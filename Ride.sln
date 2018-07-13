@@ -1,0 +1,39 @@
+
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual C++ Express 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Main", "Main\Main.vcxproj", "{4942F917-831D-40A3-BE9F-EA565D721A34}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PropGrid", "PropGrid\PropGrid.vcxproj", "{3364C212-E5CB-4027-B58D-0DD1D5271ABC}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Tdi", "Tdi\Tdi.vcxproj", "{A9001EA5-CA73-483D-B494-AFE3B98D7E1D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release MFC 4.2|Win32 = Release MFC 4.2|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A9001EA5-CA73-483D-B494-AFE3B98D7E1D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A9001EA5-CA73-483D-B494-AFE3B98D7E1D}.Debug|Win32.Build.0 = Debug|Win32
+		{A9001EA5-CA73-483D-B494-AFE3B98D7E1D}.Release MFC 4.2|Win32.ActiveCfg = Release MFC 4.2|Win32
+		{A9001EA5-CA73-483D-B494-AFE3B98D7E1D}.Release MFC 4.2|Win32.Build.0 = Release MFC 4.2|Win32
+		{A9001EA5-CA73-483D-B494-AFE3B98D7E1D}.Release|Win32.ActiveCfg = Release|Win32
+		{A9001EA5-CA73-483D-B494-AFE3B98D7E1D}.Release|Win32.Build.0 = Release|Win32
+		{3364C212-E5CB-4027-B58D-0DD1D5271ABC}.Debug|Win32.ActiveCfg = Debug|Win32
+		{3364C212-E5CB-4027-B58D-0DD1D5271ABC}.Debug|Win32.Build.0 = Debug|Win32
+		{3364C212-E5CB-4027-B58D-0DD1D5271ABC}.Release MFC 4.2|Win32.ActiveCfg = Release MFC 4.2|Win32
+		{3364C212-E5CB-4027-B58D-0DD1D5271ABC}.Release MFC 4.2|Win32.Build.0 = Release MFC 4.2|Win32
+		{3364C212-E5CB-4027-B58D-0DD1D5271ABC}.Release|Win32.ActiveCfg = Release|Win32
+		{3364C212-E5CB-4027-B58D-0DD1D5271ABC}.Release|Win32.Build.0 = Release|Win32
+		{4942F917-831D-40A3-BE9F-EA565D721A34}.Debug|Win32.ActiveCfg = Debug|Win32
+		{4942F917-831D-40A3-BE9F-EA565D721A34}.Debug|Win32.Build.0 = Debug|Win32
+		{4942F917-831D-40A3-BE9F-EA565D721A34}.Release MFC 4.2|Win32.ActiveCfg = Release MFC 4.2|Win32
+		{4942F917-831D-40A3-BE9F-EA565D721A34}.Release MFC 4.2|Win32.Build.0 = Release MFC 4.2|Win32
+		{4942F917-831D-40A3-BE9F-EA565D721A34}.Release|Win32.ActiveCfg = Release|Win32
+		{4942F917-831D-40A3-BE9F-EA565D721A34}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
