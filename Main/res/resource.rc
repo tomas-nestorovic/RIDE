@@ -1,0 +1,1418 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+#include "windows.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Neutral resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
+#ifdef _WIN32
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDR_MAINFRAME ACCELERATORS DISCARDABLE 
+BEGIN
+    "N",            ID_FILE_NEW,            VIRTKEY, CONTROL, NOINVERT
+    "O",            ID_FILE_OPEN,           VIRTKEY, CONTROL, NOINVERT
+    "S",            ID_FILE_SAVE,           VIRTKEY, CONTROL, NOINVERT
+    VK_F1,          ID_HELP_FAQ,            VIRTKEY, NOINVERT
+    VK_F4,          ID_FILE_CLOSE,          VIRTKEY, CONTROL, NOINVERT
+    VK_TAB,         ID_TDI_SWITCH,          VIRTKEY, CONTROL, NOINVERT
+    VK_TAB,         ID_TDI_SWITCH_BACK,     VIRTKEY, SHIFT, CONTROL, 
+                                                    NOINVERT
+    "W",            ID_IMAGE_PROTECT,       VIRTKEY, CONTROL, NOINVERT
+END
+
+IDR_FILEMANAGER ACCELERATORS DISCARDABLE 
+BEGIN
+    "A",            ID_EDIT_SELECT_ALL,     VIRTKEY, CONTROL, NOINVERT
+    "A",            ID_EDIT_SELECT_NONE,    VIRTKEY, SHIFT, CONTROL, 
+                                                    NOINVERT
+    "C",            ID_EDIT_COPY,           VIRTKEY, CONTROL, NOINVERT
+    "C",            ID_FILEMANAGER_FILE_COMPARE, VIRTKEY, SHIFT, CONTROL, 
+                                                    NOINVERT
+    "D",            ID_FILEMANAGER_SUBDIR_CREATE, VIRTKEY, CONTROL, NOINVERT
+    "V",            ID_EDIT_PASTE,          VIRTKEY, CONTROL, NOINVERT
+    VK_DELETE,      ID_FILEMANAGER_FILE_DELETE, VIRTKEY, NOINVERT
+    VK_F2,          ID_FILEMANAGER_FILE_EDIT, VIRTKEY, NOINVERT
+    VK_F5,          ID_FILEMANAGER_REFRESH, VIRTKEY, NOINVERT
+    VK_RETURN,      ID_FILEMANAGER_FILE_INFORMATION, VIRTKEY, ALT, NOINVERT
+    "X",            ID_EDIT_CUT,            VIRTKEY, CONTROL, NOINVERT
+END
+
+IDR_MDOS ACCELERATORS DISCARDABLE 
+BEGIN
+    "4",            ID_ZX_PREVIEWASSCREEN,  VIRTKEY, CONTROL, NOINVERT
+    "B",            ID_DOS_PREVIEWASBINARY, VIRTKEY, CONTROL, NOINVERT
+    "F",            ID_DOS_FORMAT,          VIRTKEY, SHIFT, CONTROL, 
+                                                    NOINVERT
+    "K",            ID_ZX_PREVIEWASBASIC,   VIRTKEY, CONTROL, NOINVERT
+END
+
+IDR_TRDOS ACCELERATORS DISCARDABLE 
+BEGIN
+    "4",            ID_ZX_PREVIEWASSCREEN,  VIRTKEY, CONTROL, NOINVERT
+    "6",            ID_TRDOS_DEFRAGMENT,    VIRTKEY, CONTROL, NOINVERT
+    "B",            ID_DOS_PREVIEWASBINARY, VIRTKEY, CONTROL, NOINVERT
+    "E",            ID_TRDOS_FILE_LENGTH_OCCUPIED_SECTORS, VIRTKEY, CONTROL, 
+                                                    NOINVERT
+    "F",            ID_DOS_FORMAT,          VIRTKEY, SHIFT, CONTROL, 
+                                                    NOINVERT
+    "R",            ID_TRDOS_FILE_LENGTH_FROM_DIRENTRY, VIRTKEY, CONTROL, 
+                                                    NOINVERT
+END
+
+IDR_MSDOS ACCELERATORS DISCARDABLE 
+BEGIN
+    "B",            ID_DOS_PREVIEWASBINARY, VIRTKEY, CONTROL, NOINVERT
+    "F",            ID_DOS_FORMAT,          VIRTKEY, SHIFT, CONTROL, 
+                                                    NOINVERT
+END
+
+IDR_GDOS ACCELERATORS DISCARDABLE 
+BEGIN
+    "4",            ID_ZX_PREVIEWASSCREEN,  VIRTKEY, CONTROL, NOINVERT
+    "B",            ID_DOS_PREVIEWASBINARY, VIRTKEY, CONTROL, NOINVERT
+    "F",            ID_DOS_FORMAT,          VIRTKEY, SHIFT, CONTROL, 
+                                                    NOINVERT
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MAINFRAME MENU DISCARDABLE 
+BEGIN
+    POPUP "&Image"
+    BEGIN
+        MENUITEM "&New\tCtrl+N",                ID_FILE_NEW
+        MENUITEM SEPARATOR
+        MENUITEM "&Open...\tCtrl+O",            ID_FILE_OPEN
+        MENUITEM "Open &as...",                 ID_OPEN_AS
+        MENUITEM "&Save\tCtrl+S",               ID_FILE_SAVE
+        MENUITEM "Sa&ve as...",                 ID_FILE_SAVE_AS
+        MENUITEM "&Close\tCtrl+F4",             ID_FILE_CLOSE
+        MENUITEM SEPARATOR
+        MENUITEM "Recognition...",              ID_RECOGNIZE
+        MENUITEM SEPARATOR
+        MENUITEM "&Dump...",                    ID_IMAGE_DUMP, GRAYED
+        MENUITEM "Apply &patch...",             ID_IMAGE_PATCH, GRAYED
+        MENUITEM SEPARATOR
+        MENUITEM "&Write protected\tCtrl+W",    ID_IMAGE_PROTECT
+        MENUITEM SEPARATOR
+        MENUITEM "No recent files yet",         ID_FILE_MRU_FILE1, GRAYED
+        MENUITEM SEPARATOR
+        MENUITEM "&Exit",                       ID_APP_EXIT
+    END
+    POPUP "Help"
+    BEGIN
+        MENUITEM "What's new (online)",         ID_HELP_WHATSNEW
+        MENUITEM "Check for updates (online)",  ID_APP_UPDATE
+        MENUITEM "FAQ (online)\tF1",            ID_HELP_FAQ
+        MENUITEM SEPARATOR
+        MENUITEM "Credits (online)",            ID_CREDITS
+        MENUITEM "About",                       ID_APP_ABOUT
+    END
+END
+
+IDR_MDOS MENU DISCARDABLE 
+BEGIN
+    POPUP "MDOS"
+    BEGIN
+        MENUITEM "Verify...",                   ID_DOS_VERIFY, GRAYED
+        MENUITEM "Defragment...",               ID_DOS_DEFRAGMENT, GRAYED
+        MENUITEM "Fill empty space...",         ID_DOS_FILL_EMPTY_SPACE
+        POPUP "Tape"
+        BEGIN
+            MENUITEM "Insert tape...",              ID_TAPE_OPEN
+            MENUITEM "Insert blank tape...",        ID_TAPE_NEW
+            MENUITEM SEPARATOR
+            MENUITEM "Eject\tCtrl+F4",              ID_TAPE_CLOSE
+        END
+        MENUITEM SEPARATOR
+        POPUP "Floppy recognition"
+        BEGIN
+            MENUITEM "Autodetect",                  ID_MDOS_AUTODETECT
+            MENUITEM "Force version 1.0",           ID_MDOS_VERSION1
+            MENUITEM "Force version 2.0",           ID_MDOS_VERSION2
+        END
+        MENUITEM "Export with shell-compliant names", 
+                                                ID_DOS_SHELLCOMPLIANTNAMES
+        POPUP "Default import attributes"
+        BEGIN
+            MENUITEM "(RWED)...",                   ID_MDOS_IMPORTATTRIBUTES_CUSTOM
+
+        END
+        MENUITEM SEPARATOR
+        MENUITEM "Format cylinders...\tCtrl+Shift+F", ID_DOS_FORMAT
+        MENUITEM "Unformat cylinders...",       ID_DOS_UNFORMAT
+        MENUITEM SEPARATOR
+        MENUITEM "Show as Screen$\tCtrl+4",     ID_ZX_PREVIEWASSCREEN
+        MENUITEM "Show as binary\tCtrl+B",      ID_DOS_PREVIEWASBINARY
+        MENUITEM SEPARATOR
+        MENUITEM "Take a tour (online)",        ID_DOS_TAKEATOUR
+    END
+END
+
+IDR_TRACKMAP MENU DISCARDABLE 
+BEGIN
+    POPUP "Track map"
+    BEGIN
+        MENUITEM "Sector status",               ID_TRACKMAP_STATUS
+        MENUITEM "Sector data",                 ID_TRACKMAP_DATA
+        MENUITEM "Bad sector data (if any)",    ID_TRACKMAP_BAD_DATA
+        MENUITEM SEPARATOR
+        MENUITEM "Numbering",                   ID_TRACKMAP_NUMBERING
+        POPUP "Helpers"
+        BEGIN
+            MENUITEM "Statistics",                  ID_TRACKMAP_STATISTICS
+            MENUITEM "Legend",                      ID_TRACKMAP_LEGEND
+            , GRAYED
+        END
+    END
+END
+
+IDR_FILEMANAGER MENU DISCARDABLE 
+BEGIN
+    POPUP "File manager"
+    BEGIN
+        MENUITEM "Cut\tCtrl+X",                 ID_EDIT_CUT
+        MENUITEM "Copy\tCtrl+C",                ID_EDIT_COPY
+        MENUITEM "Paste\tCtrl+V",               ID_EDIT_PASTE
+        POPUP "Selection"
+        BEGIN
+            MENUITEM "All\tCtrl+A",                 ID_EDIT_SELECT_ALL
+            MENUITEM "None\tCtrl+Shift+A",          ID_EDIT_SELECT_NONE
+            MENUITEM "Inverse",                     ID_EDIT_SELECT_INVERSE
+            MENUITEM SEPARATOR
+            MENUITEM "Properties\tAlt+Enter",       ID_FILEMANAGER_FILE_INFORMATION
+
+        END
+        MENUITEM SEPARATOR
+        MENUITEM "Create directory...\tCtrl+D", ID_FILEMANAGER_SUBDIR_CREATE
+        MENUITEM "Edit active\tF2",             ID_FILEMANAGER_FILE_EDIT
+        MENUITEM "Delete selected\tDel",        ID_FILEMANAGER_FILE_DELETE
+        MENUITEM SEPARATOR
+        MENUITEM "Large icons",                 ID_FILEMANAGER_BIG_ICONS
+        MENUITEM "Small icons",                 ID_FILEMANAGER_SMALL_ICONS
+        MENUITEM "List",                        ID_FILEMANAGER_LIST
+        MENUITEM "Details",                     ID_FILEMANAGER_REPORT
+        MENUITEM SEPARATOR
+        MENUITEM "Compare files...\tCtrl+Shift+C", 
+                                                ID_FILEMANAGER_FILE_COMPARE
+        MENUITEM "Refresh\tF5",                 ID_FILEMANAGER_REFRESH
+    END
+END
+
+IDR_TRDOS MENU DISCARDABLE 
+BEGIN
+    POPUP "TR-DOS"
+    BEGIN
+        MENUITEM "Verify...",                   ID_DOS_VERIFY, GRAYED
+        MENUITEM "Fill empty space...",         ID_DOS_FILL_EMPTY_SPACE
+        MENUITEM "Wipe empty space\tCtrl+6",    ID_TRDOS_DEFRAGMENT
+        POPUP "Tape"
+        BEGIN
+            MENUITEM "Insert tape...",              ID_TAPE_OPEN
+            MENUITEM "Insert blank tape...",        ID_TAPE_NEW
+            MENUITEM SEPARATOR
+            MENUITEM "Eject\tCtrl+F4",              ID_TAPE_CLOSE
+        END
+        MENUITEM SEPARATOR
+        POPUP "Export size given by"
+        BEGIN
+            MENUITEM "Directory entry\tCtrl+R",     ID_TRDOS_FILE_LENGTH_FROM_DIRENTRY
+
+            MENUITEM "Occupied sectors\tCtrl+E",    ID_TRDOS_FILE_LENGTH_OCCUPIED_SECTORS
+
+        END
+        MENUITEM "Export with shell-compliant names", 
+                                                ID_DOS_SHELLCOMPLIANTNAMES
+        MENUITEM "Import zero length files",    ID_DOS_FILE_ZERO_LENGTH
+        MENUITEM SEPARATOR
+        MENUITEM "Format cylinders...\tCtrl+Shift+F", ID_DOS_FORMAT
+        MENUITEM "Unformat cylinders...",       ID_DOS_UNFORMAT
+        MENUITEM SEPARATOR
+        MENUITEM "Browse as Screen$\tCtrl+4",   ID_ZX_PREVIEWASSCREEN
+        MENUITEM "Show as binary\tCtrl+B",      ID_DOS_PREVIEWASBINARY
+        MENUITEM SEPARATOR
+        MENUITEM "Take a tour (online)",        ID_DOS_TAKEATOUR, GRAYED
+    END
+END
+
+IDR_DOS_UNKNOWN MENU DISCARDABLE 
+BEGIN
+    POPUP "Unknown DOS"
+    BEGIN
+        MENUITEM "Why do I see this?",          ID_DOS
+    END
+END
+
+IDR_HEXAEDITOR MENU DISCARDABLE 
+BEGIN
+    POPUP "x"
+    BEGIN
+        MENUITEM "Copy\tCtrl+C",                ID_EDIT_COPY
+        MENUITEM "Paste\tCtrl+V",               ID_EDIT_PASTE
+        MENUITEM "Delete\tDel",                 ID_DELETE
+        MENUITEM SEPARATOR
+        MENUITEM "Select all\tCtrl+A",          ID_EDIT_SELECT_ALL
+    END
+END
+
+IDR_MSDOS MENU DISCARDABLE 
+BEGIN
+    POPUP "MS-DOS"
+    BEGIN
+        MENUITEM "ScanDisk...",                 ID_DOS_VERIFY, GRAYED
+        MENUITEM "Defragment...",               ID_DOS_DEFRAGMENT, GRAYED
+        MENUITEM "Fill empty space...",         ID_DOS_FILL_EMPTY_SPACE
+        MENUITEM "Remove long names...",        ID_MSDOS_REMOVE_LONG_NAMES
+        MENUITEM SEPARATOR
+        MENUITEM "Ignore long names",           ID_MSDOS_IGNORE_LONG_NAMES
+        MENUITEM "Ignore ""dot"" entries",      ID_MSDOS_IGNOREDOT
+        MENUITEM "Ignore ""dotdot"" entries",   ID_MSDOS_IGNOREDOTDOT
+        MENUITEM SEPARATOR
+        MENUITEM "Format cylinders...\tCtrl+Shift+F", ID_DOS_FORMAT
+        MENUITEM "Unformat cylinders...",       ID_DOS_UNFORMAT
+        MENUITEM SEPARATOR
+        MENUITEM "Show as binary\tCtrl+B",      ID_DOS_PREVIEWASBINARY
+        MENUITEM SEPARATOR
+        MENUITEM "Take a tour (online)",        ID_DOS_TAKEATOUR, GRAYED
+    END
+END
+
+IDR_GDOS MENU DISCARDABLE 
+BEGIN
+    POPUP "GDOS"
+    BEGIN
+        MENUITEM "Verify...",                   ID_DOS_VERIFY, GRAYED
+        MENUITEM "Defragment...",               ID_DOS_DEFRAGMENT, GRAYED
+        MENUITEM "Fill empty space...",         ID_DOS_FILL_EMPTY_SPACE
+        POPUP "Tape"
+        BEGIN
+            MENUITEM "Insert tape...",              ID_TAPE_OPEN
+            MENUITEM "Insert blank tape...",        ID_TAPE_NEW
+            MENUITEM SEPARATOR
+            MENUITEM "Eject\tCtrl+F4",              ID_TAPE_CLOSE
+        END
+        MENUITEM SEPARATOR
+        MENUITEM "Import zero length files",    ID_DOS_FILE_ZERO_LENGTH
+        MENUITEM "Export with shell-compliant names", 
+                                                ID_DOS_SHELLCOMPLIANTNAMES
+        MENUITEM SEPARATOR
+        MENUITEM "Format cylinders...\tCtrl+Shift+F", ID_DOS_FORMAT
+        MENUITEM "Unformat cylinders...",       ID_DOS_UNFORMAT
+        MENUITEM SEPARATOR
+        MENUITEM "Show as Screen$\tCtrl+4",     ID_ZX_PREVIEWASSCREEN
+        MENUITEM "Show as binary\tCtrl+B",      ID_DOS_PREVIEWASBINARY
+        MENUITEM SEPARATOR
+        MENUITEM "Take a tour (online)",        ID_DOS_TAKEATOUR, GRAYED
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDR_TRACKMAP            BITMAP  DISCARDABLE     "trackMap.bmp"
+IDR_FILEMANAGER         BITMAP  DISCARDABLE     "fileManager.bmp"
+IDR_MAINFRAME           BITMAP  DISCARDABLE     "mainFrame.bmp"
+IDR_ZX_TAPE             BITMAP  DISCARDABLE     "spectrumTape.bmp"
+IDR_IMAGE               BITMAP  DISCARDABLE     "image.bmp"
+IDR_FDD                 BITMAP  DISCARDABLE     "fdd.bmp"
+IDR_WEBPAGE             BITMAP  DISCARDABLE     "webPage.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Toolbar
+//
+
+IDR_TRACKMAP TOOLBAR DISCARDABLE  16, 16
+BEGIN
+    BUTTON      ID_TRACKMAP_STATUS
+    BUTTON      ID_TRACKMAP_DATA
+    BUTTON      ID_TRACKMAP_BAD_DATA
+    SEPARATOR
+    BUTTON      ID_TRACKMAP_NUMBERING
+END
+
+IDR_FILEMANAGER TOOLBAR DISCARDABLE  16, 16
+BEGIN
+    BUTTON      ID_FILEMANAGER_BIG_ICONS
+    BUTTON      ID_FILEMANAGER_SMALL_ICONS
+    BUTTON      ID_FILEMANAGER_LIST
+    BUTTON      ID_FILEMANAGER_REPORT
+    SEPARATOR
+    BUTTON      ID_EDIT_CUT
+    BUTTON      ID_EDIT_COPY
+    BUTTON      ID_EDIT_PASTE
+    SEPARATOR
+    BUTTON      ID_FILEMANAGER_FILE_DELETE
+END
+
+IDR_MAINFRAME TOOLBAR DISCARDABLE  16, 16
+BEGIN
+    BUTTON      ID_FILE_NEW
+    BUTTON      ID_FILE_OPEN
+    BUTTON      ID_FILE_SAVE
+END
+
+IDR_ZX_TAPE TOOLBAR DISCARDABLE  16, 16
+BEGIN
+    BUTTON      ID_FILE_SHIFT_DOWN
+    BUTTON      ID_FILE_SHIFT_UP
+END
+
+IDR_IMAGE TOOLBAR DISCARDABLE  16, 16
+BEGIN
+    BUTTON      ID_IMAGE_PROTECT
+END
+
+IDR_FDD TOOLBAR DISCARDABLE  16, 16
+BEGIN
+    BUTTON      ID_IMAGE_PROTECT
+    BUTTON      ID_FDD_SETTINGS
+END
+
+IDR_WEBPAGE TOOLBAR DISCARDABLE  16, 16
+BEGIN
+    BUTTON      ID_WEB_NAVIGATE_BACK
+    BUTTON      ID_WEB_NAVIGATE_FORTH
+    SEPARATOR
+    BUTTON      ID_WEB_DEFAULT_BROWSER
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDR_MDOS_FILE_ATTRIBUTES_EDITOR DIALOG DISCARDABLE  0, 0, 118, 138
+STYLE WS_POPUP | WS_CAPTION
+CAPTION "File attributes"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,7,117,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,61,117,50,14
+    CONTROL         "&Hidden",ID_HIDDEN,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,7,7,100,10
+    CONTROL         "&System",ID_SYSTEM,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,7,19,100,10
+    CONTROL         "&Protected",ID_PROTECTED,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,7,31,100,10
+    CONTROL         "&Archive",ID_ARCHIVE,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,7,43,100,10
+    CONTROL         "&Readable",ID_READABLE,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,7,55,49,10
+    CONTROL         "&Writable",ID_WRITABLE,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,7,67,50,10
+    CONTROL         "&Executable",ID_EXECUTABLE,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,7,79,50,10
+    CONTROL         "&Deletable",ID_DELETABLE,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,7,91,50,10
+    CONTROL         "<a id=""DRV_A"">Set</a>",ID_ATTRIBUTE,"SysLink",0x0,70,
+                    72,39,11
+END
+
+IDR_MDOS_DRIVE_EDITOR DIALOGEX 0, 0, 205, 202
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
+CAPTION "Drive information"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,94,181,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,148,181,50,14
+    CONTROL         "C&onnected",ID_CONNECTED,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,16,20,51,10
+    CONTROL         "&Error during last operation or all drives stopped",
+                    ID_ERROR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,16,32,161,
+                    10
+    LTEXT           "&Last seeked track:",IDC_STATIC,16,48,60,8,NOT WS_GROUP
+    EDITTEXT        ID_TRACK,82,46,20,12,ES_CENTER | ES_AUTOHSCROLL | 
+                    ES_NUMBER | NOT WS_BORDER,WS_EX_STATICEDGE
+    LTEXT           "Default geometry:",IDC_STATIC,16,64,56,8,NOT WS_GROUP
+    LTEXT           "&cylinders,",IDC_STATIC,105,64,30,8,NOT WS_GROUP
+    EDITTEXT        ID_CYLINDER,82,62,20,12,ES_CENTER | ES_AUTOHSCROLL | 
+                    ES_NUMBER | NOT WS_BORDER,WS_EX_STATICEDGE
+    LTEXT           "&sectors",IDC_STATIC,164,64,24,8,NOT WS_GROUP
+    EDITTEXT        ID_SECTOR,140,62,20,12,ES_CENTER | ES_AUTOHSCROLL | 
+                    ES_NUMBER | NOT WS_BORDER,WS_EX_STATICEDGE
+    LTEXT           "Mapped as:",IDC_STATIC,16,98,38,8,NOT WS_GROUP
+    CONTROL         "Drive &A",ID_DRIVEA,"Button",BS_AUTORADIOBUTTON | 
+                    WS_GROUP,67,98,39,10
+    CONTROL         "Drive &B",ID_DRIVEB,"Button",BS_AUTORADIOBUTTON,131,98,
+                    39,10
+    LTEXT           "Standard:",IDC_STATIC,16,110,32,8,NOT WS_GROUP
+    CONTROL         "&80 cylinders",ID_D80,"Button",BS_AUTORADIOBUTTON | 
+                    WS_GROUP,67,110,53,10
+    CONTROL         "&40 cylinders",ID_D40,"Button",BS_AUTORADIOBUTTON,131,
+                    110,53,10
+    CONTROL         "Operate on &double-sided floppy",ID_DSFLOPPY,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,16,125,114,10
+    CONTROL         "&Handle 40 cylinder floppy in D80",ID_40D80,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,16,138,118,10
+    LTEXT           "Ste&pping speed (2Mhz/1Mhz):",IDC_STATIC,16,154,96,8,
+                    NOT WS_GROUP
+    COMBOBOX        ID_STEPPING,119,152,60,61,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
+    GROUPBOX        "Status",IDC_STATIC,7,7,191,74
+    GROUPBOX        "Settings",IDC_STATIC,7,85,191,86
+END
+
+IDR_DOS_FORMAT DIALOGEX 0, 0, 229, 303
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
+CAPTION "Format cylinders"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,143,282,25,14
+    PUSHBUTTON      "Cancel",IDCANCEL,172,282,50,14
+    LTEXT           "System:",IDC_STATIC,7,8,26,8,NOT WS_GROUP
+    LTEXT           "dos",ID_SYSTEM,54,8,93,8,NOT WS_GROUP
+    LTEXT           "&Medium:",IDC_STATIC,7,24,28,8,NOT WS_GROUP
+    COMBOBOX        ID_MEDIUM,55,22,72,76,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
+    CONTROL         "<a>Not the right type?</a>",ID_DRIVE,"SysLink",0x0,135,
+                    24,72,11
+    LTEXT           "&Format:",IDC_STATIC,7,41,24,8,NOT WS_GROUP
+    COMBOBOX        ID_FORMAT,55,39,167,79,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
+    LTEXT           "Cylinders:",IDC_STATIC,7,59,31,8,NOT WS_GROUP
+    LTEXT           "F&rom:",IDC_STATIC,55,58,18,8,NOT WS_GROUP
+    EDITTEXT        ID_CYLINDER,87,56,39,12,ES_AUTOHSCROLL | ES_NUMBER | NOT 
+                    WS_BORDER,WS_EX_STATICEDGE
+    LTEXT           "&To:",IDC_STATIC,55,73,12,8,NOT WS_GROUP
+    EDITTEXT        ID_CYLINDER_N,87,71,39,12,ES_AUTOHSCROLL | ES_NUMBER | 
+                    NOT WS_BORDER,WS_EX_STATICEDGE
+    LTEXT           "&Heads:",IDC_STATIC,7,90,24,8,NOT WS_GROUP
+    EDITTEXT        ID_HEAD,55,88,39,12,ES_AUTOHSCROLL | ES_NUMBER | NOT 
+                    WS_BORDER,WS_EX_STATICEDGE
+    LTEXT           "Sectors:",IDC_STATIC,7,108,27,8,NOT WS_GROUP
+    LTEXT           "Cou&nt:",IDC_STATIC,55,107,22,8,NOT WS_GROUP
+    EDITTEXT        ID_SECTOR,87,105,39,12,ES_AUTOHSCROLL | ES_NUMBER | NOT 
+                    WS_BORDER,WS_EX_STATICEDGE
+    LTEXT           "&Size:",IDC_STATIC,55,122,16,8,NOT WS_GROUP
+    EDITTEXT        ID_SIZE,87,120,39,12,ES_AUTOHSCROLL | ES_NUMBER | NOT 
+                    WS_BORDER,WS_EX_STATICEDGE
+    LTEXT           "&Gap3:",IDC_STATIC,55,137,20,8,NOT WS_GROUP
+    EDITTEXT        ID_GAP,87,135,39,12,ES_AUTOHSCROLL | ES_NUMBER | NOT 
+                    WS_BORDER,WS_EX_STATICEDGE
+    LTEXT           "&Intleave:",IDC_STATIC,55,152,28,8,NOT WS_GROUP
+    EDITTEXT        ID_INTERLEAVE,87,150,39,12,ES_AUTOHSCROLL | ES_NUMBER | 
+                    NOT WS_BORDER,WS_EX_STATICEDGE
+    LTEXT           "S&kew:",IDC_STATIC,55,167,21,8,NOT WS_GROUP
+    EDITTEXT        ID_SKEW,87,165,39,12,ES_AUTOHSCROLL | ES_NUMBER | NOT 
+                    WS_BORDER,WS_EX_STATICEDGE
+    CONTROL         "",ID_TRACK,"SysLink",0x0,137,117,69,21
+    LTEXT           "&Cluster size:",IDC_STATIC,7,183,38,8,NOT WS_GROUP
+    COMBOBOX        ID_CLUSTER,55,182,72,76,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
+    LTEXT           "&Alloc. tables:",IDC_STATIC,7,201,41,8,NOT WS_GROUP
+    EDITTEXT        ID_FAT,55,199,39,12,ES_AUTOHSCROLL | ES_NUMBER | NOT 
+                    WS_BORDER,WS_EX_STATICEDGE
+    LTEXT           "Root &dir size:",IDC_STATIC,7,218,42,8,NOT WS_GROUP
+    EDITTEXT        ID_DIRECTORY,55,216,39,12,ES_AUTOHSCROLL | ES_NUMBER | 
+                    NOT WS_BORDER,WS_EX_STATICEDGE
+    LTEXT           "entries",IDC_STATIC,97,218,22,8,NOT WS_GROUP
+    CONTROL         "Update &boot sector",ID_BOOT,"Button",BS_AUTOCHECKBOX | 
+                    WS_DISABLED | WS_TABSTOP,7,236,78,10
+    CONTROL         "&Verify new tracks and add them to FAT",ID_VERIFY_TRACK,
+                    "Button",BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,7,
+                    248,135,10
+    CONTROL         "R&eport on low-level formatting",ID_REPORT,"Button",
+                    BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,7,259,109,10
+END
+
+IDR_DOS_UNFORMAT DIALOGEX 0, 0, 185, 130
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
+CAPTION "Unformat cylinders"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,99,109,25,14
+    PUSHBUTTON      "Cancel",IDCANCEL,128,109,50,14
+    LTEXT           "System:",IDC_STATIC,7,8,26,8,NOT WS_GROUP
+    LTEXT           "dos",ID_SYSTEM,43,8,93,8,NOT WS_GROUP
+    LTEXT           "Unfor&mat:",IDC_STATIC,7,24,32,8,NOT WS_GROUP
+    COMBOBOX        ID_FORMAT,43,22,135,70,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
+    LTEXT           "Cylinders:",IDC_STATIC,7,42,31,8,NOT WS_GROUP
+    LTEXT           "F&rom:",IDC_STATIC,43,42,18,8,NOT WS_GROUP
+    EDITTEXT        ID_CYLINDER,72,40,39,12,ES_AUTOHSCROLL | NOT WS_BORDER,
+                    WS_EX_STATICEDGE
+    LTEXT           "&To:",IDC_STATIC,43,57,12,8,NOT WS_GROUP
+    EDITTEXT        ID_CYLINDER_N,72,55,39,12,ES_AUTOHSCROLL | NOT WS_BORDER,
+                    WS_EX_STATICEDGE
+    CONTROL         "Update &boot sector",ID_BOOT,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,7,77,76,10
+    CONTROL         "Remove tracks from &FAT",ID_FAT,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,88,91,10
+END
+
+IDR_IMAGE_NEW DIALOGEX 0, 0, 265, 119
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
+CAPTION "New image"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,155,98,50,14,WS_DISABLED
+    PUSHBUTTON      "Cancel",IDCANCEL,208,98,50,14
+    LTEXT           "&Disk operating system",IDC_STATIC,7,7,70,8,NOT 
+                    WS_GROUP
+    LISTBOX         ID_DOS,7,18,121,53,LBS_NOINTEGRALHEIGHT | NOT WS_BORDER | 
+                    WS_VSCROLL | WS_TABSTOP,WS_EX_STATICEDGE
+    LTEXT           "&Container",IDC_STATIC,137,7,31,8,NOT WS_GROUP
+    LISTBOX         ID_IMAGE,137,18,121,53,LBS_NOINTEGRALHEIGHT | NOT 
+                    WS_BORDER | WS_VSCROLL | WS_TABSTOP,WS_EX_STATICEDGE
+    RTEXT           "You will format the image to a given capacity in the next step.",
+                    IDC_STATIC,59,76,199,8,NOT WS_GROUP
+    CONTROL         "<a id=""ID_HELP"">Need help?</a>",ID_HELP_INDEX,"SysLink",
+                    WS_TABSTOP,7,101,45,11
+END
+
+IDR_DOS_FILL_EMPTY_SPACE DIALOGEX 0, 0, 183, 146
+STYLE WS_POPUP | WS_CAPTION
+CAPTION "Fill empty space"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,73,125,50,14,WS_DISABLED
+    PUSHBUTTON      "Cancel",IDCANCEL,126,125,50,14
+    LTEXT           "Fill all",IDC_STATIC,7,7,18,8,NOT WS_GROUP
+    CONTROL         "empty &sectors",ID_SECTOR,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,45,7,59,10
+    CONTROL         "empty sp&ace in each file's last sector",ID_FILE,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,45,19,129,10
+    CONTROL         "and &recurrently for subdirectory files",ID_RECURRENCY,
+                    "Button",BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,45,
+                    32,129,10
+    LTEXT           "with &value",IDC_STATIC,7,47,33,8,NOT WS_GROUP
+    EDITTEXT        ID_NUMBER,45,46,40,12,ES_AUTOHSCROLL | ES_NUMBER | NOT 
+                    WS_BORDER,WS_EX_STATICEDGE
+    PUSHBUTTON      "System default",ID_DEFAULT1,90,46,56,13
+    LTEXT           "Fill all",IDC_STATIC,7,69,18,8,NOT WS_GROUP
+    CONTROL         "empty current &directory entries",ID_DIRECTORY,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,45,69,110,10
+    CONTROL         "and r&ecurrently for subdirectory entries",
+                    ID_SUBDIRECTORY,"Button",BS_AUTOCHECKBOX | WS_DISABLED | 
+                    WS_TABSTOP,45,81,135,10
+    LTEXT           "with &value",IDC_STATIC,7,96,33,8,NOT WS_GROUP
+    EDITTEXT        ID_NUMBER2,45,96,40,12,ES_AUTOHSCROLL | ES_NUMBER | NOT 
+                    WS_BORDER,WS_EX_STATICEDGE
+    PUSHBUTTON      "System default",ID_DEFAULT2,90,96,56,13
+END
+
+IDR_DOS_UNKNOWN DIALOGEX 0, 0, 260, 102
+STYLE WS_POPUP | WS_VISIBLE | WS_CAPTION
+CAPTION "Select the DOS"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    LTEXT           "Please select the DOS to use to operate on the image. Information in the boot sector (if any) will be ignored and the system's default format will be assumed.",
+                    IDC_STATIC,7,7,246,23,NOT WS_GROUP
+    LISTBOX         ID_DOS,7,29,246,41,NOT LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | 
+                    NOT WS_BORDER | WS_VSCROLL | WS_TABSTOP,WS_EX_STATICEDGE
+    DEFPUSHBUTTON   "OK",IDOK,150,81,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,203,81,50,14
+END
+
+IDR_MDOS_GKFM_EDITOR DIALOGEX 0, 0, 212, 246
+STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION
+CAPTION "George K's File Manager basic settings"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,102,225,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,155,225,50,14
+    RTEXT           "Dimensions:",IDC_STATIC,20,21,39,8,NOT WS_GROUP
+    LTEXT           "&Left:",IDC_STATIC,65,21,15,8,NOT WS_GROUP
+    EDITTEXT        ID_X,90,20,29,12,ES_CENTER | ES_AUTOHSCROLL | NOT 
+                    WS_BORDER,WS_EX_STATICEDGE
+    LTEXT           "&Top:",IDC_STATIC,134,21,16,8,NOT WS_GROUP
+    EDITTEXT        ID_Y,161,20,29,12,ES_CENTER | ES_AUTOHSCROLL | NOT 
+                    WS_BORDER,WS_EX_STATICEDGE
+    LTEXT           "&Width:",IDC_STATIC,65,35,22,8,NOT WS_GROUP
+    EDITTEXT        ID_W,90,34,29,12,ES_CENTER | ES_AUTOHSCROLL | NOT 
+                    WS_BORDER,WS_EX_STATICEDGE
+    LTEXT           "&Height:",IDC_STATIC,134,35,24,8,NOT WS_GROUP
+    EDITTEXT        ID_H,161,34,29,12,ES_CENTER | ES_AUTOHSCROLL | NOT 
+                    WS_BORDER,WS_EX_STATICEDGE
+    RTEXT           "Attributes:",IDC_STATIC,26,54,32,8,NOT WS_GROUP
+    CONTROL         "&Ink:",ID_COLOR,"Button",BS_AUTORADIOBUTTON | WS_GROUP,
+                    64,55,28,8
+    EDITTEXT        ID_INK,92,52,16,12,ES_CENTER | ES_AUTOHSCROLL | NOT 
+                    WS_BORDER,WS_EX_STATICEDGE
+    LTEXT           "&Paper:",IDC_STATIC,113,54,22,8,NOT WS_GROUP
+    EDITTEXT        ID_PAPER,137,52,16,12,ES_CENTER | ES_AUTOHSCROLL | NOT 
+                    WS_BORDER,WS_EX_STATICEDGE
+    CONTROL         "&Bright",ID_BRIGHT,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,160,54,34,10
+    CONTROL         "Tra&nsparent",IDC_STATIC,"Button",BS_AUTORADIOBUTTON,64,
+                    67,54,10
+    CONTROL         "Top l&eft",ID_ALIGN,"Button",BS_AUTORADIOBUTTON | 
+                    WS_GROUP,105,99,40,10
+    CONTROL         "Top ri&ght",IDC_STATIC,"Button",BS_AUTORADIOBUTTON,105,
+                    112,44,10
+    CONTROL         "&Custom (see Advanced)",IDC_STATIC,"Button",
+                    BS_AUTORADIOBUTTON,105,125,91,10
+    RTEXT           "Offset:",IDC_STATIC,20,160,22,8,NOT WS_GROUP
+    LTEXT           "Le&ft:",IDC_STATIC,65,160,15,8,NOT WS_GROUP
+    EDITTEXT        ID_DX,90,159,29,12,ES_CENTER | ES_AUTOHSCROLL | NOT 
+                    WS_BORDER,WS_EX_STATICEDGE
+    LTEXT           "T&op:",IDC_STATIC,134,160,16,8,NOT WS_GROUP
+    EDITTEXT        ID_DY,161,159,29,12,ES_CENTER | ES_AUTOHSCROLL | NOT 
+                    WS_BORDER,WS_EX_STATICEDGE
+    EDITTEXT        ID_DATA,21,177,170,32,ES_MULTILINE | ES_AUTOVSCROLL | 
+                    ES_AUTOHSCROLL | ES_WANTRETURN | NOT WS_BORDER,
+                    WS_EX_STATICEDGE
+    GROUPBOX        "Window parameters",IDC_STATIC,7,7,198,78
+    GROUPBOX        "Icon",IDC_STATIC,7,88,198,53
+    CONTROL         "",ID_IMAGE,"Static",SS_WHITERECT | NOT WS_VISIBLE,22,
+                    102,32,24,WS_EX_TRANSPARENT
+    GROUPBOX        "Text (using ""Desktop"" encoding)",IDC_STATIC,7,145,198,
+                    72
+    LTEXT           "Position:",IDC_STATIC,73,99,28,8,NOT WS_GROUP
+END
+
+IDR_FILEMANAGER_COMPARE_FILES DIALOG DISCARDABLE  0, 0, 434, 233
+STYLE WS_MAXIMIZEBOX | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | 
+    WS_THICKFRAME
+CAPTION "File comparison"
+FONT 8, "MS Sans Serif"
+BEGIN
+    PUSHBUTTON      "Compare",IDOK,325,215,50,14,WS_DISABLED
+    DEFPUSHBUTTON   "Close",IDCANCEL,380,215,50,14
+    CONTROL         "",ID_FILE_MRU_FILE1,"Static",SS_SIMPLE | SS_CENTERIMAGE | 
+                    SS_SUNKEN,4,4,85,11
+    CONTROL         "",ID_FILE_MRU_FILE2,"Static",SS_SIMPLE | SS_CENTERIMAGE | 
+                    SS_SUNKEN,303,4,104,11
+    PUSHBUTTON      ". . .",ID_FILE1,91,4,18,11
+    PUSHBUTTON      ". . .",ID_FILE2,412,4,18,11
+END
+
+IDR_OPEN_CUSTOM DIALOG DISCARDABLE  0, 0, 321, 20
+STYLE WS_CHILD | WS_CLIPSIBLINGS
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "<a id=""DRV_A"">Access floppy inserted in internal drive A</a>. Simon Owen's <a href=""http://simonowen.com/fdrawcmd"">fdrawcmd</a> driver required.",
+                    ID_DRIVEA,"SysLink",0x0,7,3,312,11
+END
+
+IDR_ACTION_PROGRESS DIALOG DISCARDABLE  0, 0, 186, 52
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
+CAPTION "Please wait..."
+FONT 8, "MS Sans Serif"
+BEGIN
+    PUSHBUTTON      "Cancel",IDCANCEL,67,31,50,14
+    CONTROL         "Progress1",ID_STATE,"msctls_progress32",PBS_SMOOTH,7,7,
+                    172,14
+END
+
+IDR_IMAGE_DUMP DIALOGEX 0, 0, 201, 174
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
+CAPTION "Dump to destination"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "Dump",IDOK,90,153,50,14,WS_DISABLED
+    PUSHBUTTON      "Cancel",IDCANCEL,144,153,50,14
+    CONTROL         "<a id=""ID_HELP"">Need help?</a>",ID_HELP_INDEX,"SysLink",
+                    WS_TABSTOP,7,156,66,11
+    LTEXT           "&Destination:",IDC_STATIC,7,9,38,8,NOT WS_GROUP
+    PUSHBUTTON      "",ID_FILE,58,7,136,13,BS_FLAT
+    LTEXT           "&Medium:",IDC_STATIC,7,26,28,8,NOT WS_GROUP
+    COMBOBOX        ID_MEDIUM,58,24,136,76,CBS_DROPDOWNLIST | WS_DISABLED | 
+                    WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Cylinders:",IDC_STATIC,7,43,31,8,NOT WS_GROUP
+    LTEXT           "&From:",IDC_STATIC,43,43,18,8,NOT WS_GROUP
+    EDITTEXT        ID_CYLINDER,84,42,40,12,ES_AUTOHSCROLL | ES_NUMBER | 
+                    WS_DISABLED | NOT WS_BORDER,WS_EX_STATICEDGE
+    LTEXT           "&To:",IDC_STATIC,43,57,12,8,NOT WS_GROUP
+    EDITTEXT        ID_CYLINDER_N,84,56,40,12,ES_AUTOHSCROLL | WS_DISABLED | 
+                    NOT WS_BORDER,WS_EX_STATICEDGE
+    LTEXT           "&Heads:",IDC_STATIC,7,75,24,8,NOT WS_GROUP
+    EDITTEXT        ID_HEAD,84,73,40,12,ES_AUTOHSCROLL | ES_NUMBER | 
+                    WS_DISABLED | NOT WS_BORDER,WS_EX_STATICEDGE
+    LTEXT           "Sectors:",IDC_STATIC,7,92,27,8,NOT WS_GROUP
+    LTEXT           "&Gap3:",IDC_STATIC,43,92,20,8,NOT WS_GROUP
+    EDITTEXT        ID_GAP,84,91,40,12,ES_AUTOHSCROLL | ES_NUMBER | 
+                    WS_DISABLED | NOT WS_BORDER,WS_EX_STATICEDGE
+    LTEXT           "Filling &Byte:",IDC_STATIC,43,107,36,8,NOT WS_GROUP
+    EDITTEXT        ID_NUMBER,84,105,40,12,ES_AUTOHSCROLL | ES_NUMBER | 
+                    WS_DISABLED | NOT WS_BORDER,WS_EX_STATICEDGE
+    PUSHBUTTON      "System default",ID_DEFAULT1,127,105,56,13,WS_DISABLED
+    CONTROL         "Show &report when done",ID_REPORT,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,129,174,10
+END
+
+IDR_MSDOS_FILE_ATTRIBUTES_EDITOR DIALOG DISCARDABLE  0, 0, 118, 111
+STYLE WS_POPUP | WS_CAPTION
+CAPTION "File attributes"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,7,90,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,61,90,50,14
+    CONTROL         "&Hidden",ID_HIDDEN,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,7,19,100,10
+    CONTROL         "&System",ID_SYSTEM,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,7,31,100,10
+    CONTROL         "&Read-only",ID_READONLY,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,7,7,100,10
+    CONTROL         "&Archive",ID_ARCHIVE,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,7,66,100,10
+    CONTROL         "&Volume",ID_VOLUME,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,7,43,100,10
+    CONTROL         "&Subdirectory",ID_DIRECTORY,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,7,54,100,10
+END
+
+IDR_FILEMANAGER_SUBDIR_NEW DIALOG DISCARDABLE  0, 0, 201, 63
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
+CAPTION "Create directory"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "Directory &name:",IDC_STATIC,7,7,50,8
+    EDITTEXT        ID_DIRECTORY,7,18,187,14,ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "OK",IDOK,90,42,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,144,42,50,14
+END
+
+IDR_FILEMANAGER_IMPORT_CONFLICT DIALOG DISCARDABLE  0, 0, 273, 93
+STYLE DS_MODALFRAME | WS_POPUP | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | 
+    WS_CAPTION
+CAPTION "Name conflict"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "Cancel",IDCANCEL,7,66,186,20,BS_LEFT | BS_VCENTER
+    LTEXT           "x",ID_INFORMATION,7,7,253,8,NOT WS_GROUP
+    PUSHBUTTON      "Button1",IDYES,7,23,186,20,BS_LEFT | BS_VCENTER
+    PUSHBUTTON      "Button1",IDNO,7,44,186,20,BS_LEFT | BS_VCENTER
+    CONTROL         "Apply to all sibling conflicts",ID_APPLY,"Button",
+                    BS_AUTOCHECKBOX | BS_LEFT | BS_VCENTER | BS_MULTILINE | 
+                    WS_TABSTOP,205,25,61,38
+END
+
+IDR_MSDOS_REMOVE_LONG_NAMES DIALOG DISCARDABLE  0, 0, 167, 76
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
+CAPTION "Long names removal"
+FONT 8, "MS Sans Serif"
+BEGIN
+    PUSHBUTTON      "Cancel",IDCANCEL,110,55,50,14
+    LTEXT           "Remove long names in",IDC_STATIC,7,7,73,8,NOT WS_GROUP
+    CONTROL         "&this directory only",ID_DIRECTORY,"Button",
+                    BS_AUTORADIOBUTTON | WS_GROUP,18,21,70,10
+    CONTROL         "this directory and all its &subdirectories",
+                    ID_SUBDIRECTORY,"Button",BS_AUTORADIOBUTTON,18,33,132,10
+    DEFPUSHBUTTON   "OK",IDOK,57,55,50,14
+END
+
+IDR_ACTION_DIALOG DIALOG DISCARDABLE  0, 0, 273, 28
+STYLE DS_MODALFRAME | WS_POPUP | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | 
+    WS_CAPTION
+CAPTION "What to do now?"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "x",ID_INFORMATION,7,7,258,8,NOT WS_GROUP
+END
+
+IDR_DSK_TYPE DIALOG DISCARDABLE  0, 0, 151, 82
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
+CAPTION "DSK image settings"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,59,61,49,14
+    PUSHBUTTON      "Cancel",IDCANCEL,112,61,32,14
+    CONTROL         "&Standard",ID_STANDARD,"Button",BS_AUTORADIOBUTTON | 
+                    WS_GROUP,10,11,45,10
+    CONTROL         "&Revision 5 (recommended)",ID_DRIVE,"Button",
+                    BS_AUTORADIOBUTTON,10,26,100,10
+    CONTROL         "&Patch",ID_PROTECTED,"Button",BS_AUTORADIOBUTTON,10,40,
+                    35,10
+    CONTROL         "<a id=""ID_HELP"">Need help?</a>",ID_HELP_INDEX,"SysLink",
+                    WS_TABSTOP,7,64,45,11
+END
+
+IDR_IMAGE_DUMP_ERROR DIALOG DISCARDABLE  0, 0, 253, 125
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
+CAPTION "Sector read error"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "Retry",IDRETRY,143,104,50,14
+    PUSHBUTTON      "&Accept error",IDOK,77,104,63,14
+    PUSHBUTTON      "Recover...",ID_RECOVER,23,104,51,14
+    PUSHBUTTON      "Abort",IDCANCEL,196,104,50,14
+    LTEXT           "",ID_ERROR,7,8,239,88,WS_BORDER | NOT WS_GROUP
+END
+
+IDR_FDD_ACCESS DIALOGEX 0, 0, 225, 233
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
+CAPTION "FDD access options"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,115,212,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,168,212,50,14
+    LTEXT           "Controller:",IDC_STATIC,7,8,32,8,NOT WS_GROUP
+    LTEXT           "Static",ID_SYSTEM,71,8,147,8,NOT WS_GROUP
+    LTEXT           "&Medium:",IDC_STATIC,7,24,28,8,NOT WS_GROUP
+    CONTROL         "Static",ID_MEDIUM,"Static",SS_SIMPLE | WS_BORDER,71,23,
+                    96,13
+    PUSHBUTTON      "Refresh",ID_RECOVER,170,23,48,13
+    LTEXT           "Write latency [µs]:",IDC_STATIC,7,60,58,8,NOT WS_GROUP
+    LTEXT           "&Controller:",IDC_STATIC,71,60,32,8
+    EDITTEXT        ID_LATENCY,110,58,35,12,ES_AUTOHSCROLL | NOT WS_BORDER,
+                    WS_EX_STATICEDGE
+    LTEXT           "1 &Byte:",IDC_STATIC,71,74,23,8
+    EDITTEXT        ID_NUMBER2,110,73,35,12,ES_AUTOHSCROLL | NOT WS_BORDER,
+                    WS_EX_STATICEDGE
+    CONTROL         "<a id=""ID_AUTO"">Autodetermine</a>",ID_AUTO,"SysLink",
+                    0x0,156,66,45,11
+    LTEXT           "Calibrate head:",IDC_STATIC,7,92,48,8,NOT WS_GROUP
+    CONTROL         "Never",ID_NONE,"Button",BS_AUTORADIOBUTTON | WS_GROUP,
+                    70,92,74,10
+    CONTROL         "O&nce per cylinder",ID_CYLINDER,"Button",
+                    BS_AUTORADIOBUTTON,70,103,71,10
+    CONTROL         "For each &sector",ID_SECTOR,"Button",BS_AUTORADIOBUTTON,
+                    70,114,65,10
+    CONTROL         "Never",ID_ZERO,"Button",BS_AUTORADIOBUTTON | WS_GROUP,
+                    70,130,74,10
+    CONTROL         "&Each",ID_CYLINDER_N,"Button",BS_AUTORADIOBUTTON,70,141,
+                    31,10
+    EDITTEXT        ID_NUMBER,102,142,16,12,ES_RIGHT | ES_AUTOHSCROLL | 
+                    ES_NUMBER | WS_DISABLED | NOT WS_BORDER
+    LTEXT           "-th cyl.",IDC_STATIC,118,142,22,8,NOT WS_GROUP
+    LTEXT           "Motor &off after [s]:",IDC_STATIC,7,42,56,8,NOT 
+                    WS_GROUP
+    COMBOBOX        ID_ROTATION,71,40,96,46,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
+    CONTROL         "&Verify formatted tracks before writing any data (recommended)",
+                    ID_VERIFY_TRACK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
+                    158,211,10
+    CONTROL         "Verify &written data (including requested data errors, if any)",
+                    ID_VERIFY_SECTOR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
+                    169,195,10
+    CONTROL         "&Prefer relative over absolute seeking",ID_SEEK,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,180,131,10
+    CONTROL         "Read whole &track as first sector (will also be dumped!)",
+                    ID_TRACK,"Button",BS_AUTOCHECKBOX | WS_DISABLED | 
+                    WS_TABSTOP,7,191,197,10
+END
+
+IDR_FDD_LATENCY DIALOG DISCARDABLE  0, 0, 154, 85
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
+CAPTION "Autodetermine latency"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,43,64,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,97,64,50,14
+    LTEXT           "Floppy type:",IDC_STATIC,7,8,39,8,NOT WS_GROUP
+    CONTROL         "&DD",ID_FLOPPY_DD,"Button",BS_AUTORADIOBUTTON | 
+                    WS_GROUP,57,8,29,10
+    CONTROL         "&HD",ID_FLOPPY_HD,"Button",BS_AUTORADIOBUTTON,94,8,27,
+                    10
+    LTEXT           "&Precision [µs]:",IDC_STATIC,7,24,45,8,NOT WS_GROUP
+    COMBOBOX        ID_ACCURACY,58,22,72,76,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
+    LTEXT           "&Test length:",IDC_STATIC,7,41,38,8,NOT WS_GROUP
+    COMBOBOX        ID_TEST,58,38,72,76,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
+END
+
+IDR_IMAGE_DUMP_ERROR_RESOLUTION DIALOG DISCARDABLE  0, 0, 200, 204
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
+CAPTION "Recovery from CRC error(s)"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,89,183,50,14,WS_DISABLED
+    PUSHBUTTON      "Cancel",IDCANCEL,143,183,50,14
+    GROUPBOX        "ID Field",IDC_STATIC,7,7,186,82,WS_TABSTOP
+    CONTROL         "Don't recover",ID_IDFIELD,"Button",BS_AUTORADIOBUTTON | 
+                    WS_GROUP | WS_TABSTOP,13,19,59,10
+    CONTROL         "Recover corrupted CRC only",ID_IDFIELD_CRC,"Button",
+                    BS_AUTORADIOBUTTON | WS_TABSTOP,13,32,107,10
+    CONTROL         "Replace corrupted ID Field with alternative sector ID and correct CRC:",
+                    ID_IDFIELD_REPLACE,"Button",BS_AUTORADIOBUTTON | BS_TOP | 
+                    BS_MULTILINE | WS_TABSTOP,13,45,162,17
+    CONTROL         "IPAddress1",ID_IDFIELD_VALUE,"SysIPAddress32",
+                    WS_TABSTOP,25,65,100,15
+    PUSHBUTTON      "Set to original",ID_DEFAULT1,127,65,55,14
+    GROUPBOX        "Data Field",IDC_STATIC,7,91,186,83,WS_TABSTOP
+    CONTROL         "Don't recover",ID_DATAFIELD,"Button",BS_AUTORADIOBUTTON | 
+                    WS_GROUP | WS_TABSTOP,13,104,59,10
+    CONTROL         "Recover corrupted CRC only",ID_DATAFIELD_CRC,"Button",
+                    BS_AUTORADIOBUTTON | WS_TABSTOP,13,117,107,10
+    CONTROL         "Replace corrupted data with alternative filler Byte and correct CRC",
+                    ID_DATAFIELD_REPLACE,"Button",BS_AUTORADIOBUTTON | 
+                    BS_TOP | BS_MULTILINE | WS_TABSTOP,13,130,173,20
+    EDITTEXT        ID_DATAFIELD_FILLERBYTE,25,150,78,15,ES_AUTOHSCROLL | 
+                    ES_NUMBER
+    PUSHBUTTON      "System default",ID_DEFAULT2,105,150,77,14
+END
+
+IDR_IMAGE_PATCH DIALOGEX 0, 0, 201, 138
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
+CAPTION "Patch image"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "Patch",IDOK,90,117,50,14,WS_DISABLED
+    PUSHBUTTON      "Cancel",IDCANCEL,144,117,50,14
+    CONTROL         "<a id=""ID_HELP"">Need help?</a>",ID_HELP_INDEX,"SysLink",
+                    WS_TABSTOP,7,120,66,11
+    LTEXT           "&Source:",IDC_STATIC,7,9,26,8,NOT WS_GROUP
+    PUSHBUTTON      "",ID_FILE,43,7,151,13,BS_FLAT
+    LTEXT           "Cylinders:",IDC_STATIC,7,27,31,8,NOT WS_GROUP
+    LTEXT           "&From:",IDC_STATIC,43,27,18,8,NOT WS_GROUP
+    EDITTEXT        ID_CYLINDER,84,26,40,12,ES_AUTOHSCROLL | ES_NUMBER | 
+                    WS_DISABLED | NOT WS_BORDER,WS_EX_STATICEDGE
+    LTEXT           "&To:",IDC_STATIC,43,41,12,8,NOT WS_GROUP
+    EDITTEXT        ID_CYLINDER_N,84,40,40,12,ES_AUTOHSCROLL | WS_DISABLED | 
+                    NOT WS_BORDER,WS_EX_STATICEDGE
+    LTEXT           "&Heads:",IDC_STATIC,7,59,24,8,NOT WS_GROUP
+    EDITTEXT        ID_HEAD,84,57,40,12,ES_AUTOHSCROLL | ES_NUMBER | 
+                    WS_DISABLED | NOT WS_BORDER,WS_EX_STATICEDGE
+    LTEXT           "Sectors:",IDC_STATIC,7,76,27,8,NOT WS_GROUP
+    LTEXT           "&Gap3:",IDC_STATIC,43,76,20,8,NOT WS_GROUP
+    EDITTEXT        ID_GAP,84,75,40,12,ES_AUTOHSCROLL | ES_NUMBER | 
+                    WS_DISABLED | NOT WS_BORDER,WS_EX_STATICEDGE
+    CONTROL         "Skip empty tracks in patch file",ID_TRACK,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,95,110,10
+END
+
+IDR_GDOS_FILE_ETC DIALOG DISCARDABLE  0, 0, 426, 89
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
+CAPTION "Etc."
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,317,68,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,371,68,50,14
+    CONTROL         "Static",ID_FILE,"Static",SS_LEFTNOWORDWRAP | NOT 
+                    WS_VISIBLE | WS_BORDER,0,0,426,60
+END
+
+IDR_DOS_RECOGNITION DIALOGEX 0, 0, 281, 138
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
+CAPTION "Automatic disk recognition"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    PUSHBUTTON      "Cancel",IDCANCEL,224,117,50,14
+    LTEXT           "&Not participating in recognition:",-1,153,7,98,8,NOT 
+                    WS_GROUP
+    LISTBOX         ID_HIDDEN,153,18,121,77,LBS_SORT | LBS_OWNERDRAWFIXED | 
+                    LBS_HASSTRINGS | LBS_NOINTEGRALHEIGHT | NOT WS_BORDER | 
+                    WS_VSCROLL | WS_TABSTOP,WS_EX_STATICEDGE
+    PUSHBUTTON      "<",ID_ADD,133,40,15,12
+    LTEXT           "&Participating in recognition:",-1,7,7,86,8,NOT 
+                    WS_GROUP
+    LISTBOX         ID_DOS,7,18,121,77,LBS_OWNERDRAWFIXED | LBS_HASSTRINGS | 
+                    LBS_NOINTEGRALHEIGHT | NOT WS_BORDER | WS_VSCROLL | 
+                    WS_TABSTOP,WS_EX_STATICEDGE
+    PUSHBUTTON      "^",ID_UP,7,98,15,12
+    PUSHBUTTON      "v",ID_DOWN,25,98,15,12
+    PUSHBUTTON      "&Order by priority",ID_ORDER,43,98,85,12
+    PUSHBUTTON      ">",ID_REMOVE,133,56,15,12
+    DEFPUSHBUTTON   "OK",IDOK,171,117,50,14
+    CONTROL         "<a id=""ID_HELP"">Need help?</a>",ID_HELP_INDEX,"SysLink",
+                    WS_TABSTOP,7,120,45,11
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDR_MDOS_FILE_ATTRIBUTES_EDITOR, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 111
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 131
+    END
+
+    IDR_MDOS_DRIVE_EDITOR, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 198
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 195
+    END
+
+    IDR_DOS_FORMAT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 222
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 296
+    END
+
+    IDR_DOS_UNFORMAT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 178
+        TOPMARGIN, 8
+        BOTTOMMARGIN, 123
+    END
+
+    IDR_IMAGE_NEW, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 258
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 112
+    END
+
+    IDR_DOS_FILL_EMPTY_SPACE, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 176
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 139
+    END
+
+    IDR_DOS_UNKNOWN, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 253
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 95
+    END
+
+    IDR_MDOS_GKFM_EDITOR, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 205
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 239
+    END
+
+    IDR_FILEMANAGER_COMPARE_FILES, DIALOG
+    BEGIN
+        LEFTMARGIN, 4
+        RIGHTMARGIN, 430
+        TOPMARGIN, 4
+        BOTTOMMARGIN, 229
+    END
+
+    IDR_OPEN_CUSTOM, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 319
+        BOTTOMMARGIN, 14
+    END
+
+    IDR_ACTION_PROGRESS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 45
+    END
+
+    IDR_IMAGE_DUMP, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 194
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 167
+    END
+
+    IDR_MSDOS_FILE_ATTRIBUTES_EDITOR, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 111
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 104
+    END
+
+    IDR_FILEMANAGER_SUBDIR_NEW, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 194
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 56
+    END
+
+    IDR_FILEMANAGER_IMPORT_CONFLICT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 266
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 86
+    END
+
+    IDR_MSDOS_REMOVE_LONG_NAMES, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 160
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 69
+    END
+
+    IDR_ACTION_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 266
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 21
+    END
+
+    IDR_DSK_TYPE, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 144
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 75
+    END
+
+    IDR_IMAGE_DUMP_ERROR, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 246
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 118
+    END
+
+    IDR_FDD_ACCESS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 218
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 226
+    END
+
+    IDR_FDD_LATENCY, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 147
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 78
+    END
+
+    IDR_IMAGE_DUMP_ERROR_RESOLUTION, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 193
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 197
+    END
+
+    IDR_IMAGE_PATCH, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 194
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 131
+    END
+
+    IDR_GDOS_FILE_ETC, DIALOG
+    BEGIN
+        BOTTOMMARGIN, 82
+    END
+
+    IDR_DOS_RECOGNITION, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 274
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 131
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog Info
+//
+
+IDR_MDOS_DRIVE_EDITOR DLGINIT
+BEGIN
+    ID_STEPPING, 0x403, 10, 0
+0x6d33, 0x2073, 0x202f, 0x6d36, 0x0073, 
+    ID_STEPPING, 0x403, 11, 0
+0x6d36, 0x2073, 0x202f, 0x3231, 0x736d, "\000" 
+    ID_STEPPING, 0x403, 12, 0
+0x3031, 0x736d, 0x2f20, 0x3220, 0x6d30, 0x0073, 
+    ID_STEPPING, 0x403, 12, 0
+0x3531, 0x736d, 0x2f20, 0x3320, 0x6d30, 0x0073, 
+    0
+END
+
+IDR_FDD_ACCESS DLGINIT
+BEGIN
+    ID_ROTATION, 0x403, 2, 0
+0x0031, 
+    ID_ROTATION, 0x403, 2, 0
+0x0032, 
+    ID_ROTATION, 0x403, 2, 0
+0x0033, 
+    0
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDR_MAINFRAME           ICON    DISCARDABLE     "appicon.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDR_MAINFRAME           "Real and Imaginary Disk Editor (RIDE)\n\n\n\n\n\n"
+    ID_INDICATOR_EXPORT_SECTOR "Export sectors"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_TRACKMAP_LEGEND      "Show key to read in the Track Map"
+    ID_DOS_UNFORMAT         "Remove empty cylinders from the disk"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_DOS_FORMAT           "Add empty cylinders to the disk"
+    ID_OPEN_AS              "Open existing document and choose its DOS manually"
+    ID_TAPE_NEW             "Create and insert a new tape"
+    ID_TAPE_OPEN            "Insert existing tape"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_FILE_SHIFT_UP        "Move selected files one position closer to the beginning\nMove files up"
+    ID_FILE_SHIFT_DOWN      "Move selected files one position closer to the end\nMove files down"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_TAPE_CLOSE           "Eject inserted tape"
+    ID_IMAGE_DUMP           "Duplicate content to a different medium"
+    ID_IMAGE_PATCH          "xxxxx patch (only fdds can be patched)"
+    ID_IMAGE_PROTECT        "Toggle the write protection on and off\nWrite protection"
+    ID_TRDOS_DEFRAGMENT     "Reposition files at the disk to gain more free space"
+    ID_TRDOS_FILE_LENGTH_FROM_DIRENTRY 
+                            "Get information on file length from its directory entry"
+    ID_TRDOS_FILE_LENGTH_OCCUPIED_SECTORS 
+                            "Infer file length from the number of sectors occupied"
+    ID_TRACKMAP_STATUS      "Show sector statuses\nSector statuses"
+    ID_TRACKMAP_DATA        "Show sector data\nSector data"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_HELP_FAQ             "Read through Frequently Asked Questions (FAQ; online only)"
+    ID_HELP_WHATSNEWONLINE  "See latest modifications made to the application (online only)"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_ZX_PREVIEWASSCREEN   "Show what the file would look like on a Spectrum screen"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_EDIT_SELECT_NONE     "Remove current selection"
+    ID_EDIT_SELECT_INVERSE  "Invert current selection"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_FILEMANAGER_REFRESH  "Refresh view on the current directory"
+    ID_TRACKMAP_NUMBERING   "Show each sector's number\nSector numbering"
+    ID_FDD_SETTINGS         "Drive access settings\nDrive access settings"
+    ID_WEB_DEFAULT_BROWSER  "Open in default browser\nOpen in default browser"
+    ID_DOS_PREVIEWASBINARY  "Show raw content of files in hexa-mode"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_TRACKMAP_BAD_DATA    "Show bad sector data\nBad sector data"
+    ID_TRACKMAP_STATISTICS  "Collect and show statistics on space usage"
+    ID_DOS_VERIFY           "Not implemented yet"
+    ID_DOS_DEFRAGMENT       "Not implemented yet"
+    ID_DOS_FILL_EMPTY_SPACE "Fill officially empty space with a particular value"
+    ID_MSDOS_REMOVE_LONG_NAMES 
+                            "Irrevertibly remove long names from directories, chosen next"
+    ID_MSDOS_IGNORE_LONG_NAMES "Toggle between long and short (8.3) names"
+    ID_FILEMANAGER_FILE_EDIT "Edit parameters of the first selected file"
+    ID_FILEMANAGER_FILE_DELETE "Delete selected files\nDelete"
+    ID_FILEMANAGER_BIG_ICONS "Show files as large icons\nLarge icons"
+    ID_FILEMANAGER_REPORT   "Show files in detail\nReport"
+    ID_FILEMANAGER_LIST     "Show files as small icons\nSmall icons"
+    ID_FILEMANAGER_FILE_COMPARE 
+                            "Compare contents of two files, ignoring their names, dates, etc."
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_FILEMANAGER_SUBDIR_CREATE 
+                            "Create a subdirectory in the current directory"
+    ID_DOS_FILE_ZERO_LENGTH "Allow importing of zero length files"
+END
+
+#endif    // Neutral resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "#include ""windows.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+

@@ -1,0 +1,215 @@
+#ifndef MDOS_H
+#define MDOS_H
+
+	#define MDOS2_VOLUME_LABEL_LENGTH_MAX	10
+	#define MDOS2_FILE_NAME_LENGTH_MAX	10
+
+	#define MDOS2_SECTOR_LENGTH_STD		512
+	#define MDOS2_SECTOR_LENGTH_STD_CODE	TFormat::LENGTHCODE_512
+
+	#define MDOS2_TRACK_SECTORS_MIN		1
+	#define MDOS2_TRACK_SECTORS_MAX		10
+
+	#define MDOS2_FAT_ERROR				WORD(-1)
+	#define MDOS2_FAT_SECTOR_SYSTEM		0xddd
+	#define MDOS2_FAT_SECTOR_BAD		0xdff
+	#define MDOS2_FAT_SECTOR_EMPTY		0x000
+	#define MDOS2_FAT_SECTOR_UNAVAILABLE MDOS2_FAT_SECTOR_SYSTEM
+	#define MDOS2_FAT_SECTOR_RESERVED	0xc00
+	#define MDOS2_FAT_SECTOR_EOF		0xe00 /* end-of-file mark in FAT12 */
+
+	#define MDOS2_IS_LAST_SECTOR(fatValue)\
+				(fatValue>=MDOS2_FAT_SECTOR_EOF && fatValue<=MDOS2_FAT_SECTOR_EOF+MDOS2_SECTOR_LENGTH_STD-1)
+
+	#define MDOS2_DIR_LOGSECTOR_FIRST	6 /* first logical Sector of root Directory */
+
+	#define MDOS2_DATA_LOGSECTOR_FIRST	14 /* first logical Sector dedicated for data */
+
+	class CMDOS2 sealed:public CSpectrumDos{
+		#pragma pack(1)
+		typedef struct TBootSector sealed{
+			static const TPhysicalAddress CHS;
+
+			#pragma pack(1)
+			union UReserved1{
+				#pragma pack(1)
+				struct TGKFileManager sealed{
+					static HIMAGELIST __getListOfDefaultIcons__(HDC dc);
+					static BYTE __addIconToList__(HIMAGELIST icons,PCBYTE iconZxData,HDC dc);
+					static void __drawIcon__(PCBYTE iconZxData,HDC dcdst,BYTE zoomFactor);
+					static void __addToPropertyGrid__(HWND hPropGrid,TBootSector *boot);
+					static bool WINAPI __warnOnEditingAdvancedValue__(PVOID,int);
+					static PCBYTE __getIconDataFromBoot__(const TBootSector *boot);
+					static void __getTextFromBoot__(const TBootSector *boot,PTCHAR bufT);
+
+					inline
+					static BYTE __pg_getPropertyHeight__();
+					static void WINAPI __pg_drawProperty__(PVOID,LPCVOID bootSector,short,PDRAWITEMSTRUCT pdis);
+					static bool WINAPI __pg_editProperty__(PVOID,PVOID bootSector,short);
+					
+					WORD id;	// "FM" identification text
+					BYTE y,x;	// [Y,X] = [row,column] = upper left corner (in Pixels)
+					BYTE w,h;	// [W,H] = dimensions (in Pixels)
+					BYTE color;	// bits correspond to Spectrum's standard attributes (255 = transparent window)
+					BYTE dy,dx;	// [DY,DX] = [row,column] = text offset from window's upper left corner
+					WORD aText;	// address of text in memory
+					WORD aWnd;	// address of window
+					WORD zero;
+					WORD aIcon;	// address of icon in memory
+					WORD aVRam;	// address of window in Spectrum's VideoRAM
+				} gkfm;
+				BYTE undefined[128];
+			} reserved1;
+			#pragma pack(1)
+			struct TInfo sealed{
+				BYTE driveFlags;
+				BYTE diskFlags;
+				BYTE nCylinders;
+				BYTE nSectors;
+			};
+			#pragma pack(1)
+			typedef struct TDiskAndDriveInfo sealed{
+				static void WINAPI __pg_drawProperty__(PVOID,LPCVOID diskAndDriveInfo,short,PDRAWITEMSTRUCT pdis);
+				static bool WINAPI __pg_editProperty__(PVOID,PVOID diskAndDriveInfo,short);
+
+				TInfo disk,drive,reserved;
+			} *PDiskAndDriveInfo;
+			TDiskAndDriveInfo drives[4];
+			TDiskAndDriveInfo currDrive;
+			DWORD reserved2;
+			char label[MDOS2_VOLUME_LABEL_LENGTH_MAX];
+			WORD diskID; // randomly chosen after formatting the disk and constant since
+			DWORD sdos; // the "SDOS" text that identifies MDOS floppies :-)
+			union UReserved3{
+				BYTE undefined[304];
+			} reserved3;
+		} *PBootSector;
+		typedef const TBootSector *PCBootSector;
+
+		typedef WORD TLogSector;
+
+		#pragma pack(1)
+		typedef struct TDirectoryEntry sealed{
+			enum TExtension:BYTE{
+				PROGRAM		='P',
+				CHAR_ARRAY	='C',
+				NUMBER_ARRAY='N',
+				BLOCK		='B',
+				SNAPSHOT	='S',
+				SEQUENTIAL	='Q',
+				EMPTY_ENTRY	=0xe5
+			};
+			enum TAttribute:BYTE{
+				HIDDEN		=128,
+				SYSTEM		=64,
+				PROTECTED	=32,
+				ARCHIVE		=16,
+				READABLE	=8,
+				WRITEABLE	=4,
+				EXECUTABLE	=2,
+				DELETABLE	=1
+			};
+
+			BYTE extension;
+			char name[MDOS2_FILE_NAME_LENGTH_MAX];
+			WORD lengthLow; // lower Word of File size
+			UStdParameters params;
+			TLogSector firstLogicalSector;
+			BYTE reserved1;
+			BYTE attributes;
+			BYTE lengthHigh; // upper Word of File size
+			BYTE reserved2[10];
+
+			bool __editAttributesViaDialog__();
+			PTCHAR __attributes2text__(PTCHAR buf,bool inclDashes) const;
+		} *PDirectoryEntry;
+		typedef const TDirectoryEntry *PCDirectoryEntry;
+
+		typedef CMDOS2 *PMDOS2;
+
+		enum TVersion:TSide{
+			AUTODETECT	=0,
+			VERSION_1	=2,
+			VERSION_2	=1
+		} version;
+
+		struct TMdos2DirectoryTraversal sealed:public TDirectoryTraversal{
+		private:
+			const CMDOS2 *const mdos2;
+			TLogSector dirSector;
+			BYTE nRemainingEntriesInSector;
+		public:
+			TMdos2DirectoryTraversal(const CMDOS2 *_mdos2); // ctor
+			bool AdvanceToNextEntry() override;
+			void ResetCurrentEntry(BYTE directoryFillerByte) const override;
+			void __reinitToFirstEntry__();
+			bool __existsNextEntry__();
+		};
+
+		class CMdos2BootView sealed:public CBootView{
+			void GetCommonBootParameters(RCommonBootParameters rParam,PSectorData boot) override;
+			void AddCustomBootParameters(HWND hPropGrid,HANDLE hGeometry,HANDLE hVolume,PSectorData boot) override;
+		public:
+			CMdos2BootView(PMDOS2 mdos);
+		} boot;
+
+		class CMdos2FileManagerView sealed:public CSpectrumFileManagerView{
+			static const TFileInfo InformationList[];
+
+			static bool WINAPI __editFileAttributes__(PFile file,PVOID,short);
+
+			void DrawFileInfo(LPDRAWITEMSTRUCT pdis,const int *tabs) const override;
+			int CompareFiles(PCFile file1,PCFile file2,BYTE information) const override;
+			PEditorBase CreateFileInformationEditor(PFile file,BYTE infoId) const override;
+			void OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint) override; // GK's File Manager icons
+			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
+		public:
+			CMdos2FileManagerView(PMDOS2 mdos);
+		} fileManager;
+
+		static bool __recognizeDisk__(PImage image,PFormat pFormatBoot);
+		static void __informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId);
+
+		TDirectoryEntry deDefault;
+
+		void __recognizeVersion__();
+		TLogSector __fyzlog__(RCPhysicalAddress chs) const;
+		TPhysicalAddress __logfyz__(TLogSector ls) const;
+		PSectorData __getLogicalSectorData__(TLogSector logSector) const;
+		void __markLogicalSectorAsDirty__(TLogSector logSector) const;
+		WORD __getLogicalSectorFatItem__(TLogSector logSector) const;
+		bool __setLogicalSectorFatItem__(TLogSector logSector,WORD value12) const;
+		void InitializeEmptyMedium(CFormatDialog::PCParameters params) override;
+	public:
+		static const TProperties Properties;
+
+		CMDOS2(PImage image,PCFormat pFormatBoot);
+
+		// boot
+		void FlushToBootSector() const override; // projects information stored in internal FormatBoot back to the Boot Sector (e.g. called automatically by BootView)
+		// FAT
+		bool GetSectorStatuses(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PSectorStatus buffer) const override;
+		bool ModifyTrackInFat(TCylinder cyl,THead head,PSectorStatus statuses) override;
+		bool GetFileFatPath(PCFile file,CFatPath &rFatPath) const override;
+		// file system
+		void GetFileNameAndExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const override;
+		TStdWinError ChangeFileNameAndExt(PFile file,LPCTSTR newName,LPCTSTR newExt,PFile &rRenamedFile) override;
+		DWORD GetFileDataSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData) const override;
+		TStdWinError DeleteFile(PFile file) override;
+		PDirectoryTraversal BeginDirectoryTraversal() const override;
+		PTCHAR GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const override;
+		TStdWinError ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile) override;
+		// other
+		TStdWinError CreateUserInterface(HWND hTdi) override;
+		TCmdResult ProcessCommand(WORD cmd) override;
+		bool UpdateCommandUi(WORD cmd,CCmdUI *pCmdUI) const override;
+	};
+
+
+
+
+	namespace D80{
+		extern const CImage::TProperties Properties;
+	}
+
+#endif // MDOS_H

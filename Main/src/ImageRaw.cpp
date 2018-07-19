@@ -1,0 +1,393 @@
+#include "stdafx.h"
+#include "GDOS.h"
+
+	static PImage __instantiate__(){
+		return new CImageRaw( &CImageRaw::Properties );
+	}
+
+	const CImage::TProperties CImageRaw::Properties={
+		_T("Raw data image"),	// name
+		__instantiate__,		// instantiation function
+		_T("*.ima") IMAGE_FORMAT_SEPARATOR _T("*.img") IMAGE_FORMAT_SEPARATOR _T("*.dat") IMAGE_FORMAT_SEPARATOR _T("*.bin"),	// filter
+		(TMedium::TType)(TMedium::FLOPPY_ANY | TMedium::HDD_RAW), // supported Media
+		1,16384	// Sector supported min and max length
+	};
+
+	CImageRaw::CImageRaw(PCProperties properties)
+		// ctor
+		: CImage(properties,IDR_IMAGE)
+		, trackAccessScheme(TTrackScheme::BY_CYLINDERS)
+		, nCylinders(0) , nSectors(0) // = not initialized - see SetMediumTypeAndGeometry
+		, bufferOfCylinders(NULL) , sizeWithoutGeometry(0) {
+		Reset(); // to be correctly initialized
+	}
+
+	CImageRaw::~CImageRaw(){
+		// dtor
+		__freeBufferOfCylinders__();
+	}
+
+
+
+
+
+
+	bool CImageRaw::__openImageForReadingAndWriting__(LPCTSTR fileName){
+		// True <=> given underlying file successfully opened for reading and writing, otherwise False
+		return f.Open( fileName, CFile::modeReadWrite|CFile::typeBinary|CFile::shareExclusive )!=FALSE;
+	}
+
+	TStdWinError CImageRaw::__extendToNumberOfCylinders__(TCylinder nCyl,BYTE fillerByte){
+		// formats new Cylinders to meet the minimum number requested; returns Windows standard i/o error
+		// - redimensioning the Image
+		if (const PVOID tmp=::realloc(bufferOfCylinders,sizeof(PVOID)*nCyl))
+			bufferOfCylinders=(PVOID *)tmp;
+		else
+			return ERROR_NOT_ENOUGH_MEMORY;
+		// - initializing added Cylinders with the FillerByte
+		for( const DWORD nBytesOfCylinder=nHeads*nSectors*sectorLength; nCylinders<nCyl; )
+			if (const PVOID tmp=bufferOfCylinders[nCylinders]=::malloc(nBytesOfCylinder)){
+				::memset( tmp, fillerByte, nBytesOfCylinder );
+				nCylinders++;
+			}else
+				return ERROR_NOT_ENOUGH_MEMORY;
+		return ERROR_SUCCESS;
+	}
+
+	void CImageRaw::__freeCylinder__(TCylinder cyl){
+		// disposes (unformats) the specified Cylinder (if previously formatted)
+		if (bufferOfCylinders)
+			if (const PVOID p=bufferOfCylinders[cyl]) // Cylinder formatted
+				::free(p), bufferOfCylinders[cyl]=NULL;
+	}
+
+	void CImageRaw::__freeBufferOfCylinders__(){
+		// disposes (unformats) all Cylinders
+		if (bufferOfCylinders){
+			while (nCylinders)
+				__freeCylinder__( --nCylinders );
+			::free(bufferOfCylinders), bufferOfCylinders=NULL;
+		}
+	}
+
+	PSectorData CImageRaw::__getBufferedSectorData__(RCPhysicalAddress chs) const{
+		// finds and returns buffered data of given Sector (or Null if not yet buffered; note that returning Null does NOT imply that the Sector doesn't exist in corresponding Track!)
+		if (const PSectorData cylinderData=(PSectorData)bufferOfCylinders[chs.cylinder])
+			return cylinderData+(chs.head*nSectors+chs.sectorId.sector-firstSectorNumber)*sectorLength;
+		return NULL;
+	}
+
+	BOOL CImageRaw::OnOpenDocument(LPCTSTR lpszPathName){
+		// True <=> Image opened successfully, otherwise False
+		// - opening
+		if (!__openImageForReadingAndWriting__(lpszPathName)) // if cannot open for both reading and writing ...
+			if (!__openImageForReading__(lpszPathName,&f)) // ... trying to open at least for reading, and if neither this works ...
+				return FALSE; // ... the Image cannot be open in any way
+			else
+				canBeModified=false;
+		// - currently without geometry (DOS must call SetMediumTypeAndGeometry)
+		if ( sizeWithoutGeometry=f.GetLength() )
+			nCylinders=1, nHeads=1, nSectors=1, sectorLengthCode=__getSectorLengthCode__( sectorLength=min(sizeWithoutGeometry,(WORD)-1) );
+		return TRUE;
+	}
+
+	void CImageRaw::__saveTrackToCurrentPositionInFile__(CFile *pfOtherThanCurrentFile,TPhysicalAddress chs){
+		// saves Track defined by the {Cylinder,Head} pair in PhysicalAddress to the current position in the open file; after saving, the position in the file will advance immediately "after" the just saved Track
+		for( TSector s=0; s<nSectors; s++ ){
+			chs.sectorId.sector=firstSectorNumber+s;
+			const PCSectorData bufferedData=__getBufferedSectorData__(chs);
+			if (!pfOtherThanCurrentFile){
+				// saving to Image's underlying file, currently open
+				if (bufferedData)
+					f.Write(bufferedData,sectorLength); // data modified - writing them to file
+				else
+					f.Seek(sectorLength,CFile::current); // data not modified - skipping them in file
+			}else
+				// saving to other than Image's underlying file
+				if (bufferedData){
+					pfOtherThanCurrentFile->Write(bufferedData,sectorLength);
+					if (f.m_hFile!=(UINT_PTR)INVALID_HANDLE_VALUE) // handle doesn't exist if creating a new Image
+						f.Seek(sectorLength,CFile::current);
+				}else{
+					BYTE buffer[(WORD)-1+1];
+					pfOtherThanCurrentFile->Write( buffer, f.Read(buffer,sectorLength) );
+				}
+		}
+	}
+
+	BOOL CImageRaw::OnSaveDocument(LPCTSTR lpszPathName){
+		// True <=> this Image has been successfully saved, otherwise False
+		// - saving
+		CFile fTmp;
+		const bool savingToCurrentFile=lpszPathName==m_strPathName;
+		if (!savingToCurrentFile && !__openImageForWriting__(lpszPathName,&fTmp))
+			return FALSE;
+		if (f.m_hFile!=(UINT_PTR)INVALID_HANDLE_VALUE) // handle doesn't exist when creating new Image
+			f.Seek(0,CFile::begin);
+		TPhysicalAddress chs;
+			chs.sectorId.lengthCode=sectorLengthCode;
+		switch (trackAccessScheme){
+			case TTrackScheme::BY_CYLINDERS:
+				for( chs.cylinder=0; chs.cylinder<nCylinders; chs.cylinder++ )
+					for( chs.sectorId.cylinder=chs.cylinder,chs.head=0; chs.head<nHeads; chs.head++ ){
+						chs.sectorId.side=sideMap[chs.head];
+						__saveTrackToCurrentPositionInFile__( savingToCurrentFile?NULL:&fTmp, chs );
+					}
+				break;
+			case TTrackScheme::BY_SIDES:
+				for( chs.head=0; chs.head<nHeads; chs.head++ )
+					for( chs.sectorId.side=sideMap[chs.head],chs.cylinder=0; chs.cylinder<nCylinders; chs.cylinder++ ){
+						chs.sectorId.cylinder=chs.cylinder;
+						__saveTrackToCurrentPositionInFile__( savingToCurrentFile?NULL:&fTmp, chs );
+					}
+				break;
+			default:
+				ASSERT(FALSE);
+		}
+		m_bModified=FALSE;
+		// - reopening Image's underlying file
+		if (f.m_hFile!=(UINT_PTR)INVALID_HANDLE_VALUE){
+			if (savingToCurrentFile)
+				f.SetLength(f.GetPosition()); // "trimming" eventual unnecessary data (e.g. when unformatting Cylinders)
+			f.Close();
+		}
+		if (fTmp.m_hFile!=(UINT_PTR)INVALID_HANDLE_VALUE)
+			fTmp.Close();
+		return __openImageForReadingAndWriting__(lpszPathName);
+	}
+
+	TCylinder CImageRaw::GetCylinderCount() const{
+		// determines and returns the actual number of Cylinders in the Image
+		return nCylinders;
+	}
+
+	THead CImageRaw::GetNumberOfFormattedSides(TCylinder cyl) const{
+		// determines and returns the number of Sides formatted on given Cylinder; returns 0 iff Cylinder not formatted
+		return cyl<nCylinders ? nHeads : 0;
+	}
+
+	TSector CImageRaw::ScanTrack(TCylinder cyl,THead head,PSectorId bufferId,PWORD bufferLength) const{
+		// returns the number of Sectors found in given Track, and eventually populates the Buffer with their IDs (if Buffer!=Null); returns 0 if Track not formatted or not found
+		if (cyl<nCylinders && head<nHeads){
+			if (bufferId)
+				for( TSector n=0; n<nSectors; bufferId++,*bufferLength++=sectorLength )
+					bufferId->cylinder=cyl, bufferId->side=sideMap[head], bufferId->sector=firstSectorNumber+n++, bufferId->lengthCode=sectorLengthCode;
+			return nSectors;
+		}else
+			return 0;
+	}
+
+	PSectorData CImageRaw::GetSectorData(RCPhysicalAddress chs,BYTE,bool,PWORD pSectorLength,TFdcStatus *pFdcStatus){
+		// returns Data of a Sector on a given PhysicalAddress; returns Null iff Sector not found or Track not formatted
+		if (chs.cylinder<nCylinders && chs.head<nHeads && chs.sectorId.cylinder==chs.cylinder && chs.sectorId.side==sideMap[chs.head] && chs.sectorId.sector>=firstSectorNumber && chs.sectorId.lengthCode==sectorLengthCode){
+			const TSector s=chs.sectorId.sector-firstSectorNumber;
+			if (s<nSectors){
+				*pSectorLength=sectorLength, *pFdcStatus=TFdcStatus::WithoutError; // any Data with the same length and without error
+				// . trying to get Sector's Data from Buffer
+				if (const PSectorData bufferedData=__getBufferedSectorData__(chs))
+					return bufferedData;
+				// . buffering the Cylinder that contains the requested Sector
+				const DWORD nBytesOfTrack=nSectors*sectorLength, nBytesOfCylinder=nHeads*nBytesOfTrack;
+				if (const PVOID p=bufferOfCylinders[chs.cylinder]=::malloc(nBytesOfCylinder)){
+					DWORD nBytesRead;
+					switch (trackAccessScheme){
+						case TTrackScheme::BY_CYLINDERS:
+							f.Seek( chs.cylinder*nBytesOfCylinder, CFile::begin );
+							nBytesRead=f.Read(p,nBytesOfCylinder);
+							break;
+						case TTrackScheme::BY_SIDES:
+							nBytesRead=0;
+							for( THead head=0; head<nHeads; head++ ){
+								f.Seek( (head*nCylinders+chs.cylinder)*nBytesOfTrack, CFile::begin );
+								nBytesRead+=f.Read((PBYTE)p+head*nBytesOfTrack,nBytesOfTrack);
+							}
+							break;
+						default:
+							ASSERT(FALSE);
+					}
+					::memset( (PBYTE)p+nBytesRead, 0, nBytesOfCylinder-nBytesRead );
+					return __getBufferedSectorData__(chs);
+				}else{
+					::SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+					return NULL;
+				}
+			}
+		}
+		::SetLastError(ERROR_SECTOR_NOT_FOUND);
+		return NULL;
+	}
+
+	TStdWinError CImageRaw::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE,PCFdcStatus pFdcStatus){
+		// marks Sector with given PhysicalAddress as "dirty", plus sets it the given FdcStatus; returns Windows standard i/o error
+		if (pFdcStatus->IsWithoutError()){
+			m_bModified=TRUE;
+			return ERROR_SUCCESS;
+		}else
+			return ERROR_BAD_COMMAND;
+	}
+
+	TStdWinError CImageRaw::__setMediumTypeAndGeometry__(PCFormat pFormat,PCSide _sideMap,TSector _firstSectorNumber){
+		// sets Medium's Type and geometry; returns Windows standard i/o error
+		// - determining the Image Size based on the size of Image's underlying file
+		const DWORD fileSize=	f.m_hFile!=(UINT_PTR)INVALID_HANDLE_VALUE // InvalidHandle if creating a new Image, for instance
+								? sizeWithoutGeometry
+								: 0;
+		// - setting up geometry
+		sideMap=_sideMap, firstSectorNumber=_firstSectorNumber;
+		if (pFormat->mediumType!=TMedium::UNKNOWN){
+			// MediumType and its Format are already known
+			nHeads=pFormat->nHeads, nSectors=pFormat->nSectors, sectorLengthCode=__getSectorLengthCode__( sectorLength=pFormat->sectorLength );
+			if (fileSize){ // some Cylinders exist only if Image contains some data (may not exist if Image not yet formatted)
+				__freeBufferOfCylinders__();
+				const int nSectorsInTotal=fileSize/sectorLength;
+				switch (trackAccessScheme){
+					case TTrackScheme::BY_CYLINDERS:{
+						const int nSectorsOnCylinder=nHeads*nSectors; // NumberOfHeads constant ...
+						const div_t d=div( nSectorsInTotal, nSectorsOnCylinder ); // ... and NumberOfCylinders computed
+						if (!d.rem)
+							// Image contains correct number of Sectors on the last Cylinder
+							nCylinders=d.quot;
+						else
+							// Image contains low number of Sectors on the last Cylinder - extending to correct number
+							nCylinders=1+d.quot; // "1" = the last incomplete Cylinder
+						break;
+					}
+					case TTrackScheme::BY_SIDES:{
+						const int nSectorsOnSide=( nCylinders=pFormat->nCylinders )*nSectors; // NumberOfCylinders constant ...
+						nHeads=div( nSectorsInTotal+nSectorsOnSide-1, nSectorsOnSide ).quot; // ... and NumberOfHeads computed
+						break;
+					}
+					default:
+						ASSERT(FALSE);
+				}
+				const DWORD dw=sizeof(PVOID)*nCylinders;
+				if (bufferOfCylinders=(PVOID *)::malloc(dw))
+					::ZeroMemory(bufferOfCylinders,dw);
+				else
+					return ERROR_NOT_ENOUGH_MEMORY;
+			}
+		}else{
+			// MediumType and/or its Format were not successfully determined (DosUnknown)
+			__freeBufferOfCylinders__();
+			if (fileSize){
+				nCylinders=1, nHeads=1, nSectors=1, sectorLengthCode=__getSectorLengthCode__( sectorLength=min(fileSize,(WORD)-1) );
+				::ZeroMemory( bufferOfCylinders=(PVOID *)::malloc(sizeof(PVOID)), sizeof(PVOID) );
+			}//else
+				//nop (see ctor, or specifically OnOpenDocument)
+		}
+		return ERROR_SUCCESS;		
+	}
+
+	TStdWinError CImageRaw::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){
+		// sets the given MediumType and its geometry; returns Windows standard i/o error
+		// - choosing a proper TrackAccessScheme based on commonly known restrictions on emulation
+		if (dos) // may not exist if creating a new Image
+			if (dos->properties==&CGDOS::Properties)
+				trackAccessScheme=TTrackScheme::BY_SIDES;
+			else
+				trackAccessScheme=TTrackScheme::BY_CYLINDERS;
+		// - setting up Medium's Type and geometry
+		return __setMediumTypeAndGeometry__(pFormat,sideMap,firstSectorNumber);
+	}
+
+	TStdWinError CImageRaw::Reset(){
+		// resets internal representation of the disk (e.g. by disposing all content without warning)
+		// - closing Image's underlying file
+		if (f.m_hFile!=(UINT_PTR)INVALID_HANDLE_VALUE)
+			f.Close();
+		// - emptying the BufferOfCylinders
+		__freeBufferOfCylinders__();
+		// - resetting the geometry
+		nCylinders=0, nHeads=0, nSectors=0;
+		return ERROR_SUCCESS;
+	}
+
+
+
+
+
+	TStdWinError CImageRaw::FormatTrack(TCylinder cyl,THead head,TSector _nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte){
+		// formats given Track {Cylinder,Head} to the requested NumberOfSectors, each with corresponding Length and FillerByte as initial content; returns Windows standard i/o error
+		// - formatting to "no Sectors" is translated as unformatting the Track
+		if (!_nSectors)
+			return UnformatTrack(cyl,head);
+		// - validating the Number and Lengths of Sectors
+		#ifdef _DEBUG
+			if (!nSectors) // Image is empty - it's necessary to set its geometry first!
+				ASSERT(FALSE);
+		#endif
+		BYTE involvedSectors[(TSector)-1+1];
+		::ZeroMemory(involvedSectors,sizeof(involvedSectors));
+		PCSectorId pId=bufferId;	 PCWORD pw=bufferLength;
+		for( TSector n=_nSectors; n; n--,pId++ ){
+			// . TEST: Number, Lengths and i/o errors of Sectors
+			if (pId->cylinder!=cyl || pId->side!=sideMap[head] || pId->lengthCode!=sectorLengthCode || *pw++!=sectorLength || !bufferFdcStatus++->IsWithoutError())
+				return ERROR_BAD_COMMAND;
+			// . TEST: uniqueness of SectorIDs
+			if (involvedSectors[pId->sector])
+				return ERROR_BAD_COMMAND;
+			// . passed all tests - recording Sector's number
+			involvedSectors[pId->sector]=TRUE;
+		}
+		const PCBYTE pFirstSectorNumber=(PCBYTE)::memchr(involvedSectors,TRUE,sizeof(involvedSectors));
+		if (!nCylinders) firstSectorNumber=pFirstSectorNumber-involvedSectors;
+		if (::memchr(pFirstSectorNumber,FALSE,nSectors)) // if missing some Sector -> error
+			return ERROR_BAD_COMMAND;
+		if (::memchr(pFirstSectorNumber+nSectors,TRUE,sizeof(involvedSectors)-firstSectorNumber-nSectors)) // if some Sector redundand -> error
+			return ERROR_BAD_COMMAND;
+		// - formatting
+		const DWORD nBytesOfTrack=nSectors*sectorLength;
+		if (nCylinders<=cyl)
+			// redimensioning the Image
+			switch (trackAccessScheme){
+				case TTrackScheme::BY_SIDES:
+					if (nHeads>1) // if Image structured by Sides (and there are multiple Sides), all Cylinders must be buffered as the whole Image will have to be restructured when saving
+						for( TCylinder c=0; c<nCylinders; ){
+							const TPhysicalAddress chs={ c++, 0, {cyl,sideMap[0],firstSectorNumber,sectorLengthCode} };
+							CImage::GetSectorData(chs);
+						}
+					//fallthrough
+				case TTrackScheme::BY_CYLINDERS:{
+					const TStdWinError err=__extendToNumberOfCylinders__(1+cyl,fillerByte);
+					if (err!=ERROR_SUCCESS) return err;
+					break;
+				}
+				default:
+					ASSERT(FALSE);
+			}
+		else{
+			// reinitializing given Track
+			// . buffering Cylinder by reading one of its Sector
+			const TPhysicalAddress chs={ cyl, 0, {cyl,sideMap[0],firstSectorNumber,sectorLengthCode} };
+			CImage::GetSectorData(chs);
+			// . reinitializing given Track to FillerByte
+			::memset( (PBYTE)bufferOfCylinders[cyl]+head*nBytesOfTrack, fillerByte, nBytesOfTrack );
+		}
+		m_bModified=TRUE;
+		return ERROR_SUCCESS;
+	}
+
+	TStdWinError CImageRaw::UnformatTrack(TCylinder cyl,THead){
+		// unformats given Track {Cylinder,Head}; returns Windows standard i/o error
+		switch (trackAccessScheme){
+			case TTrackScheme::BY_SIDES:
+				if (nHeads>1) // if Image structured by Sides (and there are multiple Sides), all Cylinders must be buffered as the whole Image will have to be restructured when saving
+					for( TCylinder c=0; c<nCylinders; ){
+						const TPhysicalAddress chs={ c++, 0, {cyl,sideMap[0],firstSectorNumber,sectorLengthCode} };
+						CImage::GetSectorData(chs);
+					}
+				//fallthrough
+			case TTrackScheme::BY_CYLINDERS:
+				if (cyl==nCylinders-1){ // unformatting the last Cylinder in the Image
+					// . redimensioning the Image
+					__freeCylinder__(cyl);
+					// . adjusting the NumberOfCylinders
+					nCylinders--;
+					m_bModified=TRUE;
+				}
+				break;
+			default:
+				ASSERT(FALSE);
+		}
+		return ERROR_SUCCESS;
+	}

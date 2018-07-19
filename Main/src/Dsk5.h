@@ -1,0 +1,73 @@
+#ifndef DSK_H
+#define DSK_H
+
+	#define DSK_REV5_TRACKS_MAX			204
+	#define DSK_TRACKINFO_SECTORS_MAX	29
+
+	class CDsk5 sealed:public CFloppyImage{
+		#pragma pack(1)
+		typedef struct TSectorInfo sealed{
+			BYTE cylinderNumber;
+			BYTE sideNumber;
+			BYTE sectorNumber;
+			BYTE sectorLengthCode;
+			TFdcStatus fdcStatus;
+			WORD rev5_sectorLength;
+
+			bool operator==(const TSectorId &rSectorId) const;
+			bool __hasValidSectorLengthCode__() const;
+		} *PSectorInfo;
+
+		#pragma pack(1)
+		typedef struct TTrackInfo sealed{
+			char header[12];
+			DWORD reserved1;
+			BYTE cylinderNumber;
+			BYTE headNumber;
+			WORD reserved2;
+			BYTE std_sectorMaxLengthCode;
+			BYTE nSectors;
+			BYTE gap3;
+			BYTE fillerByte;
+			TSectorInfo sectorInfo[DSK_TRACKINFO_SECTORS_MAX];
+
+			bool __readAndValidate__(CFile &f);
+		} *PTrackInfo;
+
+		bool rev5;
+		#pragma pack(1)
+		struct TDiskInfo sealed{
+			char header[34];
+			char creator[14];
+			BYTE nCylinders;
+			BYTE nHeads;
+			WORD std_trackLength;
+			BYTE rev5_trackOffsets256[DSK_REV5_TRACKS_MAX];
+		} diskInfo;
+		PTrackInfo tracks[DSK_REV5_TRACKS_MAX]; // each TrackInfo followed by data of its Sectors
+
+		PTrackInfo __findTrack__(TCylinder cyl,THead head) const;
+		WORD __getSectorLength__(const TSectorInfo *si) const;
+		WORD __getTrackLength256__(const TTrackInfo *ti) const;
+		void __freeAllTracks__();
+		TStdWinError __reset__(bool _rev5);
+	public:
+		static const TProperties Properties;
+
+		CDsk5();
+		~CDsk5();
+
+		BOOL OnOpenDocument(LPCTSTR lpszPathName) override;
+		BOOL OnSaveDocument(LPCTSTR lpszPathName) override;
+		TCylinder GetCylinderCount() const override;
+		THead GetNumberOfFormattedSides(TCylinder cyl) const override;
+		TSector ScanTrack(TCylinder cyl,THead head,PSectorId bufferId,PWORD bufferLength) const override;
+		PSectorData GetSectorData(RCPhysicalAddress chs,BYTE nSectorsToSkip,bool,PWORD sectorLength,TFdcStatus *pFdcStatus) override;
+		TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus) override;
+		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
+		TStdWinError Reset() override;
+		TStdWinError FormatTrack(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte) override;
+		TStdWinError UnformatTrack(TCylinder cyl,THead head) override;
+	};
+
+#endif // DSK_H

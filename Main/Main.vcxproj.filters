@@ -1,0 +1,335 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Header Files\Image">
+      <UniqueIdentifier>{8ab8865c-c807-47fc-be68-b27f1fda89df}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Image">
+      <UniqueIdentifier>{5be68b8a-0cb2-4d20-9146-6515fa7fe24d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Dos">
+      <UniqueIdentifier>{bc929058-02ac-45c0-beee-9f02019805b3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Dos">
+      <UniqueIdentifier>{4f143dc4-a9f8-4841-8aef-9e79d9beaaad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Utils">
+      <UniqueIdentifier>{33401f8c-c1ca-4bba-b5a1-c3569a17f49b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Utils">
+      <UniqueIdentifier>{4fb4e527-ec81-425a-a218-cd333cb186f4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\MainWindow">
+      <UniqueIdentifier>{8377b574-0b14-4e7a-9458-2aa669641a65}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\MainWindow">
+      <UniqueIdentifier>{75e6efe8-efbd-45b3-b76a-79a858f5fd44}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\MainWindow\Tabs">
+      <UniqueIdentifier>{cd86b659-860f-4c15-a115-4c2dccdaa7d9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\MainWindow\Tabs">
+      <UniqueIdentifier>{14c79f1b-9e7f-40cb-83cd-a0ca1d48163f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Dos\Spectrum">
+      <UniqueIdentifier>{0d32d85b-9140-4105-b518-eea7a70ecc5f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Dos\Spectrum\GDOS">
+      <UniqueIdentifier>{ec863e87-7270-42f6-a848-921afe471bd8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Dos\Spectrum\MDOS2">
+      <UniqueIdentifier>{ce816b79-7e17-4ffd-a9cb-e4b3e03e107c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Dos\Spectrum\TRDOS">
+      <UniqueIdentifier>{2ea20661-16fa-41e5-b19c-7073613f5a14}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Dos\PC">
+      <UniqueIdentifier>{4892195f-0172-4bff-a3c8-392f842ccca0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Dos\PC\MSDOS7">
+      <UniqueIdentifier>{11e5ca38-2c91-4ea7-8e04-416167cf827e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Dos\PC">
+      <UniqueIdentifier>{5ae4fdac-3339-405e-ac16-08c81e1115a8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Dos\Spectrum">
+      <UniqueIdentifier>{76e5a355-204e-438b-a54c-9ad458b8c61d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\editor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="res\resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Image.h">
+      <Filter>Header Files\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Dsk5.h">
+      <Filter>Header Files\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Dos.h">
+      <Filter>Header Files\Dos</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ViewBoot.h">
+      <Filter>Header Files\MainWindow\Tabs</Filter>
+    </ClInclude>
+    <ClInclude Include="src\HexaEditor.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\puvodni\zaloha\dvd\virtualizace\diskety\fdrawcmd.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\FDD.h">
+      <Filter>Header Files\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="src\SCL.h">
+      <Filter>Header Files\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ImageRaw.h">
+      <Filter>Header Files\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MGT.h">
+      <Filter>Header Files\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ImageFloppy.h">
+      <Filter>Header Files\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="src\BackgroundAction.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utils.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\DialogFormatting.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\DialogNewImage.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\DialogUnformatting.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\DialogEmptySpaceFilling.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ViewWebPage.h">
+      <Filter>Header Files\MainWindow\Tabs</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ViewTrackMap.h">
+      <Filter>Header Files\MainWindow\Tabs</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ViewFileManager.h">
+      <Filter>Header Files\MainWindow\Tabs</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MainWindow.h">
+      <Filter>Header Files\MainWindow</Filter>
+    </ClInclude>
+    <ClInclude Include="src\DosUnknown.h">
+      <Filter>Header Files\Dos</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MSDOS7.h">
+      <Filter>Header Files\Dos\PC</Filter>
+    </ClInclude>
+    <ClInclude Include="src\GDOS.h">
+      <Filter>Header Files\Dos\Spectrum</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MDOS2.h">
+      <Filter>Header Files\Dos\Spectrum</Filter>
+    </ClInclude>
+    <ClInclude Include="src\SpectrumDos.h">
+      <Filter>Header Files\Dos\Spectrum</Filter>
+    </ClInclude>
+    <ClInclude Include="src\TRDOS.h">
+      <Filter>Header Files\Dos\Spectrum</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\editor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Image.cpp">
+      <Filter>Source Files\Image</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Dsk5.cpp">
+      <Filter>Source Files\Image</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Dos.cpp">
+      <Filter>Source Files\Dos</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ViewBoot.cpp">
+      <Filter>Source Files\MainWindow\Tabs</Filter>
+    </ClCompile>
+    <ClCompile Include="src\HexaEditor.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\TdiView.cpp">
+      <Filter>Source Files\MainWindow</Filter>
+    </ClCompile>
+    <ClCompile Include="src\FDD.cpp">
+      <Filter>Source Files\Image</Filter>
+    </ClCompile>
+    <ClCompile Include="src\SCL.cpp">
+      <Filter>Source Files\Image</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ImageRaw.cpp">
+      <Filter>Source Files\Image</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Image_Patch.cpp">
+      <Filter>Source Files\Image</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Image_Dump.cpp">
+      <Filter>Source Files\Image</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MGT.cpp">
+      <Filter>Source Files\Image</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ImageFloppy.cpp">
+      <Filter>Source Files\Image</Filter>
+    </ClCompile>
+    <ClCompile Include="src\BackgroundAction.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Utils.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\DialogEmptySpaceFilling.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\DialogFormatting.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\DialogNewImage.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\DialogUnformatting.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ViewWebPage.cpp">
+      <Filter>Source Files\MainWindow\Tabs</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ViewTrackMap.cpp">
+      <Filter>Source Files\MainWindow\Tabs</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ViewFileManager.cpp">
+      <Filter>Source Files\MainWindow\Tabs</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ViewFileManager_editor.cpp">
+      <Filter>Source Files\MainWindow\Tabs</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ViewFileManager_exportImport.cpp">
+      <Filter>Source Files\MainWindow\Tabs</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MainWindow.cpp">
+      <Filter>Source Files\MainWindow</Filter>
+    </ClCompile>
+    <ClCompile Include="src\TdiTemplate.cpp">
+      <Filter>Source Files\MainWindow</Filter>
+    </ClCompile>
+    <ClCompile Include="src\GDOS.cpp">
+      <Filter>Source Files\Dos\Spectrum\GDOS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MDOS2.cpp">
+      <Filter>Source Files\Dos\Spectrum\MDOS2</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MSDOS7.cpp">
+      <Filter>Source Files\Dos\PC\MSDOS7</Filter>
+    </ClCompile>
+    <ClCompile Include="src\SpectrumDos.cpp">
+      <Filter>Source Files\Dos\Spectrum</Filter>
+    </ClCompile>
+    <ClCompile Include="src\DosUnknown.cpp">
+      <Filter>Source Files\Dos</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Dos_FatPath.cpp">
+      <Filter>Source Files\Dos</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Dos_FilePreview.cpp">
+      <Filter>Source Files\Dos</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Dos_FileReaderWriter.cpp">
+      <Filter>Source Files\Dos</Filter>
+    </ClCompile>
+    <ClCompile Include="src\SpectrumDos_ScreenPreview.cpp">
+      <Filter>Source Files\Dos\Spectrum</Filter>
+    </ClCompile>
+    <ClCompile Include="src\SpectrumDos_Tape.cpp">
+      <Filter>Source Files\Dos\Spectrum</Filter>
+    </ClCompile>
+    <ClCompile Include="src\SpectrumDos_FileManagerBase.cpp">
+      <Filter>Source Files\Dos\Spectrum</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MDOS2_FileManager.cpp">
+      <Filter>Source Files\Dos\Spectrum\MDOS2</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MDOS2_Boot.cpp">
+      <Filter>Source Files\Dos\Spectrum\MDOS2</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MDOS2_GKFM.cpp">
+      <Filter>Source Files\Dos\Spectrum\MDOS2</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MSDOS7_Boot.cpp">
+      <Filter>Source Files\Dos\PC\MSDOS7</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MSDOS7_FAT.cpp">
+      <Filter>Source Files\Dos\PC\MSDOS7</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MSDOS7_FSInfo.cpp">
+      <Filter>Source Files\Dos\PC\MSDOS7</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MSDOS7_FileManager.cpp">
+      <Filter>Source Files\Dos\PC\MSDOS7</Filter>
+    </ClCompile>
+    <ClCompile Include="src\GDOS_Boot.cpp">
+      <Filter>Source Files\Dos\Spectrum\GDOS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\GDOS_FileManager.cpp">
+      <Filter>Source Files\Dos\Spectrum\GDOS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ViewFileManager_compare.cpp">
+      <Filter>Source Files\MainWindow\Tabs</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Dos_Recognition.cpp">
+      <Filter>Source Files\Dos</Filter>
+    </ClCompile>
+    <ClCompile Include="src\TRDOS503.cpp">
+      <Filter>Source Files\Dos\Spectrum\TRDOS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\TRDOS503_Boot.cpp">
+      <Filter>Source Files\Dos\Spectrum\TRDOS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\TRDOS503_FileManager.cpp">
+      <Filter>Source Files\Dos\Spectrum\TRDOS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\TRDOS504.cpp">
+      <Filter>Source Files\Dos\Spectrum\TRDOS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\SpectrumDos_BasicPreview.cpp">
+      <Filter>Source Files\Dos\Spectrum</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Dos_HexaPreview.cpp">
+      <Filter>Source Files\Dos</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="res\resource.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>
