@@ -114,7 +114,7 @@
 		// ctor
 		: handle(hPropGrid)
 		, listBox(this,propGridWidth,propGridHeight)
-		, root(this,NULL,NULL,true) {
+		, root(this,NULL,_T(""),true) {
 	}
 
 

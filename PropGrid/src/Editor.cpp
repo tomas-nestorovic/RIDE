@@ -278,6 +278,7 @@
 		// dtor
 		while (const TListItem *const p=list){
 			list=p->pNext;
+			delete p->pEditor;
 			delete p;
 		}
 	}

@@ -80,7 +80,7 @@
 									NULL
 								)
 				)
-		, splitter((propGridWidth-CATEGORY_HEIGHT*LogicalUnitScaleFactor)/2) {
+		, splitter((propGridWidth-CATEGORY_HEIGHT*LogicalUnitScaleFactor)/2*LogicalUnitScaleFactor) {
 		wndProc0=(WNDPROC)SubclassWindow(handle,__wndProc__);
 		SetWindowFont(handle,FONT_DEFAULT,0);
 		::SetWindowLong( handle, GWL_USERDATA, (LONG)pPropGridInfo );
@@ -196,7 +196,7 @@ editItem:			// Tab key pressed - beginning to edit the Value using the correspon
 			case LB_RESETCONTENT:
 				// destroying the PropertyGrid
 				// . removing all Items
-				for( int i=ListBox_GetCount(hListBox); i--; delete (PCItem)ListBox_GetItemData(hListBox,i) );
+				for( int i=ListBox_GetCount(hListBox); i--; delete (PCItem)ListBox_GetItemData(hListBox,i) ); // also removes the Subitem from the PropertyGrid instance
 				// . base
 				break;
 		}

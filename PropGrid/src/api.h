@@ -122,7 +122,6 @@
 		static HWND WINAPI BeginEditValue(PValue value,TValueSize valueBytes,PCustomParam param,PCEditor editor,RECT rcEditorRect,DWORD style,HWND hParent,HWND *pOutEllipsisBtn);
 		static bool WINAPI TryToAcceptCurrentValueAndCloseEditor();
 		static bool WINAPI IsValueBeingEdited();
-		static void WINAPI UndefineEditor(PCEditor editor);
 	};
 
 #endif // PROPGRID_API_H

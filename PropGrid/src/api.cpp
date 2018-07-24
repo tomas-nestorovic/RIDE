@@ -143,10 +143,10 @@
 		// - stretching the MainControl (and EllipsisButton) across whole dedicated rectangle
 		const int height=rcEditorRect.bottom-rcEditorRect.top;
 		if (TEditor::pSingleShown->hEllipsisBtn){
-			rcEditorRect.right-=ELLIPSIS_BUTTON_WIDTH;
+			rcEditorRect.right-=ELLIPSIS_BUTTON_WIDTH*TPropGridInfo::LogicalUnitScaleFactor;
 			::SetWindowPos(	TEditor::pSingleShown->hEllipsisBtn, 0,
 							rcEditorRect.right, rcEditorRect.top,
-							ELLIPSIS_BUTTON_WIDTH, height,
+							ELLIPSIS_BUTTON_WIDTH*TPropGridInfo::LogicalUnitScaleFactor, height,
 							SWP_NOZORDER|SWP_SHOWWINDOW
 						);
 		}
@@ -181,9 +181,4 @@
 	bool WINAPI CPropGridCtrl::IsValueBeingEdited(){
 		// True <=> some Value is currently being edited, otherwise False
 		return TEditor::pSingleShown!=NULL;
-	}
-
-	void WINAPI CPropGridCtrl::UndefineEditor(PCEditor editor){
-		// destroys the specified Editor
-		delete (::PCEditor)editor;
 	}
