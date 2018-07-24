@@ -2,30 +2,39 @@
 
 	#define INI_POSITION	_T("pos")
 
-	#define DOS		pFileManager->tab.dos
+	#define DOS		rFileManager.tab.dos
 	#define IMAGE	DOS->image
 
-	CDos::CFilePreview::CFilePreview(HWND hPreviewWnd,LPCTSTR iniSection,const CFileManagerView *pFileManager,WORD initialWindowWidth,WORD initialWindowHeight)
+	static const RECT defaultRect={ 0, 0, 0, 0 };
+
+	CDos::CFilePreview::CFilePreview(const CWnd *pView,LPCTSTR iniSection,const CFileManagerView &rFileManager,WORD initialWindowWidth,WORD initialWindowHeight)
 		// ctor
 		// - initialization
-		: hPreviewWnd(hPreviewWnd) , iniSection(iniSection) , pFileManager(pFileManager)
+		: pView(pView)
+		, iniSection(iniSection) , rFileManager(rFileManager)
 		, pdt( DOS->BeginDirectoryTraversal() ) {
+		// - creating the Preview FrameWindow
+		CreateEx(	WS_EX_TOPMOST,
+					NULL, NULL,
+					WS_CAPTION|WS_SYSMENU|WS_THICKFRAME|WS_VISIBLE,
+					CRect(defaultRect), NULL, 0
+				);
 		// - restoring previous position of Preview on the screen
 		const float scaleFactor=TUtils::LogicalUnitScaleFactor;
 		const CString s=app.GetProfileString(iniSection,INI_POSITION,_T(""));
 		if (!s.IsEmpty()){
 			RECT r;
 			_stscanf(s,_T("%d,%d,%d,%d"),&r.left,&r.top,&r.right,&r.bottom);
-			::SetWindowPos(	hPreviewWnd, 0,
+			SetWindowPos(	NULL,
 							r.left*scaleFactor, r.top*scaleFactor,
 							(r.right-r.left)*scaleFactor, (r.bottom-r.top)*scaleFactor,
 							SWP_NOZORDER
 						);
 		}else{
 			RECT r={ 0, 0, initialWindowWidth*scaleFactor, initialWindowHeight*scaleFactor };
-			::AdjustWindowRect( &r, ::GetWindowLong(hPreviewWnd,GWL_STYLE), FALSE );
+			::AdjustWindowRect( &r, ::GetWindowLong(m_hWnd,GWL_STYLE), FALSE );
 			r.bottom+=::GetSystemMetrics(SM_CYCAPTION);
-			::SetWindowPos( hPreviewWnd, 0, 0,0, r.right,r.bottom, SWP_NOZORDER|SWP_NOMOVE );
+			SetWindowPos( NULL, 0,0, r.right-r.left,r.bottom-r.top, SWP_NOZORDER );
 		}
 	}
 
@@ -33,28 +42,21 @@
 		// dtor
 		// - freeing resources
 		DOS->EndDirectoryTraversal(pdt);
-		// - saving current position on the Screen for next time
-		RECT r;
-		::GetWindowRect(hPreviewWnd,&r);
-		const float scaleFactor=TUtils::LogicalUnitScaleFactor;
-		for( BYTE b=4; b; ((PINT)&r)[--b]/=scaleFactor );
-		TCHAR buf[80];
-		::wsprintf(buf,_T("%d,%d,%d,%d"),r);
-		app.WriteProfileString(iniSection,INI_POSITION,buf);
 	}
+
 
 
 
 	void CDos::CFilePreview::__showNextFile__(){
 		// shows next File
-		if (POSITION pos=pFileManager->GetFirstSelectedFilePosition()){
+		if (POSITION pos=rFileManager.GetFirstSelectedFilePosition()){
 			// next File selected in the FileManager
 			while (pos)
-				if (pFileManager->GetNextSelectedFile(pos)==pdt->entry)
+				if (rFileManager.GetNextSelectedFile(pos)==pdt->entry)
 					break;
 			if (!pos)
-				pos=pFileManager->GetFirstSelectedFilePosition();
-			pdt->entry=pFileManager->GetNextSelectedFile(pos);
+				pos=rFileManager.GetFirstSelectedFilePosition();
+			pdt->entry=rFileManager.GetNextSelectedFile(pos);
 		}else{
 			// next File (any)
 			PFile next=NULL;
@@ -71,19 +73,20 @@
 						}
 			pdt->entry=next;
 		}
+		RecalcLayout();
 		RefreshPreview();
 	}
 
 	void CDos::CFilePreview::__showPreviousFile__(){
 		// shows previous File
-		if (POSITION pos=pFileManager->GetLastSelectedFilePosition()){
+		if (POSITION pos=rFileManager.GetLastSelectedFilePosition()){
 			// previous File selected in the FileManager
 			while (pos)
-				if (pFileManager->GetPreviousSelectedFile(pos)==pdt->entry)
+				if (rFileManager.GetPreviousSelectedFile(pos)==pdt->entry)
 					break;
 			if (!pos)
-				pos=pFileManager->GetLastSelectedFilePosition();
-			pdt->entry=pFileManager->GetPreviousSelectedFile(pos);
+				pos=rFileManager.GetLastSelectedFilePosition();
+			pdt->entry=rFileManager.GetPreviousSelectedFile(pos);
 		}else{
 			// previous File (any)
 			PFile prev=NULL;
@@ -104,5 +107,40 @@
 							prev=pdt->entry;
 			pdt->entry=prev;
 		}
+		RecalcLayout();
 		RefreshPreview();
+	}
+
+	BOOL CDos::CFilePreview::PreCreateWindow(CREATESTRUCT &cs){
+		// adjusting the instantiation
+		if (!__super::PreCreateWindow(cs)) return FALSE;
+		cs.dwExStyle&=~WS_EX_CLIENTEDGE;
+		return TRUE;
+	}
+
+	LRESULT CDos::CFilePreview::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
+		// window procedure
+		switch (msg){
+			case WM_ACTIVATE:
+			case WM_SETFOCUS:
+				// window has received focus
+				// - passing the focus over to the View
+				if (pView){
+					::SetFocus(pView->m_hWnd);
+					return 0;
+				}else
+					break;
+			case WM_NCDESTROY:{
+				// window is about to be destroyed
+				// - saving current position on the Screen for next time
+				RECT r;
+				GetWindowRect(&r);
+				for( BYTE b=4; b; ((PINT)&r)[--b]/=TUtils::LogicalUnitScaleFactor );
+				TCHAR buf[80];
+				::wsprintf(buf,_T("%d,%d,%d,%d"),r);
+				app.WriteProfileString(iniSection,INI_POSITION,buf);
+				break;
+			}
+		}
+		return __super::WindowProc(msg,wParam,lParam);
 	}

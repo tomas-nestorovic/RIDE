@@ -17,7 +17,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #include <afxcview.h>
 #include <afxhtml.h>
 #include <afxmt.h>
-#include <afxrich.h>
+//#include <afxrich.h>
 //#include <afxcmn.h>
 //#include <afxpriv.h>
 //#include <afxtempl.h>
@@ -76,11 +76,11 @@ typedef const WORD *PCWORD;
 #include "ViewBoot.h"
 #include "ViewFileManager.h"
 #include "ViewTrackMap.h"
+#include "ViewWebPage.h"
 #include "SpectrumDos.h"
 #include "DosUnknown.h"
 #include "DialogNewImage.h"
 #include "DialogEmptySpaceFilling.h"
-#include "ViewWebPage.h"
 
 #define DLL_UXTHEME		_T("UxTheme.dll")
 #define DLL_SHELL32		_T("shell32.dll")

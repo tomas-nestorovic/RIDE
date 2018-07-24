@@ -380,7 +380,7 @@
 						__toggleWriteProtection__();
 						// . refreshing known windows that depend on Image's WriteProtection flag
 						if (CDos::CHexaPreview::pSingleInstance) 
-							CDos::CHexaPreview::pSingleInstance->SetEditable(!writeProtected);
+							CDos::CHexaPreview::pSingleInstance->hexaEditor.SetEditable(!writeProtected);
 						return TRUE;
 					case ID_IMAGE_DUMP:
 						__dump__();

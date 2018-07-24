@@ -23,10 +23,10 @@
 
 	CSpectrumDos::CTape::~CTape(){
 		// dtor
-		if (CScreenPreview::pSingleInstance && CScreenPreview::pSingleInstance->pFileManager->tab.dos==this)
-			::DestroyWindow(CScreenPreview::pSingleInstance->hPreviewWnd);
-		if (CBasicPreview::pSingleInstance && CBasicPreview::pSingleInstance->pFileManager==pFileManager)
-			::DestroyWindow(CBasicPreview::pSingleInstance->hPreviewWnd);
+		if (CScreenPreview::pSingleInstance && CScreenPreview::pSingleInstance->rFileManager.tab.dos==this)
+			CScreenPreview::pSingleInstance->DestroyWindow();
+		if (CBasicPreview::pSingleInstance && &CBasicPreview::pSingleInstance->rFileManager==pFileManager)
+			CBasicPreview::pSingleInstance->DestroyWindow();
 		dos=NULL; // to not destroy the Image (as DOS and Image are one structure in memory that is disposed at once)
 		(HACCEL)menu.hAccel=0; // for DiskDos accelerators to be not destroyed
 	}

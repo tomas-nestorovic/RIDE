@@ -20,7 +20,6 @@
 		} history;
 		bool navigationToLabel;
 
-		BOOL Create(LPCTSTR,LPCTSTR,DWORD dwStyle,const RECT &rect,CWnd *pParentWnd,UINT nID,CCreateContext *) override;
 		void OnBeforeNavigate2(LPCTSTR lpszURL,DWORD nFlags,LPCTSTR lpszTargetFrameName,CByteArray &baPostedData,LPCTSTR lpszHeaders,BOOL *pbCancel) override;
 		void OnDocumentComplete(LPCTSTR strURL) override;
 		void PostNcDestroy() override;
@@ -35,6 +34,8 @@
 		const CMainWindow::CTdiView::TTab tab;
 
 		CWebPageView(LPCTSTR url);
+
+		BOOL Create(LPCTSTR,LPCTSTR,DWORD dwStyle,const RECT &rect,CWnd *pParentWnd,UINT nID,CCreateContext *) override;
 	};
 
 #endif // WEBPAGEVIEW_H

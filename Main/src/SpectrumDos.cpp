@@ -241,10 +241,10 @@
 		// dtor
 		if (pSingleTape)
 			delete pSingleTape;
-		if (CScreenPreview::pSingleInstance && CScreenPreview::pSingleInstance->pFileManager==pFileManager)
-			::DestroyWindow(CScreenPreview::pSingleInstance->hPreviewWnd);
-		if (CBasicPreview::pSingleInstance && CBasicPreview::pSingleInstance->pFileManager==pFileManager)
-			::DestroyWindow(CBasicPreview::pSingleInstance->hPreviewWnd);
+		if (CScreenPreview::pSingleInstance && &CScreenPreview::pSingleInstance->rFileManager==pFileManager)
+			CScreenPreview::pSingleInstance->DestroyWindow();
+		if (CBasicPreview::pSingleInstance && &CBasicPreview::pSingleInstance->rFileManager==pFileManager)
+			CBasicPreview::pSingleInstance->DestroyWindow();
 	}
 
 
@@ -309,10 +309,10 @@
 						return TCmdResult::DONE; // ... the main disk Image cannot be closed neither
 					else{ // ... otherwise closing the open Tape
 						delete pSingleTape, pSingleTape=NULL;
-						if (CScreenPreview::pSingleInstance && CScreenPreview::pSingleInstance->pFileManager->DOS==pSingleTape)
-							::DestroyWindow(CScreenPreview::pSingleInstance->hPreviewWnd);
-						if (CBasicPreview::pSingleInstance && CBasicPreview::pSingleInstance->pFileManager==pFileManager)
-							::DestroyWindow(CBasicPreview::pSingleInstance->hPreviewWnd);
+						if (CScreenPreview::pSingleInstance && CScreenPreview::pSingleInstance->rFileManager.DOS==pSingleTape)
+							CScreenPreview::pSingleInstance->DestroyWindow();
+						if (CBasicPreview::pSingleInstance && &CBasicPreview::pSingleInstance->rFileManager==pFileManager)
+							CBasicPreview::pSingleInstance->DestroyWindow();
 						return TCmdResult::DONE_REDRAW; // only the Tape has been closed, not the main disk Image!
 					}
 				break; // closing the main disk Image
@@ -364,19 +364,19 @@
 			case ID_ZX_PREVIEWASSCREEN:
 				// previewing File(s) on Spectrum screen
 				if (CScreenPreview::pSingleInstance)
-					::DestroyWindow(CScreenPreview::pSingleInstance->hPreviewWnd);
+					CScreenPreview::pSingleInstance->DestroyWindow();
 				new CScreenPreview(	__isTapeFileManagerShown__()
-									? &pSingleTape->fileManager
-									: pFileManager
+									? pSingleTape->fileManager
+									: *pFileManager
 								);
 				return TCmdResult::DONE;
 			case ID_ZX_PREVIEWASBASIC:
 				// previewing File(s) as BASIC program(s)
 				if (CBasicPreview::pSingleInstance)
-					::DestroyWindow(CBasicPreview::pSingleInstance->hPreviewWnd);
+					CBasicPreview::pSingleInstance->DestroyWindow();
 				new CBasicPreview(	__isTapeFileManagerShown__()
-									? &pSingleTape->fileManager
-									: pFileManager
+									? pSingleTape->fileManager
+									: *pFileManager
 								);
 				return TCmdResult::DONE;
 			default:

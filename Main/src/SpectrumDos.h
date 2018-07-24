@@ -216,7 +216,6 @@
 		class CScreenPreview sealed:CFilePreview{
 			friend class CSpectrumDos;
 
-			static LRESULT WINAPI __wndProc__(HWND hPreview,UINT uMsg,WPARAM wParam,LPARAM lParam);
 			static void CALLBACK __flash__(HWND hPreview,UINT nMsg,UINT nTimerID,DWORD dwTime);
 
 			HANDLE hFlashTimer;
@@ -230,26 +229,23 @@
 			} dib;
 
 			void RefreshPreview() override;
+			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 		public:
 			static CScreenPreview *pSingleInstance;
 
-			CScreenPreview(const CFileManagerView *pFileManager);
+			CScreenPreview(const CFileManagerView &rFileManager);
 			~CScreenPreview();			
 		};
 
 		class CBasicPreview sealed:public CFilePreview{
-			class CListingView sealed:public CRichEditView{
-				LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
-			public:
-				void __loadBasicAndVariablesFromFile__(PCFile file);
-			} *pListingView;
+			TCHAR tmpFileName[MAX_PATH];
+			CWebPageView listingView;
 
-			HWND __createWindow__();
 			void RefreshPreview() override;
 		public:
-			static const CBasicPreview *pSingleInstance; // only single file can be previewed at a time
+			static CBasicPreview *pSingleInstance; // only single file can be previewed at a time
 
-			CBasicPreview(const CFileManagerView *pFileManager);
+			CBasicPreview(const CFileManagerView &rFileManager);
 			~CBasicPreview();
 		};
 

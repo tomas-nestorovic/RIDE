@@ -124,7 +124,7 @@
 
 	BOOL CMainWindow::PreCreateWindow(CREATESTRUCT &cs){
 		// adjusting the instantiation
-		if (!CFrameWnd::PreCreateWindow(cs)) return FALSE;
+		if (!__super::PreCreateWindow(cs)) return FALSE;
 		cs.dwExStyle&=~WS_EX_CLIENTEDGE;
 		return TRUE;
 	}
@@ -160,7 +160,7 @@
 		m_bAutoMenuEnable=false;
 		// - creating the TDI
 		pTdi=new CTdiView;
-		pTdi->Create( NULL, NULL, AFX_WS_DEFAULT_VIEW&~WS_BORDER, CRect(), this, AFX_IDW_PANE_FIRST );
+		pTdi->Create( NULL, NULL, AFX_WS_DEFAULT_VIEW&~WS_BORDER, rectDefault, this, AFX_IDW_PANE_FIRST );
 		CTdiCtrl::SubclassWnd(
 			app.m_hInstance,
 			pTdi->m_hWnd,

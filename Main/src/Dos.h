@@ -157,20 +157,22 @@
 		TStdWinError __isTrackEmpty__(TCylinder cyl,THead head,TSector nSectors,PCSectorId sectors) const;
 		TStdWinError __areStdCylindersEmpty__(TTrack nCylinders,PCylinder bufCylinders) const;
 	protected:
-		class CFilePreview{
+		class CFilePreview:public CFrameWnd{
+			const CWnd *const pView;
 		protected:
 			const LPCTSTR iniSection;
 			PDirectoryTraversal pdt;
 
-			CFilePreview(HWND hPreviewWnd,LPCTSTR iniSection,const CFileManagerView *pFileManager,WORD initialWindowWidth,WORD initialWindowHeight);
+			CFilePreview(const CWnd *pView,LPCTSTR iniSection,const CFileManagerView &rFileManager,WORD initialWindowWidth,WORD initialWindowHeight);
 			~CFilePreview();
 
 			void __showNextFile__();
 			void __showPreviousFile__();
 			virtual void RefreshPreview()=0;
+			BOOL PreCreateWindow(CREATESTRUCT &cs) override;
+			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 		public:
-			const HWND hPreviewWnd;
-			const CFileManagerView *const pFileManager;
+			const CFileManagerView &rFileManager;
 		};
 
 		typedef int (WINAPI *TFnCompareNames)(LPCTSTR name1,LPCTSTR name2);
@@ -219,17 +221,21 @@
 			UNKNOWN		=0x00ffff  // any Sector whose ID doesn't match any ID from the standard format, e.g. ID={2,1,0,3} for an MDOS Sector
 		} *PSectorStatus;
 
-		class CHexaPreview sealed:public CHexaEditor,public CFilePreview{
+		class CHexaPreview sealed:public CFilePreview{
 			CMemFile fEmpty;
 			CFileReaderWriter *pFileRW;
 
-			HWND __createWindow__();
 			void RefreshPreview() override;
-			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 		public:
 			static CHexaPreview *pSingleInstance; // only single file can be previewed at a time
 
-			CHexaPreview(const CFileManagerView *pFileManager);
+			class CHexaEditorView sealed:public CHexaEditor{
+				LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
+			public:
+				CHexaEditorView();
+			} hexaEditor;
+
+			CHexaPreview(const CFileManagerView &rFileManager);
 			~CHexaPreview();
 		};
 

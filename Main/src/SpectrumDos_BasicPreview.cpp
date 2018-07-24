@@ -1,16 +1,17 @@
 #include "stdafx.h"
 
-	const CSpectrumDos::CBasicPreview *CSpectrumDos::CBasicPreview::pSingleInstance;
+	CSpectrumDos::CBasicPreview *CSpectrumDos::CBasicPreview::pSingleInstance;
 
 	#define INI_PREVIEW	_T("ZxBasic")
 
 	#define PREVIEW_WIDTH_DEFAULT	400
 	#define PREVIEW_HEIGHT_DEFAULT	300
 
-	CSpectrumDos::CBasicPreview::CBasicPreview(const CFileManagerView *pFileManager)
+	CSpectrumDos::CBasicPreview::CBasicPreview(const CFileManagerView &rFileManager)
 		// ctor
 		// - base
-		: CFilePreview( __createWindow__(), INI_PREVIEW, pFileManager, PREVIEW_WIDTH_DEFAULT, PREVIEW_HEIGHT_DEFAULT ) {
+		: CFilePreview(	&listingView, INI_PREVIEW, rFileManager, PREVIEW_WIDTH_DEFAULT, PREVIEW_HEIGHT_DEFAULT )
+		, listingView(_T("")) {
 /*
 		CreateEx(	0, _T("RICHEDIT50W"), NULL,
 					WS_CAPTION|WS_SYSMENU|WS_THICKFRAME|WS_BORDER|WS_VISIBLE|ES_MULTILINE,
@@ -30,13 +31,26 @@
 		//*/
 		// - initialization
 		pSingleInstance=this;
+		// - creating the TemporaryFile to store HTML-formatted BASIC Listing
+		::GetTempPath(MAX_PATH,tmpFileName);
+		::GetTempFileName( tmpFileName, NULL, TRUE, tmpFileName );
+		// - creating the ListingView
+/*		
+		::InitCommonControls();
+		//::CoInitialize(NULL);
+		::LoadLibrary("riched20.dll");		// _T("RichEdit20A")
+		::LoadLibrary(_T("MSFTEDIT.DLL"));	// _T("RICHEDIT50W"), but must also load "riched20.dll" !!
+		//*/
+		listingView.Create( NULL, NULL, WS_CHILD|WS_VISIBLE, rectDefault, this, AFX_IDW_PANE_FIRST, NULL );
+		listingView.OnInitialUpdate();
 		// - showing the first File
 		__showNextFile__();
 	}
 
 	CSpectrumDos::CBasicPreview::~CBasicPreview(){
 		// dtor
-		//delete pListingView;
+		// - uninitialization
+		::DeleteFile(tmpFileName);
 		pSingleInstance=NULL;
 	}
 
@@ -46,86 +60,93 @@
 
 
 
-	#define DOS		pFileManager->tab.dos
+	#define DOS		rFileManager.tab.dos
 	#define IMAGE	DOS->image
 
 	#define PREVIEW_LABEL	"BASIC listing"
 
-	HWND CSpectrumDos::CBasicPreview::__createWindow__(){
-		// creates and returns the Preview's window
-/*		
-		::InitCommonControls();
-		//::CoInitialize(NULL);
-		::LoadLibrary("riched20.dll");		// _T("RichEdit20A")
-		::LoadLibrary(_T("MSFTEDIT.DLL"));	// _T("RICHEDIT50W"), but must also load "riched20.dll" !!
-		//*/
-		( pListingView=new CListingView )->CreateEx(
-			WS_EX_TOPMOST, NULL, NULL,
-			WS_CHILD|WS_CAPTION|WS_SYSMENU|WS_THICKFRAME|WS_BORDER|WS_VISIBLE|ES_MULTILINE,
-			0,0, PREVIEW_WIDTH_DEFAULT,PREVIEW_HEIGHT_DEFAULT,
-			TDI_HWND, 0, NULL
-		);
-		pListingView->ModifyStyle( WS_CHILD, WS_CAPTION|WS_SYSMENU|WS_THICKFRAME|WS_BORDER|WS_VISIBLE|ES_MULTILINE );
-		pListingView->SetParent(NULL);
-		return pListingView->m_hWnd;
-	}
-
 	void CSpectrumDos::CBasicPreview::RefreshPreview(){
 		// refreshes the Preview (e.g. when switched to another File)
 		if (const PCFile file=pdt->entry){
-			// . resetting the content of the Preview
-			pListingView->__loadBasicAndVariablesFromFile__(file);
+			CFileReaderWriter frw(DOS,pdt->entry);
+			// . generating HTML-formatted content
+			CFile fTmp( tmpFileName, CFile::modeWrite|CFile::modeCreate );
+				TUtils::WriteToFile(fTmp,_T("<html><body style=\"font-family:'Courier New'\">"));
+					// : BASIC Listing
+					TUtils::WriteToFile(fTmp,_T("<table cellpadding=3 cellspacing=0>"));
+						bool error=false;
+						do{
+							UBigEndianWord lineNumber;
+							if (error=frw.Read(&lineNumber,sizeof(WORD))!=sizeof(WORD)) // error
+								break;
+							if (lineNumber>0x39ff) // invalid LineNumber is a correct end of BASIC program
+								break;
+							WORD nBytesOfLine;
+							if (error=frw.Read(&nBytesOfLine,sizeof(WORD))!=sizeof(WORD)) // error
+								break;
+							if (!nBytesOfLine)
+								break;
+							BYTE lineBytes[65536];
+							if (error=frw.Read(lineBytes,nBytesOfLine)!=nBytesOfLine) // error
+								break;
+							TUtils::WriteToFile(fTmp,_T("<tr>"));
+								// | adding a new cell to the "Line Number" column
+								TUtils::WriteToFile(fTmp,_T("<td width=90pt align=right valign=top style=\"padding-right:5pt;background:silver\">"));
+									TUtils::WriteToFile(fTmp,lineNumber);
+								//TUtils::WriteToFile(fTmp,_T("</td>")); // commented out as written in the following command
+								// | adding a new cell to the "Listing" column
+								TUtils::WriteToFile(fTmp,_T("</td><td style=\"padding-left:5pt\">"));
+									PCBYTE pLineByte=lineBytes;
+									while (--nBytesOfLine>0){ // skipping the terminating Enter character (0x0d)
+										const BYTE b=*pLineByte++;
+										if (TZxRom::IsStdUdgSymbol(b)){
+											//TODO
+										}else if (b==14)
+											// skipping the five-Byte internal form of a number
+											pLineByte+=5, nBytesOfLine-=5;
+										else{
+											TCHAR buf[16];
+											TUtils::WriteToFile( fTmp, TZxRom::ZxToAscii((LPCSTR)&b,1,buf) );
+										}
+									}
+								//TUtils::WriteToFile(fTmp,_T("</td>")); // commented out as written in the following command	
+							TUtils::WriteToFile(fTmp,_T("</td></tr>"));
+						} while (frw.GetPosition()<frw.GetLength());
+					TUtils::WriteToFile(fTmp,_T("</table>"));
+					// : Error in BASIC Listing
+					if (error){
+						TUtils::WriteToFile(fTmp,_T("<p>Error!</p>"));
+						goto htmlDocEnd;
+					}
+htmlDocEnd:		TUtils::WriteToFile(fTmp,_T("</body></html>"));
+			fTmp.Close();
+			// . opening the HTML-formatted content
+			listingView.Navigate2(tmpFileName);
 			// . updating the window caption
-			TCHAR bufZx[MAX_PATH],bufCaption[20+MAX_PATH];
+			TCHAR buf[MAX_PATH],bufCaption[20+MAX_PATH];
 			::wsprintf(	bufCaption,
 						PREVIEW_LABEL " (%s)",
-						TZxRom::ZxToAscii( DOS->GetFileNameWithAppendedExt(file,bufZx),-1, bufCaption+20 )
+						TZxRom::ZxToAscii( DOS->GetFileNameWithAppendedExt(file,buf),-1, bufCaption+20 )
 					);
+			SetWindowText(bufCaption);
 		}else
-			::SetWindowText( pListingView->m_hWnd, PREVIEW_LABEL );
-		pListingView->SetWindowPos( NULL, 0,0, 0,0, SWP_NOZORDER|SWP_NOMOVE|SWP_NOSIZE|SWP_FRAMECHANGED );
+			SetWindowText(PREVIEW_LABEL);
+		SetWindowPos( NULL, 0,0, 0,0, SWP_NOZORDER|SWP_NOMOVE|SWP_NOSIZE|SWP_FRAMECHANGED );
 	}
 
-	LRESULT CSpectrumDos::CBasicPreview::CListingView::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
-		// window procedure
-		switch (msg){
-			case WM_KEYDOWN:
-				// char
-				switch (wParam){
-					case 'W':
-						// toggling the WriteProtection of Image
-						if (::GetAsyncKeyState(VK_CONTROL)<0){ // if Ctrl+W pressed
-							app.m_pMainWnd->SendMessage( WM_COMMAND, ID_IMAGE_PROTECT ); // toggling the WriteProtection
-							SetFocus(); // focusing the Preview
-						}
-						break;
-					case VK_ESCAPE:
-						// closing the Preview's window
-						::DestroyWindow(m_hWnd);
-						return 0;
-				}
-				break;
-			case WM_NCDESTROY:
-				// closing the Preview's window
-				delete pSingleInstance;
-				return 0;
-		}
-		return __super::WindowProc(msg,wParam,lParam);
-	}
-
-	void CSpectrumDos::CBasicPreview::CListingView::__loadBasicAndVariablesFromFile__(PCFile file){
+	//void CSpectrumDos::CBasicPreview::CListingView::__loadBasicAndVariablesFromFile__(PCFile file){
 		// loads Basic program and/or Basic variables from specified File
-		SetRedraw(FALSE);
+		//SetRedraw(FALSE);
 			// - resetting the content
-			SetWindowText(_T(""));			
+//			SetWindowText(_T(""));			
 			// - resetting the paragraph style
-			PARAFORMAT pf=GetParaFormatSelection();
+/*			PARAFORMAT pf=GetParaFormatSelection();
 				pf.dxOffset=500;
 				pf.dxStartIndent=500;
 				pf.dxRightIndent=500;
-			SetParaFormat(pf);
+			SetParaFormat(pf);*/
 			// - loading the Basic program (if any)
-			SetWindowText(_T("ajhd askjdhk jdkdjahdkd hka hdkadh k hdkjhd akjdh akjd hakjd hakjdh kdh kdh kadh k dhkjdh akjdh kjdh ak"));
-		SetRedraw(TRUE);
-		Invalidate();
-	}
+			//SetWindowText(_T("ajhd askjdhk jdkdjahdkd hka hdkadh k hdkjhd akjdh akjd hakjd hakjdh kdh kdh kadh k dhkjdh akjdh kjdh ak"));
+		//SetRedraw(TRUE);
+		//Invalidate();
+	//}

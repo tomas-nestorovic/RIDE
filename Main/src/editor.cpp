@@ -186,7 +186,7 @@
 		// - setting automatic destruction of TdiTemplate (see also TdiTemplate's ctor)
 		CMainWindow::CTdiTemplate::pSingleInstance->m_bAutoDelete=TRUE;
 		// - uninitializing OLE
-		::OleUninitialize();
+		//::OleUninitialize(); // commented out as must be initialized until the app has really terminated (then unititialized automatically by Windows)
 		// - releasing resources
 		//nop
 		return CWinApp::ExitInstance();

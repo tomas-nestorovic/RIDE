@@ -36,7 +36,7 @@
 	CDos::~CDos(){
 		// dtor
 		// - destroying HexaPreview of File's content associated with current FileManager
-		if (CHexaPreview::pSingleInstance && CHexaPreview::pSingleInstance->pFileManager==pFileManager)
+		if (CHexaPreview::pSingleInstance && &CHexaPreview::pSingleInstance->rFileManager==pFileManager)
 			CHexaPreview::pSingleInstance->DestroyWindow();
 		// - hiding DOS Menu
 		menu.__hide__();
@@ -997,7 +997,7 @@ finished:
 				// previewing File in hexa mode
 				if (CHexaPreview::pSingleInstance)
 					delete CHexaPreview::pSingleInstance;
-				new CHexaPreview(pFileManager);
+				new CHexaPreview(*pFileManager);
 				return TCmdResult::DONE;
 		}
 		return TCmdResult::REFUSED;
