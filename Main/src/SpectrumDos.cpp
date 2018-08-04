@@ -32,7 +32,7 @@
 		//: font(_T("DejaVu Sans Mono"),86,false,true,60) {
 	}
 
-	static const LPCSTR Keywords[]={
+	const LPCSTR CSpectrumDos::TZxRom::Keywords[]={
 		_T("RND"), _T("INKEY$"), _T("PI"), _T("FN "), _T("POINT "), _T("SCREEN$ "), _T("ATTR "), _T("AT "), _T("TAB "), _T("VAL$ "), _T("CODE "), _T("VAL "), _T("LEN "), _T("SIN "), _T("COS "), _T("TAN "), _T("ASN "), _T("ACS "), _T("ATN "), _T("LN "), _T("EXP "), _T("INT "), _T("SQR "), _T("SGN "), _T("ABS "), _T("PEEK "), _T("IN "), _T("USR "), _T("STR$ "), _T("CHR$ "), _T("NOT "), _T("BIN "),
 		_T(" OR "), _T(" AND "), _T("<="), _T(">="), _T("<>"), _T(" LINE "), _T(" THEN "), _T(" TO "), _T(" STEP "), _T(" DEF FN "), _T(" CAT "), _T(" FORMAT "), _T(" MOVE "), _T(" ERASE "), _T(" OPEN #"), _T(" CLOSE #"), _T(" MERGE "), _T(" VERIFY "), _T(" BEEP "), _T(" CIRCLE "), _T(" INK "), _T(" PAPER "), _T(" FLASH "), _T(" BRIGHT "), _T(" INVERSE "), _T(" OVER "), _T(" OUT "), _T(" LPRINT "), _T(" LLIST "), _T(" STOP "), _T(" READ "), _T(" DATA "), _T(" RESTORE "),
 		_T(" NEW "), _T(" BORDER "), _T(" CONTINUE "), _T(" DIM "), _T(" REM "), _T(" FOR "), _T(" GO TO "), _T(" GO SUB "), _T(" INPUT "), _T(" LOAD "), _T(" LIST "), _T(" LET "), _T(" PAUSE "), _T(" NEXT "), _T(" POKE "), _T(" PRINT "), _T(" PLOT "), _T(" RUN "), _T(" SAVE "), _T(" RANDOMIZE "), _T(" IF "), _T(" CLS "), _T(" DRAW "), _T(" CLEAR "), _T(" RETURN "), _T(" COPY ")
@@ -102,9 +102,16 @@
 		return zx;
 	}
 
-	bool CSpectrumDos::TZxRom::IsStdUdgSymbol(BYTE c){
+	bool CSpectrumDos::TZxRom::IsStdUdgSymbol(BYTE s){
 		// True <=> given Character is a standard UDG symbol, otherwise False
-		return 127<c && c<144;
+		return 127<s && s<144;
+	}
+
+	LPCSTR CSpectrumDos::TZxRom::GetKeywordTranscript(BYTE k){
+		// returns the textual representation of the given Keyword, or Null if the character is not a Keyword character
+		return	k>=KEYWORD_TOKEN_FIRST
+				? Keywords[k-KEYWORD_TOKEN_FIRST]
+				: NULL;
 	}
 
 	void CSpectrumDos::TZxRom::PrintAt(HDC dc,LPCTSTR buf,RECT r,UINT drawTextFormat) const{

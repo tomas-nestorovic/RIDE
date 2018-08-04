@@ -73,24 +73,6 @@
 				}
 				return 0;
 			}
-			case WM_KEYDOWN:
-				// character
-				switch (wParam){
-					case VK_ESCAPE:
-						// closing the Preview
-						DestroyWindow();
-						return 0;
-					case VK_SPACE:
-					case VK_RIGHT:
-						// next File
-						pSingleInstance->__showNextFile__();
-						break;
-					case VK_LEFT:
-						// previous File
-						pSingleInstance->__showPreviousFile__();
-						break;
-				}
-				break;
 		}
 		return __super::WindowProc(uMsg,wParam,lParam);
 	}
@@ -124,7 +106,7 @@
 	CSpectrumDos::CScreenPreview::CScreenPreview(const CFileManagerView &rFileManager)
 		// ctor
 		// - base
-		: CFilePreview( NULL, INI_PREVIEW, rFileManager, SCREEN_WIDTH, SCREEN_HEIGHT )
+		: CFilePreview( NULL, INI_PREVIEW, rFileManager, SCREEN_WIDTH, SCREEN_HEIGHT, 0 )
 		// - initialization
 		, paperFlash(false) {
 		pSingleInstance=this;

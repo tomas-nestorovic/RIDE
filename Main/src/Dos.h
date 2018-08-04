@@ -159,17 +159,19 @@
 	protected:
 		class CFilePreview:public CFrameWnd{
 			const CWnd *const pView;
+
 		protected:
 			const LPCTSTR iniSection;
 			PDirectoryTraversal pdt;
 
-			CFilePreview(const CWnd *pView,LPCTSTR iniSection,const CFileManagerView &rFileManager,WORD initialWindowWidth,WORD initialWindowHeight);
+			CFilePreview(const CWnd *pView,LPCTSTR iniSection,const CFileManagerView &rFileManager,WORD initialWindowWidth,WORD initialWindowHeight,DWORD resourceId);
 			~CFilePreview();
 
 			void __showNextFile__();
 			void __showPreviousFile__();
 			virtual void RefreshPreview()=0;
 			BOOL PreCreateWindow(CREATESTRUCT &cs) override;
+			BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 		public:
 			const CFileManagerView &rFileManager;

@@ -104,4 +104,6 @@ typedef const WORD *PCWORD;
 
 extern CRideApp app;
 
+extern void WINAPI AfxThrowInvalidArgException();
+
 #endif STDAFX_H

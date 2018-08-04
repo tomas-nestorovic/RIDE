@@ -52,8 +52,10 @@ namespace TUtils{
 	void PopulateComboBoxWithSequenceOfNumbers(HWND hComboBox,BYTE iStartValue,LPCTSTR strStartValueDesc,BYTE iEndValue,LPCTSTR strEndValueDesc);
 	float ScaleLogicalUnit(HDC dc);
 	void UnscaleLogicalUnit(PINT values,BYTE nValues);
-	void WriteToFile(CFile &f,LPCTSTR text);
-	void WriteToFile(CFile &f,int number);
+	CFile &WriteToFile(CFile &f,LPCTSTR text);
+	CFile &WriteToFile(CFile &f,TCHAR chr);
+	CFile &WriteToFile(CFile &f,int number,LPCTSTR formatting);
+	CFile &WriteToFile(CFile &f,int number);
 	PTCHAR GetApplicationOnlineDocumentUrl(LPCTSTR documentName,PTCHAR buffer);
 }
 

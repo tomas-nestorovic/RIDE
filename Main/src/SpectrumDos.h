@@ -22,9 +22,14 @@
 				FRAGMENT	=(BYTE)-2	// defined foremost due to formal reasons (e.g. Headerless File cannot have a Header with this value)
 			};
 
+			static const LPCSTR Keywords[];
+
 			static PTCHAR ZxToAscii(LPCSTR zx,BYTE zxLength,PTCHAR buf);
 			static PTCHAR AsciiToZx(LPCTSTR pc,PCHAR zx,PBYTE pOutZxLength);
-			static bool IsStdUdgSymbol(BYTE c);
+			inline
+			static bool IsStdUdgSymbol(BYTE s);
+			//inline
+			static LPCSTR GetKeywordTranscript(BYTE k);
 
 			TZxRom();
 
@@ -240,8 +245,11 @@
 		class CBasicPreview sealed:public CFilePreview{
 			TCHAR tmpFileName[MAX_PATH];
 			CWebPageView listingView;
+			bool applyColors,showNonprintableChars;
 
+			void __parseBasicFileAndGenerateHtmlFormattedContent__(PCFile file) const;
 			void RefreshPreview() override;
+			BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
 		public:
 			static CBasicPreview *pSingleInstance; // only single file can be previewed at a time
 

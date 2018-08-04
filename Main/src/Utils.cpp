@@ -606,14 +606,25 @@ namespace TUtils{
 		for( const float dpiScaleFactor=LogicalUnitScaleFactor; nValues--; *values++/=dpiScaleFactor );
 	}
 
-	void WriteToFile(CFile &f,LPCTSTR text){
+	CFile &WriteToFile(CFile &f,LPCTSTR text){
 		// writes specified Text into the File
 		f.Write( text, ::lstrlen(text) );
+		return f;
 	}
-	void WriteToFile(CFile &f,int number){
-		// writes specified Number into the File
+	CFile &WriteToFile(CFile &f,TCHAR chr){
+		// writes specified Character into the File
+		f.Write( &chr, sizeof(TCHAR) );
+		return f;
+	}
+	CFile &WriteToFile(CFile &f,int number,LPCTSTR formatting){
+		// writes specified Number into the File using the given Formatting
 		TCHAR buf[16];
-		WriteToFile( f, _itot( number,buf,10) );
+		::wsprintf( buf, formatting, number );
+		return WriteToFile(f,buf);
+	}
+	CFile &WriteToFile(CFile &f,int number){
+		// writes specified Number into the File
+		return WriteToFile(f,number,_T("%d"));
 	}
 
 	PTCHAR GetApplicationOnlineDocumentUrl(LPCTSTR documentName,PTCHAR buffer){

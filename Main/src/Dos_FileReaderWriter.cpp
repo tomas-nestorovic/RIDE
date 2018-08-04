@@ -23,10 +23,6 @@
 
 
 
-	static void WINAPI AfxThrowInvalidArgException(){
-		// without this function, we wouldn't be able to build the "MFC 4.2" version!
-	}
-
 	DWORD CDos::CFileReaderWriter::GetLength() const{
 		// returns the File size
 		return fileSize;

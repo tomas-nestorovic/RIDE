@@ -1691,5 +1691,5 @@ error:		return ::GetLastError();
 				}
 				break;
 		}
-		return CImage::OnCmdMsg(nID,nCode,pExtra,pHandlerInfo);
+		return __super::OnCmdMsg(nID,nCode,pExtra,pHandlerInfo);
 	}

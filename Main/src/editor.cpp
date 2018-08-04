@@ -398,7 +398,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 
 	afx_msg void CRideApp::__showAbout__() const{
 		// about
-		TUtils::Information( _T("Version ") APP_VERSION _T("\n\n© tomascz, 2018") );
+		TUtils::Information( _T("Version ") APP_VERSION _T("\n\ntomascz, 2015-2018") );
 	}
 
 
@@ -484,4 +484,8 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		*fileName='\0';
 		if (__doPromptFileName__( fileName, true, AFX_IDS_OPENFILE, OFN_FILEMUSTEXIST, NULL ))
 			OpenDocumentFile(fileName);
+	}
+
+	void WINAPI AfxThrowInvalidArgException(){
+		// without this function, we wouldn't be able to build the "MFC 4.2" version!
 	}

@@ -663,7 +663,7 @@
 				// enabling/disabling importing of zero-length Files
 				__writeProfileBool__( INI_ALLOW_ZERO_LENGTH_FILES, zeroLengthFilesEnabled=!zeroLengthFilesEnabled );
 				return TCmdResult::DONE;
-			case ID_TRDOS_DEFRAGMENT:{
+			case ID_DOS_DEFRAGMENT:{
 				// defragmenting the disk
 				if (image->__reportWriteProtection__()) return TCmdResult::DONE;
 				const bool ews0=exportWholeSectors;

@@ -7,18 +7,17 @@
 
 	static const RECT defaultRect={ 0, 0, 0, 0 };
 
-	CDos::CFilePreview::CFilePreview(const CWnd *pView,LPCTSTR iniSection,const CFileManagerView &rFileManager,WORD initialWindowWidth,WORD initialWindowHeight)
+	CDos::CFilePreview::CFilePreview(const CWnd *pView,LPCTSTR iniSection,const CFileManagerView &rFileManager,WORD initialWindowWidth,WORD initialWindowHeight,DWORD resourceId)
 		// ctor
 		// - initialization
 		: pView(pView)
 		, iniSection(iniSection) , rFileManager(rFileManager)
 		, pdt( DOS->BeginDirectoryTraversal() ) {
 		// - creating the Preview FrameWindow
-		CreateEx(	WS_EX_TOPMOST,
-					NULL, NULL,
-					WS_CAPTION|WS_SYSMENU|WS_THICKFRAME|WS_VISIBLE,
-					CRect(defaultRect), NULL, 0
-				);
+		Create(	NULL, NULL,
+				WS_CAPTION|WS_SYSMENU|WS_THICKFRAME|WS_VISIBLE,
+				CRect(defaultRect), NULL, (LPCTSTR)resourceId, WS_EX_TOPMOST
+			);
 		// - restoring previous position of Preview on the screen
 		const float scaleFactor=TUtils::LogicalUnitScaleFactor;
 		const CString s=app.GetProfileString(iniSection,INI_POSITION,_T(""));
@@ -118,6 +117,37 @@
 		return TRUE;
 	}
 
+	BOOL CDos::CFilePreview::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){
+		// command processing
+		switch (nCode){
+			case CN_UPDATE_COMMAND_UI:
+				// update
+				switch (nID){
+					case ID_NEXT:
+					case ID_PREV:
+					case IDCLOSE:
+						((CCmdUI *)pExtra)->Enable(TRUE);
+						return TRUE;
+				}
+				break;
+			case CN_COMMAND:
+				// command
+				switch (nID){
+					case ID_NEXT:
+						__showNextFile__();
+						return TRUE;
+					case ID_PREV:
+						__showPreviousFile__();
+						return TRUE;
+					case IDCLOSE:
+						DestroyWindow();
+						return TRUE;
+				}
+				break;
+		}
+		return __super::OnCmdMsg(nID,nCode,pExtra,pHandlerInfo);
+	}
+
 	LRESULT CDos::CFilePreview::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
 		// window procedure
 		switch (msg){
@@ -130,6 +160,26 @@
 					return 0;
 				}else
 					break;
+			case WM_KEYDOWN:
+				// character
+				switch (wParam){
+					case VK_ESCAPE:
+						// closing the Preview
+						DestroyWindow();
+						return 0;
+					case VK_SPACE:
+					case VK_RIGHT:
+					case VK_NEXT: // page down
+						// next File
+						__showNextFile__();
+						break;
+					case VK_LEFT:
+					case VK_PRIOR: // page up
+						// previous File
+						__showPreviousFile__();
+						break;
+				}
+				break;
 			case WM_NCDESTROY:{
 				// window is about to be destroyed
 				// - saving current position on the Screen for next time
