@@ -40,6 +40,7 @@
 #define IDR_IMAGE_PATCH                 186
 #define IDR_GDOS_FILE_ETC               188
 #define IDR_DOS_RECOGNITION             189
+#define IDR_SPECTRUM_PREVIEW_BASIC      193
 #define ID_HIDDEN                       1018
 #define ID_SYSTEM                       1019
 #define ID_CONNECTED                    1020
@@ -143,13 +144,11 @@
 #define ID_MDOS_VERSION1                40135
 #define ID_MDOS_VERSION2                40136
 #define ID_HELP_FAQ                     40139
-#define ID_HELP_WHATSNEWONLINE          40140
 #define ID_HELP_WHATSNEW                40141
 #define ID_TAPE_CLOSE                   40147
 #define ID_IMAGE_DUMP                   40148
 #define ID_IMAGE_PATCH                  40149
 #define ID_IMAGE_PROTECT                40150
-#define ID_TRDOS_DEFRAGMENT             40155
 #define ID_TRDOS_FILE_LENGTH_FROM_DIRENTRY 40156
 #define ID_TRDOS_FILE_LENGTH_OCCUPIED_SECTORS 40157
 #define ID_TRACKMAP_STATUS              40158
@@ -186,6 +185,9 @@
 #define ID_DOS_SHELLCOMPLIANTNAMES      40208
 #define ID_DOS_TAKEATOUR                40210
 #define ID_ZX_PREVIEWASBASIC            40211
+#define ID_PRINT                        40213
+#define ID_NEXT                         40214
+#define ID_PREV                         40215
 #define ID_Y                            58113
 #define ID_W                            58114
 #define ID_H                            58115
@@ -197,8 +199,8 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        193
-#define _APS_NEXT_COMMAND_VALUE         40212
+#define _APS_NEXT_RESOURCE_VALUE        195
+#define _APS_NEXT_COMMAND_VALUE         40216
 #define _APS_NEXT_CONTROL_VALUE         1151
 #define _APS_NEXT_SYMED_VALUE           103
 #endif

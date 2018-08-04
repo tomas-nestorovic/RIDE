@@ -69,12 +69,13 @@ END
 IDR_TRDOS ACCELERATORS DISCARDABLE 
 BEGIN
     "4",            ID_ZX_PREVIEWASSCREEN,  VIRTKEY, CONTROL, NOINVERT
-    "6",            ID_TRDOS_DEFRAGMENT,    VIRTKEY, CONTROL, NOINVERT
+    "6",            ID_DOS_DEFRAGMENT,      VIRTKEY, CONTROL, NOINVERT
     "B",            ID_DOS_PREVIEWASBINARY, VIRTKEY, CONTROL, NOINVERT
     "E",            ID_TRDOS_FILE_LENGTH_OCCUPIED_SECTORS, VIRTKEY, CONTROL, 
                                                     NOINVERT
     "F",            ID_DOS_FORMAT,          VIRTKEY, SHIFT, CONTROL, 
                                                     NOINVERT
+    "K",            ID_ZX_PREVIEWASBASIC,   VIRTKEY, CONTROL, NOINVERT
     "R",            ID_TRDOS_FILE_LENGTH_FROM_DIRENTRY, VIRTKEY, CONTROL, 
                                                     NOINVERT
 END
@@ -92,6 +93,7 @@ BEGIN
     "B",            ID_DOS_PREVIEWASBINARY, VIRTKEY, CONTROL, NOINVERT
     "F",            ID_DOS_FORMAT,          VIRTKEY, SHIFT, CONTROL, 
                                                     NOINVERT
+    "K",            ID_ZX_PREVIEWASBASIC,   VIRTKEY, CONTROL, NOINVERT
 END
 
 
@@ -167,6 +169,7 @@ BEGIN
         MENUITEM "Unformat cylinders...",       ID_DOS_UNFORMAT
         MENUITEM SEPARATOR
         MENUITEM "Show as Screen$\tCtrl+4",     ID_ZX_PREVIEWASSCREEN
+        MENUITEM "Show as BASIC program\tCtrl+K", ID_ZX_PREVIEWASBASIC
         MENUITEM "Show as binary\tCtrl+B",      ID_DOS_PREVIEWASBINARY
         MENUITEM SEPARATOR
         MENUITEM "Take a tour (online)",        ID_DOS_TAKEATOUR
@@ -229,7 +232,7 @@ BEGIN
     BEGIN
         MENUITEM "Verify...",                   ID_DOS_VERIFY, GRAYED
         MENUITEM "Fill empty space...",         ID_DOS_FILL_EMPTY_SPACE
-        MENUITEM "Wipe empty space\tCtrl+6",    ID_TRDOS_DEFRAGMENT
+        MENUITEM "Wipe empty space\tCtrl+6",    ID_DOS_DEFRAGMENT
         POPUP "Tape"
         BEGIN
             MENUITEM "Insert tape...",              ID_TAPE_OPEN
@@ -253,6 +256,7 @@ BEGIN
         MENUITEM "Unformat cylinders...",       ID_DOS_UNFORMAT
         MENUITEM SEPARATOR
         MENUITEM "Browse as Screen$\tCtrl+4",   ID_ZX_PREVIEWASSCREEN
+        MENUITEM "Show as BASIC program\tCtrl+K", ID_ZX_PREVIEWASBASIC
         MENUITEM "Show as binary\tCtrl+B",      ID_DOS_PREVIEWASBINARY
         MENUITEM SEPARATOR
         MENUITEM "Take a tour (online)",        ID_DOS_TAKEATOUR, GRAYED
@@ -324,9 +328,24 @@ BEGIN
         MENUITEM "Unformat cylinders...",       ID_DOS_UNFORMAT
         MENUITEM SEPARATOR
         MENUITEM "Show as Screen$\tCtrl+4",     ID_ZX_PREVIEWASSCREEN
+        MENUITEM "Show as BASIC program\tCtrl+K", ID_ZX_PREVIEWASBASIC
         MENUITEM "Show as binary\tCtrl+B",      ID_DOS_PREVIEWASBINARY
         MENUITEM SEPARATOR
         MENUITEM "Take a tour (online)",        ID_DOS_TAKEATOUR, GRAYED
+    END
+END
+
+IDR_SPECTRUM_PREVIEW_BASIC MENU DISCARDABLE 
+BEGIN
+    POPUP "Preview"
+    BEGIN
+        MENUITEM "Apply colors",                ID_COLOR, CHECKED
+        MENUITEM "Show non-printable chars",    ID_PRINT
+        MENUITEM SEPARATOR
+        MENUITEM "Next file\tRight",            ID_NEXT
+        MENUITEM "Previous file\tLeft",         ID_PREV
+        MENUITEM SEPARATOR
+        MENUITEM "Close\tEsc",                  IDCLOSE
     END
 END
 
@@ -1289,7 +1308,7 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    ID_TRACKMAP_LEGEND      "Show key to read in the Track Map"
+    ID_TRACKMAP_LEGEND      "Show Track Map notation legend"
     ID_DOS_UNFORMAT         "Remove empty cylinders from the disk"
 END
 
@@ -1311,21 +1330,19 @@ STRINGTABLE DISCARDABLE
 BEGIN
     ID_TAPE_CLOSE           "Eject inserted tape"
     ID_IMAGE_DUMP           "Duplicate content to a different medium"
-    ID_IMAGE_PATCH          "xxxxx patch (only fdds can be patched)"
+    ID_IMAGE_PATCH          "Apply existing patch to the disk content (only floppies can be patched)"
     ID_IMAGE_PROTECT        "Toggle the write protection on and off\nWrite protection"
-    ID_TRDOS_DEFRAGMENT     "Reposition files at the disk to gain more free space"
-    ID_TRDOS_FILE_LENGTH_FROM_DIRENTRY 
-                            "Get information on file length from its directory entry"
+    ID_TRDOS_FILE_LENGTH_FROM_DIRENTRY "Get file length from directory entry"
     ID_TRDOS_FILE_LENGTH_OCCUPIED_SECTORS 
                             "Infer file length from the number of sectors occupied"
     ID_TRACKMAP_STATUS      "Show sector statuses\nSector statuses"
-    ID_TRACKMAP_DATA        "Show sector data\nSector data"
+    ID_TRACKMAP_DATA        "Show healthy sector data\nSector data"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    ID_HELP_FAQ             "Read through Frequently Asked Questions (FAQ; online only)"
-    ID_HELP_WHATSNEWONLINE  "See latest modifications made to the application (online only)"
+    ID_HELP_FAQ             "Read through Frequently Asked Questions (FAQ)"
+    ID_HELP_WHATSNEW        "See the application evolution over time"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -1341,23 +1358,24 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    ID_FILEMANAGER_REFRESH  "Refresh view on the current directory"
+    ID_FILEMANAGER_REFRESH  "Refresh view at the current directory"
     ID_TRACKMAP_NUMBERING   "Show each sector's number\nSector numbering"
     ID_FDD_SETTINGS         "Drive access settings\nDrive access settings"
+    ID_APP_UPDATE           "Check if you are using the latest and greatest version"
     ID_WEB_DEFAULT_BROWSER  "Open in default browser\nOpen in default browser"
     ID_DOS_PREVIEWASBINARY  "Show raw content of files in hexa-mode"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    ID_TRACKMAP_BAD_DATA    "Show bad sector data\nBad sector data"
+    ID_TRACKMAP_BAD_DATA    "Show any sector data\nBad sector data"
     ID_TRACKMAP_STATISTICS  "Collect and show statistics on space usage"
     ID_DOS_VERIFY           "Not implemented yet"
-    ID_DOS_DEFRAGMENT       "Not implemented yet"
-    ID_DOS_FILL_EMPTY_SPACE "Fill officially empty space with a particular value"
-    ID_MSDOS_REMOVE_LONG_NAMES 
-                            "Irrevertibly remove long names from directories, chosen next"
-    ID_MSDOS_IGNORE_LONG_NAMES "Toggle between long and short (8.3) names"
+    ID_DOS_DEFRAGMENT       "Reposition files on the disk to gain more free space"
+    ID_DOS_FILL_EMPTY_SPACE "Flood officially empty space with a particular value"
+    ID_MSDOS_REMOVE_LONG_NAMES "Remove long names from selected directories"
+    ID_MSDOS_IGNORE_LONG_NAMES 
+                            "Toggle view between long and short (8.3) names"
     ID_FILEMANAGER_FILE_EDIT "Edit parameters of the first selected file"
     ID_FILEMANAGER_FILE_DELETE "Delete selected files\nDelete"
     ID_FILEMANAGER_BIG_ICONS "Show files as large icons\nLarge icons"
@@ -1371,7 +1389,20 @@ STRINGTABLE DISCARDABLE
 BEGIN
     ID_FILEMANAGER_SUBDIR_CREATE 
                             "Create a subdirectory in the current directory"
+    ID_FILEMANAGER_FILE_INFORMATION 
+                            "Show available information on current selection"
+    ID_MSDOS_IGNOREDOT      "Toggle displaying of ""self"""
+    ID_MSDOS_IGNOREDOTDOT   "Toggle displaying of parent folder"
     ID_DOS_FILE_ZERO_LENGTH "Allow importing of zero length files"
+    ID_RECOGNIZE            "Adjust the order in which DOSes are tried to be recognized"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_DOS_SHELLCOMPLIANTNAMES 
+                            "Use only FAT32 legal characters in export names and don't append import information"
+    ID_DOS_TAKEATOUR        "Learn more about this DOS implementation"
+    ID_ZX_PREVIEWASBASIC    "Show files as BASIC program listings"
 END
 
 #endif    // Neutral resources
