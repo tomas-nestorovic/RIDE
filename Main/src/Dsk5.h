@@ -34,7 +34,11 @@
 			bool __readAndValidate__(CFile &f);
 		} *PTrackInfo;
 
-		bool rev5;
+		struct TParams sealed{
+			bool rev5;
+
+			TParams();
+		} params;
 		#pragma pack(1)
 		struct TDiskInfo sealed{
 			char header[34];
@@ -43,6 +47,8 @@
 			BYTE nHeads;
 			WORD std_trackLength;
 			BYTE rev5_trackOffsets256[DSK_REV5_TRACKS_MAX];
+
+			TDiskInfo(const TParams &rParams);
 		} diskInfo;
 		PTrackInfo tracks[DSK_REV5_TRACKS_MAX]; // each TrackInfo followed by data of its Sectors
 
@@ -50,7 +56,9 @@
 		WORD __getSectorLength__(const TSectorInfo *si) const;
 		WORD __getTrackLength256__(const TTrackInfo *ti) const;
 		void __freeAllTracks__();
-		TStdWinError __reset__(bool _rev5);
+		bool __showOptions__(bool allowTypeBeChanged);
+		TStdWinError __reset__();
+		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
 	public:
 		static const TProperties Properties;
 

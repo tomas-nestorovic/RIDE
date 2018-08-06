@@ -9,12 +9,41 @@
 													TMedium::FLOPPY_ANY, // supported Media
 													1,2*6144	// Sector supported min and max length
 												};
+
+	#define INI_DSK	_T("DSK")
+
+	#define INI_VERSION		_T("ver")
+	#define INI_CREATOR		_T("crt")
+
+	CDsk5::TParams::TParams()
+		// ctor
+		: rev5( app.GetProfileInt(INI_DSK,INI_VERSION,1) ) {
+	}
+
+	#define STD_HEADER		"MV - CPC" /* suffices to recognize "standard" DSK format */
+	#define STD_HEADER_LEN	8
+	#define REV5_HEADER		"EXTENDED CPC DSK File\r\nDisk-Info\r\n"
+
+	CDsk5::TDiskInfo::TDiskInfo(const TParams &rParams){
+		// ctor
+		::ZeroMemory(this,sizeof(*this));
+		::lstrcpyA( header, rParams.rev5?REV5_HEADER:STD_HEADER );
+		::strncpy(	creator,
+					app.GetProfileString( INI_DSK, INI_CREATOR, _T("RIDE ") APP_VERSION),
+					sizeof(creator)
+				);
+		nHeads=2;
+	}
+
+
+
+
+
 	CDsk5::CDsk5()
 		// ctor
-		: CFloppyImage(&Properties,IDR_IMAGE) , rev5(true) {
-		::ZeroMemory(&diskInfo,sizeof(TDiskInfo));
+		: CFloppyImage(&Properties,IDR_IMAGE)
+		, diskInfo(params) {
 		::ZeroMemory(tracks,sizeof(tracks));
-		__reset__(true); // to correctly initialize
 	}
 
 	CDsk5::~CDsk5(){
@@ -70,7 +99,7 @@
 
 	WORD CDsk5::__getSectorLength__(const TSectorInfo *si) const{
 		// determines and returns Sector length given its LengthCode and/or reported SectorLength
-		if (rev5)
+		if (params.rev5)
 			return si->rev5_sectorLength+0x7f & 0xff80; // rounding up to whole multiples of 128
 		else
 			return	si->__hasValidSectorLengthCode__() // if Code valid ...
@@ -99,10 +128,6 @@
 
 
 
-	#define STD_HEADER		"MV - CPC" /* suffices to recognize "standard" DSK format */
-	#define STD_HEADER_LEN	8
-	#define REV5_HEADER		"EXTENDED CPC DSK File\r\nDisk-Info\r\n"
-
 	BOOL CDsk5::OnOpenDocument(LPCTSTR lpszPathName){
 		// True <=> Image opened successfully, otherwise False
 		CFile f;
@@ -110,7 +135,7 @@
 		// - if data shorter than an empty Image, resetting to empty Image
 		const WORD nDiskInfoBytesRead=f.Read(&diskInfo,sizeof(TDiskInfo));
 		if (!nDiskInfoBytesRead){
-			__reset__(true); // to correctly initialize
+			__reset__(); // to correctly initialize using current Parameters
 			return TRUE;
 		}else if (nDiskInfoBytesRead<sizeof(TDiskInfo)){
 formatError: ::SetLastError(ERROR_BAD_FORMAT);
@@ -118,7 +143,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		}
 		// - reading content of the Image file and continuously validating its structure
 		PTrackInfo *ppti=tracks;
-		if ( rev5=!::strncmp(diskInfo.header,REV5_HEADER,sizeof(diskInfo.header)) ){
+		if ( params.rev5=!::strncmp(diskInfo.header,REV5_HEADER,sizeof(diskInfo.header)) ){
 			// DSK Revision 5
 			if (diskInfo.nCylinders*diskInfo.nHeads>DSK_REV5_TRACKS_MAX) goto formatError;
 			for( BYTE nTracks=DSK_REV5_TRACKS_MAX,*pOffset256=diskInfo.rev5_trackOffsets256; nTracks--; pOffset256++,ppti++ )
@@ -159,7 +184,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		if (!__openImageForWriting__(lpszPathName,&f)) return FALSE;
 		f.Write(&diskInfo,sizeof(TDiskInfo));
 		const PTrackInfo *ppti=tracks;
-		if (rev5){
+		if (params.rev5){
 			// DSK Revision 5
 			for( BYTE nTracks=DSK_REV5_TRACKS_MAX,*pOffset256=diskInfo.rev5_trackOffsets256; nTracks--; pOffset256++,ppti++ )
 				if (const BYTE tmp=*pOffset256)
@@ -256,25 +281,37 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		return ERROR_SUCCESS;
 	}
 
-	TStdWinError CDsk5::__reset__(bool _rev5){
+	TStdWinError CDsk5::__reset__(){
 		// resets internal representation of the disk (e.g. by disposing all content without warning)
 		// - disposing existing Tracks
 		__freeAllTracks__();
-		// - reinitializing to an empty Revision 5 Image
-		::ZeroMemory(&diskInfo,sizeof(TDiskInfo));
-			::lstrcpyA( diskInfo.header, (rev5=_rev5) ? REV5_HEADER : STD_HEADER );
-			diskInfo.nHeads=2;
+		// - reinitializing to an empty Image
+		diskInfo=TDiskInfo(params);
 		return ERROR_SUCCESS;
 	}
 
-	TStdWinError CDsk5::Reset(){
-		// resets internal representation of the disk (e.g. by disposing all content without warning)
+	bool CDsk5::__showOptions__(bool allowTypeBeChanged){
+		// True <=> Parameters and/or DiskInfo have changed, otherwise False
 		// - defining the Dialog
 		class CTypeSelectionDialog sealed:public CDialog{
 			void DoDataExchange(CDataExchange *pDX) override{
-				DDX_Radio( pDX, ID_STANDARD, typeId );
+				// exchange of data from and to controls
+				// . Type
+				int i=rParams.rev5;
+				DDX_Radio( pDX, ID_STANDARD, i );
+				rParams.rev5=i>0;
+				GetDlgItem(ID_STANDARD)->EnableWindow(allowTypeBeChanged);
+				GetDlgItem(ID_DRIVE)->EnableWindow(allowTypeBeChanged);
+				GetDlgItem(ID_PROTECTED)->EnableWindow(allowTypeBeChanged);
+				// . Creator
+				const BYTE nCyls=rDiskInfo.nCylinders;
+				rDiskInfo.nCylinders=0; // converting the Creator field to a null-terminated string
+				DDX_Text( pDX, ID_CREATOR, rDiskInfo.creator, sizeof(rDiskInfo.creator)+1 ); // "+1" = terminal Null character
+					DDV_MaxChars( pDX, rDiskInfo.creator, sizeof(rDiskInfo.creator) );
+				rDiskInfo.nCylinders=nCyls;
 			}
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
+				// window procedure
 				switch (msg){
 					case WM_NOTIFY:
 						if (((LPNMHDR)lParam)->code==NM_CLICK){
@@ -311,16 +348,37 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				return CDialog::WindowProc(msg,wParam,lParam);
 			}
 		public:
-			int typeId;
+			const bool allowTypeBeChanged;
+			TParams &rParams;
+			TDiskInfo &rDiskInfo;
 
-			CTypeSelectionDialog()
-				: CDialog(IDR_DSK_TYPE) , typeId(1) {
+			CTypeSelectionDialog(bool allowTypeBeChanged,TParams &rParams,TDiskInfo &rDiskInfo)
+				: CDialog(IDR_DSK_TYPE)
+				, allowTypeBeChanged(allowTypeBeChanged)
+				, rParams(rParams) , rDiskInfo(rDiskInfo) {
 			}
-		} d;
+		} d(allowTypeBeChanged,params,diskInfo);
 		// - showing the Dialog and processing its result
-		return	d.DoModal()==IDOK
-				? __reset__(d.typeId!=0) // resetting to selected format type
-				: ERROR_CANCELLED;
+		if (d.DoModal()==IDOK){
+			SetModifiedFlag(TRUE);
+			return true;
+		}else
+			return false;
+	}
+
+	TStdWinError CDsk5::Reset(){
+		// resets internal representation of the disk (e.g. by disposing all content without warning)
+		if (__showOptions__(true)){
+			// . saving settings
+			app.WriteProfileInt( INI_DSK, INI_VERSION, params.rev5 );
+			const BYTE nCyls=diskInfo.nCylinders;
+			diskInfo.nCylinders=0; // converting the Creator field to a null-terminated string
+				app.WriteProfileString( INI_DSK, INI_CREATOR, diskInfo.creator );
+			diskInfo.nCylinders=nCyls;
+			// . resetting this Image using the above parameters
+			return __reset__();
+		}else
+			return ERROR_CANCELLED;
 	}
 
 	TStdWinError CDsk5::FormatTrack(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte){
@@ -329,7 +387,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		WORD w=cyl*diskInfo.nHeads+head;
 		if (w>=DSK_REV5_TRACKS_MAX)
 			return ERROR_BAD_COMMAND;
-		if (!rev5 && cyl>diskInfo.nCylinders)
+		if (!params.rev5 && cyl>diskInfo.nCylinders)
 			return ERROR_BAD_COMMAND; // only at most one consecutive Track may be formatted at "standard" DSK
 		if (!nSectors) // formatting to "no Sectors" ...
 			return UnformatTrack(cyl,head); // ... is translated as unformatting the Track
@@ -375,14 +433,14 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			}else
 				return ERROR_NOT_ENOUGH_MEMORY;
 			w++;
-		}while (!rev5 && ++head<diskInfo.nHeads); // for "standard" DSK, formatting all Tracks on the Cylinder
+		}while (!params.rev5 && ++head<diskInfo.nHeads); // for "standard" DSK, formatting all Tracks on the Cylinder
 		m_bModified=TRUE;
 		return ERROR_SUCCESS;
 	}
 
 	TStdWinError CDsk5::UnformatTrack(TCylinder cyl,THead head){
 		// unformats given Track {Cylinder,Head}; returns Windows standard i/o error
-		if (head<diskInfo.nHeads && (rev5||cyl==diskInfo.nCylinders-1)){
+		if (head<diskInfo.nHeads && (params.rev5||cyl==diskInfo.nCylinders-1)){
 			// A&(B|C); A = existing Head, B|C = existing Cylinder
 			// . redimensioning the Image
 			if (const PTrackInfo ti=__findTrack__(cyl,head)){
@@ -399,4 +457,27 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			return ERROR_SUCCESS;
 		}else
 			return ERROR_BAD_COMMAND;
+	}
+
+	BOOL CDsk5::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){
+		// command processing
+		switch (nCode){
+			case CN_UPDATE_COMMAND_UI:
+				// update
+				switch (nID){
+					case ID_IMAGE_SETTINGS:
+						((CCmdUI *)pExtra)->Enable(TRUE);
+						return TRUE;
+				}
+				break;
+			case CN_COMMAND:
+				// command
+				switch (nID){
+					case ID_IMAGE_SETTINGS:
+						__showOptions__(false); // allowing changes in everything but Type of DSK Image (Std vs Rev5)
+						return TRUE;
+				}
+				break;
+		}
+		return __super::OnCmdMsg(nID,nCode,pExtra,pHandlerInfo);
 	}

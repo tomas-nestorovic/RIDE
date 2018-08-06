@@ -118,6 +118,7 @@
 #define ID_IDFIELD_REPLACE              1147
 #define ID_IDFIELD_VALUE                1148
 #define ID_DATAFIELD                    1149
+#define ID_CREATOR                      1151
 #define ID_TDI_SWITCH                   40033
 #define ID_TDI_SWITCH_BACK              40034
 #define ID_EDIT_SELECT_NONE             40057
@@ -149,6 +150,7 @@
 #define ID_IMAGE_DUMP                   40148
 #define ID_IMAGE_PATCH                  40149
 #define ID_IMAGE_PROTECT                40150
+#define ID_IMAGE_SETTINGS               40151
 #define ID_TRDOS_FILE_LENGTH_FROM_DIRENTRY 40156
 #define ID_TRDOS_FILE_LENGTH_OCCUPIED_SECTORS 40157
 #define ID_TRACKMAP_STATUS              40158
@@ -169,7 +171,6 @@
 #define ID_FILEMANAGER_FILE_COMPARE     40175
 #define ID_FILEMANAGER_REFRESH          40176
 #define ID_TRACKMAP_NUMBERING           40178
-#define ID_FDD_SETTINGS                 40179
 #define ID_APP_UPDATE                   40185
 #define ID_WEB_NAVIGATE_BACK            40187
 #define ID_WEB_NAVIGATE_FORTH           40188
@@ -200,8 +201,8 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        195
-#define _APS_NEXT_COMMAND_VALUE         40216
-#define _APS_NEXT_CONTROL_VALUE         1151
+#define _APS_NEXT_COMMAND_VALUE         40217
+#define _APS_NEXT_CONTROL_VALUE         1152
 #define _APS_NEXT_SYMED_VALUE           103
 #endif
 #endif

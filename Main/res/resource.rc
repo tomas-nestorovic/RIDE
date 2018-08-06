@@ -120,6 +120,7 @@ BEGIN
         MENUITEM "Apply &patch...",             ID_IMAGE_PATCH, GRAYED
         MENUITEM SEPARATOR
         MENUITEM "&Write protected\tCtrl+W",    ID_IMAGE_PROTECT
+        MENUITEM "Options...",                  ID_IMAGE_SETTINGS
         MENUITEM SEPARATOR
         MENUITEM "No recent files yet",         ID_FILE_MRU_FILE1, GRAYED
         MENUITEM SEPARATOR
@@ -360,7 +361,6 @@ IDR_FILEMANAGER         BITMAP  DISCARDABLE     "fileManager.bmp"
 IDR_MAINFRAME           BITMAP  DISCARDABLE     "mainFrame.bmp"
 IDR_ZX_TAPE             BITMAP  DISCARDABLE     "spectrumTape.bmp"
 IDR_IMAGE               BITMAP  DISCARDABLE     "image.bmp"
-IDR_FDD                 BITMAP  DISCARDABLE     "fdd.bmp"
 IDR_WEBPAGE             BITMAP  DISCARDABLE     "webPage.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
@@ -407,12 +407,7 @@ END
 IDR_IMAGE TOOLBAR DISCARDABLE  16, 16
 BEGIN
     BUTTON      ID_IMAGE_PROTECT
-END
-
-IDR_FDD TOOLBAR DISCARDABLE  16, 16
-BEGIN
-    BUTTON      ID_IMAGE_PROTECT
-    BUTTON      ID_FDD_SETTINGS
+    BUTTON      ID_IMAGE_SETTINGS
 END
 
 IDR_WEBPAGE TOOLBAR DISCARDABLE  16, 16
@@ -849,21 +844,24 @@ BEGIN
     LTEXT           "x",ID_INFORMATION,7,7,258,8,NOT WS_GROUP
 END
 
-IDR_DSK_TYPE DIALOG DISCARDABLE  0, 0, 151, 82
+IDR_DSK_TYPE DIALOG DISCARDABLE  0, 0, 146, 97
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
 CAPTION "DSK image settings"
 FONT 8, "MS Sans Serif"
 BEGIN
-    DEFPUSHBUTTON   "OK",IDOK,59,61,49,14
-    PUSHBUTTON      "Cancel",IDCANCEL,112,61,32,14
-    CONTROL         "&Standard",ID_STANDARD,"Button",BS_AUTORADIOBUTTON | 
-                    WS_GROUP,10,11,45,10
-    CONTROL         "&Revision 5 (recommended)",ID_DRIVE,"Button",
-                    BS_AUTORADIOBUTTON,10,26,100,10
-    CONTROL         "&Patch",ID_PROTECTED,"Button",BS_AUTORADIOBUTTON,10,40,
-                    35,10
+    DEFPUSHBUTTON   "OK",IDOK,63,76,40,14
+    PUSHBUTTON      "Cancel",IDCANCEL,107,76,32,14
     CONTROL         "<a id=""ID_HELP"">Need help?</a>",ID_HELP_INDEX,"SysLink",
-                    WS_TABSTOP,7,64,45,11
+                    WS_TABSTOP,7,79,45,11
+    LTEXT           "Type:",IDC_STATIC,7,7,19,8
+    CONTROL         "&Standard",ID_STANDARD,"Button",BS_AUTORADIOBUTTON | 
+                    WS_GROUP,39,7,45,10
+    CONTROL         "&Revision 5 (recommended)",ID_DRIVE,"Button",
+                    BS_AUTORADIOBUTTON,39,20,100,10
+    CONTROL         "&Patch",ID_PROTECTED,"Button",BS_AUTORADIOBUTTON,39,33,
+                    35,10
+    LTEXT           "&Creator:",IDC_STATIC,7,51,26,8
+    EDITTEXT        ID_CREATOR,39,49,100,14,ES_AUTOHSCROLL
 END
 
 IDR_IMAGE_DUMP_ERROR DIALOG DISCARDABLE  0, 0, 253, 125
@@ -1195,9 +1193,9 @@ BEGIN
     IDR_DSK_TYPE, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 144
+        RIGHTMARGIN, 139
         TOPMARGIN, 7
-        BOTTOMMARGIN, 75
+        BOTTOMMARGIN, 90
     END
 
     IDR_IMAGE_DUMP_ERROR, DIALOG
@@ -1332,6 +1330,7 @@ BEGIN
     ID_IMAGE_DUMP           "Duplicate content to a different medium"
     ID_IMAGE_PATCH          "Apply existing patch to the disk content (only floppies can be patched)"
     ID_IMAGE_PROTECT        "Toggle the write protection on and off\nWrite protection"
+    ID_IMAGE_SETTINGS       "Disk and drive options\nDisk and drive options"
     ID_TRDOS_FILE_LENGTH_FROM_DIRENTRY "Get file length from directory entry"
     ID_TRDOS_FILE_LENGTH_OCCUPIED_SECTORS 
                             "Infer file length from the number of sectors occupied"
@@ -1360,7 +1359,6 @@ STRINGTABLE DISCARDABLE
 BEGIN
     ID_FILEMANAGER_REFRESH  "Refresh view at the current directory"
     ID_TRACKMAP_NUMBERING   "Show each sector's number\nSector numbering"
-    ID_FDD_SETTINGS         "Drive access settings\nDrive access settings"
     ID_APP_UPDATE           "Check if you are using the latest and greatest version"
     ID_WEB_DEFAULT_BROWSER  "Open in default browser\nOpen in default browser"
     ID_DOS_PREVIEWASBINARY  "Show raw content of files in hexa-mode"

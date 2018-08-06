@@ -1677,7 +1677,7 @@ error:		return ::GetLastError();
 			case CN_UPDATE_COMMAND_UI:
 				// update
 				switch (nID){
-					case ID_FDD_SETTINGS:
+					case ID_IMAGE_SETTINGS:
 						((CCmdUI *)pExtra)->Enable(TRUE);
 						return TRUE;
 				}
@@ -1685,7 +1685,7 @@ error:		return ::GetLastError();
 			case CN_COMMAND:
 				// command
 				switch (nID){
-					case ID_FDD_SETTINGS:
+					case ID_IMAGE_SETTINGS:
 						__showSettingDialog__();
 						return TRUE;
 				}

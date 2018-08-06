@@ -352,6 +352,9 @@
 						((CCmdUI *)pExtra)->SetCheck(writeProtected);
 						((CCmdUI *)pExtra)->Enable(canBeModified);
 						return TRUE;
+					case ID_IMAGE_SETTINGS:
+						((CCmdUI *)pExtra)->Enable(FALSE); // no disk&drive options by default
+						return TRUE;
 					case ID_IMAGE_DUMP:
 						((CCmdUI *)pExtra)->Enable(TRUE);
 						return TRUE;
