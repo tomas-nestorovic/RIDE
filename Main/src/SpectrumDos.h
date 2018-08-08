@@ -84,7 +84,7 @@
 				struct TCursor sealed{
 					enum TMode:char{
 						K='K',
-						L='L',
+						LC='L', // "L" mode alternated with "C" mode
 						E='E',
 						G='G'
 					} mode;

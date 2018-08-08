@@ -118,6 +118,8 @@
 
 	#define CURSOR_PLACEHOLDER	2 /* dummy value to be replaced with a real Cursor */
 
+	#define IS_CAPSLOCK_ON()	((::GetKeyState(VK_CAPITAL)&1)>0)
+
 	LRESULT CALLBACK CSpectrumDos::CSpectrumFileManagerView::CVarLengthFileNameEditor::__wndProc__(HWND hEditor,UINT msg,WPARAM wParam,LPARAM lParam){
 		// window procedure
 		const PDos dos=CDos::__getFocused__();
@@ -148,7 +150,13 @@
 						r.bottom=( r.top=(r.bottom-zxRom.font.charHeight)/2 )+zxRom.font.charHeight;
 						::FillRect( dc, &r, CRideBrush::Black );
 						::SetTextColor( dc, 0xffffff );
-						::DrawText(	dc, (PTCHAR)&rEditor.cursor.mode,1, &r, DT_SINGLELINE|DT_LEFT|DT_VCENTER );
+						if (rEditor.cursor.mode==TCursor::LC && IS_CAPSLOCK_ON()){
+							// displaying the "C" Mode (Capitals) at place of the "L" mode
+							static const char ModeC='C';
+							::DrawTextA( dc, &ModeC,1, &r, DT_SINGLELINE|DT_LEFT|DT_VCENTER );
+						}else
+							// displaying current Mode
+							::DrawTextA( dc, (LPCSTR)&rEditor.cursor.mode,1, &r, DT_SINGLELINE|DT_LEFT|DT_VCENTER );
 					::SelectObject(dc,hFont0);
 				::EndPaint(hEditor,&ps);
 				return 0;
@@ -210,23 +218,25 @@
 					case VK_SHIFT:
 						// changing Cursor Mode after pressing Ctrl+Shift
 						if (::GetKeyState(VK_CONTROL)<0 && ::GetKeyState(VK_SHIFT)<0){
-							static const TCursor::TMode Modes[]={ TCursor::K, TCursor::L, TCursor::E, TCursor::G };
+							static const TCursor::TMode Modes[]={ TCursor::K, TCursor::LC, TCursor::E, TCursor::G };
 							TCursor::TMode &rMode=rEditor.cursor.mode;
 							BYTE m=0;
 							while (Modes[m++]!=rMode);
 							if (m==sizeof(Modes)/sizeof(TCursor::TMode))
 								m=0;
 							rMode=Modes[m];
-							::InvalidateRect(hEditor,NULL,TRUE);
-							return 0;
-						}else
-							break;
+						}
+						//fallthrough
+					case VK_CAPITAL:
+						// turning CapsLock on and Off
+						::InvalidateRect(hEditor,NULL,TRUE); // to update the Cursor (switching between the "L" and "C" Modes)
+						break;
 					default:
 						// adding a character to Buffer
 						static const BYTE ConversionAbcModeKL[]={ 226,'*','?',205,200,204,203,'^',172,'-','+','=','.',',',';','"',199,'<',195,'>',197,'/',201,96,198,':' };
 						static const BYTE Conversion012ModeKL[]={ '_','!','@','#','$','%','&','\'','(',')' };
 						if (wParam==' '){
-							rEditor.cursor.mode=TCursor::L; // switching to Mode "L" if Space is pressed
+							rEditor.cursor.mode=TCursor::LC; // switching to Mode "L" if Space is pressed (or alternatively C, if CapsLock on)
 							goto addCharInWParam;
 						}
 						switch (rEditor.cursor.mode){
@@ -243,8 +253,8 @@
 									else if (wParam>='0' && wParam<='9')
 addCharInWParam:						rEditor.__addChar__(wParam);
 								return 0;
-							case TCursor::L:
-								// Cursor in Mode L
+							case TCursor::LC:
+								// Cursor in Modes L (or alternatively C, if CapsLock on)
 								if (::GetKeyState(VK_CONTROL)<0){
 									if (wParam>='A' && wParam<='Z')
 										rEditor.__addChar__( ConversionAbcModeKL[wParam-'A'] );
@@ -252,8 +262,8 @@ addCharInWParam:						rEditor.__addChar__(wParam);
 										rEditor.__addChar__( Conversion012ModeKL[wParam-'0'] );
 								}else
 									if (wParam>='A' && wParam<='Z'){
-										if (::GetKeyState(VK_SHIFT)>=0) // if Shift not pressed, converting to lowercase letter
-											wParam|=32;
+										if (::GetKeyState(VK_SHIFT)>=0 && !IS_CAPSLOCK_ON()) // if Shift not pressed and CapsLock not on...
+											wParam|=32; // ... converting to lowercase letter
 										goto addCharInWParam;
 									}else if (wParam>='0' && wParam<='9')
 										goto addCharInWParam;
@@ -332,7 +342,7 @@ addCharInWParam:						rEditor.__addChar__(wParam);
 		length=::lstrlen(buf);
 		ASSERT(length<sizeof(buf));
 		// - initializing the Cursor
-		cursor.mode=TCursor::L;
+		cursor.mode=TCursor::LC; // "L" Cursor if CapsLock off, "C" Cursor if CapsLock on
 		cursor.position=length;
 		return pZxFileManager->__createStdEditor__(	file, buf, lengthMax,
 													CPropGridCtrl::TCustom::DefineEditor( 0, NULL, __create__, __help__, __onChanged__ )
