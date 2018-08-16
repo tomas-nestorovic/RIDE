@@ -1,6 +1,11 @@
 #ifndef STDAFX_H
 #define STDAFX_H
 
+// use Common-Controls library version 6
+#pragma comment(linker,"\"/manifestdependency:type='win32' \
+name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
+processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
+
 #define OEMRESOURCE	/* to enable using of predefined OBM_* resources */
 #include <windows.h>
 #include <WindowsX.h>

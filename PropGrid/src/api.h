@@ -98,6 +98,15 @@
 			//*/
 		};
 
+		struct PROPGRID_DECLSPEC THyperlink sealed{
+			typedef bool (WINAPI *TOnHyperlinkClicked)(PCustomParam,int hyperlinkId,LPCTSTR hyperlinkName);
+			typedef bool (WINAPI *TOnHyperlinkClickedA)(PCustomParam,int hyperlinkId,LPCSTR hyperlinkName);
+			typedef bool (WINAPI *TOnHyperlinkClickedW)(PCustomParam,int hyperlinkId,LPCWSTR hyperlinkName);
+
+			static PCEditor DefineEditorA(TOnHyperlinkClickedA onHyperlinkClicked);
+			static PCEditor DefineEditorW(TOnHyperlinkClickedW onHyperlinkClicked);
+		};
+
 		struct PROPGRID_DECLSPEC TCustom sealed{
 			typedef HWND HParentWnd;
 			typedef HWND (WINAPI *TCreateCustomMainEditor)(PValue,TValueSize,HParentWnd);

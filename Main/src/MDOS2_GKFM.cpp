@@ -161,7 +161,11 @@
 				CPropGridCtrl::AddProperty( hPropGrid, hAdvanced, _T("VideoRAM address"),
 											&rGkfm.aVRam, sizeof(WORD), advEditor
 										);
-		}
+		}else
+			CPropGridCtrl::AddProperty(	hPropGrid, hGkfm, _T("Create?"),
+										"<a>Yes</a>", -1,
+										CPropGridCtrl::THyperlink::DefineEditorA(__pg_createNew__)
+									);
 	}
 
 	void WINAPI CMDOS2::TBootSector::UReserved1::TGKFileManager::__pg_drawProperty__(PVOID,LPCVOID bootSector,short,PDRAWITEMSTRUCT pdis){
@@ -355,4 +359,34 @@ errorText:				TCHAR buf[400];
 			return CBootView::__bootSectorModified__(NULL,0);
 		}else
 			return false;
+	}
+
+	bool WINAPI CMDOS2::TBootSector::UReserved1::TGKFileManager::__pg_createNew__(CPropGridCtrl::PCustomParam,int hyperlinkId,LPCTSTR hyperlinkName){
+		// True <=> PropertyGrid's Editor can be destroyed after this function has terminated, otherwise False
+		const PImage image=CDos::__getFocused__()->image;
+		const PBootSector pBootSector=(PBootSector)image->GetSectorData(CHS);
+		TBootSector tmpBootSector=*pBootSector;
+			static const TGKFileManager DefGkfm={	0x4d46, // textual representation of "FM" string
+													8, 112, 120, 40, // y, x, w, h [in pixels]
+													56, // color (black text on white background)
+													5, 40,	// [dy,dx] offset of the text from window's upper left corner
+													34210,	// address of the text in memory
+													34209,	// address of the window
+													0,		// always zero
+													31014,	// address of icon in memory
+													16463	// address of window in Spectrum's VideoRAM
+												};
+			tmpBootSector.reserved1.gkfm=DefGkfm;
+			static const BYTE DefGkfmText[]={	0,255,
+												'P','R','O','X','I','M','A',',',' ','v','.','o','.','s','.',15,
+												'S','o','f','t','w','a','r','e',15,
+												'n','o','v',128,' ','d','i','m','e','n','z','e',13
+											};
+			::memcpy( &tmpBootSector.reserved1.undefined[208], DefGkfmText, sizeof(DefGkfmText) );
+		if (__pg_editProperty__(NULL,&tmpBootSector,0)){
+			// creation of GKFM confirmed
+			*pBootSector=tmpBootSector; // adopting confimed values
+			image->UpdateAllViews(NULL);
+		}
+		return true; // True = destroy PropertyGrid's Editor
 	}

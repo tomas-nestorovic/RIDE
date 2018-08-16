@@ -43,6 +43,7 @@
 		CBootView(PDos dos,RCPhysicalAddress rChsBoot);
 
 		void OnDraw(CDC *pDC) override sealed;
+		void OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint) override;
 		void PostNcDestroy() override;
 		virtual void GetCommonBootParameters(RCommonBootParameters rParam,PSectorData boot)=0;
 		virtual void AddCustomBootParameters(HWND hPropGrid,HANDLE hGeometry,HANDLE hVolume,PSectorData boot)=0;

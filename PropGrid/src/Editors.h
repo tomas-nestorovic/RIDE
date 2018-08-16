@@ -166,6 +166,22 @@
 	};
 
 	#pragma pack(1)
+	struct THyperlinkEditor sealed:public TEditor{
+		const bool wideChar;
+		const CPropGridCtrl::THyperlink::TOnHyperlinkClicked onHyperlinkClicked;
+	private:
+		void __drawValue__(const TPropGridInfo::TItem::TValue &value,PDRAWITEMSTRUCT pdis) const override;
+		HWND __createMainControl__(const TPropGridInfo::TItem::TValue &value,HWND hParent) const override;
+		bool __tryToAcceptMainCtrlValue__() const override;
+		LRESULT __mainCtrl_wndProc__(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam) const override;
+	public:
+		THyperlinkEditor(
+			bool wideChar,
+			CPropGridCtrl::THyperlink::TOnHyperlinkClicked onHyperlinkClicked
+		);
+	};
+
+	#pragma pack(1)
 	typedef const struct TCustomEditor sealed:public TEditor{
 		const CPropGridCtrl::TDrawValueHandler drawValue;
 		const CPropGridCtrl::TCustom::TCreateCustomMainEditor createCustomMainEditor;

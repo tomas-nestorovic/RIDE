@@ -174,7 +174,7 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 			return -1;
 		// - getting Boot Sector data
 		WORD bootSectorDataRealLength=0; // initializing just in case the Boot Sector is not found
-		const PSectorData boot=IMAGE->GetSectorData(chsBoot,&bootSectorDataRealLength);
+		IMAGE->GetSectorData(chsBoot,&bootSectorDataRealLength);
 		// - creating the Content
 		//CCreateContext cc;
 		//cc.m_pCurrentDoc=dos->image;
@@ -191,6 +191,22 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 				//hexaEditor.CreateEx( 0, HEXAEDITOR_BASE_CLASS, NULL, AFX_WS_DEFAULT_VIEW&~WS_BORDER, RECT(), NULL, content->IdFromRowCol(0,1), NULL );
 		OnSize( SIZE_RESTORED, lpcs->cx, lpcs->cy );
 		// - populating the PropertyGrid with values from Boot Sector
+		OnUpdate(NULL,0,NULL);
+		// - manually setting that none of the Splitter cells is the actual View
+		//nop (see OnKillFocus)
+		// - currently it's this Boot that's displayed
+		pCurrentlyShown=this;
+		return 0;
+	}
+
+	void CBootView::OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint){
+		// request to refresh the display of content
+		// - getting Boot Sector data
+		WORD bootSectorDataRealLength=0; // initializing just in case the Boot Sector is not found
+		const PSectorData boot=IMAGE->GetSectorData(chsBoot,&bootSectorDataRealLength);
+		// - resetting the PropertyGrid
+		CPropGridCtrl::RemoveProperty( propGrid.m_hWnd, NULL );
+		// - populating the PropertyGrid with values from the Boot Sector (if any found)
 		if (boot){
 			// Boot Sector found - populating the PropertyGrid
 			// . basic parameters from the Boot Sector
@@ -239,13 +255,9 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 																	),
 											false
 										);
-		// - manually setting that none of the Splitter cells is an actual View
-		//nop (see OnKillFocus)
+		// - reflecting write-protection into the look of controls
 		if (IMAGE->IsWriteProtected())
 			__updateLookOfControls__();
-		// - currently it's this Boot that's displayed
-		pCurrentlyShown=this;
-		return 0;
 	}
 
 	afx_msg void CBootView::OnSize(UINT nType,int cx,int cy){
