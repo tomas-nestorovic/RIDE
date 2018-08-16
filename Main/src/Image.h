@@ -202,7 +202,7 @@
 		CMainWindow::CDockableToolBar toolbar;
 		PDos dos;
 
-		CImage(PCProperties _properties,UINT idToolbarRes);
+		CImage(PCProperties _properties);
 		~CImage();
 
 		bool IsWriteProtected() const;

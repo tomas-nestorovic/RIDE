@@ -15,7 +15,7 @@
 
 	CImageRaw::CImageRaw(PCProperties properties)
 		// ctor
-		: CImage(properties,IDR_IMAGE)
+		: CImage(properties)
 		, trackAccessScheme(TTrackScheme::BY_CYLINDERS)
 		, nCylinders(0) , nSectors(0) // = not initialized - see SetMediumTypeAndGeometry
 		, bufferOfCylinders(NULL) , sizeWithoutGeometry(0) {

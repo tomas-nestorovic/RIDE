@@ -21,9 +21,9 @@
 
 
 
-	CFloppyImage::CFloppyImage(PCProperties properties,UINT idToolbarRes)
+	CFloppyImage::CFloppyImage(PCProperties properties)
 		// ctor
-		: CImage(properties,idToolbarRes) , floppyType(TMedium::UNKNOWN) {
+		: CImage(properties) , floppyType(TMedium::UNKNOWN) {
 	}
 
 

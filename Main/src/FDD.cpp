@@ -427,7 +427,7 @@ TUtils::Information("--- EVERYTHING OK ---");
 	CFDD::CFDD()
 		// ctor
 		// - base
-		: CFloppyImage(&Properties,IDR_FDD)
+		: CFloppyImage(&Properties)
 		// - initialization
 		, dataBuffer( ::VirtualAlloc(NULL,SECTOR_LENGTH_MAX,MEM_COMMIT,PAGE_READWRITE) ) {
 		::ZeroMemory( internalTracks, sizeof(internalTracks) );

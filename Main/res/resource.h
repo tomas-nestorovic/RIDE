@@ -33,7 +33,6 @@
 #define IDR_IMAGE_DUMP_ERROR            172
 #define IDR_FDD_ACCESS                  173
 #define IDR_IMAGE                       174
-#define IDR_FDD                         178
 #define IDR_FDD_LATENCY                 181
 #define IDR_WEBPAGE                     183
 #define IDR_IMAGE_DUMP_ERROR_RESOLUTION 185

@@ -41,7 +41,7 @@
 
 	CDsk5::CDsk5()
 		// ctor
-		: CFloppyImage(&Properties,IDR_IMAGE)
+		: CFloppyImage(&Properties)
 		, diskInfo(params) {
 		::ZeroMemory(tracks,sizeof(tracks));
 	}

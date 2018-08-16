@@ -281,12 +281,12 @@
 
 
 
-	CImage::CImage(PCProperties _properties,UINT idToolbarRes)
+	CImage::CImage(PCProperties _properties)
 		// ctor
 		// - initialization
 		: properties(_properties) , dos(NULL) , writeProtected(true) , canBeModified(true)
 		// - creating Toolbar (its displaying in CTdiView::ShowContent)
-		, toolbar(idToolbarRes,ID_IMAGE) { // ID_IMAGE = "some" unique ID
+		, toolbar(IDR_IMAGE,ID_IMAGE) { // ID_IMAGE = "some" unique ID
 		// - when destroying all Views, the document must exist further (e.g. when switching Tabs in TDI)
 		m_bAutoDelete=FALSE;
 	}
