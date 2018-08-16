@@ -174,7 +174,7 @@ void __debug__(LPCTSTR text){
 		// True <=> at least two Sectors on the Track have the same ID, otherwise False
 		BYTE nAppearances=0;
 		const TSectorInfo *psi=sectors;
-		for( BYTE n=nSectors; n--; nAppearances+=*pid==psi->id );
+		for( BYTE n=nSectors; n--; nAppearances+=*pid==psi++->id );
 		return nAppearances>1;
 	}
 
