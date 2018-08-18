@@ -291,7 +291,7 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 		__updateLookOfControls__();
 	}
 	void CBootView::__updateLookOfControls__(){
-//		CPropGridCtrl::EnableProperty( propGrid.m_hWnd, NULL, !IMAGE->IsWriteProtected() );
+		CPropGridCtrl::EnableProperty( propGrid.m_hWnd, NULL, !IMAGE->IsWriteProtected() );
 		hexaEditor.SetEditable( !IMAGE->IsWriteProtected() );
 	}
 
