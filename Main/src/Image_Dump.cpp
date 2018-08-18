@@ -629,16 +629,16 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 							TCHAR url[200];
 							switch (d.DoModal()){
 								case ID_IMAGE:
-									TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineDocumentUrl(_T("faq_floppy2image.html"),url) );
+									TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_floppy2image.html"),url) );
 									break;
 								case ID_DRIVE:
-									TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineDocumentUrl(_T("faq_image2floppy.html"),url) );
+									TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_image2floppy.html"),url) );
 									break;
 								case ID_FILE:
-									TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineDocumentUrl(_T("faq_convertImage.html"),url) );
+									TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_convertImage.html"),url) );
 									break;
 								case ID_ACCURACY:
-									TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineDocumentUrl(_T("faq_copyFloppy.html"),url) );
+									TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_copyFloppy.html"),url) );
 									break;
 							}
 						}

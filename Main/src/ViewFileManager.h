@@ -31,6 +31,12 @@
 			SMALL_ICONS	=4,
 			LIST		=8
 		};
+
+		enum TConflictResolution:BYTE{
+			UNDETERMINED,
+			MERGE,
+			SKIP
+		};
 	protected:
 		struct TDirectoryStructureManagement sealed{
 			CDos::TFnGetCurrentDirectory fnGetCurrentDir;
@@ -74,12 +80,6 @@
 			CNameConflictResolutionDialog(LPCTSTR _conflictedName,LPCTSTR _conflictedNameType,LPCTSTR _captionForReplaceButton,LPCTSTR _captionForSkipButton);
 		};
 
-		enum TConflictResolution:BYTE{
-			UNDETERMINED,
-			MERGE,
-			SKIP
-		};
-
 		static void __informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId);
 		static LRESULT WINAPI __editLabel_wndProc__(HWND hEdit,UINT msg,WPARAM wParam,LPARAM lParam);
 		static UINT AFX_CDECL __selectionPropertyStatistics_thread__(PVOID _pCancelableAction);
@@ -108,7 +108,6 @@
 		TStdWinError __switchToDirectory__(PTCHAR path) const;
 		TStdWinError __skipNameConflict__(DWORD newFileSize,LPCTSTR newFileName,CDos::PFile conflict,TConflictResolution &rConflictedSiblingResolution) const;
 		TStdWinError __moveFile__(int &i,LPFILEDESCRIPTOR files,int nFiles,CDos::PFile &rMovedFile,TConflictResolution &rConflictedSiblingResolution);
-		TStdWinError __importFile__(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution);
 		TStdWinError __importPhysicalFile__(LPCTSTR pathAndName,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution);
 		TStdWinError __importVirtualFile__(int &i,LPCTSTR pathAndName,LPFILEDESCRIPTOR files,int nFiles,COleDataObject *pDataObject,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution);
 		CDos::PFile __getDirectoryUnderCursor__(CPoint &rPt) const;
@@ -244,6 +243,7 @@
 		POSITION GetLastSelectedFilePosition() const;
 		CDos::PFile GetPreviousSelectedFile(POSITION &pos) const;
 		DWORD GetCountOfSelectedFiles() const;
+		TStdWinError ImportFileAndResolveConflicts(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution);
 	};
 
 #endif // FILEMANAGERVIEW_H

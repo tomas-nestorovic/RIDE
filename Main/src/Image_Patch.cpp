@@ -168,7 +168,7 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 					case WM_NOTIFY:
 						if (((LPNMHDR)lParam)->code==NM_CLICK){
 							TCHAR url[200];
-							TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineDocumentUrl(_T("faq_patch.html"),url) );
+							TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_patch.html"),url) );
 						}
 						break;
 

@@ -627,14 +627,100 @@ namespace TUtils{
 		return WriteToFile(f,number,_T("%d"));
 	}
 
-	PTCHAR GetApplicationOnlineDocumentUrl(LPCTSTR documentName,PTCHAR buffer){
-		// fills the Buffer with URL of document that is part of this application's on-line presentation, and returns the Buffer
+	PTCHAR GetApplicationOnlineFileUrl(LPCTSTR documentName,PTCHAR buffer){
+		// fills the Buffer with URL of a file that is part of this application's on-line presentation, and returns the Buffer
 		#ifdef _DEBUG
-			::lstrcpy(buffer,_T("file://c:/Documents and Settings/Tom/Plocha/ride/www/"));
+			return ::lstrcat( ::lstrcpy(buffer,_T("file://c:/Documents and Settings/Tom/Plocha/ride/www/")), documentName );
 		#else
-			::lstrcpy(buffer,_T("http://nestorovic.hyperlink.cz/ride/html/"));
+			return ::lstrcat( ::lstrcpy(buffer,_T("http://nestorovic.hyperlink.cz/ride/")), documentName );
 		#endif
-		return ::lstrcat(buffer,documentName);
+	}
+
+	PTCHAR GetApplicationOnlineHtmlDocumentUrl(LPCTSTR documentName,PTCHAR buffer){
+		// fills the Buffer with URL of an HTML document that is part of this application's on-line presentation, and returns the Buffer
+		return ::lstrcat( GetApplicationOnlineFileUrl(_T("html/"),buffer), documentName );
+	}
+
+
+
+
+
+
+
+
+
+
+
+	struct TInternetHandle sealed{
+		const HINTERNET handle;
+
+		TInternetHandle(HINTERNET handle)
+			// ctor
+			: handle(handle) {
+		}
+		~TInternetHandle(){
+			// dtor
+			if (handle!=NULL){
+				const DWORD err0=::GetLastError(); // backing up any existing error
+					::InternetCloseHandle(handle); // ignoring the error produced here
+				::SetLastError(err0); // and restoring the backed up error
+			}
+		}
+		operator HINTERNET() const{
+			return handle;
+		}
+	};
+
+	#pragma pack(1)
+	struct TDownloadSingleFileParams sealed{
+		const LPCTSTR onlineFileUrl;
+		const PBYTE buffer;
+		const DWORD bufferSize;
+		DWORD outOnlineFileSize;
+
+		TDownloadSingleFileParams(LPCTSTR onlineFileUrl,PBYTE buffer,DWORD bufferSize)
+			// ctor
+			: onlineFileUrl(onlineFileUrl)
+			, buffer(buffer) , bufferSize(bufferSize)
+			, outOnlineFileSize(-1) {
+		}
+	};
+
+	static UINT AFX_CDECL __downloadSingleFile_thread__(PVOID _pCancelableAction){
+		// thread to download an on-line file with given URL to a local Buffer; caller is to dimension the Buffer so that it can contain the whole on-line file
+		TBackgroundActionCancelable *const pAction=(TBackgroundActionCancelable *)_pCancelableAction;
+		TDownloadSingleFileParams &rdsfp=*(TDownloadSingleFileParams *)pAction->fnParams;
+		// - opening a new Session
+		const TInternetHandle hSession=::InternetOpen(	_T("RIDE") APP_VERSION,
+														INTERNET_OPEN_TYPE_PRECONFIG,
+														NULL, NULL,
+														0
+													);
+		if (hSession==NULL)
+quitWithErr:return pAction->TerminateWithError(::GetLastError());
+		// - opening the on-line file with given URL
+		const TInternetHandle hOnlineFile=::InternetOpenUrl(hSession,
+															rdsfp.onlineFileUrl,
+															NULL, 0,
+															INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE,
+															INTERNET_NO_CALLBACK
+														);
+		if (hOnlineFile==NULL)
+			goto quitWithErr;
+		// - reading the on-line file to the Buffer, allocated and initialized by the caller; caller is to dimension the Buffer so that it can contain the whole on-line file
+		if (!::InternetReadFile( hOnlineFile, rdsfp.buffer, rdsfp.bufferSize, &rdsfp.outOnlineFileSize ))
+			goto quitWithErr;
+		// - downloaded successfully
+		return pAction->TerminateWithError(ERROR_SUCCESS);
+	}
+
+	TStdWinError DownloadSingleFile(LPCTSTR onlineFileUrl,PBYTE fileDataBuffer,DWORD fileDataBufferLength,PDWORD pDownloadedFileSize){
+		// returns the result of downloading the file with given Url
+		TDownloadSingleFileParams params( onlineFileUrl, fileDataBuffer, fileDataBufferLength );
+		const TStdWinError err=TBackgroundActionCancelable(__downloadSingleFile_thread__,&params).CarryOut(-1);
+		if (pDownloadedFileSize!=NULL)
+			*pDownloadedFileSize=params.outOnlineFileSize;
+		return err;
 	}
 
 }

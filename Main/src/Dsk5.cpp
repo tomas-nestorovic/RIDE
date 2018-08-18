@@ -336,10 +336,10 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 							TCHAR url[200];
 							switch (d.DoModal()){
 								case ID_SIZE:
-									TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineDocumentUrl(_T("faq_dsk.html"),url) );
+									TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_dsk.html"),url) );
 									break;
 								case ID_FORMAT:
-									TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineDocumentUrl(_T("faq_patch.html"),url) );
+									TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_patch.html"),url) );
 									break;
 							}
 						}

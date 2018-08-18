@@ -287,7 +287,7 @@
 									TCHAR url[200];
 									switch (d.DoModal()){
 										case ID_DRIVE:
-											TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineDocumentUrl(_T("faq_recognition.html"),url) );
+											TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_recognition.html"),url) );
 											break;
 									}
 									return TRUE;

@@ -235,7 +235,7 @@
 	void CMainWindow::OpenApplicationPresentationWebPage(LPCTSTR tabCaption,LPCTSTR documentName){
 		// in new Tab opens the specified Document from application's on-line presentation
 		TCHAR url[MAX_PATH];
-		OpenWebPage( tabCaption, TUtils::GetApplicationOnlineDocumentUrl(documentName,url) );
+		OpenWebPage( tabCaption, TUtils::GetApplicationOnlineHtmlDocumentUrl(documentName,url) );
 	}
 
 	afx_msg void CMainWindow::__openUrl_whatsNew__(){
@@ -276,7 +276,7 @@
 		CHtmlStatus *const phs=(CHtmlStatus *)pAction->fnParams;
 		// - step 1) connecting to the server
 		TCHAR buf[MAX_PATH];
-		phs->Navigate( TUtils::GetApplicationOnlineDocumentUrl(VERSION_LATEST_WEB,buf) );
+		phs->Navigate( TUtils::GetApplicationOnlineHtmlDocumentUrl(VERSION_LATEST_WEB,buf) );
 		while (!phs->connected){
 			if (!pAction->bContinue) return ERROR_CANCELLED;
 			::Sleep(100);

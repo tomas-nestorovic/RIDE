@@ -2,6 +2,7 @@
 #include "MDOS2.h"
 
 	#define INI_GKFM_PREVIEW		_T("gkfmpreviewmsg")
+	#define INI_GKFM_IMPORT_LATER	_T("gkfmimplater")
 
 	#define GKFM_WINDOW_MARGIN	2
 	#define GKFM_ICON_WIDTH		32
@@ -128,6 +129,9 @@
 		else
 			return false;
 	}
+
+	#define GKFM_UPDATE_ONLINE	_T("Update on-line")
+
 	void CMDOS2::TBootSector::UReserved1::TGKFileManager::__addToPropertyGrid__(HWND hPropGrid,PBootSector boot){
 		// adds a property showing the presence of GK's File Manager on the disk into PropertyGrid
 		const HANDLE hGkfm=CPropGridCtrl::AddCategory(hPropGrid,NULL,_T("GK's File Manager"));
@@ -161,6 +165,11 @@
 				CPropGridCtrl::AddProperty( hPropGrid, hAdvanced, _T("VideoRAM address"),
 											&rGkfm.aVRam, sizeof(WORD), advEditor
 										);
+			// . offering to update the GKFM on the disk from an on-line resource
+			CPropGridCtrl::AddProperty(	hPropGrid, hGkfm, _T(""),
+										"<a>" GKFM_UPDATE_ONLINE "</a>", -1,
+										CPropGridCtrl::THyperlink::DefineEditorA(__pg_updateOnline__)
+									);
 		}else
 			CPropGridCtrl::AddProperty(	hPropGrid, hGkfm, _T("Create?"),
 										"<a>Yes</a>", -1,
@@ -361,9 +370,14 @@ errorText:				TCHAR buf[400];
 			return false;
 	}
 
-	bool WINAPI CMDOS2::TBootSector::UReserved1::TGKFileManager::__pg_createNew__(CPropGridCtrl::PCustomParam,int hyperlinkId,LPCTSTR hyperlinkName){
+	#define GKFM_IMPORT_NAME	_T("run.P ZXP500001L2200T8")
+	#define GKFM_ONLINE_NAME	_T("MDOS2/") GKFM_IMPORT_NAME
+	#define GKFM_NOT_MODIFIED	_T("No changes to the \"run.B\" file made (if any).")
+
+	bool WINAPI CMDOS2::TBootSector::UReserved1::TGKFileManager::__pg_createNew__(CPropGridCtrl::PCustomParam param,int hyperlinkId,LPCTSTR hyperlinkName){
 		// True <=> PropertyGrid's Editor can be destroyed after this function has terminated, otherwise False
-		const PImage image=CDos::__getFocused__()->image;
+		const PMDOS2 mdos=(PMDOS2)CDos::__getFocused__();
+		const PImage image=mdos->image;
 		const PBootSector pBootSector=(PBootSector)image->GetSectorData(CHS);
 		TBootSector tmpBootSector=*pBootSector;
 			static const TGKFileManager DefGkfm={	0x4d46, // textual representation of "FM" string
@@ -385,8 +399,34 @@ errorText:				TCHAR buf[400];
 			::memcpy( &tmpBootSector.reserved1.undefined[208], DefGkfmText, sizeof(DefGkfmText) );
 		if (__pg_editProperty__(NULL,&tmpBootSector,0)){
 			// creation of GKFM confirmed
+			// . accepting the GKFM record in the Boot Sector
 			*pBootSector=tmpBootSector; // adopting confimed values
 			image->UpdateAllViews(NULL);
+			// . downloading the GKFM binary from the Internet and importing it to the disk
+			if (TUtils::QuestionYesNo(_T("Import GKFM from the Internet to the disk?"),MB_DEFBUTTON1))
+				__pg_updateOnline__(param,0,NULL);
+			else
+				__informationWithCheckableShowNoMore__( _T("Okay! You can update it later by clicking \"") GKFM_UPDATE_ONLINE _T("\" in the PropertyGrid."), INI_GKFM_IMPORT_LATER );
 		}
+		return true; // True = destroy PropertyGrid's Editor
+	}
+
+	bool WINAPI CMDOS2::TBootSector::UReserved1::TGKFileManager::__pg_updateOnline__(CPropGridCtrl::PCustomParam,int hyperlinkId,LPCTSTR hyperlinkName){
+		// True <=> PropertyGrid's Editor can be destroyed after this function has terminated, otherwise False
+		BYTE gkfmDataBuffer[16384]; // sufficiently big buffer
+		DWORD gkfmDataLength;
+		TCHAR gkfmUrl[200];
+		TStdWinError err=TUtils::DownloadSingleFile(TUtils::GetApplicationOnlineFileUrl( GKFM_ONLINE_NAME, gkfmUrl ),
+													gkfmDataBuffer, sizeof(gkfmDataBuffer), &gkfmDataLength
+												);
+		if (err==ERROR_SUCCESS){
+			PFile tmp;
+			CFileManagerView::TConflictResolution conflictResolution=CFileManagerView::TConflictResolution::UNDETERMINED;
+			const PMDOS2 mdos=(PMDOS2)CDos::__getFocused__();
+			err=mdos->fileManager.ImportFileAndResolveConflicts( &CMemFile(gkfmDataBuffer,sizeof(gkfmDataBuffer)), gkfmDataLength, GKFM_IMPORT_NAME, 0, tmp, conflictResolution );
+			if (err!=ERROR_SUCCESS)
+				TUtils::FatalError( _T("Cannot import GKFM"), err, GKFM_NOT_MODIFIED );
+		}else
+			TUtils::FatalError( _T("File download failed"), err, GKFM_NOT_MODIFIED );
 		return true; // True = destroy PropertyGrid's Editor
 	}

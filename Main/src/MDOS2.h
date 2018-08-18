@@ -46,7 +46,8 @@
 					static BYTE __pg_getPropertyHeight__();
 					static void WINAPI __pg_drawProperty__(CPropGridCtrl::PCustomParam,LPCVOID bootSector,short,PDRAWITEMSTRUCT pdis);
 					static bool WINAPI __pg_editProperty__(CPropGridCtrl::PCustomParam,PVOID bootSector,short);
-					static bool WINAPI __pg_createNew__(CPropGridCtrl::PCustomParam,int hyperlinkId,LPCTSTR hyperlinkName);
+					static bool WINAPI __pg_createNew__(CPropGridCtrl::PCustomParam param,int hyperlinkId,LPCTSTR hyperlinkName);
+					static bool WINAPI __pg_updateOnline__(CPropGridCtrl::PCustomParam,int hyperlinkId,LPCTSTR hyperlinkName);
 					
 					WORD id;	// "FM" identification text
 					BYTE y,x;	// [Y,X] = [row,column] = upper left corner (in Pixels)

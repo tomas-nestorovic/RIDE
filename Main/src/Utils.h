@@ -56,7 +56,9 @@ namespace TUtils{
 	CFile &WriteToFile(CFile &f,TCHAR chr);
 	CFile &WriteToFile(CFile &f,int number,LPCTSTR formatting);
 	CFile &WriteToFile(CFile &f,int number);
-	PTCHAR GetApplicationOnlineDocumentUrl(LPCTSTR documentName,PTCHAR buffer);
+	PTCHAR GetApplicationOnlineFileUrl(LPCTSTR documentName,PTCHAR buffer);
+	PTCHAR GetApplicationOnlineHtmlDocumentUrl(LPCTSTR documentName,PTCHAR buffer);
+	TStdWinError DownloadSingleFile(LPCTSTR onlineFileUrl,PBYTE fileDataBuffer,DWORD fileDataBufferLength,PDWORD pDownloadedFileSize);
 }
 
 #endif // UTILS_H

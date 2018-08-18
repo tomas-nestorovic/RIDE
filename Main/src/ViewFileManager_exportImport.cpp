@@ -455,7 +455,7 @@ importQuit2:		::GlobalUnlock(hg);
 		return err;
 	}
 
-	TStdWinError CFileManagerView::__importFile__(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution){
+	TStdWinError CFileManagerView::ImportFileAndResolveConflicts(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution){
 		// imports physical or virtual File; returns Windows standard i/o error (ERROR_SUCCESS = imported successfully, ERROR_CANCELLED = import of a set of Files was cancelled, ERROR_* = other error)
 		do{
 			// - importing
@@ -500,7 +500,7 @@ importQuit2:		::GlobalUnlock(hg);
 		const DWORD winAttr=::GetFileAttributes(pathAndName);
 		if (winAttr&FILE_ATTRIBUTE_DIRECTORY){
 			// Directory
-			TStdWinError err=__importFile__( NULL, 0, fileName, winAttr, rImportedFile, rConflictedSiblingResolution );
+			TStdWinError err=ImportFileAndResolveConflicts( NULL, 0, fileName, winAttr, rImportedFile, rConflictedSiblingResolution );
 			if (err==ERROR_SUCCESS){
 				// Directory created successfully - recurrently importing all contained Files
 				const CDos::PFile currentDirectory=(DOS->*pDirectoryStructureManagement->fnGetCurrentDir)();
@@ -529,7 +529,7 @@ importQuit2:		::GlobalUnlock(hg);
 		}else{
 			// File
 			CFile f( pathAndName, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary );
-			return __importFile__( &f, f.GetLength(), fileName, winAttr, rImportedFile, rConflictedSiblingResolution );
+			return ImportFileAndResolveConflicts( &f, f.GetLength(), fileName, winAttr, rImportedFile, rConflictedSiblingResolution );
 		}
 	}
 
@@ -550,7 +550,7 @@ importQuit2:		::GlobalUnlock(hg);
 		if (winAttr&FILE_ATTRIBUTE_DIRECTORY){
 			// Directory
 			// . creating (must be now as below the cFileName member is changed)
-			TStdWinError err=__importFile__( NULL, 0, fileName, winAttr, rImportedFile, rConflictedSiblingResolution );
+			TStdWinError err=ImportFileAndResolveConflicts( NULL, 0, fileName, winAttr, rImportedFile, rConflictedSiblingResolution );
 			// . determining the range of Files to import into this Directory (all such Files in the input list have the same Directory path)
 			int j=++i;
 			for( ::lstrcat(lpfd->cFileName,_T("\\")); j<nFiles; j++ )
@@ -574,7 +574,7 @@ importQuit2:		::GlobalUnlock(hg);
 			// File
 			FORMATETC etcContent={ CRideApp::cfContent, NULL, DVASPECT_CONTENT, i++, TYMED_ISTREAM };
 			CFile *const f=pDataObject->GetFileData( CRideApp::cfContent, &etcContent ); // abstracting virtual data into a File
-				const TStdWinError err=__importFile__( f, lpfd->nFileSizeLow, fileName, winAttr, rImportedFile, rConflictedSiblingResolution );
+				const TStdWinError err=ImportFileAndResolveConflicts( f, lpfd->nFileSizeLow, fileName, winAttr, rImportedFile, rConflictedSiblingResolution );
 			delete f;
 			return err;
 		}

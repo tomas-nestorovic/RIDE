@@ -109,13 +109,13 @@
 					TCHAR url[200];
 					switch (d.DoModal()){
 						case ID_DRIVE:
-							TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineDocumentUrl(_T("faq_realFdd.html"),url) );
+							TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_realFdd.html"),url) );
 							break;
 						case ID_FORMAT:
-							TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineDocumentUrl(_T("faq_formatFloppy.html"),url) );
+							TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_formatFloppy.html"),url) );
 							break;
 						case ID_SYSTEM:
-							TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineDocumentUrl(_T("faq_accessFloppy.html"),url) );
+							TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_accessFloppy.html"),url) );
 							break;
 					}
 					*pResult=0;
