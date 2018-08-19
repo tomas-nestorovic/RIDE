@@ -171,8 +171,8 @@
 										CPropGridCtrl::THyperlink::DefineEditorA(__pg_updateOnline__)
 									);
 		}else
-			CPropGridCtrl::AddProperty(	hPropGrid, hGkfm, _T("Create?"),
-										"<a>Yes</a>", -1,
+			CPropGridCtrl::AddProperty(	hPropGrid, hGkfm, _T(""),
+										"<a>Create</a>", -1,
 										CPropGridCtrl::THyperlink::DefineEditorA(__pg_createNew__)
 									);
 	}
@@ -403,7 +403,7 @@ errorText:				TCHAR buf[400];
 			*pBootSector=tmpBootSector; // adopting confimed values
 			image->UpdateAllViews(NULL);
 			// . downloading the GKFM binary from the Internet and importing it to the disk
-			if (TUtils::QuestionYesNo(_T("Import GKFM from the Internet to the disk?"),MB_DEFBUTTON1))
+			if (TUtils::QuestionYesNo(_T("Import latest version of GKFM from on-line resource to the disk?"),MB_DEFBUTTON1))
 				__pg_updateOnline__(param,0,NULL);
 			else
 				__informationWithCheckableShowNoMore__( _T("Okay! You can update it later by clicking \"") GKFM_UPDATE_ONLINE _T("\" in the PropertyGrid."), INI_GKFM_IMPORT_LATER );
@@ -416,9 +416,11 @@ errorText:				TCHAR buf[400];
 		BYTE gkfmDataBuffer[16384]; // sufficiently big buffer
 		DWORD gkfmDataLength;
 		TCHAR gkfmUrl[200];
-		TStdWinError err=TUtils::DownloadSingleFile(TUtils::GetApplicationOnlineFileUrl( GKFM_ONLINE_NAME, gkfmUrl ),
-													gkfmDataBuffer, sizeof(gkfmDataBuffer), &gkfmDataLength
-												);
+		TStdWinError err =	TUtils::DownloadSingleFile( // also displays the error message in case of problems
+								TUtils::GetApplicationOnlineFileUrl( GKFM_ONLINE_NAME, gkfmUrl ),
+								gkfmDataBuffer, sizeof(gkfmDataBuffer), &gkfmDataLength,
+								GKFM_NOT_MODIFIED
+							);
 		if (err==ERROR_SUCCESS){
 			PFile tmp;
 			CFileManagerView::TConflictResolution conflictResolution=CFileManagerView::TConflictResolution::UNDETERMINED;
@@ -426,7 +428,6 @@ errorText:				TCHAR buf[400];
 			err=mdos->fileManager.ImportFileAndResolveConflicts( &CMemFile(gkfmDataBuffer,sizeof(gkfmDataBuffer)), gkfmDataLength, GKFM_IMPORT_NAME, 0, tmp, conflictResolution );
 			if (err!=ERROR_SUCCESS)
 				TUtils::FatalError( _T("Cannot import GKFM"), err, GKFM_NOT_MODIFIED );
-		}else
-			TUtils::FatalError( _T("File download failed"), err, GKFM_NOT_MODIFIED );
+		}
 		return true; // True = destroy PropertyGrid's Editor
 	}

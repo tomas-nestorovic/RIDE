@@ -85,6 +85,7 @@ typedef const WORD *PCWORD;
 
 #define DLL_UXTHEME		_T("UxTheme.dll")
 #define DLL_SHELL32		_T("shell32.dll")
+#define DLL_WININET		_T("wininet.dll")
 
 #define APP_VERSION		_T("1.4.4 debug special")
 
