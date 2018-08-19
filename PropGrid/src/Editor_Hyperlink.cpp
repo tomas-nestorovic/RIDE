@@ -24,28 +24,31 @@
 		// - creating the temporary SysLink control to adopt the appearance from
 		const WORD w=pdis->rcItem.right-pdis->rcItem.left, h=pdis->rcItem.bottom-pdis->rcItem.top;
 		const HWND hSysLink=__createMainControl__( value, pdis->hwndItem );
+		::SendMessage( hSysLink, WM_SETFONT, (WPARAM)TPropGridInfo::FONT_DEFAULT, 0 ); // explicitly setting DPI-scaled font
 		::SetWindowPos(	hSysLink, NULL,
 						pdis->rcItem.left, pdis->rcItem.top,
 						w, h,
 						SWP_NOZORDER | SWP_SHOWWINDOW
 					);
-		// - capturing the SysLink visuals to a TemporaryBitmap
-		::SendMessage( hSysLink, WM_PAINT, 0, 0 );
-		const HDC dcBmp=::CreateCompatibleDC(pdis->hDC);
-			const HBITMAP hBmp=::CreateCompatibleBitmap( pdis->hDC, w, h );
-			const HGDIOBJ hBmp0=::SelectObject(dcBmp,hBmp);
-			const HDC dc=::GetDC(hSysLink);
-				RECT r;
-				::GetClientRect(hSysLink,&r);
-				::BitBlt( dcBmp, 0,0, r.right-r.left,r.bottom-r.top, dc, 0,0, SRCCOPY );
-			::ReleaseDC(hSysLink,dc);
+		// - adopting the SysLink visuals
+		::SendMessage( hSysLink, WM_PAINT, 0, 0 ); // forcing the painting onto the screen
+		const HDC dcTmpBmp=::CreateCompatibleDC(pdis->hDC);
+			const HBITMAP hTmpBmp=::CreateCompatibleBitmap( pdis->hDC, w, h ); // TemporaryBitmap
+			const HGDIOBJ hBmp0=::SelectObject(dcTmpBmp,hTmpBmp);
+				// . capturing the SysLink visuals to the TemporaryBitmap
+				const HDC dc=::GetDC(hSysLink);
+					RECT r;
+					::GetClientRect(hSysLink,&r);
+					::BitBlt( dcTmpBmp, 0,0, w,h, dc, 0,0, SRCCOPY );
+				::ReleaseDC(hSysLink,dc);
+				// . destroying the temporary SysLink control
+				::DestroyWindow(hSysLink);
+				// . drawing the captured visuals at place of the SysLink control
+				::TransparentBlt( pdis->hDC, 0,0, w,h, dcTmpBmp, 0,0, w,h, ::GetSysColor(COLOR_BTNFACE) );
+			::DeleteObject( ::SelectObject(dcTmpBmp,hBmp0) );
+		::DeleteDC(dcTmpBmp);
 		// - destroying the temporary SysLink control
-		::DestroyWindow(hSysLink);
-		// - drawing the captured visuals at place of the SysLink control
-			::TransparentBlt( pdis->hDC, 0,0, w,h, dcBmp, pdis->rcItem.left,pdis->rcItem.top, w,h, ::GetSysColor(COLOR_BTNFACE) );
-		// - destroying the TemporaryBitmap
-			::DeleteObject( ::SelectObject(dcBmp,hBmp0) );
-		::DeleteDC(dcBmp);
+		//nop (already destroyed when adopting the visuals above)
 	}
 
 	HWND THyperlinkEditor::__createMainControl__(const TPropGridInfo::TItem::TValue &value,HWND hParent) const{
