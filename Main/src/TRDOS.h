@@ -1,6 +1,8 @@
 #ifndef TRDOS_H
 #define TRDOS_H
 
+	#define TRDOS_NAME_BASE	_T("TR-DOS")
+
 	#define TRDOS503_FILE_NAME_LENGTH_MAX	8
 
 	#define TRDOS503_TRACK_SECTORS_COUNT	16
@@ -120,7 +122,7 @@
 
 		static const CFormatDialog::TStdFormat StdFormats[];
 
-		static bool __recognizeDisk__(PImage image,PFormat pFormatBoot);
+		static TStdWinError __recognizeDisk__(PImage image,PFormat pFormatBoot);
 		static PBootSector __getBootSector__(PImage image);
 		static UINT AFX_CDECL __defragmentation_thread__(PVOID _pCancelableAction);
 		static void __informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId);
@@ -169,7 +171,7 @@
 	#define TRDOS504_BOOT_LABEL_LENGTH_MAX	8
 
 	class CTRDOS504 sealed:public CTRDOS503{
-		static bool __recognizeDisk__(PImage image,PFormat pFormatBoot);
+		static TStdWinError __recognizeDisk__(PImage image,PFormat pFormatBoot);
 	public:
 		static const TProperties Properties;
 

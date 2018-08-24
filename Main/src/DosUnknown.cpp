@@ -3,9 +3,10 @@
 	static PDos __instantiate__(PImage image,PCFormat pFormatBoot){
 		return new CUnknownDos(image,pFormatBoot);
 	}
-	static bool __recognize__(PImage image,PFormat pFormatBoot){
+	static TStdWinError __recognize__(PImage image,PFormat pFormatBoot){
+		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
 		*pFormatBoot=TFormat::Unknown;
-		return true;
+		return ERROR_SUCCESS;
 	}
 	const CDos::TProperties CUnknownDos::Properties={
 		NULL, // name

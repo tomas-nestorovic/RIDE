@@ -7,7 +7,7 @@
 		id=::GetTickCount();
 		::memcpy(	::memset(label,' ',MSDOS7_LABEL_LENGTH_MAX),
 					VOLUME_LABEL_DEFAULT_ANSI_8CHARS,
-					::lstrlenA(VOLUME_LABEL_DEFAULT_ANSI_8CHARS)
+					sizeof(VOLUME_LABEL_DEFAULT_ANSI_8CHARS)-1
 				);
 		::wsprintfA( fatId, "FAT%d   ", rFat.type*4 );
 	}
@@ -181,27 +181,31 @@
 
 
 
-	bool CMSDOS7::__recognizeDisk__(PImage image,PFormat pFormatBoot){
-		// True <=> DOS recognizes its own disk, otherwise False
+	TStdWinError CMSDOS7::__recognizeDisk__(PImage image,PFormat pFormatBoot){
+		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
 		// - in case the Image is a physical floppy disk, determining the Type of Medium (type of floppy)
 		TFormat fmt={ TMedium::FLOPPY_DD, 1,1,MSDOS7_SECTOR_BKBOOT, MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD, 1 };
 		if (image->SetMediumTypeAndGeometry( &fmt, StdSidesMap, 1 )!=ERROR_SUCCESS){
 			fmt.mediumType=TMedium::FLOPPY_HD;
-			if (image->SetMediumTypeAndGeometry( &fmt, StdSidesMap, 1 )!=ERROR_SUCCESS)
-				return false; // unknown Medium Type
+			if (const TStdWinError err=image->SetMediumTypeAndGeometry( &fmt, StdSidesMap, 1 ))
+				return err; // unknown Medium Type
 		}
 		// - finding Boot Sector
 		bool bootSectorRecognized;
 		const TPhysicalAddress bootChs=TBootSector::__getRecognizedChs__(image,true,&bootSectorRecognized);
 		if (!bootSectorRecognized)
-			return false; // neither normal nor backup Boot Sector recognized
+			return ERROR_UNRECOGNIZED_VOLUME; // neither normal nor backup Boot Sector recognized
 		const PCBootSector bootSector=(PCBootSector)image->GetSectorData(bootChs);
 		// - MS-DOS recognized
 		*pFormatBoot=fmt;
 		bootSector->__getGeometry__(pFormatBoot); // receives only geometry; Medium Type received in MS-DOS ctor
-		return	pFormatBoot->GetCountOfAllSectors()
-				>= // testing minimal number of Sectors
-				__cluster2logSector__( MSDOS7_DATA_CLUSTER_FIRST, bootSector );
+		if (pFormatBoot->GetCountOfAllSectors()
+			>= // testing minimal number of Sectors
+			__cluster2logSector__( MSDOS7_DATA_CLUSTER_FIRST, bootSector )
+		)
+			return ERROR_SUCCESS;
+		else
+			return ERROR_UNRECOGNIZED_VOLUME;
 	}
 
 	PDos CMSDOS7::__instantiate__(PImage image,PCFormat pFormatBoot){

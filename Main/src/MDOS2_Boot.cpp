@@ -6,22 +6,24 @@
 
 	const TPhysicalAddress CMDOS2::TBootSector::CHS={ 0, 0, {0,0,1,MDOS2_SECTOR_LENGTH_STD_CODE} };
 
-	bool CMDOS2::__recognizeDisk__(PImage image,PFormat pFormatBoot){
-		// True <=> DOS recognizes its own disk, otherwise False
+	TStdWinError CMDOS2::__recognizeDisk__(PImage image,PFormat pFormatBoot){
+		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
 		static const TFormat Fmt={ TMedium::FLOPPY_DD, 1,1,10, MDOS2_SECTOR_LENGTH_STD_CODE,MDOS2_SECTOR_LENGTH_STD, 1 };
 		if (image->SetMediumTypeAndGeometry(&Fmt,StdSidesMap,1)==ERROR_SUCCESS)
 			if (const PCBootSector boot=(PCBootSector)image->GetSectorData(TBootSector::CHS))
 				if (boot->sdos==SDOS_TEXT){
 					*pFormatBoot=Fmt;
-					return	( pFormatBoot->nCylinders=boot->currDrive.disk.nCylinders )
-							*
-							( pFormatBoot->nHeads=1+(boot->currDrive.disk.diskFlags>>4) )
-							*
-							( pFormatBoot->nSectors=boot->currDrive.disk.nSectors )
-							>= // testing minimal number of Sectors
-							MDOS2_DATA_LOGSECTOR_FIRST;
+					if (( pFormatBoot->nCylinders=boot->currDrive.disk.nCylinders )
+						*
+						( pFormatBoot->nHeads=1+(boot->currDrive.disk.diskFlags>>4) )
+						*
+						( pFormatBoot->nSectors=boot->currDrive.disk.nSectors )
+						>= // testing minimal number of Sectors
+						MDOS2_DATA_LOGSECTOR_FIRST
+					)
+						return ERROR_SUCCESS;
 				}
-		return false;
+		return ERROR_UNRECOGNIZED_VOLUME;
 	}
 
 	#define CYLINDER_COUNT_MIN	2

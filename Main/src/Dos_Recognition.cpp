@@ -4,7 +4,7 @@
 
 	#define INI_RECOGNITION_DOS_ID	_T("%08x")
 
-	CDos::TRecognition::TRecognition()
+	CDos::CRecognition::CRecognition()
 		// ctor
 		// - initialization
 		: nDoses(0) {
@@ -30,14 +30,14 @@
 			order[++nDoses]=&CUnknownDos::Properties;
 	}
 
-	void CDos::TRecognition::__saveToProfile__() const{
+	void CDos::CRecognition::__saveToProfile__() const{
 		// saves the Recognition Order to profile
 		TCHAR buf[1024],*p=buf;
 		for( BYTE i=1; i<=nDoses; p+=::wsprintf(p,INI_RECOGNITION_DOS_ID,order[i++]->id) ); // indexing starts from 1
 		app.WriteProfileString( INI_GENERAL, INI_RECOGNITION_ORDER, buf );
 	}
 
-	BYTE CDos::TRecognition::__addDosByPriorityDescending__(PCProperties props){
+	BYTE CDos::CRecognition::__addDosByPriorityDescending__(PCProperties props){
 		// adds specified DOS to the earliest possible moment in recognition, respecting eventual previous user-defined ordering; returns the 1-based index at which it was added to
 		BYTE i=__getOrderIndex__(&CUnknownDos::Properties);
 		while (i>1 && props->recognitionPriority>order[i-1]->recognitionPriority) // indexing starts from 1
@@ -50,7 +50,7 @@
 		return i;
 	}
 
-	BYTE CDos::TRecognition::__getOrderIndex__(PCProperties props) const{
+	BYTE CDos::CRecognition::__getOrderIndex__(PCProperties props) const{
 		// returns 1-based Order index of the particular DOS (or 0 if DOS not found in the Order array)
 		for( BYTE i=1; i<=nDoses; i++ ) // indexing starts from 1
 			if (order[i]==props)
@@ -58,18 +58,33 @@
 		return 0;
 	}
 
-	CDos::PCProperties CDos::TRecognition::__perform__(PImage image,PFormat pOutFormatBoot) const{
-		// returns Properties of DOS recognized in the specified Image (populates the output Format recognized in the boot Sector); returns UnknownDos if no DOS can be recognized
-		BYTE i=1; // indexing starts from 1
-		PCProperties props;
-		do{
-			props=order[i++];
-			if (props->fnRecognize(image,pOutFormatBoot))
-				break;
-		} while(true);
-		return props;
+	POSITION CDos::CRecognition::__getFirstRecognizedDosPosition__() const{
+		// returns the position of the first DOS that participates in Image recognition
+		return	order[1]!=&CUnknownDos::Properties // indexing starts from 1
+				? (POSITION)1
+				: NULL;
+	}
+	CDos::PCProperties CDos::CRecognition::__getNextRecognizedDos__(POSITION &pos) const{
+		// returns the Properties of the next DOS that participates in Image recognition
+		const PCProperties result=order[(BYTE)pos++];
+		if (order[(BYTE)pos]==&CUnknownDos::Properties)
+			pos=NULL;
+		return result;
 	}
 
+	CDos::PCProperties CDos::CRecognition::__perform__(PImage image,PFormat pOutFormatBoot) const{
+		// returns Properties of DOS recognized in the specified Image (populates the output Format recognized in the boot Sector); returns UnknownDos if no DOS can be recognized; returns Null if recognition sequence cancelled by the user
+		for( POSITION pos=__getFirstRecognizedDosPosition__(); pos; ){
+			const PCProperties props=__getNextRecognizedDos__(pos);
+			switch (props->fnRecognize(image,pOutFormatBoot)){
+				case ERROR_SUCCESS:
+					return props;
+				case ERROR_CANCELLED:
+					return NULL;
+			}
+		}
+		return &CUnknownDos::Properties;
+	}
 
 
 
@@ -83,7 +98,7 @@
 		// - defining the Dialog
 		class CAutomaticRecognitionOrderDialog sealed:public CDialog{
 		public:
-			CDos::TRecognition recognition;
+			CDos::CRecognition recognition;
 		private:
 			CDos::PCProperties newlyDetectedDoses[256];
 
@@ -215,7 +230,7 @@
 									break;
 								case ID_ORDER:{
 									// ordering automatically recognized DOSes by their RecognitionPriority descending
-									const CDos::TRecognition original(recognition);
+									const CDos::CRecognition original(recognition);
 									const BYTE iUnknownDos=original.__getOrderIndex__(&CUnknownDos::Properties);
 									::memmove(	&recognition.order[1], // indexing starts from 1
 												&recognition.order[iUnknownDos],

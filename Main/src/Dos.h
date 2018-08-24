@@ -28,7 +28,7 @@
 		typedef PVOID PFile;
 		typedef LPCVOID PCFile;
 
-		typedef bool (*TFnRecognize)(PImage image,PFormat pFormatBoot);
+		typedef TStdWinError (*TFnRecognize)(PImage image,PFormat pFormatBoot);
 		typedef PDos (*TFnInstantiate)(PImage image,PCFormat pFormatBoot);
 		typedef PFile (CDos::*TFnGetCurrentDirectory)() const;
 		typedef DWORD (CDos::*TFnGetCurrentDirectoryId)() const;
@@ -135,15 +135,20 @@
 			void Write(LPCVOID lpBuf,UINT nCount) override;
 		};
 
-		union UBigEndianWord{
+		struct TBigEndianWord sealed{
 		private:
-			WORD value;
-			struct{
-				BYTE highByte,lowByte;
-			};
+			BYTE highByte,lowByte;
 		public:
 			WORD operator=(WORD newValue);
 			operator WORD() const;
+		};
+
+		struct TBigEndianDWord sealed{
+		private:
+			TBigEndianWord highWord,lowWord;
+		public:
+			DWORD operator=(DWORD newValue);
+			operator DWORD() const;
 		};
 
 		const PImage image;
@@ -241,15 +246,18 @@
 			~CHexaPreview();
 		};
 
-		struct TRecognition sealed{
+		class CRecognition sealed{
+			friend class CMainWindow; // as that's where the CAutomaticRecognitionOrderDialog is defined
 			BYTE nDoses;
 			PCProperties order[(BYTE)-1];
-
-			TRecognition();
+		public:
+			CRecognition();
 
 			void __saveToProfile__() const;
 			BYTE __addDosByPriorityDescending__(PCProperties props);
 			BYTE __getOrderIndex__(PCProperties props) const;
+			POSITION __getFirstRecognizedDosPosition__() const;
+			PCProperties __getNextRecognizedDos__(POSITION &pos) const;
 			PCProperties __perform__(PImage image,PFormat pOutFormatBoot) const;
 		};
 

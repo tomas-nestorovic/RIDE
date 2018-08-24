@@ -15,7 +15,7 @@
 		id=BOOT_ID;
 		::memcpy(	::memset( label, ' ', nCharsInLabel ),
 					VOLUME_LABEL_DEFAULT_ANSI_8CHARS,
-					::lstrlenA(VOLUME_LABEL_DEFAULT_ANSI_8CHARS)
+					sizeof(VOLUME_LABEL_DEFAULT_ANSI_8CHARS)-1
 				);
 		::memset( password, PASSWORD_FILLER_BYTE, TRDOS503_BOOT_PASSWORD_LENGTH_MAX );
 		__setDiskType__(pFormatBoot);
@@ -37,11 +37,11 @@
 		return __getBootSector__(image);
 	}
 
-	bool CTRDOS503::__recognizeDisk__(PImage image,PFormat pFormatBoot){
-		// True <=> DOS recognizes its own disk, otherwise False
+	TStdWinError CTRDOS503::__recognizeDisk__(PImage image,PFormat pFormatBoot){
+		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
 		static const TFormat Fmt={ TMedium::FLOPPY_DD, 1,2,TRDOS503_TRACK_SECTORS_COUNT, TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD, 1 };
-		if (image->SetMediumTypeAndGeometry( &Fmt, StdSidesMap, TRDOS503_SECTOR_FIRST_NUMBER )!=ERROR_SUCCESS)
-			return false;
+		if (const TStdWinError err=image->SetMediumTypeAndGeometry( &Fmt, StdSidesMap, TRDOS503_SECTOR_FIRST_NUMBER ))
+			return err;
 		const PCBootSector boot=(PCBootSector)image->GetSectorData(TBootSector::CHS);
 		if (boot && boot->id==BOOT_ID){
 			*pFormatBoot=Fmt;
@@ -57,11 +57,11 @@
 					pFormatBoot->nHeads=1;
 					break;
 				default:
-					return false;
+					return ERROR_UNRECOGNIZED_VOLUME;
 			}
-			return true;
+			return ERROR_SUCCESS;
 		}else
-			return false;
+			return ERROR_UNRECOGNIZED_VOLUME;
 	}
 
 
@@ -84,7 +84,7 @@
 		{ SS40_CAPTION, 0, {TMedium::FLOPPY_DD,39,1,TRDOS503_TRACK_SECTORS_COUNT,TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD,1}, 1, 0, FDD_SECTOR_GAP3_STD, 0, 128 }
 	};
 	const CDos::TProperties CTRDOS503::Properties={
-		_T("TR-DOS 5.03"), // name
+		TRDOS_NAME_BASE _T(" 5.03"), // name
 		MAKE_DOS_ID('T','R','D','O','S','5','0','3'), // unique identifier
 		2, // recognition priority
 		__recognizeDisk__, // recognition function

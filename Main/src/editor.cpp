@@ -218,7 +218,7 @@
 			delete dos;
 			// . automatically recognizing suitable DOS (e.g. because a floppy might not have been formatted correctly)
 			TFormat formatBoot;
-			dos = image->dos = CDos::TRecognition().__perform__(image,&formatBoot)->fnInstantiate(image,&formatBoot);
+			dos = image->dos = CDos::CRecognition().__perform__(image,&formatBoot)->fnInstantiate(image,&formatBoot);
 			image->SetMediumTypeAndGeometry( &formatBoot, dos->sideMap, dos->properties->firstSectorNumber );
 			// . creating the user interface for recognized DOS
 			dos->CreateUserInterface( TDI_HWND ); // assumed always ERROR_SUCCESS
@@ -314,7 +314,12 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		if (recognizeDosAutomatically){
 			// automatic recognition of suitable DOS by sequentially testing each of them
 			::SetLastError(ERROR_SUCCESS); // assumption (no errors)
-			if (( dosProps=CDos::TRecognition().__perform__(image,&formatBoot) )==&CUnknownDos::Properties)
+			dosProps=CDos::CRecognition().__perform__(image,&formatBoot);
+			if (!dosProps){ // if recognition sequence cancelled ...
+				delete image;
+				return NULL; // ... no Image or disk is accessed
+			}
+			if (dosProps==&CUnknownDos::Properties)
 				TUtils::Information(_T("Cannot determine the DOS!") ENTERING_LIMITED_MODE );
 		}else{
 			// manual recognition of suitable DOS by user

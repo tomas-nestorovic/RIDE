@@ -488,10 +488,19 @@
 
 	TStdWinError CTRDOS503::CreateUserInterface(HWND hTdi){
 		// creates DOS-specific Tabs in TDI; returns Windows standard i/o error
+		// - base
 		CSpectrumDos::CreateUserInterface(hTdi); // guaranteed to always return ERROR_SUCCESS
+		// - creating the user interface
 		CTdiCtrl::AddTabLast( hTdi, TRACK_MAP_TAB_LABEL, &trackMap.tab, false, NULL, NULL );
 		CTdiCtrl::AddTabLast( hTdi, BOOT_SECTOR_TAB_LABEL, &boot.tab, false, NULL, NULL );
 		CTdiCtrl::AddTabLast( hTdi, FILE_MANAGER_TAB_LABEL, &fileManager.tab, true, NULL, NULL );
+		// - informing on how the SCL Images are opened
+		if (dynamic_cast<CSCL *>(image)!=NULL){
+			TCHAR buf[200];
+			::wsprintf( buf, _T("SCL images are always opened by the top-positioned TR-DOS in the recognition sequence (currently \"%s\")."), properties->name );
+			__informationWithCheckableShowNoMore__( buf, _T("sclnfo") );
+		}
+		// - user interface created successfully
 		return ERROR_SUCCESS;
 	}
 

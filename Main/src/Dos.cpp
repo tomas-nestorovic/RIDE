@@ -1086,13 +1086,31 @@ finished:
 
 
 
-	WORD CDos::UBigEndianWord::operator=(WORD newValue){
+	WORD CDos::TBigEndianWord::operator=(WORD newValue){
 		// "setter"
 		highByte=HIBYTE(newValue), lowByte=LOBYTE(newValue);
 		return newValue;
 	}
 
-	CDos::UBigEndianWord::operator WORD() const{
+	CDos::TBigEndianWord::operator WORD() const{
 		// "getter"
 		return MAKEWORD(lowByte,highByte);
+	}
+
+
+
+
+
+
+
+
+	DWORD CDos::TBigEndianDWord::operator=(DWORD newValue){
+		// "setter"
+		highWord=HIWORD(newValue), lowWord=LOWORD(newValue);
+		return newValue;
+	}
+
+	CDos::TBigEndianDWord::operator DWORD() const{
+		// "getter"
+		return MAKELONG(lowWord,highWord);
 	}

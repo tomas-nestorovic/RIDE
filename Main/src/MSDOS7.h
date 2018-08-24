@@ -256,7 +256,7 @@
 			~CMsdos7FileManagerView();
 		} fileManager;
 
-		static bool __recognizeDisk__(PImage image,PFormat pFormatBoot);
+		static TStdWinError __recognizeDisk__(PImage image,PFormat pFormatBoot);
 		static PDos __instantiate__(PImage image,PCFormat pFormatBoot);
 		static TLogSector32 __cluster2logSector__(TCluster32 c,PCBootSector boot);
 		static UINT AFX_CDECL __removeLongNames_thread__(PVOID _pCancelableAction);

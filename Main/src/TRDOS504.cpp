@@ -5,16 +5,18 @@
 		return new CTRDOS504(image,pFormatBoot);
 	}
 
-	bool CTRDOS504::__recognizeDisk__(PImage image,PFormat pFormatBoot){
-		// True <=> DOS recognizes its own disk, otherwise False
-		if (__super::__recognizeDisk__(image,pFormatBoot))
-			return ((PCBootSector)image->GetSectorData(TBootSector::CHS))->label[TRDOS504_BOOT_LABEL_LENGTH_MAX]=='\0';
+	TStdWinError CTRDOS504::__recognizeDisk__(PImage image,PFormat pFormatBoot){
+		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
+		if (const TStdWinError err=__super::__recognizeDisk__(image,pFormatBoot))
+			return err;
+		else if (((PCBootSector)image->GetSectorData(TBootSector::CHS))->label[TRDOS504_BOOT_LABEL_LENGTH_MAX]=='\0')
+			return ERROR_SUCCESS;
 		else
-			return false;
+			return ERROR_UNRECOGNIZED_VOLUME;
 	}
 
 	const CDos::TProperties CTRDOS504::Properties={
-		_T("TR-DOS 5.04"), // name
+		TRDOS_NAME_BASE _T(" 5.04"), // name
 		MAKE_DOS_ID('T','R','D','O','S','5','0','4'), // unique identifier
 		3, // recognition priority
 		__recognizeDisk__, // recognition function

@@ -82,7 +82,7 @@
 				EMPTY_ENTRY		=0
 			} fileType;
 			char name[GDOS_FILE_NAME_LENGTH_MAX];
-			UBigEndianWord nSectors; // count of Sectors occupied by this File
+			TBigEndianWord nSectors; // count of Sectors occupied by this File
 			TSectorInfo firstSector;
 			struct TSectorAllocationBitmap sealed{
 			private:
@@ -164,7 +164,7 @@
 			CGdosFileManagerView(PGDOS gdos);
 		} fileManager;
 
-		static bool __recognizeDisk__(PImage image,PFormat pFormatBoot);
+		static TStdWinError __recognizeDisk__(PImage image,PFormat pFormatBoot);
 		static void __informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId);
 
 		bool zeroLengthFilesEnabled;

@@ -60,7 +60,7 @@
 			::lstrcpyA( header.id, HEADER_SINCLAIR );
 			header.nFiles=boot->nFiles;
 			f.Write(&header,sizeof(header));
-			// - instantiating temporary TRDOS
+			// - instantiating a temporary TR-DOS (any 5.03-based version will do)
 			const CTRDOS503 tmpTrdos(this);
 			// - saving Directory
 			CTRDOS503::PDirectoryEntry directory[TRDOS503_FILE_COUNT_MAX],*pde=directory;
@@ -88,29 +88,41 @@
 				return err;
 		}else
 			return ERROR_BAD_COMMAND; // not a TRDOS format
-		// - attempting to read as TRDOS 5.03 Image
+		// - attempting to read as TRDOS 5.0x Image
 		if (f.m_hFile!=(UINT_PTR)INVALID_HANDLE_VALUE){ // handle doesn't exist if creating a new Image
 			// . rewinding to the beginning to reload the content of the Image's underlying file
 			f.SeekToBegin();
-			// . reading TRDOS 5.03 Image
+			// . reading TRDOS 5.0x Image
 			TSclHeader sclHeader;
 			if (f.Read(&sclHeader,sizeof(sclHeader))==sizeof(sclHeader) && !::memcmp(sclHeader.id,HEADER_SINCLAIR,sizeof(sclHeader.id)) && sclHeader.nFiles<=TRDOS503_FILE_COUNT_MAX){
-				// recognized as TRDOS 5.03 Image
-				// : instantiating TRDOS 5.03
-				CTRDOS503 tmpTrdos(this);
-				::memcpy( tmpTrdos.sideMap, sideMap, sizeof(tmpTrdos.sideMap) ); // overwriting the SideMap to make sure it complies with the one provided as input
+				// recognized as TRDOS 5.0x Image
+				// : instantiating the TRDOS with the highest priority in the recognition sequence
+				CTRDOS503 *pTrdos=NULL; // assumption (no TR-DOS participates in the recognition sequence)
+				const CDos::CRecognition recognition;
+				for( POSITION pos=recognition.__getFirstRecognizedDosPosition__(); pos; ){
+					const CDos::PCProperties p=recognition.__getNextRecognizedDos__(pos);
+					if (!::memcmp(p->name,TRDOS_NAME_BASE,sizeof(TRDOS_NAME_BASE)-1)){
+						static const TFormat Fmt={ TMedium::FLOPPY_DD, FDD_CYLINDERS_MAX,2,TRDOS503_TRACK_SECTORS_COUNT, TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD, 1 };
+						pTrdos=(CTRDOS503 *)p->fnInstantiate(this,&Fmt);
+						break;
+					}
+				}
+				if (!pTrdos) // no TR-DOS participates in the recognition sequence ...
+					return ERROR_UNRECOGNIZED_VOLUME; // ... hence can never recognize this Image regardless it's clear it's a TR-DOS Image
+				::memcpy( pTrdos->sideMap, sideMap, sizeof(pTrdos->sideMap) ); // overwriting the SideMap to make sure it complies with the one provided as input
 				// : destroying any previous attempt to set Medium's geometry (e.g. during automatic recognition of suitable DOS to open this Image with)
 				while (TCylinder n=GetCylinderCount())
 					UnformatTrack(--n,0);
 				// : formatting Image to the maximum possible capacity
-				TStdWinError err=__extendToNumberOfCylinders__( tmpTrdos.formatBoot.nCylinders, tmpTrdos.properties->sectorFillerByte );
+				TStdWinError err=__extendToNumberOfCylinders__( pTrdos->formatBoot.nCylinders, pTrdos->properties->sectorFillerByte );
 				if (err!=ERROR_SUCCESS){
-error:				f.Close();
+error:				delete pTrdos;
+					f.Close();
 					::SetLastError(err);
 					return err;
 				}
 				// : initializing empty TRDOS Image
-				tmpTrdos.InitializeEmptyMedium(NULL);
+				pTrdos->InitializeEmptyMedium(NULL);
 				// : reading SCL Directory
 				TSclDirectoryItem directory[TRDOS503_FILE_COUNT_MAX],*pdi=directory;
 				const WORD nBytesOfDirectory=sclHeader.nFiles*sizeof(TSclDirectoryItem);
@@ -121,13 +133,13 @@ error:				f.Close();
 					TCHAR tmpName[MAX_PATH];
 					::wsprintf( tmpName, _T("%d.%c"), n, CTRDOS503::TDirectoryEntry::BLOCK );
 					CDos::PFile file;
-					err=tmpTrdos.ImportFile( &f, pdi->nSectors*TRDOS503_SECTOR_LENGTH_STD, tmpName, 0, file );
+					err=pTrdos->ImportFile( &f, pdi->nSectors*TRDOS503_SECTOR_LENGTH_STD, tmpName, 0, file );
 					if (err!=ERROR_SUCCESS)
 						goto error;
 					*(TSclDirectoryItem *)file=*pdi;
 				}
 			}else
-				// not recognized as TRDOS 5.03 Image
+				// not recognized as TRDOS 5.0x Image
 				return ERROR_BAD_FORMAT;
 		}
 		// - Format and MediumType set successfully

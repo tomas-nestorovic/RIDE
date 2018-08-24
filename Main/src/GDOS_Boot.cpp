@@ -8,8 +8,8 @@
 		{ _T("DS 80x10"), 0, {TMedium::FLOPPY_DD,GDOS_CYLINDERS_COUNT-1,2,GDOS_TRACK_SECTORS_COUNT,GDOS_SECTOR_LENGTH_STD_CODE,GDOS_SECTOR_LENGTH_STD,1}, 1, 0, FDD_SECTOR_GAP3_STD, 1, GDOS_DIR_FILES_COUNT_MAX }
 	};
 
-	bool CGDOS::__recognizeDisk__(PImage image,PFormat pFormatBoot){
-		// True <=> DOS recognizes its own disk, otherwise False
+	TStdWinError CGDOS::__recognizeDisk__(PImage image,PFormat pFormatBoot){
+		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
 		// - setting up the biggest possible geometry
 		//static const TFormat Fmt={ TMedium::FLOPPY_DD, 1,1,10, GDOS_SECTOR_LENGTH_STD_CODE,GDOS_SECTOR_LENGTH_STD, 1 };
 		//if (image->SetMediumTypeAndGeometry( &fmt, StdSidesMap, 1 )!=ERROR_SUCCESS) return false;
@@ -19,9 +19,9 @@
 			const TStdWinError err=image->SetMediumTypeAndGeometry( pFormatBoot, StdSidesMap, Properties.firstSectorNumber );
 		image->dos=NULL;
 		if (err!=ERROR_SUCCESS)
-			return false;
+			return err;
 		if (image->GetCylinderCount()<GDOS_CYLINDERS_COUNT)
-			return false;
+			return ERROR_UNRECOGNIZED_VOLUME;
 		// - checking disjunction of File FatPaths in the root Directory (each Sector must be allocated to a single File or be unallocated)
 		const CGDOS gdos(image,pFormatBoot);
 		TDirectoryEntry::TSectorAllocationBitmap allocatedSectorsOnDisk;
@@ -33,21 +33,21 @@
 				if (de->fileType!=TDirectoryEntry::EMPTY_ENTRY){
 					// . checking NumberOfSectors
 					if (de->nSectors>GDOS_CYLINDERS_COUNT*2*GDOS_TRACK_SECTORS_COUNT-GDOS_DIR_FILES_COUNT_MAX*sizeof(TDirectoryEntry)/GDOS_SECTOR_LENGTH_STD)
-						return false;
+						return ERROR_UNRECOGNIZED_VOLUME;
 					// . checking position of the FirstSector
 					if (!de->firstSector.__isValid__())
-						return false;
+						return ERROR_UNRECOGNIZED_VOLUME;
 					// . checking SectorAllocationBitmap
 					if (!de->sectorAllocationBitmap.IsDisjunctiveWith(allocatedSectorsOnDisk))
-						return false;
+						return ERROR_UNRECOGNIZED_VOLUME;
 					allocatedSectorsOnDisk.MergeWith(de->sectorAllocationBitmap);
 				}
 			}else
 				// root Directory Sector not found - if "too many" Sectors not found, it's not a GDOS disk
 				if (++nDirectorySectorsBad>3)
-					return false;
+					return ERROR_UNRECOGNIZED_VOLUME;
 		// - GDOS successfully recognizes the disk
-		return true;
+		return ERROR_SUCCESS;
 	}
 
 	

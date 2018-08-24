@@ -169,7 +169,7 @@
 			CMdos2FileManagerView(PMDOS2 mdos);
 		} fileManager;
 
-		static bool __recognizeDisk__(PImage image,PFormat pFormatBoot);
+		static TStdWinError __recognizeDisk__(PImage image,PFormat pFormatBoot);
 		static void __informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId);
 
 		TDirectoryEntry deDefault;
