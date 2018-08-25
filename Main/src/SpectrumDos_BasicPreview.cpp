@@ -9,6 +9,7 @@
 
 	#define INI_APPLY_COLORS			_T("clr")
 	#define INI_SHOW_NONPRINTABLE_CHARS	_T("prn")
+	#define INI_SHOW_INTERNAL_BINARY	_T("bin")
 
 	CSpectrumDos::CBasicPreview::CBasicPreview(const CFileManagerView &rFileManager)
 		// ctor
@@ -16,7 +17,8 @@
 		: CFilePreview(	&listingView, INI_PREVIEW, rFileManager, PREVIEW_WIDTH_DEFAULT, PREVIEW_HEIGHT_DEFAULT, IDR_SPECTRUM_PREVIEW_BASIC )
 		, listingView(_T(""))
 		, applyColors( app.GetProfileInt(INI_PREVIEW,INI_APPLY_COLORS,true) )
-		, showNonprintableChars( app.GetProfileInt(INI_PREVIEW,INI_SHOW_NONPRINTABLE_CHARS,false) ) {
+		, showNonprintableChars( app.GetProfileInt(INI_PREVIEW,INI_SHOW_NONPRINTABLE_CHARS,false) )
+		, binaryAfter0x14( (TBinaryAfter0x14)app.GetProfileInt(INI_PREVIEW,INI_SHOW_INTERNAL_BINARY,TBinaryAfter0x14::DONT_SHOW) ) {
 		// - initialization
 		pSingleInstance=this;
 		// - creating the TemporaryFile to store HTML-formatted BASIC Listing
@@ -34,6 +36,7 @@
 		// - saving the settings
 		app.WriteProfileInt(INI_PREVIEW,INI_APPLY_COLORS,applyColors);
 		app.WriteProfileInt(INI_PREVIEW,INI_SHOW_NONPRINTABLE_CHARS,showNonprintableChars);
+		app.WriteProfileInt(INI_PREVIEW,INI_SHOW_INTERNAL_BINARY,binaryAfter0x14);
 		// - uninitialization
 		::DeleteFile(tmpFileName);
 		pSingleInstance=NULL;
@@ -94,7 +97,7 @@
 				// . writing the opening HTML tags
 				(CFormattedBasicListingFile &)TUtils::WriteToFile(
 					*this << _T("<html><body style=\"font-family:'Courier New';margin:0;background-color:#"),
-					*(PDWORD)&Colors[7], _T("%06x")
+					*(PINT)&Colors[7], _T("%06x")
 				) << _T("\">");
 			}
 			~CFormattedBasicListingFile(){
@@ -209,7 +212,7 @@
 		bool error=false; // assumption (no parsing error of the input File)
 		listing << _T("<table cellpadding=3 cellspacing=0>");
 			do{
-				UBigEndianWord lineNumber;
+				TBigEndianWord lineNumber;
 				if (error=frw.Read(&lineNumber,sizeof(WORD))!=sizeof(WORD)) // error
 					break;
 				if (lineNumber>0x39ff) // invalid LineNumber is a correct end of BASIC program
@@ -220,8 +223,17 @@
 				//if (!nBytesOfLine) // if line has no content ...
 					//continue; // ... then simply doing nothing
 				BYTE lineBytes[65536];
-				if (error=frw.Read(lineBytes,nBytesOfLine)!=nBytesOfLine) // error
-					break;
+				const WORD nBytesOfLineRead=frw.Read(lineBytes,nBytesOfLine);
+				if (nBytesOfLineRead<nBytesOfLine){
+					// sometimes, the number of Bytes of line is intentionally reported wrongly (e.g., when part of a copy-protection scheme)
+					lineBytes[nBytesOfLineRead]='\r';
+					nBytesOfLine =	(PCBYTE)::memchr(lineBytes,'\r',sizeof(lineBytes))
+									- // Bytes "after" the '\r' (or 0x0d) Byte are not considered as Bytes of the current line
+									lineBytes
+									+ // the '\r' (or 0x0d) Byte counts as a Byte of the current line
+									1;
+					frw.Seek( nBytesOfLine-nBytesOfLineRead, CFile::current ); // rolling back those Bytes that "don't look like Bytes of a line"
+				}
 				listing << _T("<tr>");
 					// | adding a new cell to the "Line Number" column
 					listing << _T("<td width=90pt align=right valign=top style=\"padding-right:5pt;background:gray;color:white\"><b>");
@@ -240,8 +252,32 @@
 										listing << _T("<br>");
 										break;
 									case 14:
-										// skipping the five-Byte internal form of a number
-										pLineByte+=5;
+										// displaying the five-Byte internal form of constant
+										if (binaryAfter0x14==TBinaryAfter0x14::DONT_SHOW)
+											// skipping the five-Byte internal form
+											pLineByte+=5;
+										else{
+											// displaying the five-Byte internal form
+											listing << _T("<span style=\"border:1pt dashed\">"); // the "<<" operator automatically closes any previous SpecialFormatting
+												switch (binaryAfter0x14){
+													case TBinaryAfter0x14::SHOW_AS_RAW_BYTES:
+														TUtils::WriteToFile(listing,*pLineByte++,_T("0x%02X"));
+														for( BYTE n=4; n-->0; TUtils::WriteToFile(listing,*pLineByte++,_T(",0x%02X")) );
+														break;
+													case TBinaryAfter0x14::SHOW_AS_NUMBER:{
+														const double d=((TZxRom::PCNumberInternalForm)pLineByte)->ToDouble();
+														if ((int)d==d)
+															TUtils::WriteToFile(listing,(int)d);
+														else
+															TUtils::WriteToFile(listing,d);
+														pLineByte+=5;
+														break;
+													}
+													default:
+														ASSERT(FALSE);
+												}
+											listing << _T("</span>");
+										}
 										continue;
 									case 16:
 										// changing the Ink color
@@ -395,6 +431,12 @@ defaultPrinting:						if (b<' ')
 						((CCmdUI *)pExtra)->Enable(TRUE);
 						((CCmdUI *)pExtra)->SetCheck(showNonprintableChars);
 						return TRUE;
+					case ID_ZX_BASIC_BINARY_DONTSHOW:
+					case ID_ZX_BASIC_BINARY_SHOWRAW:
+					case ID_ZX_BASIC_BINARY_SHOWNUMBER:
+						((CCmdUI *)pExtra)->Enable(TRUE);
+						((CCmdUI *)pExtra)->SetCheck(nID==binaryAfter0x14+ID_ZX_BASIC_BINARY_DONTSHOW);
+						return TRUE;
 				}
 				break;
 			case CN_COMMAND:
@@ -406,6 +448,12 @@ defaultPrinting:						if (b<' ')
 						return TRUE;
 					case ID_PRINT:
 						showNonprintableChars=!showNonprintableChars;
+						RefreshPreview();
+						return TRUE;
+					case ID_ZX_BASIC_BINARY_DONTSHOW:
+					case ID_ZX_BASIC_BINARY_SHOWRAW:
+					case ID_ZX_BASIC_BINARY_SHOWNUMBER:
+						binaryAfter0x14=(TBinaryAfter0x14)(nID-ID_ZX_BASIC_BINARY_DONTSHOW);
 						RefreshPreview();
 						return TRUE;
 				}

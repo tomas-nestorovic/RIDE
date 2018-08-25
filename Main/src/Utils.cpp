@@ -641,6 +641,16 @@ namespace TUtils{
 		// writes specified Number into the File
 		return WriteToFile(f,number,_T("%d"));
 	}
+	CFile &WriteToFile(CFile &f,double number,LPCTSTR formatting){
+		// writes specified Number into the File
+		TCHAR buf[512]; // just in case the number have really many digits (not a problem for a Double)
+		_stprintf( buf, formatting, number );
+		return WriteToFile(f,buf);
+	}
+	CFile &WriteToFile(CFile &f,double number){
+		// writes specified Number into the File
+		return WriteToFile(f,number,_T("%f"));
+	}
 
 	PTCHAR GetApplicationOnlineFileUrl(LPCTSTR documentName,PTCHAR buffer){
 		// fills the Buffer with URL of a file that is part of this application's on-line presentation, and returns the Buffer

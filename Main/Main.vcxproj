@@ -230,6 +230,7 @@
     <ClCompile Include="src\SpectrumDos_ScreenPreview.cpp" />
     <ClCompile Include="src\SpectrumDos_Tape.cpp" />
     <ClCompile Include="src\SpectrumDos_FileManagerBase.cpp" />
+    <ClCompile Include="src\SpectrumDos_ZXRom.cpp" />
     <ClCompile Include="src\TdiTemplate.cpp" />
     <ClCompile Include="src\TdiView.cpp" />
     <ClCompile Include="src\TRDOS503.cpp" />

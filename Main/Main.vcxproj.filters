@@ -326,6 +326,9 @@
     <ClCompile Include="src\Dos_HexaPreview.cpp">
       <Filter>Source Files\Dos</Filter>
     </ClCompile>
+    <ClCompile Include="src\SpectrumDos_ZXRom.cpp">
+      <Filter>Source Files\Dos\Spectrum</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="res\resource.rc">

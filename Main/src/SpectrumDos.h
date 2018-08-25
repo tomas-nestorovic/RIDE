@@ -22,6 +22,19 @@
 				FRAGMENT	=(BYTE)-2	// defined foremost due to formal reasons (e.g. Headerless File cannot have a Header with this value)
 			};
 
+			#pragma pack(1)
+			typedef const struct TNumberInternalForm sealed{
+				union{
+					struct{
+						BYTE exponent;
+						TBigEndianDWord mantissa;
+					};
+					BYTE bytes[5];
+				};
+
+				double ToDouble() const;
+			} *PCNumberInternalForm;
+
 			static const LPCSTR Keywords[];
 
 			static PTCHAR ZxToAscii(LPCSTR zx,BYTE zxLength,PTCHAR buf);
@@ -246,6 +259,11 @@
 			TCHAR tmpFileName[MAX_PATH];
 			CWebPageView listingView;
 			bool applyColors,showNonprintableChars;
+			enum TBinaryAfter0x14{
+				DONT_SHOW,
+				SHOW_AS_RAW_BYTES,
+				SHOW_AS_NUMBER
+			} binaryAfter0x14;
 
 			void __parseBasicFileAndGenerateHtmlFormattedContent__(PCFile file) const;
 			void RefreshPreview() override;

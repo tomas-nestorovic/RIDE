@@ -342,6 +342,15 @@ BEGIN
     BEGIN
         MENUITEM "Apply colors",                ID_COLOR, CHECKED
         MENUITEM "Show non-printable chars",    ID_PRINT
+        POPUP "Five Bytes after (0x14)"
+        BEGIN
+            MENUITEM "Don't show",                  ID_ZX_BASIC_BINARY_DONTSHOW
+            , CHECKED
+            MENUITEM "Show as raw Bytes",           ID_ZX_BASIC_BINARY_SHOWRAW
+
+            MENUITEM "Show as number",              ID_ZX_BASIC_BINARY_SHOWNUMBER
+
+        END
         MENUITEM SEPARATOR
         MENUITEM "Next file\tRight",            ID_NEXT
         MENUITEM "Previous file\tLeft",         ID_PREV

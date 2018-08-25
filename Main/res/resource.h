@@ -188,6 +188,9 @@
 #define ID_PRINT                        40213
 #define ID_NEXT                         40214
 #define ID_PREV                         40215
+#define ID_ZX_BASIC_BINARY_DONTSHOW     40217
+#define ID_ZX_BASIC_BINARY_SHOWRAW      40218
+#define ID_ZX_BASIC_BINARY_SHOWNUMBER   40219
 #define ID_Y                            58113
 #define ID_W                            58114
 #define ID_H                            58115
@@ -199,9 +202,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        195
-#define _APS_NEXT_COMMAND_VALUE         40217
-#define _APS_NEXT_CONTROL_VALUE         1152
+#define _APS_NEXT_RESOURCE_VALUE        196
+#define _APS_NEXT_COMMAND_VALUE         40221
+#define _APS_NEXT_CONTROL_VALUE         1155
 #define _APS_NEXT_SYMED_VALUE           103
 #endif
 #endif
