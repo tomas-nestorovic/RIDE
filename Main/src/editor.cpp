@@ -157,7 +157,7 @@
 		m_pMainWnd->UpdateWindow();
 		// - searching for newly added DOSes
 		for( POSITION pos=CDos::known.GetHeadPosition(); pos; )
-			if (!CDos::TRecognition().__getOrderIndex__((CDos::PCProperties)CDos::known.GetNext(pos))){
+			if (!CDos::CRecognition().__getOrderIndex__((CDos::PCProperties)CDos::known.GetNext(pos))){
 				// found a DOS that's not recorded in the profile - displaying the dialog to confirm its recognition
 				((CMainWindow *)m_pMainWnd)->__changeAutomaticDiskRecognitionOrder__();
 				break;
@@ -367,15 +367,15 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		}
 		// - instantiating recognized/selected DOS
 		const PDos dos = image->dos = dosProps->fnInstantiate(image,&formatBoot);
-		if (!dos)
+		if (!dos){
+			delete image;
 			return NULL;
+		}
 		image->SetMediumTypeAndGeometry( &formatBoot, dos->sideMap, dos->properties->firstSectorNumber );
 		// - creating the user interface for recognized/selected DOS
-		const TStdWinError err=dos->CreateUserInterface( TDI_HWND );
-		if (err==ERROR_SUCCESS){
-			image->SetPathName( lpszFileName, TRUE ); // at this moment, Image became application's active document and the name of its underlying file is shown in MainWindow's caption
-			image->SetModifiedFlag(FALSE); // just to be sure
-		}else{
+		image->SetPathName( lpszFileName, TRUE ); // at this moment, Image became application's active document and the name of its underlying file is shown in MainWindow's caption
+		image->SetModifiedFlag(FALSE); // just to be sure
+		if (const TStdWinError err=dos->CreateUserInterface(TDI_HWND)){
 			TCHAR errMsg[100];
 			::wsprintf( errMsg, _T("Cannot use \"%s\" to access the medium"), dosProps->name );
 			TUtils::FatalError(errMsg,err);

@@ -496,10 +496,11 @@
 		CTdiCtrl::AddTabLast( hTdi, FILE_MANAGER_TAB_LABEL, &fileManager.tab, true, NULL, NULL );
 		// - informing on how the SCL Images are opened
 		if (dynamic_cast<CSCL *>(image)!=NULL){
-			TCHAR buf[200];
-			::wsprintf( buf, _T("SCL images are always opened by the top-positioned TR-DOS in the recognition sequence (currently \"%s\")."), properties->name );
-			__informationWithCheckableShowNoMore__( buf, _T("sclnfo") );
-		}
+			if (!image->GetPathName().IsEmpty()){
+				TCHAR buf[200];
+				::wsprintf( buf, _T("SCL images are always opened by the top-positioned TR-DOS in the recognition sequence (currently \"%s\")."), properties->name );
+				__informationWithCheckableShowNoMore__( buf, _T("sclnfo") );
+			}
 		// - user interface created successfully
 		return ERROR_SUCCESS;
 	}
