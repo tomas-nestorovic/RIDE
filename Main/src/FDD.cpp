@@ -424,6 +424,8 @@ TUtils::Information("--- EVERYTHING OK ---");
 		128,SECTOR_LENGTH_MAX	// Sector supported min and max length
 	};
 
+	#define FDD_THREAD_PRIORITY_DEFAULT	THREAD_PRIORITY_ABOVE_NORMAL
+
 	CFDD::CFDD()
 		// ctor
 		// - base
@@ -606,7 +608,8 @@ TUtils::Information(buf);}
 		// True <=> this Image has been successfully saved, otherwise False
 		const TStdWinError err=	TBackgroundActionCancelable(
 									__save_thread__,
-									&TSaveParams( this )
+									&TSaveParams( this ),
+									FDD_THREAD_PRIORITY_DEFAULT
 								).CarryOut(FDD_CYLINDERS_MAX);
 		::SetLastError(err);
 		return err==ERROR_SUCCESS;
@@ -1258,7 +1261,8 @@ TUtils::Information(buf);}
 									TLatencyParams lp( fdd, d.floppyType==0, 1+d.usAccuracy, 1+d.nRepeats );
 									const TStdWinError err=	TBackgroundActionCancelable(
 																__determineLatency_thread__,
-																&lp
+																&lp,
+																FDD_THREAD_PRIORITY_DEFAULT
 															).CarryOut(d.nRepeats*4+1); // 4 = number of steps of a single attempt, 1 = computation of final latency values
 									if (err==ERROR_SUCCESS){
 										params.controllerLatency=lp.outControllerLatency;

@@ -106,6 +106,7 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 						DDV_MinMaxUInt( pDX,patchParams.nHeads, 1, patchParams.source->GetNumberOfFormattedSides(patchParams.cylinderA) );
 				DDX_Text( pDX,	ID_GAP,			patchParams.gap3 );
 				DDX_Check(pDX,	ID_TRACK,		patchParams.skipEmptySourceTracks );
+				DDX_Check(pDX,	ID_PRIORITY,	realtimeThreadPriority );
 			}
 			afx_msg void OnPaint(){
 				// painting
@@ -179,11 +180,13 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 			TCHAR fileName[MAX_PATH];
 			TPatchParams patchParams;
 			CImage::PCProperties sourceImageProperties;
+			int realtimeThreadPriority;
 
 			CPatchDialog(PDos dos)
 				// ctor
 				: CDialog(IDR_IMAGE_PATCH)
-				, patchParams(dos) , sourceImageProperties(NULL) {
+				, patchParams(dos) , sourceImageProperties(NULL)
+				, realtimeThreadPriority( dos->image->properties==&CFDD::Properties ) {
 				::lstrcpy( fileName, ELLIPSIS );
 			}
 		} d(__getActive__()->dos);
@@ -191,7 +194,8 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 		if (d.DoModal()==IDOK){
 			const TStdWinError err=	TBackgroundActionCancelable(
 										__patch_thread__,
-										&d.patchParams
+										&d.patchParams,
+										d.realtimeThreadPriority ? THREAD_PRIORITY_TIME_CRITICAL : THREAD_PRIORITY_NORMAL
 									).CarryOut(d.patchParams.cylinderZ+1-d.patchParams.cylinderA);
 			if (err==ERROR_SUCCESS)
 				TUtils::Information(_T("Patched successfully."));

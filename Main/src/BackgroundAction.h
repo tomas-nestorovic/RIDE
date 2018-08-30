@@ -7,7 +7,7 @@
 	public:
 		const LPCVOID fnParams;
 
-		TBackgroundAction(AFX_THREADPROC fnAction,LPCVOID fnParams);
+		TBackgroundAction(AFX_THREADPROC fnAction,LPCVOID actionParams,int actionThreadPriority);
 		virtual ~TBackgroundAction(); // virtual in order for the keyword "this" to work in AfxBeginThread when constructing a descendant
 
 		void Resume() const;
@@ -25,7 +25,7 @@
 	public:
 		volatile bool bContinue;
 
-		TBackgroundActionCancelable(AFX_THREADPROC fnAction,LPCVOID fnParams);
+		TBackgroundActionCancelable(AFX_THREADPROC fnAction,LPCVOID actionParams,int actionThreadPriority);
 
 		DWORD CarryOut(DWORD _stateOfCompletion);
 		DWORD TerminateWithError(DWORD error);

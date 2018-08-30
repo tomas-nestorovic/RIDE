@@ -174,7 +174,8 @@ reportError:TUtils::Information(buf);
 		if (nCylinders)
 			return	TBackgroundActionCancelable(
 						__checkCylindersAreEmpty_thread__,
-						&TEmptyCylinderParams( this, nCylinders, bufCylinders )
+						&TEmptyCylinderParams( this, nCylinders, bufCylinders ),
+						THREAD_PRIORITY_BELOW_NORMAL
 					).CarryOut(nCylinders);
 		else
 			return ERROR_EMPTY;
@@ -340,7 +341,8 @@ reportError:TUtils::Information(buf);
 		// formats given Tracks, each with given NumberOfSectors, each with given Length; returns Windows standard i/o error
 		const TStdWinError err=	TBackgroundActionCancelable(
 									__formatTracks_thread__,
-									&TFmtParams( this, nTracks, cylinders, heads, nSectors, bufferId, bufferLength, rParams, verify, showReport )
+									&TFmtParams( this, nTracks, cylinders, heads, nSectors, bufferId, bufferLength, rParams, verify, showReport ),
+									THREAD_PRIORITY_BELOW_NORMAL
 								).CarryOut(nTracks);
 		if (err!=ERROR_SUCCESS)
 			TUtils::FatalError(_T("Cannot format a track"),err);
@@ -404,7 +406,8 @@ reportError:TUtils::Information(buf);
 		// unformats given Tracks; returns Windows standard i/o error
 		const TStdWinError err=	TBackgroundActionCancelable(
 									__unformatTracks_thread__,
-									&TUnfmtParams( image, nTracks, cylinders, heads )
+									&TUnfmtParams( image, nTracks, cylinders, heads ),
+									THREAD_PRIORITY_BELOW_NORMAL
 								).CarryOut(nTracks);
 		if (err!=ERROR_SUCCESS)
 			TUtils::FatalError(_T("Cannot unformat a track"),err);
@@ -600,7 +603,8 @@ reportError:TUtils::Information(buf);
 		// - filling
 		TBackgroundActionCancelable(
 			__fillEmptySpace_thread__,
-			&TFillEmptySpaceParams(this,rd)
+			&TFillEmptySpaceParams(this,rd),
+			THREAD_PRIORITY_BELOW_NORMAL
 		).CarryOut( 1+image->GetCylinderCount() ); // "1+" = to not terminate the action prelimiary when having processed the last Cylinder in Image
 		// - updating Views
 		image->UpdateAllViews(NULL);

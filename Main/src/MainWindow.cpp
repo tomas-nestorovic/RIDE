@@ -296,7 +296,7 @@
 	afx_msg void CMainWindow::__openUrl_checkForUpdates__(){
 		// checks if this instance of application is the latest by comparing it against the on-line information; opens either "You are using the latest version" web page, or the "You are using out-of-date version" web page
 		CHtmlStatus hs;
-		TBackgroundActionCancelable bac( __checkApplicationRecency_thread__, &hs );
+		TBackgroundActionCancelable bac( __checkApplicationRecency_thread__, &hs, THREAD_PRIORITY_ABOVE_NORMAL );
 		switch (const TStdWinError err=bac.CarryOut(2)){ // 2 = see number of steps in CheckApplicationRecency
 			case ERROR_SUCCESS:
 				return OpenApplicationPresentationWebPage(_T("Version"),VERSION_LATEST_WEB);

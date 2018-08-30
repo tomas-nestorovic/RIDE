@@ -659,7 +659,7 @@
 	afx_msg void CFileManagerView::__showSelectionProperties__() const{
 		// shows properties of currently selected Files (and Directories)
 		TSelectionStatistics statistics(*this);
-		TBackgroundActionCancelable bac( __selectionPropertyStatistics_thread__, &statistics );
+		TBackgroundActionCancelable bac( __selectionPropertyStatistics_thread__, &statistics, THREAD_PRIORITY_BELOW_NORMAL );
 		if (bac.CarryOut(statistics.finishedState)==ERROR_SUCCESS){
 			TCHAR buf[1024];
 			::wsprintf( buf, _T("SELECTION Properties\n\n- recurrently selected %d file(s), %d folders\n- of %d Bytes in total size\n- which occupy %d Bytes on the disk."), statistics.nFiles, statistics.nDirectories, statistics.totalSizeInBytes, statistics.totalSizeOnDiskInBytes );

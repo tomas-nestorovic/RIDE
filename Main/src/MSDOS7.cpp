@@ -1036,7 +1036,8 @@ nextCluster:result++;
 				if (d.DoModal()==IDOK)
 					TBackgroundActionCancelable(
 						__removeLongNames_thread__,
-						&TRemoveLongNameParams( this, d.dirDepth!=0 )
+						&TRemoveLongNameParams( this, d.dirDepth!=0 ),
+						THREAD_PRIORITY_BELOW_NORMAL
 					).CarryOut(formatBoot.nCylinders);
 				return TCmdResult::DONE_REDRAW;
 			}

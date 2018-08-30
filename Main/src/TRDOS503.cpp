@@ -687,7 +687,8 @@
 					if (const PBootSector boot=__getBootSector__())
 						TBackgroundActionCancelable(
 							__defragmentation_thread__,
-							&TDefragParams( this, boot )
+							&TDefragParams( this, boot ),
+							THREAD_PRIORITY_BELOW_NORMAL
 						).CarryOut(1+boot->firstFreeTrack);
 					else
 						__errorCannotDoCommand__(ERROR_DEVICE_NOT_AVAILABLE);

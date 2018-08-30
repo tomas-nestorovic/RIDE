@@ -476,6 +476,7 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 						DDV_MinMaxUInt( pDX,dumpParams.nHeads, 1, mp->headRange.iMax );
 				DDX_Text( pDX,	ID_GAP,			dumpParams.gap3 );
 				DDX_Text( pDX,	ID_NUMBER,		dumpParams.fillerByte );
+				DDX_Check(pDX,	ID_PRIORITY,	realtimeThreadPriority );
 				DDX_Check(pDX,	ID_REPORT,		showReport );
 				if (pDX->m_bSaveAndValidate){
 					// : destroying any previously instantiated Target Image
@@ -590,6 +591,9 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 										GetDlgItem(ID_NUMBER)->EnableWindow(nCompatibleMedia), GetDlgItem(ID_DEFAULT1)->EnableWindow(nCompatibleMedia);
 										CWnd *const pBtnOk=GetDlgItem(IDOK);
 										pBtnOk->EnableWindow(nCompatibleMedia), pBtnOk->SetFocus();
+										// > automatically ticking the "Real-time thread priority" check-box if either the source or the target is a floppy drive
+										if (dos->image->properties==&CFDD::Properties || targetImageProperties==&CFDD::Properties)
+											SendDlgItemMessage( ID_PRIORITY, BM_SETCHECK, BST_CHECKED );
 									}
 								}else
 									*fileName=c;
@@ -650,12 +654,14 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 			TCHAR fileName[MAX_PATH];
 			CImage::PCProperties targetImageProperties;
 			TDumpParams dumpParams;
-			int showReport;
+			int realtimeThreadPriority,showReport;
 
 			CDumpDialog(PDos _dos)
 				// ctor
 				: CDialog(IDR_IMAGE_DUMP)
-				, dos(_dos) , targetImageProperties(NULL) , dumpParams(_dos) , showReport(BST_CHECKED) {
+				, dos(_dos) , targetImageProperties(NULL) , dumpParams(_dos)
+				, realtimeThreadPriority(BST_UNCHECKED)
+				, showReport(BST_CHECKED) {
 				::lstrcpy( fileName, ELLIPSIS );
 			}
 		} d(dos);
@@ -669,7 +675,8 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 			// . dumping
 			err=TBackgroundActionCancelable(
 					__dump_thread__,
-					&d.dumpParams
+					&d.dumpParams,
+					d.realtimeThreadPriority ? THREAD_PRIORITY_TIME_CRITICAL : THREAD_PRIORITY_NORMAL
 				).CarryOut( d.dumpParams.cylinderZ+1-d.dumpParams.cylinderA );
 			if (err==ERROR_SUCCESS){
 				if (d.dumpParams.target->OnSaveDocument(d.fileName)){

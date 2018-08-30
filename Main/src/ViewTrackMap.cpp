@@ -25,7 +25,7 @@
 
 	CTrackMapView::TTrackScanner::TTrackScanner(const CTrackMapView *pvtm)
 		// ctor
-		: action( __thread__, pvtm ) {
+		: action( __thread__, pvtm, THREAD_PRIORITY_IDLE ) {
 	}
 
 	#define WM_TRACK_SCANNED	WM_USER+1
@@ -428,8 +428,7 @@
 		// shows statistics on Tracks and their Sectors in current disk
 		// - collecting statistics on Tracks and their Sectors
 		TStatisticParams sp(DOS);
-		const TStdWinError err=TBackgroundActionCancelable(__trackStatistics_thread__,&sp).CarryOut(IMAGE->GetCylinderCount());
-		if (err!=ERROR_SUCCESS)
+		if (const TStdWinError err=TBackgroundActionCancelable(__trackStatistics_thread__,&sp,THREAD_PRIORITY_BELOW_NORMAL).CarryOut(IMAGE->GetCylinderCount()))
 			return TUtils::Information(_T("Cannot create statistics"),err);
 		// - showing collected statistics
 		TCHAR buf[1000];

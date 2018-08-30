@@ -732,7 +732,7 @@ quitWithErr:const DWORD err=::GetLastError();
 	TStdWinError DownloadSingleFile(LPCTSTR onlineFileUrl,PBYTE fileDataBuffer,DWORD fileDataBufferLength,PDWORD pDownloadedFileSize,LPCTSTR fatalErrorConsequence){
 		// returns the result of downloading the file with given Url
 		TDownloadSingleFileParams params( onlineFileUrl, fileDataBuffer, fileDataBufferLength, fatalErrorConsequence );
-		const TStdWinError err=TBackgroundActionCancelable(__downloadSingleFile_thread__,&params).CarryOut(-1);
+		const TStdWinError err=TBackgroundActionCancelable(__downloadSingleFile_thread__,&params,THREAD_PRIORITY_ABOVE_NORMAL).CarryOut(-1);
 		if (pDownloadedFileSize!=NULL)
 			*pDownloadedFileSize=params.outOnlineFileSize;
 		return err;

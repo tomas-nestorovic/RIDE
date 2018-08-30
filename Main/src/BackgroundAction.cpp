@@ -1,11 +1,11 @@
 #include "stdafx.h"
 
-	TBackgroundAction::TBackgroundAction(AFX_THREADPROC fnAction,LPCVOID _fnParams)
+	TBackgroundAction::TBackgroundAction(AFX_THREADPROC fnAction,LPCVOID actionParams,int actionThreadPriority)
 		// ctor
 		// - initialization
-		: fnParams(_fnParams)
+		: fnParams(actionParams)
 		// - creating a suspended Worker
-		, pWorker( AfxBeginThread( fnAction, this, THREAD_PRIORITY_IDLE, 0, CREATE_SUSPENDED ) ) { // the object must have a vtable for the keyword "this" to work in AfxBeginThread
+		, pWorker( AfxBeginThread( fnAction, this, actionThreadPriority, 0, CREATE_SUSPENDED ) ) { // the object must have a vtable for the keyword "this" to work in AfxBeginThread
 		pWorker->m_bAutoDelete=FALSE;
 	}
 
@@ -36,9 +36,11 @@
 
 
 
-	TBackgroundActionCancelable::TBackgroundActionCancelable(AFX_THREADPROC fnAction,LPCVOID fnParams)
+	TBackgroundActionCancelable::TBackgroundActionCancelable(AFX_THREADPROC fnAction,LPCVOID actionParams,int actionThreadPriority)
 		// ctor
-		: TBackgroundAction(fnAction,fnParams) , CDialog(IDR_ACTION_PROGRESS,app.m_pMainWnd) , bContinue(true) {
+		: TBackgroundAction(fnAction,actionParams,actionThreadPriority)
+		, CDialog(IDR_ACTION_PROGRESS,app.m_pMainWnd)
+		, bContinue(true) {
 	}
 
 

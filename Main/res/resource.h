@@ -118,6 +118,7 @@
 #define ID_IDFIELD_VALUE                1148
 #define ID_DATAFIELD                    1149
 #define ID_CREATOR                      1151
+#define ID_PRIORITY                     1155
 #define ID_TDI_SWITCH                   40033
 #define ID_TDI_SWITCH_BACK              40034
 #define ID_EDIT_SELECT_NONE             40057
@@ -204,7 +205,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        196
 #define _APS_NEXT_COMMAND_VALUE         40221
-#define _APS_NEXT_CONTROL_VALUE         1155
+#define _APS_NEXT_CONTROL_VALUE         1156
 #define _APS_NEXT_SYMED_VALUE           103
 #endif
 #endif
