@@ -237,8 +237,10 @@
 												sizeof(CDos::PCProperties)*(( recognition.nDoses-=iUnknownDos-1 ))
 											);
 									for( BYTE i=1; i<iUnknownDos; recognition.__addDosByPriorityDescending__(original.order[i++]) );
-									for( i=1; recognition.order[i]!=props; i++ );
-									lb.SetCurSel(i-1);
+									if (i){ // if any of recognized DOSes selected before clicking on the button ...
+										for( i=1; recognition.order[i]!=props; i++ );
+										lb.SetCurSel(i-1); // ... reselecting the DOS after they've been ordered by priority
+									}
 									break;
 								}
 								case ID_ADD:{
