@@ -141,6 +141,7 @@
 		CDos::known.AddTail( (PVOID)&CMSDOS7::Properties );
 		CDos::known.AddTail( (PVOID)&CTRDOS503::Properties );
 		CDos::known.AddTail( (PVOID)&CTRDOS504::Properties );
+		CDos::known.AddTail( (PVOID)&CTRDOS505::Properties );
 		// - restoring Most Recently Used (MRU) file Images
 		if ((::GetVersion()&0xff)<=5){ // for Windows XP and older ...
 			delete m_pszProfileName; // ... list is stored to and read from the INI file in application's folder

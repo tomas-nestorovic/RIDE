@@ -39,7 +39,7 @@
 	const CDos::TProperties CMDOS2::Properties={
 		_T("MDOS 2.0"), // name
 		MAKE_DOS_ID('M','D','O','S','2','0','_','_'), // unique identifier
-		4, // recognition priority
+		80, // recognition priority (the bigger the number the earlier the DOS gets crack on the image)
 		__recognizeDisk__, // recognition function
 		__instantiate__, // instantiation function
 		TMedium::FLOPPY_DD,

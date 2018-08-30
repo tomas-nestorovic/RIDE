@@ -2,23 +2,23 @@
 #include "TRDOS.h"
 
 	static PDos __instantiate__(PImage image,PCFormat pFormatBoot){
-		return new CTRDOS504( image, pFormatBoot, &CTRDOS504::Properties );
+		return new CTRDOS505(image,pFormatBoot);
 	}
 
-	TStdWinError CTRDOS504::__recognizeDisk__(PImage image,PFormat pFormatBoot){
+	TStdWinError CTRDOS505::__recognizeDisk__(PImage image,PFormat pFormatBoot){
 		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
-		if (const TStdWinError err=__super::__recognizeDisk__(image,pFormatBoot))
+		if (const TStdWinError err=CTRDOS503::__recognizeDisk__(image,pFormatBoot)) // explicitly calling TR-DOS 5.03 recognition routine, thus bypassing TR-DOS 5.04 recognition routine
 			return err;
-		else if (((PCBootSector)image->GetSectorData(TBootSector::CHS))->__getLabelLengthEstimation__()==TRDOS504_BOOT_LABEL_LENGTH_MAX)
+		else if (((PCBootSector)image->GetSectorData(TBootSector::CHS))->__getLabelLengthEstimation__()==TRDOS505_BOOT_LABEL_LENGTH_MAX)
 			return ERROR_SUCCESS;
 		else
 			return ERROR_UNRECOGNIZED_VOLUME;
 	}
 
-	const CDos::TProperties CTRDOS504::Properties={
-		TRDOS_NAME_BASE _T(" 5.04"), // name
-		MAKE_DOS_ID('T','R','D','O','S','5','0','4'), // unique identifier
-		42, // recognition priority (the bigger the number the earlier the DOS gets crack on the image)
+	const CDos::TProperties CTRDOS505::Properties={
+		TRDOS_NAME_BASE _T(" 5.05"), // name
+		MAKE_DOS_ID('T','R','D','O','S','5','0','5'), // unique identifier
+		44, // recognition priority (the bigger the number the earlier the DOS gets crack on the image)
 		__recognizeDisk__, // recognition function
 		__instantiate__, // instantiation function
 		TMedium::FLOPPY_DD,
@@ -42,8 +42,8 @@
 
 
 
-	CTRDOS504::CTRDOS504(PImage image,PCFormat pFormatBoot,PCProperties pTrdosProps)
+	CTRDOS505::CTRDOS505(PImage image,PCFormat pFormatBoot)
 		// ctor
-		: CTRDOS503( image, pFormatBoot, pTrdosProps ) {
+		: CTRDOS504( image, pFormatBoot, &Properties ) {
 	}
 

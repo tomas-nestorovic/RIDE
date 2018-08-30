@@ -30,7 +30,7 @@
 	#define INI_EXPORT_WHOLE_SECTORS	_T("fmxsects")
 	#define INI_ALLOW_ZERO_LENGTH_FILES	_T("fm0files")
 
-	CTRDOS503::CTRDOS503(PImage image)
+	CTRDOS503::CTRDOS503(PImage image) // called exclusively by SCL Image!
 		// ctor (called exclusively by SCL Image!)
 		// - base
 		: CSpectrumDos( image, &CTRDOS503::Properties.stdFormats[0].params.format, TTrackScheme::BY_CYLINDERS, &Properties, IDR_TRDOS, &fileManager )
@@ -47,7 +47,13 @@
 		// - base
 		: CSpectrumDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS,pTrdosProps, IDR_TRDOS, &fileManager )
 		// - initialization
-		, boot( this, pTrdosProps==&Properties?TRDOS503_BOOT_LABEL_LENGTH_MAX:TRDOS504_BOOT_LABEL_LENGTH_MAX )
+		, boot(	this,
+				(pTrdosProps==&Properties)*TRDOS503_BOOT_LABEL_LENGTH_MAX
+				|
+				(pTrdosProps==&CTRDOS504::Properties)*TRDOS504_BOOT_LABEL_LENGTH_MAX
+				|
+				(pTrdosProps==&CTRDOS505::Properties)*TRDOS505_BOOT_LABEL_LENGTH_MAX
+			)
 		, fileManager(this)
 		, zeroLengthFilesEnabled( __getProfileBool__(INI_ALLOW_ZERO_LENGTH_FILES,false) )
 		, exportWholeSectors( __getProfileBool__(INI_EXPORT_WHOLE_SECTORS,true) ) {

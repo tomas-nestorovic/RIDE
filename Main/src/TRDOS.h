@@ -49,6 +49,7 @@
 			char label[TRDOS503_BOOT_LABEL_LENGTH_MAX];
 			WORD zero3;
 
+			BYTE __getLabelLengthEstimation__() const; // for TR-DOS version recognition
 			void __init__(PCFormat pFormatBoot,BYTE nCharsInLabel);
 			void __setDiskType__(PCFormat pFormatBoot);
 		} *PBootSector;
@@ -170,13 +171,29 @@
 
 	#define TRDOS504_BOOT_LABEL_LENGTH_MAX	8
 
-	class CTRDOS504 sealed:public CTRDOS503{
+	class CTRDOS504:public CTRDOS503{
 		static TStdWinError __recognizeDisk__(PImage image,PFormat pFormatBoot);
 	public:
 		static const TProperties Properties;
 
-		CTRDOS504(PImage image,PCFormat pFormatBoot);
+		CTRDOS504(PImage image,PCFormat pFormatBoot,PCProperties pTrdosProps);
 	};
+
+
+
+
+	#define TRDOS505_BOOT_LABEL_LENGTH_MAX	10
+
+	class CTRDOS505 sealed:public CTRDOS504{
+		static TStdWinError __recognizeDisk__(PImage image,PFormat pFormatBoot);
+	public:
+		static const TProperties Properties;
+
+		CTRDOS505(PImage image,PCFormat pFormatBoot);
+	};
+
+
+
 	
 
 

@@ -5,6 +5,14 @@
 
 	const TPhysicalAddress CTRDOS503::TBootSector::CHS={ 0, 0, {0,0,TRDOS503_BOOT_SECTOR_NUMBER,TRDOS503_SECTOR_LENGTH_STD_CODE} };
 
+	BYTE CTRDOS503::TBootSector::__getLabelLengthEstimation__() const{
+		// estimates and returns the Label length (useful for more precise TR-DOS version recognition)
+		if (const LPCSTR nullChar=(LPCSTR)::memchr(label,'\0',TRDOS503_BOOT_LABEL_LENGTH_MAX+sizeof(WORD)))
+			return nullChar-label;
+		else
+			return TRDOS503_BOOT_LABEL_LENGTH_MAX+sizeof(WORD);
+	}
+
 	#define PASSWORD_FILLER_BYTE	' '
 
 	void CTRDOS503::TBootSector::__init__(PCFormat pFormatBoot,BYTE nCharsInLabel){
@@ -86,7 +94,7 @@
 	const CDos::TProperties CTRDOS503::Properties={
 		TRDOS_NAME_BASE _T(" 5.03"), // name
 		MAKE_DOS_ID('T','R','D','O','S','5','0','3'), // unique identifier
-		2, // recognition priority
+		40, // recognition priority (the bigger the number the earlier the DOS gets crack on the image)
 		__recognizeDisk__, // recognition function
 		__instantiate__, // instantiation function
 		TMedium::FLOPPY_DD,

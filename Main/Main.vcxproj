@@ -237,6 +237,7 @@
     <ClCompile Include="src\TRDOS503_Boot.cpp" />
     <ClCompile Include="src\TRDOS503_FileManager.cpp" />
     <ClCompile Include="src\TRDOS504.cpp" />
+    <ClCompile Include="src\TRDOS505.cpp" />
     <ClCompile Include="src\Utils.cpp" />
     <ClCompile Include="src\ViewBoot.cpp" />
     <ClCompile Include="src\ViewFileManager.cpp" />
