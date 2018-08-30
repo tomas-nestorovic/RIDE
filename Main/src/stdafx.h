@@ -72,6 +72,7 @@ typedef const WORD *PCWORD;
 #include "Editor.h"
 #include "HexaEditor.h"
 #include "Dos.h"
+#include "Debug.h"
 #include "SCL.h"
 #include "BackgroundAction.h"
 #include "ViewBoot.h"

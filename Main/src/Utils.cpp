@@ -169,7 +169,7 @@ namespace TUtils{
 
 	#define ERROR_BUFFER_SIZE	220
 
-	static PTCHAR __formatErrorCode__(PTCHAR buf,TStdWinError errCode){
+	PTCHAR __formatErrorCode__(PTCHAR buf,TStdWinError errCode){
 		// generates into Buffer a message corresponding to the ErrorCode; assumed that the Buffer is at least ERROR_BUFFER_SIZE characters big
 		PTCHAR p;
 		if (errCode<=12000)

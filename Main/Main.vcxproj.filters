@@ -159,6 +159,9 @@
     <ClInclude Include="src\TRDOS.h">
       <Filter>Header Files\Dos\Spectrum</Filter>
     </ClInclude>
+    <ClInclude Include="src\Debug.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\editor.cpp">
@@ -328,6 +331,9 @@
     </ClCompile>
     <ClCompile Include="src\SpectrumDos_ZXRom.cpp">
       <Filter>Source Files\Dos\Spectrum</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Debug.cpp">
+      <Filter>Source Files\Utils</Filter>
     </ClCompile>
     <ClCompile Include="src\TRDOS505.cpp">
       <Filter>Source Files\Dos\Spectrum\TRDOS</Filter>

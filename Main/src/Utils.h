@@ -25,6 +25,7 @@ namespace TUtils{
 
 	extern const float LogicalUnitScaleFactor;
 
+	PTCHAR __formatErrorCode__(PTCHAR buf,TStdWinError errCode);
 	void FatalError(LPCTSTR text);
 	void FatalError(LPCTSTR text,LPCTSTR causeOfError,LPCTSTR consequence=NULL);
 	void FatalError(LPCTSTR text,TStdWinError causeOfError,LPCTSTR consequence=NULL);
