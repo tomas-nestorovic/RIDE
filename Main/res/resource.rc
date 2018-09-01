@@ -256,7 +256,7 @@ BEGIN
         MENUITEM "Format cylinders...\tCtrl+Shift+F", ID_DOS_FORMAT
         MENUITEM "Unformat cylinders...",       ID_DOS_UNFORMAT
         MENUITEM SEPARATOR
-        MENUITEM "Browse as Screen$\tCtrl+4",   ID_ZX_PREVIEWASSCREEN
+        MENUITEM "Show as Screen$\tCtrl+4",     ID_ZX_PREVIEWASSCREEN
         MENUITEM "Show as BASIC program\tCtrl+K", ID_ZX_PREVIEWASBASIC
         MENUITEM "Show as binary\tCtrl+B",      ID_DOS_PREVIEWASBINARY
         MENUITEM SEPARATOR

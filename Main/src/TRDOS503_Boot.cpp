@@ -208,7 +208,7 @@
 									CPropGridCtrl::TString::DefineFixedLengthEditorA( __bootSectorModified__, PASSWORD_FILLER_BYTE )
 								);
 		// - Advanced category
-		const HANDLE hAdvanced=CPropGridCtrl::AddCategory(hPropGrid,NULL,BOOT_SECTOR_ADVANCED,false);
+		const HANDLE hAdvanced=CPropGridCtrl::AddCategory(hPropGrid,NULL,BOOT_SECTOR_ADVANCED);
 			const CPropGridCtrl::PCEditor advByteEditor=CPropGridCtrl::TInteger::DefineByteEditor(__bootSectorModified__);
 			CPropGridCtrl::AddProperty( hPropGrid, hAdvanced, _T("Files"),
 										&boot->nFiles, sizeof(BYTE), advByteEditor
