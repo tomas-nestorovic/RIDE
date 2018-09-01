@@ -5,11 +5,12 @@
 	}
 
 	THyperlinkEditor::THyperlinkEditor(	bool wideChar,
-										CPropGridCtrl::THyperlink::TOnHyperlinkClicked onHyperlinkClicked
+										CPropGridCtrl::THyperlink::TOnHyperlinkClicked onHyperlinkClicked,
+										CPropGridCtrl::TOnValueChanged onValueChanged
 									)
 		// ctor
 		// - base
-		: TEditor( EDITOR_DEFAULT_HEIGHT, true, NULL )
+		: TEditor( EDITOR_DEFAULT_HEIGHT, true, NULL, onValueChanged )
 		// - initialization
 		, wideChar(wideChar)
 		, onHyperlinkClicked( onHyperlinkClicked ? onHyperlinkClicked : __doNothingAfterClick__ ) {
@@ -69,7 +70,7 @@
 
 	bool THyperlinkEditor::__tryToAcceptMainCtrlValue__() const{
 		// True <=> Editor's current Value is acceptable, otherwise False
-		return false; // just destroying the SysLink without making any changes in the input Value
+		return true; // Hyperlink doesn't have a Value, but returning True for the OnValueChanged event to fire
 	}
 
 	LRESULT THyperlinkEditor::__mainCtrl_wndProc__(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam) const{
@@ -111,18 +112,18 @@
 
 
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::THyperlink::DefineEditorA(TOnHyperlinkClickedA onHyperlinkClicked){
+	CPropGridCtrl::PCEditor CPropGridCtrl::THyperlink::DefineEditorA(TOnHyperlinkClickedA onHyperlinkClicked,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
-					new THyperlinkEditor(false,(TOnHyperlinkClicked)onHyperlinkClicked),
+					new THyperlinkEditor( false, (TOnHyperlinkClicked)onHyperlinkClicked, onValueChanged ),
 					sizeof(THyperlinkEditor)
 				);
 	}
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::THyperlink::DefineEditorW(TOnHyperlinkClickedW onHyperlinkClicked){
+	CPropGridCtrl::PCEditor CPropGridCtrl::THyperlink::DefineEditorW(TOnHyperlinkClickedW onHyperlinkClicked,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
-					new THyperlinkEditor(true,(TOnHyperlinkClicked)onHyperlinkClicked),
+					new THyperlinkEditor( true, (TOnHyperlinkClicked)onHyperlinkClicked, onValueChanged ),
 					sizeof(THyperlinkEditor)
 				);
 	}

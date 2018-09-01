@@ -50,8 +50,8 @@
 	public:
 		static const CBootView *pCurrentlyShown; // Boot that is currently shown (a multi-volume disk may have several Boots, one for each volume)
 
-		static bool WINAPI __bootSectorModified__(PVOID,int);
-		static bool WINAPI __bootSectorModified__(PVOID,LPCSTR,short);
+		static bool WINAPI __bootSectorModified__(CPropGridCtrl::PCustomParam,int);
+		static bool WINAPI __bootSectorModified__(CPropGridCtrl::PCustomParam,LPCSTR,short);
 
 		const TPhysicalAddress chsBoot;
 		const CMainWindow::CTdiView::TTab tab;

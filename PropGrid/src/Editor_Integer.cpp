@@ -6,10 +6,11 @@
 
 	TIntegerEditor::TIntegerEditor(	BYTE features,
 									CPropGridCtrl::TInteger::RCUpDownLimits rLimits,
-									CPropGridCtrl::TInteger::TOnValueConfirmed onValueConfirmed
+									CPropGridCtrl::TInteger::TOnValueConfirmed onValueConfirmed,
+									CPropGridCtrl::TOnValueChanged onValueChanged
 								)
 		// ctor
-		: TStringEditor( NULL, false, NULL )
+		: TStringEditor( NULL, false, NULL, onValueChanged )
 		, features(features)
 		, limits(rLimits)
 		, onValueConfirmed( onValueConfirmed ? onValueConfirmed : __alwaysAccept__ ) {
@@ -107,22 +108,22 @@
 	const CPropGridCtrl::TInteger::TUpDownLimits CPropGridCtrl::TInteger::PositiveIntegerLimits={ 1, INT_MAX };
 	const CPropGridCtrl::TInteger::TUpDownLimits CPropGridCtrl::TInteger::NegativeIntegerLimits={ INT_MIN, -1 };
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TInteger::DefineEditor(RCUpDownLimits rLimits,TOnValueConfirmed onValueConfirmed,BYTE features){
+	CPropGridCtrl::PCEditor CPropGridCtrl::TInteger::DefineEditor(RCUpDownLimits rLimits,TOnValueConfirmed onValueConfirmed,BYTE features,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
-					new TIntegerEditor( features, rLimits, onValueConfirmed ),
+					new TIntegerEditor( features, rLimits, onValueConfirmed, onValueChanged ),
 					sizeof(TIntegerEditor)
 				);
 	}
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TInteger::DefineByteEditor(TOnValueConfirmed onValueConfirmed,BYTE features){
+	CPropGridCtrl::PCEditor CPropGridCtrl::TInteger::DefineByteEditor(TOnValueConfirmed onValueConfirmed,BYTE features,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		static const TUpDownLimits limits={ 0, (BYTE)-1 };
-		return DefineEditor( limits, onValueConfirmed, features );
+		return DefineEditor( limits, onValueConfirmed, features, onValueChanged );
 	}
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TInteger::DefineWordEditor(TOnValueConfirmed onValueConfirmed,BYTE features){
+	CPropGridCtrl::PCEditor CPropGridCtrl::TInteger::DefineWordEditor(TOnValueConfirmed onValueConfirmed,BYTE features,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		static const TUpDownLimits limits={ 0, (WORD)-1 };
-		return DefineEditor( limits, onValueConfirmed, features );
+		return DefineEditor( limits, onValueConfirmed, features, onValueChanged );
 	}

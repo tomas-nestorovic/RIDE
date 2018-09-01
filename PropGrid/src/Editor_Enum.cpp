@@ -14,10 +14,11 @@
 											CPropGridCtrl::TDrawValueHandler drawValue,
 											CPropGridCtrl::TEnum::TGetValueList getValueList,
 											CPropGridCtrl::TEnum::TFreeValueList freeValueList,
-											CPropGridCtrl::TEnum::TOnValueConfirmed onValueConfirmed
+											CPropGridCtrl::TEnum::TOnValueConfirmed onValueConfirmed,
+											CPropGridCtrl::TOnValueChanged onValueChanged
 										)
 		// ctor
-		: TEditor( height, true, NULL )
+		: TEditor( height, true, NULL, onValueChanged )
 		, wideChar(wideChar)
 		, getValueDesc(getValueDesc)
 		, drawValue(drawValue)
@@ -127,27 +128,29 @@
 
 	
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TEnum::DefineConstStringListEditorA(TGetValueList getValueList,TGetValueDescA getValueDesc,TFreeValueList freeValueList,TOnValueConfirmed onValueConfirmed){
+	CPropGridCtrl::PCEditor CPropGridCtrl::TEnum::DefineConstStringListEditorA(TGetValueList getValueList,TGetValueDescA getValueDesc,TFreeValueList freeValueList,TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
 					new TCustomEnumEditor(	EDITOR_DEFAULT_HEIGHT,
 											false, (CPropGridCtrl::TEnum::TGetValueDesc)getValueDesc,
 											NULL,
 											getValueList, freeValueList,
-											onValueConfirmed
+											onValueConfirmed,
+											onValueChanged
 										),
 					sizeof(TCustomEnumEditor)
 				);
 	}
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TEnum::DefineConstCustomListEditor(WORD height,TGetValueList getValueList,TDrawValueHandler drawValue,TFreeValueList freeValueList,TOnValueConfirmed onValueConfirmed){
+	CPropGridCtrl::PCEditor CPropGridCtrl::TEnum::DefineConstCustomListEditor(WORD height,TGetValueList getValueList,TDrawValueHandler drawValue,TFreeValueList freeValueList,TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
 					new TCustomEnumEditor(	height>0 ? height : EDITOR_DEFAULT_HEIGHT,
 											false, NULL,
 											drawValue,
 											getValueList, freeValueList,
-											onValueConfirmed
+											onValueConfirmed,
+											onValueChanged
 										),
 					sizeof(TCustomEnumEditor)
 				);

@@ -6,8 +6,6 @@
 
 	#define STRING_LENGTH_MAX		8192
 
-	#define WM_EDITOR_VALUE_CONFIRMED	WM_USER+1
-
 	#pragma pack(1)
 	struct TEditor{
 		static const struct TControl sealed{
@@ -35,6 +33,7 @@
 		const WORD height;
 		const bool hasMainControl; // True <=> the Editor features an editable MainControl, otherwise False
 		const CPropGridCtrl::TOnEllipsisButtonClicked onEllipsisBtnClicked;
+		const CPropGridCtrl::TOnValueChanged onValueChanged;
 
 		virtual void __drawValue__(const TPropGridInfo::TItem::TValue &value,PDRAWITEMSTRUCT pdis) const=0;
 		virtual HWND __createMainControl__(const TPropGridInfo::TItem::TValue &value,HWND hParent) const=0;
@@ -51,7 +50,8 @@
 		TEditor(
 			WORD height,
 			bool hasMainControl,
-			CPropGridCtrl::TOnEllipsisButtonClicked onEllipsisBtnClicked
+			CPropGridCtrl::TOnEllipsisButtonClicked onEllipsisBtnClicked,
+			CPropGridCtrl::TOnValueChanged onValueChanged
 		);
 	};
 
@@ -70,7 +70,8 @@
 		TStringEditor(
 			CPropGridCtrl::TOnEllipsisButtonClicked onEllipsisBtnClicked,
 			bool wideChar,
-			CPropGridCtrl::TString::TOnValueConfirmed onValueConfirmed
+			CPropGridCtrl::TString::TOnValueConfirmed onValueConfirmed,
+			CPropGridCtrl::TOnValueChanged onValueChanged
 		);
 	};
 
@@ -85,7 +86,8 @@
 			CPropGridCtrl::TOnEllipsisButtonClicked onEllipsisBtnClicked,
 			bool wideChar,
 			CPropGridCtrl::TString::TOnValueConfirmed onValueConfirmed,
-			WCHAR paddingChar
+			WCHAR paddingChar,
+			CPropGridCtrl::TOnValueChanged onValueChanged
 		);
 	};
 
@@ -96,7 +98,8 @@
 	public:
 		TDynamicStringEditor(
 			bool wideChar,
-			CPropGridCtrl::TString::TOnValueConfirmed onValueConfirmed
+			CPropGridCtrl::TString::TOnValueConfirmed onValueConfirmed,
+			CPropGridCtrl::TOnValueChanged onValueChanged
 		);
 	};
 
@@ -110,7 +113,8 @@
 		LRESULT __mainCtrl_wndProc__(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam) const override;
 	public:
 		TBooleanEditor(
-			CPropGridCtrl::TBoolean::TOnValueConfirmed onValueConfirmed
+			CPropGridCtrl::TBoolean::TOnValueConfirmed onValueConfirmed,
+			CPropGridCtrl::TOnValueChanged onValueChanged
 		);
 	};
 
@@ -128,7 +132,8 @@
 		TIntegerEditor(
 			BYTE features,
 			CPropGridCtrl::TInteger::RCUpDownLimits rLimits,
-			CPropGridCtrl::TInteger::TOnValueConfirmed onValueConfirmed
+			CPropGridCtrl::TInteger::TOnValueConfirmed onValueConfirmed,
+			CPropGridCtrl::TOnValueChanged onValueChanged
 		);
 	};
 
@@ -153,7 +158,8 @@
 			CPropGridCtrl::TDrawValueHandler drawValue,
 			CPropGridCtrl::TEnum::TGetValueList getValueList,
 			CPropGridCtrl::TEnum::TFreeValueList freeValueList,
-			CPropGridCtrl::TEnum::TOnValueConfirmed onValueConfirmed
+			CPropGridCtrl::TEnum::TOnValueConfirmed onValueConfirmed,
+			CPropGridCtrl::TOnValueChanged onValueChanged
 		);
 	};
 
@@ -161,7 +167,8 @@
 	struct TFileNameEditor sealed:public TFixedPaddedStringEditor{
 		TFileNameEditor(
 			bool wideChar,
-			CPropGridCtrl::TString::TOnValueConfirmed onValueConfirmed
+			CPropGridCtrl::TString::TOnValueConfirmed onValueConfirmed,
+			CPropGridCtrl::TOnValueChanged onValueChanged
 		);
 	};
 
@@ -177,7 +184,8 @@
 	public:
 		THyperlinkEditor(
 			bool wideChar,
-			CPropGridCtrl::THyperlink::TOnHyperlinkClicked onHyperlinkClicked
+			CPropGridCtrl::THyperlink::TOnHyperlinkClicked onHyperlinkClicked,
+			CPropGridCtrl::TOnValueChanged onValueChanged
 		);
 	};
 
@@ -196,7 +204,8 @@
 			CPropGridCtrl::TDrawValueHandler drawValue,
 			CPropGridCtrl::TCustom::TCreateCustomMainEditor createCustomMainEditor,
 			CPropGridCtrl::TOnEllipsisButtonClicked onEllipsisBtnClicked,
-			CPropGridCtrl::TCustom::TOnValueConfirmed onValueConfirmed
+			CPropGridCtrl::TCustom::TOnValueConfirmed onValueConfirmed,
+			CPropGridCtrl::TOnValueChanged onValueChanged
 		);
 	} *PCCustomEditor;
 

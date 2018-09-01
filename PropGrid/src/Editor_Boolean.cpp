@@ -4,10 +4,11 @@
 		return true; // new Value is by default always accepted
 	}
 
-	TBooleanEditor::TBooleanEditor(	CPropGridCtrl::TBoolean::TOnValueConfirmed onValueConfirmed
+	TBooleanEditor::TBooleanEditor(	CPropGridCtrl::TBoolean::TOnValueConfirmed onValueConfirmed,
+									CPropGridCtrl::TOnValueChanged onValueChanged
 								)
 		// ctor
-		: TEditor( EDITOR_DEFAULT_HEIGHT, true, NULL )
+		: TEditor( EDITOR_DEFAULT_HEIGHT, true, NULL, onValueChanged )
 		, onValueConfirmed( onValueConfirmed ? onValueConfirmed : __alwaysAccept__ ) {
 	}
 
@@ -32,7 +33,6 @@
 		}
 	}
 
-	//rozepsat value na buffer+size
 	HWND TBooleanEditor::__createMainControl__(const TPropGridInfo::TItem::TValue &value,HWND hParent) const{
 		// creates, initializes with current Value, and returns Editor's MainControl
 		return ::CreateWindow(	WC_BUTTON,
@@ -44,7 +44,6 @@
 							);
 	}
 
-	//rozepsat value na buffer+size
 	bool TBooleanEditor::__tryToAcceptMainCtrlValue__() const{
 		// True <=> Editor's current Value is acceptable, otherwise False
 		ignoreRequestToDestroy=true;
@@ -84,10 +83,10 @@
 
 
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TBoolean::DefineEditor(TOnValueConfirmed onValueConfirmed){
+	CPropGridCtrl::PCEditor CPropGridCtrl::TBoolean::DefineEditor(TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
-					new TBooleanEditor(onValueConfirmed),
+					new TBooleanEditor( onValueConfirmed, onValueChanged ),
 					sizeof(TBooleanEditor)
 				);
 	}

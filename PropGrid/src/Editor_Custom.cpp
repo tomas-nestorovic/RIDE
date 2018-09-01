@@ -8,10 +8,11 @@
 									CPropGridCtrl::TDrawValueHandler drawValue,
 									CPropGridCtrl::TCustom::TCreateCustomMainEditor createCustomMainEditor,
 									CPropGridCtrl::TOnEllipsisButtonClicked onEllipsisBtnClicked,
-									CPropGridCtrl::TCustom::TOnValueConfirmed onValueConfirmed
+									CPropGridCtrl::TCustom::TOnValueConfirmed onValueConfirmed,
+									CPropGridCtrl::TOnValueChanged onValueChanged
 								)
 		// ctor
-		: TEditor( height, createCustomMainEditor, onEllipsisBtnClicked )
+		: TEditor( height, createCustomMainEditor, onEllipsisBtnClicked, onValueChanged )
 		, drawValue(drawValue)
 		, createCustomMainEditor(createCustomMainEditor)
 		, onValueConfirmed( onValueConfirmed ? onValueConfirmed : __alwaysAccept__ ) {
@@ -53,13 +54,14 @@
 
 
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TCustom::DefineEditor(WORD height,TDrawValueHandler drawValue,TCreateCustomMainEditor createCustomMainEditor,TOnEllipsisButtonClicked onEllipsisBtnClicked,TOnValueConfirmed onValueConfirmed){
+	CPropGridCtrl::PCEditor CPropGridCtrl::TCustom::DefineEditor(WORD height,TDrawValueHandler drawValue,TCreateCustomMainEditor createCustomMainEditor,TOnEllipsisButtonClicked onEllipsisBtnClicked,TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
 					new TCustomEditor(	height ? height : EDITOR_DEFAULT_HEIGHT,
 										drawValue,
 										createCustomMainEditor, onEllipsisBtnClicked,
-										onValueConfirmed
+										onValueConfirmed,
+										onValueChanged
 									),
 					sizeof(TCustomEditor)
 				);

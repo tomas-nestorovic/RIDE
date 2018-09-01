@@ -6,10 +6,11 @@
 
 	TStringEditor::TStringEditor(	CPropGridCtrl::TOnEllipsisButtonClicked onEllipsisBtnClicked,
 									bool wideChar,
-									CPropGridCtrl::TString::TOnValueConfirmed onValueConfirmed
+									CPropGridCtrl::TString::TOnValueConfirmed onValueConfirmed,
+									CPropGridCtrl::TOnValueChanged onValueChanged
 								)
 		// ctor
-		: TEditor( EDITOR_DEFAULT_HEIGHT, true, onEllipsisBtnClicked )
+		: TEditor( EDITOR_DEFAULT_HEIGHT, true, onEllipsisBtnClicked, onValueChanged )
 		, wideChar(wideChar)
 		, onValueConfirmed( onValueConfirmed ? onValueConfirmed : __alwaysAccept__ ) {
 	}
@@ -92,10 +93,11 @@
 	TFixedPaddedStringEditor::TFixedPaddedStringEditor(	CPropGridCtrl::TOnEllipsisButtonClicked onEllipsisBtnClicked,
 														bool wideChar,
 														CPropGridCtrl::TString::TOnValueConfirmed onValueConfirmed,
-														WCHAR paddingChar
+														WCHAR paddingChar,
+														CPropGridCtrl::TOnValueChanged onValueChanged
 													)
 		// ctor
-		: TStringEditor( NULL, wideChar, onValueConfirmed )
+		: TStringEditor( NULL, wideChar, onValueConfirmed, onValueChanged )
 		, paddingChar(paddingChar) {
 	}
 
@@ -150,10 +152,11 @@
 
 
 	TDynamicStringEditor::TDynamicStringEditor(	bool wideChar,
-												CPropGridCtrl::TString::TOnValueConfirmed onValueConfirmed
+												CPropGridCtrl::TString::TOnValueConfirmed onValueConfirmed,
+												CPropGridCtrl::TOnValueChanged onValueChanged
 											)
 		// ctor
-		: TStringEditor( NULL, wideChar, onValueConfirmed ) {
+		: TStringEditor( NULL, wideChar, onValueConfirmed, onValueChanged ) {
 	}
 
 	HWND TDynamicStringEditor::__createMainControl__(const TPropGridInfo::TItem::TValue &value,HWND hParent) const{
@@ -207,10 +210,11 @@
 	}
 
 	TFileNameEditor::TFileNameEditor(	bool wideChar,
-										CPropGridCtrl::TString::TOnValueConfirmed onValueConfirmed
+										CPropGridCtrl::TString::TOnValueConfirmed onValueConfirmed,
+										CPropGridCtrl::TOnValueChanged onValueChanged
 									)
 		// ctor
-		: TFixedPaddedStringEditor(	__ellipsis_selectFileInDialog__, wideChar, onValueConfirmed, '\0' ) {
+		: TFixedPaddedStringEditor(	__ellipsis_selectFileInDialog__, wideChar, onValueConfirmed, '\0', onValueChanged ) {
 	}
 
 
@@ -222,54 +226,54 @@
 
 
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TString::DefineFixedLengthEditorA(TOnValueConfirmedA onValueConfirmed,char paddingChar){
+	CPropGridCtrl::PCEditor CPropGridCtrl::TString::DefineFixedLengthEditorA(TOnValueConfirmedA onValueConfirmed,char paddingChar,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
-					new TFixedPaddedStringEditor( NULL, false, (TOnValueConfirmed)onValueConfirmed, paddingChar ),
+					new TFixedPaddedStringEditor( NULL, false, (TOnValueConfirmed)onValueConfirmed, paddingChar, onValueChanged ),
 					sizeof(TFixedPaddedStringEditor)
 				);
 	}
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TString::DefineFixedLengthEditorW(TOnValueConfirmedW onValueConfirmed,WCHAR paddingChar){
+	CPropGridCtrl::PCEditor CPropGridCtrl::TString::DefineFixedLengthEditorW(TOnValueConfirmedW onValueConfirmed,WCHAR paddingChar,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
-					new TFixedPaddedStringEditor( NULL, true, (TOnValueConfirmed)onValueConfirmed, paddingChar ),
+					new TFixedPaddedStringEditor( NULL, true, (TOnValueConfirmed)onValueConfirmed, paddingChar, onValueChanged ),
 					sizeof(TFixedPaddedStringEditor)
 				);
 	}
 
 
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TString::DefineDynamicLengthEditorA(TOnValueConfirmedA onValueConfirmed){
+	CPropGridCtrl::PCEditor CPropGridCtrl::TString::DefineDynamicLengthEditorA(TOnValueConfirmedA onValueConfirmed,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
-					new TDynamicStringEditor( false, (TOnValueConfirmed)onValueConfirmed ),
+					new TDynamicStringEditor( false, (TOnValueConfirmed)onValueConfirmed, onValueChanged ),
 					sizeof(TDynamicStringEditor)
 				);
 	}
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TString::DefineDynamicLengthEditorW(TOnValueConfirmedW onValueConfirmed){
+	CPropGridCtrl::PCEditor CPropGridCtrl::TString::DefineDynamicLengthEditorW(TOnValueConfirmedW onValueConfirmed,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
-					new TDynamicStringEditor( true, (TOnValueConfirmed)onValueConfirmed ),
+					new TDynamicStringEditor( true, (TOnValueConfirmed)onValueConfirmed, onValueChanged ),
 					sizeof(TDynamicStringEditor)
 				);
 	}
 
 
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TString::DefineFileNameEditorA(TOnValueConfirmedA onValueConfirmed){
+	CPropGridCtrl::PCEditor CPropGridCtrl::TString::DefineFileNameEditorA(TOnValueConfirmedA onValueConfirmed,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
-					new TFileNameEditor( false, (TOnValueConfirmed)onValueConfirmed ),
+					new TFileNameEditor( false, (TOnValueConfirmed)onValueConfirmed, onValueChanged ),
 					sizeof(TFileNameEditor)
 				);
 	}
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TString::DefineFileNameEditorW(TOnValueConfirmedW onValueConfirmed){
+	CPropGridCtrl::PCEditor CPropGridCtrl::TString::DefineFileNameEditorW(TOnValueConfirmedW onValueConfirmed,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
-					new TFileNameEditor( true, (TOnValueConfirmed)onValueConfirmed ),
+					new TFileNameEditor( true, (TOnValueConfirmed)onValueConfirmed, onValueChanged ),
 					sizeof(TFileNameEditor)
 				);
 	}

@@ -37,34 +37,34 @@
 
 	HANDLE WINAPI CPropGridCtrl::AddProperty(HWND hPropGrid,HANDLE category,LPCTSTR name,PValue value,TValueSize valueBytes,PCEditor editor,PCustomParam param){
 		// creates, adds into PropertyGrid, and returns a new ValueItem with given Name and Value
-		if (const TPropGridInfo::PCategoryItem inferredCategory=__inferCategory__(hPropGrid,category))
-			// creating a new ValueItem in the specified Category
-			return	new TPropGridInfo::TItem( // is also automatically added to the ListBox if Item's all ParentCategories are Expanded
-						GET_PROPGRID_INFO(hPropGrid),
-						inferredCategory,
-						name,
-						(::PCEditor)editor,
-						value, valueBytes,
-						param
-					);
-		else
-			// no Category is refered to by the input parameters - quitting with failure
-			return 0;
+		// - creating a new ValueItem in the specified Category
+		if (!IsValueBeingEdited()) // can change content only if a Value is NOT being edited
+			if (const TPropGridInfo::PCategoryItem inferredCategory=__inferCategory__(hPropGrid,category))
+				return	new TPropGridInfo::TItem( // is also automatically added to the ListBox if Item's all ParentCategories are Expanded
+							GET_PROPGRID_INFO(hPropGrid),
+							inferredCategory,
+							name,
+							(::PCEditor)editor,
+							value, valueBytes,
+							param
+						);
+		// - no Category is refered to by the input parameters - quitting with failure
+		return 0;
 	}
 
 	HANDLE WINAPI CPropGridCtrl::AddCategory(HWND hPropGrid,HANDLE category,LPCTSTR name,bool initiallyExpanded){
 		// creates, adds into PropertyGrid, and returns a new CategoryItem with given Name
-		if (const TPropGridInfo::PCategoryItem inferredCategory=__inferCategory__(hPropGrid,category))
-			// creating a new CategoryItem in the specified Category
-			return	new TPropGridInfo::TCategoryItem( // is also automatically added to the ListBox if Item's all ParentCategories are Expanded
-						GET_PROPGRID_INFO(hPropGrid),
-						inferredCategory,
-						name,
-						initiallyExpanded
-					);
-		else
-			// no Category is refered to by the input parameters - quitting with failure
-			return 0;
+		// - creating a new CategoryItem in the specified Category
+		if (!IsValueBeingEdited()) // can change content only if a Value is NOT being edited
+			if (const TPropGridInfo::PCategoryItem inferredCategory=__inferCategory__(hPropGrid,category))
+				return	new TPropGridInfo::TCategoryItem( // is also automatically added to the ListBox if Item's all ParentCategories are Expanded
+							GET_PROPGRID_INFO(hPropGrid),
+							inferredCategory,
+							name,
+							initiallyExpanded
+						);
+		// - no Category is refered to by the input parameters - quitting with failure
+		return 0;
 	}
 
 	HANDLE WINAPI CPropGridCtrl::EnableProperty(HWND hPropGrid,HANDLE propOrCat,bool enabled){
@@ -73,16 +73,21 @@
 		TPropGridInfo::TItem *const pItem=	propOrCat
 											? (TPropGridInfo::TItem *)propOrCat // enabling/disabling particular Item
 											: &pPropGridInfo->root; // enabling/disabling the whole content of specified PropertyGrid
-		if (enabled)
-			pItem->__enable__();
-		else
-			pItem->__disable__();
-		::InvalidateRect( pPropGridInfo->listBox.handle, NULL, TRUE );
+		if (!IsValueBeingEdited()){ // can change content only if a Value is NOT being edited
+			if (enabled)
+				pItem->__enable__();
+			else
+				pItem->__disable__();
+			::InvalidateRect( pPropGridInfo->listBox.handle, NULL, TRUE );
+		}
 		return pItem;
 	}
 
 	void WINAPI CPropGridCtrl::RemoveProperty(HWND hPropGrid,HANDLE propOrCat){
 		// removes specified PropertyOrCategory from the PropertyGrid
+		// - can change content only if a Value is NOT being edited
+		if (IsValueBeingEdited())
+			return;
 		// - cancelling any editing
 		TEditor::__cancelEditing__();
 		// - removing

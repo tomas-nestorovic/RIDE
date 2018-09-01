@@ -187,6 +187,7 @@
 		static const TSide StdSidesMap[];
 
 		static bool __isValidCharInFat32LongName__(WCHAR c);
+		static void WINAPI __updateView__(CPropGridCtrl::PCustomParam);
 
 		const TFnCompareNames fnCompareNames;
 		const TTrackScheme trackAccessScheme; // single Scheme to access Tracks in Image

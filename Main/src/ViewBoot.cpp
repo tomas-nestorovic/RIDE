@@ -18,7 +18,7 @@
 		TUtils::InformationWithCheckableShowNoMore( text, INI_BOOT, messageId );
 	}
 
-	bool WINAPI CBootView::__bootSectorModified__(PVOID,int){
+	bool WINAPI CBootView::__bootSectorModified__(CPropGridCtrl::PCustomParam,int){
 		// marking the Boot Sector as dirty
 		const PDos dos=CDos::__getFocused__();
 		dos->FlushToBootSector(); // marking the Boot Sector as dirty
@@ -26,7 +26,7 @@
 		return true;
 	}
 
-	bool WINAPI CBootView::__bootSectorModified__(PVOID,LPCSTR,short){
+	bool WINAPI CBootView::__bootSectorModified__(CPropGridCtrl::PCustomParam,LPCSTR,short){
 		// marking the Boot Sector as dirty
 		return __bootSectorModified__(NULL,0);
 	}
@@ -147,19 +147,14 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 
 	static void __pg_showPositiveInteger__(HWND hPropGrid,HANDLE hCategory,PVOID pInteger,LPCTSTR criticalValueId,CPropGridCtrl::TInteger::TOnValueConfirmed fn,int maxValue,LPCTSTR caption){
 		// shows Integer in value in PropertyGrid's specified Category
-		if (maxValue<=0xff)
+		if (const PCBYTE pZeroByte=(PCBYTE)::memchr(&maxValue,0,sizeof(maxValue))){
+			const CPropGridCtrl::TInteger::TUpDownLimits limits={ 1, maxValue };
 			CPropGridCtrl::AddProperty(	hPropGrid, hCategory, caption,
-										pInteger, sizeof(BYTE),
-										CPropGridCtrl::TInteger::DefineByteEditor(fn),
+										pInteger, pZeroByte-(PCBYTE)&maxValue,
+										CPropGridCtrl::TInteger::DefineEditor( limits, fn ),
 										(PVOID)criticalValueId
 									);
-		else if (maxValue<=0xffff)
-			CPropGridCtrl::AddProperty(	hPropGrid, hCategory, caption,
-										pInteger, sizeof(WORD),
-										CPropGridCtrl::TInteger::DefineWordEditor(fn),
-										(PVOID)criticalValueId
-									);
-		else
+		}else
 			CPropGridCtrl::AddProperty(	hPropGrid, hCategory, caption,
 										pInteger, sizeof(DWORD),
 										CPropGridCtrl::TInteger::DefineEditor( CPropGridCtrl::TInteger::PositiveIntegerLimits, fn ),
@@ -204,7 +199,7 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 		// - getting Boot Sector data
 		WORD bootSectorDataRealLength=0; // initializing just in case the Boot Sector is not found
 		const PSectorData boot=IMAGE->GetSectorData(chsBoot,&bootSectorDataRealLength);
-		// - resetting the PropertyGrid
+		// - clearing the PropertyGrid
 		CPropGridCtrl::RemoveProperty( propGrid.m_hWnd, NULL );
 		// - populating the PropertyGrid with values from the Boot Sector (if any found)
 		if (boot){
@@ -219,7 +214,7 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 				if (cbp.chs){
 					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.nCylinders, NULL, __updateFatAfterChangingCylinderCount__, props->cylinderRange.iMax, _T("Cylinders") );
 					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.nHeads, CRITICAL_VALUE_SIDES_COUNT, __confirmCriticalValueInBoot__, props->headRange.iMax, _T("Heads") );
-					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.nSectors, CRITICAL_VALUE_SECTORS_COUNT, __confirmCriticalValueInBoot__, props->sectorRange.iMax, _T("Sectors/track") );
+					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.nSectors, CRITICAL_VALUE_SECTORS_COUNT, __confirmCriticalValueInBoot__, min(props->sectorRange.iMax,DOS->properties->nSectorsOnTrackMax), _T("Sectors/track") );
 				}
 				if (cbp.pSectorLength){
 					static const CPropGridCtrl::TInteger::TUpDownLimits Limits={128,16384};
@@ -255,6 +250,8 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 																	),
 											false
 										);
+		// - repainting the HexaEditor
+		hexaEditor.Invalidate();
 		// - reflecting write-protection into the look of controls
 		if (IMAGE->IsWriteProtected())
 			__updateLookOfControls__();

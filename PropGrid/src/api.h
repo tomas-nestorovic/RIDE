@@ -18,26 +18,27 @@
 
 		typedef void (WINAPI *TDrawValueHandler)(PCustomParam,PCValue,TValueSize,PDRAWITEMSTRUCT);
 		typedef bool (WINAPI *TOnEllipsisButtonClicked)(PCustomParam,PValue,TValueSize);
+		typedef void (WINAPI *TOnValueChanged)(PCustomParam);
 
 		struct PROPGRID_DECLSPEC TString sealed{
 			typedef bool (WINAPI *TOnValueConfirmed)(PCustomParam,PValue,TValueSize);
 			typedef bool (WINAPI *TOnValueConfirmedA)(PCustomParam,LPCSTR,TValueSize);
 			typedef bool (WINAPI *TOnValueConfirmedW)(PCustomParam,LPCWSTR,TValueSize);
 
-			static PCEditor DefineFixedLengthEditorA(TOnValueConfirmedA onValueConfirmed=NULL,char paddingChar='\0');
-			static PCEditor DefineFixedLengthEditorW(TOnValueConfirmedW onValueConfirmed=NULL,WCHAR paddingChar='\0');
+			static PCEditor DefineFixedLengthEditorA(TOnValueConfirmedA onValueConfirmed=NULL,char paddingChar='\0',TOnValueChanged onValueChanged=NULL);
+			static PCEditor DefineFixedLengthEditorW(TOnValueConfirmedW onValueConfirmed=NULL,WCHAR paddingChar='\0',TOnValueChanged onValueChanged=NULL);
 
-			static PCEditor DefineDynamicLengthEditorA(TOnValueConfirmedA onValueConfirmed=NULL);
-			static PCEditor DefineDynamicLengthEditorW(TOnValueConfirmedW onValueConfirmed=NULL);
+			static PCEditor DefineDynamicLengthEditorA(TOnValueConfirmedA onValueConfirmed=NULL,TOnValueChanged onValueChanged=NULL);
+			static PCEditor DefineDynamicLengthEditorW(TOnValueConfirmedW onValueConfirmed=NULL,TOnValueChanged onValueChanged=NULL);
 
-			static PCEditor DefineFileNameEditorA(TOnValueConfirmedA onValueConfirmed=NULL);
-			static PCEditor DefineFileNameEditorW(TOnValueConfirmedW onValueConfirmed=NULL);
+			static PCEditor DefineFileNameEditorA(TOnValueConfirmedA onValueConfirmed=NULL,TOnValueChanged onValueChanged=NULL);
+			static PCEditor DefineFileNameEditorW(TOnValueConfirmedW onValueConfirmed=NULL,TOnValueChanged onValueChanged=NULL);
 		};
 
 		struct PROPGRID_DECLSPEC TBoolean sealed{
 			typedef bool (WINAPI *TOnValueConfirmed)(PCustomParam,bool);
 
-			static PCEditor DefineEditor(TOnValueConfirmed onValueConfirmed);
+			static PCEditor DefineEditor(TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged=NULL);
 		};
 
 		struct PROPGRID_DECLSPEC TInteger sealed{
@@ -54,9 +55,9 @@
 			static const TUpDownLimits PositiveIntegerLimits;
 			static const TUpDownLimits NegativeIntegerLimits;
 
-			static PCEditor DefineEditor(RCUpDownLimits rLimits,TOnValueConfirmed onValueConfirmed=NULL,BYTE features=TFeatures::NONE);
-			static PCEditor DefineByteEditor(TOnValueConfirmed onValueConfirmed=NULL,BYTE features=TFeatures::NONE);
-			static PCEditor DefineWordEditor(TOnValueConfirmed onValueConfirmed=NULL,BYTE features=TFeatures::NONE);
+			static PCEditor DefineEditor(RCUpDownLimits rLimits,TOnValueConfirmed onValueConfirmed=NULL,BYTE features=TFeatures::NONE,TOnValueChanged onValueChanged=NULL);
+			static PCEditor DefineByteEditor(TOnValueConfirmed onValueConfirmed=NULL,BYTE features=TFeatures::NONE,TOnValueChanged onValueChanged=NULL);
+			static PCEditor DefineWordEditor(TOnValueConfirmed onValueConfirmed=NULL,BYTE features=TFeatures::NONE,TOnValueChanged onValueChanged=NULL);
 		};
 
 		struct PROPGRID_DECLSPEC TEnum sealed{
@@ -79,13 +80,15 @@
 								TGetValueList getValueList, // list of possible values
 								TGetValueDescA getValueDesc, // value-to-string conversion
 								TFreeValueList freeValueList, // can be null for static lists of values
-								TOnValueConfirmed onValueConfirmed=NULL
+								TOnValueConfirmed onValueConfirmed=NULL,
+								TOnValueChanged onValueChanged=NULL
 							);
 			static PCEditor DefineConstStringListEditorW(
 								TGetValueList getValueList, // list of possible values
 								TGetValueDescW getValueDesc, // value-to-string conversion
 								TFreeValueList freeValueList, // can be null for static lists of values
-								TOnValueConfirmed onValueConfirmed=NULL
+								TOnValueConfirmed onValueConfirmed=NULL,
+								TOnValueChanged onValueChanged=NULL
 							);
 			//*
 			static PCEditor DefineConstCustomListEditor(
@@ -93,7 +96,8 @@
 								TGetValueList getValueList, // list of possible values
 								TDrawValueHandler drawValue,
 								TFreeValueList freeValueList, // can be null for static lists of values
-								TOnValueConfirmed onValueConfirmed=NULL
+								TOnValueConfirmed onValueConfirmed=NULL,
+								TOnValueChanged onValueChanged=NULL
 							);
 			//*/
 		};
@@ -103,8 +107,8 @@
 			typedef bool (WINAPI *TOnHyperlinkClickedA)(PCustomParam,int hyperlinkId,LPCSTR hyperlinkName);
 			typedef bool (WINAPI *TOnHyperlinkClickedW)(PCustomParam,int hyperlinkId,LPCWSTR hyperlinkName);
 
-			static PCEditor DefineEditorA(TOnHyperlinkClickedA onHyperlinkClicked);
-			static PCEditor DefineEditorW(TOnHyperlinkClickedW onHyperlinkClicked);
+			static PCEditor DefineEditorA(TOnHyperlinkClickedA onHyperlinkClicked,TOnValueChanged onValueChanged=NULL);
+			static PCEditor DefineEditorW(TOnHyperlinkClickedW onHyperlinkClicked,TOnValueChanged onValueChanged=NULL);
 		};
 
 		struct PROPGRID_DECLSPEC TCustom sealed{
@@ -117,7 +121,8 @@
 								TDrawValueHandler drawValue,
 								TCreateCustomMainEditor createCustomMainEditor, // Null <=> the editor doesn't feature a main control, otherwise the function should return a control well initialized to the current value (eventually featuring an attached UpDownControl)
 								TOnEllipsisButtonClicked onEllipsisBtnClicked, // Null <=> the editor doesn't feature an ellipsis button, otherwise the function is a handler for the on-click event on the ellipsis button
-								TOnValueConfirmed onValueConfirmed=NULL
+								TOnValueConfirmed onValueConfirmed=NULL,
+								TOnValueChanged onValueChanged=NULL
 							);
 		};
 

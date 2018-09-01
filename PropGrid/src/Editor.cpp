@@ -64,12 +64,14 @@
 
 	TEditor::TEditor(	WORD height,
 						bool hasMainControl,
-						CPropGridCtrl::TOnEllipsisButtonClicked onEllipsisBtnClicked
+						CPropGridCtrl::TOnEllipsisButtonClicked onEllipsisBtnClicked,
+						CPropGridCtrl::TOnValueChanged onValueChanged
 					)
 		// ctor
 		: height(height)
 		, hasMainControl(hasMainControl)
-		, onEllipsisBtnClicked(onEllipsisBtnClicked) {
+		, onEllipsisBtnClicked(onEllipsisBtnClicked)
+		, onValueChanged(onValueChanged) {
 	}
 
 
@@ -137,24 +139,30 @@
 			case WM_GETDLGCODE:
 				// the Editor must receive all keyboard input (it may not receive a Tab keystroke if part of a dialog or CControlBar)
 				return DLGC_WANTALLKEYS;
-			case WM_KILLFOCUS:
+			case WM_KILLFOCUS:{
 				// the MainControl or EllipsisButton has lost the focus
 				// . if the focus has been handed over to the EllipsisButton, doing nothing (as the focus remains within the Editor components)
 				if (pSingleShown->hEllipsisBtn && ::GetFocus()==pSingleShown->hEllipsisBtn)
 					break;
 				// . if attempting to leave the Editor, attempting to accept the new Value
+				CPropGridCtrl::TOnValueChanged onValueChanged=NULL; // assumption (Value didn't change)
+				CPropGridCtrl::PCustomParam param;
 				if (::IsWindowVisible(pSingleShown->hMainCtrl)) // yes, attepting to leave the Editor; must use the "pSingleShown->hMainCtrl" construct to refer to the MainControl as "hWnd" may refer to either the MainControl or EllipsisButton (see EllipsisButton's window procedure)
-					if (!::SendMessage(pSingleShown->hMainCtrl,WM_EDITOR_VALUE_CONFIRMED,0,0)){ // if Value not acceptable ... (must use the "pSingleShown->hMainCtrl" construct to refer to the MainControl as "hWnd" may refer to either the MainControl or EllipsisButton [see EllipsisButton's window procedure])
+					if (__tryToAcceptMainCtrlValue__()){ // if Value acceptable ...
+						onValueChanged=pSingleShown->value.editor->onValueChanged; // ... letting the caller know once the editing has definitely ended
+						param=pSingleShown->value.param;
+					}else{ // otherwise, if Value not acceptable ...
 						::SetFocus(hWnd); // ... focusing back on either the MainControl or EllipsisButton
 						return 0;
 					}
 				// . destroying the Editor
 				delete pSingleShown;
 				pSingleShown=NULL;
+				// . letting the caller know the editing has definitely ended
+				if (onValueChanged)
+					onValueChanged(param);
 				return 0;
-			case WM_EDITOR_VALUE_CONFIRMED:
-				// determining if new Value should be accepted or rejected
-				return	__tryToAcceptMainCtrlValue__();
+			}
 		}
 		return ::CallWindowProc(pSingleShown->wndProc0,hWnd,msg,wParam,lParam);
 	}
