@@ -165,6 +165,7 @@
 		friend class CTrackMapView;
 		friend class CFileManagerView;
 
+		const bool hasEditableSettings;
 		bool writeProtected;
 
 		void __dump__() const;
@@ -202,7 +203,7 @@
 		CMainWindow::CDockableToolBar toolbar;
 		PDos dos;
 
-		CImage(PCProperties _properties);
+		CImage(PCProperties _properties,bool hasEditableSettings);
 		~CImage();
 
 		bool IsWriteProtected() const;
@@ -218,6 +219,7 @@
 		virtual TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus)=0;
 		void MarkSectorAsDirty(RCPhysicalAddress chs);
 		virtual TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber);
+		virtual void EditSettings()=0;
 		virtual TStdWinError Reset()=0;
 		virtual TStdWinError FormatTrack(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte)=0;
 		virtual TStdWinError UnformatTrack(TCylinder cyl,THead head)=0;

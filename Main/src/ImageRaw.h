@@ -24,7 +24,7 @@
 	public:
 		static const TProperties Properties;
 
-		CImageRaw(PCProperties properties);
+		CImageRaw(PCProperties properties,bool hasEditableSettings);
 		~CImageRaw();
 
 		BOOL OnOpenDocument(LPCTSTR lpszPathName) override;
@@ -35,6 +35,7 @@
 		PSectorData GetSectorData(RCPhysicalAddress chs,BYTE,bool,PWORD pSectorLength,TFdcStatus *pFdcStatus) override;
 		TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE,PCFdcStatus pFdcStatus) override;
 		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
+		void EditSettings() override;
 		TStdWinError Reset() override;
 		TStdWinError FormatTrack(TCylinder cyl,THead head,TSector _nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte) override;
 		TStdWinError UnformatTrack(TCylinder cyl,THead) override;

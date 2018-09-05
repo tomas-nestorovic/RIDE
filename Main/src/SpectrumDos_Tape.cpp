@@ -13,7 +13,7 @@
 		// ctor
 		// - base
 		: CDos( this, &TapeFormat, TTrackScheme::BY_CYLINDERS, diskDos->properties, ::lstrcmp, StdSidesMap, 0, &fileManager ) // StdSidesMap = "some" Sides
-		, CImageRaw(&CImageRaw::Properties) // "some" Image
+		, CImageRaw(&CImageRaw::Properties,false) // "some" Image
 		// - initialization
 		, fileManager(this,diskDos->zxRom,fileName) {
 		dos=this; // linking the DOS and Image

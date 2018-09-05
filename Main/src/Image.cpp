@@ -281,10 +281,11 @@
 
 
 
-	CImage::CImage(PCProperties _properties)
+	CImage::CImage(PCProperties _properties,bool hasEditableSettings)
 		// ctor
 		// - initialization
-		: properties(_properties) , dos(NULL) , writeProtected(true) , canBeModified(true)
+		: properties(_properties) , dos(NULL)
+		, hasEditableSettings(hasEditableSettings) , writeProtected(true) , canBeModified(true)
 		// - creating Toolbar (its displaying in CTdiView::ShowContent)
 		, toolbar(IDR_IMAGE,ID_IMAGE) { // ID_IMAGE = "some" unique ID
 		// - when destroying all Views, the document must exist further (e.g. when switching Tabs in TDI)
@@ -353,7 +354,7 @@
 						((CCmdUI *)pExtra)->Enable(canBeModified);
 						return TRUE;
 					case ID_IMAGE_SETTINGS:
-						((CCmdUI *)pExtra)->Enable(FALSE); // no disk&drive options by default
+						((CCmdUI *)pExtra)->Enable(hasEditableSettings);
 						return TRUE;
 					case ID_IMAGE_DUMP:
 						((CCmdUI *)pExtra)->Enable(TRUE);
@@ -384,6 +385,9 @@
 						// . refreshing known windows that depend on Image's WriteProtection flag
 						if (CDos::CHexaPreview::pSingleInstance) 
 							CDos::CHexaPreview::pSingleInstance->hexaEditor.SetEditable(!writeProtected);
+						return TRUE;
+					case ID_IMAGE_SETTINGS:
+						EditSettings();
 						return TRUE;
 					case ID_IMAGE_DUMP:
 						__dump__();

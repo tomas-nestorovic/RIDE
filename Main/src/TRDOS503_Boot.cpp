@@ -270,7 +270,7 @@
 
 	namespace TRD{
 		static PImage __instantiate__(){
-			return new CImageRaw( &Properties );
+			return new CImageRaw( &Properties, true );
 		}
 		const CImage::TProperties Properties={	_T("TR-DOS image"),// name
 												__instantiate__,// instantiation function

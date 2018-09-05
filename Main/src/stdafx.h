@@ -88,7 +88,7 @@ typedef const WORD *PCWORD;
 #define DLL_SHELL32		_T("shell32.dll")
 #define DLL_WININET		_T("wininet.dll")
 
-#define APP_VERSION		_T("1.4.4 debug special")
+#define APP_VERSION		_T("1.4.5 debug special")
 
 #define FONT_MS_SANS_SERIF	_T("Microsoft Sans Serif")
 #define FONT_SYMBOL			_T("Symbol")

@@ -111,7 +111,6 @@
 		TStdWinError __formatToOneLongVerifiedSector__(RCPhysicalAddress chs,BYTE fillerByte);
 		void __unformatInternalTrack__(TCylinder cyl,THead head);
 		void __freeInternalTracks__();
-		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override; // enabling/disabling ToolBar buttons
 	public:
 		static const TProperties Properties;
 
@@ -126,6 +125,7 @@
 		PSectorData GetSectorData(RCPhysicalAddress chs,BYTE nSectorsToSkip,bool recoverFromError,PWORD sectorLength,TFdcStatus *pFdcStatus) override;
 		TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus) override;
 		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
+		void EditSettings() override;
 		TStdWinError Reset() override;
 		TStdWinError FormatTrack(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte);
 		TStdWinError UnformatTrack(TCylinder cyl,THead head);

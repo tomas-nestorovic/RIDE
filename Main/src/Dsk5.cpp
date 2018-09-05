@@ -41,7 +41,7 @@
 
 	CDsk5::CDsk5()
 		// ctor
-		: CFloppyImage(&Properties)
+		: CFloppyImage(&Properties,true)
 		, diskInfo(params) {
 		::ZeroMemory(tracks,sizeof(tracks));
 	}
@@ -366,6 +366,11 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			return false;
 	}
 
+	void CDsk5::EditSettings(){
+		// displays dialog with editable settings and reflects changes made by the user into the Image's inner state
+		__showOptions__(false); // allowing changes in everything but Type of DSK Image (Std vs Rev5)
+	}
+
 	TStdWinError CDsk5::Reset(){
 		// resets internal representation of the disk (e.g. by disposing all content without warning)
 		if (__showOptions__(true)){
@@ -457,27 +462,4 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			return ERROR_SUCCESS;
 		}else
 			return ERROR_BAD_COMMAND;
-	}
-
-	BOOL CDsk5::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){
-		// command processing
-		switch (nCode){
-			case CN_UPDATE_COMMAND_UI:
-				// update
-				switch (nID){
-					case ID_IMAGE_SETTINGS:
-						((CCmdUI *)pExtra)->Enable(TRUE);
-						return TRUE;
-				}
-				break;
-			case CN_COMMAND:
-				// command
-				switch (nID){
-					case ID_IMAGE_SETTINGS:
-						__showOptions__(false); // allowing changes in everything but Type of DSK Image (Std vs Rev5)
-						return TRUE;
-				}
-				break;
-		}
-		return __super::OnCmdMsg(nID,nCode,pExtra,pHandlerInfo);
 	}

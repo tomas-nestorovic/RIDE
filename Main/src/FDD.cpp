@@ -429,7 +429,7 @@ TUtils::Information("--- EVERYTHING OK ---");
 	CFDD::CFDD()
 		// ctor
 		// - base
-		: CFloppyImage(&Properties)
+		: CFloppyImage(&Properties,true)
 		// - initialization
 		, dataBuffer( ::VirtualAlloc(NULL,SECTOR_LENGTH_MAX,MEM_COMMIT,PAGE_READWRITE) ) {
 		::ZeroMemory( internalTracks, sizeof(internalTracks) );
@@ -1307,6 +1307,11 @@ TUtils::Information(buf);}
 			return false;
 	}
 
+	void CFDD::EditSettings(){
+		// displays dialog with editable settings and reflects changes made by the user into the Image's inner state
+		__showSettingDialog__();
+	}
+
 	TStdWinError CFDD::Reset(){
 		// resets internal representation of the disk (e.g. by disposing all content without warning)
 		// - displaying message
@@ -1675,30 +1680,4 @@ error:		return ::GetLastError();
 
 	void CFDD::SetPathName(LPCTSTR,BOOL){
 		//CDocument::SetPathName(tmpFileName,FALSE);
-	}
-
-
-
-
-	BOOL CFDD::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){
-		// command processing
-		switch (nCode){
-			case CN_UPDATE_COMMAND_UI:
-				// update
-				switch (nID){
-					case ID_IMAGE_SETTINGS:
-						((CCmdUI *)pExtra)->Enable(TRUE);
-						return TRUE;
-				}
-				break;
-			case CN_COMMAND:
-				// command
-				switch (nID){
-					case ID_IMAGE_SETTINGS:
-						__showSettingDialog__();
-						return TRUE;
-				}
-				break;
-		}
-		return __super::OnCmdMsg(nID,nCode,pExtra,pHandlerInfo);
 	}

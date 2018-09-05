@@ -17,7 +17,7 @@
 
 	CMGT::CMGT()
 		// ctor
-		: CImageRaw(&Properties) {
+		: CImageRaw(&Properties,true) {
 	}
 
 

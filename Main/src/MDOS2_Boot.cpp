@@ -249,7 +249,7 @@
 
 	namespace D80{
 		static PImage __instantiate__(){
-			return new CImageRaw( &Properties );
+			return new CImageRaw( &Properties, true );
 		}
 		const CImage::TProperties Properties={	_T("Didaktik D40/D80"),// name
 												__instantiate__,// instantiation function

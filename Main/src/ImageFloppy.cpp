@@ -21,9 +21,10 @@
 
 
 
-	CFloppyImage::CFloppyImage(PCProperties properties)
+	CFloppyImage::CFloppyImage(PCProperties properties,bool hasEditableSettings)
 		// ctor
-		: CImage(properties) , floppyType(TMedium::UNKNOWN) {
+		: CImage(properties,hasEditableSettings)
+		, floppyType(TMedium::UNKNOWN) {
 	}
 
 

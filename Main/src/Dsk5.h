@@ -58,7 +58,6 @@
 		void __freeAllTracks__();
 		bool __showOptions__(bool allowTypeBeChanged);
 		TStdWinError __reset__();
-		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
 	public:
 		static const TProperties Properties;
 
@@ -73,6 +72,7 @@
 		PSectorData GetSectorData(RCPhysicalAddress chs,BYTE nSectorsToSkip,bool,PWORD sectorLength,TFdcStatus *pFdcStatus) override;
 		TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus) override;
 		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
+		void EditSettings() override;
 		TStdWinError Reset() override;
 		TStdWinError FormatTrack(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte) override;
 		TStdWinError UnformatTrack(TCylinder cyl,THead head) override;

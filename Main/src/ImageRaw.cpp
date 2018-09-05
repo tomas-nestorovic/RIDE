@@ -2,7 +2,7 @@
 #include "GDOS.h"
 
 	static PImage __instantiate__(){
-		return new CImageRaw( &CImageRaw::Properties );
+		return new CImageRaw( &CImageRaw::Properties, true );
 	}
 
 	const CImage::TProperties CImageRaw::Properties={
@@ -13,9 +13,9 @@
 		1,16384	// Sector supported min and max length
 	};
 
-	CImageRaw::CImageRaw(PCProperties properties)
+	CImageRaw::CImageRaw(PCProperties properties,bool hasEditableSettings)
 		// ctor
-		: CImage(properties)
+		: CImage(properties,hasEditableSettings)
 		, trackAccessScheme(TTrackScheme::BY_CYLINDERS)
 		, nCylinders(0) , nSectors(0) // = not initialized - see SetMediumTypeAndGeometry
 		, bufferOfCylinders(NULL) , sizeWithoutGeometry(0) {
@@ -288,6 +288,11 @@
 				trackAccessScheme=TTrackScheme::BY_CYLINDERS;
 		// - setting up Medium's Type and geometry
 		return __setMediumTypeAndGeometry__(pFormat,sideMap,firstSectorNumber);
+	}
+
+	void CImageRaw::EditSettings(){
+		// displays dialog with editable settings and reflects changes made by the user into the Image's inner state
+		//TODO
 	}
 
 	TStdWinError CImageRaw::Reset(){

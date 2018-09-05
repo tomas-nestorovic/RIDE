@@ -21,7 +21,7 @@
 
 	CSCL::CSCL()
 		// ctor
-		: CImageRaw(&Properties) {
+		: CImageRaw(&Properties,false) {
 	}
 
 
