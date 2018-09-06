@@ -83,6 +83,7 @@
 					return NULL;
 			}
 		}
+		CUnknownDos::Properties.fnRecognize(image,pOutFormatBoot); // just a formality to properly fill up the FormatBoot
 		return &CUnknownDos::Properties;
 	}
 
