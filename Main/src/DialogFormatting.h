@@ -38,7 +38,7 @@
 		afx_msg void __toggleReportingOnFormatting__();
 	public:
 		TParameters params;
-		int updateBoot, verifyAndAddIntoFat, showReportOnFormatting;
+		int updateBoot, addTracksToFat, showReportOnFormatting;
 
 		CFormatDialog(PDos _dos,PCStdFormat _additionalFormats,BYTE _nAdditionalFormats);
 	};

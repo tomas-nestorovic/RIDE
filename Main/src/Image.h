@@ -222,6 +222,7 @@
 		virtual void EditSettings()=0;
 		virtual TStdWinError Reset()=0;
 		virtual TStdWinError FormatTrack(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte)=0;
+		virtual bool RequiresFormattedTracksVerification() const;
 		virtual TStdWinError UnformatTrack(TCylinder cyl,THead head)=0;
 		bool __reportWriteProtection__() const;
 		void __toggleWriteProtection__();

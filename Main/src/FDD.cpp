@@ -1649,6 +1649,11 @@ formatCustomWay:
 		return ERROR_SUCCESS;
 	}
 
+	bool CFDD::RequiresFormattedTracksVerification() const{
+		// True <=> the Image requires its newly formatted Tracks be verified, otherwise False (and caller doesn't have to carry out verification)
+		return params.verifyFormattedTracks;
+	}
+
 	TStdWinError CFDD::UnformatTrack(TCylinder cyl,THead head){
 		// unformats given Track {Cylinder,Head}; returns Windows standard i/o error
 		// - moving Head above the corresponding Cylinder

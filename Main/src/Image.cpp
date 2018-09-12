@@ -495,6 +495,11 @@
 		return ERROR_SUCCESS;
 	}
 
+	bool CImage::RequiresFormattedTracksVerification() const{
+		// True <=> the Image requires its newly formatted Tracks be verified, otherwise False (and caller doesn't have to carry out verification)
+		return false; // verification NOT required by default (but Images abstracting physical drives can override this setting)
+	}
+
 	BOOL CImage::CanCloseFrame(CFrameWnd* pFrame){
 		// True <=> the MainWindow can be closed (and thus the application), otherwise False
 		// - first asking the DOS that handles this Image

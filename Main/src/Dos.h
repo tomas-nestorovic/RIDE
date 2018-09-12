@@ -203,7 +203,7 @@
 		TCylinder __getLastOccupiedStdCylinder__() const;
 		TStdWinError __showDialogAndFormatStdCylinders__(CFormatDialog &rd,PCylinder bufCylinders,PHead bufHeads);
 		TStdWinError __formatStdCylinders__(const CFormatDialog &rd,PCylinder bufCylinders,PHead bufHeads);
-		TStdWinError __formatTracks__(TTrack nTracks,PCCylinder cylinders,PCHead heads,TSector nSectors,PSectorId bufferId,PCWORD bufferLength,const CFormatDialog::TParameters &rParams,bool verify,bool showReport);
+		TStdWinError __formatTracks__(TTrack nTracks,PCCylinder cylinders,PCHead heads,TSector nSectors,PSectorId bufferId,PCWORD bufferLength,const CFormatDialog::TParameters &rParams,bool showReport);
 		TStdWinError __unformatStdCylinders__(CUnformatDialog &rd,PCylinder bufCylinders,PHead bufHeads);
 		TStdWinError __unformatTracks__(TTrack nTracks,PCCylinder cylinders,PCHead heads);
 		bool __addStdTracksToFatAsEmpty__(TTrack nTracks,PCCylinder cylinders,PCHead heads);

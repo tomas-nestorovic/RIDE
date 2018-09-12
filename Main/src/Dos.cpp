@@ -232,7 +232,7 @@ reportError:TUtils::Information(buf);
 				formatBoot.nSectors=rd.params.format.nSectors, formatBoot.sectorLengthCode=rd.params.format.sectorLengthCode;
 				err=__formatTracks__(	n, bufCylinders, bufHeads,
 										0, bufferId, bufferLength, // 0 = standard Sectors
-										rd.params, rd.verifyAndAddIntoFat==BST_CHECKED, rd.showReportOnFormatting==BST_CHECKED
+										rd.params, rd.showReportOnFormatting==BST_CHECKED
 									);
 			formatBoot.sectorLengthCode=lengthCode0;
 		formatBoot.nSectors=nSectors0;
@@ -254,7 +254,7 @@ reportError:TUtils::Information(buf);
 				formatBoot.nCylinders=max( formatBoot.nCylinders, rd.params.format.nCylinders+1 ); // "+1" = because Cylinders numbered from zero
 				FlushToBootSector();
 			}
-			if (rd.verifyAndAddIntoFat)
+			if (rd.addTracksToFat)
 				// requested to include newly formatted Tracks into FAT
 				if (!__addStdTracksToFatAsEmpty__(n,bufCylinders,bufHeads))
 					TUtils::Information(FAT_SECTOR_UNMODIFIABLE, err=::GetLastError() );
@@ -272,10 +272,10 @@ reportError:TUtils::Information(buf);
 		const PSectorId bufferId; // non-const to be able to dynamically generate "Zoned Bit Recording" Sectors in the future
 		const PCWORD bufferLength;
 		const CFormatDialog::TParameters &rParams;
-		const bool verify, showReport;
+		const bool showReport;
 
-		TFmtParams(const CDos *dos,TTrack nTracks,PCCylinder cylinders,PCHead heads,TSector nSectors,PSectorId bufferId,PCWORD bufferLength,const CFormatDialog::TParameters &rParams,bool verify,bool showReport)
-			: dos(dos) , nTracks(nTracks) , cylinders(cylinders) , heads(heads) , nSectors(nSectors) , bufferId(bufferId) , bufferLength(bufferLength) , rParams(rParams) , verify(verify) , showReport(showReport) {
+		TFmtParams(const CDos *dos,TTrack nTracks,PCCylinder cylinders,PCHead heads,TSector nSectors,PSectorId bufferId,PCWORD bufferLength,const CFormatDialog::TParameters &rParams,bool showReport)
+			: dos(dos) , nTracks(nTracks) , cylinders(cylinders) , heads(heads) , nSectors(nSectors) , bufferId(bufferId) , bufferLength(bufferLength) , rParams(rParams) , showReport(showReport) {
 		}
 	};
 	UINT AFX_CDECL CDos::__formatTracks_thread__(PVOID _pCancelableAction){
@@ -327,9 +327,9 @@ reportError:TUtils::Information(buf);
 			}
 			if (err!=ERROR_SUCCESS)
 				return pAction->TerminateWithError(err);
+			statistics.nTracks++, statistics.nSectorsInTotal+=nSectors;
 			// . verifying Tracks by trying to read their formatted Sectors
-			if (fp.verify){
-				statistics.nTracks++, statistics.nSectorsInTotal+=nSectors;
+			if (fp.dos->image->RequiresFormattedTracksVerification()){
 				TPhysicalAddress chs={ cyl, head };
 				for( PCSectorId pId=fp.bufferId; nSectors--; statistics.nSectorsBad+=fp.dos->image->GetSectorData(chs)==NULL )
 					chs.sectorId=*pId++;
@@ -342,11 +342,11 @@ reportError:TUtils::Information(buf);
 		}
 		return ERROR_SUCCESS;
 	}
-	TStdWinError CDos::__formatTracks__(TTrack nTracks,PCCylinder cylinders,PCHead heads,TSector nSectors,PSectorId bufferId,PCWORD bufferLength,const CFormatDialog::TParameters &rParams,bool verify,bool showReport){
+	TStdWinError CDos::__formatTracks__(TTrack nTracks,PCCylinder cylinders,PCHead heads,TSector nSectors,PSectorId bufferId,PCWORD bufferLength,const CFormatDialog::TParameters &rParams,bool showReport){
 		// formats given Tracks, each with given NumberOfSectors, each with given Length; returns Windows standard i/o error
 		const TStdWinError err=	TBackgroundActionCancelable(
 									__formatTracks_thread__,
-									&TFmtParams( this, nTracks, cylinders, heads, nSectors, bufferId, bufferLength, rParams, verify, showReport ),
+									&TFmtParams( this, nTracks, cylinders, heads, nSectors, bufferId, bufferLength, rParams, showReport ),
 									THREAD_PRIORITY_BELOW_NORMAL
 								).CarryOut(nTracks);
 		if (err!=ERROR_SUCCESS)

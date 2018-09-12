@@ -4,7 +4,7 @@
 		// ctor
 		: CDialog(IDR_DOS_FORMAT) , dos(_dos)
 		, updateBoot(BST_CHECKED)
-		, verifyAndAddIntoFat(BST_CHECKED)
+		, addTracksToFat(BST_CHECKED)
 		, showReportOnFormatting(dynamic_cast<CFDD *>(_dos->image)?BST_CHECKED:BST_UNCHECKED)
 		, additionalFormats(_additionalFormats) , nAdditionalFormats(_nAdditionalFormats) {
 		params.format.mediumType=dos->formatBoot.mediumType; // to initialize Parameters using the first suitable Format; it holds: MediumType==Unknown <=> this is initial formatting of an Image, MediumType!=Unknown <=> any subsequent formatting of the same Image
@@ -131,7 +131,7 @@
 		DDX_Text( pDX,	ID_DIRECTORY	,(short &)params.nRootDirectoryEntries );
 			DDV_MinMaxUInt( pDX, params.nRootDirectoryEntries, propDos->nRootDirectoryEntriesMin, propDos->nRootDirectoryEntriesMax );
 		DDX_Check( pDX, ID_BOOT		, updateBoot );
-		DDX_Check( pDX, ID_VERIFY_TRACK, verifyAndAddIntoFat );
+		DDX_Check( pDX, ID_VERIFY_TRACK, addTracksToFat );
 		DDX_Check( pDX, ID_REPORT	, showReportOnFormatting );
 		if (pDX->m_bSaveAndValidate){
 			params.format.nCylinders++;
