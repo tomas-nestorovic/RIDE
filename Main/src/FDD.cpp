@@ -1644,6 +1644,9 @@ formatCustomWay:
 				break;
 			}
 		}
+		// - the Track structure is explicitly given after (successfull) formatting, so we can spare ourselves its eventual scanning
+		if (!REFER_TO_TRACK(cyl,head)) // Track not scanned (due to verification turned off)
+			REFER_TO_TRACK(cyl,head) = new TInternalTrack( this, cyl, head, nSectors, bufferId );
 		// - it's not necessary to calibrate the Head for this Track
 		fddHead.calibrated=true;
 		return ERROR_SUCCESS;
