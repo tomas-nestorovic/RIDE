@@ -72,7 +72,7 @@
 		::wsprintf( buf, _T("%d cylinder(s)"), GetDlgItemInt(ID_CYLINDER_N)+1-GetDlgItemInt(ID_CYLINDER) );
 		TUtils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_CYLINDER), GetDlgItem(ID_CYLINDER_N), buf, ::GetSysColor(COLOR_3DSHADOW) );
 		// - drawing curly brackets with warning on risking disk inconsistency
-		if (!(Button_GetState(GetDlgItem(ID_BOOT)->m_hWnd) & Button_GetState(GetDlgItem(ID_FAT)->m_hWnd) & BST_CHECKED))
+		if (!(IsDlgButtonChecked(ID_BOOT) & IsDlgButtonChecked(ID_FAT)))
 			TUtils::WrapControlsByClosingCurlyBracketWithText(
 				this,
 				GetDlgItem(ID_BOOT), GetDlgItem(ID_FAT),

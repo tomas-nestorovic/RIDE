@@ -131,16 +131,10 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 								if (app.__doPromptFileName__( fileName, false, AFX_IDS_OPENFILE, 0, &CDsk5::Properties )){
 									// . determining SourceImageProperties
 									sourceImageProperties=__determineTypeByExtension__(_tcsrchr(fileName,'.')); // Null <=> unknown container
-									// . adjusting interactivity
-									const bool controlsEnabled=sourceImageProperties==&CDsk5::Properties;
-									GetDlgItem(ID_CYLINDER)->EnableWindow(controlsEnabled), GetDlgItem(ID_CYLINDER_N)->EnableWindow(controlsEnabled);
-									GetDlgItem(ID_HEAD)->EnableWindow(controlsEnabled);
-									GetDlgItem(ID_GAP)->EnableWindow(controlsEnabled);
-									CWnd *const pBtnOk=GetDlgItem(IDOK);
-									pBtnOk->EnableWindow(controlsEnabled), pBtnOk->SetFocus();
-									// . updating values
+									// . adjusting interactivity and updating values
 									CWnd *const pBtnFile=GetDlgItem(ID_FILE);
-									if (controlsEnabled){
+									static const WORD Controls[]={ ID_CYLINDER, ID_CYLINDER_N, ID_HEAD, ID_GAP, IDOK, 0 };
+									if (TUtils::EnableDlgControls( m_hWnd, Controls, sourceImageProperties==&CDsk5::Properties )){
 										// : interactivity
 										if (patchParams.source)
 											delete patchParams.source;
@@ -156,6 +150,7 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 										pBtnFile->SetWindowText(buf);
 									}else
 										pBtnFile->SetWindowText( ::lstrcpy(fileName,ELLIPSIS) );
+									GetDlgItem(IDOK)->SetFocus();
 								}else
 									*fileName=c;
 								break;

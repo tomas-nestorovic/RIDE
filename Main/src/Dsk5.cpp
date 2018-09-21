@@ -300,9 +300,8 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				int i=rParams.rev5;
 				DDX_Radio( pDX, ID_STANDARD, i );
 				rParams.rev5=i>0;
-				GetDlgItem(ID_STANDARD)->EnableWindow(allowTypeBeChanged);
-				GetDlgItem(ID_DRIVE)->EnableWindow(allowTypeBeChanged);
-				GetDlgItem(ID_PROTECTED)->EnableWindow(allowTypeBeChanged);
+				static const WORD Controls[]={ ID_STANDARD, ID_DRIVE, ID_PROTECTED, 0 } ;
+				TUtils::EnableDlgControls( m_hWnd, Controls, allowTypeBeChanged );
 				// . Creator
 				const BYTE nCyls=rDiskInfo.nCylinders;
 				rDiskInfo.nCylinders=0; // converting the Creator field to a null-terminated string

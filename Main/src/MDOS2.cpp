@@ -440,7 +440,7 @@
 				if (pDX->m_bSaveAndValidate)
 					for( BYTE i=0; i<8; attributes=(attributes<<1)|(BYTE)Button_GetCheck(::GetDlgItem(m_hWnd,Controls[i++])) );
 				else
-					for( BYTE i=8; i--; Button_SetCheck(::GetDlgItem(m_hWnd,Controls[i]),attributes&1),attributes>>=1 );
+					for( BYTE i=8; i--; CheckDlgButton(Controls[i],attributes&1),attributes>>=1 );
 			}
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 				// window procedure
@@ -461,7 +461,7 @@
 				}else if (msg==WM_NOTIFY && wParam==ID_ATTRIBUTE)
 					// notification regarding the "RWED" Attributes
 					if (((LPNMHDR)lParam)->code==NM_CLICK)
-						for( BYTE i=4; i<8; Button_SetCheck(::GetDlgItem(m_hWnd,Controls[i++]),BST_CHECKED) );
+						for( BYTE i=4; i<8; CheckDlgButton(Controls[i++],BST_CHECKED) );
 				return CDialog::WindowProc(msg,wParam,lParam);
 			}
 		public:

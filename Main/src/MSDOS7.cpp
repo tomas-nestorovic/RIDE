@@ -1023,7 +1023,7 @@ nextCluster:result++;
 						if (pDX->m_bSaveAndValidate)
 							DDX_Radio( pDX, ID_DIRECTORY, dirDepth );
 						else
-							Button_SetCheck( ::GetDlgItem(m_hWnd,ID_DIRECTORY), BST_CHECKED );
+							CheckDlgButton( ID_DIRECTORY, BST_CHECKED );
 					}
 				public:
 					int dirDepth;

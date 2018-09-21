@@ -63,23 +63,11 @@
 		params.format.mediumType=TMedium::UNKNOWN; // to initialize Parameters using the first suitable Format; it holds: MediumType==Unknown <=> initial formatting of an Image, MediumType!=Unknown <=> any subsequent formatting of the same Image
 		__onMediumChanged__();
 		// - adjusting interactivity
-		if (((CMainWindow *)app.m_pMainWnd)->pTdi->__getCurrentTab__()){
-			// Boot Sector already exists
-			GetDlgItem(ID_CYLINDER)->EnableWindow(TRUE); // the first Cylinder to format can be changed
-			GetDlgItem(ID_MEDIUM)->EnableWindow(FALSE); // MediumType cannot be changed
-			GetDlgItem(ID_CLUSTER)->EnableWindow(FALSE);// Cluster size cannot be changed
-			GetDlgItem(ID_FAT)->EnableWindow(FALSE);	// number of FATs cannot be changed
-			GetDlgItem(ID_DIRECTORY)->EnableWindow(FALSE);// number of root Directory items cannot be changed
-			GetDlgItem(ID_DRIVE)->ShowWindow(SW_SHOW);
-		}else{
-			// Boot Sector doesn't exist yet
-			GetDlgItem(ID_CYLINDER)->EnableWindow(FALSE); // the first Cylinder to format cannot be changed
-			GetDlgItem(ID_MEDIUM)->EnableWindow(TRUE);	// MediumType must be selected
-			GetDlgItem(ID_CLUSTER)->EnableWindow(TRUE);	// Cluster size must be selected
-			GetDlgItem(ID_FAT)->EnableWindow(TRUE);		// number of FATs must be selected
-			GetDlgItem(ID_DIRECTORY)->EnableWindow(TRUE);	// number of root Directory items must be selected
-			GetDlgItem(ID_DRIVE)->ShowWindow(SW_HIDE);
-		}
+		const bool bootSectorAlreadyExists=((CMainWindow *)app.m_pMainWnd)->pTdi->__getCurrentTab__()!=NULL;
+		GetDlgItem(ID_CYLINDER)->EnableWindow(bootSectorAlreadyExists);
+		static const WORD Controls[]={ ID_MEDIUM, ID_CLUSTER, ID_FAT, ID_DIRECTORY, 0 };
+		TUtils::EnableDlgControls( m_hWnd, Controls, !bootSectorAlreadyExists );
+		GetDlgItem(ID_DRIVE)->ShowWindow( bootSectorAlreadyExists ? SW_SHOW : SW_HIDE );
 	}
 
 	void CFormatDialog::__selectClusterSize__(CComboBox &rcb,TSector clusterSize) const{
@@ -207,7 +195,7 @@
 				break;
 		}
 		// - drawing curly brackets with warning on risking disk inconsistency
-		if (!(Button_GetState(GetDlgItem(ID_BOOT)->m_hWnd) & Button_GetState(GetDlgItem(ID_VERIFY_TRACK)->m_hWnd) & BST_CHECKED))
+		if (!(IsDlgButtonChecked(ID_BOOT) & IsDlgButtonChecked(ID_VERIFY_TRACK)))
 			TUtils::WrapControlsByClosingCurlyBracketWithText(
 				this,
 				GetDlgItem(ID_BOOT), GetDlgItem(ID_VERIFY_TRACK),
@@ -276,15 +264,11 @@
 	afx_msg void CFormatDialog::__recognizeStandardFormat__(){
 		// determines if current settings represent one of DOS StandardFormats (settings include # of Sides, Cylinders, Sectors, RootDirectoryItems, etc.); if StandardFormat detected, it's selected in dedicated ComboBox
 		// - enabling/disabling Boot and FAT modification
-		const HWND hBoot=GetDlgItem(ID_BOOT)->m_hWnd;
-		const HWND hVerification=GetDlgItem(ID_VERIFY_TRACK)->m_hWnd;
-		if (GetDlgItemInt(ID_CYLINDER))
-			// Boot and FAT modification allowed only if NOT formatting from zeroth Track (e.g. when NOT creating a new Image)
-			::Button_Enable(hBoot,TRUE), ::Button_Enable(hVerification,TRUE);
-		else{
+		static const WORD Controls[]={ ID_BOOT, ID_VERIFY_TRACK, 0 }; // Boot and FAT modification allowed only if NOT formatting from zeroth Track (e.g. when NOT creating a new Image)
+		if (!TUtils::EnableDlgControls( m_hWnd, Controls, GetDlgItemInt(ID_CYLINDER)>0 )){
 			// if formatting from zeroth Track, Boot and FAT modification always necessary (e.g. when creating a new Image)
-			Button_SetCheck(hBoot,BST_CHECKED), Button_SetCheck(hVerification,BST_CHECKED);
-			::Button_Enable(hBoot,FALSE), ::Button_Enable(hVerification,FALSE);
+			CheckDlgButton(ID_BOOT,BST_CHECKED);
+			CheckDlgButton(ID_VERIFY_TRACK,BST_CHECKED);
 		}
 		Invalidate(); // eventually warning on driving disk into an inconsistent state
 		// - Recognizing StandardFormat
@@ -313,13 +297,8 @@
 
 	afx_msg void CFormatDialog::__toggleReportingOnFormatting__(){
 		// if SectorVerification allowed, enables ReportingOnFormatting, otherwise disables ReportingOnFormatting
-		const HWND hVerification=GetDlgItem(ID_VERIFY_TRACK)->m_hWnd, hReporting=GetDlgItem(ID_REPORT)->m_hWnd;
-		if (Button_GetCheck(hVerification)==BST_CHECKED){
-			::Button_Enable(hReporting,TRUE);
-			Button_SetCheck(hReporting,showReportOnFormatting);
-		}else{
-			::Button_Enable(hReporting,FALSE);
-			Button_SetCheck(hReporting,BST_UNCHECKED);
-		}
+		const bool verifyTracks=IsDlgButtonChecked(ID_VERIFY_TRACK);
+		GetDlgItem(ID_REPORT)->EnableWindow(verifyTracks);
+		CheckDlgButton( ID_REPORT, verifyTracks&&showReportOnFormatting );
 		Invalidate(); // eventually warning on driving disk into an inconsistent state
 	}

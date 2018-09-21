@@ -68,11 +68,9 @@
 				CListBox lb;
 				lb.Attach((HWND)lParam);
 					const int iSelected=lb.GetCurSel();
-					if (iSelected>=0){
+					static const WORD Controls[]={ IDOK, 0 };
+					if (TUtils::EnableDlgControls( m_hWnd, Controls, iSelected>=0 ))
 						fnImage=( (CImage::PCProperties)lb.GetItemData(iSelected) )->fnInstantiate;
-						GetDlgItem(IDOK)->EnableWindow(TRUE);
-					}else
-						GetDlgItem(IDOK)->EnableWindow(FALSE);
 				lb.Detach();
 				return TRUE;
 			}

@@ -398,6 +398,13 @@ namespace TUtils{
 		::MessageBox(0,text,_T("Warning"),MB_ICONINFORMATION|MB_TASKMODAL);
 	}
 
+	bool EnableDlgControls(HWND hDlg,PCWORD controlIds,bool enabled){
+		// enables/disables all specified Dialog controls and returns this new state
+		while (const WORD id=*controlIds++)
+			::EnableWindow( ::GetDlgItem(hDlg,id), enabled );
+		return enabled;
+	}
+
 	void NavigateToUrlInDefaultBrowser(LPCTSTR url){
 		// opens specified URL in user's default browser
 		::CoInitializeEx( NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE );

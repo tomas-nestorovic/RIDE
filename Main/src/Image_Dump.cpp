@@ -272,30 +272,20 @@ terminateWithError:
 															}else
 																::wsprintf( bufSectorId, _T("%d.%d.%d.%d"), idFieldSubstituteSectorId.cylinder, idFieldSubstituteSectorId.side, idFieldSubstituteSectorId.sector, idFieldSubstituteSectorId.lengthCode );
 															DDX_Text( pDX, ID_IDFIELD_VALUE, bufSectorId, sizeof(bufSectorId)/sizeof(TCHAR) );
-															if (!rFdcStatus.DescribesIdFieldCrcError()){
-																GetDlgItem(ID_IDFIELD)->EnableWindow(FALSE);
-																GetDlgItem(ID_IDFIELD_CRC)->EnableWindow(FALSE);
-																GetDlgItem(ID_IDFIELD_REPLACE)->EnableWindow(FALSE);
-																GetDlgItem(ID_IDFIELD_VALUE)->EnableWindow(FALSE);
-																GetDlgItem(ID_DEFAULT1)->EnableWindow(FALSE);
-															}
+															static const WORD IdFieldRecoveryOptions[]={ ID_IDFIELD, ID_IDFIELD_CRC, ID_IDFIELD_REPLACE, 0 };
+															TUtils::EnableDlgControls( m_hWnd, IdFieldRecoveryOptions, rFdcStatus.DescribesIdFieldCrcError() );
+															static const WORD IdFieldReplaceOption[]={ ID_IDFIELD_VALUE, ID_DEFAULT1, 0 };
+															TUtils::EnableDlgControls( m_hWnd, IdFieldReplaceOption, idFieldRecoveryType==2 );
 														// | "Data Field" region
 														DDX_Radio( pDX, ID_DATAFIELD, dataFieldRecoveryType );
 															DDX_Text( pDX, ID_DATAFIELD_FILLERBYTE, dataFieldSubstituteFillerByte );
 															if (dosProps==&CUnknownDos::Properties)
 																GetDlgItem(ID_DEFAULT2)->SetWindowText(_T("Random value"));
-															if (!rFdcStatus.DescribesDataFieldCrcError()){
-																GetDlgItem(ID_DATAFIELD)->EnableWindow(FALSE);
-																GetDlgItem(ID_DATAFIELD_CRC)->EnableWindow(FALSE);
-																GetDlgItem(ID_DATAFIELD_REPLACE)->EnableWindow(FALSE);
-																GetDlgItem(ID_DATAFIELD_FILLERBYTE)->EnableWindow(FALSE);
-																GetDlgItem(ID_DEFAULT2)->EnableWindow(FALSE);
-															}
+															static const WORD DataFieldRecoveryOptions[]={ ID_DATAFIELD, ID_DATAFIELD_CRC, ID_DATAFIELD_REPLACE, 0 };
+															TUtils::EnableDlgControls( m_hWnd, DataFieldRecoveryOptions, rFdcStatus.DescribesDataFieldCrcError() );
+															static const WORD DataFieldReplaceOption[]={ ID_DATAFIELD_FILLERBYTE, ID_DEFAULT2, 0 };
+															TUtils::EnableDlgControls( m_hWnd, DataFieldReplaceOption, dataFieldRecoveryType==2 );
 														// | interactivity
-														GetDlgItem(ID_IDFIELD_VALUE)->EnableWindow(idFieldRecoveryType==2);
-														GetDlgItem(ID_DEFAULT1)->EnableWindow(idFieldRecoveryType==2);
-														GetDlgItem(ID_DATAFIELD_FILLERBYTE)->EnableWindow(dataFieldRecoveryType==2);
-														GetDlgItem(ID_DEFAULT2)->EnableWindow(dataFieldRecoveryType==2);
 														GetDlgItem(IDOK)->EnableWindow(idFieldRecoveryType|dataFieldRecoveryType);
 													}
 													LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
@@ -585,12 +575,9 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 												break;
 										}
 										// > enabling/disabling controls
-										GetDlgItem(ID_CYLINDER)->EnableWindow(nCompatibleMedia), GetDlgItem(ID_CYLINDER_N)->EnableWindow(nCompatibleMedia);
-										GetDlgItem(ID_HEAD)->EnableWindow(nCompatibleMedia);
-										GetDlgItem(ID_GAP)->EnableWindow(nCompatibleMedia);
-										GetDlgItem(ID_NUMBER)->EnableWindow(nCompatibleMedia), GetDlgItem(ID_DEFAULT1)->EnableWindow(nCompatibleMedia);
-										CWnd *const pBtnOk=GetDlgItem(IDOK);
-										pBtnOk->EnableWindow(nCompatibleMedia), pBtnOk->SetFocus();
+										static const WORD Controls[]={ ID_CYLINDER, ID_CYLINDER_N, ID_HEAD, ID_GAP, ID_NUMBER, ID_DEFAULT1, IDOK, 0 };
+										TUtils::EnableDlgControls( m_hWnd, Controls, nCompatibleMedia>0 );
+										GetDlgItem(IDOK)->SetFocus();
 										// > automatically ticking the "Real-time thread priority" check-box if either the source or the target is a floppy drive
 										if (dos->image->properties==&CFDD::Properties || targetImageProperties==&CFDD::Properties)
 											SendDlgItemMessage( ID_PRIORITY, BM_SETCHECK, BST_CHECKED );
