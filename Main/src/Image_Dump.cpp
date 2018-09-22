@@ -13,6 +13,7 @@
 		TMedium::TType mediumType;
 		const PImage source;
 		PImage target;
+		bool formatJustBadTracks;
 		TCylinder cylinderA,cylinderZ;
 		THead nHeads;
 		BYTE gap3,fillerByte;
@@ -29,6 +30,7 @@
 			// ctor
 			: dos(_dos)
 			, source(dos->image) , target(NULL)
+			, formatJustBadTracks(false)
 			, gap3(FDD_SECTOR_GAP3_STD) , fillerByte(dos->properties->sectorFillerByte)
 			, cylinderA(0) , cylinderZ(source->GetCylinderCount()-1)
 			, nHeads(source->GetNumberOfFormattedSides(0))
@@ -375,8 +377,12 @@ terminateWithError:
 				p.acceptance.remainingErrorsOnTrack=false; // "True" valid only for Track it was set on
 				// . formatting Target Track
 //TUtils::Information("formatting Target Track");
-				if (( err=dp.target->FormatTrack(p.chs.cylinder,p.chs.head,nSectors,bufferId,bufferLength,bufferFdcStatus,dp.gap3,dp.fillerByte) )!=ERROR_SUCCESS)
-					goto terminateWithError;
+				if (dp.formatJustBadTracks && dp.source->IsTrackHealthy(p.chs.cylinder,p.chs.head)){
+					if (dp.target->PresumeHealthyTrackStructure(p.chs.cylinder,p.chs.head,nSectors,bufferId)!=ERROR_SUCCESS)
+						goto reformatTrack;
+				}else
+reformatTrack:		if ( err=dp.target->FormatTrack(p.chs.cylinder,p.chs.head,nSectors,bufferId,bufferLength,bufferFdcStatus,dp.gap3,dp.fillerByte) )
+						goto terminateWithError;
 				// . writing to Target Track
 //TUtils::Information("writing to Target Track");
 				pSrcSector=sourceSectors, pFdcStatus=bufferFdcStatus;
@@ -455,6 +461,9 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 													? TMedium::GetProperties( dumpParams.mediumType=(TMedium::TType)cbMedium.GetItemData(cbMedium.GetCurSel()) )
 													: NULL;
 				cbMedium.Detach();
+				int i=dumpParams.formatJustBadTracks;
+				DDX_Check( pDX, ID_FORMAT, i );
+				dumpParams.formatJustBadTracks=i;
 				DDX_Text( pDX,	ID_CYLINDER,	(RCylinder)dumpParams.cylinderA );
 					if (mp)
 						DDV_MinMaxUInt( pDX,dumpParams.cylinderA, 0, mp->cylinderRange.iMax-1 );

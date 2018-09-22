@@ -72,14 +72,18 @@ void __debug__(LPCTSTR text){
 	#define _HANDLE		fddHead.handle
 	#define DRIVER		fddHead.driver
 
+	#define __REFER_TO_TRACK(fdd,cyl,head)\
+				fdd->internalTracks[cyl*2+head] /* 2 = max number of Sides on a floppy */
+
 	TStdWinError CFDD::TInternalTrack::TSectorInfo::__saveToDisk__(CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip) const{
 		// saves this Sector to inserted floppy; returns Windows standard i/o error
 		// - seeking the Head
 		if (!fdd->fddHead.__seekTo__(pit->cylinder))
 			return ::GetLastError();
 		// - saving
+		char nSilentRetrials=1;
 		do{
-			// : considering the NumberOfSectorsToSkip in current Track
+			// : taking into account the NumberOfSectorsToSkip in current Track
 			if (pit->__isIdDuplicated__(&id)) // to speed matters up, only if ID is duplicated in Track
 				fdd->__setNumberOfSectorsToSkipOnCurrentTrack__(nSectorsToSkip);
 			// : saving
@@ -103,21 +107,6 @@ void __debug__(LPCTSTR text){
 						: ::GetLastError();
 					// . cleaning up after reproduction of requested i/o errors
 					//nop
-					// . verifying the writing
-					if (fdd->params.verifyWrittenData){
-						const TPhysicalAddress chs={ pit->cylinder, pit->head, id };
-						TFdcStatus sr;
-						fdd->__bufferSectorData__( chs, length, pit, nSectorsToSkip, &sr );
-						if (fdcStatus.DescribesDataFieldCrcError()^sr.DescribesDataFieldCrcError()){
-							TCHAR buf[80],tmp[30];
-							::wsprintf(buf,_T("Verification failed for sector with %s on Track %d."),chs.sectorId.ToString(tmp),chs.GetTrackNumber(2));
-							switch (TUtils::AbortRetryIgnore( buf, MB_DEFBUTTON2 )){
-								case IDIGNORE:	break;
-								case IDABORT:	return ERROR_CANCELLED;
-								case IDRETRY:	continue;
-							}
-						}
-					}
 					break;
 				}
 				default:
@@ -125,10 +114,77 @@ void __debug__(LPCTSTR text){
 					return ERROR_DEVICE_NOT_AVAILABLE;
 			}
 			if (err!=ERROR_SUCCESS)
-				switch (TUtils::AbortRetryIgnore(err,MB_DEFBUTTON2)){
-					case IDIGNORE:	break;
-					case IDABORT:	return err;
-					default:		continue;
+				switch (nSilentRetrials-->0 // for positive NumberOfSilentRetrials ...
+						? IDRETRY // ... simply silently retrying to write the Sector
+						: TUtils::AbortRetryIgnore(err,MB_DEFBUTTON2) // ... otherwise asking the user what to do
+				){
+					case IDIGNORE:
+						// ignoring the Error
+						break;
+					case IDABORT:
+						// aborting the saving
+						return err;
+					default:{
+						// re-attempting to save the Sector
+						// . checking whether (paradoxically) the Track is healthy
+						const TCylinder cyl=pit->cylinder;
+						const THead head=pit->head;
+						if (!fdd->IsTrackHealthy(cyl,head)) // if the Track contains damaged Sectors ...
+							continue; // ... trying to write the Sector once more while leaving the Track as it is, including damaged Sectors
+						// . checking if this HEALTHY Sector has been found on the Track
+						if (err!=ERROR_SECTOR_NOT_FOUND) // if something else but Sector-not-found happened (e.g. disk is write-protected) ...
+							continue; // ... trying to write the Sector once more while leaving the Track as it is
+						// . reading all Sectors
+						//nop (already done above when checking if the Track is healthy)
+						// To recap: A healthy Sector has been read, yet it cannot be written back - WE END UP HERE ONLY WHEN DUMPING AN IMAGE TO A FLOPPY WITH "Reformat just bad tracks" TICKED
+						// . reformatting the Track
+						TSectorId bufferId[(BYTE)-1]; WORD bufferLength[(BYTE)-1]; TFdcStatus bufferStatus[(BYTE)-1];
+						for( TSector n=0; n<pit->nSectors; n++ )
+							bufferId[n]=pit->sectors[n].id, bufferLength[n]=pit->sectors[n].length, bufferStatus[n]=TFdcStatus::WithoutError;
+						__REFER_TO_TRACK(fdd,cyl,head)=NULL; // detaching the Track internal representation for it to be not destroyed during reformatting of the Track
+						err=fdd->FormatTrack(	cyl, head, pit->nSectors, bufferId, bufferLength, bufferStatus,
+												10, // small Gap3 to be sure all Sectors fit in
+												fdd->dos->properties->sectorFillerByte
+											);
+						if (err!=ERROR_SUCCESS){ // if formatting failed ...
+terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any new InternalTrack representation
+							__REFER_TO_TRACK(fdd,cyl,head)=(PInternalTrack)pit; // re-attaching the original InternalTrack representation
+							return err; // ... there's nothing else to do but terminating with Error
+						}
+						// . writing each Sector back to the above reformatted Track
+						for( TSector s=0; s<nSectorsToSkip; s++ ){ // if this is the K-th Sector, we are writing only 0..(K-1)-th Sectors, leaving K+1..N-th Sectors unwritten (caller's duty); we re-attempt to write this K-th Sector in the next pass through the cycle
+							const TPhysicalAddress chs={ cyl, head, pit->sectors[s].id };
+							WORD w;
+							if (const PSectorData pData=fdd->GetSectorData(chs,s,false,&w,&TFdcStatus()))
+								::memcpy( pData, pit->sectors[s].data, w );
+							else{ // if Sector not readable even after reformatting the Track ...
+								err=::GetLastError();
+								goto terminateWithError; // ... there's nothing else to do but terminating with Error
+							}
+							if ( err=pit->sectors[s].__saveToDisk__(fdd,pit,s) ) // if Sector not writeable even after reformatting the Track ...
+								goto terminateWithError; // ... there's nothing else to do but terminating with Error
+						}
+						// . disposing the new InternalTrack representations (as it's been worked only with the original one), restoring the original
+						fdd->__unformatInternalTrack__(cyl,head); // disposing any new InternalTrack representation
+						__REFER_TO_TRACK(fdd,cyl,head)=(PInternalTrack)pit; // re-attaching the original InternalTrack representation
+						continue; // trying to write this Sector once more
+					}
+				}
+			// : verifying the writing
+			else
+				if (fdd->params.verifyWrittenData){
+					const TPhysicalAddress chs={ pit->cylinder, pit->head, id };
+					TFdcStatus sr;
+					fdd->__bufferSectorData__( chs, length, pit, nSectorsToSkip, &sr );
+					if (fdcStatus.DescribesDataFieldCrcError()^sr.DescribesDataFieldCrcError()){
+						TCHAR buf[80],tmp[30];
+						::wsprintf(buf,_T("Verification failed for sector with %s on Track %d."),chs.sectorId.ToString(tmp),chs.GetTrackNumber(2));
+						switch (TUtils::AbortRetryIgnore( buf, MB_DEFBUTTON2 )){
+							case IDIGNORE:	break;
+							case IDABORT:	return ERROR_CANCELLED;
+							case IDRETRY:	continue;
+						}
+					}
 				}
 			break;
 		}while (true);
@@ -522,7 +578,8 @@ error:				switch (const TStdWinError err=::GetLastError()){
 	}
 
 
-	#define REFER_TO_TRACK(cyl,head)	internalTracks[cyl*2+head] /* 2 = max number of Sides on a floppy */
+
+	#define REFER_TO_TRACK(cyl,head)	__REFER_TO_TRACK(this,cyl,head)
 
 	CFDD::PInternalTrack CFDD::__getScannedTrack__(TCylinder cyl,THead head) const{
 		// returns Internal representation of the Track
@@ -875,7 +932,7 @@ fdrawcmd:				// . setting
 						if (!::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transferSpeed,1, NULL,0, &nBytesTransferred, NULL ))
 							return ::GetLastError();
 						// . scanning zeroth Track - if it can be read, we have set the correct TransferSpeed
-						__unformatInternalTrack__(0,0); // initialization
+						__unformatInternalTrack__(0,0); // initialization; disposing internal information on actual Track format
 						const TInternalTrack *const pit=__scanTrack__(0,0);
 						return	pit && pit->nSectors // if Track can be scanned and its Sectors recognized ...
 								? ERROR_SUCCESS	// ... then the TransferSpeed has been set correctly
@@ -1453,7 +1510,7 @@ error:				return ::GetLastError();
 				PFD_ID_HEADER pih=fmt.params.Headers;	PCSectorId pId=bufferId;
 				for( TSector n=nSectors; n--; __assign__(*pih++,pId++) );
 formatStandardWay:
-				// . unformatting the Track
+				// . disposing internal information on actual Track format
 				__unformatInternalTrack__(cyl,head);
 				// . formatting the Track
 				if (!::DeviceIoControl( _HANDLE, IOCTL_FDCMD_FORMAT_TRACK, &fmt,sizeof(fmt), NULL,0, &nBytesTransferred, NULL ))
@@ -1475,7 +1532,7 @@ formatStandardWay:
 				break;
 			}
 			case TFormatStyle::ONE_LONG_SECTOR:{
-				// . unformatting the Track
+				// . disposing internal information on actual Track format
 				__unformatInternalTrack__(cyl,head);
 				// . formatting the Track
 				const TPhysicalAddress chs={ cyl, head, *bufferId };
@@ -1486,7 +1543,7 @@ formatStandardWay:
 				break;
 			}
 			case TFormatStyle::CUSTOM:{
-				// . unformatting the Track
+				// . disposing internal information on actual Track format
 				__unformatInternalTrack__(cyl,head);
 				// . verifying Track surface (if requested to) by writing maximum number of known Bytes to it and trying to read them back
 				if (params.verifyFormattedTracks){
@@ -1599,7 +1656,7 @@ TUtils::Information(buf);}
 //::wsprintf(buf,_T("nBytesReserved=%d"),nBytesReserved);
 //TUtils::Information(buf);}
 				}
-				bufferId-=nSectors;
+				bufferId-=nSectors; // recovering variable's original value
 formatCustomWay:
 				// . unformatting the Track
 				UnformatTrack(cyl,head);
@@ -1657,6 +1714,18 @@ formatCustomWay:
 		return params.verifyFormattedTracks;
 	}
 
+	TStdWinError CFDD::PresumeHealthyTrackStructure(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId){
+		// without formatting it, presumes that given Track contains specified Sectors that are well readable and writeable; returns Windows standard i/o error
+		// - disposing internal information on actual Track format
+		__unformatInternalTrack__(cyl,head);
+		// - explicitly setting Track structure
+		TInternalTrack::TSectorInfo *psi=( REFER_TO_TRACK(cyl,head) = new TInternalTrack( this, cyl, head, nSectors, bufferId ) )->sectors;
+		for( TSector n=nSectors; n--; psi++ )
+			psi->data=ALLOCATE_SECTOR_DATA(psi->length);
+		// - presumption done
+		return ERROR_SUCCESS;
+	}
+
 	TStdWinError CFDD::UnformatTrack(TCylinder cyl,THead head){
 		// unformats given Track {Cylinder,Head}; returns Windows standard i/o error
 		// - moving Head above the corresponding Cylinder
@@ -1671,7 +1740,7 @@ error:		return ::GetLastError();
 										{cyl,head,0,lengthCode}
 									};
 				if (::DeviceIoControl( _HANDLE, IOCTL_FDCMD_FORMAT_TRACK, &fmt,sizeof(fmt), NULL,0, &nBytesTransferred, NULL )!=0){
-					__unformatInternalTrack__(cyl,head);
+					__unformatInternalTrack__(cyl,head); // disposing internal information on actual Track format
 					return ERROR_SUCCESS;
 				}else
 					goto error;

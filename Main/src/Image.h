@@ -72,7 +72,8 @@
 			LENGTHCODE_1024	=3,
 			LENGTHCODE_2048	=4,
 			LENGTHCODE_4096	=5,
-			LENGTHCODE_8192	=6
+			LENGTHCODE_8192	=6,
+			LENGTHCODE_16384=7
 		} sectorLengthCode;
 		WORD sectorLength;
 		TSector clusterSize;
@@ -212,6 +213,7 @@
 		virtual THead GetNumberOfFormattedSides(TCylinder cyl) const=0;
 		TTrack GetTrackCount() const;
 		virtual TSector ScanTrack(TCylinder cyl,THead head,PSectorId bufferId,PWORD bufferLength) const=0;
+		bool IsTrackHealthy(TCylinder cyl,THead head);
 		virtual PSectorData GetSectorData(RCPhysicalAddress chs,BYTE nSectorsToSkip,bool recoverFromError,PWORD sectorLength,TFdcStatus *pFdcStatus)=0;
 		PSectorData GetSectorData(RCPhysicalAddress chs,PWORD sectorLength);
 		PSectorData GetSectorData(RCPhysicalAddress chs);
@@ -223,6 +225,7 @@
 		virtual TStdWinError Reset()=0;
 		virtual TStdWinError FormatTrack(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte)=0;
 		virtual bool RequiresFormattedTracksVerification() const;
+		virtual TStdWinError PresumeHealthyTrackStructure(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId);
 		virtual TStdWinError UnformatTrack(TCylinder cyl,THead head)=0;
 		bool __reportWriteProtection__() const;
 		void __toggleWriteProtection__();

@@ -453,6 +453,26 @@
 		return GetCylinderCount()*GetNumberOfFormattedSides(0);
 	}
 
+	bool CImage::IsTrackHealthy(TCylinder cyl,THead head){
+		// True <=> specified Track is not empty and contains only well readable Sectors, otherwise False
+		// - if Track is empty, assuming the Track surface is damaged, so the Track is NOT healthy
+		TSectorId bufferId[(BYTE)-1]; WORD bufferLength[(BYTE)-1];
+		const TSector nSectors=ScanTrack(cyl,head,bufferId,bufferLength);
+		if (!nSectors)
+			return false;
+		// - if any of the Sectors cannot be read without error, the Track is NOT healthy
+		for( TSector s=0; s<nSectors; s++ ){
+			const TPhysicalAddress chs={ cyl, head, bufferId[s] };
+			WORD w; TFdcStatus st;
+			if (!GetSectorData(chs,s,false,&w,&st))
+				return false;
+			if (!st.IsWithoutError())
+				return false;
+		}
+		// - the Track is healthy
+		return true;
+	}
+
 	PSectorData CImage::GetSectorData(RCPhysicalAddress chs,PWORD sectorLength){
 		// returns Data of a Sector on a given PhysicalAddress; returns Null if Sector not found or Track not formatted
 		TFdcStatus st;
@@ -498,6 +518,11 @@
 	bool CImage::RequiresFormattedTracksVerification() const{
 		// True <=> the Image requires its newly formatted Tracks be verified, otherwise False (and caller doesn't have to carry out verification)
 		return false; // verification NOT required by default (but Images abstracting physical drives can override this setting)
+	}
+
+	TStdWinError CImage::PresumeHealthyTrackStructure(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId){
+		// without formatting it, presumes that given Track contains Sectors with specified parameters; returns Windows standard i/o error
+		return ERROR_NOT_SUPPORTED; // each Track by default must be explicitly formatted to be sure about its structure (but Images abstracting physical drives can override this setting)
 	}
 
 	BOOL CImage::CanCloseFrame(CFrameWnd* pFrame){

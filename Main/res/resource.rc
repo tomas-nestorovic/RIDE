@@ -747,15 +747,15 @@ BEGIN
                     172,14
 END
 
-IDR_IMAGE_DUMP DIALOGEX 0, 0, 201, 188
+IDR_IMAGE_DUMP DIALOGEX 0, 0, 201, 197
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
 CAPTION "Dump to destination"
 FONT 8, "MS Sans Serif"
 BEGIN
-    DEFPUSHBUTTON   "Dump",IDOK,90,167,50,14,WS_DISABLED
-    PUSHBUTTON      "Cancel",IDCANCEL,144,167,50,14
+    DEFPUSHBUTTON   "Dump",IDOK,90,176,50,14,WS_DISABLED
+    PUSHBUTTON      "Cancel",IDCANCEL,144,176,50,14
     CONTROL         "<a id=""ID_HELP"">Need help?</a>",ID_HELP_INDEX,"SysLink",
-                    WS_TABSTOP,7,170,66,11
+                    WS_TABSTOP,7,179,66,11
     LTEXT           "&Destination:",IDC_STATIC,7,9,38,8,NOT WS_GROUP
     PUSHBUTTON      "",ID_FILE,58,7,136,13,BS_FLAT
     LTEXT           "&Medium:",IDC_STATIC,7,26,28,8,NOT WS_GROUP
@@ -779,11 +779,14 @@ BEGIN
     EDITTEXT        ID_NUMBER,84,105,40,12,ES_AUTOHSCROLL | ES_NUMBER | 
                     WS_DISABLED | NOT WS_BORDER,WS_EX_STATICEDGE
     PUSHBUTTON      "System default",ID_DEFAULT1,127,105,56,13,WS_DISABLED
-    CONTROL         "Real-time thread priority (normal priority if unchecked)",
-                    ID_PRIORITY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,129,
+    CONTROL         "Medium already for&matted, so reformat just bad tracks",
+                    ID_FORMAT,"Button",BS_AUTOCHECKBOX | WS_DISABLED | 
+                    WS_TABSTOP,7,129,187,10
+    CONTROL         "Real-time thread &priority (normal priority if unchecked)",
+                    ID_PRIORITY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,140,
                     187,10
     CONTROL         "Show &report when done",ID_REPORT,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,141,174,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,152,174,10
 END
 
 IDR_MSDOS_FILE_ATTRIBUTES_EDITOR DIALOG DISCARDABLE  0, 0, 118, 111
@@ -1162,7 +1165,7 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 194
         TOPMARGIN, 7
-        BOTTOMMARGIN, 181
+        BOTTOMMARGIN, 190
     END
 
     IDR_MSDOS_FILE_ATTRIBUTES_EDITOR, DIALOG
