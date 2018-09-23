@@ -586,6 +586,8 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 										// > enabling/disabling controls
 										static const WORD Controls[]={ ID_CYLINDER, ID_CYLINDER_N, ID_HEAD, ID_GAP, ID_NUMBER, ID_DEFAULT1, IDOK, 0 };
 										TUtils::EnableDlgControls( m_hWnd, Controls, nCompatibleMedia>0 );
+										GetDlgItem(ID_FORMAT)->EnableWindow(nCompatibleMedia && targetImageProperties==&CFDD::Properties);
+											CheckDlgButton( ID_FORMAT, targetImageProperties==&CFDD::Properties );
 										GetDlgItem(IDOK)->SetFocus();
 										// > automatically ticking the "Real-time thread priority" check-box if either the source or the target is a floppy drive
 										if (dos->image->properties==&CFDD::Properties || targetImageProperties==&CFDD::Properties)
