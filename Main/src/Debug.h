@@ -1,32 +1,79 @@
 #ifndef RIDEDEBUG_H
 #define RIDEDEBUG_H
 
+//#define LOGGING_ENABLED // uncomment to enable logging, otherwise logging and its classes unavailable
+
 namespace Debug{
 
-	class CLogFile sealed{
+#ifdef LOGGING_ENABLED
+
+	class CLogFile sealed:public CFile{
+		const bool permanentlyOpen;
 		TCHAR filename[MAX_PATH];
 		BYTE nIndent;
 	public:
+		static CLogFile Default;
+
 		class CAction sealed{
 			CLogFile &logFile;
 			const LPCTSTR name;
 			SYSTEMTIME start;
 		public:
-			CAction(CLogFile &rLogFile,LPCTSTR name);
+			CAction(LPCTSTR name,CLogFile &rLogFile=Default);
 			~CAction();
 		};
 
-		CLogFile(LPCTSTR logDescription);
+		CLogFile(LPCTSTR logDescription,bool permanentlyOpen);
 		
-		const CLogFile &operator<<(TCHAR c) const;
-		const CLogFile &operator<<(LPCTSTR text) const;
-		const CLogFile &operator<<(DWORD dw) const;
-		const CLogFile &operator<<(const SYSTEMTIME &rst) const;
-		const CLogFile &operator<<(const TSectorId &rsi) const;
-		const CLogFile &operator<<(const TPhysicalAddress &rchs) const;
+		CLogFile &operator<<(TCHAR c);
+		CLogFile &operator<<(LPCTSTR text);
+		CLogFile &operator<<(DWORD dw);
+		CLogFile &operator<<(const SYSTEMTIME &rst);
+		CLogFile &operator<<(const TSectorId &rsi);
+		CLogFile &operator<<(const TPhysicalAddress &rchs);
 
-		void LogError(TStdWinError err) const;
+		TStdWinError LogError(TStdWinError err);
+		DWORD LogDialogResult(DWORD result);
 	};
+
+	#define LOG_ACTION(name)\
+		const Debug::CLogFile::CAction a(name)
+
+	#define LOG_TRACK_ACTION(cyl,head,name)\
+		TCHAR __trackActionName[200];\
+		::wsprintf(__trackActionName,_T("Track [Cyl=%d,Head=%d] %s"),cyl,head,name);\
+		LOG_ACTION(__trackActionName)
+
+	#define LOG_SECTOR_ACTION(pSectorId,name)\
+		TCHAR __sectorActionName[200];\
+		::wsprintf(__sectorActionName,_T("Sector %s %s"),(pSectorId)->ToString(__sectorActionName+160),name);\
+		LOG_ACTION(__sectorActionName)
+
+	#define LOG_DIALOG_DISPLAY(name)\
+		LOG_ACTION(name)
+
+	#define LOG_DIALOG_RESULT(result)\
+		Debug::CLogFile::Default.LogDialogResult(result)
+
+	#define LOG_ERROR(err)\
+		Debug::CLogFile::Default.LogError(err)
+
+#else
+	#define LOG_ACTION(name)
+
+	#define LOG_TRACK_ACTION(cyl,head,name)
+
+	#define LOG_SECTOR_ACTION(pSectorId,name)
+
+	#define LOG_DIALOG_DISPLAY(name)
+
+	#define LOG_DIALOG_RESULT(result)\
+		result
+
+	#define LOG_ERROR(err)\
+			err
+
+#endif
 
 }
 
