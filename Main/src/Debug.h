@@ -14,6 +14,8 @@ namespace Debug{
 	public:
 		static CLogFile Default;
 
+		CMapStringToPtr actionMinTimes,actionMaxTimes; // minimum and maximum times that each of Actions took (in milliseconds)
+
 		class CAction sealed{
 			CLogFile &logFile;
 			const LPCTSTR name;
@@ -24,6 +26,7 @@ namespace Debug{
 		};
 
 		CLogFile(LPCTSTR logDescription,bool permanentlyOpen);
+		~CLogFile();
 		
 		CLogFile &operator<<(TCHAR c);
 		CLogFile &operator<<(LPCTSTR text);
@@ -32,12 +35,32 @@ namespace Debug{
 		CLogFile &operator<<(const TSectorId &rsi);
 		CLogFile &operator<<(const TPhysicalAddress &rchs);
 
+		void LogMessage(LPCTSTR text);
 		TStdWinError LogError(TStdWinError err);
+		bool LogBool(bool b);
+		PSectorData LogSectorDataPointer(PSectorData pSectorData);
 		DWORD LogDialogResult(DWORD result);
 	};
 
 	#define LOG_ACTION(name)\
 		const Debug::CLogFile::CAction a(name)
+
+	#define LOG_MESSAGE(text)\
+		Debug::CLogFile::Default.LogMessage(text)
+
+	#define LOG_ERROR(error)\
+		Debug::CLogFile::Default.LogError(error)
+
+	#define LOG_BOOL(boolValue)\
+		Debug::CLogFile::Default.LogBool(boolValue)
+
+	#define LOG_PSECTORDATA(pSectorData)\
+		Debug::CLogFile::Default.LogSectorDataPointer(pSectorData)
+
+	#define LOG_CYLINDER_ACTION(cyl,name)\
+		TCHAR __cylinderActionName[200];\
+		::wsprintf(__cylinderActionName,_T("Cyl %d %s"),cyl,name);\
+		LOG_ACTION(__cylinderActionName)
 
 	#define LOG_TRACK_ACTION(cyl,head,name)\
 		TCHAR __trackActionName[200];\
@@ -55,11 +78,21 @@ namespace Debug{
 	#define LOG_DIALOG_RESULT(result)\
 		Debug::CLogFile::Default.LogDialogResult(result)
 
-	#define LOG_ERROR(err)\
-		Debug::CLogFile::Default.LogError(err)
-
 #else
 	#define LOG_ACTION(name)
+
+	#define LOG_MESSAGE(text)
+
+	#define LOG_ERROR(error)\
+		error
+
+	#define LOG_BOOL(boolValue)\
+		boolValue
+
+	#define LOG_PSECTORDATA(pSectorData)\
+		pSectorData
+
+	#define LOG_CYLINDER_ACTION(cyl,name)
 
 	#define LOG_TRACK_ACTION(cyl,head,name)
 
@@ -69,9 +102,6 @@ namespace Debug{
 
 	#define LOG_DIALOG_RESULT(result)\
 		result
-
-	#define LOG_ERROR(err)\
-			err
 
 #endif
 
