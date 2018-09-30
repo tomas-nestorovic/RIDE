@@ -1,21 +1,5 @@
 #include "stdafx.h"
 
-//#define FDD_DEBUG
-
-#ifdef FDD_DEBUG
-TCHAR bufDebug[MAX_PATH];
-
-void __debug__(LPCTSTR text){
-		if (*bufDebug){
-			CFile f(bufDebug,CFile::modeCreate|CFile::modeWrite|CFile::modeNoTruncate);
-			f.SeekToEnd();
-			f.Write(text,::lstrlen(text));
-			TCHAR newLine[3];
-			f.Write(newLine,::lstrlen(::lstrcpy(newLine,"\n")));
-		}
-}
-#endif
-
 	static void __assign__(FD_ID_HEADER &rih,PCSectorId pid){
 		rih.cyl=pid->cylinder, rih.head=pid->side, rih.sector=pid->sector, rih.size=pid->lengthCode;
 	}
@@ -77,9 +61,10 @@ void __debug__(LPCTSTR text){
 
 	TStdWinError CFDD::TInternalTrack::TSectorInfo::__saveToDisk__(CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip) const{
 		// saves this Sector to inserted floppy; returns Windows standard i/o error
+		LOG_SECTOR_ACTION(&id,_T("TStdWinError CFDD::TInternalTrack::TSectorInfo::__saveToDisk__"));
 		// - seeking the Head
 		if (!fdd->fddHead.__seekTo__(pit->cylinder))
-			return ::GetLastError();
+			return LOG_ERROR(::GetLastError());
 		// - saving
 		char nSilentRetrials=1;
 		do{
@@ -101,16 +86,17 @@ void __debug__(LPCTSTR text){
 						fdd->__setWaitingForIndex__();
 					// . writing Sector
 					FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM, pit->head, id.cylinder,id.side,id.sector,id.lengthCode, id.sector+1, 5, 0xff };
+					LOG_ACTION(_T("DeviceIoControl fdcCommand"));
 					err=::DeviceIoControl( fdd->_HANDLE, fdcCommand, &rwp,sizeof(rwp), ::memcpy(fdd->dataBuffer,data,length),__getOfficialSectorLength__(id.lengthCode), &nBytesTransferred, NULL )!=0
 						? ERROR_SUCCESS
-						: ::GetLastError();
+						: LOG_ERROR(::GetLastError());
 					// . cleaning up after reproduction of requested i/o errors
 					//nop
 					break;
 				}
 				default:
 					ASSERT(FALSE);
-					return ERROR_DEVICE_NOT_AVAILABLE;
+					return LOG_ERROR(ERROR_DEVICE_NOT_AVAILABLE);
 			}
 			if (err!=ERROR_SUCCESS)
 				switch (nSilentRetrials-->0 // for positive NumberOfSilentRetrials ...
@@ -125,6 +111,7 @@ void __debug__(LPCTSTR text){
 						return err;
 					default:{
 						// re-attempting to save the Sector
+						LOG_ACTION(_T("re-attempting to save the Sector"));
 						// . checking whether (paradoxically) the Track is healthy
 						const TCylinder cyl=pit->cylinder;
 						const THead head=pit->head;
@@ -148,7 +135,7 @@ void __debug__(LPCTSTR text){
 						if (err!=ERROR_SUCCESS){ // if formatting failed ...
 terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any new InternalTrack representation
 							__REFER_TO_TRACK(fdd,cyl,head)=(PInternalTrack)pit; // re-attaching the original InternalTrack representation
-							return err; // ... there's nothing else to do but terminating with Error
+							return LOG_ERROR(err); // ... there's nothing else to do but terminating with Error
 						}
 						// . if this is the K-th Sector, making sure that the 0..(K-1)-th Sectors have been formatted well
 						for( TSector s=0; s<nSectorsToSkip; s++ ){
@@ -166,7 +153,7 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 						for( TSector s=0; s<nSectorsToSkip; s++ ){
 							const TPhysicalAddress chs={ cyl, head, pit->sectors[s].id };
 							if ( err=pit->sectors[s].__saveToDisk__(fdd,pit,s) ) // if Sector not writeable even after reformatting the Track ...
-								return err; // ... there's nothing else to do but terminating with Error
+								return LOG_ERROR(err); // ... there's nothing else to do but terminating with Error
 						}
 						// . trying to write this K-th Sector once more, leaving K+1..N-th Sectors unwritten (caller's duty)
 						continue;
@@ -175,6 +162,7 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 			// : verifying the writing
 			else
 				if (fdd->params.verifyWrittenData){
+					LOG_ACTION(_T("verifying the writing"));
 					const TPhysicalAddress chs={ pit->cylinder, pit->head, id };
 					TFdcStatus sr;
 					fdd->__bufferSectorData__( chs, length, pit, nSectorsToSkip, &sr );
@@ -183,7 +171,7 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 						::wsprintf(buf,_T("Verification failed for sector with %s on Track %d."),chs.sectorId.ToString(tmp),chs.GetTrackNumber(2));
 						switch (TUtils::AbortRetryIgnore( buf, MB_DEFBUTTON2 )){
 							case IDIGNORE:	break;
-							case IDABORT:	return ERROR_CANCELLED;
+							case IDABORT:	return LOG_ERROR(ERROR_CANCELLED);
 							case IDRETRY:	continue;
 						}
 					}
@@ -248,8 +236,9 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 
 	TStdWinError CFDD::TInternalTrack::__saveRawContentToDisk__(CFDD *fdd,TCylinder cyl,THead head) const{
 		// writes this RawContent to the Track given by current {Cylinder,Head} pair; returns Windows standard i/o error
+		LOG_ACTION(_T("TStdWinError CFDD::TInternalTrack::__saveRawContentToDisk__"));
 		if (!rawContent.data)
-			return ERROR_INVALID_DATA;
+			return LOG_ERROR(ERROR_INVALID_DATA);
 		// - preparing error message (should any error occur)
 		TPhysicalAddress chs={ cyl, head }; // ID will be below set to the first Sector on the Track
 		TCHAR error[80];
@@ -265,12 +254,12 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 				}
 		if (!pIdField){ // ID Field not found
 			TUtils::Information(error,_T("Cannot find first sector ID in raw content."),SAVING_END);
-			return ERROR_REQUEST_REFUSED;
+			return LOG_ERROR(ERROR_REQUEST_REFUSED);
 		}/*else if (chs.sectorId!=sectors[0].id){ // ID Field found but doesn't match the first Sector on the Track
 			TCHAR cause[150],id1[30],id1raw[30];
 			::wsprintf( cause, _T("Earlier scanned first sector %s does not match the current first sector %s in the raw content."), sectors[0].id.ToString(id1), chs.__vratCisloStopy__(2), chs.sectorId.ToString(id1raw) );
 			TUtils::Information(error,cause,SAVING_END);
-			return ERROR_CANCELLED;
+			return LOG_ERROR(ERROR_CANCELLED);
 		}*/
 		// - extracting Data Address Mark (DAM) of the first Sector
 		PCSectorData pDam=NULL; // assumption (DAM not found and RawContent not valid)
@@ -281,7 +270,7 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 				}
 		if (!pDam || *pDam!=TDataAddressMark::DATA_RECORD && *pDam!=TDataAddressMark::DELETED_DATA_RECORD && *pDam!=TDataAddressMark::DEFECTIVE_DATA_RECORD){ // DAM not found
 			TUtils::Information(error,_T("Cannot find first sector DAM in raw content (first sector in the track must have a DAM, others don't)."),SAVING_END);
-			return ERROR_REQUEST_REFUSED;
+			return LOG_ERROR(ERROR_REQUEST_REFUSED);
 		}
 		// - saving
 /*		const PCSectorData pData=1+pDam;
@@ -316,7 +305,7 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 				}
 				default:
 					ASSERT(FALSE);
-					return ERROR_DEVICE_NOT_AVAILABLE;
+					return LOG_ERROR(ERROR_DEVICE_NOT_AVAILABLE);
 			}
 TUtils::Information("--- EVERYTHING OK ---");
 			// . verifying that the first Sector on Track is reachable (i.e. hasn't been rewritten by the ID, see above)
@@ -419,6 +408,7 @@ TUtils::Information("--- EVERYTHING OK ---");
 	bool CFDD::TFddHead::__seekTo__(TCylinder cyl){
 		// True <=> Head seeked to specified Cylinder, otherwise False and reporting the error
 		if (cyl!=position){
+			LOG_CYLINDER_ACTION(cyl,_T("bool CFDD::TFddHead::__seekTo__"));
 			calibrated=false; // the Head is no longer Calibrated after changing to a different Cylinder
 			do{
 				DWORD nBytesTransferred;
@@ -427,22 +417,26 @@ TUtils::Information("--- EVERYTHING OK ---");
 					case DRV_FDRAWCMD:
 						if (preferRelativeSeeking && cyl>position){ // RelativeSeeking is allowed only to higher Cylinder numbers
 							FD_RELATIVE_SEEK_PARAMS rsp={ FD_OPTION_MT|FD_OPTION_DIR, 0, cyl-position };
+							LOG_ACTION(_T("DeviceIoControl FD_RELATIVE_SEEK_PARAMS"));
 							seeked=::DeviceIoControl( handle, IOCTL_FDCMD_RELATIVE_SEEK, &rsp,sizeof(rsp), NULL,0, &nBytesTransferred, NULL )!=0;
+							LOG_BOOL(seeked);
 						}else{
 							FD_SEEK_PARAMS sp={ cyl, 0 };
+							LOG_ACTION(_T("DeviceIoControl FD_SEEK_PARAMS"));
 							seeked=::DeviceIoControl( handle, IOCTL_FDCMD_SEEK, &sp,sizeof(sp), NULL,0, &nBytesTransferred, NULL )!=0;
+							LOG_BOOL(seeked);
 						}
 						break;
 					default:
 						ASSERT(FALSE);
-						return false;
+						return LOG_BOOL(false);
 				}
 				if (seeked)
 					position=cyl;
 				else if (TUtils::RetryCancel(::GetLastError()))
 					continue;
 				else
-					return false;
+					return LOG_BOOL(false);
 				break;
 			}while (true);
 		}
@@ -451,14 +445,15 @@ TUtils::Information("--- EVERYTHING OK ---");
 
 	bool CFDD::TFddHead::__calibrate__(){
 		// True <=> Head successfully sent home (thus Calibrated), otherwise False
+		LOG_ACTION("bool CFDD::TFddHead::__calibrate__()");
 		position=0;
 		DWORD nBytesTransferred;
 		switch (driver){
 			case DRV_FDRAWCMD:
-				return ::DeviceIoControl( handle, IOCTL_FDCMD_RECALIBRATE, NULL,0, NULL,0, &nBytesTransferred, NULL )!=0;
+				return LOG_BOOL(::DeviceIoControl( handle, IOCTL_FDCMD_RECALIBRATE, NULL,0, NULL,0, &nBytesTransferred, NULL )!=0);
 			default:
 				ASSERT(FALSE);
-				return false;
+				return LOG_BOOL(false);
 		}
 	}
 
@@ -490,6 +485,7 @@ TUtils::Information("--- EVERYTHING OK ---");
 		: CFloppyImage(&Properties,true)
 		// - initialization
 		, dataBuffer( ::VirtualAlloc(NULL,SECTOR_LENGTH_MAX,MEM_COMMIT,PAGE_READWRITE) ) {
+		LOG_ACTION(_T("CFDD::ctor"));
 		::ZeroMemory( internalTracks, sizeof(internalTracks) );
 		// - creating a temporary file in order to not break the Document-View architecture
 		TCHAR tmpFileName[MAX_PATH];
@@ -502,9 +498,7 @@ TUtils::Information("--- EVERYTHING OK ---");
 
 	CFDD::~CFDD(){
 		// dtor
-#ifdef FDD_DEBUG
-__debug__("fdd dtor");
-#endif
+		LOG_ACTION(_T("CFDD::dtor"));
 		// - disconnecting from the Drive
 		__disconnectFromFloppyDrive__();
 		// - disposing all InternalTracks
@@ -526,37 +520,36 @@ __debug__("fdd dtor");
 		// True <=> a connection to the Drive has been established using the Driver, otherwise False
 		_HANDLE=INVALID_HANDLE_VALUE; // initialization
 		switch ( DRIVER=_driver ){
-			case DRV_AUTO:{
+			case DRV_AUTO:
 				// automatic recognition of installed Drivers
-				TStdWinError err;
-				if (( err=__connectToFloppyDrive__(DRV_FDRAWCMD) )==ERROR_SUCCESS)
-					return ERROR_SUCCESS;
-				else
+				if (const TStdWinError err=__connectToFloppyDrive__(DRV_FDRAWCMD))
 					return err;
-			}
+				else
+					return ERROR_SUCCESS;
 			case DRV_FDRAWCMD:{
 				// Simon Owen's Driver
+				LOG_ACTION(_T("TStdWinError CFDD::__connectToFloppyDrive__ DRV_FDRAWCMD"));
 				// . connecting to "A:"
 				do{
 					_HANDLE=::CreateFile( _T("\\\\.\\fdraw0"), GENERIC_READ|GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL); //FILE_SHARE_WRITE
 					if (_HANDLE!=INVALID_HANDLE_VALUE) break; // Driver installed and exclusive access allowed to the A: drive
 error:				switch (const TStdWinError err=::GetLastError()){
 						case ERROR_FILE_NOT_FOUND: // "file not found" error ...
-							return ERROR_NOT_READY; // ... replaced with the "device not ready" error
+							return LOG_ERROR(ERROR_NOT_READY); // ... replaced with the "device not ready" error
 						case ERROR_ALREADY_EXISTS: // "file already exists" error ...
 							if (!TUtils::RetryCancel(_T("Exclusive access to the floppy drive required. Close all applications that may prevent it and try again.")))
-								return ERROR_ACCESS_DENIED; // ... replaced with the "access denied" error
+								return LOG_ERROR(ERROR_ACCESS_DENIED); // ... replaced with the "access denied" error
 							else
 								continue;
 						default:
-							return err;
+							return LOG_ERROR(err);
 					}
 				}while (true);
 				// . verifying the Driver's version
 				DWORD nBytesTransferred,version;
 				::DeviceIoControl( _HANDLE, IOCTL_FDRAWCMD_GET_VERSION, NULL,0, &version,sizeof(version), &nBytesTransferred, NULL );
 				if (version<FDRAWCMD_VERSION) // old Driver version
-					return ERROR_BAD_DRIVER;
+					return LOG_ERROR(ERROR_BAD_DRIVER);
 				// . synchronizing with index pulse
 				__setWaitingForIndex__();
 				// . turning off the automatic recognition of floppy inserted into Drive (having turned it on creates problems when used on older Drives [Simon Owen])
@@ -565,16 +558,19 @@ error:				switch (const TStdWinError err=::GetLastError()){
 					__disconnectFromFloppyDrive__();
 					goto error;
 				}
+				// . logging the recognized floppy drive controller
+				LOG_MESSAGE(__getControllerType__());
 				return ERROR_SUCCESS;
 			}
 			default:
 				ASSERT(FALSE);
-				return ERROR_DEVICE_NOT_AVAILABLE;
+				return LOG_ERROR(ERROR_DEVICE_NOT_AVAILABLE);
 		}
 	}
 
 	void CFDD::__disconnectFromFloppyDrive__(){
 		// disconnects from the Drive (if previously connected to)
+		LOG_ACTION(_T("void CFDD::__disconnectFromFloppyDrive__"));
 		if (_HANDLE!=INVALID_HANDLE_VALUE){
 			::CloseHandle(_HANDLE);
 			_HANDLE=INVALID_HANDLE_VALUE;
@@ -600,9 +596,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 
 	void CFDD::__freeInternalTracks__(){
 		// disposes all InternalTracks
-#ifdef FDD_DEBUG
-__debug__("fdd __freeInternalTracks__");
-#endif
+		LOG_ACTION(_T("void CFDD::__freeInternalTracks__"));
 		for( TCylinder cyl=0; cyl<FDD_CYLINDERS_MAX; cyl++ )
 			__unformatInternalTrack__(cyl,0), __unformatInternalTrack__(cyl,1);
 	}
@@ -612,9 +606,6 @@ __debug__("fdd __freeInternalTracks__");
 
 	BOOL CFDD::OnOpenDocument(LPCTSTR){
 		// True <=> Image opened successfully, otherwise False
-#ifdef FDD_DEBUG
-__debug__("fdd OnOpenDocument");
-#endif
 		return TRUE; // always successfull; failure may arise later on when attempting to access the Drive in exclusive mode
 	}
 
@@ -630,6 +621,7 @@ __debug__("fdd OnOpenDocument");
 	};
 	UINT AFX_CDECL CFDD::__save_thread__(PVOID _pCancelableAction){
 		// thread to save InternalTracks (particularly their Modified Sectors) on inserted floppy
+		LOG_ACTION(_T("UINT CFDD::__save_thread__"));
 		TBackgroundActionCancelable *const pAction=(TBackgroundActionCancelable *)_pCancelableAction;
 		const TSaveParams sp=*(TSaveParams *)pAction->fnParams;
 		for( TCylinder cyl=0; cyl<FDD_CYLINDERS_MAX; pAction->UpdateProgress(++cyl) )
@@ -647,19 +639,11 @@ __debug__("fdd OnOpenDocument");
 					TInternalTrack::TSectorInfo *psi=pit->sectors;
 					for( TSector n=0; n<pit->nSectors; psi++,n++ )
 						if (psi->modified){ // Sector has been Modified since it's was last saved
-							if (!pAction->bContinue) return ERROR_CANCELLED;
-#ifdef _DEBUG
-{TCHAR buf[200];
-::wsprintf(buf,_T("fdd __save_thread__ chs=%d(%d),%d(%d),%d"),cyl,psi->id.cylinder,head,psi->id.side,psi->id.sector);
-TUtils::Information(buf);}
-#endif
-							// : saving
-							const TStdWinError err=psi->__saveToDisk__( sp.fdd, pit, n );
-							// : evaluating the result
-							if (err==ERROR_SUCCESS)
-								psi->modified=false;
-							else
+							if (!pAction->bContinue) return LOG_ERROR(ERROR_CANCELLED);
+							if (const TStdWinError err=psi->__saveToDisk__( sp.fdd, pit, n ))
 								return pAction->TerminateWithError(err);
+							else
+								psi->modified=false;
 						}
 				}
 		sp.fdd->m_bModified=FALSE;
@@ -679,6 +663,7 @@ TUtils::Information(buf);}
 
 	TCylinder CFDD::GetCylinderCount() const{
 		// determines and returns the actual number of Cylinders in the Image
+		LOG_ACTION(_T("TCylinder CFDD::GetCylinderCount"));
 		return	GetNumberOfFormattedSides(0) // if zeroth Cylinder exists ...
 				? FDD_CYLINDERS_MAX // ... then it's assumed that there is the maximum number of Cylinders available (the actual number may be adjusted by systematically scanning the Tracks)
 				: 0; // ... otherwise the floppy is considered not formatted
@@ -686,6 +671,7 @@ TUtils::Information(buf);}
 
 	THead CFDD::GetNumberOfFormattedSides(TCylinder cyl) const{
 		// determines and returns the number of Sides formatted on given Cylinder; returns 0 iff Cylinder not formatted
+		LOG_CYLINDER_ACTION(cyl,_T("THead CFDD::GetNumberOfFormattedSides"));
 		return (ScanTrack(cyl,0,NULL,NULL)!=0) + (ScanTrack(cyl,1,NULL,NULL)!=0);
 	}
 
@@ -699,13 +685,9 @@ TUtils::Information(buf);}
 				return pit;
 			else
 				// Track has not yet been scanned - attempting to scan it now
-#ifdef FDD_DEBUG
-TCHAR buf[200];
-::wsprintf(buf,_T("fdd __scanTrack__ cyl=%d,head=%d"),cyl,head);
-__debug__(buf);
-#endif
 				if (fddHead.__seekTo__(cyl)){
 					// successfully seeked to the given Cylinder
+					LOG_TRACK_ACTION(cyl,head,_T("CFDD::PInternalTrack CFDD::__scanTrack__"));
 					DWORD nBytesTransferred;
 					switch (DRIVER){
 						case DRV_FDRAWCMD:{
@@ -751,6 +733,7 @@ __debug__(buf);
 
 	void CFDD::__setWaitingForIndex__() const{
 		// sets waiting for the index pulse before executing the next command
+		LOG_ACTION(_T("void CFDD::__setWaitingForIndex__"));
 		DWORD nBytesTransferred;
 		switch (DRIVER){
 			case DRV_FDRAWCMD:{
@@ -764,6 +747,7 @@ __debug__(buf);
 
 	void CFDD::__setNumberOfSectorsToSkipOnCurrentTrack__(BYTE nSectorsToSkip) const{
 		// True <=> the NumberOfSectors to be skipped on the current Track successfully set, otherwise False
+		LOG_ACTION(_T("void CFDD::__setNumberOfSectorsToSkipOnCurrentTrack__"));
 		DWORD nBytesTransferred;
 		switch (DRIVER){
 			case DRV_FDRAWCMD:{
@@ -785,11 +769,11 @@ __debug__(buf);
 				FD_SHORT_WRITE_PARAMS swp={ nDataBytesBeforeInterruption, nMicrosecondsAfterLastDataByteWritten };
 				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_SHORT_WRITE, &swp,sizeof(swp), NULL,0, &nBytesTransferred, NULL )!=0
 						? ERROR_SUCCESS
-						: ::GetLastError();
+						: LOG_ERROR(::GetLastError());
 			}
 			default:
 				ASSERT(FALSE);
-				return ERROR_DEVICE_NOT_AVAILABLE;
+				return LOG_ERROR(ERROR_DEVICE_NOT_AVAILABLE);
 		}
 	}
 
@@ -800,6 +784,7 @@ __debug__(buf);
 
 	bool CFDD::__bufferSectorData__(RCPhysicalAddress chs,WORD sectorLength,const TInternalTrack *pit,BYTE nSectorsToSkip,TFdcStatus *pFdcStatus) const{
 		// True <=> requested Sector found in currently seeked Track and data of the Sector have been buffered in the internal DataBuffer, otherwise False
+		LOG_SECTOR_ACTION(&chs.sectorId,_T("bool CFDD::__bufferSectorData__"));
 		// - taking into account the NumberOfSectorsToSkip
 		if (pit->__isIdDuplicated__(&chs.sectorId)) // to speed matters up, only if ID is duplicated in the Track
 			__setNumberOfSectorsToSkipOnCurrentTrack__(nSectorsToSkip);
@@ -809,17 +794,23 @@ __debug__(buf);
 		DWORD nBytesTransferred;
 		switch (DRIVER){
 			case DRV_FDRAWCMD:{
+				LOG_ACTION(_T("DeviceIoControl IOCTL_FDCMD_READ_DATA"));
 				FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM|FD_OPTION_SK, chs.head, chs.sectorId.cylinder,chs.sectorId.side,chs.sectorId.sector,chs.sectorId.lengthCode, chs.sectorId.sector+1, 5, 0xff };
 				if (!::DeviceIoControl( _HANDLE, IOCTL_FDCMD_READ_DATA, &rwp,sizeof(rwp), dataBuffer,SECTOR_LENGTH_MAX, &nBytesTransferred, NULL )){
 					// Sector read with errors
 					// | getting FdcStatus
+					LOG_ACTION(_T("DeviceIoControl IOCTL_FD_GET_RESULT"));
 					FD_CMD_RESULT cmdRes;
 					::DeviceIoControl( _HANDLE, IOCTL_FD_GET_RESULT, NULL,0, &cmdRes,sizeof(cmdRes), &nBytesTransferred, NULL );
 					*pFdcStatus=TFdcStatus(cmdRes.st1,cmdRes.st2);
 					// | if "Deleted DAM" is one of the errors, repeating reading with appropriate command
 					if (pFdcStatus->DescribesDeletedDam()){
-						::DeviceIoControl( _HANDLE, IOCTL_FDCMD_READ_DELETED_DATA, &rwp,sizeof(rwp), dataBuffer,SECTOR_LENGTH_MAX, &nBytesTransferred, NULL );
-						::DeviceIoControl( _HANDLE, IOCTL_FD_GET_RESULT, NULL,0, &cmdRes,sizeof(cmdRes), &nBytesTransferred, NULL );
+						{	LOG_ACTION(_T("DeviceIoControl IOCTL_FDCMD_READ_DELETED_DATA"));
+							::DeviceIoControl( _HANDLE, IOCTL_FDCMD_READ_DELETED_DATA, &rwp,sizeof(rwp), dataBuffer,SECTOR_LENGTH_MAX, &nBytesTransferred, NULL );
+						}
+						{	LOG_ACTION(_T("DeviceIoControl IOCTL_FD_GET_RESULT"));
+							::DeviceIoControl( _HANDLE, IOCTL_FD_GET_RESULT, NULL,0, &cmdRes,sizeof(cmdRes), &nBytesTransferred, NULL );
+						}
 						*pFdcStatus=TFdcStatus( cmdRes.st1, cmdRes.st2|FDC_ST2_DELETED_DAM );
 					}
 				}
@@ -827,12 +818,13 @@ __debug__(buf);
 			}
 			default:
 				ASSERT(FALSE);
-				return false;
+				return LOG_BOOL(false);
 		}
 	}
 
 	PSectorData CFDD::GetSectorData(RCPhysicalAddress chs,BYTE nSectorsToSkip,bool recoverFromError,PWORD sectorLength,TFdcStatus *pFdcStatus){
 		// returns Data of a Sector on a given PhysicalAddress; returns Null iff Sector not found or Track not formatted
+		LOG_SECTOR_ACTION(&chs.sectorId,_T("PSectorData CFDD::GetSectorData"));
 		if (const PInternalTrack pit=__scanTrack__(chs.cylinder,chs.head)){
 			// . getting Track's RawContent
 			if (params.readWholeTrackAsFirstSector && pit->__canRawDumpBeCreated__())
@@ -859,7 +851,7 @@ __debug__(buf);
 							//return NULL; // commented out as it holds that "pid->rawContent.data==Null"
 					}
 					*sectorLength=__getUsableSectorLength__(pit->rawContent.id.lengthCode), *pFdcStatus=TrackRawContentIoError;
-					return pit->rawContent.data;
+					return LOG_PSECTORDATA(pit->rawContent.data);
 				}else if (nSectorsToSkip)
 					nSectorsToSkip--;
 			// . retrieving data of Sector requested in current Track
@@ -877,10 +869,10 @@ returnData:						*pFdcStatus=psi->fdcStatus;
 								FREE_SECTOR_DATA(psi->data), psi->data=NULL;
 						// : seeking Head to the given Cylinder
 						if (!fddHead.__seekTo__(chs.cylinder))
-							return NULL; // Sector cannot be found as Head cannot be seeked
+							return LOG_PSECTORDATA(NULL); // Sector cannot be found as Head cannot be seeked
 						// : initial attempt to retrieve the Data
 						if (!__bufferSectorData__(chs,*sectorLength,pit,nSectorsToSkip,&psi->fdcStatus))
-							return NULL;
+							return LOG_PSECTORDATA(NULL);
 						// : recovering from errors
 						if (!psi->fdcStatus.IsWithoutError()) // no Data, or Data with errors
 							if (recoverFromError && !fddHead.calibrated)
@@ -898,11 +890,12 @@ returnData:						*pFdcStatus=psi->fdcStatus;
 		// Sector not found
 		if (::GetLastError()==ERROR_SUCCESS)
 			::SetLastError(ERROR_SECTOR_NOT_FOUND);
-		return NULL;
+		return LOG_PSECTORDATA(NULL);
 	}
 
 	TStdWinError CFDD::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus){
 		// marks Sector with specified PhysicalAddress as "dirty", plus sets it the given FdcStatus; returns Windows standard i/o error
+		LOG_SECTOR_ACTION(&chs.sectorId,_T("TStdWinError CFDD::MarkSectorAsDirty"));
 		if (const PInternalTrack pit=__getScannedTrack__(chs.cylinder,chs.head)){ // Track has already been scanned
 			// . Modifying Track's RawContent
 			if (params.readWholeTrackAsFirstSector && pit->__canRawDumpBeCreated__())
@@ -933,7 +926,7 @@ returnData:						*pFdcStatus=psi->fdcStatus;
 							TCHAR buf[200],tmp[30];
 							::wsprintf( buf, _T("Not all errors can be reproduced on a real floppy for sector with %s."), chs.sectorId.ToString(tmp) );
 							TUtils::Information(buf);
-							return ERROR_BAD_COMMAND;
+							return LOG_ERROR(ERROR_BAD_COMMAND);
 						}
 
 						break;
@@ -955,14 +948,15 @@ returnData:						*pFdcStatus=psi->fdcStatus;
 					case DRV_FDRAWCMD:{
 						transferSpeed=FD_RATE_250K;
 fdrawcmd:				// . setting
+						LOG_ACTION(_T("TStdWinError CFDD::__setDataTransferSpeed__"));
 						if (!::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transferSpeed,1, NULL,0, &nBytesTransferred, NULL ))
-							return ::GetLastError();
+							return LOG_ERROR(::GetLastError());
 						// . scanning zeroth Track - if it can be read, we have set the correct TransferSpeed
 						__unformatInternalTrack__(0,0); // initialization; disposing internal information on actual Track format
 						const TInternalTrack *const pit=__scanTrack__(0,0);
 						return	pit && pit->nSectors // if Track can be scanned and its Sectors recognized ...
 								? ERROR_SUCCESS	// ... then the TransferSpeed has been set correctly
-								: ERROR_INVALID_DATA;
+								: LOG_ERROR(ERROR_INVALID_DATA);
 					}
 					default:
 						ASSERT(FALSE);
@@ -981,15 +975,15 @@ fdrawcmd:				// . setting
 				}
 				break;
 		}
-		return ERROR_DEVICE_NOT_AVAILABLE;
+		return LOG_ERROR(ERROR_DEVICE_NOT_AVAILABLE);
 	}
 
 	TStdWinError CFDD::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
+		LOG_ACTION(_T("TStdWinError CFDD::SetMediumTypeAndGeometry"));
 		// - base
-		const TStdWinError err=CFloppyImage::SetMediumTypeAndGeometry(pFormat,sideMap,firstSectorNumber);
-		if (err!=ERROR_SUCCESS)
-			return err;
+		if (const TStdWinError err=CFloppyImage::SetMediumTypeAndGeometry(pFormat,sideMap,firstSectorNumber))
+			return LOG_ERROR(err);
 		// - setting the transfer speed according to current FloppyType (DD/HD)
 		switch (floppyType){
 			case TMedium::FLOPPY_DD:
@@ -1000,12 +994,13 @@ fdrawcmd:				// . setting
 				// automatically recognizing the Type of inserted floppy
 				if (__setDataTransferSpeed__( floppyType=TMedium::FLOPPY_DD )==ERROR_SUCCESS) return ERROR_SUCCESS;
 				if (__setDataTransferSpeed__( floppyType=TMedium::FLOPPY_HD )==ERROR_SUCCESS) return ERROR_SUCCESS;
-				return ERROR_BAD_COMMAND;
+				return LOG_ERROR(ERROR_BAD_COMMAND);
 		}
 	}
 
 	void CFDD::__setSecondsBeforeTurningMotorOff__(BYTE nSeconds) const{
 		// sets given NumberOfSeconds before turning the motor off
+		LOG_ACTION(_T("void CFDD::__setSecondsBeforeTurningMotorOff__"));
 		DWORD nBytesTransferred;
 		switch (DRIVER){
 			case DRV_FDRAWCMD:
@@ -1018,33 +1013,36 @@ fdrawcmd:				// . setting
 
 	TStdWinError CFDD::__reset__(){
 		// resets internal representation of the disk (e.g. by disposing all content without warning)
+		LOG_ACTION(_T("TStdWinError CFDD::__reset__"));
 		// - disposing all InternalTracks
 		__freeInternalTracks__();
 		// - re-connecting to the Drive
 		__disconnectFromFloppyDrive__();
-		const TStdWinError err=__connectToFloppyDrive__(DRV_AUTO);
-		if (err!=ERROR_SUCCESS)
-			return err;
+		if (const TStdWinError err=__connectToFloppyDrive__(DRV_AUTO))
+			return LOG_ERROR(err);
 		// - sending Head home
-		return fddHead.__calibrate__() ? ERROR_SUCCESS : ::GetLastError();
+		return fddHead.__calibrate__() ? ERROR_SUCCESS : LOG_ERROR(::GetLastError());
 	}
 
 	bool CFDD::__isFloppyInserted__() const{
 		// True <=> (some) floppy is inserted in the Drive, otherwise False
+		LOG_ACTION(_T("bool CFDD::__isFloppyInserted__"));
 		DWORD nBytesTransferred;
 		switch (DRIVER){
 			case DRV_FDRAWCMD:
-				return	::DeviceIoControl( _HANDLE, IOCTL_FD_CHECK_DISK, NULL,0, NULL,0, &nBytesTransferred, NULL )!=0
-						? ::GetLastError()==ERROR_SUCCESS
-						: false;
+				return LOG_BOOL(::DeviceIoControl( _HANDLE, IOCTL_FD_CHECK_DISK, NULL,0, NULL,0, &nBytesTransferred, NULL )!=0
+								? ::GetLastError()==ERROR_SUCCESS
+								: false
+							);
 			default:
 				ASSERT(FALSE);
-				return false;
+				return LOG_BOOL(false);
 		}
 	}
 
 	LPCTSTR CFDD::__getControllerType__() const{
 		// determines and returns the controller type of the Drive
+		LOG_ACTION(_T("LPCTSTR CFDD::__getControllerType__"));
 		DWORD nBytesTransferred;
 		switch (DRIVER){
 			case DRV_FDRAWCMD:{
@@ -1126,11 +1124,11 @@ fdrawcmd:				// . setting
 						FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM, chs.head, chs.sectorId.cylinder,chs.sectorId.side,chs.sectorId.sector,chs.sectorId.lengthCode, chs.sectorId.sector+1, FDD_SECTOR_GAP3_STD, 0xff };
 						return	::DeviceIoControl( fdd->_HANDLE, IOCTL_FDCMD_WRITE_DATA, &rwp,sizeof(rwp), sectorDataToWrite,sectorLength, &nBytesTransferred, NULL )!=0
 								? ERROR_SUCCESS
-								: ::GetLastError();
+								: LOG_ERROR(::GetLastError());
 					}
 					default:
 						ASSERT(FALSE);
-						return ERROR_NOT_SUPPORTED;
+						return LOG_ERROR(ERROR_NOT_SUPPORTED);
 				}
 			}
 			WORD __getNumberOfWrittenBytes__() const{
@@ -1218,7 +1216,7 @@ TUtils::Information(buf);}
 				lp.out1ByteLatency+=nMicrosecondsPerByte; // below divided by the number of attempts to get an average
 				pAction->UpdateProgress(++state);
 			pAction->UpdateProgress(++state);
-			if (!pAction->bContinue) return ERROR_CANCELLED;
+			if (!pAction->bContinue) return LOG_ERROR(ERROR_CANCELLED);
 		}
 		// - computing the final latency values
 		lp.outControllerLatency/=lp.nRepeats, lp.out1ByteLatency/=lp.nRepeats;
@@ -1389,12 +1387,13 @@ TUtils::Information(buf);}
 			}
 		} d(this);
 		// - showing the Dialog and processing its result
+		LOG_DIALOG_DISPLAY(_T("CSettingDialog"));
 		if (d.DoModal()==IDOK){
 			params=d.params;
 			__setSecondsBeforeTurningMotorOff__(params.nSecondsToTurningMotorOff);
 			return true;
 		}else
-			return false;
+			return LOG_BOOL(false);
 	}
 
 	void CFDD::EditSettings(){
@@ -1407,13 +1406,14 @@ TUtils::Information(buf);}
 		// - displaying message
 		__informationWithCheckableShowNoMore__( _T("Only 3.5\" internal drives mapped as \"A:\" are supported. To spare the floppy and drive, all activity is buffered.\nThe following applies:\n\n- Changes made to the floppy are saved only when you command so (Ctrl+S). If you don't save them, they will NOT appear on the disk!\n\n- Formatting destroys the content immediately."), INI_MSG_RESET );
 		// - resetting
+		LOG_ACTION(_T("TStdWinError CFDD::Reset"));
 		const TStdWinError err=__reset__();
 		#ifndef _DEBUG // checking Error only in Release mode (in Debug mode despite Error wanting to proceed up the setting dialog)
 			if (err!=ERROR_SUCCESS)
-				return err;
+				return LOG_ERROR(err);
 		#endif
 		// - showing the settings and applying its results to the Drive access
-		return __showSettingDialog__() ? ERROR_SUCCESS : ERROR_CANCELLED;
+		return __showSettingDialog__() ? ERROR_SUCCESS : LOG_ERROR(ERROR_CANCELLED);
 	}
 
 	BYTE CFDD::__getMaximumSectorLengthCode__() const{
@@ -1429,10 +1429,11 @@ TUtils::Information(buf);}
 
 	TStdWinError CFDD::__formatToOneLongVerifiedSector__(RCPhysicalAddress chs,BYTE fillerByte){
 		// creates (and eventually verifies) a single long Sector with the given ID; returns Windows standard i/o error
+		LOG_TRACK_ACTION(chs.cylinder,chs.head,_T("TStdWinError CFDD::__formatToOneLongVerifiedSector__"));
 		do{
 			// . navigating the Head above corresponding Cylinder
 			if (!fddHead.__seekTo__(chs.cylinder))
-				return ::GetLastError();
+				return LOG_ERROR(::GetLastError());
 			// . formatting Track to a single Sector
 			__setWaitingForIndex__();
 			FD_FORMAT_PARAMS fmt={	FD_OPTION_MFM, chs.head,
@@ -1442,25 +1443,32 @@ TUtils::Information(buf);}
 			const PFD_ID_HEADER pih=fmt.Headers;
 				__assign__( *pih, &chs.sectorId );
 			DWORD nBytesTransferred;
-			if (!::DeviceIoControl( _HANDLE, IOCTL_FDCMD_FORMAT_TRACK, &fmt,sizeof(fmt), NULL,0, &nBytesTransferred, NULL ))
-				return ::GetLastError();
+			{	LOG_ACTION(_T("DeviceIoControl IOCTL_FDCMD_FORMAT_TRACK"));
+				if (!::DeviceIoControl( _HANDLE, IOCTL_FDCMD_FORMAT_TRACK, &fmt,sizeof(fmt), NULL,0, &nBytesTransferred, NULL ))
+					return LOG_ERROR(::GetLastError());
+			}
 			// . verifying the single formatted Sector
 			if (params.verifyFormattedTracks){
+				LOG_ACTION(_T("format verification"));
 				// : writing FillerByte as test data
-				FD_SHORT_WRITE_PARAMS swp={ __getUsableSectorLength__(pih->size), params.controllerLatency+1*params.oneByteLatency }; // "X*" = reserve to guarantee that really all test data written
-				::DeviceIoControl( _HANDLE, IOCTL_FD_SET_SHORT_WRITE, &swp,sizeof(swp), NULL,0, &nBytesTransferred, NULL );
+				WORD sectorBytes=__getUsableSectorLength__(pih->size);
+				__setTimeBeforeInterruptingTheFdc__( sectorBytes, params.controllerLatency+1*params.oneByteLatency ); // "X*" = reserve to guarantee that really all test data written
 				FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM|FD_OPTION_SK, chs.head, pih->cyl,pih->head,pih->sector,pih->size, pih->sector+1, 5, 0xff };
-				if (!::DeviceIoControl( _HANDLE, IOCTL_FDCMD_WRITE_DATA, &rwp,sizeof(rwp), ::memset(dataBuffer,fillerByte,swp.length),__getOfficialSectorLength__(pih->size), &nBytesTransferred, NULL ))
-					return ::GetLastError();
+				{	LOG_ACTION(_T("DeviceIoControl IOCTL_FDCMD_WRITE_DATA"));
+					if (!::DeviceIoControl( _HANDLE, IOCTL_FDCMD_WRITE_DATA, &rwp,sizeof(rwp), ::memset(dataBuffer,fillerByte,sectorBytes),__getOfficialSectorLength__(pih->size), &nBytesTransferred, NULL ))
+						return LOG_ERROR(::GetLastError());
+				}
 				// . reading test data
-				::DeviceIoControl( _HANDLE, IOCTL_FDCMD_READ_DATA, &rwp,sizeof(rwp), dataBuffer,SECTOR_LENGTH_MAX, &nBytesTransferred, NULL ); // cannot use IF as test data always read with a CRC error in this case
-				for( PCBYTE p=(PCBYTE)dataBuffer; swp.length && *p++==fillerByte; swp.length-- );
-				if (swp.length) // error reading the test data
+				{	LOG_ACTION(_T("DeviceIoControl IOCTL_FDCMD_READ_DATA"));
+					::DeviceIoControl( _HANDLE, IOCTL_FDCMD_READ_DATA, &rwp,sizeof(rwp), dataBuffer,SECTOR_LENGTH_MAX, &nBytesTransferred, NULL ); // cannot use IF as test data always read with a CRC error in this case
+				}
+				for( PCBYTE p=(PCBYTE)dataBuffer; sectorBytes && *p++==fillerByte; sectorBytes-- );
+				if (sectorBytes) // error reading the test data
 					if (::GetLastError()==ERROR_FLOPPY_ID_MARK_NOT_FOUND) // this is an error for which it usually suffices ...
 						continue; // ... to repeat the formatting cycle
 					else
 						switch (__reportSectorVerificationError__(chs)){
-							case IDABORT:	return ERROR_CANCELLED;
+							case IDABORT:	return LOG_ERROR(ERROR_CANCELLED);
 							case IDRETRY:	continue;
 							case IDIGNORE:	break;
 						}
@@ -1490,8 +1498,9 @@ TUtils::Information(buf);}
 
 	TStdWinError CFDD::FormatTrack(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte){
 		// formats given Track {Cylinder,Head} to the requested NumberOfSectors, each with corresponding Length and FillerByte as initial content; returns Windows standard i/o error
+		LOG_TRACK_ACTION(cyl,head,_T("TStdWinError CFDD::FormatTrack"));
 		if (nSectors>FDD_SECTORS_MAX)
-			return ERROR_BAD_COMMAND;
+			return LOG_ERROR(ERROR_BAD_COMMAND);
 		if (!nSectors) // formatting to zero Sectors ...
 			return UnformatTrack(cyl,head); // ... defined as unformatting the Track
 		// - Head calibration
@@ -1500,7 +1509,7 @@ TUtils::Information(buf);}
 				if (fddHead.__calibrate__())
 					fddHead.calibrated=true;
 				else
-error:				return ::GetLastError();
+error:				return LOG_ERROR(::GetLastError());
 		// - moving Head above the corresponding Cylinder
 		if (!fddHead.__seekTo__(cyl))
 			goto error;
@@ -1529,6 +1538,7 @@ error:				return ::GetLastError();
 		switch (formatStyle){
 			case TFormatStyle::STANDARD:{
 				// . composing the structure
+				LOG_MESSAGE(_T("TFormatStyle::STANDARD"));
 				#pragma pack(1)
 				struct{
 					FD_FORMAT_PARAMS params;
@@ -1546,43 +1556,47 @@ formatStandardWay:
 				// . disposing internal information on actual Track format
 				__unformatInternalTrack__(cyl,head);
 				// . formatting the Track
-				if (!::DeviceIoControl( _HANDLE, IOCTL_FDCMD_FORMAT_TRACK, &fmt,sizeof(fmt), NULL,0, &nBytesTransferred, NULL ))
-					goto error;
+				{	LOG_ACTION(_T("DeviceIoControl IOCTL_FDCMD_FORMAT_TRACK"));
+					if (!::DeviceIoControl( _HANDLE, IOCTL_FDCMD_FORMAT_TRACK, &fmt,sizeof(fmt), NULL,0, &nBytesTransferred, NULL ))
+						goto error;
+				}
 				// . verifying the Track (if requested to)
-				if (params.verifyFormattedTracks)
+				if (params.verifyFormattedTracks){
+					LOG_ACTION(_T("track verification"));
 					for( TSector n=0; n<nSectors; n++ ){
 						const TPhysicalAddress chs={ cyl, head, bufferId[n] };
 						TFdcStatus sr;
 						__bufferSectorData__( chs, *bufferLength, &it, n, &sr );
 						if (!sr.IsWithoutError())
 							switch (__reportSectorVerificationError__(chs)){
-								case IDABORT:	return ERROR_CANCELLED;
+								case IDABORT:	return LOG_ERROR(ERROR_CANCELLED);
 								case IDRETRY:	goto formatStandardWay;
 								case IDIGNORE:	break;
 							}
 					}
+				}
 				// . Track formatted successfully
 				break;
 			}
 			case TFormatStyle::ONE_LONG_SECTOR:{
 				// . disposing internal information on actual Track format
+				LOG_MESSAGE(_T("TFormatStyle::ONE_LONG_SECTOR"));
 				__unformatInternalTrack__(cyl,head);
 				// . formatting the Track
 				const TPhysicalAddress chs={ cyl, head, *bufferId };
-				const TStdWinError err=__formatToOneLongVerifiedSector__( chs, fillerByte );
-				if (err!=ERROR_SUCCESS)
+				if (__formatToOneLongVerifiedSector__( chs, fillerByte )!=ERROR_SUCCESS)
 					goto error;
 				// . Track formatted successfully
 				break;
 			}
 			case TFormatStyle::CUSTOM:{
 				// . disposing internal information on actual Track format
+				LOG_MESSAGE(_T("TFormatStyle::CUSTOM"));
 				__unformatInternalTrack__(cyl,head);
 				// . verifying Track surface (if requested to) by writing maximum number of known Bytes to it and trying to read them back
 				if (params.verifyFormattedTracks){
 					const TPhysicalAddress chs={ cyl, head, {0,0,0,__getMaximumSectorLengthCode__()+1} };
-					const TStdWinError err=__formatToOneLongVerifiedSector__( chs, fillerByte );
-					if (err!=ERROR_SUCCESS)
+					if (__formatToOneLongVerifiedSector__( chs, fillerByte )!=ERROR_SUCCESS)
 						goto error;
 				}
 				// . creating the PlanOfFormatting
@@ -1712,22 +1726,25 @@ formatCustomWay:
 						buffer.fp.fill=fillerByte;
 						for( BYTE n=0; n<pfs->nLastSectorsValid; n++ )
 							__assign__( buffer.fp.Headers[pfs->nSectorsOnTrack-pfs->nLastSectorsValid+n], &pfs->validSectorIDs[n] );
+					LOG_ACTION(_T("DeviceIoControl IOCTL_FDCMD_FORMAT_TRACK"));
 					if (!::DeviceIoControl( _HANDLE, IOCTL_FDCMD_FORMAT_TRACK, &buffer,sizeof(buffer), NULL,0, &nBytesTransferred, NULL ))
-						return ::GetLastError();
+						return LOG_ERROR(::GetLastError());
 				}
 				// . verifying the Track (if requested to)
-				if (params.verifyFormattedTracks)
+				if (params.verifyFormattedTracks){
+					LOG_ACTION(_T("track verification"));
 					for( TSector n=0; n<nSectors; n++ ){
 						const TPhysicalAddress chs={ cyl, head, bufferId[n] };
 						TFdcStatus sr;
 						__bufferSectorData__( chs, bufferLength[n], &it, n, &sr );
 						if (bufferFdcStatus[n].DescribesMissingDam()^sr.DescribesMissingDam())
 							switch (__reportSectorVerificationError__(chs)){
-								case IDABORT:	return ERROR_CANCELLED;
+								case IDABORT:	return LOG_ERROR(ERROR_CANCELLED);
 								case IDRETRY:	goto formatCustomWay;
 								case IDIGNORE:	break;
 							}
 					}
+				}
 				// . Track formatted successfully
 //TUtils::Information("formatted OK - ready to break");
 				break;
@@ -1748,6 +1765,7 @@ formatCustomWay:
 
 	TStdWinError CFDD::PresumeHealthyTrackStructure(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId){
 		// without formatting it, presumes that given Track contains specified Sectors that are well readable and writeable; returns Windows standard i/o error
+		LOG_TRACK_ACTION(cyl,head,_T("TStdWinError CFDD::PresumeHealthyTrackStructure"));
 		// - disposing internal information on actual Track format
 		__unformatInternalTrack__(cyl,head);
 		// - explicitly setting Track structure
@@ -1760,9 +1778,10 @@ formatCustomWay:
 
 	TStdWinError CFDD::UnformatTrack(TCylinder cyl,THead head){
 		// unformats given Track {Cylinder,Head}; returns Windows standard i/o error
+		LOG_TRACK_ACTION(cyl,head,_T("TStdWinError CFDD::UnformatTrack"));
 		// - moving Head above the corresponding Cylinder
 		if (!fddHead.__seekTo__(cyl))
-error:		return ::GetLastError();
+error:		return LOG_ERROR(::GetLastError());
 		// - unformatting (approached by formatting single long Sector that is longer than one spin of the floppy - after index pulse, it rewrites its own header)
 		DWORD nBytesTransferred;
 		switch (DRIVER){
@@ -1771,6 +1790,7 @@ error:		return ::GetLastError();
 				FD_FORMAT_PARAMS fmt={	FD_OPTION_MFM, head, lengthCode, 1, 50, 0,
 										{cyl,head,0,lengthCode}
 									};
+				LOG_ACTION(_T("DeviceIoControl IOCTL_FDCMD_FORMAT_TRACK"));
 				if (::DeviceIoControl( _HANDLE, IOCTL_FDCMD_FORMAT_TRACK, &fmt,sizeof(fmt), NULL,0, &nBytesTransferred, NULL )!=0){
 					__unformatInternalTrack__(cyl,head); // disposing internal information on actual Track format
 					return ERROR_SUCCESS;
@@ -1779,7 +1799,7 @@ error:		return ::GetLastError();
 			}
 			default:
 				ASSERT(FALSE);
-				return ERROR_DEVICE_NOT_AVAILABLE;
+				return LOG_ERROR(ERROR_DEVICE_NOT_AVAILABLE);
 		}
 	}
 

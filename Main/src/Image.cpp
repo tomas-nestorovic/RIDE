@@ -450,24 +450,26 @@
 
 	TTrack CImage::GetTrackCount() const{
 		// returns the number of all Tracks in the Image
+		LOG_ACTION(_T("TTrack CImage::GetTrackCount"));
 		return GetCylinderCount()*GetNumberOfFormattedSides(0);
 	}
 
 	bool CImage::IsTrackHealthy(TCylinder cyl,THead head){
 		// True <=> specified Track is not empty and contains only well readable Sectors, otherwise False
+		LOG_ACTION(_T("bool CImage::IsTrackHealthy"));
 		// - if Track is empty, assuming the Track surface is damaged, so the Track is NOT healthy
 		TSectorId bufferId[(BYTE)-1]; WORD bufferLength[(BYTE)-1];
 		const TSector nSectors=ScanTrack(cyl,head,bufferId,bufferLength);
 		if (!nSectors)
-			return false;
+			return LOG_BOOL(false);
 		// - if any of the Sectors cannot be read without error, the Track is NOT healthy
 		for( TSector s=0; s<nSectors; s++ ){
 			const TPhysicalAddress chs={ cyl, head, bufferId[s] };
 			WORD w; TFdcStatus st;
 			if (!GetSectorData(chs,s,false,&w,&st))
-				return false;
+				return LOG_BOOL(false);
 			if (!st.IsWithoutError())
-				return false;
+				return LOG_BOOL(false);
 		}
 		// - the Track is healthy
 		return true;

@@ -134,7 +134,8 @@
 	#define NO_ERROR	_T("- no error\n")
 
 	static UINT AFX_CDECL __dump_thread__(PVOID _pCancelableAction){
-		// vlakno kopirovani Stop
+		// thread to dump tracks from the Source to the Target
+		LOG_ACTION(_T("dump thread"));
 		TBackgroundActionCancelable *const pAction=(TBackgroundActionCancelable *)_pCancelableAction;
 		TDumpParams &dp=*(TDumpParams *)pAction->fnParams;
 		// - setting geometry to the TargetImage
@@ -144,7 +145,7 @@
 		TStdWinError err=dp.target->SetMediumTypeAndGeometry( &targetGeometry, dp.dos->sideMap, dp.dos->properties->firstSectorNumber );
 		if (err!=ERROR_SUCCESS)
 terminateWithError:
-			return pAction->TerminateWithError(err);
+			return LOG_ERROR(pAction->TerminateWithError(err));
 		// - dumping
 		const TDumpParams::TSourceTrackErrors **ppSrcTrackErrors=&dp.pOutErroneousTracks;
 		#pragma pack(1)
@@ -159,13 +160,15 @@ terminateWithError:
 		::ZeroMemory(&p,sizeof(p));
 		for( p.chs.cylinder=dp.cylinderA; p.chs.cylinder<=dp.cylinderZ; pAction->UpdateProgress(++p.chs.cylinder-dp.cylinderA) )
 			for( p.chs.head=0; p.chs.head<dp.nHeads; p.chs.head++ ){
-				if (!pAction->bContinue) return ERROR_CANCELLED;
+				if (!pAction->bContinue) return LOG_ERROR(ERROR_CANCELLED);
+				LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("processing"));
 				p.track=p.chs.GetTrackNumber(dp.nHeads);
 				// . scanning Source Track
-//TUtils::Information("scanning Source Track");
+{LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("scanning source"));
 				nSectors=dp.source->ScanTrack(p.chs.cylinder,p.chs.head,bufferId,bufferLength);
+}
 				// . reading Source Track
-//TUtils::Information("reading Source Track");
+{LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("reading source"));
 				#pragma pack(1)
 				struct{
 					TSector n;
@@ -181,6 +184,7 @@ terminateWithError:
 				for( TSector s=0; s<nSectors; ){
 					// : reading SourceSector
 					p.chs.sectorId=bufferId[s];
+					LOG_SECTOR_ACTION(&p.chs.sectorId,_T("reading"));
 					pSrcSector->data=dp.source->GetSectorData( p.chs, s, true, &pSrcSector->dataLength, pFdcStatus );
 					// : reporting SourceSector Errors if A&B, A = automatically not accepted Errors exist, B = Error reporting for current Track is enabled
 					if (pFdcStatus->ToWord()&~p.acceptance.automaticallyAcceptedErrors && !p.acceptance.remainingErrorsOnTrack){
@@ -359,7 +363,8 @@ terminateWithError:
 							}
 						} d(dp,p,*pSrcSector,*pFdcStatus);
 						// | showing the Dialog and processing its result
-						switch (d.DoModal()){
+						LOG_DIALOG_DISPLAY(_T("CErroneousSectorDialog"));
+						switch (LOG_DIALOG_RESULT(d.DoModal())){
 							case IDCANCEL:
 								err=ERROR_CANCELLED;
 								goto terminateWithError;
@@ -374,21 +379,24 @@ terminateWithError:
 					// : next SourceSector
 					s++, pSrcSector++, pFdcStatus++;
 				}
+}
 				p.acceptance.remainingErrorsOnTrack=false; // "True" valid only for Track it was set on
 				// . formatting Target Track
-//TUtils::Information("formatting Target Track");
+{LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("formatting target"));
 				if (dp.formatJustBadTracks && dp.source->IsTrackHealthy(p.chs.cylinder,p.chs.head)){
 					if (dp.target->PresumeHealthyTrackStructure(p.chs.cylinder,p.chs.head,nSectors,bufferId)!=ERROR_SUCCESS)
 						goto reformatTrack;
 				}else
 reformatTrack:		if ( err=dp.target->FormatTrack(p.chs.cylinder,p.chs.head,nSectors,bufferId,bufferLength,bufferFdcStatus,dp.gap3,dp.fillerByte) )
 						goto terminateWithError;
+}
 				// . writing to Target Track
-//TUtils::Information("writing to Target Track");
+{LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("writing to Target Track"));
 				pSrcSector=sourceSectors, pFdcStatus=bufferFdcStatus;
 				for( BYTE s=0; s<nSectors; ){
 					if (!pFdcStatus->DescribesMissingDam()){
 						p.chs.sectorId=bufferId[s]; WORD w; TFdcStatus sr;
+						LOG_SECTOR_ACTION(&p.chs.sectorId,_T("writing"));
 						if (const PSectorData targetData=dp.target->GetSectorData(p.chs,s,true,&w,&sr)){
 							::memcpy( targetData, pSrcSector->data, bufferLength[s] );
 							if (( err=dp.target->MarkSectorAsDirty(p.chs,s,pFdcStatus) )!=ERROR_SUCCESS)
@@ -415,6 +423,7 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 						::memcpy( psse->erroneousSectors, erroneousSectors.buffer, ( psse->nErroneousSectors=erroneousSectors.n )*sizeof(TDumpParams::TSourceSectorError) );
 					*ppSrcTrackErrors=psse, ppSrcTrackErrors=&psse->pNextErroneousTrack;
 				}
+}
 			}
 		return ERROR_SUCCESS;
 	}
@@ -482,9 +491,10 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 					if (dumpParams.target)
 						delete dumpParams.target, dumpParams.target=NULL;
 					// : instantiating Target Image
-					if (targetImageProperties)
+					if (targetImageProperties){
+						LOG_ACTION(_T("Creating target image"));
 						dumpParams.target=targetImageProperties->fnInstantiate();
-					else{
+					}else{
 						TUtils::FatalError(_T("Unknown destination to dump to."));
 						return pDX->Fail();
 					}

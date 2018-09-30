@@ -322,7 +322,8 @@ namespace TUtils{
 
 	bool InformationOkCancel(LPCTSTR text){
 		// True <=> user confirmed the shown Textual information, otherwise False
-		return ::MessageBox(0,text,_T("Information"),MB_ICONINFORMATION|MB_OKCANCEL|MB_TASKMODAL)==IDOK;
+		LOG_DIALOG_DISPLAY(text);
+		return LOG_DIALOG_RESULT( ::MessageBox(0,text,_T("Information"),MB_ICONINFORMATION|MB_OKCANCEL|MB_TASKMODAL)==IDOK );
 	}
 
 
@@ -332,7 +333,8 @@ namespace TUtils{
 	bool QuestionYesNo(LPCTSTR text,UINT defaultButton){
 		// shows a yes-no question
 		//if (!hParent) hParent=::GetActiveWindow();
-		return ::MessageBox(0,text,_T("Question"),MB_ICONQUESTION|MB_TASKMODAL|MB_YESNO|defaultButton)==IDYES;
+		LOG_DIALOG_DISPLAY(text);
+		return LOG_DIALOG_RESULT( ::MessageBox(0,text,_T("Question"),MB_ICONQUESTION|MB_TASKMODAL|MB_YESNO|defaultButton)==IDYES );
 	}
 
 
@@ -341,7 +343,8 @@ namespace TUtils{
 	BYTE QuestionYesNoCancel(LPCTSTR text,UINT defaultButton){
 		// shows a yes-no question
 		//if (!hParent) hParent=::GetActiveWindow();
-		return ::MessageBox(0,text,_T("Question"),MB_ICONQUESTION|MB_TASKMODAL|MB_YESNOCANCEL|defaultButton);
+		LOG_DIALOG_DISPLAY(text);
+		return LOG_DIALOG_RESULT( ::MessageBox(0,text,_T("Question"),MB_ICONQUESTION|MB_TASKMODAL|MB_YESNOCANCEL|defaultButton) );
 	}
 	BYTE QuestionYesNoCancel(LPCTSTR text,UINT defaultButton,LPCTSTR causeOfError,LPCTSTR consequence){
 		// shows a yes-no question along with its Cause and immediate Consequence
@@ -363,7 +366,8 @@ namespace TUtils{
 	BYTE AbortRetryIgnore(LPCTSTR text,UINT defaultButton){
 		// shows an abort-retry-ignore question
 		//if (!hParent) hParent=::GetActiveWindow();
-		return ::MessageBox(0,text,_T("Question"),MB_ICONQUESTION|MB_TASKMODAL|MB_ABORTRETRYIGNORE|defaultButton);
+		LOG_DIALOG_DISPLAY(text);
+		return LOG_DIALOG_RESULT( ::MessageBox(0,text,_T("Question"),MB_ICONQUESTION|MB_TASKMODAL|MB_ABORTRETRYIGNORE|defaultButton) );
 	}
 
 	BYTE AbortRetryIgnore(LPCTSTR text,TStdWinError causeOfError,UINT defaultButton,LPCTSTR consequence){
@@ -384,7 +388,8 @@ namespace TUtils{
 	bool RetryCancel(LPCTSTR text){
 		// shows an retry-cancel question
 		//if (!hParent) hParent=::GetActiveWindow();
-		return ::MessageBox(0,text,_T("Question"),MB_ICONEXCLAMATION|MB_TASKMODAL|MB_RETRYCANCEL|MB_DEFBUTTON1)==IDRETRY;
+		LOG_DIALOG_DISPLAY(text);
+		return LOG_DIALOG_RESULT( ::MessageBox(0,text,_T("Question"),MB_ICONEXCLAMATION|MB_TASKMODAL|MB_RETRYCANCEL|MB_DEFBUTTON1)==IDRETRY );
 	}
 	bool RetryCancel(TStdWinError causeOfError){
 		// shows an retry-cancel question
