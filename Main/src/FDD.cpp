@@ -143,7 +143,7 @@ void __debug__(LPCTSTR text){
 							bufferId[n]=pit->sectors[n].id, bufferLength[n]=pit->sectors[n].length, bufferStatus[n]=TFdcStatus::WithoutError;
 						__REFER_TO_TRACK(fdd,cyl,head)=NULL; // detaching the Track internal representation for it to be not destroyed during reformatting of the Track
 						err=fdd->FormatTrack(	cyl, head, pit->nSectors, bufferId, bufferLength, bufferStatus,
-												10, // small Gap3 to be sure all Sectors fit in
+												FDD_SECTOR_GAP3_STD, // if gap too small (e.g. 10) it's highly likely that sectors would be missed in a single disk revolution (so for instance, reading 9 sectors would require 9 disk revolutions)
 												fdd->dos->properties->sectorFillerByte
 											);
 						if (err!=ERROR_SUCCESS){ // if formatting failed ...
@@ -151,23 +151,26 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 							__REFER_TO_TRACK(fdd,cyl,head)=(PInternalTrack)pit; // re-attaching the original InternalTrack representation
 							return err; // ... there's nothing else to do but terminating with Error
 						}
-						// . writing each Sector back to the above reformatted Track
-						for( TSector s=0; s<nSectorsToSkip; s++ ){ // if this is the K-th Sector, we are writing only 0..(K-1)-th Sectors, leaving K+1..N-th Sectors unwritten (caller's duty); we re-attempt to write this K-th Sector in the next pass through the cycle
+						// . if this is the K-th Sector, making sure that the 0..(K-1)-th Sectors have been formatted well
+						for( TSector s=0; s<nSectorsToSkip; s++ ){
 							const TPhysicalAddress chs={ cyl, head, pit->sectors[s].id };
-							WORD w;
-							if (const PSectorData pData=fdd->GetSectorData(chs,s,false,&w,&TFdcStatus()))
-								::memcpy( pData, pit->sectors[s].data, w );
-							else{ // if Sector not readable even after reformatting the Track ...
+							TFdcStatus sr;
+							if (!fdd->__bufferSectorData__(chs,pit->sectors[s].length,pit,s,&sr) || !sr.IsWithoutError()){ // if Sector not readable even after reformatting the Track ...
 								err=::GetLastError();
 								goto terminateWithError; // ... there's nothing else to do but terminating with Error
 							}
-							if ( err=pit->sectors[s].__saveToDisk__(fdd,pit,s) ) // if Sector not writeable even after reformatting the Track ...
-								goto terminateWithError; // ... there's nothing else to do but terminating with Error
 						}
 						// . disposing the new InternalTrack representations (as it's been worked only with the original one), restoring the original
 						fdd->__unformatInternalTrack__(cyl,head); // disposing any new InternalTrack representation
 						__REFER_TO_TRACK(fdd,cyl,head)=(PInternalTrack)pit; // re-attaching the original InternalTrack representation
-						continue; // trying to write this Sector once more
+						// . writing the 0..(K-1)-th Sectors back to the above reformatted Track, leaving K+1..N-th Sectors unwritten (caller's duty); we re-attempt to write this K-th Sector in the next pass through the cycle
+						for( TSector s=0; s<nSectorsToSkip; s++ ){
+							const TPhysicalAddress chs={ cyl, head, pit->sectors[s].id };
+							if ( err=pit->sectors[s].__saveToDisk__(fdd,pit,s) ) // if Sector not writeable even after reformatting the Track ...
+								return err; // ... there's nothing else to do but terminating with Error
+						}
+						// . trying to write this K-th Sector once more, leaving K+1..N-th Sectors unwritten (caller's duty)
+						continue;
 					}
 				}
 			// : verifying the writing
