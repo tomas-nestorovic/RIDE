@@ -94,10 +94,9 @@ void __debug__(LPCTSTR text){
 					DWORD fdcCommand=IOCTL_FDCMD_WRITE_DATA,nBytesTransferred;
 					if (fdcStatus.DescribesDeletedDam())
 						fdcCommand=IOCTL_FDCMD_WRITE_DELETED_DATA;
-					if (fdcStatus.reg2 & FDC_ST2_CRC_ERROR_IN_DATA){
-						FD_SHORT_WRITE_PARAMS swp={ length, fdd->params.controllerLatency };
-						::DeviceIoControl( fdd->_HANDLE, IOCTL_FD_SET_SHORT_WRITE, &swp,sizeof(swp), NULL,0, &nBytesTransferred, NULL );
-					}
+					if (fdcStatus.reg2 & FDC_ST2_CRC_ERROR_IN_DATA)
+						if ( err=fdd->__setTimeBeforeInterruptingTheFdc__(length) )
+							return err;
 					if (id.lengthCode>fdd->__getMaximumSectorLengthCode__())
 						fdd->__setWaitingForIndex__();
 					// . writing Sector
@@ -562,8 +561,10 @@ error:				switch (const TStdWinError err=::GetLastError()){
 				__setWaitingForIndex__();
 				// . turning off the automatic recognition of floppy inserted into Drive (having turned it on creates problems when used on older Drives [Simon Owen])
 				static const BYTE RecognizeInsertedFloppy=FALSE;
-				if (!::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DISK_CHECK, (PVOID)&RecognizeInsertedFloppy,1, NULL,0, &nBytesTransferred, NULL))
+				if (!::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DISK_CHECK, (PVOID)&RecognizeInsertedFloppy,1, NULL,0, &nBytesTransferred, NULL)){
+					__disconnectFromFloppyDrive__();
 					goto error;
+				}
 				return ERROR_SUCCESS;
 			}
 			default:
@@ -773,6 +774,28 @@ __debug__(buf);
 			default:
 				ASSERT(FALSE);
 		}
+	}
+
+	TStdWinError CFDD::__setTimeBeforeInterruptingTheFdc__(WORD nDataBytesBeforeInterruption,WORD nMicrosecondsAfterLastDataByteWritten) const{
+		// registers a request to interrupt the following write/format command after specified NumberOfBytes plus additional NumberOfMicrosends; returns Windows standard i/o error
+		LOG_ACTION(_T("TStdWinError CFDD::__setTimeBeforeInterruptingTheFdc__"));
+		DWORD nBytesTransferred;
+		switch (DRIVER){
+			case DRV_FDRAWCMD:{
+				FD_SHORT_WRITE_PARAMS swp={ nDataBytesBeforeInterruption, nMicrosecondsAfterLastDataByteWritten };
+				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_SHORT_WRITE, &swp,sizeof(swp), NULL,0, &nBytesTransferred, NULL )!=0
+						? ERROR_SUCCESS
+						: ::GetLastError();
+			}
+			default:
+				ASSERT(FALSE);
+				return ERROR_DEVICE_NOT_AVAILABLE;
+		}
+	}
+
+	TStdWinError CFDD::__setTimeBeforeInterruptingTheFdc__(WORD nDataBytesBeforeInterruption) const{
+		// registers a request to interrupt the following write/format command after specified NumberOfBytes plus additional NumberOfMicrosends; returns Windows standard i/o error
+		return __setTimeBeforeInterruptingTheFdc__( nDataBytesBeforeInterruption, params.controllerLatency );
 	}
 
 	bool CFDD::__bufferSectorData__(RCPhysicalAddress chs,WORD sectorLength,const TInternalTrack *pit,BYTE nSectorsToSkip,TFdcStatus *pFdcStatus) const{
@@ -1091,22 +1114,23 @@ fdrawcmd:				// . setting
 				::VirtualFree(sectorDataToWrite,0,MEM_RELEASE);
 			}
 
-			void __writeSectorData__(WORD nBytesToWrite) const{
-				// writes SectorData to the actual PhysicalAddress and interrupts the controller after specified NumberOfBytesToWrite and Microseconds
+			TStdWinError __writeSectorData__(WORD nBytesToWrite) const{
+				// writes SectorData to the actual PhysicalAddress and interrupts the controller after specified NumberOfBytesToWrite and Microseconds; returns Windows standard i/o error
+				// : setting controller interruption to the specified NumberOfBytesToWrite and Microseconds
+				if (const TStdWinError err=fdd->__setTimeBeforeInterruptingTheFdc__( nBytesToWrite, nMicroseconds ))
+					return err;
+				// : writing
+				DWORD nBytesTransferred;
 				switch (fdd->DRIVER){
 					case DRV_FDRAWCMD:{
-						// : setting controller interruption to the specified NumberOfBytesToWrite and Microseconds
-						DWORD nBytesTransferred;
-						FD_SHORT_WRITE_PARAMS swp={ nBytesToWrite, nMicroseconds };
-						::DeviceIoControl( fdd->_HANDLE, IOCTL_FD_SET_SHORT_WRITE, &swp,sizeof(swp), NULL,0, &nBytesTransferred, NULL );
-						// : writing
 						FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM, chs.head, chs.sectorId.cylinder,chs.sectorId.side,chs.sectorId.sector,chs.sectorId.lengthCode, chs.sectorId.sector+1, FDD_SECTOR_GAP3_STD, 0xff };
-						::DeviceIoControl( fdd->_HANDLE, IOCTL_FDCMD_WRITE_DATA, &rwp,sizeof(rwp), sectorDataToWrite,sectorLength, &nBytesTransferred, NULL );
-						break;
+						return	::DeviceIoControl( fdd->_HANDLE, IOCTL_FDCMD_WRITE_DATA, &rwp,sizeof(rwp), sectorDataToWrite,sectorLength, &nBytesTransferred, NULL )!=0
+								? ERROR_SUCCESS
+								: ::GetLastError();
 					}
 					default:
 						ASSERT(FALSE);
-						break;
+						return ERROR_NOT_SUPPORTED;
 				}
 			}
 			WORD __getNumberOfWrittenBytes__() const{
@@ -1115,25 +1139,28 @@ fdrawcmd:				// . setting
 				for( fdd->__bufferSectorData__(chs,sectorLength,&TInternalTrack(fdd,chs.cylinder,chs.head,1,&chs.sectorId),0,&TFdcStatus()); *p==TEST_BYTE; p++ );
 				return p-(PCBYTE)fdd->dataBuffer;
 			}
-			float __setInterruptionToWriteSpecifiedNumberOfBytes__(WORD nBytes){
-				// sets this Interruption so that the specified NumberOfBytes is written to actual PhysicalAddress; returns the NumberOfMicroseconds set
+			TStdWinError __setInterruptionToWriteSpecifiedNumberOfBytes__(WORD nBytes){
+				// sets this Interruption so that the specified NumberOfBytes is written to actual PhysicalAddress; returns the NumberOfMicroseconds set; returns Windows standard i/o error
 				// : initialization using the default NumberOfMicroseconds
 				nMicroseconds=20;
 				// : increasing the NumberOfMicroseconds until the specified NumberOfBytes is written for the first time
 				do{
 					if (!pAction->bContinue) return 1;
 					nMicroseconds+=usAccuracy;
-					__writeSectorData__(nBytes);
+					if (const TStdWinError err=__writeSectorData__(nBytes))
+						return err;
 				}while (__getNumberOfWrittenBytes__()<nBytes);
 				const float nMicrosecondsA=nMicroseconds;
 				// : increasing the NumberOfMicroseconds until a higher NumberOfBytes is written for the first time
 				do{
 					if (!pAction->bContinue) return 1;
 					nMicroseconds+=usAccuracy;
-					__writeSectorData__(nBytes);
+					if (const TStdWinError err=__writeSectorData__(nBytes))
+						return err;
 				}while (__getNumberOfWrittenBytes__()<=nBytes);
 				// : the resulting NumberOfMicroseconds is the average of when the NumberOfBytes has been written for the first and last time
-				return nMicroseconds=(nMicrosecondsA+nMicroseconds)/2;
+				nMicroseconds=(nMicrosecondsA+nMicroseconds)/2;
+				return ERROR_SUCCESS;
 			}
 		} interruption( pAction, lp.fdd, lp.ddFloppy?4096:8192, lp.usAccuracy );
 		// - testing
@@ -1166,7 +1193,9 @@ fdrawcmd:				// . setting
 			// . experimentally determining parameters from sample area of TestBytes
 				// : determining the ControllerLatency
 				const WORD nBytes=interruption.sectorLength/2;
-				const float nControllerMicroseconds=interruption.__setInterruptionToWriteSpecifiedNumberOfBytes__(nBytes);
+				if (const TStdWinError err=interruption.__setInterruptionToWriteSpecifiedNumberOfBytes__(nBytes))
+					return pAction->TerminateWithError(err);
+				const float nControllerMicroseconds=interruption.nMicroseconds;
 				lp.outControllerLatency+=nControllerMicroseconds; // below divided by the number of attempts to get an average
 /*
 {TCHAR buf[80];
@@ -1176,7 +1205,8 @@ TUtils::Information(buf);}
 				pAction->UpdateProgress(++state);
 				// : determining the latency of one Byte
 				const float p = interruption.nMicroseconds = 65000;
-				interruption.__writeSectorData__(nBytes);
+				if (const TStdWinError err=interruption.__writeSectorData__(nBytes))
+					return pAction->TerminateWithError(err);
 				const float n=interruption.__getNumberOfWrittenBytes__();
 				const float nMicrosecondsPerByte=( p - nControllerMicroseconds ) / ( n - nBytes );
 /*
@@ -1667,8 +1697,7 @@ formatCustomWay:
 				for( const TFormatStep *pfs=pFormatStep; pfs-->formatPlan; ){
 					__setWaitingForIndex__();
 					// : setting shortened formatting
-					FD_SHORT_WRITE_PARAMS swp={ pfs->interruption.nBytes, pfs->interruption.nMicroseconds };
-					::DeviceIoControl( _HANDLE, IOCTL_FD_SET_SHORT_WRITE, &swp,sizeof(swp), NULL,0, &nBytesTransferred, NULL );
+					__setTimeBeforeInterruptingTheFdc__( pfs->interruption.nBytes, pfs->interruption.nMicroseconds );
 					// : formatting
 					#pragma pack(1)
 					struct{

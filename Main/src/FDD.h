@@ -107,6 +107,8 @@
 		PInternalTrack __scanTrack__(TCylinder cyl,THead head);
 		void __setWaitingForIndex__() const;
 		void __setNumberOfSectorsToSkipOnCurrentTrack__(BYTE _nSectorsToSkip) const;
+		TStdWinError __setTimeBeforeInterruptingTheFdc__(WORD nDataBytesBeforeInterruption,WORD nMicrosecondsAfterLastDataByteWritten) const;
+		TStdWinError __setTimeBeforeInterruptingTheFdc__(WORD nDataBytesBeforeInterruption) const;
 		bool __bufferSectorData__(RCPhysicalAddress chs,WORD sectorLength,const TInternalTrack *pit,BYTE nSectorsToSkip,TFdcStatus *pFdcStatus) const;
 		TStdWinError __formatToOneLongVerifiedSector__(RCPhysicalAddress chs,BYTE fillerByte);
 		void __unformatInternalTrack__(TCylinder cyl,THead head);
