@@ -245,65 +245,81 @@
 
 	#define VERSION_LATEST_WEB	_T("usingLatest.html")
 
-	class CHtmlStatus sealed:public CHtmlView{
-		void OnDownloadBegin() override{
-			CHtmlView::OnDownloadBegin();
-			connected=true;
-		}
-		void OnTitleChange(LPCTSTR lpszText) override{
-			CHtmlView::OnTitleChange(lpszText);
-			::lstrcpy(latestVersion,lpszText);
-		}
-		void OnDownloadComplete() override{
-			CHtmlView::OnDownloadComplete();
-			downloaded=true;
-		}
-		void PostNcDestroy() override{
-		}
-	public:
-		bool connected,downloaded;
-		TCHAR latestVersion[MAX_PATH];
-		CHtmlStatus() // ctor
-			: connected(false) , downloaded(false) {
-			*latestVersion='\0';
-			Create( NULL, NULL, WS_CHILD, RECT(), app.m_pMainWnd, 0 );
-			//OnInitialUpdate();
-		}
-	};
+	#define VERSION_TAG_NAME	"\"tag_name\""
+
 	static UINT AFX_CDECL __checkApplicationRecency_thread__(PVOID _pCancelableAction){
 		// checks if this instance of application is the latest by comparing it against the on-line information; returns ERROR_SUCCESS (on-line information was downloaded and this instance is up-to-date), ERROR_EVT_VERSION_TOO_OLD (on-line information was downloaded but this instance is out-of-date), or other error
-		const TBackgroundActionCancelable *const pAction=(TBackgroundActionCancelable *)_pCancelableAction;
-		CHtmlStatus *const phs=(CHtmlStatus *)pAction->fnParams;
-		// - step 1) connecting to the server
-		TCHAR buf[MAX_PATH];
-		phs->Navigate( TUtils::GetApplicationOnlineHtmlDocumentUrl(VERSION_LATEST_WEB,buf) );
-		while (!phs->connected){
-			if (!pAction->bContinue) return ERROR_CANCELLED;
-			::Sleep(100);
+		TBackgroundActionCancelable *const pAction=(TBackgroundActionCancelable *)_pCancelableAction;
+		HINTERNET hSession=NULL, hConnection=NULL, hRequest=NULL;
+		// - opening a new Session
+		hSession=::InternetOpen( APP_IDENTIFIER, INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0 );
+		if (hSession==NULL){
+quitWithErr:const DWORD err=::GetLastError();
+			if (hRequest!=NULL)
+				::InternetCloseHandle(hRequest);
+			if (hConnection!=NULL)
+				::InternetCloseHandle(hConnection);
+			if (hSession!=NULL)
+				::InternetCloseHandle(hSession);
+			return pAction->TerminateWithError(err);
 		}
+		if (!pAction->bContinue) return ERROR_CANCELLED;
 		pAction->UpdateProgress(1);
-		// - step 2) downloading the information on latest version
-		while (!phs->downloaded){
-			if (!pAction->bContinue) return ERROR_CANCELLED;
-			::Sleep(100);
-		}
+		// - connecting to the repository server
+		hConnection=::InternetConnect( hSession, GITHUB_API_SERVER_NAME, INTERNET_DEFAULT_HTTPS_PORT, NULL, NULL, INTERNET_SERVICE_HTTP, 0, 0 );
+		if (hConnection==NULL)
+			goto quitWithErr;
+		if (!pAction->bContinue) return ERROR_CANCELLED;
 		pAction->UpdateProgress(2);
+		// - creating a new Request to the server
+		hRequest=::HttpOpenRequest(	hConnection, _T("GET"), _T("/repos/tomas-nestorovic/RIDE/releases/latest"),
+									NULL, NULL, NULL,
+									INTERNET_FLAG_SECURE | INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE | INTERNET_NO_CALLBACK,
+									0
+								);
+		if (hRequest==NULL)
+			goto quitWithErr;
+		if (!pAction->bContinue) return ERROR_CANCELLED;
+		pAction->UpdateProgress(3);
+		// - sending the Request
+		if (!::HttpSendRequest( hRequest, "User-Agent:RIDE", -1, NULL, 0 ))
+			goto quitWithErr;
+		if (!pAction->bContinue) return ERROR_CANCELLED;
+		pAction->UpdateProgress(4);
+		// - receiving the response
+		char buffer[16384];
+		DWORD nBytesRead;
+		if (!::InternetReadFile( hRequest, buffer, sizeof(buffer), &nBytesRead ))
+			goto quitWithErr;
+		buffer[nBytesRead]='\0';
+		if (!pAction->bContinue) return ERROR_CANCELLED;
+		pAction->UpdateProgress(5);
 		// - analysing the obtained information (comparing it against this instance version)
-		return	::lstrcmp(phs->latestVersion,APP_VERSION)
-				? ERROR_EVT_VERSION_TOO_OLD
-				: ERROR_SUCCESS;
+		if (const PCHAR tagName=::strstr(buffer,VERSION_TAG_NAME)){
+			const PCHAR tagValue=::strchr(tagName+sizeof(VERSION_TAG_NAME),'\"')+1; // "+1" = skipping the opening quote
+			*::strchr(tagValue,'\"')='\0'; // replacing the closing quote with the Null character
+			const int difference=::lstrcmpA(tagValue,APP_VERSION);
+			if (!difference)
+				return ERROR_SUCCESS; // the app is up-to-date
+			else if (difference>0)
+				return ERROR_EVT_VERSION_TOO_OLD; // the app is outdated
+			else
+				return ERROR_EVT_VERSION_TOO_NEW; // strangely enough, the app is newer than the latest version at the server (e.g. forgot to increase the version # in the app, but didn't forget to increase it on the server)
+		}else
+			return ERROR_DS_SERVER_DOWN;
 	}
 	afx_msg void CMainWindow::__openUrl_checkForUpdates__(){
 		// checks if this instance of application is the latest by comparing it against the on-line information; opens either "You are using the latest version" web page, or the "You are using out-of-date version" web page
-		CHtmlStatus hs;
-		TBackgroundActionCancelable bac( __checkApplicationRecency_thread__, &hs, THREAD_PRIORITY_ABOVE_NORMAL );
-		switch (const TStdWinError err=bac.CarryOut(2)){ // 2 = see number of steps in CheckApplicationRecency
+		TBackgroundActionCancelable bac( __checkApplicationRecency_thread__, NULL, THREAD_PRIORITY_LOWEST );
+		switch (const TStdWinError err=bac.CarryOut(5)){ // 5 = see number of steps in CheckApplicationRecency
 			case ERROR_SUCCESS:
 				return OpenApplicationPresentationWebPage(_T("Version"),VERSION_LATEST_WEB);
 			case ERROR_EVT_VERSION_TOO_OLD:
 				return OpenApplicationPresentationWebPage(_T("Version"),_T("usingOld.html"));
+			case ERROR_EVT_VERSION_TOO_NEW:
+				return OpenApplicationPresentationWebPage(_T("Version"),_T("usingNew.html"));
 			default:
-				return TUtils::Information(_T("Cannot retrieve current version"),err);
+				return TUtils::Information(_T("Cannot retrieve the information"),err);
 		}
 	}
 
