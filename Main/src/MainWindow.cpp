@@ -109,6 +109,7 @@
 		ON_COMMAND(ID_HELP_WHATSNEW,__openUrl_whatsNew__)
 		ON_COMMAND(ID_APP_UPDATE,__openUrl_checkForUpdates__)
 		ON_COMMAND(ID_HELP_FAQ,__openUrl_faq__)
+		ON_COMMAND(ID_HELP_REPORT_BUG,__openUrl_reportBug__)
 		ON_COMMAND(ID_CREDITS,__openUrl_credits__)
 	END_MESSAGE_MAP()
 
@@ -326,6 +327,11 @@ quitWithErr:const DWORD err=::GetLastError();
 	afx_msg void CMainWindow::__openUrl_faq__(){
 		// opens the "Frequently Asked Questions" page in a new Tab
 		OpenApplicationPresentationWebPage(_T("FAQ"),_T("faq.html"));
+	}
+
+	afx_msg void CMainWindow::__openUrl_reportBug__(){
+		// opens the "Report a bug" page in a new Tab
+		OpenApplicationPresentationWebPage(_T("Report a bug"),_T("faq_reportBug.html"));
 	}
 
 	afx_msg void CMainWindow::__openUrl_credits__(){
