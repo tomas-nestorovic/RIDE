@@ -1472,7 +1472,9 @@ TUtils::Information(buf);}
 							case IDRETRY:	continue;
 							case IDIGNORE:	break;
 						}
-			}
+			}else
+				// if verification turned off, assuming well formatted Track structure, hence avoiding the need of its scanning
+				REFER_TO_TRACK(chs.cylinder,chs.head) = new TInternalTrack( this, chs.cylinder, chs.head, 1, &chs.sectorId );
 			// . Track formatted successfully
 			break;
 		}while (true);
@@ -1574,7 +1576,8 @@ formatStandardWay:
 								case IDIGNORE:	break;
 							}
 					}
-				}
+				}else
+					PresumeHealthyTrackStructure(cyl,head,nSectors,bufferId);
 				// . Track formatted successfully
 				break;
 			}
@@ -1744,15 +1747,14 @@ formatCustomWay:
 								case IDIGNORE:	break;
 							}
 					}
-				}
+				}else
+					// if verification turned off, assuming well formatted Track structure, hence avoiding the need of its scanning
+					REFER_TO_TRACK(cyl,head) = new TInternalTrack( this, cyl, head, nSectors, bufferId );
 				// . Track formatted successfully
 //TUtils::Information("formatted OK - ready to break");
 				break;
 			}
 		}
-		// - the Track structure is explicitly given after (successfull) formatting, so we can spare ourselves its eventual scanning
-		if (!REFER_TO_TRACK(cyl,head)) // Track not scanned (due to verification turned off)
-			REFER_TO_TRACK(cyl,head) = new TInternalTrack( this, cyl, head, nSectors, bufferId );
 		// - it's not necessary to calibrate the Head for this Track
 		fddHead.calibrated=true;
 		return ERROR_SUCCESS;
