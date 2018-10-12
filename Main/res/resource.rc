@@ -1320,7 +1320,6 @@ IDR_MAINFRAME           ICON    DISCARDABLE     "appicon.ico"
 STRINGTABLE DISCARDABLE 
 BEGIN
     IDR_MAINFRAME           "Real and Imaginary Disk Editor (RIDE)\n\n\n\n\n\n"
-    ID_INDICATOR_EXPORT_SECTOR "Export sectors"
 END
 
 STRINGTABLE DISCARDABLE 

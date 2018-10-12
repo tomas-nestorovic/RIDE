@@ -40,8 +40,11 @@
 		// window procedure
 		switch (msg){
 			case WM_CREATE:{
-				static const UINT Indicators[]={ ID_SEPARATOR, ID_INDICATOR_EXPORT_SECTOR };
-				( (CMainWindow *)app.m_pMainWnd )->statusBar.SetIndicators(Indicators,2);
+				static const UINT Indicators[]={ ID_SEPARATOR, ID_SEPARATOR };
+				CStatusBar &rStatusBar=( (CMainWindow *)app.m_pMainWnd )->statusBar;
+					rStatusBar.SetIndicators(Indicators,2);
+					rStatusBar.SetPaneInfo(1,ID_SEPARATOR,SBPS_NORMAL,72);
+					rStatusBar.SetPaneText(1,DOS->properties->name);
 				break;
 			}
 		}

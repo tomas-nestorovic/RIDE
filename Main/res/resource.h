@@ -3,7 +3,6 @@
 // Used by resource.rc
 //
 #define IDR_MAINFRAME                   114
-#define ID_INDICATOR_EXPORT_SECTOR      115
 #define IDR_TRACKMAP                    120
 #define IDR_FILEMANAGER                 122
 #define IDR_MDOS                        127
