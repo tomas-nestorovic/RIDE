@@ -134,7 +134,7 @@
 	#define NO_ERROR	_T("- no error\n")
 
 	static UINT AFX_CDECL __dump_thread__(PVOID _pCancelableAction){
-		// thread to dump tracks from the Source to the Target
+		// vlakno kopirovani Stop
 		LOG_ACTION(_T("dump thread"));
 		TBackgroundActionCancelable *const pAction=(TBackgroundActionCancelable *)_pCancelableAction;
 		TDumpParams &dp=*(TDumpParams *)pAction->fnParams;
@@ -168,7 +168,6 @@ terminateWithError:
 				nSectors=dp.source->ScanTrack(p.chs.cylinder,p.chs.head,bufferId,bufferLength);
 }
 				// . reading Source Track
-{LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("reading source"));
 				#pragma pack(1)
 				struct{
 					TSector n;
@@ -181,6 +180,7 @@ terminateWithError:
 					WORD dataLength;
 				} sourceSectors[(TSector)-1],*pSrcSector=sourceSectors;
 				TFdcStatus bufferFdcStatus[(TSector)-1],*pFdcStatus=bufferFdcStatus;
+{LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("reading source"));
 				for( TSector s=0; s<nSectors; ){
 					// : reading SourceSector
 					p.chs.sectorId=bufferId[s];
