@@ -88,7 +88,9 @@ typedef const WORD *PCWORD;
 #define DLL_SHELL32		_T("shell32.dll")
 #define DLL_WININET		_T("wininet.dll")
 
+#define APP_ABBREVIATION _T("RIDE")
 #define APP_VERSION		_T("1.4.5 debug special")
+#define APP_IDENTIFIER	APP_ABBREVIATION APP_VERSION
 
 #define FONT_MS_SANS_SERIF	_T("Microsoft Sans Serif")
 #define FONT_SYMBOL			_T("Symbol")
@@ -97,6 +99,8 @@ typedef const WORD *PCWORD;
 #define FONT_WINGDINGS		_T("Wingdings")
 #define FONT_COURIER_NEW	_T("Courier New")
 #define FONT_LUCIDA_CONSOLE	_T("Lucida Console")
+
+#define GITHUB_API_SERVER_NAME	_T("api.github.com")
 
 #define ABS(x) ((x)>=0?(x):-(x))
 
