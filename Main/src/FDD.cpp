@@ -85,7 +85,7 @@
 					if (id.lengthCode>fdd->__getMaximumSectorLengthCode__())
 						fdd->__setWaitingForIndex__();
 					// . writing Sector
-					FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM, pit->head, id.cylinder,id.side,id.sector,id.lengthCode, id.sector+1, 5, 0xff };
+					FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM, pit->head, id.cylinder,id.side,id.sector,id.lengthCode, id.sector+1, 1, 0xff };
 					LOG_ACTION(_T("DeviceIoControl fdcCommand"));
 					err=::DeviceIoControl( fdd->_HANDLE, fdcCommand, &rwp,sizeof(rwp), ::memcpy(fdd->dataBuffer,data,length),__getOfficialSectorLength__(id.lengthCode), &nBytesTransferred, NULL )!=0
 						? ERROR_SUCCESS
@@ -636,15 +636,17 @@ error:				switch (const TStdWinError err=::GetLastError()){
 							return pAction->TerminateWithError(err);
 					}*/
 					// . saving data of Track's all Modified Sectors
-					TInternalTrack::TSectorInfo *psi=pit->sectors;
-					for( TSector n=0; n<pit->nSectors; psi++,n++ )
-						if (psi->modified){ // Sector has been Modified since it's was last saved
+					for( BYTE startPos=0; startPos<2; startPos++ ){ // first only Sectors at even positions in the Track, then only Sectors at odd positions
+						TInternalTrack::TSectorInfo *psi=pit->sectors+startPos;
+						for( TSector n=startPos; n<pit->nSectors; psi+=2,n+=2 ){
 							if (!pAction->bContinue) return LOG_ERROR(ERROR_CANCELLED);
-							if (const TStdWinError err=psi->__saveToDisk__( sp.fdd, pit, n ))
-								return pAction->TerminateWithError(err);
-							else
-								psi->modified=false;
+							if (psi->modified) // Sector has been Modified since it's was last saved
+								if (const TStdWinError err=psi->__saveToDisk__( sp.fdd, pit, n ))
+									return pAction->TerminateWithError(err);
+								else
+									psi->modified=false;
 						}
+					}
 				}
 		sp.fdd->m_bModified=FALSE;
 		return ERROR_SUCCESS;
@@ -795,7 +797,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		switch (DRIVER){
 			case DRV_FDRAWCMD:{
 				LOG_ACTION(_T("DeviceIoControl IOCTL_FDCMD_READ_DATA"));
-				FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM|FD_OPTION_SK, chs.head, chs.sectorId.cylinder,chs.sectorId.side,chs.sectorId.sector,chs.sectorId.lengthCode, chs.sectorId.sector+1, 5, 0xff };
+				FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM|FD_OPTION_SK, chs.head, chs.sectorId.cylinder,chs.sectorId.side,chs.sectorId.sector,chs.sectorId.lengthCode, chs.sectorId.sector+1, 1, 0xff };
 				if (!::DeviceIoControl( _HANDLE, IOCTL_FDCMD_READ_DATA, &rwp,sizeof(rwp), dataBuffer,SECTOR_LENGTH_MAX, &nBytesTransferred, NULL )){
 					// Sector read with errors
 					// | getting FdcStatus
@@ -838,7 +840,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 						// : reading the Track
 						DWORD nBytesTransferred;
 						const PCSectorId pid=&pit->sectors[0].id;
-						FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM|FD_OPTION_SK, chs.head, pid->cylinder,pid->side,pid->sector,7, pid->sector+1, 5, 0xff }; // 7 = reads 16384 Bytes beginning with the first Data Field
+						FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM|FD_OPTION_SK, chs.head, pid->cylinder,pid->side,pid->sector,7, pid->sector+1, 1, 0xff }; // 7 = reads 16384 Bytes beginning with the first Data Field
 						if (::DeviceIoControl( _HANDLE, IOCTL_FDCMD_READ_TRACK, &rwp,sizeof(rwp), dataBuffer,SECTOR_LENGTH_MAX, &nBytesTransferred, NULL )!=0){
 							// Track read - reconstructing the gaps and ID that preceed the first physical Sector (because reading of the Track begun from its data but the ID Field itself wasn't read)
 							PSectorData pData = pit->rawContent.data = ALLOCATE_SECTOR_DATA(pit->rawContent.length128);
@@ -1121,7 +1123,7 @@ fdrawcmd:				// . setting
 				DWORD nBytesTransferred;
 				switch (fdd->DRIVER){
 					case DRV_FDRAWCMD:{
-						FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM, chs.head, chs.sectorId.cylinder,chs.sectorId.side,chs.sectorId.sector,chs.sectorId.lengthCode, chs.sectorId.sector+1, FDD_SECTOR_GAP3_STD, 0xff };
+						FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM, chs.head, chs.sectorId.cylinder,chs.sectorId.side,chs.sectorId.sector,chs.sectorId.lengthCode, chs.sectorId.sector+1, FDD_SECTOR_GAP3_STD/2, 0xff };
 						return	::DeviceIoControl( fdd->_HANDLE, IOCTL_FDCMD_WRITE_DATA, &rwp,sizeof(rwp), sectorDataToWrite,sectorLength, &nBytesTransferred, NULL )!=0
 								? ERROR_SUCCESS
 								: LOG_ERROR(::GetLastError());
@@ -1453,7 +1455,7 @@ TUtils::Information(buf);}
 				// : writing FillerByte as test data
 				WORD sectorBytes=__getUsableSectorLength__(pih->size);
 				__setTimeBeforeInterruptingTheFdc__( sectorBytes, params.controllerLatency+1*params.oneByteLatency ); // "X*" = reserve to guarantee that really all test data written
-				FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM|FD_OPTION_SK, chs.head, pih->cyl,pih->head,pih->sector,pih->size, pih->sector+1, 5, 0xff };
+				FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM|FD_OPTION_SK, chs.head, pih->cyl,pih->head,pih->sector,pih->size, pih->sector+1, 1, 0xff };
 				{	LOG_ACTION(_T("DeviceIoControl IOCTL_FDCMD_WRITE_DATA"));
 					if (!::DeviceIoControl( _HANDLE, IOCTL_FDCMD_WRITE_DATA, &rwp,sizeof(rwp), ::memset(dataBuffer,fillerByte,sectorBytes),__getOfficialSectorLength__(pih->size), &nBytesTransferred, NULL ))
 						return LOG_ERROR(::GetLastError());
