@@ -12,7 +12,8 @@
 		TPatchParams(PDos dos)
 			// ctor
 			: dos(dos) , source(NULL) , target(dos->image)
-			, cylinderA(0) , cylinderZ(0) , nHeads(1) , gap3(FDD_SECTOR_GAP3_STD)
+			, cylinderA(0) , cylinderZ(0) , nHeads(1)
+			, gap3( dos->properties->GetValidGap3ForMedium(dos->formatBoot.mediumType) )
 			, skipEmptySourceTracks(BST_CHECKED) {
 		}
 		~TPatchParams(){

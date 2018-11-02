@@ -56,6 +56,8 @@
 			TSector firstSectorNumber; // lowest Sector number on each Track
 			BYTE sectorFillerByte,directoryFillerByte; // regular Sector and Directory Sector filler Byte
 			BYTE dataBeginOffsetInSector,dataEndOffsetInSector; // number of reserved Bytes at the beginning and end of each Sector
+
+			BYTE GetValidGap3ForMedium(TMedium::TType medium) const;
 		} *PCProperties;
 
 		typedef struct TDirectoryTraversal{

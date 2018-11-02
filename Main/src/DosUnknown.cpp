@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "MDOS2.h" // included to refer to one of its StandardFormats
 
 	static PDos __instantiate__(PImage image,PCFormat pFormatBoot){
 		return new CUnknownDos(image,pFormatBoot);
@@ -16,7 +17,7 @@
 		__instantiate__, // instantiation function
 		TMedium::UNKNOWN, // Unknown Medium
 		1,	// number of std Formats
-		(CFormatDialog::PCStdFormat)&Properties, // std Formats ("some" Format in case of UnknownDos)
+		CMDOS2::Properties.stdFormats, // std Formats ("some" Format in case of UnknownDos)
 		0,0, // range of supported number of Sectors
 		0, // minimal total number of Sectors required
 		0, // maximum number of Sector in one Cluster (must be power of 2)

@@ -31,7 +31,8 @@
 			: dos(_dos)
 			, source(dos->image) , target(NULL)
 			, formatJustBadTracks(false)
-			, gap3(FDD_SECTOR_GAP3_STD) , fillerByte(dos->properties->sectorFillerByte)
+			, gap3( dos->properties->GetValidGap3ForMedium(dos->formatBoot.mediumType) )
+			, fillerByte(dos->properties->sectorFillerByte)
 			, cylinderA(0) , cylinderZ(source->GetCylinderCount()-1)
 			, nHeads(source->GetNumberOfFormattedSides(0))
 			, pOutErroneousTracks(NULL) {
