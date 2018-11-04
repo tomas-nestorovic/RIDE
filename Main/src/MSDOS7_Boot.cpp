@@ -47,8 +47,8 @@
 				&&
 				nFatCopies && nFatCopies<=15
 				&&
-				AA55mark==0xaa55
-				&&
+				//AA55mark==0xaa55 // commented out as some MS-DOS floppies neglect this mark, causing this app to not recognize them
+				//&&
 				__isUsable__(); // Boot Sector contains values that make sense
 	}
 
