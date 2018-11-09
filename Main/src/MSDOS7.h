@@ -121,6 +121,7 @@
 
 			bool __recognize__(WORD sectorLength) const;
 			bool __isUsable__() const;
+			TLogSector32 __getCountOfAllSectors__() const;
 			void __getGeometry__(PFormat pFormat) const;
 			void __init__(PCFormat pFormatBoot,CFormatDialog::PCParameters params,CFat &rOutFat);
 			DWORD __getCountOfSectorsInOneFatCopy__() const;

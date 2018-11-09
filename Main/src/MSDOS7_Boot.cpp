@@ -37,9 +37,7 @@
 				&&
 				( jmpInstruction.opCode==0xeb&&jmpInstruction.param>=0x9000 || jmpInstruction.opCode==0xe9 )
 				&&
-				(nSectorsInTotal16 ^ nSectorsInTotal32  ||  nSectorsInTotal16==nSectorsInTotal32)
-				&&
-				( medium==0xf0 || 0xf8<=medium&&medium<=0xff )
+				__getCountOfAllSectors__()!=0 // Medium is known
 				&&
 				nSectorsInCluster
 				&&
@@ -57,10 +55,30 @@
 		return nHeads && nSectorsOnTrack && sectorSize && nSectorsInCluster; // geometry
 	}
 
+	CMSDOS7::TLogSector32 CMSDOS7::TBootSector::__getCountOfAllSectors__() const{
+		// determines and returns the total number of (officially reported) Sectors on the Medium
+		switch (medium){
+			case TBootSector::DISK_35_1440_DS_18:
+			case TBootSector::DISK_35_720_DS_9:
+			case TBootSector::DISK_525_180_SS_9:
+			case TBootSector::DISK_525_360_DS_9:
+			case TBootSector::DISK_525_160_SS_8:
+			case TBootSector::DISK_525_320_DS_8:
+				// for floppies, only the 16-bit value is considered valid (ignoring whatever value is in the 32-bit counterpart)
+				return nSectorsInTotal16;
+			case TBootSector::DISK_HARD:
+				// for hard disks, both 16-bit and 32-bit values are considered
+				return nSectorsInTotal16|nSectorsInTotal32;
+			default:
+				// for unknown Media, neither of the values is considered
+				return 0;
+		}
+	}
+
 	void CMSDOS7::TBootSector::__getGeometry__(PFormat pFormat) const{
 		// extracts information on geometry from this Boot Sector
 		if (const WORD nSectorsOnCylinder=nHeads*nSectorsOnTrack)
-			pFormat->nCylinders=(nSectorsInTotal16|nSectorsInTotal32)/nSectorsOnCylinder;
+			pFormat->nCylinders=__getCountOfAllSectors__()/nSectorsOnCylinder;
 		else
 			pFormat->nCylinders=0;
 		pFormat->nHeads=nHeads;

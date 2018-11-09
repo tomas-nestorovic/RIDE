@@ -22,7 +22,7 @@
 			if (bootSector->__isUsable__()){ // may not be usable if Image is being "Open As"
 				// . determining the type of FAT
 				BYTE b;
-				const TLogSector32 nDataSectors=(bootSector->nSectorsInTotal16|bootSector->nSectorsInTotal32)-__cluster2logSector__(MSDOS7_DATA_CLUSTER_FIRST,b);
+				const TLogSector32 nDataSectors=bootSector->__getCountOfAllSectors__()-__cluster2logSector__(MSDOS7_DATA_CLUSTER_FIRST,b);
 				const TCluster32 nClusters=nDataSectors/bootSector->nSectorsInCluster;
 				fat.type=CFat::GetFatType(nClusters);
 				// . propagating the Medium type stored in Boot Sector to the inner FormatBoot structure
@@ -85,7 +85,7 @@
 		if (const PCBootSector bootSector=boot.GetSectorData())
 			if (bootSector->nSectorsInCluster){
 				BYTE b;
-				const TLogSector32 nDataSectors=(bootSector->nSectorsInTotal16|bootSector->nSectorsInTotal32)-__cluster2logSector__(MSDOS7_DATA_CLUSTER_FIRST,b);
+				const TLogSector32 nDataSectors=bootSector->__getCountOfAllSectors__()-__cluster2logSector__(MSDOS7_DATA_CLUSTER_FIRST,b);
 				const TCluster32 nClusters=nDataSectors/bootSector->nSectorsInCluster;
 				switch (fat.type){
 					case CFat::FAT12:
