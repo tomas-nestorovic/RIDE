@@ -35,7 +35,7 @@ namespace Debug{
 		CLogFile &operator<<(const TSectorId &rsi);
 		CLogFile &operator<<(const TPhysicalAddress &rchs);
 
-		void LogMessage(LPCTSTR text);
+		LPCTSTR LogMessage(LPCTSTR text);
 		TStdWinError LogError(TStdWinError err);
 		bool LogBool(bool b);
 		PSectorData LogSectorDataPointer(PSectorData pSectorData);
@@ -78,10 +78,16 @@ namespace Debug{
 	#define LOG_DIALOG_RESULT(result)\
 		Debug::CLogFile::Default.LogDialogResult(result)
 
+	#define LOG_FILE_ACTION(dos,file,name)\
+		TCHAR __fileActionName[MAX_PATH+200];\
+		::wsprintf(__fileActionName,_T("File \"%s\" %s"),dos->GetFileNameWithAppendedExt(file,__fileActionName+199),name);\
+		LOG_ACTION(__fileActionName)
+
 #else
 	#define LOG_ACTION(name)
 
-	#define LOG_MESSAGE(text)
+	#define LOG_MESSAGE(text)\
+		text
 
 	#define LOG_ERROR(error)\
 		error
@@ -102,6 +108,8 @@ namespace Debug{
 
 	#define LOG_DIALOG_RESULT(result)\
 		result
+
+	#define LOG_FILE_ACTION(dos,file,name)
 
 #endif
 

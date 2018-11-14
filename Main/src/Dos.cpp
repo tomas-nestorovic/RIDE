@@ -190,13 +190,14 @@ reportError:TUtils::Information(buf);
 	TStdWinError CDos::__showDialogAndFormatStdCylinders__(CFormatDialog &rd,PCylinder bufCylinders,PHead bufHeads){
 		// formats Cylinders using parameters obtained from the confirmed FormatDialog (CDos-derivate and FormatDialog guarantee that all parameters are valid); returns Windows standard i/o error
 		if (image->__reportWriteProtection__()) return ERROR_WRITE_PROTECT;
-		if (rd.DoModal()!=IDOK){
+		LOG_DIALOG_DISPLAY(_T("CFormatDialog"));
+		if (LOG_DIALOG_RESULT(rd.DoModal())!=IDOK){
 			::SetLastError(ERROR_CANCELLED);
 			return ERROR_CANCELLED;
 		}
 		const TStdWinError err=__formatStdCylinders__(rd,bufCylinders,bufHeads);
 		::SetLastError(err);
-		return err;
+		return LOG_ERROR(err);
 	}
 
 	TStdWinError CDos::__formatStdCylinders__(const CFormatDialog &rd,PCylinder bufCylinders,PHead bufHeads){
@@ -357,7 +358,8 @@ reportError:TUtils::Information(buf);
 	TStdWinError CDos::__unformatStdCylinders__(CUnformatDialog &rd,PCylinder bufCylinders,PHead bufHeads){
 		// unformats Cylinders using Parameters obtained from confirmed UnformatDialog (CDos-derivate and UnformatDialog guarantee that all parameters are valid); returns Windows standard i/o error
 		if (image->__reportWriteProtection__()) return ERROR_WRITE_PROTECT;
-		if (rd.DoModal()!=IDOK) return ERROR_CANCELLED;
+		LOG_DIALOG_DISPLAY(_T("CUnformatDialog"));
+		if (LOG_DIALOG_RESULT(rd.DoModal())!=IDOK) return ERROR_CANCELLED;
 		// - composing the list of Tracks to unformat
 		TTrack n=0;
 		for( TCylinder c=rd.cylA; c<=rd.cylZ; c++ )
@@ -367,11 +369,11 @@ reportError:TUtils::Information(buf);
 		TStdWinError err=__areStdCylindersEmpty__(n,bufCylinders);
 		if (err!=ERROR_EMPTY){
 			TUtils::Information( DOS_ERR_CANNOT_UNFORMAT, DOS_ERR_CYLINDERS_NOT_EMPTY, DOS_MSG_CYLINDERS_UNCHANGED );
-			return err;
+			return LOG_ERROR(err);
 		}
 		// - carrying out the unformatting
 		if (( err=__unformatTracks__(n,bufCylinders,bufHeads) )!=ERROR_SUCCESS)
-			return err;
+			return LOG_ERROR(err);
 		// - removing unformatted Cylinders from Boot Sector and FAT (if commanded so)
 		if (rd.updateBoot){
 			if (1+rd.cylZ>=formatBoot.nCylinders)
@@ -688,10 +690,11 @@ reportError:TUtils::Information(buf);
 
 	LPCTSTR CDos::__exportFileData__(PCFile file,CFile *fOut,DWORD nMaxDataBytesToExport) const{
 		// exports data portion of specfied File (data portion size determined by GetFileDataSize); returns textual description of occured error
+		LOG_FILE_ACTION(this,file,_T("export"));
 		const CFatPath fatPath(this,file);
 		CFatPath::PCItem item; DWORD n;
 		if (const LPCTSTR err=fatPath.GetItems(item,n))
-			return err;
+			return LOG_MESSAGE(err);
 		else{
 			BYTE nBytesReservedBeforeData;
 			DWORD nDataBytesToExport=GetFileDataSize(file,&nBytesReservedBeforeData,NULL);
@@ -709,7 +712,7 @@ reportError:TUtils::Information(buf);
 						break;
 					}
 				}else
-					return _T("Data sector not found or read with CRC error.");
+					return LOG_MESSAGE(_T("Data sector not found or read with CRC error."));
 		}
 		return NULL;
 	}
@@ -769,6 +772,7 @@ reportError:TUtils::Information(buf);
 		// imports given File into the disk; returns Windows standard i/o error
 		ASSERT(fileName!=NULL && fileExt!=NULL);
 		// - making sure that the File with given NameAndExtension doesn't exist in current Directory
+		LOG_FILE_ACTION(this,fDesc,_T("import"));
 		rFile=NULL; // assumption (cannot import the File)
 		const PDirectoryTraversal pdt=BeginDirectoryTraversal();
 			while (pdt->AdvanceToNextEntry())
@@ -788,14 +792,14 @@ reportError:TUtils::Information(buf);
 						if (HasFileNameAndExt(pdt->entry,fileName,fileExt)){
 							rFile=pdt->entry;
 							EndDirectoryTraversal(pdt);
-							return ERROR_FILE_EXISTS;
+							return LOG_ERROR(ERROR_FILE_EXISTS);
 						}else
 							break;
 					case TDirectoryTraversal::WARNING:{
 						// any Warning becomes a real error!
 						const TStdWinError err=pdt->warning;
 						EndDirectoryTraversal(pdt);
-						return err;
+						return LOG_ERROR(err);
 					}
 					#ifdef _DEBUG
 					default:
@@ -822,11 +826,11 @@ reportError:TUtils::Information(buf);
 				}
 		EndDirectoryTraversal(pdt);
 		if (err!=ERROR_SUCCESS)
-			return err;
+			return LOG_ERROR(err);
 		// - checking if there's enough empty space on the disk
 		if (fileSize>GetFreeSpaceInBytes(err)){
 			DeleteFile(rFile); // removing the above added File record from current Directory
-			return ERROR_DISK_FULL;
+			return LOG_ERROR(ERROR_DISK_FULL);
 		}
 		// - determining the initial range of Heads in which to search for free Sectors within each Cylinder
 		THead headZ; // last Head number
@@ -878,7 +882,7 @@ reportError:TUtils::Information(buf);
 							}else{ // error when accessing discovered Empty Sector
 								err=::GetLastError();
 								DeleteFile(rFile); // removing the above added File record from current Directory
-								return err;
+								return LOG_ERROR(err);
 							}
 						}
 				}

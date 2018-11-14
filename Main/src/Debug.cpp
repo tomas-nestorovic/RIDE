@@ -24,16 +24,20 @@ namespace Debug{
 				::GetLocalTime(&st);
 				::wsprintf( filename, _T("c:\\%d_%d_%d_%d_%s.txt"), st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, logDescription );
 				d.m_ofn.lpstrFile=filename;
-			if (d.DoModal()!=IDOK)
+			if (d.DoModal()!=IDOK){
 				::PostQuitMessage(ERROR_CANCELLED);
+				*filename='\0'; // the file won't be created and no attempt to write to it will be made
+				return;
+			}
 		#endif
 		// - opening the file for writing if commanded to have it open permanently
-		if (*filename && permanentlyOpen)
+		if (permanentlyOpen)
 			Open( filename, CFile::modeWrite|CFile::modeCreate|CFile::modeNoTruncate );
 	}
 
 	CLogFile::~CLogFile(){
 		// dtor
+		if (!*filename) return;
 		// - outputting how long each of Actions took
 		*this << '\r' << '\n' << '\r' << '\n' << '\r' << '\n'; // separate new-line characters as the operator<<(LPCTSTR) operator removes new-line characters, so can't use _T("\r\n")
 		for( POSITION pos=actionMinTimes.GetStartPosition(); pos; ){
@@ -101,11 +105,12 @@ namespace Debug{
 		return operator<<(buf);
 	}
 
-	void CLogFile::LogMessage(LPCTSTR text){
+	LPCTSTR CLogFile::LogMessage(LPCTSTR text){
 		// logs given text message to the LogFile
 		SYSTEMTIME time;
 		::GetLocalTime(&time);
 		*this << CString('\t',nIndent) << time << _T(" Message: ") << text << '\r' << '\n'; // separate new-line characters as the operator<<(LPCTSTR) operator removes new-line characters, so can't use _T("\r\n")
+		return text;
 	}
 
 	TStdWinError CLogFile::LogError(TStdWinError err){
