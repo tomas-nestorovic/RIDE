@@ -444,6 +444,17 @@ leftMouseDragged:
 				if (CWnd *const pParentWnd=GetParent()) pParentWnd->Invalidate(FALSE);
 				hPreviouslyFocusedWnd=0;
 				break;
+			case WM_MOUSEWHEEL:{
+				// mouse wheel was rotated
+				UINT nLinesToScroll;
+				::SystemParametersInfo( SPI_GETWHEELSCROLLLINES, 0, &nLinesToScroll, 0 );
+				const short zDelta=(short)HIWORD(wParam);
+				if (nLinesToScroll==WHEEL_PAGESCROLL)
+					SendMessage( WM_VSCROLL, zDelta>0?SB_PAGEUP:SB_PAGEDOWN, 0 );
+				else
+					for( WORD nLines=abs(zDelta)*nLinesToScroll/WHEEL_DELTA; nLines--; SendMessage(WM_VSCROLL,zDelta>0?SB_LINEUP:SB_LINEDOWN) );
+				return TRUE;
+			}
 			case WM_VSCROLL:{
 				// scrolling vertically
 				// . determining the Row to scroll to

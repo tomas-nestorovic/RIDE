@@ -160,6 +160,10 @@
 					return 0;
 				}else
 					break;
+			case WM_MOUSEWHEEL:
+				// mouse wheel was rotated
+				wParam = (short)HIWORD(wParam)>0 ? VK_LEFT : VK_RIGHT; // navigating to the next/previous File
+				//fallthrough
 			case WM_KEYDOWN:
 				// character
 				switch (wParam){
