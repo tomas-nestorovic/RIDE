@@ -14,7 +14,9 @@
 
 	CHexaEditor::TCursor::TCursor(int position)
 		// ctor
-		: ascii(false) , hexaLow(true) , selectionA(-1) , position(position) {
+		: ascii(false) , hexaLow(true)
+		, selectionA(-1) , selectionZ(-1) // nothing selected
+		, position(position) {
 	}
 	void CHexaEditor::TCursor::__detectNewSelection__(){
 		// detects and sets the beginning of new Selection
@@ -33,10 +35,11 @@
 
 	const CHexaEditor::TEmphasis CHexaEditor::TEmphasis::Terminator={ -1, -1 };
 
-	CHexaEditor::CHexaEditor(PVOID _param)
+	CHexaEditor::CHexaEditor(PVOID param,DWORD recordSize,TFnQueryRecordLabel fnQueryRecordLabel)
 		// ctor
 		: font(_T("Courier New"),105,false,true)
-		, cursor(0) , param(_param) , hPreviouslyFocusedWnd(0)
+		, recordSize(recordSize) , fnQueryRecordLabel(fnQueryRecordLabel) , nRowsPerRecord(1)
+		, cursor(0) , param(param) , hPreviouslyFocusedWnd(0)
 		, nBytesInRow(16) , editable(true) , addrLength(ADDRESS_FORMAT_LENGTH)
 		, emphases((PEmphasis)&TEmphasis::Terminator) {
 	}
@@ -53,7 +56,7 @@
 	void CHexaEditor::SetEditable(bool _editable){
 		// enables/disables possibility to edit the content of the File (see the Reset function)
 		editable=_editable;
-		cursor=TCursor( GetScrollPos(SB_VERT)*nBytesInRow ); // resetting the Cursor and thus Selection
+		cursor=TCursor( __firstByteInRowToLogicalPosition__(GetScrollPos(SB_VERT)) ); // resetting the Cursor and thus the Selection
 		if (::IsWindow(m_hWnd)){ // may be window-less if the owner is window-less
 			app.m_pMainWnd->SetFocus(); // for the Cursor to disappear
 			Invalidate(FALSE);
@@ -89,8 +92,9 @@
 
 	void CHexaEditor::GetVisiblePart(DWORD &rLogicalBegin,DWORD &rLogicalEnd) const{
 		// gets the beginning and end of visible portion of the File content
-		const DWORD dw=GetScrollPos(SB_VERT);
-		rLogicalBegin=dw*nBytesInRow, rLogicalEnd=(dw+nRowsDisplayed)*nBytesInRow;
+		const int i=GetScrollPos(SB_VERT);
+		rLogicalBegin=__firstByteInRowToLogicalPosition__(i);
+		rLogicalEnd=__firstByteInRowToLogicalPosition__(i+nRowsDisplayed);
 	}
 
 	void CHexaEditor::AddEmphasis(DWORD a,DWORD z){
@@ -111,18 +115,37 @@
 		}
 	}
 
-	#define ROWS_MAX	max(logicalSize/nBytesInRow,nRowsInTotal)
+	int CHexaEditor::__firstByteInRowToLogicalPosition__(int row) const{
+		// converts Row begin (i.e. its first Byte) to corresponding position in underlying File and returns the result
+		const div_t d=div(row,nRowsPerRecord);
+		return d.quot*recordSize + d.rem*nBytesInRow;
+	}
+
+	int CHexaEditor::__logicalPositionToRow__(int logPos) const{
+		// computes and returns at which Row is the specified LogicalPosition
+		const div_t d=div(logPos,recordSize);
+		return d.quot*nRowsPerRecord + d.rem/nBytesInRow;;// + (d.rem+nBytesInRow-1)/nBytesInRow;
+	}
+
+	int CHexaEditor::__getRecordIndexThatStartsAtRow__(int row) const{
+		// computes and returns the zero-based record index that starts at specified Row; returns -1 if no record starts at given Row
+		const div_t d=div(row,nRowsPerRecord);
+		return d.rem ? -1 : d.quot;
+	}
 
 	int CHexaEditor::__scrollToRow__(int row){
 		// scrolls the HexaEditor so that the specified Row is shown as the first one from top; returns the Row number to which it has been really scrolled to
 		// - Row must be in expected limits
-		const int scrollMax=ROWS_MAX-nRowsOnPage;
+		const int scrollMax=nLogicalRows-nRowsOnPage;
 		if (row<0) row=0;
 		else if (row>scrollMax) row=scrollMax;
+		// - redrawing HexaEditor's client and non-client areas
+		RECT rcScroll;
+			GetClientRect(&rcScroll);
+			rcScroll.bottom=( rcScroll.top=font.charHeight )+nRowsDisplayed*font.charHeight;
+		ScrollWindow( 0, (GetScrollPos(SB_VERT)-row)*font.charHeight, &rcScroll, &rcScroll );
 		// - displaying where it's been scrolled to
 		SetScrollPos(SB_VERT,row,TRUE); // True = redrawing the scroll-bar, not HexaEditor's canvas!
-		// - redrawing HexaEditor's client and non-client areas
-		Invalidate(FALSE);
 		return row;
 	}
 
@@ -131,17 +154,17 @@
 	void CHexaEditor::__refreshVertically__(){
 		// refreshes all parameters that relate to vertical axis
 		// - determining the total number of Rows
-		nRowsInTotal=f->GetLength()/nBytesInRow;
+		nRowsPerRecord=(recordSize+nBytesInRow-1)/nBytesInRow;
+		nLogicalRows=__logicalPositionToRow__( max(f->GetLength(),logicalSize) );
 		// - setting the scrolling dimensions
 		RECT r;
 		GetClientRect(&r);
 		nRowsDisplayed=max( 0, (r.bottom-r.top)/font.charHeight-HEADER_LINES_COUNT );
 		nRowsOnPage=max( 0, nRowsDisplayed-1 );
-		const DWORD rowMax=ROWS_MAX;
-		const BOOL scrollbarNecessary=nRowsOnPage<rowMax;
+		const BOOL scrollbarNecessary=nRowsOnPage<nLogicalRows;
 		ShowScrollBar(SB_VERT,scrollbarNecessary);
 		//if (scrollbarNecessary){
-			SCROLLINFO si={ sizeof(si), SIF_RANGE|SIF_PAGE, 0,rowMax-1, nRowsOnPage };
+			SCROLLINFO si={ sizeof(si), SIF_RANGE|SIF_PAGE, 0,nLogicalRows-1, nRowsOnPage };
 			SetScrollInfo( SB_VERT, &si, TRUE );
 		//}
 	}
@@ -154,16 +177,18 @@
 	#define HEXA_SPACE_LENGTH	2
 
 	void CHexaEditor::__refreshCursorDisplay__() const{
-		// shows Cursor at position on screen that corresponds with Cursor's actual "logical" Position (e.g. the Cursor is "logically" at 12345-th Byte in the underlying File content)
-		const div_t d=div(cursor.position,nBytesInRow);
+		// shows Cursor on screen at position that corresponds with Cursor's actual Position in the underlying File content (e.g. the 12345-th Byte of the File)
+		const div_t d=div(cursor.position,recordSize);
 		const int iScrollY=GetScrollPos(SB_VERT);
 		//if (d.quot>=iScrollY){ // commented out as always guaranteed
 			// Cursor "under" the header
-			POINT pos={ 0, (HEADER_LINES_COUNT+d.quot-iScrollY)*font.charHeight };
+			POINT pos={	d.rem % nBytesInRow, // translated below to a particular pixel position
+						(HEADER_LINES_COUNT + __logicalPositionToRow__(cursor.position) - iScrollY)*font.charHeight // already a particular Y pixel position
+					};
 			if (cursor.ascii) // Cursor in the Ascii area
-				pos.x=(addrLength+ADDRESS_SPACE_LENGTH+HEXA_FORMAT_LENGTH*nBytesInRow+HEXA_SPACE_LENGTH+d.rem)*font.charAvgWidth;
+				pos.x=(addrLength+ADDRESS_SPACE_LENGTH+HEXA_FORMAT_LENGTH*nBytesInRow+HEXA_SPACE_LENGTH+pos.x)*font.charAvgWidth;
 			else // Cursor in the Hexa area
-				pos.x=(addrLength+ADDRESS_SPACE_LENGTH+HEXA_FORMAT_LENGTH*d.rem)*font.charAvgWidth;
+				pos.x=(addrLength+ADDRESS_SPACE_LENGTH+HEXA_FORMAT_LENGTH*pos.x)*font.charAvgWidth;
 			SetCaretPos(pos);
 		/*}else{ // commented out as it never occurs
 			// Cursor "above" the header
@@ -186,8 +211,10 @@
 
 	static UINT cfBinary;
 
+	#define HEADER_HEIGHT	font.charHeight
+
 	void CHexaEditor::__setNormalPrinting__(HDC dc){
-		::SetTextColor( dc, ::GetSysColor( editable?COLOR_WINDOWTEXT:COLOR_GRAYTEXT) );
+		::SetTextColor( dc, ::GetSysColor(editable?COLOR_WINDOWTEXT:COLOR_GRAYTEXT) );
 		::SetBkColor( dc, 0xffffff );
 	}
 	static void __setEmphasizedPrinting__(HDC dc){
@@ -200,6 +227,7 @@
 	}
 	LRESULT CHexaEditor::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
 		// window procedure
+		int i;
 		switch (msg){
 			case WM_MOUSEACTIVATE:
 				// preventing the focus from being stolen by the parent
@@ -221,7 +249,7 @@
 					case VK_LEFT:{
 						cursor.position--;
 cursorCorrectlyMoveTo:	// . adjusting the Cursor's Position
-						cursor.hexaLow=true;
+						cursor.hexaLow=true; // the next keystroke will modify the lower four bits of current hexa-value
 						if (cursor.position<0) cursor.position=0;
 						else if (cursor.position>maxFileSize) cursor.position=maxFileSize;
 						// . adjusting an existing Selection if Shift pressed
@@ -231,7 +259,7 @@ cursorCorrectlyMoveTo:	// . adjusting the Cursor's Position
 cursorRefresh:			// . refreshing the Cursor
 						HideCaret();
 							// : scrolling if Cursor has been moved to an invisible part of the File content
-							const int iRow=cursor.position/nBytesInRow, iScrollY=GetScrollPos(SB_VERT);
+							const int iRow=__logicalPositionToRow__(cursor.position), iScrollY=GetScrollPos(SB_VERT);
 							if (iRow<iScrollY) __scrollToRow__(iRow);
 							else if (iRow>=iScrollY+nRowsOnPage) __scrollToRow__(iRow-nRowsOnPage+1);
 							// : displaying the Cursor
@@ -241,27 +269,50 @@ cursorRefresh:			// . refreshing the Cursor
 						return 0;
 					}
 					case VK_RIGHT:
-						cursor.position++; goto cursorCorrectlyMoveTo;
-					case VK_UP:
+						cursor.position++;
+						goto cursorCorrectlyMoveTo;
+					case VK_UP:{
+						i=1; // move Cursor one row up
+moveCursorUp:			const int iRow=__logicalPositionToRow__(cursor.position);
 						if (ctrl){
-							const int iRow=cursor.position/nBytesInRow, iScrollY=__scrollToRow__(GetScrollPos(SB_VERT)-1);
+							const int iScrollY=__scrollToRow__(GetScrollPos(SB_VERT)-i);
 							if (iRow<iScrollY+nRowsOnPage) goto cursorRefresh;
 						}
-						cursor.position-=nBytesInRow; goto cursorCorrectlyMoveTo;
-					case VK_DOWN:
+						const int currRowStart=__firstByteInRowToLogicalPosition__(iRow);
+						cursor.position -=	currRowStart-__firstByteInRowToLogicalPosition__(iRow-i+1) // # of Bytes between current and "target" row to place the Cursor to (if I=1, this difference is zero)
+											+
+											max(cursor.position-currRowStart+1,
+												currRowStart-__firstByteInRowToLogicalPosition__(iRow-i)
+											);
+						goto cursorCorrectlyMoveTo;
+					}
+					case VK_DOWN:{
+						i=1; // move Cursor one row down
+moveCursorDown:			const int iRow=__logicalPositionToRow__(cursor.position);
 						if (ctrl){
-							const int iRow=cursor.position/nBytesInRow, iScrollY=__scrollToRow__(GetScrollPos(SB_VERT)+1);
+							const int iScrollY=__scrollToRow__(GetScrollPos(SB_VERT)+i);
 							if (iRow>=iScrollY) goto cursorRefresh;
 						}
-						cursor.position+=nBytesInRow; goto cursorCorrectlyMoveTo;
+						const int currRowStart=__firstByteInRowToLogicalPosition__(iRow), targetRowStart=__firstByteInRowToLogicalPosition__(iRow+i);
+						cursor.position +=	targetRowStart-__firstByteInRowToLogicalPosition__(iRow+1) // # of Bytes between current and "target" row to place the Cursor to (if I=1, this difference is zero)
+											+
+											min(targetRowStart-currRowStart,
+												__firstByteInRowToLogicalPosition__(iRow+i+1)-cursor.position-1
+											);
+						goto cursorCorrectlyMoveTo;
+					}
 					case VK_PRIOR:	// page up
-						cursor.position-=( ctrl ? nRowsOnPage-1 : nRowsOnPage )*nBytesInRow; goto cursorCorrectlyMoveTo;
+						i=nRowsOnPage-ctrl; // move Cursor N rows up
+						goto moveCursorUp;
 					case VK_NEXT:	// page down
-						cursor.position+=( ctrl ? nRowsOnPage-1 : nRowsOnPage )*nBytesInRow; goto cursorCorrectlyMoveTo;
+						i=nRowsOnPage-ctrl; // move Cursor N rows down
+						goto moveCursorDown;
 					case VK_HOME:
-						cursor.position=( ctrl ? 0 : cursor.position/nBytesInRow*nBytesInRow ); goto cursorCorrectlyMoveTo;
+						cursor.position=( ctrl ? 0 : __firstByteInRowToLogicalPosition__(__logicalPositionToRow__(cursor.position)) );
+						goto cursorCorrectlyMoveTo;
 					case VK_END:
-						cursor.position=( ctrl ? f->GetLength() : cursor.position/nBytesInRow*nBytesInRow+nBytesInRow-1 ); goto cursorCorrectlyMoveTo;
+						cursor.position=( ctrl ? f->GetLength() : __firstByteInRowToLogicalPosition__(__logicalPositionToRow__(cursor.position)+1)-1 );
+						goto cursorCorrectlyMoveTo;
 					case VK_DELETE:{
 editDelete:				// deleting the Byte after Cursor, or deleting the Selection
 						// . if Selection not set, setting it as the Byte immediately after Cursor
@@ -419,12 +470,13 @@ leftMouseDragged:
 				const int r=GET_Y_LPARAM(lParam)/font.charHeight-HEADER_LINES_COUNT+GetScrollPos(SB_VERT);
 				const int byteW=HEXA_FORMAT_LENGTH*font.charAvgWidth, hexaW=nBytesInRow*byteW;
 				const int asciiX=hexaW+HEXA_SPACE_LENGTH*font.charAvgWidth;
+				const int currLineStart=__firstByteInRowToLogicalPosition__(r), currLineBytesMinusOne=__firstByteInRowToLogicalPosition__(r+1)-currLineStart-1;
 				if (x>0 && x<=hexaW) // "x>0" - cannot be just "x" because x can be negative
 					// Hexa area
-					cursor.ascii=false, cursor.position=r*nBytesInRow+x/byteW;
+					cursor.ascii=false, cursor.position=currLineStart+min(x/byteW,currLineBytesMinusOne);
 				else if (x>asciiX && x<=asciiX+nBytesInRow*font.charAvgWidth)
 					// Ascii area
-					cursor.ascii=true, cursor.position=r*nBytesInRow+(x-asciiX)/font.charAvgWidth;
+					cursor.ascii=true, cursor.position=currLineStart+min((x-asciiX)/font.charAvgWidth,currLineBytesMinusOne);
 				else
 					// outside any area
 					break;
@@ -481,11 +533,20 @@ leftMouseDragged:
 			case WM_ERASEBKGND:{
 				// drawing the background
 				// . header
-				RECT r;
-				GetClientRect(&r);
-				r.bottom=font.charHeight;
-				::FillRect((HDC)wParam,&r,CRideBrush::BtnFace);
+				RECT rcClip;
+					GetClientRect(&rcClip);
+				RECT rcHeader={ 0, 0, rcClip.right, HEADER_HEIGHT };
+				::FillRect( (HDC)wParam, &rcHeader, CRideBrush::BtnFace );
+				const HGDIOBJ hFont0=::SelectObject( (HDC)wParam, font );
+					TCHAR buf[16];
+					__setNormalPrinting__((HDC)wParam);
+					::SetBkColor( (HDC)wParam, ::GetSysColor(COLOR_BTNFACE) );
+					rcHeader.left=(addrLength+ADDRESS_SPACE_LENGTH)*font.charAvgWidth;
+					for( BYTE n=0; n<nBytesInRow; rcHeader.left+=HEXA_FORMAT_LENGTH*font.charAvgWidth )
+						::DrawText( (HDC)wParam, buf, ::wsprintf(buf,HEXA_FORMAT,n++), &rcHeader, DT_LEFT|DT_TOP );
+				::SelectObject((HDC)wParam,hFont0);
 				// . data
+				RECT r;
 				GetClientRect(&r);
 				r.top=font.charHeight;
 				::FillRect((HDC)wParam,&r,CRideBrush::White);
@@ -498,59 +559,79 @@ leftMouseDragged:
 				const HGDIOBJ hFont0=::SelectObject( dc, font );
 					// . drawing background
 					//nop (see WM_ERASEBKGND)
-					// . drawing header text (header background drawn in WM_ERASEBKGND)
-					RECT r;
-					GetClientRect(&r);
-					r.left=(addrLength+ADDRESS_SPACE_LENGTH)*font.charAvgWidth;
-					TCHAR buf[16];
-					__setNormalPrinting__(dc);
-					::SetBkColor( dc, ::GetSysColor(COLOR_BTNFACE) );
-					for( DWORD n=0; n<nBytesInRow; r.left+=HEXA_FORMAT_LENGTH*font.charAvgWidth )
-						::DrawText( dc, buf, _stprintf(buf,HEXA_FORMAT,n++), &r, DT_LEFT );
+					// . drawing header (background and text)
+					//nop (see WM_ERASEBKGND)
 					// . determining the visible part of the File content
-					const DWORD iRowA=GetScrollPos(SB_VERT), iRowZ=min( nRowsInTotal, iRowA+nRowsOnPage );
+					const int iRowFirstToPaint=max( (dc.m_ps.rcPaint.top-HEADER_HEIGHT)/font.charHeight, 0 );
+					int iRowA= GetScrollPos(SB_VERT) + iRowFirstToPaint;
+					const int iRowLastToPaint= GetScrollPos(SB_VERT) + (dc.m_ps.rcPaint.bottom-HEADER_HEIGHT)/font.charHeight + 1;
+					const int iRowZ=min( min(nLogicalRows,iRowLastToPaint), iRowA+nRowsOnPage );
 					// . drawing Addresses and data (both Ascii and Hexa parts)
-					DWORD iRow=iRowA, address=iRowA*nBytesInRow;
-					f->Seek(address,CFile::begin);
-					r.bottom=font.charHeight;
-					const int _selectionA=min(cursor.selectionA,cursor.selectionZ), _selectionZ=max(cursor.selectionZ,cursor.selectionA);
-					PEmphasis pEmp=emphases;
-					while (pEmp->z<address) pEmp=pEmp->pNext; // choosing the first visible Emphasis
-					for( const int xHexa=(addrLength+ADDRESS_SPACE_LENGTH)*font.charAvgWidth,xAscii=xHexa+(HEXA_FORMAT_LENGTH*nBytesInRow+HEXA_SPACE_LENGTH)*font.charAvgWidth; iRow++<=iRowZ; ){
-						r.left=0, r.top=r.bottom, r.bottom+=font.charHeight;
-						// : if the last Row is being drawn, erasing it along with everything that's "below" it (i.e. a sort of EraseBackground)
-						if (address>=nRowsInTotal*nBytesInRow)
-							::FillRect( dc, &r, CRideBrush::White );
-						// : address
-						if (addrLength){
-							__setNormalPrinting__(dc);
-							::SetBkColor( dc, ::GetSysColor(COLOR_BTNFACE) );
-							::DrawText( dc, buf, _stprintf(buf,ADDRESS_FORMAT,HIWORD(address),LOWORD(address)), &r, DT_LEFT );
-						}
-						// : File content
-						if (_selectionA<=address && address<_selectionZ) __setEmphasizedPrinting__(dc);
-						else if (pEmp->a<=address && address<pEmp->z) __setSelectionPrinting__(dc);
-						else __setNormalPrinting__(dc);
-						RECT rcHexa=r, rcAscii=r;	rcHexa.left=xHexa, rcAscii.left=xAscii;
-						for( BYTE bytes[BYTES_MAX],n=f->Read(bytes,nBytesInRow),*p=bytes; n--; address++ ){
-							// | choosing colors
+					RECT rcClip;
+						GetClientRect(&rcClip);
+					const int xHexaStart=(addrLength+ADDRESS_SPACE_LENGTH)*font.charAvgWidth, xHexaEnd=xHexaStart+HEXA_FORMAT_LENGTH*nBytesInRow*font.charAvgWidth;
+					const int xAsciiStart=xHexaEnd+HEXA_SPACE_LENGTH*font.charAvgWidth, xAsciiEnd=xAsciiStart+nBytesInRow*font.charAvgWidth;
+					const COLORREF labelColor=TUtils::GetSaturatedColor(::GetSysColor(COLOR_GRAYTEXT),1.7f+.1f*!editable);
+					const CRidePen recordDelimitingHairline( 0, labelColor );
+					const HGDIOBJ hPen0=::SelectObject( dc, recordDelimitingHairline );
+						int address=__firstByteInRowToLogicalPosition__(iRowA), y=HEADER_HEIGHT+iRowFirstToPaint*font.charHeight;
+						f->Seek(address,CFile::begin);
+						const int _selectionA=min(cursor.selectionA,cursor.selectionZ), _selectionZ=max(cursor.selectionZ,cursor.selectionA);
+						PEmphasis pEmp=emphases;
+						while (pEmp->z<address) pEmp=pEmp->pNext; // choosing the first visible Emphasis
+						for( TCHAR buf[16]; iRowA<=iRowZ; iRowA++,y+=font.charHeight ){
+							RECT rcHexa={ /*xHexaStart*/0, y, min(xHexaEnd,rcClip.right), min(y+font.charHeight,rcClip.bottom) }; // commented out as this rectangle also used to paint the Address
+							RECT rcAscii={ xAsciiStart, y, min(xAsciiEnd,rcClip.right), min(y+font.charHeight,rcClip.bottom) };
+							// : address
+							if (addrLength){
+								__setNormalPrinting__(dc);
+								::SetBkColor( dc, ::GetSysColor(COLOR_BTNFACE) );
+								::DrawText( dc, buf, ::wsprintf(buf,ADDRESS_FORMAT,HIWORD(address),LOWORD(address)), &rcHexa, DT_LEFT|DT_TOP );
+							}
+							rcHexa.left=xHexaStart;
+							// : File content
 							if (_selectionA<=address && address<_selectionZ) __setEmphasizedPrinting__(dc);
 							else if (pEmp->a<=address && address<pEmp->z) __setSelectionPrinting__(dc);
 							else __setNormalPrinting__(dc);
-							if (address==pEmp->z) pEmp=pEmp->pNext;
-							// | Hexa
-							int iByte=*p++, c=_stprintf(buf,HEXA_FORMAT,iByte);
-							::DrawText( dc, buf,c, &rcHexa, DT_LEFT|DT_SINGLELINE|DT_VCENTER );
-							rcHexa.left+=c*font.charAvgWidth;
-							// | Ascii
-							if (!::isprint(iByte)) iByte='.'; // if original character not printable, displaying a substitute one
-							::DrawText( dc, (LPCTSTR)&iByte,1, &rcAscii, DT_LEFT|DT_SINGLELINE|DT_VCENTER );
-							rcAscii.left+=font.charAvgWidth;
+							for( BYTE bytes[BYTES_MAX],n=f->Read(bytes,__firstByteInRowToLogicalPosition__(iRowA+1)-address),*p=bytes; n--; address++ ){
+								// | choosing colors
+								if (_selectionA<=address && address<_selectionZ) __setEmphasizedPrinting__(dc);
+								else if (pEmp->a<=address && address<pEmp->z) __setSelectionPrinting__(dc);
+								else __setNormalPrinting__(dc);
+								if (address==pEmp->z) pEmp=pEmp->pNext;
+								// | Hexa
+								const int iByte=*p++;
+								::DrawText( dc, buf, ::wsprintf(buf,HEXA_FORMAT,iByte), &rcHexa, DT_LEFT|DT_TOP );
+								rcHexa.left+=HEXA_FORMAT_LENGTH*font.charAvgWidth;
+								// | Ascii
+								::DrawText(	dc,
+											::isprint(iByte) ? (LPCTSTR)&iByte : _T("."), 1, // if original character not printable, displaying a substitute one
+											&rcAscii, DT_LEFT|DT_TOP
+										);
+								rcAscii.left+=font.charAvgWidth;
+							}
+							// : drawing the record label if the just drawn Row is the record's first Row
+							if (fnQueryRecordLabel){ // yes, the Row can potentially be a record's first Row
+								const int recordIndex=__getRecordIndexThatStartsAtRow__(iRowA);
+								if (recordIndex>=0){
+									TCHAR buf[80];
+									RECT rc={ rcAscii.right+2*font.charAvgWidth, y, rcClip.right, rcClip.bottom };
+									::SetTextColor( dc, labelColor );
+									::SetBkColor( dc, 0xffffff );
+									::DrawText(	dc,
+												fnQueryRecordLabel(recordIndex,buf,sizeof(buf)/sizeof(TCHAR),param), -1,
+												&rc, DT_LEFT|DT_TOP
+											);
+									::MoveToEx( dc, addrLength*font.charAvgWidth, y, NULL );
+									::LineTo( dc, rcClip.right, y );
+								}
+							}
 						}
-					}
-					// . the rest of client area is white
-					const int y=r.bottom;
-					GetClientRect(&r), r.top=y;
+					::SelectObject(dc,hPen0);
+					// : filling the rest of HexaEditor with background color
+					RECT r;
+						GetClientRect(&r);
+						r.top=y;
 					::FillRect( dc, &r, CRideBrush::White );
 				::SelectObject(dc,hFont0);
 				return 0;

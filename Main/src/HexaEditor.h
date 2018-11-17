@@ -3,9 +3,14 @@
 
 	#define HEXAEDITOR_BASE_CLASS	WC_EDIT
 
+	#define HEXAEDITOR_RECORD_SIZE_INFINITE	0x7fffff00
+
 	class CRideFont; // forward
 
 	class CHexaEditor:public CEdit{
+	public:
+		typedef LPCTSTR (* TFnQueryRecordLabel)(int recordIndex,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param);
+	private:
 		class COleBinaryDataSource sealed:public COleDataSource{
 			CFile *const f;
 			const DWORD dataBegin,dataLength;
@@ -26,8 +31,11 @@
 
 		const PVOID param;
 		const CRideFont font;
+		const DWORD recordSize;
+		const TFnQueryRecordLabel fnQueryRecordLabel;
 		BYTE nBytesInRow;
-		DWORD nRowsInTotal;
+		DWORD nRowsPerRecord;
+		DWORD nLogicalRows;
 		DWORD nRowsDisplayed;
 		DWORD nRowsOnPage;
 		HWND hPreviouslyFocusedWnd;
@@ -47,6 +55,9 @@
 		BYTE addrLength; // Address format length (see ADDRESS_FORMAT); modified in ShowAddresses
 		bool editable;
 
+		int __firstByteInRowToLogicalPosition__(int row) const;
+		int __logicalPositionToRow__(int logPos) const;
+		int __getRecordIndexThatStartsAtRow__(int row) const;
 		int __scrollToRow__(int row);
 		void __refreshVertically__();
 		void __setNormalPrinting__(HDC dc);
@@ -55,7 +66,7 @@
 	protected:
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 	public:
-		CHexaEditor(PVOID _param);
+		CHexaEditor(PVOID param,DWORD recordSize=HEXAEDITOR_RECORD_SIZE_INFINITE,TFnQueryRecordLabel fnQueryRecordLabel=NULL);
 
 		void SetEditable(bool _editable);
 		int ShowAddressBand(bool _show);
