@@ -70,10 +70,10 @@
 		}
 	}
 
-	PSectorData CImageRaw::__getBufferedSectorData__(RCPhysicalAddress chs) const{
+	PSectorData CImageRaw::__getBufferedSectorData__(TCylinder cyl,THead head,PCSectorId sectorId) const{
 		// finds and returns buffered data of given Sector (or Null if not yet buffered; note that returning Null does NOT imply that the Sector doesn't exist in corresponding Track!)
-		if (const PSectorData cylinderData=(PSectorData)bufferOfCylinders[chs.cylinder])
-			return cylinderData+(chs.head*nSectors+chs.sectorId.sector-firstSectorNumber)*sectorLength;
+		if (const PSectorData cylinderData=(PSectorData)bufferOfCylinders[cyl])
+			return (PSectorData)cylinderData+(head*nSectors+sectorId->sector-firstSectorNumber)*sectorLength;
 		return NULL;
 	}
 
@@ -95,7 +95,7 @@
 		// saves Track defined by the {Cylinder,Head} pair in PhysicalAddress to the current position in the open file; after saving, the position in the file will advance immediately "after" the just saved Track
 		for( TSector s=0; s<nSectors; s++ ){
 			chs.sectorId.sector=firstSectorNumber+s;
-			const PCSectorData bufferedData=__getBufferedSectorData__(chs);
+			const PCSectorData bufferedData=__getBufferedSectorData__(chs.cylinder,chs.head,&chs.sectorId);
 			if (!pfOtherThanCurrentFile){
 				// saving to Image's underlying file, currently open
 				if (bufferedData)
@@ -177,44 +177,58 @@
 			return 0;
 	}
 
-	PSectorData CImageRaw::GetSectorData(RCPhysicalAddress chs,BYTE,bool,PWORD pSectorLength,TFdcStatus *pFdcStatus){
-		// returns Data of a Sector on a given PhysicalAddress; returns Null iff Sector not found or Track not formatted
-		if (chs.cylinder<nCylinders && chs.head<nHeads && chs.sectorId.cylinder==chs.cylinder && chs.sectorId.side==sideMap[chs.head] && chs.sectorId.sector>=firstSectorNumber && chs.sectorId.lengthCode==sectorLengthCode){
-			const TSector s=chs.sectorId.sector-firstSectorNumber;
-			if (s<nSectors){
-				*pSectorLength=sectorLength, *pFdcStatus=TFdcStatus::WithoutError; // any Data with the same length and without error
-				// . trying to get Sector's Data from Buffer
-				if (const PSectorData bufferedData=__getBufferedSectorData__(chs))
-					return bufferedData;
-				// . buffering the Cylinder that contains the requested Sector
-				const DWORD nBytesOfTrack=nSectors*sectorLength, nBytesOfCylinder=nHeads*nBytesOfTrack;
-				if (const PVOID p=bufferOfCylinders[chs.cylinder]=::malloc(nBytesOfCylinder)){
-					DWORD nBytesRead;
-					switch (trackAccessScheme){
-						case TTrackScheme::BY_CYLINDERS:
-							f.Seek( chs.cylinder*nBytesOfCylinder, CFile::begin );
-							nBytesRead=f.Read(p,nBytesOfCylinder);
-							break;
-						case TTrackScheme::BY_SIDES:
-							nBytesRead=0;
-							for( THead head=0; head<nHeads; head++ ){
-								f.Seek( (head*nCylinders+chs.cylinder)*nBytesOfTrack, CFile::begin );
-								nBytesRead+=f.Read((PBYTE)p+head*nBytesOfTrack,nBytesOfTrack);
+	void CImageRaw::GetTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses){
+		// populates output buffers with specified Sectors' data, usable lengths, and FDC statuses; ALWAYS attempts to buffer all Sectors - caller is then to sort out eventual read errors (by observing the FDC statuses); caller can call ::GetLastError to discover the error for the last Sector in the input list
+		ASSERT( outBufferData!=NULL && outBufferLengths!=NULL && outFdcStatuses!=NULL );
+		TStdWinError err=ERROR_SUCCESS; // assumption (all Sectors data retrieved successfully)
+		if (cyl<nCylinders && head<nHeads)
+			while (nSectors>0){
+				const TSectorId sectorId=*bufferId;
+				if (sectorId.cylinder==cyl && sectorId.side==sideMap[head] && sectorId.sector>=firstSectorNumber && sectorId.sector-firstSectorNumber<this->nSectors && sectorId.lengthCode==sectorLengthCode){
+					// Sector with the given ID found in the Track
+					if (const PSectorData bufferedData=__getBufferedSectorData__(cyl,head,&sectorId)){
+						// Sector's Data successfully retrieved from the buffer
+						*outBufferData++=bufferedData;
+						*outBufferLengths++=sectorLength, *outFdcStatuses++=TFdcStatus::WithoutError; // any Data are of the same length and without error
+					}else{
+						// Sector not yet buffered - buffering the Cylinder that contains the requested Sector
+						const DWORD nBytesOfTrack=this->nSectors*sectorLength, nBytesOfCylinder=nHeads*nBytesOfTrack;
+						if (const PVOID p=bufferOfCylinders[cyl]=::malloc(nBytesOfCylinder)){
+							DWORD nBytesRead;
+							switch (trackAccessScheme){
+								case TTrackScheme::BY_CYLINDERS:
+									f.Seek( cyl*nBytesOfCylinder, CFile::begin );
+									nBytesRead=f.Read(p,nBytesOfCylinder);
+									break;
+								case TTrackScheme::BY_SIDES:
+									nBytesRead=0;
+									for( THead head=0; head<nHeads; head++ ){
+										f.Seek( (head*nCylinders+cyl)*nBytesOfTrack, CFile::begin );
+										nBytesRead+=f.Read((PBYTE)p+head*nBytesOfTrack,nBytesOfTrack);
+									}
+									break;
+								default:
+									ASSERT(FALSE);
 							}
-							break;
-						default:
-							ASSERT(FALSE);
+							::memset( (PBYTE)p+nBytesRead, 0, nBytesOfCylinder-nBytesRead ); // what's left unread is zeroed
+							continue; // reattempting to read the Sector from the just buffered Cylinder
+						}else{
+							err=ERROR_NOT_ENOUGH_MEMORY; // buffering of the Cylinder failed
+							goto trackNotFound;
+						}
 					}
-					::memset( (PBYTE)p+nBytesRead, 0, nBytesOfCylinder-nBytesRead );
-					return __getBufferedSectorData__(chs);
 				}else{
-					::SetLastError(ERROR_NOT_ENOUGH_MEMORY);
-					return NULL;
+					// Sector with the given ID not found in the Track
+					*outBufferData++=NULL;
+					outBufferLengths++, *outFdcStatuses++=TFdcStatus::SectorNotFound;
 				}
+				nSectors--, bufferId++;
 			}
-		}
-		::SetLastError(ERROR_SECTOR_NOT_FOUND);
-		return NULL;
+		else
+trackNotFound:
+			while (nSectors-->0)
+				*outBufferData++=NULL, *outFdcStatuses++=TFdcStatus::SectorNotFound;
+		::SetLastError( *--outBufferData ? err : ERROR_SECTOR_NOT_FOUND );
 	}
 
 	TStdWinError CImageRaw::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE,PCFdcStatus pFdcStatus){

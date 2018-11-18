@@ -8,7 +8,7 @@
 		TSector nSectors,firstSectorNumber;
 		BYTE sectorLengthCode;	WORD sectorLength;
 
-		PSectorData __getBufferedSectorData__(RCPhysicalAddress chs) const;
+		PSectorData __getBufferedSectorData__(TCylinder cyl,THead head,PCSectorId sectorId) const;
 		void __saveTrackToCurrentPositionInFile__(CFile *pfOtherThanCurrentFile,TPhysicalAddress chs);
 	protected:
 		TTrackScheme trackAccessScheme;
@@ -32,7 +32,7 @@
 		TCylinder GetCylinderCount() const override;
 		THead GetNumberOfFormattedSides(TCylinder cyl) const override;
 		TSector ScanTrack(TCylinder cyl,THead head,PSectorId bufferId,PWORD bufferLength) const override;
-		PSectorData GetSectorData(RCPhysicalAddress chs,BYTE,bool,PWORD pSectorLength,TFdcStatus *pFdcStatus) override;
+		void GetTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses) override;
 		TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE,PCFdcStatus pFdcStatus) override;
 		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
 		void EditSettings() override;

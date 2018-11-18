@@ -39,11 +39,12 @@
 
 
 
-	PSectorData CSpectrumDos::CTape::GetSectorData(RCPhysicalAddress chs,BYTE nSectorsToSkip,bool recoverFromError,PWORD sectorLength,TFdcStatus *pFdcStatus){
-		// returns Data of a Sector on a given PhysicalAddress; returns Null if Sector not found or Track not formatted
-		*sectorLength=formatBoot.sectorLength;
-		*pFdcStatus=TFdcStatus::WithoutError;
-		return chs.cylinder<fileManager.nFiles ? &fileManager.files[chs.cylinder]->data : NULL;
+	void CSpectrumDos::CTape::GetTrackData(TCylinder cyl,THead,PCSectorId,PCBYTE,TSector,bool,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses){
+		// populates output buffers with specified Sectors' data, usable lengths, and FDC statuses; ALWAYS attempts to buffer all Sectors - caller is then to sort out eventual read errors (by observing the FDC statuses); caller can call ::GetLastError to discover the error for the last Sector in the input list
+		ASSERT( outBufferData!=NULL && outBufferLengths!=NULL && outFdcStatuses!=NULL );
+		*outBufferData= cyl<fileManager.nFiles ? &fileManager.files[cyl]->data : NULL;
+		*outBufferLengths=formatBoot.sectorLength;
+		*outFdcStatuses=TFdcStatus::WithoutError;
 	}
 
 

@@ -23,6 +23,14 @@ namespace TUtils{
 		LPCTSTR commandCaption;
 	} *PCSplitButtonAction;
 
+	class CByteIdentity sealed{
+		BYTE values[(BYTE)-1+1];
+	public:
+		CByteIdentity();
+
+		operator PCBYTE() const;
+	};
+
 	extern const float LogicalUnitScaleFactor;
 
 	PTCHAR __formatErrorCode__(PTCHAR buf,TStdWinError errCode);

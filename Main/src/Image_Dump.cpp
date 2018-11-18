@@ -159,6 +159,7 @@ terminateWithError:
 			} acceptance;
 		} p;
 		::ZeroMemory(&p,sizeof(p));
+		const TUtils::CByteIdentity sectorIdAndPositionIdentity;
 		for( p.chs.cylinder=dp.cylinderA; p.chs.cylinder<=dp.cylinderZ; pAction->UpdateProgress(++p.chs.cylinder-dp.cylinderA) )
 			for( p.chs.head=0; p.chs.head<dp.nHeads; p.chs.head++ ){
 				if (!pAction->bContinue) return LOG_ERROR(ERROR_CANCELLED);
@@ -175,25 +176,23 @@ terminateWithError:
 					TDumpParams::TSourceSectorError buffer[(TSector)-1];
 				} erroneousSectors;
 				erroneousSectors.n=0;
-				#pragma pack(1)
-				struct TSourceSector sealed{
-					PSectorData data;
-					WORD dataLength;
-				} sourceSectors[(TSector)-1],*pSrcSector=sourceSectors;
-				TFdcStatus bufferFdcStatus[(TSector)-1],*pFdcStatus=bufferFdcStatus;
+				PSectorData bufferSectorData[(TSector)-1];
+				TFdcStatus bufferFdcStatus[(TSector)-1];
 {LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("reading source"));
+				dp.source->GetTrackData( p.chs.cylinder, p.chs.head, bufferId, sectorIdAndPositionIdentity, nSectors, true, bufferSectorData, bufferLength, bufferFdcStatus ); // reading healthy Sectors (unhealthy ones read individually below)
 				for( TSector s=0; s<nSectors; ){
 					// : reading SourceSector
 					p.chs.sectorId=bufferId[s];
 					LOG_SECTOR_ACTION(&p.chs.sectorId,_T("reading"));
-					pSrcSector->data=dp.source->GetSectorData( p.chs, s, true, &pSrcSector->dataLength, pFdcStatus );
+					bufferSectorData[s]=dp.source->GetSectorData( p.chs, s, true, bufferLength+s, bufferFdcStatus+s );
 					// : reporting SourceSector Errors if A&B, A = automatically not accepted Errors exist, B = Error reporting for current Track is enabled
-					if (pFdcStatus->ToWord()&~p.acceptance.automaticallyAcceptedErrors && !p.acceptance.remainingErrorsOnTrack){
+					if (bufferFdcStatus[s].ToWord()&~p.acceptance.automaticallyAcceptedErrors && !p.acceptance.remainingErrorsOnTrack){
 						// | Dialog definition
 						class CErroneousSectorDialog sealed:public CDialog{
 							const TDumpParams &dp;
 							TParams &rp;
-							const TSourceSector &rss;
+							const PSectorData sectorData;
+							const WORD sectorLength;
 							TFdcStatus &rFdcStatus;
 
 							void PreInitDialog() override{
@@ -340,7 +339,7 @@ terminateWithError:
 													switch (d.dataFieldRecoveryType){
 														case 2:
 															// replacing data with SubstituteByte
-															::memset( rss.data, d.dataFieldSubstituteFillerByte, rss.dataLength );
+															::memset( sectorData, d.dataFieldSubstituteFillerByte, sectorLength );
 															//fallthrough
 														case 1:
 															// recovering CRC
@@ -357,12 +356,12 @@ terminateWithError:
 								return CDialog::WindowProc(msg,wParam,lParam);
 							}
 						public:
-							CErroneousSectorDialog(const TDumpParams &dp,TParams &_rParams,const TSourceSector &_rss,TFdcStatus &_rFdcStatus)
+							CErroneousSectorDialog(const TDumpParams &dp,TParams &_rParams,PSectorData sectorData,WORD sectorLength,TFdcStatus &rFdcStatus)
 								// ctor
 								: CDialog(IDR_IMAGE_DUMP_ERROR)
-								, dp(dp) , rp(_rParams) , rss(_rss) , rFdcStatus(_rFdcStatus) {
+								, dp(dp) , rp(_rParams) , sectorData(sectorData) , sectorLength(sectorLength) , rFdcStatus(rFdcStatus) {
 							}
-						} d(dp,p,*pSrcSector,*pFdcStatus);
+						} d(dp,p,bufferSectorData[s],bufferLength[s],bufferFdcStatus[s]);
 						// | showing the Dialog and processing its result
 						LOG_DIALOG_DISPLAY(_T("CErroneousSectorDialog"));
 						switch (LOG_DIALOG_RESULT(d.DoModal())){
@@ -373,12 +372,12 @@ terminateWithError:
 								continue;
 						}
 					}
-					if (!pFdcStatus->IsWithoutError()){
+					if (!bufferFdcStatus[s].IsWithoutError()){
 						TDumpParams::TSourceSectorError *const psse=&erroneousSectors.buffer[erroneousSectors.n++];
-						psse->id=p.chs.sectorId, psse->fdcStatus=*pFdcStatus;
+						psse->id=p.chs.sectorId, psse->fdcStatus=bufferFdcStatus[s];
 					}
 					// : next SourceSector
-					s++, pSrcSector++, pFdcStatus++;
+					s++;
 				}
 }
 				p.acceptance.remainingErrorsOnTrack=false; // "True" valid only for Track it was set on
@@ -393,14 +392,14 @@ reformatTrack:		if ( err=dp.target->FormatTrack(p.chs.cylinder,p.chs.head,nSecto
 }
 				// . writing to Target Track
 {LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("writing to Target Track"));
-				pSrcSector=sourceSectors, pFdcStatus=bufferFdcStatus;
+				dp.target->BufferTrackData( p.chs.cylinder, p.chs.head, bufferId, sectorIdAndPositionIdentity, nSectors, true ); // make Sectors data ready for IMMEDIATE usage
 				for( BYTE s=0; s<nSectors; ){
-					if (!pFdcStatus->DescribesMissingDam()){
-						p.chs.sectorId=bufferId[s]; WORD w; TFdcStatus sr;
+					if (!bufferFdcStatus[s].DescribesMissingDam()){
+						p.chs.sectorId=bufferId[s]; WORD w;
 						LOG_SECTOR_ACTION(&p.chs.sectorId,_T("writing"));
-						if (const PSectorData targetData=dp.target->GetSectorData(p.chs,s,true,&w,&sr)){
-							::memcpy( targetData, pSrcSector->data, bufferLength[s] );
-							if (( err=dp.target->MarkSectorAsDirty(p.chs,s,pFdcStatus) )!=ERROR_SUCCESS)
+						if (const PSectorData targetData=dp.target->GetSectorData(p.chs,s,true,&w,&TFdcStatus())){
+							::memcpy( targetData, bufferSectorData[s], bufferLength[s] );
+							if (( err=dp.target->MarkSectorAsDirty(p.chs,s,bufferFdcStatus+s) )!=ERROR_SUCCESS)
 								goto errorDuringWriting;
 						}else{
 							err=::GetLastError();
@@ -413,7 +412,7 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 							}
 						}
 					}
-					s++, pSrcSector++, pFdcStatus++; // cannot include in the FOR clause - see Continue statement in the cycle
+					s++; // cannot include in the FOR clause - see Continue statement in the cycle
 				}
 				// . registering Track with ErroneousSectors
 //TUtils::Information("registering Track with ErroneousSectors");

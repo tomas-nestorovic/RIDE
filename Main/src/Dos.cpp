@@ -331,9 +331,11 @@ reportError:TUtils::Information(buf);
 			statistics.nTracks++, statistics.nSectorsInTotal+=nSectors;
 			// . verifying Tracks by trying to read their formatted Sectors
 			if (fp.dos->image->RequiresFormattedTracksVerification()){
-				TPhysicalAddress chs={ cyl, head };
-				for( PCSectorId pId=fp.bufferId; nSectors--; statistics.nSectorsBad+=fp.dos->image->GetSectorData(chs)==NULL )
-					chs.sectorId=*pId++;
+				// : buffering Sectors from the same Track by the underlying Image, making them ready for IMMEDIATE usage
+				fp.dos->image->BufferTrackData( cyl, head, fp.bufferId, TUtils::CByteIdentity(), nSectors, false );
+				// : verifying formatted Sectors
+				WORD w;
+				for( PCSectorId pId=fp.bufferId; nSectors--; statistics.nSectorsBad+=fp.dos->image->GetSectorData(cyl,head,pId++,&w)==NULL );
 			}
 		}
 		if (fp.showReport){
@@ -462,30 +464,35 @@ reportError:TUtils::Information(buf);
 	};
 	UINT AFX_CDECL CDos::__fillEmptySpace_thread__(PVOID _pCancelableAction){
 		// thread to flood selected types of empty space on disk
+		LOG_ACTION(_T("Fill empty space"));
 		const TBackgroundActionCancelable *const pAction=(TBackgroundActionCancelable *)_pCancelableAction;
 		TFillEmptySpaceParams fesp=*(TFillEmptySpaceParams *)pAction->fnParams;
 		const PImage image=fesp.dos->image;
 		// - filling all Empty Sectors
-		if (fesp.rd.fillEmptySectors){
-			TCylinder nCylinders=image->GetCylinderCount();
-			TPhysicalAddress chs;
-			for( chs.cylinder=0; chs.cylinder<nCylinders; pAction->UpdateProgress(++chs.cylinder) )
-				for( chs.head=fesp.dos->formatBoot.nHeads; chs.head--; ){
+		if (fesp.rd.fillEmptySectors)
+			for( TCylinder cyl=0,const nCylinders=image->GetCylinderCount(); cyl<nCylinders; pAction->UpdateProgress(++cyl) )
+				for( THead head=fesp.dos->formatBoot.nHeads; head--; ){
 					if (!pAction->bContinue) return ERROR_CANCELLED;
-					TSectorId bufferId[(TSector)-1],*pId=bufferId;
-					TSector n=fesp.dos->__getListOfStdSectors__(chs.cylinder,chs.head,bufferId);
+					// : determining standard Empty Sectors
+					TSectorId bufferId[(TSector)-1],*pId=bufferId,*pEmptyId=bufferId;
+					TSector nSectors=fesp.dos->__getListOfStdSectors__(cyl,head,bufferId);
 					TSectorStatus statuses[(TSector)-1],*ps=statuses;
-					for( fesp.dos->GetSectorStatuses(chs.cylinder,chs.head,n,bufferId,statuses); n--; pId++ )
-						if (*ps++==TSectorStatus::EMPTY){
-							chs.sectorId=*pId;	WORD w;
-							if (const PSectorData data=image->GetSectorData(chs,&w)){
-								::memset( data, fesp.rd.sectorFillerByte, w );
-								image->MarkSectorAsDirty(chs);
-							}//else
-								//TODO: warning on Sector unreadability
-						}
+					for( fesp.dos->GetSectorStatuses(cyl,head,nSectors,bufferId,statuses); nSectors-->0; pId++ )
+						if (*ps++==TSectorStatus::EMPTY)
+							*pEmptyId++=*pId;
+					// : buffering Sectors from the same Track by the underlying Image, making them ready for IMMEDIATE usage
+					fesp.dos->image->BufferTrackData( cyl, head, bufferId, TUtils::CByteIdentity(), pEmptyId-bufferId, true );
+					// : filling all Empty Sectors
+					TPhysicalAddress chs={ cyl, head };
+					for( WORD w; pEmptyId>bufferId; ){
+						chs.sectorId=*--pEmptyId;
+						if (const PSectorData data=image->GetSectorData(chs,&w)){
+							::memset( data, fesp.rd.sectorFillerByte, w );
+							image->MarkSectorAsDirty(chs);
+						}//else
+							//TODO: warning on Sector unreadability
+					}
 				}
-		}
 		// - filling empty space in each File's last Sector (WARNING: It's assumed that "dot" and "dotdot"-like DirectoryEntries are disabled to prevent from unfinite looping!)
 		if (fesp.rd.fillFileEndings){
 			const WORD nDataBytesInSector=fesp.dos->formatBoot.sectorLength-fesp.dos->properties->dataBeginOffsetInSector-fesp.dos->properties->dataEndOffsetInSector;
@@ -701,18 +708,30 @@ reportError:TUtils::Information(buf);
 			nDataBytesToExport=min(nDataBytesToExport,nMaxDataBytesToExport);
 			div_t d=div((int)nBytesReservedBeforeData,(int)formatBoot.sectorLength-properties->dataBeginOffsetInSector-properties->dataEndOffsetInSector);
 			item+=d.quot, n-=d.quot; // skipping Sectors from which not read thanks to the NumberOfBytesReservedBeforeData
-			for( WORD w; n--; item++ )
-				if (const PCSectorData sectorData=image->GetSectorData(item->chs,&w)){
-					w-=d.rem+properties->dataBeginOffsetInSector+properties->dataEndOffsetInSector;
-					if (w<nDataBytesToExport){
-						fOut->Write(sectorData+properties->dataBeginOffsetInSector+d.rem,w);
-						nDataBytesToExport-=w, d.rem=0;
-					}else{
-						fOut->Write(sectorData+properties->dataBeginOffsetInSector+d.rem,nDataBytesToExport);
-						break;
-					}
-				}else
-					return LOG_MESSAGE(_T("Data sector not found or read with CRC error."));
+			for( const TUtils::CByteIdentity sectorIdAndPositionIdentity; n; ){
+				// . determining which of nearest Sectors are on the same Track
+				TSectorId bufferId[(TSector)-1];
+				TSector nSectors=0;
+				const TCylinder currCyl=item->chs.cylinder;	const THead currHead=item->chs.head;
+				while (n && item->chs.cylinder==currCyl && item->chs.head==currHead)
+					bufferId[nSectors++]=item->chs.sectorId, item++, n--;
+				// . buffering Sectors from the same Track by the underlying Image, making them ready for IMMEDIATE usage
+				image->BufferTrackData( currCyl, currHead, bufferId, sectorIdAndPositionIdentity, nSectors, true ); // make Sectors data ready for IMMEDIATE usage
+				// . reading Sectors from the same Track in the underlying Image
+				WORD w;
+				for( TSector s=0; s<nSectors; s++ )
+					if (const PCSectorData sectorData=image->GetSectorData(currCyl,currHead,bufferId+s,0,true,&w,&TFdcStatus())){
+						w-=d.rem+properties->dataBeginOffsetInSector+properties->dataEndOffsetInSector;
+						if (w<nDataBytesToExport){
+							fOut->Write(sectorData+properties->dataBeginOffsetInSector+d.rem,w);
+							nDataBytesToExport-=w, d.rem=0;
+						}else{
+							fOut->Write(sectorData+properties->dataBeginOffsetInSector+d.rem,nDataBytesToExport);
+							break;
+						}
+					}else
+						return LOG_MESSAGE(_T("Data sector not found or read with CRC error."));
+			}
 		}
 		return NULL;
 	}
@@ -847,44 +866,53 @@ reportError:TUtils::Information(buf);
 				ASSERT(FALSE);
 		}
 		// - importing the File to disk and recording its FatPath
+		const TUtils::CByteIdentity sectorIdAndPositionIdentity;
 		CFatPath::TItem item;
 		//item.value=TSectorStatus::OCCUPIED; // commented out as all Sectors in the FatPath are Occupied except for the last Sector
 		for( THead headA=0; headZ<formatBoot.nHeads; headA++,headZ++ )
 			for( item.chs.cylinder=GetFirstCylinderWithEmptySector(); item.chs.cylinder<formatBoot.nCylinders; item.chs.cylinder++ )
 				for( item.chs.head=headA; item.chs.head<=headZ; item.chs.head++ ){
+					// . getting the list of standard Sectors
 					TSectorId bufferId[(TSector)-1],*pId=bufferId;
-					TSector nSectors=__getListOfStdSectors__( item.chs.cylinder, item.chs.head, bufferId );
+					const TSector nSectors=__getListOfStdSectors__( item.chs.cylinder, item.chs.head, bufferId );
+					// . filtering out only Empty standard Sectors
 					TSectorStatus statuses[(TSector)-1],*ps=statuses;
 					GetSectorStatuses( item.chs.cylinder, item.chs.head, nSectors, bufferId, statuses );
-					for( WORD w; nSectors--; pId++ )
-						if (*ps++==TSectorStatus::EMPTY){
-							item.chs.sectorId=*pId;
-							if (const PSectorData sectorData=image->GetSectorData(item.chs,&w)){
-								w-=properties->dataBeginOffsetInSector+properties->dataEndOffsetInSector;
-								if (w<fileSize){
-									f->Read(sectorData+properties->dataBeginOffsetInSector,w);
-									fileSize-=w;
-									//image->MarkSectorAsDirty(...); // commented out as carried out below if whole import successfull
-									//item.value=TSectorStatus::OCCUPIED; // commented out as set already above
-									rFatPath.AddItem(&item);
-								}else if (!fileSize){ // zero-length File
-									item.value=TSectorStatus::RESERVED;
-									rFatPath.AddItem(&item);
-									goto finished;
-								}else{
-									f->Read(sectorData+properties->dataBeginOffsetInSector,fileSize);
-									if (w==fileSize) fileSize=0;
-									//image->MarkSectorAsDirty(...); // commented out as carried out below if whole import successfull
-									item.value=fileSize;
-									rFatPath.AddItem(&item);
-									goto finished;
-								}
-							}else{ // error when accessing discovered Empty Sector
-								err=::GetLastError();
-								DeleteFile(rFile); // removing the above added File record from current Directory
-								return LOG_ERROR(err);
+					TSector nEmptySectors=0;
+					for( TSector s=0; s<nSectors; s++ )
+						if (*ps++==TSectorStatus::EMPTY)
+							bufferId[nEmptySectors++]=bufferId[s];
+					// . buffering Sectors from the same Track by the underlying Image, making them ready for IMMEDIATE usage
+					image->BufferTrackData( item.chs.cylinder, item.chs.head, bufferId, sectorIdAndPositionIdentity, nEmptySectors, true );
+					// . importing the File to Empty Sectors on the current Track
+					for( WORD w; nEmptySectors--; ){
+						item.chs.sectorId=*pId++;
+						if (const PSectorData sectorData=image->GetSectorData(item.chs,&w)){
+							w-=properties->dataBeginOffsetInSector+properties->dataEndOffsetInSector;
+							if (w<fileSize){
+								f->Read(sectorData+properties->dataBeginOffsetInSector,w);
+								fileSize-=w;
+								//image->MarkSectorAsDirty(...); // commented out as carried out below if whole import successfull
+								//item.value=TSectorStatus::OCCUPIED; // commented out as set already above
+								rFatPath.AddItem(&item);
+							}else if (!fileSize){ // zero-length File
+								item.value=TSectorStatus::RESERVED;
+								rFatPath.AddItem(&item);
+								goto finished;
+							}else{
+								f->Read(sectorData+properties->dataBeginOffsetInSector,fileSize);
+								if (w==fileSize) fileSize=0;
+								//image->MarkSectorAsDirty(...); // commented out as carried out below if whole import successfull
+								item.value=fileSize;
+								rFatPath.AddItem(&item);
+								goto finished;
 							}
+						}else{ // error when accessing discovered Empty Sector
+							err=::GetLastError();
+							DeleteFile(rFile); // removing the above added File record from current Directory
+							return LOG_ERROR(err);
 						}
+					}
 				}
 finished:
 		CFatPath::PCItem p;	DWORD n;

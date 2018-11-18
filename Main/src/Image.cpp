@@ -74,6 +74,7 @@
 
 
 	const TFdcStatus TFdcStatus::WithoutError;
+	const TFdcStatus TFdcStatus::SectorNotFound( FDC_ST1_DATA_ERROR, FDC_ST2_CRC_ERROR_IN_DATA );
 
 	TFdcStatus::TFdcStatus()
 		// ctor
@@ -475,13 +476,39 @@
 		return true;
 	}
 
-	PSectorData CImage::GetSectorData(RCPhysicalAddress chs,PWORD sectorLength){
+	void CImage::BufferTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors){
+		// buffers Sectors in the same Track by the underlying Image, making them ready for IMMEDIATE usage - later than immediate calls to GetSectorData may be slower
+		LOG_TRACK_ACTION(cyl,head,_T("void CImage::BufferTrackData"));
+		PVOID dummyBuffer[(TSector)-1];
+		GetTrackData( cyl, head, bufferId, bufferNumbersOfSectorsToSkip, nSectors, true, (PSectorData *)dummyBuffer, (PWORD)dummyBuffer, (TFdcStatus *)dummyBuffer ); // "DummyBuffer" = throw away any outputs
+	}
+
+	PSectorData CImage::GetSectorData(TCylinder cyl,THead head,PCSectorId pid,BYTE nSectorsToSkip,bool silentlyRecoverFromError,PWORD sectorLength,TFdcStatus *pFdcStatus){
+		// returns Data of a Sector on a given PhysicalAddress; returns Null if Sector not found or Track not formatted
+		PSectorData data;
+		GetTrackData( cyl, head, pid, &nSectorsToSkip, 1, silentlyRecoverFromError, &data, sectorLength, pFdcStatus );
+		return data;
+	}
+
+	PSectorData CImage::GetSectorData(RCPhysicalAddress chs,BYTE nSectorsToSkip,bool silentlyRecoverFromError,PWORD sectorLength,TFdcStatus *pFdcStatus){
+		// returns Data of a Sector on a given PhysicalAddress; returns Null if Sector not found or Track not formatted
+		PSectorData data;
+		GetTrackData( chs.cylinder, chs.head, &chs.sectorId, &nSectorsToSkip, 1, silentlyRecoverFromError, &data, sectorLength, pFdcStatus );
+		return data;
+	}
+
+	PSectorData CImage::GetSectorData(TCylinder cyl,THead head,PCSectorId pid,PWORD sectorLength){
 		// returns Data of a Sector on a given PhysicalAddress; returns Null if Sector not found or Track not formatted
 		TFdcStatus st;
-		if (const PSectorData data=GetSectorData(chs,0,true,sectorLength,&st))
+		if (const PSectorData data=GetSectorData(cyl,head,pid,0,true,sectorLength,&st))
 			return st.IsWithoutError() ? data : NULL; // Data must be either without error, or none
 		else
 			return NULL; // Sector not found
+	}
+
+	PSectorData CImage::GetSectorData(RCPhysicalAddress chs,PWORD sectorLength){
+		// returns Data of a Sector on a given PhysicalAddress; returns Null if Sector not found or Track not formatted
+		return GetSectorData(chs.cylinder,chs.head,&chs.sectorId,sectorLength);
 	}
 
 	PSectorData CImage::GetSectorData(RCPhysicalAddress chs){

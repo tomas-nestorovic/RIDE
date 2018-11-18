@@ -232,24 +232,36 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			return 0;
 	}
 
-	PSectorData CDsk5::GetSectorData(RCPhysicalAddress chs,BYTE nSectorsToSkip,bool,PWORD sectorLength,TFdcStatus *pFdcStatus){
-		// returns Data of a Sector on a given PhysicalAddress; returns Null iff Sector not found or Track not formatted
-		if (const PTrackInfo ti=__findTrack__(chs.cylinder,chs.head)){
-			PSectorData result=(PSectorData)(ti+1);
-			const TSectorInfo *si=ti->sectorInfo;
-			for( TSector n=ti->nSectors; n--; result+=__getSectorLength__(si++) )
-				if (!nSectorsToSkip){ 
-					if (*si==chs.sectorId){ // Sector IDs are equal
-						*sectorLength=__getSectorLength__(si);
-						return	!( *pFdcStatus=si->fdcStatus ).DescribesMissingDam()
-								? result
-								: NULL;
-					}
-				}else
-					nSectorsToSkip--;
-		}
-		::SetLastError(ERROR_SECTOR_NOT_FOUND);
-		return NULL;
+	void CDsk5::GetTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses){
+		// populates output buffers with specified Sectors' data, usable lengths, and FDC statuses; ALWAYS attempts to buffer all Sectors - caller is then to sort out eventual read errors (by observing the FDC statuses); caller can call ::GetLastError to discover the error for the last Sector in the input list
+		ASSERT( outBufferData!=NULL && outBufferLengths!=NULL && outFdcStatuses!=NULL );
+		if (const PTrackInfo ti=__findTrack__(cyl,head))
+			for( const PSectorData trackDataStart=(PSectorData)(ti+1); nSectors-->0; ){
+				const TSectorId sectorId=*bufferId++;
+				PSectorData result=trackDataStart;
+				const TSectorInfo *si=ti->sectorInfo;
+				TSector n=ti->nSectors;
+				for( BYTE nSectorsToSkip=*bufferNumbersOfSectorsToSkip++; n>0; n--,result+=__getSectorLength__(si++) )
+					if (nSectorsToSkip)
+						nSectorsToSkip--;
+					else if (*si==sectorId) // Sector IDs are equal
+						break;
+				if (n>0){
+					// Sector with given ID found in the Track
+					*outBufferData++ =	!( *outFdcStatuses++=si->fdcStatus ).DescribesMissingDam()
+										? result
+										: NULL;
+					*outBufferLengths++=__getSectorLength__(si);
+				}else{
+					// Sector with given ID not found in the Track
+					*outBufferData++=NULL, *outFdcStatuses++=TFdcStatus::SectorNotFound;
+					outBufferLengths++;
+				}
+			}
+		else
+			while (nSectors-->0)
+				*outBufferData++=NULL, *outFdcStatuses++=TFdcStatus::SectorNotFound;
+		::SetLastError( *--outBufferData ? ERROR_SUCCESS : ERROR_SECTOR_NOT_FOUND );
 	}
 
 	TStdWinError CDsk5::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus){

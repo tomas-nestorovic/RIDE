@@ -27,6 +27,7 @@
 		// thread to copy Tracks
 		TBackgroundActionCancelable *pAction=(TBackgroundActionCancelable *)_pCancelableAction;
 		TPatchParams &pp=*(TPatchParams *)pAction->fnParams;
+		const TUtils::CByteIdentity sectorIdAndPositionIdentity;
 		TPhysicalAddress chs;
 		for( chs.cylinder=pp.cylinderA; chs.cylinder<=pp.cylinderZ; pAction->UpdateProgress(++chs.cylinder-pp.cylinderA) )
 			for( chs.head=0; chs.head<pp.nHeads; chs.head++ ){
@@ -38,28 +39,26 @@
 				if (!nSectors && pp.skipEmptySourceTracks==BST_CHECKED)
 					continue; // skipping empty Source Track
 				// . reading Source Track
-				#pragma pack(1)
-				struct TSourceSector sealed{
-					PSectorData data;
-					WORD dataLength;
-				} sourceSectors[(TSector)-1],*pSrcSector=sourceSectors;
-				TFdcStatus bufferFdcStatus[(TSector)-1],*pFdcStatus=bufferFdcStatus;
-				for( TSector s=0; s<nSectors; s++,pSrcSector++,pFdcStatus++ ){
+				PSectorData bufferSectorData[(TSector)-1];
+				TFdcStatus bufferFdcStatus[(TSector)-1];
+				pp.source->GetTrackData( chs.cylinder, chs.head, bufferId, sectorIdAndPositionIdentity, nSectors, true, bufferSectorData, bufferLength, bufferFdcStatus );
+				for( TSector s=0; s<nSectors; s++ ){
 					chs.sectorId=bufferId[s];
-					pSrcSector->data=pp.source->GetSectorData( chs, s, false, &pSrcSector->dataLength, pFdcStatus );
+					bufferSectorData[s]=pp.source->GetSectorData( chs, s, false, bufferLength+s, bufferFdcStatus+s );
 				}
 				// . formatting Target Track
 				TStdWinError err=pp.target->FormatTrack(chs.cylinder,chs.head,nSectors,bufferId,bufferLength,bufferFdcStatus,pp.gap3,0x00);
 				if (err!=ERROR_SUCCESS)
 terminateWithError:	return pAction->TerminateWithError(err);
 				// . writing to Target Track
-				pSrcSector=sourceSectors, pFdcStatus=bufferFdcStatus;
+				PVOID dummyBuffer[(TSector)-1];
+				pp.target->GetTrackData( chs.cylinder, chs.head, bufferId, sectorIdAndPositionIdentity, nSectors, true, (PSectorData *)dummyBuffer, (PWORD)dummyBuffer, (TFdcStatus *)dummyBuffer ); // "DummyBuffer" = throw away any outputs
 				for( BYTE s=0; s<nSectors; ){
-					if (!pFdcStatus->DescribesMissingDam()){
+					if (!bufferFdcStatus[s].DescribesMissingDam()){
 						chs.sectorId=bufferId[s]; WORD w;
 						if (const PSectorData targetData=pp.target->GetSectorData(chs,s,true,&w,&TFdcStatus())){
-							::memcpy( targetData, pSrcSector->data, bufferLength[s] );
-							if (( err=pp.target->MarkSectorAsDirty(chs,s,pFdcStatus) )!=ERROR_SUCCESS)
+							::memcpy( targetData, bufferSectorData[s], bufferLength[s] );
+							if (( err=pp.target->MarkSectorAsDirty(chs,s,bufferFdcStatus+s) )!=ERROR_SUCCESS)
 								goto errorDuringWriting;
 						}else{
 							err=::GetLastError();
@@ -72,7 +71,7 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 							}
 						}
 					}
-					s++, pSrcSector++, pFdcStatus++; // cannot include in the FOR clause - see Continue statement in the cycle
+					s++; // cannot include in the FOR clause - see Continue statement in the cycle
 				}
 			}
 		return ERROR_SUCCESS;

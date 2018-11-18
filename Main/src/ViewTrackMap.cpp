@@ -97,7 +97,7 @@
 		TCylinder cylinder;	THead head;
 		TSector nSectors;
 		TSectorId bufferId[(TSector)-1];
-		PCSectorData bufferSectorData[(TSector)-1];
+		PSectorData bufferSectorData[(TSector)-1];
 		WORD bufferLength[(TSector)-1];
 	};
 	UINT AFX_CDECL CTrackMapView::TTrackScanner::__thread__(PVOID _pBackgroundAction){
@@ -106,6 +106,7 @@
 		CTrackMapView *const pvtm=(CTrackMapView *)pAction->fnParams;
 		TTrackScanner &rts=pvtm->scanner;
 		const PImage image=pvtm->IMAGE;
+		const TUtils::CByteIdentity sectorIdAndPositionIdentity;
 		if (const THead nSides=__getNumberOfFormattedSidesInImage__(image)) // zero if disk without any Track (e.g. when opening RawImage of zero length, or if opening a corrupted DSK Image)
 			for( TTrackInfo si; true; ){
 				// . waiting for request to scan the next Track
@@ -121,13 +122,11 @@
 					si.nSectors=image->ScanTrack( si.cylinder, si.head, si.bufferId, si.bufferLength );
 				// . scanning the Track to draw its Sector data
 				if (pvtm->displayType>=TDisplayType::DATA_OK_ONLY){
-					PCSectorData *pSectorData=si.bufferSectorData;	PWORD pSectorLength=si.bufferLength;
-					for( TSector n=0; n<si.nSectors; ++n ){
-						const TPhysicalAddress chs={ si.cylinder, si.head, si.bufferId[n] };
-						TFdcStatus sr;
-						const PCSectorData data=image->GetSectorData( chs, n, false, pSectorLength++, &sr );
-						*pSectorData++= sr.IsWithoutError()||pvtm->displayType==TDisplayType::DATA_ALL ? data : NULL;
-					}
+					TFdcStatus statuses[(TSector)-1];
+					image->GetTrackData( si.cylinder, si.head, si.bufferId, sectorIdAndPositionIdentity, si.nSectors, false, si.bufferSectorData, si.bufferLength, statuses );
+					for( TSector n=0; n<si.nSectors; n++ )
+						if (pvtm->displayType!=TDisplayType::DATA_ALL && !statuses[n].IsWithoutError())
+							si.bufferSectorData[n]=NULL;
 				}
 				// . sending scanned information for drawing
 				if (::IsWindow(pvtm->m_hWnd)) // TrackMap may not exist if, for instance, switched to another view while still scanning some Track(s)

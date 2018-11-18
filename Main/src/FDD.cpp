@@ -139,9 +139,8 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 						}
 						// . if this is the K-th Sector, making sure that the 0..(K-1)-th Sectors have been formatted well
 						for( TSector s=0; s<nSectorsToSkip; s++ ){
-							const TPhysicalAddress chs={ cyl, head, pit->sectors[s].id };
 							TFdcStatus sr;
-							if (!fdd->__bufferSectorData__(chs,pit->sectors[s].length,pit,s,&sr) || !sr.IsWithoutError()){ // if Sector not readable even after reformatting the Track ...
+							if (!fdd->__bufferSectorData__(cyl,head,&pit->sectors[s].id,pit->sectors[s].length,pit,s,&sr) || !sr.IsWithoutError()){ // if Sector not readable even after reformatting the Track ...
 								err=::GetLastError();
 								goto terminateWithError; // ... there's nothing else to do but terminating with Error
 							}
@@ -168,7 +167,7 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 					fdd->__bufferSectorData__( chs, length, pit, nSectorsToSkip, &sr );
 					if (fdcStatus.DescribesDataFieldCrcError()^sr.DescribesDataFieldCrcError()){
 						TCHAR buf[80],tmp[30];
-						::wsprintf(buf,_T("Verification failed for sector with %s on Track %d."),chs.sectorId.ToString(tmp),chs.GetTrackNumber(2));
+						::wsprintf( buf, _T("Verification failed for sector with %s on Track %d."), id.ToString(tmp), chs.GetTrackNumber(2) );
 						switch (TUtils::AbortRetryIgnore( buf, MB_DEFBUTTON2 )){
 							case IDIGNORE:	break;
 							case IDABORT:	return LOG_ERROR(ERROR_CANCELLED);
@@ -784,11 +783,11 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		return __setTimeBeforeInterruptingTheFdc__( nDataBytesBeforeInterruption, params.controllerLatency );
 	}
 
-	bool CFDD::__bufferSectorData__(RCPhysicalAddress chs,WORD sectorLength,const TInternalTrack *pit,BYTE nSectorsToSkip,TFdcStatus *pFdcStatus) const{
+	bool CFDD::__bufferSectorData__(TCylinder cyl,THead head,PCSectorId psi,WORD sectorLength,const TInternalTrack *pit,BYTE nSectorsToSkip,TFdcStatus *pFdcStatus) const{
 		// True <=> requested Sector found in currently seeked Track and data of the Sector have been buffered in the internal DataBuffer, otherwise False
-		LOG_SECTOR_ACTION(&chs.sectorId,_T("bool CFDD::__bufferSectorData__"));
+		LOG_SECTOR_ACTION(psi,_T("bool CFDD::__bufferSectorData__"));
 		// - taking into account the NumberOfSectorsToSkip
-		if (pit->__isIdDuplicated__(&chs.sectorId)) // to speed matters up, only if ID is duplicated in the Track
+		if (pit->__isIdDuplicated__(psi)) // to speed matters up, only if ID is duplicated in the Track
 			__setNumberOfSectorsToSkipOnCurrentTrack__(nSectorsToSkip);
 		// - waiting for the index pulse
 		//__setWaitingForIndex__(); // commented out as caller is to decide whether this is needed or not, and eventually call it
@@ -797,7 +796,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		switch (DRIVER){
 			case DRV_FDRAWCMD:{
 				LOG_ACTION(_T("DeviceIoControl IOCTL_FDCMD_READ_DATA"));
-				FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM|FD_OPTION_SK, chs.head, chs.sectorId.cylinder,chs.sectorId.side,chs.sectorId.sector,chs.sectorId.lengthCode, chs.sectorId.sector+1, 1, 0xff };
+				FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM|FD_OPTION_SK, head, psi->cylinder,psi->side,psi->sector,psi->lengthCode, psi->sector+1, 1, 0xff };
 				if (!::DeviceIoControl( _HANDLE, IOCTL_FDCMD_READ_DATA, &rwp,sizeof(rwp), dataBuffer,SECTOR_LENGTH_MAX, &nBytesTransferred, NULL )){
 					// Sector read with errors
 					// | getting FdcStatus
@@ -815,7 +814,8 @@ error:				switch (const TStdWinError err=::GetLastError()){
 						}
 						*pFdcStatus=TFdcStatus( cmdRes.st1, cmdRes.st2|FDC_ST2_DELETED_DAM );
 					}
-				}
+				}else
+					*pFdcStatus=TFdcStatus::WithoutError;
 				return true;
 			}
 			default:
@@ -824,11 +824,21 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		}
 	}
 
-	PSectorData CFDD::GetSectorData(RCPhysicalAddress chs,BYTE nSectorsToSkip,bool recoverFromError,PWORD sectorLength,TFdcStatus *pFdcStatus){
-		// returns Data of a Sector on a given PhysicalAddress; returns Null iff Sector not found or Track not formatted
-		LOG_SECTOR_ACTION(&chs.sectorId,_T("PSectorData CFDD::GetSectorData"));
-		if (const PInternalTrack pit=__scanTrack__(chs.cylinder,chs.head)){
+	bool CFDD::__bufferSectorData__(RCPhysicalAddress chs,WORD sectorLength,const TInternalTrack *pit,BYTE nSectorsToSkip,TFdcStatus *pFdcStatus) const{
+		// True <=> requested Sector found in currently seeked Track and data of the Sector have been buffered in the internal DataBuffer, otherwise False
+		return __bufferSectorData__( chs.cylinder, chs.head, &chs.sectorId, sectorLength, pit, nSectorsToSkip, pFdcStatus );
+	}
+
+	void CFDD::GetTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses){
+		// populates output buffers with specified Sectors' data, usable lengths, and FDC statuses; ALWAYS attempts to buffer all Sectors - caller is then to sort out eventual read errors (by observing the FDC statuses); caller can call ::GetLastError to discover the error for the last Sector in the input list
+		ASSERT( outBufferData!=NULL && outBufferLengths!=NULL && outFdcStatuses!=NULL );
+		// - initializing the output buffers with data retrieval failure (assumption)
+		::ZeroMemory( outBufferData, nSectors*sizeof(PSectorData) );
+		for( TSector i=nSectors; i>0; outFdcStatuses[--i]=TFdcStatus::SectorNotFound );
+		// - getting the real data for the Sectors
+		if (const PInternalTrack pit=__scanTrack__(cyl,head)){
 			// . getting Track's RawContent
+			/* // TODO: separate into a new method, e.g. virtual CImage::GetTrackRawContent, when implementing support for Kryoflux
 			if (params.readWholeTrackAsFirstSector && pit->__canRawDumpBeCreated__())
 				if (chs.sectorId==pit->rawContent.id){
 					if (!pit->rawContent.data){ // Track RawContent not yet read
@@ -856,43 +866,55 @@ error:				switch (const TStdWinError err=::GetLastError()){
 					return LOG_PSECTORDATA(pit->rawContent.data);
 				}else if (nSectorsToSkip)
 					nSectorsToSkip--;
-			// . retrieving data of Sector requested in current Track
-			TInternalTrack::TSectorInfo *psi=pit->sectors;
-			for( TSector n=pit->nSectors,nSkipping=nSectorsToSkip; n--; psi++ )
-				if (!nSkipping){
-					if (psi->id==chs.sectorId){
-						*sectorLength=psi->length;
-						// : if Data already read WithoutError, returning them
-						if (psi->data)
-							if (psi->fdcStatus.IsWithoutError()){ // returning error-free data
-returnData:						*pFdcStatus=psi->fdcStatus;
-								return psi->data;
-							}else // disposing previous erroneous Data
-								FREE_SECTOR_DATA(psi->data), psi->data=NULL;
-						// : seeking Head to the given Cylinder
-						if (!fddHead.__seekTo__(chs.cylinder))
-							return LOG_PSECTORDATA(NULL); // Sector cannot be found as Head cannot be seeked
-						// : initial attempt to retrieve the Data
-						if (!__bufferSectorData__(chs,*sectorLength,pit,nSectorsToSkip,&psi->fdcStatus))
-							return LOG_PSECTORDATA(NULL);
-						// : recovering from errors
-						if (!psi->fdcStatus.IsWithoutError()) // no Data, or Data with errors
-							if (recoverFromError && !fddHead.calibrated)
-								if (fddHead.__calibrate__() && fddHead.__seekTo__(chs.cylinder)){
-									fddHead.calibrated=params.calibrationAfterError!=TParams::TCalibrationAfterError::FOR_EACH_SECTOR;
-									__bufferSectorData__(chs,*sectorLength,pit,nSectorsToSkip,&psi->fdcStatus);
-								}
-						if (!psi->fdcStatus.DescribesMissingDam())
-							psi->data=(PSectorData)::memcpy( ALLOCATE_SECTOR_DATA(*sectorLength), dataBuffer, *sectorLength );
-						goto returnData; // returning (any) Data
-					}
-				}else
-					nSkipping--;
-		}
-		// Sector not found
-		if (::GetLastError()==ERROR_SUCCESS)
-			::SetLastError(ERROR_SECTOR_NOT_FOUND);
-		return LOG_PSECTORDATA(NULL);
+			//*/
+			// . Planning the requested Sectors retrieval
+			struct TPlanStep sealed{
+				TInternalTrack::TSectorInfo *psi;
+				BYTE indexIntoOutputBuffers;
+			} plan[(TSector)-1], *planEnd=plan;
+			for( BYTE startPos=0; startPos<2; startPos++ ) // first only Sectors at even positions in the Track, then only Sectors at odd positions
+				for( TSector n=startPos; n<pit->nSectors; n+=2 )
+					for( TSector i=0; i<nSectors; i++ ) // checking if the current Sector in the Track is among the requested ones
+						if (n>=bufferNumbersOfSectorsToSkip[i] && pit->sectors[n].id==bufferId[i]){
+							// yes, the current Sector in the Track is one of the requested ones
+							planEnd->psi=&pit->sectors[n], planEnd->indexIntoOutputBuffers=i;
+							planEnd++;
+							break;
+						}
+			// . executing the above composed Plan
+			for( const TPlanStep *pPlanStep=plan; pPlanStep<planEnd; pPlanStep++ ){
+				TInternalTrack::TSectorInfo *const psi=pPlanStep->psi;
+				const BYTE index=pPlanStep->indexIntoOutputBuffers;
+				const WORD length = outBufferLengths[index] = psi->length;
+				// : if Data already read WithoutError, returning them
+				if (psi->data)
+					if (psi->fdcStatus.IsWithoutError()){ // returning error-free data
+returnData:				outFdcStatuses[index]=psi->fdcStatus;
+						outBufferData[index]=psi->data;
+						continue;
+					}else // disposing previous erroneous Data
+						FREE_SECTOR_DATA(psi->data), psi->data=NULL;
+				// : seeking Head to the given Cylinder
+				if (!fddHead.__seekTo__(cyl))
+					return; // Sectors cannot be found as Head cannot be seeked
+				// : initial attempt to retrieve the Data
+				if (!__bufferSectorData__(cyl,head,&psi->id,length,pit,bufferNumbersOfSectorsToSkip[index],&psi->fdcStatus))
+					continue; // if a Sector with given ID physically not found in the Track, proceed with the next Planned Sector
+				// : recovering from errors
+				if (!psi->fdcStatus.IsWithoutError()) // no Data, or Data with errors
+					if (silentlyRecoverFromErrors && !fddHead.calibrated)
+						if (fddHead.__calibrate__() && fddHead.__seekTo__(cyl)){
+							fddHead.calibrated=params.calibrationAfterError!=TParams::TCalibrationAfterError::FOR_EACH_SECTOR;
+							__bufferSectorData__(cyl,head,&psi->id,length,pit,bufferNumbersOfSectorsToSkip[index],&psi->fdcStatus);
+						}
+				if (!psi->fdcStatus.DescribesMissingDam())
+					psi->data=(PSectorData)::memcpy( ALLOCATE_SECTOR_DATA(length), dataBuffer, length );
+				goto returnData; // returning (any) Data
+			}
+		}else
+			LOG_MESSAGE(_T("Track not found"));
+		// - outputting the result
+		::SetLastError( outBufferData[nSectors-1] ? ERROR_SUCCESS : ERROR_SECTOR_NOT_FOUND );
 	}
 
 	TStdWinError CFDD::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus){
@@ -1537,7 +1559,6 @@ error:				return LOG_ERROR(::GetLastError());
 				}
 		}
 		// - formatting using selected FormatStyle and eventually verifying the Track
-		const TInternalTrack it( this, cyl, head, nSectors, bufferId );
 		DWORD nBytesTransferred;
 		switch (formatStyle){
 			case TFormatStyle::STANDARD:{
@@ -1567,11 +1588,12 @@ formatStandardWay:
 				// . verifying the Track (if requested to)
 				if (params.verifyFormattedTracks){
 					LOG_ACTION(_T("track verification"));
+					PVOID dummyBuffer[(TSector)-1];
+					TFdcStatus statuses[(TSector)-1];
+					GetTrackData( cyl, head, bufferId, TUtils::CByteIdentity(), nSectors, false, (PSectorData *)dummyBuffer, (PWORD)dummyBuffer, statuses ); // "DummyBuffer" = throw away any outputs
 					for( TSector n=0; n<nSectors; n++ ){
 						const TPhysicalAddress chs={ cyl, head, bufferId[n] };
-						TFdcStatus sr;
-						__bufferSectorData__( chs, *bufferLength, &it, n, &sr );
-						if (!sr.IsWithoutError())
+						if (!statuses[n].IsWithoutError())
 							switch (__reportSectorVerificationError__(chs)){
 								case IDABORT:	return LOG_ERROR(ERROR_CANCELLED);
 								case IDRETRY:	goto formatStandardWay;
@@ -1738,6 +1760,7 @@ formatCustomWay:
 				// . verifying the Track (if requested to)
 				if (params.verifyFormattedTracks){
 					LOG_ACTION(_T("track verification"));
+					const TInternalTrack it( this, cyl, head, nSectors, bufferId );
 					for( TSector n=0; n<nSectors; n++ ){
 						const TPhysicalAddress chs={ cyl, head, bufferId[n] };
 						TFdcStatus sr;

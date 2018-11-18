@@ -135,6 +135,7 @@
 	#pragma pack(1)
 	typedef const struct TFdcStatus sealed{
 		static const TFdcStatus WithoutError;
+		static const TFdcStatus SectorNotFound;
 
 		BYTE reg1,reg2;
 
@@ -214,7 +215,11 @@
 		TTrack GetTrackCount() const;
 		virtual TSector ScanTrack(TCylinder cyl,THead head,PSectorId bufferId,PWORD bufferLength) const=0;
 		bool IsTrackHealthy(TCylinder cyl,THead head);
-		virtual PSectorData GetSectorData(RCPhysicalAddress chs,BYTE nSectorsToSkip,bool recoverFromError,PWORD sectorLength,TFdcStatus *pFdcStatus)=0;
+		virtual void GetTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses)=0;
+		void BufferTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors);
+		PSectorData GetSectorData(TCylinder cyl,THead head,PCSectorId pid,BYTE nSectorsToSkip,bool silentlyRecoverFromError,PWORD sectorLength,TFdcStatus *pFdcStatus);
+		PSectorData GetSectorData(RCPhysicalAddress chs,BYTE nSectorsToSkip,bool silentlyRecoverFromError,PWORD sectorLength,TFdcStatus *pFdcStatus);
+		PSectorData GetSectorData(TCylinder cyl,THead head,PCSectorId pid,PWORD sectorLength);
 		PSectorData GetSectorData(RCPhysicalAddress chs,PWORD sectorLength);
 		PSectorData GetSectorData(RCPhysicalAddress chs);
 		PSectorData GetSectorDataOfUnknownLength(TPhysicalAddress &rChs,PWORD sectorLength);

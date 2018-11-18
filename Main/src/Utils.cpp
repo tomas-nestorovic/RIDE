@@ -165,6 +165,20 @@ namespace TUtils{
 
 
 
+	CByteIdentity::CByteIdentity(){
+		// ctor
+		for( BYTE i=0; (values[i]=i)<(BYTE)-1; i++ );
+	}
+
+	CByteIdentity::operator PCBYTE() const{
+		return values;
+	}
+
+
+
+
+
+
 
 
 	#define ERROR_BUFFER_SIZE	220
