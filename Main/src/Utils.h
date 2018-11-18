@@ -54,6 +54,7 @@ namespace TUtils{
 	void PopulateComboBoxWithSequenceOfNumbers(HWND hComboBox,BYTE iStartValue,LPCTSTR strStartValueDesc,BYTE iEndValue,LPCTSTR strEndValueDesc);
 	float ScaleLogicalUnit(HDC dc);
 	void UnscaleLogicalUnit(PINT values,BYTE nValues);
+	COLORREF GetSaturatedColor(COLORREF color,float saturationFactor);
 	CFile &WriteToFile(CFile &f,LPCTSTR text);
 	CFile &WriteToFile(CFile &f,TCHAR chr);
 	CFile &WriteToFile(CFile &f,int number,LPCTSTR formatting);

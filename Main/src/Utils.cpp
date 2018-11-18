@@ -633,6 +633,17 @@ namespace TUtils{
 		for( const float dpiScaleFactor=LogicalUnitScaleFactor; nValues--; *values++/=dpiScaleFactor );
 	}
 
+	COLORREF GetSaturatedColor(COLORREF currentColor,float saturationFactor){
+		// saturates input Color by specified SaturationFactor and returns the result
+		ASSERT(saturationFactor>=0);
+		COLORREF result=0;
+		for( BYTE i=sizeof(COLORREF),*pbIn=(PBYTE)&currentColor,*pbOut=(PBYTE)&result; i-->0; ){
+			const WORD w=*pbIn++*saturationFactor;
+			*pbOut++=min(w,255);
+		}
+		return result;
+	}
+
 	CFile &WriteToFile(CFile &f,LPCTSTR text){
 		// writes specified Text into the File
 		f.Write( text, ::lstrlen(text) );
