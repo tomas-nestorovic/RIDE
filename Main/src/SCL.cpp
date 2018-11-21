@@ -81,6 +81,7 @@
 
 	TStdWinError CSCL::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
+		const TExclusiveLocker locker;
 		// - base (allowed are only TRDOS-compliant formats)
 		if (pFormat->nSectors==TRDOS503_TRACK_SECTORS_COUNT && pFormat->sectorLength==TRDOS503_SECTOR_LENGTH_STD && pFormat->sectorLengthCode==TRDOS503_SECTOR_LENGTH_STD_CODE){
 			const TStdWinError err=CImageRaw::SetMediumTypeAndGeometry(pFormat,sideMap,firstSectorNumber);

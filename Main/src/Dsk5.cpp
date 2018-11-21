@@ -211,16 +211,19 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 
 	TCylinder CDsk5::GetCylinderCount() const{
 		// determines and returns the actual number of Cylinders in the Image
+		const TExclusiveLocker locker;
 		return diskInfo.nCylinders;
 	}
 
 	THead CDsk5::GetNumberOfFormattedSides(TCylinder cyl) const{
 		// determines and returns the number of Sides formatted on given Cylinder; returns 0 iff Cylinder not formatted
+		const TExclusiveLocker locker;
 		return diskInfo.nHeads;
 	}
 
 	TSector CDsk5::ScanTrack(TCylinder cyl,THead head,PSectorId bufferId,PWORD bufferLength) const{
 		// returns the number of Sectors found in given Track, and eventually populates the Buffer with their IDs (if Buffer!=Null); returns 0 if Track not formatted or not found
+		const TExclusiveLocker locker;
 		if (const PTrackInfo ti=__findTrack__(cyl,head)){
 			if (bufferId){
 				const TSectorInfo *si=ti->sectorInfo;
@@ -235,6 +238,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 	void CDsk5::GetTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses){
 		// populates output buffers with specified Sectors' data, usable lengths, and FDC statuses; ALWAYS attempts to buffer all Sectors - caller is then to sort out eventual read errors (by observing the FDC statuses); caller can call ::GetLastError to discover the error for the last Sector in the input list
 		ASSERT( outBufferData!=NULL && outBufferLengths!=NULL && outFdcStatuses!=NULL );
+		const TExclusiveLocker locker;
 		if (const PTrackInfo ti=__findTrack__(cyl,head))
 			for( const PSectorData trackDataStart=(PSectorData)(ti+1); nSectors-->0; ){
 				const TSectorId sectorId=*bufferId++;
@@ -266,6 +270,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 
 	TStdWinError CDsk5::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus){
 		// marks Sector on a given PhysicalAddress as "dirty", plus sets it the given FdcStatus; returns Windows standard i/o error
+		const TExclusiveLocker locker;
 		if (const PTrackInfo ti=__findTrack__(chs.cylinder,chs.head)){
 			PSectorInfo si=ti->sectorInfo;
 			for( TSector n=ti->nSectors; n--; si++ )
@@ -283,6 +288,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 
 	TStdWinError CDsk5::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
+		const TExclusiveLocker locker;
 		// - base
 		const TStdWinError err=CFloppyImage::SetMediumTypeAndGeometry(pFormat,sideMap,firstSectorNumber);
 		if (err!=ERROR_SUCCESS)
@@ -379,11 +385,13 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 
 	void CDsk5::EditSettings(){
 		// displays dialog with editable settings and reflects changes made by the user into the Image's inner state
+		const TExclusiveLocker locker;
 		__showOptions__(false); // allowing changes in everything but Type of DSK Image (Std vs Rev5)
 	}
 
 	TStdWinError CDsk5::Reset(){
 		// resets internal representation of the disk (e.g. by disposing all content without warning)
+		const TExclusiveLocker locker;
 		if (__showOptions__(true)){
 			// . saving settings
 			app.WriteProfileInt( INI_DSK, INI_VERSION, params.rev5 );
@@ -399,6 +407,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 
 	TStdWinError CDsk5::FormatTrack(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte){
 		// formats given Track {Cylinder,Head} to the requested NumberOfSectors, each with corresponding Length and FillerByte as initial content; returns Windows standard i/o error
+		const TExclusiveLocker locker;
 		if (nSectors>DSK_TRACKINFO_SECTORS_MAX) return ERROR_BAD_COMMAND;
 		WORD w=cyl*diskInfo.nHeads+head;
 		if (w>=DSK_REV5_TRACKS_MAX)
@@ -456,6 +465,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 
 	TStdWinError CDsk5::UnformatTrack(TCylinder cyl,THead head){
 		// unformats given Track {Cylinder,Head}; returns Windows standard i/o error
+		const TExclusiveLocker locker;
 		if (head<diskInfo.nHeads && (params.rev5||cyl==diskInfo.nCylinders-1)){
 			// A&(B|C); A = existing Head, B|C = existing Cylinder
 			// . redimensioning the Image

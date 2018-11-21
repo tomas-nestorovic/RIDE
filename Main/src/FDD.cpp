@@ -664,6 +664,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 
 	TCylinder CFDD::GetCylinderCount() const{
 		// determines and returns the actual number of Cylinders in the Image
+		const TExclusiveLocker locker;
 		LOG_ACTION(_T("TCylinder CFDD::GetCylinderCount"));
 		return	GetNumberOfFormattedSides(0) // if zeroth Cylinder exists ...
 				? FDD_CYLINDERS_MAX // ... then it's assumed that there is the maximum number of Cylinders available (the actual number may be adjusted by systematically scanning the Tracks)
@@ -672,6 +673,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 
 	THead CFDD::GetNumberOfFormattedSides(TCylinder cyl) const{
 		// determines and returns the number of Sides formatted on given Cylinder; returns 0 iff Cylinder not formatted
+		const TExclusiveLocker locker;
 		LOG_CYLINDER_ACTION(cyl,_T("THead CFDD::GetNumberOfFormattedSides"));
 		return (ScanTrack(cyl,0,NULL,NULL)!=0) + (ScanTrack(cyl,1,NULL,NULL)!=0);
 	}
@@ -715,6 +717,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 
 	TSector CFDD::ScanTrack(TCylinder cyl,THead head,PSectorId bufferId,PWORD bufferLength) const{
 		// returns the number of Sectors found in given Track, and eventually populates the Buffer with their IDs (if Buffer!=Null); returns 0 if Track not formatted or not found
+		const TExclusiveLocker locker;
 		if (const PInternalTrack pit=((CFDD *)this)->__scanTrack__(cyl,head)){
 			// Track managed to be scanned
 			const bool rawDumpExists= params.readWholeTrackAsFirstSector && pit->__canRawDumpBeCreated__();
@@ -836,6 +839,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		::ZeroMemory( outBufferData, nSectors*sizeof(PSectorData) );
 		for( TSector i=nSectors; i>0; outFdcStatuses[--i]=TFdcStatus::SectorNotFound );
 		// - getting the real data for the Sectors
+		const TExclusiveLocker locker;
 		if (const PInternalTrack pit=__scanTrack__(cyl,head)){
 			// . getting Track's RawContent
 			/* // TODO: separate into a new method, e.g. virtual CImage::GetTrackRawContent, when implementing support for Kryoflux
@@ -920,6 +924,7 @@ returnData:				outFdcStatuses[index]=psi->fdcStatus;
 	TStdWinError CFDD::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus){
 		// marks Sector with specified PhysicalAddress as "dirty", plus sets it the given FdcStatus; returns Windows standard i/o error
 		LOG_SECTOR_ACTION(&chs.sectorId,_T("TStdWinError CFDD::MarkSectorAsDirty"));
+		const TExclusiveLocker locker;
 		if (const PInternalTrack pit=__getScannedTrack__(chs.cylinder,chs.head)){ // Track has already been scanned
 			// . Modifying Track's RawContent
 			if (params.readWholeTrackAsFirstSector && pit->__canRawDumpBeCreated__())
@@ -1005,6 +1010,7 @@ fdrawcmd:				// . setting
 	TStdWinError CFDD::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		LOG_ACTION(_T("TStdWinError CFDD::SetMediumTypeAndGeometry"));
+		const TExclusiveLocker locker;
 		// - base
 		if (const TStdWinError err=CFloppyImage::SetMediumTypeAndGeometry(pFormat,sideMap,firstSectorNumber))
 			return LOG_ERROR(err);
@@ -1422,11 +1428,13 @@ TUtils::Information(buf);}
 
 	void CFDD::EditSettings(){
 		// displays dialog with editable settings and reflects changes made by the user into the Image's inner state
+		const TExclusiveLocker locker;
 		__showSettingDialog__();
 	}
 
 	TStdWinError CFDD::Reset(){
 		// resets internal representation of the disk (e.g. by disposing all content without warning)
+		const TExclusiveLocker locker;
 		// - displaying message
 		__informationWithCheckableShowNoMore__( _T("Only 3.5\" internal drives mapped as \"A:\" are supported. To spare the floppy and drive, all activity is buffered.\nThe following applies:\n\n- Changes made to the floppy are saved only when you command so (Ctrl+S). If you don't save them, they will NOT appear on the disk!\n\n- Formatting destroys the content immediately."), INI_MSG_RESET );
 		// - resetting
@@ -1527,6 +1535,7 @@ TUtils::Information(buf);}
 		LOG_TRACK_ACTION(cyl,head,_T("TStdWinError CFDD::FormatTrack"));
 		if (nSectors>FDD_SECTORS_MAX)
 			return LOG_ERROR(ERROR_BAD_COMMAND);
+		const TExclusiveLocker locker;
 		if (!nSectors) // formatting to zero Sectors ...
 			return UnformatTrack(cyl,head); // ... defined as unformatting the Track
 		// - Head calibration
@@ -1787,11 +1796,13 @@ formatCustomWay:
 
 	bool CFDD::RequiresFormattedTracksVerification() const{
 		// True <=> the Image requires its newly formatted Tracks be verified, otherwise False (and caller doesn't have to carry out verification)
+		const TExclusiveLocker locker;
 		return params.verifyFormattedTracks;
 	}
 
 	TStdWinError CFDD::PresumeHealthyTrackStructure(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId){
 		// without formatting it, presumes that given Track contains specified Sectors that are well readable and writeable; returns Windows standard i/o error
+		const TExclusiveLocker locker;
 		LOG_TRACK_ACTION(cyl,head,_T("TStdWinError CFDD::PresumeHealthyTrackStructure"));
 		// - disposing internal information on actual Track format
 		__unformatInternalTrack__(cyl,head);
@@ -1805,6 +1816,7 @@ formatCustomWay:
 
 	TStdWinError CFDD::UnformatTrack(TCylinder cyl,THead head){
 		// unformats given Track {Cylinder,Head}; returns Windows standard i/o error
+		const TExclusiveLocker locker;
 		LOG_TRACK_ACTION(cyl,head,_T("TStdWinError CFDD::UnformatTrack"));
 		// - moving Head above the corresponding Cylinder
 		if (!fddHead.__seekTo__(cyl))

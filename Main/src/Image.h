@@ -179,6 +179,11 @@
 		static BYTE __getSectorLengthCode__(WORD sectorLength);
 		static WORD __getOfficialSectorLength__(BYTE sectorLengthCode);
 
+		struct TExclusiveLocker sealed{
+			TExclusiveLocker();
+			~TExclusiveLocker();
+		};
+
 		bool canBeModified;
 
 		BOOL DoSave(LPCTSTR lpszPathName,BOOL bReplace) override;

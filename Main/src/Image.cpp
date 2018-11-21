@@ -196,6 +196,28 @@
 
 
 
+	static CCriticalSection criticalSection;
+
+	CImage::TExclusiveLocker::TExclusiveLocker(){
+		// ctor
+		criticalSection.Lock();
+	}
+
+	CImage::TExclusiveLocker::~TExclusiveLocker(){
+		// ctor
+		criticalSection.Unlock();
+	}
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -451,12 +473,14 @@
 
 	TTrack CImage::GetTrackCount() const{
 		// returns the number of all Tracks in the Image
+		const TExclusiveLocker locker;
 		LOG_ACTION(_T("TTrack CImage::GetTrackCount"));
 		return GetCylinderCount()*GetNumberOfFormattedSides(0);
 	}
 
 	bool CImage::IsTrackHealthy(TCylinder cyl,THead head){
 		// True <=> specified Track is not empty and contains only well readable Sectors, otherwise False
+		const TExclusiveLocker locker;
 		LOG_ACTION(_T("bool CImage::IsTrackHealthy"));
 		// - if Track is empty, assuming the Track surface is damaged, so the Track is NOT healthy
 		TSectorId bufferId[(BYTE)-1]; WORD bufferLength[(BYTE)-1];
@@ -519,6 +543,7 @@
 
 	PSectorData CImage::GetSectorDataOfUnknownLength(TPhysicalAddress &rChs,PWORD sectorLength){
 		// returns Data of a Sector of unknown length (i.e. LengthCode is not used to find Sector with a given ID)
+		const TExclusiveLocker locker;
 		// - scanning given Track to find out Sectors a their Lengths
 		TSectorId bufferId[(TSector)-1];	WORD bufferLength[(TSector)-1];
 		TSector nSectorsOnTrack=ScanTrack(rChs.cylinder,rChs.head,bufferId,bufferLength);
@@ -556,6 +581,7 @@
 
 	BOOL CImage::CanCloseFrame(CFrameWnd* pFrame){
 		// True <=> the MainWindow can be closed (and thus the application), otherwise False
+		const TExclusiveLocker locker;
 		// - first asking the DOS that handles this Image
 		if (!dos->CanBeShutDown(pFrame))
 			return FALSE;

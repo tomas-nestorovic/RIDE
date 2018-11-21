@@ -28,5 +28,6 @@
 
 	TStdWinError CMGT::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
+		const TExclusiveLocker locker;
 		return __setMediumTypeAndGeometry__(pFormat,sideMap,firstSectorNumber);
 	}

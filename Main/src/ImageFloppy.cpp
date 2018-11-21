@@ -45,6 +45,7 @@
 
 	TStdWinError CFloppyImage::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
+		const TExclusiveLocker locker;
 		floppyType=pFormat->mediumType;
 		return ERROR_SUCCESS;
 	}
