@@ -383,14 +383,14 @@ importQuit2:		::GlobalUnlock(hg);
 					if (directory)
 						::lstrcpy(bufOverwrite,_T("Merge existing directory with new one"));
 					else{
-						__bytesToHigherUnits__(newFileSize,higherUnit,higherUnitName);
+						TUtils::BytesToHigherUnits(newFileSize,higherUnit,higherUnitName);
 						_stprintf( bufOverwrite, _T("Replace with new file (%.2f %s)"), higherUnit, higherUnitName );
 					}	
 				TCHAR bufSkip[80];
 					if (directory)
 						::lstrcpy(bufSkip,_T("Skip this directory"));
 					else{
-						__bytesToHigherUnits__(DOS->GetFileDataSize(conflict),higherUnit,higherUnitName);
+						TUtils::BytesToHigherUnits(DOS->GetFileDataSize(conflict),higherUnit,higherUnitName);
 						_stprintf( bufSkip, _T("Keep current file (%.2f %s)"), higherUnit, higherUnitName );
 					}
 				CNameConflictResolutionDialog d( newFileName, directory?_T("directory"):_T("file"), bufOverwrite,bufSkip );

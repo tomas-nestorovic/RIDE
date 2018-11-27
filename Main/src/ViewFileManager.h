@@ -232,8 +232,6 @@
 		virtual PEditorBase CreateFileInformationEditor(CDos::PFile file,BYTE infoId) const=0;
 		virtual PTCHAR GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant,PTCHAR pOutBuffer) const=0;
 	public:
-		static void __bytesToHigherUnits__(DWORD bytes,float &rHigherUnit,LPCTSTR &rHigherUnitName);
-
 		const CFont &rFont;
 		const TDirectoryStructureManagement *const pDirectoryStructureManagement;
 		const CMainWindow::CTdiView::TTab tab;

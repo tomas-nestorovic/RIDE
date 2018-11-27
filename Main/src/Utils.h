@@ -33,7 +33,6 @@ namespace TUtils{
 
 	extern const float LogicalUnitScaleFactor;
 
-	PTCHAR __formatErrorCode__(PTCHAR buf,TStdWinError errCode);
 	void FatalError(LPCTSTR text);
 	void FatalError(LPCTSTR text,LPCTSTR causeOfError,LPCTSTR consequence=NULL);
 	void FatalError(LPCTSTR text,TStdWinError causeOfError,LPCTSTR consequence=NULL);
@@ -54,6 +53,7 @@ namespace TUtils{
 	bool RetryCancel(TStdWinError causeOfError);
 	void Warning(LPCTSTR text);
 	bool EnableDlgControls(HWND hDlg,PCWORD buttonIds,bool enabled);
+	void BytesToHigherUnits(DWORD bytes,float &rHigherUnit,LPCTSTR &rHigherUnitName);
 	void NavigateToUrlInDefaultBrowser(LPCTSTR url);
 	void DrawClosingCurlyBracket(HDC dc,int x,int yMin,int yMax);
 	void WrapControlsByClosingCurlyBracketWithText(CWnd *wnd,const CWnd *pCtrlA,const CWnd *pCtrlZ,LPCTSTR text,DWORD textColor);

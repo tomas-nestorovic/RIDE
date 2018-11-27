@@ -11,17 +11,6 @@
 		TUtils::InformationWithCheckableShowNoMore( text, INI_FILEMANAGER, messageId );
 	}
 
-	void CFileManagerView::__bytesToHigherUnits__(DWORD bytes,float &rHigherUnit,LPCTSTR &rHigherUnitName){
-		// converts Bytes to suitable HigherUnits (e.g. "12345 Bytes" to "12.345 kiB")
-		if (bytes>=0x40000000)
-			rHigherUnit=(float)bytes/0x40000000, rHigherUnitName=_T("GiB");
-		else if (bytes>=0x100000)
-			rHigherUnit=(float)bytes/0x100000, rHigherUnitName=_T("MiB");
-		else if (bytes>=0x400)
-			rHigherUnit=(float)bytes/0x400, rHigherUnitName=_T("kiB");
-		else
-			rHigherUnit=bytes, rHigherUnitName=_T("Bytes");
-	}
 
 
 
@@ -177,7 +166,7 @@
 		// creates and in MainWindow's StatusBar shows a report on Files in current Directory
 		TStdWinError errFat,errDir;
 		float freeSpace; LPCTSTR unit;
-		__bytesToHigherUnits__( DOS->GetFreeSpaceInBytes(errFat), freeSpace, unit );
+		TUtils::BytesToHigherUnits( DOS->GetFreeSpaceInBytes(errFat), freeSpace, unit );
 		TCHAR buf[200];
 		_stprintf(buf,_T("%d files, %.2f %s of free space"),DOS->GetCountOfItemsInCurrentDir(errDir),freeSpace,unit);
 		if (errFat!=ERROR_SUCCESS) ::lstrcat( buf, _T(", issues with FAT") );
