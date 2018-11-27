@@ -151,7 +151,7 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 						// . writing the 0..(K-1)-th Sectors back to the above reformatted Track, leaving K+1..N-th Sectors unwritten (caller's duty); we re-attempt to write this K-th Sector in the next pass through the cycle
 						for( TSector s=0; s<nSectorsToSkip; s++ ){
 							const TPhysicalAddress chs={ cyl, head, pit->sectors[s].id };
-							if ( err=pit->sectors[s].__saveToDisk__(fdd,pit,s) ) // if Sector not writeable even after reformatting the Track ...
+							if ( err=pit->sectors[s].__saveToDisk__(fdd,pit,s,verify) ) // if Sector not writeable even after reformatting the Track ...
 								return LOG_ERROR(err); // ... there's nothing else to do but terminating with Error
 						}
 						// . trying to write this K-th Sector once more, leaving K+1..N-th Sectors unwritten (caller's duty)
@@ -160,24 +160,36 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 				}
 			// : verifying the writing
 			else
-				if (fdd->params.verifyWrittenData){
-					LOG_ACTION(_T("verifying the writing"));
-					const TPhysicalAddress chs={ pit->cylinder, pit->head, id };
-					TFdcStatus sr;
-					fdd->__bufferSectorData__( chs, length, pit, nSectorsToSkip, &sr );
-					if (fdcStatus.DescribesDataFieldCrcError()^sr.DescribesDataFieldCrcError()){
-						TCHAR buf[80],tmp[30];
-						::wsprintf( buf, _T("Verification failed for sector with %s on Track %d."), id.ToString(tmp), chs.GetTrackNumber(2) );
-						switch (TUtils::AbortRetryIgnore( buf, MB_DEFBUTTON2 )){
-							case IDIGNORE:	break;
-							case IDABORT:	return LOG_ERROR(ERROR_CANCELLED);
-							case IDRETRY:	continue;
-						}
+				if (verify)
+					switch (__verifySaving__(fdd,pit,nSectorsToSkip)){
+						case IDIGNORE:	break;
+						case IDABORT:	return LOG_ERROR(ERROR_CANCELLED);
+						case IDRETRY:	continue;
 					}
-				}
 			break;
 		}while (true);
 		return ERROR_SUCCESS;
+	}
+
+	BYTE CFDD::TInternalTrack::TSectorInfo::__verifySaving__(CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip){
+		// verifies the saving made by during calling to __saveToDisk__
+		LOG_SECTOR_ACTION(&id,_T("verifying the writing"));
+		const TPhysicalAddress chs={ pit->cylinder, pit->head, id };
+		TFdcStatus sr;
+		fdd->__bufferSectorData__( chs, length, pit, nSectorsToSkip, &sr );
+		if (fdcStatus.DescribesDataFieldCrcError()^sr.DescribesDataFieldCrcError() // Data written with/without error than desired
+			||
+			::memcmp(data,fdd->dataBuffer,length) // Data written with error
+		){
+			TCHAR buf[80],tmp[30];
+			::wsprintf( buf, _T("Verification failed for sector with %s on Track %d."), id.ToString(tmp), chs.GetTrackNumber(2) );
+			const BYTE result=TUtils::AbortRetryIgnore( buf, MB_DEFBUTTON2 );
+			modified=result==IDIGNORE; // saved successfully if commanded to ignore any errors
+			return result;
+		}else{
+			modified=false; // saved successfully, so the Sector is no longer Modified
+			return IDIGNORE; // do nothing after return
+		}
 	}
 
 	typedef WORD TCrc;
@@ -634,18 +646,35 @@ error:				switch (const TStdWinError err=::GetLastError()){
 						}else
 							return pAction->TerminateWithError(err);
 					}*/
-					// . saving data of Track's all Modified Sectors
-					for( BYTE startPos=0; startPos<2; startPos++ ){ // first only Sectors at even positions in the Track, then only Sectors at odd positions
-						TInternalTrack::TSectorInfo *psi=pit->sectors+startPos;
-						for( TSector n=startPos; n<pit->nSectors; psi+=2,n+=2 ){
-							if (!pAction->bContinue) return LOG_ERROR(ERROR_CANCELLED);
-							if (psi->modified) // Sector has been Modified since it's was last saved
-								if (const TStdWinError err=psi->__saveToDisk__( sp.fdd, pit, n ))
-									return pAction->TerminateWithError(err);
-								else
-									psi->modified=false;
+					// . saving (and verifying) data of Track's all Modified Sectors
+					do{
+						bool allSectorsSavedOk=true; // assumption
+						// : saving
+						for( BYTE startPos=0; startPos<2; startPos++ ){ // first only Sectors at even positions in the Track, then only Sectors at odd positions
+							TInternalTrack::TSectorInfo *psi=pit->sectors+startPos;
+							for( TSector n=startPos; n<pit->nSectors; psi+=2,n+=2 ){
+								if (!pAction->bContinue) return LOG_ERROR(ERROR_CANCELLED);
+								if (psi->modified) // Sector has been Modified since it's was last saved
+									if (const TStdWinError err=psi->__saveToDisk__( sp.fdd, pit, n, false )) // False = verification carried out below
+										return pAction->TerminateWithError(err);
+									else
+										psi->modified=sp.fdd->params.verifyWrittenData; // no longer Modified if Verification turned off
+							}
 						}
-					}
+						// : verification
+						for( BYTE startPos=0; startPos<2; startPos++ ){ // first only Sectors at even positions in the Track, then only Sectors at odd positions
+							TInternalTrack::TSectorInfo *psi=pit->sectors+startPos;
+							for( TSector n=startPos; n<pit->nSectors; psi+=2,n+=2 ){
+								if (!pAction->bContinue) return LOG_ERROR(ERROR_CANCELLED);
+								if (psi->modified){ // Sector has been Modified since it's was last saved
+									const BYTE res=psi->__verifySaving__( sp.fdd, pit, n );
+									if (res==IDABORT) return pAction->TerminateWithError(ERROR_CANCELLED);
+									allSectorsSavedOk&=res==IDIGNORE;
+								}
+							}
+						}
+						if (allSectorsSavedOk) break;
+					}while (true);
 				}
 		sp.fdd->m_bModified=FALSE;
 		return ERROR_SUCCESS;

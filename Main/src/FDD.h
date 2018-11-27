@@ -47,7 +47,8 @@
 				TFdcStatus fdcStatus;
 				bool modified;
 
-				TStdWinError __saveToDisk__(CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip) const;
+				TStdWinError __saveToDisk__(CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip,bool verify);
+				BYTE __verifySaving__(CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip);
 			} *const sectors;
 			#pragma pack(1)
 			struct TRawContent sealed{
