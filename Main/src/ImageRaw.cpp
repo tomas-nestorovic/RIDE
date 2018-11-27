@@ -158,19 +158,19 @@
 
 	TCylinder CImageRaw::GetCylinderCount() const{
 		// determines and returns the actual number of Cylinders in the Image
-		const TExclusiveLocker locker;
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		return nCylinders;
 	}
 
 	THead CImageRaw::GetNumberOfFormattedSides(TCylinder cyl) const{
 		// determines and returns the number of Sides formatted on given Cylinder; returns 0 iff Cylinder not formatted
-		const TExclusiveLocker locker;
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		return cyl<nCylinders ? nHeads : 0;
 	}
 
 	TSector CImageRaw::ScanTrack(TCylinder cyl,THead head,PSectorId bufferId,PWORD bufferLength) const{
 		// returns the number of Sectors found in given Track, and eventually populates the Buffer with their IDs (if Buffer!=Null); returns 0 if Track not formatted or not found
-		const TExclusiveLocker locker;
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (cyl<nCylinders && head<nHeads){
 			if (bufferId)
 				for( TSector n=0; n<nSectors; bufferId++,*bufferLength++=sectorLength )
@@ -184,7 +184,7 @@
 		// populates output buffers with specified Sectors' data, usable lengths, and FDC statuses; ALWAYS attempts to buffer all Sectors - caller is then to sort out eventual read errors (by observing the FDC statuses); caller can call ::GetLastError to discover the error for the last Sector in the input list
 		ASSERT( outBufferData!=NULL && outBufferLengths!=NULL && outFdcStatuses!=NULL );
 		TStdWinError err=ERROR_SUCCESS; // assumption (all Sectors data retrieved successfully)
-		const TExclusiveLocker locker;
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (cyl<nCylinders && head<nHeads)
 			while (nSectors>0){
 				const TSectorId sectorId=*bufferId;
@@ -237,7 +237,7 @@ trackNotFound:
 
 	TStdWinError CImageRaw::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE,PCFdcStatus pFdcStatus){
 		// marks Sector with given PhysicalAddress as "dirty", plus sets it the given FdcStatus; returns Windows standard i/o error
-		const TExclusiveLocker locker;
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (pFdcStatus->IsWithoutError()){
 			m_bModified=TRUE;
 			return ERROR_SUCCESS;
@@ -299,7 +299,7 @@ trackNotFound:
 
 	TStdWinError CImageRaw::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
-		const TExclusiveLocker locker;
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - choosing a proper TrackAccessScheme based on commonly known restrictions on emulation
 		if (dos) // may not exist if creating a new Image
 			if (dos->properties==&CGDOS::Properties)
@@ -312,13 +312,13 @@ trackNotFound:
 
 	void CImageRaw::EditSettings(){
 		// displays dialog with editable settings and reflects changes made by the user into the Image's inner state
-		const TExclusiveLocker locker;
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		//TODO
 	}
 
 	TStdWinError CImageRaw::Reset(){
 		// resets internal representation of the disk (e.g. by disposing all content without warning)
-		const TExclusiveLocker locker;
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - closing Image's underlying file
 		if (f.m_hFile!=(UINT_PTR)INVALID_HANDLE_VALUE)
 			f.Close();
@@ -335,7 +335,7 @@ trackNotFound:
 
 	TStdWinError CImageRaw::FormatTrack(TCylinder cyl,THead head,TSector _nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte){
 		// formats given Track {Cylinder,Head} to the requested NumberOfSectors, each with corresponding Length and FillerByte as initial content; returns Windows standard i/o error
-		const TExclusiveLocker locker;
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - formatting to "no Sectors" is translated as unformatting the Track
 		if (!_nSectors)
 			return UnformatTrack(cyl,head);
@@ -397,7 +397,7 @@ trackNotFound:
 
 	TStdWinError CImageRaw::UnformatTrack(TCylinder cyl,THead){
 		// unformats given Track {Cylinder,Head}; returns Windows standard i/o error
-		const TExclusiveLocker locker;
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		switch (trackAccessScheme){
 			case TTrackScheme::BY_SIDES:
 				if (nHeads>1) // if Image structured by Sides (and there are multiple Sides), all Cylinders must be buffered as the whole Image will have to be restructured when saving

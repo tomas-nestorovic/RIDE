@@ -167,6 +167,7 @@
 		friend class CTrackMapView;
 		friend class CFileManagerView;
 
+		mutable CCriticalSection locker;
 		const bool hasEditableSettings;
 		bool writeProtected;
 
@@ -180,7 +181,8 @@
 		static WORD __getOfficialSectorLength__(BYTE sectorLengthCode);
 
 		struct TExclusiveLocker sealed{
-			TExclusiveLocker();
+			const PCImage image;
+			TExclusiveLocker(PCImage image);
 			~TExclusiveLocker();
 		};
 
@@ -241,5 +243,7 @@
 		void __toggleWriteProtection__();
 		BOOL CanCloseFrame(CFrameWnd* pFrame) override;
 	};
+
+	#define EXCLUSIVELY_LOCK_THIS_IMAGE()	const TExclusiveLocker locker(this)
 
 #endif // IMAGE_H
