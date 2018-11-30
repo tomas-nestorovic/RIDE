@@ -101,7 +101,7 @@
 				attributes.paper=7; // ... at white background
 				// . writing the opening HTML tags
 				(CFormattedBasicListingFile &)TUtils::WriteToFile(
-					*this << _T("<html><body style=\"font-family:'Courier New';margin:0;background-color:#"),
+					*this << _T("<html><body style=\"background-color:#"),
 					*(PINT)&Colors[7], _T("%06x")
 				) << _T("\">");
 			}
@@ -359,7 +359,8 @@ defaultPrinting:				if (b<' ')
 		// - generating the HTML-formatted BASIC Listing
 		bool error=false; // assumption (no parsing error of the input File)
 		listing << _T("<h2>BASIC Listing</h2>");
-		listing << _T("<table cellpadding=3 cellspacing=0>");
+		#define HTML_TABLE_BEGIN _T("<table cellpadding=3 cellspacing=0 style=\"font-family:'Courier New'\">")
+		listing << HTML_TABLE_BEGIN;
 			do{
 				TBigEndianWord lineNumber;
 				if (error=frw.Read(&lineNumber,sizeof(WORD))!=sizeof(WORD)) // error
@@ -387,7 +388,7 @@ defaultPrinting:				if (b<' ')
 				}
 				listing << _T("<tr>");
 					// | adding a new cell to the "Line Number" column
-					listing << _T("<td width=90pt align=right valign=top style=\"padding-right:5pt;background:gray;color:white\"><b>");
+					listing << _T("<td align=right valign=top style=\"padding-right:5pt\"><b>");
 						TUtils::WriteToFile(listing,lineNumber);
 					//listing << _T("</td>"); // commented out as written in the following command
 					// | adding a new cell to the "BASIC Listing" column
@@ -404,7 +405,7 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 		}
 		// - generating the HTML-formatted list of BASIC variables
 		listing << _T("<h2>Variables (Run-time States)</h2>");
-		listing << _T("<table cellpadding=3 cellspacing=0>");
+		listing << HTML_TABLE_BEGIN;
 			do{
 				BYTE variableType;
 				if (error=frw.Read(&variableType,sizeof(variableType))!=sizeof(variableType)) // error
@@ -413,7 +414,7 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 					TCHAR varName[256],*pVarName=varName;
 					*pVarName++=(variableType&31)+'@'; // extracting Variable's name first capital letter
 					*pVarName='\0'; // terminating the Variable name as most of the names may consist only of just one letter (further chars eventually added below)
-					#define HTML_END_OF_NAME_AND_START_OF_VALUE _T("</b></td><td valign=top>=</td><td>")
+					#define HTML_END_OF_NAME_AND_START_OF_VALUE _T("</b></td><td valign=top>=</td><td valign=top>")
 					switch (variableType&0xe0){ // masking out the part of the first Byte that determines the Type of the Variable
 						case 0x40:{
 							// string Variable (always with a single-letter name)
