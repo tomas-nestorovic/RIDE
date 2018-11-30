@@ -84,6 +84,11 @@
 				// . writing the supplied HTML-formatted text
 				return (CFormattedBasicListingFile &)TUtils::WriteToFile(*this,t);
 			}
+			CFormattedBasicListingFile &operator<<(int i){
+				// a shorthand for writing HTML-formatted integer into this file
+				TCHAR buf[16];
+				return operator<<(_itot(i,buf,10));
+			}
 
 			CFormattedBasicListingFile(const CBasicPreview &_rBasicPreview)
 				// ctor
@@ -106,7 +111,7 @@
 				*this << _T("</body></html>");
 			}
 
-			void __startApplyingColors__(){
+			void __startApplicationOfColors__(){
 				// writes opening tag that changes the subsequent text display
 				if (rBasicPreview.applyColors){
 					TCHAR buf[128];
@@ -119,7 +124,7 @@
 					*this << buf; // the "<<" operator automatically closes any previous SpecialFormatting
 				}
 			}
-			void __endApplyingColors__(){
+			void __endApplicationOfColors__(){
 				// writes closing tag that changes the subsequent text display to default again
 				if (rBasicPreview.applyColors)
 					*this << _T("</span>"); // the "<<" operator automatically closes any previous SpecialFormatting
@@ -207,21 +212,167 @@
 				}else
 					return false;
 			}
+
+			void __parseBasicLine__(PCBYTE pLineStart,WORD nBytesOfLine){
+				// parses a BASIC line of given length and writes corresponding HTML-formatted text into this file
+				__startApplicationOfColors__();
+					bool isLastWrittenCharNbsp=false; // True <=> the last character written to the TemporaryFile is a non-breakable space, otherwise False
+					for( const PCBYTE pLineEnd=pLineStart+nBytesOfLine; pLineStart<pLineEnd; ){
+						const BYTE b=*pLineStart++;
+						switch (b){
+							case 13:
+								// Enter - breaking the current line
+								*this << _T("<br>");
+								break;
+							case 14:
+								// displaying the five-Byte internal form of constant
+								if (rBasicPreview.binaryAfter0x14==TBinaryAfter0x14::DONT_SHOW)
+									// skipping the five-Byte internal form
+									pLineStart+=5;
+								else{
+									// displaying the five-Byte internal form
+									*this << _T("<span style=\"border:1pt dashed\">"); // the "<<" operator automatically closes any previous SpecialFormatting
+										switch (rBasicPreview.binaryAfter0x14){
+											case TBinaryAfter0x14::SHOW_AS_RAW_BYTES:
+												TUtils::WriteToFile(*this,*pLineStart++,_T("0x%02X"));
+												for( BYTE n=4; n-->0; TUtils::WriteToFile(*this,*pLineStart++,_T(",0x%02X")) );
+												break;
+											case TBinaryAfter0x14::SHOW_AS_NUMBER:
+												TUtils::WriteToFile( *this, ((TZxRom::PCNumberInternalForm)pLineStart)->ToDouble() );
+												pLineStart+=5;
+												break;
+											default:
+												ASSERT(FALSE);
+										}
+									*this << _T("</span>");
+								}
+								continue;
+							case 16:
+								// changing the Ink color
+								if (__changeInk__(*pLineStart)){ // successfully changed
+applyChangedColorAttributes:		if (pLineStart<pLineEnd){ // color information exists (there's no harm to consuming a non-existing color Byte above)
+										__writeNonprintableChar__(b);
+										__writeNonprintableChar__(*pLineStart); // any of {Ink,Paper,Flash,Bright,Inverse}
+										__endApplicationOfColors__();
+										__startApplicationOfColors__();
+										pLineStart++; // color information just consumed
+									}
+									continue;
+								}else
+									goto defaultPrinting;
+							case 17:
+								// changing the Paper color
+								if (__changePaper__(*pLineStart)) // successfully changed
+									goto applyChangedColorAttributes;
+								else
+									goto defaultPrinting;
+							case 18:
+								// changing the Flash attribute
+								if (__changeFlash__(*pLineStart)) // successfully changed
+									goto applyChangedColorAttributes;
+								else
+									goto defaultPrinting;
+							case 19:
+								// changing the Bright attribute
+								if (__changeBright__(*pLineStart)) // successfully changed
+									goto applyChangedColorAttributes;
+								else
+									goto defaultPrinting;
+							case 20:
+								// changing the Inverse attribute
+								if (__changeInverse__(*pLineStart)) // successfully changed
+									goto applyChangedColorAttributes;
+								else
+									goto defaultPrinting;
+							case 21:
+								// changing the Over attribute
+								if (*pLineStart<=1) // valid value for the Over attribute
+									goto applyChangedColorAttributes; // to display the non-printable characters
+								else
+									goto defaultPrinting;
+							case 22:
+								// changing the printing position at the screen
+								if (pLineStart+1<pLineEnd && *pLineStart<24 && *(pLineStart+1)<32){ // valid [Row,Column] coordinates
+writeTwoNonprintableChars:			__writeNonprintableChar__(b);
+									__writeNonprintableChar__(*pLineStart++); // X-coordinate information just consumed
+									__writeNonprintableChar__(*pLineStart++); // Y-coordinate information just consumed
+									continue;
+								}else
+									goto defaultPrinting; // to display the non-printable characters
+							case 23:
+								// displaying the Tab character
+								if (pLineStart+1<pLineEnd) // a Word value must follow
+									goto writeTwoNonprintableChars;
+								else
+									goto defaultPrinting; // to display the non-printable characters
+							case ' ':
+								// each explicit space character is output
+								*this << _T("&nbsp;"); // non-breakable space
+								break;
+							case '&':
+								// the "ampersand" symbol is not an escape for a hexadecimal literal
+								*this << _T("&amp;");
+								break;
+							case '<':
+								// the "less than" symbol is not an opening character of a HTML tag
+								*this << _T("&lt;");
+								break;
+							case '>':
+								// the "greater than" symbol is not a closing character of a HTML tag
+								*this << _T("&gt;");
+								break;
+							case 199:
+								// the "less than or equal to" symbol is not an opening character of a HTML tag
+								*this << _T("&lt;=");
+								break;
+							case 200:
+								// the "greater than or equal to" symbol is not a closing character of a HTML tag
+								*this << _T("&gt;=");
+								break;
+							case 201:
+								// the "inequal to" symbol is not an opening character of a HTML tag
+								*this << _T("&lt;&gt;");
+								break;
+							default:
+defaultPrinting:				if (b<' ')
+									// non-printable character
+									__writeNonprintableChar__(b);
+								else if (TZxRom::IsStdUdgSymbol(b))
+									// standard UDG symbol 
+									__writeStdUdgSymbol__(b);
+								else if (const LPCSTR keywordTranscript=TZxRom::GetKeywordTranscript(b))
+									// writing a Keyword including its start and trail spaces (will be correctly formatted by the HTML parser when displayed)
+									*this << ( keywordTranscript + (int)(isLastWrittenCharNbsp&&*keywordTranscript==' ') ); // skipping initial space should it be preceeded by a non-breakable space in the TemporaryFile (as incorrectly two spaces would be displayed in the Listing)
+								else{
+									// a character that doesn't require a special treatment - just converting between ZX Spectrum and Ascii charsets
+									TCHAR buf[16];
+									*this << TZxRom::ZxToAscii((LPCSTR)&b,1,buf);
+								}
+								break;
+						}
+						isLastWrittenCharNbsp=b==' ';
+					}
+				__endApplicationOfColors__();
+			}
+
 		} listing(*this);
 		// - generating the HTML-formatted BASIC Listing
 		bool error=false; // assumption (no parsing error of the input File)
+		listing << _T("<h2>BASIC Listing</h2>");
 		listing << _T("<table cellpadding=3 cellspacing=0>");
 			do{
 				TBigEndianWord lineNumber;
 				if (error=frw.Read(&lineNumber,sizeof(WORD))!=sizeof(WORD)) // error
 					break;
-				if (lineNumber>0x39ff) // invalid LineNumber is a correct end of BASIC program
-					break;
+				if (lineNumber>0x39ff){ // invalid LineNumber ...
+					frw.Seek( -sizeof(WORD), CFile::current ); // put the LineNumber back
+					break; // ... is a correct end of BASIC program
+				}
 				WORD nBytesOfLine;
 				if (error=frw.Read(&nBytesOfLine,sizeof(WORD))!=sizeof(WORD)) // error
 					break;
 				//if (!nBytesOfLine) // if line has no content ...
-					//continue; // ... then simply doing nothing
+					//continue; // ... then simply doing nothing; commented out to write out at least the empty line number
 				BYTE lineBytes[65536];
 				const WORD nBytesOfLineRead=frw.Read(lineBytes,nBytesOfLine);
 				if (nBytesOfLineRead<nBytesOfLine){
@@ -241,161 +392,158 @@
 					//listing << _T("</td>"); // commented out as written in the following command
 					// | adding a new cell to the "BASIC Listing" column
 					listing << _T("</b></td><td style=\"padding-left:5pt\">");
-						listing.__startApplyingColors__();
-							PCBYTE pLineByte=lineBytes;
-							bool isLastWrittenCharNbsp=false; // True <=> the last character written to the TemporaryFile is a non-breakable space, otherwise False
-							for( const PCBYTE pLineEnd=lineBytes+nBytesOfLine-1; pLineByte<pLineEnd; ){ // "-1" = skipping the terminating Enter character (0x0d)
-								const BYTE b=*pLineByte++;
-								switch (b){
-									case 13:
-										// Enter - breaking the current line
-										listing << _T("<br>");
-										break;
-									case 14:
-										// displaying the five-Byte internal form of constant
-										if (binaryAfter0x14==TBinaryAfter0x14::DONT_SHOW)
-											// skipping the five-Byte internal form
-											pLineByte+=5;
-										else{
-											// displaying the five-Byte internal form
-											listing << _T("<span style=\"border:1pt dashed\">"); // the "<<" operator automatically closes any previous SpecialFormatting
-												switch (binaryAfter0x14){
-													case TBinaryAfter0x14::SHOW_AS_RAW_BYTES:
-														TUtils::WriteToFile(listing,*pLineByte++,_T("0x%02X"));
-														for( BYTE n=4; n-->0; TUtils::WriteToFile(listing,*pLineByte++,_T(",0x%02X")) );
-														break;
-													case TBinaryAfter0x14::SHOW_AS_NUMBER:{
-														const double d=((TZxRom::PCNumberInternalForm)pLineByte)->ToDouble();
-														if ((int)d==d)
-															TUtils::WriteToFile(listing,(int)d);
-														else
-															TUtils::WriteToFile(listing,d);
-														pLineByte+=5;
-														break;
-													}
-													default:
-														ASSERT(FALSE);
-												}
-											listing << _T("</span>");
-										}
-										continue;
-									case 16:
-										// changing the Ink color
-										if (listing.__changeInk__(*pLineByte)){ // successfully changed
-applyChangedColorAttributes:				if (pLineByte<pLineEnd){ // color information exists (there's no harm to consuming a non-existing color Byte above)
-												listing.__writeNonprintableChar__(b);
-												listing.__writeNonprintableChar__(*pLineByte); // any of {Ink,Paper,Flash,Bright,Inverse}
-												listing.__endApplyingColors__();
-												listing.__startApplyingColors__();
-												pLineByte++; // color information just consumed
-											}
-											continue;
-										}else
-											goto defaultPrinting;
-									case 17:
-										// changing the Paper color
-										if (listing.__changePaper__(*pLineByte)) // successfully changed
-											goto applyChangedColorAttributes;
-										else
-											goto defaultPrinting;
-									case 18:
-										// changing the Flash attribute
-										if (listing.__changeFlash__(*pLineByte)) // successfully changed
-											goto applyChangedColorAttributes;
-										else
-											goto defaultPrinting;
-									case 19:
-										// changing the Bright attribute
-										if (listing.__changeBright__(*pLineByte)) // successfully changed
-											goto applyChangedColorAttributes;
-										else
-											goto defaultPrinting;
-									case 20:
-										// changing the Inverse attribute
-										if (listing.__changeInverse__(*pLineByte)) // successfully changed
-											goto applyChangedColorAttributes;
-										else
-											goto defaultPrinting;
-									case 21:
-										// changing the Over attribute
-										if (*pLineByte<=1) // valid value for the Over attribute
-											goto applyChangedColorAttributes; // to display the non-printable characters
-										else
-											goto defaultPrinting;
-									case 22:
-										// changing the printing position at the screen
-										if (pLineByte+1<pLineEnd && *pLineByte<24 && *(pLineByte+1)<32){ // valid [Row,Column] coordinates
-writeTwoNonprintableChars:					listing.__writeNonprintableChar__(b);
-											listing.__writeNonprintableChar__(*pLineByte++); // X-coordinate information just consumed
-											listing.__writeNonprintableChar__(*pLineByte++); // Y-coordinate information just consumed
-											continue;
-										}else
-											goto defaultPrinting; // to display the non-printable characters
-									case 23:
-										// displaying the Tab character
-										if (pLineByte+1<pLineEnd) // a Word value must follow
-											goto writeTwoNonprintableChars;
-										else
-											goto defaultPrinting; // to display the non-printable characters
-									case ' ':
-										// each explicit space character is output
-										listing << _T("&nbsp;"); // non-breakable space
-										break;
-									case '&':
-										// the "ampersand" symbol is not an escape for a hexadecimal literal
-										listing << _T("&amp;");
-										break;
-									case '<':
-										// the "less than" symbol is not an opening character of a HTML tag
-										listing << _T("&lt;");
-										break;
-									case '>':
-										// the "greater than" symbol is not a closing character of a HTML tag
-										listing << _T("&gt;");
-										break;
-									case 199:
-										// the "less than or equal to" symbol is not an opening character of a HTML tag
-										listing << _T("&lt;=");
-										break;
-									case 200:
-										// the "greater than or equal to" symbol is not a closing character of a HTML tag
-										listing << _T("&gt;=");
-										break;
-									case 201:
-										// the "inequal to" symbol is not an opening character of a HTML tag
-										listing << _T("&lt;&gt;");
-										break;
-									default:
-defaultPrinting:						if (b<' ')
-											// non-printable character
-											listing.__writeNonprintableChar__(b);
-										else if (TZxRom::IsStdUdgSymbol(b))
-											// standard UDG symbol 
-											listing.__writeStdUdgSymbol__(b);
-										else if (const LPCSTR keywordTranscript=TZxRom::GetKeywordTranscript(b))
-											// writing a Keyword including its start and trail spaces (will be correctly formatted by the HTML parser when displayed)
-											listing << ( keywordTranscript + (int)(isLastWrittenCharNbsp&&*keywordTranscript==' ') ); // skipping initial space should it be preceeded by a non-breakable space in the TemporaryFile (as incorrectly two spaces would be displayed in the Listing)
-										else{
-											// a character that doesn't require a special treatment - just converting between ZX Spectrum and Ascii charsets
-											TCHAR buf[16];
-											listing << TZxRom::ZxToAscii((LPCSTR)&b,1,buf);
-										}
-										break;
-								}
-								isLastWrittenCharNbsp=b==' ';
-							}
-						listing.__endApplyingColors__();
-					//TUtils::WriteToFile(fTmp,_T("</td>")); // commented out as written in the following command	
+						listing.__parseBasicLine__( lineBytes, nBytesOfLine-1 ); // "-1" = skipping the terminating Enter character (0x0d)
+					//TUtils::WriteToFile(fTmp,_T("</td>")); // commented out as written in the following command
 				listing << _T("</td></tr>");
 			} while (frw.GetPosition()<frw.GetLength());
 		listing << _T("</table>");
-		// : Error in BASIC Listing
+		// - Error in BASIC Listing
 		if (error){
-			listing << _T("<p style=\"color:red\">Error in BASIC file structure!</p>");
+errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure!</p>");
 			return;
 		}
-		// : generating the HTML-formatted list of BASIC variables
-		//TODO
+		// - generating the HTML-formatted list of BASIC variables
+		listing << _T("<h2>Variables (Run-time States)</h2>");
+		listing << _T("<table cellpadding=3 cellspacing=0>");
+			do{
+				BYTE variableType;
+				if (error=frw.Read(&variableType,sizeof(variableType))!=sizeof(variableType)) // error
+					break;
+				listing << _T("<tr><td align=right valign=top><b>");
+					TCHAR varName[256],*pVarName=varName;
+					*pVarName++=(variableType&31)+'@'; // extracting Variable's name first capital letter
+					*pVarName='\0'; // terminating the Variable name as most of the names may consist only of just one letter (further chars eventually added below)
+					#define HTML_END_OF_NAME_AND_START_OF_VALUE _T("</b></td><td valign=top>=</td><td>")
+					switch (variableType&0xe0){ // masking out the part of the first Byte that determines the Type of the Variable
+						case 0x40:{
+							// string Variable (always with a single-letter name)
+							WORD strLength;
+							if (error=frw.Read(&strLength,sizeof(strLength))!=sizeof(strLength)) // error
+								break;
+							BYTE strBytes[65536];
+							if (error=frw.Read(strBytes,strLength)!=strLength) // error
+								break;
+							(  listing << ::CharUpper(varName) << _T(":string(") << (int)strLength << _T(")") HTML_END_OF_NAME_AND_START_OF_VALUE ).__parseBasicLine__( strBytes, strLength );
+							break;
+						}
+						case 0x80:{
+							// number array Variable (always with a single-letter name)
+							WORD nBytesInTotal;
+							if (error=frw.Read(&nBytesInTotal,sizeof(nBytesInTotal))!=sizeof(nBytesInTotal)) // error
+								break;
+							BYTE nDimensions;
+							if (error=frw.Read(&nDimensions,sizeof(nDimensions))!=sizeof(nDimensions)) // error
+								break;
+							if (error=!nDimensions)
+								break;
+							int nItems=1;
+							WORD dimensionSizes[(BYTE)-1];
+							for( WORD n=0,tmp; n<nDimensions; nItems*=(dimensionSizes[n++]=tmp) )
+								if (error=frw.Read(&tmp,sizeof(tmp))!=sizeof(tmp)) // error
+									break;
+							if (error|=!nItems || nItems*sizeof(TZxRom::TNumberInternalForm)>frw.GetLength()-frw.GetPosition())
+								break;
+							listing << ::CharUpper(varName) << _T(":number");
+							for( BYTE n=0; n<nDimensions; listing << _T("[") << (int)dimensionSizes[n++] << _T("]") );
+							listing << HTML_END_OF_NAME_AND_START_OF_VALUE << _T(" { ");
+								for( TZxRom::TNumberInternalForm number; nItems-->0; ){
+									frw.Read(&number,sizeof(number));
+									TUtils::WriteToFile( listing, number.ToDouble() );
+									listing << _T(", ");
+								}
+								listing.Seek(-2,CFile::current); // dismissing the ", " string added after the last Item in the array
+							listing << _T(" }");
+							break;
+						}
+						case 0xA0:{
+							// number Variable with a multi-letter name
+							char c=0;
+							do{
+								if (error=frw.Read(&c,sizeof(c))!=sizeof(c)) // error
+									break;
+								*pVarName++=c&127;
+							}while (c>0);
+							if (error=c>=0) // if the last letter in Variable's name doesn't have the highest bit set ...
+								break; // ... then it's an error
+							*pVarName='\0';
+							//fallthrough
+						}
+						case 0x60:{
+							// number Variable with a single-letter name
+							TZxRom::TNumberInternalForm number;
+							if (error=frw.Read(&number,sizeof(number))!=sizeof(number)) // error
+								break;
+							TUtils::WriteToFile(	listing << ::CharUpper(varName) << _T(":number") << HTML_END_OF_NAME_AND_START_OF_VALUE,
+													number.ToDouble()
+												);
+							break;
+						}
+						case 0xC0:{
+							// character array Variable (always with a single-letter name)
+							WORD nBytesInTotal;
+							if (error=frw.Read(&nBytesInTotal,sizeof(nBytesInTotal))!=sizeof(nBytesInTotal)) // error
+								break;
+							BYTE nDimensions;
+							if (error=frw.Read(&nDimensions,sizeof(nDimensions))!=sizeof(nDimensions)) // error
+								break;
+							if (error=!nDimensions)
+								break;
+							int nItems=1;
+							WORD dimensionSizes[(BYTE)-1];
+							for( WORD n=0,tmp; n<nDimensions; nItems*=(dimensionSizes[n++]=tmp) )
+								if (error=frw.Read(&tmp,sizeof(tmp))!=sizeof(tmp)) // error
+									break;
+							if (error|=!nItems || nItems*sizeof(BYTE)>frw.GetLength()-frw.GetPosition())
+								break;
+							listing << ::CharUpper(varName) << _T(":char");
+							for( BYTE n=0; n<nDimensions; listing << _T("[") << (int)dimensionSizes[n++] << _T("]") );
+							listing << HTML_END_OF_NAME_AND_START_OF_VALUE << _T(" { ");
+								for( BYTE byte; nItems-->0; ){
+									frw.Read(&byte,sizeof(byte));
+									listing << _T("'");
+										listing.__parseBasicLine__(&byte,1);
+									listing << _T("', ");
+								}
+								listing.Seek(-2,CFile::current); // dismissing the ", " string added after the last Item in the array
+							listing << _T(" }");
+							break;
+						}
+						case 0xE0:{
+							// FOR-cycle control Variable (always with a single-letter name)
+							TZxRom::TNumberInternalForm from,to,step;
+							if (error=frw.Read(&from,sizeof(from))!=sizeof(from)) // error
+								break;
+							if (error=frw.Read(&to,sizeof(to))!=sizeof(to)) // error
+								break;
+							if (error=frw.Read(&step,sizeof(step))!=sizeof(step)) // error
+								break;
+							BYTE tmp[sizeof(WORD)+sizeof(BYTE)]; // Word = line number to jump to after the Next clause, Byte = command number in the line indicated by the Word
+							if (error=frw.Read(tmp,sizeof(tmp))!=sizeof(tmp)) // error
+								break;
+							listing << ::CharUpper(varName) << _T(":iterator") << HTML_END_OF_NAME_AND_START_OF_VALUE << _T("for( ");
+							TUtils::WriteToFile(	listing << varName << _T(":number="),
+													from.ToDouble()
+												);
+							const double d=step.ToDouble();
+							TUtils::WriteToFile(	listing << _T("; ") << varName << (d>=0?_T("<="):_T(">=")),
+													to.ToDouble()
+												);
+							TUtils::WriteToFile(	listing << _T("; ") << varName << _T("+="),
+													d
+												);
+							listing << _T(" )");
+							break;
+						}
+						default:
+							error=true;
+							break;
+					}
+				listing << _T("</td></tr>");
+			} while (frw.GetPosition()<frw.GetLength());
+		listing << _T("</table>");
+		// - Error in variables
+		if (error)
+			goto errorInBasic;
 	}
 
 	void CSpectrumDos::CBasicPreview::RefreshPreview(){
