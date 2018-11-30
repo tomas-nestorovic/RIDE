@@ -29,7 +29,7 @@
 		::ZeroMemory(this,sizeof(*this));
 		::lstrcpyA( header, rParams.rev5?REV5_HEADER:STD_HEADER );
 		::strncpy(	creator,
-					app.GetProfileString( INI_DSK, INI_CREATOR, _T("RIDE ") APP_VERSION),
+					app.GetProfileString( INI_DSK, INI_CREATOR, APP_ABBREVIATION _T(" ") APP_VERSION),
 					sizeof(creator)
 				);
 		nHeads=2;
@@ -325,6 +325,19 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				rDiskInfo.nCylinders=0; // converting the Creator field to a null-terminated string
 				DDX_Text( pDX, ID_CREATOR, rDiskInfo.creator, sizeof(rDiskInfo.creator)+1 ); // "+1" = terminal Null character
 					DDV_MaxChars( pDX, rDiskInfo.creator, sizeof(rDiskInfo.creator) );
+					if (!pDX->m_bSaveAndValidate){
+						// populating the Creator combo-box with preset names
+						CComboBox cb;
+						cb.Attach(GetDlgItem(ID_CREATOR)->m_hWnd);
+							TCHAR buf[80];
+							cb.AddString( ::lstrcpyn(buf,APP_ABBREVIATION _T(" ") APP_VERSION,sizeof(rDiskInfo.creator)+1) );
+							DWORD dw=sizeof(buf)/sizeof(TCHAR);
+							if (::GetUserName(buf,&dw)){
+								buf[sizeof(rDiskInfo.creator)]='\0';
+								cb.AddString(buf);
+							}
+						cb.Detach();
+					}
 				rDiskInfo.nCylinders=nCyls;
 			}
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
