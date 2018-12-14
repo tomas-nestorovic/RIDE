@@ -31,6 +31,17 @@ namespace TUtils{
 		operator PCBYTE() const;
 	};
 
+	class CLocalTime sealed:public CTimeSpan{
+		short nMilliseconds;
+		CLocalTime(const CTimeSpan &ts,short nMilliseconds);
+	public:
+		CLocalTime();
+		CLocalTime operator+(const CLocalTime &rTime2) const;
+		CLocalTime operator-(const CLocalTime &rTime2) const;
+		WORD GetMilliseconds() const;
+		DWORD ToMilliseconds() const;
+	};
+
 	extern const float LogicalUnitScaleFactor;
 
 	void FatalError(LPCTSTR text);

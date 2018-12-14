@@ -14,17 +14,15 @@ namespace Debug{
 		: permanentlyOpen(permanentlyOpen) , nIndent(0) {
 		// - creating a standard "Save File" Dialog with suggested Filename
 		#ifdef _DEBUG
-			SYSTEMTIME st;
-			::GetLocalTime(&st);
-			::wsprintf( filename, _T("%d_%d_%d_%d_%s.txt"), st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, logDescription );
+			const TUtils::CLocalTime st;
+			::wsprintf( filename, _T("%d_%d_%d_%s.txt"), st.GetHours(), st.GetMinutes(), st.GetSeconds(), logDescription );
 		#else
 			CFileDialog d( false, _T(""), NULL, OFN_OVERWRITEPROMPT );
 				d.m_ofn.lStructSize=sizeof(OPENFILENAME); // to show the "Places bar"
 				d.m_ofn.nFilterIndex=1;
 				d.m_ofn.lpstrTitle=_T("Enter new log file name");
-				SYSTEMTIME st;
-				::GetLocalTime(&st);
-				::wsprintf( filename, _T("c:\\%d_%d_%d_%d_%s.txt"), st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, logDescription );
+				const TUtils::CLocalTime st;
+				::wsprintf( filename, _T("c:\\%d_%d_%d_%s.txt"), st.GetHours(), st.GetMinutes(), st.GetSeconds(), logDescription );
 				d.m_ofn.lpstrFile=filename;
 			if (d.DoModal()!=IDOK){
 				::PostQuitMessage(ERROR_CANCELLED);
@@ -119,10 +117,10 @@ namespace Debug{
 		return operator<<( _itot(dw,buf,10) );
 	}
 
-	CLogFile &CLogFile::operator<<(const SYSTEMTIME &rst){
+	CLogFile &CLogFile::operator<<(const TUtils::CLocalTime &rlt){
 		// writes given SystemTime to the LogFile
 		TCHAR buf[64];
-		::wsprintf( buf, _T("%02d:%02d:%02d:%03d"), rst.wHour, rst.wMinute, rst.wSecond, rst.wMilliseconds );
+		::wsprintf( buf, _T("%02d:%02d:%02d:%03d"), rlt.GetHours(), rlt.GetMinutes(), rlt.GetSeconds(), rlt.GetMilliseconds() );
 		return operator<<(buf);
 	}
 
@@ -141,48 +139,38 @@ namespace Debug{
 
 	LPCTSTR CLogFile::LogMessage(LPCTSTR text){
 		// logs given text message to the LogFile
-		SYSTEMTIME time;
-		::GetLocalTime(&time);
-		*this << CString('\t',nIndent) << time << _T(" Message: ") << text << '\r' << '\n'; // separate new-line characters as the operator<<(LPCTSTR) operator removes new-line characters, so can't use _T("\r\n")
+		*this << CString('\t',nIndent) << TUtils::CLocalTime() << _T(" Message: ") << text << '\r' << '\n'; // separate new-line characters as the operator<<(LPCTSTR) operator removes new-line characters, so can't use _T("\r\n")
 		return text;
 	}
 
 	TStdWinError CLogFile::LogError(TStdWinError err){
 		// logs given Error to the LogFile and returns the logged Error
-		SYSTEMTIME time;
-		::GetLocalTime(&time);
 		TCHAR buf[220];
 		::FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, err, 0,
 						buf, sizeof(buf)/sizeof(TCHAR),
 						NULL
 					);
-		*this << CString('\t',nIndent) << time << _T(" Error ") << (DWORD)err << _T(": ") << buf << '\r' << '\n'; // separate new-line characters as the operator<<(LPCTSTR) operator removes new-line characters, so can't use _T("\r\n")
+		*this << CString('\t',nIndent) << TUtils::CLocalTime() << _T(" Error ") << (DWORD)err << _T(": ") << buf << '\r' << '\n'; // separate new-line characters as the operator<<(LPCTSTR) operator removes new-line characters, so can't use _T("\r\n")
 		return err;
 	}
 
 	bool CLogFile::LogBool(bool b){
 		// logs given Boolean value to the LogFile and returns the logged Boolean value
-		SYSTEMTIME time;
-		::GetLocalTime(&time);
-		Default << CString('\t',nIndent) << time << _T(" Boolean = ") << (b?_T("True"):_T("False")) << '\r' << '\n'; // separate new-line characters as the operator<<(LPCTSTR) operator removes new-line characters, so can't use _T("\r\n")
+		Default << CString('\t',nIndent) << TUtils::CLocalTime() << _T(" Boolean = ") << (b?_T("True"):_T("False")) << '\r' << '\n'; // separate new-line characters as the operator<<(LPCTSTR) operator removes new-line characters, so can't use _T("\r\n")
 		return b;
 	}
 
 	PSectorData CLogFile::LogSectorDataPointer(PSectorData pSectorData){
 		// logs given PSectorData pointer to the LogFile and returns the logged PSectorData pointer
-		SYSTEMTIME time;
-		::GetLocalTime(&time);
 		TCHAR buf[24];
 		::wsprintf( buf, _T("0%08x"), pSectorData );
-		Default << CString('\t',nIndent) << time << _T(" PSectorData = ") << (pSectorData!=NULL?buf:_T("Null")) << '\r' << '\n'; // separate new-line characters as the operator<<(LPCTSTR) operator removes new-line characters, so can't use _T("\r\n")
+		Default << CString('\t',nIndent) << TUtils::CLocalTime() << _T(" PSectorData = ") << (pSectorData!=NULL?buf:_T("Null")) << '\r' << '\n'; // separate new-line characters as the operator<<(LPCTSTR) operator removes new-line characters, so can't use _T("\r\n")
 		return pSectorData;
 	}
 
 	DWORD CLogFile::LogDialogResult(DWORD result){
 		// logs given dialog Result to the LogFile and returns the logged Result
-		SYSTEMTIME time;
-		::GetLocalTime(&time);
-		Default << CString('\t',nIndent) << time << _T(" Dialog result = ") << result << '\r' << '\n'; // separate new-line characters as the operator<<(LPCTSTR) operator removes new-line characters, so can't use _T("\r\n")
+		Default << CString('\t',nIndent) << TUtils::CLocalTime() << _T(" Dialog result = ") << result << '\r' << '\n'; // separate new-line characters as the operator<<(LPCTSTR) operator removes new-line characters, so can't use _T("\r\n")
 		return result;
 	}
 
@@ -198,18 +186,14 @@ namespace Debug{
 		// ctor
 		: logFile(rLogFile)
 		, name(name) {
-		::GetLocalTime(&start);
 		logFile << CString('\t',rLogFile.nIndent++) << start << _T(" BEGIN ") << name << '\r' << '\n'; // separate new-line characters as the operator<<(LPCTSTR) operator removes new-line characters, so can't use _T("\r\n")
 	}
 
 	CLogFile::CAction::~CAction(){
 		// dtor
 		// - writing to the LogFile
-		SYSTEMTIME end;
-		::GetLocalTime(&end);
-		const UINT_PTR nMilliseconds=	((end.wHour*60+end.wMinute)*60+end.wSecond)*1000+end.wMilliseconds
-										-
-										( ((start.wHour*60+start.wMinute)*60+start.wSecond)*1000+start.wMilliseconds );
+		const TUtils::CLocalTime end;
+		const UINT_PTR nMilliseconds=( end-start ).ToMilliseconds();
 		logFile << CString('\t',--logFile.nIndent) << end << _T(" END, t=") << (DWORD)nMilliseconds << _T("ms") << '\r' << '\n'; // separate new-line characters as the operator<<(LPCTSTR) operator removes new-line characters, so can't use _T("\r\n")
 		// - recording the NumberOfMilliseconds as the minimum time
 		PVOID value=(PVOID)-1;

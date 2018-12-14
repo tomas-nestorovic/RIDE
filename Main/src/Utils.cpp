@@ -181,6 +181,50 @@ namespace TUtils{
 
 
 
+	CLocalTime::CLocalTime(){
+		// ctor
+		SYSTEMTIME st;
+		::GetLocalTime(&st);
+		(CTimeSpan &)*this=CTimeSpan(st.wDay,st.wHour,st.wMinute,st.wSecond);
+		nMilliseconds=st.wMilliseconds;
+	}
+
+	CLocalTime::CLocalTime(const CTimeSpan &ts,short nMilliseconds)
+		// ctor for internal purposes only
+		: CTimeSpan(ts)
+		, nMilliseconds(nMilliseconds) {
+	}
+
+	CLocalTime CLocalTime::operator+(const CLocalTime &rTime2) const{
+		const short tmpMilliseconds=nMilliseconds+rTime2.nMilliseconds;
+		return	tmpMilliseconds<0
+				? CLocalTime( __super::operator+(CTimeSpan(rTime2.GetDays(),rTime2.GetHours(),rTime2.GetMinutes(),rTime2.GetSeconds()+1)), tmpMilliseconds-1000 )
+				: CLocalTime( __super::operator+(rTime2), tmpMilliseconds );
+	}
+
+	CLocalTime CLocalTime::operator-(const CLocalTime &rTime2) const{
+		const short tmpMilliseconds=nMilliseconds-rTime2.nMilliseconds;
+		return	tmpMilliseconds<0
+				? CLocalTime( __super::operator-(CTimeSpan(rTime2.GetDays(),rTime2.GetHours(),rTime2.GetMinutes(),rTime2.GetSeconds()+1)), tmpMilliseconds+1000 )
+				: CLocalTime( __super::operator-(rTime2), tmpMilliseconds );
+	}
+
+	WORD CLocalTime::GetMilliseconds() const{
+		return nMilliseconds;
+	}
+
+	DWORD CLocalTime::ToMilliseconds() const{
+		return GetTotalSeconds()*1000+nMilliseconds;
+	}
+
+
+
+
+
+
+
+
+
 	#define ERROR_BUFFER_SIZE	220
 
 	PTCHAR __formatErrorCode__(PTCHAR buf,TStdWinError errCode){
