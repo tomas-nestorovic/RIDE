@@ -1073,6 +1073,7 @@ fdrawcmd:				// . setting
 	TStdWinError CFDD::__reset__(){
 		// resets internal representation of the disk (e.g. by disposing all content without warning)
 		LOG_ACTION(_T("TStdWinError CFDD::__reset__"));
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - disposing all InternalTracks
 		__freeInternalTracks__();
 		// - re-connecting to the Drive
@@ -1222,6 +1223,7 @@ fdrawcmd:				// . setting
 		} interruption( pAction, lp.fdd, lp.ddFloppy?4096:8192, lp.usAccuracy );
 		// - testing
 		BYTE state=0;
+		const TExclusiveLocker locker(lp.fdd); // locking the access so that no one can disturb during the testing
 		for( BYTE c=lp.nRepeats; c--; ){
 			// . writing the testing Sector (DD = 4kB, HD = 8kB)
 			TStdWinError err;
@@ -1463,7 +1465,6 @@ TUtils::Information(buf);}
 
 	TStdWinError CFDD::Reset(){
 		// resets internal representation of the disk (e.g. by disposing all content without warning)
-		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - displaying message
 		__informationWithCheckableShowNoMore__( _T("Only 3.5\" internal drives mapped as \"A:\" are supported. To spare the floppy and drive, all activity is buffered.\nThe following applies:\n\n- Changes made to the floppy are saved only when you command so (Ctrl+S). If you don't save them, they will NOT appear on the disk!\n\n- Formatting destroys the content immediately."), INI_MSG_RESET );
 		// - resetting
