@@ -93,6 +93,7 @@
 		bool operator==(const TSectorId &id2) const;
 		bool operator!=(const TSectorId &id2) const;
 		TSectorId &operator=(const FD_ID_HEADER &rih);
+		TSectorId &operator=(const FD_TIMED_ID_HEADER &rtih);
 
 		PTCHAR ToString(PTCHAR buffer) const;
 	} *PSectorId;

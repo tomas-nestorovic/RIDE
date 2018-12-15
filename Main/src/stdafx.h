@@ -58,6 +58,7 @@ class CFillEmptySpaceDialog; // forward
 
 typedef const BYTE *PCBYTE;
 typedef const WORD *PCWORD;
+typedef const int *PCINT;
 
 #include "MainWindow.h"
 #include "Image.h"

@@ -9,6 +9,7 @@
 
 	#define INI_LATENCY_CONTROLLER		_T("latfdc")
 	#define INI_LATENCY_1BYTE			_T("lat1b")
+	#define INI_LATENCY_GAP3			_T("latg3")
 	#define INI_CALIBRATE_SECTOR_ERROR	_T("clberr")
 	#define INI_CALIBRATE_FORMATTING	_T("clbfmt")
 	#define INI_MOTOR_OFF_SECONDS		_T("mtroff")
@@ -28,6 +29,7 @@
 		// ctor
 		: controllerLatency( app.GetProfileInt(INI_FDD,INI_LATENCY_CONTROLLER,86000)/1000.0 )
 		, oneByteLatency( app.GetProfileInt(INI_FDD,INI_LATENCY_1BYTE,32000)/1000.0 )
+		, gap3Latency( app.GetProfileInt(INI_FDD,INI_LATENCY_GAP3,FDD_SECTOR_GAP3_STD*32000)/1000.0 )
 		, calibrationAfterError( (TCalibrationAfterError)app.GetProfileInt(INI_FDD,INI_CALIBRATE_SECTOR_ERROR,TCalibrationAfterError::ONCE_PER_CYLINDER) )
 		, calibrationStepDuringFormatting( app.GetProfileInt(INI_FDD,INI_CALIBRATE_FORMATTING,0) )
 		, verifyFormattedTracks( app.GetProfileInt(INI_FDD,INI_VERIFY_FORMATTING,true)!=0 )
@@ -40,6 +42,7 @@
 		// dtor
 		app.WriteProfileInt( INI_FDD, INI_LATENCY_CONTROLLER, controllerLatency*1000 );
 		app.WriteProfileInt( INI_FDD, INI_LATENCY_1BYTE, oneByteLatency*1000 );
+		app.WriteProfileInt( INI_FDD, INI_LATENCY_GAP3, gap3Latency*1000 );
 		app.WriteProfileInt( INI_FDD, INI_CALIBRATE_SECTOR_ERROR,calibrationAfterError );
 		app.WriteProfileInt( INI_FDD, INI_CALIBRATE_FORMATTING,calibrationStepDuringFormatting );
 		app.WriteProfileInt( INI_FDD, INI_MOTOR_OFF_SECONDS,nSecondsToTurningMotorOff );
@@ -59,7 +62,7 @@
 	#define __REFER_TO_TRACK(fdd,cyl,head)\
 				fdd->internalTracks[cyl*2+head] /* 2 = max number of Sides on a floppy */
 
-	TStdWinError CFDD::TInternalTrack::TSectorInfo::__saveToDisk__(CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip) const{
+	TStdWinError CFDD::TInternalTrack::TSectorInfo::__saveToDisk__(CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip,bool verify){
 		// saves this Sector to inserted floppy; returns Windows standard i/o error
 		LOG_SECTOR_ACTION(&id,_T("TStdWinError CFDD::TInternalTrack::TSectorInfo::__saveToDisk__"));
 		// - seeking the Head
@@ -148,7 +151,7 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 						// . disposing the new InternalTrack representations (as it's been worked only with the original one), restoring the original
 						fdd->__unformatInternalTrack__(cyl,head); // disposing any new InternalTrack representation
 						__REFER_TO_TRACK(fdd,cyl,head)=(PInternalTrack)pit; // re-attaching the original InternalTrack representation
-						// . writing the 0..(K-1)-th Sectors back to the above reformatted Track, leaving K+1..N-th Sectors unwritten (caller's duty); we re-attempt to write this K-th Sector in the next pass through the cycle
+						// . writing the 0..(K-1)-th Sectors back to the above reformatted Track, leaving K+1..N-th Sectors unwritten (caller's duty); we re-attempt to write this K-th Sector in the next iteration
 						for( TSector s=0; s<nSectorsToSkip; s++ ){
 							const TPhysicalAddress chs={ cyl, head, pit->sectors[s].id };
 							if ( err=pit->sectors[s].__saveToDisk__(fdd,pit,s,verify) ) // if Sector not writeable even after reformatting the Track ...
@@ -171,7 +174,7 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 		return ERROR_SUCCESS;
 	}
 
-	BYTE CFDD::TInternalTrack::TSectorInfo::__verifySaving__(CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip){
+	BYTE CFDD::TInternalTrack::TSectorInfo::__verifySaving__(const CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip){
 		// verifies the saving made by during calling to __saveToDisk__
 		LOG_SECTOR_ACTION(&id,_T("verifying the writing"));
 		const TPhysicalAddress chs={ pit->cylinder, pit->head, id };
@@ -201,14 +204,49 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 
 	static const TFdcStatus TrackRawContentIoError(FDC_ST1_DATA_ERROR,FDC_ST2_CRC_ERROR_IN_DATA);
 
-	CFDD::TInternalTrack::TInternalTrack(const CFDD *fdd,TCylinder cyl,THead head,TSector _nSectors,PCSectorId bufferId)
+	CFDD::TInternalTrack::TInternalTrack(const CFDD *fdd,TCylinder cyl,THead head,TSector _nSectors,PCSectorId bufferId,PCINT sectorStartsMicroseconds)
 		// ctor
 		// - initialization
 		: cylinder(cyl) , head(head)
 		, nSectors(_nSectors) , sectors((TSectorInfo *)::ZeroMemory(::calloc(_nSectors,sizeof(TSectorInfo)),_nSectors*sizeof(TSectorInfo))) {
 		TInternalTrack::TSectorInfo *psi=sectors;
-		for( BYTE s=0; s<_nSectors; psi++->seqNum=s++ )
+		for( BYTE s=0; s<nSectors; psi++->seqNum=s++ ){
 			psi->length=fdd->__getUsableSectorLength__(( psi->id=*bufferId++ ).lengthCode );
+			if (sectorStartsMicroseconds) // if start times provided ...
+				psi->startMicroseconds=*sectorStartsMicroseconds++; // ... they are used
+			else // if no start times provided ...
+				if (s) // ... then simply inferring them
+					psi->startMicroseconds=	sectors[s-1].endMicroseconds
+											+
+											FDD_SECTOR_GAP3_STD * fdd->params.oneByteLatency;	// default inter-sector Gap3 length in microseconds
+				else
+					psi->startMicroseconds=0; // the first Sector starts immediatelly after the index pulse
+			psi->endMicroseconds=	psi->startMicroseconds // inferring end of Sector from its lengths and general IBM track layout specification
+									+
+									(	12	// N Bytes 0x00 (see IBM's track layout specification)
+										+
+										3	// 0xA1A1A1 mark with corrupted clock
+										+
+										1	// Sector ID Address Mark
+										+
+										4	// Sector ID
+										+
+										sizeof(TCrc) // Sector ID CRC
+										+
+										22	// Gap2: N Bytes 0x4E
+										+
+										12	// Gap2: N Bytes 0x00
+										+
+										3	// Gap2: 0xA1A1A1 mark with corrupted clock
+										+
+										1	// Data Address Mark
+										+
+										psi->length// data
+										+
+										sizeof(TCrc) // data CRC
+									) *
+									fdd->params.oneByteLatency; // usually 32 microseconds
+		}
 		// - determining which Sector numbers are already taken on the Track
 		bool numbersTaken[(TSector)-1+1];
 		::ZeroMemory(numbersTaken,sizeof(numbersTaken));
@@ -292,7 +330,8 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 			TStdWinError err=fdd->__formatToOneLongVerifiedSector__( chs, 0xe5 );
 			if (err!=ERROR_SUCCESS) return err;
 			// . saving RawContent
-			const TSectorInfo si={	rawContent.id,
+			const TSectorInfo si={	// if uncommented, revise the correspondence to actual structure members
+									rawContent.id,
 									fdd->__getUsableSectorLength__(rawContent.id.lengthCode),
 									(PSectorData)pData,
 									TFdcStatus(
@@ -647,34 +686,47 @@ error:				switch (const TStdWinError err=::GetLastError()){
 							return pAction->TerminateWithError(err);
 					}*/
 					// . saving (and verifying) data of Track's all Modified Sectors
+					bool allSectorsProcessed;
 					do{
-						bool allSectorsSavedOk=true; // assumption
 						// : saving
-						for( BYTE startPos=0; startPos<2; startPos++ ){ // first only Sectors at even positions in the Track, then only Sectors at odd positions
-							TInternalTrack::TSectorInfo *psi=pit->sectors+startPos;
-							for( TSector n=startPos; n<pit->nSectors; psi+=2,n+=2 ){
+						BYTE justSavedSectors[(TSector)-1];
+						::ZeroMemory(justSavedSectors,pit->nSectors);
+						do{
+							allSectorsProcessed=true; // assumption
+							int lastSectorEndMicroseconds=INT_MIN/2;
+							for( TSector n=0; n<pit->nSectors; n++ ){
 								if (!pAction->bContinue) return LOG_ERROR(ERROR_CANCELLED);
-								if (psi->modified) // Sector has been Modified since it's was last saved
-									if (const TStdWinError err=psi->__saveToDisk__( sp.fdd, pit, n, false )) // False = verification carried out below
-										return pAction->TerminateWithError(err);
-									else
-										psi->modified=sp.fdd->params.verifyWrittenData; // no longer Modified if Verification turned off
-							}
-						}
-						// : verification
-						for( BYTE startPos=0; startPos<2; startPos++ ){ // first only Sectors at even positions in the Track, then only Sectors at odd positions
-							TInternalTrack::TSectorInfo *psi=pit->sectors+startPos;
-							for( TSector n=startPos; n<pit->nSectors; psi+=2,n+=2 ){
-								if (!pAction->bContinue) return LOG_ERROR(ERROR_CANCELLED);
-								if (psi->modified){ // Sector has been Modified since it's was last saved
-									const BYTE res=psi->__verifySaving__( sp.fdd, pit, n );
-									if (res==IDABORT) return pAction->TerminateWithError(ERROR_CANCELLED);
-									allSectorsSavedOk&=res==IDIGNORE;
+								TInternalTrack::TSectorInfo &si=pit->sectors[n];
+								if (si.modified && !justSavedSectors[n]){
+									if (si.startMicroseconds-lastSectorEndMicroseconds>=sp.fdd->params.gap3Latency) // sufficient distance between this and previously saved Sectors, so both of them can be processed in a single disk revolution
+										if (const TStdWinError err=si.__saveToDisk__( sp.fdd, pit, n, false )) // False = verification carried out below
+											return pAction->TerminateWithError(err);
+										else{
+											si.modified=sp.fdd->params.verifyWrittenData; // no longer Modified if Verification turned off
+											lastSectorEndMicroseconds=si.endMicroseconds;
+											justSavedSectors[n]=true;
+										}
+									allSectorsProcessed=false; // will need one more cycle iteration to eventually find out that all Sectors are processed OK
 								}
 							}
-						}
-						if (allSectorsSavedOk) break;
-					}while (true);
+						}while (!allSectorsProcessed);
+						// : verification
+						do{
+							allSectorsProcessed=true; // assumption
+							int lastSectorEndMicroseconds=INT_MIN/2;
+							for( TSector n=0; n<pit->nSectors; n++ ){
+								if (!pAction->bContinue) return LOG_ERROR(ERROR_CANCELLED);
+								TInternalTrack::TSectorInfo &si=pit->sectors[n];
+								if (si.modified)
+									if (si.startMicroseconds-lastSectorEndMicroseconds>=sp.fdd->params.gap3Latency){ // sufficient distance between this and previously saved Sectors, so both of them can be processed in a single disk revolution
+										const BYTE res=si.__verifySaving__( sp.fdd, pit, n );
+										if (res==IDABORT) return pAction->TerminateWithError(ERROR_CANCELLED);
+										lastSectorEndMicroseconds=si.endMicroseconds;
+										allSectorsProcessed=false; // will need one more cycle iteration to eventually find out that all Sectors are processed OK
+									}
+							}
+						}while (!allSectorsProcessed);
+					}while (!allSectorsProcessed);
 				}
 		sp.fdd->m_bModified=FALSE;
 		return ERROR_SUCCESS;
@@ -727,13 +779,16 @@ error:				switch (const TStdWinError err=::GetLastError()){
 							#pragma pack(1)
 							struct{
 								BYTE n;
-								FD_ID_HEADER header[(TSector)-1];
+								BYTE firstSeen;
+								DWORD trackTime;
+								FD_TIMED_ID_HEADER header[(TSector)-1];
 							} sectors;
-							if (!::DeviceIoControl( _HANDLE, IOCTL_FD_SCAN_TRACK, &sp,sizeof(sp), &sectors,sizeof(sectors), &nBytesTransferred, NULL ))
+							if (!::DeviceIoControl( _HANDLE, IOCTL_FD_TIMED_SCAN_TRACK, &sp,sizeof(sp), &sectors,sizeof(sectors), &nBytesTransferred, NULL ))
 								break;
-							TSectorId bufferId[(TSector)-1];
-							for( BYTE n=0; n<sectors.n; bufferId[n]=sectors.header[n],n++ );
-							return REFER_TO_TRACK(cyl,head) = new TInternalTrack( this, cyl, head, sectors.n, bufferId );
+							TSectorId bufferId[(TSector)-1]; int sectorTimes[(TSector)-1];
+							for( BYTE n=0; n<sectors.n; n++ )
+								bufferId[n]=sectors.header[n], sectorTimes[n]=sectors.header[n].reltime;
+							return REFER_TO_TRACK(cyl,head) = new TInternalTrack( this, cyl, head, sectors.n, bufferId, sectorTimes );//sectorTimes );
 						}
 						default:
 							ASSERT(FALSE);
@@ -869,11 +924,12 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		for( TSector i=nSectors; i>0; outFdcStatuses[--i]=TFdcStatus::SectorNotFound );
 		// - getting the real data for the Sectors
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		LOG_TRACK_ACTION(cyl,head,_T("void CFDD::GetTrackData"));
 		if (const PInternalTrack pit=__scanTrack__(cyl,head)){
 			// . getting Track's RawContent
 			/* // TODO: separate into a new method, e.g. virtual CImage::GetTrackRawContent, when implementing support for Kryoflux
 			if (params.readWholeTrackAsFirstSector && pit->__canRawDumpBeCreated__())
-				if (chs.sectorId==pit->rawContent.id){
+				if (*bufferId==pit->rawContent.id){
 					if (!pit->rawContent.data){ // Track RawContent not yet read
 						// : buffering each Sector in the Track (should the RawContent be Modified and subsequently saved - in such case, the RawContent must be saved first before saving any of its Sectors)
 						for( BYTE i=0; i<pit->nSectors; ){
@@ -883,7 +939,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 						// : reading the Track
 						DWORD nBytesTransferred;
 						const PCSectorId pid=&pit->sectors[0].id;
-						FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM|FD_OPTION_SK, chs.head, pid->cylinder,pid->side,pid->sector,7, pid->sector+1, 1, 0xff }; // 7 = reads 16384 Bytes beginning with the first Data Field
+						FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM|FD_OPTION_SK, head, pid->cylinder,pid->side,pid->sector,7, pid->sector+1, 1, 0xff }; // 7 = reads 16384 Bytes beginning with the first Data Field
 						if (::DeviceIoControl( _HANDLE, IOCTL_FDCMD_READ_TRACK, &rwp,sizeof(rwp), dataBuffer,SECTOR_LENGTH_MAX, &nBytesTransferred, NULL )!=0){
 							// Track read - reconstructing the gaps and ID that preceed the first physical Sector (because reading of the Track begun from its data but the ID Field itself wasn't read)
 							PSectorData pData = pit->rawContent.data = ALLOCATE_SECTOR_DATA(pit->rawContent.length128);
@@ -895,25 +951,42 @@ error:				switch (const TStdWinError err=::GetLastError()){
 						}//else
 							//return NULL; // commented out as it holds that "pid->rawContent.data==Null"
 					}
-					*sectorLength=__getUsableSectorLength__(pit->rawContent.id.lengthCode), *pFdcStatus=TrackRawContentIoError;
-					return LOG_PSECTORDATA(pit->rawContent.data);
-				}else if (nSectorsToSkip)
-					nSectorsToSkip--;
+					bufferId++, nSectors--;
+					*outBufferData++=pit->rawContent.data;
+					*outBufferLengths++=__getUsableSectorLength__(pit->rawContent.id.lengthCode);
+					*outFdcStatuses++=TFdcStatus::WithoutError;
+				}
 			//*/
 			// . Planning the requested Sectors retrieval
+			#ifdef LOGGING_ENABLED			
+				TCHAR buf[4000];
+				for( TCHAR n=0,*p=buf; n<pit->nSectors; n++ ){
+					const int i=::wsprintf(p,_T("%d:<%d,%d> "),n,pit->sectors[n].startMicroseconds,pit->sectors[n].endMicroseconds);
+					p+=i;
+				}
+				LOG_MESSAGE(buf);
+			#endif
 			struct TPlanStep sealed{
 				TInternalTrack::TSectorInfo *psi;
 				BYTE indexIntoOutputBuffers;
 			} plan[(TSector)-1], *planEnd=plan;
-			for( BYTE startPos=0; startPos<2; startPos++ ) // first only Sectors at even positions in the Track, then only Sectors at odd positions
-				for( TSector n=startPos; n<pit->nSectors; n+=2 )
-					for( TSector i=0; i<nSectors; i++ ) // checking if the current Sector in the Track is among the requested ones
-						if (n>=bufferNumbersOfSectorsToSkip[i] && pit->sectors[n].id==bufferId[i]){
-							// yes, the current Sector in the Track is one of the requested ones
-							planEnd->psi=&pit->sectors[n], planEnd->indexIntoOutputBuffers=i;
-							planEnd++;
-							break;
-						}
+			BYTE alreadyPlannedSectors[(TSector)-1];
+			::ZeroMemory(alreadyPlannedSectors,nSectors);
+			for( BYTE nSectorsToPlan=nSectors; planEnd-plan<nSectors && nSectorsToPlan; nSectorsToPlan-- ){ // A&B, A = all Sectors requested to read planned, B = all Sectors are planned in N iterations in the worst case (preventing infinite loop in case that at least one Sector isn't found on the Track)
+				int lastSectorEndMicroseconds=INT_MIN/2;
+				for( TSector n=0; n<pit->nSectors; n++ ){
+					TInternalTrack::TSectorInfo &si=pit->sectors[n];
+					for( TSector s=0; s<nSectors; s++ )
+						if (!alreadyPlannedSectors[s] && bufferId[s]==si.id) // one of the Sectors requested to read
+							if (si.startMicroseconds-lastSectorEndMicroseconds>=params.gap3Latency){ // sufficient distance between this and previously read Sectors, so both of them can be read in a single disk revolution
+								planEnd->psi=&si, planEnd->indexIntoOutputBuffers=s;
+								planEnd++;
+								lastSectorEndMicroseconds=si.endMicroseconds;
+								alreadyPlannedSectors[s]=true;
+								break;
+							}
+				}
+			}
 			// . executing the above composed Plan
 			for( const TPlanStep *pPlanStep=plan; pPlanStep<planEnd; pPlanStep++ ){
 				TInternalTrack::TSectorInfo *const psi=pPlanStep->psi;
@@ -1132,18 +1205,22 @@ fdrawcmd:				// . setting
 		const bool ddFloppy; // double density floppy
 		const BYTE usAccuracy; // accuracy in microseconds
 		const BYTE nRepeats;
+		TCylinder cyl;	// healthy Track to use for computation of the latencies
+		THead head;		// healthy Track to use for computation of the latencies
 		float outControllerLatency; // microseconds
 		float out1ByteLatency;		// microseconds
+		float outGap3Latency;		// microseconds
 
 		TLatencyParams(CFDD *fdd,bool ddFloppy,BYTE usAccuracy,BYTE nRepeats)
 			: fdd(fdd)
 			, ddFloppy(ddFloppy)
 			, usAccuracy(usAccuracy) , nRepeats(nRepeats)
-			, outControllerLatency(0) , out1ByteLatency(0) {
+			, cyl(0) , head(0) // a healthy Track will be found when determining the controller latency
+			, outControllerLatency(0) , out1ByteLatency(0) , outGap3Latency(0) {
 		}
 	};
-	UINT AFX_CDECL CFDD::__determineLatency_thread__(PVOID _pCancelableAction){
-		// thread to automatically determine the write latency
+	UINT AFX_CDECL CFDD::__determineControllerAndOneByteLatency_thread__(PVOID _pCancelableAction){
+		// thread to automatically determine the controller and one Byte write latencies
 		TBackgroundActionCancelable *const pAction=(TBackgroundActionCancelable *)_pCancelableAction;
 		TLatencyParams &lp=*(TLatencyParams *)pAction->fnParams;
 		// - defining the Interruption
@@ -1151,20 +1228,23 @@ fdrawcmd:				// . setting
 		private:
 			const TBackgroundActionCancelable *const pAction;
 			CFDD *const fdd;
+			TCylinder &rCyl;
+			THead &rHead;
 			const PVOID sectorDataToWrite;
 			const BYTE usAccuracy; // microseconds
 		public:
-			TPhysicalAddress chs;
 			const WORD sectorLength;
+			TSectorId sectorId;
 			WORD nMicroseconds;
 
-			TInterruption(const TBackgroundActionCancelable *pAction,CFDD *_fdd,WORD _sectorLength,BYTE _usAccuracy)
+			TInterruption(const TBackgroundActionCancelable *pAction,TLatencyParams &lp)
 				// ctor
 				: pAction(pAction)
-				, fdd(_fdd) , sectorLength(_sectorLength)
+				, fdd(lp.fdd) , sectorLength(lp.ddFloppy?4096:8192)
+				, rCyl(lp.cyl) , rHead(lp.head) // a healthy Track yet to be found
 				, sectorDataToWrite( ::VirtualAlloc(NULL,SECTOR_LENGTH_MAX,MEM_COMMIT,PAGE_READWRITE) )
-				, usAccuracy(_usAccuracy) , nMicroseconds(0) {
-				::ZeroMemory(&chs,sizeof(chs)), chs.sectorId.lengthCode=__getSectorLengthCode__(sectorLength);
+				, usAccuracy(lp.usAccuracy) , nMicroseconds(0) {
+				sectorId.lengthCode=__getSectorLengthCode__(sectorLength); // any Cylinder/Side/Sector values will do, so letting them uninitialized
 				::memset( sectorDataToWrite, TEST_BYTE, sectorLength );
 			}
 			~TInterruption(){
@@ -1173,7 +1253,7 @@ fdrawcmd:				// . setting
 			}
 
 			TStdWinError __writeSectorData__(WORD nBytesToWrite) const{
-				// writes SectorData to the actual PhysicalAddress and interrupts the controller after specified NumberOfBytesToWrite and Microseconds; returns Windows standard i/o error
+				// writes SectorData to the current Track and interrupts the controller after specified NumberOfBytesToWrite and Microseconds; returns Windows standard i/o error
 				// : setting controller interruption to the specified NumberOfBytesToWrite and Microseconds
 				if (const TStdWinError err=fdd->__setTimeBeforeInterruptingTheFdc__( nBytesToWrite, nMicroseconds ))
 					return err;
@@ -1181,7 +1261,7 @@ fdrawcmd:				// . setting
 				DWORD nBytesTransferred;
 				switch (fdd->DRIVER){
 					case DRV_FDRAWCMD:{
-						FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM, chs.head, chs.sectorId.cylinder,chs.sectorId.side,chs.sectorId.sector,chs.sectorId.lengthCode, chs.sectorId.sector+1, FDD_SECTOR_GAP3_STD/2, 0xff };
+						FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM, rHead, sectorId.cylinder,sectorId.side,sectorId.sector,sectorId.lengthCode, sectorId.sector+1, FDD_SECTOR_GAP3_STD/2, sectorId.lengthCode?0xff:0x80 };
 						return	::DeviceIoControl( fdd->_HANDLE, IOCTL_FDCMD_WRITE_DATA, &rwp,sizeof(rwp), sectorDataToWrite,sectorLength, &nBytesTransferred, NULL )!=0
 								? ERROR_SUCCESS
 								: LOG_ERROR(::GetLastError());
@@ -1194,16 +1274,16 @@ fdrawcmd:				// . setting
 			WORD __getNumberOfWrittenBytes__() const{
 				// counts and returns the number of TestBytes actually written in the most recent call to __writeSectorData__
 				PCBYTE p=(PCBYTE)fdd->dataBuffer;
-				for( fdd->__bufferSectorData__(chs,sectorLength,&TInternalTrack(fdd,chs.cylinder,chs.head,1,&chs.sectorId),0,&TFdcStatus()); *p==TEST_BYTE; p++ );
+				for( fdd->__bufferSectorData__(rCyl,rHead,&sectorId,sectorLength,&TInternalTrack(fdd,rCyl,rHead,1,&sectorId,NULL),0,&TFdcStatus()); *p==TEST_BYTE; p++ );
 				return p-(PCBYTE)fdd->dataBuffer;
 			}
 			TStdWinError __setInterruptionToWriteSpecifiedNumberOfBytes__(WORD nBytes){
-				// sets this Interruption so that the specified NumberOfBytes is written to actual PhysicalAddress; returns the NumberOfMicroseconds set; returns Windows standard i/o error
+				// sets this Interruption so that the specified NumberOfBytes is written to current Track; returns Windows standard i/o error
 				// : initialization using the default NumberOfMicroseconds
 				nMicroseconds=20;
 				// : increasing the NumberOfMicroseconds until the specified NumberOfBytes is written for the first time
 				do{
-					if (!pAction->bContinue) return 1;
+					if (!pAction->bContinue) return ERROR_CANCELLED;
 					nMicroseconds+=usAccuracy;
 					if (const TStdWinError err=__writeSectorData__(nBytes))
 						return err;
@@ -1211,7 +1291,7 @@ fdrawcmd:				// . setting
 				const float nMicrosecondsA=nMicroseconds;
 				// : increasing the NumberOfMicroseconds until a higher NumberOfBytes is written for the first time
 				do{
-					if (!pAction->bContinue) return 1;
+					if (!pAction->bContinue) return ERROR_CANCELLED;
 					nMicroseconds+=usAccuracy;
 					if (const TStdWinError err=__writeSectorData__(nBytes))
 						return err;
@@ -1220,68 +1300,110 @@ fdrawcmd:				// . setting
 				nMicroseconds=(nMicrosecondsA+nMicroseconds)/2;
 				return ERROR_SUCCESS;
 			}
-		} interruption( pAction, lp.fdd, lp.ddFloppy?4096:8192, lp.usAccuracy );
+		} interruption( pAction, lp );
 		// - testing
-		BYTE state=0;
 		const TExclusiveLocker locker(lp.fdd); // locking the access so that no one can disturb during the testing
-		for( BYTE c=lp.nRepeats; c--; ){
-			// . writing the testing Sector (DD = 4kB, HD = 8kB)
-			TStdWinError err;
+		for( BYTE c=lp.nRepeats,state=0; c--; ){
+			// . STEP 1: writing the test Sector (DD = 4kB, HD = 8kB)
 			do{
+				if (!pAction->bContinue) return LOG_ERROR(ERROR_CANCELLED);
 				// : seeking Head to the particular Cylinder
-				TPhysicalAddress &chs=interruption.chs;
-				if (!lp.fdd->fddHead.__seekTo__(chs.cylinder))
-					return pAction->TerminateWithError(ERROR_REQUEST_REFUSED);
+				if (!lp.fdd->fddHead.__seekTo__(lp.cyl))
+					return LOG_ERROR(pAction->TerminateWithError(ERROR_REQUEST_REFUSED));
 				// : formatting Track to a single Sector
 				const bool vft0=lp.fdd->params.verifyFormattedTracks;
 				lp.fdd->params.verifyFormattedTracks=false;
-					err=lp.fdd->FormatTrack( chs.cylinder, chs.head, 1,&chs.sectorId,&interruption.sectorLength,&TFdcStatus::WithoutError, FDD_SECTOR_GAP3_STD, 0 );
+					const TStdWinError err=lp.fdd->FormatTrack( lp.cyl, lp.head, 1,&interruption.sectorId,&interruption.sectorLength,&TFdcStatus::WithoutError, FDD_SECTOR_GAP3_STD, 0 );
 				lp.fdd->params.verifyFormattedTracks=vft0;
 				if (err!=ERROR_SUCCESS)
-					return pAction->TerminateWithError(err);
+					return LOG_ERROR(pAction->TerminateWithError(err));
 				// : verifying the single formatted Sector
 				TFdcStatus sr;
-				lp.fdd->__bufferSectorData__( chs, interruption.sectorLength, &TInternalTrack(lp.fdd,chs.cylinder,chs.head,1,&chs.sectorId), 0, &sr );
+				lp.fdd->__bufferSectorData__( lp.cyl, lp.head, &interruption.sectorId, interruption.sectorLength, &TInternalTrack(lp.fdd,lp.cyl,lp.head,1,&interruption.sectorId,NULL), 0, &sr );
 				if (sr.IsWithoutError())
-					break;
+					break; // yes, a healthy Track has been found - using it for computation of all latencies
 				// : attempting to create a Sector WithoutErrors on another Track
-				if (++chs.cylinder==FDD_CYLINDERS_MAX)
-					return pAction->TerminateWithError(ERROR_REQUEST_REFUSED);
+				if (++lp.cyl==FDD_CYLINDERS_MAX)
+					return LOG_ERROR(pAction->TerminateWithError(ERROR_REQUEST_REFUSED));
 			}while (true);
 			pAction->UpdateProgress(++state);
-			// . experimentally determining parameters from sample area of TestBytes
-				// : determining the ControllerLatency
-				const WORD nBytes=interruption.sectorLength/2;
-				if (const TStdWinError err=interruption.__setInterruptionToWriteSpecifiedNumberOfBytes__(nBytes))
-					return pAction->TerminateWithError(err);
-				const float nControllerMicroseconds=interruption.nMicroseconds;
-				lp.outControllerLatency+=nControllerMicroseconds; // below divided by the number of attempts to get an average
+			// . STEP 2: experimentally determining the ControllerLatency
+			if (!pAction->bContinue) return LOG_ERROR(ERROR_CANCELLED);
+			const WORD nBytes=interruption.sectorLength/2;
+			if (const TStdWinError err=interruption.__setInterruptionToWriteSpecifiedNumberOfBytes__(nBytes))
+				return LOG_ERROR(pAction->TerminateWithError(err));
+			const float nControllerMicroseconds=interruption.nMicroseconds;
+			lp.outControllerLatency+=nControllerMicroseconds; // below divided by the number of attempts to get an average
 /*
 {TCHAR buf[80];
 ::wsprintf(buf,_T("nMicrosecondsA=%d"),(int)(nControllerMicroseconds*1000));
 TUtils::Information(buf);}
 //*/
-				pAction->UpdateProgress(++state);
-				// : determining the latency of one Byte
-				const float p = interruption.nMicroseconds = 65000;
-				if (const TStdWinError err=interruption.__writeSectorData__(nBytes))
-					return pAction->TerminateWithError(err);
-				const float n=interruption.__getNumberOfWrittenBytes__();
-				const float nMicrosecondsPerByte=( p - nControllerMicroseconds ) / ( n - nBytes );
+			pAction->UpdateProgress(++state);
+			// . STEP 3: experimentally determining the latency of one Byte
+			if (!pAction->bContinue) return LOG_ERROR(ERROR_CANCELLED);
+			const float p = interruption.nMicroseconds = 65000;
+			if (const TStdWinError err=interruption.__writeSectorData__(nBytes))
+				return LOG_ERROR(pAction->TerminateWithError(err));
+			const float n=interruption.__getNumberOfWrittenBytes__();
+			const float nMicrosecondsPerByte=( p - nControllerMicroseconds ) / ( n - nBytes );
 /*
 {TCHAR buf[80];
 ::wsprintf(buf,_T("oneByteLatency=%d"),(int)(nMicrosecondsPerByte*1000));
 TUtils::Information(buf);}
 //*/
-				//lp.out1ByteLatency+=( n - sectorLength ) / ( p - nMicrosecondsZ );
-				lp.out1ByteLatency+=nMicrosecondsPerByte; // below divided by the number of attempts to get an average
-				pAction->UpdateProgress(++state);
+			//lp.out1ByteLatency+=( n - sectorLength ) / ( p - nMicrosecondsZ );
+			lp.out1ByteLatency+=nMicrosecondsPerByte; // below divided by the number of attempts to get an average
 			pAction->UpdateProgress(++state);
-			if (!pAction->bContinue) return LOG_ERROR(ERROR_CANCELLED);
 		}
 		// - computing the final latency values
 		lp.outControllerLatency/=lp.nRepeats, lp.out1ByteLatency/=lp.nRepeats;
-		pAction->UpdateProgress(++state);
+		return ERROR_SUCCESS;
+	}
+	UINT AFX_CDECL CFDD::__determineGap3Latency_thread__(PVOID _pCancelableAction){
+		// thread to automatically determine the Gap3 latency
+		TBackgroundActionCancelable *const pAction=(TBackgroundActionCancelable *)_pCancelableAction;
+		TLatencyParams &lp=*(TLatencyParams *)pAction->fnParams;
+		const TExclusiveLocker locker(lp.fdd); // locking the access so that no one can disturb during the testing
+		for( BYTE gap3=1; gap3<FDD_SECTOR_GAP3_STD; pAction->UpdateProgress(gap3+=3) ){
+			if (!pAction->bContinue) return LOG_ERROR(ERROR_CANCELLED);
+			// . STEP 1: writing two test Sectors
+			static const TSectorId SectorIds[]={ {1,0,1,2}, {1,0,2,2} };
+			static const WORD SectorLengths[]={ 512, 512 };
+			static const TFdcStatus SectorStatuses[]={ TFdcStatus::WithoutError, TFdcStatus::WithoutError };
+			const bool vft0=lp.fdd->params.verifyFormattedTracks;
+			lp.fdd->params.verifyFormattedTracks=false;
+				const TStdWinError err=lp.fdd->FormatTrack( lp.cyl, lp.head, 2, SectorIds, SectorLengths, SectorStatuses, gap3, TEST_BYTE );
+			lp.fdd->params.verifyFormattedTracks=vft0;
+			if (err!=ERROR_SUCCESS)
+				return pAction->TerminateWithError(err);
+			// . STEP 2: reading the Sectors
+			BYTE c=0;
+			while (c<lp.nRepeats){
+				if (!pAction->bContinue) return LOG_ERROR(ERROR_CANCELLED);
+				// . STEP 2.1: scanning the Track and seeing how distant the two test Sectors are on it
+				lp.fdd->__unformatInternalTrack__(lp.cyl,lp.head); // disposing internal information on actual Track format
+				const TInternalTrack *const pit=lp.fdd->__scanTrack__(lp.cyl,lp.head);
+				// : STEP 2.2: reading the first formatted Sector
+				WORD w;
+				lp.fdd->GetSectorData( lp.cyl, lp.head, &SectorIds[0], &w );
+				// : STEP 2.3: Reading the second formatted Sector and measuring how long the reading took
+				const TUtils::CLocalTime startTime;
+					lp.fdd->GetSectorData( lp.cyl, lp.head, &SectorIds[1], &w );
+				const TUtils::CLocalTime endTime;
+				const DWORD deltaMicroseconds=(endTime-startTime).ToMilliseconds()*1000;
+				// . STEP 2.4: determining if the readings took more than just one disk revolution or more
+				if (deltaMicroseconds>=pit->sectors[1].endMicroseconds-pit->sectors[0].endMicroseconds+4000) // 4000 = allowing circa 30 Bytes as a limit of detecting a single disk revolution
+					break;
+				c++;
+			}
+			if (c==lp.nRepeats){
+				// both Sectors were successfully read in a single disk revolution in all N repeats
+				lp.outGap3Latency=gap3*lp.out1ByteLatency+lp.outControllerLatency; // "+N" = just to be sure the correct minimum Gap3 has been found
+				return pAction->TerminateWithError(ERROR_SUCCESS);
+			}
+		}
+		lp.outGap3Latency=FDD_SECTOR_GAP3_STD*lp.out1ByteLatency;
 		return ERROR_SUCCESS;
 	}
 
@@ -1323,6 +1445,7 @@ TUtils::Information(buf);}
 				// exchange of latency-related data from and to controls
 				DDX_Text( pDX,	ID_LATENCY,	params.controllerLatency );
 				DDX_Text( pDX,	ID_NUMBER2,	params.oneByteLatency );
+				DDX_Text( pDX,	ID_GAP,		params.gap3Latency );
 			}
 			void DoDataExchange(CDataExchange* pDX) override{
 				// exchange of data from and to controls
@@ -1366,7 +1489,7 @@ TUtils::Information(buf);}
 				// - base
 				CDialog::OnPaint();
 				// - drawing of curly brackets
-				TUtils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_LATENCY), GetDlgItem(ID_NUMBER2), NULL, 0 );
+				TUtils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_LATENCY), GetDlgItem(ID_GAP), NULL, 0 );
 				TUtils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_NONE), GetDlgItem(ID_SECTOR), _T("if error encountered"), 0 );
 				TUtils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_ZERO), GetDlgItem(ID_CYLINDER_N), _T("when formatting"), 0 );
 			}
@@ -1408,17 +1531,26 @@ TUtils::Information(buf);}
 								__informationWithCheckableShowNoMore__( _T("Windows is NOT a real-time system! Computed latency will be valid only if you will use the floppy drive in very similar conditions as they were computed in (current conditions)!"), INI_MSG_LATENCY );
 								if (TUtils::InformationOkCancel(_T("Insert an empty disk and hit OK."))){
 									TLatencyParams lp( fdd, d.floppyType==0, 1+d.usAccuracy, 1+d.nRepeats );
-									const TStdWinError err=	TBackgroundActionCancelable(
-																__determineLatency_thread__,
-																&lp,
-																FDD_THREAD_PRIORITY_DEFAULT
-															).CarryOut(d.nRepeats*4+1); // 4 = number of steps of a single attempt, 1 = computation of final latency values
-									if (err==ERROR_SUCCESS){
-										params.controllerLatency=lp.outControllerLatency;
-										params.oneByteLatency=lp.out1ByteLatency;
-										__exchangeLatency__( &CDataExchange(this,FALSE) );
-									}else
-										TUtils::FatalError(_T("Couldn't autodetermine"),err);
+									if (const TStdWinError err=	TBackgroundActionCancelable(
+																	__determineControllerAndOneByteLatency_thread__,
+																	&lp,
+																	FDD_THREAD_PRIORITY_DEFAULT
+																).CarryOut(lp.nRepeats*3) // 3 = number of steps of a single trial
+									){
+latencyAutodeterminationError:			TUtils::FatalError(_T("Couldn't autodetermine"),err);
+										break;
+									}
+									if (const TStdWinError err=	TBackgroundActionCancelable(
+																	__determineGap3Latency_thread__,
+																	&lp,
+																	FDD_THREAD_PRIORITY_DEFAULT
+																).CarryOut(FDD_SECTOR_GAP3_STD)
+									)
+										goto latencyAutodeterminationError;
+									params.controllerLatency=lp.outControllerLatency;
+									params.oneByteLatency=lp.out1ByteLatency;
+									params.gap3Latency=lp.outGap3Latency;
+									__exchangeLatency__( &CDataExchange(this,FALSE) );
 								}
 							}
 						}
@@ -1536,7 +1668,7 @@ TUtils::Information(buf);}
 						}
 			}else
 				// if verification turned off, assuming well formatted Track structure, hence avoiding the need of its scanning
-				REFER_TO_TRACK(chs.cylinder,chs.head) = new TInternalTrack( this, chs.cylinder, chs.head, 1, &chs.sectorId );
+				REFER_TO_TRACK(chs.cylinder,chs.head) = new TInternalTrack( this, chs.cylinder, chs.head, 1, &chs.sectorId, NULL ); // NULL = calculate Sector start times from information on default Gap3 and individual Sector lengths
 			// . Track formatted successfully
 			break;
 		}while (true);
@@ -1563,6 +1695,11 @@ TUtils::Information(buf);}
 	TStdWinError CFDD::FormatTrack(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte){
 		// formats given Track {Cylinder,Head} to the requested NumberOfSectors, each with corresponding Length and FillerByte as initial content; returns Windows standard i/o error
 		LOG_TRACK_ACTION(cyl,head,_T("TStdWinError CFDD::FormatTrack"));
+		#ifdef LOGGING_ENABLED
+			TCHAR formatTrackParams[200];
+			::wsprintf(formatTrackParams,_T("Cyl=%d, Head=%d, nSectors=%d, gap3=%d, fillerByte=%d"),cyl,head,nSectors,gap3,fillerByte);
+			LOG_MESSAGE(formatTrackParams);
+		#endif
 		if (nSectors>FDD_SECTORS_MAX)
 			return LOG_ERROR(ERROR_BAD_COMMAND);
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
@@ -1799,7 +1936,7 @@ formatCustomWay:
 				// . verifying the Track (if requested to)
 				if (params.verifyFormattedTracks){
 					LOG_ACTION(_T("track verification"));
-					const TInternalTrack it( this, cyl, head, nSectors, bufferId );
+					const TInternalTrack it( this, cyl, head, nSectors, bufferId, NULL ); // NULL = calculate Sector start times from information on default Gap3 and individual Sector lengths
 					for( TSector n=0; n<nSectors; n++ ){
 						const TPhysicalAddress chs={ cyl, head, bufferId[n] };
 						TFdcStatus sr;
@@ -1813,7 +1950,7 @@ formatCustomWay:
 					}
 				}else
 					// if verification turned off, assuming well formatted Track structure, hence avoiding the need of its scanning
-					REFER_TO_TRACK(cyl,head) = new TInternalTrack( this, cyl, head, nSectors, bufferId );
+					REFER_TO_TRACK(cyl,head) = new TInternalTrack( this, cyl, head, nSectors, bufferId, NULL ); // NULL = calculate Sector start times from information on default Gap3 and individual Sector lengths
 				// . Track formatted successfully
 //TUtils::Information("formatted OK - ready to break");
 				break;
@@ -1837,7 +1974,7 @@ formatCustomWay:
 		// - disposing internal information on actual Track format
 		__unformatInternalTrack__(cyl,head);
 		// - explicitly setting Track structure
-		TInternalTrack::TSectorInfo *psi=( REFER_TO_TRACK(cyl,head) = new TInternalTrack( this, cyl, head, nSectors, bufferId ) )->sectors;
+		TInternalTrack::TSectorInfo *psi=( REFER_TO_TRACK(cyl,head) = new TInternalTrack( this, cyl, head, nSectors, bufferId, NULL ) )->sectors; // NULL = calculate Sector start times from information on default Gap3 and individual Sector lengths
 		for( TSector n=nSectors; n--; psi++ )
 			psi->data=ALLOCATE_SECTOR_DATA(psi->length);
 		// - presumption done

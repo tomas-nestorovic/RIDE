@@ -13,7 +13,7 @@
 	private:
 		#pragma pack(1)
 		struct TParams sealed{
-			float controllerLatency,oneByteLatency;
+			float controllerLatency,oneByteLatency,gap3Latency;
 			enum TCalibrationAfterError{
 				NONE				=0,
 				ONCE_PER_CYLINDER	=1,
@@ -43,12 +43,13 @@
 				BYTE seqNum; // "zero-based" sequence number of this Sector on containing Track
 				TSectorId id;
 				WORD length;
+				int startMicroseconds,endMicroseconds; // counted from the index pulse
 				PSectorData data;
 				TFdcStatus fdcStatus;
 				bool modified;
 
 				TStdWinError __saveToDisk__(CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip,bool verify);
-				BYTE __verifySaving__(CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip);
+				BYTE __verifySaving__(const CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip);
 			} *const sectors;
 			#pragma pack(1)
 			struct TRawContent sealed{
@@ -67,7 +68,7 @@
 				~TRawContent();
 			} rawContent;
 
-			TInternalTrack(const CFDD *fdd,TCylinder cyl,THead head,TSector _nSectors,PCSectorId bufferId); //ctor
+			TInternalTrack(const CFDD *fdd,TCylinder cyl,THead head,TSector _nSectors,PCSectorId bufferId,PCINT sectorStartsMicroseconds); //ctor
 			~TInternalTrack(); //dtor
 
 			bool __isIdDuplicated__(PCSectorId id) const;
@@ -76,7 +77,8 @@
 		} *PInternalTrack;
 
 		static UINT AFX_CDECL __save_thread__(PVOID _pCancelableAction);
-		static UINT AFX_CDECL __determineLatency_thread__(PVOID _pCancelableAction);
+		static UINT AFX_CDECL __determineControllerAndOneByteLatency_thread__(PVOID _pCancelableAction);
+		static UINT AFX_CDECL __determineGap3Latency_thread__(PVOID _pCancelableAction);
 		static UINT AFX_CDECL __formatTracks_thread__(PVOID _pCancelableAction);
 
 		const PVOID dataBuffer; // virtual memory (VirtualAlloc)

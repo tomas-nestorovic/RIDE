@@ -46,6 +46,12 @@
 		return *this;
 	}
 
+	TSectorId &TSectorId::operator=(const FD_TIMED_ID_HEADER &rtih){
+		// assigns Simon Owen's definition of ID to this ID and returns it
+		cylinder=rtih.cyl, side=rtih.head, sector=rtih.sector, lengthCode=rtih.size;
+		return *this;
+	}
+
 	PTCHAR TSectorId::ToString(PTCHAR buffer) const{
 		// fills the Buffer with string describing the Sector ID and returns the Buffer (caller guarantees that the Buffer is big enough)
 		::wsprintf(buffer,_T("ID={%d,%d,%d,%d}"),cylinder,side,sector,lengthCode);
