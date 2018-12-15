@@ -6,7 +6,7 @@ namespace Debug{
 
 	#include <intrin.h>
 
-	CLogFile CLogFile::Default(_T("default"),false);
+	CLogFile CLogFile::Default(_T("default"),true);
 
 	CLogFile::CLogFile(LPCTSTR logDescription,bool permanentlyOpen)
 		// ctor
@@ -35,24 +35,27 @@ namespace Debug{
 			Open( filename, CFile::modeWrite|CFile::modeCreate|CFile::modeNoTruncate );
 		// - logging some machine information, potentially useful for correctly interpreting the final Log file
 		{	LOG_ACTION(_T("Machine info"));
-			int cpuInfo[4];
-			__cpuid(cpuInfo,0x80000000); // 0x80000000 = getting the number of valid extended IDs
-			char cpuBrandName[64];
-			for( int i=0x80000000,const nExtIds=cpuInfo[0]; i<=nExtIds; i++ ){
-				__cpuid(cpuInfo,i);
-				switch (i){
-					case 0x80000002:
-						::memcpy( ::ZeroMemory(cpuBrandName,sizeof(cpuBrandName)), cpuInfo, sizeof(cpuInfo) );
-						break;
-					case 0x80000003:
-						::memcpy( cpuBrandName+sizeof(cpuInfo), cpuInfo, sizeof(cpuInfo) );
-						break;
-					case 0x80000004:
-						::memcpy( cpuBrandName+2*sizeof(cpuInfo), cpuInfo, sizeof(cpuInfo) );
-						break;
-				}
+			TCHAR cpuBrandName[200];
+			HKEY hCpuKey;
+			if (TStdWinError err=::RegOpenKeyEx( HKEY_LOCAL_MACHINE, _T("HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0"), 0, KEY_READ, &hCpuKey ))
+				LOG_MESSAGE(_T("Can't detect CPU"));
+			else{
+				DWORD dw=sizeof(cpuBrandName);
+				if (err=::RegQueryValueEx( hCpuKey, _T("ProcessorNameString"), 0, NULL, (LPBYTE)cpuBrandName, &dw )){
+					// extended CPU information NOT available - retrieving just basic information, available always
+					TCHAR vendor[30]; dw=sizeof(vendor);
+					::RegQueryValueEx( hCpuKey, _T("VendorIdentifier"), 0, NULL, (LPBYTE)vendor, &dw ); // e.g. "GenuineIntel"
+					TCHAR identifier[80]; dw=sizeof(identifier);
+					::RegQueryValueEx( hCpuKey, _T("Identifier"), 0, NULL, (LPBYTE)identifier, &dw ); // e.g. "x86 Family 6 Model 15 Stepping 6"
+					DWORD mhz; dw=sizeof(mhz);
+					::RegQueryValueEx( hCpuKey, _T("~MHz"), 0, NULL, (LPBYTE)&mhz, &dw ); // e.g. "199"
+					::wsprintf( cpuBrandName, _T("%s, %s, %d MHz"), vendor, identifier, mhz );
+				}else
+					// yes, extended CPU information available, e.g. "Intel(R) Celeron(R) M CPU        520  @ 1.60GHz"
+					//nop
+				::RegCloseKey(hCpuKey);
+				LOG_MESSAGE(cpuBrandName);
 			}
-			LOG_MESSAGE(cpuBrandName);
 			TCHAR buffer[80];
 			MEMORYSTATUSEX mse={ sizeof(MEMORYSTATUSEX) };
 			::GlobalMemoryStatusEx(&mse);
