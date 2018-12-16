@@ -78,11 +78,11 @@
 				// a shorthand for writing HTML-formatted text into this file
 				// . closing any SpecialFormatting currently -Open
 				if (specialFormattingOpen!=TSpecialFormatting::NONE){
-					TUtils::WriteToFile(*this,_T("</span>"));
+					Utils::WriteToFile(*this,_T("</span>"));
 					specialFormattingOpen=TSpecialFormatting::NONE;
 				}
 				// . writing the supplied HTML-formatted text
-				return (CFormattedBasicListingFile &)TUtils::WriteToFile(*this,t);
+				return (CFormattedBasicListingFile &)Utils::WriteToFile(*this,t);
 			}
 			CFormattedBasicListingFile &operator<<(int i){
 				// a shorthand for writing HTML-formatted integer into this file
@@ -100,7 +100,7 @@
 				::ZeroMemory(&attributes,sizeof(attributes)); // black non-flashing, non-bright text ...
 				attributes.paper=7; // ... at white background
 				// . writing the opening HTML tags
-				(CFormattedBasicListingFile &)TUtils::WriteToFile(
+				(CFormattedBasicListingFile &)Utils::WriteToFile(
 					*this << _T("<html><body style=\"background-color:#"),
 					*(PINT)&Colors[7], _T("%06x")
 				) << _T("\">");
@@ -139,8 +139,8 @@
 						specialFormattingOpen=TSpecialFormatting::NONPRINTABLE_CHARS;
 					// . writing the (non-printable) Character
 					}else
-						TUtils::WriteToFile(*this,',');
-					TUtils::WriteToFile(*this,c,_T("0x%02X"));
+						Utils::WriteToFile(*this,',');
+					Utils::WriteToFile(*this,c,_T("0x%02X"));
 				}
 			}
 
@@ -153,22 +153,22 @@
 				}
 				// . writing the standard UDG symbol as two semigraphic characters
 				for( BYTE i=2,udg=s-128; i-->0; udg<<=1 ){
-					TUtils::WriteToFile(*this,'&');
+					Utils::WriteToFile(*this,'&');
 					switch (udg&10){
 						case 0: // neither upper nor lower half has Ink color
-							TUtils::WriteToFile(*this,_T("nbsp")); // non-breakable space
+							Utils::WriteToFile(*this,_T("nbsp")); // non-breakable space
 							break;
 						case 2: // upper half only
-							TUtils::WriteToFile( TUtils::WriteToFile(*this,'#'), 9600 ); // 9600 = suitable Courier-New semigraphic symbol
+							Utils::WriteToFile( Utils::WriteToFile(*this,'#'), 9600 ); // 9600 = suitable Courier-New semigraphic symbol
 							break;
 						case 8: // lower half only
-							TUtils::WriteToFile( TUtils::WriteToFile(*this,'#'), 9604 ); // 9604 = suitable Courier-New semigraphic symbol
+							Utils::WriteToFile( Utils::WriteToFile(*this,'#'), 9604 ); // 9604 = suitable Courier-New semigraphic symbol
 							break;
 						case 10: // both halves
-							TUtils::WriteToFile( TUtils::WriteToFile(*this,'#'), 9608 ); // 9608 = suitable Courier-New semigraphic symbol
+							Utils::WriteToFile( Utils::WriteToFile(*this,'#'), 9608 ); // 9608 = suitable Courier-New semigraphic symbol
 							break;
 					}
-					TUtils::WriteToFile(*this,';');
+					Utils::WriteToFile(*this,';');
 				}
 			}
 
@@ -234,11 +234,11 @@
 									*this << _T("<span style=\"border:1pt dashed\">"); // the "<<" operator automatically closes any previous SpecialFormatting
 										switch (rBasicPreview.binaryAfter0x14){
 											case TBinaryAfter0x14::SHOW_AS_RAW_BYTES:
-												TUtils::WriteToFile(*this,*pLineStart++,_T("0x%02X"));
-												for( BYTE n=4; n-->0; TUtils::WriteToFile(*this,*pLineStart++,_T(",0x%02X")) );
+												Utils::WriteToFile(*this,*pLineStart++,_T("0x%02X"));
+												for( BYTE n=4; n-->0; Utils::WriteToFile(*this,*pLineStart++,_T(",0x%02X")) );
 												break;
 											case TBinaryAfter0x14::SHOW_AS_NUMBER:
-												TUtils::WriteToFile( *this, ((TZxRom::PCNumberInternalForm)pLineStart)->ToDouble() );
+												Utils::WriteToFile( *this, ((TZxRom::PCNumberInternalForm)pLineStart)->ToDouble() );
 												pLineStart+=5;
 												break;
 											default:
@@ -389,12 +389,12 @@ defaultPrinting:				if (b<' ')
 				listing << _T("<tr>");
 					// | adding a new cell to the "Line Number" column
 					listing << _T("<td align=right valign=top style=\"padding-right:5pt\"><b>");
-						TUtils::WriteToFile(listing,lineNumber);
+						Utils::WriteToFile(listing,lineNumber);
 					//listing << _T("</td>"); // commented out as written in the following command
 					// | adding a new cell to the "BASIC Listing" column
 					listing << _T("</b></td><td style=\"padding-left:5pt\">");
 						listing.__parseBasicLine__( lineBytes, nBytesOfLine-1 ); // "-1" = skipping the terminating Enter character (0x0d)
-					//TUtils::WriteToFile(fTmp,_T("</td>")); // commented out as written in the following command
+					//Utils::WriteToFile(fTmp,_T("</td>")); // commented out as written in the following command
 				listing << _T("</td></tr>");
 			} while (frw.GetPosition()<frw.GetLength());
 		listing << _T("</table>");
@@ -449,7 +449,7 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 							listing << HTML_END_OF_NAME_AND_START_OF_VALUE << _T(" { ");
 								for( TZxRom::TNumberInternalForm number; nItems-->0; ){
 									frw.Read(&number,sizeof(number));
-									TUtils::WriteToFile( listing, number.ToDouble() );
+									Utils::WriteToFile( listing, number.ToDouble() );
 									listing << _T(", ");
 								}
 								listing.Seek(-2,CFile::current); // dismissing the ", " string added after the last Item in the array
@@ -474,7 +474,7 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 							TZxRom::TNumberInternalForm number;
 							if (error=frw.Read(&number,sizeof(number))!=sizeof(number)) // error
 								break;
-							TUtils::WriteToFile(	listing << ::CharUpper(varName) << _T(":number") << HTML_END_OF_NAME_AND_START_OF_VALUE,
+							Utils::WriteToFile(	listing << ::CharUpper(varName) << _T(":number") << HTML_END_OF_NAME_AND_START_OF_VALUE,
 													number.ToDouble()
 												);
 							break;
@@ -522,14 +522,14 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 							if (error=frw.Read(tmp,sizeof(tmp))!=sizeof(tmp)) // error
 								break;
 							listing << ::CharUpper(varName) << _T(":iterator") << HTML_END_OF_NAME_AND_START_OF_VALUE << _T("for( ");
-							TUtils::WriteToFile(	listing << varName << _T(":number="),
+							Utils::WriteToFile(	listing << varName << _T(":number="),
 													from.ToDouble()
 												);
 							const double d=step.ToDouble();
-							TUtils::WriteToFile(	listing << _T("; ") << varName << (d>=0?_T("<="):_T(">=")),
+							Utils::WriteToFile(	listing << _T("; ") << varName << (d>=0?_T("<="):_T(">=")),
 													to.ToDouble()
 												);
-							TUtils::WriteToFile(	listing << _T("; ") << varName << _T("+="),
+							Utils::WriteToFile(	listing << _T("; ") << varName << _T("+="),
 													d
 												);
 							listing << _T(" )");

@@ -151,14 +151,14 @@
 				*pNewlyDetectedDos=NULL; // terminating the array
 				//recognition.__saveToProfile__();
 				if (pNewlyDetectedDos>newlyDetectedDoses)
-					TUtils::Information( _T("Some new DOSes have been detected!\nPlease confirm the auto-recognition sequence where they've all been added to (and marked).") );
+					Utils::Information( _T("Some new DOSes have been detected!\nPlease confirm the auto-recognition sequence where they've all been added to (and marked).") );
 				// - populating the ListBoxes with current Recognition Order
 				__repopulateListBoxesAndUpdateInteractivity__();
 				// - setting graphical symbols to buttons that organize the Recognition Order
-				TUtils::SetSingleCharTextUsingFont( GetDlgItem(ID_UP)->m_hWnd, 0xf0e1, FONT_WINGDINGS, 110 );
-				TUtils::SetSingleCharTextUsingFont( GetDlgItem(ID_DOWN)->m_hWnd, 0xf0e2, FONT_WINGDINGS, 110 );
-				TUtils::SetSingleCharTextUsingFont( GetDlgItem(ID_ADD)->m_hWnd, 0xf0e7, FONT_WINGDINGS, 110 );
-				TUtils::SetSingleCharTextUsingFont( GetDlgItem(ID_REMOVE)->m_hWnd, 0xf0e8, FONT_WINGDINGS, 110 );
+				Utils::SetSingleCharTextUsingFont( GetDlgItem(ID_UP)->m_hWnd, 0xf0e1, FONT_WINGDINGS, 110 );
+				Utils::SetSingleCharTextUsingFont( GetDlgItem(ID_DOWN)->m_hWnd, 0xf0e2, FONT_WINGDINGS, 110 );
+				Utils::SetSingleCharTextUsingFont( GetDlgItem(ID_ADD)->m_hWnd, 0xf0e7, FONT_WINGDINGS, 110 );
+				Utils::SetSingleCharTextUsingFont( GetDlgItem(ID_REMOVE)->m_hWnd, 0xf0e8, FONT_WINGDINGS, 110 );
 				// - (dis)allowing the Cancel button
 				#ifndef _DEBUG
 					GetDlgItem(IDCANCEL)->EnableWindow(*newlyDetectedDoses==NULL); // if NewDoses were detected, the Dialog cannot be cancelled - Recognition Order with NewDetectedDoses must be confirmed
@@ -170,7 +170,7 @@
 				switch (msg){
 					case WM_MEASUREITEM:
 						// determining the height of a ListBox item (presumed that there are no other owner-drawn controls!)
-						((PMEASUREITEMSTRUCT)lParam)->itemHeight=38*TUtils::LogicalUnitScaleFactor;
+						((PMEASUREITEMSTRUCT)lParam)->itemHeight=38*Utils::LogicalUnitScaleFactor;
 						return 0;
 					case WM_DRAWITEM:{
 						// drawing the ListBox item (presumed that there are no other owner-drawn controls!)
@@ -180,9 +180,9 @@
 						const CDos::PCProperties props=(CDos::PCProperties)pdis->itemData;
 						const HDC dc=pdis->hDC;
 						::SetBkMode(dc,TRANSPARENT);
-						TUtils::ScaleLogicalUnit(dc);
+						Utils::ScaleLogicalUnit(dc);
 						RECT r=pdis->rcItem;
-						TUtils::UnscaleLogicalUnit((PINT)&r,4), TUtils::UnscaleLogicalUnit((PINT)&pdis->rcItem,4);
+						Utils::UnscaleLogicalUnit((PINT)&r,4), Utils::UnscaleLogicalUnit((PINT)&pdis->rcItem,4);
 						const CRideFont newDosSymbolFont(FONT_WINGDINGS,180,false,false);
 						const HGDIOBJ hFont0=::SelectObject( dc, newDosSymbolFont );
 							if (pdis->itemState&ODS_SELECTED){
@@ -286,11 +286,11 @@
 								case NM_CLICK:
 								case NM_RETURN:{
 									// . defining the Dialog
-									class CHelpDialog sealed:public TUtils::CCommandDialog{
+									class CHelpDialog sealed:public Utils::CCommandDialog{
 										void PreInitDialog() override{
 											// dialog initialization
 											// : base
-											TUtils::CCommandDialog::PreInitDialog();
+											Utils::CCommandDialog::PreInitDialog();
 											// : supplying available actions
 											__addCommandButton__( ID_DRIVE, _T("What is a recognition sequence good for?") );
 											__addCommandButton__( IDCANCEL, MSG_HELP_CANCEL );
@@ -298,14 +298,14 @@
 									public:
 										CHelpDialog()
 											// ctor
-											: TUtils::CCommandDialog(_T("This might interest you:")) {
+											: Utils::CCommandDialog(_T("This might interest you:")) {
 										}
 									} d;
 									// . showing the Dialog and processing its result
 									TCHAR url[200];
 									switch (d.DoModal()){
 										case ID_DRIVE:
-											TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_recognition.html"),url) );
+											Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_recognition.html"),url) );
 											break;
 									}
 									return TRUE;

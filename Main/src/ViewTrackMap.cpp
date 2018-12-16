@@ -57,7 +57,7 @@
 	void CTrackMapView::OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint){
 		// request to refresh the display of content
 		// - updating the logical dimensions
-		SetScrollSizes(MM_TEXT,CSize( VIEW_WIDTH, TUtils::LogicalUnitScaleFactor*(VIEW_PADDING*2+VIEW_HEADER_HEIGHT+IMAGE->GetTrackCount()*TRACK_HEIGHT) ));
+		SetScrollSizes(MM_TEXT,CSize( VIEW_WIDTH, Utils::LogicalUnitScaleFactor*(VIEW_PADDING*2+VIEW_HEADER_HEIGHT+IMAGE->GetTrackCount()*TRACK_HEIGHT) ));
 		// - base
 		CScrollView::OnUpdate(pSender,lHint,pHint);
 	}
@@ -81,7 +81,7 @@
 		else if (ysi.nPos>ysi.nMax-ysi.nPage) ysi.nPos=ysi.nMax-ysi.nPage;
 		ScrollWindow(	// "base"
 						0,
-						(iScrollY0-ysi.nPos)//*TUtils::GetLogicalUnitScaleFactor(CClientDC(this))
+						(iScrollY0-ysi.nPos)//*Utils::GetLogicalUnitScaleFactor(CClientDC(this))
 					); 
 		SetScrollInfo(SB_VERT,&ysi,TRUE);
 		return TRUE;
@@ -106,7 +106,7 @@
 		CTrackMapView *const pvtm=(CTrackMapView *)pAction->fnParams;
 		TTrackScanner &rts=pvtm->scanner;
 		const PImage image=pvtm->IMAGE;
-		const TUtils::CByteIdentity sectorIdAndPositionIdentity;
+		const Utils::CByteIdentity sectorIdAndPositionIdentity;
 		if (const THead nSides=__getNumberOfFormattedSidesInImage__(image)) // zero if disk without any Track (e.g. when opening RawImage of zero length, or if opening a corrupted DSK Image)
 			for( TTrackInfo si; true; ){
 				// . waiting for request to scan the next Track
@@ -140,7 +140,7 @@
 		// - base
 		__super::OnPrepareDC(pDC,pInfo);
 		// - scaling
-		TUtils::ScaleLogicalUnit(*pDC);
+		Utils::ScaleLogicalUnit(*pDC);
 	}
 
 	#define SECTOR_LENGTH_FACTOR		3
@@ -257,7 +257,7 @@
 			::TabbedTextOut( dc, 0,VIEW_PADDING, _T("\tCylinder\tHead\tSectors"),-1, 3,Tabs, 0 );
 		::SelectObject(dc,font0);
 		// - determining the range of Tracks to scan
-		const int iScrollY=GetScrollPos(SB_VERT)/TUtils::LogicalUnitScaleFactor;
+		const int iScrollY=GetScrollPos(SB_VERT)/Utils::LogicalUnitScaleFactor;
 		RECT r;
 		GetClientRect(&r);
 		const TTrack nTracks=IMAGE->GetTrackCount();
@@ -428,9 +428,9 @@
 		// - collecting statistics on Tracks and their Sectors
 		TStatisticParams sp(DOS);
 		if (const TStdWinError err=TBackgroundActionCancelable(__trackStatistics_thread__,&sp,THREAD_PRIORITY_BELOW_NORMAL).CarryOut(IMAGE->GetCylinderCount()))
-			return TUtils::Information(_T("Cannot create statistics"),err);
+			return Utils::Information(_T("Cannot create statistics"),err);
 		// - showing collected statistics
 		TCHAR buf[1000];
 		::wsprintf( buf, _T("TRACK STATISTICS\n\n\nTotal number of tracks: %d\n- formatted: %d\n\nTotal number of sectors: %d\n- system: %d\n- erroneous: %d\n- occupied: %d\n- reserved: %d\n- unreachable: %d\n- unknown: %d\n- empty: %d\n"), IMAGE->GetTrackCount(), sp.nTracksFormatted, sp.sectors );
-		TUtils::Information(buf);
+		Utils::Information(buf);
 	}

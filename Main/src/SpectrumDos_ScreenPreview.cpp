@@ -126,7 +126,7 @@
 		hFlashTimer=(HANDLE)::SetTimer( m_hWnd, ID_FLASH, 500, __flash__ );
 		__flash__(m_hWnd,WM_TIMER,ID_FLASH,0);
 		// - information
-		TUtils::InformationWithCheckableShowNoMore(_T("The \"") LABEL _T(" preview\" displays a file as if it was a picture.\nTwo usages are possible:\n(1) browsing only files that are selected in the \"") FILE_MANAGER_TAB_LABEL _T("\" (eventually showing just one picture if only one file is selected), or\n(2) browsing all files (if no particular files are selected)."),INI_PREVIEW,INI_MSG);
+		Utils::InformationWithCheckableShowNoMore(_T("The \"") LABEL _T(" preview\" displays a file as if it was a picture.\nTwo usages are possible:\n(1) browsing only files that are selected in the \"") FILE_MANAGER_TAB_LABEL _T("\" (eventually showing just one picture if only one file is selected), or\n(2) browsing all files (if no particular files are selected)."),INI_PREVIEW,INI_MSG);
 	}
 
 	CSpectrumDos::CScreenPreview::~CScreenPreview(){

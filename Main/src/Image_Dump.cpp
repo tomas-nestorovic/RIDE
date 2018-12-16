@@ -49,10 +49,10 @@
 		void __exportErroneousTracksToHtml__(CFile &fHtml) const{
 			// exports SourceTrackErrors to given HTML file
 			TCHAR buffer[128];
-			TUtils::WriteToFile(fHtml,_T("<html><head><style>body,td{font-size:13pt;margin:24pt}table{border:1pt solid black;spacing:10pt}td{vertical-align:top}td.caption{font-size:14pt;background:silver}</style></head><body>"));
-				TUtils::WriteToFile(fHtml,_T("<h3>Overview</h3>"));
+			Utils::WriteToFile(fHtml,_T("<html><head><style>body,td{font-size:13pt;margin:24pt}table{border:1pt solid black;spacing:10pt}td{vertical-align:top}td.caption{font-size:14pt;background:silver}</style></head><body>"));
+				Utils::WriteToFile(fHtml,_T("<h3>Overview</h3>"));
 					if (pOutErroneousTracks){
-						TUtils::WriteToFile(fHtml,_T("<table><tr><td class=caption>Error</td><td class=caption>Count</td></tr>"));
+						Utils::WriteToFile(fHtml,_T("<table><tr><td class=caption>Error</td><td class=caption>Count</td></tr>"));
 							union{
 								BYTE bRegisters[2];
 								WORD wRegisters;
@@ -70,62 +70,62 @@
 								if (nErrorOccurences){
 									LPCTSTR bitDescriptions[3]; // 3 = prave jedna Chyba a dvakrat Null
 									sr.GetDescriptionsOfSetBits(bitDescriptions);
-									TUtils::WriteToFile(fHtml,_T("<tr><td>"));
-										TUtils::WriteToFile(fHtml,(LPCTSTR)((UINT)bitDescriptions[0]|(UINT)bitDescriptions[1]|(UINT)bitDescriptions[2]));
-									TUtils::WriteToFile(fHtml,_T("</td><td>"));
-										TUtils::WriteToFile(fHtml,nErrorOccurences);
-									TUtils::WriteToFile(fHtml,_T("</td></tr>"));
+									Utils::WriteToFile(fHtml,_T("<tr><td>"));
+										Utils::WriteToFile(fHtml,(LPCTSTR)((UINT)bitDescriptions[0]|(UINT)bitDescriptions[1]|(UINT)bitDescriptions[2]));
+									Utils::WriteToFile(fHtml,_T("</td><td>"));
+										Utils::WriteToFile(fHtml,nErrorOccurences);
+									Utils::WriteToFile(fHtml,_T("</td></tr>"));
 								}
 							}
-						TUtils::WriteToFile(fHtml,_T("</table>"));
+						Utils::WriteToFile(fHtml,_T("</table>"));
 					}else
-						TUtils::WriteToFile(fHtml,_T("No errors occurred."));
-				TUtils::WriteToFile(fHtml,_T("<h3>Details</h3>"));
+						Utils::WriteToFile(fHtml,_T("No errors occurred."));
+				Utils::WriteToFile(fHtml,_T("<h3>Details</h3>"));
 					if (pOutErroneousTracks){
-						TUtils::WriteToFile(fHtml,_T("<table><tr><td class=caption width=120>Track</td><td class=caption>Erroneous Sectors</td></tr>"));
+						Utils::WriteToFile(fHtml,_T("<table><tr><td class=caption width=120>Track</td><td class=caption>Erroneous Sectors</td></tr>"));
 							for( const TSourceTrackErrors *pErroneousTrack=pOutErroneousTracks; pErroneousTrack; pErroneousTrack=pErroneousTrack->pNextErroneousTrack ){
-								TUtils::WriteToFile(fHtml,_T("<tr><td>"));
+								Utils::WriteToFile(fHtml,_T("<tr><td>"));
 									::wsprintf( buffer, _T("Cyl %d, Head %d"), pErroneousTrack->cyl, pErroneousTrack->head );
-									TUtils::WriteToFile(fHtml,buffer);
-								TUtils::WriteToFile(fHtml,_T("</td><td><ul>"));
+									Utils::WriteToFile(fHtml,buffer);
+								Utils::WriteToFile(fHtml,_T("</td><td><ul>"));
 									PCSourceSectorError psse=pErroneousTrack->erroneousSectors;
 									for( BYTE n=pErroneousTrack->nErroneousSectors; n; n--,psse++ ){
-										TUtils::WriteToFile(fHtml,_T("<li>"));
+										Utils::WriteToFile(fHtml,_T("<li>"));
 											::wsprintf( buffer, _T("<b>%s</b>. "), psse->id.ToString(buffer+40) );
-											TUtils::WriteToFile(fHtml,buffer);
+											Utils::WriteToFile(fHtml,buffer);
 											LPCTSTR bitDescriptions[10],*pDesc=bitDescriptions;
 											psse->fdcStatus.GetDescriptionsOfSetBits(bitDescriptions);
 											::wsprintf( buffer, _T("<i>SR1</i> (0x%02X): "), psse->fdcStatus.reg1 );
-											TUtils::WriteToFile(fHtml,buffer);
+											Utils::WriteToFile(fHtml,buffer);
 											if (*pDesc){
-												TUtils::WriteToFile(fHtml,*pDesc++);
+												Utils::WriteToFile(fHtml,*pDesc++);
 												while (*pDesc){
-													TUtils::WriteToFile(fHtml,_T(", "));
-													TUtils::WriteToFile(fHtml,*pDesc++);
+													Utils::WriteToFile(fHtml,_T(", "));
+													Utils::WriteToFile(fHtml,*pDesc++);
 												}
 											}else
-												TUtils::WriteToFile(fHtml,_T("No error"));
-											TUtils::WriteToFile(fHtml,_T("."));
+												Utils::WriteToFile(fHtml,_T("No error"));
+											Utils::WriteToFile(fHtml,_T("."));
 											pDesc++; // skipping Null that terminates the list of bits set in Register 1
 											::wsprintf( buffer, _T(" <i>SR2</i> (0x%02X): "), psse->fdcStatus.reg2 );
-											TUtils::WriteToFile(fHtml,buffer);
+											Utils::WriteToFile(fHtml,buffer);
 											if (*pDesc){
-												TUtils::WriteToFile(fHtml,*pDesc++);
+												Utils::WriteToFile(fHtml,*pDesc++);
 												while (*pDesc){
-													TUtils::WriteToFile(fHtml,_T(", "));
-													TUtils::WriteToFile(fHtml,*pDesc++);
+													Utils::WriteToFile(fHtml,_T(", "));
+													Utils::WriteToFile(fHtml,*pDesc++);
 												}
 											}else
-												TUtils::WriteToFile(fHtml,_T("No error"));
-											TUtils::WriteToFile(fHtml,_T("."));
-										TUtils::WriteToFile(fHtml,_T("</li>"));
+												Utils::WriteToFile(fHtml,_T("No error"));
+											Utils::WriteToFile(fHtml,_T("."));
+										Utils::WriteToFile(fHtml,_T("</li>"));
 									}
-								TUtils::WriteToFile(fHtml,_T("</ul></td></tr>"));
+								Utils::WriteToFile(fHtml,_T("</ul></td></tr>"));
 							}
-						TUtils::WriteToFile(fHtml,_T("</table>"));
+						Utils::WriteToFile(fHtml,_T("</table>"));
 					}else
-						TUtils::WriteToFile(fHtml,_T("None."));
-			TUtils::WriteToFile(fHtml,_T("</body></html>"));
+						Utils::WriteToFile(fHtml,_T("None."));
+			Utils::WriteToFile(fHtml,_T("</body></html>"));
 		}
 	};
 
@@ -159,7 +159,7 @@ terminateWithError:
 			} acceptance;
 		} p;
 		::ZeroMemory(&p,sizeof(p));
-		const TUtils::CByteIdentity sectorIdAndPositionIdentity;
+		const Utils::CByteIdentity sectorIdAndPositionIdentity;
 		for( p.chs.cylinder=dp.cylinderA; p.chs.cylinder<=dp.cylinderZ; pAction->UpdateProgress(++p.chs.cylinder-dp.cylinderA) )
 			for( p.chs.head=0; p.chs.head<dp.nHeads; p.chs.head++ ){
 				if (!pAction->bContinue) return LOG_ERROR(ERROR_CANCELLED);
@@ -218,14 +218,14 @@ terminateWithError:
 									p+=::lstrlen(::lstrcpy(p,NO_ERROR));
 								SetDlgItemText( ID_ERROR, buf );
 								// > converting the "Accept" button to a SplitButton
-								static const TUtils::TSplitButtonAction Actions[ACCEPT_OPTIONS_COUNT]={
+								static const Utils::TSplitButtonAction Actions[ACCEPT_OPTIONS_COUNT]={
 									{ ACCEPT_ERROR_ID, _T("Accept error") },
 									{ ID_ERROR, _T("Accept all errors of this kind") },
 									{ ID_TRACK, _T("Accept all errors in this track") },
 									{ ID_IMAGE, _T("Accept all errors on the disk") }
 								};
 								CWnd *const pBtnAccept=GetDlgItem(IDOK);
-								TUtils::ConvertToSplitButton( pBtnAccept->m_hWnd, Actions, ACCEPT_OPTIONS_COUNT );
+								Utils::ConvertToSplitButton( pBtnAccept->m_hWnd, Actions, ACCEPT_OPTIONS_COUNT );
 								pBtnAccept->EnableWindow( dynamic_cast<CImageRaw *>(dp.target)==NULL ); // accepting errors is allowed only if the Target Image can accept them
 								// > enabling/disabling the "Recover" button
 								GetDlgItem(ID_RECOVER)->EnableWindow( rFdcStatus.DescribesIdFieldCrcError() || rFdcStatus.DescribesDataFieldCrcError() );
@@ -279,18 +279,18 @@ terminateWithError:
 																::wsprintf( bufSectorId, _T("%d.%d.%d.%d"), idFieldSubstituteSectorId.cylinder, idFieldSubstituteSectorId.side, idFieldSubstituteSectorId.sector, idFieldSubstituteSectorId.lengthCode );
 															DDX_Text( pDX, ID_IDFIELD_VALUE, bufSectorId, sizeof(bufSectorId)/sizeof(TCHAR) );
 															static const WORD IdFieldRecoveryOptions[]={ ID_IDFIELD, ID_IDFIELD_CRC, ID_IDFIELD_REPLACE, 0 };
-															TUtils::EnableDlgControls( m_hWnd, IdFieldRecoveryOptions, rFdcStatus.DescribesIdFieldCrcError() );
+															Utils::EnableDlgControls( m_hWnd, IdFieldRecoveryOptions, rFdcStatus.DescribesIdFieldCrcError() );
 															static const WORD IdFieldReplaceOption[]={ ID_IDFIELD_VALUE, ID_DEFAULT1, 0 };
-															TUtils::EnableDlgControls( m_hWnd, IdFieldReplaceOption, idFieldRecoveryType==2 );
+															Utils::EnableDlgControls( m_hWnd, IdFieldReplaceOption, idFieldRecoveryType==2 );
 														// | "Data Field" region
 														DDX_Radio( pDX, ID_DATAFIELD, dataFieldRecoveryType );
 															DDX_Text( pDX, ID_DATAFIELD_FILLERBYTE, dataFieldSubstituteFillerByte );
 															if (dosProps==&CUnknownDos::Properties)
 																GetDlgItem(ID_DEFAULT2)->SetWindowText(_T("Random value"));
 															static const WORD DataFieldRecoveryOptions[]={ ID_DATAFIELD, ID_DATAFIELD_CRC, ID_DATAFIELD_REPLACE, 0 };
-															TUtils::EnableDlgControls( m_hWnd, DataFieldRecoveryOptions, rFdcStatus.DescribesDataFieldCrcError() );
+															Utils::EnableDlgControls( m_hWnd, DataFieldRecoveryOptions, rFdcStatus.DescribesDataFieldCrcError() );
 															static const WORD DataFieldReplaceOption[]={ ID_DATAFIELD_FILLERBYTE, ID_DEFAULT2, 0 };
-															TUtils::EnableDlgControls( m_hWnd, DataFieldReplaceOption, dataFieldRecoveryType==2 );
+															Utils::EnableDlgControls( m_hWnd, DataFieldReplaceOption, dataFieldRecoveryType==2 );
 														// | interactivity
 														GetDlgItem(IDOK)->EnableWindow(idFieldRecoveryType|dataFieldRecoveryType);
 													}
@@ -405,7 +405,7 @@ reformatTrack:		if ( err=dp.target->FormatTrack(p.chs.cylinder,p.chs.head,nSecto
 							err=::GetLastError();
 errorDuringWriting:			TCHAR buf[80],tmp[30];
 							::wsprintf(buf,_T("Cannot write to sector with %s on target Track %d"),p.chs.sectorId.ToString(tmp),p.track);
-							switch (TUtils::AbortRetryIgnore(buf,err,MB_DEFBUTTON2)){
+							switch (Utils::AbortRetryIgnore(buf,err,MB_DEFBUTTON2)){
 								case IDABORT:	goto terminateWithError;
 								case IDRETRY:	continue;
 								case IDIGNORE:	break;
@@ -415,7 +415,7 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 					s++; // cannot include in the FOR clause - see Continue statement in the cycle
 				}
 				// . registering Track with ErroneousSectors
-//TUtils::Information("registering Track with ErroneousSectors");
+//Utils::Information("registering Track with ErroneousSectors");
 				if (erroneousSectors.n){
 					TDumpParams::TSourceTrackErrors *psse=(TDumpParams::TSourceTrackErrors *)::malloc(sizeof(TDumpParams::TSourceTrackErrors)+(erroneousSectors.n-1)*sizeof(TDumpParams::TSourceSectorError));
 						psse->cyl=p.chs.cylinder, psse->head=p.chs.head;
@@ -450,10 +450,10 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 					// : FileName must be known
 					pDX->PrepareEditCtrl(ID_FILE);
 					if (!::lstrcmp(fileName,ELLIPSIS)){
-						TUtils::Information( _T("Target not specified.") );
+						Utils::Information( _T("Target not specified.") );
 						pDX->Fail();
 					}else if (!dos->image->GetPathName().Compare(fileName)){
-						TUtils::Information( _T("Target must not be the same as source.") );
+						Utils::Information( _T("Target must not be the same as source.") );
 						pDX->Fail();
 					}
 					// : Medium must be supported by both DOS and Image
@@ -495,7 +495,7 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 						LOG_ACTION(_T("Creating target image"));
 						dumpParams.target=targetImageProperties->fnInstantiate();
 					}else{
-						TUtils::FatalError(_T("Unknown destination to dump to."));
+						Utils::FatalError(_T("Unknown destination to dump to."));
 						return pDX->Fail();
 					}
 					// : suggesting to dump only Cylinders within the officially reported Format (where suitable to)
@@ -510,11 +510,11 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 						if (dos->properties!=&CUnknownDos::Properties) // Unknown DOS doesn't have valid Format information
 							if (dumpParams.cylinderA || dumpParams.cylinderZ>=dos->formatBoot.nCylinders){ // ">=" = Cylinders are numbered from 0
 								// : defining the Dialog
-								class CSuggestionDialog sealed:public TUtils::CCommandDialog{
+								class CSuggestionDialog sealed:public Utils::CCommandDialog{
 									void PreInitDialog() override{
 										// dialog initialization
 										// : base
-										TUtils::CCommandDialog::PreInitDialog();
+										Utils::CCommandDialog::PreInitDialog();
 										// : supplying available actions
 										__addCommandButton__( IDYES, _T("Continue with format adopted from boot sector (recommended)") );
 										__addCommandButton__( IDNO, _T("Continue with current settings (cylinders beyond official format may fail!)") );
@@ -523,7 +523,7 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 								public:
 									CSuggestionDialog()
 										// ctor
-										: TUtils::CCommandDialog(_T("Dumping cylinders outside official format to a raw image may fail!")) {
+										: Utils::CCommandDialog(_T("Dumping cylinders outside official format to a raw image may fail!")) {
 									}
 								} d;
 								// : showing the Dialog and processing its result
@@ -547,7 +547,7 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 				// . painting curly brackets
 				TCHAR buf[32];
 				::wsprintf(buf,_T("%d cylinder(s)"),GetDlgItemInt(ID_CYLINDER_N)+1-GetDlgItemInt(ID_CYLINDER));
-				TUtils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_CYLINDER), GetDlgItem(ID_CYLINDER_N), buf, 0 );
+				Utils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_CYLINDER), GetDlgItem(ID_CYLINDER_N), buf, 0 );
 			}
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 				// window procedure
@@ -595,7 +595,7 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 										}
 										// > enabling/disabling controls
 										static const WORD Controls[]={ ID_CYLINDER, ID_CYLINDER_N, ID_HEAD, ID_GAP, ID_NUMBER, ID_DEFAULT1, IDOK, 0 };
-										TUtils::EnableDlgControls( m_hWnd, Controls, nCompatibleMedia>0 );
+										Utils::EnableDlgControls( m_hWnd, Controls, nCompatibleMedia>0 );
 										GetDlgItem(ID_FORMAT)->EnableWindow(nCompatibleMedia && targetImageProperties==&CFDD::Properties);
 											CheckDlgButton( ID_FORMAT, targetImageProperties==&CFDD::Properties );
 										GetDlgItem(IDOK)->SetFocus();
@@ -619,11 +619,11 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 					case WM_NOTIFY:
 						if (((LPNMHDR)lParam)->code==NM_CLICK){
 							// . defining the Dialog
-							class CHelpDialog sealed:public TUtils::CCommandDialog{
+							class CHelpDialog sealed:public Utils::CCommandDialog{
 								void PreInitDialog() override{
 									// dialog initialization
 									// : base
-									TUtils::CCommandDialog::PreInitDialog();
+									Utils::CCommandDialog::PreInitDialog();
 									// : supplying available actions
 									__addCommandButton__( ID_IMAGE, _T("How do I create an image of a real floppy disk?") );
 									__addCommandButton__( ID_DRIVE, _T("How do I save an image back to a real floppy disk?") );
@@ -634,23 +634,23 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 							public:
 								CHelpDialog()
 									// ctor
-									: TUtils::CCommandDialog(_T("Dumping is used to convert between data containers.")) {
+									: Utils::CCommandDialog(_T("Dumping is used to convert between data containers.")) {
 								}
 							} d;
 							// . showing the Dialog and processing its result
 							TCHAR url[200];
 							switch (d.DoModal()){
 								case ID_IMAGE:
-									TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_floppy2image.html"),url) );
+									Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_floppy2image.html"),url) );
 									break;
 								case ID_DRIVE:
-									TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_image2floppy.html"),url) );
+									Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_image2floppy.html"),url) );
 									break;
 								case ID_FILE:
-									TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_convertImage.html"),url) );
+									Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_convertImage.html"),url) );
 									break;
 								case ID_ACCURACY:
-									TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_copyFloppy.html"),url) );
+									Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_copyFloppy.html"),url) );
 									break;
 							}
 						}
@@ -699,11 +699,11 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 						((CMainWindow *)app.m_pMainWnd)->OpenWebPage( _T("Dump results"), tmpFileName );
 					}
 					// : reporting success
-					TUtils::Information(_T("Dumped successfully."));
+					Utils::Information(_T("Dumped successfully."));
 				}else
-					TUtils::FatalError(_T("Cannot save to the target"),::GetLastError());
+					Utils::FatalError(_T("Cannot save to the target"),::GetLastError());
 			}else
-error:			TUtils::FatalError(_T("Cannot dump"),err);
+error:			Utils::FatalError(_T("Cannot dump"),err);
 			// . destroying the list of SourceTrackErrors
 			while (const TDumpParams::TSourceTrackErrors *tmp=d.dumpParams.pOutErroneousTracks)
 				d.dumpParams.pOutErroneousTracks=d.dumpParams.pOutErroneousTracks->pNextErroneousTrack, ::free((PVOID)tmp);

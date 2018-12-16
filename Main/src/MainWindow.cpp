@@ -236,7 +236,7 @@
 	void CMainWindow::OpenApplicationPresentationWebPage(LPCTSTR tabCaption,LPCTSTR documentName){
 		// in new Tab opens the specified Document from application's on-line presentation
 		TCHAR url[MAX_PATH];
-		OpenWebPage( tabCaption, TUtils::GetApplicationOnlineHtmlDocumentUrl(documentName,url) );
+		OpenWebPage( tabCaption, Utils::GetApplicationOnlineHtmlDocumentUrl(documentName,url) );
 	}
 
 	afx_msg void CMainWindow::__openUrl_whatsNew__(){
@@ -314,7 +314,7 @@ quitWithErr:const DWORD err=::GetLastError();
 			case ERROR_EVT_VERSION_TOO_OLD:
 				return OpenApplicationPresentationWebPage(_T("Version"),_T("usingOld.html"));
 			default:
-				return TUtils::Information(_T("Cannot retrieve the information"),err);
+				return Utils::Information(_T("Cannot retrieve the information"),err);
 		}
 	}
 

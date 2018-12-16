@@ -186,7 +186,7 @@
 		if (!trdos->ValidateFormatChangeAndReportProblem(false,&fmt))
 			return false;
 		if (boot->firstFreeTrack/fmt.nHeads>=fmt.nCylinders){
-			TUtils::Information(_T("Cannot modify the format as there are occupied sectors exceeding it."));
+			Utils::Information(_T("Cannot modify the format as there are occupied sectors exceeding it."));
 			return false;
 		}
 		// - accepting new Format

@@ -70,10 +70,10 @@
 		// - drawing curly brackets and number of Cylinders
 		TCHAR buf[20];
 		::wsprintf( buf, _T("%d cylinder(s)"), GetDlgItemInt(ID_CYLINDER_N)+1-GetDlgItemInt(ID_CYLINDER) );
-		TUtils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_CYLINDER), GetDlgItem(ID_CYLINDER_N), buf, ::GetSysColor(COLOR_3DSHADOW) );
+		Utils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_CYLINDER), GetDlgItem(ID_CYLINDER_N), buf, ::GetSysColor(COLOR_3DSHADOW) );
 		// - drawing curly brackets with warning on risking disk inconsistency
 		if (!(IsDlgButtonChecked(ID_BOOT) & IsDlgButtonChecked(ID_FAT)))
-			TUtils::WrapControlsByClosingCurlyBracketWithText(
+			Utils::WrapControlsByClosingCurlyBracketWithText(
 				this,
 				GetDlgItem(ID_BOOT), GetDlgItem(ID_FAT),
 				WARNING_MSG_CONSISTENCY_AT_STAKE, COLOR_BLACK

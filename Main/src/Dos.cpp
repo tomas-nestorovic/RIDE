@@ -10,7 +10,7 @@
 
 	void CDos::__errorCannotDoCommand__(TStdWinError cause){
 		// reports on last command being not carried out due to given Cause
-		TUtils::FatalError(_T("Cannot carry out the command"),cause);
+		Utils::FatalError(_T("Cannot carry out the command"),cause);
 	}
 
 
@@ -92,7 +92,7 @@
 		TCHAR buf[200];
 		if (nSectorsInTotal<properties->nSectorsInTotalMin){ // occurs only when fresh formatting a new Image
 			::wsprintf(buf,_T("The minimum total number of sectors for a \"%s\" disk is %d (the new geometry makes up only %d)."),properties->name,properties->nSectorsInTotalMin,nSectorsInTotal);
-reportError:TUtils::Information(buf);
+reportError:Utils::Information(buf);
 			return false;
 		}else if (clusterSize>properties->clusterSizeMax){
 			::wsprintf(buf,_T("The maximum cluster size for a \"%s\" disk is %d Bytes (it's %d Bytes now)."),properties->name,properties->clusterSizeMax,clusterSize);
@@ -213,12 +213,12 @@ reportError:TUtils::Information(buf);
 			// request to NOT format from the beginning of disk - all targeted Tracks must be empty
 			const TStdWinError err=__areStdCylindersEmpty__(n,bufCylinders);
 			if (err!=ERROR_EMPTY){
-				TUtils::Information( DOS_ERR_CANNOT_FORMAT, DOS_ERR_CYLINDERS_NOT_EMPTY, DOS_MSG_CYLINDERS_UNCHANGED );
+				Utils::Information( DOS_ERR_CANNOT_FORMAT, DOS_ERR_CYLINDERS_NOT_EMPTY, DOS_MSG_CYLINDERS_UNCHANGED );
 				return err;
 			}
 		}else{
 			// request to format from the beginning of disk - warning that all data will be destroyed
-			if (!TUtils::QuestionYesNo(_T("About to format the whole image and destroy all data.\n\nContinue?!"),MB_DEFBUTTON2))
+			if (!Utils::QuestionYesNo(_T("About to format the whole image and destroy all data.\n\nContinue?!"),MB_DEFBUTTON2))
 				return ERROR_CANCELLED;
 			err=image->Reset();
 			if (err!=ERROR_SUCCESS) return err;
@@ -258,7 +258,7 @@ reportError:TUtils::Information(buf);
 			if (rd.addTracksToFat)
 				// requested to include newly formatted Tracks into FAT
 				if (!__addStdTracksToFatAsEmpty__(n,bufCylinders,bufHeads))
-					TUtils::Information(FAT_SECTOR_UNMODIFIABLE, err=::GetLastError() );
+					Utils::Information(FAT_SECTOR_UNMODIFIABLE, err=::GetLastError() );
 		}
 		image->UpdateAllViews(NULL); // although updated already in FormatTracks, here calling too as FormatBoot might have changed since then
 		::SetLastError(err);
@@ -332,7 +332,7 @@ reportError:TUtils::Information(buf);
 			// . verifying Tracks by trying to read their formatted Sectors
 			if (fp.dos->image->RequiresFormattedTracksVerification()){
 				// : buffering Sectors from the same Track by the underlying Image, making them ready for IMMEDIATE usage
-				fp.dos->image->BufferTrackData( cyl, head, fp.bufferId, TUtils::CByteIdentity(), nSectors, false );
+				fp.dos->image->BufferTrackData( cyl, head, fp.bufferId, Utils::CByteIdentity(), nSectors, false );
 				// : verifying formatted Sectors
 				WORD w;
 				for( PCSectorId pId=fp.bufferId; nSectors--; statistics.nSectorsBad+=fp.dos->image->GetSectorData(cyl,head,pId++,&w)==NULL );
@@ -341,7 +341,7 @@ reportError:TUtils::Information(buf);
 		if (fp.showReport){
 			TCHAR buf[512];
 			_stprintf( buf, _T("LOW-LEVEL FORMATTING DONE\n\n\n- formatted %d track(s)\n- with totally %d sectors\n- of which %d are bad (%.2f %%).\n\nSee the Track Map tab for more information."), statistics.nTracks, statistics.nSectorsInTotal, statistics.nSectorsBad, (float)statistics.nSectorsBad*100/statistics.nSectorsInTotal );
-			TUtils::Information(buf);
+			Utils::Information(buf);
 		}
 		return ERROR_SUCCESS;
 	}
@@ -353,7 +353,7 @@ reportError:TUtils::Information(buf);
 									THREAD_PRIORITY_BELOW_NORMAL
 								).CarryOut(nTracks);
 		if (err!=ERROR_SUCCESS)
-			TUtils::FatalError(_T("Cannot format a track"),err);
+			Utils::FatalError(_T("Cannot format a track"),err);
 		return err;
 	}
 
@@ -370,7 +370,7 @@ reportError:TUtils::Information(buf);
 		// - checking that all Cylinders to unformat are empty
 		TStdWinError err=__areStdCylindersEmpty__(n,bufCylinders);
 		if (err!=ERROR_EMPTY){
-			TUtils::Information( DOS_ERR_CANNOT_UNFORMAT, DOS_ERR_CYLINDERS_NOT_EMPTY, DOS_MSG_CYLINDERS_UNCHANGED );
+			Utils::Information( DOS_ERR_CANNOT_UNFORMAT, DOS_ERR_CYLINDERS_NOT_EMPTY, DOS_MSG_CYLINDERS_UNCHANGED );
 			return LOG_ERROR(err);
 		}
 		// - carrying out the unformatting
@@ -384,7 +384,7 @@ reportError:TUtils::Information(buf);
 		}
 		if (rd.removeTracksFromFat)
 			if (!__removeStdTracksFromFat__(n,bufCylinders,bufHeads))
-				TUtils::Information(FAT_SECTOR_UNMODIFIABLE, err=::GetLastError() );
+				Utils::Information(FAT_SECTOR_UNMODIFIABLE, err=::GetLastError() );
 		image->UpdateAllViews(NULL); // although updated already in UnformatTracks, here calling too as FormatBoot might have changed since then
 		return ERROR_SUCCESS;
 	}
@@ -419,7 +419,7 @@ reportError:TUtils::Information(buf);
 									THREAD_PRIORITY_BELOW_NORMAL
 								).CarryOut(nTracks);
 		if (err!=ERROR_SUCCESS)
-			TUtils::FatalError(_T("Cannot unformat a track"),err);
+			Utils::FatalError(_T("Cannot unformat a track"),err);
 		return err;
 	}
 
@@ -481,7 +481,7 @@ reportError:TUtils::Information(buf);
 						if (*ps++==TSectorStatus::EMPTY)
 							*pEmptyId++=*pId;
 					// : buffering Sectors from the same Track by the underlying Image, making them ready for IMMEDIATE usage
-					fesp.dos->image->BufferTrackData( cyl, head, bufferId, TUtils::CByteIdentity(), pEmptyId-bufferId, true );
+					fesp.dos->image->BufferTrackData( cyl, head, bufferId, Utils::CByteIdentity(), pEmptyId-bufferId, true );
 					// : filling all Empty Sectors
 					TPhysicalAddress chs={ cyl, head };
 					for( WORD w; pEmptyId>bufferId; ){
@@ -548,7 +548,7 @@ reportError:TUtils::Information(buf);
 								break;
 							case TDirectoryTraversal::WARNING:
 								// warning
-								//TODO: TUtils::Warning(0,pdt->error);
+								//TODO: Utils::Warning(0,pdt->error);
 								break;
 						}
 					}
@@ -597,7 +597,7 @@ reportError:TUtils::Information(buf);
 								break;
 							case TDirectoryTraversal::WARNING:
 								// warning - Directory Sector not found
-								//TODO: TUtils::Warning(0,DIR_ROOT_SECTOR_NOT_FOUND);
+								//TODO: Utils::Warning(0,DIR_ROOT_SECTOR_NOT_FOUND);
 								break;
 						}
 					}
@@ -708,7 +708,7 @@ reportError:TUtils::Information(buf);
 			nDataBytesToExport=min(nDataBytesToExport,nMaxDataBytesToExport);
 			div_t d=div((int)nBytesReservedBeforeData,(int)formatBoot.sectorLength-properties->dataBeginOffsetInSector-properties->dataEndOffsetInSector);
 			item+=d.quot, n-=d.quot; // skipping Sectors from which not read thanks to the NumberOfBytesReservedBeforeData
-			for( const TUtils::CByteIdentity sectorIdAndPositionIdentity; n; ){
+			for( const Utils::CByteIdentity sectorIdAndPositionIdentity; n; ){
 				// . determining which of nearest Sectors are on the same Track
 				TSectorId bufferId[(TSector)-1];
 				TSector nSectors=0;
@@ -822,7 +822,7 @@ reportError:TUtils::Information(buf);
 					}
 					#ifdef _DEBUG
 					default:
-						TUtils::Information(_T("CDos::__importFile__ - unknown pdt->entryType"));
+						Utils::Information(_T("CDos::__importFile__ - unknown pdt->entryType"));
 						ASSERT(FALSE);
 					#endif
 				}
@@ -866,7 +866,7 @@ reportError:TUtils::Information(buf);
 				ASSERT(FALSE);
 		}
 		// - importing the File to disk and recording its FatPath
-		const TUtils::CByteIdentity sectorIdAndPositionIdentity;
+		const Utils::CByteIdentity sectorIdAndPositionIdentity;
 		CFatPath::TItem item;
 		//item.value=TSectorStatus::OCCUPIED; // commented out as all Sectors in the FatPath are Occupied except for the last Sector
 		for( THead headA=0; headZ<formatBoot.nHeads; headA++,headZ++ )
@@ -926,13 +926,13 @@ finished:
 		// shows general error message on File being not processable due to occured Cause
 		TCHAR buf[MAX_PATH+50];
 		::wsprintf( buf, ERROR_MSG_CANNOT_PROCESS, GetFileNameWithAppendedExt(file,buf+50) );
-		TUtils::FatalError(buf,cause);
+		Utils::FatalError(buf,cause);
 	}
 	void CDos::__showFileProcessingError__(PCFile file,TStdWinError cause) const{
 		// shows general error message on File being not processable due to occured Cause
 		TCHAR buf[MAX_PATH+50];
 		::wsprintf( buf, ERROR_MSG_CANNOT_PROCESS, GetFileNameWithAppendedExt(file,buf+50) );
-		TUtils::FatalError(buf,cause);
+		Utils::FatalError(buf,cause);
 	}
 
 	void CDos::__markDirectorySectorAsDirty__(LPCVOID dirEntry) const{

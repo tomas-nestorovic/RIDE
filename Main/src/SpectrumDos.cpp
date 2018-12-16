@@ -44,7 +44,7 @@
 
 	void CSpectrumDos::__informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId){
 		// shows a MessageBox with added "Don't show anymore" check-box
-		TUtils::InformationWithCheckableShowNoMore( text, INI_SPECTRUM, messageId );
+		Utils::InformationWithCheckableShowNoMore( text, INI_SPECTRUM, messageId );
 	}
 
 	void CSpectrumDos::__parseFat32LongName__(PTCHAR buf,LPCTSTR &rOutName,BYTE nameLengthMax,LPCTSTR &rOutExt,BYTE extLengthMax,LPCTSTR &rOutZxInfo){

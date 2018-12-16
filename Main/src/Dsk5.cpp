@@ -203,7 +203,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 					}
 				}
 			if (mayLeadToIncompatibilityIssues)
-				TUtils::Information(_T("ATTENTION: Some tracks violate the common length or contain various sized sectors - such image may not work in all emulators. You are recommended to save it as \"Revision 5\" DSK (use the Image -> Dump command)."));
+				Utils::Information(_T("ATTENTION: Some tracks violate the common length or contain various sized sectors - such image may not work in all emulators. You are recommended to save it as \"Revision 5\" DSK (use the Image -> Dump command)."));
 		}
 		m_bModified=FALSE;
 		return ::GetLastError()==ERROR_SUCCESS;
@@ -319,7 +319,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				DDX_Radio( pDX, ID_STANDARD, i );
 				rParams.rev5=i>0;
 				static const WORD Controls[]={ ID_STANDARD, ID_DRIVE, ID_PROTECTED, 0 } ;
-				TUtils::EnableDlgControls( m_hWnd, Controls, allowTypeBeChanged );
+				Utils::EnableDlgControls( m_hWnd, Controls, allowTypeBeChanged );
 				// . Creator
 				const BYTE nCyls=rDiskInfo.nCylinders;
 				rDiskInfo.nCylinders=0; // converting the Creator field to a null-terminated string
@@ -346,11 +346,11 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 					case WM_NOTIFY:
 						if (((LPNMHDR)lParam)->code==NM_CLICK){
 							// . defining the Dialog
-							class CHelpDialog sealed:public TUtils::CCommandDialog{
+							class CHelpDialog sealed:public Utils::CCommandDialog{
 								void PreInitDialog() override{
 									// dialog initialization
 									// : base
-									TUtils::CCommandDialog::PreInitDialog();
+									Utils::CCommandDialog::PreInitDialog();
 									// : supplying available actions
 									__addCommandButton__( ID_SIZE, _T("Which version of DSK image should I prefer?") );
 									__addCommandButton__( ID_FORMAT, _T("How do I merge two images? What is a \"patch\"?") );
@@ -359,17 +359,17 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 							public:
 								CHelpDialog()
 									// ctor
-									: TUtils::CCommandDialog(_T("Suitable DSK version may spare you space on disk and burden during emulation.")) {
+									: Utils::CCommandDialog(_T("Suitable DSK version may spare you space on disk and burden during emulation.")) {
 								}
 							} d;
 							// . showing the Dialog and processing its result
 							TCHAR url[200];
 							switch (d.DoModal()){
 								case ID_SIZE:
-									TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_dsk.html"),url) );
+									Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_dsk.html"),url) );
 									break;
 								case ID_FORMAT:
-									TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_patch.html"),url) );
+									Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_patch.html"),url) );
 									break;
 							}
 						}

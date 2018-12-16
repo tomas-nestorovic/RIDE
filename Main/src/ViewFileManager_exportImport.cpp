@@ -313,7 +313,7 @@ importQuit1:		::DragFinish(hDrop);
 										// error creating a File copy
 										TCHAR errMsg[MAX_PATH+40];
 										::wsprintf( errMsg, _T("Cannot copy \"%s\""), fileNameAndExt );
-										TUtils::FatalError(errMsg,ERROR_CANNOT_MAKE,IMPORT_MSG_CANCELLED);
+										Utils::FatalError(errMsg,ERROR_CANNOT_MAKE,IMPORT_MSG_CANCELLED);
 										goto importQuit2;
 									}
 								}
@@ -383,14 +383,14 @@ importQuit2:		::GlobalUnlock(hg);
 					if (directory)
 						::lstrcpy(bufOverwrite,_T("Merge existing directory with new one"));
 					else{
-						TUtils::BytesToHigherUnits(newFileSize,higherUnit,higherUnitName);
+						Utils::BytesToHigherUnits(newFileSize,higherUnit,higherUnitName);
 						_stprintf( bufOverwrite, _T("Replace with new file (%.2f %s)"), higherUnit, higherUnitName );
 					}	
 				TCHAR bufSkip[80];
 					if (directory)
 						::lstrcpy(bufSkip,_T("Skip this directory"));
 					else{
-						TUtils::BytesToHigherUnits(DOS->GetFileDataSize(conflict),higherUnit,higherUnitName);
+						Utils::BytesToHigherUnits(DOS->GetFileDataSize(conflict),higherUnit,higherUnitName);
 						_stprintf( bufSkip, _T("Keep current file (%.2f %s)"), higherUnit, higherUnitName );
 					}
 				CNameConflictResolutionDialog d( newFileName, directory?_T("directory"):_T("file"), bufOverwrite,bufSkip );
@@ -484,10 +484,10 @@ importQuit2:		::GlobalUnlock(hg);
 					return err;
 				case ERROR_BAD_LENGTH:
 					// File too long or too short
-					TUtils::Information( errTxt, err, _T("File length either too long or too short.\n") IMPORT_MSG_CANCELLED );
+					Utils::Information( errTxt, err, _T("File length either too long or too short.\n") IMPORT_MSG_CANCELLED );
 					return err;
 				default:
-					TUtils::Information( errTxt, err, IMPORT_MSG_CANCELLED );
+					Utils::Information( errTxt, err, IMPORT_MSG_CANCELLED );
 					return err;
 			}
 		}while (true);
@@ -594,7 +594,7 @@ importQuit2:		::GlobalUnlock(hg);
 		COleVirtualFileDataSource obj(this,DROPEFFECT_NONE);
 		// - launching drag&drop
 		obj.DoDragDrop(DROPEFFECT_COPY|( IMAGE->writeProtected ? 0 : DROPEFFECT_MOVE )); // not contained in switch(.) because: (1) drag/drop adopts here the same logic as with copy/cut/paste - see communication of target with source in OnDrop, (2) the result of DoDragDrop is inaccurate - see DataSource's OnSetData
-		//TUtils::InformationWithCheckableShowNoMore(_T("Extra information has been appended to each file name.\n\nTo import the file back in the exact form as on this image, preserve this information."),INI_MSG_FILE_EXPORT_INFO);
+		//Utils::InformationWithCheckableShowNoMore(_T("Extra information has been appended to each file name.\n\nTo import the file back in the exact form as on this image, preserve this information."),INI_MSG_FILE_EXPORT_INFO);
 	}
 
 	afx_msg void CFileManagerView::__copyFilesToClipboard__(){
@@ -650,7 +650,7 @@ importQuit2:		::GlobalUnlock(hg);
 	CFileManagerView::CNameConflictResolutionDialog::CNameConflictResolutionDialog(LPCTSTR _conflictedName,LPCTSTR _conflictedNameType,LPCTSTR _captionForReplaceButton,LPCTSTR _captionForSkipButton)
 		// ctor
 		// - base
-		: TUtils::CCommandDialog(IDR_FILEMANAGER_IMPORT_CONFLICT,information)
+		: Utils::CCommandDialog(IDR_FILEMANAGER_IMPORT_CONFLICT,information)
 		// - initialization
 		, conflictedName(_conflictedName) , conflictedNameType(_conflictedNameType) , captionForReplaceButton(_captionForReplaceButton) , captionForSkipButton(_captionForSkipButton)
 		, useForAllSubsequentConflicts(BST_UNCHECKED) {
@@ -661,7 +661,7 @@ importQuit2:		::GlobalUnlock(hg);
 	void CFileManagerView::CNameConflictResolutionDialog::PreInitDialog(){
 		// dialog initialization
 		// - base
-		TUtils::CCommandDialog::PreInitDialog();
+		Utils::CCommandDialog::PreInitDialog();
 		// - initializing the "Replace" button
 		__convertToCommandLikeButton__( GetDlgItem(IDYES)->m_hWnd, captionForReplaceButton );
 		// - initializing the "Skip" button
@@ -680,16 +680,16 @@ importQuit2:		::GlobalUnlock(hg);
 		switch (msg){
 			case WM_PAINT:{
 				// . base
-				TUtils::CCommandDialog::WindowProc(msg,wParam,lParam);
+				Utils::CCommandDialog::WindowProc(msg,wParam,lParam);
 				// . drawing curly brackets
 				const CWnd *const pBteReplace=GetDlgItem(IDYES), *const pBtnSkip=GetDlgItem(IDNO);
 				RECT r1,r2;
 				pBteReplace->GetClientRect(&r1), pBteReplace->MapWindowPoints(this,&r1);
 				pBtnSkip->GetClientRect(&r2), pBtnSkip->MapWindowPoints(this,&r2);
 				RECT r={ r1.right+3, r1.top-2, 1000, r2.bottom+2 };
-				TUtils::DrawClosingCurlyBracket( CClientDC(this), r.left, r.top, r.bottom );
+				Utils::DrawClosingCurlyBracket( CClientDC(this), r.left, r.top, r.bottom );
 				return 0;
 			}
 		}
-		return TUtils::CCommandDialog::WindowProc(msg,wParam,lParam);
+		return Utils::CCommandDialog::WindowProc(msg,wParam,lParam);
 	}

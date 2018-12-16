@@ -442,7 +442,7 @@
 			if (f->nCylinders>nCylindersMax){
 				TCHAR buf[200];
 				::wsprintf(buf,ERR_MSG_FORMAT_CYLINDER_RANGE _T("The type of FAT can be changed only by formatting from Cylinder 0."),"max",nCylindersMax,4*fat.type);
-				TUtils::Information(buf);
+				Utils::Information(buf);
 				return false;
 			}
 			const TCylinder nCylindersMin=(	fat.GetMinCountOfClusters()
@@ -455,7 +455,7 @@
 			if (f->nCylinders<nCylindersMin){
 				TCHAR buf[200];
 				::wsprintf(buf,ERR_MSG_FORMAT_CYLINDER_RANGE _T("The type of FAT cannot be changed."),"min",nCylindersMin,4*fat.type);
-				TUtils::Information(buf);
+				Utils::Information(buf);
 				return false;
 			}
 		}//else

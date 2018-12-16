@@ -15,7 +15,7 @@
 
 	void CBootView::__informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId){
 		// shows a MessageBox with added "Don't show anymore" check-box
-		TUtils::InformationWithCheckableShowNoMore( text, INI_BOOT, messageId );
+		Utils::InformationWithCheckableShowNoMore( text, INI_BOOT, messageId );
 	}
 
 	bool WINAPI CBootView::__bootSectorModified__(CPropGridCtrl::PCustomParam,int){
@@ -33,7 +33,7 @@
 
 	bool WINAPI CBootView::__confirmCriticalValueInBoot__(PVOID criticalValueId,int newValue){
 		// informs that a critical value in the Boot is about to be changed, and if confirmed, changes it
-		if (TUtils::QuestionYesNo(_T("About to modify a critical value in the boot, data at stake if set incorrectly!\n\nContinue?!"),MB_DEFBUTTON2)){
+		if (Utils::QuestionYesNo(_T("About to modify a critical value in the boot, data at stake if set incorrectly!\n\nContinue?!"),MB_DEFBUTTON2)){
 			const PDos dos=CDos::__getFocused__();
 			// . validating the new format
 			TFormat fmt=dos->formatBoot;
@@ -87,7 +87,7 @@
 								__informationWithCheckableShowNoMore__(bufMsg,CYLINDERS_ADDED_TO_FAT);
 							else{
 errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMODIFIABLE, operationDesc );
-								TUtils::Information(bufMsg,::GetLastError());
+								Utils::Information(bufMsg,::GetLastError());
 							}
 						}else if (newValue<nCyl0){ // removing Tracks from FAT
 							operationDesc=_T("removed from FAT");
@@ -105,9 +105,9 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 			}
 			if (err!=ERROR_EMPTY){
 				if (err==ERROR_NOT_EMPTY)
-					TUtils::Information(DOS_ERR_CANNOT_ACCEPT_VALUE,DOS_ERR_CYLINDERS_NOT_EMPTY,DOS_MSG_HIT_ESC);
+					Utils::Information(DOS_ERR_CANNOT_ACCEPT_VALUE,DOS_ERR_CYLINDERS_NOT_EMPTY,DOS_MSG_HIT_ESC);
 				else
-					TUtils::Information(DOS_ERR_CANNOT_ACCEPT_VALUE,err,DOS_MSG_HIT_ESC);
+					Utils::Information(DOS_ERR_CANNOT_ACCEPT_VALUE,err,DOS_MSG_HIT_ESC);
 				return false;
 			}
 			dos->image->UpdateAllViews(NULL);
@@ -182,7 +182,7 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 			//content->CreateView(0,0,RUNTIME_CLASS(CPropertyGridView),CSize(splitX,0),&cc);
 			//const HWND hPropGrid=content->GetDlgItem( content->IdFromRowCol(0,0) )->m_hWnd;
 				propGrid.CreateEx( 0, CPropGridCtrl::GetWindowClass(app.m_hInstance), NULL, AFX_WS_DEFAULT_VIEW&~WS_BORDER, 0,0,PROPGRID_WIDTH_DEFAULT,300, content->m_hWnd, (HMENU)content->IdFromRowCol(0,0) );
-				content->SetColumnInfo(0,PROPGRID_WIDTH_DEFAULT*TUtils::LogicalUnitScaleFactor,0);
+				content->SetColumnInfo(0,PROPGRID_WIDTH_DEFAULT*Utils::LogicalUnitScaleFactor,0);
 			//content->CreateView(0,1,RUNTIME_CLASS(CHexaEditor),CSize(),&cc); // commented out as created manually below
 				hexaEditor.Reset( &fBoot, bootSectorDataRealLength, bootSectorDataRealLength );
 				static const RECT rc={0,0,100,100};

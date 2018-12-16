@@ -19,7 +19,7 @@ namespace Debug{
 		class CAction sealed{
 			CLogFile &logFile;
 			const LPCTSTR name;
-			const TUtils::CLocalTime start;
+			const Utils::CLocalTime start;
 		public:
 			CAction(LPCTSTR name,CLogFile &rLogFile=Default);
 			~CAction();
@@ -31,7 +31,7 @@ namespace Debug{
 		CLogFile &operator<<(TCHAR c);
 		CLogFile &operator<<(LPCTSTR text);
 		CLogFile &operator<<(DWORD dw);
-		CLogFile &operator<<(const TUtils::CLocalTime &rlt);
+		CLogFile &operator<<(const Utils::CLocalTime &rlt);
 		CLogFile &operator<<(const TSectorId &rsi);
 		CLogFile &operator<<(const TPhysicalAddress &rchs);
 

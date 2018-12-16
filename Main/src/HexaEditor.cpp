@@ -5,7 +5,7 @@
 
 	void CHexaEditor::__informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId){
 		// shows a MessageBox with added "Don't show anymore" check-box
-		TUtils::InformationWithCheckableShowNoMore( text, INI_HEXAEDITOR, messageId );
+		Utils::InformationWithCheckableShowNoMore( text, INI_HEXAEDITOR, messageId );
 	}
 
 
@@ -199,7 +199,7 @@
 
 	void CHexaEditor::__showMessage__(LPCTSTR msg) const{
 		// shows Message and passes focus back to the HexaEditor
-		TUtils::Information(msg);
+		Utils::Information(msg);
 		::PostMessage( m_hWnd, WM_LBUTTONDOWN, 0, -1 ); // recovering the focus; "-1" = [x,y] = nonsense value; can't use mere SetFocus because this alone doesn't work
 	}
 
@@ -571,7 +571,7 @@ leftMouseDragged:
 						GetClientRect(&rcClip);
 					const int xHexaStart=(addrLength+ADDRESS_SPACE_LENGTH)*font.charAvgWidth, xHexaEnd=xHexaStart+HEXA_FORMAT_LENGTH*nBytesInRow*font.charAvgWidth;
 					const int xAsciiStart=xHexaEnd+HEXA_SPACE_LENGTH*font.charAvgWidth, xAsciiEnd=xAsciiStart+nBytesInRow*font.charAvgWidth;
-					const COLORREF labelColor=TUtils::GetSaturatedColor(::GetSysColor(COLOR_GRAYTEXT),1.7f+.1f*!editable);
+					const COLORREF labelColor=Utils::GetSaturatedColor(::GetSysColor(COLOR_GRAYTEXT),1.7f+.1f*!editable);
 					const CRidePen recordDelimitingHairline( 0, labelColor );
 					const HGDIOBJ hPen0=::SelectObject( dc, recordDelimitingHairline );
 						int address=__firstByteInRowToLogicalPosition__(iRowA), y=HEADER_HEIGHT+iRowFirstToPaint*font.charHeight;

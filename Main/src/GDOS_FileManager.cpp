@@ -196,7 +196,7 @@
 		TDirectoryEntry tmp=*de; // backing-up the original DirectoryEntry
 		TStdWinError err=gdos->ChangeFileNameAndExt(file,bufOldName,bufNewExt,file);
 		if (err!=ERROR_SUCCESS){ // at least two Files with the same name
-			TUtils::Information(FILE_MANAGER_ERROR_RENAMING,err);
+			Utils::Information(FILE_MANAGER_ERROR_RENAMING,err);
 			return false;
 		// - adjusting the File content to reflect the new FileType
 		}else{ // the new name is unique
@@ -204,7 +204,7 @@
 			BYTE oldOffset,newOffset;
 			const DWORD oldDataSize=tmp.__getDataSize__(&oldOffset), newDataSize=de->__getDataSize__(&newOffset);
 			// . querying on eventual trimming of the File
-			if (newDataSize<oldDataSize && !TUtils::QuestionYesNo(_T("The file content needs to be trimmed.\n\nContinue?"),MB_DEFBUTTON2)){
+			if (newDataSize<oldDataSize && !Utils::QuestionYesNo(_T("The file content needs to be trimmed.\n\nContinue?"),MB_DEFBUTTON2)){
 				*de=tmp; // recovering the original DirectoryEntry
 				return true;
 			}

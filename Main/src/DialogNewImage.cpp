@@ -69,7 +69,7 @@
 				lb.Attach((HWND)lParam);
 					const int iSelected=lb.GetCurSel();
 					static const WORD Controls[]={ IDOK, 0 };
-					if (TUtils::EnableDlgControls( m_hWnd, Controls, iSelected>=0 ))
+					if (Utils::EnableDlgControls( m_hWnd, Controls, iSelected>=0 ))
 						fnImage=( (CImage::PCProperties)lb.GetItemData(iSelected) )->fnInstantiate;
 				lb.Detach();
 				return TRUE;
@@ -86,11 +86,11 @@
 				case NM_CLICK:
 				case NM_RETURN:{
 					// . defining the Dialog
-					class CHelpDialog sealed:public TUtils::CCommandDialog{
+					class CHelpDialog sealed:public Utils::CCommandDialog{
 						void PreInitDialog() override{
 							// dialog initialization
 							// : base
-							TUtils::CCommandDialog::PreInitDialog();
+							Utils::CCommandDialog::PreInitDialog();
 							// : supplying available actions
 							__addCommandButton__( ID_DRIVE, _T("Does the application co-work with real floppy drives?") );
 							__addCommandButton__( ID_FORMAT, _T("How do I format a real floppy using this application?") );
@@ -100,20 +100,20 @@
 					public:
 						CHelpDialog()
 							// ctor
-							: TUtils::CCommandDialog(_T("This might interest you:")) {
+							: Utils::CCommandDialog(_T("This might interest you:")) {
 						}
 					} d;
 					// . showing the Dialog and processing its result
 					TCHAR url[200];
 					switch (d.DoModal()){
 						case ID_DRIVE:
-							TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_realFdd.html"),url) );
+							Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_realFdd.html"),url) );
 							break;
 						case ID_FORMAT:
-							TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_formatFloppy.html"),url) );
+							Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_formatFloppy.html"),url) );
 							break;
 						case ID_SYSTEM:
-							TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_accessFloppy.html"),url) );
+							Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_accessFloppy.html"),url) );
 							break;
 					}
 					*pResult=0;

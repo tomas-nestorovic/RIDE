@@ -3,7 +3,7 @@
 
 #define MSG_HELP_CANCEL	_T("Don't need any help now.")
 
-namespace TUtils{
+namespace Utils{
 
 	class CCommandDialog:public CDialog{
 		const LPCTSTR information;

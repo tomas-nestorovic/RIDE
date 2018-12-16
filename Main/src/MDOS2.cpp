@@ -28,7 +28,7 @@
 
 	void CMDOS2::__informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId){
 		// shows a MessageBox with added "Don't show anymore" check-box
-		TUtils::InformationWithCheckableShowNoMore( text, INI_MDOS2, messageId );
+		Utils::InformationWithCheckableShowNoMore( text, INI_MDOS2, messageId );
 	}
 
 	void CMDOS2::__recognizeVersion__(){
@@ -453,7 +453,7 @@
 					RECT r1,r2;
 					p1->GetClientRect(&r1), p1->MapWindowPoints(this,&r1);
 					p2->GetClientRect(&r2), p2->MapWindowPoints(this,&r2);
-					TUtils::DrawClosingCurlyBracket(CClientDC(this),
+					Utils::DrawClosingCurlyBracket(CClientDC(this),
 													r1.right+8,
 													r1.top-3, r2.bottom+3
 												);

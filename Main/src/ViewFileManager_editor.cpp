@@ -226,7 +226,7 @@
 				if (!CreateFileInformationEditor(file, editedInformationId=lpia->iSubItem )){
 					TCHAR buf[200];
 					_stprintf(buf,_T("Information in the \"%s\" column cannot be edited."),informationList[editedInformationId].informationName);
-					TUtils::Information(buf);
+					Utils::Information(buf);
 				}
 			}
 		}else
@@ -245,7 +245,7 @@
 			if ( *pResult=err==ERROR_SUCCESS )
 				__replaceFileDisplay__( (CDos::PFile)lpdi->item.lParam, renamedFile );
 			else
-				TUtils::Information(FILE_MANAGER_ERROR_RENAMING,err);
+				Utils::Information(FILE_MANAGER_ERROR_RENAMING,err);
 		}
 		CEditorBase::pSingleShown=NULL;
 	}

@@ -139,7 +139,7 @@
 			}
 		}*/
 		// . COLUMN: icon, name a extension
-		const float dpiScaleFactor=TUtils::LogicalUnitScaleFactor;
+		const float dpiScaleFactor=Utils::LogicalUnitScaleFactor;
 		BYTE attr=de->shortNameEntry.attributes;
 		::DrawIconEx( dc, r.left,r.top, __getIcon__(de), 16*dpiScaleFactor,16*dpiScaleFactor, 0, NULL, DI_NORMAL|DI_COMPAT );
 		r.left+=20*dpiScaleFactor;
@@ -195,7 +195,7 @@
 				msdos->fileManager.__replaceFileDisplay__(file,renamedFile);
 			return true;
 		}else{	// at least two Files with the same Name+Extension combination exist
-			TUtils::Information(FILE_MANAGER_ERROR_RENAMING,err);
+			Utils::Information(FILE_MANAGER_ERROR_RENAMING,err);
 			return false;
 		}
 	}

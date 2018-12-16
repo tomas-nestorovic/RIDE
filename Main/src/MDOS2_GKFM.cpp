@@ -124,7 +124,7 @@
 
 	bool WINAPI CMDOS2::TBootSector::UReserved1::TGKFileManager::__warnOnEditingAdvancedValue__(PVOID,int){
 		// shows a warning on about to change an "advanced" parameter of GK's File Manager
-		if (TUtils::QuestionYesNo(_T("The advanced properties are best left alone if you don't know their purpose (consult George K's \"Boot Maker\" to find out).\n\nContinue anyway?!"),MB_DEFBUTTON2))
+		if (Utils::QuestionYesNo(_T("The advanced properties are best left alone if you don't know their purpose (consult George K's \"Boot Maker\" to find out).\n\nContinue anyway?!"),MB_DEFBUTTON2))
 			return CBootView::__bootSectorModified__( NULL, 0 );
 		else
 			return false;
@@ -180,12 +180,12 @@
 	void WINAPI CMDOS2::TBootSector::UReserved1::TGKFileManager::__pg_drawProperty__(PVOID,LPCVOID bootSector,short,PDRAWITEMSTRUCT pdis){
 		// draws a summary on GK's File Manager status into PropertyGrid
 		const HDC dc=pdis->hDC;
-		TUtils::ScaleLogicalUnit(dc);
+		Utils::ScaleLogicalUnit(dc);
 		const PCBootSector boot=(PCBootSector)bootSector;
 		const TGKFileManager &rGkfm=boot->reserved1.gkfm;
 		POINT org;
 		::GetViewportOrgEx(dc,&org);
-		org.x+=GKFM_ICON_PG_ZOOM_FACTOR*GKFM_WINDOW_MARGIN*TUtils::LogicalUnitScaleFactor, org.y+=GKFM_ICON_PG_ZOOM_FACTOR*GKFM_WINDOW_MARGIN*TUtils::LogicalUnitScaleFactor;
+		org.x+=GKFM_ICON_PG_ZOOM_FACTOR*GKFM_WINDOW_MARGIN*Utils::LogicalUnitScaleFactor, org.y+=GKFM_ICON_PG_ZOOM_FACTOR*GKFM_WINDOW_MARGIN*Utils::LogicalUnitScaleFactor;
 		::SetViewportOrgEx( dc, org.x, org.y, NULL );
 		// - drawing the background
 		const BYTE color=rGkfm.color;
@@ -202,8 +202,8 @@
 		} vram;
 		vram.w=rGkfm.aVRam;
 		::SetViewportOrgEx(	dc,
-							org.x+GKFM_ICON_PG_ZOOM_FACTOR*( (BYTE)(vram.L<<3) - rGkfm.x )*TUtils::LogicalUnitScaleFactor, // A-B, A = converted ZX->PC pixel, B = PC pixel
-							org.y+GKFM_ICON_PG_ZOOM_FACTOR*( (BYTE)(vram.H<<3&192 | vram.L>>2&56 | vram.H&7) - rGkfm.y )*TUtils::LogicalUnitScaleFactor, // A|B|C, A = third, B = row, C = microrow
+							org.x+GKFM_ICON_PG_ZOOM_FACTOR*( (BYTE)(vram.L<<3) - rGkfm.x )*Utils::LogicalUnitScaleFactor, // A-B, A = converted ZX->PC pixel, B = PC pixel
+							org.y+GKFM_ICON_PG_ZOOM_FACTOR*( (BYTE)(vram.H<<3&192 | vram.L>>2&56 | vram.H&7) - rGkfm.y )*Utils::LogicalUnitScaleFactor, // A|B|C, A = third, B = row, C = microrow
 							NULL
 						);
 		__drawIcon__( __getIconDataFromBoot__(boot), dc, GKFM_ICON_PG_ZOOM_FACTOR );
@@ -212,7 +212,7 @@
 		const HGDIOBJ hFont0=::SelectObject(dc,font.m_hObject);
 			TCHAR buf[GKFM_TEXT_MAX];
 			__getTextFromBoot__(boot,buf);
-			::SetViewportOrgEx( dc, org.x+GKFM_ICON_PG_ZOOM_FACTOR*TUtils::LogicalUnitScaleFactor*rGkfm.dx, org.y+GKFM_ICON_PG_ZOOM_FACTOR*TUtils::LogicalUnitScaleFactor*rGkfm.dy, NULL );
+			::SetViewportOrgEx( dc, org.x+GKFM_ICON_PG_ZOOM_FACTOR*Utils::LogicalUnitScaleFactor*rGkfm.dx, org.y+GKFM_ICON_PG_ZOOM_FACTOR*Utils::LogicalUnitScaleFactor*rGkfm.dy, NULL );
 			::SetTextColor(dc,RGB(ink.rgbRed,ink.rgbGreen,ink.rgbBlue));
 			::DrawText(	dc, buf,-1, &pdis->rcItem, DT_LEFT|DT_TOP );
 		::SelectObject(dc,hFont0);
@@ -232,7 +232,7 @@
 			static void __validateDivisibilityByEight__(CDataExchange *pDX,BYTE value){
 				// validates divisibility of Value by eight, reports a problem
 				if (pDX->m_bSaveAndValidate && value&7){
-					TUtils::Information(_T("All window dimensions must be multiples of eight!"));
+					Utils::Information(_T("All window dimensions must be multiples of eight!"));
 					pDX->Fail();
 				}
 			}
@@ -291,7 +291,7 @@
 					else{
 errorText:				TCHAR buf[400];
 						::wsprintf( buf, _T("Text location in collision with critical section in the boot.\n\nTo resolve this issue, try to\n(a) shorten the text to max.%d characters (incl. all Desktop formatting characters), or\n(b) change its beginning in the ") BOOT_SECTOR_ADVANCED _T(" setting subcategory."), GKFM_TEXT_MAX );
-						TUtils::Information(buf);
+						Utils::Information(buf);
 						pDX->PrepareEditCtrl(ID_DATA);
 						pDX->Fail();
 					}
@@ -326,7 +326,7 @@ errorText:				TCHAR buf[400];
 					const CClientDC dc(this);
 					const int iDc0=::SaveDC(dc);
 						::SetViewportOrgEx(dc,iconPosition.x,iconPosition.y,NULL);
-						TUtils::ScaleLogicalUnit(dc);
+						Utils::ScaleLogicalUnit(dc);
 						__drawIcon__( __getIconDataFromBoot__(&boot), dc, 2 );
 					::RestoreDC(dc,iDc0);
 				}
@@ -403,7 +403,7 @@ errorText:				TCHAR buf[400];
 			*pBootSector=tmpBootSector; // adopting confimed values
 			image->UpdateAllViews(NULL);
 			// . downloading the GKFM binary from the Internet and importing it to the disk
-			if (TUtils::QuestionYesNo(_T("Import latest version of GKFM from on-line resource to the disk?"),MB_DEFBUTTON1))
+			if (Utils::QuestionYesNo(_T("Import latest version of GKFM from on-line resource to the disk?"),MB_DEFBUTTON1))
 				__pg_updateOnline__(param,0,NULL);
 			else
 				__informationWithCheckableShowNoMore__( _T("Okay! You can update it later by clicking \"") GKFM_UPDATE_ONLINE _T("\" in the PropertyGrid."), INI_GKFM_IMPORT_LATER );
@@ -416,8 +416,8 @@ errorText:				TCHAR buf[400];
 		BYTE gkfmDataBuffer[16384]; // sufficiently big buffer
 		DWORD gkfmDataLength;
 		TCHAR gkfmUrl[200];
-		TStdWinError err =	TUtils::DownloadSingleFile( // also displays the error message in case of problems
-								TUtils::GetApplicationOnlineFileUrl( GKFM_ONLINE_NAME, gkfmUrl ),
+		TStdWinError err =	Utils::DownloadSingleFile( // also displays the error message in case of problems
+								Utils::GetApplicationOnlineFileUrl( GKFM_ONLINE_NAME, gkfmUrl ),
 								gkfmDataBuffer, sizeof(gkfmDataBuffer), &gkfmDataLength,
 								GKFM_NOT_MODIFIED
 							);
@@ -427,7 +427,7 @@ errorText:				TCHAR buf[400];
 			const PMDOS2 mdos=(PMDOS2)CDos::__getFocused__();
 			err=mdos->fileManager.ImportFileAndResolveConflicts( &CMemFile(gkfmDataBuffer,sizeof(gkfmDataBuffer)), gkfmDataLength, GKFM_IMPORT_NAME, 0, tmp, conflictResolution );
 			if (err!=ERROR_SUCCESS)
-				TUtils::FatalError( _T("Cannot import GKFM"), err, GKFM_NOT_MODIFIED );
+				Utils::FatalError( _T("Cannot import GKFM"), err, GKFM_NOT_MODIFIED );
 		}
 		return true; // True = destroy PropertyGrid's Editor
 	}

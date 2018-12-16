@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-namespace TUtils{
+namespace Utils{
 
 	CCommandDialog::CCommandDialog(LPCTSTR _information)
 		// ctor
@@ -811,7 +811,7 @@ namespace TUtils{
 		// - reading the on-line file to the Buffer, allocated and initialized by the caller; caller is to dimension the Buffer so that it can contain the whole on-line file
 		if (!::InternetReadFile( hOnlineFile, rdsfp.buffer, rdsfp.bufferSize, &rdsfp.outOnlineFileSize )){
 quitWithErr:const DWORD err=::GetLastError();
-			TUtils::FatalError( _T("File download failed"), err, rdsfp.fatalErrConsequence );
+			FatalError( _T("File download failed"), err, rdsfp.fatalErrConsequence );
 			if (hOnlineFile!=NULL)
 				::InternetCloseHandle(hOnlineFile);
 			if (hSession!=NULL)

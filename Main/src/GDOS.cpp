@@ -114,7 +114,7 @@
 
 	void CGDOS::__informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId){
 		// shows a MessageBox with added "Don't show anymore" check-box
-		TUtils::InformationWithCheckableShowNoMore( text, INI_GDOS, messageId );
+		Utils::InformationWithCheckableShowNoMore( text, INI_GDOS, messageId );
 	}
 
 

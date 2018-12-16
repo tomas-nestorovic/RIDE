@@ -8,7 +8,7 @@
 
 	void CFileManagerView::__informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId){
 		// shows a MessageBox with added "Don't show anymore" check-box
-		TUtils::InformationWithCheckableShowNoMore( text, INI_FILEMANAGER, messageId );
+		Utils::InformationWithCheckableShowNoMore( text, INI_FILEMANAGER, messageId );
 	}
 
 
@@ -166,7 +166,7 @@
 		// creates and in MainWindow's StatusBar shows a report on Files in current Directory
 		TStdWinError errFat,errDir;
 		float freeSpace; LPCTSTR unit;
-		TUtils::BytesToHigherUnits( DOS->GetFreeSpaceInBytes(errFat), freeSpace, unit );
+		Utils::BytesToHigherUnits( DOS->GetFreeSpaceInBytes(errFat), freeSpace, unit );
 		TCHAR buf[200];
 		_stprintf(buf,_T("%d files, %.2f %s of free space"),DOS->GetCountOfItemsInCurrentDir(errDir),freeSpace,unit);
 		if (errFat!=ERROR_SUCCESS) ::lstrcat( buf, _T(", issues with FAT") );
@@ -189,7 +189,7 @@
 		PCFileInfo info=informationList;
 		for( int i=0; i<nInformation; i++,info++ ){
 			::lstrcpy(buf+1,info->informationName);
-			lv.InsertColumn( i, buf, info->aligning, info->columnWidthDefault*TUtils::LogicalUnitScaleFactor );
+			lv.InsertColumn( i, buf, info->aligning, info->columnWidthDefault*Utils::LogicalUnitScaleFactor );
 		}
 		// - populating the FileManager and applying Ordering to Files
 		__changeDisplayMode__(displayMode+ID_FILEMANAGER_BIG_ICONS); // calls OnInitialUpdate/OnUpdate
@@ -215,7 +215,7 @@
 		if (DOS->IsDirectory(directory)){
 			const TStdWinError err=(DOS->*pDirectoryStructureManagement->fnChangeCurrentDir)(directory);
 			if (err!=ERROR_SUCCESS)
-				TUtils::FatalError(ERROR_MSG_CANT_CHANGE_DIRECTORY,err);
+				Utils::FatalError(ERROR_MSG_CANT_CHANGE_DIRECTORY,err);
 		}
 	}
 	TStdWinError CFileManagerView::__switchToDirectory__(PTCHAR path) const{
@@ -231,7 +231,7 @@
 										: ERROR_FILE_NOT_FOUND;
 			*backslash='\\';
 			if (err!=ERROR_SUCCESS){
-				TUtils::FatalError(ERROR_MSG_CANT_CHANGE_DIRECTORY,err);
+				Utils::FatalError(ERROR_MSG_CANT_CHANGE_DIRECTORY,err);
 				return err; // remains switched to the last Subdirectory that could be accessed
 			}
 			// . next Subdirectory in the Path
@@ -266,7 +266,7 @@
 		rFont.GetObject(sizeof(lf),&lf);
 		pmis->itemHeight=	( lf.lfHeight<0 ? -lf.lfHeight : lf.lfHeight )
 							+
-							reportModeRowHeightAdjustment*TUtils::LogicalUnitScaleFactor; // e.g., for the underscore "_" to be visible as well
+							reportModeRowHeightAdjustment*Utils::LogicalUnitScaleFactor; // e.g., for the underscore "_" to be visible as well
 	}
 
 	afx_msg void CFileManagerView::__changeDisplayMode__(UINT id){
@@ -318,7 +318,7 @@
 		// - if Image WriteProtected, no Files can be deleted
 		if (IMAGE->__reportWriteProtection__()) return;
 		// - deleting upon confirmation
-		if (TUtils::QuestionYesNo( _T("Selected item(s) will be deleted.\n\nContinue?"), MB_DEFBUTTON2 )){
+		if (Utils::QuestionYesNo( _T("Selected item(s) will be deleted.\n\nContinue?"), MB_DEFBUTTON2 )){
 			// . deleting
 			TFileList filesToDelete;
 			for( POSITION pos=GetFirstSelectedFilePosition(); pos; filesToDelete.AddTail(GetNextSelectedFile(pos)) );
@@ -542,7 +542,7 @@
 				GetDlgItem(ID_DIRECTORY)->GetWindowText(name,MAX_PATH);
 				const TStdWinError err=(dos->*dos->pFileManager->pDirectoryStructureManagement->fnCreateSubdir)(name,FILE_ATTRIBUTE_DIRECTORY,subdirectory);
 				if (err!=ERROR_SUCCESS)
-					TUtils::Information(_T("Cannot create the directory"),err);
+					Utils::Information(_T("Cannot create the directory"),err);
 				else
 					CDialog::OnOK();
 			}
@@ -652,7 +652,7 @@
 		if (bac.CarryOut(statistics.finishedState)==ERROR_SUCCESS){
 			TCHAR buf[1024];
 			::wsprintf( buf, _T("SELECTION Properties\n\n- recurrently selected %d file(s), %d folders\n- of %d Bytes in total size\n- which occupy %d Bytes on the disk."), statistics.nFiles, statistics.nDirectories, statistics.totalSizeInBytes, statistics.totalSizeOnDiskInBytes );
-			TUtils::Information(buf);
+			Utils::Information(buf);
 		}
 	}
 

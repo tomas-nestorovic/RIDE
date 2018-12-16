@@ -35,7 +35,7 @@
 		// - updating control layout
 		SendMessage(WM_SIZE,0,MAKELONG(r.right,r.bottom));
 		// - informing
-		TUtils::InformationWithCheckableShowNoMore(_T("Drop files to compare over their respective hexa-editors and press the Compare button."),INI_COMPARISON,INI_MSG);
+		Utils::InformationWithCheckableShowNoMore(_T("Drop files to compare over their respective hexa-editors and press the Compare button."),INI_COMPARISON,INI_MSG);
 	}
 
 
@@ -58,9 +58,9 @@
 				goto different;
 		}
 		if (length1||length2)
-different:	TUtils::Information(_T("No, the files differ in content! (File names are ignored.)"));
+different:	Utils::Information(_T("No, the files differ in content! (File names are ignored.)"));
 		else
-			TUtils::Information(_T("Yes, the file contents are identical! (File names are ignored.)"));
+			Utils::Information(_T("Yes, the file contents are identical! (File names are ignored.)"));
 		file1.f->SeekToBegin(), file2.f->SeekToBegin();
 	}
 	
@@ -172,7 +172,7 @@ different:	TUtils::Information(_T("No, the files differ in content! (File names 
 			delete fTmp;
 			TCHAR errMsg[200];
 			e.GetErrorMessage(errMsg,200);
-			TUtils::FatalError(errMsg);
+			Utils::FatalError(errMsg);
 		}
 	}
 

@@ -41,7 +41,7 @@
 		//CreatePointFont(pointHeight,face);
 		float fontHeight=10.f*-pointHeight/72.f, fontWidth=10.f*-pointWidth/72.f;
 		if (dpiScaled){
-			const float factor=TUtils::LogicalUnitScaleFactor;
+			const float factor=Utils::LogicalUnitScaleFactor;
 			fontHeight*=factor, fontWidth*=factor;
 		}
 		CreateFont( fontHeight, fontWidth, 0, 0,
@@ -165,10 +165,10 @@
 			}
 		// - suggesting to visit the FAQ page to learn more about the application
 		if (app.GetProfileInt(INI_GENERAL,INI_MSG_FAQ,FALSE)==0){
-			if (TUtils::QuestionYesNo(_T("Looks like you've launched this app for the first time. Do you want to visit the \"Frequently Asked Questions\" (FAQ) page to see what it can do?"),MB_DEFBUTTON1))
+			if (Utils::QuestionYesNo(_T("Looks like you've launched this app for the first time. Do you want to visit the \"Frequently Asked Questions\" (FAQ) page to see what it can do?"),MB_DEFBUTTON1))
 				m_pMainWnd->SendMessage(WM_COMMAND,ID_HELP_FAQ);
 			else
-				TUtils::Information(_T("Okay! You can visit the FAQ page later by clicking Help -> FAQ."));
+				Utils::Information(_T("Okay! You can visit the FAQ page later by clicking Help -> FAQ."));
 			app.WriteProfileInt( INI_GENERAL, INI_MSG_FAQ, TRUE );
 		}
 		// - parsing the command line
@@ -214,7 +214,7 @@
 					// A|B, A = formatting cancelled by the user, B = formatting failed; the conditions cannot be switched (because of short-circuit evaluation)
 					const TStdWinError err=::GetLastError(); // extracting the cause of error here ...
 					delete image; // ... as it may change here!
-					return TUtils::FatalError( _T("Cannot create a new image"), err );
+					return Utils::FatalError( _T("Cannot create a new image"), err );
 				}
 			delete dos;
 			// . automatically recognizing suitable DOS (e.g. because a floppy might not have been formatted correctly)
@@ -246,7 +246,7 @@
 			const TStdWinError err=image->Reset();
 			if (err!=ERROR_SUCCESS){
 				delete image;
-				TUtils::FatalError(_T("Cannot access the floppy drive"),err);
+				Utils::FatalError(_T("Cannot access the floppy drive"),err);
 				return NULL;
 				//AfxThrowFileException( CFileException::OsErrorToException(err), err, FDD_A_LABEL );
 			}
@@ -259,23 +259,23 @@
 											? CImage::__determineTypeByExtension__(extension)
 											: NULL;
 			if (!p){
-				TUtils::FatalError(_T("Unknown container to load."));
+				Utils::FatalError(_T("Unknown container to load."));
 				return NULL;
 			}
 			image=p->fnInstantiate(); // instantiating recognized file Image
 openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully ...
 				if (!image->CanBeModified()) // ... inform on eventual "read-only" mode (forced if Image on the disk is read-only, e.g. because opened from a CD-R)
-					TUtils::InformationWithCheckableShowNoMore(_T("The image has the Read-only flag set - editing will be disabled."),INI_GENERAL,INI_MSG_READONLY);
+					Utils::InformationWithCheckableShowNoMore(_T("The image has the Read-only flag set - editing will be disabled."),INI_GENERAL,INI_MSG_READONLY);
 			}else
 				switch (const TStdWinError err=::GetLastError()){
 					case ERROR_BAD_FORMAT:
 						if (!dynamic_cast<CImageRaw *>(image)){
 							// . defining the Dialog
-							class CWrongInnerFormatDialog sealed:public TUtils::CCommandDialog{
+							class CWrongInnerFormatDialog sealed:public Utils::CCommandDialog{
 								void PreInitDialog() override{
 									// dialog initialization
 									// : base
-									TUtils::CCommandDialog::PreInitDialog();
+									Utils::CCommandDialog::PreInitDialog();
 									// : supplying available actions
 									__addCommandButton__( IDYES, _T("Open at least valid part of it") );
 									__addCommandButton__( IDNO, _T("Try to open it as a raw sector image") );
@@ -284,7 +284,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 							public:
 								CWrongInnerFormatDialog()
 									// ctor
-									: TUtils::CCommandDialog(_T("The image seems to be malformatted.")) {
+									: Utils::CCommandDialog(_T("The image seems to be malformatted.")) {
 								}
 							} d;
 							// . showing the Dialog and processing its result
@@ -298,7 +298,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 						}
 						//fallthrough
 					default:
-						TUtils::FatalError(_T("Cannot open the file"),err);
+						Utils::FatalError(_T("Cannot open the file"),err);
 						return NULL;
 					case ERROR_SUCCESS:
 						break;
@@ -321,7 +321,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 				return NULL; // ... no Image or disk is accessed
 			}
 			if (dosProps==&CUnknownDos::Properties)
-				TUtils::Information(_T("Cannot determine the DOS!") ENTERING_LIMITED_MODE );
+				Utils::Information(_T("Cannot determine the DOS!") ENTERING_LIMITED_MODE );
 		}else{
 			// manual recognition of suitable DOS by user
 			// . defining the Dialog
@@ -364,7 +364,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			}else
 				formatBoot=( dosProps=d.dosProps )->stdFormats->params.format;
 			// . informing
-			TUtils::InformationWithCheckableShowNoMore( _T("The image will be opened using the default format of the selected DOS (see the \"") BOOT_SECTOR_TAB_LABEL _T("\" tab if available).\n\nRISK OF DATA CORRUPTION if the selected DOS and/or format is not suitable!"), INI_GENERAL, INI_MSG_OPEN_AS );
+			Utils::InformationWithCheckableShowNoMore( _T("The image will be opened using the default format of the selected DOS (see the \"") BOOT_SECTOR_TAB_LABEL _T("\" tab if available).\n\nRISK OF DATA CORRUPTION if the selected DOS and/or format is not suitable!"), INI_GENERAL, INI_MSG_OPEN_AS );
 		}
 		// - instantiating recognized/selected DOS
 		const PDos dos = image->dos = dosProps->fnInstantiate(image,&formatBoot);
@@ -379,12 +379,12 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		if (const TStdWinError err=dos->CreateUserInterface(TDI_HWND)){
 			TCHAR errMsg[100];
 			::wsprintf( errMsg, _T("Cannot use \"%s\" to access the medium"), dosProps->name );
-			TUtils::FatalError(errMsg,err);
+			Utils::FatalError(errMsg,err);
 			CMainWindow::CTdiTemplate::pSingleInstance->__closeDocument__();
 			return NULL;
 		}
 		// - informing on what to do in case of DOS misrecognition
-		TUtils::InformationWithCheckableShowNoMore( _T("If the DOS has been misrecognized, adjust the recognition sequence under \"Image -> Recognition\"."), INI_GENERAL, INI_MISRECOGNITION );
+		Utils::InformationWithCheckableShowNoMore( _T("If the DOS has been misrecognized, adjust the recognition sequence under \"Image -> Recognition\"."), INI_GENERAL, INI_MISRECOGNITION );
 		// - returning the just open Image
 		return image;
 	}
@@ -404,7 +404,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 
 	afx_msg void CRideApp::__showAbout__() const{
 		// about
-		TUtils::Information( _T("Version ") APP_VERSION _T("\n\ntomascz, 2015-2018") );
+		Utils::Information( _T("Version ") APP_VERSION _T("\n\ntomascz, 2015-2018") );
 	}
 
 
@@ -431,7 +431,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 					}else{
 						TCHAR bufT[200];
 						::WideCharToMultiByte(CP_ACP,0,pItem->szUrl,-1,bufT,sizeof(bufT)/sizeof(TCHAR),NULL,NULL);
-						TUtils::NavigateToUrlInDefaultBrowser(bufT);
+						Utils::NavigateToUrlInDefaultBrowser(bufT);
 					}
 					return 0;
 				}

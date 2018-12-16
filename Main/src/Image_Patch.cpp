@@ -27,7 +27,7 @@
 		// thread to copy Tracks
 		TBackgroundActionCancelable *pAction=(TBackgroundActionCancelable *)_pCancelableAction;
 		TPatchParams &pp=*(TPatchParams *)pAction->fnParams;
-		const TUtils::CByteIdentity sectorIdAndPositionIdentity;
+		const Utils::CByteIdentity sectorIdAndPositionIdentity;
 		TPhysicalAddress chs;
 		for( chs.cylinder=pp.cylinderA; chs.cylinder<=pp.cylinderZ; pAction->UpdateProgress(++chs.cylinder-pp.cylinderA) )
 			for( chs.head=0; chs.head<pp.nHeads; chs.head++ ){
@@ -64,7 +64,7 @@ terminateWithError:	return pAction->TerminateWithError(err);
 							err=::GetLastError();
 errorDuringWriting:			TCHAR buf[80],tmp[30];
 							::wsprintf(buf,_T("Cannot write to sector with %s on target Track %d"),chs.sectorId.ToString(tmp),chs.GetTrackNumber(pp.target->GetNumberOfFormattedSides(0)));
-							switch (TUtils::AbortRetryIgnore(buf,err,MB_DEFBUTTON2)){
+							switch (Utils::AbortRetryIgnore(buf,err,MB_DEFBUTTON2)){
 								case IDABORT:	goto terminateWithError;
 								case IDRETRY:	continue;
 								case IDIGNORE:	break;
@@ -87,10 +87,10 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 					// . FileName must be known
 					pDX->PrepareEditCtrl(ID_FILE);
 					if (!::lstrcmp(fileName,ELLIPSIS)){
-						TUtils::Information( _T("Target not specified.") );
+						Utils::Information( _T("Target not specified.") );
 						pDX->Fail();
 					}else if (!patchParams.dos->image->GetPathName().Compare(fileName)){
-						TUtils::Information( _T("Target must not be the same as source.") );
+						Utils::Information( _T("Target must not be the same as source.") );
 						pDX->Fail();
 					}
 				}else
@@ -115,7 +115,7 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 				// - painting curly brackets
 				TCHAR buf[32];
 				::wsprintf(buf,_T("%d cylinder(s)"),GetDlgItemInt(ID_CYLINDER_N)+1-GetDlgItemInt(ID_CYLINDER));
-				TUtils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_CYLINDER), GetDlgItem(ID_CYLINDER_N), buf, 0 );
+				Utils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_CYLINDER), GetDlgItem(ID_CYLINDER_N), buf, 0 );
 			}
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 				// window procedure
@@ -134,7 +134,7 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 									// . adjusting interactivity and updating values
 									CWnd *const pBtnFile=GetDlgItem(ID_FILE);
 									static const WORD Controls[]={ ID_CYLINDER, ID_CYLINDER_N, ID_HEAD, ID_GAP, IDOK, 0 };
-									if (TUtils::EnableDlgControls( m_hWnd, Controls, sourceImageProperties==&CDsk5::Properties )){
+									if (Utils::EnableDlgControls( m_hWnd, Controls, sourceImageProperties==&CDsk5::Properties )){
 										// : interactivity
 										if (patchParams.source)
 											delete patchParams.source;
@@ -164,7 +164,7 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 					case WM_NOTIFY:
 						if (((LPNMHDR)lParam)->code==NM_CLICK){
 							TCHAR url[200];
-							TUtils::NavigateToUrlInDefaultBrowser( TUtils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_patch.html"),url) );
+							Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_patch.html"),url) );
 						}
 						break;
 
@@ -193,8 +193,8 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 										d.realtimeThreadPriority ? THREAD_PRIORITY_TIME_CRITICAL : THREAD_PRIORITY_NORMAL
 									).CarryOut(d.patchParams.cylinderZ+1-d.patchParams.cylinderA);
 			if (err==ERROR_SUCCESS)
-				TUtils::Information(_T("Patched successfully."));
+				Utils::Information(_T("Patched successfully."));
 			else
-				TUtils::FatalError(_T("Cannot patch"),err);
+				Utils::FatalError(_T("Cannot patch"),err);
 		}
 	}

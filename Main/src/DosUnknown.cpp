@@ -125,7 +125,7 @@
 	CDos::TCmdResult CUnknownDos::ProcessCommand(WORD cmd){
 		// returns the Result of processing a DOS-related command
 		if (cmd==ID_DOS){
-			TUtils::Information(_T("You see this because:\n(a) the boot sector was not found on the disk, or\n(b) the boot sector was found but not recognized.\n\nIf you know for sure that the disk relates to one of implemented DOSes, you can try to open it using the \"Open as\" menu command.\n\nIf you ended up here after formatting a new disk, there have been problems formatting it - irregularities in the \"") TRACK_MAP_TAB_LABEL _T("\" tab help to reveal them."));
+			Utils::Information(_T("You see this because:\n(a) the boot sector was not found on the disk, or\n(b) the boot sector was found but not recognized.\n\nIf you know for sure that the disk relates to one of implemented DOSes, you can try to open it using the \"Open as\" menu command.\n\nIf you ended up here after formatting a new disk, there have been problems formatting it - irregularities in the \"") TRACK_MAP_TAB_LABEL _T("\" tab help to reveal them."));
 			return TCmdResult::DONE;
 		}else
 			return TCmdResult::REFUSED;

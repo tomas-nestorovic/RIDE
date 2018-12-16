@@ -19,7 +19,7 @@
 				CRect(defaultRect), NULL, (LPCTSTR)resourceId, WS_EX_TOPMOST
 			);
 		// - restoring previous position of Preview on the screen
-		const float scaleFactor=TUtils::LogicalUnitScaleFactor;
+		const float scaleFactor=Utils::LogicalUnitScaleFactor;
 		const CString s=app.GetProfileString(iniSection,INI_POSITION,_T(""));
 		if (!s.IsEmpty()){
 			RECT r;
@@ -189,7 +189,7 @@
 				// - saving current position on the Screen for next time
 				RECT r;
 				GetWindowRect(&r);
-				for( BYTE b=4; b; ((PINT)&r)[--b]/=TUtils::LogicalUnitScaleFactor );
+				for( BYTE b=4; b; ((PINT)&r)[--b]/=Utils::LogicalUnitScaleFactor );
 				TCHAR buf[80];
 				::wsprintf(buf,_T("%d,%d,%d,%d"),r);
 				app.WriteProfileString(iniSection,INI_POSITION,buf);

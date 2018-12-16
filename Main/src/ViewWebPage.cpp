@@ -172,5 +172,5 @@
 
 	afx_msg void CWebPageView::__openCurrentPageInDefaultBrowser__() const{
 		// opens CurrentPage in user's default browser
-		TUtils::NavigateToUrlInDefaultBrowser(history.currentPage->url);
+		Utils::NavigateToUrlInDefaultBrowser(history.currentPage->url);
 	}

@@ -57,7 +57,7 @@
 		if (err==ERROR_SUCCESS) // the OldName+NewExtension combination is unique
 			return true;
 		else{	// at least two Files with the same OldName+NewExtension combination exist
-			TUtils::Information(FILE_MANAGER_ERROR_RENAMING,err);
+			Utils::Information(FILE_MANAGER_ERROR_RENAMING,err);
 			return false;
 		}
 	}
@@ -102,7 +102,7 @@
 
 	bool WINAPI CSpectrumDos::CSpectrumFileManagerView::CVarLengthFileNameEditor::__help__(PVOID,PVOID,short){
 		// help
-		TUtils::Information(_T("You can type in all Spectrum characters, including commands (if in modes K, or E), letters (mode L), capitals (mode C), and UDG symbols (mode G). In each mode, type characters as you would on a classical 48k Spectrum keyboard. Non-printable characters are not supported and cannot be typed in (e.g. those influencing text color).\n\nSwitch between modes using Ctrl+Shift. Use Ctrl alone as the Symbol Shift key. You enter the C mode if CapsLock is on during L mode.\n\nExample:\nSwitch to mode E and press Z - \"LN\" shows up.\nSwitch to mode E again and press Ctrl+Z - \"BEEP\" appears this time."));
+		Utils::Information(_T("You can type in all Spectrum characters, including commands (if in modes K, or E), letters (mode L), capitals (mode C), and UDG symbols (mode G). In each mode, type characters as you would on a classical 48k Spectrum keyboard. Non-printable characters are not supported and cannot be typed in (e.g. those influencing text color).\n\nSwitch between modes using Ctrl+Shift. Use Ctrl alone as the Symbol Shift key. You enter the C mode if CapsLock is on during L mode.\n\nExample:\nSwitch to mode E and press Z - \"LN\" shows up.\nSwitch to mode E again and press Ctrl+Z - \"BEEP\" appears this time."));
 		return false; // False = actual editing of value has failed (otherwise the Editor would be closed)
 	}
 
@@ -319,7 +319,7 @@ addCharInWParam:						rEditor.__addChar__(wParam);
 		if (err==ERROR_SUCCESS) // the NewName+OldExtension combination is unique
 			return true;
 		else{	// at least two Files with the same NewName+OldExtension combination exist
-			TUtils::Information(FILE_MANAGER_ERROR_RENAMING,err);
+			Utils::Information(FILE_MANAGER_ERROR_RENAMING,err);
 			return false;
 		}
 	}

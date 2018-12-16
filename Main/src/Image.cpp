@@ -244,7 +244,7 @@
 		}else{
 			TCHAR buf[MAX_PATH+30];
 			::wsprintf( buf, _T("Cannot save to \"%s\""), fileName );
-			TUtils::FatalError(buf,::GetLastError());
+			Utils::FatalError(buf,::GetLastError());
 			return false;
 		}
 	}
@@ -348,7 +348,7 @@
 		if (!path.IsEmpty() && path!=FDD_A_LABEL){
 			const DWORD attr=::GetFileAttributes(path);
 			if (attr!=(DWORD)INVALID_HANDLE_VALUE && attr&FILE_ATTRIBUTE_READONLY)
-				return TUtils::FatalError(_T("Cannot toggle the write protection"),_T("The file is read-only."));
+				return Utils::FatalError(_T("Cannot toggle the write protection"),_T("The file is read-only."));
 		}
 		// - toggling WriteProtection
 		writeProtected=!writeProtected;
@@ -357,7 +357,7 @@
 	bool CImage::__reportWriteProtection__() const{
 		// True <=> Image is WriteProtected and a warning window has been shown, otherwise False
 		if (writeProtected){
-			TUtils::Information(_T("This operation requires the image to be accessible for writing.\n\nRemove the write protection and try again."));
+			Utils::Information(_T("This operation requires the image to be accessible for writing.\n\nRemove the write protection and try again."));
 			return true;
 		}else
 			return false;
@@ -404,7 +404,7 @@
 					}
 				switch (nID){
 					case ID_FILE_SAVE_AS:
-						TUtils::InformationWithCheckableShowNoMore( _T("Conversion between image types (e.g. DSK to IMA) must be approached by dumping, not by \"Saving as\"."), INI_GENERAL, INI_MSG_SAVE_AS );
+						Utils::InformationWithCheckableShowNoMore( _T("Conversion between image types (e.g. DSK to IMA) must be approached by dumping, not by \"Saving as\"."), INI_GENERAL, INI_MSG_SAVE_AS );
 						OnFileSaveAs();
 						return TRUE;
 					case ID_IMAGE_PROTECT:

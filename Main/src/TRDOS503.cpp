@@ -71,7 +71,7 @@
 
 	void CTRDOS503::__informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId){
 		// shows a MessageBox with added "Don't show anymore" check-box
-		TUtils::InformationWithCheckableShowNoMore( text, INI_TRDOS, messageId );
+		Utils::InformationWithCheckableShowNoMore( text, INI_TRDOS, messageId );
 	}
 
 

@@ -499,7 +499,7 @@
 		for( WORD blockLength; f.Read(&blockLength,sizeof(blockLength))==sizeof(blockLength); )
 			if (nFiles==ZX_TAPE_FILE_COUNT_MAX){
 				// ERROR: too many Files on the Tape
-error:			TUtils::Information(_T("The tape is corrupted."));
+error:			Utils::Information(_T("The tape is corrupted."));
 				break;
 			}else if (blockLength>=2){
 				// File (with or without a Header)
@@ -811,11 +811,11 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 			// File with Header
 			switch ((TZxRom::TFileType)newType.charValue){
 				case TZxRom::FRAGMENT:
-					if (TUtils::QuestionYesNo(QUESTION_ON_DISPOSING_HEADER,MB_DEFBUTTON2))
+					if (Utils::QuestionYesNo(QUESTION_ON_DISPOSING_HEADER,MB_DEFBUTTON2))
 						tf->type=TTapeFile::FRAGMENT;
 					break;
 				case TZxRom::HEADERLESS:
-					if (TUtils::QuestionYesNo(QUESTION_ON_DISPOSING_HEADER,MB_DEFBUTTON2))
+					if (Utils::QuestionYesNo(QUESTION_ON_DISPOSING_HEADER,MB_DEFBUTTON2))
 						tf->type=TTapeFile::HEADERLESS;
 					break;
 				default:					

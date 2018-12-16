@@ -66,7 +66,7 @@
 		const bool bootSectorAlreadyExists=((CMainWindow *)app.m_pMainWnd)->pTdi->__getCurrentTab__()!=NULL;
 		GetDlgItem(ID_CYLINDER)->EnableWindow(bootSectorAlreadyExists);
 		static const WORD Controls[]={ ID_MEDIUM, ID_CLUSTER, ID_FAT, ID_DIRECTORY, 0 };
-		TUtils::EnableDlgControls( m_hWnd, Controls, !bootSectorAlreadyExists );
+		Utils::EnableDlgControls( m_hWnd, Controls, !bootSectorAlreadyExists );
 		GetDlgItem(ID_DRIVE)->ShowWindow( bootSectorAlreadyExists ? SW_SHOW : SW_HIDE );
 	}
 
@@ -141,7 +141,7 @@
 			switch (pcws->message){
 				case NM_CLICK:
 				case NM_RETURN:{
-					TUtils::NavigateToUrlInDefaultBrowser(_T("http://www.hermannseib.com/documents/floppy.pdf"));
+					Utils::NavigateToUrlInDefaultBrowser(_T("http://www.hermannseib.com/documents/floppy.pdf"));
 					*pResult=0;
 					return TRUE;
 				}
@@ -150,7 +150,7 @@
 			switch (pcws->message){
 				case NM_CLICK:
 				case NM_RETURN:{
-					TUtils::Information(_T("This may happen if the media descriptor is set inconsistently from what the volume is actually stored on. To recover, change the media descriptor in the \"") BOOT_SECTOR_TAB_LABEL _T("\" tab and try again."));
+					Utils::Information(_T("This may happen if the media descriptor is set inconsistently from what the volume is actually stored on. To recover, change the media descriptor in the \"") BOOT_SECTOR_TAB_LABEL _T("\" tab and try again."));
 					*pResult=0;
 					return TRUE;
 				}
@@ -165,12 +165,12 @@
 		// - drawing curly brackets with the number of Cylinders
 		TCHAR buf[80];
 		::wsprintf( buf, _T("%d cylinder(s)"), GetDlgItemInt(ID_CYLINDER_N)+1-GetDlgItemInt(ID_CYLINDER) );
-		TUtils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_CYLINDER), GetDlgItem(ID_CYLINDER_N), buf, ::GetSysColor(COLOR_3DSHADOW) );
+		Utils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_CYLINDER), GetDlgItem(ID_CYLINDER_N), buf, ::GetSysColor(COLOR_3DSHADOW) );
 		// - drawing curly brackets with Track length
 		switch (params.format.mediumType){
 			case TMedium::FLOPPY_HD:
 			case TMedium::FLOPPY_DD:{
-				TUtils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_SECTOR), GetDlgItem(ID_GAP), _T(""), ::GetSysColor(COLOR_3DSHADOW) );
+				Utils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_SECTOR), GetDlgItem(ID_GAP), _T(""), ::GetSysColor(COLOR_3DSHADOW) );
 				const WORD nBytesOnTrack=65 // Gap 1
 										+
 										GetDlgItemInt(ID_SECTOR)
@@ -190,13 +190,13 @@
 			}
 			case TMedium::HDD_RAW:
 			default:
-				TUtils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_SECTOR), GetDlgItem(ID_GAP), _T("N/A Bytes per track"), ::GetSysColor(COLOR_3DSHADOW) );
+				Utils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_SECTOR), GetDlgItem(ID_GAP), _T("N/A Bytes per track"), ::GetSysColor(COLOR_3DSHADOW) );
 				GetDlgItem(ID_TRACK)->ShowWindow(SW_HIDE);
 				break;
 		}
 		// - drawing curly brackets with warning on risking disk inconsistency
 		if (!(IsDlgButtonChecked(ID_BOOT) & IsDlgButtonChecked(ID_VERIFY_TRACK)))
-			TUtils::WrapControlsByClosingCurlyBracketWithText(
+			Utils::WrapControlsByClosingCurlyBracketWithText(
 				this,
 				GetDlgItem(ID_BOOT), GetDlgItem(ID_VERIFY_TRACK),
 				WARNING_MSG_CONSISTENCY_AT_STAKE, COLOR_BLACK
@@ -265,7 +265,7 @@
 		// determines if current settings represent one of DOS StandardFormats (settings include # of Sides, Cylinders, Sectors, RootDirectoryItems, etc.); if StandardFormat detected, it's selected in dedicated ComboBox
 		// - enabling/disabling Boot and FAT modification
 		static const WORD Controls[]={ ID_BOOT, ID_VERIFY_TRACK, 0 }; // Boot and FAT modification allowed only if NOT formatting from zeroth Track (e.g. when NOT creating a new Image)
-		if (!TUtils::EnableDlgControls( m_hWnd, Controls, GetDlgItemInt(ID_CYLINDER)>0 )){
+		if (!Utils::EnableDlgControls( m_hWnd, Controls, GetDlgItemInt(ID_CYLINDER)>0 )){
 			// if formatting from zeroth Track, Boot and FAT modification always necessary (e.g. when creating a new Image)
 			CheckDlgButton(ID_BOOT,BST_CHECKED);
 			CheckDlgButton(ID_VERIFY_TRACK,BST_CHECKED);

@@ -22,7 +22,7 @@
 
 	static void __informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId){
 		// shows a MessageBox with added "Don't show anymore" check-box
-		TUtils::InformationWithCheckableShowNoMore( text, INI_FDD, messageId );
+		Utils::InformationWithCheckableShowNoMore( text, INI_FDD, messageId );
 	}
 
 	CFDD::TParams::TParams()
@@ -104,7 +104,7 @@
 			if (err!=ERROR_SUCCESS)
 				switch (nSilentRetrials-->0 // for positive NumberOfSilentRetrials ...
 						? IDRETRY // ... simply silently retrying to write the Sector
-						: TUtils::AbortRetryIgnore(err,MB_DEFBUTTON2) // ... otherwise asking the user what to do
+						: Utils::AbortRetryIgnore(err,MB_DEFBUTTON2) // ... otherwise asking the user what to do
 				){
 					case IDIGNORE:
 						// ignoring the Error
@@ -186,7 +186,7 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 		){
 			TCHAR buf[80],tmp[30];
 			::wsprintf( buf, _T("Verification failed for sector with %s on Track %d."), id.ToString(tmp), chs.GetTrackNumber(2) );
-			const BYTE result=TUtils::AbortRetryIgnore( buf, MB_DEFBUTTON2 );
+			const BYTE result=Utils::AbortRetryIgnore( buf, MB_DEFBUTTON2 );
 			modified=result==IDIGNORE; // saved successfully if commanded to ignore any errors
 			return result;
 		}else{
@@ -302,12 +302,12 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 					pIdField = p+=nBytesOfSectorId; break;
 				}
 		if (!pIdField){ // ID Field not found
-			TUtils::Information(error,_T("Cannot find first sector ID in raw content."),SAVING_END);
+			Utils::Information(error,_T("Cannot find first sector ID in raw content."),SAVING_END);
 			return LOG_ERROR(ERROR_REQUEST_REFUSED);
 		}/*else if (chs.sectorId!=sectors[0].id){ // ID Field found but doesn't match the first Sector on the Track
 			TCHAR cause[150],id1[30],id1raw[30];
 			::wsprintf( cause, _T("Earlier scanned first sector %s does not match the current first sector %s in the raw content."), sectors[0].id.ToString(id1), chs.__vratCisloStopy__(2), chs.sectorId.ToString(id1raw) );
-			TUtils::Information(error,cause,SAVING_END);
+			Utils::Information(error,cause,SAVING_END);
 			return LOG_ERROR(ERROR_CANCELLED);
 		}*/
 		// - extracting Data Address Mark (DAM) of the first Sector
@@ -318,7 +318,7 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 					pDam = p+3; break;
 				}
 		if (!pDam || *pDam!=TDataAddressMark::DATA_RECORD && *pDam!=TDataAddressMark::DELETED_DATA_RECORD && *pDam!=TDataAddressMark::DEFECTIVE_DATA_RECORD){ // DAM not found
-			TUtils::Information(error,_T("Cannot find first sector DAM in raw content (first sector in the track must have a DAM, others don't)."),SAVING_END);
+			Utils::Information(error,_T("Cannot find first sector DAM in raw content (first sector in the track must have a DAM, others don't)."),SAVING_END);
 			return LOG_ERROR(ERROR_REQUEST_REFUSED);
 		}
 		// - saving
@@ -357,7 +357,7 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 					ASSERT(FALSE);
 					return LOG_ERROR(ERROR_DEVICE_NOT_AVAILABLE);
 			}
-TUtils::Information("--- EVERYTHING OK ---");
+Utils::Information("--- EVERYTHING OK ---");
 			// . verifying that the first Sector on Track is reachable (i.e. hasn't been rewritten by the ID, see above)
 			if (const TFdcStatus fdcStatus=fdd->__bufferSectorData__(chs,fdd->__getUsableSectorLength__(chs.sectorId.lengthCode)))
 				if (fdcStatus.reg1 & FDC_ST1_NO_DATA) // if first Sector on Track not reachable ...
@@ -483,7 +483,7 @@ TUtils::Information("--- EVERYTHING OK ---");
 				}
 				if (seeked)
 					position=cyl;
-				else if (TUtils::RetryCancel(::GetLastError()))
+				else if (Utils::RetryCancel(::GetLastError()))
 					continue;
 				else
 					return LOG_BOOL(false);
@@ -587,7 +587,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 						case ERROR_FILE_NOT_FOUND: // "file not found" error ...
 							return LOG_ERROR(ERROR_NOT_READY); // ... replaced with the "device not ready" error
 						case ERROR_ALREADY_EXISTS: // "file already exists" error ...
-							if (!TUtils::RetryCancel(_T("Exclusive access to the floppy drive required. Close all applications that may prevent it and try again.")))
+							if (!Utils::RetryCancel(_T("Exclusive access to the floppy drive required. Close all applications that may prevent it and try again.")))
 								return LOG_ERROR(ERROR_ACCESS_DENIED); // ... replaced with the "access denied" error
 							else
 								continue;
@@ -1056,7 +1056,7 @@ returnData:				outFdcStatuses[index]=psi->fdcStatus;
 						if (pFdcStatus->reg1 & (FDC_ST1_NO_DATA)){
 							TCHAR buf[200],tmp[30];
 							::wsprintf( buf, _T("Not all errors can be reproduced on a real floppy for sector with %s."), chs.sectorId.ToString(tmp) );
-							TUtils::Information(buf);
+							Utils::Information(buf);
 							return LOG_ERROR(ERROR_BAD_COMMAND);
 						}
 
@@ -1337,7 +1337,7 @@ fdrawcmd:				// . setting
 /*
 {TCHAR buf[80];
 ::wsprintf(buf,_T("nMicrosecondsA=%d"),(int)(nControllerMicroseconds*1000));
-TUtils::Information(buf);}
+Utils::Information(buf);}
 //*/
 			pAction->UpdateProgress(++state);
 			// . STEP 3: experimentally determining the latency of one Byte
@@ -1350,7 +1350,7 @@ TUtils::Information(buf);}
 /*
 {TCHAR buf[80];
 ::wsprintf(buf,_T("oneByteLatency=%d"),(int)(nMicrosecondsPerByte*1000));
-TUtils::Information(buf);}
+Utils::Information(buf);}
 //*/
 			//lp.out1ByteLatency+=( n - sectorLength ) / ( p - nMicrosecondsZ );
 			lp.out1ByteLatency+=nMicrosecondsPerByte; // below divided by the number of attempts to get an average
@@ -1388,9 +1388,9 @@ TUtils::Information(buf);}
 				WORD w;
 				lp.fdd->GetSectorData( lp.cyl, lp.head, &SectorIds[0], &w );
 				// : STEP 2.3: Reading the second formatted Sector and measuring how long the reading took
-				const TUtils::CLocalTime startTime;
+				const Utils::CLocalTime startTime;
 					lp.fdd->GetSectorData( lp.cyl, lp.head, &SectorIds[1], &w );
-				const TUtils::CLocalTime endTime;
+				const Utils::CLocalTime endTime;
 				const DWORD deltaMicroseconds=(endTime-startTime).ToMilliseconds()*1000;
 				// . STEP 2.4: determining if the readings took more than just one disk revolution or more
 				if (deltaMicroseconds>=pit->sectors[1].endMicroseconds-pit->sectors[0].endMicroseconds+4000) // 4000 = allowing circa 30 Bytes as a limit of detecting a single disk revolution
@@ -1489,9 +1489,9 @@ TUtils::Information(buf);}
 				// - base
 				CDialog::OnPaint();
 				// - drawing of curly brackets
-				TUtils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_LATENCY), GetDlgItem(ID_GAP), NULL, 0 );
-				TUtils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_NONE), GetDlgItem(ID_SECTOR), _T("if error encountered"), 0 );
-				TUtils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_ZERO), GetDlgItem(ID_CYLINDER_N), _T("when formatting"), 0 );
+				Utils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_LATENCY), GetDlgItem(ID_GAP), NULL, 0 );
+				Utils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_NONE), GetDlgItem(ID_SECTOR), _T("if error encountered"), 0 );
+				Utils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_ZERO), GetDlgItem(ID_CYLINDER_N), _T("when formatting"), 0 );
 			}
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 				// window procedure
@@ -1516,8 +1516,8 @@ TUtils::Information(buf);}
 								}
 								void PreInitDialog() override{
 									CDialog::PreInitDialog(); // base
-									TUtils::PopulateComboBoxWithSequenceOfNumbers( GetDlgItem(ID_ACCURACY)->m_hWnd, 1,NULL, 6,NULL );
-									TUtils::PopulateComboBoxWithSequenceOfNumbers( GetDlgItem(ID_TEST)->m_hWnd, 1,_T("(worst)"), 9,_T("(best)") );
+									Utils::PopulateComboBoxWithSequenceOfNumbers( GetDlgItem(ID_ACCURACY)->m_hWnd, 1,NULL, 6,NULL );
+									Utils::PopulateComboBoxWithSequenceOfNumbers( GetDlgItem(ID_TEST)->m_hWnd, 1,_T("(worst)"), 9,_T("(best)") );
 								}
 								void DoDataExchange(CDataExchange *pDX) override{
 									DDX_Radio( pDX, ID_FLOPPY_DD,	floppyType );
@@ -1529,7 +1529,7 @@ TUtils::Information(buf);}
 							// . showing the Dialog and processing its result
 							if (d.DoModal()==IDOK){
 								__informationWithCheckableShowNoMore__( _T("Windows is NOT a real-time system! Computed latency will be valid only if you will use the floppy drive in very similar conditions as they were computed in (current conditions)!"), INI_MSG_LATENCY );
-								if (TUtils::InformationOkCancel(_T("Insert an empty disk and hit OK."))){
+								if (Utils::InformationOkCancel(_T("Insert an empty disk and hit OK."))){
 									TLatencyParams lp( fdd, d.floppyType==0, 1+d.usAccuracy, 1+d.nRepeats );
 									if (const TStdWinError err=	TBackgroundActionCancelable(
 																	__determineControllerAndOneByteLatency_thread__,
@@ -1537,7 +1537,7 @@ TUtils::Information(buf);}
 																	FDD_THREAD_PRIORITY_DEFAULT
 																).CarryOut(lp.nRepeats*3) // 3 = number of steps of a single trial
 									){
-latencyAutodeterminationError:			TUtils::FatalError(_T("Couldn't autodetermine"),err);
+latencyAutodeterminationError:			Utils::FatalError(_T("Couldn't autodetermine"),err);
 										break;
 									}
 									if (const TStdWinError err=	TBackgroundActionCancelable(
@@ -1618,7 +1618,7 @@ latencyAutodeterminationError:			TUtils::FatalError(_T("Couldn't autodetermine")
 	static BYTE __reportSectorVerificationError__(RCPhysicalAddress chs){
 		TCHAR buf[100],tmp[30];
 		::wsprintf(buf,_T("Track %d verification failed for sector with %s"),chs.GetTrackNumber(2),chs.sectorId.ToString(tmp));
-		return TUtils::AbortRetryIgnore( buf, ::GetLastError(), MB_DEFBUTTON2, _T("For copy-protected schemes, simply retrying usually helps.") );
+		return Utils::AbortRetryIgnore( buf, ::GetLastError(), MB_DEFBUTTON2, _T("For copy-protected schemes, simply retrying usually helps.") );
 	}
 
 	TStdWinError CFDD::__formatToOneLongVerifiedSector__(RCPhysicalAddress chs,BYTE fillerByte){
@@ -1766,7 +1766,7 @@ formatStandardWay:
 					LOG_ACTION(_T("track verification"));
 					PVOID dummyBuffer[(TSector)-1];
 					TFdcStatus statuses[(TSector)-1];
-					GetTrackData( cyl, head, bufferId, TUtils::CByteIdentity(), nSectors, false, (PSectorData *)dummyBuffer, (PWORD)dummyBuffer, statuses ); // "DummyBuffer" = throw away any outputs
+					GetTrackData( cyl, head, bufferId, Utils::CByteIdentity(), nSectors, false, (PSectorData *)dummyBuffer, (PWORD)dummyBuffer, statuses ); // "DummyBuffer" = throw away any outputs
 					for( TSector n=0; n<nSectors; n++ ){
 						const TPhysicalAddress chs={ cyl, head, bufferId[n] };
 						if (!statuses[n].IsWithoutError())
@@ -1822,7 +1822,7 @@ formatStandardWay:
 						::wsprintf(buf,_T("sectorLengthCode=%d\nnSectorsOnTrack=%d\nnLastSectorsValid=%d\ngap3=%d\n,nBytes=%d\nnMicroseconds=%d"),
 							sectorLengthCode,nSectorsOnTrack,nLastSectorsValid,gap3,interruption.nBytes,interruption.nMicroseconds
 						);
-						TUtils::Information(buf);
+						Utils::Information(buf);
 					}
 				} formatPlan[(TSector)-1],*pFormatStep=formatPlan;
 				WORD nBytesReserved; // reserved block of Bytes at the beginning of Track represents an area formatted in the next Step (as Sectors are formatted "backwards")
@@ -1868,7 +1868,7 @@ formatStandardWay:
 /*
 {TCHAR buf[80];
 ::wsprintf(buf,_T("sectorLength=%d\n\nz predchoziho kroku:\nnBytesReserved=%d, tmp=%d, deltaGap3=%d"),sectorLength,nBytesReserved,tmp,deltaGap3);
-TUtils::Information(buf);}
+Utils::Information(buf);}
 */
 					pFormatStep->gap3=gap3+deltaGap3;
 					// : setting up the Interruption according to the requested i/o errors
@@ -1904,7 +1904,7 @@ TUtils::Information(buf);}
 					pFormatStep++;
 //{TCHAR buf[80];
 //::wsprintf(buf,_T("nBytesReserved=%d"),nBytesReserved);
-//TUtils::Information(buf);}
+//Utils::Information(buf);}
 				}
 				bufferId-=nSectors; // recovering variable's original value
 formatCustomWay:
@@ -1952,7 +1952,7 @@ formatCustomWay:
 					// if verification turned off, assuming well formatted Track structure, hence avoiding the need of its scanning
 					REFER_TO_TRACK(cyl,head) = new TInternalTrack( this, cyl, head, nSectors, bufferId, NULL ); // NULL = calculate Sector start times from information on default Gap3 and individual Sector lengths
 				// . Track formatted successfully
-//TUtils::Information("formatted OK - ready to break");
+//Utils::Information("formatted OK - ready to break");
 				break;
 			}
 		}

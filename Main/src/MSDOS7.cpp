@@ -42,7 +42,7 @@
 
 	void CMSDOS7::__informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId){
 		// shows a MessageBox with added "Don't show anymore" check-box
-		TUtils::InformationWithCheckableShowNoMore( text, INI_MSDOS7, messageId );
+		Utils::InformationWithCheckableShowNoMore( text, INI_MSDOS7, messageId );
 	}
 
 	CMSDOS7::TLogSector32 CMSDOS7::__fyzlog__(RCPhysicalAddress chs) const{
@@ -931,10 +931,10 @@ nextCluster:result++;
 			if (bootSector->__isUsable__()){ // Boot Sector contains values that make sense
 				if (fat.type==CFat::FAT32)
 					if (!fsInfo.GetSectorData()){ // FS Info Sector not found
-						TUtils::Information(_T("FAT32 volume detected but its FS-Info sector not found.\n\nCannot continue at the moment - please retry in future versions of this application."));
+						Utils::Information(_T("FAT32 volume detected but its FS-Info sector not found.\n\nCannot continue at the moment - please retry in future versions of this application."));
 						return ERROR_REQUEST_REFUSED;
 						/*
-						if (!TUtils::QuestionYesNo(_T("FAT32 volume detected but its FS-Info sector not found. Working with such volume can be VERY slow.\n\nContinue anyway?!"),MB_DEFBUTTON2))
+						if (!Utils::QuestionYesNo(_T("FAT32 volume detected but its FS-Info sector not found. Working with such volume can be VERY slow.\n\nContinue anyway?!"),MB_DEFBUTTON2))
 							return ERROR_CANCELLED;
 						//else
 							//TODO: running ScanDisk to restore FS-Info Sector
@@ -1070,7 +1070,7 @@ nextCluster:result++;
 					::free(bufCylinders);
 				}
 				if (err!=ERROR_SUCCESS){
-					TUtils::Information( DOS_ERR_CANNOT_FORMAT, err );
+					Utils::Information( DOS_ERR_CANNOT_FORMAT, err );
 					return TCmdResult::REFUSED;
 				}else
 					return TCmdResult::DONE_REDRAW;
@@ -1095,7 +1095,7 @@ nextCluster:result++;
 					::free(bufCylinders);
 				}
 				if (err!=ERROR_SUCCESS){
-					TUtils::Information( DOS_ERR_CANNOT_UNFORMAT, err );
+					Utils::Information( DOS_ERR_CANNOT_UNFORMAT, err );
 					return TCmdResult::REFUSED;
 				}else
 					return TCmdResult::DONE_REDRAW;
@@ -1131,7 +1131,7 @@ nextCluster:result++;
 		*(TPhysicalAddress *)&boot.chsBoot=chs;
 		const PBootSector bootSector=boot.GetSectorData();
 		if (!bootSector) // Boot Sector may not be found after unsuccessfull formatting
-error:		return TUtils::FatalError( _T("Cannot initialize the medium"), ::GetLastError() );
+error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastError() );
 		bootSector->__init__( &formatBoot, params, fat ); // also initializes the Type of FAT
 		image->MarkSectorAsDirty(boot.chsBoot);
 		if (fat.type==CFat::FAT32){

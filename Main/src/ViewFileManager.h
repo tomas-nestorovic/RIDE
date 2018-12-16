@@ -67,7 +67,7 @@
 			bool __isInList__(CDos::PCFile file) const;
 		};
 
-		class CNameConflictResolutionDialog sealed:public ::TUtils::CCommandDialog{
+		class CNameConflictResolutionDialog sealed:public ::Utils::CCommandDialog{
 			const LPCTSTR conflictedName, conflictedNameType, captionForReplaceButton, captionForSkipButton;
 			TCHAR information[MAX_PATH+100];
 
