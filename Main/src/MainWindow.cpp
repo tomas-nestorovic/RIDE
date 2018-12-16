@@ -299,13 +299,9 @@ quitWithErr:const DWORD err=::GetLastError();
 		if (const PCHAR tagName=::strstr(buffer,VERSION_TAG_NAME)){
 			const PCHAR tagValue=::strchr(tagName+sizeof(VERSION_TAG_NAME),'\"')+1; // "+1" = skipping the opening quote
 			*::strchr(tagValue,'\"')='\0'; // replacing the closing quote with the Null character
-			const int difference=::lstrcmpA(tagValue,APP_VERSION);
-			if (!difference)
-				return ERROR_SUCCESS; // the app is up-to-date
-			else if (difference>0)
-				return ERROR_EVT_VERSION_TOO_OLD; // the app is outdated
-			else
-				return ERROR_EVT_VERSION_TOO_NEW; // strangely enough, the app is newer than the latest version at the server (e.g. forgot to increase the version # in the app, but didn't forget to increase it on the server)
+			return	::lstrcmpA(tagValue,APP_VERSION)
+					? ERROR_EVT_VERSION_TOO_OLD // the app is outdated
+					: ERROR_SUCCESS; // the app is up-to-date
 		}else
 			return ERROR_DS_SERVER_DOWN;
 	}
@@ -317,8 +313,6 @@ quitWithErr:const DWORD err=::GetLastError();
 				return OpenApplicationPresentationWebPage(_T("Version"),VERSION_LATEST_WEB);
 			case ERROR_EVT_VERSION_TOO_OLD:
 				return OpenApplicationPresentationWebPage(_T("Version"),_T("usingOld.html"));
-			case ERROR_EVT_VERSION_TOO_NEW:
-				return OpenApplicationPresentationWebPage(_T("Version"),_T("usingNew.html"));
 			default:
 				return TUtils::Information(_T("Cannot retrieve the information"),err);
 		}
