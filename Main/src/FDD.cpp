@@ -212,13 +212,13 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 		TInternalTrack::TSectorInfo *psi=sectors;
 		for( BYTE s=0; s<nSectors; psi++->seqNum=s++ ){
 			psi->length=fdd->__getUsableSectorLength__(( psi->id=*bufferId++ ).lengthCode );
-			if (sectorStartsMicroseconds) // if start times provided ...
+			if (sectorStartsMicroseconds>(PCINT)0x100) // if start times provided (that is, if no Gap3 information from <0;255> provided) ...
 				psi->startMicroseconds=*sectorStartsMicroseconds++; // ... they are used
-			else // if no start times provided ...
+			else // if no start times provided (that is, if just Gap3 information from <0;255> provided) ...
 				if (s) // ... then simply inferring them
 					psi->startMicroseconds=	sectors[s-1].endMicroseconds
 											+
-											FDD_SECTOR_GAP3_STD * fdd->params.oneByteLatency;	// default inter-sector Gap3 length in microseconds
+											(BYTE)sectorStartsMicroseconds * fdd->params.oneByteLatency;	// default inter-sector Gap3 length in microseconds
 				else
 					psi->startMicroseconds=0; // the first Sector starts immediatelly after the index pulse
 			psi->endMicroseconds=	psi->startMicroseconds // inferring end of Sector from its lengths and general IBM track layout specification
@@ -788,7 +788,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 							TSectorId bufferId[(TSector)-1]; int sectorTimes[(TSector)-1];
 							for( BYTE n=0; n<sectors.n; n++ )
 								bufferId[n]=sectors.header[n], sectorTimes[n]=sectors.header[n].reltime;
-							return REFER_TO_TRACK(cyl,head) = new TInternalTrack( this, cyl, head, sectors.n, bufferId, sectorTimes );//sectorTimes );
+							return REFER_TO_TRACK(cyl,head) = new TInternalTrack( this, cyl, head, sectors.n, bufferId, sectorTimes );
 						}
 						default:
 							ASSERT(FALSE);
@@ -1274,7 +1274,7 @@ fdrawcmd:				// . setting
 			WORD __getNumberOfWrittenBytes__() const{
 				// counts and returns the number of TestBytes actually written in the most recent call to __writeSectorData__
 				PCBYTE p=(PCBYTE)fdd->dataBuffer;
-				for( fdd->__bufferSectorData__(rCyl,rHead,&sectorId,sectorLength,&TInternalTrack(fdd,rCyl,rHead,1,&sectorId,NULL),0,&TFdcStatus()); *p==TEST_BYTE; p++ );
+				for( fdd->__bufferSectorData__(rCyl,rHead,&sectorId,sectorLength,&TInternalTrack(fdd,rCyl,rHead,1,&sectorId,(PCINT)FDD_SECTOR_GAP3_STD),0,&TFdcStatus()); *p==TEST_BYTE; p++ );
 				return p-(PCBYTE)fdd->dataBuffer;
 			}
 			TStdWinError __setInterruptionToWriteSpecifiedNumberOfBytes__(WORD nBytes){
@@ -1319,7 +1319,7 @@ fdrawcmd:				// . setting
 					return LOG_ERROR(pAction->TerminateWithError(err));
 				// : verifying the single formatted Sector
 				TFdcStatus sr;
-				lp.fdd->__bufferSectorData__( lp.cyl, lp.head, &interruption.sectorId, interruption.sectorLength, &TInternalTrack(lp.fdd,lp.cyl,lp.head,1,&interruption.sectorId,NULL), 0, &sr );
+				lp.fdd->__bufferSectorData__( lp.cyl, lp.head, &interruption.sectorId, interruption.sectorLength, &TInternalTrack(lp.fdd,lp.cyl,lp.head,1,&interruption.sectorId,(PCINT)FDD_SECTOR_GAP3_STD), 0, &sr );
 				if (sr.IsWithoutError())
 					break; // yes, a healthy Track has been found - using it for computation of all latencies
 				// : attempting to create a Sector WithoutErrors on another Track
@@ -1668,7 +1668,7 @@ latencyAutodeterminationError:			Utils::FatalError(_T("Couldn't autodetermine"),
 						}
 			}else
 				// if verification turned off, assuming well formatted Track structure, hence avoiding the need of its scanning
-				REFER_TO_TRACK(chs.cylinder,chs.head) = new TInternalTrack( this, chs.cylinder, chs.head, 1, &chs.sectorId, NULL ); // NULL = calculate Sector start times from information on default Gap3 and individual Sector lengths
+				REFER_TO_TRACK(chs.cylinder,chs.head) = new TInternalTrack( this, chs.cylinder, chs.head, 1, &chs.sectorId, (PCINT)FDD_SECTOR_GAP3_STD ); // Gap3 = calculate Sector start times from information of this Gap3 and individual Sector lengths
 			// . Track formatted successfully
 			break;
 		}while (true);
@@ -1777,7 +1777,7 @@ formatStandardWay:
 							}
 					}
 				}else
-					PresumeHealthyTrackStructure(cyl,head,nSectors,bufferId);
+					PresumeHealthyTrackStructure(cyl,head,nSectors,bufferId,gap3);
 				// . Track formatted successfully
 				break;
 			}
@@ -1950,7 +1950,7 @@ formatCustomWay:
 					}
 				}else
 					// if verification turned off, assuming well formatted Track structure, hence avoiding the need of its scanning
-					REFER_TO_TRACK(cyl,head) = new TInternalTrack( this, cyl, head, nSectors, bufferId, NULL ); // NULL = calculate Sector start times from information on default Gap3 and individual Sector lengths
+					REFER_TO_TRACK(cyl,head) = new TInternalTrack( this, cyl, head, nSectors, bufferId, (PCINT)gap3 ); // Gap3 = calculate Sector start times from information of this Gap3 and individual Sector lengths
 				// . Track formatted successfully
 //Utils::Information("formatted OK - ready to break");
 				break;
@@ -1967,14 +1967,14 @@ formatCustomWay:
 		return params.verifyFormattedTracks;
 	}
 
-	TStdWinError CFDD::PresumeHealthyTrackStructure(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId){
+	TStdWinError CFDD::PresumeHealthyTrackStructure(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,BYTE gap3){
 		// without formatting it, presumes that given Track contains specified Sectors that are well readable and writeable; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		LOG_TRACK_ACTION(cyl,head,_T("TStdWinError CFDD::PresumeHealthyTrackStructure"));
 		// - disposing internal information on actual Track format
 		__unformatInternalTrack__(cyl,head);
 		// - explicitly setting Track structure
-		TInternalTrack::TSectorInfo *psi=( REFER_TO_TRACK(cyl,head) = new TInternalTrack( this, cyl, head, nSectors, bufferId, NULL ) )->sectors; // NULL = calculate Sector start times from information on default Gap3 and individual Sector lengths
+		TInternalTrack::TSectorInfo *psi=( REFER_TO_TRACK(cyl,head) = new TInternalTrack( this, cyl, head, nSectors, bufferId, (PCINT)gap3 ) )->sectors; // Gap3 = calculate Sector start times from information of this Gap3 and individual Sector lengths
 		for( TSector n=nSectors; n--; psi++ )
 			psi->data=ALLOCATE_SECTOR_DATA(psi->length);
 		// - presumption done

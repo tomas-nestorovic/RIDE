@@ -384,7 +384,7 @@ terminateWithError:
 				// . formatting Target Track
 {LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("formatting target"));
 				if (dp.formatJustBadTracks && dp.source->IsTrackHealthy(p.chs.cylinder,p.chs.head)){
-					if (dp.target->PresumeHealthyTrackStructure(p.chs.cylinder,p.chs.head,nSectors,bufferId)!=ERROR_SUCCESS)
+					if (dp.target->PresumeHealthyTrackStructure(p.chs.cylinder,p.chs.head,nSectors,bufferId,dp.gap3)!=ERROR_SUCCESS)
 						goto reformatTrack;
 				}else
 reformatTrack:		if ( err=dp.target->FormatTrack(p.chs.cylinder,p.chs.head,nSectors,bufferId,bufferLength,bufferFdcStatus,dp.gap3,dp.fillerByte) )

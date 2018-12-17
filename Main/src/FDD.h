@@ -135,7 +135,7 @@
 		TStdWinError Reset() override;
 		TStdWinError FormatTrack(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte);
 		bool RequiresFormattedTracksVerification() const override;
-		TStdWinError PresumeHealthyTrackStructure(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId) override;
+		TStdWinError PresumeHealthyTrackStructure(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,BYTE gap3) override;
 		TStdWinError UnformatTrack(TCylinder cyl,THead head);
 		void SetTitle(LPCTSTR) override;
 		void SetPathName(LPCTSTR, BOOL = TRUE) override;
