@@ -736,13 +736,18 @@ namespace Utils{
 	}
 	CFile &WriteToFile(CFile &f,double number,LPCTSTR formatting){
 		// writes specified Number into the File
-		TCHAR buf[512]; // just in case the number have really many digits (not a problem for a Double)
+		if (!formatting) // if no explicit Formatting specified ...
+			if ((int)number==number) // ... and the Number doesn't have decimal digits (only integral part) ...
+				return WriteToFile(f,(int)number); // ... then simply writing the number as an integer without a decimal point ...
+			else
+				formatting=_T("%f"); // ... otherwise using the "default" Formatting
+		TCHAR buf[512]; // just in case the number had really many digits (not a problem for a Double)
 		_stprintf( buf, formatting, number );
 		return WriteToFile(f,buf);
 	}
 	CFile &WriteToFile(CFile &f,double number){
 		// writes specified Number into the File
-		return WriteToFile(f,number,_T("%f"));
+		return WriteToFile(f,number,NULL);
 	}
 
 	PTCHAR GetApplicationOnlineFileUrl(LPCTSTR documentName,PTCHAR buffer){
