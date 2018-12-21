@@ -102,6 +102,7 @@ typedef const int *PCINT;
 #define FONT_LUCIDA_CONSOLE	_T("Lucida Console")
 
 #define GITHUB_API_SERVER_NAME	_T("api.github.com")
+#define GITHUB_VERSION_TAG_NAME	"\"tag_name\""
 
 #define ABS(x) ((x)>=0?(x):-(x))
 

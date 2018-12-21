@@ -246,8 +246,6 @@
 
 	#define VERSION_LATEST_WEB	_T("usingLatest.html")
 
-	#define VERSION_TAG_NAME	"\"tag_name\""
-
 	static UINT AFX_CDECL __checkApplicationRecency_thread__(PVOID _pCancelableAction){
 		// checks if this instance of application is the latest by comparing it against the on-line information; returns ERROR_SUCCESS (on-line information was downloaded and this instance is up-to-date), ERROR_EVT_VERSION_TOO_OLD (on-line information was downloaded but this instance is out-of-date), or other error
 		TBackgroundActionCancelable *const pAction=(TBackgroundActionCancelable *)_pCancelableAction;
@@ -296,10 +294,14 @@ quitWithErr:const DWORD err=::GetLastError();
 		if (!pAction->bContinue) return ERROR_CANCELLED;
 		pAction->UpdateProgress(5);
 		// - analysing the obtained information (comparing it against this instance version)
-		if (const PCHAR tagName=::strstr(buffer,VERSION_TAG_NAME)){
-			const PCHAR tagValue=::strchr(tagName+sizeof(VERSION_TAG_NAME),'\"')+1; // "+1" = skipping the opening quote
-			*::strchr(tagValue,'\"')='\0'; // replacing the closing quote with the Null character
-			return	::lstrcmpA(tagValue,APP_VERSION)
+		if (const PCHAR githubTagName=::strstr(buffer,GITHUB_VERSION_TAG_NAME)){
+			const PCHAR githubTagValue=::strchr(githubTagName+sizeof(GITHUB_VERSION_TAG_NAME),'\"')+1; // "+1" = skipping the opening quote
+			*::strchr(githubTagValue,'\"')='\0'; // replacing the closing quote with the Null character
+			const TCHAR *p=APP_VERSION;
+			TCHAR thisTagValue[32],*t=thisTagValue;
+			while (*t=*p++)
+				if (!::isspace(*t)) t++;
+			return	::lstrcmpA(githubTagValue,thisTagValue)
 					? ERROR_EVT_VERSION_TOO_OLD // the app is outdated
 					: ERROR_SUCCESS; // the app is up-to-date
 		}else
