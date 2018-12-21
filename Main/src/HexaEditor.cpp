@@ -465,7 +465,7 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 				// mouse moved
 				if (!( mouseDragged=::GetAsyncKeyState(VK_LBUTTON)<0 )) return 0; // if mouse button not pressed, current Selection cannot be modified
 leftMouseDragged:
-				if (!editable) return 0; // if window disabled, focus cannot be acquired
+				if (!editable) break; // if window NotEditable, ignoring any mouse events and just focusing the window to receive MouseWheel messages
 				const int x=GET_X_LPARAM(lParam)-(addrLength+ADDRESS_SPACE_LENGTH)*font.charAvgWidth;
 				const int r=GET_Y_LPARAM(lParam)/font.charHeight-HEADER_LINES_COUNT+GetScrollPos(SB_VERT);
 				const int byteW=HEXA_FORMAT_LENGTH*font.charAvgWidth, hexaW=nBytesInRow*byteW;
@@ -477,9 +477,14 @@ leftMouseDragged:
 				else if (x>asciiX && x<=asciiX+nBytesInRow*font.charAvgWidth)
 					// Ascii area
 					cursor.ascii=true, cursor.position=currLineStart+min((x-asciiX)/font.charAvgWidth,currLineBytesMinusOne);
-				else
+				else{
 					// outside any area
+					if (!mouseDragged){ // if right now mouse button pressed ...
+						SELECTION_CANCEL(); // ... unselecting everything
+						Invalidate(FALSE);
+					}
 					break;
+				}
 				CEdit::WindowProc(msg,wParam,lParam); // to set focus and accept WM_KEY* messages
 				wParam=(WPARAM)hPreviouslyFocusedWnd; // due to the fallthrough
 				//fallthrough
@@ -488,7 +493,7 @@ leftMouseDragged:
 				// window has received focus
 				hPreviouslyFocusedWnd=(HWND)wParam; // the window that is losing the focus (may be refocused later when Enter is pressed)
 				CreateSolidCaret( (2-cursor.ascii)*font.charAvgWidth, font.charHeight );
-				if (editable) ShowCaret();
+				if (editable) ShowCaret(); else break;
 				goto cursorCorrectlyMoveTo;
 			case WM_KILLFOCUS:
 				// window has lost focus
