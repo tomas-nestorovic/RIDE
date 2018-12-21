@@ -41,6 +41,20 @@
 				// window size changed
 				InvalidateRect(NULL,TRUE);
 				break;
+			case WM_MOUSEWHEEL:
+				// mouse wheel was rotated
+				if (::GetKeyState(VK_CONTROL)<0){
+					// if Ctrl key pressed, resizing the window
+					RECT rc;
+					GetWindowRect(&rc);
+					const short zDelta=(short)HIWORD(wParam)/WHEEL_DELTA;
+					rc.right+=zDelta*Utils::LogicalUnitScaleFactor*24, rc.bottom+=zDelta*Utils::LogicalUnitScaleFactor*24;
+					SendMessage( WM_SIZING, WMSZ_TOPLEFT, (LPARAM)&rc ); // for the window to keep its aspect ratio
+					SetWindowPos( NULL, 0,0, rc.right-rc.left, rc.bottom-rc.top, SWP_NOMOVE|SWP_NOZORDER );
+					return TRUE;
+				}else
+					// if Ctrl key NOT pressed, simply handing the message over to the parent class
+					break;
 			case WM_PAINT:{
 				// drawing
 				RECT r;
