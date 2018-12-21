@@ -93,7 +93,7 @@
 					}else{
 						::memcpy(sectorData+dos->properties->dataBeginOffsetInSector+d.rem,lpBuf,nCount);
 						position+=nCount;
-						break;
+						return;
 					}
 				}else
 					break;

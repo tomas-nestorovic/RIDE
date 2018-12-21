@@ -727,7 +727,7 @@ reportError:Utils::Information(buf);
 							nDataBytesToExport-=w, d.rem=0;
 						}else{
 							fOut->Write(sectorData+properties->dataBeginOffsetInSector+d.rem,nDataBytesToExport);
-							break;
+							return NULL;
 						}
 					}else
 						return LOG_MESSAGE(_T("Data sector not found or read with CRC error."));
