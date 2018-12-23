@@ -294,18 +294,20 @@ quitWithErr:const DWORD err=::GetLastError();
 		if (!pAction->bContinue) return ERROR_CANCELLED;
 		pAction->UpdateProgress(5);
 		// - analysing the obtained information (comparing it against this instance version)
-		if (const PCHAR githubTagName=::strstr(buffer,GITHUB_VERSION_TAG_NAME)){
-			const PCHAR githubTagValue=::strchr(githubTagName+sizeof(GITHUB_VERSION_TAG_NAME),'\"')+1; // "+1" = skipping the opening quote
-			*::strchr(githubTagValue,'\"')='\0'; // replacing the closing quote with the Null character
-			const TCHAR *p=APP_VERSION;
-			TCHAR thisTagValue[32],*t=thisTagValue;
-			while (*t=*p++)
-				if (!::isspace(*t)) t++;
-			return	::lstrcmpA(githubTagValue,thisTagValue)
-					? ERROR_EVT_VERSION_TOO_OLD // the app is outdated
-					: ERROR_SUCCESS; // the app is up-to-date
-		}else
-			return ERROR_DS_SERVER_DOWN;
+		if (const PCHAR githubTagName=::strstr(buffer,GITHUB_VERSION_TAG_NAME))
+			if (PCHAR r=::strchr(githubTagName+sizeof(GITHUB_VERSION_TAG_NAME),'\"')){ // "R"emote tag
+				buffer[nBytesRead]='\"'; // guaranteeing that closing quote is always found
+				*::strchr( ++r, '\"' )='\0'; // "+1" = skipping the opening quote; replacing the closing quote with the Null character
+				const TCHAR *t=APP_VERSION; // "T"his tag
+				do{
+					if (::isspace(*t))
+						t++; // ignoring any whitespaces in "T"his tag
+					else if (*r++!=*t++)
+						return ERROR_EVT_VERSION_TOO_OLD; // the app is outdated
+				} while (*r/*&&*t*/); // commented out as redundant (any differences already caught above)
+				return ERROR_SUCCESS; // the app is up-to-date
+			}
+		return ERROR_DS_SERVER_DOWN;
 	}
 	afx_msg void CMainWindow::__openUrl_checkForUpdates__(){
 		// checks if this instance of application is the latest by comparing it against the on-line information; opens either "You are using the latest version" web page, or the "You are using out-of-date version" web page
