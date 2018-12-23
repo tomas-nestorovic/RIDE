@@ -1528,7 +1528,7 @@ Utils::Information(buf);}
 							} d(fdd,this);
 							// . showing the Dialog and processing its result
 							if (d.DoModal()==IDOK){
-								__informationWithCheckableShowNoMore__( _T("Windows is NOT a real-time system! Computed latency will be valid only if you will use the floppy drive in very similar conditions as they were computed in (current conditions)!"), INI_MSG_LATENCY );
+								__informationWithCheckableShowNoMore__( _T("Windows is NOT a real-time system! Computed latency will be valid only if using the floppy drive in very similar conditions as when they were computed (current conditions)!"), INI_MSG_LATENCY );
 								if (Utils::InformationOkCancel(_T("Insert an empty disk and hit OK."))){
 									TLatencyParams lp( fdd, d.floppyType==0, 1+d.usAccuracy, 1+d.nRepeats );
 									if (const TStdWinError err=	TBackgroundActionCancelable(
@@ -1598,7 +1598,7 @@ latencyAutodeterminationError:			Utils::FatalError(_T("Couldn't autodetermine"),
 	TStdWinError CFDD::Reset(){
 		// resets internal representation of the disk (e.g. by disposing all content without warning)
 		// - displaying message
-		__informationWithCheckableShowNoMore__( _T("Only 3.5\" internal drives mapped as \"A:\" are supported. To spare the floppy and drive, all activity is buffered.\nThe following applies:\n\n- Changes made to the floppy are saved only when you command so (Ctrl+S). If you don't save them, they will NOT appear on the disk!\n\n- Formatting destroys the content immediately."), INI_MSG_RESET );
+		__informationWithCheckableShowNoMore__( _T("Only 3.5\" internal drives mapped as \"A:\" are supported. To spare both floppy and drive, all activity is buffered: CHANGES (WRITINGS, DELETIONS) MADE TO THE FLOPPY ARE SAVED ONLY WHEN YOU COMMAND SO (Ctrl+S). If you don't save them, they will NOT appear on the disk next time. FORMATTING DESTROYS THE CONTENT IMMEDIATELLY!"), INI_MSG_RESET );
 		// - resetting
 		LOG_ACTION(_T("TStdWinError CFDD::Reset"));
 		const TStdWinError err=__reset__();
