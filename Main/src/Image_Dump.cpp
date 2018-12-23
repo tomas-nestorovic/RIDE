@@ -414,6 +414,15 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 					}
 					s++; // cannot include in the FOR clause - see Continue statement in the cycle
 				}
+				// . saving the writing to the Target Track (if the Target Image supports it)
+				switch ( err=dp.target->SaveTrack(p.chs.cylinder,p.chs.head) ){
+					case ERROR_SUCCESS:
+						//fallthrough
+					case ERROR_NOT_SUPPORTED:
+						break; // writings to the Target Image will be saved later via CImage::OnSaveDocument
+					default:
+						goto terminateWithError;
+				}
 				// . registering Track with ErroneousSectors
 //Utils::Information("registering Track with ErroneousSectors");
 				if (erroneousSectors.n){

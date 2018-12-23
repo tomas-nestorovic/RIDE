@@ -133,6 +133,7 @@
 		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
 		void EditSettings() override;
 		TStdWinError Reset() override;
+		TStdWinError SaveTrack(TCylinder cyl,THead head) override;
 		TStdWinError FormatTrack(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte);
 		bool RequiresFormattedTracksVerification() const override;
 		TStdWinError PresumeHealthyTrackStructure(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,BYTE gap3) override;

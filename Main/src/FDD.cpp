@@ -661,6 +661,62 @@ error:				switch (const TStdWinError err=::GetLastError()){
 
 
 
+	TStdWinError CFDD::SaveTrack(TCylinder cyl,THead head){
+		// saves the specified Track to the inserted Medium; returns Windows standard i/o error
+		LOG_TRACK_ACTION(cyl,head,_T("UINT CFDD::SaveTrack"));
+		if (TInternalTrack *const pit=__getScannedTrack__(cyl,head)){
+			// . saving RawContent of the Track
+			/*if (pid->rawContent.bModified){
+				const TStdWinError err=pid->__saveRawContentToDisk__( up.fdd, cyl, head );
+				if (err==ERROR_SUCCESS){
+					pid->rawContent.modified=false;
+				}else
+					return pAction->TerminateWithError(err);
+			}*/
+			// . saving (and verifying) data of Track's all Modified Sectors
+			bool allSectorsProcessed;
+			do{
+				// : saving
+				BYTE justSavedSectors[(TSector)-1];
+				::ZeroMemory(justSavedSectors,pit->nSectors);
+				do{
+					allSectorsProcessed=true; // assumption
+					int lastSectorEndMicroseconds=INT_MIN/2;
+					for( TSector n=0; n<pit->nSectors; n++ ){
+						TInternalTrack::TSectorInfo &si=pit->sectors[n];
+						if (si.modified && !justSavedSectors[n]){
+							if (si.startMicroseconds-lastSectorEndMicroseconds>=params.gap3Latency) // sufficient distance between this and previously saved Sectors, so both of them can be processed in a single disk revolution
+								if (const TStdWinError err=si.__saveToDisk__( this, pit, n, false )) // False = verification carried out below
+									return err;
+								else{
+									si.modified=params.verifyWrittenData; // no longer Modified if Verification turned off
+									lastSectorEndMicroseconds=si.endMicroseconds;
+									justSavedSectors[n]=true;
+								}
+							allSectorsProcessed=false; // will need one more cycle iteration to eventually find out that all Sectors are processed OK
+						}
+					}
+				}while (!allSectorsProcessed);
+				// : verification
+				do{
+					allSectorsProcessed=true; // assumption
+					int lastSectorEndMicroseconds=INT_MIN/2;
+					for( TSector n=0; n<pit->nSectors; n++ ){
+						TInternalTrack::TSectorInfo &si=pit->sectors[n];
+						if (si.modified)
+							if (si.startMicroseconds-lastSectorEndMicroseconds>=params.gap3Latency){ // sufficient distance between this and previously saved Sectors, so both of them can be processed in a single disk revolution
+								if (si.__verifySaving__( this, pit, n )==IDABORT)
+									return ERROR_CANCELLED;
+								lastSectorEndMicroseconds=si.endMicroseconds;
+								allSectorsProcessed=false; // will need one more cycle iteration to eventually find out that all Sectors are processed OK
+							}
+					}
+				}while (!allSectorsProcessed);
+			}while (!allSectorsProcessed);
+		}
+		return ERROR_SUCCESS;
+	}
+
 
 	struct TSaveParams sealed{
 		CFDD *const fdd;
@@ -675,60 +731,11 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		TBackgroundActionCancelable *const pAction=(TBackgroundActionCancelable *)_pCancelableAction;
 		const TSaveParams sp=*(TSaveParams *)pAction->fnParams;
 		for( TCylinder cyl=0; cyl<FDD_CYLINDERS_MAX; pAction->UpdateProgress(++cyl) )
-			for( THead head=0; head<2; head++ ) // 2 = max number of Sides on a floppy
-				if (TInternalTrack *const pit=sp.fdd->__getScannedTrack__(cyl,head)){
-					// . saving RawContent of the Track
-					/*if (pid->rawContent.bModified){
-						const TStdWinError err=pid->__saveRawContentToDisk__( up.fdd, cyl, head );
-						if (err==ERROR_SUCCESS){
-							pid->rawContent.modified=false;
-						}else
-							return pAction->TerminateWithError(err);
-					}*/
-					// . saving (and verifying) data of Track's all Modified Sectors
-					bool allSectorsProcessed;
-					do{
-						// : saving
-						BYTE justSavedSectors[(TSector)-1];
-						::ZeroMemory(justSavedSectors,pit->nSectors);
-						do{
-							allSectorsProcessed=true; // assumption
-							int lastSectorEndMicroseconds=INT_MIN/2;
-							for( TSector n=0; n<pit->nSectors; n++ ){
-								if (!pAction->bContinue) return LOG_ERROR(ERROR_CANCELLED);
-								TInternalTrack::TSectorInfo &si=pit->sectors[n];
-								if (si.modified && !justSavedSectors[n]){
-									if (si.startMicroseconds-lastSectorEndMicroseconds>=sp.fdd->params.gap3Latency) // sufficient distance between this and previously saved Sectors, so both of them can be processed in a single disk revolution
-										if (const TStdWinError err=si.__saveToDisk__( sp.fdd, pit, n, false )) // False = verification carried out below
-											return pAction->TerminateWithError(err);
-										else{
-											si.modified=sp.fdd->params.verifyWrittenData; // no longer Modified if Verification turned off
-											lastSectorEndMicroseconds=si.endMicroseconds;
-											justSavedSectors[n]=true;
-										}
-									allSectorsProcessed=false; // will need one more cycle iteration to eventually find out that all Sectors are processed OK
-								}
-							}
-						}while (!allSectorsProcessed);
-						// : verification
-						do{
-							allSectorsProcessed=true; // assumption
-							int lastSectorEndMicroseconds=INT_MIN/2;
-							for( TSector n=0; n<pit->nSectors; n++ ){
-								if (!pAction->bContinue) return LOG_ERROR(ERROR_CANCELLED);
-								TInternalTrack::TSectorInfo &si=pit->sectors[n];
-								if (si.modified)
-									if (si.startMicroseconds-lastSectorEndMicroseconds>=sp.fdd->params.gap3Latency){ // sufficient distance between this and previously saved Sectors, so both of them can be processed in a single disk revolution
-										const BYTE res=si.__verifySaving__( sp.fdd, pit, n );
-										if (res==IDABORT) return pAction->TerminateWithError(ERROR_CANCELLED);
-										lastSectorEndMicroseconds=si.endMicroseconds;
-										allSectorsProcessed=false; // will need one more cycle iteration to eventually find out that all Sectors are processed OK
-									}
-							}
-						}while (!allSectorsProcessed);
-					}while (!allSectorsProcessed);
-				}
-		sp.fdd->m_bModified=FALSE;
+			for( THead head=0; head<2; head++ ){ // 2 = max number of Sides on a floppy
+				if (!pAction->bContinue) return LOG_ERROR(ERROR_CANCELLED);
+				if (const TStdWinError err=sp.fdd->SaveTrack(cyl,head))
+					return pAction->TerminateWithError(err);
+			}
 		return ERROR_SUCCESS;
 	}
 	BOOL CFDD::OnSaveDocument(LPCTSTR){
@@ -739,7 +746,11 @@ error:				switch (const TStdWinError err=::GetLastError()){
 									FDD_THREAD_PRIORITY_DEFAULT
 								).CarryOut(FDD_CYLINDERS_MAX);
 		::SetLastError(err);
-		return err==ERROR_SUCCESS;
+		if (err==ERROR_SUCCESS){
+			m_bModified=FALSE;
+			return true;
+		}else
+			return false;
 	}
 
 
