@@ -7,6 +7,7 @@
 	
 	#define INI_FDD	_T("FDD")
 
+	#define INI_LATENCY_DETERMINED		_T("latdet")
 	#define INI_LATENCY_CONTROLLER		_T("latfdc")
 	#define INI_LATENCY_1BYTE			_T("lat1b")
 	#define INI_LATENCY_GAP3			_T("latg3")
@@ -1512,7 +1513,7 @@ Utils::Information(buf);}
 						return 0;
 					case WM_NOTIFY:
 						if (wParam==ID_AUTO && ((LPNMHDR)lParam)->code==NM_CLICK){
-							// automatic determination of write latency values
+autodetermineLatencies:		// automatic determination of write latency values
 							// . defining the Dialog
 							class CLatencyAutoDeterminationDialog sealed:public CDialog{
 							public:
@@ -1562,6 +1563,7 @@ latencyAutodeterminationError:			Utils::FatalError(_T("Couldn't autodetermine"),
 									params.oneByteLatency=lp.out1ByteLatency;
 									params.gap3Latency=lp.outGap3Latency;
 									__exchangeLatency__( &CDataExchange(this,FALSE) );
+									app.WriteProfileInt( INI_FDD, INI_LATENCY_DETERMINED, TRUE ); // latencies hereby at least once determined
 								}
 							}
 						}
@@ -1576,6 +1578,17 @@ latencyAutodeterminationError:			Utils::FatalError(_T("Couldn't autodetermine"),
 							case ID_CYLINDER_N:
 								// adjusting possibility to edit the CalibrationStep according to selected option
 								GetDlgItem(ID_NUMBER)->EnableWindow(wParam!=ID_ZERO);
+								break;
+							case IDOK:
+								// attempting to confirm the Dialog
+								if (!app.GetProfileInt( INI_FDD, INI_LATENCY_DETERMINED, FALSE ))
+									switch (Utils::QuestionYesNoCancel(_T("Latencies not yet determined, I/O operations may perform suboptimal.\n\nAutodetermine latencies now?"),MB_DEFBUTTON1)){
+										case IDYES:
+											msg=WM_PAINT; // changing the Message to one that won't close the Dialog
+											goto autodetermineLatencies;
+										case IDCANCEL:
+											return 0;
+									}
 								break;
 						}
 						break;
