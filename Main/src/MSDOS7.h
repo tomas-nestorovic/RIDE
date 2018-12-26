@@ -66,6 +66,11 @@
 
 		#pragma pack(1)
 		typedef struct TBootSector sealed{
+			enum TMsdosMediumType:BYTE{
+					FLOPPY	=0,
+					HDD		=0x80
+			};
+
 			static TPhysicalAddress __getRecognizedChs__(PImage image,bool recognizeBoot,bool *pSuccess);
 
 			#pragma pack(1)
@@ -97,7 +102,7 @@
 			union{
 				#pragma pack(1)
 				struct{
-					BYTE mediumType;
+					TMsdosMediumType mediumType;
 					BYTE reserved1;
 					TVolumeInfo volume;
 					BYTE reserved2[448];
@@ -105,13 +110,13 @@
 				#pragma pack(1)
 				struct{
 					TLogSector32 nSectorsFat32;
-					WORD flags;
-					WORD version;
-					TCluster32 rootDirectoryFirstCluster;
-					TLogSector16 fsInfo;
-					TLogSector16 bootCopy;
+					WORD flags; // TODO: missing in "Boot Sector" tab
+					WORD version; // TODO: missing in "Boot Sector" tab
+					TCluster32 rootDirectoryFirstCluster; // TODO: missing in "Boot Sector" tab
+					TLogSector16 fsInfo; // TODO: missing in "Boot Sector" tab
+					TLogSector16 bootCopy; // TODO: missing in "Boot Sector" tab
 					BYTE reserved1[12];
-					BYTE mediumType;
+					TMsdosMediumType mediumType;
 					BYTE reserved2;
 					TVolumeInfo volume;
 					BYTE reserved3[420];
@@ -222,12 +227,16 @@
 		CTrackMapView trackMap;
 
 		class CMsdos7BootView sealed:public CBootView{
+			static bool WINAPI __pg_createLabel__(CPropGridCtrl::PCustomParam,int hyperlinkId,LPCTSTR hyperlinkName);
+			static bool WINAPI __labelModified__(CPropGridCtrl::PCustomParam,LPCSTR,short);
 			static bool WINAPI __onMediumChanged__(PVOID,CPropGridCtrl::TEnum::UValue newValue);
 			static CPropGridCtrl::TEnum::PCValueList WINAPI __getListOfMedia__(PVOID,WORD &rnMedia);
 			static LPCTSTR WINAPI __getMediumDescription__(PVOID,CPropGridCtrl::TEnum::UValue medium,PTCHAR,short);
+			static CPropGridCtrl::TEnum::PCValueList WINAPI __getListOfMediaTypes__(PVOID,WORD &rnMediumTypes);
+			static LPCTSTR WINAPI __getMediumTypeDescription__(PVOID,CPropGridCtrl::TEnum::UValue mediumType,PTCHAR,short);
 
 			void GetCommonBootParameters(RCommonBootParameters rParam,PSectorData _boot) override;
-			void AddCustomBootParameters(HWND hPropGrid,HANDLE hGeometry,HANDLE hVolume,PSectorData _boot) override;
+			void AddCustomBootParameters(HWND hPropGrid,HANDLE hGeometry,HANDLE hVolume,const TCommonBootParameters &rParam,PSectorData _boot) override;
 		public:
 			CMsdos7BootView(PMSDOS7 msdos);
 

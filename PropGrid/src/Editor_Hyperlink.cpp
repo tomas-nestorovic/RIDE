@@ -95,7 +95,7 @@
 						::SetFocus(hWnd); // renewing the focus, should it be lost during the Action
 					ignoreRequestToDestroy=false;
 					if (destroy)
-						::ShowWindow(hWnd,SW_HIDE); // to destroy the SysLink
+						CPropGridCtrl::TryToAcceptCurrentValueAndCloseEditor(); // on success also destroys the Editor
 					return 0;
 				}else
 					break;

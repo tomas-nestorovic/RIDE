@@ -171,7 +171,7 @@
 				rParam.id.bufferCapacity=sizeof(WORD);
 	}
 
-	void CMDOS2::CMdos2BootView::AddCustomBootParameters(HWND hPropGrid,HANDLE hGeometry,HANDLE hVolume,PSectorData _boot){
+	void CMDOS2::CMdos2BootView::AddCustomBootParameters(HWND hPropGrid,HANDLE hGeometry,HANDLE hVolume,const TCommonBootParameters &rParam,PSectorData _boot){
 		// gets DOS-specific parameters from the Boot
 		const PBootSector boot=(PBootSector)_boot;
 		// . drives

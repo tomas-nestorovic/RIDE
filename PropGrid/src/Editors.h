@@ -106,6 +106,8 @@
 	#pragma pack(1)
 	struct TBooleanEditor sealed:public TEditor{
 		const CPropGridCtrl::TBoolean::TOnValueConfirmed onValueConfirmed;
+		const DWORD reservedValue;
+		const bool reservedForTrue; // True <=> the ReservedValue is for True, otherwise the ReservedValue is for False
 	protected:
 		void __drawValue__(const TPropGridInfo::TItem::TValue &value,PDRAWITEMSTRUCT pdis) const override;
 		HWND __createMainControl__(const TPropGridInfo::TItem::TValue &value,HWND hParent) const override;
@@ -113,6 +115,8 @@
 		LRESULT __mainCtrl_wndProc__(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam) const override;
 	public:
 		TBooleanEditor(
+			DWORD reservedValue,
+			bool reservedForTrue,
 			CPropGridCtrl::TBoolean::TOnValueConfirmed onValueConfirmed,
 			CPropGridCtrl::TOnValueChanged onValueChanged
 		);

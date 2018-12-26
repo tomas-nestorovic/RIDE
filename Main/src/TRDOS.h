@@ -98,7 +98,7 @@
 			static bool WINAPI __onFormatChanged__(PVOID,CPropGridCtrl::TEnum::UValue newValue);
 
 			void GetCommonBootParameters(RCommonBootParameters rParam,PSectorData _boot) override;
-			void AddCustomBootParameters(HWND hPropGrid,HANDLE hGeometry,HANDLE hVolume,PSectorData _boot) override;
+			void AddCustomBootParameters(HWND hPropGrid,HANDLE hGeometry,HANDLE hVolume,const TCommonBootParameters &rParam,PSectorData _boot) override;
 		public:
 			const BYTE nCharsInLabel;
 

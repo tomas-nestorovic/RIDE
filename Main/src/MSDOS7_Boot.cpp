@@ -45,7 +45,7 @@
 				&&
 				nFatCopies && nFatCopies<=15
 				&&
-				//AA55mark==0xaa55 // commented out as some MS-DOS floppies neglect this mark, causing this app to not recognize them
+				//AA55mark==0xaa55 // commented out as some MS-DOS floppies neglect this mark, causing this app to not recognize them (e.g. the Czech game "7 dni a 7 noci" or Slovak edition of "Ramonovo kouzlo")
 				//&&
 				__isUsable__(); // Boot Sector contains values that make sense
 	}
@@ -136,8 +136,8 @@
 					nSectorsInTotal16=nSectorsInTotal32=nSectorsInTotal;
 				nSectorsFat16=nSectorsFat;
 				fat1216.mediumType= pFormatBoot->mediumType&TMedium::FLOPPY_ANY
-									? 0		// 0 = floppy
-									: 0x80;	// 0x80 = hdd
+									? TMsdosMediumType::FLOPPY
+									: TMsdosMediumType::HDD;
 				fat1216.volume.__init__(rOutFat);
 				break;
 			case CFat::FAT32:
@@ -147,8 +147,8 @@
 				fat32.fsInfo=MSDOS7_SECTOR_FSINFO;
 				fat32.bootCopy=MSDOS7_SECTOR_BKBOOT;
 				fat32.mediumType=	pFormatBoot->mediumType&TMedium::FLOPPY_ANY
-									? 0		// 0 = floppy
-									: 0x80; // 0x80 = hdd
+									? TMsdosMediumType::FLOPPY
+									: TMsdosMediumType::HDD;
 				fat32.volume.__init__(rOutFat);
 				break;
 			default:
@@ -303,6 +303,27 @@
 		return (PBootSector)IMAGE->GetSectorData(chsBoot);
 	}
 
+	bool WINAPI CMSDOS7::CMsdos7BootView::__labelModified__(CPropGridCtrl::PCustomParam,LPCSTR newLabel,short newLabelChars){
+		const PMSDOS7 msdos=(PMSDOS7)CDos::__getFocused__();
+		const PBootSector boot=msdos->boot.GetSectorData();
+		TVolumeInfo *pvi;
+		switch (msdos->fat.type){
+			case CFat::FAT12:
+			case CFat::FAT16:
+				pvi=&boot->fat1216.volume;	break;
+			case CFat::FAT32:
+				pvi=&boot->fat32.volume;	break;
+			default:
+				ASSERT(FALSE);
+				return false;
+		}
+		::memcpy(	::memset( pvi->label, ' ', MSDOS7_LABEL_LENGTH_MAX ),
+					newLabel,
+					newLabelChars
+				);
+		return __bootSectorModified__(NULL,0);
+	}
+
 	void CMSDOS7::CMsdos7BootView::GetCommonBootParameters(RCommonBootParameters rParam,PSectorData _boot){
 		// gets basic parameters from the Boot Sector
 		const PBootSector boot=(PBootSector)_boot;
@@ -322,26 +343,24 @@
 					ASSERT(FALSE);
 					return;
 			}
-			rParam.label.length=0; // assumption (Label doesn't exist)
-			if (pvi->infoValid==0x29){
-				const PDirectoryEntry currentDirectory0=msdos->currentDirectory;
-					msdos->currentDirectory=MSDOS7_DIR_ROOT;
-					for( TMsdos7DirectoryTraversal dt(msdos); dt.__existsNextEntry__(); )
-						if (dt.entryType==TDirectoryTraversal::CUSTOM
-							&&
-							((PCDirectoryEntry)dt.entry)->shortNameEntry.attributes==FILE_ATTRIBUTE_VOLUME
-						){
-							// Label found
-							rParam.label.length=MSDOS7_LABEL_LENGTH_MAX;
-								rParam.label.bufferA=((PDirectoryEntry)dt.entry)->shortNameEntry.name;
-								rParam.label.fillerByte=' ';
-							break;
-						}
-				msdos->currentDirectory=currentDirectory0;
-				rParam.id.buffer=&pvi->id;
-					rParam.id.bufferCapacity=sizeof(DWORD);
-			}else
-				rParam.id.buffer=NULL;
+			//rParam.label.length=0; // assumption (Label doesn't exist); commented out as already zeroed by the caller
+			const PDirectoryEntry currentDirectory0=msdos->currentDirectory;
+				msdos->currentDirectory=MSDOS7_DIR_ROOT;
+				for( TMsdos7DirectoryTraversal dt(msdos); dt.__existsNextEntry__(); )
+					if (dt.entryType==TDirectoryTraversal::CUSTOM
+						&&
+						((PCDirectoryEntry)dt.entry)->shortNameEntry.attributes==FILE_ATTRIBUTE_VOLUME
+					){
+						// Label found
+						rParam.label.length=MSDOS7_LABEL_LENGTH_MAX;
+							rParam.label.bufferA=((PDirectoryEntry)dt.entry)->shortNameEntry.name;
+							rParam.label.fillerByte=' ';
+							rParam.label.onLabelConfirmedA=__labelModified__;
+						break;
+					}
+			msdos->currentDirectory=currentDirectory0;
+			rParam.id.buffer=&pvi->id;
+				rParam.id.bufferCapacity=sizeof(DWORD);
 	}
 
 	bool WINAPI CMSDOS7::CMsdos7BootView::__onMediumChanged__(PVOID,CPropGridCtrl::TEnum::UValue newValue){
@@ -364,7 +383,7 @@
 			TBootSector::DISK_525_320_DS_8,
 			TBootSector::DISK_HARD
 		};
-		rnMedia=7;
+		rnMedia=sizeof(List)/sizeof(TBootSector::TMsdosMedium);
 		return (CPropGridCtrl::TEnum::PCValueList)List;
 	}
 	LPCTSTR WINAPI CMSDOS7::CMsdos7BootView::__getMediumDescription__(PVOID,CPropGridCtrl::TEnum::UValue medium,PTCHAR,short){
@@ -382,20 +401,116 @@
 		}
 	}
 
-	void CMSDOS7::CMsdos7BootView::AddCustomBootParameters(HWND hPropGrid,HANDLE hGeometry,HANDLE hVolume,PSectorData _boot){
+	CPropGridCtrl::TEnum::PCValueList WINAPI CMSDOS7::CMsdos7BootView::__getListOfMediaTypes__(PVOID,WORD &rnMediumTypes){
+		// returns the List of known Media
+		static const TBootSector::TMsdosMediumType List[]={
+			TBootSector::FLOPPY,
+			TBootSector::HDD
+		};
+		rnMediumTypes=sizeof(List)/sizeof(TBootSector::TMsdosMediumType);
+		return (CPropGridCtrl::TEnum::PCValueList)List;
+	}
+	LPCTSTR WINAPI CMSDOS7::CMsdos7BootView::__getMediumTypeDescription__(PVOID,CPropGridCtrl::TEnum::UValue mediumType,PTCHAR,short){
+		// populates the Buffer with given Medium description and returns the description
+		switch ((TBootSector::TMsdosMediumType)mediumType.charValue){
+			case TBootSector::FLOPPY: return _T("Floppy");
+			case TBootSector::HDD	: return _T("Hard disk");
+			default:
+				return _T("<unknown>");
+		}
+	}
+
+	bool WINAPI CMSDOS7::CMsdos7BootView::__pg_createLabel__(CPropGridCtrl::PCustomParam,int hyperlinkId,LPCTSTR hyperlinkName){
+		// True <=> PropertyGrid's Editor can be destroyed after this function has terminated, otherwise False
+		const PMSDOS7 msdos=(PMSDOS7)CDos::__getFocused__();
+		const PDirectoryEntry currentDirectory0=msdos->currentDirectory;
+			msdos->currentDirectory=MSDOS7_DIR_ROOT;
+			if (const PDirectoryEntry de=TMsdos7DirectoryTraversal(msdos).__allocateNewEntry__()){
+				de->shortNameEntry.attributes=FILE_ATTRIBUTE_VOLUME;
+				::memcpy(	::memset(de->shortNameEntry.name,' ',MSDOS7_LABEL_LENGTH_MAX),
+							VOLUME_LABEL_DEFAULT_ANSI_8CHARS,
+							sizeof(VOLUME_LABEL_DEFAULT_ANSI_8CHARS)-1
+						);
+				__labelModified__( NULL, de->shortNameEntry.name, MSDOS7_LABEL_LENGTH_MAX );
+			}else
+				Utils::Information(_T("Can't create label"),ERROR_CANNOT_MAKE);
+		msdos->currentDirectory=currentDirectory0;
+		return true; // True = destroy PropertyGrid's Editor
+	}
+
+	void CMSDOS7::CMsdos7BootView::AddCustomBootParameters(HWND hPropGrid,HANDLE hGeometry,HANDLE hVolume,const TCommonBootParameters &rParam,PSectorData _boot){
 		// gets DOS-specific parameters from the Boot
 		const PBootSector boot=(PBootSector)_boot;
-		const HANDLE hGeometryAdvanced=CPropGridCtrl::AddCategory(hPropGrid,hGeometry,BOOT_SECTOR_ADVANCED,false);
+		const CFat::TType fatType=((PMSDOS7)DOS)->fat.type;
+		TVolumeInfo *const pvi=	fatType==CFat::FAT32 ? &boot->fat32.volume : &boot->fat1216.volume;
+		CPropGridCtrl::AddProperty( hPropGrid, hGeometry, _T("Sectors per cluster"),
+									&boot->nSectorsInCluster, sizeof(BYTE),
+									CPropGridCtrl::TInteger::DefinePositiveByteEditor( __bootSectorModified__ )
+								);
+		if (!rParam.label.length)
+			CPropGridCtrl::AddProperty(	hPropGrid, hVolume, _T("Label not found"),
+										"<a>Create</a>", -1,
+										CPropGridCtrl::THyperlink::DefineEditorA( __pg_createLabel__, __updateView__ )
+									);
+		CPropGridCtrl::AddProperty(	hPropGrid, hVolume, _T("ID valid"),
+									&pvi->infoValid, sizeof(BYTE),
+									CPropGridCtrl::TBoolean::DefineEditor( __bootSectorModified__, NULL, 0x29, true )
+								);
+		const HANDLE hGeometryAdvanced=CPropGridCtrl::AddCategory(hPropGrid,hGeometry,BOOT_SECTOR_ADVANCED,true);
 			// . Medium
 			CPropGridCtrl::AddProperty(	hPropGrid, hGeometryAdvanced, _T("Medium"),
 										&boot->medium, sizeof(TBootSector::TMsdosMedium),
 										CPropGridCtrl::TEnum::DefineConstStringListEditorA( __getListOfMedia__, __getMediumDescription__, NULL, __onMediumChanged__ )
 									);
 			// . number of Sectors on the disk
-			CPropGridCtrl::AddProperty( hPropGrid, hGeometryAdvanced, _T("# of sectors"),
-										&boot->nSectorsInTotal16, sizeof(TLogSector16),
-										CPropGridCtrl::TInteger::DefineEditor( CPropGridCtrl::TInteger::PositiveIntegerLimits, __bootSectorModified__ )
+			if (fatType==CFat::FAT32)
+				CPropGridCtrl::AddProperty( hPropGrid, hGeometryAdvanced, _T("All sectors"),
+											&boot->fat32.nSectorsFat32, sizeof(TLogSector32),
+											CPropGridCtrl::TInteger::DefineEditor( CPropGridCtrl::TInteger::PositiveIntegerLimits, __bootSectorModified__ )
+										);
+			else
+				CPropGridCtrl::AddProperty( hPropGrid, hGeometryAdvanced, _T("All sectors"),
+											&boot->nSectorsInTotal16, sizeof(TLogSector16),
+											CPropGridCtrl::TInteger::DefinePositiveWordEditor( __bootSectorModified__ )
+										);
+			// . number of reserved Sectors
+			CPropGridCtrl::AddProperty( hPropGrid, hGeometryAdvanced, _T("Reserved sectors"),
+										&boot->nReservedSectors, sizeof(TLogSector16),
+										CPropGridCtrl::TInteger::DefinePositiveWordEditor( __bootSectorModified__ )
 									);
+			// . number of hidden Sectors
+			CPropGridCtrl::AddProperty( hPropGrid, hGeometryAdvanced, _T("Hidden sectors"),
+										&boot->nSectorsHidden, sizeof(TLogSector32),
+										CPropGridCtrl::TInteger::DefineEditor( CPropGridCtrl::TInteger::NonNegativeIntegerLimits, __bootSectorModified__ )
+									);
+		const HANDLE hVolumeAdvanced=CPropGridCtrl::AddCategory(hPropGrid,hVolume,BOOT_SECTOR_ADVANCED,true);
+			// . OEM Name
+			CPropGridCtrl::AddProperty(	hPropGrid, hVolumeAdvanced, _T("OEM name"),
+										&boot->oemName, sizeof(boot->oemName),
+										CPropGridCtrl::TString::DefineFixedLengthEditorA( __bootSectorModifiedA__, ' ' )
+									);
+			// . MediumType
+			CPropGridCtrl::AddProperty(	hPropGrid, hVolumeAdvanced, _T("Medium type"),
+										fatType==CFat::FAT32?&boot->fat32.mediumType:&boot->fat1216.mediumType, sizeof(TBootSector::TMsdosMediumType),
+										CPropGridCtrl::TEnum::DefineConstStringListEditorA( __getListOfMediaTypes__, __getMediumTypeDescription__, NULL, __bootSectorModified__ )
+									);
+			// . FAT Name
+			CPropGridCtrl::AddProperty(	hPropGrid, hVolumeAdvanced, _T("FAT name"),
+										&pvi->fatId, sizeof(pvi->fatId),
+										CPropGridCtrl::TString::DefineFixedLengthEditorA( __bootSectorModifiedA__, ' ' )
+									);
+			// . number of FAT copies
+			static const CPropGridCtrl::TInteger::TUpDownLimits ByteOneToSevenLimits={ 1, 7 };
+			CPropGridCtrl::AddProperty( hPropGrid, hVolumeAdvanced, _T("FAT copies"),
+										&boot->nFatCopies, sizeof(BYTE),
+										CPropGridCtrl::TInteger::DefineEditor( ByteOneToSevenLimits, __bootSectorModified__ )
+									);
+			// . number of root Directory entries
+			CPropGridCtrl::AddProperty( hPropGrid, hVolumeAdvanced, _T("Root dir size"),
+										&boot->nRootDirectoryEntries, sizeof(WORD),
+										CPropGridCtrl::TInteger::DefinePositiveWordEditor( __bootSectorModified__ )
+									);
+			
 	}
 
 

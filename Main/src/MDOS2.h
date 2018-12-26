@@ -150,7 +150,7 @@
 
 		class CMdos2BootView sealed:public CBootView{
 			void GetCommonBootParameters(RCommonBootParameters rParam,PSectorData boot) override;
-			void AddCustomBootParameters(HWND hPropGrid,HANDLE hGeometry,HANDLE hVolume,PSectorData boot) override;
+			void AddCustomBootParameters(HWND hPropGrid,HANDLE hGeometry,HANDLE hVolume,const TCommonBootParameters &rParam,PSectorData boot) override;
 		public:
 			CMdos2BootView(PMDOS2 mdos);
 		} boot;

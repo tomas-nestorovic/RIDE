@@ -26,7 +26,17 @@
 		return true;
 	}
 
-	bool WINAPI CBootView::__bootSectorModified__(CPropGridCtrl::PCustomParam,LPCSTR,short){
+	bool WINAPI CBootView::__bootSectorModifiedA__(CPropGridCtrl::PCustomParam,LPCSTR,short){
+		// marking the Boot Sector as dirty
+		return __bootSectorModified__(NULL,0);
+	}
+
+	bool WINAPI CBootView::__bootSectorModified__(CPropGridCtrl::PCustomParam,bool){
+		// marking the Boot Sector as dirty
+		return __bootSectorModified__(NULL,0);
+	}
+
+	bool WINAPI CBootView::__bootSectorModified__(CPropGridCtrl::PCustomParam,CPropGridCtrl::TEnum::UValue){
 		// marking the Boot Sector as dirty
 		return __bootSectorModified__(NULL,0);
 	}
@@ -233,7 +243,7 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 				if (cbp.label.length)
 					CPropGridCtrl::AddProperty(	propGrid.m_hWnd, hVolume, _T("Label"),
 												cbp.label.bufferA, cbp.label.length,
-												CPropGridCtrl::TString::DefineFixedLengthEditorA(__bootSectorModified__,cbp.label.fillerByte)
+												CPropGridCtrl::TString::DefineFixedLengthEditorA( cbp.label.onLabelConfirmedA?cbp.label.onLabelConfirmedA:__bootSectorModifiedA__, cbp.label.fillerByte )
 											);
 				if (cbp.id.buffer){
 					const CPropGridCtrl::TInteger::TUpDownLimits limits={ 0, (UINT)-1>>8*(sizeof(UINT)-cbp.id.bufferCapacity) };
@@ -244,7 +254,7 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 				}
 			}
 			// . DOS-specific parameters of Boot
-			AddCustomBootParameters(propGrid.m_hWnd,hGeometry,hVolume,boot);
+			AddCustomBootParameters(propGrid.m_hWnd,hGeometry,hVolume,cbp,boot);
 		}else
 			// Boot Sector not found - informing through PropertyGrid
 			CPropGridCtrl::EnableProperty(	propGrid.m_hWnd,

@@ -33,6 +33,7 @@
 					BYTE length; // non-zero = this structure is valid and the Label will be added to PropertyGrid
 					PCHAR bufferA;
 					char fillerByte;
+					CPropGridCtrl::TString::TOnValueConfirmedA onLabelConfirmedA;
 				} label;
 				struct{
 					PVOID buffer; // non-Null = this structure is valid and ID will be added to PropertyGrid
@@ -46,12 +47,14 @@
 		void OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint) override;
 		void PostNcDestroy() override;
 		virtual void GetCommonBootParameters(RCommonBootParameters rParam,PSectorData boot)=0;
-		virtual void AddCustomBootParameters(HWND hPropGrid,HANDLE hGeometry,HANDLE hVolume,PSectorData boot)=0;
+		virtual void AddCustomBootParameters(HWND hPropGrid,HANDLE hGeometry,HANDLE hVolume,const TCommonBootParameters &rParam,PSectorData boot)=0;
 	public:
 		static const CBootView *pCurrentlyShown; // Boot that is currently shown (a multi-volume disk may have several Boots, one for each volume)
 
 		static bool WINAPI __bootSectorModified__(CPropGridCtrl::PCustomParam,int);
-		static bool WINAPI __bootSectorModified__(CPropGridCtrl::PCustomParam,LPCSTR,short);
+		static bool WINAPI __bootSectorModifiedA__(CPropGridCtrl::PCustomParam,LPCSTR,short);
+		static bool WINAPI __bootSectorModified__(CPropGridCtrl::PCustomParam,bool);
+		static bool WINAPI __bootSectorModified__(CPropGridCtrl::PCustomParam,CPropGridCtrl::TEnum::UValue);
 
 		const TPhysicalAddress chsBoot;
 		const CMainWindow::CTdiView::TTab tab;

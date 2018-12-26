@@ -197,7 +197,7 @@
 		return __bootSectorModified__(NULL,0);
 	}
 
-	void CTRDOS503::CTrdosBootView::AddCustomBootParameters(HWND hPropGrid,HANDLE hGeometry,HANDLE hVolume,PSectorData _boot){
+	void CTRDOS503::CTrdosBootView::AddCustomBootParameters(HWND hPropGrid,HANDLE hGeometry,HANDLE hVolume,const TCommonBootParameters &rParam,PSectorData _boot){
 		// gets DOS-specific parameters from the Boot
 		const PBootSector boot=(PBootSector)_boot;
 		// - Geometry category
@@ -208,7 +208,7 @@
 		// - Volume category
 		CPropGridCtrl::AddProperty( hPropGrid, hVolume, _T("Password"),
 									boot->password, TRDOS503_BOOT_PASSWORD_LENGTH_MAX,
-									CPropGridCtrl::TString::DefineFixedLengthEditorA( __bootSectorModified__, PASSWORD_FILLER_BYTE )
+									CPropGridCtrl::TString::DefineFixedLengthEditorA( __bootSectorModifiedA__, PASSWORD_FILLER_BYTE )
 								);
 		// - Advanced category
 		const HANDLE hAdvanced=CPropGridCtrl::AddCategory(hPropGrid,NULL,BOOT_SECTOR_ADVANCED);

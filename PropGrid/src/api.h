@@ -38,7 +38,7 @@
 		struct PROPGRID_DECLSPEC TBoolean sealed{
 			typedef bool (WINAPI *TOnValueConfirmed)(PCustomParam,bool);
 
-			static PCEditor DefineEditor(TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged=NULL);
+			static PCEditor DefineEditor(TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged=NULL,DWORD reservedValue=0,bool reservedForTrue=false);
 		};
 
 		struct PROPGRID_DECLSPEC TInteger sealed{
@@ -52,12 +52,17 @@
 			};
 			typedef bool (WINAPI *TOnValueConfirmed)(PCustomParam,int);
 
-			static const TUpDownLimits PositiveIntegerLimits;
-			static const TUpDownLimits NegativeIntegerLimits;
+			static const TUpDownLimits PositiveByteLimits; // 1..255
+			static const TUpDownLimits PositiveWordLimits; // 1..65535
+			static const TUpDownLimits PositiveIntegerLimits; // 1..INT_MAX
+			static const TUpDownLimits NonNegativeIntegerLimits; // 0..INT_MAX
+			static const TUpDownLimits NegativeIntegerLimits; // INT_MIN..-1
 
 			static PCEditor DefineEditor(RCUpDownLimits rLimits,TOnValueConfirmed onValueConfirmed=NULL,BYTE features=TFeatures::NONE,TOnValueChanged onValueChanged=NULL);
 			static PCEditor DefineByteEditor(TOnValueConfirmed onValueConfirmed=NULL,BYTE features=TFeatures::NONE,TOnValueChanged onValueChanged=NULL);
+			static PCEditor DefinePositiveByteEditor(TOnValueConfirmed onValueConfirmed=NULL,BYTE features=TFeatures::NONE,TOnValueChanged onValueChanged=NULL);
 			static PCEditor DefineWordEditor(TOnValueConfirmed onValueConfirmed=NULL,BYTE features=TFeatures::NONE,TOnValueChanged onValueChanged=NULL);
+			static PCEditor DefinePositiveWordEditor(TOnValueConfirmed onValueConfirmed=NULL,BYTE features=TFeatures::NONE,TOnValueChanged onValueChanged=NULL);
 		};
 
 		struct PROPGRID_DECLSPEC TEnum sealed{
