@@ -132,7 +132,7 @@
 		dib.bmi.bmiHeader.biCompression=BI_RGB;
 		dib.bmi.bmiHeader.biClrUsed=144; // 144 = 16 non-flashing Colors + 128 FlashCombinations
 		dib.bmi.bmiHeader.biClrImportant=16;
-		::memcpy( &dib.colors, &Colors, sizeof(Colors) ); // BmiHeader is immediatelly followed by Color table
+		::memcpy( &dib.colors, &Colors, sizeof(Colors) ); // BmiHeader is immediately followed by Color table
 		dib.handle=::CreateDIBSection( CClientDC(this), &dib.bmi, DIB_RGB_COLORS, (PVOID *)&dib.data, 0,0 );
 		// - showing the first File
 		__showNextFile__();

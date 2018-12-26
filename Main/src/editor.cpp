@@ -198,7 +198,7 @@
 		// initiates creation of new Image
 		OnFileNew(); // to close any previous Image
 		//SaveModified()
-		if (!app.m_pMainWnd->IsWindowVisible()) return; // ignoring the initial command sent by MFC immediatelly after the application has started
+		if (!app.m_pMainWnd->IsWindowVisible()) return; // ignoring the initial command sent by MFC immediately after the application has started
 		PVOID tab;
 		if (!CImage::__getActive__()){
 			// no Image open, i.e. any existing Image successfully closed in above OnFileNew
