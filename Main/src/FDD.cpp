@@ -1097,25 +1097,22 @@ returnData:				outFdcStatuses[index]=psi->fdcStatus;
 	}
 
 	TStdWinError CFDD::__setDataTransferSpeed__(TMedium::TType _floppyType){
-		// sets TransferSpeed for given FloppyType and checks suitability by scanning zeroth Track; returns Windows standard i/o error
+		// sets TransferSpeed for given FloppyType; returns Windows standard i/o error
 		DWORD nBytesTransferred;
 		BYTE transferSpeed;
+		#ifdef LOGGING_ENABLED
+			LOG_ACTION(_T("TStdWinError CFDD::__setDataTransferSpeed__"));
+			LOG_MESSAGE(TMedium::GetDescription(_floppyType));
+		#endif
 		switch (_floppyType){
 			case TMedium::FLOPPY_DD:
 				// 2DD floppy
 				switch (DRIVER){
 					case DRV_FDRAWCMD:{
 						transferSpeed=FD_RATE_250K;
-fdrawcmd:				// . setting
-						LOG_ACTION(_T("TStdWinError CFDD::__setDataTransferSpeed__"));
-						if (!::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transferSpeed,1, NULL,0, &nBytesTransferred, NULL ))
-							return LOG_ERROR(::GetLastError());
-						// . scanning zeroth Track - if it can be read, we have set the correct TransferSpeed
-						__unformatInternalTrack__(0,0); // initialization; disposing internal information on actual Track format
-						const TInternalTrack *const pit=__scanTrack__(0,0);
-						return	pit && pit->nSectors // if Track can be scanned and its Sectors recognized ...
-								? ERROR_SUCCESS	// ... then the TransferSpeed has been set correctly
-								: LOG_ERROR(ERROR_INVALID_DATA);
+fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transferSpeed,1, NULL,0, &nBytesTransferred, NULL )
+								? ERROR_SUCCESS
+								: LOG_ERROR(::GetLastError());
 					}
 					default:
 						ASSERT(FALSE);
@@ -1137,6 +1134,20 @@ fdrawcmd:				// . setting
 		return LOG_ERROR(ERROR_DEVICE_NOT_AVAILABLE);
 	}
 
+	TStdWinError CFDD::__setAndEvaluateDataTransferSpeed__(TMedium::TType _floppyType){
+		// sets TransferSpeed for given FloppyType and checks suitability by scanning zeroth Track; returns Windows standard i/o error
+		LOG_ACTION(_T("TStdWinError CFDD::__setAndEvaluateDataTransferSpeed__"));
+		// - setting
+		if (const TStdWinError err=__setDataTransferSpeed__(_floppyType))
+			return LOG_ERROR(err);
+		// - scanning zeroth Track - if it can be read, we have set the correct transfer speed
+		__unformatInternalTrack__(0,0); // initialization; disposing internal information on actual Track format
+		const TInternalTrack *const pit=__scanTrack__(0,0);
+		return	pit && pit->nSectors // if Track can be scanned and its Sectors recognized ...
+				? ERROR_SUCCESS	// ... then the TransferSpeed has been set correctly
+				: LOG_ERROR(ERROR_INVALID_DATA);
+	}
+
 	TStdWinError CFDD::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		LOG_ACTION(_T("TStdWinError CFDD::SetMediumTypeAndGeometry"));
@@ -1145,15 +1156,15 @@ fdrawcmd:				// . setting
 		if (const TStdWinError err=CFloppyImage::SetMediumTypeAndGeometry(pFormat,sideMap,firstSectorNumber))
 			return LOG_ERROR(err);
 		// - setting the transfer speed according to current FloppyType (DD/HD)
-		switch (floppyType){
+		switch (floppyType){ // set in base method to "pFormat->mediumType"
 			case TMedium::FLOPPY_DD:
 			case TMedium::FLOPPY_HD:
 				// determining if corresponding FloppyType is inserted
 				return __setDataTransferSpeed__(floppyType);
 			default:
 				// automatically recognizing the Type of inserted floppy
-				if (__setDataTransferSpeed__( floppyType=TMedium::FLOPPY_DD )==ERROR_SUCCESS) return ERROR_SUCCESS;
-				if (__setDataTransferSpeed__( floppyType=TMedium::FLOPPY_HD )==ERROR_SUCCESS) return ERROR_SUCCESS;
+				if (__setAndEvaluateDataTransferSpeed__( floppyType=TMedium::FLOPPY_DD )==ERROR_SUCCESS) return ERROR_SUCCESS;
+				if (__setAndEvaluateDataTransferSpeed__( floppyType=TMedium::FLOPPY_HD )==ERROR_SUCCESS) return ERROR_SUCCESS;
 				return LOG_ERROR(ERROR_BAD_COMMAND);
 		}
 	}
@@ -1449,10 +1460,10 @@ Utils::Information(buf);}
 					SetDlgItemText( ID_MEDIUM, _T("Not inserted") );
 				// . attempting to recognize any previous format on the floppy
 				else
-					if (fdd->__setDataTransferSpeed__(TMedium::FLOPPY_DD)==ERROR_SUCCESS){
+					if (fdd->__setAndEvaluateDataTransferSpeed__(TMedium::FLOPPY_DD)==ERROR_SUCCESS){
 						fdd->floppyType=TMedium::FLOPPY_DD;
 						SetDlgItemText( ID_MEDIUM, _T("DD formatted") );
-					}else if (fdd->__setDataTransferSpeed__(TMedium::FLOPPY_HD)==ERROR_SUCCESS){
+					}else if (fdd->__setAndEvaluateDataTransferSpeed__(TMedium::FLOPPY_HD)==ERROR_SUCCESS){
 						fdd->floppyType=TMedium::FLOPPY_HD;
 						SetDlgItemText( ID_MEDIUM, _T("HD formatted") );
 					}else

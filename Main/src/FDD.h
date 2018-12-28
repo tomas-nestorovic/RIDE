@@ -102,6 +102,7 @@
 		TStdWinError __reset__();
 		bool __isFloppyInserted__() const;
 		TStdWinError __setDataTransferSpeed__(TMedium::TType _floppyType);
+		TStdWinError __setAndEvaluateDataTransferSpeed__(TMedium::TType _floppyType);
 		void __setSecondsBeforeTurningMotorOff__(BYTE nSeconds) const;
 		LPCTSTR __getControllerType__() const;
 		bool __showSettingDialog__();
