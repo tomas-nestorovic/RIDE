@@ -168,13 +168,22 @@
 		return cyl<nCylinders ? nHeads : 0;
 	}
 
-	TSector CImageRaw::ScanTrack(TCylinder cyl,THead head,PSectorId bufferId,PWORD bufferLength) const{
+	TSector CImageRaw::ScanTrack(TCylinder cyl,THead head,PSectorId bufferId,PWORD bufferLength,PINT startTimesMicroseconds,PBYTE pAvgGap3) const{
 		// returns the number of Sectors found in given Track, and eventually populates the Buffer with their IDs (if Buffer!=Null); returns 0 if Track not formatted or not found
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (cyl<nCylinders && head<nHeads){
-			if (bufferId)
-				for( TSector n=0; n<nSectors; bufferId++,*bufferLength++=sectorLength )
-					bufferId->cylinder=cyl, bufferId->side=sideMap[head], bufferId->sector=firstSectorNumber+n++, bufferId->lengthCode=sectorLengthCode;
+			for( TSector n=0; n<nSectors; n++ ){
+				if (bufferId){
+					bufferId->cylinder=cyl, bufferId->side=sideMap[head], bufferId->sector=firstSectorNumber+n, bufferId->lengthCode=sectorLengthCode;
+					bufferId++;
+				}
+				if (bufferLength)
+					*bufferLength++=sectorLength;
+				//if (startTimesMicroseconds)
+					//TODO
+			}
+			if (pAvgGap3)
+				*pAvgGap3=FDD_SECTOR_GAP3_STD;
 			return nSectors;
 		}else
 			return 0;

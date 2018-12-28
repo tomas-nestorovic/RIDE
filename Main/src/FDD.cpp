@@ -221,7 +221,7 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 											+
 											(BYTE)sectorStartsMicroseconds * fdd->params.oneByteLatency;	// default inter-sector Gap3 length in microseconds
 				else
-					psi->startMicroseconds=0; // the first Sector starts immediatelly after the index pulse
+					psi->startMicroseconds=0; // the first Sector starts immediately after the index pulse
 			psi->endMicroseconds=	psi->startMicroseconds // inferring end of Sector from its lengths and general IBM track layout specification
 									+
 									(	12	// N Bytes 0x00 (see IBM's track layout specification)
@@ -811,21 +811,37 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		return NULL;
 	}
 
-	TSector CFDD::ScanTrack(TCylinder cyl,THead head,PSectorId bufferId,PWORD bufferLength) const{
+	TSector CFDD::ScanTrack(TCylinder cyl,THead head,PSectorId bufferId,PWORD bufferLength,PINT startTimesMicroseconds,PBYTE pAvgGap3) const{
 		// returns the number of Sectors found in given Track, and eventually populates the Buffer with their IDs (if Buffer!=Null); returns 0 if Track not formatted or not found
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (const PInternalTrack pit=((CFDD *)this)->__scanTrack__(cyl,head)){
 			// Track managed to be scanned
-			const bool rawDumpExists= params.readWholeTrackAsFirstSector && pit->__canRawDumpBeCreated__();
-			const TSector n=rawDumpExists+pit->nSectors;
-			if (bufferId){
-				if (rawDumpExists)
-					*bufferLength++=__getUsableSectorLength__(( *bufferId++=pit->rawContent.id ).lengthCode);
-				const TInternalTrack::TSectorInfo *psi=pit->sectors;
-				for( TSector s=n; s--; psi++ )
-					*bufferId++=psi->id, *bufferLength++=psi->length;
+			if (const bool rawDumpExists= params.readWholeTrackAsFirstSector && pit->__canRawDumpBeCreated__()){
+				if (bufferId)
+					*bufferId++=pit->rawContent.id;
+				if (bufferLength)
+					*bufferLength++=__getUsableSectorLength__(pit->rawContent.id.lengthCode);
+				if (startTimesMicroseconds)
+					*startTimesMicroseconds++=0; // not applicable, so "some" sensible value
 			}
-			return n;
+			const TInternalTrack::TSectorInfo *psi=pit->sectors;
+			for( TSector s=0; s<pit->nSectors; s++,psi++ ){
+				if (bufferId)
+					*bufferId++=psi->id;
+				if (bufferLength)
+					*bufferLength++=psi->length;
+				if (startTimesMicroseconds)
+					*startTimesMicroseconds++=psi->startMicroseconds;
+			}
+			if (pAvgGap3)
+				if (pit->nSectors>1){
+					int usSum=0; // sum of Gap3 Microseconds
+					const TInternalTrack::TSectorInfo *psi=pit->sectors;
+					for( TSector s=0; s<pit->nSectors-1; usSum-=psi->endMicroseconds,s++,psi++,usSum+=psi->startMicroseconds );
+					*pAvgGap3=usSum/((pit->nSectors-1)*params.oneByteLatency);
+				}else
+					*pAvgGap3=FDD_SECTOR_GAP3_STD;
+			return pit->nSectors;
 		}else
 			// Track failed to be scanned
 			return 0;

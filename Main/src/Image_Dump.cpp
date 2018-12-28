@@ -16,7 +16,11 @@
 		bool formatJustBadTracks;
 		TCylinder cylinderA,cylinderZ;
 		THead nHeads;
-		BYTE gap3,fillerByte;
+		struct{
+			BYTE value;
+			bool valueValid;
+		} gap3;
+		BYTE fillerByte;
 		#pragma pack(1)
 		const struct TSourceTrackErrors sealed{
 			TCylinder cyl;
@@ -31,11 +35,12 @@
 			: dos(_dos)
 			, source(dos->image) , target(NULL)
 			, formatJustBadTracks(false)
-			, gap3( dos->properties->GetValidGap3ForMedium(dos->formatBoot.mediumType) )
 			, fillerByte(dos->properties->sectorFillerByte)
 			, cylinderA(0) , cylinderZ(source->GetCylinderCount()-1)
 			, nHeads(source->GetNumberOfFormattedSides(0))
 			, pOutErroneousTracks(NULL) {
+			gap3.value=dos->properties->GetValidGap3ForMedium(dos->formatBoot.mediumType);
+			gap3.valueValid=true;
 		}
 
 		~TDumpParams(){
@@ -384,10 +389,22 @@ terminateWithError:
 				// . formatting Target Track
 {LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("formatting target"));
 				if (dp.formatJustBadTracks && dp.source->IsTrackHealthy(p.chs.cylinder,p.chs.head)){
-					if (dp.target->PresumeHealthyTrackStructure(p.chs.cylinder,p.chs.head,nSectors,bufferId,dp.gap3)!=ERROR_SUCCESS)
+					if (!dp.gap3.valueValid){ // "real" Gap3 Value (i.e. the one that was used when previously formatting the disk) not yet determined
+						if (dp.target->ScanTrack( p.chs.cylinder, p.chs.head, NULL, NULL, NULL, &dp.gap3.value )) // if there are some Sectors on the Target Track ...
+							if (dp.target->IsTrackHealthy(p.chs.cylinder,p.chs.head)){ // ... and all of them are well readable ...
+								#ifdef LOGGING_ENABLED
+									LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("Avg target image Gap3"));
+									TCHAR buf[80];
+									::wsprintf(buf,_T("dp.gap3.value=%d"),dp.gap3.value);
+									LOG_MESSAGE(buf);
+								#endif
+								dp.gap3.valueValid=true; // ... then the Gap3 Value found valid and can be used as a reference value for working with the Target Image
+							}
+					}
+					if (dp.target->PresumeHealthyTrackStructure(p.chs.cylinder,p.chs.head,nSectors,bufferId,dp.gap3.value)!=ERROR_SUCCESS)
 						goto reformatTrack;
 				}else
-reformatTrack:		if ( err=dp.target->FormatTrack(p.chs.cylinder,p.chs.head,nSectors,bufferId,bufferLength,bufferFdcStatus,dp.gap3,dp.fillerByte) )
+reformatTrack:		if ( err=dp.target->FormatTrack(p.chs.cylinder,p.chs.head,nSectors,bufferId,bufferLength,bufferFdcStatus,dp.gap3.value,dp.fillerByte) )
 						goto terminateWithError;
 }
 				// . writing to Target Track
@@ -491,7 +508,7 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 				DDX_Text( pDX,	ID_HEAD,		dumpParams.nHeads );
 					if (mp)
 						DDV_MinMaxUInt( pDX,dumpParams.nHeads, 1, mp->headRange.iMax );
-				DDX_Text( pDX,	ID_GAP,			dumpParams.gap3 );
+				DDX_Text( pDX,	ID_GAP,			dumpParams.gap3.value );
 				DDX_Text( pDX,	ID_NUMBER,		dumpParams.fillerByte );
 				DDX_Check(pDX,	ID_PRIORITY,	realtimeThreadPriority );
 				DDX_Check(pDX,	ID_REPORT,		showReport );
@@ -547,6 +564,8 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 										break;
 								}
 							}
+					// : Gap3 Value is Valid only if requesting to format each Track (that is, not just the bad ones)
+					dumpParams.gap3.valueValid=!dumpParams.formatJustBadTracks;
 				}
 			}
 			afx_msg void OnPaint(){
