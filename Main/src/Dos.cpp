@@ -24,7 +24,7 @@
 
 	#define INI_SHELL_COMPLIANT_EXPORT_NAMES	_T("shcomp")
 
-	CDos::CDos(PImage _image,PCFormat _pFormatBoot,TTrackScheme trackAccessScheme,PCProperties _properties,TFnCompareNames _fnCompareNames,PCSide _sideMap,UINT nResId,const CFileManagerView *_pFileManager)
+	CDos::CDos(PImage _image,PCFormat _pFormatBoot,TTrackScheme trackAccessScheme,PCProperties _properties,TFnCompareNames _fnCompareNames,PCSide _sideMap,UINT nResId,CFileManagerView *_pFileManager)
 		// ctor
 		: image(_image) , properties(_properties) , fnCompareNames(_fnCompareNames)
 		, sideMap(_sideMap) , menu(nResId) , pFileManager(_pFileManager)

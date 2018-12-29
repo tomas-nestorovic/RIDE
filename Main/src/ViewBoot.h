@@ -3,6 +3,8 @@
 
 	#define BOOT_SECTOR_TAB_LABEL	_T("Boot sector")
 	#define BOOT_SECTOR_ADVANCED	_T("Advanced")
+	#define BOOT_SECTOR_UPDATE_ONLINE	_T("Update on-line")
+	#define BOOT_SECTOR_UPDATE_ONLINE_HYPERLINK	_T("<a>Update on-line</a>")
 
 	class CBootView:public CView{
 		DECLARE_MESSAGE_MAP()

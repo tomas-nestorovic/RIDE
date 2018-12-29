@@ -195,7 +195,7 @@
 		const TTrackScheme trackAccessScheme; // single Scheme to access Tracks in Image
 		bool generateShellCompliantExportNames;
 		
-		CDos(PImage _image,PCFormat _pFormatBoot,TTrackScheme trackAccessScheme,PCProperties _properties,TFnCompareNames _fnCompareNames,PCSide _sideMap,UINT nResId,const CFileManagerView * _pFileManager);
+		CDos(PImage _image,PCFormat _pFormatBoot,TTrackScheme trackAccessScheme,PCProperties _properties,TFnCompareNames _fnCompareNames,PCSide _sideMap,UINT nResId,CFileManagerView * _pFileManager);
 
 		int __getProfileInt__(LPCTSTR entryName,int defaultValue) const;
 		void __writeProfileInt__(LPCTSTR entryName,int value) const;
@@ -269,7 +269,7 @@
 		static PDos __getFocused__();
 		static void __errorCannotDoCommand__(TStdWinError cause);
 
-		const CFileManagerView *const pFileManager;
+		CFileManagerView *const pFileManager;
 		const PCSide sideMap; // how Heads map to Side numbers (Head->Side)
 		const CMainWindow::TDynMenu menu;
 		TFormat formatBoot; // information on Medium Format retrieved from Boot; this information has ALWAYS priority if handling the disk; changes in this structure must be projected back to Boot Sector using FlushToBootSector (e.g. called automatically by BootView)

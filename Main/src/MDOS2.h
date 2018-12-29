@@ -25,6 +25,8 @@
 
 	#define MDOS2_DATA_LOGSECTOR_FIRST	14 /* first logical Sector dedicated for data */
 
+	#define MDOS2_RUNP_NOT_MODIFIED	_T("No changes to the \"run.P\" file made (if previously any).")
+
 	class CMDOS2 sealed:public CSpectrumDos{
 		#pragma pack(1)
 		typedef struct TBootSector sealed{
@@ -47,7 +49,6 @@
 					static void WINAPI __pg_drawProperty__(CPropGridCtrl::PCustomParam,LPCVOID bootSector,short,PDRAWITEMSTRUCT pdis);
 					static bool WINAPI __pg_editProperty__(CPropGridCtrl::PCustomParam,PVOID bootSector,short);
 					static bool WINAPI __pg_createNew__(CPropGridCtrl::PCustomParam param,int hyperlinkId,LPCTSTR hyperlinkName);
-					static bool WINAPI __pg_updateOnline__(CPropGridCtrl::PCustomParam,int hyperlinkId,LPCTSTR hyperlinkName);
 					
 					WORD id;	// "FM" identification text
 					BYTE y,x;	// [Y,X] = [row,column] = upper left corner (in Pixels)

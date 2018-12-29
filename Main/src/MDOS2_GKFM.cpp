@@ -130,7 +130,28 @@
 			return false;
 	}
 
-	#define GKFM_UPDATE_ONLINE	_T("Update on-line")
+	#define GKFM_IMPORT_NAME	_T("run.P ZXP500001L2200T8")
+	#define GKFM_ONLINE_NAME	_T("MDOS2/GKFM/") GKFM_IMPORT_NAME
+
+	static bool WINAPI __pg_updateOnline__(CPropGridCtrl::PCustomParam,int hyperlinkId,LPCTSTR hyperlinkName){
+		// True <=> PropertyGrid's Editor can be destroyed after this function has terminated, otherwise False
+		BYTE gkfmDataBuffer[16384]; // sufficiently big buffer
+		DWORD gkfmDataLength;
+		TCHAR gkfmUrl[200];
+		TStdWinError err =	Utils::DownloadSingleFile( // also displays the error message in case of problems
+								Utils::GetApplicationOnlineFileUrl( GKFM_ONLINE_NAME, gkfmUrl ),
+								gkfmDataBuffer, sizeof(gkfmDataBuffer), &gkfmDataLength,
+								MDOS2_RUNP_NOT_MODIFIED
+							);
+		if (err==ERROR_SUCCESS){
+			CDos::PFile tmp;
+			CFileManagerView::TConflictResolution conflictResolution=CFileManagerView::TConflictResolution::UNDETERMINED;
+			err=CDos::__getFocused__()->pFileManager->ImportFileAndResolveConflicts( &CMemFile(gkfmDataBuffer,sizeof(gkfmDataBuffer)), gkfmDataLength, GKFM_IMPORT_NAME, 0, tmp, conflictResolution );
+			if (err!=ERROR_SUCCESS)
+				Utils::FatalError( _T("Cannot import GKFM"), err, MDOS2_RUNP_NOT_MODIFIED );
+		}
+		return true; // True = destroy PropertyGrid's Editor
+	}
 
 	void CMDOS2::TBootSector::UReserved1::TGKFileManager::__addToPropertyGrid__(HWND hPropGrid,PBootSector boot){
 		// adds a property showing the presence of GK's File Manager on the disk into PropertyGrid
@@ -167,7 +188,7 @@
 										);
 			// . offering to update the GKFM on the disk from an on-line resource
 			CPropGridCtrl::AddProperty(	hPropGrid, hGkfm, _T(""),
-										"<a>" GKFM_UPDATE_ONLINE "</a>", -1,
+										BOOT_SECTOR_UPDATE_ONLINE_HYPERLINK, -1,
 										CPropGridCtrl::THyperlink::DefineEditorA(__pg_updateOnline__)
 									);
 		}else
@@ -370,10 +391,6 @@ errorText:				TCHAR buf[400];
 			return false;
 	}
 
-	#define GKFM_IMPORT_NAME	_T("run.P ZXP500001L2200T8")
-	#define GKFM_ONLINE_NAME	_T("MDOS2/") GKFM_IMPORT_NAME
-	#define GKFM_NOT_MODIFIED	_T("No changes to the \"run.B\" file made (if any).")
-
 	bool WINAPI CMDOS2::TBootSector::UReserved1::TGKFileManager::__pg_createNew__(CPropGridCtrl::PCustomParam param,int hyperlinkId,LPCTSTR hyperlinkName){
 		// True <=> PropertyGrid's Editor can be destroyed after this function has terminated, otherwise False
 		const PMDOS2 mdos=(PMDOS2)CDos::__getFocused__();
@@ -406,28 +423,7 @@ errorText:				TCHAR buf[400];
 			if (Utils::QuestionYesNo(_T("Import latest version of GKFM from on-line resource to the disk?"),MB_DEFBUTTON1))
 				__pg_updateOnline__(param,0,NULL);
 			else
-				__informationWithCheckableShowNoMore__( _T("Okay! You can update it later by clicking \"") GKFM_UPDATE_ONLINE _T("\" in the PropertyGrid."), INI_GKFM_IMPORT_LATER );
-		}
-		return true; // True = destroy PropertyGrid's Editor
-	}
-
-	bool WINAPI CMDOS2::TBootSector::UReserved1::TGKFileManager::__pg_updateOnline__(CPropGridCtrl::PCustomParam,int hyperlinkId,LPCTSTR hyperlinkName){
-		// True <=> PropertyGrid's Editor can be destroyed after this function has terminated, otherwise False
-		BYTE gkfmDataBuffer[16384]; // sufficiently big buffer
-		DWORD gkfmDataLength;
-		TCHAR gkfmUrl[200];
-		TStdWinError err =	Utils::DownloadSingleFile( // also displays the error message in case of problems
-								Utils::GetApplicationOnlineFileUrl( GKFM_ONLINE_NAME, gkfmUrl ),
-								gkfmDataBuffer, sizeof(gkfmDataBuffer), &gkfmDataLength,
-								GKFM_NOT_MODIFIED
-							);
-		if (err==ERROR_SUCCESS){
-			PFile tmp;
-			CFileManagerView::TConflictResolution conflictResolution=CFileManagerView::TConflictResolution::UNDETERMINED;
-			const PMDOS2 mdos=(PMDOS2)CDos::__getFocused__();
-			err=mdos->fileManager.ImportFileAndResolveConflicts( &CMemFile(gkfmDataBuffer,sizeof(gkfmDataBuffer)), gkfmDataLength, GKFM_IMPORT_NAME, 0, tmp, conflictResolution );
-			if (err!=ERROR_SUCCESS)
-				Utils::FatalError( _T("Cannot import GKFM"), err, GKFM_NOT_MODIFIED );
+				__informationWithCheckableShowNoMore__( _T("Okay! You can update it later by clicking \"") BOOT_SECTOR_UPDATE_ONLINE _T("\" in the PropertyGrid."), INI_GKFM_IMPORT_LATER );
 		}
 		return true; // True = destroy PropertyGrid's Editor
 	}
