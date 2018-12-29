@@ -20,6 +20,8 @@
 
 	#define TRDOS503_FILE_COUNT_MAX			((TRDOS503_BOOT_SECTOR_NUMBER-TRDOS503_SECTOR_FIRST_NUMBER)*TRDOS503_DIR_SECTOR_ENTRIES_COUNT)
 
+	#define TRDOS503_BOOTB_NOT_MODIFIED		_T("No changes to the \"boot.B\" file made (if previously any).")
+
 	class CTRDOS503:public CSpectrumDos{
 		friend class CSCL;
 	public:

@@ -197,6 +197,28 @@
 		return __bootSectorModified__(NULL,0);
 	}
 
+	#define CYGNUSBOOT_IMPORT_NAME	_T("boot.B ZXP35000aL10e2S11")
+	#define CYGNUSBOOT_ONLINE_NAME	_T("TRDOS/CygnusBoot/") CYGNUSBOOT_IMPORT_NAME
+
+	static bool WINAPI __cygnusBoot_updateOnline__(CPropGridCtrl::PCustomParam,int hyperlinkId,LPCTSTR hyperlinkName){
+		// True <=> PropertyGrid's Editor can be destroyed after this function has terminated, otherwise False
+		BYTE cygnusBootDataBuffer[8192]; // sufficiently big buffer
+		DWORD cygnusBootDataLength;
+		TCHAR cygnusBootUrl[200];
+		TStdWinError err =	Utils::DownloadSingleFile( // also displays the error message in case of problems
+								Utils::GetApplicationOnlineFileUrl( CYGNUSBOOT_ONLINE_NAME, cygnusBootUrl ),
+								cygnusBootDataBuffer, sizeof(cygnusBootDataBuffer), &cygnusBootDataLength,
+								TRDOS503_BOOTB_NOT_MODIFIED
+							);
+		if (err==ERROR_SUCCESS){
+			CDos::PFile tmp;
+			CFileManagerView::TConflictResolution conflictResolution=CFileManagerView::TConflictResolution::UNDETERMINED;
+			if ( err=CDos::__getFocused__()->pFileManager->ImportFileAndResolveConflicts( &CMemFile(cygnusBootDataBuffer,sizeof(cygnusBootDataBuffer)), cygnusBootDataLength, CYGNUSBOOT_IMPORT_NAME, 0, tmp, conflictResolution ) )
+				Utils::FatalError( _T("Cannot import CygnusBoot"), err, TRDOS503_BOOTB_NOT_MODIFIED );
+		}
+		return true; // True = destroy PropertyGrid's Editor
+	}
+
 	void CTRDOS503::CTrdosBootView::AddCustomBootParameters(HWND hPropGrid,HANDLE hGeometry,HANDLE hVolume,const TCommonBootParameters &rParam,PSectorData _boot){
 		// gets DOS-specific parameters from the Boot
 		const PBootSector boot=(PBootSector)_boot;
@@ -229,6 +251,12 @@
 			CPropGridCtrl::AddProperty( hPropGrid, hAdvanced, _T("Free sectors"),
 										&boot->nFreeSectors, sizeof(WORD),
 										CPropGridCtrl::TInteger::DefineWordEditor(__bootSectorModified__)
+									);
+		// - CygnusBoot category
+		const HANDLE hCygnusBoot=CPropGridCtrl::AddCategory(hPropGrid,NULL,_T("CygnusBoot 2.2.3"));
+			CPropGridCtrl::AddProperty(	hPropGrid, hCygnusBoot, _T("boot.B"),
+										BOOT_SECTOR_UPDATE_ONLINE_HYPERLINK, -1,
+										CPropGridCtrl::THyperlink::DefineEditorA(__cygnusBoot_updateOnline__)
 									);
 	}
 
