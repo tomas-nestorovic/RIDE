@@ -530,6 +530,10 @@
 		chs.sectorId.side=_trdos->sideMap[ chs.head=0 ],
 		chs.sectorId.sector=TRDOS503_SECTOR_FIRST_NUMBER-1;
 		chs.sectorId.lengthCode=TRDOS503_SECTOR_LENGTH_STD_CODE;
+		// - buffering the whole Directory
+		TSectorId buffer[TRDOS503_TRACK_SECTORS_COUNT];
+		trdos->__getListOfStdSectors__(0,0,buffer);
+		trdos->image->BufferTrackData( 0, 0, buffer, Utils::CByteIdentity(), TRDOS503_BOOT_SECTOR_NUMBER, true ); // including the Boot Sector (to not have to include another named constant)		
 	}
 	bool CTRDOS503::TTrdosDirectoryTraversal::__existsNextEntry__(){
 		// True <=> another Entry in current Directory exists (Empty or not), otherwise False
