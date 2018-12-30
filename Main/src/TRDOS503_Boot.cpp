@@ -197,6 +197,7 @@
 		return __bootSectorModified__(NULL,0);
 	}
 
+	#define CYGNUSBOOT_NAME			_T("CygnusBoot 2.2.3")
 	#define CYGNUSBOOT_IMPORT_NAME	_T("boot.B ZXP35000aL10e2S11")
 	#define CYGNUSBOOT_ONLINE_NAME	_T("TRDOS/CygnusBoot/") CYGNUSBOOT_IMPORT_NAME
 
@@ -214,7 +215,7 @@
 			CDos::PFile tmp;
 			CFileManagerView::TConflictResolution conflictResolution=CFileManagerView::TConflictResolution::UNDETERMINED;
 			if ( err=CDos::__getFocused__()->pFileManager->ImportFileAndResolveConflicts( &CMemFile(cygnusBootDataBuffer,sizeof(cygnusBootDataBuffer)), cygnusBootDataLength, CYGNUSBOOT_IMPORT_NAME, 0, tmp, conflictResolution ) )
-				Utils::FatalError( _T("Cannot import CygnusBoot"), err, TRDOS503_BOOTB_NOT_MODIFIED );
+				Utils::FatalError( _T("Cannot import ") CYGNUSBOOT_NAME, err, TRDOS503_BOOTB_NOT_MODIFIED );
 		}
 		return true; // True = destroy PropertyGrid's Editor
 	}
@@ -253,7 +254,7 @@
 										CPropGridCtrl::TInteger::DefineWordEditor(__bootSectorModified__)
 									);
 		// - CygnusBoot category
-		const HANDLE hCygnusBoot=CPropGridCtrl::AddCategory(hPropGrid,NULL,_T("CygnusBoot 2.2.3"));
+		const HANDLE hCygnusBoot=CPropGridCtrl::AddCategory(hPropGrid,NULL,CYGNUSBOOT_NAME);
 			CPropGridCtrl::AddProperty(	hPropGrid, hCygnusBoot, _T("boot.B"),
 										BOOT_SECTOR_UPDATE_ONLINE_HYPERLINK, -1,
 										CPropGridCtrl::THyperlink::DefineEditorA(__cygnusBoot_updateOnline__)
