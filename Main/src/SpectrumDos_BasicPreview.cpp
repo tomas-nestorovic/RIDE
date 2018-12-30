@@ -97,8 +97,7 @@
 				// . initialization
 				, rBasicPreview(_rBasicPreview)
 				, specialFormattingOpen(TSpecialFormatting::NONE) {
-				::ZeroMemory(&attributes,sizeof(attributes)); // black non-flashing, non-bright text ...
-				attributes.paper=7; // ... at white background
+				__resetColors__();
 				// . writing the opening HTML tags
 				(CFormattedBasicListingFile &)Utils::WriteToFile(
 					*this << _T("<html><body style=\"background-color:#"),
@@ -170,6 +169,12 @@
 					}
 					Utils::WriteToFile(*this,';');
 				}
+			}
+
+			void __resetColors__(){
+				// resets Attributes to their defaults
+				::ZeroMemory(&attributes,sizeof(attributes)); // black non-flashing, non-bright text ...
+				attributes.paper=7; // ... at white background
 			}
 
 			bool __changeInk__(BYTE newInk){
@@ -401,6 +406,7 @@ defaultPrinting:				if (b<' ')
 					listing << _T("</td></tr>");
 				} while (frw.GetPosition()<frw.GetLength());
 		listing << _T("</table>");
+		listing.__resetColors__();
 		// - Error in BASIC Listing
 		if (error){
 errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure!</p>");
