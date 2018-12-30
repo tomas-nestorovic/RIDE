@@ -171,6 +171,28 @@
 				rParam.id.bufferCapacity=sizeof(WORD);
 	}
 
+	#define UNIRUN_IMPORT_NAME	_T("run.P ZXP98000aL1000T8")
+	#define UNIRUN_ONLINE_NAME	_T("MDOS2/UniRUN/") UNIRUN_IMPORT_NAME
+
+	static bool WINAPI __unirun_updateOnline__(CPropGridCtrl::PCustomParam,int hyperlinkId,LPCTSTR hyperlinkName){
+		// True <=> PropertyGrid's Editor can be destroyed after this function has terminated, otherwise False
+		BYTE unirunDataBuffer[8192]; // sufficiently big buffer
+		DWORD unirunDataLength;
+		TCHAR unirunUrl[200];
+		TStdWinError err =	Utils::DownloadSingleFile( // also displays the error message in case of problems
+								Utils::GetApplicationOnlineFileUrl( UNIRUN_ONLINE_NAME, unirunUrl ),
+								unirunDataBuffer, sizeof(unirunDataBuffer), &unirunDataLength,
+								MDOS2_RUNP_NOT_MODIFIED
+							);
+		if (err==ERROR_SUCCESS){
+			CDos::PFile tmp;
+			CFileManagerView::TConflictResolution conflictResolution=CFileManagerView::TConflictResolution::UNDETERMINED;
+			if ( err=CDos::__getFocused__()->pFileManager->ImportFileAndResolveConflicts( &CMemFile(unirunDataBuffer,sizeof(unirunDataBuffer)), unirunDataLength, UNIRUN_IMPORT_NAME, 0, tmp, conflictResolution ) )
+				Utils::FatalError( _T("Cannot import UniRUN"), err, MDOS2_RUNP_NOT_MODIFIED );
+		}
+		return true; // True = destroy PropertyGrid's Editor
+	}
+
 	void CMDOS2::CMdos2BootView::AddCustomBootParameters(HWND hPropGrid,HANDLE hGeometry,HANDLE hVolume,const TCommonBootParameters &rParam,PSectorData _boot){
 		// gets DOS-specific parameters from the Boot
 		const PBootSector boot=(PBootSector)_boot;
@@ -189,6 +211,12 @@
 										);
 		// . GK's File Manager
 		TBootSector::UReserved1::TGKFileManager::__addToPropertyGrid__(hPropGrid,boot);
+		// . UniRUN by Proxima
+		const HANDLE hUniRun=CPropGridCtrl::AddCategory(hPropGrid,NULL,_T("UniRUN 2.0"));
+			CPropGridCtrl::AddProperty(	hPropGrid, hUniRun, _T("run.P"),
+										BOOT_SECTOR_UPDATE_ONLINE_HYPERLINK, -1,
+										CPropGridCtrl::THyperlink::DefineEditorA(__unirun_updateOnline__)
+									);
 	}
 
 
