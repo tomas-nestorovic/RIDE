@@ -69,17 +69,18 @@
 
 	HANDLE WINAPI CPropGridCtrl::EnableProperty(HWND hPropGrid,HANDLE propOrCat,bool enabled){
 		// enables/disables specified PropertyOrCategory (for Category recurrently all its Subitems), and returns the PropertyOrCategory; an Item must be enabled the same amout of times as it was disabled
+		// - cancelling any editing
+		TEditor::__cancelEditing__();
+		// - enabling/disabling specified PropertyOrCategory
 		const PPropGridInfo pPropGridInfo=GET_PROPGRID_INFO(hPropGrid);
 		TPropGridInfo::TItem *const pItem=	propOrCat
 											? (TPropGridInfo::TItem *)propOrCat // enabling/disabling particular Item
 											: &pPropGridInfo->root; // enabling/disabling the whole content of specified PropertyGrid
-		if (!IsValueBeingEdited()){ // can change content only if a Value is NOT being edited
-			if (enabled)
-				pItem->__enable__();
-			else
-				pItem->__disable__();
-			::InvalidateRect( pPropGridInfo->listBox.handle, NULL, TRUE );
-		}
+		if (enabled)
+			pItem->__enable__();
+		else
+			pItem->__disable__();
+		::InvalidateRect( pPropGridInfo->listBox.handle, NULL, TRUE );
 		return pItem;
 	}
 
