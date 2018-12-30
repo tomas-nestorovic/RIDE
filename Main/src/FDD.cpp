@@ -1614,7 +1614,9 @@ latencyAutodeterminationError:			Utils::FatalError(_T("Couldn't autodetermine"),
 											msg=WM_PAINT; // changing the Message to one that won't close the Dialog
 											goto autodetermineLatencies;
 										case IDCANCEL:
-											return 0;
+											Utils::Information(_T("Okay, won't bother you again. Please click on the \"Autodetermine\" button later - it really pays off!"));
+											app.WriteProfileInt( INI_FDD, INI_LATENCY_DETERMINED, TRUE ); // pretend that latencies hereby determined
+											break;
 									}
 								break;
 						}
