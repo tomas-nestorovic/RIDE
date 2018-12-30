@@ -130,6 +130,7 @@
 			return false;
 	}
 
+	#define GKFM_NAME			_T("GK's File Manager")
 	#define GKFM_IMPORT_NAME	_T("run.P ZXP500001L2200T8")
 	#define GKFM_ONLINE_NAME	_T("MDOS2/GKFM/") GKFM_IMPORT_NAME
 
@@ -148,14 +149,14 @@
 			CFileManagerView::TConflictResolution conflictResolution=CFileManagerView::TConflictResolution::UNDETERMINED;
 			err=CDos::__getFocused__()->pFileManager->ImportFileAndResolveConflicts( &CMemFile(gkfmDataBuffer,sizeof(gkfmDataBuffer)), gkfmDataLength, GKFM_IMPORT_NAME, 0, tmp, conflictResolution );
 			if (err!=ERROR_SUCCESS)
-				Utils::FatalError( _T("Cannot import GKFM"), err, MDOS2_RUNP_NOT_MODIFIED );
+				Utils::FatalError( _T("Cannot import ") GKFM_NAME, err, MDOS2_RUNP_NOT_MODIFIED );
 		}
 		return true; // True = destroy PropertyGrid's Editor
 	}
 
 	void CMDOS2::TBootSector::UReserved1::TGKFileManager::__addToPropertyGrid__(HWND hPropGrid,PBootSector boot){
 		// adds a property showing the presence of GK's File Manager on the disk into PropertyGrid
-		const HANDLE hGkfm=CPropGridCtrl::AddCategory(hPropGrid,NULL,_T("GK's File Manager"));
+		const HANDLE hGkfm=CPropGridCtrl::AddCategory(hPropGrid,NULL,GKFM_NAME);
 		TGKFileManager &rGkfm=boot->reserved1.gkfm;
 		const bool recognized=rGkfm.id==0x4d46; // textual representation of "FM" string
 		CPropGridCtrl::EnableProperty(	hPropGrid,

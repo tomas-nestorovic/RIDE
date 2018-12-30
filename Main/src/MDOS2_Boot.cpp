@@ -171,6 +171,7 @@
 				rParam.id.bufferCapacity=sizeof(WORD);
 	}
 
+	#define UNIRUN_NAME			_T("UniRUN 2.0")
 	#define UNIRUN_IMPORT_NAME	_T("run.P ZXP98000aL1000T8")
 	#define UNIRUN_ONLINE_NAME	_T("MDOS2/UniRUN/") UNIRUN_IMPORT_NAME
 
@@ -188,7 +189,7 @@
 			CDos::PFile tmp;
 			CFileManagerView::TConflictResolution conflictResolution=CFileManagerView::TConflictResolution::UNDETERMINED;
 			if ( err=CDos::__getFocused__()->pFileManager->ImportFileAndResolveConflicts( &CMemFile(unirunDataBuffer,sizeof(unirunDataBuffer)), unirunDataLength, UNIRUN_IMPORT_NAME, 0, tmp, conflictResolution ) )
-				Utils::FatalError( _T("Cannot import UniRUN"), err, MDOS2_RUNP_NOT_MODIFIED );
+				Utils::FatalError( _T("Cannot import ") UNIRUN_NAME, err, MDOS2_RUNP_NOT_MODIFIED );
 		}
 		return true; // True = destroy PropertyGrid's Editor
 	}
@@ -212,7 +213,7 @@
 		// . GK's File Manager
 		TBootSector::UReserved1::TGKFileManager::__addToPropertyGrid__(hPropGrid,boot);
 		// . UniRUN by Proxima
-		const HANDLE hUniRun=CPropGridCtrl::AddCategory(hPropGrid,NULL,_T("UniRUN 2.0"));
+		const HANDLE hUniRun=CPropGridCtrl::AddCategory(hPropGrid,NULL,UNIRUN_NAME);
 			CPropGridCtrl::AddProperty(	hPropGrid, hUniRun, _T("run.P"),
 										BOOT_SECTOR_UPDATE_ONLINE_HYPERLINK, -1,
 										CPropGridCtrl::THyperlink::DefineEditorA(__unirun_updateOnline__)
