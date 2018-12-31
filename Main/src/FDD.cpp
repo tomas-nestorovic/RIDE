@@ -1830,7 +1830,7 @@ formatStandardWay:
 							}
 					}
 				}else
-					PresumeHealthyTrackStructure(cyl,head,nSectors,bufferId,gap3);
+					PresumeHealthyTrackStructure(cyl,head,nSectors,bufferId,gap3,fillerByte);
 				// . Track formatted successfully
 				break;
 			}
@@ -2020,7 +2020,7 @@ formatCustomWay:
 		return params.verifyFormattedTracks;
 	}
 
-	TStdWinError CFDD::PresumeHealthyTrackStructure(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,BYTE gap3){
+	TStdWinError CFDD::PresumeHealthyTrackStructure(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,BYTE gap3,BYTE fillerByte){
 		// without formatting it, presumes that given Track contains specified Sectors that are well readable and writeable; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		LOG_TRACK_ACTION(cyl,head,_T("TStdWinError CFDD::PresumeHealthyTrackStructure"));
@@ -2029,7 +2029,7 @@ formatCustomWay:
 		// - explicitly setting Track structure
 		TInternalTrack::TSectorInfo *psi=( REFER_TO_TRACK(cyl,head) = new TInternalTrack( this, cyl, head, nSectors, bufferId, (PCINT)gap3 ) )->sectors; // Gap3 = calculate Sector start times from information of this Gap3 and individual Sector lengths
 		for( TSector n=nSectors; n--; psi++ )
-			psi->data=ALLOCATE_SECTOR_DATA(psi->length);
+			psi->data=(PSectorData)::memset( ALLOCATE_SECTOR_DATA(psi->length), fillerByte, psi->length );
 		// - presumption done
 		return ERROR_SUCCESS;
 	}

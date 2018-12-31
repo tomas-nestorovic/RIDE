@@ -579,7 +579,7 @@
 		return false; // verification NOT required by default (but Images abstracting physical drives can override this setting)
 	}
 
-	TStdWinError CImage::PresumeHealthyTrackStructure(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,BYTE gap3){
+	TStdWinError CImage::PresumeHealthyTrackStructure(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,BYTE gap3,BYTE fillerByte){
 		// without formatting it, presumes that given Track contains Sectors with specified parameters; returns Windows standard i/o error
 		return ERROR_NOT_SUPPORTED; // each Track by default must be explicitly formatted to be sure about its structure (but Images abstracting physical drives can override this setting)
 	}

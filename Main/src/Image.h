@@ -239,7 +239,7 @@
 		virtual TStdWinError SaveTrack(TCylinder cyl,THead head);
 		virtual TStdWinError FormatTrack(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte)=0;
 		virtual bool RequiresFormattedTracksVerification() const;
-		virtual TStdWinError PresumeHealthyTrackStructure(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,BYTE gap3);
+		virtual TStdWinError PresumeHealthyTrackStructure(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,BYTE gap3,BYTE fillerByte);
 		virtual TStdWinError UnformatTrack(TCylinder cyl,THead head)=0;
 		bool __reportWriteProtection__() const;
 		void __toggleWriteProtection__();
