@@ -214,7 +214,7 @@
 		TBootSector::UReserved1::TGKFileManager::__addToPropertyGrid__(hPropGrid,boot);
 		// . UniRUN by Proxima
 		const HANDLE hUniRun=CPropGridCtrl::AddCategory(hPropGrid,NULL,UNIRUN_NAME);
-			CPropGridCtrl::AddProperty(	hPropGrid, hUniRun, _T("run.P"),
+			CPropGridCtrl::AddProperty(	hPropGrid, hUniRun, MDOS2_RUNP,
 										BOOT_SECTOR_UPDATE_ONLINE_HYPERLINK, -1,
 										CPropGridCtrl::THyperlink::DefineEditorA(__unirun_updateOnline__)
 									);

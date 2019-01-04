@@ -450,7 +450,7 @@
 		if (!rParam.label.length)
 			CPropGridCtrl::AddProperty(	hPropGrid, hVolume, _T("Label not found"),
 										"<a>Create</a>", -1,
-										CPropGridCtrl::THyperlink::DefineEditorA( __pg_createLabel__, __updateView__ )
+										CPropGridCtrl::THyperlink::DefineEditorA( __pg_createLabel__, CBootView::__updateBootView__ )
 									);
 		CPropGridCtrl::AddProperty(	hPropGrid, hVolume, _T("ID valid"),
 									&pvi->infoValid, sizeof(BYTE),

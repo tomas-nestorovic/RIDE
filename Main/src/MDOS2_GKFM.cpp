@@ -188,14 +188,14 @@
 											&rGkfm.aVRam, sizeof(WORD), advEditor
 										);
 			// . offering to update the GKFM on the disk from an on-line resource
-			CPropGridCtrl::AddProperty(	hPropGrid, hGkfm, _T(""),
+			CPropGridCtrl::AddProperty(	hPropGrid, hGkfm, MDOS2_RUNP,
 										BOOT_SECTOR_UPDATE_ONLINE_HYPERLINK, -1,
 										CPropGridCtrl::THyperlink::DefineEditorA(__pg_updateOnline__)
 									);
 		}else
 			CPropGridCtrl::AddProperty(	hPropGrid, hGkfm, _T(""),
 										"<a>Create</a>", -1,
-										CPropGridCtrl::THyperlink::DefineEditorA( __pg_createNew__, __updateView__ )
+										CPropGridCtrl::THyperlink::DefineEditorA( __pg_createNew__, CBootView::__updateBootView__ )
 									);
 	}
 
@@ -421,10 +421,7 @@ errorText:				TCHAR buf[400];
 			*pBootSector=tmpBootSector; // adopting confimed values
 			image->UpdateAllViews(NULL);
 			// . downloading the GKFM binary from the Internet and importing it to the disk
-			if (Utils::QuestionYesNo(_T("Import latest version of GKFM from on-line resource to the disk?"),MB_DEFBUTTON1))
-				__pg_updateOnline__(param,0,NULL);
-			else
-				__informationWithCheckableShowNoMore__( _T("Okay! You can update it later by clicking \"") BOOT_SECTOR_UPDATE_ONLINE _T("\" in the PropertyGrid."), INI_GKFM_IMPORT_LATER );
+			__pg_updateOnline__(param,0,NULL);
 		}
 		return true; // True = destroy PropertyGrid's Editor
 	}

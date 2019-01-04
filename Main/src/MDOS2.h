@@ -25,7 +25,8 @@
 
 	#define MDOS2_DATA_LOGSECTOR_FIRST	14 /* first logical Sector dedicated for data */
 
-	#define MDOS2_RUNP_NOT_MODIFIED	_T("No changes to the \"run.P\" file made (if previously any).")
+	#define MDOS2_RUNP	_T("run.P")
+	#define MDOS2_RUNP_NOT_MODIFIED	_T("No changes to the \"") MDOS2_RUNP _T("\" file made (if previously any).")
 
 	class CMDOS2 sealed:public CSpectrumDos{
 		#pragma pack(1)
