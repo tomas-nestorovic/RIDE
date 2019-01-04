@@ -138,6 +138,8 @@
 		static HANDLE WINAPI EnableProperty(HWND hPropGrid,HANDLE propOrCat,bool enabled);
 		static void WINAPI RemoveProperty(HWND hPropGrid,HANDLE propOrCat);
 		static HWND WINAPI CreateUpDownControl(HWND hEdit,UINT style,bool bHexadecimal,TInteger::RCUpDownLimits rLimits,int iCurrent);
+		static short WINAPI GetCurrentlySelectedProperty(HWND hPropGrid);
+		static short WINAPI SetCurrentlySelectedProperty(HWND hPropGrid,short iSelected);
 		static HWND WINAPI BeginEditValue(PValue value,TValueSize valueBytes,PCustomParam param,PCEditor editor,RECT rcEditorRect,DWORD style,HWND hParent,HWND *pOutEllipsisBtn);
 		static bool WINAPI TryToAcceptCurrentValueAndCloseEditor();
 		static bool WINAPI IsValueBeingEdited();

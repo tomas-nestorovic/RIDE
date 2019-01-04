@@ -41,6 +41,13 @@
 		return __bootSectorModified__(NULL,0);
 	}
 
+	void WINAPI CBootView::__updateBootView__(CPropGridCtrl::PCustomParam){
+		// refreshes any current View
+		const short iCurSel=CPropGridCtrl::GetCurrentlySelectedProperty( pCurrentlyShown->propGrid.m_hWnd );
+			CDos::__getFocused__()->image->UpdateAllViews(NULL);
+		CPropGridCtrl::SetCurrentlySelectedProperty( pCurrentlyShown->propGrid.m_hWnd, iCurSel );
+	}
+
 	bool WINAPI CBootView::__confirmCriticalValueInBoot__(PVOID criticalValueId,int newValue){
 		// informs that a critical value in the Boot is about to be changed, and if confirmed, changes it
 		if (Utils::QuestionYesNo(_T("About to modify a critical value in the boot, data at stake if set incorrectly!\n\nContinue?!"),MB_DEFBUTTON2)){

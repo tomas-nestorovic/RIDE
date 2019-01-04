@@ -57,6 +57,7 @@
 		static bool WINAPI __bootSectorModifiedA__(CPropGridCtrl::PCustomParam,LPCSTR,short);
 		static bool WINAPI __bootSectorModified__(CPropGridCtrl::PCustomParam,bool);
 		static bool WINAPI __bootSectorModified__(CPropGridCtrl::PCustomParam,CPropGridCtrl::TEnum::UValue);
+		static void WINAPI __updateBootView__(CPropGridCtrl::PCustomParam);
 
 		const TPhysicalAddress chsBoot;
 		const CMainWindow::CTdiView::TTab tab;

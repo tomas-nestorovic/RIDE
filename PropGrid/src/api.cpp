@@ -69,18 +69,17 @@
 
 	HANDLE WINAPI CPropGridCtrl::EnableProperty(HWND hPropGrid,HANDLE propOrCat,bool enabled){
 		// enables/disables specified PropertyOrCategory (for Category recurrently all its Subitems), and returns the PropertyOrCategory; an Item must be enabled the same amout of times as it was disabled
-		// - cancelling any editing
-		TEditor::__cancelEditing__();
-		// - enabling/disabling specified PropertyOrCategory
 		const PPropGridInfo pPropGridInfo=GET_PROPGRID_INFO(hPropGrid);
 		TPropGridInfo::TItem *const pItem=	propOrCat
 											? (TPropGridInfo::TItem *)propOrCat // enabling/disabling particular Item
 											: &pPropGridInfo->root; // enabling/disabling the whole content of specified PropertyGrid
-		if (enabled)
-			pItem->__enable__();
-		else
-			pItem->__disable__();
-		::InvalidateRect( pPropGridInfo->listBox.handle, NULL, TRUE );
+		if (!IsValueBeingEdited()){ // can change content only if a Value is NOT being edited
+			if (enabled)
+				pItem->__enable__();
+			else
+				pItem->__disable__();
+			::InvalidateRect( pPropGridInfo->listBox.handle, NULL, TRUE );
+		}
 		return pItem;
 	}
 
@@ -132,6 +131,18 @@
 			return hUpDown;
 		}else
 			return 0;
+	}
+
+	short WINAPI CPropGridCtrl::GetCurrentlySelectedProperty(HWND hPropGrid){
+		// returns the index of the Item currently selected in the ListBox
+		return ListBox_GetCurSel( GET_PROPGRID_INFO(hPropGrid)->listBox.handle );
+	}
+
+	short WINAPI CPropGridCtrl::SetCurrentlySelectedProperty(HWND hPropGrid,short iSelected){
+		// selected the i-th Item in the ListBox; // returns the index of the Item previously selected in the ListBox
+		const short iPrevSel=GetCurrentlySelectedProperty(hPropGrid);
+		ListBox_SetCurSel( GET_PROPGRID_INFO(hPropGrid)->listBox.handle, iSelected );
+		return iPrevSel;
 	}
 
 	#define ELLIPSIS_BUTTON_WIDTH	20

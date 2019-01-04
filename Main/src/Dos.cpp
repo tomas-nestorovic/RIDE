@@ -52,11 +52,6 @@
 
 
 
-	void WINAPI CDos::__updateView__(CPropGridCtrl::PCustomParam){
-		// refreshes any current View
-		__getFocused__()->image->UpdateAllViews(NULL);
-	}
-
 	bool CDos::__isValidCharInFat32LongName__(WCHAR c){
 		// True <=> specified Character is valid for a FAT32 long file name, otherwise False
 		static const WCHAR ForbiddenChars[]=L"%#&<>|/";
