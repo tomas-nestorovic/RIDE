@@ -1,13 +1,11 @@
 #ifndef HEXAEDITOR_H
 #define HEXAEDITOR_H
 
-	#define HEXAEDITOR_BASE_CLASS	WC_EDIT
-
 	#define HEXAEDITOR_RECORD_SIZE_INFINITE	0x7fffff00
 
 	class CRideFont; // forward
 
-	class CHexaEditor:public CEdit{
+	class CHexaEditor:public CEditView{
 	public:
 		typedef LPCTSTR (* TFnQueryRecordLabel)(int recordIndex,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param);
 	private:
@@ -64,6 +62,7 @@
 		void __refreshCursorDisplay__() const;
 		void __showMessage__(LPCTSTR msg) const;
 	protected:
+		void PostNcDestroy() override;
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 	public:
 		CHexaEditor(PVOID param,DWORD recordSize=HEXAEDITOR_RECORD_SIZE_INFINITE,TFnQueryRecordLabel fnQueryRecordLabel=NULL);

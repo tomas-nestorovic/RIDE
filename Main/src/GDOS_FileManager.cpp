@@ -351,7 +351,7 @@ error:			*de=tmp; // recovering the original DirectoryEntry
 				const CWnd *const pPlaceholder=GetDlgItem(ID_FILE);
 				pPlaceholder->GetClientRect(&r);
 				pPlaceholder->MapWindowPoints(this,&r);
-				hexaEditor.Create( WS_CHILD|WS_VISIBLE, r, this, 0 );
+				hexaEditor.Create( NULL, NULL, WS_CHILD|WS_VISIBLE, r, this, 0 );
 			}
 		public:
 			TDirectoryEntry::UEtc etc;

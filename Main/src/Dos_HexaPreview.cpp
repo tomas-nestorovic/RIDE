@@ -21,7 +21,7 @@
 		pSingleInstance=this;
 		// - creating the HexaEditor view
 		hexaEditor.Reset(&fEmpty,0,0);
-		hexaEditor.CreateEx( 0, HEXAEDITOR_BASE_CLASS, LABEL, WS_CHILD|WS_VISIBLE|WS_CLIPSIBLINGS, rectDefault, this, AFX_IDW_PANE_FIRST );
+		hexaEditor.Create( NULL, NULL, AFX_WS_DEFAULT_VIEW&~WS_BORDER|WS_CLIPSIBLINGS, rectDefault, this, AFX_IDW_PANE_FIRST );
 		hexaEditor.SetEditable(!IMAGE->IsWriteProtected());
 		// - showing the first File
 		__showNextFile__();

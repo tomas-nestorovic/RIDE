@@ -146,7 +146,7 @@ different:	Utils::Information(_T("No, the files differ in content! (File names a
 	void CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::__init__(CWnd *pLabel,CWnd *pButton){
 		// initialization
 		hLabel=pLabel->m_hWnd, hEllipsisButton=pButton->m_hWnd;
-		hexaComparison.Create( WS_CHILD /*|WS_VISIBLE*/, RECT(), pLabel->GetParent(), 0 ); // commented out because see WM_SIZE
+		hexaComparison.Create( NULL, NULL, WS_CHILD /*|WS_VISIBLE*/, CFrameWnd::rectDefault, pLabel->GetParent(), 0 ); // commented out because see WM_SIZE
 		Register(&hexaComparison); // making HexaEditor a target of drag&drop
 		hexaComparison.DragAcceptFiles(); // to not pass the WM_DROPFILES message to the MainWindow (which would attempt to open the dropped File as an Image)
 	}

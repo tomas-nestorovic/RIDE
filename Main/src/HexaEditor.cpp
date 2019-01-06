@@ -235,7 +235,7 @@
 			case WM_CREATE:
 				// window created
 				// . base
-				if (CEdit::WindowProc(msg,wParam,lParam)<0) return -1;
+				if (__super::WindowProc(msg,wParam,lParam)<0) return -1;
 				// . creating the ClipFormat
 				cfBinary=::RegisterClipboardFormat(CLIPFORMAT_BINARY);
 				// . recovering the scroll position
@@ -485,7 +485,7 @@ leftMouseDragged:
 					}
 					break;
 				}
-				CEdit::WindowProc(msg,wParam,lParam); // to set focus and accept WM_KEY* messages
+				__super::WindowProc(msg,wParam,lParam); // to set focus and accept WM_KEY* messages
 				wParam=(WPARAM)hPreviouslyFocusedWnd; // due to the fallthrough
 				//fallthrough
 			}
@@ -642,9 +642,13 @@ leftMouseDragged:
 				return 0;
 			}
 		}
-		return CEdit::WindowProc(msg,wParam,lParam);
+		return __super::WindowProc(msg,wParam,lParam);
 	}
 
+	void CHexaEditor::PostNcDestroy(){
+		// self-destruction
+		//nop (View destroyed by its owner)
+	}
 
 
 

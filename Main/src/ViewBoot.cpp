@@ -202,8 +202,7 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 				content->SetColumnInfo(0,PROPGRID_WIDTH_DEFAULT*Utils::LogicalUnitScaleFactor,0);
 			//content->CreateView(0,1,RUNTIME_CLASS(CHexaEditor),CSize(),&cc); // commented out as created manually below
 				hexaEditor.Reset( &fBoot, bootSectorDataRealLength, bootSectorDataRealLength );
-				static const RECT rc={0,0,100,100};
-				hexaEditor.Create( AFX_WS_DEFAULT_VIEW&~WS_BORDER, rc, content, content->IdFromRowCol(0,1) );
+				hexaEditor.Create( NULL, NULL, AFX_WS_DEFAULT_VIEW&~WS_BORDER|WS_CLIPSIBLINGS, CFrameWnd::rectDefault, content, content->IdFromRowCol(0,1) );
 				//hexaEditor.CreateEx( 0, HEXAEDITOR_BASE_CLASS, NULL, AFX_WS_DEFAULT_VIEW&~WS_BORDER, RECT(), NULL, content->IdFromRowCol(0,1), NULL );
 		OnSize( SIZE_RESTORED, lpcs->cx, lpcs->cy );
 		// - populating the PropertyGrid with values from Boot Sector
