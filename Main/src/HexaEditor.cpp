@@ -75,6 +75,7 @@
 		// resets the HexaEditor and supplies it new File content
 		f=_f, minFileSize=_minFileSize, maxFileSize=_maxFileSize, logicalSize=0;
 		cursor=TCursor(0); // resetting the Cursor and Selection
+		SetLogicalSize(f->GetLength());
 		if (::IsWindow(m_hWnd)){ // may be window-less if the owner is window-less
 			__refreshVertically__();
 			Invalidate(FALSE);
@@ -86,7 +87,7 @@
 		logicalSize=_logicalSize;
 		if (::IsWindow(m_hWnd)){ // may be window-less if the owner is window-less
 			__refreshVertically__();
-			Invalidate(FALSE);
+			Invalidate(TRUE);
 		}
 	}
 
@@ -551,11 +552,8 @@ leftMouseDragged:
 						::DrawText( (HDC)wParam, buf, ::wsprintf(buf,HEXA_FORMAT,n++), &rcHeader, DT_LEFT|DT_TOP );
 				::SelectObject((HDC)wParam,hFont0);
 				// . data
-				RECT r;
-				GetClientRect(&r);
-				r.top=font.charHeight;
-				::FillRect((HDC)wParam,&r,CRideBrush::White);
-				return r.bottom; // = window height
+				//nop (erased in WM_PAINT)
+				return TRUE;
 			}
 			case WM_PAINT:{
 				// drawing
@@ -569,11 +567,19 @@ leftMouseDragged:
 					// . determining the visible part of the File content
 					const int iRowFirstToPaint=max( (dc.m_ps.rcPaint.top-HEADER_HEIGHT)/font.charHeight, 0 );
 					int iRowA= GetScrollPos(SB_VERT) + iRowFirstToPaint;
+					const int nPhysicalRows=__logicalPositionToRow__( min(f->GetLength(),logicalSize) );
 					const int iRowLastToPaint= GetScrollPos(SB_VERT) + (dc.m_ps.rcPaint.bottom-HEADER_HEIGHT)/font.charHeight + 1;
-					const int iRowZ=min( min(nLogicalRows,iRowLastToPaint), iRowA+nRowsOnPage );
-					// . drawing Addresses and data (both Ascii and Hexa parts)
+					const int iRowZ=min( min(nPhysicalRows,iRowLastToPaint), iRowA+nRowsOnPage );
+					// : filling the rest of HexaEditor with background color
 					RECT rcClip;
 						GetClientRect(&rcClip);
+					RECT rc=rcClip;
+						rc.top=HEADER_HEIGHT +	(	recordSize%nBytesInRow==0 // if all invalidated rows filled from left to right with content ...
+													? max(iRowZ-GetScrollPos(SB_VERT),0) // ... then simply filling with White only the last row (as only it may be partially filled, e.g. if Record size is INFINITE Bytes, File size is 50 Bytes, and each row can accommodate just 16 Bytes) ...
+													: iRowFirstToPaint // ... otherwise filling the whole invalidated area with White color (e.g. if Record size is 50 Bytes and each row can accommodate just 16 Bytes)
+												)*font.charHeight;
+					::FillRect( dc, &rc, CRideBrush::White );
+					// . drawing Addresses and data (both Ascii and Hexa parts)
 					const int xHexaStart=(addrLength+ADDRESS_SPACE_LENGTH)*font.charAvgWidth, xHexaEnd=xHexaStart+HEXA_FORMAT_LENGTH*nBytesInRow*font.charAvgWidth;
 					const int xAsciiStart=xHexaEnd+HEXA_SPACE_LENGTH*font.charAvgWidth, xAsciiEnd=xAsciiStart+nBytesInRow*font.charAvgWidth;
 					const COLORREF labelColor=Utils::GetSaturatedColor(::GetSysColor(COLOR_GRAYTEXT),1.7f+.1f*!editable);
@@ -633,11 +639,6 @@ leftMouseDragged:
 							}
 						}
 					::SelectObject(dc,hPen0);
-					// : filling the rest of HexaEditor with background color
-					RECT r;
-						GetClientRect(&r);
-						r.top=y;
-					::FillRect( dc, &r, CRideBrush::White );
 				::SelectObject(dc,hFont0);
 				return 0;
 			}
