@@ -58,6 +58,7 @@
 		int __getRecordIndexThatStartsAtRow__(int row) const;
 		int __scrollToRow__(int row);
 		void __refreshVertically__();
+		void __invalidateData__() const;
 		void __setNormalPrinting__(HDC dc);
 		void __refreshCursorDisplay__() const;
 		void __showMessage__(LPCTSTR msg) const;

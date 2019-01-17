@@ -56,8 +56,8 @@
 	void CHexaEditor::SetEditable(bool _editable){
 		// enables/disables possibility to edit the content of the File (see the Reset function)
 		editable=_editable;
-		cursor=TCursor( __firstByteInRowToLogicalPosition__(GetScrollPos(SB_VERT)) ); // resetting the Cursor and thus the Selection
 		if (::IsWindow(m_hWnd)){ // may be window-less if the owner is window-less
+			cursor=TCursor( __firstByteInRowToLogicalPosition__(GetScrollPos(SB_VERT)) ); // resetting the Cursor and thus the Selection
 			app.m_pMainWnd->SetFocus(); // for the Cursor to disappear
 			Invalidate(FALSE);
 		}
@@ -134,6 +134,9 @@
 		return d.rem ? -1 : d.quot;
 	}
 
+	#define HEADER_LINES_COUNT	1
+	#define HEADER_HEIGHT		HEADER_LINES_COUNT*font.charHeight
+
 	int CHexaEditor::__scrollToRow__(int row){
 		// scrolls the HexaEditor so that the specified Row is shown as the first one from top; returns the Row number to which it has been really scrolled to
 		// - Row must be in expected limits
@@ -143,14 +146,12 @@
 		// - redrawing HexaEditor's client and non-client areas
 		RECT rcScroll;
 			GetClientRect(&rcScroll);
-			rcScroll.bottom=( rcScroll.top=font.charHeight )+nRowsDisplayed*font.charHeight;
+			rcScroll.bottom=( rcScroll.top=HEADER_HEIGHT )+nRowsDisplayed*font.charHeight;
 		ScrollWindow( 0, (GetScrollPos(SB_VERT)-row)*font.charHeight, &rcScroll, &rcScroll );
 		// - displaying where it's been scrolled to
 		SetScrollPos(SB_VERT,row,TRUE); // True = redrawing the scroll-bar, not HexaEditor's canvas!
 		return row;
 	}
-
-	#define HEADER_LINES_COUNT	1
 
 	void CHexaEditor::__refreshVertically__(){
 		// refreshes all parameters that relate to vertical axis
@@ -170,6 +171,13 @@
 		//}
 	}
 
+	void CHexaEditor::__invalidateData__() const{
+		// invalidates the "data" (the content below the Header)
+		RECT rc;
+		GetClientRect(&rc);
+		rc.top=HEADER_HEIGHT;
+		::InvalidateRect( m_hWnd, &rc, FALSE );
+	}
 
 	#define BYTES_MAX		64
 
@@ -212,8 +220,6 @@
 
 	static UINT cfBinary;
 
-	#define HEADER_HEIGHT	font.charHeight
-
 	void CHexaEditor::__setNormalPrinting__(HDC dc){
 		::SetTextColor( dc, ::GetSysColor(editable?COLOR_WINDOWTEXT:COLOR_GRAYTEXT) );
 		::SetBkColor( dc, 0xffffff );
@@ -229,6 +235,7 @@
 	LRESULT CHexaEditor::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
 		// window procedure
 		int i;
+		const int cursorPos0=cursor.position; // original position before handling any user input
 		switch (msg){
 			case WM_MOUSEACTIVATE:
 				// preventing the focus from being stolen by the parent
@@ -254,8 +261,11 @@ cursorCorrectlyMoveTo:	// . adjusting the Cursor's Position
 						if (cursor.position<0) cursor.position=0;
 						else if (cursor.position>maxFileSize) cursor.position=maxFileSize;
 						// . adjusting an existing Selection if Shift pressed
-						if (!mouseDragged) // if mouse is being -Dragged, the beginning of a Selection has already been detected
+						if (!mouseDragged){ // if mouse is being -Dragged, the beginning of a Selection has already been detected
+							if (cursor.selectionA!=cursor.selectionZ) // if there was a Selection before ...
+								__invalidateData__(); // ... invalidating the content as the Selection may no longer be valid (e.g. may be deselected)
 							cursor.__detectNewSelection__();
+						}
 						cursor.selectionZ=cursor.position;
 cursorRefresh:			// . refreshing the Cursor
 						HideCaret();
@@ -265,7 +275,10 @@ cursorRefresh:			// . refreshing the Cursor
 							else if (iRow>=iScrollY+nRowsOnPage) __scrollToRow__(iRow-nRowsOnPage+1);
 							// : displaying the Cursor
 							__refreshCursorDisplay__();
-							Invalidate(FALSE);
+							// : invalidating the content if Selection has (or is being) changed
+							if (cursor.position!=cursorPos0) // yes, the Cursor has moved
+								if (mouseDragged || ::GetAsyncKeyState(VK_SHIFT)<0) // yes, Selection is being edited (by dragging the mouse or having the Shift key pressed)
+									__invalidateData__();
 						ShowCaret();
 						return 0;
 					}
@@ -482,7 +495,7 @@ leftMouseDragged:
 					// outside any area
 					if (!mouseDragged){ // if right now mouse button pressed ...
 						SELECTION_CANCEL(); // ... unselecting everything
-						Invalidate(FALSE);
+						Invalidate(FALSE); // ... and painting the result
 					}
 					break;
 				}
@@ -536,52 +549,45 @@ leftMouseDragged:
 				::DestroyCaret();
 				return 0;
 			}
-			case WM_ERASEBKGND:{
+			case WM_ERASEBKGND:
 				// drawing the background
-				// . header
-				RECT rcClip;
-					GetClientRect(&rcClip);
-				RECT rcHeader={ 0, 0, rcClip.right, HEADER_HEIGHT };
-				::FillRect( (HDC)wParam, &rcHeader, CRideBrush::BtnFace );
-				const HGDIOBJ hFont0=::SelectObject( (HDC)wParam, font );
-					TCHAR buf[16];
-					__setNormalPrinting__((HDC)wParam);
-					::SetBkColor( (HDC)wParam, ::GetSysColor(COLOR_BTNFACE) );
-					rcHeader.left=(addrLength+ADDRESS_SPACE_LENGTH)*font.charAvgWidth;
-					for( BYTE n=0; n<nBytesInRow; rcHeader.left+=HEXA_FORMAT_LENGTH*font.charAvgWidth )
-						::DrawText( (HDC)wParam, buf, ::wsprintf(buf,HEXA_FORMAT,n++), &rcHeader, DT_LEFT|DT_TOP );
-				::SelectObject((HDC)wParam,hFont0);
-				// . data
-				//nop (erased in WM_PAINT)
-				return TRUE;
-			}
+				return TRUE; // nop (always drawing over existing content)
 			case WM_PAINT:{
 				// drawing
 				__refreshVertically__(); // to guarantee that the actual view is always drawn
 				const CPaintDC dc(this);
 				const HGDIOBJ hFont0=::SelectObject( dc, font );
-					// . drawing background
-					//nop (see WM_ERASEBKGND)
-					// . drawing header (background and text)
-					//nop (see WM_ERASEBKGND)
+					// . drawing Header
+					RECT rcClip;
+						GetClientRect(&rcClip);
+					if (dc.m_ps.rcPaint.top<HEADER_HEIGHT){ // Header drawn only if its region invalid
+						RECT rcHeader={ 0, 0, rcClip.right, HEADER_HEIGHT };
+						::FillRect( dc, &rcHeader, CRideBrush::BtnFace );
+						TCHAR buf[16];
+						__setNormalPrinting__(dc);
+						::SetBkColor( dc, ::GetSysColor(COLOR_BTNFACE) );
+						rcHeader.left=(addrLength+ADDRESS_SPACE_LENGTH)*font.charAvgWidth;
+						for( BYTE n=0; n<nBytesInRow&&rcHeader.left<rcHeader.right; rcHeader.left+=HEXA_FORMAT_LENGTH*font.charAvgWidth )
+							::DrawText( dc, buf, ::wsprintf(buf,HEXA_FORMAT,n++), &rcHeader, DT_LEFT|DT_TOP );
+					}
 					// . determining the visible part of the File content
 					const int iRowFirstToPaint=max( (dc.m_ps.rcPaint.top-HEADER_HEIGHT)/font.charHeight, 0 );
 					int iRowA= GetScrollPos(SB_VERT) + iRowFirstToPaint;
 					const int nPhysicalRows=__logicalPositionToRow__( min(f->GetLength(),logicalSize) );
 					const int iRowLastToPaint= GetScrollPos(SB_VERT) + (dc.m_ps.rcPaint.bottom-HEADER_HEIGHT)/font.charHeight + 1;
 					const int iRowZ=min( min(nPhysicalRows,iRowLastToPaint), iRowA+nRowsOnPage );
-					// : filling the rest of HexaEditor with background color
-					RECT rcClip;
-						GetClientRect(&rcClip);
-					RECT rc=rcClip;
-						rc.top=HEADER_HEIGHT +	(	recordSize%nBytesInRow==0 // if all invalidated rows filled from left to right with content ...
-													? max(iRowZ-GetScrollPos(SB_VERT),0) // ... then simply filling with White only the last row (as only it may be partially filled, e.g. if Record size is INFINITE Bytes, File size is 50 Bytes, and each row can accommodate just 16 Bytes) ...
-													: iRowFirstToPaint // ... otherwise filling the whole invalidated area with White color (e.g. if Record size is 50 Bytes and each row can accommodate just 16 Bytes)
-												)*font.charHeight;
-					::FillRect( dc, &rc, CRideBrush::White );
 					// . drawing Addresses and data (both Ascii and Hexa parts)
 					const int xHexaStart=(addrLength+ADDRESS_SPACE_LENGTH)*font.charAvgWidth, xHexaEnd=xHexaStart+HEXA_FORMAT_LENGTH*nBytesInRow*font.charAvgWidth;
 					const int xAsciiStart=xHexaEnd+HEXA_SPACE_LENGTH*font.charAvgWidth, xAsciiEnd=xAsciiStart+nBytesInRow*font.charAvgWidth;
+					if (fnQueryRecordLabel){
+						// filling the gaps between Addresses/Hexa/Ascii, and Label space to erase any previous Label
+						RECT r={ addrLength*font.charAvgWidth, max(dc.m_ps.rcPaint.top,HEADER_HEIGHT), xHexaStart, dc.m_ps.rcPaint.bottom }; // Addresses-Hexa space
+						::FillRect( dc, &r, CRideBrush::White );
+						r.left=xHexaEnd, r.right=xAsciiStart; // Hexa-Ascii space
+						::FillRect( dc, &r, CRideBrush::White );
+						r.left=xAsciiEnd, r.right=rcClip.right; // Label space
+						::FillRect( dc, &r, CRideBrush::White );
+					}
 					const COLORREF labelColor=Utils::GetSaturatedColor(::GetSysColor(COLOR_GRAYTEXT),1.7f+.1f*!editable);
 					const CRidePen recordDelimitingHairline( 0, labelColor );
 					const HGDIOBJ hPen0=::SelectObject( dc, recordDelimitingHairline );
@@ -592,7 +598,12 @@ leftMouseDragged:
 						while (pEmp->z<address) pEmp=pEmp->pNext; // choosing the first visible Emphasis
 						for( TCHAR buf[16]; iRowA<=iRowZ; iRowA++,y+=font.charHeight ){
 							RECT rcHexa={ /*xHexaStart*/0, y, min(xHexaEnd,rcClip.right), min(y+font.charHeight,rcClip.bottom) }; // commented out as this rectangle also used to paint the Address
-							RECT rcAscii={ xAsciiStart, y, min(xAsciiEnd,rcClip.right), min(y+font.charHeight,rcClip.bottom) };
+							RECT rcAscii={ min(xAsciiStart,rcClip.right), y, min(xAsciiEnd,rcClip.right), rcHexa.bottom };
+							// : if this is the last line to draw, filling it with background color
+							if (iRowA==iRowZ){
+								::FillRect( dc, &rcHexa, CRideBrush::White );
+								::FillRect( dc, &rcAscii, CRideBrush::White );
+							}
 							// : address
 							if (addrLength){
 								__setNormalPrinting__(dc);
@@ -639,6 +650,9 @@ leftMouseDragged:
 							}
 						}
 					::SelectObject(dc,hPen0);
+					// . filling the rest of HexaEditor with background color
+					rcClip.top=y;
+					::FillRect( dc, &rcClip, CRideBrush::White );
 				::SelectObject(dc,hFont0);
 				return 0;
 			}
