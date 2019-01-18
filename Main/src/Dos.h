@@ -231,6 +231,8 @@
 		} *PSectorStatus;
 
 		class CHexaPreview sealed:public CFilePreview{
+			static LPCTSTR __getRecordLabel__(int recordIndex,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param);
+
 			CMemFile fEmpty;
 			CFileReaderWriter *pFileRW;
 
@@ -241,7 +243,7 @@
 			class CHexaEditorView sealed:public CHexaEditor{
 				LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 			public:
-				CHexaEditorView();
+				CHexaEditorView(PCDos dos,CHexaPreview *pHexaPreview);
 			} hexaEditor;
 
 			CHexaPreview(const CFileManagerView &rFileManager);

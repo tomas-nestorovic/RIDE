@@ -17,7 +17,8 @@
 		// - base
 		: CFilePreview( &hexaEditor, INI_PREVIEW, rFileManager, HEXA_WIDTH, HEXA_HEIGHT, 0 )
 		// - initialization
-		, fEmpty((PBYTE)&fEmpty,0) , pFileRW(NULL) {
+		, fEmpty((PBYTE)&fEmpty,0) , pFileRW(NULL)
+		, hexaEditor(DOS,this) {
 		pSingleInstance=this;
 		// - creating the HexaEditor view
 		hexaEditor.Reset(&fEmpty,0,0);
@@ -60,9 +61,19 @@
 
 
 
-	CDos::CHexaPreview::CHexaEditorView::CHexaEditorView()
+	CDos::CHexaPreview::CHexaEditorView::CHexaEditorView(PCDos dos,CHexaPreview *pHexaPreview)
 		// ctor
-		: CHexaEditor(NULL) {
+		: CHexaEditor( pHexaPreview, dos->formatBoot.sectorLength, __getRecordLabel__ ) {
+	}
+
+	LPCTSTR CDos::CHexaPreview::__getRecordLabel__(int recordIndex,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param){
+		// populates the Buffer with label for the specified HexaEditor's Record and returns the Buffer
+		const CHexaPreview *const pHexaPreview=(CHexaPreview *)param;
+		CDos::CFatPath::PCItem pItem; DWORD nItems;
+		if (LPCTSTR err=pHexaPreview->pFileRW->fatPath.GetItems(pItem,nItems))
+			return err;
+		else
+			return (pItem+recordIndex)->chs.sectorId.ToString(labelBuffer);
 	}
 
 	LRESULT CDos::CHexaPreview::CHexaEditorView::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
