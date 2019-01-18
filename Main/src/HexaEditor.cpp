@@ -235,7 +235,7 @@
 	LRESULT CHexaEditor::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
 		// window procedure
 		int i;
-		const int cursorPos0=cursor.position; // original position before handling any user input
+		const int cursorPos0=cursor.position;
 		switch (msg){
 			case WM_MOUSEACTIVATE:
 				// preventing the focus from being stolen by the parent
@@ -599,11 +599,6 @@ leftMouseDragged:
 						for( TCHAR buf[16]; iRowA<=iRowZ; iRowA++,y+=font.charHeight ){
 							RECT rcHexa={ /*xHexaStart*/0, y, min(xHexaEnd,rcClip.right), min(y+font.charHeight,rcClip.bottom) }; // commented out as this rectangle also used to paint the Address
 							RECT rcAscii={ min(xAsciiStart,rcClip.right), y, min(xAsciiEnd,rcClip.right), rcHexa.bottom };
-							// : if this is the last line to draw, filling it with background color
-							if (iRowA==iRowZ){
-								::FillRect( dc, &rcHexa, CRideBrush::White );
-								::FillRect( dc, &rcAscii, CRideBrush::White );
-							}
 							// : address
 							if (addrLength){
 								__setNormalPrinting__(dc);
@@ -632,10 +627,13 @@ leftMouseDragged:
 										);
 								rcAscii.left+=font.charAvgWidth;
 							}
-							// : drawing the record label if the just drawn Row is the record's first Row
-							if (fnQueryRecordLabel){ // yes, the Row can potentially be a record's first Row
+							// : filling the rest of the Row with background color (e.g. the last Row in a Record may not span up to the end)
+							::FillRect( dc, &rcHexa, CRideBrush::White );
+							::FillRect( dc, &rcAscii, CRideBrush::White );
+							// : drawing the Record label if the just drawn Row is the Record's first Row
+							if (fnQueryRecordLabel){ // yes, a new Record can potentially start at the Row
 								const int recordIndex=__getRecordIndexThatStartsAtRow__(iRowA);
-								if (recordIndex>=0){
+								if (recordIndex>=0){ // yes, a new Record starts at the Row
 									TCHAR buf[80];
 									RECT rc={ rcAscii.right+2*font.charAvgWidth, y, rcClip.right, rcClip.bottom };
 									::SetTextColor( dc, labelColor );
