@@ -273,12 +273,12 @@ cursorRefresh:			// . refreshing the Cursor
 							const int iRow=__logicalPositionToRow__(cursor.position), iScrollY=GetScrollPos(SB_VERT);
 							if (iRow<iScrollY) __scrollToRow__(iRow);
 							else if (iRow>=iScrollY+nRowsOnPage) __scrollToRow__(iRow-nRowsOnPage+1);
-							// : displaying the Cursor
-							__refreshCursorDisplay__();
 							// : invalidating the content if Selection has (or is being) changed
 							if (cursor.position!=cursorPos0) // yes, the Cursor has moved
 								if (mouseDragged || ::GetAsyncKeyState(VK_SHIFT)<0) // yes, Selection is being edited (by dragging the mouse or having the Shift key pressed)
 									__invalidateData__();
+							// : displaying the Cursor
+							__refreshCursorDisplay__();
 						ShowCaret();
 						return 0;
 					}
@@ -353,6 +353,7 @@ deleteSelection:		// . moving the content "after" Selection "to" the position of
 						}
 						// . refreshing the scrollbar
 						__refreshVertically__();
+						__invalidateData__();
 						goto cursorRefresh;
 					}
 					case VK_BACK:
@@ -403,6 +404,7 @@ editPaste:							// pasting binary data from clipboard at the Position of Cursor
 										::GlobalUnlock(hg);
 										::GlobalFree(hg);
 									}
+									__invalidateData__();
 									goto cursorRefresh;
 								}
 							}
@@ -421,6 +423,7 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 									f->Write(&b,1);
 									if ( cursor.hexaLow=!cursor.hexaLow )
 										cursor.position++;
+									__invalidateData__();
 									goto cursorRefresh;
 								}else
 									__showMessage__(MESSAGE_LIMIT_UPPER);
@@ -441,12 +444,14 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 							SELECTION_CANCEL()
 							f->Seek( cursor.position++ ,CFile::begin);
 							f->Write(&wParam,1);
+							__invalidateData__();
 							goto cursorRefresh;
 						}else
 							__showMessage__(MESSAGE_LIMIT_UPPER);
 				return 0;
 			case WM_CONTEXTMENU:{
 				// context menu invocation
+				if (!editable) return 0; // if window disabled, no context actions can be performed
 				CMenu mnu;
 				mnu.LoadMenu(IDR_HEXAEDITOR);
 				register union{
@@ -454,7 +459,11 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 					int i;
 				};
 				i=lParam;
-				if (x==-1) x=y=0; // occurs if the context menu invoked using Shift+F10
+				if (x==-1){ // occurs if the context menu invoked using Shift+F10
+					POINT caretPos=GetCaretPos();
+					ClientToScreen(&caretPos);
+					x=caretPos.x+(1+!cursor.ascii)*font.charAvgWidth, y=caretPos.y+font.charHeight;
+				}
 				switch (mnu.GetSubMenu(0)->TrackPopupMenu( TPM_RETURNCMD, x,y, this )){
 					case ID_EDIT_SELECT_ALL:
 						goto editSelectAll;
@@ -506,8 +515,9 @@ leftMouseDragged:
 			case WM_SETFOCUS:
 				// window has received focus
 				hPreviouslyFocusedWnd=(HWND)wParam; // the window that is losing the focus (may be refocused later when Enter is pressed)
+				if (!editable) return 0;
 				CreateSolidCaret( (2-cursor.ascii)*font.charAvgWidth, font.charHeight );
-				if (editable) ShowCaret(); else break;
+				ShowCaret();
 				goto cursorCorrectlyMoveTo;
 			case WM_KILLFOCUS:
 				// window has lost focus
@@ -623,7 +633,7 @@ leftMouseDragged:
 								// | Ascii
 								::DrawText(	dc,
 											::isprint(iByte) ? (LPCTSTR)&iByte : _T("."), 1, // if original character not printable, displaying a substitute one
-											&rcAscii, DT_LEFT|DT_TOP
+											&rcAscii, DT_LEFT|DT_TOP|DT_NOPREFIX
 										);
 								rcAscii.left+=font.charAvgWidth;
 							}

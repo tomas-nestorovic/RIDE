@@ -41,7 +41,7 @@
 			bool ascii; // True <=> Cursor is in the Ascii listing section
 			bool hexaLow; // True <=> ready to modify the lower half-byte in hexa mode
 			int position; // current logical position in underlying File
-			int selectionA,selectionZ; // beginning (including) and end (exluding)
+			int selectionA,selectionZ; // beginning (including) and end (excluding)
 			TCursor(int position); // ctor
 			void __detectNewSelection__();
 		} cursor;
