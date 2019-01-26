@@ -1156,6 +1156,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 		if (const TStdWinError err=CFloppyImage::SetMediumTypeAndGeometry(pFormat,sideMap,firstSectorNumber))
 			return LOG_ERROR(err);
 		// - setting the transfer speed according to current FloppyType (DD/HD)
+		__freeInternalTracks__();
 		switch (floppyType){ // set in base method to "pFormat->mediumType"
 			case TMedium::FLOPPY_DD:
 			case TMedium::FLOPPY_HD:
