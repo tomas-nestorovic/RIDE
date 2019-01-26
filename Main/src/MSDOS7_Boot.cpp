@@ -203,10 +203,10 @@
 		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
 		// - in case the Image is a physical floppy disk, determining the Type of Medium (type of floppy)
 		TFormat fmt={ TMedium::FLOPPY_DD, 1,1,MSDOS7_SECTOR_BKBOOT, MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD, 1 };
-		if (image->SetMediumTypeAndGeometry( &fmt, StdSidesMap, 1 )!=ERROR_SUCCESS){
+		if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
 			fmt.mediumType=TMedium::FLOPPY_HD;
-			if (const TStdWinError err=image->SetMediumTypeAndGeometry( &fmt, StdSidesMap, 1 ))
-				return err; // unknown Medium Type
+			if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0))
+				return ERROR_UNRECOGNIZED_VOLUME; // unknown Medium Type
 		}
 		// - finding Boot Sector
 		bool bootSectorRecognized;
