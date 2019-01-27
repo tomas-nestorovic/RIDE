@@ -212,7 +212,7 @@
 			rZxRom.PrintAt(	pdis->hDC,
 							ZxToAscii( (LPCSTR)value, valueLength, bufT ),
 							pdis->rcItem,
-							DT_SINGLELINE | DT_LEFT | DT_VCENTER
+							DT_SINGLELINE | DT_LEFT | DT_VCENTER | DT_NOPREFIX
 						);
 		::SelectObject(pdis->hDC,hFont0);
 	}
@@ -254,7 +254,7 @@
 						rZxRom.PrintAt(	dc,
 										ZxToAscii( bufM,rEditor.length+1, bufT ), // "+1" = Cursor
 										r,
-										DT_SINGLELINE | DT_LEFT | DT_VCENTER
+										DT_SINGLELINE | DT_LEFT | DT_VCENTER | DT_NOPREFIX
 									);
 						r.right=( r.left=(_tcschr(bufT,CURSOR_PLACEHOLDER)-bufT-1)*rZxRom.font.charAvgWidth )+rZxRom.font.charAvgWidth;
 						r.bottom=( r.top=(r.bottom-rZxRom.font.charHeight)/2 )+rZxRom.font.charHeight;
