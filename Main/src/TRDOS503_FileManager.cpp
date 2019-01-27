@@ -143,7 +143,7 @@
 		const PDirectoryEntry de=(PDirectoryEntry)file;
 		switch (infoId){
 			case INFORMATION_NAME:
-				return varLengthFileNameEditor.Create( de, TRDOS503_FILE_NAME_LENGTH_MAX );
+				return varLengthFileNameEditor.Create( de, TRDOS503_FILE_NAME_LENGTH_MAX, ' ' );
 			case INFORMATION_EXTENSION:
 				return singleCharExtEditor.Create(de);
 			case INFORMATION_STD_PARAM_1:

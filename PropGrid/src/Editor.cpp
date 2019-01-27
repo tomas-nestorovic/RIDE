@@ -88,7 +88,7 @@
 
 	void TEditor::__drawString__(LPCWSTR text,short textLength,PDRAWITEMSTRUCT pdis){
 		// draws Text into the specified Rectangle
-		RECT r={ PADDING_LEFT, PADDING_TOP+pdis->rcItem.top, pdis->rcItem.right, pdis->rcItem.bottom };
+		RECT r={ PROPGRID_CELL_MARGIN_LEFT, PROPGRID_CELL_MARGIN_TOP+pdis->rcItem.top, pdis->rcItem.right, pdis->rcItem.bottom };
 		WCHAR buf[STRING_LENGTH_MAX];
 		::DrawTextW(pdis->hDC,
 					::lstrcpynW( buf, text, textLength+(BYTE)(textLength>=0) ), // TextLength that is "-1" will be "-1"; TextLength that is N will be N+1

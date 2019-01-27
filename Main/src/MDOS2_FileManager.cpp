@@ -173,7 +173,7 @@
 			case INFORMATION_EXTENSION:
 				return singleCharExtEditor.Create(de);
 			case INFORMATION_NAME:
-				return varLengthFileNameEditor.Create( de, MDOS2_FILE_NAME_LENGTH_MAX );
+				return varLengthFileNameEditor.Create( de, MDOS2_FILE_NAME_LENGTH_MAX, '\0' );
 			case INFORMATION_ATTRIBUTES:
 				return __createStdEditorWithEllipsis__( de, __editFileAttributes__ );
 			case INFORMATION_PARAM_1:

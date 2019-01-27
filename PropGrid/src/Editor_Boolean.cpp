@@ -17,7 +17,7 @@
 
 	void TBooleanEditor::__drawValue__(const TPropGridInfo::TItem::TValue &value,PDRAWITEMSTRUCT pdis) const{
 		// draws the Value into the specified rectangle
-		RECT r={ PADDING_LEFT+1, PADDING_TOP+1, PADDING_LEFT+16, PADDING_TOP+16 };
+		RECT r={ PROPGRID_CELL_MARGIN_LEFT+1, PROPGRID_CELL_MARGIN_TOP+1, PROPGRID_CELL_MARGIN_LEFT+16, PROPGRID_CELL_MARGIN_TOP+16 };
 		::FrameRect(pdis->hDC, &r,
 					pdis->CtlType==ODT_LISTBOX // drawing invoked by the ListBox?
 						? TPropGridInfo::BRUSH_GRAY
@@ -29,7 +29,7 @@
 			const HDC dcmem=::CreateCompatibleDC(pdis->hDC);
 				const HGDIOBJ hBitmap0=::SelectObject( dcmem, TPropGridInfo::CHECKBOX_CHECKED );
 					::BitBlt(	pdis->hDC,
-								PADDING_LEFT+2,PADDING_TOP+2, 13, 13,
+								PROPGRID_CELL_MARGIN_LEFT+2, PROPGRID_CELL_MARGIN_TOP+2, 13, 13,
 								dcmem, 0, 0,
 								SRCCOPY
 							);

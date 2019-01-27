@@ -154,7 +154,7 @@
 		const PDirectoryEntry de=(PDirectoryEntry)file;
 		switch (infoId){
 			case INFORMATION_NAME:
-				return varLengthFileNameEditor.Create( de, GDOS_FILE_NAME_LENGTH_MAX );
+				return varLengthFileNameEditor.Create( de, GDOS_FILE_NAME_LENGTH_MAX, ' ');
 			case INFORMATION_TYPE:
 				return extensionEditor.Create(de);
 			case INFORMATION_PARAM_1:

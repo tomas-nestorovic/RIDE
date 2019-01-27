@@ -164,9 +164,9 @@
 		rParam.geometryCategory=true;
 			rParam.chs=true;
 		rParam.volumeCategory=true;
-			rParam.label.length=MDOS2_VOLUME_LABEL_LENGTH_MAX;
+			/*rParam.label.length=MDOS2_VOLUME_LABEL_LENGTH_MAX; // commented out as the default text editor isn't suitable to input Speccy keywords in disk label (e.g. "RETURN TO Zork" with keyword capitalized)
 				rParam.label.bufferA=( (PBootSector)boot )->label;
-				rParam.label.fillerByte='\0';
+				rParam.label.fillerByte='\0';*/
 			rParam.id.buffer=&( (PBootSector)boot )->diskID;
 				rParam.id.bufferCapacity=sizeof(WORD);
 	}
@@ -197,6 +197,15 @@
 	void CMDOS2::CMdos2BootView::AddCustomBootParameters(HWND hPropGrid,HANDLE hGeometry,HANDLE hVolume,const TCommonBootParameters &rParam,PSectorData _boot){
 		// gets DOS-specific parameters from the Boot
 		const PBootSector boot=(PBootSector)_boot;
+		// . Volume
+		CPropGridCtrl::AddProperty(	hPropGrid, hVolume, _T("Label"),
+									boot->label, MDOS2_VOLUME_LABEL_LENGTH_MAX,
+									((CSpectrumFileManagerView *)tab.dos->pFileManager)->zxRom.lineComposerPropGridEditor.Create(
+										boot->label,
+										MDOS2_VOLUME_LABEL_LENGTH_MAX,
+										'\0'
+									)
+								);
 		// . drives
 		const HANDLE hDrives=CPropGridCtrl::AddCategory(hPropGrid,NULL,_T("Drives"));
 			const CPropGridCtrl::PCEditor driveEditor=CPropGridCtrl::TCustom::DefineEditor( 0, TBootSector::TDiskAndDriveInfo::__pg_drawProperty__, NULL, TBootSector::TDiskAndDriveInfo::__pg_editProperty__ );

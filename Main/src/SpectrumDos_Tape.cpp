@@ -750,7 +750,7 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 														tf->dataLength>=2 ? CStdHeaderTypeEditor::STD_AND_HEADERLESS : CStdHeaderTypeEditor::STD_AND_HEADERLESS_AND_FRAGMENT
 													);
 				case INFORMATION_NAME:
-					return varLengthFileNameEditor.Create( file, ZX_TAPE_FILE_NAME_LENGTH_MAX );
+					return varLengthFileNameEditor.Create( file, ZX_TAPE_FILE_NAME_LENGTH_MAX, ' ' );
 				case INFORMATION_PARAM_1:
 					return stdParamEditor.Create( file, &h->params.param1, __markAsDirty__ );
 				case INFORMATION_PARAM_2:

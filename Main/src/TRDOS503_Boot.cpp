@@ -143,9 +143,9 @@
 		rParam.geometryCategory=true;
 			rParam.chs=false;
 		rParam.volumeCategory=true;
-			rParam.label.length=nCharsInLabel;
-			rParam.label.bufferA=((PBootSector)boot)->label;
-			rParam.label.fillerByte=' ';
+			/*rParam.label.length=nCharsInLabel; // commented out as the default text editor isn't suitable to input Speccy keywords in disk label (e.g. "RETURN TO Zork" with keyword capitalized)
+				rParam.label.bufferA=((PBootSector)boot)->label;
+				rParam.label.fillerByte=' ';*/
 	}
 
 	CPropGridCtrl::TEnum::PCValueList WINAPI CTRDOS503::CTrdosBootView::__getListOfKnownFormats__(PVOID,WORD &rnFormats){
@@ -229,6 +229,14 @@
 									CPropGridCtrl::TEnum::DefineConstStringListEditorA( __getListOfKnownFormats__, __getFormatDescription__, NULL, __onFormatChanged__ )
 								);
 		// - Volume category
+		CPropGridCtrl::AddProperty(	hPropGrid, hVolume, _T("Label"),
+									boot->label, nCharsInLabel,
+									((CSpectrumFileManagerView *)tab.dos->pFileManager)->zxRom.lineComposerPropGridEditor.Create(
+										boot->label,
+										nCharsInLabel,
+										' '
+									)
+								);
 		CPropGridCtrl::AddProperty( hPropGrid, hVolume, _T("Password"),
 									boot->password, TRDOS503_BOOT_PASSWORD_LENGTH_MAX,
 									CPropGridCtrl::TString::DefineFixedLengthEditorA( __bootSectorModifiedA__, PASSWORD_FILLER_BYTE )

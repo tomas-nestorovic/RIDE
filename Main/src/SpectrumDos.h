@@ -47,6 +47,33 @@
 			TZxRom();
 
 			const CRideFont font;
+			mutable class CLineComposerPropGridEditor sealed{
+				static HWND WINAPI __create__(CPropGridCtrl::PValue,CPropGridCtrl::TValueSize,HWND hParent);
+				static void WINAPI __drawValue__(CPropGridCtrl::PCustomParam,CPropGridCtrl::PCValue value,CPropGridCtrl::TValueSize valueLength,PDRAWITEMSTRUCT pdis);
+				static bool WINAPI __onChanged__(CPropGridCtrl::PCustomParam,HWND,CPropGridCtrl::PValue value,CPropGridCtrl::TValueSize valueSize);
+				static LRESULT CALLBACK __wndProc__(HWND hEditor,UINT msg,WPARAM wParam,LPARAM lParam);
+
+				HWND handle;
+				struct TCursor sealed{
+					enum TMode:char{
+						K='K',
+						LC='L', // "L" mode alternated with "C" mode
+						E='E',
+						G='G'
+					} mode;
+					BYTE position; // logical Position in Buffer
+				} cursor;
+				PCHAR targetValue;
+				BYTE lengthMax; // mustn't exceed Buffer's capacity
+				BYTE length;
+				char paddingChar;
+				char buf[255]; // "big enough" to contain any ZX Spectrum line
+				void __addChar__(char c);
+			public:
+				CPropGridCtrl::PCEditor Create(PCHAR zxText,BYTE zxLengthMax,char zxPaddingChar,CPropGridCtrl::TCustom::TOnValueConfirmed onValueConfirmed=__onChanged__);
+				LPCSTR GetCurrentZxText() const;
+				BYTE GetCurrentZxTextLength() const;
+			} lineComposerPropGridEditor;
 
 			void PrintAt(HDC dc,LPCTSTR buf,RECT r,UINT drawTextFormat) const;
 		} zxRom;
@@ -76,8 +103,6 @@
 
 		class CSpectrumFileManagerView:public CFileManagerView{
 		protected:
-			const TZxRom &zxRom;
-
 			mutable class CSingleCharExtensionEditor sealed{
 				static bool WINAPI __onChanged__(PVOID file,CPropGridCtrl::TEnum::UValue newExt);
 				static LPCTSTR WINAPI __getDescription__(PVOID file,CPropGridCtrl::TEnum::UValue extension,PTCHAR buf,short bufCapacity);
@@ -88,27 +113,9 @@
 			} singleCharExtEditor;
 
 			mutable class CVarLengthFileNameEditor sealed{
-				static bool WINAPI __help__(PVOID,PVOID,short);
-				static HWND WINAPI __create__(PVOID,short,HWND hParent);
 				static bool WINAPI __onChanged__(PVOID file,HWND,PVOID,short);
-				static LRESULT CALLBACK __wndProc__(HWND hEditor,UINT msg,WPARAM wParam,LPARAM lParam);
-
-				WNDPROC wndProc0; // Editor's original window procedure (from PropertyGrid)
-				struct TCursor sealed{
-					enum TMode:char{
-						K='K',
-						LC='L', // "L" mode alternated with "C" mode
-						E='E',
-						G='G'
-					} mode;
-					BYTE position; // logical Position in Buffer
-				} cursor;
-				BYTE lengthMax; // mustn't exceed Buffer's capacity
-				BYTE length;
-				char buf[32]; // "big enough" buffer to contain the name (and extension!!) of any Spectrum-derivate's file
-				void __addChar__(char c);
 			public:
-				PEditorBase Create(PFile file,BYTE _lengthMax);
+				PEditorBase Create(PFile file,BYTE lengthMax,char paddingChar);
 			} varLengthFileNameEditor;
 
 			mutable class CStdParamEditor sealed{
@@ -118,6 +125,8 @@
 
 			PTCHAR GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant,PTCHAR pOutBuffer) const override sealed;
 		public:
+			const TZxRom &zxRom;
+
 			CSpectrumFileManagerView(PDos dos,const TZxRom &rZxRom,BYTE supportedDisplayModes,BYTE initialDisplayMode,BYTE nInformation,PCFileInfo informationList);
 		};
 

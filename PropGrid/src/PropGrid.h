@@ -6,9 +6,6 @@
 
 	#define CATEGORY_HEIGHT			21
 
-	#define PADDING_LEFT	3
-	#define PADDING_TOP		1
-
 	typedef struct TPropGridInfo sealed{
 		typedef struct TCategoryItem; // forward
 		typedef TCategoryItem *PCategoryItem;

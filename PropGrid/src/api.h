@@ -9,6 +9,8 @@
 		#define PROPGRID_DECLSPEC __declspec(dllimport)
 	#endif
 
+	#define PROPGRID_CELL_MARGIN_LEFT	3
+	#define PROPGRID_CELL_MARGIN_TOP	1
 
 	class PROPGRID_DECLSPEC CPropGridCtrl sealed{
 	public:
