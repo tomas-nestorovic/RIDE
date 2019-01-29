@@ -570,7 +570,8 @@ leftMouseDragged:
 					// . drawing Header
 					RECT rcClip;
 						GetClientRect(&rcClip);
-					if (dc.m_ps.rcPaint.top<HEADER_HEIGHT){ // Header drawn only if its region invalid
+						rcClip.top=dc.m_ps.rcPaint.top, rcClip.bottom=dc.m_ps.rcPaint.bottom;
+					if (rcClip.top<HEADER_HEIGHT){ // Header drawn only if its region invalid
 						RECT rcHeader={ 0, 0, rcClip.right, HEADER_HEIGHT };
 						::FillRect( dc, &rcHeader, CRideBrush::BtnFace );
 						TCHAR buf[16];
@@ -581,23 +582,21 @@ leftMouseDragged:
 							::DrawText( dc, buf, ::wsprintf(buf,HEXA_FORMAT,n++), &rcHeader, DT_LEFT|DT_TOP );
 					}
 					// . determining the visible part of the File content
-					const int iRowFirstToPaint=max( (dc.m_ps.rcPaint.top-HEADER_HEIGHT)/font.charHeight, 0 );
+					const int iRowFirstToPaint=max( (rcClip.top-HEADER_HEIGHT)/font.charHeight, 0 );
 					int iRowA= GetScrollPos(SB_VERT) + iRowFirstToPaint;
 					const int nPhysicalRows=__logicalPositionToRow__( min(f->GetLength(),logicalSize) );
-					const int iRowLastToPaint= GetScrollPos(SB_VERT) + (dc.m_ps.rcPaint.bottom-HEADER_HEIGHT)/font.charHeight + 1;
+					const int iRowLastToPaint= GetScrollPos(SB_VERT) + (rcClip.bottom-HEADER_HEIGHT)/font.charHeight + 1;
 					const int iRowZ=min( min(nPhysicalRows,iRowLastToPaint), iRowA+nRowsOnPage );
-					// . drawing Addresses and data (both Ascii and Hexa parts)
+					// . filling the gaps between Addresses/Hexa/Ascii, and Label space to erase any previous Label
 					const int xHexaStart=(addrLength+ADDRESS_SPACE_LENGTH)*font.charAvgWidth, xHexaEnd=xHexaStart+HEXA_FORMAT_LENGTH*nBytesInRow*font.charAvgWidth;
 					const int xAsciiStart=xHexaEnd+HEXA_SPACE_LENGTH*font.charAvgWidth, xAsciiEnd=xAsciiStart+nBytesInRow*font.charAvgWidth;
-					if (fnQueryRecordLabel){
-						// filling the gaps between Addresses/Hexa/Ascii, and Label space to erase any previous Label
-						RECT r={ addrLength*font.charAvgWidth, max(dc.m_ps.rcPaint.top,HEADER_HEIGHT), xHexaStart, dc.m_ps.rcPaint.bottom }; // Addresses-Hexa space
-						::FillRect( dc, &r, CRideBrush::White );
-						r.left=xHexaEnd, r.right=xAsciiStart; // Hexa-Ascii space
-						::FillRect( dc, &r, CRideBrush::White );
-						r.left=xAsciiEnd, r.right=rcClip.right; // Label space
-						::FillRect( dc, &r, CRideBrush::White );
-					}
+					RECT r={ min(addrLength*font.charAvgWidth,rcClip.right), max(rcClip.top,HEADER_HEIGHT), min(xHexaStart,rcClip.right), rcClip.bottom }; // Addresses-Hexa space; min(.) = to not paint over the scrollbar
+					::FillRect( dc, &r, CRideBrush::White );
+					r.left=min(xHexaEnd,rcClip.right), r.right=min(xAsciiStart,rcClip.right); // Hexa-Ascii space; min(.) = to not paint over the scrollbar
+					::FillRect( dc, &r, CRideBrush::White );
+					r.left=min(xAsciiEnd,rcClip.right), r.right=min(rcClip.right,rcClip.right); // Label space; min(.) = to not paint over the scrollbar
+					::FillRect( dc, &r, CRideBrush::White );
+					// . drawing Addresses and data (both Ascii and Hexa parts)
 					const COLORREF labelColor=Utils::GetSaturatedColor(::GetSysColor(COLOR_GRAYTEXT),1.7f+.1f*!editable);
 					const CRidePen recordDelimitingHairline( 0, labelColor );
 					const HGDIOBJ hPen0=::SelectObject( dc, recordDelimitingHairline );
@@ -638,8 +637,10 @@ leftMouseDragged:
 								rcAscii.left+=font.charAvgWidth;
 							}
 							// : filling the rest of the Row with background color (e.g. the last Row in a Record may not span up to the end)
-							::FillRect( dc, &rcHexa, CRideBrush::White );
-							::FillRect( dc, &rcAscii, CRideBrush::White );
+							if (rcHexa.left<rcHexa.right) // to not paint over the scrollbar
+								::FillRect( dc, &rcHexa, CRideBrush::White );
+							if (rcAscii.left<rcAscii.right) // to not paint over the scrollbar
+								::FillRect( dc, &rcAscii, CRideBrush::White );
 							// : drawing the Record label if the just drawn Row is the Record's first Row
 							if (fnQueryRecordLabel){ // yes, a new Record can potentially start at the Row
 								const int recordIndex=__getRecordIndexThatStartsAtRow__(iRowA);
