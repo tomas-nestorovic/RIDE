@@ -361,8 +361,10 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			if (d.DoModal()!=IDOK){
 				delete image;
 				return NULL;
-			}else
+			}else{
 				formatBoot=( dosProps=d.dosProps )->stdFormats->params.format;
+				formatBoot.nCylinders++;
+			}
 			// . informing
 			Utils::InformationWithCheckableShowNoMore( _T("The image will be opened using the default format of the selected DOS (see the \"") BOOT_SECTOR_TAB_LABEL _T("\" tab if available).\n\nRISK OF DATA CORRUPTION if the selected DOS and/or format is not suitable!"), INI_GENERAL, INI_MSG_OPEN_AS );
 		}
