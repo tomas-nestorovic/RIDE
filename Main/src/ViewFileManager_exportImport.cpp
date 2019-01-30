@@ -528,6 +528,46 @@ importQuit2:		::GlobalUnlock(hg);
 			return err;
 		}else{
 			// File
+			// . if the File "looks like an Image", confirming its import by the user
+			if (const LPCTSTR extension=_tcsrchr(pathAndName,'.'))
+				if (CImage::__determineTypeByExtension__(1+extension)!=NULL){
+					// : defining the Dialog
+					TCHAR buf[MAX_PATH+80];
+					::wsprintf( buf, _T("\"%s\" looks like an image."), _tcsrchr(pathAndName,'\\')+1 );
+					class CPossiblyAnImageDialog sealed:public Utils::CCommandDialog{
+						void PreInitDialog() override{
+							// dialog initialization
+							// | base
+							Utils::CCommandDialog::PreInitDialog();
+							// | supplying available actions
+							__addCommandButton__( IDYES, _T("Open it in new instance of ") APP_ABBREVIATION _T(" (recommended)") );
+							__addCommandButton__( IDNO, _T("Import it to this image anyway") );
+							__addCommandButton__( IDCANCEL, _T("Cancel") );
+						}
+					public:
+						CPossiblyAnImageDialog(LPCTSTR msg)
+							// ctor
+							: Utils::CCommandDialog(msg) {
+						}
+					} d(buf);
+					// : showing the Dialog and processing its result
+					switch (d.DoModal()){
+						case IDYES:{
+							// opening the File in new instance of the app (this may function only in Release mode, not in Debug mode)
+							::GetModuleFileName( NULL, buf, sizeof(buf)/sizeof(TCHAR) );
+							TCHAR pathAndNameInQuotes[MAX_PATH+2];
+							::ShellExecute( NULL, "open", buf, ::lstrcat(::lstrcat(::lstrcpy(pathAndNameInQuotes,_T("\"")),pathAndName),_T("\"")), NULL, SW_SHOW );
+							return ::GetLastError();
+						}
+						case IDNO:
+							// importing the File to this Image anyway
+							break;
+						case IDCANCEL:
+							// cancelling the remainder of importing
+							return ERROR_CANCELLED;
+					}
+				}
+			// . importing the File
 			CFile f( pathAndName, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary );
 			return ImportFileAndResolveConflicts( &f, f.GetLength(), fileName, winAttr, rImportedFile, rConflictedSiblingResolution );
 		}
