@@ -15,11 +15,18 @@
 
 	#define PASSWORD_FILLER_BYTE	' '
 
-	void CTRDOS503::TBootSector::__init__(PCFormat pFormatBoot,BYTE nCharsInLabel){
+	void CTRDOS503::TBootSector::__init__(PCFormat pFormatBoot,BYTE nCharsInLabel,bool userDataInSysTrackAllowed){
 		// initializes the Boot Sector to the specified Format
 		::ZeroMemory(this,sizeof(*this));
-		firstFreeTrack=1;
-		nFreeSectors=pFormatBoot->GetCountOfAllSectors()-TRDOS503_SECTOR_RESERVED_COUNT;
+		if (userDataInSysTrackAllowed){
+			firstFreeSector=TRDOS503_BOOT_SECTOR_NUMBER; // firstFreeTrack = see ZeroMemory above
+			nFreeSectors =	pFormatBoot->GetCountOfAllSectors()-TRDOS503_SECTOR_RESERVED_COUNT
+							+
+							TRDOS503_TRACK_SECTORS_COUNT+TRDOS503_SECTOR_FIRST_NUMBER-TRDOS503_BOOT_SECTOR_NUMBER;
+		}else{
+			firstFreeTrack=1; // firstFreeSector = see ZeroMemory above
+			nFreeSectors =	pFormatBoot->GetCountOfAllSectors()-TRDOS503_SECTOR_RESERVED_COUNT;
+		}
 		id=BOOT_ID;
 		::memcpy(	::memset( label, ' ', nCharsInLabel ),
 					VOLUME_LABEL_DEFAULT_ANSI_8CHARS,
@@ -292,7 +299,7 @@
 		// initializes a fresh formatted Medium (Boot, FAT, root dir, etc.)
 		// . initializing the Boot Sector
 		if (const PBootSector bootSector=__getBootSector__()){
-			bootSector->__init__( &formatBoot, boot.nCharsInLabel );
+			bootSector->__init__( &formatBoot, boot.nCharsInLabel, importToSysTrack );
 			FlushToBootSector(); // already carried out in CDos::__formatStdCylinders__ but overwritten by ZeroMemory above
 		}
 		// . empty Directory

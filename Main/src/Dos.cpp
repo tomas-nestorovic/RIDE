@@ -58,6 +58,18 @@
 		return (WORD)c>=32 && !::wcschr(ForbiddenChars,c);
 	}
 
+	static void __warnOnChangingCriticaSetting__(LPCTSTR lastSettingOperation){
+		// warns that operation has been successfully performed on last setting but that the setting is critical for correct operation of the DOS
+		TCHAR buf[200];
+		::wsprintf( buf, _T("Setting %s but YOU KNOW WHAT YOU ARE DOING."), lastSettingOperation );
+		Utils::Information(buf);
+	}
+
+	void CDos::__warnOnEnteringCriticalConfiguration__(bool b){
+		TCHAR verb[16];
+		__warnOnChangingCriticaSetting__(  ::lstrcat( ::lstrcpy(verb,_T("turned ")), b?_T("on"):_T("off") )  );
+	}
+
 	int CDos::__getProfileInt__(LPCTSTR entryName,int defaultValue) const{
 		// returns the value of specified Entry in this DOS'es profile; returns the DefaultValue if Entry isn't found
 		TCHAR sectionName[80];

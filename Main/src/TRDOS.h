@@ -52,7 +52,7 @@
 			WORD zero3;
 
 			BYTE __getLabelLengthEstimation__() const; // for TR-DOS version recognition
-			void __init__(PCFormat pFormatBoot,BYTE nCharsInLabel);
+			void __init__(PCFormat pFormatBoot,BYTE nCharsInLabel,bool userDataInSysTrackAllowed);
 			void __setDiskType__(PCFormat pFormatBoot);
 		} *PBootSector;
 		typedef const TBootSector *PCBootSector;
@@ -77,6 +77,8 @@
 
 			WORD __getOfficialFileSize__(PBYTE pnBytesReservedAfterData) const;
 			WORD __getFileSizeOnDisk__() const;
+			void __markTemporary__();
+			bool __isTemporary__() const;
 		} *PDirectoryEntry;
 		typedef const TDirectoryEntry *PCDirectoryEntry;
 
@@ -130,7 +132,7 @@
 		static UINT AFX_CDECL __defragmentation_thread__(PVOID _pCancelableAction);
 		static void __informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId);
 
-		bool zeroLengthFilesEnabled,exportWholeSectors;
+		bool zeroLengthFilesEnabled,exportWholeSectors,importToSysTrack;
 
 		CTRDOS503(PImage image); // private ctor called exclusively by SCL Image!
 

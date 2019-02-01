@@ -24,6 +24,16 @@
 		return nSectors*TRDOS503_SECTOR_LENGTH_STD;
 	}
 
+	void CTRDOS503::TDirectoryEntry::__markTemporary__(){
+		// marks this DirectoryEntry as "temporary" (see usage in ImportFile and DeleteFile)
+		firstTrack=0, firstSector=TRDOS503_BOOT_SECTOR_NUMBER-TRDOS503_SECTOR_FIRST_NUMBER;
+	}
+
+	bool CTRDOS503::TDirectoryEntry::__isTemporary__() const{
+		// True <=> this DirectoryEntry has previously been marked as "temporary" (see usage in ImportFile and DeleteFile)
+		return !firstTrack && firstSector==TRDOS503_BOOT_SECTOR_NUMBER-TRDOS503_SECTOR_FIRST_NUMBER;
+	}
+
 
 
 	#define INI_TRDOS	_T("TRDOS")
@@ -37,7 +47,8 @@
 		// - initialization
 		, boot(this,TRDOS503_BOOT_LABEL_LENGTH_MAX) , fileManager(this)
 		, zeroLengthFilesEnabled(true) // just to be sure (SCL Image expects this setting when loading the content)
-		, exportWholeSectors(true) {
+		, exportWholeSectors(true)
+		, importToSysTrack(false) {
 		::ZeroMemory( sideMap, sizeof(sideMap) ); // both Sides of floppy are numbered as zero
 		formatBoot.nCylinders++;
 	}
@@ -56,7 +67,13 @@
 			)
 		, fileManager(this)
 		, zeroLengthFilesEnabled( __getProfileBool__(INI_ALLOW_ZERO_LENGTH_FILES,false) )
-		, exportWholeSectors( __getProfileBool__(INI_EXPORT_WHOLE_SECTORS,true) ) {
+		, exportWholeSectors( __getProfileBool__(INI_EXPORT_WHOLE_SECTORS,true) )
+		, importToSysTrack(false) {
+		if (formatBoot.mediumType!=TMedium::UNKNOWN){ // may be unknown if creating a new Image
+			PDirectoryEntry directory[TRDOS503_FILE_COUNT_MAX];
+			if (__getDirectory__(directory))
+				importToSysTrack=!directory[0]->firstTrack; // turned on if the first File starts in system Track
+		}
 		::ZeroMemory( sideMap, sizeof(sideMap) ); // both Sides of floppy are numbered as zero
 	}
 
@@ -90,13 +107,13 @@
 			BYTE sector,track; // length determined as the difference between this and previous "region"
 			TSectorStatus status;
 		} regions[TRDOS503_FILE_COUNT_MAX+2],*pRgn=regions; // "+2" = empty space and terminator (see below)
-		pRgn->sector=0, pRgn->track=1; // just in case the first DirectoryEntry isn't found (as Sector not found)
+		pRgn->sector=TRDOS503_BOOT_SECTOR_NUMBER-TRDOS503_SECTOR_FIRST_NUMBER, pRgn->track=0; // just in case the first DirectoryEntry isn't found (as Sector not found)
 		// - 
 		for( TTrdosDirectoryTraversal dt(this); dt.__existsNextEntry__(); )
 			if (dt.entryType!=TDirectoryTraversal::WARNING){
 				const PCDirectoryEntry de=(PCDirectoryEntry)dt.entry;
-				if (dt.entryType==TDirectoryTraversal::FILE && de->firstTrack){
-					// A&B: A = File (existing or Deleted), B = identification of a temporary File in Directory (see also ImportFile)
+				if (dt.entryType==TDirectoryTraversal::FILE && !de->__isTemporary__()){
+					// A&B: A = File (existing or Deleted), B = not a temporary Entry in Directory (see also ImportFile)
 					const BYTE sector = pRgn->sector=de->firstSector, track = pRgn->track=de->firstTrack;
 					pRgn++->status=	*(PCBYTE)de!=TDirectoryEntry::DELETED
 									? TSectorStatus::OCCUPIED
@@ -105,7 +122,7 @@
 					pRgn->sector=d.rem, pRgn->track=d.quot; // for the case that next DirectoryEntry not found (as Sector not found)
 				}else{
 					// end of Directory, or Directory Sector not found
-					if (dt.entryType==TDirectoryTraversal::EMPTY || !de->firstTrack) // A|B; A = natural end of Directory, B = identification of a temporary File in Directory (see also ImportFile)
+					if (dt.entryType==TDirectoryTraversal::EMPTY || de->__isTemporary__()) // A|B; A = natural end of Directory, B = a temporary Entry in Directory (see also ImportFile)
 						break; // the end of Directory is followed by empty space (see after cycle)
 					pRgn++->status=TSectorStatus::UNKNOWN; // Sector and Track set by previous known File, see above
 					*pRgn=*(pRgn-1); // for the case that next DirectoryEntry not found (as Sector not found)
@@ -117,9 +134,9 @@
 		const PCBootSector bootSector=__getBootSector__();
 		for( const BYTE track=cyl*formatBoot.nHeads+head; nSectors--; bufferId++ ){
 			const TSector sector=bufferId->sector;
-			if (cyl>=formatBoot.nCylinders || head>=formatBoot.nHeads || bufferId->cylinder!=cyl || !sector || sector>formatBoot.nSectors || bufferId->lengthCode!=TRDOS503_SECTOR_LENGTH_STD_CODE)
+			if (cyl>=formatBoot.nCylinders || head>=formatBoot.nHeads || bufferId->cylinder!=cyl || sector<TRDOS503_SECTOR_FIRST_NUMBER || formatBoot.nSectors<sector || bufferId->lengthCode!=TRDOS503_SECTOR_LENGTH_STD_CODE)
 				*buffer++=TSectorStatus::UNKNOWN; // Sector ID out of official Format - Sector thus Unknown
-			else if (!track)
+			else if (!track && (sector<=TRDOS503_BOOT_SECTOR_NUMBER || !importToSysTrack))
 				*buffer++=TSectorStatus::SYSTEM; // zeroth Track always contains System Sectors (Directory, Boot, etc.)
 			else if (track>bootSector->firstFreeTrack || track==bootSector->firstFreeTrack&&sector>bootSector->firstFreeSector)
 				*buffer++=TSectorStatus::EMPTY; // Sectors beyond the FirstFree Sector are always reported as Empty, no matter if they are referred from the Directory!
@@ -136,11 +153,13 @@
 	}
 	DWORD CTRDOS503::GetFreeSpaceInBytes(TStdWinError &rError) const{
 		// computes and returns the empty space on disk
-		rError=ERROR_SUCCESS; // assumption
-		if (const PCBootSector boot=__getBootSector__())
+		if (const PCBootSector boot=__getBootSector__()){
+			rError=ERROR_SUCCESS;
 			return boot->nFreeSectors*TRDOS503_SECTOR_LENGTH_STD;
-		else
+		}else{
+			rError=ERROR_SECTOR_NOT_FOUND;
 			return 0;
+		}
 	}
 
 
@@ -257,7 +276,7 @@
 					// File is at the end of Directory
 					const PDirectoryEntry de=(PDirectoryEntry)file;
 					*(PBYTE)de=TDirectoryEntry::END_OF_DIR;
-					if (de->firstTrack){ // 0 = identification of a temporary File in Directory (see also ImportFile)
+					if (!de->__isTemporary__()){ // not a temporary Entry in Directory (see also ImportFile)
 						boot->firstFreeTrack=de->firstTrack, boot->firstFreeSector=de->firstSector, boot->nFreeSectors+=de->nSectors;
 						boot->nFiles--;
 					}
@@ -271,7 +290,7 @@
 	
 	PTCHAR CTRDOS503::GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const{
 		// populates Buffer with specified File's export name and extension and returns the Buffer; returns Null if File cannot be exported (e.g. a "dotdot" entry in MS-DOS); caller guarantees that the Buffer is at least MAX_PATH characters big
-		const PDirectoryEntry de=(PDirectoryEntry)file;
+		const PCDirectoryEntry de=(PCDirectoryEntry)file;
 		__super::GetFileExportNameAndExt(de,shellCompliant,buf);
 		if (!shellCompliant){
 			// exporting to another RIDE instance
@@ -341,7 +360,8 @@
 			// . Size
 			//nop (set below)
 			// . FirstTrack and -Sector
-			//tmp.firstTrack=0; // 0 = identification of a temporary File in Directory (see also DeleteFile)
+			//nop
+			tmp.__markTemporary__(); // identification of a temporary Entry in Directory (see also DeleteFile)
 		// - importing to Image
 		CFatPath fatPath(this,fileSizeOnDisk);
 		err=__importFileData__( f, &tmp, zxName, uftExt, fileSize, rFile, fatPath );
@@ -530,7 +550,7 @@
 		chs.sectorId.side=_trdos->sideMap[ chs.head=0 ],
 		chs.sectorId.sector=TRDOS503_SECTOR_FIRST_NUMBER-1;
 		chs.sectorId.lengthCode=TRDOS503_SECTOR_LENGTH_STD_CODE;
-		// - buffering the whole Directory
+		// - buffering the whole Directory (to eventually speed-up reading from a real floppy)
 		TSectorId buffer[TRDOS503_TRACK_SECTORS_COUNT];
 		trdos->__getListOfStdSectors__(0,0,buffer);
 		trdos->image->BufferTrackData( 0, 0, buffer, Utils::CByteIdentity(), TRDOS503_BOOT_SECTOR_NUMBER, true ); // including the Boot Sector (to not have to include another named constant)		
@@ -624,8 +644,15 @@
 		const TBackgroundActionCancelable *const pAction=(TBackgroundActionCancelable *)_pCancelableAction;
 		const TDefragParams dp=*(TDefragParams *)pAction->fnParams;
 		// - resetting relevant information in Boot Sector
-		dp.boot->firstFreeTrack=1, dp.boot->firstFreeSector=0;
-		dp.boot->nFreeSectors=dp.trdos->formatBoot.GetCountOfAllSectors()-TRDOS503_SECTOR_RESERVED_COUNT;
+		if (dp.trdos->importToSysTrack){
+			dp.boot->firstFreeTrack=0, dp.boot->firstFreeSector=TRDOS503_BOOT_SECTOR_NUMBER;
+			dp.boot->nFreeSectors =	dp.trdos->formatBoot.GetCountOfAllSectors()-TRDOS503_SECTOR_RESERVED_COUNT
+									+
+									TRDOS503_TRACK_SECTORS_COUNT+TRDOS503_SECTOR_FIRST_NUMBER-TRDOS503_BOOT_SECTOR_NUMBER;
+		}else{
+			dp.boot->firstFreeTrack=1, dp.boot->firstFreeSector=0;
+			dp.boot->nFreeSectors =	dp.trdos->formatBoot.GetCountOfAllSectors()-TRDOS503_SECTOR_RESERVED_COUNT;
+		}
 		dp.boot->nFiles = dp.boot->nFilesDeleted = 0;
 		// - getting the list of Files
 		PDirectoryEntry directory[TRDOS503_FILE_COUNT_MAX],*pDeFree=directory;
@@ -683,6 +710,21 @@
 				// enabling/disabling importing of zero-length Files
 				__writeProfileBool__( INI_ALLOW_ZERO_LENGTH_FILES, zeroLengthFilesEnabled=!zeroLengthFilesEnabled );
 				return TCmdResult::DONE;
+			case ID_SYSTEM:{
+				// allowing/disabling importing to zero-th system Track (this command is only available if the disk contains no Files)
+				const PBootSector boot=__getBootSector__();
+				if (importToSysTrack=!importToSysTrack){ // this command is only available if the disk contains no Files
+					__warnOnEnteringCriticalConfiguration__(importToSysTrack);
+					boot->firstFreeTrack=0, boot->firstFreeSector=TRDOS503_BOOT_SECTOR_NUMBER; // Sector number incremented by 1, thus FirstFreeSector:=9
+					boot->nFreeSectors+=TRDOS503_TRACK_SECTORS_COUNT+TRDOS503_SECTOR_FIRST_NUMBER-TRDOS503_BOOT_SECTOR_NUMBER;
+				}else{
+					boot->firstFreeTrack=1, boot->firstFreeSector=0;
+					boot->nFreeSectors-=TRDOS503_TRACK_SECTORS_COUNT+TRDOS503_SECTOR_FIRST_NUMBER-TRDOS503_BOOT_SECTOR_NUMBER;
+				}
+				image->MarkSectorAsDirty(TBootSector::CHS);
+				image->UpdateAllViews(NULL);
+				break;
+			}
 			case ID_DOS_DEFRAGMENT:{
 				// defragmenting the disk
 				if (image->__reportWriteProtection__()) return TCmdResult::DONE;
@@ -718,6 +760,12 @@
 			case ID_DOS_FILE_ZERO_LENGTH:
 				pCmdUI->SetCheck(zeroLengthFilesEnabled);
 				return true;
+			case ID_SYSTEM:{
+				pCmdUI->SetCheck(importToSysTrack);
+				TStdWinError err;
+				pCmdUI->Enable(	importToSysTrack || !GetCountOfItemsInCurrentDir(err) ); // A|B, A = if enabled, the setting can be disabled at any time, B = setting available if the disk yet contains no Files
+				return true;
+			}
 		}
 		return CSpectrumDos::UpdateCommandUi(cmd,pCmdUI);
 	}

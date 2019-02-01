@@ -253,6 +253,7 @@ BEGIN
         MENUITEM "Export with shell-compliant names", 
                                                 ID_DOS_SHELLCOMPLIANTNAMES
         MENUITEM "Import zero length files",    ID_DOS_FILE_ZERO_LENGTH
+        MENUITEM "Import to system track",      ID_SYSTEM
         MENUITEM SEPARATOR
         MENUITEM "Format cylinders...\tCtrl+Shift+F", ID_DOS_FORMAT
         MENUITEM "Unformat cylinders...",       ID_DOS_UNFORMAT

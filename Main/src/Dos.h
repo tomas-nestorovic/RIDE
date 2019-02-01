@@ -189,6 +189,7 @@
 		static const TSide StdSidesMap[];
 
 		static bool __isValidCharInFat32LongName__(WCHAR c);
+		static void __warnOnEnteringCriticalConfiguration__(bool b);
 
 		const TFnCompareNames fnCompareNames;
 		const TTrackScheme trackAccessScheme; // single Scheme to access Tracks in Image
