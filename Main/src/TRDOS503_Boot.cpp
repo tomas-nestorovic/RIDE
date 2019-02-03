@@ -19,12 +19,12 @@
 		// initializes the Boot Sector to the specified Format
 		::ZeroMemory(this,sizeof(*this));
 		if (userDataInSysTrackAllowed){
-			firstFreeSector=TRDOS503_BOOT_SECTOR_NUMBER; // firstFreeTrack = see ZeroMemory above
+			firstFree.sector=TRDOS503_BOOT_SECTOR_NUMBER; // firstFree.track = see ZeroMemory above
 			nFreeSectors =	pFormatBoot->GetCountOfAllSectors()-TRDOS503_SECTOR_RESERVED_COUNT
 							+
 							TRDOS503_TRACK_SECTORS_COUNT+TRDOS503_SECTOR_FIRST_NUMBER-TRDOS503_BOOT_SECTOR_NUMBER;
 		}else{
-			firstFreeTrack=1; // firstFreeSector = see ZeroMemory above
+			firstFree.track=1; // firstFree.sector = see ZeroMemory above
 			nFreeSectors =	pFormatBoot->GetCountOfAllSectors()-TRDOS503_SECTOR_RESERVED_COUNT;
 		}
 		id=BOOT_ID;
@@ -192,7 +192,7 @@
 		}
 		if (!trdos->ValidateFormatChangeAndReportProblem(false,&fmt))
 			return false;
-		if (boot->firstFreeTrack/fmt.nHeads>=fmt.nCylinders){
+		if (boot->firstFree.track/fmt.nHeads>=fmt.nCylinders){
 			Utils::Information(_T("Cannot modify the format as there are occupied sectors exceeding it."));
 			return false;
 		}
@@ -259,10 +259,10 @@
 									);
 			const HANDLE hFirstFreeSector=CPropGridCtrl::AddCategory(hPropGrid,hAdvanced,_T("First empty sector"));
 				CPropGridCtrl::AddProperty( hPropGrid, hFirstFreeSector, _T("Track number"),
-											&boot->firstFreeTrack, sizeof(BYTE), advByteEditor
+											&boot->firstFree.track, sizeof(BYTE), advByteEditor
 										);
 				CPropGridCtrl::AddProperty( hPropGrid, hFirstFreeSector, _T("Sector ID"),
-											&boot->firstFreeSector, sizeof(BYTE), advByteEditor
+											&boot->firstFree.sector, sizeof(BYTE), advByteEditor
 										);
 			CPropGridCtrl::AddProperty( hPropGrid, hAdvanced, _T("Free sectors"),
 										&boot->nFreeSectors, sizeof(WORD),

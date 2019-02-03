@@ -60,9 +60,11 @@
 
 	static void __warnOnChangingCriticaSetting__(LPCTSTR lastSettingOperation){
 		// warns that operation has been successfully performed on last setting but that the setting is critical for correct operation of the DOS
-		TCHAR buf[200];
-		::wsprintf( buf, _T("Setting %s but YOU KNOW WHAT YOU ARE DOING."), lastSettingOperation );
-		Utils::Information(buf);
+		#ifndef _DEBUG
+			TCHAR buf[200];
+			::wsprintf( buf, _T("Setting %s but YOU KNOW WHAT YOU ARE DOING."), lastSettingOperation );
+			Utils::Information(buf);
+		#endif
 	}
 
 	void CDos::__warnOnEnteringCriticalConfiguration__(bool b){

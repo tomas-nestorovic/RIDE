@@ -85,7 +85,7 @@
 		r.left=r.right;
 		// . COLUMN: first Sector
 		r.right=*tabs++;
-			::wsprintf( bufT, _T("Tr%d/Sec%d"), de->firstTrack, de->firstSector );
+			::wsprintf( bufT, _T("Tr%d/Sec%d"), de->first.track, de->first.sector );
 			::DrawText( dc, bufT,-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
 		r.left=r.right;
 		// . COLUMN: start address / Basic start line
@@ -117,7 +117,7 @@
 			case INFORMATION_SECTORS_COUNT:
 				return f1->nSectors-f2->nSectors;
 			case INFORMATION_FIRST_SECTOR:
-				return (f1->firstTrack-f2->firstTrack)*TRDOS503_TRACK_SECTORS_COUNT+f1->firstSector-f2->firstSector;
+				return (f1->first.track-f2->first.track)*TRDOS503_TRACK_SECTORS_COUNT+f1->first.sector-f2->first.sector;
 			case INFORMATION_STD_PARAM_1:{
 				WORD w1=0,w2=0;
 				((PTRDOS503)DOS)->__getStdParameter1__(f1,w1), ((PTRDOS503)DOS)->__getStdParameter1__(f2,w2);

@@ -33,13 +33,20 @@
 		};
 
 		#pragma pack(1)
+		struct TSectorTrackPair sealed{
+			BYTE sector;
+			BYTE track;
+
+			TSectorTrackPair operator+(BYTE nSectors) const;
+		};
+
+		#pragma pack(1)
 		typedef struct TBootSector sealed{
 			static const TPhysicalAddress CHS;
 
 			BYTE zero1; // end of Directory
 			BYTE reserved1[224];
-			BYTE firstFreeSector;
-			BYTE firstFreeTrack;
+			TSectorTrackPair firstFree;
 			TDiskFormat format;
 			BYTE nFiles;
 			WORD nFreeSectors;
@@ -73,7 +80,7 @@
 			WORD parameterA;
 			WORD parameterB;
 			BYTE nSectors;
-			BYTE firstSector,firstTrack;
+			TSectorTrackPair first;
 
 			WORD __getOfficialFileSize__(PBYTE pnBytesReservedAfterData) const;
 			WORD __getFileSizeOnDisk__() const;
