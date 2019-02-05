@@ -619,7 +619,8 @@ leftMouseDragged:
 							if (_selectionA<=address && address<_selectionZ) __setEmphasizedPrinting__(dc);
 							else if (pEmp->a<=address && address<pEmp->z) __setSelectionPrinting__(dc);
 							else __setNormalPrinting__(dc);
-							for( BYTE bytes[BYTES_MAX],n=f->Read(bytes,__firstByteInRowToLogicalPosition__(iRowA+1)-address),*p=bytes; n--; address++ ){
+							BYTE bytes[BYTES_MAX],const nRealBytesOnRow=f->Read(bytes,__firstByteInRowToLogicalPosition__(iRowA+1)-address);
+							for( BYTE n=nRealBytesOnRow,*p=bytes; n--; address++ ){
 								// | choosing colors
 								if (_selectionA<=address && address<_selectionZ) __setEmphasizedPrinting__(dc);
 								else if (pEmp->a<=address && address<pEmp->z) __setSelectionPrinting__(dc);
@@ -642,7 +643,7 @@ leftMouseDragged:
 							if (rcAscii.left<rcAscii.right) // to not paint over the scrollbar
 								::FillRect( dc, &rcAscii, CRideBrush::White );
 							// : drawing the Record label if the just drawn Row is the Record's first Row
-							if (fnQueryRecordLabel){ // yes, a new Record can potentially start at the Row
+							if (fnQueryRecordLabel && nRealBytesOnRow){ // yes, a new Record can potentially start at the Row
 								const int recordIndex=__getRecordIndexThatStartsAtRow__(iRowA);
 								if (recordIndex>=0){ // yes, a new Record starts at the Row
 									TCHAR buf[80];
