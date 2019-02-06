@@ -602,7 +602,6 @@ leftMouseDragged:
 					const CRidePen recordDelimitingHairline( 0, labelColor );
 					const HGDIOBJ hPen0=::SelectObject( dc, recordDelimitingHairline );
 						int address=__firstByteInRowToLogicalPosition__(iRowA), y=HEADER_HEIGHT+iRowFirstToPaint*font.charHeight;
-						f->Seek(address,CFile::begin);
 						const int _selectionA=min(cursor.selectionA,cursor.selectionZ), _selectionZ=max(cursor.selectionZ,cursor.selectionA);
 						PEmphasis pEmp=emphases;
 						while (pEmp->z<address) pEmp=pEmp->pNext; // choosing the first visible Emphasis
@@ -620,23 +619,36 @@ leftMouseDragged:
 							if (_selectionA<=address && address<_selectionZ) __setEmphasizedPrinting__(dc);
 							else if (pEmp->a<=address && address<pEmp->z) __setSelectionPrinting__(dc);
 							else __setNormalPrinting__(dc);
-							BYTE bytes[BYTES_MAX],const nRealBytesOnRow=f->Read(bytes,__firstByteInRowToLogicalPosition__(iRowA+1)-address);
-							for( BYTE n=nRealBytesOnRow,*p=bytes; n--; address++ ){
-								// | choosing colors
-								if (_selectionA<=address && address<_selectionZ) __setEmphasizedPrinting__(dc);
-								else if (pEmp->a<=address && address<pEmp->z) __setSelectionPrinting__(dc);
-								else __setNormalPrinting__(dc);
-								if (address==pEmp->z) pEmp=pEmp->pNext;
-								// | Hexa
-								const int iByte=*p++;
-								::DrawText( dc, buf, ::wsprintf(buf,HEXA_FORMAT,iByte), &rcHexa, DT_LEFT|DT_TOP );
-								rcHexa.left+=HEXA_FORMAT_LENGTH*font.charAvgWidth;
-								// | Ascii
-								::DrawText(	dc,
-											::isprint(iByte) ? (LPCTSTR)&iByte : _T("."), 1, // if original character not printable, displaying a substitute one
-											&rcAscii, DT_LEFT|DT_TOP|DT_NOPREFIX
-										);
-								rcAscii.left+=font.charAvgWidth;
+							f->Seek( address, CFile::begin );
+							const bool isEof=f->GetPosition()==f->GetLength();
+							BYTE bytes[BYTES_MAX],const nBytesExpected=__firstByteInRowToLogicalPosition__(iRowA+1)-address,const nBytesRead=f->Read(bytes,nBytesExpected);
+							if (nBytesRead)
+								// content available
+								for( BYTE n=nBytesRead,*p=bytes; n--; address++ ){
+									// | choosing colors
+									if (_selectionA<=address && address<_selectionZ) __setEmphasizedPrinting__(dc);
+									else if (pEmp->a<=address && address<pEmp->z) __setSelectionPrinting__(dc);
+									else __setNormalPrinting__(dc);
+									if (address==pEmp->z) pEmp=pEmp->pNext;
+									// | Hexa
+									const int iByte=*p++;
+									::DrawText( dc, buf, ::wsprintf(buf,HEXA_FORMAT,iByte), &rcHexa, DT_LEFT|DT_TOP );
+									rcHexa.left+=HEXA_FORMAT_LENGTH*font.charAvgWidth;
+									// | Ascii
+									::DrawText(	dc,
+												::isprint(iByte) ? (LPCTSTR)&iByte : _T("."), 1, // if original character not printable, displaying a substitute one
+												&rcAscii, DT_LEFT|DT_TOP|DT_NOPREFIX
+											);
+									rcAscii.left+=font.charAvgWidth;
+								}
+							else if (!isEof){
+								// content not available (e.g. irrecoverable Sector read error)
+								f->Seek( address+=nBytesExpected, CFile::begin );
+								const int color0=::SetTextColor( dc, !editable*0x777700+0xff );
+									#define ERR_MSG	_T("» No data «")
+									::DrawText( dc, ERR_MSG, -1, &rcHexa, DT_LEFT|DT_TOP );
+									rcHexa.left+=(sizeof(ERR_MSG)-sizeof(TCHAR))*font.charAvgWidth;
+								::SetTextColor( dc, color0 );
 							}
 							// : filling the rest of the Row with background color (e.g. the last Row in a Record may not span up to the end)
 							if (rcHexa.left<rcHexa.right) // to not paint over the scrollbar
@@ -644,7 +656,7 @@ leftMouseDragged:
 							if (rcAscii.left<rcAscii.right) // to not paint over the scrollbar
 								::FillRect( dc, &rcAscii, CRideBrush::White );
 							// : drawing the Record label if the just drawn Row is the Record's first Row
-							if (fnQueryRecordLabel && nRealBytesOnRow){ // yes, a new Record can potentially start at the Row
+							if (fnQueryRecordLabel && !isEof){ // yes, a new Record can potentially start at the Row
 								const int recordIndex=__getRecordIndexThatStartsAtRow__(iRowA);
 								if (recordIndex>=0){ // yes, a new Record starts at the Row
 									TCHAR buf[80];
@@ -694,9 +706,8 @@ leftMouseDragged:
 		// - rendering the data
 		const HGLOBAL hg=::GlobalAlloc( GMEM_FIXED, sizeof(dataLength)+dataLength );
 		const PDWORD p=(PDWORD)::GlobalLock(hg);
-			*p=dataLength; // File content prefixed by its length
 			f->Seek(dataBegin,CFile::begin);
-			f->Read(1+p,dataLength); // actual content
+			*p=f->Read(1+p,dataLength); // File content is prefixed by its length
 		::GlobalUnlock(hg);
 		CacheGlobalData( cfBinary, hg );
 		// - delayed rendering of data
