@@ -375,6 +375,7 @@ deleteSelection:		// . moving the content "after" Selection "to" the position of
 								case 'A':
 editSelectAll:						// Selecting all
 									cursor.selectionA=0, cursor.selectionZ=cursor.position=f->GetLength();
+									__invalidateData__();
 									goto cursorRefresh;
 								case 'C':
 editCopy:							// copying the Selection into clipboard
