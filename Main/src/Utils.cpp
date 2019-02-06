@@ -797,7 +797,7 @@ namespace Utils{
 		TDownloadSingleFileParams &rdsfp=*(TDownloadSingleFileParams *)pAction->fnParams;
 		HINTERNET hSession=NULL, hOnlineFile=NULL;
 		// - opening a new Session
-		hSession=::InternetOpen(_T("RIDE") APP_VERSION,
+		hSession=::InternetOpen(APP_IDENTIFIER,
 								INTERNET_OPEN_TYPE_PRECONFIG,
 								NULL, NULL,
 								0

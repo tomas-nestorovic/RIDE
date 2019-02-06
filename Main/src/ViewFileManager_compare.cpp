@@ -279,14 +279,14 @@ different:	Utils::Information(_T("No, the files differ in content! (File names a
 			case WM_VSCROLL:{
 				// wanted to scroll vertically
 				// . base (doing the scrolling)
-				CHexaEditor::WindowProc(msg,wParam,lParam);
+				__super::WindowProc(msg,wParam,lParam);
 				// . synchronously scrolling the OtherHexaEditor
 				SCROLLINFO si1,si2;
 				GetScrollInfo( SB_VERT, &si1, SIF_POS|SIF_TRACKPOS ); // getting 32-bit scroll position
 				CHexaComparison &rOtherHexaEditor=	this==&rDialog.file1.hexaComparison
 													? rDialog.file2.hexaComparison
 													: rDialog.file1.hexaComparison;
-				rOtherHexaEditor.GetScrollInfo( SB_VERT, &si2, SIF_POS|SIF_TRACKPOS ); // getting 32-bit scroll position
+				rOtherHexaEditor.GetScrollInfo( SB_VERT, &si2, SIF_POS ); // getting 32-bit scroll position
 				if (si2.nPos!=si1.nPos){ // preventing from infinite loop
 					rOtherHexaEditor.SetScrollInfo( SB_VERT, &si1, TRUE );
 					rOtherHexaEditor.Invalidate(FALSE);
@@ -331,5 +331,5 @@ different:	Utils::Information(_T("No, the files differ in content! (File names a
 				CancelAllEmphases();
 				break;
 		}
-		return CHexaEditor::WindowProc(msg,wParam,lParam);
+		return __super::WindowProc(msg,wParam,lParam);
 	}

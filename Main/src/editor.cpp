@@ -406,7 +406,11 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 
 	afx_msg void CRideApp::__showAbout__() const{
 		// about
-		Utils::Information( _T("Version ") APP_VERSION _T("\n\ntomascz, 2015-2018") );
+		SYSTEMTIME st;
+		::GetLocalTime(&st);
+		TCHAR buf[80];
+		::wsprintf( buf, _T("Version ") APP_VERSION _T("\n\ntomascz, 2015—%d"), st.wYear );
+		Utils::Information(buf);
 	}
 
 
