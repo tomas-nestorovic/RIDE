@@ -401,7 +401,8 @@ defaultPrinting:				if (b<' ')
 						//listing << _T("</td>"); // commented out as written in the following command
 						// | adding a new cell to the "BASIC Listing" column
 						listing << _T("</b></td><td style=\"padding-left:5pt\">");
-							listing.__parseBasicLine__( lineBytes, nBytesOfLine-1 ); // "-1" = skipping the terminating Enter character (0x0d)
+							if (nBytesOfLine)
+								listing.__parseBasicLine__( lineBytes, nBytesOfLine-1 ); // "-1" = skipping the terminating Enter character (0x0d)
 						//Utils::WriteToFile(fTmp,_T("</td>")); // commented out as written in the following command
 					listing << _T("</td></tr>");
 				} while (frw.GetPosition()<frw.GetLength());
