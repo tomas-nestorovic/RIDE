@@ -30,6 +30,8 @@
 
 	CDos::CHexaPreview::~CHexaPreview(){
 		// dtor
+		// - destroying the HexaEditor window
+		hexaEditor.DestroyWindow();
 		// - releasing resources
 		if (pFileRW)
 			delete pFileRW;
