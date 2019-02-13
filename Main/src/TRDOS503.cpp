@@ -779,12 +779,20 @@
 				exportWholeSectors=ews0;
 				return TCmdResult::DONE_REDRAW;
 			}
+			case ID_ZX_PREVIEWASBASIC:{
+				// previewing File(s) as BASIC program(s)
+				const bool ews0=exportWholeSectors;
+					exportWholeSectors=false; // ignoring anything that is beyond an eventual 0xAA80 mark (that introduces a parameter "after" official data)
+					__super::ProcessCommand(cmd);
+				exportWholeSectors=ews0;
+				return TCmdResult::DONE;
+			}
 			case ID_DOS_TAKEATOUR:
 				// navigating to the online tour on this DOS
 				((CMainWindow *)app.m_pMainWnd)->OpenApplicationPresentationWebPage(_T("Tour"),_T("TRDOS503/tour.html"));
 				return TCmdResult::DONE;
 		}
-		return CSpectrumDos::ProcessCommand(cmd);
+		return __super::ProcessCommand(cmd);
 	}
 	bool CTRDOS503::UpdateCommandUi(WORD cmd,CCmdUI *pCmdUI) const{
 		// True <=> given Command-specific user interface successfully updated, otherwise False
