@@ -199,12 +199,8 @@
 		const PBootSector boot=(PBootSector)_boot;
 		// . Volume
 		CPropGridCtrl::AddProperty(	hPropGrid, hVolume, _T("Label"),
-									boot->label, MDOS2_VOLUME_LABEL_LENGTH_MAX,
-									((CSpectrumFileManagerView *)tab.dos->pFileManager)->zxRom.lineComposerPropGridEditor.Create(
-										boot->label,
-										MDOS2_VOLUME_LABEL_LENGTH_MAX,
-										'\0'
-									)
+									boot->label, MAKEWORD(MDOS2_VOLUME_LABEL_LENGTH_MAX,'\0'), // [H,L] = [ padding char, max label length ]
+									((CSpectrumFileManagerView *)tab.dos->pFileManager)->zxRom.lineComposerPropGridEditor.Create(NULL)
 								);
 		// . drives
 		const HANDLE hDrives=CPropGridCtrl::AddCategory(hPropGrid,NULL,_T("Drives"));

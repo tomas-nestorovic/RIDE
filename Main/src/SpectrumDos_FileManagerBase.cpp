@@ -124,14 +124,14 @@
 		// creates and returns the Editor of File Name
 		const PDos dos=CDos::__getFocused__();
 		const CSpectrumFileManagerView *const pZxFileManager=(CSpectrumFileManagerView *)dos->pFileManager;
-		TCHAR bufOldName[MAX_PATH];
+		ASSERT(lengthMax<sizeof(bufOldName)/sizeof(TCHAR));
 		#ifdef UNICODE
 			ASSERT(FALSE);
 		#else
 			dos->GetFileNameAndExt( file, bufOldName, NULL );
 			::memset( bufOldName+::lstrlen(bufOldName), paddingChar, lengthMax ); // guaranteed that LengthMax PaddingChars still fit in the Buffer for any ZX Spectrum derivate
-			return pZxFileManager->__createStdEditor__(	file, NULL, 0, // Null = the Editor doesn't directly work with any value, it indirectly keeps its local copy of the value
-														pZxFileManager->zxRom.lineComposerPropGridEditor.Create( bufOldName, lengthMax, paddingChar, __onChanged__ )
+			return pZxFileManager->__createStdEditor__(	file, bufOldName, MAKEWORD(lengthMax,paddingChar), // [H,L] = [ padding char, max label length ]
+														pZxFileManager->zxRom.lineComposerPropGridEditor.Create( __onChanged__ )
 													);
 		#endif
 	}

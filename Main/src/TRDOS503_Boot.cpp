@@ -237,12 +237,8 @@
 								);
 		// - Volume category
 		CPropGridCtrl::AddProperty(	hPropGrid, hVolume, _T("Label"),
-									boot->label, nCharsInLabel,
-									((CSpectrumFileManagerView *)tab.dos->pFileManager)->zxRom.lineComposerPropGridEditor.Create(
-										boot->label,
-										nCharsInLabel,
-										' '
-									)
+									boot->label, MAKEWORD(nCharsInLabel,' '), // [H,L] = [ padding char, max label length ]
+									((CSpectrumFileManagerView *)tab.dos->pFileManager)->zxRom.lineComposerPropGridEditor.Create(NULL)
 								);
 		CPropGridCtrl::AddProperty( hPropGrid, hVolume, _T("Password"),
 									boot->password, TRDOS503_BOOT_PASSWORD_LENGTH_MAX,

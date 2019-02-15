@@ -48,9 +48,9 @@
 
 			const CRideFont font;
 			mutable class CLineComposerPropGridEditor sealed{
-				static HWND WINAPI __create__(CPropGridCtrl::PValue,CPropGridCtrl::TValueSize,HWND hParent);
-				static void WINAPI __drawValue__(CPropGridCtrl::PCustomParam,CPropGridCtrl::PCValue value,CPropGridCtrl::TValueSize valueLength,PDRAWITEMSTRUCT pdis);
-				static bool WINAPI __onChanged__(CPropGridCtrl::PCustomParam,HWND,CPropGridCtrl::PValue value,CPropGridCtrl::TValueSize valueSize);
+				static HWND WINAPI __create__(CPropGridCtrl::PValue value,CPropGridCtrl::TValueSize combinedValue,HWND hParent);
+				static void WINAPI __drawValue__(CPropGridCtrl::PCustomParam,CPropGridCtrl::PCValue value,CPropGridCtrl::TValueSize combinedValue,PDRAWITEMSTRUCT pdis);
+				static bool WINAPI __onChanged__(CPropGridCtrl::PCustomParam,HWND,CPropGridCtrl::PValue,CPropGridCtrl::TValueSize);
 				static LRESULT CALLBACK __wndProc__(HWND hEditor,UINT msg,WPARAM wParam,LPARAM lParam);
 
 				HWND handle;
@@ -63,14 +63,13 @@
 					} mode;
 					BYTE position; // logical Position in Buffer
 				} cursor;
-				PCHAR targetValue;
 				BYTE lengthMax; // mustn't exceed Buffer's capacity
 				BYTE length;
 				char paddingChar;
 				char buf[255]; // "big enough" to contain any ZX Spectrum line
 				void __addChar__(char c);
 			public:
-				CPropGridCtrl::PCEditor Create(PCHAR zxText,BYTE zxLengthMax,char zxPaddingChar,CPropGridCtrl::TCustom::TOnValueConfirmed onValueConfirmed=__onChanged__);
+				CPropGridCtrl::PCEditor Create(CPropGridCtrl::TCustom::TOnValueConfirmed onValueConfirmed) const;
 				LPCSTR GetCurrentZxText() const;
 				BYTE GetCurrentZxTextLength() const;
 			} lineComposerPropGridEditor;
@@ -114,6 +113,8 @@
 
 			mutable class CVarLengthFileNameEditor sealed{
 				static bool WINAPI __onChanged__(PVOID file,HWND,PVOID,short);
+
+				TCHAR bufOldName[64]; // 64 = should accommodate filename of any ZX Spectrum-derived platform
 			public:
 				PEditorBase Create(PFile file,BYTE lengthMax,char paddingChar);
 			} varLengthFileNameEditor;
