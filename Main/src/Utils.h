@@ -74,6 +74,7 @@ namespace Utils{
 	float ScaleLogicalUnit(HDC dc);
 	void UnscaleLogicalUnit(PINT values,BYTE nValues);
 	COLORREF GetSaturatedColor(COLORREF color,float saturationFactor);
+	COLORREF GetBlendedColor(COLORREF color1,COLORREF color2,float blendFactor=.5f);
 	CFile &WriteToFile(CFile &f,LPCTSTR text);
 	CFile &WriteToFile(CFile &f,TCHAR chr);
 	CFile &WriteToFile(CFile &f,int number,LPCTSTR formatting);

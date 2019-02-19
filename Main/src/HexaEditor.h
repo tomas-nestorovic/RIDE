@@ -59,11 +59,10 @@
 		int __scrollToRow__(int row);
 		void __refreshVertically__();
 		void __invalidateData__() const;
-		void __setNormalPrinting__(HDC dc);
 		void __refreshCursorDisplay__() const;
 		void __showMessage__(LPCTSTR msg) const;
 	protected:
-		void PostNcDestroy() override;
+		void PostNcDestroy() override sealed;
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 	public:
 		CHexaEditor(PVOID param,DWORD recordSize=HEXAEDITOR_RECORD_SIZE_INFINITE,TFnQueryRecordLabel fnQueryRecordLabel=NULL);

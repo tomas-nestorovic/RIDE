@@ -714,6 +714,17 @@ namespace Utils{
 		return result;
 	}
 
+	COLORREF GetBlendedColor(COLORREF color1,COLORREF color2,float blendFactor){
+		// computes and returns the Color that is the mixture of the two input Colors in specified ratio (BlendFactor=0 <=> only Color1, BlendFactor=1 <=> only Color2
+		ASSERT(0.f<=blendFactor && blendFactor<=1.f);
+		COLORREF result=0;
+		for( BYTE i=sizeof(COLORREF),*pbIn1=(PBYTE)&color1,*pbIn2=(PBYTE)&color2,*pbOut=(PBYTE)&result; i-->0; ){
+			const WORD w = (1.f-blendFactor)**pbIn1++ + blendFactor**pbIn2++;
+			*pbOut++=min(w,255);
+		}
+		return result;
+	}
+
 	CFile &WriteToFile(CFile &f,LPCTSTR text){
 		// writes specified Text into the File
 		f.Write( text, ::lstrlen(text) );
