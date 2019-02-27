@@ -231,11 +231,13 @@ different:	Utils::Information(_T("No, the files differ in content! (File names a
 		}else if (const HGLOBAL hg=pDataObject->GetGlobalData(CRideApp::cfDescriptor)){
 			// virtual Files (dragged over from an instance of FileManager, even from another instance of this application)
 			if (const LPFILEGROUPDESCRIPTOR pfgd=(LPFILEGROUPDESCRIPTOR)::GlobalLock(hg)){
-				FORMATETC etcFileContents={ CRideApp::cfContent, NULL, DVASPECT_CONTENT, 0, TYMED_HGLOBAL|TYMED_ISTREAM }; // 0 = only first File, others ignored
-				CFile *const fTmp=pDataObject->GetFileData(CRideApp::cfContent,&etcFileContents); // abstracting virtual data into a File
-				const FILEDESCRIPTOR *const pfd=pfgd->fgd;
-				fTmp->SetLength(pfd->nFileSizeLow);
-				__openFile__(fTmp,pfd->cFileName);
+				FORMATETC etcFileContents={ CRideApp::cfContent, NULL, DVASPECT_CONTENT, 0, TYMED_ISTREAM }; // 0 = only first File, others ignored
+				if (CFile *const fTmp=pDataObject->GetFileData(CRideApp::cfContent,&etcFileContents)){ // abstracting virtual data into a File
+					// File is readable (e.g. doesn't contain no "Sector no found" errors)
+					const FILEDESCRIPTOR *const pfd=pfgd->fgd;
+					fTmp->SetLength(pfd->nFileSizeLow);
+					__openFile__(fTmp,pfd->cFileName);
+				}
 				::GlobalUnlock(hg);
 			}
 			::GlobalFree(hg);
