@@ -335,6 +335,7 @@ deleteSelection:		// . moving the content "after" Selection "to" the position of
 							BYTE buf[65536];
 							f->Seek(posSrc,CFile::begin);
 							const DWORD nBytesBuffered=f->Read(buf, min(nBytesToMove,sizeof(buf)) );
+							if (!nBytesBuffered) break; // no Bytes buffered if, for instance, Sector not found
 							f->Seek(posDst,CFile::begin);
 							f->Write(buf,nBytesBuffered);
 							nBytesToMove-=nBytesBuffered, posSrc+=nBytesBuffered, posDst+=nBytesBuffered;
