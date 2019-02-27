@@ -1035,7 +1035,7 @@ returnData:				outFdcStatuses[index]=psi->fdcStatus;
 				if (!__bufferSectorData__(cyl,head,&psi->id,length,pit,bufferNumbersOfSectorsToSkip[index],&psi->fdcStatus))
 					continue; // if a Sector with given ID physically not found in the Track, proceed with the next Planned Sector
 				// : recovering from errors
-				if (!psi->fdcStatus.IsWithoutError()) // no Data, or Data with errors
+				if (!psi->fdcStatus.IsWithoutError() && !psi->modified) // no Data, or Data with errors for a not-yet-Modified Sector
 					if (silentlyRecoverFromErrors && !fddHead.calibrated)
 						if (fddHead.__calibrate__() && fddHead.__seekTo__(cyl)){
 							fddHead.calibrated=params.calibrationAfterError!=TParams::TCalibrationAfterError::FOR_EACH_SECTOR;
