@@ -59,8 +59,11 @@
 		if (!fatPath.GetItems(item,n)){
 			div_t d=div((int)position,(int)dos->formatBoot.sectorLength-dos->properties->dataBeginOffsetInSector-dos->properties->dataEndOffsetInSector);
 			item+=d.quot, n-=d.quot; // skipping Sectors from which not read
+			bool readWithoutCrcError=true;
+			TFdcStatus sr;
 			for( WORD w; n--; item++ )
-				if (const PCSectorData sectorData=dos->image->GetSectorData(item->chs,&w)){
+				if (const PCSectorData sectorData=dos->image->GetSectorData(item->chs,0,true,&w,&sr)){
+					readWithoutCrcError&=sr.IsWithoutError();
 					w-=d.rem+dos->properties->dataBeginOffsetInSector+dos->properties->dataEndOffsetInSector;
 					if (w<nCount){
 						lpBuf=(PBYTE)::memcpy(lpBuf,sectorData+dos->properties->dataBeginOffsetInSector+d.rem,w)+w;
@@ -68,11 +71,13 @@
 					}else{
 						::memcpy(lpBuf,sectorData+dos->properties->dataBeginOffsetInSector+d.rem,nCount);
 						position+=nCount;
+						::SetLastError( readWithoutCrcError ? ERROR_SUCCESS : ERROR_CRC );
 						return nBytesToRead;
 					}
 				}else
 					break;
 		}
+		::SetLastError(ERROR_READ_FAULT);
 		return nBytesToRead-nCount;
 	}
 
@@ -83,10 +88,11 @@
 		if (!fatPath.GetItems(item,n)){
 			div_t d=div((int)position,(int)dos->formatBoot.sectorLength-dos->properties->dataBeginOffsetInSector-dos->properties->dataEndOffsetInSector);
 			item+=d.quot, n-=d.quot; // skipping Sectors into which not written
+			TFdcStatus sr;
 			for( WORD w; n--; item++ )
-				if (const PSectorData sectorData=dos->image->GetSectorData(item->chs,&w)){
+				if (const PSectorData sectorData=dos->image->GetSectorData(item->chs,0,false,&w,&sr)){ // False = freezing the state of data (eventually erroneous)
 					w-=d.rem+dos->properties->dataBeginOffsetInSector+dos->properties->dataEndOffsetInSector;
-					dos->image->MarkSectorAsDirty(item->chs);
+					dos->image->MarkSectorAsDirty(item->chs,0,&sr);
 					if (w<nCount){
 						::memcpy(sectorData+dos->properties->dataBeginOffsetInSector+d.rem,lpBuf,w);
 						lpBuf=(PCBYTE)lpBuf+w, nCount-=w, position+=w, d.rem=0;
@@ -99,3 +105,34 @@
 					break;
 		}
 	}
+
+	/*UINT CDos::CFileReaderWriter::GetBufferPtr(UINT nCommand,UINT nCount,PVOID *ppBufStart,PVOID *ppBufMax){
+		// direct buffering support; for a given read/write request returns the number of Bytes actually available in the Buffer at current Position (increments the Position by this number of Bytes)
+		switch (nCommand){
+			case CFile::bufferCheck:
+				return TRUE; // yes, direct buffering supported
+			case CFile::bufferCommit:
+				return 0; // not supported
+			default:{
+				// reading/writing is possible only within a single Sector; if inteded to read from/write to multiple Sectors, multiple calls to GetBufferPtr must be made
+				ASSERT( ppBufStart!=NULL && ppBufMax!=NULL );
+				CFatPath::PCItem item; DWORD n;
+				if (!fatPath.GetItems(item,n)){
+					const WORD usableSectorLength=dos->formatBoot.sectorLength-dos->properties->dataBeginOffsetInSector-dos->properties->dataEndOffsetInSector;
+					const div_t d=div( (int)position, usableSectorLength );
+					WORD w; TFdcStatus sr;
+					if (const PSectorData sectorData=dos->image->GetSectorData( item[d.quot].chs, 0, false, &w, &sr )){
+						*ppBufStart = sectorData+dos->properties->dataBeginOffsetInSector+d.rem;
+						*ppBufMax = (PBYTE)*ppBufStart + min(nCount,usableSectorLength-d.rem);
+						position+=( nCount=(PCBYTE)*ppBufMax-(PCBYTE)*ppBufStart );
+					}else{
+						*ppBufStart = *ppBufMax = NULL;
+						nCount=0;
+					}
+					::SetLastError( !sr.IsWithoutError()*ERROR_SECTOR_NOT_FOUND );
+					return nCount;
+				}else
+					return 0;
+			}
+		}
+	}*/
