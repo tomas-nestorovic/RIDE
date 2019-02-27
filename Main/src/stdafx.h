@@ -49,6 +49,7 @@ typedef const CImage *PCImage;
 
 class CDos; // forward
 typedef CDos *PDos;
+typedef const CDos *PCDos;
 
 class CRideApp; // forward
 class CBootView; // forward
@@ -110,6 +111,7 @@ typedef const int *PCINT;
 
 #define COLOR_WHITE	0xffffff
 #define COLOR_BLACK	0
+#define COLOR_YELLOW 0xffff
 
 extern CRideApp app;
 

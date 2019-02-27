@@ -37,11 +37,17 @@
 
 	CHexaEditor::CHexaEditor(PVOID param,DWORD recordSize,TFnQueryRecordLabel fnQueryRecordLabel)
 		// ctor
+		// - initialization
 		: font(_T("Courier New"),105,false,true)
 		, recordSize(recordSize) , fnQueryRecordLabel(fnQueryRecordLabel) , nRowsPerRecord(1)
 		, cursor(0) , param(param) , hPreviouslyFocusedWnd(0)
 		, nBytesInRow(16) , editable(true) , addrLength(ADDRESS_FORMAT_LENGTH)
 		, emphases((PEmphasis)&TEmphasis::Terminator) {
+		// - comparing requested configuration with HexaEditor's skills
+		ASSERT(	recordSize>=128 // making sure that entire Rows are either (1) well readable, (2) readable with error, or (3) non-readable; 128 = min Sector length
+				? recordSize%128==0 // case: Record spans over entire Sectors
+				: 128%recordSize==0 // case: Sector contains integral multiple of Records
+			);
 	}
 
 
@@ -583,7 +589,7 @@ leftMouseDragged:
 							// : BackgroundColor is the EmphasisColor overlayed with SelectionColor
 blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContentFlags!=currContentFlags) // "if EmphasisColor or the application of SelectionColor have changed"
 								SetBkColor(	newContentFlags&Selected
-											? Utils::GetBlendedColor(newEmphasisColor,SelectionColor) // need to overlay EmphasisColor with SelectionColor
+											? Utils::GetBlendedColor(newEmphasisColor,SelectionColor,.6f) // need to overlay EmphasisColor with SelectionColor
 											: newEmphasisColor // EmphasisColor only
 										);
 						}else if (!newContentFlags){
@@ -597,7 +603,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 							// Selected content
 							if (newEmphasisColor!=currEmphasisColor || newContentFlags!=currContentFlags){ // "if EmphasisColor or the application of SelectionColor have changed"
 								// : TextColor is either Black or White, whichever is in higher contrast to CurrentBackgroundColor
-								const COLORREF bgColor=Utils::GetBlendedColor(newEmphasisColor,SelectionColor); // need to overlay EmphasisColor with SelectionColor
+								const COLORREF bgColor=Utils::GetBlendedColor(newEmphasisColor,SelectionColor,.6f); // need to overlay EmphasisColor with SelectionColor
 								const WORD rgbSum = *(PCBYTE)&bgColor + ((PCBYTE)&bgColor)[1] + ((PCBYTE)&bgColor)[2];
 								SetTextColor( rgbSum>0x180 ? COLOR_BLACK : COLOR_WHITE );
 								// : BackgroundColor is the EmphasisColor overlayed with SelectionColor
@@ -618,7 +624,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 						dc.SetContentPrintState( CHexaPaintDC::Normal, ::GetSysColor(COLOR_BTNFACE) );
 						rcHeader.left=(addrLength+ADDRESS_SPACE_LENGTH)*font.charAvgWidth;
 						for( BYTE n=0; n<nBytesInRow&&rcHeader.left<rcHeader.right; rcHeader.left+=HEXA_FORMAT_LENGTH*font.charAvgWidth )
-							::DrawText( dc, buf, ::wsprintf(buf,HEXA_FORMAT,n++), &rcHeader, DT_LEFT|DT_TOP );
+							dc.DrawText( buf, ::wsprintf(buf,HEXA_FORMAT,n++), &rcHeader, DT_LEFT|DT_TOP );
 					}
 					// . determining the visible part of the File content
 					const int iRowFirstToPaint=max( (rcClip.top-HEADER_HEIGHT)/font.charHeight, 0 );
@@ -643,38 +649,47 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 						const int _selectionA=min(cursor.selectionA,cursor.selectionZ), _selectionZ=max(cursor.selectionZ,cursor.selectionA);
 						PEmphasis pEmp=emphases;
 						while (pEmp->z<address) pEmp=pEmp->pNext; // choosing the first visible Emphasis
+						f->Seek( address, CFile::begin );
 						for( TCHAR buf[16]; iRowA<=iRowZ; iRowA++,y+=font.charHeight ){
 							RECT rcHexa={ /*xHexaStart*/0, y, min(xHexaEnd,rcClip.right), min(y+font.charHeight,rcClip.bottom) }; // commented out as this rectangle also used to paint the Address
 							RECT rcAscii={ min(xAsciiStart,rcClip.right), y, min(xAsciiEnd,rcClip.right), rcHexa.bottom };
 							// : address
 							if (addrLength){
 								dc.SetContentPrintState( CHexaPaintDC::Normal, ::GetSysColor(COLOR_BTNFACE) );
-								::DrawText( dc, buf, ::wsprintf(buf,ADDRESS_FORMAT,HIWORD(address),LOWORD(address)), &rcHexa, DT_LEFT|DT_TOP );
+								dc.DrawText( buf, ::wsprintf(buf,ADDRESS_FORMAT,HIWORD(address),LOWORD(address)), &rcHexa, DT_LEFT|DT_TOP );
 							}
 							rcHexa.left=xHexaStart;
 							// : File content
-							f->Seek( address, CFile::begin );
 							const bool isEof=f->GetPosition()==f->GetLength();
-							BYTE bytes[BYTES_MAX],const nBytesExpected=__firstByteInRowToLogicalPosition__(iRowA+1)-address,const nBytesRead=f->Read(bytes,nBytesExpected);
+							BYTE bytes[BYTES_MAX],const nBytesExpected=__firstByteInRowToLogicalPosition__(iRowA+1)-address;
+							::SetLastError(ERROR_SUCCESS); // clearing any previous error
+							BYTE nBytesRead=f->Read(bytes,nBytesExpected);
+							BYTE printFlags=::GetLastError()==ERROR_SUCCESS // File content readable without error
+											? CHexaPaintDC::Normal
+											: CHexaPaintDC::Erroneous;
 							if (nBytesRead)
-								// content available
-								for( BYTE n=nBytesRead,*p=bytes; n--; address++ ){
+								// entire Row available (guaranteed thanks to checks in the ctor)
+								for( const BYTE *p=bytes; nBytesRead--; address++ ){
 									// | choosing colors
-									BYTE printFlags=CHexaPaintDC::Normal;
-									COLORREF emphasisColor=COLOR_WHITE;
+									COLORREF emphasisColor;
 									if (_selectionA<=address && address<_selectionZ)
-										emphasisColor=dc.SelectionColor, printFlags|=CHexaPaintDC::Selected;
+										printFlags|=CHexaPaintDC::Selected;
+									else
+										printFlags&=~CHexaPaintDC::Selected;
 									if (pEmp->a<=address && address<pEmp->z)
 										emphasisColor=COLOR_YELLOW;
+									else{
+										emphasisColor=COLOR_WHITE;
+										if (address==pEmp->z) pEmp=pEmp->pNext;
+									}
 									dc.SetContentPrintState( printFlags, emphasisColor );
-									if (address==pEmp->z) pEmp=pEmp->pNext;
 									// | Hexa
 									const int iByte=*p++;
-									::DrawText( dc, buf, ::wsprintf(buf,HEXA_FORMAT,iByte), &rcHexa, DT_LEFT|DT_TOP );
+									dc.DrawText( buf, ::wsprintf(buf,HEXA_FORMAT,iByte), &rcHexa, DT_LEFT|DT_TOP );
 									rcHexa.left+=HEXA_FORMAT_LENGTH*font.charAvgWidth;
 									// | Ascii
-									::DrawText(	dc,
-												::isprint(iByte) ? (LPCTSTR)&iByte : _T("."), 1, // if original character not printable, displaying a substitute one
+									::DrawTextW(dc,
+												::isprint(iByte) ? (LPCWSTR)&iByte : L"\x2219", 1, // if original character not printable, displaying a substitute one
 												&rcAscii, DT_LEFT|DT_TOP|DT_NOPREFIX
 											);
 									rcAscii.left+=font.charAvgWidth;
@@ -682,9 +697,9 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 							else if (!isEof){
 								// content not available (e.g. irrecoverable Sector read error)
 								f->Seek( address+=nBytesExpected, CFile::begin );
-								dc.SetContentPrintState( CHexaPaintDC::Erroneous, COLOR_WHITE );
 								#define ERR_MSG	_T("» No data «")
-								::DrawText( dc, ERR_MSG, -1, &rcHexa, DT_LEFT|DT_TOP );
+								dc.SetContentPrintState( printFlags, COLOR_WHITE );
+								dc.DrawText( ERR_MSG, -1, &rcHexa, DT_LEFT|DT_TOP );
 								rcHexa.left+=(sizeof(ERR_MSG)-sizeof(TCHAR))*font.charAvgWidth;
 							}
 							// : filling the rest of the Row with background color (e.g. the last Row in a Record may not span up to the end)
