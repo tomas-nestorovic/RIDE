@@ -80,7 +80,10 @@
 		, zeroLengthFilesEnabled( __getProfileBool__(INI_ALLOW_ZERO_LENGTH_FILES,false) )
 		, exportWholeSectors( __getProfileBool__(INI_EXPORT_WHOLE_SECTORS,true) )
 		, importToSysTrack(false) {
-		if (formatBoot.mediumType!=TMedium::UNKNOWN){ // may be unknown if creating a new Image
+		if (formatBoot.mediumType!=TMedium::UNKNOWN // may be unknown if creating a new Image
+			&&
+			image->GetCylinderCount() // Image is initialized (e.g. isn't when reconstructing a temporary TRD Image from an input SCL Image)
+		){
 			PDirectoryEntry directory[TRDOS503_FILE_COUNT_MAX];
 			if (__getDirectory__(directory))
 				importToSysTrack=!directory[0]->first.track; // turned on if the first File starts in system Track

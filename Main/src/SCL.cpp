@@ -97,6 +97,9 @@
 			TSclHeader sclHeader;
 			if (f.Read(&sclHeader,sizeof(sclHeader))==sizeof(sclHeader) && !::memcmp(sclHeader.id,HEADER_SINCLAIR,sizeof(sclHeader.id)) && sclHeader.nFiles<=TRDOS503_FILE_COUNT_MAX){
 				// recognized as TRDOS 5.0x Image
+				// : destroying any previous attempt to set Medium's geometry (e.g. during automatic recognition of suitable DOS to open this Image with)
+				while (TCylinder n=GetCylinderCount())
+					UnformatTrack(--n,0);
 				// : instantiating the TRDOS with the highest priority in the recognition sequence
 				CTRDOS503 *pTrdos=NULL; // assumption (no TR-DOS participates in the recognition sequence)
 				const CDos::CRecognition recognition;
@@ -111,9 +114,6 @@
 				if (!pTrdos) // no TR-DOS participates in the recognition sequence ...
 					return ERROR_UNRECOGNIZED_VOLUME; // ... hence can never recognize this Image regardless it's clear it's a TR-DOS Image
 				::memcpy( pTrdos->sideMap, sideMap, sizeof(pTrdos->sideMap) ); // overwriting the SideMap to make sure it complies with the one provided as input
-				// : destroying any previous attempt to set Medium's geometry (e.g. during automatic recognition of suitable DOS to open this Image with)
-				while (TCylinder n=GetCylinderCount())
-					UnformatTrack(--n,0);
 				// : formatting Image to the maximum possible capacity
 				TStdWinError err=__extendToNumberOfCylinders__( pTrdos->formatBoot.nCylinders, pTrdos->properties->sectorFillerByte );
 				if (err!=ERROR_SUCCESS){
