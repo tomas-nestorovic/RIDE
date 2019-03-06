@@ -74,7 +74,7 @@
 		// - unescaping and trimming the Extension
 		if (pExt){
 			dw=extLengthMax;
-			::UrlUnescape(	TZxRom::AsciiToZx(buf,buf,NULL), // converting in place to ZX charset
+			::UrlUnescape(	TZxRom::AsciiToZx(pExt,pExt,NULL), // converting in place to ZX charset
 							NULL, &dw,
 							URL_UNESCAPE_INPLACE // unescaping in place
 						);
