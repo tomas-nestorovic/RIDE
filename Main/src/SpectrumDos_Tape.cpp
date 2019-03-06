@@ -234,24 +234,12 @@
 								zxInfo
 							);
 		// - processing import information
-		TCHAR uftExt[]={ *zxExt, '\0' };
-		UStdParameters u;	TUniFileType uts;
+		UStdParameters u;	TUniFileType uts=TUniFileType::HEADERLESS;
 		DWORD blockFlag=TStd::DATA; // assumption (block featuring Header has been saved using standard routine in ROM)
 		DWORD blockChecksum=0, dw;
 		if (const int n=__importFileInformation__(zxInfo,uts,u,dw)){
-			switch (uts){
-				case TUniFileType::SCREEN:
-					*uftExt=TUniFileType::BLOCK;
-					//fallthrough
-				case TUniFileType::PROGRAM:
-				case TUniFileType::NUMBER_ARRAY:
-				case TUniFileType::CHAR_ARRAY:
-				case TUniFileType::BLOCK:
-					break;
-				default:
-					*uftExt=TUniFileType::HEADERLESS;
-					break;
-			}
+			if (uts==TUniFileType::SCREEN)
+				uts=TUniFileType::BLOCK;
 			if (dw) fileSize=dw;
 			_stscanf( zxInfo+n, EXPORT_INFO_TAPE2, &blockFlag, &blockChecksum );
 		}
@@ -264,9 +252,9 @@
 			tf->dataChecksum=blockChecksum;
 			tf->dataLength=fileSize;
 		for( BYTE type=ZX_TAPE_EXTENSION_STD_COUNT; type--; )
-			if (Extensions[type]==*uftExt){
+			if (Extensions[type]==uts){
 				// File can be imported with Header
-				tf->type=TTapeFile::STD_HEADER;
+				tf->type=TTapeFile::STD_HEADER; // the File isn't Headerless as assumed above
 				const PHeader h=tf->GetHeader();
 				// . Extension
 				h->type=(TZxRom::TFileType)type;
