@@ -71,12 +71,12 @@ BEGIN
     "4",            ID_ZX_PREVIEWASSCREEN,  VIRTKEY, CONTROL, NOINVERT
     "6",            ID_DOS_DEFRAGMENT,      VIRTKEY, CONTROL, NOINVERT
     "B",            ID_DOS_PREVIEWASBINARY, VIRTKEY, CONTROL, NOINVERT
-    "E",            ID_TRDOS_FILE_LENGTH_OCCUPIED_SECTORS, VIRTKEY, CONTROL, 
+    "E",            ID_DOS_FILE_LENGTH_OCCUPIED_SECTORS, VIRTKEY, CONTROL, 
                                                     NOINVERT
     "F",            ID_DOS_FORMAT,          VIRTKEY, SHIFT, CONTROL, 
                                                     NOINVERT
     "K",            ID_ZX_PREVIEWASBASIC,   VIRTKEY, CONTROL, NOINVERT
-    "R",            ID_TRDOS_FILE_LENGTH_FROM_DIRENTRY, VIRTKEY, CONTROL, 
+    "R",            ID_DOS_FILE_LENGTH_FROM_DIRENTRY, VIRTKEY, CONTROL, 
                                                     NOINVERT
 END
 
@@ -245,9 +245,9 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Export size given by"
         BEGIN
-            MENUITEM "Directory entry\tCtrl+R",     ID_TRDOS_FILE_LENGTH_FROM_DIRENTRY
+            MENUITEM "Directory entry\tCtrl+R",     ID_DOS_FILE_LENGTH_FROM_DIRENTRY
 
-            MENUITEM "Occupied sectors\tCtrl+E",    ID_TRDOS_FILE_LENGTH_OCCUPIED_SECTORS
+            MENUITEM "Occupied sectors\tCtrl+E",    ID_DOS_FILE_LENGTH_OCCUPIED_SECTORS
 
         END
         MENUITEM "Export with shell-compliant names", 
@@ -1354,8 +1354,8 @@ BEGIN
     ID_IMAGE_PATCH          "Apply existing patch to the disk content (only floppies can be patched)"
     ID_IMAGE_PROTECT        "Toggle the write protection on and off\nWrite protection"
     ID_IMAGE_SETTINGS       "Disk and drive options\nDisk and drive options"
-    ID_TRDOS_FILE_LENGTH_FROM_DIRENTRY "Get file length from directory entry"
-    ID_TRDOS_FILE_LENGTH_OCCUPIED_SECTORS 
+    ID_DOS_FILE_LENGTH_FROM_DIRENTRY "Get file length from directory entry"
+    ID_DOS_FILE_LENGTH_OCCUPIED_SECTORS 
                             "Infer file length from the number of sectors occupied"
     ID_TRACKMAP_STATUS      "Show sector statuses\nSector statuses"
     ID_TRACKMAP_DATA        "Show healthy sector data\nSector data"

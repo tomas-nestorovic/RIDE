@@ -153,6 +153,11 @@
 			operator DWORD() const;
 		};
 
+		enum TGetFileSizeOptions:BYTE{
+			OfficialDataLength,
+			SizeOnDisk
+		};
+
 		const PImage image;
 		const PCProperties properties;
 	private:
@@ -194,8 +199,9 @@
 		const TFnCompareNames fnCompareNames;
 		const TTrackScheme trackAccessScheme; // single Scheme to access Tracks in Image
 		bool generateShellCompliantExportNames;
+		TGetFileSizeOptions getFileSizeDefaultOption;
 		
-		CDos(PImage _image,PCFormat _pFormatBoot,TTrackScheme trackAccessScheme,PCProperties _properties,TFnCompareNames _fnCompareNames,PCSide _sideMap,UINT nResId,CFileManagerView * _pFileManager);
+		CDos(PImage _image,PCFormat _pFormatBoot,TTrackScheme trackAccessScheme,PCProperties _properties,TFnCompareNames _fnCompareNames,PCSide _sideMap,UINT nResId,CFileManagerView * _pFileManager,TGetFileSizeOptions _getFileSizeDefaultOption);
 
 		int __getProfileInt__(LPCTSTR entryName,int defaultValue) const;
 		void __writeProfileInt__(LPCTSTR entryName,int value) const;
@@ -210,7 +216,6 @@
 		TStdWinError __unformatTracks__(TTrack nTracks,PCCylinder cylinders,PCHead heads);
 		bool __addStdTracksToFatAsEmpty__(TTrack nTracks,PCCylinder cylinders,PCHead heads);
 		bool __removeStdTracksFromFat__(TTrack nTracks,PCCylinder cylinders,PCHead heads);
-		DWORD __getFileSize__(PCFile file) const;
 		bool __fillEmptySpace__(CFillEmptySpaceDialog &rd);
 		LPCTSTR __exportFileData__(PCFile file,CFile *fOut,DWORD nMaxDataBytesToExport) const;
 		TStdWinError __importFileData__(CFile *fIn,PFile fDesc,LPCTSTR fileName,LPCTSTR fileExt,DWORD fileSize,PFile &rFile,CFatPath &rFatPath);
@@ -291,9 +296,12 @@
 		PTCHAR GetFileNameWithAppendedExt(PCFile file,PTCHAR bufNameExt) const;
 		bool HasFileNameAndExt(PCFile file,LPCTSTR fileName,LPCTSTR fileExt) const;
 		virtual TStdWinError ChangeFileNameAndExt(PFile file,LPCTSTR newName,LPCTSTR newExt,PFile &rRenamedFile)=0;
-		virtual DWORD GetFileDataSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData) const=0;
-		DWORD GetFileDataSize(PCFile file) const;
-		virtual DWORD GetFileSizeOnDisk(PCFile file) const;
+		virtual DWORD GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData,TGetFileSizeOptions option) const=0;
+		DWORD GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData) const;
+		DWORD GetFileSize(PCFile file) const;
+		DWORD GetFileOfficialSize(PCFile file) const;
+		DWORD GetFileOccupiedSize(PCFile file) const;
+		DWORD GetFileSizeOnDisk(PCFile file) const;
 		virtual DWORD GetAttributes(PCFile file) const=0;
 		bool IsDirectory(PCFile file) const;
 		virtual TStdWinError DeleteFile(PFile file)=0;

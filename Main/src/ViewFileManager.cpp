@@ -618,19 +618,19 @@
 				// counts the File into Statistics; recurrently processes Subdirectories
 				if (pdt->entryType==CDos::TDirectoryTraversal::FILE)
 					// File
-					rStatistics.nFiles++, rStatistics.totalSizeInBytes+=dos->GetFileDataSize(pdt->entry), rStatistics.totalSizeOnDiskInBytes+=dos->GetFileSizeOnDisk(pdt->entry);
+					rStatistics.nFiles++, rStatistics.totalSizeInBytes+=dos->GetFileOfficialSize(pdt->entry), rStatistics.totalSizeOnDiskInBytes+=dos->GetFileSizeOnDisk(pdt->entry);
 				else{
 					// Directory - processing it recurrently
 					// . switching to the Directory
 					if ((dos->*pDirStructMan->fnChangeCurrentDir)(pdt->entry)!=ERROR_SUCCESS)
 						return;
-					// . preventing from cycling indefinitely (e.g. because of encountering a dotdot entry ".." in MS-DOS Directory)
+					// . preventing from cycling infinitely (e.g. because of encountering a dotdot entry ".." in MS-DOS Directory)
 					const TDirectoryEtc dirEtc={ (dos->*pDirStructMan->fnGetCurrentDirId)(), dirPath };
 					for( PCDirectoryEtc pde=dirPath; pde!=NULL; pde=pde->parent )
 						if (pde->dirId==dirEtc.dirId) return;
 					// . involving Directory into Statistics
 					const CDos::PDirectoryTraversal subPdt=dos->BeginDirectoryTraversal();
-						for( rStatistics.nDirectories++,rStatistics.totalSizeInBytes+=dos->GetFileDataSize(pdt->entry),rStatistics.totalSizeOnDiskInBytes+=dos->GetFileSizeOnDisk(pdt->entry); subPdt->GetNextFileOrSubdir()!=NULL; ){
+						for( rStatistics.nDirectories++,rStatistics.totalSizeInBytes+=dos->GetFileOfficialSize(pdt->entry),rStatistics.totalSizeOnDiskInBytes+=dos->GetFileSizeOnDisk(pdt->entry); subPdt->GetNextFileOrSubdir()!=NULL; ){
 							if (!pAction->bContinue) break;
 							if (subPdt->entryType!=CDos::TDirectoryTraversal::WARNING)
 								__countInFile__(subPdt,&dirEtc);

@@ -106,7 +106,7 @@
 	CGDOS::CGDOS(PImage image,PCFormat pFormatBoot)
 		// ctor
 		// - base
-		: CSpectrumDos( image, pFormatBoot, TTrackScheme::BY_SIDES, &Properties, IDR_GDOS, &fileManager )
+		: CSpectrumDos( image, pFormatBoot, TTrackScheme::BY_SIDES, &Properties, IDR_GDOS, &fileManager, TGetFileSizeOptions::OfficialDataLength )
 		// - initialization
 		, zeroLengthFilesEnabled( __getProfileBool__(INI_ALLOW_ZERO_LENGTH_FILES,false) )
 		, fileManager(this) {
@@ -358,10 +358,19 @@
 		return ERROR_SUCCESS;
 	}
 
-	DWORD CGDOS::GetFileDataSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData) const{
-		// determines and returns the size of specified File's data portion
-		if (pnBytesReservedAfterData) *pnBytesReservedAfterData=0;
-		return ((PCDirectoryEntry)file)->__getDataSize__(pnBytesReservedBeforeData);
+	DWORD CGDOS::GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData,TGetFileSizeOptions option) const{
+		// determines and returns the size of specified File
+		const PCDirectoryEntry de=(PCDirectoryEntry)file;
+		switch (option){
+			case TGetFileSizeOptions::OfficialDataLength:
+				if (pnBytesReservedAfterData) *pnBytesReservedAfterData=0;
+				return de->__getDataSize__(pnBytesReservedBeforeData);
+			case TGetFileSizeOptions::SizeOnDisk:
+				return de->nSectors*GDOS_SECTOR_LENGTH_STD;
+			default:
+				ASSERT(FALSE);
+				return 0;
+		}
 	}
 
 	TStdWinError CGDOS::DeleteFile(PFile file){
@@ -404,22 +413,22 @@
 			UStdParameters stdParams;
 				if (const PCWORD pw=de->__getStdParameter1__()) stdParams.param1=*pw;
 				if (const PCWORD pw=de->__getStdParameter2__()) stdParams.param2=*pw;
-			__exportFileInformation__( buf+::lstrlen(buf), uts, stdParams, CDos::GetFileDataSize(de) );
+			__exportFileInformation__( buf+::lstrlen(buf), uts, stdParams, GetFileOfficialSize(de) );
 		}
 		return buf;
 	}
 
 	DWORD CGDOS::ExportFile(PCFile file,CFile *fOut,DWORD nBytesToExportMax,LPCTSTR *pOutError) const{
-		// exports data portion of specfied File (data portion size determined by GetFileDataSize); returns the export size of specified File
+		// exports data portion of specfied File (data portion size determined by GetFileSize); returns the export size of specified File
 		const PCDirectoryEntry de=(PCDirectoryEntry)file;
 		if (fOut){
 			// . exporting File's data
-			CSpectrumDos::ExportFile( file, fOut, nBytesToExportMax, pOutError );
+			__super::ExportFile( file, fOut, nBytesToExportMax, pOutError );
 			// . exporting Etc data stored in DirectoryEntry
 			if (const DWORD nBytesReserved=nBytesToExportMax-fOut->GetLength())
 				fOut->Write( &de->etc, min(nBytesReserved,sizeof(de->etc)) );
 		}
-		return CDos::GetFileDataSize(de)+sizeof(de->etc);
+		return reinterpret_cast<PCDos>(this)->GetFileSize(de)+sizeof(de->etc);
 	}
 
 	TStdWinError CGDOS::ImportFile(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile){

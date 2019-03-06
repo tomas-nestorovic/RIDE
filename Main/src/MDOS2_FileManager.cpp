@@ -73,7 +73,7 @@
 									&&
 									!strncmp(name,de->name,MDOS2_FILE_NAME_LENGTH_MAX) // "Bytes" File name equal to Program name
 									&&
-									DOS->GetFileDataSize(de)==GKFM_ICON_BYTES_COUNT // correct size
+									DOS->GetFileOfficialSize(de)==GKFM_ICON_BYTES_COUNT // correct size
 								){
 									// found a File with icon intended for particular Program
 									lvi.iImage=TBootSector::UReserved1::TGKFileManager::__addIconToList__( icons, ((PMDOS2)DOS)->__getLogicalSectorData__(de->firstLogicalSector), dc );
@@ -155,7 +155,7 @@
 			case INFORMATION_NAME:
 				return ::strncmp(f1->name,f2->name,MDOS2_FILE_NAME_LENGTH_MAX);
 			case INFORMATION_SIZE:
-				return DOS->GetFileDataSize(f1)-DOS->GetFileDataSize(f2);
+				return DOS->GetFileOfficialSize(f1)-DOS->GetFileOfficialSize(f2);
 			case INFORMATION_ATTRIBUTES:
 				return f1->attributes-f2->attributes;
 			case INFORMATION_PARAM_1:

@@ -23,14 +23,16 @@
 
 
 	#define INI_SHELL_COMPLIANT_EXPORT_NAMES	_T("shcomp")
+	#define INI_GETFILESIZE_OPTION				_T("gfsopt")
 
-	CDos::CDos(PImage _image,PCFormat _pFormatBoot,TTrackScheme trackAccessScheme,PCProperties _properties,TFnCompareNames _fnCompareNames,PCSide _sideMap,UINT nResId,CFileManagerView *_pFileManager)
+	CDos::CDos(PImage _image,PCFormat _pFormatBoot,TTrackScheme trackAccessScheme,PCProperties _properties,TFnCompareNames _fnCompareNames,PCSide _sideMap,UINT nResId,CFileManagerView *_pFileManager,TGetFileSizeOptions _getFileSizeDefaultOption)
 		// ctor
 		: image(_image) , properties(_properties) , fnCompareNames(_fnCompareNames)
 		, sideMap(_sideMap) , menu(nResId) , pFileManager(_pFileManager)
 		, formatBoot(*_pFormatBoot) // information on Medium Format retrieved from Boot; this information has ALWAYS priority when manipulating data on the disk; changes in this structure must be projected back to Boot Sector using FlushToBootSector (e.g. called automatically by BootView)
 		, trackAccessScheme(trackAccessScheme) // single Scheme to access Tracks in Image
-		, generateShellCompliantExportNames( __getProfileBool__(INI_SHELL_COMPLIANT_EXPORT_NAMES,true) ) { // True <=> the GetFileExportNameAndExt function must produce names that are compliant with the FAT32 file system, otherwise False
+		, generateShellCompliantExportNames( __getProfileBool__(INI_SHELL_COMPLIANT_EXPORT_NAMES,true) ) // True <=> the GetFileExportNameAndExt function must produce names that are compliant with the FAT32 file system, otherwise False
+		, getFileSizeDefaultOption( (TGetFileSizeOptions)__getProfileInt__(INI_GETFILESIZE_OPTION,_getFileSizeDefaultOption) ) {
 	}
 
 	CDos::~CDos(){
@@ -536,7 +538,7 @@ reportError:Utils::Information(buf);
 								if (const LPCTSTR err=fatPath.GetItems(item,n))
 									fesp.dos->__showFileProcessingError__(file,err);
 								else
-									for( DWORD fileSize=fesp.dos->__getFileSize__(file); n--; item++ )
+									for( DWORD fileSize=fesp.dos->GetFileOccupiedSize(file); n--; item++ )
 										if (nDataBytesInSector<fileSize)
 											fileSize-=nDataBytesInSector;
 										else{
@@ -680,23 +682,31 @@ reportError:Utils::Information(buf);
 		return !fnCompareNames(fileName,bufName) && !fnCompareNames(fileExt,bufExt);
 	}
 
-	DWORD CDos::GetFileDataSize(PCFile file) const{
-		// returns the number of Bytes in data portion of specified File (e.g. TR-DOS yet stores some extra information "after" official data - these are NOT counted in here!)
-		return GetFileDataSize(file,NULL,NULL);
+	DWORD CDos::GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData) const{
+		// a wrapper around the virtual GetFileSize with DefaultOption
+		return GetFileSize(file,pnBytesReservedBeforeData,pnBytesReservedAfterData,getFileSizeDefaultOption);
 	}
 
-	DWORD CDos::__getFileSize__(PCFile file) const{
+	DWORD CDos::GetFileSize(PCFile file) const{
+		// a wrapper around the virtual GetFileSize with DefaultOption
+		return GetFileSize(file,NULL,NULL);
+	}
+
+	DWORD CDos::GetFileOfficialSize(PCFile file) const{
+		// returns the number of Bytes in data portion of specified File (e.g. TR-DOS yet stores some extra information "after" official data - these are NOT counted in here!)
+		return GetFileSize(file,NULL,NULL,TGetFileSizeOptions::OfficialDataLength);
+	}
+
+	DWORD CDos::GetFileOccupiedSize(PCFile file) const{
 		// returns the number of Bytes that the whole File contains (e.g. TR-DOS yet stores some extra information "after" official data - EVEN THESE are counted in here!)
 		BYTE nBytesReservedBeforeData,nBytesReservedAfterData;
-		const DWORD nDataBytes=GetFileDataSize(file,&nBytesReservedBeforeData,&nBytesReservedAfterData);
+		const DWORD nDataBytes=GetFileSize(file,&nBytesReservedBeforeData,&nBytesReservedAfterData);
 		return nBytesReservedBeforeData+nDataBytes+nBytesReservedAfterData;
 	}
 
 	DWORD CDos::GetFileSizeOnDisk(PCFile file) const{
 		// determines and returns how many Bytes the specified File actually occupies on disk
-		const WORD nDataBytesInSector=formatBoot.sectorLength-properties->dataBeginOffsetInSector-properties->dataEndOffsetInSector;
-		const DWORD nSectors=(__getFileSize__(file)+nDataBytesInSector-1)/nDataBytesInSector;
-		return nSectors*formatBoot.sectorLength;
+		return GetFileSize(file,NULL,NULL,TGetFileSizeOptions::SizeOnDisk);
 	}
 
 	bool CDos::IsDirectory(PCFile file) const{
@@ -705,7 +715,7 @@ reportError:Utils::Information(buf);
 	}
 
 	LPCTSTR CDos::__exportFileData__(PCFile file,CFile *fOut,DWORD nMaxDataBytesToExport) const{
-		// exports data portion of specfied File (data portion size determined by GetFileDataSize); returns textual description of occured error
+		// exports data portion of specfied File (data portion size determined by GetFileSize); returns textual description of occured error
 		LOG_FILE_ACTION(this,file,_T("export"));
 		const CFatPath fatPath(this,file);
 		CFatPath::PCItem item; DWORD n;
@@ -713,7 +723,7 @@ reportError:Utils::Information(buf);
 			return LOG_MESSAGE(err);
 		else{
 			BYTE nBytesReservedBeforeData;
-			DWORD nDataBytesToExport=GetFileDataSize(file,&nBytesReservedBeforeData,NULL);
+			DWORD nDataBytesToExport=GetFileSize(file,&nBytesReservedBeforeData,NULL);
 			nDataBytesToExport=min(nDataBytesToExport,nMaxDataBytesToExport);
 			div_t d=div((int)nBytesReservedBeforeData,(int)formatBoot.sectorLength-properties->dataBeginOffsetInSector-properties->dataEndOffsetInSector);
 			item+=d.quot, n-=d.quot; // skipping Sectors from which not read thanks to the NumberOfBytesReservedBeforeData
@@ -789,11 +799,11 @@ reportError:Utils::Information(buf);
 			const LPCTSTR errMsg=__exportFileData__(file,fOut,nBytesToExportMax);
 			if (pOutError)
 				*pOutError=errMsg;
-			const DWORD nDataBytes=GetFileDataSize(file);
+			const DWORD nDataBytes=GetFileSize(file);
 			return min(nDataBytes,nBytesToExportMax);
 			//return fOut->GetLength();
 		}else
-			return GetFileDataSize(file);
+			return GetFileSize(file);
 	}
 
 	TStdWinError CDos::__importFileData__(CFile *f,PFile fDesc,LPCTSTR fileName,LPCTSTR fileExt,DWORD fileSize,PFile &rFile,CFatPath &rFatPath){
@@ -1043,6 +1053,14 @@ finished:
 				// toggles the requirement to produce FAT32-compliant names for exported Files
 				__writeProfileBool__( INI_SHELL_COMPLIANT_EXPORT_NAMES, generateShellCompliantExportNames=!generateShellCompliantExportNames );
 				return TCmdResult::DONE;
+			case ID_DOS_FILE_LENGTH_FROM_DIRENTRY:
+				// export File size given by informatin in DirectoryEntry
+				__writeProfileInt__( INI_GETFILESIZE_OPTION, getFileSizeDefaultOption=TGetFileSizeOptions::OfficialDataLength );
+				return TCmdResult::DONE;
+			case ID_DOS_FILE_LENGTH_OCCUPIED_SECTORS:
+				// export File size given by number of Sectors in FatPath
+				__writeProfileInt__( INI_GETFILESIZE_OPTION, getFileSizeDefaultOption=TGetFileSizeOptions::SizeOnDisk );
+				return TCmdResult::DONE;
 			case ID_DOS_PREVIEWASBINARY:
 				// previewing File in hexa mode
 				if (CHexaPreview::pSingleInstance)
@@ -1059,6 +1077,14 @@ finished:
 			case ID_DOS_SHELLCOMPLIANTNAMES:
 				// projects the requirement to produce FAT32-compliant names for exported Files into the UI
 				pCmdUI->SetCheck(generateShellCompliantExportNames);
+				return true;
+			case ID_DOS_FILE_LENGTH_FROM_DIRENTRY:
+				// projects the default GetFileSizeOption into the UI
+				pCmdUI->SetRadio(getFileSizeDefaultOption==TGetFileSizeOptions::OfficialDataLength);
+				return true;
+			case ID_DOS_FILE_LENGTH_OCCUPIED_SECTORS:
+				// projects the default GetFileSizeOption into the UI
+				pCmdUI->SetRadio(getFileSizeDefaultOption==TGetFileSizeOptions::SizeOnDisk);
 				return true;
 		}
 		return false;

@@ -10,7 +10,7 @@
 	CMSDOS7::CMSDOS7(PImage image,PCFormat pFormatBoot)
 		// ctor
 		// - base
-		: CDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS, &Properties, ::lstrcmpi, CDos::StdSidesMap, IDR_MSDOS, &fileManager )
+		: CDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS, &Properties, ::lstrcmpi, CDos::StdSidesMap, IDR_MSDOS, &fileManager, TGetFileSizeOptions::OfficialDataLength )
 		// - initialization
 		, fat(*this) , fsInfo(*this)
 		, trackMap(this) , boot(this) , fileManager(this)
@@ -744,26 +744,33 @@ nextCluster:result++;
 		return ERROR_SUCCESS;
 	}
 
-	DWORD CMSDOS7::GetFileDataSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData) const{
-		// determines and returns the size of specified File's data portion
-		if (pnBytesReservedBeforeData) *pnBytesReservedBeforeData=0;
-		if (pnBytesReservedAfterData) *pnBytesReservedAfterData=0;
-		return ( (PCDirectoryEntry)file )->shortNameEntry.size;
-	}
+	DWORD CMSDOS7::GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData,TGetFileSizeOptions option) const{
+		// determines and returns the size of specified File
+		const PDirectoryEntry de=(PDirectoryEntry)file;
+		switch (option){
+			case TGetFileSizeOptions::OfficialDataLength:
+				if (pnBytesReservedBeforeData) *pnBytesReservedBeforeData=0;
+				if (pnBytesReservedAfterData) *pnBytesReservedAfterData=0;
+				return de->shortNameEntry.size;
+			case TGetFileSizeOptions::SizeOnDisk:
+				if (IsDirectory(file)){
+					// Directory - finding out how much space it occupies on the disk (NOT including its content!)
+					DWORD sizeOnDisk=0;
+					const PDirectoryEntry currentDirectory0=currentDirectory;
+					const_cast<CMSDOS7 *>(this)->__switchToDirectory__(de);
+						for( TMsdos7DirectoryTraversal dt(this); dt.__existsNextEntry__(); sizeOnDisk+=sizeof(UDirectoryEntry) );
+					const_cast<CMSDOS7 *>(this)->__switchToDirectory__(currentDirectory0);
+					return sizeOnDisk;
+				}else{
+					// File
+					const DWORD clusterSizeInBytes=boot.GetSectorData()->__getClusterSizeInBytes__();
+					return (de->shortNameEntry.size+clusterSizeInBytes-1)/clusterSizeInBytes * clusterSizeInBytes;
+				}
+			default:
+				ASSERT(FALSE);
+				return 0;
+		}
 
-	DWORD CMSDOS7::GetFileSizeOnDisk(PCFile file) const{
-		// determines and returns how many Bytes the specified File actually occupies on disk
-		if (IsDirectory(file)){
-			// Directory - finding out how much space it occupies on the disk (NOT including its content!)
-			DWORD sizeOnDisk=0;
-			const PDirectoryEntry currentDirectory0=currentDirectory;
-			((CMSDOS7 *)this)->__switchToDirectory__( (PDirectoryEntry)file );
-				for( TMsdos7DirectoryTraversal dt(this); dt.__existsNextEntry__(); sizeOnDisk+=sizeof(UDirectoryEntry) );
-			((CMSDOS7 *)this)->__switchToDirectory__(currentDirectory0);
-			return sizeOnDisk;
-		}else
-			// File
-			return CDos::GetFileSizeOnDisk(file);
 	}
 
 	DWORD CMSDOS7::GetAttributes(PCFile file) const{

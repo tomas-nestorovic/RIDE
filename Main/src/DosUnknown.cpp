@@ -32,7 +32,7 @@
 	CUnknownDos::CUnknownDos(PImage image,PCFormat pFormatBoot)
 		// ctor
 		// - base
-		: CDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS, &Properties, NULL, StdSidesMap, IDR_DOS_UNKNOWN, NULL )
+		: CDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS, &Properties, NULL, StdSidesMap, IDR_DOS_UNKNOWN, NULL, TGetFileSizeOptions::OfficialDataLength )
 		// - initialization
 		, trackMap(this) {
 	}
@@ -85,8 +85,8 @@
 		// tries to change given File's name and extension; returns Windows standard i/o error
 		return ERROR_FILE_INVALID;
 	}
-	DWORD CUnknownDos::GetFileDataSize(PCFile,PBYTE,PBYTE) const{
-		// determines and returns the size of specified File's data portion
+	DWORD CUnknownDos::GetFileSize(PCFile,PBYTE,PBYTE,TGetFileSizeOptions) const{
+		// determines and returns the size of specified File
 		return 0;
 	}
 	DWORD CUnknownDos::GetAttributes(PCFile) const{

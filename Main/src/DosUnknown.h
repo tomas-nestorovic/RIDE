@@ -18,7 +18,7 @@
 		// file system
 		void GetFileNameAndExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const override;
 		TStdWinError ChangeFileNameAndExt(PFile,LPCTSTR,LPCTSTR,PFile &) override;
-		DWORD GetFileDataSize(PCFile,PBYTE,PBYTE) const override;
+		DWORD GetFileSize(PCFile,PBYTE,PBYTE,TGetFileSizeOptions) const override;
 		DWORD GetAttributes(PCFile file) const override;
 		TStdWinError DeleteFile(PFile) override;
 		PDirectoryTraversal BeginDirectoryTraversal() const override;

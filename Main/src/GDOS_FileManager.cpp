@@ -66,7 +66,7 @@
 		r.left=r.right;
 		// . COLUMN: size
 		r.right=*tabs++;
-			::DrawText( dc, _itot(DOS->GetFileDataSize(de),bufT,10),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
+			::DrawText( dc, _itot(DOS->GetFileOfficialSize(de),bufT,10),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
 		r.left=r.right;
 		// . COLUMN: # of Sectors
 		r.right=*tabs++;
@@ -110,7 +110,7 @@
 				return ::lstrcmp( f1->__getFileTypeDesc__(buf1), f2->__getFileTypeDesc__(buf2) );
 			}
 			case INFORMATION_SIZE:
-				return DOS->GetFileDataSize(f1)-DOS->GetFileDataSize(f2);
+				return DOS->GetFileOfficialSize(f1)-DOS->GetFileOfficialSize(f2);
 			case INFORMATION_SECTOR_COUNT:
 				return f1->nSectors-f2->nSectors;
 			case INFORMATION_SECTOR_FIRST:

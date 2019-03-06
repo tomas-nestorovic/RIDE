@@ -12,7 +12,7 @@
 	CSpectrumDos::CTape::CTape(LPCTSTR fileName,const CSpectrumDos *diskDos)
 		// ctor
 		// - base
-		: CDos( this, &TapeFormat, TTrackScheme::BY_CYLINDERS, diskDos->properties, ::lstrcmp, StdSidesMap, 0, &fileManager ) // StdSidesMap = "some" Sides
+		: CDos( this, &TapeFormat, TTrackScheme::BY_CYLINDERS, diskDos->properties, ::lstrcmp, StdSidesMap, 0, &fileManager, TGetFileSizeOptions::OfficialDataLength ) // StdSidesMap = "some" Sides
 		, CImageRaw(&CImageRaw::Properties,false) // "some" Image
 		// - initialization
 		, fileManager(this,diskDos->zxRom,fileName) {
@@ -169,8 +169,8 @@
 			// Headerless File or Fragment
 			return ERROR_BAD_FILE_TYPE;
 	}
-	DWORD CSpectrumDos::CTape::GetFileDataSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData) const{
-		// determines and returns the size of specified File's data portion
+	DWORD CSpectrumDos::CTape::GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData,TGetFileSizeOptions option) const{
+		// determines and returns the size of specified File
 		if (pnBytesReservedBeforeData) *pnBytesReservedBeforeData=0;
 		if (pnBytesReservedAfterData) *pnBytesReservedAfterData=0;
 		const PCTapeFile tf=fileManager.files[(TTapeFileId)file];
@@ -701,7 +701,7 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 				return ::strncmp(j1,j2,ZX_TAPE_FILE_NAME_LENGTH_MAX);
 			}
 			case INFORMATION_SIZE:
-				return DOS->GetFileDataSize(file1)-DOS->GetFileDataSize(file2);
+				return DOS->GetFileOfficialSize(file1)-DOS->GetFileOfficialSize(file2);
 			case INFORMATION_PARAM_1:{
 				const WORD p1= h1 ? h1->params.param1 : -1;
 				const WORD p2= h2 ? h2->params.param1 : -1;

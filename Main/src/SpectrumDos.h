@@ -229,7 +229,7 @@
 			// file system
 			void GetFileNameAndExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const override;
 			TStdWinError ChangeFileNameAndExt(PFile file,LPCTSTR newName,LPCTSTR newExt,PFile &rRenamedFile) override;
-			DWORD GetFileDataSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData) const override;
+			DWORD GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData,TGetFileSizeOptions option) const override;
 			DWORD GetAttributes(PCFile file) const override;
 			TStdWinError DeleteFile(PFile file) override;
 			PDirectoryTraversal BeginDirectoryTraversal() const override;
@@ -295,7 +295,7 @@
 		CTrackMapView trackMap;
 		TSide sideMap[2]; // 2 = only one- or two-sided floppies are considered to be used with any ZX Spectrum derivate
 
-		CSpectrumDos(PImage image,PCFormat pFormatBoot,TTrackScheme trackAccessScheme,PCProperties properties,UINT nResId,CSpectrumFileManagerView *pFileManager);
+		CSpectrumDos(PImage image,PCFormat pFormatBoot,TTrackScheme trackAccessScheme,PCProperties properties,UINT nResId,CSpectrumFileManagerView *pFileManager,TGetFileSizeOptions _getFileSizeDefaultOption);
 		~CSpectrumDos();
 
 		PTCHAR GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const;

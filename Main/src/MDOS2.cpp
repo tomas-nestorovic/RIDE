@@ -10,7 +10,7 @@
 	CMDOS2::CMDOS2(PImage image,PCFormat pFormatBoot)
 		// ctor
 		// - base
-		: CSpectrumDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS, &Properties, IDR_MDOS, &fileManager )
+		: CSpectrumDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS, &Properties, IDR_MDOS, &fileManager, TGetFileSizeOptions::OfficialDataLength )
 		// - initialization
 		, boot(this) , fileManager(this) , version(AUTODETECT) {
 		deDefault.attributes=__getProfileInt__(INI_DEFAULT_ATTRIBUTES,0);
@@ -228,11 +228,20 @@
 		__markDirectorySectorAsDirty__( rRenamedFile=file );
 		return ERROR_SUCCESS;
 	}
-	DWORD CMDOS2::GetFileDataSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData) const{
-		// determines and returns the size of specified File's data portion
-		if (pnBytesReservedBeforeData) *pnBytesReservedBeforeData=0;
-		if (pnBytesReservedAfterData) *pnBytesReservedAfterData=0;
-		return MAKELONG( ((PCDirectoryEntry)file)->lengthLow, ((PCDirectoryEntry)file)->lengthHigh );
+	DWORD CMDOS2::GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData,TGetFileSizeOptions option) const{
+		// determines and returns the size of specified File
+		const PCDirectoryEntry de=(PCDirectoryEntry)file;
+		switch (option){
+			case TGetFileSizeOptions::OfficialDataLength:
+				if (pnBytesReservedBeforeData) *pnBytesReservedBeforeData=0;
+				if (pnBytesReservedAfterData) *pnBytesReservedAfterData=0;
+				return MAKELONG( de->lengthLow, de->lengthHigh );
+			case TGetFileSizeOptions::SizeOnDisk:
+				return (MAKELONG(de->lengthLow,de->lengthHigh)+MDOS2_SECTOR_LENGTH_STD-1)/MDOS2_SECTOR_LENGTH_STD * MDOS2_SECTOR_LENGTH_STD;
+			default:
+				ASSERT(FALSE);
+				return 0;
+		}
 	}
 
 	TStdWinError CMDOS2::DeleteFile(PFile file){
@@ -274,7 +283,7 @@
 				default								: uts=TUniFileType::UNKNOWN; break;
 			}
 			const PTCHAR p=buf+::lstrlen(buf);
-			_stprintf(	p + __exportFileInformation__( p, uts, de->params, CDos::GetFileDataSize(de) ),
+			_stprintf(	p + __exportFileInformation__( p, uts, de->params, GetFileOfficialSize(de) ),
 						INFO_ATTRIBUTES, de->attributes
 					);
 		}

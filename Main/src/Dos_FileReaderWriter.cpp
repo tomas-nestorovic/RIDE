@@ -2,7 +2,7 @@
 
 	CDos::CFileReaderWriter::CFileReaderWriter(const CDos *dos,PCFile file)
 		// ctor to read/edit an existing File in Image
-		: dos(dos) , fileSize(dos->__getFileSize__(file)) , fatPath(dos,file)
+		: dos(dos) , fileSize(dos->GetFileOccupiedSize(file)) , fatPath(dos,file)
 		, position(0) {
 	}
 

@@ -149,7 +149,7 @@
 		r.left=r.right;
 		// . COLUMN: size
 		r.right=*tabs++;
-			::DrawText( dc, _itot(DOS->GetFileDataSize(de),buf,10),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
+			::DrawText( dc, _itot(DOS->GetFileOfficialSize(de),buf,10),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
 		r.left=r.right;
 		// . COLUMN: attributes
 		r.right=*tabs++;
@@ -172,7 +172,7 @@
 					return ::lstrcmpi( DOS->GetFileNameWithAppendedExt(f1,n1), DOS->GetFileNameWithAppendedExt(f2,n2) );
 				}
 			case INFORMATION_SIZE:
-				return DOS->GetFileDataSize(f1)-DOS->GetFileDataSize(f2);
+				return DOS->GetFileOfficialSize(f1)-DOS->GetFileOfficialSize(f2);
 			case INFORMATION_ATTRIBUTES:
 				return f1->shortNameEntry.attributes-f2->shortNameEntry.attributes;
 		}

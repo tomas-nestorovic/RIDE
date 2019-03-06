@@ -46,7 +46,7 @@
 			// . resetting the content of the HexaPreview
 			if (pFileRW)
 				delete pFileRW;
-			const DWORD size=DOS->__getFileSize__(file);
+			const DWORD size=DOS->GetFileOccupiedSize(file);
 			hexaEditor.Reset( pFileRW=new CFileReaderWriter(DOS,file) ,size,size );
 			// . updating the window caption
 			TCHAR bufCaption[20+MAX_PATH];

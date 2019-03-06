@@ -48,18 +48,17 @@
 
 
 	#define INI_TRDOS	_T("TRDOS")
-	#define INI_EXPORT_WHOLE_SECTORS	_T("fmxsects")
 	#define INI_ALLOW_ZERO_LENGTH_FILES	_T("fm0files")
 
 	CTRDOS503::CTRDOS503(PImage image) // called exclusively by SCL Image!
 		// ctor (called exclusively by SCL Image!)
 		// - base
-		: CSpectrumDos( image, &CTRDOS503::Properties.stdFormats[0].params.format, TTrackScheme::BY_CYLINDERS, &Properties, IDR_TRDOS, &fileManager )
+		: CSpectrumDos( image, &CTRDOS503::Properties.stdFormats[0].params.format, TTrackScheme::BY_CYLINDERS, &Properties, IDR_TRDOS, &fileManager, TGetFileSizeOptions::SizeOnDisk )
 		// - initialization
 		, boot(this,TRDOS503_BOOT_LABEL_LENGTH_MAX) , fileManager(this)
 		, zeroLengthFilesEnabled(true) // just to be sure (SCL Image expects this setting when loading the content)
-		, exportWholeSectors(true)
 		, importToSysTrack(false) {
+		getFileSizeDefaultOption=TGetFileSizeOptions::SizeOnDisk; // making sure this option is always set
 		::ZeroMemory( sideMap, sizeof(sideMap) ); // both Sides of floppy are numbered as zero
 		formatBoot.nCylinders++;
 	}
@@ -67,7 +66,7 @@
 	CTRDOS503::CTRDOS503(PImage image,PCFormat pFormatBoot,PCProperties pTrdosProps)
 		// ctor
 		// - base
-		: CSpectrumDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS,pTrdosProps, IDR_TRDOS, &fileManager )
+		: CSpectrumDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS,pTrdosProps, IDR_TRDOS, &fileManager, TGetFileSizeOptions::SizeOnDisk )
 		// - initialization
 		, boot(	this,
 				(pTrdosProps==&Properties)*TRDOS503_BOOT_LABEL_LENGTH_MAX
@@ -78,7 +77,6 @@
 			)
 		, fileManager(this)
 		, zeroLengthFilesEnabled( __getProfileBool__(INI_ALLOW_ZERO_LENGTH_FILES,false) )
-		, exportWholeSectors( __getProfileBool__(INI_EXPORT_WHOLE_SECTORS,true) )
 		, importToSysTrack(false) {
 		if (formatBoot.mediumType!=TMedium::UNKNOWN // may be unknown if creating a new Image
 			&&
@@ -196,7 +194,7 @@
 			item.chs.sectorId.sector=TRDOS503_SECTOR_FIRST_NUMBER+de->first.sector;
 			item.chs.sectorId.lengthCode=TRDOS503_SECTOR_LENGTH_STD_CODE;
 			BYTE nBytesAfterData;
-			item.value=GetFileDataSize(de,NULL,&nBytesAfterData) + TRDOS503_SECTOR_LENGTH_STD-1; // "+N" = rounding up
+			item.value=reinterpret_cast<PCDos>(this)->GetFileSize(de,NULL,&nBytesAfterData) + TRDOS503_SECTOR_LENGTH_STD-1; // "+N" = rounding up
 			item.value+=nBytesAfterData;
 		for( item.value/=formatBoot.sectorLength; item.value--; ){ // each Item gets a unique Value
 			// . adding the Item to the FatPath
@@ -264,14 +262,20 @@
 		__markDirectorySectorAsDirty__( rRenamedFile=file );
 		return ERROR_SUCCESS;
 	}
-	DWORD CTRDOS503::GetFileDataSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData) const{
-		// determines and returns the size of specified File's data portion
+	DWORD CTRDOS503::GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData,TGetFileSizeOptions option) const{
+		// determines and returns the size of specified File
+		const PCDirectoryEntry de=(PCDirectoryEntry)file;
 		if (pnBytesReservedBeforeData) *pnBytesReservedBeforeData=0;
-		if (exportWholeSectors){
-			if (pnBytesReservedAfterData) *pnBytesReservedAfterData=0;
-			return ((PCDirectoryEntry)file)->__getFileSizeOnDisk__();
-		}else
-			return ((PCDirectoryEntry)file)->__getOfficialFileSize__(pnBytesReservedAfterData);
+		switch (option){
+			case TGetFileSizeOptions::OfficialDataLength:
+				return de->__getOfficialFileSize__(pnBytesReservedAfterData);
+			case TGetFileSizeOptions::SizeOnDisk:
+				if (pnBytesReservedAfterData) *pnBytesReservedAfterData=0;
+				return de->__getFileSizeOnDisk__();
+			default:
+				ASSERT(FALSE);
+				return 0;
+		}	
 	}
 
 	TStdWinError CTRDOS503::DeleteFile(PFile file){
@@ -730,14 +734,6 @@
 	CDos::TCmdResult CTRDOS503::ProcessCommand(WORD cmd){
 		// returns the Result of processing a DOS-related command
 		switch (cmd){
-			case ID_TRDOS_FILE_LENGTH_FROM_DIRENTRY:
-				// export File size given by informatin in DirectoryEntry
-				__writeProfileBool__( INI_EXPORT_WHOLE_SECTORS, exportWholeSectors=false );
-				return TCmdResult::DONE;
-			case ID_TRDOS_FILE_LENGTH_OCCUPIED_SECTORS:
-				// export File size given by number of Sectors in FatPath
-				__writeProfileBool__( INI_EXPORT_WHOLE_SECTORS, exportWholeSectors=true );
-				return TCmdResult::DONE;
 			case ID_DOS_FILE_ZERO_LENGTH:
 				// enabling/disabling importing of zero-length Files
 				__writeProfileBool__( INI_ALLOW_ZERO_LENGTH_FILES, zeroLengthFilesEnabled=!zeroLengthFilesEnabled );
@@ -769,8 +765,8 @@
 			case ID_DOS_DEFRAGMENT:{
 				// defragmenting the disk
 				if (image->__reportWriteProtection__()) return TCmdResult::DONE;
-				const bool ews0=exportWholeSectors;
-					exportWholeSectors=true; // during the defragmentation, File size is given by the number of Sectors in FatPath (as some Files lie about its size in their DirectoryEntries as part of copy-protection scheme)
+				const TGetFileSizeOptions gfs0=getFileSizeDefaultOption;
+					getFileSizeDefaultOption=TGetFileSizeOptions::SizeOnDisk; // during the defragmentation, File size is given by the number of Sectors in FatPath (as some Files lie about its size in their DirectoryEntries as part of copy-protection scheme)
 					if (const PBootSector boot=__getBootSector__())
 						TBackgroundActionCancelable(
 							__defragmentation_thread__,
@@ -779,16 +775,8 @@
 						).CarryOut(1+boot->firstFree.track);
 					else
 						__errorCannotDoCommand__(ERROR_DEVICE_NOT_AVAILABLE);
-				exportWholeSectors=ews0;
+				getFileSizeDefaultOption=gfs0;
 				return TCmdResult::DONE_REDRAW;
-			}
-			case ID_ZX_PREVIEWASBASIC:{
-				// previewing File(s) as BASIC program(s)
-				const bool ews0=exportWholeSectors;
-					exportWholeSectors=false; // ignoring anything that is beyond an eventual 0xAA80 mark (that introduces a parameter "after" official data)
-					__super::ProcessCommand(cmd);
-				exportWholeSectors=ews0;
-				return TCmdResult::DONE;
 			}
 			case ID_DOS_TAKEATOUR:
 				// navigating to the online tour on this DOS
@@ -800,12 +788,6 @@
 	bool CTRDOS503::UpdateCommandUi(WORD cmd,CCmdUI *pCmdUI) const{
 		// True <=> given Command-specific user interface successfully updated, otherwise False
 		switch (cmd){
-			case ID_TRDOS_FILE_LENGTH_FROM_DIRENTRY:
-				pCmdUI->SetRadio(!exportWholeSectors);
-				return true;
-			case ID_TRDOS_FILE_LENGTH_OCCUPIED_SECTORS:
-				pCmdUI->SetRadio(exportWholeSectors);
-				return true;
 			case ID_DOS_FILE_ZERO_LENGTH:
 				pCmdUI->SetCheck(zeroLengthFilesEnabled);
 				return true;

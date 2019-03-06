@@ -390,7 +390,7 @@ importQuit2:		::GlobalUnlock(hg);
 					if (directory)
 						::lstrcpy(bufSkip,_T("Skip this directory"));
 					else{
-						Utils::BytesToHigherUnits(DOS->GetFileDataSize(conflict),higherUnit,higherUnitName);
+						Utils::BytesToHigherUnits(DOS->GetFileSize(conflict),higherUnit,higherUnitName);
 						_stprintf( bufSkip, _T("Keep current file (%.2f %s)"), higherUnit, higherUnitName );
 					}
 				CNameConflictResolutionDialog d( newFileName, directory?_T("directory"):_T("file"), bufOverwrite,bufSkip );
@@ -431,7 +431,7 @@ importQuit2:		::GlobalUnlock(hg);
 				if (::strncmp(files[j].cFileName,lpfd->cFileName,n)) break;
 			// . resolving conflicts
 			if (err==ERROR_FILE_EXISTS) // Directory already exists on the disk
-				if (( err=__skipNameConflict__(DOS->GetFileDataSize(file),fileName,rMovedFile,rConflictedSiblingResolution) )==ERROR_SUCCESS){
+				if (( err=__skipNameConflict__(DOS->GetFileSize(file),fileName,rMovedFile,rConflictedSiblingResolution) )==ERROR_SUCCESS){
 					// merging current and conflicted Directories
 					const CDos::PFile currentDirectory=(DOS->*pDirectoryStructureManagement->fnGetCurrentDir)();
 					__switchToDirectory__(rMovedFile);
@@ -450,7 +450,7 @@ importQuit2:		::GlobalUnlock(hg);
 		}else
 			// File
 			if (err==ERROR_FILE_EXISTS) // File already exists on the disk
-				if (( err=__skipNameConflict__(DOS->GetFileDataSize(file),fileName,rMovedFile,rConflictedSiblingResolution) )==ERROR_SUCCESS)
+				if (( err=__skipNameConflict__(DOS->GetFileSize(file),fileName,rMovedFile,rConflictedSiblingResolution) )==ERROR_SUCCESS)
 					err=(DOS->*pDirectoryStructureManagement->fnMoveFileToCurrDir)( file, fileName, rMovedFile );
 		return err;
 	}
