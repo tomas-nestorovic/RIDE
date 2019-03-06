@@ -2,7 +2,7 @@
 
 	#define INI_MSG	_T("tapeinit")
 
-	#define FILE_LENGTH_MAX	0xffff
+	#define FILE_LENGTH_MAX	0xff80 /* value that's a multiple of 128 - HexaEditor's requirement */
 
 	static const TFormat TapeFormat={
 		TMedium::FLOPPY_DD, // no need to create a new Medium Type for a Tape
