@@ -227,7 +227,7 @@
 	public:
 		typedef enum TSectorStatus:COLORREF{ // each value must be bigger than the biggest possible Sector length (typically 16384)
 			SYSTEM		=0xff40ff, // e.g. reserved for root Directory
-			UNAVAILABLE	=0x707070, // Sectors that are not included in FAT, e.g. beyond the FAT
+			UNAVAILABLE	=0x707070, // Sectors that are not included in FAT (e.g. beyond the FAT, or FAT Sector error)
 			SKIPPED		=0xb8b8b8, // e.g. deleted Files in TR-DOS
 			BAD			=0x0000ff,
 			OCCUPIED	=0xffcc99,

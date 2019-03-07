@@ -114,21 +114,12 @@ reportError:Utils::Information(buf);
 
 	TCylinder CDos::__getLastOccupiedStdCylinder__() const{
 		// finds and returns number of the last (at least partially) occupied Cylinder (0..N-1)
+		TSectorId bufferId[(TSector)-1];
 		if (formatBoot.mediumType!=TMedium::UNKNOWN) // Unknown Medium if creating a new Image
 			for( TCylinder cylMin=TMedium::GetProperties(formatBoot.mediumType)->cylinderRange.iMax; cylMin--; )
-				for( THead head=formatBoot.nHeads; head--; ){
-					TSectorId bufferId[(TSector)-1];
-					TSector n=__getListOfStdSectors__(cylMin,head,bufferId);
-					TSectorStatus statuses[(TSector)-1],*ps=statuses;
-					for( GetSectorStatuses(cylMin,head,n,bufferId,statuses); n--; )
-						switch (*ps++){
-							case TSectorStatus::OCCUPIED:
-							case TSectorStatus::RESERVED:
-							case TSectorStatus::SYSTEM:
-							case TSectorStatus::UNAVAILABLE:
-								return cylMin;
-						}
-				}
+				for( THead head=formatBoot.nHeads; head--; )
+					if (ERROR_EMPTY!=__isTrackEmpty__( cylMin, head, __getListOfStdSectors__(cylMin,head,bufferId), bufferId ))
+						return cylMin;
 		return 0;
 	}
 
@@ -150,6 +141,7 @@ reportError:Utils::Information(buf);
 				case TSectorStatus::OCCUPIED:
 				case TSectorStatus::RESERVED:
 				case TSectorStatus::SKIPPED:
+				//case TSectorStatus::UNAVAILABLE:
 					return ERROR_NOT_EMPTY;
 			}
 		return ERROR_EMPTY;
