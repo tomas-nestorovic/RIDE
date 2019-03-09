@@ -69,6 +69,7 @@
 						NULL, &dw,
 						URL_UNESCAPE_INPLACE // unescaping in place
 					);
+		for( PTCHAR a=buf,b=a; *a=*b++; a+=*a!='\x1' ); // eliminating 0x01 characters that interrupt ZX keywords (see CSpectrumDos::GetFileExportNameAndExt)
 		if (::lstrlen(buf)>nameLengthMax) // Name potentially too long, trimming it
 			buf[nameLengthMax]='\0';
 		// - unescaping and trimming the Extension
@@ -78,6 +79,7 @@
 							NULL, &dw,
 							URL_UNESCAPE_INPLACE // unescaping in place
 						);
+			for( PTCHAR a=pExt,b=a; *a=*b++; a+=*a!='\x1' ); // eliminating 0x01 characters that interrupt ZX keywords (see CSpectrumDos::GetFileExportNameAndExt)
 			if (::lstrlen(pExt)>extLengthMax)
 				pExt[extLengthMax]='\0';
 		}
@@ -284,9 +286,31 @@
 				// valid export name - taking it as the result
 				::lstrcpy(buf,pcNameAndExt);
 			return buf;
-		}else
+		}else{
 			// exporting to another RIDE instance; substituting non-alphanumeric characters with "URL-like" escape sequences
-			return __super::GetFileExportNameAndExt(file,shellCompliant,buf);
+			// . URL-escaping the File name and extension, e.g. "PICTURE01.B" -> "PICTURE%48x%49x.B"
+			__super::GetFileExportNameAndExt(file,shellCompliant,buf);
+			// . checking that the File name is importable back in the same form, e.g. "PICTURE.B" is not exported as [PI][CTURE.B] where "PI" is a Spectrum keyword
+			TCHAR currNameAndExt[MAX_PATH],currExt[MAX_PATH];
+			GetFileNameWithAppendedExt(file,currNameAndExt);
+			for( TCHAR tmp[MAX_PATH],*p=buf; *p; p++ )
+				if (*p!='%'){ // not an escape sequence "%NN"
+					LPCTSTR name,ext,zxInfo;
+					__parseFat32LongName__( ::lstrcpyn(tmp,buf,p-buf+2), name,-1, ext,-1, zxInfo ); // "+2" = "+1" for including current char "*p" and another "+1" for terminating null char
+					if (*ext!='\0')
+						::lstrcat( ::lstrcat(tmp,_T(".")), ext );
+					if (::strncmp( tmp, currNameAndExt, ::lstrlen(tmp) )){
+						// the exported name cannot be imported back in the same form - interrupting the sequence of characters to prevent from keywords being recognized (e.g. "PI" in "PICTURE")
+						#define ZX_KEYWORD_INTERRUPTION_CHAR	_T("%01")
+						::memcpy( p + sizeof(ZX_KEYWORD_INTERRUPTION_CHAR)/sizeof(TCHAR)-1, p, (::lstrlen(p)+1)*sizeof(TCHAR) );
+						::memcpy( p, ZX_KEYWORD_INTERRUPTION_CHAR, sizeof(ZX_KEYWORD_INTERRUPTION_CHAR)-sizeof(TCHAR) );
+						p+=sizeof(ZX_KEYWORD_INTERRUPTION_CHAR)/sizeof(TCHAR)-1;
+					}
+				}else // an escape sequence "%NN" (e.g. "%20" for a space char) - skipping it
+					p+=2;
+			// . returning a File name and extension that are well importable back
+			return buf;
+		}
 	}
 
 	DWORD CSpectrumDos::GetAttributes(PCFile file) const{
