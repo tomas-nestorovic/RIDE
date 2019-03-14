@@ -28,6 +28,14 @@
 		return fileSize;
 	}
 
+	void CDos::CFileReaderWriter::SetLength(DWORD dwNewLen){
+		// overrides the reported FileSize
+		ASSERT( dwNewLen<=fileSize ); // can only "shrink" the reported FileSize
+		fileSize=dwNewLen;
+		if (position>fileSize)
+			position=fileSize;
+	}
+
 	DWORD CDos::CFileReaderWriter::GetPosition() const{
 		// returns the actual Position in open File
 		return position;

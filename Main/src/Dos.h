@@ -121,7 +121,7 @@
 
 		class CFileReaderWriter sealed:public CFile{
 			const CDos *const dos;
-			const LONG fileSize;
+			LONG fileSize;
 			LONG position;
 		public:
 			const CFatPath fatPath;
@@ -131,6 +131,7 @@
 			~CFileReaderWriter();
 
 			DWORD GetLength() const override;
+			void SetLength(DWORD dwNewLen) override;
 			DWORD GetPosition() const override;
 			LONG Seek(LONG lOff,UINT nFrom) override;
 			UINT Read(LPVOID lpBuf,UINT nCount) override;
