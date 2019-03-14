@@ -13,8 +13,6 @@
 	};
 
 	const CFileManagerView::TDirectoryStructureManagement CMSDOS7::CMsdos7FileManagerView::dirManagement={
-		(CDos::TFnGetCurrentDirectory)&CMSDOS7::__getCurrentDirectory__,
-		(CDos::TFnGetCurrentDirectoryId)&CMSDOS7::__getCurrentDirectoryId__,
 		(CDos::TFnCreateSubdirectory)&CMSDOS7::__createSubdirectory__,
 		(CDos::TFnChangeCurrentDirectory)&CMSDOS7::__switchToDirectory__,
 		(CDos::TFnMoveFileToCurrDir)&CMSDOS7::__moveFileToCurrDir__

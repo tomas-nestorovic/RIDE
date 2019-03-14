@@ -31,6 +31,7 @@
 		, sideMap(_sideMap) , menu(nResId) , pFileManager(_pFileManager)
 		, formatBoot(*_pFormatBoot) // information on Medium Format retrieved from Boot; this information has ALWAYS priority when manipulating data on the disk; changes in this structure must be projected back to Boot Sector using FlushToBootSector (e.g. called automatically by BootView)
 		, trackAccessScheme(trackAccessScheme) // single Scheme to access Tracks in Image
+		, currentDir(DOS_DIR_ROOT) , currentDirId(DOS_DIR_ROOT_ID)
 		, generateShellCompliantExportNames( __getProfileBool__(INI_SHELL_COMPLIANT_EXPORT_NAMES,true) ) // True <=> the GetFileExportNameAndExt function must produce names that are compliant with the FAT32 file system, otherwise False
 		, getFileSizeDefaultOption( (TGetFileSizeOptions)__getProfileInt__(INI_GETFILESIZE_OPTION,_getFileSizeDefaultOption) ) {
 	}
@@ -502,13 +503,8 @@ reportError:Utils::Information(buf);
 			pAction->UpdateProgress(0);
 			// . adding current Directory into DiscoverdDirectories, and backing-up current Directory (may be changed during processing)
 			CFileManagerView::TFileList discoveredDirs;
-			PFile currDir0;
-			if (fesp.dos->pFileManager->pDirectoryStructureManagement!=NULL)
-				discoveredDirs.AddHead(
-					currDir0 = (fesp.dos->*fesp.dos->pFileManager->pDirectoryStructureManagement->fnGetCurrentDir)()
-				);
-			else
-				discoveredDirs.AddHead((PVOID)NULL);
+			PFile currDir0=fesp.dos->currentDir;
+			discoveredDirs.AddHead(currDir0);
 			// . filling empty space last Sectors
 			while (discoveredDirs.GetCount()){
 				const PFile dir=discoveredDirs.RemoveHead();
@@ -566,13 +562,8 @@ reportError:Utils::Information(buf);
 			pAction->UpdateProgress(0);
 			// . adding current Directory into DiscoverdDirectories, and backing-up current Directory (may be changed during processing)
 			CFileManagerView::TFileList discoveredDirs;
-			PFile currDir0;
-			if (fesp.dos->pFileManager->pDirectoryStructureManagement!=NULL)
-				discoveredDirs.AddHead(
-					currDir0 = (fesp.dos->*fesp.dos->pFileManager->pDirectoryStructureManagement->fnGetCurrentDir)()
-				);
-			else
-				discoveredDirs.AddHead((PVOID)NULL);
+			PFile currDir0=fesp.dos->currentDir;
+			discoveredDirs.AddHead(currDir0);
 			// . filling Empty Directory entries
 			while (discoveredDirs.GetCount()){
 				const PFile dir=discoveredDirs.RemoveHead();

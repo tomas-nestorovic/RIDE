@@ -14,10 +14,10 @@
 		// - initialization
 		, fat(*this) , fsInfo(*this)
 		, trackMap(this) , boot(this) , fileManager(this)
-		, currentDirectory(MSDOS7_DIR_ROOT)
 		, dontShowLongFileNames( __getProfileBool__(INI_DONT_SHOW_LONG_NAMES,false) )
 		, dontShowDotEntries( __getProfileBool__(INI_DONT_SHOW_DOT,false) )
 		, dontShowDotdotEntries( __getProfileBool__(INI_DONT_SHOW_DOTDOT,false) ) {
+		__switchToDirectory__(MSDOS7_DIR_ROOT);
 		if (const PCBootSector bootSector=boot.GetSectorData()) // may not exist when creating new Image
 			if (bootSector->__isUsable__()){ // may not be usable if Image is being "Open As"
 				// . determining the type of FAT
@@ -640,17 +640,6 @@ nextCluster:result++;
 		return result;
 	}
 
-	CMSDOS7::PDirectoryEntry CMSDOS7::__getCurrentDirectory__() const{
-		// return CurrentDirectory
-		return currentDirectory;
-	}
-	DWORD CMSDOS7::__getCurrentDirectoryId__() const{
-		// returns CurrentDirectory's "ID"
-		return	currentDirectory!=MSDOS7_DIR_ROOT
-				? currentDirectory->shortNameEntry.__getFirstCluster__()
-				: 0;
-	}
-
 	TStdWinError CMSDOS7::__createSubdirectory__(LPCTSTR name,DWORD winAttr,PDirectoryEntry &rCreatedSubdir){
 		// creates a new Subdirectory in CurrentDirectory; returns Windows standard i/o error
 		// - allocating new Directory Cluster
@@ -689,25 +678,28 @@ nextCluster:result++;
 				return ERROR_CANNOT_MAKE;
 			}
 		// - creating the "dot" and "dotdot" entries in newly created Subdirectory
-		const PDirectoryEntry currentDirectory0=currentDirectory;
-		currentDirectory=(PDirectoryEntry)rCreatedSubdir;
+		const PDirectoryEntry currentDirectory0=(PDirectoryEntry)currentDir;
+		__switchToDirectory__((PDirectoryEntry)rCreatedSubdir);
 			TMsdos7DirectoryTraversal dt(this);
 			const PDirectoryEntry dot=dt.__allocateNewEntry__();
-				*dot=*currentDirectory;
+				*dot=*(PDirectoryEntry)currentDir;
 				*(PCHAR)::memset( dot, ' ', MSDOS7_FILE_NAME_LENGTH_MAX+MSDOS7_FILE_EXT_LENGTH_MAX )='.';
 			const PDirectoryEntry dotdot=dt.__allocateNewEntry__();
 				( *dotdot=*dot ).shortNameEntry.name[1]='.';
 				dotdot->shortNameEntry.__setFirstCluster__( currentDirectory0!=MSDOS7_DIR_ROOT ? currentDirectory0->shortNameEntry.__getFirstCluster__() : 0 );
-		currentDirectory=currentDirectory0;
+		__switchToDirectory__(currentDirectory0);
 		return ERROR_SUCCESS;
 	}
 
 	TStdWinError CMSDOS7::__switchToDirectory__(PDirectoryEntry directory){
 		// changes CurrentDirectory; returns Windows standard i/o error
 		if (directory)
-			currentDirectory=directory->shortNameEntry.__getFirstCluster__() ? directory : MSDOS7_DIR_ROOT;
+			currentDir=directory->shortNameEntry.__getFirstCluster__() ? directory : MSDOS7_DIR_ROOT;
 		else
-			currentDirectory=MSDOS7_DIR_ROOT;
+			currentDir=MSDOS7_DIR_ROOT;
+		currentDirId =	currentDir!=MSDOS7_DIR_ROOT
+						? ((PDirectoryEntry)currentDir)->shortNameEntry.__getFirstCluster__()
+						: 0;
 		return ERROR_SUCCESS;
 	}
 	
@@ -731,7 +723,7 @@ nextCluster:result++;
 				return ERROR_CANNOT_MAKE;
 		// - if a Directory is being moved, changing the reference to the parent in the "dotdot" DirectoryEntry
 		if (IsDirectory(rMovedFile)){
-			const PDirectoryEntry currentDirectory0=currentDirectory;
+			const PDirectoryEntry currentDirectory0=(PDirectoryEntry)currentDir;
 			if (( err=__switchToDirectory__(rMovedFile) )!=ERROR_SUCCESS)
 				return err;
 			if (const PDirectoryEntry dotdot=(PDirectoryEntry)__findFile__(_T(".."),_T(""),NULL))
@@ -756,7 +748,7 @@ nextCluster:result++;
 				if (IsDirectory(file)){
 					// Directory - finding out how much space it occupies on the disk (NOT including its content!)
 					DWORD sizeOnDisk=0;
-					const PDirectoryEntry currentDirectory0=currentDirectory;
+					const PDirectoryEntry currentDirectory0=(PDirectoryEntry)currentDir;
 					const_cast<CMSDOS7 *>(this)->__switchToDirectory__(de);
 						for( TMsdos7DirectoryTraversal dt(this); dt.__existsNextEntry__(); sizeOnDisk+=sizeof(UDirectoryEntry) );
 					const_cast<CMSDOS7 *>(this)->__switchToDirectory__(currentDirectory0);
@@ -795,9 +787,8 @@ nextCluster:result++;
 				if (!de->shortNameEntry.__isDotOrDotdot__()){ // "dot" and "dotdot" Entries skipped
 					// . recurrently deleting the content of a Directory
 					if (IsDirectory(de)){
-						const PDirectoryEntry originalDirectory=currentDirectory;
-						TStdWinError err=__switchToDirectory__(de);
-						if (err!=ERROR_SUCCESS)
+						const PDirectoryEntry originalDirectory=(PDirectoryEntry)currentDir;
+						if (const TStdWinError err=__switchToDirectory__(de))
 							return err;
 						for( TMsdos7DirectoryTraversal dt(this); dt.__existsNextEntry__(); )
 							switch (dt.entryType){
@@ -808,7 +799,7 @@ nextCluster:result++;
 									//fallthrough
 								case TDirectoryTraversal::FILE:
 									// File
-									if (( err=DeleteFile(dt.entry) )!=ERROR_SUCCESS){
+									if (const TStdWinError err=DeleteFile(dt.entry)){
 										__showFileProcessingError__(dt.entry,err);
 										return err; // will remain switched to Subdirectory that contains the undeletable File
 									}
@@ -972,10 +963,10 @@ nextCluster:result++;
 		// thread to remove long File names
 		TBackgroundActionCancelable *const pAction=(TBackgroundActionCancelable *)_pCancelableAction;
 		const TRemoveLongNameParams &rlnp=*(TRemoveLongNameParams *)pAction->fnParams;
-		const PDirectoryEntry originalDirectory=rlnp.msdos->currentDirectory;
+		const PDirectoryEntry originalDirectory=(PDirectoryEntry)rlnp.msdos->currentDir;
 			CFileManagerView::TFileList bfsDirectories; // breadth first search, searching through Directories in breadth
 			TCylinder state=0;
-			for( bfsDirectories.AddTail(rlnp.msdos->currentDirectory); bfsDirectories.GetCount(); ){
+			for( bfsDirectories.AddTail(rlnp.msdos->currentDir); bfsDirectories.GetCount(); ){
 				if (!pAction->bContinue){
 					rlnp.msdos->__switchToDirectory__(originalDirectory);
 					return ERROR_CANCELLED;
@@ -1170,7 +1161,7 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 			fat.SetClusterValue( c, clusterState );
 		}
 		// - initializing root Directory
-		currentDirectory=MSDOS7_DIR_ROOT;
+		__switchToDirectory__(MSDOS7_DIR_ROOT);
 		switch (fat.type){
 			case CFat::FAT12:
 			case CFat::FAT16:
@@ -1255,9 +1246,9 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 		, nRemainingSectorsInCluster(0) , nRemainingEntriesInSector(0) {
 		// - "pointer" set to the first DirectoryEntry
 		if (const PCBootSector bootSector=msdos7->boot.GetSectorData()){
-			if (msdos7->currentDirectory!=MSDOS7_DIR_ROOT)
+			if (msdos7->currentDir!=MSDOS7_DIR_ROOT)
 				// NON-root Directory
-				next=msdos7->currentDirectory->shortNameEntry.__getFirstCluster__();
+				next=((PDirectoryEntry)msdos7->currentDir)->shortNameEntry.__getFirstCluster__();
 			else
 				// root Directory
 				switch (msdos7->fat.type){
@@ -1362,7 +1353,7 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 			switch (msdos7->fat.type){
 				case CFat::FAT12:
 				case CFat::FAT16:
-					if (msdos7->currentDirectory==MSDOS7_DIR_ROOT) // for root Directory of FAT12/FAT16 ...
+					if (msdos7->currentDir==MSDOS7_DIR_ROOT) // for root Directory of FAT12/FAT16 ...
 						return NULL; // ... cannot be allocated a new Cluster
 					//fallthrough
 				case CFat::FAT32:

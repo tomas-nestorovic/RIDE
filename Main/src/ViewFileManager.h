@@ -39,8 +39,6 @@
 		};
 	protected:
 		struct TDirectoryStructureManagement sealed{
-			CDos::TFnGetCurrentDirectory fnGetCurrentDir;
-			CDos::TFnGetCurrentDirectoryId fnGetCurrentDirId;
 			CDos::TFnCreateSubdirectory fnCreateSubdir;
 			CDos::TFnChangeCurrentDirectory fnChangeCurrentDir;
 			CDos::TFnMoveFileToCurrDir fnMoveFileToCurrDir;

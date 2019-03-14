@@ -9,6 +9,9 @@
 	#define DOS_MSG_CYLINDERS_UNCHANGED	_T("No cylinders have been modified.")
 	#define DOS_MSG_HIT_ESC				_T("Hit Escape to cancel editing.")
 
+	#define DOS_DIR_ROOT	NULL
+	#define DOS_DIR_ROOT_ID	0
+
 	#define VOLUME_LABEL_DEFAULT_ANSI_8CHARS	"Untitled"
 
 	#define FAT_SECTOR_UNMODIFIABLE		_T("Some FAT sectors could not be modified")
@@ -30,8 +33,6 @@
 
 		typedef TStdWinError (*TFnRecognize)(PImage image,PFormat pFormatBoot);
 		typedef PDos (*TFnInstantiate)(PImage image,PCFormat pFormatBoot);
-		typedef PFile (CDos::*TFnGetCurrentDirectory)() const;
-		typedef DWORD (CDos::*TFnGetCurrentDirectoryId)() const;
 		typedef TStdWinError (CDos::*TFnCreateSubdirectory)(LPCTSTR name,DWORD winAttr,PFile &rCreatedSubdir);
 		typedef TStdWinError (CDos::*TFnChangeCurrentDirectory)(PFile directory);
 		typedef TStdWinError (CDos::*TFnMoveFileToCurrDir)(PFile file,LPCTSTR fileNameAndExt,PFile &rMovedFile);
@@ -199,6 +200,8 @@
 
 		const TFnCompareNames fnCompareNames;
 		const TTrackScheme trackAccessScheme; // single Scheme to access Tracks in Image
+		PFile currentDir;
+		DWORD currentDirId;
 		bool generateShellCompliantExportNames;
 		TGetFileSizeOptions getFileSizeDefaultOption;
 		

@@ -18,7 +18,7 @@
 		// ctor
 		// - initialization
 		: fileManager(_fileManager) , preferredDropEffect(_preferredDropEffect) , deleteFromDiskWhenMoved(true)
-		, sourceDir( fileManager->pDirectoryStructureManagement ? (fileManager->DOS->*fileManager->pDirectoryStructureManagement->fnGetCurrentDir)() : NULL) {
+		, sourceDir(fileManager->DOS->currentDir) {
 		fileManager->ownedDataSource=this; // FileManager is the owner of this DataSource
 		// - setting the PreferredDropEfect (necessary to recognize between Copying and Cutting)
 		const HGLOBAL hPde=::GlobalAlloc( GMEM_SHARE, sizeof(DROPEFFECT) );
@@ -72,7 +72,7 @@
 		if (fileManager->DOS->IsDirectory(file)){
 			// Directory - adding all its "Subfiles"
 			// . switching to the Directory
-			const CDos::PFile originalDirectory=(fileManager->DOS->*fileManager->pDirectoryStructureManagement->fnGetCurrentDir)();
+			const CDos::PFile originalDirectory=fileManager->DOS->currentDir;
 			result=-(fileManager->DOS->*fileManager->pDirectoryStructureManagement->fnChangeCurrentDir)(file);
 			if (result<0) return result; // if error, quit
 			result++; // adding this Directory
@@ -262,7 +262,7 @@
 			// - switching to TargetDirectory
 			CDos::PFile originalDirectory,targetDirectory=NULL;
 			if (pDirectoryStructureManagement){
-				originalDirectory=(DOS->*pDirectoryStructureManagement->fnGetCurrentDir)();
+				originalDirectory=DOS->currentDir;
 				if (targetDirectory=__getDirectoryUnderCursor__(point))
 					__switchToDirectory__(targetDirectory);
 			}
@@ -301,7 +301,7 @@ importQuit1:		::DragFinish(hDrop);
 						TCHAR fileNameAndExt[MAX_PATH];
 						::lstrcpy( fileNameAndExt, pfgd->fgd[i].cFileName );
 						if (ownedDataSource) // FileManager is both source and target of File data (e.g. when creating a File copy by pressing Ctrl+C and Ctrl+V)
-							if (!pDirectoryStructureManagement || ownedDataSource->sourceDir==(DOS->*pDirectoryStructureManagement->fnGetCurrentDir)()){
+							if (!pDirectoryStructureManagement || ownedDataSource->sourceDir==DOS->currentDir){
 								// source and target Directories are the same
 								if (dropEffect==DROPEFFECT_MOVE){
 									// moving Files within the same Directory
@@ -433,7 +433,7 @@ importQuit2:		::GlobalUnlock(hg);
 			if (err==ERROR_FILE_EXISTS) // Directory already exists on the disk
 				if (( err=__skipNameConflict__(DOS->GetFileSize(file),fileName,rMovedFile,rConflictedSiblingResolution) )==ERROR_SUCCESS){
 					// merging current and conflicted Directories
-					const CDos::PFile currentDirectory=(DOS->*pDirectoryStructureManagement->fnGetCurrentDir)();
+					const CDos::PFile currentDirectory=DOS->currentDir;
 					__switchToDirectory__(rMovedFile);
 						bool allSubfilesMoved=true; // assumption
 						for( TConflictResolution csr=rConflictedSiblingResolution; i<j; ){
@@ -503,7 +503,7 @@ importQuit2:		::GlobalUnlock(hg);
 			TStdWinError err=ImportFileAndResolveConflicts( NULL, 0, fileName, winAttr, rImportedFile, rConflictedSiblingResolution );
 			if (err==ERROR_SUCCESS){
 				// Directory created successfully - recurrently importing all contained Files
-				const CDos::PFile currentDirectory=(DOS->*pDirectoryStructureManagement->fnGetCurrentDir)();
+				const CDos::PFile currentDirectory=DOS->currentDir;
 				__switchToDirectory__(rImportedFile);
 					WIN32_FIND_DATA fd;
 					const HANDLE hFindFile=::FindFirstFile(::lstrcat(::lstrcpy(fd.cFileName,pathAndName),_T("\\*.*")),&fd);
@@ -597,7 +597,7 @@ importQuit2:		::GlobalUnlock(hg);
 				if (::strncmp(files[j].cFileName,lpfd->cFileName,::lstrlen(lpfd->cFileName))) break;
 			// . processing recurrently
 			if (err==ERROR_SUCCESS){
-				const CDos::PFile currentDirectory=(DOS->*pDirectoryStructureManagement->fnGetCurrentDir)();
+				const CDos::PFile currentDirectory=DOS->currentDir;
 				__switchToDirectory__(rImportedFile);
 					TConflictResolution csr=rConflictedSiblingResolution;
 					for( CDos::PFile tmp; i<j; ){

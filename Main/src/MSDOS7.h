@@ -273,7 +273,6 @@
 		static void __informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId);
 		static PTCHAR __getFileExportNameAndExt__(LPCTSTR bufName,LPCTSTR bufExt,bool shellCompliant,PTCHAR pOutBuffer);
 
-		PDirectoryEntry currentDirectory;
 		bool dontShowLongFileNames, dontShowDotEntries, dontShowDotdotEntries;
 
 		TLogSector32 __fyzlog__(RCPhysicalAddress chs) const;
@@ -293,8 +292,6 @@
 		void __generateShortFileNameAndExt__(PDirectoryEntry de,LPCTSTR longName,LPCTSTR longExt) const;
 		bool __getLongFileNameAndExt__(PCDirectoryEntry de,PTCHAR bufName,PTCHAR bufExt) const;
 		TStdWinError __changeLongFileNameAndExt__(PDirectoryEntry de,LPCTSTR newName,LPCTSTR newExt,PDirectoryEntry &rRenamedFile) const;
-		PDirectoryEntry __getCurrentDirectory__() const;
-		DWORD __getCurrentDirectoryId__() const;
 		TStdWinError __createSubdirectory__(LPCTSTR name,DWORD winAttr,PDirectoryEntry &rCreatedSubdir);
 		TStdWinError __switchToDirectory__(PDirectoryEntry directory);
 		TStdWinError __moveFileToCurrDir__(PDirectoryEntry de,LPCTSTR fileNameAndExt,PDirectoryEntry &rMovedFile);
