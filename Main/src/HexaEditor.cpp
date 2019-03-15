@@ -713,14 +713,14 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 								const int recordIndex=__getRecordIndexThatStartsAtRow__(iRowA);
 								if (recordIndex>=0){ // yes, a new Record starts at the Row
 									TCHAR buf[80];
-									RECT rc={ rcAscii.right+2*font.charAvgWidth, y, rcClip.right, rcClip.bottom };
-									const COLORREF textColor0=dc.SetTextColor(labelColor), bgColor0=dc.SetBkColor(COLOR_WHITE);
-										dc.DrawText(fnQueryRecordLabel(recordIndex,buf,sizeof(buf)/sizeof(TCHAR),param), -1,
-													&rc, DT_LEFT|DT_TOP
-												);
-										dc.MoveTo( addrLength*font.charAvgWidth, y );
-										dc.LineTo( rcClip.right, y );
-									dc.SetTextColor(textColor0), dc.SetBkColor(bgColor0);
+									if (const LPCTSTR recordLabel=fnQueryRecordLabel(recordIndex,buf,sizeof(buf)/sizeof(TCHAR),param)){
+										RECT rc={ rcAscii.right+2*font.charAvgWidth, y, rcClip.right, rcClip.bottom };
+										const COLORREF textColor0=dc.SetTextColor(labelColor), bgColor0=dc.SetBkColor(COLOR_WHITE);
+											dc.DrawText( recordLabel, -1, &rc, DT_LEFT|DT_TOP );
+											dc.MoveTo( addrLength*font.charAvgWidth, y );
+											dc.LineTo( rcClip.right, y );
+										dc.SetTextColor(textColor0), dc.SetBkColor(bgColor0);
+									}
 								}
 							}
 						}
