@@ -230,11 +230,11 @@
 	}
 	DWORD CMDOS2::GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData,TGetFileSizeOptions option) const{
 		// determines and returns the size of specified File
+		if (pnBytesReservedBeforeData) *pnBytesReservedBeforeData=0;
+		if (pnBytesReservedAfterData) *pnBytesReservedAfterData=0;
 		const PCDirectoryEntry de=(PCDirectoryEntry)file;
 		switch (option){
 			case TGetFileSizeOptions::OfficialDataLength:
-				if (pnBytesReservedBeforeData) *pnBytesReservedBeforeData=0;
-				if (pnBytesReservedAfterData) *pnBytesReservedAfterData=0;
 				return MAKELONG( de->lengthLow, de->lengthHigh );
 			case TGetFileSizeOptions::SizeOnDisk:
 				return (MAKELONG(de->lengthLow,de->lengthHigh)+MDOS2_SECTOR_LENGTH_STD-1)/MDOS2_SECTOR_LENGTH_STD * MDOS2_SECTOR_LENGTH_STD;

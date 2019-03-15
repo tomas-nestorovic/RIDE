@@ -738,14 +738,16 @@ nextCluster:result++;
 
 	DWORD CMSDOS7::GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData,TGetFileSizeOptions option) const{
 		// determines and returns the size of specified File
+		if (pnBytesReservedBeforeData) *pnBytesReservedBeforeData=0;
+		if (pnBytesReservedAfterData) *pnBytesReservedAfterData=0;
 		const PDirectoryEntry de=(PDirectoryEntry)file;
 		switch (option){
 			case TGetFileSizeOptions::OfficialDataLength:
-				if (pnBytesReservedBeforeData) *pnBytesReservedBeforeData=0;
-				if (pnBytesReservedAfterData) *pnBytesReservedAfterData=0;
-				return de->shortNameEntry.size;
+				if (!IsDirectory(de))
+					return de->shortNameEntry.size;
+				//fallthrough
 			case TGetFileSizeOptions::SizeOnDisk:
-				if (IsDirectory(file)){
+				if (IsDirectory(de)){
 					// Directory - finding out how much space it occupies on the disk (NOT including its content!)
 					DWORD sizeOnDisk=0;
 					const PDirectoryEntry currentDirectory0=(PDirectoryEntry)currentDir;
@@ -762,7 +764,6 @@ nextCluster:result++;
 				ASSERT(FALSE);
 				return 0;
 		}
-
 	}
 
 	DWORD CMSDOS7::GetAttributes(PCFile file) const{

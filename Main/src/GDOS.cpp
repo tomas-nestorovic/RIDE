@@ -360,12 +360,13 @@
 
 	DWORD CGDOS::GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData,TGetFileSizeOptions option) const{
 		// determines and returns the size of specified File
+		if (pnBytesReservedAfterData) *pnBytesReservedAfterData=0;
 		const PCDirectoryEntry de=(PCDirectoryEntry)file;
 		switch (option){
 			case TGetFileSizeOptions::OfficialDataLength:
-				if (pnBytesReservedAfterData) *pnBytesReservedAfterData=0;
 				return de->__getDataSize__(pnBytesReservedBeforeData);
 			case TGetFileSizeOptions::SizeOnDisk:
+				if (pnBytesReservedBeforeData) *pnBytesReservedBeforeData=0;
 				return de->nSectors*GDOS_SECTOR_LENGTH_STD;
 			default:
 				ASSERT(FALSE);
