@@ -4,6 +4,8 @@
 	#define ZX_PARAMETER_1	_T("Std param 1")
 	#define ZX_PARAMETER_2	_T("Std param 2")
 
+	#define ZX_DIR_ROOT		DOS_DIR_ROOT
+
 	#define ZX_TAPE_FILE_NAME_LENGTH_MAX	10
 
 	#define ZX_TAPE_FILE_COUNT_MAX			2048

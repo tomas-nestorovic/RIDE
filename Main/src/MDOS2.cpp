@@ -159,11 +159,19 @@
 
 	bool CMDOS2::GetFileFatPath(PCFile file,CFatPath &rFatPath) const{
 		// True <=> FatPath of given File (even an erroneous FatPath) successfully retrieved, otherwise False
+		// - if queried about the root Directory, populating the FatPath with root Directory Sectors
+		CFatPath::TItem item;
+		if (file==ZX_DIR_ROOT){
+			for( item.value=MDOS2_DIR_LOGSECTOR_FIRST; item.value<MDOS2_DATA_LOGSECTOR_FIRST; item.value++ ){
+				item.chs=__logfyz__(item.value);
+				if (!rFatPath.AddItem(&item)) break; // also sets an error in FatPath
+			}
+			return true;
+		}
 		// - no FatPath can be retrieved if DirectoryEntry is Empty
 		if (*(PBYTE)file==TDirectoryEntry::EMPTY_ENTRY)
 			return false;
 		// - if File has no Sectors, we are done (may happen due to a failure during importing)
-		CFatPath::TItem item;
 		if (!( item.value=((PDirectoryEntry)file)->firstLogicalSector ))
 			return true;
 		// - extracting the FatPath from FAT
@@ -195,20 +203,29 @@
 	void CMDOS2::GetFileNameAndExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
 		const PCDirectoryEntry de=(PCDirectoryEntry)file;
-		if (bufName){
-			#ifdef UNICODE
-				::MultiByteToWideChar( CP_ACP, 0, de->name,MDOS2_FILE_NAME_LENGTH_MAX+1, buf,MDOS2_FILE_NAME_LENGTH_MAX+1 );
-				ASSERT(FALSE)
-			#else
-				::lstrcpynA( bufName, de->name, MDOS2_FILE_NAME_LENGTH_MAX+1 );
-			#endif
+		if (bufName)
+			if (de==ZX_DIR_ROOT)
+				::lstrcpy( bufName, _T("\\") );
+			else{
+				#ifdef UNICODE
+					::MultiByteToWideChar( CP_ACP, 0, de->name,MDOS2_FILE_NAME_LENGTH_MAX+1, buf,MDOS2_FILE_NAME_LENGTH_MAX+1 );
+					ASSERT(FALSE)
+				#else
+					::lstrcpynA( bufName, de->name, MDOS2_FILE_NAME_LENGTH_MAX+1 );
+				#endif
+			}
+		if (bufExt){
+			if (de!=ZX_DIR_ROOT)
+				*bufExt++=de->extension;
+			*bufExt='\0';
 		}
-		if (bufExt)
-			*bufExt++=de->extension, *bufExt='\0';
 	}
 	TStdWinError CMDOS2::ChangeFileNameAndExt(PFile file,LPCTSTR newName,LPCTSTR newExt,PFile &rRenamedFile){
 		// tries to change given File's name and extension; returns Windows standard i/o error
 		ASSERT(newName!=NULL && newExt!=NULL);
+		// - can't change root Directory's name
+		if (file==ZX_DIR_ROOT)
+			return ERROR_DIRECTORY;
 		// - checking that the NewName+NewExt combination follows the "10.1" convention
 		if (::lstrlen(newName)>MDOS2_FILE_NAME_LENGTH_MAX || ::lstrlen(newExt)>1)
 			return ERROR_FILENAME_EXCED_RANGE;
@@ -233,19 +250,24 @@
 		if (pnBytesReservedBeforeData) *pnBytesReservedBeforeData=0;
 		if (pnBytesReservedAfterData) *pnBytesReservedAfterData=0;
 		const PCDirectoryEntry de=(PCDirectoryEntry)file;
-		switch (option){
-			case TGetFileSizeOptions::OfficialDataLength:
-				return MAKELONG( de->lengthLow, de->lengthHigh );
-			case TGetFileSizeOptions::SizeOnDisk:
-				return (MAKELONG(de->lengthLow,de->lengthHigh)+MDOS2_SECTOR_LENGTH_STD-1)/MDOS2_SECTOR_LENGTH_STD * MDOS2_SECTOR_LENGTH_STD;
-			default:
-				ASSERT(FALSE);
-				return 0;
-		}
+		if (de==ZX_DIR_ROOT)
+			return (MDOS2_DATA_LOGSECTOR_FIRST-MDOS2_DIR_LOGSECTOR_FIRST)*MDOS2_SECTOR_LENGTH_STD;
+		else
+			switch (option){
+				case TGetFileSizeOptions::OfficialDataLength:
+					return MAKELONG( de->lengthLow, de->lengthHigh );
+				case TGetFileSizeOptions::SizeOnDisk:
+					return (MAKELONG(de->lengthLow,de->lengthHigh)+MDOS2_SECTOR_LENGTH_STD-1)/MDOS2_SECTOR_LENGTH_STD * MDOS2_SECTOR_LENGTH_STD;
+				default:
+					ASSERT(FALSE);
+					return 0;
+			}
 	}
 
 	TStdWinError CMDOS2::DeleteFile(PFile file){
 		// deletes specified File; returns Windows standard i/o error
+		if (file==ZX_DIR_ROOT)
+			return ERROR_ACCESS_DENIED; // can't delete the root Directory
 		if (*(PBYTE)file!=TDirectoryEntry::EMPTY_ENTRY){ // File mustn't be already deleted (may happen during moving it in FileManager)
 			const CFatPath fatPath(this,file);
 			CFatPath::PCItem item; DWORD n;

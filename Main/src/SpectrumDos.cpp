@@ -315,7 +315,9 @@
 
 	DWORD CSpectrumDos::GetAttributes(PCFile file) const{
 		// maps File's attributes to Windows attributes and returns the result
-		return 0; // none but standard attributes
+		return	file!=ZX_DIR_ROOT
+				? 0 // none but standard attributes
+				: FILE_ATTRIBUTE_DIRECTORY; // root Directory
 	}
 
 	bool CSpectrumDos::UpdateCommandUi(WORD cmd,CCmdUI *pCmdUI) const{
