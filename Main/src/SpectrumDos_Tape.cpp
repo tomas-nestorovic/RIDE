@@ -75,6 +75,10 @@
 	}
 	bool CSpectrumDos::CTape::GetFileFatPath(PCFile file,CFatPath &rFatPath) const{
 		// True <=> FatPath of given File (even an erroneous FatPath) successfully retrieved, otherwise False
+		// - if queried about the root Directory, populating the FatPath with root Directory Sectors
+		if (file==ZX_DIR_ROOT)
+			return true; // the root Directory occupies no space
+		// - extracting the FatPath
 		if ((TTapeFileId)file<fileManager.nFiles){
 			CFatPath::TItem item;
 				item.chs.cylinder=(TTapeFileId)file;
@@ -118,31 +122,42 @@
 
 	void CSpectrumDos::CTape::GetFileNameAndExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
-		const PCTapeFile tf=fileManager.files[(TTapeFileId)file];
-		if (const PCHeader h=tf->GetHeader()){
-			// File with a Header
-			if (bufName){
-				BYTE nameLength=ZX_TAPE_FILE_NAME_LENGTH_MAX;
-				while (nameLength-- && h->name[nameLength]==' ');
-				::lstrcpyn( bufName, h->name, (BYTE)(2+nameLength) );
-			}
-			if (bufExt)
-				*bufExt++=Extensions[h->type], *bufExt='\0';
-		}else{
-			// Headerless File or Fragment
-			static DWORD idHeaderless=1;
+		if (file==ZX_DIR_ROOT){
 			if (bufName)
-				::wsprintf( bufName, _T("%08d"), idHeaderless++ ); // ID padded with zeros to eight digits (to make up an acceptable name even for TR-DOS)
+				::lstrcpy( bufName, _T("\\") );
 			if (bufExt)
-				*bufExt++=HEADERLESS_EXTENSION, *bufExt='\0';
+				*bufExt='\0';
+		}else{
+			const PCTapeFile tf=fileManager.files[(TTapeFileId)file];
+			if (const PCHeader h=tf->GetHeader()){
+				// File with a Header
+				if (bufName){
+					BYTE nameLength=ZX_TAPE_FILE_NAME_LENGTH_MAX;
+					while (nameLength-- && h->name[nameLength]==' ');
+					::lstrcpyn( bufName, h->name, (BYTE)(2+nameLength) );
+				}
+				if (bufExt)
+					*bufExt++=Extensions[h->type], *bufExt='\0';
+			}else{
+				// Headerless File or Fragment
+				static DWORD idHeaderless=1;
+				if (bufName)
+					::wsprintf( bufName, _T("%08d"), idHeaderless++ ); // ID padded with zeros to eight digits (to make up an acceptable name even for TR-DOS)
+				if (bufExt)
+					*bufExt++=HEADERLESS_EXTENSION, *bufExt='\0';
+			}
 		}
 	}
 
 	TStdWinError CSpectrumDos::CTape::ChangeFileNameAndExt(PFile file,LPCTSTR newName,LPCTSTR newExt,PFile &rRenamedFile){
 		// tries to change given File's name and extension; returns Windows standard i/o error
+		// - can't change root Directory's name
+		if (file==ZX_DIR_ROOT)
+			return ERROR_DIRECTORY;
+		// - renaming
 		if (const PHeader h=fileManager.files[ (TTapeFileId)(rRenamedFile=file) ]->GetHeader()){
 			// File with a Header
-			// - checking that the NewName+NewExt combination follows the "10.1" convention
+			// . checking that the NewName+NewExt combination follows the "10.1" convention
 			if (::lstrlen(newName)>ZX_TAPE_FILE_NAME_LENGTH_MAX || ::lstrlen(newExt)>1)
 				return ERROR_FILENAME_EXCED_RANGE;
 			// . making sure that a File with given NameAndExtension doesn't yet exist 
@@ -174,7 +189,10 @@
 		if (pnBytesReservedBeforeData) *pnBytesReservedBeforeData=0;
 		if (pnBytesReservedAfterData) *pnBytesReservedAfterData=0;
 		const PCTapeFile tf=fileManager.files[(TTapeFileId)file];
-		if (const PCHeader h=tf->GetHeader())
+		if (file==ZX_DIR_ROOT)
+			// the root Directory occupies no space
+			return 0;
+		else if (const PCHeader h=tf->GetHeader())
 			// File with a Header
 			return h->length;
 		else
@@ -184,11 +202,15 @@
 
 	DWORD CSpectrumDos::CTape::GetAttributes(PCFile file) const{
 		// maps File's attributes to Windows attributes and returns the result
-		return 0; // none but standard attributes
+		return	file!=ZX_DIR_ROOT
+				? 0 // none but standard attributes
+				: FILE_ATTRIBUTE_DIRECTORY; // root Directory
 	}
 
 	TStdWinError CSpectrumDos::CTape::DeleteFile(PFile file){
 		// deletes specified File; returns Windows standard i/o error
+		if (file==ZX_DIR_ROOT)
+			return ERROR_ACCESS_DENIED; // can't delete the root Directory
 		PPTapeFile a=fileManager.files+(TTapeFileId)file, b=a;
 		::free(*b++), fileManager.nFiles--;
 		for( TTapeFileId n=fileManager.nFiles-(TTapeFileId)file; n--; *a++=*b++ );
@@ -287,7 +309,7 @@
 
 	CSpectrumDos::CTape::TTapeTraversal::TTapeTraversal(const CTapeFileManagerView &rFileManager)
 		// ctor
-		: TDirectoryTraversal(0,ZX_TAPE_FILE_NAME_LENGTH_MAX) , rFileManager(rFileManager) {
+		: TDirectoryTraversal(1,ZX_TAPE_FILE_NAME_LENGTH_MAX) , rFileManager(rFileManager) {
 		fileId=1; // Files numbered from 1
 		entryType=TDirectoryTraversal::FILE;
 	}
