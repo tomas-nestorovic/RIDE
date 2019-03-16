@@ -1,5 +1,5 @@
 REM --- General clean-up ---
-del _.d80 _.dsk ride.sdf
+del _.d80 _.d40 _.dsk _.ima _.img _.trd _.scl _.tap _.mgt ride.sdf
 del /a:h ride.suo
 del C:\WINDOWS\ride.ini
 rd /s /q debug ipch release "Release MFC 4.2"
