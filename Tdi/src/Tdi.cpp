@@ -1,8 +1,13 @@
 #include "stdafx.h"
 
-	TTabInfo::TTabInfo(bool canBeClosed,CTdiCtrl::TTab::TOnClosing fnOnTabClosing,CTdiCtrl::TTab::PContent content)
+	static bool WINAPI __canCloseTabAlways__(CTdiCtrl::TTab::PContent){
+		return true;
+	}
+
+	TTabInfo::TTabInfo(CTdiCtrl::TTab::TCanBeClosed fnCanBeClosed,CTdiCtrl::TTab::TOnClosing fnOnTabClosing,CTdiCtrl::TTab::PContent content)
 		// ctor
-		: canBeClosed(canBeClosed) , fnOnTabClosing(fnOnTabClosing) , content(content) {
+		: fnCanBeClosed( fnCanBeClosed!=TDI_TAB_CANCLOSE_ALWAYS ? fnCanBeClosed : __canCloseTabAlways__ )
+		, fnOnTabClosing(fnOnTabClosing) , content(content) {
 	}
 
 
@@ -122,7 +127,7 @@
 					const PCTabInfo pti=(PCTabInfo)ti.lParam;
 					const HMENU hMenu=::CreatePopupMenu();
 						::AppendMenu( hMenu, MF_STRING, IDIGNORE, _T("Move tab") );
-						if (pti->canBeClosed)
+						if (pti->fnCanBeClosed!=TDI_TAB_CANCLOSE_NEVER)
 							::AppendMenu( hMenu, MF_STRING, IDCLOSE, _T("Close tab") );
 						POINT cursorPos;
 						::GetCursorPos(&cursorPos);
@@ -230,7 +235,7 @@
 			ti.mask=TCIF_PARAM;
 		TabCtrl_GetItem(handle,i,&ti);
 		const PCTabInfo pti=(PCTabInfo)ti.lParam;
-		::ShowWindow( hBtnCloseCurrentTab, pti->canBeClosed*SW_SHOW );
+		::ShowWindow( hBtnCloseCurrentTab, (pti->fnCanBeClosed!=TDI_TAB_CANCLOSE_NEVER)*SW_SHOW );
 		params.fnShowContent( params.customParam, currentTabContent=pti->content );
 		__fitContentToTdiCanvas__();
 	}

@@ -3,11 +3,11 @@
 
 	#pragma pack(1)
 	typedef const struct TTabInfo sealed{
-		const bool canBeClosed;
+		const CTdiCtrl::TTab::TCanBeClosed fnCanBeClosed;
 		const CTdiCtrl::TTab::TOnClosing fnOnTabClosing; // can be Null
 		const CTdiCtrl::TTab::PContent content;
 
-		TTabInfo(bool canBeClosed,CTdiCtrl::TTab::TOnClosing fnOnTabClosing,CTdiCtrl::TTab::PContent content);
+		TTabInfo(CTdiCtrl::TTab::TCanBeClosed fnCanBeClosed,CTdiCtrl::TTab::TOnClosing fnOnTabClosing,CTdiCtrl::TTab::PContent content);
 	} *PCTabInfo;
 
 

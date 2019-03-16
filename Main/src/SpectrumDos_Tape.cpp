@@ -369,8 +369,12 @@
 		return TRUE;
 	}
 
-	static bool WINAPI __canTapeBeClosed__(LPCVOID tab){
-		return CImage::__getActive__()->dos->ProcessCommand(ID_FILE_CLOSE)==CDos::TCmdResult::DONE;
+	static bool WINAPI __canTapeBeClosed__(CTdiCtrl::TTab::PContent tab){
+		const PImage tape=CDos::__getFocused__()->image;
+		if (tape->SaveModified()){
+			return true;
+		}else
+			return false;
 	}
 
 	CDos::TCmdResult CSpectrumDos::CTape::ProcessCommand(WORD cmd){
@@ -473,6 +477,10 @@
 		{ _T("Checksum"),	LVCFMT_RIGHT,	75 }
 	};
 
+	static void WINAPI __onTapeClosing__(CTdiCtrl::TTab::PContent tab){
+		delete ((CMainWindow::CTdiView::PTab)tab)->dos;
+	}
+
 	CSpectrumDos::CTape::CTapeFileManagerView::CTapeFileManagerView(CTape *tape,const TZxRom &rZxRom,LPCTSTR fileName)
 		// ctor
 		// - base
@@ -543,7 +551,7 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 		// - showing the TapeFileManager
 		TCHAR buf[MAX_PATH];
 		::wsprintf( buf, TAB_LABEL _T(" \"%s\""), (LPCTSTR)f.GetFileName() );
-		CTdiCtrl::AddTabLast( TDI_HWND, buf, &tab, true, __canTapeBeClosed__, NULL );
+		CTdiCtrl::AddTabLast( TDI_HWND, buf, &tab, true, __canTapeBeClosed__, __onTapeClosing__ );
 		CSpectrumDos::__informationWithCheckableShowNoMore__( _T("Use the \"") TAB_LABEL _T("\" tab to transfer files from/to the open floppy image or between two tapes (open in two instances of the application).\n\nHeaderless files:\n- are transferred to a floppy with a dummy name,\n- are used on tape to store \"tape-unfriendly\" data from a floppy (sequential files, etc.)."), INI_MSG );
 	}
 	CSpectrumDos::CTape::CTapeFileManagerView::~CTapeFileManagerView(){

@@ -57,7 +57,7 @@
 		return true;
 	}
 
-	void WINAPI CTdiCtrl::InsertTab(HWND hTdi,int iIndex,LPCTSTR tabName,TTab::PContent tabContent,bool makeCurrent,bool canBeClosed,TTab::TOnClosing fnOnTabClosing){
+	void WINAPI CTdiCtrl::InsertTab(HWND hTdi,int iIndex,LPCTSTR tabName,TTab::PContent tabContent,bool makeCurrent,TTab::TCanBeClosed fnCanBeClosed,TTab::TOnClosing fnOnTabClosing){
 		// adds to specified position (Index) a new Tab with given Name and Content
 		const PTdiInfo pTdiInfo=GET_TDI_INFO(hTdi);
 		TCITEM ti;
@@ -74,7 +74,7 @@
 		}
 		ti.mask=TCIF_TEXT|TCIF_PARAM;
 		ti.pszText=(PTCHAR)tabName;
-		ti.lParam=(LPARAM)new TTabInfo( canBeClosed, fnOnTabClosing, tabContent );
+		ti.lParam=(LPARAM)new TTabInfo( fnCanBeClosed, fnOnTabClosing, tabContent );
 		TabCtrl_InsertItem( hTdi, iIndex, &ti );
 		if (makeCurrent){
 			pTdiInfo->__switchToTab__(iIndex);
@@ -82,9 +82,9 @@
 		}
 	}
 
-	void WINAPI CTdiCtrl::AddTabLast(HWND hTdi,LPCTSTR tabName,TTab::PContent tabContent,bool makeCurrent,bool canBeClosed,TTab::TOnClosing fnOnTabClosing){
+	void WINAPI CTdiCtrl::AddTabLast(HWND hTdi,LPCTSTR tabName,TTab::PContent tabContent,bool makeCurrent,TTab::TCanBeClosed fnCanBeClosed,TTab::TOnClosing fnOnTabClosing){
 		// adds a new Tab with given Name and Content as the last Tab in the TDI
-		InsertTab( hTdi, TabCtrl_GetItemCount(hTdi), tabName, tabContent, makeCurrent, canBeClosed, fnOnTabClosing );
+		InsertTab( hTdi, TabCtrl_GetItemCount(hTdi), tabName, tabContent, makeCurrent, fnCanBeClosed, fnOnTabClosing );
 	}
 
 	void WINAPI CTdiCtrl::UpdateTabCaption(HWND hTdi,TTab::PContent tabContent,LPCTSTR tabNewName){
@@ -115,8 +115,7 @@
 		const PCTabInfo pti=(PCTabInfo)ti.lParam;
 			TabCtrl_DeleteItem(hTdi,tabId);
 			if (pti->fnOnTabClosing)
-				if (!pti->fnOnTabClosing(pti->content)) // confirming closing of the Tab
-					return; // not confirmed to close the Tab
+				pti->fnOnTabClosing(pti->content);
 		delete pti;
 	}
 
@@ -140,10 +139,11 @@
 			ti.mask=TCIF_PARAM;
 		TabCtrl_GetItem(hTdi,i,&ti);
 		const PCTabInfo pti=(PCTabInfo)ti.lParam;
-		if (pti->canBeClosed){
-			SwitchToPrevTab(hTdi);
-			RemoveTab(hTdi,i);
-		}
+		if (pti->fnCanBeClosed!=TDI_TAB_CANCLOSE_NEVER)
+			if (pti->fnCanBeClosed(pti->content)){ // confirming closing of the Tab
+				SwitchToPrevTab(hTdi);
+				RemoveTab(hTdi,i);
+			}
 	}
 
 	void WINAPI CTdiCtrl::SwitchToTab(HWND hTdi,TTab::PContent tabContent){

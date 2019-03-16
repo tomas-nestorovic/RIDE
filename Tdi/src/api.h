@@ -10,6 +10,10 @@
 	#endif
 
 
+	#define TDI_TAB_CANCLOSE_ALWAYS		(CTdiCtrl::TTab::TCanBeClosed)TRUE
+	#define TDI_TAB_CANCLOSE_NEVER		NULL
+
+
 	class TDI_DECLSPEC CTdiCtrl sealed{
 	public:
 		typedef PVOID PCustomParam;
@@ -22,7 +26,8 @@
 			typedef void (WINAPI *TRepaintContent)(PContent);
 			typedef HWND (WINAPI *TGetContentHwnd)(PContent);
 
-			typedef bool (WINAPI *TOnClosing)(PContent);
+			typedef bool (WINAPI *TCanBeClosed)(PContent);
+			typedef void (WINAPI *TOnClosing)(PContent);
 		};
 
 		typedef const struct TDI_DECLSPEC TParams sealed{
@@ -39,8 +44,8 @@
 		static void WINAPI SubclassWnd(HINSTANCE hInstance,HWND hTabCtrl,PCParams params);
 		static TTab::PContent GetTabContent(HWND hTdi,int iIndex);
 		static bool WINAPI GetCurrentTabContentRect(HWND hTdi,LPRECT pOutRect);
-		static void WINAPI InsertTab(HWND hTdi,int iIndex,LPCTSTR tabName,TTab::PContent tabContent,bool makeCurrent,bool canBeClosed,TTab::TOnClosing fnOnTabClosing);
-		static void WINAPI AddTabLast(HWND hTdi,LPCTSTR tabName,TTab::PContent tabContent,bool makeCurrent,bool canBeClosed,TTab::TOnClosing fnOnTabClosing);
+		static void WINAPI InsertTab(HWND hTdi,int iIndex,LPCTSTR tabName,TTab::PContent tabContent,bool makeCurrent,TTab::TCanBeClosed fnCanBeClosed,TTab::TOnClosing fnOnTabClosing);
+		static void WINAPI AddTabLast(HWND hTdi,LPCTSTR tabName,TTab::PContent tabContent,bool makeCurrent,TTab::TCanBeClosed fnCanBeClosed,TTab::TOnClosing fnOnTabClosing);
 		static void WINAPI UpdateTabCaption(HWND hTdi,TTab::PContent tabContent,LPCTSTR tabNewName);
 		static bool WINAPI GetCurrentTab(HWND hTdi,TTab::PContent *outTabContent);
 		static void WINAPI RemoveTab(HWND hTdi,int tabId);
