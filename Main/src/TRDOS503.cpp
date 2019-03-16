@@ -182,17 +182,25 @@
 
 	bool CTRDOS503::GetFileFatPath(PCFile file,CFatPath &rFatPath) const{
 		// True <=> FatPath of given File (even an erroneous FatPath) successfully retrieved, otherwise False
+		// - if queried about the root Directory, populating the FatPath with root Directory Sectors
+		CFatPath::TItem item;
+		item.chs.sectorId.lengthCode=TRDOS503_SECTOR_LENGTH_STD_CODE;
+		if (file==ZX_DIR_ROOT){
+			item.chs.cylinder = item.chs.sectorId.cylinder = 0;
+			item.chs.sectorId.side=sideMap[ item.chs.head=0 ];
+			for( item.chs.sectorId.sector=TRDOS503_SECTOR_FIRST_NUMBER; item.chs.sectorId.sector<TRDOS503_BOOT_SECTOR_NUMBER; item.chs.sectorId.sector++,item.value++ ) // incrementing Value just to guarantee it's unique for each Sector
+				if (!rFatPath.AddItem(&item)) break; // also sets an error in FatPath
+			return true;
+		}
 		// - no FatPath can be retrieved if File is Deleted
 		if (*(PCBYTE)file==TDirectoryEntry::DELETED)
 			return false;
 		// - composing the FatPath
 		const PCDirectoryEntry de=(PCDirectoryEntry)file;
 		const div_t B=div( de->first.track, formatBoot.nHeads );
-		CFatPath::TItem item;
 			item.chs.cylinder = item.chs.sectorId.cylinder = B.quot,
 			item.chs.sectorId.side=sideMap[ item.chs.head=B.rem ],
 			item.chs.sectorId.sector=TRDOS503_SECTOR_FIRST_NUMBER+de->first.sector;
-			item.chs.sectorId.lengthCode=TRDOS503_SECTOR_LENGTH_STD_CODE;
 			BYTE nBytesAfterData;
 			item.value=reinterpret_cast<PCDos>(this)->GetFileSize(de,NULL,&nBytesAfterData) + TRDOS503_SECTOR_LENGTH_STD-1; // "+N" = rounding up
 			item.value+=nBytesAfterData;
@@ -215,22 +223,31 @@
 	void CTRDOS503::GetFileNameAndExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
 		const PCDirectoryEntry de=(PCDirectoryEntry)file;
-		if (bufName){
-			#ifdef UNICODE
-				::MultiByteToWideChar( CP_ACP, 0, de->name,TRDOS503_FILE_NAME_LENGTH_MAX+1, tmp,TRDOS503_FILE_NAME_LENGTH_MAX+1 );
-				ASSERT(FALSE);
-			#else
-				::lstrcpyn( bufName, de->name, TRDOS503_FILE_NAME_LENGTH_MAX+1 );
-			#endif
-			for( PTCHAR p=bufName+TRDOS503_FILE_NAME_LENGTH_MAX; p--!=bufName; ) // trimming trailing spaces
-				if (*p==' ') *p='\0'; else break;
+		if (bufName)
+			if (de==ZX_DIR_ROOT)
+				::lstrcpy( bufName, _T("\\") );
+			else{
+				#ifdef UNICODE
+					::MultiByteToWideChar( CP_ACP, 0, de->name,TRDOS503_FILE_NAME_LENGTH_MAX+1, tmp,TRDOS503_FILE_NAME_LENGTH_MAX+1 );
+					ASSERT(FALSE);
+				#else
+					::lstrcpyn( bufName, de->name, TRDOS503_FILE_NAME_LENGTH_MAX+1 );
+				#endif
+				for( PTCHAR p=bufName+TRDOS503_FILE_NAME_LENGTH_MAX; p--!=bufName; ) // trimming trailing spaces
+					if (*p==' ') *p='\0'; else break;
+			}
+		if (bufExt){
+			if (de!=ZX_DIR_ROOT)
+				*bufExt++=de->extension;
+			*bufExt='\0';
 		}
-		if (bufExt)
-			*bufExt++=de->extension, *bufExt='\0';
 	}
 	TStdWinError CTRDOS503::ChangeFileNameAndExt(PFile file,LPCTSTR newName,LPCTSTR newExt,PFile &rRenamedFile){
 		// tries to change given File's name and extension; returns Windows standard i/o error
 		ASSERT(newName!=NULL && newExt!=NULL);
+		// - can't change root Directory's name
+		if (file==ZX_DIR_ROOT)
+			return ERROR_DIRECTORY;
 		// - checking that the NewName+NewExt combination follows the "8.1" convention
 		if (::lstrlen(newName)>TRDOS503_FILE_NAME_LENGTH_MAX || ::lstrlen(newExt)>1)
 			return ERROR_FILENAME_EXCED_RANGE;
@@ -264,22 +281,27 @@
 	}
 	DWORD CTRDOS503::GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData,TGetFileSizeOptions option) const{
 		// determines and returns the size of specified File
-		const PCDirectoryEntry de=(PCDirectoryEntry)file;
 		if (pnBytesReservedBeforeData) *pnBytesReservedBeforeData=0;
-		switch (option){
-			case TGetFileSizeOptions::OfficialDataLength:
-				return de->__getOfficialFileSize__(pnBytesReservedAfterData);
-			case TGetFileSizeOptions::SizeOnDisk:
-				if (pnBytesReservedAfterData) *pnBytesReservedAfterData=0;
-				return de->__getFileSizeOnDisk__();
-			default:
-				ASSERT(FALSE);
-				return 0;
-		}	
+		if (pnBytesReservedAfterData) *pnBytesReservedAfterData=0;
+		const PCDirectoryEntry de=(PCDirectoryEntry)file;
+		if (de==ZX_DIR_ROOT)
+			return (TRDOS503_BOOT_SECTOR_NUMBER-TRDOS503_SECTOR_FIRST_NUMBER)*TRDOS503_SECTOR_LENGTH_STD;
+		else
+			switch (option){
+				case TGetFileSizeOptions::OfficialDataLength:
+					return de->__getOfficialFileSize__(pnBytesReservedAfterData);
+				case TGetFileSizeOptions::SizeOnDisk:
+					return de->__getFileSizeOnDisk__();
+				default:
+					ASSERT(FALSE);
+					return 0;
+			}	
 	}
 
 	TStdWinError CTRDOS503::DeleteFile(PFile file){
 		// deletes specified File; returns Windows standard i/o error
+		if (file==ZX_DIR_ROOT)
+			return ERROR_ACCESS_DENIED; // can't delete the root Directory
 		if (*(PCBYTE)file!=TDirectoryEntry::DELETED && *(PCBYTE)file!=TDirectoryEntry::END_OF_DIR) // File mustn't be already Deleted (may happen during moving it in FileManager)
 			if (const PBootSector boot=__getBootSector__()){
 				PDirectoryEntry directory[TRDOS503_FILE_COUNT_MAX];
