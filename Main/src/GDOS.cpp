@@ -177,11 +177,27 @@
 	bool CGDOS::GetFileFatPath(PCFile file,CFatPath &rFatPath) const{
 		// True <=> FatPath of given File (even an erroneous FatPath) successfully retrieved, otherwise False
 		const PCDirectoryEntry de=(PCDirectoryEntry)file;
+		// - if queried about the root Directory, populating the FatPath with root Directory Sectors
+		CFatPath::TItem item;
+		if (de==ZX_DIR_ROOT){
+			item.chs.sectorId.lengthCode=GDOS_SECTOR_LENGTH_STD_CODE;
+			item.chs.cylinder = item.chs.sectorId.cylinder = 0;
+			item.chs.sectorId.side=sideMap[ item.chs.head=0 ];
+			item.chs.sectorId.sector=Properties.firstSectorNumber;
+			while (rFatPath.AddItem(&item)){ // also sets an error in FatPath
+				if (++item.chs.sectorId.sector>GDOS_TRACK_SECTORS_COUNT){
+					item.chs.sectorId.sector=Properties.firstSectorNumber;
+					if (( item.chs.sectorId.cylinder=++item.chs.cylinder )==GDOS_DIR_FILES_COUNT_MAX*sizeof(TDirectoryEntry)/GDOS_SECTOR_LENGTH_STD/GDOS_TRACK_SECTORS_COUNT) // end of Directory
+						break; // end of Directory
+				}
+				item.value++;
+			}
+			return true;
+		}
 		// - no FatPath can be retrieved if DirectoryEntry is Empty
 		if (de->fileType==TDirectoryEntry::EMPTY_ENTRY)
 			return false;
 		// - if File has no Sectors, we are done (may happen due to a failure during importing)
-		CFatPath::TItem item;
 		if (!de->firstSector.__isValid__())
 			return true;
 		// - extracting the FatPath
@@ -263,7 +279,13 @@
 
 	void CGDOS::GetFileNameAndExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
-		((PCDirectoryEntry)file)->__getNameAndExt__(bufName,bufExt);
+		if (file==ZX_DIR_ROOT){
+			if (bufName)
+				::lstrcpy( bufName, _T("\\") );
+			if (bufExt)
+				*bufExt='\0';
+		}else
+			((PCDirectoryEntry)file)->__getNameAndExt__(bufName,bufExt);
 	}
 
 	void CGDOS::TDirectoryEntry::__setNameAndExt__(LPCTSTR newName,LPCTSTR newExt){
@@ -333,6 +355,9 @@
 	TStdWinError CGDOS::ChangeFileNameAndExt(PFile file,LPCTSTR newName,LPCTSTR newExt,PFile &rRenamedFile){
 		// tries to change given File's name and extension; returns Windows standard i/o error
 		ASSERT(newName!=NULL && newExt!=NULL);
+		// - can't change root Directory's name
+		if (file==ZX_DIR_ROOT)
+			return ERROR_DIRECTORY;
 		// - checking that the NewName+NewExt combination follows the "10.1" convention
 		if (::lstrlen(newName)>GDOS_FILE_NAME_LENGTH_MAX || ::lstrlen(newExt)>1)
 			return ERROR_FILENAME_EXCED_RANGE;
@@ -361,22 +386,27 @@
 	DWORD CGDOS::GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData,TGetFileSizeOptions option) const{
 		// determines and returns the size of specified File
 		if (pnBytesReservedAfterData) *pnBytesReservedAfterData=0;
+		if (pnBytesReservedBeforeData) *pnBytesReservedBeforeData=0;
 		const PCDirectoryEntry de=(PCDirectoryEntry)file;
-		switch (option){
-			case TGetFileSizeOptions::OfficialDataLength:
-				return de->__getDataSize__(pnBytesReservedBeforeData);
-			case TGetFileSizeOptions::SizeOnDisk:
-				if (pnBytesReservedBeforeData) *pnBytesReservedBeforeData=0;
-				return de->nSectors*GDOS_SECTOR_LENGTH_STD;
-			default:
-				ASSERT(FALSE);
-				return 0;
-		}
+		if (de==ZX_DIR_ROOT)
+			return GDOS_DIR_FILES_COUNT_MAX*sizeof(TDirectoryEntry);
+		else
+			switch (option){
+				case TGetFileSizeOptions::OfficialDataLength:
+					return de->__getDataSize__(pnBytesReservedBeforeData);
+				case TGetFileSizeOptions::SizeOnDisk:
+					return de->nSectors*GDOS_SECTOR_LENGTH_STD;
+				default:
+					ASSERT(FALSE);
+					return 0;
+			}
 	}
 
 	TStdWinError CGDOS::DeleteFile(PFile file){
 		// deletes specified File; returns Windows standard i/o error
 		const PDirectoryEntry de=(PDirectoryEntry)file;
+		if (de==ZX_DIR_ROOT)
+			return ERROR_ACCESS_DENIED; // can't delete the root Directory
 		if (de->fileType!=TDirectoryEntry::EMPTY_ENTRY) // File mustn't be already deleted (may happen during moving it in FileManager)
 			if (const LPCTSTR errMsg=CFatPath(this,de).GetErrorDesc()){
 				__showFileProcessingError__(de,errMsg);

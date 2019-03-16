@@ -3,12 +3,21 @@
 	CDos::CFileReaderWriter::CFileReaderWriter(const CDos *dos,PCFile file)
 		// ctor to read/edit an existing File in Image
 		: dos(dos) , fileSize(dos->GetFileOccupiedSize(file)) , fatPath(dos,file)
+		, dataBeginOffsetInSector(dos->properties->dataBeginOffsetInSector) , dataEndOffsetInSector(dos->properties->dataEndOffsetInSector)
+		, position(0) {
+	}
+
+	CDos::CFileReaderWriter::CFileReaderWriter(const CDos *dos,PCFile file,BYTE dataBeginOffsetInSector,BYTE dataEndOffsetInSector)
+		// ctor to read/edit an existing File in Image with overriden Sector structure
+		: dos(dos) , fileSize(dos->GetFileOccupiedSize(file)) , fatPath(dos,file)
+		, dataBeginOffsetInSector(dataBeginOffsetInSector) , dataEndOffsetInSector(dataEndOffsetInSector)
 		, position(0) {
 	}
 
 	CDos::CFileReaderWriter::CFileReaderWriter(const CDos *dos,RCPhysicalAddress chs)
 		// ctor to read/edit particular Sector in Image (e.g. Boot Sector)
 		: dos(dos) , fileSize(dos->formatBoot.sectorLength) , fatPath(dos,chs)
+		, dataBeginOffsetInSector(0) , dataEndOffsetInSector(0)
 		, position(0) {
 	}
 
@@ -65,19 +74,19 @@
 		const UINT nBytesToRead=nCount;
 		CFatPath::PCItem item; DWORD n;
 		if (!fatPath.GetItems(item,n)){
-			div_t d=div((int)position,(int)dos->formatBoot.sectorLength-dos->properties->dataBeginOffsetInSector-dos->properties->dataEndOffsetInSector);
+			div_t d=div((int)position,(int)dos->formatBoot.sectorLength-dataBeginOffsetInSector-dataEndOffsetInSector);
 			item+=d.quot, n-=d.quot; // skipping Sectors from which not read
 			bool readWithoutCrcError=true;
 			TFdcStatus sr;
 			for( WORD w; n--; item++ )
 				if (const PCSectorData sectorData=dos->image->GetSectorData(item->chs,0,true,&w,&sr)){
 					readWithoutCrcError&=sr.IsWithoutError();
-					w-=d.rem+dos->properties->dataBeginOffsetInSector+dos->properties->dataEndOffsetInSector;
+					w-=d.rem+dataBeginOffsetInSector+dataEndOffsetInSector;
 					if (w<nCount){
-						lpBuf=(PBYTE)::memcpy(lpBuf,sectorData+dos->properties->dataBeginOffsetInSector+d.rem,w)+w;
+						lpBuf=(PBYTE)::memcpy(lpBuf,sectorData+dataBeginOffsetInSector+d.rem,w)+w;
 						nCount-=w, position+=w, d.rem=0;
 					}else{
-						::memcpy(lpBuf,sectorData+dos->properties->dataBeginOffsetInSector+d.rem,nCount);
+						::memcpy(lpBuf,sectorData+dataBeginOffsetInSector+d.rem,nCount);
 						position+=nCount;
 						::SetLastError( readWithoutCrcError ? ERROR_SUCCESS : ERROR_CRC );
 						return nBytesToRead;
@@ -94,18 +103,18 @@
 		nCount=min(nCount,fileSize-position);
 		CFatPath::PCItem item; DWORD n;
 		if (!fatPath.GetItems(item,n)){
-			div_t d=div((int)position,(int)dos->formatBoot.sectorLength-dos->properties->dataBeginOffsetInSector-dos->properties->dataEndOffsetInSector);
+			div_t d=div((int)position,(int)dos->formatBoot.sectorLength-dataBeginOffsetInSector-dataEndOffsetInSector);
 			item+=d.quot, n-=d.quot; // skipping Sectors into which not written
 			TFdcStatus sr;
 			for( WORD w; n--; item++ )
 				if (const PSectorData sectorData=dos->image->GetSectorData(item->chs,0,false,&w,&sr)){ // False = freezing the state of data (eventually erroneous)
-					w-=d.rem+dos->properties->dataBeginOffsetInSector+dos->properties->dataEndOffsetInSector;
+					w-=d.rem+dataBeginOffsetInSector+dataEndOffsetInSector;
 					dos->image->MarkSectorAsDirty(item->chs,0,&sr);
 					if (w<nCount){
-						::memcpy(sectorData+dos->properties->dataBeginOffsetInSector+d.rem,lpBuf,w);
+						::memcpy(sectorData+dataBeginOffsetInSector+d.rem,lpBuf,w);
 						lpBuf=(PCBYTE)lpBuf+w, nCount-=w, position+=w, d.rem=0;
 					}else{
-						::memcpy(sectorData+dos->properties->dataBeginOffsetInSector+d.rem,lpBuf,nCount);
+						::memcpy(sectorData+dataBeginOffsetInSector+d.rem,lpBuf,nCount);
 						position+=nCount;
 						return;
 					}
@@ -126,11 +135,11 @@
 				ASSERT( ppBufStart!=NULL && ppBufMax!=NULL );
 				CFatPath::PCItem item; DWORD n;
 				if (!fatPath.GetItems(item,n)){
-					const WORD usableSectorLength=dos->formatBoot.sectorLength-dos->properties->dataBeginOffsetInSector-dos->properties->dataEndOffsetInSector;
+					const WORD usableSectorLength=dos->formatBoot.sectorLength-dataBeginOffsetInSector-dataEndOffsetInSector;
 					const div_t d=div( (int)position, usableSectorLength );
 					WORD w; TFdcStatus sr;
 					if (const PSectorData sectorData=dos->image->GetSectorData( item[d.quot].chs, 0, false, &w, &sr )){
-						*ppBufStart = sectorData+dos->properties->dataBeginOffsetInSector+d.rem;
+						*ppBufStart = sectorData+dataBeginOffsetInSector+d.rem;
 						*ppBufMax = (PBYTE)*ppBufStart + min(nCount,usableSectorLength-d.rem);
 						position+=( nCount=(PCBYTE)*ppBufMax-(PCBYTE)*ppBufStart );
 					}else{
