@@ -9,6 +9,8 @@
 		1, 1, 1, TFormat::LENGTHCODE_128,FILE_LENGTH_MAX, 1 // to correctly compute free space in GetSectorStatuses a GetFileFatPath
 	};
 
+	CSpectrumDos::CTape *CSpectrumDos::CTape::pSingleInstance;
+
 	CSpectrumDos::CTape::CTape(LPCTSTR fileName,const CSpectrumDos *diskDos)
 		// ctor
 		// - base
@@ -19,10 +21,12 @@
 		dos=this; // linking the DOS and Image
 		(HACCEL)menu.hAccel=diskDos->menu.hAccel; // for DiskDos accelerators to work even if switched to Tape
 		SetPathName(fileName,FALSE);
+		pSingleInstance=this;
 	}
 
 	CSpectrumDos::CTape::~CTape(){
 		// dtor
+		pSingleInstance=NULL; // no longer accepting any requests
 		if (CScreenPreview::pSingleInstance && CScreenPreview::pSingleInstance->rFileManager.tab.dos==this)
 			CScreenPreview::pSingleInstance->DestroyWindow();
 		if (CBasicPreview::pSingleInstance && &CBasicPreview::pSingleInstance->rFileManager==pFileManager)
@@ -443,9 +447,6 @@
 				// saving the Tape to the open underlying physical file
 				DoSave(NULL,FALSE);
 				return TCmdResult::DONE;
-			case ID_FILE_CLOSE:
-				// ejecting the Tape
-				return SaveModified() ? TCmdResult::DONE : TCmdResult::REFUSED;
 		}
 		return CDos::ProcessCommand(cmd);
 	}

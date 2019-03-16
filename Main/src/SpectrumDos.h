@@ -214,6 +214,8 @@
 		
 			BOOL DoSave(LPCTSTR,BOOL) override;
 		public:
+			static CTape *pSingleInstance;
+
 			static bool WINAPI __markAsDirty__(PVOID,int);
 
 			CTape(LPCTSTR fileName,const CSpectrumDos *diskDos);
@@ -241,7 +243,7 @@
 			TCmdResult ProcessCommand(WORD cmd) override;
 			bool UpdateCommandUi(WORD cmd,CCmdUI *pCmdUI) const override;
 			void InitializeEmptyMedium(CFormatDialog::PCParameters) override;
-		} *pSingleTape;
+		};
 
 		class CScreenPreview sealed:CFilePreview{
 			friend class CSpectrumDos;

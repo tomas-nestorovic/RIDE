@@ -114,14 +114,14 @@
 	CSpectrumDos::CSpectrumDos(PImage image,PCFormat pFormatBoot,TTrackScheme trackAccessScheme,PCProperties properties,UINT nResId,CSpectrumFileManagerView *pFileManager,TGetFileSizeOptions _getFileSizeDefaultOption)
 		// ctor
 		: CDos(image,pFormatBoot,trackAccessScheme,properties,::lstrcmp,sideMap,nResId,pFileManager,_getFileSizeDefaultOption)
-		, pSingleTape(NULL) , trackMap(this) {
+		, trackMap(this) {
 		::memcpy( sideMap, StdSidesMap, sizeof(sideMap) ); // mapping Head numbers to Side numbers as the IBM norm dictates
 	}
 
 	CSpectrumDos::~CSpectrumDos(){
 		// dtor
-		if (pSingleTape)
-			delete pSingleTape;
+		if (CTape::pSingleInstance)
+			delete CTape::pSingleInstance;
 		if (CScreenPreview::pSingleInstance && &CScreenPreview::pSingleInstance->rFileManager==pFileManager)
 			CScreenPreview::pSingleInstance->DestroyWindow();
 		if (CBasicPreview::pSingleInstance && &CBasicPreview::pSingleInstance->rFileManager==pFileManager)
@@ -185,20 +185,18 @@
 			case ID_FILE_CLOSE:
 			case ID_TAPE_CLOSE:
 				// closing this Image (or a Tape, if opened)
-				if (pSingleTape)
-					if (pSingleTape->ProcessCommand(ID_FILE_CLOSE)==TCmdResult::REFUSED) // if closing an open Tape rejected ...
-						return TCmdResult::DONE; // ... the main disk Image cannot be closed neither
-					else{ // ... otherwise closing the open Tape
-						delete pSingleTape, pSingleTape=NULL;
-						if (CScreenPreview::pSingleInstance && CScreenPreview::pSingleInstance->rFileManager.DOS==pSingleTape)
-							CScreenPreview::pSingleInstance->DestroyWindow();
-						if (CBasicPreview::pSingleInstance && &CBasicPreview::pSingleInstance->rFileManager==pFileManager)
-							CBasicPreview::pSingleInstance->DestroyWindow();
-						return TCmdResult::DONE_REDRAW; // only the Tape has been closed, not the main disk Image!
-					}
+				if (CTape::pSingleInstance)
+					if (CTape::pSingleInstance->image->SaveModified()){
+						CTdiCtrl::RemoveTab( TDI_HWND, &CTape::pSingleInstance->pFileManager->tab );
+						return TCmdResult::DONE; // the closing command applies only to the open Tape, not to the main disk Image
+					}else
+						return TCmdResult::REFUSED; // rejected to close the Tape
 				break; // closing the main disk Image
 			case ID_TAPE_NEW:{
 				// creating the underlying Tape file on local disk
+				if (CTape::pSingleInstance) // closing the open Tape first
+					if (ProcessCommand(ID_FILE_CLOSE)==TCmdResult::REFUSED) // if closing of the open Tape rejected ...
+						return TCmdResult::DONE; // ... a new Tape cannot be created
 				TCHAR fileName[MAX_PATH];
 				*fileName='\0';
 				CString title;
@@ -210,18 +208,21 @@
 					d.m_ofn.lpstrFile=fileName;
 				if (d.DoModal()==IDOK){
 					// . ejecting current Tape (if any)
-					if (pSingleTape)
-						if (ProcessCommand(ID_TAPE_CLOSE)!=TCmdResult::DONE_REDRAW) // if Tape not ejected ...
+					if (CTape::pSingleInstance)
+						if (ProcessCommand(ID_TAPE_CLOSE)==TCmdResult::REFUSED) // if Tape not ejected ...
 							return TCmdResult::DONE; // ... we are done (successfully)
 					// . inserting a blank Tape (by creating a new underlying physical file and opening it)
 					CFile( fileName, CFile::modeCreate|CFile::shareDenyRead|CFile::typeBinary ).Close(); // creating the underlying file on local disk
-					( pSingleTape=new CTape(fileName,this) )->__toggleWriteProtection__(); // new Tape is not WriteProtected
+					( new CTape(fileName,this) )->__toggleWriteProtection__(); // new Tape is not WriteProtected
 					return TCmdResult::DONE;
 				}else
 					return TCmdResult::DONE_REDRAW;
 			}
 			case ID_TAPE_OPEN:{
 				// opening an existing file with Tape
+				if (CTape::pSingleInstance) // closing the open Tape first
+					if (ProcessCommand(ID_FILE_CLOSE)==TCmdResult::REFUSED) // if closing of the open Tape rejected ...
+						return TCmdResult::DONE; // ... a new Tape cannot be open
 				TCHAR fileName[MAX_PATH];
 				*fileName='\0';
 				CString title;
@@ -233,11 +234,11 @@
 					d.m_ofn.lpstrFile=fileName;
 				if (d.DoModal()==IDOK){
 					// . ejecting current Tape (if any)
-					if (pSingleTape)
-						if (ProcessCommand(ID_TAPE_CLOSE)!=TCmdResult::DONE_REDRAW) // if Tape not ejected ...
+					if (CTape::pSingleInstance)
+						if (ProcessCommand(ID_TAPE_CLOSE)==TCmdResult::REFUSED) // if Tape not ejected ...
 							return TCmdResult::DONE; // ... we are done (successfully)
 					// . inserting a recorded Tape (by opening its underlying physical file)
-					pSingleTape=new CTape(fileName,this); // inserted Tape is WriteProtected by default
+					new CTape(fileName,this); // inserted Tape is WriteProtected by default
 					return TCmdResult::DONE;
 				}else
 					return TCmdResult::DONE_REDRAW;
@@ -247,7 +248,7 @@
 				if (CScreenPreview::pSingleInstance)
 					CScreenPreview::pSingleInstance->DestroyWindow();
 				new CScreenPreview(	__isTapeFileManagerShown__()
-									? pSingleTape->fileManager
+									? CTape::pSingleInstance->fileManager
 									: *pFileManager
 								);
 				return TCmdResult::DONE;
@@ -256,13 +257,13 @@
 				if (CBasicPreview::pSingleInstance)
 					CBasicPreview::pSingleInstance->DestroyWindow();
 				new CBasicPreview(	__isTapeFileManagerShown__()
-									? pSingleTape->fileManager
+									? CTape::pSingleInstance->fileManager
 									: *pFileManager
 								);
 				return TCmdResult::DONE;
 			default:
 				// passing a non-recognized Command to an open Tape first
-				if (__isTapeFileManagerShown__() && pSingleTape->OnCmdMsg(cmd,CN_COMMAND,NULL,NULL))
+				if (__isTapeFileManagerShown__() && CTape::pSingleInstance->OnCmdMsg(cmd,CN_COMMAND,NULL,NULL))
 					return TCmdResult::DONE;
 		}
 		return CDos::ProcessCommand(cmd);
@@ -324,10 +325,10 @@
 		// True <=> given Command-specific user interface successfully updated, otherwise False
 		switch (cmd){
 			case ID_TAPE_CLOSE:
-				pCmdUI->Enable(pSingleTape!=NULL);
+				pCmdUI->Enable(CTape::pSingleInstance!=NULL);
 				return true;
 			default:
-				if (__isTapeFileManagerShown__() && pSingleTape->OnCmdMsg(cmd,CN_UPDATE_COMMAND_UI,pCmdUI,NULL))
+				if (__isTapeFileManagerShown__() && CTape::pSingleInstance->OnCmdMsg(cmd,CN_UPDATE_COMMAND_UI,pCmdUI,NULL))
 					return true;
 				break;
 		}
@@ -336,14 +337,14 @@
 
 	bool CSpectrumDos::__isTapeFileManagerShown__() const{
 		// True <=> Tape's FileManager is currently shown in the TDI, otherwise False
-		return pSingleTape && pSingleTape->fileManager.m_hWnd; // A&B, A = Tape inserted, B = Tape's FileManager currently switched to
+		return CTape::pSingleInstance && CTape::pSingleInstance->fileManager.m_hWnd; // A&B, A = Tape inserted, B = Tape's FileManager currently switched to
 	}
 
 	bool CSpectrumDos::CanBeShutDown(CFrameWnd* pFrame) const{
 		// True <=> this DOS has no dependecies which would require it to remain active, otherwise False (has some dependecies which require the DOS to remain active)
 		// - first attempting to close the Tape
-		if (pSingleTape)
-			if (!pSingleTape->CanCloseFrame(pFrame))
+		if (CTape::pSingleInstance)
+			if (!CTape::pSingleInstance->CanCloseFrame(pFrame))
 				return FALSE;
 		// - base
 		return CDos::CanBeShutDown(pFrame);
