@@ -216,11 +216,21 @@
 
 	bool CMSDOS7::GetFileFatPath(PCFile file,CFatPath &rFatPath) const{
 		// True <=> FatPath of given File (even an erroneous FatPath) successfully retrieved, otherwise False
+		// - if queried about a Directory, populating the FatPath with its Sectors
+		CFatPath::TItem item;
+		if (IsDirectory(file)){
+			item.chs=boot.chsBoot;
+			for( TMsdos7DirectoryTraversal dt(this,file); dt.__existsNextEntry__(); )
+				if (item.chs!=dt.chs){
+					item.chs=dt.chs;
+					if (!rFatPath.AddItem(&item)) break; // also sets an error in FatPath
+				}
+			return true;
+		}
 		// - no FatPath can be retrieved if DirectoryEntry is Empty
 		if (*(PCBYTE)file==UDirectoryEntry::EMPTY_ENTRY)
 			return false;
 		// - zero-length File has no Clusters allocated
-		CFatPath::TItem item;
 		if (!( item.value=((PCDirectoryEntry)file)->shortNameEntry.__getFirstCluster__() ))
 			return true; // success despite the FatPath is empty (as no Clusters allocated)
 		// - extracting the FatPath from FAT
@@ -323,6 +333,9 @@ nextCluster:result++;
 
 	BYTE CMSDOS7::__getLongFileNameEntries__(PCDirectoryEntry de,PDirectoryEntry *bufLongNameEntries) const{
 		// populates Buffer with long name entries of the specified File and returns their count (returns 0 if no long name found); assumed that the Buffer capacity is at least LONG_FILE_NAME_ENTRIES_COUNT_MAX entries
+		// - root Directory has no long name
+		if (de==MSDOS7_DIR_ROOT)
+			return 0;
 		// - for Files marked with Volume Attribute the long name doesn't exist
 		if (de->shortNameEntry.attributes&FILE_ATTRIBUTE_VOLUME)
 			return 0;
@@ -376,7 +389,10 @@ nextCluster:result++;
 
 	void CMSDOS7::__getShortFileNameAndExt__(PCDirectoryEntry de,PTCHAR bufName,PTCHAR bufExt) const{
 		// populates the Buffer with short File name and returns the Buffer; caller guarantess that Buffer's capacity is at least MAX_PATH chars
-		if (*(PDWORD)de==MSDOS7_DIR_DOT){
+		if (de==MSDOS7_DIR_ROOT){
+			if (bufName) ::lstrcpy(bufName,_T("\\"));
+			if (bufExt)	 *bufExt='\0';
+		}else if (*(PDWORD)de==MSDOS7_DIR_DOT){
 			if (bufName) ::lstrcpy(bufName,_T("."));
 			if (bufExt)	 *bufExt='\0';
 		}else if (*(PDWORD)de==MSDOS7_DIR_DOTDOT){
@@ -452,6 +468,9 @@ nextCluster:result++;
 	TStdWinError CMSDOS7::__changeShortFileNameAndExt__(PDirectoryEntry de,LPCTSTR newName,LPCTSTR newExt,PDirectoryEntry &rRenamedFile) const{
 		// tries to change given File's short name and extension; returns Windows standard i/o error
 		ASSERT(newName!=NULL && newExt!=NULL);
+		// - can't change root Directory's name
+		if (de==MSDOS7_DIR_ROOT)
+			return ERROR_DIRECTORY;
 		// - checking that the NewName+NewExt combination follows the "8.3" convention
 		if (::lstrlen(newName)>MSDOS7_FILE_NAME_LENGTH_MAX || ::lstrlen(newExt)>MSDOS7_FILE_EXT_LENGTH_MAX)
 			return ERROR_FILENAME_EXCED_RANGE;
@@ -543,6 +562,9 @@ nextCluster:result++;
 	TStdWinError CMSDOS7::__changeLongFileNameAndExt__(PDirectoryEntry de,LPCTSTR newName,LPCTSTR newExt,PDirectoryEntry &rRenamedFile) const{
 		// tries to change given File's long name and extension; returns Windows standard i/o error
 		ASSERT(newName!=NULL && newExt!=NULL);
+		// - can't change root Directory's name
+		if (de==MSDOS7_DIR_ROOT)
+			return ERROR_DIRECTORY;
 		// - doing nothing if the NewName and NewExt don't differ from the old name and old extension
 		TCHAR tmpName[MAX_PATH],tmpExt[MAX_PATH];
 		if (__getLongFileNameAndExt__(de,tmpName,tmpExt))
@@ -765,6 +787,8 @@ nextCluster:result++;
 
 	TStdWinError CMSDOS7::DeleteFile(PFile file){
 		// deletes specified File; returns Windows standard i/o error
+		if (file==MSDOS7_DIR_ROOT)
+			return ERROR_ACCESS_DENIED; // can't delete the root Directory
 		if (*(PCHAR)file!=UDirectoryEntry::EMPTY_ENTRY){ // File mustn't be already deleted (may happen during moving it in FileManager)
 			const CFatPath fatPath(this,file);
 			CFatPath::PCItem item; DWORD n;
