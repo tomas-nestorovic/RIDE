@@ -216,7 +216,7 @@
 			TLogSector32 dirSector;
 			BYTE nRemainingEntriesInSector;
 		public:
-			TMsdos7DirectoryTraversal(const CMSDOS7 *_msdos7); // ctor
+			TMsdos7DirectoryTraversal(const CMSDOS7 *_msdos7,PCFile directory); // ctor
 			PFile AllocateNewEntry() override;
 			PDirectoryEntry __allocateNewEntry__();
 			bool AdvanceToNextEntry() override;
@@ -314,7 +314,7 @@
 		DWORD GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData,TGetFileSizeOptions option) const override;
 		DWORD GetAttributes(PCFile file) const override;
 		TStdWinError DeleteFile(PFile file) override;
-		PDirectoryTraversal BeginDirectoryTraversal() const override;
+		PDirectoryTraversal BeginDirectoryTraversal(PCFile directory) const override;
 		PTCHAR GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const override;
 		TStdWinError ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile) override;
 		// other

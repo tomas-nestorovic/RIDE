@@ -362,7 +362,7 @@
 		if (::lstrlen(newName)>GDOS_FILE_NAME_LENGTH_MAX || ::lstrlen(newExt)>1)
 			return ERROR_FILENAME_EXCED_RANGE;
 		// - making sure that a File with given NameAndExtension doesn't yet exist
-		if ( rRenamedFile=__findFile__(newName,newExt,file) )
+		if ( rRenamedFile=__findFileInCurrDir__(newName,newExt,file) )
 			return ERROR_FILE_EXISTS;
 		// - extracting important information about the File before renaming it (e.g. standard parameters)
 		const PDirectoryEntry de=(PDirectoryEntry)file;
@@ -665,15 +665,16 @@
 
 
 
-	CDos::PDirectoryTraversal CGDOS::BeginDirectoryTraversal() const{
-		// initiates exploration of current Directory through a DOS-specific DirectoryTraversal
+	CDos::PDirectoryTraversal CGDOS::BeginDirectoryTraversal(PCFile directory) const{
+		// initiates exploration of specified Directory through a DOS-specific DirectoryTraversal
+		ASSERT(directory==ZX_DIR_ROOT);
 		return new TGdosDirectoryTraversal(this);
 	}
 
 	CGDOS::TGdosDirectoryTraversal::TGdosDirectoryTraversal(const CGDOS *gdos)
 		// ctor
 		// - base
-		: TDirectoryTraversal(sizeof(TDirectoryEntry),GDOS_FILE_NAME_LENGTH_MAX)
+		: TDirectoryTraversal( ZX_DIR_ROOT, sizeof(TDirectoryEntry), GDOS_FILE_NAME_LENGTH_MAX )
 		// - initialization
 		, gdos(gdos)
 		// - getting ready to read the first Directory Sector

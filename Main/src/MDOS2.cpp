@@ -230,7 +230,7 @@
 		if (::lstrlen(newName)>MDOS2_FILE_NAME_LENGTH_MAX || ::lstrlen(newExt)>1)
 			return ERROR_FILENAME_EXCED_RANGE;
 		// - making sure that a File with given NameAndExtension doesn't yet exist
-		if ( rRenamedFile=__findFile__(newName,newExt,file) )
+		if ( rRenamedFile=__findFileInCurrDir__(newName,newExt,file) )
 			return ERROR_FILE_EXISTS;
 		// - renaming
 		const PDirectoryEntry de=(PDirectoryEntry)file;
@@ -541,7 +541,7 @@
 
 	CMDOS2::TMdos2DirectoryTraversal::TMdos2DirectoryTraversal(const CMDOS2 *_mdos2)
 		// ctor
-		: TDirectoryTraversal(sizeof(TDirectoryEntry),MDOS2_FILE_NAME_LENGTH_MAX)
+		: TDirectoryTraversal( ZX_DIR_ROOT, sizeof(TDirectoryEntry), MDOS2_FILE_NAME_LENGTH_MAX )
 		, mdos2(_mdos2) {
 		__reinitToFirstEntry__();
 	}
@@ -571,8 +571,9 @@
 		return true;
 	}
 
-	CDos::PDirectoryTraversal CMDOS2::BeginDirectoryTraversal() const{
-		// initiates exploration of current Directory through a DOS-specific DirectoryTraversal
+	CDos::PDirectoryTraversal CMDOS2::BeginDirectoryTraversal(PCFile directory) const{
+		// initiates exploration of specified Directory through a DOS-specific DirectoryTraversal
+		ASSERT(directory==ZX_DIR_ROOT);
 		return new TMdos2DirectoryTraversal(this);
 	}
 	bool CMDOS2::TMdos2DirectoryTraversal::AdvanceToNextEntry(){

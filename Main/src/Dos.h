@@ -62,6 +62,7 @@
 		} *PCProperties;
 
 		typedef struct TDirectoryTraversal{
+			const PCFile directory;
 			const WORD entrySize;
 			const WORD nameCharsMax;
 			TPhysicalAddress chs;
@@ -77,7 +78,7 @@
 				TStdWinError warning; // it's up to the caller to consider further traversal of the Directory (i.e. interpret this warning as a serious error)
 			};
 
-			TDirectoryTraversal(WORD entrySize,WORD nameCharsMax); // ctor
+			TDirectoryTraversal(PCFile directory,WORD entrySize,WORD nameCharsMax); // ctor
 
 			virtual PFile AllocateNewEntry();
 			virtual bool AdvanceToNextEntry()=0;
@@ -175,7 +176,7 @@
 	protected:
 		class CFilePreview:public CFrameWnd{
 			const CWnd *const pView;
-
+			const PFile directory;
 		protected:
 			const LPCTSTR iniSection;
 			PDirectoryTraversal pdt;
@@ -226,7 +227,8 @@
 		LPCTSTR __exportFileData__(PCFile file,CFile *fOut,DWORD nMaxDataBytesToExport) const;
 		TStdWinError __importFileData__(CFile *fIn,PFile fDesc,LPCTSTR fileName,LPCTSTR fileExt,DWORD fileSize,PFile &rFile,CFatPath &rFatPath);
 		void __markDirectorySectorAsDirty__(LPCVOID dirEntry) const;
-		PFile __findFile__(LPCTSTR fileName,LPCTSTR fileExt,PCFile ignoreThisFile) const;
+		PFile __findFile__(PCFile directory,LPCTSTR fileName,LPCTSTR fileExt,PCFile ignoreThisFile) const;
+		PFile __findFileInCurrDir__(LPCTSTR fileName,LPCTSTR fileExt,PCFile ignoreThisFile) const;
 		TStdWinError __shiftFileContent__(const CFatPath &rFatPath,char nBytesShift) const;
 		void __showFileProcessingError__(PCFile file,LPCTSTR cause) const;
 		void __showFileProcessingError__(PCFile file,TStdWinError cause) const;
@@ -311,7 +313,8 @@
 		virtual DWORD GetAttributes(PCFile file) const=0;
 		bool IsDirectory(PCFile file) const;
 		virtual TStdWinError DeleteFile(PFile file)=0;
-		virtual PDirectoryTraversal BeginDirectoryTraversal() const=0;
+		virtual PDirectoryTraversal BeginDirectoryTraversal(PCFile directory) const=0;
+		PDirectoryTraversal BeginDirectoryTraversal() const;
 		void EndDirectoryTraversal(PDirectoryTraversal pdt) const;
 		DWORD GetCountOfItemsInCurrentDir(TStdWinError &rError) const;
 		virtual PTCHAR GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const;

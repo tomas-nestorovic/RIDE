@@ -22,6 +22,7 @@
 		// returns the Buffer populated with the export name and extension of the next File's copy in current Directory; returns Null if no further name and extension can be generated
 		BYTE tmpDirEntry[2048]; // "big enough" to accommodate any ZX Spectrum DirectoryEntry
 		const PDirectoryTraversal pdt=DOS->BeginDirectoryTraversal();
+			if (!pdt) return NULL;
 			::memcpy( tmpDirEntry, file, pdt->entrySize );
 			const BYTE nameCharsMax=pdt->nameCharsMax;
 		DOS->EndDirectoryTraversal(pdt);

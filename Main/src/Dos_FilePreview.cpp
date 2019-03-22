@@ -12,7 +12,8 @@
 		// - initialization
 		: pView(pView)
 		, iniSection(iniSection) , rFileManager(rFileManager)
-		, pdt( DOS->BeginDirectoryTraversal() ) {
+		, directory(DOS->currentDir)
+		, pdt( DOS->BeginDirectoryTraversal(DOS->currentDir) ) {
 		// - creating the Preview FrameWindow
 		Create(	NULL, NULL,
 				WS_CAPTION|WS_SYSMENU|WS_THICKFRAME|WS_VISIBLE,
@@ -48,6 +49,7 @@
 
 	void CDos::CFilePreview::__showNextFile__(){
 		// shows next File
+		if (!pdt) return;
 		if (POSITION pos=rFileManager.GetFirstSelectedFilePosition()){
 			// next File selected in the FileManager
 			while (pos)
@@ -65,7 +67,7 @@
 						break;
 					}
 				if (!next)
-					for( DOS->EndDirectoryTraversal(pdt),pdt=DOS->BeginDirectoryTraversal(); pdt->AdvanceToNextEntry(); )
+					for( DOS->EndDirectoryTraversal(pdt),pdt=DOS->BeginDirectoryTraversal(directory); pdt->AdvanceToNextEntry(); )
 						if (pdt->entryType==TDirectoryTraversal::FILE){
 							next=pdt->entry;
 							break;
@@ -78,6 +80,7 @@
 
 	void CDos::CFilePreview::__showPreviousFile__(){
 		// shows previous File
+		if (!pdt) return;
 		if (POSITION pos=rFileManager.GetLastSelectedFilePosition()){
 			// previous File selected in the FileManager
 			while (pos)
@@ -90,12 +93,12 @@
 			// previous File (any)
 			PFile prev=NULL;
 				const PFile curr=pdt->entry;
-				for( DOS->EndDirectoryTraversal(pdt),pdt=DOS->BeginDirectoryTraversal(); pdt->AdvanceToNextEntry(); )
+				for( DOS->EndDirectoryTraversal(pdt),pdt=DOS->BeginDirectoryTraversal(directory); pdt->AdvanceToNextEntry(); )
 					if (pdt->entryType==TDirectoryTraversal::FILE){
 						if (pdt->entry==curr){
 							if (prev) // doesn't exist if showing the first File
 								// setting the "cursor" to Previous File (currently points to Current File)
-								for( DOS->EndDirectoryTraversal(pdt),pdt=DOS->BeginDirectoryTraversal(); pdt->AdvanceToNextEntry() && pdt->entry!=prev; );
+								for( DOS->EndDirectoryTraversal(pdt),pdt=DOS->BeginDirectoryTraversal(directory); pdt->AdvanceToNextEntry() && pdt->entry!=prev; );
 							break;
 						}
 						prev=pdt->entry;

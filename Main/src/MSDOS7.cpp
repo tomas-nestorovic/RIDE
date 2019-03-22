@@ -330,7 +330,7 @@ nextCluster:result++;
 		PDirectoryEntry tmpBuf[LONG_FILE_NAME_ENTRIES_COUNT_MAX]; // cyclic buffer whose items are addressed using modulo implemented as "&(N-1)"
 		::ZeroMemory(tmpBuf,sizeof(tmpBuf));
 		BYTE i=0;
-		TMsdos7DirectoryTraversal dt(this);
+		TMsdos7DirectoryTraversal dt(this,currentDir);
 		while (dt.__existsNextEntry__())
 			if (( tmpBuf[i=++i&(LONG_FILE_NAME_ENTRIES_COUNT_MAX-1)]=(PDirectoryEntry)dt.entry )==de)
 				break;
@@ -470,7 +470,7 @@ nextCluster:result++;
 		// - making sure that the NewName+NewExt combination is not empty
 		//TODO
 		// - making sure that the NewName+NewExt combination isn't used by another File in CurrentDirectory
-		for( TMsdos7DirectoryTraversal dt(this); dt.__existsNextEntry__(); )
+		for( TMsdos7DirectoryTraversal dt(this,currentDir); dt.__existsNextEntry__(); )
 			if (dt.entry!=de)
 				if (dt.entryType==TDirectoryTraversal::FILE || dt.entryType==TDirectoryTraversal::SUBDIR){
 					TCHAR tmpName[MAX_PATH],tmpExt[MAX_PATH];
@@ -555,7 +555,7 @@ nextCluster:result++;
 		// - making sure that the NewNameAndExtension is not empty
 		//TODO
 		// - making sure that the NewNameAndExtension isn't used by another File in CurrentDirectory
-		for( TMsdos7DirectoryTraversal dt(this); dt.__existsNextEntry__(); )
+		for( TMsdos7DirectoryTraversal dt(this,currentDir); dt.__existsNextEntry__(); )
 			if (dt.entry!=de)
 				if (dt.entryType==TDirectoryTraversal::FILE || dt.entryType==TDirectoryTraversal::SUBDIR){
 					__getShortFileNameAndExt__( (PCDirectoryEntry)dt.entry, tmpName, tmpExt );
@@ -580,7 +580,7 @@ nextCluster:result++;
 			::lstrcat( ::lstrcat( ::lstrcpy(longNameAndExt,newName), _T(".") ), newExt );
 			// . allocating necessary number of DirectoryEntries to accommodate the long NameAndExtension
 			PDirectoryEntry longNameEntries[LONG_FILE_NAME_ENTRIES_COUNT_MAX], *plnde=longNameEntries;
-			TMsdos7DirectoryTraversal dt(this);
+			TMsdos7DirectoryTraversal dt(this,currentDir);
 			for( BYTE n=(::lstrlen(longNameAndExt)+12)/13; n--; ) // 13 = number of characters in one LongNameEntry
 				if (!( *plnde++=dt.__allocateNewEntry__() ))
 					return ERROR_CANNOT_MAKE;
@@ -670,7 +670,7 @@ nextCluster:result++;
 				return err;
 			}
 		if (rCreatedSubdir==&tmp) // new Subdirectory's name follows the "8.3" convention
-			if ( rCreatedSubdir=TMsdos7DirectoryTraversal(this).__allocateNewEntry__() ){
+			if ( rCreatedSubdir=TMsdos7DirectoryTraversal(this,currentDir).__allocateNewEntry__() ){
 				*rCreatedSubdir=tmp;
 				__markDirectorySectorAsDirty__(rCreatedSubdir);
 			}else{
@@ -678,16 +678,13 @@ nextCluster:result++;
 				return ERROR_CANNOT_MAKE;
 			}
 		// - creating the "dot" and "dotdot" entries in newly created Subdirectory
-		const PDirectoryEntry currentDirectory0=(PDirectoryEntry)currentDir;
-		__switchToDirectory__((PDirectoryEntry)rCreatedSubdir);
-			TMsdos7DirectoryTraversal dt(this);
-			const PDirectoryEntry dot=dt.__allocateNewEntry__();
-				*dot=*(PDirectoryEntry)currentDir;
-				*(PCHAR)::memset( dot, ' ', MSDOS7_FILE_NAME_LENGTH_MAX+MSDOS7_FILE_EXT_LENGTH_MAX )='.';
-			const PDirectoryEntry dotdot=dt.__allocateNewEntry__();
-				( *dotdot=*dot ).shortNameEntry.name[1]='.';
-				dotdot->shortNameEntry.__setFirstCluster__( currentDirectory0!=MSDOS7_DIR_ROOT ? currentDirectory0->shortNameEntry.__getFirstCluster__() : 0 );
-		__switchToDirectory__(currentDirectory0);
+		TMsdos7DirectoryTraversal dt(this,(PDirectoryEntry)rCreatedSubdir);
+		const PDirectoryEntry dot=dt.__allocateNewEntry__();
+			*dot=*(PCDirectoryEntry)rCreatedSubdir;
+			*(PCHAR)::memset( dot, ' ', MSDOS7_FILE_NAME_LENGTH_MAX+MSDOS7_FILE_EXT_LENGTH_MAX )='.';
+		const PDirectoryEntry dotdot=dt.__allocateNewEntry__();
+			( *dotdot=*dot ).shortNameEntry.name[1]='.';
+			dotdot->shortNameEntry.__setFirstCluster__( currentDir!=MSDOS7_DIR_ROOT ? ((PCDirectoryEntry)currentDir)->shortNameEntry.__getFirstCluster__() : 0 );
 		return ERROR_SUCCESS;
 	}
 
@@ -716,23 +713,18 @@ nextCluster:result++;
 			return err;
 		// - if moving a File with "8.3" name (e.g. "MYFILE.TXT"), moving the single DirectoryEntry "manually"
 		if (rMovedFile==de) // a "8.3" named File - the above "registration" didn't function for it
-			if (PDirectoryEntry newDe=TMsdos7DirectoryTraversal(this).__allocateNewEntry__()){
+			if (const PDirectoryEntry newDe=TMsdos7DirectoryTraversal(this,currentDir).__allocateNewEntry__()){
 				*newDe=*de;
 				*(PBYTE)de=UDirectoryEntry::EMPTY_ENTRY;
 			}else
 				return ERROR_CANNOT_MAKE;
 		// - if a Directory is being moved, changing the reference to the parent in the "dotdot" DirectoryEntry
-		if (IsDirectory(rMovedFile)){
-			const PDirectoryEntry currentDirectory0=(PDirectoryEntry)currentDir;
-			if (( err=__switchToDirectory__(rMovedFile) )!=ERROR_SUCCESS)
-				return err;
-			if (const PDirectoryEntry dotdot=(PDirectoryEntry)__findFile__(_T(".."),_T(""),NULL))
-				dotdot->shortNameEntry.__setFirstCluster__(	currentDirectory0!=MSDOS7_DIR_ROOT
-															? currentDirectory0->shortNameEntry.__getFirstCluster__()
+		if (IsDirectory(rMovedFile))
+			if (const PDirectoryEntry dotdot=(PDirectoryEntry)__findFile__(rMovedFile,_T(".."),_T(""),NULL))
+				dotdot->shortNameEntry.__setFirstCluster__(	currentDir!=MSDOS7_DIR_ROOT
+															? ((PCDirectoryEntry)currentDir)->shortNameEntry.__getFirstCluster__()
 															: 0
 														);
-			__switchToDirectory__(currentDirectory0);
-		}
 		return ERROR_SUCCESS;
 	}
 
@@ -750,10 +742,7 @@ nextCluster:result++;
 				if (IsDirectory(de)){
 					// Directory - finding out how much space it occupies on the disk (NOT including its content!)
 					DWORD sizeOnDisk=0;
-					const PDirectoryEntry currentDirectory0=(PDirectoryEntry)currentDir;
-					const_cast<CMSDOS7 *>(this)->__switchToDirectory__(de);
-						for( TMsdos7DirectoryTraversal dt(this); dt.__existsNextEntry__(); sizeOnDisk+=sizeof(UDirectoryEntry) );
-					const_cast<CMSDOS7 *>(this)->__switchToDirectory__(currentDirectory0);
+					for( TMsdos7DirectoryTraversal dt(this,de); dt.__existsNextEntry__(); sizeOnDisk+=sizeof(UDirectoryEntry) );
 					return sizeOnDisk;
 				}else{
 					// File
@@ -787,11 +776,8 @@ nextCluster:result++;
 				// . deleting the content
 				if (!de->shortNameEntry.__isDotOrDotdot__()){ // "dot" and "dotdot" Entries skipped
 					// . recurrently deleting the content of a Directory
-					if (IsDirectory(de)){
-						const PDirectoryEntry originalDirectory=(PDirectoryEntry)currentDir;
-						if (const TStdWinError err=__switchToDirectory__(de))
-							return err;
-						for( TMsdos7DirectoryTraversal dt(this); dt.__existsNextEntry__(); )
+					if (IsDirectory(de))
+						for( TMsdos7DirectoryTraversal dt(this,de); dt.__existsNextEntry__(); )
 							switch (dt.entryType){
 								case TDirectoryTraversal::SUBDIR:
 									// Directory
@@ -806,8 +792,6 @@ nextCluster:result++;
 									}
 									break;
 							}
-						__switchToDirectory__(originalDirectory);
-					}
 					// : modifying the FS Info Sector
 					if (const PFsInfoSector fsInfoSector=fsInfo.GetSectorData()){
 						const TSector nSectorsInCluster=boot.GetSectorData()->nSectorsInCluster; // Boot Sector guarateed to exist in this context
@@ -964,18 +948,11 @@ nextCluster:result++;
 		// thread to remove long File names
 		TBackgroundActionCancelable *const pAction=(TBackgroundActionCancelable *)_pCancelableAction;
 		const TRemoveLongNameParams &rlnp=*(TRemoveLongNameParams *)pAction->fnParams;
-		const PDirectoryEntry originalDirectory=(PDirectoryEntry)rlnp.msdos->currentDir;
 			CFileManagerView::TFileList bfsDirectories; // breadth first search, searching through Directories in breadth
 			TCylinder state=0;
 			for( bfsDirectories.AddTail(rlnp.msdos->currentDir); bfsDirectories.GetCount(); ){
-				if (!pAction->bContinue){
-					rlnp.msdos->__switchToDirectory__(originalDirectory);
-					return ERROR_CANCELLED;
-				}
-				const TStdWinError err=rlnp.msdos->__switchToDirectory__( (PDirectoryEntry)bfsDirectories.RemoveHead() );
-				if (err!=ERROR_SUCCESS)
-					return pAction->TerminateWithError(err);
-				TMsdos7DirectoryTraversal dt(rlnp.msdos);
+				if (!pAction->bContinue) return ERROR_CANCELLED;
+				TMsdos7DirectoryTraversal dt( rlnp.msdos, bfsDirectories.RemoveHead() );
 				while (dt.__existsNextEntry__()){
 					const PDirectoryEntry de=(PDirectoryEntry)dt.entry;
 					switch (dt.entryType){
@@ -993,7 +970,6 @@ nextCluster:result++;
 				}
 				pAction->UpdateProgress( state=max(state,dt.chs.cylinder) );
 			}
-		rlnp.msdos->__switchToDirectory__(originalDirectory);
 		return pAction->TerminateWithError(ERROR_SUCCESS);
 	}
 
@@ -1232,24 +1208,24 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 
 
 
-	CDos::PDirectoryTraversal CMSDOS7::BeginDirectoryTraversal() const{
-		// initiates exploration of current Directory through a DOS-specific DirectoryTraversal
-		return new TMsdos7DirectoryTraversal(this);
+	CDos::PDirectoryTraversal CMSDOS7::BeginDirectoryTraversal(PCFile directory) const{
+		// initiates exploration of specified Directory through a DOS-specific DirectoryTraversal
+		return new TMsdos7DirectoryTraversal(this,directory);
 	}
 
-	CMSDOS7::TMsdos7DirectoryTraversal::TMsdos7DirectoryTraversal(const CMSDOS7 *_msdos7)
+	CMSDOS7::TMsdos7DirectoryTraversal::TMsdos7DirectoryTraversal(const CMSDOS7 *_msdos7,PCFile directory)
 		// ctor
 		// - base
-		: TDirectoryTraversal( sizeof(UDirectoryEntry), _msdos7->dontShowLongFileNames?MSDOS7_FILE_NAME_LENGTH_MAX:MAX_PATH )
+		: TDirectoryTraversal( directory, sizeof(UDirectoryEntry), _msdos7->dontShowLongFileNames?MSDOS7_FILE_NAME_LENGTH_MAX:MAX_PATH )
 		// - initialization
 		, msdos7(_msdos7)
 		, foundEndOfDirectory(false) , fatError(false)
 		, nRemainingSectorsInCluster(0) , nRemainingEntriesInSector(0) {
 		// - "pointer" set to the first DirectoryEntry
 		if (const PCBootSector bootSector=msdos7->boot.GetSectorData()){
-			if (msdos7->currentDir!=MSDOS7_DIR_ROOT)
+			if (directory!=MSDOS7_DIR_ROOT)
 				// NON-root Directory
-				next=((PDirectoryEntry)msdos7->currentDir)->shortNameEntry.__getFirstCluster__();
+				next=((PCDirectoryEntry)directory)->shortNameEntry.__getFirstCluster__();
 			else
 				// root Directory
 				switch (msdos7->fat.type){
@@ -1354,7 +1330,7 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 			switch (msdos7->fat.type){
 				case CFat::FAT12:
 				case CFat::FAT16:
-					if (msdos7->currentDir==MSDOS7_DIR_ROOT) // for root Directory of FAT12/FAT16 ...
+					if (directory==MSDOS7_DIR_ROOT) // for root Directory of FAT12/FAT16 ...
 						return NULL; // ... cannot be allocated a new Cluster
 					//fallthrough
 				case CFat::FAT32:

@@ -78,7 +78,7 @@
 			result++; // adding this Directory
 			::lstrcat( exportName, _T("\\") );
 			// . enumerating "Subfiles"
-			const CDos::PDirectoryTraversal pdt=fileManager->DOS->BeginDirectoryTraversal();
+			if (const CDos::PDirectoryTraversal pdt=fileManager->DOS->BeginDirectoryTraversal()){
 				while (pdt->AdvanceToNextEntry())
 					if (pdt->entryType==CDos::TDirectoryTraversal::FILE || pdt->entryType==CDos::TDirectoryTraversal::SUBDIR){
 						const int n=__addFileToExport__( relativeDir, pdt->entry, lpfd );
@@ -89,7 +89,8 @@
 						if (lpfd) lpfd+=n;
 						result+=n;
 					}
-			fileManager->DOS->EndDirectoryTraversal(pdt);
+				fileManager->DOS->EndDirectoryTraversal(pdt);
+			}
 			// . switching back to OriginalDirectory
 			(fileManager->DOS->*fileManager->pDirectoryStructureManagement->fnChangeCurrentDir)(originalDirectory);
 		}else

@@ -313,13 +313,14 @@
 
 	CSpectrumDos::CTape::TTapeTraversal::TTapeTraversal(const CTapeFileManagerView &rFileManager)
 		// ctor
-		: TDirectoryTraversal(1,ZX_TAPE_FILE_NAME_LENGTH_MAX) , rFileManager(rFileManager) {
+		: TDirectoryTraversal( ZX_DIR_ROOT, 1, ZX_TAPE_FILE_NAME_LENGTH_MAX ) , rFileManager(rFileManager) {
 		fileId=1; // Files numbered from 1
 		entryType=TDirectoryTraversal::FILE;
 	}
 	
-	CDos::PDirectoryTraversal CSpectrumDos::CTape::BeginDirectoryTraversal() const{
-		// initiates exploration of current Directory through a DOS-specific DirectoryTraversal
+	CDos::PDirectoryTraversal CSpectrumDos::CTape::BeginDirectoryTraversal(PCFile directory) const{
+		// initiates exploration of specified Directory through a DOS-specific DirectoryTraversal
+		ASSERT(directory==ZX_DIR_ROOT);
 		return new TTapeTraversal(fileManager);
 	}
 	bool CSpectrumDos::CTape::TTapeTraversal::AdvanceToNextEntry(){

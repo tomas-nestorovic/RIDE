@@ -266,7 +266,7 @@
 				bufNameCopy[MAX_PATH]='\0'; // trimming to maximum number of characters
 			}
 			// . finding if a file with given name already exists
-			if (!((CMSDOS7 *)DOS)->__findFile__(bufNameCopy,bufExt,NULL))
+			if (!((CMSDOS7 *)DOS)->__findFileInCurrDir__(bufNameCopy,bufExt,NULL))
 				// generated a unique Name for the next File copy - returning the final export name and extension
 				return ((CMSDOS7 *)DOS)->__getFileExportNameAndExt__( bufNameCopy, bufExt, shellCompliant, pOutBuffer );
 		}

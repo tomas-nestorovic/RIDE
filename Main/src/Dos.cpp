@@ -503,19 +503,11 @@ reportError:Utils::Information(buf);
 			pAction->UpdateProgress(0);
 			// . adding current Directory into DiscoverdDirectories, and backing-up current Directory (may be changed during processing)
 			CFileManagerView::TFileList discoveredDirs;
-			PFile currDir0=fesp.dos->currentDir;
-			discoveredDirs.AddHead(currDir0);
+			discoveredDirs.AddHead(fesp.dos->currentDir);
 			// . filling empty space last Sectors
 			while (discoveredDirs.GetCount()){
 				const PFile dir=discoveredDirs.RemoveHead();
-				if (fesp.dos->pFileManager->pDirectoryStructureManagement!=NULL){
-					const TStdWinError err=(fesp.dos->*fesp.dos->pFileManager->pDirectoryStructureManagement->fnChangeCurrentDir)(dir);
-					if (err!=ERROR_SUCCESS){
-						//TODO: warning
-						continue;
-					}
-				}
-				const PDirectoryTraversal pdt=fesp.dos->BeginDirectoryTraversal();
+				if (const PDirectoryTraversal pdt=fesp.dos->BeginDirectoryTraversal(dir)){
 					while (const PCFile file=pdt->GetNextFileOrSubdir()){
 						if (!pAction->bContinue) return ERROR_CANCELLED;
 						switch (pdt->entryType){
@@ -551,30 +543,21 @@ reportError:Utils::Information(buf);
 								break;
 						}
 					}
-				fesp.dos->EndDirectoryTraversal(pdt);
+					fesp.dos->EndDirectoryTraversal(pdt);
+				}//else
+					//TODO: warning
 			}
-			// . restoring current Directory (might have been changed during processing)
-			if (fesp.dos->pFileManager->pDirectoryStructureManagement!=NULL)
-				(fesp.dos->*fesp.dos->pFileManager->pDirectoryStructureManagement->fnChangeCurrentDir)(currDir0);
 		}
 		// - filling Empty Directory entries (WARNING: It's assumed that "dot" and "dotdot"-like DirectoryEntries are disabled to prevent from unfinite looping!)
 		if (fesp.rd.fillEmptyDirectoryEntries){
 			pAction->UpdateProgress(0);
 			// . adding current Directory into DiscoverdDirectories, and backing-up current Directory (may be changed during processing)
 			CFileManagerView::TFileList discoveredDirs;
-			PFile currDir0=fesp.dos->currentDir;
-			discoveredDirs.AddHead(currDir0);
+			discoveredDirs.AddHead(fesp.dos->currentDir);
 			// . filling Empty Directory entries
 			while (discoveredDirs.GetCount()){
 				const PFile dir=discoveredDirs.RemoveHead();
-				if (fesp.dos->pFileManager->pDirectoryStructureManagement!=NULL){
-					const TStdWinError err=(fesp.dos->*fesp.dos->pFileManager->pDirectoryStructureManagement->fnChangeCurrentDir)(dir);
-					if (err!=ERROR_SUCCESS){
-						//TODO: warning
-						continue;
-					}
-				}
-				const PDirectoryTraversal pdt=fesp.dos->BeginDirectoryTraversal();
+				if (const PDirectoryTraversal pdt=fesp.dos->BeginDirectoryTraversal(dir)){
 					pAction->UpdateProgress(pdt->chs.cylinder);
 					while (pdt->AdvanceToNextEntry()){
 						if (!pAction->bContinue) return ERROR_CANCELLED;
@@ -595,11 +578,10 @@ reportError:Utils::Information(buf);
 								break;
 						}
 					}
-				fesp.dos->EndDirectoryTraversal(pdt);
+					fesp.dos->EndDirectoryTraversal(pdt);
+				}//else
+					//TODO: warning
 			}
-			// . restoring current Directory (might have been changed during processing)
-			if (fesp.dos->pFileManager->pDirectoryStructureManagement!=NULL)
-				(fesp.dos->*fesp.dos->pFileManager->pDirectoryStructureManagement->fnChangeCurrentDir)(currDir0);
 		}
 		pAction->UpdateProgress(-1); // "-1" = completed
 		return ERROR_SUCCESS;
@@ -796,6 +778,7 @@ reportError:Utils::Information(buf);
 		LOG_FILE_ACTION(this,fDesc,_T("import"));
 		rFile=NULL; // assumption (cannot import the File)
 		const PDirectoryTraversal pdt=BeginDirectoryTraversal();
+			if (!pdt) return LOG_ERROR(ERROR_PATH_NOT_FOUND);
 			while (pdt->AdvanceToNextEntry())
 				switch (pdt->entryType){
 					case TDirectoryTraversal::EMPTY:
@@ -939,20 +922,21 @@ finished:
 
 	void CDos::__markDirectorySectorAsDirty__(LPCVOID dirEntry) const{
 		// marks Directory Sector that contains specified Directory entry as "dirty"
-		const PDirectoryTraversal pdt=BeginDirectoryTraversal();
+		if (const PDirectoryTraversal pdt=BeginDirectoryTraversal()){
 			while (pdt->AdvanceToNextEntry())
 				if (pdt->entry==dirEntry){
 					image->MarkSectorAsDirty(pdt->chs);
 					break;
 				}
-		EndDirectoryTraversal(pdt);
+			EndDirectoryTraversal(pdt);
+		}
 	}
 
-	CDos::PFile CDos::__findFile__(LPCTSTR fileName,LPCTSTR fileExt,PCFile ignoreThisFile) const{
+	CDos::PFile CDos::__findFile__(PCFile directory,LPCTSTR fileName,LPCTSTR fileExt,PCFile ignoreThisFile) const{
 		// finds and returns a File with given NameAndExtension; returns Null if such File doesn't exist
 		ASSERT(fileName!=NULL && fileExt!=NULL);
 		PFile result=NULL; // assumption (File with given NameAndExtension not found)
-		const PDirectoryTraversal pdt=BeginDirectoryTraversal();
+		if (const PDirectoryTraversal pdt=BeginDirectoryTraversal(directory)){
 			while (pdt->AdvanceToNextEntry())
 				if (pdt->entryType==TDirectoryTraversal::FILE || pdt->entryType==TDirectoryTraversal::SUBDIR)
 					if (pdt->entry!=ignoreThisFile)
@@ -960,8 +944,14 @@ finished:
 							result=pdt->entry;
 							break;
 						}
-		EndDirectoryTraversal(pdt);
+			EndDirectoryTraversal(pdt);
+		}
 		return result;
+	}
+
+	CDos::PFile CDos::__findFileInCurrDir__(LPCTSTR fileName,LPCTSTR fileExt,PCFile ignoreThisFile) const{
+		// finds and returns a File with given NameAndExtension; returns Null if such File doesn't exist
+		return __findFile__( currentDir, fileName, fileExt, ignoreThisFile );
 	}
 
 	TStdWinError CDos::__shiftFileContent__(const CFatPath &rFatPath,char nBytesShift) const{
@@ -1107,9 +1097,9 @@ finished:
 
 
 
-	CDos::TDirectoryTraversal::TDirectoryTraversal(WORD entrySize,WORD nameCharsMax)
+	CDos::TDirectoryTraversal::TDirectoryTraversal(PCFile directory,WORD entrySize,WORD nameCharsMax)
 		// ctor
-		: entrySize(entrySize) , nameCharsMax(nameCharsMax)
+		: directory(directory) , entrySize(entrySize) , nameCharsMax(nameCharsMax)
 		, entryType(TDirectoryTraversal::EMPTY) {
 	}
 
@@ -1130,6 +1120,12 @@ finished:
 			}
 		return NULL;
 	}
+
+	CDos::PDirectoryTraversal CDos::BeginDirectoryTraversal() const{
+		// initiates exploration of current Directory through a DOS-specific DirectoryTraversal
+		return BeginDirectoryTraversal(currentDir);
+	}
+
 	void CDos::EndDirectoryTraversal(PDirectoryTraversal pdt) const{
 		// ends the DirectoryTraversal
 		delete pdt;
@@ -1139,7 +1135,7 @@ finished:
 		// counts and returns the number of all Files and Directories in current Directory
 		rError=ERROR_SUCCESS; // assumption (Directory OK)
 		DWORD result=0;
-		const PDirectoryTraversal pdt=BeginDirectoryTraversal();
+		if (const PDirectoryTraversal pdt=BeginDirectoryTraversal()){
 			while (pdt->GetNextFileOrSubdir())
 				switch (pdt->entryType){
 					case TDirectoryTraversal::SUBDIR:
@@ -1151,7 +1147,8 @@ finished:
 							rError=pdt->warning;
 						break;
 				}
-		EndDirectoryTraversal(pdt);
+			EndDirectoryTraversal(pdt);
+		}
 		return result;
 	}
 

@@ -344,21 +344,18 @@
 					return;
 			}
 			//rParam.label.length=0; // assumption (Label doesn't exist); commented out as already zeroed by the caller
-			const PDirectoryEntry currentDirectory0=(PDirectoryEntry)msdos->currentDir;
-			msdos->__switchToDirectory__(MSDOS7_DIR_ROOT);
-				for( TMsdos7DirectoryTraversal dt(msdos); dt.__existsNextEntry__(); )
-					if (dt.entryType==TDirectoryTraversal::CUSTOM
-						&&
-						((PCDirectoryEntry)dt.entry)->shortNameEntry.attributes==FILE_ATTRIBUTE_VOLUME
-					){
-						// Label found
-						rParam.label.length=MSDOS7_LABEL_LENGTH_MAX;
-							rParam.label.bufferA=((PDirectoryEntry)dt.entry)->shortNameEntry.name;
-							rParam.label.fillerByte=' ';
-							rParam.label.onLabelConfirmedA=__labelModified__;
-						break;
-					}
-			msdos->__switchToDirectory__(currentDirectory0);
+			for( TMsdos7DirectoryTraversal dt(msdos,MSDOS7_DIR_ROOT); dt.__existsNextEntry__(); )
+				if (dt.entryType==TDirectoryTraversal::CUSTOM
+					&&
+					((PCDirectoryEntry)dt.entry)->shortNameEntry.attributes==FILE_ATTRIBUTE_VOLUME
+				){
+					// Label found
+					rParam.label.length=MSDOS7_LABEL_LENGTH_MAX;
+						rParam.label.bufferA=((PDirectoryEntry)dt.entry)->shortNameEntry.name;
+						rParam.label.fillerByte=' ';
+						rParam.label.onLabelConfirmedA=__labelModified__;
+					break;
+				}
 			rParam.id.buffer=&pvi->id;
 				rParam.id.bufferCapacity=sizeof(DWORD);
 	}
@@ -423,18 +420,15 @@
 	bool WINAPI CMSDOS7::CMsdos7BootView::__pg_createLabel__(CPropGridCtrl::PCustomParam,int hyperlinkId,LPCTSTR hyperlinkName){
 		// True <=> PropertyGrid's Editor can be destroyed after this function has terminated, otherwise False
 		const PMSDOS7 msdos=(PMSDOS7)CDos::__getFocused__();
-		const PDirectoryEntry currentDirectory0=(PDirectoryEntry)msdos->currentDir;
-		msdos->__switchToDirectory__(MSDOS7_DIR_ROOT);
-			if (const PDirectoryEntry de=TMsdos7DirectoryTraversal(msdos).__allocateNewEntry__()){
-				de->shortNameEntry.attributes=FILE_ATTRIBUTE_VOLUME;
-				::memcpy(	::memset(de->shortNameEntry.name,' ',MSDOS7_LABEL_LENGTH_MAX),
-							VOLUME_LABEL_DEFAULT_ANSI_8CHARS,
-							sizeof(VOLUME_LABEL_DEFAULT_ANSI_8CHARS)-1
-						);
-				__labelModified__( NULL, de->shortNameEntry.name, MSDOS7_LABEL_LENGTH_MAX );
-			}else
-				Utils::Information(_T("Can't create label"),ERROR_CANNOT_MAKE);
-		msdos->__switchToDirectory__(currentDirectory0);
+		if (const PDirectoryEntry de=TMsdos7DirectoryTraversal(msdos,MSDOS7_DIR_ROOT).__allocateNewEntry__()){
+			de->shortNameEntry.attributes=FILE_ATTRIBUTE_VOLUME;
+			::memcpy(	::memset(de->shortNameEntry.name,' ',MSDOS7_LABEL_LENGTH_MAX),
+						VOLUME_LABEL_DEFAULT_ANSI_8CHARS,
+						sizeof(VOLUME_LABEL_DEFAULT_ANSI_8CHARS)-1
+					);
+			__labelModified__( NULL, de->shortNameEntry.name, MSDOS7_LABEL_LENGTH_MAX );
+		}else
+			Utils::Information(_T("Can't create label"),ERROR_CANNOT_MAKE);
 		return true; // True = destroy PropertyGrid's Editor
 	}
 

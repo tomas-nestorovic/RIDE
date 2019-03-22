@@ -98,8 +98,8 @@
 		return ERROR_NOT_SUPPORTED;
 	}
 
-	CDos::PDirectoryTraversal CUnknownDos::BeginDirectoryTraversal() const{
-		// initiates exploration of current Directory through a DOS-specific DirectoryTraversal
+	CDos::PDirectoryTraversal CUnknownDos::BeginDirectoryTraversal(PCFile) const{
+		// initiates exploration of specified Directory through a DOS-specific DirectoryTraversal
 		return NULL;
 	}
 	PTCHAR CUnknownDos::GetFileExportNameAndExt(PCFile,bool,PTCHAR) const{

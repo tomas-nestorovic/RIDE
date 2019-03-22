@@ -252,7 +252,7 @@
 		if (::lstrlen(newName)>TRDOS503_FILE_NAME_LENGTH_MAX || ::lstrlen(newExt)>1)
 			return ERROR_FILENAME_EXCED_RANGE;
 		// - making sure that a File with given NameAndExtension doesn't yet exist
-		if ( rRenamedFile=__findFile__(newName,newExt,file) )
+		if ( rRenamedFile=__findFileInCurrDir__(newName,newExt,file) )
 			return ERROR_FILE_EXISTS;
 		// - getting important information about the File
 		const PDirectoryEntry de=(PDirectoryEntry)file;
@@ -588,7 +588,7 @@
 	CTRDOS503::TTrdosDirectoryTraversal::TTrdosDirectoryTraversal(const CTRDOS503 *_trdos)
 		// ctor
 		// - base
-		: TDirectoryTraversal(sizeof(TDirectoryEntry),TRDOS503_FILE_NAME_LENGTH_MAX)
+		: TDirectoryTraversal( ZX_DIR_ROOT, sizeof(TDirectoryEntry), TRDOS503_FILE_NAME_LENGTH_MAX )
 		// - initialization
 		, trdos(_trdos) , foundEndOfDirectory(false)
 		// - getting ready to read the first Directory Sector
@@ -639,8 +639,9 @@
 		return nFilesFound;
 	}
 
-	CDos::PDirectoryTraversal CTRDOS503::BeginDirectoryTraversal() const{
-		// initiates exploration of current Directory through a DOS-specific DirectoryTraversal
+	CDos::PDirectoryTraversal CTRDOS503::BeginDirectoryTraversal(PCFile directory) const{
+		// initiates exploration of specified Directory through a DOS-specific DirectoryTraversal
+		ASSERT(directory==ZX_DIR_ROOT);
 		return new TTrdosDirectoryTraversal(this);
 	}
 	bool CTRDOS503::TTrdosDirectoryTraversal::AdvanceToNextEntry(){
