@@ -757,9 +757,7 @@ nextCluster:result++;
 		const PDirectoryEntry de=(PDirectoryEntry)file;
 		switch (option){
 			case TGetFileSizeOptions::OfficialDataLength:
-				if (!IsDirectory(de))
-					return de->shortNameEntry.size;
-				//fallthrough
+				return IsDirectory(de) ? 0 : de->shortNameEntry.size;
 			case TGetFileSizeOptions::SizeOnDisk:
 				if (IsDirectory(de)){
 					// Directory - finding out how much space it occupies on the disk (NOT including its content!)
