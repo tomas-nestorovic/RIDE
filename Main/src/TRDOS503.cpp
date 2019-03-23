@@ -124,8 +124,8 @@
 		for( TTrdosDirectoryTraversal dt(this); dt.__existsNextEntry__(); )
 			if (dt.entryType!=TDirectoryTraversal::WARNING){
 				const PCDirectoryEntry de=(PCDirectoryEntry)dt.entry;
-				if (dt.entryType==TDirectoryTraversal::FILE && !de->__isTemporary__()){
-					// A&B: A = File (existing or Deleted), B = not a temporary Entry in Directory (see also ImportFile)
+				if ((dt.entryType==TDirectoryTraversal::FILE||dt.entryType==TDirectoryTraversal::CUSTOM) && !de->__isTemporary__()){
+					// (A|B)&C: A = existing File, B = Deleted File, C = not a temporary Entry in Directory (see also ImportFile)
 					const TSectorTrackPair tmp = pRgn->start = de->first;
 					pRgn++->status=	*(PCBYTE)de!=TDirectoryEntry::DELETED
 									? TSectorStatus::OCCUPIED
@@ -622,7 +622,9 @@
 		entry=(PDirectoryEntry)entry+1, nRemainingEntriesInSector--;
 		if (!foundEndOfDirectory)
 			if (*(PCBYTE)entry!=TDirectoryEntry::END_OF_DIR)
-				entryType=TDirectoryTraversal::FILE;
+				entryType =	*(PCBYTE)entry!=TDirectoryEntry::DELETED
+							? TDirectoryTraversal::FILE
+							: TDirectoryTraversal::CUSTOM;
 			else{
 				entryType=TDirectoryTraversal::EMPTY;
 				foundEndOfDirectory=true;
@@ -634,7 +636,8 @@
 		// returns the length of available Directory including Deleted Files; assumed that the buffer is big enough to contain maximally occupied Directory
 		BYTE nFilesFound=0;
 		for( TTrdosDirectoryTraversal dt(this); dt.__existsNextEntry__(); )
-			if (dt.entryType==TDirectoryTraversal::FILE)
+			if (dt.entryType==TDirectoryTraversal::FILE || dt.entryType==TDirectoryTraversal::CUSTOM)
+				// existing or Deleted File
 				*directory++=(PDirectoryEntry)dt.entry, nFilesFound++;
 		return nFilesFound;
 	}
@@ -646,20 +649,7 @@
 	}
 	bool CTRDOS503::TTrdosDirectoryTraversal::AdvanceToNextEntry(){
 		// True <=> found another Entry in current Directory (Empty or not), otherwise False
-		while (__existsNextEntry__())
-			switch (entryType){
-				case TDirectoryTraversal::FILE:
-					// File (existing or Deleted)
-					if (*(PCBYTE)entry!=TDirectoryEntry::DELETED) return true; // publishing only existing Files
-					break;
-				case TDirectoryTraversal::EMPTY:
-					// the first Empty Entry indicates the end of Directory
-					return true;
-				//default:
-					// error
-					//nop (continuing to search Files to publish)
-			}
-		return false;
+		return __existsNextEntry__();
 	}
 
 	void CTRDOS503::TTrdosDirectoryTraversal::ResetCurrentEntry(BYTE directoryFillerByte) const{
