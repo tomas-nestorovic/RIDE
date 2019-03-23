@@ -15,6 +15,7 @@
 
 	class CFileManagerView:public CListView{
 		friend class CMainWindow;
+		friend class CDirEntriesView;
 		DECLARE_MESSAGE_MAP()
 	public:
 		#pragma pack(1)
@@ -95,6 +96,7 @@
 		COleDropTarget dropTarget;
 		WORD nativelyLastFile; // index of a file that is natively the last one in current Directory
 		CMapPtrToWord nativeOrderOfFiles; // map of native order of Files as they are discovered in current Directory (i.e. without Ordering)
+		CPtrList ownedDirEntryViews; // PDirEntriesView
 
 		void __updateSummaryInStatusBar__() const;
 		WORD __getNativeOrderOfFile__(CDos::PCFile file) const;
@@ -133,6 +135,7 @@
 		afx_msg void __onColumnClick__(NMHDR *pNMHDR,LRESULT *pResult);
 		afx_msg void __createSubdirectory__();
 			afx_msg void __createSubdirectory_updateUI__(CCmdUI *pCmdUI) const;
+		afx_msg void __browseCurrentDirInHexaMode__();
 		afx_msg void __showSelectionProperties__() const;
 		afx_msg void OnDestroy();
 	public:

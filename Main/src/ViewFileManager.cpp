@@ -61,6 +61,7 @@
 		ON_COMMAND(ID_FILEMANAGER_REFRESH,__refreshDisplay__)
 		ON_COMMAND(ID_FILEMANAGER_SUBDIR_CREATE,__createSubdirectory__)
 			ON_UPDATE_COMMAND_UI(ID_FILEMANAGER_SUBDIR_CREATE,__createSubdirectory_updateUI__)
+		ON_COMMAND(ID_FILEMANAGER_DIR_HEXAMODE,__browseCurrentDirInHexaMode__)
 		ON_COMMAND(ID_FILEMANAGER_FILE_INFORMATION,__showSelectionProperties__)
 			ON_UPDATE_COMMAND_UI(ID_FILEMANAGER_FILE_INFORMATION,__fileSelected_updateUI__)
 		ON_WM_DESTROY()
@@ -72,6 +73,8 @@
 			::OleSetClipboard(NULL);
 			delete ownedDataSource;
 		}
+		while (ownedDirEntryViews.GetCount())
+			CTdiCtrl::RemoveTab( TDI_HWND, &((CDirEntriesView *)ownedDirEntryViews.GetHead())->tab );
 	}
 
 
@@ -566,6 +569,17 @@
 		pCmdUI->Enable(pDirectoryStructureManagement!=NULL);
 	}
 
+	static void WINAPI __onDirEntriesViewClosing__(LPCVOID tab){
+		delete ((CMainWindow::CTdiView::PTab)tab)->view;
+	}
+	afx_msg void CFileManagerView::__browseCurrentDirInHexaMode__(){
+		// opens a new Tab with DirectoryEntries listed in an HexaEditor instance
+		CDirEntriesView *const deView=new CDirEntriesView( DOS, DOS->currentDir );
+		TCHAR label[80+MAX_PATH];
+		::wsprintf( label, _T("Dir \"%s\""), DOS->GetFileNameWithAppendedExt(DOS->currentDir,label+80) );
+		CTdiCtrl::AddTabLast( TDI_HWND, label, &deView->tab, true, TDI_TAB_CANCLOSE_ALWAYS, __onDirEntriesViewClosing__ );
+		ownedDirEntryViews.AddTail(deView);
+	}
 
 
 

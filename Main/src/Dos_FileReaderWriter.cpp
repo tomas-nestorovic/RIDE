@@ -1,16 +1,11 @@
 #include "stdafx.h"
 
-	CDos::CFileReaderWriter::CFileReaderWriter(const CDos *dos,PCFile file)
+	CDos::CFileReaderWriter::CFileReaderWriter(const CDos *dos,PCFile file,bool wholeSectors)
 		// ctor to read/edit an existing File in Image
-		: dos(dos) , fileSize(dos->GetFileOccupiedSize(file)) , fatPath(dos,file)
-		, dataBeginOffsetInSector(dos->properties->dataBeginOffsetInSector) , dataEndOffsetInSector(dos->properties->dataEndOffsetInSector)
-		, position(0) {
-	}
-
-	CDos::CFileReaderWriter::CFileReaderWriter(const CDos *dos,PCFile file,BYTE dataBeginOffsetInSector,BYTE dataEndOffsetInSector)
-		// ctor to read/edit an existing File in Image with overriden Sector structure
-		: dos(dos) , fileSize(dos->GetFileOccupiedSize(file)) , fatPath(dos,file)
-		, dataBeginOffsetInSector(dataBeginOffsetInSector) , dataEndOffsetInSector(dataEndOffsetInSector)
+		: dos(dos) , fatPath(dos,file)
+		, fileSize( wholeSectors ? dos->GetFileSizeOnDisk(file) : dos->GetFileOccupiedSize(file) )
+		, dataBeginOffsetInSector( wholeSectors ? 0 : dos->properties->dataBeginOffsetInSector)
+		, dataEndOffsetInSector( wholeSectors ? 0 : dos->properties->dataEndOffsetInSector )
 		, position(0) {
 	}
 

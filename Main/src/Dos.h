@@ -129,8 +129,7 @@
 		public:
 			const CFatPath fatPath;
 
-			CFileReaderWriter(const CDos *dos,PCFile file); // ctor to read/edit an existing File on the Image
-			CFileReaderWriter(const CDos *dos,PCFile file,BYTE dataBeginOffsetInSector,BYTE dataEndOffsetInSector); // ctor to read/edit an existing File on the Image with overriden Sector structure
+			CFileReaderWriter(const CDos *dos,PCFile file,bool wholeSectors=false); // ctor to read/edit an existing File on the Image
 			CFileReaderWriter(const CDos *dos,RCPhysicalAddress chs); // ctor to read/write particular Sector in the Image (e.g. Boot Sector)
 			~CFileReaderWriter();
 
