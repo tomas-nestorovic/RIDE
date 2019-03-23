@@ -181,6 +181,7 @@
     <ClInclude Include="src\TRDOS.h" />
     <ClInclude Include="src\Utils.h" />
     <ClInclude Include="src\ViewBoot.h" />
+    <ClInclude Include="src\ViewDirectoryEntries.h" />
     <ClInclude Include="src\ViewFileManager.h" />
     <ClInclude Include="src\ViewTrackMap.h" />
     <ClInclude Include="src\ViewWebPage.h" />
@@ -242,6 +243,7 @@
     <ClCompile Include="src\TRDOS505.cpp" />
     <ClCompile Include="src\Utils.cpp" />
     <ClCompile Include="src\ViewBoot.cpp" />
+    <ClCompile Include="src\ViewDirectoryEntries.cpp" />
     <ClCompile Include="src\ViewFileManager.cpp" />
     <ClCompile Include="src\ViewFileManager_editor.cpp" />
     <ClCompile Include="src\ViewFileManager_exportImport.cpp" />

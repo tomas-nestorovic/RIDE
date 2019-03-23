@@ -213,7 +213,13 @@ BEGIN
 
         END
         MENUITEM SEPARATOR
-        MENUITEM "Create directory...\tCtrl+D", ID_FILEMANAGER_SUBDIR_CREATE
+        POPUP "Directory"
+        BEGIN
+            MENUITEM "Create subdir...\tCtrl+D",    ID_FILEMANAGER_SUBDIR_CREATE
+
+            MENUITEM "Browse in hexa-mode",         ID_FILEMANAGER_DIR_HEXAMODE
+
+        END
         MENUITEM "Edit active\tF2",             ID_FILEMANAGER_FILE_EDIT
         MENUITEM "Delete selected\tDel",        ID_FILEMANAGER_FILE_DELETE
         MENUITEM SEPARATOR

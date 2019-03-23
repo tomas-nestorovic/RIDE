@@ -192,6 +192,7 @@
 #define ID_ZX_BASIC_BINARY_SHOWRAW      40218
 #define ID_ZX_BASIC_BINARY_SHOWNUMBER   40219
 #define ID_HELP_REPORT_BUG              40221
+#define ID_FILEMANAGER_DIR_HEXAMODE     40223
 #define ID_Y                            58113
 #define ID_W                            58114
 #define ID_H                            58115
@@ -203,8 +204,8 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        197
-#define _APS_NEXT_COMMAND_VALUE         40222
+#define _APS_NEXT_RESOURCE_VALUE        203
+#define _APS_NEXT_COMMAND_VALUE         40232
 #define _APS_NEXT_CONTROL_VALUE         1169
 #define _APS_NEXT_SYMED_VALUE           103
 #endif

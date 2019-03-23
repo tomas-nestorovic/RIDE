@@ -81,6 +81,7 @@ typedef const int *PCINT;
 #include "ViewFileManager.h"
 #include "ViewTrackMap.h"
 #include "ViewWebPage.h"
+#include "ViewDirectoryEntries.h"
 #include "SpectrumDos.h"
 #include "DosUnknown.h"
 #include "DialogNewImage.h"
@@ -91,7 +92,7 @@ typedef const int *PCINT;
 #define DLL_WININET		_T("wininet.dll")
 
 #define APP_ABBREVIATION _T("RIDE")
-#define APP_VERSION		_T("1.4.5 debug special")
+#define APP_VERSION		_T("1.4.6 debug special")
 #define APP_IDENTIFIER	APP_ABBREVIATION APP_VERSION
 
 #define FONT_MS_SANS_SERIF	_T("Microsoft Sans Serif")

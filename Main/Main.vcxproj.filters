@@ -162,6 +162,9 @@
     <ClInclude Include="src\Debug.h">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
+    <ClInclude Include="src\ViewDirectoryEntries.h">
+      <Filter>Header Files\MainWindow\Tabs</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\editor.cpp">
@@ -337,6 +340,9 @@
     </ClCompile>
     <ClCompile Include="src\TRDOS505.cpp">
       <Filter>Source Files\Dos\Spectrum\TRDOS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ViewDirectoryEntries.cpp">
+      <Filter>Source Files\MainWindow\Tabs</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
