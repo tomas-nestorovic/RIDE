@@ -1242,14 +1242,12 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 		// - initialization
 		, msdos7(_msdos7)
 		, foundEndOfDirectory(false) , fatError(false)
+		, next( directory!=MSDOS7_DIR_ROOT ? ((PCDirectoryEntry)directory)->shortNameEntry.__getFirstCluster__() : 0 )
 		, nRemainingSectorsInCluster(0) , nRemainingEntriesInSector(0) {
 		// - "pointer" set to the first DirectoryEntry
-		if (const PCBootSector bootSector=msdos7->boot.GetSectorData()){
-			if (directory!=MSDOS7_DIR_ROOT)
-				// NON-root Directory
-				next=((PCDirectoryEntry)directory)->shortNameEntry.__getFirstCluster__();
-			else
-				// root Directory
+		if (!next)
+			// root Directory
+			if (const PCBootSector bootSector=msdos7->boot.GetSectorData())
 				switch (msdos7->fat.type){
 					case CFat::FAT12:
 					case CFat::FAT16:{
@@ -1262,7 +1260,6 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 						next=bootSector->fat32.rootDirectoryFirstCluster;
 						break;
 				}
-		}
 	}
 
 	bool CMSDOS7::TMsdos7DirectoryTraversal::__existsNextEntry__(){
@@ -1276,10 +1273,15 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 						if (MARKS_CLUSTER_EOF(next)){
 							foundEndOfDirectory=true;
 							return false; // EntryType must be anything but Empty - above set to Warning
+						}else if (next==MSDOS7_FAT_ERROR)
+							return fatError=true; // EntryType already set to Warning above
+						else if (next==MSDOS7_FAT_CLUSTER_EMPTY){
+							fatError=true; // if the Cluster is reported as Empty in the FAT, this is probably an error
+							foundEndOfDirectory=true; // with Empty Cluster, the traversal through the Directory cannot continue
+							return false;
 						}else if (!fatError){
 							dirSector=msdos7->__cluster2logSector__( cluster=next, nRemainingSectorsInCluster ); // also sets the NumberOfRemainingSectorsInCluster
-							if (( next=msdos7->fat.GetClusterValue(next) )==MSDOS7_FAT_ERROR)
-								return fatError=true; // EntryType already set to Warning above
+							next=msdos7->fat.GetClusterValue(cluster);
 						}else
 							return false; // EntryType already set to Warning above
 					nRemainingSectorsInCluster--;
