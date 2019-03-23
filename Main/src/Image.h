@@ -106,6 +106,7 @@
 		TSectorId sectorId;
 
 		bool operator==(const TPhysicalAddress &chs2) const;
+		bool operator!=(const TPhysicalAddress &chs2) const;
 		TTrack GetTrackNumber() const;
 		TTrack GetTrackNumber(THead nHeads) const;
 	} &RCPhysicalAddress;

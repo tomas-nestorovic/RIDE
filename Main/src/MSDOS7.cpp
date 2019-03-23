@@ -218,20 +218,24 @@
 		// True <=> FatPath of given File (even an erroneous FatPath) successfully retrieved, otherwise False
 		// - if queried about a Directory, populating the FatPath with its Sectors
 		CFatPath::TItem item;
+		item.value=	file!=MSDOS7_DIR_ROOT
+					? ((PDirectoryEntry)file)->shortNameEntry.__getFirstCluster__()
+					: 0;
 		if (IsDirectory(file)){
 			item.chs=boot.chsBoot;
-			for( TMsdos7DirectoryTraversal dt(this,file); dt.__existsNextEntry__(); )
-				if (item.chs!=dt.chs){
-					item.chs=dt.chs;
-					if (!rFatPath.AddItem(&item)) break; // also sets an error in FatPath
-				}
+			if (file!=MSDOS7_DIR_ROOT)
+				for( TMsdos7DirectoryTraversal dt(this,file); dt.__existsNextEntry__(); item.value++ )
+					if (item.chs!=dt.chs){
+						item.chs=dt.chs;
+						if (!rFatPath.AddItem(&item)) break; // also sets an error in FatPath
+					}
 			return true;
 		}
 		// - no FatPath can be retrieved if DirectoryEntry is Empty
 		if (*(PCBYTE)file==UDirectoryEntry::EMPTY_ENTRY)
 			return false;
 		// - zero-length File has no Clusters allocated
-		if (!( item.value=((PCDirectoryEntry)file)->shortNameEntry.__getFirstCluster__() ))
+		if (!item.value)
 			return true; // success despite the FatPath is empty (as no Clusters allocated)
 		// - extracting the FatPath from FAT
 		const TCluster32 clusterMax=MSDOS7_DATA_CLUSTER_FIRST+__getCountOfClusters__();
@@ -829,6 +833,7 @@ nextCluster:result++;
 				__deleteLongFileNameEntries__(de);
 				// . deleting short name from CurrentDirectory
 				*(PBYTE)de=UDirectoryEntry::EMPTY_ENTRY;
+				de->shortNameEntry.__setFirstCluster__(MSDOS7_FAT_CLUSTER_EOF);
 				__markDirectorySectorAsDirty__(de);
 			}
 		}

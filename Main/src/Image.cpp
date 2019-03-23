@@ -66,6 +66,10 @@
 				&&
 				sectorId==chs2.sectorId;
 	}
+	bool TPhysicalAddress::operator!=(const TPhysicalAddress &chs2) const{
+		// True <=> PhysicalAddresses are NOT equal, otherwise False
+		return !operator==(chs2);
+	}
 	TTrack TPhysicalAddress::GetTrackNumber() const{
 		// determines and returns the Track number based on DOS's current Format
 		return GetTrackNumber( CImage::__getActive__()->dos->formatBoot.nHeads );
