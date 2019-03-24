@@ -46,7 +46,7 @@
 	void CSpectrumDos::CTape::GetTrackData(TCylinder cyl,THead,PCSectorId,PCBYTE,TSector,bool,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses){
 		// populates output buffers with specified Sectors' data, usable lengths, and FDC statuses; ALWAYS attempts to buffer all Sectors - caller is then to sort out eventual read errors (by observing the FDC statuses); caller can call ::GetLastError to discover the error for the last Sector in the input list
 		ASSERT( outBufferData!=NULL && outBufferLengths!=NULL && outFdcStatuses!=NULL );
-		*outBufferData= cyl<fileManager.nFiles ? &fileManager.files[cyl]->data : NULL;
+		*outBufferData= cyl<fileManager.nFiles ? fileManager.files[cyl]->data : NULL;
 		*outBufferLengths=formatBoot.sectorLength;
 		*outFdcStatuses=TFdcStatus::WithoutError;
 	}
@@ -83,13 +83,14 @@
 		if (file==ZX_DIR_ROOT)
 			return true; // the root Directory occupies no space
 		// - extracting the FatPath
-		if ((TTapeFileId)file<fileManager.nFiles){
-			CFatPath::TItem item;
-				item.chs.cylinder=(TTapeFileId)file;
-			rFatPath.AddItem(&item);
-			return true;
-		}else
-			return false;
+		for( TTapeTraversal tt(fileManager); tt.AdvanceToNextEntry(); )
+			if (tt.entry==file){
+				CFatPath::TItem item;
+					item.chs.cylinder=tt.fileId;
+				rFatPath.AddItem(&item);
+				return true;
+			}
+		return false;
 	}
 	DWORD CSpectrumDos::CTape::GetFreeSpaceInBytes(TStdWinError &rError) const{
 		// computes and returns the empty space on disk
@@ -132,7 +133,7 @@
 			if (bufExt)
 				*bufExt='\0';
 		}else{
-			const PCTapeFile tf=fileManager.files[(TTapeFileId)file];
+			const PCTapeFile tf=(PCTapeFile)file;
 			if (const PCHeader h=tf->GetHeader()){
 				// File with a Header
 				if (bufName){
@@ -159,7 +160,7 @@
 		if (file==ZX_DIR_ROOT)
 			return ERROR_DIRECTORY;
 		// - renaming
-		if (const PHeader h=fileManager.files[ (TTapeFileId)(rRenamedFile=file) ]->GetHeader()){
+		if (const PHeader h=((PTapeFile)( rRenamedFile=file ))->GetHeader()){
 			// File with a Header
 			// . checking that the NewName+NewExt combination follows the "10.1" convention
 			if (::lstrlen(newName)>ZX_TAPE_FILE_NAME_LENGTH_MAX || ::lstrlen(newExt)>1)
@@ -186,14 +187,14 @@
 			return ERROR_SUCCESS;
 		}else
 			// Headerless File or Fragment
-			return ERROR_BAD_FILE_TYPE;
+			return ERROR_SUCCESS; // simply ignoring the request (Success to be able to create headerless File copies in the Tape)
 	}
 	DWORD CSpectrumDos::CTape::GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData,TGetFileSizeOptions option) const{
 		// determines and returns the size of specified File
 		if (pnBytesReservedBeforeData) *pnBytesReservedBeforeData=0;
 		if (pnBytesReservedAfterData) *pnBytesReservedAfterData=0;
-		const PCTapeFile tf=fileManager.files[(TTapeFileId)file];
-		if (file==ZX_DIR_ROOT)
+		const PCTapeFile tf=(PCTapeFile)file;
+		if (tf==ZX_DIR_ROOT)
 			// the root Directory occupies no space
 			return 0;
 		else if (const PCHeader h=tf->GetHeader())
@@ -215,10 +216,14 @@
 		// deletes specified File; returns Windows standard i/o error
 		if (file==ZX_DIR_ROOT)
 			return ERROR_ACCESS_DENIED; // can't delete the root Directory
-		PPTapeFile a=fileManager.files+(TTapeFileId)file, b=a;
-		::free(*b++), fileManager.nFiles--;
-		for( TTapeFileId n=fileManager.nFiles-(TTapeFileId)file; n--; *a++=*b++ );
-		m_bModified=TRUE;
+		for( TTapeTraversal tt(fileManager); tt.AdvanceToNextEntry(); )
+			if (tt.entry==file){
+				PPTapeFile a=fileManager.files+tt.fileId, b=a;
+				::free(*b++), fileManager.nFiles--;
+				for( short n=fileManager.nFiles-tt.fileId; n--; *a++=*b++ );
+				m_bModified=TRUE;
+				break;
+			}
 		return ERROR_SUCCESS;
 	}
 
@@ -227,11 +232,11 @@
 	PTCHAR CSpectrumDos::CTape::GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const{
 		// populates Buffer with specified File's export name and extension and returns the Buffer; returns Null if File cannot be exported (e.g. a "dotdot" entry in MS-DOS); caller guarantees that the Buffer is at least MAX_PATH characters big
 		const PTCHAR p=buf+::lstrlen( __super::GetFileExportNameAndExt(file,shellCompliant,buf) );
-		const PCTapeFile tf=fileManager.files[(TTapeFileId)file];
+		const PCTapeFile tf=(PCTapeFile)file;
 		if (const PCHeader h=tf->GetHeader())
 			// File with a Header
 			::wsprintf( p+__exportFileInformation__(p,(TUniFileType)Extensions[h->type],h->params,tf->dataLength), EXPORT_INFO_TAPE2, tf->dataBlockFlag, tf->dataChecksum );
-		else if (!tf->type==TTapeFile::HEADERLESS)
+		else if (tf->type==TTapeFile::HEADERLESS)
 			// Headerless File
 			::wsprintf( p+__exportFileInformation__(p,TUniFileType::HEADERLESS,UStdParameters(),tf->dataLength), EXPORT_INFO_TAPE2, tf->dataBlockFlag, tf->dataChecksum );
 		else
@@ -270,13 +275,14 @@
 			_stscanf( zxInfo+n, EXPORT_INFO_TAPE2, &blockFlag, &blockChecksum );
 		}
 		// - creating File Header (if Extension known)
-		const PTapeFile tf=fileManager.files[(TTapeFileId)( rFile=(PFile)fileManager.nFiles++ )]=(PTapeFile)::malloc( NUMBER_OF_BYTES_TO_ALLOCATE_FILE(fileSize) );
+		const PTapeFile tf=fileManager.files[fileManager.nFiles++]=(PTapeFile)::malloc( NUMBER_OF_BYTES_TO_ALLOCATE_FILE(fileSize) );
 			tf->type =	uts==TUniFileType::FRAGMENT // if explicitly annotated as a Fragment ...
 						? TTapeFile::FRAGMENT // ... importing it as a Fragment
 						: TTapeFile::HEADERLESS; // ... otherwise defaulting to the Headerless File, unless below recognized otherwise
 			tf->dataBlockFlag=blockFlag;
 			tf->dataChecksum=blockChecksum;
 			tf->dataLength=fileSize;
+		rFile=tf;
 		for( BYTE type=ZX_TAPE_EXTENSION_STD_COUNT; type--; )
 			if (Extensions[type]==uts){
 				// File can be imported with Header
@@ -299,7 +305,7 @@
 				break;
 			}
 		// - importing File Data
-		f->Read( &tf->data, fileSize );
+		f->Read( tf->data, fileSize );
 		// - File successfully imported into Tape
 		m_bModified=TRUE;
 		return ERROR_SUCCESS;
@@ -313,9 +319,11 @@
 
 	CSpectrumDos::CTape::TTapeTraversal::TTapeTraversal(const CTapeFileManagerView &rFileManager)
 		// ctor
-		: TDirectoryTraversal( ZX_DIR_ROOT, 1, ZX_TAPE_FILE_NAME_LENGTH_MAX ) , rFileManager(rFileManager) {
-		fileId=1; // Files numbered from 1
-		entryType=TDirectoryTraversal::FILE;
+		: TDirectoryTraversal( ZX_DIR_ROOT, sizeof(TTapeFile), ZX_TAPE_FILE_NAME_LENGTH_MAX )
+		, rFileManager(rFileManager)
+		, fileId(-1) {
+		ASSERT(FILE_LENGTH_MAX%sizeof(TTapeFile)==0); // HexaEditor's requirement
+		entryType=TDirectoryTraversal::FILE; // won't change throughout the traversal
 	}
 	
 	CDos::PDirectoryTraversal CSpectrumDos::CTape::BeginDirectoryTraversal(PCFile directory) const{
@@ -325,9 +333,10 @@
 	}
 	bool CSpectrumDos::CTape::TTapeTraversal::AdvanceToNextEntry(){
 		// True <=> found another entry in current Directory (Empty or not), otherwise False
-		if (fileId<rFileManager.nFiles)
-			return ( entry=(PFile)fileId++ )!=NULL;
-		else
+		if (++fileId<rFileManager.nFiles){
+			entry=rFileManager.files[fileId];
+			return true;
+		}else
 			return false;
 	}
 
@@ -367,7 +376,7 @@
 	BOOL CSpectrumDos::CTape::DoSave(LPCTSTR,BOOL){
 		// True <=> Image successfully saved, otherwise False
 		fileManager.f.SetLength(0); // rewriting Tape's underlying physical file
-		for( TTapeFileId n=1; n<fileManager.nFiles; ){ // Files numbered from 1
+		for( short n=0; n<fileManager.nFiles; ){
 			const PCTapeFile tf=fileManager.files[n++];
 			if (const PCHeader h=tf->GetHeader()){
 				// File features a standard Header
@@ -384,12 +393,12 @@
 				const WORD d=tf->dataLength, blockLength=2+d; // "+2" = Flag and Checksum
 				fileManager.f.Write( &blockLength, sizeof(blockLength) );
 				fileManager.f.Write( &tf->dataBlockFlag, 1 );
-				fileManager.f.Write( &tf->data, d );
+				fileManager.f.Write( tf->data, d );
 				fileManager.f.Write( &tf->dataChecksum, 1 );
 			}else{
 				// data Fragment
 				fileManager.f.Write( &tf->dataLength, sizeof(WORD) );
-				fileManager.f.Write( &tf->data, tf->dataLength );
+				fileManager.f.Write( tf->data, tf->dataLength );
 			}
 		}
 		m_bModified=FALSE;
@@ -410,15 +419,18 @@
 			case ID_FILE_SHIFT_UP:{
 				// shifting selected Files "up" (i.e. towards the beginning of Tape)
 				if (__reportWriteProtection__()) return TCmdResult::DONE;
-				TTapeFileId iPrevSelected=0;
-				for( POSITION pos=fileManager.GetFirstSelectedFilePosition(); pos; ){
-					const TTapeFileId iSelected=(TTapeFileId)fileManager.GetNextSelectedFile(pos);
+				const CListCtrl &lv=fileManager.GetListCtrl();
+				short iPrevSelected=-1;
+				for( POSITION pos=lv.GetFirstSelectedItemPosition(); pos; ){
+					const short iSelected=lv.GetNextSelectedItem(pos);
+					PTapeFile *const a=fileManager.files+iSelected;
+					fileManager.selectedFiles.AddTail(*a);
 					if (iPrevSelected<iSelected-1){ // before the current Selected File is at least one unselected File to whose position the current Selected File can be shifted
-						PTapeFile *a=fileManager.files+iSelected, *b=a-1, tmp=*a;
+						PTapeFile *const b=a-1, tmp=*a;
 						*a=*b; *b=tmp;
-						fileManager.selectedFiles.AddTail( (PVOID)(iPrevSelected=iSelected-1) );
+						iPrevSelected=iSelected-1;
 					}else
-						fileManager.selectedFiles.AddTail( (PVOID)(iPrevSelected=iSelected) );
+						iPrevSelected=iSelected;
 				}
 				m_bModified=TRUE;
 				fileManager.__refreshDisplay__();
@@ -428,17 +440,20 @@
 				// shifting selected Files "down" (i.e. towards the end of Tape)
 				if (__reportWriteProtection__()) return TCmdResult::DONE;
 				// . reversing the list of Selected Files
-				CFileManagerView::TFileList selected;
-				for( POSITION pos=fileManager.GetFirstSelectedFilePosition(); pos; selected.AddHead(fileManager.GetNextSelectedFile(pos)) );
+				const CListCtrl &lv=fileManager.GetListCtrl();
+				CFileManagerView::TFileList selectedIndices;
+				for( POSITION pos=lv.GetFirstSelectedItemPosition(); pos; selectedIndices.AddHead((PVOID)lv.GetNextSelectedItem(pos)) );
 				// . shifting
-				for( TTapeFileId iNextSelected=1+fileManager.GetListCtrl().GetItemCount(); selected.GetCount(); ){
-					const TTapeFileId iSelected=(TTapeFileId)selected.RemoveHead();
+				for( short iNextSelected=fileManager.nFiles; selectedIndices.GetCount(); ){
+					const short iSelected=(short)selectedIndices.RemoveHead();
+					PTapeFile *const a=fileManager.files+iSelected;
+					fileManager.selectedFiles.AddTail(*a);
 					if (iSelected+1<iNextSelected){ // after the current Selected File is at least one unselected File to whose position the current Selected File can be shifted
-						PTapeFile *a=fileManager.files+iSelected, *b=a+1, tmp=*a;
+						PTapeFile *const b=a+1, tmp=*a;
 						*a=*b; *b=tmp;
-						fileManager.selectedFiles.AddTail( (PVOID)(iNextSelected=iSelected+1) );
+						iNextSelected=iSelected+1;
 					}else
-						fileManager.selectedFiles.AddTail( (PVOID)(iNextSelected=iSelected) );
+						iNextSelected=iSelected;
 				}
 				m_bModified=TRUE;
 				fileManager.__refreshDisplay__();
@@ -449,7 +464,7 @@
 				DoSave(NULL,FALSE);
 				return TCmdResult::DONE;
 		}
-		return CDos::ProcessCommand(cmd);
+		return __super::ProcessCommand(cmd);
 	}
 
 	bool CSpectrumDos::CTape::UpdateCommandUi(WORD cmd,CCmdUI *pCmdUI) const{
@@ -510,12 +525,11 @@
 		// - base
 		: CSpectrumFileManagerView( tape, rZxRom, REPORT, LVS_REPORT, INFORMATION_COUNT,InformationList )
 		// - initialization
-		, nFiles(1) // Files numbered from 1
+		, nFiles(0)
 		, f( fileName, CFile::modeReadWrite|CFile::shareExclusive|CFile::typeBinary )
 		// - creating Tape's ToolBar (its positioning in WM_CREATE to be shown "after" the TapeFileManager's ToolBar)
 		, toolbar( IDR_ZX_TAPE, ID_TAPE_OPEN ) { // "some" unique ID
 		// - loading the Tape's content
-		files[0]=NULL; // 0 index not used, Files numbered from 1
 		for( WORD blockLength; f.Read(&blockLength,sizeof(blockLength))==sizeof(blockLength); )
 			if (nFiles==ZX_TAPE_FILE_COUNT_MAX){
 				// ERROR: too many Files on the Tape
@@ -560,7 +574,7 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 					tf->dataBlockFlag=flag;
 					tf->dataChecksum=dataChecksum;
 					tf->dataLength=blockLength;
-					::memcpy( &tf->data, dataBuffer, blockLength );
+					::memcpy( tf->data, dataBuffer, blockLength );
 			}else{
 				// Fragment
 				BYTE dataBuffer[2];
@@ -570,7 +584,7 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 					tf->dataBlockFlag=TStd::DATA;
 					tf->dataChecksum=__getChecksum__(TStd::DATA,dataBuffer,blockLength);
 					tf->dataLength=blockLength;
-					::memcpy( &tf->data, dataBuffer, blockLength );
+					::memcpy( tf->data, dataBuffer, blockLength );
 			}
 		// - showing the TapeFileManager
 		TCHAR buf[MAX_PATH];
@@ -614,7 +628,7 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 		// drawing File information
 		RECT r=pdis->rcItem;
 		const HDC dc=pdis->hDC;
-		const PCTapeFile tf=files[pdis->itemData];
+		const PCTapeFile tf=(PCTapeFile)pdis->itemData;
 		const HGDIOBJ hFont0=::SelectObject(dc,zxRom.font);
 			if (const PCHeader h=tf->GetHeader()){
 				// File with Header
@@ -719,7 +733,7 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 
 	int CSpectrumDos::CTape::CTapeFileManagerView::CompareFiles(PCFile file1,PCFile file2,BYTE information) const{
 		// determines the order of given Files by the specified Information
-		const PCTapeFile tf1=files[(TTapeFileId)file1], tf2=files[(TTapeFileId)file2];
+		const PCTapeFile tf1=(PCTapeFile)file1, tf2=(PCTapeFile)file2;
 		const PCHeader h1=tf1->GetHeader(), h2=tf2->GetHeader();
 		switch (information){
 			case INFORMATION_TYPE:{
@@ -760,7 +774,7 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 
 	CFileManagerView::PEditorBase CSpectrumDos::CTape::CTapeFileManagerView::CreateFileInformationEditor(CDos::PFile file,BYTE infoId) const{
 		// creates and returns Editor of File's selected Information; returns Null if Information cannot be edited
-		const PTapeFile tf=files[(TTapeFileId)file];
+		const PTapeFile tf=(PTapeFile)file;
 		// - parameters specific for given Tape File
 		if (const PHeader h=tf->GetHeader())
 			// File with Header
@@ -826,7 +840,7 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 		// changes the Type of File
 		const PDos dos=CDos::__getFocused__();
 		CTapeFileManagerView *const pTapeFileManager=(CTapeFileManagerView *)dos->pFileManager;
-		const PTapeFile tf=pTapeFileManager->files[(TTapeFileId)file];
+		const PTapeFile tf=(PTapeFile)file;
 		if (PHeader h=tf->GetHeader())
 			// File with Header
 			switch ((TZxRom::TFileType)newType.charValue){

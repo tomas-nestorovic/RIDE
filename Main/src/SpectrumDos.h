@@ -156,14 +156,12 @@
 				BYTE dataBlockFlag; // 255 = block saved using the standard ROM routine, otherwise any other value
 				BYTE dataChecksum;
 				WORD dataLength;
-				BYTE data;
+				BYTE data[7]; // to make the structure 32 Bytes long (so that FILE_LENGTH_MAX is a round multiple of it - HexaEditor's requirement)
 
 				PHeader GetHeader();
 				PCHeader GetHeader() const;
 			} *PTapeFile,**PPTapeFile;
 			typedef const TTapeFile *PCTapeFile;
-
-			typedef WORD TTapeFileId;
 
 			static const TCHAR Extensions[ZX_TAPE_EXTENSION_STD_COUNT];
 
@@ -198,7 +196,7 @@
 			public:
 				CFile f; // physical Tape file (e.g. "C:\myTape.tap")
 				PTapeFile files[ZX_TAPE_FILE_COUNT_MAX]; // Files stored on this Tape
-				TTapeFileId nFiles; // number of Files stored on this Tape
+				short nFiles; // number of Files stored on this Tape
 
 				CTapeFileManagerView(CTape *tape,const TZxRom &rZxRom,LPCTSTR fileName);
 				~CTapeFileManagerView();
@@ -206,7 +204,7 @@
 
 			struct TTapeTraversal sealed:public TDirectoryTraversal{
 				const CTapeFileManagerView &rFileManager;
-				TTapeFileId fileId;
+				short fileId;
 				TTapeTraversal(const CTapeFileManagerView &rFileManager); // ctor
 				bool AdvanceToNextEntry() override;
 				void ResetCurrentEntry(BYTE directoryFillerByte) const override;
