@@ -834,8 +834,6 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 
 
 
-	#define QUESTION_ON_DISPOSING_HEADER	_T("Sure to convert to fragment?")
-
 	bool WINAPI CSpectrumDos::CTape::CTapeFileManagerView::CStdHeaderTypeEditor::__onChanged__(PVOID file,CPropGridCtrl::TEnum::UValue newType){
 		// changes the Type of File
 		const PDos dos=CDos::__getFocused__();
@@ -845,11 +843,11 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 			// File with Header
 			switch ((TZxRom::TFileType)newType.charValue){
 				case TZxRom::FRAGMENT:
-					if (Utils::QuestionYesNo(QUESTION_ON_DISPOSING_HEADER,MB_DEFBUTTON2))
+					if (Utils::QuestionYesNo(_T("Sure to convert to fragment?"),MB_DEFBUTTON2))
 						tf->type=TTapeFile::FRAGMENT;
 					break;
 				case TZxRom::HEADERLESS:
-					if (Utils::QuestionYesNo(QUESTION_ON_DISPOSING_HEADER,MB_DEFBUTTON2))
+					if (Utils::QuestionYesNo(_T("Sure to dispose the header?"),MB_DEFBUTTON2))
 						tf->type=TTapeFile::HEADERLESS;
 					break;
 				default:					
