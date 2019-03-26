@@ -190,18 +190,21 @@
 					// tab close button pressed
 					CTdiCtrl::RemoveCurrentTab(hTdi);
 				break;
-			case TCM_DELETEITEM:
+			case TCM_DELETEITEM:{
 				// closing and disposing the Tab
 				// . base (closing the Tab)
+				const bool closingCurrentTab=TabCtrl_GetCurSel(hTdi)==wParam;
 				::CallWindowProc(wndProc0,hTdi,msg,wParam,lParam);
 				// . switching to some of remaining Tabs
-				if (const int n=TabCtrl_GetItemCount(hTdi))
-					// some Tabs have remained - switching to one of them
-					pTdiInfo->__switchToTab__( wParam<n ? wParam : n-1 );
-				else
-					// no Tabs have remained
-					pTdiInfo->__hideCurrentContent__();
+				if (closingCurrentTab)
+					if (const int n=TabCtrl_GetItemCount(hTdi))
+						// some Tabs have remained - switching to one of them
+						pTdiInfo->__switchToTab__( wParam<n ? wParam : n-1 );
+					else
+						// no Tabs have remained
+						pTdiInfo->__hideCurrentContent__();
 				return 0;
+			}
 			case TCM_DELETEALLITEMS:
 				// closing and disposing the Tab
 				for( int i=TabCtrl_GetItemCount(hTdi); i; CTdiCtrl::RemoveTab(hTdi,--i) );

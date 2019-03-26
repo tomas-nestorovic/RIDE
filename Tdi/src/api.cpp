@@ -140,10 +140,8 @@
 		TabCtrl_GetItem(hTdi,i,&ti);
 		const PCTabInfo pti=(PCTabInfo)ti.lParam;
 		if (pti->fnCanBeClosed!=TDI_TAB_CANCLOSE_NEVER)
-			if (pti->fnCanBeClosed(pti->content)){ // confirming closing of the Tab
-				SwitchToPrevTab(hTdi);
+			if (pti->fnCanBeClosed(pti->content)) // confirming closing of the Tab
 				RemoveTab(hTdi,i);
-			}
 	}
 
 	void WINAPI CTdiCtrl::SwitchToTab(HWND hTdi,TTab::PContent tabContent){
