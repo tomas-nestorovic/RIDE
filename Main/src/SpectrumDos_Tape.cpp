@@ -11,13 +11,13 @@
 
 	CSpectrumDos::CTape *CSpectrumDos::CTape::pSingleInstance;
 
-	CSpectrumDos::CTape::CTape(LPCTSTR fileName,const CSpectrumDos *diskDos)
+	CSpectrumDos::CTape::CTape(LPCTSTR fileName,const CSpectrumDos *diskDos,bool makeCurrentTab)
 		// ctor
 		// - base
 		: CDos( this, &TapeFormat, TTrackScheme::BY_CYLINDERS, diskDos->properties, ::lstrcmp, StdSidesMap, 0, &fileManager, TGetFileSizeOptions::OfficialDataLength ) // StdSidesMap = "some" Sides
 		, CImageRaw(&CImageRaw::Properties,false) // "some" Image
 		// - initialization
-		, fileManager(this,diskDos->zxRom,fileName) {
+		, fileManager( this, diskDos->zxRom, fileName, makeCurrentTab ) {
 		dos=this; // linking the DOS and Image
 		(HACCEL)menu.hAccel=diskDos->menu.hAccel; // for DiskDos accelerators to work even if switched to Tape
 		SetPathName(fileName,FALSE);
@@ -520,7 +520,7 @@
 		delete ((CMainWindow::CTdiView::PTab)tab)->dos;
 	}
 
-	CSpectrumDos::CTape::CTapeFileManagerView::CTapeFileManagerView(CTape *tape,const TZxRom &rZxRom,LPCTSTR fileName)
+	CSpectrumDos::CTape::CTapeFileManagerView::CTapeFileManagerView(CTape *tape,const TZxRom &rZxRom,LPCTSTR fileName,bool makeCurrentTab)
 		// ctor
 		// - base
 		: CSpectrumFileManagerView( tape, rZxRom, REPORT, LVS_REPORT, INFORMATION_COUNT,InformationList )
@@ -589,7 +589,7 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 		// - showing the TapeFileManager
 		TCHAR buf[MAX_PATH];
 		::wsprintf( buf, TAB_LABEL _T(" \"%s\""), (LPCTSTR)f.GetFileName() );
-		CTdiCtrl::AddTabLast( TDI_HWND, buf, &tab, true, __canTapeBeClosed__, __onTapeClosing__ );
+		CTdiCtrl::AddTabLast( TDI_HWND, buf, &tab, makeCurrentTab, __canTapeBeClosed__, __onTapeClosing__ );
 		CSpectrumDos::__informationWithCheckableShowNoMore__( _T("Use the \"") TAB_LABEL _T("\" tab to transfer files from/to the open floppy image or between two tapes (open in two instances of the application).\n\nHeaderless files:\n- are transferred to a floppy with a dummy name,\n- are used on tape to store \"tape-unfriendly\" data from a floppy (sequential files, etc.)."), INI_MSG );
 	}
 	CSpectrumDos::CTape::CTapeFileManagerView::~CTapeFileManagerView(){

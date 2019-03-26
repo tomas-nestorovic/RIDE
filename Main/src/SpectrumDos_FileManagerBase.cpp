@@ -17,6 +17,7 @@
 
 
 	#define DOS tab.dos
+	#define IMAGE	DOS->image
 
 	PTCHAR CSpectrumDos::CSpectrumFileManagerView::GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant,PTCHAR pOutBuffer) const{
 		// returns the Buffer populated with the export name and extension of the next File's copy in current Directory; returns Null if no further name and extension can be generated
@@ -41,6 +42,57 @@
 				return DOS->GetFileExportNameAndExt( &tmpDirEntry, shellCompliant, pOutBuffer );
 		}
 		return NULL; // the Name for the next File copy cannot be generated
+	}
+
+	TStdWinError CSpectrumDos::CSpectrumFileManagerView::ImportPhysicalFile(LPCTSTR pathAndName,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution){
+		// dragged cursor released above window
+		// - if the File "looks like an Tape Image", confirming its import by the user
+		if (const LPCTSTR extension=_tcsrchr(pathAndName,'.')){
+			TCHAR ext[MAX_PATH];
+			if (!::lstrcmp(::CharLower(::lstrcpy(ext,extension)),_T(".tap"))){
+				// . defining the Dialog
+				TCHAR buf[MAX_PATH+80];
+				::wsprintf( buf, _T("\"%s\" looks like a tape."), _tcsrchr(pathAndName,'\\')+1 );
+				class CPossiblyATapeDialog sealed:public Utils::CCommandDialog{
+					void PreInitDialog() override{
+						// dialog initialization
+						// : base
+						Utils::CCommandDialog::PreInitDialog();
+						// : supplying available actions
+						__addCommandButton__( IDYES, _T("Open it in a new tab (recommended)") );
+						__addCommandButton__( IDNO, _T("Import it to this image anyway") );
+						__addCommandButton__( IDCANCEL, _T("Cancel") );
+					}
+				public:
+					CPossiblyATapeDialog(LPCTSTR msg)
+						// ctor
+						: Utils::CCommandDialog(msg) {
+					}
+				} d(buf);
+				// . showing the Dialog and processing its result
+				switch (d.DoModal()){
+					case IDYES:{
+						// opening the File in a new TDI Tab
+						// : ejecting current Tape (if any)
+						if (CTape::pSingleInstance)
+							if (DOS->ProcessCommand(ID_TAPE_CLOSE)==TCmdResult::REFUSED) // if Tape not ejected ...
+								return ERROR_CANCELLED; // ... we are done
+						// : inserting a recorded Tape (by opening its underlying physical file)
+						new CTape( pathAndName, (CSpectrumDos *)DOS, false ); // inserted Tape is WriteProtected by default
+						rImportedFile=NULL; // File processed another way than importing
+						return ERROR_SUCCESS;
+					}
+					case IDNO:
+						// importing the File to this Image anyway
+						break;
+					case IDCANCEL:
+						// cancelling the remainder of importing
+						return ERROR_CANCELLED;
+				}
+			}
+		}
+		// - importing the File
+		return __super::ImportPhysicalFile( pathAndName, rImportedFile, rConflictedSiblingResolution );
 	}
 
 	#define EXTENSION_MIN	32

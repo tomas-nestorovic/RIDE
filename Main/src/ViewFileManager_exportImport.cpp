@@ -277,9 +277,10 @@
 					for( UINT n=::DragQueryFile(hDrop,-1,NULL,0); n; )
 						if (::DragQueryFile(hDrop,--n,buf,MAX_PATH))
 							// creating File in Image
-							switch (__importPhysicalFile__(buf,importedFile,conflictResolution)){ // shows also error messages
+							switch (ImportPhysicalFile(buf,importedFile,conflictResolution)){ // shows also error messages
 								case ERROR_SUCCESS:
-									selectedFiles.AddTail(importedFile);
+									if (importedFile) // File really imported (e.g. Spectrum Tape may be upon request open in a separate TDI Tab instead of be imported)
+										selectedFiles.AddTail(importedFile);
 									break;
 								case ERROR_CANCELLED:
 									goto importQuit1;
@@ -495,7 +496,7 @@ importQuit2:		::GlobalUnlock(hg);
 		return ERROR_SUCCESS;
 	}
 
-	TStdWinError CFileManagerView::__importPhysicalFile__(LPCTSTR pathAndName,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution){
+	TStdWinError CFileManagerView::ImportPhysicalFile(LPCTSTR pathAndName,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution){
 		// imports physical File with given Name into current Directory; returns Windows standard i/o error
 		const LPCTSTR fileName=_tcsrchr(pathAndName,'\\')+1;
 		const DWORD winAttr=::GetFileAttributes(pathAndName);
@@ -513,7 +514,7 @@ importQuit2:		::GlobalUnlock(hg);
 							TCHAR buf[MAX_PATH];
 							if (::lstrcmp(fd.cFileName,_T(".")) && ::lstrcmp(fd.cFileName,_T(".."))){ // "dot" and "dotdot" entries skipped
 								CDos::PFile file;
-								err=__importPhysicalFile__( ::lstrcat(::lstrcat(::lstrcpy(buf,pathAndName),_T("\\")),fd.cFileName), file, csr );
+								err=ImportPhysicalFile( ::lstrcat(::lstrcat(::lstrcpy(buf,pathAndName),_T("\\")),fd.cFileName), file, csr );
 								if (err!=ERROR_SUCCESS && err!=ERROR_FILE_EXISTS) break;
 							}
 							if (!::FindNextFile(hFindFile,&fd)){

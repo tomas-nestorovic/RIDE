@@ -213,7 +213,7 @@
 							return TCmdResult::DONE; // ... we are done (successfully)
 					// . inserting a blank Tape (by creating a new underlying physical file and opening it)
 					CFile( fileName, CFile::modeCreate|CFile::shareDenyRead|CFile::typeBinary ).Close(); // creating the underlying file on local disk
-					( new CTape(fileName,this) )->__toggleWriteProtection__(); // new Tape is not WriteProtected
+					( new CTape(fileName,this,true) )->__toggleWriteProtection__(); // new Tape is not WriteProtected
 					return TCmdResult::DONE;
 				}else
 					return TCmdResult::DONE_REDRAW;
@@ -238,7 +238,7 @@
 						if (ProcessCommand(ID_TAPE_CLOSE)==TCmdResult::REFUSED) // if Tape not ejected ...
 							return TCmdResult::DONE; // ... we are done (successfully)
 					// . inserting a recorded Tape (by opening its underlying physical file)
-					new CTape(fileName,this); // inserted Tape is WriteProtected by default
+					new CTape(fileName,this,true); // inserted Tape is WriteProtected by default
 					return TCmdResult::DONE;
 				}else
 					return TCmdResult::DONE_REDRAW;

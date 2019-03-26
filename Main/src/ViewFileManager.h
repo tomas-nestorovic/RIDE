@@ -108,7 +108,6 @@
 		TStdWinError __switchToDirectory__(PTCHAR path) const;
 		TStdWinError __skipNameConflict__(DWORD newFileSize,LPCTSTR newFileName,CDos::PFile conflict,TConflictResolution &rConflictedSiblingResolution) const;
 		TStdWinError __moveFile__(int &i,LPFILEDESCRIPTOR files,int nFiles,CDos::PFile &rMovedFile,TConflictResolution &rConflictedSiblingResolution);
-		TStdWinError __importPhysicalFile__(LPCTSTR pathAndName,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution);
 		TStdWinError __importVirtualFile__(int &i,LPCTSTR pathAndName,LPFILEDESCRIPTOR files,int nFiles,COleDataObject *pDataObject,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution);
 		CDos::PFile __getDirectoryUnderCursor__(CPoint &rPt) const;
 		afx_msg int OnCreate(LPCREATESTRUCT lpcs);
@@ -232,6 +231,7 @@
 		virtual int CompareFiles(CDos::PCFile file1,CDos::PCFile file2,BYTE information) const=0;
 		virtual PEditorBase CreateFileInformationEditor(CDos::PFile file,BYTE infoId) const=0;
 		virtual PTCHAR GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant,PTCHAR pOutBuffer) const=0;
+		virtual TStdWinError ImportPhysicalFile(LPCTSTR pathAndName,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution);
 	public:
 		const CFont &rFont;
 		const TDirectoryStructureManagement *const pDirectoryStructureManagement;

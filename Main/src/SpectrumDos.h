@@ -127,6 +127,7 @@
 			} stdParamEditor;
 
 			PTCHAR GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant,PTCHAR pOutBuffer) const override sealed;
+			TStdWinError ImportPhysicalFile(LPCTSTR pathAndName,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution) override;
 		public:
 			const TZxRom &zxRom;
 
@@ -198,7 +199,7 @@
 				PTapeFile files[ZX_TAPE_FILE_COUNT_MAX]; // Files stored on this Tape
 				short nFiles; // number of Files stored on this Tape
 
-				CTapeFileManagerView(CTape *tape,const TZxRom &rZxRom,LPCTSTR fileName);
+				CTapeFileManagerView(CTape *tape,const TZxRom &rZxRom,LPCTSTR fileName,bool makeCurrentTab);
 				~CTapeFileManagerView();
 			} fileManager;
 
@@ -216,7 +217,7 @@
 
 			static bool WINAPI __markAsDirty__(PVOID,int);
 
-			CTape(LPCTSTR fileName,const CSpectrumDos *diskDos);
+			CTape(LPCTSTR fileName,const CSpectrumDos *diskDos,bool makeCurrentTab);
 			~CTape();
 
 			void GetTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses) override;
