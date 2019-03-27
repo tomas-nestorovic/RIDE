@@ -192,17 +192,30 @@
 				break;
 			case TCM_DELETEITEM:{
 				// closing and disposing the Tab
+				// . getting information on the current situation
+				TCITEM ti;
+					ti.mask=TCIF_PARAM;
+				TabCtrl_GetItem( hTdi, wParam, &ti );
+				const PCTabInfo pti=(PCTabInfo)ti.lParam;
+				const int iCurrentTab=TabCtrl_GetCurSel(hTdi);
+				const bool closingCurrentTab=iCurrentTab==wParam;
 				// . base (closing the Tab)
-				const bool closingCurrentTab=TabCtrl_GetCurSel(hTdi)==wParam;
 				::CallWindowProc(wndProc0,hTdi,msg,wParam,lParam);
+				// . letting the caller know that the Tab is being closed
+				if (pti->fnOnTabClosing)
+					pti->fnOnTabClosing(pti->content);
+				delete pti;
 				// . switching to some of remaining Tabs
-				if (closingCurrentTab)
-					if (const int n=TabCtrl_GetItemCount(hTdi))
-						// some Tabs have remained - switching to one of them
-						pTdiInfo->__switchToTab__( wParam<n ? wParam : n-1 );
-					else
-						// no Tabs have remained
-						pTdiInfo->__hideCurrentContent__();
+				if (!closingCurrentTab){
+					// closing another but current Tab - just repainting it
+					TabCtrl_GetItem( hTdi, iCurrentTab, &ti );
+					pTdiInfo->params.fnRepaintContent( ((PCTabInfo)ti.lParam)->content );
+				}else if (const int n=TabCtrl_GetItemCount(hTdi))
+					// some Tabs have remained - switching to one of them
+					pTdiInfo->__switchToTab__( wParam<n ? wParam : n-1 );
+				else
+					// no Tabs have remained
+					pTdiInfo->__hideCurrentContent__();
 				return 0;
 			}
 			case TCM_DELETEALLITEMS:

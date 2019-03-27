@@ -109,14 +109,7 @@
 
 	void WINAPI CTdiCtrl::RemoveTab(HWND hTdi,int tabId){
 		// removes I-th Tab
-		TCITEM ti;
-			ti.mask=TCIF_PARAM;
-		TabCtrl_GetItem(hTdi,tabId,&ti);
-		const PCTabInfo pti=(PCTabInfo)ti.lParam;
-			TabCtrl_DeleteItem(hTdi,tabId);
-			if (pti->fnOnTabClosing)
-				pti->fnOnTabClosing(pti->content);
-		delete pti;
+		TabCtrl_DeleteItem(hTdi,tabId);
 	}
 
 	void WINAPI CTdiCtrl::RemoveTab(HWND hTdi,TTab::PContent tabContent){
