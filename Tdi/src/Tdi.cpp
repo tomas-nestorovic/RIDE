@@ -196,15 +196,11 @@
 				TCITEM ti;
 					ti.mask=TCIF_PARAM;
 				TabCtrl_GetItem( hTdi, wParam, &ti );
-				const PCTabInfo pti=(PCTabInfo)ti.lParam;
+				const PCTabInfo pti=(PCTabInfo)ti.lParam; // extracting TabInfo; TCITEM may be reinitialized below
 				const int iCurrentTab=TabCtrl_GetCurSel(hTdi);
 				const bool closingCurrentTab=iCurrentTab==wParam;
 				// . base (closing the Tab)
 				::CallWindowProc(wndProc0,hTdi,msg,wParam,lParam);
-				// . letting the caller know that the Tab is being closed
-				if (pti->fnOnTabClosing)
-					pti->fnOnTabClosing(pti->content);
-				delete pti;
 				// . switching to some of remaining Tabs
 				if (!closingCurrentTab){
 					// closing another but current Tab - just repainting it
@@ -216,6 +212,10 @@
 				else
 					// no Tabs have remained
 					pTdiInfo->__hideCurrentContent__();
+				// . letting the caller know that the Tab is being closed
+				if (pti->fnOnTabClosing)
+					pti->fnOnTabClosing(pti->content);
+				delete pti;
 				return 0;
 			}
 			case TCM_DELETEALLITEMS:
