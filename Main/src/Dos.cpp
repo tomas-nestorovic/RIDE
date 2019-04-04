@@ -1008,12 +1008,8 @@ finished:
 
 
 
-	#define MENU_DOS_POSITION	1
-
 	TStdWinError CDos::CreateUserInterface(HWND hTdi){
 		// creates DOS-specific Tabs in TDI; returns Windows standard i/o error
-		// - showing DOS-specific Menu
-		menu.__show__(MENU_DOS_POSITION);
 		// - adding the Document (Image) to TdiTemplate
 		CMainWindow::CTdiTemplate::pSingleInstance->AddDocument(image);
 		return ERROR_SUCCESS; // always succeeds (but may fail in CDos-derivate)

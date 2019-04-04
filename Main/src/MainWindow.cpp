@@ -147,8 +147,12 @@
 			if (::TranslateAccelerator(m_hWnd,t->menu.hAccel,pMsg))
 				return TRUE;
 			// . pretranslating the Message by accelerators of currently focused DOS (if any; e.g. WebPageView usually isn't associated with any DOS)
-			if (t->dos)
-				if (::TranslateAccelerator(m_hWnd,t->dos->menu.hAccel,pMsg)) return TRUE;
+			if (const PCDos dos=t->dos){
+				// focused DOS (e.g. a ZX Tape)
+				if (::TranslateAccelerator(m_hWnd,dos->menu.hAccel,pMsg)) return TRUE;
+			}else if (const PCImage image=CImage::__getActive__())
+				// active DOS (e.g. MDOS when a WebPage is focused)
+				if (::TranslateAccelerator(m_hWnd,image->dos->menu.hAccel,pMsg)) return TRUE;
 		}
 		return CFrameWnd::PreTranslateMessage(pMsg); // base
 	}

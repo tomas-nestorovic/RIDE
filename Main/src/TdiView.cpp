@@ -39,18 +39,24 @@
 	// True <=> the Tab is part of a DOS (e.g. a WebPage is usually not part of any DOS), otherwise False
 	#define IS_TAB_PART_OF_DOS(pTab)	((pTab)->dos!=NULL)
 
-	#define MENU_POSITION_TAB		2
+	#define MENU_POSITION_DOS		1
+	#define MENU_POSITION_VIEW		2
 
 	void WINAPI CMainWindow::CTdiView::__fnShowContent__(PVOID pTdi,LPCVOID pTab){
 		// shows the content of the Tab
 		const PTab tab= ((CTdiView *)pTdi)->pCurrentTab = (PTab)pTab;
 		const PView view=tab->view;
-		// - showing the associated Menu
-		tab->menu.__show__(MENU_POSITION_TAB);
-		// - showing the Image's ToolBar (guaranteed that the Toolbar always exists)
+		// - showing the Menus associated with the DOS and View 
+		if (IS_TAB_PART_OF_DOS(tab)){ // the Tab is part of a DOS (e.g. a WebPage is usually not part of any DOS)
+			tab->dos->menu.__show__(MENU_POSITION_DOS);
+			tab->menu.__show__(MENU_POSITION_VIEW);
+		}else
+			tab->menu.__show__(MENU_POSITION_DOS); // showing the View's Menu at the DOS's position
+		// - showing Image's ToolBar (guaranteed that the Toolbar always exists)
 		CMainWindow *const pMainWindow=(CMainWindow *)app.m_pMainWnd;
-		if (IS_TAB_PART_OF_DOS(tab)) // the Tab is part of a DOS (e.g. a WebPage is usually not part of any DOS)
+		if (IS_TAB_PART_OF_DOS(tab)){ // the Tab is part of a DOS (e.g. a WebPage is usually not part of any DOS)
 			tab->dos->image->toolbar.__show__(pMainWindow->toolbar);
+		}
 		// - showing the Tab's ToolBar (e.g. the FileManager's ToolBar)
 		if (IS_TAB_PART_OF_DOS(tab)) // the Tab is part of a DOS (e.g. a WebPage is usually not part of any DOS)
 			tab->toolbar.__show__( tab->dos->image->toolbar );
@@ -87,11 +93,13 @@
 		::DestroyWindow( view->m_hWnd );
 		// - hiding the Tab's ToolBar (e.g. the FileManager's ToolBar)
 		tab->toolbar.__hide__();
-		// - hiding the Image's ToolBar
-		if (tab->dos)
+		// - hiding the Image's ToolBar (guaranteed that the Toolbar always exists)
+		if (IS_TAB_PART_OF_DOS(tab))
 			tab->dos->image->toolbar.__hide__();
-		// - hiding the associated Menu
+		// - hiding the Menus associated with the DOS and View 
 		tab->menu.__hide__();
+		if (IS_TAB_PART_OF_DOS(tab))
+			tab->dos->menu.__hide__();
 		// - resetting the StatusBar
 		__resetStatusBar__();
 	}
