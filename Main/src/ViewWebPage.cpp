@@ -61,8 +61,10 @@
 	BOOL CWebPageView::Create(LPCTSTR,LPCTSTR,DWORD dwStyle,const RECT &rect,CWnd *pParentWnd,UINT nID,CCreateContext *){
 		// True <=> window created successfully, otherwise False
 		// - base
-		if (!CHtmlView::Create(NULL,NULL,dwStyle,rect,pParentWnd,nID,NULL)) return FALSE;
-		OnInitialUpdate(); // because isn't called automatically by OnCreate; calls SetScrollSizes via OnUpdate
+		if (!CHtmlView::Create(NULL,NULL,dwStyle,rect,pParentWnd,nID,NULL)) // (CCreateContext *)==NULL => doesn't allow current Image to get crack on MFC commands
+			return FALSE;
+		// - performing initial update as the method isn't called automatically during OnCreate
+		OnInitialUpdate(); // calls SetScrollSizes via OnUpdate
 		// - navigating to and displaying CurrentPage
 		Navigate(history.currentPage->url);
 		return TRUE;
