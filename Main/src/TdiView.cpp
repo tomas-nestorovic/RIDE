@@ -48,7 +48,7 @@
 		const PView view=tab->view;
 		// - showing the Menus associated with the DOS and View 
 		if (IS_TAB_PART_OF_DOS(tab)){ // the Tab is part of a DOS (e.g. a WebPage is usually not part of any DOS)
-			tab->dos->menu.__show__(MENU_POSITION_DOS);
+			CImage::__getActive__()->dos->menu.__show__(MENU_POSITION_DOS);
 			tab->menu.__show__(MENU_POSITION_VIEW);
 		}else
 			tab->menu.__show__(MENU_POSITION_DOS); // showing the View's Menu at the DOS's position
@@ -99,7 +99,7 @@
 		// - hiding the Menus associated with the DOS and View 
 		tab->menu.__hide__();
 		if (IS_TAB_PART_OF_DOS(tab))
-			tab->dos->menu.__hide__();
+			CImage::__getActive__()->dos->menu.__hide__();
 		// - resetting the StatusBar
 		__resetStatusBar__();
 	}
