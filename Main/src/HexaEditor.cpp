@@ -250,6 +250,8 @@
 				switch (wParam){
 					case VK_LEFT:{
 						cursor.position--;
+						if (ctrl) // Ctrl+Left shortcut navigates to the previous Record (or the beginning of current Record, if Cursor not already there)
+							cursor.position= cursor.position/recordSize * recordSize;
 cursorCorrectlyMoveTo:	// . adjusting the Cursor's Position
 						cursor.hexaLow=true; // the next keystroke will modify the lower four bits of current hexa-value
 						if (cursor.position<0) cursor.position=0;
@@ -277,7 +279,10 @@ cursorRefresh:			// . refreshing the Cursor
 						return 0;
 					}
 					case VK_RIGHT:
-						cursor.position++;
+						if (ctrl) // Ctrl+Right short navigates to the next Record
+							cursor.position= (cursor.position/recordSize+1) * recordSize;
+						else
+							cursor.position++;
 						goto cursorCorrectlyMoveTo;
 					case VK_UP:{
 						i=1; // move Cursor one row up
