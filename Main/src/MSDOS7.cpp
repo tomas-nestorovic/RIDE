@@ -1169,8 +1169,10 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 			case CFat::FAT12:
 			case CFat::FAT16:
 				for( TLogSector16 lsDir=bootSector->__getRootDirectoryFirstSector__(),lsData=lsDir+bootSector->__getCountOfPermanentRootDirectorySectors__(); lsDir<lsData; lsDir++ )
-					if (const PSectorData tmp=__getLogicalSectorData__(lsDir))
+					if (const PSectorData tmp=__getLogicalSectorData__(lsDir)){
 						::ZeroMemory( tmp, bootSector->sectorSize );
+						__markLogicalSectorAsDirty__(lsDir);
+					}
 				break;
 			case CFat::FAT32:
 				if (( bootSector->fat32.rootDirectoryFirstCluster=__allocateAndResetDirectoryCluster__() )==MSDOS7_FAT_CLUSTER_EOF){
