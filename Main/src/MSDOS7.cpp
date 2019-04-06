@@ -223,12 +223,11 @@
 					: 0;
 		if (IsDirectory(file)){
 			item.chs=boot.chsBoot;
-			if (file!=MSDOS7_DIR_ROOT)
-				for( TMsdos7DirectoryTraversal dt(this,file); dt.__existsNextEntry__(); item.value++ )
-					if (item.chs!=dt.chs){
-						item.chs=dt.chs;
-						if (!rFatPath.AddItem(&item)) break; // also sets an error in FatPath
-					}
+			for( TMsdos7DirectoryTraversal dt(this,file); dt.__existsNextEntry__(); item.value++ )
+				if (item.chs!=dt.chs){
+					item.chs=dt.chs;
+					if (!rFatPath.AddItem(&item)) break; // also sets an error in FatPath
+				}
 			return true;
 		}
 		// - no FatPath can be retrieved if DirectoryEntry is Empty
