@@ -51,6 +51,15 @@
 		*outFdcStatuses=TFdcStatus::WithoutError;
 	}
 
+	TStdWinError CSpectrumDos::CTape::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus){
+		// marks Sector on a given PhysicalAddress as "dirty", plus sets it the given FdcStatus; returns Windows standard i/o error
+		if (chs.cylinder<fileManager.nFiles){
+			fileManager.files[chs.cylinder]->dataChecksumStatus=TTapeFile::TDataChecksumStatus::UNDETERMINED; // the Checksum needs re-comparison
+			m_bModified=true;
+			return ERROR_SUCCESS;
+		}else
+			return ERROR_FILE_NOT_FOUND;
+	}
 
 
 
@@ -281,6 +290,7 @@
 						: TTapeFile::HEADERLESS; // ... otherwise defaulting to the Headerless File, unless below recognized otherwise
 			tf->dataBlockFlag=blockFlag;
 			tf->dataChecksum=blockChecksum;
+			tf->dataChecksumStatus=TTapeFile::TDataChecksumStatus::UNDETERMINED;
 			tf->dataLength=fileSize;
 		rFile=tf;
 		for( BYTE type=ZX_TAPE_EXTENSION_STD_COUNT; type--; )
@@ -573,6 +583,7 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 					tf->stdHeader=header;
 					tf->dataBlockFlag=flag;
 					tf->dataChecksum=dataChecksum;
+					tf->dataChecksumStatus=TTapeFile::TDataChecksumStatus::UNDETERMINED;
 					tf->dataLength=blockLength;
 					::memcpy( tf->data, dataBuffer, blockLength );
 			}else{
@@ -628,7 +639,7 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 		// drawing File information
 		RECT r=pdis->rcItem;
 		const HDC dc=pdis->hDC;
-		const PCTapeFile tf=(PCTapeFile)pdis->itemData;
+		const PTapeFile tf=(PTapeFile)pdis->itemData;
 		const HGDIOBJ hFont0=::SelectObject(dc,zxRom.font);
 			if (const PCHeader h=tf->GetHeader()){
 				// File with Header
@@ -668,8 +679,24 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 					::DrawText( dc, _itot(tf->dataBlockFlag,bufT,10),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
 				r.left=r.right;
 				// . COLUMN: checksum
-				r.right=*tabs++;
+drawChecksum:	r.right=*tabs++;
+					const BYTE statusWidth=(r.bottom-r.top)*4/3;
+					r.right-=statusWidth;
 					::DrawText( dc, _itot(tf->dataChecksum,bufT,10),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
+					r.left=max(r.right,r.left), r.right+=statusWidth;
+					if (tf->dataChecksumStatus==TTapeFile::TDataChecksumStatus::UNDETERMINED)
+						tf->dataChecksumStatus=	tf->dataChecksum==__getChecksum__(tf->dataBlockFlag,tf->data,tf->dataLength)
+												? TTapeFile::TDataChecksumStatus::CORRECT
+												: TTapeFile::TDataChecksumStatus::INCORRECT;
+					const int color0 =	pdis->itemState&ODS_SELECTED
+										? ::GetTextColor(dc)
+										: ::SetTextColor( dc, tf->dataChecksumStatus==TTapeFile::TDataChecksumStatus::CORRECT?0xa0ffa0:0xff );
+						const CRideFont statusFont( FONT_WEBDINGS, 120 );
+						const HGDIOBJ hFont0=::SelectObject(dc,statusFont);
+							const WCHAR StatusCorrect=0xf061, StatusIncorrect=0xf072;
+							::DrawTextW( dc, tf->dataChecksumStatus==TTapeFile::TDataChecksumStatus::CORRECT?&StatusCorrect:&StatusIncorrect,1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
+						::SelectObject(dc,hFont0);
+					::SetTextColor( dc, color0 );
 			}else if (tf->type==TTapeFile::HEADERLESS){
 				// Headerless File
 				// . color distinction of Files based on their Type
@@ -699,8 +726,7 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 					::DrawText( dc, _itot(tf->dataBlockFlag,bufT,10),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
 				r.left=r.right;
 				// . COLUMN: checksum
-				r.right=*tabs++;
-					::DrawText( dc, _itot(tf->dataChecksum,bufT,10),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
+				goto drawChecksum;
 			}else{
 				// Fragment
 				// . color distinction of Files based on their Type
@@ -766,10 +792,16 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 		return 0;
 	}
 
-	bool CSpectrumDos::CTape::__markAsDirty__(PVOID,int){
+	static bool WINAPI __markAsDirty__(PVOID file,int){
 		// marks the Tape as dirty
-		__getFocused__()->image->SetModifiedFlag(TRUE);
+		CDos::__getFocused__()->image->SetModifiedFlag(TRUE);
 		return true;
+	}
+
+	bool WINAPI CSpectrumDos::CTape::CTapeFileManagerView::__checksumModified__(PVOID file,int){
+		// marks the TapeFile's data Checksum as modified
+		((PTapeFile)file)->dataChecksumStatus=TTapeFile::TDataChecksumStatus::UNDETERMINED; // the Checksum needs re-comparison
+		return __markAsDirty__(file,0);
 	}
 
 	CFileManagerView::PEditorBase CSpectrumDos::CTape::CTapeFileManagerView::CreateFileInformationEditor(CDos::PFile file,BYTE infoId) const{
@@ -792,7 +824,7 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 				case INFORMATION_FLAG:
 					return __createStdEditorForByteValue__( file, &tf->dataBlockFlag, __markAsDirty__ );
 				case INFORMATION_CHECKSUM:
-					return __createStdEditorForByteValue__( file, &tf->dataChecksum, __markAsDirty__ );
+					return __createStdEditorForByteValue__( file, &tf->dataChecksum, __checksumModified__ );
 			}
 		else if (tf->type==TTapeFile::HEADERLESS)
 			// Headerless File
@@ -804,7 +836,7 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 				case INFORMATION_FLAG:
 					return __createStdEditorForByteValue__( file, &tf->dataBlockFlag, __markAsDirty__ );
 				case INFORMATION_CHECKSUM:
-					return __createStdEditorForByteValue__( file, &tf->dataChecksum, __markAsDirty__ );
+					return __createStdEditorForByteValue__( file, &tf->dataChecksum, __checksumModified__ );
 			}
 		else
 			// Fragment

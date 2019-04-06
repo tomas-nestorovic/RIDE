@@ -156,8 +156,13 @@
 				THeader stdHeader;
 				BYTE dataBlockFlag; // 255 = block saved using the standard ROM routine, otherwise any other value
 				BYTE dataChecksum;
+				enum TDataChecksumStatus:BYTE{
+					UNDETERMINED,
+					CORRECT,
+					INCORRECT
+				} dataChecksumStatus;
 				WORD dataLength;
-				BYTE data[7]; // to make the structure 32 Bytes long (so that FILE_LENGTH_MAX is a round multiple of it - HexaEditor's requirement)
+				BYTE data[6]; // to make the structure 32 Bytes long (so that FILE_LENGTH_MAX is a round multiple of it - HexaEditor's requirement)
 
 				PHeader GetHeader();
 				PCHeader GetHeader() const;
@@ -168,6 +173,8 @@
 
 			class CTapeFileManagerView sealed:public CSpectrumFileManagerView{
 				friend class CTape;
+
+				static bool WINAPI __checksumModified__(PVOID file,int);
 
 				mutable class CStdHeaderTypeEditor sealed{
 				public:
@@ -215,12 +222,11 @@
 		public:
 			static CTape *pSingleInstance;
 
-			static bool WINAPI __markAsDirty__(PVOID,int);
-
 			CTape(LPCTSTR fileName,const CSpectrumDos *diskDos,bool makeCurrentTab);
 			~CTape();
 
 			void GetTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses) override;
+			TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus) override;
 
 			// boot
 			void FlushToBootSector() const override; // projects information stored in internal FormatBoot back to the Boot Sector (e.g. called automatically by BootView)
