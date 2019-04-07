@@ -602,7 +602,9 @@ nextCluster:result++;
 		else{
 			// NewNameAndExtension doesn't follow the "8.3" format
 			TCHAR longNameAndExt[MAX_PATH];
-			::lstrcat( ::lstrcat( ::lstrcpy(longNameAndExt,newName), _T(".") ), newExt );
+			::lstrcpy(longNameAndExt,newName);
+			if (*newExt)
+				::lstrcat( ::lstrcat( longNameAndExt, _T(".") ), newExt );
 			// . allocating necessary number of DirectoryEntries to accommodate the long NameAndExtension
 			PDirectoryEntry longNameEntries[LONG_FILE_NAME_ENTRIES_COUNT_MAX], *plnde=longNameEntries;
 			TMsdos7DirectoryTraversal dt(this,currentDir);
