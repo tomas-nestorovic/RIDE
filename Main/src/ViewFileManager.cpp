@@ -616,15 +616,18 @@
 				// . initialization
 				: rStatistics(*(TSelectionStatistics *)pAction->fnParams) , rFileManager(rStatistics.rFileManager) , pAction(pAction) , dos(rFileManager.DOS) , pDirStructMan(rFileManager.pDirectoryStructureManagement) , state(0) {
 				// . recurrently collecting Statistics on selected Files
+				const CDos::PFile currentDirectory=dos->currentDir;
 				const TDirectoryEtc dirEtc={ dos->currentDirId, NULL };
 				for( POSITION pos=rFileManager.GetFirstSelectedFilePosition(); pos; ){
 					if (!pAction->bContinue) break;
-					if (const CDos::PDirectoryTraversal pdt=dos->BeginDirectoryTraversal()){
+					if (const CDos::PDirectoryTraversal pdt=dos->BeginDirectoryTraversal(currentDirectory)){
 						for( const CDos::PCFile file=rFileManager.GetNextSelectedFile(pos); pdt->GetNextFileOrSubdir()!=file; );
 						__countInFile__(pdt,&dirEtc);
 						dos->EndDirectoryTraversal(pdt);
 					}
 				}
+				if (pDirStructMan!=NULL)
+					(dos->*pDirStructMan->fnChangeCurrentDir)(currentDirectory); // because it could recurrently be switched to another but CurrentDirectory
 			}
 
 			void __countInFile__(CDos::PDirectoryTraversal pdt,PCDirectoryEtc dirPath){
@@ -634,6 +637,9 @@
 					rStatistics.nFiles++, rStatistics.totalSizeInBytes+=dos->GetFileOfficialSize(pdt->entry), rStatistics.totalSizeOnDiskInBytes+=dos->GetFileSizeOnDisk(pdt->entry);
 				else{
 					// Directory - processing it recurrently
+					// . switching to the Directory
+					if ((dos->*pDirStructMan->fnChangeCurrentDir)(pdt->entry)!=ERROR_SUCCESS)
+						return;
 					// . preventing from cycling infinitely (e.g. because of encountering a dotdot entry ".." in MS-DOS Directory)
 					const TDirectoryEtc dirEtc={ dos->currentDirId, dirPath };
 					for( PCDirectoryEtc pde=dirPath; pde!=NULL; pde=pde->parent )
