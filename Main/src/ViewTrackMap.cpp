@@ -107,31 +107,30 @@
 		TTrackScanner &rts=pvtm->scanner;
 		const PImage image=pvtm->IMAGE;
 		const Utils::CByteIdentity sectorIdAndPositionIdentity;
-		if (const THead nSides=__getNumberOfFormattedSidesInImage__(image)) // zero if disk without any Track (e.g. when opening RawImage of zero length, or if opening a corrupted DSK Image)
-			for( TTrackInfo si; true; ){
-				// . waiting for request to scan the next Track
-				rts.scanNextTrack.Lock();
-				// . getting the TrackNumber to scan
-				rts.params.criticalSection.Lock();
-					const TTrack trackNumber=rts.params.x;
-				rts.params.criticalSection.Unlock();
-				const div_t d=div(trackNumber,nSides);
-				// . scanning the Track to draw its Sector Statuses
-				si.cylinder=d.quot, si.head=d.rem;
-				//if (pvtm->displayType==TDisplayType::STATUS) // commented out because this scanning always needed
-					si.nSectors=image->ScanTrack( si.cylinder, si.head, si.bufferId, si.bufferLength );
-				// . scanning the Track to draw its Sector data
-				if (pvtm->displayType>=TDisplayType::DATA_OK_ONLY){
-					TFdcStatus statuses[(TSector)-1];
-					image->GetTrackData( si.cylinder, si.head, si.bufferId, sectorIdAndPositionIdentity, si.nSectors, false, si.bufferSectorData, si.bufferLength, statuses );
-					for( TSector n=0; n<si.nSectors; n++ )
-						if (pvtm->displayType!=TDisplayType::DATA_ALL && !statuses[n].IsWithoutError())
-							si.bufferSectorData[n]=NULL;
-				}
-				// . sending scanned information for drawing
-				if (::IsWindow(pvtm->m_hWnd)) // TrackMap may not exist if, for instance, switched to another view while still scanning some Track(s)
-					pvtm->PostMessage( WM_TRACK_SCANNED, trackNumber, (LPARAM)&si );
+		for( TTrackInfo si; const THead nSides=__getNumberOfFormattedSidesInImage__(image); ){ // "nSides==0" if disk without any Track (e.g. when opening RawImage of zero length, or if opening a corrupted DSK Image)
+			// . waiting for request to scan the next Track
+			rts.scanNextTrack.Lock();
+			// . getting the TrackNumber to scan
+			rts.params.criticalSection.Lock();
+				const TTrack trackNumber=rts.params.x;
+			rts.params.criticalSection.Unlock();
+			const div_t d=div(trackNumber,nSides);
+			// . scanning the Track to draw its Sector Statuses
+			si.cylinder=d.quot, si.head=d.rem;
+			//if (pvtm->displayType==TDisplayType::STATUS) // commented out because this scanning always needed
+				si.nSectors=image->ScanTrack( si.cylinder, si.head, si.bufferId, si.bufferLength );
+			// . scanning the Track to draw its Sector data
+			if (pvtm->displayType>=TDisplayType::DATA_OK_ONLY){
+				TFdcStatus statuses[(TSector)-1];
+				image->GetTrackData( si.cylinder, si.head, si.bufferId, sectorIdAndPositionIdentity, si.nSectors, false, si.bufferSectorData, si.bufferLength, statuses );
+				for( TSector n=0; n<si.nSectors; n++ )
+					if (pvtm->displayType!=TDisplayType::DATA_ALL && !statuses[n].IsWithoutError())
+						si.bufferSectorData[n]=NULL;
 			}
+			// . sending scanned information for drawing
+			if (::IsWindow(pvtm->m_hWnd)) // TrackMap may not exist if, for instance, switched to another view while still scanning some Track(s)
+				pvtm->PostMessage( WM_TRACK_SCANNED, trackNumber, (LPARAM)&si );
+		}
 		return ERROR_SUCCESS;
 	}
 
