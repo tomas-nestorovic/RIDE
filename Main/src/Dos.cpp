@@ -291,6 +291,7 @@ reportError:Utils::Information(buf);
 			TTrack nTracks;
 			DWORD nSectorsInTotal;
 			DWORD nSectorsBad;
+			DWORD availableGoodCapacityInBytes;
 		} statistics;
 		::ZeroMemory(&statistics,sizeof(statistics));
 		for( TCylinder n=0; fp.nTracks--; pAction->UpdateProgress(++n) ){
@@ -339,12 +340,19 @@ reportError:Utils::Information(buf);
 				fp.dos->image->BufferTrackData( cyl, head, fp.bufferId, Utils::CByteIdentity(), nSectors, false );
 				// : verifying formatted Sectors
 				WORD w;
-				for( PCSectorId pId=fp.bufferId; nSectors--; statistics.nSectorsBad+=fp.dos->image->GetSectorData(cyl,head,pId++,&w)==NULL );
-			}
+				for( PCSectorId pId=fp.bufferId; nSectors--; )
+					if (const PCSectorData tmp=fp.dos->image->GetSectorData(cyl,head,pId++,&w))
+						statistics.availableGoodCapacityInBytes+=w;
+					else
+						statistics.nSectorsBad++;
+			}else
+				for( PCWORD pLength=fp.bufferLength; nSectors--; statistics.availableGoodCapacityInBytes+=*pLength++ );
 		}
 		if (fp.showReport){
 			TCHAR buf[512];
-			_stprintf( buf, _T("LOW-LEVEL FORMATTING DONE\n\n\n- formatted %d track(s)\n- with totally %d sectors\n- of which %d are bad (%.2f %%).\n\nSee the Track Map tab for more information."), statistics.nTracks, statistics.nSectorsInTotal, statistics.nSectorsBad, (float)statistics.nSectorsBad*100/statistics.nSectorsInTotal );
+			float units; LPCTSTR unitsName;
+			Utils::BytesToHigherUnits( statistics.availableGoodCapacityInBytes, units, unitsName );
+			_stprintf( buf, _T("LOW-LEVEL FORMATTING DONE\n\n\n- formatted %d track(s)\n- with totally %d sectors\n- of which %d are bad (%.2f %%)\n- resulting in %.2f %s raw good capacity.\n\nSee the Track Map tab for more information."), statistics.nTracks, statistics.nSectorsInTotal, statistics.nSectorsBad, (float)statistics.nSectorsBad*100/statistics.nSectorsInTotal, units, unitsName );
 			Utils::Information(buf);
 		}
 		return ERROR_SUCCESS;

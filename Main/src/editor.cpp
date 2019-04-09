@@ -232,7 +232,7 @@
 
 	static bool recognizeDosAutomatically=true;
 
-	#define ENTERING_LIMITED_MODE	_T("\n\nContinuing with viewing the image in limited mode.")
+	#define ENTERING_LIMITED_MODE	_T("\n\nContinuing to view the image in limited mode.")
 
 	CDocument *CRideApp::OpenDocumentFile(LPCTSTR lpszFileName){
 		// opens document with specified FileName
@@ -321,7 +321,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 				return NULL; // ... no Image or disk is accessed
 			}
 			if (dosProps==&CUnknownDos::Properties)
-				Utils::Information(_T("Cannot determine the DOS!") ENTERING_LIMITED_MODE );
+				Utils::Information(_T("CANNOT RECOGNIZE THE DOS!\nDoes it participate in recognition?") ENTERING_LIMITED_MODE );
 		}else{
 			// manual recognition of suitable DOS by user
 			// . defining the Dialog

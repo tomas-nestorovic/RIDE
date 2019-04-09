@@ -77,7 +77,7 @@
 									sr.GetDescriptionsOfSetBits(bitDescriptions);
 									Utils::WriteToFile(fHtml,_T("<tr><td>"));
 										Utils::WriteToFile(fHtml,(LPCTSTR)((UINT)bitDescriptions[0]|(UINT)bitDescriptions[1]|(UINT)bitDescriptions[2]));
-									Utils::WriteToFile(fHtml,_T("</td><td>"));
+									Utils::WriteToFile(fHtml,_T("</td><td align=right>"));
 										Utils::WriteToFile(fHtml,nErrorOccurences);
 									Utils::WriteToFile(fHtml,_T("</td></tr>"));
 								}
