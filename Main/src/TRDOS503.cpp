@@ -50,10 +50,10 @@
 	#define INI_TRDOS	_T("TRDOS")
 	#define INI_ALLOW_ZERO_LENGTH_FILES	_T("fm0files")
 
-	CTRDOS503::CTRDOS503(PImage image) // called exclusively by SCL Image!
+	CTRDOS503::CTRDOS503(PImage image,PCFormat pTempImageFormat) // called exclusively by SCL Image!
 		// ctor (called exclusively by SCL Image!)
 		// - base
-		: CSpectrumDos( image, &CTRDOS503::Properties.stdFormats[0].params.format, TTrackScheme::BY_CYLINDERS, &Properties, IDR_TRDOS, &fileManager, TGetFileSizeOptions::SizeOnDisk )
+		: CSpectrumDos( image, pTempImageFormat, TTrackScheme::BY_CYLINDERS, &Properties, IDR_TRDOS, &fileManager, TGetFileSizeOptions::SizeOnDisk )
 		// - initialization
 		, boot(this,TRDOS503_BOOT_LABEL_LENGTH_MAX) , fileManager(this)
 		, zeroLengthFilesEnabled(true) // just to be sure (SCL Image expects this setting when loading the content)

@@ -51,6 +51,9 @@
 	BOOL CSCL::OnSaveDocument(LPCTSTR lpszPathName){
 		// True <=> this Image has been successfully saved, otherwise False
 		if (const CTRDOS503::PCBootSector boot=CTRDOS503::__getBootSector__(this)){
+			TFormat imageFormat;
+			if (CTRDOS503::__recognizeDisk__(this,&imageFormat)!=ERROR_SUCCESS)
+				return FALSE;
 			if (f.m_hFile!=(UINT_PTR)INVALID_HANDLE_VALUE) // Image's underlying file doesn't exist if saving a fresh formatted Image
 				f.Close();
 			if (!__openImageForWriting__(lpszPathName,&f))
@@ -61,7 +64,8 @@
 			header.nFiles=boot->nFiles;
 			f.Write(&header,sizeof(header));
 			// - instantiating a temporary TR-DOS (any 5.03-based version will do)
-			const CTRDOS503 tmpTrdos(this);
+			imageFormat.nCylinders--; // converting Format information to command on which Cylinders to format
+			const CTRDOS503 tmpTrdos(this,&imageFormat);
 			// - saving Directory
 			CTRDOS503::PDirectoryEntry directory[TRDOS503_FILE_COUNT_MAX],*pde=directory;
 			for( BYTE n=tmpTrdos.__getDirectory__(directory); n--; f.Write(*pde++,sizeof(TSclDirectoryItem)) );

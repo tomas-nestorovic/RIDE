@@ -141,7 +141,7 @@
 
 		bool zeroLengthFilesEnabled,importToSysTrack;
 
-		CTRDOS503(PImage image); // private ctor called exclusively by SCL Image!
+		CTRDOS503(PImage image,PCFormat pTempImageFormat); // private ctor called exclusively by SCL Image!
 
 		PBootSector __getBootSector__() const;
 		void InitializeEmptyMedium(CFormatDialog::PCParameters) override;
