@@ -91,7 +91,7 @@
 		DDX_Text( pDX,	ID_CYLINDER	,(RCylinder)params.cylinder0 );
 			DDV_MinMaxUInt( pDX, params.cylinder0, 0, params.format.nCylinders );
 		DDX_Text( pDX,	ID_HEAD	,params.format.nHeads );
-			const THead nHeadsMax =	params.cylinder0 ? params.format.nHeads : propMedium->headRange.iMax;
+			const THead nHeadsMax =	params.cylinder0 ? min(dos->formatBoot.nHeads,propMedium->headRange.iMax) : propMedium->headRange.iMax;
 			DDV_MinMaxUInt( pDX, params.format.nHeads, propMedium->headRange.iMin, nHeadsMax );
 		DDX_Text( pDX,	ID_SECTOR	,params.format.nSectors );
 			DDV_MinMaxUInt( pDX, params.format.nSectors, max(propMedium->sectorRange.iMin,propDos->nSectorsOnTrackMin), min(propMedium->sectorRange.iMax,propDos->nSectorsOnTrackMax) );
