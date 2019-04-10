@@ -372,6 +372,8 @@ trackNotFound:
 			return ERROR_BAD_COMMAND;
 		if (::memchr(pFirstSectorNumber+nSectors,TRUE,sizeof(involvedSectors)-firstSectorNumber-nSectors)) // if some Sector redundand -> error
 			return ERROR_BAD_COMMAND;
+		if (head>=nHeads)
+			return ERROR_BAD_COMMAND;
 		// - formatting
 		const DWORD nBytesOfTrack=nSectors*sectorLength;
 		if (nCylinders<=cyl)
