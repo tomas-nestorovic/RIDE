@@ -807,9 +807,12 @@
 			case ID_SYSTEM:{
 				pCmdUI->SetCheck(importToSysTrack);
 				TStdWinError err;
-				pCmdUI->Enable(	importToSysTrack || !GetCountOfItemsInCurrentDir(err) ); // A|B, A = if enabled, the setting can be disabled at any time, B = setting available if the disk yet contains no Files
+				pCmdUI->Enable(	image->properties!=&CSCL::Properties // import to system Track available only for non-SCL Images
+								&&
+								( importToSysTrack || !GetCountOfItemsInCurrentDir(err) ) // A|B, A = if enabled, the setting can be disabled at any time, B = setting available if the disk yet contains no Files
+							);
 				return true;
 			}
 		}
-		return CSpectrumDos::UpdateCommandUi(cmd,pCmdUI);
+		return __super::UpdateCommandUi(cmd,pCmdUI);
 	}
