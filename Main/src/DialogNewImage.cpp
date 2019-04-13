@@ -3,7 +3,7 @@
 	CNewImageDialog::CNewImageDialog()
 		// ctor
 		: CDialog(IDR_IMAGE_NEW)
-		, fnImage(NULL) , fnDos(NULL) {
+		, fnImage(NULL) , dosProps(NULL) {
 	}
 
 
@@ -17,6 +17,11 @@
 		// dialog initialization
 		// - base
 		CDialog::OnInitDialog();
+		// - positioning and scaling the Error box to match the Image list-box
+		RECT rc;
+		GetDlgItem(ID_IMAGE)->GetWindowRect(&rc);
+		ScreenToClient(&rc);
+		GetDlgItem(ID_ERROR)->SetWindowPos( NULL, rc.left, rc.top, rc.right-rc.left, rc.bottom-rc.top, SWP_NOZORDER );
 		// - populating the list of available DOSes
 		CListBox lb;
 		lb.Attach(GetDlgItem(ID_DOS)->m_hWnd);
@@ -28,6 +33,7 @@
 			lb.SetCurSel(0);
 			GotoDlgCtrl(&lb); // focusing the ComboBox with DOSes
 		lb.Detach();
+		__refreshListOfContainers__();
 		// - done
 		return FALSE; // False = focus already set manually
 	}
@@ -39,6 +45,40 @@
 			if (imageProps->sectorLengthMin<=dosStdSectorLength && dosStdSectorLength<=imageProps->sectorLengthMax)
 				rLBImage.SetItemDataPtr( rLBImage.AddString(imageProps->name), (PVOID)imageProps );
 	}
+
+	void CNewImageDialog::__refreshListOfContainers__(){
+		// forces refreshing of the list of containers available for the selected DOS; eventually displays an error message
+		GetDlgItem(IDOK)->EnableWindow(FALSE); // need yet to select a container
+		CWnd *const pImageListBox=GetDlgItem(ID_IMAGE), *const pErrorBox=GetDlgItem(ID_ERROR);
+		// - checking if the selected DOS is among those which participate in the automatic recognition sequence
+		if (dosProps){
+			// some DOS selected
+			const CDos::CRecognition recognition;
+			for( POSITION pos=recognition.__getFirstRecognizedDosPosition__(); pos; )
+				if (recognition.__getNextRecognizedDos__(pos)==dosProps){
+					// yes, DOS participates in the automatic recognition sequence
+					CListBox lb;
+					lb.Attach(pImageListBox->m_hWnd);
+						lb.ShowWindow(SW_SHOW), pErrorBox->ShowWindow(SW_HIDE);
+						lb.ResetContent();
+						for( POSITION pos=CImage::known.GetHeadPosition(); pos; )
+							__checkCompatibilityAndAddToOptions__( dosProps, lb, (CImage::PCProperties)CImage::known.GetNext(pos) );
+						__checkCompatibilityAndAddToOptions__( dosProps, lb, &CFDD::Properties );
+					lb.Detach();
+					return;
+				}
+		}
+		// - the selected DOS doesn't participate in the automatic recognition sequence
+		pErrorBox->ShowWindow(SW_SHOW), pImageListBox->ShowWindow(SW_HIDE);
+		TCHAR errMsg[200];
+		if (dosProps)
+			::wsprintf( errMsg, _T("Can't create a disk of \"%s\" as it doesn't participate in automatic recognition.\n\n<a>Change the recognition sequence</a>"), dosProps->name );
+		else
+			::wsprintf( errMsg, _T("Select a DOS first") );
+		SetDlgItemText( ID_ERROR, errMsg );
+		dosProps=NULL;
+	}
+
 	BOOL CNewImageDialog::OnCommand(WPARAM wParam,LPARAM lParam){
 		// command processing
 		switch (wParam){
@@ -47,20 +87,9 @@
 				CListBox lb;
 				lb.Attach((HWND)lParam);
 					const int iSelected=lb.GetCurSel();
-					if (iSelected>=0){
-						const CDos::PCProperties dosProps=(CDos::PCProperties)lb.GetItemData(iSelected);
-						fnDos=dosProps->fnInstantiate;
-						lb.Detach();
-						lb.Attach(GetDlgItem(ID_IMAGE)->m_hWnd);
-						lb.ResetContent();
-						GetDlgItem(IDOK)->EnableWindow(FALSE);
-						if (iSelected>0){
-							for( POSITION pos=CImage::known.GetHeadPosition(); pos; )
-								__checkCompatibilityAndAddToOptions__( dosProps, lb, (CImage::PCProperties)CImage::known.GetNext(pos) );
-							__checkCompatibilityAndAddToOptions__( dosProps, lb, &CFDD::Properties );
-						}
-					}
+					dosProps= iSelected>0 ? (CDos::PCProperties)lb.GetItemData(iSelected) : NULL;
 				lb.Detach();
+				__refreshListOfContainers__();
 				return TRUE;
 			}
 			case MAKELONG(ID_IMAGE,LBN_SELCHANGE):{ // Image selection changed
@@ -116,6 +145,16 @@
 							Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_accessFloppy.html"),url) );
 							break;
 					}
+					*pResult=0;
+					return TRUE;
+				}
+			}
+		else if (pcws->wParam==ID_ERROR)
+			switch (pcws->message){
+				case NM_CLICK:
+				case NM_RETURN:{
+					((CMainWindow *)app.m_pMainWnd)->__changeAutomaticDiskRecognitionOrder__();
+					__refreshListOfContainers__();
 					*pResult=0;
 					return TRUE;
 				}

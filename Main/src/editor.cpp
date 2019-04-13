@@ -208,7 +208,7 @@
 			// . creating selected Image
 			const PImage image=d.fnImage();
 			// . formatting Image under selected DOS
-			PDos dos = image->dos = d.fnDos(image,&TFormat::Unknown);
+			PDos dos = image->dos = d.dosProps->fnInstantiate(image,&TFormat::Unknown);
 				image->writeProtected=false; // just to be sure
 				if (dos->ProcessCommand(ID_DOS_FORMAT)==CDos::TCmdResult::REFUSED || !image->GetCylinderCount()){
 					// A|B, A = formatting cancelled by the user, B = formatting failed; the conditions cannot be switched (because of short-circuit evaluation)
