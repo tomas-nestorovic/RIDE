@@ -8,6 +8,12 @@
 	class CHexaEditor:public CEditView{
 	public:
 		typedef LPCTSTR (* TFnQueryRecordLabel)(int recordIndex,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param);
+
+		#pragma pack(1)
+		typedef const struct TSubmenuItem sealed{
+			LPCTSTR name;
+			ACCEL accel;
+		} *PCSubmenuItem;
 	private:
 		class COleBinaryDataSource sealed:public COleDataSource{
 			CFile *const f;
@@ -31,6 +37,9 @@
 		const CRideFont font;
 		const DWORD recordSize;
 		const TFnQueryRecordLabel fnQueryRecordLabel;
+		const PCSubmenuItem customSelectSubmenu, customGotoSubmenu;
+		const HACCEL hDefaultAccelerators;
+		HACCEL hAdditionalAccelerators;
 		BYTE nBytesInRow;
 		DWORD nRowsPerRecord;
 		DWORD nLogicalRows;
@@ -65,7 +74,8 @@
 		void PostNcDestroy() override sealed;
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 	public:
-		CHexaEditor(PVOID param,DWORD recordSize=HEXAEDITOR_RECORD_SIZE_INFINITE,TFnQueryRecordLabel fnQueryRecordLabel=NULL);
+		CHexaEditor(PVOID param,DWORD recordSize=HEXAEDITOR_RECORD_SIZE_INFINITE,TFnQueryRecordLabel fnQueryRecordLabel=NULL,PCSubmenuItem customSelectSubmenu=NULL,PCSubmenuItem customGotoSubmenu=NULL);
+		~CHexaEditor();
 
 		void SetEditable(bool _editable);
 		int ShowAddressBand(bool _show);
@@ -74,6 +84,7 @@
 		void GetVisiblePart(DWORD &rLogicalBegin,DWORD &rLogicalEnd) const;
 		void AddEmphasis(DWORD a,DWORD z);
 		void CancelAllEmphases();
+		BOOL PreTranslateMessage(PMSG pMsg) override;
 	};
 
 #endif // HEXAEDITOR_H

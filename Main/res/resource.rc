@@ -96,6 +96,17 @@ BEGIN
     "K",            ID_ZX_PREVIEWASBASIC,   VIRTKEY, CONTROL, NOINVERT
 END
 
+IDR_HEXAEDITOR ACCELERATORS DISCARDABLE 
+BEGIN
+    "A",            ID_EDIT_SELECT_ALL,     VIRTKEY, CONTROL, NOINVERT
+    "A",            ID_EDIT_SELECT_NONE,    VIRTKEY, SHIFT, CONTROL, 
+                                                    NOINVERT
+    "C",            ID_EDIT_COPY,           VIRTKEY, CONTROL, NOINVERT
+    "R",            ID_EDIT_SELECT_CURRENT, VIRTKEY, CONTROL, NOINVERT
+    "V",            ID_EDIT_PASTE,          VIRTKEY, CONTROL, NOINVERT
+    VK_NEXT,        ID_NEXT,                VIRTKEY, CONTROL, NOINVERT
+    VK_PRIOR,       ID_PREV,                VIRTKEY, CONTROL, NOINVERT
+END
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -288,7 +299,19 @@ BEGIN
         MENUITEM "Paste\tCtrl+V",               ID_EDIT_PASTE
         MENUITEM "Delete\tDel",                 ID_DELETE
         MENUITEM SEPARATOR
-        MENUITEM "Select all\tCtrl+A",          ID_EDIT_SELECT_ALL
+        POPUP "Select"
+        BEGIN
+            MENUITEM "All\tCtrl+A",                 ID_EDIT_SELECT_ALL
+            MENUITEM "Nothing\tCtrl+Shift+A",       ID_EDIT_SELECT_NONE
+            MENUITEM SEPARATOR
+            MENUITEM "Current item\tCtrl+R",        ID_EDIT_SELECT_CURRENT
+        END
+        MENUITEM SEPARATOR
+        POPUP "Go to"
+        BEGIN
+            MENUITEM "Previous item\tCtrl+PgUp",    ID_PREV
+            MENUITEM "Next item\tCtrl+PgDown",      ID_NEXT
+        END
     END
 END
 

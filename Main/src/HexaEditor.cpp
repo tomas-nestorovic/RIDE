@@ -35,11 +35,13 @@
 
 	const CHexaEditor::TEmphasis CHexaEditor::TEmphasis::Terminator={ -1, -1 };
 
-	CHexaEditor::CHexaEditor(PVOID param,DWORD recordSize,TFnQueryRecordLabel fnQueryRecordLabel)
+	CHexaEditor::CHexaEditor(PVOID param,DWORD recordSize,TFnQueryRecordLabel fnQueryRecordLabel,PCSubmenuItem customSelectSubmenu,PCSubmenuItem customGotoSubmenu)
 		// ctor
 		// - initialization
 		: font(_T("Courier New"),105,false,true)
 		, recordSize(recordSize) , fnQueryRecordLabel(fnQueryRecordLabel) , nRowsPerRecord(1)
+		, customSelectSubmenu(customSelectSubmenu) , customGotoSubmenu(customGotoSubmenu)
+		, hDefaultAccelerators(::LoadAccelerators(app.m_hInstance,MAKEINTRESOURCE(IDR_HEXAEDITOR)))
 		, cursor(0) , param(param) , hPreviouslyFocusedWnd(0)
 		, nBytesInRow(16) , editable(true) , addrLength(ADDRESS_FORMAT_LENGTH)
 		, emphases((PEmphasis)&TEmphasis::Terminator) {
@@ -48,8 +50,25 @@
 				? recordSize%128==0 // case: Record spans over entire Sectors
 				: 128%recordSize==0 // case: Sector contains integral multiple of Records
 			);
+		// - creating the custom Accelerators table
+		ACCEL accelerators[80]; BYTE nAccels=0;
+		if (customSelectSubmenu)
+			for( PCSubmenuItem psi=customSelectSubmenu; psi->name!=NULL; psi++ )
+				if (psi->accel.key!='\0')
+					accelerators[nAccels++]=psi->accel;
+		if (customGotoSubmenu)
+			for( PCSubmenuItem psi=customGotoSubmenu; psi->name!=NULL; psi++ )
+				if (psi->accel.key!='\0')
+					accelerators[nAccels++]=psi->accel;
+		hAdditionalAccelerators=::CreateAcceleratorTable( accelerators, nAccels );
 	}
 
+	CHexaEditor::~CHexaEditor(){
+		// dtor
+		// - destroying the Accelerator tables
+		::DestroyAcceleratorTable(hAdditionalAccelerators);
+		::DestroyAcceleratorTable(hDefaultAccelerators);
+	}
 
 
 
@@ -250,8 +269,6 @@
 				switch (wParam){
 					case VK_LEFT:{
 						cursor.position--;
-						if (ctrl) // Ctrl+Left shortcut navigates to the previous Record (or the beginning of current Record, if Cursor not already there)
-							cursor.position= cursor.position/recordSize * recordSize;
 cursorCorrectlyMoveTo:	// . adjusting the Cursor's Position
 						cursor.hexaLow=true; // the next keystroke will modify the lower four bits of current hexa-value
 						if (cursor.position<0) cursor.position=0;
@@ -279,10 +296,7 @@ cursorRefresh:			// . refreshing the Cursor
 						return 0;
 					}
 					case VK_RIGHT:
-						if (ctrl) // Ctrl+Right short navigates to the next Record
-							cursor.position= (cursor.position/recordSize+1) * recordSize;
-						else
-							cursor.position++;
+						cursor.position++;
 						goto cursorCorrectlyMoveTo;
 					case VK_UP:{
 						i=1; // move Cursor one row up
@@ -371,44 +385,6 @@ deleteSelection:		// . moving the content "after" Selection "to" the position of
 					default:
 						if (ctrl){
 							// a shortcut other than Cursor positioning
-							switch (wParam){
-								case 'A':
-editSelectAll:						// Selecting all
-									cursor.selectionA=0, cursor.selectionZ=cursor.position=f->GetLength();
-									__invalidateData__();
-									goto cursorRefresh;
-								case 'C':
-editCopy:							// copying the Selection into clipboard
-									if (cursor.selectionA!=cursor.selectionZ)
-										( new COleBinaryDataSource(	f,
-																	min(cursor.selectionA,cursor.selectionZ),
-																	max(cursor.selectionZ,cursor.selectionA)
-										) )->SetClipboard();
-									return 0;
-								case 'V':{
-editPaste:							// pasting binary data from clipboard at the Position of Cursor
-									COleDataObject odo;
-									odo.AttachClipboard();
-									if (const HGLOBAL hg=odo.GetGlobalData(cfBinary)){
-										const DWORD *p=(PDWORD)::GlobalLock(hg), length=*p; // binary data are prefixed by their length
-											f->Seek(cursor.position,CFile::begin);
-											const DWORD lengthLimit=maxFileSize-cursor.position;
-											if (length<=lengthLimit){
-												SELECTION_CANCEL()
-												f->Write( ++p, length );
-												cursor.position+=length;
-											}else{
-												f->Write( ++p, lengthLimit );
-												cursor.position+=lengthLimit;
-												__showMessage__(MESSAGE_LIMIT_UPPER);
-											}
-										::GlobalUnlock(hg);
-										::GlobalFree(hg);
-									}
-									__invalidateData__();
-									goto cursorRefresh;
-								}
-							}
 							return 0;
 						}else if (!cursor.ascii) // here Hexa mode; Ascii mode handled in WM_CHAR
 							// Hexa modification
@@ -455,6 +431,20 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 				if (!editable) return 0; // if window disabled, no context actions can be performed
 				CMenu mnu;
 				mnu.LoadMenu(IDR_HEXAEDITOR);
+				if (customSelectSubmenu) // custom "Select" submenu
+					if (CMenu *const pSelectSubmenu=mnu.GetSubMenu(0)->GetSubMenu(4)){ // 4 = "Select" submenu in IDR_HEXAEDITOR menu
+						while (pSelectSubmenu->GetMenuItemCount()) // clearing the submenu
+							pSelectSubmenu->RemoveMenu( 0, MF_BYPOSITION );
+						for( PCSubmenuItem psi=customSelectSubmenu; psi->name!=NULL; psi++ )
+							pSelectSubmenu->AppendMenu( MF_STRING, psi->accel.cmd, psi->name );
+					}
+				if (customGotoSubmenu) // custom "Go to" submenu
+					if (CMenu *const pGotoSubmenu=mnu.GetSubMenu(0)->GetSubMenu(6)){ // 6 = "Select" submenu in IDR_HEXAEDITOR menu
+						while (pGotoSubmenu->GetMenuItemCount()) // clearing the submenu
+							pGotoSubmenu->RemoveMenu( 0, MF_BYPOSITION );
+						for( PCSubmenuItem psi=customGotoSubmenu; psi->name!=NULL; psi++ )
+							pGotoSubmenu->AppendMenu( MF_STRING, psi->accel.cmd, psi->name );
+					}
 				register union{
 					struct{ short x,y; };
 					int i;
@@ -465,18 +455,74 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 					ClientToScreen(&caretPos);
 					x=caretPos.x+(1+!cursor.ascii)*font.charAvgWidth, y=caretPos.y+font.charHeight;
 				}
-				switch (mnu.GetSubMenu(0)->TrackPopupMenu( TPM_RETURNCMD, x,y, this )){
+				wParam=mnu.GetSubMenu(0)->TrackPopupMenu( TPM_RETURNCMD, x,y, this );
+				//fallthrough
+			}
+			case WM_COMMAND:
+				// processing a command
+				switch (LOWORD(wParam)){
 					case ID_EDIT_SELECT_ALL:
-						goto editSelectAll;
+						// Selecting everything
+						cursor.selectionA=0, cursor.selectionZ=cursor.position=f->GetLength();
+						__invalidateData__();
+						goto cursorRefresh;
+					case ID_EDIT_SELECT_NONE:
+						// removing current selection
+						SELECTION_CANCEL()
+						__invalidateData__();
+						goto cursorRefresh;
+					case ID_EDIT_SELECT_CURRENT:{
+						// selecting the whole Record under the Cursor
+						int row=__logicalPositionToRow__(cursor.position);
+						while (__getRecordIndexThatStartsAtRow__(row)<0) row--; // navigating to the beginning of the current Record
+						cursor.position = cursor.selectionZ = (  cursor.selectionA=__firstByteInRowToLogicalPosition__(row)  )+recordSize;
+						__invalidateData__();
+						goto cursorRefresh;
+					}
 					case ID_EDIT_COPY:
-						goto editCopy;
-					case ID_EDIT_PASTE:
-						goto editPaste;
+						// copying the Selection into clipboard
+						if (cursor.selectionA!=cursor.selectionZ)
+							( new COleBinaryDataSource(	f,
+														min(cursor.selectionA,cursor.selectionZ),
+														max(cursor.selectionZ,cursor.selectionA)
+							) )->SetClipboard();
+						return 0;
+					case ID_EDIT_PASTE:{
+						// pasting binary data from clipboard at the Position of Cursor
+						COleDataObject odo;
+						odo.AttachClipboard();
+						if (const HGLOBAL hg=odo.GetGlobalData(cfBinary)){
+							const DWORD *p=(PDWORD)::GlobalLock(hg), length=*p; // binary data are prefixed by their length
+								f->Seek(cursor.position,CFile::begin);
+								const DWORD lengthLimit=maxFileSize-cursor.position;
+								if (length<=lengthLimit){
+									SELECTION_CANCEL()
+									f->Write( ++p, length );
+									cursor.position+=length;
+								}else{
+									f->Write( ++p, lengthLimit );
+									cursor.position+=lengthLimit;
+									__showMessage__(MESSAGE_LIMIT_UPPER);
+								}
+							::GlobalUnlock(hg);
+							::GlobalFree(hg);
+						}
+						__invalidateData__();
+						goto cursorRefresh;
+					}
 					case ID_DELETE:
+						// deleting content of the current selection
 						goto editDelete;
+					case ID_NEXT:
+						// navigating to the next Record
+						cursor.position= (cursor.position/recordSize+1) * recordSize;
+						goto cursorCorrectlyMoveTo;
+					case ID_PREV:
+						// navigating to the previous Record (or the beginning of current Record, if Cursor not already there)
+						cursor.position= --cursor.position/recordSize * recordSize;
+						goto cursorCorrectlyMoveTo;
 				}
 				return 0; // to suppress CEdit's standard context menu
-			}
 			case WM_LBUTTONDOWN:
 				// left mouse button pressed
 				mouseDragged=false;
@@ -740,6 +786,15 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 		return __super::WindowProc(msg,wParam,lParam);
 	}
 
+	BOOL CHexaEditor::PreTranslateMessage(PMSG pMsg){
+		// pre-processing the Message
+		return	::GetFocus()==m_hWnd
+				?	::TranslateAccelerator(m_hWnd,hAdditionalAccelerators,pMsg)
+					||
+					::TranslateAccelerator(m_hWnd,hDefaultAccelerators,pMsg)
+				: FALSE;
+	}
+
 	void CHexaEditor::PostNcDestroy(){
 		// self-destruction
 		//nop (View destroyed by its owner)
@@ -795,3 +850,4 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 			// other form of rendering than the "File" one (i.e. other than CFSTR_FILECONTENTS)
 			return COleDataSource::OnRenderFileData(lpFormatEtc,pFile);
 	}*/
+
