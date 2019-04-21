@@ -6,14 +6,16 @@
 		, fileSize( wholeSectors ? dos->GetFileSizeOnDisk(file) : dos->GetFileOccupiedSize(file) )
 		, dataBeginOffsetInSector( wholeSectors ? 0 : dos->properties->dataBeginOffsetInSector)
 		, dataEndOffsetInSector( wholeSectors ? 0 : dos->properties->dataEndOffsetInSector )
-		, position(0) {
+		, position(0)
+		, recordLength(dos->formatBoot.sectorLength) {
 	}
 
 	CDos::CFileReaderWriter::CFileReaderWriter(const CDos *dos,RCPhysicalAddress chs)
 		// ctor to read/edit particular Sector in Image (e.g. Boot Sector)
 		: dos(dos) , fileSize(dos->formatBoot.sectorLength) , fatPath(dos,chs)
 		, dataBeginOffsetInSector(0) , dataEndOffsetInSector(0)
-		, position(0) {
+		, position(0)
+		, recordLength(dos->formatBoot.sectorLength) {
 	}
 
 	CDos::CFileReaderWriter::~CFileReaderWriter(){
@@ -148,3 +150,54 @@
 			}
 		}
 	}*/
+
+
+
+
+
+
+
+
+
+	void CDos::CFileReaderWriter::OnDisplayed(){
+		// HexaEditor's client area has just been created (and content may be drawn at any time)
+	}
+
+	void CDos::CFileReaderWriter::OnHidden(){
+		// HexaEditor's client area has just been destroyed (and content won't be drawn until the next call to OnDisplayed)
+	}
+
+	void CDos::CFileReaderWriter::GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength) const{
+		// retrieves the start logical position and length of the Record pointed to by the input LogicalPosition
+		if (pOutRecordStartLogPos)
+			*pOutRecordStartLogPos = logPos/recordLength * recordLength;
+		if (pOutRecordLength)
+			*pOutRecordLength = recordLength;
+	}
+
+	int CDos::CFileReaderWriter::LogicalPositionToRow(int logPos,BYTE nBytesInRow) const{
+		// computes and returns the row containing the specified LogicalPosition
+		const div_t d=div( logPos, recordLength );
+		const int nRowsPerRecord = (recordLength+nBytesInRow-1)/nBytesInRow;
+		return d.quot*nRowsPerRecord + d.rem/nBytesInRow;// + (d.rem+nBytesInRow-1)/nBytesInRow;
+	}
+
+	int CDos::CFileReaderWriter::RowToLogicalPosition(int row,BYTE nBytesInRow) const{
+		// converts Row begin (i.e. its first Byte) to corresponding logical position in underlying File and returns the result
+		const int nRowsPerRecord = (recordLength+nBytesInRow-1)/nBytesInRow;
+		const div_t d=div( row, nRowsPerRecord );
+		return d.quot*recordLength + d.rem*nBytesInRow;
+	}
+
+	LPCTSTR CDos::CFileReaderWriter::GetRecordLabel(int logPos,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const{
+		// populates the Buffer with label for the Record that STARTS at specified LogicalPosition, and returns the Buffer; returns Null if no Record starts at specified LogicalPosition
+		const div_t d=div( logPos, recordLength );
+		if (!d.rem){
+			CDos::CFatPath::PCItem pItem; DWORD nItems;
+			if (LPCTSTR err=fatPath.GetItems(pItem,nItems))
+				return err;
+			else
+				return (pItem+d.quot)->chs.sectorId.ToString(labelBuffer);
+		}else
+			return nullptr;
+	}

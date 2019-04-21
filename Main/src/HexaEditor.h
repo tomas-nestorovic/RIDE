@@ -7,7 +7,14 @@
 
 	class CHexaEditor:public CEditView{
 	public:
-		typedef LPCTSTR (* TFnQueryRecordLabel)(int recordIndex,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param);
+		typedef struct TContentAdviser{
+			virtual void OnDisplayed()=NULL;
+			virtual void OnHidden()=NULL;
+			virtual void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength) const=NULL;
+			virtual int LogicalPositionToRow(int logPos,BYTE nBytesInRow) const=NULL;
+			virtual int RowToLogicalPosition(int row,BYTE nBytesInRow) const=NULL;
+			virtual LPCTSTR GetRecordLabel(int logPos,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const=NULL;
+		} *PContentAdviser;
 
 		#pragma pack(1)
 		typedef const struct TSubmenuItem sealed{
@@ -35,13 +42,10 @@
 
 		const PVOID param;
 		const CRideFont font;
-		const DWORD recordSize;
-		const TFnQueryRecordLabel fnQueryRecordLabel;
 		const PCSubmenuItem customSelectSubmenu, customGotoSubmenu;
 		const HACCEL hDefaultAccelerators;
 		HACCEL hAdditionalAccelerators;
 		BYTE nBytesInRow;
-		DWORD nRowsPerRecord;
 		DWORD nLogicalRows;
 		DWORD nRowsDisplayed;
 		DWORD nRowsOnPage;
@@ -57,6 +61,7 @@
 		PEmphasis emphases; // must be ordered ascending by A (and thus automatically also by Z)
 
 		CFile *f;
+		PContentAdviser pContentAdviser;
 		DWORD minFileSize,maxFileSize;
 		DWORD logicalSize; // zero by default
 		BYTE addrLength; // Address format length (see ADDRESS_FORMAT); modified in ShowAddresses
@@ -64,7 +69,6 @@
 
 		int __firstByteInRowToLogicalPosition__(int row) const;
 		int __logicalPositionToRow__(int logPos) const;
-		int __getRecordIndexThatStartsAtRow__(int row) const;
 		int __scrollToRow__(int row);
 		void __refreshVertically__();
 		void __invalidateData__() const;
@@ -74,7 +78,7 @@
 		void PostNcDestroy() override sealed;
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 	public:
-		CHexaEditor(PVOID param,DWORD recordSize=HEXAEDITOR_RECORD_SIZE_INFINITE,TFnQueryRecordLabel fnQueryRecordLabel=NULL,PCSubmenuItem customSelectSubmenu=NULL,PCSubmenuItem customGotoSubmenu=NULL);
+		CHexaEditor(PVOID param,PCSubmenuItem customSelectSubmenu=NULL,PCSubmenuItem customGotoSubmenu=NULL);
 		~CHexaEditor();
 
 		void SetEditable(bool _editable);

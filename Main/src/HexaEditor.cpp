@@ -35,21 +35,21 @@
 
 	const CHexaEditor::TEmphasis CHexaEditor::TEmphasis::Terminator={ -1, -1 };
 
-	CHexaEditor::CHexaEditor(PVOID param,DWORD recordSize,TFnQueryRecordLabel fnQueryRecordLabel,PCSubmenuItem customSelectSubmenu,PCSubmenuItem customGotoSubmenu)
+	CHexaEditor::CHexaEditor(PVOID param,PCSubmenuItem customSelectSubmenu,PCSubmenuItem customGotoSubmenu)
 		// ctor
 		// - initialization
 		: font(_T("Courier New"),105,false,true)
-		, recordSize(recordSize) , fnQueryRecordLabel(fnQueryRecordLabel) , nRowsPerRecord(1)
 		, customSelectSubmenu(customSelectSubmenu) , customGotoSubmenu(customGotoSubmenu)
 		, hDefaultAccelerators(::LoadAccelerators(app.m_hInstance,MAKEINTRESOURCE(IDR_HEXAEDITOR)))
 		, cursor(0) , param(param) , hPreviouslyFocusedWnd(0)
+		, f(nullptr) , pContentAdviser(nullptr)
 		, nBytesInRow(16) , editable(true) , addrLength(ADDRESS_FORMAT_LENGTH)
 		, emphases((PEmphasis)&TEmphasis::Terminator) {
 		// - comparing requested configuration with HexaEditor's skills
-		ASSERT(	recordSize>=128 // making sure that entire Rows are either (1) well readable, (2) readable with error, or (3) non-readable; 128 = min Sector length
+		/*ASSERT(	recordSize>=128 // making sure that entire Rows are either (1) well readable, (2) readable with error, or (3) non-readable; 128 = min Sector length
 				? recordSize%128==0 // case: Record spans over entire Sectors
 				: 128%recordSize==0 // case: Sector contains integral multiple of Records
-			);
+			);*/
 		// - creating the custom Accelerators table
 		ACCEL accelerators[80]; BYTE nAccels=0;
 		if (customSelectSubmenu)
@@ -98,7 +98,37 @@
 
 	void CHexaEditor::Reset(CFile *_f,DWORD _minFileSize,DWORD _maxFileSize){
 		// resets the HexaEditor and supplies it new File content
-		f=_f, minFileSize=_minFileSize, maxFileSize=_maxFileSize, logicalSize=0;
+		if (!( pContentAdviser=dynamic_cast<PContentAdviser>(  f=_f  ) )){
+			static struct TDefault sealed:public TContentAdviser{
+				void OnDisplayed() override{
+					// HexaEditor's client area has just been created (and content may be drawn at any time)
+				}
+				void OnHidden() override{
+					// HexaEditor's client area has just been destroyed (and content won't be drawn until the next call to OnDisplayed)
+				}
+				void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength) const override{
+					// retrieves the start logical position and length of the Record pointed to by the input LogicalPosition
+					if (pOutRecordStartLogPos)
+						*pOutRecordStartLogPos=0;
+					if (pOutRecordLength)
+						*pOutRecordLength=HEXAEDITOR_RECORD_SIZE_INFINITE;
+				}
+				int LogicalPositionToRow(int logPos,BYTE nBytesInRow) const override{
+					// computes and returns the row containing the specified LogicalPosition
+					return logPos/nBytesInRow;
+				}
+				int RowToLogicalPosition(int row,BYTE nBytesInRow) const override{
+					// converts Row begin (i.e. its first Byte) to corresponding logical position in underlying File and returns the result
+					return row*nBytesInRow;
+				}
+				LPCTSTR GetRecordLabel(int logPos,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override{
+					// populates the Buffer with label for the Record that STARTS at specified LogicalPosition, and returns the Buffer; returns Null if no Record starts at specified LogicalPosition
+					return nullptr;
+				}
+			} Default;
+			pContentAdviser=&Default;
+		}
+		minFileSize=_minFileSize, maxFileSize=_maxFileSize, logicalSize=0;
 		cursor=TCursor(0); // resetting the Cursor and Selection
 		SetLogicalSize(f->GetLength());
 		if (::IsWindow(m_hWnd)){ // may be window-less if the owner is window-less
@@ -143,20 +173,12 @@
 
 	int CHexaEditor::__firstByteInRowToLogicalPosition__(int row) const{
 		// converts Row begin (i.e. its first Byte) to corresponding position in underlying File and returns the result
-		const div_t d=div(row,nRowsPerRecord);
-		return d.quot*recordSize + d.rem*nBytesInRow;
+		return pContentAdviser->RowToLogicalPosition(row,nBytesInRow);
 	}
 
 	int CHexaEditor::__logicalPositionToRow__(int logPos) const{
 		// computes and returns at which Row is the specified LogicalPosition
-		const div_t d=div(logPos,recordSize);
-		return d.quot*nRowsPerRecord + d.rem/nBytesInRow;;// + (d.rem+nBytesInRow-1)/nBytesInRow;
-	}
-
-	int CHexaEditor::__getRecordIndexThatStartsAtRow__(int row) const{
-		// computes and returns the zero-based record index that starts at specified Row; returns -1 if no record starts at given Row
-		const div_t d=div(row,nRowsPerRecord);
-		return d.rem ? -1 : d.quot;
+		return pContentAdviser->LogicalPositionToRow(logPos,nBytesInRow);
 	}
 
 	#define HEADER_LINES_COUNT	1
@@ -181,7 +203,6 @@
 	void CHexaEditor::__refreshVertically__(){
 		// refreshes all parameters that relate to vertical axis
 		// - determining the total number of Rows
-		nRowsPerRecord=(recordSize+nBytesInRow-1)/nBytesInRow;
 		nLogicalRows=__logicalPositionToRow__( max(f->GetLength(),logicalSize) );
 		// - setting the scrolling dimensions
 		RECT r;
@@ -212,7 +233,9 @@
 
 	void CHexaEditor::__refreshCursorDisplay__() const{
 		// shows Cursor on screen at position that corresponds with Cursor's actual Position in the underlying File content (e.g. the 12345-th Byte of the File)
-		const div_t d=div(cursor.position,recordSize);
+		int currRecordStart, currRecordLength;
+		pContentAdviser->GetRecordInfo( cursor.position, &currRecordStart, &currRecordLength );
+		const div_t d=div(cursor.position-currRecordStart,currRecordLength);
 		const int iScrollY=GetScrollPos(SB_VERT);
 		//if (d.quot>=iScrollY){ // commented out as always guaranteed
 			// Cursor "under" the header
@@ -473,9 +496,9 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 						goto cursorRefresh;
 					case ID_EDIT_SELECT_CURRENT:{
 						// selecting the whole Record under the Cursor
-						int row=__logicalPositionToRow__(cursor.position);
-						while (__getRecordIndexThatStartsAtRow__(row)<0) row--; // navigating to the beginning of the current Record
-						cursor.position = cursor.selectionZ = (  cursor.selectionA=__firstByteInRowToLogicalPosition__(row)  )+recordSize;
+						int recordLength;
+						pContentAdviser->GetRecordInfo( cursor.position, &cursor.selectionA, &recordLength );
+						cursor.position = cursor.selectionZ = cursor.selectionA+recordLength;
 						__invalidateData__();
 						goto cursorRefresh;
 					}
@@ -513,14 +536,20 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 					case ID_DELETE:
 						// deleting content of the current selection
 						goto editDelete;
-					case ID_NEXT:
+					case ID_NEXT:{
 						// navigating to the next Record
-						cursor.position= (cursor.position/recordSize+1) * recordSize;
+						int currRecordLength;
+						pContentAdviser->GetRecordInfo( cursor.position, &cursor.position, &currRecordLength );
+						cursor.position+=currRecordLength;
 						goto cursorCorrectlyMoveTo;
-					case ID_PREV:
+					}
+					case ID_PREV:{
 						// navigating to the previous Record (or the beginning of current Record, if Cursor not already there)
-						cursor.position= --cursor.position/recordSize * recordSize;
+						int currRecordLength;
+						pContentAdviser->GetRecordInfo( --cursor.position, &cursor.position, &currRecordLength );
+						cursor.position+=currRecordLength;
 						goto cursorCorrectlyMoveTo;
+					}
 				}
 				return 0; // to suppress CEdit's standard context menu
 			case WM_LBUTTONDOWN:
@@ -760,18 +789,15 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 							if (rcAscii.left<rcAscii.right) // to not paint over the scrollbar
 								::FillRect( dc, &rcAscii, CRideBrush::White );
 							// : drawing the Record label if the just drawn Row is the Record's first Row
-							if (fnQueryRecordLabel && !isEof){ // yes, a new Record can potentially start at the Row
-								const int recordIndex=__getRecordIndexThatStartsAtRow__(iRowA);
-								if (recordIndex>=0){ // yes, a new Record starts at the Row
-									TCHAR buf[80];
-									if (const LPCTSTR recordLabel=fnQueryRecordLabel(recordIndex,buf,sizeof(buf)/sizeof(TCHAR),param)){
-										RECT rc={ rcAscii.right+2*font.charAvgWidth, y, rcClip.right, rcClip.bottom };
-										const COLORREF textColor0=dc.SetTextColor(labelColor), bgColor0=dc.SetBkColor(COLOR_WHITE);
-											dc.DrawText( recordLabel, -1, &rc, DT_LEFT|DT_TOP );
-											dc.MoveTo( addrLength*font.charAvgWidth, y );
-											dc.LineTo( rcClip.right, y );
-										dc.SetTextColor(textColor0), dc.SetBkColor(bgColor0);
-									}
+							if (!isEof){ // yes, a new Record can potentially start at the Row
+								TCHAR buf[80];
+								if (LPCTSTR recordLabel=pContentAdviser->GetRecordLabel( __firstByteInRowToLogicalPosition__(iRowA), buf, sizeof(buf)/sizeof(TCHAR), param )){
+									RECT rc={ rcAscii.right+2*font.charAvgWidth, y, rcClip.right, rcClip.bottom };
+									const COLORREF textColor0=dc.SetTextColor(labelColor), bgColor0=dc.SetBkColor(COLOR_WHITE);
+										dc.DrawText( recordLabel, -1, &rc, DT_LEFT|DT_TOP );
+										dc.MoveTo( addrLength*font.charAvgWidth, y );
+										dc.LineTo( rcClip.right, y );
+									dc.SetTextColor(textColor0), dc.SetBkColor(bgColor0);
 								}
 							}
 						}

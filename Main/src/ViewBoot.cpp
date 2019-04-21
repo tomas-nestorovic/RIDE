@@ -139,16 +139,12 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 
 
 
-	static LPCTSTR __getBootSectorHexaEditorLabel__(int recordIndex,PTCHAR buf,BYTE bufCapacity,PVOID param){
-		return ((CBootView *)param)->chsBoot.sectorId.ToString(buf);
-	}
-
 	#define PROPGRID_WIDTH_DEFAULT	250
 
 	CBootView::CBootView(PDos dos,RCPhysicalAddress rChsBoot)
 		// ctor
 		: tab(0,0,dos,this) , splitX(PROPGRID_WIDTH_DEFAULT) , chsBoot(rChsBoot)
-		, fBoot(dos,rChsBoot) , hexaEditor(this,HEXAEDITOR_RECORD_SIZE_INFINITE,__getBootSectorHexaEditorLabel__) {
+		, fBoot(dos,rChsBoot) , hexaEditor(this) {
 	}
 
 	BEGIN_MESSAGE_MAP(CBootView,CView)

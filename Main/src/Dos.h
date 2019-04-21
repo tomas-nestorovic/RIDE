@@ -121,11 +121,13 @@
 			LPCTSTR GetErrorDesc() const;
 		};
 
-		class CFileReaderWriter sealed:public CFile{
+		class CFileReaderWriter:public CFile,public CHexaEditor::TContentAdviser{
 			const CDos *const dos;
 			const BYTE dataBeginOffsetInSector,dataEndOffsetInSector;
 			LONG fileSize;
 			LONG position;
+		protected:
+			int recordLength;
 		public:
 			const CFatPath fatPath;
 
@@ -133,12 +135,21 @@
 			CFileReaderWriter(const CDos *dos,RCPhysicalAddress chs); // ctor to read/write particular Sector in the Image (e.g. Boot Sector)
 			~CFileReaderWriter();
 
+			// CFile methods
 			DWORD GetLength() const override;
 			void SetLength(DWORD dwNewLen) override;
 			DWORD GetPosition() const override;
 			LONG Seek(LONG lOff,UINT nFrom) override;
 			UINT Read(LPVOID lpBuf,UINT nCount) override;
 			void Write(LPCVOID lpBuf,UINT nCount) override;
+
+			// CHexaEditor::TContentAdviser methods
+			void OnDisplayed() override;
+			void OnHidden() override;
+			void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength) const override;
+			int LogicalPositionToRow(int logPos,BYTE nBytesInRow) const override;
+			int RowToLogicalPosition(int row,BYTE nBytesInRow) const override;
+			LPCTSTR GetRecordLabel(int logPos,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override;
 		};
 
 		struct TBigEndianWord sealed{
@@ -244,8 +255,6 @@
 		} *PSectorStatus;
 
 		class CHexaPreview sealed:public CFilePreview{
-			static LPCTSTR __getRecordLabel__(int recordIndex,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param);
-
 			CMemFile fEmpty;
 			CFileReaderWriter *pFileRW;
 

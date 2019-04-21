@@ -65,17 +65,7 @@
 
 	CDos::CHexaPreview::CHexaEditorView::CHexaEditorView(PCDos dos,CHexaPreview *pHexaPreview)
 		// ctor
-		: CHexaEditor( pHexaPreview, dos->formatBoot.sectorLength, __getRecordLabel__ ) {
-	}
-
-	LPCTSTR CDos::CHexaPreview::__getRecordLabel__(int recordIndex,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param){
-		// populates the Buffer with label for the specified HexaEditor's Record and returns the Buffer
-		const CHexaPreview *const pHexaPreview=(CHexaPreview *)param;
-		CDos::CFatPath::PCItem pItem; DWORD nItems;
-		if (LPCTSTR err=pHexaPreview->pFileRW->fatPath.GetItems(pItem,nItems))
-			return err;
-		else
-			return (pItem+recordIndex)->chs.sectorId.ToString(labelBuffer);
+		: CHexaEditor(pHexaPreview) {
 	}
 
 	LRESULT CDos::CHexaPreview::CHexaEditorView::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){

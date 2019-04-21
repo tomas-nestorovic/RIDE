@@ -5,42 +5,53 @@
 	#define DOS		tab.dos
 	#define IMAGE	DOS->image
 
-	static WORD __getDirectoryEntrySize__(PCDos dos,CDos::PFile directory){
-		// determines and returns the DirectoryEntry size in Bytes (e.g. returns 32 for MDOS entries)
-		if (const CDos::PDirectoryTraversal pdt=dos->BeginDirectoryTraversal(directory)){
-			const WORD result=pdt->entrySize;
-			dos->EndDirectoryTraversal(pdt);
-			return result;
-		}else
-			return HEXAEDITOR_RECORD_SIZE_INFINITE;
-	}
-
-	static LPCTSTR __getRecordLabel__(int recordIndex,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param){
-		// determines and returns the DirectoryEntry description; returns NULL if description for the DirectoryEntry doesn't exist
-		LPCTSTR result=NULL; // assumption (no description exists for the DirectoryEntry)
-		const CDirEntriesView *const pdev=(CDirEntriesView *)param;
-		if (const CDos::PDirectoryTraversal pdt=pdev->DOS->BeginDirectoryTraversal(pdev->directory)){
-			while (pdt->AdvanceToNextEntry() && recordIndex>0)
-				recordIndex--;
-			if (!recordIndex) // successfully navigated to the DirectoryEntry
-				switch (pdt->entryType){
-					case CDos::TDirectoryTraversal::SUBDIR:
-					case CDos::TDirectoryTraversal::FILE:
-						result=pdev->DOS->GetFileNameWithAppendedExt( pdt->entry, labelBuffer );
-						break;
-					case CDos::TDirectoryTraversal::EMPTY:
-						result=_T("[ empty ]");
-						break;
-				}
-			pdev->DOS->EndDirectoryTraversal(pdt);
+	class CDirectoryEntriesReaderWriter sealed:public CDos::CFileReaderWriter{
+	public:
+		CDirectoryEntriesReaderWriter(const CDos *dos,CDos::PCFile directory)
+			// ctor
+			// - base
+			: CDos::CFileReaderWriter(dos,directory,true) {
+			// - determining the DirectoryEntry size in Bytes
+			if (const CDos::PDirectoryTraversal pdt=dos->BeginDirectoryTraversal(directory)){
+				recordLength=pdt->entrySize;
+				dos->EndDirectoryTraversal(pdt);
+			}else
+				recordLength=HEXAEDITOR_RECORD_SIZE_INFINITE;
 		}
-		return result;
-	}
+
+		LPCTSTR GetRecordLabel(int logPos,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override{
+			// populates the Buffer with label for the Record that STARTS at specified LogicalPosition, and returns the Buffer; returns Null if no Record starts at specified LogicalPosition
+			div_t d=div( logPos, recordLength );
+			if (!d.rem){
+				LPCTSTR result=NULL; // assumption (no description exists for the DirectoryEntry)
+				const CDirEntriesView *const pdev=(CDirEntriesView *)param;
+				if (const CDos::PDirectoryTraversal pdt=pdev->DOS->BeginDirectoryTraversal(pdev->directory)){
+					while (pdt->AdvanceToNextEntry() && d.quot>0)
+						d.quot--;
+					if (!d.quot) // successfully navigated to the DirectoryEntry
+						switch (pdt->entryType){
+							case CDos::TDirectoryTraversal::SUBDIR:
+							case CDos::TDirectoryTraversal::FILE:
+								result=pdev->DOS->GetFileNameWithAppendedExt( pdt->entry, labelBuffer );
+								break;
+							case CDos::TDirectoryTraversal::EMPTY:
+								result=_T("[ empty ]");
+								break;
+						}
+					pdev->DOS->EndDirectoryTraversal(pdt);
+				}
+				return result;
+			}else
+				return nullptr;
+		}
+	};
+
+
 
 	CDirEntriesView::CDirEntriesView(PDos dos,CDos::PFile directory)
 		// ctor
 		// - base
-		: CHexaEditor( this, __getDirectoryEntrySize__(dos,directory), __getRecordLabel__ )
+		: CHexaEditor(this)
 		// - initialization
 		, tab(0,0,dos,this)
 		, iScrollY(0)
@@ -79,7 +90,7 @@
 		if (__super::OnCreate(lpcs)==-1)
 			return -1;
 		// - displaying the content
-		f=new CDos::CFileReaderWriter(DOS,directory,true);
+		f=new CDirectoryEntriesReaderWriter(DOS,directory);
 		OnUpdate(NULL,0,NULL);
 		// - recovering the Scroll position and repainting the view (by setting its editability)
 		SetScrollPos( SB_VERT, iScrollY );
