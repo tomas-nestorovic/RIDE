@@ -73,7 +73,7 @@
 			BYTE buf[65536];
 			for( pde=directory; header.nFiles--; )
 				f.Write(buf,
-						tmpTrdos.ExportFile( *pde++, &CMemFile(buf,sizeof(buf)), -1, NULL )
+						tmpTrdos.ExportFile( *pde++, &CMemFile(buf,sizeof(buf)), -1, nullptr )
 					);
 			m_bModified=FALSE;
 			// - reopening the Image's underlying file
@@ -105,7 +105,7 @@
 				while (TCylinder n=GetCylinderCount())
 					UnformatTrack(--n,0);
 				// : instantiating the TRDOS with the highest priority in the recognition sequence
-				CTRDOS503 *pTrdos=NULL; // assumption (no TR-DOS participates in the recognition sequence)
+				CTRDOS503 *pTrdos=nullptr; // assumption (no TR-DOS participates in the recognition sequence)
 				const CDos::CRecognition recognition;
 				for( POSITION pos=recognition.__getFirstRecognizedDosPosition__(); pos; ){
 					const CDos::PCProperties p=recognition.__getNextRecognizedDos__(pos);
@@ -127,7 +127,7 @@ error:				delete pTrdos;
 					return err;
 				}
 				// : initializing empty TRDOS Image
-				pTrdos->InitializeEmptyMedium(NULL);
+				pTrdos->InitializeEmptyMedium(nullptr);
 				// : reading SCL Directory
 				TSclDirectoryItem directory[TRDOS503_FILE_COUNT_MAX],*pdi=directory;
 				const WORD nBytesOfDirectory=sclHeader.nFiles*sizeof(TSclDirectoryItem);

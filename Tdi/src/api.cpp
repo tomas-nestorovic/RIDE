@@ -19,7 +19,7 @@
 		const HWND hTab32=::CreateWindow(	WC_TABCONTROL,windowName,
 											style,
 											0,0, width,height,
-											hParent, (HMENU)id,hInstance,NULL
+											hParent, (HMENU)id,hInstance,nullptr
 										);
 		SubclassWnd(hInstance,hTab32,params);
 		return hTab32;
@@ -30,7 +30,7 @@
 		::SetWindowLong(hTabCtrl, GWL_USERDATA,
 						(LONG)new TTdiInfo( hInstance, hTabCtrl, params )
 					);
-		::InvalidateRect(hTabCtrl,NULL,FALSE);
+		::InvalidateRect(hTabCtrl,nullptr,FALSE);
 	}
 
 	CTdiCtrl::TTab::PContent CTdiCtrl::GetTabContent(HWND hTdi,int iIndex){
@@ -41,7 +41,7 @@
 			TabCtrl_GetItem(hTdi,iIndex,&ti);
 			return ((PCTabInfo)ti.lParam)->content;
 		}else
-			return NULL;
+			return nullptr;
 	}
 
 	bool WINAPI CTdiCtrl::GetCurrentTabContentRect(HWND hTdi,LPRECT pOutRect){
@@ -78,7 +78,7 @@
 		TabCtrl_InsertItem( hTdi, iIndex, &ti );
 		if (makeCurrent){
 			pTdiInfo->__switchToTab__(iIndex);
-			::InvalidateRect( hTdi, NULL, TRUE );
+			::InvalidateRect( hTdi, nullptr, TRUE );
 		}
 	}
 

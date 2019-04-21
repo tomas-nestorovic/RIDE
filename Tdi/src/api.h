@@ -11,7 +11,7 @@
 
 
 	#define TDI_TAB_CANCLOSE_ALWAYS		(CTdiCtrl::TTab::TCanBeClosed)TRUE
-	#define TDI_TAB_CANCLOSE_NEVER		NULL
+	#define TDI_TAB_CANCLOSE_NEVER		nullptr
 
 
 	class TDI_DECLSPEC CTdiCtrl sealed{

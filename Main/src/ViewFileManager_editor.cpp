@@ -17,7 +17,7 @@
 		pSingleShown=this;
 		// - determining the area dedicated for the Editor
 		CListCtrl &lv=parent.GetListCtrl();
-		LVFINDINFO lvdi={ LVFI_PARAM, NULL, (LPARAM)file };
+		LVFINDINFO lvdi={ LVFI_PARAM, nullptr, (LPARAM)file };
 		CRect rcEditorArea;
 		lv.GetSubItemRect( lv.FindItem(&lvdi), editedInformationId, LVIR_BOUNDS, rcEditorArea );
 		if (!editedInformationId)	// the width of whole File item returned for zeroth Information
@@ -61,7 +61,7 @@
 				// . base
 				::CallWindowProc(pSingleShown->wndProc0,hEditor,msg,wParam,lParam);
 				// . destroying
-				delete pSingleShown; pSingleShown=NULL;
+				delete pSingleShown; pSingleShown=nullptr;
 				return 0;
 		}
 		return ::CallWindowProc(pSingleShown->wndProc0,hEditor,msg,wParam,lParam);
@@ -93,7 +93,7 @@
 
 	void CFileManagerView::CEditorBase::Repaint() const{
 		// repaints the Editor
-		::InvalidateRect( hEditor, NULL, TRUE );
+		::InvalidateRect( hEditor, nullptr, TRUE );
 	}
 
 
@@ -116,7 +116,7 @@
 	CFileManagerView::PEditorBase CFileManagerView::__createStdEditorWithEllipsis__(CDos::PFile file,CPropGridCtrl::TOnEllipsisButtonClicked buttonAction) const{
 		// creates and returns an Editor that contains only PropertyGrid's standard EllipsisButton and misses the main control; the EllipsisButton triggers an edit dialog with given ID
 		return __createStdEditor__(	file, file, 0,
-									CPropGridCtrl::TCustom::DefineEditor( 0, NULL, NULL, buttonAction )
+									CPropGridCtrl::TCustom::DefineEditor( 0, nullptr, nullptr, buttonAction )
 								);
 	}
 
@@ -170,7 +170,7 @@
 			CEditorBase::pSingleShown=(PEditorBase)::SetWindowLong( hEdit, GWL_WNDPROC, (long)__editLabel_wndProc__ );
 		}
 		// - emptying the clipboard
-		if (ownedDataSource) ::OleSetClipboard(NULL);
+		if (ownedDataSource) ::OleSetClipboard(nullptr);
 	}
 	LRESULT WINAPI CFileManagerView::__editLabel_wndProc__(HWND hEdit,UINT msg,WPARAM wParam,LPARAM lParam){
 		// window procedure of label Editor (in DisplayMode other than Report)
@@ -247,5 +247,5 @@
 			else
 				Utils::Information(FILE_MANAGER_ERROR_RENAMING,err);
 		}
-		CEditorBase::pSingleShown=NULL;
+		CEditorBase::pSingleShown=nullptr;
 	}

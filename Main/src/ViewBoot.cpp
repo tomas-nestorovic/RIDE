@@ -22,29 +22,29 @@
 		// marking the Boot Sector as dirty
 		const PDos dos=CDos::__getFocused__();
 		dos->FlushToBootSector(); // marking the Boot Sector as dirty
-		dos->image->UpdateAllViews(NULL);
+		dos->image->UpdateAllViews(nullptr);
 		return true;
 	}
 
 	bool WINAPI CBootView::__bootSectorModifiedA__(CPropGridCtrl::PCustomParam,LPCSTR,short){
 		// marking the Boot Sector as dirty
-		return __bootSectorModified__(NULL,0);
+		return __bootSectorModified__(nullptr,0);
 	}
 
 	bool WINAPI CBootView::__bootSectorModified__(CPropGridCtrl::PCustomParam,bool){
 		// marking the Boot Sector as dirty
-		return __bootSectorModified__(NULL,0);
+		return __bootSectorModified__(nullptr,0);
 	}
 
 	bool WINAPI CBootView::__bootSectorModified__(CPropGridCtrl::PCustomParam,CPropGridCtrl::TEnum::UValue){
 		// marking the Boot Sector as dirty
-		return __bootSectorModified__(NULL,0);
+		return __bootSectorModified__(nullptr,0);
 	}
 
 	void WINAPI CBootView::__updateBootView__(CPropGridCtrl::PCustomParam){
 		// refreshes any current View
 		const short iCurSel=CPropGridCtrl::GetCurrentlySelectedProperty( pCurrentlyShown->propGrid.m_hWnd );
-			CDos::__getFocused__()->image->UpdateAllViews(NULL);
+			CDos::__getFocused__()->image->UpdateAllViews(nullptr);
 		CPropGridCtrl::SetCurrentlySelectedProperty( pCurrentlyShown->propGrid.m_hWnd, iCurSel );
 	}
 
@@ -63,7 +63,7 @@
 			// . accepting the new format
 			dos->formatBoot=fmt;
 			dos->FlushToBootSector();
-			dos->image->UpdateAllViews(NULL);
+			dos->image->UpdateAllViews(nullptr);
 			__informationWithCheckableShowNoMore__(IMAGE_STRUCTURE_UNAFFECTED,(LPCTSTR)criticalValueId);
 			return true;
 		}else
@@ -127,7 +127,7 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 					Utils::Information(DOS_ERR_CANNOT_ACCEPT_VALUE,err,DOS_MSG_HIT_ESC);
 				return false;
 			}
-			dos->image->UpdateAllViews(NULL);
+			dos->image->UpdateAllViews(nullptr);
 			return true;
 		}else
 			return false;
@@ -194,15 +194,15 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 			content->CreateStatic(this,1,2,WS_CHILD|WS_VISIBLE|WS_CLIPSIBLINGS);//WS_CLIPCHILDREN|
 			//content->CreateView(0,0,RUNTIME_CLASS(CPropertyGridView),CSize(splitX,0),&cc);
 			//const HWND hPropGrid=content->GetDlgItem( content->IdFromRowCol(0,0) )->m_hWnd;
-				propGrid.CreateEx( 0, CPropGridCtrl::GetWindowClass(app.m_hInstance), NULL, AFX_WS_DEFAULT_VIEW&~WS_BORDER, 0,0,PROPGRID_WIDTH_DEFAULT,300, content->m_hWnd, (HMENU)content->IdFromRowCol(0,0) );
+				propGrid.CreateEx( 0, CPropGridCtrl::GetWindowClass(app.m_hInstance), nullptr, AFX_WS_DEFAULT_VIEW&~WS_BORDER, 0,0,PROPGRID_WIDTH_DEFAULT,300, content->m_hWnd, (HMENU)content->IdFromRowCol(0,0) );
 				content->SetColumnInfo(0,PROPGRID_WIDTH_DEFAULT*Utils::LogicalUnitScaleFactor,0);
 			//content->CreateView(0,1,RUNTIME_CLASS(CHexaEditor),CSize(),&cc); // commented out as created manually below
 				hexaEditor.Reset( &fBoot, bootSectorDataRealLength, bootSectorDataRealLength );
-				hexaEditor.Create( NULL, NULL, AFX_WS_DEFAULT_VIEW&~WS_BORDER|WS_CLIPSIBLINGS, CFrameWnd::rectDefault, content, content->IdFromRowCol(0,1) );
-				//hexaEditor.CreateEx( 0, HEXAEDITOR_BASE_CLASS, NULL, AFX_WS_DEFAULT_VIEW&~WS_BORDER, RECT(), NULL, content->IdFromRowCol(0,1), NULL );
+				hexaEditor.Create( nullptr, nullptr, AFX_WS_DEFAULT_VIEW&~WS_BORDER|WS_CLIPSIBLINGS, CFrameWnd::rectDefault, content, content->IdFromRowCol(0,1) );
+				//hexaEditor.CreateEx( 0, HEXAEDITOR_BASE_CLASS, nullptr, AFX_WS_DEFAULT_VIEW&~WS_BORDER, RECT(), nullptr, content->IdFromRowCol(0,1), nullptr );
 		OnSize( SIZE_RESTORED, lpcs->cx, lpcs->cy );
 		// - populating the PropertyGrid with values from Boot Sector
-		OnUpdate(NULL,0,NULL);
+		OnUpdate(nullptr,0,nullptr);
 		// - manually setting that none of the Splitter cells is the actual View
 		//nop (see OnKillFocus)
 		// - currently it's this Boot that's displayed
@@ -216,7 +216,7 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 		WORD bootSectorDataRealLength=0; // initializing just in case the Boot Sector is not found
 		const PSectorData boot=IMAGE->GetSectorData(chsBoot,&bootSectorDataRealLength);
 		// - clearing the PropertyGrid
-		CPropGridCtrl::RemoveProperty( propGrid.m_hWnd, NULL );
+		CPropGridCtrl::RemoveProperty( propGrid.m_hWnd, nullptr );
 		// - populating the PropertyGrid with values from the Boot Sector (if any found)
 		if (boot){
 			// Boot Sector found - populating the PropertyGrid
@@ -225,10 +225,10 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 			::ZeroMemory(&cbp,sizeof(cbp));
 			GetCommonBootParameters(cbp,boot);
 			const TMedium::PCProperties props=TMedium::GetProperties(DOS->formatBoot.mediumType);
-			const HANDLE hGeometry= cbp.geometryCategory ? CPropGridCtrl::AddCategory(propGrid.m_hWnd,NULL,_T("Geometry")) : 0;
+			const HANDLE hGeometry= cbp.geometryCategory ? CPropGridCtrl::AddCategory(propGrid.m_hWnd,nullptr,_T("Geometry")) : 0;
 			if (hGeometry){
 				if (cbp.chs){
-					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.nCylinders, NULL, __updateFatAfterChangingCylinderCount__, props->cylinderRange.iMax, _T("Cylinders") );
+					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.nCylinders, nullptr, __updateFatAfterChangingCylinderCount__, props->cylinderRange.iMax, _T("Cylinders") );
 					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.nHeads, CRITICAL_VALUE_SIDES_COUNT, __confirmCriticalValueInBoot__, props->headRange.iMax, _T("Heads") );
 					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.nSectors, CRITICAL_VALUE_SECTORS_COUNT, __confirmCriticalValueInBoot__, min(props->sectorRange.iMax,DOS->properties->nSectorsOnTrackMax), _T("Sectors/track") );
 				}
@@ -240,7 +240,7 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 											);
 				}
 			}
-			const HANDLE hVolume= cbp.volumeCategory ? CPropGridCtrl::AddCategory(propGrid.m_hWnd,NULL,_T("Volume")) : 0;
+			const HANDLE hVolume= cbp.volumeCategory ? CPropGridCtrl::AddCategory(propGrid.m_hWnd,nullptr,_T("Volume")) : 0;
 			if (hVolume){
 				if (cbp.label.length)
 					CPropGridCtrl::AddProperty(	propGrid.m_hWnd, hVolume, _T("Label"),
@@ -260,7 +260,7 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 		}else
 			// Boot Sector not found - informing through PropertyGrid
 			CPropGridCtrl::EnableProperty(	propGrid.m_hWnd,
-											CPropGridCtrl::AddProperty(	propGrid.m_hWnd, NULL,
+											CPropGridCtrl::AddProperty(	propGrid.m_hWnd, nullptr,
 																		_T("Boot sector"), "Not found!", -1,
 																		CPropGridCtrl::TString::DefineFixedLengthEditorA()
 																	),
@@ -275,7 +275,7 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 
 	afx_msg void CBootView::OnSize(UINT nType,int cx,int cy){
 		// window size changed
-		content->SetWindowPos( NULL, 0,0, cx,cy, SWP_NOZORDER|SWP_NOMOVE );
+		content->SetWindowPos( nullptr, 0,0, cx,cy, SWP_NOZORDER|SWP_NOMOVE );
 	}
 
 	afx_msg void CBootView::OnKillFocus(CWnd *newFocus){
@@ -295,7 +295,7 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 		// - base
 		CView::OnDestroy();
 		// - no Boot is currently being displayed
-		pCurrentlyShown=NULL;
+		pCurrentlyShown=nullptr;
 	}
 
 	afx_msg void CBootView::__toggleWriteProtection__(){
@@ -304,7 +304,7 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 		__updateLookOfControls__();
 	}
 	void CBootView::__updateLookOfControls__(){
-		CPropGridCtrl::EnableProperty( propGrid.m_hWnd, NULL, !IMAGE->IsWriteProtected() );
+		CPropGridCtrl::EnableProperty( propGrid.m_hWnd, nullptr, !IMAGE->IsWriteProtected() );
 		hexaEditor.SetEditable( !IMAGE->IsWriteProtected() );
 	}
 

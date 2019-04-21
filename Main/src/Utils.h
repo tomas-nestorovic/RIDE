@@ -45,20 +45,20 @@ namespace Utils{
 	extern const float LogicalUnitScaleFactor;
 
 	void FatalError(LPCTSTR text);
-	void FatalError(LPCTSTR text,LPCTSTR causeOfError,LPCTSTR consequence=NULL);
-	void FatalError(LPCTSTR text,TStdWinError causeOfError,LPCTSTR consequence=NULL);
+	void FatalError(LPCTSTR text,LPCTSTR causeOfError,LPCTSTR consequence=nullptr);
+	void FatalError(LPCTSTR text,TStdWinError causeOfError,LPCTSTR consequence=nullptr);
 	void Information(LPCTSTR text);
-	void Information(LPCTSTR text,LPCTSTR causeOfError,LPCTSTR consequence=NULL);
-	void Information(LPCTSTR text,TStdWinError causeOfError,LPCTSTR consequence=NULL);
+	void Information(LPCTSTR text,LPCTSTR causeOfError,LPCTSTR consequence=nullptr);
+	void Information(LPCTSTR text,TStdWinError causeOfError,LPCTSTR consequence=nullptr);
 	bool InformationWithCheckBox(LPCTSTR textInformation,LPCTSTR checkBoxCaption);
 	void InformationWithCheckableShowNoMore(LPCTSTR text,LPCTSTR sectionId,LPCTSTR messageId);
 	bool InformationOkCancel(LPCTSTR text);
 	bool QuestionYesNo(LPCTSTR text,UINT defaultButton);
 	BYTE QuestionYesNoCancel(LPCTSTR text,UINT defaultButton);
-	BYTE QuestionYesNoCancel(LPCTSTR text,UINT defaultButton,LPCTSTR causeOfError,LPCTSTR consequence=NULL);
-	BYTE QuestionYesNoCancel(LPCTSTR text,UINT defaultButton,TStdWinError causeOfError,LPCTSTR consequence=NULL);
+	BYTE QuestionYesNoCancel(LPCTSTR text,UINT defaultButton,LPCTSTR causeOfError,LPCTSTR consequence=nullptr);
+	BYTE QuestionYesNoCancel(LPCTSTR text,UINT defaultButton,TStdWinError causeOfError,LPCTSTR consequence=nullptr);
 	BYTE AbortRetryIgnore(LPCTSTR text,UINT defaultButton);
-	BYTE AbortRetryIgnore(LPCTSTR text,TStdWinError causeOfError,UINT defaultButton,LPCTSTR consequence=NULL);
+	BYTE AbortRetryIgnore(LPCTSTR text,TStdWinError causeOfError,UINT defaultButton,LPCTSTR consequence=nullptr);
 	BYTE AbortRetryIgnore(TStdWinError causeOfError,UINT defaultButton);
 	bool RetryCancel(LPCTSTR text);
 	bool RetryCancel(TStdWinError causeOfError);

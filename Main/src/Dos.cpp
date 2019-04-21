@@ -250,7 +250,7 @@ reportError:Utils::Information(buf);
 			formatBoot.nCylinders++; // because Cylinders numbered from zero
 			InitializeEmptyMedium(&rd.params); // DOS-specific initialization of newly formatted Medium
 			if (dynamic_cast<CFDD *>(image)) // if formatted on floppy Drive ...
-				if (!image->OnSaveDocument(NULL)) // ... immediately saving all Modified Sectors (Boot, FAT, Dir,...)
+				if (!image->OnSaveDocument(nullptr)) // ... immediately saving all Modified Sectors (Boot, FAT, Dir,...)
 					return ::GetLastError();
 		}else{
 			// formatted only selected Cylinders
@@ -264,7 +264,7 @@ reportError:Utils::Information(buf);
 				if (!__addStdTracksToFatAsEmpty__(n,bufCylinders,bufHeads))
 					Utils::Information(FAT_SECTOR_UNMODIFIABLE, err=::GetLastError() );
 		}
-		image->UpdateAllViews(NULL); // although updated already in FormatTracks, here calling too as FormatBoot might have changed since then
+		image->UpdateAllViews(nullptr); // although updated already in FormatTracks, here calling too as FormatBoot might have changed since then
 		::SetLastError(err);
 		return ERROR_SUCCESS;
 	}
@@ -397,7 +397,7 @@ reportError:Utils::Information(buf);
 		if (rd.removeTracksFromFat)
 			if (!__removeStdTracksFromFat__(n,bufCylinders,bufHeads))
 				Utils::Information(FAT_SECTOR_UNMODIFIABLE, err=::GetLastError() );
-		image->UpdateAllViews(NULL); // although updated already in UnformatTracks, here calling too as FormatBoot might have changed since then
+		image->UpdateAllViews(nullptr); // although updated already in UnformatTracks, here calling too as FormatBoot might have changed since then
 		return ERROR_SUCCESS;
 	}
 	struct TUnfmtParams sealed{
@@ -605,7 +605,7 @@ reportError:Utils::Information(buf);
 			THREAD_PRIORITY_BELOW_NORMAL
 		).CarryOut( 1+image->GetCylinderCount() ); // "1+" = to not terminate the action prelimiary when having processed the last Cylinder in Image
 		// - updating Views
-		image->UpdateAllViews(NULL);
+		image->UpdateAllViews(nullptr);
 		return true;
 	}
 
@@ -649,7 +649,7 @@ reportError:Utils::Information(buf);
 
 	bool CDos::HasFileNameAndExt(PCFile file,LPCTSTR fileName,LPCTSTR fileExt) const{
 		// True <=> given File has the name and extension as specified, otherwise False
-		ASSERT(fileName!=NULL && fileExt!=NULL);
+		ASSERT(fileName!=nullptr && fileExt!=nullptr);
 		TCHAR bufName[MAX_PATH],bufExt[MAX_PATH];
 		GetFileNameAndExt( file, bufName, bufExt );
 		return !fnCompareNames(fileName,bufName) && !fnCompareNames(fileExt,bufExt);
@@ -662,12 +662,12 @@ reportError:Utils::Information(buf);
 
 	DWORD CDos::GetFileSize(PCFile file) const{
 		// a wrapper around the virtual GetFileSize with DefaultOption
-		return GetFileSize(file,NULL,NULL);
+		return GetFileSize(file,nullptr,nullptr);
 	}
 
 	DWORD CDos::GetFileOfficialSize(PCFile file) const{
 		// returns the number of Bytes in data portion of specified File (e.g. TR-DOS yet stores some extra information "after" official data - these are NOT counted in here!)
-		return GetFileSize(file,NULL,NULL,TGetFileSizeOptions::OfficialDataLength);
+		return GetFileSize(file,nullptr,nullptr,TGetFileSizeOptions::OfficialDataLength);
 	}
 
 	DWORD CDos::GetFileOccupiedSize(PCFile file) const{
@@ -679,7 +679,7 @@ reportError:Utils::Information(buf);
 
 	DWORD CDos::GetFileSizeOnDisk(PCFile file) const{
 		// determines and returns how many Bytes the specified File actually occupies on disk
-		return GetFileSize(file,NULL,NULL,TGetFileSizeOptions::SizeOnDisk);
+		return GetFileSize(file,nullptr,nullptr,TGetFileSizeOptions::SizeOnDisk);
 	}
 
 	bool CDos::IsDirectory(PCFile file) const{
@@ -696,7 +696,7 @@ reportError:Utils::Information(buf);
 			return LOG_MESSAGE(err);
 		else{
 			BYTE nBytesReservedBeforeData;
-			DWORD nDataBytesToExport=GetFileSize(file,&nBytesReservedBeforeData,NULL);
+			DWORD nDataBytesToExport=GetFileSize(file,&nBytesReservedBeforeData,nullptr);
 			nDataBytesToExport=min(nDataBytesToExport,nMaxDataBytesToExport);
 			div_t d=div((int)nBytesReservedBeforeData,(int)formatBoot.sectorLength-properties->dataBeginOffsetInSector-properties->dataEndOffsetInSector);
 			item+=d.quot, n-=d.quot; // skipping Sectors from which not read thanks to the NumberOfBytesReservedBeforeData
@@ -719,13 +719,13 @@ reportError:Utils::Information(buf);
 							nDataBytesToExport-=w, d.rem=0;
 						}else{
 							fOut->Write(sectorData+properties->dataBeginOffsetInSector+d.rem,nDataBytesToExport);
-							return NULL;
+							return nullptr;
 						}
 					}else
 						return LOG_MESSAGE(_T("Data sector not found or read with CRC error."));
 			}
 		}
-		return NULL;
+		return nullptr;
 	}
 
 	PTCHAR CDos::GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const{
@@ -748,14 +748,14 @@ reportError:Utils::Information(buf);
 		}else{
 			// exporting to another RIDE instance; substituting non-alphanumeric characters with "URL-like" escape sequences
 			TCHAR tmp[MAX_PATH],*pOutChar=buf;
-			GetFileNameAndExt(file,tmp,NULL);
+			GetFileNameAndExt(file,tmp,nullptr);
 			for( LPCTSTR pInChar=tmp; const TCHAR c=*pInChar++; )
 				if (::isalpha((unsigned char)c))
 					*pOutChar++=c;
 				else
 					pOutChar+=::wsprintf( pOutChar, _T("%%%02x"), (unsigned char)c );
 			*pOutChar++='.';
-			GetFileNameAndExt(file,NULL,tmp);
+			GetFileNameAndExt(file,nullptr,tmp);
 			for( LPCTSTR pInChar=tmp; const TCHAR c=*pInChar++; )
 				if (::isalpha((unsigned char)c))
 					*pOutChar++=c;
@@ -781,10 +781,10 @@ reportError:Utils::Information(buf);
 
 	TStdWinError CDos::__importFileData__(CFile *f,PFile fDesc,LPCTSTR fileName,LPCTSTR fileExt,DWORD fileSize,PFile &rFile,CFatPath &rFatPath){
 		// imports given File into the disk; returns Windows standard i/o error
-		ASSERT(fileName!=NULL && fileExt!=NULL);
+		ASSERT(fileName!=nullptr && fileExt!=nullptr);
 		// - making sure that the File with given NameAndExtension doesn't exist in current Directory
 		LOG_FILE_ACTION(this,fDesc,_T("import"));
-		rFile=NULL; // assumption (cannot import the File)
+		rFile=nullptr; // assumption (cannot import the File)
 		const PDirectoryTraversal pdt=BeginDirectoryTraversal();
 			if (!pdt) return LOG_ERROR(ERROR_PATH_NOT_FOUND);
 			while (pdt->AdvanceToNextEntry())
@@ -942,8 +942,8 @@ finished:
 
 	CDos::PFile CDos::__findFile__(PCFile directory,LPCTSTR fileName,LPCTSTR fileExt,PCFile ignoreThisFile) const{
 		// finds and returns a File with given NameAndExtension; returns Null if such File doesn't exist
-		ASSERT(fileName!=NULL && fileExt!=NULL);
-		PFile result=NULL; // assumption (File with given NameAndExtension not found)
+		ASSERT(fileName!=nullptr && fileExt!=nullptr);
+		PFile result=nullptr; // assumption (File with given NameAndExtension not found)
 		if (const PDirectoryTraversal pdt=BeginDirectoryTraversal(directory)){
 			while (pdt->AdvanceToNextEntry())
 				if (pdt->entryType==TDirectoryTraversal::FILE || pdt->entryType==TDirectoryTraversal::SUBDIR)
@@ -1109,7 +1109,7 @@ finished:
 
 	CDos::PFile CDos::TDirectoryTraversal::AllocateNewEntry(){
 		// allocates and returns new entry at the end of current Directory and returns; returns Null if new entry cannot be allocated (e.g. because disk is full)
-		return NULL; // Null = cannot allocate new Empty entry (aka. this Directory has fixed number of entries)
+		return nullptr; // Null = cannot allocate new Empty entry (aka. this Directory has fixed number of entries)
 	}
 
 	CDos::PFile CDos::TDirectoryTraversal::GetNextFileOrSubdir(){
@@ -1122,7 +1122,7 @@ finished:
 				case TDirectoryTraversal::WARNING:
 					return (PFile)-1; // "some" non-zero value to indicate that whole Directory has not yet been traversed
 			}
-		return NULL;
+		return nullptr;
 	}
 
 	CDos::PDirectoryTraversal CDos::BeginDirectoryTraversal() const{

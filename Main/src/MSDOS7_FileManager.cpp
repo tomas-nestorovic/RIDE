@@ -51,9 +51,9 @@
 		WORD iconId;
 		LPCTSTR extensions; // deliminated by comma
 	} ICON_INFOS[MSDOS7_FILE_ICONS_COUNT]={
-		4	,NULL, // folder closed
-		5	,NULL, // folder open
-		1	,NULL, // file general
+		4	,nullptr, // folder closed
+		5	,nullptr, // folder open
+		1	,nullptr, // file general
 		152	,_T("txt,"),
 		2	,_T("rtf,doc,pdf,"),
 		153	,_T("bat,"),
@@ -103,7 +103,7 @@
 			return icons[ICON_FOLDER_OPEN];
 		else{
 			TCHAR bufExt[MAX_PATH];
-			DOS->GetFileNameAndExt(de,NULL,bufExt);
+			DOS->GetFileNameAndExt(de,nullptr,bufExt);
 			if (*bufExt){
 				::lstrcat( ::CharLower(bufExt), _T(",") );
 				for( BYTE n=MSDOS7_FILE_ICONS_COUNT; --n>ICON_FILE_GENERAL; )
@@ -139,7 +139,7 @@
 		// . COLUMN: icon, name a extension
 		const float dpiScaleFactor=Utils::LogicalUnitScaleFactor;
 		BYTE attr=de->shortNameEntry.attributes;
-		::DrawIconEx( dc, r.left,r.top, __getIcon__(de), 16*dpiScaleFactor,16*dpiScaleFactor, 0, NULL, DI_NORMAL|DI_COMPAT );
+		::DrawIconEx( dc, r.left,r.top, __getIcon__(de), 16*dpiScaleFactor,16*dpiScaleFactor, 0, nullptr, DI_NORMAL|DI_COMPAT );
 		r.left+=20*dpiScaleFactor;
 		TCHAR buf[MAX_PATH];
 		r.right=*tabs++;
@@ -241,7 +241,7 @@
 			case INFORMATION_ATTRIBUTES:
 				return __createStdEditorWithEllipsis__( file, __editFileAttributes__ );
 			default:
-				return NULL;
+				return nullptr;
 		}
 	}
 
@@ -266,9 +266,9 @@
 				bufNameCopy[MAX_PATH]='\0'; // trimming to maximum number of characters
 			}
 			// . finding if a file with given name already exists
-			if (!((CMSDOS7 *)DOS)->__findFileInCurrDir__(bufNameCopy,bufExt,NULL))
+			if (!((CMSDOS7 *)DOS)->__findFileInCurrDir__(bufNameCopy,bufExt,nullptr))
 				// generated a unique Name for the next File copy - returning the final export name and extension
 				return ((CMSDOS7 *)DOS)->__getFileExportNameAndExt__( bufNameCopy, bufExt, shellCompliant, pOutBuffer );
 		}
-		return NULL; // the Name for the next File copy cannot be generated
+		return nullptr; // the Name for the next File copy cannot be generated
 	}

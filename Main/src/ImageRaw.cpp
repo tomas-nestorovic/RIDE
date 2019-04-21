@@ -18,7 +18,7 @@
 		: CImage(properties,hasEditableSettings)
 		, trackAccessScheme(TTrackScheme::BY_CYLINDERS)
 		, nCylinders(0) , nSectors(0) // = not initialized - see SetMediumTypeAndGeometry
-		, bufferOfCylinders(NULL) , sizeWithoutGeometry(0) {
+		, bufferOfCylinders(nullptr) , sizeWithoutGeometry(0) {
 		Reset(); // to be correctly initialized
 	}
 
@@ -58,7 +58,7 @@
 		// disposes (unformats) the specified Cylinder (if previously formatted)
 		if (bufferOfCylinders)
 			if (const PVOID p=bufferOfCylinders[cyl]) // Cylinder formatted
-				::free(p), bufferOfCylinders[cyl]=NULL;
+				::free(p), bufferOfCylinders[cyl]=nullptr;
 	}
 
 	void CImageRaw::__freeBufferOfCylinders__(){
@@ -66,7 +66,7 @@
 		if (bufferOfCylinders){
 			while (nCylinders)
 				__freeCylinder__( --nCylinders );
-			::free(bufferOfCylinders), bufferOfCylinders=NULL;
+			::free(bufferOfCylinders), bufferOfCylinders=nullptr;
 		}
 	}
 
@@ -74,7 +74,7 @@
 		// finds and returns buffered data of given Sector (or Null if not yet buffered; note that returning Null does NOT imply that the Sector doesn't exist in corresponding Track!)
 		if (const PSectorData cylinderData=(PSectorData)bufferOfCylinders[cyl])
 			return (PSectorData)cylinderData+(head*nSectors+sectorId->sector-firstSectorNumber)*sectorLength;
-		return NULL;
+		return nullptr;
 	}
 
 	BOOL CImageRaw::OnOpenDocument(LPCTSTR lpszPathName){
@@ -131,14 +131,14 @@
 				for( chs.cylinder=0; chs.cylinder<nCylinders; chs.cylinder++ )
 					for( chs.sectorId.cylinder=chs.cylinder,chs.head=0; chs.head<nHeads; chs.head++ ){
 						chs.sectorId.side=sideMap[chs.head];
-						__saveTrackToCurrentPositionInFile__( savingToCurrentFile?NULL:&fTmp, chs );
+						__saveTrackToCurrentPositionInFile__( savingToCurrentFile?nullptr:&fTmp, chs );
 					}
 				break;
 			case TTrackScheme::BY_SIDES:
 				for( chs.head=0; chs.head<nHeads; chs.head++ )
 					for( chs.sectorId.side=sideMap[chs.head],chs.cylinder=0; chs.cylinder<nCylinders; chs.cylinder++ ){
 						chs.sectorId.cylinder=chs.cylinder;
-						__saveTrackToCurrentPositionInFile__( savingToCurrentFile?NULL:&fTmp, chs );
+						__saveTrackToCurrentPositionInFile__( savingToCurrentFile?nullptr:&fTmp, chs );
 					}
 				break;
 			default:
@@ -191,7 +191,7 @@
 
 	void CImageRaw::GetTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses){
 		// populates output buffers with specified Sectors' data, usable lengths, and FDC statuses; ALWAYS attempts to buffer all Sectors - caller is then to sort out eventual read errors (by observing the FDC statuses); caller can call ::GetLastError to discover the error for the last Sector in the input list
-		ASSERT( outBufferData!=NULL && outBufferLengths!=NULL && outFdcStatuses!=NULL );
+		ASSERT( outBufferData!=nullptr && outBufferLengths!=nullptr && outFdcStatuses!=nullptr );
 		TStdWinError err=ERROR_SUCCESS; // assumption (all Sectors data retrieved successfully)
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (cyl<nCylinders && head<nHeads)
@@ -232,7 +232,7 @@
 					}
 				}else{
 					// Sector with the given ID not found in the Track
-					*outBufferData++=NULL;
+					*outBufferData++=nullptr;
 					outBufferLengths++, *outFdcStatuses++=TFdcStatus::SectorNotFound;
 				}
 				nSectors--, bufferId++;
@@ -240,7 +240,7 @@
 		else
 trackNotFound:
 			while (nSectors-->0)
-				*outBufferData++=NULL, *outFdcStatuses++=TFdcStatus::SectorNotFound;
+				*outBufferData++=nullptr, *outFdcStatuses++=TFdcStatus::SectorNotFound;
 		::SetLastError( *--outBufferData ? err : ERROR_SECTOR_NOT_FOUND );
 	}
 

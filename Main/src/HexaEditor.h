@@ -8,12 +8,12 @@
 	class CHexaEditor:public CEditView{
 	public:
 		typedef struct TContentAdviser{
-			virtual void OnDisplayed()=NULL;
-			virtual void OnHidden()=NULL;
-			virtual void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength) const=NULL;
-			virtual int LogicalPositionToRow(int logPos,BYTE nBytesInRow) const=NULL;
-			virtual int RowToLogicalPosition(int row,BYTE nBytesInRow) const=NULL;
-			virtual LPCTSTR GetRecordLabel(int logPos,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const=NULL;
+			virtual void OnDisplayed()=0;
+			virtual void OnHidden()=0;
+			virtual void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength) const=0;
+			virtual int LogicalPositionToRow(int logPos,BYTE nBytesInRow) const=0;
+			virtual int RowToLogicalPosition(int row,BYTE nBytesInRow) const=0;
+			virtual LPCTSTR GetRecordLabel(int logPos,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const=0;
 		} *PContentAdviser;
 
 		#pragma pack(1)
@@ -78,7 +78,7 @@
 		void PostNcDestroy() override sealed;
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 	public:
-		CHexaEditor(PVOID param,PCSubmenuItem customSelectSubmenu=NULL,PCSubmenuItem customGotoSubmenu=NULL);
+		CHexaEditor(PVOID param,PCSubmenuItem customSelectSubmenu=nullptr,PCSubmenuItem customGotoSubmenu=nullptr);
 		~CHexaEditor();
 
 		void SetEditable(bool _editable);

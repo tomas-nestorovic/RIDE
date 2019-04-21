@@ -13,7 +13,7 @@
 	#define MSDOS7_FAT_CLUSTER_EMPTY	0x0
 	#define MSDOS7_FAT_CLUSTER_EOF		0x0ffffff8
 
-	#define MSDOS7_DIR_ROOT			NULL
+	#define MSDOS7_DIR_ROOT			nullptr
 	#define MSDOS7_DIR_DOT			0x2020202e
 	#define MSDOS7_DIR_DOTDOT		0x20202e2e
 

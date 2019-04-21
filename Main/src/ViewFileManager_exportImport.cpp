@@ -30,11 +30,11 @@
 		DelaySetData( CRideApp::cfPerformedDropEffect );
 		// - composing the list of Files to Copy/Cut - but in reality, transferred will be only Files that will be actually selected
 		//DelayRenderData( CRideApp::cfDescriptor );	// commented out because the list would be composed while it might have already been switched to another directory (and current file selection would be lost)
-		FORMATETC etc={ CRideApp::cfDescriptor, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
-		HGLOBAL hDesc=NULL;
+		FORMATETC etc={ CRideApp::cfDescriptor, nullptr, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
+		HGLOBAL hDesc=nullptr;
 			OnRenderGlobalData( &etc, &hDesc ); // generating File names for non-RIDE targets (e.g. Explorer)
 		CacheGlobalData( CRideApp::cfDescriptor, hDesc );
-		etc.cfFormat=CRideApp::cfRideFileList, hDesc=NULL;
+		etc.cfFormat=CRideApp::cfRideFileList, hDesc=nullptr;
 			OnRenderGlobalData( &etc, &hDesc ); // generating File names for another RIDE instance
 		CacheGlobalData( CRideApp::cfRideFileList, hDesc );
 		// - File data rendered later on background
@@ -45,7 +45,7 @@
 	CFileManagerView::COleVirtualFileDataSource::~COleVirtualFileDataSource(){
 		// dtor
 		if (fileManager->ownedDataSource==this)
-			fileManager->ownedDataSource=NULL; // FileManager ceases to be the Owner of this DataSource
+			fileManager->ownedDataSource=nullptr; // FileManager ceases to be the Owner of this DataSource
 	}
 
 
@@ -63,7 +63,7 @@
 			lpfd->dwFlags=FD_ATTRIBUTES|FD_FILESIZE;
 			::lstrcpy( lpfd->cFileName, relativeDir );
 			lpfd->dwFileAttributes=fileManager->DOS->GetAttributes(file);
-			lpfd->nFileSizeLow=fileManager->DOS->ExportFile(file,NULL,-1,NULL); // getting only the export size of Files, not actually exporting any Files
+			lpfd->nFileSizeLow=fileManager->DOS->ExportFile(file,nullptr,-1,nullptr); // getting only the export size of Files, not actually exporting any Files
 			lpfd++;
 			listOfFiles.AddTail(file);
 		}
@@ -108,7 +108,7 @@
 
 	bool CFileManagerView::COleVirtualFileDataSource::__isInList__(CDos::PCFile file) const{
 		// True <=> specified File is in the list of Files to transfer, otherwise False
-		return listOfFiles.Find((PVOID)file)!=NULL;
+		return listOfFiles.Find((PVOID)file)!=nullptr;
 	}
 
 	BOOL CFileManagerView::COleVirtualFileDataSource::OnRenderData(LPFORMATETC lpFormatEtc,LPSTGMEDIUM lpStgMedium){
@@ -128,7 +128,7 @@
 			*relativeDir='\0';
 			UINT nFilesToExport=0;
 			for( POSITION pos=fileManager->GetFirstSelectedFilePosition(); pos; )
-				nFilesToExport+=__addFileToExport__( relativeDir, fileManager->GetNextSelectedFile(pos), NULL );
+				nFilesToExport+=__addFileToExport__( relativeDir, fileManager->GetNextSelectedFile(pos), nullptr );
 			// . allocating the FileGroupDescriptor structure
 			if (!*phGlobal)
 				*phGlobal=::GlobalAlloc( GPTR, sizeof(FILEGROUPDESCRIPTOR)+(nFilesToExport-1)*sizeof(FILEDESCRIPTOR) ); // GHND = allocated memory zeroed
@@ -161,7 +161,7 @@
 		if (lpFormatEtc->cfFormat==CRideApp::cfContent){
 			// extracting virtual File's data, i.e. pretending "as if this was a real File" (i.e. CFSTR_FILECONTENTS)
  			const CDos::PCFile file=(CDos::PCFile)__getFile__(lpFormatEtc->lindex);
-			if (const DWORD fileExportSize=fileManager->DOS->ExportFile(file,NULL,-1,NULL)){
+			if (const DWORD fileExportSize=fileManager->DOS->ExportFile(file,nullptr,-1,nullptr)){
 				pFile->SetLength(fileExportSize);
 				LPCTSTR errMsg;
 				fileManager->DOS->ExportFile(file,pFile,-1,&errMsg);
@@ -190,7 +190,7 @@
 			::GlobalFree(lpStgMedium->hGlobal);
 			// - after Copy/Cut, DataSource clears the clipboard (but not after drag&drop)
 			if (preferredDropEffect!=DROPEFFECT_NONE)
-				::OleSetClipboard(NULL);
+				::OleSetClipboard(nullptr);
 			return TRUE;
 		}else
 			return COleDataSource::OnSetData(lpFormatEtc,lpStgMedium,bRelease);
@@ -208,11 +208,11 @@
 		// determines and returns the Directory currently under cursor (or Null if cursor not above Directory)
 		const CListCtrl &lv=GetListCtrl();
 		const int i=lv.HitTest(rPt);
-		if (i<0) return NULL; // cursor outside any File or Directory
+		if (i<0) return nullptr; // cursor outside any File or Directory
 		const CDos::PFile file=(CDos::PFile)lv.GetItemData(i);
 		return	DOS->IsDirectory(file) // the File is actually a Directory
 				? file
-				: NULL;
+				: nullptr;
 	}
 
 	DROPEFFECT CFileManagerView::OnDragEnter(COleDataObject *pDataObject,DWORD dwKeyState,CPoint point){
@@ -261,7 +261,7 @@
 		BOOL result=FALSE; // assumption (Drop failed)
 		SetRedraw(FALSE);
 			// - switching to TargetDirectory
-			CDos::PFile originalDirectory,targetDirectory=NULL;
+			CDos::PFile originalDirectory,targetDirectory=nullptr;
 			if (pDirectoryStructureManagement){
 				originalDirectory=DOS->currentDir;
 				if (targetDirectory=__getDirectoryUnderCursor__(point))
@@ -274,7 +274,7 @@
 				// importing physical Files (by dragging them from Explorer)
 				if (const HDROP hDrop=(HDROP)::GlobalLock(hg)){
 					TCHAR buf[MAX_PATH];
-					for( UINT n=::DragQueryFile(hDrop,-1,NULL,0); n; )
+					for( UINT n=::DragQueryFile(hDrop,-1,nullptr,0); n; )
 						if (::DragQueryFile(hDrop,--n,buf,MAX_PATH))
 							// creating File in Image
 							switch (ImportPhysicalFile(buf,importedFile,conflictResolution)){ // shows also error messages
@@ -352,14 +352,14 @@ importQuit2:		::GlobalUnlock(hg);
 				::GlobalFree(hg);
 			}
 			// - informing DataSource on type of acceptance of Files (for the drag&drop to go the same way as with copy/cut/paste)
-			FORMATETC etc={ CRideApp::cfPasteSucceeded, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
-			STGMEDIUM stg={ TYMED_HGLOBAL, (HBITMAP)::GlobalAlloc(GMEM_FIXED,sizeof(DWORD)), NULL };
+			FORMATETC etc={ CRideApp::cfPasteSucceeded, nullptr, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
+			STGMEDIUM stg={ TYMED_HGLOBAL, (HBITMAP)::GlobalAlloc(GMEM_FIXED,sizeof(DWORD)), nullptr };
 			*(DROPEFFECT *)::GlobalLock(stg.hGlobal)=dropEffect;
 			::GlobalUnlock(stg.hGlobal);
 			pDataObject->m_lpDataObject->SetData( &etc, &stg, TRUE );
 			// - clearing cliboard after pasting cut Files
 			if (dropEffect==DROPEFFECT_MOVE)
-				::OleSetClipboard(NULL);
+				::OleSetClipboard(nullptr);
 			// - switching back to OriginalDirectory
 			if (targetDirectory){ // it was switched from Original- to TargetDirectory above
 				__switchToDirectory__(originalDirectory);
@@ -464,7 +464,7 @@ importQuit2:		::GlobalUnlock(hg);
 			TStdWinError err;
 			if (winAttr&FILE_ATTRIBUTE_DIRECTORY){
 				// importing a Directory
-				f=NULL;
+				f=nullptr;
 				err=pDirectoryStructureManagement	// if the DOS supports Directories ...
 					? err=(DOS->*pDirectoryStructureManagement->fnCreateSubdir)( nameAndExtension, winAttr, rImportedFile ) // ... creating the Directory
 					: ERROR_NOT_SUPPORTED; // ... otherwise error
@@ -502,7 +502,7 @@ importQuit2:		::GlobalUnlock(hg);
 		const DWORD winAttr=::GetFileAttributes(pathAndName);
 		if (winAttr&FILE_ATTRIBUTE_DIRECTORY){
 			// Directory
-			TStdWinError err=ImportFileAndResolveConflicts( NULL, 0, fileName, winAttr, rImportedFile, rConflictedSiblingResolution );
+			TStdWinError err=ImportFileAndResolveConflicts( nullptr, 0, fileName, winAttr, rImportedFile, rConflictedSiblingResolution );
 			if (err==ERROR_SUCCESS){
 				// Directory created successfully - recurrently importing all contained Files
 				const CDos::PFile currentDirectory=DOS->currentDir;
@@ -532,7 +532,7 @@ importQuit2:		::GlobalUnlock(hg);
 			// File
 			// . if the File "looks like an Image", confirming its import by the user
 			if (const LPCTSTR extension=_tcsrchr(pathAndName,'.'))
-				if (CImage::__determineTypeByExtension__(1+extension)!=NULL){
+				if (CImage::__determineTypeByExtension__(1+extension)!=nullptr){
 					// : defining the Dialog
 					TCHAR buf[MAX_PATH+80];
 					::wsprintf( buf, _T("\"%s\" looks like an image."), _tcsrchr(pathAndName,'\\')+1 );
@@ -556,9 +556,9 @@ importQuit2:		::GlobalUnlock(hg);
 					switch (d.DoModal()){
 						case IDYES:{
 							// opening the File in new instance of the app (this may function only in Release mode, not in Debug mode)
-							::GetModuleFileName( NULL, buf, sizeof(buf)/sizeof(TCHAR) );
+							::GetModuleFileName( nullptr, buf, sizeof(buf)/sizeof(TCHAR) );
 							TCHAR pathAndNameInQuotes[MAX_PATH+2];
-							::ShellExecute( NULL, "open", buf, ::lstrcat(::lstrcat(::lstrcpy(pathAndNameInQuotes,_T("\"")),pathAndName),_T("\"")), NULL, SW_SHOW );
+							::ShellExecute( nullptr, "open", buf, ::lstrcat(::lstrcat(::lstrcpy(pathAndNameInQuotes,_T("\"")),pathAndName),_T("\"")), nullptr, SW_SHOW );
 							return ::GetLastError();
 						}
 						case IDNO:
@@ -592,7 +592,7 @@ importQuit2:		::GlobalUnlock(hg);
 		if (winAttr&FILE_ATTRIBUTE_DIRECTORY){
 			// Directory
 			// . creating (must be now as below the cFileName member is changed)
-			TStdWinError err=ImportFileAndResolveConflicts( NULL, 0, fileName, winAttr, rImportedFile, rConflictedSiblingResolution );
+			TStdWinError err=ImportFileAndResolveConflicts( nullptr, 0, fileName, winAttr, rImportedFile, rConflictedSiblingResolution );
 			// . determining the range of Files to import into this Directory (all such Files in the input list have the same Directory path)
 			int j=++i;
 			for( ::lstrcat(lpfd->cFileName,_T("\\")); j<nFiles; j++ )
@@ -614,7 +614,7 @@ importQuit2:		::GlobalUnlock(hg);
 			return err;
 		}else{
 			// File
-			FORMATETC etcContent={ CRideApp::cfContent, NULL, DVASPECT_CONTENT, i++, TYMED_ISTREAM };
+			FORMATETC etcContent={ CRideApp::cfContent, nullptr, DVASPECT_CONTENT, i++, TYMED_ISTREAM };
 			CFile *const f=pDataObject->GetFileData( CRideApp::cfContent, &etcContent ); // abstracting virtual data into a File
 				const TStdWinError err=ImportFileAndResolveConflicts( f, lpfd->nFileSizeLow, fileName, winAttr, rImportedFile, rConflictedSiblingResolution );
 			delete f;
@@ -663,7 +663,7 @@ importQuit2:		::GlobalUnlock(hg);
 
 	afx_msg void CFileManagerView::__fileSelected_updateUI__(CCmdUI *pCmdUI) const{
 		// projecting existence of one or more selected Files into UI
-		pCmdUI->Enable( GetFirstSelectedFilePosition()!=NULL );
+		pCmdUI->Enable( GetFirstSelectedFilePosition()!=nullptr );
 	}
 
 

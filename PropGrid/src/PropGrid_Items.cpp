@@ -15,7 +15,7 @@
 		: parentCategory(parentCategory)
 		, name(::lstrcpy(new TCHAR[1+::lstrlen(name)],name))
 		, value(editor,buffer,bufferCapacity,param)
-		, disabled(0) , nextInCategory(NULL) {
+		, disabled(0) , nextInCategory(nullptr) {
 		// - adding this Item to the end of the ParentCategory
 		if (parentCategory){ // NOT PropertyGrid's Root Category
 			TItem **a=&parentCategory->subitems;
@@ -82,7 +82,7 @@
 
 	bool TPropGridInfo::TItem::__isCategory__() const{
 		// True <=> this Item is actually a Category, otherwise False
-		return value.editor==NULL;
+		return value.editor==nullptr;
 	}
 
 
@@ -99,9 +99,9 @@
 	TPropGridInfo::TCategoryItem::TCategoryItem(TPropGridInfo *pPropGridInfo,PCategoryItem parentCategory,LPCTSTR name,bool initiallyExpanded)
 		// ctor
 		// - base
-		: TItem( pPropGridInfo, parentCategory, name, NULL, NULL, 0, NULL )
+		: TItem( pPropGridInfo, parentCategory, name, nullptr, nullptr, 0, nullptr )
 		// - initialization
-		, subitems(NULL)
+		, subitems(nullptr)
 		, expanded(initiallyExpanded) {
 	}
 
@@ -122,7 +122,7 @@
 			::SetViewportOrgEx(	dc,
 								(CATEGORY_HEIGHT+(__getLevel__()-2*ITEM_LEVEL_TOP)*EDITOR_DEFAULT_HEIGHT)*LogicalUnitScaleFactor,
 								rc.top,
-								NULL
+								nullptr
 							);
 			__scaleLogicalUnit__(dc);
 			// . drawing the "[-]" icon
@@ -130,11 +130,11 @@
 						(CATEGORY_HEIGHT-CATEGORY_SYMBOL_SIZE)/2, (CATEGORY_HEIGHT-CATEGORY_SYMBOL_SIZE)/2,
 						(CATEGORY_HEIGHT+CATEGORY_SYMBOL_SIZE)/2, (CATEGORY_HEIGHT+CATEGORY_SYMBOL_SIZE)/2
 					);
-			::MoveToEx( dc, CATEGORY_HEIGHT/2-2, CATEGORY_HEIGHT/2, NULL );
+			::MoveToEx( dc, CATEGORY_HEIGHT/2-2, CATEGORY_HEIGHT/2, nullptr );
 			::LineTo( dc, CATEGORY_HEIGHT/2+2+1, CATEGORY_HEIGHT/2 ); // "+1" because the last point of a line isn't drawn
 			// . if the Category is collapsed, changing the above "[-]" icon to "[+]"
 			if (!expanded){ // is collapsed
-				::MoveToEx( dc, CATEGORY_HEIGHT/2, CATEGORY_HEIGHT/2-2, NULL );
+				::MoveToEx( dc, CATEGORY_HEIGHT/2, CATEGORY_HEIGHT/2-2, nullptr );
 				::LineTo( dc, CATEGORY_HEIGHT/2, CATEGORY_HEIGHT/2+2+1 ); // "+1" because the last point of a line isn't drawn
 			}
 		::RestoreDC(dc,iDc0);
@@ -145,7 +145,7 @@
 		// - base
 		//TItem::__enable__(); // commented out as Categories can always be expanded/collapsed
 		// - enabling all Subitems in this Category
-		for( TItem *p=subitems; p!=NULL; p=p->nextInCategory )
+		for( TItem *p=subitems; p!=nullptr; p=p->nextInCategory )
 			p->__enable__();
 	}
 
@@ -154,6 +154,6 @@
 		// - base
 		//TItem::__disable__(); // commented out as Categories can always be expanded/collapsed
 		// - disabling all Subitems in this Category
-		for( TItem *p=subitems; p!=NULL; p=p->nextInCategory )
+		for( TItem *p=subitems; p!=nullptr; p=p->nextInCategory )
 			p->__disable__();
 	}

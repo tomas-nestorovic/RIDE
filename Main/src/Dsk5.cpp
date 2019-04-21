@@ -92,9 +92,9 @@
 
 	CDsk5::PTrackInfo CDsk5::__findTrack__(TCylinder cyl,THead head) const{
 		// finds and returns given Track (returns Null if Track not formatted or not found)
-		if (cyl>=diskInfo.nCylinders || head>=diskInfo.nHeads) return NULL;
+		if (cyl>=diskInfo.nCylinders || head>=diskInfo.nHeads) return nullptr;
 		const WORD w=cyl*diskInfo.nHeads+head;
-		return w<DSK_REV5_TRACKS_MAX ? tracks[w] : NULL;
+		return w<DSK_REV5_TRACKS_MAX ? tracks[w] : nullptr;
 	}
 
 	WORD CDsk5::__getSectorLength__(const TSectorInfo *si) const{
@@ -245,7 +245,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 
 	void CDsk5::GetTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses){
 		// populates output buffers with specified Sectors' data, usable lengths, and FDC statuses; ALWAYS attempts to buffer all Sectors - caller is then to sort out eventual read errors (by observing the FDC statuses); caller can call ::GetLastError to discover the error for the last Sector in the input list
-		ASSERT( outBufferData!=NULL && outBufferLengths!=NULL && outFdcStatuses!=NULL );
+		ASSERT( outBufferData!=nullptr && outBufferLengths!=nullptr && outFdcStatuses!=nullptr );
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (const PTrackInfo ti=__findTrack__(cyl,head))
 			for( const PSectorData trackDataStart=(PSectorData)(ti+1); nSectors-->0; ){
@@ -262,17 +262,17 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 					// Sector with given ID found in the Track
 					*outBufferData++ =	!( *outFdcStatuses++=si->fdcStatus ).DescribesMissingDam()
 										? result
-										: NULL;
+										: nullptr;
 					*outBufferLengths++=__getSectorLength__(si);
 				}else{
 					// Sector with given ID not found in the Track
-					*outBufferData++=NULL, *outFdcStatuses++=TFdcStatus::SectorNotFound;
+					*outBufferData++=nullptr, *outFdcStatuses++=TFdcStatus::SectorNotFound;
 					outBufferLengths++;
 				}
 			}
 		else
 			while (nSectors-->0)
-				*outBufferData++=NULL, *outFdcStatuses++=TFdcStatus::SectorNotFound;
+				*outBufferData++=nullptr, *outFdcStatuses++=TFdcStatus::SectorNotFound;
 		::SetLastError( *--outBufferData ? ERROR_SUCCESS : ERROR_SECTOR_NOT_FOUND );
 	}
 
@@ -492,7 +492,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			// . redimensioning the Image
 			if (const PTrackInfo ti=__findTrack__(cyl,head)){
 				diskInfo.rev5_trackOffsets256[cyl*diskInfo.nHeads+head]=0;
-				::free(ti), tracks[cyl*diskInfo.nHeads+head]=NULL;
+				::free(ti), tracks[cyl*diskInfo.nHeads+head]=nullptr;
 			}
 			// . updating the NumberOfCylinders
 			for( cyl=diskInfo.nCylinders; cyl--; )

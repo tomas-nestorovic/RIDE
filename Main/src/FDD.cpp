@@ -91,7 +91,7 @@
 					// . writing Sector
 					FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM, pit->head, id.cylinder,id.side,id.sector,id.lengthCode, id.sector+1, 1, 0xff };
 					LOG_ACTION(_T("DeviceIoControl fdcCommand"));
-					err=::DeviceIoControl( fdd->_HANDLE, fdcCommand, &rwp,sizeof(rwp), ::memcpy(fdd->dataBuffer,data,length),__getOfficialSectorLength__(id.lengthCode), &nBytesTransferred, NULL )!=0
+					err=::DeviceIoControl( fdd->_HANDLE, fdcCommand, &rwp,sizeof(rwp), ::memcpy(fdd->dataBuffer,data,length),__getOfficialSectorLength__(id.lengthCode), &nBytesTransferred, nullptr )!=0
 						? ERROR_SUCCESS
 						: LOG_ERROR(::GetLastError());
 					// . cleaning up after reproduction of requested i/o errors
@@ -131,7 +131,7 @@
 						TSectorId bufferId[(BYTE)-1]; WORD bufferLength[(BYTE)-1]; TFdcStatus bufferStatus[(BYTE)-1];
 						for( TSector n=0; n<pit->nSectors; n++ )
 							bufferId[n]=pit->sectors[n].id, bufferLength[n]=pit->sectors[n].length, bufferStatus[n]=TFdcStatus::WithoutError;
-						__REFER_TO_TRACK(fdd,cyl,head)=NULL; // detaching the Track internal representation for it to be not destroyed during reformatting of the Track
+						__REFER_TO_TRACK(fdd,cyl,head)=nullptr; // detaching the Track internal representation for it to be not destroyed during reformatting of the Track
 						err=fdd->FormatTrack(	cyl, head, pit->nSectors, bufferId, bufferLength, bufferStatus,
 												FDD_SECTOR_GAP3_STD, // if gap too small (e.g. 10) it's highly likely that sectors would be missed in a single disk revolution (so for instance, reading 9 sectors would require 9 disk revolutions)
 												fdd->dos->properties->sectorFillerByte
@@ -294,7 +294,7 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 		TCHAR error[80];
 		::wsprintf( error, _T("Cannot save raw content of Track %d"), chs.GetTrackNumber(2) ); // 2 = max number of Sides on a floppy
 		// - extracting first Sector ID
-		PCSectorData pIdField=NULL; // assumption (ID Field not found and RawContent is not valid)
+		PCSectorData pIdField=nullptr; // assumption (ID Field not found and RawContent is not valid)
 		bool idFieldOk=false;
 		PCSectorData p=rawContent.data;
 		for( const PCSectorData pMax=p+500; p<pMax; p++ )
@@ -312,7 +312,7 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 			return LOG_ERROR(ERROR_CANCELLED);
 		}*/
 		// - extracting Data Address Mark (DAM) of the first Sector
-		PCSectorData pDam=NULL; // assumption (DAM not found and RawContent not valid)
+		PCSectorData pDam=nullptr; // assumption (DAM not found and RawContent not valid)
 		for( const PCSectorData pMax=p+100; p<pMax; p++ )
 			if (const BYTE nBytesOfGap=TInternalTrack::TRawContent::__containsBufferGap__(p))
 				if ((*(PDWORD)(p+=nBytesOfGap)&SECTOR_SYNCHRONIZATION_MASK)==SECTOR_SYNCHRONIZATION){
@@ -350,8 +350,8 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 										};
 					__assign__( fp.Headers[0], &sectors[0].id );
 					FD_SHORT_WRITE_PARAMS swp={ sizeof(FD_ID_HEADER), fdd->params.controllerLatency+(sizeof(TCrc)+1)*fdd->params.oneByteLatency }; // "+1" = just to be sure
-					::DeviceIoControl( fdd->_HANDLE, IOCTL_FD_SET_SHORT_WRITE, &swp,sizeof(swp), NULL,0, &nBytesTransferred, NULL );
-					::DeviceIoControl( fdd->_HANDLE, IOCTL_FDCMD_FORMAT_TRACK, &fp,sizeof(fp)+8, NULL,0, &nBytesTransferred, NULL ); // cannot use IF because DeviceIoControl returns an error when formatting with bad CRC
+					::DeviceIoControl( fdd->_HANDLE, IOCTL_FD_SET_SHORT_WRITE, &swp,sizeof(swp), nullptr,0, &nBytesTransferred, nullptr );
+					::DeviceIoControl( fdd->_HANDLE, IOCTL_FDCMD_FORMAT_TRACK, &fp,sizeof(fp)+8, nullptr,0, &nBytesTransferred, nullptr ); // cannot use IF because DeviceIoControl returns an error when formatting with bad CRC
 					break;
 				}
 				default:
@@ -425,7 +425,7 @@ Utils::Information("--- EVERYTHING OK ---");
 
 	CFDD::TInternalTrack::TRawContent::TRawContent()
 		// ctor
-		: data(NULL) // Null <=> RawContent not available
+		: data(nullptr) // Null <=> RawContent not available
 		, modified(false) {
 	}
 
@@ -469,12 +469,12 @@ Utils::Information("--- EVERYTHING OK ---");
 						if (preferRelativeSeeking && cyl>position){ // RelativeSeeking is allowed only to higher Cylinder numbers
 							FD_RELATIVE_SEEK_PARAMS rsp={ FD_OPTION_MT|FD_OPTION_DIR, 0, cyl-position };
 							LOG_ACTION(_T("DeviceIoControl FD_RELATIVE_SEEK_PARAMS"));
-							seeked=::DeviceIoControl( handle, IOCTL_FDCMD_RELATIVE_SEEK, &rsp,sizeof(rsp), NULL,0, &nBytesTransferred, NULL )!=0;
+							seeked=::DeviceIoControl( handle, IOCTL_FDCMD_RELATIVE_SEEK, &rsp,sizeof(rsp), nullptr,0, &nBytesTransferred, nullptr )!=0;
 							LOG_BOOL(seeked);
 						}else{
 							FD_SEEK_PARAMS sp={ cyl, 0 };
 							LOG_ACTION(_T("DeviceIoControl FD_SEEK_PARAMS"));
-							seeked=::DeviceIoControl( handle, IOCTL_FDCMD_SEEK, &sp,sizeof(sp), NULL,0, &nBytesTransferred, NULL )!=0;
+							seeked=::DeviceIoControl( handle, IOCTL_FDCMD_SEEK, &sp,sizeof(sp), nullptr,0, &nBytesTransferred, nullptr )!=0;
 							LOG_BOOL(seeked);
 						}
 						break;
@@ -501,7 +501,7 @@ Utils::Information("--- EVERYTHING OK ---");
 		DWORD nBytesTransferred;
 		switch (driver){
 			case DRV_FDRAWCMD:
-				return LOG_BOOL(::DeviceIoControl( handle, IOCTL_FDCMD_RECALIBRATE, NULL,0, NULL,0, &nBytesTransferred, NULL )!=0);
+				return LOG_BOOL(::DeviceIoControl( handle, IOCTL_FDCMD_RECALIBRATE, nullptr,0, nullptr,0, &nBytesTransferred, nullptr )!=0);
 			default:
 				ASSERT(FALSE);
 				return LOG_BOOL(false);
@@ -523,7 +523,7 @@ Utils::Information("--- EVERYTHING OK ---");
 	const CImage::TProperties CFDD::Properties={
 		_T("[ Physical floppy drive A: ]"),	// name
 		__instantiate__,	// instantiation function
-		NULL, // filter
+		nullptr, // filter
 		TMedium::FLOPPY_ANY, // supported Media
 		128,SECTOR_LENGTH_MAX	// Sector supported min and max length
 	};
@@ -535,13 +535,13 @@ Utils::Information("--- EVERYTHING OK ---");
 		// - base
 		: CFloppyImage(&Properties,true)
 		// - initialization
-		, dataBuffer( ::VirtualAlloc(NULL,SECTOR_LENGTH_MAX,MEM_COMMIT,PAGE_READWRITE) ) {
+		, dataBuffer( ::VirtualAlloc(nullptr,SECTOR_LENGTH_MAX,MEM_COMMIT,PAGE_READWRITE) ) {
 		LOG_ACTION(_T("CFDD::ctor"));
 		::ZeroMemory( internalTracks, sizeof(internalTracks) );
 		// - creating a temporary file in order to not break the Document-View architecture
 		TCHAR tmpFileName[MAX_PATH];
 		::GetTempPath(MAX_PATH,tmpFileName);
-		::GetTempFileName( tmpFileName, NULL, TRUE, tmpFileName );
+		::GetTempFileName( tmpFileName, nullptr, TRUE, tmpFileName );
 		const CFile fTmp( m_strPathName=tmpFileName, CFile::modeCreate );
 		// - connecting to the Drive
 		__reset__();
@@ -582,7 +582,7 @@ Utils::Information("--- EVERYTHING OK ---");
 				LOG_ACTION(_T("TStdWinError CFDD::__connectToFloppyDrive__ DRV_FDRAWCMD"));
 				// . connecting to "A:"
 				do{
-					_HANDLE=::CreateFile( _T("\\\\.\\fdraw0"), GENERIC_READ|GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL); //FILE_SHARE_WRITE
+					_HANDLE=::CreateFile( _T("\\\\.\\fdraw0"), GENERIC_READ|GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr); //FILE_SHARE_WRITE
 					if (_HANDLE!=INVALID_HANDLE_VALUE) break; // Driver installed and exclusive access allowed to the A: drive
 error:				switch (const TStdWinError err=::GetLastError()){
 						case ERROR_FILE_NOT_FOUND: // "file not found" error ...
@@ -598,14 +598,14 @@ error:				switch (const TStdWinError err=::GetLastError()){
 				}while (true);
 				// . verifying the Driver's version
 				DWORD nBytesTransferred,version;
-				::DeviceIoControl( _HANDLE, IOCTL_FDRAWCMD_GET_VERSION, NULL,0, &version,sizeof(version), &nBytesTransferred, NULL );
+				::DeviceIoControl( _HANDLE, IOCTL_FDRAWCMD_GET_VERSION, nullptr,0, &version,sizeof(version), &nBytesTransferred, nullptr );
 				if (version<FDRAWCMD_VERSION) // old Driver version
 					return LOG_ERROR(ERROR_BAD_DRIVER);
 				// . synchronizing with index pulse
 				__setWaitingForIndex__();
 				// . turning off the automatic recognition of floppy inserted into Drive (having turned it on creates problems when used on older Drives [Simon Owen])
 				static const BYTE RecognizeInsertedFloppy=FALSE;
-				if (!::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DISK_CHECK, (PVOID)&RecognizeInsertedFloppy,1, NULL,0, &nBytesTransferred, NULL)){
+				if (!::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DISK_CHECK, (PVOID)&RecognizeInsertedFloppy,1, nullptr,0, &nBytesTransferred, nullptr)){
 					__disconnectFromFloppyDrive__();
 					goto error;
 				}
@@ -636,13 +636,13 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		// returns Internal representation of the Track
 		return	cyl<FDD_CYLINDERS_MAX
 				? REFER_TO_TRACK(cyl,head)
-				: NULL;
+				: nullptr;
 	}
 
 	void CFDD::__unformatInternalTrack__(TCylinder cyl,THead head){
 		// disposes buffered InternalTrack
 		if (const PInternalTrack tmp=__getScannedTrack__(cyl,head))
-			delete tmp, REFER_TO_TRACK(cyl,head)=NULL;
+			delete tmp, REFER_TO_TRACK(cyl,head)=nullptr;
 	}
 
 	void CFDD::__freeInternalTracks__(){
@@ -768,7 +768,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		// determines and returns the number of Sides formatted on given Cylinder; returns 0 iff Cylinder not formatted
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		LOG_CYLINDER_ACTION(cyl,_T("THead CFDD::GetNumberOfFormattedSides"));
-		return (ScanTrack(cyl,0,NULL,NULL)!=0) + (ScanTrack(cyl,1,NULL,NULL)!=0);
+		return (ScanTrack(cyl,0)!=0) + (ScanTrack(cyl,1)!=0);
 	}
 
 	CFDD::PInternalTrack CFDD::__scanTrack__(TCylinder cyl,THead head){
@@ -795,7 +795,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 								DWORD trackTime;
 								FD_TIMED_ID_HEADER header[(TSector)-1];
 							} sectors;
-							if (!::DeviceIoControl( _HANDLE, IOCTL_FD_TIMED_SCAN_TRACK, &sp,sizeof(sp), &sectors,sizeof(sectors), &nBytesTransferred, NULL ))
+							if (!::DeviceIoControl( _HANDLE, IOCTL_FD_TIMED_SCAN_TRACK, &sp,sizeof(sp), &sectors,sizeof(sectors), &nBytesTransferred, nullptr ))
 								break;
 							TSectorId bufferId[(TSector)-1]; int sectorTimes[(TSector)-1];
 							for( BYTE n=0; n<sectors.n; n++ )
@@ -808,7 +808,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 					}
 				}
 		// - Track cannot be scanned
-		return NULL;
+		return nullptr;
 	}
 
 	TSector CFDD::ScanTrack(TCylinder cyl,THead head,PSectorId bufferId,PWORD bufferLength,PINT startTimesMicroseconds,PBYTE pAvgGap3) const{
@@ -853,7 +853,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		DWORD nBytesTransferred;
 		switch (DRIVER){
 			case DRV_FDRAWCMD:{
-				::DeviceIoControl( _HANDLE, IOCTL_FD_WAIT_INDEX, NULL,0, NULL,0, &nBytesTransferred, NULL );
+				::DeviceIoControl( _HANDLE, IOCTL_FD_WAIT_INDEX, nullptr,0, nullptr,0, &nBytesTransferred, nullptr );
 				break;
 			}
 			default:
@@ -868,7 +868,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		switch (DRIVER){
 			case DRV_FDRAWCMD:{
 				FD_SECTOR_OFFSET_PARAMS sop={ nSectorsToSkip };
-				::DeviceIoControl( _HANDLE, IOCTL_FD_SET_SECTOR_OFFSET, &sop,sizeof(sop), NULL,0, &nBytesTransferred, NULL );
+				::DeviceIoControl( _HANDLE, IOCTL_FD_SET_SECTOR_OFFSET, &sop,sizeof(sop), nullptr,0, &nBytesTransferred, nullptr );
 				break;
 			}
 			default:
@@ -883,7 +883,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		switch (DRIVER){
 			case DRV_FDRAWCMD:{
 				FD_SHORT_WRITE_PARAMS swp={ nDataBytesBeforeInterruption, nMicrosecondsAfterLastDataByteWritten };
-				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_SHORT_WRITE, &swp,sizeof(swp), NULL,0, &nBytesTransferred, NULL )!=0
+				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_SHORT_WRITE, &swp,sizeof(swp), nullptr,0, &nBytesTransferred, nullptr )!=0
 						? ERROR_SUCCESS
 						: LOG_ERROR(::GetLastError());
 			}
@@ -912,20 +912,20 @@ error:				switch (const TStdWinError err=::GetLastError()){
 			case DRV_FDRAWCMD:{
 				LOG_ACTION(_T("DeviceIoControl IOCTL_FDCMD_READ_DATA"));
 				FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM|FD_OPTION_SK, head, psi->cylinder,psi->side,psi->sector,psi->lengthCode, psi->sector+1, 1, 0xff };
-				if (!::DeviceIoControl( _HANDLE, IOCTL_FDCMD_READ_DATA, &rwp,sizeof(rwp), dataBuffer,SECTOR_LENGTH_MAX, &nBytesTransferred, NULL )){
+				if (!::DeviceIoControl( _HANDLE, IOCTL_FDCMD_READ_DATA, &rwp,sizeof(rwp), dataBuffer,SECTOR_LENGTH_MAX, &nBytesTransferred, nullptr )){
 					// Sector read with errors
 					// | getting FdcStatus
 					LOG_ACTION(_T("DeviceIoControl IOCTL_FD_GET_RESULT"));
 					FD_CMD_RESULT cmdRes;
-					::DeviceIoControl( _HANDLE, IOCTL_FD_GET_RESULT, NULL,0, &cmdRes,sizeof(cmdRes), &nBytesTransferred, NULL );
+					::DeviceIoControl( _HANDLE, IOCTL_FD_GET_RESULT, nullptr,0, &cmdRes,sizeof(cmdRes), &nBytesTransferred, nullptr );
 					*pFdcStatus=TFdcStatus(cmdRes.st1,cmdRes.st2);
 					// | if "Deleted DAM" is one of the errors, repeating reading with appropriate command
 					if (pFdcStatus->DescribesDeletedDam()){
 						{	LOG_ACTION(_T("DeviceIoControl IOCTL_FDCMD_READ_DELETED_DATA"));
-							::DeviceIoControl( _HANDLE, IOCTL_FDCMD_READ_DELETED_DATA, &rwp,sizeof(rwp), dataBuffer,SECTOR_LENGTH_MAX, &nBytesTransferred, NULL );
+							::DeviceIoControl( _HANDLE, IOCTL_FDCMD_READ_DELETED_DATA, &rwp,sizeof(rwp), dataBuffer,SECTOR_LENGTH_MAX, &nBytesTransferred, nullptr );
 						}
 						{	LOG_ACTION(_T("DeviceIoControl IOCTL_FD_GET_RESULT"));
-							::DeviceIoControl( _HANDLE, IOCTL_FD_GET_RESULT, NULL,0, &cmdRes,sizeof(cmdRes), &nBytesTransferred, NULL );
+							::DeviceIoControl( _HANDLE, IOCTL_FD_GET_RESULT, nullptr,0, &cmdRes,sizeof(cmdRes), &nBytesTransferred, nullptr );
 						}
 						*pFdcStatus=TFdcStatus( cmdRes.st1, cmdRes.st2|FDC_ST2_DELETED_DAM );
 					}
@@ -946,7 +946,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 
 	void CFDD::GetTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses){
 		// populates output buffers with specified Sectors' data, usable lengths, and FDC statuses; ALWAYS attempts to buffer all Sectors - caller is then to sort out eventual read errors (by observing the FDC statuses); caller can call ::GetLastError to discover the error for the last Sector in the input list
-		ASSERT( outBufferData!=NULL && outBufferLengths!=NULL && outFdcStatuses!=NULL );
+		ASSERT( outBufferData!=nullptr && outBufferLengths!=nullptr && outFdcStatuses!=nullptr );
 		// - initializing the output buffers with data retrieval failure (assumption)
 		::ZeroMemory( outBufferData, nSectors*sizeof(PSectorData) );
 		for( TSector i=nSectors; i>0; outFdcStatuses[--i]=TFdcStatus::SectorNotFound );
@@ -968,7 +968,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 						DWORD nBytesTransferred;
 						const PCSectorId pid=&pit->sectors[0].id;
 						FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM|FD_OPTION_SK, head, pid->cylinder,pid->side,pid->sector,7, pid->sector+1, 1, 0xff }; // 7 = reads 16384 Bytes beginning with the first Data Field
-						if (::DeviceIoControl( _HANDLE, IOCTL_FDCMD_READ_TRACK, &rwp,sizeof(rwp), dataBuffer,SECTOR_LENGTH_MAX, &nBytesTransferred, NULL )!=0){
+						if (::DeviceIoControl( _HANDLE, IOCTL_FDCMD_READ_TRACK, &rwp,sizeof(rwp), dataBuffer,SECTOR_LENGTH_MAX, &nBytesTransferred, nullptr )!=0){
 							// Track read - reconstructing the gaps and ID that preceed the first physical Sector (because reading of the Track begun from its data but the ID Field itself wasn't read)
 							PSectorData pData = pit->rawContent.data = ALLOCATE_SECTOR_DATA(pit->rawContent.length128);
 							TInternalTrack::TRawContent::__generateGap__(pData,40);
@@ -977,7 +977,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 							TInternalTrack::TRawContent::__generateSectorDefaultData__( pData, TDataAddressMark::DATA_RECORD, 0, 0, &TFdcStatus::WithoutError );
 							::memcpy( pData-sizeof(TCrc), dataBuffer, __getUsableSectorLength__(pit->rawContent.id.lengthCode) ); // assumed that UsableSectorLength < OfficialSectorLength (and thus not written outside allocated memory)
 						}//else
-							//return NULL; // commented out as it holds that "pid->rawContent.data==Null"
+							//return nullptr; // commented out as it holds that "pid->rawContent.data==Null"
 					}
 					bufferId++, nSectors--;
 					*outBufferData++=pit->rawContent.data;
@@ -1027,7 +1027,7 @@ returnData:				outFdcStatuses[index]=psi->fdcStatus;
 						outBufferData[index]=psi->data;
 						continue;
 					}else // disposing previous erroneous Data
-						FREE_SECTOR_DATA(psi->data), psi->data=NULL;
+						FREE_SECTOR_DATA(psi->data), psi->data=nullptr;
 				// : seeking Head to the given Cylinder
 				if (!fddHead.__seekTo__(cyl))
 					return; // Sectors cannot be found as Head cannot be seeked
@@ -1110,7 +1110,7 @@ returnData:				outFdcStatuses[index]=psi->fdcStatus;
 				switch (DRIVER){
 					case DRV_FDRAWCMD:{
 						transferSpeed=FD_RATE_250K;
-fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transferSpeed,1, NULL,0, &nBytesTransferred, NULL )
+fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transferSpeed,1, nullptr,0, &nBytesTransferred, nullptr )
 								? ERROR_SUCCESS
 								: LOG_ERROR(::GetLastError());
 					}
@@ -1176,7 +1176,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 		DWORD nBytesTransferred;
 		switch (DRIVER){
 			case DRV_FDRAWCMD:
-				::DeviceIoControl( _HANDLE, IOCTL_FD_SET_MOTOR_TIMEOUT, &++nSeconds,sizeof(nSeconds), NULL,0, &nBytesTransferred, NULL );
+				::DeviceIoControl( _HANDLE, IOCTL_FD_SET_MOTOR_TIMEOUT, &++nSeconds,sizeof(nSeconds), nullptr,0, &nBytesTransferred, nullptr );
 				break;
 			default:
 				ASSERT(FALSE);
@@ -1203,7 +1203,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 		DWORD nBytesTransferred;
 		switch (DRIVER){
 			case DRV_FDRAWCMD:
-				return LOG_BOOL(::DeviceIoControl( _HANDLE, IOCTL_FD_CHECK_DISK, NULL,0, NULL,0, &nBytesTransferred, NULL )!=0
+				return LOG_BOOL(::DeviceIoControl( _HANDLE, IOCTL_FD_CHECK_DISK, nullptr,0, nullptr,0, &nBytesTransferred, nullptr )!=0
 								? ::GetLastError()==ERROR_SUCCESS
 								: false
 							);
@@ -1220,7 +1220,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 		switch (DRIVER){
 			case DRV_FDRAWCMD:{
 				FD_FDC_INFO fdcInfo;
-				::DeviceIoControl( _HANDLE, IOCTL_FD_GET_FDC_INFO, NULL,0, &fdcInfo,sizeof(fdcInfo), &nBytesTransferred, NULL );
+				::DeviceIoControl( _HANDLE, IOCTL_FD_GET_FDC_INFO, nullptr,0, &fdcInfo,sizeof(fdcInfo), &nBytesTransferred, nullptr );
 				switch (fdcInfo.ControllerType){
 					case FDC_TYPE_NORMAL	: return _T("Normal");
 					case FDC_TYPE_ENHANCED	: return _T("Enhanced");
@@ -1233,7 +1233,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 			}
 			default:
 				ASSERT(FALSE);
-				return NULL;
+				return nullptr;
 		}
 	}
 
@@ -1282,7 +1282,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 				: pAction(pAction)
 				, fdd(lp.fdd) , sectorLength(lp.ddFloppy?4096:8192)
 				, rCyl(lp.cyl) , rHead(lp.head) // a healthy Track yet to be found
-				, sectorDataToWrite( ::VirtualAlloc(NULL,SECTOR_LENGTH_MAX,MEM_COMMIT,PAGE_READWRITE) )
+				, sectorDataToWrite( ::VirtualAlloc(nullptr,SECTOR_LENGTH_MAX,MEM_COMMIT,PAGE_READWRITE) )
 				, usAccuracy(lp.usAccuracy) , nMicroseconds(0) {
 				sectorId.lengthCode=__getSectorLengthCode__(sectorLength); // any Cylinder/Side/Sector values will do, so letting them uninitialized
 				::memset( sectorDataToWrite, TEST_BYTE, sectorLength );
@@ -1302,7 +1302,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 				switch (fdd->DRIVER){
 					case DRV_FDRAWCMD:{
 						FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM, rHead, sectorId.cylinder,sectorId.side,sectorId.sector,sectorId.lengthCode, sectorId.sector+1, FDD_SECTOR_GAP3_STD/2, sectorId.lengthCode?0xff:0x80 };
-						return	::DeviceIoControl( fdd->_HANDLE, IOCTL_FDCMD_WRITE_DATA, &rwp,sizeof(rwp), sectorDataToWrite,sectorLength, &nBytesTransferred, NULL )!=0
+						return	::DeviceIoControl( fdd->_HANDLE, IOCTL_FDCMD_WRITE_DATA, &rwp,sizeof(rwp), sectorDataToWrite,sectorLength, &nBytesTransferred, nullptr )!=0
 								? ERROR_SUCCESS
 								: LOG_ERROR(::GetLastError());
 					}
@@ -1529,7 +1529,7 @@ Utils::Information(buf);}
 				// - base
 				CDialog::OnPaint();
 				// - drawing of curly brackets
-				Utils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_LATENCY), GetDlgItem(ID_GAP), NULL, 0 );
+				Utils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_LATENCY), GetDlgItem(ID_GAP), nullptr, 0 );
 				Utils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_NONE), GetDlgItem(ID_SECTOR), _T("if error encountered"), 0 );
 				Utils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_ZERO), GetDlgItem(ID_CYLINDER_N), _T("when formatting"), 0 );
 			}
@@ -1556,7 +1556,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 								}
 								void PreInitDialog() override{
 									CDialog::PreInitDialog(); // base
-									Utils::PopulateComboBoxWithSequenceOfNumbers( GetDlgItem(ID_ACCURACY)->m_hWnd, 1,NULL, 6,NULL );
+									Utils::PopulateComboBoxWithSequenceOfNumbers( GetDlgItem(ID_ACCURACY)->m_hWnd, 1,nullptr, 6,nullptr );
 									Utils::PopulateComboBoxWithSequenceOfNumbers( GetDlgItem(ID_TEST)->m_hWnd, 1,_T("(worst)"), 9,_T("(best)") );
 								}
 								void DoDataExchange(CDataExchange *pDX) override{
@@ -1692,7 +1692,7 @@ latencyAutodeterminationError:			Utils::FatalError(_T("Couldn't autodetermine"),
 				__assign__( *pih, &chs.sectorId );
 			DWORD nBytesTransferred;
 			{	LOG_ACTION(_T("DeviceIoControl IOCTL_FDCMD_FORMAT_TRACK"));
-				if (!::DeviceIoControl( _HANDLE, IOCTL_FDCMD_FORMAT_TRACK, &fmt,sizeof(fmt), NULL,0, &nBytesTransferred, NULL ))
+				if (!::DeviceIoControl( _HANDLE, IOCTL_FDCMD_FORMAT_TRACK, &fmt,sizeof(fmt), nullptr,0, &nBytesTransferred, nullptr ))
 					return LOG_ERROR(::GetLastError());
 			}
 			// . verifying the single formatted Sector
@@ -1703,12 +1703,12 @@ latencyAutodeterminationError:			Utils::FatalError(_T("Couldn't autodetermine"),
 				__setTimeBeforeInterruptingTheFdc__( sectorBytes, params.controllerLatency+1*params.oneByteLatency ); // "X*" = reserve to guarantee that really all test data written
 				FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM|FD_OPTION_SK, chs.head, pih->cyl,pih->head,pih->sector,pih->size, pih->sector+1, 1, 0xff };
 				{	LOG_ACTION(_T("DeviceIoControl IOCTL_FDCMD_WRITE_DATA"));
-					if (!::DeviceIoControl( _HANDLE, IOCTL_FDCMD_WRITE_DATA, &rwp,sizeof(rwp), ::memset(dataBuffer,fillerByte,sectorBytes),__getOfficialSectorLength__(pih->size), &nBytesTransferred, NULL ))
+					if (!::DeviceIoControl( _HANDLE, IOCTL_FDCMD_WRITE_DATA, &rwp,sizeof(rwp), ::memset(dataBuffer,fillerByte,sectorBytes),__getOfficialSectorLength__(pih->size), &nBytesTransferred, nullptr ))
 						return LOG_ERROR(::GetLastError());
 				}
 				// . reading test data
 				{	LOG_ACTION(_T("DeviceIoControl IOCTL_FDCMD_READ_DATA"));
-					::DeviceIoControl( _HANDLE, IOCTL_FDCMD_READ_DATA, &rwp,sizeof(rwp), dataBuffer,SECTOR_LENGTH_MAX, &nBytesTransferred, NULL ); // cannot use IF as test data always read with a CRC error in this case
+					::DeviceIoControl( _HANDLE, IOCTL_FDCMD_READ_DATA, &rwp,sizeof(rwp), dataBuffer,SECTOR_LENGTH_MAX, &nBytesTransferred, nullptr ); // cannot use IF as test data always read with a CRC error in this case
 				}
 				for( PCBYTE p=(PCBYTE)dataBuffer; sectorBytes && *p++==fillerByte; sectorBytes-- );
 				if (sectorBytes) // error reading the test data
@@ -1812,7 +1812,7 @@ formatStandardWay:
 				__unformatInternalTrack__(cyl,head);
 				// . formatting the Track
 				{	LOG_ACTION(_T("DeviceIoControl IOCTL_FDCMD_FORMAT_TRACK"));
-					if (!::DeviceIoControl( _HANDLE, IOCTL_FDCMD_FORMAT_TRACK, &fmt,sizeof(fmt), NULL,0, &nBytesTransferred, NULL ))
+					if (!::DeviceIoControl( _HANDLE, IOCTL_FDCMD_FORMAT_TRACK, &fmt,sizeof(fmt), nullptr,0, &nBytesTransferred, nullptr ))
 						goto error;
 				}
 				// . verifying the Track (if requested to)
@@ -1984,13 +1984,13 @@ formatCustomWay:
 						for( BYTE n=0; n<pfs->nLastSectorsValid; n++ )
 							__assign__( buffer.fp.Headers[pfs->nSectorsOnTrack-pfs->nLastSectorsValid+n], &pfs->validSectorIDs[n] );
 					LOG_ACTION(_T("DeviceIoControl IOCTL_FDCMD_FORMAT_TRACK"));
-					if (!::DeviceIoControl( _HANDLE, IOCTL_FDCMD_FORMAT_TRACK, &buffer,sizeof(buffer), NULL,0, &nBytesTransferred, NULL ))
+					if (!::DeviceIoControl( _HANDLE, IOCTL_FDCMD_FORMAT_TRACK, &buffer,sizeof(buffer), nullptr,0, &nBytesTransferred, nullptr ))
 						return LOG_ERROR(::GetLastError());
 				}
 				// . verifying the Track (if requested to)
 				if (params.verifyFormattedTracks){
 					LOG_ACTION(_T("track verification"));
-					const TInternalTrack it( this, cyl, head, nSectors, bufferId, NULL ); // NULL = calculate Sector start times from information on default Gap3 and individual Sector lengths
+					const TInternalTrack it( this, cyl, head, nSectors, bufferId, nullptr ); // nullptr = calculate Sector start times from information on default Gap3 and individual Sector lengths
 					for( TSector n=0; n<nSectors; n++ ){
 						const TPhysicalAddress chs={ cyl, head, bufferId[n] };
 						TFdcStatus sr;
@@ -2051,7 +2051,7 @@ error:		return LOG_ERROR(::GetLastError());
 										{cyl,head,0,lengthCode}
 									};
 				LOG_ACTION(_T("DeviceIoControl IOCTL_FDCMD_FORMAT_TRACK"));
-				if (::DeviceIoControl( _HANDLE, IOCTL_FDCMD_FORMAT_TRACK, &fmt,sizeof(fmt), NULL,0, &nBytesTransferred, NULL )!=0){
+				if (::DeviceIoControl( _HANDLE, IOCTL_FDCMD_FORMAT_TRACK, &fmt,sizeof(fmt), nullptr,0, &nBytesTransferred, nullptr )!=0){
 					__unformatInternalTrack__(cyl,head); // disposing internal information on actual Track format
 					return ERROR_SUCCESS;
 				}else

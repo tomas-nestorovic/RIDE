@@ -25,7 +25,7 @@
 		, reportModeRowHeightAdjustment(reportModeRowHeightAdjustment)
 		, nInformation(_nInformation) , informationList(_informationList) , nameColumnId(_nameColumnId)
 		, supportedDisplayModes(_supportedDisplayModes) , displayMode(_initialDisplayMode)
-		, ordering(ORDER_NONE) , focusedFile(-1) , scrollY(0) , ownedDataSource(NULL)
+		, ordering(ORDER_NONE) , focusedFile(-1) , scrollY(0) , ownedDataSource(nullptr)
 		, pDirectoryStructureManagement(_pDirectoryStructureManagement) {
 		// - switching to default DisplayMode
 /*		const WORD id=displayMode+ID_FILEMANAGER_BIG_ICONS;
@@ -70,7 +70,7 @@
 	CFileManagerView::~CFileManagerView(){
 		// dtor
 		if (ownedDataSource){
-			::OleSetClipboard(NULL);
+			::OleSetClipboard(nullptr);
 			delete ownedDataSource;
 		}
 		while (ownedDirEntryViews.GetCount())
@@ -229,7 +229,7 @@
 			*backslash='\0';
 				TCHAR buf[MAX_PATH], *pDot=_tcsrchr(::lstrcpy(buf,path),'.');
 				if (pDot) *pDot='\0'; else pDot=_T(".");
-				const CDos::PFile subdirectory=DOS->__findFileInCurrDir__(buf,1+pDot,NULL);
+				const CDos::PFile subdirectory=DOS->__findFileInCurrDir__(buf,1+pDot,nullptr);
 				const TStdWinError err=	subdirectory
 										? (DOS->*pDirectoryStructureManagement->fnChangeCurrentDir)(subdirectory)
 										: ERROR_FILE_NOT_FOUND;
@@ -279,7 +279,7 @@
 			ModifyStyle( LVS_TYPEMASK|LVS_EDITLABELS, LVS_REPORT|LVS_OWNERDRAWFIXED );
 			/*RECT r;
 			GetClientRect(&r);
-			SetWindowPos( NULL, 0,0, r.right,r.bottom, SWP_NOMOVE|SWP_NOZORDER ); // to generate WM_MEASUREITEM
+			SetWindowPos( nullptr, 0,0, r.right,r.bottom, SWP_NOMOVE|SWP_NOZORDER ); // to generate WM_MEASUREITEM
 			*/
 		}else
 			ModifyStyle( LVS_TYPEMASK|LVS_OWNERDRAWFIXED, displayMode|LVS_EDITLABELS );
@@ -295,7 +295,7 @@
 
 	afx_msg void CFileManagerView::__imageWritableAndFileSelected_updateUI__(CCmdUI *pCmdUI){
 		// projecting File selection into UI
-		pCmdUI->Enable( !IMAGE->writeProtected && GetFirstSelectedFilePosition()!=NULL );
+		pCmdUI->Enable( !IMAGE->writeProtected && GetFirstSelectedFilePosition()!=nullptr );
 	}
 
 	afx_msg void CFileManagerView::__selectAllFilesInCurrentDir__(){
@@ -329,7 +329,7 @@
 			__deleteFiles__(filesToDelete);
 			if (::IsWindow(m_hWnd)) __refreshDisplay__();
 			// . emptying the clipboard
-			if (ownedDataSource) ::OleSetClipboard(NULL);
+			if (ownedDataSource) ::OleSetClipboard(nullptr);
 		}
 	}
 
@@ -512,7 +512,7 @@
 		// returns previous selected File
 		if (::IsWindow(m_hWnd)){
 			const CListCtrl &lv=GetListCtrl();
-			POSITION prev=NULL;
+			POSITION prev=nullptr;
 			for( POSITION p=lv.GetFirstSelectedItemPosition(); p!=pos; lv.GetNextSelectedItem(p) )
 				prev=p;
 			const CDos::PFile result=(CDos::PFile)lv.GetItemData( lv.GetNextSelectedItem(pos) );
@@ -566,7 +566,7 @@
 	}
 	afx_msg void CFileManagerView::__createSubdirectory_updateUI__(CCmdUI *pCmdUI) const{
 		// projecting possibility to create Subdirectories into UI
-		pCmdUI->Enable(pDirectoryStructureManagement!=NULL);
+		pCmdUI->Enable(pDirectoryStructureManagement!=nullptr);
 	}
 
 	static void WINAPI __onDirEntriesViewClosing__(LPCVOID tab){
@@ -617,7 +617,7 @@
 				: rStatistics(*(TSelectionStatistics *)pAction->fnParams) , rFileManager(rStatistics.rFileManager) , pAction(pAction) , dos(rFileManager.DOS) , pDirStructMan(rFileManager.pDirectoryStructureManagement) , state(0) {
 				// . recurrently collecting Statistics on selected Files
 				const CDos::PFile currentDirectory=dos->currentDir;
-				const TDirectoryEtc dirEtc={ dos->currentDirId, NULL };
+				const TDirectoryEtc dirEtc={ dos->currentDirId, nullptr };
 				for( POSITION pos=rFileManager.GetFirstSelectedFilePosition(); pos; ){
 					if (!pAction->bContinue) break;
 					if (const CDos::PDirectoryTraversal pdt=dos->BeginDirectoryTraversal(currentDirectory)){
@@ -626,7 +626,7 @@
 						dos->EndDirectoryTraversal(pdt);
 					}
 				}
-				if (pDirStructMan!=NULL)
+				if (pDirStructMan!=nullptr)
 					(dos->*pDirStructMan->fnChangeCurrentDir)(currentDirectory); // because it could recurrently be switched to another but CurrentDirectory
 			}
 
@@ -642,11 +642,11 @@
 						return;
 					// . preventing from cycling infinitely (e.g. because of encountering a dotdot entry ".." in MS-DOS Directory)
 					const TDirectoryEtc dirEtc={ dos->currentDirId, dirPath };
-					for( PCDirectoryEtc pde=dirPath; pde!=NULL; pde=pde->parent )
+					for( PCDirectoryEtc pde=dirPath; pde!=nullptr; pde=pde->parent )
 						if (pde->dirId==dirEtc.dirId) return;
 					// . involving Directory into Statistics
 					if (const CDos::PDirectoryTraversal subPdt=dos->BeginDirectoryTraversal(pdt->entry)){
-						for( rStatistics.nDirectories++,rStatistics.totalSizeInBytes+=dos->GetFileOfficialSize(pdt->entry),rStatistics.totalSizeOnDiskInBytes+=dos->GetFileSizeOnDisk(pdt->entry); subPdt->GetNextFileOrSubdir()!=NULL; ){
+						for( rStatistics.nDirectories++,rStatistics.totalSizeInBytes+=dos->GetFileOfficialSize(pdt->entry),rStatistics.totalSizeOnDiskInBytes+=dos->GetFileSizeOnDisk(pdt->entry); subPdt->GetNextFileOrSubdir()!=nullptr; ){
 							if (!pAction->bContinue) break;
 							if (subPdt->entryType!=CDos::TDirectoryTraversal::WARNING)
 								__countInFile__(subPdt,&dirEtc);
@@ -675,7 +675,7 @@
 
 	afx_msg void CFileManagerView::__refreshDisplay__(){
 		// refreshing the View
-		OnUpdate(NULL,0,NULL);
+		OnUpdate(nullptr,0,nullptr);
 	}
 
 

@@ -2,7 +2,7 @@
 
 	CWebPageView::THistory::TPage::TPage(LPCTSTR _url)
 		// ctor
-		: url(_url) , iScrollY(0) , newer(NULL) , older(NULL) {
+		: url(_url) , iScrollY(0) , newer(nullptr) , older(nullptr) {
 	}
 
 
@@ -37,7 +37,7 @@
 
 	CWebPageView::CWebPageView(LPCTSTR url)
 		// ctor
-		: history(url) , tab(IDR_WEBPAGE,ID_CYLINDER,NULL,this)
+		: history(url) , tab(IDR_WEBPAGE,ID_CYLINDER,nullptr,this)
 		, navigationToLabel(false) {
 	}
 
@@ -61,7 +61,7 @@
 	BOOL CWebPageView::Create(LPCTSTR,LPCTSTR,DWORD dwStyle,const RECT &rect,CWnd *pParentWnd,UINT nID,CCreateContext *){
 		// True <=> window created successfully, otherwise False
 		// - base
-		if (!CHtmlView::Create(NULL,NULL,dwStyle,rect,pParentWnd,nID,NULL)) // (CCreateContext *)==NULL => doesn't allow current Image to get crack on MFC commands
+		if (!CHtmlView::Create(nullptr,nullptr,dwStyle,rect,pParentWnd,nID,nullptr)) // (CCreateContext *)==nullptr => doesn't allow current Image to get crack on MFC commands
 			return FALSE;
 		// - performing initial update as the method isn't called automatically during OnCreate
 		OnInitialUpdate(); // calls SetScrollSizes via OnUpdate
@@ -79,9 +79,9 @@
 			return;
 		// - ignoring navigation to a label in CurrentPage
 		const LPCTSTR pCurrLabel=_tcsrchr(history.currentPage->url,'#');
-		const int nCurrPageChars= pCurrLabel!=NULL ? pCurrLabel-history.currentPage->url : ::lstrlen(history.currentPage->url);
+		const int nCurrPageChars= pCurrLabel!=nullptr ? pCurrLabel-history.currentPage->url : ::lstrlen(history.currentPage->url);
 		const LPCTSTR pNewLabel=_tcsrchr(lpszURL,'#');
-		const int nNewPageChars= pNewLabel!=NULL ? pNewLabel-lpszURL : ::lstrlen(lpszURL);
+		const int nNewPageChars= pNewLabel!=nullptr ? pNewLabel-lpszURL : ::lstrlen(lpszURL);
 		if (nCurrPageChars==nNewPageChars)
 			if ( navigationToLabel=!::strncmp(history.currentPage->url,lpszURL,nNewPageChars) )
 				return;
@@ -158,7 +158,7 @@
 	}
 	afx_msg void CWebPageView::__navigateBack_updateUI__(CCmdUI *pCmdUI) const{
 		// projecting existence of Historically older Page into UI
-		pCmdUI->Enable(history.currentPage->older!=NULL);
+		pCmdUI->Enable(history.currentPage->older!=nullptr);
 	}
 
 	afx_msg void CWebPageView::__navigateForward__(){
@@ -169,7 +169,7 @@
 	}
 	afx_msg void CWebPageView::__navigateForward_updateUI__(CCmdUI *pCmdUI) const{
 		// projecting existence of Historically newer Page into UI
-		pCmdUI->Enable(history.currentPage->newer!=NULL);
+		pCmdUI->Enable(history.currentPage->newer!=nullptr);
 	}
 
 	afx_msg void CWebPageView::__openCurrentPageInDefaultBrowser__() const{

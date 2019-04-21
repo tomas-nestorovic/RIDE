@@ -32,7 +32,7 @@
 				const HGDIOBJ hBmp0=::SelectObject(dcdst,hBmp);
 					__drawIcon__(iconZxData,dcdst,GKFM_ICON_FM_ZOOM_FACTOR);
 				::SelectObject(dcdst,hBmp0);
-				const int i=ImageList_Add( icons, hBmp, NULL );
+				const int i=ImageList_Add( icons, hBmp, nullptr );
 			::DeleteObject(hBmp);
 		::DeleteDC(dcdst);
 		return i;
@@ -90,7 +90,7 @@
 			};
 			return defaultIcon;
 		}else
-			return NULL;
+			return nullptr;
 	}
 
 	#define DESKTOP_NL	13	/* Proxima Desktop's "new line" character */
@@ -125,7 +125,7 @@
 	bool WINAPI CMDOS2::TBootSector::UReserved1::TGKFileManager::__warnOnEditingAdvancedValue__(PVOID,int){
 		// shows a warning on about to change an "advanced" parameter of GK's File Manager
 		if (Utils::QuestionYesNo(_T("The advanced properties are best left alone if you don't know their purpose (consult George K's \"Boot Maker\" to find out).\n\nContinue anyway?!"),MB_DEFBUTTON2))
-			return CBootView::__bootSectorModified__( NULL, 0 );
+			return CBootView::__bootSectorModified__( nullptr, 0 );
 		else
 			return false;
 	}
@@ -156,7 +156,7 @@
 
 	void CMDOS2::TBootSector::UReserved1::TGKFileManager::__addToPropertyGrid__(HWND hPropGrid,PBootSector boot){
 		// adds a property showing the presence of GK's File Manager on the disk into PropertyGrid
-		const HANDLE hGkfm=CPropGridCtrl::AddCategory(hPropGrid,NULL,GKFM_NAME);
+		const HANDLE hGkfm=CPropGridCtrl::AddCategory(hPropGrid,nullptr,GKFM_NAME);
 		TGKFileManager &rGkfm=boot->reserved1.gkfm;
 		const bool recognized=rGkfm.id==0x4d46; // textual representation of "FM" string
 		CPropGridCtrl::EnableProperty(	hPropGrid,
@@ -170,7 +170,7 @@
 			// . basic preview
 			CPropGridCtrl::AddProperty(	hPropGrid, hGkfm, _T("Basic"),
 										boot, sizeof(TBootSector),
-										CPropGridCtrl::TCustom::DefineEditor( __pg_getPropertyHeight__(), __pg_drawProperty__, NULL, __pg_editProperty__ )
+										CPropGridCtrl::TCustom::DefineEditor( __pg_getPropertyHeight__(), __pg_drawProperty__, nullptr, __pg_editProperty__ )
 									);
 			// . advanced properties
 			const HANDLE hAdvanced=CPropGridCtrl::AddCategory( hPropGrid, hGkfm, BOOT_SECTOR_ADVANCED, false );
@@ -208,7 +208,7 @@
 		POINT org;
 		::GetViewportOrgEx(dc,&org);
 		org.x+=GKFM_ICON_PG_ZOOM_FACTOR*GKFM_WINDOW_MARGIN*Utils::LogicalUnitScaleFactor, org.y+=GKFM_ICON_PG_ZOOM_FACTOR*GKFM_WINDOW_MARGIN*Utils::LogicalUnitScaleFactor;
-		::SetViewportOrgEx( dc, org.x, org.y, NULL );
+		::SetViewportOrgEx( dc, org.x, org.y, nullptr );
 		// - drawing the background
 		const BYTE color=rGkfm.color;
 		const RGBQUAD paper=Colors[(color&120)>>3], ink=Colors[(color&7)|((color&64)>>3)]; // RGBQUAD inversed order of R-G-B components than COLORREF
@@ -226,7 +226,7 @@
 		::SetViewportOrgEx(	dc,
 							org.x+GKFM_ICON_PG_ZOOM_FACTOR*( (BYTE)(vram.L<<3) - rGkfm.x )*Utils::LogicalUnitScaleFactor, // A-B, A = converted ZX->PC pixel, B = PC pixel
 							org.y+GKFM_ICON_PG_ZOOM_FACTOR*( (BYTE)(vram.H<<3&192 | vram.L>>2&56 | vram.H&7) - rGkfm.y )*Utils::LogicalUnitScaleFactor, // A|B|C, A = third, B = row, C = microrow
-							NULL
+							nullptr
 						);
 		__drawIcon__( __getIconDataFromBoot__(boot), dc, GKFM_ICON_PG_ZOOM_FACTOR );
 		// - drawing text
@@ -234,7 +234,7 @@
 		const HGDIOBJ hFont0=::SelectObject(dc,font.m_hObject);
 			TCHAR buf[GKFM_TEXT_MAX];
 			__getTextFromBoot__(boot,buf);
-			::SetViewportOrgEx( dc, org.x+GKFM_ICON_PG_ZOOM_FACTOR*Utils::LogicalUnitScaleFactor*rGkfm.dx, org.y+GKFM_ICON_PG_ZOOM_FACTOR*Utils::LogicalUnitScaleFactor*rGkfm.dy, NULL );
+			::SetViewportOrgEx( dc, org.x+GKFM_ICON_PG_ZOOM_FACTOR*Utils::LogicalUnitScaleFactor*rGkfm.dx, org.y+GKFM_ICON_PG_ZOOM_FACTOR*Utils::LogicalUnitScaleFactor*rGkfm.dy, nullptr );
 			::SetTextColor(dc,RGB(ink.rgbRed,ink.rgbGreen,ink.rgbBlue));
 			::DrawText(	dc, buf,-1, &pdis->rcItem, DT_LEFT|DT_TOP );
 		::SelectObject(dc,hFont0);
@@ -347,7 +347,7 @@ errorText:				TCHAR buf[400];
 					GetDlgItem(ID_IMAGE)->MapWindowPoints(this,&iconPosition,1);
 					const CClientDC dc(this);
 					const int iDc0=::SaveDC(dc);
-						::SetViewportOrgEx(dc,iconPosition.x,iconPosition.y,NULL);
+						::SetViewportOrgEx(dc,iconPosition.x,iconPosition.y,nullptr);
 						Utils::ScaleLogicalUnit(dc);
 						__drawIcon__( __getIconDataFromBoot__(&boot), dc, 2 );
 					::RestoreDC(dc,iDc0);
@@ -387,7 +387,7 @@ errorText:				TCHAR buf[400];
 		__informationWithCheckableShowNoMore__(_T("Layout on real hardware may differ from the preview.\n\nClick OK to proceed to the editor."),INI_GKFM_PREVIEW);
 		if (d.DoModal()==IDOK){
 			*(PBootSector)bootSector=d.boot;
-			return CBootView::__bootSectorModified__(NULL,0);
+			return CBootView::__bootSectorModified__(nullptr,0);
 		}else
 			return false;
 	}
@@ -415,13 +415,13 @@ errorText:				TCHAR buf[400];
 												'n','o','v',128,' ','d','i','m','e','n','z','e',13
 											};
 			::memcpy( &tmpBootSector.reserved1.undefined[208], DefGkfmText, sizeof(DefGkfmText) );
-		if (__pg_editProperty__(NULL,&tmpBootSector,0)){
+		if (__pg_editProperty__(nullptr,&tmpBootSector,0)){
 			// creation of GKFM confirmed
 			// . accepting the GKFM record in the Boot Sector
 			*pBootSector=tmpBootSector; // adopting confimed values
-			image->UpdateAllViews(NULL);
+			image->UpdateAllViews(nullptr);
 			// . downloading the GKFM binary from the Internet and importing it to the disk
-			__pg_updateOnline__(param,0,NULL);
+			__pg_updateOnline__(param,0,nullptr);
 		}
 		return true; // True = destroy PropertyGrid's Editor
 	}

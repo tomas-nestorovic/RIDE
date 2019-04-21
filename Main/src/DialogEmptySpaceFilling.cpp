@@ -44,10 +44,10 @@
 		// projecting feasibility into UI
 		nOptionsChecked+=-1+2*IsDlgButtonChecked(id);
 		GetDlgItem(ID_RECURRENCY)->EnableWindow(
-			IsDlgButtonChecked(ID_FILE) && dos->pFileManager->pDirectoryStructureManagement!=NULL
+			IsDlgButtonChecked(ID_FILE) && dos->pFileManager->pDirectoryStructureManagement!=nullptr
 		);
 		GetDlgItem(ID_SUBDIRECTORY)->EnableWindow(
-			IsDlgButtonChecked(ID_DIRECTORY) && dos->pFileManager->pDirectoryStructureManagement!=NULL
+			IsDlgButtonChecked(ID_DIRECTORY) && dos->pFileManager->pDirectoryStructureManagement!=nullptr
 		);
 		GetDlgItem(IDOK)->EnableWindow( nOptionsChecked>0 );
 	}

@@ -9,7 +9,7 @@
 	#define DOS_MSG_CYLINDERS_UNCHANGED	_T("No cylinders have been modified.")
 	#define DOS_MSG_HIT_ESC				_T("Hit Escape to cancel editing.")
 
-	#define DOS_DIR_ROOT	NULL
+	#define DOS_DIR_ROOT	nullptr
 	#define DOS_DIR_ROOT_ID	0
 
 	#define VOLUME_LABEL_DEFAULT_ANSI_8CHARS	"Untitled"

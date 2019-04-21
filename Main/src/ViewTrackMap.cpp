@@ -125,7 +125,7 @@
 				image->GetTrackData( si.cylinder, si.head, si.bufferId, sectorIdAndPositionIdentity, si.nSectors, false, si.bufferSectorData, si.bufferLength, statuses );
 				for( TSector n=0; n<si.nSectors; n++ )
 					if (pvtm->displayType!=TDisplayType::DATA_ALL && !statuses[n].IsWithoutError())
-						si.bufferSectorData[n]=NULL;
+						si.bufferSectorData[n]=nullptr;
 			}
 			// . sending scanned information for drawing
 			if (::IsWindow(pvtm->m_hWnd)) // TrackMap may not exist if, for instance, switched to another view while still scanning some Track(s)
@@ -202,9 +202,9 @@
 								const HGDIOBJ hPen0=::SelectObject(dc,CRidePen::RedHairline);
 									r.right+=1+w; // "1+" = to correctly display a zero-length Sector
 									dc.Rectangle(&r);
-									::MoveToEx( dc, r.left, r.top, NULL );
+									::MoveToEx( dc, r.left, r.top, nullptr );
 									::LineTo( dc, r.right, r.bottom );
-									::MoveToEx( dc, r.left, r.bottom, NULL );
+									::MoveToEx( dc, r.left, r.bottom, nullptr );
 									::LineTo( dc, r.right, r.top);
 								::SelectObject(dc,hPen0);
 							}
@@ -276,7 +276,7 @@
 
 	void CTrackMapView::__updateStatusBarIfCursorOutsideAnySector__() const{
 		// updates the MainWindow's StatusBar when cursor isn't over any Sector
-		CMainWindow::__setStatusBarText__(NULL);
+		CMainWindow::__setStatusBarText__(nullptr);
 	}
 
 

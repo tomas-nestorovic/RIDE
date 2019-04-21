@@ -23,9 +23,9 @@
 		pSingleInstance=this;
 		// - creating the TemporaryFile to store HTML-formatted BASIC Listing
 		::GetTempPath(MAX_PATH,tmpFileName);
-		::GetTempFileName( tmpFileName, NULL, TRUE, tmpFileName );
+		::GetTempFileName( tmpFileName, nullptr, TRUE, tmpFileName );
 		// - creating the ListingView
-		listingView.Create( NULL, NULL, WS_CHILD|WS_VISIBLE, rectDefault, this, AFX_IDW_PANE_FIRST, NULL );
+		listingView.Create( nullptr, nullptr, WS_CHILD|WS_VISIBLE, rectDefault, this, AFX_IDW_PANE_FIRST, nullptr );
 		listingView.OnInitialUpdate();
 		// - showing the first File
 		__showNextFile__();
@@ -39,7 +39,7 @@
 		app.WriteProfileInt(INI_PREVIEW,INI_SHOW_INTERNAL_BINARY,binaryAfter0x14);
 		// - uninitialization
 		::DeleteFile(tmpFileName);
-		pSingleInstance=NULL;
+		pSingleInstance=nullptr;
 	}
 
 
@@ -580,7 +580,7 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 			SetWindowText(bufCaption);
 		}else
 			SetWindowText(PREVIEW_LABEL);
-		SetWindowPos( NULL, 0,0, 0,0, SWP_NOZORDER|SWP_NOMOVE|SWP_NOSIZE|SWP_FRAMECHANGED );
+		SetWindowPos( nullptr, 0,0, 0,0, SWP_NOZORDER|SWP_NOMOVE|SWP_NOSIZE|SWP_FRAMECHANGED );
 	}
 
 	BOOL CSpectrumDos::CBasicPreview::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){

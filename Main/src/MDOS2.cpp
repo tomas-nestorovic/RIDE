@@ -38,7 +38,7 @@
 								{ 0, TVersion::VERSION_1, formatBoot.nSectors, MDOS2_SECTOR_LENGTH_STD_CODE }
 							};
 		for( ; chs.sectorId.sector; chs.sectorId.sector-- )
-			if (image->GetSectorData(chs)!=NULL){ // at least one Sector is readable = Version 1.0 successfully recognized
+			if (image->GetSectorData(chs)!=nullptr){ // at least one Sector is readable = Version 1.0 successfully recognized
 				sideMap[1]=TVersion::VERSION_1;
 				return;
 			}
@@ -222,7 +222,7 @@
 	}
 	TStdWinError CMDOS2::ChangeFileNameAndExt(PFile file,LPCTSTR newName,LPCTSTR newExt,PFile &rRenamedFile){
 		// tries to change given File's name and extension; returns Windows standard i/o error
-		ASSERT(newName!=NULL && newExt!=NULL);
+		ASSERT(newName!=nullptr && newExt!=nullptr);
 		// - can't change root Directory's name
 		if (file==ZX_DIR_ROOT)
 			return ERROR_DIRECTORY;
@@ -391,9 +391,9 @@
 	TStdWinError CMDOS2::CreateUserInterface(HWND hTdi){
 		// creates DOS-specific Tabs in TDI; returns Windows standard i/o error
 		CSpectrumDos::CreateUserInterface(hTdi); // guaranteed to always return ERROR_SUCCESS
-		CTdiCtrl::AddTabLast( hTdi, TRACK_MAP_TAB_LABEL, &trackMap.tab, false, TDI_TAB_CANCLOSE_NEVER, NULL );
-		CTdiCtrl::AddTabLast( hTdi, BOOT_SECTOR_TAB_LABEL, &boot.tab, false, TDI_TAB_CANCLOSE_NEVER, NULL );
-		CTdiCtrl::AddTabLast( hTdi, FILE_MANAGER_TAB_LABEL, &fileManager.tab, true, TDI_TAB_CANCLOSE_NEVER, NULL );
+		CTdiCtrl::AddTabLast( hTdi, TRACK_MAP_TAB_LABEL, &trackMap.tab, false, TDI_TAB_CANCLOSE_NEVER, nullptr );
+		CTdiCtrl::AddTabLast( hTdi, BOOT_SECTOR_TAB_LABEL, &boot.tab, false, TDI_TAB_CANCLOSE_NEVER, nullptr );
+		CTdiCtrl::AddTabLast( hTdi, FILE_MANAGER_TAB_LABEL, &fileManager.tab, true, TDI_TAB_CANCLOSE_NEVER, nullptr );
 		return ERROR_SUCCESS;
 	}
 

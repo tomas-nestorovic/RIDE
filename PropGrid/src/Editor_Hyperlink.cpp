@@ -10,12 +10,12 @@
 									)
 		// ctor
 		// - base
-		: TEditor( EDITOR_DEFAULT_HEIGHT, true, NULL, onValueChanged )
+		: TEditor( EDITOR_DEFAULT_HEIGHT, true, nullptr, onValueChanged )
 		// - initialization
 		, wideChar(wideChar)
 		, onHyperlinkClicked( onHyperlinkClicked ? onHyperlinkClicked : __doNothingAfterClick__ ) {
 		// - initializing OLE and Common Controls
-		::OleInitialize(NULL);
+		::OleInitialize(nullptr);
 		static const INITCOMMONCONTROLSEX Icc={ sizeof(Icc), ICC_LINK_CLASS };
 		::InitCommonControlsEx(&Icc); // silently assuming that running on Windows 2000 and newer (see handling failures to create a SysLink window below)
 	}
@@ -26,7 +26,7 @@
 		const WORD w=pdis->rcItem.right-pdis->rcItem.left, h=pdis->rcItem.bottom-pdis->rcItem.top;
 		const HWND hSysLink=__createMainControl__( value, pdis->hwndItem );
 		::SendMessage( hSysLink, WM_SETFONT, (WPARAM)TPropGridInfo::FONT_DEFAULT, 0 ); // explicitly setting DPI-scaled font
-		::SetWindowPos(	hSysLink, NULL,
+		::SetWindowPos(	hSysLink, nullptr,
 						pdis->rcItem.left, pdis->rcItem.top,
 						w, h,
 						SWP_NOZORDER | SWP_SHOWWINDOW
@@ -64,7 +64,7 @@
 								buf,
 								EDITOR_STYLE,
 								0,0, 1,1,
-								hParent, 0, GET_PROPGRID_HINSTANCE(hParent), NULL
+								hParent, 0, GET_PROPGRID_HINSTANCE(hParent), nullptr
 							);
 	}
 
@@ -89,7 +89,7 @@
 							destroy=((THyperlinkEditor *)value.editor)->onHyperlinkClicked( value.param, info.item.iLink, (LPCTSTR)info.item.szID );
 						else{
 							char buf[1024];
-							::WideCharToMultiByte( CP_ACP, 0, info.item.szID,-1, buf,sizeof(buf), NULL,NULL );
+							::WideCharToMultiByte( CP_ACP, 0, info.item.szID,-1, buf,sizeof(buf), nullptr,nullptr );
 							destroy=((THyperlinkEditor *)value.editor)->onHyperlinkClicked( value.param, info.item.iLink, (LPCTSTR)buf );
 						}
 						::SetFocus(hWnd); // renewing the focus, should it be lost during the Action

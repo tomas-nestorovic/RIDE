@@ -10,7 +10,7 @@
 									CPropGridCtrl::TOnValueChanged onValueChanged
 								)
 		// ctor
-		: TEditor( EDITOR_DEFAULT_HEIGHT, true, NULL, onValueChanged )
+		: TEditor( EDITOR_DEFAULT_HEIGHT, true, nullptr, onValueChanged )
 		, reservedValue(reservedValue) , reservedForTrue(reservedForTrue)
 		, onValueConfirmed( onValueConfirmed ? onValueConfirmed : __alwaysAccept__ ) {
 	}
@@ -46,10 +46,10 @@
 		::memcpy( &tmp, value.buffer, value.bufferCapacity );
 		checked=reservedForTrue && tmp==reservedValue  ||  !reservedForTrue && tmp!=reservedValue;
 		return ::CreateWindow(	WC_BUTTON,
-								NULL, // no caption next to the check-box
+								nullptr, // no caption next to the check-box
 								EDITOR_STYLE | BS_AUTOCHECKBOX | BS_OWNERDRAW,
 								0,0, 1,1,
-								hParent, 0, GET_PROPGRID_HINSTANCE(hParent), NULL
+								hParent, 0, GET_PROPGRID_HINSTANCE(hParent), nullptr
 							);
 	}
 
@@ -74,7 +74,7 @@
 			case WM_CAPTURECHANGED:
 				// CheckBox clicked (either by left mouse button or using space-bar)
 				checked=!checked;
-				::InvalidateRect(hCheckBox,NULL,TRUE);
+				::InvalidateRect(hCheckBox,nullptr,TRUE);
 				break;
 			case WM_ERASEBKGND:{
 				RECT rc;

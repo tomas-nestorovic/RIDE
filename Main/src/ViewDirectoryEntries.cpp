@@ -23,7 +23,7 @@
 			// populates the Buffer with label for the Record that STARTS at specified LogicalPosition, and returns the Buffer; returns Null if no Record starts at specified LogicalPosition
 			div_t d=div( logPos, recordLength );
 			if (!d.rem){
-				LPCTSTR result=NULL; // assumption (no description exists for the DirectoryEntry)
+				LPCTSTR result=nullptr; // assumption (no description exists for the DirectoryEntry)
 				const CDirEntriesView *const pdev=(CDirEntriesView *)param;
 				if (const CDos::PDirectoryTraversal pdt=pdev->DOS->BeginDirectoryTraversal(pdev->directory)){
 					while (pdt->AdvanceToNextEntry() && d.quot>0)
@@ -91,7 +91,7 @@
 			return -1;
 		// - displaying the content
 		f=new CDirectoryEntriesReaderWriter(DOS,directory);
-		OnUpdate(NULL,0,NULL);
+		OnUpdate(nullptr,0,nullptr);
 		// - recovering the Scroll position and repainting the view (by setting its editability)
 		SetScrollPos( SB_VERT, iScrollY );
 		SetEditable( !IMAGE->IsWriteProtected() );

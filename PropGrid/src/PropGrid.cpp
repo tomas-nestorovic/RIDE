@@ -79,11 +79,11 @@
 
 	static float __getLogicalUnitScaleFactor__(){
 		// computes and returns the factor (from (0;oo)) to multiply the size of one logical unit with; returns 1 if the logical unit size doesn't have to be changed
-		const HDC screen=::GetDC(NULL);
+		const HDC screen=::GetDC(nullptr);
 			const float result=min(	::GetDeviceCaps(screen,LOGPIXELSX)/(float)SCREEN_DPI_DEFAULT,
 									::GetDeviceCaps(screen,LOGPIXELSY)/(float)SCREEN_DPI_DEFAULT
 								);
-		::ReleaseDC(NULL,screen);
+		::ReleaseDC(nullptr,screen);
 		return result;
 	}
 
@@ -93,8 +93,8 @@
 		// changes given DeviceContext's size of one logical unit; returns the Factor using which the logical unit size has been multiplied with
 		if (LogicalUnitScaleFactor!=1){
 			::SetMapMode(dc,MM_ISOTROPIC);
-			::SetWindowExtEx( dc, SCREEN_DPI_DEFAULT, SCREEN_DPI_DEFAULT, NULL );
-			::SetViewportExtEx( dc, ::GetDeviceCaps(dc,LOGPIXELSX), ::GetDeviceCaps(dc,LOGPIXELSY), NULL );
+			::SetWindowExtEx( dc, SCREEN_DPI_DEFAULT, SCREEN_DPI_DEFAULT, nullptr );
+			::SetViewportExtEx( dc, ::GetDeviceCaps(dc,LOGPIXELSX), ::GetDeviceCaps(dc,LOGPIXELSY), nullptr );
 		}
 		return LogicalUnitScaleFactor;
 	}
@@ -114,7 +114,7 @@
 		// ctor
 		: handle(hPropGrid)
 		, listBox(this,propGridWidth,propGridHeight)
-		, root(this,NULL,_T(""),true) {
+		, root(this,nullptr,_T(""),true) {
 	}
 
 
@@ -205,14 +205,14 @@
 								r.bottom=i;
 							// | drawing decorations
 							::SelectObject(dc,PEN_GRAY);
-								::MoveToEx(dc,CATEGORY_HEIGHT*LogicalUnitScaleFactor,r.bottom,NULL);
+								::MoveToEx(dc,CATEGORY_HEIGHT*LogicalUnitScaleFactor,r.bottom,nullptr);
 								::LineTo(dc,CATEGORY_HEIGHT*LogicalUnitScaleFactor,r.top); // vertical band (where the main Categories have their "[+/-]" symbols)
 								::LineTo(dc,10000,r.top); // horizontal delimiter of Properties
 							::SelectObject(dc,PEN_GRAY_LIGHT); // vertical splitter
-								::MoveToEx(dc,r.right-1,r.top,NULL);
+								::MoveToEx(dc,r.right-1,r.top,nullptr);
 								::LineTo(dc,r.right-1,r.bottom);
 							::SelectObject(dc,PEN_GRAY_DARK);
-								::MoveToEx(dc,r.right,r.top,NULL);
+								::MoveToEx(dc,r.right,r.top,nullptr);
 								::LineTo(dc,r.right,r.bottom);
 							// | for non-top-level Category, we are done here
 							if (pItem->__isCategory__())
@@ -222,7 +222,7 @@
 						::SetViewportOrgEx(	dc, // origin [0,0] goes to the upper left corner of "value part" of the Item
 											(1*LogicalUnitScaleFactor+r.right),
 											(1*LogicalUnitScaleFactor+r.top),
-											NULL
+											nullptr
 										);
 						::OffsetRect( &pdis->rcItem, 0, -r.top );
 						pdis->rcItem.bottom--; // width of the horizontal line separating individial ListBox Items
@@ -254,13 +254,13 @@ paintingDone:	::RestoreDC(dc,iDc0);
 				// window size changed
 				TEditor::__cancelEditing__(); // cancelling any running editing of a Property
 				::SetWindowPos(	GET_PROPGRID_INFO(hPropGrid)->listBox.handle,
-								NULL, 0,0, LOWORD(lParam),HIWORD(lParam),
+								nullptr, 0,0, LOWORD(lParam),HIWORD(lParam),
 								SWP_NOMOVE | SWP_NOZORDER
 							);
 				break;
 			case WM_PAINT:
 				// painting
-				::InvalidateRect( GET_PROPGRID_INFO(hPropGrid)->listBox.handle, NULL, TRUE );
+				::InvalidateRect( GET_PROPGRID_INFO(hPropGrid)->listBox.handle, nullptr, TRUE );
 				break;
 			case WM_DESTROY:
 				// closing the PropertyGrid window

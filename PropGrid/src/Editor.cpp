@@ -12,23 +12,23 @@
 		// ctor
 		// - creating Editor's GUI
 		: value(editor,valueBuffer,valueBufferCapacity,param)
-		, hMainCtrl(NULL) // set below
-		, hEllipsisBtn(	editor->onEllipsisBtnClicked!=NULL
+		, hMainCtrl(nullptr) // set below
+		, hEllipsisBtn(	editor->onEllipsisBtnClicked!=nullptr
 						? ::CreateWindow(	WC_BUTTON, _T("..."),
 											EDITOR_STYLE, 0,0, 1,1,
-											hParent , 0,GET_PROPGRID_HINSTANCE(hParent),NULL
+											hParent , 0,GET_PROPGRID_HINSTANCE(hParent),nullptr
 										)
-						: NULL
+						: nullptr
 					)
 		, mainControlExists( editor->hasMainControl )
-		, wndProc0(NULL) , ellipsisBtnWndProc0(NULL) { // set below
+		, wndProc0(nullptr) , ellipsisBtnWndProc0(nullptr) { // set below
 		pSingleShown=this;
 		(HWND)hMainCtrl=editor->hasMainControl
 						? editor->__createMainControl__( value, hParent )
-						: ::CreateWindow(	WC_STATIC, NULL, WS_CHILD,
+						: ::CreateWindow(	WC_STATIC, nullptr, WS_CHILD,
 											0,0, 100,100,
 											HWND_MESSAGE, // "Message-Only Window" (invisible window that only processes messages)
-											0,GET_PROPGRID_HINSTANCE(hParent), NULL
+											0,GET_PROPGRID_HINSTANCE(hParent), nullptr
 										);
 		(WNDPROC)wndProc0=SubclassWindow(hMainCtrl,editor->__wndProc__);
 		(WNDPROC)ellipsisBtnWndProc0=SubclassWindow(hEllipsisBtn,__ellipsisBtn_wndProc__);
@@ -48,7 +48,7 @@
 		if (hEllipsisBtn)
 			::DestroyWindow(hEllipsisBtn);
 		::DestroyWindow(hMainCtrl);
-		::InvalidateRect( hParent, NULL, TRUE );
+		::InvalidateRect( hParent, nullptr, TRUE );
 	}
 
 
@@ -145,7 +145,7 @@
 				if (pSingleShown->hEllipsisBtn && ::GetFocus()==pSingleShown->hEllipsisBtn)
 					break;
 				// . if attempting to leave the Editor, attempting to accept the new Value
-				CPropGridCtrl::TOnValueChanged onValueChanged=NULL; // assumption (Value didn't change)
+				CPropGridCtrl::TOnValueChanged onValueChanged=nullptr; // assumption (Value didn't change)
 				CPropGridCtrl::PCustomParam param;
 				if (::IsWindowVisible(pSingleShown->hMainCtrl)) // yes, attepting to leave the Editor; must use the "pSingleShown->hMainCtrl" construct to refer to the MainControl as "hWnd" may refer to either the MainControl or EllipsisButton (see EllipsisButton's window procedure)
 					if (__tryToAcceptMainCtrlValue__()){ // if Value acceptable ...
@@ -157,7 +157,7 @@
 					}
 				// . destroying the Editor
 				delete pSingleShown;
-				pSingleShown=NULL;
+				pSingleShown=nullptr;
 				// . letting the caller know the editing has definitely ended
 				if (onValueChanged)
 					onValueChanged(param);
@@ -261,7 +261,7 @@
 	PCEditor CRegisteredEditors::__add__(PCEditor definition,BYTE editorSizeInBytes){
 		// returns the Editor with given Definition
 		// - checking if an Editor with given Definition has already been registered before
-		for( const TListItem *pDef=list; pDef!=NULL; pDef=pDef->pNext )
+		for( const TListItem *pDef=list; pDef!=nullptr; pDef=pDef->pNext )
 			if (pDef->editorSizeInBytes==editorSizeInBytes)
 				if (!::memcmp(pDef->pEditor,definition,editorSizeInBytes)){
 					// an Editor with given Definition already registered
@@ -279,7 +279,7 @@
 
 	CRegisteredEditors::CRegisteredEditors()
 		// ctor
-		: list(NULL) {
+		: list(nullptr) {
 	}
 
 	CRegisteredEditors::~CRegisteredEditors(){

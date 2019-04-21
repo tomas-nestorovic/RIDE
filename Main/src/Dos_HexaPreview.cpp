@@ -17,12 +17,12 @@
 		// - base
 		: CFilePreview( &hexaEditor, INI_PREVIEW, rFileManager, HEXA_WIDTH, HEXA_HEIGHT, 0 )
 		// - initialization
-		, fEmpty((PBYTE)&fEmpty,0) , pFileRW(NULL)
+		, fEmpty((PBYTE)&fEmpty,0) , pFileRW(nullptr)
 		, hexaEditor(DOS,this) {
 		pSingleInstance=this;
 		// - creating the HexaEditor view
 		hexaEditor.Reset(&fEmpty,0,0);
-		hexaEditor.Create( NULL, NULL, AFX_WS_DEFAULT_VIEW&~WS_BORDER|WS_CLIPSIBLINGS, rectDefault, this, AFX_IDW_PANE_FIRST );
+		hexaEditor.Create( nullptr, nullptr, AFX_WS_DEFAULT_VIEW&~WS_BORDER|WS_CLIPSIBLINGS, rectDefault, this, AFX_IDW_PANE_FIRST );
 		hexaEditor.SetEditable(!IMAGE->IsWriteProtected());
 		// - showing the first File
 		__showNextFile__();
@@ -35,7 +35,7 @@
 		// - releasing resources
 		if (pFileRW)
 			delete pFileRW;
-		pSingleInstance=NULL;
+		pSingleInstance=nullptr;
 	}
 
 
@@ -54,7 +54,7 @@
 			SetWindowText(bufCaption);
 		}else
 			SetWindowText(LABEL);
-		//SetWindowPos( NULL, 0,0, 0,0, SWP_NOZORDER|SWP_NOMOVE|SWP_NOSIZE|SWP_FRAMECHANGED|SWP_NOSENDCHANGING );
+		//SetWindowPos( nullptr, 0,0, 0,0, SWP_NOZORDER|SWP_NOMOVE|SWP_NOSIZE|SWP_FRAMECHANGED|SWP_NOSENDCHANGING );
 	}
 
 

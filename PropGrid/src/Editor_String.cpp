@@ -26,10 +26,10 @@
 	HWND TStringEditor::__createEditBox__(HWND hParent,UINT extraStyle){
 		// creates and returns an Edit box with given ExtraStyle
 		const HWND hEdit=::CreateWindow(WC_EDIT,
-										NULL, // descendant sets the edit-box content
+										nullptr, // descendant sets the edit-box content
 										extraStyle | ES_AUTOHSCROLL | ES_WANTRETURN | EDITOR_STYLE,
 										0,0, 1,1,
-										hParent, 0, GET_PROPGRID_HINSTANCE(hParent), NULL
+										hParent, 0, GET_PROPGRID_HINSTANCE(hParent), nullptr
 									);
 		//Edit_SetSel(hEdit,0,-1);	// selecting all text
 		return hEdit;
@@ -97,7 +97,7 @@
 														CPropGridCtrl::TOnValueChanged onValueChanged
 													)
 		// ctor
-		: TStringEditor( NULL, wideChar, onValueConfirmed, onValueChanged )
+		: TStringEditor( nullptr, wideChar, onValueConfirmed, onValueChanged )
 		, paddingChar(paddingChar) {
 	}
 
@@ -156,7 +156,7 @@
 												CPropGridCtrl::TOnValueChanged onValueChanged
 											)
 		// ctor
-		: TStringEditor( NULL, wideChar, onValueConfirmed, onValueChanged ) {
+		: TStringEditor( nullptr, wideChar, onValueConfirmed, onValueChanged ) {
 	}
 
 	HWND TDynamicStringEditor::__createMainControl__(const TPropGridInfo::TItem::TValue &value,HWND hParent) const{
@@ -229,7 +229,7 @@
 	CPropGridCtrl::PCEditor CPropGridCtrl::TString::DefineFixedLengthEditorA(TOnValueConfirmedA onValueConfirmed,char paddingChar,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
-					new TFixedPaddedStringEditor( NULL, false, (TOnValueConfirmed)onValueConfirmed, paddingChar, onValueChanged ),
+					new TFixedPaddedStringEditor( nullptr, false, (TOnValueConfirmed)onValueConfirmed, paddingChar, onValueChanged ),
 					sizeof(TFixedPaddedStringEditor)
 				);
 	}
@@ -237,7 +237,7 @@
 	CPropGridCtrl::PCEditor CPropGridCtrl::TString::DefineFixedLengthEditorW(TOnValueConfirmedW onValueConfirmed,WCHAR paddingChar,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
-					new TFixedPaddedStringEditor( NULL, true, (TOnValueConfirmed)onValueConfirmed, paddingChar, onValueChanged ),
+					new TFixedPaddedStringEditor( nullptr, true, (TOnValueConfirmed)onValueConfirmed, paddingChar, onValueChanged ),
 					sizeof(TFixedPaddedStringEditor)
 				);
 	}

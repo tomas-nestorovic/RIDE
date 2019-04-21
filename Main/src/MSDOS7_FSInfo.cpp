@@ -40,14 +40,14 @@
 		// returns the data of FS Info Sector; returns Null if Sector doesn't exist or isn't readable
 		// - if FS Info Sector doesn't exist, we are done
 		if (msdos.fat.type!=CFat::FAT32)
-			return NULL;
+			return nullptr;
 		// - reading and recognizing the FS Info Sector
 		if (const PCBootSector bootSector=msdos.boot.GetSectorData())
 			if (const PFsInfoSector fsInfo=(PFsInfoSector)msdos.__getLogicalSectorData__(bootSector->fat32.fsInfo))
 				if (fsInfo->__recognize__(msdos.formatBoot.sectorLength))
 					return fsInfo;
 		// - FS Info Sector isn't readable or isn't recognized
-		return NULL;
+		return nullptr;
 	}
 
 	void CMSDOS7::CFsInfo::MarkSectorAsDirty() const{

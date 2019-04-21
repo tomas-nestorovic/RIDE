@@ -10,7 +10,7 @@
 									CPropGridCtrl::TOnValueChanged onValueChanged
 								)
 		// ctor
-		: TStringEditor( NULL, false, NULL, onValueChanged )
+		: TStringEditor( nullptr, false, nullptr, onValueChanged )
 		, features(features)
 		, limits(rLimits)
 		, onValueConfirmed( onValueConfirmed ? onValueConfirmed : __alwaysAccept__ ) {
@@ -48,14 +48,14 @@
 		const HWND hEdit=TEditor::pSingleShown->hMainCtrl;
 		TCHAR buf[16];
 		::GetWindowText( hEdit, buf, sizeof(buf)/sizeof(TCHAR) );
-		const int i=_tcstol( buf, NULL, features&CPropGridCtrl::TInteger::HEXADECIMAL?16:10 );
+		const int i=_tcstol( buf, nullptr, features&CPropGridCtrl::TInteger::HEXADECIMAL?16:10 );
 		const bool outOfRange=	features&CPropGridCtrl::TInteger::HEXADECIMAL
 								? (UINT)i<(UINT)limits.iMin || (UINT)i>(UINT)limits.iMax
 								: i<limits.iMin || i>limits.iMax;
 		if (outOfRange){
 			TCHAR buf[80];
 			::wsprintf( buf, _T("Number must be between %d and %d."), limits );
-			::MessageBox( hEdit, buf, NULL, MB_OK|MB_ICONEXCLAMATION );
+			::MessageBox( hEdit, buf, nullptr, MB_OK|MB_ICONEXCLAMATION );
 			return false;
 		}
 		ignoreRequestToDestroy=true;

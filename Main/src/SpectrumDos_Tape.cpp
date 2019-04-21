@@ -26,12 +26,12 @@
 
 	CSpectrumDos::CTape::~CTape(){
 		// dtor
-		pSingleInstance=NULL; // no longer accepting any requests
+		pSingleInstance=nullptr; // no longer accepting any requests
 		if (CScreenPreview::pSingleInstance && CScreenPreview::pSingleInstance->rFileManager.tab.dos==this)
 			CScreenPreview::pSingleInstance->DestroyWindow();
 		if (CBasicPreview::pSingleInstance && &CBasicPreview::pSingleInstance->rFileManager==pFileManager)
 			CBasicPreview::pSingleInstance->DestroyWindow();
-		dos=NULL; // to not destroy the Image (as DOS and Image are one structure in memory that is disposed at once)
+		dos=nullptr; // to not destroy the Image (as DOS and Image are one structure in memory that is disposed at once)
 		(HACCEL)menu.hAccel=0; // for DiskDos accelerators to be not destroyed
 	}
 
@@ -45,8 +45,8 @@
 
 	void CSpectrumDos::CTape::GetTrackData(TCylinder cyl,THead,PCSectorId,PCBYTE,TSector,bool,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses){
 		// populates output buffers with specified Sectors' data, usable lengths, and FDC statuses; ALWAYS attempts to buffer all Sectors - caller is then to sort out eventual read errors (by observing the FDC statuses); caller can call ::GetLastError to discover the error for the last Sector in the input list
-		ASSERT( outBufferData!=NULL && outBufferLengths!=NULL && outFdcStatuses!=NULL );
-		*outBufferData= cyl<fileManager.nFiles ? fileManager.files[cyl]->data : NULL;
+		ASSERT( outBufferData!=nullptr && outBufferLengths!=nullptr && outFdcStatuses!=nullptr );
+		*outBufferData= cyl<fileManager.nFiles ? fileManager.files[cyl]->data : nullptr;
 		*outBufferLengths=formatBoot.sectorLength;
 		*outFdcStatuses=TFdcStatus::WithoutError;
 	}
@@ -364,7 +364,7 @@
 		// returns this File's Header, or Null if this File is Headerless
 		return	type==STD_HEADER
 				? &stdHeader
-				: NULL;
+				: nullptr;
 	}
 
 	CSpectrumDos::CTape::PCHeader CSpectrumDos::CTape::TTapeFile::GetHeader() const{
@@ -471,7 +471,7 @@
 			}
 			case ID_FILE_SAVE:
 				// saving the Tape to the open underlying physical file
-				DoSave(NULL,FALSE);
+				DoSave(nullptr,FALSE);
 				return TCmdResult::DONE;
 		}
 		return __super::ProcessCommand(cmd);
@@ -655,7 +655,7 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 				r.right=*tabs-5;
 					CPropGridCtrl::TEnum::UValue v;
 						v.longValue=h->type;
-					::DrawText( dc, CStdHeaderTypeEditor::__getDescription__(NULL,v,NULL,0),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
+					::DrawText( dc, CStdHeaderTypeEditor::__getDescription__(nullptr,v,nullptr,0),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
 				r.left=*tabs++;
 				// . COLUMN: Name
 				r.right=*tabs++;
@@ -844,7 +844,7 @@ drawChecksum:	r.right=*tabs++;
 				case INFORMATION_TYPE:
 					return stdHeaderTypeEditor.Create( file, TZxRom::FRAGMENT, CStdHeaderTypeEditor::STD_AND_HEADERLESS_AND_FRAGMENT );
 			}
-		return NULL;
+		return nullptr;
 	}
 
 
@@ -940,7 +940,7 @@ drawChecksum:	r.right=*tabs++;
 		types=_types;
 		const PEditorBase result=pZxFileManager->__createStdEditor__(
 			file, &( data=type ), sizeof(data),
-			CPropGridCtrl::TEnum::DefineConstStringListEditorA( __createValues__, __getDescription__, NULL, __onChanged__ )
+			CPropGridCtrl::TEnum::DefineConstStringListEditorA( __createValues__, __getDescription__, nullptr, __onChanged__ )
 		);
 		::SendMessage( CEditorBase::pSingleShown->hEditor, WM_SETFONT, (WPARAM)pZxFileManager->rFont.m_hObject, 0 );
 		return result;

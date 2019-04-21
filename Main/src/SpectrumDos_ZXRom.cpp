@@ -146,7 +146,7 @@
 		// returns the textual representation of the given Keyword, or Null if the character is not a Keyword character
 		return	k>=KEYWORD_TOKEN_FIRST
 				? Keywords[k-KEYWORD_TOKEN_FIRST]
-				: NULL;
+				: nullptr;
 	}
 
 	void CSpectrumDos::TZxRom::PrintAt(HDC dc,LPCTSTR buf,RECT r,UINT drawTextFormat) const{
@@ -165,8 +165,8 @@
 				// UDG character - composed from four 0x2588 characters printed in half scale
 				const int mapMode0=::SetMapMode(dc,MM_ANISOTROPIC);
 					// . printing in half scale (MM_ISOTROPIC)
-					::SetWindowExtEx(dc,200,200,NULL);
-					::SetViewportExtEx(dc,100,100,NULL);
+					::SetWindowExtEx(dc,200,200,nullptr);
+					::SetViewportExtEx(dc,100,100,nullptr);
 					// . printing UDG
 					static const WCHAR w=0x2588;
 					c-=128; // lower four bits encode which "quadrants" of UDG character are shown (e.g. the UDG character of "L" shape = 2+4+8 = 14)
@@ -209,7 +209,7 @@
 		rEditor.cursor.position=rEditor.length;
 		// - returning the initialized Editor
 		const HWND hEditor=::CreateWindow(	AfxRegisterWndClass(0,app.LoadStandardCursor(IDC_IBEAM),CRideBrush::White),
-											NULL, WS_CHILD|WS_VISIBLE|WS_CLIPSIBLINGS, 0,0, 1,1, hParent, 0, AfxGetInstanceHandle(), NULL
+											nullptr, WS_CHILD|WS_VISIBLE|WS_CLIPSIBLINGS, 0,0, 1,1, hParent, 0, AfxGetInstanceHandle(), nullptr
 										);
 		(WNDPROC)::SetWindowLong(hEditor,GWL_WNDPROC,(LONG)__wndProc__);
 		return rEditor.handle = hEditor;
@@ -235,7 +235,7 @@
 					rEditor.buf,
 					rEditor.length
 				);
-		dos->image->UpdateAllViews(NULL);
+		dos->image->UpdateAllViews(nullptr);
 		return true; // new text always accepted
 	}
 
@@ -294,27 +294,27 @@
 						// moving Cursor one Position to the left
 						if (rEditor.cursor.position){
 							rEditor.cursor.position--;
-							::InvalidateRect(hEditor,NULL,TRUE);
+							::InvalidateRect(hEditor,nullptr,TRUE);
 						}
 						return 0;
 					case VK_RIGHT:
 						// moving Cursor one Position to the right
 						if (rEditor.cursor.position<rEditor.length){
 							rEditor.cursor.position++;
-							::InvalidateRect(hEditor,NULL,TRUE);
+							::InvalidateRect(hEditor,nullptr,TRUE);
 						}
 						return 0;
 					case VK_HOME:
 					case VK_UP:
 						// moving Cursor to the beginning of File Name
 						rEditor.cursor.position=0;
-						::InvalidateRect(hEditor,NULL,TRUE);
+						::InvalidateRect(hEditor,nullptr,TRUE);
 						return 0;
 					case VK_END:
 					case VK_DOWN:
 						// moving Cursor to the end of File Name
 						rEditor.cursor.position=rEditor.length;
-						::InvalidateRect(hEditor,NULL,TRUE);
+						::InvalidateRect(hEditor,nullptr,TRUE);
 						return 0;
 					case VK_BACK:
 						// deleting the character that preceeds the Cursor (Backspace)
@@ -323,7 +323,7 @@
 							const PCHAR p=rEditor.buf;
 							::memmove( p+c, p+1+c, rEditor.lengthMax-c );
 							rEditor.length--;
-							::InvalidateRect(hEditor,NULL,TRUE);
+							::InvalidateRect(hEditor,nullptr,TRUE);
 						}
 						return 0;
 					case VK_DELETE:
@@ -332,7 +332,7 @@
 							const BYTE c=rEditor.cursor.position;
 							const PCHAR p=rEditor.buf;
 							::memmove( p+c, p+1+c, ( --rEditor.length )-c );
-							::InvalidateRect(hEditor,NULL,TRUE);
+							::InvalidateRect(hEditor,nullptr,TRUE);
 						}
 						return 0;
 					case VK_CONTROL:
@@ -350,7 +350,7 @@
 						//fallthrough
 					case VK_CAPITAL:
 						// turning CapsLock on and Off
-						::InvalidateRect(hEditor,NULL,TRUE); // to update the Cursor (switching between the "L" and "C" Modes)
+						::InvalidateRect(hEditor,nullptr,TRUE); // to update the Cursor (switching between the "L" and "C" Modes)
 						break;
 					default:
 						// adding a character to Buffer
@@ -440,7 +440,7 @@ addCharInWParam:						rEditor.__addChar__(wParam);
 		buf[cursor.position++]=c;
 		length++;
 		//cursor.mod=TCursor::L;
-		::InvalidateRect( handle, NULL, TRUE );
+		::InvalidateRect( handle, nullptr, TRUE );
 	}
 
 	CPropGridCtrl::PCEditor CSpectrumDos::TZxRom::CLineComposerPropGridEditor::Create(CPropGridCtrl::TCustom::TOnValueConfirmed onValueConfirmed) const{

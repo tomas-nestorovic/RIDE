@@ -279,7 +279,7 @@
 					TBootSector::__getRecognizedChs__(
 						msdos->image,
 						false, // False = no attempt to recognize Boot Sector, just getting a readable Sector where a Boot is normally expected (this is for the case that the Image is being "Opened as")
-						NULL
+						nullptr
 					)
 				) {
 		// - extracting information from Boot Sector (for the case that the Image is being "Opened as")
@@ -321,7 +321,7 @@
 					newLabel,
 					newLabelChars
 				);
-		return __bootSectorModified__(NULL,0);
+		return __bootSectorModified__(nullptr,0);
 	}
 
 	void CMSDOS7::CMsdos7BootView::GetCommonBootParameters(RCommonBootParameters rParam,PSectorData _boot){
@@ -367,7 +367,7 @@
 		msdos->fat.SetClusterValue( 0, msdos->fat.GetClusterValue(0)&0xffffff00|(BYTE)newValue.charValue );
 		// - propagating the Medium type that has just been changed in Boot Sector to the inner FormatBoot structure
 		msdos->__adoptMediumFromBootSector__();
-		return __bootSectorModified__(NULL,0);
+		return __bootSectorModified__(nullptr,0);
 	}
 	CPropGridCtrl::TEnum::PCValueList WINAPI CMSDOS7::CMsdos7BootView::__getListOfMedia__(PVOID,WORD &rnMedia){
 		// returns the List of known Media
@@ -426,7 +426,7 @@
 						VOLUME_LABEL_DEFAULT_ANSI_8CHARS,
 						sizeof(VOLUME_LABEL_DEFAULT_ANSI_8CHARS)-1
 					);
-			__labelModified__( NULL, de->shortNameEntry.name, MSDOS7_LABEL_LENGTH_MAX );
+			__labelModified__( nullptr, de->shortNameEntry.name, MSDOS7_LABEL_LENGTH_MAX );
 		}else
 			Utils::Information(_T("Can't create label"),ERROR_CANNOT_MAKE);
 		return true; // True = destroy PropertyGrid's Editor
@@ -448,13 +448,13 @@
 									);
 		CPropGridCtrl::AddProperty(	hPropGrid, hVolume, _T("ID valid"),
 									&pvi->infoValid, sizeof(BYTE),
-									CPropGridCtrl::TBoolean::DefineEditor( __bootSectorModified__, NULL, 0x29, true )
+									CPropGridCtrl::TBoolean::DefineEditor( __bootSectorModified__, nullptr, 0x29, true )
 								);
 		const HANDLE hGeometryAdvanced=CPropGridCtrl::AddCategory(hPropGrid,hGeometry,BOOT_SECTOR_ADVANCED,true);
 			// . Medium
 			CPropGridCtrl::AddProperty(	hPropGrid, hGeometryAdvanced, _T("Medium"),
 										&boot->medium, sizeof(TBootSector::TMsdosMedium),
-										CPropGridCtrl::TEnum::DefineConstStringListEditorA( __getListOfMedia__, __getMediumDescription__, NULL, __onMediumChanged__ )
+										CPropGridCtrl::TEnum::DefineConstStringListEditorA( __getListOfMedia__, __getMediumDescription__, nullptr, __onMediumChanged__ )
 									);
 			// . number of Sectors on the disk
 			if (fatType==CFat::FAT32)
@@ -486,7 +486,7 @@
 			// . MediumType
 			CPropGridCtrl::AddProperty(	hPropGrid, hVolumeAdvanced, _T("Medium type"),
 										fatType==CFat::FAT32?&boot->fat32.mediumType:&boot->fat1216.mediumType, sizeof(TBootSector::TMsdosMediumType),
-										CPropGridCtrl::TEnum::DefineConstStringListEditorA( __getListOfMediaTypes__, __getMediumTypeDescription__, NULL, __bootSectorModified__ )
+										CPropGridCtrl::TEnum::DefineConstStringListEditorA( __getListOfMediaTypes__, __getMediumTypeDescription__, nullptr, __bootSectorModified__ )
 									);
 			// . FAT Name
 			CPropGridCtrl::AddProperty(	hPropGrid, hVolumeAdvanced, _T("FAT name"),

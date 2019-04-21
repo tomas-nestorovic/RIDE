@@ -12,7 +12,7 @@
 			default:
 				ASSERT(FALSE); // unknown Error
 		}
-		return NULL;
+		return nullptr;
 	}
 
 

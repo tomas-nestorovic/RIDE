@@ -41,7 +41,7 @@
 			RECT r;
 			::GetClientRect( hListBoxWithCurrentlyDraggedSplitter, &r );
 			const int mode0=::SetROP2(dc,R2_NOT);
-				::MoveToEx( dc, position, r.top, NULL );
+				::MoveToEx( dc, position, r.top, nullptr );
 				::LineTo( dc, position, r.bottom );
 			::SetROP2(dc,mode0);
 		ReleaseDC(hListBoxWithCurrentlyDraggedSplitter,dc);
@@ -52,7 +52,7 @@
 		// - releasing the mouse capture
 		::ReleaseCapture();
 		// . removing the constraining of the cursor to the ListBox area
-		::ClipCursor(NULL);
+		::ClipCursor(nullptr);
 		// - uninitializing
 		position=toPosition;
 		hListBoxWithCurrentlyDraggedSplitter=(HWND)INVALID_HANDLE_VALUE;
@@ -72,12 +72,12 @@
 
 	TPropGridInfo::TListBox::TListBox(TPropGridInfo *pPropGridInfo,WORD propGridWidth,WORD propGridHeight)
 		// ctor
-		: handle( ::CreateWindow(	WC_LISTBOX, NULL,
+		: handle( ::CreateWindow(	WC_LISTBOX, nullptr,
 									WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_VSCROLL | LBS_NOTIFY | LBS_OWNERDRAWVARIABLE | LBS_WANTKEYBOARDINPUT,
 									0,0, propGridWidth,propGridHeight,
 									pPropGridInfo->handle, 0,
 									GET_PROPGRID_HINSTANCE(pPropGridInfo->handle),
-									NULL
+									nullptr
 								)
 				)
 		, splitter((propGridWidth-CATEGORY_HEIGHT*LogicalUnitScaleFactor)/2*LogicalUnitScaleFactor) {
@@ -127,7 +127,7 @@
 					else
 						pPropGridInfo->listBox.__removeCategorySubitems__(c);
 					// : painting the result
-					::InvalidateRect(hListBox,NULL,TRUE);
+					::InvalidateRect(hListBox,nullptr,TRUE);
 					break;
 				}
 				break;
@@ -153,7 +153,7 @@
 					// : terminating the dragging
 					pPropGridInfo->listBox.splitter.__endDrag__(x);
 					// : painting the result
-					::InvalidateRect(hListBox,NULL,TRUE);
+					::InvalidateRect(hListBox,nullptr,TRUE);
 					return 0;
 				}
 				// . if clicked on Item's Value part, beginning to edit the Value using the corresponding Editor
@@ -187,7 +187,7 @@ editItem:			// Tab key pressed - beginning to edit the Value using the correspon
 							r,
 							WS_CHILD | WS_CLIPSIBLINGS,
 							pPropGridInfo->handle,
-							NULL
+							nullptr
 						);
 						return 0;
 					}
@@ -218,7 +218,7 @@ editItem:			// Tab key pressed - beginning to edit the Value using the correspon
 			}
 		}
 		// . painting the result
-		::InvalidateRect(handle,NULL,TRUE);
+		::InvalidateRect(handle,nullptr,TRUE);
 	}
 
 	void TPropGridInfo::TListBox::__removeCategorySubitems__(PCategoryItem category) const{
@@ -230,7 +230,7 @@ editItem:			// Tab key pressed - beginning to edit the Value using the correspon
 				__removeCategorySubitems__( (PCategoryItem)item );
 		}
 		// . painting the result
-		::InvalidateRect(handle,NULL,TRUE);
+		::InvalidateRect(handle,nullptr,TRUE);
 	}
 
 	void TPropGridInfo::TListBox::__addItem__(PCItem item) const{

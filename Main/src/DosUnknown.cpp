@@ -10,7 +10,7 @@
 		return ERROR_SUCCESS;
 	}
 	const CDos::TProperties CUnknownDos::Properties={
-		NULL, // name
+		nullptr, // name
 		0, // unique identifier
 		0, // recognition priority
 		__recognize__, // recognition function
@@ -32,7 +32,7 @@
 	CUnknownDos::CUnknownDos(PImage image,PCFormat pFormatBoot)
 		// ctor
 		// - base
-		: CDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS, &Properties, NULL, StdSidesMap, IDR_DOS_UNKNOWN, NULL, TGetFileSizeOptions::OfficialDataLength )
+		: CDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS, &Properties, nullptr, StdSidesMap, IDR_DOS_UNKNOWN, nullptr, TGetFileSizeOptions::OfficialDataLength )
 		// - initialization
 		, trackMap(this) {
 	}
@@ -100,11 +100,11 @@
 
 	CDos::PDirectoryTraversal CUnknownDos::BeginDirectoryTraversal(PCFile) const{
 		// initiates exploration of specified Directory through a DOS-specific DirectoryTraversal
-		return NULL;
+		return nullptr;
 	}
 	PTCHAR CUnknownDos::GetFileExportNameAndExt(PCFile,bool,PTCHAR) const{
 		// populates Buffer with specified File's export name and extension and returns the Buffer; returns Null if File cannot be exported (e.g. a "dotdot" entry in MS-DOS); caller guarantees that the Buffer is at least MAX_PATH characters big
-		return NULL;
+		return nullptr;
 	}
 	TStdWinError CUnknownDos::ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile){
 		// imports specified File (physical or virtual) into the Image; returns Windows standard i/o error
@@ -119,7 +119,7 @@
 	TStdWinError CUnknownDos::CreateUserInterface(HWND hTdi){
 		// creates DOS-specific Tabs in TDI; returns Windows standard i/o error
 		CDos::CreateUserInterface(hTdi); // guaranteed to always return ERROR_SUCCESS
-		CTdiCtrl::InsertTab( hTdi, 0, TRACK_MAP_TAB_LABEL, &trackMap.tab, true, NULL, NULL );
+		CTdiCtrl::InsertTab( hTdi, 0, TRACK_MAP_TAB_LABEL, &trackMap.tab, true, nullptr, nullptr );
 		return ERROR_SUCCESS;
 	}
 	CDos::TCmdResult CUnknownDos::ProcessCommand(WORD cmd){

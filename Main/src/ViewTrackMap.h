@@ -29,7 +29,7 @@
 
 		void OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint) override;
 		BOOL OnScroll(UINT nScrollCode,UINT nPos,BOOL bDoScroll=TRUE) override;
-		void OnPrepareDC(CDC *pDC,CPrintInfo *pInfo=NULL) override;
+		void OnPrepareDC(CDC *pDC,CPrintInfo *pInfo=nullptr) override;
 		void OnDraw(CDC *pDC) override;
 		void PostNcDestroy() override;
 		void __updateStatusBarIfCursorOutsideAnySector__() const;

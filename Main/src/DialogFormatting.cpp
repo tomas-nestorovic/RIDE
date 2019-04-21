@@ -38,7 +38,7 @@
 
 
 
-	#define FORMAT_CUSTOM	NULL
+	#define FORMAT_CUSTOM	nullptr
 
 	void CFormatDialog::PreInitDialog(){
 		// dialog initialization
@@ -63,7 +63,7 @@
 		params.format.mediumType=TMedium::UNKNOWN; // to initialize Parameters using the first suitable Format; it holds: MediumType==Unknown <=> initial formatting of an Image, MediumType!=Unknown <=> any subsequent formatting of the same Image
 		__onMediumChanged__();
 		// - adjusting interactivity
-		const bool bootSectorAlreadyExists=((CMainWindow *)app.m_pMainWnd)->pTdi->__getCurrentTab__()!=NULL;
+		const bool bootSectorAlreadyExists=((CMainWindow *)app.m_pMainWnd)->pTdi->__getCurrentTab__()!=nullptr;
 		GetDlgItem(ID_CYLINDER)->EnableWindow(bootSectorAlreadyExists);
 		static const WORD Controls[]={ ID_MEDIUM, ID_CLUSTER, ID_FAT, ID_DIRECTORY, 0 };
 		Utils::EnableDlgControls( m_hWnd, Controls, !bootSectorAlreadyExists );

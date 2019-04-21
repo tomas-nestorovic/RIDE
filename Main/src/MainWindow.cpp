@@ -165,7 +165,7 @@
 		m_bAutoMenuEnable=false;
 		// - creating the TDI
 		pTdi=new CTdiView;
-		pTdi->Create( NULL, NULL, AFX_WS_DEFAULT_VIEW&~WS_BORDER, rectDefault, this, AFX_IDW_PANE_FIRST );
+		pTdi->Create( nullptr, nullptr, AFX_WS_DEFAULT_VIEW&~WS_BORDER, rectDefault, this, AFX_IDW_PANE_FIRST );
 		CTdiCtrl::SubclassWnd(
 			app.m_hInstance,
 			pTdi->m_hWnd,
@@ -200,7 +200,7 @@
 
 	afx_msg void CMainWindow::__imageOperation_updateUI__(CCmdUI *pCmdUI){
 		// projecting Image operability into UI
-		pCmdUI->Enable( GetActiveDocument()!=NULL );
+		pCmdUI->Enable( GetActiveDocument()!=nullptr );
 	}
 
 	afx_msg void CMainWindow::__switchToNextTab__(){
@@ -223,7 +223,7 @@
 
 	afx_msg void CMainWindow::__closeCurrentTab_updateUI__(CCmdUI *pCmdUI) const{
 		// projecting possibility to close current Tab into UI
-		pCmdUI->Enable( ((CMainWindow *)app.m_pMainWnd)->pTdi->__getCurrentTab__()!=NULL );
+		pCmdUI->Enable( ((CMainWindow *)app.m_pMainWnd)->pTdi->__getCurrentTab__()!=nullptr );
 	}
 
 
@@ -252,39 +252,39 @@
 	static UINT AFX_CDECL __checkApplicationRecency_thread__(PVOID _pCancelableAction){
 		// checks if this instance of application is the latest by comparing it against the on-line information; returns ERROR_SUCCESS (on-line information was downloaded and this instance is up-to-date), ERROR_EVT_VERSION_TOO_OLD (on-line information was downloaded but this instance is out-of-date), or other error
 		TBackgroundActionCancelable *const pAction=(TBackgroundActionCancelable *)_pCancelableAction;
-		HINTERNET hSession=NULL, hConnection=NULL, hRequest=NULL;
+		HINTERNET hSession=nullptr, hConnection=nullptr, hRequest=nullptr;
 		// - opening a new Session
-		hSession=::InternetOpen( APP_IDENTIFIER, INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0 );
-		if (hSession==NULL){
+		hSession=::InternetOpen( APP_IDENTIFIER, INTERNET_OPEN_TYPE_PRECONFIG, nullptr, nullptr, 0 );
+		if (hSession==nullptr){
 quitWithErr:const DWORD err=::GetLastError();
-			if (hRequest!=NULL)
+			if (hRequest!=nullptr)
 				::InternetCloseHandle(hRequest);
-			if (hConnection!=NULL)
+			if (hConnection!=nullptr)
 				::InternetCloseHandle(hConnection);
-			if (hSession!=NULL)
+			if (hSession!=nullptr)
 				::InternetCloseHandle(hSession);
 			return pAction->TerminateWithError(err);
 		}
 		if (!pAction->bContinue) return ERROR_CANCELLED;
 		pAction->UpdateProgress(1);
 		// - connecting to the repository server
-		hConnection=::InternetConnect( hSession, GITHUB_API_SERVER_NAME, INTERNET_DEFAULT_HTTPS_PORT, NULL, NULL, INTERNET_SERVICE_HTTP, 0, 0 );
-		if (hConnection==NULL)
+		hConnection=::InternetConnect( hSession, GITHUB_API_SERVER_NAME, INTERNET_DEFAULT_HTTPS_PORT, nullptr, nullptr, INTERNET_SERVICE_HTTP, 0, 0 );
+		if (hConnection==nullptr)
 			goto quitWithErr;
 		if (!pAction->bContinue) return ERROR_CANCELLED;
 		pAction->UpdateProgress(2);
 		// - creating a new Request to the server
 		hRequest=::HttpOpenRequest(	hConnection, _T("GET"), _T("/repos/tomas-nestorovic/RIDE/releases/latest"),
-									NULL, NULL, NULL,
+									nullptr, nullptr, nullptr,
 									INTERNET_FLAG_SECURE | INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE | INTERNET_NO_CALLBACK,
 									0
 								);
-		if (hRequest==NULL)
+		if (hRequest==nullptr)
 			goto quitWithErr;
 		if (!pAction->bContinue) return ERROR_CANCELLED;
 		pAction->UpdateProgress(3);
 		// - sending the Request
-		if (!::HttpSendRequest( hRequest, "User-Agent:RIDE", -1, NULL, 0 ))
+		if (!::HttpSendRequest( hRequest, "User-Agent:RIDE", -1, nullptr, 0 ))
 			goto quitWithErr;
 		if (!pAction->bContinue) return ERROR_CANCELLED;
 		pAction->UpdateProgress(4);
@@ -314,7 +314,7 @@ quitWithErr:const DWORD err=::GetLastError();
 	}
 	afx_msg void CMainWindow::__openUrl_checkForUpdates__(){
 		// checks if this instance of application is the latest by comparing it against the on-line information; opens either "You are using the latest version" web page, or the "You are using out-of-date version" web page
-		TBackgroundActionCancelable bac( __checkApplicationRecency_thread__, NULL, THREAD_PRIORITY_LOWEST );
+		TBackgroundActionCancelable bac( __checkApplicationRecency_thread__, nullptr, THREAD_PRIORITY_LOWEST );
 		switch (const TStdWinError err=bac.CarryOut(5)){ // 5 = see number of steps in CheckApplicationRecency
 			case ERROR_SUCCESS:
 				return OpenApplicationPresentationWebPage(_T("Version"),VERSION_LATEST_WEB);

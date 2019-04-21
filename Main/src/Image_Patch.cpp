@@ -11,7 +11,7 @@
 
 		TPatchParams(PDos dos)
 			// ctor
-			: dos(dos) , source(NULL) , target(dos->image)
+			: dos(dos) , source(nullptr) , target(dos->image)
 			, cylinderA(0) , cylinderZ(0) , nHeads(1)
 			, gap3( dos->properties->GetValidGap3ForMedium(dos->formatBoot.mediumType) )
 			, skipEmptySourceTracks(BST_CHECKED) {
@@ -180,7 +180,7 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 			CPatchDialog(PDos dos)
 				// ctor
 				: CDialog(IDR_IMAGE_PATCH)
-				, patchParams(dos) , sourceImageProperties(NULL)
+				, patchParams(dos) , sourceImageProperties(nullptr)
 				, realtimeThreadPriority( dos->image->properties==&CFDD::Properties ) {
 				::lstrcpy( fileName, ELLIPSIS );
 			}

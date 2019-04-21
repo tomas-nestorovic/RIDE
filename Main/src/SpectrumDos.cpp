@@ -50,7 +50,7 @@
 	void CSpectrumDos::__parseFat32LongName__(PTCHAR buf,LPCTSTR &rOutName,BYTE nameLengthMax,LPCTSTR &rOutExt,BYTE extLengthMax,LPCTSTR &rOutZxInfo){
 		// parses input FAT long name into three components: ZX Name (of LengthMax chars at most), single-char ZX Extension, and ZX Information
 		// - finding ZX import information
-		rOutZxInfo=NULL; // assumption (no ZX import information found)
+		rOutZxInfo=nullptr; // assumption (no ZX import information found)
 		if (PTCHAR pSpace=_tcsrchr(buf,' ')) // string may be terminated with import information, see CSpectrumDos::__importFileInformation__
 			if (pSpace[1]=='Z' && pSpace[2]=='X'){ // ZX import information must be correctly prefixed
 				*pSpace++='\0'; // terminating the File's Name+Extension
@@ -65,8 +65,8 @@
 			rOutExt=_T("");
 		// - unescaping and trimming the Name
 		DWORD dw=nameLengthMax;
-		::UrlUnescape(	TZxRom::AsciiToZx(buf,buf,NULL), // converting in place to ZX charset
-						NULL, &dw,
+		::UrlUnescape(	TZxRom::AsciiToZx(buf,buf,nullptr), // converting in place to ZX charset
+						nullptr, &dw,
 						URL_UNESCAPE_INPLACE // unescaping in place
 					);
 		for( PTCHAR a=buf,b=a; *a=*b++; a+=*a!='\x1' ); // eliminating 0x01 characters that interrupt ZX keywords (see CSpectrumDos::GetFileExportNameAndExt)
@@ -75,8 +75,8 @@
 		// - unescaping and trimming the Extension
 		if (pExt){
 			dw=extLengthMax;
-			::UrlUnescape(	TZxRom::AsciiToZx(pExt,pExt,NULL), // converting in place to ZX charset
-							NULL, &dw,
+			::UrlUnescape(	TZxRom::AsciiToZx(pExt,pExt,nullptr), // converting in place to ZX charset
+							nullptr, &dw,
 							URL_UNESCAPE_INPLACE // unescaping in place
 						);
 			for( PTCHAR a=pExt,b=a; *a=*b++; a+=*a!='\x1' ); // eliminating 0x01 characters that interrupt ZX keywords (see CSpectrumDos::GetFileExportNameAndExt)
@@ -201,7 +201,7 @@
 				*fileName='\0';
 				CString title;
 					title.LoadString(AFX_IDS_SAVEFILE);
-				CFileDialog d( FALSE, TAPE_EXTENSION, NULL, OFN_OVERWRITEPROMPT|OFN_HIDEREADONLY|OFN_DONTADDTORECENT, _T("Tape (*") TAPE_EXTENSION _T(")|*") TAPE_EXTENSION _T("|") );
+				CFileDialog d( FALSE, TAPE_EXTENSION, nullptr, OFN_OVERWRITEPROMPT|OFN_HIDEREADONLY|OFN_DONTADDTORECENT, _T("Tape (*") TAPE_EXTENSION _T(")|*") TAPE_EXTENSION _T("|") );
 					d.m_ofn.lStructSize=sizeof(OPENFILENAME); // to show the "Places bar"
 					d.m_ofn.nFilterIndex=1;
 					d.m_ofn.lpstrTitle=title;
@@ -227,7 +227,7 @@
 				*fileName='\0';
 				CString title;
 					title.LoadString(AFX_IDS_OPENFILE);
-				CFileDialog d( TRUE, TAPE_EXTENSION, NULL, OFN_FILEMUSTEXIST, _T("Tape (*") TAPE_EXTENSION _T(")|*") TAPE_EXTENSION _T("|") );
+				CFileDialog d( TRUE, TAPE_EXTENSION, nullptr, OFN_FILEMUSTEXIST, _T("Tape (*") TAPE_EXTENSION _T(")|*") TAPE_EXTENSION _T("|") );
 					d.m_ofn.lStructSize=sizeof(OPENFILENAME); // to show the "Places bar"
 					d.m_ofn.nFilterIndex=1;
 					d.m_ofn.lpstrTitle=title;
@@ -263,7 +263,7 @@
 				return TCmdResult::DONE;
 			default:
 				// passing a non-recognized Command to an open Tape first
-				if (__isTapeFileManagerShown__() && CTape::pSingleInstance->OnCmdMsg(cmd,CN_COMMAND,NULL,NULL))
+				if (__isTapeFileManagerShown__() && CTape::pSingleInstance->OnCmdMsg(cmd,CN_COMMAND,nullptr,nullptr))
 					return TCmdResult::DONE;
 		}
 		return CDos::ProcessCommand(cmd);
@@ -325,10 +325,10 @@
 		// True <=> given Command-specific user interface successfully updated, otherwise False
 		switch (cmd){
 			case ID_TAPE_CLOSE:
-				pCmdUI->Enable(CTape::pSingleInstance!=NULL);
+				pCmdUI->Enable(CTape::pSingleInstance!=nullptr);
 				return true;
 			default:
-				if (__isTapeFileManagerShown__() && CTape::pSingleInstance->OnCmdMsg(cmd,CN_UPDATE_COMMAND_UI,pCmdUI,NULL))
+				if (__isTapeFileManagerShown__() && CTape::pSingleInstance->OnCmdMsg(cmd,CN_UPDATE_COMMAND_UI,pCmdUI,nullptr))
 					return true;
 				break;
 		}

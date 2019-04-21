@@ -5,12 +5,12 @@
 	CMainWindow::CTdiTemplate::CTdiTemplate()
 		// ctor
 		// - base
-		: CSingleDocTemplate( IDR_MAINFRAME, NULL, NULL, NULL ){
+		: CSingleDocTemplate( IDR_MAINFRAME, nullptr, nullptr, nullptr ){
 		empty.m_bAutoDelete=FALSE; // Empty document destroyed along with this Template
 		m_bAutoDelete=FALSE; // for the Template to be not destroyed when it contains no open documents (no open Images)
 		// - creating the MainWindow
 		app.m_pMainWnd=new CMainWindow;
-		((CMainWindow *)app.m_pMainWnd)->LoadFrame( m_nIDResource, WS_OVERLAPPEDWINDOW|FWS_ADDTOTITLE, NULL, NULL );
+		((CMainWindow *)app.m_pMainWnd)->LoadFrame( m_nIDResource, WS_OVERLAPPEDWINDOW|FWS_ADDTOTITLE, nullptr, nullptr );
 		pSingleInstance=this;
 	}
 
@@ -43,7 +43,7 @@
 				TDI_INSTANCE->__closeAllTabsOfFocusedDos__();
 				( (CFrameWnd *)app.m_pMainWnd )->OnUpdateFrameTitle(FALSE); // updating the MainWindow's title (now without document)
 			}
-			delete m_pOnlyDoc, m_pOnlyDoc=NULL;
+			delete m_pOnlyDoc, m_pOnlyDoc=nullptr;
 		}
 		return true;
 	}
@@ -54,7 +54,7 @@
 		// opens the document stored in specified file
 		// - closing current document
 		if (!__closeDocument__())
-			return NULL;
+			return nullptr;
 		// - opening the requested document
 		//nop (caller is to open and load the document, and then call AddDocument)
 		return &empty;

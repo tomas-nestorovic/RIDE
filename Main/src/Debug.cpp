@@ -17,7 +17,7 @@ namespace Debug{
 			const Utils::CLocalTime st;
 			::wsprintf( filename, _T("%d_%d_%d_%s.txt"), st.GetHours(), st.GetMinutes(), st.GetSeconds(), logDescription );
 		#else
-			CFileDialog d( false, _T(""), NULL, OFN_OVERWRITEPROMPT );
+			CFileDialog d( false, _T(""), nullptr, OFN_OVERWRITEPROMPT );
 				d.m_ofn.lStructSize=sizeof(OPENFILENAME); // to show the "Places bar"
 				d.m_ofn.nFilterIndex=1;
 				d.m_ofn.lpstrTitle=_T("Enter new log file name");
@@ -41,14 +41,14 @@ namespace Debug{
 				LOG_MESSAGE(_T("Can't detect CPU"));
 			else{
 				DWORD dw=sizeof(cpuBrandName);
-				if (err=::RegQueryValueEx( hCpuKey, _T("ProcessorNameString"), 0, NULL, (LPBYTE)cpuBrandName, &dw )){
+				if (err=::RegQueryValueEx( hCpuKey, _T("ProcessorNameString"), 0, nullptr, (LPBYTE)cpuBrandName, &dw )){
 					// extended CPU information NOT available - retrieving just basic information, available always
 					TCHAR vendor[30]; dw=sizeof(vendor);
-					::RegQueryValueEx( hCpuKey, _T("VendorIdentifier"), 0, NULL, (LPBYTE)vendor, &dw ); // e.g. "GenuineIntel"
+					::RegQueryValueEx( hCpuKey, _T("VendorIdentifier"), 0, nullptr, (LPBYTE)vendor, &dw ); // e.g. "GenuineIntel"
 					TCHAR identifier[80]; dw=sizeof(identifier);
-					::RegQueryValueEx( hCpuKey, _T("Identifier"), 0, NULL, (LPBYTE)identifier, &dw ); // e.g. "x86 Family 6 Model 15 Stepping 6"
+					::RegQueryValueEx( hCpuKey, _T("Identifier"), 0, nullptr, (LPBYTE)identifier, &dw ); // e.g. "x86 Family 6 Model 15 Stepping 6"
 					DWORD mhz; dw=sizeof(mhz);
-					::RegQueryValueEx( hCpuKey, _T("~MHz"), 0, NULL, (LPBYTE)&mhz, &dw ); // e.g. "199"
+					::RegQueryValueEx( hCpuKey, _T("~MHz"), 0, nullptr, (LPBYTE)&mhz, &dw ); // e.g. "199"
 					::wsprintf( cpuBrandName, _T("%s, %s, %d MHz"), vendor, identifier, mhz );
 				}else
 					// yes, extended CPU information available, e.g. "Intel(R) Celeron(R) M CPU        520  @ 1.60GHz"
@@ -149,9 +149,9 @@ namespace Debug{
 	TStdWinError CLogFile::LogError(TStdWinError err){
 		// logs given Error to the LogFile and returns the logged Error
 		TCHAR buf[220];
-		::FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, err, 0,
+		::FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, err, 0,
 						buf, sizeof(buf)/sizeof(TCHAR),
-						NULL
+						nullptr
 					);
 		*this << CString('\t',nIndent) << Utils::CLocalTime() << _T(" Error ") << (DWORD)err << _T(": ") << buf << '\r' << '\n'; // separate new-line characters as the operator<<(LPCTSTR) operator removes new-line characters, so can't use _T("\r\n")
 		return err;
@@ -167,7 +167,7 @@ namespace Debug{
 		// logs given PSectorData pointer to the LogFile and returns the logged PSectorData pointer
 		TCHAR buf[24];
 		::wsprintf( buf, _T("0%08x"), pSectorData );
-		Default << CString('\t',nIndent) << Utils::CLocalTime() << _T(" PSectorData = ") << (pSectorData!=NULL?buf:_T("Null")) << '\r' << '\n'; // separate new-line characters as the operator<<(LPCTSTR) operator removes new-line characters, so can't use _T("\r\n")
+		Default << CString('\t',nIndent) << Utils::CLocalTime() << _T(" PSectorData = ") << (pSectorData!=nullptr?buf:_T("Null")) << '\r' << '\n'; // separate new-line characters as the operator<<(LPCTSTR) operator removes new-line characters, so can't use _T("\r\n")
 		return pSectorData;
 	}
 
@@ -204,7 +204,7 @@ namespace Debug{
 		if (nMilliseconds<(UINT_PTR)value)
 			logFile.actionMinTimes.SetAt(name,(PVOID)nMilliseconds);
 		// - recording the NumberOfMilliseconds as the maximum time
-		value=NULL;
+		value=nullptr;
 		logFile.actionMaxTimes.Lookup(name,value);
 		if (nMilliseconds>(UINT_PTR)value)
 			logFile.actionMaxTimes.SetAt(name,(PVOID)nMilliseconds);

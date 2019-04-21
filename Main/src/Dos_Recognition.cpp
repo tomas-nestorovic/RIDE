@@ -62,13 +62,13 @@
 		// returns the position of the first DOS that participates in Image recognition
 		return	order[1]!=&CUnknownDos::Properties // indexing starts from 1
 				? (POSITION)1
-				: NULL;
+				: nullptr;
 	}
 	CDos::PCProperties CDos::CRecognition::__getNextRecognizedDos__(POSITION &pos) const{
 		// returns the Properties of the next DOS that participates in Image recognition
 		const PCProperties result=order[(BYTE)pos++];
 		if (order[(BYTE)pos]==&CUnknownDos::Properties)
-			pos=NULL;
+			pos=nullptr;
 		return result;
 	}
 
@@ -80,7 +80,7 @@
 				case ERROR_SUCCESS:
 					return props;
 				case ERROR_CANCELLED:
-					return NULL;
+					return nullptr;
 			}
 		}
 		CUnknownDos::Properties.fnRecognize(image,pOutFormatBoot); // just a formality to properly fill up the FormatBoot
@@ -148,7 +148,7 @@
 					if (!recognition.__getOrderIndex__(props))
 						recognition.__addDosByPriorityDescending__( *pNewlyDetectedDos++=props );
 				}
-				*pNewlyDetectedDos=NULL; // terminating the array
+				*pNewlyDetectedDos=nullptr; // terminating the array
 				//recognition.__saveToProfile__();
 				if (pNewlyDetectedDos>newlyDetectedDoses)
 					Utils::Information( _T("Some new DOSes have been detected!\nPlease confirm the auto-recognition sequence where they've all been added to (and marked).") );
@@ -161,7 +161,7 @@
 				Utils::SetSingleCharTextUsingFont( GetDlgItem(ID_REMOVE)->m_hWnd, 0xf0e8, FONT_WINGDINGS, 110 );
 				// - (dis)allowing the Cancel button
 				#ifndef _DEBUG
-					GetDlgItem(IDCANCEL)->EnableWindow(*newlyDetectedDoses==NULL); // if NewDoses were detected, the Dialog cannot be cancelled - Recognition Order with NewDetectedDoses must be confirmed
+					GetDlgItem(IDCANCEL)->EnableWindow(*newlyDetectedDoses==nullptr); // if NewDoses were detected, the Dialog cannot be cancelled - Recognition Order with NewDetectedDoses must be confirmed
 				#endif
 			}
 

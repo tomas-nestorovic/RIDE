@@ -38,23 +38,23 @@ namespace Utils{
 				cmdInfo->cursorHovering=true;
 				TRACKMOUSEEVENT tme={ sizeof(tme), TME_LEAVE, hCmdBtn };
 				::TrackMouseEvent(&tme);
-				::InvalidateRect(hCmdBtn,NULL,TRUE);
+				::InvalidateRect(hCmdBtn,nullptr,TRUE);
 				break;
 			}
 			case WM_MOUSELEAVE:
 				// mouse left Button's client area
 				cmdInfo->cursorHovering=false;
-				::InvalidateRect(hCmdBtn,NULL,TRUE);
+				::InvalidateRect(hCmdBtn,nullptr,TRUE);
 				break;
 			case WM_LBUTTONDOWN:
 				// left mouse button pressed
 				cmdInfo->pressed=true;
-				::InvalidateRect(hCmdBtn,NULL,TRUE);
+				::InvalidateRect(hCmdBtn,nullptr,TRUE);
 				break;
 			case WM_LBUTTONUP:
 				// left mouse button released
 				cmdInfo->pressed=false;
-				::InvalidateRect(hCmdBtn,NULL,TRUE);
+				::InvalidateRect(hCmdBtn,nullptr,TRUE);
 				break;
 			case WM_PAINT:{
 				// drawing
@@ -69,7 +69,7 @@ namespace Utils{
 							typedef HANDLE (WINAPI *TOpenThemeData)(HWND hWnd,LPCWSTR className);
 							const HANDLE hTheme=((TOpenThemeData)::GetProcAddress(hUxTheme,_T("OpenThemeData")))(hCmdBtn,WC_BUTTONW);
 								typedef HRESULT (WINAPI *TDrawThemeBackground)(HTHEME hTheme,HDC dc,int iPartId,int iStateId,LPRECT lpRect,LPRECT lpClipRect);
-								buttonBackgroundPainted=((TDrawThemeBackground)::GetProcAddress(hUxTheme,_T("DrawThemeBackground")))( hTheme, dc, BP_PUSHBUTTON, cmdInfo->pressed?PBS_PRESSED:PBS_HOT, &r, NULL )==S_OK;
+								buttonBackgroundPainted=((TDrawThemeBackground)::GetProcAddress(hUxTheme,_T("DrawThemeBackground")))( hTheme, dc, BP_PUSHBUTTON, cmdInfo->pressed?PBS_PRESSED:PBS_HOT, &r, nullptr )==S_OK;
 							typedef BOOL (WINAPI *TCloseThemeData)(HANDLE);
 							((TCloseThemeData)::GetProcAddress(hUxTheme,_T("CloseThemeData")))(hTheme);
 							::FreeLibrary(hUxTheme);
@@ -127,7 +127,7 @@ namespace Utils{
 							(WNDPROC)::SetWindowLong( hButton, GWL_WNDPROC, (long)__commandLikeButton_wndProc__ )
 						)
 					);
-		::InvalidateRect(hButton,NULL,FALSE);
+		::InvalidateRect(hButton,nullptr,FALSE);
 	}
 
 	#define CMDBUTTON_HEIGHT	32
@@ -138,7 +138,7 @@ namespace Utils{
 		// - increasing the parent window size for the new Button to fit in
 		RECT r;
 		GetWindowRect(&r);
-		SetWindowPos(	NULL,
+		SetWindowPos(	nullptr,
 						0,0, r.right-r.left, r.bottom-r.top+CMDBUTTON_MARGIN+CMDBUTTON_HEIGHT,
 						SWP_NOZORDER|SWP_NOMOVE
 					);
@@ -149,10 +149,10 @@ namespace Utils{
 		pInformation->GetClientRect(&t);
 		pInformation->MapWindowPoints(this,&t);
 		__convertToCommandLikeButton__(
-			::CreateWindow( WC_BUTTON,NULL,
+			::CreateWindow( WC_BUTTON,nullptr,
 							WS_CHILD|WS_VISIBLE,
 							t.left, r.bottom-t.top-CMDBUTTON_HEIGHT, t.right-t.left, CMDBUTTON_HEIGHT,
-							m_hWnd, (HMENU)id, app.m_hInstance, NULL
+							m_hWnd, (HMENU)id, app.m_hInstance, nullptr
 						),
 			caption
 		);
@@ -232,9 +232,9 @@ namespace Utils{
 		PTCHAR p;
 		if (errCode<=12000)
 			// "standard" error
-			p=buf+::FormatMessage(	FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, errCode, 0,
+			p=buf+::FormatMessage(	FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, errCode, 0,
 									buf, ERROR_BUFFER_SIZE-20,
-									NULL
+									nullptr
 								);
 		else
 			// WinInet error
@@ -242,7 +242,7 @@ namespace Utils{
 				// "standard" WinInet error message
 				p=buf+::FormatMessage(	FORMAT_MESSAGE_FROM_HMODULE, ::GetModuleHandle(DLL_WININET), errCode, 0,
 										buf, ERROR_BUFFER_SIZE-20,
-										NULL
+										nullptr
 									);
 			else{
 				// detailed error message from the server
@@ -259,7 +259,7 @@ namespace Utils{
 	void FatalError(LPCTSTR text){
 		// shows fatal error
 		//if (!hParent) hParent=::GetActiveWindow();
-		::MessageBox(0,text,NULL,MB_ICONERROR|MB_TASKMODAL);
+		::MessageBox(0,text,nullptr,MB_ICONERROR|MB_TASKMODAL);
 	}
 
 	#define ERROR_BECAUSE		_T("%s because:\n\n%s")
@@ -336,7 +336,7 @@ namespace Utils{
 					hCheckBox++; // for this branch to be not entered when creating the CheckBox ...
 					hCheckBox=::CreateWindow(	WC_BUTTON, checkBoxMessage, // ... that is, here!
 												WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX | checkBoxChecked,
-												CHECKBOX_MARGIN,checkBoxY,checkBoxSize.cx,checkBoxSize.cy,hMsgBox,0,AfxGetInstanceHandle(),NULL
+												CHECKBOX_MARGIN,checkBoxY,checkBoxSize.cx,checkBoxSize.cy,hMsgBox,0,AfxGetInstanceHandle(),nullptr
 											);
 					//Button_SetCheck(hCheckBox,checkBoxChecked);
 				}
@@ -482,8 +482,8 @@ namespace Utils{
 
 	void NavigateToUrlInDefaultBrowser(LPCTSTR url){
 		// opens specified URL in user's default browser
-		::CoInitializeEx( NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE );
-		if ((int)::ShellExecute( 0, NULL, url, NULL, NULL, SW_SHOWDEFAULT )<=32){
+		::CoInitializeEx( nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE );
+		if ((int)::ShellExecute( 0, nullptr, url, nullptr, nullptr, SW_SHOWDEFAULT )<=32){
 			TCHAR buf[300];
 			::wsprintf(buf,_T("Cannot navigate to\n%s\n\nDo you want to copy the link to clipboard?"),url);
 			if (QuestionYesNo(buf,MB_DEFBUTTON1))
@@ -585,7 +585,7 @@ namespace Utils{
 						mnu.AppendMenu( MF_STRING, psbi->pAction[id].commandId, psbi->pAction[id].commandCaption );
 					POINT pt={ psbi->rcClientArea.right-SPLITBUTTON_ARROW_WIDTH, psbi->rcClientArea.bottom };
 					::ClientToScreen( hSplitBtn, &pt );
-					::TrackPopupMenu( mnu.m_hMenu, TPM_LEFTALIGN|TPM_LEFTBUTTON|TPM_RIGHTBUTTON, pt.x, pt.y, 0, ::GetParent(hSplitBtn), NULL );
+					::TrackPopupMenu( mnu.m_hMenu, TPM_LEFTALIGN|TPM_LEFTBUTTON|TPM_RIGHTBUTTON, pt.x, pt.y, 0, ::GetParent(hSplitBtn), nullptr );
 					//fallthrough
 				}
 			case WM_LBUTTONUP:
@@ -624,11 +624,11 @@ namespace Utils{
 					// : splitting using certical line
 					LOGPEN logPen={ PS_SOLID, {1,1}, ::GetSysColor(COLOR_BTNSHADOW) };
 					const HGDIOBJ hPen0=::SelectObject( dc, ::CreatePenIndirect(&logPen) );
-						::MoveToEx( dc, r.left, 1, NULL );
+						::MoveToEx( dc, r.left, 1, nullptr );
 						::LineTo( dc, r.left, --r.bottom );
 					logPen.lopnColor=::GetSysColor(COLOR_BTNHIGHLIGHT);
 					::DeleteObject( ::SelectObject(dc,::CreatePenIndirect(&logPen)) );
-						::MoveToEx( dc, ++r.left, 1, NULL );
+						::MoveToEx( dc, ++r.left, 1, nullptr );
 						::LineTo( dc, r.left, r.bottom );
 					::DeleteObject( ::SelectObject(dc,hPen0) );
 				::ReleaseDC(hSplitBtn,dc);
@@ -644,7 +644,7 @@ namespace Utils{
 
 	void ConvertToSplitButton(HWND hStdBtn,PCSplitButtonAction pAction,BYTE nActions){
 		// converts an existing standard button to a SplitButton featuring specified additional Actions
-		::SetWindowText(hStdBtn,NULL);
+		::SetWindowText(hStdBtn,nullptr);
 		::SetWindowLong(hStdBtn,GWL_ID,pAction->commandId); // 0.Action is the default
 		::SetWindowLong(hStdBtn, GWL_USERDATA,
 						(long)new TSplitButtonInfo(
@@ -654,7 +654,7 @@ namespace Utils{
 							(WNDPROC)::SetWindowLong( hStdBtn, GWL_WNDPROC, (long)__splitButton_wndProc__ )
 						)
 					);
-		::InvalidateRect(hStdBtn,NULL,TRUE);
+		::InvalidateRect(hStdBtn,nullptr,TRUE);
 	}
 
 	void SetSingleCharTextUsingFont(HWND hWnd,WCHAR singleChar,LPCTSTR fontFace,int fontPointSize){
@@ -679,7 +679,7 @@ namespace Utils{
 
 	static float __getLogicalUnitScaleFactor__(){
 		// computes and returns the factor (from (0;oo)) to multiply the size of one logical unit with; returns 1 if the logical unit size doesn't have to be changed
-		const CClientDC screen(NULL);
+		const CClientDC screen(nullptr);
 		return	min(::GetDeviceCaps(screen,LOGPIXELSX)/(float)SCREEN_DPI_DEFAULT,
 					::GetDeviceCaps(screen,LOGPIXELSY)/(float)SCREEN_DPI_DEFAULT
 				);
@@ -692,8 +692,8 @@ namespace Utils{
 		const float factor=LogicalUnitScaleFactor;
 		if (factor!=1){
 			::SetMapMode(dc,MM_ISOTROPIC);
-			::SetWindowExtEx( dc, SCREEN_DPI_DEFAULT, SCREEN_DPI_DEFAULT, NULL );
-			::SetViewportExtEx( dc, ::GetDeviceCaps(dc,LOGPIXELSX), ::GetDeviceCaps(dc,LOGPIXELSY), NULL );
+			::SetWindowExtEx( dc, SCREEN_DPI_DEFAULT, SCREEN_DPI_DEFAULT, nullptr );
+			::SetViewportExtEx( dc, ::GetDeviceCaps(dc,LOGPIXELSX), ::GetDeviceCaps(dc,LOGPIXELSY), nullptr );
 		}
 		return factor;
 	}
@@ -758,7 +758,7 @@ namespace Utils{
 	}
 	CFile &WriteToFile(CFile &f,double number){
 		// writes specified Number into the File
-		return WriteToFile(f,number,NULL);
+		return WriteToFile(f,number,nullptr);
 	}
 
 	PTCHAR GetApplicationOnlineFileUrl(LPCTSTR documentName,PTCHAR buffer){
@@ -806,31 +806,31 @@ namespace Utils{
 		// thread to download an on-line file with given URL to a local Buffer; caller is to dimension the Buffer so that it can contain the whole on-line file
 		TBackgroundActionCancelable *const pAction=(TBackgroundActionCancelable *)_pCancelableAction;
 		TDownloadSingleFileParams &rdsfp=*(TDownloadSingleFileParams *)pAction->fnParams;
-		HINTERNET hSession=NULL, hOnlineFile=NULL;
+		HINTERNET hSession=nullptr, hOnlineFile=nullptr;
 		// - opening a new Session
 		hSession=::InternetOpen(APP_IDENTIFIER,
 								INTERNET_OPEN_TYPE_PRECONFIG,
-								NULL, NULL,
+								nullptr, nullptr,
 								0
 							);
-		if (hSession==NULL)
+		if (hSession==nullptr)
 			goto quitWithErr;
 		// - opening the on-line file with given URL
 		hOnlineFile=::InternetOpenUrl(	hSession,
 										rdsfp.onlineFileUrl,
-										NULL, 0,
+										nullptr, 0,
 										INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE,
 										INTERNET_NO_CALLBACK
 									);
-		if (hOnlineFile==NULL)
+		if (hOnlineFile==nullptr)
 			goto quitWithErr;
 		// - reading the on-line file to the Buffer, allocated and initialized by the caller; caller is to dimension the Buffer so that it can contain the whole on-line file
 		if (!::InternetReadFile( hOnlineFile, rdsfp.buffer, rdsfp.bufferSize, &rdsfp.outOnlineFileSize )){
 quitWithErr:const DWORD err=::GetLastError();
 			FatalError( _T("File download failed"), err, rdsfp.fatalErrConsequence );
-			if (hOnlineFile!=NULL)
+			if (hOnlineFile!=nullptr)
 				::InternetCloseHandle(hOnlineFile);
-			if (hSession!=NULL)
+			if (hSession!=nullptr)
 				::InternetCloseHandle(hSession);
 			return pAction->TerminateWithError(err);
 		}
@@ -842,7 +842,7 @@ quitWithErr:const DWORD err=::GetLastError();
 		// returns the result of downloading the file with given Url
 		TDownloadSingleFileParams params( onlineFileUrl, fileDataBuffer, fileDataBufferLength, fatalErrorConsequence );
 		const TStdWinError err=TBackgroundActionCancelable(__downloadSingleFile_thread__,&params,THREAD_PRIORITY_ABOVE_NORMAL).CarryOut(-1);
-		if (pDownloadedFileSize!=NULL)
+		if (pDownloadedFileSize!=nullptr)
 			*pDownloadedFileSize=params.outOnlineFileSize;
 		return err;
 	}

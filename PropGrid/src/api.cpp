@@ -20,7 +20,7 @@
 								windowName,
 								WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | style,
 								x,y, width,height,
-								hParent, 0,hInstance,NULL
+								hParent, 0,hInstance,nullptr
 							);
 	}
 
@@ -78,7 +78,7 @@
 				pItem->__enable__();
 			else
 				pItem->__disable__();
-			::InvalidateRect( pPropGridInfo->listBox.handle, NULL, TRUE );
+			::InvalidateRect( pPropGridInfo->listBox.handle, nullptr, TRUE );
 		}
 		return pItem;
 	}
@@ -116,11 +116,11 @@
 		// creates and returns an UpDown control attached to the specified Edit-box
 		static const INITCOMMONCONTROLSEX icc={ sizeof(INITCOMMONCONTROLSEX), ICC_UPDOWN_CLASS };
 		if (::InitCommonControlsEx(&icc)){
-			const HWND hUpDown=::CreateWindow(	UPDOWN_CLASS, NULL,
+			const HWND hUpDown=::CreateWindow(	UPDOWN_CLASS, nullptr,
 												style | UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_HOTTRACK | UDS_NOTHOUSANDS,
 												0,0, 10,10, ::GetParent(hEdit), 0,
 												(HINSTANCE)::GetWindowLong(hEdit,GWL_HINSTANCE),
-												NULL
+												nullptr
 											);
 			upDownWndProc0=(WNDPROC)::SetWindowLong( hUpDown, GWL_WNDPROC, (LONG)__upDown_wndProc__ );
 			::SetWindowLong( hEdit, GWL_STYLE, ::GetWindowLong(hEdit,GWL_STYLE)|ES_NUMBER );
@@ -188,7 +188,7 @@
 		::SetFocus(hParent); // attempting to accept the Value
 		if (!IsValueBeingEdited()){
 			// new Value successfully accepted (and propagated to the ValueBuffer)
-			::InvalidateRect( hParent, NULL, TRUE ); // repainting PropertyGrid's ListBox (or the Parent in general)
+			::InvalidateRect( hParent, nullptr, TRUE ); // repainting PropertyGrid's ListBox (or the Parent in general)
 			return true; // Value accepted
 		}else
 			// Value NOT accepted (and the Editor remains to exist)
@@ -197,5 +197,5 @@
 
 	bool WINAPI CPropGridCtrl::IsValueBeingEdited(){
 		// True <=> some Value is currently being edited, otherwise False
-		return TEditor::pSingleShown!=NULL;
+		return TEditor::pSingleShown!=nullptr;
 	}

@@ -101,8 +101,8 @@ different:	Utils::Information(_T("No, the files differ in content! (File names a
 				::SetWindowPos( file2.hexaComparison.m_hWnd, 0, hexa2X,hexaY, hexa2W,hexaH, SWP_NOZORDER|SWP_SHOWWINDOW );
 				// . laying out buttons (can't use "GetDlgItem(.)->..." because buttons don't exist immediately after the Dialog has been created)
 				const int buttonX=wndW-padding.x-buttonWidth+1, tlacitkoY=wndH-padding.y-buttonHeight;
-				::SetWindowPos( ::GetDlgItem(m_hWnd,IDCANCEL), NULL, buttonX,tlacitkoY, 0,0, SWP_NOZORDER|SWP_NOSIZE );
-				::SetWindowPos( ::GetDlgItem(m_hWnd,IDOK), NULL, buttonX-padding.x-buttonWidth,tlacitkoY, 0,0, SWP_NOZORDER|SWP_NOSIZE );
+				::SetWindowPos( ::GetDlgItem(m_hWnd,IDCANCEL), nullptr, buttonX,tlacitkoY, 0,0, SWP_NOZORDER|SWP_NOSIZE );
+				::SetWindowPos( ::GetDlgItem(m_hWnd,IDOK), nullptr, buttonX-padding.x-buttonWidth,tlacitkoY, 0,0, SWP_NOZORDER|SWP_NOSIZE );
 				break;
 			}
 			case WM_COMMAND:
@@ -115,7 +115,7 @@ different:	Utils::Information(_T("No, the files differ in content! (File names a
 			case WM_NCDESTROY:
 				// destroying the window's non-client area
 				CDialog::WindowProc(msg,wParam,lParam);
-				delete pSingleInstance, pSingleInstance=NULL;
+				delete pSingleInstance, pSingleInstance=nullptr;
 				return 0;
 		}
 		return CDialog::WindowProc(msg,wParam,lParam);
@@ -131,7 +131,7 @@ different:	Utils::Information(_T("No, the files differ in content! (File names a
 
 	CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::COleComparisonDropTarget(CFileComparisonDialog &rDialog)
 		// ctor
-		: f(NULL) , hexaComparison(rDialog) {
+		: f(nullptr) , hexaComparison(rDialog) {
 		hexaComparison.Reset(&rDialog.fEmpty,0,0), hexaComparison.SetEditable(false);
 	}
 
@@ -146,7 +146,7 @@ different:	Utils::Information(_T("No, the files differ in content! (File names a
 	void CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::__init__(CWnd *pLabel,CWnd *pButton){
 		// initialization
 		hLabel=pLabel->m_hWnd, hEllipsisButton=pButton->m_hWnd;
-		hexaComparison.Create( NULL, NULL, WS_CHILD /*|WS_VISIBLE*/, CFrameWnd::rectDefault, pLabel->GetParent(), 0 ); // commented out because see WM_SIZE
+		hexaComparison.Create( nullptr, nullptr, WS_CHILD /*|WS_VISIBLE*/, CFrameWnd::rectDefault, pLabel->GetParent(), 0 ); // commented out because see WM_SIZE
 		Register(&hexaComparison); // making HexaEditor a target of drag&drop
 		hexaComparison.DragAcceptFiles(); // to not pass the WM_DROPFILES message to the MainWindow (which would attempt to open the dropped File as an Image)
 	}
@@ -181,7 +181,7 @@ different:	Utils::Information(_T("No, the files differ in content! (File names a
 		// - freeing any previous File
 		if (f){
 			delete f;
-			::SetWindowText(hLabel,NULL);
+			::SetWindowText(hLabel,nullptr);
 		}
 		// - storing 32-bit scroll position (its recovery below)
 		SCROLLINFO si;
@@ -231,7 +231,7 @@ different:	Utils::Information(_T("No, the files differ in content! (File names a
 		}else if (const HGLOBAL hg=pDataObject->GetGlobalData(CRideApp::cfDescriptor)){
 			// virtual Files (dragged over from an instance of FileManager, even from another instance of this application)
 			if (const LPFILEGROUPDESCRIPTOR pfgd=(LPFILEGROUPDESCRIPTOR)::GlobalLock(hg)){
-				FORMATETC etcFileContents={ CRideApp::cfContent, NULL, DVASPECT_CONTENT, 0, TYMED_ISTREAM }; // 0 = only first File, others ignored
+				FORMATETC etcFileContents={ CRideApp::cfContent, nullptr, DVASPECT_CONTENT, 0, TYMED_ISTREAM }; // 0 = only first File, others ignored
 				if (CFile *const fTmp=pDataObject->GetFileData(CRideApp::cfContent,&etcFileContents)){ // abstracting virtual data into a File
 					// File is readable (e.g. doesn't contain no "Sector no found" errors)
 					const FILEDESCRIPTOR *const pfd=pfgd->fgd;
@@ -272,7 +272,7 @@ different:	Utils::Information(_T("No, the files differ in content! (File names a
 
 	CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::CHexaComparison::CHexaComparison(CFileComparisonDialog &_rDialog)
 		// ctor
-		: CHexaEditor(NULL) , rDialog(_rDialog) {
+		: CHexaEditor(nullptr) , rDialog(_rDialog) {
 	}
 
 	LRESULT CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::CHexaComparison::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){

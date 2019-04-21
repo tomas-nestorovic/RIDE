@@ -108,11 +108,11 @@
 		if (reg1 & FDC_ST1_DATA_ERROR)			*pDescriptions++=_T("error in ID or Data field");
 		if (reg1 & FDC_ST1_NO_DATA)				*pDescriptions++=_T("ID field with error");
 		if (reg1 & FDC_ST1_NO_ADDRESS_MARK)		*pDescriptions++=_T("missing address mark");
-		*pDescriptions++=NULL; // end of Descriptions of set bits in Register1
+		*pDescriptions++=nullptr; // end of Descriptions of set bits in Register1
 		if (reg2 & FDC_ST2_DELETED_DAM)			*pDescriptions++=_T("Data field deletion inconsistence");
 		if (reg2 & FDC_ST2_CRC_ERROR_IN_DATA)	*pDescriptions++=_T("Data field CRC error");
 		if (reg2 & FDC_ST2_NOT_DAM)				*pDescriptions++=_T("no Data field found");
-		*pDescriptions++=NULL; // end of Descriptions of set bits in Register2
+		*pDescriptions++=nullptr; // end of Descriptions of set bits in Register2
 	}
 
 	bool TFdcStatus::IsWithoutError() const{
@@ -171,7 +171,7 @@
 			case HDD_RAW	: return _T("Hard disk (without MBR support)");
 			default:
 				ASSERT(FALSE);
-				return NULL;
+				return nullptr;
 		}
 	}
 	TMedium::PCProperties TMedium::GetProperties(TType mediumType){
@@ -194,7 +194,7 @@
 			}
 			default:
 				ASSERT(FALSE);
-				return NULL;
+				return nullptr;
 		}
 	}
 
@@ -282,7 +282,7 @@
 					return p;
 			}
 		}
-		return NULL;
+		return nullptr;
 	}
 
 	BYTE CImage::__populateComboBoxWithCompatibleMedia__(HWND hComboBox,WORD dosSupportedMedia,PCProperties imageProperties){
@@ -316,7 +316,7 @@
 	CImage::CImage(PCProperties _properties,bool hasEditableSettings)
 		// ctor
 		// - initialization
-		: properties(_properties) , dos(NULL)
+		: properties(_properties) , dos(nullptr)
 		, hasEditableSettings(hasEditableSettings) , writeProtected(true) , canBeModified(true)
 		// - creating Toolbar (its displaying in CTdiView::ShowContent)
 		, toolbar(IDR_IMAGE,ID_IMAGE) { // ID_IMAGE = "some" unique ID
@@ -401,7 +401,7 @@
 				if (dos)
 					switch (dos->ProcessCommand(nID)){
 						case CDos::TCmdResult::DONE_REDRAW:
-							UpdateAllViews(NULL,0,NULL);
+							UpdateAllViews(nullptr,0,nullptr);
 							// fallthrouh
 						case CDos::TCmdResult::DONE:
 							return TRUE;
@@ -427,7 +427,7 @@
 					case ID_IMAGE_PATCH:
 						if (!__reportWriteProtection__()){
 							__patch__();
-							UpdateAllViews(NULL,0,NULL);
+							UpdateAllViews(nullptr,0,nullptr);
 						}
 						return TRUE;
 					case ID_FILE_CLOSE:
@@ -534,9 +534,9 @@
 		// returns Data of a Sector on a given PhysicalAddress; returns Null if Sector not found or Track not formatted
 		TFdcStatus st;
 		if (const PSectorData data=GetSectorData(cyl,head,pid,0,true,sectorLength,&st))
-			return st.IsWithoutError() ? data : NULL; // Data must be either without error, or none
+			return st.IsWithoutError() ? data : nullptr; // Data must be either without error, or none
 		else
-			return NULL; // Sector not found
+			return nullptr; // Sector not found
 	}
 
 	PSectorData CImage::GetSectorData(RCPhysicalAddress chs,PWORD sectorLength){
@@ -563,7 +563,7 @@
 				break;
 		}
 		if (!nSectorsOnTrack) // Sector with a given ID not found (LengthCode ignored)
-			return NULL;
+			return nullptr;
 		// - retrieving Data
 		return GetSectorData(rChs,sectorLength);
 	}

@@ -11,7 +11,7 @@
 	#define INFORMATION_STD_PARAM_2	7 /* column to sort by */
 
 	const CFileManagerView::TFileInfo CTRDOS503::CTrdosFileManagerView::InformationList[INFORMATION_COUNT]={
-		{ NULL,				LVCFMT_LEFT,	8 }, // auxiliary column to indent the first information from left edge of window
+		{ nullptr,				LVCFMT_LEFT,	8 }, // auxiliary column to indent the first information from left edge of window
 		{ _T("Name"),		LVCFMT_LEFT,	180 },
 		{ _T("Extension"),	LVCFMT_RIGHT,	70 },
 		{ _T("Size"),		LVCFMT_RIGHT,	55 },
@@ -77,7 +77,7 @@
 		r.left=r.right;
 		// . COLUMN: Size
 		r.right=*tabs++;
-			::DrawText( dc, _itot(de->__getOfficialFileSize__(NULL),bufT,10),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
+			::DrawText( dc, _itot(de->__getOfficialFileSize__(nullptr),bufT,10),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
 		r.left=r.right;
 		// . COLUMN: # of Sectors
 		r.right=*tabs++;
@@ -113,7 +113,7 @@
 			case INFORMATION_EXTENSION:
 				return f1->extension-f2->extension;
 			case INFORMATION_SIZE:
-				return f1->__getOfficialFileSize__(NULL)-f2->__getOfficialFileSize__(NULL);
+				return f1->__getOfficialFileSize__(nullptr)-f2->__getOfficialFileSize__(nullptr);
 			case INFORMATION_SECTORS_COUNT:
 				return f1->nSectors-f2->nSectors;
 			case INFORMATION_FIRST_SECTOR:
@@ -150,13 +150,13 @@
 				if (((PTRDOS503)DOS)->__getStdParameter1__(de,stdParameter))
 					return stdParamEditor.Create( de, &stdParameter, __onStdParam1Changed__ );
 				else
-					return NULL;
+					return nullptr;
 			case INFORMATION_STD_PARAM_2:
 				if (((PTRDOS503)DOS)->__getStdParameter2__(de,stdParameter))
 					return stdParamEditor.Create( de, &stdParameter, __onStdParam2Changed__ );
 				else
-					return NULL;
+					return nullptr;
 			default:
-				return NULL;
+				return nullptr;
 		}
 	}

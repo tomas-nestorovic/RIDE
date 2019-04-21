@@ -18,7 +18,7 @@
 											CPropGridCtrl::TOnValueChanged onValueChanged
 										)
 		// ctor
-		: TEditor( height, true, NULL, onValueChanged )
+		: TEditor( height, true, nullptr, onValueChanged )
 		, wideChar(wideChar)
 		, getValueDesc(getValueDesc)
 		, drawValue(drawValue)
@@ -29,7 +29,7 @@
 
 	void TCustomEnumEditor::__drawValue__(const TPropGridInfo::TItem::TValue &value,PDRAWITEMSTRUCT pdis) const{
 		// draws the Value into the specified rectangle
-		if (drawValue!=NULL)
+		if (drawValue!=nullptr)
 			// custom-drawn (aka. owner-drawn) Value
 			drawValue( value.param, value.buffer, value.bufferCapacity, pdis );
 		else{
@@ -65,11 +65,11 @@
 			return 0; // error - unsupported BufferCapacity (must be from the set {1,...,4})
 		// - creating the ComboBox
 		const HWND hComboBox=::CreateWindow(WC_COMBOBOX,
-											NULL, // descendant sets the edit-box content
+											nullptr, // descendant sets the edit-box content
 											CBS_DROPDOWNLIST | WS_VSCROLL | EDITOR_STYLE
-												| ( drawValue!=NULL ? CBS_OWNERDRAWFIXED : 0 ),
+												| ( drawValue!=nullptr ? CBS_OWNERDRAWFIXED : 0 ),
 											0,0, 1,1,
-											hParent, 0, GET_PROPGRID_HINSTANCE(hParent), NULL
+											hParent, 0, GET_PROPGRID_HINSTANCE(hParent), nullptr
 										);
 		// . increasing the height of the ComboBox to accommodate also the drop-down list
 		RECT r;
@@ -82,7 +82,7 @@
 				uValue.longValue=0;
 			for( const BYTE *valueBytes=(PBYTE)valueList; nValues--; valueBytes+=value.bufferCapacity ){ // let's treat the ValueList as an array of Bytes in the form of [Value1,Value2,...,ValueN} where each Value occupies the same number of Bytes (e.g. 2 Bytes)
 				::memcpy( &uValue, valueBytes, value.bufferCapacity );
-				if (drawValue!=NULL)
+				if (drawValue!=nullptr)
 					// owner-drawn Value
 					ComboBox_AddItemData( hComboBox, uValue.longValue );
 				else{
@@ -133,7 +133,7 @@
 		return	RegisteredEditors.__add__(
 					new TCustomEnumEditor(	EDITOR_DEFAULT_HEIGHT,
 											false, (CPropGridCtrl::TEnum::TGetValueDesc)getValueDesc,
-											NULL,
+											nullptr,
 											getValueList, freeValueList,
 											onValueConfirmed,
 											onValueChanged
@@ -146,7 +146,7 @@
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
 					new TCustomEnumEditor(	height>0 ? height : EDITOR_DEFAULT_HEIGHT,
-											false, NULL,
+											false, nullptr,
 											drawValue,
 											getValueList, freeValueList,
 											onValueConfirmed,

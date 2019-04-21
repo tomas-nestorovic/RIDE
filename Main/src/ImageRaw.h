@@ -31,7 +31,7 @@
 		BOOL OnSaveDocument(LPCTSTR lpszPathName) override;
 		TCylinder GetCylinderCount() const override;
 		THead GetNumberOfFormattedSides(TCylinder cyl) const override;
-		TSector ScanTrack(TCylinder cyl,THead head,PSectorId bufferId=NULL,PWORD bufferLength=NULL,PINT startTimesMicroseconds=NULL,PBYTE pAvgGap3=NULL) const override;
+		TSector ScanTrack(TCylinder cyl,THead head,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PINT startTimesMicroseconds=nullptr,PBYTE pAvgGap3=nullptr) const override;
 		void GetTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses) override;
 		TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE,PCFdcStatus pFdcStatus) override;
 		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;

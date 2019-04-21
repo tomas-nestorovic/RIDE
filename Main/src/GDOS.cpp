@@ -290,7 +290,7 @@
 
 	void CGDOS::TDirectoryEntry::__setNameAndExt__(LPCTSTR newName,LPCTSTR newExt){
 		// sets File's Name and Type based on the Buffer content
-		ASSERT(newName!=NULL && newExt!=NULL);
+		ASSERT(newName!=nullptr && newExt!=nullptr);
 		// - setting the Name trimmed to 10 characters at most
 		const BYTE nCharsInNewName=::lstrlen(newName);
 		#ifdef UNICODE
@@ -313,7 +313,7 @@
 			case TDirectoryEntry::CODE			:
 			case TDirectoryEntry::SCREEN		: return &etc.stdZxType.code.startInMemory;
 			default:
-				return NULL;
+				return nullptr;
 		}
 	}
 
@@ -337,7 +337,7 @@
 			case TDirectoryEntry::CODE			:
 			case TDirectoryEntry::SCREEN		: return &etc.stdZxType.code.autostartAddress;
 			default:
-				return NULL;
+				return nullptr;
 		}
 	}
 
@@ -354,7 +354,7 @@
 
 	TStdWinError CGDOS::ChangeFileNameAndExt(PFile file,LPCTSTR newName,LPCTSTR newExt,PFile &rRenamedFile){
 		// tries to change given File's name and extension; returns Windows standard i/o error
-		ASSERT(newName!=NULL && newExt!=NULL);
+		ASSERT(newName!=nullptr && newExt!=nullptr);
 		// - can't change root Directory's name
 		if (file==ZX_DIR_ROOT)
 			return ERROR_DIRECTORY;
@@ -366,7 +366,7 @@
 			return ERROR_FILE_EXISTS;
 		// - extracting important information about the File before renaming it (e.g. standard parameters)
 		const PDirectoryEntry de=(PDirectoryEntry)file;
-		const DWORD dataSize=de->__getDataSize__(NULL);
+		const DWORD dataSize=de->__getDataSize__(nullptr);
 		UStdParameters stdParams;
 			if (const PCWORD pw=de->__getStdParameter1__()) stdParams.param1=*pw;
 			if (const PCWORD pw=de->__getStdParameter2__()) stdParams.param2=*pw;
@@ -571,8 +571,8 @@
 	TStdWinError CGDOS::CreateUserInterface(HWND hTdi){
 		// creates DOS-specific Tabs in TDI; returns Windows standard i/o error
 		CSpectrumDos::CreateUserInterface(hTdi); // guaranteed to always return ERROR_SUCCESS
-		CTdiCtrl::AddTabLast( hTdi, TRACK_MAP_TAB_LABEL, &trackMap.tab, false, TDI_TAB_CANCLOSE_NEVER, NULL );
-		CTdiCtrl::AddTabLast( hTdi, FILE_MANAGER_TAB_LABEL, &fileManager.tab, true, TDI_TAB_CANCLOSE_NEVER, NULL );
+		CTdiCtrl::AddTabLast( hTdi, TRACK_MAP_TAB_LABEL, &trackMap.tab, false, TDI_TAB_CANCLOSE_NEVER, nullptr );
+		CTdiCtrl::AddTabLast( hTdi, FILE_MANAGER_TAB_LABEL, &fileManager.tab, true, TDI_TAB_CANCLOSE_NEVER, nullptr );
 		return ERROR_SUCCESS;
 	}
 

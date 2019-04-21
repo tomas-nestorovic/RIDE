@@ -53,11 +53,11 @@
 		// - creating the custom Accelerators table
 		ACCEL accelerators[80]; BYTE nAccels=0;
 		if (customSelectSubmenu)
-			for( PCSubmenuItem psi=customSelectSubmenu; psi->name!=NULL; psi++ )
+			for( PCSubmenuItem psi=customSelectSubmenu; psi->name!=nullptr; psi++ )
 				if (psi->accel.key!='\0')
 					accelerators[nAccels++]=psi->accel;
 		if (customGotoSubmenu)
-			for( PCSubmenuItem psi=customGotoSubmenu; psi->name!=NULL; psi++ )
+			for( PCSubmenuItem psi=customGotoSubmenu; psi->name!=nullptr; psi++ )
 				if (psi->accel.key!='\0')
 					accelerators[nAccels++]=psi->accel;
 		hAdditionalAccelerators=::CreateAcceleratorTable( accelerators, nAccels );
@@ -458,14 +458,14 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 					if (CMenu *const pSelectSubmenu=mnu.GetSubMenu(0)->GetSubMenu(4)){ // 4 = "Select" submenu in IDR_HEXAEDITOR menu
 						while (pSelectSubmenu->GetMenuItemCount()) // clearing the submenu
 							pSelectSubmenu->RemoveMenu( 0, MF_BYPOSITION );
-						for( PCSubmenuItem psi=customSelectSubmenu; psi->name!=NULL; psi++ )
+						for( PCSubmenuItem psi=customSelectSubmenu; psi->name!=nullptr; psi++ )
 							pSelectSubmenu->AppendMenu( MF_STRING, psi->accel.cmd, psi->name );
 					}
 				if (customGotoSubmenu) // custom "Go to" submenu
 					if (CMenu *const pGotoSubmenu=mnu.GetSubMenu(0)->GetSubMenu(6)){ // 6 = "Select" submenu in IDR_HEXAEDITOR menu
 						while (pGotoSubmenu->GetMenuItemCount()) // clearing the submenu
 							pGotoSubmenu->RemoveMenu( 0, MF_BYPOSITION );
-						for( PCSubmenuItem psi=customGotoSubmenu; psi->name!=NULL; psi++ )
+						for( PCSubmenuItem psi=customGotoSubmenu; psi->name!=nullptr; psi++ )
 							pGotoSubmenu->AppendMenu( MF_STRING, psi->accel.cmd, psi->name );
 					}
 				register union{

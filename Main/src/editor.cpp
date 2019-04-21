@@ -113,7 +113,7 @@
 		// - creating/allocating resources
 		//nop
 		// - initializing OLE and Common Controls
-		::OleInitialize(NULL);
+		::OleInitialize(nullptr);
 		static const INITCOMMONCONTROLSEX Icc={ sizeof(Icc), ICC_LINK_CLASS };
 		if (!::InitCommonControlsEx(&Icc))
 			return FALSE; // will end-up here if running on Windows 2000 or older!
@@ -247,7 +247,7 @@
 			if (err!=ERROR_SUCCESS){
 				delete image;
 				Utils::FatalError(_T("Cannot access the floppy drive"),err);
-				return NULL;
+				return nullptr;
 				//AfxThrowFileException( CFileException::OsErrorToException(err), err, FDD_A_LABEL );
 			}
 		}else if (CDocument *const doc=CWinApp::OpenDocumentFile(lpszFileName)){
@@ -257,10 +257,10 @@
 			const LPCTSTR extension=_tcsrchr(lpszFileName,'.');
 			const CImage::PCProperties p=	extension // recognizing file Image by its extension
 											? CImage::__determineTypeByExtension__(extension)
-											: NULL;
+											: nullptr;
 			if (!p){
 				Utils::FatalError(_T("Unknown container to load."));
-				return NULL;
+				return nullptr;
 			}
 			image=p->fnInstantiate(); // instantiating recognized file Image
 openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully ...
@@ -292,25 +292,25 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 							if (command==IDYES) break;
 							delete image;
 							OnFileNew();
-							if (command==IDCANCEL) return NULL;
+							if (command==IDCANCEL) return nullptr;
 							image=CImageRaw::Properties.fnInstantiate();
 							goto openImage;
 						}
 						//fallthrough
 					default:
 						Utils::FatalError(_T("Cannot open the file"),err);
-						return NULL;
+						return nullptr;
 					case ERROR_SUCCESS:
 						break;
 				}
 		}else
 			// failed to open Image
-			return NULL;
+			return nullptr;
 		// - adding file Image into list of Most Recently Used (MRU) documents
 		if (!dynamic_cast<CFDD *>(image))
 			app.AddToRecentFileList(lpszFileName);
 		// - determining the DOS
-		CDos::PCProperties dosProps=NULL;
+		CDos::PCProperties dosProps=nullptr;
 		TFormat formatBoot; // information on Format (# of Cylinders, etc.) obtained from Image's Boot record
 		if (recognizeDosAutomatically){
 			// automatic recognition of suitable DOS by sequentially testing each of them
@@ -318,7 +318,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			dosProps=CDos::CRecognition().__perform__(image,&formatBoot);
 			if (!dosProps){ // if recognition sequence cancelled ...
 				delete image;
-				return NULL; // ... no Image or disk is accessed
+				return nullptr; // ... no Image or disk is accessed
 			}
 			if (dosProps==&CUnknownDos::Properties)
 				Utils::Information(_T("CANNOT RECOGNIZE THE DOS!\nDoes it participate in recognition?") ENTERING_LIMITED_MODE );
@@ -354,13 +354,13 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 
 				CDosSelectionDialog()
 					// ctor
-					: CDialog(IDR_DOS_UNKNOWN) , dosProps(NULL) {
+					: CDialog(IDR_DOS_UNKNOWN) , dosProps(nullptr) {
 				}
 			} d;
 			// . showing the Dialog and processing its result
 			if (d.DoModal()!=IDOK){
 				delete image;
-				return NULL;
+				return nullptr;
 			}else{
 				formatBoot=( dosProps=d.dosProps )->stdFormats->params.format;
 				formatBoot.nCylinders++;
@@ -372,7 +372,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		const PDos dos = image->dos = dosProps->fnInstantiate(image,&formatBoot);
 		if (!dos){
 			delete image;
-			return NULL;
+			return nullptr;
 		}
 		image->SetMediumTypeAndGeometry( &formatBoot, dos->sideMap, dos->properties->firstSectorNumber );
 		// - creating the user interface for recognized/selected DOS
@@ -383,7 +383,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			::wsprintf( errMsg, _T("Cannot use \"%s\" to access the medium"), dosProps->name );
 			Utils::FatalError(errMsg,err);
 			CMainWindow::CTdiTemplate::pSingleInstance->__closeDocument__();
-			return NULL;
+			return nullptr;
 		}
 		// - informing on what to do in case of DOS misrecognition
 		Utils::InformationWithCheckableShowNoMore( _T("If the DOS has been misrecognized, adjust the recognition sequence under \"Image -> Recognition\"."), INI_GENERAL, INI_MISRECOGNITION );
@@ -418,7 +418,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 
 	
 
-	#define FDD_ACCESS	NULL
+	#define FDD_ACCESS	nullptr
 
 	static HHOOK ofn_hHook;
 	static PTCHAR ofn_fileName;
@@ -436,7 +436,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 						ofn_fileName=FDD_ACCESS;
 					}else{
 						TCHAR bufT[200];
-						::WideCharToMultiByte(CP_ACP,0,pItem->szUrl,-1,bufT,sizeof(bufT)/sizeof(TCHAR),NULL,NULL);
+						::WideCharToMultiByte(CP_ACP,0,pItem->szUrl,-1,bufT,sizeof(bufT)/sizeof(TCHAR),nullptr,nullptr);
 						Utils::NavigateToUrlInDefaultBrowser(bufT);
 					}
 					return 0;
@@ -469,7 +469,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		// - creating a standard "Open/Save File" Dialog
 		CString title;
 			title.LoadString(stdStringId);
-		CFileDialog d( stdStringId==AFX_IDS_OPENFILE, _T(""), NULL, flags|OFN_OVERWRITEPROMPT, buf );
+		CFileDialog d( stdStringId==AFX_IDS_OPENFILE, _T(""), nullptr, flags|OFN_OVERWRITEPROMPT, buf );
 			d.m_ofn.lStructSize=sizeof(OPENFILENAME); // to show the "Places bar"
 			d.m_ofn.nFilterIndex=1;
 			d.m_ofn.lpstrTitle=title;
@@ -494,7 +494,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		//CWinApp::OnFileOpen();
 		TCHAR fileName[MAX_PATH];
 		*fileName='\0';
-		if (__doPromptFileName__( fileName, true, AFX_IDS_OPENFILE, OFN_FILEMUSTEXIST, NULL ))
+		if (__doPromptFileName__( fileName, true, AFX_IDS_OPENFILE, OFN_FILEMUSTEXIST, nullptr ))
 			OpenDocumentFile(fileName);
 	}
 

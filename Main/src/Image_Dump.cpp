@@ -33,12 +33,12 @@
 		TDumpParams(PDos _dos)
 			// ctor
 			: dos(_dos)
-			, source(dos->image) , target(NULL)
+			, source(dos->image) , target(nullptr)
 			, formatJustBadTracks(false)
 			, fillerByte(dos->properties->sectorFillerByte)
 			, cylinderA(0) , cylinderZ(source->GetCylinderCount()-1)
 			, nHeads(source->GetNumberOfFormattedSides(0))
-			, pOutErroneousTracks(NULL) {
+			, pOutErroneousTracks(nullptr) {
 			gap3.value=dos->properties->GetValidGap3ForMedium(dos->formatBoot.mediumType);
 			gap3.valueValid=true;
 		}
@@ -46,7 +46,7 @@
 		~TDumpParams(){
 			// dtor
 			if (target){
-				target->dos=NULL; // to not also destroy the DOS
+				target->dos=nullptr; // to not also destroy the DOS
 				delete target;
 			}
 		}
@@ -231,7 +231,7 @@ terminateWithError:
 								};
 								CWnd *const pBtnAccept=GetDlgItem(IDOK);
 								Utils::ConvertToSplitButton( pBtnAccept->m_hWnd, Actions, ACCEPT_OPTIONS_COUNT );
-								pBtnAccept->EnableWindow( dynamic_cast<CImageRaw *>(dp.target)==NULL ); // accepting errors is allowed only if the Target Image can accept them
+								pBtnAccept->EnableWindow( dynamic_cast<CImageRaw *>(dp.target)==nullptr ); // accepting errors is allowed only if the Target Image can accept them
 								// > enabling/disabling the "Recover" button
 								GetDlgItem(ID_RECOVER)->EnableWindow( rFdcStatus.DescribesIdFieldCrcError() || rFdcStatus.DescribesDataFieldCrcError() );
 							}
@@ -390,7 +390,7 @@ terminateWithError:
 {LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("formatting target"));
 				if (dp.formatJustBadTracks && dp.source->IsTrackHealthy(p.chs.cylinder,p.chs.head)){
 					if (!dp.gap3.valueValid){ // "real" Gap3 Value (i.e. the one that was used when previously formatting the disk) not yet determined
-						if (dp.target->ScanTrack( p.chs.cylinder, p.chs.head, NULL, NULL, NULL, &dp.gap3.value )) // if there are some Sectors on the Target Track ...
+						if (dp.target->ScanTrack( p.chs.cylinder, p.chs.head, nullptr, nullptr, nullptr, &dp.gap3.value )) // if there are some Sectors on the Target Track ...
 							if (dp.target->IsTrackHealthy(p.chs.cylinder,p.chs.head)){ // ... and all of them are well readable ...
 								#ifdef LOGGING_ENABLED
 									LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("Avg target image Gap3"));
@@ -445,7 +445,7 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 				if (erroneousSectors.n){
 					TDumpParams::TSourceTrackErrors *psse=(TDumpParams::TSourceTrackErrors *)::malloc(sizeof(TDumpParams::TSourceTrackErrors)+(erroneousSectors.n-1)*sizeof(TDumpParams::TSourceSectorError));
 						psse->cyl=p.chs.cylinder, psse->head=p.chs.head;
-						psse->pNextErroneousTrack=NULL;
+						psse->pNextErroneousTrack=nullptr;
 						::memcpy( psse->erroneousSectors, erroneousSectors.buffer, ( psse->nErroneousSectors=erroneousSectors.n )*sizeof(TDumpParams::TSourceSectorError) );
 					*ppSrcTrackErrors=psse, ppSrcTrackErrors=&psse->pNextErroneousTrack;
 				}
@@ -488,13 +488,13 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 					TMedium::TType mt=(TMedium::TType)ComboBox_GetItemData( hComboBox, ComboBox_GetCurSel(hComboBox) );
 				}else{
 					GetDlgItem(ID_FILE)->SetWindowText(ELLIPSIS);
-					__populateComboBoxWithCompatibleMedia__( hMedium, 0, NULL ); // if FileName not set, Medium cannot be determined
+					__populateComboBoxWithCompatibleMedia__( hMedium, 0, nullptr ); // if FileName not set, Medium cannot be determined
 				}
 				CComboBox cbMedium;
 				cbMedium.Attach(hMedium);
 					const TMedium::PCProperties mp=	targetImageProperties // ComboBox populated with compatible Media and one of them selected
 													? TMedium::GetProperties( dumpParams.mediumType=(TMedium::TType)cbMedium.GetItemData(cbMedium.GetCurSel()) )
-													: NULL;
+													: nullptr;
 				cbMedium.Detach();
 				int i=dumpParams.formatJustBadTracks;
 				DDX_Check( pDX, ID_FORMAT, i );
@@ -515,7 +515,7 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 				if (pDX->m_bSaveAndValidate){
 					// : destroying any previously instantiated Target Image
 					if (dumpParams.target)
-						delete dumpParams.target, dumpParams.target=NULL;
+						delete dumpParams.target, dumpParams.target=nullptr;
 					// : instantiating Target Image
 					if (targetImageProperties){
 						LOG_ACTION(_T("Creating target image"));
@@ -530,7 +530,7 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 							dumpParams.source->properties==&CFDD::Properties
 							&&
 						#endif
-						dynamic_cast<CImageRaw *>(dumpParams.target)!=NULL
+						dynamic_cast<CImageRaw *>(dumpParams.target)!=nullptr
 					)
 						// suggestion is helpfull only if dumping a floppy to an image with invariant structure (as Cylinders outside the official Format may have different layout, causing an "Device doesn't recognize this command" error during formatting the raw Image)
 						if (dos->properties!=&CUnknownDos::Properties) // Unknown DOS doesn't have valid Format information
@@ -588,7 +588,7 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 							case ID_FILE:{
 								const TCHAR c=*fileName;
 								*fileName='\0';
-								if (app.__doPromptFileName__( fileName, true, AFX_IDS_SAVEFILE, 0, NULL )){
+								if (app.__doPromptFileName__( fileName, true, AFX_IDS_SAVEFILE, 0, nullptr )){
 									// : compacting FileName in order to be better displayable on the button
 									CWnd *const pBtnFile=GetDlgItem(ID_FILE);
 									RECT r;
@@ -695,7 +695,7 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 			CDumpDialog(PDos _dos)
 				// ctor
 				: CDialog(IDR_IMAGE_DUMP)
-				, dos(_dos) , targetImageProperties(NULL) , dumpParams(_dos)
+				, dos(_dos) , targetImageProperties(nullptr) , dumpParams(_dos)
 				, realtimeThreadPriority(BST_UNCHECKED)
 				, showReport(BST_CHECKED) {
 				::lstrcpy( fileName, ELLIPSIS );
@@ -721,7 +721,7 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 						// | saving to temporary file
 						TCHAR tmpFileName[MAX_PATH];
 						::GetTempPath(MAX_PATH,tmpFileName);
-						::GetTempFileName( tmpFileName, NULL, TRUE, tmpFileName );
+						::GetTempFileName( tmpFileName, nullptr, TRUE, tmpFileName );
 						d.dumpParams.__exportErroneousTracksToHtml__( CFile(::lstrcat(tmpFileName,_T(".html")),CFile::modeCreate|CFile::modeWrite) );
 						// | displaying
 						((CMainWindow *)app.m_pMainWnd)->OpenWebPage( _T("Dump results"), tmpFileName );

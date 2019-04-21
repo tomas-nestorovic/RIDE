@@ -27,7 +27,7 @@
 
 
 
-	#define UNFORMAT_CUSTOM		NULL
+	#define UNFORMAT_CUSTOM		nullptr
 
 	void CUnformatDialog::PreInitDialog(){
 		// dialog initialization

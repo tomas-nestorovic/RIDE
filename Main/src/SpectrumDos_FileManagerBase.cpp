@@ -4,7 +4,7 @@
 
 	CSpectrumDos::CSpectrumFileManagerView::CSpectrumFileManagerView(PDos dos,const TZxRom &rZxRom,BYTE supportedDisplayModes,BYTE initialDisplayMode,BYTE nInformation,PCFileInfo informationList)
 		// ctor
-		: CFileManagerView( dos, supportedDisplayModes, initialDisplayMode, rZxRom.font, 3, nInformation, informationList, 0, NULL )
+		: CFileManagerView( dos, supportedDisplayModes, initialDisplayMode, rZxRom.font, 3, nInformation, informationList, 0, nullptr )
 		, zxRom(rZxRom) {
 	}
 
@@ -23,7 +23,7 @@
 		// returns the Buffer populated with the export name and extension of the next File's copy in current Directory; returns Null if no further name and extension can be generated
 		BYTE tmpDirEntry[2048]; // "big enough" to accommodate any ZX Spectrum DirectoryEntry
 		const PDirectoryTraversal pdt=DOS->BeginDirectoryTraversal();
-			if (!pdt) return NULL;
+			if (!pdt) return nullptr;
 			::memcpy( tmpDirEntry, file, pdt->entrySize );
 			const BYTE nameCharsMax=pdt->nameCharsMax;
 		DOS->EndDirectoryTraversal(pdt);
@@ -41,7 +41,7 @@
 				// generated a unique Name for the next File copy - returning the final export name and extension
 				return DOS->GetFileExportNameAndExt( &tmpDirEntry, shellCompliant, pOutBuffer );
 		}
-		return NULL; // the Name for the next File copy cannot be generated
+		return nullptr; // the Name for the next File copy cannot be generated
 	}
 
 	TStdWinError CSpectrumDos::CSpectrumFileManagerView::ImportPhysicalFile(LPCTSTR pathAndName,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution){
@@ -79,7 +79,7 @@
 								return ERROR_CANCELLED; // ... we are done
 						// : inserting a recorded Tape (by opening its underlying physical file)
 						new CTape( pathAndName, (CSpectrumDos *)DOS, false ); // inserted Tape is WriteProtected by default
-						rImportedFile=NULL; // File processed another way than importing
+						rImportedFile=nullptr; // File processed another way than importing
 						return ERROR_SUCCESS;
 					}
 					case IDNO:
@@ -103,7 +103,7 @@
 		const PDos dos=CDos::__getFocused__();
 		// - getting File's original Name and Extension
 		TCHAR bufOldName[MAX_PATH];
-		dos->GetFileNameAndExt(file,bufOldName,NULL);
+		dos->GetFileNameAndExt(file,bufOldName,nullptr);
 		const TCHAR bufNewExt[]={ newExt.charValue, '\0' };
 		// - validating File's new Name and Extension
 		const TStdWinError err=dos->ChangeFileNameAndExt(file,bufOldName,bufNewExt,file);
@@ -134,7 +134,7 @@
 		const PDos dos=CDos::__getFocused__();
 		const CSpectrumFileManagerView *const pZxFileManager=(CSpectrumFileManagerView *)dos->pFileManager;
 		TCHAR bufExt[2];
-		dos->GetFileNameAndExt(file,NULL,bufExt);
+		dos->GetFileNameAndExt(file,nullptr,bufExt);
 		const PEditorBase result=pZxFileManager->__createStdEditor__(
 			file, &( data=*bufExt ), sizeof(data),
 			CPropGridCtrl::TEnum::DefineConstStringListEditorA( __createValues__, __getDescription__, __freeValues__, __onChanged__ )
@@ -159,7 +159,7 @@
 		const CSpectrumFileManagerView *const pZxFileManager=(CSpectrumFileManagerView *)dos->pFileManager;
 		// - getting File's original Name and Extension
 		TCHAR bufOldExt[MAX_PATH];
-		dos->GetFileNameAndExt(file,NULL,bufOldExt);
+		dos->GetFileNameAndExt(file,nullptr,bufOldExt);
 		TCHAR bufNewName[MAX_PATH];
 		const TZxRom::CLineComposerPropGridEditor &rEditor=pZxFileManager->zxRom.lineComposerPropGridEditor;
 		::lstrcpyn( bufNewName, rEditor.GetCurrentZxText(), rEditor.GetCurrentZxTextLength()+1 );
@@ -181,7 +181,7 @@
 		#ifdef UNICODE
 			ASSERT(FALSE);
 		#else
-			dos->GetFileNameAndExt( file, bufOldName, NULL );
+			dos->GetFileNameAndExt( file, bufOldName, nullptr );
 			::memset( bufOldName+::lstrlen(bufOldName), paddingChar, lengthMax ); // guaranteed that LengthMax PaddingChars still fit in the Buffer for any ZX Spectrum derivate
 			return pZxFileManager->__createStdEditor__(	file, bufOldName, MAKEWORD(lengthMax,paddingChar), // [H,L] = [ padding char, max label length ]
 														pZxFileManager->zxRom.lineComposerPropGridEditor.Create( __onChanged__ )

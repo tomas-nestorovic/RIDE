@@ -27,20 +27,20 @@
 			typedef bool (WINAPI *TOnValueConfirmedA)(PCustomParam,LPCSTR,TValueSize);
 			typedef bool (WINAPI *TOnValueConfirmedW)(PCustomParam,LPCWSTR,TValueSize);
 
-			static PCEditor DefineFixedLengthEditorA(TOnValueConfirmedA onValueConfirmed=NULL,char paddingChar='\0',TOnValueChanged onValueChanged=NULL);
-			static PCEditor DefineFixedLengthEditorW(TOnValueConfirmedW onValueConfirmed=NULL,WCHAR paddingChar='\0',TOnValueChanged onValueChanged=NULL);
+			static PCEditor DefineFixedLengthEditorA(TOnValueConfirmedA onValueConfirmed=nullptr,char paddingChar='\0',TOnValueChanged onValueChanged=nullptr);
+			static PCEditor DefineFixedLengthEditorW(TOnValueConfirmedW onValueConfirmed=nullptr,WCHAR paddingChar='\0',TOnValueChanged onValueChanged=nullptr);
 
-			static PCEditor DefineDynamicLengthEditorA(TOnValueConfirmedA onValueConfirmed=NULL,TOnValueChanged onValueChanged=NULL);
-			static PCEditor DefineDynamicLengthEditorW(TOnValueConfirmedW onValueConfirmed=NULL,TOnValueChanged onValueChanged=NULL);
+			static PCEditor DefineDynamicLengthEditorA(TOnValueConfirmedA onValueConfirmed=nullptr,TOnValueChanged onValueChanged=nullptr);
+			static PCEditor DefineDynamicLengthEditorW(TOnValueConfirmedW onValueConfirmed=nullptr,TOnValueChanged onValueChanged=nullptr);
 
-			static PCEditor DefineFileNameEditorA(TOnValueConfirmedA onValueConfirmed=NULL,TOnValueChanged onValueChanged=NULL);
-			static PCEditor DefineFileNameEditorW(TOnValueConfirmedW onValueConfirmed=NULL,TOnValueChanged onValueChanged=NULL);
+			static PCEditor DefineFileNameEditorA(TOnValueConfirmedA onValueConfirmed=nullptr,TOnValueChanged onValueChanged=nullptr);
+			static PCEditor DefineFileNameEditorW(TOnValueConfirmedW onValueConfirmed=nullptr,TOnValueChanged onValueChanged=nullptr);
 		};
 
 		struct PROPGRID_DECLSPEC TBoolean sealed{
 			typedef bool (WINAPI *TOnValueConfirmed)(PCustomParam,bool);
 
-			static PCEditor DefineEditor(TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged=NULL,DWORD reservedValue=0,bool reservedForTrue=false);
+			static PCEditor DefineEditor(TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged=nullptr,DWORD reservedValue=0,bool reservedForTrue=false);
 		};
 
 		struct PROPGRID_DECLSPEC TInteger sealed{
@@ -60,11 +60,11 @@
 			static const TUpDownLimits NonNegativeIntegerLimits; // 0..INT_MAX
 			static const TUpDownLimits NegativeIntegerLimits; // INT_MIN..-1
 
-			static PCEditor DefineEditor(RCUpDownLimits rLimits,TOnValueConfirmed onValueConfirmed=NULL,BYTE features=TFeatures::NONE,TOnValueChanged onValueChanged=NULL);
-			static PCEditor DefineByteEditor(TOnValueConfirmed onValueConfirmed=NULL,BYTE features=TFeatures::NONE,TOnValueChanged onValueChanged=NULL);
-			static PCEditor DefinePositiveByteEditor(TOnValueConfirmed onValueConfirmed=NULL,BYTE features=TFeatures::NONE,TOnValueChanged onValueChanged=NULL);
-			static PCEditor DefineWordEditor(TOnValueConfirmed onValueConfirmed=NULL,BYTE features=TFeatures::NONE,TOnValueChanged onValueChanged=NULL);
-			static PCEditor DefinePositiveWordEditor(TOnValueConfirmed onValueConfirmed=NULL,BYTE features=TFeatures::NONE,TOnValueChanged onValueChanged=NULL);
+			static PCEditor DefineEditor(RCUpDownLimits rLimits,TOnValueConfirmed onValueConfirmed=nullptr,BYTE features=TFeatures::NONE,TOnValueChanged onValueChanged=nullptr);
+			static PCEditor DefineByteEditor(TOnValueConfirmed onValueConfirmed=nullptr,BYTE features=TFeatures::NONE,TOnValueChanged onValueChanged=nullptr);
+			static PCEditor DefinePositiveByteEditor(TOnValueConfirmed onValueConfirmed=nullptr,BYTE features=TFeatures::NONE,TOnValueChanged onValueChanged=nullptr);
+			static PCEditor DefineWordEditor(TOnValueConfirmed onValueConfirmed=nullptr,BYTE features=TFeatures::NONE,TOnValueChanged onValueChanged=nullptr);
+			static PCEditor DefinePositiveWordEditor(TOnValueConfirmed onValueConfirmed=nullptr,BYTE features=TFeatures::NONE,TOnValueChanged onValueChanged=nullptr);
 		};
 
 		struct PROPGRID_DECLSPEC TEnum sealed{
@@ -87,15 +87,15 @@
 								TGetValueList getValueList, // list of possible values
 								TGetValueDescA getValueDesc, // value-to-string conversion
 								TFreeValueList freeValueList, // can be null for static lists of values
-								TOnValueConfirmed onValueConfirmed=NULL,
-								TOnValueChanged onValueChanged=NULL
+								TOnValueConfirmed onValueConfirmed=nullptr,
+								TOnValueChanged onValueChanged=nullptr
 							);
 			static PCEditor DefineConstStringListEditorW(
 								TGetValueList getValueList, // list of possible values
 								TGetValueDescW getValueDesc, // value-to-string conversion
 								TFreeValueList freeValueList, // can be null for static lists of values
-								TOnValueConfirmed onValueConfirmed=NULL,
-								TOnValueChanged onValueChanged=NULL
+								TOnValueConfirmed onValueConfirmed=nullptr,
+								TOnValueChanged onValueChanged=nullptr
 							);
 			//*
 			static PCEditor DefineConstCustomListEditor(
@@ -103,8 +103,8 @@
 								TGetValueList getValueList, // list of possible values
 								TDrawValueHandler drawValue,
 								TFreeValueList freeValueList, // can be null for static lists of values
-								TOnValueConfirmed onValueConfirmed=NULL,
-								TOnValueChanged onValueChanged=NULL
+								TOnValueConfirmed onValueConfirmed=nullptr,
+								TOnValueChanged onValueChanged=nullptr
 							);
 			//*/
 		};
@@ -114,8 +114,8 @@
 			typedef bool (WINAPI *TOnHyperlinkClickedA)(PCustomParam,int hyperlinkId,LPCSTR hyperlinkName);
 			typedef bool (WINAPI *TOnHyperlinkClickedW)(PCustomParam,int hyperlinkId,LPCWSTR hyperlinkName);
 
-			static PCEditor DefineEditorA(TOnHyperlinkClickedA onHyperlinkClicked,TOnValueChanged onValueChanged=NULL);
-			static PCEditor DefineEditorW(TOnHyperlinkClickedW onHyperlinkClicked,TOnValueChanged onValueChanged=NULL);
+			static PCEditor DefineEditorA(TOnHyperlinkClickedA onHyperlinkClicked,TOnValueChanged onValueChanged=nullptr);
+			static PCEditor DefineEditorW(TOnHyperlinkClickedW onHyperlinkClicked,TOnValueChanged onValueChanged=nullptr);
 		};
 
 		struct PROPGRID_DECLSPEC TCustom sealed{
@@ -128,14 +128,14 @@
 								TDrawValueHandler drawValue,
 								TCreateCustomMainEditor createCustomMainEditor, // Null <=> the editor doesn't feature a main control, otherwise the function should return a control well initialized to the current value (eventually featuring an attached UpDownControl)
 								TOnEllipsisButtonClicked onEllipsisBtnClicked, // Null <=> the editor doesn't feature an ellipsis button, otherwise the function is a handler for the on-click event on the ellipsis button
-								TOnValueConfirmed onValueConfirmed=NULL,
-								TOnValueChanged onValueChanged=NULL
+								TOnValueConfirmed onValueConfirmed=nullptr,
+								TOnValueChanged onValueChanged=nullptr
 							);
 		};
 
 		static LPCTSTR WINAPI GetWindowClass(HINSTANCE hInstance);
 		static HWND WINAPI Create(HINSTANCE hInstance,LPCTSTR windowName,UINT style,int x,int y,int width,int height,HWND hParent);
-		static HANDLE WINAPI AddProperty(HWND hPropGrid,HANDLE category,LPCTSTR name,PValue value,TValueSize valueBytes,PCEditor editor,PCustomParam param=NULL);
+		static HANDLE WINAPI AddProperty(HWND hPropGrid,HANDLE category,LPCTSTR name,PValue value,TValueSize valueBytes,PCEditor editor,PCustomParam param=nullptr);
 		static HANDLE WINAPI AddCategory(HWND hPropGrid,HANDLE category,LPCTSTR name,bool initiallyExpanded=true);
 		static HANDLE WINAPI EnableProperty(HWND hPropGrid,HANDLE propOrCat,bool enabled);
 		static void WINAPI RemoveProperty(HWND hPropGrid,HANDLE propOrCat);

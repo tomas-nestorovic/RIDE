@@ -442,12 +442,12 @@ nextCluster:result++;
 				if (const PWCHAR pDot=::wcsrchr(bufW,'.')){
 					*pDot='\0';
 					if (bufName)
-						::WideCharToMultiByte( CP_ACP, 0, bufW,-1, bufName,MAX_PATH, NULL,NULL );
+						::WideCharToMultiByte( CP_ACP, 0, bufW,-1, bufName,MAX_PATH, nullptr,nullptr );
 					if (bufExt)
-						::WideCharToMultiByte( CP_ACP, 0, pDot+1,-1, bufExt,MAX_PATH, NULL,NULL );
+						::WideCharToMultiByte( CP_ACP, 0, pDot+1,-1, bufExt,MAX_PATH, nullptr,nullptr );
 				}else{
 					if (bufName)
-						::WideCharToMultiByte( CP_ACP, 0, bufW,-1, bufName,MAX_PATH, NULL,NULL );
+						::WideCharToMultiByte( CP_ACP, 0, bufW,-1, bufName,MAX_PATH, nullptr,nullptr );
 					if (bufExt)
 						*bufExt='\0';
 				}
@@ -470,7 +470,7 @@ nextCluster:result++;
 
 	TStdWinError CMSDOS7::__changeShortFileNameAndExt__(PDirectoryEntry de,LPCTSTR newName,LPCTSTR newExt,PDirectoryEntry &rRenamedFile) const{
 		// tries to change given File's short name and extension; returns Windows standard i/o error
-		ASSERT(newName!=NULL && newExt!=NULL);
+		ASSERT(newName!=nullptr && newExt!=nullptr);
 		// - can't change root Directory's name
 		if (de==MSDOS7_DIR_ROOT)
 			return ERROR_DIRECTORY;
@@ -538,7 +538,7 @@ nextCluster:result++;
 
 	void CMSDOS7::__generateShortFileNameAndExt__(PDirectoryEntry de,LPCTSTR longName,LPCTSTR longExt) const{
 		// generates and sets File's short name and extension based on specified LongNameAndExtension
-		ASSERT(longName!=NULL && longExt!=NULL);
+		ASSERT(longName!=nullptr && longExt!=nullptr);
 		// - converting to upper-case, and removing all spaces and intermediate dots
 		TCHAR bufShortName[MSDOS7_FILE_NAME_LENGTH_MAX+1], bufShortExt[MSDOS7_FILE_EXT_LENGTH_MAX+1]; // "+1" = to accommodate terminating null character
 		__convertLongToShortTerm__( bufShortName, MSDOS7_FILE_NAME_LENGTH_MAX, longName );
@@ -564,7 +564,7 @@ nextCluster:result++;
 
 	TStdWinError CMSDOS7::__changeLongFileNameAndExt__(PDirectoryEntry de,LPCTSTR newName,LPCTSTR newExt,PDirectoryEntry &rRenamedFile) const{
 		// tries to change given File's long name and extension; returns Windows standard i/o error
-		ASSERT(newName!=NULL && newExt!=NULL);
+		ASSERT(newName!=nullptr && newExt!=nullptr);
 		// - can't change root Directory's name
 		if (de==MSDOS7_DIR_ROOT)
 			return ERROR_DIRECTORY;
@@ -647,7 +647,7 @@ nextCluster:result++;
 
 	TStdWinError CMSDOS7::ChangeFileNameAndExt(PFile file,LPCTSTR newName,LPCTSTR newExt,PFile &rRenamedFile){
 		// tries to change given File's name and extension; returns Windows standard i/o error
-		ASSERT(newName!=NULL && newExt!=NULL);
+		ASSERT(newName!=nullptr && newExt!=nullptr);
 		return	dontShowLongFileNames
 				? __changeShortFileNameAndExt__( (PDirectoryEntry)file, newName, newExt, (PDirectoryEntry &)rRenamedFile )
 				: __changeLongFileNameAndExt__( (PDirectoryEntry)file, newName, newExt, (PDirectoryEntry &)rRenamedFile );
@@ -747,7 +747,7 @@ nextCluster:result++;
 				return ERROR_CANNOT_MAKE;
 		// - if a Directory is being moved, changing the reference to the parent in the "dotdot" DirectoryEntry
 		if (IsDirectory(rMovedFile))
-			if (const PDirectoryEntry dotdot=(PDirectoryEntry)__findFile__(rMovedFile,_T(".."),_T(""),NULL))
+			if (const PDirectoryEntry dotdot=(PDirectoryEntry)__findFile__(rMovedFile,_T(".."),_T(""),nullptr))
 				dotdot->shortNameEntry.__setFirstCluster__(	currentDir!=MSDOS7_DIR_ROOT
 															? ((PCDirectoryEntry)currentDir)->shortNameEntry.__getFirstCluster__()
 															: 0
@@ -856,7 +856,7 @@ nextCluster:result++;
 			GetFileNameAndExt(file,bufName,bufExt);
 			return __getFileExportNameAndExt__( bufName, bufExt, shellCompliant, buf );
 		}else
-			return NULL;
+			return nullptr;
 	}
 
 	TStdWinError CMSDOS7::ImportFile(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile){
@@ -951,9 +951,9 @@ nextCluster:result++;
 							//TODO: running ScanDisk to restore FS-Info Sector
 						*/
 					}
-				CTdiCtrl::AddTabLast( hTdi, TRACK_MAP_TAB_LABEL, &trackMap.tab, false, TDI_TAB_CANCLOSE_NEVER, NULL );
-				CTdiCtrl::AddTabLast( hTdi, BOOT_SECTOR_TAB_LABEL, &boot.tab, false, TDI_TAB_CANCLOSE_NEVER, NULL );
-				CTdiCtrl::AddTabLast( hTdi, FILE_MANAGER_TAB_LABEL, &fileManager.tab, true, TDI_TAB_CANCLOSE_NEVER, NULL );
+				CTdiCtrl::AddTabLast( hTdi, TRACK_MAP_TAB_LABEL, &trackMap.tab, false, TDI_TAB_CANCLOSE_NEVER, nullptr );
+				CTdiCtrl::AddTabLast( hTdi, BOOT_SECTOR_TAB_LABEL, &boot.tab, false, TDI_TAB_CANCLOSE_NEVER, nullptr );
+				CTdiCtrl::AddTabLast( hTdi, FILE_MANAGER_TAB_LABEL, &fileManager.tab, true, TDI_TAB_CANCLOSE_NEVER, nullptr );
 				return ERROR_SUCCESS;
 			}
 		return ERROR_REQUEST_REFUSED;
@@ -1065,7 +1065,7 @@ nextCluster:result++;
 					const PHead bufHeads=(PHead)::calloc( HDD_HEADS_MAX*HDD_CYLINDERS_MAX, sizeof(THead) ); // big enough buffer
 					if (( err=::GetLastError() )==ERROR_SUCCESS){
 						err=__showDialogAndFormatStdCylinders__(
-							CFormatDialog(this,NULL,0),
+							CFormatDialog(this,nullptr,0),
 							bufCylinders, bufHeads
 						);
 						::free(bufHeads);
@@ -1354,7 +1354,7 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 			// . moving pointer to the end of CurrentDirectory
 			while (__existsNextEntry__() && !foundEndOfDirectory); // cycle as long as there exists another Entry and the Entry isn't the end of CurrentDirectory
 			if (!foundEndOfDirectory) // if end of CurrentDirectory not found (e.g. because Sector unreadable or FAT error) ...
-				return NULL; // ... we are unsuccessfully done
+				return nullptr; // ... we are unsuccessfully done
 			// . if an Empty DirectoryEntry found, we are successfully done
 			if (entryType==TDirectoryTraversal::EMPTY)
 				break;
@@ -1363,11 +1363,11 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 				case CFat::FAT12:
 				case CFat::FAT16:
 					if (directory==MSDOS7_DIR_ROOT) // for root Directory of FAT12/FAT16 ...
-						return NULL; // ... cannot be allocated a new Cluster
+						return nullptr; // ... cannot be allocated a new Cluster
 					//fallthrough
 				case CFat::FAT32:
 					if (( next=msdos7->__allocateAndResetDirectoryCluster__() )==MSDOS7_FAT_CLUSTER_EOF)
-						return NULL; // failed to allocate a new Directory Cluster
+						return nullptr; // failed to allocate a new Directory Cluster
 					msdos7->fat.SetClusterValue(cluster,next);
 					foundEndOfDirectory=false; // toggling the flag back - thanks to the newly allocated Cluster, the CurrentDirectory doesn't yet end
 					break;

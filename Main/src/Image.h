@@ -222,7 +222,7 @@
 		virtual TCylinder GetCylinderCount() const=0;
 		virtual THead GetNumberOfFormattedSides(TCylinder cyl) const=0;
 		TTrack GetTrackCount() const;
-		virtual TSector ScanTrack(TCylinder cyl,THead head,PSectorId bufferId=NULL,PWORD bufferLength=NULL,PINT startTimesMicroseconds=NULL,PBYTE pAvgGap3=NULL) const=0;
+		virtual TSector ScanTrack(TCylinder cyl,THead head,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PINT startTimesMicroseconds=nullptr,PBYTE pAvgGap3=nullptr) const=0;
 		bool IsTrackHealthy(TCylinder cyl,THead head);
 		virtual void GetTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses)=0;
 		void BufferTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors);

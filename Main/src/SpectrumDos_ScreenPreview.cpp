@@ -39,7 +39,7 @@
 			}*/
 			case WM_SIZE:
 				// window size changed
-				InvalidateRect(NULL,TRUE);
+				InvalidateRect(nullptr,TRUE);
 				break;
 			case WM_MOUSEWHEEL:
 				// mouse wheel was rotated
@@ -50,7 +50,7 @@
 					const short zDelta=(short)HIWORD(wParam)/WHEEL_DELTA;
 					rc.right+=zDelta*Utils::LogicalUnitScaleFactor*24, rc.bottom+=zDelta*Utils::LogicalUnitScaleFactor*24;
 					SendMessage( WM_SIZING, WMSZ_TOPLEFT, (LPARAM)&rc ); // for the window to keep its aspect ratio
-					SetWindowPos( NULL, 0,0, rc.right-rc.left, rc.bottom-rc.top, SWP_NOMOVE|SWP_NOZORDER );
+					SetWindowPos( nullptr, 0,0, rc.right-rc.left, rc.bottom-rc.top, SWP_NOMOVE|SWP_NOZORDER );
 					return TRUE;
 				}else
 					// if Ctrl key NOT pressed, simply handing the message over to the parent class
@@ -64,9 +64,9 @@
 					// drawing the Spectrum screen stored in a Device Independed Bitmap (DIB)
 					// . DIB drawn across the whole Preview canvas; commented out as substituted by suitable StretchDIBits parameters
 					/*::SetMapMode( dc, MM_ISOTROPIC );	// custom conversion of logical coordinates to device coordinates (Y axis points down)
-					::SetWindowExtEx( dc, SCREEN_WIDTH-1, -SCREEN_HEIGHT+1, NULL );	// "logical" window size is [Width,-Height] ("minus" in order for the Y axis to point up)
-					::SetViewportExtEx( dc, ps.rcPaint.right, ps.rcPaint.bottom, NULL );
-					::SetViewportOrgEx( dc, 0, ps.rcPaint.bottom, NULL );	// placing origin to the lower left corner
+					::SetWindowExtEx( dc, SCREEN_WIDTH-1, -SCREEN_HEIGHT+1, nullptr );	// "logical" window size is [Width,-Height] ("minus" in order for the Y axis to point up)
+					::SetViewportExtEx( dc, ps.rcPaint.right, ps.rcPaint.bottom, nullptr );
+					::SetViewportOrgEx( dc, 0, ps.rcPaint.bottom, nullptr );	// placing origin to the lower left corner
 					*/
 					// . drawing DIB
 					::StretchDIBits(dc,
@@ -82,7 +82,7 @@
 					::SetBkMode(dc,TRANSPARENT);
 					::DrawText( dc, _T("Error: No file to display"),-1, &r, DT_SINGLELINE|DT_CENTER|DT_VCENTER );
 					::LineTo( dc, r.right, r.bottom );
-					::MoveToEx( dc, r.right, 0, NULL );
+					::MoveToEx( dc, r.right, 0, nullptr );
 					::LineTo( dc, 0, r.bottom );
 				}
 				return 0;
@@ -102,7 +102,7 @@
 			for( BYTE b=0; b<128; b++ )
 				*bk++=colors[ b&64 ? 8+(b&7) : b&7 ];
 		// - redrawing
-		::InvalidateRect(hPreview,NULL,FALSE);
+		::InvalidateRect(hPreview,nullptr,FALSE);
 	}
 
 
@@ -120,7 +120,7 @@
 	CSpectrumDos::CScreenPreview::CScreenPreview(const CFileManagerView &rFileManager)
 		// ctor
 		// - base
-		: CFilePreview( NULL, INI_PREVIEW, rFileManager, SCREEN_WIDTH, SCREEN_HEIGHT, 0 )
+		: CFilePreview( nullptr, INI_PREVIEW, rFileManager, SCREEN_WIDTH, SCREEN_HEIGHT, 0 )
 		// - initialization
 		, paperFlash(false) {
 		pSingleInstance=this;
@@ -148,7 +148,7 @@
 		// - freeing resources
 		::KillTimer(m_hWnd,ID_FLASH);
 		::DeleteObject(dib.handle);
-		pSingleInstance=NULL;
+		pSingleInstance=nullptr;
 	}
 
 
@@ -168,7 +168,7 @@
 		::memset(buf,0,6144);		// pixel part
 		::memset(buf+6144,56,768);	// attribute part (56 = Paper 7 + Ink 0)
 		// - loading the File into Buffer
-		LPCTSTR errMsg=NULL;
+		LPCTSTR errMsg=nullptr;
 		DOS->ExportFile( file, &CMemFile(buf,sizeof(buf)), sizeof(buf), &errMsg );
 		if (errMsg)
 			return ((CSpectrumDos *)DOS)->__showFileProcessingError__(file,errMsg);
@@ -197,7 +197,7 @@
 			zxOffset.H-=8;					// next character row
 		}
 		// - drawing the converted image
-		InvalidateRect(NULL,FALSE);
+		InvalidateRect(nullptr,FALSE);
 		// - updaring window's caption
 		TCHAR bufZx[MAX_PATH], bufCaption[20+MAX_PATH];
 		::wsprintf(	bufCaption,

@@ -3,7 +3,7 @@
 	CNewImageDialog::CNewImageDialog()
 		// ctor
 		: CDialog(IDR_IMAGE_NEW)
-		, fnImage(NULL) , dosProps(NULL) {
+		, fnImage(nullptr) , dosProps(nullptr) {
 	}
 
 
@@ -21,7 +21,7 @@
 		RECT rc;
 		GetDlgItem(ID_IMAGE)->GetWindowRect(&rc);
 		ScreenToClient(&rc);
-		GetDlgItem(ID_ERROR)->SetWindowPos( NULL, rc.left, rc.top, rc.right-rc.left, rc.bottom-rc.top, SWP_NOZORDER );
+		GetDlgItem(ID_ERROR)->SetWindowPos( nullptr, rc.left, rc.top, rc.right-rc.left, rc.bottom-rc.top, SWP_NOZORDER );
 		// - populating the list of available DOSes
 		CListBox lb;
 		lb.Attach(GetDlgItem(ID_DOS)->m_hWnd);
@@ -76,7 +76,7 @@
 		else
 			::wsprintf( errMsg, _T("Select a DOS first") );
 		SetDlgItemText( ID_ERROR, errMsg );
-		dosProps=NULL;
+		dosProps=nullptr;
 	}
 
 	BOOL CNewImageDialog::OnCommand(WPARAM wParam,LPARAM lParam){
@@ -87,7 +87,7 @@
 				CListBox lb;
 				lb.Attach((HWND)lParam);
 					const int iSelected=lb.GetCurSel();
-					dosProps= iSelected>0 ? (CDos::PCProperties)lb.GetItemData(iSelected) : NULL;
+					dosProps= iSelected>0 ? (CDos::PCProperties)lb.GetItemData(iSelected) : nullptr;
 				lb.Detach();
 				__refreshListOfContainers__();
 				return TRUE;

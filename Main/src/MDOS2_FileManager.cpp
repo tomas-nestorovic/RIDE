@@ -181,7 +181,7 @@
 			case INFORMATION_PARAM_2:
 				return stdParamEditor.Create( de, &de->params.param2, __markDirectorySectorAsDirty__ );
 			default:
-				return NULL;
+				return nullptr;
 		}
 	}
 

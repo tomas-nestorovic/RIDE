@@ -132,7 +132,7 @@
 			*++p=( d.di.letter|(d.di.d40<<1)|(d.di.twosideFloppy<<2)|(d.di.dsk40cyl<<3)|(d.di.stepping<<4) )<<2;
 			*++p=d.di.nCylinders;
 			*++p=d.di.nSectors;
-			return CBootView::__bootSectorModified__(NULL,0);
+			return CBootView::__bootSectorModified__(nullptr,0);
 		}else
 			return false;
 	}
@@ -200,11 +200,11 @@
 		// . Volume
 		CPropGridCtrl::AddProperty(	hPropGrid, hVolume, _T("Label"),
 									boot->label, MAKEWORD(MDOS2_VOLUME_LABEL_LENGTH_MAX,'\0'), // [H,L] = [ padding char, max label length ]
-									((CSpectrumFileManagerView *)tab.dos->pFileManager)->zxRom.lineComposerPropGridEditor.Create(NULL)
+									((CSpectrumFileManagerView *)tab.dos->pFileManager)->zxRom.lineComposerPropGridEditor.Create(nullptr)
 								);
 		// . drives
-		const HANDLE hDrives=CPropGridCtrl::AddCategory(hPropGrid,NULL,_T("Drives"));
-			const CPropGridCtrl::PCEditor driveEditor=CPropGridCtrl::TCustom::DefineEditor( 0, TBootSector::TDiskAndDriveInfo::__pg_drawProperty__, NULL, TBootSector::TDiskAndDriveInfo::__pg_editProperty__ );
+		const HANDLE hDrives=CPropGridCtrl::AddCategory(hPropGrid,nullptr,_T("Drives"));
+			const CPropGridCtrl::PCEditor driveEditor=CPropGridCtrl::TCustom::DefineEditor( 0, TBootSector::TDiskAndDriveInfo::__pg_drawProperty__, nullptr, TBootSector::TDiskAndDriveInfo::__pg_editProperty__ );
 			CPropGridCtrl::AddProperty(	hPropGrid, hDrives, _T("Used"),
 										&boot->currDrive, sizeof(TBootSector::TDiskAndDriveInfo),
 										driveEditor
@@ -218,7 +218,7 @@
 		// . GK's File Manager
 		TBootSector::UReserved1::TGKFileManager::__addToPropertyGrid__(hPropGrid,boot);
 		// . UniRUN by Proxima
-		const HANDLE hUniRun=CPropGridCtrl::AddCategory(hPropGrid,NULL,UNIRUN_NAME);
+		const HANDLE hUniRun=CPropGridCtrl::AddCategory(hPropGrid,nullptr,UNIRUN_NAME);
 			CPropGridCtrl::AddProperty(	hPropGrid, hUniRun, MDOS2_RUNP,
 										BOOT_SECTOR_UPDATE_ONLINE_HYPERLINK, -1,
 										CPropGridCtrl::THyperlink::DefineEditorA(__unirun_updateOnline__)

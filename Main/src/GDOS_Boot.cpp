@@ -17,7 +17,7 @@
 		CGDOS tmp(image,pFormatBoot);
 		image->dos=&tmp;
 			const TStdWinError err=image->SetMediumTypeAndGeometry( pFormatBoot, StdSidesMap, Properties.firstSectorNumber );
-		image->dos=NULL;
+		image->dos=nullptr;
 		if (err!=ERROR_SUCCESS)
 			return err;
 		if (image->GetCylinderCount()<GDOS_CYLINDERS_COUNT)

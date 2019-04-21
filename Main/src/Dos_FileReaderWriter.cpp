@@ -129,7 +129,7 @@
 				return 0; // not supported
 			default:{
 				// reading/writing is possible only within a single Sector; if inteded to read from/write to multiple Sectors, multiple calls to GetBufferPtr must be made
-				ASSERT( ppBufStart!=NULL && ppBufMax!=NULL );
+				ASSERT( ppBufStart!=nullptr && ppBufMax!=nullptr );
 				CFatPath::PCItem item; DWORD n;
 				if (!fatPath.GetItems(item,n)){
 					const WORD usableSectorLength=dos->formatBoot.sectorLength-dataBeginOffsetInSector-dataEndOffsetInSector;
@@ -140,7 +140,7 @@
 						*ppBufMax = (PBYTE)*ppBufStart + min(nCount,usableSectorLength-d.rem);
 						position+=( nCount=(PCBYTE)*ppBufMax-(PCBYTE)*ppBufStart );
 					}else{
-						*ppBufStart = *ppBufMax = NULL;
+						*ppBufStart = *ppBufMax = nullptr;
 						nCount=0;
 					}
 					::SetLastError( !sr.IsWithoutError()*ERROR_SECTOR_NOT_FOUND );

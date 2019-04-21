@@ -201,7 +201,7 @@
 		// - adjusting relevant information in the Boot Sector
 		boot->nFreeSectors-=pf->nCylinders*pf->nHeads*pf->nSectors;
 		boot->nFreeSectors+=fmt.nCylinders*fmt.nHeads*fmt.nSectors;
-		return __bootSectorModified__(NULL,0);
+		return __bootSectorModified__(nullptr,0);
 	}
 
 	#define CYGNUSBOOT_NAME			_T("CygnusBoot 2.2.3")
@@ -233,19 +233,19 @@
 		// - Geometry category
 		CPropGridCtrl::AddProperty(	hPropGrid, hGeometry, _T("Format"),
 									&boot->format, sizeof(TDiskFormat),
-									CPropGridCtrl::TEnum::DefineConstStringListEditorA( __getListOfKnownFormats__, __getFormatDescription__, NULL, __onFormatChanged__ )
+									CPropGridCtrl::TEnum::DefineConstStringListEditorA( __getListOfKnownFormats__, __getFormatDescription__, nullptr, __onFormatChanged__ )
 								);
 		// - Volume category
 		CPropGridCtrl::AddProperty(	hPropGrid, hVolume, _T("Label"),
 									boot->label, MAKEWORD(nCharsInLabel,' '), // [H,L] = [ padding char, max label length ]
-									((CSpectrumFileManagerView *)tab.dos->pFileManager)->zxRom.lineComposerPropGridEditor.Create(NULL)
+									((CSpectrumFileManagerView *)tab.dos->pFileManager)->zxRom.lineComposerPropGridEditor.Create(nullptr)
 								);
 		CPropGridCtrl::AddProperty( hPropGrid, hVolume, _T("Password"),
 									boot->password, TRDOS503_BOOT_PASSWORD_LENGTH_MAX,
 									CPropGridCtrl::TString::DefineFixedLengthEditorA( __bootSectorModifiedA__, PASSWORD_FILLER_BYTE )
 								);
 		// - Advanced category
-		const HANDLE hAdvanced=CPropGridCtrl::AddCategory(hPropGrid,NULL,BOOT_SECTOR_ADVANCED);
+		const HANDLE hAdvanced=CPropGridCtrl::AddCategory(hPropGrid,nullptr,BOOT_SECTOR_ADVANCED);
 			const CPropGridCtrl::PCEditor advByteEditor=CPropGridCtrl::TInteger::DefineByteEditor(__bootSectorModified__);
 			CPropGridCtrl::AddProperty( hPropGrid, hAdvanced, _T("Files"),
 										&boot->nFiles, sizeof(BYTE), advByteEditor
@@ -265,7 +265,7 @@
 										CPropGridCtrl::TInteger::DefineWordEditor(__bootSectorModified__)
 									);
 		// - CygnusBoot category
-		const HANDLE hCygnusBoot=CPropGridCtrl::AddCategory(hPropGrid,NULL,CYGNUSBOOT_NAME);
+		const HANDLE hCygnusBoot=CPropGridCtrl::AddCategory(hPropGrid,nullptr,CYGNUSBOOT_NAME);
 			CPropGridCtrl::AddProperty(	hPropGrid, hCygnusBoot, _T("boot.B"),
 										BOOT_SECTOR_UPDATE_ONLINE_HYPERLINK, -1,
 										CPropGridCtrl::THyperlink::DefineEditorA(__cygnusBoot_updateOnline__)

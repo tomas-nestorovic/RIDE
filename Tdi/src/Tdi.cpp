@@ -36,12 +36,12 @@
 		// - initializing
 		: handle(hTdi) , params(*params)
 		, wndProc0((WNDPROC)SubclassWindow(hTdi,__wndProc__))
-		, currentTabContent(NULL)
+		, currentTabContent(nullptr)
 		, hBtnCloseCurrentTab(	::CreateWindow(
 									WC_BUTTON, _T("r"),
 									WS_CHILD|WS_CLIPSIBLINGS|BS_FLAT|BS_CENTER,
 									0,0, BUTTON_CLOSE_SIZE,BUTTON_CLOSE_SIZE,
-									hTdi,(HMENU)IDCLOSE,hInstance,NULL
+									hTdi,(HMENU)IDCLOSE,hInstance,nullptr
 								)
 		){
 		// - allocating shared resources if creating the the first instance of TDI
@@ -91,7 +91,7 @@
 			case WM_SIZE:{
 				// window size changed
 				::SetWindowPos(	pTdiInfo->hBtnCloseCurrentTab,
-								NULL,
+								nullptr,
 								GET_X_LPARAM(lParam)-5-BUTTON_CLOSE_SIZE,1, 0,0,
 								SWP_NOZORDER|SWP_NOSIZE
 							);
@@ -131,7 +131,7 @@
 							::AppendMenu( hMenu, MF_STRING, IDCLOSE, _T("Close tab") );
 						POINT cursorPos;
 						::GetCursorPos(&cursorPos);
-						switch (::TrackPopupMenu( hMenu, TPM_RETURNCMD, cursorPos.x, cursorPos.y, 0, hTdi, NULL )){
+						switch (::TrackPopupMenu( hMenu, TPM_RETURNCMD, cursorPos.x, cursorPos.y, 0, hTdi, nullptr )){
 							case IDIGNORE:
 								// moving current Tab
 								::SetCursorPos(cursorPos.x,cursorPos.y);
@@ -181,7 +181,7 @@
 				// left mouse button released
 				if (pDraggedTabInfo){
 					::ReleaseCapture(); // no need to further block the capture once we know that the dragging has ended
-					delete pDraggedTabInfo, pDraggedTabInfo=NULL;
+					delete pDraggedTabInfo, pDraggedTabInfo=nullptr;
 				}
 				break;
 			case WM_COMMAND:
@@ -238,7 +238,7 @@
 		if (!currentTabContent) return; // already hidden
 		::ShowWindow( hBtnCloseCurrentTab, SW_HIDE );
 		params.fnHideContent( params.customParam, currentTabContent );
-		currentTabContent=NULL;
+		currentTabContent=nullptr;
 	}
 
 	void TTdiInfo::__switchToTab__(int i){
@@ -260,7 +260,7 @@
 		// stretches CurrentTabContent so that it covers the whole TDI canvas below Tab captions
 		RECT r;
 		if (CTdiCtrl::GetCurrentTabContentRect(handle,&r))
-			::SetWindowPos(	params.fnGetHwnd(currentTabContent), NULL,
+			::SetWindowPos(	params.fnGetHwnd(currentTabContent), nullptr,
 							r.left, r.top,
 							r.right-r.left, r.bottom-r.top,
 							SWP_NOZORDER | SWP_SHOWWINDOW

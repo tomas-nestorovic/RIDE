@@ -15,9 +15,9 @@
 		, directory(DOS->currentDir)
 		, pdt( DOS->BeginDirectoryTraversal(DOS->currentDir) ) {
 		// - creating the Preview FrameWindow
-		Create(	NULL, NULL,
+		Create(	nullptr, nullptr,
 				WS_CAPTION|WS_SYSMENU|WS_THICKFRAME|WS_VISIBLE,
-				CRect(defaultRect), NULL, (LPCTSTR)resourceId, WS_EX_TOPMOST
+				CRect(defaultRect), nullptr, (LPCTSTR)resourceId, WS_EX_TOPMOST
 			);
 		// - restoring previous position of Preview on the screen
 		const float scaleFactor=Utils::LogicalUnitScaleFactor;
@@ -25,7 +25,7 @@
 		if (!s.IsEmpty()){
 			RECT r;
 			_stscanf(s,_T("%d,%d,%d,%d"),&r.left,&r.top,&r.right,&r.bottom);
-			SetWindowPos(	NULL,
+			SetWindowPos(	nullptr,
 							r.left*scaleFactor, r.top*scaleFactor,
 							(r.right-r.left)*scaleFactor, (r.bottom-r.top)*scaleFactor,
 							SWP_NOZORDER
@@ -34,7 +34,7 @@
 			RECT r={ 0, 0, initialWindowWidth*scaleFactor, initialWindowHeight*scaleFactor };
 			::AdjustWindowRect( &r, ::GetWindowLong(m_hWnd,GWL_STYLE), FALSE );
 			r.bottom+=::GetSystemMetrics(SM_CYCAPTION);
-			SetWindowPos( NULL, 0,0, r.right-r.left,r.bottom-r.top, SWP_NOZORDER );
+			SetWindowPos( nullptr, 0,0, r.right-r.left,r.bottom-r.top, SWP_NOZORDER );
 		}
 	}
 
@@ -60,7 +60,7 @@
 			pdt->entry=rFileManager.GetNextSelectedFile(pos);
 		}else{
 			// next File (any)
-			PFile next=NULL;
+			PFile next=nullptr;
 				while (pdt->AdvanceToNextEntry())
 					if (pdt->entryType==TDirectoryTraversal::FILE){
 						next=pdt->entry;
@@ -91,7 +91,7 @@
 			pdt->entry=rFileManager.GetPreviousSelectedFile(pos);
 		}else{
 			// previous File (any)
-			PFile prev=NULL;
+			PFile prev=nullptr;
 				const PFile curr=pdt->entry;
 				for( DOS->EndDirectoryTraversal(pdt),pdt=DOS->BeginDirectoryTraversal(directory); pdt->AdvanceToNextEntry(); )
 					if (pdt->entryType==TDirectoryTraversal::FILE){

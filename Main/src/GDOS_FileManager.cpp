@@ -12,7 +12,7 @@
 	#define INFORMATION_ETC			8 /* column to sort by */
 
 	const CFileManagerView::TFileInfo CGDOS::CGdosFileManagerView::InformationList[INFORMATION_COUNT]={
-		{ NULL,				LVCFMT_LEFT,	8 }, // auxiliary column to indent the first information from left edge of window
+		{ nullptr,				LVCFMT_LEFT,	8 }, // auxiliary column to indent the first information from left edge of window
 		{ _T("Name"),		LVCFMT_LEFT,	180 },
 		{ _T("Type"),		LVCFMT_RIGHT,	110 },
 		{ _T("Size"),		LVCFMT_RIGHT,	60 },
@@ -161,16 +161,16 @@
 				if (const PWORD pw=de->__getStdParameter1__())
 					return stdParamEditor.Create( de, pw, __onStdParam1Changed__ );
 				else
-					return NULL;
+					return nullptr;
 			case INFORMATION_PARAM_2:
 				if (const PWORD pw=de->__getStdParameter2__())
 					return stdParamEditor.Create( de, pw, __onStdParam2Changed__ );
 				else
-					return NULL;
+					return nullptr;
 			case INFORMATION_ETC:
 				return etcEditor.Create(de);
 			default:
-				return NULL;
+				return nullptr;
 		}
 	}
 
@@ -191,7 +191,7 @@
 		// - validating File's new Name and Extension
 		TDirectoryEntry *const de=(PDirectoryEntry)file;
 		TCHAR bufOldName[GDOS_FILE_NAME_LENGTH_MAX+1];
-		de->__getNameAndExt__(bufOldName,NULL);
+		de->__getNameAndExt__(bufOldName,nullptr);
 		const TCHAR bufNewExt[]={ newExt.charValue, '\0' };
 		TDirectoryEntry tmp=*de; // backing-up the original DirectoryEntry
 		TStdWinError err=gdos->ChangeFileNameAndExt(file,bufOldName,bufNewExt,file);
@@ -312,10 +312,10 @@ error:			*de=tmp; // recovering the original DirectoryEntry
 	CGDOS::TDirectoryEntry::UEtc::CEditor::CEditor(UEtc &rEtc)
 		// ctor
 		// - base
-		: CHexaEditor(NULL,NULL) , CMemFile((PBYTE)&rEtc,sizeof(UEtc)) {
+		: CHexaEditor(nullptr,nullptr) , CMemFile((PBYTE)&rEtc,sizeof(UEtc)) {
 		// - initializing the HexaEditor
 		__reset__(this,sizeof(UEtc),sizeof(UEtc));
-		CreateEx( WS_EX_TOPMOST, HEXAEDITOR_BASE_CLASS, _T("Etc."), WS_CAPTION|WS_SYSMENU|WS_THICKFRAME, 0,0,640,240, NULL, 0, NULL );
+		CreateEx( WS_EX_TOPMOST, HEXAEDITOR_BASE_CLASS, _T("Etc."), WS_CAPTION|WS_SYSMENU|WS_THICKFRAME, 0,0,640,240, nullptr, 0, nullptr );
 		ShowWindow(SW_SHOW);
 		// - making the MainWindow inactive
 		//app.m_pMainWnd->BeginModalState();
@@ -351,7 +351,7 @@ error:			*de=tmp; // recovering the original DirectoryEntry
 				const CWnd *const pPlaceholder=GetDlgItem(ID_FILE);
 				pPlaceholder->GetClientRect(&r);
 				pPlaceholder->MapWindowPoints(this,&r);
-				hexaEditor.Create( NULL, NULL, WS_CHILD|WS_VISIBLE, r, this, 0 );
+				hexaEditor.Create( nullptr, nullptr, WS_CHILD|WS_VISIBLE, r, this, 0 );
 			}
 		public:
 			TDirectoryEntry::UEtc etc;
@@ -359,7 +359,7 @@ error:			*de=tmp; // recovering the original DirectoryEntry
 			CEtcDialog(TDirectoryEntry::UEtc &rEtc)
 				// ctor
 				: CDialog(IDR_GDOS_FILE_ETC)
-				, etc(rEtc) , hexaEditor(NULL) , f((PBYTE)&etc,sizeof(etc)) {
+				, etc(rEtc) , hexaEditor(nullptr) , f((PBYTE)&etc,sizeof(etc)) {
 				hexaEditor.Reset(&f,sizeof(etc),sizeof(etc));
 			}
 		} d(de->etc);

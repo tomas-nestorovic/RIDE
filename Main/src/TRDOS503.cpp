@@ -202,7 +202,7 @@
 			item.chs.sectorId.side=sideMap[ item.chs.head=B.rem ],
 			item.chs.sectorId.sector=TRDOS503_SECTOR_FIRST_NUMBER+de->first.sector;
 			BYTE nBytesAfterData;
-			item.value=reinterpret_cast<PCDos>(this)->GetFileSize(de,NULL,&nBytesAfterData) + TRDOS503_SECTOR_LENGTH_STD-1; // "+N" = rounding up
+			item.value=reinterpret_cast<PCDos>(this)->GetFileSize(de,nullptr,&nBytesAfterData) + TRDOS503_SECTOR_LENGTH_STD-1; // "+N" = rounding up
 			item.value+=nBytesAfterData;
 		for( item.value/=formatBoot.sectorLength; item.value--; ){ // each Item gets a unique Value
 			// . adding the Item to the FatPath
@@ -244,7 +244,7 @@
 	}
 	TStdWinError CTRDOS503::ChangeFileNameAndExt(PFile file,LPCTSTR newName,LPCTSTR newExt,PFile &rRenamedFile){
 		// tries to change given File's name and extension; returns Windows standard i/o error
-		ASSERT(newName!=NULL && newExt!=NULL);
+		ASSERT(newName!=nullptr && newExt!=nullptr);
 		// - can't change root Directory's name
 		if (file==ZX_DIR_ROOT)
 			return ERROR_DIRECTORY;
@@ -256,7 +256,7 @@
 			return ERROR_FILE_EXISTS;
 		// - getting important information about the File
 		const PDirectoryEntry de=(PDirectoryEntry)file;
-		const WORD officialFileSize=de->__getOfficialFileSize__(NULL);
+		const WORD officialFileSize=de->__getOfficialFileSize__(nullptr);
 		UStdParameters stdParams;
 			__getStdParameter1__(de,stdParams.param1), __getStdParameter2__(de,stdParams.param2);
 		// - renaming
@@ -352,7 +352,7 @@
 					default							: uts=TUniFileType::UNKNOWN; break;
 				}
 			const PTCHAR p=buf+::lstrlen(buf);
-			::wsprintf(	p+__exportFileInformation__( p, uts, params, de->__getOfficialFileSize__(NULL) ),
+			::wsprintf(	p+__exportFileInformation__( p, uts, params, de->__getOfficialFileSize__(nullptr) ),
 						INFO_FILE_EX, de->nSectors
 					);
 		}
@@ -448,7 +448,7 @@
 
 	bool CTRDOS503::__parameterAfterData__(PCDirectoryEntry de,bool modify,PWORD pw) const{
 		// True <=> parameter after given File's data successfully get/set, otherwise False
-		WORD officialFileSize=de->__getOfficialFileSize__(NULL);
+		WORD officialFileSize=de->__getOfficialFileSize__(nullptr);
 		WORD buf[2]={ 0xAA80, *pw }; // 0xAA80 = the mark that introduces a parameter "after" official data
 		for( BYTE n=4,*p=(PBYTE)buf; n--; officialFileSize++ ){
 			const TSector sector=officialFileSize/TRDOS503_SECTOR_LENGTH_STD;
@@ -564,11 +564,11 @@
 		// - base
 		CSpectrumDos::CreateUserInterface(hTdi); // guaranteed to always return ERROR_SUCCESS
 		// - creating the user interface
-		CTdiCtrl::AddTabLast( hTdi, TRACK_MAP_TAB_LABEL, &trackMap.tab, false, TDI_TAB_CANCLOSE_NEVER, NULL );
-		CTdiCtrl::AddTabLast( hTdi, BOOT_SECTOR_TAB_LABEL, &boot.tab, false, TDI_TAB_CANCLOSE_NEVER, NULL );
-		CTdiCtrl::AddTabLast( hTdi, FILE_MANAGER_TAB_LABEL, &fileManager.tab, true, TDI_TAB_CANCLOSE_NEVER, NULL );
+		CTdiCtrl::AddTabLast( hTdi, TRACK_MAP_TAB_LABEL, &trackMap.tab, false, TDI_TAB_CANCLOSE_NEVER, nullptr );
+		CTdiCtrl::AddTabLast( hTdi, BOOT_SECTOR_TAB_LABEL, &boot.tab, false, TDI_TAB_CANCLOSE_NEVER, nullptr );
+		CTdiCtrl::AddTabLast( hTdi, FILE_MANAGER_TAB_LABEL, &fileManager.tab, true, TDI_TAB_CANCLOSE_NEVER, nullptr );
 		// - informing on how the SCL Images are opened
-		if (dynamic_cast<CSCL *>(image)!=NULL)
+		if (dynamic_cast<CSCL *>(image)!=nullptr)
 			if (!image->GetPathName().IsEmpty()){
 				TCHAR buf[200];
 				::wsprintf( buf, _T("SCL images are always opened by the top-positioned TR-DOS in the recognition sequence (currently \"%s\")."), properties->name );
