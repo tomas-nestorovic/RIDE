@@ -547,13 +547,10 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 						cursor.position+=currRecordLength;
 						goto cursorCorrectlyMoveTo;
 					}
-					case ID_PREV:{
+					case ID_PREV:
 						// navigating to the previous Record (or the beginning of current Record, if Cursor not already there)
-						int currRecordLength;
-						pContentAdviser->GetRecordInfo( --cursor.position, &cursor.position, &currRecordLength );
-						cursor.position+=currRecordLength;
+						pContentAdviser->GetRecordInfo( --cursor.position, &cursor.position, NULL );
 						goto cursorCorrectlyMoveTo;
-					}
 				}
 				return 0; // to suppress CEdit's standard context menu
 			case WM_LBUTTONDOWN:
