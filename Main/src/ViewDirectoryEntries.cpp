@@ -54,7 +54,7 @@
 		: CHexaEditor(this)
 		// - initialization
 		, tab(0,0,dos,this)
-		, iScrollY(0)
+		, iScrollY(0) , f(nullptr)
 		, directory(directory) {
 	}
 
@@ -90,7 +90,6 @@
 		if (__super::OnCreate(lpcs)==-1)
 			return -1;
 		// - displaying the content
-		f=new CDirectoryEntriesReaderWriter(DOS,directory);
 		OnUpdate(nullptr,0,nullptr);
 		// - recovering the Scroll position and repainting the view (by setting its editability)
 		SetScrollPos( SB_VERT, iScrollY );
@@ -100,6 +99,9 @@
 
 	void CDirEntriesView::OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint){
 		// request to refresh the display of content
+		if (f)
+			delete f;
+		f=new CDirectoryEntriesReaderWriter(DOS,directory);
 		Reset( f, f->GetLength(), f->GetLength() );
 	}
 
@@ -108,7 +110,7 @@
 		// - saving Scroll position for later
 		iScrollY=GetScrollPos(SB_VERT);
 		// - disposing the underlying File
-		delete f;
+		delete f, f=nullptr;
 		// - base
 		CView::OnDestroy();
 	}
