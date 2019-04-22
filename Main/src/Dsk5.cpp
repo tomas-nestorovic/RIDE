@@ -505,3 +505,8 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		}else
 			return ERROR_BAD_COMMAND;
 	}
+
+	CImage::CSectorDataSerializer *CDsk5::CreateSectorDataSerializer(){
+		// abstracts all Sector data (good and bad) into a single file and returns the result
+		return nullptr;
+	}

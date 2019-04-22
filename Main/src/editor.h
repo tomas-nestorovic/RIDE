@@ -33,7 +33,7 @@
 	class CRideApp sealed:public CWinApp{
 		DECLARE_MESSAGE_MAP()
 	public:
-		static bool __doPromptFileName__(PTCHAR fileName,bool fddAccessAllowed,UINT stdStringId,DWORD flags,CImage::PCProperties singleAllowedImage);
+		static bool __doPromptFileName__(PTCHAR fileName,bool fddAccessAllowed,UINT stdStringId,DWORD flags,LPCVOID singleAllowedImageProperties);
 
 		static CLIPFORMAT cfDescriptor,cfRideFileList,cfContent,cfPreferredDropEffect,cfPerformedDropEffect,cfPasteSucceeded;
 

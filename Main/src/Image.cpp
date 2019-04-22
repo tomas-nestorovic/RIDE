@@ -367,6 +367,10 @@
 			return false;
 	}
 
+	static void WINAPI __onDiskBrowserViewClosing__(LPCVOID tab){
+		delete ((CMainWindow::CTdiView::PTab)tab)->view;
+	}
+
 	#define INI_MSG_SAVE_AS		_T("msgsaveas")
 
 	BOOL CImage::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){
@@ -430,6 +434,11 @@
 							UpdateAllViews(nullptr,0,nullptr);
 						}
 						return TRUE;
+					case ID_IMAGE_BROWSE:{
+						CDiskBrowserView *const dbView=new CDiskBrowserView(CImage::__getActive__()->dos); // can only browse main disk Images (e.g. never a ZX Spectrum Tape)
+						CTdiCtrl::AddTabLast( TDI_HWND, _T("Sectors hexa-browser"), &dbView->tab, true, TDI_TAB_CANCLOSE_ALWAYS, __onDiskBrowserViewClosing__ );
+						return TRUE;
+					}
 					case ID_FILE_CLOSE:
 						return FALSE; // for CDocument to be excluded from processing, and processing was forwarded right to MainWindow
 				}

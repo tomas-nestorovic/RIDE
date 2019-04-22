@@ -444,9 +444,10 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			}
 		return ::CallNextHookEx(ofn_hHook,kod,wParam,lParam);
 	}
-	bool CRideApp::__doPromptFileName__(PTCHAR fileName,bool fddAccessAllowed,UINT stdStringId,DWORD flags,CImage::PCProperties singleAllowedImage){
+	bool CRideApp::__doPromptFileName__(PTCHAR fileName,bool fddAccessAllowed,UINT stdStringId,DWORD flags,LPCVOID singleAllowedImageProperties){
 		// reimplementation of CDocManager::DoPromptFileName
 		// - creating the list of Filters
+		const CImage::PCProperties singleAllowedImage=(CImage::PCProperties)singleAllowedImageProperties;
 		TCHAR buf[300],*a=buf; // an "always big enough" buffer
 		DWORD nFilters=0;
 		if (singleAllowedImage)

@@ -431,3 +431,62 @@ trackNotFound:
 		}
 		return ERROR_SUCCESS;
 	}
+
+	CImage::CSectorDataSerializer *CImageRaw::CreateSectorDataSerializer(){
+		// abstracts all Sector data (good and bad) into a single file and returns the result
+		// - defining the Serializer class
+		class CSerializer sealed:public CSectorDataSerializer{
+			const CImageRaw *const image;
+		public:
+			CSerializer(CImageRaw *image)
+				// ctor
+				: CSectorDataSerializer( image, image->nCylinders*image->nHeads*image->nSectors*image->sectorLength )
+				, image(image) {
+				Seek(0,SeekPosition::begin); // initializing state of current Sector to read from or write to
+				sector.chs.sectorId.lengthCode=image->sectorLengthCode;
+			}
+
+			// CSectorDataSerializer methods
+			LONG Seek(LONG lOff,UINT nFrom) override{
+				// sets the actual Position in the Serializer
+				const LONG result=__super::Seek(lOff,nFrom);
+				const div_t s=div( (int)position, image->sectorLength ); // Quot = # of Sectors to skip, Rem = the first Byte to read in the Sector yet to be computed
+				sector.offset=s.rem;
+				const div_t t=div( s.quot, image->nSectors ); // Quot = # of Tracks to skip, Rem = the zero-based Sector index on a Track yet to be computed
+				const div_t h=div( t.quot, image->nHeads ); // Quotient = # of Cylinders to skip, Remainder = Head in a Cylinder
+				sector.chs.cylinder = sector.chs.sectorId.cylinder = h.quot;
+				sector.chs.sectorId.side=image->sideMap[ sector.chs.head=h.rem ];
+				sector.chs.sectorId.sector=image->firstSectorNumber+t.rem;
+				return result;
+			}
+
+			// CHexaEditor::TContentAdviser methods
+			int LogicalPositionToRow(int logPos,BYTE nBytesInRow) const override{
+				// computes and returns the row containing the specified LogicalPosition
+				const div_t d=div( logPos, image->sectorLength );
+				const int nRowsPerRecord = (image->sectorLength+nBytesInRow-1)/nBytesInRow;
+				return d.quot*nRowsPerRecord + d.rem/nBytesInRow;
+			}
+			int RowToLogicalPosition(int row,BYTE nBytesInRow) const override{
+				// converts Row begin (i.e. its first Byte) to corresponding logical position in underlying File and returns the result
+				const int nRowsPerRecord = (image->sectorLength+nBytesInRow-1)/nBytesInRow;
+				const div_t d=div( row, nRowsPerRecord );
+				return d.quot*image->sectorLength + d.rem*nBytesInRow;
+			}
+			void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength) const override{
+				// retrieves the start logical position and length of the Record pointed to by the input LogicalPosition
+				if (pOutRecordStartLogPos)
+					*pOutRecordStartLogPos = logPos/image->sectorLength*image->sectorLength;
+				if (pOutRecordLength)
+					*pOutRecordLength = image->sectorLength;
+			}
+			LPCTSTR GetRecordLabel(int logPos,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override{
+				// populates the Buffer with label for the Record that STARTS at specified LogicalPosition, and returns the Buffer; returns Null if no Record starts at specified LogicalPosition
+				return	logPos%image->sectorLength==0
+						? sector.chs.sectorId.ToString(labelBuffer)
+						: nullptr;
+			}
+		};
+		// - returning a Serializer class instance
+		return new CSerializer(this);
+	}

@@ -204,6 +204,30 @@
 			WORD sectorLengthMin,sectorLengthMax;
 		} *PCProperties;
 
+		class CSectorDataSerializer abstract:public CFile,public CHexaEditor::TContentAdviser{
+			const PImage image;
+			DWORD dataTotalLength;
+		protected:
+			DWORD position;
+			struct{ // Sector (inferred from Position) to currently read from or write to
+				TPhysicalAddress chs;
+				WORD offset;
+			} sector;
+
+			CSectorDataSerializer(PImage image,DWORD dataTotalLength);
+		public:
+			// CFile methods
+			DWORD GetLength() const override sealed;
+			void SetLength(DWORD dwNewLen) override sealed;
+			DWORD GetPosition() const override sealed;
+			LONG Seek(LONG lOff,UINT nFrom) override;
+			UINT Read(LPVOID lpBuf,UINT nCount) override sealed;
+			void Write(LPCVOID lpBuf,UINT nCount) override sealed;
+			// CHexaEditor::TContentAdviser methods
+			void OnDisplayed() override;
+			void OnHidden() override;
+		};
+
 		static CPtrList known; // list of known Images (registered in CRideApp::InitInstance)
 
 		static CImage *__getActive__();
@@ -242,6 +266,7 @@
 		virtual bool RequiresFormattedTracksVerification() const;
 		virtual TStdWinError PresumeHealthyTrackStructure(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,BYTE gap3,BYTE fillerByte);
 		virtual TStdWinError UnformatTrack(TCylinder cyl,THead head)=0;
+		virtual CSectorDataSerializer *CreateSectorDataSerializer()=0;
 		bool __reportWriteProtection__() const;
 		void __toggleWriteProtection__();
 		BOOL CanCloseFrame(CFrameWnd* pFrame) override;

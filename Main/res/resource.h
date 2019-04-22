@@ -149,7 +149,8 @@
 #define ID_IMAGE_DUMP                   40148
 #define ID_IMAGE_PATCH                  40149
 #define ID_IMAGE_PROTECT                40150
-#define ID_IMAGE_SETTINGS               40151
+#define ID_IMAGE_BROWSE                 40151
+#define ID_IMAGE_SETTINGS               40152
 #define ID_DOS_FILE_LENGTH_FROM_DIRENTRY 40156
 #define ID_DOS_FILE_LENGTH_OCCUPIED_SECTORS 40157
 #define ID_TRACKMAP_STATUS              40158

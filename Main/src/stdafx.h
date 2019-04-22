@@ -62,6 +62,8 @@ typedef const WORD *PCWORD;
 typedef const int *PCINT;
 
 #include "MainWindow.h"
+#include "Editor.h"
+#include "HexaEditor.h"
 #include "Image.h"
 #include "DialogFormatting.h"
 #include "DialogUnformatting.h"
@@ -71,8 +73,6 @@ typedef const int *PCINT;
 #include "Dsk5.h"
 #include "FDD.h"
 #include "Utils.h"
-#include "Editor.h"
-#include "HexaEditor.h"
 #include "Dos.h"
 #include "Debug.h"
 #include "SCL.h"
@@ -82,6 +82,7 @@ typedef const int *PCINT;
 #include "ViewTrackMap.h"
 #include "ViewWebPage.h"
 #include "ViewDirectoryEntries.h"
+#include "ViewDiskBrowser.h"
 #include "SpectrumDos.h"
 #include "DosUnknown.h"
 #include "DialogNewImage.h"

@@ -39,6 +39,7 @@
 		TStdWinError Reset() override;
 		TStdWinError FormatTrack(TCylinder cyl,THead head,TSector _nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte) override;
 		TStdWinError UnformatTrack(TCylinder cyl,THead) override;
+		CSectorDataSerializer *CreateSectorDataSerializer() override;
 	};
 
 #endif // IMAGERAW_H

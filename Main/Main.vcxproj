@@ -182,6 +182,7 @@
     <ClInclude Include="src\Utils.h" />
     <ClInclude Include="src\ViewBoot.h" />
     <ClInclude Include="src\ViewDirectoryEntries.h" />
+    <ClInclude Include="src\ViewDiskBrowser.h" />
     <ClInclude Include="src\ViewFileManager.h" />
     <ClInclude Include="src\ViewTrackMap.h" />
     <ClInclude Include="src\ViewWebPage.h" />
@@ -211,6 +212,7 @@
     <ClCompile Include="src\GDOS_Boot.cpp" />
     <ClCompile Include="src\GDOS_FileManager.cpp" />
     <ClCompile Include="src\HexaEditor.cpp" />
+    <ClCompile Include="src\Image_SectorDataSerializer.cpp" />
     <ClCompile Include="src\MainWindow.cpp" />
     <ClCompile Include="src\Image.cpp" />
     <ClCompile Include="src\ImageFloppy.cpp" />
@@ -244,6 +246,7 @@
     <ClCompile Include="src\Utils.cpp" />
     <ClCompile Include="src\ViewBoot.cpp" />
     <ClCompile Include="src\ViewDirectoryEntries.cpp" />
+    <ClCompile Include="src\ViewDiskBrowser.cpp" />
     <ClCompile Include="src\ViewFileManager.cpp" />
     <ClCompile Include="src\ViewFileManager_editor.cpp" />
     <ClCompile Include="src\ViewFileManager_exportImport.cpp" />

@@ -129,6 +129,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "&Dump...",                    ID_IMAGE_DUMP, GRAYED
         MENUITEM "Apply &patch...",             ID_IMAGE_PATCH, GRAYED
+        MENUITEM "Browse sectors...",           ID_IMAGE_BROWSE, GRAYED
         MENUITEM SEPARATOR
         MENUITEM "&Write protected\tCtrl+W",    ID_IMAGE_PROTECT
         MENUITEM "Options...",                  ID_IMAGE_SETTINGS
