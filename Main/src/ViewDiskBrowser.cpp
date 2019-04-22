@@ -12,7 +12,7 @@
 		: CHexaEditor(this)
 		// - initialization
 		, tab(0,0,dos,this)
-		, iScrollY(0) {
+		, iScrollY(0) , f(nullptr) {
 	}
 
 	BEGIN_MESSAGE_MAP(CDiskBrowserView,CHexaEditor)
@@ -34,7 +34,6 @@
 		if (__super::OnCreate(lpcs)==-1)
 			return -1;
 		// - displaying the content
-		f=IMAGE->CreateSectorDataSerializer();
 		OnUpdate(nullptr,0,nullptr);
 		// - recovering the Scroll position and repainting the view (by setting its editability)
 		SetScrollPos( SB_VERT, iScrollY );
@@ -44,6 +43,9 @@
 
 	void CDiskBrowserView::OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint){
 		// request to refresh the display of content
+		if (f)
+			delete f;
+		f=IMAGE->CreateSectorDataSerializer();
 		Reset( f, f->GetLength(), f->GetLength() );
 	}
 
@@ -52,7 +54,7 @@
 		// - saving Scroll position for later
 		iScrollY=GetScrollPos(SB_VERT);
 		// - disposing the underlying File
-		delete f;
+		delete f, f=nullptr;
 		// - base
 		CView::OnDestroy();
 	}
