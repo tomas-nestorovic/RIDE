@@ -133,6 +133,7 @@
 		SetLogicalSize(f->GetLength());
 		if (::IsWindow(m_hWnd)){ // may be window-less if the owner is window-less
 			__refreshVertically__();
+			pContentAdviser->OnDisplayed(); // letting the ContentAdviser know that HexaEditor's client area has just been created (and content may be drawn at any time)
 			Invalidate(FALSE);
 		}
 	}
@@ -284,6 +285,9 @@
 				cfBinary=::RegisterClipboardFormat(CLIPFORMAT_BINARY);
 				// . recovering the scroll position
 				//SetScrollPos( SB_VERT, iScrollY, FALSE );
+				// . letting the ContentAdviser know that HexaEditor's client area has just been created (and content may be drawn at any time)
+				if (pContentAdviser)
+					pContentAdviser->OnDisplayed();
 				return 0;
 			case WM_KEYDOWN:{
 				// key pressed
@@ -808,6 +812,13 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 				::SelectObject(dc,hFont0);
 				return 0;
 			}
+			case WM_DESTROY:
+				// window destroyed
+				// . letting the ContentAdviser know that HexaEditor's client area has just been destroyed (and content won't be drawn until the next call to OnDisplayed)
+				if (pContentAdviser)
+					pContentAdviser->OnDisplayed();
+				// . base
+				break;
 		}
 		return __super::WindowProc(msg,wParam,lParam);
 	}
