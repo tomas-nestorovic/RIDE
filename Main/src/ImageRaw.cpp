@@ -460,7 +460,7 @@ trackNotFound:
 				return result;
 			}
 
-			// CHexaEditor::TContentAdviser methods
+			// CHexaEditor::IContentAdviser methods
 			int LogicalPositionToRow(int logPos,BYTE nBytesInRow) const override{
 				// computes and returns the row containing the specified LogicalPosition
 				const div_t d=div( logPos, image->sectorLength );
@@ -473,12 +473,14 @@ trackNotFound:
 				const div_t d=div( row, nRowsPerRecord );
 				return d.quot*image->sectorLength + d.rem*nBytesInRow;
 			}
-			void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength) const override{
+			void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength,bool *pOutDataReady) const override{
 				// retrieves the start logical position and length of the Record pointed to by the input LogicalPosition
 				if (pOutRecordStartLogPos)
 					*pOutRecordStartLogPos = logPos/image->sectorLength*image->sectorLength;
 				if (pOutRecordLength)
 					*pOutRecordLength = image->sectorLength;
+				if (pOutDataReady)
+					*pOutDataReady=true;
 			}
 			LPCTSTR GetRecordLabel(int logPos,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override{
 				// populates the Buffer with label for the Record that STARTS at specified LogicalPosition, and returns the Buffer; returns Null if no Record starts at specified LogicalPosition

@@ -76,7 +76,6 @@
 		TStdWinError Reset() override;
 		TStdWinError FormatTrack(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte) override;
 		TStdWinError UnformatTrack(TCylinder cyl,THead head) override;
-		CSectorDataSerializer *CreateSectorDataSerializer() override;
 	};
 
 #endif // DSK_H

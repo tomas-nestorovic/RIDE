@@ -11,6 +11,7 @@
 
 		WORD __getUsableSectorLength__(BYTE sectorLengthCode) const;
 		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
+		CSectorDataSerializer *CreateSectorDataSerializer() override sealed;
 	};
 
 #endif // IMAGEFLOPPY_H

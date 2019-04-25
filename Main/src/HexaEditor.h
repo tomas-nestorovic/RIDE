@@ -7,10 +7,8 @@
 
 	class CHexaEditor:public CEditView{
 	public:
-		typedef struct TContentAdviser{
-			virtual void OnDisplayed()=0;
-			virtual void OnHidden()=0;
-			virtual void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength) const=0;
+		typedef interface IContentAdviser{
+			virtual void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength,bool *pOutDataReady) const=0;
 			virtual int LogicalPositionToRow(int logPos,BYTE nBytesInRow) const=0;
 			virtual int RowToLogicalPosition(int row,BYTE nBytesInRow) const=0;
 			virtual LPCTSTR GetRecordLabel(int logPos,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const=0;

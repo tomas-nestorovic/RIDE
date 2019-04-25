@@ -99,19 +99,15 @@
 	void CHexaEditor::Reset(CFile *_f,DWORD _minFileSize,DWORD _maxFileSize){
 		// resets the HexaEditor and supplies it new File content
 		if (!( pContentAdviser=dynamic_cast<PContentAdviser>(  f=_f  ) )){
-			static struct TDefault sealed:public TContentAdviser{
-				void OnDisplayed() override{
-					// HexaEditor's client area has just been created (and content may be drawn at any time)
-				}
-				void OnHidden() override{
-					// HexaEditor's client area has just been destroyed (and content won't be drawn until the next call to OnDisplayed)
-				}
-				void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength) const override{
+			static struct TDefault sealed:public IContentAdviser{
+				void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength,bool *pOutDataReady) const override{
 					// retrieves the start logical position and length of the Record pointed to by the input LogicalPosition
 					if (pOutRecordStartLogPos)
 						*pOutRecordStartLogPos=0;
 					if (pOutRecordLength)
 						*pOutRecordLength=HEXAEDITOR_RECORD_SIZE_INFINITE;
+					if (pOutDataReady)
+						*pOutDataReady=true;
 				}
 				int LogicalPositionToRow(int logPos,BYTE nBytesInRow) const override{
 					// computes and returns the row containing the specified LogicalPosition
@@ -133,7 +129,6 @@
 		SetLogicalSize(f->GetLength());
 		if (::IsWindow(m_hWnd)){ // may be window-less if the owner is window-less
 			__refreshVertically__();
-			pContentAdviser->OnDisplayed(); // letting the ContentAdviser know that HexaEditor's client area has just been created (and content may be drawn at any time)
 			Invalidate(FALSE);
 		}
 	}
@@ -235,7 +230,7 @@
 	void CHexaEditor::__refreshCursorDisplay__() const{
 		// shows Cursor on screen at position that corresponds with Cursor's actual Position in the underlying File content (e.g. the 12345-th Byte of the File)
 		int currRecordStart, currRecordLength;
-		pContentAdviser->GetRecordInfo( cursor.position, &currRecordStart, &currRecordLength );
+		pContentAdviser->GetRecordInfo( cursor.position, &currRecordStart, &currRecordLength, NULL );
 		const div_t d=div(cursor.position-currRecordStart,currRecordLength);
 		const int iScrollY=GetScrollPos(SB_VERT);
 		//if (d.quot>=iScrollY){ // commented out as always guaranteed
@@ -285,9 +280,6 @@
 				cfBinary=::RegisterClipboardFormat(CLIPFORMAT_BINARY);
 				// . recovering the scroll position
 				//SetScrollPos( SB_VERT, iScrollY, FALSE );
-				// . letting the ContentAdviser know that HexaEditor's client area has just been created (and content may be drawn at any time)
-				if (pContentAdviser)
-					pContentAdviser->OnDisplayed();
 				return 0;
 			case WM_KEYDOWN:{
 				// key pressed
@@ -501,7 +493,7 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 					case ID_EDIT_SELECT_CURRENT:{
 						// selecting the whole Record under the Cursor
 						int recordLength;
-						pContentAdviser->GetRecordInfo( cursor.position, &cursor.selectionA, &recordLength );
+						pContentAdviser->GetRecordInfo( cursor.position, &cursor.selectionA, &recordLength, NULL );
 						cursor.position = cursor.selectionZ = cursor.selectionA+recordLength;
 						__invalidateData__();
 						goto cursorRefresh;
@@ -543,13 +535,13 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 					case ID_NEXT:{
 						// navigating to the next Record
 						int currRecordLength;
-						pContentAdviser->GetRecordInfo( cursor.position, &cursor.position, &currRecordLength );
+						pContentAdviser->GetRecordInfo( cursor.position, &cursor.position, &currRecordLength, NULL );
 						cursor.position+=currRecordLength;
 						goto cursorCorrectlyMoveTo;
 					}
 					case ID_PREV:
 						// navigating to the previous Record (or the beginning of current Record, if Cursor not already there)
-						pContentAdviser->GetRecordInfo( --cursor.position, &cursor.position, NULL );
+						pContentAdviser->GetRecordInfo( --cursor.position, &cursor.position, NULL, NULL );
 						goto cursorCorrectlyMoveTo;
 				}
 				return 0; // to suppress CEdit's standard context menu
@@ -650,7 +642,8 @@ leftMouseDragged:
 					enum TContentFlags:BYTE{
 						Normal		=0,
 						Selected	=1,
-						Erroneous	=2
+						Erroneous	=2,
+						Unknown		=4 // = currently fetching data
 					};
 
 					const COLORREF SelectionColor;
@@ -674,6 +667,13 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 											? Utils::GetBlendedColor(newEmphasisColor,SelectionColor,.6f) // need to overlay EmphasisColor with SelectionColor
 											: newEmphasisColor // EmphasisColor only
 										);
+						}else if (newContentFlags&Unknown){
+							// content not yet known (e.g. floppy drive head is currently seeking to requested cylinder, etc.)
+							// : TextColor is (some tone of) Yellow
+							if (!(currContentFlags&Unknown)) // "if previously not Unknown"
+								SetTextColor( !hexaEditorEditable*0x1122+0x66cc99 );
+							// : BackgroundColor is the EmphasisColor
+							goto blendEmphasisAndSelection;
 						}else if (!newContentFlags){
 							// Normal (not Selected) content
 							// : TextColor is (some tone of) Black
@@ -743,44 +743,57 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 							rcHexa.left=xHexaStart;
 							// : File content
 							const bool isEof=f->GetPosition()==f->GetLength();
-							BYTE bytes[BYTES_MAX],const nBytesExpected=__firstByteInRowToLogicalPosition__(iRowA+1)-address;
-							::SetLastError(ERROR_SUCCESS); // clearing any previous error
-							BYTE nBytesRead=f->Read(bytes,nBytesExpected);
-							BYTE printFlags=::GetLastError()==ERROR_SUCCESS // File content readable without error
-											? CHexaPaintDC::Normal
-											: CHexaPaintDC::Erroneous;
-							if (nBytesRead)
-								// entire Row available (guaranteed thanks to checks in the ctor)
-								for( const BYTE *p=bytes; nBytesRead--; address++ ){
-									// | choosing colors
-									COLORREF emphasisColor;
-									if (_selectionA<=address && address<_selectionZ)
-										printFlags|=CHexaPaintDC::Selected;
-									else
-										printFlags&=~CHexaPaintDC::Selected;
-									if (pEmp->a<=address && address<pEmp->z)
-										emphasisColor=COLOR_YELLOW;
-									else{
-										emphasisColor=COLOR_WHITE;
-										if (address==pEmp->z) pEmp=pEmp->pNext;
+							const BYTE nBytesExpected=__firstByteInRowToLogicalPosition__(iRowA+1)-address;
+							bool dataReady;
+							pContentAdviser->GetRecordInfo( address, NULL, NULL, &dataReady );
+							if (dataReady){
+								// Record's data are known (there are some, some with error, or none)
+								BYTE bytes[BYTES_MAX];
+								::SetLastError(ERROR_SUCCESS); // clearing any previous error
+								BYTE nBytesRead=f->Read(bytes,nBytesExpected);
+								BYTE printFlags=::GetLastError()==ERROR_SUCCESS // File content readable without error
+												? CHexaPaintDC::Normal
+												: CHexaPaintDC::Erroneous;
+								if (nBytesRead)
+									// entire Row available (guaranteed thanks to checks in the ctor)
+									for( const BYTE *p=bytes; nBytesRead--; address++ ){
+										// | choosing colors
+										COLORREF emphasisColor;
+										if (_selectionA<=address && address<_selectionZ)
+											printFlags|=CHexaPaintDC::Selected;
+										else
+											printFlags&=~CHexaPaintDC::Selected;
+										if (pEmp->a<=address && address<pEmp->z)
+											emphasisColor=COLOR_YELLOW;
+										else{
+											emphasisColor=COLOR_WHITE;
+											if (address==pEmp->z) pEmp=pEmp->pNext;
+										}
+										dc.SetContentPrintState( printFlags, emphasisColor );
+										// | Hexa
+										const int iByte=*p++;
+										dc.DrawText( buf, ::wsprintf(buf,HEXA_FORMAT,iByte), &rcHexa, DT_LEFT|DT_TOP );
+										rcHexa.left+=HEXA_FORMAT_LENGTH*font.charAvgWidth;
+										// | Ascii
+										::DrawTextW(dc,
+													::isprint(iByte) ? (LPCWSTR)&iByte : L"\x2219", 1, // if original character not printable, displaying a substitute one
+													&rcAscii, DT_LEFT|DT_TOP|DT_NOPREFIX
+												);
+										rcAscii.left+=font.charAvgWidth;
 									}
-									dc.SetContentPrintState( printFlags, emphasisColor );
-									// | Hexa
-									const int iByte=*p++;
-									dc.DrawText( buf, ::wsprintf(buf,HEXA_FORMAT,iByte), &rcHexa, DT_LEFT|DT_TOP );
-									rcHexa.left+=HEXA_FORMAT_LENGTH*font.charAvgWidth;
-									// | Ascii
-									::DrawTextW(dc,
-												::isprint(iByte) ? (LPCWSTR)&iByte : L"\x2219", 1, // if original character not printable, displaying a substitute one
-												&rcAscii, DT_LEFT|DT_TOP|DT_NOPREFIX
-											);
-									rcAscii.left+=font.charAvgWidth;
+								else if (!isEof){
+									// content not available (e.g. irrecoverable Sector read error)
+									f->Seek( address+=nBytesExpected, CFile::begin );
+									#define ERR_MSG	_T("» No data «")
+									dc.SetContentPrintState( printFlags, COLOR_WHITE );
+									dc.DrawText( ERR_MSG, -1, &rcHexa, DT_LEFT|DT_TOP );
+									rcHexa.left+=(sizeof(ERR_MSG)-sizeof(TCHAR))*font.charAvgWidth;
 								}
-							else if (!isEof){
-								// content not available (e.g. irrecoverable Sector read error)
+							}else{
+								// Record's data are not yet known - caller will refresh the HexaEditor when data for this Record are known
 								f->Seek( address+=nBytesExpected, CFile::begin );
-								#define ERR_MSG	_T("» No data «")
-								dc.SetContentPrintState( printFlags, COLOR_WHITE );
+								#define ERR_MSG	_T("» Fetching data ... «")
+								dc.SetContentPrintState( CHexaPaintDC::Unknown, COLOR_WHITE );
 								dc.DrawText( ERR_MSG, -1, &rcHexa, DT_LEFT|DT_TOP );
 								rcHexa.left+=(sizeof(ERR_MSG)-sizeof(TCHAR))*font.charAvgWidth;
 							}
@@ -809,13 +822,6 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 				::SelectObject(dc,hFont0);
 				return 0;
 			}
-			case WM_DESTROY:
-				// window destroyed
-				// . letting the ContentAdviser know that HexaEditor's client area has just been destroyed (and content won't be drawn until the next call to OnDisplayed)
-				if (pContentAdviser)
-					pContentAdviser->OnDisplayed();
-				// . base
-				break;
 		}
 		return __super::WindowProc(msg,wParam,lParam);
 	}

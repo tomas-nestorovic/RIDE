@@ -2063,11 +2063,6 @@ error:		return LOG_ERROR(::GetLastError());
 		}
 	}
 
-	CImage::CSectorDataSerializer *CFDD::CreateSectorDataSerializer(){
-		// abstracts all Sector data (good and bad) into a single file and returns the result
-		return nullptr;
-	}
-
 	void CFDD::SetTitle(LPCTSTR){
 		CDocument::SetTitle(FDD_A_LABEL);
 	}

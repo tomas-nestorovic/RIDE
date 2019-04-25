@@ -95,19 +95,3 @@
 			}else
 				break;
 	}
-
-
-
-
-
-
-
-
-
-	void CImage::CSectorDataSerializer::OnDisplayed(){
-		// HexaEditor's client area has just been created (and content may be drawn at any time)
-	}
-
-	void CImage::CSectorDataSerializer::OnHidden(){
-		// HexaEditor's client area has just been destroyed (and content won't be drawn until the next call to OnDisplayed)
-	}

@@ -204,7 +204,7 @@
 			WORD sectorLengthMin,sectorLengthMax;
 		} *PCProperties;
 
-		class CSectorDataSerializer abstract:public CFile,public CHexaEditor::TContentAdviser{
+		class CSectorDataSerializer abstract:public CFile,public CHexaEditor::IContentAdviser{
 			const PImage image;
 			DWORD dataTotalLength;
 		protected:
@@ -216,16 +216,12 @@
 
 			CSectorDataSerializer(PImage image,DWORD dataTotalLength);
 		public:
-			// CFile methods
 			DWORD GetLength() const override sealed;
 			void SetLength(DWORD dwNewLen) override sealed;
 			DWORD GetPosition() const override sealed;
 			LONG Seek(LONG lOff,UINT nFrom) override;
 			UINT Read(LPVOID lpBuf,UINT nCount) override sealed;
 			void Write(LPCVOID lpBuf,UINT nCount) override sealed;
-			// CHexaEditor::TContentAdviser methods
-			void OnDisplayed() override;
-			void OnHidden() override;
 		};
 
 		static CPtrList known; // list of known Images (registered in CRideApp::InitInstance)

@@ -139,7 +139,6 @@
 		bool RequiresFormattedTracksVerification() const override;
 		TStdWinError PresumeHealthyTrackStructure(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,BYTE gap3,BYTE fillerByte) override;
 		TStdWinError UnformatTrack(TCylinder cyl,THead head) override;
-		CSectorDataSerializer *CreateSectorDataSerializer() override;
 		void SetTitle(LPCTSTR) override;
 		void SetPathName(LPCTSTR, BOOL = TRUE) override;
 	};

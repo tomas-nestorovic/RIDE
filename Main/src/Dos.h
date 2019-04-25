@@ -121,7 +121,7 @@
 			LPCTSTR GetErrorDesc() const;
 		};
 
-		class CFileReaderWriter:public CFile,public CHexaEditor::TContentAdviser{
+		class CFileReaderWriter:public CFile,public CHexaEditor::IContentAdviser{
 			const CDos *const dos;
 			const BYTE dataBeginOffsetInSector,dataEndOffsetInSector;
 			LONG fileSize;
@@ -143,10 +143,8 @@
 			UINT Read(LPVOID lpBuf,UINT nCount) override;
 			void Write(LPCVOID lpBuf,UINT nCount) override;
 
-			// CHexaEditor::TContentAdviser methods
-			void OnDisplayed() override;
-			void OnHidden() override;
-			void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength) const override;
+			// CHexaEditor::IContentAdviser methods
+			void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength,bool *pOutDataReady) const override;
 			int LogicalPositionToRow(int logPos,BYTE nBytesInRow) const override;
 			int RowToLogicalPosition(int row,BYTE nBytesInRow) const override;
 			LPCTSTR GetRecordLabel(int logPos,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override;

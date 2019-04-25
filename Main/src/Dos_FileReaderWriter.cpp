@@ -159,20 +159,14 @@
 
 
 
-	void CDos::CFileReaderWriter::OnDisplayed(){
-		// HexaEditor's client area has just been created (and content may be drawn at any time)
-	}
-
-	void CDos::CFileReaderWriter::OnHidden(){
-		// HexaEditor's client area has just been destroyed (and content won't be drawn until the next call to OnDisplayed)
-	}
-
-	void CDos::CFileReaderWriter::GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength) const{
+	void CDos::CFileReaderWriter::GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength,bool *pOutDataReady) const{
 		// retrieves the start logical position and length of the Record pointed to by the input LogicalPosition
 		if (pOutRecordStartLogPos)
 			*pOutRecordStartLogPos = logPos/recordLength * recordLength;
 		if (pOutRecordLength)
 			*pOutRecordLength = recordLength;
+		if (pOutDataReady)
+			*pOutDataReady=true;
 	}
 
 	int CDos::CFileReaderWriter::LogicalPositionToRow(int logPos,BYTE nBytesInRow) const{

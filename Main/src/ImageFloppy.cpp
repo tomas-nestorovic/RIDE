@@ -49,3 +49,11 @@
 		floppyType=pFormat->mediumType;
 		return ERROR_SUCCESS;
 	}
+
+	CImage::CSectorDataSerializer *CFloppyImage::CreateSectorDataSerializer(){
+		// abstracts all Sector data (good and bad) into a single file and returns the result
+		// - defining the Serializer class
+		ASSERT(FALSE);
+		// - returning a Serializer class instance
+		return nullptr;
+	}
