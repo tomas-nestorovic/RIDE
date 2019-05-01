@@ -432,7 +432,7 @@ trackNotFound:
 		return ERROR_SUCCESS;
 	}
 
-	CImage::CSectorDataSerializer *CImageRaw::CreateSectorDataSerializer(){
+	CImage::CSectorDataSerializer *CImageRaw::CreateSectorDataSerializer(CHexaEditor *pParentHexaEditor){
 		// abstracts all Sector data (good and bad) into a single file and returns the result
 		// - defining the Serializer class
 		class CSerializer sealed:public CSectorDataSerializer{
@@ -451,12 +451,11 @@ trackNotFound:
 				rOutChs.sectorId.lengthCode=image->sectorLengthCode;
 			}
 		public:
-			CSerializer(CImageRaw *image)
+			CSerializer(CHexaEditor *pParentHexaEditor,CImageRaw *image)
 				// ctor
-				: CSectorDataSerializer( image, image->nCylinders*image->nHeads*image->nSectors*image->sectorLength )
+				: CSectorDataSerializer( pParentHexaEditor, image, image->nCylinders*image->nHeads*image->nSectors*image->sectorLength )
 				, image(image) {
 				Seek(0,SeekPosition::begin); // initializing state of current Sector to read from or write to
-				sector.chs.sectorId.lengthCode=image->sectorLengthCode;
 			}
 
 			// CSectorDataSerializer methods
@@ -468,19 +467,19 @@ trackNotFound:
 			}
 
 			// CHexaEditor::IContentAdviser methods
-			int LogicalPositionToRow(int logPos,BYTE nBytesInRow) const override{
+			int LogicalPositionToRow(int logPos,BYTE nBytesInRow) override{
 				// computes and returns the row containing the specified LogicalPosition
 				const div_t d=div( logPos, image->sectorLength );
 				const int nRowsPerRecord = (image->sectorLength+nBytesInRow-1)/nBytesInRow;
 				return d.quot*nRowsPerRecord + d.rem/nBytesInRow;
 			}
-			int RowToLogicalPosition(int row,BYTE nBytesInRow) const override{
+			int RowToLogicalPosition(int row,BYTE nBytesInRow) override{
 				// converts Row begin (i.e. its first Byte) to corresponding logical position in underlying File and returns the result
 				const int nRowsPerRecord = (image->sectorLength+nBytesInRow-1)/nBytesInRow;
 				const div_t d=div( row, nRowsPerRecord );
 				return d.quot*image->sectorLength + d.rem*nBytesInRow;
 			}
-			void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength,bool *pOutDataReady) const override{
+			void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength,bool *pOutDataReady) override{
 				// retrieves the start logical position and length of the Record pointed to by the input LogicalPosition
 				if (pOutRecordStartLogPos)
 					*pOutRecordStartLogPos = logPos/image->sectorLength*image->sectorLength;
@@ -500,5 +499,5 @@ trackNotFound:
 			}
 		};
 		// - returning a Serializer class instance
-		return new CSerializer(this);
+		return new CSerializer( pParentHexaEditor, this );
 	}

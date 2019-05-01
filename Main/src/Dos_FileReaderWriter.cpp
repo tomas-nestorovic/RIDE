@@ -159,7 +159,7 @@
 
 
 
-	void CDos::CFileReaderWriter::GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength,bool *pOutDataReady) const{
+	void CDos::CFileReaderWriter::GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength,bool *pOutDataReady){
 		// retrieves the start logical position and length of the Record pointed to by the input LogicalPosition
 		if (pOutRecordStartLogPos)
 			*pOutRecordStartLogPos = logPos/recordLength * recordLength;
@@ -169,14 +169,14 @@
 			*pOutDataReady=true;
 	}
 
-	int CDos::CFileReaderWriter::LogicalPositionToRow(int logPos,BYTE nBytesInRow) const{
+	int CDos::CFileReaderWriter::LogicalPositionToRow(int logPos,BYTE nBytesInRow){
 		// computes and returns the row containing the specified LogicalPosition
 		const div_t d=div( logPos, recordLength );
 		const int nRowsPerRecord = (recordLength+nBytesInRow-1)/nBytesInRow;
 		return d.quot*nRowsPerRecord + d.rem/nBytesInRow;// + (d.rem+nBytesInRow-1)/nBytesInRow;
 	}
 
-	int CDos::CFileReaderWriter::RowToLogicalPosition(int row,BYTE nBytesInRow) const{
+	int CDos::CFileReaderWriter::RowToLogicalPosition(int row,BYTE nBytesInRow){
 		// converts Row begin (i.e. its first Byte) to corresponding logical position in underlying File and returns the result
 		const int nRowsPerRecord = (recordLength+nBytesInRow-1)/nBytesInRow;
 		const div_t d=div( row, nRowsPerRecord );

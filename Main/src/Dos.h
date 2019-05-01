@@ -144,9 +144,9 @@
 			void Write(LPCVOID lpBuf,UINT nCount) override;
 
 			// CHexaEditor::IContentAdviser methods
-			void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength,bool *pOutDataReady) const override;
-			int LogicalPositionToRow(int logPos,BYTE nBytesInRow) const override;
-			int RowToLogicalPosition(int row,BYTE nBytesInRow) const override;
+			void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength,bool *pOutDataReady) override;
+			int LogicalPositionToRow(int logPos,BYTE nBytesInRow) override;
+			int RowToLogicalPosition(int row,BYTE nBytesInRow) override;
 			LPCTSTR GetRecordLabel(int logPos,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override;
 		};
 

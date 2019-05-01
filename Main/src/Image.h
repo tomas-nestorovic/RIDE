@@ -205,16 +205,17 @@
 		} *PCProperties;
 
 		class CSectorDataSerializer abstract:public CFile,public CHexaEditor::IContentAdviser{
+		protected:
+			CHexaEditor *const pParentHexaEditor;
 			const PImage image;
 			DWORD dataTotalLength;
-		protected:
 			DWORD position;
 			struct{ // Sector (inferred from Position) to currently read from or write to
 				TPhysicalAddress chs;
 				WORD offset;
 			} sector;
 
-			CSectorDataSerializer(PImage image,DWORD dataTotalLength);
+			CSectorDataSerializer(CHexaEditor *pParentHexaEditor,PImage image,DWORD dataTotalLength);
 		public:
 			DWORD GetLength() const override sealed;
 			void SetLength(DWORD dwNewLen) override sealed;
@@ -262,7 +263,7 @@
 		virtual bool RequiresFormattedTracksVerification() const;
 		virtual TStdWinError PresumeHealthyTrackStructure(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,BYTE gap3,BYTE fillerByte);
 		virtual TStdWinError UnformatTrack(TCylinder cyl,THead head)=0;
-		virtual CSectorDataSerializer *CreateSectorDataSerializer()=0;
+		virtual CSectorDataSerializer *CreateSectorDataSerializer(CHexaEditor *pParentHexaEditor)=0;
 		bool __reportWriteProtection__() const;
 		void __toggleWriteProtection__();
 		BOOL CanCloseFrame(CFrameWnd* pFrame) override;

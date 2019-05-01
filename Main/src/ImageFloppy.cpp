@@ -50,7 +50,7 @@
 		return ERROR_SUCCESS;
 	}
 
-	CImage::CSectorDataSerializer *CFloppyImage::CreateSectorDataSerializer(){
+	CImage::CSectorDataSerializer *CFloppyImage::CreateSectorDataSerializer(CHexaEditor *pParentHexaEditor){
 		// abstracts all Sector data (good and bad) into a single file and returns the result
 		// - defining the Serializer class
 		ASSERT(FALSE);

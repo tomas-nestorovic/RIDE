@@ -100,7 +100,7 @@
 		// resets the HexaEditor and supplies it new File content
 		if (!( pContentAdviser=dynamic_cast<PContentAdviser>(  f=_f  ) )){
 			static struct TDefault sealed:public IContentAdviser{
-				void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength,bool *pOutDataReady) const override{
+				void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength,bool *pOutDataReady) override{
 					// retrieves the start logical position and length of the Record pointed to by the input LogicalPosition
 					if (pOutRecordStartLogPos)
 						*pOutRecordStartLogPos=0;
@@ -109,11 +109,11 @@
 					if (pOutDataReady)
 						*pOutDataReady=true;
 				}
-				int LogicalPositionToRow(int logPos,BYTE nBytesInRow) const override{
+				int LogicalPositionToRow(int logPos,BYTE nBytesInRow) override{
 					// computes and returns the row containing the specified LogicalPosition
 					return logPos/nBytesInRow;
 				}
-				int RowToLogicalPosition(int row,BYTE nBytesInRow) const override{
+				int RowToLogicalPosition(int row,BYTE nBytesInRow) override{
 					// converts Row begin (i.e. its first Byte) to corresponding logical position in underlying File and returns the result
 					return row*nBytesInRow;
 				}

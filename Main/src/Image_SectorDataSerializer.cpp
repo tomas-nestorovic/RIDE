@@ -1,8 +1,8 @@
 #include "stdafx.h"
 
-	CImage::CSectorDataSerializer::CSectorDataSerializer(PImage image,DWORD dataTotalLength)
+	CImage::CSectorDataSerializer::CSectorDataSerializer(CHexaEditor *pParentHexaEditor,PImage image,DWORD dataTotalLength)
 		// ctor
-		: image(image) , dataTotalLength(dataTotalLength) , position(0) {
+		: pParentHexaEditor(pParentHexaEditor) , image(image) , dataTotalLength(dataTotalLength) , position(0) {
 	}
 
 
