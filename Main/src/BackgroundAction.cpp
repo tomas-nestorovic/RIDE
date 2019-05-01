@@ -27,6 +27,10 @@
 		pWorker->SuspendThread();
 	}
 
+	TBackgroundAction::operator HANDLE() const{
+		// gets the Worker thread handle
+		return pWorker->m_hThread;
+	}
 
 
 

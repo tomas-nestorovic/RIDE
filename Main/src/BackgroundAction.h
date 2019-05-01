@@ -12,6 +12,7 @@
 
 		void Resume() const;
 		void Suspend() const;
+		operator HANDLE() const;
 	};
 
 

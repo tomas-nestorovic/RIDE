@@ -45,7 +45,7 @@
 		// request to refresh the display of content
 		if (f)
 			delete f;
-		f=IMAGE->CreateSectorDataSerializer();
+		f=IMAGE->CreateSectorDataSerializer(this);
 		Reset( f, f->GetLength(), f->GetLength() );
 	}
 
