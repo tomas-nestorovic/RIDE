@@ -437,6 +437,19 @@ trackNotFound:
 		// - defining the Serializer class
 		class CSerializer sealed:public CSectorDataSerializer{
 			const CImageRaw *const image;
+
+			void __getPhysicalAddress__(int logPos,TPhysicalAddress &rOutChs,PWORD pOutOffset) const{
+				// determines the PhysicalAddress that contains the specified LogicalPosition
+				const div_t s=div( (int)position, image->sectorLength ); // Quot = # of Sectors to skip, Rem = the first Byte to read in the Sector yet to be computed
+				if (pOutOffset)
+					*pOutOffset=s.rem;
+				const div_t t=div( s.quot, image->nSectors ); // Quot = # of Tracks to skip, Rem = the zero-based Sector index on a Track yet to be computed
+				const div_t h=div( t.quot, image->nHeads ); // Quotient = # of Cylinders to skip, Remainder = Head in a Cylinder
+				rOutChs.cylinder = rOutChs.sectorId.cylinder = h.quot;
+				rOutChs.sectorId.side=image->sideMap[ rOutChs.head=h.rem ];
+				rOutChs.sectorId.sector=image->firstSectorNumber+t.rem;
+				rOutChs.sectorId.lengthCode=image->sectorLengthCode;
+			}
 		public:
 			CSerializer(CImageRaw *image)
 				// ctor
@@ -450,13 +463,7 @@ trackNotFound:
 			LONG Seek(LONG lOff,UINT nFrom) override{
 				// sets the actual Position in the Serializer
 				const LONG result=__super::Seek(lOff,nFrom);
-				const div_t s=div( (int)position, image->sectorLength ); // Quot = # of Sectors to skip, Rem = the first Byte to read in the Sector yet to be computed
-				sector.offset=s.rem;
-				const div_t t=div( s.quot, image->nSectors ); // Quot = # of Tracks to skip, Rem = the zero-based Sector index on a Track yet to be computed
-				const div_t h=div( t.quot, image->nHeads ); // Quotient = # of Cylinders to skip, Remainder = Head in a Cylinder
-				sector.chs.cylinder = sector.chs.sectorId.cylinder = h.quot;
-				sector.chs.sectorId.side=image->sideMap[ sector.chs.head=h.rem ];
-				sector.chs.sectorId.sector=image->firstSectorNumber+t.rem;
+				__getPhysicalAddress__( result, sector.chs, &sector.offset );
 				return result;
 			}
 
@@ -484,9 +491,12 @@ trackNotFound:
 			}
 			LPCTSTR GetRecordLabel(int logPos,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override{
 				// populates the Buffer with label for the Record that STARTS at specified LogicalPosition, and returns the Buffer; returns Null if no Record starts at specified LogicalPosition
-				return	logPos%image->sectorLength==0
-						? sector.chs.sectorId.ToString(labelBuffer)
-						: nullptr;
+				if (logPos%image->sectorLength==0){
+					TPhysicalAddress chs;
+					__getPhysicalAddress__( logPos, chs, nullptr );
+					return chs.sectorId.ToString(labelBuffer);
+				}else
+					return nullptr;
 			}
 		};
 		// - returning a Serializer class instance
