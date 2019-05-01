@@ -794,7 +794,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 									dc.DrawText( ERR_MSG, -1, &rcHexa, DT_LEFT|DT_TOP );
 									rcHexa.left+=(sizeof(ERR_MSG)-sizeof(TCHAR))*font.charAvgWidth;
 								}
-							}else{
+							}else if (!isEof){
 								// Record's data are not yet known - caller will refresh the HexaEditor when data for this Record are known
 								f->Seek( address+=nBytesExpected, CFile::begin );
 								#define ERR_MSG	_T("» Fetching data ... «")
