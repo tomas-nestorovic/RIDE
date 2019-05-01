@@ -82,6 +82,7 @@
 		void SetEditable(bool _editable);
 		int ShowAddressBand(bool _show);
 		void Reset(CFile *_f,DWORD _minFileSize,DWORD _maxFileSize);
+		void SetLogicalBounds(DWORD _minFileSize,DWORD _maxFileSize);
 		void SetLogicalSize(DWORD _logicalSize);
 		void GetVisiblePart(DWORD &rLogicalBegin,DWORD &rLogicalEnd) const;
 		void AddEmphasis(DWORD a,DWORD z);

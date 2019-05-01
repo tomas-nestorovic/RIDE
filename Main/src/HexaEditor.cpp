@@ -124,13 +124,18 @@
 			} Default;
 			pContentAdviser=&Default;
 		}
-		minFileSize=_minFileSize, maxFileSize=_maxFileSize, logicalSize=0;
 		cursor=TCursor(0); // resetting the Cursor and Selection
+		SetLogicalBounds( _minFileSize, _maxFileSize );
 		SetLogicalSize(f->GetLength());
 		if (::IsWindow(m_hWnd)){ // may be window-less if the owner is window-less
 			__refreshVertically__();
 			Invalidate(FALSE);
 		}
+	}
+
+	void CHexaEditor::SetLogicalBounds(DWORD _minFileSize,DWORD _maxFileSize){
+		// changes the min and max File size
+		minFileSize=_minFileSize, maxFileSize=_maxFileSize;
 	}
 
 	void CHexaEditor::SetLogicalSize(DWORD _logicalSize){
@@ -229,7 +234,7 @@
 
 	void CHexaEditor::__refreshCursorDisplay__() const{
 		// shows Cursor on screen at position that corresponds with Cursor's actual Position in the underlying File content (e.g. the 12345-th Byte of the File)
-		int currRecordStart, currRecordLength;
+		int currRecordStart, currRecordLength=1;
 		pContentAdviser->GetRecordInfo( cursor.position, &currRecordStart, &currRecordLength, NULL );
 		const div_t d=div(cursor.position-currRecordStart,currRecordLength);
 		const int iScrollY=GetScrollPos(SB_VERT);
@@ -492,7 +497,7 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 						goto cursorRefresh;
 					case ID_EDIT_SELECT_CURRENT:{
 						// selecting the whole Record under the Cursor
-						int recordLength;
+						int recordLength=0;
 						pContentAdviser->GetRecordInfo( cursor.position, &cursor.selectionA, &recordLength, NULL );
 						cursor.position = cursor.selectionZ = cursor.selectionA+recordLength;
 						__invalidateData__();
@@ -534,7 +539,7 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 						goto editDelete;
 					case ID_NEXT:{
 						// navigating to the next Record
-						int currRecordLength;
+						int currRecordLength=0;
 						pContentAdviser->GetRecordInfo( cursor.position, &cursor.position, &currRecordLength, NULL );
 						cursor.position+=currRecordLength;
 						goto cursorCorrectlyMoveTo;
@@ -744,7 +749,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 							// : File content
 							const bool isEof=f->GetPosition()==f->GetLength();
 							const BYTE nBytesExpected=__firstByteInRowToLogicalPosition__(iRowA+1)-address;
-							bool dataReady;
+							bool dataReady=false; // assumption
 							pContentAdviser->GetRecordInfo( address, NULL, NULL, &dataReady );
 							if (dataReady){
 								// Record's data are known (there are some, some with error, or none)
