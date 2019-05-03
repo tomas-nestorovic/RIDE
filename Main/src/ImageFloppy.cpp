@@ -74,6 +74,7 @@
 												false
 											);
 						ps->scannedTracks.infos[requestTrack].buffered=true;
+						ps->pParentHexaEditor->RepaintData(true); // True = immediate repainting
 					// . then, scanning the remaining Tracks (if not all yet scanned)
 					}else{
 						// : scanning the next remaining Track in parallel with the main thread ...
@@ -85,10 +86,10 @@
 						ps->scannedTracks.locker.Unlock();
 						if (!ps->bChsValid)
 							ps->Seek(0,SeekPosition::current); // initializing state of current Sector to read from or write to
+						// : the Serializer has changed its state - letting the related HexaEditor know of the change
+						ps->pParentHexaEditor->SetLogicalSize(ps->dataTotalLength);
+						ps->pParentHexaEditor->SetLogicalBounds( 0, ps->dataTotalLength );
 					}
-					// . the Serializer has changed its state - letting the related HexaEditor know of the change
-					ps->pParentHexaEditor->SetLogicalSize(ps->dataTotalLength); // also refreshes the content
-					ps->pParentHexaEditor->SetLogicalBounds( 0, ps->dataTotalLength );
 				} while (ps->bContinue);
 				return ERROR_SUCCESS;
 			}

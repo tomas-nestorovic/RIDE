@@ -141,10 +141,8 @@
 	void CHexaEditor::SetLogicalSize(DWORD _logicalSize){
 		// changes the LogicalSize of File content (originally set when Resetting the HexaEditor)
 		logicalSize=_logicalSize;
-		if (::IsWindow(m_hWnd)){ // may be window-less if the owner is window-less
+		if (::IsWindow(m_hWnd)) // may be window-less if the owner is window-less
 			__refreshVertically__();
-			Invalidate(TRUE);
-		}
 	}
 
 	void CHexaEditor::GetVisiblePart(DWORD &rLogicalBegin,DWORD &rLogicalEnd) const{
@@ -218,12 +216,12 @@
 		//}
 	}
 
-	void CHexaEditor::__invalidateData__() const{
-		// invalidates the "data" (the content below the Header)
+	void CHexaEditor::RepaintData(bool immediately) const{
+		// invalidates the "data" (the content below the Header), eventually repaints them Immediately
 		RECT rc;
 		GetClientRect(&rc);
 		rc.top=HEADER_HEIGHT;
-		::InvalidateRect( m_hWnd, &rc, FALSE );
+		::RedrawWindow( m_hWnd, &rc, nullptr, RDW_INVALIDATE|RDW_NOCHILDREN|(BYTE)immediately*RDW_UPDATENOW );
 	}
 
 	#define BYTES_MAX		64
@@ -300,7 +298,7 @@ cursorCorrectlyMoveTo:	// . adjusting the Cursor's Position
 						// . adjusting an existing Selection if Shift pressed
 						if (!mouseDragged){ // if mouse is being -Dragged, the beginning of a Selection has already been detected
 							if (cursor.selectionA!=cursor.selectionZ) // if there was a Selection before ...
-								__invalidateData__(); // ... invalidating the content as the Selection may no longer be valid (e.g. may be deselected)
+								RepaintData(); // ... invalidating the content as the Selection may no longer be valid (e.g. may be deselected)
 							cursor.__detectNewSelection__();
 						}
 						cursor.selectionZ=cursor.position;
@@ -313,7 +311,7 @@ cursorRefresh:			// . refreshing the Cursor
 							// : invalidating the content if Selection has (or is being) changed
 							if (cursor.position!=cursorPos0) // yes, the Cursor has moved
 								if (mouseDragged || ::GetAsyncKeyState(VK_SHIFT)<0) // yes, Selection is being edited (by dragging the mouse or having the Shift key pressed)
-									__invalidateData__();
+									RepaintData();
 							// : displaying the Cursor
 							__refreshCursorDisplay__();
 						ShowCaret();
@@ -391,7 +389,7 @@ deleteSelection:		// . moving the content "after" Selection "to" the position of
 						}
 						// . refreshing the scrollbar
 						__refreshVertically__();
-						__invalidateData__();
+						RepaintData();
 						goto cursorRefresh;
 					}
 					case VK_BACK:
@@ -424,7 +422,7 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 									f->Write(&b,1);
 									if ( cursor.hexaLow=!cursor.hexaLow )
 										cursor.position++;
-									__invalidateData__();
+									RepaintData();
 									goto cursorRefresh;
 								}else
 									__showMessage__(MESSAGE_LIMIT_UPPER);
@@ -445,7 +443,7 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 							SELECTION_CANCEL()
 							f->Seek( cursor.position++ ,CFile::begin);
 							f->Write(&wParam,1);
-							__invalidateData__();
+							RepaintData();
 							goto cursorRefresh;
 						}else
 							__showMessage__(MESSAGE_LIMIT_UPPER);
@@ -488,19 +486,19 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 					case ID_EDIT_SELECT_ALL:
 						// Selecting everything
 						cursor.selectionA=0, cursor.selectionZ=cursor.position=f->GetLength();
-						__invalidateData__();
+						RepaintData();
 						goto cursorRefresh;
 					case ID_EDIT_SELECT_NONE:
 						// removing current selection
 						SELECTION_CANCEL()
-						__invalidateData__();
+						RepaintData();
 						goto cursorRefresh;
 					case ID_EDIT_SELECT_CURRENT:{
 						// selecting the whole Record under the Cursor
 						int recordLength=0;
 						pContentAdviser->GetRecordInfo( cursor.position, &cursor.selectionA, &recordLength, NULL );
 						cursor.position = cursor.selectionZ = cursor.selectionA+recordLength;
-						__invalidateData__();
+						RepaintData();
 						goto cursorRefresh;
 					}
 					case ID_EDIT_COPY:
@@ -531,7 +529,7 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 							::GlobalUnlock(hg);
 							::GlobalFree(hg);
 						}
-						__invalidateData__();
+						RepaintData();
 						goto cursorRefresh;
 					}
 					case ID_DELETE:
@@ -578,7 +576,7 @@ leftMouseDragged:
 					// outside any area
 					if (!mouseDragged){ // if right now mouse button pressed ...
 						SELECTION_CANCEL(); // ... unselecting everything
-						Invalidate(FALSE); // ... and painting the result
+						RepaintData(); // ... and painting the result
 					}
 					break;
 				}

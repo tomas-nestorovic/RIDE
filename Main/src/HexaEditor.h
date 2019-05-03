@@ -69,7 +69,6 @@
 		int __logicalPositionToRow__(int logPos) const;
 		int __scrollToRow__(int row);
 		void __refreshVertically__();
-		void __invalidateData__() const;
 		void __refreshCursorDisplay__() const;
 		void __showMessage__(LPCTSTR msg) const;
 	protected:
@@ -87,6 +86,7 @@
 		void GetVisiblePart(DWORD &rLogicalBegin,DWORD &rLogicalEnd) const;
 		void AddEmphasis(DWORD a,DWORD z);
 		void CancelAllEmphases();
+		void RepaintData(bool immediately=false) const;
 		BOOL PreTranslateMessage(PMSG pMsg) override;
 	};
 
