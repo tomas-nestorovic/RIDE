@@ -35,6 +35,7 @@
 		};
 
 		class CDockableToolBar sealed:public CToolBar{
+			void OnUpdateCmdUI(CFrameWnd* pTarget,BOOL bDisableIfNoHndler) override;
 		public:
 			CDockableToolBar(UINT nResId,UINT id);
 

@@ -66,6 +66,9 @@
 			( (CMainWindow *)app.m_pMainWnd )->ShowControlBar(this,FALSE,FALSE);
 	}
 
+	void CMainWindow::CDockableToolBar::OnUpdateCmdUI(CFrameWnd* pTarget,BOOL bDisableIfNoHndler){
+		return __super::OnUpdateCmdUI( pTarget, FALSE ); // False = don't search the message map for corresponding command handlers
+	}
 
 
 
