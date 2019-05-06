@@ -208,12 +208,7 @@
 		GetClientRect(&r);
 		nRowsDisplayed=max( 0, (r.bottom-r.top)/font.charHeight-HEADER_LINES_COUNT );
 		nRowsOnPage=max( 0, nRowsDisplayed-1 );
-		const BOOL scrollbarNecessary=nRowsOnPage<nLogicalRows;
-		ShowScrollBar(SB_VERT,scrollbarNecessary);
-		//if (scrollbarNecessary){
-			SCROLLINFO si={ sizeof(si), SIF_RANGE|SIF_PAGE, 0,nLogicalRows-1, nRowsOnPage };
-			SetScrollInfo( SB_VERT, &si, TRUE );
-		//}
+		PostMessage( WM_HEXA_PAINTSCROLLBARS );
 	}
 
 	void CHexaEditor::RepaintData(bool immediately) const{
@@ -823,6 +818,16 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 					rcClip.top=y;
 					::FillRect( dc, &rcClip, CRideBrush::White );
 				::SelectObject(dc,hFont0);
+				return 0;
+			}
+			case WM_HEXA_PAINTSCROLLBARS:{
+				// repainting the scrollbars
+				const BOOL scrollbarNecessary=nRowsOnPage<nLogicalRows;
+				ShowScrollBar(SB_VERT,scrollbarNecessary);
+				//if (scrollbarNecessary){
+					SCROLLINFO si={ sizeof(si), SIF_RANGE|SIF_PAGE, 0,nLogicalRows-1, nRowsOnPage };
+					SetScrollInfo( SB_VERT, &si, TRUE );
+				//}
 				return 0;
 			}
 		}

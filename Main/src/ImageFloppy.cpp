@@ -74,7 +74,8 @@
 												false
 											);
 						ps->scannedTracks.infos[requestTrack].buffered=true;
-						ps->pParentHexaEditor->RepaintData(true); // True = immediate repainting
+						if (ps->bContinue)
+							ps->pParentHexaEditor->RepaintData(true); // True = immediate repainting
 					// . then, scanning the remaining Tracks (if not all yet scanned)
 					}else{
 						// : scanning the next remaining Track in parallel with the main thread ...
