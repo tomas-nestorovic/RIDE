@@ -553,11 +553,14 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 				// left mouse button released
 				mouseDragged=false;
 				break;
-			case WM_MOUSEMOVE:{
+			case WM_MOUSEMOVE:
 				// mouse moved
 				if (!( mouseDragged=::GetAsyncKeyState(VK_LBUTTON)<0 )) return 0; // if mouse button not pressed, current Selection cannot be modified
 leftMouseDragged:
 				if (!editable) break; // if window NotEditable, ignoring any mouse events and just focusing the window to receive MouseWheel messages
+				//fallthrough
+			case WM_RBUTTONDOWN:{
+				// right mouse button pressed
 				const int x=GET_X_LPARAM(lParam)-(addrLength+ADDRESS_SPACE_LENGTH)*font.charAvgWidth;
 				const int r=GET_Y_LPARAM(lParam)/font.charHeight-HEADER_LINES_COUNT+GetScrollPos(SB_VERT);
 				const int byteW=HEXA_FORMAT_LENGTH*font.charAvgWidth, hexaW=nBytesInRow*byteW;
