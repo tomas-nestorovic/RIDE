@@ -102,8 +102,11 @@ BEGIN
     "A",            ID_EDIT_SELECT_NONE,    VIRTKEY, SHIFT, CONTROL, 
                                                     NOINVERT
     "C",            ID_EDIT_COPY,           VIRTKEY, CONTROL, NOINVERT
+    "K",            ID_BOOKMARK_TOGGLE,     VIRTKEY, CONTROL, NOINVERT
     "R",            ID_EDIT_SELECT_CURRENT, VIRTKEY, CONTROL, NOINVERT
     "V",            ID_EDIT_PASTE,          VIRTKEY, CONTROL, NOINVERT
+    VK_F11,         ID_BOOKMARK_PREV,       VIRTKEY, CONTROL, NOINVERT
+    VK_F12,         ID_BOOKMARK_NEXT,       VIRTKEY, CONTROL, NOINVERT
     VK_NEXT,        ID_NEXT,                VIRTKEY, CONTROL, NOINVERT
     VK_PRIOR,       ID_PREV,                VIRTKEY, CONTROL, NOINVERT
 END
@@ -296,6 +299,8 @@ IDR_HEXAEDITOR MENU DISCARDABLE
 BEGIN
     POPUP "x"
     BEGIN
+        MENUITEM "Bookmark here\tCtrl+K",       ID_BOOKMARK_TOGGLE
+        MENUITEM SEPARATOR
         MENUITEM "Copy\tCtrl+C",                ID_EDIT_COPY
         MENUITEM "Paste\tCtrl+V",               ID_EDIT_PASTE
         MENUITEM "Delete\tDel",                 ID_DELETE
@@ -312,6 +317,9 @@ BEGIN
         BEGIN
             MENUITEM "Previous item\tCtrl+PgUp",    ID_PREV
             MENUITEM "Next item\tCtrl+PgDown",      ID_NEXT
+            MENUITEM SEPARATOR
+            MENUITEM "Previous bookmark\tCtrl+F11", ID_BOOKMARK_PREV
+            MENUITEM "Next bookmark\tCtrl+F12",     ID_BOOKMARK_NEXT
         END
     END
 END

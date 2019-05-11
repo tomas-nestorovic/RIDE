@@ -56,6 +56,12 @@
 			TCursor(int position); // ctor
 			void __detectNewSelection__();
 		} cursor;
+		class CBookmarks sealed:CDWordArray{
+		public:
+			void __addBookmark__(int logPos);
+			void __removeBookmark__(int logPos);
+			int __getNearestNextBookmarkPosition__(int logPos) const;
+		} bookmarks;
 		PEmphasis emphases; // must be ordered ascending by A (and thus automatically also by Z)
 
 		CFile *f;

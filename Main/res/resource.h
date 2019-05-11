@@ -122,6 +122,7 @@
 #define ID_TDI_SWITCH_BACK              40034
 #define ID_EDIT_SELECT_NONE             40057
 #define ID_EDIT_SELECT_INVERSE          40058
+#define ID_BOOKMARK_TOGGLE              40062
 #define ID_DATA                         40068
 #define ID_RECURRENCY                   40080
 #define ID_FILE                         40081
@@ -194,7 +195,9 @@
 #define ID_ZX_BASIC_BINARY_SHOWNUMBER   40219
 #define ID_HELP_REPORT_BUG              40221
 #define ID_FILEMANAGER_DIR_HEXAMODE     40223
+#define ID_BOOKMARK_NEXT                40229
 #define ID_EDIT_SELECT_CURRENT          40239
+#define ID_BOOKMARK_PREV                40240
 #define ID_Y                            58113
 #define ID_W                            58114
 #define ID_H                            58115
@@ -207,7 +210,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        205
-#define _APS_NEXT_COMMAND_VALUE         40240
+#define _APS_NEXT_COMMAND_VALUE         40242
 #define _APS_NEXT_CONTROL_VALUE         1170
 #define _APS_NEXT_SYMED_VALUE           103
 #endif

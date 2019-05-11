@@ -29,6 +29,47 @@
 
 
 
+	#define BOOKMARK_POSITION_INFINITY	INT_MAX
+
+	void CHexaEditor::CBookmarks::__addBookmark__(int logPos){
+		// adds a new Bookmark at specified LogicalPosition (if not already added there)
+		if (__getNearestNextBookmarkPosition__(logPos)==logPos) // if Bookmark already present ...
+			return; // ... we are done
+		WORD i=GetSize();
+		while (i>0)
+			if ((*this)[i-1]>logPos)
+				i--;
+			else
+				break;
+		InsertAt( i, logPos ); // adding a new Bookmark so that the Bookmarks are ordered ascending
+	}
+	void CHexaEditor::CBookmarks::__removeBookmark__(int logPos){
+		// removes existing Bookmark from specified LogicalPosition (if not already removed before)
+		for( WORD i=GetSize(); i>0; )
+			if ((*this)[--i]==logPos){
+				RemoveAt(i);
+				break;
+			}
+	}
+	int CHexaEditor::CBookmarks::__getNearestNextBookmarkPosition__(int logPos) const{
+		// finds and returns the Bookmark at LogicalPosition or the nearest next Bookmark
+		WORD i=GetSize();
+		while (i>0)
+			if ((*this)[i-1]>=logPos)
+				i--;
+			else
+				break;
+		return	i<GetSize()
+				? (*this)[i] // nearest next Bookmark found
+				: BOOKMARK_POSITION_INFINITY; // no nearest next Bookmark found - considering it in infinity
+	}
+
+
+
+
+
+
+
 	#define WM_HEXA_PAINTSCROLLBARS	WM_USER+1
 
 	#define ADDRESS_FORMAT			_T(" %04X-%04X")
@@ -365,8 +406,14 @@ editDelete:				// deleting the Byte after Cursor, or deleting the Selection
 						if (cursor.selectionA==cursor.selectionZ)
 							if (cursor.position<f->GetLength()) cursor.selectionA=cursor.position, cursor.selectionZ=cursor.position+1;
 							else return 0;
-deleteSelection:		// . moving the content "after" Selection "to" the position of the Selection
-						UINT posSrc=max(cursor.selectionA,cursor.selectionZ), posDst=min(cursor.selectionA,cursor.selectionZ);
+deleteSelection:		UINT posSrc=max(cursor.selectionA,cursor.selectionZ), posDst=min(cursor.selectionA,cursor.selectionZ);
+						// . checking if there are any Bookmarks selected
+						if (bookmarks.__getNearestNextBookmarkPosition__(posDst)<posSrc){
+							if (Utils::QuestionYesNo(_T("Sure to delete selected bookmarks?"),MB_DEFBUTTON2))
+								for( int pos; (pos=bookmarks.__getNearestNextBookmarkPosition__(posDst))<posSrc; bookmarks.__removeBookmark__(pos) );
+							return 0;
+						}
+						// . moving the content "after" Selection "to" the position of the Selection
 						cursor.position=posDst; // moving the Cursor
 						SELECTION_CANCEL()
 						for( DWORD nBytesToMove=f->GetLength()-posSrc; nBytesToMove; ){
@@ -376,6 +423,10 @@ deleteSelection:		// . moving the content "after" Selection "to" the position of
 							if (!nBytesBuffered) break; // no Bytes buffered if, for instance, Sector not found
 							f->Seek(posDst,CFile::begin);
 							f->Write(buf,nBytesBuffered);
+							for( int pos=posSrc; (pos=bookmarks.__getNearestNextBookmarkPosition__(pos))<posSrc+nBytesBuffered; ){
+								bookmarks.__removeBookmark__(pos);
+								bookmarks.__addBookmark__(posDst+pos-posSrc);
+							}
 							nBytesToMove-=nBytesBuffered, posSrc+=nBytesBuffered, posDst+=nBytesBuffered;
 						}
 						// . the "source-destination" difference filled up with zeros
@@ -450,15 +501,16 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 				if (!editable) return 0; // if window disabled, no context actions can be performed
 				CMenu mnu;
 				mnu.LoadMenu(IDR_HEXAEDITOR);
+				mnu.GetSubMenu(0)->CheckMenuItem( ID_BOOKMARK_TOGGLE, MF_CHECKED*(bookmarks.__getNearestNextBookmarkPosition__(cursor.position)==cursor.position) );
 				if (customSelectSubmenu) // custom "Select" submenu
-					if (CMenu *const pSelectSubmenu=mnu.GetSubMenu(0)->GetSubMenu(4)){ // 4 = "Select" submenu in IDR_HEXAEDITOR menu
+					if (CMenu *const pSelectSubmenu=mnu.GetSubMenu(0)->GetSubMenu(6)){ // 6 = "Select" submenu in IDR_HEXAEDITOR menu
 						while (pSelectSubmenu->GetMenuItemCount()) // clearing the submenu
 							pSelectSubmenu->RemoveMenu( 0, MF_BYPOSITION );
 						for( PCSubmenuItem psi=customSelectSubmenu; psi->name!=nullptr; psi++ )
 							pSelectSubmenu->AppendMenu( MF_STRING, psi->accel.cmd, psi->name );
 					}
 				if (customGotoSubmenu) // custom "Go to" submenu
-					if (CMenu *const pGotoSubmenu=mnu.GetSubMenu(0)->GetSubMenu(6)){ // 6 = "Select" submenu in IDR_HEXAEDITOR menu
+					if (CMenu *const pGotoSubmenu=mnu.GetSubMenu(0)->GetSubMenu(8)){ // 8 = "Select" submenu in IDR_HEXAEDITOR menu
 						while (pGotoSubmenu->GetMenuItemCount()) // clearing the submenu
 							pGotoSubmenu->RemoveMenu( 0, MF_BYPOSITION );
 						for( PCSubmenuItem psi=customGotoSubmenu; psi->name!=nullptr; psi++ )
@@ -480,6 +532,35 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 			case WM_COMMAND:
 				// processing a command
 				switch (LOWORD(wParam)){
+					case ID_BOOKMARK_TOGGLE:
+						// toggling a Bookmark at Cursor's Position
+						if (bookmarks.__getNearestNextBookmarkPosition__(cursor.position)==cursor.position)
+							bookmarks.__removeBookmark__(cursor.position);
+						else
+							bookmarks.__addBookmark__(cursor.position);
+						RepaintData();
+						goto cursorRefresh;
+					case ID_BOOKMARK_PREV:
+						// navigating the Cursor to the previous Bookmark
+						if (bookmarks.__getNearestNextBookmarkPosition__(0)<cursor.position){
+							int prevBookmarkPos=0;
+							for( int pos=0; pos<cursor.position-1; pos=bookmarks.__getNearestNextBookmarkPosition__(pos+1) )
+								prevBookmarkPos=pos;
+							cursor.position=prevBookmarkPos;						
+							RepaintData();
+							goto cursorRefresh;
+						}else
+							break;
+					case ID_BOOKMARK_NEXT:{
+						// navigating the Cursor to the next Bookmark
+						const int nextBookmarkPos=bookmarks.__getNearestNextBookmarkPosition__(cursor.position+1);
+						if (nextBookmarkPos<BOOKMARK_POSITION_INFINITY){
+							cursor.position=nextBookmarkPos;
+							RepaintData();
+							goto cursorRefresh;
+						}else
+							break;
+					}
 					case ID_EDIT_SELECT_ALL:
 						// Selecting everything
 						cursor.selectionA=0, cursor.selectionZ=cursor.position=f->GetLength();
@@ -734,6 +815,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 						const int _selectionA=min(cursor.selectionA,cursor.selectionZ), _selectionZ=max(cursor.selectionZ,cursor.selectionA);
 						PEmphasis pEmp=emphases;
 						while (pEmp->z<address) pEmp=pEmp->pNext; // choosing the first visible Emphasis
+						int nearestNextBookmarkPos=bookmarks.__getNearestNextBookmarkPosition__(address);
 						f->Seek( address, CFile::begin );
 						for( TCHAR buf[16]; iRowA<=iRowZ; iRowA++,y+=font.charHeight ){
 							RECT rcHexa={ /*xHexaStart*/0, y, min(xHexaEnd,rcClip.right), min(y+font.charHeight,rcClip.bottom) }; // commented out as this rectangle also used to paint the Address
@@ -776,12 +858,21 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 										// | Hexa
 										const int iByte=*p++;
 										dc.DrawText( buf, ::wsprintf(buf,HEXA_FORMAT,iByte), &rcHexa, DT_LEFT|DT_TOP );
+										if (address==nearestNextBookmarkPos){
+											const RECT rcBookmark={ rcHexa.left, rcHexa.top, rcHexa.left+2*font.charAvgWidth, rcHexa.top+font.charHeight };
+											::FrameRect( dc, &rcBookmark, CRideBrush::Black );
+										}
 										rcHexa.left+=HEXA_FORMAT_LENGTH*font.charAvgWidth;
 										// | Ascii
 										::DrawTextW(dc,
 													::isprint(iByte) ? (LPCWSTR)&iByte : L"\x2219", 1, // if original character not printable, displaying a substitute one
 													&rcAscii, DT_LEFT|DT_TOP|DT_NOPREFIX
 												);
+										if (address==nearestNextBookmarkPos){
+											const RECT rcBookmark={ rcAscii.left, rcAscii.top, rcAscii.left+font.charAvgWidth, rcAscii.top+font.charHeight };
+											::FrameRect( dc, &rcBookmark, CRideBrush::Black );
+											nearestNextBookmarkPos=bookmarks.__getNearestNextBookmarkPosition__(address+1);
+										}
 										rcAscii.left+=font.charAvgWidth;
 									}
 								else if (!isEof){
