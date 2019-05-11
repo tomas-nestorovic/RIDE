@@ -143,7 +143,7 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 
 	CBootView::CBootView(PDos dos,RCPhysicalAddress rChsBoot)
 		// ctor
-		: tab(0,0,dos,this) , splitX(PROPGRID_WIDTH_DEFAULT) , chsBoot(rChsBoot)
+		: tab(0,0,0,dos,this) , splitX(PROPGRID_WIDTH_DEFAULT) , chsBoot(rChsBoot)
 		, fBoot(dos,rChsBoot) , hexaEditor(this) {
 	}
 

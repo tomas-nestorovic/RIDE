@@ -1,13 +1,13 @@
 #include "stdafx.h"
 
-	CMainWindow::CTdiView::TTab::TTab(UINT nResId,UINT nToolBarId,PDos _dos,PView _view)
+	CMainWindow::CTdiView::TTab::TTab(UINT nMenuResId,UINT nToolbarResId,UINT nToolBarId,PDos _dos,PView _view)
 		// ctor
 		// - initialization
 		: dos(_dos) , view(_view)
 		// - creating the Menu
-		, menu(nResId)
+		, menu(nMenuResId)
 		// - creating the ToolBar (its displaying in CTdiView::ShowContent)
-		, toolbar(nResId,nToolBarId) {
+		, toolbar(nToolbarResId,nToolBarId) {
 	}
 
 

@@ -11,7 +11,7 @@
 		// - base
 		: CHexaEditor(this)
 		// - initialization
-		, tab(0,0,dos,this)
+		, tab( 0, IDR_HEXAEDITOR, ID_CYLINDER, dos, this )
 		, iScrollY(0) , f(nullptr) {
 	}
 

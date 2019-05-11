@@ -66,7 +66,7 @@
 				const TDynMenu menu;
 				const PView view;
 				CDockableToolBar toolbar;
-				TTab(UINT nResId,UINT nToolBarId,PDos _dos,PView _view); // ctor
+				TTab(UINT nMenuResId,UINT nToolbarResId,UINT nToolBarId,PDos _dos,PView _view); // ctor
 			} *PTab;
 		private:
 			static void WINAPI __fnShowContent__(PVOID pTdi,LPCVOID pTab);

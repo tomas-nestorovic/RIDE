@@ -21,7 +21,8 @@
 	CFileManagerView::CFileManagerView(PDos _dos,BYTE _supportedDisplayModes,BYTE _initialDisplayMode,const CFont &rFont,BYTE reportModeRowHeightAdjustment,BYTE _nInformation,PCFileInfo _informationList,BYTE _nameColumnId,const TDirectoryStructureManagement *_pDirectoryStructureManagement)
 		// ctor
 		// - initialization
-		: tab(IDR_FILEMANAGER,ID_FILE,_dos,this) , rFont(rFont)
+		: tab( IDR_FILEMANAGER, IDR_FILEMANAGER, ID_FILE, _dos, this )
+		, rFont(rFont)
 		, reportModeRowHeightAdjustment(reportModeRowHeightAdjustment)
 		, nInformation(_nInformation) , informationList(_informationList) , nameColumnId(_nameColumnId)
 		, supportedDisplayModes(_supportedDisplayModes) , displayMode(_initialDisplayMode)

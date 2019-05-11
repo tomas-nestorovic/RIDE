@@ -18,7 +18,7 @@
 
 	CTrackMapView::CTrackMapView(PDos _dos)
 		// ctor
-		: tab(IDR_TRACKMAP,ID_CYLINDER,_dos,this)
+		: tab( IDR_TRACKMAP, IDR_TRACKMAP, ID_CYLINDER, _dos, this )
 		, displayType(TDisplayType::STATUS) , showSectorNumbers(false) , highlightBadSectors(false) , iScrollY(0) , scanner(this) {
 		::ZeroMemory( rainbowBrushes, sizeof(rainbowBrushes) );
 	}

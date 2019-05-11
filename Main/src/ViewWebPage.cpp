@@ -37,7 +37,8 @@
 
 	CWebPageView::CWebPageView(LPCTSTR url)
 		// ctor
-		: history(url) , tab(IDR_WEBPAGE,ID_CYLINDER,nullptr,this)
+		: tab( IDR_WEBPAGE, IDR_WEBPAGE, ID_CYLINDER, nullptr, this )
+		, history(url)
 		, navigationToLabel(false) {
 	}
 
