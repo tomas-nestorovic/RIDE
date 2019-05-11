@@ -960,6 +960,60 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 		return __super::WindowProc(msg,wParam,lParam);
 	}
 
+	BOOL CHexaEditor::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){
+		// command processing
+		switch (nCode){
+			case CN_UPDATE_COMMAND_UI:
+				// update
+				switch (nID){
+					case ID_EDIT_COPY:
+						((CCmdUI *)pExtra)->Enable( cursor.selectionA!=cursor.selectionZ );
+						return TRUE;
+					case ID_EDIT_PASTE:{
+						COleDataObject odo;
+						odo.AttachClipboard();
+						((CCmdUI *)pExtra)->Enable( editable && odo.IsDataAvailable(cfBinary) );
+						return TRUE;
+					}
+					case ID_EDIT_DELETE:
+						((CCmdUI *)pExtra)->Enable(editable);
+						return TRUE;
+					case ID_BOOKMARK_TOGGLE:
+						((CCmdUI *)pExtra)->SetCheck( bookmarks.__getNearestNextBookmarkPosition__(cursor.position)==cursor.position );
+						return TRUE;
+					case ID_BOOKMARK_PREV:
+						((CCmdUI *)pExtra)->Enable( bookmarks.__getNearestNextBookmarkPosition__(0)<cursor.position );
+						return TRUE;
+					case ID_BOOKMARK_NEXT:
+						((CCmdUI *)pExtra)->Enable( bookmarks.__getNearestNextBookmarkPosition__(cursor.position+1)<BOOKMARK_POSITION_INFINITY );
+						return TRUE;
+					//case ID_PREV,ID_NEXT,ID_ADDRESS:
+						//nop (traversal across Records is always available)
+				}
+				break;
+			case CN_COMMAND:
+				// command
+				switch (nID){
+					case ID_EDIT_SELECT_ALL:
+					case ID_EDIT_SELECT_NONE:
+					case ID_EDIT_SELECT_CURRENT:
+					case ID_EDIT_COPY:
+					case ID_EDIT_PASTE:
+					case ID_EDIT_DELETE:
+					case ID_BOOKMARK_TOGGLE:
+					case ID_BOOKMARK_PREV:
+					case ID_BOOKMARK_NEXT:
+					case ID_NEXT:
+					case ID_PREV:
+					case ID_ADDRESS:
+						WindowProc( WM_COMMAND, nID, 0 );
+						return TRUE;
+				}
+				break;
+		}
+		return __super::OnCmdMsg(nID,nCode,pExtra,pHandlerInfo);
+	}
+
 	BOOL CHexaEditor::PreTranslateMessage(PMSG pMsg){
 		// pre-processing the Message
 		return	::GetFocus()==m_hWnd

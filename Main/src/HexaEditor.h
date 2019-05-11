@@ -80,6 +80,7 @@
 	protected:
 		void PostNcDestroy() override sealed;
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
+		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override; // enabling/disabling ToolBar buttons
 	public:
 		CHexaEditor(PVOID param,PCSubmenuItem customSelectSubmenu=nullptr,PCSubmenuItem customGotoSubmenu=nullptr);
 		~CHexaEditor();

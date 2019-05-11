@@ -414,6 +414,7 @@ IDR_MAINFRAME           BITMAP  DISCARDABLE     "mainFrame.bmp"
 IDR_ZX_TAPE             BITMAP  DISCARDABLE     "spectrumTape.bmp"
 IDR_IMAGE               BITMAP  DISCARDABLE     "image.bmp"
 IDR_WEBPAGE             BITMAP  DISCARDABLE     "webPage.bmp"
+IDR_HEXAEDITOR          BITMAP  DISCARDABLE     "hexaEditor.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -470,6 +471,21 @@ BEGIN
     BUTTON      ID_WEB_DEFAULT_BROWSER
 END
 
+IDR_HEXAEDITOR TOOLBAR DISCARDABLE  16, 16
+BEGIN
+    BUTTON      ID_EDIT_COPY
+    BUTTON      ID_EDIT_PASTE
+    SEPARATOR
+    BUTTON      ID_DELETE
+    SEPARATOR
+    BUTTON      ID_BOOKMARK_TOGGLE
+    BUTTON      ID_BOOKMARK_PREV
+    BUTTON      ID_BOOKMARK_NEXT
+    SEPARATOR
+    BUTTON      ID_PREV
+    BUTTON      ID_NEXT
+    BUTTON      ID_NAVIGATE_ADDRESS
+END
 
 /////////////////////////////////////////////////////////////////////////////
 //
