@@ -102,6 +102,7 @@ BEGIN
     "A",            ID_EDIT_SELECT_NONE,    VIRTKEY, SHIFT, CONTROL, 
                                                     NOINVERT
     "C",            ID_EDIT_COPY,           VIRTKEY, CONTROL, NOINVERT
+    "G",            ID_NAVIGATE_ADDRESS,    VIRTKEY, CONTROL, NOINVERT
     "K",            ID_BOOKMARK_TOGGLE,     VIRTKEY, CONTROL, NOINVERT
     "R",            ID_EDIT_SELECT_CURRENT, VIRTKEY, CONTROL, NOINVERT
     "V",            ID_EDIT_PASTE,          VIRTKEY, CONTROL, NOINVERT
@@ -320,6 +321,8 @@ BEGIN
             MENUITEM SEPARATOR
             MENUITEM "Previous bookmark\tCtrl+F11", ID_BOOKMARK_PREV
             MENUITEM "Next bookmark\tCtrl+F12",     ID_BOOKMARK_NEXT
+            MENUITEM SEPARATOR
+            MENUITEM "Address...\tCtrl+G",          ID_NAVIGATE_ADDRESS
         END
     END
 END
@@ -1111,6 +1114,18 @@ BEGIN
 END
 
 
+IDR_HEXAEDITOR_GOTOADDRESS DIALOG DISCARDABLE  0, 0, 152, 65
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
+CAPTION "Go to"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "&Address",ID_INFORMATION,7,7,135,8,NOT WS_GROUP
+    EDITTEXT        ID_NUMBER,7,18,138,14,ES_AUTOHSCROLL | ES_NUMBER
+    DEFPUSHBUTTON   "OK",IDOK,42,44,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,95,44,50,14
+END
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // DESIGNINFO
@@ -1313,6 +1328,14 @@ BEGIN
         RIGHTMARGIN, 274
         TOPMARGIN, 7
         BOTTOMMARGIN, 131
+    END
+
+    IDR_HEXAEDITOR_GOTOADDRESS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 145
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 58
     END
 END
 #endif    // APSTUDIO_INVOKED

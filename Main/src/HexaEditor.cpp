@@ -624,6 +624,36 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 						// navigating to the previous Record (or the beginning of current Record, if Cursor not already there)
 						pContentAdviser->GetRecordInfo( --cursor.position, &cursor.position, NULL, NULL );
 						goto cursorCorrectlyMoveTo;
+					case ID_NAVIGATE_ADDRESS:{
+						// navigating to an address input by the user
+						// . defining the Dialog
+						class CAddressDialog sealed:public CDialog{
+							void DoDataExchange(CDataExchange *pDX) override{
+								if (pDX->m_bSaveAndValidate){
+									DDX_Text( pDX, ID_NUMBER, address );
+									DDV_MinMaxInt( pDX, address, 0, fileLength );
+								}else{
+									TCHAR buf[80];
+									::wsprintf( buf, _T("&Address (0 - %d):"), fileLength );
+									SetDlgItemText( ID_INFORMATION, buf );
+								}
+							}
+						public:
+							const int fileLength;
+							int address;
+							CAddressDialog(int fileLength)
+								: CDialog(IDR_HEXAEDITOR_GOTOADDRESS)
+								, fileLength(fileLength) , address(0) {
+							}
+						} d(f->GetLength());
+						// . showing the Dialog and processing its result
+						if (d.DoModal()==IDOK){
+							SetFocus();
+							cursor.position=d.address;
+							goto cursorCorrectlyMoveTo;
+						}else
+							return 0;
+					}
 				}
 				return 0; // to suppress CEdit's standard context menu
 			case WM_LBUTTONDOWN:
