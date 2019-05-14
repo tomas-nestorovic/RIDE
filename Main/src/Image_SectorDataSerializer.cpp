@@ -57,6 +57,8 @@
 		WORD w; TFdcStatus sr;
 		while (true)
 			if (const PCSectorData sectorData=image->GetSectorData(sector.chs,0,true,&w,&sr)){
+				if (!w) // e.g. reading Sector with LengthCode 231 - such Sector has by default no data (a pointer to zero-length data has been returned by GetSectorData)
+					break;
 				readWithoutCrcError&=sr.IsWithoutError();
 				w-=sector.offset;
 				if (w<nCount){
@@ -81,6 +83,8 @@
 		WORD w; TFdcStatus sr;
 		while (true)
 			if (const PSectorData sectorData=image->GetSectorData(sector.chs,0,false,&w,&sr)){ // False = freezing the state of data (eventually erroneous)
+				if (!w) // e.g. reading Sector with LengthCode 231 - such Sector has by default no data (a pointer to zero-length data has been returned by GetSectorData)
+					break;
 				image->MarkSectorAsDirty(sector.chs,0,&sr);
 				w-=sector.offset;
 				if (w<nCount){
