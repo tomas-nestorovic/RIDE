@@ -73,6 +73,7 @@
 
 		int __firstByteInRowToLogicalPosition__(int row) const;
 		int __logicalPositionToRow__(int logPos) const;
+		int __logicalPositionFromPoint__(const POINT &rPoint,bool *pOutAsciiArea) const;
 		int __scrollToRow__(int row);
 		void __refreshVertically__();
 		void __refreshCursorDisplay__() const;

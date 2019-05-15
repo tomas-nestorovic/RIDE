@@ -291,6 +291,26 @@
 		}*/
 	}
 
+	int CHexaEditor::__logicalPositionFromPoint__(const POINT &rPoint,bool *pOutAsciiArea) const{
+		// determines and returns the LogicalPosition pointed to by the input Point (or -1 if not pointing at a particular Byte in both the Hexa and Ascii areas)
+		const int x=rPoint.x-(addrLength+ADDRESS_SPACE_LENGTH)*font.charAvgWidth;
+		const int r=rPoint.y/font.charHeight-HEADER_LINES_COUNT+GetScrollPos(SB_VERT);
+		const int byteW=HEXA_FORMAT_LENGTH*font.charAvgWidth, hexaW=nBytesInRow*byteW;
+		const int asciiX=hexaW+HEXA_SPACE_LENGTH*font.charAvgWidth;
+		const int currLineStart=__firstByteInRowToLogicalPosition__(r), currLineBytesMinusOne=__firstByteInRowToLogicalPosition__(r+1)-currLineStart-1;
+		if (x>0 && x<=hexaW){ // "x>0" - cannot be just "x" because x can be negative
+			// Hexa area
+			if (pOutAsciiArea) *pOutAsciiArea=false;
+			return currLineStart+min(x/byteW,currLineBytesMinusOne);
+		}else if (x>asciiX && x<=asciiX+nBytesInRow*font.charAvgWidth){
+			// Ascii area
+			if (pOutAsciiArea) *pOutAsciiArea=true;
+			return currLineStart+min((x-asciiX)/font.charAvgWidth,currLineBytesMinusOne);
+		}else
+			// outside any area
+			return -1;
+	}
+
 	void CHexaEditor::__showMessage__(LPCTSTR msg) const{
 		// shows Message and passes focus back to the HexaEditor
 		Utils::Information(msg);
@@ -660,29 +680,35 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 				// left mouse button pressed
 				mouseDragged=false;
 				goto leftMouseDragged; // "as if it's already been Dragged"
+			case WM_RBUTTONDOWN:{
+				// right mouse button pressed
+				mouseDragged=false;
+				const int logPos=__logicalPositionFromPoint__(CPoint(lParam),nullptr);
+				if (logPos>=0){
+					// in either Hexa or Ascii areas
+					if (min(cursor.selectionA,cursor.selectionZ)<=logPos && logPos<max(cursor.selectionA,cursor.selectionZ))
+						// right-clicked on the Selection - showing context menu at the place of Cursor
+						break;
+					else
+						// right-clicked outside the Selection - unselecting everything and moving the Cursor
+						goto leftMouseDragged; // "as if it's already been Dragged"
+				}else
+					// outside any area - ignoring the right-click
+					return 0;
+			}
 			case WM_LBUTTONUP:
 				// left mouse button released
 				mouseDragged=false;
 				break;
-			case WM_MOUSEMOVE:
+			case WM_MOUSEMOVE:{
 				// mouse moved
 				if (!( mouseDragged=::GetAsyncKeyState(VK_LBUTTON)<0 )) return 0; // if mouse button not pressed, current Selection cannot be modified
 leftMouseDragged:
 				if (!editable) break; // if window NotEditable, ignoring any mouse events and just focusing the window to receive MouseWheel messages
-				//fallthrough
-			case WM_RBUTTONDOWN:{
-				// right mouse button pressed
-				const int x=GET_X_LPARAM(lParam)-(addrLength+ADDRESS_SPACE_LENGTH)*font.charAvgWidth;
-				const int r=GET_Y_LPARAM(lParam)/font.charHeight-HEADER_LINES_COUNT+GetScrollPos(SB_VERT);
-				const int byteW=HEXA_FORMAT_LENGTH*font.charAvgWidth, hexaW=nBytesInRow*byteW;
-				const int asciiX=hexaW+HEXA_SPACE_LENGTH*font.charAvgWidth;
-				const int currLineStart=__firstByteInRowToLogicalPosition__(r), currLineBytesMinusOne=__firstByteInRowToLogicalPosition__(r+1)-currLineStart-1;
-				if (x>0 && x<=hexaW) // "x>0" - cannot be just "x" because x can be negative
-					// Hexa area
-					cursor.ascii=false, cursor.position=currLineStart+min(x/byteW,currLineBytesMinusOne);
-				else if (x>asciiX && x<=asciiX+nBytesInRow*font.charAvgWidth)
-					// Ascii area
-					cursor.ascii=true, cursor.position=currLineStart+min((x-asciiX)/font.charAvgWidth,currLineBytesMinusOne);
+				const int logPos=__logicalPositionFromPoint__(CPoint(lParam),&cursor.ascii);
+				if (logPos>=0)
+					// in either Hexa or Ascii areas
+					cursor.position=logPos;
 				else{
 					// outside any area
 					if (!mouseDragged){ // if right now mouse button pressed ...
