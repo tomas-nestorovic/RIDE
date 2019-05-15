@@ -521,20 +521,27 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 				if (!editable) return 0; // if window disabled, no context actions can be performed
 				CMenu mnu;
 				mnu.LoadMenu(IDR_HEXAEDITOR);
+				mnu.GetSubMenu(0)->EnableMenuItem( ID_BOOKMARK_TOGGLE, (MF_DISABLED|MF_GRAYED)*(cursor.selectionA!=cursor.selectionZ) );
 				mnu.GetSubMenu(0)->CheckMenuItem( ID_BOOKMARK_TOGGLE, MF_CHECKED*(bookmarks.__getNearestNextBookmarkPosition__(cursor.position)==cursor.position) );
 				if (customSelectSubmenu) // custom "Select" submenu
 					if (CMenu *const pSelectSubmenu=mnu.GetSubMenu(0)->GetSubMenu(6)){ // 6 = "Select" submenu in IDR_HEXAEDITOR menu
 						while (pSelectSubmenu->GetMenuItemCount()) // clearing the submenu
 							pSelectSubmenu->RemoveMenu( 0, MF_BYPOSITION );
 						for( PCSubmenuItem psi=customSelectSubmenu; psi->name!=nullptr; psi++ )
-							pSelectSubmenu->AppendMenu( MF_STRING, psi->accel.cmd, psi->name );
+							if (*psi->name!='\0')
+								pSelectSubmenu->AppendMenu( MF_STRING, psi->accel.cmd, psi->name );
+							else
+								pSelectSubmenu->AppendMenu( MF_SEPARATOR );
 					}
 				if (customGotoSubmenu) // custom "Go to" submenu
 					if (CMenu *const pGotoSubmenu=mnu.GetSubMenu(0)->GetSubMenu(8)){ // 8 = "Select" submenu in IDR_HEXAEDITOR menu
 						while (pGotoSubmenu->GetMenuItemCount()) // clearing the submenu
 							pGotoSubmenu->RemoveMenu( 0, MF_BYPOSITION );
 						for( PCSubmenuItem psi=customGotoSubmenu; psi->name!=nullptr; psi++ )
-							pGotoSubmenu->AppendMenu( MF_STRING, psi->accel.cmd, psi->name );
+							if (*psi->name!='\0')
+								pGotoSubmenu->AppendMenu( MF_STRING, psi->accel.cmd, psi->name );
+							else
+								pGotoSubmenu->AppendMenu( MF_SEPARATOR );
 					}
 				register union{
 					struct{ short x,y; };
@@ -551,6 +558,7 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 			}
 			case WM_COMMAND:
 				// processing a command
+				if (!editable) return 0;
 				switch (LOWORD(wParam)){
 					case ID_BOOKMARK_TOGGLE:
 						// toggling a Bookmark at Cursor's Position
@@ -1005,13 +1013,13 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 						((CCmdUI *)pExtra)->Enable(editable);
 						return TRUE;
 					case ID_BOOKMARK_TOGGLE:
-						((CCmdUI *)pExtra)->SetCheck( bookmarks.__getNearestNextBookmarkPosition__(cursor.position)==cursor.position );
+						((CCmdUI *)pExtra)->SetCheck( editable && bookmarks.__getNearestNextBookmarkPosition__(cursor.position)==cursor.position );
 						return TRUE;
 					case ID_BOOKMARK_PREV:
-						((CCmdUI *)pExtra)->Enable( bookmarks.__getNearestNextBookmarkPosition__(0)<cursor.position );
+						((CCmdUI *)pExtra)->Enable( editable && bookmarks.__getNearestNextBookmarkPosition__(0)<cursor.position );
 						return TRUE;
 					case ID_BOOKMARK_NEXT:
-						((CCmdUI *)pExtra)->Enable( bookmarks.__getNearestNextBookmarkPosition__(cursor.position+1)<BOOKMARK_POSITION_INFINITY );
+						((CCmdUI *)pExtra)->Enable( editable && bookmarks.__getNearestNextBookmarkPosition__(cursor.position+1)<BOOKMARK_POSITION_INFINITY );
 						return TRUE;
 					//case ID_PREV,ID_NEXT,ID_ADDRESS:
 						//nop (traversal across Records is always available)
