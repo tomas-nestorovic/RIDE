@@ -349,7 +349,8 @@ cursorCorrectlyMoveTo:	// . adjusting the Cursor's Position
 								RepaintData(); // ... invalidating the content as the Selection may no longer be valid (e.g. may be deselected)
 							cursor.__detectNewSelection__();
 						}
-						cursor.selectionZ=cursor.position;
+						if (cursor.selectionA>=0) // affecting end of Selection only if its beginning already set
+							cursor.selectionZ=cursor.position;
 cursorRefresh:			// . refreshing the Cursor
 						HideCaret();
 							// : scrolling if Cursor has been moved to an invisible part of the File content
