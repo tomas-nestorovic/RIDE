@@ -23,6 +23,10 @@
 		if (::GetAsyncKeyState(VK_SHIFT)>=0) // if Shift NOT pressed ...
 			selectionA=position;	// ... we have detected a new Selection
 	}
+	void CHexaEditor::TCursor::__cancelSelection__(){
+		// sets that nothing is selected
+		selectionA = selectionZ = -1;
+	}
 
 
 
@@ -106,8 +110,6 @@
 
 
 
-
-	#define SELECTION_CANCEL()	cursor.selectionA=cursor.selectionZ=-1; // cancelling the Selection
 
 	void CHexaEditor::SetEditable(bool _editable){
 		// enables/disables possibility to edit the content of the File (see the Reset function)
@@ -423,7 +425,7 @@ deleteSelection:		UINT posSrc=max(cursor.selectionA,cursor.selectionZ), posDst=m
 						}
 						// . moving the content "after" Selection "to" the position of the Selection
 						cursor.position=posDst; // moving the Cursor
-						SELECTION_CANCEL()
+						cursor.__cancelSelection__();
 						for( DWORD nBytesToMove=f->GetLength()-posSrc; nBytesToMove; ){
 							BYTE buf[65536];
 							f->Seek(posSrc,CFile::begin);
@@ -469,7 +471,7 @@ deleteSelection:		UINT posSrc=max(cursor.selectionA,cursor.selectionZ), posDst=m
 							if (wParam>='0' && wParam<='9'){
 								wParam-='0';
 changeHalfbyte:					if (cursor.position<maxFileSize){
-									SELECTION_CANCEL()
+									cursor.__cancelSelection__();
 									BYTE b=0;
 									f->Seek(cursor.position,CFile::begin);
 									f->Read(&b,1);
@@ -496,7 +498,7 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 					// Ascii modification
 					if (::GetAsyncKeyState(VK_CONTROL)>=0 && ::isprint(wParam)) // Ctrl not pressed, thus character printable
 						if (cursor.position<maxFileSize){
-							SELECTION_CANCEL()
+							cursor.__cancelSelection__();
 							f->Seek( cursor.position++ ,CFile::begin);
 							f->Write(&wParam,1);
 							RepaintData();
@@ -583,7 +585,7 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 						goto cursorRefresh;
 					case ID_EDIT_SELECT_NONE:
 						// removing current selection
-						SELECTION_CANCEL()
+						cursor.__cancelSelection__();
 						RepaintData();
 						goto cursorRefresh;
 					case ID_EDIT_SELECT_CURRENT:{
@@ -611,7 +613,7 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 								f->Seek(cursor.position,CFile::begin);
 								const DWORD lengthLimit=maxFileSize-cursor.position;
 								if (length<=lengthLimit){
-									SELECTION_CANCEL()
+									cursor.__cancelSelection__();
 									f->Write( ++p, length );
 									cursor.position+=length;
 								}else{
@@ -707,7 +709,7 @@ leftMouseDragged:
 				else{
 					// outside any area
 					if (!mouseDragged){ // if right now mouse button pressed ...
-						SELECTION_CANCEL(); // ... unselecting everything
+						cursor.__cancelSelection__(); // ... unselecting everything
 						RepaintData(); // ... and painting the result
 					}
 					break;
@@ -763,6 +765,22 @@ leftMouseDragged:
 				::DestroyCaret();
 				return 0;
 			}
+			case EM_SETSEL:
+				// sets current Selection, moving Cursor to the end of the Selection
+				if (wParam==lParam){
+					// just changing Cursor's current Position
+					cursor.position=wParam;
+					cursor.__cancelSelection__();
+				}else{
+					// setting current Selection
+					if (wParam>lParam){
+						const int tmp=wParam; wParam=lParam; lParam=tmp;
+					}
+					cursor.selectionA=max(0,wParam);
+					cursor.selectionZ = cursor.position = min(lParam,maxFileSize);
+				}
+				RepaintData();
+				goto cursorRefresh;
 			case WM_ERASEBKGND:
 				// drawing the background
 				return TRUE; // nop (always drawing over existing content)

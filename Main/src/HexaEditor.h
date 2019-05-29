@@ -47,6 +47,7 @@
 			int selectionA,selectionZ; // beginning (including) and end (excluding)
 			TCursor(int position); // ctor
 			void __detectNewSelection__();
+			inline void __cancelSelection__();
 		} cursor;
 		class CBookmarks sealed:CDWordArray{
 		public:
