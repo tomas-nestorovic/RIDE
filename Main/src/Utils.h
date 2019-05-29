@@ -63,6 +63,7 @@ namespace Utils{
 	bool RetryCancel(LPCTSTR text);
 	bool RetryCancel(TStdWinError causeOfError);
 	void Warning(LPCTSTR text);
+	bool EnableDlgControl(HWND hDlg,WORD controlId,bool enabled);
 	bool EnableDlgControls(HWND hDlg,PCWORD buttonIds,bool enabled);
 	void BytesToHigherUnits(DWORD bytes,float &rHigherUnit,LPCTSTR &rHigherUnitName);
 	void NavigateToUrlInDefaultBrowser(LPCTSTR url);
@@ -83,6 +84,8 @@ namespace Utils{
 	CFile &WriteToFile(CFile &f,double number);
 	PTCHAR GetApplicationOnlineFileUrl(LPCTSTR documentName,PTCHAR buffer);
 	PTCHAR GetApplicationOnlineHtmlDocumentUrl(LPCTSTR documentName,PTCHAR buffer);
+	HMENU GetSubmenuByContainedCommand(HMENU hMenu,WORD cmd,PBYTE pOutSubmenuPosition=nullptr);
+	HMENU CreateSubmenuByContainedCommand(UINT menuResourceId,WORD cmd,PBYTE pOutSubmenuPosition=nullptr);
 	TStdWinError DownloadSingleFile(LPCTSTR onlineFileUrl,PBYTE fileDataBuffer,DWORD fileDataBufferLength,PDWORD pDownloadedFileSize,LPCTSTR fatalErrorConsequence);
 }
 

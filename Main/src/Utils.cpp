@@ -461,6 +461,12 @@ namespace Utils{
 		::MessageBox(0,text,_T("Warning"),MB_ICONINFORMATION|MB_TASKMODAL);
 	}
 
+	bool EnableDlgControl(HWND hDlg,WORD controlId,bool enabled){
+		// enables/disables the specified Dialog control and returns this new state
+		::EnableWindow( ::GetDlgItem(hDlg,controlId), enabled );
+		return enabled;
+	}
+
 	bool EnableDlgControls(HWND hDlg,PCWORD controlIds,bool enabled){
 		// enables/disables all specified Dialog controls and returns this new state
 		while (const WORD id=*controlIds++)
@@ -775,7 +781,30 @@ namespace Utils{
 		return ::lstrcat( GetApplicationOnlineFileUrl(_T("html/"),buffer), documentName );
 	}
 
+	HMENU GetSubmenuByContainedCommand(HMENU hMenu,WORD cmd,PBYTE pOutSubmenuPosition){
+		// returns an immediate Submenu that contains the specified Command; returns Null if none of immediate submenus contains the Command
+		for( BYTE i=0; i<::GetMenuItemCount(hMenu); i++ )
+			if (const HMENU hSubmenu=::GetSubMenu(hMenu,i))
+				if (::GetMenuPosFromID(hSubmenu,cmd)>=0){
+					if (pOutSubmenuPosition) *pOutSubmenuPosition=i;
+					return hSubmenu;
+				}
+		return nullptr; // none of the immediate Submenus contains the specified Command
+	}
 
+	HMENU CreateSubmenuByContainedCommand(UINT menuResourceId,WORD cmd,PBYTE pOutSubmenuPosition){
+		// returns an immediate Submenu that contains the specified Command; returns Null if none of immediate submenus contains the Command
+		CMenu m;
+		if (m.LoadMenu(menuResourceId)){
+			BYTE pos;
+			if (const HMENU hSubmenu=GetSubmenuByContainedCommand( *m.GetSubMenu(0), cmd, &pos )){
+				m.GetSubMenu(0)->RemoveMenu( pos, MF_BYPOSITION ); // "detaching" the Submenu from the parent
+				if (pOutSubmenuPosition) *pOutSubmenuPosition=pos;
+				return hSubmenu;
+			}
+		}
+		return nullptr; // none of the immediate Submenus contains the specified Command
+	}
 
 
 
