@@ -78,7 +78,7 @@
 
 	const CHexaEditor::TEmphasis CHexaEditor::TEmphasis::Terminator={ -1, -1 };
 
-	CHexaEditor::CHexaEditor(PVOID param,PCSubmenuItem customSelectSubmenu,PCSubmenuItem customGotoSubmenu)
+	CHexaEditor::CHexaEditor(PVOID param,HMENU customSelectSubmenu,HMENU customGotoSubmenu)
 		// ctor
 		// - initialization
 		: font(_T("Courier New"),105,false,true)
@@ -93,23 +93,11 @@
 				? recordSize%128==0 // case: Record spans over entire Sectors
 				: 128%recordSize==0 // case: Sector contains integral multiple of Records
 			);*/
-		// - creating the custom Accelerators table
-		ACCEL accelerators[80]; BYTE nAccels=0;
-		if (customSelectSubmenu)
-			for( PCSubmenuItem psi=customSelectSubmenu; psi->name!=nullptr; psi++ )
-				if (psi->accel.key!='\0')
-					accelerators[nAccels++]=psi->accel;
-		if (customGotoSubmenu)
-			for( PCSubmenuItem psi=customGotoSubmenu; psi->name!=nullptr; psi++ )
-				if (psi->accel.key!='\0')
-					accelerators[nAccels++]=psi->accel;
-		hAdditionalAccelerators=::CreateAcceleratorTable( accelerators, nAccels );
 	}
 
 	CHexaEditor::~CHexaEditor(){
 		// dtor
-		// - destroying the Accelerator tables
-		::DestroyAcceleratorTable(hAdditionalAccelerators);
+		// - destroying the Accelerator table
 		::DestroyAcceleratorTable(hDefaultAccelerators);
 	}
 
@@ -519,30 +507,24 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 			case WM_CONTEXTMENU:{
 				// context menu invocation
 				if (!editable) return 0; // if window disabled, no context actions can be performed
-				CMenu mnu;
-				mnu.LoadMenu(IDR_HEXAEDITOR);
-				mnu.GetSubMenu(0)->EnableMenuItem( ID_BOOKMARK_TOGGLE, (MF_DISABLED|MF_GRAYED)*(cursor.selectionA!=cursor.selectionZ) );
-				mnu.GetSubMenu(0)->CheckMenuItem( ID_BOOKMARK_TOGGLE, MF_CHECKED*(bookmarks.__getNearestNextBookmarkPosition__(cursor.position)==cursor.position) );
-				if (customSelectSubmenu) // custom "Select" submenu
-					if (CMenu *const pSelectSubmenu=mnu.GetSubMenu(0)->GetSubMenu(6)){ // 6 = "Select" submenu in IDR_HEXAEDITOR menu
-						while (pSelectSubmenu->GetMenuItemCount()) // clearing the submenu
-							pSelectSubmenu->RemoveMenu( 0, MF_BYPOSITION );
-						for( PCSubmenuItem psi=customSelectSubmenu; psi->name!=nullptr; psi++ )
-							if (*psi->name!='\0')
-								pSelectSubmenu->AppendMenu( MF_STRING, psi->accel.cmd, psi->name );
-							else
-								pSelectSubmenu->AppendMenu( MF_SEPARATOR );
-					}
-				if (customGotoSubmenu) // custom "Go to" submenu
-					if (CMenu *const pGotoSubmenu=mnu.GetSubMenu(0)->GetSubMenu(8)){ // 8 = "Select" submenu in IDR_HEXAEDITOR menu
-						while (pGotoSubmenu->GetMenuItemCount()) // clearing the submenu
-							pGotoSubmenu->RemoveMenu( 0, MF_BYPOSITION );
-						for( PCSubmenuItem psi=customGotoSubmenu; psi->name!=nullptr; psi++ )
-							if (*psi->name!='\0')
-								pGotoSubmenu->AppendMenu( MF_STRING, psi->accel.cmd, psi->name );
-							else
-								pGotoSubmenu->AppendMenu( MF_SEPARATOR );
-					}
+				CMenu contextMenu;
+				contextMenu.LoadMenu(IDR_HEXAEDITOR);
+				CMenu &mnu=*contextMenu.GetSubMenu(0);
+				mnu.EnableMenuItem( ID_BOOKMARK_TOGGLE, (MF_DISABLED|MF_GRAYED)*(cursor.selectionA!=cursor.selectionZ) );
+				mnu.CheckMenuItem( ID_BOOKMARK_TOGGLE, MF_CHECKED*(bookmarks.__getNearestNextBookmarkPosition__(cursor.position)==cursor.position) );
+				BYTE iSelectSubmenu, iGotoSubmenu;
+				if (customSelectSubmenu){ // custom "Select" submenu
+					const HMENU hSubmenu=Utils::GetSubmenuByContainedCommand( mnu, ID_EDIT_SELECT_ALL, &iSelectSubmenu );
+					TCHAR buf[80];
+					mnu.GetMenuString( iSelectSubmenu, buf, sizeof(buf)/sizeof(TCHAR), MF_BYPOSITION );
+					mnu.ModifyMenu( iSelectSubmenu, MF_BYPOSITION|MF_POPUP, (UINT_PTR)customSelectSubmenu, buf );
+				}
+				if (customGotoSubmenu){ // custom "Go to" submenu
+					const HMENU hSubmenu=Utils::GetSubmenuByContainedCommand( mnu, ID_NAVIGATE_ADDRESS, &iGotoSubmenu );
+					TCHAR buf[80];
+					mnu.GetMenuString( iGotoSubmenu, buf, sizeof(buf)/sizeof(TCHAR), MF_BYPOSITION );
+					mnu.ModifyMenu( iGotoSubmenu, MF_BYPOSITION|MF_POPUP, (UINT_PTR)customGotoSubmenu, buf );
+				}
 				register union{
 					struct{ short x,y; };
 					int i;
@@ -553,8 +535,13 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 					ClientToScreen(&caretPos);
 					x=caretPos.x+(1+!cursor.ascii)*font.charAvgWidth, y=caretPos.y+font.charHeight;
 				}
-				wParam=mnu.GetSubMenu(0)->TrackPopupMenu( TPM_RETURNCMD, x,y, this );
-				//fallthrough
+				if ( wParam=mnu.TrackPopupMenu( TPM_RETURNCMD, x,y, this ) )
+					OnCmdMsg( wParam, CN_COMMAND, nullptr, nullptr );
+				if (customGotoSubmenu) // custom "Go to" submenu
+					mnu.RemoveMenu( iGotoSubmenu, MF_BYPOSITION ); // "detaching" the Submenu from the parent
+				if (customSelectSubmenu) // custom "Select" submenu
+					mnu.RemoveMenu( iSelectSubmenu, MF_BYPOSITION ); // "detaching" the Submenu from the parent
+				return 0;
 			}
 			case WM_COMMAND:
 				// processing a command
@@ -1009,11 +996,9 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 						((CCmdUI *)pExtra)->Enable( editable && odo.IsDataAvailable(cfBinary) );
 						return TRUE;
 					}
-					case ID_EDIT_DELETE:
-						((CCmdUI *)pExtra)->Enable(editable);
-						return TRUE;
 					case ID_BOOKMARK_TOGGLE:
-						((CCmdUI *)pExtra)->SetCheck( editable && bookmarks.__getNearestNextBookmarkPosition__(cursor.position)==cursor.position );
+						((CCmdUI *)pExtra)->SetCheck(bookmarks.__getNearestNextBookmarkPosition__(cursor.position)==cursor.position );
+						((CCmdUI *)pExtra)->Enable(editable);
 						return TRUE;
 					case ID_BOOKMARK_PREV:
 						((CCmdUI *)pExtra)->Enable( editable && bookmarks.__getNearestNextBookmarkPosition__(0)<cursor.position );
@@ -1021,8 +1006,11 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 					case ID_BOOKMARK_NEXT:
 						((CCmdUI *)pExtra)->Enable( editable && bookmarks.__getNearestNextBookmarkPosition__(cursor.position+1)<BOOKMARK_POSITION_INFINITY );
 						return TRUE;
-					//case ID_PREV,ID_NEXT,ID_ADDRESS:
-						//nop (traversal across Records is always available)
+					case ID_IMAGE_PROTECT:
+						break; // leaving up to a higher logic to decide if write-protection can be removed
+					default:
+						((CCmdUI *)pExtra)->Enable(editable);
+						return TRUE;
 				}
 				break;
 			case CN_COMMAND:
@@ -1051,9 +1039,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 	BOOL CHexaEditor::PreTranslateMessage(PMSG pMsg){
 		// pre-processing the Message
 		return	::GetFocus()==m_hWnd
-				?	::TranslateAccelerator(m_hWnd,hAdditionalAccelerators,pMsg)
-					||
-					::TranslateAccelerator(m_hWnd,hDefaultAccelerators,pMsg)
+				?	::TranslateAccelerator(m_hWnd,hDefaultAccelerators,pMsg)
 				: FALSE;
 	}
 

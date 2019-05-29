@@ -13,12 +13,6 @@
 			virtual int RowToLogicalPosition(int row,BYTE nBytesInRow)=0;
 			virtual LPCTSTR GetRecordLabel(int logPos,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const=0;
 		} *PContentAdviser;
-
-		#pragma pack(1)
-		typedef const struct TSubmenuItem sealed{
-			LPCTSTR name;
-			ACCEL accel;
-		} *PCSubmenuItem;
 	private:
 		class COleBinaryDataSource sealed:public COleDataSource{
 			CFile *const f;
@@ -40,9 +34,7 @@
 
 		const PVOID param;
 		const CRideFont font;
-		const PCSubmenuItem customSelectSubmenu, customGotoSubmenu;
 		const HACCEL hDefaultAccelerators;
-		HACCEL hAdditionalAccelerators;
 		BYTE nBytesInRow;
 		DWORD nLogicalRows;
 		DWORD nRowsDisplayed;
@@ -79,11 +71,13 @@
 		void __refreshCursorDisplay__() const;
 		void __showMessage__(LPCTSTR msg) const;
 	protected:
+		const HMENU customSelectSubmenu, customGotoSubmenu;
+
 		void PostNcDestroy() override sealed;
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override; // enabling/disabling ToolBar buttons
 	public:
-		CHexaEditor(PVOID param,PCSubmenuItem customSelectSubmenu=nullptr,PCSubmenuItem customGotoSubmenu=nullptr);
+		CHexaEditor(PVOID param,HMENU customSelectSubmenu=nullptr,HMENU customGotoSubmenu=nullptr);
 		~CHexaEditor();
 
 		void SetEditable(bool _editable);
