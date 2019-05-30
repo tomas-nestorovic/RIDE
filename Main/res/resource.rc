@@ -304,7 +304,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Copy\tCtrl+C",                ID_EDIT_COPY
         MENUITEM "Paste\tCtrl+V",               ID_EDIT_PASTE
-        MENUITEM "Delete\tDel",                 ID_DELETE
+        MENUITEM "Delete\tDel",                 ID_EDIT_DELETE
         MENUITEM SEPARATOR
         POPUP "Select"
         BEGIN
@@ -476,7 +476,7 @@ BEGIN
     BUTTON      ID_EDIT_COPY
     BUTTON      ID_EDIT_PASTE
     SEPARATOR
-    BUTTON      ID_DELETE
+    BUTTON      ID_EDIT_DELETE
     SEPARATOR
     BUTTON      ID_BOOKMARK_TOGGLE
     BUTTON      ID_BOOKMARK_PREV

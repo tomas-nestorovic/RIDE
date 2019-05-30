@@ -628,7 +628,7 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 						RepaintData();
 						goto cursorRefresh;
 					}
-					case ID_DELETE:
+					case ID_EDIT_DELETE:
 						// deleting content of the current selection
 						goto editDelete;
 					case ID_NEXT:{
@@ -1046,7 +1046,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 					case ID_BOOKMARK_NEXT:
 					case ID_NEXT:
 					case ID_PREV:
-					case ID_ADDRESS:
+					case ID_NAVIGATE_ADDRESS:
 						WindowProc( WM_COMMAND, nID, 0 );
 						return TRUE;
 				}

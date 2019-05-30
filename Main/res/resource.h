@@ -196,10 +196,12 @@
 #define ID_ZX_BASIC_BINARY_SHOWNUMBER   40219
 #define ID_HELP_REPORT_BUG              40221
 #define ID_FILEMANAGER_DIR_HEXAMODE     40223
-#define ID_BOOKMARK_NEXT                40229
+#define ID_EDIT_DELETE                  40227
+#define ID_BOOKMARK_NEXT                40230
 #define ID_EDIT_SELECT_CURRENT          40239
 #define ID_BOOKMARK_PREV                40240
 #define ID_NAVIGATE_ADDRESS             40241
+#define ID_BOOKMARK_DELETEALL           40257
 #define ID_Y                            58113
 #define ID_W                            58114
 #define ID_H                            58115
@@ -212,7 +214,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        206
-#define _APS_NEXT_COMMAND_VALUE         40242
+#define _APS_NEXT_COMMAND_VALUE         40258
 #define _APS_NEXT_CONTROL_VALUE         1171
 #define _APS_NEXT_SYMED_VALUE           103
 #endif
