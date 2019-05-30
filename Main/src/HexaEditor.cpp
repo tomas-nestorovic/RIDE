@@ -111,6 +111,11 @@
 
 
 
+	int CHexaEditor::__getCursorPos__() const{
+		// returns Cursor's current Position
+		return cursor.position;
+	}
+
 	void CHexaEditor::SetEditable(bool _editable){
 		// enables/disables possibility to edit the content of the File (see the Reset function)
 		editable=_editable;

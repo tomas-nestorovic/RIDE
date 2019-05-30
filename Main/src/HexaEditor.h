@@ -74,6 +74,7 @@
 	protected:
 		const HMENU customSelectSubmenu, customGotoSubmenu;
 
+		int __getCursorPos__() const;
 		void PostNcDestroy() override sealed;
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override; // enabling/disabling ToolBar buttons

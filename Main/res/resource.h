@@ -40,6 +40,8 @@
 #define IDR_DOS_RECOGNITION             189
 #define IDR_SPECTRUM_PREVIEW_BASIC      193
 #define IDR_HEXAEDITOR_GOTOADDRESS      205
+#define IDR_DISKBROWSER                 206
+#define IDR_DISKBROWSER_GOTOSECTOR      207
 #define ID_HIDDEN                       1018
 #define ID_SYSTEM                       1019
 #define ID_CONNECTED                    1020
@@ -201,6 +203,13 @@
 #define ID_EDIT_SELECT_CURRENT          40239
 #define ID_BOOKMARK_PREV                40240
 #define ID_NAVIGATE_ADDRESS             40241
+#define ID_SELECT_CURRENT_TRACK         40246
+#define ID_SELECT_CURRENT_CYLINDER      40247
+#define ID_NAVIGATE_PREVIOUSCYLINDER    40248
+#define ID_NAVIGATE_NEXTCYLINDER        40251
+#define ID_NAVIGATE_NEXTTRACK           40252
+#define ID_NAVIGATE_PREVIOUSTRACK       40253
+#define ID_NAVIGATE_SECTOR              40254
 #define ID_BOOKMARK_DELETEALL           40257
 #define ID_Y                            58113
 #define ID_W                            58114
@@ -213,7 +222,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        206
+#define _APS_NEXT_RESOURCE_VALUE        208
 #define _APS_NEXT_COMMAND_VALUE         40258
 #define _APS_NEXT_CONTROL_VALUE         1171
 #define _APS_NEXT_SYMED_VALUE           103

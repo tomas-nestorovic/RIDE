@@ -112,6 +112,19 @@ BEGIN
     VK_PRIOR,       ID_PREV,                VIRTKEY, CONTROL, NOINVERT
 END
 
+IDR_DISKBROWSER ACCELERATORS DISCARDABLE 
+BEGIN
+    "G",            ID_NAVIGATE_SECTOR,     VIRTKEY, SHIFT, CONTROL, 
+                                                    NOINVERT
+    "R",            ID_SELECT_CURRENT_TRACK, VIRTKEY, SHIFT, CONTROL, 
+                                                    NOINVERT
+    VK_NEXT,        ID_NAVIGATE_NEXTTRACK,  VIRTKEY, SHIFT, CONTROL, 
+                                                    NOINVERT
+    VK_PRIOR,       ID_NAVIGATE_PREVIOUSTRACK, VIRTKEY, SHIFT, CONTROL, 
+                                                    NOINVERT
+END
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Menu
@@ -399,6 +412,47 @@ BEGIN
         MENUITEM "Previous file\tLeft",         ID_PREV
         MENUITEM SEPARATOR
         MENUITEM "Close\tEsc",                  IDCLOSE
+    END
+END
+
+IDR_DISKBROWSER MENU DISCARDABLE 
+BEGIN
+    POPUP "Disk browser"
+    BEGIN
+        MENUITEM "Bookmark at cursor\tCtrl+K",  ID_BOOKMARK_TOGGLE
+        MENUITEM "Delete all bookmarks",        ID_BOOKMARK_DELETEALL
+        MENUITEM SEPARATOR
+        MENUITEM "Copy\tCtrl+C",                ID_EDIT_COPY
+        MENUITEM "Paste\tCtrl+V",               ID_EDIT_PASTE
+        MENUITEM "Delete\tDel",                 ID_EDIT_DELETE
+        MENUITEM SEPARATOR
+        POPUP "Select"
+        BEGIN
+            MENUITEM "All\tCtrl+A",                 ID_EDIT_SELECT_ALL
+            MENUITEM "Nothing\tCtrl+Shift+A",       ID_EDIT_SELECT_NONE
+            MENUITEM SEPARATOR
+            MENUITEM "Current sector\tCtrl+R",      ID_EDIT_SELECT_CURRENT
+            MENUITEM "Current track\tCtrl+Shift+R", ID_SELECT_CURRENT_TRACK
+            MENUITEM "Current cylinder",            ID_SELECT_CURRENT_CYLINDER
+        END
+        MENUITEM SEPARATOR
+        POPUP "Go to"
+        BEGIN
+            MENUITEM "Previous cylinder",           ID_NAVIGATE_PREVIOUSCYLINDER
+            MENUITEM "Previous track\tCtrl+Shift+PgUp", 
+                                                    ID_NAVIGATE_PREVIOUSTRACK
+
+            MENUITEM "Previous sector\tCtrl+PgUp",  ID_PREV
+            MENUITEM "Sector...\tCtrl+Shift+G",     ID_NAVIGATE_SECTOR
+            MENUITEM "Next sector\tCtrl+PgDown",    ID_NEXT
+            MENUITEM "Next track\tCtrl+Shift+PgDown", ID_NAVIGATE_NEXTTRACK
+            MENUITEM "Next cylinder",               ID_NAVIGATE_NEXTCYLINDER
+            MENUITEM SEPARATOR
+            MENUITEM "Previous bookmark\tCtrl+F11", ID_BOOKMARK_PREV
+            MENUITEM "Next bookmark\tCtrl+F12",     ID_BOOKMARK_NEXT
+            MENUITEM SEPARATOR
+            MENUITEM "Address...\tCtrl+G",          ID_NAVIGATE_ADDRESS
+        END
     END
 END
 
@@ -1141,6 +1195,26 @@ BEGIN
     PUSHBUTTON      "Cancel",IDCANCEL,95,44,50,14
 END
 
+IDR_DISKBROWSER_GOTOSECTOR DIALOG DISCARDABLE  0, 0, 260, 138
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
+CAPTION "Go to sector"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "&Cylinder:",IDC_STATIC,7,7,28,8,NOT WS_GROUP
+    LISTBOX         ID_CYLINDER,7,18,53,87,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | 
+                    WS_TABSTOP
+    LTEXT           "&Head",IDC_STATIC,81,7,18,8,NOT WS_GROUP
+    LISTBOX         ID_HEAD,81,18,53,87,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | 
+                    WS_TABSTOP
+    LTEXT           "&Sector ID",IDC_STATIC,155,7,31,8,NOT WS_GROUP
+    LISTBOX         ID_SECTOR,155,17,98,87,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | 
+                    WS_TABSTOP
+    DEFPUSHBUTTON   "OK",IDOK,150,117,50,14,WS_DISABLED
+    PUSHBUTTON      "Cancel",IDCANCEL,203,117,50,14
+    CTEXT           ">",ID_CYLINDER_N,62,53,18,14,SS_CENTERIMAGE | NOT 
+                    WS_GROUP
+    CTEXT           ">",ID_TRACK,135,53,18,14,SS_CENTERIMAGE | NOT WS_GROUP
+END
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -1352,6 +1426,14 @@ BEGIN
         RIGHTMARGIN, 145
         TOPMARGIN, 7
         BOTTOMMARGIN, 58
+    END
+
+    IDR_DISKBROWSER_GOTOSECTOR, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 253
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 131
     END
 END
 #endif    // APSTUDIO_INVOKED
