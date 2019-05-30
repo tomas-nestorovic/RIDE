@@ -2,7 +2,8 @@
 
 	CImage::CSectorDataSerializer::CSectorDataSerializer(CHexaEditor *pParentHexaEditor,PImage image,DWORD dataTotalLength)
 		// ctor
-		: pParentHexaEditor(pParentHexaEditor) , image(image) , dataTotalLength(dataTotalLength) , position(0) {
+		: pParentHexaEditor(pParentHexaEditor) , image(image) , dataTotalLength(dataTotalLength) , position(0) , currTrack(0) {
+		sector.indexOnTrack=0, sector.offset=0;
 	}
 
 
@@ -56,7 +57,7 @@
 		bool readWithoutCrcError=true; // assumption
 		WORD w; TFdcStatus sr;
 		while (true)
-			if (const PCSectorData sectorData=image->GetSectorData(sector.chs,0,true,&w,&sr)){
+			if (const PCSectorData sectorData=image->GetSectorData(GetCurrentPhysicalAddress(),sector.indexOnTrack,true,&w,&sr)){
 				if (!w) // e.g. reading Sector with LengthCode 231 - such Sector has by default no data (a pointer to zero-length data has been returned by GetSectorData)
 					break;
 				readWithoutCrcError&=sr.IsWithoutError();
@@ -81,11 +82,12 @@
 		// tries to write given NumberOfBytes from the Buffer to the current Position (increments the Position by the number of Bytes actually written)
 		nCount=min( nCount, dataTotalLength-position );
 		WORD w; TFdcStatus sr;
-		while (true)
-			if (const PSectorData sectorData=image->GetSectorData(sector.chs,0,false,&w,&sr)){ // False = freezing the state of data (eventually erroneous)
+		while (true){
+			const TPhysicalAddress chs=GetCurrentPhysicalAddress();
+			if (const PSectorData sectorData=image->GetSectorData(chs,sector.indexOnTrack,false,&w,&sr)){ // False = freezing the state of data (eventually erroneous)
 				if (!w) // e.g. reading Sector with LengthCode 231 - such Sector has by default no data (a pointer to zero-length data has been returned by GetSectorData)
 					break;
-				image->MarkSectorAsDirty(sector.chs,0,&sr);
+				image->MarkSectorAsDirty(chs,sector.indexOnTrack,&sr);
 				w-=sector.offset;
 				if (w<nCount){
 					::memcpy(sectorData+sector.offset,lpBuf,w);
@@ -98,4 +100,10 @@
 				}
 			}else
 				break;
+		}
+	}
+
+	TTrack CImage::CSectorDataSerializer::GetCurrentSectorIndexOnTrack() const{
+		// returns the zero-based index of current Sector on the Track
+		return sector.indexOnTrack;
 	}

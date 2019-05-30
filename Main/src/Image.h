@@ -28,7 +28,7 @@
 	typedef const THead *PCHead;
 	typedef const TSide *PCSide;
 	typedef const TSector *PCSector;
-	typedef WORD TTrack;
+	typedef WORD TTrack,*PTrack;
 
 	#define FDD_CYLINDERS_MAX	82
 	#define FDD_SECTORS_MAX		64
@@ -210,8 +210,9 @@
 			const PImage image;
 			DWORD dataTotalLength;
 			DWORD position;
+			TTrack currTrack; // Track (inferred from Position) to currently read from or write to
 			struct{ // Sector (inferred from Position) to currently read from or write to
-				TPhysicalAddress chs;
+				BYTE indexOnTrack; // zero-based index of the Sector on the Track (to distinguish among duplicate-ID Sectors)
 				WORD offset;
 			} sector;
 
@@ -223,6 +224,9 @@
 			LONG Seek(LONG lOff,UINT nFrom) override;
 			UINT Read(LPVOID lpBuf,UINT nCount) override sealed;
 			void Write(LPCVOID lpBuf,UINT nCount) override sealed;
+			TTrack GetCurrentSectorIndexOnTrack() const;
+			virtual TPhysicalAddress GetCurrentPhysicalAddress() const=0;
+			virtual DWORD GetSectorStartPosition(RCPhysicalAddress chs,BYTE nSectorsToSkip) const=0;
 		};
 
 		static CPtrList known; // list of known Images (registered in CRideApp::InitInstance)

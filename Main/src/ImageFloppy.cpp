@@ -163,7 +163,7 @@
 				::WaitForSingleObject( trackWorker, INFINITE );
 			}
 
-			bool __getPhysicalAddress__(int logPos,TPhysicalAddress *pOutChs,PBYTE pOutTrack,PWORD pOutSectorOffset) const{
+			bool __getPhysicalAddress__(int logPos,PTrack pOutTrack,PBYTE pOutSectorIndexOnTrack,PWORD pOutSectorOffset) const{
 				// returns the ScannedTrack that contains the specified LogicalPosition
 				if (logPos<0 || logPos>=dataTotalLength)
 					return false;
@@ -177,13 +177,10 @@
 							while (( pos-=lengths[--nSectors] )>logPos);
 							if (pOutSectorOffset)
 								*pOutSectorOffset=logPos-pos;
+							if (pOutSectorIndexOnTrack)
+								*pOutSectorIndexOnTrack=nSectors;
 							if (pOutTrack)
 								*pOutTrack=track;
-							if (pOutChs){
-								pOutChs->cylinder = track>>1;
-								pOutChs->head = track&1;
-								pOutChs->sectorId = ids[nSectors];
-							}
 							return true;
 						}//else
 							// empty Track - skipping it
@@ -195,7 +192,28 @@
 			LONG Seek(LONG lOff,UINT nFrom) override{
 				// sets the actual Position in the Serializer
 				const LONG result=__super::Seek(lOff,nFrom);
-				bChsValid=__getPhysicalAddress__( result, &sector.chs, nullptr, &sector.offset );
+				bChsValid=__getPhysicalAddress__( result, &currTrack, &sector.indexOnTrack, &sector.offset );
+				return result;
+			}
+			TPhysicalAddress GetCurrentPhysicalAddress() const override{
+				// returns the current Sector's PhysicalAddress
+				TSectorId ids[FDD_SECTORS_MAX];
+				__scanTrack__(currTrack,ids,nullptr);
+				const TPhysicalAddress result={ currTrack>>1, currTrack&1, ids[sector.indexOnTrack] };
+				return result;
+			}
+			DWORD GetSectorStartPosition(RCPhysicalAddress chs,BYTE nSectorsToSkip) const override{
+				// computes and returns the position of the first Byte of the Sector at the PhysicalAddress
+				const BYTE track=chs.cylinder*2+chs.head;
+				if (track>=scannedTracks.n)
+					return dataTotalLength;
+				DWORD result=scannedTracks.infos[track].logicalPosition;
+				TSectorId ids[FDD_SECTORS_MAX]; WORD lengths[FDD_SECTORS_MAX];
+				for( TSector s=0,const nSectors=__scanTrack__(track,ids,lengths); s<nSectors; result+=lengths[s++] )
+					if (nSectorsToSkip)
+						nSectorsToSkip--;
+					else if (ids[s]==chs.sectorId) // Sector IDs are equal
+						break;
 				return result;
 			}
 
@@ -215,8 +233,8 @@
 						scannedTracks.locker.Unlock();
 					}
 					// . returning the result
-					BYTE track;
-					__getPhysicalAddress__(logPos,nullptr,&track,nullptr); // guaranteed to always succeed
+					TTrack track;
+					__getPhysicalAddress__(logPos,&track,nullptr,nullptr); // guaranteed to always succeed
 					int pos=scannedTracks.infos[track+1].logicalPosition;
 					int nRows=scannedTracks.infos[track+1].nRowsAtLogicalPosition;
 					WORD lengths[FDD_SECTORS_MAX];
@@ -267,8 +285,8 @@
 			}
 			void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength,bool *pOutDataReady) override{
 				// retrieves the start logical position and length of the Record pointed to by the input LogicalPosition
-				BYTE track;
-				if (!__getPhysicalAddress__(logPos,nullptr,&track,nullptr))
+				TTrack track;
+				if (!__getPhysicalAddress__(logPos,&track,nullptr,nullptr))
 					return;
 				if (pOutRecordStartLogPos || pOutRecordLength){
 					WORD lengths[FDD_SECTORS_MAX];
@@ -289,8 +307,8 @@
 			}
 			LPCTSTR GetRecordLabel(int logPos,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override{
 				// populates the Buffer with label for the Record that STARTS at specified LogicalPosition, and returns the Buffer; returns Null if no Record starts at specified LogicalPosition
-				BYTE track;
-				if (!__getPhysicalAddress__(logPos,nullptr,&track,nullptr))
+				TTrack track;
+				if (!__getPhysicalAddress__(logPos,&track,nullptr,nullptr))
 					return nullptr;
 				TSectorId ids[FDD_SECTORS_MAX]; WORD lengths[FDD_SECTORS_MAX];
 				TSector nSectors=__scanTrack__( track, ids, lengths );
