@@ -81,7 +81,7 @@
 						}while (!::memcmp( &currChs, &f->GetCurrentPhysicalAddress(), nBytesToCompare ));
 						int selectionZ=selectionA;
 						do{
-							if (pos>=f->GetLength()) // if we would be beyond the last Sector in the Image ...
+							if (selectionZ>=f->GetLength()) // if we would be beyond the last Sector in the Image ...
 								break; // ... then this is the end of the current Track or Cylinder
 							int sectorLength;
 							f->GetRecordInfo( selectionZ, nullptr, &sectorLength, nullptr );
