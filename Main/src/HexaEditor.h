@@ -53,6 +53,7 @@
 		public:
 			void __addBookmark__(int logPos);
 			void __removeBookmark__(int logPos);
+			void __removeAllBookmarks__();
 			int __getNearestNextBookmarkPosition__(int logPos) const;
 		} bookmarks;
 		PEmphasis emphases; // must be ordered ascending by A (and thus automatically also by Z)

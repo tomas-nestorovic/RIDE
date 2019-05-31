@@ -55,6 +55,10 @@
 				break;
 			}
 	}
+	void CHexaEditor::CBookmarks::__removeAllBookmarks__(){
+		// removes all Bookmarks
+		RemoveAll();
+	}
 	int CHexaEditor::CBookmarks::__getNearestNextBookmarkPosition__(int logPos) const{
 		// finds and returns the Bookmark at LogicalPosition or the nearest next Bookmark
 		WORD i=GetSize();
@@ -584,6 +588,14 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 						}else
 							break;
 					}
+					case ID_BOOKMARK_DELETEALL:
+						// deleting all Bookmarks
+						if (Utils::QuestionYesNo(_T("Sure to delete all bookmarks?"),MB_DEFBUTTON2)){
+							bookmarks.__removeAllBookmarks__();
+							RepaintData();
+							goto cursorRefresh;
+						}else
+							break;
 					case ID_EDIT_SELECT_ALL:
 						// Selecting everything
 						cursor.selectionA=0, cursor.selectionZ=cursor.position=f->GetLength();
@@ -1049,6 +1061,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 					case ID_BOOKMARK_TOGGLE:
 					case ID_BOOKMARK_PREV:
 					case ID_BOOKMARK_NEXT:
+					case ID_BOOKMARK_DELETEALL:
 					case ID_NEXT:
 					case ID_PREV:
 					case ID_NAVIGATE_ADDRESS:
