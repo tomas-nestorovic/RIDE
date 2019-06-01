@@ -58,6 +58,7 @@
 		__recognizeDisk__, // recognition function
 		__instantiate__, // instantiation function
 		TMedium::FLOPPY_DD,
+		&CMGT::Properties, // the most common Image to contain data for this DOS (e.g. *.D80 Image for MDOS)
 		1,	// number of std Formats
 		StdFormats, // std Formats
 		GDOS_TRACK_SECTORS_COUNT,GDOS_TRACK_SECTORS_COUNT, // range of supported number of Sectors

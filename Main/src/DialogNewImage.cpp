@@ -64,7 +64,9 @@
 						for( POSITION pos=CImage::known.GetHeadPosition(); pos; )
 							__checkCompatibilityAndAddToOptions__( dosProps, lb, (CImage::PCProperties)CImage::known.GetNext(pos) );
 						__checkCompatibilityAndAddToOptions__( dosProps, lb, &CFDD::Properties );
+						lb.SetCurSel( lb.FindString(0,dosProps->typicalImage->name) );
 					lb.Detach();
+					SendMessage( WM_COMMAND, MAKELONG(ID_IMAGE,LBN_SELCHANGE), (LPARAM)pImageListBox->m_hWnd );
 					return;
 				}
 		}

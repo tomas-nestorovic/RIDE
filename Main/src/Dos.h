@@ -45,6 +45,7 @@
 			TFnRecognize fnRecognize;
 			TFnInstantiate fnInstantiate;
 			TMedium::TType supportedMedia; // a set of MediumTypes this DOS supports
+			CImage::PCProperties typicalImage; // the most common Image to contain data for this DOS (e.g. *.D80 Image for MDOS)
 			// formatting
 			BYTE nStdFormats;
 			CFormatDialog::PCStdFormat stdFormats;

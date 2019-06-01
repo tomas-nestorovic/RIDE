@@ -249,6 +249,7 @@
 		__recognizeDisk__, // recognition function
 		__instantiate__, // instantiation function
 		(TMedium::TType)(TMedium::FLOPPY_DD|TMedium::FLOPPY_HD|TMedium::HDD_RAW),
+		&CImageRaw::Properties, // the most common Image to contain data for this DOS (e.g. *.D80 Image for MDOS)
 		7,	// number of std Formats
 		StdFormats, // std Formats
 		1,127, // range of supported number of Sectors

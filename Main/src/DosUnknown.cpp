@@ -16,6 +16,7 @@
 		__recognize__, // recognition function
 		__instantiate__, // instantiation function
 		TMedium::UNKNOWN, // Unknown Medium
+		nullptr, // the most common Image to contain data for this DOS (e.g. *.D80 Image for MDOS)
 		1,	// number of std Formats
 		CMDOS2::Properties.stdFormats, // std Formats ("some" Format in case of UnknownDos)
 		0,0, // range of supported number of Sectors

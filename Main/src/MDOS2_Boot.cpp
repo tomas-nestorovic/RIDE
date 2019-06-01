@@ -43,6 +43,7 @@
 		__recognizeDisk__, // recognition function
 		__instantiate__, // instantiation function
 		TMedium::FLOPPY_DD,
+		&D80::Properties, // the most common Image to contain data for this DOS (e.g. *.D80 Image for MDOS)
 		2,	// number of std Formats
 		StdFormats, // std Formats
 		1,10, // range of supported number of Sectors
