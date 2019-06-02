@@ -386,10 +386,17 @@ moveCursorUp:			const int iRow=__logicalPositionToRow__(cursor.position);
 							if (iRow<iScrollY+nRowsOnPage) goto cursorRefresh;
 						}
 						const int currRowStart=__firstByteInRowToLogicalPosition__(iRow);
-						cursor.position -=	currRowStart-__firstByteInRowToLogicalPosition__(iRow-i+1) // # of Bytes between current and "target" row to place the Cursor to (if I=1, this difference is zero)
-											+
-											max(cursor.position-currRowStart+1,
-												currRowStart-__firstByteInRowToLogicalPosition__(iRow-i)
+						const int targetRowStart=__firstByteInRowToLogicalPosition__(iRow-i);
+						cursor.position -=	max(cursor.position-__firstByteInRowToLogicalPosition__(iRow-i+1)+1,
+													// ..........			Target row
+													// .................
+													// ..........
+													// .............C...	Current row with Cursor
+												currRowStart-targetRowStart
+													// .................	..........			Target row
+													// ..........			................
+													// .................	..........
+													// .......C..			.......C........	Current row with Cursor
 											);
 						goto cursorCorrectlyMoveTo;
 					}
@@ -400,11 +407,18 @@ moveCursorDown:			const int iRow=__logicalPositionToRow__(cursor.position);
 							const int iScrollY=__scrollToRow__(GetScrollPos(SB_VERT)+i);
 							if (iRow>=iScrollY) goto cursorRefresh;
 						}
-						const int currRowStart=__firstByteInRowToLogicalPosition__(iRow), targetRowStart=__firstByteInRowToLogicalPosition__(iRow+i);
-						cursor.position +=	targetRowStart-__firstByteInRowToLogicalPosition__(iRow+1) // # of Bytes between current and "target" row to place the Cursor to (if I=1, this difference is zero)
-											+
-											min(targetRowStart-currRowStart,
+						const int currRowStart=__firstByteInRowToLogicalPosition__(iRow);
+						const int targetRowStart=__firstByteInRowToLogicalPosition__(iRow+i);
+						cursor.position +=	min(targetRowStart-currRowStart,
+													// .......C..			.......C........	Current row with Cursor
+													// .................	..........
+													// ..........			................
+													// .................	..........			Target row
 												__firstByteInRowToLogicalPosition__(iRow+i+1)-cursor.position-1
+													// .............C...	Current row with Cursor
+													// ..........
+													// .................
+													// ..........			Target row
 											);
 						goto cursorCorrectlyMoveTo;
 					}
