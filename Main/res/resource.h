@@ -42,6 +42,7 @@
 #define IDR_HEXAEDITOR_GOTOADDRESS      205
 #define IDR_DISKBROWSER                 206
 #define IDR_DISKBROWSER_GOTOSECTOR      207
+#define IDR_MSDOS_DATETIME_EDIT         208
 #define ID_HIDDEN                       1018
 #define ID_SYSTEM                       1019
 #define ID_CONNECTED                    1020
@@ -121,6 +122,8 @@
 #define ID_DATAFIELD                    1149
 #define ID_CREATOR                      1151
 #define ID_PRIORITY                     1155
+#define ID_DATE                         1171
+#define ID_TIME                         1173
 #define ID_TDI_SWITCH                   40033
 #define ID_TDI_SWITCH_BACK              40034
 #define ID_EDIT_SELECT_NONE             40057
@@ -222,9 +225,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        208
-#define _APS_NEXT_COMMAND_VALUE         40258
-#define _APS_NEXT_CONTROL_VALUE         1171
+#define _APS_NEXT_RESOURCE_VALUE        210
+#define _APS_NEXT_COMMAND_VALUE         40259
+#define _APS_NEXT_CONTROL_VALUE         1180
 #define _APS_NEXT_SYMED_VALUE           103
 #endif
 #endif

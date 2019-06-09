@@ -1216,6 +1216,22 @@ BEGIN
     CTEXT           ">",ID_TRACK,135,53,18,14,SS_CENTERIMAGE | NOT WS_GROUP
 END
 
+IDR_MSDOS_DATETIME_EDIT DIALOG DISCARDABLE  0, 0, 258, 146
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
+CAPTION "File date and time"
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "MonthCalendar1",ID_DATE,"SysMonthCal32",MCS_NOTODAY | 
+                    WS_TABSTOP,7,7,244,90
+    CONTROL         "DateTimePicker2",ID_TIME,"SysDateTimePick32",
+                    DTS_RIGHTALIGN | DTS_UPDOWN | WS_TABSTOP | 0x8,7,100,244,
+                    13
+    DEFPUSHBUTTON   "OK",IDOK,201,125,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,148,125,50,14
+    CONTROL         "<a id=""ID_REMOVE"">Remove from FAT entry</a>",
+                    ID_REMOVE,"SysLink",WS_TABSTOP,7,128,124,11
+END
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // DESIGNINFO
@@ -1434,6 +1450,14 @@ BEGIN
         RIGHTMARGIN, 253
         TOPMARGIN, 7
         BOTTOMMARGIN, 131
+    END
+
+    IDR_MSDOS_DATETIME_EDIT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 251
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 139
     END
 END
 #endif    // APSTUDIO_INVOKED

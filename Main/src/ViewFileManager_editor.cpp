@@ -120,6 +120,13 @@
 								);
 	}
 
+	CFileManagerView::PEditorBase CFileManagerView::__createStdEditorWithEllipsis__(CDos::PFile file,CPropGridCtrl::PValue value,CPropGridCtrl::TValueSize valueSize,CPropGridCtrl::TOnEllipsisButtonClicked buttonAction) const{
+		// creates and returns an Editor that contains only PropertyGrid's standard EllipsisButton and misses the main control; the EllipsisButton triggers an edit dialog with given ID
+		return __createStdEditor__(	file, value, valueSize,
+									CPropGridCtrl::TCustom::DefineEditor( 0, nullptr, nullptr, buttonAction )
+								);
+	}
+
 	CFileManagerView::PEditorBase CFileManagerView::__createStdEditorForByteValue__(CDos::PFile file,PBYTE pByte,CPropGridCtrl::TInteger::TOnValueConfirmed fnOnValueConfirmed) const{
 		// creates and returns PropertyGrid's build-in Editor for editing specified Byte value
 		return __createStdEditor__( file, pByte, sizeof(BYTE),

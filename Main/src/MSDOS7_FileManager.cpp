@@ -1,15 +1,19 @@
 #include "stdafx.h"
 #include "MSDOS7.h"
 
-	#define INFORMATION_COUNT		3
+	#define INFORMATION_COUNT		5
 	#define INFORMATION_NAME_A_EXT	0 /* column to sort by */
 	#define INFORMATION_SIZE		1 /* column to sort by */
 	#define INFORMATION_ATTRIBUTES	2 /* column to sort by */
+	#define INFORMATION_CREATED		3 /* column to sort by */
+	#define INFORMATION_MODIFIED	4 /* column to sort by */
 
 	const CFileManagerView::TFileInfo CMSDOS7::CMsdos7FileManagerView::InformationList[INFORMATION_COUNT]={
 		{ _T("Name"),		LVCFMT_LEFT,	250 },
 		{ _T("Size"),		LVCFMT_RIGHT,	70 },
-		{ _T("Attributes"), LVCFMT_RIGHT,	80 }
+		{ _T("Attributes"), LVCFMT_RIGHT,	80 },
+		{ _T("Created"),	LVCFMT_RIGHT,	190 },
+		{ _T("Modified"),	LVCFMT_RIGHT,	190 }
 	};
 
 	const CFileManagerView::TDirectoryStructureManagement CMSDOS7::CMsdos7FileManagerView::dirManagement={
@@ -156,6 +160,14 @@
 				if (!(attr&32)) *t='-';
 			::DrawText( dc, buf,-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
 		r.left=r.right;
+		// . COLUMN: date/time created
+		r.right=*tabs++;
+			TDateTime(de->shortNameEntry.timeAndDateCreated).DrawInPropGrid(dc,r);
+		r.left=r.right;
+		// . COLUMN: date/time last modified
+		r.right=*tabs++;
+			TDateTime(de->shortNameEntry.timeAndDateLastModified).DrawInPropGrid(dc,r);
+		r.left=r.right;
 	}
 
 	int CMSDOS7::CMsdos7FileManagerView::CompareFiles(PCFile file1,PCFile file2,BYTE information) const{
@@ -173,6 +185,10 @@
 				return DOS->GetFileOfficialSize(f1)-DOS->GetFileOfficialSize(f2);
 			case INFORMATION_ATTRIBUTES:
 				return f1->shortNameEntry.attributes-f2->shortNameEntry.attributes;
+			case INFORMATION_CREATED:
+				return f1->shortNameEntry.timeAndDateCreated-f2->shortNameEntry.timeAndDateCreated;
+			case INFORMATION_MODIFIED:
+				return f1->shortNameEntry.timeAndDateLastModified-f2->shortNameEntry.timeAndDateLastModified;
 		}
 		return 0;
 	}
@@ -197,6 +213,7 @@
 			return false;
 		}
 	}
+
 	bool WINAPI CMSDOS7::CMsdos7FileManagerView::__editFileAttributes__(PVOID file,PVOID,short){
 		// True <=> Attributes editing confirmed, otherwise False
 		const PDirectoryEntry de=(PDirectoryEntry)file;
@@ -224,6 +241,17 @@
 		}else
 			return false;
 	}
+
+	static bool WINAPI __editDateTime__(CPropGridCtrl::PCustomParam file,CPropGridCtrl::PValue value,CPropGridCtrl::TValueSize){
+		// True <=> date&time editing confirmed, otherwise False
+		CMSDOS7::TDateTime dt(*(PDWORD)value);
+		if (dt.Edit()){
+			dt.ToDWord( (PDWORD)value );
+			return true;
+		}else
+			return false;
+	}
+
 	CFileManagerView::PEditorBase CMSDOS7::CMsdos7FileManagerView::CreateFileInformationEditor(CDos::PFile file,BYTE infoId) const{
 		// creates and returns Editor of File's selected Information; returns Null if Information cannot be edited
 		switch (infoId){
@@ -240,6 +268,10 @@
 			}
 			case INFORMATION_ATTRIBUTES:
 				return __createStdEditorWithEllipsis__( file, __editFileAttributes__ );
+			case INFORMATION_CREATED:
+				return __createStdEditorWithEllipsis__( file, &((PDirectoryEntry)file)->shortNameEntry.timeAndDateCreated, sizeof(DWORD), __editDateTime__ );
+			case INFORMATION_MODIFIED:
+				return __createStdEditorWithEllipsis__( file, &((PDirectoryEntry)file)->shortNameEntry.timeAndDateLastModified, sizeof(DWORD), __editDateTime__ );
 			default:
 				return nullptr;
 		}
@@ -271,4 +303,119 @@
 				return ((CMSDOS7 *)DOS)->__getFileExportNameAndExt__( bufNameCopy, bufExt, shellCompliant, pOutBuffer );
 		}
 		return nullptr; // the Name for the next File copy cannot be generated
+	}
+
+
+
+
+
+
+
+
+
+
+	CMSDOS7::TDateTime::TDateTime(DWORD msdosTimeAndDate){
+		// ctor
+		FILETIME ft;
+		::DosDateTimeToFileTime( HIWORD(msdosTimeAndDate), LOWORD(msdosTimeAndDate), &ft );
+		::FileTimeToSystemTime( &ft, this );
+	}
+
+	CMSDOS7::TDateTime::TDateTime(const SYSTEMTIME &r)
+		// ctor
+		: SYSTEMTIME(r) {
+	}
+
+	LPCTSTR CMSDOS7::TDateTime::ToString(PTCHAR buf,LPCTSTR format) const{
+		// populates the Buffer with this DateTime value and returns the buffer
+		if (ToDWord(nullptr)){ // is valid in MS-DOS format?
+			static const LPCTSTR MonthAbbreviations[]={ _T("Jan"), _T("Feb"), _T("Mar"), _T("Apr"), _T("May"), _T("Jun"), _T("Jul"), _T("Aug"), _T("Sep"), _T("Oct"), _T("Nov"), _T("Dec") };
+			::wsprintf( buf, _T("%d/%s/%d, %d:%02d:%02d"), wDay, MonthAbbreviations[wMonth-1], wYear, wHour, wMinute, wSecond );
+			return buf;
+		}else
+			return nullptr;
+	}
+
+	bool CMSDOS7::TDateTime::ToDWord(PDWORD pOutResult) const{
+		// True <=> successfully packed this DateTime to a DWORD whose higher and lower Words contains MS-DOS compliant date and time, respectively, otherwise False
+		// - attempting to compose and return the result
+		FILETIME ft;
+		if (::SystemTimeToFileTime( this, &ft )){
+			WORD msdosDate, msdosTime;
+			if (::FileTimeToDosDateTime( &ft, &msdosDate, &msdosTime )){
+				if (pOutResult) *pOutResult=MAKELONG(msdosTime,msdosDate);
+				return true;
+			}
+		}
+		// - the SystemTime contains values that CANNOT be represented in MS-DOS format
+		if (pOutResult) *pOutResult=0; // 0 = begin of MS-DOS epoch
+		return !wYear; // zeroth Year reserved for clearing date-time entries in FAT (or whereever else used), see the Edit method
+	}
+
+	bool CMSDOS7::TDateTime::Edit(){
+		// True <=> user confirmed the shown editation dialog and accepted the new value, otherwise False
+		// - defining the Dialog
+		class TDateTimeDialog sealed:public CDialog{
+			void DoDataExchange(CDataExchange *pDX) override{
+				// exchange of data from and to controls
+				if (pDX->m_bSaveAndValidate){
+					// saving the date and time combined from values of both controls together, impossible to do using DDX_* functions
+					SYSTEMTIME tmp;
+					SendDlgItemMessage( ID_DATE, MCM_GETCURSEL, 0, (LPARAM)&st );
+					SendDlgItemMessage( ID_TIME, DTM_GETSYSTEMTIME, 0, (LPARAM)&tmp );
+					st.wHour=tmp.wHour, st.wMinute=tmp.wMinute, st.wSecond=tmp.wSecond, st.wMilliseconds=tmp.wMilliseconds;
+				}else{
+					// loading the date and time values
+					// . restricting the Date control to MS-DOS epoch only
+					static const SYSTEMTIME DateRange[]={ {1980,1,2,1}, {2107,12,4,31} };
+					SendDlgItemMessage( ID_DATE, MCM_SETRANGE, GDTR_MIN|GDTR_MAX, (LPARAM)&DateRange );
+					// . loading
+					SendDlgItemMessage( ID_DATE, MCM_SETCURSEL, 0, (LPARAM)&st );
+					SendDlgItemMessage( ID_TIME, DTM_SETSYSTEMTIME, 0, (LPARAM)&st );
+				}
+			}
+			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
+				// window procedure
+				if (msg==WM_NOTIFY && wParam==ID_REMOVE)
+					// notification regarding the "Remove from FAT" option
+					if (((LPNMHDR)lParam)->code==NM_CLICK)
+						EndDialog(ID_REMOVE);
+				return CDialog::WindowProc(msg,wParam,lParam);
+			}
+		public:
+			SYSTEMTIME st;
+
+			TDateTimeDialog(const TDateTime &rDateTime)
+				: CDialog(IDR_MSDOS_DATETIME_EDIT)
+				, st(rDateTime) {
+			}
+		} d(*this);
+		// - showing the Dialog and processing its result
+		switch (d.DoModal()){
+			case ID_REMOVE:
+				d.st.wYear=0;
+				//fallthrough
+			case IDOK:
+				*this=d.st;
+				return true;
+			default:
+				return false;
+		}
+	}
+
+	void CMSDOS7::TDateTime::DrawInPropGrid(HDC dc,RECT rc,BYTE horizonalAlignment) const{
+		// draws the MS-DOS file date&time information
+		rc.left+=PROPGRID_CELL_MARGIN_LEFT;
+		TCHAR buf[80];
+		if (const LPCTSTR desc=ToString(buf)) // is valid in MS-DOS format?
+			::DrawText(	dc, desc, -1, &rc,
+						DT_SINGLELINE | horizonalAlignment | DT_VCENTER
+					);
+		else{
+			const int color0=::SetTextColor( dc, 0xee );
+				::DrawText(	dc, _T("Invalid or no date"), -1, &rc,
+							DT_SINGLELINE | horizonalAlignment | DT_VCENTER
+						);
+			::SetTextColor(dc,color0);
+		}
 	}

@@ -177,10 +177,10 @@
 				char extension[MSDOS7_FILE_EXT_LENGTH_MAX];
 				BYTE attributes;
 				WORD reserved;
-				DWORD timeCreated;
-				WORD dayLastAccessed;
+				DWORD timeAndDateCreated; // LOW = time, HIGH = date
+				WORD dateLastAccessed;
 				WORD firstClusterHigh;
-				DWORD timeLastModified;
+				DWORD timeAndDateLastModified; // LOW = time, HIGH = date
 				WORD firstClusterLow;
 				DWORD size;
 
@@ -296,6 +296,16 @@
 		TStdWinError __switchToDirectory__(PDirectoryEntry directory);
 		TStdWinError __moveFileToCurrDir__(PDirectoryEntry de,LPCTSTR fileNameAndExt,PDirectoryEntry &rMovedFile);
 	public:
+		struct TDateTime sealed:public SYSTEMTIME{
+			TDateTime(DWORD msdosTimeAndDate);
+			TDateTime(const SYSTEMTIME &r);
+
+			LPCTSTR ToString(PTCHAR buf,LPCTSTR format=nullptr) const;
+			bool ToDWord(PDWORD pOutResult) const;
+			bool Edit();
+			void DrawInPropGrid(HDC dc,RECT rc,BYTE horizonalAlignment=DT_RIGHT) const;
+		};
+
 		static const TProperties Properties;
 
 		CMSDOS7(PImage image,PCFormat pFormatBoot);
