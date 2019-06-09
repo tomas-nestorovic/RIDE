@@ -9,7 +9,7 @@
 	CDiskBrowserView::CDiskBrowserView(PDos dos)
 		// ctor
 		// - base
-		: CHexaEditor( this, Utils::CreateSubmenuByContainedCommand(IDR_DISKBROWSER,ID_EDIT_SELECT_ALL), Utils::CreateSubmenuByContainedCommand(IDR_DISKBROWSER,ID_NAVIGATE_ADDRESS) )
+		: CHexaEditor( this, Utils::CreateSubmenuByContainedCommand(IDR_DISKBROWSER,ID_EDIT_SELECT_ALL), nullptr, Utils::CreateSubmenuByContainedCommand(IDR_DISKBROWSER,ID_NAVIGATE_ADDRESS) )
 		// - initialization
 		, tab( IDR_DISKBROWSER, IDR_HEXAEDITOR, ID_CYLINDER, dos, this )
 		, iScrollY(0) , f(nullptr) {

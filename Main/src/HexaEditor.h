@@ -73,14 +73,14 @@
 		void __refreshCursorDisplay__() const;
 		void __showMessage__(LPCTSTR msg) const;
 	protected:
-		const HMENU customSelectSubmenu, customGotoSubmenu;
+		const HMENU customSelectSubmenu, customResetSubmenu, customGotoSubmenu;
 
 		int __getCursorPos__() const;
 		void PostNcDestroy() override sealed;
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override; // enabling/disabling ToolBar buttons
 	public:
-		CHexaEditor(PVOID param,HMENU customSelectSubmenu=nullptr,HMENU customGotoSubmenu=nullptr);
+		CHexaEditor(PVOID param,HMENU customSelectSubmenu=nullptr,HMENU customResetSubmenu=nullptr,HMENU customGotoSubmenu=nullptr);
 		~CHexaEditor();
 
 		void SetEditable(bool _editable);

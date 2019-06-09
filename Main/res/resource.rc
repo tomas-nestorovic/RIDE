@@ -98,6 +98,7 @@ END
 
 IDR_HEXAEDITOR ACCELERATORS DISCARDABLE 
 BEGIN
+    "0",            ID_ZERO,                VIRTKEY, CONTROL, NOINVERT
     "A",            ID_EDIT_SELECT_ALL,     VIRTKEY, CONTROL, NOINVERT
     "A",            ID_EDIT_SELECT_NONE,    VIRTKEY, SHIFT, CONTROL, 
                                                     NOINVERT
@@ -326,7 +327,11 @@ BEGIN
             MENUITEM SEPARATOR
             MENUITEM "Current item\tCtrl+R",        ID_EDIT_SELECT_CURRENT
         END
-        MENUITEM SEPARATOR
+        POPUP "Reset"
+        BEGIN
+            MENUITEM "Selection with zeros\tCtrl+0", ID_ZERO
+            MENUITEM "Selection with...",           ID_NUMBER
+        END
         POPUP "Go to"
         BEGIN
             MENUITEM "Previous item\tCtrl+PgUp",    ID_PREV
@@ -1232,6 +1237,26 @@ BEGIN
                     ID_REMOVE,"SysLink",WS_TABSTOP,7,128,124,11
 END
 
+IDR_HEXAEDITOR_RESETSELECTION DIALOG DISCARDABLE  0, 0, 148, 95
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
+CAPTION "Reset selection"
+FONT 8, "MS Sans Serif"
+BEGIN
+    EDITTEXT        ID_NUMBER2,69,48,40,12,ES_AUTOHSCROLL | ES_NUMBER | NOT 
+                    WS_BORDER
+    CONTROL         "Custom value:",ID_NUMBER,"Button",BS_AUTORADIOBUTTON | 
+                    WS_GROUP | WS_TABSTOP,7,48,59,10
+    CONTROL         "Data sector default",ID_DATA,"Button",
+                    BS_AUTORADIOBUTTON | WS_TABSTOP,7,35,134,10
+    CONTROL         "Directory sector default",ID_DIRECTORY,"Button",
+                    BS_AUTORADIOBUTTON | WS_TABSTOP,7,23,134,10
+    LTEXT           "Enter Byte to reset selection with:",IDC_STATIC,7,7,106,
+                    8,NOT WS_GROUP
+    DEFPUSHBUTTON   "OK",IDOK,91,74,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,38,74,50,14
+END
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // DESIGNINFO
@@ -1458,6 +1483,14 @@ BEGIN
         RIGHTMARGIN, 251
         TOPMARGIN, 7
         BOTTOMMARGIN, 139
+    END
+
+    IDR_HEXAEDITOR_RESETSELECTION, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 141
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 88
     END
 END
 #endif    // APSTUDIO_INVOKED

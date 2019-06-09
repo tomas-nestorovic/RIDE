@@ -102,9 +102,11 @@
 		if (!fatPath.GetItems(item,n)){
 			div_t d=div((int)position,(int)dos->formatBoot.sectorLength-dataBeginOffsetInSector-dataEndOffsetInSector);
 			item+=d.quot, n-=d.quot; // skipping Sectors into which not written
+			bool writtenWithoutCrcError=true;
 			TFdcStatus sr;
 			for( WORD w; n--; item++ )
 				if (const PSectorData sectorData=dos->image->GetSectorData(item->chs,0,false,&w,&sr)){ // False = freezing the state of data (eventually erroneous)
+					writtenWithoutCrcError&=sr.IsWithoutError();
 					w-=d.rem+dataBeginOffsetInSector+dataEndOffsetInSector;
 					dos->image->MarkSectorAsDirty(item->chs,0,&sr);
 					if (w<nCount){
@@ -113,11 +115,13 @@
 					}else{
 						::memcpy(sectorData+dataBeginOffsetInSector+d.rem,lpBuf,nCount);
 						position+=nCount;
+						::SetLastError( writtenWithoutCrcError ? ERROR_SUCCESS : ERROR_CRC );
 						return;
 					}
 				}else
 					break;
 		}
+		::SetLastError(ERROR_WRITE_FAULT);
 	}
 
 	/*UINT CDos::CFileReaderWriter::GetBufferPtr(UINT nCommand,UINT nCount,PVOID *ppBufStart,PVOID *ppBufMax){

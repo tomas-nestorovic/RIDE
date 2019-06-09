@@ -86,11 +86,11 @@
 
 	const CHexaEditor::TEmphasis CHexaEditor::TEmphasis::Terminator={ -1, -1 };
 
-	CHexaEditor::CHexaEditor(PVOID param,HMENU customSelectSubmenu,HMENU customGotoSubmenu)
+	CHexaEditor::CHexaEditor(PVOID param,HMENU customSelectSubmenu,HMENU customResetSubmenu,HMENU customGotoSubmenu)
 		// ctor
 		// - initialization
 		: font(_T("Courier New"),105,false,true)
-		, customSelectSubmenu(customSelectSubmenu) , customGotoSubmenu(customGotoSubmenu)
+		, customSelectSubmenu(customSelectSubmenu) , customResetSubmenu(customResetSubmenu) , customGotoSubmenu(customGotoSubmenu)
 		, hDefaultAccelerators(::LoadAccelerators(app.m_hInstance,MAKEINTRESOURCE(IDR_HEXAEDITOR)))
 		, cursor(0) , param(param) , hPreviouslyFocusedWnd(0)
 		, f(nullptr) , pContentAdviser(nullptr)
@@ -538,12 +538,18 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 				CMenu &mnu=*contextMenu.GetSubMenu(0);
 				mnu.EnableMenuItem( ID_BOOKMARK_TOGGLE, (MF_DISABLED|MF_GRAYED)*(cursor.selectionA!=cursor.selectionZ) );
 				mnu.CheckMenuItem( ID_BOOKMARK_TOGGLE, MF_CHECKED*(bookmarks.__getNearestNextBookmarkPosition__(cursor.position)==cursor.position) );
-				BYTE iSelectSubmenu, iGotoSubmenu;
+				BYTE iSelectSubmenu, iResetSubmenu, iGotoSubmenu;
 				if (customSelectSubmenu){ // custom "Select" submenu
 					const HMENU hSubmenu=Utils::GetSubmenuByContainedCommand( mnu, ID_EDIT_SELECT_ALL, &iSelectSubmenu );
 					TCHAR buf[80];
 					mnu.GetMenuString( iSelectSubmenu, buf, sizeof(buf)/sizeof(TCHAR), MF_BYPOSITION );
 					mnu.ModifyMenu( iSelectSubmenu, MF_BYPOSITION|MF_POPUP, (UINT_PTR)customSelectSubmenu, buf );
+				}
+				if (customResetSubmenu){ // custom "Fill" submenu
+					const HMENU hSubmenu=Utils::GetSubmenuByContainedCommand( mnu, ID_ZERO, &iResetSubmenu );
+					TCHAR buf[80];
+					mnu.GetMenuString( iResetSubmenu, buf, sizeof(buf)/sizeof(TCHAR), MF_BYPOSITION );
+					mnu.ModifyMenu( iResetSubmenu, MF_BYPOSITION|MF_POPUP, (UINT_PTR)customResetSubmenu, buf );
 				}
 				if (customGotoSubmenu){ // custom "Go to" submenu
 					const HMENU hSubmenu=Utils::GetSubmenuByContainedCommand( mnu, ID_NAVIGATE_ADDRESS, &iGotoSubmenu );
@@ -627,6 +633,70 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 						cursor.position = cursor.selectionZ = cursor.selectionA+recordLength;
 						RepaintData();
 						goto cursorRefresh;
+					}
+					case ID_ZERO:
+						// resetting Selection with zeros
+						i=0;
+resetSelectionWithValue:BYTE buf[65536];
+						::memset( buf, i, sizeof(buf) );
+						for( DWORD nBytesToReset=max(cursor.selectionA,cursor.selectionZ)-f->Seek(min(cursor.selectionA,cursor.selectionZ),CFile::begin),n; nBytesToReset; nBytesToReset-=n ){
+							n=min( nBytesToReset, sizeof(buf) );
+							f->Write( buf, n );
+							if (::GetLastError()==ERROR_WRITE_FAULT){
+								Utils::Information( _T("Selection only partially reset"), ERROR_WRITE_FAULT );
+								break;
+							}
+						}
+						RepaintData();
+						goto cursorCorrectlyMoveTo;
+					case ID_NUMBER:{
+						// resetting Selection with user-defined value
+						// . defining the Dialog
+						class CResetDialog sealed:public CDialog{
+							BOOL OnInitDialog() override{
+								TCHAR buf[80];
+								::wsprintf( buf+GetDlgItemText(ID_DIRECTORY,buf,sizeof(buf)/sizeof(TCHAR)), _T(" (0x%02X)"), directoryDefaultByte );
+								SetDlgItemText( ID_DIRECTORY, buf );
+								::wsprintf( buf+GetDlgItemText(ID_DATA,buf,sizeof(buf)/sizeof(TCHAR)), _T(" (0x%02X)"), dataDefaultByte );
+								SetDlgItemText( ID_DATA, buf );
+								return __super::OnInitDialog();
+							}
+							void DoDataExchange(CDataExchange *pDX) override{
+								DDX_Radio( pDX, ID_NUMBER, iRadioSel );
+								DDX_Text( pDX, ID_NUMBER2, value );
+							}
+							LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
+								if (msg==WM_COMMAND)
+									Utils::EnableDlgControl( m_hWnd, ID_NUMBER2, ::IsDlgButtonChecked(m_hWnd,ID_NUMBER) );
+								return __super::WindowProc(msg,wParam,lParam);
+							}
+						public:
+							const BYTE directoryDefaultByte, dataDefaultByte;
+							int iRadioSel;
+							BYTE value;
+
+							CResetDialog()
+								: CDialog( IDR_HEXAEDITOR_RESETSELECTION )
+								, directoryDefaultByte( CDos::__getFocused__()->properties->directoryFillerByte )
+								, dataDefaultByte( CDos::__getFocused__()->properties->sectorFillerByte )
+								, iRadioSel(0) , value(0) {
+							}
+						} d;
+						// . showing the Dialog and processing its result
+						const TCursor cursor0=cursor;
+							const bool dlgConfirmed=d.DoModal()==IDOK;
+						cursor=cursor0;
+						if (dlgConfirmed){
+							switch (d.iRadioSel){
+								case 0: i=d.value; break;
+								case 1: i=d.dataDefaultByte; break;
+								case 2: i=d.directoryDefaultByte; break;
+								default:
+									ASSERT(FALSE);
+							}
+							goto resetSelectionWithValue;
+						}else
+							return 0;
 					}
 					case ID_EDIT_COPY:
 						// copying the Selection into clipboard
@@ -1076,6 +1146,8 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 					case ID_BOOKMARK_PREV:
 					case ID_BOOKMARK_NEXT:
 					case ID_BOOKMARK_DELETEALL:
+					case ID_ZERO:
+					case ID_NUMBER:
 					case ID_NEXT:
 					case ID_PREV:
 					case ID_NAVIGATE_ADDRESS:

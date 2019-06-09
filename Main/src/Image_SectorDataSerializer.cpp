@@ -81,12 +81,14 @@
 	void CImage::CSectorDataSerializer::Write(LPCVOID lpBuf,UINT nCount){
 		// tries to write given NumberOfBytes from the Buffer to the current Position (increments the Position by the number of Bytes actually written)
 		nCount=min( nCount, dataTotalLength-position );
+		bool writtenWithoutCrcError=true; // assumption
 		WORD w; TFdcStatus sr;
 		while (true){
 			const TPhysicalAddress chs=GetCurrentPhysicalAddress();
 			if (const PSectorData sectorData=image->GetSectorData(chs,sector.indexOnTrack,false,&w,&sr)){ // False = freezing the state of data (eventually erroneous)
 				if (!w) // e.g. reading Sector with LengthCode 231 - such Sector has by default no data (a pointer to zero-length data has been returned by GetSectorData)
 					break;
+				writtenWithoutCrcError&=sr.IsWithoutError();
 				image->MarkSectorAsDirty(chs,sector.indexOnTrack,&sr);
 				w-=sector.offset;
 				if (w<nCount){
@@ -96,11 +98,13 @@
 				}else{
 					::memcpy(sectorData+sector.offset,lpBuf,nCount);
 					Seek(nCount,SeekPosition::current);
+					::SetLastError( writtenWithoutCrcError ? ERROR_SUCCESS : ERROR_CRC );
 					return;
 				}
 			}else
 				break;
 		}
+		::SetLastError(ERROR_WRITE_FAULT);
 	}
 
 	TTrack CImage::CSectorDataSerializer::GetCurrentSectorIndexOnTrack() const{
