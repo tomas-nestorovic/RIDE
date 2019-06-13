@@ -222,7 +222,7 @@
 		if (err==ERROR_SUCCESS){
 			CDos::PFile tmp;
 			CFileManagerView::TConflictResolution conflictResolution=CFileManagerView::TConflictResolution::UNDETERMINED;
-			if ( err=CDos::__getFocused__()->pFileManager->ImportFileAndResolveConflicts( &CMemFile(cygnusBootDataBuffer,sizeof(cygnusBootDataBuffer)), cygnusBootDataLength, CYGNUSBOOT_IMPORT_NAME, 0, tmp, conflictResolution ) )
+			if ( err=CDos::__getFocused__()->pFileManager->ImportFileAndResolveConflicts( &CMemFile(cygnusBootDataBuffer,sizeof(cygnusBootDataBuffer)), cygnusBootDataLength, CYGNUSBOOT_IMPORT_NAME, 0, FILETIME(), FILETIME(), FILETIME(), tmp, conflictResolution ) )
 				Utils::FatalError( _T("Cannot import ") CYGNUSBOOT_NAME, err, TRDOS503_BOOTB_NOT_MODIFIED );
 		}
 		return true; // True = destroy PropertyGrid's Editor

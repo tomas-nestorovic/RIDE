@@ -316,21 +316,22 @@
 
 	CMSDOS7::TDateTime::TDateTime(DWORD msdosTimeAndDate){
 		// ctor
-		FILETIME ft;
-		::DosDateTimeToFileTime( HIWORD(msdosTimeAndDate), LOWORD(msdosTimeAndDate), &ft );
-		::FileTimeToSystemTime( &ft, this );
+		::DosDateTimeToFileTime( HIWORD(msdosTimeAndDate), LOWORD(msdosTimeAndDate), this );
 	}
 
-	CMSDOS7::TDateTime::TDateTime(const SYSTEMTIME &r)
+	CMSDOS7::TDateTime::TDateTime(const FILETIME &r)
 		// ctor
-		: SYSTEMTIME(r) {
+		: FILETIME(r) {
 	}
 
 	LPCTSTR CMSDOS7::TDateTime::ToString(PTCHAR buf,LPCTSTR format) const{
 		// populates the Buffer with this DateTime value and returns the buffer
 		if (ToDWord(nullptr)){ // is valid in MS-DOS format?
 			static const LPCTSTR MonthAbbreviations[]={ _T("Jan"), _T("Feb"), _T("Mar"), _T("Apr"), _T("May"), _T("Jun"), _T("Jul"), _T("Aug"), _T("Sep"), _T("Oct"), _T("Nov"), _T("Dec") };
-			::wsprintf( buf, _T("%d/%s/%d, %d:%02d:%02d"), wDay, MonthAbbreviations[wMonth-1], wYear, wHour, wMinute, wSecond );
+			SYSTEMTIME st;
+			::FileTimeToSystemTime( this, &st );
+			::SystemTimeToTzSpecificLocalTime( nullptr, &st, &st );
+			::wsprintf( buf, _T("%d/%s/%d, %d:%02d:%02d"), st.wDay, MonthAbbreviations[st.wMonth-1], st.wYear, st.wHour, st.wMinute, st.wSecond );
 			return buf;
 		}else
 			return nullptr;
@@ -339,17 +340,16 @@
 	bool CMSDOS7::TDateTime::ToDWord(PDWORD pOutResult) const{
 		// True <=> successfully packed this DateTime to a DWORD whose higher and lower Words contains MS-DOS compliant date and time, respectively, otherwise False
 		// - attempting to compose and return the result
-		FILETIME ft;
-		if (::SystemTimeToFileTime( this, &ft )){
-			WORD msdosDate, msdosTime;
-			if (::FileTimeToDosDateTime( &ft, &msdosDate, &msdosTime )){
-				if (pOutResult) *pOutResult=MAKELONG(msdosTime,msdosDate);
-				return true;
-			}
+		WORD msdosDate, msdosTime;
+		if (::FileTimeToDosDateTime( this, &msdosDate, &msdosTime )){
+			if (pOutResult) *pOutResult=MAKELONG(msdosTime,msdosDate);
+			return true;
 		}
 		// - the SystemTime contains values that CANNOT be represented in MS-DOS format
+		SYSTEMTIME st;
+		::FileTimeToSystemTime( this, &st );
 		if (pOutResult) *pOutResult=0; // 0 = begin of MS-DOS epoch
-		return !wYear; // zeroth Year reserved for clearing date-time entries in FAT (or whereever else used), see the Edit method
+		return !st.wYear; // zeroth Year reserved for clearing date-time entries in FAT (or whereever else used), see the Edit method
 	}
 
 	bool CMSDOS7::TDateTime::Edit(){
@@ -358,18 +358,21 @@
 		class TDateTimeDialog sealed:public CDialog{
 			void DoDataExchange(CDataExchange *pDX) override{
 				// exchange of data from and to controls
+				SYSTEMTIME st;
 				if (pDX->m_bSaveAndValidate){
 					// saving the date and time combined from values of both controls together, impossible to do using DDX_* functions
 					SYSTEMTIME tmp;
 					SendDlgItemMessage( ID_DATE, MCM_GETCURSEL, 0, (LPARAM)&st );
 					SendDlgItemMessage( ID_TIME, DTM_GETSYSTEMTIME, 0, (LPARAM)&tmp );
 					st.wHour=tmp.wHour, st.wMinute=tmp.wMinute, st.wSecond=tmp.wSecond, st.wMilliseconds=tmp.wMilliseconds;
+					::SystemTimeToFileTime( &st, &ft );
 				}else{
 					// loading the date and time values
 					// . restricting the Date control to MS-DOS epoch only
 					static const SYSTEMTIME DateRange[]={ {1980,1,2,1}, {2107,12,4,31} };
 					SendDlgItemMessage( ID_DATE, MCM_SETRANGE, GDTR_MIN|GDTR_MAX, (LPARAM)&DateRange );
 					// . loading
+					::FileTimeToSystemTime( &ft, &st );
 					SendDlgItemMessage( ID_DATE, MCM_SETCURSEL, 0, (LPARAM)&st );
 					SendDlgItemMessage( ID_TIME, DTM_SETSYSTEMTIME, 0, (LPARAM)&st );
 				}
@@ -383,20 +386,20 @@
 				return CDialog::WindowProc(msg,wParam,lParam);
 			}
 		public:
-			SYSTEMTIME st;
+			FILETIME ft;
 
-			TDateTimeDialog(const TDateTime &rDateTime)
+			TDateTimeDialog(const FILETIME &rDateTime)
 				: CDialog(IDR_MSDOS_DATETIME_EDIT)
-				, st(rDateTime) {
+				, ft(rDateTime) {
 			}
 		} d(*this);
 		// - showing the Dialog and processing its result
 		switch (d.DoModal()){
 			case ID_REMOVE:
-				d.st.wYear=0;
+				d.ft.dwHighDateTime = d.ft.dwLowDateTime = 0;
 				//fallthrough
 			case IDOK:
-				*this=d.st;
+				*this=d.ft;
 				return true;
 			default:
 				return false;

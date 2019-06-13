@@ -667,7 +667,7 @@ nextCluster:result++;
 		return result;
 	}
 
-	TStdWinError CMSDOS7::__createSubdirectory__(LPCTSTR name,DWORD winAttr,PDirectoryEntry &rCreatedSubdir){
+	TStdWinError CMSDOS7::__createSubdirectory__(LPCTSTR name,DWORD winAttr,const FILETIME &rCreated,const FILETIME &rLastRead,const FILETIME &rLastModified,PDirectoryEntry &rCreatedSubdir){
 		// creates a new Subdirectory in CurrentDirectory; returns Windows standard i/o error
 		// - allocating new Directory Cluster
 		const TCluster32 cluster=__allocateAndResetDirectoryCluster__();
@@ -686,13 +686,16 @@ nextCluster:result++;
 			__generateShortFileNameAndExt__(&tmp,tmpName,pExt);
 			// . size
 			//nop (always 0)
+			// . dates and times
+			TDateTime(rCreated).ToDWord( &tmp.shortNameEntry.timeAndDateCreated );
+			//TODO: TDateTime(rLastRead).ToDWord( &tmp.shortNameEntry.dateLastAccessed );
+			TDateTime(rLastModified).ToDWord( &tmp.shortNameEntry.timeAndDateLastModified );
 			// . first Cluster
 			tmp.shortNameEntry.__setFirstCluster__(cluster);
 			// . Attributes
 			tmp.shortNameEntry.attributes=winAttr;
 			// . setting long name (if any)
-			const TStdWinError err=ChangeFileNameAndExt( &tmp, tmpName, pExt, (PFile &)rCreatedSubdir );
-			if (err!=ERROR_SUCCESS){
+			if (const TStdWinError err=ChangeFileNameAndExt( &tmp, tmpName, pExt, (PFile &)rCreatedSubdir )){
 				fat.FreeChainOfClusters(cluster);
 				return err;
 			}
@@ -859,7 +862,7 @@ nextCluster:result++;
 			return nullptr;
 	}
 
-	TStdWinError CMSDOS7::ImportFile(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile){
+	TStdWinError CMSDOS7::ImportFile(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,const FILETIME &rCreated,const FILETIME &rLastRead,const FILETIME &rLastModified,PFile &rFile){
 		// imports specified File (physical or virtual) into the Image; returns Windows standard i/o error
 		// - marking the Volume as "dirty"
 		//TODO (below just draft)
@@ -884,6 +887,10 @@ nextCluster:result++;
 			__generateShortFileNameAndExt__(&tmp,tmpName,pExt);
 			// . size
 			tmp.shortNameEntry.size=fileSize;
+			// . dates and times
+			TDateTime(rCreated).ToDWord( &tmp.shortNameEntry.timeAndDateCreated );
+			//TODO: TDateTime(rLastRead).ToDWord( &tmp.shortNameEntry.dateLastAccessed );
+			TDateTime(rLastModified).ToDWord( &tmp.shortNameEntry.timeAndDateLastModified );
 			// . first Cluster
 			//nop (set up below, now 0 = zero-length File)
 			// . Attributes

@@ -107,7 +107,7 @@
 		// populates Buffer with specified File's export name and extension and returns the Buffer; returns Null if File cannot be exported (e.g. a "dotdot" entry in MS-DOS); caller guarantees that the Buffer is at least MAX_PATH characters big
 		return nullptr;
 	}
-	TStdWinError CUnknownDos::ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile){
+	TStdWinError CUnknownDos::ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,const FILETIME &rCreated,const FILETIME &rLastRead,const FILETIME &rLastModified,PFile &rFile){
 		// imports specified File (physical or virtual) into the Image; returns Windows standard i/o error
 		return ERROR_NOT_SUPPORTED;
 	}

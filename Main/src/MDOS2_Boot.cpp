@@ -189,7 +189,7 @@
 		if (err==ERROR_SUCCESS){
 			CDos::PFile tmp;
 			CFileManagerView::TConflictResolution conflictResolution=CFileManagerView::TConflictResolution::UNDETERMINED;
-			if ( err=CDos::__getFocused__()->pFileManager->ImportFileAndResolveConflicts( &CMemFile(unirunDataBuffer,sizeof(unirunDataBuffer)), unirunDataLength, UNIRUN_IMPORT_NAME, 0, tmp, conflictResolution ) )
+			if ( err=CDos::__getFocused__()->pFileManager->ImportFileAndResolveConflicts( &CMemFile(unirunDataBuffer,sizeof(unirunDataBuffer)), unirunDataLength, UNIRUN_IMPORT_NAME, 0, FILETIME(), FILETIME(), FILETIME(), tmp, conflictResolution ) )
 				Utils::FatalError( _T("Cannot import ") UNIRUN_NAME, err, MDOS2_RUNP_NOT_MODIFIED );
 		}
 		return true; // True = destroy PropertyGrid's Editor

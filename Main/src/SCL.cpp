@@ -138,7 +138,7 @@ error:				delete pTrdos;
 					TCHAR tmpName[MAX_PATH];
 					::wsprintf( tmpName, _T("%d.%c"), n, CTRDOS503::TDirectoryEntry::BLOCK );
 					CDos::PFile file;
-					err=pTrdos->ImportFile( &f, pdi->nSectors*TRDOS503_SECTOR_LENGTH_STD, tmpName, 0, file );
+					err=pTrdos->ImportFile( &f, pdi->nSectors*TRDOS503_SECTOR_LENGTH_STD, tmpName, 0, FILETIME(), FILETIME(), FILETIME(), file );
 					if (err!=ERROR_SUCCESS)
 						goto error;
 					*(TSclDirectoryItem *)file=*pdi;

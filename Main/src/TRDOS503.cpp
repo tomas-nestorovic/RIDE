@@ -359,7 +359,7 @@
 		return buf;
 	}
 
-	TStdWinError CTRDOS503::ImportFile(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile){
+	TStdWinError CTRDOS503::ImportFile(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,const FILETIME &rCreated,const FILETIME &rLastRead,const FILETIME &rLastModified,PFile &rFile){
 		// imports specified File (physical or virtual) into the Image; returns Windows standard i/o error
 		// - parsing the NameAndExtension into a usable "8.1" form
 		LPCTSTR zxName,zxExt,zxInfo;
@@ -729,7 +729,7 @@
 					// : importing File data from Buffer to new place in Image
 					PDirectoryEntry deFree=*pDeFree++;
 					*(PBYTE)deFree=TDirectoryEntry::END_OF_DIR; // marking the DirectoryEntry as the end of Directory (and thus Empty)
-					dp.trdos->ImportFile( &CMemFile(buf,sizeof(buf)), fileExportSize, tmpName, 0, (PFile &)deFree );
+					dp.trdos->ImportFile( &CMemFile(buf,sizeof(buf)), fileExportSize, tmpName, 0, FILETIME(), FILETIME(), FILETIME(), (PFile &)deFree );
 					// : marking the DirectorySector from which the File was removed as dirty; Directory Sector where the File was moved to marked as dirty during importing its data
 					dp.trdos->__markDirectorySectorAsDirty__(de);
 				}else{

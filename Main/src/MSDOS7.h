@@ -292,13 +292,13 @@
 		void __generateShortFileNameAndExt__(PDirectoryEntry de,LPCTSTR longName,LPCTSTR longExt) const;
 		bool __getLongFileNameAndExt__(PCDirectoryEntry de,PTCHAR bufName,PTCHAR bufExt) const;
 		TStdWinError __changeLongFileNameAndExt__(PDirectoryEntry de,LPCTSTR newName,LPCTSTR newExt,PDirectoryEntry &rRenamedFile) const;
-		TStdWinError __createSubdirectory__(LPCTSTR name,DWORD winAttr,PDirectoryEntry &rCreatedSubdir);
+		TStdWinError __createSubdirectory__(LPCTSTR name,DWORD winAttr,const FILETIME &rCreated,const FILETIME &rLastRead,const FILETIME &rLastModified,PDirectoryEntry &rCreatedSubdir);
 		TStdWinError __switchToDirectory__(PDirectoryEntry directory);
 		TStdWinError __moveFileToCurrDir__(PDirectoryEntry de,LPCTSTR fileNameAndExt,PDirectoryEntry &rMovedFile);
 	public:
-		struct TDateTime sealed:public SYSTEMTIME{
+		struct TDateTime sealed:public FILETIME{
 			TDateTime(DWORD msdosTimeAndDate);
-			TDateTime(const SYSTEMTIME &r);
+			TDateTime(const FILETIME &r);
 
 			LPCTSTR ToString(PTCHAR buf,LPCTSTR format=nullptr) const;
 			bool ToDWord(PDWORD pOutResult) const;
@@ -326,7 +326,7 @@
 		TStdWinError DeleteFile(PFile file) override;
 		PDirectoryTraversal BeginDirectoryTraversal(PCFile directory) const override;
 		PTCHAR GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const override;
-		TStdWinError ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile) override;
+		TStdWinError ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,const FILETIME &rCreated,const FILETIME &rLastRead,const FILETIME &rLastModified,PFile &rFile) override;
 		// other
 		TStdWinError CreateUserInterface(HWND hTdi) override;
 		TCmdResult ProcessCommand(WORD cmd) override;

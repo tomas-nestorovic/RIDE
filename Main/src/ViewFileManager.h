@@ -243,7 +243,7 @@
 		POSITION GetLastSelectedFilePosition() const;
 		CDos::PFile GetPreviousSelectedFile(POSITION &pos) const;
 		DWORD GetCountOfSelectedFiles() const;
-		TStdWinError ImportFileAndResolveConflicts(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution);
+		TStdWinError ImportFileAndResolveConflicts(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,const FILETIME &rCreated,const FILETIME &rLastRead,const FILETIME &rLastModified,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution);
 	};
 
 #endif // FILEMANAGERVIEW_H

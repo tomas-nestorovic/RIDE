@@ -147,7 +147,7 @@
 		if (err==ERROR_SUCCESS){
 			CDos::PFile tmp;
 			CFileManagerView::TConflictResolution conflictResolution=CFileManagerView::TConflictResolution::UNDETERMINED;
-			err=CDos::__getFocused__()->pFileManager->ImportFileAndResolveConflicts( &CMemFile(gkfmDataBuffer,sizeof(gkfmDataBuffer)), gkfmDataLength, GKFM_IMPORT_NAME, 0, tmp, conflictResolution );
+			err=CDos::__getFocused__()->pFileManager->ImportFileAndResolveConflicts( &CMemFile(gkfmDataBuffer,sizeof(gkfmDataBuffer)), gkfmDataLength, GKFM_IMPORT_NAME, 0, FILETIME(), FILETIME(), FILETIME(), tmp, conflictResolution );
 			if (err!=ERROR_SUCCESS)
 				Utils::FatalError( _T("Cannot import ") GKFM_NAME, err, MDOS2_RUNP_NOT_MODIFIED );
 		}

@@ -33,7 +33,7 @@
 
 		typedef TStdWinError (*TFnRecognize)(PImage image,PFormat pFormatBoot);
 		typedef PDos (*TFnInstantiate)(PImage image,PCFormat pFormatBoot);
-		typedef TStdWinError (CDos::*TFnCreateSubdirectory)(LPCTSTR name,DWORD winAttr,PFile &rCreatedSubdir);
+		typedef TStdWinError (CDos::*TFnCreateSubdirectory)(LPCTSTR name,DWORD winAttr,const FILETIME &rCreated,const FILETIME &rLastRead,const FILETIME &rLastModified,PFile &rCreatedSubdir);
 		typedef TStdWinError (CDos::*TFnChangeCurrentDirectory)(PFile directory);
 		typedef TStdWinError (CDos::*TFnMoveFileToCurrDir)(PFile file,LPCTSTR fileNameAndExt,PFile &rMovedFile);
 
@@ -326,7 +326,7 @@
 		DWORD GetCountOfItemsInCurrentDir(TStdWinError &rError) const;
 		virtual PTCHAR GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const;
 		virtual DWORD ExportFile(PCFile file,CFile *fOut,DWORD nBytesToExportMax,LPCTSTR *pOutError) const;
-		virtual TStdWinError ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile)=0;
+		virtual TStdWinError ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,const FILETIME &rCreated,const FILETIME &rLastRead,const FILETIME &rLastModified,PFile &rFile)=0;
 		// other
 		virtual TStdWinError CreateUserInterface(HWND hTdi);
 		virtual enum TCmdResult:BYTE{

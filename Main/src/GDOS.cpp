@@ -462,7 +462,7 @@
 		return reinterpret_cast<PCDos>(this)->GetFileSize(de)+sizeof(de->etc);
 	}
 
-	TStdWinError CGDOS::ImportFile(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile){
+	TStdWinError CGDOS::ImportFile(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,const FILETIME &rCreated,const FILETIME &rLastRead,const FILETIME &rLastModified,PFile &rFile){
 		// imports specified File (physical or virtual) into the Image; returns Windows standard i/o error
 		// - parsing the NameAndExtension into a usable "10.1" form
 		LPCTSTR zxName, zxExt, zxInfo;

@@ -457,7 +457,7 @@ importQuit2:		::GlobalUnlock(hg);
 		return err;
 	}
 
-	TStdWinError CFileManagerView::ImportFileAndResolveConflicts(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution){
+	TStdWinError CFileManagerView::ImportFileAndResolveConflicts(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,const FILETIME &rCreated,const FILETIME &rLastRead,const FILETIME &rLastModified,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution){
 		// imports physical or virtual File; returns Windows standard i/o error (ERROR_SUCCESS = imported successfully, ERROR_CANCELLED = import of a set of Files was cancelled, ERROR_* = other error)
 		do{
 			// - importing
@@ -466,12 +466,12 @@ importQuit2:		::GlobalUnlock(hg);
 				// importing a Directory
 				f=nullptr;
 				err=pDirectoryStructureManagement	// if the DOS supports Directories ...
-					? err=(DOS->*pDirectoryStructureManagement->fnCreateSubdir)( nameAndExtension, winAttr, rImportedFile ) // ... creating the Directory
+					? err=(DOS->*pDirectoryStructureManagement->fnCreateSubdir)( nameAndExtension, winAttr, rCreated, rLastRead, rLastModified, rImportedFile ) // ... creating the Directory
 					: ERROR_NOT_SUPPORTED; // ... otherwise error
 			}else{
 				// importing a File
 				f->SeekToBegin();
-				err=DOS->ImportFile( f, fileSize, nameAndExtension, winAttr, rImportedFile );
+				err=DOS->ImportFile( f, fileSize, nameAndExtension, winAttr, rCreated, rLastRead, rLastModified, rImportedFile );
 			}
 			// - if Directory/File imported successfully, quit
 			if (err==ERROR_SUCCESS) break;
@@ -500,9 +500,14 @@ importQuit2:		::GlobalUnlock(hg);
 		// imports physical File with given Name into current Directory; returns Windows standard i/o error
 		const LPCTSTR fileName=_tcsrchr(pathAndName,'\\')+1;
 		const DWORD winAttr=::GetFileAttributes(pathAndName);
+		FILETIME created,lastRead,lastModified;
 		if (winAttr&FILE_ATTRIBUTE_DIRECTORY){
 			// Directory
-			TStdWinError err=ImportFileAndResolveConflicts( nullptr, 0, fileName, winAttr, rImportedFile, rConflictedSiblingResolution );
+			FILE_FLAG_BACKUP_SEMANTICS;
+			const HANDLE hDir=::CreateFile( pathAndName, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS, nullptr );
+			::GetFileTime( hDir, &created, &lastRead, &lastModified );
+			::CloseHandle(hDir);
+			TStdWinError err=ImportFileAndResolveConflicts( nullptr, 0, fileName, winAttr, created, lastRead, lastModified, rImportedFile, rConflictedSiblingResolution );
 			if (err==ERROR_SUCCESS){
 				// Directory created successfully - recurrently importing all contained Files
 				const CDos::PFile currentDirectory=DOS->currentDir;
@@ -571,7 +576,8 @@ importQuit2:		::GlobalUnlock(hg);
 				}
 			// . importing the File
 			CFile f( pathAndName, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary );
-			return ImportFileAndResolveConflicts( &f, f.GetLength(), fileName, winAttr, rImportedFile, rConflictedSiblingResolution );
+			::GetFileTime( (HANDLE)f.m_hFile, &created, &lastRead, &lastModified );
+			return ImportFileAndResolveConflicts( &f, f.GetLength(), fileName, winAttr, created, lastRead, lastModified, rImportedFile, rConflictedSiblingResolution );
 		}
 	}
 
@@ -586,13 +592,17 @@ importQuit2:		::GlobalUnlock(hg);
 		if (lpfd->nFileSizeHigh)
 			return ERROR_FILE_TOO_LARGE;
 		// - importing
+		static const FILETIME NoFileTime;
+		const FILETIME &rCreated= lpfd->dwFlags&FD_CREATETIME ? lpfd->ftCreationTime : NoFileTime;
+		const FILETIME &rLastRead= lpfd->dwFlags&FD_ACCESSTIME ? lpfd->ftLastAccessTime : NoFileTime;
+		const FILETIME &rLastWritten= lpfd->dwFlags&FD_WRITESTIME ? lpfd->ftLastWriteTime : NoFileTime;
 		const LPCTSTR backslash=_tcsrchr(pathAndName,'\\');
 		const LPCTSTR fileName= backslash&&pDirectoryStructureManagement ? 1+backslash : pathAndName;
 		const DWORD winAttr=lpfd->dwFileAttributes;
 		if (winAttr&FILE_ATTRIBUTE_DIRECTORY){
 			// Directory
 			// . creating (must be now as below the cFileName member is changed)
-			TStdWinError err=ImportFileAndResolveConflicts( nullptr, 0, fileName, winAttr, rImportedFile, rConflictedSiblingResolution );
+			TStdWinError err=ImportFileAndResolveConflicts( nullptr, 0, fileName, winAttr, rCreated, rLastRead, rLastWritten, rImportedFile, rConflictedSiblingResolution );
 			// . determining the range of Files to import into this Directory (all such Files in the input list have the same Directory path)
 			int j=++i;
 			for( ::lstrcat(lpfd->cFileName,_T("\\")); j<nFiles; j++ )
@@ -616,7 +626,7 @@ importQuit2:		::GlobalUnlock(hg);
 			// File
 			FORMATETC etcContent={ CRideApp::cfContent, nullptr, DVASPECT_CONTENT, i++, TYMED_ISTREAM };
 			CFile *const f=pDataObject->GetFileData( CRideApp::cfContent, &etcContent ); // abstracting virtual data into a File
-				const TStdWinError err=ImportFileAndResolveConflicts( f, lpfd->nFileSizeLow, fileName, winAttr, rImportedFile, rConflictedSiblingResolution );
+				const TStdWinError err=ImportFileAndResolveConflicts( f, lpfd->nFileSizeLow, fileName, winAttr, rCreated, rLastRead, rLastWritten, rImportedFile, rConflictedSiblingResolution );
 			delete f;
 			return err;
 		}

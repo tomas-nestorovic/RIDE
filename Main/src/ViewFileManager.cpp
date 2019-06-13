@@ -544,9 +544,10 @@
 			void OnOK() override{
 				// the Name of new Subdirectory confirmed
 				TCHAR name[MAX_PATH];
-				GetDlgItem(ID_DIRECTORY)->GetWindowText(name,MAX_PATH);
-				const TStdWinError err=(dos->*dos->pFileManager->pDirectoryStructureManagement->fnCreateSubdir)(name,FILE_ATTRIBUTE_DIRECTORY,subdirectory);
-				if (err!=ERROR_SUCCESS)
+				GetDlgItemText( ID_DIRECTORY, name, MAX_PATH );
+				FILETIME ft;
+				::GetSystemTimeAsFileTime(&ft);
+				if (const TStdWinError err=(dos->*dos->pFileManager->pDirectoryStructureManagement->fnCreateSubdir)(name,FILE_ATTRIBUTE_DIRECTORY,ft,ft,ft,subdirectory))
 					Utils::Information(_T("Cannot create the directory"),err);
 				else
 					CDialog::OnOK();
