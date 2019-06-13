@@ -43,6 +43,7 @@
 #define IDR_DISKBROWSER                 206
 #define IDR_DISKBROWSER_GOTOSECTOR      207
 #define IDR_MSDOS_DATETIME_EDIT         208
+#define IDR_HEXAEDITOR_RESETSELECTION   209
 #define ID_HIDDEN                       1018
 #define ID_SYSTEM                       1019
 #define ID_CONNECTED                    1020

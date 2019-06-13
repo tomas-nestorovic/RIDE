@@ -440,7 +440,11 @@ BEGIN
             MENUITEM "Current track\tCtrl+Shift+R", ID_SELECT_CURRENT_TRACK
             MENUITEM "Current cylinder",            ID_SELECT_CURRENT_CYLINDER
         END
-        MENUITEM SEPARATOR
+        POPUP "Reset"
+        BEGIN
+            MENUITEM "Selection with zeros\tCtrl+0", ID_ZERO
+            MENUITEM "Selection with...",           ID_NUMBER
+        END
         POPUP "Go to"
         BEGIN
             MENUITEM "Previous cylinder",           ID_NAVIGATE_PREVIOUSCYLINDER
