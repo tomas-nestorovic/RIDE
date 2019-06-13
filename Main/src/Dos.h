@@ -62,6 +62,14 @@
 			BYTE GetValidGap3ForMedium(TMedium::TType medium) const;
 		} *PCProperties;
 
+		struct TFileDateTime:public FILETIME{
+			static const FILETIME None;
+
+			TFileDateTime(const FILETIME &r);
+
+			bool Edit(bool dateEditingEnabled,bool timeEditingEnabled,const SYSTEMTIME *epoch);
+		};
+
 		typedef struct TDirectoryTraversal{
 			const PCFile directory;
 			const WORD entrySize;

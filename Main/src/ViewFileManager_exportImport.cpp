@@ -592,10 +592,9 @@ importQuit2:		::GlobalUnlock(hg);
 		if (lpfd->nFileSizeHigh)
 			return ERROR_FILE_TOO_LARGE;
 		// - importing
-		static const FILETIME NoFileTime;
-		const FILETIME &rCreated= lpfd->dwFlags&FD_CREATETIME ? lpfd->ftCreationTime : NoFileTime;
-		const FILETIME &rLastRead= lpfd->dwFlags&FD_ACCESSTIME ? lpfd->ftLastAccessTime : NoFileTime;
-		const FILETIME &rLastWritten= lpfd->dwFlags&FD_WRITESTIME ? lpfd->ftLastWriteTime : NoFileTime;
+		const FILETIME &rCreated= lpfd->dwFlags&FD_CREATETIME ? lpfd->ftCreationTime : CDos::TFileDateTime::None;
+		const FILETIME &rLastRead= lpfd->dwFlags&FD_ACCESSTIME ? lpfd->ftLastAccessTime : CDos::TFileDateTime::None;
+		const FILETIME &rLastWritten= lpfd->dwFlags&FD_WRITESTIME ? lpfd->ftLastWriteTime : CDos::TFileDateTime::None;
 		const LPCTSTR backslash=_tcsrchr(pathAndName,'\\');
 		const LPCTSTR fileName= backslash&&pDirectoryStructureManagement ? 1+backslash : pathAndName;
 		const DWORD winAttr=lpfd->dwFileAttributes;

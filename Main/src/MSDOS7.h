@@ -246,6 +246,7 @@
 		class CMsdos7FileManagerView sealed:public CFileManagerView{
 			static bool WINAPI __onNameAndExtConfirmed__(PVOID file,LPCTSTR newNameAndExt,short nCharsOfNewNameAndExt);
 			static bool WINAPI __editFileAttributes__(PVOID file,PVOID,short);
+			static bool WINAPI __editFileDateTime__(PVOID file,PVOID value,short);
 
 			static const TFileInfo InformationList[];
 			static const TDirectoryStructureManagement dirManagement;
@@ -296,13 +297,14 @@
 		TStdWinError __switchToDirectory__(PDirectoryEntry directory);
 		TStdWinError __moveFileToCurrDir__(PDirectoryEntry de,LPCTSTR fileNameAndExt,PDirectoryEntry &rMovedFile);
 	public:
-		struct TDateTime sealed:public FILETIME{
+		struct TDateTime sealed:public TFileDateTime{
+			static const SYSTEMTIME Epoch[];
+
 			TDateTime(DWORD msdosTimeAndDate);
 			TDateTime(const FILETIME &r);
 
-			LPCTSTR ToString(PTCHAR buf,LPCTSTR format=nullptr) const;
+			LPCTSTR ToString(PTCHAR buf) const;
 			bool ToDWord(PDWORD pOutResult) const;
-			bool Edit();
 			void DrawInPropGrid(HDC dc,RECT rc,BYTE horizonalAlignment=DT_RIGHT) const;
 		};
 

@@ -242,11 +242,12 @@
 			return false;
 	}
 
-	static bool WINAPI __editDateTime__(CPropGridCtrl::PCustomParam file,CPropGridCtrl::PValue value,CPropGridCtrl::TValueSize){
+	bool WINAPI CMSDOS7::CMsdos7FileManagerView::__editFileDateTime__(PVOID file,PVOID value,short){
 		// True <=> date&time editing confirmed, otherwise False
 		CMSDOS7::TDateTime dt(*(PDWORD)value);
-		if (dt.Edit()){
+		if (dt.Edit(true,true,CMSDOS7::TDateTime::Epoch)){
 			dt.ToDWord( (PDWORD)value );
+			((CMSDOS7 *)CDos::__getFocused__())->__markDirectorySectorAsDirty__(file);
 			return true;
 		}else
 			return false;
@@ -269,9 +270,9 @@
 			case INFORMATION_ATTRIBUTES:
 				return __createStdEditorWithEllipsis__( file, __editFileAttributes__ );
 			case INFORMATION_CREATED:
-				return __createStdEditorWithEllipsis__( file, &((PDirectoryEntry)file)->shortNameEntry.timeAndDateCreated, sizeof(DWORD), __editDateTime__ );
+				return __createStdEditorWithEllipsis__( file, &((PDirectoryEntry)file)->shortNameEntry.timeAndDateCreated, sizeof(DWORD), __editFileDateTime__ );
 			case INFORMATION_MODIFIED:
-				return __createStdEditorWithEllipsis__( file, &((PDirectoryEntry)file)->shortNameEntry.timeAndDateLastModified, sizeof(DWORD), __editDateTime__ );
+				return __createStdEditorWithEllipsis__( file, &((PDirectoryEntry)file)->shortNameEntry.timeAndDateLastModified, sizeof(DWORD), __editFileDateTime__ );
 			default:
 				return nullptr;
 		}
@@ -314,17 +315,20 @@
 
 
 
-	CMSDOS7::TDateTime::TDateTime(DWORD msdosTimeAndDate){
+	const SYSTEMTIME CMSDOS7::TDateTime::Epoch[]={ {1980,1,2,1}, {2107,12,4,31} };
+
+	CMSDOS7::TDateTime::TDateTime(DWORD msdosTimeAndDate)
 		// ctor
+		: TFileDateTime(TFileDateTime::None) {
 		::DosDateTimeToFileTime( HIWORD(msdosTimeAndDate), LOWORD(msdosTimeAndDate), this );
 	}
 
 	CMSDOS7::TDateTime::TDateTime(const FILETIME &r)
 		// ctor
-		: FILETIME(r) {
+		: TFileDateTime(r) {
 	}
 
-	LPCTSTR CMSDOS7::TDateTime::ToString(PTCHAR buf,LPCTSTR format) const{
+	LPCTSTR CMSDOS7::TDateTime::ToString(PTCHAR buf) const{
 		// populates the Buffer with this DateTime value and returns the buffer
 		if (ToDWord(nullptr)){ // is valid in MS-DOS format?
 			static const LPCTSTR MonthAbbreviations[]={ _T("Jan"), _T("Feb"), _T("Mar"), _T("Apr"), _T("May"), _T("Jun"), _T("Jul"), _T("Aug"), _T("Sep"), _T("Oct"), _T("Nov"), _T("Dec") };
@@ -350,60 +354,6 @@
 		::FileTimeToSystemTime( this, &st );
 		if (pOutResult) *pOutResult=0; // 0 = begin of MS-DOS epoch
 		return !st.wYear; // zeroth Year reserved for clearing date-time entries in FAT (or whereever else used), see the Edit method
-	}
-
-	bool CMSDOS7::TDateTime::Edit(){
-		// True <=> user confirmed the shown editation dialog and accepted the new value, otherwise False
-		// - defining the Dialog
-		class TDateTimeDialog sealed:public CDialog{
-			void DoDataExchange(CDataExchange *pDX) override{
-				// exchange of data from and to controls
-				SYSTEMTIME st;
-				if (pDX->m_bSaveAndValidate){
-					// saving the date and time combined from values of both controls together, impossible to do using DDX_* functions
-					SYSTEMTIME tmp;
-					SendDlgItemMessage( ID_DATE, MCM_GETCURSEL, 0, (LPARAM)&st );
-					SendDlgItemMessage( ID_TIME, DTM_GETSYSTEMTIME, 0, (LPARAM)&tmp );
-					st.wHour=tmp.wHour, st.wMinute=tmp.wMinute, st.wSecond=tmp.wSecond, st.wMilliseconds=tmp.wMilliseconds;
-					::SystemTimeToFileTime( &st, &ft );
-				}else{
-					// loading the date and time values
-					// . restricting the Date control to MS-DOS epoch only
-					static const SYSTEMTIME DateRange[]={ {1980,1,2,1}, {2107,12,4,31} };
-					SendDlgItemMessage( ID_DATE, MCM_SETRANGE, GDTR_MIN|GDTR_MAX, (LPARAM)&DateRange );
-					// . loading
-					::FileTimeToSystemTime( &ft, &st );
-					SendDlgItemMessage( ID_DATE, MCM_SETCURSEL, 0, (LPARAM)&st );
-					SendDlgItemMessage( ID_TIME, DTM_SETSYSTEMTIME, 0, (LPARAM)&st );
-				}
-			}
-			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
-				// window procedure
-				if (msg==WM_NOTIFY && wParam==ID_REMOVE)
-					// notification regarding the "Remove from FAT" option
-					if (((LPNMHDR)lParam)->code==NM_CLICK)
-						EndDialog(ID_REMOVE);
-				return CDialog::WindowProc(msg,wParam,lParam);
-			}
-		public:
-			FILETIME ft;
-
-			TDateTimeDialog(const FILETIME &rDateTime)
-				: CDialog(IDR_MSDOS_DATETIME_EDIT)
-				, ft(rDateTime) {
-			}
-		} d(*this);
-		// - showing the Dialog and processing its result
-		switch (d.DoModal()){
-			case ID_REMOVE:
-				d.ft.dwHighDateTime = d.ft.dwLowDateTime = 0;
-				//fallthrough
-			case IDOK:
-				*this=d.ft;
-				return true;
-			default:
-				return false;
-		}
 	}
 
 	void CMSDOS7::TDateTime::DrawInPropGrid(HDC dc,RECT rc,BYTE horizonalAlignment) const{
