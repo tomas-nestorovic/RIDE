@@ -243,7 +243,7 @@
 			TStdWinError DeleteFile(PFile file) override;
 			PDirectoryTraversal BeginDirectoryTraversal(PCFile directory) const override;
 			PTCHAR GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const override;
-			TStdWinError ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,const FILETIME &rCreated,const FILETIME &rLastRead,const FILETIME &rLastModified,PFile &rFile) override;
+			TStdWinError ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile) override;
 			// other
 			TCmdResult ProcessCommand(WORD cmd) override;
 			bool UpdateCommandUi(WORD cmd,CCmdUI *pCmdUI) const override;

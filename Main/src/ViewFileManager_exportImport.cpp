@@ -466,15 +466,18 @@ importQuit2:		::GlobalUnlock(hg);
 				// importing a Directory
 				f=nullptr;
 				err=pDirectoryStructureManagement	// if the DOS supports Directories ...
-					? err=(DOS->*pDirectoryStructureManagement->fnCreateSubdir)( nameAndExtension, winAttr, rCreated, rLastRead, rLastModified, rImportedFile ) // ... creating the Directory
+					? err=(DOS->*pDirectoryStructureManagement->fnCreateSubdir)( nameAndExtension, winAttr, rImportedFile ) // ... creating the Directory
 					: ERROR_NOT_SUPPORTED; // ... otherwise error
 			}else{
 				// importing a File
 				f->SeekToBegin();
-				err=DOS->ImportFile( f, fileSize, nameAndExtension, winAttr, rCreated, rLastRead, rLastModified, rImportedFile );
+				err=DOS->ImportFile( f, fileSize, nameAndExtension, winAttr, rImportedFile );
 			}
-			// - if Directory/File imported successfully, quit
-			if (err==ERROR_SUCCESS) break;
+			// - if Directory/File imported successfully, set its time stamps and quit
+			if (err==ERROR_SUCCESS){
+				DOS->SetFileTimeStamps( rImportedFile, &rCreated, &rLastRead, &rLastModified );
+				break;
+			}
 			// - error while importing Directory/File
 			TCHAR errTxt[MAX_PATH+50];
 			::wsprintf( errTxt, _T("Cannot import the %s \"%s\""), f?_T("file"):_T("directory"), nameAndExtension );

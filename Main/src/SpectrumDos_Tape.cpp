@@ -257,7 +257,7 @@
 	#define NUMBER_OF_BYTES_TO_ALLOCATE_FILE(dataLength)\
 		(sizeof(TTapeFile)+dataLength)
 
-	TStdWinError CSpectrumDos::CTape::ImportFile(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,const FILETIME &rCreated,const FILETIME &rLastRead,const FILETIME &rLastModified,PFile &rFile){
+	TStdWinError CSpectrumDos::CTape::ImportFile(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile){
 		// imports specified File (physical or virtual) into the Image; returns Windows standard i/o error
 		// - checking if there's an empty slot in Tape's "Directory"
 		if (fileManager.nFiles==ZX_TAPE_FILE_COUNT_MAX)

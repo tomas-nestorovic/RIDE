@@ -682,6 +682,36 @@ reportError:Utils::Information(buf);
 		return GetFileSize(file,nullptr,nullptr,TGetFileSizeOptions::SizeOnDisk);
 	}
 
+	void CDos::GetFileTimeStamps(PCFile file,LPFILETIME pCreated,LPFILETIME pLastRead,LPFILETIME pLastWritten) const{
+		// given specific File, populates the Created, LastRead, and LastWritten outputs
+		if (pCreated) *pCreated=TFileDateTime::None;	// Files don't have time stamps by default
+		if (pLastRead) *pLastRead=TFileDateTime::None;	// Files don't have time stamps by default
+		if (pLastWritten) *pLastWritten=TFileDateTime::None;	// Files don't have time stamps by default
+	}
+
+	bool CDos::GetFileCreatedTimeStamp(PCFile file,FILETIME &rCreated) const{
+		// True <=> File has a Created time stamp copied to the output field, otherwise False
+		GetFileTimeStamps( file, &rCreated, nullptr, nullptr );
+		return TFileDateTime::None!=rCreated;
+	}
+
+	bool CDos::GetFileLastReadTimeStamp(PCFile file,FILETIME &rLastRead) const{
+		// True <=> File has a LastRead time stamp copied to the output field, otherwise False
+		GetFileTimeStamps( file, nullptr, &rLastRead, nullptr );
+		return TFileDateTime::None!=rLastRead;
+	}
+
+	bool CDos::GetFileLastWrittenTimeStamp(PCFile file,FILETIME &rLastWritten) const{
+		// True <=> File has a LastRead time stamp copied to the output field, otherwise False
+		GetFileTimeStamps( file, nullptr, nullptr, &rLastWritten );
+		return TFileDateTime::None!=rLastWritten;
+	}
+
+	void CDos::SetFileTimeStamps(PFile file,const FILETIME *pCreated,const FILETIME *pLastRead,const FILETIME *pLastWritten){
+		// translates the Created, LastRead, and LastWritten intputs into this DOS File time stamps
+		//nop (Files don't have time stamps by default)
+	}
+
 	bool CDos::IsDirectory(PCFile file) const{
 		// True <=> given File is actually a Directory, otherwise False
 		return (GetAttributes(file)&FILE_ATTRIBUTE_DIRECTORY)!=0;
@@ -1163,11 +1193,23 @@ finished:
 
 
 
-	const FILETIME CDos::TFileDateTime::None;
+	static const FILETIME None;
+
+	const CDos::TFileDateTime CDos::TFileDateTime::None(::None);
 
 	CDos::TFileDateTime::TFileDateTime(const FILETIME &r)
 		// ctor
 		: FILETIME(r) {
+	}
+
+	bool CDos::TFileDateTime::operator==(const FILETIME &r) const{
+		// True <=> this DateTime is the same as the specified one, otherwise False
+		return dwLowDateTime==r.dwLowDateTime && dwHighDateTime==r.dwHighDateTime;
+	}
+
+	bool CDos::TFileDateTime::operator!=(const FILETIME &r) const{
+		// True <=> this DateTime is different from the specified one, otherwise False
+		return dwLowDateTime!=r.dwLowDateTime || dwHighDateTime!=r.dwHighDateTime;
 	}
 
 	bool CDos::TFileDateTime::Edit(bool dateEditingEnabled,bool timeEditingEnabled,const SYSTEMTIME *epoch){

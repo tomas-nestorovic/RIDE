@@ -667,7 +667,7 @@ nextCluster:result++;
 		return result;
 	}
 
-	TStdWinError CMSDOS7::__createSubdirectory__(LPCTSTR name,DWORD winAttr,const FILETIME &rCreated,const FILETIME &rLastRead,const FILETIME &rLastModified,PDirectoryEntry &rCreatedSubdir){
+	TStdWinError CMSDOS7::__createSubdirectory__(LPCTSTR name,DWORD winAttr,PDirectoryEntry &rCreatedSubdir){
 		// creates a new Subdirectory in CurrentDirectory; returns Windows standard i/o error
 		// - allocating new Directory Cluster
 		const TCluster32 cluster=__allocateAndResetDirectoryCluster__();
@@ -687,9 +687,7 @@ nextCluster:result++;
 			// . size
 			//nop (always 0)
 			// . dates and times
-			TDateTime(rCreated).ToDWord( &tmp.shortNameEntry.timeAndDateCreated );
-			//TODO: TDateTime(rLastRead).ToDWord( &tmp.shortNameEntry.dateLastAccessed );
-			TDateTime(rLastModified).ToDWord( &tmp.shortNameEntry.timeAndDateLastModified );
+			//nop (set separately by the caller via SetFileTimeStampts)
 			// . first Cluster
 			tmp.shortNameEntry.__setFirstCluster__(cluster);
 			// . Attributes
@@ -783,6 +781,35 @@ nextCluster:result++;
 		}
 	}
 
+	void CMSDOS7::GetFileTimeStamps(PCFile file,LPFILETIME pCreated,LPFILETIME pLastRead,LPFILETIME pLastWritten) const{
+		// given specific File, populates the Created, LastRead, and LastWritten outputs
+		const PCDirectoryEntry de=(PCDirectoryEntry)file;
+		if (pCreated)
+			*pCreated= de!=MSDOS7_DIR_ROOT ? TDateTime(de->shortNameEntry.timeAndDateCreated) : TFileDateTime::None ;
+		if (pLastRead)
+			*pLastRead= de!=MSDOS7_DIR_ROOT ? TDateTime(MAKELONG(0,de->shortNameEntry.dateLastAccessed)) : TFileDateTime::None ;
+		if (pLastWritten)
+			*pLastWritten= de!=MSDOS7_DIR_ROOT ? TDateTime(de->shortNameEntry.timeAndDateLastModified) : TFileDateTime::None ;
+	}
+
+	void CMSDOS7::SetFileTimeStamps(PFile file,const FILETIME *pCreated,const FILETIME *pLastRead,const FILETIME *pLastWritten){
+		// translates the Created, LastRead, and LastWritten intputs into this DOS File time stamps
+		if (file==MSDOS7_DIR_ROOT)
+			return;
+		const PDirectoryEntry de=(PDirectoryEntry)file;
+		if (pCreated)
+			TDateTime(*pCreated).ToDWord( &de->shortNameEntry.timeAndDateCreated );
+		if (pLastRead){
+			DWORD tmp;
+			TDateTime(*pLastRead).ToDWord( &tmp );
+			de->shortNameEntry.dateLastAccessed=HIWORD(tmp);
+		}
+		if (pLastWritten)
+			TDateTime(*pLastWritten).ToDWord( &de->shortNameEntry.timeAndDateLastModified );
+		if (pCreated || pLastRead || pLastWritten)
+			__markDirectorySectorAsDirty__(de);
+	}
+
 	DWORD CMSDOS7::GetAttributes(PCFile file) const{
 		// maps File's attributes to Windows attributes and returns the result
 		return	file!=MSDOS7_DIR_ROOT
@@ -862,7 +889,7 @@ nextCluster:result++;
 			return nullptr;
 	}
 
-	TStdWinError CMSDOS7::ImportFile(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,const FILETIME &rCreated,const FILETIME &rLastRead,const FILETIME &rLastModified,PFile &rFile){
+	TStdWinError CMSDOS7::ImportFile(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile){
 		// imports specified File (physical or virtual) into the Image; returns Windows standard i/o error
 		// - marking the Volume as "dirty"
 		//TODO (below just draft)
@@ -888,9 +915,7 @@ nextCluster:result++;
 			// . size
 			tmp.shortNameEntry.size=fileSize;
 			// . dates and times
-			TDateTime(rCreated).ToDWord( &tmp.shortNameEntry.timeAndDateCreated );
-			//TODO: TDateTime(rLastRead).ToDWord( &tmp.shortNameEntry.dateLastAccessed );
-			TDateTime(rLastModified).ToDWord( &tmp.shortNameEntry.timeAndDateLastModified );
+			//nop (set separately by the caller via SetFileTimeStampts
 			// . first Cluster
 			//nop (set up below, now 0 = zero-length File)
 			// . Attributes
