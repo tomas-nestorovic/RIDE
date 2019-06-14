@@ -64,6 +64,12 @@
 			::lstrcpy( lpfd->cFileName, relativeDir );
 			lpfd->dwFileAttributes=fileManager->DOS->GetAttributes(file);
 			lpfd->nFileSizeLow=fileManager->DOS->ExportFile(file,nullptr,-1,nullptr); // getting only the export size of Files, not actually exporting any Files
+			if (fileManager->DOS->GetFileCreatedTimeStamp( file, lpfd->ftCreationTime ))
+				lpfd->dwFlags|=FD_CREATETIME;
+			if (fileManager->DOS->GetFileLastReadTimeStamp( file, lpfd->ftLastAccessTime ))
+				lpfd->dwFlags|=FD_ACCESSTIME;
+			if (fileManager->DOS->GetFileLastWrittenTimeStamp( file, lpfd->ftLastWriteTime ))
+				lpfd->dwFlags|=FD_WRITESTIME;
 			lpfd++;
 			listOfFiles.AddTail(file);
 		}
