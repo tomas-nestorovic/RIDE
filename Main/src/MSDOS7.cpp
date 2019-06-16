@@ -787,7 +787,7 @@ nextCluster:result++;
 		if (pCreated)
 			*pCreated= de!=MSDOS7_DIR_ROOT ? TDateTime(de->shortNameEntry.timeAndDateCreated) : TFileDateTime::None ;
 		if (pLastRead)
-			*pLastRead= de!=MSDOS7_DIR_ROOT ? TDateTime(MAKELONG(0,de->shortNameEntry.dateLastAccessed)) : TFileDateTime::None ;
+			*pLastRead= de!=MSDOS7_DIR_ROOT ? TDateTime(de->shortNameEntry.dateLastAccessed) : TFileDateTime::None ;
 		if (pLastWritten)
 			*pLastWritten= de!=MSDOS7_DIR_ROOT ? TDateTime(de->shortNameEntry.timeAndDateLastModified) : TFileDateTime::None ;
 	}

@@ -246,7 +246,7 @@
 		class CMsdos7FileManagerView sealed:public CFileManagerView{
 			static bool WINAPI __onNameAndExtConfirmed__(PVOID file,LPCTSTR newNameAndExt,short nCharsOfNewNameAndExt);
 			static bool WINAPI __editFileAttributes__(PVOID file,PVOID,short);
-			static bool WINAPI __editFileDateTime__(PVOID file,PVOID value,short);
+			static bool WINAPI __editFileDateTime__(PVOID file,PVOID value,short valueSize);
 
 			static const TFileInfo InformationList[];
 			static const TDirectoryStructureManagement dirManagement;
@@ -300,12 +300,14 @@
 		struct TDateTime sealed:public TFileDateTime{
 			static const SYSTEMTIME Epoch[];
 
+			TDateTime(WORD msdosDate);
 			TDateTime(DWORD msdosTimeAndDate);
 			TDateTime(const FILETIME &r);
 
 			LPCTSTR ToString(PTCHAR buf) const;
+			PTCHAR DateToString(PTCHAR buf) const;
 			bool ToDWord(PDWORD pOutResult) const;
-			void DrawInPropGrid(HDC dc,RECT rc,BYTE horizonalAlignment=DT_RIGHT) const;
+			void DrawInPropGrid(HDC dc,RECT rc,bool onlyDate=false,BYTE horizonalAlignment=DT_RIGHT) const;
 		};
 
 		static const TProperties Properties;

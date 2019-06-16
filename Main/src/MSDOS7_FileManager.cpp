@@ -1,19 +1,21 @@
 #include "stdafx.h"
 #include "MSDOS7.h"
 
-	#define INFORMATION_COUNT		5
+	#define INFORMATION_COUNT		6
 	#define INFORMATION_NAME_A_EXT	0 /* column to sort by */
 	#define INFORMATION_SIZE		1 /* column to sort by */
 	#define INFORMATION_ATTRIBUTES	2 /* column to sort by */
 	#define INFORMATION_CREATED		3 /* column to sort by */
-	#define INFORMATION_MODIFIED	4 /* column to sort by */
+	#define INFORMATION_READ		4 /* column to sort by */
+	#define INFORMATION_MODIFIED	5 /* column to sort by */
 
 	const CFileManagerView::TFileInfo CMSDOS7::CMsdos7FileManagerView::InformationList[INFORMATION_COUNT]={
 		{ _T("Name"),		LVCFMT_LEFT,	250 },
 		{ _T("Size"),		LVCFMT_RIGHT,	70 },
 		{ _T("Attributes"), LVCFMT_RIGHT,	80 },
 		{ _T("Created"),	LVCFMT_RIGHT,	190 },
-		{ _T("Modified"),	LVCFMT_RIGHT,	190 }
+		{ _T("Last read"),	LVCFMT_RIGHT,	110 },
+		{ _T("Last modified"),	LVCFMT_RIGHT,	190 }
 	};
 
 	const CFileManagerView::TDirectoryStructureManagement CMSDOS7::CMsdos7FileManagerView::dirManagement={
@@ -164,6 +166,10 @@
 		r.right=*tabs++;
 			TDateTime(de->shortNameEntry.timeAndDateCreated).DrawInPropGrid(dc,r);
 		r.left=r.right;
+		// . COLUMN: date last read
+		r.right=*tabs++;
+			TDateTime(de->shortNameEntry.dateLastAccessed).DrawInPropGrid(dc,r,true);
+		r.left=r.right;
 		// . COLUMN: date/time last modified
 		r.right=*tabs++;
 			TDateTime(de->shortNameEntry.timeAndDateLastModified).DrawInPropGrid(dc,r);
@@ -187,6 +193,8 @@
 				return f1->shortNameEntry.attributes-f2->shortNameEntry.attributes;
 			case INFORMATION_CREATED:
 				return f1->shortNameEntry.timeAndDateCreated-f2->shortNameEntry.timeAndDateCreated;
+			case INFORMATION_READ:
+				return f1->shortNameEntry.dateLastAccessed-f2->shortNameEntry.dateLastAccessed;
 			case INFORMATION_MODIFIED:
 				return f1->shortNameEntry.timeAndDateLastModified-f2->shortNameEntry.timeAndDateLastModified;
 		}
@@ -242,11 +250,17 @@
 			return false;
 	}
 
-	bool WINAPI CMSDOS7::CMsdos7FileManagerView::__editFileDateTime__(PVOID file,PVOID value,short){
+	bool WINAPI CMSDOS7::CMsdos7FileManagerView::__editFileDateTime__(PVOID file,PVOID value,short valueSize){
 		// True <=> date&time editing confirmed, otherwise False
-		CMSDOS7::TDateTime dt(*(PDWORD)value);
-		if (dt.Edit(true,true,CMSDOS7::TDateTime::Epoch)){
-			dt.ToDWord( (PDWORD)value );
+		CMSDOS7::TDateTime dt( valueSize==sizeof(DWORD) ? *(PDWORD)value : *(PWORD)value);
+		if (dt.Edit( true, valueSize==sizeof(DWORD), CMSDOS7::TDateTime::Epoch )){
+			if (valueSize==sizeof(DWORD))
+				dt.ToDWord( (PDWORD)value );
+			else{
+				DWORD tmp;
+				dt.ToDWord(&tmp);
+				*(PWORD)value=HIWORD(tmp);
+			}
 			((CMSDOS7 *)CDos::__getFocused__())->__markDirectorySectorAsDirty__(file);
 			return true;
 		}else
@@ -271,6 +285,8 @@
 				return __createStdEditorWithEllipsis__( file, __editFileAttributes__ );
 			case INFORMATION_CREATED:
 				return __createStdEditorWithEllipsis__( file, &((PDirectoryEntry)file)->shortNameEntry.timeAndDateCreated, sizeof(DWORD), __editFileDateTime__ );
+			case INFORMATION_READ:
+				return __createStdEditorWithEllipsis__( file, &((PDirectoryEntry)file)->shortNameEntry.dateLastAccessed, sizeof(WORD), __editFileDateTime__ );
 			case INFORMATION_MODIFIED:
 				return __createStdEditorWithEllipsis__( file, &((PDirectoryEntry)file)->shortNameEntry.timeAndDateLastModified, sizeof(DWORD), __editFileDateTime__ );
 			default:
@@ -317,6 +333,12 @@
 
 	const SYSTEMTIME CMSDOS7::TDateTime::Epoch[]={ {1980,1,2,1}, {2107,12,4,31} };
 
+	CMSDOS7::TDateTime::TDateTime(WORD msdosDate)
+		// ctor
+		: TFileDateTime(TFileDateTime::None) {
+		::DosDateTimeToFileTime( msdosDate, 0, this );
+	}
+
 	CMSDOS7::TDateTime::TDateTime(DWORD msdosTimeAndDate)
 		// ctor
 		: TFileDateTime(TFileDateTime::None) {
@@ -330,15 +352,18 @@
 
 	LPCTSTR CMSDOS7::TDateTime::ToString(PTCHAR buf) const{
 		// populates the Buffer with this DateTime value and returns the buffer
-		if (ToDWord(nullptr)){ // is valid in MS-DOS format?
-			static const LPCTSTR MonthAbbreviations[]={ _T("Jan"), _T("Feb"), _T("Mar"), _T("Apr"), _T("May"), _T("Jun"), _T("Jul"), _T("Aug"), _T("Sep"), _T("Oct"), _T("Nov"), _T("Dec") };
-			SYSTEMTIME st;
-			::FileTimeToSystemTime( this, &st );
-			::SystemTimeToTzSpecificLocalTime( nullptr, &st, &st );
-			::wsprintf( buf, _T("%d/%s/%d, %d:%02d:%02d"), st.wDay, MonthAbbreviations[st.wMonth-1], st.wYear, st.wHour, st.wMinute, st.wSecond );
+		if (DateToString(buf)){ // is valid in MS-DOS format?
+			TimeToString(  buf+::lstrlen( ::lstrcat(buf,_T(", ")) )  );
 			return buf;
 		}else
 			return nullptr;
+	}
+
+	PTCHAR CMSDOS7::TDateTime::DateToString(PTCHAR buf) const{
+		// populates the Buffer with this Date value and returns the buffer
+		return	ToDWord(nullptr) // is valid in MS-DOS format?
+				? __super::DateToString(buf)
+				: nullptr;
 	}
 
 	bool CMSDOS7::TDateTime::ToDWord(PDWORD pOutResult) const{
@@ -356,17 +381,17 @@
 		return !st.wYear; // zeroth Year reserved for clearing date-time entries in FAT (or whereever else used), see the Edit method
 	}
 
-	void CMSDOS7::TDateTime::DrawInPropGrid(HDC dc,RECT rc,BYTE horizonalAlignment) const{
+	void CMSDOS7::TDateTime::DrawInPropGrid(HDC dc,RECT rc,bool onlyDate,BYTE horizonalAlignment) const{
 		// draws the MS-DOS file date&time information
 		rc.left+=PROPGRID_CELL_MARGIN_LEFT;
 		TCHAR buf[80];
-		if (const LPCTSTR desc=ToString(buf)) // is valid in MS-DOS format?
+		if (const LPCTSTR desc=onlyDate?DateToString(buf):ToString(buf)) // is valid in MS-DOS format?
 			::DrawText(	dc, desc, -1, &rc,
 						DT_SINGLELINE | horizonalAlignment | DT_VCENTER
 					);
 		else{
 			const int color0=::SetTextColor( dc, 0xee );
-				::DrawText(	dc, _T("Invalid or no date"), -1, &rc,
+				::DrawText(	dc, _T("N/A"), -1, &rc,
 							DT_SINGLELINE | horizonalAlignment | DT_VCENTER
 						);
 			::SetTextColor(dc,color0);

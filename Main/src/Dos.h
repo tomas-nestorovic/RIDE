@@ -69,6 +69,8 @@
 
 			bool operator==(const FILETIME &r) const;
 			bool operator!=(const FILETIME &r) const;
+			PTCHAR DateToString(PTCHAR buf) const;
+			PTCHAR TimeToString(PTCHAR buf) const;
 			bool Edit(bool dateEditingEnabled,bool timeEditingEnabled,const SYSTEMTIME *epoch);
 		};
 
