@@ -196,10 +196,11 @@ different:	Utils::Information(_T("No, the files differ in content! (File names a
 		const DWORD L2= rDialog.file2.f ? rDialog.file2.f->GetLength() : 0;
 		const DWORD biggerSize=max(L1,L2);
 			rDialog.file1.hexaComparison.SetLogicalSize(biggerSize);
+			rDialog.file1.hexaComparison.Invalidate();
 			rDialog.file2.hexaComparison.SetLogicalSize(biggerSize);
+			rDialog.file2.hexaComparison.Invalidate();
 		// - recovering the scroll position (its reset in Reset)
 		hexaComparison.SetScrollInfo( SB_VERT, &si, TRUE );
-		hexaComparison.Invalidate();
 		// - Drop always succeeds
 		::EnableWindow( rDialog.hCompareButton, rDialog.file1.f&&rDialog.file2.f );
 	}
