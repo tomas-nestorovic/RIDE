@@ -6,7 +6,6 @@
 		// ctor
 		// - base
 		: CSingleDocTemplate( IDR_MAINFRAME, nullptr, nullptr, nullptr ){
-		empty.m_bAutoDelete=FALSE; // Empty document destroyed along with this Template
 		m_bAutoDelete=FALSE; // for the Template to be not destroyed when it contains no open documents (no open Images)
 		// - creating the MainWindow
 		app.m_pMainWnd=new CMainWindow;
@@ -55,7 +54,18 @@
 		// - closing current document
 		if (!__closeDocument__())
 			return nullptr;
+		// - creating a new document doesn't require opening any existing document
+		if (!lpszPathName)
+			return nullptr;
 		// - opening the requested document
-		//nop (caller is to open and load the document, and then call AddDocument)
-		return &empty;
+		const LPCTSTR extension=_tcsrchr(lpszPathName,'.');
+		const CImage::PCProperties p=	extension // recognizing file Image by its extension
+										? CImage::__determineTypeByExtension__(extension)
+										: nullptr;
+		if (!p){
+			Utils::FatalError(_T("Unknown container to load."));
+			return nullptr;
+		}
+		return p->fnInstantiate(); // instantiating recognized file Image
+		// caller is now to load the document, and then call AddDocument
 	}

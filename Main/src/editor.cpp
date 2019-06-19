@@ -249,19 +249,8 @@
 				return nullptr;
 				//AfxThrowFileException( CFileException::OsErrorToException(err), err, FDD_A_LABEL );
 			}
-		}else if (CDocument *const doc=CWinApp::OpenDocumentFile(lpszFileName)){
+		}else if (image=(PImage)CWinApp::OpenDocumentFile(lpszFileName)){
 			// Image opened successfully
-			if (doc==CImage::__getActive__()) // if attempting to open an already opened Image ...
-				return doc; // ... returning the already opened instance
-			const LPCTSTR extension=_tcsrchr(lpszFileName,'.');
-			const CImage::PCProperties p=	extension // recognizing file Image by its extension
-											? CImage::__determineTypeByExtension__(extension)
-											: nullptr;
-			if (!p){
-				Utils::FatalError(_T("Unknown container to load."));
-				return nullptr;
-			}
-			image=p->fnInstantiate(); // instantiating recognized file Image
 openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully ...
 				if (!image->CanBeModified()) // ... inform on eventual "read-only" mode (forced if Image on the disk is read-only, e.g. because opened from a CD-R)
 					Utils::InformationWithCheckableShowNoMore(_T("The image has the Read-only flag set - editing will be disabled."),INI_GENERAL,INI_MSG_READONLY);

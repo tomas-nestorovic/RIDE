@@ -44,7 +44,6 @@
 		};
 
 		class CTdiTemplate sealed:public CSingleDocTemplate{
-			CDocument empty;
 		public:
 			static CTdiTemplate *pSingleInstance;
 
