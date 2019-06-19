@@ -1600,6 +1600,7 @@ STRINGTABLE DISCARDABLE
 BEGIN
     ID_EDIT_SELECT_NONE     "Remove current selection"
     ID_EDIT_SELECT_INVERSE  "Invert current selection"
+    ID_BOOKMARK_TOGGLE      "Toggle a bookmark at cursor position\nToggle a bookmark"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -1607,6 +1608,8 @@ BEGIN
     ID_FILEMANAGER_REFRESH  "Refresh view at the current directory"
     ID_TRACKMAP_NUMBERING   "Show each sector's number\nSector numbering"
     ID_APP_UPDATE           "Check if you are using the latest and greatest version"
+    ID_WEB_NAVIGATE_BACK    "Go to previous website\nGo to previous website"
+    ID_WEB_NAVIGATE_FORTH   "Go to next website\nGo to next website"
     ID_WEB_DEFAULT_BROWSER  "Open in default browser\nOpen in default browser"
     ID_DOS_PREVIEWASBINARY  "Show raw content of files in hexa-mode"
 END
@@ -1648,6 +1651,36 @@ BEGIN
                             "Use only FAT32 legal characters in export names and don't append import information"
     ID_DOS_TAKEATOUR        "Learn more about this DOS implementation"
     ID_ZX_PREVIEWASBASIC    "Show files as BASIC program listings"
+    ID_NEXT                 "Go to next item\nGo to next item"
+    ID_PREV                 "Go to previous item\nGo to previous item"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_EDIT_DELETE          "Delete selected content\nDelete"
+    ID_BOOKMARK_NEXT        "Go to next bookmark\nGo to next bookmark"
+    ID_EDIT_SELECT_CURRENT  "Select whole item under cursor"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_BOOKMARK_PREV        "Go to previous bookmark\nGo to previous bookmark"
+    ID_NAVIGATE_ADDRESS     "Place cursor at chosen address\nGo to address"
+    ID_SELECT_CURRENT_TRACK "Select whole track under cursor"
+    ID_SELECT_CURRENT_CYLINDER 
+                            "Select whole cylinder under cursor (if cylinder already fully scanned, e.g. real FDD)"
+    ID_NAVIGATE_PREVIOUSCYLINDER 
+                            "Go to cylinder preceeding the one under cursor"
+    ID_NAVIGATE_NEXTCYLINDER 
+                            "Go to cylinder following the one under cursor (if cylinder already fully scanned, e.g. real FDD)"
+    ID_NAVIGATE_NEXTTRACK   "Go to track following the one under cursor"
+    ID_NAVIGATE_PREVIOUSTRACK "Go to track preceeding the one under cursor"
+    ID_NAVIGATE_SECTOR      "Go to chosen sector"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_BOOKMARK_DELETEALL   "Irreversively delete all set bookmarks"
 END
 
 #endif    // Neutral resources
