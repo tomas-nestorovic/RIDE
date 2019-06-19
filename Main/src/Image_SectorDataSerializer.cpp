@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-	CImage::CSectorDataSerializer::CSectorDataSerializer(CHexaEditor *pParentHexaEditor,PImage image,DWORD dataTotalLength)
+	CImage::CSectorDataSerializer::CSectorDataSerializer(CHexaEditor *pParentHexaEditor,PImage image,LONG dataTotalLength)
 		// ctor
 		: pParentHexaEditor(pParentHexaEditor) , image(image) , dataTotalLength(dataTotalLength) , position(0) , currTrack(0) {
 		sector.indexOnTrack=0, sector.offset=0;

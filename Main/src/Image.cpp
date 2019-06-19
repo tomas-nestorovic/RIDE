@@ -122,7 +122,7 @@
 
 	bool TFdcStatus::DescribesIdFieldCrcError() const{
 		// True <=> Registers describe that ID Field cannot be read without error, otherwise False
-		return reg1&FDC_ST1_NO_DATA;
+		return (reg1&FDC_ST1_NO_DATA)!=0;
 	}
 
 	void TFdcStatus::CancelIdFieldCrcError(){
@@ -134,7 +134,7 @@
 
 	bool TFdcStatus::DescribesDataFieldCrcError() const{
 		// True <=> Registers describe that ID Field or Data contain CRC error, otherwise False
-		return reg2&FDC_ST2_CRC_ERROR_IN_DATA;
+		return (reg2&FDC_ST2_CRC_ERROR_IN_DATA)!=0;
 	}
 
 	void TFdcStatus::CancelDataFieldCrcError(){
@@ -146,7 +146,7 @@
 
 	bool TFdcStatus::DescribesDeletedDam() const{
 		// True <=> Registers describe that using normal data reading command, deleted data have been read instead, otherwise False
-		return reg2&FDC_ST2_DELETED_DAM;
+		return (reg2&FDC_ST2_DELETED_DAM)!=0;
 	}
 
 	bool TFdcStatus::DescribesMissingDam() const{

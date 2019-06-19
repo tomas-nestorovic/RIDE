@@ -387,7 +387,7 @@ nextCluster:result++;
 		}
 	}
 
-	#define KANJI				0xe5
+	#define KANJI				(char)0xe5
 	#define KANJI_PLACEHOLDER	5
 
 	void CMSDOS7::__getShortFileNameAndExt__(PCDirectoryEntry de,PTCHAR bufName,PTCHAR bufExt) const{

@@ -17,7 +17,7 @@
 
 	CDsk5::TParams::TParams()
 		// ctor
-		: rev5( app.GetProfileInt(INI_DSK,INI_VERSION,1) ) {
+		: rev5( app.GetProfileInt(INI_DSK,INI_VERSION,1)!=0 ) {
 	}
 
 	#define STD_HEADER		"MV - CPC" /* suffices to recognize "standard" DSK format */

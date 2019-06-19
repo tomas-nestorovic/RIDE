@@ -84,11 +84,11 @@
 			if (!(zxLength--))
 				break;
 			else if (z==96)
-				*t++=163; // Pound sign, £
+				*t++=(char)163; // Pound sign, £
 			else if (z<=126)
 				*t++=z; // the same as ASCII up to character 126 (0x7e)
 			else if (z==127)
-				*t++=169; // copyright sign, ©
+				*t++=(char)169; // copyright sign, ©
 			else if (z<=143)
 				*t++=z; // UDG graphics
 			else if (z<=164)

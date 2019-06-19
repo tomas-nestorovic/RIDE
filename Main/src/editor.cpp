@@ -199,7 +199,6 @@
 		OnFileNew(); // to close any previous Image
 		//SaveModified()
 		if (!app.m_pMainWnd->IsWindowVisible()) return; // ignoring the initial command sent by MFC immediately after the application has started
-		PVOID tab;
 		if (!CImage::__getActive__()){
 			// no Image open, i.e. any existing Image successfully closed in above OnFileNew
 			// . displaying the "New Image" Dialog
@@ -400,8 +399,8 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 	afx_msg void CRideApp::__openImageAs__(){
 		// opens Image and lets user to determine suitable DOS
 		recognizeDosAutomatically=false;
-		CMainWindow::CTdiTemplate::pSingleInstance->__closeDocument__(); // to close any previous Image
-		OnFileOpen();
+		if (CMainWindow::CTdiTemplate::pSingleInstance->__closeDocument__()) // to close any previous Image
+			OnFileOpen();
 	}
 
 	afx_msg void CRideApp::__showAbout__() const{
@@ -495,8 +494,12 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		//CWinApp::OnFileOpen();
 		TCHAR fileName[MAX_PATH];
 		*fileName='\0';
-		if (__doPromptFileName__( fileName, true, AFX_IDS_OPENFILE, OFN_FILEMUSTEXIST, nullptr ))
+		if (__doPromptFileName__( fileName, true, AFX_IDS_OPENFILE, OFN_FILEMUSTEXIST, nullptr )){
+			if (const CDocument *const doc=CImage::__getActive__())
+				if (doc->GetPathName()==fileName) // if attempting to open an already opened Image ...
+					return; // ... doing nothing
 			OpenDocumentFile(fileName);
+		}
 	}
 
 	void WINAPI AfxThrowInvalidArgException(){

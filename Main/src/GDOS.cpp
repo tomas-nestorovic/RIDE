@@ -70,7 +70,7 @@
 	bool CGDOS::TDirectoryEntry::TSectorAllocationBitmap::IsSectorAllocated(RCPhysicalAddress chs) const{
 		// True <=> Sector with the given PhysicalAddress is Occupied, otherwise False
 		const div_t d=div(__sectorChs2sectorId__(chs),8); // 8 = number of bits in a Byte
-		return allocated[d.quot]&(1<<d.rem);
+		return ( allocated[d.quot]&(1<<d.rem) )!=0;
 	}
 
 	void CGDOS::TDirectoryEntry::TSectorAllocationBitmap::SetSectorAllocation(RCPhysicalAddress chs,bool isOccupied){

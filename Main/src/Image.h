@@ -208,15 +208,15 @@
 		protected:
 			CHexaEditor *const pParentHexaEditor;
 			const PImage image;
-			DWORD dataTotalLength;
-			DWORD position;
+			LONG dataTotalLength;
+			LONG position;
 			TTrack currTrack; // Track (inferred from Position) to currently read from or write to
 			struct{ // Sector (inferred from Position) to currently read from or write to
 				BYTE indexOnTrack; // zero-based index of the Sector on the Track (to distinguish among duplicate-ID Sectors)
 				WORD offset;
 			} sector;
 
-			CSectorDataSerializer(CHexaEditor *pParentHexaEditor,PImage image,DWORD dataTotalLength);
+			CSectorDataSerializer(CHexaEditor *pParentHexaEditor,PImage image,LONG dataTotalLength);
 		public:
 			DWORD GetLength() const override sealed;
 			void SetLength(DWORD dwNewLen) override sealed;

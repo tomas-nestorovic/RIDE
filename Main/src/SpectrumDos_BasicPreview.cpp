@@ -16,8 +16,8 @@
 		// - base
 		: CFilePreview(	&listingView, INI_PREVIEW, rFileManager, PREVIEW_WIDTH_DEFAULT, PREVIEW_HEIGHT_DEFAULT, IDR_SPECTRUM_PREVIEW_BASIC )
 		, listingView(_T(""))
-		, applyColors( app.GetProfileInt(INI_PREVIEW,INI_APPLY_COLORS,true) )
-		, showNonprintableChars( app.GetProfileInt(INI_PREVIEW,INI_SHOW_NONPRINTABLE_CHARS,false) )
+		, applyColors( app.GetProfileInt(INI_PREVIEW,INI_APPLY_COLORS,true)!=0 )
+		, showNonprintableChars( app.GetProfileInt(INI_PREVIEW,INI_SHOW_NONPRINTABLE_CHARS,false)!=0 )
 		, binaryAfter0x14( (TBinaryAfter0x14)app.GetProfileInt(INI_PREVIEW,INI_SHOW_INTERNAL_BINARY,TBinaryAfter0x14::DONT_SHOW) ) {
 		// - initialization
 		pSingleInstance=this;
@@ -200,7 +200,7 @@
 			bool __changeFlash__(BYTE newFlash){
 				// sets new Ink color index
 				if (newFlash<=1){
-					attributes.flash=newFlash;
+					attributes.flash=newFlash!=0;
 					return true;
 				}else
 					return false;
@@ -208,7 +208,7 @@
 			bool __changeBright__(BYTE newBright){
 				// sets new Ink color index
 				if (newBright<=1){
-					attributes.bright=newBright;
+					attributes.bright=newBright!=0;
 					return true;
 				}else
 					return false;
@@ -216,7 +216,7 @@
 			bool __changeInverse__(BYTE newInverse){
 				// sets new Ink color index
 				if (newInverse<=1){
-					attributes.inverse=newInverse;
+					attributes.inverse=newInverse!=0;
 					return true;
 				}else
 					return false;

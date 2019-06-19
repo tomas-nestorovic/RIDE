@@ -667,7 +667,7 @@ resetSelectionWithValue:BYTE buf[65536];
 							}
 							LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 								if (msg==WM_COMMAND)
-									Utils::EnableDlgControl( m_hWnd, ID_NUMBER2, ::IsDlgButtonChecked(m_hWnd,ID_NUMBER) );
+									Utils::EnableDlgControl( m_hWnd, ID_NUMBER2, ::IsDlgButtonChecked(m_hWnd,ID_NUMBER)!=0 );
 								return __super::WindowProc(msg,wParam,lParam);
 							}
 						public:

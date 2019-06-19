@@ -498,7 +498,7 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 				cbMedium.Detach();
 				int i=dumpParams.formatJustBadTracks;
 				DDX_Check( pDX, ID_FORMAT, i );
-				dumpParams.formatJustBadTracks=i;
+				dumpParams.formatJustBadTracks=i!=0;
 				DDX_Text( pDX,	ID_CYLINDER,	(RCylinder)dumpParams.cylinderA );
 					if (mp)
 						DDV_MinMaxUInt( pDX,dumpParams.cylinderA, 0, mp->cylinderRange.iMax-1 );

@@ -596,7 +596,7 @@ importQuit2:		::GlobalUnlock(hg);
 		// imports virtual File with given Name into current Directory; returns Windows standard i/o error
 		const LPFILEDESCRIPTOR lpfd=files+i;
 		// - making sure that FileDescriptor structure contains all mandatory information
-		if (lpfd->dwFlags&FD_ATTRIBUTES_MANDATORY!=FD_ATTRIBUTES_MANDATORY)
+		if ((lpfd->dwFlags&FD_ATTRIBUTES_MANDATORY)!=FD_ATTRIBUTES_MANDATORY)
 			return ERROR_NOT_SUPPORTED;
 		if (lpfd->nFileSizeHigh)
 			return ERROR_FILE_TOO_LARGE;

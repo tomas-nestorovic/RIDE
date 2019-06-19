@@ -292,7 +292,7 @@
 			// . URL-escaping the File name and extension, e.g. "PICTURE01.B" -> "PICTURE%48x%49x.B"
 			__super::GetFileExportNameAndExt(file,shellCompliant,buf);
 			// . checking that the File name is importable back in the same form, e.g. "PICTURE.B" is not exported as [PI][CTURE.B] where "PI" is a Spectrum keyword
-			TCHAR currNameAndExt[MAX_PATH],currExt[MAX_PATH];
+			TCHAR currNameAndExt[MAX_PATH];
 			GetFileNameWithAppendedExt(file,currNameAndExt);
 			for( TCHAR tmp[MAX_PATH],*p=buf; *p; p++ )
 				if (*p!='%'){ // not an escape sequence "%NN"
