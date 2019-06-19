@@ -817,8 +817,9 @@ leftMouseDragged:
 					break;
 				}
 				__super::WindowProc(msg,wParam,lParam); // to set focus and accept WM_KEY* messages
-				wParam=(WPARAM)hPreviouslyFocusedWnd; // due to the fallthrough
-				//fallthrough
+				CreateSolidCaret( (2-cursor.ascii)*font.charAvgWidth, font.charHeight );
+				ShowCaret();
+				goto cursorCorrectlyMoveTo;
 			}
 			case WM_SETFOCUS:
 				// window has received focus
@@ -826,7 +827,7 @@ leftMouseDragged:
 				if (!editable) return 0;
 				CreateSolidCaret( (2-cursor.ascii)*font.charAvgWidth, font.charHeight );
 				ShowCaret();
-				goto cursorCorrectlyMoveTo;
+				goto cursorRefresh;
 			case WM_KILLFOCUS:
 				// window has lost focus
 				::DestroyCaret();
