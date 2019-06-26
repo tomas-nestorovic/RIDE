@@ -137,7 +137,7 @@
 			::memcpy( value.buffer, tmp, n*sizeof(WCHAR) );
 		}else{
 			char tmp[STRING_LENGTH_MAX];
-			for( int i=::GetWindowTextA(hEdit,tmp,STRING_LENGTH_MAX); i<n; tmp[i++]=paddingChar );
+			for( int i=::GetWindowTextA(hEdit,tmp,STRING_LENGTH_MAX); i<n; tmp[i++]=(char)paddingChar );
 			::memcpy( value.buffer, tmp, n*sizeof(char) );
 		}
 		return true;
@@ -191,7 +191,7 @@
 				ofn.lpstrFile=::lstrcpynW( buf, (LPCWSTR)value.buffer, value.bufferCapacity+1 );
 				ofn.nMaxFile=MAX_PATH;
 			if (::GetOpenFileNameW(&ofn))
-				return ::SetWindowTextW( hEdit, buf );
+				return ::SetWindowTextW( hEdit, buf )!=FALSE;
 			else
 				return false;
 		}else{
@@ -203,7 +203,7 @@
 				ofn.lpstrFile=::lstrcpynA( buf, (LPCSTR)value.buffer, value.bufferCapacity+1 );
 				ofn.nMaxFile=MAX_PATH;
 			if (::GetOpenFileNameA(&ofn))
-				return ::SetWindowTextA( hEdit, buf );
+				return ::SetWindowTextA( hEdit, buf )!=FALSE;
 			else
 				return false;
 		}

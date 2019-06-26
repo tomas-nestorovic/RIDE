@@ -12,7 +12,7 @@
 									CPropGridCtrl::TOnValueChanged onValueChanged
 								)
 		// ctor
-		: TEditor( height, createCustomMainEditor, onEllipsisBtnClicked, onValueChanged )
+		: TEditor( height, createCustomMainEditor!=nullptr, onEllipsisBtnClicked, onValueChanged )
 		, drawValue(drawValue)
 		, createCustomMainEditor(createCustomMainEditor)
 		, onValueConfirmed( onValueConfirmed ? onValueConfirmed : __alwaysAccept__ ) {

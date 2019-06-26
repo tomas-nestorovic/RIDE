@@ -306,7 +306,7 @@ different:	Utils::Information(_T("No, the files differ in content! (File names a
 					thisFile=rDialog.file2.f, otherFile=rDialog.file1.f;
 				if (!thisFile || !otherFile) break; // if one of Files doesn't exist, we can't test their equality
 				// . determining visible portion of ThisFile
-				DWORD a,z,L=thisFile->GetLength();
+				int a,z,L=thisFile->GetLength();
 				GetVisiblePart(a,z);
 				if (a>=L) break; // it's being scrolled "behind" ThisFile (e.g. because the OtherFile is longer)
 				if (z>L) z=L;
@@ -314,7 +314,7 @@ different:	Utils::Information(_T("No, the files differ in content! (File names a
 				L=otherFile->GetLength();
 				if (a>=L){ AddEmphasis(a,z); break; } // ThisFile is longer than the OtherFile
 				if (z>L){ AddEmphasis(L,z); z=L; } // ThisFile is longer than the OtherFile
-				DWORD diffBegin=z; // Z = there's no difference between the Files
+				int diffBegin=z; // Z = there's no difference between the Files
 				for( thisFile->Seek(a,CFile::begin),otherFile->Seek(a,CFile::begin); a<z; a++ ){
 					BYTE b1,b2;
 					thisFile->Read(&b1,1), otherFile->Read(&b2,1);

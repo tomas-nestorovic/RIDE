@@ -224,7 +224,7 @@
 			LONG Seek(LONG lOff,UINT nFrom) override;
 			UINT Read(LPVOID lpBuf,UINT nCount) override sealed;
 			void Write(LPCVOID lpBuf,UINT nCount) override sealed;
-			TTrack GetCurrentSectorIndexOnTrack() const;
+			BYTE GetCurrentSectorIndexOnTrack() const;
 			virtual TPhysicalAddress GetCurrentPhysicalAddress() const=0;
 			virtual DWORD GetSectorStartPosition(RCPhysicalAddress chs,BYTE nSectorsToSkip) const=0;
 		};

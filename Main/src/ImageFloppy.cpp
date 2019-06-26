@@ -98,7 +98,7 @@
 			const TBackgroundAction trackWorker;
 			bool bContinue, bChsValid;
 			struct{
-				BYTE track;
+				TTrack track;
 				CEvent bufferEvent;
 			} request;
 			struct{
@@ -129,7 +129,7 @@
 			} scannedTracks;
 			BYTE lastKnownHexaRowLength;
 
-			TSector __scanTrack__(BYTE track,PSectorId ids,PWORD lengths) const{
+			TSector __scanTrack__(TTrack track,PSectorId ids,PWORD lengths) const{
 				// a wrapper around CImage::ScanTrack
 				const TSector nSectors=image->ScanTrack( track>>1, track&1, ids, lengths );
 				if (lengths)

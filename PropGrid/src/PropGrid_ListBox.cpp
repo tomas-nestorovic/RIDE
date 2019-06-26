@@ -104,7 +104,7 @@
 			case WM_LBUTTONDOWN:{
 				// left mouse button pressed
 				// . if cursor not above any Item, ignoring the click
-				const short i=::SendMessage(hListBox,LB_ITEMFROMPOINT,0,lParam);
+				const int i=::SendMessage(hListBox,LB_ITEMFROMPOINT,0,lParam);
 				if (i<0)
 					return 0;
 				// . if cursor above the Splitter, this is the beginning of its dragging
@@ -158,7 +158,7 @@
 				}
 				// . if clicked on Item's Value part, beginning to edit the Value using the corresponding Editor
 				if (x>pPropGridInfo->listBox.splitter.position){
-					const short i=::SendMessage(hListBox,LB_ITEMFROMPOINT,0,lParam);
+					const int i=::SendMessage(hListBox,LB_ITEMFROMPOINT,0,lParam);
 					ListBox_SetCurSel(hListBox,i); // otherwise the selection would be set no earlier than in the base window procedure which is too late (see GetCurSel below)
 					if (i>=0) // yes, an Item has been selected
 						goto editItem;

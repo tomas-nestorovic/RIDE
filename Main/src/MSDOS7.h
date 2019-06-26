@@ -130,8 +130,8 @@
 			void __getGeometry__(PFormat pFormat) const;
 			void __init__(PCFormat pFormatBoot,CFormatDialog::PCParameters params,CFat &rOutFat);
 			DWORD __getCountOfSectorsInOneFatCopy__() const;
-			TLogSector16 __getRootDirectoryFirstSector__() const;
-			DWORD __getCountOfPermanentRootDirectorySectors__() const;
+			TLogSector32 __getRootDirectoryFirstSector__() const;
+			TLogSector16 __getCountOfPermanentRootDirectorySectors__() const;
 			DWORD __getCountOfNondataSectors__() const;
 			DWORD __getClusterSizeInBytes__() const;
 		} *PBootSector;
@@ -212,7 +212,7 @@
 			const CMSDOS7 *const msdos7;
 			bool foundEndOfDirectory,fatError;
 			TCluster32 cluster,next;
-			BYTE nRemainingSectorsInCluster;
+			TLogSector16 nRemainingSectorsInCluster; // TLogSector16 as there can be up to 4095 Root Directory Sectors in FAT16
 			TLogSector32 dirSector;
 			BYTE nRemainingEntriesInSector;
 		public:

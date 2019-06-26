@@ -107,7 +107,7 @@
 		::SetLastError(ERROR_WRITE_FAULT);
 	}
 
-	TTrack CImage::CSectorDataSerializer::GetCurrentSectorIndexOnTrack() const{
+	BYTE CImage::CSectorDataSerializer::GetCurrentSectorIndexOnTrack() const{
 		// returns the zero-based index of current Sector on the Track
 		return sector.indexOnTrack;
 	}

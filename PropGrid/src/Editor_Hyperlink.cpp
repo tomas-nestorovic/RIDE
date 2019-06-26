@@ -23,7 +23,7 @@
 	void THyperlinkEditor::__drawValue__(const TPropGridInfo::TItem::TValue &value,PDRAWITEMSTRUCT pdis) const{
 		// draws the Value into the specified rectangle
 		// - creating the temporary SysLink control to adopt the appearance from
-		const WORD w=pdis->rcItem.right-pdis->rcItem.left, h=pdis->rcItem.bottom-pdis->rcItem.top;
+		const LONG w=pdis->rcItem.right-pdis->rcItem.left, h=pdis->rcItem.bottom-pdis->rcItem.top;
 		const HWND hSysLink=__createMainControl__( value, pdis->hwndItem );
 		::SendMessage( hSysLink, WM_SETFONT, (WPARAM)TPropGridInfo::FONT_DEFAULT, 0 ); // explicitly setting DPI-scaled font
 		::SetWindowPos(	hSysLink, nullptr,

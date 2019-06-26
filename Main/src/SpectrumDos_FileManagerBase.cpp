@@ -25,7 +25,7 @@
 		const PDirectoryTraversal pdt=DOS->BeginDirectoryTraversal();
 			if (!pdt) return nullptr;
 			::memcpy( tmpDirEntry, file, pdt->entrySize );
-			const BYTE nameCharsMax=pdt->nameCharsMax;
+			const WORD nameCharsMax=pdt->nameCharsMax;
 		DOS->EndDirectoryTraversal(pdt);
 		for( BYTE copyNumber=1; copyNumber; copyNumber++ ){
 			// . composing the Name for the File copy

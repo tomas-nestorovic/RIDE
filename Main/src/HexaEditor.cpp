@@ -84,7 +84,7 @@
 	#define ADDRESS_FORMAT_LENGTH	10
 	#define ADDRESS_SPACE_LENGTH	1
 
-	const CHexaEditor::TEmphasis CHexaEditor::TEmphasis::Terminator={ -1, -1 };
+	const CHexaEditor::TEmphasis CHexaEditor::TEmphasis::Terminator={ INT_MAX, INT_MAX };
 
 	CHexaEditor::CHexaEditor(PVOID param,HMENU customSelectSubmenu,HMENU customResetSubmenu,HMENU customGotoSubmenu)
 		// ctor
@@ -138,7 +138,7 @@
 		return ADDRESS_FORMAT_LENGTH*font.charAvgWidth;
 	}
 
-	void CHexaEditor::Reset(CFile *_f,DWORD _minFileSize,DWORD _maxFileSize){
+	void CHexaEditor::Reset(CFile *_f,int _minFileSize,int _maxFileSize){
 		// resets the HexaEditor and supplies it new File content
 		if (!( pContentAdviser=dynamic_cast<PContentAdviser>(  f=_f  ) )){
 			static struct TDefault sealed:public IContentAdviser{
@@ -175,26 +175,26 @@
 		}
 	}
 
-	void CHexaEditor::SetLogicalBounds(DWORD _minFileSize,DWORD _maxFileSize){
+	void CHexaEditor::SetLogicalBounds(int _minFileSize,int _maxFileSize){
 		// changes the min and max File size
 		minFileSize=_minFileSize, maxFileSize=_maxFileSize;
 	}
 
-	void CHexaEditor::SetLogicalSize(DWORD _logicalSize){
+	void CHexaEditor::SetLogicalSize(int _logicalSize){
 		// changes the LogicalSize of File content (originally set when Resetting the HexaEditor)
 		logicalSize=_logicalSize;
 		if (::IsWindow(m_hWnd)) // may be window-less if the owner is window-less
 			__refreshVertically__();
 	}
 
-	void CHexaEditor::GetVisiblePart(DWORD &rLogicalBegin,DWORD &rLogicalEnd) const{
+	void CHexaEditor::GetVisiblePart(int &rLogicalBegin,int &rLogicalEnd) const{
 		// gets the beginning and end of visible portion of the File content
 		const int i=GetScrollPos(SB_VERT);
 		rLogicalBegin=__firstByteInRowToLogicalPosition__(i);
 		rLogicalEnd=__firstByteInRowToLogicalPosition__(i+nRowsDisplayed);
 	}
 
-	void CHexaEditor::AddEmphasis(DWORD a,DWORD z){
+	void CHexaEditor::AddEmphasis(int a,int z){
 		// adds a new Emphasis into the list and orders the list by beginnings A (and thus also by endings Z; insertsort)
 		PEmphasis *p=&emphases;
 		while (a>(*p)->a) p=&(*p)->pNext;
@@ -440,7 +440,7 @@ editDelete:				// deleting the Byte after Cursor, or deleting the Selection
 						if (cursor.selectionA==cursor.selectionZ)
 							if (cursor.position<f->GetLength()) cursor.selectionA=cursor.position, cursor.selectionZ=cursor.position+1;
 							else return 0;
-deleteSelection:		UINT posSrc=max(cursor.selectionA,cursor.selectionZ), posDst=min(cursor.selectionA,cursor.selectionZ);
+deleteSelection:		int posSrc=max(cursor.selectionA,cursor.selectionZ), posDst=min(cursor.selectionA,cursor.selectionZ);
 						// . checking if there are any Bookmarks selected
 						if (bookmarks.__getNearestNextBookmarkPosition__(posDst)<posSrc){
 							if (Utils::QuestionYesNo(_T("Sure to delete selected bookmarks?"),MB_DEFBUTTON2))
@@ -450,10 +450,10 @@ deleteSelection:		UINT posSrc=max(cursor.selectionA,cursor.selectionZ), posDst=m
 						// . moving the content "after" Selection "to" the position of the Selection
 						cursor.position=posDst; // moving the Cursor
 						cursor.__cancelSelection__();
-						for( DWORD nBytesToMove=f->GetLength()-posSrc; nBytesToMove; ){
+						for( int nBytesToMove=f->GetLength()-posSrc; nBytesToMove; ){
 							BYTE buf[65536];
 							f->Seek(posSrc,CFile::begin);
-							const DWORD nBytesBuffered=f->Read(buf, min(nBytesToMove,sizeof(buf)) );
+							const int nBytesBuffered=f->Read(buf, min(nBytesToMove,sizeof(buf)) );
 							if (!nBytesBuffered) break; // no Bytes buffered if, for instance, Sector not found
 							f->Seek(posDst,CFile::begin);
 							f->Write(buf,nBytesBuffered);

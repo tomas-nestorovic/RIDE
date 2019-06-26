@@ -1202,7 +1202,7 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 		switch (fat.type){
 			case CFat::FAT12:
 			case CFat::FAT16:
-				for( TLogSector16 lsDir=bootSector->__getRootDirectoryFirstSector__(),lsData=lsDir+bootSector->__getCountOfPermanentRootDirectorySectors__(); lsDir<lsData; lsDir++ )
+				for( TLogSector32 lsDir=bootSector->__getRootDirectoryFirstSector__(),lsData=lsDir+bootSector->__getCountOfPermanentRootDirectorySectors__(); lsDir<lsData; lsDir++ )
 					if (const PSectorData tmp=__getLogicalSectorData__(lsDir)){
 						::ZeroMemory( tmp, bootSector->sectorSize );
 						__markLogicalSectorAsDirty__(lsDir);
@@ -1320,7 +1320,7 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 							foundEndOfDirectory=true; // with Empty Cluster, the traversal through the Directory cannot continue
 							return false;
 						}else if (!fatError){
-							dirSector=msdos7->__cluster2logSector__( cluster=next, nRemainingSectorsInCluster ); // also sets the NumberOfRemainingSectorsInCluster
+							dirSector=msdos7->__cluster2logSector__( cluster=next, (BYTE &)nRemainingSectorsInCluster ); // also sets the NumberOfRemainingSectorsInCluster
 							next=msdos7->fat.GetClusterValue(cluster);
 						}else
 							return false; // EntryType already set to Warning above

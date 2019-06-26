@@ -161,14 +161,14 @@
 		return nSectorsFat16 ? nSectorsFat16 : fat32.nSectorsFat32;
 	}
 
-	CMSDOS7::TLogSector16 CMSDOS7::TBootSector::__getRootDirectoryFirstSector__() const{
+	CMSDOS7::TLogSector32 CMSDOS7::TBootSector::__getRootDirectoryFirstSector__() const{
 		// computes and returns the first Sector permanently occupied by root Directory
 		return	nReservedSectors	// Boot
 				+
 				nFatCopies*__getCountOfSectorsInOneFatCopy__(); // FAT
 	}
 
-	DWORD CMSDOS7::TBootSector::__getCountOfPermanentRootDirectorySectors__() const{
+	CMSDOS7::TLogSector16 CMSDOS7::TBootSector::__getCountOfPermanentRootDirectorySectors__() const{
 		// computes and returns the number of Sectors that are permanently occupied by root Directory
 		return	sectorSize
 				? (nRootDirectoryEntries*sizeof(UDirectoryEntry)+sectorSize-1)/sectorSize

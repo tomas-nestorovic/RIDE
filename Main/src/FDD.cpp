@@ -1431,7 +1431,7 @@ Utils::Information(buf);}
 				const Utils::CLocalTime startTime;
 					lp.fdd->GetSectorData( lp.cyl, lp.head, &SectorIds[1], &w );
 				const Utils::CLocalTime endTime;
-				const DWORD deltaMicroseconds=(endTime-startTime).ToMilliseconds()*1000;
+				const int deltaMicroseconds=(endTime-startTime).ToMilliseconds()*1000;
 				// . STEP 2.4: determining if the readings took more than just one disk revolution or more
 				if (deltaMicroseconds>=pit->sectors[1].endMicroseconds-pit->sectors[0].endMicroseconds+4000) // 4000 = allowing circa 30 Bytes as a limit of detecting a single disk revolution
 					break;

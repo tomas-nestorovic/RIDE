@@ -84,7 +84,8 @@
 	bool CSpectrumDos::CTape::ModifyTrackInFat(TCylinder,THead,PSectorStatus){
 		// True <=> Statuses of all Sectors in Track successfully changed, otherwise False; caller guarantees that the number of Statuses corresponds with the number of standard "official" Sectors in the Boot
 		//nop (not applicable for Tape)
-		return m_bModified=TRUE;
+		m_bModified=TRUE;
+		return true;
 	}
 	bool CSpectrumDos::CTape::GetFileFatPath(PCFile file,CFatPath &rFatPath) const{
 		// True <=> FatPath of given File (even an erroneous FatPath) successfully retrieved, otherwise False
@@ -680,7 +681,7 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 				r.left=r.right;
 				// . COLUMN: checksum
 drawChecksum:	r.right=*tabs++;
-					const BYTE statusWidth=(r.bottom-r.top)*4/3;
+					const LONG statusWidth=(r.bottom-r.top)*4/3;
 					r.right-=statusWidth;
 					::DrawText( dc, _itot(tf->dataChecksum,bufT,10),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
 					r.left=max(r.right,r.left), r.right+=statusWidth;

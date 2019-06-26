@@ -26,7 +26,7 @@
 		typedef struct TEmphasis sealed{ // aka, "highlightings" in listing of underlying File (e.g. when comparing two Files using FileManager)
 			static const TEmphasis Terminator;
 
-			DWORD a,z;
+			int a,z;
 			TEmphasis *pNext;
 		} *PEmphasis;
 
@@ -36,9 +36,9 @@
 		const CRideFont font;
 		const HACCEL hDefaultAccelerators;
 		BYTE nBytesInRow;
-		DWORD nLogicalRows;
-		DWORD nRowsDisplayed;
-		DWORD nRowsOnPage;
+		int nLogicalRows;
+		int nRowsDisplayed;
+		int nRowsOnPage;
 		HWND hPreviouslyFocusedWnd;
 		struct TCursor sealed{
 			bool ascii; // True <=> Cursor is in the Ascii listing section
@@ -60,8 +60,8 @@
 
 		CFile *f;
 		PContentAdviser pContentAdviser;
-		DWORD minFileSize,maxFileSize;
-		DWORD logicalSize; // zero by default
+		int minFileSize,maxFileSize;
+		int logicalSize; // zero by default
 		BYTE addrLength; // Address format length (see ADDRESS_FORMAT); modified in ShowAddresses
 		bool editable;
 
@@ -85,11 +85,11 @@
 
 		void SetEditable(bool _editable);
 		int ShowAddressBand(bool _show);
-		void Reset(CFile *_f,DWORD _minFileSize,DWORD _maxFileSize);
-		void SetLogicalBounds(DWORD _minFileSize,DWORD _maxFileSize);
-		void SetLogicalSize(DWORD _logicalSize);
-		void GetVisiblePart(DWORD &rLogicalBegin,DWORD &rLogicalEnd) const;
-		void AddEmphasis(DWORD a,DWORD z);
+		void Reset(CFile *_f,int _minFileSize,int _maxFileSize);
+		void SetLogicalBounds(int _minFileSize,int _maxFileSize);
+		void SetLogicalSize(int _logicalSize);
+		void GetVisiblePart(int &rLogicalBegin,int &rLogicalEnd) const;
+		void AddEmphasis(int a,int z);
 		void CancelAllEmphases();
 		void RepaintData(bool immediately=false) const;
 		BOOL PreTranslateMessage(PMSG pMsg) override;
