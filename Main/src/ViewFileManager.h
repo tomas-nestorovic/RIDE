@@ -50,7 +50,7 @@
 			const DROPEFFECT preferredDropEffect;
 			TFileList listOfFiles;
 
-			int __addFileToExport__(PTCHAR relativeDir,CDos::PFile file,LPFILEDESCRIPTOR lpfd);
+			DWORD __addFileToExport__(PTCHAR relativeDir,CDos::PFile file,LPFILEDESCRIPTOR lpfd,TStdWinError &rOutError);
 			BOOL OnRenderData(LPFORMATETC lpFormatEtc,LPSTGMEDIUM lpStgMedium) override;
 			BOOL OnRenderGlobalData(LPFORMATETC lpFormatEtc,HGLOBAL *phGlobal) override;
 			BOOL OnRenderFileData(LPFORMATETC lpFormatEtc,CFile *pFile) override;

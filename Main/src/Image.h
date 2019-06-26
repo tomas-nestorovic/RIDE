@@ -160,7 +160,7 @@
 		BY_SIDES		=2
 	};
 
-	typedef WORD TStdWinError; // Windows standard i/o error
+	typedef DWORD TStdWinError; // Windows standard i/o error
 
 
 

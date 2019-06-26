@@ -53,8 +53,8 @@
 
 
 
-	int CFileManagerView::COleVirtualFileDataSource::__addFileToExport__(PTCHAR relativeDir,CDos::PFile file,LPFILEDESCRIPTOR lpfd){
-		// adds given File for exporting by initializing the FileDescriptor structure; returns the number of Files added by this command: ">1" = this File is a Directory (and all its "Subfiles" have thus been added), "==1" = only specified File added, or "<0" = an error occurred and absolute value represents its code
+	DWORD CFileManagerView::COleVirtualFileDataSource::__addFileToExport__(PTCHAR relativeDir,CDos::PFile file,LPFILEDESCRIPTOR lpfd,TStdWinError &rOutError){
+		// adds given File for exporting by initializing the FileDescriptor structure; returns the number of Files (and Directories) added by this command
 		// - checking if the File can be exported
 		const PTCHAR exportName=fileManager->DOS->GetFileExportNameAndExt(file,fileManager->DOS->generateShellCompliantExportNames,relativeDir+::lstrlen(relativeDir));
 		if (!exportName) return 0;
@@ -74,26 +74,23 @@
 			listOfFiles.AddTail(file);
 		}
 		// - processing recurrently
-		int result;
+		DWORD result=1; // this File or Directory
 		if (fileManager->DOS->IsDirectory(file)){
 			// Directory - adding all its "Subfiles"
 			// . switching to the Directory
 			const CDos::PFile originalDirectory=fileManager->DOS->currentDir;
-			result=-(fileManager->DOS->*fileManager->pDirectoryStructureManagement->fnChangeCurrentDir)(file);
-			if (result<0) return result; // if error, quit
-			result++; // adding this Directory
+			if (rOutError=(fileManager->DOS->*fileManager->pDirectoryStructureManagement->fnChangeCurrentDir)(file))
+				return 0; // if error, quit
 			::lstrcat( exportName, _T("\\") );
 			// . enumerating "Subfiles"
 			if (const CDos::PDirectoryTraversal pdt=fileManager->DOS->BeginDirectoryTraversal()){
 				while (pdt->AdvanceToNextEntry())
 					if (pdt->entryType==CDos::TDirectoryTraversal::FILE || pdt->entryType==CDos::TDirectoryTraversal::SUBDIR){
-						const int n=__addFileToExport__( relativeDir, pdt->entry, lpfd );
-						if (n<0){ // error - quit
-							result=n;
-							break;
-						}
+						const DWORD n=__addFileToExport__( relativeDir, pdt->entry, lpfd, rOutError );
 						if (lpfd) lpfd+=n;
 						result+=n;
+						if (rOutError)
+							break; // error - terminate
 					}
 				fileManager->DOS->EndDirectoryTraversal(pdt);
 			}
@@ -101,7 +98,7 @@
 			(fileManager->DOS->*fileManager->pDirectoryStructureManagement->fnChangeCurrentDir)(originalDirectory);
 		}else
 			// File
-			result=1;
+			rOutError=ERROR_SUCCESS;
 		// - recovering the RelativeDirectory and returning the result
 		*exportName='\0';
 		return result;
@@ -131,10 +128,11 @@
 			// generating the list of Files for shell or another RIDE instance (i.e. CFSTR_FILEDESCRIPTOR array; in reality, transferred will be only files that will be actually selected
 			TCHAR relativeDir[MAX_PATH];
 			// . determining the NumberOfFilesToExport
+			TStdWinError err;
 			*relativeDir='\0';
-			UINT nFilesToExport=0;
+			DWORD nFilesToExport=0;
 			for( POSITION pos=fileManager->GetFirstSelectedFilePosition(); pos; )
-				nFilesToExport+=__addFileToExport__( relativeDir, fileManager->GetNextSelectedFile(pos), nullptr );
+				nFilesToExport+=__addFileToExport__( relativeDir, fileManager->GetNextSelectedFile(pos), nullptr, err );
 			// . allocating the FileGroupDescriptor structure
 			if (!*phGlobal)
 				*phGlobal=::GlobalAlloc( GPTR, sizeof(FILEGROUPDESCRIPTOR)+(nFilesToExport-1)*sizeof(FILEDESCRIPTOR) ); // GHND = allocated memory zeroed
@@ -144,7 +142,7 @@
 				pFgd->cItems=nFilesToExport;
 				LPFILEDESCRIPTOR lpfd=pFgd->fgd;
 				for( POSITION pos=fileManager->GetFirstSelectedFilePosition(); pos; )
-					lpfd+=__addFileToExport__( relativeDir, fileManager->GetNextSelectedFile(pos), lpfd );
+					lpfd+=__addFileToExport__( relativeDir, fileManager->GetNextSelectedFile(pos), lpfd, err );
 			::GlobalUnlock(*phGlobal);
 			return TRUE;
 		}else if (lpFormatEtc->cfFormat==CRideApp::cfRideFileList){
