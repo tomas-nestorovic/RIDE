@@ -297,7 +297,7 @@
 
 	afx_msg void CFormatDialog::__toggleReportingOnFormatting__(){
 		// if SectorVerification allowed, enables ReportingOnFormatting, otherwise disables ReportingOnFormatting
-		const bool verifyTracks=IsDlgButtonChecked(ID_VERIFY_TRACK)!=0;
+		const bool verifyTracks=IsDlgButtonChecked(ID_VERIFY_TRACK)==BST_CHECKED;
 		GetDlgItem(ID_REPORT)->EnableWindow(verifyTracks);
 		CheckDlgButton( ID_REPORT, verifyTracks&&showReportOnFormatting );
 		Invalidate(); // eventually warning on driving disk into an inconsistent state

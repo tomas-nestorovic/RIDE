@@ -42,12 +42,12 @@
 
 	afx_msg void CFillEmptySpaceDialog::__enableOkButton__(UINT id){
 		// projecting feasibility into UI
-		nOptionsChecked+=-1+2*IsDlgButtonChecked(id);
+		nOptionsChecked+=-1+2*(IsDlgButtonChecked(id)==BST_CHECKED);
 		GetDlgItem(ID_RECURRENCY)->EnableWindow(
-			IsDlgButtonChecked(ID_FILE) && dos->pFileManager->pDirectoryStructureManagement!=nullptr
+			IsDlgButtonChecked(ID_FILE)==BST_CHECKED && dos->pFileManager->pDirectoryStructureManagement!=nullptr
 		);
 		GetDlgItem(ID_SUBDIRECTORY)->EnableWindow(
-			IsDlgButtonChecked(ID_DIRECTORY) && dos->pFileManager->pDirectoryStructureManagement!=nullptr
+			IsDlgButtonChecked(ID_DIRECTORY)==BST_CHECKED && dos->pFileManager->pDirectoryStructureManagement!=nullptr
 		);
 		GetDlgItem(IDOK)->EnableWindow( nOptionsChecked>0 );
 	}
