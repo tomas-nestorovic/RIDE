@@ -48,7 +48,7 @@
 
 	void CNewImageDialog::__refreshListOfContainers__(){
 		// forces refreshing of the list of containers available for the selected DOS; eventually displays an error message
-		GetDlgItem(IDOK)->EnableWindow(FALSE); // need yet to select a container
+		Utils::EnableDlgControl( m_hWnd, IDOK, false ); // need yet to select a container
 		CWnd *const pImageListBox=GetDlgItem(ID_IMAGE), *const pErrorBox=GetDlgItem(ID_ERROR);
 		// - checking if the selected DOS is among those which participate in the automatic recognition sequence
 		if (dosProps){
@@ -78,7 +78,6 @@
 		else
 			::wsprintf( errMsg, _T("Select a DOS first") );
 		SetDlgItemText( ID_ERROR, errMsg );
-		dosProps=nullptr;
 	}
 
 	BOOL CNewImageDialog::OnCommand(WPARAM wParam,LPARAM lParam){
@@ -99,8 +98,7 @@
 				CListBox lb;
 				lb.Attach((HWND)lParam);
 					const int iSelected=lb.GetCurSel();
-					static const WORD Controls[]={ IDOK, 0 };
-					if (Utils::EnableDlgControls( m_hWnd, Controls, iSelected>=0 ))
+					if (Utils::EnableDlgControl( m_hWnd, IDOK, iSelected>=0 ))
 						fnImage=( (CImage::PCProperties)lb.GetItemData(iSelected) )->fnInstantiate;
 				lb.Detach();
 				return TRUE;
