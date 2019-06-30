@@ -147,7 +147,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "&Dump...",                    ID_IMAGE_DUMP, GRAYED
         MENUITEM "Apply &patch...",             ID_IMAGE_PATCH, GRAYED
-        MENUITEM "Browse sectors...",           ID_IMAGE_BROWSE, GRAYED
+        MENUITEM "Browse sectors",              ID_IMAGE_BROWSE, GRAYED
         MENUITEM SEPARATOR
         MENUITEM "&Write protected\tCtrl+W",    ID_IMAGE_PROTECT
         MENUITEM "Options...",                  ID_IMAGE_SETTINGS
@@ -1577,6 +1577,7 @@ BEGIN
     ID_IMAGE_DUMP           "Duplicate content to a different medium"
     ID_IMAGE_PATCH          "Apply existing patch to the disk content (only floppies can be patched)"
     ID_IMAGE_PROTECT        "Toggle the write protection on and off\nWrite protection"
+    ID_IMAGE_BROWSE         "Show sector data in hexa-mode"
     ID_IMAGE_SETTINGS       "Disk and drive options\nDisk and drive options"
     ID_DOS_FILE_LENGTH_FROM_DIRENTRY "Get file length from directory entry"
     ID_DOS_FILE_LENGTH_OCCUPIED_SECTORS 
