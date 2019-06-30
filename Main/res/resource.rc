@@ -1248,9 +1248,9 @@ STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
 CAPTION "Reset selection"
 FONT 8, "MS Sans Serif"
 BEGIN
-    EDITTEXT        ID_NUMBER2,69,48,40,12,ES_AUTOHSCROLL | ES_NUMBER | NOT 
+    EDITTEXT        ID_NUMBER,69,48,40,12,ES_AUTOHSCROLL | ES_NUMBER | NOT 
                     WS_BORDER
-    CONTROL         "Custom value:",ID_NUMBER,"Button",BS_AUTORADIOBUTTON | 
+    CONTROL         "Custom value:",ID_NUMBER2,"Button",BS_AUTORADIOBUTTON | 
                     WS_GROUP | WS_TABSTOP,7,48,59,10
     CONTROL         "Data sector default",ID_DATA,"Button",
                     BS_AUTORADIOBUTTON | WS_TABSTOP,7,35,134,10

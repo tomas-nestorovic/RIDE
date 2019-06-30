@@ -443,8 +443,12 @@ editDelete:				// deleting the Byte after Cursor, or deleting the Selection
 deleteSelection:		int posSrc=max(cursor.selectionA,cursor.selectionZ), posDst=min(cursor.selectionA,cursor.selectionZ);
 						// . checking if there are any Bookmarks selected
 						if (bookmarks.__getNearestNextBookmarkPosition__(posDst)<posSrc){
-							if (Utils::QuestionYesNo(_T("Sure to delete selected bookmarks?"),MB_DEFBUTTON2))
+							if (Utils::QuestionYesNo(_T("Sure to delete selected bookmarks?"),MB_DEFBUTTON2)){
 								for( int pos; (pos=bookmarks.__getNearestNextBookmarkPosition__(posDst))<posSrc; bookmarks.__removeBookmark__(pos) );
+								cursor.__cancelSelection__();
+								SetFocus();
+								RepaintData();
+							}
 							return 0;
 						}
 						// . moving the content "after" Selection "to" the position of the Selection
@@ -591,7 +595,7 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 						// navigating the Cursor to the previous Bookmark
 						if (bookmarks.__getNearestNextBookmarkPosition__(0)<cursor.position){
 							int prevBookmarkPos=0;
-							for( int pos=0; pos<cursor.position-1; pos=bookmarks.__getNearestNextBookmarkPosition__(pos+1) )
+							for( int pos=0; pos<cursor.position; pos=bookmarks.__getNearestNextBookmarkPosition__(pos+1) )
 								prevBookmarkPos=pos;
 							cursor.position=prevBookmarkPos;						
 							RepaintData();
@@ -662,12 +666,12 @@ resetSelectionWithValue:BYTE buf[65536];
 								return __super::OnInitDialog();
 							}
 							void DoDataExchange(CDataExchange *pDX) override{
-								DDX_Radio( pDX, ID_NUMBER, iRadioSel );
-								DDX_Text( pDX, ID_NUMBER2, value );
+								DDX_Radio( pDX, ID_NUMBER2, iRadioSel );
+								DDX_Text( pDX, ID_NUMBER, value );
 							}
 							LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 								if (msg==WM_COMMAND)
-									Utils::EnableDlgControl( m_hWnd, ID_NUMBER2, IsDlgButtonChecked(ID_NUMBER)==BST_CHECKED );
+									Utils::EnableDlgControl( m_hWnd, ID_NUMBER, IsDlgButtonChecked(ID_NUMBER2)==BST_CHECKED );
 								return __super::WindowProc(msg,wParam,lParam);
 							}
 						public:
