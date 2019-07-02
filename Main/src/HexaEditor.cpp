@@ -130,6 +130,11 @@
 		}
 	}
 
+	bool CHexaEditor::IsEditable() const{
+		// True <=> content can be edited, otherwise False
+		return editable;
+	}
+
 	int CHexaEditor::ShowAddressBand(bool _show){
 		// shows/hides the Address bar; returns the width of the Address bar
 		addrLength= _show ? ADDRESS_FORMAT_LENGTH : 0;
@@ -1123,6 +1128,17 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 					}
 					case ID_BOOKMARK_TOGGLE:
 						((CCmdUI *)pExtra)->SetCheck(bookmarks.__getNearestNextBookmarkPosition__(cursor.position)==cursor.position );
+						//fallthrough
+					case ID_BOOKMARK_DELETEALL:
+					case ID_EDIT_SELECT_ALL:
+					case ID_EDIT_SELECT_NONE:
+					case ID_EDIT_SELECT_CURRENT:
+					case ID_EDIT_DELETE:
+					case ID_ZERO:
+					case ID_NUMBER:
+					case ID_NEXT:
+					case ID_PREV:
+					case ID_NAVIGATE_ADDRESS:
 						((CCmdUI *)pExtra)->Enable(editable);
 						return TRUE;
 					case ID_BOOKMARK_PREV:
@@ -1133,9 +1149,6 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 						return TRUE;
 					case ID_IMAGE_PROTECT:
 						break; // leaving up to a higher logic to decide if write-protection can be removed
-					default:
-						((CCmdUI *)pExtra)->Enable(editable);
-						return TRUE;
 				}
 				break;
 			case CN_COMMAND:

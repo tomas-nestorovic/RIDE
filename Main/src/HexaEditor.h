@@ -84,6 +84,7 @@
 		~CHexaEditor();
 
 		void SetEditable(bool _editable);
+		bool IsEditable() const;
 		int ShowAddressBand(bool _show);
 		void Reset(CFile *_f,int _minFileSize,int _maxFileSize);
 		void SetLogicalBounds(int _minFileSize,int _maxFileSize);
