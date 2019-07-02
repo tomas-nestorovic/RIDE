@@ -66,7 +66,7 @@
 					ps->scannedTracks.locker.Unlock();
 					// . first, processing a request to buffer a Track (if any)
 					if (ps->request.bufferEvent.Lock( allTracksScanned ? INFINITE : 2 )){
-						const BYTE requestTrack=ps->request.track;
+						const TTrack requestTrack=ps->request.track;
 						TSectorId ids[FDD_SECTORS_MAX];
 						image->BufferTrackData(	requestTrack>>1, requestTrack&1,
 												ids, Utils::CByteIdentity(),

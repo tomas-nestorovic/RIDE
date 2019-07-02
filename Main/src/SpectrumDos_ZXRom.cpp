@@ -157,10 +157,10 @@
 			r.left=r.right-n*font.charAvgWidth;
 		}
 		while (n--){
-			WORD c=(BYTE)*buf++; // cannot use TCHAR because must use non-signed type
+			BYTE c=(BYTE)*buf++; // cannot use TCHAR because must use non-signed type
 			if (!IsStdUdgSymbol(c))
 				// directly printable character
-				::DrawText( dc, (LPCTSTR)&c,1, &r, drawTextFormat );
+				::DrawTextA( dc, (LPCSTR)&c,1, &r, drawTextFormat );
 			else{
 				// UDG character - composed from four 0x2588 characters printed in half scale
 				const int mapMode0=::SetMapMode(dc,MM_ANISOTROPIC);

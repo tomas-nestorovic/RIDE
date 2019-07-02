@@ -110,7 +110,7 @@
 
 
 
-	TPropGridInfo::TPropGridInfo(HWND hPropGrid,WORD propGridWidth,WORD propGridHeight)
+	TPropGridInfo::TPropGridInfo(HWND hPropGrid,LONG propGridWidth,LONG propGridHeight)
 		// ctor
 		: handle(hPropGrid)
 		, listBox(this,propGridWidth,propGridHeight)

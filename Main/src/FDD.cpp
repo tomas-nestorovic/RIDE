@@ -28,9 +28,9 @@
 
 	CFDD::TParams::TParams()
 		// ctor
-		: controllerLatency( app.GetProfileInt(INI_FDD,INI_LATENCY_CONTROLLER,86000)/1000.0 )
-		, oneByteLatency( app.GetProfileInt(INI_FDD,INI_LATENCY_1BYTE,32000)/1000.0 )
-		, gap3Latency( app.GetProfileInt(INI_FDD,INI_LATENCY_GAP3,FDD_SECTOR_GAP3_STD*4/5*32000)/1000.0 ) // "4/5" = giving the FDC 20% tolerance for Gap3
+		: controllerLatency( app.GetProfileInt(INI_FDD,INI_LATENCY_CONTROLLER,86000)/1000.0f )
+		, oneByteLatency( app.GetProfileInt(INI_FDD,INI_LATENCY_1BYTE,32000)/1000.0f )
+		, gap3Latency( app.GetProfileInt(INI_FDD,INI_LATENCY_GAP3,FDD_SECTOR_GAP3_STD*4/5*32000)/1000.0f ) // "4/5" = giving the FDC 20% tolerance for Gap3
 		, calibrationAfterError( (TCalibrationAfterError)app.GetProfileInt(INI_FDD,INI_CALIBRATE_SECTOR_ERROR,TCalibrationAfterError::ONCE_PER_CYLINDER) )
 		, calibrationStepDuringFormatting( app.GetProfileInt(INI_FDD,INI_CALIBRATE_FORMATTING,0) )
 		, verifyFormattedTracks( app.GetProfileInt(INI_FDD,INI_VERIFY_FORMATTING,true)!=0 )

@@ -89,7 +89,7 @@
 
 			const HWND handle;
 
-			TListBox(TPropGridInfo *pPropGridInfo,WORD propGridWidth,WORD propGridHeight);
+			TListBox(TPropGridInfo *pPropGridInfo,LONG propGridWidth,LONG propGridHeight);
 
 			void __addItem__(PCItem item) const;
 			void __removeItem__(PCItem item) const;
@@ -98,7 +98,7 @@
 		} listBox;
 		TCategoryItem root;
 
-		TPropGridInfo(HWND hPropGrid,WORD propGridWidth,WORD propGridHeight);
+		TPropGridInfo(HWND hPropGrid,LONG propGridWidth,LONG propGridHeight);
 	} *PPropGridInfo;
 
 	typedef const TPropGridInfo *PCPropGridInfo;

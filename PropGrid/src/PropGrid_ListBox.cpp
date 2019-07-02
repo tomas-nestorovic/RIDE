@@ -70,7 +70,7 @@
 
 	static WNDPROC wndProc0; // ListBox's original window procedure
 
-	TPropGridInfo::TListBox::TListBox(TPropGridInfo *pPropGridInfo,WORD propGridWidth,WORD propGridHeight)
+	TPropGridInfo::TListBox::TListBox(TPropGridInfo *pPropGridInfo,LONG propGridWidth,LONG propGridHeight)
 		// ctor
 		: handle( ::CreateWindow(	WC_LISTBOX, nullptr,
 									WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_VSCROLL | LBS_NOTIFY | LBS_OWNERDRAWVARIABLE | LBS_WANTKEYBOARDINPUT,
