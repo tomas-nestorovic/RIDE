@@ -58,6 +58,20 @@
 	BOOL CDiskBrowserView::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){
 		// command processing
 		switch (nCode){
+			case CN_UPDATE_COMMAND_UI:
+				// update
+				switch (nID){
+					case ID_SELECT_CURRENT_TRACK:
+					case ID_SELECT_CURRENT_CYLINDER:
+					case ID_NAVIGATE_PREVIOUSTRACK:
+					case ID_NAVIGATE_PREVIOUSCYLINDER:
+					case ID_NAVIGATE_NEXTTRACK:
+					case ID_NAVIGATE_NEXTCYLINDER:
+					case ID_NAVIGATE_SECTOR:
+						((CCmdUI *)pExtra)->Enable( IsEditable() );
+						return TRUE;
+				}
+				break;
 			case CN_COMMAND:{
 				// command
 				BYTE nBytesToCompare=sizeof(TCylinder);
