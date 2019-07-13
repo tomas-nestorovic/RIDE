@@ -768,7 +768,10 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		// determines and returns the number of Sides formatted on given Cylinder; returns 0 iff Cylinder not formatted
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		LOG_CYLINDER_ACTION(cyl,_T("THead CFDD::GetNumberOfFormattedSides"));
-		return (ScanTrack(cyl,0)!=0) + (ScanTrack(cyl,1)!=0);
+		if (ScanTrack(cyl,1)!=0)
+			return 2;
+		else
+			return ScanTrack(cyl,0)!=0;
 	}
 
 	CFDD::PInternalTrack CFDD::__scanTrack__(TCylinder cyl,THead head){
