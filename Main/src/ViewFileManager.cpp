@@ -257,6 +257,7 @@
 				// Enter - switching to selected Directory
 				if (POSITION pos=GetFirstSelectedFilePosition()){
 					__switchToDirectory__(GetNextSelectedFile(pos));
+					GetListCtrl().SendMessage( LVM_SCROLL, 0, -__getVerticalScrollPos__() ); // resetting the scroll position to zero pixels
 					__refreshDisplay__();
 				}
 				break;
@@ -460,17 +461,22 @@
 		return true;
 	}
 
+	int CFileManagerView::__getVerticalScrollPos__() const{
+		// computes and returns the number of pixels scrolled to vertically
+		const CListCtrl &lv=GetListCtrl();
+		RECT r;
+		lv.GetItemRect(0,&r,LVIR_BOUNDS);
+		return lv.GetScrollPos(SB_VERT)*(r.bottom-r.top);
+	}
 
 	afx_msg void CFileManagerView::OnDestroy(){
 		// window destroyed
 		dropTarget.Revoke();
 		// - saving the scroll position for later
-		const CListCtrl &lv=GetListCtrl();
-		RECT r;
-		lv.GetItemRect(0,&r,LVIR_BOUNDS);
-		scrollY=lv.GetScrollPos(SB_VERT)*(r.bottom-r.top);
+		scrollY=__getVerticalScrollPos__();
 		//scrollToIndex=lv.GetTopIndex();
 		// - storing current File selection into auxiliary list
+		const CListCtrl &lv=GetListCtrl();
 		for( POSITION pos=lv.GetFirstSelectedItemPosition(); pos; selectedFiles.AddTail((PVOID)lv.GetItemData(lv.GetNextSelectedItem(pos))) );
 		// - storing currently FocusedFile
 		focusedFile=-1; // assumption (no File in Focus)
@@ -679,7 +685,12 @@
 
 	afx_msg void CFileManagerView::__refreshDisplay__(){
 		// refreshing the View
+		// - saving the scroll position for later
+		scrollY=__getVerticalScrollPos__();
+		// - refreshing
 		OnUpdate(nullptr,0,nullptr);
+		// - restoring the scroll position
+		GetListCtrl().SendMessage( LVM_SCROLL, 0, scrollY );
 	}
 
 

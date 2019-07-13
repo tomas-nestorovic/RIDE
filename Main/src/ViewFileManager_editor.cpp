@@ -221,6 +221,7 @@
 		if (lpia->iSubItem==nameColumnId)
 			if (DOS->IsDirectory(file)){
 				__switchToDirectory__(file);
+				GetListCtrl().SendMessage( LVM_SCROLL, 0, -__getVerticalScrollPos__() ); // resetting the scroll position to zero pixels
 				__refreshDisplay__();
 				return;
 			}

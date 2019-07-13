@@ -105,6 +105,7 @@
 		void __deleteFiles__(TFileList &rFileList);
 		void __restoreFileSelection__();
 		void __switchToDirectory__(CDos::PFile directory) const;
+		int __getVerticalScrollPos__() const;
 		TStdWinError __switchToDirectory__(PTCHAR path) const;
 		TStdWinError __skipNameConflict__(DWORD newFileSize,LPCTSTR newFileName,CDos::PFile conflict,TConflictResolution &rConflictedSiblingResolution) const;
 		TStdWinError __moveFile__(int &i,LPFILEDESCRIPTOR files,int nFiles,CDos::PFile &rMovedFile,TConflictResolution &rConflictedSiblingResolution);
