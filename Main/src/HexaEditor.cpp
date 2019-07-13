@@ -275,7 +275,7 @@
 	void CHexaEditor::__refreshCursorDisplay__() const{
 		// shows Cursor on screen at position that corresponds with Cursor's actual Position in the underlying File content (e.g. the 12345-th Byte of the File)
 		int currRecordStart, currRecordLength=1;
-		pContentAdviser->GetRecordInfo( cursor.position, &currRecordStart, &currRecordLength, NULL );
+		pContentAdviser->GetRecordInfo( cursor.position, &currRecordStart, &currRecordLength, nullptr );
 		const div_t d=div(cursor.position-currRecordStart,currRecordLength);
 		const int iScrollY=GetScrollPos(SB_VERT);
 		//if (d.quot>=iScrollY){ // commented out as always guaranteed
@@ -744,13 +744,13 @@ resetSelectionWithValue:BYTE buf[65536];
 					case ID_NEXT:{
 						// navigating to the next Record
 						int currRecordLength=0;
-						pContentAdviser->GetRecordInfo( cursor.position, &cursor.position, &currRecordLength, NULL );
+						pContentAdviser->GetRecordInfo( cursor.position, &cursor.position, &currRecordLength, nullptr );
 						cursor.position+=currRecordLength;
 						goto cursorCorrectlyMoveTo;
 					}
 					case ID_PREV:
 						// navigating to the previous Record (or the beginning of current Record, if Cursor not already there)
-						pContentAdviser->GetRecordInfo( --cursor.position, &cursor.position, NULL, NULL );
+						pContentAdviser->GetRecordInfo( --cursor.position, &cursor.position, nullptr, nullptr );
 						goto cursorCorrectlyMoveTo;
 					case ID_NAVIGATE_ADDRESS:{
 						// navigating to an address input by the user
@@ -1011,7 +1011,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 							const bool isEof=f->GetPosition()==f->GetLength();
 							const BYTE nBytesExpected=__firstByteInRowToLogicalPosition__(iRowA+1)-address;
 							bool dataReady=false; // assumption
-							pContentAdviser->GetRecordInfo( address, NULL, NULL, &dataReady );
+							pContentAdviser->GetRecordInfo( address, nullptr, nullptr, &dataReady );
 							if (dataReady){
 								// Record's data are known (there are some, some with error, or none)
 								BYTE bytes[BYTES_MAX];
