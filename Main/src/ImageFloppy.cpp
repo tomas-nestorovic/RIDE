@@ -150,6 +150,7 @@
 				scannedTracks.n=0;
 				::ZeroMemory( scannedTracks.infos, sizeof(scannedTracks.infos) );
 				// . launching the TrackWorker
+				request.track=-1;
 				trackWorker.Resume();
 				// . initializing state of current Sector to read from or write to
 				//nop (in Worker)
@@ -299,11 +300,12 @@
 						*pOutRecordLength = lengths[nSectors];
 				}
 				if (pOutDataReady)
-					if (!( *pOutDataReady=scannedTracks.infos[track].buffered )){
+					if (!( *pOutDataReady=scannedTracks.infos[track].buffered ))
 						// Sector not yet buffered and its data probably wanted - buffering them now
-						request.track=track;
-						request.bufferEvent.SetEvent();
-					}
+						if (request.track!=track){ // Request not yet issued
+							request.track=track;
+							request.bufferEvent.SetEvent();
+						}
 			}
 			LPCTSTR GetRecordLabel(int logPos,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override{
 				// populates the Buffer with label for the Record that STARTS at specified LogicalPosition, and returns the Buffer; returns Null if no Record starts at specified LogicalPosition

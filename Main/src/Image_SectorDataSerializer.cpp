@@ -57,7 +57,7 @@
 		bool readWithoutCrcError=true; // assumption
 		WORD w; TFdcStatus sr;
 		while (true)
-			if (const PCSectorData sectorData=image->GetSectorData(GetCurrentPhysicalAddress(),sector.indexOnTrack,true,&w,&sr)){
+			if (const PCSectorData sectorData=image->GetSectorData(GetCurrentPhysicalAddress(),sector.indexOnTrack,false,&w,&sr)){ // False = not attempting to recover from error as many small read requests are made, potentially leading to a floppy calibration overhead
 				if (!w) // e.g. reading Sector with LengthCode 231 - such Sector has by default no data (a pointer to zero-length data has been returned by GetSectorData)
 					break;
 				readWithoutCrcError&=sr.IsWithoutError();
