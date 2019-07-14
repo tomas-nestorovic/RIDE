@@ -11,6 +11,7 @@
 		BOOL PreCreateWindow(CREATESTRUCT &cs) override;
 		BOOL PreTranslateMessage(PMSG pMsg) override;
 		afx_msg int OnCreate(LPCREATESTRUCT lpcs);
+		afx_msg void OnDropFiles(HDROP dropInfo);
 		afx_msg void OnInitMenu(CMenu *menu);
 			afx_msg void __imageOperation_updateUI__(CCmdUI *pCmdUI);
 		afx_msg void __switchToNextTab__();

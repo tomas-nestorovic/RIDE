@@ -229,7 +229,7 @@
 
 
 
-	static bool recognizeDosAutomatically=true;
+	bool recognizeDosAutomatically=true;
 
 	#define ENTERING_LIMITED_MODE	_T("\n\nContinuing to view the image in limited mode.")
 

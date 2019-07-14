@@ -195,6 +195,13 @@
 		return 0;
 	}
 
+	afx_msg void CMainWindow::OnDropFiles(HDROP hDrop){
+		// a File from Windows Explorer dropped on the client area
+		extern bool recognizeDosAutomatically;
+		recognizeDosAutomatically=true;
+		__super::OnDropFiles(hDrop);
+	}
+
 	afx_msg void CMainWindow::OnInitMenu(CMenu *menu){
 		// clicked somewhere in the main menu
 		SetFocus(); // to immediately carry out actions that depend on focus
