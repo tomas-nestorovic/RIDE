@@ -115,10 +115,8 @@ END
 
 IDR_DISKBROWSER ACCELERATORS DISCARDABLE 
 BEGIN
-    "G",            ID_NAVIGATE_SECTOR,     VIRTKEY, SHIFT, CONTROL, 
-                                                    NOINVERT
-    "R",            ID_SELECT_CURRENT_TRACK, VIRTKEY, SHIFT, CONTROL, 
-                                                    NOINVERT
+    "E",            ID_NAVIGATE_SECTOR,     VIRTKEY, CONTROL, NOINVERT
+    "T",            ID_SELECT_CURRENT_TRACK, VIRTKEY, CONTROL, NOINVERT
     VK_NEXT,        ID_NAVIGATE_NEXTTRACK,  VIRTKEY, SHIFT, CONTROL, 
                                                     NOINVERT
     VK_PRIOR,       ID_NAVIGATE_PREVIOUSTRACK, VIRTKEY, SHIFT, CONTROL, 
@@ -437,7 +435,7 @@ BEGIN
             MENUITEM "Nothing\tCtrl+Shift+A",       ID_EDIT_SELECT_NONE
             MENUITEM SEPARATOR
             MENUITEM "Current sector\tCtrl+R",      ID_EDIT_SELECT_CURRENT
-            MENUITEM "Current track\tCtrl+Shift+R", ID_SELECT_CURRENT_TRACK
+            MENUITEM "Current track\tCtrl+T",       ID_SELECT_CURRENT_TRACK
             MENUITEM "Current cylinder",            ID_SELECT_CURRENT_CYLINDER
         END
         POPUP "Reset"
@@ -452,7 +450,7 @@ BEGIN
                                                     ID_NAVIGATE_PREVIOUSTRACK
 
             MENUITEM "Previous sector\tCtrl+PgUp",  ID_PREV
-            MENUITEM "Sector...\tCtrl+Shift+G",     ID_NAVIGATE_SECTOR
+            MENUITEM "Sector...\tCtrl+E",           ID_NAVIGATE_SECTOR
             MENUITEM "Next sector\tCtrl+PgDown",    ID_NEXT
             MENUITEM "Next track\tCtrl+Shift+PgDown", ID_NAVIGATE_NEXTTRACK
             MENUITEM "Next cylinder",               ID_NAVIGATE_NEXTCYLINDER
@@ -1212,10 +1210,10 @@ BEGIN
     LTEXT           "&Cylinder:",IDC_STATIC,7,7,28,8,NOT WS_GROUP
     LISTBOX         ID_CYLINDER,7,18,53,87,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | 
                     WS_TABSTOP
-    LTEXT           "&Head",IDC_STATIC,81,7,18,8,NOT WS_GROUP
+    LTEXT           "&Head:",IDC_STATIC,81,7,18,8,NOT WS_GROUP
     LISTBOX         ID_HEAD,81,18,53,87,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | 
                     WS_TABSTOP
-    LTEXT           "&Sector ID",IDC_STATIC,155,7,31,8,NOT WS_GROUP
+    LTEXT           "&Sector:",IDC_STATIC,155,7,31,8,NOT WS_GROUP
     LISTBOX         ID_SECTOR,155,17,98,87,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | 
                     WS_TABSTOP
     DEFPUSHBUTTON   "OK",IDOK,150,117,50,14,WS_DISABLED

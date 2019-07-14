@@ -158,8 +158,8 @@
 								// : base
 								__super::OnInitDialog();
 								// : setting arrows indicating the flow of interaction
-								Utils::SetSingleCharTextUsingFont( ::GetDlgItem(m_hWnd,ID_CYLINDER_N), 0xf0e0, FONT_WINGDINGS, 110 );
-								Utils::SetSingleCharTextUsingFont( ::GetDlgItem(m_hWnd,ID_TRACK), 0xf0e0, FONT_WINGDINGS, 110 );
+								Utils::SetSingleCharTextUsingFont( ::GetDlgItem(m_hWnd,ID_CYLINDER_N), 0xf0e0, FONT_WINGDINGS, 125 );
+								Utils::SetSingleCharTextUsingFont( ::GetDlgItem(m_hWnd,ID_TRACK), 0xf0e0, FONT_WINGDINGS, 125 );
 								// : populating the Cylinder listbox with available Cylinder numbers and pre-selecting current Cylinder
 								const BYTE sectorIndexOnTrackBk=sectorIndexOnTrack; const TPhysicalAddress chsBk=chs;
 								TCHAR buf[80];
