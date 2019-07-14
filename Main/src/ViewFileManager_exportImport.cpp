@@ -369,8 +369,10 @@ importQuit2:		::GlobalUnlock(hg);
 				__switchToDirectory__(originalDirectory);
 				selectedFiles.RemoveAll();
 			}
-			// - refreshing the FileManager
-			__refreshDisplay__();
+			// - refreshing the FileManager and scrolling to the last imported File
+			const LVFINDINFO lvfi={ LVFI_PARAM, nullptr, (LPARAM)selectedFiles.GetTail() };
+			__refreshDisplay__(); // repopulating the content of the FileManager (empties the SelectedFiles list)
+			ListView_EnsureVisible( m_hWnd, ListView_FindItem(m_hWnd,0,&lvfi), false ); // scrolling to the last imported File
 		SetRedraw(TRUE);
 		return result;
 	}
