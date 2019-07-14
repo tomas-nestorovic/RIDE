@@ -1024,8 +1024,8 @@ error:				switch (const TStdWinError err=::GetLastError()){
 				const BYTE index=pPlanStep->indexIntoOutputBuffers;
 				const WORD length = outBufferLengths[index] = psi->length;
 				// : if Data already read WithoutError, returning them
-				if (psi->data)
-					if (psi->fdcStatus.IsWithoutError()){ // returning error-free data
+				if (psi->data || psi->fdcStatus.DescribesMissingDam()) // A|B, A = some data exist, B = reattempting to read the DAM-less Sector only if automatic recovery desired
+					if (psi->fdcStatus.IsWithoutError() || !silentlyRecoverFromErrors){ // A|B, A = returning error-free data, B = settling with any data if automatic recovery not desired
 returnData:				outFdcStatuses[index]=psi->fdcStatus;
 						outBufferData[index]=psi->data;
 						continue;
