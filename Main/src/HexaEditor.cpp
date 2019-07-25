@@ -877,6 +877,13 @@ leftMouseDragged:
 				::DestroyCaret();
 				return 0;
 			}
+			case EM_GETSEL:
+				// gets current Selection
+				if (wParam!=0)
+					*(PINT)wParam= cursor.selectionA>=0 ? cursor.selectionA : cursor.position; // ?: = something really selected?
+				if (lParam!=0)
+					*(PINT)lParam= cursor.selectionA>=0 ? cursor.selectionZ : cursor.position; // ?: = something really selected?
+				return -1; // the Selection generally doesn't belong to the <0;65535> range
 			case EM_SETSEL:
 				// sets current Selection, moving Cursor to the end of the Selection
 				if (wParam==lParam){

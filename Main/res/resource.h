@@ -42,6 +42,7 @@
 #define IDR_HEXAEDITOR_GOTOADDRESS      205
 #define IDR_DISKBROWSER                 206
 #define IDR_DISKBROWSER_GOTOSECTOR      207
+#define IDR_DIRECTORYBROWSER            207
 #define IDR_DOS_DATETIME_EDIT           208
 #define IDR_HEXAEDITOR_RESETSELECTION   209
 #define ID_HIDDEN                       1018

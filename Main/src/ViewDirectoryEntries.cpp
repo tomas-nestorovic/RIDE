@@ -51,9 +51,9 @@
 	CDirEntriesView::CDirEntriesView(PDos dos,CDos::PFile directory)
 		// ctor
 		// - base
-		: CHexaEditor(this)
+		: CHexaEditor( this, nullptr, Utils::CreateSubmenuByContainedCommand(IDR_DIRECTORYBROWSER,ID_DEFAULT1) )
 		// - initialization
-		, tab( 0, IDR_HEXAEDITOR, ID_CYLINDER, dos, this )
+		, tab( IDR_DIRECTORYBROWSER, IDR_HEXAEDITOR, ID_CYLINDER, dos, this )
 		, iScrollY(0) , f(nullptr)
 		, directory(directory) {
 	}
@@ -123,4 +123,62 @@
 
 	afx_msg void CDirEntriesView::__closeView__(){
 		CTdiCtrl::RemoveCurrentTab( TDI_HWND );
+	}
+
+	BOOL CDirEntriesView::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){
+		// command processing
+		switch (nCode){
+			case CN_UPDATE_COMMAND_UI:
+				// update
+				switch (nID){
+					case ID_DEFAULT1:
+						((CCmdUI *)pExtra)->Enable( IsEditable() );
+						return TRUE;
+				}
+				break;
+			case CN_COMMAND:
+				// command
+				switch (nID){
+					case ID_DEFAULT1:{
+						// resetting selected DirectoryEntries to their default content
+						// . getting the selection range
+						int selA,selZ;
+						SendMessage( EM_GETSEL, (WPARAM)&selA, (LPARAM)&selZ );
+						if (selA>selZ)
+							std::swap(selA,selZ);
+						// . resetting the selected portion of DirectoryEntries
+						const CDos::PDirectoryTraversal pdt=DOS->BeginDirectoryTraversal(directory);
+							// : navigating to the first (at least partially) selected DirectoryEntry
+							for( DWORD n=selA/pdt->entrySize; n-->0; pdt->AdvanceToNextEntry() );
+							// : resetting
+							for( int dirEntryStart; selA<selZ; ){
+								pdt->AdvanceToNextEntry();
+								f->GetRecordInfo( selA, &dirEntryStart, nullptr, nullptr );
+								if (selA==dirEntryStart && dirEntryStart+pdt->entrySize<=selZ){
+									// whole DirectoryEntry requested to reset
+									pdt->ResetCurrentEntry(DOS->properties->directoryFillerByte);
+									f->Seek( selA+=pdt->entrySize, CFile::begin );
+								}else{
+									// just a part of the DirectoryEntry requested to reset
+									BYTE orgDirEntry[4096]; // should suffice to accommodate DirectoryEntry of *any* DOS
+									f->Seek( dirEntryStart, CFile::begin );
+									f->Read( orgDirEntry, pdt->entrySize );
+									pdt->ResetCurrentEntry(DOS->properties->directoryFillerByte);
+									f->Seek( dirEntryStart, CFile::begin );
+									BYTE rstDirEntry[4096]; // should suffice to accommodate DirectoryEntry of *any* DOS
+									f->Read( rstDirEntry, pdt->entrySize );
+									::memcpy( orgDirEntry+selA-dirEntryStart, rstDirEntry+selA-dirEntryStart, std::min<int>(selZ-selA,pdt->entrySize) );
+									f->Seek( dirEntryStart, CFile::begin );
+									f->Write( orgDirEntry, pdt->entrySize );
+									selA=std::min<>( dirEntryStart+pdt->entrySize, selZ );
+								}
+							}
+						DOS->EndDirectoryTraversal(pdt);
+						RepaintData();
+						return 0;
+					}
+				}
+				break;
+		}
+		return __super::OnCmdMsg(nID,nCode,pExtra,pHandlerInfo);
 	}

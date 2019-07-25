@@ -123,6 +123,10 @@ BEGIN
                                                     NOINVERT
 END
 
+IDR_DIRECTORYBROWSER ACCELERATORS DISCARDABLE 
+BEGIN
+    "D",            ID_DEFAULT1,            VIRTKEY, CONTROL, NOINVERT
+END
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -463,6 +467,43 @@ BEGIN
     END
 END
 
+IDR_DIRECTORYBROWSER MENU DISCARDABLE 
+BEGIN
+    POPUP "Dir browser"
+    BEGIN
+        MENUITEM "Bookmark at cursor\tCtrl+K",  ID_BOOKMARK_TOGGLE
+        MENUITEM "Delete all bookmarks",        ID_BOOKMARK_DELETEALL
+        MENUITEM SEPARATOR
+        MENUITEM "Copy\tCtrl+C",                ID_EDIT_COPY
+        MENUITEM "Paste\tCtrl+V",               ID_EDIT_PASTE
+        MENUITEM "Delete\tDel",                 ID_EDIT_DELETE
+        MENUITEM SEPARATOR
+        POPUP "Select"
+        BEGIN
+            MENUITEM "All\tCtrl+A",                 ID_EDIT_SELECT_ALL
+            MENUITEM "Nothing\tCtrl+Shift+A",       ID_EDIT_SELECT_NONE
+            MENUITEM SEPARATOR
+            MENUITEM "Current entry\tCtrl+R",       ID_EDIT_SELECT_CURRENT
+        END
+        POPUP "Reset"
+        BEGIN
+            MENUITEM "To system default\tCtrl+D",   ID_DEFAULT1
+            MENUITEM SEPARATOR
+            MENUITEM "Selection with zeros\tCtrl+0", ID_ZERO
+            MENUITEM "Selection with...",           ID_NUMBER
+        END
+        POPUP "Go to"
+        BEGIN
+            MENUITEM "Previous entry\tCtrl+PgUp",   ID_PREV
+            MENUITEM "Next entry\tCtrl+PgDown",     ID_NEXT
+            MENUITEM SEPARATOR
+            MENUITEM "Previous bookmark\tCtrl+F11", ID_BOOKMARK_PREV
+            MENUITEM "Next bookmark\tCtrl+F12",     ID_BOOKMARK_NEXT
+            MENUITEM SEPARATOR
+            MENUITEM "Address...\tCtrl+G",          ID_NAVIGATE_ADDRESS
+        END
+    END
+END
 
 /////////////////////////////////////////////////////////////////////////////
 //
