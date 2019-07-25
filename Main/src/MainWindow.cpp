@@ -102,6 +102,7 @@
 		ON_WM_CREATE()
 		ON_WM_INITMENU()
 		ON_WM_DROPFILES()
+		ON_WM_LBUTTONDBLCLK()
 		ON_UPDATE_COMMAND_UI_RANGE(ID_FILE_SAVE,ID_FILE_SAVE_AS,__imageOperation_updateUI__)
 		ON_UPDATE_COMMAND_UI_RANGE(ID_IMAGE_DUMP,ID_IMAGE_SETTINGS,__imageOperation_updateUI__)
 		ON_COMMAND(ID_TDI_SWITCH,__switchToNextTab__)
@@ -202,6 +203,12 @@
 		__super::OnDropFiles(hDrop);
 	}
 
+	afx_msg void CMainWindow::OnLButtonDblClk(UINT,CPoint){
+		// mouse double-clicked on the client area
+		if (!pTdi->__getCurrentTab__())
+			app.__openImage__(); // double-clicking on the client area is interpreted as wanting to open an Image
+	}
+
 	afx_msg void CMainWindow::OnInitMenu(CMenu *menu){
 		// clicked somewhere in the main menu
 		SetFocus(); // to immediately carry out actions that depend on focus
@@ -225,7 +232,7 @@
 
 	afx_msg void CMainWindow::__closeCurrentTab__(){
 		// closes currently visible TDI Tab
-		if (((CMainWindow *)app.m_pMainWnd)->pTdi->__getCurrentTab__()->dos) // if current Tab relates to a DOS ...
+		if (pTdi->__getCurrentTab__()->dos) // if current Tab relates to a DOS ...
 			CTdiTemplate::pSingleInstance->__closeDocument__(); // ... closing the corresponding Image (and thus the DOS and all its Tabs and Views)
 		else
 			CTdiCtrl::RemoveCurrentTab( pTdi->m_hWnd ); // ... otherwise closing just the Tab (e.g. a WebPageView that usually isn't associated with any DOS)
@@ -233,7 +240,7 @@
 
 	afx_msg void CMainWindow::__closeCurrentTab_updateUI__(CCmdUI *pCmdUI) const{
 		// projecting possibility to close current Tab into UI
-		pCmdUI->Enable( ((CMainWindow *)app.m_pMainWnd)->pTdi->__getCurrentTab__()!=nullptr );
+		pCmdUI->Enable( pTdi->__getCurrentTab__()!=nullptr );
 	}
 
 
