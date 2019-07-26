@@ -131,14 +131,10 @@ different:	Utils::Information(_T("No, the files differ in content! (File names a
 
 	CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::COleComparisonDropTarget(CFileComparisonDialog &rDialog)
 		// ctor
-		: f(nullptr) , hexaComparison(rDialog) {
+		: hexaComparison(rDialog) {
 		hexaComparison.Reset(&rDialog.fEmpty,0,0), hexaComparison.SetEditable(false);
 	}
 
-	CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::~COleComparisonDropTarget(){
-		// dtor
-		if (f) delete f;
-	}
 
 
 
@@ -180,15 +176,16 @@ different:	Utils::Information(_T("No, the files differ in content! (File names a
 		// opens specified File and shows its content in HexaEditor
 		// - freeing any previous File
 		if (f){
-			delete f;
+			f.reset();
 			::SetWindowText(hLabel,nullptr);
 		}
 		// - storing 32-bit scroll position (its recovery below)
 		SCROLLINFO si;
 		hexaComparison.GetScrollInfo( SB_VERT, &si, SIF_POS|SIF_TRACKPOS );
 		// - showing the File in HexaEditor
-		size=( f=fTmp )->GetLength();
-		hexaComparison.Reset(f,size,size);
+		f.reset(fTmp);
+		size=f->GetLength();
+		hexaComparison.Reset( f.get(), size, size );
 		::SetWindowText(hLabel,fileName);
 		// - updating the LogicalSizes of both HexaEditors to BiggerSize of the two Files
 		CFileComparisonDialog &rDialog=hexaComparison.rDialog;
@@ -301,9 +298,9 @@ different:	Utils::Information(_T("No, the files differ in content! (File names a
 				CancelAllEmphases();
 				CFile *thisFile,*otherFile;
 				if (this==&rDialog.file1.hexaComparison)
-					thisFile=rDialog.file1.f, otherFile=rDialog.file2.f;
+					thisFile=rDialog.file1.f.get(), otherFile=rDialog.file2.f.get();
 				else
-					thisFile=rDialog.file2.f, otherFile=rDialog.file1.f;
+					thisFile=rDialog.file2.f.get(), otherFile=rDialog.file1.f.get();
 				if (!thisFile || !otherFile) break; // if one of Files doesn't exist, we can't test their equality
 				// . determining visible portion of ThisFile
 				int a,z,L=thisFile->GetLength();

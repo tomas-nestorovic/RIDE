@@ -174,7 +174,7 @@
 			class COleComparisonDropTarget sealed:public COleDropTarget{
 			public:
 				HWND hLabel,hEllipsisButton;
-				CFile *f;
+				std::unique_ptr<CFile> f;
 				DWORD size;
 				class CHexaComparison sealed:public CHexaEditor{
 					LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
@@ -184,7 +184,6 @@
 				} hexaComparison;
 
 				COleComparisonDropTarget(CFileComparisonDialog &rDialog); // ctor
-				~COleComparisonDropTarget(); // dtor
 
 				void __init__(CWnd *pLabel,CWnd *pButton);
 				void __chooseAndOpenPhysicalFile__();
