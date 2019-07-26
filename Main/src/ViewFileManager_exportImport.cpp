@@ -370,9 +370,11 @@ importQuit2:		::GlobalUnlock(hg);
 				selectedFiles.RemoveAll();
 			}
 			// - refreshing the FileManager and scrolling to the last imported File
-			const LVFINDINFO lvfi={ LVFI_PARAM, nullptr, (LPARAM)selectedFiles.GetTail() };
-			__refreshDisplay__(); // repopulating the content of the FileManager (empties the SelectedFiles list)
-			ListView_EnsureVisible( m_hWnd, ListView_FindItem(m_hWnd,0,&lvfi), false ); // scrolling to the last imported File
+			if (selectedFiles.GetCount()){ // may be empty if importing a single File that is already on the disk, and refusing to rewrite it
+				const LVFINDINFO lvfi={ LVFI_PARAM, nullptr, (LPARAM)selectedFiles.GetTail() };
+				__refreshDisplay__(); // repopulating the content of the FileManager (empties the SelectedFiles list)
+				ListView_EnsureVisible( m_hWnd, ListView_FindItem(m_hWnd,0,&lvfi), false ); // scrolling to the last imported File
+			}
 		SetRedraw(TRUE);
 		return result;
 	}
