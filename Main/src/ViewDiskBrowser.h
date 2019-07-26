@@ -5,7 +5,7 @@
 		DECLARE_MESSAGE_MAP()
 	private:
 		int iScrollY; // ScrollBar position
-		CImage::CSectorDataSerializer *f;
+		std::unique_ptr<CImage::CSectorDataSerializer> f;
 
 		afx_msg int OnCreate(LPCREATESTRUCT lpcs);
 		afx_msg void OnDestroy();

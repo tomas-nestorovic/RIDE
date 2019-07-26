@@ -4,6 +4,7 @@
 #define _USE_MATH_DEFINES // for M_PI to be defined
 #include <cmath>
 #include <algorithm>
+#include <memory>
 
 // use Common-Controls library version 6
 #pragma comment(linker,"\"/manifestdependency:type='win32' \

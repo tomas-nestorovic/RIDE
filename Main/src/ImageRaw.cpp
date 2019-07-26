@@ -432,7 +432,7 @@ trackNotFound:
 		return ERROR_SUCCESS;
 	}
 
-	CImage::CSectorDataSerializer *CImageRaw::CreateSectorDataSerializer(CHexaEditor *pParentHexaEditor){
+	std::unique_ptr<CImage::CSectorDataSerializer> CImageRaw::CreateSectorDataSerializer(CHexaEditor *pParentHexaEditor){
 		// abstracts all Sector data (good and bad) into a single file and returns the result
 		// - defining the Serializer class
 		class CSerializer sealed:public CSectorDataSerializer{
@@ -509,5 +509,5 @@ trackNotFound:
 			}
 		};
 		// - returning a Serializer class instance
-		return new CSerializer( pParentHexaEditor, this );
+		return std::unique_ptr<CSectorDataSerializer>( new CSerializer( pParentHexaEditor, this ) );
 	}

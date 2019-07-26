@@ -12,7 +12,7 @@
 		: CHexaEditor( this, Utils::CreateSubmenuByContainedCommand(IDR_DISKBROWSER,ID_EDIT_SELECT_ALL), nullptr, Utils::CreateSubmenuByContainedCommand(IDR_DISKBROWSER,ID_NAVIGATE_ADDRESS) )
 		// - initialization
 		, tab( IDR_DISKBROWSER, IDR_HEXAEDITOR, ID_CYLINDER, dos, this )
-		, iScrollY(0) , f(nullptr) {
+		, iScrollY(0) {
 	}
 
 	BEGIN_MESSAGE_MAP(CDiskBrowserView,CHexaEditor)
@@ -49,10 +49,8 @@
 
 	void CDiskBrowserView::OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint){
 		// request to refresh the display of content
-		if (f)
-			delete f;
-		f=IMAGE->CreateSectorDataSerializer(this);
-		Reset( f, f->GetLength(), f->GetLength() );
+		f.reset( IMAGE->CreateSectorDataSerializer(this) );
+		Reset( f.get(), f->GetLength(), f->GetLength() );
 	}
 
 	BOOL CDiskBrowserView::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){
@@ -259,7 +257,7 @@
 		// - saving Scroll position for later
 		iScrollY=GetScrollPos(SB_VERT);
 		// - disposing the underlying File
-		delete f, f=nullptr;
+		f.reset();
 		// - base
 		CView::OnDestroy();
 	}

@@ -11,7 +11,7 @@
 
 		WORD __getUsableSectorLength__(BYTE sectorLengthCode) const;
 		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
-		CSectorDataSerializer *CreateSectorDataSerializer(CHexaEditor *pParentHexaEditor) override sealed;
+		std::unique_ptr<CSectorDataSerializer> CreateSectorDataSerializer(CHexaEditor *pParentHexaEditor) override sealed;
 	};
 
 #endif // IMAGEFLOPPY_H
