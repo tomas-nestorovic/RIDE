@@ -515,7 +515,7 @@ reportError:Utils::Information(buf);
 			// . filling empty space last Sectors
 			while (discoveredDirs.GetCount()){
 				const PFile dir=discoveredDirs.RemoveHead();
-				if (const PDirectoryTraversal pdt=fesp.dos->BeginDirectoryTraversal(dir)){
+				if (const auto pdt=fesp.dos->BeginDirectoryTraversal(dir))
 					while (const PCFile file=pdt->GetNextFileOrSubdir()){
 						if (!pAction->bContinue) return ERROR_CANCELLED;
 						switch (pdt->entryType){
@@ -551,8 +551,7 @@ reportError:Utils::Information(buf);
 								break;
 						}
 					}
-					fesp.dos->EndDirectoryTraversal(pdt);
-				}//else
+				//else
 					//TODO: warning
 			}
 		}
@@ -565,7 +564,7 @@ reportError:Utils::Information(buf);
 			// . filling Empty Directory entries
 			while (discoveredDirs.GetCount()){
 				const PFile dir=discoveredDirs.RemoveHead();
-				if (const PDirectoryTraversal pdt=fesp.dos->BeginDirectoryTraversal(dir)){
+				if (const auto pdt=fesp.dos->BeginDirectoryTraversal(dir)){
 					pAction->UpdateProgress(pdt->chs.cylinder);
 					while (pdt->AdvanceToNextEntry()){
 						if (!pAction->bContinue) return ERROR_CANCELLED;
@@ -586,7 +585,6 @@ reportError:Utils::Information(buf);
 								break;
 						}
 					}
-					fesp.dos->EndDirectoryTraversal(pdt);
 				}//else
 					//TODO: warning
 			}
@@ -815,8 +813,7 @@ reportError:Utils::Information(buf);
 		// - making sure that the File with given NameAndExtension doesn't exist in current Directory
 		LOG_FILE_ACTION(this,fDesc,_T("import"));
 		rFile=nullptr; // assumption (cannot import the File)
-		const PDirectoryTraversal pdt=BeginDirectoryTraversal();
-			if (!pdt) return LOG_ERROR(ERROR_PATH_NOT_FOUND);
+		if (const auto pdt=BeginDirectoryTraversal()){
 			while (pdt->AdvanceToNextEntry())
 				switch (pdt->entryType){
 					case TDirectoryTraversal::EMPTY:
@@ -833,14 +830,12 @@ reportError:Utils::Information(buf);
 						// found a File in current Directory
 						if (HasFileNameAndExt(pdt->entry,fileName,fileExt)){
 							rFile=pdt->entry;
-							EndDirectoryTraversal(pdt);
 							return LOG_ERROR(ERROR_FILE_EXISTS);
 						}else
 							break;
 					case TDirectoryTraversal::WARNING:{
 						// any Warning becomes a real error!
 						const TStdWinError err=pdt->warning;
-						EndDirectoryTraversal(pdt);
 						return LOG_ERROR(err);
 					}
 					#ifdef _DEBUG
@@ -849,9 +844,9 @@ reportError:Utils::Information(buf);
 						ASSERT(FALSE);
 					#endif
 				}
-		//EndDirectoryTraversal(pdt);
+		//}
 		// - creating a record for specified File in current Directory
-		//const PDirectoryTraversal pdt=BeginDirectoryTraversal();
+		//if (const auto pdt=BeginDirectoryTraversal()){
 			PFile tmp;
 			TStdWinError err=ChangeFileNameAndExt( fDesc, fileName, fileExt, tmp );
 			if (err==ERROR_SUCCESS)
@@ -866,14 +861,17 @@ reportError:Utils::Information(buf);
 					}else // Empty entry not found and not allocated
 						err=ERROR_CANNOT_MAKE;
 				}
-		EndDirectoryTraversal(pdt);
-		if (err!=ERROR_SUCCESS)
-			return LOG_ERROR(err);
+			if (err!=ERROR_SUCCESS)
+				return LOG_ERROR(err);
+		//}
 		// - checking if there's enough empty space on the disk
-		if (fileSize>GetFreeSpaceInBytes(err)){
-			DeleteFile(rFile); // removing the above added File record from current Directory
-			return LOG_ERROR(ERROR_DISK_FULL);
-		}
+		//if (const auto pdt=BeginDirectoryTraversal()){
+			if (fileSize>GetFreeSpaceInBytes(err)){
+				DeleteFile(rFile); // removing the above added File record from current Directory
+				return LOG_ERROR(ERROR_DISK_FULL);
+			}
+		}else
+			return LOG_ERROR(ERROR_PATH_NOT_FOUND);
 		// - determining the initial range of Heads in which to search for free Sectors within each Cylinder
 		THead headZ; // last Head number
 		switch (trackAccessScheme){
@@ -931,7 +929,7 @@ reportError:Utils::Information(buf);
 								goto finished;
 							}
 						}else{ // error when accessing discovered Empty Sector
-							err=::GetLastError();
+							const TStdWinError err=::GetLastError();
 							DeleteFile(rFile); // removing the above added File record from current Directory
 							return LOG_ERROR(err);
 						}
@@ -960,21 +958,19 @@ finished:
 
 	void CDos::__markDirectorySectorAsDirty__(LPCVOID dirEntry) const{
 		// marks Directory Sector that contains specified Directory entry as "dirty"
-		if (const PDirectoryTraversal pdt=BeginDirectoryTraversal()){
+		if (const auto pdt=BeginDirectoryTraversal())
 			while (pdt->AdvanceToNextEntry())
 				if (pdt->entry==dirEntry){
 					image->MarkSectorAsDirty(pdt->chs);
 					break;
 				}
-			EndDirectoryTraversal(pdt);
-		}
 	}
 
 	CDos::PFile CDos::__findFile__(PCFile directory,LPCTSTR fileName,LPCTSTR fileExt,PCFile ignoreThisFile) const{
 		// finds and returns a File with given NameAndExtension; returns Null if such File doesn't exist
 		ASSERT(fileName!=nullptr && fileExt!=nullptr);
 		PFile result=nullptr; // assumption (File with given NameAndExtension not found)
-		if (const PDirectoryTraversal pdt=BeginDirectoryTraversal(directory)){
+		if (const auto pdt=BeginDirectoryTraversal(directory))
 			while (pdt->AdvanceToNextEntry())
 				if (pdt->entryType==TDirectoryTraversal::FILE || pdt->entryType==TDirectoryTraversal::SUBDIR)
 					if (pdt->entry!=ignoreThisFile)
@@ -982,8 +978,6 @@ finished:
 							result=pdt->entry;
 							break;
 						}
-			EndDirectoryTraversal(pdt);
-		}
 		return result;
 	}
 
@@ -1155,21 +1149,16 @@ finished:
 		return nullptr;
 	}
 
-	CDos::PDirectoryTraversal CDos::BeginDirectoryTraversal() const{
+	std::unique_ptr<CDos::TDirectoryTraversal> CDos::BeginDirectoryTraversal() const{
 		// initiates exploration of current Directory through a DOS-specific DirectoryTraversal
 		return BeginDirectoryTraversal(currentDir);
-	}
-
-	void CDos::EndDirectoryTraversal(PDirectoryTraversal pdt) const{
-		// ends the DirectoryTraversal
-		delete pdt;
 	}
 
 	DWORD CDos::GetCountOfItemsInCurrentDir(TStdWinError &rError) const{
 		// counts and returns the number of all Files and Directories in current Directory
 		rError=ERROR_SUCCESS; // assumption (Directory OK)
 		DWORD result=0;
-		if (const PDirectoryTraversal pdt=BeginDirectoryTraversal()){
+		if (const auto pdt=BeginDirectoryTraversal())
 			while (pdt->GetNextFileOrSubdir())
 				switch (pdt->entryType){
 					case TDirectoryTraversal::SUBDIR:
@@ -1181,8 +1170,6 @@ finished:
 							rError=pdt->warning;
 						break;
 				}
-			EndDirectoryTraversal(pdt);
-		}
 		return result;
 	}
 

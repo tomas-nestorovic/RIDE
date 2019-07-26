@@ -1270,9 +1270,9 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 
 
 
-	CDos::PDirectoryTraversal CMSDOS7::BeginDirectoryTraversal(PCFile directory) const{
+	std::unique_ptr<CDos::TDirectoryTraversal> CMSDOS7::BeginDirectoryTraversal(PCFile directory) const{
 		// initiates exploration of specified Directory through a DOS-specific DirectoryTraversal
-		return new TMsdos7DirectoryTraversal(this,directory);
+		return std::unique_ptr<TDirectoryTraversal>( new TMsdos7DirectoryTraversal(this,directory) );
 	}
 
 	CMSDOS7::TMsdos7DirectoryTraversal::TMsdos7DirectoryTraversal(const CMSDOS7 *_msdos7,PCFile directory)

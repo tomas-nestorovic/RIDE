@@ -200,10 +200,9 @@
 			const PFile directory;
 		protected:
 			const LPCTSTR iniSection;
-			PDirectoryTraversal pdt;
+			std::unique_ptr<CDos::TDirectoryTraversal> pdt;
 
 			CFilePreview(const CWnd *pView,LPCTSTR iniSection,const CFileManagerView &rFileManager,WORD initialWindowWidth,WORD initialWindowHeight,DWORD resourceId);
-			~CFilePreview();
 
 			void __showNextFile__();
 			void __showPreviousFile__();
@@ -337,9 +336,8 @@
 		virtual DWORD GetAttributes(PCFile file) const=0;
 		bool IsDirectory(PCFile file) const;
 		virtual TStdWinError DeleteFile(PFile file)=0;
-		virtual PDirectoryTraversal BeginDirectoryTraversal(PCFile directory) const=0;
-		PDirectoryTraversal BeginDirectoryTraversal() const;
-		void EndDirectoryTraversal(PDirectoryTraversal pdt) const;
+		virtual std::unique_ptr<TDirectoryTraversal> BeginDirectoryTraversal(PCFile directory) const=0;
+		std::unique_ptr<TDirectoryTraversal> BeginDirectoryTraversal() const;
 		DWORD GetCountOfItemsInCurrentDir(TStdWinError &rError) const;
 		virtual PTCHAR GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const;
 		virtual DWORD ExportFile(PCFile file,CFile *fOut,DWORD nBytesToExportMax,LPCTSTR *pOutError) const;

@@ -571,10 +571,10 @@
 		return true;
 	}
 
-	CDos::PDirectoryTraversal CMDOS2::BeginDirectoryTraversal(PCFile directory) const{
+	std::unique_ptr<CDos::TDirectoryTraversal> CMDOS2::BeginDirectoryTraversal(PCFile directory) const{
 		// initiates exploration of specified Directory through a DOS-specific DirectoryTraversal
 		ASSERT(directory==ZX_DIR_ROOT);
-		return new TMdos2DirectoryTraversal(this);
+		return std::unique_ptr<TDirectoryTraversal>( new TMdos2DirectoryTraversal(this) );
 	}
 	bool CMDOS2::TMdos2DirectoryTraversal::AdvanceToNextEntry(){
 		// True <=> found another entry in current Directory (Empty or not), otherwise False

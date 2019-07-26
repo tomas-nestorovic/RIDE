@@ -330,7 +330,7 @@
 		void SetFileTimeStamps(PFile file,const FILETIME *pCreated,const FILETIME *pLastRead,const FILETIME *pLastWritten) override;
 		DWORD GetAttributes(PCFile file) const override;
 		TStdWinError DeleteFile(PFile file) override;
-		PDirectoryTraversal BeginDirectoryTraversal(PCFile directory) const override;
+		std::unique_ptr<TDirectoryTraversal> BeginDirectoryTraversal(PCFile directory) const override;
 		PTCHAR GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const override;
 		TStdWinError ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile) override;
 		// other

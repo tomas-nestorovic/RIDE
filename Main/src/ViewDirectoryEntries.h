@@ -5,7 +5,7 @@
 		DECLARE_MESSAGE_MAP()
 	private:
 		int iScrollY; // ScrollBar position
-		CDos::CFileReaderWriter *f;
+		std::unique_ptr<CDos::CFileReaderWriter> f;
 
 		afx_msg int OnCreate(LPCREATESTRUCT lpcs);
 		afx_msg void OnDestroy();

@@ -38,11 +38,6 @@
 		}
 	}
 
-	CDos::CFilePreview::~CFilePreview(){
-		// dtor
-		// - freeing resources
-		DOS->EndDirectoryTraversal(pdt);
-	}
 
 
 
@@ -67,7 +62,7 @@
 						break;
 					}
 				if (!next)
-					for( DOS->EndDirectoryTraversal(pdt),pdt=DOS->BeginDirectoryTraversal(directory); pdt->AdvanceToNextEntry(); )
+					for( pdt=DOS->BeginDirectoryTraversal(directory); pdt->AdvanceToNextEntry(); )
 						if (pdt->entryType==TDirectoryTraversal::FILE){
 							next=pdt->entry;
 							break;
@@ -93,12 +88,12 @@
 			// previous File (any)
 			PFile prev=nullptr;
 				const PFile curr=pdt->entry;
-				for( DOS->EndDirectoryTraversal(pdt),pdt=DOS->BeginDirectoryTraversal(directory); pdt->AdvanceToNextEntry(); )
+				for( pdt=DOS->BeginDirectoryTraversal(directory); pdt->AdvanceToNextEntry(); )
 					if (pdt->entryType==TDirectoryTraversal::FILE){
 						if (pdt->entry==curr){
 							if (prev) // doesn't exist if showing the first File
 								// setting the "cursor" to Previous File (currently points to Current File)
-								for( DOS->EndDirectoryTraversal(pdt),pdt=DOS->BeginDirectoryTraversal(directory); pdt->AdvanceToNextEntry() && pdt->entry!=prev; );
+								for( pdt=DOS->BeginDirectoryTraversal(directory); pdt->AdvanceToNextEntry() && pdt->entry!=prev; );
 							break;
 						}
 						prev=pdt->entry;

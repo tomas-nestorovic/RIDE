@@ -110,7 +110,7 @@
 			ListView_SetImageList(m_hWnd,icons,iconType) // list of Icons for all DisplayModes but LVS_REPORT
 		);
 		// - populating the FileManager with new content
-		if (const CDos::PDirectoryTraversal pdt=DOS->BeginDirectoryTraversal()){
+		if (const auto pdt=DOS->BeginDirectoryTraversal())
 			while (pdt->GetNextFileOrSubdir())
 				switch (pdt->entryType){
 					case CDos::TDirectoryTraversal::SUBDIR:
@@ -124,8 +124,6 @@
 						//nop (info added to StatusBar in summary below)
 						break;
 				}
-			DOS->EndDirectoryTraversal(pdt);
-		}
 		// - applying Order to Files
 		__order__();
 		// - restoring File selection
@@ -630,17 +628,16 @@
 				const TDirectoryEtc dirEtc={ dos->currentDirId, nullptr };
 				for( POSITION pos=rFileManager.GetFirstSelectedFilePosition(); pos; ){
 					if (!pAction->bContinue) break;
-					if (const CDos::PDirectoryTraversal pdt=dos->BeginDirectoryTraversal(currentDirectory)){
+					if (const auto pdt=dos->BeginDirectoryTraversal(currentDirectory)){
 						for( const CDos::PCFile file=rFileManager.GetNextSelectedFile(pos); pdt->GetNextFileOrSubdir()!=file; );
 						__countInFile__(pdt,&dirEtc);
-						dos->EndDirectoryTraversal(pdt);
 					}
 				}
 				if (pDirStructMan!=nullptr)
 					(dos->*pDirStructMan->fnChangeCurrentDir)(currentDirectory); // because it could recurrently be switched to another but CurrentDirectory
 			}
 
-			void __countInFile__(CDos::PDirectoryTraversal pdt,PCDirectoryEtc dirPath){
+			void __countInFile__(const std::unique_ptr<CDos::TDirectoryTraversal> &pdt,PCDirectoryEtc dirPath){
 				// counts the File into Statistics; recurrently processes Subdirectories
 				if (pdt->entryType==CDos::TDirectoryTraversal::FILE)
 					// File
@@ -655,14 +652,13 @@
 					for( PCDirectoryEtc pde=dirPath; pde!=nullptr; pde=pde->parent )
 						if (pde->dirId==dirEtc.dirId) return;
 					// . involving Directory into Statistics
-					if (const CDos::PDirectoryTraversal subPdt=dos->BeginDirectoryTraversal(pdt->entry)){
+					if (const auto subPdt=dos->BeginDirectoryTraversal(pdt->entry)){
 						for( rStatistics.nDirectories++,rStatistics.totalSizeInBytes+=dos->GetFileOfficialSize(pdt->entry),rStatistics.totalSizeOnDiskInBytes+=dos->GetFileSizeOnDisk(pdt->entry); subPdt->GetNextFileOrSubdir()!=nullptr; ){
 							if (!pAction->bContinue) break;
 							if (subPdt->entryType!=CDos::TDirectoryTraversal::WARNING)
 								__countInFile__(subPdt,&dirEtc);
 						}
 						pAction->UpdateProgress( state=max(state,subPdt->chs.cylinder) );
-						dos->EndDirectoryTraversal(subPdt);
 					}
 				}
 			}

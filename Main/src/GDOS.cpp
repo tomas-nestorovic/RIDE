@@ -665,10 +665,10 @@
 
 
 
-	CDos::PDirectoryTraversal CGDOS::BeginDirectoryTraversal(PCFile directory) const{
+	std::unique_ptr<CDos::TDirectoryTraversal> CGDOS::BeginDirectoryTraversal(PCFile directory) const{
 		// initiates exploration of specified Directory through a DOS-specific DirectoryTraversal
 		ASSERT(directory==ZX_DIR_ROOT);
-		return new TGdosDirectoryTraversal(this);
+		return std::unique_ptr<TDirectoryTraversal>( new TGdosDirectoryTraversal(this) );
 	}
 
 	CGDOS::TGdosDirectoryTraversal::TGdosDirectoryTraversal(const CGDOS *gdos)

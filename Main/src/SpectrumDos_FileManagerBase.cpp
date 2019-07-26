@@ -21,25 +21,24 @@
 
 	PTCHAR CSpectrumDos::CSpectrumFileManagerView::GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant,PTCHAR pOutBuffer) const{
 		// returns the Buffer populated with the export name and extension of the next File's copy in current Directory; returns Null if no further name and extension can be generated
-		BYTE tmpDirEntry[2048]; // "big enough" to accommodate any ZX Spectrum DirectoryEntry
-		const PDirectoryTraversal pdt=DOS->BeginDirectoryTraversal();
-			if (!pdt) return nullptr;
+		if (const auto pdt=DOS->BeginDirectoryTraversal()){
+			BYTE tmpDirEntry[4096]; // "big enough" to accommodate any ZX Spectrum DirectoryEntry
 			::memcpy( tmpDirEntry, file, pdt->entrySize );
 			const WORD nameCharsMax=pdt->nameCharsMax;
-		DOS->EndDirectoryTraversal(pdt);
-		for( BYTE copyNumber=1; copyNumber; copyNumber++ ){
-			// . composing the Name for the File copy
-			TCHAR bufNameCopy[MAX_PATH], bufExt[MAX_PATH];
-			DOS->GetFileNameAndExt(	file,bufNameCopy, bufExt );
-			TCHAR postfix[8];
-			const BYTE n=::wsprintf(postfix,_T("%c%d"),255,copyNumber); // 255 = token of the "COPY" keyword
-			if (::lstrlen(::lstrcat(bufNameCopy,postfix))>nameCharsMax)
-				::lstrcpy( &bufNameCopy[nameCharsMax-n], postfix ); // trimming to maximum number of characters
-			// . attempting to rename the TemporaryDirectoryEntry
-			CDos::PFile fExisting;
-			if (DOS->ChangeFileNameAndExt( &tmpDirEntry, bufNameCopy, bufExt, fExisting )==ERROR_SUCCESS)
-				// generated a unique Name for the next File copy - returning the final export name and extension
-				return DOS->GetFileExportNameAndExt( &tmpDirEntry, shellCompliant, pOutBuffer );
+			for( BYTE copyNumber=1; copyNumber; copyNumber++ ){
+				// . composing the Name for the File copy
+				TCHAR bufNameCopy[MAX_PATH], bufExt[MAX_PATH];
+				DOS->GetFileNameAndExt(	file,bufNameCopy, bufExt );
+				TCHAR postfix[8];
+				const BYTE n=::wsprintf(postfix,_T("%c%d"),255,copyNumber); // 255 = token of the "COPY" keyword
+				if (::lstrlen(::lstrcat(bufNameCopy,postfix))>nameCharsMax)
+					::lstrcpy( &bufNameCopy[nameCharsMax-n], postfix ); // trimming to maximum number of characters
+				// . attempting to rename the TemporaryDirectoryEntry
+				CDos::PFile fExisting;
+				if (DOS->ChangeFileNameAndExt( &tmpDirEntry, bufNameCopy, bufExt, fExisting )==ERROR_SUCCESS)
+					// generated a unique Name for the next File copy - returning the final export name and extension
+					return DOS->GetFileExportNameAndExt( &tmpDirEntry, shellCompliant, pOutBuffer );
+			}
 		}
 		return nullptr; // the Name for the next File copy cannot be generated
 	}

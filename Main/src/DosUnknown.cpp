@@ -99,7 +99,7 @@
 		return ERROR_NOT_SUPPORTED;
 	}
 
-	CDos::PDirectoryTraversal CUnknownDos::BeginDirectoryTraversal(PCFile) const{
+	std::unique_ptr<CDos::TDirectoryTraversal> CUnknownDos::BeginDirectoryTraversal(PCFile) const{
 		// initiates exploration of specified Directory through a DOS-specific DirectoryTraversal
 		return nullptr;
 	}
