@@ -266,7 +266,7 @@
 
 		class CHexaPreview sealed:public CFilePreview{
 			CMemFile fEmpty;
-			CFileReaderWriter *pFileRW;
+			std::unique_ptr<CFileReaderWriter> pFileRW;
 
 			void RefreshPreview() override;
 		public:

@@ -17,7 +17,7 @@
 		// - base
 		: CFilePreview( &hexaEditor, INI_PREVIEW, rFileManager, HEXA_WIDTH, HEXA_HEIGHT, 0 )
 		// - initialization
-		, fEmpty((PBYTE)&fEmpty,0) , pFileRW(nullptr)
+		, fEmpty((PBYTE)&fEmpty,0)
 		, hexaEditor(DOS,this) {
 		pSingleInstance=this;
 		// - creating the HexaEditor view
@@ -32,9 +32,6 @@
 		// dtor
 		// - destroying the HexaEditor window
 		hexaEditor.DestroyWindow();
-		// - releasing resources
-		if (pFileRW)
-			delete pFileRW;
 		pSingleInstance=nullptr;
 	}
 
@@ -44,10 +41,9 @@
 		// refreshes the Preview (e.g. when switched to another File)
 		if (const PCFile file=pdt->entry){
 			// . resetting the content of the HexaPreview
-			if (pFileRW)
-				delete pFileRW;
+			pFileRW.reset(new CFileReaderWriter(DOS,file));
 			const DWORD size=DOS->GetFileOccupiedSize(file);
-			hexaEditor.Reset( pFileRW=new CFileReaderWriter(DOS,file) ,size,size );
+			hexaEditor.Reset( pFileRW.get(), size, size );
 			// . updating the window caption
 			TCHAR bufCaption[20+MAX_PATH];
 			::wsprintf( bufCaption, LABEL _T(" (%s)"), DOS->GetFileNameWithAppendedExt(file,bufCaption+20) );
