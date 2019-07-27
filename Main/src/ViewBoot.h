@@ -14,7 +14,7 @@
 		static bool WINAPI __updateFatAfterChangingCylinderCount__(PVOID,int newValue);
 
 		CDos::CFileReaderWriter fBoot;
-		CSplitterWnd *content; // newly created for whenever Boot is switched to in TDI
+		std::unique_ptr<CSplitterWnd> content; // newly created for whenever Boot is switched to in TDI
 		CWnd propGrid;
 		CHexaEditor hexaEditor;
 		int splitX;

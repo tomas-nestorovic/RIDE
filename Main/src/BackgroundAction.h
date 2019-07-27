@@ -3,7 +3,7 @@
 
 	struct TBackgroundAction{
 	protected:
-		CWinThread *const pWorker;
+		const std::unique_ptr<CWinThread> pWorker;
 	public:
 		const LPCVOID fnParams;
 

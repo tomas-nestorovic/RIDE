@@ -190,7 +190,7 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 		// - creating the Content
 		//CCreateContext cc;
 		//cc.m_pCurrentDoc=dos->image;
-		content=new CSplitterWnd;
+		content.reset( new CSplitterWnd );
 			content->CreateStatic(this,1,2,WS_CHILD|WS_VISIBLE|WS_CLIPSIBLINGS);//WS_CLIPCHILDREN|
 			//content->CreateView(0,0,RUNTIME_CLASS(CPropertyGridView),CSize(splitX,0),&cc);
 			//const HWND hPropGrid=content->GetDlgItem( content->IdFromRowCol(0,0) )->m_hWnd;
@@ -198,7 +198,7 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 				content->SetColumnInfo(0,PROPGRID_WIDTH_DEFAULT*Utils::LogicalUnitScaleFactor,0);
 			//content->CreateView(0,1,RUNTIME_CLASS(CHexaEditor),CSize(),&cc); // commented out as created manually below
 				hexaEditor.Reset( &fBoot, bootSectorDataRealLength, bootSectorDataRealLength );
-				hexaEditor.Create( nullptr, nullptr, AFX_WS_DEFAULT_VIEW&~WS_BORDER|WS_CLIPSIBLINGS, CFrameWnd::rectDefault, content, content->IdFromRowCol(0,1) );
+				hexaEditor.Create( nullptr, nullptr, AFX_WS_DEFAULT_VIEW&~WS_BORDER|WS_CLIPSIBLINGS, CFrameWnd::rectDefault, content.get(), content->IdFromRowCol(0,1) );
 				//hexaEditor.CreateEx( 0, HEXAEDITOR_BASE_CLASS, nullptr, AFX_WS_DEFAULT_VIEW&~WS_BORDER, RECT(), nullptr, content->IdFromRowCol(0,1), nullptr );
 		OnSize( SIZE_RESTORED, lpcs->cx, lpcs->cy );
 		// - populating the PropertyGrid with values from Boot Sector
@@ -291,7 +291,7 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 		content->GetDlgItem( content->IdFromRowCol(0,0) )->GetClientRect(&r);
 		splitX=r.right;
 		// - disposing the Content
-		delete content;
+		content.reset();
 		// - base
 		CView::OnDestroy();
 		// - no Boot is currently being displayed

@@ -13,7 +13,6 @@
 		// dtor
 		// - forced termination of the Worker (if this cannot be done, it's necessary to sort it out in descendant's dtor)
 		::TerminateThread( pWorker->m_hThread, 0 );
-		delete pWorker;
 	}
 
 
