@@ -1204,7 +1204,7 @@ finished:
 		static const LPCTSTR MonthAbbreviations[]={ _T("Jan"), _T("Feb"), _T("Mar"), _T("Apr"), _T("May"), _T("Jun"), _T("Jul"), _T("Aug"), _T("Sep"), _T("Oct"), _T("Nov"), _T("Dec") };
 		SYSTEMTIME st;
 		::FileTimeToSystemTime( this, &st );
-		//::SystemTimeToTzSpecificLocalTime( nullptr, &st, &st );
+		::SystemTimeToTzSpecificLocalTime( nullptr, &st, &st );
 		::wsprintf( buf, _T("%d/%s/%d"), st.wDay, MonthAbbreviations[st.wMonth-1], st.wYear );
 		return buf;
 	}
@@ -1213,7 +1213,7 @@ finished:
 		// populates the Buffer with this Time value and returns the buffer
 		SYSTEMTIME st;
 		::FileTimeToSystemTime( this, &st );
-		//::SystemTimeToTzSpecificLocalTime( nullptr, &st, &st );
+		::SystemTimeToTzSpecificLocalTime( nullptr, &st, &st );
 		::wsprintf( buf, _T("%d:%02d:%02d"), st.wHour, st.wMinute, st.wSecond );
 		return buf;
 	}
