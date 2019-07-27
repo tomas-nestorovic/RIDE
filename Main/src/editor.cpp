@@ -237,19 +237,17 @@
 		// opens document with specified FileName
 		app.m_pMainWnd->SetFocus(); // to immediately carry out actions that depend on focus
 		// - opening the Image
-		PImage image;
+		std::unique_ptr<CImage> image;
 		if (!::lstrcmp(lpszFileName,FDD_A_LABEL)){
 			// accessing the floppy in Drive A:
 			OnFileNew(); // to close any previous Image
-			image=new CFDD;
-			const TStdWinError err=image->Reset();
-			if (err!=ERROR_SUCCESS){
-				delete image;
+			image.reset( new CFDD );
+			if (const TStdWinError err=image->Reset()){
 				Utils::FatalError(_T("Cannot access the floppy drive"),err);
 				return nullptr;
 				//AfxThrowFileException( CFileException::OsErrorToException(err), err, FDD_A_LABEL );
 			}
-		}else if (image=(PImage)CWinApp::OpenDocumentFile(lpszFileName)){
+		}else if (image=std::unique_ptr<CImage>((PImage)CWinApp::OpenDocumentFile(lpszFileName))){
 			// Image opened successfully
 openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully ...
 				if (!image->CanBeModified()) // ... inform on eventual "read-only" mode (forced if Image on the disk is read-only, e.g. because opened from a CD-R)
@@ -257,7 +255,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			}else
 				switch (const TStdWinError err=::GetLastError()){
 					case ERROR_BAD_FORMAT:
-						if (!dynamic_cast<CImageRaw *>(image)){
+						if (!dynamic_cast<CImageRaw *>(image.get())){
 							// . defining the Dialog
 							class CWrongInnerFormatDialog sealed:public Utils::CCommandDialog{
 								void PreInitDialog() override{
@@ -278,10 +276,9 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 							// . showing the Dialog and processing its result
 							const BYTE command=d.DoModal();
 							if (command==IDYES) break;
-							delete image;
 							OnFileNew();
 							if (command==IDCANCEL) return nullptr;
-							image=CImageRaw::Properties.fnInstantiate();
+							image.reset( CImageRaw::Properties.fnInstantiate() );
 							goto openImage;
 						}
 						//fallthrough
@@ -295,7 +292,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			// failed to open Image
 			return nullptr;
 		// - adding file Image into list of Most Recently Used (MRU) documents
-		if (!dynamic_cast<CFDD *>(image))
+		if (!dynamic_cast<CFDD *>(image.get()))
 			app.AddToRecentFileList(lpszFileName);
 		// - determining the DOS
 		CDos::PCProperties dosProps=nullptr;
@@ -303,11 +300,9 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		if (recognizeDosAutomatically){
 			// automatic recognition of suitable DOS by sequentially testing each of them
 			::SetLastError(ERROR_SUCCESS); // assumption (no errors)
-			dosProps=CDos::CRecognition().__perform__(image,&formatBoot);
-			if (!dosProps){ // if recognition sequence cancelled ...
-				delete image;
+			dosProps=CDos::CRecognition().__perform__( image.get(), &formatBoot );
+			if (!dosProps) // if recognition sequence cancelled ...
 				return nullptr; // ... no Image or disk is accessed
-			}
 			if (dosProps==&CUnknownDos::Properties)
 				Utils::Information(_T("CANNOT RECOGNIZE THE DOS!\nDoes it participate in recognition?") ENTERING_LIMITED_MODE );
 		}else{
@@ -346,10 +341,9 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 				}
 			} d;
 			// . showing the Dialog and processing its result
-			if (d.DoModal()!=IDOK){
-				delete image;
+			if (d.DoModal()!=IDOK)
 				return nullptr;
-			}else{
+			else{
 				formatBoot=( dosProps=d.dosProps )->stdFormats->params.format;
 				formatBoot.nCylinders++;
 			}
@@ -357,11 +351,9 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			Utils::InformationWithCheckableShowNoMore( _T("The image will be opened using the default format of the selected DOS (see the \"") BOOT_SECTOR_TAB_LABEL _T("\" tab if available).\n\nRISK OF DATA CORRUPTION if the selected DOS and/or format is not suitable!"), INI_GENERAL, INI_MSG_OPEN_AS );
 		}
 		// - instantiating recognized/selected DOS
-		const PDos dos = image->dos = dosProps->fnInstantiate(image,&formatBoot);
-		if (!dos){
-			delete image;
+		const PDos dos = image->dos = dosProps->fnInstantiate( image.get(), &formatBoot );
+		if (!dos)
 			return nullptr;
-		}
 		image->SetMediumTypeAndGeometry( &formatBoot, dos->sideMap, dos->properties->firstSectorNumber );
 		// - creating the user interface for recognized/selected DOS
 		image->SetPathName( lpszFileName, TRUE ); // at this moment, Image became application's active document and the name of its underlying file is shown in MainWindow's caption
@@ -376,7 +368,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		// - informing on what to do in case of DOS misrecognition
 		Utils::InformationWithCheckableShowNoMore( _T("If the DOS has been misrecognized, adjust the recognition sequence under \"Image -> Recognition\"."), INI_GENERAL, INI_MISRECOGNITION );
 		// - returning the just open Image
-		return image;
+		return image.release();
 	}
 
 	afx_msg void CRideApp::__openImage__(){

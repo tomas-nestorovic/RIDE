@@ -12,7 +12,7 @@
 		const CDos *const dos;
 		TMedium::TType mediumType;
 		const PImage source;
-		PImage target;
+		std::unique_ptr<CImage> target;
 		bool formatJustBadTracks;
 		TCylinder cylinderA,cylinderZ;
 		THead nHeads;
@@ -33,7 +33,7 @@
 		TDumpParams(PDos _dos)
 			// ctor
 			: dos(_dos)
-			, source(dos->image) , target(nullptr)
+			, source(dos->image)
 			, formatJustBadTracks(false)
 			, fillerByte(dos->properties->sectorFillerByte)
 			, cylinderA(0) , cylinderZ(source->GetCylinderCount()-1)
@@ -45,10 +45,8 @@
 
 		~TDumpParams(){
 			// dtor
-			if (target){
+			if (target)
 				target->dos=nullptr; // to not also destroy the DOS
-				delete target;
-			}
 		}
 
 		void __exportErroneousTracksToHtml__(CFile &fHtml) const{
@@ -231,7 +229,7 @@ terminateWithError:
 								};
 								CWnd *const pBtnAccept=GetDlgItem(IDOK);
 								Utils::ConvertToSplitButton( pBtnAccept->m_hWnd, Actions, ACCEPT_OPTIONS_COUNT );
-								pBtnAccept->EnableWindow( dynamic_cast<CImageRaw *>(dp.target)==nullptr ); // accepting errors is allowed only if the Target Image can accept them
+								pBtnAccept->EnableWindow( dynamic_cast<CImageRaw *>(dp.target.get())==nullptr ); // accepting errors is allowed only if the Target Image can accept them
 								// > enabling/disabling the "Recover" button
 								GetDlgItem(ID_RECOVER)->EnableWindow( rFdcStatus.DescribesIdFieldCrcError() || rFdcStatus.DescribesDataFieldCrcError() );
 							}
@@ -513,13 +511,10 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 				DDX_Check(pDX,	ID_PRIORITY,	realtimeThreadPriority );
 				DDX_Check(pDX,	ID_REPORT,		showReport );
 				if (pDX->m_bSaveAndValidate){
-					// : destroying any previously instantiated Target Image
-					if (dumpParams.target)
-						delete dumpParams.target, dumpParams.target=nullptr;
 					// : instantiating Target Image
 					if (targetImageProperties){
 						LOG_ACTION(_T("Creating target image"));
-						dumpParams.target=targetImageProperties->fnInstantiate();
+						dumpParams.target=std::unique_ptr<CImage>( targetImageProperties->fnInstantiate() );
 					}else{
 						Utils::FatalError(_T("Unknown destination to dump to."));
 						return pDX->Fail();
@@ -530,7 +525,7 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 							dumpParams.source->properties==&CFDD::Properties
 							&&
 						#endif
-						dynamic_cast<CImageRaw *>(dumpParams.target)!=nullptr
+						dynamic_cast<CImageRaw *>(dumpParams.target.get())!=nullptr
 					)
 						// suggestion is helpfull only if dumping a floppy to an image with invariant structure (as Cylinders outside the official Format may have different layout, causing an "Device doesn't recognize this command" error during formatting the raw Image)
 						if (dos->properties!=&CUnknownDos::Properties) // Unknown DOS doesn't have valid Format information

@@ -2,7 +2,7 @@
 
 	struct TPatchParams sealed{
 		const CDos *const dos;
-		PImage source;
+		std::unique_ptr<CImage> source;
 		const PImage target;
 		TCylinder cylinderA,cylinderZ;
 		THead nHeads;
@@ -11,15 +11,10 @@
 
 		TPatchParams(PDos dos)
 			// ctor
-			: dos(dos) , source(nullptr) , target(dos->image)
+			: dos(dos) , target(dos->image)
 			, cylinderA(0) , cylinderZ(0) , nHeads(1)
 			, gap3( dos->properties->GetValidGap3ForMedium(dos->formatBoot.mediumType) )
 			, skipEmptySourceTracks(BST_CHECKED) {
-		}
-		~TPatchParams(){
-			// dtor
-			if (source)
-				delete source;
 		}
 	};
 
@@ -136,9 +131,8 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 									static const WORD Controls[]={ ID_CYLINDER, ID_CYLINDER_N, ID_HEAD, ID_GAP, IDOK, 0 };
 									if (Utils::EnableDlgControls( m_hWnd, Controls, sourceImageProperties==&CDsk5::Properties )){
 										// : interactivity
-										if (patchParams.source)
-											delete patchParams.source;
-										( patchParams.source=sourceImageProperties->fnInstantiate() )->OnOpenDocument(fileName);
+										patchParams.source.reset( sourceImageProperties->fnInstantiate() );
+										patchParams.source->OnOpenDocument(fileName);
 										patchParams.cylinderA=0, patchParams.cylinderZ=patchParams.source->GetCylinderCount()-1;
 										patchParams.nHeads=min(patchParams.source->GetNumberOfFormattedSides(0),patchParams.target->GetNumberOfFormattedSides(0));
 										DoDataExchange( &CDataExchange(this,FALSE) );
