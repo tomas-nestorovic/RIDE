@@ -105,13 +105,13 @@
 				while (TCylinder n=GetCylinderCount())
 					UnformatTrack(--n,0);
 				// : instantiating the TRDOS with the highest priority in the recognition sequence
-				CTRDOS503 *pTrdos=nullptr; // assumption (no TR-DOS participates in the recognition sequence)
+				std::unique_ptr<CTRDOS503> pTrdos=nullptr; // assumption (no TR-DOS participates in the recognition sequence)
 				const CDos::CRecognition recognition;
 				for( POSITION pos=recognition.__getFirstRecognizedDosPosition__(); pos; ){
 					const CDos::PCProperties p=recognition.__getNextRecognizedDos__(pos);
 					if (!::memcmp(p->name,TRDOS_NAME_BASE,sizeof(TRDOS_NAME_BASE)-1)){
 						static const TFormat Fmt={ TMedium::FLOPPY_DD, FDD_CYLINDERS_MAX,2,TRDOS503_TRACK_SECTORS_COUNT, TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD, 1 };
-						pTrdos=(CTRDOS503 *)p->fnInstantiate(this,&Fmt);
+						pTrdos.reset( (CTRDOS503 *)p->fnInstantiate(this,&Fmt) );
 						break;
 					}
 				}
@@ -121,8 +121,7 @@
 				// : formatting Image to the maximum possible capacity
 				TStdWinError err=__extendToNumberOfCylinders__( pTrdos->formatBoot.nCylinders, pTrdos->properties->sectorFillerByte );
 				if (err!=ERROR_SUCCESS){
-error:				delete pTrdos;
-					f.Close();
+error:				f.Close();
 					::SetLastError(err);
 					return err;
 				}
