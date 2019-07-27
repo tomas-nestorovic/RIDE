@@ -49,7 +49,7 @@
 
 	void CDiskBrowserView::OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint){
 		// request to refresh the display of content
-		f.reset( IMAGE->CreateSectorDataSerializer(this) );
+		f=IMAGE->CreateSectorDataSerializer(this);
 		Reset( f.get(), f->GetLength(), f->GetLength() );
 	}
 
