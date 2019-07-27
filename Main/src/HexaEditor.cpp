@@ -25,7 +25,7 @@
 	}
 	void CHexaEditor::TCursor::__cancelSelection__(){
 		// sets that nothing is selected
-		selectionA = selectionZ = -1;
+		selectionA = selectionZ = position;
 	}
 
 
@@ -363,7 +363,7 @@ cursorCorrectlyMoveTo:	// . adjusting the Cursor's Position
 								RepaintData(); // ... invalidating the content as the Selection may no longer be valid (e.g. may be deselected)
 							cursor.__detectNewSelection__();
 						}
-						if (cursor.selectionA>=0) // affecting end of Selection only if its beginning already set
+						//if (cursor.selectionA>=0) // affecting end of Selection only if its beginning already set
 							cursor.selectionZ=cursor.position;
 cursorRefresh:			// . refreshing the Cursor
 						HideCaret();
@@ -724,9 +724,9 @@ resetSelectionWithValue:BYTE buf[65536];
 								f->Seek(cursor.position,CFile::begin);
 								const DWORD lengthLimit=maxFileSize-cursor.position;
 								if (length<=lengthLimit){
-									cursor.__cancelSelection__();
 									f->Write( ++p, length );
 									cursor.position+=length;
+									cursor.__cancelSelection__();
 								}else{
 									f->Write( ++p, lengthLimit );
 									cursor.position+=lengthLimit;
