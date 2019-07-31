@@ -584,9 +584,13 @@ importQuit2:		::GlobalUnlock(hg);
 					}
 				}
 			// . importing the File
-			CFile f( pathAndName, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary );
-			::GetFileTime( (HANDLE)f.m_hFile, &created, &lastRead, &lastModified );
-			return ImportFileAndResolveConflicts( &f, f.GetLength(), fileName, winAttr, created, lastRead, lastModified, rImportedFile, rConflictedSiblingResolution );
+			CFileException e;
+			CFile f;
+			if (f.Open( pathAndName, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary, &e )){
+				::GetFileTime( (HANDLE)f.m_hFile, &created, &lastRead, &lastModified );
+				return ImportFileAndResolveConflicts( &f, f.GetLength(), fileName, winAttr, created, lastRead, lastModified, rImportedFile, rConflictedSiblingResolution );
+			}else
+				return e.m_cause;
 		}
 	}
 
