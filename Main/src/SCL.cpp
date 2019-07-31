@@ -51,7 +51,7 @@
 	BOOL CSCL::OnSaveDocument(LPCTSTR lpszPathName){
 		// True <=> this Image has been successfully saved, otherwise False
 		if (const CTRDOS503::PCBootSector boot=CTRDOS503::__getBootSector__(this)){
-			if (f.m_hFile!=(UINT_PTR)INVALID_HANDLE_VALUE) // Image's underlying file doesn't exist if saving a fresh formatted Image
+			if (f.m_hFile!=CFile::hFileNull) // Image's underlying file doesn't exist if saving a fresh formatted Image
 				f.Close();
 			if (!__openImageForWriting__(lpszPathName,&f))
 				return FALSE;
@@ -91,7 +91,7 @@
 		}else
 			return ERROR_BAD_COMMAND; // not a TRDOS format
 		// - attempting to read as TRDOS 5.0x Image
-		if (f.m_hFile!=(UINT_PTR)INVALID_HANDLE_VALUE){ // handle doesn't exist if creating a new Image
+		if (f.m_hFile!=CFile::hFileNull){ // handle doesn't exist if creating a new Image
 			// . rewinding to the beginning to reload the content of the Image's underlying file
 			f.SeekToBegin();
 			// . reading TRDOS 5.0x Image

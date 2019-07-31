@@ -106,7 +106,7 @@
 				// saving to other than Image's underlying file
 				if (bufferedData){
 					pfOtherThanCurrentFile->Write(bufferedData,sectorLength);
-					if (f.m_hFile!=(UINT_PTR)INVALID_HANDLE_VALUE) // handle doesn't exist if creating a new Image
+					if (f.m_hFile!=CFile::hFileNull) // handle doesn't exist if creating a new Image
 						f.Seek(sectorLength,CFile::current);
 				}else{
 					BYTE buffer[(WORD)-1+1];
@@ -122,7 +122,7 @@
 		const bool savingToCurrentFile=lpszPathName==m_strPathName;
 		if (!savingToCurrentFile && !__openImageForWriting__(lpszPathName,&fTmp))
 			return FALSE;
-		if (f.m_hFile!=(UINT_PTR)INVALID_HANDLE_VALUE) // handle doesn't exist when creating new Image
+		if (f.m_hFile!=CFile::hFileNull) // handle doesn't exist when creating new Image
 			f.Seek(0,CFile::begin);
 		TPhysicalAddress chs;
 			chs.sectorId.lengthCode=sectorLengthCode;
@@ -146,12 +146,12 @@
 		}
 		m_bModified=FALSE;
 		// - reopening Image's underlying file
-		if (f.m_hFile!=(UINT_PTR)INVALID_HANDLE_VALUE){
+		if (f.m_hFile!=CFile::hFileNull){
 			if (savingToCurrentFile)
 				f.SetLength(f.GetPosition()); // "trimming" eventual unnecessary data (e.g. when unformatting Cylinders)
 			f.Close();
 		}
-		if (fTmp.m_hFile!=(UINT_PTR)INVALID_HANDLE_VALUE)
+		if (fTmp.m_hFile!=CFile::hFileNull)
 			fTmp.Close();
 		return __openImageForReadingAndWriting__(lpszPathName);
 	}
@@ -257,7 +257,7 @@ trackNotFound:
 	TStdWinError CImageRaw::__setMediumTypeAndGeometry__(PCFormat pFormat,PCSide _sideMap,TSector _firstSectorNumber){
 		// sets Medium's Type and geometry; returns Windows standard i/o error
 		// - determining the Image Size based on the size of Image's underlying file
-		const DWORD fileSize=	f.m_hFile!=(UINT_PTR)INVALID_HANDLE_VALUE // InvalidHandle if creating a new Image, for instance
+		const DWORD fileSize=	f.m_hFile!=CFile::hFileNull // InvalidHandle if creating a new Image, for instance
 								? sizeWithoutGeometry
 								: 0;
 		// - setting up geometry
@@ -329,7 +329,7 @@ trackNotFound:
 		// resets internal representation of the disk (e.g. by disposing all content without warning)
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - closing Image's underlying file
-		if (f.m_hFile!=(UINT_PTR)INVALID_HANDLE_VALUE)
+		if (f.m_hFile!=CFile::hFileNull)
 			f.Close();
 		// - emptying the BufferOfCylinders
 		__freeBufferOfCylinders__();
