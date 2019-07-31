@@ -38,10 +38,10 @@
 		afx_msg void OnDestroy();
 		afx_msg LRESULT __drawTrack__(WPARAM wParam,LPARAM lParam);
 		afx_msg void __changeDisplayType__(UINT id);
-			afx_msg void __changeDisplayType_updateUI__(CCmdUI *pCmdUI) const;
+			afx_msg void __changeDisplayType_updateUI__(CCmdUI *pCmdUI);
 		afx_msg void __toggleSectorNumbering__();
-			afx_msg void __toggleSectorNumbering_updateUI__(CCmdUI *pCmdUI) const;
-		afx_msg void __showDiskStatistics__() const;
+			afx_msg void __toggleSectorNumbering_updateUI__(CCmdUI *pCmdUI);
+		afx_msg void __showDiskStatistics__();
 	public:
 		const CMainWindow::CTdiView::TTab tab;
 

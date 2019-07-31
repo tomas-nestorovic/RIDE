@@ -384,7 +384,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			OnFileOpen();
 	}
 
-	afx_msg void CRideApp::__showAbout__() const{
+	afx_msg void CRideApp::__showAbout__(){
 		// about
 		SYSTEMTIME st;
 		::GetLocalTime(&st);

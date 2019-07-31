@@ -44,7 +44,7 @@
 		afx_msg void __createNewImage__();
 		afx_msg void __openImage__();
 		afx_msg void __openImageAs__();
-		afx_msg void __showAbout__() const;
+		afx_msg void __showAbout__();
 	};
 
 #endif // RIDEAPP_H

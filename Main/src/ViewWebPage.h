@@ -26,10 +26,10 @@
 		afx_msg void OnDestroy();
 		void __saveCurrentPageScrollPosition__() const;
 		afx_msg void __navigateBack__();
-			afx_msg void __navigateBack_updateUI__(CCmdUI *pCmdUI) const;
+			afx_msg void __navigateBack_updateUI__(CCmdUI *pCmdUI);
 		afx_msg void __navigateForward__();
-			afx_msg void __navigateForward_updateUI__(CCmdUI *pCmdUI) const;
-		afx_msg void __openCurrentPageInDefaultBrowser__() const;
+			afx_msg void __navigateForward_updateUI__(CCmdUI *pCmdUI);
+		afx_msg void __openCurrentPageInDefaultBrowser__();
 	public:
 		const CMainWindow::CTdiView::TTab tab;
 

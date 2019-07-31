@@ -572,7 +572,7 @@
 			__addToTheEndAndSelectFile__(d.subdirectory);
 		}
 	}
-	afx_msg void CFileManagerView::__createSubdirectory_updateUI__(CCmdUI *pCmdUI) const{
+	afx_msg void CFileManagerView::__createSubdirectory_updateUI__(CCmdUI *pCmdUI){
 		// projecting possibility to create Subdirectories into UI
 		pCmdUI->Enable(pDirectoryStructureManagement!=nullptr);
 	}
@@ -668,7 +668,7 @@
 		return pAction->bContinue ? ERROR_SUCCESS : ERROR_CANCELLED;
 	}
 
-	afx_msg void CFileManagerView::__showSelectionProperties__() const{
+	afx_msg void CFileManagerView::__showSelectionProperties__(){
 		// shows properties of currently selected Files (and Directories)
 		TSelectionStatistics statistics(*this);
 		TBackgroundActionCancelable bac( __selectionPropertyStatistics_thread__, &statistics, THREAD_PRIORITY_BELOW_NORMAL );

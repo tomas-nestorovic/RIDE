@@ -125,7 +125,7 @@
 		afx_msg void __selectAllFilesInCurrentDir__();
 		afx_msg void __unselectAllFilesInCurrentDir__();
 		afx_msg void __invertSelectionInCurrentDir__();
-			afx_msg void __fileSelected_updateUI__(CCmdUI *pCmdUI) const;
+			afx_msg void __fileSelected_updateUI__(CCmdUI *pCmdUI);
 		afx_msg void __deleteSelectedFilesUponConfirmation__();
 		afx_msg void __onBeginDrag__(NMHDR *pNMHDR,LRESULT *pResult);
 		afx_msg void __copyFilesToClipboard__();
@@ -134,9 +134,9 @@
 			afx_msg void __pasteFiles_updateUI__(CCmdUI *pCmdUI);
 		afx_msg void __onColumnClick__(NMHDR *pNMHDR,LRESULT *pResult);
 		afx_msg void __createSubdirectory__();
-			afx_msg void __createSubdirectory_updateUI__(CCmdUI *pCmdUI) const;
+			afx_msg void __createSubdirectory_updateUI__(CCmdUI *pCmdUI);
 		afx_msg void __browseCurrentDirInHexaMode__();
-		afx_msg void __showSelectionProperties__() const;
+		afx_msg void __showSelectionProperties__();
 		afx_msg void OnDestroy();
 	public:
 		typedef class CEditorBase sealed{

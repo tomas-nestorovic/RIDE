@@ -104,7 +104,7 @@
 
 	CDos::PFile CFileManagerView::COleVirtualFileDataSource::__getFile__(int id) const{
 		// returns a File with the specified order number; assumed that the order number is always within range
-		return listOfFiles.GetAt( listOfFiles.FindIndex(id) );
+		return (CDos::PFile)listOfFiles.GetAt( listOfFiles.FindIndex(id) );
 	}
 
 	bool CFileManagerView::COleVirtualFileDataSource::__isInList__(CDos::PCFile file) const{
@@ -681,7 +681,7 @@ importQuit2:		::GlobalUnlock(hg);
 		}
 	}
 
-	afx_msg void CFileManagerView::__fileSelected_updateUI__(CCmdUI *pCmdUI) const{
+	afx_msg void CFileManagerView::__fileSelected_updateUI__(CCmdUI *pCmdUI){
 		// projecting existence of one or more selected Files into UI
 		pCmdUI->Enable( GetFirstSelectedFilePosition()!=nullptr );
 	}

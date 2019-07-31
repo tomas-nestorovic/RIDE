@@ -238,7 +238,7 @@
 			CTdiCtrl::RemoveCurrentTab( pTdi->m_hWnd ); // ... otherwise closing just the Tab (e.g. a WebPageView that usually isn't associated with any DOS)
 	}
 
-	afx_msg void CMainWindow::__closeCurrentTab_updateUI__(CCmdUI *pCmdUI) const{
+	afx_msg void CMainWindow::__closeCurrentTab_updateUI__(CCmdUI *pCmdUI){
 		// projecting possibility to close current Tab into UI
 		pCmdUI->Enable( pTdi->__getCurrentTab__()!=nullptr );
 	}

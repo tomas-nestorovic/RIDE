@@ -18,7 +18,7 @@
 		afx_msg void __switchToNextTab__();
 		afx_msg void __switchToPrevTab__();
 		afx_msg void __closeCurrentTab__();
-			afx_msg void __closeCurrentTab_updateUI__(CCmdUI *pCmdUI) const;
+			afx_msg void __closeCurrentTab_updateUI__(CCmdUI *pCmdUI);
 		afx_msg void __openUrl_whatsNew__();
 		afx_msg void __openUrl_checkForUpdates__();
 		afx_msg void __openUrl_faq__();
@@ -95,7 +95,7 @@
 
 		void OpenWebPage(LPCTSTR tabCaption,LPCTSTR url);
 		void OpenApplicationPresentationWebPage(LPCTSTR tabCaption,LPCTSTR documentName);
-		afx_msg void __changeAutomaticDiskRecognitionOrder__() const;
+		afx_msg void __changeAutomaticDiskRecognitionOrder__();
 	};
 
 

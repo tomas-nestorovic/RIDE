@@ -363,7 +363,7 @@
 		displayType=(TDisplayType)id;
 		Invalidate(FALSE);
 	}
-	afx_msg void CTrackMapView::__changeDisplayType_updateUI__(CCmdUI *pCmdUI) const{
+	afx_msg void CTrackMapView::__changeDisplayType_updateUI__(CCmdUI *pCmdUI){
 		// projecting DisplayType into UI
 		pCmdUI->SetRadio( displayType==pCmdUI->m_nID );
 	}
@@ -373,7 +373,7 @@
 		showSectorNumbers=!showSectorNumbers;
 		Invalidate(TRUE);
 	}
-	afx_msg void CTrackMapView::__toggleSectorNumbering_updateUI__(CCmdUI *pCmdUI) const{
+	afx_msg void CTrackMapView::__toggleSectorNumbering_updateUI__(CCmdUI *pCmdUI){
 		// projecting SectorNumbering into UI
 		pCmdUI->SetCheck(showSectorNumbers);
 		pCmdUI->Enable(displayType==TDisplayType::STATUS);
@@ -422,7 +422,7 @@
 			}
 		return ERROR_SUCCESS;
 	}
-	afx_msg void CTrackMapView::__showDiskStatistics__() const{
+	afx_msg void CTrackMapView::__showDiskStatistics__(){
 		// shows statistics on Tracks and their Sectors in current disk
 		// - collecting statistics on Tracks and their Sectors
 		TStatisticParams sp(DOS);

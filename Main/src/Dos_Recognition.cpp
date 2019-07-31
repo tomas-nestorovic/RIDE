@@ -94,7 +94,7 @@
 
 
 
-	afx_msg void CMainWindow::__changeAutomaticDiskRecognitionOrder__() const{
+	afx_msg void CMainWindow::__changeAutomaticDiskRecognitionOrder__(){
 		// shows the Dialog to manually modify the recognition order of DOS
 		// - defining the Dialog
 		class CAutomaticRecognitionOrderDialog sealed:public CDialog{

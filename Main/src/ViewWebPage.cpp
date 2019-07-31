@@ -157,7 +157,7 @@
 		if (THistory::TPage *pOlder=history.currentPage->older)
 			Navigate(( history.currentPage=pOlder )->url);
 	}
-	afx_msg void CWebPageView::__navigateBack_updateUI__(CCmdUI *pCmdUI) const{
+	afx_msg void CWebPageView::__navigateBack_updateUI__(CCmdUI *pCmdUI){
 		// projecting existence of Historically older Page into UI
 		pCmdUI->Enable(history.currentPage->older!=nullptr);
 	}
@@ -168,12 +168,12 @@
 		if (THistory::TPage *pNewer=history.currentPage->newer)
 			Navigate(( history.currentPage=pNewer )->url);
 	}
-	afx_msg void CWebPageView::__navigateForward_updateUI__(CCmdUI *pCmdUI) const{
+	afx_msg void CWebPageView::__navigateForward_updateUI__(CCmdUI *pCmdUI){
 		// projecting existence of Historically newer Page into UI
 		pCmdUI->Enable(history.currentPage->newer!=nullptr);
 	}
 
-	afx_msg void CWebPageView::__openCurrentPageInDefaultBrowser__() const{
+	afx_msg void CWebPageView::__openCurrentPageInDefaultBrowser__(){
 		// opens CurrentPage in user's default browser
 		Utils::NavigateToUrlInDefaultBrowser(history.currentPage->url);
 	}
