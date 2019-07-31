@@ -51,9 +51,6 @@
 	BOOL CSCL::OnSaveDocument(LPCTSTR lpszPathName){
 		// True <=> this Image has been successfully saved, otherwise False
 		if (const CTRDOS503::PCBootSector boot=CTRDOS503::__getBootSector__(this)){
-			TFormat imageFormat;
-			if (CTRDOS503::__recognizeDisk__(this,&imageFormat)!=ERROR_SUCCESS)
-				return FALSE;
 			if (f.m_hFile!=(UINT_PTR)INVALID_HANDLE_VALUE) // Image's underlying file doesn't exist if saving a fresh formatted Image
 				f.Close();
 			if (!__openImageForWriting__(lpszPathName,&f))
@@ -63,19 +60,20 @@
 			::lstrcpyA( header.id, HEADER_SINCLAIR );
 			header.nFiles=boot->nFiles;
 			f.Write(&header,sizeof(header));
-			// - instantiating a temporary TR-DOS (any 5.03-based version will do)
-			imageFormat.nCylinders--; // converting Format information to command on which Cylinders to format
-			const CTRDOS503 tmpTrdos(this,&imageFormat);
 			// - saving Directory
+			CTRDOS503 *const trdos=(CTRDOS503 *)dos;
 			CTRDOS503::PDirectoryEntry directory[TRDOS503_FILE_COUNT_MAX],*pde=directory;
-			for( BYTE n=tmpTrdos.__getDirectory__(directory); n--; f.Write(*pde++,sizeof(TSclDirectoryItem)) );
+			for( BYTE n=trdos->__getDirectory__(directory); n--; f.Write(*pde++,sizeof(TSclDirectoryItem)) );
 			// - saving each File's data
-			BYTE buf[65536];
-			for( pde=directory; header.nFiles--; )
-				f.Write(buf,
-						tmpTrdos.ExportFile( *pde++, &CMemFile(buf,sizeof(buf)), -1, nullptr )
-					);
-			m_bModified=FALSE;
+			const CDos::TGetFileSizeOptions gfso0=trdos->getFileSizeDefaultOption;
+			trdos->getFileSizeDefaultOption=CDos::TGetFileSizeOptions::SizeOnDisk; // exporting whole Sectors instead of just reported File length
+				BYTE buf[65536];
+				for( pde=directory; header.nFiles--; )
+					f.Write(buf,
+							trdos->ExportFile( *pde++, &CMemFile(buf,sizeof(buf)), -1, nullptr )
+						);
+				m_bModified=FALSE;
+			trdos->getFileSizeDefaultOption=gfso0;
 			// - reopening the Image's underlying file
 			f.Close();
 			return __openImageForReadingAndWriting__(lpszPathName);
@@ -88,8 +86,7 @@
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - base (allowed are only TRDOS-compliant formats)
 		if (pFormat->nSectors==TRDOS503_TRACK_SECTORS_COUNT && pFormat->sectorLength==TRDOS503_SECTOR_LENGTH_STD && pFormat->sectorLengthCode==TRDOS503_SECTOR_LENGTH_STD_CODE){
-			const TStdWinError err=CImageRaw::SetMediumTypeAndGeometry(pFormat,sideMap,firstSectorNumber);
-			if (err!=ERROR_SUCCESS)
+			if (const TStdWinError err=CImageRaw::SetMediumTypeAndGeometry(pFormat,sideMap,firstSectorNumber))
 				return err;
 		}else
 			return ERROR_BAD_COMMAND; // not a TRDOS format
@@ -117,6 +114,8 @@
 				}
 				if (!pTrdos) // no TR-DOS participates in the recognition sequence ...
 					return ERROR_UNRECOGNIZED_VOLUME; // ... hence can never recognize this Image regardless it's clear it's a TR-DOS Image
+				pTrdos->zeroLengthFilesEnabled=true;
+				pTrdos->importToSysTrack=false;
 				::memcpy( pTrdos->sideMap, sideMap, sizeof(pTrdos->sideMap) ); // overwriting the SideMap to make sure it complies with the one provided as input
 				// : formatting Image to the maximum possible capacity
 				TStdWinError err=__extendToNumberOfCylinders__( pTrdos->formatBoot.nCylinders, pTrdos->properties->sectorFillerByte );

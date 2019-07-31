@@ -50,19 +50,6 @@
 	#define INI_TRDOS	_T("TRDOS")
 	#define INI_ALLOW_ZERO_LENGTH_FILES	_T("fm0files")
 
-	CTRDOS503::CTRDOS503(PImage image,PCFormat pTempImageFormat) // called exclusively by SCL Image!
-		// ctor (called exclusively by SCL Image!)
-		// - base
-		: CSpectrumDos( image, pTempImageFormat, TTrackScheme::BY_CYLINDERS, &Properties, IDR_TRDOS, &fileManager, TGetFileSizeOptions::SizeOnDisk )
-		// - initialization
-		, boot(this,TRDOS503_BOOT_LABEL_LENGTH_MAX) , fileManager(this)
-		, zeroLengthFilesEnabled(true) // just to be sure (SCL Image expects this setting when loading the content)
-		, importToSysTrack(false) {
-		getFileSizeDefaultOption=TGetFileSizeOptions::SizeOnDisk; // making sure this option is always set
-		::ZeroMemory( sideMap, sizeof(sideMap) ); // both Sides of floppy are numbered as zero
-		formatBoot.nCylinders++;
-	}
-
 	CTRDOS503::CTRDOS503(PImage image,PCFormat pFormatBoot,PCProperties pTrdosProps)
 		// ctor
 		// - base
