@@ -188,7 +188,7 @@
 				void __init__(CWnd *pLabel,CWnd *pButton);
 				void __chooseAndOpenPhysicalFile__();
 				void __openPhysicalFile__(LPCTSTR fileName);
-				void __openFile__(CFile *fTmp,LPCTSTR fileName);
+				void __openFile__(std::unique_ptr<CFile> &fTmp,LPCTSTR fileName);
 				DROPEFFECT OnDragEnter(CWnd *,COleDataObject *pDataObject,DWORD dwKeyState,CPoint point) override;
 				DROPEFFECT OnDragOver(CWnd *pWnd,COleDataObject *pDataObject,DWORD dwKeyState,CPoint point) override;
 				BOOL OnDrop(CWnd *,COleDataObject *pDataObject,DROPEFFECT dropEffect,CPoint point) override;

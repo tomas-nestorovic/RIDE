@@ -633,10 +633,8 @@ importQuit2:		::GlobalUnlock(hg);
 		}else{
 			// File
 			FORMATETC etcContent={ CRideApp::cfContent, nullptr, DVASPECT_CONTENT, i++, TYMED_ISTREAM };
-			CFile *const f=pDataObject->GetFileData( CRideApp::cfContent, &etcContent ); // abstracting virtual data into a File
-				const TStdWinError err=ImportFileAndResolveConflicts( f, lpfd->nFileSizeLow, fileName, winAttr, rCreated, rLastRead, rLastWritten, rImportedFile, rConflictedSiblingResolution );
-			delete f;
-			return err;
+			const std::unique_ptr<CFile> f( pDataObject->GetFileData( CRideApp::cfContent, &etcContent ) ); // abstracting virtual data into a File
+			return ImportFileAndResolveConflicts( f.get(), lpfd->nFileSizeLow, fileName, winAttr, rCreated, rLastRead, rLastWritten, rImportedFile, rConflictedSiblingResolution );
 		}
 	}
 

@@ -160,19 +160,18 @@ different:	Utils::Information(_T("No, the files differ in content! (File names a
 
 	void CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::__openPhysicalFile__(LPCTSTR fileName){
 		// opens chosen physical File upon confirmation and shows its content in HexaEditor
-		CFile *const fTmp=new CFile;
+		std::unique_ptr<CFile> fTmp( new CFile );
 		CFileException e;
 		if (fTmp->Open( fileName, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary, &e ))
 			__openFile__(fTmp,fileName);
 		else{
-			delete fTmp;
 			TCHAR errMsg[200];
 			e.GetErrorMessage(errMsg,200);
 			Utils::FatalError(errMsg);
 		}
 	}
 
-	void CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::__openFile__(CFile *fTmp,LPCTSTR fileName){
+	void CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::__openFile__(std::unique_ptr<CFile> &fTmp,LPCTSTR fileName){
 		// opens specified File and shows its content in HexaEditor
 		// - freeing any previous File
 		if (f){
@@ -183,7 +182,7 @@ different:	Utils::Information(_T("No, the files differ in content! (File names a
 		SCROLLINFO si;
 		hexaComparison.GetScrollInfo( SB_VERT, &si, SIF_POS|SIF_TRACKPOS );
 		// - showing the File in HexaEditor
-		f.reset(fTmp);
+		f=std::move(fTmp);
 		size=f->GetLength();
 		hexaComparison.Reset( f.get(), size, size );
 		::SetWindowText(hLabel,fileName);
@@ -230,7 +229,7 @@ different:	Utils::Information(_T("No, the files differ in content! (File names a
 			// virtual Files (dragged over from an instance of FileManager, even from another instance of this application)
 			if (const LPFILEGROUPDESCRIPTOR pfgd=(LPFILEGROUPDESCRIPTOR)::GlobalLock(hg)){
 				FORMATETC etcFileContents={ CRideApp::cfContent, nullptr, DVASPECT_CONTENT, 0, TYMED_ISTREAM }; // 0 = only first File, others ignored
-				if (CFile *const fTmp=pDataObject->GetFileData(CRideApp::cfContent,&etcFileContents)){ // abstracting virtual data into a File
+				if (std::unique_ptr<CFile> fTmp=std::unique_ptr<CFile>(pDataObject->GetFileData(CRideApp::cfContent,&etcFileContents))){ // abstracting virtual data into a File
 					// File is readable (e.g. doesn't contain no "Sector no found" errors)
 					const FILEDESCRIPTOR *const pfd=pfgd->fgd;
 					fTmp->SetLength(pfd->nFileSizeLow);
