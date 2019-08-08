@@ -43,11 +43,13 @@
 		struct TCursor sealed{
 			bool ascii; // True <=> Cursor is in the Ascii listing section
 			bool hexaLow; // True <=> ready to modify the lower half-byte in hexa mode
-			int position; // current logical position in underlying File
-			int selectionA,selectionZ; // beginning (including) and end (excluding)
+			int selectionA; // beginning (including)
+			union{
+				int position; // current logical position in underlying File
+				int selectionZ; // Selection end (excluding); obsolete, don't use
+			};
 			TCursor(int position); // ctor
 			void __detectNewSelection__();
-			inline void __cancelSelection__();
 		} cursor;
 		class CBookmarks sealed:CDWordArray{
 		public:

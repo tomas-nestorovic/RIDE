@@ -15,17 +15,12 @@
 	CHexaEditor::TCursor::TCursor(int position)
 		// ctor
 		: ascii(false) , hexaLow(true)
-		, selectionA(-1) , selectionZ(-1) // nothing selected
-		, position(position) {
+		, selectionA(position) , position(position) { // nothing selected
 	}
 	void CHexaEditor::TCursor::__detectNewSelection__(){
 		// detects and sets the beginning of new Selection
 		if (::GetAsyncKeyState(VK_SHIFT)>=0) // if Shift NOT pressed ...
 			selectionA=position;	// ... we have detected a new Selection
-	}
-	void CHexaEditor::TCursor::__cancelSelection__(){
-		// sets that nothing is selected
-		selectionA = selectionZ = position;
 	}
 
 
@@ -249,12 +244,12 @@
 	void CHexaEditor::__refreshVertically__(){
 		// refreshes all parameters that relate to vertical axis
 		// - determining the total number of Rows
-		nLogicalRows=__logicalPositionToRow__( max(f->GetLength(),logicalSize) );
+		nLogicalRows=__logicalPositionToRow__( std::max<int>(f->GetLength(),logicalSize) );
 		// - setting the scrolling dimensions
 		RECT r;
 		GetClientRect(&r);
-		nRowsDisplayed=max( 0, (r.bottom-r.top)/font.charHeight-HEADER_LINES_COUNT );
-		nRowsOnPage=max( 0, nRowsDisplayed-1 );
+		nRowsDisplayed=std::max<int>( 0, (r.bottom-r.top)/font.charHeight-HEADER_LINES_COUNT );
+		nRowsOnPage=std::max<>( 0, nRowsDisplayed-1 );
 		PostMessage( WM_HEXA_PAINTSCROLLBARS );
 	}
 
@@ -305,11 +300,11 @@
 		if (x>0 && x<=hexaW){ // "x>0" - cannot be just "x" because x can be negative
 			// Hexa area
 			if (pOutAsciiArea) *pOutAsciiArea=false;
-			return currLineStart+min(x/byteW,currLineBytesMinusOne);
+			return currLineStart+std::min<>(x/byteW,currLineBytesMinusOne);
 		}else if (x>asciiX && x<=asciiX+nBytesInRow*font.charAvgWidth){
 			// Ascii area
 			if (pOutAsciiArea) *pOutAsciiArea=true;
-			return currLineStart+min((x-asciiX)/font.charAvgWidth,currLineBytesMinusOne);
+			return currLineStart+std::min<>((x-asciiX)/font.charAvgWidth,currLineBytesMinusOne);
 		}else
 			// outside any area
 			return -1;
@@ -359,12 +354,10 @@ cursorCorrectlyMoveTo:	// . adjusting the Cursor's Position
 						else if (cursor.position>maxFileSize) cursor.position=maxFileSize;
 						// . adjusting an existing Selection if Shift pressed
 						if (!mouseDragged){ // if mouse is being -Dragged, the beginning of a Selection has already been detected
-							if (cursor.selectionA!=cursor.selectionZ) // if there was a Selection before ...
+							if (cursor.selectionA!=cursorPos0) // if there has been a Selection before ...
 								RepaintData(); // ... invalidating the content as the Selection may no longer be valid (e.g. may be deselected)
 							cursor.__detectNewSelection__();
 						}
-						//if (cursor.selectionA>=0) // affecting end of Selection only if its beginning already set
-							cursor.selectionZ=cursor.position;
 cursorRefresh:			// . refreshing the Cursor
 						HideCaret();
 							// : scrolling if Cursor has been moved to an invisible part of the File content
@@ -392,7 +385,8 @@ moveCursorUp:			const int iRow=__logicalPositionToRow__(cursor.position);
 						}
 						const int currRowStart=__firstByteInRowToLogicalPosition__(iRow);
 						const int targetRowStart=__firstByteInRowToLogicalPosition__(iRow-i);
-						cursor.position -=	max(cursor.position-__firstByteInRowToLogicalPosition__(iRow-i+1)+1,
+						cursor.position -=	std::max<>(
+												cursor.position-__firstByteInRowToLogicalPosition__(iRow-i+1)+1,
 													// ..........			Target row
 													// .................
 													// ..........
@@ -414,7 +408,8 @@ moveCursorDown:			const int iRow=__logicalPositionToRow__(cursor.position);
 						}
 						const int currRowStart=__firstByteInRowToLogicalPosition__(iRow);
 						const int targetRowStart=__firstByteInRowToLogicalPosition__(iRow+i);
-						cursor.position +=	min(targetRowStart-currRowStart,
+						cursor.position +=	std::min<>(
+												targetRowStart-currRowStart,
 													// .......C..			.......C........	Current row with Cursor
 													// .................	..........
 													// ..........			................
@@ -442,23 +437,22 @@ moveCursorDown:			const int iRow=__logicalPositionToRow__(cursor.position);
 					case VK_DELETE:{
 editDelete:				// deleting the Byte after Cursor, or deleting the Selection
 						// . if Selection not set, setting it as the Byte immediately after Cursor
-						if (cursor.selectionA==cursor.selectionZ)
-							if (cursor.position<f->GetLength()) cursor.selectionA=cursor.position, cursor.selectionZ=cursor.position+1;
+						if (cursor.selectionA==cursor.position)
+							if (cursor.position<f->GetLength()) cursor.selectionA=cursor.position++;
 							else return 0;
-deleteSelection:		int posSrc=max(cursor.selectionA,cursor.selectionZ), posDst=min(cursor.selectionA,cursor.selectionZ);
+deleteSelection:		int posSrc=std::max<>(cursor.selectionA,cursor.position), posDst=std::min<>(cursor.selectionA,cursor.position);
 						// . checking if there are any Bookmarks selected
 						if (bookmarks.__getNearestNextBookmarkPosition__(posDst)<posSrc){
 							if (Utils::QuestionYesNo(_T("Sure to delete selected bookmarks?"),MB_DEFBUTTON2)){
 								for( int pos; (pos=bookmarks.__getNearestNextBookmarkPosition__(posDst))<posSrc; bookmarks.__removeBookmark__(pos) );
-								cursor.__cancelSelection__();
-								SetFocus();
+								cursor.selectionA=cursor.position; // cancelling any Selection
 								RepaintData();
 							}
+							SetFocus();
 							return 0;
 						}
 						// . moving the content "after" Selection "to" the position of the Selection
-						cursor.position=posDst; // moving the Cursor
-						cursor.__cancelSelection__();
+						cursor.selectionA = cursor.position = posDst; // moving the Cursor and cancelling any Selection
 						for( int nBytesToMove=f->GetLength()-posSrc; nBytesToMove; ){
 							BYTE buf[65536];
 							f->Seek(posSrc,CFile::begin);
@@ -486,8 +480,8 @@ deleteSelection:		int posSrc=max(cursor.selectionA,cursor.selectionZ), posDst=mi
 					case VK_BACK:
 						// deleting the Byte before Cursor, or deleting the Selection
 						// . if Selection not set, setting it as the Byte immediately before Cursor
-						if (cursor.selectionA==cursor.selectionZ)
-							if (cursor.position) cursor.selectionA=cursor.position-1, cursor.selectionZ=cursor.position;
+						if (cursor.selectionA==cursor.position)
+							if (cursor.position) cursor.selectionA=cursor.position-1;
 							else return 0;
 						// . moving the content "after" Selection "to" the position of the Selection
 						goto deleteSelection;
@@ -504,7 +498,6 @@ deleteSelection:		int posSrc=max(cursor.selectionA,cursor.selectionZ), posDst=mi
 							if (wParam>='0' && wParam<='9'){
 								wParam-='0';
 changeHalfbyte:					if (cursor.position<maxFileSize){
-									cursor.__cancelSelection__();
 									BYTE b=0;
 									f->Seek(cursor.position,CFile::begin);
 									f->Read(&b,1);
@@ -513,6 +506,7 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 									f->Write(&b,1);
 									if ( cursor.hexaLow=!cursor.hexaLow )
 										cursor.position++;
+									cursor.selectionA=cursor.position; // cancelling any Selection
 									RepaintData();
 									goto cursorRefresh;
 								}else
@@ -531,9 +525,9 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 					// Ascii modification
 					if (::GetAsyncKeyState(VK_CONTROL)>=0 && ::isprint(wParam)) // Ctrl not pressed, thus character printable
 						if (cursor.position<maxFileSize){
-							cursor.__cancelSelection__();
-							f->Seek( cursor.position++ ,CFile::begin);
+							f->Seek( cursor.position, CFile::begin );
 							f->Write(&wParam,1);
+							cursor.selectionA = ++cursor.position; // moving the Cursor and cancelling any Selection
 							RepaintData();
 							goto cursorRefresh;
 						}else
@@ -545,7 +539,8 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 				CMenu contextMenu;
 				contextMenu.LoadMenu(IDR_HEXAEDITOR);
 				CMenu &mnu=*contextMenu.GetSubMenu(0);
-				mnu.EnableMenuItem( ID_BOOKMARK_TOGGLE, (MF_DISABLED|MF_GRAYED)*(cursor.selectionA!=cursor.selectionZ) );
+				const bool selectionExists=cursor.selectionA!=cursor.position;
+				mnu.EnableMenuItem( ID_BOOKMARK_TOGGLE, (MF_DISABLED|MF_GRAYED)*selectionExists );
 				mnu.CheckMenuItem( ID_BOOKMARK_TOGGLE, MF_CHECKED*(bookmarks.__getNearestNextBookmarkPosition__(cursor.position)==cursor.position) );
 				BYTE iSelectSubmenu, iResetSubmenu, iGotoSubmenu;
 				if (customSelectSubmenu){ // custom "Select" submenu
@@ -604,7 +599,7 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 							int prevBookmarkPos=0;
 							for( int pos=0; pos<cursor.position; pos=bookmarks.__getNearestNextBookmarkPosition__(pos+1) )
 								prevBookmarkPos=pos;
-							cursor.position=prevBookmarkPos;						
+							cursor.selectionA = cursor.position = prevBookmarkPos; // moving the Cursor and cancelling any Selection
 							RepaintData();
 							goto cursorRefresh;
 						}else
@@ -613,7 +608,7 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 						// navigating the Cursor to the next Bookmark
 						const int nextBookmarkPos=bookmarks.__getNearestNextBookmarkPosition__(cursor.position+1);
 						if (nextBookmarkPos<BOOKMARK_POSITION_INFINITY){
-							cursor.position=nextBookmarkPos;
+							cursor.selectionA = cursor.position = nextBookmarkPos; // moving the Cursor and cancelling any Selection
 							RepaintData();
 							goto cursorRefresh;
 						}else
@@ -629,19 +624,19 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 							break;
 					case ID_EDIT_SELECT_ALL:
 						// Selecting everything
-						cursor.selectionA=0, cursor.selectionZ=cursor.position=f->GetLength();
+						cursor.selectionA=0, cursor.position=f->GetLength();
 						RepaintData();
 						goto cursorRefresh;
 					case ID_EDIT_SELECT_NONE:
 						// removing current selection
-						cursor.__cancelSelection__();
+						cursor.selectionA=cursor.position; // cancelling any Selection
 						RepaintData();
 						goto cursorRefresh;
 					case ID_EDIT_SELECT_CURRENT:{
 						// selecting the whole Record under the Cursor
 						int recordLength=0;
 						pContentAdviser->GetRecordInfo( cursor.position, &cursor.selectionA, &recordLength, NULL );
-						cursor.position = cursor.selectionZ = cursor.selectionA+recordLength;
+						cursor.position=cursor.selectionA+recordLength;
 						RepaintData();
 						goto cursorRefresh;
 					}
@@ -650,7 +645,7 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 						i=0;
 resetSelectionWithValue:BYTE buf[65536];
 						::memset( buf, i, sizeof(buf) );
-						for( DWORD nBytesToReset=max(cursor.selectionA,cursor.selectionZ)-f->Seek(min(cursor.selectionA,cursor.selectionZ),CFile::begin),n; nBytesToReset; nBytesToReset-=n ){
+						for( DWORD nBytesToReset=std::max<>(cursor.selectionA,cursor.position)-f->Seek(std::min<>(cursor.selectionA,cursor.position),CFile::begin),n; nBytesToReset; nBytesToReset-=n ){
 							n=min( nBytesToReset, sizeof(buf) );
 							f->Write( buf, n );
 							if (::GetLastError()==ERROR_WRITE_FAULT){
@@ -711,10 +706,10 @@ resetSelectionWithValue:BYTE buf[65536];
 					}
 					case ID_EDIT_COPY:
 						// copying the Selection into clipboard
-						if (cursor.selectionA!=cursor.selectionZ)
+						if (cursor.selectionA!=cursor.position)
 							( new COleBinaryDataSource(	f,
-														min(cursor.selectionA,cursor.selectionZ),
-														max(cursor.selectionZ,cursor.selectionA)
+														std::min<>(cursor.selectionA,cursor.position),
+														std::max<>(cursor.position,cursor.selectionA)
 							) )->SetClipboard();
 						return 0;
 					case ID_EDIT_PASTE:{
@@ -727,8 +722,7 @@ resetSelectionWithValue:BYTE buf[65536];
 								const DWORD lengthLimit=maxFileSize-cursor.position;
 								if (length<=lengthLimit){
 									f->Write( ++p, length );
-									cursor.position+=length;
-									cursor.__cancelSelection__();
+									cursor.selectionA = cursor.position+=length; // moving the Cursor and cancelling any Selection
 								}else{
 									f->Write( ++p, lengthLimit );
 									cursor.position+=lengthLimit;
@@ -796,7 +790,7 @@ resetSelectionWithValue:BYTE buf[65536];
 				const int logPos=__logicalPositionFromPoint__(CPoint(lParam),nullptr);
 				if (logPos>=0){
 					// in either Hexa or Ascii areas
-					if (min(cursor.selectionA,cursor.selectionZ)<=logPos && logPos<max(cursor.selectionA,cursor.selectionZ))
+					if (std::min<>(cursor.selectionA,cursor.position)<=logPos && logPos<std::max<>(cursor.selectionA,cursor.position))
 						// right-clicked on the Selection - showing context menu at the place of Cursor
 						break;
 					else
@@ -822,7 +816,7 @@ leftMouseDragged:
 				else{
 					// outside any area
 					if (!mouseDragged){ // if right now mouse button pressed ...
-						cursor.__cancelSelection__(); // ... unselecting everything
+						cursor.selectionA=cursor.position; // ... cancelling any Selection ...
 						RepaintData(); // ... and painting the result
 					}
 					break;
@@ -882,24 +876,17 @@ leftMouseDragged:
 			case EM_GETSEL:
 				// gets current Selection
 				if (wParam!=0)
-					*(PINT)wParam= cursor.selectionA>=0 ? cursor.selectionA : cursor.position; // ?: = something really selected?
+					*(PINT)wParam=cursor.selectionA;
 				if (lParam!=0)
-					*(PINT)lParam= cursor.selectionA>=0 ? cursor.selectionZ : cursor.position; // ?: = something really selected?
-				return -1; // the Selection generally doesn't belong to the <0;65535> range
+					*(PINT)lParam=cursor.position;
+				return cursor.position; // returned is the Cursor Position, in contrast to the convenient value for an Edit control
 			case EM_SETSEL:
 				// sets current Selection, moving Cursor to the end of the Selection
-				if (wParam==lParam){
-					// just changing Cursor's current Position
-					cursor.position=wParam;
-					cursor.__cancelSelection__();
-				}else{
-					// setting current Selection
-					if (wParam>lParam){
-						const int tmp=wParam; wParam=lParam; lParam=tmp;
-					}
-					cursor.selectionA=max(0,wParam);
-					cursor.selectionZ = cursor.position = min(lParam,maxFileSize);
+				if (wParam>lParam){
+					const int tmp=wParam; wParam=lParam; lParam=tmp;
 				}
+				cursor.selectionA=max(0,wParam);
+				cursor.position=min(lParam,maxFileSize);
 				RepaintData();
 				goto cursorRefresh;
 			case WM_ERASEBKGND:
@@ -983,33 +970,33 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 							dc.DrawText( buf, ::wsprintf(buf,HEXA_FORMAT,n++), &rcHeader, DT_LEFT|DT_TOP );
 					}
 					// . determining the visible part of the File content
-					const int iRowFirstToPaint=max( (rcClip.top-HEADER_HEIGHT)/font.charHeight, 0 );
+					const int iRowFirstToPaint=std::max<int>( (rcClip.top-HEADER_HEIGHT)/font.charHeight, 0 );
 					int iRowA= GetScrollPos(SB_VERT) + iRowFirstToPaint;
-					const int nPhysicalRows=__logicalPositionToRow__( min(f->GetLength(),logicalSize) );
+					const int nPhysicalRows=__logicalPositionToRow__( std::min<int>(f->GetLength(),logicalSize) );
 					const int iRowLastToPaint= GetScrollPos(SB_VERT) + (rcClip.bottom-HEADER_HEIGHT)/font.charHeight + 1;
-					const int iRowZ=min( min(nPhysicalRows,iRowLastToPaint), iRowA+nRowsOnPage );
+					const int iRowZ=std::min<>( std::min<>(nPhysicalRows,iRowLastToPaint), iRowA+nRowsOnPage );
 					// . filling the gaps between Addresses/Hexa/Ascii, and Label space to erase any previous Label
 					const int xHexaStart=(addrLength+ADDRESS_SPACE_LENGTH)*font.charAvgWidth, xHexaEnd=xHexaStart+HEXA_FORMAT_LENGTH*nBytesInRow*font.charAvgWidth;
 					const int xAsciiStart=xHexaEnd+HEXA_SPACE_LENGTH*font.charAvgWidth, xAsciiEnd=xAsciiStart+nBytesInRow*font.charAvgWidth;
-					RECT r={ min(addrLength*font.charAvgWidth,rcClip.right), max(rcClip.top,HEADER_HEIGHT), min(xHexaStart,rcClip.right), rcClip.bottom }; // Addresses-Hexa space; min(.) = to not paint over the scrollbar
+					RECT r={ std::min<LONG>(addrLength*font.charAvgWidth,rcClip.right), std::max<LONG>(rcClip.top,HEADER_HEIGHT), std::min<LONG>(xHexaStart,rcClip.right), rcClip.bottom }; // Addresses-Hexa space; min(.) = to not paint over the scrollbar
 					::FillRect( dc, &r, CRideBrush::White );
-					r.left=min(xHexaEnd,rcClip.right), r.right=min(xAsciiStart,rcClip.right); // Hexa-Ascii space; min(.) = to not paint over the scrollbar
+					r.left=std::min<LONG>(xHexaEnd,rcClip.right), r.right=std::min<LONG>(xAsciiStart,rcClip.right); // Hexa-Ascii space; min(.) = to not paint over the scrollbar
 					::FillRect( dc, &r, CRideBrush::White );
-					r.left=min(xAsciiEnd,rcClip.right), r.right=min(rcClip.right,rcClip.right); // Label space; min(.) = to not paint over the scrollbar
+					r.left=std::min<LONG>(xAsciiEnd,rcClip.right), r.right=std::min<>(rcClip.right,rcClip.right); // Label space; min(.) = to not paint over the scrollbar
 					::FillRect( dc, &r, CRideBrush::White );
 					// . drawing Addresses and data (both Ascii and Hexa parts)
 					const COLORREF labelColor=Utils::GetSaturatedColor(::GetSysColor(COLOR_GRAYTEXT),1.7f+.1f*!editable);
 					const CRidePen recordDelimitingHairline( 0, labelColor );
 					const HGDIOBJ hPen0=::SelectObject( dc, recordDelimitingHairline );
 						int address=__firstByteInRowToLogicalPosition__(iRowA), y=HEADER_HEIGHT+iRowFirstToPaint*font.charHeight;
-						const int _selectionA=min(cursor.selectionA,cursor.selectionZ), _selectionZ=max(cursor.selectionZ,cursor.selectionA);
+						const int _selectionA=std::min<>(cursor.selectionA,cursor.position), _selectionZ=std::max<>(cursor.position,cursor.selectionA);
 						PEmphasis pEmp=emphases;
 						while (pEmp->z<address) pEmp=pEmp->pNext; // choosing the first visible Emphasis
 						int nearestNextBookmarkPos=bookmarks.__getNearestNextBookmarkPosition__(address);
 						f->Seek( address, CFile::begin );
 						for( TCHAR buf[16]; iRowA<=iRowZ; iRowA++,y+=font.charHeight ){
-							RECT rcHexa={ /*xHexaStart*/0, y, min(xHexaEnd,rcClip.right), min(y+font.charHeight,rcClip.bottom) }; // commented out as this rectangle also used to paint the Address
-							RECT rcAscii={ min(xAsciiStart,rcClip.right), y, min(xAsciiEnd,rcClip.right), rcHexa.bottom };
+							RECT rcHexa={ /*xHexaStart*/0, y, std::min<LONG>(xHexaEnd,rcClip.right), std::min<LONG>(y+font.charHeight,rcClip.bottom) }; // commented out as this rectangle also used to paint the Address
+							RECT rcAscii={ std::min<LONG>(xAsciiStart,rcClip.right), y, std::min<LONG>(xAsciiEnd,rcClip.right), rcHexa.bottom };
 							// : address
 							if (addrLength){
 								dc.SetContentPrintState( CHexaPaintDC::Normal, ::GetSysColor(COLOR_BTNFACE) );
@@ -1127,7 +1114,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 				// update
 				switch (nID){
 					case ID_EDIT_COPY:
-						((CCmdUI *)pExtra)->Enable( cursor.selectionA!=cursor.selectionZ );
+						((CCmdUI *)pExtra)->Enable( cursor.selectionA!=cursor.position );
 						return TRUE;
 					case ID_EDIT_PASTE:{
 						COleDataObject odo;
