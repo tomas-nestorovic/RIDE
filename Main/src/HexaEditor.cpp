@@ -580,6 +580,8 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 					OnCmdMsg( wParam, CN_COMMAND, nullptr, nullptr );
 				if (customGotoSubmenu) // custom "Go to" submenu
 					mnu.RemoveMenu( iGotoSubmenu, MF_BYPOSITION ); // "detaching" the Submenu from the parent
+				if (customResetSubmenu) // custom "Reset" submenu
+					mnu.RemoveMenu( iResetSubmenu, MF_BYPOSITION ); // "detaching" the Submenu from the parent
 				if (customSelectSubmenu) // custom "Select" submenu
 					mnu.RemoveMenu( iSelectSubmenu, MF_BYPOSITION ); // "detaching" the Submenu from the parent
 				return 0;
