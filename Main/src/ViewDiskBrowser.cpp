@@ -80,7 +80,7 @@
 						//fallthrough
 					case ID_SELECT_CURRENT_CYLINDER:{
 						// selecting current Cylinder and placing Cursor at the end of the selection
-						int pos=__getCursorPos__();
+						int pos=HexaEditor_GetCursorPos(m_hWnd);
 						f->Seek(pos,CFile::begin);
 						const TPhysicalAddress currChs=f->GetCurrentPhysicalAddress();
 						int selectionA;
@@ -100,7 +100,7 @@
 							selectionZ+=sectorLength;
 							f->Seek(selectionZ,CFile::begin);
 						}while (!::memcmp( &currChs, &f->GetCurrentPhysicalAddress(), nBytesToCompare ));					
-						Edit_SetSel( m_hWnd, selectionA, selectionZ );
+						HexaEditor_SetSelection( m_hWnd, selectionA, selectionZ );
 						return 0;
 					}
 					case ID_NAVIGATE_PREVIOUSTRACK:
@@ -109,7 +109,7 @@
 						//fallthrough
 					case ID_NAVIGATE_PREVIOUSCYLINDER:{
 						// moving Cursor at the beginning of previous Cylinder
-						int pos=__getCursorPos__();
+						int pos=HexaEditor_GetCursorPos(m_hWnd);
 						f->Seek(pos-1,CFile::begin);
 						const TPhysicalAddress currChs=f->GetCurrentPhysicalAddress();
 						int targetPos;
@@ -120,7 +120,7 @@
 							f->GetRecordInfo( --pos, &pos, nullptr, nullptr );
 							f->Seek(pos,CFile::begin);
 						}while (!::memcmp( &currChs, &f->GetCurrentPhysicalAddress(), nBytesToCompare ));
-						Edit_SetSel( m_hWnd, targetPos, targetPos );
+						HexaEditor_SetSelection( m_hWnd, targetPos, targetPos );
 						return 0;
 					}
 					case ID_NAVIGATE_NEXTTRACK:
@@ -129,7 +129,7 @@
 						//fallthrough
 					case ID_NAVIGATE_NEXTCYLINDER:{
 						// moving Cursor at the beginning of next Cylinder
-						int pos=__getCursorPos__();
+						int pos=HexaEditor_GetCursorPos(m_hWnd);
 						f->Seek(pos,CFile::begin);
 						const TPhysicalAddress currChs=f->GetCurrentPhysicalAddress();
 						do{
@@ -140,13 +140,13 @@
 							pos+=sectorLength;
 							f->Seek(pos,CFile::begin);
 						}while (!::memcmp( &currChs, &f->GetCurrentPhysicalAddress(), nBytesToCompare ));
-						Edit_SetSel( m_hWnd, pos, pos );
+						HexaEditor_SetSelection( m_hWnd, pos, pos );
 						return 0;
 					}
 					case ID_NAVIGATE_SECTOR:{
 						// moving Cursor at the beginning of user-selected Sector
 						// . seeking at the Cursor Position to determine the PhysicalAddress
-						f->Seek( __getCursorPos__(), CFile::begin );
+						f->Seek( HexaEditor_GetCursorPos(m_hWnd), CFile::begin );
 						// . defining the Dialog
 						class CGoToSectorDialog sealed:public CDialog{
 							const PCImage image;
@@ -241,7 +241,7 @@
 						// . showing the Dialog and processing its result
 						if (d.DoModal()==IDOK){
 							const int pos=f->GetSectorStartPosition(d.chs,d.sectorIndexOnTrack);
-							Edit_SetSel( m_hWnd, pos, pos );
+							HexaEditor_SetSelection( m_hWnd, pos, pos );
 						}
 						return 0;
 					}

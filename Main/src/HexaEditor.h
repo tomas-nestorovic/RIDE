@@ -3,6 +3,13 @@
 
 	#define HEXAEDITOR_RECORD_SIZE_INFINITE	0x7fffff00
 
+	#define HexaEditor_GetSelection(hWnd,pOutSelA,pOutSelZ)\
+		::SendMessage( hWnd, EM_GETSEL, (WPARAM)(pOutSelA), (LPARAM)(pOutSelZ) )
+	#define HexaEditor_SetSelection(hWnd,selA,selZ)\
+		::SendMessage( hWnd, EM_SETSEL, selA, selZ )
+	#define HexaEditor_GetCursorPos(hWnd)\
+		HexaEditor_GetSelection( hWnd, nullptr, nullptr )
+
 	class CRideFont; // forward
 
 	class CHexaEditor:public CEditView{
@@ -77,7 +84,6 @@
 	protected:
 		const HMENU customSelectSubmenu, customResetSubmenu, customGotoSubmenu;
 
-		int __getCursorPos__() const;
 		void PostNcDestroy() override sealed;
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override; // enabling/disabling ToolBar buttons
