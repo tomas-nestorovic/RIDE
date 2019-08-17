@@ -47,7 +47,6 @@
 		static void WINAPI InsertTab(HWND hTdi,int iIndex,LPCTSTR tabName,TTab::PContent tabContent,bool makeCurrent,TTab::TCanBeClosed fnCanBeClosed,TTab::TOnClosing fnOnTabClosing);
 		static void WINAPI AddTabLast(HWND hTdi,LPCTSTR tabName,TTab::PContent tabContent,bool makeCurrent,TTab::TCanBeClosed fnCanBeClosed,TTab::TOnClosing fnOnTabClosing);
 		static void WINAPI UpdateTabCaption(HWND hTdi,TTab::PContent tabContent,LPCTSTR tabNewName);
-		static bool WINAPI GetCurrentTab(HWND hTdi,TTab::PContent *outTabContent);
 		static void WINAPI RemoveTab(HWND hTdi,int tabId);
 		static void WINAPI RemoveTab(HWND hTdi,TTab::PContent tabContent);
 		static void WINAPI RemoveCurrentTab(HWND hTdi);

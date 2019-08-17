@@ -48,12 +48,14 @@
 		// True <=> the rectangle of TDI canvas below Tab captions (where Tab Contents are shown) has been retrieved, otherwise False
 		RECT r,s;
 		if (!TabCtrl_GetItemRect(hTdi,0,&s)) return false;
-		::GetClientRect(hTdi,&r);
-		const int padding=r.top;
-		pOutRect->left=padding;
-		pOutRect->top=s.bottom+padding;
-		pOutRect->right=r.right-padding;
-		pOutRect->bottom=r.bottom;
+		if (pOutRect){
+			::GetClientRect(hTdi,&r);
+			const int padding=r.top;
+			pOutRect->left=padding;
+			pOutRect->top=s.bottom+padding;
+			pOutRect->right=r.right-padding;
+			pOutRect->bottom=r.bottom;
+		}
 		return true;
 	}
 
