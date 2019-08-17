@@ -130,11 +130,8 @@
 					rc.left=55*Utils::LogicalUnitScaleFactor;
 					const CRideFont fontTitle( FONT_MS_SANS_SERIF, 195, false, true );
 					const HGDIOBJ hFont0=::SelectObject( dc, fontTitle );
-						for( LPCTSTR pTitleChar=APP_FULLNAME; const TCHAR c=*pTitleChar; pTitleChar++ ){
-							::SetTextColor( dc, ::isupper(c)?0xffecd9:0xf3f3f3 ); // 0xefefdc
-							::DrawText( dc, &c,1, &rc, DT_LEFT|DT_VCENTER|DT_SINGLELINE|DT_NOPREFIX );
-							rc.left+=fontTitle.GetTextSize(&c,1).cx;
-						}
+						::SetTextColor( dc, 0xffecd9 );
+						::DrawText( dc, APP_FULLNAME,-1, &rc, DT_LEFT|DT_VCENTER|DT_SINGLELINE|DT_NOPREFIX );
 					//::SelectObject(dc,hFont0); // commented out as further changes to DC's font below
 					// . category Glyphs etc
 					const CRideFont fontGlyph( FONT_WEBDINGS, 300, false, true );
