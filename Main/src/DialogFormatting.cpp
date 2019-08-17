@@ -150,7 +150,7 @@
 			switch (pcws->message){
 				case NM_CLICK:
 				case NM_RETURN:{
-					Utils::Information(_T("This may happen if the media descriptor is set inconsistently from what the volume is actually stored on. To recover, change the media descriptor in the \"") BOOT_SECTOR_TAB_LABEL _T("\" tab and try again."));
+					Utils::Information(_T("Media sometimes introduce themselves wrongly (e.g. copy-protection). The introduction (if any) can be changed in the \"") BOOT_SECTOR_TAB_LABEL _T("\" tab."));
 					*pResult=0;
 					return TRUE;
 				}
