@@ -23,11 +23,11 @@ namespace Utils{
 	typedef struct TCommandLikeButtonInfo sealed{
 		const WNDPROC wndProc0;
 		const COLORREF textColor;
-		const WCHAR webdingsGlyphBeforeText;
+		const WCHAR wingdingsGlyphBeforeText;
 		bool cursorHovering, pressed;
-		TCommandLikeButtonInfo(WNDPROC _wndProc0,WCHAR webdingsGlyphBeforeText,COLORREF textColor)
+		TCommandLikeButtonInfo(WNDPROC _wndProc0,WCHAR wingdingsGlyphBeforeText,COLORREF textColor)
 			// ctor
-			: wndProc0(_wndProc0) , textColor(textColor) , webdingsGlyphBeforeText(webdingsGlyphBeforeText)
+			: wndProc0(_wndProc0) , textColor(textColor) , wingdingsGlyphBeforeText(wingdingsGlyphBeforeText)
 			, cursorHovering(false) , pressed(false) {
 		}
 	} *PCommandLikeButtonInfo;
@@ -88,7 +88,7 @@ namespace Utils{
 					TCHAR text[200];
 					::GetWindowText(hCmdBtn,text,sizeof(text)/sizeof(TCHAR));
 					::SetTextColor( dc, cmdInfo->textColor );
-					if (const WCHAR glyph=cmdInfo->webdingsGlyphBeforeText){
+					if (const WCHAR glyph=cmdInfo->wingdingsGlyphBeforeText){
 						// prefixing the Text with specified Glyph
 						const CRideFont font( FONT_WINGDINGS, 130, false, true );
 						const HGDIOBJ hFont0=::SelectObject( dc, font );
@@ -661,14 +661,14 @@ namespace Utils{
 		::InvalidateRect(hStdBtn,nullptr,TRUE);
 	}
 
-	void ConvertToCommandLikeButton(HWND hStdBtn,WCHAR webdingsGlyphBeforeText,COLORREF textColor){
+	void ConvertToCommandLikeButton(HWND hStdBtn,WCHAR wingdingsGlyphBeforeText,COLORREF textColor){
 		// converts an existing standard button to a "command-like" one known from Windows Vista, featuring specified GlypfBeforeText ('\0' = no Glyph)
 		::SetWindowLong( hStdBtn, GWL_STYLE, ::GetWindowLong(hStdBtn,GWL_STYLE)|BS_OWNERDRAW );
 		::SetWindowLong(hStdBtn,
 						GWL_USERDATA,
 						(long)new TCommandLikeButtonInfo(
 							(WNDPROC)::SetWindowLong( hStdBtn, GWL_WNDPROC, (long)__commandLikeButton_wndProc__ ),
-							webdingsGlyphBeforeText,
+							wingdingsGlyphBeforeText,
 							textColor
 						)
 					);
