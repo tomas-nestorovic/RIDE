@@ -22,10 +22,13 @@ namespace Utils{
 
 	typedef struct TCommandLikeButtonInfo sealed{
 		const WNDPROC wndProc0;
+		const COLORREF textColor;
+		const WCHAR webdingsGlyphBeforeText;
 		bool cursorHovering, pressed;
-		TCommandLikeButtonInfo(WNDPROC _wndProc0)
+		TCommandLikeButtonInfo(WNDPROC _wndProc0,WCHAR webdingsGlyphBeforeText,COLORREF textColor)
 			// ctor
-			: wndProc0(_wndProc0) , cursorHovering(false) , pressed(false) {
+			: wndProc0(_wndProc0) , textColor(textColor) , webdingsGlyphBeforeText(webdingsGlyphBeforeText)
+			, cursorHovering(false) , pressed(false) {
 		}
 	} *PCommandLikeButtonInfo;
 
@@ -82,17 +85,26 @@ namespace Utils{
 								::DrawFrameControl( dc, &r, DFC_BUTTON, DFCS_BUTTONPUSH );
 					}
 					::SetBkMode(dc,TRANSPARENT);
-					const CRideFont font( FONT_WINGDINGS, 130, false, true );
-					const HFONT hFont0=(HFONT)::SelectObject( dc, font );
-						r.left+=10;
-						static const WCHAR Arrow=0xf0e8;
-						::DrawTextW( dc, &Arrow,1, &r, DT_SINGLELINE|DT_LEFT|DT_VCENTER );
-					::SelectObject( dc, (HGDIOBJ)::SendMessage(::GetParent(hCmdBtn),WM_GETFONT,0,0) );
-						r.left+=35;
-						TCHAR buf[200];
-						::GetWindowText(hCmdBtn,buf,sizeof(buf)/sizeof(TCHAR));
-						::DrawText( dc, buf,-1, &r, DT_SINGLELINE|DT_LEFT|DT_VCENTER );
-					::SelectObject(dc,hFont0);
+					TCHAR text[200];
+					::GetWindowText(hCmdBtn,text,sizeof(text)/sizeof(TCHAR));
+					::SetTextColor( dc, cmdInfo->textColor );
+					if (const WCHAR glyph=cmdInfo->webdingsGlyphBeforeText){
+						// prefixing the Text with specified Glyph
+						const CRideFont font( FONT_WINGDINGS, 130, false, true );
+						const HGDIOBJ hFont0=::SelectObject( dc, font );
+							r.left+=10;
+							::DrawTextW( dc, &glyph,1, &r, DT_SINGLELINE|DT_LEFT|DT_VCENTER );
+						::SelectObject( dc, (HGDIOBJ)::SendMessage(::GetParent(hCmdBtn),WM_GETFONT,0,0) );
+							r.left+=35;
+							::DrawText( dc, text,-1, &r, DT_SINGLELINE|DT_LEFT|DT_VCENTER );
+						::SelectObject(dc,hFont0);
+					}else{
+						// keeping the text without prefix
+						const HGDIOBJ hFont0=::SelectObject( dc, (HGDIOBJ)::SendMessage(::GetParent(hCmdBtn),WM_GETFONT,0,0) );
+							r.left+=10;
+							::DrawText( dc, text,-1, &r, DT_SINGLELINE|DT_LEFT|DT_VCENTER );
+						::SelectObject(dc,hFont0);
+					}
 				::EndPaint(hCmdBtn,&ps);
 				break;
 			}
@@ -117,19 +129,6 @@ namespace Utils{
 		return CDialog::WindowProc(msg,wParam,lParam);
 	}
 
-	void CCommandDialog::__convertToCommandLikeButton__(HWND hButton,LPCTSTR text) const{
-		// supplies given Button the "command-like" style from Windows Vista
-		::SetWindowText(hButton,text);
-		::SetWindowLong( hButton, GWL_STYLE, ::GetWindowLong(hButton,GWL_STYLE)|BS_OWNERDRAW );
-		::SetWindowLong(hButton,
-						GWL_USERDATA,
-						(long)new TCommandLikeButtonInfo(
-							(WNDPROC)::SetWindowLong( hButton, GWL_WNDPROC, (long)__commandLikeButton_wndProc__ )
-						)
-					);
-		::InvalidateRect(hButton,nullptr,FALSE);
-	}
-
 	#define CMDBUTTON_HEIGHT	32
 	#define CMDBUTTON_MARGIN	1
 
@@ -148,13 +147,12 @@ namespace Utils{
 		const CWnd *const pInformation=GetDlgItem(ID_INFORMATION);
 		pInformation->GetClientRect(&t);
 		pInformation->MapWindowPoints(this,&t);
-		__convertToCommandLikeButton__(
-			::CreateWindow( WC_BUTTON,nullptr,
+		ConvertToCommandLikeButton(
+			::CreateWindow( WC_BUTTON,caption,
 							WS_CHILD|WS_VISIBLE,
 							t.left, r.bottom-t.top-CMDBUTTON_HEIGHT, t.right-t.left, CMDBUTTON_HEIGHT,
 							m_hWnd, (HMENU)id, app.m_hInstance, nullptr
-						),
-			caption
+						)
 		);
 	}
 
@@ -661,6 +659,20 @@ namespace Utils{
 						)
 					);
 		::InvalidateRect(hStdBtn,nullptr,TRUE);
+	}
+
+	void ConvertToCommandLikeButton(HWND hStdBtn,WCHAR webdingsGlyphBeforeText,COLORREF textColor){
+		// converts an existing standard button to a "command-like" one known from Windows Vista, featuring specified GlypfBeforeText ('\0' = no Glyph)
+		::SetWindowLong( hStdBtn, GWL_STYLE, ::GetWindowLong(hStdBtn,GWL_STYLE)|BS_OWNERDRAW );
+		::SetWindowLong(hStdBtn,
+						GWL_USERDATA,
+						(long)new TCommandLikeButtonInfo(
+							(WNDPROC)::SetWindowLong( hStdBtn, GWL_WNDPROC, (long)__commandLikeButton_wndProc__ ),
+							webdingsGlyphBeforeText,
+							textColor
+						)
+					);
+		::InvalidateRect(hStdBtn,nullptr,FALSE);
 	}
 
 	void SetSingleCharTextUsingFont(HWND hWnd,WCHAR singleChar,LPCTSTR fontFace,int fontPointSize){

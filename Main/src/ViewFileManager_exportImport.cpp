@@ -723,13 +723,16 @@ importQuit2:		::GlobalUnlock(hg);
 	void CFileManagerView::CNameConflictResolutionDialog::PreInitDialog(){
 		// dialog initialization
 		// - base
-		Utils::CCommandDialog::PreInitDialog();
+		__super::PreInitDialog();
 		// - initializing the "Replace" button
-		__convertToCommandLikeButton__( GetDlgItem(IDYES)->m_hWnd, captionForReplaceButton );
+		SetDlgItemText( IDYES, captionForReplaceButton );
+		Utils::ConvertToCommandLikeButton( GetDlgItem(IDYES)->m_hWnd );
 		// - initializing the "Skip" button
-		__convertToCommandLikeButton__( GetDlgItem(IDNO)->m_hWnd, captionForSkipButton );
+		SetDlgItemText( IDNO, captionForSkipButton );
+		Utils::ConvertToCommandLikeButton( GetDlgItem(IDNO)->m_hWnd );
 		// - initializing the "Cancel" button
-		__convertToCommandLikeButton__( GetDlgItem(IDCANCEL)->m_hWnd, _T("Quit importing") );
+		SetDlgItemText( IDCANCEL, _T("Quit importing") );
+		Utils::ConvertToCommandLikeButton( GetDlgItem(IDCANCEL)->m_hWnd );
 	}
 
 	void CFileManagerView::CNameConflictResolutionDialog::DoDataExchange(CDataExchange *pDX){

@@ -8,7 +8,6 @@ namespace Utils{
 	class CCommandDialog:public CDialog{
 		const LPCTSTR information;
 	protected:
-		void __convertToCommandLikeButton__(HWND hButton,LPCTSTR text) const;
 		void __addCommandButton__(WORD id,LPCTSTR caption);
 
 		CCommandDialog(LPCTSTR _information);
@@ -70,6 +69,7 @@ namespace Utils{
 	void DrawClosingCurlyBracket(HDC dc,int x,int yMin,int yMax);
 	void WrapControlsByClosingCurlyBracketWithText(CWnd *wnd,const CWnd *pCtrlA,const CWnd *pCtrlZ,LPCTSTR text,DWORD textColor);
 	void ConvertToSplitButton(HWND hStdBtn,PCSplitButtonAction pAction,BYTE nActions);
+	void ConvertToCommandLikeButton(HWND hStdBtn,WCHAR webdingsGlyphBeforeText=0xf0e8,COLORREF textColor=0); // 0xf0e8 = arrow right
 	void SetSingleCharTextUsingFont(HWND hWnd,WCHAR singleChar,LPCTSTR fontFace,int fontPointSize);
 	void PopulateComboBoxWithSequenceOfNumbers(HWND hComboBox,BYTE iStartValue,LPCTSTR strStartValueDesc,BYTE iEndValue,LPCTSTR strEndValueDesc);
 	float ScaleLogicalUnit(HDC dc);
