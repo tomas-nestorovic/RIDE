@@ -15,6 +15,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 #define OEMRESOURCE
 #include <afxwin.h>
+#include <afxpriv.h>
 #include <afxext.h>
 #include <afxcview.h>
 #include <afxhtml.h>
@@ -94,6 +95,7 @@ typedef const int *PCINT;
 #define DLL_SHELL32		_T("shell32.dll")
 #define DLL_WININET		_T("wininet.dll")
 
+#define APP_FULLNAME	_T("Real and Imaginary Disk Editor")
 #define APP_ABBREVIATION _T("RIDE")
 #define APP_VERSION		_T("1.5 debug special")
 #define APP_IDENTIFIER	APP_ABBREVIATION APP_VERSION

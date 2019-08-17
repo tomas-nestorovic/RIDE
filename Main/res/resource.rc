@@ -1301,6 +1301,13 @@ BEGIN
     PUSHBUTTON      "Cancel",IDCANCEL,38,74,50,14
 END
 
+IDR_GUIDEPOST DIALOG DISCARDABLE  0, 0, 301, 134
+STYLE DS_MODALFRAME | DS_CENTER | WS_CHILD
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "",ID_HEAD,"Static",SS_WHITEFRAME | WS_BORDER,0,0,301,32
+    ICON            IDR_MAINFRAME,IDC_STATIC,6,6,20,20
+END
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -1536,6 +1543,11 @@ BEGIN
         RIGHTMARGIN, 141
         TOPMARGIN, 7
         BOTTOMMARGIN, 88
+    END
+
+    IDR_GUIDEPOST, DIALOG
+    BEGIN
+        BOTTOMMARGIN, 127
     END
 END
 #endif    // APSTUDIO_INVOKED

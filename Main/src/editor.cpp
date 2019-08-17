@@ -69,6 +69,20 @@
 		::SelectObject(dc,hFont0);
 	}
 
+	SIZE CRideFont::GetTextSize(LPCTSTR text,int textLength) const{
+		// determines and returns the Size of the specified Text using using this font face
+		const CClientDC screen(nullptr);
+		const HGDIOBJ hFont0=::SelectObject( screen, m_hObject );
+			const SIZE result=screen.GetTextExtent( text, textLength );
+		::SelectObject( screen, hFont0 );
+		return result;
+	}
+
+	SIZE CRideFont::GetTextSize(LPCTSTR text) const{
+		// determines and returns the Size of the specified Text using using this font face
+		return GetTextSize( text, ::lstrlen(text) );
+	}
+
 	const CRideFont CRideFont::Small(FONT_MS_SANS_SERIF,70);
 	const CRideFont CRideFont::Std(FONT_MS_SANS_SERIF,90);
 	const CRideFont CRideFont::StdBold(FONT_MS_SANS_SERIF,90,true);
@@ -123,6 +137,17 @@
 		cfPreferredDropEffect=::RegisterClipboardFormat(CFSTR_PREFERREDDROPEFFECT);
 		cfPerformedDropEffect=::RegisterClipboardFormat(CFSTR_PERFORMEDDROPEFFECT);
 		cfPasteSucceeded=::RegisterClipboardFormat(CFSTR_PASTESUCCEEDED);
+		// - restoring Most Recently Used (MRU) file Images
+		if ((::GetVersion()&0xff)<=5){ // for Windows XP and older ...
+			delete m_pszProfileName; // ... list is stored to and read from the INI file in application's folder
+			struct TTmp sealed{ TCHAR profile[MAX_PATH]; }; // encapsulating the array into a structure - because MFC4.2 doesn't know the "new TCHAR[MAX_PATH]" operator!
+			PTCHAR pIniFileName=(new TTmp)->profile;
+			::GetModuleFileName(0,pIniFileName,MAX_PATH);
+			::lstrcpy( _tcsrchr(pIniFileName,'\\'), _T("\\RIDE.INI") );
+			m_pszProfileName=pIniFileName;
+		}else // for Windows Vista and newer ...
+			SetRegistryKey(_T("Real and Imaginary Disk Editor")); // ... list is stored to and read from system register (as INI files need explicit administrator rights)
+		LoadStdProfileSettings();
 		// - registering the only document template available in this application
 		AddDocTemplate(
 			new CMainWindow::CTdiTemplate()
@@ -142,17 +167,6 @@
 		CDos::known.AddTail( (PVOID)&CTRDOS503::Properties );
 		CDos::known.AddTail( (PVOID)&CTRDOS504::Properties );
 		CDos::known.AddTail( (PVOID)&CTRDOS505::Properties );
-		// - restoring Most Recently Used (MRU) file Images
-		if ((::GetVersion()&0xff)<=5){ // for Windows XP and older ...
-			delete m_pszProfileName; // ... list is stored to and read from the INI file in application's folder
-			struct TTmp sealed{ TCHAR profile[MAX_PATH]; }; // encapsulating the array into a structure - because MFC4.2 doesn't know the "new TCHAR[MAX_PATH]" operator!
-			PTCHAR pIniFileName=(new TTmp)->profile;
-			::GetModuleFileName(0,pIniFileName,MAX_PATH);
-			::lstrcpy( _tcsrchr(pIniFileName,'\\'), _T("\\RIDE.INI") );
-			m_pszProfileName=pIniFileName;
-		}else // for Windows Vista and newer ...
-			SetRegistryKey(_T("Real and Imaginary Disk Editor")); // ... list is stored to and read from system register (as INI files need explicit administrator rights)
-		LoadStdProfileSettings();
 		// - displaying the document-view MainWindow
 		m_pMainWnd->ShowWindow(SW_SHOW);
 		m_pMainWnd->UpdateWindow();
@@ -481,6 +495,11 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 					return; // ... doing nothing
 			OpenDocumentFile(fileName);
 		}
+	}
+
+	CRecentFileList *CRideApp::GetRecentFileList() const{
+		// public getter of RecentFileList
+		return m_pRecentFileList;
 	}
 
 	void WINAPI AfxThrowInvalidArgException(){

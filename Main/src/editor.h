@@ -25,6 +25,9 @@
 		int charAvgWidth,charHeight;
 
 		CRideFont(LPCTSTR face,int pointHeight,bool bold=false,bool dpiScaled=false,int pointWidth=0);
+
+		SIZE GetTextSize(LPCTSTR text,int textLength) const;
+		SIZE GetTextSize(LPCTSTR text) const;
 	};
 
 
@@ -41,6 +44,7 @@
 		int ExitInstance() override;
 		CDocument *OpenDocumentFile(LPCTSTR lpszFileName) override;
 		void OnFileOpen(); // public wrapper
+		CRecentFileList *GetRecentFileList() const;
 		afx_msg void __createNewImage__();
 		afx_msg void __openImage__();
 		afx_msg void __openImageAs__();

@@ -45,6 +45,7 @@
 #define IDR_DIRECTORYBROWSER            207
 #define IDR_DOS_DATETIME_EDIT           208
 #define IDR_HEXAEDITOR_RESETSELECTION   209
+#define IDR_GUIDEPOST                   211
 #define ID_HIDDEN                       1018
 #define ID_SYSTEM                       1019
 #define ID_CONNECTED                    1020
@@ -227,9 +228,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        210
-#define _APS_NEXT_COMMAND_VALUE         40259
-#define _APS_NEXT_CONTROL_VALUE         1180
+#define _APS_NEXT_RESOURCE_VALUE        214
+#define _APS_NEXT_COMMAND_VALUE         40267
+#define _APS_NEXT_CONTROL_VALUE         1181
 #define _APS_NEXT_SYMED_VALUE           103
 #endif
 #endif
