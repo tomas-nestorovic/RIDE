@@ -88,7 +88,7 @@
 			__addCategory__( _T("Recently accessed locations"), 0xf0cd );
 				BYTE i=0;
 				for( CRecentFileList *const pMru=app.GetRecentFileList(); i<4 && i<pMru->GetSize(); i++ ){ // 4 = max # of MRU files displayed in the GuidePost
-					const CString fileName=pMru->operator[](i);
+					const CString &fileName=pMru->operator[](i);
 					if (fileName.IsEmpty())
 						break;
 					TCHAR buf[MAX_PATH];

@@ -306,8 +306,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			// failed to open Image
 			return nullptr;
 		// - adding file Image into list of Most Recently Used (MRU) documents
-		if (!dynamic_cast<CFDD *>(image.get()))
-			app.AddToRecentFileList(lpszFileName);
+		//nop (added by calling CDocument::SetPathName below)
 		// - determining the DOS
 		CDos::PCProperties dosProps=nullptr;
 		TFormat formatBoot; // information on Format (# of Cylinders, etc.) obtained from Image's Boot record
