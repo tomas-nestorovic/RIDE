@@ -59,7 +59,7 @@
 			__addStaticText__( title, sectionTitleFont );
 		}
 
-		void __addButton__(LPCTSTR caption,UINT id){
+		void __addButton__(LPCTSTR caption,UINT id,WCHAR wingdingsGlyphBeforeText='\0'){
 			// adds a new button under currently open category
 			ASSERT(nCategories>0); // a category must currently be open
 			const int height=buttonCaptionFont.charHeight+2*(1+::GetSystemMetrics(SM_CYBORDER));
@@ -69,8 +69,9 @@
 					rcCurrContent.left,rcCurrContent.top, rcCurrContent.Width(),height,
 					m_hWnd, (HMENU)id, app.m_hInstance, nullptr
 				),
-				'\0',
-				0xa00000
+				wingdingsGlyphBeforeText,
+				0xa00000,
+				-20
 			);
 			SendDlgItemMessage( id, WM_SETFONT, (WPARAM)buttonCaptionFont.m_hObject );
 			rcCurrContent.top+=height;
@@ -91,18 +92,18 @@
 						break;
 					TCHAR buf[MAX_PATH];
 					::PathCompactPath( CClientDC(this), ::lstrcpy(buf,fileName), rcCurrContent.Width() );
-					__addButton__( buf, ID_FILE_MRU_FILE1+i );
+					__addButton__( buf, ID_FILE_MRU_FILE1+i, 0xf030 );
 				}
 				if (!i)
 					__addStaticText__( _T("Currently none. Files you open or drives you access will be shown here."), buttonCaptionFont );
 			// - composing the "FAQ" section
 			__addCategory__( _T("Frequent questions (network connection needed)"), 0xf0a8 );
-				__addButton__( _T("How do I format a real floppy?"), ID_FORMAT );
-				__addButton__( _T("How do I dump a real floppy to an image?"), ID_IMAGE );
-				__addButton__( _T("How do I dump an image back to a real floppy?"), ID_MEDIUM );
-				__addButton__( _T("How do I make an exact copy of a real floppy?"), ID_CREATOR );
-				__addButton__( _T("How do I convert one image format to another?"), ID_DATA );
-				__addButton__( _T("Are tape images supported?"), ID_TAPE_OPEN );
+				__addButton__( _T("How do I format a real floppy?"), ID_FORMAT, 0xf026 );
+				__addButton__( _T("How do I dump a real floppy to an image?"), ID_IMAGE, 0xf026 );
+				__addButton__( _T("How do I dump an image back to a real floppy?"), ID_MEDIUM, 0xf026 );
+				__addButton__( _T("How do I make an exact copy of a real floppy?"), ID_CREATOR, 0xf026 );
+				__addButton__( _T("How do I convert one image format to another?"), ID_DATA, 0xf026 );
+				__addButton__( _T("Are tape images supported?"), ID_TAPE_OPEN, 0xf026 );
 			// - composing the "Miscellaneous" section
 			//TODO
 			// - adjusting the window height so that all the content is visible

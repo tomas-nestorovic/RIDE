@@ -22,12 +22,14 @@ namespace Utils{
 
 	typedef struct TCommandLikeButtonInfo sealed{
 		const WNDPROC wndProc0;
-		const COLORREF textColor;
+		const COLORREF textColor, glyphColor;
 		const WCHAR wingdingsGlyphBeforeText;
+		const int glyphPointSizeIncrement;
 		bool cursorHovering, pressed;
-		TCommandLikeButtonInfo(WNDPROC _wndProc0,WCHAR wingdingsGlyphBeforeText,COLORREF textColor)
+		TCommandLikeButtonInfo(WNDPROC _wndProc0,WCHAR wingdingsGlyphBeforeText,COLORREF glyphColor,int glyphPointSizeIncrement,COLORREF textColor)
 			// ctor
-			: wndProc0(_wndProc0) , textColor(textColor) , wingdingsGlyphBeforeText(wingdingsGlyphBeforeText)
+			: wndProc0(_wndProc0) , textColor(textColor)
+			, wingdingsGlyphBeforeText(wingdingsGlyphBeforeText) , glyphColor(glyphColor) , glyphPointSizeIncrement(glyphPointSizeIncrement)
 			, cursorHovering(false) , pressed(false) {
 		}
 	} *PCommandLikeButtonInfo;
@@ -87,21 +89,23 @@ namespace Utils{
 					::SetBkMode(dc,TRANSPARENT);
 					TCHAR text[200];
 					::GetWindowText(hCmdBtn,text,sizeof(text)/sizeof(TCHAR));
-					::SetTextColor( dc, cmdInfo->textColor );
 					if (const WCHAR glyph=cmdInfo->wingdingsGlyphBeforeText){
 						// prefixing the Text with specified Glyph
-						const CRideFont font( FONT_WINGDINGS, 130, false, true );
+						const CRideFont font( FONT_WINGDINGS, 130+cmdInfo->glyphPointSizeIncrement, false, true );
 						const HGDIOBJ hFont0=::SelectObject( dc, font );
 							r.left+=10;
+							::SetTextColor( dc, cmdInfo->glyphColor );
 							::DrawTextW( dc, &glyph,1, &r, DT_SINGLELINE|DT_LEFT|DT_VCENTER );
 						::SelectObject( dc, (HGDIOBJ)::SendMessage(::GetParent(hCmdBtn),WM_GETFONT,0,0) );
 							r.left+=35;
+							::SetTextColor( dc, cmdInfo->textColor );
 							::DrawText( dc, text,-1, &r, DT_SINGLELINE|DT_LEFT|DT_VCENTER );
 						::SelectObject(dc,hFont0);
 					}else{
 						// keeping the text without prefix
 						const HGDIOBJ hFont0=::SelectObject( dc, (HGDIOBJ)::SendMessage(::GetParent(hCmdBtn),WM_GETFONT,0,0) );
 							r.left+=10;
+							::SetTextColor( dc, cmdInfo->textColor );
 							::DrawText( dc, text,-1, &r, DT_SINGLELINE|DT_LEFT|DT_VCENTER );
 						::SelectObject(dc,hFont0);
 					}
@@ -661,14 +665,14 @@ namespace Utils{
 		::InvalidateRect(hStdBtn,nullptr,TRUE);
 	}
 
-	void ConvertToCommandLikeButton(HWND hStdBtn,WCHAR wingdingsGlyphBeforeText,COLORREF textColor){
+	void ConvertToCommandLikeButton(HWND hStdBtn,WCHAR wingdingsGlyphBeforeText,COLORREF textColor,int glyphPointSizeIncrement,COLORREF glyphColor){
 		// converts an existing standard button to a "command-like" one known from Windows Vista, featuring specified GlypfBeforeText ('\0' = no Glyph)
 		::SetWindowLong( hStdBtn, GWL_STYLE, ::GetWindowLong(hStdBtn,GWL_STYLE)|BS_OWNERDRAW );
 		::SetWindowLong(hStdBtn,
 						GWL_USERDATA,
 						(long)new TCommandLikeButtonInfo(
 							(WNDPROC)::SetWindowLong( hStdBtn, GWL_WNDPROC, (long)__commandLikeButton_wndProc__ ),
-							wingdingsGlyphBeforeText,
+							wingdingsGlyphBeforeText, glyphColor, glyphPointSizeIncrement,
 							textColor
 						)
 					);
