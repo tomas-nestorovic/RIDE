@@ -20,8 +20,6 @@
 
 
 	class CIntroductoryGuidePost sealed:public CDialog{
-		static CIntroductoryGuidePost *pSingleInstance;
-
 		const CRideFont sectionTitleFont;
 		const CRideFont buttonCaptionFont;
 		BYTE nCategories;
@@ -170,14 +168,16 @@
 			return __super::WindowProc(msg,wParam,lParam);
 		}
 	public:
+		static const CIntroductoryGuidePost *pSingleInstance;
+
 		static void Show(){
 			// creates and positions the GuidePost
 			if (!pSingleInstance){
-				pSingleInstance=new CIntroductoryGuidePost;
-				pSingleInstance->Create( IDR_GUIDEPOST, TDI_INSTANCE );
-				CentreInParent();
-				pSingleInstance->ShowWindow(SW_SHOW);
-				app.m_pMainWnd->SetFocus(); // 
+				CIntroductoryGuidePost *const pIgp=new CIntroductoryGuidePost;
+				pSingleInstance=pIgp;
+				pIgp->Create( IDR_GUIDEPOST, TDI_INSTANCE );
+				pIgp->ShowWindow(SW_SHOW);
+				app.m_pMainWnd->SetFocus();
 			}
 		}
 
@@ -199,13 +199,13 @@
 		static void Hide(){
 			// destroys the GuidePost
 			if (pSingleInstance){
-				pSingleInstance->DestroyWindow();
+				::DestroyWindow( pSingleInstance->m_hWnd );
 				pSingleInstance=nullptr;
 			}
 		}
 	};
 
-	CIntroductoryGuidePost *CIntroductoryGuidePost::pSingleInstance;
+	const CIntroductoryGuidePost *CIntroductoryGuidePost::pSingleInstance;
 
 
 
@@ -334,22 +334,32 @@
 				// window created
 				if (const LRESULT err=__super::WindowProc(msg,wParam,lParam))
 					return err;
-				CIntroductoryGuidePost::Show(); // displaying the introductory GuidePost
+				SetFocus();
 				return 0;
+			case WM_SETFOCUS:
+				// window has received focus
+				if (!CIntroductoryGuidePost::pSingleInstance && !CTdiCtrl::GetCurrentTabContentRect(m_hWnd,nullptr))
+					CIntroductoryGuidePost::Show(); // displaying the introductory GuidePost
+				//fallthrough
 			case WM_SIZE:
 				// window size changed
 				CIntroductoryGuidePost::CentreInParent();
 				break;
-			case WM_SETFOCUS:
-				// window has received focus
-				//fallthrough
 			case WM_KILLFOCUS:
 				// window has lost focus
-				( (CMainWindow *)app.m_pMainWnd )->SetActiveView(	pCurrentTab
-																	? pCurrentTab->view
-																	: this
-																);
-				return 0;
+				if (CIntroductoryGuidePost::pSingleInstance){
+					HWND hFocusedWnd=(HWND)wParam;
+					do{
+						if (hFocusedWnd==CIntroductoryGuidePost::pSingleInstance->m_hWnd)
+							return __super::WindowProc(msg,wParam,lParam);
+					}while ( hFocusedWnd=::GetParent(hFocusedWnd) );
+					( (CMainWindow *)app.m_pMainWnd )->SetActiveView(	pCurrentTab
+																		? pCurrentTab->view
+																		: this
+																	);
+					CIntroductoryGuidePost::Hide(); // hiding the introductory GuidePost
+				}
+				break;
 		}
 		return __super::WindowProc(msg,wParam,lParam);
 	}
