@@ -19,6 +19,14 @@
 	TPhysicalAddress CMSDOS7::TBootSector::__getRecognizedChs__(PImage image,bool recognizeBoot,bool *pSuccess){
 		// True <=> Boot Sector has been recognized on the disk, otherwise False
 		TPhysicalAddress chs={ 0, 0, {0,0,1,-1} };
+		// - in case the Image is a physical floppy disk, determining the Type of Medium (type of floppy)
+		TFormat fmt={ TMedium::FLOPPY_DD, 1,1,MSDOS7_SECTOR_BKBOOT, MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD, 1 };
+		if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
+			fmt.mediumType=TMedium::FLOPPY_HD;
+			if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0))
+				return chs; // unknown Medium Type, any address will sooner or later cause a failure in access
+		}
+		// - recognizing the Boot Sector
 		if (pSuccess) *pSuccess=true; // assumption (Boot Sector found and successfully recognized)
 		WORD w;
 		PCBootSector boot=(PCBootSector)image->GetSectorDataOfUnknownLength(chs,&w);
