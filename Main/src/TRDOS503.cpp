@@ -706,7 +706,7 @@
 					// : exporting the File into Buffer
 					BYTE buf[65536]; // big enough to contain any TR-DOS File data
 					LPCTSTR errMsg;
-					const DWORD fileExportSize=dp.trdos->ExportFile( de, &CMemFile(buf,sizeof(buf)), -1, &errMsg );
+					const DWORD fileExportSize=dp.trdos->ExportFile( de, &CMemFile(buf,sizeof(buf)), sizeof(buf), &errMsg );
 					if (errMsg){
 						dp.trdos->__showFileProcessingError__(de,errMsg);
 						return ERROR_CANCELLED; //TODO: making sure that the disk is in consistent state

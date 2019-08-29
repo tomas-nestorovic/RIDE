@@ -800,11 +800,8 @@ reportError:Utils::Information(buf);
 			const LPCTSTR errMsg=__exportFileData__(file,fOut,nBytesToExportMax);
 			if (pOutError)
 				*pOutError=errMsg;
-			const DWORD nDataBytes=GetFileSize(file);
-			return min(nDataBytes,nBytesToExportMax);
-			//return fOut->GetLength();
-		}else
-			return GetFileSize(file);
+		}
+		return std::min<>( GetFileSize(file), nBytesToExportMax );
 	}
 
 	TStdWinError CDos::__importFileData__(CFile *f,PFile fDesc,LPCTSTR fileName,LPCTSTR fileExt,DWORD fileSize,PFile &rFile,CFatPath &rFatPath){

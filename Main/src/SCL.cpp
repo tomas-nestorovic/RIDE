@@ -70,7 +70,7 @@
 				BYTE buf[65536];
 				for( pde=directory; header.nFiles--; )
 					f.Write(buf,
-							trdos->ExportFile( *pde++, &CMemFile(buf,sizeof(buf)), -1, nullptr )
+							trdos->ExportFile( *pde++, &CMemFile(buf,sizeof(buf)), sizeof(buf), nullptr )
 						);
 				m_bModified=FALSE;
 			trdos->getFileSizeDefaultOption=gfso0;
