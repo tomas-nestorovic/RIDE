@@ -149,10 +149,17 @@
 			~CFileReaderWriter();
 
 			// CFile methods
+			#if _MFC_VER>=0x0A00
+			ULONGLONG GetLength() const override;
+			void SetLength(ULONGLONG dwNewLen) override;
+			ULONGLONG GetPosition() const override;
+			ULONGLONG Seek(LONGLONG lOff,UINT nFrom) override;
+			#else
 			DWORD GetLength() const override;
 			void SetLength(DWORD dwNewLen) override;
 			DWORD GetPosition() const override;
 			LONG Seek(LONG lOff,UINT nFrom) override;
+			#endif
 			UINT Read(LPVOID lpBuf,UINT nCount) override;
 			void Write(LPCVOID lpBuf,UINT nCount) override;
 

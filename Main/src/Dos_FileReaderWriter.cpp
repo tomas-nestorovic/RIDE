@@ -29,12 +29,20 @@
 
 
 
+	#if _MFC_VER>=0x0A00
+	ULONGLONG CDos::CFileReaderWriter::GetLength() const{
+	#else
 	DWORD CDos::CFileReaderWriter::GetLength() const{
+	#endif
 		// returns the File size
 		return fileSize;
 	}
 
+	#if _MFC_VER>=0x0A00
+	void CDos::CFileReaderWriter::SetLength(ULONGLONG dwNewLen){
+	#else
 	void CDos::CFileReaderWriter::SetLength(DWORD dwNewLen){
+	#endif
 		// overrides the reported FileSize
 		ASSERT( dwNewLen<=fileSize ); // can only "shrink" the reported FileSize
 		fileSize=dwNewLen;
@@ -42,12 +50,20 @@
 			position=fileSize;
 	}
 
+	#if _MFC_VER>=0x0A00
+	ULONGLONG CDos::CFileReaderWriter::GetPosition() const{
+	#else
 	DWORD CDos::CFileReaderWriter::GetPosition() const{
+	#endif
 		// returns the actual Position in open File
 		return position;
 	}
 
+	#if _MFC_VER>=0x0A00
+	ULONGLONG CDos::CFileReaderWriter::Seek(LONGLONG lOff,UINT nFrom){
+	#else
 	LONG CDos::CFileReaderWriter::Seek(LONG lOff,UINT nFrom){
+	#endif
 		// sets the actual Position in open File
 		switch ((SeekPosition)nFrom){
 			case SeekPosition::current:

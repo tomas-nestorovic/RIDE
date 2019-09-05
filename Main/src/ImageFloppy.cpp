@@ -190,7 +190,11 @@
 			}
 
 			// CSectorDataSerializer methods
+			#if _MFC_VER>=0x0A00
+			ULONGLONG Seek(LONGLONG lOff,UINT nFrom) override{
+			#else
 			LONG Seek(LONG lOff,UINT nFrom) override{
+			#endif
 				// sets the actual Position in the Serializer
 				const LONG result=__super::Seek(lOff,nFrom);
 				bChsValid=__getPhysicalAddress__( result, &currTrack, &sector.indexOnTrack, &sector.offset );

@@ -218,10 +218,17 @@
 
 			CSectorDataSerializer(CHexaEditor *pParentHexaEditor,PImage image,LONG dataTotalLength);
 		public:
+			#if _MFC_VER>=0x0A00
+			ULONGLONG GetLength() const override sealed;
+			void SetLength(ULONGLONG dwNewLen) override sealed;
+			ULONGLONG GetPosition() const override sealed;
+			ULONGLONG Seek(LONGLONG lOff,UINT nFrom) override;
+			#else
 			DWORD GetLength() const override sealed;
 			void SetLength(DWORD dwNewLen) override sealed;
 			DWORD GetPosition() const override sealed;
 			LONG Seek(LONG lOff,UINT nFrom) override;
+			#endif
 			UINT Read(LPVOID lpBuf,UINT nCount) override sealed;
 			void Write(LPCVOID lpBuf,UINT nCount) override sealed;
 			BYTE GetCurrentSectorIndexOnTrack() const;
