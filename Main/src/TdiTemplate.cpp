@@ -49,7 +49,11 @@
 
 	typedef CDocument *PDocument;
 
+	#if _MFC_VER>=0x0A00
+	PDocument CMainWindow::CTdiTemplate::OpenDocumentFile(LPCTSTR lpszPathName,BOOL bAddToMRU,BOOL bMakeVisible){
+	#else
 	PDocument CMainWindow::CTdiTemplate::OpenDocumentFile(LPCTSTR lpszPathName,BOOL bMakeVisible){
+	#endif
 		// opens the document stored in specified file
 		// - closing current document
 		if (!__closeDocument__())

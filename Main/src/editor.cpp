@@ -261,7 +261,7 @@
 				return nullptr;
 				//AfxThrowFileException( CFileException::OsErrorToException(err), err, FDD_A_LABEL );
 			}
-		}else if (image=std::unique_ptr<CImage>((PImage)CWinApp::OpenDocumentFile(lpszFileName))){
+		}else if (image=std::unique_ptr<CImage>((PImage)__super::OpenDocumentFile(lpszFileName))){
 			// Image opened successfully
 openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully ...
 				if (!image->CanBeModified()) // ... inform on eventual "read-only" mode (forced if Image on the disk is read-only, e.g. because opened from a CD-R)

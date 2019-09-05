@@ -54,7 +54,12 @@
 
 			CDocument *__getDocument__() const;
 			bool __closeDocument__();
+
+			#if _MFC_VER>=0x0A00
+			CDocument *OpenDocumentFile(LPCTSTR lpszPathName,BOOL bAddToMRU,BOOL bMakeVisible) override;
+			#else
 			CDocument *OpenDocumentFile(LPCTSTR lpszPathName,BOOL bMakeVisible=TRUE) override;
+			#endif
 		};
 
 		class CTdiView sealed:public CCtrlView{
