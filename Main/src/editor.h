@@ -45,6 +45,7 @@
 		CDocument *OpenDocumentFile(LPCTSTR lpszFileName) override;
 		void OnFileOpen(); // public wrapper
 		CRecentFileList *GetRecentFileList() const;
+		afx_msg BOOL OnOpenRecentFile(UINT nID);
 		afx_msg void __createNewImage__();
 		afx_msg void __openImage__();
 		afx_msg void __openImageAs__();

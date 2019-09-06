@@ -208,6 +208,19 @@
 
 	const CIntroductoryGuidePost *CIntroductoryGuidePost::pSingleInstance;
 
+	afx_msg BOOL CRideApp::OnOpenRecentFile(UINT nID){
+		// opens document from the MRU files list under the given index
+		// - base
+		if (!__super::OnOpenRecentFile(nID))
+			return FALSE;
+		// - if no Image opened, it wasn't found in which case it was removed from the MRU files list - projecting the updated MRU files list to the just shown introductory GuidePost
+		if (!CImage::__getActive__()){
+			CIntroductoryGuidePost::Hide();
+			CIntroductoryGuidePost::Show();
+		}
+		// - successfully handled opening of a MRU file
+		return TRUE;
+	}
 
 
 
