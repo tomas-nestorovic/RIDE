@@ -72,7 +72,7 @@
 	}
 	TTrack TPhysicalAddress::GetTrackNumber() const{
 		// determines and returns the Track number based on DOS's current Format
-		return GetTrackNumber( CImage::__getActive__()->dos->formatBoot.nHeads );
+		return GetTrackNumber( CImage::GetActive()->dos->formatBoot.nHeads );
 	}
 	TTrack TPhysicalAddress::GetTrackNumber(THead nHeads) const{
 		// determines and returns the Track number based on the specified NumberOfHeads
@@ -230,7 +230,7 @@
 
 
 
-	PImage CImage::__getActive__(){
+	PImage CImage::GetActive(){
 		// returns active document
 		return (PImage)CMainWindow::CTdiTemplate::pSingleInstance->__getDocument__();
 	}
@@ -435,7 +435,7 @@
 						}
 						return TRUE;
 					case ID_IMAGE_BROWSE:{
-						CDiskBrowserView *const dbView=new CDiskBrowserView(CImage::__getActive__()->dos); // can only browse main disk Images (e.g. never a ZX Spectrum Tape)
+						CDiskBrowserView *const dbView=new CDiskBrowserView(CImage::GetActive()->dos); // can only browse main disk Images (e.g. never a ZX Spectrum Tape)
 						CTdiCtrl::AddTabLast( TDI_HWND, _T("Sectors hexa-browser"), &dbView->tab, true, TDI_TAB_CANCLOSE_ALWAYS, __onDiskBrowserViewClosing__ );
 						return TRUE;
 					}

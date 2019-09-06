@@ -4,7 +4,7 @@
 	CPtrList CDos::known;
 
 
-	PDos CDos::__getFocused__(){
+	PDos CDos::GetFocused(){
 		return ((CMainWindow *)app.m_pMainWnd)->pTdi->__getCurrentTab__()->dos;
 	}
 

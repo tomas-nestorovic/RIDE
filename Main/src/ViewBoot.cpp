@@ -20,7 +20,7 @@
 
 	bool WINAPI CBootView::__bootSectorModified__(CPropGridCtrl::PCustomParam,int){
 		// marking the Boot Sector as dirty
-		const PDos dos=CDos::__getFocused__();
+		const PDos dos=CDos::GetFocused();
 		dos->FlushToBootSector(); // marking the Boot Sector as dirty
 		dos->image->UpdateAllViews(nullptr);
 		return true;
@@ -44,14 +44,14 @@
 	void WINAPI CBootView::__updateBootView__(CPropGridCtrl::PCustomParam){
 		// refreshes any current View
 		const short iCurSel=CPropGridCtrl::GetCurrentlySelectedProperty( pCurrentlyShown->propGrid.m_hWnd );
-			CDos::__getFocused__()->image->UpdateAllViews(nullptr);
+			CDos::GetFocused()->image->UpdateAllViews(nullptr);
 		CPropGridCtrl::SetCurrentlySelectedProperty( pCurrentlyShown->propGrid.m_hWnd, iCurSel );
 	}
 
 	bool WINAPI CBootView::__confirmCriticalValueInBoot__(PVOID criticalValueId,int newValue){
 		// informs that a critical value in the Boot is about to be changed, and if confirmed, changes it
 		if (Utils::QuestionYesNo(_T("About to modify a critical value in the boot, data at stake if set incorrectly!\n\nContinue?!"),MB_DEFBUTTON2)){
-			const PDos dos=CDos::__getFocused__();
+			const PDos dos=CDos::GetFocused();
 			// . validating the new format
 			TFormat fmt=dos->formatBoot;
 			if (criticalValueId==CRITICAL_VALUE_SIDES_COUNT)
@@ -74,7 +74,7 @@
 
 	bool WINAPI CBootView::__updateFatAfterChangingCylinderCount__(PVOID,int newValue){
 		// updates the FAT after the number of Cylinders in the FAT has been changed
-		const PDos dos=CDos::__getFocused__();
+		const PDos dos=CDos::GetFocused();
 		TFormat fmt=dos->formatBoot;
 			fmt.nCylinders=(TCylinder)newValue;
 		if (dos->ValidateFormatChangeAndReportProblem(false,&fmt)){

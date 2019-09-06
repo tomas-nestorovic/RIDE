@@ -203,7 +203,7 @@
 
 	bool WINAPI CMSDOS7::CMsdos7FileManagerView::__onNameAndExtConfirmed__(PVOID file,LPCTSTR newNameAndExt,short nCharsOfNewNameAndExt){
 		// True <=> NewNameAndExtension confirmed, otherwise False
-		const PMSDOS7 msdos=(PMSDOS7)CDos::__getFocused__();
+		const PMSDOS7 msdos=(PMSDOS7)CDos::GetFocused();
 		TCHAR tmpName[MAX_PATH];
 		PTCHAR pExt=_tcsrchr( ::lstrcpy(tmpName,(LPCTSTR)newNameAndExt), '.' );
 		if (pExt)
@@ -244,7 +244,7 @@
 		// - showing the Dialog and processing its result
 		if (d.DoModal()==IDOK){
 			de->shortNameEntry.attributes=d.attributes;
-			((PMSDOS7)CDos::__getFocused__())->__markDirectorySectorAsDirty__(de);
+			((PMSDOS7)CDos::GetFocused())->__markDirectorySectorAsDirty__(de);
 			return true;
 		}else
 			return false;
@@ -261,7 +261,7 @@
 				dt.ToDWord(&tmp);
 				*(PWORD)value=HIWORD(tmp);
 			}
-			((CMSDOS7 *)CDos::__getFocused__())->__markDirectorySectorAsDirty__(file);
+			((CMSDOS7 *)CDos::GetFocused())->__markDirectorySectorAsDirty__(file);
 			return true;
 		}else
 			return false;

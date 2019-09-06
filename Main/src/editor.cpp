@@ -214,7 +214,7 @@
 		OnFileNew(); // to close any previous Image
 		//SaveModified()
 		if (!app.m_pMainWnd->IsWindowVisible()) return; // ignoring the initial command sent by MFC immediately after the application has started
-		if (!CImage::__getActive__()){
+		if (!CImage::GetActive()){
 			// no Image open, i.e. any existing Image successfully closed in above OnFileNew
 			// . displaying the "New Image" Dialog
 			CNewImageDialog d;
@@ -490,7 +490,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		TCHAR fileName[MAX_PATH];
 		*fileName='\0';
 		if (__doPromptFileName__( fileName, true, AFX_IDS_OPENFILE, OFN_FILEMUSTEXIST, nullptr )){
-			if (const CDocument *const doc=CImage::__getActive__())
+			if (const CDocument *const doc=CImage::GetActive())
 				if (doc->GetPathName()==fileName) // if attempting to open an already opened Image ...
 					return; // ... doing nothing
 			OpenDocumentFile(fileName);

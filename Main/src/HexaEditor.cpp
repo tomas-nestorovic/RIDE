@@ -84,7 +84,7 @@
 	CHexaEditor::CHexaEditor(PVOID param,HMENU customSelectSubmenu,HMENU customResetSubmenu,HMENU customGotoSubmenu)
 		// ctor
 		// - initialization
-		: font(_T("Courier New"),105,false,true)
+		: font(FONT_COURIER_NEW,105,false,true)
 		, customSelectSubmenu(customSelectSubmenu) , customResetSubmenu(customResetSubmenu) , customGotoSubmenu(customGotoSubmenu)
 		, hDefaultAccelerators(::LoadAccelerators(app.m_hInstance,MAKEINTRESOURCE(IDR_HEXAEDITOR)))
 		, cursor(0) , param(param) , hPreviouslyFocusedWnd(0)
@@ -678,8 +678,8 @@ resetSelectionWithValue:BYTE buf[65536];
 
 							CResetDialog()
 								: CDialog( IDR_HEXAEDITOR_RESETSELECTION )
-								, directoryDefaultByte( CDos::__getFocused__()->properties->directoryFillerByte )
-								, dataDefaultByte( CDos::__getFocused__()->properties->sectorFillerByte )
+								, directoryDefaultByte( CDos::GetFocused()->properties->directoryFillerByte )
+								, dataDefaultByte( CDos::GetFocused()->properties->sectorFillerByte )
 								, iRadioSel(0) , value(0) {
 							}
 						} d;

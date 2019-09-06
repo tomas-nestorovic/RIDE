@@ -178,7 +178,7 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 				, realtimeThreadPriority( dos->image->properties==&CFDD::Properties ) {
 				::lstrcpy( fileName, ELLIPSIS );
 			}
-		} d(__getActive__()->dos);
+		} d(GetActive()->dos);
 		// - showing the Dialog and processing its result
 		if (d.DoModal()==IDOK){
 			const TStdWinError err=	TBackgroundActionCancelable(

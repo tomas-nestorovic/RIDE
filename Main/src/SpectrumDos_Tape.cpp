@@ -417,7 +417,7 @@
 	}
 
 	static bool WINAPI __canTapeBeClosed__(CTdiCtrl::TTab::PContent tab){
-		const PImage tape=CDos::__getFocused__()->image;
+		const PImage tape=CDos::GetFocused()->image;
 		if (tape->SaveModified()){
 			return true;
 		}else
@@ -795,7 +795,7 @@ drawChecksum:	r.right=*tabs++;
 
 	static bool WINAPI __markAsDirty__(PVOID file,int){
 		// marks the Tape as dirty
-		CDos::__getFocused__()->image->SetModifiedFlag(TRUE);
+		CDos::GetFocused()->image->SetModifiedFlag(TRUE);
 		return true;
 	}
 
@@ -869,7 +869,7 @@ drawChecksum:	r.right=*tabs++;
 
 	bool WINAPI CSpectrumDos::CTape::CTapeFileManagerView::CStdHeaderTypeEditor::__onChanged__(PVOID file,CPropGridCtrl::TEnum::UValue newType){
 		// changes the Type of File
-		const PDos dos=CDos::__getFocused__();
+		const PDos dos=CDos::GetFocused();
 		CTapeFileManagerView *const pTapeFileManager=(CTapeFileManagerView *)dos->pFileManager;
 		const PTapeFile tf=(PTapeFile)file;
 		if (PHeader h=tf->GetHeader())
@@ -917,7 +917,7 @@ drawChecksum:	r.right=*tabs++;
 			TZxRom::HEADERLESS,
 			TZxRom::FRAGMENT
 		};
-		const CTapeFileManagerView *const pTapeFileManager=(CTapeFileManagerView *)((CSpectrumDos *)CDos::__getFocused__())->pFileManager;
+		const CTapeFileManagerView *const pTapeFileManager=(CTapeFileManagerView *)((CSpectrumDos *)CDos::GetFocused())->pFileManager;
 		rnValues=4+pTapeFileManager->stdHeaderTypeEditor.types;
 		return List;
 	}
@@ -936,7 +936,7 @@ drawChecksum:	r.right=*tabs++;
 	}
 	CFileManagerView::PEditorBase CSpectrumDos::CTape::CTapeFileManagerView::CStdHeaderTypeEditor::Create(PFile file,TZxRom::TFileType type,TDisplayTypes _types){
 		// creates and returns an Editor of standard File Type
-		const PDos dos=CDos::__getFocused__();
+		const PDos dos=CDos::GetFocused();
 		CSpectrumFileManagerView *const pZxFileManager=(CSpectrumFileManagerView *)dos->pFileManager;
 		types=_types;
 		const PEditorBase result=pZxFileManager->__createStdEditor__(

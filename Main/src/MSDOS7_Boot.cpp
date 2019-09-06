@@ -313,7 +313,7 @@
 	}
 
 	bool WINAPI CMSDOS7::CMsdos7BootView::__labelModified__(CPropGridCtrl::PCustomParam,LPCSTR newLabel,short newLabelChars){
-		const PMSDOS7 msdos=(PMSDOS7)CDos::__getFocused__();
+		const PMSDOS7 msdos=(PMSDOS7)CDos::GetFocused();
 		const PBootSector boot=msdos->boot.GetSectorData();
 		TVolumeInfo *pvi;
 		switch (msdos->fat.type){
@@ -371,7 +371,7 @@
 
 	bool WINAPI CMSDOS7::CMsdos7BootView::__onMediumChanged__(PVOID,CPropGridCtrl::TEnum::UValue newValue){
 		// Medium Type changed via PropertyGrid
-		CMSDOS7 *const msdos=(CMSDOS7 *)CDos::__getFocused__();
+		CMSDOS7 *const msdos=(CMSDOS7 *)CDos::GetFocused();
 		// - changing the Medium Type in FAT
 		msdos->fat.SetClusterValue( 0, msdos->fat.GetClusterValue(0)&0xffffff00|(BYTE)newValue.charValue );
 		// - propagating the Medium type that has just been changed in Boot Sector to the inner FormatBoot structure
@@ -428,7 +428,7 @@
 
 	bool WINAPI CMSDOS7::CMsdos7BootView::__pg_createLabel__(CPropGridCtrl::PCustomParam,int hyperlinkId,LPCTSTR hyperlinkName){
 		// True <=> PropertyGrid's Editor can be destroyed after this function has terminated, otherwise False
-		const PMSDOS7 msdos=(PMSDOS7)CDos::__getFocused__();
+		const PMSDOS7 msdos=(PMSDOS7)CDos::GetFocused();
 		if (const PDirectoryEntry de=TMsdos7DirectoryTraversal(msdos,MSDOS7_DIR_ROOT).__allocateNewEntry__()){
 			de->shortNameEntry.attributes=FILE_ATTRIBUTE_VOLUME;
 			::memcpy(	::memset(de->shortNameEntry.name,' ',MSDOS7_LABEL_LENGTH_MAX),

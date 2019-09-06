@@ -86,8 +86,6 @@
 		public:
 			CTdiView();
 
-			static PDos __getFocusedDos__();
-
 			void __closeAllTabsOfFocusedDos__();
 			PTab __getCurrentTab__() const;
 		} *pTdi;

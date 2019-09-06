@@ -175,7 +175,7 @@
 	}
 	bool WINAPI CTRDOS503::CTrdosBootView::__onFormatChanged__(PVOID,CPropGridCtrl::TEnum::UValue newValue){
 		// disk Format changed through PropertyGrid
-		CTRDOS503 *const trdos=(CTRDOS503 *)CDos::__getFocused__();
+		CTRDOS503 *const trdos=(CTRDOS503 *)CDos::GetFocused();
 		const PBootSector boot=trdos->__getBootSector__();
 		if (!boot) return false;
 		// - validating new Format
@@ -222,7 +222,7 @@
 		if (err==ERROR_SUCCESS){
 			CDos::PFile tmp;
 			CFileManagerView::TConflictResolution conflictResolution=CFileManagerView::TConflictResolution::UNDETERMINED;
-			if ( err=CDos::__getFocused__()->pFileManager->ImportFileAndResolveConflicts( &CMemFile(cygnusBootDataBuffer,sizeof(cygnusBootDataBuffer)), cygnusBootDataLength, CYGNUSBOOT_IMPORT_NAME, 0, FILETIME(), FILETIME(), FILETIME(), tmp, conflictResolution ) )
+			if ( err=CDos::GetFocused()->pFileManager->ImportFileAndResolveConflicts( &CMemFile(cygnusBootDataBuffer,sizeof(cygnusBootDataBuffer)), cygnusBootDataLength, CYGNUSBOOT_IMPORT_NAME, 0, FILETIME(), FILETIME(), FILETIME(), tmp, conflictResolution ) )
 				Utils::FatalError( _T("Cannot import ") CYGNUSBOOT_NAME, err, TRDOS503_BOOTB_NOT_MODIFIED );
 		}
 		return true; // True = destroy PropertyGrid's Editor

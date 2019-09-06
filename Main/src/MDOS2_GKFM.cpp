@@ -147,7 +147,7 @@
 		if (err==ERROR_SUCCESS){
 			CDos::PFile tmp;
 			CFileManagerView::TConflictResolution conflictResolution=CFileManagerView::TConflictResolution::UNDETERMINED;
-			err=CDos::__getFocused__()->pFileManager->ImportFileAndResolveConflicts( &CMemFile(gkfmDataBuffer,sizeof(gkfmDataBuffer)), gkfmDataLength, GKFM_IMPORT_NAME, 0, FILETIME(), FILETIME(), FILETIME(), tmp, conflictResolution );
+			err=CDos::GetFocused()->pFileManager->ImportFileAndResolveConflicts( &CMemFile(gkfmDataBuffer,sizeof(gkfmDataBuffer)), gkfmDataLength, GKFM_IMPORT_NAME, 0, FILETIME(), FILETIME(), FILETIME(), tmp, conflictResolution );
 			if (err!=ERROR_SUCCESS)
 				Utils::FatalError( _T("Cannot import ") GKFM_NAME, err, MDOS2_RUNP_NOT_MODIFIED );
 		}
@@ -394,7 +394,7 @@ errorText:				TCHAR buf[400];
 
 	bool WINAPI CMDOS2::TBootSector::UReserved1::TGKFileManager::__pg_createNew__(CPropGridCtrl::PCustomParam param,int hyperlinkId,LPCTSTR hyperlinkName){
 		// True <=> PropertyGrid's Editor can be destroyed after this function has terminated, otherwise False
-		const PMDOS2 mdos=(PMDOS2)CDos::__getFocused__();
+		const PMDOS2 mdos=(PMDOS2)CDos::GetFocused();
 		const PImage image=mdos->image;
 		const PBootSector pBootSector=(PBootSector)image->GetSectorData(CHS);
 		TBootSector tmpBootSector=*pBootSector;

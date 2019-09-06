@@ -154,7 +154,7 @@
 			if (const PCDos dos=t->dos){
 				// focused DOS (e.g. a ZX Tape)
 				if (::TranslateAccelerator(m_hWnd,dos->menu.hAccel,pMsg)) return TRUE;
-			}else if (const PCImage image=CImage::__getActive__())
+			}else if (const PCImage image=CImage::GetActive())
 				// active DOS (e.g. MDOS when a WebPage is focused)
 				if (::TranslateAccelerator(m_hWnd,image->dos->menu.hAccel,pMsg)) return TRUE;
 		}

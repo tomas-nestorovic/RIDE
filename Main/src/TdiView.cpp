@@ -259,7 +259,7 @@
 		const PView view=tab->view;
 		// - showing the Menus associated with the DOS and View 
 		if (IS_TAB_PART_OF_DOS(tab)){ // the Tab is part of a DOS (e.g. a WebPage is usually not part of any DOS)
-			CImage::__getActive__()->dos->menu.__show__(MENU_POSITION_DOS);
+			CImage::GetActive()->dos->menu.__show__(MENU_POSITION_DOS);
 			tab->menu.__show__(MENU_POSITION_VIEW);
 		}else
 			tab->menu.__show__(MENU_POSITION_DOS); // showing the View's Menu at the DOS's position
@@ -279,7 +279,7 @@
 		CTdiCtrl::GetCurrentTabContentRect( ( (CTdiView *)pTdi )->m_hWnd, &r );
 		::OffsetRect( &r, r.left, r.top );
 		CCreateContext cc;
-			cc.m_pCurrentDoc=CImage::__getActive__();
+			cc.m_pCurrentDoc=CImage::GetActive();
 		view->Create(	nullptr, nullptr,
 						(AFX_WS_DEFAULT_VIEW & ~WS_BORDER) | WS_CLIPSIBLINGS,
 						r, (CTdiView *)pTdi, 0,
@@ -302,7 +302,7 @@
 		( (CMainWindow *)app.m_pMainWnd )->SetActiveView((CTdiView *)pTdi); // neccessary to call manually as otherwise no view will be active after closing the CurrentTab (and with no active documents, no command will be propagated to the document, etc.)
 		((CTdiView *)pTdi)->pCurrentTab=nullptr;
 		if (IS_TAB_PART_OF_DOS(tab)) // the Tab is part of a DOS (e.g. a WebPage is usually not part of any DOS)
-			if (CImage *const image=CImage::__getActive__())
+			if (CImage *const image=CImage::GetActive())
 				image->RemoveView(view); // View added into the list when shown, see CCreateContext
 		::DestroyWindow( view->m_hWnd );
 		// - hiding the Tab's ToolBar (e.g. the FileManager's ToolBar)
@@ -313,7 +313,7 @@
 		// - hiding the Menus associated with the DOS and View 
 		tab->menu.__hide__();
 		if (IS_TAB_PART_OF_DOS(tab))
-			CImage::__getActive__()->dos->menu.__hide__();
+			CImage::GetActive()->dos->menu.__hide__();
 		// - resetting the StatusBar
 		__resetStatusBar__();
 		// - displaying the introductory GuidePost if this was the last Tab in the TDI

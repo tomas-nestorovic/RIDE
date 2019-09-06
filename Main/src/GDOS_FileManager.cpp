@@ -136,7 +136,7 @@
 	bool WINAPI CGDOS::CGdosFileManagerView::__onStdParam1Changed__(PVOID file,int newWordValue){
 		const PDirectoryEntry de=(PDirectoryEntry)file;
 		de->__setStdParameter1__(newWordValue);
-		if (const PGdosSectorData pData=(PGdosSectorData)CImage::__getActive__()->GetSectorData(de->firstSector.__getChs__()))
+		if (const PGdosSectorData pData=(PGdosSectorData)CImage::GetActive()->GetSectorData(de->firstSector.__getChs__()))
 			pData->stdZxType=de->etc.stdZxType;
 		__markDirectorySectorAsDirty__(file,0);
 		return true;
@@ -144,7 +144,7 @@
 	bool WINAPI CGDOS::CGdosFileManagerView::__onStdParam2Changed__(PVOID file,int newWordValue){
 		const PDirectoryEntry de=(PDirectoryEntry)file;
 		de->__setStdParameter2__(newWordValue);
-		if (const PGdosSectorData pData=(PGdosSectorData)CImage::__getActive__()->GetSectorData(de->firstSector.__getChs__()))
+		if (const PGdosSectorData pData=(PGdosSectorData)CImage::GetActive()->GetSectorData(de->firstSector.__getChs__()))
 			pData->stdZxType=de->etc.stdZxType;
 		__markDirectorySectorAsDirty__(file,0);
 		return true;
@@ -187,7 +187,7 @@
 
 	bool WINAPI CGDOS::CGdosFileManagerView::CExtensionEditor::__onChanged__(PVOID file,CPropGridCtrl::TEnum::UValue newExt){
 		// changes the "extension" of selected File
-		const PGDOS gdos=(PGDOS)CDos::__getFocused__();
+		const PGDOS gdos=(PGDOS)CDos::GetFocused();
 		// - validating File's new Name and Extension
 		TDirectoryEntry *const de=(PDirectoryEntry)file;
 		TCHAR bufOldName[GDOS_FILE_NAME_LENGTH_MAX+1];
@@ -292,7 +292,7 @@ error:			*de=tmp; // recovering the original DirectoryEntry
 	}
 	CFileManagerView::PEditorBase CGDOS::CGdosFileManagerView::CExtensionEditor::Create(PDirectoryEntry de){
 		// creates and returns the Editor of File "extension"
-		const PDos dos=CDos::__getFocused__();
+		const PDos dos=CDos::GetFocused();
 		const CSpectrumFileManagerView *const pZxFileManager=(CSpectrumFileManagerView *)dos->pFileManager;
 		const PEditorBase result=pZxFileManager->__createStdEditor__(
 			de, &( data=de->fileType ), sizeof(data),
@@ -366,7 +366,7 @@ error:			*de=tmp; // recovering the original DirectoryEntry
 		// - showing the Dialog and processing its result
 		if (d.DoModal()==IDOK){
 			de->etc=d.etc;
-			((PGDOS)CDos::__getFocused__())->__markDirectorySectorAsDirty__(de);
+			((PGDOS)CDos::GetFocused())->__markDirectorySectorAsDirty__(de);
 			return true;
 		}else
 			return false;
@@ -374,5 +374,5 @@ error:			*de=tmp; // recovering the original DirectoryEntry
 
 	CFileManagerView::PEditorBase CGDOS::CGdosFileManagerView::CEtcEditor::Create(PDirectoryEntry de){
 		// creates and returns an Editor of File's Etc information
-		return CDos::__getFocused__()->pFileManager->__createStdEditorWithEllipsis__( de, __onEllipsisClick__ );
+		return CDos::GetFocused()->pFileManager->__createStdEditorWithEllipsis__( de, __onEllipsisClick__ );
 	}

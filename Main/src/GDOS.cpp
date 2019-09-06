@@ -34,7 +34,7 @@
 	TPhysicalAddress CGDOS::TSectorInfo::__getChs__() const{
 		// converts to and returns the PhysicalAddress of this Sector
 		const BYTE cyl=track&127, head=(track&128)!=0;
-		const TPhysicalAddress chs={ cyl, head, {cyl,CImage::__getActive__()->dos->sideMap[head],sector,GDOS_SECTOR_LENGTH_STD_CODE} };
+		const TPhysicalAddress chs={ cyl, head, {cyl,CImage::GetActive()->dos->sideMap[head],sector,GDOS_SECTOR_LENGTH_STD_CODE} };
 		return chs;
 	}
 

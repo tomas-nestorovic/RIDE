@@ -454,7 +454,7 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 
 	void CImage::__dump__() const{
 		// dumps this Image to a chosen target
-		const PDos dos=__getActive__()->dos;
+		const PDos dos=GetActive()->dos;
 		// - defining the Dialog
 		class CDumpDialog sealed:public CDialog{
 			const PDos dos;

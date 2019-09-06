@@ -99,7 +99,7 @@
 
 	bool WINAPI CSpectrumDos::CSpectrumFileManagerView::CSingleCharExtensionEditor::__onChanged__(PVOID file,CPropGridCtrl::TEnum::UValue newExt){
 		// changes the single-character Extension of given File
-		const PDos dos=CDos::__getFocused__();
+		const PDos dos=CDos::GetFocused();
 		// - getting File's original Name and Extension
 		TCHAR bufOldName[MAX_PATH];
 		dos->GetFileNameAndExt(file,bufOldName,nullptr);
@@ -130,7 +130,7 @@
 	}
 	CFileManagerView::PEditorBase CSpectrumDos::CSpectrumFileManagerView::CSingleCharExtensionEditor::Create(PFile file){
 		// creates and returns an Editor of File's single-character Extension
-		const PDos dos=CDos::__getFocused__();
+		const PDos dos=CDos::GetFocused();
 		const CSpectrumFileManagerView *const pZxFileManager=(CSpectrumFileManagerView *)dos->pFileManager;
 		TCHAR bufExt[2];
 		dos->GetFileNameAndExt(file,nullptr,bufExt);
@@ -154,7 +154,7 @@
 
 	bool WINAPI CSpectrumDos::CSpectrumFileManagerView::CVarLengthFileNameEditor::__onChanged__(PVOID file,HWND,PVOID,short){
 		// changes specified File's Name
-		const PDos dos=CDos::__getFocused__();
+		const PDos dos=CDos::GetFocused();
 		const CSpectrumFileManagerView *const pZxFileManager=(CSpectrumFileManagerView *)dos->pFileManager;
 		// - getting File's original Name and Extension
 		TCHAR bufOldExt[MAX_PATH];
@@ -174,7 +174,7 @@
 
 	CFileManagerView::PEditorBase CSpectrumDos::CSpectrumFileManagerView::CVarLengthFileNameEditor::Create(PFile file,BYTE lengthMax,char paddingChar){
 		// creates and returns the Editor of File Name
-		const PDos dos=CDos::__getFocused__();
+		const PDos dos=CDos::GetFocused();
 		const CSpectrumFileManagerView *const pZxFileManager=(CSpectrumFileManagerView *)dos->pFileManager;
 		ASSERT(lengthMax<sizeof(bufOldName)/sizeof(TCHAR));
 		#ifdef UNICODE
@@ -200,7 +200,7 @@
 
 	CFileManagerView::PEditorBase CSpectrumDos::CSpectrumFileManagerView::CStdParamEditor::Create(PFile file,PWORD pwParam,CPropGridCtrl::TInteger::TOnValueConfirmed fnOnConfirmed){
 		// creates and returns the Editor of File Name
-		const PDos dos=CDos::__getFocused__();
+		const PDos dos=CDos::GetFocused();
 		const CSpectrumFileManagerView *const pZxFileManager=(CSpectrumFileManagerView *)dos->pFileManager;
 		const PEditorBase result=pZxFileManager->__createStdEditorForWordValue__( file, pwParam, fnOnConfirmed );
 		::SendMessage( result->hEditor, WM_SETFONT, (WPARAM)pZxFileManager->zxRom.font.m_hObject, 0 );

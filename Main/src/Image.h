@@ -238,7 +238,7 @@
 
 		static CPtrList known; // list of known Images (registered in CRideApp::InitInstance)
 
-		static CImage *__getActive__();
+		static CImage *GetActive();
 		static PCProperties __determineTypeByExtension__(LPCTSTR extension);
 		static BYTE __populateComboBoxWithCompatibleMedia__(HWND hComboBox,WORD dosSupportedMedia,PCProperties imageProperties);
 

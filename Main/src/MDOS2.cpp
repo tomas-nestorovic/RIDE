@@ -506,7 +506,7 @@
 		// - showing the Dialog and processing its result
 		if (d.DoModal()==IDOK){
 			attributes=d.attributes;
-			((PMDOS2)CImage::__getActive__()->dos)->__markDirectorySectorAsDirty__(this);
+			((PMDOS2)CImage::GetActive()->dos)->__markDirectorySectorAsDirty__(this);
 			return true;
 		}else
 			return false;

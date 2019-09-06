@@ -455,7 +455,7 @@
 
 	bool CFileManagerView::__markDirectorySectorAsDirty__(PVOID dirEntry,int){
 		// marks Directory Sector that contains specified DirectoryEntry as "dirty"
-		CDos::__getFocused__()->__markDirectorySectorAsDirty__(dirEntry);
+		CDos::GetFocused()->__markDirectorySectorAsDirty__(dirEntry);
 		return true;
 	}
 

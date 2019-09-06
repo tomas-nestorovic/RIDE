@@ -133,10 +133,10 @@
 	}
 
 	bool WINAPI CTRDOS503::CTrdosFileManagerView::__onStdParam1Changed__(PVOID file,int newWord){
-		return ((PTRDOS503)CDos::__getFocused__())->__setStdParameter1__((PDirectoryEntry)file,newWord);
+		return ((PTRDOS503)CDos::GetFocused())->__setStdParameter1__((PDirectoryEntry)file,newWord);
 	}
 	bool WINAPI CTRDOS503::CTrdosFileManagerView::__onStdParam2Changed__(PVOID file,int newWord){
-		return ((PTRDOS503)CDos::__getFocused__())->__setStdParameter2__((PDirectoryEntry)file,newWord);
+		return ((PTRDOS503)CDos::GetFocused())->__setStdParameter2__((PDirectoryEntry)file,newWord);
 	}
 	CFileManagerView::PEditorBase CTRDOS503::CTrdosFileManagerView::CreateFileInformationEditor(PFile file,BYTE infoId) const{
 		// creates and returns Editor of File's selected Information; returns Null if Information cannot be edited

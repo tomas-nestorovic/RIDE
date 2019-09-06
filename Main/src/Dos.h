@@ -306,7 +306,7 @@
 
 		static CPtrList known; // list of known DOSes (registered in CRideApp::InitInstance)
 
-		static PDos __getFocused__();
+		static PDos GetFocused();
 		static void __errorCannotDoCommand__(TStdWinError cause);
 
 		CFileManagerView *const pFileManager;
