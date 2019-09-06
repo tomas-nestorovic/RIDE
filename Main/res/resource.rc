@@ -181,6 +181,7 @@ BEGIN
         BEGIN
             MENUITEM "Insert tape...",              ID_TAPE_OPEN
             MENUITEM "Insert blank tape...",        ID_TAPE_NEW
+            MENUITEM "Append tape...",              ID_TAPE_APPEND
             MENUITEM SEPARATOR
             MENUITEM "Eject\tCtrl+F4",              ID_TAPE_CLOSE
         END
@@ -277,6 +278,7 @@ BEGIN
         BEGIN
             MENUITEM "Insert tape...",              ID_TAPE_OPEN
             MENUITEM "Insert blank tape...",        ID_TAPE_NEW
+            MENUITEM "Append tape...",              ID_TAPE_APPEND
             MENUITEM SEPARATOR
             MENUITEM "Eject\tCtrl+F4",              ID_TAPE_CLOSE
         END
@@ -380,6 +382,7 @@ BEGIN
         BEGIN
             MENUITEM "Insert tape...",              ID_TAPE_OPEN
             MENUITEM "Insert blank tape...",        ID_TAPE_NEW
+            MENUITEM "Append tape...",              ID_TAPE_APPEND
             MENUITEM SEPARATOR
             MENUITEM "Eject\tCtrl+F4",              ID_TAPE_CLOSE
         END
@@ -1613,6 +1616,7 @@ BEGIN
     ID_DOS_FORMAT           "Add empty cylinders to the disk"
     ID_OPEN_AS              "Open existing document and choose its DOS manually"
     ID_TAPE_NEW             "Create and insert a new tape"
+    ID_TAPE_APPEND          "Copy content of another tape to the end of this tape"
     ID_TAPE_OPEN            "Insert existing tape"
 END
 

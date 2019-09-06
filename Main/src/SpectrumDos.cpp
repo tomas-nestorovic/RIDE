@@ -213,7 +213,7 @@
 							return TCmdResult::DONE; // ... we are done (successfully)
 					// . inserting a blank Tape (by creating a new underlying physical file and opening it)
 					CFile( fileName, CFile::modeCreate|CFile::shareDenyRead|CFile::typeBinary ).Close(); // creating the underlying file on local disk
-					( new CTape(fileName,this,true) )->__toggleWriteProtection__(); // new Tape is not WriteProtected
+					( CTape::pSingleInstance=new CTape(fileName,this,true) )->__toggleWriteProtection__(); // new Tape is not WriteProtected
 					return TCmdResult::DONE;
 				}else
 					return TCmdResult::DONE_REDRAW;
@@ -238,7 +238,46 @@
 						if (ProcessCommand(ID_TAPE_CLOSE)==TCmdResult::REFUSED) // if Tape not ejected ...
 							return TCmdResult::DONE; // ... we are done (successfully)
 					// . inserting a recorded Tape (by opening its underlying physical file)
-					new CTape(fileName,this,true); // inserted Tape is WriteProtected by default
+					CTape::pSingleInstance=new CTape(fileName,this,true); // inserted Tape is WriteProtected by default
+					return TCmdResult::DONE;
+				}else
+					return TCmdResult::DONE_REDRAW;
+			}
+			case ID_TAPE_APPEND:{
+				// copying content of another tape to the end of this tape
+				TCHAR fileName[MAX_PATH];
+				*fileName='\0';
+				CString title;
+					title.LoadString(AFX_IDS_OPENFILE);
+				CFileDialog d( TRUE, TAPE_EXTENSION, nullptr, OFN_FILEMUSTEXIST, _T("Tape (*") TAPE_EXTENSION _T(")|*") TAPE_EXTENSION _T("|") );
+					d.m_ofn.lStructSize=sizeof(OPENFILENAME); // to show the "Places bar"
+					d.m_ofn.nFilterIndex=1;
+					d.m_ofn.lpstrTitle=title;
+					d.m_ofn.lpstrFile=fileName;
+				if (d.DoModal()==IDOK){
+					// . opening the Tape to append
+					//const std::unique_ptr<const CTape> tape(new CTape(fileName,this,false));
+					const CTape *const tape=new CTape(fileName,this,false);
+						// . appending each File (or block)
+						if (const auto pdt=tape->BeginDirectoryTraversal(ZX_DIR_ROOT))
+							for( BYTE blockData[65536]; const PCFile file=pdt->GetNextFileOrSubdir(); ){
+								TCHAR nameAndExt[MAX_PATH];
+								PFile f;
+								if (const TStdWinError err=	CTape::pSingleInstance->ImportFile(
+																&CMemFile(blockData,sizeof(blockData)), 
+																tape->ExportFile( file, &CMemFile(blockData,sizeof(blockData)), sizeof(blockData), nullptr ),
+																tape->GetFileExportNameAndExt( file, false, nameAndExt ),
+																0, f
+															)
+								){
+									TCHAR msg[200+MAX_PATH];
+									::wsprintf( msg, _T("Failed to append block \"%s\""), nameAndExt );
+									Utils::Information( msg, err, _T("Appended only partly.") );
+									break;
+								}
+							}
+					CTdiCtrl::RemoveTab( TDI_HWND, &tape->pFileManager->tab );
+					image->UpdateAllViews(nullptr);
 					return TCmdResult::DONE;
 				}else
 					return TCmdResult::DONE_REDRAW;
@@ -324,6 +363,9 @@
 	bool CSpectrumDos::UpdateCommandUi(WORD cmd,CCmdUI *pCmdUI) const{
 		// True <=> given Command-specific user interface successfully updated, otherwise False
 		switch (cmd){
+			case ID_TAPE_APPEND:
+				pCmdUI->Enable(CTape::pSingleInstance!=nullptr && !CTape::pSingleInstance->IsWriteProtected());
+				return true;
 			case ID_TAPE_CLOSE:
 				pCmdUI->Enable(CTape::pSingleInstance!=nullptr);
 				return true;

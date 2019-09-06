@@ -148,7 +148,8 @@
 #define ID_OPEN_AS                      40101
 #define ID_DEFAULT2                     40102
 #define ID_TAPE_NEW                     40108
-#define ID_TAPE_OPEN                    40109
+#define ID_TAPE_APPEND                  40109
+#define ID_TAPE_OPEN                    40110
 #define ID_ZX_PREVIEWASSCREEN           40112
 #define ID_MDOS_AUTODETECT              40134
 #define ID_MDOS_VERSION1                40135

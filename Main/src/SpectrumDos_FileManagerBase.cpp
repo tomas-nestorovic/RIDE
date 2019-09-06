@@ -77,7 +77,7 @@
 							if (DOS->ProcessCommand(ID_TAPE_CLOSE)==TCmdResult::REFUSED) // if Tape not ejected ...
 								return ERROR_CANCELLED; // ... we are done
 						// : inserting a recorded Tape (by opening its underlying physical file)
-						new CTape( pathAndName, (CSpectrumDos *)DOS, false ); // inserted Tape is WriteProtected by default
+						CTape::pSingleInstance=new CTape( pathAndName, (CSpectrumDos *)DOS, false ); // inserted Tape is WriteProtected by default
 						rImportedFile=nullptr; // File processed another way than importing
 						return ERROR_SUCCESS;
 					}

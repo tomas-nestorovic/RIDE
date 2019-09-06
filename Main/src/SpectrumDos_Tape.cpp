@@ -21,12 +21,12 @@
 		dos=this; // linking the DOS and Image
 		(HACCEL)menu.hAccel=diskDos->menu.hAccel; // for DiskDos accelerators to work even if switched to Tape
 		SetPathName(fileName,FALSE);
-		pSingleInstance=this;
 	}
 
 	CSpectrumDos::CTape::~CTape(){
 		// dtor
-		pSingleInstance=nullptr; // no longer accepting any requests
+		if (pSingleInstance==this)
+			pSingleInstance=nullptr; // no longer accepting any requests
 		if (CScreenPreview::pSingleInstance && CScreenPreview::pSingleInstance->rFileManager.tab.dos==this)
 			CScreenPreview::pSingleInstance->DestroyWindow();
 		if (CBasicPreview::pSingleInstance && &CBasicPreview::pSingleInstance->rFileManager==pFileManager)
