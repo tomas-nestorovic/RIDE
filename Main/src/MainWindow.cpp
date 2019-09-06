@@ -81,12 +81,17 @@
 
 	void CMainWindow::__resetStatusBar__(){
 		// resets the MainWindow's StatusBar
-		static const UINT Indicator=ID_SEPARATOR;
-		( (CMainWindow *)app.m_pMainWnd )->statusBar.SetIndicators(&Indicator,1);
+		CStatusBar &rsb=( (CMainWindow *)app.m_pMainWnd )->statusBar;
+		if (rsb.m_hWnd){
+			static const UINT Indicator=ID_SEPARATOR;
+			rsb.SetIndicators(&Indicator,1);
+		}
 	}
 	void CMainWindow::__setStatusBarText__(LPCTSTR text){
 		// sets the MainWindow's StatusBar main part to the specified Text
-		( (CMainWindow *)app.m_pMainWnd )->statusBar.SetPaneText(0,text);
+		CStatusBar &rsb=( (CMainWindow *)app.m_pMainWnd )->statusBar;
+		if (rsb.m_hWnd)
+			rsb.SetPaneText(0,text);
 	}
 
 	
