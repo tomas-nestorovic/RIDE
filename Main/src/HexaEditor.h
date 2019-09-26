@@ -7,7 +7,7 @@
 		::SendMessage( hWnd, EM_GETSEL, (WPARAM)(pOutSelA), (LPARAM)(pOutSelZ) )
 	#define HexaEditor_SetSelection(hWnd,selA,selZ)\
 		::SendMessage( hWnd, EM_SETSEL, selA, selZ )
-	#define HexaEditor_GetCursorPos(hWnd)\
+	#define HexaEditor_GetCaretPos(hWnd)\
 		HexaEditor_GetSelection( hWnd, nullptr, nullptr )
 
 	class CRideFont; // forward
@@ -47,17 +47,18 @@
 		int nRowsDisplayed;
 		int nRowsOnPage;
 		HWND hPreviouslyFocusedWnd;
-		struct TCursor sealed{
-			bool ascii; // True <=> Cursor is in the Ascii listing section
+		struct TCaret sealed{
+			bool ascii; // True <=> Caret is in the Ascii listing section
 			bool hexaLow; // True <=> ready to modify the lower half-byte in hexa mode
 			int selectionA; // beginning (including)
 			union{
 				int position; // current logical position in underlying File
-				int selectionZ; // Selection end (excluding); obsolete, don't use
+				const int selectionZ; // Selection end (excluding)
 			};
-			TCursor(int position); // ctor
+			TCaret(int position); // ctor
+			TCaret &operator=(const TCaret &r);
 			void __detectNewSelection__();
-		} cursor;
+		} caret;
 		class CBookmarks sealed:CDWordArray{
 		public:
 			void __addBookmark__(int logPos);
@@ -79,7 +80,7 @@
 		int __logicalPositionFromPoint__(const POINT &rPoint,bool *pOutAsciiArea) const;
 		int __scrollToRow__(int row);
 		void __refreshVertically__();
-		void __refreshCursorDisplay__() const;
+		void __refreshCaretDisplay__() const;
 		void __showMessage__(LPCTSTR msg) const;
 	protected:
 		const HMENU customSelectSubmenu, customResetSubmenu, customGotoSubmenu;

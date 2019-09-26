@@ -12,12 +12,16 @@
 
 
 
-	CHexaEditor::TCursor::TCursor(int position)
+	CHexaEditor::TCaret::TCaret(int position)
 		// ctor
 		: ascii(false) , hexaLow(true)
-		, selectionA(position) , position(position) { // nothing selected
+		, selectionA(position) , selectionZ(position) { // nothing selected
 	}
-	void CHexaEditor::TCursor::__detectNewSelection__(){
+	CHexaEditor::TCaret &CHexaEditor::TCaret::operator=(const TCaret &r){
+		// copy assignment operator
+		return *(TCaret *)(  ::memcpy( this, &r, sizeof(*this) )  );
+	}
+	void CHexaEditor::TCaret::__detectNewSelection__(){
 		// detects and sets the beginning of new Selection
 		if (::GetAsyncKeyState(VK_SHIFT)>=0) // if Shift NOT pressed ...
 			selectionA=position;	// ... we have detected a new Selection
@@ -87,7 +91,7 @@
 		: font(FONT_COURIER_NEW,105,false,true)
 		, customSelectSubmenu(customSelectSubmenu) , customResetSubmenu(customResetSubmenu) , customGotoSubmenu(customGotoSubmenu)
 		, hDefaultAccelerators(::LoadAccelerators(app.m_hInstance,MAKEINTRESOURCE(IDR_HEXAEDITOR)))
-		, cursor(0) , param(param) , hPreviouslyFocusedWnd(0)
+		, caret(0) , param(param) , hPreviouslyFocusedWnd(0)
 		, f(nullptr) , pContentAdviser(nullptr)
 		, nBytesInRow(16) , editable(true) , addrLength(ADDRESS_FORMAT_LENGTH)
 		, emphases((PEmphasis)&TEmphasis::Terminator) {
@@ -114,8 +118,8 @@
 		// enables/disables possibility to edit the content of the File (see the Reset function)
 		editable=_editable;
 		if (::IsWindow(m_hWnd)){ // may be window-less if the owner is window-less
-			cursor=TCursor( __firstByteInRowToLogicalPosition__(GetScrollPos(SB_VERT)) ); // resetting the Cursor and thus the Selection
-			app.m_pMainWnd->SetFocus(); // for the Cursor to disappear
+			caret=TCaret( __firstByteInRowToLogicalPosition__(GetScrollPos(SB_VERT)) ); // resetting the Caret and thus the Selection
+			app.m_pMainWnd->SetFocus(); // for the Caret to disappear
 			Invalidate(FALSE);
 		}
 	}
@@ -161,7 +165,7 @@
 			} Default;
 			pContentAdviser=&Default;
 		}
-		cursor=TCursor(0); // resetting the Cursor and Selection
+		caret=TCaret(0); // resetting the Caret and Selection
 		SetLogicalBounds( _minFileSize, _maxFileSize );
 		SetLogicalSize(f->GetLength());
 		if (::IsWindow(m_hWnd)){ // may be window-less if the owner is window-less
@@ -262,24 +266,24 @@
 	#define HEXA_FORMAT_LENGTH	3
 	#define HEXA_SPACE_LENGTH	2
 
-	void CHexaEditor::__refreshCursorDisplay__() const{
-		// shows Cursor on screen at position that corresponds with Cursor's actual Position in the underlying File content (e.g. the 12345-th Byte of the File)
+	void CHexaEditor::__refreshCaretDisplay__() const{
+		// shows Caret on screen at position that corresponds with Caret's actual Position in the underlying File content (e.g. the 12345-th Byte of the File)
 		int currRecordStart, currRecordLength=1;
-		pContentAdviser->GetRecordInfo( cursor.position, &currRecordStart, &currRecordLength, nullptr );
-		const div_t d=div(cursor.position-currRecordStart,currRecordLength);
+		pContentAdviser->GetRecordInfo( caret.position, &currRecordStart, &currRecordLength, nullptr );
+		const div_t d=div(caret.position-currRecordStart,currRecordLength);
 		const int iScrollY=GetScrollPos(SB_VERT);
 		//if (d.quot>=iScrollY){ // commented out as always guaranteed
-			// Cursor "under" the header
+			// Caret "under" the header
 			POINT pos={	d.rem % nBytesInRow, // translated below to a particular pixel position
-						(HEADER_LINES_COUNT + __logicalPositionToRow__(cursor.position) - iScrollY)*font.charHeight // already a particular Y pixel position
+						(HEADER_LINES_COUNT + __logicalPositionToRow__(caret.position) - iScrollY)*font.charHeight // already a particular Y pixel position
 					};
-			if (cursor.ascii) // Cursor in the Ascii area
+			if (caret.ascii) // Caret in the Ascii area
 				pos.x=(addrLength+ADDRESS_SPACE_LENGTH+HEXA_FORMAT_LENGTH*nBytesInRow+HEXA_SPACE_LENGTH+pos.x)*font.charAvgWidth;
-			else // Cursor in the Hexa area
+			else // Caret in the Hexa area
 				pos.x=(addrLength+ADDRESS_SPACE_LENGTH+HEXA_FORMAT_LENGTH*pos.x)*font.charAvgWidth;
 			SetCaretPos(pos);
 		/*}else{ // commented out as it never occurs
-			// Cursor "above" the header
+			// Caret "above" the header
 			static const POINT Pos={ -100, -100 };
 			SetCaretPos(Pos);
 		}*/
@@ -322,7 +326,7 @@
 	LRESULT CHexaEditor::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
 		// window procedure
 		int i;
-		const int cursorPos0=cursor.position;
+		const int caretPos0=caret.position;
 		switch (msg){
 			case WM_MOUSEACTIVATE:
 				// preventing the focus from being stolen by the parent
@@ -342,112 +346,112 @@
 				const bool ctrl=::GetKeyState(VK_CONTROL)<0;
 				switch (wParam){
 					case VK_LEFT:{
-						cursor.position--;
-cursorCorrectlyMoveTo:	// . adjusting the Cursor's Position
-						cursor.hexaLow=true; // the next keystroke will modify the lower four bits of current hexa-value
-						if (cursor.position<0) cursor.position=0;
-						else if (cursor.position>maxFileSize) cursor.position=maxFileSize;
+						caret.position--;
+caretCorrectlyMoveTo:	// . adjusting the Caret's Position
+						caret.hexaLow=true; // the next keystroke will modify the lower four bits of current hexa-value
+						if (caret.position<0) caret.position=0;
+						else if (caret.position>maxFileSize) caret.position=maxFileSize;
 						// . adjusting an existing Selection if Shift pressed
 						if (!mouseDragged){ // if mouse is being -Dragged, the beginning of a Selection has already been detected
-							if (cursor.selectionA!=cursorPos0) // if there has been a Selection before ...
+							if (caret.selectionA!=caretPos0) // if there has been a Selection before ...
 								RepaintData(); // ... invalidating the content as the Selection may no longer be valid (e.g. may be deselected)
-							cursor.__detectNewSelection__();
+							caret.__detectNewSelection__();
 						}
-cursorRefresh:			// . refreshing the Cursor
+caretRefresh:			// . refreshing the Caret
 						HideCaret();
-							// : scrolling if Cursor has been moved to an invisible part of the File content
-							const int iRow=__logicalPositionToRow__(cursor.position), iScrollY=GetScrollPos(SB_VERT);
+							// : scrolling if Caret has been moved to an invisible part of the File content
+							const int iRow=__logicalPositionToRow__(caret.position), iScrollY=GetScrollPos(SB_VERT);
 							if (iRow<iScrollY) __scrollToRow__(iRow);
 							else if (iRow>=iScrollY+nRowsOnPage) __scrollToRow__(iRow-nRowsOnPage+1);
 							// : invalidating the content if Selection has (or is being) changed
-							if (cursor.position!=cursorPos0) // yes, the Cursor has moved
+							if (caret.position!=caretPos0) // yes, the Caret has moved
 								if (mouseDragged || ::GetAsyncKeyState(VK_SHIFT)<0) // yes, Selection is being edited (by dragging the mouse or having the Shift key pressed)
 									RepaintData();
-							// : displaying the Cursor
-							__refreshCursorDisplay__();
+							// : displaying the Caret
+							__refreshCaretDisplay__();
 						ShowCaret();
 						return 0;
 					}
 					case VK_RIGHT:
-						cursor.position++;
-						goto cursorCorrectlyMoveTo;
+						caret.position++;
+						goto caretCorrectlyMoveTo;
 					case VK_UP:{
-						i=1; // move Cursor one row up
-moveCursorUp:			const int iRow=__logicalPositionToRow__(cursor.position);
+						i=1; // move Caret one row up
+moveCaretUp:			const int iRow=__logicalPositionToRow__(caret.position);
 						if (ctrl){
 							const int iScrollY=__scrollToRow__(GetScrollPos(SB_VERT)-i);
-							if (iRow<iScrollY+nRowsOnPage) goto cursorRefresh;
+							if (iRow<iScrollY+nRowsOnPage) goto caretRefresh;
 						}
 						const int currRowStart=__firstByteInRowToLogicalPosition__(iRow);
 						const int targetRowStart=__firstByteInRowToLogicalPosition__(iRow-i);
-						cursor.position -=	std::max<>(
-												cursor.position-__firstByteInRowToLogicalPosition__(iRow-i+1)+1,
+						caret.position -=	std::max<>(
+												caret.position-__firstByteInRowToLogicalPosition__(iRow-i+1)+1,
 													// ..........			Target row
 													// .................
 													// ..........
-													// .............C...	Current row with Cursor
+													// .............C...	Current row with Caret
 												currRowStart-targetRowStart
 													// .................	..........			Target row
 													// ..........			................
 													// .................	..........
-													// .......C..			.......C........	Current row with Cursor
+													// .......C..			.......C........	Current row with Caret
 											);
-						goto cursorCorrectlyMoveTo;
+						goto caretCorrectlyMoveTo;
 					}
 					case VK_DOWN:{
-						i=1; // move Cursor one row down
-moveCursorDown:			const int iRow=__logicalPositionToRow__(cursor.position);
+						i=1; // move Caret one row down
+moveCaretDown:			const int iRow=__logicalPositionToRow__(caret.position);
 						if (ctrl){
 							const int iScrollY=__scrollToRow__(GetScrollPos(SB_VERT)+i);
-							if (iRow>=iScrollY) goto cursorRefresh;
+							if (iRow>=iScrollY) goto caretRefresh;
 						}
 						const int currRowStart=__firstByteInRowToLogicalPosition__(iRow);
 						const int targetRowStart=__firstByteInRowToLogicalPosition__(iRow+i);
-						cursor.position +=	std::min<>(
+						caret.position +=	std::min<>(
 												targetRowStart-currRowStart,
-													// .......C..			.......C........	Current row with Cursor
+													// .......C..			.......C........	Current row with Caret
 													// .................	..........
 													// ..........			................
 													// .................	..........			Target row
-												__firstByteInRowToLogicalPosition__(iRow+i+1)-cursor.position-1
-													// .............C...	Current row with Cursor
+												__firstByteInRowToLogicalPosition__(iRow+i+1)-caret.position-1
+													// .............C...	Current row with Caret
 													// ..........
 													// .................
 													// ..........			Target row
 											);
-						goto cursorCorrectlyMoveTo;
+						goto caretCorrectlyMoveTo;
 					}
 					case VK_PRIOR:	// page up
-						i=nRowsOnPage-ctrl; // move Cursor N rows up
-						goto moveCursorUp;
+						i=nRowsOnPage-ctrl; // move Caret N rows up
+						goto moveCaretUp;
 					case VK_NEXT:	// page down
-						i=nRowsOnPage-ctrl; // move Cursor N rows down
-						goto moveCursorDown;
+						i=nRowsOnPage-ctrl; // move Caret N rows down
+						goto moveCaretDown;
 					case VK_HOME:
-						cursor.position=( ctrl ? 0 : __firstByteInRowToLogicalPosition__(__logicalPositionToRow__(cursor.position)) );
-						goto cursorCorrectlyMoveTo;
+						caret.position=( ctrl ? 0 : __firstByteInRowToLogicalPosition__(__logicalPositionToRow__(caret.position)) );
+						goto caretCorrectlyMoveTo;
 					case VK_END:
-						cursor.position=( ctrl ? f->GetLength() : __firstByteInRowToLogicalPosition__(__logicalPositionToRow__(cursor.position)+1)-1 );
-						goto cursorCorrectlyMoveTo;
+						caret.position=( ctrl ? f->GetLength() : __firstByteInRowToLogicalPosition__(__logicalPositionToRow__(caret.position)+1)-1 );
+						goto caretCorrectlyMoveTo;
 					case VK_DELETE:{
-editDelete:				// deleting the Byte after Cursor, or deleting the Selection
-						// . if Selection not set, setting it as the Byte immediately after Cursor
-						if (cursor.selectionA==cursor.position)
-							if (cursor.position<f->GetLength()) cursor.selectionA=cursor.position++;
+editDelete:				// deleting the Byte after Caret, or deleting the Selection
+						// . if Selection not set, setting it as the Byte immediately after Caret
+						if (caret.selectionA==caret.position)
+							if (caret.position<f->GetLength()) caret.selectionA=caret.position++;
 							else return 0;
-deleteSelection:		int posSrc=std::max<>(cursor.selectionA,cursor.position), posDst=std::min<>(cursor.selectionA,cursor.position);
+deleteSelection:		int posSrc=std::max<>(caret.selectionA,caret.position), posDst=std::min<>(caret.selectionA,caret.position);
 						// . checking if there are any Bookmarks selected
 						if (bookmarks.__getNearestNextBookmarkPosition__(posDst)<posSrc){
 							if (Utils::QuestionYesNo(_T("Sure to delete selected bookmarks?"),MB_DEFBUTTON2)){
 								for( int pos; (pos=bookmarks.__getNearestNextBookmarkPosition__(posDst))<posSrc; bookmarks.__removeBookmark__(pos) );
-								cursor.selectionA=cursor.position; // cancelling any Selection
+								caret.selectionA=caret.position; // cancelling any Selection
 								RepaintData();
 							}
 							SetFocus();
 							return 0;
 						}
 						// . moving the content "after" Selection "to" the position of the Selection
-						cursor.selectionA = cursor.position = posDst; // moving the Cursor and cancelling any Selection
+						caret.selectionA = caret.position = posDst; // moving the Caret and cancelling any Selection
 						for( int nBytesToMove=f->GetLength()-posSrc; nBytesToMove; ){
 							BYTE buf[65536];
 							f->Seek(posSrc,CFile::begin);
@@ -470,13 +474,13 @@ deleteSelection:		int posSrc=std::max<>(cursor.selectionA,cursor.position), posD
 						// . refreshing the scrollbar
 						__refreshVertically__();
 						RepaintData();
-						goto cursorRefresh;
+						goto caretRefresh;
 					}
 					case VK_BACK:
-						// deleting the Byte before Cursor, or deleting the Selection
-						// . if Selection not set, setting it as the Byte immediately before Cursor
-						if (cursor.selectionA==cursor.position)
-							if (cursor.position) cursor.selectionA=cursor.position-1;
+						// deleting the Byte before Caret, or deleting the Selection
+						// . if Selection not set, setting it as the Byte immediately before Caret
+						if (caret.selectionA==caret.position)
+							if (caret.position) caret.selectionA=caret.position-1;
 							else return 0;
 						// . moving the content "after" Selection "to" the position of the Selection
 						goto deleteSelection;
@@ -486,24 +490,24 @@ deleteSelection:		int posSrc=std::max<>(cursor.selectionA,cursor.position), posD
 						break;
 					default:
 						if (ctrl){
-							// a shortcut other than Cursor positioning
+							// a shortcut other than Caret positioning
 							return 0;
-						}else if (!cursor.ascii) // here Hexa mode; Ascii mode handled in WM_CHAR
+						}else if (!caret.ascii) // here Hexa mode; Ascii mode handled in WM_CHAR
 							// Hexa modification
 							if (wParam>='0' && wParam<='9'){
 								wParam-='0';
-changeHalfbyte:					if (cursor.position<maxFileSize){
+changeHalfbyte:					if (caret.position<maxFileSize){
 									BYTE b=0;
-									f->Seek(cursor.position,CFile::begin);
+									f->Seek(caret.position,CFile::begin);
 									f->Read(&b,1);
 									b= b<<4 | wParam;
-									if (cursor.position<f->GetLength()) f->Seek(-1,CFile::current);
+									if (caret.position<f->GetLength()) f->Seek(-1,CFile::current);
 									f->Write(&b,1);
-									if ( cursor.hexaLow=!cursor.hexaLow )
-										cursor.position++;
-									cursor.selectionA=cursor.position; // cancelling any Selection
+									if ( caret.hexaLow=!caret.hexaLow )
+										caret.position++;
+									caret.selectionA=caret.position; // cancelling any Selection
 									RepaintData();
-									goto cursorRefresh;
+									goto caretRefresh;
 								}else
 									__showMessage__(MESSAGE_LIMIT_UPPER);
 							}else if (wParam>='A' && wParam<='F'){
@@ -516,15 +520,15 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 			}
 			case WM_CHAR:
 				// character
-				if (cursor.ascii) // here Ascii mode; Hexa mode handled in WM_KEYDOWN
+				if (caret.ascii) // here Ascii mode; Hexa mode handled in WM_KEYDOWN
 					// Ascii modification
 					if (::GetAsyncKeyState(VK_CONTROL)>=0 && ::isprint(wParam)) // Ctrl not pressed, thus character printable
-						if (cursor.position<maxFileSize){
-							f->Seek( cursor.position, CFile::begin );
+						if (caret.position<maxFileSize){
+							f->Seek( caret.position, CFile::begin );
 							f->Write(&wParam,1);
-							cursor.selectionA = ++cursor.position; // moving the Cursor and cancelling any Selection
+							caret.selectionA = ++caret.position; // moving the Caret and cancelling any Selection
 							RepaintData();
-							goto cursorRefresh;
+							goto caretRefresh;
 						}else
 							__showMessage__(MESSAGE_LIMIT_UPPER);
 				return 0;
@@ -534,9 +538,9 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 				CMenu contextMenu;
 				contextMenu.LoadMenu(IDR_HEXAEDITOR);
 				CMenu &mnu=*contextMenu.GetSubMenu(0);
-				const bool selectionExists=cursor.selectionA!=cursor.position;
+				const bool selectionExists=caret.selectionA!=caret.position;
 				mnu.EnableMenuItem( ID_BOOKMARK_TOGGLE, (MF_DISABLED|MF_GRAYED)*selectionExists );
-				mnu.CheckMenuItem( ID_BOOKMARK_TOGGLE, MF_CHECKED*(bookmarks.__getNearestNextBookmarkPosition__(cursor.position)==cursor.position) );
+				mnu.CheckMenuItem( ID_BOOKMARK_TOGGLE, MF_CHECKED*(bookmarks.__getNearestNextBookmarkPosition__(caret.position)==caret.position) );
 				BYTE iSelectSubmenu, iResetSubmenu, iGotoSubmenu;
 				if (customSelectSubmenu){ // custom "Select" submenu
 					const HMENU hSubmenu=Utils::GetSubmenuByContainedCommand( mnu, ID_EDIT_SELECT_ALL, &iSelectSubmenu );
@@ -564,7 +568,7 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 				if (x==-1){ // occurs if the context menu invoked using Shift+F10
 					POINT caretPos=GetCaretPos();
 					ClientToScreen(&caretPos);
-					x=caretPos.x+(1+!cursor.ascii)*font.charAvgWidth, y=caretPos.y+font.charHeight;
+					x=caretPos.x+(1+!caret.ascii)*font.charAvgWidth, y=caretPos.y+font.charHeight;
 				}
 				if ( wParam=mnu.TrackPopupMenu( TPM_RETURNCMD, x,y, this ) )
 					OnCmdMsg( wParam, CN_COMMAND, nullptr, nullptr );
@@ -581,31 +585,31 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 				if (!editable) return 0;
 				switch (LOWORD(wParam)){
 					case ID_BOOKMARK_TOGGLE:
-						// toggling a Bookmark at Cursor's Position
-						if (bookmarks.__getNearestNextBookmarkPosition__(cursor.position)==cursor.position)
-							bookmarks.__removeBookmark__(cursor.position);
+						// toggling a Bookmark at Caret's Position
+						if (bookmarks.__getNearestNextBookmarkPosition__(caret.position)==caret.position)
+							bookmarks.__removeBookmark__(caret.position);
 						else
-							bookmarks.__addBookmark__(cursor.position);
+							bookmarks.__addBookmark__(caret.position);
 						RepaintData();
-						goto cursorRefresh;
+						goto caretRefresh;
 					case ID_BOOKMARK_PREV:
-						// navigating the Cursor to the previous Bookmark
-						if (bookmarks.__getNearestNextBookmarkPosition__(0)<cursor.position){
+						// navigating the Caret to the previous Bookmark
+						if (bookmarks.__getNearestNextBookmarkPosition__(0)<caret.position){
 							int prevBookmarkPos=0;
-							for( int pos=0; pos<cursor.position; pos=bookmarks.__getNearestNextBookmarkPosition__(pos+1) )
+							for( int pos=0; pos<caret.position; pos=bookmarks.__getNearestNextBookmarkPosition__(pos+1) )
 								prevBookmarkPos=pos;
-							cursor.selectionA = cursor.position = prevBookmarkPos; // moving the Cursor and cancelling any Selection
+							caret.selectionA = caret.position = prevBookmarkPos; // moving the Caret and cancelling any Selection
 							RepaintData();
-							goto cursorRefresh;
+							goto caretRefresh;
 						}else
 							break;
 					case ID_BOOKMARK_NEXT:{
-						// navigating the Cursor to the next Bookmark
-						const int nextBookmarkPos=bookmarks.__getNearestNextBookmarkPosition__(cursor.position+1);
+						// navigating the Caret to the next Bookmark
+						const int nextBookmarkPos=bookmarks.__getNearestNextBookmarkPosition__(caret.position+1);
 						if (nextBookmarkPos<BOOKMARK_POSITION_INFINITY){
-							cursor.selectionA = cursor.position = nextBookmarkPos; // moving the Cursor and cancelling any Selection
+							caret.selectionA = caret.position = nextBookmarkPos; // moving the Caret and cancelling any Selection
 							RepaintData();
-							goto cursorRefresh;
+							goto caretRefresh;
 						}else
 							break;
 					}
@@ -614,33 +618,33 @@ changeHalfbyte:					if (cursor.position<maxFileSize){
 						if (Utils::QuestionYesNo(_T("Sure to delete all bookmarks?"),MB_DEFBUTTON2)){
 							bookmarks.__removeAllBookmarks__();
 							RepaintData();
-							goto cursorRefresh;
+							goto caretRefresh;
 						}else
 							break;
 					case ID_EDIT_SELECT_ALL:
 						// Selecting everything
-						cursor.selectionA=0, cursor.position=f->GetLength();
+						caret.selectionA=0, caret.position=f->GetLength();
 						RepaintData();
-						goto cursorRefresh;
+						goto caretRefresh;
 					case ID_EDIT_SELECT_NONE:
 						// removing current selection
-						cursor.selectionA=cursor.position; // cancelling any Selection
+						caret.selectionA=caret.position; // cancelling any Selection
 						RepaintData();
-						goto cursorRefresh;
+						goto caretRefresh;
 					case ID_EDIT_SELECT_CURRENT:{
-						// selecting the whole Record under the Cursor
+						// selecting the whole Record under the Caret
 						int recordLength=0;
-						pContentAdviser->GetRecordInfo( cursor.position, &cursor.selectionA, &recordLength, NULL );
-						cursor.position=cursor.selectionA+recordLength;
+						pContentAdviser->GetRecordInfo( caret.position, &caret.selectionA, &recordLength, NULL );
+						caret.position=caret.selectionA+recordLength;
 						RepaintData();
-						goto cursorRefresh;
+						goto caretRefresh;
 					}
 					case ID_ZERO:
 						// resetting Selection with zeros
 						i=0;
 resetSelectionWithValue:BYTE buf[65536];
 						::memset( buf, i, sizeof(buf) );
-						for( DWORD nBytesToReset=std::max<>(cursor.selectionA,cursor.position)-f->Seek(std::min<>(cursor.selectionA,cursor.position),CFile::begin),n; nBytesToReset; nBytesToReset-=n ){
+						for( DWORD nBytesToReset=std::max<>(caret.selectionA,caret.position)-f->Seek(std::min<>(caret.selectionA,caret.position),CFile::begin),n; nBytesToReset; nBytesToReset-=n ){
 							n=min( nBytesToReset, sizeof(buf) );
 							f->Write( buf, n );
 							if (::GetLastError()==ERROR_WRITE_FAULT){
@@ -649,7 +653,7 @@ resetSelectionWithValue:BYTE buf[65536];
 							}
 						}
 						RepaintData();
-						goto cursorCorrectlyMoveTo;
+						goto caretCorrectlyMoveTo;
 					case ID_NUMBER:{
 						// resetting Selection with user-defined value
 						// . defining the Dialog
@@ -684,9 +688,9 @@ resetSelectionWithValue:BYTE buf[65536];
 							}
 						} d;
 						// . showing the Dialog and processing its result
-						const TCursor cursor0=cursor;
+						const TCaret caret0=caret;
 							const bool dlgConfirmed=d.DoModal()==IDOK;
-						cursor=cursor0;
+						caret=caret0;
 						if (dlgConfirmed){
 							switch (d.iRadioSel){
 								case 0: i=d.value; break;
@@ -701,33 +705,33 @@ resetSelectionWithValue:BYTE buf[65536];
 					}
 					case ID_EDIT_COPY:
 						// copying the Selection into clipboard
-						if (cursor.selectionA!=cursor.position)
+						if (caret.selectionA!=caret.position)
 							( new COleBinaryDataSource(	f,
-														std::min<>(cursor.selectionA,cursor.position),
-														std::max<>(cursor.position,cursor.selectionA)
+														std::min<>(caret.selectionA,caret.position),
+														std::max<>(caret.position,caret.selectionA)
 							) )->SetClipboard();
 						return 0;
 					case ID_EDIT_PASTE:{
-						// pasting binary data from clipboard at the Position of Cursor
+						// pasting binary data from clipboard at the Position of Caret
 						COleDataObject odo;
 						odo.AttachClipboard();
 						if (const HGLOBAL hg=odo.GetGlobalData(cfBinary)){
 							const DWORD *p=(PDWORD)::GlobalLock(hg), length=*p; // binary data are prefixed by their length
-								f->Seek(cursor.position,CFile::begin);
-								const DWORD lengthLimit=maxFileSize-cursor.position;
+								f->Seek(caret.position,CFile::begin);
+								const DWORD lengthLimit=maxFileSize-caret.position;
 								if (length<=lengthLimit){
 									f->Write( ++p, length );
-									cursor.selectionA = cursor.position+=length; // moving the Cursor and cancelling any Selection
+									caret.selectionA = caret.position+=length; // moving the Caret and cancelling any Selection
 								}else{
 									f->Write( ++p, lengthLimit );
-									cursor.position+=lengthLimit;
+									caret.position+=lengthLimit;
 									__showMessage__(MESSAGE_LIMIT_UPPER);
 								}
 							::GlobalUnlock(hg);
 							::GlobalFree(hg);
 						}
 						RepaintData();
-						goto cursorRefresh;
+						goto caretRefresh;
 					}
 					case ID_EDIT_DELETE:
 						// deleting content of the current selection
@@ -735,14 +739,14 @@ resetSelectionWithValue:BYTE buf[65536];
 					case ID_NEXT:{
 						// navigating to the next Record
 						int currRecordLength=0;
-						pContentAdviser->GetRecordInfo( cursor.position, &cursor.position, &currRecordLength, nullptr );
-						cursor.position+=currRecordLength;
-						goto cursorCorrectlyMoveTo;
+						pContentAdviser->GetRecordInfo( caret.position, &caret.position, &currRecordLength, nullptr );
+						caret.position+=currRecordLength;
+						goto caretCorrectlyMoveTo;
 					}
 					case ID_PREV:
-						// navigating to the previous Record (or the beginning of current Record, if Cursor not already there)
-						pContentAdviser->GetRecordInfo( --cursor.position, &cursor.position, nullptr, nullptr );
-						goto cursorCorrectlyMoveTo;
+						// navigating to the previous Record (or the beginning of current Record, if Caret not already there)
+						pContentAdviser->GetRecordInfo( --caret.position, &caret.position, nullptr, nullptr );
+						goto caretCorrectlyMoveTo;
 					case ID_NAVIGATE_ADDRESS:{
 						// navigating to an address input by the user
 						// . defining the Dialog
@@ -768,8 +772,8 @@ resetSelectionWithValue:BYTE buf[65536];
 						// . showing the Dialog and processing its result
 						if (d.DoModal()==IDOK){
 							SetFocus();
-							cursor.position=d.address;
-							goto cursorCorrectlyMoveTo;
+							caret.position=d.address;
+							goto caretCorrectlyMoveTo;
 						}else
 							return 0;
 					}
@@ -785,11 +789,11 @@ resetSelectionWithValue:BYTE buf[65536];
 				const int logPos=__logicalPositionFromPoint__(CPoint(lParam),nullptr);
 				if (logPos>=0){
 					// in either Hexa or Ascii areas
-					if (std::min<>(cursor.selectionA,cursor.position)<=logPos && logPos<std::max<>(cursor.selectionA,cursor.position))
-						// right-clicked on the Selection - showing context menu at the place of Cursor
+					if (std::min<>(caret.selectionA,caret.position)<=logPos && logPos<std::max<>(caret.selectionA,caret.position))
+						// right-clicked on the Selection - showing context menu at the place of Caret
 						break;
 					else
-						// right-clicked outside the Selection - unselecting everything and moving the Cursor
+						// right-clicked outside the Selection - unselecting everything and moving the Caret
 						goto leftMouseDragged; // "as if it's already been Dragged"
 				}else
 					// outside any area - ignoring the right-click
@@ -804,30 +808,30 @@ resetSelectionWithValue:BYTE buf[65536];
 				if (!( mouseDragged=::GetAsyncKeyState(VK_LBUTTON)<0 )) return 0; // if mouse button not pressed, current Selection cannot be modified
 leftMouseDragged:
 				if (!editable) break; // if window NotEditable, ignoring any mouse events and just focusing the window to receive MouseWheel messages
-				const int logPos=__logicalPositionFromPoint__(CPoint(lParam),&cursor.ascii);
+				const int logPos=__logicalPositionFromPoint__(CPoint(lParam),&caret.ascii);
 				if (logPos>=0)
 					// in either Hexa or Ascii areas
-					cursor.position=logPos;
+					caret.position=logPos;
 				else{
 					// outside any area
 					if (!mouseDragged){ // if right now mouse button pressed ...
-						cursor.selectionA=cursor.position; // ... cancelling any Selection ...
+						caret.selectionA=caret.position; // ... cancelling any Selection ...
 						RepaintData(); // ... and painting the result
 					}
 					break;
 				}
 				__super::WindowProc(msg,wParam,lParam); // to set focus and accept WM_KEY* messages
-				CreateSolidCaret( (2-cursor.ascii)*font.charAvgWidth, font.charHeight );
+				CreateSolidCaret( (2-caret.ascii)*font.charAvgWidth, font.charHeight );
 				ShowCaret();
-				goto cursorCorrectlyMoveTo;
+				goto caretCorrectlyMoveTo;
 			}
 			case WM_SETFOCUS:
 				// window has received focus
 				hPreviouslyFocusedWnd=(HWND)wParam; // the window that is losing the focus (may be refocused later when Enter is pressed)
 				if (!editable) return 0;
-				CreateSolidCaret( (2-cursor.ascii)*font.charAvgWidth, font.charHeight );
+				CreateSolidCaret( (2-caret.ascii)*font.charAvgWidth, font.charHeight );
 				ShowCaret();
-				goto cursorRefresh;
+				goto caretRefresh;
 			case WM_KILLFOCUS:
 				// window has lost focus
 				::DestroyCaret();
@@ -871,19 +875,19 @@ leftMouseDragged:
 			case EM_GETSEL:
 				// gets current Selection
 				if (wParam!=0)
-					*(PINT)wParam=cursor.selectionA;
+					*(PINT)wParam=caret.selectionA;
 				if (lParam!=0)
-					*(PINT)lParam=cursor.position;
-				return cursor.position; // returned is the Cursor Position, in contrast to the convenient value for an Edit control
+					*(PINT)lParam=caret.position;
+				return caret.position; // returned is the Caret Position, in contrast to the convenient value for an Edit control
 			case EM_SETSEL:
-				// sets current Selection, moving Cursor to the end of the Selection
+				// sets current Selection, moving Caret to the end of the Selection
 				if (wParam>lParam){
 					const int tmp=wParam; wParam=lParam; lParam=tmp;
 				}
-				cursor.selectionA=max(0,wParam);
-				cursor.position=min(lParam,maxFileSize);
+				caret.selectionA=max(0,wParam);
+				caret.position=min(lParam,maxFileSize);
 				RepaintData();
-				goto cursorRefresh;
+				goto caretRefresh;
 			case WM_ERASEBKGND:
 				// drawing the background
 				return TRUE; // nop (always drawing over existing content)
@@ -984,7 +988,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 					const CRidePen recordDelimitingHairline( 0, labelColor );
 					const HGDIOBJ hPen0=::SelectObject( dc, recordDelimitingHairline );
 						int address=__firstByteInRowToLogicalPosition__(iRowA), y=HEADER_HEIGHT+iRowFirstToPaint*font.charHeight;
-						const int _selectionA=std::min<>(cursor.selectionA,cursor.position), _selectionZ=std::max<>(cursor.position,cursor.selectionA);
+						const int _selectionA=std::min<>(caret.selectionA,caret.position), _selectionZ=std::max<>(caret.position,caret.selectionA);
 						PEmphasis pEmp=emphases;
 						while (pEmp->z<address) pEmp=pEmp->pNext; // choosing the first visible Emphasis
 						int nearestNextBookmarkPos=bookmarks.__getNearestNextBookmarkPosition__(address);
@@ -1109,7 +1113,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 				// update
 				switch (nID){
 					case ID_EDIT_COPY:
-						((CCmdUI *)pExtra)->Enable( cursor.selectionA!=cursor.position );
+						((CCmdUI *)pExtra)->Enable( caret.selectionA!=caret.position );
 						return TRUE;
 					case ID_EDIT_PASTE:{
 						COleDataObject odo;
@@ -1118,7 +1122,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 						return TRUE;
 					}
 					case ID_BOOKMARK_TOGGLE:
-						((CCmdUI *)pExtra)->SetCheck(bookmarks.__getNearestNextBookmarkPosition__(cursor.position)==cursor.position );
+						((CCmdUI *)pExtra)->SetCheck(bookmarks.__getNearestNextBookmarkPosition__(caret.position)==caret.position );
 						//fallthrough
 					case ID_BOOKMARK_DELETEALL:
 					case ID_EDIT_SELECT_ALL:
@@ -1133,10 +1137,10 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 						((CCmdUI *)pExtra)->Enable(editable);
 						return TRUE;
 					case ID_BOOKMARK_PREV:
-						((CCmdUI *)pExtra)->Enable( editable && bookmarks.__getNearestNextBookmarkPosition__(0)<cursor.position );
+						((CCmdUI *)pExtra)->Enable( editable && bookmarks.__getNearestNextBookmarkPosition__(0)<caret.position );
 						return TRUE;
 					case ID_BOOKMARK_NEXT:
-						((CCmdUI *)pExtra)->Enable( editable && bookmarks.__getNearestNextBookmarkPosition__(cursor.position+1)<BOOKMARK_POSITION_INFINITY );
+						((CCmdUI *)pExtra)->Enable( editable && bookmarks.__getNearestNextBookmarkPosition__(caret.position+1)<BOOKMARK_POSITION_INFINITY );
 						return TRUE;
 					case ID_IMAGE_PROTECT:
 						break; // leaving up to a higher logic to decide if write-protection can be removed
