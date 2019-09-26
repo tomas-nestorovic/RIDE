@@ -45,7 +45,7 @@
 
 	CTRDOS503::PBootSector CTRDOS503::__getBootSector__(PImage image){
 		// returns the data of Boot Sector (or Null if Boot unreadable)
-		return (CTRDOS503::PBootSector)image->GetSectorData(TBootSector::CHS);
+		return (CTRDOS503::PBootSector)image->GetHealthySectorData(TBootSector::CHS);
 	}
 	CTRDOS503::PBootSector CTRDOS503::__getBootSector__() const{
 		// returns the data of Boot Sector (or Null if Boot unreadable)
@@ -57,7 +57,7 @@
 		static const TFormat Fmt={ TMedium::FLOPPY_DD, 1,2,TRDOS503_TRACK_SECTORS_COUNT, TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD, 1 };
 		if (const TStdWinError err=image->SetMediumTypeAndGeometry( &Fmt, StdSidesMap, TRDOS503_SECTOR_FIRST_NUMBER ))
 			return err;
-		const PCBootSector boot=(PCBootSector)image->GetSectorData(TBootSector::CHS);
+		const PCBootSector boot=(PCBootSector)image->GetHealthySectorData(TBootSector::CHS);
 		if (boot && boot->id==BOOT_ID){
 			*pFormatBoot=Fmt;
 			switch ( const BYTE f=boot->format ){

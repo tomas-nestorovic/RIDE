@@ -213,7 +213,7 @@
 				break;
 			}
 			// . VALIDATION: next Sector can be retrieved
-			if (const PCGdosSectorData sd=(PCGdosSectorData)image->GetSectorData(item.chs))
+			if (const PCGdosSectorData sd=(PCGdosSectorData)image->GetHealthySectorData(item.chs))
 				psi=&sd->nextSector;
 			else
 				break;
@@ -544,14 +544,14 @@
 			if (offset){ // File must have standard data at the beginning ...
 				ASSERT(offset==sizeof(TStdZxTypeData)); // ... and should thus be of standard FileType
 				__shiftFileContent__(fatPath,offset); // shifting File's content to make space at the beginning
-				( (PGdosSectorData)image->GetSectorData(item->chs) )->stdZxType=de->etc.stdZxType; // creating the standard data
+				( (PGdosSectorData)image->GetHealthySectorData(item->chs) )->stdZxType=de->etc.stdZxType; // creating the standard data
 			}
 			// . initializing File's SectorAllocationBitmap and interconnecting Sectors that contain File's data
 			TSectorInfo *psi=&de->firstSector;
 			while (n--){
 				psi->__setChs__(item->chs);
 				de->sectorAllocationBitmap.SetSectorAllocation(item->chs,true);
-				psi=&((PGdosSectorData)image->GetSectorData(item++->chs))->nextSector;
+				psi=&((PGdosSectorData)image->GetHealthySectorData(item++->chs))->nextSector;
 			}
 			psi->__setEof__();
 		// - File successfully imported to Image
@@ -694,7 +694,7 @@
 				if (( chs.sectorId.cylinder=++chs.cylinder )==GDOS_DIR_FILES_COUNT_MAX*sizeof(TDirectoryEntry)/GDOS_SECTOR_LENGTH_STD/GDOS_TRACK_SECTORS_COUNT) // end of Directory
 					return false; // end of Directory
 			}
-			entry=gdos->image->GetSectorData(chs);
+			entry=gdos->image->GetHealthySectorData(chs);
 			if (!entry){ // Directory Sector not found
 				entryType=TDirectoryTraversal::WARNING, warning=ERROR_SECTOR_NOT_FOUND;
 				return true;

@@ -186,7 +186,7 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 			return -1;
 		// - getting Boot Sector data
 		WORD bootSectorDataRealLength=0; // initializing just in case the Boot Sector is not found
-		IMAGE->GetSectorData(chsBoot,&bootSectorDataRealLength);
+		IMAGE->GetHealthySectorData(chsBoot,&bootSectorDataRealLength);
 		// - creating the Content
 		//CCreateContext cc;
 		//cc.m_pCurrentDoc=dos->image;
@@ -214,7 +214,7 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 		// request to refresh the display of content
 		// - getting Boot Sector data
 		WORD bootSectorDataRealLength=0; // initializing just in case the Boot Sector is not found
-		const PSectorData boot=IMAGE->GetSectorData(chsBoot,&bootSectorDataRealLength);
+		const PSectorData boot=IMAGE->GetHealthySectorData(chsBoot,&bootSectorDataRealLength);
 		// - clearing the PropertyGrid
 		CPropGridCtrl::RemoveProperty( propGrid.m_hWnd, nullptr );
 		// - populating the PropertyGrid with values from the Boot Sector (if any found)

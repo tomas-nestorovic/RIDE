@@ -10,7 +10,7 @@
 		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
 		static const TFormat Fmt={ TMedium::FLOPPY_DD, 1,1,10, MDOS2_SECTOR_LENGTH_STD_CODE,MDOS2_SECTOR_LENGTH_STD, 1 };
 		if (image->SetMediumTypeAndGeometry(&Fmt,StdSidesMap,1)==ERROR_SUCCESS)
-			if (const PCBootSector boot=(PCBootSector)image->GetSectorData(TBootSector::CHS))
+			if (const PCBootSector boot=(PCBootSector)image->GetHealthySectorData(TBootSector::CHS))
 				if (boot->sdos==SDOS_TEXT){
 					*pFormatBoot=Fmt;
 					if (( pFormatBoot->nCylinders=boot->currDrive.disk.nCylinders )
@@ -236,7 +236,7 @@
 
 	void CMDOS2::FlushToBootSector() const{
 		// flushes internal Format information to the actual Boot Sector's data
-		if (const PBootSector boot=(PBootSector)image->GetSectorData(TBootSector::CHS)){
+		if (const PBootSector boot=(PBootSector)image->GetHealthySectorData(TBootSector::CHS)){
 			boot->currDrive.disk.nCylinders=formatBoot.nCylinders;
 			if (formatBoot.nHeads==2)
 				boot->currDrive.disk.diskFlags|=16;
@@ -251,7 +251,7 @@
 		// initializes a fresh formatted Medium (Boot, FAT, root dir, etc.)
 		// - initializing the Boot Sector
 		WORD w;
-		if (const PBootSector boot=(PBootSector)image->GetSectorData(TBootSector::CHS,&w)){ // Boot Sector may not be found
+		if (const PBootSector boot=(PBootSector)image->GetHealthySectorData(TBootSector::CHS,&w)){ // Boot Sector may not be found
 			::ZeroMemory(boot,w);
 			// . the floppy was formatted in two-head D80-compatible drive
 			static const TBootSector::TDiskAndDriveInfo DefaultInfo={ 1, 16, 80, 9, 0, 16, 80, 9 };

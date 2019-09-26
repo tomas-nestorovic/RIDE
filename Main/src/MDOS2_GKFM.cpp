@@ -396,7 +396,7 @@ errorText:				TCHAR buf[400];
 		// True <=> PropertyGrid's Editor can be destroyed after this function has terminated, otherwise False
 		const PMDOS2 mdos=(PMDOS2)CDos::GetFocused();
 		const PImage image=mdos->image;
-		const PBootSector pBootSector=(PBootSector)image->GetSectorData(CHS);
+		const PBootSector pBootSector=(PBootSector)image->GetHealthySectorData(CHS);
 		TBootSector tmpBootSector=*pBootSector;
 			static const TGKFileManager DefGkfm={	0x4d46, // textual representation of "FM" string
 													8, 112, 120, 40, // y, x, w, h [in pixels]

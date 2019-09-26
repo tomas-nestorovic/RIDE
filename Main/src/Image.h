@@ -260,10 +260,10 @@
 		void BufferTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors);
 		PSectorData GetSectorData(TCylinder cyl,THead head,PCSectorId pid,BYTE nSectorsToSkip,bool silentlyRecoverFromError,PWORD sectorLength,TFdcStatus *pFdcStatus);
 		PSectorData GetSectorData(RCPhysicalAddress chs,BYTE nSectorsToSkip,bool silentlyRecoverFromError,PWORD sectorLength,TFdcStatus *pFdcStatus);
-		PSectorData GetSectorData(TCylinder cyl,THead head,PCSectorId pid,PWORD sectorLength);
-		PSectorData GetSectorData(RCPhysicalAddress chs,PWORD sectorLength);
-		PSectorData GetSectorData(RCPhysicalAddress chs);
-		PSectorData GetSectorDataOfUnknownLength(TPhysicalAddress &rChs,PWORD sectorLength);
+		PSectorData GetHealthySectorData(TCylinder cyl,THead head,PCSectorId pid,PWORD sectorLength);
+		PSectorData GetHealthySectorData(RCPhysicalAddress chs,PWORD sectorLength);
+		PSectorData GetHealthySectorData(RCPhysicalAddress chs);
+		PSectorData GetHealthySectorDataOfUnknownLength(TPhysicalAddress &rChs,PWORD sectorLength);
 		virtual TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus)=0;
 		void MarkSectorAsDirty(RCPhysicalAddress chs);
 		virtual TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber);

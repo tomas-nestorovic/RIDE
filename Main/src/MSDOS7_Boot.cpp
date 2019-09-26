@@ -29,10 +29,10 @@
 		// - recognizing the Boot Sector
 		if (pSuccess) *pSuccess=true; // assumption (Boot Sector found and successfully recognized)
 		WORD w;
-		PCBootSector boot=(PCBootSector)image->GetSectorDataOfUnknownLength(chs,&w);
+		PCBootSector boot=(PCBootSector)image->GetHealthySectorDataOfUnknownLength(chs,&w);
 		if (!boot || recognizeBoot&&!boot->__recognize__(w)){
 			chs.sectorId.sector=MSDOS7_SECTOR_BKBOOT;
-			boot=(PCBootSector)image->GetSectorDataOfUnknownLength(chs,&w);
+			boot=(PCBootSector)image->GetHealthySectorDataOfUnknownLength(chs,&w);
 			if (!boot || recognizeBoot&&!boot->__recognize__(w))
 				if (pSuccess) *pSuccess=false; // neither normal nor backup Boot Sector could be recognized
 		}
@@ -221,7 +221,7 @@
 		const TPhysicalAddress bootChs=TBootSector::__getRecognizedChs__(image,true,&bootSectorRecognized);
 		if (!bootSectorRecognized)
 			return ERROR_UNRECOGNIZED_VOLUME; // neither normal nor backup Boot Sector recognized
-		const PCBootSector bootSector=(PCBootSector)image->GetSectorData(bootChs);
+		const PCBootSector bootSector=(PCBootSector)image->GetHealthySectorData(bootChs);
 		// - MS-DOS recognized
 		*pFormatBoot=fmt;
 		bootSector->__getGeometry__(pFormatBoot); // receives only geometry; Medium Type received in MS-DOS ctor
@@ -309,7 +309,7 @@
 
 	CMSDOS7::PBootSector CMSDOS7::CMsdos7BootView::GetSectorData() const{
 		// returns data of Boot Sector (or Null if Boot Sector unreadable)
-		return (PBootSector)IMAGE->GetSectorData(chsBoot);
+		return (PBootSector)IMAGE->GetHealthySectorData(chsBoot);
 	}
 
 	bool WINAPI CMSDOS7::CMsdos7BootView::__labelModified__(CPropGridCtrl::PCustomParam,LPCSTR newLabel,short newLabelChars){

@@ -38,7 +38,7 @@
 								{ 0, TVersion::VERSION_1, formatBoot.nSectors, MDOS2_SECTOR_LENGTH_STD_CODE }
 							};
 		for( ; chs.sectorId.sector; chs.sectorId.sector-- )
-			if (image->GetSectorData(chs)!=nullptr){ // at least one Sector is readable = Version 1.0 successfully recognized
+			if (image->GetHealthySectorData(chs)!=nullptr){ // at least one Sector is readable = Version 1.0 successfully recognized
 				sideMap[1]=TVersion::VERSION_1;
 				return;
 			}
@@ -57,9 +57,9 @@
 		return chs;
 	}
 
-	PSectorData CMDOS2::__getLogicalSectorData__(TLogSector logSector) const{
+	PSectorData CMDOS2::__getHealthyLogicalSectorData__(TLogSector logSector) const{
 		// returns data of LogicalSector, or Null of such Sector is unreadable or doesn't exist
-		return image->GetSectorData( __logfyz__(logSector) );
+		return image->GetHealthySectorData( __logfyz__(logSector) );
 	}
 	void CMDOS2::__markLogicalSectorAsDirty__(TLogSector logSector) const{
 		// marks given LogicalSector as dirty
@@ -71,7 +71,7 @@
 	WORD CMDOS2::__getLogicalSectorFatItem__(TLogSector logSector) const{
 		// returns the value in FAT of the specified LogicalSector; returns MDOS2_FAT_ERROR if FAT Sector read error
 		div_t d=div( logSector, FAT_ITEMS_IN_SECTOR ); // determining the item ID in FAT Sector
-		if (PCSectorData itemAddress=__getLogicalSectorData__(FAT_LOGSECTOR_FIRST+d.quot)){
+		if (PCSectorData itemAddress=__getHealthyLogicalSectorData__(FAT_LOGSECTOR_FIRST+d.quot)){
 			itemAddress+=( d.rem*=3 )/2;
 			if (d.rem&1) // item on odd address in FAT Sector
 				return (*itemAddress&0xf)*256 + itemAddress[1];
@@ -85,7 +85,7 @@
 		ASSERT((value12&0xf000)==0); // must always be a 12-bit Value only
 		div_t d=div( logSector, FAT_ITEMS_IN_SECTOR );	// determining the item ID in FAT Sector
 		const TLogSector lsFat=FAT_LOGSECTOR_FIRST+d.quot;
-		if (PSectorData itemAddress=__getLogicalSectorData__(lsFat)){
+		if (PSectorData itemAddress=__getHealthyLogicalSectorData__(lsFat)){
 			itemAddress+=( d.rem*=3 )/2;
 			if (d.rem&1){ // item on odd address in FAT Sector
 				*itemAddress=( *itemAddress&0xf0 )|( value12>>8 ); // not using "(value&0xf)>>8" as assumed that the Value is always only 12-bit
@@ -555,7 +555,7 @@
 		if (!nRemainingEntriesInSector){
 			if (dirSector==MDOS2_DATA_LOGSECTOR_FIRST) return false; // end of Directory
 			chs=mdos2->__logfyz__(dirSector);
-			entry=mdos2->__getLogicalSectorData__(dirSector++);
+			entry=mdos2->__getHealthyLogicalSectorData__(dirSector++);
 			if (!entry){ // LogicalSector not found
 				entryType=TDirectoryTraversal::WARNING, warning=ERROR_SECTOR_NOT_FOUND;
 				return true;

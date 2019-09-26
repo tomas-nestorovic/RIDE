@@ -341,7 +341,7 @@ reportError:Utils::Information(buf);
 				// : verifying formatted Sectors
 				WORD w;
 				for( PCSectorId pId=fp.bufferId; nSectors--; )
-					if (const PCSectorData tmp=fp.dos->image->GetSectorData(cyl,head,pId++,&w))
+					if (const PCSectorData tmp=fp.dos->image->GetHealthySectorData(cyl,head,pId++,&w))
 						statistics.availableGoodCapacityInBytes+=w;
 					else
 						statistics.nSectorsBad++;
@@ -498,7 +498,7 @@ reportError:Utils::Information(buf);
 					TPhysicalAddress chs={ cyl, head };
 					for( WORD w; pEmptyId>bufferId; ){
 						chs.sectorId=*--pEmptyId;
-						if (const PSectorData data=image->GetSectorData(chs,&w)){
+						if (const PSectorData data=image->GetHealthySectorData(chs,&w)){
 							::memset( data, fesp.rd.sectorFillerByte, w );
 							image->MarkSectorAsDirty(chs);
 						}//else
@@ -531,7 +531,7 @@ reportError:Utils::Information(buf);
 											fileSize-=nDataBytesInSector;
 										else{
 											pAction->UpdateProgress(item->chs.cylinder);
-											if (const PSectorData sectorData=fesp.dos->image->GetSectorData(item->chs)){
+											if (const PSectorData sectorData=fesp.dos->image->GetHealthySectorData(item->chs)){
 												::memset( sectorData+fesp.dos->properties->dataBeginOffsetInSector+fileSize, fesp.rd.sectorFillerByte, nDataBytesInSector-fileSize );
 												image->MarkSectorAsDirty(item->chs);
 											}//else
@@ -905,7 +905,7 @@ reportError:Utils::Information(buf);
 					// . importing the File to Empty Sectors on the current Track
 					for( WORD w; nEmptySectors--; ){
 						item.chs.sectorId=*pId++;
-						if (const PSectorData sectorData=image->GetSectorData(item.chs,&w)){
+						if (const PSectorData sectorData=image->GetHealthySectorData(item.chs,&w)){
 							w-=properties->dataBeginOffsetInSector+properties->dataEndOffsetInSector;
 							if (w<fileSize){
 								f->Read(sectorData+properties->dataBeginOffsetInSector,w);
@@ -995,7 +995,7 @@ finished:
 		// - making sure all Sectors in the FatPath are readable
 		WORD w;
 		for( DWORD n=0; n<nItems; )
-			if (!image->GetSectorData(pItem[n++].chs,&w))
+			if (!image->GetHealthySectorData(pItem[n++].chs,&w))
 				return ERROR_SECTOR_NOT_FOUND;
 			else if (w!=formatBoot.sectorLength)
 				return ERROR_VOLMGR_DISK_SECTOR_SIZE_INVALID;
@@ -1005,22 +1005,22 @@ finished:
 			// shifting to the "left"
 			const WORD offset=-nBytesShift,delta=nDataBytesInSector-offset;
 			do{
-				const PSectorData sectorData=image->GetSectorData(pItem->chs)+properties->dataBeginOffsetInSector;
+				const PSectorData sectorData=image->GetHealthySectorData(pItem->chs)+properties->dataBeginOffsetInSector;
 				::memcpy( sectorData, sectorData+offset, delta );
 				image->MarkSectorAsDirty(pItem++->chs);
 				if (!--nItems) break;
-				::memcpy( sectorData+delta, image->GetSectorData(pItem->chs)+properties->dataBeginOffsetInSector, offset );
+				::memcpy( sectorData+delta, image->GetHealthySectorData(pItem->chs)+properties->dataBeginOffsetInSector, offset );
 			}while (true);
 		}else{
 			// shifting to the "right"
 			pItem+=nItems-1;
 			const WORD offset=nBytesShift,delta=nDataBytesInSector-offset;
 			do{
-				const PSectorData sectorData=image->GetSectorData(pItem->chs)+properties->dataBeginOffsetInSector;
+				const PSectorData sectorData=image->GetHealthySectorData(pItem->chs)+properties->dataBeginOffsetInSector;
 				::memmove( sectorData+offset, sectorData, delta );
 				image->MarkSectorAsDirty(pItem--->chs);
 				if (!--nItems) break;
-				::memcpy( sectorData, image->GetSectorData(pItem->chs)+properties->dataBeginOffsetInSector+delta, offset );
+				::memcpy( sectorData, image->GetHealthySectorData(pItem->chs)+properties->dataBeginOffsetInSector+delta, offset );
 			}while (true);
 		}
 		return ERROR_SUCCESS;

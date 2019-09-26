@@ -383,7 +383,7 @@ trackNotFound:
 					if (nHeads>1) // if Image structured by Sides (and there are multiple Sides), all Cylinders must be buffered as the whole Image will have to be restructured when saving
 						for( TCylinder c=0; c<nCylinders; ){
 							const TPhysicalAddress chs={ c++, 0, {cyl,sideMap[0],firstSectorNumber,sectorLengthCode} };
-							CImage::GetSectorData(chs);
+							GetHealthySectorData(chs);
 						}
 					//fallthrough
 				case TTrackScheme::BY_CYLINDERS:{
@@ -398,7 +398,7 @@ trackNotFound:
 			// reinitializing given Track
 			// . buffering Cylinder by reading one of its Sector
 			const TPhysicalAddress chs={ cyl, 0, {cyl,sideMap[0],firstSectorNumber,sectorLengthCode} };
-			CImage::GetSectorData(chs);
+			GetHealthySectorData(chs);
 			// . reinitializing given Track to FillerByte
 			::memset( (PBYTE)bufferOfCylinders[cyl]+head*nBytesOfTrack, fillerByte, nBytesOfTrack );
 		}
@@ -414,7 +414,7 @@ trackNotFound:
 				if (nHeads>1) // if Image structured by Sides (and there are multiple Sides), all Cylinders must be buffered as the whole Image will have to be restructured when saving
 					for( TCylinder c=0; c<nCylinders; ){
 						const TPhysicalAddress chs={ c++, 0, {cyl,sideMap[0],firstSectorNumber,sectorLengthCode} };
-						CImage::GetSectorData(chs);
+						GetHealthySectorData(chs);
 					}
 				//fallthrough
 			case TTrackScheme::BY_CYLINDERS:

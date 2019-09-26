@@ -539,7 +539,7 @@
 		return data;
 	}
 
-	PSectorData CImage::GetSectorData(TCylinder cyl,THead head,PCSectorId pid,PWORD sectorLength){
+	PSectorData CImage::GetHealthySectorData(TCylinder cyl,THead head,PCSectorId pid,PWORD sectorLength){
 		// returns Data of a Sector on a given PhysicalAddress; returns Null if Sector not found or Track not formatted
 		TFdcStatus st;
 		if (const PSectorData data=GetSectorData(cyl,head,pid,0,true,sectorLength,&st))
@@ -548,18 +548,18 @@
 			return nullptr; // Sector not found
 	}
 
-	PSectorData CImage::GetSectorData(RCPhysicalAddress chs,PWORD sectorLength){
+	PSectorData CImage::GetHealthySectorData(RCPhysicalAddress chs,PWORD sectorLength){
 		// returns Data of a Sector on a given PhysicalAddress; returns Null if Sector not found or Track not formatted
-		return GetSectorData(chs.cylinder,chs.head,&chs.sectorId,sectorLength);
+		return GetHealthySectorData(chs.cylinder,chs.head,&chs.sectorId,sectorLength);
 	}
 
-	PSectorData CImage::GetSectorData(RCPhysicalAddress chs){
+	PSectorData CImage::GetHealthySectorData(RCPhysicalAddress chs){
 		// returns Data of a Sector on a given PhysicalAddress; returns Null if Sector not found or Track not formatted
 		WORD w;
-		return GetSectorData(chs,&w);
+		return GetHealthySectorData(chs,&w);
 	}
 
-	PSectorData CImage::GetSectorDataOfUnknownLength(TPhysicalAddress &rChs,PWORD sectorLength){
+	PSectorData CImage::GetHealthySectorDataOfUnknownLength(TPhysicalAddress &rChs,PWORD sectorLength){
 		// returns Data of a Sector of unknown length (i.e. LengthCode is not used to find Sector with a given ID)
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - scanning given Track to find out Sectors a their Lengths
@@ -574,7 +574,7 @@
 		if (!nSectorsOnTrack) // Sector with a given ID not found (LengthCode ignored)
 			return nullptr;
 		// - retrieving Data
-		return GetSectorData(rChs,sectorLength);
+		return GetHealthySectorData(rChs,sectorLength);
 	}
 
 	void CImage::MarkSectorAsDirty(RCPhysicalAddress chs){

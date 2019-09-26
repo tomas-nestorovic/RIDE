@@ -55,7 +55,7 @@
 					const TLogSector32 ls=	bootSector->nReservedSectors	// BootSector, etc.
 											+
 											d.quot+nFatCopies*bootSector->__getCountOfSectorsInOneFatCopy__(); // FAT
-					if (const PCSectorData fatData=msdos.__getLogicalSectorData__(ls)){
+					if (const PCSectorData fatData=msdos.__getHealthyLogicalSectorData__(ls)){
 						*v++=fatData[d.rem];
 						goto nextByte;
 					}
@@ -122,7 +122,7 @@ nextByte:		;
 					const TLogSector32 ls=	bootSector->nReservedSectors	// BootSector etc.
 											+
 											d.quot+nFatCopies*bootSector->__getCountOfSectorsInOneFatCopy__(); // FAT
-					if (const PSectorData fatData=msdos.__getLogicalSectorData__(ls)){
+					if (const PSectorData fatData=msdos.__getHealthyLogicalSectorData__(ls)){
 						fatData[d.rem] = fatData[d.rem]&*m | *v;
 						byteWritten=true;
 						msdos.__markLogicalSectorAsDirty__(ls);

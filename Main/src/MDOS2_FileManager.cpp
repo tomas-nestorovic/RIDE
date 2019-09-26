@@ -76,7 +76,7 @@
 									DOS->GetFileOfficialSize(de)==GKFM_ICON_BYTES_COUNT // correct size
 								){
 									// found a File with icon intended for particular Program
-									lvi.iImage=TBootSector::UReserved1::TGKFileManager::__addIconToList__( icons, ((PMDOS2)DOS)->__getLogicalSectorData__(de->firstLogicalSector), dc );
+									lvi.iImage=TBootSector::UReserved1::TGKFileManager::__addIconToList__( icons, ((PMDOS2)DOS)->__getHealthyLogicalSectorData__(de->firstLogicalSector), dc );
 									lv.SetItem(&lvi);
 									break;
 								}

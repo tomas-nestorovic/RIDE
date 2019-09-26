@@ -118,9 +118,9 @@
 			ASSERT(FALSE); // caller guarantees that this function is called only if Boot Sector can be found
 	}
 
-	PSectorData CMSDOS7::__getLogicalSectorData__(TLogSector32 logSector) const{
+	PSectorData CMSDOS7::__getHealthyLogicalSectorData__(TLogSector32 logSector) const{
 		// returns data of LogicalSector, or Null of such Sector is unreadable or doesn't exist
-		return image->GetSectorData( __logfyz__(logSector) );
+		return image->GetHealthySectorData( __logfyz__(logSector) );
 	}
 
 	void CMSDOS7::__markLogicalSectorAsDirty__(TLogSector32 logSector) const{
@@ -302,7 +302,7 @@
 				// . checking it's readable (and thus assumed also writeable)
 				BYTE n;
 				for( TLogSector32 ls=__cluster2logSector__(result,n); n--; )
-					if (!__getLogicalSectorData__(ls++)){
+					if (!__getHealthyLogicalSectorData__(ls++)){
 						// Sector not found - Cluster is unusable!
 						fat.SetClusterValue(result,MSDOS7_FAT_CLUSTER_BAD); // marking the Cluster as Bad
 						goto nextCluster;
@@ -660,7 +660,7 @@ nextCluster:result++;
 			fat.SetClusterValue( result, MSDOS7_FAT_CLUSTER_EOF ); // guaranteed that FAT Sector exists
 			BYTE n;
 			for( TLogSector32 ls=__cluster2logSector__(result,n); n--; ls++ ){
-				::ZeroMemory( __getLogicalSectorData__(ls), formatBoot.sectorLength ); // guaranteed that LogicalSector's data exist
+				::ZeroMemory( __getHealthyLogicalSectorData__(ls), formatBoot.sectorLength ); // guaranteed that LogicalSector's data exist
 				__markLogicalSectorAsDirty__(ls);
 			}
 		}
@@ -1171,7 +1171,7 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 		image->MarkSectorAsDirty(boot.chsBoot);
 		if (fat.type==CFat::FAT32){
 			chs.sectorId.sector=MSDOS7_SECTOR_BKBOOT;
-			if (const PBootSector bkBoot=(PBootSector)image->GetSectorData(chs)){ // backup Boot Sector may not be found after unsuccessfull formatting
+			if (const PBootSector bkBoot=(PBootSector)image->GetHealthySectorData(chs)){ // backup Boot Sector may not be found after unsuccessfull formatting
 				*bkBoot=*bootSector;
 				image->MarkSectorAsDirty(chs);
 			}
@@ -1191,7 +1191,7 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 			DWORD clusterState=MSDOS7_FAT_CLUSTER_EMPTY; // assumption (Cluster ok)
 			BYTE b;
 			for( TLogSector32 ls=__cluster2logSector__(c,b); b--; )
-				if (!__getLogicalSectorData__(ls++)){
+				if (!__getHealthyLogicalSectorData__(ls++)){
 					clusterState=MSDOS7_FAT_CLUSTER_BAD;
 					break;
 				}
@@ -1203,7 +1203,7 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 			case CFat::FAT12:
 			case CFat::FAT16:
 				for( TLogSector32 lsDir=bootSector->__getRootDirectoryFirstSector__(),lsData=lsDir+bootSector->__getCountOfPermanentRootDirectorySectors__(); lsDir<lsData; lsDir++ )
-					if (const PSectorData tmp=__getLogicalSectorData__(lsDir)){
+					if (const PSectorData tmp=__getHealthyLogicalSectorData__(lsDir)){
 						::ZeroMemory( tmp, bootSector->sectorSize );
 						__markLogicalSectorAsDirty__(lsDir);
 					}
@@ -1326,7 +1326,7 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 							return false; // EntryType already set to Warning above
 					nRemainingSectorsInCluster--;
 					chs=msdos7->__logfyz__(dirSector);
-					entry=msdos7->__getLogicalSectorData__(dirSector++);
+					entry=msdos7->__getHealthyLogicalSectorData__(dirSector++);
 					if (!entry){ // LogicalSector not found
 						warning=ERROR_SECTOR_NOT_FOUND;
 						return true; // EntryType already set to Warning above

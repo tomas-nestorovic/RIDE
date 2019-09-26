@@ -226,7 +226,7 @@
 		if (!__super::OnOpenRecentFile(nID))
 			return FALSE;
 		// - if no Image opened, it wasn't found in which case it was removed from the MRU files list - projecting the updated MRU files list to the just shown introductory GuidePost
-		if (!CImage::__getActive__()){
+		if (!CImage::GetActive()){
 			CIntroductoryGuidePost::Hide();
 			CIntroductoryGuidePost::Show();
 		}

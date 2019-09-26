@@ -1429,10 +1429,10 @@ Utils::Information(buf);}
 				const TInternalTrack *const pit=lp.fdd->__scanTrack__(lp.cyl,lp.head);
 				// : STEP 2.2: reading the first formatted Sector
 				WORD w;
-				lp.fdd->GetSectorData( lp.cyl, lp.head, &SectorIds[0], &w );
+				lp.fdd->GetHealthySectorData( lp.cyl, lp.head, &SectorIds[0], &w );
 				// : STEP 2.3: Reading the second formatted Sector and measuring how long the reading took
 				const Utils::CLocalTime startTime;
-					lp.fdd->GetSectorData( lp.cyl, lp.head, &SectorIds[1], &w );
+					lp.fdd->GetHealthySectorData( lp.cyl, lp.head, &SectorIds[1], &w );
 				const Utils::CLocalTime endTime;
 				const int deltaMicroseconds=(endTime-startTime).ToMilliseconds()*1000;
 				// . STEP 2.4: determining if the readings took more than just one disk revolution or more

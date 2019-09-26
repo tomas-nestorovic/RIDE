@@ -282,7 +282,7 @@
 		TCluster32 __logSector2cluster__(TLogSector32 ls) const;
 		TCluster32 __getCountOfClusters__() const;
 		void __adoptMediumFromBootSector__();
-		PSectorData __getLogicalSectorData__(TLogSector32 logSector) const;
+		PSectorData __getHealthyLogicalSectorData__(TLogSector32 logSector) const;
 		void __markLogicalSectorAsDirty__(TLogSector32 logSector) const;
 		TCluster32 __getFirstFreeHealthyCluster__() const;
 		TCluster32 __allocateAndResetDirectoryCluster__() const;

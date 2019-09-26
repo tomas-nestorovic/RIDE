@@ -136,7 +136,7 @@
 	bool WINAPI CGDOS::CGdosFileManagerView::__onStdParam1Changed__(PVOID file,int newWordValue){
 		const PDirectoryEntry de=(PDirectoryEntry)file;
 		de->__setStdParameter1__(newWordValue);
-		if (const PGdosSectorData pData=(PGdosSectorData)CImage::GetActive()->GetSectorData(de->firstSector.__getChs__()))
+		if (const PGdosSectorData pData=(PGdosSectorData)CImage::GetActive()->GetHealthySectorData(de->firstSector.__getChs__()))
 			pData->stdZxType=de->etc.stdZxType;
 		__markDirectorySectorAsDirty__(file,0);
 		return true;
@@ -144,7 +144,7 @@
 	bool WINAPI CGDOS::CGdosFileManagerView::__onStdParam2Changed__(PVOID file,int newWordValue){
 		const PDirectoryEntry de=(PDirectoryEntry)file;
 		de->__setStdParameter2__(newWordValue);
-		if (const PGdosSectorData pData=(PGdosSectorData)CImage::GetActive()->GetSectorData(de->firstSector.__getChs__()))
+		if (const PGdosSectorData pData=(PGdosSectorData)CImage::GetActive()->GetHealthySectorData(de->firstSector.__getChs__()))
 			pData->stdZxType=de->etc.stdZxType;
 		__markDirectorySectorAsDirty__(file,0);
 		return true;
@@ -233,14 +233,14 @@ error:			*de=tmp; // recovering the original DirectoryEntry
 				gdos->__showFileProcessingError__(file,err);
 				return false;
 			}else if (de->__isStandardRomFile__())
-				if (const PGdosSectorData pData=(PGdosSectorData)gdos->image->GetSectorData(pItem->chs))
+				if (const PGdosSectorData pData=(PGdosSectorData)gdos->image->GetHealthySectorData(pItem->chs))
 					pData->stdZxType=de->etc.stdZxType;
 			// . adjusting connections between consecutive Sectors of the File, eventually freeing them up
 			if (nSectorsAfterRetyping<de->nSectors){
 				// File has become shorter (by trimming or shifting its data "to the left")
 				if (nSectorsAfterRetyping){
 					const TPhysicalAddress &rChs=(pItem+nSectorsAfterRetyping-1)->chs;
-					if (const PGdosSectorData pData=(PGdosSectorData)gdos->image->GetSectorData(rChs)){
+					if (const PGdosSectorData pData=(PGdosSectorData)gdos->image->GetHealthySectorData(rChs)){
 						pData->nextSector.__setEof__();
 						gdos->image->MarkSectorAsDirty(rChs);
 					}else{
@@ -255,7 +255,7 @@ error:			*de=tmp; // recovering the original DirectoryEntry
 				ASSERT(nSectorsAfterRetyping==1+de->nSectors); // File can be longer only by a single Sector
 				if (de->nSectors){
 					const TPhysicalAddress &rChs=(pItem+de->nSectors-1)->chs;
-					if (const PGdosSectorData pData=(PGdosSectorData)gdos->image->GetSectorData(rChs)){
+					if (const PGdosSectorData pData=(PGdosSectorData)gdos->image->GetHealthySectorData(rChs)){
 						pData->nextSector.__setChs__((pItem+de->nSectors)->chs);
 						gdos->image->MarkSectorAsDirty(rChs);
 					}else{
@@ -265,7 +265,7 @@ error:			*de=tmp; // recovering the original DirectoryEntry
 				}else
 					de->firstSector.__setChs__(pItem->chs);
 				const TPhysicalAddress &rChs=(pItem+de->nSectors)->chs;
-				( (PGdosSectorData)gdos->image->GetSectorData(rChs) )->nextSector.__setEof__(); // guaranteed that Sector always readable
+				( (PGdosSectorData)gdos->image->GetHealthySectorData(rChs) )->nextSector.__setEof__(); // guaranteed that Sector always readable
 				gdos->image->MarkSectorAsDirty(rChs);
 				de->sectorAllocationBitmap.SetSectorAllocation(rChs,true);
 			}

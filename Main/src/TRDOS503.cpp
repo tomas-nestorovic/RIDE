@@ -443,7 +443,7 @@
 			const TSectorTrackPair A = de->first+sector;
 			const div_t B=div(A.track,formatBoot.nHeads);
 			const TPhysicalAddress chs={ B.quot, B.rem, { B.quot, sideMap[B.rem], A.sector+TRDOS503_SECTOR_FIRST_NUMBER, TRDOS503_SECTOR_LENGTH_STD_CODE } };
-			if (const PSectorData data=image->GetSectorData(chs)){
+			if (const PSectorData data=image->GetHealthySectorData(chs)){
 				if (modify){
 					((PBYTE)data)[officialFileSize&(TRDOS503_SECTOR_LENGTH_STD-1)]=*p++;
 					image->MarkSectorAsDirty(chs);
@@ -597,7 +597,7 @@
 				foundEndOfDirectory=true;
 				return false;
 			}
-			entry=trdos->image->GetSectorData(chs);
+			entry=trdos->image->GetHealthySectorData(chs);
 			if (!entry){ // Directory Sector not found
 				entryType=TDirectoryTraversal::WARNING, warning=ERROR_SECTOR_NOT_FOUND;
 				return true;

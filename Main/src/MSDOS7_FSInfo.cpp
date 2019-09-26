@@ -43,7 +43,7 @@
 			return nullptr;
 		// - reading and recognizing the FS Info Sector
 		if (const PCBootSector bootSector=msdos.boot.GetSectorData())
-			if (const PFsInfoSector fsInfo=(PFsInfoSector)msdos.__getLogicalSectorData__(bootSector->fat32.fsInfo))
+			if (const PFsInfoSector fsInfo=(PFsInfoSector)msdos.__getHealthyLogicalSectorData__(bootSector->fat32.fsInfo))
 				if (fsInfo->__recognize__(msdos.formatBoot.sectorLength))
 					return fsInfo;
 		// - FS Info Sector isn't readable or isn't recognized
