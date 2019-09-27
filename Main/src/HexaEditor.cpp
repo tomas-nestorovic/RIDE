@@ -77,6 +77,30 @@
 
 
 
+	static struct TDefaultContentAdviser sealed:public CHexaEditor::IContentAdviser{
+		void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength,bool *pOutDataReady) override{
+			// retrieves the start logical position and length of the Record pointed to by the input LogicalPosition
+			if (pOutRecordStartLogPos)
+				*pOutRecordStartLogPos=0;
+			if (pOutRecordLength)
+				*pOutRecordLength=HEXAEDITOR_RECORD_SIZE_INFINITE;
+			if (pOutDataReady)
+				*pOutDataReady=true;
+		}
+		int LogicalPositionToRow(int logPos,BYTE nBytesInRow) override{
+			// computes and returns the row containing the specified LogicalPosition
+			return logPos/nBytesInRow;
+		}
+		int RowToLogicalPosition(int row,BYTE nBytesInRow) override{
+			// converts Row begin (i.e. its first Byte) to corresponding logical position in underlying File and returns the result
+			return row*nBytesInRow;
+		}
+		LPCTSTR GetRecordLabel(int logPos,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override{
+			// populates the Buffer with label for the Record that STARTS at specified LogicalPosition, and returns the Buffer; returns Null if no Record starts at specified LogicalPosition
+			return nullptr;
+		}
+	} DefaultContentAdviser;
+
 	#define WM_HEXA_PAINTSCROLLBARS	WM_USER+1
 
 	#define ADDRESS_FORMAT			_T(" %04X-%04X")
@@ -92,7 +116,7 @@
 		, customSelectSubmenu(customSelectSubmenu) , customResetSubmenu(customResetSubmenu) , customGotoSubmenu(customGotoSubmenu)
 		, hDefaultAccelerators(::LoadAccelerators(app.m_hInstance,MAKEINTRESOURCE(IDR_HEXAEDITOR)))
 		, caret(0) , param(param) , hPreviouslyFocusedWnd(0)
-		, f(nullptr) , pContentAdviser(nullptr)
+		, f(nullptr) , pContentAdviser(&DefaultContentAdviser)
 		, nBytesInRow(16) , editable(true) , addrLength(ADDRESS_FORMAT_LENGTH)
 		, emphases((PEmphasis)&TEmphasis::Terminator) {
 		// - comparing requested configuration with HexaEditor's skills
@@ -139,32 +163,8 @@
 
 	void CHexaEditor::Reset(CFile *_f,int _minFileSize,int _maxFileSize){
 		// resets the HexaEditor and supplies it new File content
-		if (!( pContentAdviser=dynamic_cast<PContentAdviser>(  f=_f  ) )){
-			static struct TDefault sealed:public IContentAdviser{
-				void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength,bool *pOutDataReady) override{
-					// retrieves the start logical position and length of the Record pointed to by the input LogicalPosition
-					if (pOutRecordStartLogPos)
-						*pOutRecordStartLogPos=0;
-					if (pOutRecordLength)
-						*pOutRecordLength=HEXAEDITOR_RECORD_SIZE_INFINITE;
-					if (pOutDataReady)
-						*pOutDataReady=true;
-				}
-				int LogicalPositionToRow(int logPos,BYTE nBytesInRow) override{
-					// computes and returns the row containing the specified LogicalPosition
-					return logPos/nBytesInRow;
-				}
-				int RowToLogicalPosition(int row,BYTE nBytesInRow) override{
-					// converts Row begin (i.e. its first Byte) to corresponding logical position in underlying File and returns the result
-					return row*nBytesInRow;
-				}
-				LPCTSTR GetRecordLabel(int logPos,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override{
-					// populates the Buffer with label for the Record that STARTS at specified LogicalPosition, and returns the Buffer; returns Null if no Record starts at specified LogicalPosition
-					return nullptr;
-				}
-			} Default;
-			pContentAdviser=&Default;
-		}
+		if (!( pContentAdviser=dynamic_cast<PContentAdviser>(  f=_f  ) ))
+			pContentAdviser=&DefaultContentAdviser;
 		caret=TCaret(0); // resetting the Caret and Selection
 		SetLogicalBounds( _minFileSize, _maxFileSize );
 		SetLogicalSize(f->GetLength());
