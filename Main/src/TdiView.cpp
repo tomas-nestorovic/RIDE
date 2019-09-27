@@ -201,6 +201,7 @@
 			// destroys the GuidePost
 			if (pSingleInstance){
 				::DestroyWindow( pSingleInstance->m_hWnd );
+				delete pSingleInstance;
 				pSingleInstance=nullptr;
 			}
 		}
