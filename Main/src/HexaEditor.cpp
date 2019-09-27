@@ -325,6 +325,7 @@
 
 	LRESULT CHexaEditor::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
 		// window procedure
+		static DWORD cursorPos0;
 		int i;
 		const int caretPos0=caret.position;
 		switch (msg){
@@ -781,6 +782,7 @@ resetSelectionWithValue:BYTE buf[65536];
 				return 0; // to suppress CEdit's standard context menu
 			case WM_LBUTTONDOWN:
 				// left mouse button pressed
+				cursorPos0=lParam;
 				mouseDragged=false;
 				goto leftMouseDragged; // "as if it's already been Dragged"
 			case WM_RBUTTONDOWN:{
@@ -805,7 +807,9 @@ resetSelectionWithValue:BYTE buf[65536];
 				break;
 			case WM_MOUSEMOVE:{
 				// mouse moved
-				if (!( mouseDragged=::GetAsyncKeyState(VK_LBUTTON)<0 )) return 0; // if mouse button not pressed, current Selection cannot be modified
+				if (!( mouseDragged=::GetKeyState(VK_LBUTTON)<0 )) return 0; // if mouse button not pressed, current Selection cannot be modified
+				if (cursorPos0==lParam) return 0; // actually no Cursor movement occured
+				cursorPos0=lParam;
 leftMouseDragged:
 				if (!editable) break; // if window NotEditable, ignoring any mouse events and just focusing the window to receive MouseWheel messages
 				const int logPos=__logicalPositionFromPoint__(CPoint(lParam),&caret.ascii);
@@ -824,6 +828,18 @@ leftMouseDragged:
 				CreateSolidCaret( (2-caret.ascii)*font.charAvgWidth, font.charHeight );
 				ShowCaret();
 				goto caretCorrectlyMoveTo;
+			}
+			case WM_LBUTTONDBLCLK:{
+				// left mouse button double-clicked
+				if (!editable) break; // if window NotEditable, ignoring any mouse events and just focusing the window to receive MouseWheel messages
+				const int logPos=__logicalPositionFromPoint__(CPoint(lParam),&caret.ascii);
+				if (logPos>=0){
+					// in either Hexa or Ascii areas
+					int recordStart,recordLength;
+					pContentAdviser->GetRecordInfo( logPos, &recordStart, &recordLength, nullptr );
+					HexaEditor_SetSelection( m_hWnd, recordStart, recordStart+recordLength );
+				}
+				break;
 			}
 			case WM_SETFOCUS:
 				// window has received focus
