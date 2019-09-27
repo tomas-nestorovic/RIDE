@@ -1178,7 +1178,7 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 		}
 		// - initializing the FS Info Sector
 		if (fat.type==CFat::FAT32)
-			if (const PFsInfoSector fsInfoSector=fsInfo.GetSectorData()){ // FS Info Sector may not be found after unsuccessfull formatting
+			if (const PFsInfoSector fsInfoSector=(PFsInfoSector)__getHealthyLogicalSectorData__(bootSector->fat32.fsInfo)){ // FS Info Sector may not be found after unsuccessfull formatting
 				fsInfoSector->__init__();
 				fsInfo.MarkSectorAsDirty();
 			}else
