@@ -466,9 +466,9 @@
 										CPropGridCtrl::TEnum::DefineConstStringListEditorA( __getListOfMedia__, __getMediumDescription__, nullptr, __onMediumChanged__ )
 									);
 			// . number of Sectors on the disk
-			if (fatType==CFat::FAT32)
+			if (fatType==CFat::FAT32 || boot->nSectorsInTotal16==0)
 				CPropGridCtrl::AddProperty( hPropGrid, hGeometryAdvanced, _T("All sectors"),
-											&boot->fat32.nSectorsFat32, sizeof(TLogSector32),
+											&boot->nSectorsInTotal32, sizeof(TLogSector32),
 											CPropGridCtrl::TInteger::DefineEditor( CPropGridCtrl::TInteger::PositiveIntegerLimits, __bootSectorModified__ )
 										);
 			else
