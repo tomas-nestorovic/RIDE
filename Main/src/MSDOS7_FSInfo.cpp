@@ -46,6 +46,8 @@
 			if (const PFsInfoSector fsInfo=(PFsInfoSector)msdos.__getHealthyLogicalSectorData__(bootSector->fat32.fsInfo))
 				if (fsInfo->__recognize__(msdos.formatBoot.sectorLength))
 					return fsInfo;
+				else
+					::SetLastError(ERROR_INVALID_DATA);
 		// - FS Info Sector isn't readable or isn't recognized
 		return nullptr;
 	}
