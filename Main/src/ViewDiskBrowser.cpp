@@ -80,7 +80,7 @@
 						//fallthrough
 					case ID_SELECT_CURRENT_CYLINDER:{
 						// selecting current Cylinder and placing Cursor at the end of the selection
-						int pos=HexaEditor_GetCursorPos(m_hWnd);
+						int pos=HexaEditor_GetCaretPos(m_hWnd);
 						f->Seek(pos,CFile::begin);
 						const TPhysicalAddress currChs=f->GetCurrentPhysicalAddress();
 						int selectionA;
@@ -109,7 +109,7 @@
 						//fallthrough
 					case ID_NAVIGATE_PREVIOUSCYLINDER:{
 						// moving Cursor at the beginning of previous Cylinder
-						int pos=HexaEditor_GetCursorPos(m_hWnd);
+						int pos=HexaEditor_GetCaretPos(m_hWnd);
 						f->Seek(pos-1,CFile::begin);
 						const TPhysicalAddress currChs=f->GetCurrentPhysicalAddress();
 						int targetPos;
@@ -129,7 +129,7 @@
 						//fallthrough
 					case ID_NAVIGATE_NEXTCYLINDER:{
 						// moving Cursor at the beginning of next Cylinder
-						int pos=HexaEditor_GetCursorPos(m_hWnd);
+						int pos=HexaEditor_GetCaretPos(m_hWnd);
 						f->Seek(pos,CFile::begin);
 						const TPhysicalAddress currChs=f->GetCurrentPhysicalAddress();
 						do{
@@ -146,7 +146,7 @@
 					case ID_NAVIGATE_SECTOR:{
 						// moving Cursor at the beginning of user-selected Sector
 						// . seeking at the Cursor Position to determine the PhysicalAddress
-						f->Seek( HexaEditor_GetCursorPos(m_hWnd), CFile::begin );
+						f->Seek( HexaEditor_GetCaretPos(m_hWnd), CFile::begin );
 						// . defining the Dialog
 						class CGoToSectorDialog sealed:public CDialog{
 							const PCImage image;
