@@ -5,7 +5,8 @@
 
 	CMSDOS7::CFat::CFat(const CMSDOS7 &msdos)
 		// ctor
-		: msdos(msdos) , type(UNDETERMINED) {
+		: msdos(msdos) , type(UNDETERMINED)
+		, firstFreeClusterTemp(-1) , nFreeClustersTemp(-1) {
 	}
 
 	#define FAT12_CLUSTERS_COUNT_MAX	4085
@@ -87,8 +88,9 @@ nextByte:		;
 	bool CMSDOS7::CFat::SetClusterValue(TCluster32 cluster,DWORD newValue) const{
 		// True <=> NewValue of given Cluster successfully written into at least one copy of FAT, otherwise False
 		if (const PCBootSector bootSector=msdos.boot.GetSectorData()){
-			// . modifying the FSInfo Sector
-			if (const PFsInfoSector fsInfo=msdos.fsInfo.GetSectorData())
+			// . modifying the information on first free Cluster
+			if (const PFsInfoSector fsInfo=msdos.fsInfo.GetSectorData()){
+				// for FAT32, using the FS-Info Sector
 				if (newValue==MSDOS7_FAT_CLUSTER_EMPTY && cluster<fsInfo->firstFreeCluster){
 					fsInfo->firstFreeCluster=cluster;
 					msdos.fsInfo.MarkSectorAsDirty();
@@ -96,6 +98,12 @@ nextByte:		;
 					fsInfo->firstFreeCluster++;
 					msdos.fsInfo.MarkSectorAsDirty();
 				}
+			}else
+				// for FAT32 without FS-Info Sector or for FAT16/FAT12, using the temporary information on first free Cluster
+				if (newValue==MSDOS7_FAT_CLUSTER_EMPTY && cluster<firstFreeClusterTemp)
+					firstFreeClusterTemp=cluster;
+				else if (newValue!=MSDOS7_FAT_CLUSTER_EMPTY && cluster==firstFreeClusterTemp)
+					firstFreeClusterTemp++;
 			// . adjusting the NewValue and Mask
 			DWORD mask;
 			switch (type){

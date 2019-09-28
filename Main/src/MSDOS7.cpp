@@ -271,31 +271,43 @@
 
 	DWORD CMSDOS7::GetFreeSpaceInBytes(TStdWinError &rError) const{
 		// computes and returns the empty space on disk
+		rError=ERROR_SUCCESS;
+		const PCBootSector bootSector=boot.GetSectorData(); // guaranteed to be found at this point
+		const DWORD nBytesInCluster=bootSector->__getClusterSizeInBytes__();
 		if (const PFsInfoSector fsInfoSector=fsInfo.GetSectorData()){
 			// for FAT32, computing the free space quickly from available FS Info Sector
-			rError=ERROR_SUCCESS;
-			const PCBootSector bootSector=boot.GetSectorData(); // guaranteed to be found at this point
-			const DWORD nBytesInCluster=bootSector->__getClusterSizeInBytes__();
-			if (fsInfoSector->nFreeClusters>=__getCountOfClusters__()){
+			if (fsInfoSector->nFreeClusters>__getCountOfClusters__()){
 				// value in FsInfoSector out of range - fixing it
-				fsInfoSector->nFreeClusters=CDos::GetFreeSpaceInBytes(rError) // base
+				fsInfoSector->nFreeClusters=__super::GetFreeSpaceInBytes(rError) // base, doing the hard work to compute the free space
 											/
 											nBytesInCluster;
 				fsInfo.MarkSectorAsDirty();
 			}
 			return fsInfoSector->nFreeClusters*nBytesInCluster;
-		}else
-			// for FAT32 without FS Info Sector or for FAT16/FAT12, doing the hard work to compute the free space
-			return CDos::GetFreeSpaceInBytes(rError);
+		}else{
+			// for FAT32 without FS Info Sector or for FAT16/FAT12, using the temporary information on free space
+			if (fat.nFreeClustersTemp>__getCountOfClusters__())
+				// value out of range - fixing it
+				fat.nFreeClustersTemp =	__super::GetFreeSpaceInBytes(rError) // base, doing the hard work to compute the free space
+										/
+										nBytesInCluster;
+			return fat.nFreeClustersTemp*nBytesInCluster;
+		}
 	}
 
 	CMSDOS7::TCluster32 CMSDOS7::__getFirstFreeHealthyCluster__() const{
 		// searches for and returns the first Cluster that's reported as Empty and is fully intact (i.e. is readable, and thus assumed also writeable); returns MSDOS7_FAT_CLUSTER_EOF is no free healthy Cluster can be found
-		const PFsInfoSector fsInfoSector=fsInfo.GetSectorData();
 		const TCluster32 clusterMax=MSDOS7_DATA_CLUSTER_FIRST+__getCountOfClusters__();
-		TCluster32 result=	fsInfoSector && fsInfoSector->firstFreeCluster<clusterMax // FS Info Sector exists and contains initialized value
-							? fsInfoSector->firstFreeCluster
-							: MSDOS7_DATA_CLUSTER_FIRST;
+		const PFsInfoSector fsInfoSector=fsInfo.GetSectorData();
+		TCluster32 result=MSDOS7_DATA_CLUSTER_FIRST;
+		if (fsInfoSector){
+			// for FAT32, using the FS-Info Sector
+			if (fsInfoSector->firstFreeCluster<clusterMax) // FS-Info Sector exists and contains initialized value
+				result=fsInfoSector->firstFreeCluster;
+		}else
+			// for FAT32 without FS-Info Sector or for FAT16/FAT12, using the temporary information on first free Cluster
+			if (fat.firstFreeClusterTemp<clusterMax)
+				result=fat.firstFreeClusterTemp;
 		while (result<clusterMax){
 			if (fat.GetClusterValue(result)==MSDOS7_FAT_CLUSTER_EMPTY){
 				// found an empty Cluster
@@ -307,11 +319,14 @@
 						fat.SetClusterValue(result,MSDOS7_FAT_CLUSTER_BAD); // marking the Cluster as Bad
 						goto nextCluster;
 					}
-				// . updating FS Info Sector
+				// . updating the information on first free Cluster
 				if (fsInfoSector){
+					// for FAT32, using the FS-Info Sector
 					fsInfoSector->firstFreeCluster=result; // just in case the value was invalid
 					fsInfo.MarkSectorAsDirty();
-				}
+				}else
+					// for FAT32 without FS-Info Sector or for FAT16/FAT12, using the temporary information on first free Cluster
+					fat.firstFreeClusterTemp=result; // just in case the value was invalid
 				// . returning the result
 				return result;
 			}
@@ -849,13 +864,17 @@ nextCluster:result++;
 									}
 									break;
 							}
-					// : modifying the FS Info Sector
+					// : modifying the information on free space
+					const TSector nSectorsInCluster=boot.GetSectorData()->nSectorsInCluster; // Boot Sector guarateed to exist in this context
 					if (const PFsInfoSector fsInfoSector=fsInfo.GetSectorData()){
-						const TSector nSectorsInCluster=boot.GetSectorData()->nSectorsInCluster; // Boot Sector guarateed to exist in this context
+						// for FAT32, using the FS-Info Sector
 						fsInfoSector->nFreeClusters // guaranteed that NumberOfFreeClusters initialized (as caller had to call GetFreeSpaceInBytes, where it eventually has been initialized)
 							+=(n+nSectorsInCluster-1)/nSectorsInCluster; // count of Directory Sectors rounded up to whole Clusters
 						fsInfo.MarkSectorAsDirty();
-					}
+					}else
+						// for FAT32 without FS Info Sector or for FAT16/FAT12, using the temporary information on free space
+						fat.nFreeClustersTemp
+							+=(n+nSectorsInCluster-1)/nSectorsInCluster; // count of Directory Sectors rounded up to whole Clusters
 					// : marking occupied Clusters as Empty in FAT
 					if (n)
 						fat.FreeChainOfClusters(item->value);
@@ -940,13 +959,17 @@ nextCluster:result++;
 		const PDirectoryEntry de=(PDirectoryEntry)rFile;
 			// . first Cluster
 			de->shortNameEntry.__setFirstCluster__(cluster0);
-		// - modifying the FS Info Sector
+		// - modifying the information on free space
+		const TSector nSectorsInCluster=boot.GetSectorData()->nSectorsInCluster; // Boot Sector guarateed to exist in this context
 		if (const PFsInfoSector fsInfoSector=fsInfo.GetSectorData()){
-			const TSector nSectorsInCluster=boot.GetSectorData()->nSectorsInCluster; // Boot Sector guarateed to exist in this context
+			// for FAT32, using the FS-Info Sector
 			fsInfoSector->nFreeClusters // guaranteed that NumberOfFreeClusters initialized (as caller had to call GetFreeSpaceInBytes, where it eventually has been initialized)
 				-=(n+nSectorsInCluster-1)/nSectorsInCluster; // count of Directory Sectors rounded up to whole Clusters
 			fsInfo.MarkSectorAsDirty();
-		}
+		}else
+			// for FAT32 without FS-Info Sector or for FAT16/FAT12, using the temporary information on free space
+			fat.nFreeClustersTemp
+				-=(n+nSectorsInCluster-1)/nSectorsInCluster; // count of Directory Sectors rounded up to whole Clusters
 		// - marking newly occupied Clusters in the FAT
 		if (fileSize){ // only NON-zero-length Files are in FAT
 			for( DWORD h; --n; cluster0=h ) // all Sectors but the last one are Occupied in FatPath

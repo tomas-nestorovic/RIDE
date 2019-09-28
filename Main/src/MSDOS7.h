@@ -45,6 +45,9 @@
 
 			static TType GetFatType(TCluster32 nClusters);
 
+			mutable TCluster32 nFreeClustersTemp;
+			mutable TCluster32 firstFreeClusterTemp;
+
 			CFat(const CMSDOS7 &msdos);
 
 			TCluster32 GetMinCountOfClusters() const;
