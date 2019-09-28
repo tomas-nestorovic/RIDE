@@ -236,7 +236,10 @@
 			dos = image->dos = CDos::CRecognition().__perform__(image,&formatBoot)->fnInstantiate(image,&formatBoot);
 			image->SetMediumTypeAndGeometry( &formatBoot, dos->sideMap, dos->properties->firstSectorNumber );
 			// . creating the user interface for recognized DOS
-			dos->CreateUserInterface( TDI_HWND ); // assumed always ERROR_SUCCESS
+			if (const TStdWinError err=dos->CreateUserInterface(TDI_HWND)){
+				delete image; // ... as it may change here!
+				return Utils::FatalError( _T("Cannot access the image"), err );
+			}
 			image->SetPathName(VOLUME_LABEL_DEFAULT_ANSI_8CHARS,FALSE);
 		}
 	}
