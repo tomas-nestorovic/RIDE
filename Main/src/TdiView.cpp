@@ -165,6 +165,12 @@
 							return 0;
 					}
 					break;
+				case WM_NCDESTROY:
+					// window is about to be destroyed
+					__super::WindowProc(msg,wParam,lParam);
+					delete pSingleInstance;
+					pSingleInstance=nullptr;
+					return 0;
 			}
 			return __super::WindowProc(msg,wParam,lParam);
 		}
@@ -199,11 +205,8 @@
 
 		static void Hide(){
 			// destroys the GuidePost
-			if (pSingleInstance){
+			if (pSingleInstance)
 				::DestroyWindow( pSingleInstance->m_hWnd );
-				delete pSingleInstance;
-				pSingleInstance=nullptr;
-			}
 		}
 	};
 
