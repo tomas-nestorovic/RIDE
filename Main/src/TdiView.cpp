@@ -20,8 +20,8 @@
 
 
 	class CIntroductoryGuidePost sealed:public CDialog{
-		const CRideFont sectionTitleFont;
-		const CRideFont buttonCaptionFont;
+		const Utils::CRideFont sectionTitleFont;
+		const Utils::CRideFont buttonCaptionFont;
 		BYTE nCategories;
 		struct{
 			short posY;
@@ -37,7 +37,7 @@
 			, nCategories(0) {
 		}
 
-		void __addStaticText__(LPCTSTR text,const CRideFont &rFont){
+		void __addStaticText__(LPCTSTR text,const Utils::CRideFont &rFont){
 			// adds a new static text under currently open category
 			const int height=rFont.charHeight+2*(1+::GetSystemMetrics(SM_CYBORDER));
 			::SendMessage(
@@ -123,17 +123,17 @@
 					const CClientDC dc(this);
 					RECT rc;
 					GetDlgItem(ID_HEAD)->GetClientRect(&rc);
-					::FillRect( dc, &rc, CRideBrush::White );
+					::FillRect( dc, &rc, Utils::CRideBrush::White );
 					// . application title
 					::SetBkMode(dc,TRANSPARENT);
 					rc.left=55*Utils::LogicalUnitScaleFactor;
-					const CRideFont fontTitle( FONT_MS_SANS_SERIF, 195, false, true );
+					const Utils::CRideFont fontTitle( FONT_MS_SANS_SERIF, 195, false, true );
 					const HGDIOBJ hFont0=::SelectObject( dc, fontTitle );
 						::SetTextColor( dc, 0xffecd9 );
 						::DrawText( dc, APP_FULLNAME,-1, &rc, DT_LEFT|DT_VCENTER|DT_SINGLELINE|DT_NOPREFIX );
 					//::SelectObject(dc,hFont0); // commented out as further changes to DC's font below
 					// . category Glyphs etc
-					const CRideFont fontGlyph( FONT_WEBDINGS, 300, false, true );
+					const Utils::CRideFont fontGlyph( FONT_WEBDINGS, 300, false, true );
 					::SelectObject( dc, fontGlyph );
 						::SetTextColor( dc, Utils::GetBlendedColor(::GetSysColor(COLOR_BTNFACE),::GetSysColor(COLOR_BTNTEXT),.3f) );
 						for( BYTE c=0; c<nCategories; c++ )

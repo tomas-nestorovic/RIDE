@@ -255,7 +255,7 @@
 			static const TDirectoryStructureManagement dirManagement;
 
 			const HMODULE hShell32;
-			const CRideFont font;
+			const Utils::CRideFont font;
 			HICON icons[MSDOS7_FILE_ICONS_COUNT];
 
 			HICON __getIcon__(PCDirectoryEntry de) const;

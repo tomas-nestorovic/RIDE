@@ -48,7 +48,7 @@
 
 			TZxRom();
 
-			const CRideFont font;
+			const Utils::CRideFont font;
 			mutable class CLineComposerPropGridEditor sealed{
 				static HWND WINAPI __create__(CPropGridCtrl::PValue value,CPropGridCtrl::TValueSize combinedValue,HWND hParent);
 				static void WINAPI __drawValue__(CPropGridCtrl::PCustomParam,CPropGridCtrl::PCValue value,CPropGridCtrl::TValueSize combinedValue,PDRAWITEMSTRUCT pdis);

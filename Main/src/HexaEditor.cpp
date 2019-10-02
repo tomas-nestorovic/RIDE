@@ -977,7 +977,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 						rcClip.top=dc.m_ps.rcPaint.top, rcClip.bottom=dc.m_ps.rcPaint.bottom;
 					if (rcClip.top<HEADER_HEIGHT){ // Header drawn only if its region invalid
 						RECT rcHeader={ 0, 0, rcClip.right, HEADER_HEIGHT };
-						::FillRect( dc, &rcHeader, CRideBrush::BtnFace );
+						::FillRect( dc, &rcHeader, Utils::CRideBrush::BtnFace );
 						TCHAR buf[16];
 						dc.SetContentPrintState( CHexaPaintDC::Normal, ::GetSysColor(COLOR_BTNFACE) );
 						rcHeader.left=(addrLength+ADDRESS_SPACE_LENGTH)*font.charAvgWidth;
@@ -994,14 +994,14 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 					const int xHexaStart=(addrLength+ADDRESS_SPACE_LENGTH)*font.charAvgWidth, xHexaEnd=xHexaStart+HEXA_FORMAT_LENGTH*nBytesInRow*font.charAvgWidth;
 					const int xAsciiStart=xHexaEnd+HEXA_SPACE_LENGTH*font.charAvgWidth, xAsciiEnd=xAsciiStart+nBytesInRow*font.charAvgWidth;
 					RECT r={ std::min<LONG>(addrLength*font.charAvgWidth,rcClip.right), std::max<LONG>(rcClip.top,HEADER_HEIGHT), std::min<LONG>(xHexaStart,rcClip.right), rcClip.bottom }; // Addresses-Hexa space; min(.) = to not paint over the scrollbar
-					::FillRect( dc, &r, CRideBrush::White );
+					::FillRect( dc, &r, Utils::CRideBrush::White );
 					r.left=std::min<LONG>(xHexaEnd,rcClip.right), r.right=std::min<LONG>(xAsciiStart,rcClip.right); // Hexa-Ascii space; min(.) = to not paint over the scrollbar
-					::FillRect( dc, &r, CRideBrush::White );
+					::FillRect( dc, &r, Utils::CRideBrush::White );
 					r.left=std::min<LONG>(xAsciiEnd,rcClip.right), r.right=std::min<>(rcClip.right,rcClip.right); // Label space; min(.) = to not paint over the scrollbar
-					::FillRect( dc, &r, CRideBrush::White );
+					::FillRect( dc, &r, Utils::CRideBrush::White );
 					// . drawing Addresses and data (both Ascii and Hexa parts)
 					const COLORREF labelColor=Utils::GetSaturatedColor(::GetSysColor(COLOR_GRAYTEXT),1.7f+.1f*!editable);
-					const CRidePen recordDelimitingHairline( 0, labelColor );
+					const Utils::CRidePen recordDelimitingHairline( 0, labelColor );
 					const HGDIOBJ hPen0=::SelectObject( dc, recordDelimitingHairline );
 						int address=__firstByteInRowToLogicalPosition__(iRowA), y=HEADER_HEIGHT+iRowFirstToPaint*font.charHeight;
 						const int _selectionA=std::min<>(caret.selectionA,caret.position), _selectionZ=std::max<>(caret.position,caret.selectionA);
@@ -1052,7 +1052,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 										dc.DrawText( buf, ::wsprintf(buf,HEXA_FORMAT,iByte), &rcHexa, DT_LEFT|DT_TOP );
 										if (address==nearestNextBookmarkPos){
 											const RECT rcBookmark={ rcHexa.left, rcHexa.top, rcHexa.left+2*font.charAvgWidth, rcHexa.top+font.charHeight };
-											::FrameRect( dc, &rcBookmark, CRideBrush::Black );
+											::FrameRect( dc, &rcBookmark, Utils::CRideBrush::Black );
 										}
 										rcHexa.left+=HEXA_FORMAT_LENGTH*font.charAvgWidth;
 										// | Ascii
@@ -1062,7 +1062,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 												);
 										if (address==nearestNextBookmarkPos){
 											const RECT rcBookmark={ rcAscii.left, rcAscii.top, rcAscii.left+font.charAvgWidth, rcAscii.top+font.charHeight };
-											::FrameRect( dc, &rcBookmark, CRideBrush::Black );
+											::FrameRect( dc, &rcBookmark, Utils::CRideBrush::Black );
 											nearestNextBookmarkPos=bookmarks.__getNearestNextBookmarkPosition__(address+1);
 										}
 										rcAscii.left+=font.charAvgWidth;
@@ -1085,9 +1085,9 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 							}
 							// : filling the rest of the Row with background color (e.g. the last Row in a Record may not span up to the end)
 							if (rcHexa.left<rcHexa.right) // to not paint over the scrollbar
-								::FillRect( dc, &rcHexa, CRideBrush::White );
+								::FillRect( dc, &rcHexa, Utils::CRideBrush::White );
 							if (rcAscii.left<rcAscii.right) // to not paint over the scrollbar
-								::FillRect( dc, &rcAscii, CRideBrush::White );
+								::FillRect( dc, &rcAscii, Utils::CRideBrush::White );
 							// : drawing the Record label if the just drawn Row is the Record's first Row
 							if (!isEof){ // yes, a new Record can potentially start at the Row
 								TCHAR buf[80];
@@ -1104,7 +1104,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 					::SelectObject(dc,hPen0);
 					// . filling the rest of HexaEditor with background color
 					rcClip.top=y;
-					::FillRect( dc, &rcClip, CRideBrush::White );
+					::FillRect( dc, &rcClip, Utils::CRideBrush::White );
 				::SelectObject(dc,hFont0);
 				return 0;
 			}

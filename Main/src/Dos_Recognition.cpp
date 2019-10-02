@@ -183,13 +183,13 @@
 						Utils::ScaleLogicalUnit(dc);
 						RECT r=pdis->rcItem;
 						Utils::UnscaleLogicalUnit((PINT)&r,4), Utils::UnscaleLogicalUnit((PINT)&pdis->rcItem,4);
-						const CRideFont newDosSymbolFont(FONT_WINGDINGS,180,false,false);
+						const Utils::CRideFont newDosSymbolFont(FONT_WINGDINGS,180,false,false);
 						const HGDIOBJ hFont0=::SelectObject( dc, newDosSymbolFont );
 							if (pdis->itemState&ODS_SELECTED){
-								::FillRect( dc, &r, CRideBrush::Selection );
+								::FillRect( dc, &r, Utils::CRideBrush::Selection );
 								::SetTextColor( dc, COLOR_WHITE );
 							}else{
-								::FillRect( dc, &r, CRideBrush::White );
+								::FillRect( dc, &r, Utils::CRideBrush::White );
 								::SetTextColor( dc, COLOR_BLACK );
 							}
 							r.left+=4, r.bottom-=15;
@@ -200,9 +200,9 @@
 									r.left+=25;
 									break;
 								}
-						::SelectObject( dc, CRideFont::StdBold );
+						::SelectObject( dc, Utils::CRideFont::StdBold );
 							::DrawText( dc, props->name,-1, &r, DT_SINGLELINE|DT_VCENTER );
-						::SelectObject( dc, CRideFont::Small );
+						::SelectObject( dc, Utils::CRideFont::Small );
 							r.top=r.bottom-8, r.bottom=pdis->rcItem.bottom;
 							TCHAR desc[80];
 							::wsprintf( desc, _T("Recognition priority: %d"), props->recognitionPriority );

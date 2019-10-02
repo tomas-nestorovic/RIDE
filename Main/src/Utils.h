@@ -3,7 +3,36 @@
 
 #define MSG_HELP_CANCEL	_T("Don't need any help now.")
 
+typedef DWORD TStdWinError; // Windows standard i/o error
+
 namespace Utils{
+
+	class CRidePen sealed:public ::CPen{
+	public:
+		static const CRidePen BlackHairline, WhiteHairline, RedHairline;
+
+		CRidePen(BYTE thickness,COLORREF color);
+	};
+
+	class CRideBrush sealed:public ::CBrush{
+	public:
+		static const CRideBrush None, Black, White, BtnFace, Selection;
+
+		CRideBrush(int stockObjectId);
+		CRideBrush(bool sysColor,int sysColorId);
+	};
+
+	class CRideFont sealed:public ::CFont{
+	public:
+		static const CRideFont Small, Std, StdBold;
+
+		int charAvgWidth,charHeight;
+
+		CRideFont(LPCTSTR face,int pointHeight,bool bold=false,bool dpiScaled=false,int pointWidth=0);
+
+		SIZE GetTextSize(LPCTSTR text,int textLength) const;
+		SIZE GetTextSize(LPCTSTR text) const;
+	};
 
 	class CCommandDialog:public CDialog{
 		const LPCTSTR information;

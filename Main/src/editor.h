@@ -3,40 +3,22 @@
 
 	#define INI_GENERAL			_T("General")
 
-	class CRidePen sealed:public CPen{
-	public:
-		static const CRidePen BlackHairline, WhiteHairline, RedHairline;
-
-		CRidePen(BYTE thickness,COLORREF color);
-	};
-
-	class CRideBrush sealed:public CBrush{
-	public:
-		static const CRideBrush None, Black, White, BtnFace, Selection;
-
-		CRideBrush(int stockObjectId);
-		CRideBrush(bool sysColor,int sysColorId);
-	};
-
-	class CRideFont sealed:public CFont{
-	public:
-		static const CRideFont Small, Std, StdBold;
-
-		int charAvgWidth,charHeight;
-
-		CRideFont(LPCTSTR face,int pointHeight,bool bold=false,bool dpiScaled=false,int pointWidth=0);
-
-		SIZE GetTextSize(LPCTSTR text,int textLength) const;
-		SIZE GetTextSize(LPCTSTR text) const;
-	};
-
-
-
-
 	class CRideApp sealed:public CWinApp{
 		DECLARE_MESSAGE_MAP()
 	public:
-		static bool __doPromptFileName__(PTCHAR fileName,bool fddAccessAllowed,UINT stdStringId,DWORD flags,LPCVOID singleAllowedImageProperties);
+		class CRecentFileListEx sealed:public CRecentFileList{
+			CDos::PCProperties openWith[ID_FILE_MRU_LAST+1-ID_FILE_MRU_FIRST];
+		public:
+			CRecentFileListEx(const CRecentFileList &rStdMru);
+
+			CDos::PCProperties GetDosMruFileOpenWith(int nIndex) const;
+			void Add(LPCTSTR lpszPathName,CDos::PCProperties dosProps);
+			void Remove(int nIndex) override;
+			void ReadList() override;
+			void WriteList() override;
+		};
+
+		static bool __doPromptFileName__(PTCHAR fileName,bool fddAccessAllowed,UINT stdStringId,DWORD flags,CImage::PCProperties singleAllowedImage);
 
 		static CLIPFORMAT cfDescriptor,cfRideFileList,cfContent,cfPreferredDropEffect,cfPerformedDropEffect,cfPasteSucceeded;
 

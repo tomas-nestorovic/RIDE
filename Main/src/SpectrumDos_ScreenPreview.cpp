@@ -78,7 +78,7 @@
 								);
 				}else{
 					// no screen File to draw
-					//::FillRect( dc, &r, CRideBrush::BtnFace );
+					//::FillRect( dc, &r, Utils::CRideBrush::BtnFace );
 					::SetBkMode(dc,TRANSPARENT);
 					::DrawText( dc, _T("Error: No file to display"),-1, &r, DT_SINGLELINE|DT_CENTER|DT_VCENTER );
 					::LineTo( dc, r.right, r.bottom );

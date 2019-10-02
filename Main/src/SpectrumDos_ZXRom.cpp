@@ -208,7 +208,7 @@
 		rEditor.cursor.mode=TCursor::LC; // "L" Cursor if CapsLock off, "C" Cursor if CapsLock on
 		rEditor.cursor.position=rEditor.length;
 		// - returning the initialized Editor
-		const HWND hEditor=::CreateWindow(	AfxRegisterWndClass(0,app.LoadStandardCursor(IDC_IBEAM),CRideBrush::White),
+		const HWND hEditor=::CreateWindow(	AfxRegisterWndClass(0,app.LoadStandardCursor(IDC_IBEAM),Utils::CRideBrush::White),
 											nullptr, WS_CHILD|WS_VISIBLE|WS_CLIPSIBLINGS, 0,0, 1,1, hParent, 0, AfxGetInstanceHandle(), nullptr
 										);
 		(WNDPROC)::SetWindowLong(hEditor,GWL_WNDPROC,(LONG)__wndProc__);
@@ -269,7 +269,7 @@
 									);
 						r.right=( r.left=(_tcschr(bufT,CURSOR_PLACEHOLDER)-bufT-1)*rZxRom.font.charAvgWidth )+rZxRom.font.charAvgWidth;
 						r.bottom=( r.top=(r.bottom-rZxRom.font.charHeight)/2 )+rZxRom.font.charHeight;
-						::FillRect( dc, &r, CRideBrush::Black );
+						::FillRect( dc, &r, Utils::CRideBrush::Black );
 						::SetTextColor( dc, 0xffffff );
 						if (rEditor.cursor.mode==TCursor::LC && IS_CAPSLOCK_ON()){
 							// displaying the "C" Mode (Capitals) at place of the "L" mode

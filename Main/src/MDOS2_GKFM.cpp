@@ -230,7 +230,7 @@
 						);
 		__drawIcon__( __getIconDataFromBoot__(boot), dc, GKFM_ICON_PG_ZOOM_FACTOR );
 		// - drawing text
-		const CRideFont font(FONT_VERDANA,60);
+		const Utils::CRideFont font(FONT_VERDANA,60);
 		const HGDIOBJ hFont0=::SelectObject(dc,font.m_hObject);
 			TCHAR buf[GKFM_TEXT_MAX];
 			__getTextFromBoot__(boot,buf);

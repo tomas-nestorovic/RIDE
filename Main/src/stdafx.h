@@ -64,8 +64,8 @@ typedef const BYTE *PCBYTE;
 typedef const WORD *PCWORD;
 typedef const int *PCINT;
 
+#include "Utils.h"
 #include "MainWindow.h"
-#include "Editor.h"
 #include "HexaEditor.h"
 #include "Image.h"
 #include "DialogFormatting.h"
@@ -75,7 +75,6 @@ typedef const int *PCINT;
 #include "MGT.h"
 #include "Dsk5.h"
 #include "FDD.h"
-#include "Utils.h"
 #include "Dos.h"
 #include "Debug.h"
 #include "SCL.h"
@@ -90,6 +89,7 @@ typedef const int *PCINT;
 #include "DosUnknown.h"
 #include "DialogNewImage.h"
 #include "DialogEmptySpaceFilling.h"
+#include "Editor.h"
 
 #define DLL_UXTHEME		_T("UxTheme.dll")
 #define DLL_SHELL32		_T("shell32.dll")

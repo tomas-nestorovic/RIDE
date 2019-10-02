@@ -4,92 +4,6 @@
 #include "TRDOS.h"
 #include "GDOS.h"
 
-	CRidePen::CRidePen(BYTE thickness,COLORREF color)
-		// ctor
-		: CPen(PS_SOLID,thickness,color) {
-	}
-
-	const CRidePen CRidePen::BlackHairline(0,0);
-	const CRidePen CRidePen::WhiteHairline(0,0xffffff);
-	const CRidePen CRidePen::RedHairline(0,0xff);
-
-
-
-
-	CRideBrush::CRideBrush(int stockObjectId){
-		// ctor
-		CreateStockObject(stockObjectId);
-	}
-
-	CRideBrush::CRideBrush(bool sysColor,int sysColorId){
-		// ctor
-		CreateSysColorBrush(sysColorId);
-	}
-
-	const CRideBrush CRideBrush::None=NULL_BRUSH;
-	const CRideBrush CRideBrush::Black=BLACK_BRUSH;
-	const CRideBrush CRideBrush::White=WHITE_BRUSH;
-	const CRideBrush CRideBrush::BtnFace(true,COLOR_BTNFACE);
-	const CRideBrush CRideBrush::Selection(true,COLOR_ACTIVECAPTION);
-
-
-
-
-	CRideFont::CRideFont(LPCTSTR face,int pointHeight,bool bold,bool dpiScaled,int pointWidth){
-		// ctor
-		// - creating the Font
-		//CreatePointFont(pointHeight,face);
-		float fontHeight=10.f*-pointHeight/72.f, fontWidth=10.f*-pointWidth/72.f;
-		if (dpiScaled){
-			const float factor=Utils::LogicalUnitScaleFactor;
-			fontHeight*=factor, fontWidth*=factor;
-		}
-		CreateFont( fontHeight, fontWidth, 0, 0,
-					bold*FW_BOLD,
-					FALSE, FALSE, FALSE,
-					DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-					ANTIALIASED_QUALITY,
-					FF_DONTCARE,
-					face
-				);
-/*		if (bold){
-			LOGFONT logFont;
-			GetObject(sizeof(logFont),&logFont);
-				logFont.lfWeight=FW_BOLD;
-			DeleteObject();
-			CreateFontIndirect(&logFont);
-		}*/
-		// - determining the AvgWidth and Height of Font characters
-		CClientDC dc(app.m_pMainWnd);
-		const HGDIOBJ hFont0=::SelectObject( dc, m_hObject );
-			TEXTMETRIC tm;
-			dc.GetTextMetrics(&tm);
-			charAvgWidth=tm.tmAveCharWidth;
-			charHeight=tm.tmHeight;
-		::SelectObject(dc,hFont0);
-	}
-
-	SIZE CRideFont::GetTextSize(LPCTSTR text,int textLength) const{
-		// determines and returns the Size of the specified Text using using this font face
-		const CClientDC screen(nullptr);
-		const HGDIOBJ hFont0=::SelectObject( screen, m_hObject );
-			const SIZE result=screen.GetTextExtent( text, textLength );
-		::SelectObject( screen, hFont0 );
-		return result;
-	}
-
-	SIZE CRideFont::GetTextSize(LPCTSTR text) const{
-		// determines and returns the Size of the specified Text using using this font face
-		return GetTextSize( text, ::lstrlen(text) );
-	}
-
-	const CRideFont CRideFont::Small(FONT_MS_SANS_SERIF,70);
-	const CRideFont CRideFont::Std(FONT_MS_SANS_SERIF,90);
-	const CRideFont CRideFont::StdBold(FONT_MS_SANS_SERIF,90,true);
-
-
-
-
 	CRideApp app;
 
 	#define INI_MSG_OPEN_AS		_T("msgopenas")
@@ -441,10 +355,9 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			}
 		return ::CallNextHookEx(ofn_hHook,kod,wParam,lParam);
 	}
-	bool CRideApp::__doPromptFileName__(PTCHAR fileName,bool fddAccessAllowed,UINT stdStringId,DWORD flags,LPCVOID singleAllowedImageProperties){
+	bool CRideApp::__doPromptFileName__(PTCHAR fileName,bool fddAccessAllowed,UINT stdStringId,DWORD flags,CImage::PCProperties singleAllowedImage){
 		// reimplementation of CDocManager::DoPromptFileName
 		// - creating the list of Filters
-		const CImage::PCProperties singleAllowedImage=(CImage::PCProperties)singleAllowedImageProperties;
 		TCHAR buf[300],*a=buf; // an "always big enough" buffer
 		DWORD nFilters=0;
 		if (singleAllowedImage)

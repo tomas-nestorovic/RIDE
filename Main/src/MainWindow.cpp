@@ -180,7 +180,7 @@
 			pTdi->m_hWnd,
 			&CTdiCtrl::TParams( pTdi, CTdiView::__fnShowContent__, CTdiView::__fnHideContent__, CTdiView::__fnRepaintContent__, CTdiView::__fnGetHwnd__ )
 		);
-		pTdi->SendMessage( WM_SETFONT, (WPARAM)CRideFont(FONT_MS_SANS_SERIF,90,false,true).Detach(), TRUE );
+		pTdi->SendMessage( WM_SETFONT, (WPARAM)Utils::CRideFont(FONT_MS_SANS_SERIF,90,false,true).Detach(), TRUE );
 		// - creating the StatusBar
 		statusBar.Create(this);
 		__resetStatusBar__();

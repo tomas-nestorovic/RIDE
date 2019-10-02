@@ -155,7 +155,7 @@
 			OnPrepareDC(&dc);
 			// . basic drawing
 			::SetBkMode(dc,TRANSPARENT);
-			const HGDIOBJ font0=::SelectObject(dc,CRideFont::Std);
+			const HGDIOBJ font0=::SelectObject(dc,Utils::CRideFont::Std);
 				const TTrackInfo &rti=*(TTrackInfo *)pTrackInfo;
 				TCHAR buf[16];
 				// : drawing Cylinder and Side numbers
@@ -170,7 +170,7 @@
 				PCWORD pLength=rti.bufferLength;
 				TSector nSectors=rti.nSectors;
 				RECT r={ SECTOR1_X, y+(TRACK_HEIGHT-SECTOR_HEIGHT)/2, SECTOR1_X, y+(TRACK_HEIGHT+SECTOR_HEIGHT)/2 };
-				const HGDIOBJ hBrush0=::SelectObject(dc,CRideBrush::White);
+				const HGDIOBJ hBrush0=::SelectObject(dc,Utils::CRideBrush::White);
 					if (displayType==TDisplayType::STATUS){
 						// drawing Sector Statuses
 						CDos::TSectorStatus statuses[(TSector)-1],*ps=statuses;
@@ -195,11 +195,11 @@
 								for( WORD n=w; n--; sample+=(1<<SECTOR_LENGTH_FACTOR),rcSample.left++,rcSample.right++ )
 									::FillRect( dc, &rcSample, rainbowBrushes[*sample] );
 								r.right+=1+w; // "1+" = to correctly display a zero-length Sector
-								::FrameRect( dc, &r, CRideBrush::Black );
+								::FrameRect( dc, &r, Utils::CRideBrush::Black );
 								//dc.Rectangle(&r);
 							}else{
 								// Sector not found - drawing crossing-out
-								const HGDIOBJ hPen0=::SelectObject(dc,CRidePen::RedHairline);
+								const HGDIOBJ hPen0=::SelectObject(dc,Utils::CRidePen::RedHairline);
 									r.right+=1+w; // "1+" = to correctly display a zero-length Sector
 									dc.Rectangle(&r);
 									::MoveToEx( dc, r.left, r.top, nullptr );
@@ -252,7 +252,7 @@
 		pDC->SetBkMode(TRANSPARENT);
 		// - drawing TrackMap header
 		const HDC dc=*pDC;
-		const HGDIOBJ font0=::SelectObject(dc,CRideFont::StdBold);
+		const HGDIOBJ font0=::SelectObject(dc,Utils::CRideFont::StdBold);
 			::TabbedTextOut( dc, 0,VIEW_PADDING, _T("\tCylinder\tHead\tSectors"),-1, 3,Tabs, 0 );
 		::SelectObject(dc,font0);
 		// - determining the range of Tracks to scan

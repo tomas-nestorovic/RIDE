@@ -10,8 +10,6 @@
 	#define HexaEditor_GetCaretPos(hWnd)\
 		HexaEditor_GetSelection( hWnd, nullptr, nullptr )
 
-	class CRideFont; // forward
-
 	class CHexaEditor:public CEditView{
 	public:
 		typedef interface IContentAdviser{
@@ -40,7 +38,7 @@
 		static void __informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId);
 
 		const PVOID param;
-		const CRideFont font;
+		const Utils::CRideFont font;
 		const HACCEL hDefaultAccelerators;
 		BYTE nBytesInRow;
 		int nLogicalRows;
