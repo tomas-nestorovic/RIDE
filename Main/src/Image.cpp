@@ -602,6 +602,18 @@
 		return ERROR_NOT_SUPPORTED; // individual Track saving is not supported for this kind of Image (OnSaveDocument must be called instead)
 	}
 
+	void CImage::SetPathName(LPCTSTR lpszPathName,BOOL bAddToMRU){
+		//
+		__super::SetPathName( lpszPathName, FALSE );
+		if (bAddToMRU)
+			if (CRideApp::CRecentFileListEx *const pMru=app.GetRecentFileList()){
+				extern CDos::PCProperties manuallyForceDos;
+				pMru->Add(	lpszPathName,
+							!manuallyForceDos ? &CUnknownDos::Properties : dos->properties
+						);
+			}
+	}
+
 	BOOL CImage::CanCloseFrame(CFrameWnd* pFrame){
 		// True <=> the MainWindow can be closed (and thus the application), otherwise False
 		EXCLUSIVELY_LOCK_THIS_IMAGE();

@@ -4,6 +4,82 @@
 #include "TRDOS.h"
 #include "GDOS.h"
 
+	CRideApp::CRecentFileListEx::CRecentFileListEx(const CRecentFileList &rStdMru)
+		// ctor
+		: CRecentFileList( rStdMru.m_nStart, rStdMru.m_strSectionName, rStdMru.m_strEntryFormat, rStdMru.m_nSize, rStdMru.m_nMaxDisplayLength ) {
+		ASSERT( m_nSize<sizeof(openWith)/sizeof(openWith[0]) );
+	}
+
+	CDos::PCProperties CRideApp::CRecentFileListEx::GetDosMruFileOpenWith(int nIndex) const{
+		// returns the Properties of the DOS most recently used to open the file under the specified Index (or the Properties of the Unknown DOS if automatic recognition should be used)
+		if (0<=nIndex && nIndex<m_nSize);else
+			::Beep(10,10);
+		ASSERT( 0<=nIndex && nIndex<m_nSize );
+		return openWith[nIndex];
+	}
+
+	void CRideApp::CRecentFileListEx::Add(LPCTSTR lpszPathName,CDos::PCProperties dosProps){
+		// add the file to the list
+		ASSERT( lpszPathName );
+		ASSERT( dosProps!=nullptr ); // use Properties of the Unknown DOS if automatic recognition should be used
+		TCHAR fileName[MAX_PATH];
+		__super::Add( ::lstrcpy(fileName,lpszPathName) ); // handing over a copy as MFC may (for some reason) corrupt the original string
+		const CString *p=m_arrNames;
+		while (p->CompareNoCase(lpszPathName))
+			p++;
+		const int i=p-m_arrNames;
+		::memmove( openWith+i+1, openWith+i, (m_nSize-i-1)*sizeof(openWith[0]) );
+		openWith[i]=dosProps;
+	}
+
+	void CRideApp::CRecentFileListEx::Remove(int nIndex){
+		// removes the MRU file under the specified Index
+		ASSERT( 0<=nIndex && nIndex<m_nSize );
+		__super::Remove(nIndex);
+		::memmove( openWith+nIndex, openWith+nIndex+1, (m_nSize-nIndex-1)*sizeof(openWith[0]) );
+		openWith[m_nSize-1]=&CUnknownDos::Properties;
+	}
+
+	#define PREFIX_MRU_DOS _T("Dos")
+
+	void CRideApp::CRecentFileListEx::ReadList(){
+		// reads the MRU files list
+		__super::ReadList();
+		TCHAR entryName[200];
+		::lstrcpy( entryName, PREFIX_MRU_DOS );
+		for( int iMru=0; iMru<m_nSize; iMru++ ){
+			openWith[iMru]=&CUnknownDos::Properties; // assumption (automatic recognition should be used)
+			::wsprintf( entryName+(sizeof(PREFIX_MRU_DOS)/sizeof(TCHAR)-1), m_strEntryFormat, iMru+1 );
+			const CDos::TId dosId=app.GetProfileInt( m_strSectionName, entryName, 0 );
+			for( POSITION pos=CDos::known.GetHeadPosition(); pos; ){
+				const CDos::PCProperties props=(CDos::PCProperties)CDos::known.GetNext(pos);
+				if (props->id==dosId){
+					openWith[iMru]=props;
+					break;
+				}
+			}
+		}
+	}
+
+	void CRideApp::CRecentFileListEx::WriteList(){
+		// writes the MRU files list
+		__super::WriteList();
+		TCHAR entryName[200];
+		::lstrcpy( entryName, PREFIX_MRU_DOS );
+		for( int iMru=0; iMru<m_nSize; iMru++ ){
+			::wsprintf( entryName+(sizeof(PREFIX_MRU_DOS)/sizeof(TCHAR)-1), m_strEntryFormat, iMru+1 );
+			if (!m_arrNames[iMru].IsEmpty())
+				app.WriteProfileInt( m_strSectionName, entryName, openWith[iMru]->id );
+		}
+	}
+
+
+
+
+
+
+
+
 	CRideApp app;
 
 	#define INI_MSG_OPEN_AS		_T("msgopenas")
@@ -52,23 +128,6 @@
 		cfPreferredDropEffect=::RegisterClipboardFormat(CFSTR_PREFERREDDROPEFFECT);
 		cfPerformedDropEffect=::RegisterClipboardFormat(CFSTR_PERFORMEDDROPEFFECT);
 		cfPasteSucceeded=::RegisterClipboardFormat(CFSTR_PASTESUCCEEDED);
-		// - restoring Most Recently Used (MRU) file Images
-		if ((::GetVersion()&0xff)<=5){ // for Windows XP and older ...
-			delete m_pszProfileName; // ... list is stored to and read from the INI file in application's folder
-			struct TTmp sealed{ TCHAR profile[MAX_PATH]; }; // encapsulating the array into a structure - because MFC4.2 doesn't know the "new TCHAR[MAX_PATH]" operator!
-			PTCHAR pIniFileName=(new TTmp)->profile;
-			::GetModuleFileName(0,pIniFileName,MAX_PATH);
-			::lstrcpy( _tcsrchr(pIniFileName,'\\'), _T("\\") APP_ABBREVIATION _T(".INI") );
-			m_pszProfileName=pIniFileName;
-		}else // for Windows Vista and newer ...
-			SetRegistryKey(APP_FULLNAME); // ... list is stored to and read from system register (as INI files need explicit administrator rights)
-		LoadStdProfileSettings();
-		// - registering the only document template available in this application
-		AddDocTemplate(
-			new CMainWindow::CTdiTemplate()
-		);
-		// - calling "static constructors"
-		//nop
 		// - registering recognizable Image types and known DOSes (in alphabetical order)
 		CImage::known.AddTail( (PVOID)&D80::Properties );
 		CImage::known.AddTail( (PVOID)&CDsk5::Properties );
@@ -82,6 +141,28 @@
 		CDos::known.AddTail( (PVOID)&CTRDOS503::Properties );
 		CDos::known.AddTail( (PVOID)&CTRDOS504::Properties );
 		CDos::known.AddTail( (PVOID)&CTRDOS505::Properties );
+		// - restoring Most Recently Used (MRU) file Images
+		if ((::GetVersion()&0xff)<=5){ // for Windows XP and older ...
+			delete m_pszProfileName; // ... list is stored to and read from the INI file in application's folder
+			struct TTmp sealed{ TCHAR profile[MAX_PATH]; }; // encapsulating the array into a structure - because MFC4.2 doesn't know the "new TCHAR[MAX_PATH]" operator!
+			PTCHAR pIniFileName=(new TTmp)->profile;
+			::GetModuleFileName(0,pIniFileName,MAX_PATH);
+			::lstrcpy( _tcsrchr(pIniFileName,'\\'), _T("\\") APP_ABBREVIATION _T(".INI") );
+			m_pszProfileName=pIniFileName;
+		}else // for Windows Vista and newer ...
+			SetRegistryKey(APP_FULLNAME); // ... list is stored to and read from system register (as INI files need explicit administrator rights)
+		LoadStdProfileSettings();
+		if (const CRecentFileList *const pStdMru=m_pRecentFileList){
+			// replacing the standard MRU files list with an extended one
+			(  m_pRecentFileList=new CRecentFileListEx(*pStdMru)  )->ReadList();
+			delete pStdMru;
+		}
+		// - registering the only document template available in this application
+		AddDocTemplate(
+			new CMainWindow::CTdiTemplate()
+		);
+		// - calling "static constructors"
+		//nop
 		// - displaying the document-view MainWindow
 		m_pMainWnd->ShowWindow(SW_SHOW);
 		m_pMainWnd->UpdateWindow();
@@ -272,7 +353,9 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 				}
 			} d;
 			// . showing the Dialog and processing its result
-			if (d.DoModal()!=IDOK)
+			if (manuallyForceDos!=&CUnknownDos::Properties)
+				d.dosProps=manuallyForceDos;
+			else if (d.DoModal()!=IDOK)
 				return nullptr;
 			formatBoot=( dosProps=d.dosProps )->stdFormats->params.format;
 			formatBoot.nCylinders++;
@@ -415,9 +498,9 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		}
 	}
 
-	CRecentFileList *CRideApp::GetRecentFileList() const{
+	CRideApp::CRecentFileListEx *CRideApp::GetRecentFileList() const{
 		// public getter of RecentFileList
-		return m_pRecentFileList;
+		return (CRecentFileListEx *)m_pRecentFileList;
 	}
 
 	void WINAPI AfxThrowInvalidArgException(){

@@ -26,7 +26,7 @@
 		int ExitInstance() override;
 		CDocument *OpenDocumentFile(LPCTSTR lpszFileName) override;
 		void OnFileOpen(); // public wrapper
-		CRecentFileList *GetRecentFileList() const;
+		CRecentFileListEx *GetRecentFileList() const;
 		#if _MFC_VER>=0x0A00
 		afx_msg void OnOpenRecentFile(UINT nID);
 		#else

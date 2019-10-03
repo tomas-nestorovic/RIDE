@@ -276,6 +276,7 @@
 		virtual std::unique_ptr<CSectorDataSerializer> CreateSectorDataSerializer(CHexaEditor *pParentHexaEditor)=0;
 		bool __reportWriteProtection__() const;
 		void __toggleWriteProtection__();
+		void SetPathName(LPCTSTR lpszPathName,BOOL bAddToMRU=TRUE) override;
 		BOOL CanCloseFrame(CFrameWnd* pFrame) override;
 	};
 
