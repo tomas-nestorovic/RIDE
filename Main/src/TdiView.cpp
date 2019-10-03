@@ -87,12 +87,21 @@
 			rcCurrContent.top=55*Utils::LogicalUnitScaleFactor, rcCurrContent.left=70*Utils::LogicalUnitScaleFactor, rcCurrContent.right-=16*Utils::LogicalUnitScaleFactor;
 			__addCategory__( _T("Recently accessed locations"), 0xf0cd );
 				BYTE i=0;
-				for( CRecentFileList *const pMru=app.GetRecentFileList(); i<4 && i<pMru->GetSize(); i++ ){ // 4 = max # of MRU files displayed in the GuidePost
+				for( CRideApp::CRecentFileListEx *const pMru=app.GetRecentFileList(); i<4 && i<pMru->GetSize(); i++ ){ // 4 = max # of MRU files displayed in the GuidePost
 					const CString &fileName=pMru->operator[](i);
 					if (fileName.IsEmpty())
 						break;
+					TCHAR dosName[80];
+					const CDos::PCProperties dosProps=pMru->GetDosMruFileOpenWith(i);
+					if (dosProps==&CUnknownDos::Properties)
+						::lstrcpy( dosName, _T("Auto") );
+					else if (const LPCTSTR space=::strchr(dosProps->name,' '))
+						::strncpy( dosName, dosProps->name, space-dosProps->name )[space-dosProps->name]='\0';
+					else
+						::lstrcpy( dosName, dosProps->name );
 					TCHAR buf[MAX_PATH];
-					::PathCompactPath( CClientDC(this), ::lstrcpy(buf,fileName), rcCurrContent.Width() );
+					::wsprintf( buf, _T("(%s) %s"), dosName, fileName );
+					::PathCompactPath( CClientDC(this), buf, rcCurrContent.Width() );
 					__addButton__( buf, ID_FILE_MRU_FILE1+i, 0xf030, 0x47bbbb );
 				}
 				if (!i)
@@ -229,6 +238,9 @@
 	afx_msg BOOL CRideApp::OnOpenRecentFile(UINT nID){
 		// opens document from the MRU files list under the given index
 		// - base
+		extern CDos::PCProperties manuallyForceDos;
+		const CDos::PCProperties dosProps=app.GetRecentFileList()->GetDosMruFileOpenWith(nID-ID_FILE_MRU_FIRST);
+		manuallyForceDos= dosProps==&CUnknownDos::Properties ? nullptr : dosProps;
 		if (!__super::OnOpenRecentFile(nID))
 			return FALSE;
 		// - if no Image opened, it wasn't found in which case it was removed from the MRU files list - projecting the updated MRU files list to the just shown introductory GuidePost

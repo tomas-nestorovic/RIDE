@@ -58,10 +58,10 @@
 			struct TTmp sealed{ TCHAR profile[MAX_PATH]; }; // encapsulating the array into a structure - because MFC4.2 doesn't know the "new TCHAR[MAX_PATH]" operator!
 			PTCHAR pIniFileName=(new TTmp)->profile;
 			::GetModuleFileName(0,pIniFileName,MAX_PATH);
-			::lstrcpy( _tcsrchr(pIniFileName,'\\'), _T("\\RIDE.INI") );
+			::lstrcpy( _tcsrchr(pIniFileName,'\\'), _T("\\") APP_ABBREVIATION _T(".INI") );
 			m_pszProfileName=pIniFileName;
 		}else // for Windows Vista and newer ...
-			SetRegistryKey(_T("Real and Imaginary Disk Editor")); // ... list is stored to and read from system register (as INI files need explicit administrator rights)
+			SetRegistryKey(APP_FULLNAME); // ... list is stored to and read from system register (as INI files need explicit administrator rights)
 		LoadStdProfileSettings();
 		// - registering the only document template available in this application
 		AddDocTemplate(
@@ -161,7 +161,7 @@
 
 
 
-	bool recognizeDosAutomatically=true;
+	CDos::PCProperties manuallyForceDos=nullptr; // Null = use automatic recognition
 
 	#define ENTERING_LIMITED_MODE	_T("\n\nContinuing to view the image in limited mode.")
 
@@ -228,7 +228,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		// - determining the DOS
 		CDos::PCProperties dosProps=nullptr;
 		TFormat formatBoot; // information on Format (# of Cylinders, etc.) obtained from Image's Boot record
-		if (recognizeDosAutomatically){
+		if (!manuallyForceDos){
 			// automatic recognition of suitable DOS by sequentially testing each of them
 			::SetLastError(ERROR_SUCCESS); // assumption (no errors)
 			dosProps=CDos::CRecognition().__perform__( image.get(), &formatBoot );
@@ -274,9 +274,11 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			// . showing the Dialog and processing its result
 			if (d.DoModal()!=IDOK)
 				return nullptr;
-			else{
-				formatBoot=( dosProps=d.dosProps )->stdFormats->params.format;
-				formatBoot.nCylinders++;
+			formatBoot=( dosProps=d.dosProps )->stdFormats->params.format;
+			formatBoot.nCylinders++;
+			if (const TStdWinError err=image->SetMediumTypeAndGeometry( &formatBoot, CDos::StdSidesMap, d.dosProps->firstSectorNumber )){
+				Utils::FatalError( _T("Can't change the medium geometry"), err, _T("The container can't be open.") );
+				return nullptr;
 			}
 			// . informing
 			Utils::InformationWithCheckableShowNoMore( _T("The image will be opened using the default format of the selected DOS (see the \"") BOOT_SECTOR_TAB_LABEL _T("\" tab if available).\n\nRISK OF DATA CORRUPTION if the selected DOS and/or format is not suitable!"), INI_GENERAL, INI_MSG_OPEN_AS );
@@ -304,13 +306,13 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 
 	afx_msg void CRideApp::__openImage__(){
 		// opens Image and recognizes suitable DOS automatically
-		recognizeDosAutomatically=true;
+		manuallyForceDos=nullptr; // use automatic recognition
 		OnFileOpen();
 	}
 
 	afx_msg void CRideApp::__openImageAs__(){
 		// opens Image and lets user to determine suitable DOS
-		recognizeDosAutomatically=false;
+		manuallyForceDos=&CUnknownDos::Properties; // show dialog to manually pick a DOS
 		if (CMainWindow::CTdiTemplate::pSingleInstance->__closeDocument__()) // to close any previous Image
 			OnFileOpen();
 	}

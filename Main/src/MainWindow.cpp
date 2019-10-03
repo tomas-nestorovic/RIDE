@@ -203,8 +203,8 @@
 
 	afx_msg void CMainWindow::OnDropFiles(HDROP hDrop){
 		// a File from Windows Explorer dropped on the client area
-		extern bool recognizeDosAutomatically;
-		recognizeDosAutomatically=true;
+		extern CDos::PCProperties manuallyForceDos;
+		manuallyForceDos=nullptr; // Null = use automatic recognition
 		__super::OnDropFiles(hDrop);
 	}
 
