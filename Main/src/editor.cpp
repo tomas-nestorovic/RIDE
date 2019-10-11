@@ -12,8 +12,6 @@
 
 	CDos::PCProperties CRideApp::CRecentFileListEx::GetDosMruFileOpenWith(int nIndex) const{
 		// returns the Properties of the DOS most recently used to open the file under the specified Index (or the Properties of the Unknown DOS if automatic recognition should be used)
-		if (0<=nIndex && nIndex<m_nSize);else
-			::Beep(10,10);
 		ASSERT( 0<=nIndex && nIndex<m_nSize );
 		return openWith[nIndex];
 	}
@@ -22,14 +20,16 @@
 		// add the file to the list
 		ASSERT( lpszPathName );
 		ASSERT( dosProps!=nullptr ); // use Properties of the Unknown DOS if automatic recognition should be used
+		int i=0;
+		while (i<m_nSize)
+			if (m_arrNames[i].CompareNoCase(lpszPathName))
+				i++;
+			else
+				break;
 		TCHAR fileName[MAX_PATH];
 		__super::Add( ::lstrcpy(fileName,lpszPathName) ); // handing over a copy as MFC may (for some reason) corrupt the original string
-		const CString *p=m_arrNames;
-		while (p->CompareNoCase(lpszPathName))
-			p++;
-		const int i=p-m_arrNames;
-		::memmove( openWith+i+1, openWith+i, (m_nSize-i-1)*sizeof(openWith[0]) );
-		openWith[i]=dosProps;
+		::memmove( openWith+1, openWith, i*sizeof(openWith[0]) );
+		openWith[0]=dosProps;
 	}
 
 	void CRideApp::CRecentFileListEx::Remove(int nIndex){
