@@ -19,7 +19,7 @@
 	void TIntegerEditor::__drawValue__(const TPropGridInfo::TItem::TValue &value,PDRAWITEMSTRUCT pdis) const{
 		// draws the Value into the specified rectangle
 		int i=0;
-		::memcpy( &i, value.buffer, min(value.bufferCapacity,sizeof(i)) );
+		::memcpy( &i, value.buffer, std::min<CPropGridCtrl::TBufferCapacity>(value.bufferCapacity,sizeof(i)) );
 		TCHAR buf[16];
 		__drawString__( buf,
 						::wsprintf( buf, features&CPropGridCtrl::TInteger::HEXADECIMAL?_T("0x%X"):_T("%d"), i ),
@@ -33,7 +33,7 @@
 		const HWND hEdit=__createEditBox__( hParent, features&CPropGridCtrl::TInteger::ALIGN_RIGHT );
 		// - attaching an UpDownControl to the edit-box
 		int i=0;
-		::memcpy( &i, value.buffer, min(value.bufferCapacity,sizeof(i)) );
+		::memcpy( &i, value.buffer, std::min<CPropGridCtrl::TBufferCapacity>(value.bufferCapacity,sizeof(i)) );
 		CPropGridCtrl::CreateUpDownControl(	hEdit,
 											EDITOR_STYLE,
 											features&CPropGridCtrl::TInteger::HEXADECIMAL,
@@ -62,7 +62,7 @@
 			const TPropGridInfo::TItem::TValue &value=TEditor::pSingleShown->value;
 			const bool accepted=onValueConfirmed( value.param, i );
 			if (accepted)
-				::memcpy( value.buffer, &i, min(value.bufferCapacity,sizeof(i)) );
+				::memcpy( value.buffer, &i, std::min<CPropGridCtrl::TBufferCapacity>(value.bufferCapacity,sizeof(i)) );
 		ignoreRequestToDestroy=false;
 		return accepted;
 	}

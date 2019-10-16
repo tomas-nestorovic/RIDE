@@ -55,13 +55,13 @@
 				WCHAR buffer[STRING_LENGTH_MAX];
 				const CPropGridCtrl::TBufferCapacity nChars=::GetWindowTextW( hEdit, buffer, STRING_LENGTH_MAX );
 				accepted=onValueConfirmed(	value.param, buffer,
-											min( nChars, value.bufferCapacity ) // we should never need to trim the text, but do so just to be sure :-)
+											std::min<>( nChars, value.bufferCapacity ) // we should never need to trim the text, but do so just to be sure :-)
 										);
 			}else{
 				char buffer[STRING_LENGTH_MAX];
 				const CPropGridCtrl::TBufferCapacity nChars=::GetWindowTextA( hEdit, buffer, STRING_LENGTH_MAX );
 				accepted=onValueConfirmed(	value.param, buffer,
-											min( nChars, value.bufferCapacity ) // we should never need to trim the text, but do so just to be sure :-)
+											std::min<>( nChars, value.bufferCapacity ) // we should never need to trim the text, but do so just to be sure :-)
 										);
 			}
 		ignoreRequestToDestroy=false;
@@ -109,13 +109,13 @@
 		if (wideChar){
 			WCHAR tmp[STRING_LENGTH_MAX];
 			*tmp=~paddingChar; // terminator
-			::lstrcpynW( tmp+1, (LPCWSTR)value.buffer, min(STRING_LENGTH_MAX-1,value.bufferCapacity+1) ); // "+1", "-1" = terminator, "+1" = null character in the TmpBuffer
+			::lstrcpynW( tmp+1, (LPCWSTR)value.buffer, std::min<>(STRING_LENGTH_MAX-1,value.bufferCapacity+1) ); // "+1", "-1" = terminator, "+1" = null character in the TmpBuffer
 				for( PWCHAR p=tmp+value.bufferCapacity; *p==paddingChar; *p--='\0' );
 			::SetWindowTextW( hEdit, tmp+1 ); // "+1" = terminator
 		}else{
 			char tmp[STRING_LENGTH_MAX];
 			*tmp=~paddingChar; // terminator
-			::lstrcpynA( tmp+1, (LPCSTR)value.buffer, min(STRING_LENGTH_MAX-1,value.bufferCapacity+1) ); // "+1", "-1" = terminator, "+1" = null character in the TmpBuffer
+			::lstrcpynA( tmp+1, (LPCSTR)value.buffer, std::min<>(STRING_LENGTH_MAX-1,value.bufferCapacity+1) ); // "+1", "-1" = terminator, "+1" = null character in the TmpBuffer
 				for( PCHAR p=tmp+value.bufferCapacity; *p==paddingChar; *p--='\0' );
 			::SetWindowTextA( hEdit, tmp+1 ); // "+1" = terminator
 		}

@@ -13,6 +13,8 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #include <tchar.h>
 #include <commctrl.h>
 #include <shlwapi.h>
+
+#include <algorithm>
 //#include <cmath>
 
 typedef const struct TEditor *PCEditor; // forward
@@ -20,5 +22,8 @@ typedef const struct TEditor *PCEditor; // forward
 #include "api.h"
 #include "PropGrid.h"
 #include "Editors.h"
+
+#undef min
+#undef max
 
 #endif

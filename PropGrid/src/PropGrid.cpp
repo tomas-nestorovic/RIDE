@@ -80,9 +80,9 @@
 	static float __getLogicalUnitScaleFactor__(){
 		// computes and returns the factor (from (0;oo)) to multiply the size of one logical unit with; returns 1 if the logical unit size doesn't have to be changed
 		const HDC screen=::GetDC(nullptr);
-			const float result=min(	::GetDeviceCaps(screen,LOGPIXELSX)/(float)SCREEN_DPI_DEFAULT,
-									::GetDeviceCaps(screen,LOGPIXELSY)/(float)SCREEN_DPI_DEFAULT
-								);
+			const float result=std::min<>(	::GetDeviceCaps(screen,LOGPIXELSX)/(float)SCREEN_DPI_DEFAULT,
+											::GetDeviceCaps(screen,LOGPIXELSY)/(float)SCREEN_DPI_DEFAULT
+										);
 		::ReleaseDC(nullptr,screen);
 		return result;
 	}
@@ -196,11 +196,11 @@
 							::SetTextColor( dc, ::GetSysColor(textColorId) );
 								r.left=r.right, r.right=GET_PROPGRID_INFO(hPropGrid)->listBox.splitter.position;
 								::FillRect( dc, &r, pdis->itemState&ODS_SELECTED ? BRUSH_SELECTION : BRUSH_GRAY_LIGHT );
-								const int i=r.bottom;
-								const int b=r.top+EDITOR_DEFAULT_HEIGHT*LogicalUnitScaleFactor
-											+
-											1; // width of the horizontal line separating individial ListBox Items
-								r.bottom=min(r.bottom,b);
+								const LONG i=r.bottom;
+								const LONG b =	r.top+EDITOR_DEFAULT_HEIGHT*LogicalUnitScaleFactor
+												+
+												1; // width of the horizontal line separating individial ListBox Items
+								r.bottom=std::min<>(r.bottom,b);
 									pItem->__drawIndentedName__( dc, r, FONT_DEFAULT );
 								r.bottom=i;
 							// | drawing decorations

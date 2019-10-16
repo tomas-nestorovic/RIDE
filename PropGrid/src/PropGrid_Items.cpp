@@ -13,7 +13,7 @@
 		// ctor
 		// - initialization
 		: parentCategory(parentCategory)
-		, name(::lstrcpy(new TCHAR[1+::lstrlen(name)],name))
+		, name(::lstrcpy((PTCHAR)::malloc((1+::lstrlen(name))*sizeof(TCHAR)),name))
 		, value(editor,buffer,bufferCapacity,param)
 		, disabled(0) , nextInCategory(nullptr) {
 		// - adding this Item to the end of the ParentCategory
@@ -41,7 +41,7 @@
 			*a=nextInCategory;
 		}
 		// - uninitialization
-		delete[] name;
+		::free((PVOID)name);
 	}
 
 	void TPropGridInfo::TItem::__drawIndentedName__(HDC dc,RECT rc,HFONT hFont) const{
