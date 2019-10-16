@@ -15,7 +15,8 @@
 		: parentCategory(parentCategory)
 		, name(::lstrcpy((PTCHAR)::malloc((1+::lstrlen(name))*sizeof(TCHAR)),name))
 		, value(editor,buffer,bufferCapacity,param)
-		, disabled(0) , nextInCategory(nullptr) {
+		, disabled( parentCategory ? parentCategory->disabled : 0 )
+		, nextInCategory(nullptr) {
 		// - adding this Item to the end of the ParentCategory
 		if (parentCategory){ // NOT PropertyGrid's Root Category
 			TItem **a=&parentCategory->subitems;
@@ -59,7 +60,8 @@
 
 	void TPropGridInfo::TItem::__enable__(){
 		// enables this Item (i.e. "unlocks" this Item, making it eventually editable)
-		disabled--;
+		if (disabled>0)
+			disabled--;
 	}
 
 	void TPropGridInfo::TItem::__disable__(){
@@ -143,7 +145,7 @@
 	void TPropGridInfo::TCategoryItem::__enable__(){
 		// enables this Item (i.e. "unlocks" this Item, making it eventually editable)
 		// - base
-		//TItem::__enable__(); // commented out as Categories can always be expanded/collapsed
+		__super::__enable__();
 		// - enabling all Subitems in this Category
 		for( TItem *p=subitems; p!=nullptr; p=p->nextInCategory )
 			p->__enable__();
@@ -152,7 +154,7 @@
 	void TPropGridInfo::TCategoryItem::__disable__(){
 		// disables this Item (i.e. "locks" this Item, making it not editable)
 		// - base
-		//TItem::__disable__(); // commented out as Categories can always be expanded/collapsed
+		__super::__disable__();
 		// - disabling all Subitems in this Category
 		for( TItem *p=subitems; p!=nullptr; p=p->nextInCategory )
 			p->__disable__();

@@ -309,7 +309,7 @@
 
 	CMSDOS7::PBootSector CMSDOS7::CMsdos7BootView::GetSectorData() const{
 		// returns data of Boot Sector (or Null if Boot Sector unreadable)
-		return (PBootSector)IMAGE->GetHealthySectorData(chsBoot);
+		return (PBootSector)IMAGE->GetHealthySectorData(chs);
 	}
 
 	bool WINAPI CMSDOS7::CMsdos7BootView::__labelModified__(CPropGridCtrl::PCustomParam,LPCSTR newLabel,short newLabelChars){
@@ -453,7 +453,7 @@
 		if (!rParam.label.length)
 			CPropGridCtrl::AddProperty(	hPropGrid, hVolume, _T("Label not found"),
 										"<a>Create</a>", -1,
-										CPropGridCtrl::THyperlink::DefineEditorA( __pg_createLabel__, CBootView::__updateBootView__ )
+										CPropGridCtrl::THyperlink::DefineEditorA( __pg_createLabel__, CBootView::__updateCriticalSectorView__ )
 									);
 		CPropGridCtrl::AddProperty(	hPropGrid, hVolume, _T("ID valid"),
 									&pvi->infoValid, sizeof(BYTE),
@@ -531,7 +531,7 @@
 			bootSector->nSectorsInTotal16=formatBoot.GetCountOfAllSectors();
 			bootSector->nHeads=formatBoot.nHeads;
 			bootSector->nSectorsOnTrack=formatBoot.nSectors;
-			image->MarkSectorAsDirty(boot.chsBoot);
+			boot.MarkSectorAsDirty();
 		}
 	}
 

@@ -222,7 +222,7 @@
 					? ((PDirectoryEntry)file)->shortNameEntry.__getFirstCluster__()
 					: 0;
 		if (IsDirectory(file)){
-			item.chs=boot.chsBoot;
+			item.chs=boot.GetPhysicalAddress();
 			for( TMsdos7DirectoryTraversal dt(this,file); dt.__existsNextEntry__(); item.value++ )
 				if (item.chs!=dt.chs){
 					item.chs=dt.chs;
@@ -1186,12 +1186,12 @@ nextCluster:result++;
 		// initializes a fresh formatted Medium (Boot, FAT, root dir, etc.)
 		// - initializing Boot Sector
 		TPhysicalAddress chs={ 0, 0, {0,0,1,params->format.sectorLengthCode} };
-		*(TPhysicalAddress *)&boot.chsBoot=chs;
+		boot.ChangeToSector(chs);
 		const PBootSector bootSector=boot.GetSectorData();
 		if (!bootSector) // Boot Sector may not be found after unsuccessfull formatting
 error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastError() );
 		bootSector->__init__( &formatBoot, params, fat ); // also initializes the Type of FAT
-		image->MarkSectorAsDirty(boot.chsBoot);
+		boot.MarkSectorAsDirty();
 		if (fat.type==CFat::FAT32){
 			chs.sectorId.sector=MSDOS7_SECTOR_BKBOOT;
 			if (const PBootSector bkBoot=(PBootSector)image->GetHealthySectorData(chs)){ // backup Boot Sector may not be found after unsuccessfull formatting

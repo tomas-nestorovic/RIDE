@@ -8,8 +8,6 @@
 	#define CYLINDERS_REMOVED_FROM_FAT		_T("msgpg4")
 	#define IMAGE_STRUCTURE_UNAFFECTED		_T("Changing this value does NOT affect the image structure.\n\nTo modify its structure, switch to the \"") TRACK_MAP_TAB_LABEL _T("\" tab.")
 
-	const CBootView *CBootView::pCurrentlyShown;
-
 	#define DOS		tab.dos
 	#define IMAGE	DOS->image
 
@@ -39,13 +37,6 @@
 	bool WINAPI CBootView::__bootSectorModified__(CPropGridCtrl::PCustomParam,CPropGridCtrl::TEnum::UValue){
 		// marking the Boot Sector as dirty
 		return __bootSectorModified__(nullptr,0);
-	}
-
-	void WINAPI CBootView::__updateBootView__(CPropGridCtrl::PCustomParam){
-		// refreshes any current View
-		const short iCurSel=CPropGridCtrl::GetCurrentlySelectedProperty( pCurrentlyShown->propGrid.m_hWnd );
-			CDos::GetFocused()->image->UpdateAllViews(nullptr);
-		CPropGridCtrl::SetCurrentlySelectedProperty( pCurrentlyShown->propGrid.m_hWnd, iCurSel );
 	}
 
 	bool WINAPI CBootView::__confirmCriticalValueInBoot__(PVOID criticalValueId,int newValue){
@@ -139,21 +130,12 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 
 
 
-	#define PROPGRID_WIDTH_DEFAULT	250
 
 	CBootView::CBootView(PDos dos,RCPhysicalAddress rChsBoot)
 		// ctor
-		: tab(0,0,0,dos,this) , splitX(PROPGRID_WIDTH_DEFAULT) , chsBoot(rChsBoot)
-		, fBoot(dos,rChsBoot) , hexaEditor(this) {
+		: CCriticalSectorView(dos,rChsBoot) {
 	}
 
-	BEGIN_MESSAGE_MAP(CBootView,CView)
-		ON_WM_CREATE()
-		ON_WM_SIZE()
-		ON_WM_KILLFOCUS()
-		ON_COMMAND(ID_IMAGE_PROTECT,__toggleWriteProtection__)
-		ON_WM_DESTROY()
-	END_MESSAGE_MAP()
 
 
 
@@ -179,44 +161,13 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 									);
 	}
 
-	afx_msg int CBootView::OnCreate(LPCREATESTRUCT lpcs){
-		// window created
-		// - base
-		if (CView::OnCreate(lpcs)==-1)
-			return -1;
-		// - getting Boot Sector data
-		WORD bootSectorDataRealLength=0; // initializing just in case the Boot Sector is not found
-		IMAGE->GetHealthySectorData(chsBoot,&bootSectorDataRealLength);
-		// - creating the Content
-		//CCreateContext cc;
-		//cc.m_pCurrentDoc=dos->image;
-		content.reset( new CSplitterWnd );
-			content->CreateStatic(this,1,2,WS_CHILD|WS_VISIBLE|WS_CLIPSIBLINGS);//WS_CLIPCHILDREN|
-			//content->CreateView(0,0,RUNTIME_CLASS(CPropertyGridView),CSize(splitX,0),&cc);
-			//const HWND hPropGrid=content->GetDlgItem( content->IdFromRowCol(0,0) )->m_hWnd;
-				propGrid.CreateEx( 0, CPropGridCtrl::GetWindowClass(app.m_hInstance), nullptr, AFX_WS_DEFAULT_VIEW&~WS_BORDER, 0,0,PROPGRID_WIDTH_DEFAULT,300, content->m_hWnd, (HMENU)content->IdFromRowCol(0,0) );
-				content->SetColumnInfo(0,PROPGRID_WIDTH_DEFAULT*Utils::LogicalUnitScaleFactor,0);
-			//content->CreateView(0,1,RUNTIME_CLASS(CHexaEditor),CSize(),&cc); // commented out as created manually below
-				hexaEditor.Reset( &fBoot, bootSectorDataRealLength, bootSectorDataRealLength );
-				hexaEditor.Create( nullptr, nullptr, AFX_WS_DEFAULT_VIEW&~WS_BORDER|WS_CLIPSIBLINGS, CFrameWnd::rectDefault, content.get(), content->IdFromRowCol(0,1) );
-				//hexaEditor.CreateEx( 0, HEXAEDITOR_BASE_CLASS, nullptr, AFX_WS_DEFAULT_VIEW&~WS_BORDER, RECT(), nullptr, content->IdFromRowCol(0,1), nullptr );
-		OnSize( SIZE_RESTORED, lpcs->cx, lpcs->cy );
-		// - populating the PropertyGrid with values from Boot Sector
-		OnUpdate(nullptr,0,nullptr);
-		// - manually setting that none of the Splitter cells is the actual View
-		//nop (see OnKillFocus)
-		// - currently it's this Boot that's displayed
-		pCurrentlyShown=this;
-		return 0;
-	}
-
 	void CBootView::OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint){
 		// request to refresh the display of content
+		// - base
+		__super::OnUpdate( pSender, lHint, pHint );
 		// - getting Boot Sector data
 		WORD bootSectorDataRealLength=0; // initializing just in case the Boot Sector is not found
-		const PSectorData boot=IMAGE->GetHealthySectorData(chsBoot,&bootSectorDataRealLength);
-		// - clearing the PropertyGrid
-		CPropGridCtrl::RemoveProperty( propGrid.m_hWnd, nullptr );
+		const PSectorData boot=IMAGE->GetHealthySectorData(chs,&bootSectorDataRealLength);
 		// - populating the PropertyGrid with values from the Boot Sector (if any found)
 		if (boot){
 			// Boot Sector found - populating the PropertyGrid
@@ -266,58 +217,4 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 																	),
 											false
 										);
-		// - repainting the HexaEditor
-		hexaEditor.Invalidate();
-		// - reflecting write-protection into the look of controls
-		if (IMAGE->IsWriteProtected())
-			__updateLookOfControls__();
-	}
-
-	afx_msg void CBootView::OnSize(UINT nType,int cx,int cy){
-		// window size changed
-		content->SetWindowPos( nullptr, 0,0, cx,cy, SWP_NOZORDER|SWP_NOMOVE );
-	}
-
-	afx_msg void CBootView::OnKillFocus(CWnd *newFocus){
-		// window lost focus
-		// - manually setting that this Boot is still the active View, regardless of the lost focus
-		((CFrameWnd *)app.m_pMainWnd)->SetActiveView(this);
-	}
-
-	afx_msg void CBootView::OnDestroy(){
-		// window destroyed
-		// - saving the Splitter's X position for later
-		RECT r;
-		content->GetDlgItem( content->IdFromRowCol(0,0) )->GetClientRect(&r);
-		splitX=r.right;
-		// - disposing the Content
-		content.reset();
-		// - base
-		CView::OnDestroy();
-		// - no Boot is currently being displayed
-		pCurrentlyShown=nullptr;
-	}
-
-	afx_msg void CBootView::__toggleWriteProtection__(){
-		// toggles Image's WriteProtection flag
-		IMAGE->__toggleWriteProtection__(); // "base"
-		__updateLookOfControls__();
-	}
-	void CBootView::__updateLookOfControls__(){
-		CPropGridCtrl::EnableProperty( propGrid.m_hWnd, nullptr, !IMAGE->IsWriteProtected() );
-		hexaEditor.SetEditable( !IMAGE->IsWriteProtected() );
-	}
-
-	void CBootView::OnDraw(CDC *pDC){
-		// drawing
-	}
-
-	void CBootView::PostNcDestroy(){
-		// self-destruction
-		//nop (View destroyed by its owner)
-	}
-
-	bool CBootView::__isValueBeingEditedInPropertyGrid__() const{
-		// True <=> some value is right now being edited in PropertyGrid, otherwise False
-		return CPropGridCtrl::IsValueBeingEdited();
 	}

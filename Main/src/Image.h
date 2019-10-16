@@ -101,6 +101,8 @@
 
 	#pragma pack(1)
 	typedef const struct TPhysicalAddress sealed{
+		static const TPhysicalAddress Invalid;
+
 		TCylinder cylinder;
 		THead head;
 		TSectorId sectorId;

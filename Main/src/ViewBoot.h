@@ -6,25 +6,10 @@
 	#define BOOT_SECTOR_UPDATE_ONLINE	_T("Update on-line")
 	#define BOOT_SECTOR_UPDATE_ONLINE_HYPERLINK	_T("<a>Update on-line</a>")
 
-	class CBootView:public CView{
-		DECLARE_MESSAGE_MAP()
-	private:
+	class CBootView:public CCriticalSectorView{
 		static void __informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId);
 		static bool WINAPI __confirmCriticalValueInBoot__(PVOID criticalValueId,int newValue);
 		static bool WINAPI __updateFatAfterChangingCylinderCount__(PVOID,int newValue);
-
-		CDos::CFileReaderWriter fBoot;
-		std::unique_ptr<CSplitterWnd> content; // newly created for whenever Boot is switched to in TDI
-		CWnd propGrid;
-		CHexaEditor hexaEditor;
-		int splitX;
-
-		afx_msg int OnCreate(LPCREATESTRUCT lpcs);
-		afx_msg void OnSize(UINT nType,int cx,int cy);
-		afx_msg void OnKillFocus(CWnd *newFocus);
-		afx_msg void OnDestroy();
-		afx_msg void __toggleWriteProtection__();
-		void __updateLookOfControls__();
 	protected:
 		typedef struct TCommonBootParameters sealed{
 			unsigned geometryCategory	:1;
@@ -45,24 +30,14 @@
 
 		CBootView(PDos dos,RCPhysicalAddress rChsBoot);
 
-		void OnDraw(CDC *pDC) override sealed;
 		void OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint) override;
-		void PostNcDestroy() override;
 		virtual void GetCommonBootParameters(RCommonBootParameters rParam,PSectorData boot)=0;
 		virtual void AddCustomBootParameters(HWND hPropGrid,HANDLE hGeometry,HANDLE hVolume,const TCommonBootParameters &rParam,PSectorData boot)=0;
 	public:
-		static const CBootView *pCurrentlyShown; // Boot that is currently shown (a multi-volume disk may have several Boots, one for each volume)
-
 		static bool WINAPI __bootSectorModified__(CPropGridCtrl::PCustomParam,int);
 		static bool WINAPI __bootSectorModifiedA__(CPropGridCtrl::PCustomParam,LPCSTR,short);
 		static bool WINAPI __bootSectorModified__(CPropGridCtrl::PCustomParam,bool);
 		static bool WINAPI __bootSectorModified__(CPropGridCtrl::PCustomParam,CPropGridCtrl::TEnum::UValue);
-		static void WINAPI __updateBootView__(CPropGridCtrl::PCustomParam);
-
-		const TPhysicalAddress chsBoot;
-		const CMainWindow::CTdiView::TTab tab;
-
-		bool __isValueBeingEditedInPropertyGrid__() const;
 	};
 
 #endif // BOOTVIEW_H

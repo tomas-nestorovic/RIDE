@@ -214,6 +214,7 @@
     <ClInclude Include="src\TRDOS.h" />
     <ClInclude Include="src\Utils.h" />
     <ClInclude Include="src\ViewBoot.h" />
+    <ClInclude Include="src\ViewCriticalSector.h" />
     <ClInclude Include="src\ViewDirectoryEntries.h" />
     <ClInclude Include="src\ViewDiskBrowser.h" />
     <ClInclude Include="src\ViewFileManager.h" />
@@ -279,6 +280,7 @@
     <ClCompile Include="src\TRDOS505.cpp" />
     <ClCompile Include="src\Utils.cpp" />
     <ClCompile Include="src\ViewBoot.cpp" />
+    <ClCompile Include="src\ViewCriticalSector.cpp" />
     <ClCompile Include="src\ViewDirectoryEntries.cpp" />
     <ClCompile Include="src\ViewDiskBrowser.cpp" />
     <ClCompile Include="src\ViewFileManager.cpp" />

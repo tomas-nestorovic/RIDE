@@ -58,6 +58,8 @@
 		return buffer;
 	}
 
+	const TPhysicalAddress TPhysicalAddress::Invalid={ -1, -1, {-1,-1,-1,-1} };
+
 	bool TPhysicalAddress::operator==(const TPhysicalAddress &chs2) const{
 		// True <=> PhysicalAddresses are equal, otherwise False
 		return	cylinder==chs2.cylinder

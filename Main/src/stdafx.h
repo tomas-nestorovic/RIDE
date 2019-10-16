@@ -79,6 +79,7 @@ typedef const int *PCINT;
 #include "Debug.h"
 #include "SCL.h"
 #include "BackgroundAction.h"
+#include "ViewCriticalSector.h"
 #include "ViewBoot.h"
 #include "ViewFileManager.h"
 #include "ViewTrackMap.h"

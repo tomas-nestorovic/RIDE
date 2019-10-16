@@ -146,7 +146,7 @@
 			if (CFileManagerView::CEditorBase::pSingleShown)
 				return FALSE;
 			// . PropertyGrid's Editor receives all messages and none must be pre-translated
-			if (CBootView::pCurrentlyShown && CBootView::pCurrentlyShown->__isValueBeingEditedInPropertyGrid__())
+			if (CCriticalSectorView::__isValueBeingEditedInPropertyGrid__())
 				return FALSE;
 			// . File HexaPreview receives all messages and none must be pre-translated (but only if focused)
 			if (CDos::CHexaPreview::pSingleInstance)

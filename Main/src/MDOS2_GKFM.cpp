@@ -195,7 +195,7 @@
 		}else
 			CPropGridCtrl::AddProperty(	hPropGrid, hGkfm, _T(""),
 										"<a>Create</a>", -1,
-										CPropGridCtrl::THyperlink::DefineEditorA( __pg_createNew__, CBootView::__updateBootView__ )
+										CPropGridCtrl::THyperlink::DefineEditorA( __pg_createNew__, CBootView::__updateCriticalSectorView__ )
 									);
 	}
 
