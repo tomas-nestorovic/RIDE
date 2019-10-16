@@ -30,21 +30,23 @@
 
 
 
-	CMSDOS7::CFsInfo::CFsInfo(const CMSDOS7 &msdos)
+	CMSDOS7::CFsInfoView::CFsInfoView(CMSDOS7 *msdos)
 		// ctor
-		: msdos(msdos) {
+		: CCriticalSectorView( msdos, TPhysicalAddress::Invalid ) {
 	}
 
+	#define MSDOS	((CMSDOS7 *)tab.dos)
+	#define IMAGE	tab.dos->image
 
-	CMSDOS7::PFsInfoSector CMSDOS7::CFsInfo::GetSectorData() const{
+	CMSDOS7::PFsInfoSector CMSDOS7::CFsInfoView::GetSectorData() const{
 		// returns the data of FS Info Sector; returns Null if Sector doesn't exist or isn't readable
 		// - if FS Info Sector doesn't exist, we are done
-		if (msdos.fat.type!=CFat::FAT32)
+		if (MSDOS->fat.type!=CFat::FAT32)
 			return nullptr;
 		// - reading and recognizing the FS Info Sector
-		if (const PCBootSector bootSector=msdos.boot.GetSectorData())
-			if (const PFsInfoSector fsInfo=(PFsInfoSector)msdos.__getHealthyLogicalSectorData__(bootSector->fat32.fsInfo))
-				if (fsInfo->__recognize__(msdos.formatBoot.sectorLength))
+		if (const PCBootSector bootSector=MSDOS->boot.GetSectorData())
+			if (const PFsInfoSector fsInfo=(PFsInfoSector)MSDOS->__getHealthyLogicalSectorData__(bootSector->fat32.fsInfo))
+				if (fsInfo->__recognize__(MSDOS->formatBoot.sectorLength))
 					return fsInfo;
 				else
 					::SetLastError(ERROR_INVALID_DATA);
@@ -52,9 +54,48 @@
 		return nullptr;
 	}
 
-	void CMSDOS7::CFsInfo::MarkSectorAsDirty() const{
+	void CMSDOS7::CFsInfoView::MarkSectorAsDirty() const{
 		// marks the FS Info Sector as dirty
-		if (const PCBootSector bootSector=msdos.boot.GetSectorData())
-			msdos.__markLogicalSectorAsDirty__( bootSector->fat32.fsInfo );
+		if (const PCBootSector bootSector=MSDOS->boot.GetSectorData())
+			MSDOS->__markLogicalSectorAsDirty__( bootSector->fat32.fsInfo );
 	}
 
+	bool WINAPI CMSDOS7::CFsInfoView::__sectorModified__(CPropGridCtrl::PCustomParam,int){
+		// marking the Boot Sector as dirty
+		const PMSDOS7 msdos=(PMSDOS7)CDos::GetFocused();
+		msdos->fsInfo.MarkSectorAsDirty();
+		msdos->image->UpdateAllViews(nullptr);
+		return true;
+	}
+
+	void CMSDOS7::CFsInfoView::OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint){
+		// request to refresh the display of content
+		// - changing to the FS-Info Sector (might have been switched elsewhere before, e.g. Boot error now recovered)
+		if (const PCBootSector bootSector=MSDOS->boot.GetSectorData())
+			ChangeToSector(  MSDOS->__logfyz__( bootSector->fat32.fsInfo )  );
+		else
+			ChangeToSector( TPhysicalAddress::Invalid );
+		// - base
+		__super::OnUpdate( pSender, lHint, pHint );
+		// - populating the PropertyGrid with values from the FS-Info Sector (if any found)
+		const PFsInfoSector fsInfo=GetSectorData();
+		CPropGridCtrl::EnableProperty(	propGrid.m_hWnd,
+										CPropGridCtrl::AddProperty(	propGrid.m_hWnd, nullptr, _T("Status"),
+																	fsInfo?"Recognized":"Not recognized", -1,
+																	CPropGridCtrl::TString::DefineFixedLengthEditorA()
+																),
+										false
+									);
+		if (fsInfo){
+			// FS-Info Sector found
+			const HANDLE hClusters=CPropGridCtrl::AddCategory(propGrid.m_hWnd,nullptr,_T("Clusters"));
+				CPropGridCtrl::AddProperty(	propGrid.m_hWnd, hClusters, _T("First free"),
+											&fsInfo->firstFreeCluster, sizeof(TCluster32),
+											CPropGridCtrl::TInteger::DefineEditor( CPropGridCtrl::TInteger::PositiveIntegerLimits, __sectorModified__ )
+										);
+				CPropGridCtrl::AddProperty(	propGrid.m_hWnd, hClusters, _T("Count of free"),
+											&fsInfo->nFreeClusters, sizeof(TCluster32),
+											CPropGridCtrl::TInteger::DefineEditor( CPropGridCtrl::TInteger::PositiveIntegerLimits, __sectorModified__ )
+										);
+		}
+	}

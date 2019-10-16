@@ -155,15 +155,6 @@
 		} *PFsInfoSector;
 		typedef const TFsInfoSector *PCFsInfoSector;
 
-		class CFsInfo sealed{
-			const CMSDOS7 &msdos;
-		public:
-			CFsInfo(const CMSDOS7 &msdos);
-
-			PFsInfoSector GetSectorData() const;
-			void MarkSectorAsDirty() const;
-		} fsInfo;
-
 		#pragma pack(1)
 		typedef union UDirectoryEntry{
 			enum TSpecial:char{
@@ -245,6 +236,18 @@
 
 			PBootSector GetSectorData() const;
 		} boot;
+
+		class CFsInfoView sealed:public CCriticalSectorView{
+			static bool WINAPI __sectorModified__(CPropGridCtrl::PCustomParam,int);
+
+			void OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint) override;
+		public:
+			CFsInfoView(CMSDOS7 *msdos);
+
+			//TPhysicalAddress GetPhysicalAddress() const;
+			PFsInfoSector GetSectorData() const;
+			void MarkSectorAsDirty() const;
+		} fsInfo;
 
 		class CMsdos7FileManagerView sealed:public CFileManagerView{
 			static bool WINAPI __onNameAndExtConfirmed__(PVOID file,LPCTSTR newNameAndExt,short nCharsOfNewNameAndExt);

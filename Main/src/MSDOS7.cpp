@@ -12,7 +12,7 @@
 		// - base
 		: CDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS, &Properties, ::lstrcmpi, CDos::StdSidesMap, IDR_MSDOS, &fileManager, TGetFileSizeOptions::OfficialDataLength )
 		// - initialization
-		, fat(*this) , fsInfo(*this)
+		, fat(*this) , fsInfo(this)
 		, trackMap(this) , boot(this) , fileManager(this)
 		, dontShowLongFileNames( __getProfileBool__(INI_DONT_SHOW_LONG_NAMES,false) )
 		, dontShowDotEntries( __getProfileBool__(INI_DONT_SHOW_DOT,false) )
@@ -1008,6 +1008,8 @@ nextCluster:result++;
 					}
 				CTdiCtrl::AddTabLast( hTdi, TRACK_MAP_TAB_LABEL, &trackMap.tab, false, TDI_TAB_CANCLOSE_NEVER, nullptr );
 				CTdiCtrl::AddTabLast( hTdi, BOOT_SECTOR_TAB_LABEL, &boot.tab, false, TDI_TAB_CANCLOSE_NEVER, nullptr );
+				if (fat.type==CFat::FAT32)
+					CTdiCtrl::AddTabLast( hTdi, _T("FS-Info sector"), &fsInfo.tab, false, TDI_TAB_CANCLOSE_NEVER, nullptr );
 				CTdiCtrl::AddTabLast( hTdi, FILE_MANAGER_TAB_LABEL, &fileManager.tab, true, TDI_TAB_CANCLOSE_NEVER, nullptr );
 				return ERROR_SUCCESS;
 			}
