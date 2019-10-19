@@ -108,7 +108,7 @@
 					__addStaticText__( _T("Currently none. Files you open or drives you access will be shown here."), buttonCaptionFont );
 			// - composing the "FAQ" section
 			__addCategory__( _T("Frequent questions (network connection needed)"), 0xf0a8 );
-				#define HELP_GLYPH_COLOR	0x656565
+				#define HELP_GLYPH_COLOR	0x585858
 				__addButton__( _T("How do I format a real floppy?"), ID_FORMAT, 0xf026, HELP_GLYPH_COLOR );
 				__addButton__( _T("How do I dump a real floppy to an image?"), ID_IMAGE, 0xf026, HELP_GLYPH_COLOR );
 				__addButton__( _T("How do I dump an image back to a real floppy?"), ID_MEDIUM, 0xf026, HELP_GLYPH_COLOR );
@@ -396,7 +396,7 @@
 					HWND hFocusedWnd=(HWND)wParam;
 					do{
 						if (hFocusedWnd==CIntroductoryGuidePost::pSingleInstance->m_hWnd)
-							return __super::WindowProc(msg,wParam,lParam);
+							return 0;
 					}while ( hFocusedWnd=::GetParent(hFocusedWnd) );
 					( (CMainWindow *)app.m_pMainWnd )->SetActiveView(	pCurrentTab
 																		? pCurrentTab->view

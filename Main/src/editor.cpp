@@ -166,6 +166,7 @@
 		// - displaying the document-view MainWindow
 		m_pMainWnd->ShowWindow(SW_SHOW);
 		m_pMainWnd->UpdateWindow();
+		TDI_INSTANCE->SetFocus(); // explicitly focusing on the TDI View to activate the IntroductoryGuidePost
 		// - searching for newly added DOSes
 		for( POSITION pos=CDos::known.GetHeadPosition(); pos; )
 			if (!CDos::CRecognition().__getOrderIndex__((CDos::PCProperties)CDos::known.GetNext(pos))){
