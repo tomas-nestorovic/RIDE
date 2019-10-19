@@ -625,7 +625,7 @@ namespace Utils{
 		RECT rCtrlA,rCtrlZ;
 		pCtrlA->GetClientRect(&rCtrlA), pCtrlA->MapWindowPoints(wnd,&rCtrlA);
 		pCtrlZ->GetClientRect(&rCtrlZ), pCtrlZ->MapWindowPoints(wnd,&rCtrlZ);
-		RECT r={ max(rCtrlA.right,rCtrlZ.right)+5, rCtrlA.top-6, 1000, rCtrlZ.bottom+6 };
+		RECT r={ std::max<>(rCtrlA.right,rCtrlZ.right)+5, rCtrlA.top-6, 1000, rCtrlZ.bottom+6 };
 		CClientDC dc(wnd);
 		dc.SetTextColor( textColor );
 		DrawClosingCurlyBracket( dc, r.left, r.top, r.bottom );
@@ -788,9 +788,9 @@ namespace Utils{
 	static float __getLogicalUnitScaleFactor__(){
 		// computes and returns the factor (from (0;oo)) to multiply the size of one logical unit with; returns 1 if the logical unit size doesn't have to be changed
 		const CClientDC screen(nullptr);
-		return	min(::GetDeviceCaps(screen,LOGPIXELSX)/(float)SCREEN_DPI_DEFAULT,
-					::GetDeviceCaps(screen,LOGPIXELSY)/(float)SCREEN_DPI_DEFAULT
-				);
+		return	std::min<>(	::GetDeviceCaps(screen,LOGPIXELSX)/(float)SCREEN_DPI_DEFAULT,
+							::GetDeviceCaps(screen,LOGPIXELSY)/(float)SCREEN_DPI_DEFAULT
+						);
 	}
 
 	const float LogicalUnitScaleFactor=__getLogicalUnitScaleFactor__();
@@ -817,7 +817,7 @@ namespace Utils{
 		COLORREF result=0;
 		for( BYTE i=sizeof(COLORREF),*pbIn=(PBYTE)&currentColor,*pbOut=(PBYTE)&result; i-->0; ){
 			const WORD w=*pbIn++*saturationFactor;
-			*pbOut++=min(w,255);
+			*pbOut++=std::min<>( w, (WORD)255 );
 		}
 		return result;
 	}
@@ -828,7 +828,7 @@ namespace Utils{
 		COLORREF result=0;
 		for( BYTE i=sizeof(COLORREF),*pbIn1=(PBYTE)&color1,*pbIn2=(PBYTE)&color2,*pbOut=(PBYTE)&result; i-->0; ){
 			const WORD w = blendFactor**pbIn1++ + (1.f-blendFactor)**pbIn2++;
-			*pbOut++=min(w,255);
+			*pbOut++=std::min<>( w, (WORD)255 );
 		}
 		return result;
 	}

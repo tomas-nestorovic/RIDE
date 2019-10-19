@@ -120,6 +120,9 @@ typedef const int *PCINT;
 #define COLOR_BLACK	0
 #define COLOR_YELLOW 0xffff
 
+#undef min
+#undef max
+
 extern CRideApp app;
 
 extern void WINAPI AfxThrowInvalidArgException();

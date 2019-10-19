@@ -104,7 +104,7 @@
 		if (w>GKFM_BASE && w<GKFM_BASE+MDOS2_SECTOR_LENGTH_STD){
 			// . getting Text from Boot Sector
 			BYTE bufD[GKFM_TEXT_MAX]; // D = Desktop
-			::memcpy( bufD, (PCBYTE)boot+w-GKFM_BASE, min(GKFM_TEXT_MAX,MDOS2_SECTOR_LENGTH_STD-(w-GKFM_BASE)) );
+			::memcpy( bufD, (PCBYTE)boot+w-GKFM_BASE, std::min<>(GKFM_TEXT_MAX,MDOS2_SECTOR_LENGTH_STD-(w-GKFM_BASE)) );
 			bufD[GKFM_TEXT_MAX-1]=DESKTOP_NL;
 			// . Desktop->ASCII char-set conversion
 			for( BYTE n=GKFM_TEXT_MAX,*a=bufD; n--; a++ )
@@ -309,7 +309,7 @@
 					if (w>=sizeof(TGKFileManager) && w<sizeof(TBootSector::UReserved1)) // GKFM_VRAM+2 = GK's File Manager data length in Boot Sector
 						nCharsMaxD=sizeof(TBootSector::UReserved1)-w;
 					else if (w>=MDOS2_SECTOR_LENGTH_STD-sizeof(UReserved3) && w<MDOS2_SECTOR_LENGTH_STD)
-						nCharsMaxD=min(GKFM_TEXT_MAX,MDOS2_SECTOR_LENGTH_STD-w);
+						nCharsMaxD=std::min<>( GKFM_TEXT_MAX, MDOS2_SECTOR_LENGTH_STD-w );
 					else{
 errorText:				TCHAR buf[400];
 						::wsprintf( buf, _T("Text location in collision with critical section in the boot.\n\nTo resolve this issue, try to\n(a) shorten the text to max.%d characters (incl. all Desktop formatting characters), or\n(b) change its beginning in the ") BOOT_SECTOR_ADVANCED _T(" setting subcategory."), GKFM_TEXT_MAX );

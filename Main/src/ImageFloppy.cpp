@@ -38,7 +38,7 @@
 		// determines and returns usable portion of a Sector based on supplied LenghtCode and actual FloppyType
 		const WORD officialLength=__getOfficialSectorLength__(sectorLengthCode);
 		if (floppyType==TMedium::FLOPPY_DD || floppyType==TMedium::UNKNOWN) // Unknown = if FloppyType not set (e.g. if DOS Unknown), the floppy is by default considered as a one with the lowest capacity
-			return min( 6144, officialLength );
+			return std::min<>( (WORD)6144, officialLength );
 		else
 			return officialLength;
 	}

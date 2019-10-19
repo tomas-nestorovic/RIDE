@@ -70,10 +70,10 @@
 				lOff+=position;
 				//fallthrough
 			case SeekPosition::begin:
-				position=min(lOff,fileSize);
+				position=std::min<>(lOff,fileSize);
 				break;
 			case SeekPosition::end:
-				position=max(fileSize-lOff,0);
+				position=std::max<>( fileSize-lOff, 0L );
 				break;
 			default:
 				ASSERT(FALSE);
@@ -83,7 +83,7 @@
 
 	UINT CDos::CFileReaderWriter::Read(LPVOID lpBuf,UINT nCount){
 		// tries to read given NumberOfBytes into the Buffer, starting with current Position; returns the number of Bytes actually read (increments the Position by this actually read number of Bytes)
-		nCount=min(nCount,fileSize-position);
+		nCount=std::min<UINT>(nCount,fileSize-position);
 		const UINT nBytesToRead=nCount;
 		CFatPath::PCItem item; DWORD n;
 		if (!fatPath.GetItems(item,n)){
@@ -113,7 +113,7 @@
 
 	void CDos::CFileReaderWriter::Write(LPCVOID lpBuf,UINT nCount){
 		// tries to write given NumberOfBytes from the Buffer to the current Position (increments the Position by the number of Bytes actually written)
-		nCount=min(nCount,fileSize-position);
+		nCount=std::min<UINT>(nCount,fileSize-position);
 		CFatPath::PCItem item; DWORD n;
 		if (!fatPath.GetItems(item,n)){
 			div_t d=div((int)position,(int)dos->formatBoot.sectorLength-dataBeginOffsetInSector-dataEndOffsetInSector);

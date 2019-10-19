@@ -91,9 +91,9 @@
 					case CFat::FAT12:
 						return nClusters;
 					case CFat::FAT16:
-						return min( nClusters, (MSDOS7_FAT_CLUSTER_BAD-MSDOS7_DATA_CLUSTER_FIRST)&0xffff );
+						return std::min<TCluster32>( nClusters, (MSDOS7_FAT_CLUSTER_BAD-MSDOS7_DATA_CLUSTER_FIRST)&0xffff );
 					case CFat::FAT32:
-						return min( nClusters, MSDOS7_FAT_CLUSTER_BAD-MSDOS7_DATA_CLUSTER_FIRST );
+						return std::min<TCluster32>( nClusters, MSDOS7_FAT_CLUSTER_BAD-MSDOS7_DATA_CLUSTER_FIRST );
 					default:
 						ASSERT(FALSE);
 				}
@@ -1053,7 +1053,7 @@ nextCluster:result++;
 						rlnp.msdos->__markDirectorySectorAsDirty__(de);
 					}
 				}
-				pAction->UpdateProgress( state=max(state,dt.chs.cylinder) );
+				pAction->UpdateProgress( state=std::max<>(state,dt.chs.cylinder) );
 			}
 		return pAction->TerminateWithError(ERROR_SUCCESS);
 	}

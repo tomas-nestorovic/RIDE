@@ -247,7 +247,7 @@
 		// - setting the scrolling dimensions
 		RECT r;
 		GetClientRect(&r);
-		nRowsDisplayed=std::max<int>( 0, (r.bottom-r.top)/font.charHeight-HEADER_LINES_COUNT );
+		nRowsDisplayed=std::max<>( 0L, (r.bottom-r.top)/font.charHeight-HEADER_LINES_COUNT );
 		nRowsOnPage=std::max<>( 0, nRowsDisplayed-1 );
 		PostMessage( WM_HEXA_PAINTSCROLLBARS );
 	}
@@ -299,7 +299,7 @@
 		if (x>0 && x<=hexaW){ // "x>0" - cannot be just "x" because x can be negative
 			// Hexa area
 			if (pOutAsciiArea) *pOutAsciiArea=false;
-			return currLineStart+std::min<>(x/byteW,currLineBytesMinusOne);
+			return currLineStart+std::min<>( x/byteW, currLineBytesMinusOne );
 		}else if (x>asciiX && x<=asciiX+nBytesInRow*font.charAvgWidth){
 			// Ascii area
 			if (pOutAsciiArea) *pOutAsciiArea=true;
@@ -456,7 +456,7 @@ deleteSelection:		int posSrc=std::max<>(caret.selectionA,caret.position), posDst
 						for( int nBytesToMove=f->GetLength()-posSrc; nBytesToMove; ){
 							BYTE buf[65536];
 							f->Seek(posSrc,CFile::begin);
-							const int nBytesBuffered=f->Read(buf, min(nBytesToMove,sizeof(buf)) );
+							const int nBytesBuffered=f->Read(buf, std::min<UINT>(nBytesToMove,sizeof(buf)) );
 							if (!nBytesBuffered) break; // no Bytes buffered if, for instance, Sector not found
 							f->Seek(posDst,CFile::begin);
 							f->Write(buf,nBytesBuffered);
@@ -646,7 +646,7 @@ changeHalfbyte:					if (caret.position<maxFileSize){
 resetSelectionWithValue:BYTE buf[65536];
 						::memset( buf, i, sizeof(buf) );
 						for( DWORD nBytesToReset=std::max<>(caret.selectionA,caret.position)-f->Seek(std::min<>(caret.selectionA,caret.position),CFile::begin),n; nBytesToReset; nBytesToReset-=n ){
-							n=min( nBytesToReset, sizeof(buf) );
+							n=std::min<UINT>( nBytesToReset, sizeof(buf) );
 							f->Write( buf, n );
 							if (::GetLastError()==ERROR_WRITE_FAULT){
 								Utils::Information( _T("Selection only partially reset"), ERROR_WRITE_FAULT );
@@ -900,8 +900,8 @@ leftMouseDragged:
 				if (wParam>lParam){
 					const int tmp=wParam; wParam=lParam; lParam=tmp;
 				}
-				caret.selectionA=max(0,wParam);
-				caret.position=min(lParam,maxFileSize);
+				caret.selectionA=std::max<int>(0,wParam);
+				caret.position=std::min<int>(lParam,maxFileSize);
 				RepaintData();
 				goto caretRefresh;
 			case WM_ERASEBKGND:
@@ -985,7 +985,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 							dc.DrawText( buf, ::wsprintf(buf,HEXA_FORMAT,n++), &rcHeader, DT_LEFT|DT_TOP );
 					}
 					// . determining the visible part of the File content
-					const int iRowFirstToPaint=std::max<int>( (rcClip.top-HEADER_HEIGHT)/font.charHeight, 0 );
+					const int iRowFirstToPaint=std::max<>( (rcClip.top-HEADER_HEIGHT)/font.charHeight, 0L );
 					int iRowA= GetScrollPos(SB_VERT) + iRowFirstToPaint;
 					const int nPhysicalRows=__logicalPositionToRow__( std::min<int>(f->GetLength(),logicalSize) );
 					const int iRowLastToPaint= GetScrollPos(SB_VERT) + (rcClip.bottom-HEADER_HEIGHT)/font.charHeight + 1;

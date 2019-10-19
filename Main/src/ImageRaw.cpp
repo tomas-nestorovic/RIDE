@@ -87,7 +87,7 @@
 				canBeModified=false;
 		// - currently without geometry (DOS must call SetMediumTypeAndGeometry)
 		if ( sizeWithoutGeometry=f.GetLength() )
-			nCylinders=1, nHeads=1, nSectors=1, sectorLengthCode=__getSectorLengthCode__( sectorLength=min(sizeWithoutGeometry,(WORD)-1) );
+			nCylinders=1, nHeads=1, nSectors=1, sectorLengthCode=__getSectorLengthCode__( sectorLength=std::min<DWORD>(sizeWithoutGeometry,(WORD)-1) );
 		return TRUE;
 	}
 
@@ -298,7 +298,7 @@ trackNotFound:
 			// MediumType and/or its Format were not successfully determined (DosUnknown)
 			__freeBufferOfCylinders__();
 			if (fileSize){
-				nCylinders=1, nHeads=1, nSectors=1, sectorLengthCode=__getSectorLengthCode__( sectorLength=min(fileSize,(WORD)-1) );
+				nCylinders=1, nHeads=1, nSectors=1, sectorLengthCode=__getSectorLengthCode__( sectorLength=std::min<DWORD>(fileSize,(WORD)-1) );
 				::ZeroMemory( bufferOfCylinders=(PVOID *)::malloc(sizeof(PVOID)), sizeof(PVOID) );
 			}//else
 				//nop (see ctor, or specifically OnOpenDocument)

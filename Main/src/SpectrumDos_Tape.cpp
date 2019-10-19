@@ -684,7 +684,7 @@ drawChecksum:	r.right=*tabs++;
 					const LONG statusWidth=(r.bottom-r.top)*4/3;
 					r.right-=statusWidth;
 					::DrawText( dc, _itot(tf->dataChecksum,bufT,10),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
-					r.left=max(r.right,r.left), r.right+=statusWidth;
+					r.left=std::max<>(r.right,r.left), r.right+=statusWidth;
 					if (tf->dataChecksumStatus==TTapeFile::TDataChecksumStatus::UNDETERMINED)
 						tf->dataChecksumStatus=	tf->dataChecksum==__getChecksum__(tf->dataBlockFlag,tf->data,tf->dataLength)
 												? TTapeFile::TDataChecksumStatus::CORRECT

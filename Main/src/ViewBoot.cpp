@@ -70,7 +70,7 @@
 			fmt.nCylinders=(TCylinder)newValue;
 		if (dos->ValidateFormatChangeAndReportProblem(false,&fmt)){
 			// new number of Cylinders acceptable
-			const TCylinder nCyl0=(TCylinder)dos->formatBoot.nCylinders, cylZ=max(nCyl0,newValue);
+			const TCylinder nCyl0=(TCylinder)dos->formatBoot.nCylinders, cylZ=std::max<int>(nCyl0,newValue);
 			const THead nHeads=dos->formatBoot.nHeads;
 			const TTrack nTracksMax=cylZ*nHeads;
 			TStdWinError err;
@@ -80,7 +80,7 @@
 				if (( err=::GetLastError() )==ERROR_SUCCESS){
 					// . composing the list of Tracks that will be added to or removed from FAT
 					TTrack nTracks=0;
-					for( TCylinder cylA=min(nCyl0,newValue); cylA<cylZ; cylA++ )
+					for( TCylinder cylA=std::min<int>(nCyl0,newValue); cylA<cylZ; cylA++ )
 						for( THead head=0; head<nHeads; head++,nTracks++ )
 							bufCylinders[nTracks]=cylA, bufHeads[nTracks]=head;
 					// . adding to or removing from FAT
@@ -181,7 +181,7 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 				if (cbp.chs){
 					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.nCylinders, nullptr, __updateFatAfterChangingCylinderCount__, props->cylinderRange.iMax, _T("Cylinders") );
 					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.nHeads, CRITICAL_VALUE_SIDES_COUNT, __confirmCriticalValueInBoot__, props->headRange.iMax, _T("Heads") );
-					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.nSectors, CRITICAL_VALUE_SECTORS_COUNT, __confirmCriticalValueInBoot__, min(props->sectorRange.iMax,DOS->properties->nSectorsOnTrackMax), _T("Sectors/track") );
+					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.nSectors, CRITICAL_VALUE_SECTORS_COUNT, __confirmCriticalValueInBoot__, std::min<int>(props->sectorRange.iMax,DOS->properties->nSectorsOnTrackMax), _T("Sectors/track") );
 				}
 				if (cbp.pSectorLength){
 					static const CPropGridCtrl::TInteger::TUpDownLimits Limits={128,16384};

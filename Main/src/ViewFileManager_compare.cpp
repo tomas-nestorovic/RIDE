@@ -190,7 +190,7 @@ different:	Utils::Information(_T("No, the files differ in content! (File names a
 		CFileComparisonDialog &rDialog=hexaComparison.rDialog;
 		const DWORD L1= rDialog.file1.f ? rDialog.file1.f->GetLength() : 0;
 		const DWORD L2= rDialog.file2.f ? rDialog.file2.f->GetLength() : 0;
-		const DWORD biggerSize=max(L1,L2);
+		const DWORD biggerSize=std::max<>(L1,L2);
 			rDialog.file1.hexaComparison.SetLogicalSize(biggerSize);
 			rDialog.file1.hexaComparison.Invalidate();
 			rDialog.file2.hexaComparison.SetLogicalSize(biggerSize);

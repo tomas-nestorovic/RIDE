@@ -658,7 +658,7 @@
 							if (subPdt->entryType!=CDos::TDirectoryTraversal::WARNING)
 								__countInFile__(subPdt,&dirEtc);
 						}
-						pAction->UpdateProgress( state=max(state,subPdt->chs.cylinder) );
+						pAction->UpdateProgress( state=std::max<>(state,subPdt->chs.cylinder) );
 					}
 				}
 			}

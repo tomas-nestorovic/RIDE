@@ -296,7 +296,7 @@
 		#ifdef UNICODE
 			ASSERT(FALSE)
 		#else
-			::memcpy( ::memset(name,' ',sizeof(name)), newName, min(nCharsInNewName,sizeof(name)) );
+			::memcpy( ::memset(name,' ',sizeof(name)), newName, std::min<size_t>(nCharsInNewName,sizeof(name)) );
 		#endif
 		// - setting FileType
 		fileType=(TFileType)*newExt;
@@ -374,7 +374,7 @@
 		de->__setNameAndExt__(newName,newExt);
 		// - modifying information of a standard ROM File (e.g. standard parameters)
 		if (de->__isStandardRomFile__()){
-			de->etc.stdZxType.romId=(TZxRom::TFileType)min(de->fileType-1,TZxRom::TFileType::CODE); // min = retyping Screen to Code
+			de->etc.stdZxType.romId=(TZxRom::TFileType)std::min<BYTE>(de->fileType-1,TZxRom::TFileType::CODE); // min = retyping Screen to Code
 			de->__setStdParameter1__(stdParams.param1), de->__setStdParameter2__(stdParams.param2);
 			de->__setDataSizeByFileType__(dataSize);
 		}
@@ -457,7 +457,7 @@
 			__super::ExportFile( file, fOut, nBytesToExportMax, pOutError );
 			// . exporting Etc data stored in DirectoryEntry
 			if (const DWORD nBytesReserved=nBytesToExportMax-fOut->GetLength())
-				fOut->Write( &de->etc, min(nBytesReserved,sizeof(de->etc)) );
+				fOut->Write( &de->etc, std::min<UINT>(nBytesReserved,sizeof(de->etc)) );
 		}
 		return reinterpret_cast<PCDos>(this)->GetFileSize(de)+sizeof(de->etc);
 	}

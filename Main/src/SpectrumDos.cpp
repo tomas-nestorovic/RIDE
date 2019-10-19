@@ -154,7 +154,7 @@
 				// formatting standard Cylinders (i.e. with standard "official" Sectors)
 				TCylinder bufCylinders[FDD_CYLINDERS_MAX*2];// a "big enough" Buffer
 				THead bufHeads[FDD_CYLINDERS_MAX*2];		// a "big enough" Buffer
-				const TCylinder cylMin=min( 1+__getLastOccupiedStdCylinder__(), formatBoot.nCylinders );
+				const TCylinder cylMin=std::min<int>( 1+__getLastOccupiedStdCylinder__(), formatBoot.nCylinders );
 				CFormatDialog::TStdFormat additionalFormats[]={
 					{ _T("Expand to 40 cylinders"),	cylMin, formatBoot, 1, 0, FDD_SECTOR_GAP3_STD, properties->stdFormats->params.nAllocationTables, properties->nRootDirectoryEntriesMax },
 					{ _T("Expand to 80 cylinders"),	cylMin, formatBoot, 1, 0, FDD_SECTOR_GAP3_STD, properties->stdFormats->params.nAllocationTables, properties->nRootDirectoryEntriesMax }

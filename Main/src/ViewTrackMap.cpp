@@ -261,8 +261,8 @@
 		GetClientRect(&r);
 		const TTrack nTracks=IMAGE->GetTrackCount();
 		scanner.params.criticalSection.Lock();
-			scanner.params.a=max( 0, (iScrollY-TRACK0_Y)/TRACK_HEIGHT );
-			scanner.params.z=min( nTracks, max( 0, (iScrollY+r.bottom-r.top-TRACK0_Y+TRACK_HEIGHT-1)/TRACK_HEIGHT ) );
+			scanner.params.a=std::max<>( 0, (iScrollY-TRACK0_Y)/TRACK_HEIGHT );
+			scanner.params.z=std::min<LONG>( nTracks, std::max<>( 0L, (iScrollY+r.bottom-r.top-TRACK0_Y+TRACK_HEIGHT-1)/TRACK_HEIGHT ) );
 			scanner.params.x=scanner.params.a;
 		scanner.params.criticalSection.Unlock();
 		// - launching the Scanner of Tracks

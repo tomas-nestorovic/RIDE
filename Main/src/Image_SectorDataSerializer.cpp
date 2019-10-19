@@ -55,10 +55,10 @@
 				lOff+=position;
 				//fallthrough
 			case SeekPosition::begin:
-				position=min(lOff,dataTotalLength);
+				position=std::min<>(lOff,dataTotalLength);
 				break;
 			case SeekPosition::end:
-				position=max(dataTotalLength-lOff,0);
+				position=std::max<>( dataTotalLength-lOff, 0L );
 				break;
 			default:
 				ASSERT(FALSE);
@@ -68,7 +68,7 @@
 
 	UINT CImage::CSectorDataSerializer::Read(LPVOID lpBuf,UINT nCount){
 		// tries to read given NumberOfBytes into the Buffer, starting with current Position; returns the number of Bytes actually read (increments the Position by this actually read number of Bytes)
-		nCount=min( nCount, dataTotalLength-position );
+		nCount=std::min<UINT>( nCount, dataTotalLength-position );
 		const UINT nBytesToRead=nCount;
 		bool readWithoutCrcError=true; // assumption
 		WORD w; TFdcStatus sr;
@@ -96,7 +96,7 @@
 
 	void CImage::CSectorDataSerializer::Write(LPCVOID lpBuf,UINT nCount){
 		// tries to write given NumberOfBytes from the Buffer to the current Position (increments the Position by the number of Bytes actually written)
-		nCount=min( nCount, dataTotalLength-position );
+		nCount=std::min<UINT>( nCount, dataTotalLength-position );
 		bool writtenWithoutCrcError=true; // assumption
 		WORD w; TFdcStatus sr;
 		while (true){

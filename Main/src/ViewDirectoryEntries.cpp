@@ -162,7 +162,7 @@
 								f->Seek( dirEntryStart, CFile::begin );
 								BYTE rstDirEntry[4096]; // should suffice to accommodate DirectoryEntry of *any* DOS
 								f->Read( rstDirEntry, pdt->entrySize );
-								::memcpy( orgDirEntry+selA-dirEntryStart, rstDirEntry+selA-dirEntryStart, std::min<int>(selZ-selA,pdt->entrySize) );
+								::memcpy( orgDirEntry+selA-dirEntryStart, rstDirEntry+selA-dirEntryStart, std::min<size_t>(selZ-selA,pdt->entrySize) );
 								f->Seek( dirEntryStart, CFile::begin );
 								f->Write( orgDirEntry, pdt->entrySize );
 								selA=std::min<>( dirEntryStart+pdt->entrySize, selZ );

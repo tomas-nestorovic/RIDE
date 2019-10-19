@@ -548,10 +548,11 @@
 			const PCBootSector bootSector=boot.GetSectorData();
 			if (!bootSector)
 				return false;
-			const TCylinder nCylindersMax=(	min(fat.GetMaxCountOfClusters()
-												,
-												(bootSector->__getCountOfSectorsInOneFatCopy__()*bootSector->sectorSize-MSDOS7_DATA_CLUSTER_FIRST)*2/fat.type
-											)*
+			const TCylinder nCylindersMax=(	std::min<>(	fat.GetMaxCountOfClusters()
+														,
+														(bootSector->__getCountOfSectorsInOneFatCopy__()*bootSector->sectorSize-MSDOS7_DATA_CLUSTER_FIRST)*2/fat.type
+													)
+											*
 											bootSector->nSectorsInCluster
 											+
 											bootSector->__getCountOfNondataSectors__()

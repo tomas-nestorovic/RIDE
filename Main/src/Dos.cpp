@@ -256,7 +256,7 @@ reportError:Utils::Information(buf);
 			// formatted only selected Cylinders
 			if (rd.updateBoot){
 				// requested to update Format in Boot Sector
-				formatBoot.nCylinders=max( formatBoot.nCylinders, rd.params.format.nCylinders+1 ); // "+1" = because Cylinders numbered from zero
+				formatBoot.nCylinders=std::max<int>( formatBoot.nCylinders, rd.params.format.nCylinders+1 ); // "+1" = because Cylinders numbered from zero
 				FlushToBootSector();
 			}
 			if (rd.addTracksToFat)
@@ -391,7 +391,7 @@ reportError:Utils::Information(buf);
 		// - removing unformatted Cylinders from Boot Sector and FAT (if commanded so)
 		if (rd.updateBoot){
 			if (1+rd.cylZ>=formatBoot.nCylinders)
-				formatBoot.nCylinders=min(formatBoot.nCylinders,rd.cylA);
+				formatBoot.nCylinders=std::min<>( formatBoot.nCylinders, rd.cylA );
 			FlushToBootSector();
 		}
 		if (rd.removeTracksFromFat)
@@ -725,7 +725,7 @@ reportError:Utils::Information(buf);
 		else{
 			BYTE nBytesReservedBeforeData;
 			DWORD nDataBytesToExport=GetFileSize(file,&nBytesReservedBeforeData,nullptr);
-			nDataBytesToExport=min(nDataBytesToExport,nMaxDataBytesToExport);
+			nDataBytesToExport=std::min<>( nDataBytesToExport, nMaxDataBytesToExport );
 			div_t d=div((int)nBytesReservedBeforeData,(int)formatBoot.sectorLength-properties->dataBeginOffsetInSector-properties->dataEndOffsetInSector);
 			item+=d.quot, n-=d.quot; // skipping Sectors from which not read thanks to the NumberOfBytesReservedBeforeData
 			for( const Utils::CByteIdentity sectorIdAndPositionIdentity; n; ){
@@ -1111,7 +1111,7 @@ finished:
 		CFormatDialog::PCStdFormat pStdFmt=stdFormats;
 		for( BYTE n=nStdFormats; n-->0; pStdFmt++ )
 			if (pStdFmt->params.format.mediumType & medium)
-				result=min( result, pStdFmt->params.gap3 );
+				result=std::min<>( result, pStdFmt->params.gap3 );
 		return result;
 	}
 

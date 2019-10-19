@@ -134,7 +134,7 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 										patchParams.source.reset( sourceImageProperties->fnInstantiate() );
 										patchParams.source->OnOpenDocument(fileName);
 										patchParams.cylinderA=0, patchParams.cylinderZ=patchParams.source->GetCylinderCount()-1;
-										patchParams.nHeads=min(patchParams.source->GetNumberOfFormattedSides(0),patchParams.target->GetNumberOfFormattedSides(0));
+										patchParams.nHeads=std::min<>( patchParams.source->GetNumberOfFormattedSides(0), patchParams.target->GetNumberOfFormattedSides(0) );
 										DoDataExchange( &CDataExchange(this,FALSE) );
 										// : compacting FileName in order to be displayable on the button
 										RECT r;
