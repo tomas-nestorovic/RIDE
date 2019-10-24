@@ -137,8 +137,13 @@
 		class CFileReaderWriter:public CFile,public CHexaEditor::IContentAdviser{
 			const CDos *const dos;
 			const BYTE dataBeginOffsetInSector,dataEndOffsetInSector;
+			#if _MFC_VER>=0x0A00
+			LONGLONG fileSize;
+			LONGLONG position;
+			#else
 			LONG fileSize;
 			LONG position;
+			#endif
 		protected:
 			int recordLength;
 		public:

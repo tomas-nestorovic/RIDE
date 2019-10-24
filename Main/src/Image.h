@@ -209,8 +209,13 @@
 		protected:
 			CHexaEditor *const pParentHexaEditor;
 			const PImage image;
+			#if _MFC_VER>=0x0A00
+			LONGLONG dataTotalLength;
+			LONGLONG position;
+			#else
 			LONG dataTotalLength;
 			LONG position;
+			#endif
 			TTrack currTrack; // Track (inferred from Position) to currently read from or write to
 			struct{ // Sector (inferred from Position) to currently read from or write to
 				BYTE indexOnTrack; // zero-based index of the Sector on the Track (to distinguish among duplicate-ID Sectors)

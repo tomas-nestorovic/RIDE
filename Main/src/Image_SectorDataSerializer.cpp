@@ -58,7 +58,7 @@
 				position=std::min<>(lOff,dataTotalLength);
 				break;
 			case SeekPosition::end:
-				position=std::max<>( dataTotalLength-lOff, 0L );
+				position=std::max<>( dataTotalLength-lOff, (decltype(position))0 );
 				break;
 			default:
 				ASSERT(FALSE);

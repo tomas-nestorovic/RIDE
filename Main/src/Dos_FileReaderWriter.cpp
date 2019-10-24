@@ -73,7 +73,7 @@
 				position=std::min<>(lOff,fileSize);
 				break;
 			case SeekPosition::end:
-				position=std::max<>( fileSize-lOff, 0L );
+				position=std::max<>( fileSize-lOff, (decltype(position))0 );
 				break;
 			default:
 				ASSERT(FALSE);
