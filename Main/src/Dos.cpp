@@ -234,10 +234,10 @@ reportError:Utils::Information(buf);
 		const TSector nSectors0=formatBoot.nSectors;
 			const TFormat::TLengthCode lengthCode0=formatBoot.sectorLengthCode;
 				formatBoot.nSectors=rd.params.format.nSectors, formatBoot.sectorLengthCode=rd.params.format.sectorLengthCode;
-				const TStdWinError err=__formatTracks__(n, bufCylinders, bufHeads,
-														0, bufferId, bufferLength, // 0 = standard Sectors
-														rd.params, rd.showReportOnFormatting==BST_CHECKED
-													);
+				TStdWinError err=__formatTracks__(	n, bufCylinders, bufHeads,
+													0, bufferId, bufferLength, // 0 = standard Sectors
+													rd.params, rd.showReportOnFormatting==BST_CHECKED
+												);
 			formatBoot.sectorLengthCode=lengthCode0;
 		formatBoot.nSectors=nSectors0;
 		if (err!=ERROR_SUCCESS)
