@@ -208,7 +208,7 @@
 		const div_t d=div( logPos, recordLength );
 		if (!d.rem){
 			CDos::CFatPath::PCItem pItem; DWORD nItems;
-			if (LPCTSTR err=fatPath.GetItems(pItem,nItems))
+			if (const LPCTSTR err=fatPath.GetItems(pItem,nItems))
 				return err;
 			else
 				return (pItem+d.quot)->chs.sectorId.ToString(labelBuffer);

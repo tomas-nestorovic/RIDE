@@ -138,7 +138,7 @@
 	#define NO_ERROR	_T("- no error\n")
 
 	static UINT AFX_CDECL __dump_thread__(PVOID _pCancelableAction){
-		// vlakno kopirovani Stop
+		// threat to copy Tracks
 		LOG_ACTION(_T("dump thread"));
 		TBackgroundActionCancelable *const pAction=(TBackgroundActionCancelable *)_pCancelableAction;
 		TDumpParams &dp=*(TDumpParams *)pAction->fnParams;
@@ -482,7 +482,7 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 					}
 					// : Medium must be supported by both DOS and Image
 					pDX->PrepareEditCtrl(ID_MEDIUM);
-					HWND hComboBox=GetDlgItem(ID_MEDIUM)->m_hWnd;
+					const HWND hComboBox=GetDlgItem(ID_MEDIUM)->m_hWnd;
 					TMedium::TType mt=(TMedium::TType)ComboBox_GetItemData( hComboBox, ComboBox_GetCurSel(hComboBox) );
 				}else{
 					GetDlgItem(ID_FILE)->SetWindowText(ELLIPSIS);

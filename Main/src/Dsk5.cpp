@@ -298,8 +298,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - base
-		const TStdWinError err=CFloppyImage::SetMediumTypeAndGeometry(pFormat,sideMap,firstSectorNumber);
-		if (err!=ERROR_SUCCESS)
+		if (const TStdWinError err=CFloppyImage::SetMediumTypeAndGeometry( pFormat, sideMap, firstSectorNumber ))
 			return err;
 		// - changes in geometry allowed only if Image is empty
 		if (!diskInfo.nCylinders)

@@ -212,7 +212,6 @@ reportError:Utils::Information(buf);
 			for( THead h=0; h<rd.params.format.nHeads; h++,n++ )
 				bufCylinders[n]=c, bufHeads[n]=h;
 		// - checking if formatting can proceed
-		TStdWinError err;
 		if (rd.params.cylinder0){
 			// request to NOT format from the beginning of disk - all targeted Tracks must be empty
 			const TStdWinError err=__areStdCylindersEmpty__(n,bufCylinders);
@@ -224,10 +223,10 @@ reportError:Utils::Information(buf);
 			// request to format from the beginning of disk - warning that all data will be destroyed
 			if (!Utils::QuestionYesNo(_T("About to format the whole image and destroy all data.\n\nContinue?!"),MB_DEFBUTTON2))
 				return ERROR_CANCELLED;
-			err=image->Reset();
-			if (err!=ERROR_SUCCESS) return err;
-			err=image->SetMediumTypeAndGeometry( &rd.params.format, sideMap, properties->firstSectorNumber );
-			if (err!=ERROR_SUCCESS) return err;
+			if (const TStdWinError err=image->Reset())
+				return err;
+			if (const TStdWinError err=image->SetMediumTypeAndGeometry( &rd.params.format, sideMap, properties->firstSectorNumber ))
+				return err;
 		}
 		// - carrying out the formatting
 		TSectorId bufferId[(TSector)-1];	WORD bufferLength[(TSector)-1];
@@ -235,10 +234,10 @@ reportError:Utils::Information(buf);
 		const TSector nSectors0=formatBoot.nSectors;
 			const TFormat::TLengthCode lengthCode0=formatBoot.sectorLengthCode;
 				formatBoot.nSectors=rd.params.format.nSectors, formatBoot.sectorLengthCode=rd.params.format.sectorLengthCode;
-				err=__formatTracks__(	n, bufCylinders, bufHeads,
-										0, bufferId, bufferLength, // 0 = standard Sectors
-										rd.params, rd.showReportOnFormatting==BST_CHECKED
-									);
+				const TStdWinError err=__formatTracks__(n, bufCylinders, bufHeads,
+														0, bufferId, bufferLength, // 0 = standard Sectors
+														rd.params, rd.showReportOnFormatting==BST_CHECKED
+													);
 			formatBoot.sectorLengthCode=lengthCode0;
 		formatBoot.nSectors=nSectors0;
 		if (err!=ERROR_SUCCESS)
