@@ -11,8 +11,6 @@
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
-#define _WIN32_WINNT 0x0501
-
 #define OEMRESOURCE
 #include <afxwin.h>
 #include <afxpriv.h>
