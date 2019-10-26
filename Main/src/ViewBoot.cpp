@@ -4,6 +4,8 @@
 
 	#define CRITICAL_VALUE_SIDES_COUNT		_T("msgpg1")
 	#define CRITICAL_VALUE_SECTORS_COUNT	_T("msgpg2")
+	#define CRITICAL_VALUE_SECTOR_SIZE		_T("msgpg5")
+	#define CRITICAL_VALUE_CLUSTER_SIZE		_T("msgpg6")
 	#define CYLINDERS_ADDED_TO_FAT			_T("msgpg3")
 	#define CYLINDERS_REMOVED_FROM_FAT		_T("msgpg4")
 	#define IMAGE_STRUCTURE_UNAFFECTED		_T("Changing this value does NOT affect the image structure.\n\nTo modify its structure, switch to the \"") TRACK_MAP_TAB_LABEL _T("\" tab.")
@@ -49,6 +51,10 @@
 				fmt.nHeads=(THead)newValue;
 			else if (criticalValueId==CRITICAL_VALUE_SECTORS_COUNT)
 				fmt.nSectors=(TSector)newValue;
+			else if (criticalValueId==CRITICAL_VALUE_SECTOR_SIZE)
+				fmt.sectorLength=(WORD)newValue;
+			else if (criticalValueId==CRITICAL_VALUE_CLUSTER_SIZE)
+				fmt.clusterSize=(TSector)newValue;
 			if (!dos->ValidateFormatChangeAndReportProblem(false,&fmt))
 				return false;
 			// . accepting the new format
@@ -146,18 +152,22 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 
 	static void __pg_showPositiveInteger__(HWND hPropGrid,HANDLE hCategory,PVOID pInteger,LPCTSTR criticalValueId,CPropGridCtrl::TInteger::TOnValueConfirmed fn,int maxValue,LPCTSTR caption){
 		// shows Integer in value in PropertyGrid's specified Category
-		if (const PCBYTE pZeroByte=(PCBYTE)::memchr(&maxValue,0,sizeof(maxValue))){
-			const CPropGridCtrl::TInteger::TUpDownLimits limits={ 1, maxValue };
+		const CPropGridCtrl::TInteger::TUpDownLimits limits={ 1, maxValue };
+		const auto pgEditor=CPropGridCtrl::TInteger::DefineEditor( limits, fn );
+		if (maxValue<=(BYTE)-1)
 			CPropGridCtrl::AddProperty(	hPropGrid, hCategory, caption,
-										pInteger, pZeroByte-(PCBYTE)&maxValue,
-										CPropGridCtrl::TInteger::DefineEditor( limits, fn ),
-										(PVOID)criticalValueId
+										pInteger, sizeof(BYTE),
+										pgEditor, (PVOID)criticalValueId
 									);
-		}else
+		else if (maxValue<=(WORD)-1)
+			CPropGridCtrl::AddProperty(	hPropGrid, hCategory, caption,
+										pInteger, sizeof(WORD),
+										pgEditor, (PVOID)criticalValueId
+									);
+		else
 			CPropGridCtrl::AddProperty(	hPropGrid, hCategory, caption,
 										pInteger, sizeof(DWORD),
-										CPropGridCtrl::TInteger::DefineEditor( CPropGridCtrl::TInteger::PositiveIntegerLimits, fn ),
-										(PVOID)criticalValueId
+										pgEditor, (PVOID)criticalValueId
 									);
 	}
 
@@ -183,12 +193,13 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.nHeads, CRITICAL_VALUE_SIDES_COUNT, __confirmCriticalValueInBoot__, props->headRange.iMax, _T("Heads") );
 					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.nSectors, CRITICAL_VALUE_SECTORS_COUNT, __confirmCriticalValueInBoot__, std::min<int>(props->sectorRange.iMax,DOS->properties->nSectorsOnTrackMax), _T("Sectors/track") );
 				}
-				if (cbp.pSectorLength){
-					static const CPropGridCtrl::TInteger::TUpDownLimits Limits={128,16384};
+				if (cbp.sectorLength){
+					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.sectorLength, CRITICAL_VALUE_SECTOR_SIZE, __confirmCriticalValueInBoot__, 16384, _T("Sector size") );
+					/*static const CPropGridCtrl::TInteger::TUpDownLimits Limits={128,16384};
 					CPropGridCtrl::AddProperty(	propGrid.m_hWnd, hGeometry, _T("Sector size"),
-												cbp.pSectorLength, sizeof(WORD),
+												&DOS->formatBoot.sectorLength, sizeof(WORD),
 												CPropGridCtrl::TInteger::DefineEditor(Limits,__bootSectorModified__)
-											);
+											);*/
 				}
 			}
 			const HANDLE hVolume= cbp.volumeCategory ? CPropGridCtrl::AddCategory(propGrid.m_hWnd,nullptr,_T("Volume")) : 0;
@@ -205,6 +216,8 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 												CPropGridCtrl::TInteger::DefineEditor(limits,__bootSectorModified__)
 											);
 				}
+				if (cbp.clusterSize)
+					__pg_showPositiveInteger__( propGrid.m_hWnd, hVolume, &DOS->formatBoot.clusterSize, CRITICAL_VALUE_CLUSTER_SIZE, __confirmCriticalValueInBoot__, DOS->properties->clusterSizeMax, _T("Cluster size") );
 			}
 			// . DOS-specific parameters of Boot
 			AddCustomBootParameters(propGrid.m_hWnd,hGeometry,hVolume,cbp,boot);

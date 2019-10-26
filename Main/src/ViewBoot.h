@@ -14,7 +14,7 @@
 		typedef struct TCommonBootParameters sealed{
 			unsigned geometryCategory	:1;
 				unsigned chs:1;
-				PWORD pSectorLength; // non-Null pointer = added to PropertyGrid
+				unsigned sectorLength:1;
 			unsigned volumeCategory	:1;
 				struct{
 					BYTE length; // non-zero = this structure is valid and the Label will be added to PropertyGrid
@@ -26,6 +26,7 @@
 					PVOID buffer; // non-Null = this structure is valid and ID will be added to PropertyGrid
 					BYTE bufferCapacity;
 				} id;
+				unsigned clusterSize:1;
 		} &RCommonBootParameters;
 
 		CBootView(PDos dos,RCPhysicalAddress rChsBoot);

@@ -339,7 +339,7 @@
 		const PMSDOS7 msdos=(PMSDOS7)DOS;
 		rParam.geometryCategory=true;
 			rParam.chs=true;
-			rParam.pSectorLength=&boot->sectorSize;
+			rParam.sectorLength=true;
 		rParam.volumeCategory=true;
 			TVolumeInfo *pvi;
 			switch (msdos->fat.type){
@@ -367,6 +367,7 @@
 				}
 			rParam.id.buffer=&pvi->id;
 				rParam.id.bufferCapacity=sizeof(DWORD);
+			rParam.clusterSize=true;
 	}
 
 	bool WINAPI CMSDOS7::CMsdos7BootView::__onMediumChanged__(PVOID,CPropGridCtrl::TEnum::UValue newValue){
@@ -446,10 +447,6 @@
 		const PBootSector boot=(PBootSector)_boot;
 		const CFat::TType fatType=((PMSDOS7)DOS)->fat.type;
 		TVolumeInfo *const pvi=	fatType==CFat::FAT32 ? &boot->fat32.volume : &boot->fat1216.volume;
-		CPropGridCtrl::AddProperty( hPropGrid, hGeometry, _T("Sectors per cluster"),
-									&boot->nSectorsInCluster, sizeof(BYTE),
-									CPropGridCtrl::TInteger::DefinePositiveByteEditor( __bootSectorModified__ )
-								);
 		if (!rParam.label.length)
 			CPropGridCtrl::AddProperty(	hPropGrid, hVolume, _T("Label not found"),
 										"<a>Create</a>", -1,
@@ -531,6 +528,8 @@
 			bootSector->nSectorsInTotal16=formatBoot.GetCountOfAllSectors();
 			bootSector->nHeads=formatBoot.nHeads;
 			bootSector->nSectorsOnTrack=formatBoot.nSectors;
+			bootSector->nSectorsInCluster=formatBoot.clusterSize;
+			bootSector->sectorSize=formatBoot.sectorLength;
 			boot.MarkSectorAsDirty();
 		}
 	}
