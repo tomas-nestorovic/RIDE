@@ -76,7 +76,7 @@
 			LENGTHCODE_16384=7
 		} sectorLengthCode;
 		WORD sectorLength;
-		TSector clusterSize;
+		WORD clusterSize; // in Sectors
 
 		bool operator==(const TFormat &fmt2) const;
 		DWORD GetCountOfAllSectors() const;
