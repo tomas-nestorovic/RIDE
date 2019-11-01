@@ -4,7 +4,7 @@
 	#define	EDITOR_DEFAULT_HEIGHT	20
 	#define EDITOR_STYLE			( WS_CHILD | WS_CLIPSIBLINGS )
 
-	#define STRING_LENGTH_MAX		8192
+	#define STRING_LENGTH_MAX		(CPropGridCtrl::TSize)8192
 
 	#pragma pack(1)
 	struct TEditor{
@@ -20,7 +20,6 @@
 
 			TControl(	PCEditor editor,
 						CPropGridCtrl::PValue valueBuffer,
-						CPropGridCtrl::TValueSize valueBufferCapacity,
 						CPropGridCtrl::PCustomParam param,
 						DWORD style,
 						HWND hParent
@@ -50,9 +49,12 @@
 		TEditor(
 			WORD height,
 			bool hasMainControl,
+			CPropGridCtrl::TSize valueSize,
 			CPropGridCtrl::TOnEllipsisButtonClicked onEllipsisBtnClicked,
 			CPropGridCtrl::TOnValueChanged onValueChanged
 		);
+	public:
+		const CPropGridCtrl::TSize valueSize;
 	};
 
 	#pragma pack(1)
@@ -70,6 +72,7 @@
 		TStringEditor(
 			CPropGridCtrl::TOnEllipsisButtonClicked onEllipsisBtnClicked,
 			bool wideChar,
+			CPropGridCtrl::TSize nCharsMax,
 			CPropGridCtrl::TString::TOnValueConfirmed onValueConfirmed,
 			CPropGridCtrl::TOnValueChanged onValueChanged
 		);
@@ -85,6 +88,7 @@
 		TFixedPaddedStringEditor(
 			CPropGridCtrl::TOnEllipsisButtonClicked onEllipsisBtnClicked,
 			bool wideChar,
+			CPropGridCtrl::TSize nCharsMax,
 			CPropGridCtrl::TString::TOnValueConfirmed onValueConfirmed,
 			WCHAR paddingChar,
 			CPropGridCtrl::TOnValueChanged onValueChanged
@@ -115,6 +119,7 @@
 		LRESULT __mainCtrl_wndProc__(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam) const override;
 	public:
 		TBooleanEditor(
+			CPropGridCtrl::TSize nValueBytes,
 			DWORD reservedValue,
 			bool reservedForTrue,
 			CPropGridCtrl::TBoolean::TOnValueConfirmed onValueConfirmed,
@@ -124,6 +129,7 @@
 
 	#pragma pack(1)
 	struct TIntegerEditor sealed:public TStringEditor{
+		const CPropGridCtrl::TSize nValueBytes;
 		const BYTE features;
 		const CPropGridCtrl::TInteger::TUpDownLimits limits;
 		const CPropGridCtrl::TInteger::TOnValueConfirmed onValueConfirmed;
@@ -134,6 +140,7 @@
 		LRESULT __mainCtrl_wndProc__(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam) const override;
 	public:
 		TIntegerEditor(
+			CPropGridCtrl::TSize nValueBytes,
 			BYTE features,
 			CPropGridCtrl::TInteger::RCUpDownLimits rLimits,
 			CPropGridCtrl::TInteger::TOnValueConfirmed onValueConfirmed,
@@ -156,6 +163,7 @@
 		bool __tryToAcceptMainCtrlValue__() const override;
 	public:
 		TCustomEnumEditor(
+			CPropGridCtrl::TSize nValueBytes,
 			WORD height,
 			bool wideChar,
 			CPropGridCtrl::TEnum::TGetValueDesc getValueDesc,
@@ -171,6 +179,7 @@
 	struct TFileNameEditor sealed:public TFixedPaddedStringEditor{
 		TFileNameEditor(
 			bool wideChar,
+			CPropGridCtrl::TSize nCharsMax,
 			CPropGridCtrl::TString::TOnValueConfirmed onValueConfirmed,
 			CPropGridCtrl::TOnValueChanged onValueChanged
 		);
@@ -205,6 +214,7 @@
 	public:
 		TCustomEditor(
 			WORD height,
+			CPropGridCtrl::TSize nValueBytes,
 			CPropGridCtrl::TDrawValueHandler drawValue,
 			CPropGridCtrl::TCustom::TCreateCustomMainEditor createCustomMainEditor,
 			CPropGridCtrl::TOnEllipsisButtonClicked onEllipsisBtnClicked,

@@ -17,15 +17,14 @@
 			const struct TValue sealed{
 				const PCEditor editor; // either ==TEditor::Category (then this Item is a category), or !=TEditor::Category (then this Item is a property)
 				const CPropGridCtrl::PValue buffer;
-				const CPropGridCtrl::TValueSize bufferCapacity;
 				const CPropGridCtrl::PCustomParam param;
 
-				TValue(PCEditor editor,CPropGridCtrl::PValue buffer,CPropGridCtrl::TValueSize bufferCapacity,CPropGridCtrl::PCustomParam param);
+				TValue(PCEditor editor,CPropGridCtrl::PValue buffer,CPropGridCtrl::PCustomParam param);
 			} value;
 			BYTE disabled; // >0 = this Item cannot be Edited
 			TItem *nextInCategory;
 
-			TItem(TPropGridInfo *pPropGridInfo,PCategoryItem parentCategory,LPCTSTR name,PCEditor editor,CPropGridCtrl::PValue buffer,CPropGridCtrl::TValueSize bufferCapacity,CPropGridCtrl::PCustomParam param);
+			TItem(TPropGridInfo *pPropGridInfo,PCategoryItem parentCategory,LPCTSTR name,PCEditor editor,CPropGridCtrl::PValue buffer,CPropGridCtrl::PCustomParam param);
 			virtual ~TItem();
 
 			virtual void __drawIndentedName__(HDC dc,RECT rc,HFONT hFont) const;

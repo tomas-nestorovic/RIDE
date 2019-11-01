@@ -4,13 +4,14 @@
 		return true; // new Value is by default always accepted
 	}
 
-	TBooleanEditor::TBooleanEditor(	DWORD reservedValue,
+	TBooleanEditor::TBooleanEditor(	CPropGridCtrl::TSize nValueBytes,
+									DWORD reservedValue,
 									bool reservedForTrue,
 									CPropGridCtrl::TBoolean::TOnValueConfirmed onValueConfirmed,
 									CPropGridCtrl::TOnValueChanged onValueChanged
 								)
 		// ctor
-		: TEditor( EDITOR_DEFAULT_HEIGHT, true, nullptr, onValueChanged )
+		: TEditor( EDITOR_DEFAULT_HEIGHT, true, std::min<CPropGridCtrl::TSize>(nValueBytes,sizeof(DWORD)), nullptr, onValueChanged )
 		, reservedValue(reservedValue) , reservedForTrue(reservedForTrue)
 		, onValueConfirmed( onValueConfirmed ? onValueConfirmed : __alwaysAccept__ ) {
 	}
@@ -24,7 +25,7 @@
 						: TPropGridInfo::BRUSH_BLACK
 				);
 		DWORD tmp=0;
-		::memcpy( &tmp, value.buffer, value.bufferCapacity );
+		::memcpy( &tmp, value.buffer, valueSize );
 		if (reservedForTrue && tmp==reservedValue  ||  !reservedForTrue && tmp!=reservedValue){
 			const HDC dcmem=::CreateCompatibleDC(pdis->hDC);
 				const HGDIOBJ hBitmap0=::SelectObject( dcmem, TPropGridInfo::CHECKBOX_CHECKED );
@@ -43,7 +44,7 @@
 	HWND TBooleanEditor::__createMainControl__(const TPropGridInfo::TItem::TValue &value,HWND hParent) const{
 		// creates, initializes with current Value, and returns Editor's MainControl
 		DWORD tmp=0;
-		::memcpy( &tmp, value.buffer, value.bufferCapacity );
+		::memcpy( &tmp, value.buffer, valueSize );
 		checked=reservedForTrue && tmp==reservedValue  ||  !reservedForTrue && tmp!=reservedValue;
 		return ::CreateWindow(	WC_BUTTON,
 								nullptr, // no caption next to the check-box
@@ -62,7 +63,7 @@
 				const DWORD tmp=reservedForTrue && checked  ||  !reservedForTrue && !checked
 								? reservedValue
 								: ~reservedValue;
-				::memcpy( value.buffer, &tmp, value.bufferCapacity );
+				::memcpy( value.buffer, &tmp, valueSize );
 			}
 		ignoreRequestToDestroy=false;
 		return accepted;
@@ -93,7 +94,7 @@
 					DWORD tmp=	reservedForTrue && checked  ||  !reservedForTrue && !checked
 								? reservedValue
 								: ~reservedValue;
-					__drawValue__(	TPropGridInfo::TItem::TValue( pSingleShown->value.editor, &tmp, sizeof(tmp), pSingleShown->value.param ),
+					__drawValue__(	TPropGridInfo::TItem::TValue( pSingleShown->value.editor, &tmp, pSingleShown->value.param ),
 									&dis
 								);
 				::EndPaint(hCheckBox,&ps);
@@ -111,10 +112,15 @@
 
 
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TBoolean::DefineEditor(TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged,DWORD reservedValue,bool reservedForTrue){
+	CPropGridCtrl::PCEditor CPropGridCtrl::TBoolean::DefineEditor(TSize nValueBytes,TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged,DWORD reservedValue,bool reservedForTrue){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
-					new TBooleanEditor( reservedValue, reservedForTrue, onValueConfirmed, onValueChanged ),
+					new TBooleanEditor( nValueBytes, reservedValue, reservedForTrue, onValueConfirmed, onValueChanged ),
 					sizeof(TBooleanEditor)
 				);
+	}
+
+	CPropGridCtrl::PCEditor CPropGridCtrl::TBoolean::DefineByteEditor(TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged,BYTE reservedValue,bool reservedForTrue){
+		// creates and returns an Editor with specified parameters
+		return DefineEditor( sizeof(BYTE), onValueConfirmed, onValueChanged, reservedValue, reservedForTrue );
 	}

@@ -8,7 +8,8 @@
 		//nop (the allocated ValueList remains in memory (e.g. because it's been allocated in protected read-only space using as "static const")
 	}
 
-	TCustomEnumEditor::TCustomEnumEditor(	WORD height,
+	TCustomEnumEditor::TCustomEnumEditor(	CPropGridCtrl::TSize nValueBytes,
+											WORD height,
 											bool wideChar,
 											CPropGridCtrl::TEnum::TGetValueDesc getValueDesc,
 											CPropGridCtrl::TDrawValueHandler drawValue,
@@ -18,7 +19,7 @@
 											CPropGridCtrl::TOnValueChanged onValueChanged
 										)
 		// ctor
-		: TEditor( height, true, nullptr, onValueChanged )
+		: TEditor( height, true, std::min<CPropGridCtrl::TSize>(nValueBytes,sizeof(CPropGridCtrl::TEnum::UValue)), nullptr, onValueChanged )
 		, wideChar(wideChar)
 		, getValueDesc(getValueDesc)
 		, drawValue(drawValue)
@@ -31,13 +32,13 @@
 		// draws the Value into the specified rectangle
 		if (drawValue!=nullptr)
 			// custom-drawn (aka. owner-drawn) Value
-			drawValue( value.param, value.buffer, value.bufferCapacity, pdis );
+			drawValue( value.param, value.buffer, value.editor->valueSize, pdis );
 		else{
 			// string-described Value
 			CPropGridCtrl::TEnum::UValue uValue;
 				uValue.longValue=0;
-			::memcpy( &uValue, value.buffer, value.bufferCapacity );
-			WCHAR desc[STRING_LENGTH_MAX];
+			::memcpy( &uValue, value.buffer, valueSize );
+			WCHAR desc[STRING_LENGTH_MAX+1];
 			__drawString__(	__getValueDescW__( value.param, uValue, desc, sizeof(desc)/sizeof(WCHAR) ), -1,
 							pdis
 						);
@@ -49,7 +50,7 @@
 		if (wideChar)
 			return ((CPropGridCtrl::TEnum::TGetValueDescW)getValueDesc)( param, value, buf, bufCapacity );
 		else{
-			char bufA[STRING_LENGTH_MAX];
+			char bufA[STRING_LENGTH_MAX+1];
 			::MultiByteToWideChar(	CP_ACP, 0,
 									((CPropGridCtrl::TEnum::TGetValueDescA)getValueDesc)( param, value, bufA, sizeof(bufA) ), -1,
 									buf, bufCapacity
@@ -60,9 +61,6 @@
 
 	HWND TCustomEnumEditor::__createMainControl__(const TPropGridInfo::TItem::TValue &value,HWND hParent) const{
 		// creates, initializes with current Value, and returns Editor's MainControl
-		// - checking the BufferCapacity
-		if (value.bufferCapacity>sizeof(CPropGridCtrl::TEnum::UValue))
-			return 0; // error - unsupported BufferCapacity (must be from the set {1,...,4})
 		// - creating the ComboBox
 		const HWND hComboBox=::CreateWindow(WC_COMBOBOX,
 											nullptr, // descendant sets the edit-box content
@@ -80,8 +78,8 @@
 		const CPropGridCtrl::TEnum::PCValueList valueList=getValueList( value.param, nValues );
 			CPropGridCtrl::TEnum::UValue uValue; // actual Value extracted from the ValueBytes below
 				uValue.longValue=0;
-			for( const BYTE *valueBytes=(PBYTE)valueList; nValues--; valueBytes+=value.bufferCapacity ){ // let's treat the ValueList as an array of Bytes in the form of [Value1,Value2,...,ValueN} where each Value occupies the same number of Bytes (e.g. 2 Bytes)
-				::memcpy( &uValue, valueBytes, value.bufferCapacity );
+			for( const BYTE *valueBytes=(PBYTE)valueList; nValues--; valueBytes+=valueSize ){ // let's treat the ValueList as an array of Bytes in the form of [Value1,Value2,...,ValueN} where each Value occupies the same number of Bytes (e.g. 2 Bytes)
+				::memcpy( &uValue, valueBytes, valueSize );
 				if (drawValue!=nullptr)
 					// owner-drawn Value
 					ComboBox_AddItemData( hComboBox, uValue.longValue );
@@ -96,7 +94,7 @@
 			}
 		freeValueList( value.param , valueList );
 		// . selecting the default Value in the ComboBox (or leaving it empty if it doesn't match any predefined Values from the List)
-		::memcpy( &uValue, value.buffer, value.bufferCapacity );
+		::memcpy( &uValue, value.buffer, valueSize );
 		int i=ComboBox_GetCount(hComboBox);
 		while (i--)
 			if (ComboBox_GetItemData(hComboBox,i)==uValue.longValue) break;
@@ -113,7 +111,7 @@
 			const TPropGridInfo::TItem::TValue &value=TEditor::pSingleShown->value;
 			const bool accepted=onValueConfirmed( value.param, uValue );
 			if (accepted)
-				::memcpy( value.buffer, &uValue, value.bufferCapacity );
+				::memcpy( value.buffer, &uValue, valueSize );
 		ignoreRequestToDestroy=false;
 		return accepted;
 	}
@@ -128,10 +126,11 @@
 
 	
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TEnum::DefineConstStringListEditorA(TGetValueList getValueList,TGetValueDescA getValueDesc,TFreeValueList freeValueList,TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged){
+	CPropGridCtrl::PCEditor CPropGridCtrl::TEnum::DefineConstStringListEditorA(TSize nValueBytes,TGetValueList getValueList,TGetValueDescA getValueDesc,TFreeValueList freeValueList,TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
-					new TCustomEnumEditor(	EDITOR_DEFAULT_HEIGHT,
+					new TCustomEnumEditor(	nValueBytes,
+											EDITOR_DEFAULT_HEIGHT,
 											false, (CPropGridCtrl::TEnum::TGetValueDesc)getValueDesc,
 											nullptr,
 											getValueList, freeValueList,
@@ -142,10 +141,26 @@
 				);
 	}
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TEnum::DefineConstCustomListEditor(WORD height,TGetValueList getValueList,TDrawValueHandler drawValue,TFreeValueList freeValueList,TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged){
+	CPropGridCtrl::PCEditor CPropGridCtrl::TEnum::DefineConstStringListEditorW(TSize nValueBytes,TGetValueList getValueList,TGetValueDescW getValueDesc,TFreeValueList freeValueList,TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
-					new TCustomEnumEditor(	height>0 ? height : EDITOR_DEFAULT_HEIGHT,
+					new TCustomEnumEditor(	nValueBytes,
+											EDITOR_DEFAULT_HEIGHT,
+											true, (CPropGridCtrl::TEnum::TGetValueDesc)getValueDesc,
+											nullptr,
+											getValueList, freeValueList,
+											onValueConfirmed,
+											onValueChanged
+										),
+					sizeof(TCustomEnumEditor)
+				);
+	}
+
+	CPropGridCtrl::PCEditor CPropGridCtrl::TEnum::DefineConstCustomListEditor(WORD height,TSize nValueBytes,TGetValueList getValueList,TDrawValueHandler drawValue,TFreeValueList freeValueList,TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged){
+		// creates and returns an Editor with specified parameters
+		return	RegisteredEditors.__add__(
+					new TCustomEnumEditor(	nValueBytes,
+											height>0 ? height : EDITOR_DEFAULT_HEIGHT,
 											false, nullptr,
 											drawValue,
 											getValueList, freeValueList,

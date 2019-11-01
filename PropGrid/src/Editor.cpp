@@ -4,14 +4,13 @@
 
 	TEditor::TControl::TControl(PCEditor editor,
 								CPropGridCtrl::PValue valueBuffer,
-								CPropGridCtrl::TValueSize valueBufferCapacity,
 								CPropGridCtrl::PCustomParam param,
 								DWORD style,
 								HWND hParent
 							)
 		// ctor
 		// - creating Editor's GUI
-		: value(editor,valueBuffer,valueBufferCapacity,param)
+		: value(editor,valueBuffer,param)
 		, hMainCtrl(nullptr) // set below
 		, hEllipsisBtn(	editor->onEllipsisBtnClicked!=nullptr
 						? ::CreateWindow(	WC_BUTTON, _T("..."),
@@ -64,12 +63,14 @@
 
 	TEditor::TEditor(	WORD height,
 						bool hasMainControl,
+						CPropGridCtrl::TSize valueSize,
 						CPropGridCtrl::TOnEllipsisButtonClicked onEllipsisBtnClicked,
 						CPropGridCtrl::TOnValueChanged onValueChanged
 					)
 		// ctor
 		: height(height)
 		, hasMainControl(hasMainControl)
+		, valueSize(valueSize)
 		, onEllipsisBtnClicked(onEllipsisBtnClicked)
 		, onValueChanged(onValueChanged) {
 	}
@@ -79,9 +80,9 @@
 
 	void TEditor::__drawString__(LPCSTR text,short textLength,PDRAWITEMSTRUCT pdis){
 		// draws Text into the specified Rectangle
-		WCHAR bufW[STRING_LENGTH_MAX];
+		WCHAR bufW[STRING_LENGTH_MAX+1];
 		__drawString__(	bufW,
-						::MultiByteToWideChar( CP_ACP, 0, text,textLength, bufW,STRING_LENGTH_MAX ),
+						::MultiByteToWideChar( CP_ACP, 0, text,textLength, bufW,STRING_LENGTH_MAX+1 ),
 						pdis
 					);
 	}
@@ -89,7 +90,7 @@
 	void TEditor::__drawString__(LPCWSTR text,short textLength,PDRAWITEMSTRUCT pdis){
 		// draws Text into the specified Rectangle
 		RECT r={ PROPGRID_CELL_MARGIN_LEFT, PROPGRID_CELL_MARGIN_TOP+pdis->rcItem.top, pdis->rcItem.right, pdis->rcItem.bottom };
-		WCHAR buf[STRING_LENGTH_MAX];
+		WCHAR buf[STRING_LENGTH_MAX+1];
 		::DrawTextW(pdis->hDC,
 					::lstrcpynW( buf, text, textLength+(BYTE)(textLength>=0) ), // TextLength that is "-1" will be "-1"; TextLength that is N will be N+1
 					-1,
@@ -183,7 +184,7 @@
 					const bool b=( (CPropGridCtrl::TOnEllipsisButtonClicked)::GetWindowLong(hEllipsisBtn,GWL_USERDATA) )( // carrying out the Action
 										pSingleShown->value.param,
 										pSingleShown->value.buffer,
-										pSingleShown->value.bufferCapacity
+										pSingleShown->value.editor->valueSize
 								);
 				SubclassWindow(hEllipsisBtn,wndProc); // renewing the subclassing
 				::SetFocus(hEllipsisBtn); // renewing the focus, should it be lost during the Action

@@ -50,9 +50,9 @@
 
 			const Utils::CRideFont font;
 			mutable class CLineComposerPropGridEditor sealed{
-				static HWND WINAPI __create__(CPropGridCtrl::PValue value,CPropGridCtrl::TValueSize combinedValue,HWND hParent);
-				static void WINAPI __drawValue__(CPropGridCtrl::PCustomParam,CPropGridCtrl::PCValue value,CPropGridCtrl::TValueSize combinedValue,PDRAWITEMSTRUCT pdis);
-				static bool WINAPI __onChanged__(CPropGridCtrl::PCustomParam,HWND,CPropGridCtrl::PValue,CPropGridCtrl::TValueSize);
+				static HWND WINAPI __create__(CPropGridCtrl::PValue value,CPropGridCtrl::TSize combinedValue,HWND hParent);
+				static void WINAPI __drawValue__(CPropGridCtrl::PCustomParam,CPropGridCtrl::PCValue value,CPropGridCtrl::TSize combinedValue,PDRAWITEMSTRUCT pdis);
+				static bool WINAPI __onChanged__(CPropGridCtrl::PCustomParam,HWND,CPropGridCtrl::PValue);
 				static LRESULT CALLBACK __wndProc__(HWND hEditor,UINT msg,WPARAM wParam,LPARAM lParam);
 
 				HWND handle;
@@ -71,7 +71,7 @@
 				char buf[255]; // "big enough" to contain any ZX Spectrum line
 				void __addChar__(char c);
 			public:
-				CPropGridCtrl::PCEditor Create(CPropGridCtrl::TCustom::TOnValueConfirmed onValueConfirmed) const;
+				CPropGridCtrl::PCEditor Create(BYTE nCharsMax,char paddingChar,CPropGridCtrl::TCustom::TOnValueConfirmed onValueConfirmed) const;
 				LPCSTR GetCurrentZxText() const;
 				BYTE GetCurrentZxTextLength() const;
 			} lineComposerPropGridEditor;
@@ -114,7 +114,7 @@
 			} singleCharExtEditor;
 
 			mutable class CVarLengthFileNameEditor sealed{
-				static bool WINAPI __onChanged__(PVOID file,HWND,PVOID,short);
+				static bool WINAPI __onChanged__(PVOID file,HWND,PVOID);
 
 				TCHAR bufOldName[64]; // 64 = should accommodate filename of any ZX Spectrum-derived platform
 			public:

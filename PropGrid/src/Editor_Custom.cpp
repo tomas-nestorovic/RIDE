@@ -1,10 +1,11 @@
 #include "stdafx.h"
 
-	static bool WINAPI __alwaysAccept__(CPropGridCtrl::PCustomParam,HWND,CPropGridCtrl::PValue,CPropGridCtrl::TValueSize){
+	static bool WINAPI __alwaysAccept__(CPropGridCtrl::PCustomParam,HWND,CPropGridCtrl::PValue){
 		return true; // new Value is by default always accepted
 	}
 
 	TCustomEditor::TCustomEditor(	WORD height,
+									CPropGridCtrl::TSize nValueBytes,
 									CPropGridCtrl::TDrawValueHandler drawValue,
 									CPropGridCtrl::TCustom::TCreateCustomMainEditor createCustomMainEditor,
 									CPropGridCtrl::TOnEllipsisButtonClicked onEllipsisBtnClicked,
@@ -12,7 +13,7 @@
 									CPropGridCtrl::TOnValueChanged onValueChanged
 								)
 		// ctor
-		: TEditor( height, createCustomMainEditor!=nullptr, onEllipsisBtnClicked, onValueChanged )
+		: TEditor( height, createCustomMainEditor!=nullptr, nValueBytes, onEllipsisBtnClicked, onValueChanged )
 		, drawValue(drawValue)
 		, createCustomMainEditor(createCustomMainEditor)
 		, onValueConfirmed( onValueConfirmed ? onValueConfirmed : __alwaysAccept__ ) {
@@ -20,13 +21,13 @@
 
 	void TCustomEditor::__drawValue__(const TPropGridInfo::TItem::TValue &value,PDRAWITEMSTRUCT pdis) const{
 		// draws the Value into the specified rectangle
-		drawValue( value.param, value.buffer, value.bufferCapacity, pdis );
+		drawValue( value.param, value.buffer, value.editor->valueSize, pdis );
 	}
 
 	HWND TCustomEditor::__createMainControl__(const TPropGridInfo::TItem::TValue &value,HWND hParent) const{
 		// creates, initializes with current Value, and returns Editor's MainControl
 		// - creating the MainControl
-		const HWND hMainCtrl=createCustomMainEditor( value.buffer, value.bufferCapacity, hParent );
+		const HWND hMainCtrl=createCustomMainEditor( value.buffer, value.editor->valueSize, hParent );
 		// - adjusting the MainControl's style
 		::SetWindowLong(hMainCtrl, GWL_STYLE,
 						::GetWindowLong(hMainCtrl,GWL_STYLE)
@@ -41,7 +42,7 @@
 		// True <=> Editor's current Value is acceptable, otherwise False
 		ignoreRequestToDestroy=true;
 			const TPropGridInfo::TItem::TValue &value=TEditor::pSingleShown->value;
-			const bool accepted=onValueConfirmed( value.param, TEditor::pSingleShown->hMainCtrl, value.buffer, value.bufferCapacity );
+			const bool accepted=onValueConfirmed( value.param, TEditor::pSingleShown->hMainCtrl, value.buffer );
 		ignoreRequestToDestroy=false;
 		return accepted;
 	}
@@ -54,10 +55,11 @@
 
 
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TCustom::DefineEditor(WORD height,TDrawValueHandler drawValue,TCreateCustomMainEditor createCustomMainEditor,TOnEllipsisButtonClicked onEllipsisBtnClicked,TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged){
+	CPropGridCtrl::PCEditor CPropGridCtrl::TCustom::DefineEditor(WORD height,TSize nValueBytes,TDrawValueHandler drawValue,TCreateCustomMainEditor createCustomMainEditor,TOnEllipsisButtonClicked onEllipsisBtnClicked,TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
 					new TCustomEditor(	height ? height : EDITOR_DEFAULT_HEIGHT,
+										nValueBytes,
 										drawValue,
 										createCustomMainEditor, onEllipsisBtnClicked,
 										onValueConfirmed,

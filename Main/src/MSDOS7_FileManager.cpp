@@ -273,11 +273,11 @@
 			case INFORMATION_NAME_A_EXT:{
 				TCHAR buf[MAX_PATH];
 				return __createStdEditor__(	file,
-											DOS->GetFileNameWithAppendedExt(file,buf), MAX_PATH,
+											DOS->GetFileNameWithAppendedExt(file,buf),
 											#ifdef UNICODE
-												CPropGridCtrl::TString::DefineDynamicLengthEditorW(__onNameAndExtConfirmed__)
+												CPropGridCtrl::TString::DefineDynamicLengthEditorW( __onNameAndExtConfirmed__ )
 											#else
-												CPropGridCtrl::TString::DefineDynamicLengthEditorA(__onNameAndExtConfirmed__)
+												CPropGridCtrl::TString::DefineDynamicLengthEditorA( __onNameAndExtConfirmed__ )
 											#endif
 										);
 			}

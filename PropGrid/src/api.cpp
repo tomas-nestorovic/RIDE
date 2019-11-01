@@ -35,7 +35,7 @@
 			return 0; // no Category is refered by the input parameters - quitting with error
 	}
 
-	HANDLE WINAPI CPropGridCtrl::AddProperty(HWND hPropGrid,HANDLE category,LPCTSTR name,PValue value,TValueSize valueBytes,PCEditor editor,PCustomParam param){
+	HANDLE WINAPI CPropGridCtrl::AddProperty(HWND hPropGrid,HANDLE category,LPCTSTR name,PValue value,PCEditor editor,PCustomParam param){
 		// creates, adds into PropertyGrid, and returns a new ValueItem with given Name and Value
 		// - creating a new ValueItem in the specified Category
 		if (!IsValueBeingEdited()) // can change content only if a Value is NOT being edited
@@ -45,7 +45,7 @@
 							inferredCategory,
 							name,
 							(::PCEditor)editor,
-							value, valueBytes,
+							value,
 							param
 						);
 		// - no Category is refered to by the input parameters - quitting with failure
@@ -147,7 +147,7 @@
 
 	#define ELLIPSIS_BUTTON_WIDTH	20
 
-	HWND WINAPI CPropGridCtrl::BeginEditValue(PValue value,TValueSize valueBytes,PCustomParam param,PCEditor editor,RECT rcEditorRect,DWORD style,HWND hParent,HWND *pOutEllipsisBtn){
+	HWND WINAPI CPropGridCtrl::BeginEditValue(PValue value,PCustomParam param,PCEditor editor,RECT rcEditorRect,DWORD style,HWND hParent,HWND *pOutEllipsisBtn){
 		// creates and returns the MainControl (and EllipsisButton) of the Editor for the specified Value
 		// - no other Value must be edited
 		if (IsValueBeingEdited())
@@ -156,7 +156,7 @@
 		if (!hParent || hParent==INVALID_HANDLE_VALUE)
 			return 0;
 		// - creating the MainControl (and EllipsisButton)
-		new TEditor::TControl( (::PCEditor)editor, value, valueBytes, param, style, hParent );
+		new TEditor::TControl( (::PCEditor)editor, value, param, style, hParent );
 		// - stretching the MainControl (and EllipsisButton) across whole dedicated rectangle
 		const int height=rcEditorRect.bottom-rcEditorRect.top;
 		if (TEditor::pSingleShown->hEllipsisBtn){

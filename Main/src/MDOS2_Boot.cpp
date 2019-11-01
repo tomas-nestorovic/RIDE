@@ -199,21 +199,20 @@
 		// gets DOS-specific parameters from the Boot
 		const PBootSector boot=(PBootSector)_boot;
 		// . Volume
-		CPropGridCtrl::AddProperty(	hPropGrid, hVolume, _T("Label"),
-									boot->label, MAKEWORD(MDOS2_VOLUME_LABEL_LENGTH_MAX,'\0'), // [H,L] = [ padding char, max label length ]
-									((CSpectrumFileManagerView *)tab.dos->pFileManager)->zxRom.lineComposerPropGridEditor.Create(nullptr)
+		CPropGridCtrl::AddProperty(	hPropGrid, hVolume, _T("Label"), boot->label,
+									((CSpectrumFileManagerView *)tab.dos->pFileManager)->zxRom.lineComposerPropGridEditor.Create(MDOS2_VOLUME_LABEL_LENGTH_MAX,'\0',nullptr)
 								);
 		// . drives
 		const HANDLE hDrives=CPropGridCtrl::AddCategory(hPropGrid,nullptr,_T("Drives"));
-			const CPropGridCtrl::PCEditor driveEditor=CPropGridCtrl::TCustom::DefineEditor( 0, TBootSector::TDiskAndDriveInfo::__pg_drawProperty__, nullptr, TBootSector::TDiskAndDriveInfo::__pg_editProperty__ );
+			const CPropGridCtrl::PCEditor driveEditor=CPropGridCtrl::TCustom::DefineEditor( 0, sizeof(TBootSector::TDiskAndDriveInfo), TBootSector::TDiskAndDriveInfo::__pg_drawProperty__, nullptr, TBootSector::TDiskAndDriveInfo::__pg_editProperty__ );
 			CPropGridCtrl::AddProperty(	hPropGrid, hDrives, _T("Used"),
-										&boot->currDrive, sizeof(TBootSector::TDiskAndDriveInfo),
+										&boot->currDrive,
 										driveEditor
 									);
 			TBootSector::PDiskAndDriveInfo pddi=boot->drives; // drive information
 			for( TCHAR buf[]=_T("Drive @"); ++buf[6]<='D'; pddi++ )
 				CPropGridCtrl::AddProperty(	hPropGrid, hDrives, buf,
-											pddi, sizeof(TBootSector::TDiskAndDriveInfo),
+											pddi,
 											driveEditor
 										);
 		// . GK's File Manager
@@ -221,7 +220,7 @@
 		// . UniRUN by Proxima
 		const HANDLE hUniRun=CPropGridCtrl::AddCategory(hPropGrid,nullptr,UNIRUN_NAME);
 			CPropGridCtrl::AddProperty(	hPropGrid, hUniRun, MDOS2_RUNP,
-										BOOT_SECTOR_UPDATE_ONLINE_HYPERLINK, -1,
+										BOOT_SECTOR_UPDATE_ONLINE_HYPERLINK,
 										CPropGridCtrl::THyperlink::DefineEditorA(__unirun_updateOnline__)
 									);
 	}

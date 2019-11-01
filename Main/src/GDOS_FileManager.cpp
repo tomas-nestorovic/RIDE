@@ -295,8 +295,8 @@ error:			*de=tmp; // recovering the original DirectoryEntry
 		const PDos dos=CDos::GetFocused();
 		const CSpectrumFileManagerView *const pZxFileManager=(CSpectrumFileManagerView *)dos->pFileManager;
 		const PEditorBase result=pZxFileManager->__createStdEditor__(
-			de, &( data=de->fileType ), sizeof(data),
-			CPropGridCtrl::TEnum::DefineConstStringListEditorA( __createValues__, __getDescription__, __freeValues__, __onChanged__ )
+			de, &( data=de->fileType ),
+			CPropGridCtrl::TEnum::DefineConstStringListEditorA( sizeof(data), __createValues__, __getDescription__, __freeValues__, __onChanged__ )
 		);
 		::SendMessage( result->hEditor, WM_SETFONT, (WPARAM)pZxFileManager->rFont.m_hObject, 0 );
 		return result;

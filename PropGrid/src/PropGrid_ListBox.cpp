@@ -181,7 +181,7 @@ editItem:			// Tab key pressed - beginning to edit the Value using the correspon
 						::InflateRect(&r,-1,-1); // excluding lines separating individial Items
 						// : initiating the editing
 						CPropGridCtrl::BeginEditValue(
-							pItem->value.buffer, pItem->value.bufferCapacity,
+							pItem->value.buffer,
 							pItem->value.param,
 							pItem->value.editor,
 							r,

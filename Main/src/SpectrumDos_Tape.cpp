@@ -940,8 +940,8 @@ drawChecksum:	r.right=*tabs++;
 		CSpectrumFileManagerView *const pZxFileManager=(CSpectrumFileManagerView *)dos->pFileManager;
 		types=_types;
 		const PEditorBase result=pZxFileManager->__createStdEditor__(
-			file, &( data=type ), sizeof(data),
-			CPropGridCtrl::TEnum::DefineConstStringListEditorA( __createValues__, __getDescription__, nullptr, __onChanged__ )
+			file, &( data=type ),
+			CPropGridCtrl::TEnum::DefineConstStringListEditorA( sizeof(data), __createValues__, __getDescription__, nullptr, __onChanged__ )
 		);
 		::SendMessage( CEditorBase::pSingleShown->hEditor, WM_SETFONT, (WPARAM)pZxFileManager->rFont.m_hObject, 0 );
 		return result;

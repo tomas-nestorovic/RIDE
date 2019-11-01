@@ -449,65 +449,65 @@
 		TVolumeInfo *const pvi=	fatType==CFat::FAT32 ? &boot->fat32.volume : &boot->fat1216.volume;
 		if (!rParam.label.length)
 			CPropGridCtrl::AddProperty(	hPropGrid, hVolume, _T("Label not found"),
-										"<a>Create</a>", -1,
+										"<a>Create</a>",
 										CPropGridCtrl::THyperlink::DefineEditorA( __pg_createLabel__, CBootView::__updateCriticalSectorView__ )
 									);
 		CPropGridCtrl::AddProperty(	hPropGrid, hVolume, _T("ID valid"),
-									&pvi->infoValid, sizeof(BYTE),
-									CPropGridCtrl::TBoolean::DefineEditor( __bootSectorModified__, nullptr, 0x29, true )
+									&pvi->infoValid,
+									CPropGridCtrl::TBoolean::DefineEditor( sizeof(BYTE), __bootSectorModified__, nullptr, 0x29, true )
 								);
 		const HANDLE hGeometryAdvanced=CPropGridCtrl::AddCategory(hPropGrid,hGeometry,BOOT_SECTOR_ADVANCED,true);
 			// . Medium
 			CPropGridCtrl::AddProperty(	hPropGrid, hGeometryAdvanced, _T("Medium"),
-										&boot->medium, sizeof(TBootSector::TMsdosMedium),
-										CPropGridCtrl::TEnum::DefineConstStringListEditorA( __getListOfMedia__, __getMediumDescription__, nullptr, __onMediumChanged__ )
+										&boot->medium,
+										CPropGridCtrl::TEnum::DefineConstStringListEditorA( sizeof(TBootSector::TMsdosMedium), __getListOfMedia__, __getMediumDescription__, nullptr, __onMediumChanged__ )
 									);
 			// . number of Sectors on the disk
 			if (fatType==CFat::FAT32 || boot->nSectorsInTotal16==0)
 				CPropGridCtrl::AddProperty( hPropGrid, hGeometryAdvanced, _T("All sectors"),
-											&boot->nSectorsInTotal32, sizeof(TLogSector32),
-											CPropGridCtrl::TInteger::DefineEditor( CPropGridCtrl::TInteger::PositiveIntegerLimits, __bootSectorModified__ )
+											&boot->nSectorsInTotal32,
+											CPropGridCtrl::TInteger::DefineEditor( sizeof(TLogSector32), CPropGridCtrl::TInteger::PositiveIntegerLimits, __bootSectorModified__ )
 										);
 			else
 				CPropGridCtrl::AddProperty( hPropGrid, hGeometryAdvanced, _T("All sectors"),
-											&boot->nSectorsInTotal16, sizeof(TLogSector16),
+											&boot->nSectorsInTotal16,
 											CPropGridCtrl::TInteger::DefinePositiveWordEditor( __bootSectorModified__ )
 										);
 			// . number of reserved Sectors
 			CPropGridCtrl::AddProperty( hPropGrid, hGeometryAdvanced, _T("Reserved sectors"),
-										&boot->nReservedSectors, sizeof(TLogSector16),
+										&boot->nReservedSectors,
 										CPropGridCtrl::TInteger::DefinePositiveWordEditor( __bootSectorModified__ )
 									);
 			// . number of hidden Sectors
 			CPropGridCtrl::AddProperty( hPropGrid, hGeometryAdvanced, _T("Hidden sectors"),
-										&boot->nSectorsHidden, sizeof(TLogSector32),
-										CPropGridCtrl::TInteger::DefineEditor( CPropGridCtrl::TInteger::NonNegativeIntegerLimits, __bootSectorModified__ )
+										&boot->nSectorsHidden,
+										CPropGridCtrl::TInteger::DefineEditor( sizeof(TLogSector32), CPropGridCtrl::TInteger::NonNegativeIntegerLimits, __bootSectorModified__ )
 									);
 		const HANDLE hVolumeAdvanced=CPropGridCtrl::AddCategory(hPropGrid,hVolume,BOOT_SECTOR_ADVANCED,true);
 			// . OEM Name
 			CPropGridCtrl::AddProperty(	hPropGrid, hVolumeAdvanced, _T("OEM name"),
-										&boot->oemName, sizeof(boot->oemName),
-										CPropGridCtrl::TString::DefineFixedLengthEditorA( __bootSectorModifiedA__, ' ' )
+										&boot->oemName,
+										CPropGridCtrl::TString::DefineFixedLengthEditorA( sizeof(boot->oemName), __bootSectorModifiedA__, ' ' )
 									);
 			// . MediumType
 			CPropGridCtrl::AddProperty(	hPropGrid, hVolumeAdvanced, _T("Medium type"),
-										fatType==CFat::FAT32?&boot->fat32.mediumType:&boot->fat1216.mediumType, sizeof(TBootSector::TMsdosMediumType),
-										CPropGridCtrl::TEnum::DefineConstStringListEditorA( __getListOfMediaTypes__, __getMediumTypeDescription__, nullptr, __bootSectorModified__ )
+										fatType==CFat::FAT32?&boot->fat32.mediumType:&boot->fat1216.mediumType,
+										CPropGridCtrl::TEnum::DefineConstStringListEditorA( sizeof(TBootSector::TMsdosMediumType), __getListOfMediaTypes__, __getMediumTypeDescription__, nullptr, __bootSectorModified__ )
 									);
 			// . FAT Name
 			CPropGridCtrl::AddProperty(	hPropGrid, hVolumeAdvanced, _T("FAT name"),
-										&pvi->fatId, sizeof(pvi->fatId),
-										CPropGridCtrl::TString::DefineFixedLengthEditorA( __bootSectorModifiedA__, ' ' )
+										&pvi->fatId,
+										CPropGridCtrl::TString::DefineFixedLengthEditorA( sizeof(pvi->fatId), __bootSectorModifiedA__, ' ' )
 									);
 			// . number of FAT copies
 			static const CPropGridCtrl::TInteger::TUpDownLimits ByteOneToSevenLimits={ 1, 7 };
 			CPropGridCtrl::AddProperty( hPropGrid, hVolumeAdvanced, _T("FAT copies"),
-										&boot->nFatCopies, sizeof(BYTE),
-										CPropGridCtrl::TInteger::DefineEditor( ByteOneToSevenLimits, __bootSectorModified__ )
+										&boot->nFatCopies,
+										CPropGridCtrl::TInteger::DefineEditor( sizeof(BYTE), ByteOneToSevenLimits, __bootSectorModified__ )
 									);
 			// . number of root Directory entries
 			CPropGridCtrl::AddProperty( hPropGrid, hVolumeAdvanced, _T("Root dir size"),
-										&boot->nRootDirectoryEntries, sizeof(WORD),
+										&boot->nRootDirectoryEntries,
 										CPropGridCtrl::TInteger::DefinePositiveWordEditor( __bootSectorModified__ )
 									);
 			

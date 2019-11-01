@@ -2,19 +2,19 @@
 
 	#define ITEM_LEVEL_TOP			1
 
-	TPropGridInfo::TItem::TValue::TValue(PCEditor editor,CPropGridCtrl::PValue buffer,CPropGridCtrl::TValueSize bufferCapacity,CPropGridCtrl::PCustomParam param)
+	TPropGridInfo::TItem::TValue::TValue(PCEditor editor,CPropGridCtrl::PValue buffer,CPropGridCtrl::PCustomParam param)
 		// ctor
-		: editor(editor) , buffer(buffer) , bufferCapacity(bufferCapacity) , param(param) {
+		: editor(editor) , buffer(buffer) , param(param) {
 	}
 
 
 
-	TPropGridInfo::TItem::TItem(TPropGridInfo *pPropGridInfo,PCategoryItem parentCategory,LPCTSTR name,PCEditor editor,CPropGridCtrl::PValue buffer,CPropGridCtrl::TValueSize bufferCapacity,CPropGridCtrl::PCustomParam param)
+	TPropGridInfo::TItem::TItem(TPropGridInfo *pPropGridInfo,PCategoryItem parentCategory,LPCTSTR name,PCEditor editor,CPropGridCtrl::PValue buffer,CPropGridCtrl::PCustomParam param)
 		// ctor
 		// - initialization
 		: parentCategory(parentCategory)
 		, name(::lstrcpy((PTCHAR)::malloc((1+::lstrlen(name))*sizeof(TCHAR)),name))
-		, value(editor,buffer,bufferCapacity,param)
+		, value(editor,buffer,param)
 		, disabled( parentCategory ? parentCategory->disabled : 0 )
 		, nextInCategory(nullptr) {
 		// - adding this Item to the end of the ParentCategory
@@ -101,7 +101,7 @@
 	TPropGridInfo::TCategoryItem::TCategoryItem(TPropGridInfo *pPropGridInfo,PCategoryItem parentCategory,LPCTSTR name,bool initiallyExpanded)
 		// ctor
 		// - base
-		: TItem( pPropGridInfo, parentCategory, name, nullptr, nullptr, 0, nullptr )
+		: TItem( pPropGridInfo, parentCategory, name, nullptr, nullptr, nullptr )
 		// - initialization
 		, subitems(nullptr)
 		, expanded(initiallyExpanded) {

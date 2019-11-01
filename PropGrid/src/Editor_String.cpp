@@ -1,16 +1,17 @@
 #include "stdafx.h"
 
-	static bool WINAPI __alwaysAccept__(CPropGridCtrl::PCustomParam,CPropGridCtrl::PValue,CPropGridCtrl::TValueSize){
+	static bool WINAPI __alwaysAccept__(CPropGridCtrl::PCustomParam,CPropGridCtrl::PValue,CPropGridCtrl::TSize){
 		return true; // new Value is by default always accepted
 	}
 
 	TStringEditor::TStringEditor(	CPropGridCtrl::TOnEllipsisButtonClicked onEllipsisBtnClicked,
 									bool wideChar,
+									CPropGridCtrl::TSize nCharsMax,
 									CPropGridCtrl::TString::TOnValueConfirmed onValueConfirmed,
 									CPropGridCtrl::TOnValueChanged onValueChanged
 								)
 		// ctor
-		: TEditor( EDITOR_DEFAULT_HEIGHT, true, onEllipsisBtnClicked, onValueChanged )
+		: TEditor( EDITOR_DEFAULT_HEIGHT, true, std::min<>(STRING_LENGTH_MAX,nCharsMax), onEllipsisBtnClicked, onValueChanged )
 		, wideChar(wideChar)
 		, onValueConfirmed( onValueConfirmed ? onValueConfirmed : __alwaysAccept__ ) {
 	}
@@ -18,9 +19,9 @@
 	void TStringEditor::__drawValue__(const TPropGridInfo::TItem::TValue &value,PDRAWITEMSTRUCT pdis) const{
 		// draws the Value into the specified rectangle
 		if (wideChar)
-			__drawString__( (LPCWSTR)value.buffer, value.bufferCapacity, pdis );
+			__drawString__( (LPCWSTR)value.buffer, valueSize, pdis );
 		else
-			__drawString__( (LPCSTR)value.buffer, value.bufferCapacity, pdis );
+			__drawString__( (LPCSTR)value.buffer, valueSize, pdis );
 	}
 
 	HWND TStringEditor::__createEditBox__(HWND hParent,UINT extraStyle){
@@ -40,7 +41,7 @@
 		// - creating the Edit-box
 		const HWND hEdit=__createEditBox__(hParent,0);
 		// - constraining the length of text in the Edit-box
-		Edit_LimitText(hEdit,value.bufferCapacity);
+		Edit_LimitText(hEdit,valueSize);
 		// - returning the Edit-box
 		return hEdit;
 	}
@@ -52,16 +53,14 @@
 			const HWND hEdit=TEditor::pSingleShown->hMainCtrl;
 			const TPropGridInfo::TItem::TValue &value=TEditor::pSingleShown->value;
 			if (wideChar){
-				WCHAR buffer[STRING_LENGTH_MAX];
-				const CPropGridCtrl::TBufferCapacity nChars=::GetWindowTextW( hEdit, buffer, STRING_LENGTH_MAX );
+				WCHAR buffer[STRING_LENGTH_MAX+1];
 				accepted=onValueConfirmed(	value.param, buffer,
-											std::min<>( nChars, value.bufferCapacity ) // we should never need to trim the text, but do so just to be sure :-)
+											::GetWindowTextW( hEdit, buffer, STRING_LENGTH_MAX+1 )
 										);
 			}else{
-				char buffer[STRING_LENGTH_MAX];
-				const CPropGridCtrl::TBufferCapacity nChars=::GetWindowTextA( hEdit, buffer, STRING_LENGTH_MAX );
+				char buffer[STRING_LENGTH_MAX+1];
 				accepted=onValueConfirmed(	value.param, buffer,
-											std::min<>( nChars, value.bufferCapacity ) // we should never need to trim the text, but do so just to be sure :-)
+											::GetWindowTextA( hEdit, buffer, STRING_LENGTH_MAX+1 )
 										);
 			}
 		ignoreRequestToDestroy=false;
@@ -92,12 +91,13 @@
 
 	TFixedPaddedStringEditor::TFixedPaddedStringEditor(	CPropGridCtrl::TOnEllipsisButtonClicked onEllipsisBtnClicked,
 														bool wideChar,
+														CPropGridCtrl::TSize nCharsMax,
 														CPropGridCtrl::TString::TOnValueConfirmed onValueConfirmed,
 														WCHAR paddingChar,
 														CPropGridCtrl::TOnValueChanged onValueChanged
 													)
 		// ctor
-		: TStringEditor( nullptr, wideChar, onValueConfirmed, onValueChanged )
+		: TStringEditor( nullptr, wideChar, nCharsMax, onValueConfirmed, onValueChanged )
 		, paddingChar(paddingChar) {
 	}
 
@@ -107,16 +107,16 @@
 		const HWND hEdit=__super::__createMainControl__(value,hParent);
 		// - initializing the edit-box
 		if (wideChar){
-			WCHAR tmp[STRING_LENGTH_MAX];
+			WCHAR tmp[STRING_LENGTH_MAX+2]; // "+2" = terminator and null character
 			*tmp=~paddingChar; // terminator
-			::lstrcpynW( tmp+1, (LPCWSTR)value.buffer, std::min<>(STRING_LENGTH_MAX-1,value.bufferCapacity+1) ); // "+1", "-1" = terminator, "+1" = null character in the TmpBuffer
-				for( PWCHAR p=tmp+value.bufferCapacity; *p==paddingChar; *p--='\0' );
+			::lstrcpynW( tmp+1, (LPCWSTR)value.buffer, valueSize+1 );
+				for( PWCHAR p=tmp+valueSize; *p==paddingChar; *p--='\0' );
 			::SetWindowTextW( hEdit, tmp+1 ); // "+1" = terminator
 		}else{
-			char tmp[STRING_LENGTH_MAX];
+			char tmp[STRING_LENGTH_MAX+2]; // "+2" = terminator and null character
 			*tmp=~paddingChar; // terminator
-			::lstrcpynA( tmp+1, (LPCSTR)value.buffer, std::min<>(STRING_LENGTH_MAX-1,value.bufferCapacity+1) ); // "+1", "-1" = terminator, "+1" = null character in the TmpBuffer
-				for( PCHAR p=tmp+value.bufferCapacity; *p==paddingChar; *p--='\0' );
+			::lstrcpynA( tmp+1, (LPCSTR)value.buffer, valueSize+1 );
+				for( PCHAR p=tmp+valueSize; *p==paddingChar; *p--='\0' );
 			::SetWindowTextA( hEdit, tmp+1 ); // "+1" = terminator
 		}
 		return hEdit;
@@ -130,14 +130,14 @@
 		// - yes, the current Value is acceptable - replacing the old Value with it
 		const HWND hEdit=TEditor::pSingleShown->hMainCtrl;
 		const TPropGridInfo::TItem::TValue &value=TEditor::pSingleShown->value;
-		const int n=value.bufferCapacity;
+		const int n=valueSize;
 		if (wideChar){
-			WCHAR tmp[STRING_LENGTH_MAX];
-			for( int i=::GetWindowTextW(hEdit,tmp,STRING_LENGTH_MAX); i<n; tmp[i++]=paddingChar );
+			WCHAR tmp[STRING_LENGTH_MAX+1];
+			for( int i=::GetWindowTextW(hEdit,tmp,STRING_LENGTH_MAX+1); i<n; tmp[i++]=paddingChar );
 			::memcpy( value.buffer, tmp, n*sizeof(WCHAR) );
 		}else{
-			char tmp[STRING_LENGTH_MAX];
-			for( int i=::GetWindowTextA(hEdit,tmp,STRING_LENGTH_MAX); i<n; tmp[i++]=(char)paddingChar );
+			char tmp[STRING_LENGTH_MAX+1];
+			for( int i=::GetWindowTextA(hEdit,tmp,STRING_LENGTH_MAX+1); i<n; tmp[i++]=(char)paddingChar );
 			::memcpy( value.buffer, tmp, n*sizeof(char) );
 		}
 		return true;
@@ -156,7 +156,7 @@
 												CPropGridCtrl::TOnValueChanged onValueChanged
 											)
 		// ctor
-		: TStringEditor( nullptr, wideChar, onValueConfirmed, onValueChanged ) {
+		: TStringEditor( nullptr, wideChar, STRING_LENGTH_MAX, onValueConfirmed, onValueChanged ) {
 	}
 
 	HWND TDynamicStringEditor::__createMainControl__(const TPropGridInfo::TItem::TValue &value,HWND hParent) const{
@@ -178,7 +178,7 @@
 
 
 
-	static bool WINAPI __ellipsis_selectFileInDialog__(CPropGridCtrl::PCustomParam param,CPropGridCtrl::PValue newFileName,CPropGridCtrl::TValueSize newFileNameLength){
+	static bool WINAPI __ellipsis_selectFileInDialog__(CPropGridCtrl::PCustomParam param,CPropGridCtrl::PValue newFileName,CPropGridCtrl::TSize valueSize){
 		// True <=> file in shown dialog selected and confirmed (via the OK button), otherwise False
 		const TPropGridInfo::TItem::TValue &value=TEditor::pSingleShown->value;
 		const HWND hEdit=TEditor::pSingleShown->hMainCtrl;
@@ -188,7 +188,7 @@
 				::ZeroMemory(&ofn,sizeof(ofn));
 				ofn.lStructSize=sizeof(ofn);
 				ofn.hInstance=GET_PROPGRID_HINSTANCE( ofn.hwndOwner=hEdit );
-				ofn.lpstrFile=::lstrcpynW( buf, (LPCWSTR)value.buffer, value.bufferCapacity+1 );
+				ofn.lpstrFile=::lstrcpynW( buf, (LPCWSTR)value.buffer, std::min<>(valueSize+1,MAX_PATH) );
 				ofn.nMaxFile=MAX_PATH;
 			if (::GetOpenFileNameW(&ofn))
 				return ::SetWindowTextW( hEdit, buf )!=FALSE;
@@ -200,7 +200,7 @@
 				::ZeroMemory(&ofn,sizeof(ofn));
 				ofn.lStructSize=sizeof(ofn);
 				ofn.hInstance=GET_PROPGRID_HINSTANCE( ofn.hwndOwner=hEdit );
-				ofn.lpstrFile=::lstrcpynA( buf, (LPCSTR)value.buffer, value.bufferCapacity+1 );
+				ofn.lpstrFile=::lstrcpynA( buf, (LPCSTR)value.buffer, std::min<>(valueSize+1,MAX_PATH) );
 				ofn.nMaxFile=MAX_PATH;
 			if (::GetOpenFileNameA(&ofn))
 				return ::SetWindowTextA( hEdit, buf )!=FALSE;
@@ -210,11 +210,12 @@
 	}
 
 	TFileNameEditor::TFileNameEditor(	bool wideChar,
+										CPropGridCtrl::TSize nCharsMax,
 										CPropGridCtrl::TString::TOnValueConfirmed onValueConfirmed,
 										CPropGridCtrl::TOnValueChanged onValueChanged
 									)
 		// ctor
-		: TFixedPaddedStringEditor(	__ellipsis_selectFileInDialog__, wideChar, onValueConfirmed, '\0', onValueChanged ) {
+		: TFixedPaddedStringEditor(	__ellipsis_selectFileInDialog__, wideChar, nCharsMax, onValueConfirmed, '\0', onValueChanged ) {
 	}
 
 
@@ -226,18 +227,18 @@
 
 
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TString::DefineFixedLengthEditorA(TOnValueConfirmedA onValueConfirmed,char paddingChar,TOnValueChanged onValueChanged){
+	CPropGridCtrl::PCEditor CPropGridCtrl::TString::DefineFixedLengthEditorA(TSize nCharsMax,TOnValueConfirmedA onValueConfirmed,char paddingChar,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
-					new TFixedPaddedStringEditor( nullptr, false, (TOnValueConfirmed)onValueConfirmed, paddingChar, onValueChanged ),
+					new TFixedPaddedStringEditor( nullptr, false, nCharsMax, (TOnValueConfirmed)onValueConfirmed, paddingChar, onValueChanged ),
 					sizeof(TFixedPaddedStringEditor)
 				);
 	}
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TString::DefineFixedLengthEditorW(TOnValueConfirmedW onValueConfirmed,WCHAR paddingChar,TOnValueChanged onValueChanged){
+	CPropGridCtrl::PCEditor CPropGridCtrl::TString::DefineFixedLengthEditorW(TSize nCharsMax,TOnValueConfirmedW onValueConfirmed,WCHAR paddingChar,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
-					new TFixedPaddedStringEditor( nullptr, true, (TOnValueConfirmed)onValueConfirmed, paddingChar, onValueChanged ),
+					new TFixedPaddedStringEditor( nullptr, true, nCharsMax, (TOnValueConfirmed)onValueConfirmed, paddingChar, onValueChanged ),
 					sizeof(TFixedPaddedStringEditor)
 				);
 	}
@@ -262,18 +263,18 @@
 
 
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TString::DefineFileNameEditorA(TOnValueConfirmedA onValueConfirmed,TOnValueChanged onValueChanged){
+	CPropGridCtrl::PCEditor CPropGridCtrl::TString::DefineFileNameEditorA(TSize nCharsMax,TOnValueConfirmedA onValueConfirmed,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
-					new TFileNameEditor( false, (TOnValueConfirmed)onValueConfirmed, onValueChanged ),
+					new TFileNameEditor( false, nCharsMax, (TOnValueConfirmed)onValueConfirmed, onValueChanged ),
 					sizeof(TFileNameEditor)
 				);
 	}
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TString::DefineFileNameEditorW(TOnValueConfirmedW onValueConfirmed,TOnValueChanged onValueChanged){
+	CPropGridCtrl::PCEditor CPropGridCtrl::TString::DefineFileNameEditorW(TSize nCharsMax,TOnValueConfirmedW onValueConfirmed,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
-					new TFileNameEditor( true, (TOnValueConfirmed)onValueConfirmed, onValueChanged ),
+					new TFileNameEditor( true, nCharsMax, (TOnValueConfirmed)onValueConfirmed, onValueChanged ),
 					sizeof(TFileNameEditor)
 				);
 	}

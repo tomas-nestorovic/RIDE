@@ -10,7 +10,7 @@
 									)
 		// ctor
 		// - base
-		: TEditor( EDITOR_DEFAULT_HEIGHT, true, nullptr, onValueChanged )
+		: TEditor( EDITOR_DEFAULT_HEIGHT, true, 0, nullptr, onValueChanged )
 		// - initialization
 		, wideChar(wideChar)
 		, onHyperlinkClicked( onHyperlinkClicked ? onHyperlinkClicked : __doNothingAfterClick__ ) {
@@ -22,7 +22,7 @@
 
 	void THyperlinkEditor::__drawValue__(const TPropGridInfo::TItem::TValue &value,PDRAWITEMSTRUCT pdis) const{
 		// draws the Value into the specified rectangle
-		// - creating the temporary SysLink control to adopt the appearance from
+		// - creating the temporary SysLink control to adopt the appearance of
 		const LONG w=pdis->rcItem.right-pdis->rcItem.left, h=pdis->rcItem.bottom-pdis->rcItem.top;
 		const HWND hSysLink=__createMainControl__( value, pdis->hwndItem );
 		::SendMessage( hSysLink, WM_SETFONT, (WPARAM)TPropGridInfo::FONT_DEFAULT, 0 ); // explicitly setting DPI-scaled font
@@ -54,12 +54,12 @@
 
 	HWND THyperlinkEditor::__createMainControl__(const TPropGridInfo::TItem::TValue &value,HWND hParent) const{
 		// creates, initializes with current Value, and returns Editor's MainControl
-		WCHAR buf[STRING_LENGTH_MAX];
+		WCHAR buf[STRING_LENGTH_MAX+1];
 		*buf=' '; // imitating the value cell padding by prepending an extra space to the text
 		if (wideChar)
 			::lstrcpyW(buf+1,(LPCWSTR)value.buffer);
 		else
-			::MultiByteToWideChar( CP_ACP, 0, (LPCSTR)value.buffer,-1, buf+1,sizeof(buf)/sizeof(WCHAR) );
+			::MultiByteToWideChar( CP_ACP, 0, (LPCSTR)value.buffer,-1, buf+1,sizeof(buf)/sizeof(WCHAR)-1 );
 		return ::CreateWindowW(	WC_LINK,
 								buf,
 								EDITOR_STYLE,

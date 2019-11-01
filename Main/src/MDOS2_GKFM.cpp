@@ -161,40 +161,40 @@
 		const bool recognized=rGkfm.id==0x4d46; // textual representation of "FM" string
 		CPropGridCtrl::EnableProperty(	hPropGrid,
 										CPropGridCtrl::AddProperty(	hPropGrid, hGkfm, _T("Status"),
-																	recognized?"Recognized":"Not recognized", -1,
-																	CPropGridCtrl::TString::DefineFixedLengthEditorA()
+																	recognized?"Recognized":"Not recognized",
+																	CPropGridCtrl::TString::DefineFixedLengthEditorA(0)
 																),
 										false
 									);
 		if (recognized){
 			// . basic preview
 			CPropGridCtrl::AddProperty(	hPropGrid, hGkfm, _T("Basic"),
-										boot, sizeof(TBootSector),
-										CPropGridCtrl::TCustom::DefineEditor( __pg_getPropertyHeight__(), __pg_drawProperty__, nullptr, __pg_editProperty__ )
+										boot,
+										CPropGridCtrl::TCustom::DefineEditor( __pg_getPropertyHeight__(), sizeof(TBootSector), __pg_drawProperty__, nullptr, __pg_editProperty__ )
 									);
 			// . advanced properties
 			const HANDLE hAdvanced=CPropGridCtrl::AddCategory( hPropGrid, hGkfm, BOOT_SECTOR_ADVANCED, false );
 				const CPropGridCtrl::PCEditor advEditor=CPropGridCtrl::TInteger::DefineWordEditor(__warnOnEditingAdvancedValue__);
 				CPropGridCtrl::AddProperty( hPropGrid, hAdvanced, _T("Text address"),
-											&rGkfm.aText, sizeof(WORD), advEditor
+											&rGkfm.aText, advEditor
 										);
 				CPropGridCtrl::AddProperty( hPropGrid, hAdvanced, _T("Window address"),
-											&rGkfm.aWnd, sizeof(WORD), advEditor
+											&rGkfm.aWnd, advEditor
 										);
 				CPropGridCtrl::AddProperty( hPropGrid, hAdvanced, _T("Icon address"),
-											&rGkfm.aIcon, sizeof(WORD), advEditor
+											&rGkfm.aIcon, advEditor
 										);
 				CPropGridCtrl::AddProperty( hPropGrid, hAdvanced, _T("VideoRAM address"),
-											&rGkfm.aVRam, sizeof(WORD), advEditor
+											&rGkfm.aVRam, advEditor
 										);
 			// . offering to update the GKFM on the disk from an on-line resource
 			CPropGridCtrl::AddProperty(	hPropGrid, hGkfm, MDOS2_RUNP,
-										BOOT_SECTOR_UPDATE_ONLINE_HYPERLINK, -1,
+										BOOT_SECTOR_UPDATE_ONLINE_HYPERLINK,
 										CPropGridCtrl::THyperlink::DefineEditorA(__pg_updateOnline__)
 									);
 		}else
 			CPropGridCtrl::AddProperty(	hPropGrid, hGkfm, _T(""),
-										"<a>Create</a>", -1,
+										"<a>Create</a>",
 										CPropGridCtrl::THyperlink::DefineEditorA( __pg_createNew__, CBootView::__updateCriticalSectorView__ )
 									);
 	}

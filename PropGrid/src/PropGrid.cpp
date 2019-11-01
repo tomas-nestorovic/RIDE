@@ -241,7 +241,6 @@
 						TEditor::pSingleShown->value.editor->__drawValue__(
 							TItem::TValue(	TEditor::pSingleShown->value.editor,
 											&pdis->itemData,
-											TEditor::pSingleShown->value.bufferCapacity,
 											TEditor::pSingleShown->value.param
 										),
 							pdis

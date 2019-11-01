@@ -135,8 +135,8 @@
 		TCHAR bufExt[2];
 		dos->GetFileNameAndExt(file,nullptr,bufExt);
 		const PEditorBase result=pZxFileManager->__createStdEditor__(
-			file, &( data=*bufExt ), sizeof(data),
-			CPropGridCtrl::TEnum::DefineConstStringListEditorA( __createValues__, __getDescription__, __freeValues__, __onChanged__ )
+			file, &( data=*bufExt ),
+			CPropGridCtrl::TEnum::DefineConstStringListEditorA( sizeof(data), __createValues__, __getDescription__, __freeValues__, __onChanged__ )
 		);
 		::SendMessage( result->hEditor, WM_SETFONT, (WPARAM)pZxFileManager->rFont.m_hObject, 0 );
 		return result;
@@ -152,7 +152,7 @@
 
 
 
-	bool WINAPI CSpectrumDos::CSpectrumFileManagerView::CVarLengthFileNameEditor::__onChanged__(PVOID file,HWND,PVOID,short){
+	bool WINAPI CSpectrumDos::CSpectrumFileManagerView::CVarLengthFileNameEditor::__onChanged__(PVOID file,HWND,PVOID){
 		// changes specified File's Name
 		const PDos dos=CDos::GetFocused();
 		const CSpectrumFileManagerView *const pZxFileManager=(CSpectrumFileManagerView *)dos->pFileManager;
@@ -182,8 +182,8 @@
 		#else
 			dos->GetFileNameAndExt( file, bufOldName, nullptr );
 			::memset( bufOldName+::lstrlen(bufOldName), paddingChar, lengthMax ); // guaranteed that LengthMax PaddingChars still fit in the Buffer for any ZX Spectrum derivate
-			return pZxFileManager->__createStdEditor__(	file, bufOldName, MAKEWORD(lengthMax,paddingChar), // [H,L] = [ padding char, max label length ]
-														pZxFileManager->zxRom.lineComposerPropGridEditor.Create( __onChanged__ )
+			return pZxFileManager->__createStdEditor__(	file, bufOldName,
+														pZxFileManager->zxRom.lineComposerPropGridEditor.Create( lengthMax, paddingChar, __onChanged__ )
 													);
 		#endif
 	}

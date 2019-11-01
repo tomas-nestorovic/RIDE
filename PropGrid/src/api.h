@@ -14,33 +14,34 @@
 
 	class PROPGRID_DECLSPEC CPropGridCtrl sealed{
 	public:
-		typedef short TValueSize,TBufferCapacity;
+		typedef short TSize;
 		typedef PVOID PCustomParam,PValue;
 		typedef LPCVOID PCEditor,PCValue;
 
-		typedef void (WINAPI *TDrawValueHandler)(PCustomParam,PCValue,TValueSize,PDRAWITEMSTRUCT);
-		typedef bool (WINAPI *TOnEllipsisButtonClicked)(PCustomParam,PValue,TValueSize);
+		typedef void (WINAPI *TDrawValueHandler)(PCustomParam,PCValue,TSize,PDRAWITEMSTRUCT);
+		typedef bool (WINAPI *TOnEllipsisButtonClicked)(PCustomParam,PValue,TSize);
 		typedef void (WINAPI *TOnValueChanged)(PCustomParam);
 
 		struct PROPGRID_DECLSPEC TString sealed{
-			typedef bool (WINAPI *TOnValueConfirmed)(PCustomParam,PValue,TValueSize);
-			typedef bool (WINAPI *TOnValueConfirmedA)(PCustomParam,LPCSTR,TValueSize);
-			typedef bool (WINAPI *TOnValueConfirmedW)(PCustomParam,LPCWSTR,TValueSize);
+			typedef bool (WINAPI *TOnValueConfirmed)(PCustomParam,PValue,TSize);
+			typedef bool (WINAPI *TOnValueConfirmedA)(PCustomParam,LPCSTR,TSize);
+			typedef bool (WINAPI *TOnValueConfirmedW)(PCustomParam,LPCWSTR,TSize);
 
-			static PCEditor DefineFixedLengthEditorA(TOnValueConfirmedA onValueConfirmed=nullptr,char paddingChar='\0',TOnValueChanged onValueChanged=nullptr);
-			static PCEditor DefineFixedLengthEditorW(TOnValueConfirmedW onValueConfirmed=nullptr,WCHAR paddingChar='\0',TOnValueChanged onValueChanged=nullptr);
+			static PCEditor DefineFixedLengthEditorA(TSize nCharsMax,TOnValueConfirmedA onValueConfirmed=nullptr,char paddingChar='\0',TOnValueChanged onValueChanged=nullptr);
+			static PCEditor DefineFixedLengthEditorW(TSize nCharsMax,TOnValueConfirmedW onValueConfirmed=nullptr,WCHAR paddingChar='\0',TOnValueChanged onValueChanged=nullptr);
 
 			static PCEditor DefineDynamicLengthEditorA(TOnValueConfirmedA onValueConfirmed=nullptr,TOnValueChanged onValueChanged=nullptr);
 			static PCEditor DefineDynamicLengthEditorW(TOnValueConfirmedW onValueConfirmed=nullptr,TOnValueChanged onValueChanged=nullptr);
 
-			static PCEditor DefineFileNameEditorA(TOnValueConfirmedA onValueConfirmed=nullptr,TOnValueChanged onValueChanged=nullptr);
-			static PCEditor DefineFileNameEditorW(TOnValueConfirmedW onValueConfirmed=nullptr,TOnValueChanged onValueChanged=nullptr);
+			static PCEditor DefineFileNameEditorA(TSize nCharsMax,TOnValueConfirmedA onValueConfirmed=nullptr,TOnValueChanged onValueChanged=nullptr);
+			static PCEditor DefineFileNameEditorW(TSize nCharsMax,TOnValueConfirmedW onValueConfirmed=nullptr,TOnValueChanged onValueChanged=nullptr);
 		};
 
 		struct PROPGRID_DECLSPEC TBoolean sealed{
 			typedef bool (WINAPI *TOnValueConfirmed)(PCustomParam,bool);
 
-			static PCEditor DefineEditor(TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged=nullptr,DWORD reservedValue=0,bool reservedForTrue=false);
+			static PCEditor DefineEditor(TSize nValueBytes,TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged=nullptr,DWORD reservedValue=0,bool reservedForTrue=false);
+			static PCEditor DefineByteEditor(TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged=nullptr,BYTE reservedValue=0,bool reservedForTrue=false);
 		};
 
 		struct PROPGRID_DECLSPEC TInteger sealed{
@@ -60,7 +61,7 @@
 			static const TUpDownLimits NonNegativeIntegerLimits; // 0..INT_MAX
 			static const TUpDownLimits NegativeIntegerLimits; // INT_MIN..-1
 
-			static PCEditor DefineEditor(RCUpDownLimits rLimits,TOnValueConfirmed onValueConfirmed=nullptr,BYTE features=TFeatures::NONE,TOnValueChanged onValueChanged=nullptr);
+			static PCEditor DefineEditor(TSize nValueBytes,RCUpDownLimits rLimits,TOnValueConfirmed onValueConfirmed=nullptr,BYTE features=TFeatures::NONE,TOnValueChanged onValueChanged=nullptr);
 			static PCEditor DefineByteEditor(TOnValueConfirmed onValueConfirmed=nullptr,BYTE features=TFeatures::NONE,TOnValueChanged onValueChanged=nullptr);
 			static PCEditor DefinePositiveByteEditor(TOnValueConfirmed onValueConfirmed=nullptr,BYTE features=TFeatures::NONE,TOnValueChanged onValueChanged=nullptr);
 			static PCEditor DefineWordEditor(TOnValueConfirmed onValueConfirmed=nullptr,BYTE features=TFeatures::NONE,TOnValueChanged onValueChanged=nullptr);
@@ -78,12 +79,13 @@
 			typedef LPCVOID PCValueList;
 			typedef PCValueList (WINAPI *TGetValueList)(PCustomParam,RValueCount);
 			typedef void (WINAPI *TFreeValueList)(PCustomParam,PCValueList);
-			typedef LPCTSTR (WINAPI *TGetValueDesc)(PCustomParam,UValue,PTCHAR,TBufferCapacity);
-			typedef LPCSTR (WINAPI *TGetValueDescA)(PCustomParam,UValue,PCHAR,TBufferCapacity);
-			typedef LPCWSTR (WINAPI *TGetValueDescW)(PCustomParam,UValue,PWCHAR,TBufferCapacity);
+			typedef LPCTSTR (WINAPI *TGetValueDesc)(PCustomParam,UValue,PTCHAR,TSize);
+			typedef LPCSTR (WINAPI *TGetValueDescA)(PCustomParam,UValue,PCHAR,TSize);
+			typedef LPCWSTR (WINAPI *TGetValueDescW)(PCustomParam,UValue,PWCHAR,TSize);
 			typedef bool (WINAPI *TOnValueConfirmed)(PCustomParam,UValue);
 
 			static PCEditor DefineConstStringListEditorA(
+								TSize nValueBytes,
 								TGetValueList getValueList, // list of possible values
 								TGetValueDescA getValueDesc, // value-to-string conversion
 								TFreeValueList freeValueList, // can be null for static lists of values
@@ -91,6 +93,7 @@
 								TOnValueChanged onValueChanged=nullptr
 							);
 			static PCEditor DefineConstStringListEditorW(
+								TSize nValueBytes,
 								TGetValueList getValueList, // list of possible values
 								TGetValueDescW getValueDesc, // value-to-string conversion
 								TFreeValueList freeValueList, // can be null for static lists of values
@@ -100,6 +103,7 @@
 			//*
 			static PCEditor DefineConstCustomListEditor(
 								WORD height, // height of editor in pixels (0 = default property height)
+								TSize nValueBytes,
 								TGetValueList getValueList, // list of possible values
 								TDrawValueHandler drawValue,
 								TFreeValueList freeValueList, // can be null for static lists of values
@@ -120,11 +124,12 @@
 
 		struct PROPGRID_DECLSPEC TCustom sealed{
 			typedef HWND HParentWnd;
-			typedef HWND (WINAPI *TCreateCustomMainEditor)(PValue,TValueSize,HParentWnd);
-			typedef bool (WINAPI *TOnValueConfirmed)(PCustomParam,HWND,PValue,TValueSize);
+			typedef HWND (WINAPI *TCreateCustomMainEditor)(PValue,TSize,HParentWnd);
+			typedef bool (WINAPI *TOnValueConfirmed)(PCustomParam,HWND,PValue);
 
 			static PCEditor DefineEditor(
 								WORD height, // height of editor in pixels (0 = default property height)
+								TSize nValueBytes,
 								TDrawValueHandler drawValue,
 								TCreateCustomMainEditor createCustomMainEditor, // Null <=> the editor doesn't feature a main control, otherwise the function should return a control well initialized to the current value (eventually featuring an attached UpDownControl)
 								TOnEllipsisButtonClicked onEllipsisBtnClicked, // Null <=> the editor doesn't feature an ellipsis button, otherwise the function is a handler for the on-click event on the ellipsis button
@@ -135,14 +140,14 @@
 
 		static LPCTSTR WINAPI GetWindowClass(HINSTANCE hInstance);
 		static HWND WINAPI Create(HINSTANCE hInstance,LPCTSTR windowName,UINT style,int x,int y,int width,int height,HWND hParent);
-		static HANDLE WINAPI AddProperty(HWND hPropGrid,HANDLE category,LPCTSTR name,PValue value,TValueSize valueBytes,PCEditor editor,PCustomParam param=nullptr);
+		static HANDLE WINAPI AddProperty(HWND hPropGrid,HANDLE category,LPCTSTR name,PValue value,PCEditor editor,PCustomParam param=nullptr);
 		static HANDLE WINAPI AddCategory(HWND hPropGrid,HANDLE category,LPCTSTR name,bool initiallyExpanded=true);
 		static HANDLE WINAPI EnableProperty(HWND hPropGrid,HANDLE propOrCat,bool enabled);
 		static void WINAPI RemoveProperty(HWND hPropGrid,HANDLE propOrCat);
 		static HWND WINAPI CreateUpDownControl(HWND hEdit,UINT style,bool bHexadecimal,TInteger::RCUpDownLimits rLimits,int iCurrent);
 		static short WINAPI GetCurrentlySelectedProperty(HWND hPropGrid);
 		static short WINAPI SetCurrentlySelectedProperty(HWND hPropGrid,short iSelected);
-		static HWND WINAPI BeginEditValue(PValue value,TValueSize valueBytes,PCustomParam param,PCEditor editor,RECT rcEditorRect,DWORD style,HWND hParent,HWND *pOutEllipsisBtn);
+		static HWND WINAPI BeginEditValue(PValue value,PCustomParam param,PCEditor editor,RECT rcEditorRect,DWORD style,HWND hParent,HWND *pOutEllipsisBtn);
 		static bool WINAPI TryToAcceptCurrentValueAndCloseEditor();
 		static bool WINAPI IsValueBeingEdited();
 	};

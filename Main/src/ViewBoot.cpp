@@ -153,22 +153,18 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 	static void __pg_showPositiveInteger__(HWND hPropGrid,HANDLE hCategory,PVOID pInteger,LPCTSTR criticalValueId,CPropGridCtrl::TInteger::TOnValueConfirmed fn,int maxValue,LPCTSTR caption){
 		// shows Integer in value in PropertyGrid's specified Category
 		const CPropGridCtrl::TInteger::TUpDownLimits limits={ 1, maxValue };
-		const auto pgEditor=CPropGridCtrl::TInteger::DefineEditor( limits, fn );
+		BYTE size;
 		if (maxValue<=(BYTE)-1)
-			CPropGridCtrl::AddProperty(	hPropGrid, hCategory, caption,
-										pInteger, sizeof(BYTE),
-										pgEditor, (PVOID)criticalValueId
-									);
+			size=sizeof(BYTE);
 		else if (maxValue<=(WORD)-1)
-			CPropGridCtrl::AddProperty(	hPropGrid, hCategory, caption,
-										pInteger, sizeof(WORD),
-										pgEditor, (PVOID)criticalValueId
-									);
+			size=sizeof(WORD);
 		else
-			CPropGridCtrl::AddProperty(	hPropGrid, hCategory, caption,
-										pInteger, sizeof(DWORD),
-										pgEditor, (PVOID)criticalValueId
-									);
+			size=sizeof(DWORD);
+		CPropGridCtrl::AddProperty(	hPropGrid, hCategory, caption,
+									pInteger, 
+									CPropGridCtrl::TInteger::DefineEditor( size, limits, fn ),
+									(PVOID)criticalValueId
+								);
 	}
 
 	void CBootView::OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint){
@@ -206,14 +202,14 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 			if (hVolume){
 				if (cbp.label.length)
 					CPropGridCtrl::AddProperty(	propGrid.m_hWnd, hVolume, _T("Label"),
-												cbp.label.bufferA, cbp.label.length,
-												CPropGridCtrl::TString::DefineFixedLengthEditorA( cbp.label.onLabelConfirmedA?cbp.label.onLabelConfirmedA:__bootSectorModifiedA__, cbp.label.fillerByte )
+												cbp.label.bufferA,
+												CPropGridCtrl::TString::DefineFixedLengthEditorA( cbp.label.length, cbp.label.onLabelConfirmedA?cbp.label.onLabelConfirmedA:__bootSectorModifiedA__, cbp.label.fillerByte )
 											);
 				if (cbp.id.buffer){
 					const CPropGridCtrl::TInteger::TUpDownLimits limits={ 0, (UINT)-1>>8*(sizeof(UINT)-cbp.id.bufferCapacity) };
 					CPropGridCtrl::AddProperty(	propGrid.m_hWnd, hVolume, _T("ID"),
-												cbp.id.buffer, cbp.id.bufferCapacity,
-												CPropGridCtrl::TInteger::DefineEditor(limits,__bootSectorModified__)
+												cbp.id.buffer,
+												CPropGridCtrl::TInteger::DefineEditor( cbp.id.bufferCapacity, limits, __bootSectorModified__ )
 											);
 				}
 				if (cbp.clusterSize)
@@ -225,8 +221,8 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 			// Boot Sector not found - informing through PropertyGrid
 			CPropGridCtrl::EnableProperty(	propGrid.m_hWnd,
 											CPropGridCtrl::AddProperty(	propGrid.m_hWnd, nullptr,
-																		_T("Boot sector"), "Not found!", -1,
-																		CPropGridCtrl::TString::DefineFixedLengthEditorA()
+																		_T("Boot sector"), "Not found!",
+																		CPropGridCtrl::TString::DefineFixedLengthEditorA(0)
 																	),
 											false
 										);

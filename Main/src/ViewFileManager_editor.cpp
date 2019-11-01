@@ -9,7 +9,7 @@
 
 	const CFileManagerView::CEditorBase *CFileManagerView::CEditorBase::pSingleShown;
 
-	CFileManagerView::CEditorBase::CEditorBase(CDos::PFile file,PVOID value,short valueSize,CPropGridCtrl::PCEditor editor,RCFileManagerView parent)
+	CFileManagerView::CEditorBase::CEditorBase(CDos::PFile file,PVOID value,CPropGridCtrl::PCEditor editor,RCFileManagerView parent)
 		// ctor
 		// - initialization
 		: file(file) , parent(parent)
@@ -23,7 +23,7 @@
 		if (!editedInformationId)	// the width of whole File item returned for zeroth Information
 			rcEditorArea.right=lv.GetColumnWidth(0);
 		// - creating the Editor
-		(HWND)hEditor=CPropGridCtrl::BeginEditValue( value, valueSize, file, editor, rcEditorArea, 0, parent.m_hWnd, (HWND *)&hEllipsisButton );
+		(HWND)hEditor=CPropGridCtrl::BeginEditValue( value, file, editor, rcEditorArea, 0, parent.m_hWnd, (HWND *)&hEllipsisButton );
 		wndProc0=(WNDPROC)::SetWindowLong(hEditor,GWL_WNDPROC,(long)__wndProc__);
 		::SendMessage( hEditor, WM_SETFONT, (WPARAM)parent.rFont.m_hObject, 0 );
 		ellipsisButtonWndProc0=(WNDPROC)::SetWindowLong(hEllipsisButton,GWL_WNDPROC,(long)__ellipsisButton_wndProc__);
@@ -108,35 +108,33 @@
 	#define DOS		tab.dos
 	#define IMAGE	DOS->image
 
-	CFileManagerView::PEditorBase CFileManagerView::__createStdEditor__(CDos::PFile file,PVOID value,short valueSize,CPropGridCtrl::PCEditor editor) const{
+	CFileManagerView::PEditorBase CFileManagerView::__createStdEditor__(CDos::PFile file,PVOID value,CPropGridCtrl::PCEditor editor) const{
 		// creates and returns PropertyGrid's specified built-in Editor
-		return new CEditorBase( file, value, valueSize, editor, *this );
+		return new CEditorBase( file, value, editor, *this );
 	}
 
 	CFileManagerView::PEditorBase CFileManagerView::__createStdEditorWithEllipsis__(CDos::PFile file,CPropGridCtrl::TOnEllipsisButtonClicked buttonAction) const{
 		// creates and returns an Editor that contains only PropertyGrid's standard EllipsisButton and misses the main control; the EllipsisButton triggers an edit dialog with given ID
-		return __createStdEditor__(	file, file, 0,
-									CPropGridCtrl::TCustom::DefineEditor( 0, nullptr, nullptr, buttonAction )
-								);
+		return __createStdEditorWithEllipsis__( file, file, 0, buttonAction );
 	}
 
-	CFileManagerView::PEditorBase CFileManagerView::__createStdEditorWithEllipsis__(CDos::PFile file,CPropGridCtrl::PValue value,CPropGridCtrl::TValueSize valueSize,CPropGridCtrl::TOnEllipsisButtonClicked buttonAction) const{
+	CFileManagerView::PEditorBase CFileManagerView::__createStdEditorWithEllipsis__(CDos::PFile file,CPropGridCtrl::PValue value,CPropGridCtrl::TSize valueSize,CPropGridCtrl::TOnEllipsisButtonClicked buttonAction) const{
 		// creates and returns an Editor that contains only PropertyGrid's standard EllipsisButton and misses the main control; the EllipsisButton triggers an edit dialog with given ID
-		return __createStdEditor__(	file, value, valueSize,
-									CPropGridCtrl::TCustom::DefineEditor( 0, nullptr, nullptr, buttonAction )
+		return __createStdEditor__(	file, value,
+									CPropGridCtrl::TCustom::DefineEditor( 0, valueSize, nullptr, nullptr, buttonAction )
 								);
 	}
 
 	CFileManagerView::PEditorBase CFileManagerView::__createStdEditorForByteValue__(CDos::PFile file,PBYTE pByte,CPropGridCtrl::TInteger::TOnValueConfirmed fnOnValueConfirmed) const{
 		// creates and returns PropertyGrid's build-in Editor for editing specified Byte value
-		return __createStdEditor__( file, pByte, sizeof(BYTE),
+		return __createStdEditor__( file, pByte,
 									CPropGridCtrl::TInteger::DefineByteEditor(fnOnValueConfirmed,CPropGridCtrl::TInteger::ALIGN_RIGHT)
 								);
 	}
 
 	CFileManagerView::PEditorBase CFileManagerView::__createStdEditorForWordValue__(CDos::PFile file,PWORD pWord,CPropGridCtrl::TInteger::TOnValueConfirmed fnOnValueConfirmed) const{
 		// creates and returns PropertyGrid's build-in Editor for editing specified Word value
-		return __createStdEditor__( file, pWord, sizeof(WORD),
+		return __createStdEditor__( file, pWord,
 									CPropGridCtrl::TInteger::DefineWordEditor(fnOnValueConfirmed,CPropGridCtrl::TInteger::ALIGN_RIGHT)
 								);
 	}
