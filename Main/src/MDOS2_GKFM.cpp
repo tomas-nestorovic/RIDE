@@ -159,13 +159,10 @@
 		const HANDLE hGkfm=PropGrid::AddCategory(hPropGrid,nullptr,GKFM_NAME);
 		TGKFileManager &rGkfm=boot->reserved1.gkfm;
 		const bool recognized=rGkfm.id==0x4d46; // textual representation of "FM" string
-		PropGrid::EnableProperty(	hPropGrid,
-									PropGrid::AddProperty(	hPropGrid, hGkfm, _T("Status"),
-															recognized?"Recognized":"Not recognized",
-															PropGrid::String::DefineFixedLengthEditorA(0)
-														),
-									false
-								);
+		PropGrid::AddDisabledProperty(	hPropGrid, hGkfm, _T("Status"),
+										recognized?"Recognized":"Not recognized",
+										PropGrid::String::DefineFixedLengthEditorA(0)
+									);
 		if (recognized){
 			// . basic preview
 			PropGrid::AddProperty(	hPropGrid, hGkfm, _T("Basic"),

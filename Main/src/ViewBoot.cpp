@@ -213,11 +213,8 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 			AddCustomBootParameters(propGrid.m_hWnd,hGeometry,hVolume,cbp,boot);
 		}else
 			// Boot Sector not found - informing through PropertyGrid
-			PropGrid::EnableProperty(	propGrid.m_hWnd,
-										PropGrid::AddProperty(	propGrid.m_hWnd, nullptr,
-																_T("Boot sector"), "Not found!",
-																PropGrid::String::DefineFixedLengthEditorA(0)
-															),
-										false
-									);
+			PropGrid::AddDisabledProperty(	propGrid.m_hWnd, nullptr,
+											_T("Boot sector"), "Not found!",
+											PropGrid::String::DefineFixedLengthEditorA(0)
+										);
 	}

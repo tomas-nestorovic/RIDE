@@ -52,6 +52,14 @@
 		return 0;
 	}
 
+	HANDLE WINAPI PropGrid::AddDisabledProperty(HWND hPropGrid,HANDLE category,LPCTSTR name,PValue value,PCEditor editor,PCustomParam param){
+		// creates, adds into PropertyGrid, and returns a new ValueItem with given Name and Value
+		if (const HANDLE result=AddProperty(hPropGrid,category,name,value,editor,param))
+			return EnableProperty( hPropGrid, result, false );
+		else
+			return 0;
+	}
+
 	HANDLE WINAPI PropGrid::AddCategory(HWND hPropGrid,HANDLE category,LPCTSTR name,bool initiallyExpanded){
 		// creates, adds into PropertyGrid, and returns a new CategoryItem with given Name
 		// - creating a new CategoryItem in the specified Category

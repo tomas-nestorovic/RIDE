@@ -201,6 +201,7 @@
 		PROPGRID_DECLSPEC LPCTSTR WINAPI GetWindowClass(HINSTANCE hInstance);
 		PROPGRID_DECLSPEC HWND WINAPI Create(HINSTANCE hInstance,LPCTSTR windowName,UINT style,int x,int y,int width,int height,HWND hParent);
 		PROPGRID_DECLSPEC HANDLE WINAPI AddProperty(HWND hPropGrid,HANDLE category,LPCTSTR name,PValue value,PCEditor editor,PCustomParam param=nullptr);
+		PROPGRID_DECLSPEC HANDLE WINAPI AddDisabledProperty(HWND hPropGrid,HANDLE category,LPCTSTR name,PValue value,PCEditor editor,PCustomParam param=nullptr);
 		PROPGRID_DECLSPEC HANDLE WINAPI AddCategory(HWND hPropGrid,HANDLE category,LPCTSTR name,bool initiallyExpanded=true);
 		PROPGRID_DECLSPEC HANDLE WINAPI EnableProperty(HWND hPropGrid,HANDLE propOrCat,bool enabled);
 		PROPGRID_DECLSPEC void WINAPI RemoveProperty(HWND hPropGrid,HANDLE propOrCat);

@@ -79,12 +79,9 @@
 		__super::OnUpdate( pSender, lHint, pHint );
 		// - populating the PropertyGrid with values from the FS-Info Sector (if any found)
 		const PFsInfoSector fsInfo=GetSectorData();
-		PropGrid::EnableProperty(	propGrid.m_hWnd,
-										PropGrid::AddProperty(	propGrid.m_hWnd, nullptr, _T("Status"),
-																fsInfo?"Recognized":"Not recognized",
-																PropGrid::String::DefineFixedLengthEditorA(0)
-															),
-										false
+		PropGrid::AddDisabledProperty(	propGrid.m_hWnd, nullptr, _T("Status"),
+										fsInfo?"Recognized":"Not recognized",
+										PropGrid::String::DefineFixedLengthEditorA(0)
 									);
 		if (fsInfo){
 			// FS-Info Sector found
