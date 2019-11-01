@@ -1,25 +1,25 @@
 #include "stdafx.h"
 
-	static bool WINAPI __alwaysAccept__(CPropGridCtrl::PCustomParam,CPropGridCtrl::TEnum::UValue){
+	static bool WINAPI __alwaysAccept__(PropGrid::PCustomParam,PropGrid::Enum::UValue){
 		return true; // new Value is by default always accepted
 	}
 
-	static void WINAPI __dontDisposeValues__(CPropGridCtrl::PCustomParam,CPropGridCtrl::TEnum::PCValueList){
+	static void WINAPI __dontDisposeValues__(PropGrid::PCustomParam,PropGrid::Enum::PCValueList){
 		//nop (the allocated ValueList remains in memory (e.g. because it's been allocated in protected read-only space using as "static const")
 	}
 
-	TCustomEnumEditor::TCustomEnumEditor(	CPropGridCtrl::TSize nValueBytes,
+	TCustomEnumEditor::TCustomEnumEditor(	PropGrid::TSize nValueBytes,
 											WORD height,
 											bool wideChar,
-											CPropGridCtrl::TEnum::TGetValueDesc getValueDesc,
-											CPropGridCtrl::TDrawValueHandler drawValue,
-											CPropGridCtrl::TEnum::TGetValueList getValueList,
-											CPropGridCtrl::TEnum::TFreeValueList freeValueList,
-											CPropGridCtrl::TEnum::TOnValueConfirmed onValueConfirmed,
-											CPropGridCtrl::TOnValueChanged onValueChanged
+											PropGrid::Enum::TGetValueDesc getValueDesc,
+											PropGrid::TDrawValueHandler drawValue,
+											PropGrid::Enum::TGetValueList getValueList,
+											PropGrid::Enum::TFreeValueList freeValueList,
+											PropGrid::Enum::TOnValueConfirmed onValueConfirmed,
+											PropGrid::TOnValueChanged onValueChanged
 										)
 		// ctor
-		: TEditor( height, true, std::min<CPropGridCtrl::TSize>(nValueBytes,sizeof(CPropGridCtrl::TEnum::UValue)), nullptr, onValueChanged )
+		: TEditor( height, true, std::min<PropGrid::TSize>(nValueBytes,sizeof(PropGrid::Enum::UValue)), nullptr, onValueChanged )
 		, wideChar(wideChar)
 		, getValueDesc(getValueDesc)
 		, drawValue(drawValue)
@@ -35,7 +35,7 @@
 			drawValue( value.param, value.buffer, value.editor->valueSize, pdis );
 		else{
 			// string-described Value
-			CPropGridCtrl::TEnum::UValue uValue;
+			PropGrid::Enum::UValue uValue;
 				uValue.longValue=0;
 			::memcpy( &uValue, value.buffer, valueSize );
 			WCHAR desc[STRING_LENGTH_MAX+1];
@@ -45,14 +45,14 @@
 		}
 	}
 
-	LPCWSTR TCustomEnumEditor::__getValueDescW__(CPropGridCtrl::PCustomParam param,CPropGridCtrl::TEnum::UValue value,PWCHAR buf,short bufCapacity) const{
+	LPCWSTR TCustomEnumEditor::__getValueDescW__(PropGrid::PCustomParam param,PropGrid::Enum::UValue value,PWCHAR buf,short bufCapacity) const{
 		// returns the textual description of the given Value
 		if (wideChar)
-			return ((CPropGridCtrl::TEnum::TGetValueDescW)getValueDesc)( param, value, buf, bufCapacity );
+			return ((PropGrid::Enum::TGetValueDescW)getValueDesc)( param, value, buf, bufCapacity );
 		else{
 			char bufA[STRING_LENGTH_MAX+1];
 			::MultiByteToWideChar(	CP_ACP, 0,
-									((CPropGridCtrl::TEnum::TGetValueDescA)getValueDesc)( param, value, bufA, sizeof(bufA) ), -1,
+									((PropGrid::Enum::TGetValueDescA)getValueDesc)( param, value, bufA, sizeof(bufA) ), -1,
 									buf, bufCapacity
 								);
 			return buf;
@@ -75,8 +75,8 @@
 		::SetWindowPos( hComboBox,0, 0,0, r.right,8*r.bottom, SWP_NOMOVE ); // "8*" = approximately 8 items
 		// . populating the ComboBox with Values
 		WORD nValues;
-		const CPropGridCtrl::TEnum::PCValueList valueList=getValueList( value.param, nValues );
-			CPropGridCtrl::TEnum::UValue uValue; // actual Value extracted from the ValueBytes below
+		const PropGrid::Enum::PCValueList valueList=getValueList( value.param, nValues );
+			PropGrid::Enum::UValue uValue; // actual Value extracted from the ValueBytes below
 				uValue.longValue=0;
 			for( const BYTE *valueBytes=(PBYTE)valueList; nValues--; valueBytes+=valueSize ){ // let's treat the ValueList as an array of Bytes in the form of [Value1,Value2,...,ValueN} where each Value occupies the same number of Bytes (e.g. 2 Bytes)
 				::memcpy( &uValue, valueBytes, valueSize );
@@ -105,7 +105,7 @@
 	bool TCustomEnumEditor::__tryToAcceptMainCtrlValue__() const{
 		// True <=> Editor's current Value is acceptable, otherwise False
 		const HWND hComboBox=TEditor::pSingleShown->hMainCtrl;
-		CPropGridCtrl::TEnum::UValue uValue; // actual Value extracted from the ValueBytes below
+		PropGrid::Enum::UValue uValue; // actual Value extracted from the ValueBytes below
 			uValue.longValue=ComboBox_GetItemData( hComboBox, ComboBox_GetCurSel(hComboBox) );
 		ignoreRequestToDestroy=true;
 			const TPropGridInfo::TItem::TValue &value=TEditor::pSingleShown->value;
@@ -126,12 +126,12 @@
 
 	
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TEnum::DefineConstStringListEditorA(TSize nValueBytes,TGetValueList getValueList,TGetValueDescA getValueDesc,TFreeValueList freeValueList,TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged){
+	PropGrid::PCEditor PropGrid::Enum::DefineConstStringListEditorA(TSize nValueBytes,TGetValueList getValueList,TGetValueDescA getValueDesc,TFreeValueList freeValueList,TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
 					new TCustomEnumEditor(	nValueBytes,
 											EDITOR_DEFAULT_HEIGHT,
-											false, (CPropGridCtrl::TEnum::TGetValueDesc)getValueDesc,
+											false, (PropGrid::Enum::TGetValueDesc)getValueDesc,
 											nullptr,
 											getValueList, freeValueList,
 											onValueConfirmed,
@@ -141,12 +141,12 @@
 				);
 	}
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TEnum::DefineConstStringListEditorW(TSize nValueBytes,TGetValueList getValueList,TGetValueDescW getValueDesc,TFreeValueList freeValueList,TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged){
+	PropGrid::PCEditor PropGrid::Enum::DefineConstStringListEditorW(TSize nValueBytes,TGetValueList getValueList,TGetValueDescW getValueDesc,TFreeValueList freeValueList,TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
 					new TCustomEnumEditor(	nValueBytes,
 											EDITOR_DEFAULT_HEIGHT,
-											true, (CPropGridCtrl::TEnum::TGetValueDesc)getValueDesc,
+											true, (PropGrid::Enum::TGetValueDesc)getValueDesc,
 											nullptr,
 											getValueList, freeValueList,
 											onValueConfirmed,
@@ -156,7 +156,7 @@
 				);
 	}
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TEnum::DefineConstCustomListEditor(WORD height,TSize nValueBytes,TGetValueList getValueList,TDrawValueHandler drawValue,TFreeValueList freeValueList,TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged){
+	PropGrid::PCEditor PropGrid::Enum::DefineConstCustomListEditor(WORD height,TSize nValueBytes,TGetValueList getValueList,TDrawValueHandler drawValue,TFreeValueList freeValueList,TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
 					new TCustomEnumEditor(	nValueBytes,

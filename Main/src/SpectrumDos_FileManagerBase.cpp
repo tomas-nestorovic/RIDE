@@ -97,7 +97,7 @@
 	#define EXTENSION_MIN	32
 	#define EXTENSION_MAX	127
 
-	bool WINAPI CSpectrumDos::CSpectrumFileManagerView::CSingleCharExtensionEditor::__onChanged__(PVOID file,CPropGridCtrl::TEnum::UValue newExt){
+	bool WINAPI CSpectrumDos::CSpectrumFileManagerView::CSingleCharExtensionEditor::__onChanged__(PVOID file,PropGrid::Enum::UValue newExt){
 		// changes the single-character Extension of given File
 		const PDos dos=CDos::GetFocused();
 		// - getting File's original Name and Extension
@@ -113,17 +113,17 @@
 			return false;
 		}
 	}
-	static CPropGridCtrl::TEnum::PCValueList WINAPI __createValues__(PVOID file,WORD &rnValues){
+	static PropGrid::Enum::PCValueList WINAPI __createValues__(PVOID file,WORD &rnValues){
 		// creates and returns the list of File's possible Extensions
 		const PBYTE list=(PBYTE)::malloc( rnValues=EXTENSION_MAX+1-EXTENSION_MIN );
 		for( BYTE p=EXTENSION_MIN,*a=list; p<=EXTENSION_MAX; *a++=p++ );
 		return list;
 	}
-	static void WINAPI __freeValues__(PVOID file,CPropGridCtrl::TEnum::PCValueList list){
+	static void WINAPI __freeValues__(PVOID file,PropGrid::Enum::PCValueList list){
 		// disposes the list of File's possible Extensions
 		::free((PVOID)list);
 	}
-	LPCTSTR WINAPI CSpectrumDos::CSpectrumFileManagerView::CSingleCharExtensionEditor::__getDescription__(PVOID file,CPropGridCtrl::TEnum::UValue extension,PTCHAR buf,short bufCapacity){
+	LPCTSTR WINAPI CSpectrumDos::CSpectrumFileManagerView::CSingleCharExtensionEditor::__getDescription__(PVOID file,PropGrid::Enum::UValue extension,PTCHAR buf,short bufCapacity){
 		// sets the Buffer to textual description of given Extension and returns its beginning in the Buffer
 		const char bufM[2]={ extension.charValue, '\0' };
 		return TZxRom::ZxToAscii(bufM,1,buf);
@@ -136,7 +136,7 @@
 		dos->GetFileNameAndExt(file,nullptr,bufExt);
 		const PEditorBase result=pZxFileManager->__createStdEditor__(
 			file, &( data=*bufExt ),
-			CPropGridCtrl::TEnum::DefineConstStringListEditorA( sizeof(data), __createValues__, __getDescription__, __freeValues__, __onChanged__ )
+			PropGrid::Enum::DefineConstStringListEditorA( sizeof(data), __createValues__, __getDescription__, __freeValues__, __onChanged__ )
 		);
 		::SendMessage( result->hEditor, WM_SETFONT, (WPARAM)pZxFileManager->rFont.m_hObject, 0 );
 		return result;
@@ -198,7 +198,7 @@
 
 
 
-	CFileManagerView::PEditorBase CSpectrumDos::CSpectrumFileManagerView::CStdParamEditor::Create(PFile file,PWORD pwParam,CPropGridCtrl::TInteger::TOnValueConfirmed fnOnConfirmed){
+	CFileManagerView::PEditorBase CSpectrumDos::CSpectrumFileManagerView::CStdParamEditor::Create(PFile file,PWORD pwParam,PropGrid::Integer::TOnValueConfirmed fnOnConfirmed){
 		// creates and returns the Editor of File Name
 		const PDos dos=CDos::GetFocused();
 		const CSpectrumFileManagerView *const pZxFileManager=(CSpectrumFileManagerView *)dos->pFileManager;

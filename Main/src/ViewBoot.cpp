@@ -18,7 +18,7 @@
 		Utils::InformationWithCheckableShowNoMore( text, INI_BOOT, messageId );
 	}
 
-	bool WINAPI CBootView::__bootSectorModified__(CPropGridCtrl::PCustomParam,int){
+	bool WINAPI CBootView::__bootSectorModified__(PropGrid::PCustomParam,int){
 		// marking the Boot Sector as dirty
 		const PDos dos=CDos::GetFocused();
 		dos->FlushToBootSector(); // marking the Boot Sector as dirty
@@ -26,17 +26,17 @@
 		return true;
 	}
 
-	bool WINAPI CBootView::__bootSectorModifiedA__(CPropGridCtrl::PCustomParam,LPCSTR,short){
+	bool WINAPI CBootView::__bootSectorModifiedA__(PropGrid::PCustomParam,LPCSTR,short){
 		// marking the Boot Sector as dirty
 		return __bootSectorModified__(nullptr,0);
 	}
 
-	bool WINAPI CBootView::__bootSectorModified__(CPropGridCtrl::PCustomParam,bool){
+	bool WINAPI CBootView::__bootSectorModified__(PropGrid::PCustomParam,bool){
 		// marking the Boot Sector as dirty
 		return __bootSectorModified__(nullptr,0);
 	}
 
-	bool WINAPI CBootView::__bootSectorModified__(CPropGridCtrl::PCustomParam,CPropGridCtrl::TEnum::UValue){
+	bool WINAPI CBootView::__bootSectorModified__(PropGrid::PCustomParam,PropGrid::Enum::UValue){
 		// marking the Boot Sector as dirty
 		return __bootSectorModified__(nullptr,0);
 	}
@@ -150,9 +150,9 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 
 
 
-	static void __pg_showPositiveInteger__(HWND hPropGrid,HANDLE hCategory,PVOID pInteger,LPCTSTR criticalValueId,CPropGridCtrl::TInteger::TOnValueConfirmed fn,int maxValue,LPCTSTR caption){
+	static void __pg_showPositiveInteger__(HWND hPropGrid,HANDLE hCategory,PVOID pInteger,LPCTSTR criticalValueId,PropGrid::Integer::TOnValueConfirmed fn,int maxValue,LPCTSTR caption){
 		// shows Integer in value in PropertyGrid's specified Category
-		const CPropGridCtrl::TInteger::TUpDownLimits limits={ 1, maxValue };
+		const PropGrid::Integer::TUpDownLimits limits={ 1, maxValue };
 		BYTE size;
 		if (maxValue<=(BYTE)-1)
 			size=sizeof(BYTE);
@@ -160,9 +160,9 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 			size=sizeof(WORD);
 		else
 			size=sizeof(DWORD);
-		CPropGridCtrl::AddProperty(	hPropGrid, hCategory, caption,
+		PropGrid::AddProperty(	hPropGrid, hCategory, caption,
 									pInteger, 
-									CPropGridCtrl::TInteger::DefineEditor( size, limits, fn ),
+									PropGrid::Integer::DefineEditor( size, limits, fn ),
 									(PVOID)criticalValueId
 								);
 	}
@@ -182,7 +182,7 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 			::ZeroMemory(&cbp,sizeof(cbp));
 			GetCommonBootParameters(cbp,boot);
 			const TMedium::PCProperties props=TMedium::GetProperties(DOS->formatBoot.mediumType);
-			const HANDLE hGeometry= cbp.geometryCategory ? CPropGridCtrl::AddCategory(propGrid.m_hWnd,nullptr,_T("Geometry")) : 0;
+			const HANDLE hGeometry= cbp.geometryCategory ? PropGrid::AddCategory(propGrid.m_hWnd,nullptr,_T("Geometry")) : 0;
 			if (hGeometry){
 				if (cbp.chs){
 					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.nCylinders, nullptr, __updateFatAfterChangingCylinderCount__, props->cylinderRange.iMax, _T("Cylinders") );
@@ -191,25 +191,25 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 				}
 				if (cbp.sectorLength){
 					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.sectorLength, CRITICAL_VALUE_SECTOR_SIZE, __confirmCriticalValueInBoot__, 16384, _T("Sector size") );
-					/*static const CPropGridCtrl::TInteger::TUpDownLimits Limits={128,16384};
-					CPropGridCtrl::AddProperty(	propGrid.m_hWnd, hGeometry, _T("Sector size"),
+					/*static const PropGrid::Integer::TUpDownLimits Limits={128,16384};
+					PropGrid::AddProperty(	propGrid.m_hWnd, hGeometry, _T("Sector size"),
 												&DOS->formatBoot.sectorLength, sizeof(WORD),
-												CPropGridCtrl::TInteger::DefineEditor(Limits,__bootSectorModified__)
+												PropGrid::Integer::DefineEditor(Limits,__bootSectorModified__)
 											);*/
 				}
 			}
-			const HANDLE hVolume= cbp.volumeCategory ? CPropGridCtrl::AddCategory(propGrid.m_hWnd,nullptr,_T("Volume")) : 0;
+			const HANDLE hVolume= cbp.volumeCategory ? PropGrid::AddCategory(propGrid.m_hWnd,nullptr,_T("Volume")) : 0;
 			if (hVolume){
 				if (cbp.label.length)
-					CPropGridCtrl::AddProperty(	propGrid.m_hWnd, hVolume, _T("Label"),
+					PropGrid::AddProperty(	propGrid.m_hWnd, hVolume, _T("Label"),
 												cbp.label.bufferA,
-												CPropGridCtrl::TString::DefineFixedLengthEditorA( cbp.label.length, cbp.label.onLabelConfirmedA?cbp.label.onLabelConfirmedA:__bootSectorModifiedA__, cbp.label.fillerByte )
+												PropGrid::String::DefineFixedLengthEditorA( cbp.label.length, cbp.label.onLabelConfirmedA?cbp.label.onLabelConfirmedA:__bootSectorModifiedA__, cbp.label.fillerByte )
 											);
 				if (cbp.id.buffer){
-					const CPropGridCtrl::TInteger::TUpDownLimits limits={ 0, (UINT)-1>>8*(sizeof(UINT)-cbp.id.bufferCapacity) };
-					CPropGridCtrl::AddProperty(	propGrid.m_hWnd, hVolume, _T("ID"),
+					const PropGrid::Integer::TUpDownLimits limits={ 0, (UINT)-1>>8*(sizeof(UINT)-cbp.id.bufferCapacity) };
+					PropGrid::AddProperty(	propGrid.m_hWnd, hVolume, _T("ID"),
 												cbp.id.buffer,
-												CPropGridCtrl::TInteger::DefineEditor( cbp.id.bufferCapacity, limits, __bootSectorModified__ )
+												PropGrid::Integer::DefineEditor( cbp.id.bufferCapacity, limits, __bootSectorModified__ )
 											);
 				}
 				if (cbp.clusterSize)
@@ -219,10 +219,10 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 			AddCustomBootParameters(propGrid.m_hWnd,hGeometry,hVolume,cbp,boot);
 		}else
 			// Boot Sector not found - informing through PropertyGrid
-			CPropGridCtrl::EnableProperty(	propGrid.m_hWnd,
-											CPropGridCtrl::AddProperty(	propGrid.m_hWnd, nullptr,
+			PropGrid::EnableProperty(	propGrid.m_hWnd,
+											PropGrid::AddProperty(	propGrid.m_hWnd, nullptr,
 																		_T("Boot sector"), "Not found!",
-																		CPropGridCtrl::TString::DefineFixedLengthEditorA(0)
+																		PropGrid::String::DefineFixedLengthEditorA(0)
 																	),
 											false
 										);

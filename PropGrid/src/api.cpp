@@ -2,7 +2,7 @@
 
 	#define PG_CLASS_NAME	_T("WCPropGridClass32")
 
-	LPCTSTR WINAPI CPropGridCtrl::GetWindowClass(HINSTANCE hInstance){
+	LPCTSTR WINAPI PropGrid::GetWindowClass(HINSTANCE hInstance){
 		// creates and returns PropertyGrid window class
 		WNDCLASS wc;
 			::ZeroMemory(&wc,sizeof(wc));
@@ -13,7 +13,7 @@
 		return PG_CLASS_NAME;
 	}
 
-	HWND WINAPI CPropGridCtrl::Create(HINSTANCE hInstance,LPCTSTR windowName,UINT style,int x,int y,int width,int height,HWND hParent){
+	HWND WINAPI PropGrid::Create(HINSTANCE hInstance,LPCTSTR windowName,UINT style,int x,int y,int width,int height,HWND hParent){
 		// creates and returns a new instance of the PropertyGrid
 		//if (width<=2*CATEGORY_HEIGHT) width=2*CATEGORY_HEIGHT;
 		return ::CreateWindow(	GetWindowClass(hInstance), // making sure the window class is always defined
@@ -35,7 +35,7 @@
 			return 0; // no Category is refered by the input parameters - quitting with error
 	}
 
-	HANDLE WINAPI CPropGridCtrl::AddProperty(HWND hPropGrid,HANDLE category,LPCTSTR name,PValue value,PCEditor editor,PCustomParam param){
+	HANDLE WINAPI PropGrid::AddProperty(HWND hPropGrid,HANDLE category,LPCTSTR name,PValue value,PCEditor editor,PCustomParam param){
 		// creates, adds into PropertyGrid, and returns a new ValueItem with given Name and Value
 		// - creating a new ValueItem in the specified Category
 		if (!IsValueBeingEdited()) // can change content only if a Value is NOT being edited
@@ -52,7 +52,7 @@
 		return 0;
 	}
 
-	HANDLE WINAPI CPropGridCtrl::AddCategory(HWND hPropGrid,HANDLE category,LPCTSTR name,bool initiallyExpanded){
+	HANDLE WINAPI PropGrid::AddCategory(HWND hPropGrid,HANDLE category,LPCTSTR name,bool initiallyExpanded){
 		// creates, adds into PropertyGrid, and returns a new CategoryItem with given Name
 		// - creating a new CategoryItem in the specified Category
 		if (!IsValueBeingEdited()) // can change content only if a Value is NOT being edited
@@ -67,7 +67,7 @@
 		return 0;
 	}
 
-	HANDLE WINAPI CPropGridCtrl::EnableProperty(HWND hPropGrid,HANDLE propOrCat,bool enabled){
+	HANDLE WINAPI PropGrid::EnableProperty(HWND hPropGrid,HANDLE propOrCat,bool enabled){
 		// enables/disables specified PropertyOrCategory (for Category recurrently all its Subitems), and returns the PropertyOrCategory; an Item must be enabled the same amout of times as it was disabled
 		const PPropGridInfo pPropGridInfo=GET_PROPGRID_INFO(hPropGrid);
 		TPropGridInfo::TItem *const pItem=	propOrCat
@@ -83,7 +83,7 @@
 		return pItem;
 	}
 
-	void WINAPI CPropGridCtrl::RemoveProperty(HWND hPropGrid,HANDLE propOrCat){
+	void WINAPI PropGrid::RemoveProperty(HWND hPropGrid,HANDLE propOrCat){
 		// removes specified PropertyOrCategory from the PropertyGrid
 		// - can change content only if a Value is NOT being edited
 		if (IsValueBeingEdited())
@@ -112,7 +112,7 @@
 		return ::CallWindowProc(upDownWndProc0,hUpDown,msg,wParam,lParam);
 	}
 
-	HWND WINAPI CPropGridCtrl::CreateUpDownControl(HWND hEdit,UINT style,bool bHexadecimal,TInteger::RCUpDownLimits rLimits,int iCurrent){
+	HWND WINAPI PropGrid::CreateUpDownControl(HWND hEdit,UINT style,bool bHexadecimal,Integer::RCUpDownLimits rLimits,int iCurrent){
 		// creates and returns an UpDown control attached to the specified Edit-box
 		static const INITCOMMONCONTROLSEX icc={ sizeof(INITCOMMONCONTROLSEX), ICC_UPDOWN_CLASS };
 		if (::InitCommonControlsEx(&icc)){
@@ -133,12 +133,12 @@
 			return 0;
 	}
 
-	short WINAPI CPropGridCtrl::GetCurrentlySelectedProperty(HWND hPropGrid){
+	short WINAPI PropGrid::GetCurrentlySelectedProperty(HWND hPropGrid){
 		// returns the index of the Item currently selected in the ListBox
 		return ListBox_GetCurSel( GET_PROPGRID_INFO(hPropGrid)->listBox.handle );
 	}
 
-	short WINAPI CPropGridCtrl::SetCurrentlySelectedProperty(HWND hPropGrid,short iSelected){
+	short WINAPI PropGrid::SetCurrentlySelectedProperty(HWND hPropGrid,short iSelected){
 		// selected the i-th Item in the ListBox; // returns the index of the Item previously selected in the ListBox
 		const short iPrevSel=GetCurrentlySelectedProperty(hPropGrid);
 		ListBox_SetCurSel( GET_PROPGRID_INFO(hPropGrid)->listBox.handle, iSelected );
@@ -147,7 +147,7 @@
 
 	#define ELLIPSIS_BUTTON_WIDTH	20
 
-	HWND WINAPI CPropGridCtrl::BeginEditValue(PValue value,PCustomParam param,PCEditor editor,RECT rcEditorRect,DWORD style,HWND hParent,HWND *pOutEllipsisBtn){
+	HWND WINAPI PropGrid::BeginEditValue(PValue value,PCustomParam param,PCEditor editor,RECT rcEditorRect,DWORD style,HWND hParent,HWND *pOutEllipsisBtn){
 		// creates and returns the MainControl (and EllipsisButton) of the Editor for the specified Value
 		// - no other Value must be edited
 		if (IsValueBeingEdited())
@@ -178,7 +178,7 @@
 		return TEditor::pSingleShown->hMainCtrl;
 	}
 
-	bool WINAPI CPropGridCtrl::TryToAcceptCurrentValueAndCloseEditor(){
+	bool WINAPI PropGrid::TryToAcceptCurrentValueAndCloseEditor(){
 		// True <=> current Value in the Editor is acceptable, otherwise False (and the Editor remains to exist)
 		// - a Value must be actually being edited
 		if (!IsValueBeingEdited())
@@ -195,7 +195,7 @@
 			return false;
 	}
 
-	bool WINAPI CPropGridCtrl::IsValueBeingEdited(){
+	bool WINAPI PropGrid::IsValueBeingEdited(){
 		// True <=> some Value is currently being edited, otherwise False
 		return TEditor::pSingleShown!=nullptr;
 	}

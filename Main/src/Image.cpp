@@ -389,7 +389,7 @@
 						return TRUE;
 					case ID_IMAGE_PROTECT:
 						((CCmdUI *)pExtra)->SetCheck(writeProtected);
-						((CCmdUI *)pExtra)->Enable(canBeModified && !CPropGridCtrl::IsValueBeingEdited());
+						((CCmdUI *)pExtra)->Enable(canBeModified && !PropGrid::IsValueBeingEdited());
 						return TRUE;
 					case ID_IMAGE_SETTINGS:
 						((CCmdUI *)pExtra)->Enable(hasEditableSettings);

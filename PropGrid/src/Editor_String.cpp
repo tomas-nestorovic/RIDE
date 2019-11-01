@@ -1,14 +1,14 @@
 #include "stdafx.h"
 
-	static bool WINAPI __alwaysAccept__(CPropGridCtrl::PCustomParam,CPropGridCtrl::PValue,CPropGridCtrl::TSize){
+	static bool WINAPI __alwaysAccept__(PropGrid::PCustomParam,PropGrid::PValue,PropGrid::TSize){
 		return true; // new Value is by default always accepted
 	}
 
-	TStringEditor::TStringEditor(	CPropGridCtrl::TOnEllipsisButtonClicked onEllipsisBtnClicked,
+	TStringEditor::TStringEditor(	PropGrid::TOnEllipsisButtonClicked onEllipsisBtnClicked,
 									bool wideChar,
-									CPropGridCtrl::TSize nCharsMax,
-									CPropGridCtrl::TString::TOnValueConfirmed onValueConfirmed,
-									CPropGridCtrl::TOnValueChanged onValueChanged
+									PropGrid::TSize nCharsMax,
+									PropGrid::String::TOnValueConfirmed onValueConfirmed,
+									PropGrid::TOnValueChanged onValueChanged
 								)
 		// ctor
 		: TEditor( EDITOR_DEFAULT_HEIGHT, true, std::min<>(STRING_LENGTH_MAX,nCharsMax), onEllipsisBtnClicked, onValueChanged )
@@ -89,12 +89,12 @@
 
 
 
-	TFixedPaddedStringEditor::TFixedPaddedStringEditor(	CPropGridCtrl::TOnEllipsisButtonClicked onEllipsisBtnClicked,
+	TFixedPaddedStringEditor::TFixedPaddedStringEditor(	PropGrid::TOnEllipsisButtonClicked onEllipsisBtnClicked,
 														bool wideChar,
-														CPropGridCtrl::TSize nCharsMax,
-														CPropGridCtrl::TString::TOnValueConfirmed onValueConfirmed,
+														PropGrid::TSize nCharsMax,
+														PropGrid::String::TOnValueConfirmed onValueConfirmed,
 														WCHAR paddingChar,
-														CPropGridCtrl::TOnValueChanged onValueChanged
+														PropGrid::TOnValueChanged onValueChanged
 													)
 		// ctor
 		: TStringEditor( nullptr, wideChar, nCharsMax, onValueConfirmed, onValueChanged )
@@ -152,8 +152,8 @@
 
 
 	TDynamicStringEditor::TDynamicStringEditor(	bool wideChar,
-												CPropGridCtrl::TString::TOnValueConfirmed onValueConfirmed,
-												CPropGridCtrl::TOnValueChanged onValueChanged
+												PropGrid::String::TOnValueConfirmed onValueConfirmed,
+												PropGrid::TOnValueChanged onValueChanged
 											)
 		// ctor
 		: TStringEditor( nullptr, wideChar, STRING_LENGTH_MAX, onValueConfirmed, onValueChanged ) {
@@ -178,7 +178,7 @@
 
 
 
-	static bool WINAPI __ellipsis_selectFileInDialog__(CPropGridCtrl::PCustomParam param,CPropGridCtrl::PValue newFileName,CPropGridCtrl::TSize valueSize){
+	static bool WINAPI __ellipsis_selectFileInDialog__(PropGrid::PCustomParam param,PropGrid::PValue newFileName,PropGrid::TSize valueSize){
 		// True <=> file in shown dialog selected and confirmed (via the OK button), otherwise False
 		const TPropGridInfo::TItem::TValue &value=TEditor::pSingleShown->value;
 		const HWND hEdit=TEditor::pSingleShown->hMainCtrl;
@@ -210,9 +210,9 @@
 	}
 
 	TFileNameEditor::TFileNameEditor(	bool wideChar,
-										CPropGridCtrl::TSize nCharsMax,
-										CPropGridCtrl::TString::TOnValueConfirmed onValueConfirmed,
-										CPropGridCtrl::TOnValueChanged onValueChanged
+										PropGrid::TSize nCharsMax,
+										PropGrid::String::TOnValueConfirmed onValueConfirmed,
+										PropGrid::TOnValueChanged onValueChanged
 									)
 		// ctor
 		: TFixedPaddedStringEditor(	__ellipsis_selectFileInDialog__, wideChar, nCharsMax, onValueConfirmed, '\0', onValueChanged ) {
@@ -227,7 +227,7 @@
 
 
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TString::DefineFixedLengthEditorA(TSize nCharsMax,TOnValueConfirmedA onValueConfirmed,char paddingChar,TOnValueChanged onValueChanged){
+	PropGrid::PCEditor PropGrid::String::DefineFixedLengthEditorA(TSize nCharsMax,TOnValueConfirmedA onValueConfirmed,char paddingChar,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
 					new TFixedPaddedStringEditor( nullptr, false, nCharsMax, (TOnValueConfirmed)onValueConfirmed, paddingChar, onValueChanged ),
@@ -235,7 +235,7 @@
 				);
 	}
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TString::DefineFixedLengthEditorW(TSize nCharsMax,TOnValueConfirmedW onValueConfirmed,WCHAR paddingChar,TOnValueChanged onValueChanged){
+	PropGrid::PCEditor PropGrid::String::DefineFixedLengthEditorW(TSize nCharsMax,TOnValueConfirmedW onValueConfirmed,WCHAR paddingChar,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
 					new TFixedPaddedStringEditor( nullptr, true, nCharsMax, (TOnValueConfirmed)onValueConfirmed, paddingChar, onValueChanged ),
@@ -245,7 +245,7 @@
 
 
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TString::DefineDynamicLengthEditorA(TOnValueConfirmedA onValueConfirmed,TOnValueChanged onValueChanged){
+	PropGrid::PCEditor PropGrid::String::DefineDynamicLengthEditorA(TOnValueConfirmedA onValueConfirmed,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
 					new TDynamicStringEditor( false, (TOnValueConfirmed)onValueConfirmed, onValueChanged ),
@@ -253,7 +253,7 @@
 				);
 	}
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TString::DefineDynamicLengthEditorW(TOnValueConfirmedW onValueConfirmed,TOnValueChanged onValueChanged){
+	PropGrid::PCEditor PropGrid::String::DefineDynamicLengthEditorW(TOnValueConfirmedW onValueConfirmed,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
 					new TDynamicStringEditor( true, (TOnValueConfirmed)onValueConfirmed, onValueChanged ),
@@ -263,7 +263,7 @@
 
 
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TString::DefineFileNameEditorA(TSize nCharsMax,TOnValueConfirmedA onValueConfirmed,TOnValueChanged onValueChanged){
+	PropGrid::PCEditor PropGrid::String::DefineFileNameEditorA(TSize nCharsMax,TOnValueConfirmedA onValueConfirmed,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
 					new TFileNameEditor( false, nCharsMax, (TOnValueConfirmed)onValueConfirmed, onValueChanged ),
@@ -271,7 +271,7 @@
 				);
 	}
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TString::DefineFileNameEditorW(TSize nCharsMax,TOnValueConfirmedW onValueConfirmed,TOnValueChanged onValueChanged){
+	PropGrid::PCEditor PropGrid::String::DefineFileNameEditorW(TSize nCharsMax,TOnValueConfirmedW onValueConfirmed,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
 					new TFileNameEditor( true, nCharsMax, (TOnValueConfirmed)onValueConfirmed, onValueChanged ),

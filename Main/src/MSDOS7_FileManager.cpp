@@ -275,9 +275,9 @@
 				return __createStdEditor__(	file,
 											DOS->GetFileNameWithAppendedExt(file,buf),
 											#ifdef UNICODE
-												CPropGridCtrl::TString::DefineDynamicLengthEditorW( __onNameAndExtConfirmed__ )
+												PropGrid::String::DefineDynamicLengthEditorW( __onNameAndExtConfirmed__ )
 											#else
-												CPropGridCtrl::TString::DefineDynamicLengthEditorA( __onNameAndExtConfirmed__ )
+												PropGrid::String::DefineDynamicLengthEditorA( __onNameAndExtConfirmed__ )
 											#endif
 										);
 			}

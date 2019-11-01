@@ -27,7 +27,7 @@
 	public:
 		static const CCriticalSectorView *pCurrentlyShown; // Sector that is currently shown (a volume can have multiple critical Sectors)
 
-		static void WINAPI __updateCriticalSectorView__(CPropGridCtrl::PCustomParam);
+		static void WINAPI __updateCriticalSectorView__(PropGrid::PCustomParam);
 		static bool __isValueBeingEditedInPropertyGrid__();
 
 		const CMainWindow::CTdiView::TTab tab;

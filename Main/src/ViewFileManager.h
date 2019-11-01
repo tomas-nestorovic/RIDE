@@ -153,17 +153,17 @@
 			const HWND hEditor;		// File information Editor (WC_EDIT derivate,...)
 			const HWND hEllipsisButton;
 
-			CEditorBase(CDos::PFile file,PVOID value,CPropGridCtrl::PCEditor editor,RCFileManagerView parent);
+			CEditorBase(CDos::PFile file,PVOID value,PropGrid::PCEditor editor,RCFileManagerView parent);
 			~CEditorBase();
 
 			void Repaint() const;
 		} *PEditorBase;
 
-		PEditorBase __createStdEditor__(CDos::PFile file,CPropGridCtrl::PValue value,CPropGridCtrl::PCEditor editor) const;
-		PEditorBase __createStdEditorWithEllipsis__(CDos::PFile file,CPropGridCtrl::TOnEllipsisButtonClicked buttonAction) const;
-		PEditorBase __createStdEditorWithEllipsis__(CDos::PFile file,CPropGridCtrl::PValue value,CPropGridCtrl::TSize valueSize,CPropGridCtrl::TOnEllipsisButtonClicked buttonAction) const;
-		PEditorBase __createStdEditorForByteValue__(CDos::PFile file,PBYTE pByte,CPropGridCtrl::TInteger::TOnValueConfirmed fnOnValueConfirmed) const;
-		PEditorBase __createStdEditorForWordValue__(CDos::PFile file,PWORD pWord,CPropGridCtrl::TInteger::TOnValueConfirmed fnOnValueConfirmed) const;
+		PEditorBase __createStdEditor__(CDos::PFile file,PropGrid::PValue value,PropGrid::PCEditor editor) const;
+		PEditorBase __createStdEditorWithEllipsis__(CDos::PFile file,PropGrid::TOnEllipsisButtonClicked buttonAction) const;
+		PEditorBase __createStdEditorWithEllipsis__(CDos::PFile file,PropGrid::PValue value,PropGrid::TSize valueSize,PropGrid::TOnEllipsisButtonClicked buttonAction) const;
+		PEditorBase __createStdEditorForByteValue__(CDos::PFile file,PBYTE pByte,PropGrid::Integer::TOnValueConfirmed fnOnValueConfirmed) const;
+		PEditorBase __createStdEditorForWordValue__(CDos::PFile file,PWORD pWord,PropGrid::Integer::TOnValueConfirmed fnOnValueConfirmed) const;
 	protected:
 		class CFileComparisonDialog sealed:public CDialog{
 			CMemFile fEmpty;

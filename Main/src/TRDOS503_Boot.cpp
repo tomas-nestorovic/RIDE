@@ -156,13 +156,13 @@
 				rParam.label.fillerByte=' ';*/
 	}
 
-	CPropGridCtrl::TEnum::PCValueList WINAPI CTRDOS503::CTrdosBootView::__getListOfKnownFormats__(PVOID,WORD &rnFormats){
+	PropGrid::Enum::PCValueList WINAPI CTRDOS503::CTrdosBootView::__getListOfKnownFormats__(PVOID,WORD &rnFormats){
 		// returns the list of known Formats
 		static const TDiskFormat List[]={ DS80, DS40, SS80, SS40 };
 		rnFormats=4;
-		return (CPropGridCtrl::TEnum::PCValueList)List;
+		return (PropGrid::Enum::PCValueList)List;
 	}
-	LPCTSTR WINAPI CTRDOS503::CTrdosBootView::__getFormatDescription__(PVOID,CPropGridCtrl::TEnum::UValue format,PTCHAR buf,short bufCapacity){
+	LPCTSTR WINAPI CTRDOS503::CTrdosBootView::__getFormatDescription__(PVOID,PropGrid::Enum::UValue format,PTCHAR buf,short bufCapacity){
 		// populates the Buffer with a description of specified Format and returns the Buffer
 		switch ((TDiskFormat)format.charValue){
 			case DS80:	return DS80_CAPTION;
@@ -173,7 +173,7 @@
 				return _T("<unknown>");
 		}
 	}
-	bool WINAPI CTRDOS503::CTrdosBootView::__onFormatChanged__(PVOID,CPropGridCtrl::TEnum::UValue newValue){
+	bool WINAPI CTRDOS503::CTrdosBootView::__onFormatChanged__(PVOID,PropGrid::Enum::UValue newValue){
 		// disk Format changed through PropertyGrid
 		CTRDOS503 *const trdos=(CTRDOS503 *)CDos::GetFocused();
 		const PBootSector boot=trdos->__getBootSector__();
@@ -209,7 +209,7 @@
 	#define CYGNUSBOOT_IMPORT_NAME	_T("boot.B ZXP35000aL10e2S11")
 	#define CYGNUSBOOT_ONLINE_NAME	_T("TRDOS/CygnusBoot/") CYGNUSBOOT_IMPORT_NAME
 
-	static bool WINAPI __cygnusBoot_updateOnline__(CPropGridCtrl::PCustomParam,int hyperlinkId,LPCTSTR hyperlinkName){
+	static bool WINAPI __cygnusBoot_updateOnline__(PropGrid::PCustomParam,int hyperlinkId,LPCTSTR hyperlinkName){
 		// True <=> PropertyGrid's Editor can be destroyed after this function has terminated, otherwise False
 		BYTE cygnusBootDataBuffer[8192]; // sufficiently big buffer
 		DWORD cygnusBootDataLength;
@@ -232,44 +232,44 @@
 		// gets DOS-specific parameters from the Boot
 		const PBootSector boot=(PBootSector)_boot;
 		// - Geometry category
-		CPropGridCtrl::AddProperty(	hPropGrid, hGeometry, _T("Format"),
+		PropGrid::AddProperty(	hPropGrid, hGeometry, _T("Format"),
 									&boot->format,
-									CPropGridCtrl::TEnum::DefineConstStringListEditorA( sizeof(TDiskFormat), __getListOfKnownFormats__, __getFormatDescription__, nullptr, __onFormatChanged__ )
+									PropGrid::Enum::DefineConstStringListEditorA( sizeof(TDiskFormat), __getListOfKnownFormats__, __getFormatDescription__, nullptr, __onFormatChanged__ )
 								);
 		// - Volume category
-		CPropGridCtrl::AddProperty(	hPropGrid, hVolume, _T("Label"),
+		PropGrid::AddProperty(	hPropGrid, hVolume, _T("Label"),
 									boot->label,
 									((CSpectrumFileManagerView *)tab.dos->pFileManager)->zxRom.lineComposerPropGridEditor.Create( nCharsInLabel, ' ', nullptr )
 								);
-		CPropGridCtrl::AddProperty( hPropGrid, hVolume, _T("Password"),
+		PropGrid::AddProperty( hPropGrid, hVolume, _T("Password"),
 									boot->password,
-									CPropGridCtrl::TString::DefineFixedLengthEditorA( TRDOS503_BOOT_PASSWORD_LENGTH_MAX, __bootSectorModifiedA__, PASSWORD_FILLER_BYTE )
+									PropGrid::String::DefineFixedLengthEditorA( TRDOS503_BOOT_PASSWORD_LENGTH_MAX, __bootSectorModifiedA__, PASSWORD_FILLER_BYTE )
 								);
 		// - Advanced category
-		const HANDLE hAdvanced=CPropGridCtrl::AddCategory(hPropGrid,nullptr,BOOT_SECTOR_ADVANCED);
-			const CPropGridCtrl::PCEditor advByteEditor=CPropGridCtrl::TInteger::DefineByteEditor(__bootSectorModified__);
-			CPropGridCtrl::AddProperty( hPropGrid, hAdvanced, _T("Files"),
+		const HANDLE hAdvanced=PropGrid::AddCategory(hPropGrid,nullptr,BOOT_SECTOR_ADVANCED);
+			const PropGrid::PCEditor advByteEditor=PropGrid::Integer::DefineByteEditor(__bootSectorModified__);
+			PropGrid::AddProperty( hPropGrid, hAdvanced, _T("Files"),
 										&boot->nFiles, advByteEditor
 									);
-			CPropGridCtrl::AddProperty( hPropGrid, hAdvanced, _T("Deleted files"),
+			PropGrid::AddProperty( hPropGrid, hAdvanced, _T("Deleted files"),
 										&boot->nFilesDeleted, advByteEditor
 									);
-			const HANDLE hFirstFreeSector=CPropGridCtrl::AddCategory(hPropGrid,hAdvanced,_T("First empty sector"));
-				CPropGridCtrl::AddProperty( hPropGrid, hFirstFreeSector, _T("Track number"),
+			const HANDLE hFirstFreeSector=PropGrid::AddCategory(hPropGrid,hAdvanced,_T("First empty sector"));
+				PropGrid::AddProperty( hPropGrid, hFirstFreeSector, _T("Track number"),
 											&boot->firstFree.track, advByteEditor
 										);
-				CPropGridCtrl::AddProperty( hPropGrid, hFirstFreeSector, _T("Sector ID"),
+				PropGrid::AddProperty( hPropGrid, hFirstFreeSector, _T("Sector ID"),
 											&boot->firstFree.sector, advByteEditor
 										);
-			CPropGridCtrl::AddProperty( hPropGrid, hAdvanced, _T("Free sectors"),
+			PropGrid::AddProperty( hPropGrid, hAdvanced, _T("Free sectors"),
 										&boot->nFreeSectors,
-										CPropGridCtrl::TInteger::DefineWordEditor(__bootSectorModified__)
+										PropGrid::Integer::DefineWordEditor(__bootSectorModified__)
 									);
 		// - CygnusBoot category
-		const HANDLE hCygnusBoot=CPropGridCtrl::AddCategory(hPropGrid,nullptr,CYGNUSBOOT_NAME);
-			CPropGridCtrl::AddProperty(	hPropGrid, hCygnusBoot, _T("boot.B"),
+		const HANDLE hCygnusBoot=PropGrid::AddCategory(hPropGrid,nullptr,CYGNUSBOOT_NAME);
+			PropGrid::AddProperty(	hPropGrid, hCygnusBoot, _T("boot.B"),
 										BOOT_SECTOR_UPDATE_ONLINE_HYPERLINK,
-										CPropGridCtrl::THyperlink::DefineEditorA(__cygnusBoot_updateOnline__)
+										PropGrid::Hyperlink::DefineEditorA(__cygnusBoot_updateOnline__)
 									);
 	}
 

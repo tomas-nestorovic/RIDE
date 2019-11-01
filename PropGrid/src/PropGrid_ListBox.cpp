@@ -180,7 +180,7 @@ editItem:			// Tab key pressed - beginning to edit the Value using the correspon
 						r.left=pPropGridInfo->listBox.splitter.position;
 						::InflateRect(&r,-1,-1); // excluding lines separating individial Items
 						// : initiating the editing
-						CPropGridCtrl::BeginEditValue(
+						PropGrid::BeginEditValue(
 							pItem->value.buffer,
 							pItem->value.param,
 							pItem->value.editor,

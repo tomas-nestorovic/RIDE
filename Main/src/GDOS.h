@@ -142,8 +142,8 @@
 			static bool WINAPI __onStdParam2Changed__(PVOID file,int newWordValue);
 
 			mutable class CExtensionEditor sealed{
-				static bool WINAPI __onChanged__(PVOID file,CPropGridCtrl::TEnum::UValue newExt);
-				static LPCTSTR WINAPI __getDescription__(PVOID file,CPropGridCtrl::TEnum::UValue extension,PTCHAR buf,short bufCapacity);
+				static bool WINAPI __onChanged__(PVOID file,PropGrid::Enum::UValue newExt);
+				static LPCTSTR WINAPI __getDescription__(PVOID file,PropGrid::Enum::UValue extension,PTCHAR buf,short bufCapacity);
 
 				BYTE data;
 			public:

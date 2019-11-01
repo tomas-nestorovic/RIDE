@@ -5,16 +5,16 @@
 	#define DOS		tab.dos
 	#define IMAGE	DOS->image
 
-	void WINAPI CCriticalSectorView::__updateCriticalSectorView__(CPropGridCtrl::PCustomParam){
+	void WINAPI CCriticalSectorView::__updateCriticalSectorView__(PropGrid::PCustomParam){
 		// refreshes any current View
-		const short iCurSel=CPropGridCtrl::GetCurrentlySelectedProperty( pCurrentlyShown->propGrid.m_hWnd );
+		const short iCurSel=PropGrid::GetCurrentlySelectedProperty( pCurrentlyShown->propGrid.m_hWnd );
 			CDos::GetFocused()->image->UpdateAllViews(nullptr);
-		CPropGridCtrl::SetCurrentlySelectedProperty( pCurrentlyShown->propGrid.m_hWnd, iCurSel );
+		PropGrid::SetCurrentlySelectedProperty( pCurrentlyShown->propGrid.m_hWnd, iCurSel );
 	}
 
 	bool CCriticalSectorView::__isValueBeingEditedInPropertyGrid__(){
 		// True <=> some value is right now being edited in PropertyGrid, otherwise False
-		return pCurrentlyShown!=nullptr && CPropGridCtrl::IsValueBeingEdited();
+		return pCurrentlyShown!=nullptr && PropGrid::IsValueBeingEdited();
 	}
 
 
@@ -63,7 +63,7 @@
 			content->CreateStatic(this,1,2,WS_CHILD|WS_VISIBLE|WS_CLIPSIBLINGS);//WS_CLIPCHILDREN|
 			//content->CreateView(0,0,RUNTIME_CLASS(CPropertyGridView),CSize(splitX,0),&cc);
 			//const HWND hPropGrid=content->GetDlgItem( content->IdFromRowCol(0,0) )->m_hWnd;
-				propGrid.CreateEx( 0, CPropGridCtrl::GetWindowClass(app.m_hInstance), nullptr, AFX_WS_DEFAULT_VIEW&~WS_BORDER, 0,0,PROPGRID_WIDTH_DEFAULT,300, content->m_hWnd, (HMENU)content->IdFromRowCol(0,0) );
+				propGrid.CreateEx( 0, PropGrid::GetWindowClass(app.m_hInstance), nullptr, AFX_WS_DEFAULT_VIEW&~WS_BORDER, 0,0,PROPGRID_WIDTH_DEFAULT,300, content->m_hWnd, (HMENU)content->IdFromRowCol(0,0) );
 				content->SetColumnInfo(0,PROPGRID_WIDTH_DEFAULT*Utils::LogicalUnitScaleFactor,0);
 			//content->CreateView(0,1,RUNTIME_CLASS(CHexaEditor),CSize(),&cc); // commented out as created manually below
 				hexaEditor.Reset( &fSectorData, sectorDataRealLength, sectorDataRealLength );
@@ -82,7 +82,7 @@
 	void CCriticalSectorView::OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint){
 		// request to refresh the display of content
 		// - clearing the PropertyGrid
-		CPropGridCtrl::RemoveProperty( propGrid.m_hWnd, nullptr );
+		PropGrid::RemoveProperty( propGrid.m_hWnd, nullptr );
 		// - planning repainting of the HexaEditor
 		hexaEditor.Invalidate();
 		// - reflecting write-protection into the look of controls
@@ -121,7 +121,7 @@
 	}
 
 	void CCriticalSectorView::__updateLookOfControls__(){
-		CPropGridCtrl::EnableProperty( propGrid.m_hWnd, nullptr, !IMAGE->IsWriteProtected() );
+		PropGrid::EnableProperty( propGrid.m_hWnd, nullptr, !IMAGE->IsWriteProtected() );
 		hexaEditor.SetEditable( !IMAGE->IsWriteProtected() );
 	}
 

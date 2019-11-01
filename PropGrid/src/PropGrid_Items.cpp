@@ -2,14 +2,14 @@
 
 	#define ITEM_LEVEL_TOP			1
 
-	TPropGridInfo::TItem::TValue::TValue(PCEditor editor,CPropGridCtrl::PValue buffer,CPropGridCtrl::PCustomParam param)
+	TPropGridInfo::TItem::TValue::TValue(PCEditor editor,PropGrid::PValue buffer,PropGrid::PCustomParam param)
 		// ctor
 		: editor(editor) , buffer(buffer) , param(param) {
 	}
 
 
 
-	TPropGridInfo::TItem::TItem(TPropGridInfo *pPropGridInfo,PCategoryItem parentCategory,LPCTSTR name,PCEditor editor,CPropGridCtrl::PValue buffer,CPropGridCtrl::PCustomParam param)
+	TPropGridInfo::TItem::TItem(TPropGridInfo *pPropGridInfo,PCategoryItem parentCategory,LPCTSTR name,PCEditor editor,PropGrid::PValue buffer,PropGrid::PCustomParam param)
 		// ctor
 		// - initialization
 		: parentCategory(parentCategory)

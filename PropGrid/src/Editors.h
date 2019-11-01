@@ -4,7 +4,7 @@
 	#define	EDITOR_DEFAULT_HEIGHT	20
 	#define EDITOR_STYLE			( WS_CHILD | WS_CLIPSIBLINGS )
 
-	#define STRING_LENGTH_MAX		(CPropGridCtrl::TSize)8192
+	#define STRING_LENGTH_MAX		(PropGrid::TSize)8192
 
 	#pragma pack(1)
 	struct TEditor{
@@ -15,12 +15,12 @@
 			const bool mainControlExists; // True <=> MainControl is an editable control, otherwise False
 			const WNDPROC wndProc0;		// Editor's original window procedure
 			const WNDPROC ellipsisBtnWndProc0; // EllipsisButton's original window procedure
-			//const CPropGridCtrl::PValue origValue; // property's original Value
+			//const PropGrid::PValue origValue; // property's original Value
 			//const HWND hUpDown;
 
 			TControl(	PCEditor editor,
-						CPropGridCtrl::PValue valueBuffer,
-						CPropGridCtrl::PCustomParam param,
+						PropGrid::PValue valueBuffer,
+						PropGrid::PCustomParam param,
 						DWORD style,
 						HWND hParent
 					);
@@ -31,8 +31,8 @@
 
 		const WORD height;
 		const bool hasMainControl; // True <=> the Editor features an editable MainControl, otherwise False
-		const CPropGridCtrl::TOnEllipsisButtonClicked onEllipsisBtnClicked;
-		const CPropGridCtrl::TOnValueChanged onValueChanged;
+		const PropGrid::TOnEllipsisButtonClicked onEllipsisBtnClicked;
+		const PropGrid::TOnValueChanged onValueChanged;
 
 		virtual void __drawValue__(const TPropGridInfo::TItem::TValue &value,PDRAWITEMSTRUCT pdis) const=0;
 		virtual HWND __createMainControl__(const TPropGridInfo::TItem::TValue &value,HWND hParent) const=0;
@@ -49,18 +49,18 @@
 		TEditor(
 			WORD height,
 			bool hasMainControl,
-			CPropGridCtrl::TSize valueSize,
-			CPropGridCtrl::TOnEllipsisButtonClicked onEllipsisBtnClicked,
-			CPropGridCtrl::TOnValueChanged onValueChanged
+			PropGrid::TSize valueSize,
+			PropGrid::TOnEllipsisButtonClicked onEllipsisBtnClicked,
+			PropGrid::TOnValueChanged onValueChanged
 		);
 	public:
-		const CPropGridCtrl::TSize valueSize;
+		const PropGrid::TSize valueSize;
 	};
 
 	#pragma pack(1)
 	struct TStringEditor:public TEditor{
 		const bool wideChar;
-		const CPropGridCtrl::TString::TOnValueConfirmed onValueConfirmed;
+		const PropGrid::String::TOnValueConfirmed onValueConfirmed;
 	protected:
 		static HWND __createEditBox__(HWND hParent,UINT extraStyle);
 
@@ -70,11 +70,11 @@
 		LRESULT __mainCtrl_wndProc__(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam) const override;
 
 		TStringEditor(
-			CPropGridCtrl::TOnEllipsisButtonClicked onEllipsisBtnClicked,
+			PropGrid::TOnEllipsisButtonClicked onEllipsisBtnClicked,
 			bool wideChar,
-			CPropGridCtrl::TSize nCharsMax,
-			CPropGridCtrl::TString::TOnValueConfirmed onValueConfirmed,
-			CPropGridCtrl::TOnValueChanged onValueChanged
+			PropGrid::TSize nCharsMax,
+			PropGrid::String::TOnValueConfirmed onValueConfirmed,
+			PropGrid::TOnValueChanged onValueChanged
 		);
 	};
 
@@ -86,12 +86,12 @@
 		bool __tryToAcceptMainCtrlValue__() const override;
 	public:
 		TFixedPaddedStringEditor(
-			CPropGridCtrl::TOnEllipsisButtonClicked onEllipsisBtnClicked,
+			PropGrid::TOnEllipsisButtonClicked onEllipsisBtnClicked,
 			bool wideChar,
-			CPropGridCtrl::TSize nCharsMax,
-			CPropGridCtrl::TString::TOnValueConfirmed onValueConfirmed,
+			PropGrid::TSize nCharsMax,
+			PropGrid::String::TOnValueConfirmed onValueConfirmed,
 			WCHAR paddingChar,
-			CPropGridCtrl::TOnValueChanged onValueChanged
+			PropGrid::TOnValueChanged onValueChanged
 		);
 	};
 
@@ -102,14 +102,14 @@
 	public:
 		TDynamicStringEditor(
 			bool wideChar,
-			CPropGridCtrl::TString::TOnValueConfirmed onValueConfirmed,
-			CPropGridCtrl::TOnValueChanged onValueChanged
+			PropGrid::String::TOnValueConfirmed onValueConfirmed,
+			PropGrid::TOnValueChanged onValueChanged
 		);
 	};
 
 	#pragma pack(1)
 	struct TBooleanEditor sealed:public TEditor{
-		const CPropGridCtrl::TBoolean::TOnValueConfirmed onValueConfirmed;
+		const PropGrid::Boolean::TOnValueConfirmed onValueConfirmed;
 		const DWORD reservedValue;
 		const bool reservedForTrue; // True <=> the ReservedValue is for True, otherwise the ReservedValue is for False
 	protected:
@@ -119,20 +119,20 @@
 		LRESULT __mainCtrl_wndProc__(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam) const override;
 	public:
 		TBooleanEditor(
-			CPropGridCtrl::TSize nValueBytes,
+			PropGrid::TSize nValueBytes,
 			DWORD reservedValue,
 			bool reservedForTrue,
-			CPropGridCtrl::TBoolean::TOnValueConfirmed onValueConfirmed,
-			CPropGridCtrl::TOnValueChanged onValueChanged
+			PropGrid::Boolean::TOnValueConfirmed onValueConfirmed,
+			PropGrid::TOnValueChanged onValueChanged
 		);
 	};
 
 	#pragma pack(1)
 	struct TIntegerEditor sealed:public TStringEditor{
-		const CPropGridCtrl::TSize nValueBytes;
+		const PropGrid::TSize nValueBytes;
 		const BYTE features;
-		const CPropGridCtrl::TInteger::TUpDownLimits limits;
-		const CPropGridCtrl::TInteger::TOnValueConfirmed onValueConfirmed;
+		const PropGrid::Integer::TUpDownLimits limits;
+		const PropGrid::Integer::TOnValueConfirmed onValueConfirmed;
 	protected:
 		void __drawValue__(const TPropGridInfo::TItem::TValue &value,PDRAWITEMSTRUCT pdis) const override;
 		HWND __createMainControl__(const TPropGridInfo::TItem::TValue &value,HWND hParent) const override;
@@ -140,38 +140,38 @@
 		LRESULT __mainCtrl_wndProc__(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam) const override;
 	public:
 		TIntegerEditor(
-			CPropGridCtrl::TSize nValueBytes,
+			PropGrid::TSize nValueBytes,
 			BYTE features,
-			CPropGridCtrl::TInteger::RCUpDownLimits rLimits,
-			CPropGridCtrl::TInteger::TOnValueConfirmed onValueConfirmed,
-			CPropGridCtrl::TOnValueChanged onValueChanged
+			PropGrid::Integer::RCUpDownLimits rLimits,
+			PropGrid::Integer::TOnValueConfirmed onValueConfirmed,
+			PropGrid::TOnValueChanged onValueChanged
 		);
 	};
 
 	#pragma pack(1)
 	struct TCustomEnumEditor sealed:public TEditor{
 		const bool wideChar;
-		const CPropGridCtrl::TEnum::TGetValueDesc getValueDesc;
-		const CPropGridCtrl::TDrawValueHandler drawValue;
-		const CPropGridCtrl::TEnum::TGetValueList getValueList;
-		const CPropGridCtrl::TEnum::TFreeValueList freeValueList;
-		const CPropGridCtrl::TEnum::TOnValueConfirmed onValueConfirmed;
+		const PropGrid::Enum::TGetValueDesc getValueDesc;
+		const PropGrid::TDrawValueHandler drawValue;
+		const PropGrid::Enum::TGetValueList getValueList;
+		const PropGrid::Enum::TFreeValueList freeValueList;
+		const PropGrid::Enum::TOnValueConfirmed onValueConfirmed;
 	protected:
-		LPCWSTR __getValueDescW__(CPropGridCtrl::PCustomParam param,CPropGridCtrl::TEnum::UValue value,PWCHAR buf,short bufCapacity) const;
+		LPCWSTR __getValueDescW__(PropGrid::PCustomParam param,PropGrid::Enum::UValue value,PWCHAR buf,short bufCapacity) const;
 		void __drawValue__(const TPropGridInfo::TItem::TValue &value,PDRAWITEMSTRUCT pdis) const override;
 		HWND __createMainControl__(const TPropGridInfo::TItem::TValue &value,HWND hParent) const override;
 		bool __tryToAcceptMainCtrlValue__() const override;
 	public:
 		TCustomEnumEditor(
-			CPropGridCtrl::TSize nValueBytes,
+			PropGrid::TSize nValueBytes,
 			WORD height,
 			bool wideChar,
-			CPropGridCtrl::TEnum::TGetValueDesc getValueDesc,
-			CPropGridCtrl::TDrawValueHandler drawValue,
-			CPropGridCtrl::TEnum::TGetValueList getValueList,
-			CPropGridCtrl::TEnum::TFreeValueList freeValueList,
-			CPropGridCtrl::TEnum::TOnValueConfirmed onValueConfirmed,
-			CPropGridCtrl::TOnValueChanged onValueChanged
+			PropGrid::Enum::TGetValueDesc getValueDesc,
+			PropGrid::TDrawValueHandler drawValue,
+			PropGrid::Enum::TGetValueList getValueList,
+			PropGrid::Enum::TFreeValueList freeValueList,
+			PropGrid::Enum::TOnValueConfirmed onValueConfirmed,
+			PropGrid::TOnValueChanged onValueChanged
 		);
 	};
 
@@ -179,16 +179,16 @@
 	struct TFileNameEditor sealed:public TFixedPaddedStringEditor{
 		TFileNameEditor(
 			bool wideChar,
-			CPropGridCtrl::TSize nCharsMax,
-			CPropGridCtrl::TString::TOnValueConfirmed onValueConfirmed,
-			CPropGridCtrl::TOnValueChanged onValueChanged
+			PropGrid::TSize nCharsMax,
+			PropGrid::String::TOnValueConfirmed onValueConfirmed,
+			PropGrid::TOnValueChanged onValueChanged
 		);
 	};
 
 	#pragma pack(1)
 	struct THyperlinkEditor sealed:public TEditor{
 		const bool wideChar;
-		const CPropGridCtrl::THyperlink::TOnHyperlinkClicked onHyperlinkClicked;
+		const PropGrid::Hyperlink::TOnHyperlinkClicked onHyperlinkClicked;
 	private:
 		void __drawValue__(const TPropGridInfo::TItem::TValue &value,PDRAWITEMSTRUCT pdis) const override;
 		HWND __createMainControl__(const TPropGridInfo::TItem::TValue &value,HWND hParent) const override;
@@ -197,16 +197,16 @@
 	public:
 		THyperlinkEditor(
 			bool wideChar,
-			CPropGridCtrl::THyperlink::TOnHyperlinkClicked onHyperlinkClicked,
-			CPropGridCtrl::TOnValueChanged onValueChanged
+			PropGrid::Hyperlink::TOnHyperlinkClicked onHyperlinkClicked,
+			PropGrid::TOnValueChanged onValueChanged
 		);
 	};
 
 	#pragma pack(1)
 	typedef const struct TCustomEditor sealed:public TEditor{
-		const CPropGridCtrl::TDrawValueHandler drawValue;
-		const CPropGridCtrl::TCustom::TCreateCustomMainEditor createCustomMainEditor;
-		const CPropGridCtrl::TCustom::TOnValueConfirmed onValueConfirmed;
+		const PropGrid::TDrawValueHandler drawValue;
+		const PropGrid::Custom::TCreateCustomMainEditor createCustomMainEditor;
+		const PropGrid::Custom::TOnValueConfirmed onValueConfirmed;
 	protected:
 		void __drawValue__(const TPropGridInfo::TItem::TValue &value,PDRAWITEMSTRUCT pdis) const override;
 		HWND __createMainControl__(const TPropGridInfo::TItem::TValue &value,HWND hParent) const override;
@@ -214,12 +214,12 @@
 	public:
 		TCustomEditor(
 			WORD height,
-			CPropGridCtrl::TSize nValueBytes,
-			CPropGridCtrl::TDrawValueHandler drawValue,
-			CPropGridCtrl::TCustom::TCreateCustomMainEditor createCustomMainEditor,
-			CPropGridCtrl::TOnEllipsisButtonClicked onEllipsisBtnClicked,
-			CPropGridCtrl::TCustom::TOnValueConfirmed onValueConfirmed,
-			CPropGridCtrl::TOnValueChanged onValueChanged
+			PropGrid::TSize nValueBytes,
+			PropGrid::TDrawValueHandler drawValue,
+			PropGrid::Custom::TCreateCustomMainEditor createCustomMainEditor,
+			PropGrid::TOnEllipsisButtonClicked onEllipsisBtnClicked,
+			PropGrid::Custom::TOnValueConfirmed onValueConfirmed,
+			PropGrid::TOnValueChanged onValueChanged
 		);
 	} *PCCustomEditor;
 

@@ -1,16 +1,16 @@
 #include "stdafx.h"
 
-	static bool WINAPI __alwaysAccept__(CPropGridCtrl::PCustomParam,HWND,CPropGridCtrl::PValue){
+	static bool WINAPI __alwaysAccept__(PropGrid::PCustomParam,HWND,PropGrid::PValue){
 		return true; // new Value is by default always accepted
 	}
 
 	TCustomEditor::TCustomEditor(	WORD height,
-									CPropGridCtrl::TSize nValueBytes,
-									CPropGridCtrl::TDrawValueHandler drawValue,
-									CPropGridCtrl::TCustom::TCreateCustomMainEditor createCustomMainEditor,
-									CPropGridCtrl::TOnEllipsisButtonClicked onEllipsisBtnClicked,
-									CPropGridCtrl::TCustom::TOnValueConfirmed onValueConfirmed,
-									CPropGridCtrl::TOnValueChanged onValueChanged
+									PropGrid::TSize nValueBytes,
+									PropGrid::TDrawValueHandler drawValue,
+									PropGrid::Custom::TCreateCustomMainEditor createCustomMainEditor,
+									PropGrid::TOnEllipsisButtonClicked onEllipsisBtnClicked,
+									PropGrid::Custom::TOnValueConfirmed onValueConfirmed,
+									PropGrid::TOnValueChanged onValueChanged
 								)
 		// ctor
 		: TEditor( height, createCustomMainEditor!=nullptr, nValueBytes, onEllipsisBtnClicked, onValueChanged )
@@ -55,7 +55,7 @@
 
 
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TCustom::DefineEditor(WORD height,TSize nValueBytes,TDrawValueHandler drawValue,TCreateCustomMainEditor createCustomMainEditor,TOnEllipsisButtonClicked onEllipsisBtnClicked,TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged){
+	PropGrid::PCEditor PropGrid::Custom::DefineEditor(WORD height,TSize nValueBytes,TDrawValueHandler drawValue,TCreateCustomMainEditor createCustomMainEditor,TOnEllipsisButtonClicked onEllipsisBtnClicked,TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
 					new TCustomEditor(	height ? height : EDITOR_DEFAULT_HEIGHT,

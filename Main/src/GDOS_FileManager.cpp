@@ -185,7 +185,7 @@
 	#define EXTENSION_MIN	1 /* because 0 = Empty DirectoryEntry */
 	#define EXTENSION_MAX 255
 
-	bool WINAPI CGDOS::CGdosFileManagerView::CExtensionEditor::__onChanged__(PVOID file,CPropGridCtrl::TEnum::UValue newExt){
+	bool WINAPI CGDOS::CGdosFileManagerView::CExtensionEditor::__onChanged__(PVOID file,PropGrid::Enum::UValue newExt){
 		// changes the "extension" of selected File
 		const PGDOS gdos=(PGDOS)CDos::GetFocused();
 		// - validating File's new Name and Extension
@@ -274,17 +274,17 @@ error:			*de=tmp; // recovering the original DirectoryEntry
 		// - successfully changed FileType
 		return true;
 	}
-	static CPropGridCtrl::TEnum::PCValueList WINAPI __createValues__(PVOID file,WORD &rnValues){
+	static PropGrid::Enum::PCValueList WINAPI __createValues__(PVOID file,WORD &rnValues){
 		// creates and returns the List of possible File "extensions"
 		PBYTE list=(PBYTE)::malloc( rnValues=EXTENSION_MAX+1-EXTENSION_MIN ), a=list;
 		for( WORD p=EXTENSION_MIN; p<=EXTENSION_MAX; *a++=p++ );
-		return (CPropGridCtrl::TEnum::PCValueList)list;
+		return (PropGrid::Enum::PCValueList)list;
 	}
-	static void WINAPI __freeValues__(PVOID,CPropGridCtrl::TEnum::PCValueList values){
+	static void WINAPI __freeValues__(PVOID,PropGrid::Enum::PCValueList values){
 		// disposes the List of possible File "extensions"
 		::free((PVOID)values);
 	}
-	LPCTSTR WINAPI CGDOS::CGdosFileManagerView::CExtensionEditor::__getDescription__(PVOID file,CPropGridCtrl::TEnum::UValue extension,PTCHAR buf,short bufCapacity){
+	LPCTSTR WINAPI CGDOS::CGdosFileManagerView::CExtensionEditor::__getDescription__(PVOID file,PropGrid::Enum::UValue extension,PTCHAR buf,short bufCapacity){
 		// populates the Buffer with File "extension" description and returns the Buffer
 		TDirectoryEntry tmp;
 			tmp.fileType=(TDirectoryEntry::TFileType)extension.charValue;
@@ -296,7 +296,7 @@ error:			*de=tmp; // recovering the original DirectoryEntry
 		const CSpectrumFileManagerView *const pZxFileManager=(CSpectrumFileManagerView *)dos->pFileManager;
 		const PEditorBase result=pZxFileManager->__createStdEditor__(
 			de, &( data=de->fileType ),
-			CPropGridCtrl::TEnum::DefineConstStringListEditorA( sizeof(data), __createValues__, __getDescription__, __freeValues__, __onChanged__ )
+			PropGrid::Enum::DefineConstStringListEditorA( sizeof(data), __createValues__, __getDescription__, __freeValues__, __onChanged__ )
 		);
 		::SendMessage( result->hEditor, WM_SETFONT, (WPARAM)pZxFileManager->rFont.m_hObject, 0 );
 		return result;

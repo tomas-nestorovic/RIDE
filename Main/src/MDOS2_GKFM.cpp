@@ -134,7 +134,7 @@
 	#define GKFM_IMPORT_NAME	_T("run.P ZXP500001L2200T8")
 	#define GKFM_ONLINE_NAME	_T("MDOS2/GKFM/") GKFM_IMPORT_NAME
 
-	static bool WINAPI __pg_updateOnline__(CPropGridCtrl::PCustomParam,int hyperlinkId,LPCTSTR hyperlinkName){
+	static bool WINAPI __pg_updateOnline__(PropGrid::PCustomParam,int hyperlinkId,LPCTSTR hyperlinkName){
 		// True <=> PropertyGrid's Editor can be destroyed after this function has terminated, otherwise False
 		BYTE gkfmDataBuffer[16384]; // sufficiently big buffer
 		DWORD gkfmDataLength;
@@ -156,46 +156,46 @@
 
 	void CMDOS2::TBootSector::UReserved1::TGKFileManager::__addToPropertyGrid__(HWND hPropGrid,PBootSector boot){
 		// adds a property showing the presence of GK's File Manager on the disk into PropertyGrid
-		const HANDLE hGkfm=CPropGridCtrl::AddCategory(hPropGrid,nullptr,GKFM_NAME);
+		const HANDLE hGkfm=PropGrid::AddCategory(hPropGrid,nullptr,GKFM_NAME);
 		TGKFileManager &rGkfm=boot->reserved1.gkfm;
 		const bool recognized=rGkfm.id==0x4d46; // textual representation of "FM" string
-		CPropGridCtrl::EnableProperty(	hPropGrid,
-										CPropGridCtrl::AddProperty(	hPropGrid, hGkfm, _T("Status"),
+		PropGrid::EnableProperty(	hPropGrid,
+										PropGrid::AddProperty(	hPropGrid, hGkfm, _T("Status"),
 																	recognized?"Recognized":"Not recognized",
-																	CPropGridCtrl::TString::DefineFixedLengthEditorA(0)
+																	PropGrid::String::DefineFixedLengthEditorA(0)
 																),
 										false
 									);
 		if (recognized){
 			// . basic preview
-			CPropGridCtrl::AddProperty(	hPropGrid, hGkfm, _T("Basic"),
+			PropGrid::AddProperty(	hPropGrid, hGkfm, _T("Basic"),
 										boot,
-										CPropGridCtrl::TCustom::DefineEditor( __pg_getPropertyHeight__(), sizeof(TBootSector), __pg_drawProperty__, nullptr, __pg_editProperty__ )
+										PropGrid::Custom::DefineEditor( __pg_getPropertyHeight__(), sizeof(TBootSector), __pg_drawProperty__, nullptr, __pg_editProperty__ )
 									);
 			// . advanced properties
-			const HANDLE hAdvanced=CPropGridCtrl::AddCategory( hPropGrid, hGkfm, BOOT_SECTOR_ADVANCED, false );
-				const CPropGridCtrl::PCEditor advEditor=CPropGridCtrl::TInteger::DefineWordEditor(__warnOnEditingAdvancedValue__);
-				CPropGridCtrl::AddProperty( hPropGrid, hAdvanced, _T("Text address"),
+			const HANDLE hAdvanced=PropGrid::AddCategory( hPropGrid, hGkfm, BOOT_SECTOR_ADVANCED, false );
+				const PropGrid::PCEditor advEditor=PropGrid::Integer::DefineWordEditor(__warnOnEditingAdvancedValue__);
+				PropGrid::AddProperty( hPropGrid, hAdvanced, _T("Text address"),
 											&rGkfm.aText, advEditor
 										);
-				CPropGridCtrl::AddProperty( hPropGrid, hAdvanced, _T("Window address"),
+				PropGrid::AddProperty( hPropGrid, hAdvanced, _T("Window address"),
 											&rGkfm.aWnd, advEditor
 										);
-				CPropGridCtrl::AddProperty( hPropGrid, hAdvanced, _T("Icon address"),
+				PropGrid::AddProperty( hPropGrid, hAdvanced, _T("Icon address"),
 											&rGkfm.aIcon, advEditor
 										);
-				CPropGridCtrl::AddProperty( hPropGrid, hAdvanced, _T("VideoRAM address"),
+				PropGrid::AddProperty( hPropGrid, hAdvanced, _T("VideoRAM address"),
 											&rGkfm.aVRam, advEditor
 										);
 			// . offering to update the GKFM on the disk from an on-line resource
-			CPropGridCtrl::AddProperty(	hPropGrid, hGkfm, MDOS2_RUNP,
+			PropGrid::AddProperty(	hPropGrid, hGkfm, MDOS2_RUNP,
 										BOOT_SECTOR_UPDATE_ONLINE_HYPERLINK,
-										CPropGridCtrl::THyperlink::DefineEditorA(__pg_updateOnline__)
+										PropGrid::Hyperlink::DefineEditorA(__pg_updateOnline__)
 									);
 		}else
-			CPropGridCtrl::AddProperty(	hPropGrid, hGkfm, _T(""),
+			PropGrid::AddProperty(	hPropGrid, hGkfm, _T(""),
 										"<a>Create</a>",
-										CPropGridCtrl::THyperlink::DefineEditorA( __pg_createNew__, CBootView::__updateCriticalSectorView__ )
+										PropGrid::Hyperlink::DefineEditorA( __pg_createNew__, CBootView::__updateCriticalSectorView__ )
 									);
 	}
 
@@ -392,7 +392,7 @@ errorText:				TCHAR buf[400];
 			return false;
 	}
 
-	bool WINAPI CMDOS2::TBootSector::UReserved1::TGKFileManager::__pg_createNew__(CPropGridCtrl::PCustomParam param,int hyperlinkId,LPCTSTR hyperlinkName){
+	bool WINAPI CMDOS2::TBootSector::UReserved1::TGKFileManager::__pg_createNew__(PropGrid::PCustomParam param,int hyperlinkId,LPCTSTR hyperlinkName){
 		// True <=> PropertyGrid's Editor can be destroyed after this function has terminated, otherwise False
 		const PMDOS2 mdos=(PMDOS2)CDos::GetFocused();
 		const PImage image=mdos->image;

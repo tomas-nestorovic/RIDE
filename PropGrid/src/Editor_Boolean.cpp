@@ -1,17 +1,17 @@
 #include "stdafx.h"
 
-	static bool WINAPI __alwaysAccept__(CPropGridCtrl::PCustomParam,bool){
+	static bool WINAPI __alwaysAccept__(PropGrid::PCustomParam,bool){
 		return true; // new Value is by default always accepted
 	}
 
-	TBooleanEditor::TBooleanEditor(	CPropGridCtrl::TSize nValueBytes,
+	TBooleanEditor::TBooleanEditor(	PropGrid::TSize nValueBytes,
 									DWORD reservedValue,
 									bool reservedForTrue,
-									CPropGridCtrl::TBoolean::TOnValueConfirmed onValueConfirmed,
-									CPropGridCtrl::TOnValueChanged onValueChanged
+									PropGrid::Boolean::TOnValueConfirmed onValueConfirmed,
+									PropGrid::TOnValueChanged onValueChanged
 								)
 		// ctor
-		: TEditor( EDITOR_DEFAULT_HEIGHT, true, std::min<CPropGridCtrl::TSize>(nValueBytes,sizeof(DWORD)), nullptr, onValueChanged )
+		: TEditor( EDITOR_DEFAULT_HEIGHT, true, std::min<PropGrid::TSize>(nValueBytes,sizeof(DWORD)), nullptr, onValueChanged )
 		, reservedValue(reservedValue) , reservedForTrue(reservedForTrue)
 		, onValueConfirmed( onValueConfirmed ? onValueConfirmed : __alwaysAccept__ ) {
 	}
@@ -112,7 +112,7 @@
 
 
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TBoolean::DefineEditor(TSize nValueBytes,TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged,DWORD reservedValue,bool reservedForTrue){
+	PropGrid::PCEditor PropGrid::Boolean::DefineEditor(TSize nValueBytes,TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged,DWORD reservedValue,bool reservedForTrue){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
 					new TBooleanEditor( nValueBytes, reservedValue, reservedForTrue, onValueConfirmed, onValueChanged ),
@@ -120,7 +120,7 @@
 				);
 	}
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::TBoolean::DefineByteEditor(TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged,BYTE reservedValue,bool reservedForTrue){
+	PropGrid::PCEditor PropGrid::Boolean::DefineByteEditor(TOnValueConfirmed onValueConfirmed,TOnValueChanged onValueChanged,BYTE reservedValue,bool reservedForTrue){
 		// creates and returns an Editor with specified parameters
 		return DefineEditor( sizeof(BYTE), onValueConfirmed, onValueChanged, reservedValue, reservedForTrue );
 	}

@@ -1,12 +1,12 @@
 #include "stdafx.h"
 
-	static bool WINAPI __doNothingAfterClick__(CPropGridCtrl::PCustomParam,int,LPCTSTR){
+	static bool WINAPI __doNothingAfterClick__(PropGrid::PCustomParam,int,LPCTSTR){
 		return true; // True = destroy the SysLink after clicking on a hyperlink, otherwise False
 	}
 
 	THyperlinkEditor::THyperlinkEditor(	bool wideChar,
-										CPropGridCtrl::THyperlink::TOnHyperlinkClicked onHyperlinkClicked,
-										CPropGridCtrl::TOnValueChanged onValueChanged
+										PropGrid::Hyperlink::TOnHyperlinkClicked onHyperlinkClicked,
+										PropGrid::TOnValueChanged onValueChanged
 									)
 		// ctor
 		// - base
@@ -95,7 +95,7 @@
 						::SetFocus(hWnd); // renewing the focus, should it be lost during the Action
 					ignoreRequestToDestroy=false;
 					if (destroy)
-						CPropGridCtrl::TryToAcceptCurrentValueAndCloseEditor(); // on success also destroys the Editor
+						PropGrid::TryToAcceptCurrentValueAndCloseEditor(); // on success also destroys the Editor
 					return 0;
 				}else
 					break;
@@ -112,7 +112,7 @@
 
 
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::THyperlink::DefineEditorA(TOnHyperlinkClickedA onHyperlinkClicked,TOnValueChanged onValueChanged){
+	PropGrid::PCEditor PropGrid::Hyperlink::DefineEditorA(TOnHyperlinkClickedA onHyperlinkClicked,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
 					new THyperlinkEditor( false, (TOnHyperlinkClicked)onHyperlinkClicked, onValueChanged ),
@@ -120,7 +120,7 @@
 				);
 	}
 
-	CPropGridCtrl::PCEditor CPropGridCtrl::THyperlink::DefineEditorW(TOnHyperlinkClickedW onHyperlinkClicked,TOnValueChanged onValueChanged){
+	PropGrid::PCEditor PropGrid::Hyperlink::DefineEditorW(TOnHyperlinkClickedW onHyperlinkClicked,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
 		return	RegisteredEditors.__add__(
 					new THyperlinkEditor( true, (TOnHyperlinkClicked)onHyperlinkClicked, onValueChanged ),

@@ -50,9 +50,9 @@
 
 			const Utils::CRideFont font;
 			mutable class CLineComposerPropGridEditor sealed{
-				static HWND WINAPI __create__(CPropGridCtrl::PValue value,CPropGridCtrl::TSize combinedValue,HWND hParent);
-				static void WINAPI __drawValue__(CPropGridCtrl::PCustomParam,CPropGridCtrl::PCValue value,CPropGridCtrl::TSize combinedValue,PDRAWITEMSTRUCT pdis);
-				static bool WINAPI __onChanged__(CPropGridCtrl::PCustomParam,HWND,CPropGridCtrl::PValue);
+				static HWND WINAPI __create__(PropGrid::PValue value,PropGrid::TSize combinedValue,HWND hParent);
+				static void WINAPI __drawValue__(PropGrid::PCustomParam,PropGrid::PCValue value,PropGrid::TSize combinedValue,PDRAWITEMSTRUCT pdis);
+				static bool WINAPI __onChanged__(PropGrid::PCustomParam,HWND,PropGrid::PValue);
 				static LRESULT CALLBACK __wndProc__(HWND hEditor,UINT msg,WPARAM wParam,LPARAM lParam);
 
 				HWND handle;
@@ -71,7 +71,7 @@
 				char buf[255]; // "big enough" to contain any ZX Spectrum line
 				void __addChar__(char c);
 			public:
-				CPropGridCtrl::PCEditor Create(BYTE nCharsMax,char paddingChar,CPropGridCtrl::TCustom::TOnValueConfirmed onValueConfirmed) const;
+				PropGrid::PCEditor Create(BYTE nCharsMax,char paddingChar,PropGrid::Custom::TOnValueConfirmed onValueConfirmed) const;
 				LPCSTR GetCurrentZxText() const;
 				BYTE GetCurrentZxTextLength() const;
 			} lineComposerPropGridEditor;
@@ -105,8 +105,8 @@
 		class CSpectrumFileManagerView:public CFileManagerView{
 		protected:
 			mutable class CSingleCharExtensionEditor sealed{
-				static bool WINAPI __onChanged__(PVOID file,CPropGridCtrl::TEnum::UValue newExt);
-				static LPCTSTR WINAPI __getDescription__(PVOID file,CPropGridCtrl::TEnum::UValue extension,PTCHAR buf,short bufCapacity);
+				static bool WINAPI __onChanged__(PVOID file,PropGrid::Enum::UValue newExt);
+				static LPCTSTR WINAPI __getDescription__(PVOID file,PropGrid::Enum::UValue extension,PTCHAR buf,short bufCapacity);
 
 				BYTE data;
 			public:
@@ -123,7 +123,7 @@
 
 			mutable class CStdParamEditor sealed{
 			public:
-				PEditorBase Create(PFile file,PWORD pwParam,CPropGridCtrl::TInteger::TOnValueConfirmed fnOnConfirmed);
+				PEditorBase Create(PFile file,PWORD pwParam,PropGrid::Integer::TOnValueConfirmed fnOnConfirmed);
 			} stdParamEditor;
 
 			PTCHAR GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant,PTCHAR pOutBuffer) const override sealed;
@@ -184,13 +184,13 @@
 						STD_AND_HEADERLESS_AND_FRAGMENT
 					};
 				private:
-					static bool WINAPI __onChanged__(PVOID file,CPropGridCtrl::TEnum::UValue _newType);
-					static CPropGridCtrl::TEnum::PCValueList WINAPI __createValues__(PVOID file,WORD &rnValues);
+					static bool WINAPI __onChanged__(PVOID file,PropGrid::Enum::UValue _newType);
+					static PropGrid::Enum::PCValueList WINAPI __createValues__(PVOID file,WORD &rnValues);
 
 					BYTE data;
 					TDisplayTypes types;
 				public:
-					static LPCTSTR WINAPI __getDescription__(PVOID file,CPropGridCtrl::TEnum::UValue stdType,PTCHAR,short);
+					static LPCTSTR WINAPI __getDescription__(PVOID file,PropGrid::Enum::UValue stdType,PTCHAR,short);
 					
 					PEditorBase Create(PFile file,TZxRom::TFileType type,TDisplayTypes _types);
 				} stdHeaderTypeEditor;

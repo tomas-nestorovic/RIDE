@@ -654,7 +654,7 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 					}
 				// . COLUMN: Type
 				r.right=*tabs-5;
-					CPropGridCtrl::TEnum::UValue v;
+					PropGrid::Enum::UValue v;
 						v.longValue=h->type;
 					::DrawText( dc, CStdHeaderTypeEditor::__getDescription__(nullptr,v,nullptr,0),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
 				r.left=*tabs++;
@@ -867,7 +867,7 @@ drawChecksum:	r.right=*tabs++;
 
 
 
-	bool WINAPI CSpectrumDos::CTape::CTapeFileManagerView::CStdHeaderTypeEditor::__onChanged__(PVOID file,CPropGridCtrl::TEnum::UValue newType){
+	bool WINAPI CSpectrumDos::CTape::CTapeFileManagerView::CStdHeaderTypeEditor::__onChanged__(PVOID file,PropGrid::Enum::UValue newType){
 		// changes the Type of File
 		const PDos dos=CDos::GetFocused();
 		CTapeFileManagerView *const pTapeFileManager=(CTapeFileManagerView *)dos->pFileManager;
@@ -907,7 +907,7 @@ drawChecksum:	r.right=*tabs++;
 			}
 		return __markAsDirty__(file,0);
 	}
-	CPropGridCtrl::TEnum::PCValueList WINAPI CSpectrumDos::CTape::CTapeFileManagerView::CStdHeaderTypeEditor::__createValues__(PVOID file,WORD &rnValues){
+	PropGrid::Enum::PCValueList WINAPI CSpectrumDos::CTape::CTapeFileManagerView::CStdHeaderTypeEditor::__createValues__(PVOID file,WORD &rnValues){
 		// returns the list of standard File Types
 		static const TZxRom::TFileType List[]={
 			TZxRom::PROGRAM,
@@ -921,7 +921,7 @@ drawChecksum:	r.right=*tabs++;
 		rnValues=4+pTapeFileManager->stdHeaderTypeEditor.types;
 		return List;
 	}
-	LPCTSTR WINAPI CSpectrumDos::CTape::CTapeFileManagerView::CStdHeaderTypeEditor::__getDescription__(PVOID file,CPropGridCtrl::TEnum::UValue stdType,PTCHAR,short){
+	LPCTSTR WINAPI CSpectrumDos::CTape::CTapeFileManagerView::CStdHeaderTypeEditor::__getDescription__(PVOID file,PropGrid::Enum::UValue stdType,PTCHAR,short){
 		// returns the textual description of the specified Type
 		switch ((TZxRom::TFileType)stdType.charValue){
 			case TZxRom::PROGRAM		: return _T("Program");
@@ -941,7 +941,7 @@ drawChecksum:	r.right=*tabs++;
 		types=_types;
 		const PEditorBase result=pZxFileManager->__createStdEditor__(
 			file, &( data=type ),
-			CPropGridCtrl::TEnum::DefineConstStringListEditorA( sizeof(data), __createValues__, __getDescription__, nullptr, __onChanged__ )
+			PropGrid::Enum::DefineConstStringListEditorA( sizeof(data), __createValues__, __getDescription__, nullptr, __onChanged__ )
 		);
 		::SendMessage( CEditorBase::pSingleShown->hEditor, WM_SETFONT, (WPARAM)pZxFileManager->rFont.m_hObject, 0 );
 		return result;

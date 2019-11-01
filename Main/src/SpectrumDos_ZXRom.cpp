@@ -194,7 +194,7 @@
 
 
 
-	HWND WINAPI CSpectrumDos::TZxRom::CLineComposerPropGridEditor::__create__(CPropGridCtrl::PValue value,CPropGridCtrl::TSize combinedValue,HWND hParent){
+	HWND WINAPI CSpectrumDos::TZxRom::CLineComposerPropGridEditor::__create__(PropGrid::PValue value,PropGrid::TSize combinedValue,HWND hParent){
 		// - initializing the Editor
 		CLineComposerPropGridEditor &rEditor=((CSpectrumFileManagerView *)CDos::GetFocused()->pFileManager)->zxRom.lineComposerPropGridEditor;
 		rEditor.length = rEditor.lengthMax = LOBYTE(combinedValue);
@@ -215,7 +215,7 @@
 		return rEditor.handle = hEditor;
 	}
 
-	void WINAPI CSpectrumDos::TZxRom::CLineComposerPropGridEditor::__drawValue__(CPropGridCtrl::PCustomParam,CPropGridCtrl::PCValue value,CPropGridCtrl::TSize combinedValue,PDRAWITEMSTRUCT pdis){
+	void WINAPI CSpectrumDos::TZxRom::CLineComposerPropGridEditor::__drawValue__(PropGrid::PCustomParam,PropGrid::PCValue value,PropGrid::TSize combinedValue,PDRAWITEMSTRUCT pdis){
 		const TZxRom &rZxRom=((CSpectrumFileManagerView *)CDos::GetFocused()->pFileManager)->zxRom;
 		const HGDIOBJ hFont0=::SelectObject( pdis->hDC, rZxRom.font.m_hObject );
 			TCHAR bufT[4096];
@@ -228,7 +228,7 @@
 		::SelectObject(pdis->hDC,hFont0);
 	}
 
-	bool WINAPI CSpectrumDos::TZxRom::CLineComposerPropGridEditor::__onChanged__(CPropGridCtrl::PCustomParam,HWND,CPropGridCtrl::PValue value){
+	bool WINAPI CSpectrumDos::TZxRom::CLineComposerPropGridEditor::__onChanged__(PropGrid::PCustomParam,HWND,PropGrid::PValue value){
 		const PDos dos=CDos::GetFocused();
 		const CLineComposerPropGridEditor &rEditor=((CSpectrumFileManagerView *)dos->pFileManager)->zxRom.lineComposerPropGridEditor;
 		::memcpy(	::memset( value, rEditor.paddingChar, rEditor.lengthMax ),
@@ -443,9 +443,9 @@ addCharInWParam:						rEditor.__addChar__(wParam);
 		::InvalidateRect( handle, nullptr, TRUE );
 	}
 
-	CPropGridCtrl::PCEditor CSpectrumDos::TZxRom::CLineComposerPropGridEditor::Create(BYTE nCharsMax,char paddingChar,CPropGridCtrl::TCustom::TOnValueConfirmed onValueConfirmed) const{
+	PropGrid::PCEditor CSpectrumDos::TZxRom::CLineComposerPropGridEditor::Create(BYTE nCharsMax,char paddingChar,PropGrid::Custom::TOnValueConfirmed onValueConfirmed) const{
 		// creates and returns the ZX Spectrum line Editor
-		return CPropGridCtrl::TCustom::DefineEditor( 0, MAKEWORD(nCharsMax,paddingChar), __drawValue__, __create__, __help__, onValueConfirmed?onValueConfirmed:__onChanged__ );
+		return PropGrid::Custom::DefineEditor( 0, MAKEWORD(nCharsMax,paddingChar), __drawValue__, __create__, __help__, onValueConfirmed?onValueConfirmed:__onChanged__ );
 	}
 
 	LPCSTR CSpectrumDos::TZxRom::CLineComposerPropGridEditor::GetCurrentZxText() const{

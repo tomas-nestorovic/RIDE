@@ -221,13 +221,13 @@
 		CTrackMapView trackMap;
 
 		class CMsdos7BootView sealed:public CBootView{
-			static bool WINAPI __pg_createLabel__(CPropGridCtrl::PCustomParam,int hyperlinkId,LPCTSTR hyperlinkName);
-			static bool WINAPI __labelModified__(CPropGridCtrl::PCustomParam,LPCSTR,short);
-			static bool WINAPI __onMediumChanged__(PVOID,CPropGridCtrl::TEnum::UValue newValue);
-			static CPropGridCtrl::TEnum::PCValueList WINAPI __getListOfMedia__(PVOID,WORD &rnMedia);
-			static LPCTSTR WINAPI __getMediumDescription__(PVOID,CPropGridCtrl::TEnum::UValue medium,PTCHAR,short);
-			static CPropGridCtrl::TEnum::PCValueList WINAPI __getListOfMediaTypes__(PVOID,WORD &rnMediumTypes);
-			static LPCTSTR WINAPI __getMediumTypeDescription__(PVOID,CPropGridCtrl::TEnum::UValue mediumType,PTCHAR,short);
+			static bool WINAPI __pg_createLabel__(PropGrid::PCustomParam,int hyperlinkId,LPCTSTR hyperlinkName);
+			static bool WINAPI __labelModified__(PropGrid::PCustomParam,LPCSTR,short);
+			static bool WINAPI __onMediumChanged__(PVOID,PropGrid::Enum::UValue newValue);
+			static PropGrid::Enum::PCValueList WINAPI __getListOfMedia__(PVOID,WORD &rnMedia);
+			static LPCTSTR WINAPI __getMediumDescription__(PVOID,PropGrid::Enum::UValue medium,PTCHAR,short);
+			static PropGrid::Enum::PCValueList WINAPI __getListOfMediaTypes__(PVOID,WORD &rnMediumTypes);
+			static LPCTSTR WINAPI __getMediumTypeDescription__(PVOID,PropGrid::Enum::UValue mediumType,PTCHAR,short);
 
 			void GetCommonBootParameters(RCommonBootParameters rParam,PSectorData _boot) override;
 			void AddCustomBootParameters(HWND hPropGrid,HANDLE hGeometry,HANDLE hVolume,const TCommonBootParameters &rParam,PSectorData _boot) override;
@@ -238,7 +238,7 @@
 		} boot;
 
 		class CFsInfoView sealed:public CCriticalSectorView{
-			static bool WINAPI __sectorModified__(CPropGridCtrl::PCustomParam,int);
+			static bool WINAPI __sectorModified__(PropGrid::PCustomParam,int);
 
 			void OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint) override;
 		public:

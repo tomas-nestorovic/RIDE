@@ -104,9 +104,9 @@
 		};
 
 		class CTrdosBootView sealed:public CBootView{
-			static CPropGridCtrl::TEnum::PCValueList WINAPI __getListOfKnownFormats__(PVOID,WORD &rnFormats);
-			static LPCTSTR WINAPI __getFormatDescription__(PVOID,CPropGridCtrl::TEnum::UValue format,PTCHAR buf,short bufCapacity);
-			static bool WINAPI __onFormatChanged__(PVOID,CPropGridCtrl::TEnum::UValue newValue);
+			static PropGrid::Enum::PCValueList WINAPI __getListOfKnownFormats__(PVOID,WORD &rnFormats);
+			static LPCTSTR WINAPI __getFormatDescription__(PVOID,PropGrid::Enum::UValue format,PTCHAR buf,short bufCapacity);
+			static bool WINAPI __onFormatChanged__(PVOID,PropGrid::Enum::UValue newValue);
 
 			void GetCommonBootParameters(RCommonBootParameters rParam,PSectorData _boot) override;
 			void AddCustomBootParameters(HWND hPropGrid,HANDLE hGeometry,HANDLE hVolume,const TCommonBootParameters &rParam,PSectorData _boot) override;

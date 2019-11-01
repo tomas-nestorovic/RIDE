@@ -176,7 +176,7 @@
 	#define UNIRUN_IMPORT_NAME	_T("run.P ZXP98000aL1000T8")
 	#define UNIRUN_ONLINE_NAME	_T("MDOS2/UniRUN/") UNIRUN_IMPORT_NAME
 
-	static bool WINAPI __unirun_updateOnline__(CPropGridCtrl::PCustomParam,int hyperlinkId,LPCTSTR hyperlinkName){
+	static bool WINAPI __unirun_updateOnline__(PropGrid::PCustomParam,int hyperlinkId,LPCTSTR hyperlinkName){
 		// True <=> PropertyGrid's Editor can be destroyed after this function has terminated, otherwise False
 		BYTE unirunDataBuffer[8192]; // sufficiently big buffer
 		DWORD unirunDataLength;
@@ -199,29 +199,29 @@
 		// gets DOS-specific parameters from the Boot
 		const PBootSector boot=(PBootSector)_boot;
 		// . Volume
-		CPropGridCtrl::AddProperty(	hPropGrid, hVolume, _T("Label"), boot->label,
+		PropGrid::AddProperty(	hPropGrid, hVolume, _T("Label"), boot->label,
 									((CSpectrumFileManagerView *)tab.dos->pFileManager)->zxRom.lineComposerPropGridEditor.Create(MDOS2_VOLUME_LABEL_LENGTH_MAX,'\0',nullptr)
 								);
 		// . drives
-		const HANDLE hDrives=CPropGridCtrl::AddCategory(hPropGrid,nullptr,_T("Drives"));
-			const CPropGridCtrl::PCEditor driveEditor=CPropGridCtrl::TCustom::DefineEditor( 0, sizeof(TBootSector::TDiskAndDriveInfo), TBootSector::TDiskAndDriveInfo::__pg_drawProperty__, nullptr, TBootSector::TDiskAndDriveInfo::__pg_editProperty__ );
-			CPropGridCtrl::AddProperty(	hPropGrid, hDrives, _T("Used"),
+		const HANDLE hDrives=PropGrid::AddCategory(hPropGrid,nullptr,_T("Drives"));
+			const PropGrid::PCEditor driveEditor=PropGrid::Custom::DefineEditor( 0, sizeof(TBootSector::TDiskAndDriveInfo), TBootSector::TDiskAndDriveInfo::__pg_drawProperty__, nullptr, TBootSector::TDiskAndDriveInfo::__pg_editProperty__ );
+			PropGrid::AddProperty(	hPropGrid, hDrives, _T("Used"),
 										&boot->currDrive,
 										driveEditor
 									);
 			TBootSector::PDiskAndDriveInfo pddi=boot->drives; // drive information
 			for( TCHAR buf[]=_T("Drive @"); ++buf[6]<='D'; pddi++ )
-				CPropGridCtrl::AddProperty(	hPropGrid, hDrives, buf,
+				PropGrid::AddProperty(	hPropGrid, hDrives, buf,
 											pddi,
 											driveEditor
 										);
 		// . GK's File Manager
 		TBootSector::UReserved1::TGKFileManager::__addToPropertyGrid__(hPropGrid,boot);
 		// . UniRUN by Proxima
-		const HANDLE hUniRun=CPropGridCtrl::AddCategory(hPropGrid,nullptr,UNIRUN_NAME);
-			CPropGridCtrl::AddProperty(	hPropGrid, hUniRun, MDOS2_RUNP,
+		const HANDLE hUniRun=PropGrid::AddCategory(hPropGrid,nullptr,UNIRUN_NAME);
+			PropGrid::AddProperty(	hPropGrid, hUniRun, MDOS2_RUNP,
 										BOOT_SECTOR_UPDATE_ONLINE_HYPERLINK,
-										CPropGridCtrl::THyperlink::DefineEditorA(__unirun_updateOnline__)
+										PropGrid::Hyperlink::DefineEditorA(__unirun_updateOnline__)
 									);
 	}
 

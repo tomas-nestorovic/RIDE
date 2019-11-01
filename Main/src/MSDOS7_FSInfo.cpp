@@ -60,7 +60,7 @@
 			MSDOS->__markLogicalSectorAsDirty__( bootSector->fat32.fsInfo );
 	}
 
-	bool WINAPI CMSDOS7::CFsInfoView::__sectorModified__(CPropGridCtrl::PCustomParam,int){
+	bool WINAPI CMSDOS7::CFsInfoView::__sectorModified__(PropGrid::PCustomParam,int){
 		// marking the Boot Sector as dirty
 		const PMSDOS7 msdos=(PMSDOS7)CDos::GetFocused();
 		msdos->fsInfo.MarkSectorAsDirty();
@@ -79,24 +79,24 @@
 		__super::OnUpdate( pSender, lHint, pHint );
 		// - populating the PropertyGrid with values from the FS-Info Sector (if any found)
 		const PFsInfoSector fsInfo=GetSectorData();
-		CPropGridCtrl::EnableProperty(	propGrid.m_hWnd,
-										CPropGridCtrl::AddProperty(	propGrid.m_hWnd, nullptr, _T("Status"),
+		PropGrid::EnableProperty(	propGrid.m_hWnd,
+										PropGrid::AddProperty(	propGrid.m_hWnd, nullptr, _T("Status"),
 																	fsInfo?"Recognized":"Not recognized",
-																	CPropGridCtrl::TString::DefineFixedLengthEditorA(0)
+																	PropGrid::String::DefineFixedLengthEditorA(0)
 																),
 										false
 									);
 		if (fsInfo){
 			// FS-Info Sector found
-			const HANDLE hClusters=CPropGridCtrl::AddCategory(propGrid.m_hWnd,nullptr,_T("Clusters"));
-				const CPropGridCtrl::TInteger::TUpDownLimits limits={ 2, INT_MAX };
-				CPropGridCtrl::AddProperty(	propGrid.m_hWnd, hClusters, _T("First free"),
+			const HANDLE hClusters=PropGrid::AddCategory(propGrid.m_hWnd,nullptr,_T("Clusters"));
+				const PropGrid::Integer::TUpDownLimits limits={ 2, INT_MAX };
+				PropGrid::AddProperty(	propGrid.m_hWnd, hClusters, _T("First free"),
 											&fsInfo->firstFreeCluster,
-											CPropGridCtrl::TInteger::DefineEditor( sizeof(TCluster32), limits, __sectorModified__ )
+											PropGrid::Integer::DefineEditor( sizeof(TCluster32), limits, __sectorModified__ )
 										);
-				CPropGridCtrl::AddProperty(	propGrid.m_hWnd, hClusters, _T("Count of free"),
+				PropGrid::AddProperty(	propGrid.m_hWnd, hClusters, _T("Count of free"),
 											&fsInfo->nFreeClusters,
-											CPropGridCtrl::TInteger::DefineEditor( sizeof(TCluster32), CPropGridCtrl::TInteger::PositiveIntegerLimits, __sectorModified__ )
+											PropGrid::Integer::DefineEditor( sizeof(TCluster32), PropGrid::Integer::TUpDownLimits::PositiveInteger, __sectorModified__ )
 										);
 		}
 	}

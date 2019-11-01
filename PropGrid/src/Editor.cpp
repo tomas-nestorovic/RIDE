@@ -3,8 +3,8 @@
 	const TEditor::TControl *TEditor::pSingleShown;
 
 	TEditor::TControl::TControl(PCEditor editor,
-								CPropGridCtrl::PValue valueBuffer,
-								CPropGridCtrl::PCustomParam param,
+								PropGrid::PValue valueBuffer,
+								PropGrid::PCustomParam param,
 								DWORD style,
 								HWND hParent
 							)
@@ -63,9 +63,9 @@
 
 	TEditor::TEditor(	WORD height,
 						bool hasMainControl,
-						CPropGridCtrl::TSize valueSize,
-						CPropGridCtrl::TOnEllipsisButtonClicked onEllipsisBtnClicked,
-						CPropGridCtrl::TOnValueChanged onValueChanged
+						PropGrid::TSize valueSize,
+						PropGrid::TOnEllipsisButtonClicked onEllipsisBtnClicked,
+						PropGrid::TOnValueChanged onValueChanged
 					)
 		// ctor
 		: height(height)
@@ -125,7 +125,7 @@
 							//fallthrough
 					case VK_RETURN:
 						// the Enter key - confirming the current Value
-						CPropGridCtrl::TryToAcceptCurrentValueAndCloseEditor(); // on success also destroys the Editor
+						PropGrid::TryToAcceptCurrentValueAndCloseEditor(); // on success also destroys the Editor
 						return 0; // cannot Break (and CallWindowProc below) as the Editor may no longer exist at this moment
 					case VK_ESCAPE:
 						// the Escape key - cancelling the Item editing
@@ -146,8 +146,8 @@
 				if (pSingleShown->hEllipsisBtn && ::GetFocus()==pSingleShown->hEllipsisBtn)
 					break;
 				// . if attempting to leave the Editor, attempting to accept the new Value
-				CPropGridCtrl::TOnValueChanged onValueChanged=nullptr; // assumption (Value didn't change)
-				CPropGridCtrl::PCustomParam param;
+				PropGrid::TOnValueChanged onValueChanged=nullptr; // assumption (Value didn't change)
+				PropGrid::PCustomParam param;
 				if (::IsWindowVisible(pSingleShown->hMainCtrl)) // yes, attepting to leave the Editor; must use the "pSingleShown->hMainCtrl" construct to refer to the MainControl as "hWnd" may refer to either the MainControl or EllipsisButton (see EllipsisButton's window procedure)
 					if (__tryToAcceptMainCtrlValue__()){ // if Value acceptable ...
 						onValueChanged=pSingleShown->value.editor->onValueChanged; // ... letting the caller know once the editing has definitely ended
@@ -181,7 +181,7 @@
 				// EllipsisButton clicked (either by left mouse button or using space-bar)
 				// . removing the subclassing, carrying out the Action, renewing the subclassing (as it's important that the EllipsisButton doesn't know that it's eventually lost the focus [e.g. due to a shown dialog]; knowing it's lost he focus would result in preliminary destroying the Editor)
 				const WNDPROC wndProc=SubclassWindow(hEllipsisBtn,pSingleShown->ellipsisBtnWndProc0); // removing the subclassing
-					const bool b=( (CPropGridCtrl::TOnEllipsisButtonClicked)::GetWindowLong(hEllipsisBtn,GWL_USERDATA) )( // carrying out the Action
+					const bool b=( (PropGrid::TOnEllipsisButtonClicked)::GetWindowLong(hEllipsisBtn,GWL_USERDATA) )( // carrying out the Action
 										pSingleShown->value.param,
 										pSingleShown->value.buffer,
 										pSingleShown->value.editor->valueSize
@@ -191,7 +191,7 @@
 				// . evaluating the Action's result
 				if (b){
 					// Action succeeded (e.g. a dialog confirmed by the OK button) - attempting to accept the new Value
-					CPropGridCtrl::TryToAcceptCurrentValueAndCloseEditor(); // on success also destroys the Editor
+					PropGrid::TryToAcceptCurrentValueAndCloseEditor(); // on success also destroys the Editor
 					return 0;
 				}else{
 					// Action failed (e.g. a dialog dismissed by the Cancel button)
@@ -207,7 +207,7 @@
 						if (::GetKeyState(VK_SHIFT)<0 && pSingleShown->mainControlExists) // Shift pressed and the MainControl exists
 							::SetFocus( pSingleShown->hMainCtrl ); // switching to the MainControl
 						else
-							CPropGridCtrl::TryToAcceptCurrentValueAndCloseEditor(); // on success also destroys the Editor
+							PropGrid::TryToAcceptCurrentValueAndCloseEditor(); // on success also destroys the Editor
 						return 0;
 					case VK_SPACE:
 						// Space-bar (click on the EllipsisButton catched in WM_CAPTURECHANGED)

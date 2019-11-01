@@ -48,7 +48,7 @@
 		};
 		#pragma pack(1)
 		typedef const struct TProperties sealed{
-			CPropGridCtrl::TInteger::TUpDownLimits cylinderRange, headRange, sectorRange;
+			PropGrid::Integer::TUpDownLimits cylinderRange, headRange, sectorRange;
 		} *PCProperties;
 
 		static LPCTSTR GetDescription(TType mediumType);
