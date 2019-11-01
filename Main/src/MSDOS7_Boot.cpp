@@ -449,67 +449,67 @@
 		TVolumeInfo *const pvi=	fatType==CFat::FAT32 ? &boot->fat32.volume : &boot->fat1216.volume;
 		if (!rParam.label.length)
 			PropGrid::AddProperty(	hPropGrid, hVolume, _T("Label not found"),
-										"<a>Create</a>",
-										PropGrid::Hyperlink::DefineEditorA( __pg_createLabel__, CBootView::__updateCriticalSectorView__ )
-									);
-		PropGrid::AddProperty(	hPropGrid, hVolume, _T("ID valid"),
-									&pvi->infoValid,
-									PropGrid::Boolean::DefineEditor( sizeof(BYTE), __bootSectorModified__, nullptr, 0x29, true )
+									"<a>Create</a>",
+									PropGrid::Hyperlink::DefineEditorA( __pg_createLabel__, CBootView::__updateCriticalSectorView__ )
 								);
+		PropGrid::AddProperty(	hPropGrid, hVolume, _T("ID valid"),
+								&pvi->infoValid,
+								PropGrid::Boolean::DefineByteEditor( __bootSectorModified__, nullptr, 0x29, true )
+							);
 		const HANDLE hGeometryAdvanced=PropGrid::AddCategory(hPropGrid,hGeometry,BOOT_SECTOR_ADVANCED,true);
 			// . Medium
 			PropGrid::AddProperty(	hPropGrid, hGeometryAdvanced, _T("Medium"),
-										&boot->medium,
-										PropGrid::Enum::DefineConstStringListEditorA( sizeof(TBootSector::TMsdosMedium), __getListOfMedia__, __getMediumDescription__, nullptr, __onMediumChanged__ )
-									);
+									&boot->medium,
+									PropGrid::Enum::DefineConstStringListEditorA( sizeof(TBootSector::TMsdosMedium), __getListOfMedia__, __getMediumDescription__, nullptr, __onMediumChanged__ )
+								);
 			// . number of Sectors on the disk
 			if (fatType==CFat::FAT32 || boot->nSectorsInTotal16==0)
-				PropGrid::AddProperty( hPropGrid, hGeometryAdvanced, _T("All sectors"),
-											&boot->nSectorsInTotal32,
-											PropGrid::Integer::DefineEditor( sizeof(TLogSector32), PropGrid::Integer::TUpDownLimits::PositiveInteger, __bootSectorModified__ )
-										);
+				PropGrid::AddProperty(	hPropGrid, hGeometryAdvanced, _T("All sectors"),
+										&boot->nSectorsInTotal32,
+										PropGrid::Integer::DefineEditor( sizeof(TLogSector32), PropGrid::Integer::TUpDownLimits::PositiveInteger, __bootSectorModified__ )
+									);
 			else
-				PropGrid::AddProperty( hPropGrid, hGeometryAdvanced, _T("All sectors"),
-											&boot->nSectorsInTotal16,
-											PropGrid::Integer::DefinePositiveWordEditor( __bootSectorModified__ )
-										);
-			// . number of reserved Sectors
-			PropGrid::AddProperty( hPropGrid, hGeometryAdvanced, _T("Reserved sectors"),
-										&boot->nReservedSectors,
+				PropGrid::AddProperty(	hPropGrid, hGeometryAdvanced, _T("All sectors"),
+										&boot->nSectorsInTotal16,
 										PropGrid::Integer::DefinePositiveWordEditor( __bootSectorModified__ )
 									);
+			// . number of reserved Sectors
+			PropGrid::AddProperty(	hPropGrid, hGeometryAdvanced, _T("Reserved sectors"),
+									&boot->nReservedSectors,
+									PropGrid::Integer::DefinePositiveWordEditor( __bootSectorModified__ )
+								);
 			// . number of hidden Sectors
-			PropGrid::AddProperty( hPropGrid, hGeometryAdvanced, _T("Hidden sectors"),
-										&boot->nSectorsHidden,
-										PropGrid::Integer::DefineEditor( sizeof(TLogSector32), PropGrid::Integer::TUpDownLimits::NonNegativeInteger, __bootSectorModified__ )
-									);
+			PropGrid::AddProperty(	hPropGrid, hGeometryAdvanced, _T("Hidden sectors"),
+									&boot->nSectorsHidden,
+									PropGrid::Integer::DefineEditor( sizeof(TLogSector32), PropGrid::Integer::TUpDownLimits::NonNegativeInteger, __bootSectorModified__ )
+								);
 		const HANDLE hVolumeAdvanced=PropGrid::AddCategory(hPropGrid,hVolume,BOOT_SECTOR_ADVANCED,true);
 			// . OEM Name
 			PropGrid::AddProperty(	hPropGrid, hVolumeAdvanced, _T("OEM name"),
-										&boot->oemName,
-										PropGrid::String::DefineFixedLengthEditorA( sizeof(boot->oemName), __bootSectorModifiedA__, ' ' )
-									);
+									&boot->oemName,
+									PropGrid::String::DefineFixedLengthEditorA( sizeof(boot->oemName), __bootSectorModifiedA__, ' ' )
+								);
 			// . MediumType
 			PropGrid::AddProperty(	hPropGrid, hVolumeAdvanced, _T("Medium type"),
-										fatType==CFat::FAT32?&boot->fat32.mediumType:&boot->fat1216.mediumType,
-										PropGrid::Enum::DefineConstStringListEditorA( sizeof(TBootSector::TMsdosMediumType), __getListOfMediaTypes__, __getMediumTypeDescription__, nullptr, __bootSectorModified__ )
-									);
+									fatType==CFat::FAT32?&boot->fat32.mediumType:&boot->fat1216.mediumType,
+									PropGrid::Enum::DefineConstStringListEditorA( sizeof(TBootSector::TMsdosMediumType), __getListOfMediaTypes__, __getMediumTypeDescription__, nullptr, __bootSectorModified__ )
+								);
 			// . FAT Name
 			PropGrid::AddProperty(	hPropGrid, hVolumeAdvanced, _T("FAT name"),
-										&pvi->fatId,
-										PropGrid::String::DefineFixedLengthEditorA( sizeof(pvi->fatId), __bootSectorModifiedA__, ' ' )
-									);
+									&pvi->fatId,
+									PropGrid::String::DefineFixedLengthEditorA( sizeof(pvi->fatId), __bootSectorModifiedA__, ' ' )
+								);
 			// . number of FAT copies
 			static const PropGrid::Integer::TUpDownLimits ByteOneToSevenLimits={ 1, 7 };
-			PropGrid::AddProperty( hPropGrid, hVolumeAdvanced, _T("FAT copies"),
-										&boot->nFatCopies,
-										PropGrid::Integer::DefineEditor( sizeof(BYTE), ByteOneToSevenLimits, __bootSectorModified__ )
-									);
+			PropGrid::AddProperty(	hPropGrid, hVolumeAdvanced, _T("FAT copies"),
+									&boot->nFatCopies,
+									PropGrid::Integer::DefineEditor( sizeof(BYTE), ByteOneToSevenLimits, __bootSectorModified__ )
+								);
 			// . number of root Directory entries
-			PropGrid::AddProperty( hPropGrid, hVolumeAdvanced, _T("Root dir size"),
-										&boot->nRootDirectoryEntries,
-										PropGrid::Integer::DefinePositiveWordEditor( __bootSectorModified__ )
-									);
+			PropGrid::AddProperty(	hPropGrid, hVolumeAdvanced, _T("Root dir size"),
+									&boot->nRootDirectoryEntries,
+									PropGrid::Integer::DefinePositiveWordEditor( __bootSectorModified__ )
+								);
 			
 	}
 

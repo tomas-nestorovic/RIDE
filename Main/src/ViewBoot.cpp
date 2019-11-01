@@ -161,10 +161,10 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 		else
 			size=sizeof(DWORD);
 		PropGrid::AddProperty(	hPropGrid, hCategory, caption,
-									pInteger, 
-									PropGrid::Integer::DefineEditor( size, limits, fn ),
-									(PVOID)criticalValueId
-								);
+								pInteger, 
+								PropGrid::Integer::DefineEditor( size, limits, fn ),
+								(PVOID)criticalValueId
+							);
 	}
 
 	void CBootView::OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint){
@@ -189,28 +189,22 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.nHeads, CRITICAL_VALUE_SIDES_COUNT, __confirmCriticalValueInBoot__, props->headRange.iMax, _T("Heads") );
 					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.nSectors, CRITICAL_VALUE_SECTORS_COUNT, __confirmCriticalValueInBoot__, std::min<int>(props->sectorRange.iMax,DOS->properties->nSectorsOnTrackMax), _T("Sectors/track") );
 				}
-				if (cbp.sectorLength){
+				if (cbp.sectorLength)
 					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.sectorLength, CRITICAL_VALUE_SECTOR_SIZE, __confirmCriticalValueInBoot__, 16384, _T("Sector size") );
-					/*static const PropGrid::Integer::TUpDownLimits Limits={128,16384};
-					PropGrid::AddProperty(	propGrid.m_hWnd, hGeometry, _T("Sector size"),
-												&DOS->formatBoot.sectorLength, sizeof(WORD),
-												PropGrid::Integer::DefineEditor(Limits,__bootSectorModified__)
-											);*/
-				}
 			}
 			const HANDLE hVolume= cbp.volumeCategory ? PropGrid::AddCategory(propGrid.m_hWnd,nullptr,_T("Volume")) : 0;
 			if (hVolume){
 				if (cbp.label.length)
 					PropGrid::AddProperty(	propGrid.m_hWnd, hVolume, _T("Label"),
-												cbp.label.bufferA,
-												PropGrid::String::DefineFixedLengthEditorA( cbp.label.length, cbp.label.onLabelConfirmedA?cbp.label.onLabelConfirmedA:__bootSectorModifiedA__, cbp.label.fillerByte )
-											);
+											cbp.label.bufferA,
+											PropGrid::String::DefineFixedLengthEditorA( cbp.label.length, cbp.label.onLabelConfirmedA?cbp.label.onLabelConfirmedA:__bootSectorModifiedA__, cbp.label.fillerByte )
+										);
 				if (cbp.id.buffer){
 					const PropGrid::Integer::TUpDownLimits limits={ 0, (UINT)-1>>8*(sizeof(UINT)-cbp.id.bufferCapacity) };
 					PropGrid::AddProperty(	propGrid.m_hWnd, hVolume, _T("ID"),
-												cbp.id.buffer,
-												PropGrid::Integer::DefineEditor( cbp.id.bufferCapacity, limits, __bootSectorModified__ )
-											);
+											cbp.id.buffer,
+											PropGrid::Integer::DefineEditor( cbp.id.bufferCapacity, limits, __bootSectorModified__ )
+										);
 				}
 				if (cbp.clusterSize)
 					__pg_showPositiveInteger__( propGrid.m_hWnd, hVolume, &DOS->formatBoot.clusterSize, CRITICAL_VALUE_CLUSTER_SIZE, __confirmCriticalValueInBoot__, DOS->properties->clusterSizeMax, _T("Cluster size") );
@@ -220,10 +214,10 @@ errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMOD
 		}else
 			// Boot Sector not found - informing through PropertyGrid
 			PropGrid::EnableProperty(	propGrid.m_hWnd,
-											PropGrid::AddProperty(	propGrid.m_hWnd, nullptr,
-																		_T("Boot sector"), "Not found!",
-																		PropGrid::String::DefineFixedLengthEditorA(0)
-																	),
-											false
-										);
+										PropGrid::AddProperty(	propGrid.m_hWnd, nullptr,
+																_T("Boot sector"), "Not found!",
+																PropGrid::String::DefineFixedLengthEditorA(0)
+															),
+										false
+									);
 	}

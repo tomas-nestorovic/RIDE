@@ -81,9 +81,9 @@
 		const PFsInfoSector fsInfo=GetSectorData();
 		PropGrid::EnableProperty(	propGrid.m_hWnd,
 										PropGrid::AddProperty(	propGrid.m_hWnd, nullptr, _T("Status"),
-																	fsInfo?"Recognized":"Not recognized",
-																	PropGrid::String::DefineFixedLengthEditorA(0)
-																),
+																fsInfo?"Recognized":"Not recognized",
+																PropGrid::String::DefineFixedLengthEditorA(0)
+															),
 										false
 									);
 		if (fsInfo){
@@ -91,12 +91,12 @@
 			const HANDLE hClusters=PropGrid::AddCategory(propGrid.m_hWnd,nullptr,_T("Clusters"));
 				const PropGrid::Integer::TUpDownLimits limits={ 2, INT_MAX };
 				PropGrid::AddProperty(	propGrid.m_hWnd, hClusters, _T("First free"),
-											&fsInfo->firstFreeCluster,
-											PropGrid::Integer::DefineEditor( sizeof(TCluster32), limits, __sectorModified__ )
-										);
+										&fsInfo->firstFreeCluster,
+										PropGrid::Integer::DefineEditor( sizeof(TCluster32), limits, __sectorModified__ )
+									);
 				PropGrid::AddProperty(	propGrid.m_hWnd, hClusters, _T("Count of free"),
-											&fsInfo->nFreeClusters,
-											PropGrid::Integer::DefineEditor( sizeof(TCluster32), PropGrid::Integer::TUpDownLimits::PositiveInteger, __sectorModified__ )
-										);
+										&fsInfo->nFreeClusters,
+										PropGrid::Integer::DefineEditor( sizeof(TCluster32), PropGrid::Integer::TUpDownLimits::PositiveInteger, __sectorModified__ )
+									);
 		}
 	}

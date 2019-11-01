@@ -160,43 +160,43 @@
 		TGKFileManager &rGkfm=boot->reserved1.gkfm;
 		const bool recognized=rGkfm.id==0x4d46; // textual representation of "FM" string
 		PropGrid::EnableProperty(	hPropGrid,
-										PropGrid::AddProperty(	hPropGrid, hGkfm, _T("Status"),
-																	recognized?"Recognized":"Not recognized",
-																	PropGrid::String::DefineFixedLengthEditorA(0)
-																),
-										false
-									);
+									PropGrid::AddProperty(	hPropGrid, hGkfm, _T("Status"),
+															recognized?"Recognized":"Not recognized",
+															PropGrid::String::DefineFixedLengthEditorA(0)
+														),
+									false
+								);
 		if (recognized){
 			// . basic preview
 			PropGrid::AddProperty(	hPropGrid, hGkfm, _T("Basic"),
-										boot,
-										PropGrid::Custom::DefineEditor( __pg_getPropertyHeight__(), sizeof(TBootSector), __pg_drawProperty__, nullptr, __pg_editProperty__ )
-									);
+									boot,
+									PropGrid::Custom::DefineEditor( __pg_getPropertyHeight__(), sizeof(TBootSector), __pg_drawProperty__, nullptr, __pg_editProperty__ )
+								);
 			// . advanced properties
 			const HANDLE hAdvanced=PropGrid::AddCategory( hPropGrid, hGkfm, BOOT_SECTOR_ADVANCED, false );
 				const PropGrid::PCEditor advEditor=PropGrid::Integer::DefineWordEditor(__warnOnEditingAdvancedValue__);
-				PropGrid::AddProperty( hPropGrid, hAdvanced, _T("Text address"),
-											&rGkfm.aText, advEditor
-										);
-				PropGrid::AddProperty( hPropGrid, hAdvanced, _T("Window address"),
-											&rGkfm.aWnd, advEditor
-										);
-				PropGrid::AddProperty( hPropGrid, hAdvanced, _T("Icon address"),
-											&rGkfm.aIcon, advEditor
-										);
-				PropGrid::AddProperty( hPropGrid, hAdvanced, _T("VideoRAM address"),
-											&rGkfm.aVRam, advEditor
-										);
+				PropGrid::AddProperty(	hPropGrid, hAdvanced, _T("Text address"),
+										&rGkfm.aText, advEditor
+									);
+				PropGrid::AddProperty(	hPropGrid, hAdvanced, _T("Window address"),
+										&rGkfm.aWnd, advEditor
+									);
+				PropGrid::AddProperty(	hPropGrid, hAdvanced, _T("Icon address"),
+										&rGkfm.aIcon, advEditor
+									);
+				PropGrid::AddProperty(	hPropGrid, hAdvanced, _T("VideoRAM address"),
+										&rGkfm.aVRam, advEditor
+									);
 			// . offering to update the GKFM on the disk from an on-line resource
 			PropGrid::AddProperty(	hPropGrid, hGkfm, MDOS2_RUNP,
-										BOOT_SECTOR_UPDATE_ONLINE_HYPERLINK,
-										PropGrid::Hyperlink::DefineEditorA(__pg_updateOnline__)
-									);
+									BOOT_SECTOR_UPDATE_ONLINE_HYPERLINK,
+									PropGrid::Hyperlink::DefineEditorA(__pg_updateOnline__)
+								);
 		}else
 			PropGrid::AddProperty(	hPropGrid, hGkfm, _T(""),
-										"<a>Create</a>",
-										PropGrid::Hyperlink::DefineEditorA( __pg_createNew__, CBootView::__updateCriticalSectorView__ )
-									);
+									"<a>Create</a>",
+									PropGrid::Hyperlink::DefineEditorA( __pg_createNew__, CBootView::__updateCriticalSectorView__ )
+								);
 	}
 
 	void WINAPI CMDOS2::TBootSector::UReserved1::TGKFileManager::__pg_drawProperty__(PVOID,LPCVOID bootSector,short,PDRAWITEMSTRUCT pdis){

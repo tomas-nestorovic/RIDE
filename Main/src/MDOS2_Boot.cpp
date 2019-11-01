@@ -200,29 +200,29 @@
 		const PBootSector boot=(PBootSector)_boot;
 		// . Volume
 		PropGrid::AddProperty(	hPropGrid, hVolume, _T("Label"), boot->label,
-									((CSpectrumFileManagerView *)tab.dos->pFileManager)->zxRom.lineComposerPropGridEditor.Create(MDOS2_VOLUME_LABEL_LENGTH_MAX,'\0',nullptr)
-								);
+								((CSpectrumFileManagerView *)tab.dos->pFileManager)->zxRom.lineComposerPropGridEditor.Create(MDOS2_VOLUME_LABEL_LENGTH_MAX,'\0',nullptr)
+							);
 		// . drives
 		const HANDLE hDrives=PropGrid::AddCategory(hPropGrid,nullptr,_T("Drives"));
 			const PropGrid::PCEditor driveEditor=PropGrid::Custom::DefineEditor( 0, sizeof(TBootSector::TDiskAndDriveInfo), TBootSector::TDiskAndDriveInfo::__pg_drawProperty__, nullptr, TBootSector::TDiskAndDriveInfo::__pg_editProperty__ );
 			PropGrid::AddProperty(	hPropGrid, hDrives, _T("Used"),
-										&boot->currDrive,
-										driveEditor
-									);
+									&boot->currDrive,
+									driveEditor
+								);
 			TBootSector::PDiskAndDriveInfo pddi=boot->drives; // drive information
 			for( TCHAR buf[]=_T("Drive @"); ++buf[6]<='D'; pddi++ )
 				PropGrid::AddProperty(	hPropGrid, hDrives, buf,
-											pddi,
-											driveEditor
-										);
+										pddi,
+										driveEditor
+									);
 		// . GK's File Manager
 		TBootSector::UReserved1::TGKFileManager::__addToPropertyGrid__(hPropGrid,boot);
 		// . UniRUN by Proxima
 		const HANDLE hUniRun=PropGrid::AddCategory(hPropGrid,nullptr,UNIRUN_NAME);
 			PropGrid::AddProperty(	hPropGrid, hUniRun, MDOS2_RUNP,
-										BOOT_SECTOR_UPDATE_ONLINE_HYPERLINK,
-										PropGrid::Hyperlink::DefineEditorA(__unirun_updateOnline__)
-									);
+									BOOT_SECTOR_UPDATE_ONLINE_HYPERLINK,
+									PropGrid::Hyperlink::DefineEditorA(__unirun_updateOnline__)
+								);
 	}
 
 
