@@ -191,7 +191,13 @@
 				// . evaluating the Action's result
 				if (b){
 					// Action succeeded (e.g. a dialog confirmed by the OK button) - attempting to accept the new Value
+					const auto onValueChanged =	!pSingleShown->mainControlExists // the event explicitly fires ...
+												? pSingleShown->value.editor->onValueChanged // ... only if there's no MainControl
+												: nullptr; // ... otherwise, firing of the event is left upon the MainControl
+					const auto param=pSingleShown->value.param;
 					PropGrid::TryToAcceptCurrentValueAndCloseEditor(); // on success also destroys the Editor
+					if (onValueChanged)
+						onValueChanged(param);
 					return 0;
 				}else{
 					// Action failed (e.g. a dialog dismissed by the Cancel button)
