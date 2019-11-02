@@ -110,8 +110,6 @@ typedef const int *PCINT;
 #define GITHUB_API_SERVER_NAME	_T("api.github.com")
 #define GITHUB_VERSION_TAG_NAME	"\"tag_name\""
 
-#define ABS(x) ((x)>=0?(x):-(x))
-
 #define ELLIPSIS	_T(". . .")
 
 #define COLOR_WHITE	0xffffff
