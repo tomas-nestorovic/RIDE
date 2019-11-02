@@ -71,7 +71,8 @@
 				char buf[255]; // "big enough" to contain any ZX Spectrum line
 				void __addChar__(char c);
 			public:
-				PropGrid::PCEditor Create(BYTE nCharsMax,char paddingChar,PropGrid::Custom::TOnValueConfirmed onValueConfirmed) const;
+				static PropGrid::PCEditor Define(BYTE nCharsMax,char paddingChar,PropGrid::Custom::TOnValueConfirmed onValueConfirmed,PropGrid::TOnValueChanged onValueChanged);
+
 				LPCSTR GetCurrentZxText() const;
 				BYTE GetCurrentZxTextLength() const;
 			} lineComposerPropGridEditor;

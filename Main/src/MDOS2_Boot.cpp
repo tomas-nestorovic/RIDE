@@ -200,7 +200,7 @@
 		const PBootSector boot=(PBootSector)_boot;
 		// . Volume
 		PropGrid::AddProperty(	hPropGrid, hVolume, _T("Label"), boot->label,
-								((CSpectrumFileManagerView *)tab.dos->pFileManager)->zxRom.lineComposerPropGridEditor.Create(MDOS2_VOLUME_LABEL_LENGTH_MAX,'\0',nullptr)
+								TZxRom::CLineComposerPropGridEditor::Define(MDOS2_VOLUME_LABEL_LENGTH_MAX,'\0',nullptr,__bootSectorModified__)
 							);
 		// . drives
 		const HANDLE hDrives=PropGrid::AddCategory(hPropGrid,nullptr,_T("Drives"));

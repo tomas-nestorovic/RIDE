@@ -35,6 +35,7 @@
 		virtual void GetCommonBootParameters(RCommonBootParameters rParam,PSectorData boot)=0;
 		virtual void AddCustomBootParameters(HWND hPropGrid,HANDLE hGeometry,HANDLE hVolume,const TCommonBootParameters &rParam,PSectorData boot)=0;
 	public:
+		static void WINAPI __bootSectorModified__(PropGrid::PCustomParam);
 		static bool WINAPI __bootSectorModified__(PropGrid::PCustomParam,int);
 		static bool WINAPI __bootSectorModifiedA__(PropGrid::PCustomParam,LPCSTR,short);
 		static bool WINAPI __bootSectorModified__(PropGrid::PCustomParam,bool);

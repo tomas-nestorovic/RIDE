@@ -18,11 +18,16 @@
 		Utils::InformationWithCheckableShowNoMore( text, INI_BOOT, messageId );
 	}
 
-	bool WINAPI CBootView::__bootSectorModified__(PropGrid::PCustomParam,int){
+	void WINAPI CBootView::__bootSectorModified__(PropGrid::PCustomParam){
 		// marking the Boot Sector as dirty
 		const PDos dos=CDos::GetFocused();
 		dos->FlushToBootSector(); // marking the Boot Sector as dirty
 		dos->image->UpdateAllViews(nullptr);
+	}
+
+	bool WINAPI CBootView::__bootSectorModified__(PropGrid::PCustomParam,int){
+		// marking the Boot Sector as dirty
+		__bootSectorModified__(nullptr);
 		return true;
 	}
 

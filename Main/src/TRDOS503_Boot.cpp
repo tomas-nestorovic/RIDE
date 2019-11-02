@@ -239,7 +239,7 @@
 		// - Volume category
 		PropGrid::AddProperty(	hPropGrid, hVolume, _T("Label"),
 								boot->label,
-								((CSpectrumFileManagerView *)tab.dos->pFileManager)->zxRom.lineComposerPropGridEditor.Create( nCharsInLabel, ' ', nullptr )
+								TZxRom::CLineComposerPropGridEditor::Define( nCharsInLabel, ' ', nullptr, __bootSectorModified__ )
 							);
 		PropGrid::AddProperty(	hPropGrid, hVolume, _T("Password"),
 								boot->password,

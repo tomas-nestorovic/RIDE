@@ -183,7 +183,7 @@
 			dos->GetFileNameAndExt( file, bufOldName, nullptr );
 			::memset( bufOldName+::lstrlen(bufOldName), paddingChar, lengthMax ); // guaranteed that LengthMax PaddingChars still fit in the Buffer for any ZX Spectrum derivate
 			return pZxFileManager->__createStdEditor__(	file, bufOldName,
-														pZxFileManager->zxRom.lineComposerPropGridEditor.Create( lengthMax, paddingChar, __onChanged__ )
+														TZxRom::CLineComposerPropGridEditor::Define( lengthMax, paddingChar, __onChanged__, nullptr )
 													);
 		#endif
 	}
