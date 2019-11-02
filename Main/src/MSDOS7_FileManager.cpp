@@ -333,6 +333,25 @@
 
 	const SYSTEMTIME CMSDOS7::TDateTime::Epoch[]={ {1980,1,2,1}, {2107,12,4,31} };
 
+	static void WINAPI __pg_dateTime_draw__(PropGrid::PCustomParam,PropGrid::PCValue value,PropGrid::TSize size,PDRAWITEMSTRUCT pdis){
+		if (size==sizeof(DWORD)) // both date and time
+			CMSDOS7::TDateTime(*(const DWORD *)value).DrawInPropGrid( pdis->hDC, pdis->rcItem, false, DT_LEFT );
+		else // only date
+			CMSDOS7::TDateTime(*(PCWORD)value).DrawInPropGrid( pdis->hDC, pdis->rcItem, true, DT_LEFT );
+	}
+	PropGrid::PCEditor CMSDOS7::TDateTime::DefinePropGridDateTimeEditor(PropGrid::TOnValueChanged onValueChanged){
+		// creates and returns a PropertyGrid Editor with specified parameters
+		return	PropGrid::Custom::DefineEditor(
+					0, // default height
+					sizeof(DWORD), // both date and time
+					__pg_dateTime_draw__,
+					nullptr,
+					CMsdos7FileManagerView::__editFileDateTime__,
+					nullptr,
+					onValueChanged
+				);
+	}
+
 	CMSDOS7::TDateTime::TDateTime(WORD msdosDate)
 		// ctor
 		: TFileDateTime(TFileDateTime::None) {
