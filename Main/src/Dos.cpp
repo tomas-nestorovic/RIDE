@@ -1297,6 +1297,62 @@ finished:
 
 
 
+	CDos::CHexaValuePropGridEditor::CHexaValuePropGridEditor(PropGrid::PValue value,PropGrid::TSize valueSize)
+		// ctor
+		// - base
+		: CDialog(IDR_DOS_PROPGRID_HEXAEDITOR)
+		// - initialization
+		, hexaEditor(nullptr)
+		, f( (PBYTE)::memcpy(newValueBuffer,value,valueSize), valueSize ) {
+		hexaEditor.Reset( &f, valueSize, valueSize );
+	}
+
+	void CDos::CHexaValuePropGridEditor::PreInitDialog(){
+		// dialog initialization
+		// - base
+		__super::PreInitDialog();
+		// - creating and showing the HexaEditor at the position of the placeholder (see Dialog's resource)
+		RECT r;
+		const CWnd *const pPlaceholder=GetDlgItem(ID_FILE);
+		pPlaceholder->GetClientRect(&r);
+		pPlaceholder->MapWindowPoints(this,&r);
+		hexaEditor.Create( nullptr, nullptr, WS_CHILD|WS_VISIBLE, r, this, 0 );
+	}
+
+	void WINAPI CDos::CHexaValuePropGridEditor::DrawValue(PropGrid::PCustomParam,PropGrid::PCValue value,PropGrid::TSize valueSize,PDRAWITEMSTRUCT pdis){
+		TCHAR buf[1024],*p=buf;
+		for( PCBYTE v=(PCBYTE)value,const vMax=(PCBYTE)value+std::min<PropGrid::TSize>(valueSize,sizeof(buf)/sizeof(TCHAR)/3); v<vMax; p+=::wsprintf(p,_T(" %02X"),*v++) );
+		::DrawText( pdis->hDC, buf,-1, &pdis->rcItem, DT_SINGLELINE|DT_VCENTER|DT_LEFT );
+	}
+
+	bool WINAPI CDos::CHexaValuePropGridEditor::EditValue(PropGrid::PCustomParam,PropGrid::PValue value,PropGrid::TSize valueSize){
+		CHexaValuePropGridEditor d(value,valueSize);
+		if (d.DoModal()==IDOK){
+			::memcpy( value, d.newValueBuffer, valueSize );
+			return true;
+		}else
+			return false;
+	}
+
+	PropGrid::PCEditor CDos::CHexaValuePropGridEditor::Define(PropGrid::PCustomParam,PropGrid::TSize valueSize,PropGrid::TOnValueChanged onValueChanged){
+		// creates and returns a hexa-editor usable to edit values in PropertyGrid
+		return	PropGrid::Custom::DefineEditor(
+					0, // default height
+					valueSize,
+					DrawValue,
+					nullptr, EditValue, // no main control, just ellipsis button
+					nullptr,
+					onValueChanged
+				);
+	}
+
+
+
+
+
+
+
+
 	WORD CDos::TBigEndianWord::operator=(WORD newValue){
 		// "setter"
 		highByte=HIBYTE(newValue), lowByte=LOBYTE(newValue);

@@ -74,6 +74,20 @@
 			bool Edit(bool dateEditingEnabled,bool timeEditingEnabled,const SYSTEMTIME *epoch);
 		};
 
+		class CHexaValuePropGridEditor sealed:public CDialog{
+			BYTE newValueBuffer[2048];
+			CHexaEditor hexaEditor;
+			CMemFile f;
+
+			void PreInitDialog() override;
+
+			CHexaValuePropGridEditor(PropGrid::PValue value,PropGrid::TSize valueSize);
+		public:
+			static void WINAPI DrawValue(PropGrid::PCustomParam,PropGrid::PCValue value,PropGrid::TSize valueSize,PDRAWITEMSTRUCT pdis);
+			static bool WINAPI EditValue(PropGrid::PCustomParam,PropGrid::PValue value,PropGrid::TSize valueSize);
+			static PropGrid::PCEditor Define(PropGrid::PCustomParam,PropGrid::TSize valueSize,PropGrid::TOnValueChanged onValueChanged);
+		};
+
 		typedef struct TDirectoryTraversal{
 			const PCFile directory;
 			const WORD entrySize;

@@ -368,7 +368,8 @@
 		for( int i=0,pos=0; i<nInformation; i++ )
 			tabs[i]= pos+=lv.GetColumnWidth(i) ;
 		const HGDIOBJ hFont0=::SelectObject(dc,rFont.m_hObject);
-			DrawFileInfo(lpdi,tabs);
+			DRAWITEMSTRUCT dis=*lpdi;
+			DrawFileInfo(&dis,tabs);
 		::SelectObject(dc,hFont0);
 		// - drawing the focus
 		if (lpdi->itemState&ODS_FOCUS)

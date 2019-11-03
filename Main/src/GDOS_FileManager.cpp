@@ -93,9 +93,8 @@
 		r.left=r.right;
 		// . COLUMN: etc.
 		r.right=*tabs++;
-			PTCHAR p=bufT;
-			for( BYTE i=0; i<sizeof(TDirectoryEntry::UEtc); p+=::wsprintf(p,_T(" %02X"),*((PCBYTE)&de->etc+i++)) );
-			::DrawText( dc, bufT,-1, &r, DT_SINGLELINE|DT_VCENTER|DT_LEFT );
+			pdis->rcItem=r;
+			CHexaValuePropGridEditor::DrawValue( nullptr, &de->etc, sizeof(de->etc), pdis );
 		//r.left=r.right;
 	}
 
@@ -308,64 +307,11 @@ error:			*de=tmp; // recovering the original DirectoryEntry
 
 
 
-/*
-	CGDOS::TDirectoryEntry::UEtc::CEditor::CEditor(UEtc &rEtc)
-		// ctor
-		// - base
-		: CHexaEditor(nullptr,nullptr) , CMemFile((PBYTE)&rEtc,sizeof(UEtc)) {
-		// - initializing the HexaEditor
-		__reset__(this,sizeof(UEtc),sizeof(UEtc));
-		CreateEx( WS_EX_TOPMOST, HEXAEDITOR_BASE_CLASS, _T("Etc."), WS_CAPTION|WS_SYSMENU|WS_THICKFRAME, 0,0,640,240, nullptr, 0, nullptr );
-		ShowWindow(SW_SHOW);
-		// - making the MainWindow inactive
-		//app.m_pMainWnd->BeginModalState();
-	}
-
-	LRESULT CGDOS::TDirectoryEntry::UEtc::CEditor::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
-		// window procedure
-		// - base
-		const LRESULT res=CHexaEditor::WindowProc(msg,wParam,lParam);
-		// - custom post-processing
-		switch (msg){
-			case WM_CLOSE:
-				DestroyWindow();
-				break;
-		}
-		return res;
-	}*/
 
 	bool WINAPI CGDOS::CGdosFileManagerView::CEtcEditor::__onEllipsisClick__(PVOID file,PVOID,short){
 		// True <=> editing of File's Etc field confirmed, otherwise False
 		const PDirectoryEntry de=(PDirectoryEntry)file;
-		// - defining the Dialog
-		class CEtcDialog sealed:public CDialog{
-			CHexaEditor hexaEditor;
-			CMemFile f;
-
-			void PreInitDialog() override{
-				// dialog initialization
-				// - base
-				CDialog::PreInitDialog();
-				// - creating and showing the HexaEditor at the position of the placeholder (see Dialog's resource)
-				RECT r;
-				const CWnd *const pPlaceholder=GetDlgItem(ID_FILE);
-				pPlaceholder->GetClientRect(&r);
-				pPlaceholder->MapWindowPoints(this,&r);
-				hexaEditor.Create( nullptr, nullptr, WS_CHILD|WS_VISIBLE, r, this, 0 );
-			}
-		public:
-			TDirectoryEntry::UEtc etc;
-
-			CEtcDialog(TDirectoryEntry::UEtc &rEtc)
-				// ctor
-				: CDialog(IDR_GDOS_FILE_ETC)
-				, etc(rEtc) , hexaEditor(nullptr) , f((PBYTE)&etc,sizeof(etc)) {
-				hexaEditor.Reset(&f,sizeof(etc),sizeof(etc));
-			}
-		} d(de->etc);
-		// - showing the Dialog and processing its result
-		if (d.DoModal()==IDOK){
-			de->etc=d.etc;
+		if (CHexaValuePropGridEditor::EditValue( de, &de->etc, sizeof(de->etc) )){
 			((PGDOS)CDos::GetFocused())->__markDirectorySectorAsDirty__(de);
 			return true;
 		}else

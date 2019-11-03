@@ -36,7 +36,7 @@
 #define IDR_WEBPAGE                     183
 #define IDR_IMAGE_DUMP_ERROR_RESOLUTION 185
 #define IDR_IMAGE_PATCH                 186
-#define IDR_GDOS_FILE_ETC               188
+#define IDR_DOS_PROPGRID_HEXAEDITOR     188
 #define IDR_DOS_RECOGNITION             189
 #define IDR_SPECTRUM_PREVIEW_BASIC      193
 #define IDR_HEXAEDITOR_GOTOADDRESS      205
