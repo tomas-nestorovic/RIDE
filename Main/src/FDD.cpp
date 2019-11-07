@@ -1,8 +1,10 @@
 #include "stdafx.h"
 
-	static void __assign__(FD_ID_HEADER &rih,PCSectorId pid){
-		rih.cyl=pid->cylinder, rih.head=pid->side, rih.sector=pid->sector, rih.size=pid->lengthCode;
-	}
+	struct TFdIdHeader sealed:public FD_ID_HEADER{
+		TFdIdHeader(const TSectorId &rid){
+			cyl=rid.cylinder, head=rid.side, sector=rid.sector, size=rid.lengthCode;
+		}
+	};
 
 	
 	#define INI_FDD	_T("FDD")
@@ -346,9 +348,9 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 				case DRV_FDRAWCMD:{
 					FD_FORMAT_PARAMS fp={	FD_OPTION_MFM, chs.head,
 											1, // Sector length doesn't matter, important is to create the ID Field
-											3, 60, 0xe5
+											3, 60, 0xe5,
+											TFdIdHeader(sectors[0].id)
 										};
-					__assign__( fp.Headers[0], &sectors[0].id );
 					FD_SHORT_WRITE_PARAMS swp={ sizeof(FD_ID_HEADER), fdd->params.controllerLatency+(sizeof(TCrc)+1)*fdd->params.oneByteLatency }; // "+1" = just to be sure
 					::DeviceIoControl( fdd->_HANDLE, IOCTL_FD_SET_SHORT_WRITE, &swp,sizeof(swp), nullptr,0, &nBytesTransferred, nullptr );
 					::DeviceIoControl( fdd->_HANDLE, IOCTL_FDCMD_FORMAT_TRACK, &fp,sizeof(fp)+8, nullptr,0, &nBytesTransferred, nullptr ); // cannot use IF because DeviceIoControl returns an error when formatting with bad CRC
@@ -1689,10 +1691,9 @@ latencyAutodeterminationError:			Utils::FatalError(_T("Couldn't autodetermine"),
 			__setWaitingForIndex__();
 			FD_FORMAT_PARAMS fmt={	FD_OPTION_MFM, chs.head,
 									1, // the Sector length doesn't matter, the important thing is to correctly create its ID Field
-									1, 1, fillerByte
+									1, 1, fillerByte,
+									TFdIdHeader(chs.sectorId)
 								};
-			const PFD_ID_HEADER pih=fmt.Headers;
-				__assign__( *pih, &chs.sectorId );
 			DWORD nBytesTransferred;
 			{	LOG_ACTION(_T("DeviceIoControl IOCTL_FDCMD_FORMAT_TRACK"));
 				if (!::DeviceIoControl( _HANDLE, IOCTL_FDCMD_FORMAT_TRACK, &fmt,sizeof(fmt), nullptr,0, &nBytesTransferred, nullptr ))
@@ -1702,11 +1703,12 @@ latencyAutodeterminationError:			Utils::FatalError(_T("Couldn't autodetermine"),
 			if (params.verifyFormattedTracks){
 				LOG_ACTION(_T("format verification"));
 				// : writing FillerByte as test data
-				WORD sectorBytes=__getUsableSectorLength__(pih->size);
+				const FD_ID_HEADER &rih=fmt.Headers[0];
+				WORD sectorBytes=__getUsableSectorLength__(rih.size);
 				__setTimeBeforeInterruptingTheFdc__( sectorBytes, params.controllerLatency+1*params.oneByteLatency ); // "X*" = reserve to guarantee that really all test data written
-				FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM|FD_OPTION_SK, chs.head, pih->cyl,pih->head,pih->sector,pih->size, pih->sector+1, 1, 0xff };
+				FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM|FD_OPTION_SK, chs.head, rih.cyl,rih.head,rih.sector,rih.size, rih.sector+1, 1, 0xff };
 				{	LOG_ACTION(_T("DeviceIoControl IOCTL_FDCMD_WRITE_DATA"));
-					if (!::DeviceIoControl( _HANDLE, IOCTL_FDCMD_WRITE_DATA, &rwp,sizeof(rwp), ::memset(dataBuffer,fillerByte,sectorBytes),__getOfficialSectorLength__(pih->size), &nBytesTransferred, nullptr ))
+					if (!::DeviceIoControl( _HANDLE, IOCTL_FDCMD_WRITE_DATA, &rwp,sizeof(rwp), ::memset(dataBuffer,fillerByte,sectorBytes),__getOfficialSectorLength__(rih.size), &nBytesTransferred, nullptr ))
 						return LOG_ERROR(::GetLastError());
 				}
 				// . reading test data
@@ -1809,7 +1811,7 @@ error:				return LOG_ERROR(::GetLastError());
 					fmt.params.gap=gap3;
 					fmt.params.fill=fillerByte;
 				PFD_ID_HEADER pih=fmt.params.Headers;	PCSectorId pId=bufferId;
-				for( TSector n=nSectors; n--; __assign__(*pih++,pId++) );
+				for( TSector n=nSectors; n--; *pih++=TFdIdHeader(*pId++) );
 formatStandardWay:
 				// . disposing internal information on actual Track format
 				__unformatInternalTrack__(cyl,head);
@@ -1985,7 +1987,7 @@ formatCustomWay:
 						buffer.fp.gap=pfs->gap3;
 						buffer.fp.fill=fillerByte;
 						for( BYTE n=0; n<pfs->nLastSectorsValid; n++ )
-							__assign__( buffer.fp.Headers[pfs->nSectorsOnTrack-pfs->nLastSectorsValid+n], &pfs->validSectorIDs[n] );
+							buffer.fp.Headers[pfs->nSectorsOnTrack-pfs->nLastSectorsValid+n]=TFdIdHeader( pfs->validSectorIDs[n] );
 					LOG_ACTION(_T("DeviceIoControl IOCTL_FDCMD_FORMAT_TRACK"));
 					if (!::DeviceIoControl( _HANDLE, IOCTL_FDCMD_FORMAT_TRACK, &buffer,sizeof(buffer), nullptr,0, &nBytesTransferred, nullptr ))
 						return LOG_ERROR(::GetLastError());
