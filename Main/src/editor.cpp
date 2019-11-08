@@ -84,8 +84,9 @@
 
 	#define INI_MSG_OPEN_AS		_T("msgopenas")
 	#define INI_MSG_READONLY	_T("msgro")
-	#define INI_MSG_FAQ	_T("1stfaq")
+	#define INI_MSG_FAQ			_T("1stfaq")
 
+	#define INI_CRASHED			_T("crash")
 
 	CLIPFORMAT CRideApp::cfDescriptor;
 	CLIPFORMAT CRideApp::cfRideFileList;
@@ -181,7 +182,13 @@
 			else
 				Utils::Information(_T("Okay! You can visit the FAQ page later by clicking Help -> FAQ."));
 			app.WriteProfileInt( INI_GENERAL, INI_MSG_FAQ, TRUE );
+		// - checking whether the app crashed last time
+		#ifndef _DEBUG
+		}else if (app.GetProfileInt(INI_GENERAL,INI_CRASHED,FALSE)){
+			Utils::Information(_T("If the app CRASHED last time, please reproduce the conditions and report the problem (see Help menu).\n\nThank you and sorry for the inconvenience."));
+		#endif
 		}
+		app.WriteProfileInt( INI_GENERAL, INI_CRASHED, TRUE ); // assumption (the app has crashed)
 		// - parsing the command line
 		CCommandLineInfo cmdInfo;
 		ParseCommandLine(cmdInfo);
@@ -201,6 +208,9 @@
 		//::OleUninitialize(); // commented out as must be initialized until the app has really terminated (then unititialized automatically by Windows)
 		// - releasing resources
 		//nop
+		// - the app hasn't crashed
+		app.WriteProfileInt( INI_GENERAL, INI_CRASHED, FALSE );
+		// - base
 		return CWinApp::ExitInstance();
 	}
 
