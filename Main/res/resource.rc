@@ -219,6 +219,9 @@ BEGIN
         MENUITEM "Sector data",                 ID_TRACKMAP_DATA
         MENUITEM "Bad sector data (if any)",    ID_TRACKMAP_BAD_DATA
         MENUITEM SEPARATOR
+        MENUITEM "Zoom in",                     ID_ZOOM_IN
+        MENUITEM "Zoom out",                    ID_ZOOM_OUT
+        MENUITEM SEPARATOR
         MENUITEM "Numbering",                   ID_TRACKMAP_NUMBERING
         POPUP "Helpers"
         BEGIN

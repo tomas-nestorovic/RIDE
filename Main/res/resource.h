@@ -218,6 +218,8 @@
 #define ID_NAVIGATE_PREVIOUSTRACK       40253
 #define ID_NAVIGATE_SECTOR              40254
 #define ID_BOOKMARK_DELETEALL           40257
+#define ID_ZOOM_OUT                     40267
+#define ID_ZOOM_IN                      40268
 #define ID_Y                            58113
 #define ID_W                            58114
 #define ID_H                            58115
@@ -230,7 +232,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        214
-#define _APS_NEXT_COMMAND_VALUE         40267
+#define _APS_NEXT_COMMAND_VALUE         40269
 #define _APS_NEXT_CONTROL_VALUE         1181
 #define _APS_NEXT_SYMED_VALUE           103
 #endif

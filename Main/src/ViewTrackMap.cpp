@@ -19,7 +19,8 @@
 	CTrackMapView::CTrackMapView(PDos _dos)
 		// ctor
 		: tab( IDR_TRACKMAP, IDR_TRACKMAP, ID_CYLINDER, _dos, this )
-		, displayType(TDisplayType::STATUS) , showSectorNumbers(false) , highlightBadSectors(false) , iScrollY(0) , scanner(this) {
+		, displayType(TDisplayType::STATUS) , showSectorNumbers(false) , highlightBadSectors(false) , iScrollY(0) , scanner(this)
+		, zoomLengthFactor(3) {
 		::ZeroMemory( rainbowBrushes, sizeof(rainbowBrushes) );
 	}
 
@@ -40,6 +41,10 @@
 			ON_UPDATE_COMMAND_UI_RANGE(ID_TRACKMAP_STATUS,ID_TRACKMAP_BAD_DATA,__changeDisplayType_updateUI__)
 		ON_COMMAND(ID_TRACKMAP_NUMBERING,__toggleSectorNumbering__)
 			ON_UPDATE_COMMAND_UI(ID_TRACKMAP_NUMBERING,__toggleSectorNumbering_updateUI__)
+		ON_COMMAND(ID_ZOOM_IN,__zoomIn__)
+			ON_UPDATE_COMMAND_UI(ID_ZOOM_IN,__zoomIn_updateUI__)
+		ON_COMMAND(ID_ZOOM_OUT,__zoomOut__)
+			ON_UPDATE_COMMAND_UI(ID_ZOOM_OUT,__zoomOut_updateUI__)
 		ON_COMMAND(ID_TRACKMAP_STATISTICS,__showDiskStatistics__)
 	END_MESSAGE_MAP()
 
@@ -142,8 +147,6 @@
 		Utils::ScaleLogicalUnit(*pDC);
 	}
 
-	#define SECTOR_LENGTH_FACTOR		3
-
 	static const int Tabs[]={ VIEW_PADDING, VIEW_PADDING+60, SECTOR1_X };
 
 	afx_msg LRESULT CTrackMapView::__drawTrack__(WPARAM trackNumber,LPARAM pTrackInfo){
@@ -176,7 +179,7 @@
 						CDos::TSectorStatus statuses[(TSector)-1],*ps=statuses;
 						DOS->GetSectorStatuses( rti.cylinder, rti.head, nSectors, pId, statuses );
 						for( ; nSectors--; r.left=r.right+=SECTOR_MARGIN ){
-							r.right+=1+(*pLength++>>SECTOR_LENGTH_FACTOR); // "1+" = to correctly display a zero-length Sector
+							r.right+=1+(*pLength++>>zoomLengthFactor); // "1+" = to correctly display a zero-length Sector
 							const CBrush brush(*ps++);
 							const HGDIOBJ hBrush0=::SelectObject(dc,brush);
 							dc.Rectangle(&r);
@@ -187,12 +190,12 @@
 					}else
 						// drawing Sector data
 						for( const PCSectorData *pData=rti.bufferSectorData; nSectors--; r.left=r.right+=SECTOR_MARGIN ){
-							const WORD w=*pLength++>>SECTOR_LENGTH_FACTOR;
+							const WORD w=*pLength++>>zoomLengthFactor;
 							if (PCBYTE sample=(PCBYTE)*pData++){
 								// Sector found - drawing its data
 								RECT rcSample=r;
 									rcSample.right=rcSample.left+2;
-								for( WORD n=w; n--; sample+=(1<<SECTOR_LENGTH_FACTOR),rcSample.left++,rcSample.right++ )
+								for( WORD n=w; n--; sample+=(1<<zoomLengthFactor),rcSample.left++,rcSample.right++ )
 									::FillRect( dc, &rcSample, rainbowBrushes[*sample] );
 								r.right+=1+w; // "1+" = to correctly display a zero-length Sector
 								::FrameRect( dc, &r, Utils::CRideBrush::Black );
@@ -227,10 +230,10 @@
 									PCSectorId pRefId=&item->chs.sectorId, bufferId=rti.bufferId;
 									PCWORD pw=rti.bufferLength;
 									r.left=SECTOR1_X;
-									for( TSector nSectors=rti.nSectors; nSectors--; r.left+=(*pw++>>SECTOR_LENGTH_FACTOR)+SECTOR_MARGIN )
+									for( TSector nSectors=rti.nSectors; nSectors--; r.left+=(*pw++>>zoomLengthFactor)+SECTOR_MARGIN )
 										if (*pRefId==*bufferId++)
 											break;
-									r.right=r.left+1+(*pw>>SECTOR_LENGTH_FACTOR); // "1+" = to correctly display a zero-length Sector
+									r.right=r.left+1+(*pw>>zoomLengthFactor); // "1+" = to correctly display a zero-length Sector
 									dc.Rectangle(&r);
 								}
 					}
@@ -324,7 +327,7 @@
 			CDos::TSectorStatus statuses[(TSector)-1],*pStatus=statuses;
 			DOS->GetSectorStatuses( d.quot, d.rem, nSectors, bufferId, statuses );
 			for( int xL=0,xR=0; nSectors--; pStatus++,pId++ ){
-				xR+=*pLength++>>SECTOR_LENGTH_FACTOR;
+				xR+=*pLength++>>zoomLengthFactor;
 				if (point.x>=xL && point.x<=xR){
 					// cursor over a Sector
 					TCHAR buf[40],tmp[30];
@@ -377,6 +380,26 @@
 		// projecting SectorNumbering into UI
 		pCmdUI->SetCheck(showSectorNumbers);
 		pCmdUI->Enable(displayType==TDisplayType::STATUS);
+	}
+
+	afx_msg void CTrackMapView::__zoomOut__(){
+		// zooms out the view
+		zoomLengthFactor++;
+		Invalidate(TRUE);
+	}
+	afx_msg void CTrackMapView::__zoomOut_updateUI__(CCmdUI *pCmdUI){
+		// projects possibility to even more zoom out the view
+		pCmdUI->Enable( zoomLengthFactor<8 );
+	}
+
+	afx_msg void CTrackMapView::__zoomIn__(){
+		// zooms in the view
+		zoomLengthFactor--;
+		Invalidate(TRUE);
+	}
+	afx_msg void CTrackMapView::__zoomIn_updateUI__(CCmdUI *pCmdUI){
+		// projects possibility to even more zoom in the view
+		pCmdUI->Enable( zoomLengthFactor>0 );
 	}
 
 

@@ -26,6 +26,7 @@
 			TTrackScanner(const CTrackMapView *pvtm); // ctor
 		} scanner;
 		bool showSectorNumbers,highlightBadSectors;
+		BYTE zoomLengthFactor;
 
 		void OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint) override;
 		BOOL OnScroll(UINT nScrollCode,UINT nPos,BOOL bDoScroll=TRUE) override;
@@ -41,6 +42,10 @@
 			afx_msg void __changeDisplayType_updateUI__(CCmdUI *pCmdUI);
 		afx_msg void __toggleSectorNumbering__();
 			afx_msg void __toggleSectorNumbering_updateUI__(CCmdUI *pCmdUI);
+		afx_msg void __zoomOut__();
+			afx_msg void __zoomOut_updateUI__(CCmdUI *pCmdUI);
+		afx_msg void __zoomIn__();
+			afx_msg void __zoomIn_updateUI__(CCmdUI *pCmdUI);
 		afx_msg void __showDiskStatistics__();
 	public:
 		const CMainWindow::CTdiView::TTab tab;
