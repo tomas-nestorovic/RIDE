@@ -436,24 +436,24 @@ reportError:Utils::Information(buf);
 
 	bool CDos::__addStdTracksToFatAsEmpty__(TTrack nTracks,PCCylinder cylinders,PCHead heads){
 		// records standard "official" Sectors in given Tracks as Empty into FAT
-		// - all possible Sectors are Empty
-		TSectorStatus statuses[(TSector)-1];
-		for( TSector n=0; n<(TSector)-1; statuses[n++]=TSectorStatus::EMPTY );
-		// - adding
 		bool result=true; // assumption (all Tracks successfully added to FAT)
-		while (nTracks--)
-			result&=ModifyTrackInFat( *cylinders++, *heads++, statuses );
+		TSectorId ids[(TSector)-1];
+		for( TPhysicalAddress chs; nTracks--; )
+			for( TSector n=__getListOfStdSectors__( chs.cylinder=*cylinders++, chs.head=*heads++, ids ); n>0; ){
+				chs.sectorId=ids[--n];
+				result&=ModifyStdSectorStatus( chs, TSectorStatus::EMPTY );
+			}
 		return result;
 	}
 	bool CDos::__removeStdTracksFromFat__(TTrack nTracks,PCCylinder cylinders,PCHead heads){
 		// records standard "official" Sectors in given Tracks as Unavailable
-		// - all possible Sectors are Unavailable
-		TSectorStatus statuses[(TSector)-1];
-		for( TSector n=0; n<(TSector)-1; statuses[n++]=TSectorStatus::UNAVAILABLE );
-		// - removing
-		bool result=true; // assumption (all Tracks successfully removed from FAT)
-		while (nTracks--)
-			result&=ModifyTrackInFat( *cylinders++, *heads++, statuses );
+		bool result=true; // assumption (all Tracks successfully added to FAT)
+		TSectorId ids[(TSector)-1];
+		for( TPhysicalAddress chs; nTracks--; )
+			for( TSector n=__getListOfStdSectors__( chs.cylinder=*cylinders++, chs.head=*heads++, ids ); n>0; ){
+				chs.sectorId=ids[--n];
+				result&=ModifyStdSectorStatus( chs, TSectorStatus::UNAVAILABLE );
+			}
 		return result;
 	}
 

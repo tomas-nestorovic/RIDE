@@ -233,7 +233,7 @@
 			void FlushToBootSector() const override; // projects information stored in internal FormatBoot back to the Boot Sector (e.g. called automatically by BootView)
 			// FAT
 			bool GetSectorStatuses(TCylinder,THead,TSector,PCSectorId,PSectorStatus) const override;
-			bool ModifyTrackInFat(TCylinder,THead,PSectorStatus) override;
+			bool ModifyStdSectorStatus(RCPhysicalAddress,TSectorStatus) override;
 			bool GetFileFatPath(PCFile file,CFatPath &rFatPath) const override;
 			DWORD GetFreeSpaceInBytes(TStdWinError &rError) const override;
 			// file system

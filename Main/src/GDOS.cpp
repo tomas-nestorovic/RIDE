@@ -151,18 +151,14 @@
 		return result;
 	}
 
-	bool CGDOS::ModifyTrackInFat(TCylinder cyl,THead head,PSectorStatus statuses){
-		// True <=> Statuses of all Sectors in Track successfully changed, otherwise False; caller guarantees that the number of Statuses corresponds with the number of standard "official" Sectors in the Boot
+	bool CGDOS::ModifyStdSectorStatus(RCPhysicalAddress chs,TSectorStatus status){
+		// True <=> the Status of the specified DOS-standard Sector successfully changed, otherwise False
 		bool result=true; // assumption (Statuses of all Sectors successfully modified)
-		TPhysicalAddress chs={ cyl, head, {cyl,sideMap[head],Properties.firstSectorNumber,GDOS_SECTOR_LENGTH_STD_CODE} };
-		while (chs.sectorId.sector<=GDOS_TRACK_SECTORS_COUNT){
-			for( TGdosDirectoryTraversal dt(this); dt.__existsNextEntry__(); )
-				if (dt.entryType==TDirectoryTraversal::FILE)
-					((PDirectoryEntry)dt.entry)->sectorAllocationBitmap.SetSectorAllocation( chs, *statuses++!=TSectorStatus::EMPTY );
-				else if (dt.entryType==TDirectoryTraversal::WARNING)
-					result=false;
-			chs.sectorId.sector++;
-		}
+		for( TGdosDirectoryTraversal dt(this); dt.__existsNextEntry__(); )
+			if (dt.entryType==TDirectoryTraversal::FILE)
+				((PDirectoryEntry)dt.entry)->sectorAllocationBitmap.SetSectorAllocation( chs, status!=TSectorStatus::EMPTY );
+			else if (dt.entryType==TDirectoryTraversal::WARNING)
+				result=false;
 		return result;
 	}
 

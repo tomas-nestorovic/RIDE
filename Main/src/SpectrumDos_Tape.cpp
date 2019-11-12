@@ -81,8 +81,8 @@
 		// True <=> Statuses of all Sectors in the Track successfully retrieved and populated the Buffer, otherwise False
 		return true; // see FormatBoot initialization in ctor
 	}
-	bool CSpectrumDos::CTape::ModifyTrackInFat(TCylinder,THead,PSectorStatus){
-		// True <=> Statuses of all Sectors in Track successfully changed, otherwise False; caller guarantees that the number of Statuses corresponds with the number of standard "official" Sectors in the Boot
+	bool CSpectrumDos::CTape::ModifyStdSectorStatus(RCPhysicalAddress,TSectorStatus){
+		// True <=> the Status of the specified DOS-standard Sector successfully changed, otherwise False
 		//nop (not applicable for Tape)
 		m_bModified=TRUE;
 		return true;

@@ -145,8 +145,8 @@
 		}
 		return result;
 	}
-	bool CTRDOS503::ModifyTrackInFat(TCylinder cyl,THead head,PSectorStatus statuses){
-		// True <=> Statuses of all Sectors in Track successfully changed, otherwise False; caller guarantees that the number of Statuses corresponds with the number of standard "official" Sectors in the Boot
+	bool CTRDOS503::ModifyStdSectorStatus(RCPhysicalAddress,TSectorStatus){
+		// True <=> the Status of the specified DOS-standard Sector successfully changed, otherwise False
 		return true; // True = silently ignoring this request (as there's not FAT) - otherwise the caller might show an error message
 	}
 	DWORD CTRDOS503::GetFreeSpaceInBytes(TStdWinError &rError) const{

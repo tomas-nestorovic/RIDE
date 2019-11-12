@@ -177,29 +177,27 @@
 		return result;
 	}
 
-	bool CMSDOS7::ModifyTrackInFat(TCylinder cyl,THead head,PSectorStatus statuses){
-		// True <=> Statuses of all Sectors in Track successfully changed, otherwise False; caller guarantees that the number of Statuses corresponds with the number of standard "official" Sectors in the Boot
+	bool CMSDOS7::ModifyStdSectorStatus(RCPhysicalAddress chs,TSectorStatus status){
+		// True <=> the Status of the specified DOS-standard Sector successfully changed, otherwise False
 		if (const PCBootSector bootSector=boot.GetSectorData()){
 			// Boot Sector exists
-			bool result=true; // assumption (Statuses of all Sectors successfully changed)
-			TSector nSectors=formatBoot.nSectors,s=1; // 1 = Sectors numbered from 1
-			const TPhysicalAddress chsBase={ cyl, head, {cyl,sideMap[head],0,formatBoot.sectorLengthCode} };
-			BYTE b;
-			for( const TLogSector32 logSectorBase=__fyzlog__(chsBase),logSectorDataA=__cluster2logSector__(MSDOS7_DATA_CLUSTER_FIRST,b); nSectors--; ){
-				const TLogSector32 ls=logSectorBase+(s++);
-				if (ls>=logSectorDataA){
-					DWORD value;
-					switch (*statuses++){
-						case TSectorStatus::BAD			:value=MSDOS7_FAT_CLUSTER_BAD; break;
-						case TSectorStatus::EMPTY		:value=MSDOS7_FAT_CLUSTER_EMPTY; break;
-						case TSectorStatus::UNAVAILABLE	:value=MSDOS7_FAT_CLUSTER_BAD; break;
-						default:
-							ASSERT(FALSE);
-					}
-					result&=fat.SetClusterValue( __logSector2cluster__(ls), value );
-				}
+			DWORD value;
+			switch (status){
+				case TSectorStatus::EMPTY:
+					value=MSDOS7_FAT_CLUSTER_EMPTY;
+					break;
+				default:
+					ASSERT(FALSE);
+				case TSectorStatus::UNAVAILABLE:
+				case TSectorStatus::BAD:
+					value=MSDOS7_FAT_CLUSTER_BAD;
+					break;
 			}
-			return result;
+			const TLogSector32 ls=__fyzlog__(chs);
+			BYTE b;
+			return	ls>=__cluster2logSector__(MSDOS7_DATA_CLUSTER_FIRST,b)
+					? fat.SetClusterValue( __logSector2cluster__(ls), value )
+					: true;
 		}else{
 			// Boot Sector doesn't exist (may happen after unsuccessfull formatting)
 			::SetLastError(ERROR_SECTOR_NOT_FOUND);

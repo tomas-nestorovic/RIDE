@@ -132,23 +132,23 @@
 		}
 		return result;
 	}
-	bool CMDOS2::ModifyTrackInFat(TCylinder cyl,THead head,PSectorStatus statuses){
-		// True <=> Statuses of all Sectors in Track successfully changed, otherwise False; caller guarantees that the number of Statuses corresponds with the number of standard "official" Sectors in the Boot
-		bool result=true; // assumption (Statuses of all Sectors successfully modified)
-		TSector nSectors=formatBoot.nSectors,s=0;
-		for( const TLogSector logSectorBase=(cyl*formatBoot.nHeads+head)*nSectors; nSectors--; ){
-			WORD value;
-			switch (*statuses++){
-				case TSectorStatus::UNAVAILABLE	: value=MDOS2_FAT_SECTOR_UNAVAILABLE; break;
-				case TSectorStatus::BAD			: value=MDOS2_FAT_SECTOR_BAD; break;
-				case TSectorStatus::EMPTY		: value=MDOS2_FAT_SECTOR_EMPTY; break;
-				case TSectorStatus::RESERVED	: value=MDOS2_FAT_SECTOR_RESERVED; break;
-				default:
-					ASSERT(FALSE);
-			}
-			result&=__setLogicalSectorFatItem__( logSectorBase+(s++), value );
+	bool CMDOS2::ModifyStdSectorStatus(RCPhysicalAddress chs,TSectorStatus status){
+		// True <=> the Status of the specified DOS-standard Sector successfully changed, otherwise False
+		WORD value;
+		switch (status){
+			case TSectorStatus::UNAVAILABLE:
+				value=MDOS2_FAT_SECTOR_UNAVAILABLE;
+				break;
+			case TSectorStatus::EMPTY:
+				value=MDOS2_FAT_SECTOR_EMPTY;
+				break;
+			default:
+				ASSERT(FALSE);
+			case TSectorStatus::BAD:
+				value=MDOS2_FAT_SECTOR_BAD;
+				break;
 		}
-		return result;
+		return __setLogicalSectorFatItem__( __fyzlog__(chs), value );
 	}
 
 

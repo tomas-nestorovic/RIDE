@@ -61,8 +61,8 @@
 		while (nSectors--) *buffer++=TSectorStatus::UNKNOWN; // all Sector are Unknown by design
 		return true;
 	}
-	bool CUnknownDos::ModifyTrackInFat(TCylinder,THead,PSectorStatus){
-		// True <=> Statuses of all Sectors in Track successfully changed, otherwise False; caller guarantees that the number of Statuses corresponds with the number of standard "official" Sectors in the Boot
+	bool CUnknownDos::ModifyStdSectorStatus(RCPhysicalAddress,TSectorStatus){
+		// True <=> the Status of the specified DOS-standard Sector successfully changed, otherwise False
 		return false; //nop (doesn't have an allocation table)
 	}
 	bool CUnknownDos::GetFileFatPath(PCFile,CFatPath &) const{
