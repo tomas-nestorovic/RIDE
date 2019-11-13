@@ -91,7 +91,7 @@
 /*	// commented out due to described reason below
 	BOOL CFileManagerView::PreCreateWindow(CREATESTRUCT &cs){
 		// adjusting the instantiation
-		if (!CListView::PreCreateWindow(cs)) return FALSE;
+		if (!__super::PreCreateWindow(cs)) return FALSE;
 		//cs.style|=LVS_OWNERDRAWFIXED; // commented out as set in ChangeDisplayMode
 		return TRUE;
 	}*/
@@ -182,7 +182,7 @@
 	afx_msg int CFileManagerView::OnCreate(LPCREATESTRUCT lpcs){
 		// window created
 		// - base
-		if (CListView::OnCreate(lpcs)==-1) return -1;
+		if (__super::OnCreate(lpcs)==-1) return -1;
 		CListCtrl &lv=GetListCtrl();
 		// - registering the FileManager as a target of drag&drop
 		dropTarget.Register(this);
@@ -215,11 +215,9 @@
 
 	void CFileManagerView::__switchToDirectory__(CDos::PFile directory) const{
 		// changes the current Directory
-		if (DOS->IsDirectory(directory)){
-			const TStdWinError err=(DOS->*pDirectoryStructureManagement->fnChangeCurrentDir)(directory);
-			if (err!=ERROR_SUCCESS)
+		if (DOS->IsDirectory(directory))
+			if (const TStdWinError err=(DOS->*pDirectoryStructureManagement->fnChangeCurrentDir)(directory))
 				Utils::FatalError(ERROR_MSG_CANT_CHANGE_DIRECTORY,err);
-		}
 	}
 	TStdWinError CFileManagerView::__switchToDirectory__(PTCHAR path) const{
 		// changes the current Directory; assumed that the Path is terminated by backslash; returns Windows standard i/o error
@@ -260,7 +258,7 @@
 				}
 				break;
 			default:
-				CListView::OnChar(nChar,nRepCnt,nFlags);
+				__super::OnChar(nChar,nRepCnt,nFlags);
 		}
 	}
 
@@ -337,8 +335,7 @@
 		// deletes Files in the List
 		while (rFileList.GetCount()){ // Files deleted in reversed order ("from rear")
 			const CDos::PFile fileToDelete=rFileList.RemoveTail();
-			const TStdWinError err=DOS->DeleteFile(fileToDelete);
-			if (err!=ERROR_SUCCESS){
+			if (const TStdWinError err=DOS->DeleteFile(fileToDelete)){
 				DOS->__showFileProcessingError__(fileToDelete,err);
 				break;
 			}
@@ -478,14 +475,12 @@
 		const CListCtrl &lv=GetListCtrl();
 		for( POSITION pos=lv.GetFirstSelectedItemPosition(); pos; selectedFiles.AddTail((PVOID)lv.GetItemData(lv.GetNextSelectedItem(pos))) );
 		// - storing currently FocusedFile
-		focusedFile=-1; // assumption (no File in Focus)
-		for( int n=lv.GetItemCount(); n--; )
-			if (lv.GetItemState(n,LVIS_FOCUSED)){ focusedFile=n; break; }
+		focusedFile=lv.GetNextItem(-1,LVNI_FOCUSED);
 		// - destroying the FileComparisonDialog (if shown)
 		if (CFileComparisonDialog::pSingleInstance)
 			CFileComparisonDialog::pSingleInstance->SendMessage( WM_COMMAND, IDCANCEL, 0 );
 		// - base
-		CListView::OnDestroy();
+		__super::OnDestroy();
 	}
 
 	POSITION CFileManagerView::GetFirstSelectedFilePosition() const{
