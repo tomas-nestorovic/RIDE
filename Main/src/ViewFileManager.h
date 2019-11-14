@@ -125,6 +125,7 @@
 		afx_msg void __selectAllFilesInCurrentDir__();
 		afx_msg void __unselectAllFilesInCurrentDir__();
 		afx_msg void __invertSelectionInCurrentDir__();
+		afx_msg void __toggleFocusedItemSelection__();
 			afx_msg void __fileSelected_updateUI__(CCmdUI *pCmdUI);
 		afx_msg void __deleteSelectedFilesUponConfirmation__();
 		afx_msg void __onBeginDrag__(NMHDR *pNMHDR,LRESULT *pResult);

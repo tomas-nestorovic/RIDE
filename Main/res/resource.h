@@ -131,6 +131,7 @@
 #define ID_TDI_SWITCH_BACK              40034
 #define ID_EDIT_SELECT_NONE             40057
 #define ID_EDIT_SELECT_INVERSE          40058
+#define ID_EDIT_SELECT_TOGGLE           40059
 #define ID_BOOKMARK_TOGGLE              40062
 #define ID_DATA                         40068
 #define ID_RECURRENCY                   40080

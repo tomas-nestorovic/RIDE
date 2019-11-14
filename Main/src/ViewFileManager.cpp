@@ -50,6 +50,7 @@
 		ON_COMMAND(ID_EDIT_SELECT_ALL,__selectAllFilesInCurrentDir__)
 		ON_COMMAND(ID_EDIT_SELECT_NONE,__unselectAllFilesInCurrentDir__)
 		ON_COMMAND(ID_EDIT_SELECT_INVERSE,__invertSelectionInCurrentDir__)
+		ON_COMMAND(ID_EDIT_SELECT_TOGGLE,__toggleFocusedItemSelection__)
 		ON_COMMAND(ID_FILEMANAGER_FILE_DELETE,__deleteSelectedFilesUponConfirmation__)
 			ON_UPDATE_COMMAND_UI(ID_FILEMANAGER_FILE_DELETE,__imageWritableAndFileSelected_updateUI__)
 		ON_COMMAND(ID_EDIT_COPY,__copyFilesToClipboard__)
@@ -311,6 +312,17 @@
 			CListCtrl &lv=GetListCtrl();
 			for( int i=lv.GetItemCount(); i--; lv.SetItemState( i, ~lv.GetItemState(i,LVIS_SELECTED), LVIS_SELECTED ) );
 		SetRedraw(TRUE);
+	}
+
+	afx_msg void CFileManagerView::__toggleFocusedItemSelection__(){
+		// toggles selection status of currently focused File, and moves focus to the next File
+		CListCtrl &lv=GetListCtrl();
+		if (const int nItems=lv.GetItemCount()){
+			int iFocused=std::max( 0, lv.GetNextItem(-1,LVNI_FOCUSED) );
+			if (lv.GetSelectedCount()!=1 || lv.GetNextItem(-1,LVNI_SELECTED)!=iFocused) // A|B; A = multiple items already selected (maybe by sequentially toggling their statuses), B = the focused and first selected items are different (user selected one item, now wants to select another)
+				lv.SetItemState( iFocused, ~lv.GetItemState(iFocused,LVIS_SELECTED), LVIS_SELECTED );
+			lv.SetItemState( std::min(++iFocused,nItems-1), LVIS_FOCUSED, LVIS_FOCUSED );
+		}
 	}
 
 	afx_msg void CFileManagerView::__deleteSelectedFilesUponConfirmation__(){
