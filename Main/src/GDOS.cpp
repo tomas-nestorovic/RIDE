@@ -363,7 +363,7 @@
 		// - extracting important information about the File before renaming it (e.g. standard parameters)
 		const PDirectoryEntry de=(PDirectoryEntry)file;
 		const DWORD dataSize=de->__getDataSize__(nullptr);
-		UStdParameters stdParams;
+		TStdParameters stdParams=TStdParameters::Default;
 			if (const PCWORD pw=de->__getStdParameter1__()) stdParams.param1=*pw;
 			if (const PCWORD pw=de->__getStdParameter2__()) stdParams.param2=*pw;
 		// - renaming
@@ -437,7 +437,7 @@
 				case TDirectoryEntry::OPENTYPE		: uts=TUniFileType::SEQUENTIAL; break;
 				default								: uts=TUniFileType::UNKNOWN; break;
 			}
-			UStdParameters stdParams;
+			TStdParameters stdParams=TStdParameters::Default;
 				if (const PCWORD pw=de->__getStdParameter1__()) stdParams.param1=*pw;
 				if (const PCWORD pw=de->__getStdParameter2__()) stdParams.param2=*pw;
 			__exportFileInformation__( buf+::lstrlen(buf), uts, stdParams, GetFileOfficialSize(de) );
@@ -469,7 +469,7 @@
 								zxInfo
 							);
 		// - getting import information
-		UStdParameters params;	TUniFileType uts; DWORD dw;
+		TStdParameters params=TStdParameters::Default;	TUniFileType uts; DWORD dw;
 		if (const int n=__importFileInformation__(zxInfo,uts,params,dw))
 			if (dw) fileSize=dw;
 		// - initializing the description of File to import

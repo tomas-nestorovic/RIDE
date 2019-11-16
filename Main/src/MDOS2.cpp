@@ -325,9 +325,9 @@
 		// - initializing the description of File to import
 		TDirectoryEntry tmp; // the description
 			::ZeroMemory(&tmp,sizeof(tmp));
-			// . importing information
+			// . import information
 			int attr=deDefault.attributes;
-			tmp.params=UStdParameters(); TUniFileType uts; DWORD dw; // initialization
+			tmp.params=TStdParameters::Default; TUniFileType uts; DWORD dw; // initialization
 			if (const int n=__importFileInformation__(zxInfo,uts,tmp.params,dw)){
 				if (dw) fileSize=dw;
 				_stscanf( zxInfo+n, INFO_ATTRIBUTES, &attr );

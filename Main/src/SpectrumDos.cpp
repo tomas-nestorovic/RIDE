@@ -29,11 +29,8 @@
 
 
 
-	CSpectrumDos::UStdParameters::UStdParameters()
-		// ctor
-		: dw(0x80000000) {
-	}
 
+	const CSpectrumDos::TStdParameters CSpectrumDos::TStdParameters::Default={ 0, 0x8000 };
 
 
 
@@ -87,11 +84,11 @@
 
 	#define INFO_STD	_T(" ZX%c%xL%x")
 
-	int CSpectrumDos::__exportFileInformation__(PTCHAR buf,TUniFileType uniFileType,UStdParameters params,DWORD fileLength){
+	int CSpectrumDos::__exportFileInformation__(PTCHAR buf,TUniFileType uniFileType,TStdParameters params,DWORD fileLength){
 		// populates the Buffer with File export information in normalized form and returns the number of characters written to the Buffer
 		return _stprintf( buf, INFO_STD, uniFileType, params, fileLength );
 	}
-	int CSpectrumDos::__importFileInformation__(LPCTSTR buf,TUniFileType &rUniFileType,UStdParameters &rParams,DWORD &rFileLength){
+	int CSpectrumDos::__importFileInformation__(LPCTSTR buf,TUniFileType &rUniFileType,TStdParameters &rParams,DWORD &rFileLength){
 		// returns the number of characters recognized as import information normalized form (supplied by ExportFileInformation)
 		rUniFileType=TUniFileType::UNKNOWN, rFileLength=0; // initialization
 		if (buf){ // Null if File has no import information

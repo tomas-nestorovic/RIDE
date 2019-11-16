@@ -244,7 +244,7 @@
 		// - getting important information about the File
 		const PDirectoryEntry de=(PDirectoryEntry)file;
 		const WORD officialFileSize=de->__getOfficialFileSize__(nullptr);
-		UStdParameters stdParams;
+		TStdParameters stdParams=TStdParameters::Default;
 			__getStdParameter1__(de,stdParams.param1), __getStdParameter2__(de,stdParams.param2);
 		// - renaming
 		TDirectoryEntry tmp=*de; // all changes are made to a temporary Entry before they are copied to disk
@@ -328,7 +328,7 @@
 		__super::GetFileExportNameAndExt(de,shellCompliant,buf);
 		if (!shellCompliant){
 			// exporting to another RIDE instance
-			UStdParameters params;
+			TStdParameters params=TStdParameters::Default;
 				__getStdParameter1__(de,params.param1), __getStdParameter2__(de,params.param2);
 			TUniFileType uts;
 				switch (de->extension){
@@ -357,7 +357,7 @@
 								zxInfo
 							);
 		// - getting import information
-		UStdParameters params;	TUniFileType uts;	DWORD dw;
+		TStdParameters params=TStdParameters::Default;	TUniFileType uts;	DWORD dw;
 		const LPCTSTR pTrdosSpecificInfo=zxInfo+__importFileInformation__(zxInfo,uts,params,dw);
 		const DWORD fileSizeFormal=	pTrdosSpecificInfo>zxInfo // if record on official File size exists in ZxInformation ...
 									? dw // ... use that record

@@ -117,7 +117,7 @@
 			BYTE extension;
 			char name[MDOS2_FILE_NAME_LENGTH_MAX];
 			WORD lengthLow; // lower Word of File size
-			UStdParameters params;
+			TStdParameters params;
 			TLogSector firstLogicalSector;
 			BYTE reserved1;
 			BYTE attributes;

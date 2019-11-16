@@ -248,10 +248,10 @@
 			::wsprintf( p+__exportFileInformation__(p,(TUniFileType)Extensions[h->type],h->params,tf->dataLength), EXPORT_INFO_TAPE2, tf->dataBlockFlag, tf->dataChecksum );
 		else if (tf->type==TTapeFile::HEADERLESS)
 			// Headerless File
-			::wsprintf( p+__exportFileInformation__(p,TUniFileType::HEADERLESS,UStdParameters(),tf->dataLength), EXPORT_INFO_TAPE2, tf->dataBlockFlag, tf->dataChecksum );
+			::wsprintf( p+__exportFileInformation__(p,TUniFileType::HEADERLESS,TStdParameters::Default,tf->dataLength), EXPORT_INFO_TAPE2, tf->dataBlockFlag, tf->dataChecksum );
 		else
 			// Fragment
-			__exportFileInformation__(p,TUniFileType::FRAGMENT,UStdParameters(),tf->dataLength);
+			__exportFileInformation__(p,TUniFileType::FRAGMENT,TStdParameters::Default,tf->dataLength);
 		return buf;
 	}
 
@@ -281,7 +281,8 @@
 								zxInfo
 							);
 		// - processing import information
-		UStdParameters u;	TUniFileType uts=TUniFileType::HEADERLESS;
+		TStdParameters u=TStdParameters::Default;
+		TUniFileType uts=TUniFileType::HEADERLESS;
 		DWORD blockFlag=TStd::DATA; // assumption (block featuring Header has been saved using standard routine in ROM)
 		DWORD blockChecksum=0, dw;
 		if (const int n=__importFileInformation__(zxInfo,uts,u,dw)){
@@ -901,7 +902,7 @@ drawChecksum:	r.right=*tabs++;
 				default:{
 					tf->type=TTapeFile::STD_HEADER;
 					h=tf->GetHeader();
-					h->length=tf->dataLength, h->params=UStdParameters();
+					h->length=tf->dataLength, h->params=TStdParameters::Default;
 					const TCHAR newExt[]={ Extensions[ h->type=(TZxRom::TFileType)newType.charValue ],'\0' };
 					dos->ChangeFileNameAndExt(file,_T("Unnamed"),newExt,file); // always succeeds as all inputs are set correctly
 					break;

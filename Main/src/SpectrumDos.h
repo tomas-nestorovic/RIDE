@@ -95,12 +95,11 @@
 			FRAGMENT		='F'
 		};
 
-		union UStdParameters{
-			#pragma pack(1)
-			struct{ WORD param1,param2; };
-			DWORD dw;
+		#pragma pack(1)
+		struct TStdParameters sealed{
+			static const TStdParameters Default;
 
-			UStdParameters();
+			WORD param1,param2;
 		};
 
 		class CSpectrumFileManagerView:public CFileManagerView{
@@ -137,16 +136,16 @@
 
 		class CTape sealed:private CImageRaw,public CDos{ // CImageRaw = the type of Image doesn't matter (not used by Tape)
 			friend class CSpectrumDos;
-
+		public:
 			#pragma pack(1)
 			typedef struct THeader sealed{
 				TZxRom::TFileType type; // any type but Headerless
 				char name[ZX_TAPE_FILE_NAME_LENGTH_MAX];
 				WORD length;
-				UStdParameters params;
+				TStdParameters params;
 			} *PHeader;
 			typedef const THeader *PCHeader;
-
+		private:
 			#pragma pack(1)
 			typedef struct TTapeFile sealed{
 				enum TType{
@@ -298,8 +297,8 @@
 		static const RGBQUAD Colors[16];
 
 		static void __parseFat32LongName__(PTCHAR buf,LPCTSTR &rOutName,BYTE nameLengthMax,LPCTSTR &rOutExt,BYTE extLengthMax,LPCTSTR &rOutZxInfo);
-		static int __exportFileInformation__(PTCHAR buf,TUniFileType uniFileType,UStdParameters params,DWORD fileLength);
-		static int __importFileInformation__(LPCTSTR buf,TUniFileType &rUniFileType,UStdParameters &rParams,DWORD &rFileLength);
+		static int __exportFileInformation__(PTCHAR buf,TUniFileType uniFileType,TStdParameters params,DWORD fileLength);
+		static int __importFileInformation__(LPCTSTR buf,TUniFileType &rUniFileType,TStdParameters &rParams,DWORD &rFileLength);
 		static void __informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId);
 
 		CTrackMapView trackMap;
