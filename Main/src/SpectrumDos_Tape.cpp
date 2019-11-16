@@ -258,6 +258,12 @@
 	#define NUMBER_OF_BYTES_TO_ALLOCATE_FILE(dataLength)\
 		(sizeof(TTapeFile)+dataLength)
 
+	static BYTE __getChecksum__(BYTE flag,PCBYTE data,WORD nBytes){
+		// computes and returns the Checksum based on specified Flag and Data
+		while (nBytes--) flag^=*data++;
+		return flag;
+	}
+
 	TStdWinError CSpectrumDos::CTape::ImportFile(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile){
 		// imports specified File (physical or virtual) into the Image; returns Windows standard i/o error
 		// - checking if there's an empty slot in Tape's "Directory"
@@ -317,6 +323,7 @@
 			}
 		// - importing File Data
 		f->Read( tf->data, fileSize );
+		tf->dataChecksum=__getChecksum__( tf->dataBlockFlag, tf->data, fileSize );
 		// - File successfully imported into Tape
 		m_bModified=TRUE;
 		return ERROR_SUCCESS;
@@ -379,11 +386,6 @@
 	
 	
 	
-	static BYTE __getChecksum__(BYTE flag,PCBYTE data,WORD nBytes){
-		// computes and returns the Checksum based on specified Flag and Data
-		while (nBytes--) flag^=*data++;
-		return flag;
-	}
 	BOOL CSpectrumDos::CTape::DoSave(LPCTSTR,BOOL){
 		// True <=> Image successfully saved, otherwise False
 		fileManager.f.SetLength(0); // rewriting Tape's underlying physical file
