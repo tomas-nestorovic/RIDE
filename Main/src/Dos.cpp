@@ -925,9 +925,12 @@ reportError:Utils::Information(buf);
 								goto finished;
 							}
 						}else{ // error when accessing discovered Empty Sector
-							const TStdWinError err=::GetLastError();
-							DeleteFile(rFile); // removing the above added File record from current Directory
-							return LOG_ERROR(err);
+							ModifyStdSectorStatus( item.chs, TSectorStatus::BAD ); // marking the Sector as Bad
+							TStdWinError err;
+							if (fileSize>GetFreeSpaceInBytes(err)){
+								DeleteFile(rFile); // removing the above added File record from current Directory
+								return LOG_ERROR(ERROR_DISK_FULL);
+							}
 						}
 					}
 				}
