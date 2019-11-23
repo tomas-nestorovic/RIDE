@@ -112,6 +112,13 @@
 
 
 
+	static BOOL __stdcall compareWindowClassNameWithRide(HWND hWnd,LPARAM pnAppsRunning){
+		TCHAR buf[200];
+		::GetClassName( hWnd, buf, sizeof(buf) );
+		*(PINT)pnAppsRunning+=::lstrcmpi(buf,APP_CLASSNAME)==0;
+		return TRUE;
+	}
+
 	BOOL CRideApp::InitInstance(){
 		// application initialization
 		if (!CWinApp::InitInstance())
@@ -182,13 +189,16 @@
 			else
 				Utils::Information(_T("Okay! You can visit the FAQ page later by clicking Help -> FAQ."));
 			app.WriteProfileInt( INI_GENERAL, INI_MSG_FAQ, TRUE );
+		}
 		// - checking whether the app crashed last time
 		#ifndef _DEBUG
-		}else if (app.GetProfileInt(INI_GENERAL,INI_CRASHED,FALSE)){
-			Utils::Information(_T("If the app CRASHED last time, please reproduce the conditions and report the problem (see Help menu).\n\nThank you and sorry for the inconvenience."));
+			const int nAppsReportedRunning=app.GetProfileInt(INI_GENERAL,INI_CRASHED,0);
+			int nAppsRunning=0;
+			::EnumTaskWindows( 0, compareWindowClassNameWithRide, (LPARAM)&nAppsRunning );
+			if (nAppsReportedRunning>=nAppsRunning)
+				Utils::Information(_T("If the app CRASHED last time, please reproduce the conditions and report the problem (see Help menu).\n\nThank you and sorry for the inconvenience."));
+			app.WriteProfileInt( INI_GENERAL, INI_CRASHED, nAppsRunning ); // assumption (the app has crashed)
 		#endif
-		}
-		app.WriteProfileInt( INI_GENERAL, INI_CRASHED, TRUE ); // assumption (the app has crashed)
 		// - parsing the command line
 		CCommandLineInfo cmdInfo;
 		ParseCommandLine(cmdInfo);
@@ -209,7 +219,7 @@
 		// - releasing resources
 		//nop
 		// - the app hasn't crashed
-		app.WriteProfileInt( INI_GENERAL, INI_CRASHED, FALSE );
+		app.WriteProfileInt( INI_GENERAL, INI_CRASHED, app.GetProfileInt(INI_GENERAL,INI_CRASHED,1)-1 );
 		// - base
 		return CWinApp::ExitInstance();
 	}

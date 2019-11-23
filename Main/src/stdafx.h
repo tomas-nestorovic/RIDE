@@ -98,6 +98,7 @@ typedef const int *PCINT;
 #define APP_ABBREVIATION _T("RIDE")
 #define APP_VERSION		_T("1.5 debug special")
 #define APP_IDENTIFIER	APP_ABBREVIATION APP_VERSION
+#define APP_CLASSNAME	_T("Afx:tomascz.") APP_ABBREVIATION
 
 #define FONT_MS_SANS_SERIF	_T("Microsoft Sans Serif")
 #define FONT_SYMBOL			_T("Symbol")

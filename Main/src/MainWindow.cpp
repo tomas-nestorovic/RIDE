@@ -134,9 +134,17 @@
 
 	BOOL CMainWindow::PreCreateWindow(CREATESTRUCT &cs){
 		// adjusting the instantiation
-		if (!__super::PreCreateWindow(cs)) return FALSE;
+		// - base
+		if (!__super::PreCreateWindow(cs))
+			return FALSE;
+		// - adjusting the style
 		cs.dwExStyle&=~WS_EX_CLIENTEDGE;
-		return TRUE;
+		// - registering a custom named class, so that the count of running instances can be computed (to determine whether the app has crashed last time)
+		WNDCLASS wc;
+		::GetClassInfo( app.m_hInstance, cs.lpszClass, &wc );
+		wc.lpszClassName = cs.lpszClass = APP_CLASSNAME;
+		wc.hIcon=app.LoadIcon(IDR_MAINFRAME);
+		return AfxRegisterClass(&wc);
 	}
 
 	BOOL CMainWindow::PreTranslateMessage(PMSG pMsg){
