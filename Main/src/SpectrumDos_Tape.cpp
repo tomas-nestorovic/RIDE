@@ -284,7 +284,7 @@
 		TStdParameters u=TStdParameters::Default;
 		TUniFileType uts=TUniFileType::HEADERLESS;
 		DWORD blockFlag=TStd::DATA; // assumption (block featuring Header has been saved using standard routine in ROM)
-		DWORD blockChecksum=0, dw;
+		int blockChecksum=-1; DWORD dw;
 		if (const int n=__importFileInformation__(zxInfo,uts,u,dw)){
 			if (uts==TUniFileType::SCREEN)
 				uts=TUniFileType::BLOCK;
@@ -297,7 +297,7 @@
 						? TTapeFile::FRAGMENT // ... importing it as a Fragment
 						: TTapeFile::HEADERLESS; // ... otherwise defaulting to the Headerless File, unless below recognized otherwise
 			tf->dataBlockFlag=blockFlag;
-			tf->dataChecksum=blockChecksum;
+			//tf->dataChecksum=blockChecksum; // commented out as set later
 			tf->dataChecksumStatus=TTapeFile::TDataChecksumStatus::UNDETERMINED;
 			tf->dataLength=fileSize;
 		rFile=tf;
@@ -324,7 +324,9 @@
 			}
 		// - importing File Data
 		f->Read( tf->data, fileSize );
-		tf->dataChecksum=__getChecksum__( tf->dataBlockFlag, tf->data, fileSize );
+		tf->dataChecksum =	blockChecksum>=0
+							? blockChecksum
+							: __getChecksum__( tf->dataBlockFlag, tf->data, fileSize );
 		// - File successfully imported into Tape
 		m_bModified=TRUE;
 		return ERROR_SUCCESS;
