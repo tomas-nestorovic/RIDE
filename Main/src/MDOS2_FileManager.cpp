@@ -22,7 +22,7 @@
 
 	CMDOS2::CMdos2FileManagerView::CMdos2FileManagerView(PMDOS2 mdos)
 		// ctor
-		: CSpectrumFileManagerView( mdos, mdos->zxRom, BIG_ICONS|REPORT, LVS_REPORT, INFORMATION_COUNT, InformationList ) {
+		: CSpectrumFileManagerView( mdos, mdos->zxRom, BIG_ICONS|REPORT, LVS_REPORT, INFORMATION_COUNT, InformationList, MDOS2_FILE_NAME_LENGTH_MAX ) {
 	}
 
 

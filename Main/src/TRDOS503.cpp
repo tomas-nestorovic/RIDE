@@ -575,7 +575,7 @@
 	CTRDOS503::TTrdosDirectoryTraversal::TTrdosDirectoryTraversal(const CTRDOS503 *_trdos)
 		// ctor
 		// - base
-		: TDirectoryTraversal( ZX_DIR_ROOT, sizeof(TDirectoryEntry), TRDOS503_FILE_NAME_LENGTH_MAX )
+		: TDirectoryTraversal( ZX_DIR_ROOT, sizeof(TDirectoryEntry) )
 		// - initialization
 		, trdos(_trdos) , foundEndOfDirectory(false)
 		// - getting ready to read the first Directory Sector

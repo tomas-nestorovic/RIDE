@@ -103,6 +103,7 @@
 		};
 
 		class CSpectrumFileManagerView:public CFileManagerView{
+			const BYTE nameCharsMax;
 		protected:
 			mutable class CSingleCharExtensionEditor sealed{
 				static bool WINAPI __onChanged__(PVOID file,PropGrid::Enum::UValue newExt);
@@ -131,7 +132,7 @@
 		public:
 			const TZxRom &zxRom;
 
-			CSpectrumFileManagerView(PDos dos,const TZxRom &rZxRom,BYTE supportedDisplayModes,BYTE initialDisplayMode,BYTE nInformation,PCFileInfo informationList);
+			CSpectrumFileManagerView(PDos dos,const TZxRom &rZxRom,BYTE supportedDisplayModes,BYTE initialDisplayMode,BYTE nInformation,PCFileInfo informationList,BYTE nameCharsMax);
 		};
 
 		class CTape sealed:private CImageRaw,public CDos{ // CImageRaw = the type of Image doesn't matter (not used by Tape)

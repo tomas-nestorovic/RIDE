@@ -340,7 +340,7 @@
 
 	CSpectrumDos::CTape::TTapeTraversal::TTapeTraversal(const CTapeFileManagerView &rFileManager)
 		// ctor
-		: TDirectoryTraversal( ZX_DIR_ROOT, sizeof(TTapeFile), ZX_TAPE_FILE_NAME_LENGTH_MAX )
+		: TDirectoryTraversal( ZX_DIR_ROOT, sizeof(TTapeFile) )
 		, rFileManager(rFileManager)
 		, fileId(-1) {
 		ASSERT(FILE_LENGTH_MAX%sizeof(TTapeFile)==0); // HexaEditor's requirement
@@ -539,7 +539,7 @@
 	CSpectrumDos::CTape::CTapeFileManagerView::CTapeFileManagerView(CTape *tape,const TZxRom &rZxRom,LPCTSTR fileName,bool makeCurrentTab)
 		// ctor
 		// - base
-		: CSpectrumFileManagerView( tape, rZxRom, REPORT, LVS_REPORT, INFORMATION_COUNT,InformationList )
+		: CSpectrumFileManagerView( tape, rZxRom, REPORT, LVS_REPORT, INFORMATION_COUNT,InformationList, ZX_TAPE_FILE_NAME_LENGTH_MAX )
 		// - initialization
 		, nFiles(0)
 		, f( fileName, CFile::modeReadWrite|CFile::shareExclusive|CFile::typeBinary )

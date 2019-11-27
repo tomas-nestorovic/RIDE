@@ -1124,9 +1124,9 @@ finished:
 
 
 
-	CDos::TDirectoryTraversal::TDirectoryTraversal(PCFile directory,WORD entrySize,WORD nameCharsMax)
+	CDos::TDirectoryTraversal::TDirectoryTraversal(PCFile directory,WORD entrySize)
 		// ctor
-		: directory(directory) , entrySize(entrySize) , nameCharsMax(nameCharsMax)
+		: directory(directory) , entrySize(entrySize)
 		, entryType(TDirectoryTraversal::EMPTY) {
 	}
 

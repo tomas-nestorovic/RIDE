@@ -2,10 +2,10 @@
 
 	#define INI_MSG_PARAMS	_T("params")
 
-	CSpectrumDos::CSpectrumFileManagerView::CSpectrumFileManagerView(PDos dos,const TZxRom &rZxRom,BYTE supportedDisplayModes,BYTE initialDisplayMode,BYTE nInformation,PCFileInfo informationList)
+	CSpectrumDos::CSpectrumFileManagerView::CSpectrumFileManagerView(PDos dos,const TZxRom &rZxRom,BYTE supportedDisplayModes,BYTE initialDisplayMode,BYTE nInformation,PCFileInfo informationList,BYTE nameCharsMax)
 		// ctor
 		: CFileManagerView( dos, supportedDisplayModes, initialDisplayMode, rZxRom.font, 3, nInformation, informationList, 0, nullptr )
-		, zxRom(rZxRom) {
+		, zxRom(rZxRom) , nameCharsMax(nameCharsMax) {
 	}
 
 
@@ -24,7 +24,6 @@
 		if (const auto pdt=DOS->BeginDirectoryTraversal()){
 			BYTE tmpDirEntry[4096]; // "big enough" to accommodate any ZX Spectrum DirectoryEntry
 			::memcpy( tmpDirEntry, file, pdt->entrySize );
-			const WORD nameCharsMax=pdt->nameCharsMax;
 			for( BYTE copyNumber=1; copyNumber; copyNumber++ ){
 				// . composing the Name for the File copy
 				TCHAR bufNameCopy[MAX_PATH], bufExt[MAX_PATH];

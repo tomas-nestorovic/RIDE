@@ -25,7 +25,7 @@
 
 	CGDOS::CGdosFileManagerView::CGdosFileManagerView(PGDOS gdos)
 		// ctor
-		: CSpectrumFileManagerView( gdos, gdos->zxRom, REPORT, LVS_REPORT, INFORMATION_COUNT, InformationList ) {
+		: CSpectrumFileManagerView( gdos, gdos->zxRom, REPORT, LVS_REPORT, INFORMATION_COUNT, InformationList, GDOS_FILE_NAME_LENGTH_MAX ) {
 	}
 
 

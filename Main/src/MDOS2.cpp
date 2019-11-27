@@ -541,7 +541,7 @@
 
 	CMDOS2::TMdos2DirectoryTraversal::TMdos2DirectoryTraversal(const CMDOS2 *_mdos2)
 		// ctor
-		: TDirectoryTraversal( ZX_DIR_ROOT, sizeof(TDirectoryEntry), MDOS2_FILE_NAME_LENGTH_MAX )
+		: TDirectoryTraversal( ZX_DIR_ROOT, sizeof(TDirectoryEntry) )
 		, mdos2(_mdos2) {
 		__reinitToFirstEntry__();
 	}

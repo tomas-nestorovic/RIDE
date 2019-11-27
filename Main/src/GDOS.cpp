@@ -670,7 +670,7 @@
 	CGDOS::TGdosDirectoryTraversal::TGdosDirectoryTraversal(const CGDOS *gdos)
 		// ctor
 		// - base
-		: TDirectoryTraversal( ZX_DIR_ROOT, sizeof(TDirectoryEntry), GDOS_FILE_NAME_LENGTH_MAX )
+		: TDirectoryTraversal( ZX_DIR_ROOT, sizeof(TDirectoryEntry) )
 		// - initialization
 		, gdos(gdos)
 		// - getting ready to read the first Directory Sector

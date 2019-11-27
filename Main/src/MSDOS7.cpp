@@ -1301,7 +1301,7 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 	CMSDOS7::TMsdos7DirectoryTraversal::TMsdos7DirectoryTraversal(const CMSDOS7 *_msdos7,PCFile directory)
 		// ctor
 		// - base
-		: TDirectoryTraversal( directory, sizeof(UDirectoryEntry), _msdos7->dontShowLongFileNames?MSDOS7_FILE_NAME_LENGTH_MAX:MAX_PATH )
+		: TDirectoryTraversal( directory, sizeof(UDirectoryEntry) )
 		// - initialization
 		, msdos7(_msdos7)
 		, foundEndOfDirectory(false) , fatError(false)

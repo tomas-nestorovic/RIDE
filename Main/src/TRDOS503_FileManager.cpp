@@ -23,7 +23,7 @@
 
 	CTRDOS503::CTrdosFileManagerView::CTrdosFileManagerView(PTRDOS503 trdos)
 		// ctor
-		: CSpectrumFileManagerView( trdos, trdos->zxRom, REPORT, LVS_REPORT, INFORMATION_COUNT, InformationList ) {
+		: CSpectrumFileManagerView( trdos, trdos->zxRom, REPORT, LVS_REPORT, INFORMATION_COUNT, InformationList, TRDOS503_FILE_NAME_LENGTH_MAX ) {
 	}
 
 
