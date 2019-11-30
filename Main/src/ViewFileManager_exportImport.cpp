@@ -259,7 +259,6 @@
 
 	BOOL CFileManagerView::OnDrop(COleDataObject *pDataObject,DROPEFFECT dropEffect,CPoint point){
 		// dragged cursor released above window
-		if (IMAGE->__reportWriteProtection__()) return FALSE;
 		BOOL result=FALSE; // assumption (Drop failed)
 		SetRedraw(FALSE);
 			// - switching to TargetDirectory
@@ -284,6 +283,10 @@
 									if (importedFile) // File really imported (e.g. Spectrum Tape may be upon request open in a separate TDI Tab instead of be imported)
 										selectedFiles.AddTail(importedFile);
 									break;
+								case ERROR_WRITE_PROTECT:
+									IMAGE->__reportWriteProtection__();
+									dropEffect=DROPEFFECT_NONE;
+									//fallthrough
 								case ERROR_CANCELLED:
 									goto importQuit1;
 								default:
@@ -294,7 +297,7 @@
 importQuit1:		::DragFinish(hDrop);
 					::GlobalUnlock(hg);
 				}
-			}else{
+			}else if (!IMAGE->__reportWriteProtection__()){
 				// importing virtual Files (by dragging them from FileManager, no matter if this one or across applications)
 				if (!( hg=pDataObject->GetGlobalData(CRideApp::cfRideFileList) )) // if RIDE native list of Files not available ...
 					hg=pDataObject->GetGlobalData(CRideApp::cfDescriptor); // ... then settle with shell native list of Files
@@ -352,7 +355,9 @@ importQuit2:		::GlobalUnlock(hg);
 					if (moveWithinCurrentDisk) dropEffect=DROPEFFECT_COPY; // to not delete the Files
 				}
 				::GlobalFree(hg);
-			}
+			}else
+				// can't import virtual Files as the Image is write-protected
+				dropEffect=DROPEFFECT_NONE;
 			// - informing DataSource on type of acceptance of Files (for the drag&drop to go the same way as with copy/cut/paste)
 			FORMATETC etc={ CRideApp::cfPasteSucceeded, nullptr, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
 			STGMEDIUM stg={ TYMED_HGLOBAL, (HBITMAP)::GlobalAlloc(GMEM_FIXED,sizeof(DWORD)), nullptr };
@@ -507,6 +512,8 @@ importQuit2:		::GlobalUnlock(hg);
 
 	TStdWinError CFileManagerView::ImportPhysicalFile(LPCTSTR pathAndName,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution){
 		// imports physical File with given Name into current Directory; returns Windows standard i/o error
+		if (IMAGE->IsWriteProtected())
+			return ERROR_WRITE_PROTECT;
 		const LPCTSTR fileName=_tcsrchr(pathAndName,'\\')+1;
 		const DWORD winAttr=::GetFileAttributes(pathAndName);
 		FILETIME created,lastRead,lastModified;
