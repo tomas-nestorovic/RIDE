@@ -23,6 +23,8 @@
 		afx_msg void __openUrl_checkForUpdates__();
 		afx_msg void __openUrl_faq__();
 		afx_msg void __openUrl_reportBug__();
+		afx_msg void __openUrl_repository__();
+		afx_msg void __openUrl_tutorials__();
 		afx_msg void __openUrl_credits__();
 	public:
 		struct TDynMenu sealed{
