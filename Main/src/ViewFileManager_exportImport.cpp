@@ -371,6 +371,7 @@ importQuit2:		::GlobalUnlock(hg);
 			if (targetDirectory){ // it was switched from Original- to TargetDirectory above
 				__switchToDirectory__(originalDirectory);
 				selectedFiles.RemoveAll();
+				__refreshDisplay__(); // repopulating the content of the FileManager (empties the SelectedFiles list)
 			}
 			// - refreshing the FileManager and scrolling to the last imported File
 			if (selectedFiles.GetCount()){ // may be empty if importing a single File that is already on the disk, and refusing to rewrite it
