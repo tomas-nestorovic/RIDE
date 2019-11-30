@@ -166,6 +166,12 @@ BEGIN
         MENUITEM "Check for updates (online)",  ID_APP_UPDATE
         MENUITEM "Report a bug (online)",       ID_HELP_REPORT_BUG
         MENUITEM SEPARATOR
+        POPUP "For developers"
+        BEGIN
+            MENUITEM "Repository (GitHub)",         ID_HELP_REPOSITORY
+            MENUITEM "Tutorials (online)",          ID_HELP_TUTORIALS
+        END
+        MENUITEM SEPARATOR
         MENUITEM "Credits (online)",            ID_CREDITS
         MENUITEM "About",                       ID_APP_ABOUT
     END

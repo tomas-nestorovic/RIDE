@@ -208,6 +208,8 @@
 #define ID_FILEMANAGER_DIR_HEXAMODE     40223
 #define ID_EDIT_DELETE                  40227
 #define ID_BOOKMARK_NEXT                40230
+#define ID_HELP_REPOSITORY              40232
+#define ID_HELP_TUTORIALS               40233
 #define ID_EDIT_SELECT_CURRENT          40239
 #define ID_BOOKMARK_PREV                40240
 #define ID_NAVIGATE_ADDRESS             40241
