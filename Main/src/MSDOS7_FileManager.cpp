@@ -10,12 +10,12 @@
 	#define INFORMATION_MODIFIED	5 /* column to sort by */
 
 	const CFileManagerView::TFileInfo CMSDOS7::CMsdos7FileManagerView::InformationList[INFORMATION_COUNT]={
-		{ _T("Name"),		LVCFMT_LEFT,	250 },
-		{ _T("Size"),		LVCFMT_RIGHT,	70 },
-		{ _T("Attributes"), LVCFMT_RIGHT,	80 },
-		{ _T("Created"),	LVCFMT_RIGHT,	190 },
-		{ _T("Last read"),	LVCFMT_RIGHT,	110 },
-		{ _T("Last modified"),	LVCFMT_RIGHT,	190 }
+		{ _T("Name"),		250,	TFileInfo::AlignLeft|TFileInfo::FileName },
+		{ _T("Size"),		70,		TFileInfo::AlignRight },
+		{ _T("Attributes"), 80,		TFileInfo::AlignRight },
+		{ _T("Created"),	190,	TFileInfo::AlignRight },
+		{ _T("Last read"),	110,	TFileInfo::AlignRight },
+		{ _T("Last modified"),190,	TFileInfo::AlignRight }
 	};
 
 	const CFileManagerView::TDirectoryStructureManagement CMSDOS7::CMsdos7FileManagerView::dirManagement={
@@ -27,7 +27,7 @@
 	CMSDOS7::CMsdos7FileManagerView::CMsdos7FileManagerView(PMSDOS7 msdos)
 		// ctor
 		// - base
-		: CFileManagerView( msdos, REPORT, LVS_REPORT, font, 3, INFORMATION_COUNT, InformationList, INFORMATION_NAME_A_EXT, &dirManagement )
+		: CFileManagerView( msdos, REPORT, LVS_REPORT, font, 3, INFORMATION_COUNT, InformationList, &dirManagement )
 		// - loading libraries
 		, hShell32(::LoadLibrary(DLL_SHELL32))
 		// - creating presentation Font

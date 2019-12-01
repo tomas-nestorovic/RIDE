@@ -123,16 +123,11 @@
 
 	#define FRAGMENT_TYPE			_T("Fragment")
 
-	#define EXTENSION_PROGRAM	TUniFileType::PROGRAM
-	#define EXTENSION_NUMBERS	TUniFileType::NUMBER_ARRAY
-	#define EXTENSION_CHARS		TUniFileType::CHAR_ARRAY
-	#define EXTENSION_BYTES		TUniFileType::BLOCK
-
 	const TCHAR CSpectrumDos::CTape::Extensions[ZX_TAPE_EXTENSION_STD_COUNT]={
-		EXTENSION_PROGRAM,
-		EXTENSION_NUMBERS,
-		EXTENSION_CHARS,
-		EXTENSION_BYTES
+		ZX_TAPE_EXTENSION_PROGRAM,
+		ZX_TAPE_EXTENSION_NUMBERS,
+		ZX_TAPE_EXTENSION_CHARS,
+		ZX_TAPE_EXTENSION_BYTES
 	};
 
 	void CSpectrumDos::CTape::GetFileNameAndExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
@@ -179,10 +174,10 @@
 			//nop (Files on tape may he equal names)
 			// . renaming
 			switch (*newExt){
-				case EXTENSION_PROGRAM	: h->type=TZxRom::TFileType::PROGRAM;	break;
-				case EXTENSION_NUMBERS	: h->type=TZxRom::TFileType::NUMBER_ARRAY;break;
-				case EXTENSION_CHARS	: h->type=TZxRom::TFileType::CHAR_ARRAY;break;
-				case EXTENSION_BYTES	: h->type=TZxRom::TFileType::CODE;		break;
+				case ZX_TAPE_EXTENSION_PROGRAM	: h->type=TZxRom::TFileType::PROGRAM;	break;
+				case ZX_TAPE_EXTENSION_NUMBERS	: h->type=TZxRom::TFileType::NUMBER_ARRAY;break;
+				case ZX_TAPE_EXTENSION_CHARS	: h->type=TZxRom::TFileType::CHAR_ARRAY;break;
+				case ZX_TAPE_EXTENSION_BYTES	: h->type=TZxRom::TFileType::CODE;		break;
 				default:
 					return ERROR_BAD_FILE_TYPE;
 			}

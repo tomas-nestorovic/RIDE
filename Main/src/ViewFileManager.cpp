@@ -18,14 +18,16 @@
 
 
 
-	CFileManagerView::CFileManagerView(PDos _dos,BYTE _supportedDisplayModes,BYTE _initialDisplayMode,const CFont &rFont,BYTE reportModeRowHeightAdjustment,BYTE _nInformation,PCFileInfo _informationList,BYTE _nameColumnId,const TDirectoryStructureManagement *_pDirectoryStructureManagement)
+	CFileManagerView::CFileManagerView(PDos _dos,BYTE _supportedDisplayModes,BYTE _initialDisplayMode,const CFont &rFont,BYTE reportModeRowHeightAdjustment,BYTE _nInformation,PCFileInfo _informationList,const TDirectoryStructureManagement *_pDirectoryStructureManagement)
 		// ctor
 		// - initialization
 		: tab( IDR_FILEMANAGER, IDR_FILEMANAGER, ID_FILE, _dos, this )
 		, rFont(rFont)
 		, reportModeRowHeightAdjustment(reportModeRowHeightAdjustment)
-		, nInformation(_nInformation) , informationList(_informationList) , nameColumnId(_nameColumnId)
+		, nInformation(_nInformation) , informationList(_informationList)
 		, supportedDisplayModes(_supportedDisplayModes) , displayMode(_initialDisplayMode)
+		, reportModeDisplayedInfosPrev(0) // no columns have been shown previously ...
+		, reportModeDisplayedInfos(-1) // ... and now wanting to show them all
 		, ordering(ORDER_NONE) , focusedFile(-1) , scrollY(0) , ownedDataSource(nullptr)
 		, pDirectoryStructureManagement(_pDirectoryStructureManagement) {
 		// - switching to default DisplayMode
@@ -100,6 +102,8 @@
 	#define DOS		tab.dos
 	#define IMAGE	DOS->image
 
+	#define ORDER_NONE_SYMBOL		' '
+
 	void CFileManagerView::OnUpdate(CView *pSender,LPARAM iconType,CObject *icons){
 		// request to refresh the display of content
 		// - emptying the FileManager
@@ -110,6 +114,21 @@
 		ImageList_Destroy(
 			ListView_SetImageList(m_hWnd,icons,iconType) // list of Icons for all DisplayModes but LVS_REPORT
 		);
+		// - displaying Information on Files in individual columns
+		if (reportModeDisplayedInfos!=reportModeDisplayedInfosPrev){
+			// . removing all previous columns
+			while (!lv.GetColumn(0,&LVCOLUMN()))
+				lv.DeleteColumn(0);
+			// . adding a new set of columns
+			TCHAR buf[80];	*buf=ORDER_NONE_SYMBOL;
+			PCFileInfo info=informationList;
+			for( int i=0; i<nInformation; i++,info++ )
+				if ((reportModeDisplayedInfos&1<<i)!=0){
+					::lstrcpy(buf+1,info->informationName);
+					lv.InsertColumn( i, buf, info->flags&(TFileInfo::AlignLeft|TFileInfo::AlignRight), info->columnWidthDefault*Utils::LogicalUnitScaleFactor );
+				}
+			reportModeDisplayedInfosPrev=reportModeDisplayedInfos;
+		}
 		// - populating the FileManager with new content
 		if (const auto pdt=DOS->BeginDirectoryTraversal())
 			while (pdt->GetNextFileOrSubdir())
@@ -178,8 +197,6 @@
 		CMainWindow::__setStatusBarText__(buf);
 	}
 
-	#define ORDER_NONE_SYMBOL		' '
-
 	afx_msg int CFileManagerView::OnCreate(LPCREATESTRUCT lpcs){
 		// window created
 		// - base
@@ -188,13 +205,6 @@
 		// - registering the FileManager as a target of drag&drop
 		dropTarget.Register(this);
 		DragAcceptFiles(); // to not pass the WM_DROPFILES message to the MainWindow (which would attempt to open the dropped File as an Image)
-		// - initializing FileManager with available Information on Files
-		TCHAR buf[80];	*buf=ORDER_NONE_SYMBOL;
-		PCFileInfo info=informationList;
-		for( int i=0; i<nInformation; i++,info++ ){
-			::lstrcpy(buf+1,info->informationName);
-			lv.InsertColumn( i, buf, info->aligning, info->columnWidthDefault*Utils::LogicalUnitScaleFactor );
-		}
 		// - populating the FileManager and applying Ordering to Files
 		__changeDisplayMode__(displayMode+ID_FILEMANAGER_BIG_ICONS); // calls OnInitialUpdate/OnUpdate
 		// - restoring scroll position
@@ -477,9 +487,23 @@
 		return lv.GetScrollPos(SB_VERT)*(r.bottom-r.top);
 	}
 
+	CFileManagerView::PCFileInfo CFileManagerView::__fileInfoFromColumnId__(BYTE columnId) const{
+		// for a specified column index determines and returns FileInfo structure 
+		for( BYTE i=0; i<nInformation; i++ )
+			if ((reportModeDisplayedInfos&1<<i)!=0)
+				if (!columnId)
+					return informationList+i;
+				else
+					columnId--;
+		ASSERT(FALSE); // we should never end up here, but just to be sure
+		return nullptr;
+	}
+
 	afx_msg void CFileManagerView::OnDestroy(){
 		// window destroyed
 		dropTarget.Revoke();
+		// - displaying the same set of columns the next time it's switched to the File Manager
+		reportModeDisplayedInfosPrev=~reportModeDisplayedInfos;
 		// - saving the scroll position for later
 		scrollY=__getVerticalScrollPos__();
 		//scrollToIndex=lv.GetTopIndex();

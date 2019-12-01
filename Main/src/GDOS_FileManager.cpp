@@ -12,15 +12,15 @@
 	#define INFORMATION_ETC			8 /* column to sort by */
 
 	const CFileManagerView::TFileInfo CGDOS::CGdosFileManagerView::InformationList[INFORMATION_COUNT]={
-		{ nullptr,				LVCFMT_LEFT,	8 }, // auxiliary column to indent the first information from left edge of window
-		{ _T("Name"),		LVCFMT_LEFT,	180 },
-		{ _T("Type"),		LVCFMT_RIGHT,	110 },
-		{ _T("Size"),		LVCFMT_RIGHT,	60 },
-		{ _T("Sectors"),	LVCFMT_RIGHT,	55 },
-		{ _T("First sector"),LVCFMT_RIGHT,	100 },
-		{ ZX_PARAMETER_1,	LVCFMT_RIGHT,	90 },
-		{ ZX_PARAMETER_2,	LVCFMT_RIGHT,	80 },
-		{ _T("Etc."),		LVCFMT_LEFT,	80 }
+		{ nullptr,			8,		TFileInfo::AlignLeft }, // auxiliary column to indent the first information from left edge of window
+		{ _T("Name"),		180,	TFileInfo::AlignLeft|TFileInfo::FileName },
+		{ _T("Type"),		110,	TFileInfo::AlignRight },
+		{ _T("Size"),		60,		TFileInfo::AlignRight },
+		{ _T("Sectors"),	55,		TFileInfo::AlignRight },
+		{ _T("First sector"),100,	TFileInfo::AlignRight },
+		{ ZX_PARAMETER_1,	90,		TFileInfo::AlignRight },
+		{ ZX_PARAMETER_2,	80,		TFileInfo::AlignRight },
+		{ _T("Etc."),		80,		TFileInfo::AlignLeft }
 	};
 
 	CGDOS::CGdosFileManagerView::CGdosFileManagerView(PGDOS gdos)

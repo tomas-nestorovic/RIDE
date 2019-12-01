@@ -20,9 +20,16 @@
 	public:
 		#pragma pack(1)
 		typedef const struct TFileInfo sealed{
+			enum TFlags:BYTE{
+				AlignLeft=LVCFMT_LEFT,
+				AlignRight=LVCFMT_RIGHT,
+				FileName=2,
+				Highlighted=4
+			};
+
 			LPCTSTR informationName;
-			BYTE aligning;
 			WORD columnWidthDefault;
+			BYTE flags;
 		} *PCFileInfo;
 		typedef CPtrList TFileList;
 
@@ -85,10 +92,10 @@
 
 		const BYTE supportedDisplayModes; // see TDisplayMode enumeration
 		const BYTE reportModeRowHeightAdjustment; // in 1/10 of a point
-		const BYTE nameColumnId;
 		const BYTE nInformation;
 		const PCFileInfo informationList;
 		const COleVirtualFileDataSource *ownedDataSource;
+		DWORD reportModeDisplayedInfosPrev;
 		union{
 			int scrollY;
 			int dropTargetFileId;
@@ -106,6 +113,7 @@
 		void __restoreFileSelection__();
 		void __switchToDirectory__(CDos::PFile directory) const;
 		int __getVerticalScrollPos__() const;
+		PCFileInfo __fileInfoFromColumnId__(BYTE columnId) const;
 		TStdWinError __switchToDirectory__(PTCHAR path) const;
 		TStdWinError __skipNameConflict__(DWORD newFileSize,LPCTSTR newFileName,CDos::PFile conflict,TConflictResolution &rConflictedSiblingResolution) const;
 		TStdWinError __moveFile__(int &i,LPFILEDESCRIPTOR files,int nFiles,CDos::PFile &rMovedFile,TConflictResolution &rConflictedSiblingResolution);
@@ -209,10 +217,11 @@
 
 		BYTE displayMode; // see the TDisplayMode enumeration
 		BYTE ordering;
+		DWORD reportModeDisplayedInfos;
 		TFileList selectedFiles; // used only for restoring selection when the FileManager is switched back - otherwise the content is empty!
 		int focusedFile;
 
-		CFileManagerView(PDos _dos,BYTE _supportedDisplayModes,BYTE _initialDisplayMode,const CFont &rFont,BYTE reportModeRowHeightAdjustment,BYTE _nInformation,PCFileInfo _informationList,BYTE _nameColumnId,const TDirectoryStructureManagement *_pDirectoryStructureManagement);
+		CFileManagerView(PDos _dos,BYTE _supportedDisplayModes,BYTE _initialDisplayMode,const CFont &rFont,BYTE reportModeRowHeightAdjustment,BYTE _nInformation,PCFileInfo _informationList,const TDirectoryStructureManagement *_pDirectoryStructureManagement);
 		~CFileManagerView();
 
 		void __editFileInformation__(CDos::PFile file,BYTE editableInformationSearchDirection) const;

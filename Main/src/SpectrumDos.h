@@ -11,6 +11,11 @@
 	#define ZX_TAPE_FILE_COUNT_MAX			2048
 	#define ZX_TAPE_EXTENSION_STD_COUNT		4
 
+	#define ZX_TAPE_EXTENSION_PROGRAM	TUniFileType::PROGRAM
+	#define ZX_TAPE_EXTENSION_NUMBERS	TUniFileType::NUMBER_ARRAY
+	#define ZX_TAPE_EXTENSION_CHARS		TUniFileType::CHAR_ARRAY
+	#define ZX_TAPE_EXTENSION_BYTES		TUniFileType::BLOCK
+
 	class CSpectrumDos:public CDos{
 		bool __isTapeFileManagerShown__() const;
 	protected:
@@ -170,8 +175,6 @@
 			} *PTapeFile,**PPTapeFile;
 			typedef const TTapeFile *PCTapeFile;
 
-			static const TCHAR Extensions[ZX_TAPE_EXTENSION_STD_COUNT];
-
 			class CTapeFileManagerView sealed:public CSpectrumFileManagerView{
 				friend class CTape;
 
@@ -222,6 +225,7 @@
 			BOOL DoSave(LPCTSTR,BOOL) override;
 		public:
 			static CTape *pSingleInstance;
+			static const TCHAR Extensions[ZX_TAPE_EXTENSION_STD_COUNT];
 
 			CTape(LPCTSTR fileName,const CSpectrumDos *diskDos,bool makeCurrentTab);
 			~CTape();

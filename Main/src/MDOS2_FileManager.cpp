@@ -12,12 +12,12 @@
 	#define INFORMATION_PARAM_2		5 /* column to sort by */
 
 	const CFileManagerView::TFileInfo CMDOS2::CMdos2FileManagerView::InformationList[INFORMATION_COUNT]={
-		{ _T("Extension"),	LVCFMT_RIGHT,	70 },
-		{ _T("Name"),		LVCFMT_LEFT,	180 },
-		{ _T("Size"),		LVCFMT_RIGHT,	60 },
-		{ _T("Attributes"), LVCFMT_RIGHT,	80 },
-		{ ZX_PARAMETER_1,	LVCFMT_RIGHT,	90 },
-		{ ZX_PARAMETER_2,	LVCFMT_RIGHT,	80 }
+		{ _T("Extension"),	70,		TFileInfo::AlignRight },
+		{ _T("Name"),		180,	TFileInfo::AlignLeft|TFileInfo::FileName },
+		{ _T("Size"),		60,		TFileInfo::AlignRight },
+		{ _T("Attributes"), 80,		TFileInfo::AlignRight },
+		{ ZX_PARAMETER_1,	90,		TFileInfo::AlignRight },
+		{ ZX_PARAMETER_2,	80,		TFileInfo::AlignRight }
 	};
 
 	CMDOS2::CMdos2FileManagerView::CMdos2FileManagerView(PMDOS2 mdos)

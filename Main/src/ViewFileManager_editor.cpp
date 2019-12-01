@@ -167,7 +167,11 @@
 		// - creating Editor for File's first editable Information
 		if (displayMode==LVS_REPORT){
 			__informationWithCheckableShowNoMore__( _T("About to edit the name.\n\nNavigate between additional editable information forth and back by pressing Tab or Ctrl+Tab.\nYou eventually can also double-click on a file information to edit it (but double-clicking on a directory name shows its content)."), INI_MSG_FILE_EDITING );
-			editedInformationId=nameColumnId-1;
+			for( editedInformationId=nInformation; editedInformationId--; )
+				if (reportModeDisplayedInfos&1<<editedInformationId)
+					if ((informationList+editedInformationId)->flags&TFileInfo::FileName)
+						break;
+			editedInformationId--;
 			__editFileInformation__( file, SEARCH_DIRECTION_RIGHT );
 		}else{
 			lv.SetFocus();	// to edit File's label, the ListCtrl must be fokused
@@ -188,13 +192,15 @@
 
 	void CFileManagerView::__editFileInformation__(CDos::PFile file,BYTE editableInformationSearchDirection) const{
 		// creates Editor of given Information; if Information not editable, searches the nearest editable Information in given Direction {Left,Right}
-		BYTE n=nInformation;
-		do{
+		for( BYTE n=nInformation; n>0; n-- ){
 			if (( editedInformationId+=editableInformationSearchDirection )==nInformation)
 				editedInformationId=0;
 			else if(editedInformationId==(BYTE)-1)
 				editedInformationId=nInformation-1;
-		}while (!CreateFileInformationEditor(file,editedInformationId) && --n);
+			if (reportModeDisplayedInfos&1<<editedInformationId)
+				if (CreateFileInformationEditor(file,editedInformationId))
+					break;
+		}
 	}
 
 	void CFileManagerView::__editNextFileInformation__(CDos::PFile file) const{
@@ -216,7 +222,7 @@
 		const CListCtrl &lv=GetListCtrl();
 		const CDos::PFile file=(CDos::PFile)lv.GetItemData(lpia->iItem);
 		// - displaying the content of Subdirectory
-		if (lpia->iSubItem==nameColumnId)
+		if (__fileInfoFromColumnId__(lpia->iSubItem)->flags&TFileInfo::FileName)
 			if (DOS->IsDirectory(file)){
 				__switchToDirectory__(file);
 				GetListCtrl().SendMessage( LVM_SCROLL, 0, -__getVerticalScrollPos__() ); // resetting the scroll position to zero pixels
@@ -229,9 +235,10 @@
 			if (!CEditorBase::pSingleShown && lpia->iSubItem>-1){
 				// !A&B; A = no Editor shown, B = double-clicked on File Information (column)
 				if (IMAGE->__reportWriteProtection__()) return; // if Image WriteProtected, informing and quitting
-				if (!CreateFileInformationEditor(file, editedInformationId=lpia->iSubItem )){
+				const auto fileInfo=__fileInfoFromColumnId__(lpia->iSubItem);
+				if (!CreateFileInformationEditor(file, editedInformationId=fileInfo-informationList )){
 					TCHAR buf[200];
-					_stprintf(buf,_T("Information in the \"%s\" column cannot be edited."),informationList[editedInformationId].informationName);
+					_stprintf(buf,_T("Information in the \"%s\" column cannot be edited."),fileInfo->informationName);
 					Utils::Information(buf);
 				}
 			}

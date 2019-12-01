@@ -11,14 +11,14 @@
 	#define INFORMATION_STD_PARAM_2	7 /* column to sort by */
 
 	const CFileManagerView::TFileInfo CTRDOS503::CTrdosFileManagerView::InformationList[INFORMATION_COUNT]={
-		{ nullptr,				LVCFMT_LEFT,	8 }, // auxiliary column to indent the first information from left edge of window
-		{ _T("Name"),		LVCFMT_LEFT,	180 },
-		{ _T("Extension"),	LVCFMT_RIGHT,	70 },
-		{ _T("Size"),		LVCFMT_RIGHT,	55 },
-		{ _T("Sectors"),	LVCFMT_RIGHT,	55 },
-		{ _T("First sector"),LVCFMT_RIGHT,	100 },
-		{ ZX_PARAMETER_1,	LVCFMT_RIGHT,	90 },
-		{ ZX_PARAMETER_2,	LVCFMT_RIGHT,	80 }
+		{ nullptr,			8,		TFileInfo::AlignLeft }, // auxiliary column to indent the first information from left edge of window
+		{ _T("Name"),		180,	TFileInfo::AlignLeft|TFileInfo::FileName },
+		{ _T("Extension"),	70,		TFileInfo::AlignRight },
+		{ _T("Size"),		55,		TFileInfo::AlignRight },
+		{ _T("Sectors"),	55,		TFileInfo::AlignRight },
+		{ _T("First sector"),100,	TFileInfo::AlignRight },
+		{ ZX_PARAMETER_1,	90,		TFileInfo::AlignRight },
+		{ ZX_PARAMETER_2,	80,		TFileInfo::AlignRight }
 	};
 
 	CTRDOS503::CTrdosFileManagerView::CTrdosFileManagerView(PTRDOS503 trdos)
