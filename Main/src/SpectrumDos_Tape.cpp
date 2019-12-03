@@ -517,14 +517,14 @@
 	#define INFORMATION_FLAG	5 /* column to sort by */
 	#define INFORMATION_CHECKSUM 6 /* column to sort by */
 
-	static const CFileManagerView::TFileInfo InformationList[INFORMATION_COUNT]={
-		{ _T("Type"),		LVCFMT_RIGHT,	100 },
-		{ _T("Name"),		LVCFMT_LEFT,	180 },
-		{ _T("Size"),		LVCFMT_RIGHT,	60 },
-		{ ZX_PARAMETER_1,	LVCFMT_RIGHT,	75 },
-		{ ZX_PARAMETER_2,	LVCFMT_RIGHT,	75 },
-		{ _T("Block flag"),	LVCFMT_RIGHT,	75 },
-		{ _T("Checksum"),	LVCFMT_RIGHT,	75 }
+	const CFileManagerView::TFileInfo CSpectrumDos::CTape::CTapeFileManagerView::InformationList[]={
+		{ _T("Type"),		100,	TFileInfo::AlignRight },
+		{ _T("Name"),		180,	TFileInfo::AlignLeft|TFileInfo::FileName },
+		{ _T("Size"),		60,		TFileInfo::AlignRight },
+		{ ZX_PARAMETER_1,	75,		TFileInfo::AlignRight },
+		{ ZX_PARAMETER_2,	75,		TFileInfo::AlignRight },
+		{ _T("Block flag"),	75,		TFileInfo::AlignRight },
+		{ _T("Checksum"),	75,		TFileInfo::AlignRight }
 	};
 
 	static void WINAPI __onTapeClosing__(CTdiCtrl::TTab::PContent tab){
