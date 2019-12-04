@@ -5,7 +5,10 @@
 	CSpectrumDos::CSpectrumFileManagerView::CSpectrumFileManagerView(PDos dos,const TZxRom &rZxRom,BYTE supportedDisplayModes,BYTE initialDisplayMode,BYTE nInformation,PCFileInfo informationList,BYTE nameCharsMax)
 		// ctor
 		: CFileManagerView( dos, supportedDisplayModes, initialDisplayMode, rZxRom.font, 3, nInformation, informationList, nullptr )
-		, zxRom(rZxRom) , nameCharsMax(nameCharsMax) {
+		, zxRom(rZxRom) , nameCharsMax(nameCharsMax)
+		, singleCharExtEditor(this)
+		, varLengthFileNameEditor(this)
+		, stdTapeHeaderTypeEditor(this) {
 	}
 
 
@@ -93,6 +96,17 @@
 		return __super::ImportPhysicalFile( pathAndName, rImportedFile, rConflictedSiblingResolution );
 	}
 
+
+
+
+
+
+
+	CSpectrumDos::CSpectrumFileManagerView::CSingleCharExtensionEditor::CSingleCharExtensionEditor(const CSpectrumFileManagerView *pZxFileManager)
+		// ctor
+		: pZxFileManager(pZxFileManager) {
+	}
+
 	#define EXTENSION_MIN	32
 	#define EXTENSION_MAX	127
 
@@ -129,16 +143,19 @@
 	}
 	CFileManagerView::PEditorBase CSpectrumDos::CSpectrumFileManagerView::CSingleCharExtensionEditor::Create(PFile file){
 		// creates and returns an Editor of File's single-character Extension
-		const PDos dos=CDos::GetFocused();
-		const CSpectrumFileManagerView *const pZxFileManager=(CSpectrumFileManagerView *)dos->pFileManager;
 		TCHAR bufExt[2];
-		dos->GetFileNameAndExt(file,nullptr,bufExt);
+		pZxFileManager->DOS->GetFileNameAndExt(file,nullptr,bufExt);
 		const PEditorBase result=pZxFileManager->__createStdEditor__(
 			file, &( data=*bufExt ),
 			PropGrid::Enum::DefineConstStringListEditorA( sizeof(data), __createValues__, __getDescription__, __freeValues__, __onChanged__ )
 		);
 		::SendMessage( result->hEditor, WM_SETFONT, (WPARAM)pZxFileManager->rFont.m_hObject, 0 );
 		return result;
+	}
+	void CSpectrumDos::CSpectrumFileManagerView::CSingleCharExtensionEditor::DrawReportModeCell(BYTE extension,LPDRAWITEMSTRUCT pdis) const{
+		// directly draws File's single-character Extension
+		TCHAR buf[16];
+		pZxFileManager->zxRom.PrintAt( pdis->hDC, TZxRom::ZxToAscii((LPCSTR)&extension,1,buf), pdis->rcItem, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
 	}
 
 
@@ -150,6 +167,10 @@
 
 
 
+	CSpectrumDos::CSpectrumFileManagerView::CVarLengthFileNameEditor::CVarLengthFileNameEditor(const CSpectrumFileManagerView *pZxFileManager)
+		// ctor
+		: pZxFileManager(pZxFileManager) {
+	}
 
 	bool WINAPI CSpectrumDos::CSpectrumFileManagerView::CVarLengthFileNameEditor::__onChanged__(PVOID file,HWND,PVOID){
 		// changes specified File's Name
@@ -173,13 +194,11 @@
 
 	CFileManagerView::PEditorBase CSpectrumDos::CSpectrumFileManagerView::CVarLengthFileNameEditor::Create(PFile file,BYTE lengthMax,char paddingChar){
 		// creates and returns the Editor of File Name
-		const PDos dos=CDos::GetFocused();
-		const CSpectrumFileManagerView *const pZxFileManager=(CSpectrumFileManagerView *)dos->pFileManager;
 		ASSERT(lengthMax<sizeof(bufOldName)/sizeof(TCHAR));
 		#ifdef UNICODE
 			ASSERT(FALSE);
 		#else
-			dos->GetFileNameAndExt( file, bufOldName, nullptr );
+			pZxFileManager->DOS->GetFileNameAndExt( file, bufOldName, nullptr );
 			::memset( bufOldName+::lstrlen(bufOldName), paddingChar, lengthMax ); // guaranteed that LengthMax PaddingChars still fit in the Buffer for any ZX Spectrum derivate
 			return pZxFileManager->__createStdEditor__(	file, bufOldName,
 														TZxRom::CLineComposerPropGridEditor::Define( lengthMax, paddingChar, __onChanged__, nullptr )
@@ -187,21 +206,8 @@
 		#endif
 	}
 
-
-
-
-
-
-
-
-
-
-
-	CFileManagerView::PEditorBase CSpectrumDos::CSpectrumFileManagerView::CStdParamEditor::Create(PFile file,PWORD pwParam,PropGrid::Integer::TOnValueConfirmed fnOnConfirmed){
-		// creates and returns the Editor of File Name
-		const PDos dos=CDos::GetFocused();
-		const CSpectrumFileManagerView *const pZxFileManager=(CSpectrumFileManagerView *)dos->pFileManager;
-		const PEditorBase result=pZxFileManager->__createStdEditorForWordValue__( file, pwParam, fnOnConfirmed );
-		::SendMessage( result->hEditor, WM_SETFONT, (WPARAM)pZxFileManager->zxRom.font.m_hObject, 0 );
-		return result;
+	void CSpectrumDos::CSpectrumFileManagerView::CVarLengthFileNameEditor::DrawReportModeCell(LPCSTR fileName,BYTE fileNameLength,LPDRAWITEMSTRUCT pdis) const{
+		// directly draws FileName
+		TCHAR buf[512];
+		pZxFileManager->zxRom.PrintAt( pdis->hDC, TZxRom::ZxToAscii(fileName,fileNameLength,buf), pdis->rcItem, DT_SINGLELINE|DT_VCENTER );
 	}

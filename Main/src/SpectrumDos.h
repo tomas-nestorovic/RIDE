@@ -114,23 +114,47 @@
 				static bool WINAPI __onChanged__(PVOID file,PropGrid::Enum::UValue newExt);
 				static LPCTSTR WINAPI __getDescription__(PVOID file,PropGrid::Enum::UValue extension,PTCHAR buf,short bufCapacity);
 
+				const CSpectrumFileManagerView *const pZxFileManager;
 				BYTE data;
 			public:
+				CSingleCharExtensionEditor(const CSpectrumFileManagerView *pZxFileManager);
+
 				PEditorBase Create(PFile file);
+				void DrawReportModeCell(BYTE extension,LPDRAWITEMSTRUCT pdis) const;
 			} singleCharExtEditor;
 
 			mutable class CVarLengthFileNameEditor sealed{
 				static bool WINAPI __onChanged__(PVOID file,HWND,PVOID);
 
+				const CSpectrumFileManagerView *const pZxFileManager;
 				TCHAR bufOldName[64]; // 64 = should accommodate filename of any ZX Spectrum-derived platform
 			public:
+				CVarLengthFileNameEditor(const CSpectrumFileManagerView *pZxFileManager);
+
 				PEditorBase Create(PFile file,BYTE lengthMax,char paddingChar);
+				void DrawReportModeCell(LPCSTR fileName,BYTE fileNameLength,LPDRAWITEMSTRUCT pdis) const;
 			} varLengthFileNameEditor;
 
-			mutable class CStdParamEditor sealed{
+			mutable class CStdTapeHeaderBlockTypeEditor sealed{
 			public:
-				PEditorBase Create(PFile file,PWORD pwParam,PropGrid::Integer::TOnValueConfirmed fnOnConfirmed);
-			} stdParamEditor;
+				enum TDisplayTypes{
+					STD_ONLY,
+					STD_AND_HEADERLESS,
+					STD_AND_HEADERLESS_AND_FRAGMENT
+				};
+			private:
+				static PropGrid::Enum::PCValueList WINAPI __createValues__(PVOID file,WORD &rnValues);
+				static LPCTSTR WINAPI __getDescription__(PVOID file,PropGrid::Enum::UValue stdType,PTCHAR,short);
+
+				const CSpectrumFileManagerView *const pZxFileManager;
+				BYTE data;
+				TDisplayTypes types;
+			public:				
+				CStdTapeHeaderBlockTypeEditor(const CSpectrumFileManagerView *pZxFileManager);
+
+				PEditorBase Create(PFile file,TZxRom::TFileType type,TDisplayTypes _types,PropGrid::Enum::TOnValueConfirmed onChanged);
+				void DrawReportModeCell(BYTE type,LPDRAWITEMSTRUCT pdis) const;
+			} stdTapeHeaderTypeEditor;
 
 			PTCHAR GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant,PTCHAR pOutBuffer) const override sealed;
 			TStdWinError ImportPhysicalFile(LPCTSTR pathAndName,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution) override;
@@ -178,30 +202,14 @@
 			class CTapeFileManagerView sealed:public CSpectrumFileManagerView{
 				friend class CTape;
 
+				static const TFileInfo InformationList[];
+
 				static bool WINAPI __checksumModified__(PVOID file,int);
-
-				mutable class CStdHeaderTypeEditor sealed{
-				public:
-					enum TDisplayTypes{
-						STD_ONLY,
-						STD_AND_HEADERLESS,
-						STD_AND_HEADERLESS_AND_FRAGMENT
-					};
-				private:
-					static bool WINAPI __onChanged__(PVOID file,PropGrid::Enum::UValue _newType);
-					static PropGrid::Enum::PCValueList WINAPI __createValues__(PVOID file,WORD &rnValues);
-
-					BYTE data;
-					TDisplayTypes types;
-				public:
-					static LPCTSTR WINAPI __getDescription__(PVOID file,PropGrid::Enum::UValue stdType,PTCHAR,short);
-					
-					PEditorBase Create(PFile file,TZxRom::TFileType type,TDisplayTypes _types);
-				} stdHeaderTypeEditor;
+				static bool WINAPI __tapeBlockTypeModified__(PVOID file,PropGrid::Enum::UValue _newType);
 
 				CMainWindow::CDockableToolBar toolbar;
 
-				void DrawFileInfo(LPDRAWITEMSTRUCT pdis,const int *tabs) const override;
+				void DrawReportModeCell(PCFileInfo pFileInfo,LPDRAWITEMSTRUCT pdis) const override;
 				int CompareFiles(PCFile file1,PCFile file2,BYTE information) const override;
 				PEditorBase CreateFileInformationEditor(PFile,BYTE infoId) const override;
 				LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;

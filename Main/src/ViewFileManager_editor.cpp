@@ -110,7 +110,9 @@
 
 	CFileManagerView::PEditorBase CFileManagerView::__createStdEditor__(CDos::PFile file,PVOID value,PropGrid::PCEditor editor) const{
 		// creates and returns PropertyGrid's specified built-in Editor
-		return new CEditorBase( file, value, editor, *this );
+		const PEditorBase result=new CEditorBase( file, value, editor, *this );
+		::SendMessage( result->hEditor, WM_SETFONT, (WPARAM)rFont.m_hObject, 0 );
+		return result;
 	}
 
 	CFileManagerView::PEditorBase CFileManagerView::__createStdEditorWithEllipsis__(CDos::PFile file,PropGrid::TOnEllipsisButtonClicked buttonAction) const{
@@ -122,20 +124,6 @@
 		// creates and returns an Editor that contains only PropertyGrid's standard EllipsisButton and misses the main control; the EllipsisButton triggers an edit dialog with given ID
 		return __createStdEditor__(	file, value,
 									PropGrid::Custom::DefineEditor( 0, valueSize, nullptr, nullptr, buttonAction )
-								);
-	}
-
-	CFileManagerView::PEditorBase CFileManagerView::__createStdEditorForByteValue__(CDos::PFile file,PBYTE pByte,PropGrid::Integer::TOnValueConfirmed fnOnValueConfirmed) const{
-		// creates and returns PropertyGrid's build-in Editor for editing specified Byte value
-		return __createStdEditor__( file, pByte,
-									PropGrid::Integer::DefineByteEditor(fnOnValueConfirmed,PropGrid::Integer::ALIGN_RIGHT)
-								);
-	}
-
-	CFileManagerView::PEditorBase CFileManagerView::__createStdEditorForWordValue__(CDos::PFile file,PWORD pWord,PropGrid::Integer::TOnValueConfirmed fnOnValueConfirmed) const{
-		// creates and returns PropertyGrid's build-in Editor for editing specified Word value
-		return __createStdEditor__( file, pWord,
-									PropGrid::Integer::DefineWordEditor(fnOnValueConfirmed,PropGrid::Integer::ALIGN_RIGHT)
 								);
 	}
 
@@ -261,4 +249,58 @@
 				Utils::Information(FILE_MANAGER_ERROR_RENAMING,err);
 		}
 		CEditorBase::pSingleShown=nullptr;
+	}
+
+
+
+
+
+
+
+
+
+	CFileManagerView::CIntegerEditor::CIntegerEditor(const CFileManagerView *pFileManager)
+		// ctor
+		: pFileManager(pFileManager) {
+	}
+
+	CFileManagerView::PEditorBase CFileManagerView::CIntegerEditor::Create(CDos::PFile file,PBYTE pByte,PropGrid::Integer::TOnValueConfirmed fnOnConfirmed){
+		// creates and returns PropertyGrid's build-in Editor for editing specified Byte value
+		return	pFileManager->__createStdEditor__(	file, pByte,
+													PropGrid::Integer::DefineByteEditor(fnOnConfirmed,PropGrid::Integer::ALIGN_RIGHT)
+												);
+	}
+
+	CFileManagerView::PEditorBase CFileManagerView::CIntegerEditor::Create(CDos::PFile file,PWORD pWord,PropGrid::Integer::TOnValueConfirmed fnOnConfirmed){
+		// creates and returns PropertyGrid's build-in Editor for editing specified Word value
+		return	pFileManager->__createStdEditor__(	file, pWord,
+													PropGrid::Integer::DefineWordEditor(fnOnConfirmed,PropGrid::Integer::ALIGN_RIGHT)
+												);
+	}
+
+	void CFileManagerView::CIntegerEditor::DrawReportModeCell(int number,LPDRAWITEMSTRUCT pdis) const{
+		// directly draws the integral Number
+		TCHAR buf[16];
+		::DrawText( pdis->hDC, _itot(number,buf,10),-1, &pdis->rcItem, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
+	}
+
+	void CFileManagerView::CIntegerEditor::DrawReportModeCellWithCheckmark(int number,bool checkmark,LPDRAWITEMSTRUCT pdis) const{
+		// draws ActualChecksum and, based on the Correctness, either a "check" or "cross" symbol next to it
+		// - Number
+		RECT &r=pdis->rcItem;
+		const LONG statusWidth=(r.bottom-r.top)*4/3;
+		r.right-=statusWidth;
+		DrawReportModeCell( number, pdis );
+		// - "check" or "cross" symbol
+		const HDC dc=pdis->hDC;
+		r.left=std::max<>(r.right,r.left), r.right+=statusWidth;
+		const int color0 =	pdis->itemState&ODS_SELECTED
+							? ::GetTextColor(dc)
+							: ::SetTextColor( dc, checkmark?0xa0ffa0:0xff );
+			const Utils::CRideFont statusFont( FONT_WEBDINGS, 120 );
+			const HGDIOBJ hFont0=::SelectObject(dc,statusFont);
+				const WCHAR StatusCorrect=0xf061, StatusIncorrect=0xf072;
+				::DrawTextW( dc, checkmark?&StatusCorrect:&StatusIncorrect,1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
+			::SelectObject(dc,hFont0);
+		::SetTextColor( dc, color0 );
 	}

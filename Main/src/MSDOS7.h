@@ -261,7 +261,7 @@
 			HICON icons[MSDOS7_FILE_ICONS_COUNT];
 
 			HICON __getIcon__(PCDirectoryEntry de) const;
-			void DrawFileInfo(LPDRAWITEMSTRUCT pdis,const int *tabs) const override;
+			void DrawReportModeCell(PCFileInfo pFileInfo,LPDRAWITEMSTRUCT pdis) const override;
 			int CompareFiles(PCFile file1,PCFile file2,BYTE information) const override;
 			PEditorBase CreateFileInformationEditor(PFile file,BYTE infoId) const override;
 			PTCHAR GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant,PTCHAR pOutBuffer) const override;

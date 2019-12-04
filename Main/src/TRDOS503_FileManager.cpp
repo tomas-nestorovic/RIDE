@@ -51,7 +51,7 @@
 		return CSpectrumFileManagerView::WindowProc(msg,wParam,lParam);
 	}
 
-	void CTRDOS503::CTrdosFileManagerView::DrawFileInfo(LPDRAWITEMSTRUCT pdis,const int *tabs) const{
+	void CTRDOS503::CTrdosFileManagerView::DrawReportModeCell(PCFileInfo pFileInfo,LPDRAWITEMSTRUCT pdis) const{
 		// draws Information on File
 		RECT r=pdis->rcItem;
 		const HDC dc=pdis->hDC;
@@ -64,44 +64,49 @@
 				//case TDirectoryEntry::BLOCK	: break;
 				case TDirectoryEntry::PRINT		: ::SetTextColor(dc,0x999999); break;
 			}
+		// . drawing Information
 		TCHAR bufT[MAX_PATH];
-		// . COLUMN: <indent from left edge>
-		r.left=*tabs++;
-		// . COLUMN: Name
-		r.right=*tabs++;
-			zxRom.PrintAt( dc, TZxRom::ZxToAscii(de->name,TRDOS503_FILE_NAME_LENGTH_MAX,bufT), r, DT_SINGLELINE|DT_VCENTER );
-		r.left=r.right;
-		// . COLUMN: Extension
-		r.right=*tabs++;
-			zxRom.PrintAt( dc, TZxRom::ZxToAscii((LPCSTR)&de->extension,1,bufT), r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
-		r.left=r.right;
-		// . COLUMN: Size
-		r.right=*tabs++;
-			::DrawText( dc, _itot(de->__getOfficialFileSize__(nullptr),bufT,10),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
-		r.left=r.right;
-		// . COLUMN: # of Sectors
-		r.right=*tabs++;
-			::DrawText( dc, _itot(de->nSectors,bufT,10),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
-		r.left=r.right;
-		// . COLUMN: first Sector
-		r.right=*tabs++;
-			::wsprintf( bufT, _T("Tr%d/Sec%d"), de->first.track, de->first.sector );
-			::DrawText( dc, bufT,-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
-		r.left=r.right;
-		// . COLUMN: start address / Basic start line
-		r.right=*tabs++;
-			WORD param;
-			::DrawText(	dc,
-						((PTRDOS503)DOS)->__getStdParameter1__(de,param) ? _itot(param,bufT,10) : _T("N/A"),
-						-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT
-					);
-		r.left=r.right;
-		// . COLUMN: length of Basic Program without variables
-		r.right=*tabs++;
-			::DrawText(	dc,
-						((PTRDOS503)DOS)->__getStdParameter2__(de,param) ? _itot(param,bufT,10) : _T("N/A"),
-						-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT
-					);
+		switch (pFileInfo-InformationList){
+			case INFORMATION_NAME:
+				// File Name
+				varLengthFileNameEditor.DrawReportModeCell( de->name, TRDOS503_FILE_NAME_LENGTH_MAX, pdis );
+				break;
+			case INFORMATION_EXTENSION:
+				// File Extension
+				singleCharExtEditor.DrawReportModeCell( de->extension, pdis );
+				break;
+			case INFORMATION_SIZE:
+				// File Size
+				integerEditor.DrawReportModeCell( de->__getOfficialFileSize__(nullptr), pdis );
+				break;
+			case INFORMATION_SECTORS_COUNT:
+				// # of File Sectors
+				integerEditor.DrawReportModeCell( de->nSectors, pdis );
+				break;
+			case INFORMATION_FIRST_SECTOR:
+				// first File Sector
+				::wsprintf( bufT, _T("Tr%d/Sec%d"), de->first.track, de->first.sector );
+				::DrawText( dc, bufT,-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
+				break;
+			case INFORMATION_STD_PARAM_1:{
+				// start address / Basic start line
+				WORD param;
+				::DrawText(	dc,
+							((PTRDOS503)DOS)->__getStdParameter1__(de,param) ? _itot(param,bufT,10) : _T("N/A"),
+							-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT
+						);
+				break;
+			}
+			case INFORMATION_STD_PARAM_2:{
+				// length of Basic Program without variables
+				WORD param;
+				::DrawText(	dc,
+							((PTRDOS503)DOS)->__getStdParameter2__(de,param) ? _itot(param,bufT,10) : _T("N/A"),
+							-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT
+						);
+				break;
+			}
+		}
 	}
 
 	int CTRDOS503::CTrdosFileManagerView::CompareFiles(PCFile file1,PCFile file2,BYTE information) const{
@@ -148,12 +153,12 @@
 				return singleCharExtEditor.Create(de);
 			case INFORMATION_STD_PARAM_1:
 				if (((PTRDOS503)DOS)->__getStdParameter1__(de,stdParameter))
-					return stdParamEditor.Create( de, &stdParameter, __onStdParam1Changed__ );
+					return integerEditor.Create( de, &stdParameter, __onStdParam1Changed__ );
 				else
 					return nullptr;
 			case INFORMATION_STD_PARAM_2:
 				if (((PTRDOS503)DOS)->__getStdParameter2__(de,stdParameter))
-					return stdParamEditor.Create( de, &stdParameter, __onStdParam2Changed__ );
+					return integerEditor.Create( de, &stdParameter, __onStdParam2Changed__ );
 				else
 					return nullptr;
 			default:

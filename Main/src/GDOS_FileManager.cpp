@@ -37,9 +37,9 @@
 
 	#define DOS	tab.dos
 
-	void CGDOS::CGdosFileManagerView::DrawFileInfo(LPDRAWITEMSTRUCT pdis,const int *tabs) const{
+	void CGDOS::CGdosFileManagerView::DrawReportModeCell(PCFileInfo pFileInfo,LPDRAWITEMSTRUCT pdis) const{
 		// draws Information on File
-		RECT r=pdis->rcItem;
+		RECT &r=pdis->rcItem;
 		const HDC dc=pdis->hDC;
 		const PDirectoryEntry de=(PDirectoryEntry)pdis->itemData;
 		// . color distinction of Files based on their Type
@@ -53,49 +53,49 @@
 				case TDirectoryEntry::SNAPSHOT_128K: ::SetTextColor(dc,FILE_MANAGER_COLOR_EXECUTABLE); break;
 				case TDirectoryEntry::OPENTYPE		: ::SetTextColor(dc,0x999999); break;
 			}
+		// . drawing Information
 		TCHAR bufT[MAX_PATH];
-		// . COLUMN: <indent from left edge>
-		r.left=*tabs++;
-		// . COLUMN: Name
-		r.right=*tabs++;
-			zxRom.PrintAt( dc, TZxRom::ZxToAscii(de->name,GDOS_FILE_NAME_LENGTH_MAX,bufT), r, DT_SINGLELINE|DT_VCENTER );
-		r.left=r.right;
-		// . COLUMN: Type
-		r.right=*tabs++;
-			::DrawText( dc, de->__getFileTypeDesc__(bufT),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
-		r.left=r.right;
-		// . COLUMN: size
-		r.right=*tabs++;
-			::DrawText( dc, _itot(DOS->GetFileOfficialSize(de),bufT,10),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
-		r.left=r.right;
-		// . COLUMN: # of Sectors
-		r.right=*tabs++;
-			::DrawText( dc, _itot(de->nSectors,bufT,10),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
-		r.left=r.right;
-		// . COLUMN: first Sector
-		r.right=*tabs++;
-			::wsprintf( bufT, _T("Tr%d/Sec%d"), de->firstSector.__getChs__().GetTrackNumber(), de->firstSector.sector );
-			::DrawText( dc, bufT,-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
-		r.left=r.right;
-		// . COLUMN: start address / Basic start line
-		r.right=*tabs++;
-			if (const PCWORD pw=de->__getStdParameter1__())
-				::DrawText( dc, _itot(*pw,bufT,10),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
-			else
-				::DrawText( dc, _T("N/A"),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
-		r.left=r.right;
-		// . COLUMN: length of Basic Program without variables
-		r.right=*tabs++;
-			if (const PCWORD pw=de->__getStdParameter2__())
-				::DrawText( dc, _itot(*pw,bufT,10),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
-			else
-				::DrawText( dc, _T("N/A"),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
-		r.left=r.right;
-		// . COLUMN: etc.
-		r.right=*tabs++;
-			pdis->rcItem=r;
-			CHexaValuePropGridEditor::DrawValue( nullptr, &de->etc, sizeof(de->etc), pdis );
-		//r.left=r.right;
+		switch (pFileInfo-InformationList){
+			case INFORMATION_NAME:
+				// File Name
+				varLengthFileNameEditor.DrawReportModeCell( de->name, GDOS_FILE_NAME_LENGTH_MAX, pdis );
+				break;
+			case INFORMATION_TYPE:
+				// File Type
+				::DrawText( dc, de->__getFileTypeDesc__(bufT),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
+				break;
+			case INFORMATION_SIZE:
+				// File Size
+				integerEditor.DrawReportModeCell( DOS->GetFileOfficialSize(de), pdis );
+				break;
+			case INFORMATION_SECTOR_COUNT:
+				// # of File Sectors
+				integerEditor.DrawReportModeCell( de->nSectors, pdis );
+				break;
+			case INFORMATION_SECTOR_FIRST:
+				// first File Sector
+				::wsprintf( bufT, _T("Tr%d/Sec%d"), de->firstSector.__getChs__().GetTrackNumber(), de->firstSector.sector );
+				::DrawText( dc, bufT,-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
+				break;
+			case INFORMATION_PARAM_1:
+				// start address / Basic start line
+				if (const PCWORD pw=de->__getStdParameter1__())
+					integerEditor.DrawReportModeCell( *pw, pdis );
+				else
+					::DrawText( dc, _T("N/A"),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
+				break;
+			case INFORMATION_PARAM_2:
+				// length of Basic Program without variables
+				if (const PCWORD pw=de->__getStdParameter2__())
+					integerEditor.DrawReportModeCell( *pw, pdis );
+				else
+					::DrawText( dc, _T("N/A"),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
+				break;
+			case INFORMATION_ETC:
+				// etc.
+				CHexaValuePropGridEditor::DrawValue( nullptr, &de->etc, sizeof(de->etc), pdis );
+				break;
+		}
 	}
 
 	int CGDOS::CGdosFileManagerView::CompareFiles(PCFile file1,PCFile file2,BYTE information) const{
@@ -158,12 +158,12 @@
 				return extensionEditor.Create(de);
 			case INFORMATION_PARAM_1:
 				if (const PWORD pw=de->__getStdParameter1__())
-					return stdParamEditor.Create( de, pw, __onStdParam1Changed__ );
+					return integerEditor.Create( de, pw, __onStdParam1Changed__ );
 				else
 					return nullptr;
 			case INFORMATION_PARAM_2:
 				if (const PWORD pw=de->__getStdParameter2__())
-					return stdParamEditor.Create( de, pw, __onStdParam2Changed__ );
+					return integerEditor.Create( de, pw, __onStdParam2Changed__ );
 				else
 					return nullptr;
 			case INFORMATION_ETC:

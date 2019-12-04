@@ -105,9 +105,9 @@
 		return CSpectrumFileManagerView::WindowProc(msg,wParam,lParam);
 	}
 
-	void CMDOS2::CMdos2FileManagerView::DrawFileInfo(LPDRAWITEMSTRUCT pdis,const int *tabs) const{
+	void CMDOS2::CMdos2FileManagerView::DrawReportModeCell(PCFileInfo pFileInfo,LPDRAWITEMSTRUCT pdis) const{
 		// draws Information on File
-		RECT r=pdis->rcItem;
+		RECT &r=pdis->rcItem;
 		const HDC dc=pdis->hDC;
 		const PCDirectoryEntry de=(PCDirectoryEntry)pdis->itemData;
 		// . color distinction of Files based on their Extension
@@ -120,30 +120,36 @@
 				case TDirectoryEntry::SNAPSHOT		: ::SetTextColor(dc,FILE_MANAGER_COLOR_EXECUTABLE); break;
 				case TDirectoryEntry::SEQUENTIAL	: ::SetTextColor(dc,0x999999); break;
 			}
-		TCHAR bufT[MAX_PATH];
-		// . COLUMN: Extension
-		r.right=*tabs-5;
-			zxRom.PrintAt( dc, TZxRom::ZxToAscii((LPCSTR)&de->extension,1,bufT), r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
-		r.left=*tabs++;
-		// . COLUMN: Name
-		r.right=*tabs++;
-			zxRom.PrintAt( dc, TZxRom::ZxToAscii(de->name,MDOS2_FILE_NAME_LENGTH_MAX,bufT), r, DT_SINGLELINE|DT_VCENTER );
-		r.left=r.right;
-		// . COLUMN: Size
-		r.right=*tabs++;
-			::DrawText( dc, _itot(MAKELONG(de->lengthLow,de->lengthHigh),bufT,10),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
-		r.left=r.right;
-		// . COLUMN: Attributes
-		r.right=*tabs++;
-			::DrawText( dc, de->__attributes2text__(bufT,true),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
-		r.left=r.right;
-		// . COLUMN: start address / Basic start line
-		r.right=*tabs++;
-			::DrawText( dc, _itot(de->params.param1,bufT,10),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
-		r.left=r.right;
-		// . COLUMN: length of Basic Program without variables
-		r.right=*tabs++;
-			::DrawText( dc, _itot(de->params.param2,bufT,10),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
+		// . drawing Information
+		switch (pFileInfo-InformationList){
+			case INFORMATION_EXTENSION:
+				// File Extension
+				r.right-=5;
+				singleCharExtEditor.DrawReportModeCell( de->extension, pdis );
+				break;
+			case INFORMATION_NAME:
+				// File Name
+				varLengthFileNameEditor.DrawReportModeCell( de->name, MDOS2_FILE_NAME_LENGTH_MAX, pdis );
+				break;
+			case INFORMATION_SIZE:
+				// File Size
+				integerEditor.DrawReportModeCell( MAKELONG(de->lengthLow,de->lengthHigh), pdis );
+				break;
+			case INFORMATION_ATTRIBUTES:{
+				// File Attributes
+				TCHAR buf[16];
+				::DrawText( dc, de->__attributes2text__(buf,true),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
+				break;
+			}
+			case INFORMATION_PARAM_1:
+				// start address / Basic start line
+				integerEditor.DrawReportModeCell( de->params.param1, pdis );
+				break;
+			case INFORMATION_PARAM_2:
+				// length of Basic Program without variables
+				integerEditor.DrawReportModeCell( de->params.param2, pdis );
+				break;
+		}
 	}
 
 	int CMDOS2::CMdos2FileManagerView::CompareFiles(PCFile file1,PCFile file2,BYTE information) const{
@@ -177,9 +183,9 @@
 			case INFORMATION_ATTRIBUTES:
 				return __createStdEditorWithEllipsis__( de, __editFileAttributes__ );
 			case INFORMATION_PARAM_1:
-				return stdParamEditor.Create( de, &de->params.param1, __markDirectorySectorAsDirty__ );
+				return integerEditor.Create( de, &de->params.param1, __markDirectorySectorAsDirty__ );
 			case INFORMATION_PARAM_2:
-				return stdParamEditor.Create( de, &de->params.param2, __markDirectorySectorAsDirty__ );
+				return integerEditor.Create( de, &de->params.param2, __markDirectorySectorAsDirty__ );
 			default:
 				return nullptr;
 		}

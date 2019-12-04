@@ -29,7 +29,8 @@
 		, reportModeDisplayedInfosPrev(0) // no columns have been shown previously ...
 		, reportModeDisplayedInfos(-1) // ... and now wanting to show them all
 		, ordering(ORDER_NONE) , focusedFile(-1) , scrollY(0) , ownedDataSource(nullptr)
-		, pDirectoryStructureManagement(_pDirectoryStructureManagement) {
+		, pDirectoryStructureManagement(_pDirectoryStructureManagement)
+		, integerEditor(this) {
 		// - switching to default DisplayMode
 /*		const WORD id=displayMode+ID_FILEMANAGER_BIG_ICONS;
 		CToolBarCtrl &tb=toolbar.GetToolBarCtrl();
@@ -383,12 +384,16 @@
 			::SetTextColor( dc, COLOR_BLACK );
 		}
 		// - drawing Information
-		int tabs[30];
-		for( int i=0,pos=0; i<nInformation; i++ )
-			tabs[i]= pos+=lv.GetColumnWidth(i) ;
 		const HGDIOBJ hFont0=::SelectObject(dc,rFont.m_hObject);
 			DRAWITEMSTRUCT dis=*lpdi;
-			DrawFileInfo(&dis,tabs);
+			for( BYTE i=0,iColumn=0; i<nInformation; i++ )
+				if (reportModeDisplayedInfos&1<<i){
+					dis.rcItem.right=dis.rcItem.left+lv.GetColumnWidth(iColumn++);
+					const RECT tmp=dis.rcItem;
+						DrawReportModeCell( informationList+i, &dis );
+					dis.rcItem=tmp;
+					dis.rcItem.left=dis.rcItem.right;
+				}
 		::SelectObject(dc,hFont0);
 		// - drawing the focus
 		if (lpdi->itemState&ODS_FOCUS)

@@ -156,7 +156,7 @@
 				PEditorBase Create(PDirectoryEntry de);
 			} etcEditor;
 
-			void DrawFileInfo(LPDRAWITEMSTRUCT pdis,const int *tabs) const override;
+			void DrawReportModeCell(PCFileInfo pFileInfo,LPDRAWITEMSTRUCT pdis) const override;
 			int CompareFiles(PCFile file1,PCFile file2,BYTE information) const override;
 			PEditorBase CreateFileInformationEditor(PFile file,BYTE infoId) const override;
 			//LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;

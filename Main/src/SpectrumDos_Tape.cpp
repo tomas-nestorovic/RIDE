@@ -636,9 +636,9 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 		return CFileManagerView::WindowProc(msg,wParam,lParam);
 	}
 
-	void CSpectrumDos::CTape::CTapeFileManagerView::DrawFileInfo(LPDRAWITEMSTRUCT pdis,const int *tabs) const{
+	void CSpectrumDos::CTape::CTapeFileManagerView::DrawReportModeCell(PCFileInfo pFileInfo,LPDRAWITEMSTRUCT pdis) const{
 		// drawing File information
-		RECT r=pdis->rcItem;
+		RECT &r=pdis->rcItem;
 		const HDC dc=pdis->hDC;
 		const PTapeFile tf=(PTapeFile)pdis->itemData;
 		const HGDIOBJ hFont0=::SelectObject(dc,zxRom.font);
@@ -652,108 +652,87 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 						case TZxRom::CHAR_ARRAY		: ::SetTextColor(dc,0xff00ff); break;
 						//case TZxRom::CODE			: break;
 					}
-				// . COLUMN: Type
-				r.right=*tabs-5;
-					PropGrid::Enum::UValue v;
-						v.longValue=h->type;
-					::DrawText( dc, CStdHeaderTypeEditor::__getDescription__(nullptr,v,nullptr,0),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
-				r.left=*tabs++;
-				// . COLUMN: Name
-				r.right=*tabs++;
-					TCHAR bufT[MAX_PATH];
-					zxRom.PrintAt( dc, TZxRom::ZxToAscii(h->name,ZX_TAPE_FILE_NAME_LENGTH_MAX,bufT), r, DT_SINGLELINE|DT_VCENTER );
-				r.left=r.right;
-				// . COLUMN: Size
-				r.right=*tabs++;
-					::DrawText( dc, _itot(h->length,bufT,10),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
-				r.left=r.right;
-				// . COLUMN: Param 1
-				r.right=*tabs++;
-					::DrawText( dc, _itot(h->params.param1,bufT,10),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
-				r.left=r.right;
-				// . COLUMN: Param 2
-				r.right=*tabs++;
-					::DrawText( dc, _itot(h->params.param2,bufT,10),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
-				r.left=r.right;
-				// . COLUMN: block Flag
-				r.right=*tabs++;
-					::DrawText( dc, _itot(tf->dataBlockFlag,bufT,10),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
-				r.left=r.right;
-				// . COLUMN: checksum
-drawChecksum:	r.right=*tabs++;
-					const LONG statusWidth=(r.bottom-r.top)*4/3;
-					r.right-=statusWidth;
-					::DrawText( dc, _itot(tf->dataChecksum,bufT,10),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
-					r.left=std::max<>(r.right,r.left), r.right+=statusWidth;
-					if (tf->dataChecksumStatus==TTapeFile::TDataChecksumStatus::UNDETERMINED)
-						tf->dataChecksumStatus=	tf->dataChecksum==__getChecksum__(tf->dataBlockFlag,tf->data,tf->dataLength)
-												? TTapeFile::TDataChecksumStatus::CORRECT
-												: TTapeFile::TDataChecksumStatus::INCORRECT;
-					const int color0 =	pdis->itemState&ODS_SELECTED
-										? ::GetTextColor(dc)
-										: ::SetTextColor( dc, tf->dataChecksumStatus==TTapeFile::TDataChecksumStatus::CORRECT?0xa0ffa0:0xff );
-						const Utils::CRideFont statusFont( FONT_WEBDINGS, 120 );
-						const HGDIOBJ hFont0=::SelectObject(dc,statusFont);
-							const WCHAR StatusCorrect=0xf061, StatusIncorrect=0xf072;
-							::DrawTextW( dc, tf->dataChecksumStatus==TTapeFile::TDataChecksumStatus::CORRECT?&StatusCorrect:&StatusIncorrect,1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
-						::SelectObject(dc,hFont0);
-					::SetTextColor( dc, color0 );
+				// . drawing Information
+				switch (pFileInfo-InformationList){
+					case INFORMATION_TYPE:{
+						// Type
+						r.right-=5;
+						stdTapeHeaderTypeEditor.DrawReportModeCell( h->type, pdis );
+						break;
+					}
+					case INFORMATION_NAME:
+						// Name
+						varLengthFileNameEditor.DrawReportModeCell( h->name, ZX_TAPE_FILE_NAME_LENGTH_MAX, pdis );
+						break;
+					case INFORMATION_SIZE:
+						// Size
+						integerEditor.DrawReportModeCell( h->length, pdis );
+						break;
+					case INFORMATION_PARAM_1:
+						// start address / Basic start line
+						integerEditor.DrawReportModeCell( h->params.param1, pdis );
+						break;
+					case INFORMATION_PARAM_2:
+						// length of Basic Program without variables
+						integerEditor.DrawReportModeCell( h->params.param2, pdis );
+						break;
+					case INFORMATION_FLAG:
+						// block Flag
+						integerEditor.DrawReportModeCell( tf->dataBlockFlag, pdis );
+						break;
+					case INFORMATION_CHECKSUM:{
+drawChecksum:			// checksum
+						if (tf->dataChecksumStatus==TTapeFile::TDataChecksumStatus::UNDETERMINED)
+							tf->dataChecksumStatus=	tf->dataChecksum==__getChecksum__(tf->dataBlockFlag,tf->data,tf->dataLength)
+													? TTapeFile::TDataChecksumStatus::CORRECT
+													: TTapeFile::TDataChecksumStatus::INCORRECT;
+						integerEditor.DrawReportModeCellWithCheckmark( tf->dataChecksum, tf->dataChecksumStatus==TTapeFile::TDataChecksumStatus::CORRECT, pdis );
+						break;
+					}
+				}
 			}else if (tf->type==TTapeFile::HEADERLESS){
 				// Headerless File
 				// . color distinction of Files based on their Type
 				if (!pdis->itemState&ODS_SELECTED)
 					::SetTextColor(dc,0x999999);
-				// . COLUMN: Type
-				r.right=*tabs-5;
-					::DrawText( dc, HEADERLESS_TYPE,-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
-				r.left=*tabs++;
-				// . COLUMN: Name
-				r.right=*tabs++;
-					//zxRom.PrintAt( dc, HEADERLESS_N_A, r, DT_SINGLELINE|DT_VCENTER );
-				r.left=r.right;
-				// . COLUMN: Size
-				r.right=*tabs++;
-					TCHAR bufT[8];
-					::DrawText( dc, _itot(tf->dataLength,bufT,10),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
-				r.left=r.right;
-				// . COLUMN: Param 1
-				r.right=*tabs++;
-				r.left=r.right;
-				// . COLUMN: Param 2
-				r.right=*tabs++;
-				r.left=r.right;
-				// . COLUMN: block Flag
-				r.right=*tabs++;
-					::DrawText( dc, _itot(tf->dataBlockFlag,bufT,10),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
-				r.left=r.right;
-				// . COLUMN: checksum
-				goto drawChecksum;
+				// . drawing Information
+				TCHAR bufT[MAX_PATH];
+				switch (pFileInfo-InformationList){
+					case INFORMATION_TYPE:
+						// Type
+						r.right-=5;
+						stdTapeHeaderTypeEditor.DrawReportModeCell( TZxRom::TFileType::HEADERLESS, pdis );
+						break;
+					case INFORMATION_SIZE:
+						// Size
+						integerEditor.DrawReportModeCell( tf->dataLength, pdis );
+						break;
+					case INFORMATION_FLAG:
+						// block Flag
+						integerEditor.DrawReportModeCell( tf->dataBlockFlag, pdis );
+						break;
+					case INFORMATION_CHECKSUM:
+						// checksum
+						goto drawChecksum;
+				}
 			}else{
 				// Fragment
 				// . color distinction of Files based on their Type
 				if (!pdis->itemState&ODS_SELECTED)
 					::SetTextColor(dc,0x994444);
-				// . COLUMN: Type
-				r.right=*tabs-5;
-					::DrawText( dc, FRAGMENT_TYPE,-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
-				r.left=*tabs++;
-				// . COLUMN: Name
-				r.right=*tabs++;
-					//zxRom.PrintAt( dc, HEADERLESS_N_A, r, DT_SINGLELINE|DT_VCENTER );
-				r.left=r.right;
-				// . COLUMN: Size
-				r.right=*tabs++;
-					TCHAR bufT[8];
-					::DrawText( dc, _itot(tf->dataLength,bufT,10),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
-				//r.left=r.right;
-				// . COLUMN: Param 1
-				//r.right=*tabs++;
-				//r.left=r.right;
-				// . COLUMN: Param 2
-				//r.right=*tabs++;
-				//r.left=r.right;
-				// . COLUMN: block Flag
-				//nop
+				// . drawing Information
+				TCHAR bufT[MAX_PATH];
+				switch (pFileInfo-InformationList){
+					case INFORMATION_TYPE:
+						// Type
+						r.right-=5;
+						stdTapeHeaderTypeEditor.DrawReportModeCell( TZxRom::TFileType::FRAGMENT, pdis );
+						break;
+					case INFORMATION_SIZE:
+						// Size
+						integerEditor.DrawReportModeCell( tf->dataLength, pdis );
+						break;
+				}
 			}
 		::SelectObject(dc,hFont0);
 	}
@@ -813,37 +792,39 @@ drawChecksum:	r.right=*tabs++;
 			// File with Header
 			switch (infoId){
 				case INFORMATION_TYPE:
-					return stdHeaderTypeEditor.Create(	file, h->type,
-														tf->dataLength>=2 ? CStdHeaderTypeEditor::STD_AND_HEADERLESS : CStdHeaderTypeEditor::STD_AND_HEADERLESS_AND_FRAGMENT
-													);
+					return stdTapeHeaderTypeEditor.Create(	file, h->type,
+															tf->dataLength>=2 ? CStdTapeHeaderBlockTypeEditor::STD_AND_HEADERLESS : CStdTapeHeaderBlockTypeEditor::STD_AND_HEADERLESS_AND_FRAGMENT,
+															__tapeBlockTypeModified__
+														);
 				case INFORMATION_NAME:
 					return varLengthFileNameEditor.Create( file, ZX_TAPE_FILE_NAME_LENGTH_MAX, ' ' );
 				case INFORMATION_PARAM_1:
-					return stdParamEditor.Create( file, &h->params.param1, __markAsDirty__ );
+					return integerEditor.Create( file, &h->params.param1, __markAsDirty__ );
 				case INFORMATION_PARAM_2:
-					return stdParamEditor.Create( file, &h->params.param2, __markAsDirty__ );
+					return integerEditor.Create( file, &h->params.param2, __markAsDirty__ );
 				case INFORMATION_FLAG:
-					return __createStdEditorForByteValue__( file, &tf->dataBlockFlag, __markAsDirty__ );
+					return integerEditor.Create( file, &tf->dataBlockFlag, __markAsDirty__ );
 				case INFORMATION_CHECKSUM:
-					return __createStdEditorForByteValue__( file, &tf->dataChecksum, __checksumModified__ );
+					return integerEditor.Create( file, &tf->dataChecksum, __checksumModified__ );
 			}
 		else if (tf->type==TTapeFile::HEADERLESS)
 			// Headerless File
 			switch (infoId){
 				case INFORMATION_TYPE:
-					return stdHeaderTypeEditor.Create(	file, TZxRom::HEADERLESS,
-														tf->dataLength>=2 ? CStdHeaderTypeEditor::STD_AND_HEADERLESS : CStdHeaderTypeEditor::STD_AND_HEADERLESS_AND_FRAGMENT
-													);
+					return stdTapeHeaderTypeEditor.Create(	file, TZxRom::HEADERLESS,
+															tf->dataLength>=2 ? CStdTapeHeaderBlockTypeEditor::STD_AND_HEADERLESS : CStdTapeHeaderBlockTypeEditor::STD_AND_HEADERLESS_AND_FRAGMENT,
+															__tapeBlockTypeModified__
+														);
 				case INFORMATION_FLAG:
-					return __createStdEditorForByteValue__( file, &tf->dataBlockFlag, __markAsDirty__ );
+					return integerEditor.Create( file, &tf->dataBlockFlag, __markAsDirty__ );
 				case INFORMATION_CHECKSUM:
-					return __createStdEditorForByteValue__( file, &tf->dataChecksum, __checksumModified__ );
+					return integerEditor.Create( file, &tf->dataChecksum, __checksumModified__ );
 			}
 		else
 			// Fragment
 			switch (infoId){
 				case INFORMATION_TYPE:
-					return stdHeaderTypeEditor.Create( file, TZxRom::FRAGMENT, CStdHeaderTypeEditor::STD_AND_HEADERLESS_AND_FRAGMENT );
+					return stdTapeHeaderTypeEditor.Create( file, TZxRom::FRAGMENT, CStdTapeHeaderBlockTypeEditor::STD_AND_HEADERLESS_AND_FRAGMENT, __tapeBlockTypeModified__ );
 			}
 		return nullptr;
 	}
@@ -867,10 +848,10 @@ drawChecksum:	r.right=*tabs++;
 
 
 
-	bool WINAPI CSpectrumDos::CTape::CTapeFileManagerView::CStdHeaderTypeEditor::__onChanged__(PVOID file,PropGrid::Enum::UValue newType){
+	bool WINAPI CSpectrumDos::CTape::CTapeFileManagerView::__tapeBlockTypeModified__(PVOID file,PropGrid::Enum::UValue newType){
 		// changes the Type of File
 		const PDos dos=CDos::GetFocused();
-		CTapeFileManagerView *const pTapeFileManager=(CTapeFileManagerView *)dos->pFileManager;
+		const CSpectrumFileManagerView *const pZxFileManager=(CSpectrumFileManagerView *)dos->pFileManager;
 		const PTapeFile tf=(PTapeFile)file;
 		if (PHeader h=tf->GetHeader())
 			// File with Header
@@ -907,7 +888,13 @@ drawChecksum:	r.right=*tabs++;
 			}
 		return __markAsDirty__(file,0);
 	}
-	PropGrid::Enum::PCValueList WINAPI CSpectrumDos::CTape::CTapeFileManagerView::CStdHeaderTypeEditor::__createValues__(PVOID file,WORD &rnValues){
+
+	CSpectrumDos::CSpectrumFileManagerView::CStdTapeHeaderBlockTypeEditor::CStdTapeHeaderBlockTypeEditor(const CSpectrumFileManagerView *pZxFileManager)
+		// ctor
+		: pZxFileManager(pZxFileManager) {
+	}
+
+	PropGrid::Enum::PCValueList WINAPI CSpectrumDos::CSpectrumFileManagerView::CStdTapeHeaderBlockTypeEditor::__createValues__(PVOID file,WORD &rnValues){
 		// returns the list of standard File Types
 		static const TZxRom::TFileType List[]={
 			TZxRom::PROGRAM,
@@ -917,11 +904,12 @@ drawChecksum:	r.right=*tabs++;
 			TZxRom::HEADERLESS,
 			TZxRom::FRAGMENT
 		};
-		const CTapeFileManagerView *const pTapeFileManager=(CTapeFileManagerView *)((CSpectrumDos *)CDos::GetFocused())->pFileManager;
-		rnValues=4+pTapeFileManager->stdHeaderTypeEditor.types;
+		const CSpectrumFileManagerView *const pZxFileManager=(CSpectrumFileManagerView *)((CSpectrumDos *)CDos::GetFocused())->pFileManager;
+		rnValues=4+pZxFileManager->stdTapeHeaderTypeEditor.types;
 		return List;
 	}
-	LPCTSTR WINAPI CSpectrumDos::CTape::CTapeFileManagerView::CStdHeaderTypeEditor::__getDescription__(PVOID file,PropGrid::Enum::UValue stdType,PTCHAR,short){
+
+	LPCTSTR WINAPI CSpectrumDos::CSpectrumFileManagerView::CStdTapeHeaderBlockTypeEditor::__getDescription__(PVOID file,PropGrid::Enum::UValue stdType,PTCHAR,short){
 		// returns the textual description of the specified Type
 		switch ((TZxRom::TFileType)stdType.charValue){
 			case TZxRom::PROGRAM		: return _T("Program");
@@ -934,15 +922,21 @@ drawChecksum:	r.right=*tabs++;
 				return _T("<Unknown>");
 		}
 	}
-	CFileManagerView::PEditorBase CSpectrumDos::CTape::CTapeFileManagerView::CStdHeaderTypeEditor::Create(PFile file,TZxRom::TFileType type,TDisplayTypes _types){
+
+	CFileManagerView::PEditorBase CSpectrumDos::CSpectrumFileManagerView::CStdTapeHeaderBlockTypeEditor::Create(PFile file,TZxRom::TFileType type,TDisplayTypes _types,PropGrid::Enum::TOnValueConfirmed onChanged){
 		// creates and returns an Editor of standard File Type
-		const PDos dos=CDos::GetFocused();
-		CSpectrumFileManagerView *const pZxFileManager=(CSpectrumFileManagerView *)dos->pFileManager;
 		types=_types;
 		const PEditorBase result=pZxFileManager->__createStdEditor__(
 			file, &( data=type ),
-			PropGrid::Enum::DefineConstStringListEditorA( sizeof(data), __createValues__, __getDescription__, nullptr, __onChanged__ )
+			PropGrid::Enum::DefineConstStringListEditorA( sizeof(data), __createValues__, __getDescription__, nullptr, onChanged )
 		);
 		::SendMessage( CEditorBase::pSingleShown->hEditor, WM_SETFONT, (WPARAM)pZxFileManager->rFont.m_hObject, 0 );
 		return result;
+	}
+
+	void CSpectrumDos::CSpectrumFileManagerView::CStdTapeHeaderBlockTypeEditor::DrawReportModeCell(BYTE type,LPDRAWITEMSTRUCT pdis) const{
+		// directly draws the block Type
+		PropGrid::Enum::UValue v;
+			v.longValue=type;
+		::DrawText( pdis->hDC, __getDescription__(nullptr,v,nullptr,0),-1, &pdis->rcItem, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
 	}

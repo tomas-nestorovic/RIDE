@@ -126,9 +126,9 @@
 
 	#define ATTRIBUTES_COUNT	6
 
-	void CMSDOS7::CMsdos7FileManagerView::DrawFileInfo(LPDRAWITEMSTRUCT pdis,const int *tabs) const{
+	void CMSDOS7::CMsdos7FileManagerView::DrawReportModeCell(PCFileInfo pFileInfo,LPDRAWITEMSTRUCT pdis) const{
 		// draws Information on File
-		RECT r=pdis->rcItem;
+		RECT &r=pdis->rcItem;
 		const HDC dc=pdis->hDC;
 		const PCDirectoryEntry de=(PCDirectoryEntry)pdis->itemData;
 		// . color distinction of Files based on their Extension; commented out as it doesn't look well
@@ -142,38 +142,43 @@
 				//default: break;
 			}
 		}*/
-		// . COLUMN: icon, name a extension
-		const float dpiScaleFactor=Utils::LogicalUnitScaleFactor;
-		BYTE attr=de->shortNameEntry.attributes;
-		::DrawIconEx( dc, r.left,r.top, __getIcon__(de), 16*dpiScaleFactor,16*dpiScaleFactor, 0, nullptr, DI_NORMAL|DI_COMPAT );
-		r.left+=20*dpiScaleFactor;
+		// . drawing Information
 		TCHAR buf[MAX_PATH];
-		r.right=*tabs++;
-			::DrawText( dc, DOS->GetFileNameWithAppendedExt(de,buf),-1, &r, DT_SINGLELINE|DT_VCENTER );
-		r.left=r.right;
-		// . COLUMN: size
-		r.right=*tabs++;
-			::DrawText( dc, _itot(DOS->GetFileOfficialSize(de),buf,10),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
-		r.left=r.right;
-		// . COLUMN: attributes
-		r.right=*tabs++;
-			PTCHAR t=::lstrcpy(buf,_T("ADVSHR"));
-			for( BYTE a=ATTRIBUTES_COUNT; a--; attr<<=1,t++ )
-				if (!(attr&32)) *t='-';
-			::DrawText( dc, buf,-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
-		r.left=r.right;
-		// . COLUMN: date/time created
-		r.right=*tabs++;
-			TDateTime(de->shortNameEntry.timeAndDateCreated).DrawInPropGrid(dc,r);
-		r.left=r.right;
-		// . COLUMN: date last read
-		r.right=*tabs++;
-			TDateTime(de->shortNameEntry.dateLastAccessed).DrawInPropGrid(dc,r,true);
-		r.left=r.right;
-		// . COLUMN: date/time last modified
-		r.right=*tabs++;
-			TDateTime(de->shortNameEntry.timeAndDateLastModified).DrawInPropGrid(dc,r);
-		r.left=r.right;
+		switch (pFileInfo-InformationList){
+			case INFORMATION_NAME_A_EXT:{
+				// icon, Name a Extension
+				const float dpiScaleFactor=Utils::LogicalUnitScaleFactor;
+				::DrawIconEx( dc, r.left,r.top, __getIcon__(de), 16*dpiScaleFactor,16*dpiScaleFactor, 0, nullptr, DI_NORMAL|DI_COMPAT );
+				r.left+=20*dpiScaleFactor;
+				::DrawText( dc, DOS->GetFileNameWithAppendedExt(de,buf),-1, &r, DT_SINGLELINE|DT_VCENTER );
+				break;
+			}
+			case INFORMATION_SIZE:
+				// File Size
+				integerEditor.DrawReportModeCell( DOS->GetFileOfficialSize(de), pdis );
+				break;
+			case INFORMATION_ATTRIBUTES:{
+				// Attributes
+				BYTE attr=de->shortNameEntry.attributes;
+				PTCHAR t=::lstrcpy(buf,_T("ADVSHR"));
+				for( BYTE a=ATTRIBUTES_COUNT; a--; attr<<=1,t++ )
+					if (!(attr&32)) *t='-';
+				::DrawText( dc, buf,-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
+				break;
+			}
+			case INFORMATION_CREATED:
+				// date/time created
+				TDateTime(de->shortNameEntry.timeAndDateCreated).DrawInPropGrid(dc,r);
+				break;
+			case INFORMATION_READ:
+				// date last read
+				TDateTime(de->shortNameEntry.dateLastAccessed).DrawInPropGrid(dc,r,true);
+				break;
+			case INFORMATION_MODIFIED:
+				// date/time last modified
+				TDateTime(de->shortNameEntry.timeAndDateLastModified).DrawInPropGrid(dc,r);
+				break;
+		}
 	}
 
 	int CMSDOS7::CMsdos7FileManagerView::CompareFiles(PCFile file1,PCFile file2,BYTE information) const{

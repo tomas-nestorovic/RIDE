@@ -171,8 +171,6 @@
 		PEditorBase __createStdEditor__(CDos::PFile file,PropGrid::PValue value,PropGrid::PCEditor editor) const;
 		PEditorBase __createStdEditorWithEllipsis__(CDos::PFile file,PropGrid::TOnEllipsisButtonClicked buttonAction) const;
 		PEditorBase __createStdEditorWithEllipsis__(CDos::PFile file,PropGrid::PValue value,PropGrid::TSize valueSize,PropGrid::TOnEllipsisButtonClicked buttonAction) const;
-		PEditorBase __createStdEditorForByteValue__(CDos::PFile file,PBYTE pByte,PropGrid::Integer::TOnValueConfirmed fnOnValueConfirmed) const;
-		PEditorBase __createStdEditorForWordValue__(CDos::PFile file,PWORD pWord,PropGrid::Integer::TOnValueConfirmed fnOnValueConfirmed) const;
 	protected:
 		class CFileComparisonDialog sealed:public CDialog{
 			CMemFile fEmpty;
@@ -212,6 +210,17 @@
 			CFileComparisonDialog();
 		};
 
+		mutable class CIntegerEditor sealed{
+			const CFileManagerView *const pFileManager;
+		public:
+			CIntegerEditor(const CFileManagerView *pFileManager);
+
+			PEditorBase Create(CDos::PFile file,PBYTE pByte,PropGrid::Integer::TOnValueConfirmed fnOnConfirmed=nullptr);
+			PEditorBase Create(CDos::PFile file,PWORD pWord,PropGrid::Integer::TOnValueConfirmed fnOnConfirmed=nullptr);
+			void DrawReportModeCell(int number,LPDRAWITEMSTRUCT pdis) const;
+			void DrawReportModeCellWithCheckmark(int number,bool checkmark,LPDRAWITEMSTRUCT pdis) const;
+		} integerEditor;
+
 		static int CALLBACK __orderFiles__(LPARAM file1,LPARAM file2,LPARAM orderingInfo);
 		static bool WINAPI __markDirectorySectorAsDirty__(PVOID dirEntry,int);
 
@@ -238,7 +247,7 @@
 		BOOL OnDrop(COleDataObject *pDataObject,DROPEFFECT dropEffect,CPoint point) override;
 		void PostNcDestroy() override;
 		afx_msg void __refreshDisplay__();
-		virtual void DrawFileInfo(LPDRAWITEMSTRUCT pdis,const int *tabs) const=0;
+		virtual void DrawReportModeCell(PCFileInfo pFileInfo,LPDRAWITEMSTRUCT pdis) const=0;
 		virtual int CompareFiles(CDos::PCFile file1,CDos::PCFile file2,BYTE information) const=0;
 		virtual PEditorBase CreateFileInformationEditor(CDos::PFile file,BYTE infoId) const=0;
 		virtual PTCHAR GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant,PTCHAR pOutBuffer) const=0;
