@@ -42,9 +42,11 @@
 			case WM_CREATE:{
 				static const UINT Indicators[]={ ID_SEPARATOR, ID_SEPARATOR };
 				CStatusBar &rStatusBar=( (CMainWindow *)app.m_pMainWnd )->statusBar;
+				if (rStatusBar.m_hWnd){ // may not exist if the app is closing
 					rStatusBar.SetIndicators(Indicators,2);
 					rStatusBar.SetPaneInfo(1,ID_SEPARATOR,SBPS_NORMAL,72);
 					rStatusBar.SetPaneText(1,DOS->properties->name);
+				}
 				break;
 			}
 		}

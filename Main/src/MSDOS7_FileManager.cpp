@@ -75,7 +75,9 @@
 		// - updating the FAT indication in StatusBar
 		TCHAR buf[8];
 		::wsprintf( buf, _T("FAT%d"), ((PMSDOS7)DOS)->fat.type*4 );
-		( (CMainWindow *)app.m_pMainWnd )->statusBar.SetPaneText( 1, buf );
+		CStatusBar &rStatusBar=( (CMainWindow *)app.m_pMainWnd )->statusBar;
+		if (rStatusBar.m_hWnd) // may not exist if the app is closing
+			rStatusBar.SetPaneText( 1, buf );
 		// - base
 		CFileManagerView::OnUpdate(pSender,lHint,pHint);
 	}
@@ -88,8 +90,10 @@
 				// . reinitializing the StatusBar
 				static const UINT Indicators[]={ ID_SEPARATOR, ID_SEPARATOR };
 				CStatusBar &rStatusBar=( (CMainWindow *)app.m_pMainWnd )->statusBar;
+				if (rStatusBar.m_hWnd){ // may not exist if the app is closing
 					rStatusBar.SetIndicators(Indicators,2);
 					rStatusBar.SetPaneInfo(1,ID_SEPARATOR,SBPS_NORMAL,40);
+				}
 				// . creating the Icons
 				for( BYTE n=MSDOS7_FILE_ICONS_COUNT; n--; icons[n]=(HICON)::LoadImage( hShell32, (LPCTSTR)ICON_INFOS[n].iconId, IMAGE_ICON, 16,16, LR_DEFAULTCOLOR ) );
 				break;
