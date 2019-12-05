@@ -470,6 +470,19 @@
 				fileManager.__refreshDisplay__();
 				return TCmdResult::DONE; // cannot use DONE_REDRAW as Tape is a companion to a disk Image
 			}
+			case ID_COMPUTE_CHECKSUM:{
+				// recomputes the Checksum for selected Files
+				if (__reportWriteProtection__()) return TCmdResult::DONE;
+				const CListCtrl &lv=fileManager.GetListCtrl();
+				for( POSITION pos=lv.GetFirstSelectedItemPosition(); pos; ){
+					const PTapeFile tf=fileManager.files[lv.GetNextSelectedItem(pos)];
+					tf->dataChecksum=__getChecksum__( tf->dataBlockFlag, tf->data, tf->dataLength );
+					tf->dataChecksumStatus=TTapeFile::TDataChecksumStatus::UNDETERMINED;
+				}
+				m_bModified=TRUE;
+				fileManager.__refreshDisplay__();
+				return TCmdResult::DONE; // cannot use DONE_REDRAW as Tape is a companion to a disk Image
+			}
 			case ID_FILE_SAVE:
 				// saving the Tape to the open underlying physical file
 				DoSave(nullptr,FALSE);
@@ -483,10 +496,11 @@
 		switch (cmd){
 			case ID_FILE_SHIFT_UP:
 			case ID_FILE_SHIFT_DOWN:
+			case ID_COMPUTE_CHECKSUM:
 				pCmdUI->Enable( fileManager.GetListCtrl().GetSelectedCount() );
 				return true;
 		}
-		return CDos::UpdateCommandUi(cmd,pCmdUI);
+		return __super::UpdateCommandUi(cmd,pCmdUI);
 	}
 
 	void CSpectrumDos::CTape::InitializeEmptyMedium(CFormatDialog::PCParameters){

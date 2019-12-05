@@ -221,6 +221,7 @@
 #define ID_NAVIGATE_PREVIOUSTRACK       40253
 #define ID_NAVIGATE_SECTOR              40254
 #define ID_BOOKMARK_DELETEALL           40257
+#define ID_COMPUTE_CHECKSUM             40260
 #define ID_ZOOM_OUT                     40267
 #define ID_ZOOM_IN                      40268
 #define ID_Y                            58113

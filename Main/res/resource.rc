@@ -573,6 +573,8 @@ IDR_ZX_TAPE TOOLBAR DISCARDABLE  16, 16
 BEGIN
     BUTTON      ID_FILE_SHIFT_DOWN
     BUTTON      ID_FILE_SHIFT_UP
+    SEPARATOR
+    BUTTON      ID_COMPUTE_CHECKSUM
 END
 
 IDR_IMAGE TOOLBAR DISCARDABLE  16, 16
@@ -1636,6 +1638,7 @@ STRINGTABLE DISCARDABLE
 BEGIN
     ID_FILE_SHIFT_UP        "Move selected files one position closer to the beginning\nMove files up"
     ID_FILE_SHIFT_DOWN      "Move selected files one position closer to the end\nMove files down"
+    ID_COMPUTE_CHECKSUM     "Recalculate correct checksum for selected files\nRecalculate checksum"
 END
 
 STRINGTABLE DISCARDABLE 
