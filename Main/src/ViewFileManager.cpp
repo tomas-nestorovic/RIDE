@@ -4,7 +4,7 @@
 
 	#define ORDER_NONE		255
 	#define ORDER_ASCENDING	128
-	#define ORDER_COLUMN_ID	(~ORDER_ASCENDING)
+	#define ORDER_FILEINFO_ID	(~ORDER_ASCENDING)
 
 	void CFileManagerView::__informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId){
 		// shows a MessageBox with added "Don't show anymore" check-box
@@ -18,7 +18,7 @@
 
 
 
-	CFileManagerView::CFileManagerView(PDos _dos,BYTE _supportedDisplayModes,BYTE _initialDisplayMode,const CFont &rFont,BYTE reportModeRowHeightAdjustment,BYTE _nInformation,PCFileInfo _informationList,const TDirectoryStructureManagement *_pDirectoryStructureManagement)
+	CFileManagerView::CFileManagerView(PDos _dos,BYTE _supportedDisplayModes,BYTE _initialDisplayMode,const CFont &rFont,BYTE reportModeRowHeightAdjustment,BYTE _nInformation,PCFileInfo _informationList,PCDirectoryStructureManagement pDirectoryStructureManagement)
 		// ctor
 		// - initialization
 		: tab( IDR_FILEMANAGER, IDR_FILEMANAGER, ID_FILE, _dos, this )
@@ -29,7 +29,7 @@
 		, reportModeDisplayedInfosPrev(0) // no columns have been shown previously ...
 		, reportModeDisplayedInfos(-1) // ... and now wanting to show them all
 		, ordering(ORDER_NONE) , focusedFile(-1) , scrollY(0) , ownedDataSource(nullptr)
-		, pDirectoryStructureManagement(_pDirectoryStructureManagement)
+		, pDirectoryStructureManagement(pDirectoryStructureManagement)
 		, integerEditor(this) {
 		// - switching to default DisplayMode
 /*		const WORD id=displayMode+ID_FILEMANAGER_BIG_ICONS;
@@ -118,8 +118,7 @@
 		// - displaying Information on Files in individual columns
 		if (reportModeDisplayedInfos!=reportModeDisplayedInfosPrev){
 			// . removing all previous columns
-			while (!lv.GetColumn(0,&LVCOLUMN()))
-				lv.DeleteColumn(0);
+			while (lv.DeleteColumn(0));
 			// . adding a new set of columns
 			TCHAR buf[80];	*buf=ORDER_NONE_SYMBOL;
 			PCFileInfo info=informationList;
@@ -264,9 +263,13 @@
 			case VK_RETURN:
 				// Enter - switching to selected Directory
 				if (POSITION pos=GetFirstSelectedFilePosition()){
-					__switchToDirectory__(GetNextSelectedFile(pos));
-					GetListCtrl().SendMessage( LVM_SCROLL, 0, -__getVerticalScrollPos__() ); // resetting the scroll position to zero pixels
-					__refreshDisplay__();
+					const CDos::PFile item=GetNextSelectedFile(pos);
+					if (DOS->IsDirectory(item)){
+						previousDirectories.AddHead(DOS->currentDir);
+						__switchToDirectory__(item);
+						GetListCtrl().SendMessage( LVM_SCROLL, 0, -__getVerticalScrollPos__() ); // resetting the scroll position to zero pixels
+						__refreshDisplay__();
+					}
 				}
 				break;
 			default:
@@ -410,28 +413,31 @@
 		if (ri->ordering==ORDER_NONE)
 			return ri->rFileManager.__getNativeOrderOfFile__((CDos::PCFile)file1)-ri->rFileManager.__getNativeOrderOfFile__((CDos::PCFile)file2);
 		else if (ri->ordering&ORDER_ASCENDING)
-			return ri->rFileManager.CompareFiles( (CDos::PCFile)file1, (CDos::PCFile)file2, ri->ordering&ORDER_COLUMN_ID );
+			return ri->rFileManager.CompareFiles( (CDos::PCFile)file1, (CDos::PCFile)file2, ri->ordering&ORDER_FILEINFO_ID );
 		else
-			return ri->rFileManager.CompareFiles( (CDos::PCFile)file2, (CDos::PCFile)file1, ri->ordering&ORDER_COLUMN_ID  );
+			return ri->rFileManager.CompareFiles( (CDos::PCFile)file2, (CDos::PCFile)file1, ri->ordering&ORDER_FILEINFO_ID );
 	}
 	afx_msg void CFileManagerView::__onColumnClick__(NMHDR *pNMHDR,LRESULT *pResult){
 		// clicked on column label - ordering Files by given column
 		// - removing the Order sign from column it was originally Ordered by (the "+" or "-" symbols)
 		if (ordering!=ORDER_NONE){
-			CListCtrl &lv=GetListCtrl();
-			TCHAR buf[80];
-			LVCOLUMN lvc;
-				lvc.mask=LVCF_TEXT, lvc.pszText=buf, lvc.cchTextMax=sizeof(buf)/sizeof(TCHAR);
-			lv.GetColumn( ordering&ORDER_COLUMN_ID, &lvc );
-			*buf=ORDER_NONE_SYMBOL;
-			lv.SetColumn( ordering&ORDER_COLUMN_ID, &lvc );
+			const char columnId=__columnIdFromFileInfo__( ordering&ORDER_FILEINFO_ID );
+			if (columnId>=0){
+				CListCtrl &lv=GetListCtrl();
+				TCHAR buf[80];
+				LVCOLUMN lvc;
+					lvc.mask=LVCF_TEXT, lvc.pszText=buf, lvc.cchTextMax=sizeof(buf)/sizeof(TCHAR);
+				lv.GetColumn( columnId, &lvc );
+				*buf=ORDER_NONE_SYMBOL;
+				lv.SetColumn( columnId, &lvc );
+			}
 		}
 		// - determining the Order type
 		const LPNMLISTVIEW pnmlv=(LPNMLISTVIEW)pNMHDR;
-		const BYTE columnId=pnmlv->iSubItem;
-		if ((ordering&ORDER_COLUMN_ID)!=columnId)
+		const BYTE fileInfoIndex=__fileInfoFromColumnId__(pnmlv->iSubItem)-informationList;
+		if ((ordering&ORDER_FILEINFO_ID)!=fileInfoIndex)
 			// Ordering by given column ascending
-			ordering=columnId|ORDER_ASCENDING;
+			ordering=fileInfoIndex|ORDER_ASCENDING;
 		else if (ordering&ORDER_ASCENDING)
 			// Ordering by given column descending
 			ordering=ordering&~ORDER_ASCENDING;
@@ -449,12 +455,15 @@
 		//nop (see OnColumnClick)
 		// - setting the Order sign in column by which it is newly ordered by (the "+" or "-" symbols)
 		if (ordering!=ORDER_NONE){
-			TCHAR buf[80];
-			LVCOLUMN lvc;
-				lvc.mask=LVCF_TEXT, lvc.pszText=buf, lvc.cchTextMax=sizeof(buf)/sizeof(TCHAR);
-			lv.GetColumn( ordering&ORDER_COLUMN_ID, &lvc );
-			*buf= ordering&ORDER_ASCENDING ? '+' : '—' ;
-			lv.SetColumn( ordering&ORDER_COLUMN_ID, &lvc );
+			const char columnId=__columnIdFromFileInfo__( ordering&ORDER_FILEINFO_ID );
+			if (columnId>=0){
+				TCHAR buf[80];
+				LVCOLUMN lvc;
+					lvc.mask=LVCF_TEXT, lvc.pszText=buf, lvc.cchTextMax=sizeof(buf)/sizeof(TCHAR);
+				lv.GetColumn( columnId, &lvc );
+				*buf= ordering&ORDER_ASCENDING ? '+' : '–' ;
+				lv.SetColumn( columnId, &lvc );
+			}
 		}
 		// - ordering
 		const TOrderInfo ri={ ordering, *this };
@@ -502,6 +511,21 @@
 					columnId--;
 		ASSERT(FALSE); // we should never end up here, but just to be sure
 		return nullptr;
+	}
+
+	char CFileManagerView::__columnIdFromFileInfo__(BYTE fileInfoIndex) const{
+		// determines and returns the column index that contains the specified FileInfo; returns -1 if the column is not displayed
+		char result=-1;
+		if ((reportModeDisplayedInfos&1<<fileInfoIndex)!=0)
+			do{
+				result+=(reportModeDisplayedInfos&1<<fileInfoIndex)!=0;
+			}while (fileInfoIndex-->0);
+		return result;
+	}
+
+	char CFileManagerView::__columnIdFromFileInfo__(PCFileInfo fi) const{
+		// determines and returns the column index that contains the specified FileInfo; returns -1 if the column is not displayed
+		return __columnIdFromFileInfo__(fi-informationList);
 	}
 
 	afx_msg void CFileManagerView::OnDestroy(){
@@ -653,7 +677,7 @@
 			RCFileManagerView rFileManager;
 			const TBackgroundActionCancelable *const pAction;
 			const PDos dos;
-			const CFileManagerView::TDirectoryStructureManagement *const pDirStructMan;
+			const CFileManagerView::PCDirectoryStructureManagement pDirStructMan;
 			TCylinder state;
 
 			TStatisticsCollector(const TBackgroundActionCancelable *pAction)

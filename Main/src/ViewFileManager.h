@@ -46,11 +46,11 @@
 			SKIP
 		};
 	protected:
-		struct TDirectoryStructureManagement sealed{
+		typedef const struct TDirectoryStructureManagement sealed{
 			CDos::TFnCreateSubdirectory fnCreateSubdir;
 			CDos::TFnChangeCurrentDirectory fnChangeCurrentDir;
 			CDos::TFnMoveFileToCurrDir fnMoveFileToCurrDir;
-		};
+		} *PCDirectoryStructureManagement;
 	private:
 		class COleVirtualFileDataSource sealed:public COleDataSource{
 			const PFileManagerView fileManager;
@@ -114,6 +114,8 @@
 		void __switchToDirectory__(CDos::PFile directory) const;
 		int __getVerticalScrollPos__() const;
 		PCFileInfo __fileInfoFromColumnId__(BYTE columnId) const;
+		char __columnIdFromFileInfo__(BYTE fileInfoIndex) const;
+		char __columnIdFromFileInfo__(PCFileInfo fi) const;
 		TStdWinError __switchToDirectory__(PTCHAR path) const;
 		TStdWinError __skipNameConflict__(DWORD newFileSize,LPCTSTR newFileName,CDos::PFile conflict,TConflictResolution &rConflictedSiblingResolution) const;
 		TStdWinError __moveFile__(int &i,LPFILEDESCRIPTOR files,int nFiles,CDos::PFile &rMovedFile,TConflictResolution &rConflictedSiblingResolution);
@@ -230,7 +232,7 @@
 		TFileList selectedFiles; // used only for restoring selection when the FileManager is switched back - otherwise the content is empty!
 		int focusedFile;
 
-		CFileManagerView(PDos _dos,BYTE _supportedDisplayModes,BYTE _initialDisplayMode,const CFont &rFont,BYTE reportModeRowHeightAdjustment,BYTE _nInformation,PCFileInfo _informationList,const TDirectoryStructureManagement *_pDirectoryStructureManagement);
+		CFileManagerView(PDos _dos,BYTE _supportedDisplayModes,BYTE _initialDisplayMode,const CFont &rFont,BYTE reportModeRowHeightAdjustment,BYTE _nInformation,PCFileInfo _informationList,PCDirectoryStructureManagement pDirectoryStructureManagement);
 		~CFileManagerView();
 
 		void __editFileInformation__(CDos::PFile file,BYTE editableInformationSearchDirection) const;
@@ -254,7 +256,7 @@
 		virtual TStdWinError ImportPhysicalFile(LPCTSTR pathAndName,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution);
 	public:
 		const CFont &rFont;
-		const TDirectoryStructureManagement *const pDirectoryStructureManagement;
+		const PCDirectoryStructureManagement pDirectoryStructureManagement;
 		const CMainWindow::CTdiView::TTab tab;
 
 		POSITION GetFirstSelectedFilePosition() const;
