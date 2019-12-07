@@ -212,6 +212,7 @@
 		// - displaying the content of Subdirectory
 		if (__fileInfoFromColumnId__(lpia->iSubItem)->flags&TFileInfo::FileName)
 			if (DOS->IsDirectory(file)){
+				previousDirectories.AddHead(DOS->currentDir);
 				__switchToDirectory__(file);
 				GetListCtrl().SendMessage( LVM_SCROLL, 0, -__getVerticalScrollPos__() ); // resetting the scroll position to zero pixels
 				__refreshDisplay__();
@@ -233,6 +234,20 @@
 		}else
 			// DisplayMode is other than Report - only File name can be edited
 			__editNameOfSelectedFile__();
+	}
+
+	afx_msg void CFileManagerView::__navigateBack__(){
+		// switching to previous Directory
+		const CDos::PFile currDir=DOS->currentDir;
+		__switchToDirectory__(previousDirectories.RemoveHead());
+		GetListCtrl().SendMessage( LVM_SCROLL, 0, -__getVerticalScrollPos__() ); // resetting the scroll position to zero pixels
+		selectedFiles.AddHead( focusedFile=currDir );
+		__refreshDisplay__();
+	}
+
+	afx_msg void CFileManagerView::__navigateBack_updateUI__(CCmdUI *pCmdUI){
+		// projects possibility to navigate back into the UI
+		pCmdUI->Enable( !previousDirectories.IsEmpty() );
 	}
 
 	afx_msg void CFileManagerView::__onEndLabelEdit__(NMHDR *pNMHDR,LRESULT *pResult){

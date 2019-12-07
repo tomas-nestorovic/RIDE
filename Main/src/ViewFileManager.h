@@ -104,6 +104,7 @@
 		WORD nativelyLastFile; // index of a file that is natively the last one in current Directory
 		CMapPtrToWord nativeOrderOfFiles; // map of native order of Files as they are discovered in current Directory (i.e. without Ordering)
 		CPtrList ownedDirEntryViews; // PDirEntriesView
+		TFileList previousDirectories;
 
 		void __updateSummaryInStatusBar__() const;
 		WORD __getNativeOrderOfFile__(CDos::PCFile file) const;
@@ -130,6 +131,8 @@
 		afx_msg void __imageWritableAndFileSelected_updateUI__(CCmdUI *pCmdUI);
 		afx_msg void __editNameOfSelectedFile__();
 		afx_msg void __onDblClick__(NMHDR *pNMHDR,LRESULT *pResult);
+		afx_msg void __navigateBack__();
+			afx_msg void __navigateBack_updateUI__(CCmdUI *pCmdUI);
 		afx_msg void __onEndLabelEdit__(NMHDR *pNMHDR,LRESULT *pResult);
 		afx_msg void __compareFiles__();
 		afx_msg void __selectAllFilesInCurrentDir__();
@@ -230,7 +233,7 @@
 		BYTE ordering;
 		DWORD reportModeDisplayedInfos;
 		TFileList selectedFiles; // used only for restoring selection when the FileManager is switched back - otherwise the content is empty!
-		int focusedFile;
+		CDos::PFile focusedFile;
 
 		CFileManagerView(PDos _dos,BYTE _supportedDisplayModes,BYTE _initialDisplayMode,const CFont &rFont,BYTE reportModeRowHeightAdjustment,BYTE _nInformation,PCFileInfo _informationList,PCDirectoryStructureManagement pDirectoryStructureManagement);
 		~CFileManagerView();

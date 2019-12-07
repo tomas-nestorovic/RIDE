@@ -28,7 +28,7 @@
 		, supportedDisplayModes(_supportedDisplayModes) , displayMode(_initialDisplayMode)
 		, reportModeDisplayedInfosPrev(0) // no columns have been shown previously ...
 		, reportModeDisplayedInfos(-1) // ... and now wanting to show them all
-		, ordering(ORDER_NONE) , focusedFile(-1) , scrollY(0) , ownedDataSource(nullptr)
+		, ordering(ORDER_NONE) , focusedFile(nullptr) , scrollY(0) , ownedDataSource(nullptr)
 		, pDirectoryStructureManagement(pDirectoryStructureManagement)
 		, integerEditor(this) {
 		// - switching to default DisplayMode
@@ -48,6 +48,8 @@
 			ON_UPDATE_COMMAND_UI(ID_FILEMANAGER_FILE_EDIT,__imageWritableAndFileSelected_updateUI__)
 		ON_NOTIFY_REFLECT(LVN_COLUMNCLICK,__onColumnClick__)
 		ON_NOTIFY_REFLECT(NM_DBLCLK,__onDblClick__)
+		ON_COMMAND(ID_NAVIGATE_UP,__navigateBack__)
+			ON_UPDATE_COMMAND_UI(ID_NAVIGATE_UP,__navigateBack_updateUI__)
 		ON_NOTIFY_REFLECT(LVN_ENDLABELEDIT,__onEndLabelEdit__)
 		ON_COMMAND(ID_FILEMANAGER_FILE_COMPARE,__compareFiles__)
 		ON_COMMAND(ID_EDIT_SELECT_ALL,__selectAllFilesInCurrentDir__)
@@ -148,7 +150,9 @@
 		__order__();
 		// - restoring File selection
 		__restoreFileSelection__();
-		lv.SetItemState(focusedFile,LVIS_FOCUSED,LVIS_FOCUSED);
+		LVFINDINFO lvdi; lvdi.flags=LVFI_PARAM;
+		lvdi.lParam=(LPARAM)focusedFile;
+		lv.SetItemState( lv.FindItem(&lvdi), LVIS_FOCUSED, LVNI_FOCUSED );
 		// - reporting in StatusBar
 		__updateSummaryInStatusBar__();
 	}
@@ -540,7 +544,8 @@
 		const CListCtrl &lv=GetListCtrl();
 		for( POSITION pos=lv.GetFirstSelectedItemPosition(); pos; selectedFiles.AddTail((PVOID)lv.GetItemData(lv.GetNextSelectedItem(pos))) );
 		// - storing currently FocusedFile
-		focusedFile=lv.GetNextItem(-1,LVNI_FOCUSED);
+		const int iFocused=lv.GetNextItem(-1,LVNI_FOCUSED);
+		focusedFile= iFocused>=0 ? (CDos::PFile)lv.GetItemData(iFocused) : nullptr;
 		// - destroying the FileComparisonDialog (if shown)
 		if (CFileComparisonDialog::pSingleInstance)
 			CFileComparisonDialog::pSingleInstance->SendMessage( WM_COMMAND, IDCANCEL, 0 );

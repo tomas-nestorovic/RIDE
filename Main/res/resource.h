@@ -220,6 +220,7 @@
 #define ID_NAVIGATE_NEXTTRACK           40252
 #define ID_NAVIGATE_PREVIOUSTRACK       40253
 #define ID_NAVIGATE_SECTOR              40254
+#define ID_NAVIGATE_UP                  40255
 #define ID_BOOKMARK_DELETEALL           40257
 #define ID_COMPUTE_CHECKSUM             40260
 #define ID_ZOOM_OUT                     40267
