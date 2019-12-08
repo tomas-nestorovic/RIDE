@@ -137,6 +137,7 @@
 		public:
 			static LPCTSTR GetErrorDesc(TError error);
 
+			CFatPath(DWORD nItemsMax); // for Dummy object which has no Buffer and just counts the Items (allocation units)
 			CFatPath(const CDos *dos,PCFile file); // ctor for exporting a File on Image
 			CFatPath(const CDos *dos,DWORD fileSize); // ctor for importing a File to Image
 			CFatPath(const CDos *dos,RCPhysicalAddress chs); // ctor for editing a Sector (e.g. Boot Sector)

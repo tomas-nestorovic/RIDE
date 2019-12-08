@@ -21,6 +21,13 @@
 
 
 
+
+	CDos::CFatPath::CFatPath(DWORD nItemsMax)
+		// ctor for Dummy object which has no Buffer and just counts the Items (allocation units)
+		: nItemsMax(nItemsMax) , buffer(nullptr)
+		, nItems(0) , pLastItem(nullptr) {
+	}
+
 	CDos::CFatPath::CFatPath(const CDos *dos,PCFile file)
 		// ctor for exporting a File in Image
 		: nItemsMax(dos->formatBoot.clusterSize // "clusterSize+" = to round up to whole multiples of ClusterSize
@@ -52,7 +59,8 @@
 
 	CDos::CFatPath::~CFatPath(){
 		// dtor
-		::free(buffer);
+		if (buffer!=nullptr)
+			::free(buffer);
 	}
 
 
@@ -68,7 +76,9 @@
 		// - VALIDATION: FatPath must be acyclic (detected by wanting to exceed the expected number of Items)
 		if (nItems==nItemsMax){ error=VALUE_CYCLE; return false; }
 		// - extending FatPath
-		*pLastItem++=*pItem, nItems++;
+		if (pLastItem!=nullptr)
+			*pLastItem++=*pItem;
+		nItems++;
 		return true; // CDos-derivate performs additional validation
 	}
 
