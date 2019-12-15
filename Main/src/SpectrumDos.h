@@ -123,17 +123,19 @@
 				void DrawReportModeCell(BYTE extension,LPDRAWITEMSTRUCT pdis) const;
 			} singleCharExtEditor;
 
-			mutable class CVarLengthFileNameEditor sealed{
-				static bool WINAPI __onConfirmed__(PVOID file,HWND,PVOID);
+			mutable class CVarLengthCommandLineEditor sealed{
+				static bool WINAPI __onCmdLineConfirmed__(PVOID file,HWND,PVOID value);
+				static bool WINAPI __onFileNameConfirmed__(PVOID file,HWND,PVOID);
 
 				const CSpectrumFileManagerView *const pZxFileManager;
-				TCHAR bufOldName[64]; // 64 = should accommodate filename of any ZX Spectrum-derived platform
+				TCHAR bufOldCmd[256];
 			public:
-				CVarLengthFileNameEditor(const CSpectrumFileManagerView *pZxFileManager);
+				CVarLengthCommandLineEditor(const CSpectrumFileManagerView *pZxFileManager);
 
-				PEditorBase Create(PFile file,BYTE lengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged=nullptr);
-				void DrawReportModeCell(LPCSTR fileName,BYTE fileNameLength,LPDRAWITEMSTRUCT pdis) const;
-			} varLengthFileNameEditor;
+				PEditorBase Create(PFile file,PCHAR cmd,BYTE cmdLengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged=nullptr);
+				PEditorBase CreateForFileName(PFile file,BYTE fileNameLengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged=nullptr);
+				void DrawReportModeCell(LPCSTR cmd,BYTE cmdLength,LPDRAWITEMSTRUCT pdis) const;
+			} varLengthCommandLineEditor;
 
 			mutable class CStdTapeHeaderBlockTypeEditor sealed{
 			public:

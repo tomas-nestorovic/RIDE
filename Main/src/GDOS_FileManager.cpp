@@ -58,7 +58,7 @@
 		switch (pFileInfo-InformationList){
 			case INFORMATION_NAME:
 				// File Name
-				varLengthFileNameEditor.DrawReportModeCell( de->name, GDOS_FILE_NAME_LENGTH_MAX, pdis );
+				varLengthCommandLineEditor.DrawReportModeCell( de->name, GDOS_FILE_NAME_LENGTH_MAX, pdis );
 				break;
 			case INFORMATION_TYPE:
 				// File Type
@@ -153,7 +153,7 @@
 		const PDirectoryEntry de=(PDirectoryEntry)file;
 		switch (infoId){
 			case INFORMATION_NAME:
-				return varLengthFileNameEditor.Create( de, GDOS_FILE_NAME_LENGTH_MAX, ' ');
+				return varLengthCommandLineEditor.CreateForFileName( de, GDOS_FILE_NAME_LENGTH_MAX, ' ');
 			case INFORMATION_TYPE:
 				return extensionEditor.Create(de);
 			case INFORMATION_PARAM_1:

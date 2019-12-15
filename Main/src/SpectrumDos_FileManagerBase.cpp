@@ -7,7 +7,7 @@
 		: CFileManagerView( dos, supportedDisplayModes, initialDisplayMode, rZxRom.font, 3, nInformation, informationList, pDirManagement )
 		, zxRom(rZxRom) , nameCharsMax(nameCharsMax)
 		, singleCharExtEditor(this)
-		, varLengthFileNameEditor(this)
+		, varLengthCommandLineEditor(this)
 		, stdTapeHeaderTypeEditor(this) {
 	}
 
@@ -167,12 +167,37 @@
 
 
 
-	CSpectrumDos::CSpectrumFileManagerView::CVarLengthFileNameEditor::CVarLengthFileNameEditor(const CSpectrumFileManagerView *pZxFileManager)
+	CSpectrumDos::CSpectrumFileManagerView::CVarLengthCommandLineEditor::CVarLengthCommandLineEditor(const CSpectrumFileManagerView *pZxFileManager)
 		// ctor
 		: pZxFileManager(pZxFileManager) {
 	}
 
-	bool WINAPI CSpectrumDos::CSpectrumFileManagerView::CVarLengthFileNameEditor::__onConfirmed__(PVOID file,HWND,PVOID){
+	bool WINAPI CSpectrumDos::CSpectrumFileManagerView::CVarLengthCommandLineEditor::__onCmdLineConfirmed__(PVOID file,HWND,PVOID value){
+		// overwrites old command line with new one
+		const PDos dos=CDos::GetFocused();
+		const CSpectrumFileManagerView *const pZxFileManager=(CSpectrumFileManagerView *)dos->pFileManager;
+		const TZxRom::CLineComposerPropGridEditor &rEditor=pZxFileManager->zxRom.lineComposerPropGridEditor;
+		ASSERT( sizeof(*rEditor.GetCurrentZxText())==sizeof(char) );
+		::memcpy( value, rEditor.GetCurrentZxText(), rEditor.GetCurrentZxTextLength() );
+		return true;
+	}
+
+	CFileManagerView::PEditorBase CSpectrumDos::CSpectrumFileManagerView::CVarLengthCommandLineEditor::Create(PFile file,PCHAR cmd,BYTE cmdLengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged){
+		// creates and returns the Editor of Spectrum command line
+		ASSERT(cmdLengthMax<sizeof(bufOldCmd)/sizeof(TCHAR));
+		#ifdef UNICODE
+			ASSERT(FALSE);
+		#else
+			::memcpy( bufOldCmd, cmd, cmdLengthMax );
+			return	pZxFileManager->__createStdEditor__( 
+						file,
+						cmd,
+						TZxRom::CLineComposerPropGridEditor::Define( cmdLengthMax, paddingChar, __onCmdLineConfirmed__, onChanged )
+					);
+		#endif
+	}
+
+	bool WINAPI CSpectrumDos::CSpectrumFileManagerView::CVarLengthCommandLineEditor::__onFileNameConfirmed__(PVOID file,HWND,PVOID){
 		// changes specified File's Name
 		const PDos dos=CDos::GetFocused();
 		const CSpectrumFileManagerView *const pZxFileManager=(CSpectrumFileManagerView *)dos->pFileManager;
@@ -192,22 +217,25 @@
 			return true;
 	}
 
-	CFileManagerView::PEditorBase CSpectrumDos::CSpectrumFileManagerView::CVarLengthFileNameEditor::Create(PFile file,BYTE lengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged){
+	CFileManagerView::PEditorBase CSpectrumDos::CSpectrumFileManagerView::CVarLengthCommandLineEditor::CreateForFileName(PFile file,BYTE fileNameLengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged){
 		// creates and returns the Editor of File Name
-		ASSERT(lengthMax<sizeof(bufOldName)/sizeof(TCHAR));
+		ASSERT(fileNameLengthMax<sizeof(bufOldCmd)/sizeof(TCHAR));
+		pZxFileManager->DOS->GetFileNameOrExt( file, bufOldCmd, nullptr );
+		const int fileNameLength=::lstrlen(bufOldCmd);
 		#ifdef UNICODE
 			ASSERT(FALSE);
 		#else
-			pZxFileManager->DOS->GetFileNameOrExt( file, bufOldName, nullptr );
-			::memset( bufOldName+::lstrlen(bufOldName), paddingChar, lengthMax ); // guaranteed that LengthMax PaddingChars still fit in the Buffer for any ZX Spectrum derivate
-			return pZxFileManager->__createStdEditor__(	file, bufOldName,
-														TZxRom::CLineComposerPropGridEditor::Define( lengthMax, paddingChar, __onConfirmed__, onChanged )
-													);
+			::memset( bufOldCmd+fileNameLength, paddingChar, fileNameLengthMax-fileNameLength );
 		#endif
+		return	pZxFileManager->__createStdEditor__(
+					file,
+					bufOldCmd,
+					TZxRom::CLineComposerPropGridEditor::Define( fileNameLengthMax, paddingChar, __onFileNameConfirmed__, onChanged )
+				);
 	}
 
-	void CSpectrumDos::CSpectrumFileManagerView::CVarLengthFileNameEditor::DrawReportModeCell(LPCSTR fileName,BYTE fileNameLength,LPDRAWITEMSTRUCT pdis) const{
+	void CSpectrumDos::CSpectrumFileManagerView::CVarLengthCommandLineEditor::DrawReportModeCell(LPCSTR cmd,BYTE cmdLength,LPDRAWITEMSTRUCT pdis) const{
 		// directly draws FileName
 		TCHAR buf[512];
-		pZxFileManager->zxRom.PrintAt( pdis->hDC, TZxRom::ZxToAscii(fileName,fileNameLength,buf), pdis->rcItem, DT_SINGLELINE|DT_VCENTER );
+		pZxFileManager->zxRom.PrintAt( pdis->hDC, TZxRom::ZxToAscii(cmd,cmdLength,buf), pdis->rcItem, DT_SINGLELINE|DT_VCENTER );
 	}

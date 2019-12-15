@@ -699,7 +699,7 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 					}
 					case INFORMATION_NAME:
 						// Name
-						varLengthFileNameEditor.DrawReportModeCell( h->name, ZX_TAPE_FILE_NAME_LENGTH_MAX, pdis );
+						varLengthCommandLineEditor.DrawReportModeCell( h->name, ZX_TAPE_FILE_NAME_LENGTH_MAX, pdis );
 						break;
 					case INFORMATION_SIZE:
 						// Size
@@ -834,7 +834,7 @@ drawChecksum:			// checksum
 															__tapeBlockTypeModified__
 														);
 				case INFORMATION_NAME:
-					return varLengthFileNameEditor.Create( file, ZX_TAPE_FILE_NAME_LENGTH_MAX, ' ' );
+					return varLengthCommandLineEditor.CreateForFileName( file, ZX_TAPE_FILE_NAME_LENGTH_MAX, ' ' );
 				case INFORMATION_PARAM_1:
 					return integerEditor.Create( file, &h->params.param1, __markAsDirty__ );
 				case INFORMATION_PARAM_2:

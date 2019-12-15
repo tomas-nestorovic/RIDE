@@ -133,7 +133,7 @@
 				break;
 			case INFORMATION_NAME:
 				// File Name
-				varLengthFileNameEditor.DrawReportModeCell( de->name, MDOS2_FILE_NAME_LENGTH_MAX, pdis );
+				varLengthCommandLineEditor.DrawReportModeCell( de->name, MDOS2_FILE_NAME_LENGTH_MAX, pdis );
 				break;
 			case INFORMATION_SIZE:
 				// File Size
@@ -183,7 +183,7 @@
 			case INFORMATION_EXTENSION:
 				return singleCharExtEditor.Create(de);
 			case INFORMATION_NAME:
-				return varLengthFileNameEditor.Create( de, MDOS2_FILE_NAME_LENGTH_MAX, '\0' );
+				return varLengthCommandLineEditor.CreateForFileName( de, MDOS2_FILE_NAME_LENGTH_MAX, '\0' );
 			case INFORMATION_ATTRIBUTES:
 				return __createStdEditorWithEllipsis__( de, __editFileAttributes__ );
 			case INFORMATION_PARAM_1:
