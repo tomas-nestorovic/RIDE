@@ -187,9 +187,9 @@
 			case INFORMATION_ATTRIBUTES:
 				return __createStdEditorWithEllipsis__( de, __editFileAttributes__ );
 			case INFORMATION_PARAM_1:
-				return integerEditor.Create( de, &de->params.param1, __markDirectorySectorAsDirty__ );
+				return integerEditor.Create( de, &de->params.param1 );
 			case INFORMATION_PARAM_2:
-				return integerEditor.Create( de, &de->params.param2, __markDirectorySectorAsDirty__ );
+				return integerEditor.Create( de, &de->params.param2 );
 			default:
 				return nullptr;
 		}

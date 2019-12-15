@@ -132,8 +132,8 @@
 			public:
 				CVarLengthCommandLineEditor(const CSpectrumFileManagerView *pZxFileManager);
 
-				PEditorBase Create(PFile file,PCHAR cmd,BYTE cmdLengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged=nullptr);
-				PEditorBase CreateForFileName(PFile file,BYTE fileNameLengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged=nullptr);
+				PEditorBase Create(PFile file,PCHAR cmd,BYTE cmdLengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged=__markDirectorySectorAsDirty__);
+				PEditorBase CreateForFileName(PFile file,BYTE fileNameLengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged=__markDirectorySectorAsDirty__);
 				void DrawReportModeCell(LPCSTR cmd,BYTE cmdLength,LPDRAWITEMSTRUCT pdis) const;
 			} varLengthCommandLineEditor;
 

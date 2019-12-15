@@ -95,8 +95,7 @@
 		// - extracting the FatPath
 		for( TTapeTraversal tt(fileManager); tt.AdvanceToNextEntry(); )
 			if (tt.entry==file){
-				CFatPath::TItem item;
-					item.chs.cylinder=tt.fileId;
+				const CFatPath::TItem item={ tt.chs.cylinder, tt.chs };
 				rFatPath.AddItem(&item);
 				return true;
 			}
@@ -373,7 +372,7 @@
 	bool CSpectrumDos::CTape::TTapeTraversal::AdvanceToNextEntry(){
 		// True <=> found another entry in current Directory (Empty or not), otherwise False
 		if (++fileId<rFileManager.nFiles){
-			entry=rFileManager.files[fileId];
+			entry=rFileManager.files[ chs.cylinder=fileId ];
 			return true;
 		}else
 			return false;
@@ -809,16 +808,11 @@ drawChecksum:			// checksum
 		return 0;
 	}
 
-	static bool WINAPI __markAsDirty__(PVOID file,int){
-		// marks the Tape as dirty
-		CDos::GetFocused()->image->SetModifiedFlag(TRUE);
-		return true;
-	}
-
 	bool WINAPI CSpectrumDos::CTape::CTapeFileManagerView::__checksumModified__(PVOID file,int){
 		// marks the TapeFile's data Checksum as modified
 		((PTapeFile)file)->dataChecksumStatus=TTapeFile::TDataChecksumStatus::UNDETERMINED; // the Checksum needs re-comparison
-		return __markAsDirty__(file,0);
+		__markDirectorySectorAsDirty__(file);
+		return true;
 	}
 
 	CFileManagerView::PEditorBase CSpectrumDos::CTape::CTapeFileManagerView::CreateFileInformationEditor(CDos::PFile file,BYTE infoId) const{
@@ -836,11 +830,11 @@ drawChecksum:			// checksum
 				case INFORMATION_NAME:
 					return varLengthCommandLineEditor.CreateForFileName( file, ZX_TAPE_FILE_NAME_LENGTH_MAX, ' ' );
 				case INFORMATION_PARAM_1:
-					return integerEditor.Create( file, &h->params.param1, __markAsDirty__ );
+					return integerEditor.Create( file, &h->params.param1 );
 				case INFORMATION_PARAM_2:
-					return integerEditor.Create( file, &h->params.param2, __markAsDirty__ );
+					return integerEditor.Create( file, &h->params.param2 );
 				case INFORMATION_FLAG:
-					return integerEditor.Create( file, &tf->dataBlockFlag, __markAsDirty__ );
+					return integerEditor.Create( file, &tf->dataBlockFlag );
 				case INFORMATION_CHECKSUM:
 					return integerEditor.Create( file, &tf->dataChecksum, __checksumModified__ );
 			}
@@ -853,7 +847,7 @@ drawChecksum:			// checksum
 															__tapeBlockTypeModified__
 														);
 				case INFORMATION_FLAG:
-					return integerEditor.Create( file, &tf->dataBlockFlag, __markAsDirty__ );
+					return integerEditor.Create( file, &tf->dataBlockFlag );
 				case INFORMATION_CHECKSUM:
 					return integerEditor.Create( file, &tf->dataChecksum, __checksumModified__ );
 			}
@@ -923,7 +917,8 @@ drawChecksum:			// checksum
 					break;
 				}
 			}
-		return __markAsDirty__(file,0);
+		__markDirectorySectorAsDirty__(file);
+		return true;
 	}
 
 	CSpectrumDos::CSpectrumFileManagerView::CStdTapeHeaderBlockTypeEditor::CStdTapeHeaderBlockTypeEditor(const CSpectrumFileManagerView *pZxFileManager)
