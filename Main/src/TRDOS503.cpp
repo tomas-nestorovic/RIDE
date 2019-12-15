@@ -207,7 +207,7 @@
 		return true;
 	}
 
-	void CTRDOS503::GetFileNameAndExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
+	void CTRDOS503::GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
 		const PCDirectoryEntry de=(PCDirectoryEntry)file;
 		if (bufName)
@@ -239,7 +239,7 @@
 		if (::lstrlen(newName)>TRDOS503_FILE_NAME_LENGTH_MAX || ::lstrlen(newExt)>1)
 			return ERROR_FILENAME_EXCED_RANGE;
 		// - making sure that a File with given NameAndExtension doesn't yet exist
-		if ( rRenamedFile=__findFileInCurrDir__(newName,newExt,file) )
+		if ( rRenamedFile=FindFileInCurrentDir(newName,newExt,file) )
 			return ERROR_FILE_EXISTS;
 		// - getting important information about the File
 		const PDirectoryEntry de=(PDirectoryEntry)file;
@@ -263,7 +263,7 @@
 			//return ERROR_DS_SIZELIMIT_EXCEEDED; //ERROR_INCORRECT_SIZE;
 		// - marking the corresponding Directory Sector as dirty
 		*de=tmp;
-		__markDirectorySectorAsDirty__( rRenamedFile=file );
+		MarkDirectorySectorAsDirty( rRenamedFile=file );
 		return ERROR_SUCCESS;
 	}
 	DWORD CTRDOS503::GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData,TGetFileSizeOptions option) const{
@@ -292,7 +292,7 @@
 		if (*(PCBYTE)file!=TDirectoryEntry::DELETED && *(PCBYTE)file!=TDirectoryEntry::END_OF_DIR) // File mustn't be already Deleted (may happen during moving it in FileManager)
 			if (const PBootSector boot=__getBootSector__()){
 				PDirectoryEntry directory[TRDOS503_FILE_COUNT_MAX];
-				__markDirectorySectorAsDirty__(file);
+				MarkDirectorySectorAsDirty(file);
 				image->MarkSectorAsDirty(TBootSector::CHS);
 				if (file!=directory[__getDirectory__(directory)-1]){
 					// File is not at the end of Directory
@@ -428,7 +428,7 @@
 		PDirectoryEntry directory[TRDOS503_FILE_COUNT_MAX+1],*p=directory; // "+1" = terminator
 		for( directory[__getDirectory__(directory)]=(PDirectoryEntry)boot; *p!=de; p++ ); // Boot Sector as terminator
 		*(PBYTE)*++p=TDirectoryEntry::END_OF_DIR;
-		__markDirectorySectorAsDirty__(*p);
+		MarkDirectorySectorAsDirty(*p);
 		// - File successfully imported to Image
 		return ERROR_SUCCESS;
 	}
@@ -492,7 +492,7 @@
 				//fallthrough
 			default:
 				de->parameterA=newParam1;
-				__markDirectorySectorAsDirty__(de);
+				MarkDirectorySectorAsDirty(de);
 				return true;
 		}
 	}
@@ -533,7 +533,7 @@
 				//fallthrough
 			default:
 				de->parameterB=newParam2;
-				__markDirectorySectorAsDirty__(de);
+				MarkDirectorySectorAsDirty(de);
 				return true;
 		}
 	}
@@ -708,7 +708,7 @@
 					LPCTSTR errMsg;
 					const DWORD fileExportSize=dp.trdos->ExportFile( de, &CMemFile(buf,sizeof(buf)), sizeof(buf), &errMsg );
 					if (errMsg){
-						dp.trdos->__showFileProcessingError__(de,errMsg);
+						dp.trdos->ShowFileProcessingError(de,errMsg);
 						return ERROR_CANCELLED; //TODO: making sure that the disk is in consistent state
 					}
 					TCHAR tmpName[MAX_PATH];
@@ -718,7 +718,7 @@
 					*(PBYTE)deFree=TDirectoryEntry::END_OF_DIR; // marking the DirectoryEntry as the end of Directory (and thus Empty)
 					dp.trdos->ImportFile( &CMemFile(buf,sizeof(buf)), fileExportSize, tmpName, 0, (PFile &)deFree );
 					// : marking the DirectorySector from which the File was removed as dirty; Directory Sector where the File was moved to marked as dirty during importing its data
-					dp.trdos->__markDirectorySectorAsDirty__(de);
+					dp.trdos->MarkDirectorySectorAsDirty(de);
 				}else{
 					// disk (so far) not fragmented - keeping the File where it is
 					dp.boot->firstFree = de->first+de->nSectors;

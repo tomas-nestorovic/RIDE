@@ -171,7 +171,7 @@
 		LPCTSTR errMsg=nullptr;
 		DOS->ExportFile( file, &CMemFile(buf,sizeof(buf)), sizeof(buf), &errMsg );
 		if (errMsg)
-			return ((CSpectrumDos *)DOS)->__showFileProcessingError__(file,errMsg);
+			return DOS->ShowFileProcessingError(file,errMsg);
 		// - converting Spectrum data in Buffer to DIB pixel data
 		union{
 			struct{ BYTE L,H; };

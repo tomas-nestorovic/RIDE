@@ -225,11 +225,11 @@
 			// . shifting the File content
 			if (const LPCTSTR errMsg=fatPath.GetItems(pItem,n)){
 				*de=tmp; // recovering the original DirectoryEntry
-				gdos->__showFileProcessingError__(file,errMsg);
+				gdos->ShowFileProcessingError(file,errMsg);
 				return false;
 			}else if (( err=gdos->__shiftFileContent__(fatPath,(char)newOffset-(char)oldOffset) )!=ERROR_SUCCESS){
 error:			*de=tmp; // recovering the original DirectoryEntry
-				gdos->__showFileProcessingError__(file,err);
+				gdos->ShowFileProcessingError(file,err);
 				return false;
 			}else if (de->__isStandardRomFile__())
 				if (const PGdosSectorData pData=(PGdosSectorData)gdos->image->GetHealthySectorData(pItem->chs))
@@ -312,7 +312,7 @@ error:			*de=tmp; // recovering the original DirectoryEntry
 		// True <=> editing of File's Etc field confirmed, otherwise False
 		const PDirectoryEntry de=(PDirectoryEntry)file;
 		if (CHexaValuePropGridEditor::EditValue( de, &de->etc, sizeof(de->etc) )){
-			((PGDOS)CDos::GetFocused())->__markDirectorySectorAsDirty__(de);
+			CDos::GetFocused()->MarkDirectorySectorAsDirty(de);
 			return true;
 		}else
 			return false;

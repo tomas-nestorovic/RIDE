@@ -523,7 +523,7 @@ reportError:Utils::Information(buf);
 								const CFatPath fatPath(fesp.dos,file);
 								CFatPath::PCItem item; DWORD n;
 								if (const LPCTSTR err=fatPath.GetItems(item,n))
-									fesp.dos->__showFileProcessingError__(file,err);
+									fesp.dos->ShowFileProcessingError(file,err);
 								else
 									for( DWORD fileSize=fesp.dos->GetFileOccupiedSize(file); n--; item++ )
 										if (nDataBytesInSector<fileSize)
@@ -637,7 +637,7 @@ reportError:Utils::Information(buf);
 	PTCHAR CDos::GetFileNameWithAppendedExt(PCFile file,PTCHAR bufNameExt) const{
 		// returns the Buffer populated with File name concatenated with File extension
 		TCHAR bufExt[MAX_PATH];
-		GetFileNameAndExt(file,bufNameExt,bufExt);
+		GetFileNameOrExt(file,bufNameExt,bufExt);
 		if (*bufExt)
 			return ::lstrcat( ::lstrcat(bufNameExt,_T(".")), bufExt );
 		else
@@ -648,7 +648,7 @@ reportError:Utils::Information(buf);
 		// True <=> given File has the name and extension as specified, otherwise False
 		ASSERT(fileName!=nullptr && fileExt!=nullptr);
 		TCHAR bufName[MAX_PATH],bufExt[MAX_PATH];
-		GetFileNameAndExt( file, bufName, bufExt );
+		GetFileNameOrExt( file, bufName, bufExt );
 		return !fnCompareNames(fileName,bufName) && !fnCompareNames(fileExt,bufExt);
 	}
 
@@ -775,14 +775,14 @@ reportError:Utils::Information(buf);
 		}else{
 			// exporting to another RIDE instance; substituting non-alphanumeric characters with "URL-like" escape sequences
 			TCHAR tmp[MAX_PATH],*pOutChar=buf;
-			GetFileNameAndExt(file,tmp,nullptr);
+			GetFileNameOrExt(file,tmp,nullptr);
 			for( LPCTSTR pInChar=tmp; const TCHAR c=*pInChar++; )
 				if (::isalpha((unsigned char)c))
 					*pOutChar++=c;
 				else
 					pOutChar+=::wsprintf( pOutChar, _T("%%%02x"), (unsigned char)c );
 			*pOutChar++='.';
-			GetFileNameAndExt(file,nullptr,tmp);
+			GetFileNameOrExt(file,nullptr,tmp);
 			for( LPCTSTR pInChar=tmp; const TCHAR c=*pInChar++; )
 				if (::isalpha((unsigned char)c))
 					*pOutChar++=c;
@@ -853,7 +853,7 @@ reportError:Utils::Information(buf);
 						rFile=pdt->AllocateNewEntry(); // ... allocating new one
 					if (rFile){ // Empty entry found ...
 						::memcpy( rFile, fDesc, pdt->entrySize ); // ... initializing it by supplied FileDescriptor (DOS-specific)
-						__markDirectorySectorAsDirty__(rFile);
+						MarkDirectorySectorAsDirty(rFile);
 					}else // Empty entry not found and not allocated
 						err=ERROR_CANNOT_MAKE;
 				}
@@ -942,27 +942,17 @@ finished:
 
 	#define ERROR_MSG_CANNOT_PROCESS	_T("Cannot process \"%s\"")
 
-	void CDos::__showFileProcessingError__(PCFile file,LPCTSTR cause) const{
+	void CDos::ShowFileProcessingError(PCFile file,LPCTSTR cause) const{
 		// shows general error message on File being not processable due to occured Cause
 		TCHAR buf[MAX_PATH+50];
 		::wsprintf( buf, ERROR_MSG_CANNOT_PROCESS, GetFileNameWithAppendedExt(file,buf+50) );
 		Utils::FatalError(buf,cause);
 	}
-	void CDos::__showFileProcessingError__(PCFile file,TStdWinError cause) const{
+	void CDos::ShowFileProcessingError(PCFile file,TStdWinError cause) const{
 		// shows general error message on File being not processable due to occured Cause
 		TCHAR buf[MAX_PATH+50];
 		::wsprintf( buf, ERROR_MSG_CANNOT_PROCESS, GetFileNameWithAppendedExt(file,buf+50) );
 		Utils::FatalError(buf,cause);
-	}
-
-	void CDos::__markDirectorySectorAsDirty__(LPCVOID dirEntry) const{
-		// marks Directory Sector that contains specified Directory entry as "dirty"
-		if (const auto pdt=BeginDirectoryTraversal())
-			while (pdt->AdvanceToNextEntry())
-				if (pdt->entry==dirEntry){
-					image->MarkSectorAsDirty(pdt->chs);
-					break;
-				}
 	}
 
 	CDos::PFile CDos::__findFile__(PCFile directory,LPCTSTR fileName,LPCTSTR fileExt,PCFile ignoreThisFile) const{
@@ -980,7 +970,7 @@ finished:
 		return result;
 	}
 
-	CDos::PFile CDos::__findFileInCurrDir__(LPCTSTR fileName,LPCTSTR fileExt,PCFile ignoreThisFile) const{
+	CDos::PFile CDos::FindFileInCurrentDir(LPCTSTR fileName,LPCTSTR fileExt,PCFile ignoreThisFile) const{
 		// finds and returns a File with given NameAndExtension; returns Null if such File doesn't exist
 		return __findFile__( currentDir, fileName, fileExt, ignoreThisFile );
 	}
@@ -1151,6 +1141,16 @@ finished:
 	std::unique_ptr<CDos::TDirectoryTraversal> CDos::BeginDirectoryTraversal() const{
 		// initiates exploration of current Directory through a DOS-specific DirectoryTraversal
 		return BeginDirectoryTraversal(currentDir);
+	}
+
+	void CDos::MarkDirectorySectorAsDirty(PCFile file) const{
+		// marks Directory Sector that contains specified File as "dirty"
+		if (const auto pdt=BeginDirectoryTraversal())
+			while (pdt->AdvanceToNextEntry())
+				if (pdt->entry==file){
+					image->MarkSectorAsDirty(pdt->chs);
+					break;
+				}
 	}
 
 	DWORD CDos::GetCountOfItemsInCurrentDir(TStdWinError &rError) const{

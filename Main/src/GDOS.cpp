@@ -273,7 +273,7 @@
 			*bufExt++=fileType, *bufExt='\0';
 	}
 
-	void CGDOS::GetFileNameAndExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
+	void CGDOS::GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
 		if (file==ZX_DIR_ROOT){
 			if (bufName)
@@ -358,7 +358,7 @@
 		if (::lstrlen(newName)>GDOS_FILE_NAME_LENGTH_MAX || ::lstrlen(newExt)>1)
 			return ERROR_FILENAME_EXCED_RANGE;
 		// - making sure that a File with given NameAndExtension doesn't yet exist
-		if ( rRenamedFile=__findFileInCurrDir__(newName,newExt,file) )
+		if ( rRenamedFile=FindFileInCurrentDir(newName,newExt,file) )
 			return ERROR_FILE_EXISTS;
 		// - extracting important information about the File before renaming it (e.g. standard parameters)
 		const PDirectoryEntry de=(PDirectoryEntry)file;
@@ -375,7 +375,7 @@
 			de->__setDataSizeByFileType__(dataSize);
 		}
 		// - marking the Sector as dirty
-		__markDirectorySectorAsDirty__( rRenamedFile=file );
+		MarkDirectorySectorAsDirty( rRenamedFile=file );
 		return ERROR_SUCCESS;
 	}
 
@@ -405,12 +405,12 @@
 			return ERROR_ACCESS_DENIED; // can't delete the root Directory
 		if (de->fileType!=TDirectoryEntry::EMPTY_ENTRY) // File mustn't be already deleted (may happen during moving it in FileManager)
 			if (const LPCTSTR errMsg=CFatPath(this,de).GetErrorDesc()){
-				__showFileProcessingError__(de,errMsg);
+				ShowFileProcessingError(de,errMsg);
 				return ERROR_GEN_FAILURE;
 			}else{
 				// deleting from Directory
 				de->fileType=TDirectoryEntry::EMPTY_ENTRY;
-				__markDirectorySectorAsDirty__(de);
+				MarkDirectorySectorAsDirty(de);
 			}
 		return ERROR_SUCCESS;
 	}

@@ -227,6 +227,7 @@
 		} integerEditor;
 
 		static int CALLBACK __orderFiles__(LPARAM file1,LPARAM file2,LPARAM orderingInfo);
+		static void WINAPI __markDirectorySectorAsDirty__(PVOID dirEntry);
 		static bool WINAPI __markDirectorySectorAsDirty__(PVOID dirEntry,int);
 
 		BYTE displayMode; // see the TDisplayMode enumeration

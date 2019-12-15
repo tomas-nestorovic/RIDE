@@ -113,7 +113,7 @@
 			return icons[ICON_FOLDER_OPEN];
 		else{
 			TCHAR bufExt[MAX_PATH];
-			DOS->GetFileNameAndExt(de,nullptr,bufExt);
+			DOS->GetFileNameOrExt(de,nullptr,bufExt);
 			if (*bufExt){
 				::lstrcat( ::CharLower(bufExt), _T(",") );
 				for( BYTE n=MSDOS7_FILE_ICONS_COUNT; --n>ICON_FILE_GENERAL; )
@@ -253,7 +253,7 @@
 		// - showing the Dialog and processing its result
 		if (d.DoModal()==IDOK){
 			de->shortNameEntry.attributes=d.attributes;
-			((PMSDOS7)CDos::GetFocused())->__markDirectorySectorAsDirty__(de);
+			CDos::GetFocused()->MarkDirectorySectorAsDirty(de);
 			return true;
 		}else
 			return false;
@@ -270,7 +270,7 @@
 				dt.ToDWord(&tmp);
 				*(PWORD)value=HIWORD(tmp);
 			}
-			((CMSDOS7 *)CDos::GetFocused())->__markDirectorySectorAsDirty__(file);
+			CDos::GetFocused()->MarkDirectorySectorAsDirty(file);
 			return true;
 		}else
 			return false;
@@ -310,21 +310,21 @@
 			TCHAR bufNameCopy[20+MAX_PATH], bufExt[MAX_PATH];
 			if (((CMSDOS7 *)DOS)->dontShowLongFileNames){
 				// using only short "8.3" names
-				DOS->GetFileNameAndExt(	file,
+				DOS->GetFileNameOrExt(	file,
 										bufNameCopy+::wsprintf(bufNameCopy,_T("%d~"),copyNumber),
 										bufExt
 									);
 				bufNameCopy[MSDOS7_FILE_NAME_LENGTH_MAX]='\0'; // trimming to maximum number of characters
 			}else{
 				// using long names
-				DOS->GetFileNameAndExt(	file,
+				DOS->GetFileNameOrExt(	file,
 										bufNameCopy+::wsprintf(bufNameCopy,_T("Copy %d - "),copyNumber),
 										bufExt
 									);
 				bufNameCopy[MAX_PATH]='\0'; // trimming to maximum number of characters
 			}
 			// . finding if a file with given name already exists
-			if (!((CMSDOS7 *)DOS)->__findFileInCurrDir__(bufNameCopy,bufExt,nullptr))
+			if (!DOS->FindFileInCurrentDir(bufNameCopy,bufExt,nullptr))
 				// generated a unique Name for the next File copy - returning the final export name and extension
 				return ((CMSDOS7 *)DOS)->__getFileExportNameAndExt__( bufNameCopy, bufExt, shellCompliant, pOutBuffer );
 		}

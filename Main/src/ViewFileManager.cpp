@@ -241,7 +241,7 @@
 			*backslash='\0';
 				TCHAR buf[MAX_PATH], *pDot=_tcsrchr(::lstrcpy(buf,path),'.');
 				if (pDot) *pDot='\0'; else pDot=_T(".");
-				const CDos::PFile subdirectory=DOS->__findFileInCurrDir__(buf,1+pDot,nullptr);
+				const CDos::PFile subdirectory=DOS->FindFileInCurrentDir(buf,1+pDot,nullptr);
 				const TStdWinError err=	subdirectory
 										? (DOS->*pDirectoryStructureManagement->fnChangeCurrentDir)(subdirectory)
 										: ERROR_FILE_NOT_FOUND;
@@ -366,7 +366,7 @@
 		while (rFileList.GetCount()){ // Files deleted in reversed order ("from rear")
 			const CDos::PFile fileToDelete=rFileList.RemoveTail();
 			if (const TStdWinError err=DOS->DeleteFile(fileToDelete)){
-				DOS->__showFileProcessingError__(fileToDelete,err);
+				DOS->ShowFileProcessingError(fileToDelete,err);
 				break;
 			}
 		}
@@ -491,9 +491,14 @@
 		GetListCtrl().InsertItem(&lvi);
 	}
 
+	void CFileManagerView::__markDirectorySectorAsDirty__(PVOID dirEntry){
+		// marks Directory Sector that contains specified DirectoryEntry as "dirty"
+		CDos::GetFocused()->MarkDirectorySectorAsDirty(dirEntry);
+	}
+
 	bool CFileManagerView::__markDirectorySectorAsDirty__(PVOID dirEntry,int){
 		// marks Directory Sector that contains specified DirectoryEntry as "dirty"
-		CDos::GetFocused()->__markDirectorySectorAsDirty__(dirEntry);
+		__markDirectorySectorAsDirty__(dirEntry);
 		return true;
 	}
 

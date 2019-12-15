@@ -30,7 +30,7 @@
 			for( BYTE copyNumber=1; copyNumber; copyNumber++ ){
 				// . composing the Name for the File copy
 				TCHAR bufNameCopy[MAX_PATH], bufExt[MAX_PATH];
-				DOS->GetFileNameAndExt(	file,bufNameCopy, bufExt );
+				DOS->GetFileNameOrExt(	file,bufNameCopy, bufExt );
 				TCHAR postfix[8];
 				const BYTE n=::wsprintf(postfix,_T("%c%d"),255,copyNumber); // 255 = token of the "COPY" keyword
 				if (::lstrlen(::lstrcat(bufNameCopy,postfix))>nameCharsMax)
@@ -115,7 +115,7 @@
 		const PDos dos=CDos::GetFocused();
 		// - getting File's original Name and Extension
 		TCHAR bufOldName[MAX_PATH];
-		dos->GetFileNameAndExt(file,bufOldName,nullptr);
+		dos->GetFileNameOrExt(file,bufOldName,nullptr);
 		const TCHAR bufNewExt[]={ newExt.charValue, '\0' };
 		// - validating File's new Name and Extension
 		const TStdWinError err=dos->ChangeFileNameAndExt(file,bufOldName,bufNewExt,file);
@@ -144,7 +144,7 @@
 	CFileManagerView::PEditorBase CSpectrumDos::CSpectrumFileManagerView::CSingleCharExtensionEditor::Create(PFile file){
 		// creates and returns an Editor of File's single-character Extension
 		TCHAR bufExt[2];
-		pZxFileManager->DOS->GetFileNameAndExt(file,nullptr,bufExt);
+		pZxFileManager->DOS->GetFileNameOrExt(file,nullptr,bufExt);
 		const PEditorBase result=pZxFileManager->__createStdEditor__(
 			file, &( data=*bufExt ),
 			PropGrid::Enum::DefineConstStringListEditorA( sizeof(data), __createValues__, __getDescription__, __freeValues__, __onChanged__ )
@@ -178,7 +178,7 @@
 		const CSpectrumFileManagerView *const pZxFileManager=(CSpectrumFileManagerView *)dos->pFileManager;
 		// - getting File's original Name and Extension
 		TCHAR bufOldExt[MAX_PATH];
-		dos->GetFileNameAndExt(file,nullptr,bufOldExt);
+		dos->GetFileNameOrExt(file,nullptr,bufOldExt);
 		TCHAR bufNewName[MAX_PATH];
 		const TZxRom::CLineComposerPropGridEditor &rEditor=pZxFileManager->zxRom.lineComposerPropGridEditor;
 		::lstrcpyn( bufNewName, rEditor.GetCurrentZxText(), rEditor.GetCurrentZxTextLength()+1 );
@@ -198,7 +198,7 @@
 		#ifdef UNICODE
 			ASSERT(FALSE);
 		#else
-			pZxFileManager->DOS->GetFileNameAndExt( file, bufOldName, nullptr );
+			pZxFileManager->DOS->GetFileNameOrExt( file, bufOldName, nullptr );
 			::memset( bufOldName+::lstrlen(bufOldName), paddingChar, lengthMax ); // guaranteed that LengthMax PaddingChars still fit in the Buffer for any ZX Spectrum derivate
 			return pZxFileManager->__createStdEditor__(	file, bufOldName,
 														TZxRom::CLineComposerPropGridEditor::Define( lengthMax, paddingChar, __onChanged__, nullptr )

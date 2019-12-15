@@ -168,7 +168,7 @@
 				LPCTSTR errMsg;
 				fileManager->DOS->ExportFile(file,pFile,-1,&errMsg);
 				if (errMsg){
-					fileManager->DOS->__showFileProcessingError__(file,errMsg);
+					fileManager->DOS->ShowFileProcessingError(file,errMsg);
 					return FALSE;
 				}
 			}//else
@@ -420,7 +420,7 @@ importQuit2:		::GlobalUnlock(hg);
 				else{
 					const TStdWinError err=DOS->DeleteFile(conflict); // resolving the Conflict by deleting existing File
 					if (err!=ERROR_SUCCESS)
-						DOS->__showFileProcessingError__(conflict,err);
+						DOS->ShowFileProcessingError(conflict,err);
 					return err;
 				}
 			case IDNO:

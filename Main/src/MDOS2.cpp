@@ -200,7 +200,7 @@
 		return true; // FatPath (with or without error) successfully extracted from FAT
 	}
 
-	void CMDOS2::GetFileNameAndExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
+	void CMDOS2::GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
 		const PCDirectoryEntry de=(PCDirectoryEntry)file;
 		if (bufName)
@@ -230,7 +230,7 @@
 		if (::lstrlen(newName)>MDOS2_FILE_NAME_LENGTH_MAX || ::lstrlen(newExt)>1)
 			return ERROR_FILENAME_EXCED_RANGE;
 		// - making sure that a File with given NameAndExtension doesn't yet exist
-		if ( rRenamedFile=__findFileInCurrDir__(newName,newExt,file) )
+		if ( rRenamedFile=FindFileInCurrentDir(newName,newExt,file) )
 			return ERROR_FILE_EXISTS;
 		// - renaming
 		const PDirectoryEntry de=(PDirectoryEntry)file;
@@ -242,7 +242,7 @@
 						newName, ::lstrlen(newName)
 					);
 		#endif
-		__markDirectorySectorAsDirty__( rRenamedFile=file );
+		MarkDirectorySectorAsDirty( rRenamedFile=file );
 		return ERROR_SUCCESS;
 	}
 	DWORD CMDOS2::GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData,TGetFileSizeOptions option) const{
@@ -272,7 +272,7 @@
 			const CFatPath fatPath(this,file);
 			CFatPath::PCItem item; DWORD n;
 			if (const LPCTSTR errMsg=fatPath.GetItems(item,n)){
-				__showFileProcessingError__(file,errMsg);
+				ShowFileProcessingError(file,errMsg);
 				return ERROR_GEN_FAILURE;
 			}else{
 				// . deleting from FAT
@@ -280,7 +280,7 @@
 					__setLogicalSectorFatItem__( item++->value, MDOS2_FAT_SECTOR_EMPTY );
 				// . deleting from root Directory
 				*(PBYTE)file=TDirectoryEntry::EMPTY_ENTRY;
-				__markDirectorySectorAsDirty__(file);
+				MarkDirectorySectorAsDirty(file);
 			}
 		}
 		return ERROR_SUCCESS;
@@ -506,7 +506,7 @@
 		// - showing the Dialog and processing its result
 		if (d.DoModal()==IDOK){
 			attributes=d.attributes;
-			((PMDOS2)CImage::GetActive()->dos)->__markDirectorySectorAsDirty__(this);
+			CDos::GetFocused()->MarkDirectorySectorAsDirty(this);
 			return true;
 		}else
 			return false;

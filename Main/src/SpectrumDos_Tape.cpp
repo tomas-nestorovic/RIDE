@@ -130,7 +130,7 @@
 		ZX_TAPE_EXTENSION_BYTES
 	};
 
-	void CSpectrumDos::CTape::GetFileNameAndExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
+	void CSpectrumDos::CTape::GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
 		if (file==ZX_DIR_ROOT){
 			if (bufName)

@@ -396,7 +396,7 @@ nextCluster:result++;
 		for( BYTE n=__getLongFileNameEntries__(de,longNameEntries); n--; ){
 			de=*p++;
 			*(PBYTE)de=UDirectoryEntry::EMPTY_ENTRY;
-			__markDirectorySectorAsDirty__(de);
+			MarkDirectorySectorAsDirty(de);
 		}
 	}
 
@@ -470,7 +470,7 @@ nextCluster:result++;
 			return false;
 	}
 
-	void CMSDOS7::GetFileNameAndExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
+	void CMSDOS7::GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
 		// - attempting to get File's long name
 		if (!dontShowLongFileNames)
@@ -526,13 +526,13 @@ nextCluster:result++;
 			::memcpy( de->shortNameEntry.name, ::CharUpper(::lstrcpy(tmp,newName)), ::lstrlen(newName) );
 			::memcpy( de->shortNameEntry.extension, ::CharUpper(::lstrcpy(tmp,newExt)), ::lstrlen(newExt) );
 		#endif
-		__markDirectorySectorAsDirty__( rRenamedFile=de );
+		MarkDirectorySectorAsDirty( rRenamedFile=de );
 		// - recalculating the Checksum for File's long name Entries
 		PDirectoryEntry *p=longNameEntries;
 		for( const BYTE checksum=de->shortNameEntry.__getChecksum__(); n--; ){
 			de=*p++;
 			de->longNameEntry.checksum=checksum;
-			__markDirectorySectorAsDirty__(de);
+			MarkDirectorySectorAsDirty(de);
 		}
 		return ERROR_SUCCESS;
 	}
@@ -642,19 +642,19 @@ nextCluster:result++;
 				p->longNameEntry.checksum=checksum;
 				::memcpy( p->longNameEntry.name2, pw, 12 ),	pw+=6;
 				::memcpy( p->longNameEntry.name3, pw, 4 ),	pw+=2;
-				__markDirectorySectorAsDirty__(p);
+				MarkDirectorySectorAsDirty(p);
 			}
 			(*plnde)->longNameEntry.sequenceNumber|=UDirectoryEntry::LONG_NAME_END;
-			__markDirectorySectorAsDirty__(rRenamedFile);
+			MarkDirectorySectorAsDirty(rRenamedFile);
 			// - removing original short and long NameAndExtension
 			for( BYTE n=__getLongFileNameEntries__(de,longNameEntries); n--; ){
 				const PDirectoryEntry p=*plnde++;
 				*(PBYTE)p=UDirectoryEntry::EMPTY_ENTRY;
-				__markDirectorySectorAsDirty__(p);
+				MarkDirectorySectorAsDirty(p);
 			}
 			*(PBYTE)de=UDirectoryEntry::EMPTY_ENTRY;
 		}
-		__markDirectorySectorAsDirty__(de);
+		MarkDirectorySectorAsDirty(de);
 		return ERROR_SUCCESS;
 	}
 
@@ -713,7 +713,7 @@ nextCluster:result++;
 		if (rCreatedSubdir==&tmp) // new Subdirectory's name follows the "8.3" convention
 			if ( rCreatedSubdir=TMsdos7DirectoryTraversal(this,currentDir).__allocateNewEntry__() ){
 				*rCreatedSubdir=tmp;
-				__markDirectorySectorAsDirty__(rCreatedSubdir);
+				MarkDirectorySectorAsDirty(rCreatedSubdir);
 			}else{
 				fat.FreeChainOfClusters(cluster);
 				return ERROR_CANNOT_MAKE;
@@ -820,7 +820,7 @@ nextCluster:result++;
 		if (pLastWritten)
 			TDateTime(*pLastWritten).ToDWord( &de->shortNameEntry.timeAndDateLastModified );
 		if (pCreated || pLastRead || pLastWritten)
-			__markDirectorySectorAsDirty__(de);
+			MarkDirectorySectorAsDirty(de);
 	}
 
 	DWORD CMSDOS7::GetAttributes(PCFile file) const{
@@ -839,7 +839,7 @@ nextCluster:result++;
 			const CFatPath fatPath(this,file);
 			CFatPath::PCItem item; DWORD n;
 			if (const LPCTSTR err=fatPath.GetItems(item,n)){
-				__showFileProcessingError__(file,err);
+				ShowFileProcessingError(file,err);
 				return ERROR_GEN_FAILURE;
 			}else{
 				const PDirectoryEntry de=(PDirectoryEntry)file; // retyping for easier use below
@@ -857,7 +857,7 @@ nextCluster:result++;
 								case TDirectoryTraversal::FILE:
 									// File
 									if (const TStdWinError err=DeleteFile(dt.entry)){
-										__showFileProcessingError__(dt.entry,err);
+										ShowFileProcessingError(dt.entry,err);
 										return err; // will remain switched to Subdirectory that contains the undeletable File
 									}
 									break;
@@ -882,7 +882,7 @@ nextCluster:result++;
 				// . deleting short name from CurrentDirectory
 				*(PBYTE)de=UDirectoryEntry::EMPTY_ENTRY;
 				de->shortNameEntry.__setFirstCluster__(MSDOS7_FAT_CLUSTER_EOF);
-				__markDirectorySectorAsDirty__(de);
+				MarkDirectorySectorAsDirty(de);
 			}
 		}
 		return ERROR_SUCCESS;
@@ -900,7 +900,7 @@ nextCluster:result++;
 		// populates Buffer with specified File's export name and extension and returns the Buffer; returns Null if File cannot be exported (e.g. a "dotdot" entry in MS-DOS); caller guarantees that the Buffer is at least MAX_PATH characters big
 		if (!((PCDirectoryEntry)file)->shortNameEntry.__isDotOrDotdot__()){
 			TCHAR bufName[MAX_PATH], bufExt[MAX_PATH];
-			GetFileNameAndExt(file,bufName,bufExt);
+			GetFileNameOrExt(file,bufName,bufExt);
 			return __getFileExportNameAndExt__( bufName, bufExt, shellCompliant, buf );
 		}else
 			return nullptr;
@@ -1048,7 +1048,7 @@ nextCluster:result++;
 					}
 					if ((de->longNameEntry.attributes&FILE_ATTRIBUTE_LONGNAME_MASK)==FILE_ATTRIBUTE_LONGNAME){
 						*(PBYTE)de=UDirectoryEntry::EMPTY_ENTRY;
-						rlnp.msdos->__markDirectorySectorAsDirty__(de);
+						rlnp.msdos->MarkDirectorySectorAsDirty(de);
 					}
 				}
 				pAction->UpdateProgress( state=std::max<>(state,dt.chs.cylinder) );

@@ -273,12 +273,8 @@
 		bool __fillEmptySpace__(CFillEmptySpaceDialog &rd);
 		LPCTSTR __exportFileData__(PCFile file,CFile *fOut,DWORD nMaxDataBytesToExport) const;
 		TStdWinError __importFileData__(CFile *fIn,PFile fDesc,LPCTSTR fileName,LPCTSTR fileExt,DWORD fileSize,PFile &rFile,CFatPath &rFatPath);
-		void __markDirectorySectorAsDirty__(LPCVOID dirEntry) const;
 		PFile __findFile__(PCFile directory,LPCTSTR fileName,LPCTSTR fileExt,PCFile ignoreThisFile) const;
-		PFile __findFileInCurrDir__(LPCTSTR fileName,LPCTSTR fileExt,PCFile ignoreThisFile) const;
 		TStdWinError __shiftFileContent__(const CFatPath &rFatPath,char nBytesShift) const;
-		void __showFileProcessingError__(PCFile file,LPCTSTR cause) const;
-		void __showFileProcessingError__(PCFile file,TStdWinError cause) const;
 	public:
 		typedef enum TSectorStatus:COLORREF{ // each value must be bigger than the biggest possible Sector length (typically 16384)
 			SYSTEM		=0xff40ff, // e.g. reserved for root Directory
@@ -345,7 +341,7 @@
 		virtual DWORD GetFreeSpaceInBytes(TStdWinError &rError) const;
 		virtual TCylinder GetFirstCylinderWithEmptySector() const;
 		// file system
-		virtual void GetFileNameAndExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const=0;
+		virtual void GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const=0;
 		PTCHAR GetFileNameWithAppendedExt(PCFile file,PTCHAR bufNameExt) const;
 		bool HasFileNameAndExt(PCFile file,LPCTSTR fileName,LPCTSTR fileExt) const;
 		virtual TStdWinError ChangeFileNameAndExt(PFile file,LPCTSTR newName,LPCTSTR newExt,PFile &rRenamedFile)=0;
@@ -365,10 +361,12 @@
 		virtual TStdWinError DeleteFile(PFile file)=0;
 		virtual std::unique_ptr<TDirectoryTraversal> BeginDirectoryTraversal(PCFile directory) const=0;
 		std::unique_ptr<TDirectoryTraversal> BeginDirectoryTraversal() const;
+		void MarkDirectorySectorAsDirty(PCFile file) const;
 		DWORD GetCountOfItemsInCurrentDir(TStdWinError &rError) const;
 		virtual PTCHAR GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const;
 		virtual DWORD ExportFile(PCFile file,CFile *fOut,DWORD nBytesToExportMax,LPCTSTR *pOutError) const;
 		virtual TStdWinError ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile)=0;
+		PFile FindFileInCurrentDir(LPCTSTR fileName,LPCTSTR fileExt,PCFile ignoreThisFile) const;
 		// other
 		virtual TStdWinError CreateUserInterface(HWND hTdi);
 		virtual enum TCmdResult:BYTE{
@@ -379,6 +377,8 @@
 		virtual bool UpdateCommandUi(WORD cmd,CCmdUI *pCmdUI) const;
 		virtual void InitializeEmptyMedium(CFormatDialog::PCParameters params)=0;
 		virtual bool ValidateFormatChangeAndReportProblem(bool reformatting,PCFormat f) const;
+		void ShowFileProcessingError(PCFile file,LPCTSTR cause) const;
+		void ShowFileProcessingError(PCFile file,TStdWinError cause) const;
 		virtual bool CanBeShutDown(CFrameWnd* pFrame) const;
 	};
 
