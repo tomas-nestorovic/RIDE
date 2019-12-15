@@ -248,7 +248,33 @@
 			PFsInfoSector GetSectorData() const;
 			void MarkSectorAsDirty() const;
 		} fsInfo;
+	public:
+		struct TDateTime sealed:public TFileDateTime{
+			class CEditor sealed{
+				const CFileManagerView *const pFileManager;
+			public:
+				CEditor(const CFileManagerView *pFileManager);
 
+				CFileManagerView::PEditorBase Create(PFile file,PDWORD pMsdosTimeAndDate);
+				CFileManagerView::PEditorBase Create(PFile file,PWORD pMsdosDate);
+				void DrawReportModeCell(DWORD msdosTimeAndDate,LPDRAWITEMSTRUCT pdis,BYTE horizonalAlignment=DT_RIGHT) const;
+				void DrawReportModeCell(WORD msdosDate,LPDRAWITEMSTRUCT pdis,BYTE horizonalAlignment=DT_RIGHT) const;
+			};
+
+			static const SYSTEMTIME Epoch[];
+
+			static PropGrid::PCEditor DefinePropGridDateTimeEditor(PropGrid::TOnValueChanged onValueChanged);
+
+			TDateTime(WORD msdosDate);
+			TDateTime(DWORD msdosTimeAndDate);
+			TDateTime(const FILETIME &r);
+
+			LPCTSTR ToString(PTCHAR buf) const;
+			PTCHAR DateToString(PTCHAR buf) const;
+			bool ToDWord(PDWORD pOutResult) const;
+			void DrawInPropGrid(HDC dc,RECT rc,bool onlyDate=false,BYTE horizonalAlignment=DT_RIGHT) const;
+		};
+	private:
 		class CMsdos7FileManagerView sealed:public CFileManagerView{
 			static bool WINAPI __onNameAndExtConfirmed__(PVOID file,LPCTSTR newNameAndExt,short nCharsOfNewNameAndExt);
 			static bool WINAPI __editFileAttributes__(PVOID file,PVOID,short);
@@ -259,6 +285,7 @@
 			const HMODULE hShell32;
 			const Utils::CRideFont font;
 			HICON icons[MSDOS7_FILE_ICONS_COUNT];
+			mutable TDateTime::CEditor dateTimeEditor;
 
 			HICON __getIcon__(PCDirectoryEntry de) const;
 			void DrawReportModeCell(PCFileInfo pFileInfo,LPDRAWITEMSTRUCT pdis) const override;
@@ -268,8 +295,6 @@
 			void OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint) override; // supplying File Icons
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 		public:
-			static bool WINAPI __editFileDateTime__(PVOID file,PVOID value,short valueSize);
-
 			CMsdos7FileManagerView(PMSDOS7 msdos);
 			~CMsdos7FileManagerView();
 		} fileManager;
@@ -304,21 +329,6 @@
 		TStdWinError __switchToDirectory__(PDirectoryEntry directory);
 		TStdWinError __moveFileToCurrDir__(PDirectoryEntry de,LPCTSTR fileNameAndExt,PDirectoryEntry &rMovedFile);
 	public:
-		struct TDateTime sealed:public TFileDateTime{
-			static const SYSTEMTIME Epoch[];
-
-			static PropGrid::PCEditor DefinePropGridDateTimeEditor(PropGrid::TOnValueChanged onValueChanged);
-
-			TDateTime(WORD msdosDate);
-			TDateTime(DWORD msdosTimeAndDate);
-			TDateTime(const FILETIME &r);
-
-			LPCTSTR ToString(PTCHAR buf) const;
-			PTCHAR DateToString(PTCHAR buf) const;
-			bool ToDWord(PDWORD pOutResult) const;
-			void DrawInPropGrid(HDC dc,RECT rc,bool onlyDate=false,BYTE horizonalAlignment=DT_RIGHT) const;
-		};
-
 		static const TProperties Properties;
 
 		CMSDOS7(PImage image,PCFormat pFormatBoot);

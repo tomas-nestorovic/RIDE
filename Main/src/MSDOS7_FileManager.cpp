@@ -31,7 +31,9 @@
 		// - loading libraries
 		, hShell32(::LoadLibrary(DLL_SHELL32))
 		// - creating presentation Font
-		, font(FONT_LUCIDA_CONSOLE,108,false,true,58) {
+		, font(FONT_LUCIDA_CONSOLE,108,false,true,58)
+		// - initialization of editors
+		, dateTimeEditor(this) {
 	}
 
 	CMSDOS7::CMsdos7FileManagerView::~CMsdos7FileManagerView(){
@@ -172,15 +174,15 @@
 			}
 			case INFORMATION_CREATED:
 				// date/time created
-				TDateTime(de->shortNameEntry.timeAndDateCreated).DrawInPropGrid(dc,r);
+				dateTimeEditor.DrawReportModeCell( de->shortNameEntry.timeAndDateCreated, pdis );
 				break;
 			case INFORMATION_READ:
 				// date last read
-				TDateTime(de->shortNameEntry.dateLastAccessed).DrawInPropGrid(dc,r,true);
+				dateTimeEditor.DrawReportModeCell( de->shortNameEntry.dateLastAccessed, pdis );
 				break;
 			case INFORMATION_MODIFIED:
 				// date/time last modified
-				TDateTime(de->shortNameEntry.timeAndDateLastModified).DrawInPropGrid(dc,r);
+				dateTimeEditor.DrawReportModeCell( de->shortNameEntry.timeAndDateLastModified, pdis );
 				break;
 		}
 	}
@@ -259,23 +261,6 @@
 			return false;
 	}
 
-	bool WINAPI CMSDOS7::CMsdos7FileManagerView::__editFileDateTime__(PVOID file,PVOID value,short valueSize){
-		// True <=> date&time editing confirmed, otherwise False
-		CMSDOS7::TDateTime dt( valueSize==sizeof(DWORD) ? *(PDWORD)value : *(PWORD)value);
-		if (dt.Edit( true, valueSize==sizeof(DWORD), CMSDOS7::TDateTime::Epoch )){
-			if (valueSize==sizeof(DWORD))
-				dt.ToDWord( (PDWORD)value );
-			else{
-				DWORD tmp;
-				dt.ToDWord(&tmp);
-				*(PWORD)value=HIWORD(tmp);
-			}
-			CDos::GetFocused()->MarkDirectorySectorAsDirty(file);
-			return true;
-		}else
-			return false;
-	}
-
 	CFileManagerView::PEditorBase CMSDOS7::CMsdos7FileManagerView::CreateFileInformationEditor(CDos::PFile file,BYTE infoId) const{
 		// creates and returns Editor of File's selected Information; returns Null if Information cannot be edited
 		switch (infoId){
@@ -293,11 +278,11 @@
 			case INFORMATION_ATTRIBUTES:
 				return __createStdEditorWithEllipsis__( file, __editFileAttributes__ );
 			case INFORMATION_CREATED:
-				return __createStdEditorWithEllipsis__( file, &((PDirectoryEntry)file)->shortNameEntry.timeAndDateCreated, sizeof(DWORD), __editFileDateTime__ );
+				return dateTimeEditor.Create( file, &((PDirectoryEntry)file)->shortNameEntry.timeAndDateCreated );
 			case INFORMATION_READ:
-				return __createStdEditorWithEllipsis__( file, &((PDirectoryEntry)file)->shortNameEntry.dateLastAccessed, sizeof(WORD), __editFileDateTime__ );
+				return dateTimeEditor.Create( file, &((PDirectoryEntry)file)->shortNameEntry.dateLastAccessed );
 			case INFORMATION_MODIFIED:
-				return __createStdEditorWithEllipsis__( file, &((PDirectoryEntry)file)->shortNameEntry.timeAndDateLastModified, sizeof(DWORD), __editFileDateTime__ );
+				return dateTimeEditor.Create( file, &((PDirectoryEntry)file)->shortNameEntry.timeAndDateLastModified );
 			default:
 				return nullptr;
 		}
@@ -348,6 +333,24 @@
 		else // only date
 			CMSDOS7::TDateTime(*(PCWORD)value).DrawInPropGrid( pdis->hDC, pdis->rcItem, true, DT_LEFT );
 	}
+
+	static bool WINAPI __editFileDateTime__(PVOID file,PVOID value,short valueSize){
+		// True <=> date&time editing confirmed, otherwise False
+		CMSDOS7::TDateTime dt( valueSize==sizeof(DWORD) ? *(PDWORD)value : *(PWORD)value);
+		if (dt.Edit( true, valueSize==sizeof(DWORD), CMSDOS7::TDateTime::Epoch )){
+			if (valueSize==sizeof(DWORD))
+				dt.ToDWord( (PDWORD)value );
+			else{
+				DWORD tmp;
+				dt.ToDWord(&tmp);
+				*(PWORD)value=HIWORD(tmp);
+			}
+			CDos::GetFocused()->MarkDirectorySectorAsDirty(file);
+			return true;
+		}else
+			return false;
+	}
+
 	PropGrid::PCEditor CMSDOS7::TDateTime::DefinePropGridDateTimeEditor(PropGrid::TOnValueChanged onValueChanged){
 		// creates and returns a PropertyGrid Editor with specified parameters
 		return	PropGrid::Custom::DefineEditor(
@@ -355,7 +358,7 @@
 					sizeof(DWORD), // both date and time
 					__pg_dateTime_draw__,
 					nullptr,
-					CMsdos7FileManagerView::__editFileDateTime__,
+					__editFileDateTime__,
 					nullptr,
 					onValueChanged
 				);
@@ -424,4 +427,31 @@
 						);
 			::SetTextColor(dc,color0);
 		}
+	}
+
+
+
+	CMSDOS7::TDateTime::CEditor::CEditor(const CFileManagerView *pFileManager)
+		// ctor
+		: pFileManager(pFileManager) {
+	}
+
+	CFileManagerView::PEditorBase CMSDOS7::TDateTime::CEditor::Create(PFile file,PDWORD pMsdosTimeAndDate){
+		// creates and returns an Editor of File DateTime stamp
+		return pFileManager->__createStdEditorWithEllipsis__( file, pMsdosTimeAndDate, sizeof(DWORD), __editFileDateTime__ );
+	}
+
+	CFileManagerView::PEditorBase CMSDOS7::TDateTime::CEditor::Create(PFile file,PWORD pMsdosDate){
+		// creates and returns an Editor of File Date stamp
+		return pFileManager->__createStdEditorWithEllipsis__( file, pMsdosDate, sizeof(WORD), __editFileDateTime__ );
+	}
+
+	void CMSDOS7::TDateTime::CEditor::DrawReportModeCell(DWORD msdosTimeAndDate,LPDRAWITEMSTRUCT pdis,BYTE horizonalAlignment) const{
+		// draws the MS-DOS File date&time information
+		TDateTime(msdosTimeAndDate).DrawInPropGrid( pdis->hDC, pdis->rcItem, false, horizonalAlignment );
+	}
+
+	void CMSDOS7::TDateTime::CEditor::DrawReportModeCell(WORD msdosDate,LPDRAWITEMSTRUCT pdis,BYTE horizonalAlignment) const{
+		// draws the MS-DOS File date information
+		TDateTime(msdosDate).DrawInPropGrid( pdis->hDC, pdis->rcItem, true, horizonalAlignment );
 	}
