@@ -130,6 +130,51 @@
 		ZX_TAPE_EXTENSION_BYTES
 	};
 
+	void CSpectrumDos::CTape::THeader::GetNameOrExt(PTCHAR bufName,PTCHAR bufExt) const{
+		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
+		if (bufName){
+			// Name wanted - removing trailing spaces
+			BYTE nameLength=ZX_TAPE_FILE_NAME_LENGTH_MAX;
+			while (nameLength-- && name[nameLength]==' ');
+			::lstrcpyn( bufName, name, (BYTE)(2+nameLength) );
+		}
+		if (bufExt){
+			// Extension wanted - trying to map Type to one of UniversalFileTypes
+			*bufExt++ =	type<ZX_TAPE_EXTENSION_STD_COUNT
+						? Extensions[type]
+						: type;
+			*bufExt='\0';
+		}
+	}
+
+	TStdWinError CSpectrumDos::CTape::THeader::SetNameAndExt(LPCTSTR newName,LPCTSTR newExt){
+		// tries to change given File's name and extension; returns Windows standard i/o error
+		ASSERT(newName!=nullptr);
+		// - checking that the NewName+NewExt combination follows the "10.1" convention
+		const int nNameChars=::lstrlen(newName);
+		if (nNameChars>ZX_TAPE_FILE_NAME_LENGTH_MAX || ::lstrlen(newExt)>1)
+			return ERROR_FILENAME_EXCED_RANGE;
+		// - renaming
+		if (newExt)
+			switch (*newExt){
+				case ZX_TAPE_EXTENSION_PROGRAM	: type=TZxRom::TFileType::PROGRAM;	break;
+				case ZX_TAPE_EXTENSION_NUMBERS	: type=TZxRom::TFileType::NUMBER_ARRAY;break;
+				case ZX_TAPE_EXTENSION_CHARS	: type=TZxRom::TFileType::CHAR_ARRAY;break;
+				case ZX_TAPE_EXTENSION_BYTES	: type=TZxRom::TFileType::CODE;		break;
+				default:
+					return ERROR_BAD_FILE_TYPE;
+			}
+		#ifdef UNICODE
+			ASSERT(FALSE)
+		#else
+			::memcpy(	::memset(name,' ',ZX_TAPE_FILE_NAME_LENGTH_MAX),
+						newName, nNameChars
+					);
+		#endif
+		// - successfully renamed
+		return ERROR_SUCCESS;
+	}
+
 	void CSpectrumDos::CTape::GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
 		if (file==ZX_DIR_ROOT){
@@ -139,16 +184,10 @@
 				*bufExt='\0';
 		}else{
 			const PCTapeFile tf=(PCTapeFile)file;
-			if (const PCHeader h=tf->GetHeader()){
+			if (const PCHeader h=tf->GetHeader())
 				// File with a Header
-				if (bufName){
-					BYTE nameLength=ZX_TAPE_FILE_NAME_LENGTH_MAX;
-					while (nameLength-- && h->name[nameLength]==' ');
-					::lstrcpyn( bufName, h->name, (BYTE)(2+nameLength) );
-				}
-				if (bufExt)
-					*bufExt++=Extensions[h->type], *bufExt='\0';
-			}else{
+				h->GetNameOrExt( bufName, bufExt );
+			else{
 				// Headerless File or Fragment
 				static DWORD idHeaderless=1;
 				if (bufName)
@@ -167,27 +206,11 @@
 		// - renaming
 		if (const PHeader h=((PTapeFile)( rRenamedFile=file ))->GetHeader()){
 			// File with a Header
-			// . checking that the NewName+NewExt combination follows the "10.1" convention
-			if (::lstrlen(newName)>ZX_TAPE_FILE_NAME_LENGTH_MAX || ::lstrlen(newExt)>1)
-				return ERROR_FILENAME_EXCED_RANGE;
 			// . making sure that a File with given NameAndExtension doesn't yet exist 
 			//nop (Files on tape may he equal names)
 			// . renaming
-			switch (*newExt){
-				case ZX_TAPE_EXTENSION_PROGRAM	: h->type=TZxRom::TFileType::PROGRAM;	break;
-				case ZX_TAPE_EXTENSION_NUMBERS	: h->type=TZxRom::TFileType::NUMBER_ARRAY;break;
-				case ZX_TAPE_EXTENSION_CHARS	: h->type=TZxRom::TFileType::CHAR_ARRAY;break;
-				case ZX_TAPE_EXTENSION_BYTES	: h->type=TZxRom::TFileType::CODE;		break;
-				default:
-					return ERROR_BAD_FILE_TYPE;
-			}
-			#ifdef UNICODE
-				ASSERT(FALSE)
-			#else
-				::memcpy(	::memset(h->name,' ',ZX_TAPE_FILE_NAME_LENGTH_MAX),
-							newName, ::lstrlen(newName)
-						);
-			#endif
+			if (const TStdWinError err=h->SetNameAndExt( newName, newExt ))
+				return err;
 			m_bModified=TRUE;
 			return ERROR_SUCCESS;
 		}else
@@ -895,8 +918,8 @@ drawChecksum:			// checksum
 					tf->type=TTapeFile::STD_HEADER;
 					h=tf->GetHeader();
 					h->length=tf->dataLength, h->params=TStdParameters::Default;
-					const TCHAR newExt[]={ Extensions[ h->type=(TZxRom::TFileType)newType.charValue ],'\0' };
-					dos->ChangeFileNameAndExt(file,_T("Unnamed"),newExt,file); // always succeeds as all inputs are set correctly
+					const TCHAR newExt[]={ Extensions[ (TZxRom::TFileType)newType.charValue ], '\0' };
+					h->SetNameAndExt( _T("Unnamed"), newExt );
 					break;
 				}
 			}

@@ -2,9 +2,9 @@
 
 	#define INI_MSG_PARAMS	_T("params")
 
-	CSpectrumDos::CSpectrumFileManagerView::CSpectrumFileManagerView(PDos dos,const TZxRom &rZxRom,BYTE supportedDisplayModes,BYTE initialDisplayMode,BYTE nInformation,PCFileInfo informationList,BYTE nameCharsMax)
+	CSpectrumDos::CSpectrumFileManagerView::CSpectrumFileManagerView(PDos dos,const TZxRom &rZxRom,BYTE supportedDisplayModes,BYTE initialDisplayMode,BYTE nInformation,PCFileInfo informationList,BYTE nameCharsMax,PCDirectoryStructureManagement pDirManagement)
 		// ctor
-		: CFileManagerView( dos, supportedDisplayModes, initialDisplayMode, rZxRom.font, 3, nInformation, informationList, nullptr )
+		: CFileManagerView( dos, supportedDisplayModes, initialDisplayMode, rZxRom.font, 3, nInformation, informationList, pDirManagement )
 		, zxRom(rZxRom) , nameCharsMax(nameCharsMax)
 		, singleCharExtEditor(this)
 		, varLengthFileNameEditor(this)
@@ -172,7 +172,7 @@
 		: pZxFileManager(pZxFileManager) {
 	}
 
-	bool WINAPI CSpectrumDos::CSpectrumFileManagerView::CVarLengthFileNameEditor::__onChanged__(PVOID file,HWND,PVOID){
+	bool WINAPI CSpectrumDos::CSpectrumFileManagerView::CVarLengthFileNameEditor::__onConfirmed__(PVOID file,HWND,PVOID){
 		// changes specified File's Name
 		const PDos dos=CDos::GetFocused();
 		const CSpectrumFileManagerView *const pZxFileManager=(CSpectrumFileManagerView *)dos->pFileManager;
@@ -192,7 +192,7 @@
 			return true;
 	}
 
-	CFileManagerView::PEditorBase CSpectrumDos::CSpectrumFileManagerView::CVarLengthFileNameEditor::Create(PFile file,BYTE lengthMax,char paddingChar){
+	CFileManagerView::PEditorBase CSpectrumDos::CSpectrumFileManagerView::CVarLengthFileNameEditor::Create(PFile file,BYTE lengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged){
 		// creates and returns the Editor of File Name
 		ASSERT(lengthMax<sizeof(bufOldName)/sizeof(TCHAR));
 		#ifdef UNICODE
@@ -201,7 +201,7 @@
 			pZxFileManager->DOS->GetFileNameOrExt( file, bufOldName, nullptr );
 			::memset( bufOldName+::lstrlen(bufOldName), paddingChar, lengthMax ); // guaranteed that LengthMax PaddingChars still fit in the Buffer for any ZX Spectrum derivate
 			return pZxFileManager->__createStdEditor__(	file, bufOldName,
-														TZxRom::CLineComposerPropGridEditor::Define( lengthMax, paddingChar, __onChanged__, nullptr )
+														TZxRom::CLineComposerPropGridEditor::Define( lengthMax, paddingChar, __onConfirmed__, onChanged )
 													);
 		#endif
 	}

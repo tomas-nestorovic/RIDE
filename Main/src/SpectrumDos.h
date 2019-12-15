@@ -124,14 +124,14 @@
 			} singleCharExtEditor;
 
 			mutable class CVarLengthFileNameEditor sealed{
-				static bool WINAPI __onChanged__(PVOID file,HWND,PVOID);
+				static bool WINAPI __onConfirmed__(PVOID file,HWND,PVOID);
 
 				const CSpectrumFileManagerView *const pZxFileManager;
 				TCHAR bufOldName[64]; // 64 = should accommodate filename of any ZX Spectrum-derived platform
 			public:
 				CVarLengthFileNameEditor(const CSpectrumFileManagerView *pZxFileManager);
 
-				PEditorBase Create(PFile file,BYTE lengthMax,char paddingChar);
+				PEditorBase Create(PFile file,BYTE lengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged=nullptr);
 				void DrawReportModeCell(LPCSTR fileName,BYTE fileNameLength,LPDRAWITEMSTRUCT pdis) const;
 			} varLengthFileNameEditor;
 
@@ -161,7 +161,7 @@
 		public:
 			const TZxRom &zxRom;
 
-			CSpectrumFileManagerView(PDos dos,const TZxRom &rZxRom,BYTE supportedDisplayModes,BYTE initialDisplayMode,BYTE nInformation,PCFileInfo informationList,BYTE nameCharsMax);
+			CSpectrumFileManagerView(PDos dos,const TZxRom &rZxRom,BYTE supportedDisplayModes,BYTE initialDisplayMode,BYTE nInformation,PCFileInfo informationList,BYTE nameCharsMax,PCDirectoryStructureManagement pDirManagement=nullptr);
 		};
 
 		class CTape sealed:private CImageRaw,public CDos{ // CImageRaw = the type of Image doesn't matter (not used by Tape)
@@ -173,6 +173,9 @@
 				char name[ZX_TAPE_FILE_NAME_LENGTH_MAX];
 				WORD length;
 				TStdParameters params;
+
+				void GetNameOrExt(PTCHAR bufName,PTCHAR bufExt) const;
+				TStdWinError SetNameAndExt(LPCTSTR newName,LPCTSTR newExt);
 			} *PHeader;
 			typedef const THeader *PCHeader;
 		private:
