@@ -196,7 +196,7 @@
 
 	HWND WINAPI CSpectrumDos::TZxRom::CLineComposerPropGridEditor::__create__(PropGrid::PValue value,PropGrid::TSize combinedValue,HWND hParent){
 		// - initializing the Editor
-		CLineComposerPropGridEditor &rEditor=static_cast<const CSpectrumDos *>(CDos::GetFocused())->zxRom.lineComposerPropGridEditor;
+		CLineComposerPropGridEditor &rEditor=((CSpectrumFileManagerView *)CDos::GetFocused()->pFileManager)->zxRom.lineComposerPropGridEditor;
 		rEditor.length = rEditor.lengthMax = LOBYTE(combinedValue);
 		ASSERT(rEditor.length<sizeof(rEditor.buf));
 		for( rEditor.paddingChar=HIBYTE(combinedValue); rEditor.length; )
@@ -216,7 +216,7 @@
 	}
 
 	void WINAPI CSpectrumDos::TZxRom::CLineComposerPropGridEditor::__drawValue__(PropGrid::PCustomParam,PropGrid::PCValue value,PropGrid::TSize combinedValue,PDRAWITEMSTRUCT pdis){
-		const TZxRom &rZxRom=static_cast<const CSpectrumDos *>(CDos::GetFocused())->zxRom;
+		const TZxRom &rZxRom=((CSpectrumFileManagerView *)CDos::GetFocused()->pFileManager)->zxRom;
 		const HGDIOBJ hFont0=::SelectObject( pdis->hDC, rZxRom.font.m_hObject );
 			TCHAR bufT[4096];
 			pdis->rcItem.left+=PROPGRID_CELL_MARGIN_LEFT;
@@ -230,7 +230,7 @@
 
 	bool WINAPI CSpectrumDos::TZxRom::CLineComposerPropGridEditor::__onChanged__(PropGrid::PCustomParam,HWND,PropGrid::PValue value){
 		const PDos dos=CDos::GetFocused();
-		const CLineComposerPropGridEditor &rEditor=static_cast<const CSpectrumDos *>(CDos::GetFocused())->zxRom.lineComposerPropGridEditor;
+		const CLineComposerPropGridEditor &rEditor=((CSpectrumFileManagerView *)dos->pFileManager)->zxRom.lineComposerPropGridEditor;
 		::memcpy(	::memset( value, rEditor.paddingChar, rEditor.lengthMax ),
 					rEditor.buf,
 					rEditor.length
@@ -245,7 +245,7 @@
 
 	LRESULT CALLBACK CSpectrumDos::TZxRom::CLineComposerPropGridEditor::__wndProc__(HWND hEditor,UINT msg,WPARAM wParam,LPARAM lParam){
 		// window procedure
-		const TZxRom &rZxRom=static_cast<const CSpectrumDos *>(CDos::GetFocused())->zxRom;
+		const TZxRom &rZxRom=((CSpectrumFileManagerView *)CDos::GetFocused()->pFileManager)->zxRom;
 		CLineComposerPropGridEditor &rEditor=rZxRom.lineComposerPropGridEditor;
 		switch (msg){
 			case WM_PAINT:{
