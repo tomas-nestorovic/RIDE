@@ -18,9 +18,10 @@
 		// - determining the area dedicated for the Editor
 		CListCtrl &lv=parent.GetListCtrl();
 		LVFINDINFO lvdi={ LVFI_PARAM, nullptr, (LPARAM)file };
+		const char columnId=parent.__columnIdFromFileInfo__(editedInformationId);
 		CRect rcEditorArea;
-		lv.GetSubItemRect( lv.FindItem(&lvdi), editedInformationId, LVIR_BOUNDS, rcEditorArea );
-		if (!editedInformationId)	// the width of whole File item returned for zeroth Information
+		lv.GetSubItemRect( lv.FindItem(&lvdi), columnId, LVIR_BOUNDS, rcEditorArea );
+		if (!columnId)	// the width of whole File item returned for zeroth Information
 			rcEditorArea.right=lv.GetColumnWidth(0);
 		// - creating the Editor
 		(HWND)hEditor=PropGrid::BeginEditValue( value, file, editor, rcEditorArea, 0, parent.m_hWnd, (HWND *)&hEllipsisButton );
@@ -183,7 +184,7 @@
 		for( BYTE n=nInformation; n>0; n-- ){
 			if (( editedInformationId+=editableInformationSearchDirection )==nInformation)
 				editedInformationId=0;
-			else if(editedInformationId==(BYTE)-1)
+			else if (editedInformationId==(BYTE)-1)
 				editedInformationId=nInformation-1;
 			if (reportModeDisplayedInfos&1<<editedInformationId)
 				if (CreateFileInformationEditor(file,editedInformationId))
