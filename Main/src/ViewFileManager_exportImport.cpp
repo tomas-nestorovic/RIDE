@@ -513,14 +513,13 @@ importQuit2:		::GlobalUnlock(hg);
 
 	TStdWinError CFileManagerView::ImportPhysicalFile(LPCTSTR pathAndName,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution){
 		// imports physical File with given Name into current Directory; returns Windows standard i/o error
-		if (IMAGE->IsWriteProtected())
-			return ERROR_WRITE_PROTECT;
 		const LPCTSTR fileName=_tcsrchr(pathAndName,'\\')+1;
 		const DWORD winAttr=::GetFileAttributes(pathAndName);
 		FILETIME created,lastRead,lastModified;
 		if (winAttr&FILE_ATTRIBUTE_DIRECTORY){
 			// Directory
-			FILE_FLAG_BACKUP_SEMANTICS;
+			if (IMAGE->IsWriteProtected())
+				return ERROR_WRITE_PROTECT;
 			const HANDLE hDir=::CreateFile( pathAndName, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS, nullptr );
 			::GetFileTime( hDir, &created, &lastRead, &lastModified );
 			::CloseHandle(hDir);
@@ -578,6 +577,7 @@ importQuit2:		::GlobalUnlock(hg);
 					switch (d.DoModal()){
 						case IDYES:{
 							// opening the File in new instance of the app (this may function only in Release mode, not in Debug mode)
+							rImportedFile=nullptr;
 							::GetModuleFileName( nullptr, buf, sizeof(buf)/sizeof(TCHAR) );
 							TCHAR pathAndNameInQuotes[MAX_PATH+2];
 							::ShellExecute( nullptr, "open", buf, ::lstrcat(::lstrcat(::lstrcpy(pathAndNameInQuotes,_T("\"")),pathAndName),_T("\"")), nullptr, SW_SHOW );
@@ -592,6 +592,8 @@ importQuit2:		::GlobalUnlock(hg);
 					}
 				}
 			// . importing the File
+			if (IMAGE->IsWriteProtected())
+				return ERROR_WRITE_PROTECT;
 			CFileException e;
 			CFile f;
 			if (f.Open( pathAndName, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary, &e )){
