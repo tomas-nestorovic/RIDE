@@ -111,11 +111,6 @@
 
 
 
-	enum TStd:BYTE{
-		HEADER	=0,
-		DATA	=255
-	};
-
 	#define HEADERLESS_EXTENSION	'H'
 	#define HEADERLESS_TYPE			_T("Headerless")
 	#define HEADERLESS_N_A			_T("N/A")
@@ -172,6 +167,13 @@
 		#endif
 		// - successfully renamed
 		return ERROR_SUCCESS;
+	}
+
+	CSpectrumDos::TUniFileType CSpectrumDos::CTape::THeader::GetUniFileType() const{
+		// maps FileType to global UniFileType
+		return	type<ZX_TAPE_EXTENSION_STD_COUNT
+				? (TUniFileType)Extensions[type]
+				: TUniFileType::UNKNOWN;
 	}
 
 	void CSpectrumDos::CTape::GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
@@ -254,7 +256,7 @@
 		return ERROR_SUCCESS;
 	}
 
-	#define EXPORT_INFO_TAPE2	_T("G%uS%x")
+	#define EXPORT_INFO_TAPE	_T("S%x")
 
 	PTCHAR CSpectrumDos::CTape::GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const{
 		// populates Buffer with specified File's export name and extension and returns the Buffer; returns Null if File cannot be exported (e.g. a "dotdot" entry in MS-DOS); caller guarantees that the Buffer is at least MAX_PATH characters big
@@ -262,10 +264,10 @@
 		const PCTapeFile tf=(PCTapeFile)file;
 		if (const PCHeader h=tf->GetHeader())
 			// File with a Header
-			::wsprintf( p+__exportFileInformation__(p,(TUniFileType)Extensions[h->type],h->params,tf->dataLength), EXPORT_INFO_TAPE2, tf->dataBlockFlag, tf->dataChecksum );
+			::wsprintf( p+__exportFileInformation__(p,h->GetUniFileType(),h->params,tf->dataLength,tf->dataBlockFlag), EXPORT_INFO_TAPE, tf->dataChecksum );
 		else if (tf->type==TTapeFile::HEADERLESS)
 			// Headerless File
-			::wsprintf( p+__exportFileInformation__(p,TUniFileType::HEADERLESS,TStdParameters::Default,tf->dataLength), EXPORT_INFO_TAPE2, tf->dataBlockFlag, tf->dataChecksum );
+			::wsprintf( p+__exportFileInformation__(p,TUniFileType::HEADERLESS,TStdParameters::Default,tf->dataLength,tf->dataBlockFlag), EXPORT_INFO_TAPE, tf->dataChecksum );
 		else
 			// Fragment
 			__exportFileInformation__(p,TUniFileType::FRAGMENT,TStdParameters::Default,tf->dataLength);
@@ -300,13 +302,12 @@
 		// - processing import information
 		TStdParameters u=TStdParameters::Default;
 		TUniFileType uts=TUniFileType::HEADERLESS;
-		DWORD blockFlag=TStd::DATA; // assumption (block featuring Header has been saved using standard routine in ROM)
-		int blockChecksum=-1; DWORD dw;
-		if (const int n=__importFileInformation__(zxInfo,uts,u,dw)){
+		int blockChecksum=-1; DWORD dw; BYTE blockFlag;
+		if (const int n=__importFileInformation__(zxInfo,uts,u,dw,blockFlag)){
 			if (uts==TUniFileType::SCREEN)
 				uts=TUniFileType::BLOCK;
 			if (dw) fileSize=dw;
-			_stscanf( zxInfo+n, EXPORT_INFO_TAPE2, &blockFlag, &blockChecksum );
+			_stscanf( zxInfo+n, EXPORT_INFO_TAPE, &blockChecksum );
 		}
 		// - creating File Header (if Extension known)
 		const PTapeFile tf=fileManager.files[fileManager.nFiles++]=(PTapeFile)::malloc( NUMBER_OF_BYTES_TO_ALLOCATE_FILE(fileSize) );
@@ -415,10 +416,10 @@
 				// File features a standard Header
 				static const WORD BlockLength=2+sizeof(THeader); // "+2" = Flag and Checksum
 				fileManager.f.Write( &BlockLength, sizeof(BlockLength) );
-				static const BYTE Flag=TStd::HEADER;
+				static const BYTE Flag=TFlag::HEADER;
 				fileManager.f.Write( &Flag, sizeof(Flag) );
 				fileManager.f.Write( h, sizeof(THeader) );
-				const BYTE checksum=__getChecksum__(TStd::HEADER,(PCBYTE)h,sizeof(THeader));
+				const BYTE checksum=__getChecksum__(TFlag::HEADER,(PCBYTE)h,sizeof(THeader));
 				fileManager.f.Write( &checksum, sizeof(checksum) );
 			}
 			if (tf->type!=TTapeFile::FRAGMENT){
@@ -584,21 +585,21 @@ error:			Utils::Information(_T("The tape is corrupted."));
 				break;
 			}else if (blockLength>=2){
 				// File (with or without a Header)
-				BYTE flag=TStd::DATA;
+				BYTE flag=TFlag::DATA;
 				if (!f.Read(&flag,1)) goto error;
 				bool hasHeader=false; // assumption (this is a Headerless data block)
 				THeader header;
-				if (flag==TStd::HEADER && blockLength==sizeof(THeader)+2){ // "+2" = Flag and Checksum
+				if (flag==TFlag::HEADER && blockLength==sizeof(THeader)+2){ // "+2" = Flag and Checksum
 					// File with (potential) Header
 					if (f.Read(&header,sizeof(header))!=sizeof(header)) goto error;
 					BYTE headerChecksum;
 					if (!f.Read(&headerChecksum,sizeof(BYTE))) goto error; // ERROR: Header data must be followed by a Checksum
-					if (__getChecksum__(TStd::HEADER,(PCBYTE)&header,sizeof(header))==headerChecksum){
+					if (__getChecksum__(TFlag::HEADER,(PCBYTE)&header,sizeof(header))==headerChecksum){
 						// the block has a valid Checksum and thus describes a standard Header
 						if (f.Read(&blockLength,sizeof(blockLength))!=sizeof(WORD)) goto error; // ERROR: Header must be followed by another block (Data)
 						if (blockLength<2) goto error; // ERROR: Fragment not expected here
 						if (!f.Read(&flag,1)) goto error; // ERROR: Header must be followed by another block (Data)
-						if (flag==TStd::HEADER){
+						if (flag==TFlag::HEADER){
 							// a standard Header cannot be followed by a block that is also a standard Header
 							f.Seek(sizeof(flag)+sizeof(blockLength),CFile::current); // reverting the reading
 							goto putHeaderBack;
@@ -629,8 +630,8 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 				if (f.Read(&dataBuffer,blockLength)!=blockLength) goto error;
 				const PTapeFile tf = files[nFiles++] = (PTapeFile)::malloc( NUMBER_OF_BYTES_TO_ALLOCATE_FILE(blockLength) );
 					tf->type=TTapeFile::FRAGMENT;
-					tf->dataBlockFlag=TStd::DATA;
-					tf->dataChecksum=__getChecksum__(TStd::DATA,dataBuffer,blockLength);
+					tf->dataBlockFlag=TFlag::DATA;
+					tf->dataChecksum=__getChecksum__(TFlag::DATA,dataBuffer,blockLength);
 					tf->dataLength=blockLength;
 					::memcpy( tf->data, dataBuffer, blockLength );
 			}

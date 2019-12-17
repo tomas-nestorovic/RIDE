@@ -82,24 +82,62 @@
 		}
 	}
 
-	#define INFO_STD	_T(" ZX%c%xL%x")
+	#define INFO_UNI	_T(" ZX%c")
+	#define INFO_STD	_T("%xL%x")
+	#define INFO_FLAG	_T("G%u")
+
+	int CSpectrumDos::__exportFileInformation__(PTCHAR buf,TUniFileType uniFileType){
+		// populates the Buffer with File export information in normalized form and returns the number of characters written to the Buffer
+		return _stprintf( buf, INFO_UNI, uniFileType );
+	}
 
 	int CSpectrumDos::__exportFileInformation__(PTCHAR buf,TUniFileType uniFileType,TStdParameters params,DWORD fileLength){
 		// populates the Buffer with File export information in normalized form and returns the number of characters written to the Buffer
-		return _stprintf( buf, INFO_STD, uniFileType, params, fileLength );
+		const int N=__exportFileInformation__( buf, uniFileType );
+		return N + _stprintf( buf+N, INFO_STD, params, fileLength );
 	}
-	int CSpectrumDos::__importFileInformation__(LPCTSTR buf,TUniFileType &rUniFileType,TStdParameters &rParams,DWORD &rFileLength){
+
+	int CSpectrumDos::__exportFileInformation__(PTCHAR buf,TUniFileType uniFileType,TStdParameters params,DWORD fileLength,BYTE dataFlag){
+		// populates the Buffer with File export information in normalized form and returns the number of characters written to the Buffer
+		const int N=__exportFileInformation__( buf, uniFileType, params, fileLength );
+		return N + _stprintf( buf+N, INFO_FLAG, dataFlag );
+	}
+
+	int CSpectrumDos::__importFileInformation__(LPCTSTR buf,TUniFileType &rUniFileType){
 		// returns the number of characters recognized as import information normalized form (supplied by ExportFileInformation)
-		rUniFileType=TUniFileType::UNKNOWN, rFileLength=0; // initialization
+		rUniFileType=TUniFileType::UNKNOWN; // initialization
 		if (buf){ // Null if File has no import information
 			int n=0;
-			if (_stscanf( buf, INFO_STD _T("%n"), &rUniFileType, &rParams, &rFileLength, &n ))
+			if (_stscanf( buf, INFO_UNI _T("%n"), &rUniFileType, &n ))
 				return n;
 		}
 		return 0;
 	}
 
+	int CSpectrumDos::__importFileInformation__(LPCTSTR buf,TUniFileType &rUniFileType,TStdParameters &rParams,DWORD &rFileLength){
+		// returns the number of characters recognized as import information normalized form (supplied by ExportFileInformation)
+		rParams=TStdParameters::Default, rFileLength=0; // initialization
+		if (buf){ // Null if File has no import information
+			const int N=__importFileInformation__( buf, rUniFileType );
+			int n=0;
+			_stscanf( buf+N, INFO_STD _T("%n"), &rParams, &rFileLength, &n );
+			return N+n;
+		}
+		return 0;
+	}
 
+	int CSpectrumDos::__importFileInformation__(LPCTSTR buf,TUniFileType &rUniFileType,TStdParameters &rParams,DWORD &rFileLength,BYTE &rDataFlag){
+		// returns the number of characters recognized as import information normalized form (supplied by ExportFileInformation)
+		rDataFlag=CTape::TFlag::DATA; // assumption (block featuring Header has been saved using standard routine in ROM)
+		if (buf){ // Null if File has no import information
+			const int N=__importFileInformation__( buf, rUniFileType, rParams, rFileLength );
+			int n=0,tmp=rDataFlag;
+			_stscanf( buf+N, INFO_FLAG _T("%n"), &tmp, &n );
+			rDataFlag=tmp;
+			return N+n;
+		}
+		return 0;
+	}
 
 
 

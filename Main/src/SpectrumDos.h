@@ -87,6 +87,7 @@
 
 		enum TUniFileType:char{ // ZX platform-independent File types ("universal" types) - used during exporting/importing of Files across ZX platforms
 			UNKNOWN			='X',
+			SUBDIRECTORY	='D',
 			PROGRAM			='P',
 			CHAR_ARRAY		='C',
 			NUMBER_ARRAY	='N',
@@ -169,6 +170,11 @@
 		class CTape sealed:private CImageRaw,public CDos{ // CImageRaw = the type of Image doesn't matter (not used by Tape)
 			friend class CSpectrumDos;
 		public:
+			enum TFlag:BYTE{
+				HEADER	=0,
+				DATA	=255
+			};
+
 			#pragma pack(1)
 			typedef struct THeader sealed{
 				TZxRom::TFileType type; // any type but Headerless
@@ -178,6 +184,7 @@
 
 				void GetNameOrExt(PTCHAR bufName,PTCHAR bufExt) const;
 				TStdWinError SetNameAndExt(LPCTSTR newName,LPCTSTR newExt);
+				TUniFileType GetUniFileType() const;
 			} *PHeader;
 			typedef const THeader *PCHeader;
 		private:
@@ -315,8 +322,12 @@
 		static const RGBQUAD Colors[16];
 
 		static void __parseFat32LongName__(PTCHAR buf,LPCTSTR &rOutName,BYTE nameLengthMax,LPCTSTR &rOutExt,BYTE extLengthMax,LPCTSTR &rOutZxInfo);
+		static int __exportFileInformation__(PTCHAR buf,TUniFileType uniFileType);
 		static int __exportFileInformation__(PTCHAR buf,TUniFileType uniFileType,TStdParameters params,DWORD fileLength);
+		static int __exportFileInformation__(PTCHAR buf,TUniFileType uniFileType,TStdParameters params,DWORD fileLength,BYTE dataFlag);
+		static int __importFileInformation__(LPCTSTR buf,TUniFileType &rUniFileType);
 		static int __importFileInformation__(LPCTSTR buf,TUniFileType &rUniFileType,TStdParameters &rParams,DWORD &rFileLength);
+		static int __importFileInformation__(LPCTSTR buf,TUniFileType &rUniFileType,TStdParameters &rParams,DWORD &rFileLength,BYTE &rDataFlag);
 		static void __informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId);
 
 		CTrackMapView trackMap;
