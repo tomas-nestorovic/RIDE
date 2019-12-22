@@ -2,7 +2,7 @@
 
 	#define INI_MSG_PARAMS	_T("params")
 
-	CSpectrumDos::CSpectrumFileManagerView::CSpectrumFileManagerView(PDos dos,const TZxRom &rZxRom,BYTE supportedDisplayModes,BYTE initialDisplayMode,BYTE nInformation,PCFileInfo informationList,BYTE nameCharsMax,PCDirectoryStructureManagement pDirManagement)
+	CSpectrumBase::CSpectrumBaseFileManagerView::CSpectrumBaseFileManagerView(PDos dos,const TZxRom &rZxRom,BYTE supportedDisplayModes,BYTE initialDisplayMode,BYTE nInformation,PCFileInfo informationList,BYTE nameCharsMax,PCDirectoryStructureManagement pDirManagement)
 		// ctor
 		: CFileManagerView( dos, supportedDisplayModes, initialDisplayMode, rZxRom.font, 3, nInformation, informationList, pDirManagement )
 		, zxRom(rZxRom) , nameCharsMax(nameCharsMax)
@@ -11,6 +11,10 @@
 		, stdTapeHeaderTypeEditor(this) {
 	}
 
+	CSpectrumDos::CSpectrumFileManagerView::CSpectrumFileManagerView(PDos dos,const TZxRom &rZxRom,BYTE supportedDisplayModes,BYTE initialDisplayMode,BYTE nInformation,PCFileInfo informationList,BYTE nameCharsMax,PCDirectoryStructureManagement pDirManagement)
+		// ctor
+		: CSpectrumBaseFileManagerView( dos, rZxRom, supportedDisplayModes, initialDisplayMode, nInformation, informationList, nameCharsMax, pDirManagement ) {
+	}
 
 
 
@@ -22,7 +26,7 @@
 	#define DOS tab.dos
 	#define IMAGE	DOS->image
 
-	PTCHAR CSpectrumDos::CSpectrumFileManagerView::GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant,PTCHAR pOutBuffer) const{
+	PTCHAR CSpectrumBase::CSpectrumBaseFileManagerView::GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant,PTCHAR pOutBuffer) const{
 		// returns the Buffer populated with the export name and extension of the next File's copy in current Directory; returns Null if no further name and extension can be generated
 		if (const auto pdt=DOS->BeginDirectoryTraversal()){
 			BYTE tmpDirEntry[4096]; // "big enough" to accommodate any ZX Spectrum DirectoryEntry
@@ -102,7 +106,7 @@
 
 
 
-	CSpectrumDos::CSpectrumFileManagerView::CSingleCharExtensionEditor::CSingleCharExtensionEditor(const CSpectrumFileManagerView *pZxFileManager)
+	CSpectrumBase::CSpectrumBaseFileManagerView::CSingleCharExtensionEditor::CSingleCharExtensionEditor(const CSpectrumBaseFileManagerView *pZxFileManager)
 		// ctor
 		: pZxFileManager(pZxFileManager) {
 	}
@@ -110,7 +114,7 @@
 	#define EXTENSION_MIN	32
 	#define EXTENSION_MAX	127
 
-	bool WINAPI CSpectrumDos::CSpectrumFileManagerView::CSingleCharExtensionEditor::__onChanged__(PVOID file,PropGrid::Enum::UValue newExt){
+	bool WINAPI CSpectrumBase::CSpectrumBaseFileManagerView::CSingleCharExtensionEditor::__onChanged__(PVOID file,PropGrid::Enum::UValue newExt){
 		// changes the single-character Extension of given File
 		const PDos dos=CDos::GetFocused();
 		// - getting File's original Name and Extension
@@ -136,12 +140,12 @@
 		// disposes the list of File's possible Extensions
 		::free((PVOID)list);
 	}
-	LPCTSTR WINAPI CSpectrumDos::CSpectrumFileManagerView::CSingleCharExtensionEditor::__getDescription__(PVOID file,PropGrid::Enum::UValue extension,PTCHAR buf,short bufCapacity){
+	LPCTSTR WINAPI CSpectrumBase::CSpectrumBaseFileManagerView::CSingleCharExtensionEditor::__getDescription__(PVOID file,PropGrid::Enum::UValue extension,PTCHAR buf,short bufCapacity){
 		// sets the Buffer to textual description of given Extension and returns its beginning in the Buffer
 		const char bufM[2]={ extension.charValue, '\0' };
 		return TZxRom::ZxToAscii(bufM,1,buf);
 	}
-	CFileManagerView::PEditorBase CSpectrumDos::CSpectrumFileManagerView::CSingleCharExtensionEditor::Create(PFile file){
+	CFileManagerView::PEditorBase CSpectrumBase::CSpectrumBaseFileManagerView::CSingleCharExtensionEditor::Create(PFile file){
 		// creates and returns an Editor of File's single-character Extension
 		TCHAR bufExt[2];
 		pZxFileManager->DOS->GetFileNameOrExt(file,nullptr,bufExt);
@@ -152,7 +156,7 @@
 		::SendMessage( result->hEditor, WM_SETFONT, (WPARAM)pZxFileManager->rFont.m_hObject, 0 );
 		return result;
 	}
-	void CSpectrumDos::CSpectrumFileManagerView::CSingleCharExtensionEditor::DrawReportModeCell(BYTE extension,LPDRAWITEMSTRUCT pdis) const{
+	void CSpectrumBase::CSpectrumBaseFileManagerView::CSingleCharExtensionEditor::DrawReportModeCell(BYTE extension,LPDRAWITEMSTRUCT pdis) const{
 		// directly draws File's single-character Extension
 		TCHAR buf[16];
 		pZxFileManager->zxRom.PrintAt( pdis->hDC, TZxRom::ZxToAscii((LPCSTR)&extension,1,buf), pdis->rcItem, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
@@ -167,22 +171,22 @@
 
 
 
-	CSpectrumDos::CSpectrumFileManagerView::CVarLengthCommandLineEditor::CVarLengthCommandLineEditor(const CSpectrumFileManagerView *pZxFileManager)
+	CSpectrumBase::CSpectrumBaseFileManagerView::CVarLengthCommandLineEditor::CVarLengthCommandLineEditor(const CSpectrumBaseFileManagerView *pZxFileManager)
 		// ctor
 		: pZxFileManager(pZxFileManager) {
 	}
 
-	bool WINAPI CSpectrumDos::CSpectrumFileManagerView::CVarLengthCommandLineEditor::__onCmdLineConfirmed__(PVOID file,HWND,PVOID value){
+	bool WINAPI CSpectrumBase::CSpectrumBaseFileManagerView::CVarLengthCommandLineEditor::__onCmdLineConfirmed__(PVOID file,HWND,PVOID value){
 		// overwrites old command line with new one
 		const PDos dos=CDos::GetFocused();
-		const CSpectrumFileManagerView *const pZxFileManager=(CSpectrumFileManagerView *)dos->pFileManager;
+		const CSpectrumBaseFileManagerView *const pZxFileManager=(CSpectrumBaseFileManagerView *)dos->pFileManager;
 		const TZxRom::CLineComposerPropGridEditor &rEditor=pZxFileManager->zxRom.lineComposerPropGridEditor;
 		ASSERT( sizeof(*rEditor.GetCurrentZxText())==sizeof(char) );
 		::memcpy( value, rEditor.GetCurrentZxText(), rEditor.GetCurrentZxTextLength() );
 		return true;
 	}
 
-	CFileManagerView::PEditorBase CSpectrumDos::CSpectrumFileManagerView::CVarLengthCommandLineEditor::Create(PFile file,PCHAR cmd,BYTE cmdLengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged){
+	CFileManagerView::PEditorBase CSpectrumBase::CSpectrumBaseFileManagerView::CVarLengthCommandLineEditor::Create(PFile file,PCHAR cmd,BYTE cmdLengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged){
 		// creates and returns the Editor of Spectrum command line
 		ASSERT(cmdLengthMax<sizeof(bufOldCmd)/sizeof(TCHAR));
 		#ifdef UNICODE
@@ -197,10 +201,10 @@
 		#endif
 	}
 
-	bool WINAPI CSpectrumDos::CSpectrumFileManagerView::CVarLengthCommandLineEditor::__onFileNameConfirmed__(PVOID file,HWND,PVOID){
+	bool WINAPI CSpectrumBase::CSpectrumBaseFileManagerView::CVarLengthCommandLineEditor::__onFileNameConfirmed__(PVOID file,HWND,PVOID){
 		// changes specified File's Name
 		const PDos dos=CDos::GetFocused();
-		const CSpectrumFileManagerView *const pZxFileManager=(CSpectrumFileManagerView *)dos->pFileManager;
+		const CSpectrumBaseFileManagerView *const pZxFileManager=(CSpectrumBaseFileManagerView *)dos->pFileManager;
 		// - getting File's original Name and Extension
 		TCHAR bufOldExt[MAX_PATH];
 		dos->GetFileNameOrExt(file,nullptr,bufOldExt);
@@ -217,7 +221,7 @@
 			return true;
 	}
 
-	CFileManagerView::PEditorBase CSpectrumDos::CSpectrumFileManagerView::CVarLengthCommandLineEditor::CreateForFileName(PFile file,BYTE fileNameLengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged){
+	CFileManagerView::PEditorBase CSpectrumBase::CSpectrumBaseFileManagerView::CVarLengthCommandLineEditor::CreateForFileName(PFile file,BYTE fileNameLengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged){
 		// creates and returns the Editor of File Name
 		ASSERT(fileNameLengthMax<sizeof(bufOldCmd)/sizeof(TCHAR));
 		pZxFileManager->DOS->GetFileNameOrExt( file, bufOldCmd, nullptr );
@@ -234,7 +238,7 @@
 				);
 	}
 
-	void CSpectrumDos::CSpectrumFileManagerView::CVarLengthCommandLineEditor::DrawReportModeCell(LPCSTR cmd,BYTE cmdLength,LPDRAWITEMSTRUCT pdis) const{
+	void CSpectrumBase::CSpectrumBaseFileManagerView::CVarLengthCommandLineEditor::DrawReportModeCell(LPCSTR cmd,BYTE cmdLength,LPDRAWITEMSTRUCT pdis) const{
 		// directly draws FileName
 		TCHAR buf[512];
 		pZxFileManager->zxRom.PrintAt( pdis->hDC, TZxRom::ZxToAscii(cmd,cmdLength,buf), pdis->rcItem, DT_SINGLELINE|DT_VCENTER );

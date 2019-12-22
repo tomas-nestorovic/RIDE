@@ -14,7 +14,7 @@
 	CSpectrumDos::CTape::CTape(LPCTSTR fileName,const CSpectrumDos *diskDos,bool makeCurrentTab)
 		// ctor
 		// - base
-		: CDos( this, &TapeFormat, TTrackScheme::BY_CYLINDERS, diskDos->properties, ::lstrcmp, StdSidesMap, 0, &fileManager, TGetFileSizeOptions::OfficialDataLength ) // StdSidesMap = "some" Sides
+		: CSpectrumBase( this, &TapeFormat, TTrackScheme::BY_CYLINDERS, diskDos->properties, 0, &fileManager, TGetFileSizeOptions::OfficialDataLength )
 		, CImageRaw(&CImageRaw::Properties,false) // "some" Image
 		// - initialization
 		, fileManager( this, diskDos->zxRom, fileName, makeCurrentTab ) {
@@ -27,10 +27,6 @@
 		// dtor
 		if (pSingleInstance==this)
 			pSingleInstance=nullptr; // no longer accepting any requests
-		if (CScreenPreview::pSingleInstance && CScreenPreview::pSingleInstance->rFileManager.tab.dos==this)
-			CScreenPreview::pSingleInstance->DestroyWindow();
-		if (CBasicPreview::pSingleInstance && &CBasicPreview::pSingleInstance->rFileManager==pFileManager)
-			CBasicPreview::pSingleInstance->DestroyWindow();
 		dos=nullptr; // to not destroy the Image (as DOS and Image are one structure in memory that is disposed at once)
 		(HACCEL)menu.hAccel=0; // for DiskDos accelerators to be not destroyed
 	}
@@ -149,6 +145,13 @@
 		if (nNameChars>ZX_TAPE_FILE_NAME_LENGTH_MAX || ::lstrlen(newExt)>1)
 			return ERROR_FILENAME_EXCED_RANGE;
 		// - renaming
+		#ifdef UNICODE
+			ASSERT(FALSE)
+		#else
+			::memcpy(	::memset(name,' ',ZX_TAPE_FILE_NAME_LENGTH_MAX),
+						newName, nNameChars
+					);
+		#endif
 		if (newExt)
 			switch (*newExt){
 				case ZX_TAPE_EXTENSION_PROGRAM	: type=TZxRom::TFileType::PROGRAM;	break;
@@ -158,13 +161,6 @@
 				default:
 					return ERROR_BAD_FILE_TYPE;
 			}
-		#ifdef UNICODE
-			ASSERT(FALSE)
-		#else
-			::memcpy(	::memset(name,' ',ZX_TAPE_FILE_NAME_LENGTH_MAX),
-						newName, nNameChars
-					);
-		#endif
 		// - successfully renamed
 		return ERROR_SUCCESS;
 	}
@@ -174,6 +170,18 @@
 		return	type<ZX_TAPE_EXTENSION_STD_COUNT
 				? (TUniFileType)Extensions[type]
 				: TUniFileType::UNKNOWN;
+	}
+
+	bool CSpectrumDos::CTape::THeader::SetFileType(TUniFileType uts){
+		// maps specified UniFileType to particular standard Spectrum FileType
+		switch (uts){
+			case TUniFileType::PROGRAM		: type=TZxRom::TFileType::PROGRAM; return true;
+			case TUniFileType::CHAR_ARRAY	: type=TZxRom::TFileType::CHAR_ARRAY; return true;
+			case TUniFileType::NUMBER_ARRAY	: type=TZxRom::TFileType::NUMBER_ARRAY; return true;
+			case TUniFileType::BLOCK:
+			case TUniFileType::SCREEN		: type=TZxRom::TFileType::CODE; return true;
+		}
+		return false;
 	}
 
 	void CSpectrumDos::CTape::GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
@@ -190,7 +198,6 @@
 				h->GetNameOrExt( bufName, bufExt );
 			else{
 				// Headerless File or Fragment
-				static DWORD idHeaderless=1;
 				if (bufName)
 					::wsprintf( bufName, _T("%08d"), idHeaderless++ ); // ID padded with zeros to eight digits (to make up an acceptable name even for TR-DOS)
 				if (bufExt)
@@ -416,10 +423,10 @@
 				// File features a standard Header
 				static const WORD BlockLength=2+sizeof(THeader); // "+2" = Flag and Checksum
 				fileManager.f.Write( &BlockLength, sizeof(BlockLength) );
-				static const BYTE Flag=TFlag::HEADER;
+				static const BYTE Flag=TZxRom::TStdBlockFlag::HEADER;
 				fileManager.f.Write( &Flag, sizeof(Flag) );
 				fileManager.f.Write( h, sizeof(THeader) );
-				const BYTE checksum=__getChecksum__(TFlag::HEADER,(PCBYTE)h,sizeof(THeader));
+				const BYTE checksum=__getChecksum__(TZxRom::TStdBlockFlag::HEADER,(PCBYTE)h,sizeof(THeader));
 				fileManager.f.Write( &checksum, sizeof(checksum) );
 			}
 			if (tf->type!=TTapeFile::FRAGMENT){
@@ -571,7 +578,7 @@
 	CSpectrumDos::CTape::CTapeFileManagerView::CTapeFileManagerView(CTape *tape,const TZxRom &rZxRom,LPCTSTR fileName,bool makeCurrentTab)
 		// ctor
 		// - base
-		: CSpectrumFileManagerView( tape, rZxRom, REPORT, LVS_REPORT, INFORMATION_COUNT,InformationList, ZX_TAPE_FILE_NAME_LENGTH_MAX )
+		: CSpectrumBaseFileManagerView( tape, rZxRom, REPORT, LVS_REPORT, INFORMATION_COUNT,InformationList, ZX_TAPE_FILE_NAME_LENGTH_MAX )
 		// - initialization
 		, nFiles(0)
 		, f( fileName, CFile::modeReadWrite|CFile::shareExclusive|CFile::typeBinary )
@@ -585,21 +592,21 @@ error:			Utils::Information(_T("The tape is corrupted."));
 				break;
 			}else if (blockLength>=2){
 				// File (with or without a Header)
-				BYTE flag=TFlag::DATA;
+				BYTE flag=TZxRom::TStdBlockFlag::DATA;
 				if (!f.Read(&flag,1)) goto error;
 				bool hasHeader=false; // assumption (this is a Headerless data block)
 				THeader header;
-				if (flag==TFlag::HEADER && blockLength==sizeof(THeader)+2){ // "+2" = Flag and Checksum
+				if (flag==TZxRom::TStdBlockFlag::HEADER && blockLength==sizeof(THeader)+2){ // "+2" = Flag and Checksum
 					// File with (potential) Header
 					if (f.Read(&header,sizeof(header))!=sizeof(header)) goto error;
 					BYTE headerChecksum;
 					if (!f.Read(&headerChecksum,sizeof(BYTE))) goto error; // ERROR: Header data must be followed by a Checksum
-					if (__getChecksum__(TFlag::HEADER,(PCBYTE)&header,sizeof(header))==headerChecksum){
+					if (__getChecksum__(TZxRom::TStdBlockFlag::HEADER,(PCBYTE)&header,sizeof(header))==headerChecksum){
 						// the block has a valid Checksum and thus describes a standard Header
 						if (f.Read(&blockLength,sizeof(blockLength))!=sizeof(WORD)) goto error; // ERROR: Header must be followed by another block (Data)
 						if (blockLength<2) goto error; // ERROR: Fragment not expected here
 						if (!f.Read(&flag,1)) goto error; // ERROR: Header must be followed by another block (Data)
-						if (flag==TFlag::HEADER){
+						if (flag==TZxRom::TStdBlockFlag::HEADER){
 							// a standard Header cannot be followed by a block that is also a standard Header
 							f.Seek(sizeof(flag)+sizeof(blockLength),CFile::current); // reverting the reading
 							goto putHeaderBack;
@@ -630,8 +637,8 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 				if (f.Read(&dataBuffer,blockLength)!=blockLength) goto error;
 				const PTapeFile tf = files[nFiles++] = (PTapeFile)::malloc( NUMBER_OF_BYTES_TO_ALLOCATE_FILE(blockLength) );
 					tf->type=TTapeFile::FRAGMENT;
-					tf->dataBlockFlag=TFlag::DATA;
-					tf->dataChecksum=__getChecksum__(TFlag::DATA,dataBuffer,blockLength);
+					tf->dataBlockFlag=TZxRom::TStdBlockFlag::DATA;
+					tf->dataChecksum=__getChecksum__(TZxRom::TStdBlockFlag::DATA,dataBuffer,blockLength);
 					tf->dataLength=blockLength;
 					::memcpy( tf->data, dataBuffer, blockLength );
 			}
@@ -883,7 +890,7 @@ drawChecksum:			// checksum
 	bool WINAPI CSpectrumDos::CTape::CTapeFileManagerView::__tapeBlockTypeModified__(PVOID file,PropGrid::Enum::UValue newType){
 		// changes the Type of File
 		const PDos dos=CDos::GetFocused();
-		const CSpectrumFileManagerView *const pZxFileManager=(CSpectrumFileManagerView *)dos->pFileManager;
+		const CSpectrumBaseFileManagerView *const pZxFileManager=(CSpectrumBaseFileManagerView *)dos->pFileManager;
 		const PTapeFile tf=(PTapeFile)file;
 		if (PHeader h=tf->GetHeader())
 			// File with Header
@@ -922,12 +929,12 @@ drawChecksum:			// checksum
 		return true;
 	}
 
-	CSpectrumDos::CSpectrumFileManagerView::CStdTapeHeaderBlockTypeEditor::CStdTapeHeaderBlockTypeEditor(const CSpectrumFileManagerView *pZxFileManager)
+	CSpectrumBase::CSpectrumBaseFileManagerView::CStdTapeHeaderBlockTypeEditor::CStdTapeHeaderBlockTypeEditor(const CSpectrumBaseFileManagerView *pZxFileManager)
 		// ctor
 		: pZxFileManager(pZxFileManager) {
 	}
 
-	PropGrid::Enum::PCValueList WINAPI CSpectrumDos::CSpectrumFileManagerView::CStdTapeHeaderBlockTypeEditor::__createValues__(PVOID file,WORD &rnValues){
+	PropGrid::Enum::PCValueList WINAPI CSpectrumBase::CSpectrumBaseFileManagerView::CStdTapeHeaderBlockTypeEditor::__createValues__(PVOID file,WORD &rnValues){
 		// returns the list of standard File Types
 		static const TZxRom::TFileType List[]={
 			TZxRom::PROGRAM,
@@ -937,12 +944,12 @@ drawChecksum:			// checksum
 			TZxRom::HEADERLESS,
 			TZxRom::FRAGMENT
 		};
-		const CSpectrumFileManagerView *const pZxFileManager=(CSpectrumFileManagerView *)((CSpectrumDos *)CDos::GetFocused())->pFileManager;
+		const CSpectrumBaseFileManagerView *const pZxFileManager=(CSpectrumBaseFileManagerView *)((CSpectrumDos *)CDos::GetFocused())->pFileManager;
 		rnValues=4+pZxFileManager->stdTapeHeaderTypeEditor.types;
 		return List;
 	}
 
-	LPCTSTR WINAPI CSpectrumDos::CSpectrumFileManagerView::CStdTapeHeaderBlockTypeEditor::__getDescription__(PVOID file,PropGrid::Enum::UValue stdType,PTCHAR,short){
+	LPCTSTR WINAPI CSpectrumBase::CSpectrumBaseFileManagerView::CStdTapeHeaderBlockTypeEditor::__getDescription__(PVOID file,PropGrid::Enum::UValue stdType,PTCHAR,short){
 		// returns the textual description of the specified Type
 		switch ((TZxRom::TFileType)stdType.charValue){
 			case TZxRom::PROGRAM		: return _T("Program");
@@ -956,7 +963,7 @@ drawChecksum:			// checksum
 		}
 	}
 
-	CFileManagerView::PEditorBase CSpectrumDos::CSpectrumFileManagerView::CStdTapeHeaderBlockTypeEditor::Create(PFile file,TZxRom::TFileType type,TDisplayTypes _types,PropGrid::Enum::TOnValueConfirmed onChanged){
+	CFileManagerView::PEditorBase CSpectrumBase::CSpectrumBaseFileManagerView::CStdTapeHeaderBlockTypeEditor::Create(PFile file,TZxRom::TFileType type,TDisplayTypes _types,PropGrid::Enum::TOnValueConfirmed onChanged){
 		// creates and returns an Editor of standard File Type
 		types=_types;
 		const PEditorBase result=pZxFileManager->__createStdEditor__(
@@ -967,7 +974,7 @@ drawChecksum:			// checksum
 		return result;
 	}
 
-	void CSpectrumDos::CSpectrumFileManagerView::CStdTapeHeaderBlockTypeEditor::DrawReportModeCell(BYTE type,LPDRAWITEMSTRUCT pdis) const{
+	void CSpectrumBase::CSpectrumBaseFileManagerView::CStdTapeHeaderBlockTypeEditor::DrawReportModeCell(BYTE type,LPDRAWITEMSTRUCT pdis) const{
 		// directly draws the block Type
 		PropGrid::Enum::UValue v;
 			v.longValue=type;

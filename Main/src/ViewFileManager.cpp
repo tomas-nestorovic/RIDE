@@ -1,5 +1,7 @@
 #include "stdafx.h"
 
+	const CFileManagerView *CFileManagerView::pCurrentlyShown;
+
 	#define INI_FILEMANAGER	_T("FileManager")
 
 	#define ORDER_NONE		255
@@ -215,6 +217,8 @@
 		lv.SendMessage( LVM_SCROLL, 0, scrollY );
 		// - no File has so far been the target of Drop action
 		dropTargetFileId=-1;
+		// - currently it's this FileManager that's displayed
+		pCurrentlyShown=this;
 		return 0;
 	}
 	void CFileManagerView::__restoreFileSelection__(){
@@ -554,6 +558,8 @@
 		// - destroying the FileComparisonDialog (if shown)
 		if (CFileComparisonDialog::pSingleInstance)
 			CFileComparisonDialog::pSingleInstance->SendMessage( WM_COMMAND, IDCANCEL, 0 );
+		// - no FileManager is currently displayed
+		pCurrentlyShown=nullptr;
 		// - base
 		__super::OnDestroy();
 	}

@@ -10,7 +10,7 @@
 
 	#define ID_FLASH	0
 
-	LRESULT CSpectrumDos::CScreenPreview::WindowProc(UINT uMsg,WPARAM wParam,LPARAM lParam){
+	LRESULT CSpectrumBase::CScreenPreview::WindowProc(UINT uMsg,WPARAM wParam,LPARAM lParam){
 		// window procedure
 		switch (uMsg){
 			case WM_SIZING:{
@@ -91,7 +91,7 @@
 		return __super::WindowProc(uMsg,wParam,lParam);
 	}
 
-	void CALLBACK CSpectrumDos::CScreenPreview::__flash__(HWND hPreview,UINT nMsg,UINT nTimerID,DWORD dwTime){
+	void CALLBACK CSpectrumBase::CScreenPreview::__flash__(HWND hPreview,UINT nMsg,UINT nTimerID,DWORD dwTime){
 		// swapping Colors of all FlashCombinations (Ink vs Paper) and redrawing the Preview
 		// - swapping Colors
 		RGBQUAD *bk=pSingleInstance->dib.flashCombinations, *colors=pSingleInstance->dib.colors;
@@ -115,9 +115,9 @@
 
 	#define LABEL	_T("Screen$")
 
-	CSpectrumDos::CScreenPreview *CSpectrumDos::CScreenPreview::pSingleInstance;
+	CSpectrumBase::CScreenPreview *CSpectrumBase::CScreenPreview::pSingleInstance;
 
-	CSpectrumDos::CScreenPreview::CScreenPreview(const CFileManagerView &rFileManager)
+	CSpectrumBase::CScreenPreview::CScreenPreview(const CFileManagerView &rFileManager)
 		// ctor
 		// - base
 		: CFilePreview( nullptr, INI_PREVIEW, rFileManager, SCREEN_WIDTH, SCREEN_HEIGHT, 0 )
@@ -143,7 +143,7 @@
 		Utils::InformationWithCheckableShowNoMore(_T("The \"") LABEL _T(" preview\" displays a file as if it was a picture.\nTwo usages are possible:\n(1) browsing only files that are selected in the \"") FILE_MANAGER_TAB_LABEL _T("\" (eventually showing just one picture if only one file is selected), or\n(2) browsing all files (if no particular files are selected)."),INI_PREVIEW,INI_MSG);
 	}
 
-	CSpectrumDos::CScreenPreview::~CScreenPreview(){
+	CSpectrumBase::CScreenPreview::~CScreenPreview(){
 		// dtor
 		// - freeing resources
 		::KillTimer(m_hWnd,ID_FLASH);
@@ -159,7 +159,7 @@
 
 
 
-	void CSpectrumDos::CScreenPreview::RefreshPreview(){
+	void CSpectrumBase::CScreenPreview::RefreshPreview(){
 		// refreshes the Preview window
 		const PCFile file=pdt->entry;
 		if (!file) return;

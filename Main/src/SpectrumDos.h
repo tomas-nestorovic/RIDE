@@ -16,10 +16,57 @@
 	#define ZX_TAPE_EXTENSION_CHARS		TUniFileType::CHAR_ARRAY
 	#define ZX_TAPE_EXTENSION_BYTES		TUniFileType::BLOCK
 
-	class CSpectrumDos:public CDos{
-		bool __isTapeFileManagerShown__() const;
-	protected:
+	class CSpectrumBase:public CDos{
+		class CScreenPreview sealed:CFilePreview{
+			friend class CSpectrumBase;
+
+			static void CALLBACK __flash__(HWND hPreview,UINT nMsg,UINT nTimerID,DWORD dwTime);
+
+			HANDLE hFlashTimer;
+			bool paperFlash;
+			struct{
+				BITMAPINFO bmi;
+				RGBQUAD colors[16];
+				RGBQUAD flashCombinations[128];
+				HBITMAP handle;
+				PBYTE data;
+			} dib;
+
+			void RefreshPreview() override;
+			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
+		public:
+			static CScreenPreview *pSingleInstance;
+
+			CScreenPreview(const CFileManagerView &rFileManager);
+			~CScreenPreview();			
+		};
+
+		class CBasicPreview sealed:public CFilePreview{
+			TCHAR tmpFileName[MAX_PATH];
+			CWebPageView listingView;
+			bool applyColors,showNonprintableChars;
+			enum TBinaryAfter0x14{
+				DONT_SHOW,
+				SHOW_AS_RAW_BYTES,
+				SHOW_AS_NUMBER
+			} binaryAfter0x14;
+
+			void __parseBasicFileAndGenerateHtmlFormattedContent__(PCFile file) const;
+			void RefreshPreview() override;
+			BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
+		public:
+			static CBasicPreview *pSingleInstance; // only single file can be previewed at a time
+
+			CBasicPreview(const CFileManagerView &rFileManager);
+			~CBasicPreview();
+		};
+	public:
 		const struct TZxRom sealed{
+			enum TStdBlockFlag:BYTE{
+				HEADER	=0,
+				DATA	=255
+			};
+
 			enum TFileType:BYTE{
 				PROGRAM		=0,
 				NUMBER_ARRAY=1,
@@ -84,7 +131,7 @@
 
 			void PrintAt(HDC dc,LPCTSTR buf,RECT r,UINT drawTextFormat) const;
 		} zxRom;
-
+	protected:
 		enum TUniFileType:char{ // ZX platform-independent File types ("universal" types) - used during exporting/importing of Files across ZX platforms
 			UNKNOWN			='X',
 			SUBDIRECTORY	='D',
@@ -108,17 +155,17 @@
 			WORD param1,param2;
 		};
 
-		class CSpectrumFileManagerView:public CFileManagerView{
+		class CSpectrumBaseFileManagerView:public CFileManagerView{
 			const BYTE nameCharsMax;
 		protected:
 			mutable class CSingleCharExtensionEditor sealed{
 				static bool WINAPI __onChanged__(PVOID file,PropGrid::Enum::UValue newExt);
 				static LPCTSTR WINAPI __getDescription__(PVOID file,PropGrid::Enum::UValue extension,PTCHAR buf,short bufCapacity);
 
-				const CSpectrumFileManagerView *const pZxFileManager;
+				const CSpectrumBaseFileManagerView *const pZxFileManager;
 				BYTE data;
 			public:
-				CSingleCharExtensionEditor(const CSpectrumFileManagerView *pZxFileManager);
+				CSingleCharExtensionEditor(const CSpectrumBaseFileManagerView *pZxFileManager);
 
 				PEditorBase Create(PFile file);
 				void DrawReportModeCell(BYTE extension,LPDRAWITEMSTRUCT pdis) const;
@@ -128,10 +175,10 @@
 				static bool WINAPI __onCmdLineConfirmed__(PVOID file,HWND,PVOID value);
 				static bool WINAPI __onFileNameConfirmed__(PVOID file,HWND,PVOID);
 
-				const CSpectrumFileManagerView *const pZxFileManager;
+				const CSpectrumBaseFileManagerView *const pZxFileManager;
 				TCHAR bufOldCmd[256];
 			public:
-				CVarLengthCommandLineEditor(const CSpectrumFileManagerView *pZxFileManager);
+				CVarLengthCommandLineEditor(const CSpectrumBaseFileManagerView *pZxFileManager);
 
 				PEditorBase Create(PFile file,PCHAR cmd,BYTE cmdLengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged=__markDirectorySectorAsDirty__);
 				PEditorBase CreateForFileName(PFile file,BYTE fileNameLengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged=__markDirectorySectorAsDirty__);
@@ -149,32 +196,54 @@
 				static PropGrid::Enum::PCValueList WINAPI __createValues__(PVOID file,WORD &rnValues);
 				static LPCTSTR WINAPI __getDescription__(PVOID file,PropGrid::Enum::UValue stdType,PTCHAR,short);
 
-				const CSpectrumFileManagerView *const pZxFileManager;
+				const CSpectrumBaseFileManagerView *const pZxFileManager;
 				BYTE data;
 				TDisplayTypes types;
 			public:				
-				CStdTapeHeaderBlockTypeEditor(const CSpectrumFileManagerView *pZxFileManager);
+				CStdTapeHeaderBlockTypeEditor(const CSpectrumBaseFileManagerView *pZxFileManager);
 
 				PEditorBase Create(PFile file,TZxRom::TFileType type,TDisplayTypes _types,PropGrid::Enum::TOnValueConfirmed onChanged);
 				void DrawReportModeCell(BYTE type,LPDRAWITEMSTRUCT pdis) const;
 			} stdTapeHeaderTypeEditor;
 
 			PTCHAR GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant,PTCHAR pOutBuffer) const override sealed;
-			TStdWinError ImportPhysicalFile(LPCTSTR pathAndName,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution) override;
+		protected:
+			CSpectrumBaseFileManagerView(PDos dos,const TZxRom &rZxRom,BYTE supportedDisplayModes,BYTE initialDisplayMode,BYTE nInformation,PCFileInfo informationList,BYTE nameCharsMax,PCDirectoryStructureManagement pDirManagement=nullptr);
 		public:
 			const TZxRom &zxRom;
-
-			CSpectrumFileManagerView(PDos dos,const TZxRom &rZxRom,BYTE supportedDisplayModes,BYTE initialDisplayMode,BYTE nInformation,PCFileInfo informationList,BYTE nameCharsMax,PCDirectoryStructureManagement pDirManagement=nullptr);
 		};
 
-		class CTape sealed:private CImageRaw,public CDos{ // CImageRaw = the type of Image doesn't matter (not used by Tape)
+		static const RGBQUAD Colors[16];
+		static DWORD idHeaderless;
+
+		static void __parseFat32LongName__(PTCHAR buf,LPCTSTR &rOutName,BYTE nameLengthMax,LPCTSTR &rOutExt,BYTE extLengthMax,LPCTSTR &rOutZxInfo);
+		static int __exportFileInformation__(PTCHAR buf,TUniFileType uniFileType);
+		static int __exportFileInformation__(PTCHAR buf,TUniFileType uniFileType,TStdParameters params,DWORD fileLength);
+		static int __exportFileInformation__(PTCHAR buf,TUniFileType uniFileType,TStdParameters params,DWORD fileLength,BYTE dataFlag);
+		static int __importFileInformation__(LPCTSTR buf,TUniFileType &rUniFileType);
+		static int __importFileInformation__(LPCTSTR buf,TUniFileType &rUniFileType,TStdParameters &rParams,DWORD &rFileLength);
+		static int __importFileInformation__(LPCTSTR buf,TUniFileType &rUniFileType,TStdParameters &rParams,DWORD &rFileLength,BYTE &rDataFlag);
+		static void __informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId);
+
+		TSide sideMap[2]; // 2 = only one- or two-sided floppies are considered to be used with any ZX Spectrum derivate
+
+		CSpectrumBase(PImage image,PCFormat pFormatBoot,TTrackScheme trackAccessScheme,PCProperties properties,UINT nResId,CSpectrumBaseFileManagerView *pFileManager,TGetFileSizeOptions getFileSizeDefaultOption);
+		~CSpectrumBase();
+
+		PTCHAR GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const;
+		DWORD GetAttributes(PCFile file) const override;
+		TCmdResult ProcessCommand(WORD cmd) override;
+	};
+
+
+
+
+	class CSpectrumDos:public CSpectrumBase{
+		bool __isTapeFileManagerShown__() const;
+	protected:
+		class CTape sealed:private CImageRaw,public CSpectrumBase{ // CImageRaw = the type of Image doesn't matter (not used by Tape)
 			friend class CSpectrumDos;
 		public:
-			enum TFlag:BYTE{
-				HEADER	=0,
-				DATA	=255
-			};
-
 			#pragma pack(1)
 			typedef struct THeader sealed{
 				TZxRom::TFileType type; // any type but Headerless
@@ -185,6 +254,7 @@
 				void GetNameOrExt(PTCHAR bufName,PTCHAR bufExt) const;
 				TStdWinError SetNameAndExt(LPCTSTR newName,LPCTSTR newExt);
 				TUniFileType GetUniFileType() const;
+				bool SetFileType(TUniFileType uts);
 			} *PHeader;
 			typedef const THeader *PCHeader;
 		private:
@@ -211,7 +281,7 @@
 			} *PTapeFile,**PPTapeFile;
 			typedef const TTapeFile *PCTapeFile;
 
-			class CTapeFileManagerView sealed:public CSpectrumFileManagerView{
+			class CTapeFileManagerView sealed:public CSpectrumBaseFileManagerView{
 				friend class CTape;
 
 				static const TFileInfo InformationList[];
@@ -275,69 +345,18 @@
 			void InitializeEmptyMedium(CFormatDialog::PCParameters) override;
 		};
 
-		class CScreenPreview sealed:CFilePreview{
-			friend class CSpectrumDos;
+		class CSpectrumFileManagerView:public CSpectrumBaseFileManagerView{
+		protected:
+			TStdWinError ImportPhysicalFile(LPCTSTR pathAndName,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution) override;
 
-			static void CALLBACK __flash__(HWND hPreview,UINT nMsg,UINT nTimerID,DWORD dwTime);
-
-			HANDLE hFlashTimer;
-			bool paperFlash;
-			struct{
-				BITMAPINFO bmi;
-				RGBQUAD colors[16];
-				RGBQUAD flashCombinations[128];
-				HBITMAP handle;
-				PBYTE data;
-			} dib;
-
-			void RefreshPreview() override;
-			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
-		public:
-			static CScreenPreview *pSingleInstance;
-
-			CScreenPreview(const CFileManagerView &rFileManager);
-			~CScreenPreview();			
+			CSpectrumFileManagerView(PDos dos,const TZxRom &rZxRom,BYTE supportedDisplayModes,BYTE initialDisplayMode,BYTE nInformation,PCFileInfo informationList,BYTE nameCharsMax,PCDirectoryStructureManagement pDirManagement=nullptr);
 		};
-
-		class CBasicPreview sealed:public CFilePreview{
-			TCHAR tmpFileName[MAX_PATH];
-			CWebPageView listingView;
-			bool applyColors,showNonprintableChars;
-			enum TBinaryAfter0x14{
-				DONT_SHOW,
-				SHOW_AS_RAW_BYTES,
-				SHOW_AS_NUMBER
-			} binaryAfter0x14;
-
-			void __parseBasicFileAndGenerateHtmlFormattedContent__(PCFile file) const;
-			void RefreshPreview() override;
-			BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
-		public:
-			static CBasicPreview *pSingleInstance; // only single file can be previewed at a time
-
-			CBasicPreview(const CFileManagerView &rFileManager);
-			~CBasicPreview();
-		};
-
-		static const RGBQUAD Colors[16];
-
-		static void __parseFat32LongName__(PTCHAR buf,LPCTSTR &rOutName,BYTE nameLengthMax,LPCTSTR &rOutExt,BYTE extLengthMax,LPCTSTR &rOutZxInfo);
-		static int __exportFileInformation__(PTCHAR buf,TUniFileType uniFileType);
-		static int __exportFileInformation__(PTCHAR buf,TUniFileType uniFileType,TStdParameters params,DWORD fileLength);
-		static int __exportFileInformation__(PTCHAR buf,TUniFileType uniFileType,TStdParameters params,DWORD fileLength,BYTE dataFlag);
-		static int __importFileInformation__(LPCTSTR buf,TUniFileType &rUniFileType);
-		static int __importFileInformation__(LPCTSTR buf,TUniFileType &rUniFileType,TStdParameters &rParams,DWORD &rFileLength);
-		static int __importFileInformation__(LPCTSTR buf,TUniFileType &rUniFileType,TStdParameters &rParams,DWORD &rFileLength,BYTE &rDataFlag);
-		static void __informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId);
 
 		CTrackMapView trackMap;
-		TSide sideMap[2]; // 2 = only one- or two-sided floppies are considered to be used with any ZX Spectrum derivate
 
-		CSpectrumDos(PImage image,PCFormat pFormatBoot,TTrackScheme trackAccessScheme,PCProperties properties,UINT nResId,CSpectrumFileManagerView *pFileManager,TGetFileSizeOptions _getFileSizeDefaultOption);
+		CSpectrumDos(PImage image,PCFormat pFormatBoot,TTrackScheme trackAccessScheme,PCProperties properties,UINT nResId,CSpectrumBaseFileManagerView *pFileManager,TGetFileSizeOptions getFileSizeDefaultOption);
 		~CSpectrumDos();
-
-		PTCHAR GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const;
-		DWORD GetAttributes(PCFile file) const override;
+	public:
 		TCmdResult ProcessCommand(WORD cmd) override;
 		bool UpdateCommandUi(WORD cmd,CCmdUI *pCmdUI) const override;
 		bool CanBeShutDown(CFrameWnd* pFrame) const override sealed; // sealed as no need to ever change the functionality

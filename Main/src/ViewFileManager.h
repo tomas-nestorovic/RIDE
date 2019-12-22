@@ -259,6 +259,8 @@
 		virtual PTCHAR GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant,PTCHAR pOutBuffer) const=0;
 		virtual TStdWinError ImportPhysicalFile(LPCTSTR pathAndName,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution);
 	public:
+		static const CFileManagerView *pCurrentlyShown; // FileManager that is currently shown (a disk can have multiple volumes, each with its own FileManager)
+
 		const CFont &rFont;
 		const PCDirectoryStructureManagement pDirectoryStructureManagement;
 		const CMainWindow::CTdiView::TTab tab;

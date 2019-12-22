@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-	CSpectrumDos::CBasicPreview *CSpectrumDos::CBasicPreview::pSingleInstance;
+	CSpectrumBase::CBasicPreview *CSpectrumBase::CBasicPreview::pSingleInstance;
 
 	#define INI_PREVIEW	_T("ZxBasic")
 
@@ -11,7 +11,7 @@
 	#define INI_SHOW_NONPRINTABLE_CHARS	_T("prn")
 	#define INI_SHOW_INTERNAL_BINARY	_T("bin")
 
-	CSpectrumDos::CBasicPreview::CBasicPreview(const CFileManagerView &rFileManager)
+	CSpectrumBase::CBasicPreview::CBasicPreview(const CFileManagerView &rFileManager)
 		// ctor
 		// - base
 		: CFilePreview(	&listingView, INI_PREVIEW, rFileManager, PREVIEW_WIDTH_DEFAULT, PREVIEW_HEIGHT_DEFAULT, IDR_SPECTRUM_PREVIEW_BASIC )
@@ -31,7 +31,7 @@
 		__showNextFile__();
 	}
 
-	CSpectrumDos::CBasicPreview::~CBasicPreview(){
+	CSpectrumBase::CBasicPreview::~CBasicPreview(){
 		// dtor
 		// - saving the settings
 		app.WriteProfileInt(INI_PREVIEW,INI_APPLY_COLORS,applyColors);
@@ -53,7 +53,7 @@
 
 	#define PREVIEW_LABEL	"BASIC listing"
 
-	void CSpectrumDos::CBasicPreview::__parseBasicFileAndGenerateHtmlFormattedContent__(PCFile file) const{
+	void CSpectrumBase::CBasicPreview::__parseBasicFileAndGenerateHtmlFormattedContent__(PCFile file) const{
 		// generates HTML-formatted BASIC listing of the input File into a temporary file
 		// - creating the File reader
 		CFileReaderWriter frw(DOS,pdt->entry);
@@ -564,7 +564,7 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 			goto errorInBasic;
 	}
 
-	void CSpectrumDos::CBasicPreview::RefreshPreview(){
+	void CSpectrumBase::CBasicPreview::RefreshPreview(){
 		// refreshes the Preview (e.g. when switched to another File)
 		if (const PCFile file=pdt->entry){
 			// . describing the BASIC file using HTML-formatted text
@@ -583,7 +583,7 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 		SetWindowPos( nullptr, 0,0, 0,0, SWP_NOZORDER|SWP_NOMOVE|SWP_NOSIZE|SWP_FRAMECHANGED );
 	}
 
-	BOOL CSpectrumDos::CBasicPreview::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){
+	BOOL CSpectrumBase::CBasicPreview::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){
 		// command processing
 		switch (nCode){
 			case CN_UPDATE_COMMAND_UI:
