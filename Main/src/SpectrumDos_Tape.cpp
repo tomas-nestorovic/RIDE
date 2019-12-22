@@ -233,11 +233,8 @@
 		if (tf==ZX_DIR_ROOT)
 			// the root Directory occupies no space
 			return 0;
-		else if (const PCHeader h=tf->GetHeader())
-			// File with a Header
-			return h->length;
 		else
-			// Headerless File or Fragment
+			// File with or without a Header, or a Fragment
 			return tf->dataLength;
 	}
 
@@ -271,7 +268,7 @@
 		const PCTapeFile tf=(PCTapeFile)file;
 		if (const PCHeader h=tf->GetHeader())
 			// File with a Header
-			::wsprintf( p+__exportFileInformation__(p,h->GetUniFileType(),h->params,tf->dataLength,tf->dataBlockFlag), EXPORT_INFO_TAPE, tf->dataChecksum );
+			::wsprintf( p+__exportFileInformation__(p,h->GetUniFileType(),h->params,h->length,tf->dataBlockFlag), EXPORT_INFO_TAPE, tf->dataChecksum );
 		else if (tf->type==TTapeFile::HEADERLESS)
 			// Headerless File
 			::wsprintf( p+__exportFileInformation__(p,TUniFileType::HEADERLESS,TStdParameters::Default,tf->dataLength,tf->dataBlockFlag), EXPORT_INFO_TAPE, tf->dataChecksum );
@@ -552,19 +549,21 @@
 
 	#define TAB_LABEL	_T("Tape")
 
-	#define INFORMATION_COUNT	7
-	#define INFORMATION_TYPE	0 /* column to sort by */
-	#define INFORMATION_NAME	1 /* column to sort by */
-	#define INFORMATION_SIZE	2 /* column to sort by */
-	#define INFORMATION_PARAM_1	3 /* column to sort by */
-	#define INFORMATION_PARAM_2	4 /* column to sort by */
-	#define INFORMATION_FLAG	5 /* column to sort by */
-	#define INFORMATION_CHECKSUM 6 /* column to sort by */
+	#define INFORMATION_COUNT		8
+	#define INFORMATION_TYPE		0 /* column to sort by */
+	#define INFORMATION_NAME		1 /* column to sort by */
+	#define INFORMATION_SIZE		2 /* column to sort by */
+	#define INFORMATION_SIZE_REPORTED 3 /* column to sort by */
+	#define INFORMATION_PARAM_1		4 /* column to sort by */
+	#define INFORMATION_PARAM_2		5 /* column to sort by */
+	#define INFORMATION_FLAG		6 /* column to sort by */
+	#define INFORMATION_CHECKSUM	7 /* column to sort by */
 
-	const CFileManagerView::TFileInfo CSpectrumDos::CTape::CTapeFileManagerView::InformationList[]={
+	const CFileManagerView::TFileInfo CSpectrumDos::CTape::CTapeFileManagerView::InformationList[INFORMATION_COUNT]={
 		{ _T("Type"),		100,	TFileInfo::AlignRight },
 		{ _T("Name"),		180,	TFileInfo::AlignLeft|TFileInfo::FileName },
 		{ _T("Size"),		60,		TFileInfo::AlignRight },
+		{ _T("Reported size"), 90,	TFileInfo::AlignRight },
 		{ ZX_PARAMETER_1,	75,		TFileInfo::AlignRight },
 		{ ZX_PARAMETER_2,	75,		TFileInfo::AlignRight },
 		{ _T("Block flag"),	75,		TFileInfo::AlignRight },
@@ -709,6 +708,10 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 						varLengthCommandLineEditor.DrawReportModeCell( h->name, ZX_TAPE_FILE_NAME_LENGTH_MAX, pdis );
 						break;
 					case INFORMATION_SIZE:
+						// Size
+						integerEditor.DrawReportModeCell( tf->dataLength, pdis );
+						break;
+					case INFORMATION_SIZE_REPORTED:
 						// Size
 						integerEditor.DrawReportModeCell( h->length, pdis );
 						break;
