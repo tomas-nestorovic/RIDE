@@ -1183,6 +1183,16 @@ finished:
 
 	const CDos::TFileDateTime CDos::TFileDateTime::None(::None);
 
+	CDos::TFileDateTime CDos::TFileDateTime::GetCurrent(){
+		// creates and returns current DateTime object
+		SYSTEMTIME st;
+		::GetLocalTime(&st);
+		::SystemTimeToTzSpecificLocalTime( nullptr, &st, &st );
+		FILETIME ft;
+		::SystemTimeToFileTime( &st, &ft );
+		return TFileDateTime(ft);
+	}
+
 	CDos::TFileDateTime::TFileDateTime(const FILETIME &r)
 		// ctor
 		: FILETIME(r) {

@@ -65,6 +65,8 @@
 		struct TFileDateTime:public FILETIME{
 			static const TFileDateTime None;
 
+			static TFileDateTime GetCurrent();
+
 			TFileDateTime(const FILETIME &r);
 
 			bool operator==(const FILETIME &r) const;
