@@ -46,6 +46,7 @@
 #define IDR_DOS_DATETIME_EDIT           208
 #define IDR_HEXAEDITOR_RESETSELECTION   209
 #define IDR_GUIDEPOST                   211
+#define IDR_BSDOS                       214
 #define ID_HIDDEN                       1018
 #define ID_SYSTEM                       1019
 #define ID_CONNECTED                    1020

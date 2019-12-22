@@ -67,6 +67,9 @@
     <Filter Include="Header Files\Dos\Spectrum">
       <UniqueIdentifier>{76e5a355-204e-438b-a54c-9ad458b8c61d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Dos\Spectrum\BSDOS">
+      <UniqueIdentifier>{5860f9a0-971c-41cd-bd6d-a24ae12ef431}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\stdafx.h">
@@ -167,6 +170,9 @@
     </ClInclude>
     <ClInclude Include="src\ViewDiskBrowser.h">
       <Filter>Header Files\MainWindow\Tabs</Filter>
+    </ClInclude>
+    <ClInclude Include="src\BSDOS.h">
+      <Filter>Header Files\Dos\Spectrum</Filter>
     </ClInclude>
     <ClInclude Include="src\ViewCriticalSector.h">
       <Filter>Header Files\MainWindow\Tabs</Filter>
@@ -356,8 +362,17 @@
     <ClCompile Include="src\ViewDiskBrowser.cpp">
       <Filter>Source Files\MainWindow\Tabs</Filter>
     </ClCompile>
+    <ClCompile Include="src\BSDOS.cpp">
+      <Filter>Source Files\Dos\Spectrum\BSDOS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\BSDOS_Boot.cpp">
+      <Filter>Source Files\Dos\Spectrum\BSDOS</Filter>
+    </ClCompile>
     <ClCompile Include="src\ViewCriticalSector.cpp">
       <Filter>Source Files\MainWindow\Tabs</Filter>
+    </ClCompile>
+    <ClCompile Include="src\BSDOS_FileManager.cpp">
+      <Filter>Source Files\Dos\Spectrum\BSDOS</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

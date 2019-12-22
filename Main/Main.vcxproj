@@ -189,6 +189,7 @@
     <ClInclude Include="..\..\puvodni\zaloha\dvd\virtualizace\diskety\fdrawcmd.h" />
     <ClInclude Include="res\resource.h" />
     <ClInclude Include="src\BackgroundAction.h" />
+    <ClInclude Include="src\BSDOS.h" />
     <ClInclude Include="src\Debug.h" />
     <ClInclude Include="src\DialogEmptySpaceFilling.h" />
     <ClInclude Include="src\DialogFormatting.h" />
@@ -223,6 +224,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\BackgroundAction.cpp" />
+    <ClCompile Include="src\BSDOS.cpp" />
+    <ClCompile Include="src\BSDOS_Boot.cpp" />
+    <ClCompile Include="src\BSDOS_FileManager.cpp" />
     <ClCompile Include="src\Debug.cpp" />
     <ClCompile Include="src\Dos_HexaPreview.cpp" />
     <ClCompile Include="src\Dos_Recognition.cpp" />

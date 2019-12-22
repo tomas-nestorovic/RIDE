@@ -117,6 +117,7 @@ typedef const int *PCINT;
 #define COLOR_WHITE	0xffffff
 #define COLOR_BLACK	0
 #define COLOR_YELLOW 0xffff
+#define COLOR_RED	0xff
 
 #undef min
 #undef max

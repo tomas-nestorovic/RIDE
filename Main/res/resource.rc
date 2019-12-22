@@ -130,6 +130,16 @@ BEGIN
     "D",            ID_DEFAULT1,            VIRTKEY, CONTROL, NOINVERT
 END
 
+IDR_BSDOS ACCELERATORS DISCARDABLE 
+BEGIN
+    "4",            ID_ZX_PREVIEWASSCREEN,  VIRTKEY, CONTROL, NOINVERT
+    "B",            ID_DOS_PREVIEWASBINARY, VIRTKEY, CONTROL, NOINVERT
+    "F",            ID_DOS_FORMAT,          VIRTKEY, SHIFT, CONTROL, 
+                                                    NOINVERT
+    "K",            ID_ZX_PREVIEWASBASIC,   VIRTKEY, CONTROL, NOINVERT
+END
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Menu
@@ -520,6 +530,33 @@ BEGIN
         END
     END
 END
+
+IDR_BSDOS MENU DISCARDABLE 
+BEGIN
+    POPUP "BS-DOS"
+    BEGIN
+        MENUITEM "Fill empty space...",         ID_DOS_FILL_EMPTY_SPACE
+        POPUP "Tape"
+        BEGIN
+            MENUITEM "Insert tape...",              ID_TAPE_OPEN
+            MENUITEM "Insert blank tape...",        ID_TAPE_NEW
+            MENUITEM "Append tape...",              ID_TAPE_APPEND
+            MENUITEM SEPARATOR
+            MENUITEM "Eject\tCtrl+F4",              ID_TAPE_CLOSE
+        END
+        MENUITEM SEPARATOR
+        MENUITEM "Export with shell-compliant names", 
+                                                ID_DOS_SHELLCOMPLIANTNAMES
+        MENUITEM SEPARATOR
+        MENUITEM "Format cylinders...\tCtrl+Shift+F", ID_DOS_FORMAT
+        MENUITEM "Unformat cylinders...",       ID_DOS_UNFORMAT
+        MENUITEM SEPARATOR
+        MENUITEM "Show as Screen$\tCtrl+4",     ID_ZX_PREVIEWASSCREEN
+        MENUITEM "Show as BASIC program\tCtrl+K", ID_ZX_PREVIEWASBASIC
+        MENUITEM "Show as binary\tCtrl+B",      ID_DOS_PREVIEWASBINARY
+    END
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //

@@ -3,6 +3,7 @@
 #include "MSDOS7.h"
 #include "TRDOS.h"
 #include "GDOS.h"
+#include "BSDOS.h"
 
 	CRideApp::CRecentFileListEx::CRecentFileListEx(const CRecentFileList &rStdMru)
 		// ctor
@@ -139,10 +140,12 @@
 		// - registering recognizable Image types and known DOSes (in alphabetical order)
 		CImage::known.AddTail( (PVOID)&D80::Properties );
 		CImage::known.AddTail( (PVOID)&CDsk5::Properties );
+		CImage::known.AddTail( (PVOID)&MBD::Properties );
 		CImage::known.AddTail( (PVOID)&CMGT::Properties );
 		CImage::known.AddTail( (PVOID)&CImageRaw::Properties );
 		CImage::known.AddTail( (PVOID)&CSCL::Properties );
 		CImage::known.AddTail( (PVOID)&TRD::Properties );
+		CDos::known.AddTail( (PVOID)&CBSDOS308::Properties );
 		CDos::known.AddTail( (PVOID)&CGDOS::Properties );
 		CDos::known.AddTail( (PVOID)&CMDOS2::Properties );
 		CDos::known.AddTail( (PVOID)&CMSDOS7::Properties );
@@ -464,7 +467,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 	bool CRideApp::__doPromptFileName__(PTCHAR fileName,bool fddAccessAllowed,UINT stdStringId,DWORD flags,CImage::PCProperties singleAllowedImage){
 		// reimplementation of CDocManager::DoPromptFileName
 		// - creating the list of Filters
-		TCHAR buf[300],*a=buf; // an "always big enough" buffer
+		TCHAR buf[500],*a=buf; // an "always big enough" buffer
 		DWORD nFilters=0;
 		if (singleAllowedImage)
 			// list of Filters consists of only one item
