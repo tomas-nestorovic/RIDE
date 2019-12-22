@@ -374,6 +374,9 @@
     <ClCompile Include="src\BSDOS_FileManager.cpp">
       <Filter>Source Files\Dos\Spectrum\BSDOS</Filter>
     </ClCompile>
+    <ClCompile Include="src\SpectrumBase.cpp">
+      <Filter>Source Files\Dos\Spectrum</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="res\resource.rc">
