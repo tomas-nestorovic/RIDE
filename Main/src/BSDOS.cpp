@@ -609,7 +609,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 	#define HEADERLESS_TYPE			_T("Headerless")
 	#define HEADERLESS_N_A			_T("N/A")
 
-	void CBSDOS308::GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
+	bool CBSDOS308::GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
 		if (file==ZX_DIR_ROOT){
 			// root Directory
@@ -641,8 +641,10 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 					::wsprintf( bufName, _T("%08d"), idHeaderless++ ); // ID padded with zeros to eight digits (to make up an acceptable name even for TR-DOS)
 				if (bufExt)
 					*bufExt++=TUniFileType::HEADERLESS, *bufExt='\0';
+				return false; // name irrelevant
 			}
 		}
+		return true; // name relevant
 	}
 
 	TStdWinError CBSDOS308::ChangeFileNameAndExt(PFile file,LPCTSTR newName,LPCTSTR newExt,PFile &rRenamedFile){

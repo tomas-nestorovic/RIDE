@@ -200,7 +200,7 @@
 		return true; // FatPath (with or without error) successfully extracted from FAT
 	}
 
-	void CMDOS2::GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
+	bool CMDOS2::GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
 		const PCDirectoryEntry de=(PCDirectoryEntry)file;
 		if (bufName)
@@ -219,6 +219,7 @@
 				*bufExt++=de->extension;
 			*bufExt='\0';
 		}
+		return true; // name relevant
 	}
 	TStdWinError CMDOS2::ChangeFileNameAndExt(PFile file,LPCTSTR newName,LPCTSTR newExt,PFile &rRenamedFile){
 		// tries to change given File's name and extension; returns Windows standard i/o error

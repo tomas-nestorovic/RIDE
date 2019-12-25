@@ -79,8 +79,9 @@
 
 
 
-	void CUnknownDos::GetFileNameOrExt(PCFile,PTCHAR,PTCHAR) const{
+	bool CUnknownDos::GetFileNameOrExt(PCFile,PTCHAR,PTCHAR) const{
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
+		return false; // name irrelevant
 	}
 	TStdWinError CUnknownDos::ChangeFileNameAndExt(PFile,LPCTSTR,LPCTSTR,PFile &){
 		// tries to change given File's name and extension; returns Windows standard i/o error

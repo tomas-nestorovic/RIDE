@@ -184,7 +184,7 @@
 		return false;
 	}
 
-	void CSpectrumDos::CTape::GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
+	bool CSpectrumDos::CTape::GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
 		if (file==ZX_DIR_ROOT){
 			if (bufName)
@@ -202,8 +202,10 @@
 					::wsprintf( bufName, _T("%08d"), idHeaderless++ ); // ID padded with zeros to eight digits (to make up an acceptable name even for TR-DOS)
 				if (bufExt)
 					*bufExt++=HEADERLESS_EXTENSION, *bufExt='\0';
+				return false; // name irrelevant
 			}
 		}
+		return true; // name relevant
 	}
 
 	TStdWinError CSpectrumDos::CTape::ChangeFileNameAndExt(PFile file,LPCTSTR newName,LPCTSTR newExt,PFile &rRenamedFile){

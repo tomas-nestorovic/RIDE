@@ -343,7 +343,7 @@
 		virtual DWORD GetFreeSpaceInBytes(TStdWinError &rError) const;
 		virtual TCylinder GetFirstCylinderWithEmptySector() const;
 		// file system
-		virtual void GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const=0;
+		virtual bool GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const=0;
 		PTCHAR GetFileNameWithAppendedExt(PCFile file,PTCHAR bufNameExt) const;
 		bool HasFileNameAndExt(PCFile file,LPCTSTR fileName,LPCTSTR fileExt) const;
 		virtual TStdWinError ChangeFileNameAndExt(PFile file,LPCTSTR newName,LPCTSTR newExt,PFile &rRenamedFile)=0;

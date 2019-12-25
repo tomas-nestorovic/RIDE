@@ -273,7 +273,7 @@
 			*bufExt++=fileType, *bufExt='\0';
 	}
 
-	void CGDOS::GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
+	bool CGDOS::GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
 		if (file==ZX_DIR_ROOT){
 			if (bufName)
@@ -282,6 +282,7 @@
 				*bufExt='\0';
 		}else
 			((PCDirectoryEntry)file)->__getNameAndExt__(bufName,bufExt);
+		return true; // name relevant
 	}
 
 	void CGDOS::TDirectoryEntry::__setNameAndExt__(LPCTSTR newName,LPCTSTR newExt){

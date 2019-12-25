@@ -207,7 +207,7 @@
 		return true;
 	}
 
-	void CTRDOS503::GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
+	bool CTRDOS503::GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
 		const PCDirectoryEntry de=(PCDirectoryEntry)file;
 		if (bufName)
@@ -228,6 +228,7 @@
 				*bufExt++=de->extension;
 			*bufExt='\0';
 		}
+		return true; // name relevant
 	}
 	TStdWinError CTRDOS503::ChangeFileNameAndExt(PFile file,LPCTSTR newName,LPCTSTR newExt,PFile &rRenamedFile){
 		// tries to change given File's name and extension; returns Windows standard i/o error

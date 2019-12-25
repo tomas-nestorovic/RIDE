@@ -34,7 +34,8 @@
 			for( BYTE copyNumber=1; copyNumber; copyNumber++ ){
 				// . composing the Name for the File copy
 				TCHAR bufNameCopy[MAX_PATH], bufExt[MAX_PATH];
-				DOS->GetFileNameOrExt(	file,bufNameCopy, bufExt );
+				if (!DOS->GetFileNameOrExt( file,bufNameCopy, bufExt )) // name irrelevant
+					return DOS->GetFileExportNameAndExt( &tmpDirEntry, shellCompliant, pOutBuffer );
 				TCHAR postfix[8];
 				const BYTE n=::wsprintf(postfix,_T("%c%d"),255,copyNumber); // 255 = token of the "COPY" keyword
 				if (::lstrlen(::lstrcat(bufNameCopy,postfix))>nameCharsMax)

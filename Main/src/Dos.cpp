@@ -648,8 +648,9 @@ reportError:Utils::Information(buf);
 		// True <=> given File has the name and extension as specified, otherwise False
 		ASSERT(fileName!=nullptr && fileExt!=nullptr);
 		TCHAR bufName[MAX_PATH],bufExt[MAX_PATH];
-		GetFileNameOrExt( file, bufName, bufExt );
-		return !fnCompareNames(fileName,bufName) && !fnCompareNames(fileExt,bufExt);
+		return	GetFileNameOrExt( file, bufName, bufExt )
+				? !fnCompareNames(fileName,bufName) && !fnCompareNames(fileExt,bufExt) // name relevant
+				: false; // name irrelevant
 	}
 
 	DWORD CDos::GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData) const{

@@ -470,14 +470,15 @@ nextCluster:result++;
 			return false;
 	}
 
-	void CMSDOS7::GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
+	bool CMSDOS7::GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
 		// - attempting to get File's long name
 		if (!dontShowLongFileNames)
 			if (__getLongFileNameAndExt__((PCDirectoryEntry)file,bufName,bufExt))
-				return;
+				return true; // name relevant
 		// - only short name can be get for given File
-		return __getShortFileNameAndExt__((PCDirectoryEntry)file,bufName,bufExt);
+		__getShortFileNameAndExt__((PCDirectoryEntry)file,bufName,bufExt);
+		return true; // name relevant
 	}
 
 
