@@ -4,7 +4,7 @@
 	void CMSDOS7::TVolumeInfo::__init__(const CFat &rFat){
 		// initializes this Volume information
 		infoValid=0x29; // this information now is valid
-		id=::GetTickCount();
+		Utils::RandomizeData( &id, sizeof(id) );
 		::memcpy(	::memset(label,' ',MSDOS7_LABEL_LENGTH_MAX),
 					VOLUME_LABEL_DEFAULT_ANSI_8CHARS,
 					sizeof(VOLUME_LABEL_DEFAULT_ANSI_8CHARS)-1

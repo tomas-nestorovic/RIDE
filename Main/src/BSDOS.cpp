@@ -1024,7 +1024,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 						sizeof(VOLUME_LABEL_DEFAULT_ANSI_8CHARS)-1
 					);
 			// . disk ID
-			//TODO
+			Utils::RandomizeData( boot->diskId, sizeof(boot->diskId) );
 		// - FAT
 		TLogSector ls=1;
 		const TLogSector nSectorsTotal=formatBoot.GetCountOfAllSectors();

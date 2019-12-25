@@ -908,6 +908,11 @@ namespace Utils{
 		return nullptr; // none of the immediate Submenus contains the specified Command
 	}
 
+	void RandomizeData(PVOID buffer,WORD nBytes){
+		// populates Buffer with given CountOfBytes of random data
+		::srand( ::GetTickCount() );
+		for( PBYTE p=(PBYTE)buffer; nBytes--; *p++=::rand() );
+	}
 
 
 

@@ -261,7 +261,7 @@
 			boot->currDrive.drive.diskFlags=boot->currDrive.disk.diskFlags; // flag on two-headed drive
 			// . label and identification
 			::lstrcpyA( boot->label, VOLUME_LABEL_DEFAULT_ANSI_8CHARS );
-			boot->diskID=::GetTickCount();
+			Utils::RandomizeData( &boot->diskID, sizeof(boot->diskID) );
 			boot->sdos=SDOS_TEXT;
 		}
 		// - initializing the FAT (first 14 Sectors are System, the rest is Empty)
