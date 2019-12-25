@@ -9,6 +9,8 @@
 	#define BSDOS_SECTOR_NUMBER_LAST	11
 	#define BSDOS_SECTOR_NUMBER_TEMP	(BSDOS_SECTOR_NUMBER_FIRST+1)
 
+	#define BSDOS_FAT_COPIES_MAX		2
+
 	#define BSDOS_DIRS_SLOTS_COUNT		(BSDOS_SECTOR_LENGTH_STD/sizeof(CDirsSector::TSlot))
 
 	#define BSDOS_DIR_CORRUPTED			_T("« Corrupted »")
@@ -39,8 +41,9 @@
 			TLogSector dirsLogSector;
 			WORD nSectorsPerFat;
 			WORD nBytesInFat;
-			TLogSector fatStarts[2]; // first LogicalSectors of two FAT copies
-			DWORD reserved2;
+			TLogSector fatStarts[BSDOS_FAT_COPIES_MAX]; // first LogicalSectors of individual FAT copies
+			BYTE diskIdChecksum;
+			BYTE reserved2[3];
 			BYTE fatSectorsListing[6];
 			BYTE signature2;
 			DWORD formattedDateTime;

@@ -67,7 +67,7 @@
 		5, // minimal total number of Sectors required
 		1, // maximum number of Sector in one Cluster (must be power of 2)
 		BSDOS_SECTOR_LENGTH_STD, // maximum size of a Cluster (in Bytes)
-		2,2, // range of supported number of allocation tables (FATs)
+		1,2, // range of supported number of allocation tables (FATs)
 		32,12640, // range of supported number of root Directory entries
 		1,	// lowest Sector number on each Track
 		0x00,0x00, // regular Sector and Directory Sector filler Byte
