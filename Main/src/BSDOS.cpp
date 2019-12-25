@@ -420,8 +420,16 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 		for( CDirsSector::PSlot slot=dirsSector.GetSlots(); IsDirectory(slot); slot++ )
 			if (!slot->subdirExists)
 				if (const TLogSector ls=__getFirstHealthyFreeSector__()){
+					// . parsing the Name (can be an import name with escaped Spectrum tokens)
+					LPCTSTR zxName,zxExt,zxInfo;
+					TCHAR buf[MAX_PATH];
+					__parseFat32LongName__(	::lstrcpy(buf,name),
+											zxName, ZX_TAPE_FILE_NAME_LENGTH_MAX,
+											zxExt, 1,
+											zxInfo
+										);
 					// . validating Name
-					if (const TStdWinError err=TDirectoryEntry(this,0).file.stdHeader.SetNameAndExt(name,nullptr))
+					if (const TStdWinError err=TDirectoryEntry(this,0).file.stdHeader.SetNameAndExt(zxName,nullptr))
 						return err;
 					// . indicating that the Slot is now occupied
 					slot->subdirExists=true;
@@ -435,7 +443,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 					const PDirectoryEntry de=dirsSector.TryGetDirectoryEntry(slot);
 					de->occupied=true;
 					ASSERT( &de->dir.name==&de->file.stdHeader.name );
-					de->file.stdHeader.SetNameAndExt( name, nullptr );
+					de->file.stdHeader.SetNameAndExt( zxName, nullptr );
 					slot->nameChecksum=de->GetDirNameChecksum();
 					::memset( de->dir.comment, ' ', sizeof(de->dir.comment) );
 					dirsSector.MarkDirectoryEntryAsDirty(slot);
