@@ -45,10 +45,12 @@
 		return new CBSDOS308(image,pFormatBoot);
 	}
 
+	#define BSDOS_SECTOR_GAP3	32 /* smaller than regular IBM norm-compliant Gap to make sure all Sectors fit in a Track */
+
 	static const CFormatDialog::TStdFormat StdFormats[]={
-		{ _T("5.25\" DS DD"), 0, {TMedium::FLOPPY_DD,39,2,5,TFormat::TLengthCode::LENGTHCODE_1024,BSDOS_SECTOR_LENGTH_STD,1}, 1, 0, FDD_SECTOR_GAP3_STD, 2, 32 },
-		{ _T("3.5\"/5.25\" DS DD"), 0, {TMedium::FLOPPY_DD,79,2,5,TFormat::TLengthCode::LENGTHCODE_1024,BSDOS_SECTOR_LENGTH_STD,1}, 1, 0, FDD_SECTOR_GAP3_STD, 2, 32 },
-		{ _T("3.5\" DS HD"), 0, {TMedium::FLOPPY_HD,79,2,11,TFormat::TLengthCode::LENGTHCODE_1024,BSDOS_SECTOR_LENGTH_STD,1}, 1, 0, FDD_SECTOR_GAP3_STD, 2, 32 }
+		{ _T("5.25\" DS DD"), 0, {TMedium::FLOPPY_DD,39,2,5,TFormat::TLengthCode::LENGTHCODE_1024,BSDOS_SECTOR_LENGTH_STD,1}, 1, 0, BSDOS_SECTOR_GAP3, 2, 32 },
+		{ _T("3.5\"/5.25\" DS DD"), 0, {TMedium::FLOPPY_DD,79,2,5,TFormat::TLengthCode::LENGTHCODE_1024,BSDOS_SECTOR_LENGTH_STD,1}, 1, 0, BSDOS_SECTOR_GAP3, 2, 32 },
+		{ _T("3.5\" DS HD"), 0, {TMedium::FLOPPY_HD,79,2,11,TFormat::TLengthCode::LENGTHCODE_1024,BSDOS_SECTOR_LENGTH_STD,1}, 1, 0, BSDOS_SECTOR_GAP3, 2, 32 }
 	};
 
 	const CDos::TProperties CBSDOS308::Properties={
