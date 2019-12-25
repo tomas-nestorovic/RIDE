@@ -507,9 +507,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 
 	BYTE CBSDOS308::TDirectoryEntry::GetDirNameChecksum() const{
 		// computes and returns the Name Checksum
-		BYTE checksum=0;
-		for( BYTE i=ZX_TAPE_FILE_NAME_LENGTH_MAX; i; checksum^=dir.name[--i] );
-		return checksum;
+		return __xorChecksum__( dir.name, sizeof(dir.name) );
 	}
 
 	CBSDOS308::TDirectoryEntry::CTraversal::CTraversal(const CBSDOS308 *bsdos,PCFile slot)
@@ -1025,6 +1023,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 					);
 			// . disk ID
 			Utils::RandomizeData( boot->diskId, sizeof(boot->diskId) );
+			boot->diskIdChecksum=__xorChecksum__( boot->diskId, sizeof(boot->diskId) );
 		// - FAT
 		TLogSector ls=1;
 		const TLogSector nSectorsTotal=formatBoot.GetCountOfAllSectors();

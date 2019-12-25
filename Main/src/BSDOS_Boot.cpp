@@ -126,6 +126,12 @@
 			rParam.clusterSize=true;
 	}
 
+	void WINAPI CBSDOS308::TBootSector::OnDiskIdChanged(PropGrid::PCustomParam bootSector){
+		const PBootSector boot=(PBootSector)bootSector;
+		boot->diskIdChecksum=__xorChecksum__( boot->diskId, sizeof(boot->diskId) );
+		CBootView::__bootSectorModified__(boot);
+	}
+
 	void CBSDOS308::CBsdosBootView::AddCustomBootParameters(HWND hPropGrid,HANDLE hGeometry,HANDLE hVolume,const TCommonBootParameters &rParam,PSectorData _boot){
 		// gets DOS-specific parameters from the Boot
 		const PBootSector boot=reinterpret_cast<PBootSector>(_boot);
@@ -139,7 +145,8 @@
 								CMSDOS7::TDateTime::DefinePropGridDateTimeEditor(__bootSectorModified__)
 							);
 		PropGrid::AddProperty(	hPropGrid, hVolume, _T("Disk ID"), &boot->diskId,
-								CHexaValuePropGridEditor::Define( nullptr, sizeof(boot->diskId), __bootSectorModified__ )
+								CHexaValuePropGridEditor::Define( nullptr, sizeof(boot->diskId), TBootSector::OnDiskIdChanged ),
+								boot
 							);
 		const HANDLE hAdvanced=PropGrid::AddCategory( hPropGrid, hVolume, BOOT_SECTOR_ADVANCED );
 			const PropGrid::PCEditor pWordEditor=PropGrid::Integer::DefineWordEditor(__bootSectorModified__);

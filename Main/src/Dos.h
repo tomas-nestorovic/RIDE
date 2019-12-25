@@ -249,6 +249,8 @@
 
 		static bool __isValidCharInFat32LongName__(WCHAR c);
 		static void __warnOnEnteringCriticalConfiguration__(bool b);
+		static BYTE __xorChecksum__(PCBYTE buffer,WORD nBytes);
+		static BYTE __xorChecksum__(LPCSTR buffer,WORD nChars);
 
 		const TFnCompareNames fnCompareNames;
 		const TTrackScheme trackAccessScheme; // single Scheme to access Tracks in Image

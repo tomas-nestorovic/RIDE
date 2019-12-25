@@ -24,6 +24,7 @@
 			static const TPhysicalAddress CHS;
 
 			static TBootSector *GetData(PImage image);
+			static void WINAPI OnDiskIdChanged(PropGrid::PCustomParam bootSector);
 
 			struct{
 				BYTE opCode;
