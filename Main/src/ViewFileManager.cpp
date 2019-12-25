@@ -277,6 +277,7 @@
 						__switchToDirectory__(item);
 						GetListCtrl().SendMessage( LVM_SCROLL, 0, -__getVerticalScrollPos__() ); // resetting the scroll position to zero pixels
 						__refreshDisplay__();
+						__informationWithCheckableShowNoMore__( FILE_MANAGER_MSG_DIR_GO_BACK, FILE_MANAGER_MSG_DIR_GO_BACK );
 					}
 				}
 				break;
