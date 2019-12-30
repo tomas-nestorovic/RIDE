@@ -834,6 +834,8 @@ drawChecksum:			// checksum
 														);
 				case INFORMATION_NAME:
 					return varLengthCommandLineEditor.CreateForFileName( file, ZX_TAPE_FILE_NAME_LENGTH_MAX, ' ' );
+				case INFORMATION_SIZE_REPORTED:
+					return integerEditor.Create( file, &h->length );
 				case INFORMATION_PARAM_1:
 					return integerEditor.Create( file, &h->params.param1 );
 				case INFORMATION_PARAM_2:
