@@ -19,9 +19,9 @@
 	};
 
 	const CFileManagerView::TDirectoryStructureManagement CMSDOS7::CMsdos7FileManagerView::dirManagement={
-		(CDos::TFnCreateSubdirectory)&CMSDOS7::__createSubdirectory__,
-		(CDos::TFnChangeCurrentDirectory)&CMSDOS7::__switchToDirectory__,
-		(CDos::TFnMoveFileToCurrDir)&CMSDOS7::__moveFileToCurrDir__
+		(CDos::TFnCreateSubdirectory)&CMSDOS7::CreateSubdirectory,
+		(CDos::TFnChangeCurrentDirectory)&CMSDOS7::SwitchToDirectory,
+		(CDos::TFnMoveFileToCurrDir)&CMSDOS7::MoveFileToCurrDir
 	};
 
 	CMSDOS7::CMsdos7FileManagerView::CMsdos7FileManagerView(PMSDOS7 msdos)
@@ -114,12 +114,12 @@
 		if (DOS->IsDirectory(de))
 			return icons[ICON_FOLDER_OPEN];
 		else{
-			TCHAR bufExt[MAX_PATH];
-			DOS->GetFileNameOrExt(de,nullptr,bufExt);
-			if (*bufExt){
-				::lstrcat( ::CharLower(bufExt), _T(",") );
+			CPathString ext;
+			DOS->GetFileNameOrExt(de,nullptr,&ext);
+			if (*ext){
+				ext.LowerCase()+=',';
 				for( BYTE n=MSDOS7_FILE_ICONS_COUNT; --n>ICON_FILE_GENERAL; )
-					if (::strstr(ICON_INFOS[n].extensions,bufExt))
+					if (::strstr(ICON_INFOS[n].extensions,ext))
 						return icons[n];
 			}
 			return icons[ICON_FILE_GENERAL];
@@ -156,7 +156,7 @@
 				const float dpiScaleFactor=Utils::LogicalUnitScaleFactor;
 				::DrawIconEx( dc, r.left,r.top, __getIcon__(de), 16*dpiScaleFactor,16*dpiScaleFactor, 0, nullptr, DI_NORMAL|DI_COMPAT );
 				r.left+=20*dpiScaleFactor;
-				::DrawText( dc, DOS->GetFileNameWithAppendedExt(de,buf),-1, &r, DT_SINGLELINE|DT_VCENTER );
+				::DrawText( dc, DOS->GetFileShellCompliantExportNameAndExt(de,buf),-1, &r, DT_SINGLELINE|DT_VCENTER );
 				break;
 			}
 			case INFORMATION_SIZE:
@@ -196,7 +196,7 @@
 					return -d; // Directories first
 				else{
 					TCHAR n1[MAX_PATH],n2[MAX_PATH];
-					return ::lstrcmpi( DOS->GetFileNameWithAppendedExt(f1,n1), DOS->GetFileNameWithAppendedExt(f2,n2) );
+					return ::lstrcmpi( DOS->GetFileShellCompliantExportNameAndExt(f1,n1), DOS->GetFileShellCompliantExportNameAndExt(f2,n2) );
 				}
 			case INFORMATION_SIZE:
 				return DOS->GetFileOfficialSize(f1)-DOS->GetFileOfficialSize(f2);
@@ -222,14 +222,15 @@
 		else
 			pExt=_T("");
 		CDos::PFile renamedFile;
-		const TStdWinError err=msdos->ChangeFileNameAndExt(file,tmpName,pExt,renamedFile);
-		if (err==ERROR_SUCCESS){ // the new Name+Extension combination is unique
+		if (const TStdWinError err=msdos->ChangeFileNameAndExt(file,tmpName,pExt,renamedFile)){
+			// at least two Files with the same Name+Extension combination exist
+			Utils::Information(FILE_MANAGER_ERROR_RENAMING,err);
+			return false;
+		}else{
+			// the new Name+Extension combination is unique
 			if (file!=renamedFile)
 				msdos->fileManager.__replaceFileDisplay__(file,renamedFile);
 			return true;
-		}else{	// at least two Files with the same Name+Extension combination exist
-			Utils::Information(FILE_MANAGER_ERROR_RENAMING,err);
-			return false;
 		}
 	}
 
@@ -267,7 +268,7 @@
 			case INFORMATION_NAME_A_EXT:{
 				TCHAR buf[MAX_PATH];
 				return __createStdEditor__(	file,
-											DOS->GetFileNameWithAppendedExt(file,buf),
+											DOS->GetFileShellCompliantExportNameAndExt(file,buf),
 											#ifdef UNICODE
 												PropGrid::String::DefineDynamicLengthEditorW( __onNameAndExtConfirmed__ )
 											#else
@@ -290,28 +291,26 @@
 
 	PTCHAR CMSDOS7::CMsdos7FileManagerView::GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant,PTCHAR pOutBuffer) const{
 		// returns the Buffer populated with the export name and extension of the next File's copy in current Directory; returns Null if no further name and extension can be generated
+		// - getting copied File's Name and Extension
+		CPathString fileName, fileExt;
+		DOS->GetFileNameOrExt( file, &fileName, &fileExt );
+		// - composing a unique Name+Extension combination for the next File copy
 		for( BYTE copyNumber=0; ++copyNumber; ){
 			// . composing the Name for the File copy
-			TCHAR bufNameCopy[20+MAX_PATH], bufExt[MAX_PATH];
+			TCHAR buf[MAX_PATH+20];
 			if (((CMSDOS7 *)DOS)->dontShowLongFileNames){
 				// using only short "8.3" names
-				DOS->GetFileNameOrExt(	file,
-										bufNameCopy+::wsprintf(bufNameCopy,_T("%d~"),copyNumber),
-										bufExt
-									);
-				bufNameCopy[MSDOS7_FILE_NAME_LENGTH_MAX]='\0'; // trimming to maximum number of characters
+				::lstrcpy( buf+::wsprintf(buf,_T("%d~"),copyNumber), fileName );
+				buf[MSDOS7_FILE_NAME_LENGTH_MAX]='\0'; // trimming to maximum number of characters
 			}else{
 				// using long names
-				DOS->GetFileNameOrExt(	file,
-										bufNameCopy+::wsprintf(bufNameCopy,_T("Copy %d - "),copyNumber),
-										bufExt
-									);
-				bufNameCopy[MAX_PATH]='\0'; // trimming to maximum number of characters
+				::lstrcpy( buf+::wsprintf(buf,_T("Copy %d - "),copyNumber), fileName );
+				buf[MAX_PATH]='\0'; // trimming to maximum number of characters
 			}
-			// . finding if a file with given name already exists
-			if (!DOS->FindFileInCurrentDir(bufNameCopy,bufExt,nullptr))
+			// . finding if a file with given Name+Ext combination already exists
+			if (!DOS->FindFileInCurrentDir(buf,fileExt,nullptr))
 				// generated a unique Name for the next File copy - returning the final export name and extension
-				return ((CMSDOS7 *)DOS)->__getFileExportNameAndExt__( bufNameCopy, bufExt, shellCompliant, pOutBuffer );
+				return ((CMSDOS7 *)DOS)->__getFileExportNameAndExt__( buf, fileExt, shellCompliant, pOutBuffer );
 		}
 		return nullptr; // the Name for the next File copy cannot be generated
 	}

@@ -120,47 +120,31 @@
 		ZX_TAPE_EXTENSION_BYTES
 	};
 
-	void CSpectrumDos::CTape::THeader::GetNameOrExt(PTCHAR bufName,PTCHAR bufExt) const{
+	void CSpectrumDos::CTape::THeader::GetNameOrExt(PPathString pOutName,PPathString pOutExt) const{
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
-		if (bufName){
+		if (pOutName)
 			// Name wanted - removing trailing spaces
-			BYTE nameLength=ZX_TAPE_FILE_NAME_LENGTH_MAX;
-			while (nameLength-- && name[nameLength]==' ');
-			::lstrcpyn( bufName, name, (BYTE)(2+nameLength) );
-		}
-		if (bufExt){
+			( *pOutName=CPathString(name,sizeof(name)) ).TrimRight(' ');
+		if (pOutExt)
 			// Extension wanted - trying to map Type to one of UniversalFileTypes
-			*bufExt++ =	type<ZX_TAPE_EXTENSION_STD_COUNT
+			*pOutExt=	type<ZX_TAPE_EXTENSION_STD_COUNT
 						? Extensions[type]
 						: type;
-			*bufExt='\0';
-		}
 	}
 
-	TStdWinError CSpectrumDos::CTape::THeader::SetNameAndExt(LPCTSTR newName,LPCTSTR newExt){
+	TStdWinError CSpectrumDos::CTape::THeader::SetName(RCPathString newName){
 		// tries to change given File's name and extension; returns Windows standard i/o error
-		ASSERT(newName!=nullptr);
 		// - checking that the NewName+NewExt combination follows the "10.1" convention
-		const int nNameChars=::lstrlen(newName);
-		if (nNameChars>ZX_TAPE_FILE_NAME_LENGTH_MAX || ::lstrlen(newExt)>1)
+		if (newName.GetLength()>ZX_TAPE_FILE_NAME_LENGTH_MAX)
 			return ERROR_FILENAME_EXCED_RANGE;
 		// - renaming
 		#ifdef UNICODE
 			ASSERT(FALSE)
 		#else
 			::memcpy(	::memset(name,' ',ZX_TAPE_FILE_NAME_LENGTH_MAX),
-						newName, nNameChars
+						newName, newName.GetLength()
 					);
 		#endif
-		if (newExt)
-			switch (*newExt){
-				case ZX_TAPE_EXTENSION_PROGRAM	: type=TZxRom::TFileType::PROGRAM;	break;
-				case ZX_TAPE_EXTENSION_NUMBERS	: type=TZxRom::TFileType::NUMBER_ARRAY;break;
-				case ZX_TAPE_EXTENSION_CHARS	: type=TZxRom::TFileType::CHAR_ARRAY;break;
-				case ZX_TAPE_EXTENSION_BYTES	: type=TZxRom::TFileType::CODE;		break;
-				default:
-					return ERROR_BAD_FILE_TYPE;
-			}
 		// - successfully renamed
 		return ERROR_SUCCESS;
 	}
@@ -184,31 +168,34 @@
 		return false;
 	}
 
-	bool CSpectrumDos::CTape::GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
+	bool CSpectrumDos::CTape::GetFileNameOrExt(PCFile file,PPathString pOutName,PPathString pOutExt) const{
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
 		if (file==ZX_DIR_ROOT){
-			if (bufName)
-				::lstrcpy( bufName, _T("\\") );
-			if (bufExt)
-				*bufExt='\0';
+			if (pOutName)
+				*pOutName='\\';
+			if (pOutExt)
+				*pOutExt=_T("");
 		}else{
 			const PCTapeFile tf=(PCTapeFile)file;
 			if (const PCHeader h=tf->GetHeader())
 				// File with a Header
-				h->GetNameOrExt( bufName, bufExt );
+				h->GetNameOrExt( pOutName, pOutExt );
 			else{
 				// Headerless File or Fragment
-				if (bufName)
+				if (pOutName){
+					TCHAR bufName[16];
 					::wsprintf( bufName, _T("%08d"), idHeaderless++ ); // ID padded with zeros to eight digits (to make up an acceptable name even for TR-DOS)
-				if (bufExt)
-					*bufExt++=HEADERLESS_EXTENSION, *bufExt='\0';
+					*pOutName=bufName;
+				}
+				if (pOutExt)
+					*pOutExt=HEADERLESS_EXTENSION;
 				return false; // name irrelevant
 			}
 		}
 		return true; // name relevant
 	}
 
-	TStdWinError CSpectrumDos::CTape::ChangeFileNameAndExt(PFile file,LPCTSTR newName,LPCTSTR newExt,PFile &rRenamedFile){
+	TStdWinError CSpectrumDos::CTape::ChangeFileNameAndExt(PFile file,RCPathString newName,RCPathString newExt,PFile &rRenamedFile){
 		// tries to change given File's name and extension; returns Windows standard i/o error
 		// - can't change root Directory's name
 		if (file==ZX_DIR_ROOT)
@@ -219,8 +206,10 @@
 			// . making sure that a File with given NameAndExtension doesn't yet exist 
 			//nop (Files on tape may he equal names)
 			// . renaming
-			if (const TStdWinError err=h->SetNameAndExt( newName, newExt ))
+			if (const TStdWinError err=h->SetName(newName))
 				return err;
+			if (!h->SetFileType((TUniFileType)*newExt))
+				return ERROR_BAD_FILE_TYPE;
 			m_bModified=TRUE;
 			return ERROR_SUCCESS;
 		}else
@@ -267,16 +256,18 @@
 	PTCHAR CSpectrumDos::CTape::GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const{
 		// populates Buffer with specified File's export name and extension and returns the Buffer; returns Null if File cannot be exported (e.g. a "dotdot" entry in MS-DOS); caller guarantees that the Buffer is at least MAX_PATH characters big
 		const PTCHAR p=buf+::lstrlen( __super::GetFileExportNameAndExt(file,shellCompliant,buf) );
-		const PCTapeFile tf=(PCTapeFile)file;
-		if (const PCHeader h=tf->GetHeader())
-			// File with a Header
-			::wsprintf( p+__exportFileInformation__(p,h->GetUniFileType(),h->params,h->length,tf->dataBlockFlag), EXPORT_INFO_TAPE, tf->dataChecksum );
-		else if (tf->type==TTapeFile::HEADERLESS)
-			// Headerless File
-			::wsprintf( p+__exportFileInformation__(p,TUniFileType::HEADERLESS,TStdParameters::Default,tf->dataLength,tf->dataBlockFlag), EXPORT_INFO_TAPE, tf->dataChecksum );
-		else
-			// Fragment
-			__exportFileInformation__(p,TUniFileType::FRAGMENT,TStdParameters::Default,tf->dataLength);
+		if (!shellCompliant){
+			const PCTapeFile tf=(PCTapeFile)file;
+			if (const PCHeader h=tf->GetHeader())
+				// File with a Header
+				::wsprintf( p+__exportFileInformation__(p,h->GetUniFileType(),h->params,h->length,tf->dataBlockFlag), EXPORT_INFO_TAPE, tf->dataChecksum );
+			else if (tf->type==TTapeFile::HEADERLESS)
+				// Headerless File
+				::wsprintf( p+__exportFileInformation__(p,TUniFileType::HEADERLESS,TStdParameters::Default,tf->dataLength,tf->dataBlockFlag), EXPORT_INFO_TAPE, tf->dataChecksum );
+			else
+				// Fragment
+				__exportFileInformation__(p,TUniFileType::FRAGMENT,TStdParameters::Default,tf->dataLength);
+		}
 		return buf;
 	}
 
@@ -299,10 +290,11 @@
 			return ERROR_BAD_LENGTH;
 		// - converting the NameAndExtension to the "10.1" form usable for Tape
 		LPCTSTR zxName,zxExt,zxInfo;
+		BYTE zxNameLength=ZX_TAPE_FILE_NAME_LENGTH_MAX, zxExtLength=1;
 		TCHAR buf[MAX_PATH];
 		__parseFat32LongName__(	::lstrcpy(buf,nameAndExtension),
-								zxName, ZX_TAPE_FILE_NAME_LENGTH_MAX,
-								zxExt, 1,
+								zxName, zxNameLength,
+								zxExt, zxExtLength,
 								zxInfo
 							);
 		// - processing import information
@@ -925,8 +917,8 @@ drawChecksum:			// checksum
 					tf->type=TTapeFile::STD_HEADER;
 					h=tf->GetHeader();
 					h->length=tf->dataLength, h->params=TStdParameters::Default;
-					const TCHAR newExt[]={ Extensions[ (TZxRom::TFileType)newType.charValue ], '\0' };
-					h->SetNameAndExt( _T("Unnamed"), newExt );
+					h->SetName(_T("Unnamed"));
+					h->type=(TZxRom::TFileType)newType.charValue;
 					break;
 				}
 			}

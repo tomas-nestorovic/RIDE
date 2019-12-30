@@ -113,8 +113,8 @@
 
 			bool __isStandardRomFile__() const;
 			LPCTSTR __getFileTypeDesc__(PTCHAR buffer) const;
-			void __getNameAndExt__(PTCHAR bufName,PTCHAR bufExt) const;
-			void __setNameAndExt__(LPCTSTR newName,LPCTSTR newExt);
+			void GetNameOrExt(PPathString pOutName,PPathString pOutExt) const;
+			void SetNameAndExt(RCPathString newName,RCPathString newExt);
 			PWORD __getStdParameter1__();
 			void __setStdParameter1__(WORD param1);
 			PWORD __getStdParameter2__();
@@ -182,8 +182,8 @@
 		bool ModifyStdSectorStatus(RCPhysicalAddress chs,TSectorStatus status) override;
 		bool GetFileFatPath(PCFile file,CFatPath &rFatPath) const override;
 		// file system
-		bool GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const override;
-		TStdWinError ChangeFileNameAndExt(PFile file,LPCTSTR newName,LPCTSTR newExt,PFile &rRenamedFile) override;
+		bool GetFileNameOrExt(PCFile file,PPathString pOutName,PPathString pOutExt) const override;
+		TStdWinError ChangeFileNameAndExt(PFile file,RCPathString newName,RCPathString newExt,PFile &rRenamedFile) override;
 		DWORD GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData,TGetFileSizeOptions option) const override;
 		TStdWinError DeleteFile(PFile file) override;
 		std::unique_ptr<TDirectoryTraversal> BeginDirectoryTraversal(PCFile directory) const override;

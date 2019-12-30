@@ -16,8 +16,8 @@
 		bool GetFileFatPath(PCFile,CFatPath &) const override;
 		DWORD GetFreeSpaceInBytes(TStdWinError &rError) const override;
 		// file system
-		bool GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const override;
-		TStdWinError ChangeFileNameAndExt(PFile,LPCTSTR,LPCTSTR,PFile &) override;
+		bool GetFileNameOrExt(PCFile file,PPathString,PPathString) const override;
+		TStdWinError ChangeFileNameAndExt(PFile,RCPathString,RCPathString,PFile &) override;
 		DWORD GetFileSize(PCFile,PBYTE,PBYTE,TGetFileSizeOptions) const override;
 		DWORD GetAttributes(PCFile file) const override;
 		TStdWinError DeleteFile(PFile) override;

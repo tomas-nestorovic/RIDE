@@ -279,8 +279,8 @@
 					de->fileHasStdHeader=true;
 					de->file.stdHeader.length=std::min<DWORD>( de->file.dataLength, (WORD)-1 );
 					de->file.stdHeader.params=TStdParameters::Default;
-					const TCHAR newExt[]={ CTape::Extensions[ (TZxRom::TFileType)newType.charValue ], '\0' };
-					de->file.stdHeader.SetNameAndExt( _T("Unnamed"), newExt );
+					de->file.stdHeader.SetName(_T("Unnamed"));
+					de->file.stdHeader.type=(TZxRom::TFileType)newType.charValue;
 					break;
 				}
 			}

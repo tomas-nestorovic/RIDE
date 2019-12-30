@@ -17,7 +17,7 @@
 		, dontShowLongFileNames( __getProfileBool__(INI_DONT_SHOW_LONG_NAMES,false) )
 		, dontShowDotEntries( __getProfileBool__(INI_DONT_SHOW_DOT,false) )
 		, dontShowDotdotEntries( __getProfileBool__(INI_DONT_SHOW_DOTDOT,false) ) {
-		__switchToDirectory__(MSDOS7_DIR_ROOT);
+		SwitchToDirectory(MSDOS7_DIR_ROOT);
 		if (const PCBootSector bootSector=boot.GetSectorData()) // may not exist when creating new Image
 			if (bootSector->__isUsable__()){ // may not be usable if Image is being "Open As"
 				// . determining the type of FAT
@@ -470,14 +470,20 @@ nextCluster:result++;
 			return false;
 	}
 
-	bool CMSDOS7::GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
+	bool CMSDOS7::GetFileNameOrExt(PCFile file,PPathString pOutName,PPathString pOutExt) const{
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
 		// - attempting to get File's long name
+		TCHAR bufName[MAX_PATH],bufExt[MAX_PATH];
 		if (!dontShowLongFileNames)
-			if (__getLongFileNameAndExt__((PCDirectoryEntry)file,bufName,bufExt))
+			if (__getLongFileNameAndExt__((PCDirectoryEntry)file,bufName,bufExt)){
+				if (pOutName) *pOutName=bufName;
+				if (pOutExt) *pOutExt=bufExt;
 				return true; // name relevant
+			}
 		// - only short name can be get for given File
 		__getShortFileNameAndExt__((PCDirectoryEntry)file,bufName,bufExt);
+		if (pOutName) *pOutName=bufName;
+		if (pOutExt) *pOutExt=bufExt;
 		return true; // name relevant
 	}
 
@@ -659,9 +665,8 @@ nextCluster:result++;
 		return ERROR_SUCCESS;
 	}
 
-	TStdWinError CMSDOS7::ChangeFileNameAndExt(PFile file,LPCTSTR newName,LPCTSTR newExt,PFile &rRenamedFile){
+	TStdWinError CMSDOS7::ChangeFileNameAndExt(PFile file,RCPathString newName,RCPathString newExt,PFile &rRenamedFile){
 		// tries to change given File's name and extension; returns Windows standard i/o error
-		ASSERT(newName!=nullptr && newExt!=nullptr);
 		return	dontShowLongFileNames
 				? __changeShortFileNameAndExt__( (PDirectoryEntry)file, newName, newExt, (PDirectoryEntry &)rRenamedFile )
 				: __changeLongFileNameAndExt__( (PDirectoryEntry)file, newName, newExt, (PDirectoryEntry &)rRenamedFile );
@@ -681,7 +686,7 @@ nextCluster:result++;
 		return result;
 	}
 
-	TStdWinError CMSDOS7::__createSubdirectory__(LPCTSTR name,DWORD winAttr,PDirectoryEntry &rCreatedSubdir){
+	TStdWinError CMSDOS7::CreateSubdirectory(RCPathString name,DWORD winAttr,PDirectoryEntry &rCreatedSubdir){
 		// creates a new Subdirectory in CurrentDirectory; returns Windows standard i/o error
 		// - allocating new Directory Cluster
 		const TCluster32 cluster=__allocateAndResetDirectoryCluster__();
@@ -720,9 +725,9 @@ nextCluster:result++;
 				return ERROR_CANNOT_MAKE;
 			}
 		// - creating the "dot" and "dotdot" entries in newly created Subdirectory
-		TMsdos7DirectoryTraversal dt(this,(PDirectoryEntry)rCreatedSubdir);
+		TMsdos7DirectoryTraversal dt(this,rCreatedSubdir);
 		const PDirectoryEntry dot=dt.__allocateNewEntry__();
-			*dot=*(PCDirectoryEntry)rCreatedSubdir;
+			*dot=*rCreatedSubdir;
 			*(PCHAR)::memset( dot, ' ', MSDOS7_FILE_NAME_LENGTH_MAX+MSDOS7_FILE_EXT_LENGTH_MAX )='.';
 		const PDirectoryEntry dotdot=dt.__allocateNewEntry__();
 			( *dotdot=*dot ).shortNameEntry.name[1]='.';
@@ -730,7 +735,7 @@ nextCluster:result++;
 		return ERROR_SUCCESS;
 	}
 
-	TStdWinError CMSDOS7::__switchToDirectory__(PDirectoryEntry directory){
+	TStdWinError CMSDOS7::SwitchToDirectory(PDirectoryEntry directory){
 		// changes CurrentDirectory; returns Windows standard i/o error
 		if (directory)
 			currentDir=directory->shortNameEntry.__getFirstCluster__() ? directory : MSDOS7_DIR_ROOT;
@@ -742,16 +747,15 @@ nextCluster:result++;
 		return ERROR_SUCCESS;
 	}
 	
-	TStdWinError CMSDOS7::__moveFileToCurrDir__(PDirectoryEntry de,LPCTSTR fileNameAndExt,PDirectoryEntry &rMovedFile){
+	TStdWinError CMSDOS7::MoveFileToCurrDir(PDirectoryEntry de,LPCTSTR exportFileNameAndExt,PFile &rMovedFile){
 		// moves given File to CurrentDirectory; returns Windows standard i/o error
-		// - "registering" the File's NameAndExtension in CurrentDirectory
+		// - "registering" the File's Name+Extension in CurrentDirectory
 		TCHAR bufName[MAX_PATH], *pExt;
-		if (const PTCHAR pDot=_tcsrchr(::lstrcpy(bufName,fileNameAndExt),'.'))
+		if (const PTCHAR pDot=_tcsrchr(::lstrcpy(bufName,exportFileNameAndExt),'.'))
 			*pDot='\0', pExt=1+pDot;
 		else
 			pExt=_T("");
-		TStdWinError err=ChangeFileNameAndExt( de, bufName, pExt, (PFile &)rMovedFile ); // also destroys original short name DirectoryEntry (leaving long name Entries orphaned but that's still a legal approach)
-		if (err!=ERROR_SUCCESS)
+		if (const TStdWinError err=ChangeFileNameAndExt( de, bufName, pExt, rMovedFile )) // also destroys original short name DirectoryEntry (leaving long name Entries orphaned but that's still a legal approach)
 			return err;
 		// - if moving a File with "8.3" name (e.g. "MYFILE.TXT"), moving the single DirectoryEntry "manually"
 		if (rMovedFile==de) // a "8.3" named File - the above "registration" didn't function for it
@@ -900,8 +904,8 @@ nextCluster:result++;
 	PTCHAR CMSDOS7::GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const{
 		// populates Buffer with specified File's export name and extension and returns the Buffer; returns Null if File cannot be exported (e.g. a "dotdot" entry in MS-DOS); caller guarantees that the Buffer is at least MAX_PATH characters big
 		if (!((PCDirectoryEntry)file)->shortNameEntry.__isDotOrDotdot__()){
-			TCHAR bufName[MAX_PATH], bufExt[MAX_PATH];
-			GetFileNameOrExt(file,bufName,bufExt);
+			CPathString bufName, bufExt;
+			GetFileNameOrExt( file, &bufName, &bufExt );
 			return __getFileExportNameAndExt__( bufName, bufExt, shellCompliant, buf );
 		}else
 			return nullptr;
@@ -946,8 +950,7 @@ nextCluster:result++;
 			__getShortFileNameAndExt__(&tmp,tmpName,pExt);
 		}
 		CFatPath fatPath(this,fileSize);
-		TStdWinError err=__importFileData__( f, &tmp, tmpName, pExt, fileSize, rFile, fatPath );
-		if (err!=ERROR_SUCCESS)
+		if (const TStdWinError err=__importFileData__( f, &tmp, tmpName, pExt, fileSize, rFile, fatPath ))
 			return err;
 		CFatPath::PCItem item; DWORD n;
 		fatPath.GetItems(item,n);
@@ -1222,7 +1225,7 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 			fat.SetClusterValue( c, clusterState );
 		}
 		// - initializing root Directory
-		__switchToDirectory__(MSDOS7_DIR_ROOT);
+		SwitchToDirectory(MSDOS7_DIR_ROOT);
 		switch (fat.type){
 			case CFat::FAT12:
 			case CFat::FAT16:

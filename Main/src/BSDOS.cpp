@@ -411,7 +411,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 		//nop (can't reset a root Directory Slot)
 	}
 
-	TStdWinError CBSDOS308::CreateSubdirectory(LPCTSTR name,DWORD winAttr,PFile &rCreatedSubdir){
+	TStdWinError CBSDOS308::CreateSubdirectory(RCPathString name,DWORD winAttr,PFile &rCreatedSubdir){
 		// creates a new Subdirectory in CurrentDirectory; returns Windows standard i/o error
 		// - cannot create a new Subdirectory elsewhere but in the Root Directory
 		if (currentDir!=ZX_DIR_ROOT)
@@ -420,16 +420,8 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 		for( CDirsSector::PSlot slot=dirsSector.GetSlots(); IsDirectory(slot); slot++ )
 			if (!slot->subdirExists)
 				if (const TLogSector ls=__getFirstHealthyFreeSector__()){
-					// . parsing the Name (can be an import name with escaped Spectrum tokens)
-					LPCTSTR zxName,zxExt,zxInfo;
-					TCHAR buf[MAX_PATH];
-					__parseFat32LongName__(	::lstrcpy(buf,name),
-											zxName, ZX_TAPE_FILE_NAME_LENGTH_MAX,
-											zxExt, 1,
-											zxInfo
-										);
 					// . validating Name
-					if (const TStdWinError err=TDirectoryEntry(this,0).file.stdHeader.SetNameAndExt(zxName,nullptr))
+					if (const TStdWinError err=TDirectoryEntry(this,0).file.stdHeader.SetName(name))
 						return err;
 					// . indicating that the Slot is now occupied
 					slot->subdirExists=true;
@@ -443,7 +435,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 					const PDirectoryEntry de=dirsSector.TryGetDirectoryEntry(slot);
 					de->occupied=true;
 					ASSERT( &de->dir.name==&de->file.stdHeader.name );
-					de->file.stdHeader.SetNameAndExt( zxName, nullptr );
+					de->file.stdHeader.SetName(name);
 					slot->nameChecksum=de->GetDirNameChecksum();
 					::memset( de->dir.comment, ' ', sizeof(de->dir.comment) );
 					dirsSector.MarkDirectoryEntryAsDirty(slot);
@@ -463,7 +455,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 		return ERROR_SUCCESS;
 	}
 
-	TStdWinError CBSDOS308::MoveFileToCurrentDir(PFile file,LPCTSTR fileNameAndExt,PFile &rMovedFile){
+	TStdWinError CBSDOS308::MoveFileToCurrentDir(PFile file,LPCTSTR exportFileNameAndExt,PFile &rMovedFile){
 		// moves given File to CurrentDirectory; returns Windows standard i/o error
 		// - cannot move "to" root Directory
 		if (currentDir==ZX_DIR_ROOT)
@@ -607,52 +599,54 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 	#define HEADERLESS_TYPE			_T("Headerless")
 	#define HEADERLESS_N_A			_T("N/A")
 
-	bool CBSDOS308::GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
+	bool CBSDOS308::GetFileNameOrExt(PCFile file,PPathString pOutName,PPathString pOutExt) const{
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
 		if (file==ZX_DIR_ROOT){
 			// root Directory
-			if (bufName)
-				::lstrcpy( bufName, _T("\\") );
-			if (bufExt)
-				*bufExt='\0';
+			if (pOutName)
+				*pOutName='\\';
+			if (pOutExt)
+				*pOutExt=_T("");
 		}else if (IsDirectory(file)){
 			// root Subdirectory
-			if (bufName)
+			if (pOutName)
 				if (const PCDirectoryEntry de=dirsSector.TryGetDirectoryEntry( (CDirsSector::PCSlot)file )){
 					// Directory's name can be retrieved
 					ASSERT( &de->dir.name==&de->file.stdHeader.name );
-					de->file.stdHeader.GetNameOrExt( bufName, nullptr );
+					de->file.stdHeader.GetNameOrExt( pOutName, nullptr );
 				}else
 					// Directory's first Sector is unreadable
-					::lstrcpy( bufName, BSDOS_DIR_CORRUPTED );
-			if (bufExt)
-				*bufExt='\0';
+					*pOutName=BSDOS_DIR_CORRUPTED;
+			if (pOutExt)
+				*pOutExt=_T("");
 		}else{
 			// File
 			const PCDirectoryEntry de=(PCDirectoryEntry)file;
 			if (de->fileHasStdHeader)
 				// File with a Header
-				de->file.stdHeader.GetNameOrExt( bufName, bufExt );
+				de->file.stdHeader.GetNameOrExt( pOutName, pOutExt );
 			else{
 				// Headerless File or Fragment
-				if (bufName)
+				if (pOutName){
+					TCHAR bufName[16];
 					::wsprintf( bufName, _T("%08d"), idHeaderless++ ); // ID padded with zeros to eight digits (to make up an acceptable name even for TR-DOS)
-				if (bufExt)
-					*bufExt++=TUniFileType::HEADERLESS, *bufExt='\0';
+					*pOutName=bufName;
+				}
+				if (pOutExt)
+					*pOutExt=TUniFileType::HEADERLESS;
 				return false; // name irrelevant
 			}
 		}
 		return true; // name relevant
 	}
 
-	TStdWinError CBSDOS308::ChangeFileNameAndExt(PFile file,LPCTSTR newName,LPCTSTR newExt,PFile &rRenamedFile){
+	TStdWinError CBSDOS308::ChangeFileNameAndExt(PFile file,RCPathString newName,RCPathString newExt,PFile &rRenamedFile){
 		// tries to change given File's name and extension; returns Windows standard i/o error
 		if (file==ZX_DIR_ROOT)
 			// root Directory
 			return ERROR_DIR_NOT_ROOT; // can't rename root Directory
 		else if (IsDirectory(file)){
 			// root Subdirectory
-			ASSERT( newName!=nullptr );
 			// . making sure that a Directory with given NameAndExtension doesn't yet exist
 			// commented out as Directories are identified by their index in the DIRS Sector rather than by name
 			//if ( rRenamedFile=__findFileInCurrDir__(newName,_T(""),file) )
@@ -661,7 +655,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 			if (const PDirectoryEntry de=dirsSector.TryGetDirectoryEntry( (CDirsSector::PCSlot)file )){
 				// Directory's name can be changed
 				ASSERT( &de->dir.name==&de->file.stdHeader.name );
-				if (const TStdWinError err=de->file.stdHeader.SetNameAndExt( newName, nullptr ))
+				if (const TStdWinError err=de->file.stdHeader.SetName(newName))
 					return err;
 				dirsSector.MarkDirectoryEntryAsDirty( (CDirsSector::PCSlot)( rRenamedFile=file ) );
 				return ERROR_SUCCESS;
@@ -673,12 +667,13 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 			const PDirectoryEntry de=(PDirectoryEntry)file;
 			if (de->fileHasStdHeader){
 				// File with Header
-				ASSERT( newName!=nullptr && newExt!=nullptr );
 				// . making sure that a File with given NameAndExtension doesn't yet exist
 				if ( rRenamedFile=FindFileInCurrentDir(newName,newExt,file) )
 					return ERROR_FILE_EXISTS;
 				// . renaming
-				if (const TStdWinError err=de->file.stdHeader.SetNameAndExt( newName, newExt ))
+				if (const TStdWinError err=de->file.stdHeader.SetName(newName))
+					return err;
+				if (!de->file.stdHeader.SetFileType((TUniFileType)*newExt))
 					de->file.stdHeader.type=(TZxRom::TFileType)*newExt;
 				MarkDirectorySectorAsDirty(de);
 			}//else
@@ -838,10 +833,11 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 		// imports specified File (physical or virtual) into the Image; returns Windows standard i/o error
 		// - converting the NameAndExtension to the "10.1" form usable for Tape
 		LPCTSTR zxName,zxExt,zxInfo;
+		BYTE zxNameLength=ZX_TAPE_FILE_NAME_LENGTH_MAX, zxExtLength=1;
 		TCHAR buf[MAX_PATH];
 		__parseFat32LongName__(	::lstrcpy(buf,nameAndExtension),
-								zxName, ZX_TAPE_FILE_NAME_LENGTH_MAX,
-								zxExt, 1,
+								zxName, zxNameLength,
+								zxExt, zxExtLength,
 								zxInfo
 							);
 		// - importing
@@ -856,7 +852,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 			int dirNameChecksum=-1;
 			_stscanf( zxInfo+n, INFO_DIR, &dirNameChecksum );
 			// . creating a Subdirectory with given name
-			if (const TStdWinError err=CreateSubdirectory( zxName, FILE_ATTRIBUTE_DIRECTORY, rFile ))
+			if (const TStdWinError err=CreateSubdirectory( CPathString(zxName,zxNameLength), FILE_ATTRIBUTE_DIRECTORY, rFile ))
 				return err;
 			if (dirNameChecksum>=0)
 				( (CDirsSector::PSlot)rFile )->nameChecksum=dirNameChecksum;
@@ -880,7 +876,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 			// . changing the Extension according to the "universal" type valid across ZX platforms (as TR-DOS File "Picture.C" should be take on the name "Picture.B" under MDOS)
 			CFatPath fatPath( this, fileSize );
 			//const TCHAR uftExt[2]={ tmp.extension, '\0' };
-			if (const TStdWinError err=__importFileData__( fIn, &tmp, zxName, zxExt, fileSize, rFile, fatPath ))
+			if (const TStdWinError err=__importFileData__( fIn, &tmp, CPathString(zxName,zxNameLength), CPathString(zxExt,zxExtLength), fileSize, rFile, fatPath ))
 				return err;
 			// . finishing initialization of DirectoryEntry of successfully imported File
 			const PDirectoryEntry de=(PDirectoryEntry)rFile;

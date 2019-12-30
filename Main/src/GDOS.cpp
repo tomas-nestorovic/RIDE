@@ -258,42 +258,36 @@
 		}
 	}
 
-	void CGDOS::TDirectoryEntry::__getNameAndExt__(PTCHAR bufName,PTCHAR bufExt) const{
+	void CGDOS::TDirectoryEntry::GetNameOrExt(PPathString pOutName,PPathString pOutExt) const{
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
-		if (bufName){
-			#ifdef UNICODE
-				ASSERT(FALSE);
-			#else
-				::lstrcpyn( bufName, name, sizeof(name)+1 );
-			#endif
-			for( PTCHAR p=bufName+sizeof(name); p--!=bufName; ) // trimming trailing spaces
-				if (*p==' ') *p='\0'; else break;
-		}
-		if (bufExt)
-			*bufExt++=fileType, *bufExt='\0';
+		if (pOutName)
+			(  *pOutName=CPathString( name, sizeof(name) )  ).TrimRight(' ');
+		if (pOutExt)
+			*pOutExt=fileType;
 	}
 
-	bool CGDOS::GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
+	bool CGDOS::GetFileNameOrExt(PCFile file,PPathString pOutName,PPathString pOutExt) const{
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
 		if (file==ZX_DIR_ROOT){
-			if (bufName)
-				::lstrcpy( bufName, _T("\\") );
-			if (bufExt)
-				*bufExt='\0';
+			if (pOutName)
+				*pOutName='\\';
+			if (pOutExt)
+				*pOutExt=_T("");
 		}else
-			((PCDirectoryEntry)file)->__getNameAndExt__(bufName,bufExt);
+			((PCDirectoryEntry)file)->GetNameOrExt(pOutName,pOutExt);
 		return true; // name relevant
 	}
 
-	void CGDOS::TDirectoryEntry::__setNameAndExt__(LPCTSTR newName,LPCTSTR newExt){
+	void CGDOS::TDirectoryEntry::SetNameAndExt(RCPathString newName,RCPathString newExt){
 		// sets File's Name and Type based on the Buffer content
-		ASSERT(newName!=nullptr && newExt!=nullptr);
 		// - setting the Name trimmed to 10 characters at most
-		const BYTE nCharsInNewName=::lstrlen(newName);
 		#ifdef UNICODE
 			ASSERT(FALSE)
 		#else
-			::memcpy( ::memset(name,' ',sizeof(name)), newName, std::min<size_t>(nCharsInNewName,sizeof(name)) );
+			::memcpy(	::memset(name,' ',sizeof(name)),
+						newName,
+						std::min<size_t>( newName.GetLength(), sizeof(name) )
+					);
 		#endif
 		// - setting FileType
 		fileType=(TFileType)*newExt;
@@ -349,14 +343,13 @@
 		}
 	}
 
-	TStdWinError CGDOS::ChangeFileNameAndExt(PFile file,LPCTSTR newName,LPCTSTR newExt,PFile &rRenamedFile){
+	TStdWinError CGDOS::ChangeFileNameAndExt(PFile file,RCPathString newName,RCPathString newExt,PFile &rRenamedFile){
 		// tries to change given File's name and extension; returns Windows standard i/o error
-		ASSERT(newName!=nullptr && newExt!=nullptr);
 		// - can't change root Directory's name
 		if (file==ZX_DIR_ROOT)
 			return ERROR_DIRECTORY;
 		// - checking that the NewName+NewExt combination follows the "10.1" convention
-		if (::lstrlen(newName)>GDOS_FILE_NAME_LENGTH_MAX || ::lstrlen(newExt)>1)
+		if (newName.GetLength()>GDOS_FILE_NAME_LENGTH_MAX || newExt.GetLength()>1)
 			return ERROR_FILENAME_EXCED_RANGE;
 		// - making sure that a File with given NameAndExtension doesn't yet exist
 		if ( rRenamedFile=FindFileInCurrentDir(newName,newExt,file) )
@@ -368,7 +361,7 @@
 			if (const PCWORD pw=de->__getStdParameter1__()) stdParams.param1=*pw;
 			if (const PCWORD pw=de->__getStdParameter2__()) stdParams.param2=*pw;
 		// - renaming
-		de->__setNameAndExt__(newName,newExt);
+		de->SetNameAndExt(newName,newExt);
 		// - modifying information of a standard ROM File (e.g. standard parameters)
 		if (de->__isStandardRomFile__()){
 			de->etc.stdZxType.romId=(TZxRom::TFileType)std::min<BYTE>(de->fileType-1,TZxRom::TFileType::CODE); // min = retyping Screen to Code
@@ -423,7 +416,8 @@
 		if (shellCompliant){
 			// exporting to non-RIDE target (e.g. to the Explorer); excluding from the Buffer characters that are forbidden in FAT32 long file names
 			TCHAR bufExt[16];
-			::lstrcpy( _tcsrchr(buf,'.')+1, de->__getFileTypeDesc__(bufExt) );
+			if (de!=ZX_DIR_ROOT)
+				::lstrcpy( _tcsrchr(buf,'.')+1, de->__getFileTypeDesc__(bufExt) );
 		}else{
 			// exporting to another RIDE instance
 			TUniFileType uts;
@@ -463,10 +457,11 @@
 		// imports specified File (physical or virtual) into the Image; returns Windows standard i/o error
 		// - parsing the NameAndExtension into a usable "10.1" form
 		LPCTSTR zxName, zxExt, zxInfo;
+		BYTE zxNameLength=GDOS_FILE_NAME_LENGTH_MAX, zxExtLength=10; // 10 = Extension may be represented as text, e.g. "$-ARRAY", not just a single char, e.g. '0x03' (both representations are equal!)
 		TCHAR buf[MAX_PATH];
 		__parseFat32LongName__(	::lstrcpy(buf,nameAndExtension),
-								zxName, GDOS_FILE_NAME_LENGTH_MAX,
-								zxExt, 10, // 10 = Extension may be represented as text, e.g. "$-ARRAY", not just a single char, e.g. '0x03' (both representations are equal!)
+								zxName, zxNameLength,
+								zxExt, zxExtLength,
 								zxInfo
 							);
 		// - getting import information
@@ -477,8 +472,8 @@
 		TDirectoryEntry tmp;
 			::ZeroMemory(&tmp,sizeof(tmp));
 			// . name
-			tmp.__setNameAndExt__(zxName,zxExt);
-			switch (::lstrlen(zxExt)){
+			tmp.SetNameAndExt( CPathString(zxName,zxNameLength), CPathString(zxExt,zxExtLength) );
+			switch (zxExtLength){
 				case 0:
 					// no Extension provided - considering the File as Special
 					tmp.fileType=TDirectoryEntry::SPECIAL;
@@ -523,9 +518,7 @@
 			return ERROR_BAD_LENGTH;
 		// - importing to Image
 		CFatPath fatPath(this,offset+fileSize);
-		const TCHAR uftExt[2]={ tmp.fileType, '\0' };
-		err=__importFileData__( f, &tmp, zxName, uftExt, fileSize, rFile, fatPath );
-		if (err!=ERROR_SUCCESS)
+		if (err=__importFileData__( f, &tmp, CPathString(zxName,zxNameLength), CPathString(tmp.fileType), fileSize, rFile, fatPath ))
 			return err;
 		// - finishing initialization of DirectoryEntry of successfully imported File
 		const PDirectoryEntry de=(PDirectoryEntry)rFile;

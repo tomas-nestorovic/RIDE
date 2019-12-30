@@ -200,35 +200,29 @@
 		return true; // FatPath (with or without error) successfully extracted from FAT
 	}
 
-	bool CMDOS2::GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
+	bool CMDOS2::GetFileNameOrExt(PCFile file,PPathString pOutName,PPathString pOutExt) const{
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
-		const PCDirectoryEntry de=(PCDirectoryEntry)file;
-		if (bufName)
-			if (de==ZX_DIR_ROOT)
-				::lstrcpy( bufName, _T("\\") );
-			else{
-				#ifdef UNICODE
-					::MultiByteToWideChar( CP_ACP, 0, de->name,MDOS2_FILE_NAME_LENGTH_MAX+1, buf,MDOS2_FILE_NAME_LENGTH_MAX+1 );
-					ASSERT(FALSE)
-				#else
-					::lstrcpynA( bufName, de->name, MDOS2_FILE_NAME_LENGTH_MAX+1 );
-				#endif
-			}
-		if (bufExt){
-			if (de!=ZX_DIR_ROOT)
-				*bufExt++=de->extension;
-			*bufExt='\0';
+		if (file==ZX_DIR_ROOT){
+			if (pOutName)
+				*pOutName='\\';
+			if (pOutExt)
+				*pOutExt=_T("");
+		}else{
+			const PCDirectoryEntry de=(PCDirectoryEntry)file;
+			if (pOutName)
+				*pOutName=CPathString( de->name, MDOS2_FILE_NAME_LENGTH_MAX ).TrimRight('\0'); // trimming trailing null-characters
+			if (pOutExt)
+				*pOutExt=de->extension;
 		}
 		return true; // name relevant
 	}
-	TStdWinError CMDOS2::ChangeFileNameAndExt(PFile file,LPCTSTR newName,LPCTSTR newExt,PFile &rRenamedFile){
+	TStdWinError CMDOS2::ChangeFileNameAndExt(PFile file,RCPathString newName,RCPathString newExt,PFile &rRenamedFile){
 		// tries to change given File's name and extension; returns Windows standard i/o error
-		ASSERT(newName!=nullptr && newExt!=nullptr);
 		// - can't change root Directory's name
 		if (file==ZX_DIR_ROOT)
 			return ERROR_DIRECTORY;
 		// - checking that the NewName+NewExt combination follows the "10.1" convention
-		if (::lstrlen(newName)>MDOS2_FILE_NAME_LENGTH_MAX || ::lstrlen(newExt)>1)
+		if (newName.GetLength()>MDOS2_FILE_NAME_LENGTH_MAX || newExt.GetLength()>1)
 			return ERROR_FILENAME_EXCED_RANGE;
 		// - making sure that a File with given NameAndExtension doesn't yet exist
 		if ( rRenamedFile=FindFileInCurrentDir(newName,newExt,file) )
@@ -240,7 +234,7 @@
 			ASSERT(FALSE)
 		#else
 			::memcpy(	::memset(de->name,0,MDOS2_FILE_NAME_LENGTH_MAX),
-						newName, ::lstrlen(newName)
+						newName, newName.GetLength()
 					);
 		#endif
 		MarkDirectorySectorAsDirty( rRenamedFile=file );
@@ -317,10 +311,11 @@
 		// imports specified File (physical or virtual) into the Image; returns Windows standard i/o error
 		// - parsing the NameAndExtension into a usable "10.1" form
 		LPCTSTR zxName,zxExt,zxInfo;
+		BYTE zxNameLength=MDOS2_FILE_NAME_LENGTH_MAX, zxExtLength=1;
 		TCHAR buf[MAX_PATH];
 		__parseFat32LongName__(	::lstrcpy(buf,nameAndExtension),
-								zxName, MDOS2_FILE_NAME_LENGTH_MAX,
-								zxExt, 1,
+								zxName, zxNameLength,
+								zxExt, zxExtLength,
 								zxInfo
 							);
 		// - initializing the description of File to import
@@ -358,9 +353,7 @@
 		}
 		// - importing to Image
 		CFatPath fatPath(this,fileSize);
-		const TCHAR uftExt[2]={ tmp.extension, '\0' };
-		const TStdWinError err=__importFileData__( f, &tmp, zxName, uftExt, fileSize, rFile, fatPath );
-		if (err!=ERROR_SUCCESS)
+		if (const TStdWinError err=__importFileData__( f, &tmp, CPathString(zxName,zxNameLength), tmp.extension, fileSize, rFile, fatPath ))
 			return err;
 		// - finishing initialization of DirectoryEntry of successfully imported File
 		const PDirectoryEntry de=(PDirectoryEntry)rFile;

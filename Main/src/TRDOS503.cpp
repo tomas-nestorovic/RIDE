@@ -207,37 +207,29 @@
 		return true;
 	}
 
-	bool CTRDOS503::GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const{
+	bool CTRDOS503::GetFileNameOrExt(PCFile file,PPathString pOutName,PPathString pOutExt) const{
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
-		const PCDirectoryEntry de=(PCDirectoryEntry)file;
-		if (bufName)
-			if (de==ZX_DIR_ROOT)
-				::lstrcpy( bufName, _T("\\") );
-			else{
-				#ifdef UNICODE
-					::MultiByteToWideChar( CP_ACP, 0, de->name,TRDOS503_FILE_NAME_LENGTH_MAX+1, tmp,TRDOS503_FILE_NAME_LENGTH_MAX+1 );
-					ASSERT(FALSE);
-				#else
-					::lstrcpyn( bufName, de->name, TRDOS503_FILE_NAME_LENGTH_MAX+1 );
-				#endif
-				for( PTCHAR p=bufName+TRDOS503_FILE_NAME_LENGTH_MAX; p--!=bufName; ) // trimming trailing spaces
-					if (*p==' ') *p='\0'; else break;
-			}
-		if (bufExt){
-			if (de!=ZX_DIR_ROOT)
-				*bufExt++=de->extension;
-			*bufExt='\0';
+		if (file==ZX_DIR_ROOT){
+			if (pOutName)
+				*pOutName='\\';
+			if (pOutExt)
+				*pOutExt=_T("");
+		}else{
+			const PCDirectoryEntry de=(PCDirectoryEntry)file;
+			if (pOutName)
+				( *pOutName=CPathString(de->name,TRDOS503_FILE_NAME_LENGTH_MAX) ).TrimRight(' '); // trimming trailing spaces
+			if (pOutExt)
+				*pOutExt=de->extension;
 		}
 		return true; // name relevant
 	}
-	TStdWinError CTRDOS503::ChangeFileNameAndExt(PFile file,LPCTSTR newName,LPCTSTR newExt,PFile &rRenamedFile){
+	TStdWinError CTRDOS503::ChangeFileNameAndExt(PFile file,RCPathString newName,RCPathString newExt,PFile &rRenamedFile){
 		// tries to change given File's name and extension; returns Windows standard i/o error
-		ASSERT(newName!=nullptr && newExt!=nullptr);
 		// - can't change root Directory's name
 		if (file==ZX_DIR_ROOT)
 			return ERROR_DIRECTORY;
 		// - checking that the NewName+NewExt combination follows the "8.1" convention
-		if (::lstrlen(newName)>TRDOS503_FILE_NAME_LENGTH_MAX || ::lstrlen(newExt)>1)
+		if (newName.GetLength()>TRDOS503_FILE_NAME_LENGTH_MAX || newExt.GetLength()>1)
 			return ERROR_FILENAME_EXCED_RANGE;
 		// - making sure that a File with given NameAndExtension doesn't yet exist
 		if ( rRenamedFile=FindFileInCurrentDir(newName,newExt,file) )
@@ -254,7 +246,7 @@
 			ASSERT(FALSE)
 		#else
 			::memcpy(	::memset(tmp.name,' ',TRDOS503_FILE_NAME_LENGTH_MAX),
-						newName, ::lstrlen(newName)
+						newName, newName.GetLength()
 					);
 		#endif
 		// - setting important information about the File
@@ -351,10 +343,11 @@
 		// imports specified File (physical or virtual) into the Image; returns Windows standard i/o error
 		// - parsing the NameAndExtension into a usable "8.1" form
 		LPCTSTR zxName,zxExt,zxInfo;
+		BYTE zxNameLength=TRDOS503_FILE_NAME_LENGTH_MAX, zxExtLength=1;
 		TCHAR buf[MAX_PATH];
 		__parseFat32LongName__(	::lstrcpy(buf,nameAndExtension),
-								zxName, TRDOS503_FILE_NAME_LENGTH_MAX,
-								zxExt, 1,
+								zxName, zxNameLength,
+								zxExt, zxExtLength,
 								zxInfo
 							);
 		// - getting import information
@@ -399,8 +392,7 @@
 			tmp.__markTemporary__(); // identification of a temporary Entry in Directory (see also DeleteFile)
 		// - importing to Image
 		CFatPath fatPath(this,fileSizeOnDisk);
-		err=__importFileData__( f, &tmp, zxName, uftExt, fileSize, rFile, fatPath );
-		if (err!=ERROR_SUCCESS)
+		if (err=__importFileData__( f, &tmp, CPathString(zxName,zxNameLength), uftExt, fileSize, rFile, fatPath ))
 			return err;
 		// - finishing initialization of DirectoryEntry of successfully imported File
 		const PDirectoryEntry de=(PDirectoryEntry)rFile;

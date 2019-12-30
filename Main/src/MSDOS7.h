@@ -165,7 +165,6 @@
 			#pragma pack(1)
 			struct TShortNameEntry sealed{
 				static bool __isCharacterValid__(char c);
-				//static PTCHAR __convertLongToShortTerm__(PTCHAR bufShort,BYTE bufShortChars,LPCTSTR bufLong);
 
 				char name[MSDOS7_FILE_NAME_LENGTH_MAX];
 				char extension[MSDOS7_FILE_EXT_LENGTH_MAX];
@@ -325,9 +324,6 @@
 		void __generateShortFileNameAndExt__(PDirectoryEntry de,LPCTSTR longName,LPCTSTR longExt) const;
 		bool __getLongFileNameAndExt__(PCDirectoryEntry de,PTCHAR bufName,PTCHAR bufExt) const;
 		TStdWinError __changeLongFileNameAndExt__(PDirectoryEntry de,LPCTSTR newName,LPCTSTR newExt,PDirectoryEntry &rRenamedFile) const;
-		TStdWinError __createSubdirectory__(LPCTSTR name,DWORD winAttr,PDirectoryEntry &rCreatedSubdir);
-		TStdWinError __switchToDirectory__(PDirectoryEntry directory);
-		TStdWinError __moveFileToCurrDir__(PDirectoryEntry de,LPCTSTR fileNameAndExt,PDirectoryEntry &rMovedFile);
 	public:
 		static const TProperties Properties;
 
@@ -342,8 +338,8 @@
 		DWORD GetFreeSpaceInBytes(TStdWinError &rError) const override;
 		TCylinder GetFirstCylinderWithEmptySector() const override;
 		// file system
-		bool GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const override;
-		TStdWinError ChangeFileNameAndExt(PFile file,LPCTSTR newName,LPCTSTR newExt,PFile &rRenamedFile) override;
+		bool GetFileNameOrExt(PCFile file,PPathString pOutName,PPathString pOutExt) const override;
+		TStdWinError ChangeFileNameAndExt(PFile file,RCPathString newName,RCPathString newExt,PFile &rRenamedFile) override;
 		DWORD GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData,TGetFileSizeOptions option) const override;
 		void GetFileTimeStamps(PCFile file,LPFILETIME pCreated,LPFILETIME pLastRead,LPFILETIME pLastWritten) const override;
 		void SetFileTimeStamps(PFile file,const FILETIME *pCreated,const FILETIME *pLastRead,const FILETIME *pLastWritten) override;
@@ -352,6 +348,9 @@
 		std::unique_ptr<TDirectoryTraversal> BeginDirectoryTraversal(PCFile directory) const override;
 		PTCHAR GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const override;
 		TStdWinError ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile) override;
+		TStdWinError CreateSubdirectory(RCPathString name,DWORD winAttr,PDirectoryEntry &rCreatedSubdir);
+		TStdWinError SwitchToDirectory(PDirectoryEntry directory);
+		TStdWinError MoveFileToCurrDir(PDirectoryEntry de,LPCTSTR exportFileNameAndExt,PFile &rMovedFile);
 		// other
 		TStdWinError CreateUserInterface(HWND hTdi) override;
 		TCmdResult ProcessCommand(WORD cmd) override;

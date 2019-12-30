@@ -189,16 +189,16 @@
 		const PGDOS gdos=(PGDOS)CDos::GetFocused();
 		// - validating File's new Name and Extension
 		TDirectoryEntry *const de=(PDirectoryEntry)file;
-		TCHAR bufOldName[GDOS_FILE_NAME_LENGTH_MAX+1];
-		de->__getNameAndExt__(bufOldName,nullptr);
-		const TCHAR bufNewExt[]={ newExt.charValue, '\0' };
+		CPathString oldName;
+		de->GetNameOrExt( &oldName, nullptr );
 		TDirectoryEntry tmp=*de; // backing-up the original DirectoryEntry
-		TStdWinError err=gdos->ChangeFileNameAndExt(file,bufOldName,bufNewExt,file);
-		if (err!=ERROR_SUCCESS){ // at least two Files with the same name
+		if (TStdWinError err=gdos->ChangeFileNameAndExt( file, oldName, CPathString(newExt.charValue), file )){
+			// at least two Files with the same name+ext combination
 			Utils::Information(FILE_MANAGER_ERROR_RENAMING,err);
 			return false;
 		// - adjusting the File content to reflect the new FileType
-		}else{ // the new name is unique
+		}else{
+			// the new name+ext combination is unique
 			// . getting information on File's original DataSize
 			BYTE oldOffset,newOffset;
 			const DWORD oldDataSize=tmp.__getDataSize__(&oldOffset), newDataSize=de->__getDataSize__(&newOffset);

@@ -28,23 +28,32 @@
 
 	PTCHAR CSpectrumBase::CSpectrumBaseFileManagerView::GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant,PTCHAR pOutBuffer) const{
 		// returns the Buffer populated with the export name and extension of the next File's copy in current Directory; returns Null if no further name and extension can be generated
+		// - if File Name+Ext combination is irrelevant (headerless Files), returning current export Name+Ext
+		CPathString fileName, fileExt;
+		if (!DOS->GetFileNameOrExt( file, &fileName, &fileExt )) // name irrelevant
+			return DOS->GetFileExportNameAndExt( file, shellCompliant, pOutBuffer );
+		// - generating a unique File Name+Ext
 		if (const auto pdt=DOS->BeginDirectoryTraversal()){
-			BYTE tmpDirEntry[4096]; // "big enough" to accommodate any ZX Spectrum DirectoryEntry
+			BYTE tmpDirEntry[2048]; // "big enough" to accommodate any ZX Spectrum DirectoryEntry
 			::memcpy( tmpDirEntry, file, pdt->entrySize );
 			for( BYTE copyNumber=1; copyNumber; copyNumber++ ){
 				// . composing the Name for the File copy
-				TCHAR bufNameCopy[MAX_PATH], bufExt[MAX_PATH];
-				if (!DOS->GetFileNameOrExt( file,bufNameCopy, bufExt )) // name irrelevant
-					return DOS->GetFileExportNameAndExt( &tmpDirEntry, shellCompliant, pOutBuffer );
 				TCHAR postfix[8];
 				const BYTE n=::wsprintf(postfix,_T("%c%d"),255,copyNumber); // 255 = token of the "COPY" keyword
-				if (::lstrlen(::lstrcat(bufNameCopy,postfix))>nameCharsMax)
-					::lstrcpy( &bufNameCopy[nameCharsMax-n], postfix ); // trimming to maximum number of characters
+				TCHAR bufCopyName[MAX_PATH];
+				::lstrcpy(	::lstrcpy(bufCopyName,fileName)  +  std::min<short>( fileName.GetLength(), nameCharsMax-n ), // trimming to maximum number of characters
+							postfix
+						);
 				// . attempting to rename the TemporaryDirectoryEntry
 				CDos::PFile fExisting;
-				if (DOS->ChangeFileNameAndExt( &tmpDirEntry, bufNameCopy, bufExt, fExisting )==ERROR_SUCCESS)
-					// generated a unique Name for the next File copy - returning the final export name and extension
-					return DOS->GetFileExportNameAndExt( &tmpDirEntry, shellCompliant, pOutBuffer );
+				switch (DOS->ChangeFileNameAndExt( &tmpDirEntry, bufCopyName, fileExt, fExisting )){
+					case ERROR_SUCCESS:
+						// generated a unique Name for the next File copy - returning the final export name and extension
+						return DOS->GetFileExportNameAndExt( &tmpDirEntry, shellCompliant, pOutBuffer );
+					case ERROR_CANNOT_MAKE:
+						// Directory full
+						return nullptr;
+				}
 			}
 		}
 		return nullptr; // the Name for the next File copy cannot be generated
@@ -118,18 +127,17 @@
 	bool WINAPI CSpectrumBase::CSpectrumBaseFileManagerView::CSingleCharExtensionEditor::__onChanged__(PVOID file,PropGrid::Enum::UValue newExt){
 		// changes the single-character Extension of given File
 		const PDos dos=CDos::GetFocused();
-		// - getting File's original Name and Extension
-		TCHAR bufOldName[MAX_PATH];
-		dos->GetFileNameOrExt(file,bufOldName,nullptr);
-		const TCHAR bufNewExt[]={ newExt.charValue, '\0' };
+		// - getting File's original Name
+		CPathString oldName;
+		dos->GetFileNameOrExt(file,&oldName,nullptr);
 		// - validating File's new Name and Extension
-		const TStdWinError err=dos->ChangeFileNameAndExt(file,bufOldName,bufNewExt,file);
-		if (err==ERROR_SUCCESS) // the OldName+NewExtension combination is unique
-			return true;
-		else{	// at least two Files with the same OldName+NewExtension combination exist
+		if (const TStdWinError err=dos->ChangeFileNameAndExt( file, oldName, newExt.charValue, file )){
+			// at least two Files with the same OldName+NewExtension combination exist
 			Utils::Information(FILE_MANAGER_ERROR_RENAMING,err);
 			return false;
-		}
+		}else
+			// the OldName+NewExtension combination is unique
+			return true;
 	}
 	static PropGrid::Enum::PCValueList WINAPI __createValues__(PVOID file,WORD &rnValues){
 		// creates and returns the list of File's possible Extensions
@@ -148,10 +156,10 @@
 	}
 	CFileManagerView::PEditorBase CSpectrumBase::CSpectrumBaseFileManagerView::CSingleCharExtensionEditor::Create(PFile file){
 		// creates and returns an Editor of File's single-character Extension
-		TCHAR bufExt[2];
-		pZxFileManager->DOS->GetFileNameOrExt(file,nullptr,bufExt);
+		CPathString ext;
+		pZxFileManager->DOS->GetFileNameOrExt(file,nullptr,&ext);
 		const PEditorBase result=pZxFileManager->__createStdEditor__(
-			file, &( data=*bufExt ),
+			file, &( data=*ext ),
 			PropGrid::Enum::DefineConstStringListEditorA( sizeof(data), __createValues__, __getDescription__, __freeValues__, __onChanged__ )
 		);
 		::SendMessage( result->hEditor, WM_SETFONT, (WPARAM)pZxFileManager->rFont.m_hObject, 0 );
@@ -206,14 +214,12 @@
 		// changes specified File's Name
 		const PDos dos=CDos::GetFocused();
 		const CSpectrumBaseFileManagerView *const pZxFileManager=(CSpectrumBaseFileManagerView *)dos->pFileManager;
-		// - getting File's original Name and Extension
-		TCHAR bufOldExt[MAX_PATH];
-		dos->GetFileNameOrExt(file,nullptr,bufOldExt);
-		TCHAR bufNewName[MAX_PATH];
+		// - getting File's original Extension
+		CPathString oldExt;
+		dos->GetFileNameOrExt(file,nullptr,&oldExt);
+		// - validating File's new Name+Extension combination
 		const TZxRom::CLineComposerPropGridEditor &rEditor=pZxFileManager->zxRom.lineComposerPropGridEditor;
-		::lstrcpyn( bufNewName, rEditor.GetCurrentZxText(), rEditor.GetCurrentZxTextLength()+1 );
-		// - validating File's new Name and Extension
-		if (const TStdWinError err=dos->ChangeFileNameAndExt(file,bufNewName,bufOldExt,file)){
+		if (const TStdWinError err=dos->ChangeFileNameAndExt( file, CPathString(rEditor.GetCurrentZxText(),rEditor.GetCurrentZxTextLength()), oldExt, file )){
 			// at least two Files with the same NewName+OldExtension combination exist
 			Utils::Information(FILE_MANAGER_ERROR_RENAMING,err);
 			return false;
@@ -225,12 +231,13 @@
 	CFileManagerView::PEditorBase CSpectrumBase::CSpectrumBaseFileManagerView::CVarLengthCommandLineEditor::CreateForFileName(PFile file,BYTE fileNameLengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged){
 		// creates and returns the Editor of File Name
 		ASSERT(fileNameLengthMax<sizeof(bufOldCmd)/sizeof(TCHAR));
-		pZxFileManager->DOS->GetFileNameOrExt( file, bufOldCmd, nullptr );
-		const int fileNameLength=::lstrlen(bufOldCmd);
+		CPathString oldName;
+		pZxFileManager->DOS->GetFileNameOrExt( file, &oldName, nullptr );
+		::memset( bufOldCmd, paddingChar, fileNameLengthMax );
 		#ifdef UNICODE
 			ASSERT(FALSE);
 		#else
-			::memset( bufOldCmd+fileNameLength, paddingChar, fileNameLengthMax-fileNameLength );
+			::memcpy( bufOldCmd, oldName, oldName.GetLength() );
 		#endif
 		return	pZxFileManager->__createStdEditor__(
 					file,

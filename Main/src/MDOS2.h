@@ -196,8 +196,8 @@
 		bool ModifyStdSectorStatus(RCPhysicalAddress chs,TSectorStatus status) override;
 		bool GetFileFatPath(PCFile file,CFatPath &rFatPath) const override;
 		// file system
-		bool GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const override;
-		TStdWinError ChangeFileNameAndExt(PFile file,LPCTSTR newName,LPCTSTR newExt,PFile &rRenamedFile) override;
+		bool GetFileNameOrExt(PCFile file,PPathString pOutName,PPathString pOutExt) const override;
+		TStdWinError ChangeFileNameAndExt(PFile file,RCPathString newName,RCPathString newExt,PFile &rRenamedFile) override;
 		DWORD GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData,TGetFileSizeOptions option) const override;
 		TStdWinError DeleteFile(PFile file) override;
 		std::unique_ptr<TDirectoryTraversal> BeginDirectoryTraversal(PCFile directory) const override;

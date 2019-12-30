@@ -80,7 +80,7 @@ namespace Debug{
 
 	#define LOG_FILE_ACTION(dos,file,name)\
 		TCHAR __fileActionName[MAX_PATH+200];\
-		::wsprintf(__fileActionName,_T("File \"%s\" %s"),dos->GetFileNameWithAppendedExt(file,__fileActionName+199),name);\
+		::wsprintf(__fileActionName,_T("File \"%s\" %s"),dos->GetFileShellCompliantExportNameAndExt(file,__fileActionName+199),name);\
 		LOG_ACTION(__fileActionName)
 
 #else

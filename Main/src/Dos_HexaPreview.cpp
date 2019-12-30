@@ -46,7 +46,7 @@
 			hexaEditor.Reset( pFileRW.get(), size, size );
 			// . updating the window caption
 			TCHAR bufCaption[20+MAX_PATH];
-			::wsprintf( bufCaption, LABEL _T(" (%s)"), DOS->GetFileNameWithAppendedExt(file,bufCaption+20) );
+			::wsprintf( bufCaption, LABEL _T(" (%s)"), DOS->GetFileShellCompliantExportNameAndExt(file,bufCaption+20) );
 			SetWindowText(bufCaption);
 		}else
 			SetWindowText(LABEL);

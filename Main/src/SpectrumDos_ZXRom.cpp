@@ -108,29 +108,13 @@
 	PTCHAR CSpectrumDos::TZxRom::AsciiToZx(LPCTSTR pc,PCHAR zx,PBYTE pOutZxLength){
 		// converts text from PC's current character set to Spectrum character set and returns the result in Buffer
 		PCHAR buf=zx;
-		for( bool prevCharIsSpace=true; const TCHAR c=*pc; pc++ )
+		for( ; const TCHAR c=*pc; pc++ )
 			if (c==-93) // Pound sign, £
-				*buf++=96, prevCharIsSpace=false;
+				*buf++=96;
 			else if (c==-87) // copyright sign, ©
-				*buf++=127, prevCharIsSpace=false;
-			else{
-				BYTE token=KEYWORD_TOKEN_FIRST;
-				do{
-					LPCSTR K=Keywords[token-KEYWORD_TOKEN_FIRST];
-					K += *K==' '&&prevCharIsSpace; // skipping Keyword's initial space if the PreviousCharacter was a space
-					BYTE N=::lstrlenA(K);
-					N -= K[N-1]==' '&&pc[N-1]=='\0'; // skipping Keyword's trailing space should the match be found at the end of the PC text
-					if (!::strncmp(pc,K,N)){
-						pc+=N-1; // "-1" = see "pc++" in the For cycle
-						prevCharIsSpace=K[N-1]==' ';
-						break;
-					}
-				}while (++token);
-				if (token) // a Keyword with given Token found in the input PC text
-					*buf++=token;
-				else // no Keyword match found in the input PC text
-					*buf++=c, prevCharIsSpace=false;
-			}
+				*buf++=127;
+			else
+				*buf++=c;
 		*buf='\0';
 		if (pOutZxLength)
 			*pOutZxLength=buf-zx;

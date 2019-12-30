@@ -55,12 +55,6 @@
 
 
 
-	bool CDos::__isValidCharInFat32LongName__(WCHAR c){
-		// True <=> specified Character is valid for a FAT32 long file name, otherwise False
-		static const WCHAR ForbiddenChars[]=L"%#&<>|/";
-		return (WORD)c>=32 && !::wcschr(ForbiddenChars,c);
-	}
-
 	static void __warnOnChangingCriticaSetting__(LPCTSTR lastSettingOperation){
 		// warns that operation has been successfully performed on last setting but that the setting is critical for correct operation of the DOS
 		#ifndef _DEBUG
@@ -647,22 +641,16 @@ reportError:Utils::Information(buf);
 		return 0; // caller should start looking for Empty Sectors from the beginning of disk
 	}
 
-	PTCHAR CDos::GetFileNameWithAppendedExt(PCFile file,PTCHAR bufNameExt) const{
+	PTCHAR CDos::GetFileShellCompliantExportNameAndExt(PCFile file,PTCHAR bufNameExt) const{
 		// returns the Buffer populated with File name concatenated with File extension
-		TCHAR bufExt[MAX_PATH];
-		GetFileNameOrExt(file,bufNameExt,bufExt);
-		if (*bufExt)
-			return ::lstrcat( ::lstrcat(bufNameExt,_T(".")), bufExt );
-		else
-			return bufNameExt;
+		return GetFileExportNameAndExt( file, true, bufNameExt );
 	}
 
-	bool CDos::HasFileNameAndExt(PCFile file,LPCTSTR fileName,LPCTSTR fileExt) const{
+	bool CDos::HasFileNameAndExt(PCFile file,RCPathString fileName,RCPathString fileExt) const{
 		// True <=> given File has the name and extension as specified, otherwise False
-		ASSERT(fileName!=nullptr && fileExt!=nullptr);
-		TCHAR bufName[MAX_PATH],bufExt[MAX_PATH];
-		return	GetFileNameOrExt( file, bufName, bufExt )
-				? !fnCompareNames(fileName,bufName) && !fnCompareNames(fileExt,bufExt) // name relevant
+		CPathString name,ext;
+		return	GetFileNameOrExt( file, &name, &ext )
+				? fileName.Equals(name,fnCompareNames) && fileExt.Equals(ext,fnCompareNames) // name relevant
 				: false; // name irrelevant
 	}
 
@@ -771,38 +759,27 @@ reportError:Utils::Information(buf);
 
 	PTCHAR CDos::GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const{
 		// populates Buffer with specified File's export name and extension and returns the Buffer; returns Null if File cannot be exported (e.g. a "dotdot" entry in MS-DOS); caller guarantees that the Buffer is at least MAX_PATH characters big
+		CPathString fileName,fileExt;
+		GetFileNameOrExt( file, &fileName, &fileExt );
 		if (shellCompliant){
 			// exporting to non-RIDE target (e.g. to the Explorer); excluding from the Buffer characters that are forbidden in FAT32 long file names
-			TCHAR nameAndExt[MAX_PATH];
-			for( PTCHAR p=GetFileNameWithAppendedExt(file,nameAndExt); const TCHAR c=*p; )
-				if (__isValidCharInFat32LongName__(c))
-					p++; // keeping valid Character
-				else
-					::lstrcpy(p,1+p); // skipping invalid Character
-			if (*nameAndExt=='.' || *nameAndExt=='\0'){
+			fileExt.ExcludeFat32LongNameInvalidChars();
+			if (fileName.ExcludeFat32LongNameInvalidChars().GetLength()){
+				// valid export name - taking it as the result
+				if (fileExt.GetLength())
+					fileName+='.';
+				( fileName+=fileExt ).CopyNullTerminatedTo( buf, MAX_PATH );
+			}else{
 				// invalid export name - generating an artifical one
 				static WORD fileId;
-				::wsprintf( buf, _T("File%04d%s"), ++fileId, nameAndExt );
-			}else
-				// valid export name - taking it as the result
-				::lstrcpy(buf,nameAndExt);
+				::wsprintf( buf, _T("File%05d.%s"), ++fileId, fileExt );
+			}
 		}else{
 			// exporting to another RIDE instance; substituting non-alphanumeric characters with "URL-like" escape sequences
-			TCHAR tmp[MAX_PATH],*pOutChar=buf;
-			GetFileNameOrExt(file,tmp,nullptr);
-			for( LPCTSTR pInChar=tmp; const TCHAR c=*pInChar++; )
-				if (::isalpha((unsigned char)c))
-					*pOutChar++=c;
-				else
-					pOutChar+=::wsprintf( pOutChar, _T("%%%02x"), (unsigned char)c );
-			*pOutChar++='.';
-			GetFileNameOrExt(file,nullptr,tmp);
-			for( LPCTSTR pInChar=tmp; const TCHAR c=*pInChar++; )
-				if (::isalpha((unsigned char)c))
-					*pOutChar++=c;
-				else
-					pOutChar+=::wsprintf( pOutChar, _T("%%%02x"), (unsigned char)c );
-			*pOutChar='\0';		
+			short exportNameLength=fileName.EscapeNullTerminatedTo( buf, MAX_PATH );
+			if (MAX_PATH-++exportNameLength>0)
+				::lstrcat( buf, _T(".") );
+			fileExt.EscapeNullTerminatedTo( buf+exportNameLength, MAX_PATH-exportNameLength );
 		}
 		return buf;
 	}
@@ -817,9 +794,8 @@ reportError:Utils::Information(buf);
 		return std::min<>( GetFileSize(file), nBytesToExportMax );
 	}
 
-	TStdWinError CDos::__importFileData__(CFile *f,PFile fDesc,LPCTSTR fileName,LPCTSTR fileExt,DWORD fileSize,PFile &rFile,CFatPath &rFatPath){
+	TStdWinError CDos::__importFileData__(CFile *f,PFile fDesc,RCPathString fileName,RCPathString fileExt,DWORD fileSize,PFile &rFile,CFatPath &rFatPath){
 		// imports given File into the disk; returns Windows standard i/o error
-		ASSERT(fileName!=nullptr && fileExt!=nullptr);
 		// - making sure that the File with given NameAndExtension doesn't exist in current Directory
 		LOG_FILE_ACTION(this,fDesc,_T("import"));
 		rFile=nullptr; // assumption (cannot import the File)
@@ -843,11 +819,9 @@ reportError:Utils::Information(buf);
 							return LOG_ERROR(ERROR_FILE_EXISTS);
 						}else
 							break;
-					case TDirectoryTraversal::WARNING:{
+					case TDirectoryTraversal::WARNING:
 						// any Warning becomes a real error!
-						const TStdWinError err=pdt->warning;
-						return LOG_ERROR(err);
-					}
+						return LOG_ERROR(pdt->warning);
 					#ifdef _DEBUG
 					default:
 						Utils::Information(_T("CDos::__importFile__ - unknown pdt->entryType"));
@@ -959,19 +933,18 @@ finished:
 	void CDos::ShowFileProcessingError(PCFile file,LPCTSTR cause) const{
 		// shows general error message on File being not processable due to occured Cause
 		TCHAR buf[MAX_PATH+50];
-		::wsprintf( buf, ERROR_MSG_CANNOT_PROCESS, GetFileNameWithAppendedExt(file,buf+50) );
+		::wsprintf( buf, ERROR_MSG_CANNOT_PROCESS, GetFileShellCompliantExportNameAndExt(file,buf+50) );
 		Utils::FatalError(buf,cause);
 	}
 	void CDos::ShowFileProcessingError(PCFile file,TStdWinError cause) const{
 		// shows general error message on File being not processable due to occured Cause
 		TCHAR buf[MAX_PATH+50];
-		::wsprintf( buf, ERROR_MSG_CANNOT_PROCESS, GetFileNameWithAppendedExt(file,buf+50) );
+		::wsprintf( buf, ERROR_MSG_CANNOT_PROCESS, GetFileShellCompliantExportNameAndExt(file,buf+50) );
 		Utils::FatalError(buf,cause);
 	}
 
-	CDos::PFile CDos::__findFile__(PCFile directory,LPCTSTR fileName,LPCTSTR fileExt,PCFile ignoreThisFile) const{
+	CDos::PFile CDos::__findFile__(PCFile directory,RCPathString fileName,RCPathString fileExt,PCFile ignoreThisFile) const{
 		// finds and returns a File with given NameAndExtension; returns Null if such File doesn't exist
-		ASSERT(fileName!=nullptr && fileExt!=nullptr);
 		PFile result=nullptr; // assumption (File with given NameAndExtension not found)
 		if (const auto pdt=BeginDirectoryTraversal(directory))
 			while (pdt->AdvanceToNextEntry())
@@ -984,7 +957,7 @@ finished:
 		return result;
 	}
 
-	CDos::PFile CDos::FindFileInCurrentDir(LPCTSTR fileName,LPCTSTR fileExt,PCFile ignoreThisFile) const{
+	CDos::PFile CDos::FindFileInCurrentDir(RCPathString fileName,RCPathString fileExt,PCFile ignoreThisFile) const{
 		// finds and returns a File with given NameAndExtension; returns Null if such File doesn't exist
 		return __findFile__( currentDir, fileName, fileExt, ignoreThisFile );
 	}

@@ -492,7 +492,7 @@
 		TCHAR bufName[MAX_PATH];
 		LVITEM lvi={ LVIF_TEXT|LVIF_PARAM, nativelyLastFile++ };
 			nativeOrderOfFiles[(PVOID)file]=lvi.iItem;
-			lvi.pszText=DOS->GetFileNameWithAppendedExt( (CDos::PCFile)( lvi.lParam=(LPARAM)file ), bufName );
+			lvi.pszText=DOS->GetFileShellCompliantExportNameAndExt( (CDos::PCFile)( lvi.lParam=(LPARAM)file ), bufName );
 		GetListCtrl().InsertItem(&lvi);
 	}
 
@@ -662,7 +662,7 @@
 		// opens a new Tab with DirectoryEntries listed in an HexaEditor instance
 		CDirEntriesView *const deView=new CDirEntriesView( DOS, DOS->currentDir );
 		TCHAR label[80+MAX_PATH];
-		::wsprintf( label, _T("Dir \"%s\""), DOS->GetFileNameWithAppendedExt(DOS->currentDir,label+80) );
+		::wsprintf( label, _T("Dir \"%s\""), DOS->GetFileShellCompliantExportNameAndExt(DOS->currentDir,label+80) );
 		CTdiCtrl::AddTabLast( TDI_HWND, label, &deView->tab, true, TDI_TAB_CANCLOSE_ALWAYS, __onDirEntriesViewClosing__ );
 		ownedDirEntryViews.AddTail(deView);
 	}

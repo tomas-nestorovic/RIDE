@@ -27,15 +27,46 @@
 		friend class CTrackMapView;
 		friend class CFileManagerView;
 	public:
+		typedef int (WINAPI *TFnCompareNames)(LPCTSTR name1,LPCTSTR name2);
 		typedef DWORD TId;
 		typedef PVOID PFile;
 		typedef LPCVOID PCFile;
 
+		typedef class CPathString sealed{
+			short nCharsInBuf;
+			TCHAR buf[MAX_PATH];
+		public:
+			static bool IsValidFat32LongNameChar(WCHAR c);
+			static CPathString Unescape(LPCTSTR term);
+			static short Unescape(PTCHAR buf,LPCTSTR term);
+
+			CPathString();
+			CPathString(TCHAR c,short nRepeats=1);
+			CPathString(LPCSTR str);
+			CPathString(LPCSTR str,short strLength);
+
+			operator LPCTSTR() const;
+			TCHAR operator[](int i) const;
+			//TCHAR &operator[](int i);
+			//bool operator==(const CPathString &r) const;
+			CPathString &operator+=(TCHAR c);
+			CPathString &operator+=(const CPathString &r);
+
+			short GetLength() const;
+			bool Equals(const CPathString &r,TFnCompareNames comparer) const;
+			short EscapeNullTerminatedTo(PTCHAR buffer,short bufferCharCapacity) const;
+			PTCHAR CopyNullTerminatedTo(PTCHAR buffer,short bufferCharCapacity) const;
+			CPathString &LowerCase();
+			CPathString &TrimRight(TCHAR c);
+			CPathString &ExcludeFat32LongNameInvalidChars();
+		} *PPathString,&RPathString;
+		typedef const CPathString *PCPathString,&RCPathString;
+
 		typedef TStdWinError (*TFnRecognize)(PImage image,PFormat pFormatBoot);
 		typedef PDos (*TFnInstantiate)(PImage image,PCFormat pFormatBoot);
-		typedef TStdWinError (CDos::*TFnCreateSubdirectory)(LPCTSTR name,DWORD winAttr,PFile &rCreatedSubdir);
+		typedef TStdWinError (CDos::*TFnCreateSubdirectory)(RCPathString name,DWORD winAttr,PFile &rCreatedSubdir);
 		typedef TStdWinError (CDos::*TFnChangeCurrentDirectory)(PFile directory);
-		typedef TStdWinError (CDos::*TFnMoveFileToCurrDir)(PFile file,LPCTSTR fileNameAndExt,PFile &rMovedFile);
+		typedef TStdWinError (CDos::*TFnMoveFileToCurrDir)(PFile file,LPCTSTR exportFileNameAndExt,PFile &rMovedFile);
 
 		#pragma pack(1)
 		typedef const struct TProperties sealed{
@@ -243,11 +274,8 @@
 			const CFileManagerView &rFileManager;
 		};
 
-		typedef int (WINAPI *TFnCompareNames)(LPCTSTR name1,LPCTSTR name2);
-
 		static const TSide StdSidesMap[];
 
-		static bool __isValidCharInFat32LongName__(WCHAR c);
 		static void __warnOnEnteringCriticalConfiguration__(bool b);
 		static BYTE __xorChecksum__(PCBYTE buffer,WORD nBytes);
 		static BYTE __xorChecksum__(LPCSTR buffer,WORD nChars);
@@ -276,8 +304,8 @@
 		bool __removeStdTracksFromFat__(TTrack nTracks,PCCylinder cylinders,PCHead heads);
 		bool __fillEmptySpace__(CFillEmptySpaceDialog &rd);
 		LPCTSTR __exportFileData__(PCFile file,CFile *fOut,DWORD nMaxDataBytesToExport) const;
-		TStdWinError __importFileData__(CFile *fIn,PFile fDesc,LPCTSTR fileName,LPCTSTR fileExt,DWORD fileSize,PFile &rFile,CFatPath &rFatPath);
-		PFile __findFile__(PCFile directory,LPCTSTR fileName,LPCTSTR fileExt,PCFile ignoreThisFile) const;
+		TStdWinError __importFileData__(CFile *fIn,PFile fDesc,RCPathString fileName,RCPathString fileExt,DWORD fileSize,PFile &rFile,CFatPath &rFatPath);
+		PFile __findFile__(PCFile directory,RCPathString fileName,RCPathString fileExt,PCFile ignoreThisFile) const;
 		TStdWinError __shiftFileContent__(const CFatPath &rFatPath,char nBytesShift) const;
 	public:
 		typedef enum TSectorStatus:COLORREF{ // each value must be bigger than the biggest possible Sector length (typically 16384)
@@ -345,10 +373,10 @@
 		virtual DWORD GetFreeSpaceInBytes(TStdWinError &rError) const;
 		virtual TCylinder GetFirstCylinderWithEmptySector() const;
 		// file system
-		virtual bool GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const=0;
-		PTCHAR GetFileNameWithAppendedExt(PCFile file,PTCHAR bufNameExt) const;
-		bool HasFileNameAndExt(PCFile file,LPCTSTR fileName,LPCTSTR fileExt) const;
-		virtual TStdWinError ChangeFileNameAndExt(PFile file,LPCTSTR newName,LPCTSTR newExt,PFile &rRenamedFile)=0;
+		virtual bool GetFileNameOrExt(PCFile file,PPathString pOutName,PPathString pOutExt) const=0;
+		PTCHAR GetFileShellCompliantExportNameAndExt(PCFile file,PTCHAR bufNameExt) const;
+		bool HasFileNameAndExt(PCFile file,RCPathString fileName,RCPathString fileExt) const;
+		virtual TStdWinError ChangeFileNameAndExt(PFile file,RCPathString newName,RCPathString newExt,PFile &rRenamedFile)=0;
 		virtual DWORD GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData,TGetFileSizeOptions option) const=0;
 		DWORD GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData) const;
 		DWORD GetFileSize(PCFile file) const;
@@ -370,7 +398,7 @@
 		virtual PTCHAR GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const;
 		virtual DWORD ExportFile(PCFile file,CFile *fOut,DWORD nBytesToExportMax,LPCTSTR *pOutError) const;
 		virtual TStdWinError ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile)=0;
-		PFile FindFileInCurrentDir(LPCTSTR fileName,LPCTSTR fileExt,PCFile ignoreThisFile) const;
+		PFile FindFileInCurrentDir(RCPathString fileName,RCPathString fileExt,PCFile ignoreThisFile) const;
 		// other
 		virtual TStdWinError CreateUserInterface(HWND hTdi);
 		virtual enum TCmdResult:BYTE{

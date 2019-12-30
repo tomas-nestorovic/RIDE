@@ -202,7 +202,7 @@
 		TCHAR bufZx[MAX_PATH], bufCaption[20+MAX_PATH];
 		::wsprintf(	bufCaption,
 					LABEL " (%s)",
-					TZxRom::ZxToAscii( DOS->GetFileNameWithAppendedExt(file,bufZx),-1, bufCaption+20 )
+					TZxRom::ZxToAscii( DOS->GetFileShellCompliantExportNameAndExt(file,bufZx),-1, bufCaption+20 )
 				);
 		SetWindowText(bufCaption);
 	}

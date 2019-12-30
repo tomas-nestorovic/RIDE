@@ -213,8 +213,8 @@
 		bool ModifyStdSectorStatus(RCPhysicalAddress chs,TSectorStatus status) override;
 		bool GetFileFatPath(PCFile file,CFatPath &rFatPath) const override;
 		// file system
-		bool GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const override;
-		TStdWinError ChangeFileNameAndExt(PFile file,LPCTSTR newName,LPCTSTR newExt,PFile &rRenamedFile) override;
+		bool GetFileNameOrExt(PCFile file,PPathString pOutName,PPathString pOutExt) const override;
+		TStdWinError ChangeFileNameAndExt(PFile file,RCPathString newName,RCPathString newExt,PFile &rRenamedFile) override;
 		DWORD GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData,TGetFileSizeOptions option) const override;
 		void GetFileTimeStamps(PCFile file,LPFILETIME pCreated,LPFILETIME pLastRead,LPFILETIME pLastWritten) const override;
 		void SetFileTimeStamps(PFile file,const FILETIME *pCreated,const FILETIME *pLastRead,const FILETIME *pLastWritten) override;
@@ -223,9 +223,9 @@
 		std::unique_ptr<TDirectoryTraversal> BeginDirectoryTraversal(PCFile directory) const override;
 		PTCHAR GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const override;
 		TStdWinError ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile) override;
-		TStdWinError CreateSubdirectory(LPCTSTR name,DWORD winAttr,PFile &rCreatedSubdir);
+		TStdWinError CreateSubdirectory(RCPathString name,DWORD winAttr,PFile &rCreatedSubdir);
 		TStdWinError SwitchToDirectory(PFile slot);
-		TStdWinError MoveFileToCurrentDir(PFile file,LPCTSTR fileNameAndExt,PFile &rMovedFile);
+		TStdWinError MoveFileToCurrentDir(PFile file,LPCTSTR exportFileNameAndExt,PFile &rMovedFile);
 		// other
 		TStdWinError CreateUserInterface(HWND hTdi) override;
 		TCmdResult ProcessCommand(WORD cmd) override;

@@ -216,7 +216,7 @@
 		static const RGBQUAD Colors[16];
 		static DWORD idHeaderless;
 
-		static void __parseFat32LongName__(PTCHAR buf,LPCTSTR &rOutName,BYTE nameLengthMax,LPCTSTR &rOutExt,BYTE extLengthMax,LPCTSTR &rOutZxInfo);
+		static void __parseFat32LongName__(PTCHAR buf,LPCTSTR &rOutName,BYTE &rInOutNameLength,LPCTSTR &rOutExt,BYTE &rInOutExtLength,LPCTSTR &rOutZxInfo);
 		static int __exportFileInformation__(PTCHAR buf,TUniFileType uniFileType);
 		static int __exportFileInformation__(PTCHAR buf,TUniFileType uniFileType,TStdParameters params,DWORD fileLength);
 		static int __exportFileInformation__(PTCHAR buf,TUniFileType uniFileType,TStdParameters params,DWORD fileLength,BYTE dataFlag);
@@ -251,8 +251,8 @@
 				WORD length;
 				TStdParameters params;
 
-				void GetNameOrExt(PTCHAR bufName,PTCHAR bufExt) const;
-				TStdWinError SetNameAndExt(LPCTSTR newName,LPCTSTR newExt);
+				void GetNameOrExt(PPathString pOutName,PPathString pOutExt) const;
+				TStdWinError SetName(RCPathString newName);
 				TUniFileType GetUniFileType() const;
 				bool SetFileType(TUniFileType uts);
 			} *PHeader;
@@ -331,8 +331,8 @@
 			bool GetFileFatPath(PCFile file,CFatPath &rFatPath) const override;
 			DWORD GetFreeSpaceInBytes(TStdWinError &rError) const override;
 			// file system
-			bool GetFileNameOrExt(PCFile file,PTCHAR bufName,PTCHAR bufExt) const override;
-			TStdWinError ChangeFileNameAndExt(PFile file,LPCTSTR newName,LPCTSTR newExt,PFile &rRenamedFile) override;
+			bool GetFileNameOrExt(PCFile file,PPathString pOutName,PPathString pOutExt) const override;
+			TStdWinError ChangeFileNameAndExt(PFile file,RCPathString newName,RCPathString newExt,PFile &rRenamedFile) override;
 			DWORD GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData,TGetFileSizeOptions option) const override;
 			DWORD GetAttributes(PCFile file) const override;
 			TStdWinError DeleteFile(PFile file) override;

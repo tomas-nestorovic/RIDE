@@ -46,7 +46,7 @@
 		Utils::InformationWithCheckableShowNoMore( text, INI_SPECTRUM, messageId );
 	}
 
-	void CSpectrumBase::__parseFat32LongName__(PTCHAR buf,LPCTSTR &rOutName,BYTE nameLengthMax,LPCTSTR &rOutExt,BYTE extLengthMax,LPCTSTR &rOutZxInfo){
+	void CSpectrumBase::__parseFat32LongName__(PTCHAR buf,LPCTSTR &rOutName,BYTE &rInOutNameLength,LPCTSTR &rOutExt,BYTE &rInOutExtLength,LPCTSTR &rOutZxInfo){
 		// parses input FAT long name into three components: ZX Name (of LengthMax chars at most), single-char ZX Extension, and ZX Information
 		// - finding ZX import information
 		rOutZxInfo=nullptr; // assumption (no ZX import information found)
@@ -55,33 +55,28 @@
 				*pSpace++='\0'; // terminating the File's Name+Extension
 				rOutZxInfo=pSpace;
 			}
-		// - parsing the input string
-		rOutName=buf; // Name always starts at the beginning of Buffer
-		PTCHAR pExt=_tcsrchr(buf,'.');
-		if (pExt) // Extension specified (Dot found)
+		// - finding, unescaping, and trimming the Extension
+		rOutName=buf; // Name (processed later) always starts at the beginning of Buffer
+		if (PTCHAR pExt=_tcsrchr(buf,'.')){
+			// Extension specified (Dot found)
 			*pExt++='\0', rOutExt=pExt;
-		else // Extension not specified (Dot not found)
-			rOutExt=_T("");
+			rInOutExtLength=std::min<int>(	rInOutExtLength,
+											CPathString::Unescape( // unescaping the Extension
+												pExt, // in-place (unescaped string is never longer than escaped one)
+												TZxRom::AsciiToZx(pExt,pExt,nullptr) // converting in place to ZX charset
+											)
+										);
+			pExt[rInOutExtLength]='\0';
+		}else // Extension not specified (Dot not found)
+			rOutExt=_T(""), rInOutExtLength=0;
 		// - unescaping and trimming the Name
-		DWORD dw=nameLengthMax;
-		::UrlUnescape(	TZxRom::AsciiToZx(buf,buf,nullptr), // converting in place to ZX charset
-						nullptr, &dw,
-						URL_UNESCAPE_INPLACE // unescaping in place
-					);
-		for( PTCHAR a=buf,b=a; *a=*b++; a+=*a!='\x1' ); // eliminating 0x01 characters that interrupt ZX keywords (see CSpectrumDos::GetFileExportNameAndExt)
-		if (::lstrlen(buf)>nameLengthMax) // Name potentially too long, trimming it
-			buf[nameLengthMax]='\0';
-		// - unescaping and trimming the Extension
-		if (pExt){
-			dw=extLengthMax;
-			::UrlUnescape(	TZxRom::AsciiToZx(pExt,pExt,nullptr), // converting in place to ZX charset
-							nullptr, &dw,
-							URL_UNESCAPE_INPLACE // unescaping in place
-						);
-			for( PTCHAR a=pExt,b=a; *a=*b++; a+=*a!='\x1' ); // eliminating 0x01 characters that interrupt ZX keywords (see CSpectrumDos::GetFileExportNameAndExt)
-			if (::lstrlen(pExt)>extLengthMax)
-				pExt[extLengthMax]='\0';
-		}
+		rInOutNameLength=std::min<int>(	rInOutNameLength,
+										CPathString::Unescape( // unescaping the Name
+											buf, // in-place (unescaped string is never longer than escaped one)
+											TZxRom::AsciiToZx(buf,buf,nullptr) // converting in place to ZX charset
+										)
+									);
+		buf[rInOutNameLength]='\0';
 	}
 
 	#define INFO_UNI	_T(" ZX%c")
@@ -174,45 +169,24 @@
 		// populates Buffer with specified File's export name and extension and returns the Buffer; returns Null if File cannot be exported (e.g. a "dotdot" entry in MS-DOS); caller guarantees that the Buffer is at least MAX_PATH characters big
 		if (shellCompliant){
 			// exporting to non-RIDE target (e.g. to the Explorer); excluding from the Buffer characters that are forbidden in FAT32 long file names
-			TCHAR zxNameAndExt[MAX_PATH],pcNameAndExt[MAX_PATH];
-			for( PTCHAR p=::lstrcpy(pcNameAndExt,TZxRom::ZxToAscii(GetFileNameWithAppendedExt(file,zxNameAndExt),-1,pcNameAndExt)); const TCHAR c=*p; ) // "lstrcpy" = making sure that the string starts at the beginning of the buffer
-				if (__isValidCharInFat32LongName__(c))
-					p++; // keeping valid Character
-				else
-					::lstrcpy(p,1+p); // skipping invalid Character
-			if (*pcNameAndExt=='.' || *pcNameAndExt=='\0'){
-				// invalid export name - generating an artifical one
-				static WORD fileId;
-				::wsprintf( buf, _T("File%04d%s"), ++fileId, pcNameAndExt );
-			}else
+			CPathString fileName,fileExt;
+			GetFileNameOrExt( file, &fileName, &fileExt );
+			const PTCHAR pZxName=TZxRom::ZxToAscii( fileName, fileName.ExcludeFat32LongNameInvalidChars().GetLength(), buf );
+			if (short n=::lstrlen(pZxName)){
 				// valid export name - taking it as the result
-				::lstrcpy(buf,pcNameAndExt);
-			return buf;
-		}else{
+				if (const short fileExtLength=fileExt.ExcludeFat32LongNameInvalidChars().GetLength()){
+					pZxName[n++]='.';
+					::lstrcpy(	pZxName+n,
+								TZxRom::ZxToAscii( fileExt, fileExtLength, pZxName+n )
+							);
+				}
+				return ::lstrcpy( buf, pZxName ); // for the export name+ext to start at the beginning of the Buffer
+			}else
+				// invalid export name - generating an artifical one
+				return __super::GetFileExportNameAndExt(file,shellCompliant,buf);
+		}else
 			// exporting to another RIDE instance; substituting non-alphanumeric characters with "URL-like" escape sequences
-			// . URL-escaping the File name and extension, e.g. "PICTURE01.B" -> "PICTURE%48x%49x.B"
-			__super::GetFileExportNameAndExt(file,shellCompliant,buf);
-			// . checking that the File name is importable back in the same form, e.g. "PICTURE.B" is not exported as [PI][CTURE.B] where "PI" is a Spectrum keyword
-			TCHAR currNameAndExt[MAX_PATH];
-			GetFileNameWithAppendedExt(file,currNameAndExt);
-			for( TCHAR tmp[MAX_PATH],*p=buf; *p; p++ )
-				if (*p!='%'){ // not an escape sequence "%NN"
-					LPCTSTR name,ext,zxInfo;
-					__parseFat32LongName__( ::lstrcpyn(tmp,buf,p-buf+2), name,-1, ext,-1, zxInfo ); // "+2" = "+1" for including current char "*p" and another "+1" for terminating null char
-					if (*ext!='\0')
-						::lstrcat( ::lstrcat(tmp,_T(".")), ext );
-					if (::strncmp( tmp, currNameAndExt, ::lstrlen(tmp) )){
-						// the exported name cannot be imported back in the same form - interrupting the sequence of characters to prevent from keywords being recognized (e.g. "PI" in "PICTURE")
-						#define ZX_KEYWORD_INTERRUPTION_CHAR	_T("%01")
-						::memcpy( p + sizeof(ZX_KEYWORD_INTERRUPTION_CHAR)/sizeof(TCHAR)-1, p, (::lstrlen(p)+1)*sizeof(TCHAR) );
-						::memcpy( p, ZX_KEYWORD_INTERRUPTION_CHAR, sizeof(ZX_KEYWORD_INTERRUPTION_CHAR)-sizeof(TCHAR) );
-						p+=sizeof(ZX_KEYWORD_INTERRUPTION_CHAR)/sizeof(TCHAR)-1;
-					}
-				}else // an escape sequence "%NN" (e.g. "%20" for a space char) - skipping it
-					p+=2;
-			// . returning a File name and extension that are well importable back
-			return buf;
-		}
+			return __super::GetFileExportNameAndExt(file,shellCompliant,buf);
 	}
 
 	DWORD CSpectrumBase::GetAttributes(PCFile file) const{
