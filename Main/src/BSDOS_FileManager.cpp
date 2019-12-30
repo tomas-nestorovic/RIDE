@@ -317,6 +317,10 @@
 					return	de->fileHasStdHeader
 							? varLengthCommandLineEditor.CreateForFileName( de, ZX_TAPE_FILE_NAME_LENGTH_MAX, ' ' )
 							: nullptr;
+				case INFORMATION_SIZE_REPORTED:
+					return	de->fileHasStdHeader
+							? integerEditor.Create( file, &de->file.stdHeader.length )
+							: nullptr;
 				case INFORMATION_STD_PARAM_1:
 					return	de->fileHasStdHeader
 							? integerEditor.Create( de, &de->file.stdHeader.params.param1 )
