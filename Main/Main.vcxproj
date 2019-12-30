@@ -229,6 +229,7 @@
     <ClCompile Include="src\BSDOS_FileManager.cpp" />
     <ClCompile Include="src\Debug.cpp" />
     <ClCompile Include="src\Dos_HexaPreview.cpp" />
+    <ClCompile Include="src\Dos_PathString.cpp" />
     <ClCompile Include="src\Dos_Recognition.cpp" />
     <ClCompile Include="src\DialogEmptySpaceFilling.cpp" />
     <ClCompile Include="src\DialogFormatting.cpp" />

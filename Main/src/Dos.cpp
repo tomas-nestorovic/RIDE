@@ -772,7 +772,7 @@ reportError:Utils::Information(buf);
 			}else{
 				// invalid export name - generating an artifical one
 				static WORD fileId;
-				::wsprintf( buf, _T("File%05d.%s"), ++fileId, fileExt );
+				::wsprintf( buf, _T("File%05d.%s"), ++fileId, fileExt.GetString() );
 			}
 		}else{
 			// exporting to another RIDE instance; substituting non-alphanumeric characters with "URL-like" escape sequences

@@ -377,6 +377,9 @@
     <ClCompile Include="src\SpectrumBase.cpp">
       <Filter>Source Files\Dos\Spectrum</Filter>
     </ClCompile>
+    <ClCompile Include="src\Dos_PathString.cpp">
+      <Filter>Source Files\Dos</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="res\resource.rc">

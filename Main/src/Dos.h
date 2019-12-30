@@ -53,6 +53,7 @@
 			CPathString &operator+=(const CPathString &r);
 
 			short GetLength() const;
+			LPCTSTR GetString() const;
 			bool Equals(const CPathString &r,TFnCompareNames comparer) const;
 			short EscapeNullTerminatedTo(PTCHAR buffer,short bufferCharCapacity) const;
 			PTCHAR CopyNullTerminatedTo(PTCHAR buffer,short bufferCharCapacity) const;
