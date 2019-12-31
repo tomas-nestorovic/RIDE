@@ -20,6 +20,8 @@ namespace Utils{
 
 		CRideBrush(int stockObjectId);
 		CRideBrush(bool sysColor,int sysColorId);
+
+		operator COLORREF() const;
 	};
 
 	class CRideFont sealed:public ::CFont{

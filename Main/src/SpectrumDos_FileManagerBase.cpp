@@ -151,8 +151,7 @@
 	}
 	LPCTSTR WINAPI CSpectrumBase::CSpectrumBaseFileManagerView::CSingleCharExtensionEditor::__getDescription__(PVOID file,PropGrid::Enum::UValue extension,PTCHAR buf,short bufCapacity){
 		// sets the Buffer to textual description of given Extension and returns its beginning in the Buffer
-		const char bufM[2]={ extension.charValue, '\0' };
-		return TZxRom::ZxToAscii(bufM,1,buf);
+		return TZxRom::ZxToAscii( &extension.charValue, 1, buf );
 	}
 	CFileManagerView::PEditorBase CSpectrumBase::CSpectrumBaseFileManagerView::CSingleCharExtensionEditor::Create(PFile file){
 		// creates and returns an Editor of File's single-character Extension
@@ -167,8 +166,7 @@
 	}
 	void CSpectrumBase::CSpectrumBaseFileManagerView::CSingleCharExtensionEditor::DrawReportModeCell(BYTE extension,LPDRAWITEMSTRUCT pdis) const{
 		// directly draws File's single-character Extension
-		TCHAR buf[16];
-		pZxFileManager->zxRom.PrintAt( pdis->hDC, TZxRom::ZxToAscii((LPCSTR)&extension,1,buf), pdis->rcItem, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
+		pZxFileManager->zxRom.PrintAt( pdis->hDC, (LPCSTR)&extension, 1, pdis->rcItem, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
 	}
 
 
@@ -246,8 +244,8 @@
 				);
 	}
 
-	void CSpectrumBase::CSpectrumBaseFileManagerView::CVarLengthCommandLineEditor::DrawReportModeCell(LPCSTR cmd,BYTE cmdLength,LPDRAWITEMSTRUCT pdis) const{
+	void CSpectrumBase::CSpectrumBaseFileManagerView::CVarLengthCommandLineEditor::DrawReportModeCell(LPCSTR cmd,BYTE cmdLength,char paddingChar,LPDRAWITEMSTRUCT pdis) const{
 		// directly draws FileName
-		TCHAR buf[512];
-		pZxFileManager->zxRom.PrintAt( pdis->hDC, TZxRom::ZxToAscii(cmd,cmdLength,buf), pdis->rcItem, DT_SINGLELINE|DT_VCENTER );
+		CPathString tmp( cmd, cmdLength );
+		pZxFileManager->zxRom.PrintAt( pdis->hDC, tmp, tmp.TrimRight(paddingChar).GetLength(), pdis->rcItem, DT_SINGLELINE|DT_VCENTER );
 	}

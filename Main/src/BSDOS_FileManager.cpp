@@ -76,7 +76,6 @@
 		// draws Information on File
 		RECT &r=pdis->rcItem;
 		const HDC dc=pdis->hDC;
-		TCHAR bufT[MAX_PATH];
 		if (DOS->IsDirectory((PCFile)pdis->itemData)){
 			// root Directory
 			const CDirsSector::PCSlot slot=(CDirsSector::PCSlot)pdis->itemData;
@@ -90,10 +89,10 @@
 				case INFORMATION_NAME:
 					// Directory Name
 					if (de!=nullptr)
-						varLengthCommandLineEditor.DrawReportModeCell( de->dir.name, ZX_TAPE_FILE_NAME_LENGTH_MAX, pdis );
+						varLengthCommandLineEditor.DrawReportModeCell( de->dir.name, ZX_TAPE_FILE_NAME_LENGTH_MAX, ' ', pdis );
 					else{
 						const int color0=::SetTextColor( dc, COLOR_RED );
-							zxRom.PrintAt( dc, BSDOS_DIR_CORRUPTED, r, DT_SINGLELINE|DT_VCENTER );
+							::DrawText( dc, BSDOS_DIR_CORRUPTED, -1, &r, DT_SINGLELINE|DT_VCENTER );
 						::SetTextColor(dc,color0);
 					}
 					break;
@@ -112,10 +111,7 @@
 				case INFORMATION_COMMENT:
 					// Directory personalized Comment
 					if (de!=nullptr)
-						zxRom.PrintAt(	dc,
-										TZxRom::ZxToAscii( de->dir.comment, sizeof(de->dir.comment), bufT ),
-										r, DT_SINGLELINE|DT_VCENTER
-									);
+						zxRom.PrintAt( dc, de->dir.comment, sizeof(de->dir.comment), r, DT_SINGLELINE|DT_VCENTER );
 					break;
 			}
 		}else{
@@ -147,7 +143,7 @@
 				case INFORMATION_NAME:
 					// File Name
 					if (de->fileHasStdHeader)
-						varLengthCommandLineEditor.DrawReportModeCell( de->file.stdHeader.name, ZX_TAPE_FILE_NAME_LENGTH_MAX, pdis );
+						varLengthCommandLineEditor.DrawReportModeCell( de->file.stdHeader.name, ZX_TAPE_FILE_NAME_LENGTH_MAX, ' ', pdis );
 					break;
 				case INFORMATION_SIZE:
 					// File Size

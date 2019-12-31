@@ -575,7 +575,7 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 			TCHAR buf[MAX_PATH],bufCaption[20+MAX_PATH];
 			::wsprintf(	bufCaption,
 						PREVIEW_LABEL " (%s)",
-						TZxRom::ZxToAscii( DOS->GetFileShellCompliantExportNameAndExt(file,buf),-1, bufCaption+20 )
+						DOS->GetFileShellCompliantExportNameAndExt(file,buf)
 					);
 			SetWindowText(bufCaption);
 		}else

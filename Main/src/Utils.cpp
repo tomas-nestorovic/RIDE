@@ -30,6 +30,12 @@ namespace Utils{
 	const CRideBrush CRideBrush::BtnFace(true,COLOR_BTNFACE);
 	const CRideBrush CRideBrush::Selection(true,COLOR_ACTIVECAPTION);
 
+	CRideBrush::operator COLORREF() const{
+		// 
+		LOGBRUSH lb;
+		::GetObject( m_hObject, sizeof(lb), &lb );
+		return lb.lbColor;
+	}
 
 
 

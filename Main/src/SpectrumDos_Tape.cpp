@@ -699,7 +699,7 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 					}
 					case INFORMATION_NAME:
 						// Name
-						varLengthCommandLineEditor.DrawReportModeCell( h->name, ZX_TAPE_FILE_NAME_LENGTH_MAX, pdis );
+						varLengthCommandLineEditor.DrawReportModeCell( h->name, ZX_TAPE_FILE_NAME_LENGTH_MAX, ' ', pdis );
 						break;
 					case INFORMATION_SIZE:
 						// Size

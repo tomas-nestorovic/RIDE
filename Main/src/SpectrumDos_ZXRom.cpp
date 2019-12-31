@@ -80,9 +80,10 @@
 		// converts text from Spectrum character set to PC's current character set and returns the result in Buffer
 		bufT[0]=' '; // initialization
 		PTCHAR t=1+bufT;
-		for( LPCSTR m=zx; const BYTE z=*m; m++ )
-			if (!(zxLength--))
-				break;
+		while (zxLength--){
+			const BYTE z=*zx++;
+			if (!z)
+				*t++=255; // null character
 			else if (z==96)
 				*t++=(char)163; // Pound sign, £
 			else if (z<=126)
@@ -101,6 +102,7 @@
 					::lstrcpy( t, K );
 				t+=::lstrlen(t);
 			}
+		}
 		*t='\0';
 		return 1+bufT; // "1+" = see initialization above
 	}
@@ -133,16 +135,33 @@
 				: nullptr;
 	}
 
-	void CSpectrumDos::TZxRom::PrintAt(HDC dc,LPCTSTR buf,RECT r,UINT drawTextFormat) const{
-		// prints text in Buffer inside the given Rectangle
-		BYTE n=::lstrlen(buf);
+	WORD CSpectrumDos::TZxRom::PrintAt(HDC dc,LPCSTR zx,BYTE zxLength,RECT r,UINT drawTextFormat) const{
+		// returns the number of ASCII characters to which the input ZX code has been converted and printed inside the given Rectangle
+		TCHAR buf[3000]; // a big-enough buffer to accommodate 255-times the keyword RANDOMIZE
+		const PCHAR pAscii=ZxToAscii( zx, zxLength, buf );
+		const WORD nAsciiChars=::lstrlen(pAscii);
 		if (drawTextFormat&DT_RIGHT){
 			drawTextFormat&=~DT_RIGHT;
-			r.left=r.right-n*font.charAvgWidth;
+			r.left=r.right-nAsciiChars*font.charAvgWidth;
 		}
-		while (n--){
-			BYTE c=(BYTE)*buf++; // cannot use TCHAR because must use non-signed type
-			if (!IsStdUdgSymbol(c))
+		for( WORD i=pAscii-buf,const iEnd=i+nAsciiChars; i<iEnd; i++ ){
+			BYTE c=buf[i]; // cannot use TCHAR because must use non-signed type
+			if (c<' ' || c==255){
+				// non-printable character (255 = replacement for null character 0x00)
+				TCHAR tmp[4];
+				::wsprintf( tmp, _T("%02X"), c<' '?c:0 );
+				RECT rHexa=r;
+					rHexa.right=r.left+2*font.charAvgWidth;
+				::FillRect( dc, &rHexa, CBrush(Utils::GetBlendedColor( ::GetBkColor(dc), 0xc8c8c8, .5f )) );
+				rHexa.right--;
+				::DrawText( dc, tmp, -1, &r, drawTextFormat );
+				const CPen delimiterPen( PS_DOT, 1, COLOR_WHITE );
+				const HGDIOBJ hPen0=::SelectObject( dc, delimiterPen );
+					::MoveToEx( dc, rHexa.right, r.top, nullptr );
+					::LineTo( dc, rHexa.right, r.bottom );
+				::SelectObject(dc,hPen0);
+				r.left+=font.charAvgWidth; // adjustment for the second printed hexa-character made below
+			}else if (!IsStdUdgSymbol(c))
 				// directly printable character
 				::DrawTextA( dc, (LPCSTR)&c,1, &r, drawTextFormat );
 			else{
@@ -167,6 +186,7 @@
 			}
 			r.left+=font.charAvgWidth;
 		}
+		return nAsciiChars;
 	}
 
 
@@ -202,10 +222,8 @@
 	void WINAPI CSpectrumBase::TZxRom::CLineComposerPropGridEditor::__drawValue__(PropGrid::PCustomParam,PropGrid::PCValue value,PropGrid::TSize combinedValue,PDRAWITEMSTRUCT pdis){
 		const TZxRom &rZxRom=((CSpectrumBaseFileManagerView *)CDos::GetFocused()->pFileManager)->zxRom;
 		const HGDIOBJ hFont0=::SelectObject( pdis->hDC, rZxRom.font.m_hObject );
-			TCHAR bufT[4096];
 			pdis->rcItem.left+=PROPGRID_CELL_MARGIN_LEFT;
-			rZxRom.PrintAt(	pdis->hDC,
-							ZxToAscii( (LPCSTR)value, LOBYTE(combinedValue), bufT ),
+			rZxRom.PrintAt(	pdis->hDC, (LPCSTR)value, LOBYTE(combinedValue),
 							pdis->rcItem,
 							DT_SINGLELINE | DT_LEFT | DT_VCENTER | DT_NOPREFIX
 						);
@@ -223,8 +241,6 @@
 		return true; // new text always accepted
 	}
 
-	#define CURSOR_PLACEHOLDER	2 /* dummy value to be replaced with a real Cursor */
-
 	#define IS_CAPSLOCK_ON()	((::GetKeyState(VK_CAPITAL)&1)>0)
 
 	LRESULT CALLBACK CSpectrumBase::TZxRom::CLineComposerPropGridEditor::__wndProc__(HWND hEditor,UINT msg,WPARAM wParam,LPARAM lParam){
@@ -238,30 +254,34 @@
 				const HDC dc=::BeginPaint(hEditor,&ps);
 					::SetBkMode(dc,TRANSPARENT);
 					const HGDIOBJ hFont0=::SelectObject( dc, rZxRom.font.m_hObject );
-						const BYTE c=rEditor.cursor.position;
 						RECT r;
 						::GetClientRect(hEditor,&r);
-						char bufM[MAX_PATH];
-							::memcpy( bufM+1, rEditor.buf, rEditor.lengthMax );
-							::memmove( bufM, bufM+1, c );
-							bufM[c]=CURSOR_PLACEHOLDER; // placeholder of Cursor (drawn below)
-						TCHAR bufT[MAX_PATH];
-						rZxRom.PrintAt(	dc,
-										ZxToAscii( bufM,rEditor.length+1, bufT ), // "+1" = Cursor
+						// . printing content BEFORE Cursor
+						const WORD nAsciiChars=rZxRom.PrintAt(
+							dc, rEditor.buf, rEditor.cursor.position,
+							r,
+							DT_SINGLELINE | DT_LEFT | DT_VCENTER | DT_NOPREFIX
+						);
+						// . printing content AFTER Cursor
+						r.left+=(nAsciiChars+1)*rZxRom.font.charAvgWidth; // "+1" = Cursor
+						rZxRom.PrintAt(	dc, rEditor.buf+rEditor.cursor.position, rEditor.length-rEditor.cursor.position,
 										r,
 										DT_SINGLELINE | DT_LEFT | DT_VCENTER | DT_NOPREFIX
 									);
-						r.right=( r.left=(_tcschr(bufT,CURSOR_PLACEHOLDER)-bufT-1)*rZxRom.font.charAvgWidth )+rZxRom.font.charAvgWidth;
-						r.bottom=( r.top=(r.bottom-rZxRom.font.charHeight)/2 )+rZxRom.font.charHeight;
-						::FillRect( dc, &r, Utils::CRideBrush::Black );
-						::SetTextColor( dc, 0xffffff );
-						if (rEditor.cursor.mode==TCursor::LC && IS_CAPSLOCK_ON()){
-							// displaying the "C" Mode (Capitals) at place of the "L" mode
-							static const char ModeC='C';
-							::DrawTextA( dc, &ModeC,1, &r, DT_SINGLELINE|DT_LEFT|DT_VCENTER );
-						}else
-							// displaying current Mode
-							::DrawTextA( dc, (LPCSTR)&rEditor.cursor.mode,1, &r, DT_SINGLELINE|DT_LEFT|DT_VCENTER );
+						// . printing Cursor
+						r.right=r.left;
+						r.left-=rZxRom.font.charAvgWidth;
+						const COLORREF color0=::SetTextColor( dc, COLOR_WHITE );
+							//r.bottom=( r.top=(r.bottom-rZxRom.font.charHeight)/2 )+rZxRom.font.charHeight;
+							::FillRect( dc, &r, Utils::CRideBrush::Black );
+							if (rEditor.cursor.mode==TCursor::LC && IS_CAPSLOCK_ON()){
+								// displaying the "C" Mode (Capitals) at place of the "L" mode
+								static const char ModeC='C';
+								::DrawTextA( dc, &ModeC,1, &r, DT_SINGLELINE|DT_LEFT|DT_VCENTER );
+							}else
+								// displaying current Mode
+								::DrawTextA( dc, (LPCSTR)&rEditor.cursor.mode,1, &r, DT_SINGLELINE|DT_LEFT|DT_VCENTER );
+						::SetTextColor(dc,color0);
 					::SelectObject(dc,hFont0);
 				::EndPaint(hEditor,&ps);
 				return 0;

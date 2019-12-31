@@ -71,7 +71,7 @@
 		switch (pFileInfo-InformationList){
 			case INFORMATION_NAME:
 				// File Name
-				varLengthCommandLineEditor.DrawReportModeCell( de->name, TRDOS503_FILE_NAME_LENGTH_MAX, pdis );
+				varLengthCommandLineEditor.DrawReportModeCell( de->name, TRDOS503_FILE_NAME_LENGTH_MAX, ' ', pdis );
 				break;
 			case INFORMATION_EXTENSION:
 				// File Extension

@@ -389,9 +389,11 @@
 		// - drawing the item background based on item's selection
 		const CListCtrl &lv=GetListCtrl();
 		if (lpdi->itemState&ODS_SELECTED || lv.GetItemState(lpdi->itemID,LVNI_DROPHILITED)){
+			::SetBkColor( dc, Utils::CRideBrush::Selection );
 			::FillRect( dc, &lpdi->rcItem, Utils::CRideBrush::Selection );
 			::SetTextColor( dc, COLOR_WHITE );
 		}else{
+			::SetBkColor( dc, COLOR_WHITE );
 			::FillRect( dc, &lpdi->rcItem, Utils::CRideBrush::White );
 			::SetTextColor( dc, COLOR_BLACK );
 		}

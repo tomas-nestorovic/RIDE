@@ -129,7 +129,7 @@
 				BYTE GetCurrentZxTextLength() const;
 			} lineComposerPropGridEditor;
 
-			void PrintAt(HDC dc,LPCTSTR buf,RECT r,UINT drawTextFormat) const;
+			WORD PrintAt(HDC dc,LPCSTR zx,BYTE zxLength,RECT r,UINT drawTextFormat) const;
 		} zxRom;
 	protected:
 		enum TUniFileType:char{ // ZX platform-independent File types ("universal" types) - used during exporting/importing of Files across ZX platforms
@@ -182,7 +182,7 @@
 
 				PEditorBase Create(PFile file,PCHAR cmd,BYTE cmdLengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged=__markDirectorySectorAsDirty__);
 				PEditorBase CreateForFileName(PFile file,BYTE fileNameLengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged=__markDirectorySectorAsDirty__);
-				void DrawReportModeCell(LPCSTR cmd,BYTE cmdLength,LPDRAWITEMSTRUCT pdis) const;
+				void DrawReportModeCell(LPCSTR cmd,BYTE cmdLength,char paddingChar,LPDRAWITEMSTRUCT pdis) const;
 			} varLengthCommandLineEditor;
 
 			mutable class CStdTapeHeaderBlockTypeEditor sealed{

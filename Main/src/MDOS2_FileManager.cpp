@@ -133,7 +133,7 @@
 				break;
 			case INFORMATION_NAME:
 				// File Name
-				varLengthCommandLineEditor.DrawReportModeCell( de->name, MDOS2_FILE_NAME_LENGTH_MAX, pdis );
+				varLengthCommandLineEditor.DrawReportModeCell( de->name, MDOS2_FILE_NAME_LENGTH_MAX, '\0', pdis );
 				break;
 			case INFORMATION_SIZE:
 				// File Size
