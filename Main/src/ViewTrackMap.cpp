@@ -198,12 +198,13 @@
 								for( WORD n=w; n--; sample+=(1<<zoomLengthFactor),rcSample.left++,rcSample.right++ )
 									::FillRect( dc, &rcSample, rainbowBrushes[*sample] );
 								r.right+=1+w; // "1+" = to correctly display a zero-length Sector
-								::FrameRect( dc, &r, Utils::CRideBrush::Black );
-								//dc.Rectangle(&r);
+								::SelectObject( dc, ::GetStockObject(NULL_BRUSH) );
+								dc.Rectangle(&r);
 							}else{
 								// Sector not found - drawing crossing-out
 								const HGDIOBJ hPen0=::SelectObject(dc,Utils::CRidePen::RedHairline);
 									r.right+=1+w; // "1+" = to correctly display a zero-length Sector
+									::SelectObject( dc, Utils::CRideBrush::White );
 									dc.Rectangle(&r);
 									::MoveToEx( dc, r.left, r.top, nullptr );
 									::LineTo( dc, r.right, r.bottom );
