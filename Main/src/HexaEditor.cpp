@@ -197,9 +197,15 @@
 		// adds a new Emphasis into the list and orders the list by beginnings A (and thus also by endings Z; insertsort)
 		PEmphasis *p=&emphases;
 		while (a>(*p)->a) p=&(*p)->pNext;
-		const PEmphasis newEmp=new TEmphasis;
-		newEmp->a=a, newEmp->z=z, newEmp->pNext=*p;
-		*p=newEmp;
+		const PEmphasis pNext=*p;
+		if (z<pNext->a){
+			// new Emphasis doesn't concatenate with an existing one, e.g. <2,15) comes before Emphasis <16,30)
+			const PEmphasis newEmp=new TEmphasis;
+			newEmp->a=a, newEmp->z=z, newEmp->pNext=*p;
+			*p=newEmp;
+		}else
+			// new Emphasis concatenates with an existing one, e.g. <2,16) can be merged with existing <16,30)
+			pNext->a=a;
 	}
 
 	void CHexaEditor::CancelAllEmphases(){
@@ -254,10 +260,13 @@
 
 	void CHexaEditor::RepaintData(bool immediately) const{
 		// invalidates the "data" (the content below the Header), eventually repaints them Immediately
-		RECT rc;
-		GetClientRect(&rc);
-		rc.top=HEADER_HEIGHT;
-		::RedrawWindow( m_hWnd, &rc, nullptr, RDW_INVALIDATE|RDW_NOCHILDREN|(BYTE)immediately*RDW_UPDATENOW );
+		if (m_hWnd){
+			const_cast<CHexaEditor *>(this)->__refreshVertically__();
+			RECT rc;
+			GetClientRect(&rc);
+			rc.top=HEADER_HEIGHT;
+			::RedrawWindow( m_hWnd, &rc, nullptr, RDW_INVALIDATE|RDW_NOCHILDREN|(BYTE)immediately*RDW_UPDATENOW );
+		}
 	}
 
 	#define BYTES_MAX		64
@@ -907,9 +916,12 @@ leftMouseDragged:
 			case WM_ERASEBKGND:
 				// drawing the background
 				return TRUE; // nop (always drawing over existing content)
+			case WM_SIZE:			
+				// window size has changed
+				__refreshVertically__(); // to guarantee that the actual view is always drawn
+				break;
 			case WM_PAINT:{
 				// drawing
-				__refreshVertically__(); // to guarantee that the actual view is always drawn
 				class CHexaPaintDC sealed:public CPaintDC{
 					const bool hexaEditorEditable;
 					BYTE currContentFlags;
