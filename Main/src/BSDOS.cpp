@@ -852,60 +852,42 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 								zxExt, zxExtLength,
 								zxInfo
 							);
-		// - importing
+		// - only Files are allowed as items in root Subdirectories
 		TUniFileType uts;
-		const int n=__importFileInformation__( zxInfo, uts );
-		if (currentDir==ZX_DIR_ROOT){
-			// root Directory
-			// . only Subdirectories are allowed as items in the root Directory
-			if (uts!=TUniFileType::SUBDIRECTORY)
-				return ERROR_CANNOT_MAKE;
-			// . processing import information
-			int dirNameChecksum=-1;
-			_stscanf( zxInfo+n, INFO_DIR, &dirNameChecksum );
-			// . creating a Subdirectory with given name
-			if (const TStdWinError err=CreateSubdirectory( CPathString(zxName,zxNameLength), FILE_ATTRIBUTE_DIRECTORY, rFile ))
-				return err;
-			if (dirNameChecksum>=0)
-				( (CDirsSector::PSlot)rFile )->nameChecksum=dirNameChecksum;
-		}else{
-			// File
-			// . only Files are allowed as items in root Subdirectories
-			if (uts==TUniFileType::SUBDIRECTORY)
-				return ERROR_CANNOT_MAKE;
-			// . initializing the description of File to import
-			TDirectoryEntry tmp( this, 0 );
-				// : import information
-				DWORD dw;
-				__importFileInformation__( zxInfo, uts, tmp.file.stdHeader.params, dw, tmp.file.dataFlag );
-				// : name and extension
-				tmp.fileHasStdHeader=uts!=TUniFileType::HEADERLESS; // and ChangeFileNameAndExt called below by __importFileData__
-				// : size
-				tmp.file.stdHeader.length = dw ? dw : fileSize;
-				tmp.file.dataLength=fileSize;
-				// : first logical Sector
-				//nop (see below)
-			// . changing the Extension according to the "universal" type valid across ZX platforms (as TR-DOS File "Picture.C" should be take on the name "Picture.B" under MDOS)
-			CFatPath fatPath( this, fileSize );
-			//const TCHAR uftExt[2]={ tmp.extension, '\0' };
-			if (const TStdWinError err=__importFileData__( fIn, &tmp, CPathString(zxName,zxNameLength), CPathString(zxExt,zxExtLength), fileSize, rFile, fatPath ))
-				return err;
-			// . finishing initialization of DirectoryEntry of successfully imported File
-			const PDirectoryEntry de=(PDirectoryEntry)rFile;
-				// . FirstLogicalSector
-				CFatPath::PCItem item; DWORD n;
-				fatPath.GetItems(item,n);
-				TLogSector ls = de->file.firstSector = __fyzlog__(item->chs);
-			// . recording the FatPath in FAT
-			if (fileSize){ // only NON-zero-length Files are in FAT
-				for( WORD h; --n; ls=h,fileSize-=BSDOS_SECTOR_LENGTH_STD ) // all Sectors but the last one are Occupied in FatPath
-					__setLogicalSectorFatItem__( ls, TFatValue(true,true,h=__fyzlog__((++item)->chs)) ); // no need to test FAT Sector existence (already tested above)
-				__setLogicalSectorFatItem__(ls, // terminating the FatPath in FAT
-											TFatValue( true, false, fileSize )
-										);
-			}else
-				de->file.firstSector=boot.GetSectorData()->dirsLogSector; // some sensible value
-		}
+		__importFileInformation__( zxInfo, uts );
+		if (uts==TUniFileType::SUBDIRECTORY)
+			return ERROR_CANNOT_MAKE;
+		// - initializing the description of File to import
+		TDirectoryEntry tmp( this, 0 );
+			// . import information
+			DWORD dw;
+			__importFileInformation__( zxInfo, uts, tmp.file.stdHeader.params, dw, tmp.file.dataFlag );
+			// . name and extension
+			tmp.fileHasStdHeader=uts!=TUniFileType::HEADERLESS; // and ChangeFileNameAndExt called below by __importFileData__
+			// . size
+			tmp.file.stdHeader.length = dw ? dw : fileSize;
+			tmp.file.dataLength=fileSize;
+			// . first logical Sector
+			//nop (see below)
+		// - changing the Extension according to the "universal" type valid across ZX platforms (as TR-DOS File "Picture.C" should be take on the name "Picture.B" under MDOS)
+		CFatPath fatPath( this, fileSize );
+		if (const TStdWinError err=__importFileData__( fIn, &tmp, CPathString(zxName,zxNameLength), CPathString(zxExt,zxExtLength), fileSize, rFile, fatPath ))
+			return err;
+		// - finishing initialization of DirectoryEntry of successfully imported File
+		const PDirectoryEntry de=(PDirectoryEntry)rFile;
+			// . FirstLogicalSector
+			CFatPath::PCItem item; DWORD n;
+			fatPath.GetItems(item,n);
+			TLogSector ls = de->file.firstSector = __fyzlog__(item->chs);
+		// - recording the FatPath in FAT
+		if (fileSize){ // only NON-zero-length Files are in FAT
+			for( WORD h; --n; ls=h,fileSize-=BSDOS_SECTOR_LENGTH_STD ) // all Sectors but the last one are Occupied in FatPath
+				__setLogicalSectorFatItem__( ls, TFatValue(true,true,h=__fyzlog__((++item)->chs)) ); // no need to test FAT Sector existence (already tested above)
+			__setLogicalSectorFatItem__(ls, // terminating the FatPath in FAT
+										TFatValue( true, false, fileSize )
+									);
+		}else
+			de->file.firstSector=boot.GetSectorData()->dirsLogSector; // some sensible value
 		// - successfully imported to the Image
 		return ERROR_SUCCESS;
 	}
