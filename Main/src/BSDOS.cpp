@@ -411,6 +411,8 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 		//nop (can't reset a root Directory Slot)
 	}
 
+	#define INFO_DIR	_T("S%x")
+
 	TStdWinError CBSDOS308::CreateSubdirectory(LPCTSTR name,DWORD winAttr,PFile &rCreatedSubdir){
 		// creates a new Subdirectory in CurrentDirectory; returns Windows standard i/o error
 		// - cannot create a new Subdirectory elsewhere but in the Root Directory
@@ -429,6 +431,15 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 											zxExt, zxExtLength,
 											zxInfo
 										);
+					// . validating type
+					int dirNameChecksum=-1;
+					if (zxInfo!=nullptr){
+						TUniFileType uts;
+						const int n=__importFileInformation__( zxInfo, uts );
+						if (uts!=TUniFileType::SUBDIRECTORY)
+							return ERROR_CANNOT_MAKE;
+						_stscanf( zxInfo+n, INFO_DIR, &dirNameChecksum );
+					}
 					// . validating Name
 					if (zxExtLength)
 						return ERROR_INVALID_DATATYPE;
@@ -448,7 +459,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 					de->occupied=true;
 					ASSERT( &de->dir.name==&de->file.stdHeader.name );
 					de->file.stdHeader.SetName(dirName);
-					slot->nameChecksum=de->GetDirNameChecksum();
+					slot->nameChecksum= dirNameChecksum>=0 ? dirNameChecksum : de->GetDirNameChecksum();
 					::memset( de->dir.comment, ' ', sizeof(de->dir.comment) );
 					dirsSector.MarkDirectoryEntryAsDirty(slot);
 					return ERROR_SUCCESS;
@@ -811,8 +822,6 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 		// - successfully deleted
 		return ERROR_SUCCESS;
 	}
-
-	#define INFO_DIR	_T("S%x")
 
 	PTCHAR CBSDOS308::GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const{
 		// populates Buffer with specified File's export name and extension and returns the Buffer; returns Null if File cannot be exported (e.g. a "dotdot" entry in MS-DOS); caller guarantees that the Buffer is at least MAX_PATH characters big
