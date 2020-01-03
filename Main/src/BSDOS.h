@@ -223,7 +223,7 @@
 		std::unique_ptr<TDirectoryTraversal> BeginDirectoryTraversal(PCFile directory) const override;
 		PTCHAR GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const override;
 		TStdWinError ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile) override;
-		TStdWinError CreateSubdirectory(RCPathString name,DWORD winAttr,PFile &rCreatedSubdir);
+		TStdWinError CreateSubdirectory(LPCTSTR name,DWORD winAttr,PFile &rCreatedSubdir);
 		TStdWinError SwitchToDirectory(PFile slot);
 		TStdWinError MoveFileToCurrentDir(PFile file,LPCTSTR exportFileNameAndExt,PFile &rMovedFile);
 		// other

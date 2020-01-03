@@ -65,7 +65,7 @@
 
 		typedef TStdWinError (*TFnRecognize)(PImage image,PFormat pFormatBoot);
 		typedef PDos (*TFnInstantiate)(PImage image,PCFormat pFormatBoot);
-		typedef TStdWinError (CDos::*TFnCreateSubdirectory)(RCPathString name,DWORD winAttr,PFile &rCreatedSubdir);
+		typedef TStdWinError (CDos::*TFnCreateSubdirectory)(LPCTSTR name,DWORD winAttr,PFile &rCreatedSubdir);
 		typedef TStdWinError (CDos::*TFnChangeCurrentDirectory)(PFile directory);
 		typedef TStdWinError (CDos::*TFnMoveFileToCurrDir)(PFile file,LPCTSTR exportFileNameAndExt,PFile &rMovedFile);
 

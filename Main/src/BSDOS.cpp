@@ -411,7 +411,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 		//nop (can't reset a root Directory Slot)
 	}
 
-	TStdWinError CBSDOS308::CreateSubdirectory(RCPathString name,DWORD winAttr,PFile &rCreatedSubdir){
+	TStdWinError CBSDOS308::CreateSubdirectory(LPCTSTR name,DWORD winAttr,PFile &rCreatedSubdir){
 		// creates a new Subdirectory in CurrentDirectory; returns Windows standard i/o error
 		// - cannot create a new Subdirectory elsewhere but in the Root Directory
 		if (currentDir!=ZX_DIR_ROOT)
@@ -420,8 +420,20 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 		for( CDirsSector::PSlot slot=dirsSector.GetSlots(); IsDirectory(slot); slot++ )
 			if (!slot->subdirExists)
 				if (const TLogSector ls=__getFirstHealthyFreeSector__()){
+					// . parsing the Name (can be an import name with escaped Spectrum tokens)
+					LPCTSTR zxName,zxExt,zxInfo;
+					BYTE zxNameLength=ZX_TAPE_FILE_NAME_LENGTH_MAX, zxExtLength=1;
+					TCHAR buf[MAX_PATH];
+					__parseFat32LongName__(	::lstrcpy(buf,name),
+											zxName, zxNameLength,
+											zxExt, zxExtLength,
+											zxInfo
+										);
 					// . validating Name
-					if (const TStdWinError err=TDirectoryEntry(this,0).file.stdHeader.SetName(name))
+					if (zxExtLength)
+						return ERROR_INVALID_DATATYPE;
+					const CPathString dirName(zxName,zxNameLength);
+					if (const TStdWinError err=TDirectoryEntry(this,0).file.stdHeader.SetName(dirName))
 						return err;
 					// . indicating that the Slot is now occupied
 					slot->subdirExists=true;
@@ -435,7 +447,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 					const PDirectoryEntry de=dirsSector.TryGetDirectoryEntry(slot);
 					de->occupied=true;
 					ASSERT( &de->dir.name==&de->file.stdHeader.name );
-					de->file.stdHeader.SetName(name);
+					de->file.stdHeader.SetName(dirName);
 					slot->nameChecksum=de->GetDirNameChecksum();
 					::memset( de->dir.comment, ' ', sizeof(de->dir.comment) );
 					dirsSector.MarkDirectoryEntryAsDirty(slot);

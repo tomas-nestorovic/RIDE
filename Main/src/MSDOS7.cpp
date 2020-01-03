@@ -686,7 +686,7 @@ nextCluster:result++;
 		return result;
 	}
 
-	TStdWinError CMSDOS7::CreateSubdirectory(RCPathString name,DWORD winAttr,PDirectoryEntry &rCreatedSubdir){
+	TStdWinError CMSDOS7::CreateSubdirectory(LPCTSTR name,DWORD winAttr,PDirectoryEntry &rCreatedSubdir){
 		// creates a new Subdirectory in CurrentDirectory; returns Windows standard i/o error
 		// - allocating new Directory Cluster
 		const TCluster32 cluster=__allocateAndResetDirectoryCluster__();
