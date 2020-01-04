@@ -47,6 +47,7 @@
 #define IDR_HEXAEDITOR_RESETSELECTION   209
 #define IDR_GUIDEPOST                   211
 #define IDR_BSDOS                       214
+#define IDR_DOS_VERIFY                  214
 #define ID_HIDDEN                       1018
 #define ID_SYSTEM                       1019
 #define ID_CONNECTED                    1020
@@ -69,12 +70,10 @@
 #define ID_CYLINDER                     1037
 #define ID_DOS                          1038
 #define ID_NONE                         1039
-#define ID_IMAGE                        1040
 #define ID_HEAD                         1043
 #define ID_SIZE                         1044
 #define ID_FORMAT                       1045
 #define ID_CYLINDER_N                   1046
-#define ID_FAT                          1047
 #define ID_GAP                          1048
 #define ID_MEDIUM                       1049
 #define ID_CLUSTER                      1050
@@ -96,8 +95,6 @@
 #define ID_REPORT                       1108
 #define ID_DRIVE                        1109
 #define ID_INFORMATION                  1110
-#define ID_FILE1                        1111
-#define ID_FILE2                        1112
 #define ID_STANDARD                     1113
 #define ID_LATENCY                      1116
 #define ID_AUTO                         1117
@@ -113,7 +110,6 @@
 #define ID_VERIFY_SECTOR                1132
 #define ID_SEEK                         1133
 #define ID_ROTATION                     1134
-#define ID_BOOT                         1138
 #define ID_ADD                          1140
 #define ID_REMOVE                       1141
 #define ID_ORDER                        1142
@@ -128,6 +124,12 @@
 #define ID_PRIORITY                     1155
 #define ID_DATE                         1171
 #define ID_TIME                         1173
+#define ID_BOOT                         1175
+#define ID_FAT                          1176
+#define ID_FILE1                        1177
+#define ID_FILE2                        1178
+#define ID_IMAGE                        1179
+#define ID_REPAIR                       1183
 #define ID_TDI_SWITCH                   40033
 #define ID_TDI_SWITCH_BACK              40034
 #define ID_EDIT_SELECT_NONE             40057
@@ -237,9 +239,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        214
-#define _APS_NEXT_COMMAND_VALUE         40269
-#define _APS_NEXT_CONTROL_VALUE         1181
+#define _APS_NEXT_RESOURCE_VALUE        216
+#define _APS_NEXT_COMMAND_VALUE         40271
+#define _APS_NEXT_CONTROL_VALUE         1185
 #define _APS_NEXT_SYMED_VALUE           103
 #endif
 #endif

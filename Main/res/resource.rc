@@ -1368,6 +1368,31 @@ BEGIN
     ICON            IDR_MAINFRAME,IDC_STATIC,6,6,20,20
 END
 
+IDR_DOS_VERIFY DIALOG DISCARDABLE  0, 0, 185, 114
+STYLE WS_POPUP | WS_CAPTION
+CAPTION "Volume verification"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,75,93,50,14,WS_DISABLED
+    PUSHBUTTON      "Cancel",IDCANCEL,128,93,50,14
+    LTEXT           "System:",IDC_STATIC,7,7,26,8,NOT WS_GROUP
+    LTEXT           "dos",ID_DOS,43,7,93,8,NOT WS_GROUP
+    LTEXT           "Verify:",IDC_STATIC,7,21,20,8,NOT WS_GROUP
+    CONTROL         "&Boot sector",ID_BOOT,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,43,21,85,9
+    CONTROL         "File &allocation tables",ID_FAT,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,43,32,78,10
+    CONTROL         "&Filesystem",ID_FILE1,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,43,43,85,9
+    CONTROL         "<a>Full integrity check</a>",IDC_STATIC,"SysLink",0x0,
+                    140,28,38,19
+    CONTROL         "Disk &surface",ID_IMAGE,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,43,54,55,10
+    COMBOBOX        ID_REPAIR,43,67,135,58,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
+END
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // DESIGNINFO
@@ -1608,6 +1633,14 @@ BEGIN
     BEGIN
         BOTTOMMARGIN, 127
     END
+
+    IDR_DOS_VERIFY, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 178
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 107
+    END
 END
 #endif    // APSTUDIO_INVOKED
 
@@ -1641,6 +1674,16 @@ BEGIN
     0
 END
 
+IDR_DOS_VERIFY DLGINIT
+BEGIN
+    ID_REPAIR, 0x403, 32, 0
+0x7541, 0x6f74, 0x616d, 0x6974, 0x6163, 0x6c6c, 0x2079, 0x6572, 0x6170, 
+0x7269, 0x6120, 0x6c6c, 0x6920, 0x7373, 0x6575, 0x0073, 
+    ID_REPAIR, 0x403, 33, 0
+0x614d, 0x756e, 0x6c61, 0x796c, 0x6320, 0x6e6f, 0x6966, 0x6d72, 0x6520, 
+0x6361, 0x2068, 0x6572, 0x6170, 0x6172, 0x6974, 0x6e6f, "\000" 
+    0
+END
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -1731,7 +1774,7 @@ STRINGTABLE DISCARDABLE
 BEGIN
     ID_TRACKMAP_BAD_DATA    "Show any sector data\nBad sector data"
     ID_TRACKMAP_STATISTICS  "Collect and show statistics on space usage"
-    ID_DOS_VERIFY           "Not implemented yet"
+    ID_DOS_VERIFY           "Verify (and repair) disk consistency and data integrity"
     ID_DOS_DEFRAGMENT       "Reposition files on the disk to gain more free space"
     ID_DOS_FILL_EMPTY_SPACE "Flood officially empty space with a particular value"
     ID_MSDOS_REMOVE_LONG_NAMES "Remove long names from selected directories"

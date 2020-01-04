@@ -177,6 +177,9 @@
     <ClInclude Include="src\ViewCriticalSector.h">
       <Filter>Header Files\MainWindow\Tabs</Filter>
     </ClInclude>
+    <ClInclude Include="src\DialogVerification.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\editor.cpp">
@@ -379,6 +382,9 @@
     </ClCompile>
     <ClCompile Include="src\Dos_PathString.cpp">
       <Filter>Source Files\Dos</Filter>
+    </ClCompile>
+    <ClCompile Include="src\DialogVerification.cpp">
+      <Filter>Source Files\Utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

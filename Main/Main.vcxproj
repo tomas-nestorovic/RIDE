@@ -195,6 +195,7 @@
     <ClInclude Include="src\DialogFormatting.h" />
     <ClInclude Include="src\DialogNewImage.h" />
     <ClInclude Include="src\DialogUnformatting.h" />
+    <ClInclude Include="src\DialogVerification.h" />
     <ClInclude Include="src\Dos.h" />
     <ClInclude Include="src\DosUnknown.h" />
     <ClInclude Include="src\Dsk5.h" />
@@ -228,6 +229,7 @@
     <ClCompile Include="src\BSDOS_Boot.cpp" />
     <ClCompile Include="src\BSDOS_FileManager.cpp" />
     <ClCompile Include="src\Debug.cpp" />
+    <ClCompile Include="src\DialogVerification.cpp" />
     <ClCompile Include="src\Dos_HexaPreview.cpp" />
     <ClCompile Include="src\Dos_PathString.cpp" />
     <ClCompile Include="src\Dos_Recognition.cpp" />
