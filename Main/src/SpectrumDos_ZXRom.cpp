@@ -139,7 +139,7 @@
 		// returns the number of ASCII characters to which the input ZX code has been converted and printed inside the given Rectangle
 		TCHAR buf[3000]; // a big-enough buffer to accommodate 255-times the keyword RANDOMIZE
 		const PCHAR pAscii=ZxToAscii( zx, zxLength, buf );
-		const WORD nAsciiChars=::lstrlen(pAscii);
+		WORD nAsciiChars=::lstrlen(pAscii);
 		if (drawTextFormat&DT_RIGHT){
 			drawTextFormat&=~DT_RIGHT;
 			r.left=r.right-nAsciiChars*font.charAvgWidth;
@@ -160,6 +160,7 @@
 					::MoveToEx( dc, rHexa.right, r.top, nullptr );
 					::LineTo( dc, rHexa.right, r.bottom );
 				::SelectObject(dc,hPen0);
+				nAsciiChars++; // one extra character is used to represent both half-Bytes
 				r.left+=font.charAvgWidth; // adjustment for the second printed hexa-character made below
 			}else if (!IsStdUdgSymbol(c))
 				// directly printable character
@@ -298,6 +299,7 @@
 						// moving Cursor one Position to the left
 						if (rEditor.cursor.position){
 							rEditor.cursor.position--;
+cursorMoved:				rEditor.hexaLow=true; // specifically for hexa-mode X
 							::InvalidateRect(hEditor,nullptr,TRUE);
 						}
 						return 0;
@@ -305,21 +307,19 @@
 						// moving Cursor one Position to the right
 						if (rEditor.cursor.position<rEditor.length){
 							rEditor.cursor.position++;
-							::InvalidateRect(hEditor,nullptr,TRUE);
+							goto cursorMoved;
 						}
 						return 0;
 					case VK_HOME:
 					case VK_UP:
 						// moving Cursor to the beginning of File Name
 						rEditor.cursor.position=0;
-						::InvalidateRect(hEditor,nullptr,TRUE);
-						return 0;
+						goto cursorMoved;
 					case VK_END:
 					case VK_DOWN:
 						// moving Cursor to the end of File Name
 						rEditor.cursor.position=rEditor.length;
-						::InvalidateRect(hEditor,nullptr,TRUE);
-						return 0;
+						goto cursorMoved;
 					case VK_BACK:
 						// deleting the character that preceeds the Cursor (Backspace)
 						if (rEditor.cursor.position){
@@ -327,7 +327,7 @@
 							const PCHAR p=rEditor.buf;
 							::memmove( p+c, p+1+c, rEditor.lengthMax-c );
 							rEditor.length--;
-							::InvalidateRect(hEditor,nullptr,TRUE);
+							goto cursorMoved;
 						}
 						return 0;
 					case VK_DELETE:
@@ -336,20 +336,21 @@
 							const BYTE c=rEditor.cursor.position;
 							const PCHAR p=rEditor.buf;
 							::memmove( p+c, p+1+c, ( --rEditor.length )-c );
-							::InvalidateRect(hEditor,nullptr,TRUE);
+							goto cursorMoved;
 						}
 						return 0;
 					case VK_CONTROL:
 					case VK_SHIFT:
 						// changing Cursor Mode after pressing Ctrl+Shift
 						if (::GetKeyState(VK_CONTROL)<0 && ::GetKeyState(VK_SHIFT)<0){
-							static const TCursor::TMode Modes[]={ TCursor::K, TCursor::LC, TCursor::E, TCursor::G };
+							static const TCursor::TMode Modes[]={ TCursor::K, TCursor::LC, TCursor::E, TCursor::G, TCursor::X };
 							TCursor::TMode &rMode=rEditor.cursor.mode;
 							BYTE m=0;
 							while (Modes[m++]!=rMode);
 							if (m==sizeof(Modes)/sizeof(TCursor::TMode))
 								m=0;
 							rMode=Modes[m];
+							rEditor.hexaLow=true; // specifically for hexa-mode X
 						}
 						//fallthrough
 					case VK_CAPITAL:
@@ -422,6 +423,25 @@ addCharInWParam:						rEditor.__addChar__(wParam);
 										rEditor.__addChar__( Conversion[wParam-'1'] );
 									}
 								return 0;
+							case TCursor::X:{
+								// Cursor in hexa-mode
+								if ('A'<=wParam && wParam<='F')
+									wParam-='A'-10;
+								else if ('0'<=wParam && wParam<='9')
+									wParam-='0';
+								else
+									return 0;
+								if (rEditor.hexaLow){ // beginning writing a new Byte
+									if (!rEditor.__addChar__('\0')) // if new Byte can't be added ...
+										return 0; // ... we are done
+								}else // finishing writing current Byte
+									::InvalidateRect(hEditor,nullptr,TRUE);
+								char &r=rEditor.buf[rEditor.cursor.position-1];
+								r<<=4;
+								r|=wParam;
+								rEditor.hexaLow=!rEditor.hexaLow;
+								return 0;
+							}
 						}
 						return 0;
 				}
@@ -437,14 +457,15 @@ addCharInWParam:						rEditor.__addChar__(wParam);
 		return false; // False = actual editing of value has failed (otherwise the Editor would be closed)
 	}
 
-	void CSpectrumBase::TZxRom::CLineComposerPropGridEditor::__addChar__(char c){
-		// adds given Character at Cursor's current Position
-		if (length==lengthMax) return; // can't exceed the maximum length
+	bool CSpectrumBase::TZxRom::CLineComposerPropGridEditor::__addChar__(char c){
+		// True <=> given Character has been added at Cursor's current Position, otherwise False
+		if (length==lengthMax) return false; // can't exceed the maximum length
 		::memmove( buf+cursor.position+1, buf+cursor.position, length-cursor.position );
 		buf[cursor.position++]=c;
 		length++;
 		//cursor.mod=TCursor::L;
 		::InvalidateRect( handle, nullptr, TRUE );
+		return true;
 	}
 
 	PropGrid::PCEditor CSpectrumBase::TZxRom::CLineComposerPropGridEditor::Define(BYTE nCharsMax,char paddingChar,PropGrid::Custom::TOnValueConfirmed onValueConfirmed,PropGrid::TOnValueChanged onValueChanged){

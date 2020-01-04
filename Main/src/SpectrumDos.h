@@ -113,15 +113,17 @@
 						K='K',
 						LC='L', // "L" mode alternated with "C" mode
 						E='E',
-						G='G'
+						G='G',
+						X='X'
 					} mode;
 					BYTE position; // logical Position in Buffer
 				} cursor;
 				BYTE lengthMax; // mustn't exceed Buffer's capacity
 				BYTE length;
+				bool hexaLow; // True <=> ready to modify the lower half-byte in hexa mode
 				char paddingChar;
 				char buf[255]; // "big enough" to contain any ZX Spectrum line
-				void __addChar__(char c);
+				bool __addChar__(char c);
 			public:
 				static PropGrid::PCEditor Define(BYTE nCharsMax,char paddingChar,PropGrid::Custom::TOnValueConfirmed onValueConfirmed,PropGrid::TOnValueChanged onValueChanged);
 
