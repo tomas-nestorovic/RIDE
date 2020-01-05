@@ -659,7 +659,7 @@
 	};
 	UINT AFX_CDECL CTRDOS503::__defragmentation_thread__(PVOID _pCancelableAction){
 		// thread to defragment the disk
-		const PBackgroundActionCancelableBase pAction=(PBackgroundActionCancelableBase)_pCancelableAction;
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
 		const TDefragParams dp=*(TDefragParams *)pAction->GetParams();
 		pAction->SetProgressTarget( 1+dp.boot->firstFree.track );
 		// - getting the list of Files
@@ -692,7 +692,7 @@
 		nFiles-=dp.boot->nFiles, pDeFree+=dp.boot->nFiles;
 		// - defragmenting
 		for( const PDirectoryEntry *pDe=directory+dp.boot->nFiles; nFiles--; pDe++ ){
-			if (!pAction->CanContinue()) return ERROR_CANCELLED;
+			if (pAction->IsCancelled()) return ERROR_CANCELLED;
 			const PDirectoryEntry de=(PDirectoryEntry)*pDe;
 			if (*(PCBYTE)de!=TDirectoryEntry::DELETED) // an existing (i.e. non-Deleted) File
 				if (pDe!=pDeFree){

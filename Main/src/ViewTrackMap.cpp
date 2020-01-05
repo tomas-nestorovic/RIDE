@@ -418,13 +418,13 @@
 	};
 	static UINT AFX_CDECL __trackStatistics_thread__(PVOID _pCancelableAction){
 		// creates and shows statistics on Tracks and their Sectors in current disk
-		const PBackgroundActionCancelableBase pAction=(PBackgroundActionCancelableBase)_pCancelableAction;
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
 		TStatisticParams &rsp=*(TStatisticParams *)pAction->GetParams();
 		const PCImage image=rsp.dos->image;
 		pAction->SetProgressTarget( image->GetCylinderCount() );
 		for( TCylinder nCylinders=image->GetCylinderCount(),cyl=0; cyl<nCylinders; pAction->UpdateProgress(++cyl) )
 			for( THead nHeads=image->GetNumberOfFormattedSides(cyl),head=0; head<nHeads; head++,rsp.nTracksFormatted++ ){
-				if (!pAction->CanContinue()) return ERROR_CANCELLED;
+				if (pAction->IsCancelled()) return ERROR_CANCELLED;
 				TSectorId bufferId[(TSector)-1];
 				WORD bufferLength[(TSector)-1];
 				TSector nSectors=image->ScanTrack(cyl,head,bufferId,bufferLength);

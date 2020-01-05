@@ -684,7 +684,7 @@
 
 	UINT AFX_CDECL CFileManagerView::__selectionPropertyStatistics_thread__(PVOID _pCancelableAction){
 		// collects Statistics on current Selection
-		const PBackgroundActionCancelableBase pAction=(PBackgroundActionCancelableBase)_pCancelableAction;
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
 		// - processing recurrently (see below Collector's ctor)
 		struct TStatisticsCollector sealed{
 			typedef const struct TDirectoryEtc sealed{
@@ -694,12 +694,12 @@
 
 			TSelectionStatistics &rStatistics;
 			RCFileManagerView rFileManager;
-			const PBackgroundActionCancelableBase pAction;
+			const PBackgroundActionCancelable pAction;
 			const PDos dos;
 			const CFileManagerView::PCDirectoryStructureManagement pDirStructMan;
 			TCylinder state;
 
-			TStatisticsCollector(PBackgroundActionCancelableBase pAction)
+			TStatisticsCollector(PBackgroundActionCancelable pAction)
 				// ctor
 				// . initialization
 				: rStatistics(*(TSelectionStatistics *)pAction->GetParams())
@@ -710,7 +710,7 @@
 				const CDos::PFile currentDirectory=dos->currentDir;
 				const TDirectoryEtc dirEtc={ dos->currentDirId, nullptr };
 				for( POSITION pos=rFileManager.GetFirstSelectedFilePosition(); pos; ){
-					if (!pAction->CanContinue()) break;
+					if (pAction->IsCancelled()) break;
 					if (const auto pdt=dos->BeginDirectoryTraversal(currentDirectory)){
 						for( const CDos::PCFile file=rFileManager.GetNextSelectedFile(pos); pdt->GetNextFileOrSubdir()!=file; );
 						__countInFile__(pdt,&dirEtc);
@@ -737,7 +737,7 @@
 					// . involving Directory into Statistics
 					if (const auto subPdt=dos->BeginDirectoryTraversal(pdt->entry)){
 						for( rStatistics.nDirectories++,rStatistics.totalSizeInBytes+=dos->GetFileOfficialSize(pdt->entry),rStatistics.totalSizeOnDiskInBytes+=dos->GetFileSizeOnDisk(pdt->entry); subPdt->GetNextFileOrSubdir()!=nullptr; ){
-							if (!pAction->CanContinue()) break;
+							if (pAction->IsCancelled()) break;
 							if (subPdt->entryType!=CDos::TDirectoryTraversal::WARNING)
 								__countInFile__(subPdt,&dirEtc);
 						}
@@ -748,7 +748,7 @@
 		} tmp(pAction);
 		// - Statistics collected
 		pAction->UpdateProgressFinished();
-		return pAction->CanContinue() ? ERROR_SUCCESS : ERROR_CANCELLED;
+		return pAction->IsCancelled() ? ERROR_CANCELLED : ERROR_SUCCESS;
 	}
 
 	afx_msg void CFileManagerView::__showSelectionProperties__(){

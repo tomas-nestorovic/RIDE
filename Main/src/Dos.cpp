@@ -166,12 +166,12 @@ reportError:Utils::Information(buf);
 	};
 	UINT AFX_CDECL CDos::__checkCylindersAreEmpty_thread__(PVOID _pCancelableAction){
 		// thread to determine if given Cylinders are empty; return ERROR_EMPTY/ERROR_NOT_EMPTY or another Windows standard i/o error
-		const PBackgroundActionCancelableBase pAction=(PBackgroundActionCancelableBase)_pCancelableAction;
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
 		TEmptyCylinderParams ecp=*(TEmptyCylinderParams *)pAction->GetParams();
 		pAction->SetProgressTarget( ecp.nCylinders );
 		const TCylinder firstCylinderWithEmptySector=ecp.dos->GetFirstCylinderWithEmptySector();
 		for( TCylinder n=0; n<ecp.nCylinders; pAction->UpdateProgress(++n) ){
-			if (!pAction->CanContinue()) return ERROR_CANCELLED;
+			if (pAction->IsCancelled()) return ERROR_CANCELLED;
 			const TCylinder cyl=*ecp.cylinders++;
 			// . Cylinder not empty if located before FirstCylinderWithEmptySector
 			if (cyl<firstCylinderWithEmptySector)
@@ -292,7 +292,7 @@ reportError:Utils::Information(buf);
 	};
 	UINT AFX_CDECL CDos::__formatTracks_thread__(PVOID _pCancelableAction){
 		// thread to format selected Tracks
-		const PBackgroundActionCancelableBase pAction=(PBackgroundActionCancelableBase)_pCancelableAction;
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
 		TFmtParams fp=*(TFmtParams *)pAction->GetParams();
 		pAction->SetProgressTarget( fp.nTracks );
 		struct{
@@ -303,7 +303,7 @@ reportError:Utils::Information(buf);
 		} statistics;
 		::ZeroMemory(&statistics,sizeof(statistics));
 		for( TCylinder n=0; fp.nTracks--; pAction->UpdateProgress(++n) ){
-			if (!pAction->CanContinue()) return ERROR_CANCELLED;
+			if (pAction->IsCancelled()) return ERROR_CANCELLED;
 			const TCylinder cyl=*fp.cylinders++;
 			const THead head=*fp.heads++;
 			// . formatting Track
@@ -420,12 +420,12 @@ reportError:Utils::Information(buf);
 	};
 	UINT AFX_CDECL CDos::__unformatTracks_thread__(PVOID _pCancelableAction){
 		// thread to unformat specified Tracks
-		const PBackgroundActionCancelableBase pAction=(PBackgroundActionCancelableBase)_pCancelableAction;
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
 		TUnfmtParams ufp=*(TUnfmtParams *)pAction->GetParams();
 		pAction->SetProgressTarget( ufp.nTracks );
 		ufp.cylinders+=ufp.nTracks, ufp.heads+=ufp.nTracks; // unformatting "backwards"
 		for( TCylinder n=0; ufp.nTracks--; pAction->UpdateProgress(++n) ){
-			if (!pAction->CanContinue()) return ERROR_CANCELLED;
+			if (pAction->IsCancelled()) return ERROR_CANCELLED;
 			if (const TStdWinError err=ufp.image->UnformatTrack( *--ufp.cylinders, *--ufp.heads ))
 				return pAction->TerminateWithError(err);
 		}
@@ -485,7 +485,7 @@ reportError:Utils::Information(buf);
 	UINT AFX_CDECL CDos::__fillEmptySpace_thread__(PVOID _pCancelableAction){
 		// thread to flood selected types of empty space on disk
 		LOG_ACTION(_T("Fill empty space"));
-		const PBackgroundActionCancelableBase pAction=(PBackgroundActionCancelableBase)_pCancelableAction;
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
 		TFillEmptySpaceParams fesp=*(TFillEmptySpaceParams *)pAction->GetParams();
 		const PImage image=fesp.dos->image;
 		pAction->SetProgressTarget( 1+image->GetCylinderCount() ); // "1+" = to not terminate the action prelimiary when having processed the last Cylinder in Image
@@ -493,7 +493,7 @@ reportError:Utils::Information(buf);
 		if (fesp.rd.fillEmptySectors)
 			for( TCylinder cyl=0,const nCylinders=image->GetCylinderCount(); cyl<nCylinders; pAction->UpdateProgress(++cyl) )
 				for( THead head=fesp.dos->formatBoot.nHeads; head--; ){
-					if (!pAction->CanContinue()) return ERROR_CANCELLED;
+					if (pAction->IsCancelled()) return ERROR_CANCELLED;
 					// : determining standard Empty Sectors
 					TSectorId bufferId[(TSector)-1],*pId=bufferId,*pEmptyId=bufferId;
 					TSector nSectors=fesp.dos->__getListOfStdSectors__(cyl,head,bufferId);
@@ -526,7 +526,7 @@ reportError:Utils::Information(buf);
 				const PFile dir=discoveredDirs.RemoveHead();
 				if (const auto pdt=fesp.dos->BeginDirectoryTraversal(dir))
 					while (const PCFile file=pdt->GetNextFileOrSubdir()){
-						if (!pAction->CanContinue()) return ERROR_CANCELLED;
+						if (pAction->IsCancelled()) return ERROR_CANCELLED;
 						switch (pdt->entryType){
 							case TDirectoryTraversal::FILE:{
 								// File
@@ -576,7 +576,7 @@ reportError:Utils::Information(buf);
 				if (const auto pdt=fesp.dos->BeginDirectoryTraversal(dir)){
 					pAction->UpdateProgress(pdt->chs.cylinder);
 					while (pdt->AdvanceToNextEntry()){
-						if (!pAction->CanContinue()) return ERROR_CANCELLED;
+						if (pAction->IsCancelled()) return ERROR_CANCELLED;
 						switch (pdt->entryType){
 							case TDirectoryTraversal::EMPTY:
 								// Empty entry

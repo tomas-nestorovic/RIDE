@@ -20,14 +20,14 @@
 
 	static UINT AFX_CDECL __patch_thread__(PVOID _pCancelableAction){
 		// thread to copy Tracks
-		const PBackgroundActionCancelableBase pAction=(PBackgroundActionCancelableBase)_pCancelableAction;
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
 		const TPatchParams &pp=*(TPatchParams *)pAction->GetParams();
 		pAction->SetProgressTarget( pp.cylinderZ+1-pp.cylinderA );
 		const Utils::CByteIdentity sectorIdAndPositionIdentity;
 		TPhysicalAddress chs;
 		for( chs.cylinder=pp.cylinderA; chs.cylinder<=pp.cylinderZ; pAction->UpdateProgress(++chs.cylinder-pp.cylinderA) )
 			for( chs.head=0; chs.head<pp.nHeads; chs.head++ ){
-				if (!pAction->CanContinue()) return ERROR_CANCELLED;
+				if (pAction->IsCancelled()) return ERROR_CANCELLED;
 				// . scanning Source Track
 				TSectorId bufferId[(TSector)-1];	WORD bufferLength[(TSector)-1];
 				const TSector nSectors=pp.source->ScanTrack(chs.cylinder,chs.head,bufferId,bufferLength);

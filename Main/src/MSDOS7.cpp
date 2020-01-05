@@ -1033,13 +1033,13 @@ nextCluster:result++;
 	};
 	UINT AFX_CDECL CMSDOS7::__removeLongNames_thread__(PVOID _pCancelableAction){
 		// thread to remove long File names
-		const PBackgroundActionCancelableBase pAction=(PBackgroundActionCancelableBase)_pCancelableAction;
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
 		const TRemoveLongNameParams rlnp=*(TRemoveLongNameParams *)pAction->GetParams();
 		pAction->SetProgressTarget( rlnp.msdos->formatBoot.nCylinders );
 			CFileManagerView::TFileList bfsDirectories; // breadth first search, searching through Directories in breadth
 			TCylinder state=0;
 			for( bfsDirectories.AddTail(rlnp.msdos->currentDir); bfsDirectories.GetCount(); ){
-				if (!pAction->CanContinue()) return ERROR_CANCELLED;
+				if (pAction->IsCancelled()) return ERROR_CANCELLED;
 				TMsdos7DirectoryTraversal dt( rlnp.msdos, bfsDirectories.RemoveHead() );
 				while (dt.__existsNextEntry__()){
 					const PDirectoryEntry de=(PDirectoryEntry)dt.entry;

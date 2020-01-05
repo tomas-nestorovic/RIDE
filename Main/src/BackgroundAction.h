@@ -19,32 +19,25 @@
 	} *PCBackgroundAction;
 
 
-	typedef class CBackgroundActionCancelableBase abstract:public CBackgroundAction,public CDialog{
-		volatile bool bContinue;
-	protected:
+	typedef class CBackgroundActionCancelable:public CBackgroundAction,public CDialog{
 		int progressTarget;
+	protected:
+		volatile bool bCancelled;
+
+		CBackgroundActionCancelable(UINT dlgResId);
 
 		BOOL OnInitDialog() override;
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 	public:
-		CBackgroundActionCancelableBase(UINT dlgResId);
-
-		virtual TStdWinError Perform()=0;
-		bool CanContinue() const volatile;
-		void SetProgressTarget(int targetState);
-		void SetProgressTargetInfinity();
-		virtual void UpdateProgress(int state) const=0;
-		void UpdateProgressFinished() const;
-		TStdWinError TerminateWithError(TStdWinError error);
-	} *PBackgroundActionCancelableBase;
-
-
-	class CBackgroundActionCancelable sealed:public CBackgroundActionCancelableBase{
-	public:
 		CBackgroundActionCancelable(AFX_THREADPROC fnAction,LPCVOID actionParams,int actionThreadPriority);
 
-		TStdWinError Perform() override;
-		void UpdateProgress(int state) const override;
-	};
+		TStdWinError Perform();
+		bool IsCancelled() const volatile;
+		void SetProgressTarget(int targetState);
+		void SetProgressTargetInfinity();
+		void UpdateProgress(int state) const;
+		void UpdateProgressFinished() const;
+		TStdWinError TerminateWithError(TStdWinError error);
+	} *PBackgroundActionCancelable;
 
 #endif // BACKGROUNDACTION_H

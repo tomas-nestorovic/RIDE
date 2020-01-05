@@ -946,7 +946,7 @@ namespace Utils{
 
 	static UINT AFX_CDECL __downloadSingleFile_thread__(PVOID _pCancelableAction){
 		// thread to download an on-line file with given URL to a local Buffer; caller is to dimension the Buffer so that it can contain the whole on-line file
-		const PBackgroundActionCancelableBase pAction=(PBackgroundActionCancelableBase)_pCancelableAction;
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
 		TDownloadSingleFileParams &rdsfp=*(TDownloadSingleFileParams *)pAction->GetParams();
 		pAction->SetProgressTargetInfinity();
 		HINTERNET hSession=nullptr, hOnlineFile=nullptr;

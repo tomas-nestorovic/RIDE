@@ -13,7 +13,7 @@
 		// dtor
 		// - forced termination of the Worker (if this cannot be done, it's necessary to sort it out in descendant's dtor)
 		if (pWorker)
-			::TerminateThread( *this, 0 );
+			::TerminateThread( *this, ERROR_SUCCESS );
 	}
 
 
@@ -60,16 +60,25 @@
 
 
 
-	CBackgroundActionCancelableBase::CBackgroundActionCancelableBase(UINT dlgResId)
+	CBackgroundActionCancelable::CBackgroundActionCancelable(UINT dlgResId)
 		// ctor
 		: CDialog( dlgResId, app.m_pMainWnd )
-		, bContinue(true)
+		, bCancelled(false)
 		, progressTarget(INT_MAX) {
+	}
+
+	CBackgroundActionCancelable::CBackgroundActionCancelable(AFX_THREADPROC fnAction,LPCVOID actionParams,int actionThreadPriority)
+		// ctor
+		: CDialog( IDR_ACTION_PROGRESS, app.m_pMainWnd )
+		, bCancelled(false)
+		, progressTarget(INT_MAX) {
+		BeginAnother( fnAction, actionParams, actionThreadPriority );
 	}
 
 
 
-	BOOL CBackgroundActionCancelableBase::OnInitDialog(){
+
+	BOOL CBackgroundActionCancelable::OnInitDialog(){
 		// dialog initialization
 		// - zeroing the progress-bar
 		CProgressCtrl pc;
@@ -81,60 +90,16 @@
 		return TRUE;
 	}
 
-	LRESULT CBackgroundActionCancelableBase::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
+	LRESULT CBackgroundActionCancelable::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
 		// window procedure
 		if (msg==WM_COMMAND && wParam==IDCANCEL)
-			bContinue=false; // cancelling the Worker and whole dialog
+			bCancelled=true; // cancelling the Worker and whole dialog
 		return __super::WindowProc(msg,wParam,lParam);
-	}
-
-	bool CBackgroundActionCancelableBase::CanContinue() const volatile{
-		// True <=> the Worker can continue (user hasn't cancelled it), otherwise False
-		return bContinue;
-	}
-
-	void CBackgroundActionCancelableBase::SetProgressTarget(int targetState){
-		// sets Worker's target progress state, "100% completed"
-		CProgressCtrl pc;
-		pc.Attach( GetDlgItem(ID_STATE)->m_hWnd );
-			pc.SetRange32( 0, progressTarget=targetState );
-		pc.Detach();
-	}
-
-	void CBackgroundActionCancelableBase::SetProgressTargetInfinity(){
-		// sets Worker's target progress state to infinity
-		SetProgressTarget(INT_MAX);
-	}
-
-	void CBackgroundActionCancelableBase::UpdateProgressFinished() const{
-		// refreshes the displaying of actual progress to "100% completed"
-		UpdateProgress(INT_MAX);
-	}
-
-	TStdWinError CBackgroundActionCancelableBase::TerminateWithError(TStdWinError error){
-		// initiates the termination of the Worker with specified Error
-		bContinue=false;
-		PostMessage( WM_COMMAND, IDCANCEL );
-		return error;
-	}
-
-
-
-
-
-
-
-
-
-	CBackgroundActionCancelable::CBackgroundActionCancelable(AFX_THREADPROC fnAction,LPCVOID actionParams,int actionThreadPriority)
-		// ctor
-		: CBackgroundActionCancelableBase( IDR_ACTION_PROGRESS ) {
-		BeginAnother( fnAction, actionParams, actionThreadPriority );
 	}
 
 	TStdWinError CBackgroundActionCancelable::Perform(){
 		// returns the Worker's result; when performing, the actual progress is shown in a modal window
-		// - showing modal dialog (if none exists so far)
+		// - showing modal dialog and performing the Action
 		DoModal();
 		// - waiting for the already running Worker
 		::WaitForSingleObject( *this, INFINITE );
@@ -142,6 +107,24 @@
 		TStdWinError result;
 		::GetExitCodeThread( *this, &result );
 		return result;
+	}
+
+	bool CBackgroundActionCancelable::IsCancelled() const volatile{
+		// True <=> the Worker can continue (user hasn't cancelled it), otherwise False
+		return bCancelled;
+	}
+
+	void CBackgroundActionCancelable::SetProgressTarget(int targetState){
+		// sets Worker's target progress state, "100% completed"
+		CProgressCtrl pc;
+		pc.Attach( GetDlgItem(ID_STATE)->m_hWnd );
+			pc.SetRange32( 0, progressTarget=targetState );
+		pc.Detach();
+	}
+
+	void CBackgroundActionCancelable::SetProgressTargetInfinity(){
+		// sets Worker's target progress state to infinity
+		SetProgressTarget(INT_MAX);
 	}
 
 	void CBackgroundActionCancelable::UpdateProgress(int state) const{
@@ -153,4 +136,16 @@
 			else
 				// Worker finished - closing the window
 				::PostMessage( m_hWnd, WM_COMMAND, IDOK, 0 );
+	}
+
+	void CBackgroundActionCancelable::UpdateProgressFinished() const{
+		// refreshes the displaying of actual progress to "100% completed"
+		UpdateProgress(INT_MAX);
+	}
+
+	TStdWinError CBackgroundActionCancelable::TerminateWithError(TStdWinError error){
+		// initiates the termination of the Worker with specified Error
+		bCancelled=true;
+		PostMessage( WM_COMMAND, IDCANCEL );
+		return error;
 	}
