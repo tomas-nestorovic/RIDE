@@ -731,11 +731,12 @@ error:				switch (const TStdWinError err=::GetLastError()){
 	UINT AFX_CDECL CFDD::__save_thread__(PVOID _pCancelableAction){
 		// thread to save InternalTracks (particularly their Modified Sectors) on inserted floppy
 		LOG_ACTION(_T("UINT CFDD::__save_thread__"));
-		TBackgroundActionCancelable *const pAction=(TBackgroundActionCancelable *)_pCancelableAction;
-		const TSaveParams sp=*(TSaveParams *)pAction->fnParams;
+		const PBackgroundActionCancelableBase pAction=(PBackgroundActionCancelableBase)_pCancelableAction;
+		const TSaveParams sp=*(TSaveParams *)pAction->GetParams();
+		pAction->SetProgressTarget(FDD_CYLINDERS_MAX);
 		for( TCylinder cyl=0; cyl<FDD_CYLINDERS_MAX; pAction->UpdateProgress(++cyl) )
 			for( THead head=0; head<2; head++ ){ // 2 = max number of Sides on a floppy
-				if (!pAction->bContinue) return LOG_ERROR(ERROR_CANCELLED);
+				if (!pAction->CanContinue()) return LOG_ERROR(ERROR_CANCELLED);
 				if (const TStdWinError err=sp.fdd->SaveTrack(cyl,head))
 					return pAction->TerminateWithError(err);
 			}
@@ -743,11 +744,11 @@ error:				switch (const TStdWinError err=::GetLastError()){
 	}
 	BOOL CFDD::OnSaveDocument(LPCTSTR){
 		// True <=> this Image has been successfully saved, otherwise False
-		const TStdWinError err=	TBackgroundActionCancelable(
+		const TStdWinError err=	CBackgroundActionCancelable(
 									__save_thread__,
 									&TSaveParams( this ),
 									FDD_THREAD_PRIORITY_DEFAULT
-								).CarryOut(FDD_CYLINDERS_MAX);
+								).Perform();
 		::SetLastError(err);
 		if (err==ERROR_SUCCESS){
 			m_bModified=FALSE;
@@ -1266,12 +1267,13 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 	};
 	UINT AFX_CDECL CFDD::__determineControllerAndOneByteLatency_thread__(PVOID _pCancelableAction){
 		// thread to automatically determine the controller and one Byte write latencies
-		TBackgroundActionCancelable *const pAction=(TBackgroundActionCancelable *)_pCancelableAction;
-		TLatencyParams &lp=*(TLatencyParams *)pAction->fnParams;
+		const PBackgroundActionCancelableBase pAction=(PBackgroundActionCancelableBase)_pCancelableAction;
+		TLatencyParams &lp=*(TLatencyParams *)pAction->GetParams();
+		pAction->SetProgressTarget( lp.nRepeats*3 ); // 3 = number of steps of a single trial
 		// - defining the Interruption
 		struct TInterruption sealed{
 		private:
-			const TBackgroundActionCancelable *const pAction;
+			const PBackgroundActionCancelableBase pAction;
 			CFDD *const fdd;
 			TCylinder &rCyl;
 			THead &rHead;
@@ -1282,7 +1284,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 			TSectorId sectorId;
 			WORD nMicroseconds;
 
-			TInterruption(const TBackgroundActionCancelable *pAction,TLatencyParams &lp)
+			TInterruption(const PBackgroundActionCancelableBase pAction,TLatencyParams &lp)
 				// ctor
 				: pAction(pAction)
 				, fdd(lp.fdd) , sectorLength(lp.ddFloppy?4096:8192)
@@ -1328,7 +1330,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 				nMicroseconds=20;
 				// : increasing the NumberOfMicroseconds until the specified NumberOfBytes is written for the first time
 				do{
-					if (!pAction->bContinue) return ERROR_CANCELLED;
+					if (!pAction->CanContinue()) return ERROR_CANCELLED;
 					nMicroseconds+=usAccuracy;
 					if (const TStdWinError err=__writeSectorData__(nBytes))
 						return err;
@@ -1336,7 +1338,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 				const float nMicrosecondsA=nMicroseconds;
 				// : increasing the NumberOfMicroseconds until a higher NumberOfBytes is written for the first time
 				do{
-					if (!pAction->bContinue) return ERROR_CANCELLED;
+					if (!pAction->CanContinue()) return ERROR_CANCELLED;
 					nMicroseconds+=usAccuracy;
 					if (const TStdWinError err=__writeSectorData__(nBytes))
 						return err;
@@ -1351,7 +1353,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 		for( BYTE c=lp.nRepeats,state=0; c--; ){
 			// . STEP 1: writing the test Sector (DD = 4kB, HD = 8kB)
 			do{
-				if (!pAction->bContinue) return LOG_ERROR(ERROR_CANCELLED);
+				if (!pAction->CanContinue()) return LOG_ERROR(ERROR_CANCELLED);
 				// : seeking Head to the particular Cylinder
 				if (!lp.fdd->fddHead.__seekTo__(lp.cyl))
 					return LOG_ERROR(pAction->TerminateWithError(ERROR_REQUEST_REFUSED));
@@ -1373,7 +1375,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 			}while (true);
 			pAction->UpdateProgress(++state);
 			// . STEP 2: experimentally determining the ControllerLatency
-			if (!pAction->bContinue) return LOG_ERROR(ERROR_CANCELLED);
+			if (!pAction->CanContinue()) return LOG_ERROR(ERROR_CANCELLED);
 			const WORD nBytes=interruption.sectorLength/2;
 			if (const TStdWinError err=interruption.__setInterruptionToWriteSpecifiedNumberOfBytes__(nBytes))
 				return LOG_ERROR(pAction->TerminateWithError(err));
@@ -1386,7 +1388,7 @@ Utils::Information(buf);}
 //*/
 			pAction->UpdateProgress(++state);
 			// . STEP 3: experimentally determining the latency of one Byte
-			if (!pAction->bContinue) return LOG_ERROR(ERROR_CANCELLED);
+			if (!pAction->CanContinue()) return LOG_ERROR(ERROR_CANCELLED);
 			const float p = interruption.nMicroseconds = 65000;
 			if (const TStdWinError err=interruption.__writeSectorData__(nBytes))
 				return LOG_ERROR(pAction->TerminateWithError(err));
@@ -1407,11 +1409,12 @@ Utils::Information(buf);}
 	}
 	UINT AFX_CDECL CFDD::__determineGap3Latency_thread__(PVOID _pCancelableAction){
 		// thread to automatically determine the Gap3 latency
-		TBackgroundActionCancelable *const pAction=(TBackgroundActionCancelable *)_pCancelableAction;
-		TLatencyParams &lp=*(TLatencyParams *)pAction->fnParams;
+		const PBackgroundActionCancelableBase pAction=(PBackgroundActionCancelableBase)_pCancelableAction;
+		TLatencyParams &lp=*(TLatencyParams *)pAction->GetParams();
+		pAction->SetProgressTarget( FDD_SECTOR_GAP3_STD );
 		const TExclusiveLocker locker(lp.fdd); // locking the access so that no one can disturb during the testing
 		for( BYTE gap3=1; gap3<FDD_SECTOR_GAP3_STD; pAction->UpdateProgress(gap3+=3) ){
-			if (!pAction->bContinue) return LOG_ERROR(ERROR_CANCELLED);
+			if (!pAction->CanContinue()) return LOG_ERROR(ERROR_CANCELLED);
 			// . STEP 1: writing two test Sectors
 			static const TSectorId SectorIds[]={ {1,0,1,2}, {1,0,2,2} };
 			static const WORD SectorLengths[]={ 512, 512 };
@@ -1425,7 +1428,7 @@ Utils::Information(buf);}
 			// . STEP 2: reading the Sectors
 			BYTE c=0;
 			while (c<lp.nRepeats){
-				if (!pAction->bContinue) return LOG_ERROR(ERROR_CANCELLED);
+				if (!pAction->CanContinue()) return LOG_ERROR(ERROR_CANCELLED);
 				// . STEP 2.1: scanning the Track and seeing how distant the two test Sectors are on it
 				lp.fdd->__unformatInternalTrack__(lp.cyl,lp.head); // disposing internal information on actual Track format
 				const TInternalTrack *const pit=lp.fdd->__scanTrack__(lp.cyl,lp.head);
@@ -1576,20 +1579,20 @@ autodetermineLatencies:		// automatic determination of write latency values
 								__informationWithCheckableShowNoMore__( _T("Windows is NOT a real-time system! Computed latency will be valid only if using the floppy drive in very similar conditions as when they were computed (current conditions)!"), INI_MSG_LATENCY );
 								if (Utils::InformationOkCancel(_T("Insert an empty disk and hit OK."))){
 									TLatencyParams lp( fdd, d.floppyType==0, 1+d.usAccuracy, 1+d.nRepeats );
-									if (const TStdWinError err=	TBackgroundActionCancelable(
+									if (const TStdWinError err=	CBackgroundActionCancelable(
 																	__determineControllerAndOneByteLatency_thread__,
 																	&lp,
 																	FDD_THREAD_PRIORITY_DEFAULT
-																).CarryOut(lp.nRepeats*3) // 3 = number of steps of a single trial
+																).Perform()
 									){
 latencyAutodeterminationError:			Utils::FatalError(_T("Couldn't autodetermine"),err);
 										break;
 									}
-									if (const TStdWinError err=	TBackgroundActionCancelable(
+									if (const TStdWinError err=	CBackgroundActionCancelable(
 																	__determineGap3Latency_thread__,
 																	&lp,
 																	FDD_THREAD_PRIORITY_DEFAULT
-																).CarryOut(FDD_SECTOR_GAP3_STD)
+																).Perform()
 									)
 										goto latencyAutodeterminationError;
 									params.controllerLatency=lp.outControllerLatency;

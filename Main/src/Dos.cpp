@@ -166,11 +166,12 @@ reportError:Utils::Information(buf);
 	};
 	UINT AFX_CDECL CDos::__checkCylindersAreEmpty_thread__(PVOID _pCancelableAction){
 		// thread to determine if given Cylinders are empty; return ERROR_EMPTY/ERROR_NOT_EMPTY or another Windows standard i/o error
-		TBackgroundActionCancelable *const pAction=(TBackgroundActionCancelable *)_pCancelableAction;
-		TEmptyCylinderParams ecp=*(TEmptyCylinderParams *)pAction->fnParams;
+		const PBackgroundActionCancelableBase pAction=(PBackgroundActionCancelableBase)_pCancelableAction;
+		TEmptyCylinderParams ecp=*(TEmptyCylinderParams *)pAction->GetParams();
+		pAction->SetProgressTarget( ecp.nCylinders );
 		const TCylinder firstCylinderWithEmptySector=ecp.dos->GetFirstCylinderWithEmptySector();
 		for( TCylinder n=0; n<ecp.nCylinders; pAction->UpdateProgress(++n) ){
-			if (!pAction->bContinue) return ERROR_CANCELLED;
+			if (!pAction->CanContinue()) return ERROR_CANCELLED;
 			const TCylinder cyl=*ecp.cylinders++;
 			// . Cylinder not empty if located before FirstCylinderWithEmptySector
 			if (cyl<firstCylinderWithEmptySector)
@@ -188,11 +189,11 @@ reportError:Utils::Information(buf);
 	TStdWinError CDos::__areStdCylindersEmpty__(TTrack nCylinders,PCylinder bufCylinders) const{
 		// checks if specified Cylinders are empty (i.e. none of their standard "official" Sectors is allocated, non-standard sectors ignored); returns Windows standard i/o error
 		if (nCylinders)
-			return	TBackgroundActionCancelable(
+			return	CBackgroundActionCancelable(
 						__checkCylindersAreEmpty_thread__,
 						&TEmptyCylinderParams( this, nCylinders, bufCylinders ),
 						THREAD_PRIORITY_BELOW_NORMAL
-					).CarryOut(nCylinders);
+					).Perform();
 		else
 			return ERROR_EMPTY;
 	}
@@ -291,8 +292,9 @@ reportError:Utils::Information(buf);
 	};
 	UINT AFX_CDECL CDos::__formatTracks_thread__(PVOID _pCancelableAction){
 		// thread to format selected Tracks
-		TBackgroundActionCancelable *const pAction=(TBackgroundActionCancelable *)_pCancelableAction;
-		TFmtParams fp=*(TFmtParams *)pAction->fnParams;
+		const PBackgroundActionCancelableBase pAction=(PBackgroundActionCancelableBase)_pCancelableAction;
+		TFmtParams fp=*(TFmtParams *)pAction->GetParams();
+		pAction->SetProgressTarget( fp.nTracks );
 		struct{
 			TTrack nTracks;
 			DWORD nSectorsInTotal;
@@ -301,7 +303,7 @@ reportError:Utils::Information(buf);
 		} statistics;
 		::ZeroMemory(&statistics,sizeof(statistics));
 		for( TCylinder n=0; fp.nTracks--; pAction->UpdateProgress(++n) ){
-			if (!pAction->bContinue) return ERROR_CANCELLED;
+			if (!pAction->CanContinue()) return ERROR_CANCELLED;
 			const TCylinder cyl=*fp.cylinders++;
 			const THead head=*fp.heads++;
 			// . formatting Track
@@ -365,11 +367,11 @@ reportError:Utils::Information(buf);
 	}
 	TStdWinError CDos::__formatTracks__(TTrack nTracks,PCCylinder cylinders,PCHead heads,TSector nSectors,PSectorId bufferId,PCWORD bufferLength,const CFormatDialog::TParameters &rParams,bool showReport){
 		// formats given Tracks, each with given NumberOfSectors, each with given Length; returns Windows standard i/o error
-		const TStdWinError err=	TBackgroundActionCancelable(
+		const TStdWinError err=	CBackgroundActionCancelable(
 									__formatTracks_thread__,
 									&TFmtParams( this, nTracks, cylinders, heads, nSectors, bufferId, bufferLength, rParams, showReport ),
 									THREAD_PRIORITY_BELOW_NORMAL
-								).CarryOut(nTracks);
+								).Perform();
 		if (err!=ERROR_SUCCESS)
 			Utils::FatalError(_T("Cannot format a track"),err);
 		return err;
@@ -418,24 +420,24 @@ reportError:Utils::Information(buf);
 	};
 	UINT AFX_CDECL CDos::__unformatTracks_thread__(PVOID _pCancelableAction){
 		// thread to unformat specified Tracks
-		TBackgroundActionCancelable *const pAction=(TBackgroundActionCancelable *)_pCancelableAction;
-		TUnfmtParams ufp=*(TUnfmtParams *)pAction->fnParams;
+		const PBackgroundActionCancelableBase pAction=(PBackgroundActionCancelableBase)_pCancelableAction;
+		TUnfmtParams ufp=*(TUnfmtParams *)pAction->GetParams();
+		pAction->SetProgressTarget( ufp.nTracks );
 		ufp.cylinders+=ufp.nTracks, ufp.heads+=ufp.nTracks; // unformatting "backwards"
 		for( TCylinder n=0; ufp.nTracks--; pAction->UpdateProgress(++n) ){
-			if (!pAction->bContinue) return ERROR_CANCELLED;
-			const TStdWinError err=ufp.image->UnformatTrack( *--ufp.cylinders, *--ufp.heads );
-			if (err!=ERROR_SUCCESS)
+			if (!pAction->CanContinue()) return ERROR_CANCELLED;
+			if (const TStdWinError err=ufp.image->UnformatTrack( *--ufp.cylinders, *--ufp.heads ))
 				return pAction->TerminateWithError(err);
 		}
 		return ERROR_SUCCESS;
 	}
 	TStdWinError CDos::__unformatTracks__(TTrack nTracks,PCCylinder cylinders,PCHead heads){
 		// unformats given Tracks; returns Windows standard i/o error
-		const TStdWinError err=	TBackgroundActionCancelable(
+		const TStdWinError err=	CBackgroundActionCancelable(
 									__unformatTracks_thread__,
 									&TUnfmtParams( image, nTracks, cylinders, heads ),
 									THREAD_PRIORITY_BELOW_NORMAL
-								).CarryOut(nTracks);
+								).Perform();
 		if (err!=ERROR_SUCCESS)
 			Utils::FatalError(_T("Cannot unformat a track"),err);
 		return err;
@@ -483,14 +485,15 @@ reportError:Utils::Information(buf);
 	UINT AFX_CDECL CDos::__fillEmptySpace_thread__(PVOID _pCancelableAction){
 		// thread to flood selected types of empty space on disk
 		LOG_ACTION(_T("Fill empty space"));
-		const TBackgroundActionCancelable *const pAction=(TBackgroundActionCancelable *)_pCancelableAction;
-		TFillEmptySpaceParams fesp=*(TFillEmptySpaceParams *)pAction->fnParams;
+		const PBackgroundActionCancelableBase pAction=(PBackgroundActionCancelableBase)_pCancelableAction;
+		TFillEmptySpaceParams fesp=*(TFillEmptySpaceParams *)pAction->GetParams();
 		const PImage image=fesp.dos->image;
+		pAction->SetProgressTarget( 1+image->GetCylinderCount() ); // "1+" = to not terminate the action prelimiary when having processed the last Cylinder in Image
 		// - filling all Empty Sectors
 		if (fesp.rd.fillEmptySectors)
 			for( TCylinder cyl=0,const nCylinders=image->GetCylinderCount(); cyl<nCylinders; pAction->UpdateProgress(++cyl) )
 				for( THead head=fesp.dos->formatBoot.nHeads; head--; ){
-					if (!pAction->bContinue) return ERROR_CANCELLED;
+					if (!pAction->CanContinue()) return ERROR_CANCELLED;
 					// : determining standard Empty Sectors
 					TSectorId bufferId[(TSector)-1],*pId=bufferId,*pEmptyId=bufferId;
 					TSector nSectors=fesp.dos->__getListOfStdSectors__(cyl,head,bufferId);
@@ -523,7 +526,7 @@ reportError:Utils::Information(buf);
 				const PFile dir=discoveredDirs.RemoveHead();
 				if (const auto pdt=fesp.dos->BeginDirectoryTraversal(dir))
 					while (const PCFile file=pdt->GetNextFileOrSubdir()){
-						if (!pAction->bContinue) return ERROR_CANCELLED;
+						if (!pAction->CanContinue()) return ERROR_CANCELLED;
 						switch (pdt->entryType){
 							case TDirectoryTraversal::FILE:{
 								// File
@@ -573,7 +576,7 @@ reportError:Utils::Information(buf);
 				if (const auto pdt=fesp.dos->BeginDirectoryTraversal(dir)){
 					pAction->UpdateProgress(pdt->chs.cylinder);
 					while (pdt->AdvanceToNextEntry()){
-						if (!pAction->bContinue) return ERROR_CANCELLED;
+						if (!pAction->CanContinue()) return ERROR_CANCELLED;
 						switch (pdt->entryType){
 							case TDirectoryTraversal::EMPTY:
 								// Empty entry
@@ -595,7 +598,7 @@ reportError:Utils::Information(buf);
 					//TODO: warning
 			}
 		}
-		pAction->UpdateProgress(-1); // "-1" = completed
+		pAction->UpdateProgressFinished();
 		return ERROR_SUCCESS;
 	}
 	bool CDos::__fillEmptySpace__(CFillEmptySpaceDialog &rd){
@@ -603,11 +606,11 @@ reportError:Utils::Information(buf);
 		if (image->__reportWriteProtection__()) return false;
 		if (rd.DoModal()!=IDOK) return false;
 		// - filling
-		TBackgroundActionCancelable(
+		CBackgroundActionCancelable(
 			__fillEmptySpace_thread__,
 			&TFillEmptySpaceParams(this,rd),
 			THREAD_PRIORITY_BELOW_NORMAL
-		).CarryOut( 1+image->GetCylinderCount() ); // "1+" = to not terminate the action prelimiary when having processed the last Cylinder in Image
+		).Perform();
 		// - updating Views
 		image->UpdateAllViews(nullptr);
 		return true;

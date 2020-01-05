@@ -1,34 +1,55 @@
 #include "stdafx.h"
 
-	TBackgroundAction::TBackgroundAction(AFX_THREADPROC fnAction,LPCVOID actionParams,int actionThreadPriority)
+	CBackgroundAction::CBackgroundAction(){
 		// ctor
-		// - initialization
-		: fnParams(actionParams)
-		// - creating a suspended Worker
-		, pWorker( AfxBeginThread( fnAction, this, actionThreadPriority, 0, CREATE_SUSPENDED ) ) { // the object must have a vtable for the keyword "this" to work in AfxBeginThread
+	}
+
+	CBackgroundAction::CBackgroundAction(AFX_THREADPROC fnAction,LPCVOID actionParams,int actionThreadPriority){
+		// ctor
+		BeginAnother( fnAction, actionParams, actionThreadPriority );
+	}
+
+	CBackgroundAction::~CBackgroundAction(){
+		// dtor
+		// - forced termination of the Worker (if this cannot be done, it's necessary to sort it out in descendant's dtor)
+		if (pWorker)
+			::TerminateThread( *this, 0 );
+	}
+
+
+
+	LPCVOID CBackgroundAction::GetParams() const{
+		// returns the Parameters which the Worker was launched with
+		return fnParams;
+	}
+
+	void CBackgroundAction::Resume() const{
+		// resumes Worker's activity
+		if (pWorker)
+			pWorker->ResumeThread();
+	}
+	void CBackgroundAction::Suspend() const{
+		// suspends Worker's activity
+		if (pWorker)
+			pWorker->SuspendThread();
+	}
+
+	void CBackgroundAction::BeginAnother(AFX_THREADPROC fnAction,LPCVOID actionParams,int actionThreadPriority){
+		// waits until the current Worker has finished and launches another Worker
+		// - waiting
+		if (pWorker)
+			::WaitForSingleObject( *this, INFINITE );
+		// - launching new
+		fnParams=actionParams;
+		pWorker.reset(
+			AfxBeginThread( fnAction, this, actionThreadPriority, 0, CREATE_SUSPENDED ) // the object must have a vtable for the keyword "this" to work in AfxBeginThread
+		);
 		pWorker->m_bAutoDelete=FALSE;
 	}
 
-	TBackgroundAction::~TBackgroundAction(){
-		// dtor
-		// - forced termination of the Worker (if this cannot be done, it's necessary to sort it out in descendant's dtor)
-		::TerminateThread( pWorker->m_hThread, 0 );
-	}
-
-
-
-	void TBackgroundAction::Resume() const{
-		// resumes Worker's activity
-		pWorker->ResumeThread();
-	}
-	void TBackgroundAction::Suspend() const{
-		// suspends Worker's activity
-		pWorker->SuspendThread();
-	}
-
-	TBackgroundAction::operator HANDLE() const{
+	CBackgroundAction::operator HANDLE() const{
 		// gets the Worker thread handle
-		return pWorker->m_hThread;
+		return pWorker ? pWorker->m_hThread : INVALID_HANDLE_VALUE;
 	}
 
 
@@ -39,68 +60,97 @@
 
 
 
-	TBackgroundActionCancelable::TBackgroundActionCancelable(AFX_THREADPROC fnAction,LPCVOID actionParams,int actionThreadPriority)
+	CBackgroundActionCancelableBase::CBackgroundActionCancelableBase(UINT dlgResId)
 		// ctor
-		: TBackgroundAction(fnAction,actionParams,actionThreadPriority)
-		, CDialog(IDR_ACTION_PROGRESS,app.m_pMainWnd)
-		, bContinue(true) {
+		: CDialog( dlgResId, app.m_pMainWnd )
+		, bContinue(true)
+		, progressTarget(INT_MAX) {
 	}
 
 
 
-	BOOL TBackgroundActionCancelable::OnInitDialog(){
+	BOOL CBackgroundActionCancelableBase::OnInitDialog(){
 		// dialog initialization
+		// - zeroing the progress-bar
+		CProgressCtrl pc;
+		pc.Attach( GetDlgItem(ID_STATE)->m_hWnd );
+			pc.SetPos(0);
+		pc.Detach();
 		// - launching the Worker
-		pWorker->ResumeThread();
+		Resume();
 		return TRUE;
 	}
 
-	DWORD TBackgroundActionCancelable::CarryOut(DWORD _stateOfCompletion){
-		// returns the Action's result; when performing the Action, the actual progress is shown in a modal window
-		// - Action initialization
-		stateOfCompletion=_stateOfCompletion;
-		const HANDLE hWorker=pWorker->m_hThread;
-		// - showing modal dialog (if none exists so far)
-		DoModal();
-		// - waiting for the Worker
-		::WaitForSingleObject(hWorker,INFINITE);
-		// - returning the result
-		DWORD result;
-		::GetExitCodeThread(hWorker,&result);
-		return result;
+	LRESULT CBackgroundActionCancelableBase::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
+		// window procedure
+		if (msg==WM_COMMAND && wParam==IDCANCEL)
+			bContinue=false; // cancelling the Worker and whole dialog
+		return __super::WindowProc(msg,wParam,lParam);
 	}
 
-	DWORD TBackgroundActionCancelable::TerminateWithError(DWORD error){
-		// initiates the termination of the Action with specified Error
-		bContinue=false;
-		::PostMessage( m_hWnd, WM_COMMAND, IDCANCEL, 0 );
-		return error;
+	bool CBackgroundActionCancelableBase::CanContinue() const volatile{
+		// True <=> the Worker can continue (user hasn't cancelled it), otherwise False
+		return bContinue;
 	}
 
-	void TBackgroundActionCancelable::UpdateProgress(DWORD state) const{
-		// refreshes the displaying of actual progress
-		if (m_hWnd) // the window doesn't exist if Action already cancelled but the Worker hasn't yet found out that it can no longer Continue
-			if (state<stateOfCompletion)
-				// Action not yet finished - refreshing
-				::PostMessage( GetDlgItem(ID_STATE)->m_hWnd, PBM_SETPOS, state, 0 );
-			else
-				// Action completed - closing the window
-				::PostMessage( m_hWnd, WM_COMMAND, IDOK, 0 );
-	}
-
-	void TBackgroundActionCancelable::PreInitDialog(){
-		// dialog initialization
-		CDialog::PreInitDialog();
+	void CBackgroundActionCancelableBase::SetProgressTarget(int targetState){
+		// sets Worker's target progress state, "100% completed"
 		CProgressCtrl pc;
 		pc.Attach( GetDlgItem(ID_STATE)->m_hWnd );
-			pc.SetRange32( 0, stateOfCompletion );
-			pc.SetPos(0);
+			pc.SetRange32( 0, progressTarget=targetState );
 		pc.Detach();
 	}
 
-	LRESULT TBackgroundActionCancelable::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
-		// window procedure
-		if (msg==WM_COMMAND && wParam==IDCANCEL)
-			bContinue=false; // cancelling the Action
-		return CDialog::WindowProc(msg,wParam,lParam);
+	void CBackgroundActionCancelableBase::SetProgressTargetInfinity(){
+		// sets Worker's target progress state to infinity
+		SetProgressTarget(INT_MAX);
+	}
+
+	void CBackgroundActionCancelableBase::UpdateProgressFinished() const{
+		// refreshes the displaying of actual progress to "100% completed"
+		UpdateProgress(INT_MAX);
+	}
+
+	TStdWinError CBackgroundActionCancelableBase::TerminateWithError(TStdWinError error){
+		// initiates the termination of the Worker with specified Error
+		bContinue=false;
+		PostMessage( WM_COMMAND, IDCANCEL );
+		return error;
+	}
+
+
+
+
+
+
+
+
+
+	CBackgroundActionCancelable::CBackgroundActionCancelable(AFX_THREADPROC fnAction,LPCVOID actionParams,int actionThreadPriority)
+		// ctor
+		: CBackgroundActionCancelableBase( IDR_ACTION_PROGRESS ) {
+		BeginAnother( fnAction, actionParams, actionThreadPriority );
+	}
+
+	TStdWinError CBackgroundActionCancelable::Perform(){
+		// returns the Worker's result; when performing, the actual progress is shown in a modal window
+		// - showing modal dialog (if none exists so far)
+		DoModal();
+		// - waiting for the already running Worker
+		::WaitForSingleObject( *this, INFINITE );
+		// - returning the Result
+		TStdWinError result;
+		::GetExitCodeThread( *this, &result );
+		return result;
+	}
+
+	void CBackgroundActionCancelable::UpdateProgress(int state) const{
+		// refreshes the displaying of actual progress
+		if (m_hWnd) // the window doesn't exist if Worker already cancelled but the Worker hasn't yet found out that it can no longer Continue
+			if (state<progressTarget)
+				// Worker not yet finished - refreshing
+				GetDlgItem(ID_STATE)->PostMessage( PBM_SETPOS, state );
+			else
+				// Worker finished - closing the window
+				::PostMessage( m_hWnd, WM_COMMAND, IDOK, 0 );
 	}

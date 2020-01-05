@@ -140,8 +140,9 @@
 	static UINT AFX_CDECL __dump_thread__(PVOID _pCancelableAction){
 		// threat to copy Tracks
 		LOG_ACTION(_T("dump thread"));
-		TBackgroundActionCancelable *const pAction=(TBackgroundActionCancelable *)_pCancelableAction;
-		TDumpParams &dp=*(TDumpParams *)pAction->fnParams;
+		const PBackgroundActionCancelableBase pAction=(PBackgroundActionCancelableBase)_pCancelableAction;
+		TDumpParams &dp=*(TDumpParams *)pAction->GetParams();
+		pAction->SetProgressTarget( dp.cylinderZ+1-dp.cylinderA );
 		// - setting geometry to the TargetImage
 		TSectorId bufferId[(TSector)-1];	WORD bufferLength[(TSector)-1];
 		TSector nSectors=dp.source->ScanTrack(0,0,bufferId,bufferLength);
@@ -165,7 +166,7 @@ terminateWithError:
 		const Utils::CByteIdentity sectorIdAndPositionIdentity;
 		for( p.chs.cylinder=dp.cylinderA; p.chs.cylinder<=dp.cylinderZ; pAction->UpdateProgress(++p.chs.cylinder-dp.cylinderA) )
 			for( p.chs.head=0; p.chs.head<dp.nHeads; p.chs.head++ ){
-				if (!pAction->bContinue) return LOG_ERROR(ERROR_CANCELLED);
+				if (!pAction->CanContinue()) return LOG_ERROR(ERROR_CANCELLED);
 				LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("processing"));
 				p.track=p.chs.GetTrackNumber(dp.nHeads);
 				// . scanning Source Track
@@ -704,11 +705,11 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 			if (err!=ERROR_SUCCESS)
 				goto error;
 			// . dumping
-			err=TBackgroundActionCancelable(
+			err=CBackgroundActionCancelable(
 					__dump_thread__,
 					&d.dumpParams,
 					d.realtimeThreadPriority ? THREAD_PRIORITY_TIME_CRITICAL : THREAD_PRIORITY_NORMAL
-				).CarryOut( d.dumpParams.cylinderZ+1-d.dumpParams.cylinderA );
+				).Perform();
 			if (err==ERROR_SUCCESS){
 				if (d.dumpParams.target->OnSaveDocument(d.fileName)){
 					// : displaying statistics on SourceTrackErrors

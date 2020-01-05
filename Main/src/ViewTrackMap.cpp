@@ -107,8 +107,8 @@
 	};
 	UINT AFX_CDECL CTrackMapView::TTrackScanner::__thread__(PVOID _pBackgroundAction){
 		// scanning of Tracks
-		const TBackgroundAction *const pAction=(TBackgroundAction *)_pBackgroundAction;
-		CTrackMapView *const pvtm=(CTrackMapView *)pAction->fnParams;
+		const PCBackgroundAction pAction=(PCBackgroundAction)_pBackgroundAction;
+		CTrackMapView *const pvtm=(CTrackMapView *)pAction->GetParams();
 		TTrackScanner &rts=pvtm->scanner;
 		const PImage image=pvtm->IMAGE;
 		const Utils::CByteIdentity sectorIdAndPositionIdentity;
@@ -418,12 +418,13 @@
 	};
 	static UINT AFX_CDECL __trackStatistics_thread__(PVOID _pCancelableAction){
 		// creates and shows statistics on Tracks and their Sectors in current disk
-		const TBackgroundActionCancelable *const pAction=(TBackgroundActionCancelable *)_pCancelableAction;
-		TStatisticParams &rsp=*(TStatisticParams *)pAction->fnParams;
+		const PBackgroundActionCancelableBase pAction=(PBackgroundActionCancelableBase)_pCancelableAction;
+		TStatisticParams &rsp=*(TStatisticParams *)pAction->GetParams();
 		const PCImage image=rsp.dos->image;
+		pAction->SetProgressTarget( image->GetCylinderCount() );
 		for( TCylinder nCylinders=image->GetCylinderCount(),cyl=0; cyl<nCylinders; pAction->UpdateProgress(++cyl) )
 			for( THead nHeads=image->GetNumberOfFormattedSides(cyl),head=0; head<nHeads; head++,rsp.nTracksFormatted++ ){
-				if (!pAction->bContinue) return ERROR_CANCELLED;
+				if (!pAction->CanContinue()) return ERROR_CANCELLED;
 				TSectorId bufferId[(TSector)-1];
 				WORD bufferLength[(TSector)-1];
 				TSector nSectors=image->ScanTrack(cyl,head,bufferId,bufferLength);
@@ -450,7 +451,12 @@
 		// shows statistics on Tracks and their Sectors in current disk
 		// - collecting statistics on Tracks and their Sectors
 		TStatisticParams sp(DOS);
-		if (const TStdWinError err=TBackgroundActionCancelable(__trackStatistics_thread__,&sp,THREAD_PRIORITY_BELOW_NORMAL).CarryOut(IMAGE->GetCylinderCount()))
+		if (const TStdWinError err=	CBackgroundActionCancelable(
+										__trackStatistics_thread__,
+										&sp,
+										THREAD_PRIORITY_BELOW_NORMAL
+									).Perform()
+		)
 			return Utils::Information(_T("Cannot create statistics"),err);
 		// - showing collected statistics
 		TCHAR buf[1000];

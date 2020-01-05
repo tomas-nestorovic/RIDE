@@ -1033,12 +1033,13 @@ nextCluster:result++;
 	};
 	UINT AFX_CDECL CMSDOS7::__removeLongNames_thread__(PVOID _pCancelableAction){
 		// thread to remove long File names
-		TBackgroundActionCancelable *const pAction=(TBackgroundActionCancelable *)_pCancelableAction;
-		const TRemoveLongNameParams &rlnp=*(TRemoveLongNameParams *)pAction->fnParams;
+		const PBackgroundActionCancelableBase pAction=(PBackgroundActionCancelableBase)_pCancelableAction;
+		const TRemoveLongNameParams rlnp=*(TRemoveLongNameParams *)pAction->GetParams();
+		pAction->SetProgressTarget( rlnp.msdos->formatBoot.nCylinders );
 			CFileManagerView::TFileList bfsDirectories; // breadth first search, searching through Directories in breadth
 			TCylinder state=0;
 			for( bfsDirectories.AddTail(rlnp.msdos->currentDir); bfsDirectories.GetCount(); ){
-				if (!pAction->bContinue) return ERROR_CANCELLED;
+				if (!pAction->CanContinue()) return ERROR_CANCELLED;
 				TMsdos7DirectoryTraversal dt( rlnp.msdos, bfsDirectories.RemoveHead() );
 				while (dt.__existsNextEntry__()){
 					const PDirectoryEntry de=(PDirectoryEntry)dt.entry;
@@ -1096,11 +1097,11 @@ nextCluster:result++;
 				} d;
 				// . showing the Dialog and processing its result
 				if (d.DoModal()==IDOK)
-					TBackgroundActionCancelable(
+					CBackgroundActionCancelable(
 						__removeLongNames_thread__,
 						&TRemoveLongNameParams( this, d.dirDepth!=0 ),
 						THREAD_PRIORITY_BELOW_NORMAL
-					).CarryOut(formatBoot.nCylinders);
+					).Perform();
 				return TCmdResult::DONE_REDRAW;
 			}
 			case ID_MSDOS_IGNORE_LONG_NAMES:

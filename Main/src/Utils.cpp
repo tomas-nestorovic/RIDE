@@ -946,8 +946,9 @@ namespace Utils{
 
 	static UINT AFX_CDECL __downloadSingleFile_thread__(PVOID _pCancelableAction){
 		// thread to download an on-line file with given URL to a local Buffer; caller is to dimension the Buffer so that it can contain the whole on-line file
-		TBackgroundActionCancelable *const pAction=(TBackgroundActionCancelable *)_pCancelableAction;
-		TDownloadSingleFileParams &rdsfp=*(TDownloadSingleFileParams *)pAction->fnParams;
+		const PBackgroundActionCancelableBase pAction=(PBackgroundActionCancelableBase)_pCancelableAction;
+		TDownloadSingleFileParams &rdsfp=*(TDownloadSingleFileParams *)pAction->GetParams();
+		pAction->SetProgressTargetInfinity();
 		HINTERNET hSession=nullptr, hOnlineFile=nullptr;
 		// - opening a new Session
 		hSession=::InternetOpen(APP_IDENTIFIER,
@@ -983,7 +984,11 @@ quitWithErr:const DWORD err=::GetLastError();
 	TStdWinError DownloadSingleFile(LPCTSTR onlineFileUrl,PBYTE fileDataBuffer,DWORD fileDataBufferLength,PDWORD pDownloadedFileSize,LPCTSTR fatalErrorConsequence){
 		// returns the result of downloading the file with given Url
 		TDownloadSingleFileParams params( onlineFileUrl, fileDataBuffer, fileDataBufferLength, fatalErrorConsequence );
-		const TStdWinError err=TBackgroundActionCancelable(__downloadSingleFile_thread__,&params,THREAD_PRIORITY_ABOVE_NORMAL).CarryOut(-1);
+		const TStdWinError err=	CBackgroundActionCancelable(
+									__downloadSingleFile_thread__,
+									&params,
+									THREAD_PRIORITY_ABOVE_NORMAL
+								).Perform();
 		if (pDownloadedFileSize!=nullptr)
 			*pDownloadedFileSize=params.outOnlineFileSize;
 		return err;

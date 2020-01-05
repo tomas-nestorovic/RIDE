@@ -17,7 +17,7 @@
 		HBRUSH rainbowBrushes[TRACK_MAP_COLORS_COUNT];
 		struct TTrackScanner sealed{
 			static UINT AFX_CDECL __thread__(PVOID _pBackgroundAction);
-			const TBackgroundAction action;
+			const CBackgroundAction action;
 			struct TParams sealed{
 				CCriticalSection criticalSection;
 				TTrack a,z,x; // first, last, and currect Track to scan; it holds: A <= X < Z

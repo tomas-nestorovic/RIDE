@@ -56,8 +56,8 @@
 		class CSerializer sealed:public CSectorDataSerializer{
 			static UINT AFX_CDECL __trackWorker_thread__(PVOID _pBackgroundAction){
 				// thread to scan and buffer Tracks
-				const TBackgroundAction *const pAction=(TBackgroundAction *)_pBackgroundAction;
-				CSerializer *const ps=(CSerializer *)pAction->fnParams;
+				const PCBackgroundAction pAction=(PCBackgroundAction)_pBackgroundAction;
+				CSerializer *const ps=(CSerializer *)pAction->GetParams();
 				const PImage image=ps->image;
 				do{
 					// . checking if all Tracks on the disk have already been scanned
@@ -95,7 +95,7 @@
 				return ERROR_SUCCESS;
 			}
 
-			const TBackgroundAction trackWorker;
+			const CBackgroundAction trackWorker;
 			bool bContinue, bChsValid;
 			struct{
 				TTrack track;

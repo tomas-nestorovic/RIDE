@@ -684,7 +684,7 @@
 
 	UINT AFX_CDECL CFileManagerView::__selectionPropertyStatistics_thread__(PVOID _pCancelableAction){
 		// collects Statistics on current Selection
-		const TBackgroundActionCancelable *const pAction=(TBackgroundActionCancelable *)_pCancelableAction;
+		const PBackgroundActionCancelableBase pAction=(PBackgroundActionCancelableBase)_pCancelableAction;
 		// - processing recurrently (see below Collector's ctor)
 		struct TStatisticsCollector sealed{
 			typedef const struct TDirectoryEtc sealed{
@@ -694,20 +694,23 @@
 
 			TSelectionStatistics &rStatistics;
 			RCFileManagerView rFileManager;
-			const TBackgroundActionCancelable *const pAction;
+			const PBackgroundActionCancelableBase pAction;
 			const PDos dos;
 			const CFileManagerView::PCDirectoryStructureManagement pDirStructMan;
 			TCylinder state;
 
-			TStatisticsCollector(const TBackgroundActionCancelable *pAction)
+			TStatisticsCollector(PBackgroundActionCancelableBase pAction)
 				// ctor
 				// . initialization
-				: rStatistics(*(TSelectionStatistics *)pAction->fnParams) , rFileManager(rStatistics.rFileManager) , pAction(pAction) , dos(rFileManager.DOS) , pDirStructMan(rFileManager.pDirectoryStructureManagement) , state(0) {
+				: rStatistics(*(TSelectionStatistics *)pAction->GetParams())
+				, pAction(pAction) , state(0)
+				, dos(rFileManager.DOS) , rFileManager(rStatistics.rFileManager) , pDirStructMan(rFileManager.pDirectoryStructureManagement) {
+				pAction->SetProgressTarget( rStatistics.finishedState );
 				// . recurrently collecting Statistics on selected Files
 				const CDos::PFile currentDirectory=dos->currentDir;
 				const TDirectoryEtc dirEtc={ dos->currentDirId, nullptr };
 				for( POSITION pos=rFileManager.GetFirstSelectedFilePosition(); pos; ){
-					if (!pAction->bContinue) break;
+					if (!pAction->CanContinue()) break;
 					if (const auto pdt=dos->BeginDirectoryTraversal(currentDirectory)){
 						for( const CDos::PCFile file=rFileManager.GetNextSelectedFile(pos); pdt->GetNextFileOrSubdir()!=file; );
 						__countInFile__(pdt,&dirEtc);
@@ -734,7 +737,7 @@
 					// . involving Directory into Statistics
 					if (const auto subPdt=dos->BeginDirectoryTraversal(pdt->entry)){
 						for( rStatistics.nDirectories++,rStatistics.totalSizeInBytes+=dos->GetFileOfficialSize(pdt->entry),rStatistics.totalSizeOnDiskInBytes+=dos->GetFileSizeOnDisk(pdt->entry); subPdt->GetNextFileOrSubdir()!=nullptr; ){
-							if (!pAction->bContinue) break;
+							if (!pAction->CanContinue()) break;
 							if (subPdt->entryType!=CDos::TDirectoryTraversal::WARNING)
 								__countInFile__(subPdt,&dirEtc);
 						}
@@ -744,15 +747,19 @@
 			}
 		} tmp(pAction);
 		// - Statistics collected
-		pAction->UpdateProgress(tmp.rStatistics.finishedState);
-		return pAction->bContinue ? ERROR_SUCCESS : ERROR_CANCELLED;
+		pAction->UpdateProgressFinished();
+		return pAction->CanContinue() ? ERROR_SUCCESS : ERROR_CANCELLED;
 	}
 
 	afx_msg void CFileManagerView::__showSelectionProperties__(){
 		// shows properties of currently selected Files (and Directories)
 		TSelectionStatistics statistics(*this);
-		TBackgroundActionCancelable bac( __selectionPropertyStatistics_thread__, &statistics, THREAD_PRIORITY_BELOW_NORMAL );
-		if (bac.CarryOut(statistics.finishedState)==ERROR_SUCCESS){
+		if (CBackgroundActionCancelable(
+				__selectionPropertyStatistics_thread__,
+				&statistics,
+				THREAD_PRIORITY_BELOW_NORMAL
+			).Perform()==ERROR_SUCCESS
+		){
 			TCHAR buf[1024];
 			::wsprintf( buf, _T("SELECTION Properties\n\n- recurrently selected %d file(s), %d folders\n- of %d Bytes in total size\n- which occupy %d Bytes on the disk."), statistics.nFiles, statistics.nDirectories, statistics.totalSizeInBytes, statistics.totalSizeOnDiskInBytes );
 			Utils::Information(buf);

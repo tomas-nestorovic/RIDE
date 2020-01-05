@@ -283,9 +283,10 @@
 
 	static UINT AFX_CDECL __checkApplicationRecency_thread__(PVOID _pCancelableAction){
 		// checks if this instance of application is the latest by comparing it against the on-line information; returns ERROR_SUCCESS (on-line information was downloaded and this instance is up-to-date), ERROR_EVT_VERSION_TOO_OLD (on-line information was downloaded but this instance is out-of-date), or other error
-		TBackgroundActionCancelable *const pAction=(TBackgroundActionCancelable *)_pCancelableAction;
+		const PBackgroundActionCancelableBase pAction=(PBackgroundActionCancelableBase)_pCancelableAction;
+		pAction->SetProgressTarget(5); // 5 = see number of steps below
 		HINTERNET hSession=nullptr, hConnection=nullptr, hRequest=nullptr;
-		// - opening a new Session
+		// - Step 1: opening a new Session
 		hSession=::InternetOpen( APP_IDENTIFIER, INTERNET_OPEN_TYPE_PRECONFIG, nullptr, nullptr, 0 );
 		if (hSession==nullptr){
 quitWithErr:const DWORD err=::GetLastError();
@@ -297,15 +298,15 @@ quitWithErr:const DWORD err=::GetLastError();
 				::InternetCloseHandle(hSession);
 			return pAction->TerminateWithError(err);
 		}
-		if (!pAction->bContinue) return ERROR_CANCELLED;
+		if (!pAction->CanContinue()) return ERROR_CANCELLED;
 		pAction->UpdateProgress(1);
-		// - connecting to the repository server
+		// - Step 2: connecting to the repository server
 		hConnection=::InternetConnect( hSession, GITHUB_API_SERVER_NAME, INTERNET_DEFAULT_HTTPS_PORT, nullptr, nullptr, INTERNET_SERVICE_HTTP, 0, 0 );
 		if (hConnection==nullptr)
 			goto quitWithErr;
-		if (!pAction->bContinue) return ERROR_CANCELLED;
+		if (!pAction->CanContinue()) return ERROR_CANCELLED;
 		pAction->UpdateProgress(2);
-		// - creating a new Request to the server
+		// - Step 3: creating a new Request to the server
 		hRequest=::HttpOpenRequest(	hConnection, _T("GET"), _T("/repos/tomas-nestorovic/RIDE/releases/latest"),
 									nullptr, nullptr, nullptr,
 									INTERNET_FLAG_SECURE | INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE | INTERNET_NO_CALLBACK,
@@ -313,20 +314,20 @@ quitWithErr:const DWORD err=::GetLastError();
 								);
 		if (hRequest==nullptr)
 			goto quitWithErr;
-		if (!pAction->bContinue) return ERROR_CANCELLED;
+		if (!pAction->CanContinue()) return ERROR_CANCELLED;
 		pAction->UpdateProgress(3);
-		// - sending the Request
+		// - Step 4: sending the Request
 		if (!::HttpSendRequest( hRequest, "User-Agent:RIDE", -1, nullptr, 0 ))
 			goto quitWithErr;
-		if (!pAction->bContinue) return ERROR_CANCELLED;
+		if (!pAction->CanContinue()) return ERROR_CANCELLED;
 		pAction->UpdateProgress(4);
-		// - receiving the response
+		// - Step 5: receiving the response
 		char buffer[16384];
 		DWORD nBytesRead;
 		if (!::InternetReadFile( hRequest, buffer, sizeof(buffer), &nBytesRead ))
 			goto quitWithErr;
 		buffer[nBytesRead]='\0';
-		if (!pAction->bContinue) return ERROR_CANCELLED;
+		if (!pAction->CanContinue()) return ERROR_CANCELLED;
 		pAction->UpdateProgress(5);
 		// - analysing the obtained information (comparing it against this instance version)
 		if (const PCHAR githubTagName=::strstr(buffer,GITHUB_VERSION_TAG_NAME))
@@ -346,8 +347,12 @@ quitWithErr:const DWORD err=::GetLastError();
 	}
 	afx_msg void CMainWindow::__openUrl_checkForUpdates__(){
 		// checks if this instance of application is the latest by comparing it against the on-line information; opens either "You are using the latest version" web page, or the "You are using out-of-date version" web page
-		TBackgroundActionCancelable bac( __checkApplicationRecency_thread__, nullptr, THREAD_PRIORITY_LOWEST );
-		switch (const TStdWinError err=bac.CarryOut(5)){ // 5 = see number of steps in CheckApplicationRecency
+		switch (const TStdWinError err=	CBackgroundActionCancelable(
+											__checkApplicationRecency_thread__,
+											nullptr,
+											THREAD_PRIORITY_LOWEST
+										).Perform()
+		){
 			case ERROR_SUCCESS:
 				return OpenApplicationPresentationWebPage(_T("Version"),VERSION_LATEST_WEB);
 			case ERROR_EVT_VERSION_TOO_OLD:

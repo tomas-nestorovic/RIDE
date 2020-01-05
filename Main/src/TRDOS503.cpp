@@ -659,8 +659,9 @@
 	};
 	UINT AFX_CDECL CTRDOS503::__defragmentation_thread__(PVOID _pCancelableAction){
 		// thread to defragment the disk
-		const TBackgroundActionCancelable *const pAction=(TBackgroundActionCancelable *)_pCancelableAction;
-		const TDefragParams dp=*(TDefragParams *)pAction->fnParams;
+		const PBackgroundActionCancelableBase pAction=(PBackgroundActionCancelableBase)_pCancelableAction;
+		const TDefragParams dp=*(TDefragParams *)pAction->GetParams();
+		pAction->SetProgressTarget( 1+dp.boot->firstFree.track );
 		// - getting the list of Files
 		PDirectoryEntry directory[TRDOS503_FILE_COUNT_MAX],*pDeFree=directory;
 		BYTE nFiles=dp.trdos->__getDirectory__(directory);
@@ -691,7 +692,7 @@
 		nFiles-=dp.boot->nFiles, pDeFree+=dp.boot->nFiles;
 		// - defragmenting
 		for( const PDirectoryEntry *pDe=directory+dp.boot->nFiles; nFiles--; pDe++ ){
-			if (!pAction->bContinue) return ERROR_CANCELLED;
+			if (!pAction->CanContinue()) return ERROR_CANCELLED;
 			const PDirectoryEntry de=(PDirectoryEntry)*pDe;
 			if (*(PCBYTE)de!=TDirectoryEntry::DELETED) // an existing (i.e. non-Deleted) File
 				if (pDe!=pDeFree){
@@ -721,7 +722,7 @@
 			pAction->UpdateProgress( dp.boot->firstFree.track );
 		}
 		*(PBYTE)*pDeFree=TDirectoryEntry::END_OF_DIR; // terminating the Directory
-		pAction->UpdateProgress(-1); // "-1" = completed
+		pAction->UpdateProgressFinished();
 		return ERROR_SUCCESS;
 	}
 	CDos::TCmdResult CTRDOS503::ProcessCommand(WORD cmd){
@@ -761,11 +762,11 @@
 				const TGetFileSizeOptions gfs0=getFileSizeDefaultOption;
 					getFileSizeDefaultOption=TGetFileSizeOptions::SizeOnDisk; // during the defragmentation, File size is given by the number of Sectors in FatPath (as some Files lie about its size in their DirectoryEntries as part of copy-protection scheme)
 					if (const PBootSector boot=__getBootSector__())
-						TBackgroundActionCancelable(
+						CBackgroundActionCancelable(
 							__defragmentation_thread__,
 							&TDefragParams( this, boot ),
 							THREAD_PRIORITY_BELOW_NORMAL
-						).CarryOut(1+boot->firstFree.track);
+						).Perform();
 					else
 						__errorCannotDoCommand__(ERROR_DEVICE_NOT_AVAILABLE);
 				getFileSizeDefaultOption=gfs0;

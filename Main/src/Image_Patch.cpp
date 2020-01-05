@@ -20,13 +20,14 @@
 
 	static UINT AFX_CDECL __patch_thread__(PVOID _pCancelableAction){
 		// thread to copy Tracks
-		TBackgroundActionCancelable *pAction=(TBackgroundActionCancelable *)_pCancelableAction;
-		TPatchParams &pp=*(TPatchParams *)pAction->fnParams;
+		const PBackgroundActionCancelableBase pAction=(PBackgroundActionCancelableBase)_pCancelableAction;
+		const TPatchParams &pp=*(TPatchParams *)pAction->GetParams();
+		pAction->SetProgressTarget( pp.cylinderZ+1-pp.cylinderA );
 		const Utils::CByteIdentity sectorIdAndPositionIdentity;
 		TPhysicalAddress chs;
 		for( chs.cylinder=pp.cylinderA; chs.cylinder<=pp.cylinderZ; pAction->UpdateProgress(++chs.cylinder-pp.cylinderA) )
 			for( chs.head=0; chs.head<pp.nHeads; chs.head++ ){
-				if (!pAction->bContinue) return ERROR_CANCELLED;
+				if (!pAction->CanContinue()) return ERROR_CANCELLED;
 				// . scanning Source Track
 				TSectorId bufferId[(TSector)-1];	WORD bufferLength[(TSector)-1];
 				const TSector nSectors=pp.source->ScanTrack(chs.cylinder,chs.head,bufferId,bufferLength);
@@ -180,15 +181,14 @@ errorDuringWriting:			TCHAR buf[80],tmp[30];
 			}
 		} d(GetActive()->dos);
 		// - showing the Dialog and processing its result
-		if (d.DoModal()==IDOK){
-			const TStdWinError err=	TBackgroundActionCancelable(
-										__patch_thread__,
-										&d.patchParams,
-										d.realtimeThreadPriority ? THREAD_PRIORITY_TIME_CRITICAL : THREAD_PRIORITY_NORMAL
-									).CarryOut(d.patchParams.cylinderZ+1-d.patchParams.cylinderA);
-			if (err==ERROR_SUCCESS)
-				Utils::Information(_T("Patched successfully."));
-			else
+		if (d.DoModal()==IDOK)
+			if (const TStdWinError err=	CBackgroundActionCancelable(
+											__patch_thread__,
+											&d.patchParams,
+											d.realtimeThreadPriority ? THREAD_PRIORITY_TIME_CRITICAL : THREAD_PRIORITY_NORMAL
+										).Perform()
+			)
 				Utils::FatalError(_T("Cannot patch"),err);
-		}
+			else
+				Utils::Information(_T("Patched successfully."));
 	}
