@@ -23,6 +23,7 @@
 		int progressTarget;
 	protected:
 		volatile bool bCancelled;
+		mutable int lastState;
 
 		CBackgroundActionCancelable(UINT dlgResId);
 
@@ -39,5 +40,30 @@
 		void UpdateProgressFinished() const;
 		TStdWinError TerminateWithError(TStdWinError error);
 	} *PBackgroundActionCancelable;
+
+
+	class CBackgroundMultiActionCancelable sealed:public CBackgroundActionCancelable{
+		int actionThreadPriority;
+		BYTE nActions,iCurrAction;
+		struct{
+			AFX_THREADPROC fnAction;
+			LPCVOID fnParams;
+			LPCTSTR fnName;
+		} actions[16];
+		struct{
+			int glyphX;
+			int charHeight;
+			int progressHeight;
+			CRect rcActions;
+		} painting;
+
+		void __drawAction__(HDC dc,WCHAR wingdingsGlyph,LPCTSTR name,RECT &inOutRc) const;
+		BOOL OnInitDialog() override;
+		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
+	public:
+		CBackgroundMultiActionCancelable(int actionThreadPriority);
+
+		void AddAction(AFX_THREADPROC fnAction,LPCVOID actionParams,LPCTSTR name);
+	};
 
 #endif // BACKGROUNDACTION_H

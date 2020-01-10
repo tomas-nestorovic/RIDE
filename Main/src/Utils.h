@@ -31,6 +31,7 @@ namespace Utils{
 		int charAvgWidth,charHeight;
 
 		CRideFont(LPCTSTR face,int pointHeight,bool bold=false,bool dpiScaled=false,int pointWidth=0);
+		CRideFont(HWND hWnd,bool bold=false);
 
 		SIZE GetTextSize(LPCTSTR text,int textLength) const;
 		SIZE GetTextSize(LPCTSTR text) const;
@@ -95,6 +96,7 @@ namespace Utils{
 	void Warning(LPCTSTR text);
 	bool EnableDlgControl(HWND hDlg,WORD controlId,bool enabled);
 	bool EnableDlgControls(HWND hDlg,PCWORD buttonIds,bool enabled);
+	void OffsetDlgControl(HWND hDlg,WORD controlId,int dx,int dy);
 	void BytesToHigherUnits(DWORD bytes,float &rHigherUnit,LPCTSTR &rHigherUnitName);
 	void NavigateToUrlInDefaultBrowser(LPCTSTR url);
 	void DrawClosingCurlyBracket(HDC dc,int x,int yMin,int yMax);

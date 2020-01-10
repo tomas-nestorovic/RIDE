@@ -1392,6 +1392,20 @@ BEGIN
                     WS_TABSTOP
 END
 
+IDR_ACTION_SEQUENCE DIALOG DISCARDABLE  0, 0, 254, 58
+STYLE WS_POPUP | WS_CAPTION
+CAPTION "Please wait..."
+FONT 8, "MS Sans Serif"
+BEGIN
+    PUSHBUTTON      "Cancel",IDCANCEL,197,37,50,14
+    CONTROL         "Progress1",ID_STATE,"msctls_progress32",PBS_SMOOTH,22,
+                    21,210,6
+    LTEXT           "Thread priority:",ID_STANDARD,7,29,48,8,NOT WS_GROUP
+    COMBOBOX        ID_PRIORITY,7,39,73,85,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
+    LTEXT           "The following steps will be performed:",ID_INFORMATION,
+                    7,7,131,8,NOT WS_GROUP
+END
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -1641,6 +1655,14 @@ BEGIN
         TOPMARGIN, 7
         BOTTOMMARGIN, 107
     END
+
+    IDR_ACTION_SEQUENCE, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 247
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 51
+    END
 END
 #endif    // APSTUDIO_INVOKED
 
@@ -1684,6 +1706,22 @@ BEGIN
 0x6361, 0x2068, 0x6572, 0x6170, 0x6172, 0x6974, 0x6e6f, "\000" 
     0
 END
+
+IDR_ACTION_SEQUENCE DLGINIT
+BEGIN
+    ID_PRIORITY, 0x403, 7, 0
+0x6f4c, 0x6577, 0x7473, "\000" 
+    ID_PRIORITY, 0x403, 13, 0
+0x6542, 0x6f6c, 0x2077, 0x6f6e, 0x6d72, 0x6c61, "\000" 
+    ID_PRIORITY, 0x403, 7, 0
+0x6f4e, 0x6d72, 0x6c61, "\000" 
+    ID_PRIORITY, 0x403, 13, 0
+0x6241, 0x766f, 0x2065, 0x6f6e, 0x6d72, 0x6c61, "\000" 
+    ID_PRIORITY, 0x403, 8, 0
+0x6948, 0x6867, 0x7365, 0x0074, 
+    0
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //

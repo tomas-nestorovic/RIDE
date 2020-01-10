@@ -63,7 +63,7 @@
 	CBackgroundActionCancelable::CBackgroundActionCancelable(UINT dlgResId)
 		// ctor
 		: CDialog( dlgResId, app.m_pMainWnd )
-		, bCancelled(false)
+		, bCancelled(false) , lastState(0)
 		, progressTarget(INT_MAX) {
 	}
 
@@ -87,7 +87,7 @@
 		pc.Detach();
 		// - launching the Worker
 		Resume();
-		return TRUE;
+		return __super::OnInitDialog();
 	}
 
 	LRESULT CBackgroundActionCancelable::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
@@ -132,7 +132,10 @@
 		if (m_hWnd) // the window doesn't exist if Worker already cancelled but the Worker hasn't yet found out that it can no longer Continue
 			if (state<progressTarget)
 				// Worker not yet finished - refreshing
-				GetDlgItem(ID_STATE)->PostMessage( PBM_SETPOS, state );
+				GetDlgItem(ID_STATE)->PostMessage( 
+					PBM_SETPOS,
+					lastState=std::max( lastState, state )
+				);
 			else
 				// Worker finished - closing the window
 				::PostMessage( m_hWnd, WM_COMMAND, IDOK, 0 );
@@ -148,4 +151,138 @@
 		bCancelled=true;
 		PostMessage( WM_COMMAND, IDCANCEL );
 		return error;
+	}
+
+
+
+
+
+
+
+
+
+	CBackgroundMultiActionCancelable::CBackgroundMultiActionCancelable(int actionThreadPriority)
+		// ctor
+		: CBackgroundActionCancelable( IDR_ACTION_SEQUENCE )
+		, actionThreadPriority(  std::max( std::min(actionThreadPriority,THREAD_BASE_PRIORITY_MAX), THREAD_BASE_PRIORITY_MIN )  )
+		, nActions(0) {
+	}
+
+	void CBackgroundMultiActionCancelable::AddAction(AFX_THREADPROC fnAction,LPCVOID actionParams,LPCTSTR name){
+		// orders another Action at the end of the list of Actions
+		auto &r=actions[nActions++];
+		r.fnAction=fnAction;
+		r.fnParams=actionParams;
+		r.fnName=name;
+	}
+
+	#define PADDING_ACTION		5
+	#define PADDING_STATUS		3
+
+	BOOL CBackgroundMultiActionCancelable::OnInitDialog(){
+		// dialog initialization
+		// - initializing the Painting information
+		CPoint pt(0,0);
+		GetDlgItem(ID_INFORMATION)->MapWindowPoints( this, &pt, 1 );
+		painting.glyphX=pt.x;
+		painting.charHeight=Utils::CRideFont(m_hWnd).charHeight;
+		CRect rc;
+		GetDlgItem(ID_STATE)->GetClientRect(&rc);
+		painting.progressHeight=rc.Height();
+		rc.bottom += nActions*(painting.charHeight+PADDING_ACTION) + 2*PADDING_STATUS;
+		GetDlgItem(ID_STATE)->MapWindowPoints( this, &(pt=CPoint(0,0)), 1 );
+		rc.OffsetRect(pt);
+		painting.rcActions=rc;
+		const int rcActionsHeight=painting.rcActions.Height();
+		// - adjusting the size of window to display all Action Names
+		GetWindowRect(&rc);
+		SetWindowPos(	nullptr, 0, 0,
+						rc.Width(), rc.Height()+rcActionsHeight,
+						SWP_NOZORDER|SWP_NOMOVE
+					);
+		Utils::OffsetDlgControl( m_hWnd, ID_STANDARD, 0, rcActionsHeight );
+		Utils::OffsetDlgControl( m_hWnd, ID_PRIORITY, 0, rcActionsHeight );
+		Utils::OffsetDlgControl( m_hWnd, IDCANCEL, 0, rcActionsHeight );
+		// - launching the first Action in combo-box
+		iCurrAction=-1;
+		SendMessage( WM_COMMAND, IDOK );
+		// - base
+		const BOOL result=__super::OnInitDialog();
+		// - displaying thread Priority
+		SendDlgItemMessage( ID_PRIORITY, CB_SETCURSEL, actionThreadPriority-THREAD_BASE_PRIORITY_MIN ); // zero-based index
+		return result;
+	}
+
+	void CBackgroundMultiActionCancelable::__drawAction__(HDC dc,WCHAR wingdingsGlyph,LPCTSTR name,RECT &inOutRc) const{
+		// draws Action
+		const Utils::CRideFont glyphFont( FONT_WINGDINGS, 100 );
+		const HGDIOBJ hFont0=::SelectObject( dc, glyphFont );
+			::TextOutW( dc, painting.glyphX, inOutRc.top, &wingdingsGlyph, 1 );
+		::SelectObject( dc, hFont0 );
+		::DrawText( dc, name, -1, &inOutRc, DT_LEFT|DT_TOP );
+		inOutRc.top+=painting.charHeight+PADDING_ACTION;
+	}
+
+	LRESULT CBackgroundMultiActionCancelable::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
+		// window procedure
+		switch (msg){
+			case WM_COMMAND:
+				// processing a command
+				switch (wParam){
+					case MAKELONG(ID_PRIORITY,CBN_SELCHANGE):
+						// Action Priority has been changed
+						actionThreadPriority=SendDlgItemMessage(ID_PRIORITY,CB_GETCURSEL)+THREAD_BASE_PRIORITY_MIN;
+						::SetThreadPriority( *this, actionThreadPriority );
+						return 0;
+					case IDOK:
+						// current Action has finished - proceeding with the next one
+						if (++iCurrAction<nActions){
+							// . launching the next Action
+							lastState=0;
+							auto &r=actions[iCurrAction];
+							BeginAnother( r.fnAction, r.fnParams, actionThreadPriority );
+							Resume();
+							// . repositioning the progress-bar
+							const int y=painting.rcActions.top
+										+
+										iCurrAction*(painting.charHeight+PADDING_ACTION)
+										+
+										painting.charHeight+PADDING_STATUS;
+							GetDlgItem(ID_STATE)->SetWindowPos( nullptr, painting.rcActions.left, y, 0, 0, SWP_NOZORDER|SWP_NOSIZE );
+							// . repainting the list of Actions
+							Invalidate();
+							return 0;
+						}else
+							break;
+				}
+				break;
+			case WM_PAINT:{
+				// drawing
+				// . basic painting
+				const LRESULT result=__super::WindowProc(msg,wParam,lParam);
+				// . preparing for drawing Actions
+				RECT rc=painting.rcActions;
+				const CClientDC dc(this);
+				::SetBkMode( dc, TRANSPARENT );
+				// . painting
+				BYTE i=0;
+				const Utils::CRideFont font(m_hWnd);
+				const HGDIOBJ hFont0=::SelectObject( dc, font );
+					// Actions already completed
+					while (i<iCurrAction)
+						__drawAction__(	dc, 0xf0fc, actions[i++].fnName, rc );
+				const Utils::CRideFont fontBold(m_hWnd,true);
+				::SelectObject( dc, fontBold );
+					// Action currently in progress
+					__drawAction__(	dc, 0xf0e0, actions[i].fnName, rc );
+					rc.top+=PADDING_STATUS+painting.progressHeight+PADDING_STATUS;
+				::SelectObject( dc, font );
+					// Actions yet to be performed
+					while (++i<nActions)
+						__drawAction__(	dc, 0xf09f, actions[i].fnName, rc );
+				::SelectObject( dc, hFont0 );
+				return result;
+			}
+		}
+		return __super::WindowProc(msg,wParam,lParam);
 	}

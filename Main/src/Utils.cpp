@@ -73,6 +73,24 @@ namespace Utils{
 		::SelectObject(dc,hFont0);
 	}
 
+	CRideFont::CRideFont(HWND hWnd,bool bold){
+		// ctor
+		// - creating the Font
+		LOGFONT logFont;
+			::GetObject( (HGDIOBJ)::SendMessage(hWnd,WM_GETFONT,0,0), sizeof(logFont), &logFont );
+			if (bold)
+				logFont.lfWeight=FW_BOLD;
+		CreateFontIndirect(&logFont);
+		// - determining the AvgWidth and Height of Font characters
+		CClientDC dc(app.m_pMainWnd);
+		const HGDIOBJ hFont0=::SelectObject( dc, m_hObject );
+			TEXTMETRIC tm;
+			dc.GetTextMetrics(&tm);
+			charAvgWidth=tm.tmAveCharWidth;
+			charHeight=tm.tmHeight;
+		::SelectObject(dc,hFont0);
+	}
+
 	SIZE CRideFont::GetTextSize(LPCTSTR text,int textLength) const{
 		// determines and returns the Size of the specified Text using using this font face
 		const CClientDC screen(nullptr);
@@ -566,6 +584,14 @@ namespace Utils{
 		while (const WORD id=*controlIds++)
 			::EnableWindow( ::GetDlgItem(hDlg,id), enabled );
 		return enabled;
+	}
+
+	void OffsetDlgControl(HWND hDlg,WORD controlId,int dx,int dy){
+		// changes Dialog control position by [dx,dy]
+		const HWND hCtrl=::GetDlgItem(hDlg,controlId);
+		POINT pt={};
+		::MapWindowPoints( hCtrl, hDlg, &pt, 1 );
+		::SetWindowPos( hCtrl, 0, pt.x+dx, pt.y+dy, 0, 0, SWP_NOZORDER|SWP_NOSIZE );
 	}
 
 	void BytesToHigherUnits(DWORD bytes,float &rHigherUnit,LPCTSTR &rHigherUnitName){

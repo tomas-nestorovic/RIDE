@@ -48,6 +48,7 @@
 #define IDR_GUIDEPOST                   211
 #define IDR_BSDOS                       214
 #define IDR_DOS_VERIFY                  214
+#define IDR_ACTION_SEQUENCE             216
 #define ID_HIDDEN                       1018
 #define ID_SYSTEM                       1019
 #define ID_CONNECTED                    1020
@@ -239,7 +240,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        216
+#define _APS_NEXT_RESOURCE_VALUE        217
 #define _APS_NEXT_COMMAND_VALUE         40271
 #define _APS_NEXT_CONTROL_VALUE         1185
 #define _APS_NEXT_SYMED_VALUE           103
