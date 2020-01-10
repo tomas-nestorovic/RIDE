@@ -249,7 +249,9 @@
 		const PCProperties properties;
 	private:
 		static UINT AFX_CDECL __checkCylindersAreEmpty_thread__(PVOID _pCancelableAction);
-		static UINT AFX_CDECL __fillEmptySpace_thread__(PVOID _pCancelableAction);
+		static UINT AFX_CDECL __fillEmptySectors_thread__(PVOID _pCancelableAction);
+		static UINT AFX_CDECL __fillEmptyLastSectors_thread__(PVOID _pCancelableAction);
+		static UINT AFX_CDECL __fillEmptyDirEntries_thread__(PVOID _pCancelableAction);
 		static UINT AFX_CDECL __formatTracks_thread__(PVOID _pCancelableAction);
 		static UINT AFX_CDECL __unformatTracks_thread__(PVOID _pCancelableAction);
 

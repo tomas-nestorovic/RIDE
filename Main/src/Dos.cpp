@@ -482,121 +482,136 @@ reportError:Utils::Information(buf);
 			: dos(dos) , rd(rd) {
 		}
 	};
-	UINT AFX_CDECL CDos::__fillEmptySpace_thread__(PVOID _pCancelableAction){
-		// thread to flood selected types of empty space on disk
-		LOG_ACTION(_T("Fill empty space"));
+	UINT AFX_CDECL CDos::__fillEmptySectors_thread__(PVOID _pCancelableAction){
+		// thread to flood empty Sectors on the disk
+		LOG_ACTION(_T("Fill empty space (sectors)"));
 		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
-		TFillEmptySpaceParams fesp=*(TFillEmptySpaceParams *)pAction->GetParams();
+		const TFillEmptySpaceParams fesp=*(TFillEmptySpaceParams *)pAction->GetParams();
 		const PImage image=fesp.dos->image;
-		pAction->SetProgressTarget( 1+image->GetCylinderCount() ); // "1+" = to not terminate the action prelimiary when having processed the last Cylinder in Image
-		// - filling all Empty Sectors
-		if (fesp.rd.fillEmptySectors)
-			for( TCylinder cyl=0,const nCylinders=image->GetCylinderCount(); cyl<nCylinders; pAction->UpdateProgress(++cyl) )
-				for( THead head=fesp.dos->formatBoot.nHeads; head--; ){
+		pAction->SetProgressTarget( image->GetCylinderCount() );
+		for( TCylinder cyl=0,const nCylinders=image->GetCylinderCount(); cyl<nCylinders; pAction->UpdateProgress(++cyl) )
+			for( THead head=fesp.dos->formatBoot.nHeads; head--; ){
+				if (pAction->IsCancelled()) return ERROR_CANCELLED;
+				// : determining standard Empty Sectors
+				TSectorId bufferId[(TSector)-1],*pId=bufferId,*pEmptyId=bufferId;
+				TSector nSectors=fesp.dos->__getListOfStdSectors__(cyl,head,bufferId);
+				TSectorStatus statuses[(TSector)-1],*ps=statuses;
+				for( fesp.dos->GetSectorStatuses(cyl,head,nSectors,bufferId,statuses); nSectors-->0; pId++ )
+					if (*ps++==TSectorStatus::EMPTY)
+						*pEmptyId++=*pId;
+				// : buffering Sectors from the same Track by the underlying Image, making them ready for IMMEDIATE usage
+				fesp.dos->image->BufferTrackData( cyl, head, bufferId, Utils::CByteIdentity(), pEmptyId-bufferId, true );
+				// : filling all Empty Sectors
+				TPhysicalAddress chs={ cyl, head };
+				for( WORD w; pEmptyId>bufferId; ){
+					chs.sectorId=*--pEmptyId;
+					if (const PSectorData data=image->GetHealthySectorData(chs,&w)){
+						::memset( data, fesp.rd.sectorFillerByte, w );
+						image->MarkSectorAsDirty(chs);
+					}//else
+						//TODO: warning on Sector unreadability
+				}
+			}
+		return ERROR_SUCCESS;
+	}
+	UINT AFX_CDECL CDos::__fillEmptyLastSectors_thread__(PVOID _pCancelableAction){
+		// thread to flood empty space in each File's last Sector
+		//
+		// WARNING: It's assumed that "dot" and "dotdot"-like DirectoryEntries are disabled to prevent from unfinite looping!
+		//
+		LOG_ACTION(_T("Fill empty space (LAST sectors)"));
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
+		const TFillEmptySpaceParams fesp=*(TFillEmptySpaceParams *)pAction->GetParams();
+		const PImage image=fesp.dos->image;
+		pAction->SetProgressTarget( 1+image->GetCylinderCount() ); // "1+" = to not preliminary terminating the action
+		const WORD nDataBytesInSector=fesp.dos->formatBoot.sectorLength-fesp.dos->properties->dataBeginOffsetInSector-fesp.dos->properties->dataEndOffsetInSector;
+		// . adding current Directory into DiscoverdDirectories, and backing-up current Directory (may be changed during processing)
+		CFileManagerView::TFileList discoveredDirs;
+		discoveredDirs.AddHead(fesp.dos->currentDir);
+		// . filling empty space in last Sectors
+		while (discoveredDirs.GetCount()){
+			const PFile dir=discoveredDirs.RemoveHead();
+			if (const auto pdt=fesp.dos->BeginDirectoryTraversal(dir))
+				while (const PCFile file=pdt->GetNextFileOrSubdir()){
 					if (pAction->IsCancelled()) return ERROR_CANCELLED;
-					// : determining standard Empty Sectors
-					TSectorId bufferId[(TSector)-1],*pId=bufferId,*pEmptyId=bufferId;
-					TSector nSectors=fesp.dos->__getListOfStdSectors__(cyl,head,bufferId);
-					TSectorStatus statuses[(TSector)-1],*ps=statuses;
-					for( fesp.dos->GetSectorStatuses(cyl,head,nSectors,bufferId,statuses); nSectors-->0; pId++ )
-						if (*ps++==TSectorStatus::EMPTY)
-							*pEmptyId++=*pId;
-					// : buffering Sectors from the same Track by the underlying Image, making them ready for IMMEDIATE usage
-					fesp.dos->image->BufferTrackData( cyl, head, bufferId, Utils::CByteIdentity(), pEmptyId-bufferId, true );
-					// : filling all Empty Sectors
-					TPhysicalAddress chs={ cyl, head };
-					for( WORD w; pEmptyId>bufferId; ){
-						chs.sectorId=*--pEmptyId;
-						if (const PSectorData data=image->GetHealthySectorData(chs,&w)){
-							::memset( data, fesp.rd.sectorFillerByte, w );
-							image->MarkSectorAsDirty(chs);
-						}//else
-							//TODO: warning on Sector unreadability
+					switch (pdt->entryType){
+						case TDirectoryTraversal::FILE:{
+							// File
+							const CFatPath fatPath(fesp.dos,file);
+							CFatPath::PCItem item; DWORD n;
+							if (const LPCTSTR err=fatPath.GetItems(item,n))
+								fesp.dos->ShowFileProcessingError(file,err);
+							else
+								for( DWORD fileSize=fesp.dos->GetFileOccupiedSize(file); n--; item++ )
+									if (nDataBytesInSector<fileSize)
+										fileSize-=nDataBytesInSector;
+									else{
+										pAction->UpdateProgress(item->chs.cylinder);
+										if (const PSectorData sectorData=fesp.dos->image->GetHealthySectorData(item->chs)){
+											::memset( sectorData+fesp.dos->properties->dataBeginOffsetInSector+fileSize, fesp.rd.sectorFillerByte, nDataBytesInSector-fileSize );
+											image->MarkSectorAsDirty(item->chs);
+										}//else
+											//TODO: Warning (Bad Sector)
+										break;
+									}
+							break;
+						}
+						case TDirectoryTraversal::SUBDIR:
+							// Subdirectory (WARNING: It's assumed that "dot" and "dotdot"-like DirectoryEntries are disabled to prevent from unfinite looping!)
+							if (fesp.rd.fillSubdirectoryFileEndings)
+								discoveredDirs.AddTail(pdt->entry);
+							break;
+						case TDirectoryTraversal::WARNING:
+							// warning
+							//TODO: Utils::Warning(0,pdt->error);
+							break;
 					}
 				}
-		// - filling empty space in each File's last Sector (WARNING: It's assumed that "dot" and "dotdot"-like DirectoryEntries are disabled to prevent from unfinite looping!)
-		if (fesp.rd.fillFileEndings){
-			const WORD nDataBytesInSector=fesp.dos->formatBoot.sectorLength-fesp.dos->properties->dataBeginOffsetInSector-fesp.dos->properties->dataEndOffsetInSector;
-			pAction->UpdateProgress(0);
-			// . adding current Directory into DiscoverdDirectories, and backing-up current Directory (may be changed during processing)
-			CFileManagerView::TFileList discoveredDirs;
-			discoveredDirs.AddHead(fesp.dos->currentDir);
-			// . filling empty space last Sectors
-			while (discoveredDirs.GetCount()){
-				const PFile dir=discoveredDirs.RemoveHead();
-				if (const auto pdt=fesp.dos->BeginDirectoryTraversal(dir))
-					while (const PCFile file=pdt->GetNextFileOrSubdir()){
-						if (pAction->IsCancelled()) return ERROR_CANCELLED;
-						switch (pdt->entryType){
-							case TDirectoryTraversal::FILE:{
-								// File
-								const CFatPath fatPath(fesp.dos,file);
-								CFatPath::PCItem item; DWORD n;
-								if (const LPCTSTR err=fatPath.GetItems(item,n))
-									fesp.dos->ShowFileProcessingError(file,err);
-								else
-									for( DWORD fileSize=fesp.dos->GetFileOccupiedSize(file); n--; item++ )
-										if (nDataBytesInSector<fileSize)
-											fileSize-=nDataBytesInSector;
-										else{
-											pAction->UpdateProgress(item->chs.cylinder);
-											if (const PSectorData sectorData=fesp.dos->image->GetHealthySectorData(item->chs)){
-												::memset( sectorData+fesp.dos->properties->dataBeginOffsetInSector+fileSize, fesp.rd.sectorFillerByte, nDataBytesInSector-fileSize );
-												image->MarkSectorAsDirty(item->chs);
-											}//else
-												//TODO: Warning (Bad Sector)
-											break;
-										}
-								break;
-							}
-							case TDirectoryTraversal::SUBDIR:
-								// Subdirectory (WARNING: It's assumed that "dot" and "dotdot"-like DirectoryEntries are disabled to prevent from unfinite looping!)
-								if (fesp.rd.fillSubdirectoryFileEndings)
-									discoveredDirs.AddTail(pdt->entry);
-								break;
-							case TDirectoryTraversal::WARNING:
-								// warning
-								//TODO: Utils::Warning(0,pdt->error);
-								break;
-						}
-					}
-				//else
-					//TODO: warning
-			}
+			//else
+				//TODO: warning
 		}
-		// - filling Empty Directory entries (WARNING: It's assumed that "dot" and "dotdot"-like DirectoryEntries are disabled to prevent from unfinite looping!)
-		if (fesp.rd.fillEmptyDirectoryEntries){
-			pAction->UpdateProgress(0);
-			// . adding current Directory into DiscoverdDirectories, and backing-up current Directory (may be changed during processing)
-			CFileManagerView::TFileList discoveredDirs;
-			discoveredDirs.AddHead(fesp.dos->currentDir);
-			// . filling Empty Directory entries
-			while (discoveredDirs.GetCount()){
-				const PFile dir=discoveredDirs.RemoveHead();
-				if (const auto pdt=fesp.dos->BeginDirectoryTraversal(dir)){
-					pAction->UpdateProgress(pdt->chs.cylinder);
-					while (pdt->AdvanceToNextEntry()){
-						if (pAction->IsCancelled()) return ERROR_CANCELLED;
-						switch (pdt->entryType){
-							case TDirectoryTraversal::EMPTY:
-								// Empty entry
-								pdt->ResetCurrentEntry(fesp.rd.directoryFillerByte);
-								image->MarkSectorAsDirty(pdt->chs);
-								break;
-							case TDirectoryTraversal::SUBDIR:
-								// Subdirectory (WARNING: It's assumed that "dot" and "dotdot"-like DirectoryEntries are disabled to prevent from unfinite looping!)
-								if (fesp.rd.fillEmptySubdirectoryEntries)
-									discoveredDirs.AddTail(pdt->entry);
-								break;
-							case TDirectoryTraversal::WARNING:
-								// warning - Directory Sector not found
-								//TODO: Utils::Warning(0,DIR_ROOT_SECTOR_NOT_FOUND);
-								break;
-						}
+		pAction->UpdateProgressFinished();
+		return ERROR_SUCCESS;
+	}
+	UINT AFX_CDECL CDos::__fillEmptyDirEntries_thread__(PVOID _pCancelableAction){
+		// thread to flood Empty Directory entries
+		//
+		// WARNING: It's assumed that "dot" and "dotdot"-like DirectoryEntries are disabled to prevent from unfinite looping!
+		//
+		LOG_ACTION(_T("Fill empty space (dir entries)"));
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
+		const TFillEmptySpaceParams fesp=*(TFillEmptySpaceParams *)pAction->GetParams();
+		const PImage image=fesp.dos->image;
+		pAction->SetProgressTarget( image->GetCylinderCount() ); // "1+" = to not preliminary terminating the action
+		// . adding current Directory into DiscoverdDirectories, and backing-up current Directory (may be changed during processing)
+		CFileManagerView::TFileList discoveredDirs;
+		discoveredDirs.AddHead(fesp.dos->currentDir);
+		// . filling Empty Directory entries
+		while (discoveredDirs.GetCount()){
+			const PFile dir=discoveredDirs.RemoveHead();
+			if (const auto pdt=fesp.dos->BeginDirectoryTraversal(dir))
+				while (pdt->AdvanceToNextEntry()){
+					if (pAction->IsCancelled()) return ERROR_CANCELLED;
+					switch (pdt->entryType){
+						case TDirectoryTraversal::EMPTY:
+							// Empty entry
+							pAction->UpdateProgress(pdt->chs.cylinder);
+							pdt->ResetCurrentEntry(fesp.rd.directoryFillerByte);
+							image->MarkSectorAsDirty(pdt->chs);
+							break;
+						case TDirectoryTraversal::SUBDIR:
+							// Subdirectory (WARNING: It's assumed that "dot" and "dotdot"-like DirectoryEntries are disabled to prevent from unfinite looping!)
+							if (fesp.rd.fillEmptySubdirectoryEntries)
+								discoveredDirs.AddTail(pdt->entry);
+							break;
+						case TDirectoryTraversal::WARNING:
+							// warning - Directory Sector not found
+							//TODO: Utils::Warning(0,DIR_ROOT_SECTOR_NOT_FOUND);
+							break;
 					}
-				}//else
-					//TODO: warning
-			}
+				}
+			//else
+				//TODO: warning
 		}
 		pAction->UpdateProgressFinished();
 		return ERROR_SUCCESS;
@@ -606,11 +621,21 @@ reportError:Utils::Information(buf);
 		if (image->__reportWriteProtection__()) return false;
 		if (rd.DoModal()!=IDOK) return false;
 		// - filling
-		CBackgroundActionCancelable(
-			__fillEmptySpace_thread__,
-			&TFillEmptySpaceParams(this,rd),
-			THREAD_PRIORITY_BELOW_NORMAL
-		).Perform();
+		CBackgroundMultiActionCancelable bmac(THREAD_PRIORITY_BELOW_NORMAL);
+			const TFillEmptySpaceParams params(this,rd);
+			if (rd.fillEmptySectors)
+				bmac.AddAction( __fillEmptySectors_thread__, &params, _T("Filling empty sectors") );
+			TCHAR labelLastSectors[128];
+			if (rd.fillFileEndings){
+				::wsprintf( labelLastSectors, _T("Filling last sectors of files in current directory%s"), rd.fillEmptySubdirectoryEntries?_T(" and its subdirectories"):_T("") );
+				bmac.AddAction( __fillEmptyLastSectors_thread__, &params, labelLastSectors );
+			}
+			TCHAR labelDirEntries[128];
+			if (rd.fillEmptyDirectoryEntries){
+				::wsprintf( labelDirEntries, _T("Filling empty entries in current directory%s"), rd.fillEmptySubdirectoryEntries?_T(" and its subdirectories"):_T("") );
+				bmac.AddAction( __fillEmptyDirEntries_thread__, &params, labelDirEntries );
+			}
+		bmac.Perform();
 		// - updating Views
 		image->UpdateAllViews(nullptr);
 		return true;
