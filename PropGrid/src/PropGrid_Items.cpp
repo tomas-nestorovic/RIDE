@@ -9,11 +9,11 @@
 
 
 
-	TPropGridInfo::TItem::TItem(TPropGridInfo *pPropGridInfo,PCategoryItem parentCategory,LPCTSTR name,PCEditor editor,PropGrid::PValue buffer,PropGrid::PCustomParam param)
+	TPropGridInfo::TItem::TItem(TPropGridInfo *pPropGridInfo,PCategoryItem parentCategory,LPCWSTR name,PCEditor editor,PropGrid::PValue buffer,PropGrid::PCustomParam param)
 		// ctor
 		// - initialization
 		: parentCategory(parentCategory)
-		, name(::lstrcpy((PTCHAR)::malloc((1+::lstrlen(name))*sizeof(TCHAR)),name))
+		, name(::lstrcpyW((PWCHAR)::malloc((1+::lstrlenW(name))*sizeof(WCHAR)),name))
 		, value(editor,buffer,param)
 		, disabled( parentCategory ? parentCategory->disabled : 0 )
 		, nextInCategory(nullptr) {
@@ -51,7 +51,7 @@
 			rc.left=( CATEGORY_HEIGHT + (__getLevel__()-ITEM_LEVEL_TOP)*EDITOR_DEFAULT_HEIGHT + PROPGRID_CELL_MARGIN_LEFT )
 					*
 					LogicalUnitScaleFactor;
-			::DrawText(	dc,
+			::DrawTextW(dc,
 						name, -1, &rc,
 						DT_SINGLELINE | DT_LEFT | DT_VCENTER
 					);
@@ -98,7 +98,7 @@
 
 
 
-	TPropGridInfo::TCategoryItem::TCategoryItem(TPropGridInfo *pPropGridInfo,PCategoryItem parentCategory,LPCTSTR name,bool initiallyExpanded)
+	TPropGridInfo::TCategoryItem::TCategoryItem(TPropGridInfo *pPropGridInfo,PCategoryItem parentCategory,LPCWSTR name,bool initiallyExpanded)
 		// ctor
 		// - base
 		: TItem( pPropGridInfo, parentCategory, name, nullptr, nullptr, nullptr )

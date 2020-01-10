@@ -12,7 +12,7 @@
 
 		typedef const struct TItem{
 			const PCategoryItem parentCategory;
-			const LPCTSTR name;
+			const LPCWSTR name;
 			//TPropGridInfo *const pPropGridInfo;
 			const struct TValue sealed{
 				const PCEditor editor; // either ==TEditor::Category (then this Item is a category), or !=TEditor::Category (then this Item is a property)
@@ -24,7 +24,7 @@
 			BYTE disabled; // >0 = this Item cannot be Edited
 			TItem *nextInCategory;
 
-			TItem(TPropGridInfo *pPropGridInfo,PCategoryItem parentCategory,LPCTSTR name,PCEditor editor,PropGrid::PValue buffer,PropGrid::PCustomParam param);
+			TItem(TPropGridInfo *pPropGridInfo,PCategoryItem parentCategory,LPCWSTR name,PCEditor editor,PropGrid::PValue buffer,PropGrid::PCustomParam param);
 			virtual ~TItem();
 
 			virtual void __drawIndentedName__(HDC dc,RECT rc,HFONT hFont) const;
@@ -39,7 +39,7 @@
 			TItem *subitems;
 			bool expanded; // use TListBox::__expand/collapseCategory__ to modify
 
-			TCategoryItem(TPropGridInfo *pPropGridInfo,PCategoryItem parentCategory,LPCTSTR name,bool initiallyExpanded);
+			TCategoryItem(TPropGridInfo *pPropGridInfo,PCategoryItem parentCategory,LPCWSTR name,bool initiallyExpanded);
 			~TCategoryItem();
 
 			void __drawIndentedName__(HDC dc,RECT rc,HFONT hFont) const override;

@@ -200,9 +200,12 @@
 
 		PROPGRID_DECLSPEC LPCTSTR WINAPI GetWindowClass(HINSTANCE hInstance);
 		PROPGRID_DECLSPEC HWND WINAPI Create(HINSTANCE hInstance,LPCTSTR windowName,UINT style,int x,int y,int width,int height,HWND hParent);
-		PROPGRID_DECLSPEC HANDLE WINAPI AddProperty(HWND hPropGrid,HANDLE category,LPCTSTR name,PValue value,PCEditor editor,PCustomParam param=nullptr);
-		PROPGRID_DECLSPEC HANDLE WINAPI AddDisabledProperty(HWND hPropGrid,HANDLE category,LPCTSTR name,PValue value,PCEditor editor,PCustomParam param=nullptr);
-		PROPGRID_DECLSPEC HANDLE WINAPI AddCategory(HWND hPropGrid,HANDLE category,LPCTSTR name,bool initiallyExpanded=true);
+		PROPGRID_DECLSPEC HANDLE WINAPI AddPropertyW(HWND hPropGrid,HANDLE category,LPCWSTR name,PValue value,PCEditor editor,PCustomParam param=nullptr);
+		PROPGRID_DECLSPEC HANDLE WINAPI AddPropertyA(HWND hPropGrid,HANDLE category,LPCSTR name,PValue value,PCEditor editor,PCustomParam param=nullptr);
+		PROPGRID_DECLSPEC HANDLE WINAPI AddDisabledPropertyW(HWND hPropGrid,HANDLE category,LPCWSTR name,PValue value,PCEditor editor,PCustomParam param=nullptr);
+		PROPGRID_DECLSPEC HANDLE WINAPI AddDisabledPropertyA(HWND hPropGrid,HANDLE category,LPCSTR name,PValue value,PCEditor editor,PCustomParam param=nullptr);
+		PROPGRID_DECLSPEC HANDLE WINAPI AddCategoryW(HWND hPropGrid,HANDLE category,LPCWSTR name,bool initiallyExpanded=true);
+		PROPGRID_DECLSPEC HANDLE WINAPI AddCategoryA(HWND hPropGrid,HANDLE category,LPCSTR name,bool initiallyExpanded=true);
 		PROPGRID_DECLSPEC HANDLE WINAPI EnableProperty(HWND hPropGrid,HANDLE propOrCat,bool enabled);
 		PROPGRID_DECLSPEC void WINAPI RemoveProperty(HWND hPropGrid,HANDLE propOrCat);
 		PROPGRID_DECLSPEC HWND WINAPI CreateUpDownControl(HWND hEdit,UINT style,bool bHexadecimal,Integer::RCUpDownLimits rLimits,int iCurrent);
@@ -211,6 +214,16 @@
 		PROPGRID_DECLSPEC HWND WINAPI BeginEditValue(PValue value,PCustomParam param,PCEditor editor,RECT rcEditorRect,DWORD style,HWND hParent,HWND *pOutEllipsisBtn);
 		PROPGRID_DECLSPEC bool WINAPI TryToAcceptCurrentValueAndCloseEditor();
 		PROPGRID_DECLSPEC bool WINAPI IsValueBeingEdited();
+
+		#ifdef UNICODE
+			#define AddProperty AddPropertyW
+			#define AddDisabledProperty AddDisabledPropertyW
+			#define AddCategory AddCategoryW
+		#else
+			#define AddProperty AddPropertyA
+			#define AddDisabledProperty AddDisabledPropertyA
+			#define AddCategory AddCategoryA
+		#endif
 	}
 
 #endif // PROPGRID_API_H

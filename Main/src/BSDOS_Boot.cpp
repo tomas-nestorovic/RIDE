@@ -152,8 +152,8 @@
 			const PropGrid::PCEditor pWordEditor=PropGrid::Integer::DefineWordEditor(__bootSectorModified__);
 			PropGrid::AddProperty( hPropGrid, hAdvanced, _T("FAT sectors"), &boot->nSectorsPerFat, pWordEditor );
 			PropGrid::AddProperty( hPropGrid, hAdvanced, _T("FAT Bytes"), &boot->nBytesInFat, pWordEditor );
-			PropGrid::AddProperty( hPropGrid, hAdvanced, _T("FAT¹ start"), &boot->fatStarts[0], pWordEditor );
-			PropGrid::AddProperty( hPropGrid, hAdvanced, _T("FAT² start"), &boot->fatStarts[1], pWordEditor );
+			PropGrid::AddPropertyW( hPropGrid, hAdvanced, L"FAT\xB9 start", &boot->fatStarts[0], pWordEditor );
+			PropGrid::AddPropertyW( hPropGrid, hAdvanced, L"FAT\xB2 start", &boot->fatStarts[1], pWordEditor );
 			PropGrid::AddProperty( hPropGrid, hAdvanced, _T("DIRS sector"), &boot->dirsLogSector, pWordEditor );
 
 

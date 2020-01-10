@@ -35,7 +35,7 @@
 			return 0; // no Category is refered by the input parameters - quitting with error
 	}
 
-	HANDLE WINAPI PropGrid::AddProperty(HWND hPropGrid,HANDLE category,LPCTSTR name,PValue value,PCEditor editor,PCustomParam param){
+	HANDLE WINAPI PropGrid::AddPropertyW(HWND hPropGrid,HANDLE category,LPCWSTR name,PValue value,PCEditor editor,PCustomParam param){
 		// creates, adds into PropertyGrid, and returns a new ValueItem with given Name and Value
 		// - creating a new ValueItem in the specified Category
 		if (!IsValueBeingEdited()) // can change content only if a Value is NOT being edited
@@ -52,15 +52,29 @@
 		return 0;
 	}
 
-	HANDLE WINAPI PropGrid::AddDisabledProperty(HWND hPropGrid,HANDLE category,LPCTSTR name,PValue value,PCEditor editor,PCustomParam param){
+	HANDLE WINAPI PropGrid::AddPropertyA(HWND hPropGrid,HANDLE category,LPCSTR name,PValue value,PCEditor editor,PCustomParam param){
 		// creates, adds into PropertyGrid, and returns a new ValueItem with given Name and Value
-		if (const HANDLE result=AddProperty(hPropGrid,category,name,value,editor,param))
+		WCHAR bufW[200];
+		::MultiByteToWideChar( CP_ACP, 0, name, -1, bufW, sizeof(bufW)/sizeof(WCHAR) );
+		return AddPropertyW( hPropGrid, category, bufW, value, editor, param );
+	}
+
+	HANDLE WINAPI PropGrid::AddDisabledPropertyW(HWND hPropGrid,HANDLE category,LPCWSTR name,PValue value,PCEditor editor,PCustomParam param){
+		// creates, adds into PropertyGrid, and returns a new ValueItem with given Name and Value
+		if (const HANDLE result=AddPropertyW(hPropGrid,category,name,value,editor,param))
 			return EnableProperty( hPropGrid, result, false );
 		else
 			return 0;
 	}
 
-	HANDLE WINAPI PropGrid::AddCategory(HWND hPropGrid,HANDLE category,LPCTSTR name,bool initiallyExpanded){
+	HANDLE WINAPI PropGrid::AddDisabledPropertyA(HWND hPropGrid,HANDLE category,LPCSTR name,PValue value,PCEditor editor,PCustomParam param){
+		// creates, adds into PropertyGrid, and returns a new ValueItem with given Name and Value
+		WCHAR bufW[200];
+		::MultiByteToWideChar( CP_ACP, 0, name, -1, bufW, sizeof(bufW)/sizeof(WCHAR) );
+		return AddDisabledPropertyW( hPropGrid, category, bufW, value, editor, param );
+	}
+
+	HANDLE WINAPI PropGrid::AddCategoryW(HWND hPropGrid,HANDLE category,LPCWSTR name,bool initiallyExpanded){
 		// creates, adds into PropertyGrid, and returns a new CategoryItem with given Name
 		// - creating a new CategoryItem in the specified Category
 		if (!IsValueBeingEdited()) // can change content only if a Value is NOT being edited
@@ -73,6 +87,13 @@
 						);
 		// - no Category is refered to by the input parameters - quitting with failure
 		return 0;
+	}
+
+	HANDLE WINAPI PropGrid::AddCategoryA(HWND hPropGrid,HANDLE category,LPCSTR name,bool initiallyExpanded){
+		// creates, adds into PropertyGrid, and returns a new CategoryItem with given Name
+		WCHAR bufW[200];
+		::MultiByteToWideChar( CP_ACP, 0, name, -1, bufW, sizeof(bufW)/sizeof(WCHAR) );
+		return AddCategoryW( hPropGrid, category, bufW, initiallyExpanded );
 	}
 
 	HANDLE WINAPI PropGrid::EnableProperty(HWND hPropGrid,HANDLE propOrCat,bool enabled){
