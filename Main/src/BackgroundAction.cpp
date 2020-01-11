@@ -80,11 +80,6 @@
 
 	BOOL CBackgroundActionCancelable::OnInitDialog(){
 		// dialog initialization
-		// - zeroing the progress-bar
-		CProgressCtrl pc;
-		pc.Attach( GetDlgItem(ID_STATE)->m_hWnd );
-			pc.SetPos(0);
-		pc.Detach();
 		// - launching the Worker
 		Resume();
 		return __super::OnInitDialog();
@@ -116,10 +111,7 @@
 
 	void CBackgroundActionCancelable::SetProgressTarget(int targetState){
 		// sets Worker's target progress state, "100% completed"
-		CProgressCtrl pc;
-		pc.Attach( GetDlgItem(ID_STATE)->m_hWnd );
-			pc.SetRange32( 0, progressTarget=targetState );
-		pc.Detach();
+		SendDlgItemMessage( ID_STATE, PBM_SETRANGE32, 0, progressTarget=targetState );
 	}
 
 	void CBackgroundActionCancelable::SetProgressTargetInfinity(){
@@ -184,7 +176,7 @@
 		// - initializing the Painting information
 		CPoint pt(0,0);
 		GetDlgItem(ID_INFORMATION)->MapWindowPoints( this, &pt, 1 );
-		painting.glyphX=pt.x;
+		painting.glyphX=pt.x+14;
 		painting.charHeight=Utils::CRideFont(m_hWnd).charHeight;
 		CRect rc;
 		GetDlgItem(ID_STATE)->GetClientRect(&rc);
@@ -215,7 +207,7 @@
 
 	void CBackgroundMultiActionCancelable::__drawAction__(HDC dc,WCHAR wingdingsGlyph,LPCTSTR name,RECT &inOutRc) const{
 		// draws Action
-		const Utils::CRideFont glyphFont( FONT_WINGDINGS, 100 );
+		const Utils::CRideFont glyphFont( FONT_WINGDINGS, 105 );
 		const HGDIOBJ hFont0=::SelectObject( dc, glyphFont );
 			::TextOutW( dc, painting.glyphX, inOutRc.top, &wingdingsGlyph, 1 );
 		::SelectObject( dc, hFont0 );
@@ -248,6 +240,7 @@
 										iCurrAction*(painting.charHeight+PADDING_ACTION)
 										+
 										painting.charHeight+PADDING_STATUS;
+							SendDlgItemMessage( ID_STATE, PBM_SETPOS, 0 ); // zeroing the progress-bar
 							GetDlgItem(ID_STATE)->SetWindowPos( nullptr, painting.rcActions.left, y, 0, 0, SWP_NOZORDER|SWP_NOSIZE );
 							// . repainting the list of Actions
 							Invalidate();
