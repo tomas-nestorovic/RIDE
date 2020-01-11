@@ -489,7 +489,7 @@ reportError:Utils::Information(buf);
 		const TFillEmptySpaceParams fesp=*(TFillEmptySpaceParams *)pAction->GetParams();
 		const PImage image=fesp.dos->image;
 		pAction->SetProgressTarget( image->GetCylinderCount() );
-		for( TCylinder cyl=0,const nCylinders=image->GetCylinderCount(); cyl<nCylinders; pAction->UpdateProgress(++cyl) )
+		for( TCylinder cyl=0,const nCylinders=image->GetCylinderCount(); cyl<nCylinders; cyl++ )
 			for( THead head=fesp.dos->formatBoot.nHeads; head--; ){
 				if (pAction->IsCancelled()) return ERROR_CANCELLED;
 				// : determining standard Empty Sectors
@@ -499,6 +499,8 @@ reportError:Utils::Information(buf);
 				for( fesp.dos->GetSectorStatuses(cyl,head,nSectors,bufferId,statuses); nSectors-->0; pId++ )
 					if (*ps++==TSectorStatus::EMPTY)
 						*pEmptyId++=*pId;
+				if (pEmptyId==bufferId) // Track contains no Empty Sectors
+					continue;
 				// : buffering Sectors from the same Track by the underlying Image, making them ready for IMMEDIATE usage
 				fesp.dos->image->BufferTrackData( cyl, head, bufferId, Utils::CByteIdentity(), pEmptyId-bufferId, true );
 				// : filling all Empty Sectors
@@ -511,7 +513,9 @@ reportError:Utils::Information(buf);
 					}//else
 						//TODO: warning on Sector unreadability
 				}
+				pAction->UpdateProgress(cyl);
 			}
+		pAction->UpdateProgressFinished();
 		return ERROR_SUCCESS;
 	}
 	UINT AFX_CDECL CDos::__fillEmptyLastSectors_thread__(PVOID _pCancelableAction){

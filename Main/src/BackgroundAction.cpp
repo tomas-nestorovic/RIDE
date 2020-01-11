@@ -119,16 +119,19 @@
 		SetProgressTarget(INT_MAX);
 	}
 
+	#define PB_RESOLUTION	100
+
 	void CBackgroundActionCancelable::UpdateProgress(int state) const{
 		// refreshes the displaying of actual progress
 		if (m_hWnd) // the window doesn't exist if Worker already cancelled but the Worker hasn't yet found out that it can no longer Continue
-			if (state<progressTarget)
+			if (state<progressTarget){
 				// Worker not yet finished - refreshing
-				GetDlgItem(ID_STATE)->PostMessage( 
-					PBM_SETPOS,
-					lastState=std::max( lastState, state )
-				);
-			else
+				if (state>lastState){ // always progressing towards the Target, never back
+					if (state*PB_RESOLUTION/progressTarget > lastState*PB_RESOLUTION/progressTarget) // preventing from overwhelming the with messages - target of 60k shouldn't mean 60.000 messages
+						GetDlgItem(ID_STATE)->PostMessage( PBM_SETPOS, state );
+					lastState=state;
+				}
+			}else
 				// Worker finished - closing the window
 				::PostMessage( m_hWnd, WM_COMMAND, IDOK, 0 );
 	}
