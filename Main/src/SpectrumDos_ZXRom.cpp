@@ -76,9 +76,9 @@
 	// KEYWORD_TOKEN_FIRST corresponds to the "RND" Keyword in ZX Spectrum charset
 	#define KEYWORD_TOKEN_FIRST	165
 
-	PTCHAR CSpectrumDos::TZxRom::ZxToAscii(LPCSTR zx,BYTE zxLength,PTCHAR bufT){
+	PTCHAR CSpectrumDos::TZxRom::ZxToAscii(LPCSTR zx,BYTE zxLength,PTCHAR bufT,char zxBefore){
 		// converts text from Spectrum character set to PC's current character set and returns the result in Buffer
-		bufT[0]=' '; // initialization
+		bufT[0]=zxBefore; // initialization
 		PTCHAR t=1+bufT;
 		while (zxLength--){
 			const BYTE z=*zx++;
@@ -135,10 +135,10 @@
 				: nullptr;
 	}
 
-	WORD CSpectrumDos::TZxRom::PrintAt(HDC dc,LPCSTR zx,BYTE zxLength,RECT r,UINT drawTextFormat) const{
+	WORD CSpectrumDos::TZxRom::PrintAt(HDC dc,LPCSTR zx,BYTE zxLength,RECT r,UINT drawTextFormat,char zxBefore) const{
 		// returns the number of ASCII characters to which the input ZX code has been converted and printed inside the given Rectangle
 		TCHAR buf[3000]; // a big-enough buffer to accommodate 255-times the keyword RANDOMIZE
-		const PCHAR pAscii=ZxToAscii( zx, zxLength, buf );
+		const PCHAR pAscii=ZxToAscii( zx, zxLength, buf, zxBefore );
 		WORD nAsciiChars=::lstrlen(pAscii);
 		if (drawTextFormat&DT_RIGHT){
 			drawTextFormat&=~DT_RIGHT;
@@ -224,7 +224,8 @@
 		const TZxRom &rZxRom=((CSpectrumBaseFileManagerView *)CDos::GetFocused()->pFileManager)->zxRom;
 		const HGDIOBJ hFont0=::SelectObject( pdis->hDC, rZxRom.font.m_hObject );
 			pdis->rcItem.left+=PROPGRID_CELL_MARGIN_LEFT;
-			rZxRom.PrintAt(	pdis->hDC, (LPCSTR)value, LOBYTE(combinedValue),
+			CPathString tmp( (LPCSTR)value, LOBYTE(combinedValue) );
+			rZxRom.PrintAt(	pdis->hDC, tmp, tmp.TrimRight(HIBYTE(combinedValue)).GetLength(),
 							pdis->rcItem,
 							DT_SINGLELINE | DT_LEFT | DT_VCENTER | DT_NOPREFIX
 						);
@@ -267,7 +268,8 @@
 						r.left+=(nAsciiChars+1)*rZxRom.font.charAvgWidth; // "+1" = Cursor
 						rZxRom.PrintAt(	dc, rEditor.buf+rEditor.cursor.position, rEditor.length-rEditor.cursor.position,
 										r,
-										DT_SINGLELINE | DT_LEFT | DT_VCENTER | DT_NOPREFIX
+										DT_SINGLELINE | DT_LEFT | DT_VCENTER | DT_NOPREFIX,
+										TCursor::K // some Cursor
 									);
 						// . printing Cursor
 						r.right=r.left;
@@ -453,7 +455,7 @@ addCharInWParam:						rEditor.__addChar__(wParam);
 
 	static bool WINAPI __help__(PVOID,PVOID,short){
 		// help
-		Utils::Information(_T("You can type in all Spectrum characters, including commands (if in modes K, or E), letters (mode L), capitals (mode C), and UDG symbols (mode G). In each mode, type characters as you would on a classical 48k Spectrum keyboard. Non-printable characters are not supported and cannot be typed in (e.g. those influencing text color).\n\nSwitch between modes using Ctrl+Shift. Use Ctrl alone as the Symbol Shift key. You enter the C mode if CapsLock is on during L mode.\n\nExample:\nSwitch to mode E and press Z - \"LN\" shows up.\nSwitch to mode E again and press Ctrl+Z - \"BEEP\" appears this time."));
+		Utils::Information(_T("You can type in all Spectrum characters, including commands (if in modes K, or E), letters (mode L), capitals (mode C), UDG symbols (mode G), and non-printable characters, e.g. 0x06 for tab (hexa-mode X). In each mode, type characters as you would on a classical 48k Spectrum keyboard.\n\nSwitch between modes using Ctrl+Shift. Use Ctrl alone as the Symbol Shift key. You enter the C mode if CapsLock is on during L mode.\n\nExample:\nSwitch to mode E and press Z - \"LN\" shows up.\nSwitch to mode E again and press Ctrl+Z - \"BEEP\" appears this time."));
 		return false; // False = actual editing of value has failed (otherwise the Editor would be closed)
 	}
 
