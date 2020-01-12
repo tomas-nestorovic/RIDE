@@ -108,6 +108,7 @@
 				static LRESULT CALLBACK __wndProc__(HWND hEditor,UINT msg,WPARAM wParam,LPARAM lParam);
 
 				HWND handle;
+				int scrollX;
 				struct TCursor sealed{
 					enum TMode:char{
 						K='K',

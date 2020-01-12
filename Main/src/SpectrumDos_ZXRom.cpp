@@ -152,7 +152,8 @@
 				::wsprintf( tmp, _T("%02X"), c<' '?c:0 );
 				RECT rHexa=r;
 					rHexa.right=r.left+2*font.charAvgWidth;
-				::FillRect( dc, &rHexa, CBrush(Utils::GetBlendedColor( ::GetBkColor(dc), 0xc8c8c8, .5f )) );
+				if ((drawTextFormat&DT_CALCRECT)==0)
+					::FillRect( dc, &rHexa, CBrush(Utils::GetBlendedColor( ::GetBkColor(dc), 0xc8c8c8, .5f )) );
 				rHexa.right--;
 				::DrawText( dc, tmp, -1, &r, drawTextFormat );
 				const CPen delimiterPen( PS_DOT, 1, COLOR_WHITE );
@@ -202,6 +203,7 @@
 	HWND WINAPI CSpectrumBase::TZxRom::CLineComposerPropGridEditor::__create__(PropGrid::PValue value,PropGrid::TSize combinedValue,HWND hParent){
 		// - initializing the Editor
 		CLineComposerPropGridEditor &rEditor=((CSpectrumBaseFileManagerView *)CDos::GetFocused()->pFileManager)->zxRom.lineComposerPropGridEditor;
+		rEditor.scrollX=0;
 		rEditor.length = rEditor.lengthMax = LOBYTE(combinedValue);
 		ASSERT(rEditor.length<sizeof(rEditor.buf));
 		for( rEditor.paddingChar=HIBYTE(combinedValue); rEditor.length; )
@@ -256,10 +258,25 @@
 				const HDC dc=::BeginPaint(hEditor,&ps);
 					::SetBkMode(dc,TRANSPARENT);
 					const HGDIOBJ hFont0=::SelectObject( dc, rZxRom.font.m_hObject );
-						RECT r;
+						CRect r;
 						::GetClientRect(hEditor,&r);
+						// . making sure the Cursor is always visible
+						const int w=r.Width();
+						const WORD nAsciiChars=rZxRom.PrintAt( // not actually printing anything, see DT_CALCRECT
+							dc, rEditor.buf, rEditor.cursor.position,
+							r,
+							DT_CALCRECT | DT_SINGLELINE | DT_LEFT | DT_VCENTER | DT_NOPREFIX
+						);
+						if (nAsciiChars*rZxRom.font.charAvgWidth<rEditor.scrollX)
+							// Cursor "before" visible rectangle - scrolling the content so that the Cursor is again visible
+							rEditor.scrollX=std::max( 0, nAsciiChars*rZxRom.font.charAvgWidth-w/4 );
+						else if ((nAsciiChars+1)*rZxRom.font.charAvgWidth>=rEditor.scrollX+w && w>rZxRom.font.charAvgWidth) // A&B, A = Cursor must also be visible, B = under the condition that it can be actually displayed; "+1" = Cursor
+							// Cursor "after" visible rectangle - scrolling the content so that the Cursor is again visible
+							rEditor.scrollX=nAsciiChars*rZxRom.font.charAvgWidth-3*w/4;
+						::SetWindowOrgEx( dc, rEditor.scrollX, 0, nullptr );
+						r.right=rEditor.scrollX+w;
 						// . printing content BEFORE Cursor
-						const WORD nAsciiChars=rZxRom.PrintAt(
+						rZxRom.PrintAt(
 							dc, rEditor.buf, rEditor.cursor.position,
 							r,
 							DT_SINGLELINE | DT_LEFT | DT_VCENTER | DT_NOPREFIX
