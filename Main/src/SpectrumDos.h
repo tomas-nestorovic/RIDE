@@ -109,7 +109,7 @@
 
 				HWND handle;
 				int scrollX;
-				struct TCursor sealed{
+				struct TCaret sealed{
 					enum TMode:char{
 						K='K',
 						LC='L', // "L" mode alternated with "C" mode
@@ -118,7 +118,7 @@
 						X='X'
 					} mode;
 					BYTE position; // logical Position in Buffer
-				} cursor;
+				} caret;
 				BYTE lengthMax; // mustn't exceed Buffer's capacity
 				BYTE length;
 				bool hexaLow; // True <=> ready to modify the lower half-byte in hexa mode

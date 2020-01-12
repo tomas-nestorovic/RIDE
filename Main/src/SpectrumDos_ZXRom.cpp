@@ -211,9 +211,9 @@
 				::memcpy( rEditor.buf, value, ++rEditor.length );
 				break;
 			}
-		// - initializing the Cursor
-		rEditor.cursor.mode=TCursor::LC; // "L" Cursor if CapsLock off, "C" Cursor if CapsLock on
-		rEditor.cursor.position=rEditor.length;
+		// - initializing the Caret
+		rEditor.caret.mode=TCaret::LC; // "L" Caret if CapsLock off, "C" Caret if CapsLock on
+		rEditor.caret.position=rEditor.length;
 		// - returning the initialized Editor
 		const HWND hEditor=::CreateWindow(	AfxRegisterWndClass(0,app.LoadStandardCursor(IDC_IBEAM),Utils::CRideBrush::White),
 											nullptr, WS_CHILD|WS_VISIBLE|WS_CLIPSIBLINGS, 0,0, 1,1, hParent, 0, AfxGetInstanceHandle(), nullptr
@@ -252,6 +252,15 @@
 		const TZxRom &rZxRom=((CSpectrumBaseFileManagerView *)CDos::GetFocused()->pFileManager)->zxRom;
 		CLineComposerPropGridEditor &rEditor=rZxRom.lineComposerPropGridEditor;
 		switch (msg){
+			case WM_SETFOCUS:
+				// window has received focus
+				::CreateCaret( hEditor, nullptr, rZxRom.font.charAvgWidth, rZxRom.font.charHeight );
+				::ShowCaret(hEditor);
+				break;
+			case WM_KILLFOCUS:
+				// window has lost focus
+				::DestroyCaret();
+				break;
 			case WM_PAINT:{
 				// drawing
 				PAINTSTRUCT ps;
@@ -260,48 +269,48 @@
 					const HGDIOBJ hFont0=::SelectObject( dc, rZxRom.font.m_hObject );
 						CRect r;
 						::GetClientRect(hEditor,&r);
-						// . making sure the Cursor is always visible
+						r.bottom=rZxRom.font.charHeight;
+						// . making sure the Caret is always visible
 						const int w=r.Width();
 						const WORD nAsciiChars=rZxRom.PrintAt( // not actually printing anything, see DT_CALCRECT
-							dc, rEditor.buf, rEditor.cursor.position,
+							dc, rEditor.buf, rEditor.caret.position,
 							r,
 							DT_CALCRECT | DT_SINGLELINE | DT_LEFT | DT_VCENTER | DT_NOPREFIX
 						);
 						if (nAsciiChars*rZxRom.font.charAvgWidth<rEditor.scrollX)
-							// Cursor "before" visible rectangle - scrolling the content so that the Cursor is again visible
+							// Caret "before" visible rectangle - scrolling the content so that the Caret is again visible
 							rEditor.scrollX=std::max( 0, nAsciiChars*rZxRom.font.charAvgWidth-w/4 );
-						else if ((nAsciiChars+1)*rZxRom.font.charAvgWidth>=rEditor.scrollX+w && w>rZxRom.font.charAvgWidth) // A&B, A = Cursor must also be visible, B = under the condition that it can be actually displayed; "+1" = Cursor
-							// Cursor "after" visible rectangle - scrolling the content so that the Cursor is again visible
+						else if ((nAsciiChars+1)*rZxRom.font.charAvgWidth>=rEditor.scrollX+w && w>rZxRom.font.charAvgWidth) // A&B, A = Caret must also be visible, B = under the condition that it can be actually displayed; "+1" = Caret
+							// Caret "after" visible rectangle - scrolling the content so that the Caret is again visible
 							rEditor.scrollX=nAsciiChars*rZxRom.font.charAvgWidth-3*w/4;
 						::SetWindowOrgEx( dc, rEditor.scrollX, 0, nullptr );
 						r.right=rEditor.scrollX+w;
-						// . printing content BEFORE Cursor
+						// . printing content BEFORE Caret
 						rZxRom.PrintAt(
-							dc, rEditor.buf, rEditor.cursor.position,
+							dc, rEditor.buf, rEditor.caret.position,
 							r,
 							DT_SINGLELINE | DT_LEFT | DT_VCENTER | DT_NOPREFIX
 						);
-						// . printing content AFTER Cursor
-						r.left+=(nAsciiChars+1)*rZxRom.font.charAvgWidth; // "+1" = Cursor
-						rZxRom.PrintAt(	dc, rEditor.buf+rEditor.cursor.position, rEditor.length-rEditor.cursor.position,
+						// . printing content AFTER Caret
+						r.left+=(nAsciiChars+1)*rZxRom.font.charAvgWidth; // "+1" = Caret
+						rZxRom.PrintAt(	dc, rEditor.buf+rEditor.caret.position, rEditor.length-rEditor.caret.position,
 										r,
 										DT_SINGLELINE | DT_LEFT | DT_VCENTER | DT_NOPREFIX,
-										TCursor::K // some Cursor
+										TCaret::K // some Caret
 									);
-						// . printing Cursor
-						r.right=r.left;
-						r.left-=rZxRom.font.charAvgWidth;
-						const COLORREF color0=::SetTextColor( dc, COLOR_WHITE );
-							//r.bottom=( r.top=(r.bottom-rZxRom.font.charHeight)/2 )+rZxRom.font.charHeight;
-							::FillRect( dc, &r, Utils::CRideBrush::Black );
-							if (rEditor.cursor.mode==TCursor::LC && IS_CAPSLOCK_ON()){
+						// . printing Caret
+						::HideCaret(hEditor);
+							r.right=r.left;
+							r.left-=rZxRom.font.charAvgWidth;
+							if (rEditor.caret.mode==TCaret::LC && IS_CAPSLOCK_ON()){
 								// displaying the "C" Mode (Capitals) at place of the "L" mode
 								static const char ModeC='C';
 								::DrawTextA( dc, &ModeC,1, &r, DT_SINGLELINE|DT_LEFT|DT_VCENTER );
 							}else
 								// displaying current Mode
-								::DrawTextA( dc, (LPCSTR)&rEditor.cursor.mode,1, &r, DT_SINGLELINE|DT_LEFT|DT_VCENTER );
-						::SetTextColor(dc,color0);
+								::DrawTextA( dc, (LPCSTR)&rEditor.caret.mode,1, &r, DT_SINGLELINE|DT_LEFT|DT_VCENTER );
+							::SetCaretPos( r.left-rEditor.scrollX, 0 );
+						::ShowCaret(hEditor);
 					::SelectObject(dc,hFont0);
 				::EndPaint(hEditor,&ps);
 				return 0;
@@ -315,58 +324,58 @@
 						// control keys of all Editors
 						break;
 					case VK_LEFT:
-						// moving Cursor one Position to the left
-						if (rEditor.cursor.position){
-							rEditor.cursor.position--;
-cursorMoved:				rEditor.hexaLow=true; // specifically for hexa-mode X
+						// moving Caret one Position to the left
+						if (rEditor.caret.position){
+							rEditor.caret.position--;
+caretMoved:					rEditor.hexaLow=true; // specifically for hexa-mode X
 							::InvalidateRect(hEditor,nullptr,TRUE);
 						}
 						return 0;
 					case VK_RIGHT:
-						// moving Cursor one Position to the right
-						if (rEditor.cursor.position<rEditor.length){
-							rEditor.cursor.position++;
-							goto cursorMoved;
+						// moving Caret one Position to the right
+						if (rEditor.caret.position<rEditor.length){
+							rEditor.caret.position++;
+							goto caretMoved;
 						}
 						return 0;
 					case VK_HOME:
 					case VK_UP:
-						// moving Cursor to the beginning of File Name
-						rEditor.cursor.position=0;
-						goto cursorMoved;
+						// moving Caret to the beginning of File Name
+						rEditor.caret.position=0;
+						goto caretMoved;
 					case VK_END:
 					case VK_DOWN:
-						// moving Cursor to the end of File Name
-						rEditor.cursor.position=rEditor.length;
-						goto cursorMoved;
+						// moving Caret to the end of File Name
+						rEditor.caret.position=rEditor.length;
+						goto caretMoved;
 					case VK_BACK:
-						// deleting the character that preceeds the Cursor (Backspace)
-						if (rEditor.cursor.position){
-							const BYTE c=--rEditor.cursor.position;
+						// deleting the character that preceeds the Caret (Backspace)
+						if (rEditor.caret.position){
+							const BYTE c=--rEditor.caret.position;
 							const PCHAR p=rEditor.buf;
 							::memmove( p+c, p+1+c, rEditor.lengthMax-c );
 							rEditor.length--;
-							goto cursorMoved;
+							goto caretMoved;
 						}
 						return 0;
 					case VK_DELETE:
-						// deleting the character that follows the Cursor (Delete)
-						if (rEditor.cursor.position<rEditor.length){
-							const BYTE c=rEditor.cursor.position;
+						// deleting the character that follows the Caret (Delete)
+						if (rEditor.caret.position<rEditor.length){
+							const BYTE c=rEditor.caret.position;
 							const PCHAR p=rEditor.buf;
 							::memmove( p+c, p+1+c, ( --rEditor.length )-c );
-							goto cursorMoved;
+							goto caretMoved;
 						}
 						return 0;
 					case VK_CONTROL:
 					case VK_SHIFT:
-						// changing Cursor Mode after pressing Ctrl+Shift
+						// changing Caret Mode after pressing Ctrl+Shift
 						if (::GetKeyState(VK_CONTROL)<0 && ::GetKeyState(VK_SHIFT)<0){
-							static const TCursor::TMode Modes[]={ TCursor::K, TCursor::LC, TCursor::E, TCursor::G, TCursor::X };
-							TCursor::TMode &rMode=rEditor.cursor.mode;
+							static const TCaret::TMode Modes[]={ TCaret::K, TCaret::LC, TCaret::E, TCaret::G, TCaret::X };
+							TCaret::TMode &rMode=rEditor.caret.mode;
 							BYTE m=0;
 							while (Modes[m++]!=rMode);
-							if (m==sizeof(Modes)/sizeof(TCursor::TMode))
+							if (m==sizeof(Modes)/sizeof(TCaret::TMode))
 								m=0;
 							rMode=Modes[m];
 							rEditor.hexaLow=true; // specifically for hexa-mode X
@@ -374,19 +383,19 @@ cursorMoved:				rEditor.hexaLow=true; // specifically for hexa-mode X
 						//fallthrough
 					case VK_CAPITAL:
 						// turning CapsLock on and Off
-						::InvalidateRect(hEditor,nullptr,TRUE); // to update the Cursor (switching between the "L" and "C" Modes)
+						::InvalidateRect(hEditor,nullptr,TRUE); // to update the Caret (switching between the "L" and "C" Modes)
 						break;
 					default:
 						// adding a character to Buffer
 						static const BYTE ConversionAbcModeKL[]={ 226,'*','?',205,200,204,203,'^',172,'-','+','=','.',',',';','"',199,'<',195,'>',197,'/',201,96,198,':' };
 						static const BYTE Conversion012ModeKL[]={ '_','!','@','#','$','%','&','\'','(',')' };
 						if (wParam==' '){
-							rEditor.cursor.mode=TCursor::LC; // switching to Mode "L" if Space is pressed (or alternatively C, if CapsLock on)
+							rEditor.caret.mode=TCaret::LC; // switching to Mode "L" if Space is pressed (or alternatively C, if CapsLock on)
 							goto addCharInWParam;
 						}
-						switch (rEditor.cursor.mode){
-							case TCursor::K:
-								// Cursor in Mode K
+						switch (rEditor.caret.mode){
+							case TCaret::K:
+								// Caret in Mode K
 								if (::GetKeyState(VK_CONTROL)<0){
 									if (wParam>='A' && wParam<='Z')
 										rEditor.__addChar__( ConversionAbcModeKL[wParam-'A'] );
@@ -398,8 +407,8 @@ cursorMoved:				rEditor.hexaLow=true; // specifically for hexa-mode X
 									else if (wParam>='0' && wParam<='9')
 addCharInWParam:						rEditor.__addChar__(wParam);
 								return 0;
-							case TCursor::LC:
-								// Cursor in Modes L (or alternatively C, if CapsLock on)
+							case TCaret::LC:
+								// Caret in Modes L (or alternatively C, if CapsLock on)
 								if (::GetKeyState(VK_CONTROL)<0){
 									if (wParam>='A' && wParam<='Z')
 										rEditor.__addChar__( ConversionAbcModeKL[wParam-'A'] );
@@ -413,8 +422,8 @@ addCharInWParam:						rEditor.__addChar__(wParam);
 									}else if (wParam>='0' && wParam<='9')
 										goto addCharInWParam;
 								return 0;
-							case TCursor::E:
-								// Cursor in Mode E
+							case TCaret::E:
+								// Caret in Mode E
 								if (::GetKeyState(VK_CONTROL)<0){
 									if (wParam>='A' && wParam<='Z'){
 										static const BYTE Conversion[]={ '~',220,218,'\\',183,'{','}',216,191,174,170,171,221,222,223,127,181,214,'|',213,']',219,182,217,'[',215 };
@@ -429,8 +438,8 @@ addCharInWParam:						rEditor.__addChar__(wParam);
 										rEditor.__addChar__( Conversion[wParam-'A'] );
 									}
 								return 0;
-							case TCursor::G:
-								// Cursor in Mode G
+							case TCaret::G:
+								// Caret in Mode G
 								if (wParam>='A' && wParam<='Z')
 									rEditor.__addChar__( 144+wParam-'A' );
 								else if (wParam>='1' && wParam<='8') // 0 and 9 ignored
@@ -442,8 +451,8 @@ addCharInWParam:						rEditor.__addChar__(wParam);
 										rEditor.__addChar__( Conversion[wParam-'1'] );
 									}
 								return 0;
-							case TCursor::X:{
-								// Cursor in hexa-mode
+							case TCaret::X:{
+								// Caret in hexa-mode
 								if ('A'<=wParam && wParam<='F')
 									wParam-='A'-10;
 								else if ('0'<=wParam && wParam<='9')
@@ -455,7 +464,7 @@ addCharInWParam:						rEditor.__addChar__(wParam);
 										return 0; // ... we are done
 								}else // finishing writing current Byte
 									::InvalidateRect(hEditor,nullptr,TRUE);
-								char &r=rEditor.buf[rEditor.cursor.position-1];
+								char &r=rEditor.buf[rEditor.caret.position-1];
 								r<<=4;
 								r|=wParam;
 								rEditor.hexaLow=!rEditor.hexaLow;
@@ -477,12 +486,12 @@ addCharInWParam:						rEditor.__addChar__(wParam);
 	}
 
 	bool CSpectrumBase::TZxRom::CLineComposerPropGridEditor::__addChar__(char c){
-		// True <=> given Character has been added at Cursor's current Position, otherwise False
+		// True <=> given Character has been added at Caret's current Position, otherwise False
 		if (length==lengthMax) return false; // can't exceed the maximum length
-		::memmove( buf+cursor.position+1, buf+cursor.position, length-cursor.position );
-		buf[cursor.position++]=c;
+		::memmove( buf+caret.position+1, buf+caret.position, length-caret.position );
+		buf[caret.position++]=c;
 		length++;
-		//cursor.mod=TCursor::L;
+		//caret.mod=TCaret::L;
 		::InvalidateRect( handle, nullptr, TRUE );
 		return true;
 	}
