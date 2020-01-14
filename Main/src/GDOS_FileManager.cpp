@@ -215,8 +215,7 @@
 				// adding one more Sector to the end of the File to accommodate the NewOffset (approached by importing a single-Byte File to the disk)
 				BYTE buf; PFile p;
 				CFatPath emptySector(gdos,sizeof(buf));
-				err=gdos->__importFileData__( &CMemFile(&buf,sizeof(buf)), &tmp, _T(""), _T(""), sizeof(buf), p, emptySector );
-				if (err!=ERROR_SUCCESS)
+				if (err=gdos->__importFileData__( &CMemFile(&buf,sizeof(buf)), &tmp, _T(""), _T(""), sizeof(buf), true, p, emptySector ))
 					goto error;
 				gdos->DeleteFile(p); // deleting the imported auxiliary single-Byte File
 				emptySector.GetItems(pItem,n);

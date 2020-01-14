@@ -392,7 +392,7 @@
 			tmp.__markTemporary__(); // identification of a temporary Entry in Directory (see also DeleteFile)
 		// - importing to Image
 		CFatPath fatPath(this,fileSizeOnDisk);
-		if (err=__importFileData__( f, &tmp, CPathString(zxName,zxNameLength), uftExt, fileSize, rFile, fatPath ))
+		if (err=__importFileData__( f, &tmp, CPathString(zxName,zxNameLength), uftExt, fileSize, false, rFile, fatPath ))
 			return err;
 		// - finishing initialization of DirectoryEntry of successfully imported File
 		const PDirectoryEntry de=(PDirectoryEntry)rFile;

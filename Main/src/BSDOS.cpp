@@ -302,7 +302,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 		if (__importFileData__(
 				&CMemFile(&buf,sizeof(buf)),
 				currentDir==ZX_DIR_ROOT ? (PFile)&slotInit : (PFile)&deInit,
-				_T(""), _T(""), sizeof(buf), p,
+				_T(""), _T(""), sizeof(buf), true, p,
 				emptySector
 			)!=ERROR_SUCCESS
 		)
@@ -880,7 +880,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 			//nop (see below)
 		// - changing the Extension according to the "universal" type valid across ZX platforms (as TR-DOS File "Picture.C" should be take on the name "Picture.B" under MDOS)
 		CFatPath fatPath( this, fileSize );
-		if (const TStdWinError err=__importFileData__( fIn, &tmp, CPathString(zxName,zxNameLength), CPathString(zxExt,zxExtLength), fileSize, rFile, fatPath ))
+		if (const TStdWinError err=__importFileData__( fIn, &tmp, CPathString(zxName,zxNameLength), CPathString(zxExt,zxExtLength), fileSize, true, rFile, fatPath ))
 			return err;
 		// - finishing initialization of DirectoryEntry of successfully imported File
 		const PDirectoryEntry de=(PDirectoryEntry)rFile;

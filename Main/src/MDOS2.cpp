@@ -353,7 +353,7 @@
 		}
 		// - importing to Image
 		CFatPath fatPath(this,fileSize);
-		if (const TStdWinError err=__importFileData__( f, &tmp, CPathString(zxName,zxNameLength), tmp.extension, fileSize, rFile, fatPath ))
+		if (const TStdWinError err=__importFileData__( f, &tmp, CPathString(zxName,zxNameLength), tmp.extension, fileSize, true, rFile, fatPath ))
 			return err;
 		// - finishing initialization of DirectoryEntry of successfully imported File
 		const PDirectoryEntry de=(PDirectoryEntry)rFile;

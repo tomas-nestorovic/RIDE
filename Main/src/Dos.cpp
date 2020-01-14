@@ -826,7 +826,7 @@ reportError:Utils::Information(buf);
 		return std::min<>( GetFileSize(file), nBytesToExportMax );
 	}
 
-	TStdWinError CDos::__importFileData__(CFile *f,PFile fDesc,RCPathString fileName,RCPathString fileExt,DWORD fileSize,PFile &rFile,CFatPath &rFatPath){
+	TStdWinError CDos::__importFileData__(CFile *f,PFile fDesc,RCPathString fileName,RCPathString fileExt,DWORD fileSize,bool skipBadSectors,PFile &rFile,CFatPath &rFatPath){
 		// imports given File into the disk; returns Windows standard i/o error
 		// - making sure that the File with given NameAndExtension doesn't exist in current Directory
 		LOG_FILE_ACTION(this,fDesc,_T("import"));
@@ -945,12 +945,17 @@ reportError:Utils::Information(buf);
 								goto finished;
 							}
 						}else{ // error when accessing discovered Empty Sector
-							ModifyStdSectorStatus( item.chs, TSectorStatus::BAD ); // marking the Sector as Bad
 							TStdWinError err;
-							if (fileSize>GetFreeSpaceInBytes(err)){
-								DeleteFile(rFile); // removing the above added File record from current Directory
-								return LOG_ERROR(ERROR_DISK_FULL);
-							}
+							if (skipBadSectors){
+								ModifyStdSectorStatus( item.chs, TSectorStatus::BAD ); // marking the Sector as Bad ...
+								if (fileSize>GetFreeSpaceInBytes(err))
+									err=ERROR_DISK_FULL;
+								else
+									continue; // ... and proceeding with the next Sector
+							}else
+								err=::GetLastError();
+							DeleteFile(rFile); // removing the above added File record from current Directory
+							return LOG_ERROR(err);
 						}
 					}
 				}

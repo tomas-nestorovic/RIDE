@@ -307,7 +307,7 @@
 		bool __removeStdTracksFromFat__(TTrack nTracks,PCCylinder cylinders,PCHead heads);
 		bool __fillEmptySpace__(CFillEmptySpaceDialog &rd);
 		LPCTSTR __exportFileData__(PCFile file,CFile *fOut,DWORD nMaxDataBytesToExport) const;
-		TStdWinError __importFileData__(CFile *fIn,PFile fDesc,RCPathString fileName,RCPathString fileExt,DWORD fileSize,PFile &rFile,CFatPath &rFatPath);
+		TStdWinError __importFileData__(CFile *fIn,PFile fDesc,RCPathString fileName,RCPathString fileExt,DWORD fileSize,bool skipBadSectors,PFile &rFile,CFatPath &rFatPath);
 		PFile __findFile__(PCFile directory,RCPathString fileName,RCPathString fileExt,PCFile ignoreThisFile) const;
 		TStdWinError __shiftFileContent__(const CFatPath &rFatPath,char nBytesShift) const;
 	public:

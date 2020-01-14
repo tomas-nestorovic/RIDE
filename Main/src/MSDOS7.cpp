@@ -950,7 +950,7 @@ nextCluster:result++;
 			__getShortFileNameAndExt__(&tmp,tmpName,pExt);
 		}
 		CFatPath fatPath(this,fileSize);
-		if (const TStdWinError err=__importFileData__( f, &tmp, tmpName, pExt, fileSize, rFile, fatPath ))
+		if (const TStdWinError err=__importFileData__( f, &tmp, tmpName, pExt, fileSize, true, rFile, fatPath ))
 			return err;
 		CFatPath::PCItem item; DWORD n;
 		fatPath.GetItems(item,n);

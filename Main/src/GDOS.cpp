@@ -518,7 +518,7 @@
 			return ERROR_BAD_LENGTH;
 		// - importing to Image
 		CFatPath fatPath(this,offset+fileSize);
-		if (err=__importFileData__( f, &tmp, CPathString(zxName,zxNameLength), CPathString(tmp.fileType), fileSize, rFile, fatPath ))
+		if (err=__importFileData__( f, &tmp, CPathString(zxName,zxNameLength), CPathString(tmp.fileType), fileSize, true, rFile, fatPath ))
 			return err;
 		// - finishing initialization of DirectoryEntry of successfully imported File
 		const PDirectoryEntry de=(PDirectoryEntry)rFile;
