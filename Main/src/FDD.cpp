@@ -1578,23 +1578,14 @@ autodetermineLatencies:		// automatic determination of write latency values
 							if (d.DoModal()==IDOK){
 								__informationWithCheckableShowNoMore__( _T("Windows is NOT a real-time system! Computed latency will be valid only if using the floppy drive in very similar conditions as when they were computed (current conditions)!"), INI_MSG_LATENCY );
 								if (Utils::InformationOkCancel(_T("Insert an empty disk and hit OK."))){
-									TLatencyParams lp( fdd, d.floppyType==0, 1+d.usAccuracy, 1+d.nRepeats );
-									if (const TStdWinError err=	CBackgroundActionCancelable(
-																	__determineControllerAndOneByteLatency_thread__,
-																	&lp,
-																	FDD_THREAD_PRIORITY_DEFAULT
-																).Perform()
-									){
-latencyAutodeterminationError:			Utils::FatalError(_T("Couldn't autodetermine"),err);
+									CBackgroundMultiActionCancelable bmac( THREAD_PRIORITY_TIME_CRITICAL );
+										TLatencyParams lp( fdd, d.floppyType==0, 1+d.usAccuracy, 1+d.nRepeats );
+										bmac.AddAction( __determineControllerAndOneByteLatency_thread__, &lp, _T("Determining controller latencies") );
+										bmac.AddAction( __determineGap3Latency_thread__, &lp, _T("Determining minimal Gap3 size") );
+									if (const TStdWinError err=bmac.Perform()){
+										Utils::FatalError(_T("Couldn't autodetermine"),err);
 										break;
 									}
-									if (const TStdWinError err=	CBackgroundActionCancelable(
-																	__determineGap3Latency_thread__,
-																	&lp,
-																	FDD_THREAD_PRIORITY_DEFAULT
-																).Perform()
-									)
-										goto latencyAutodeterminationError;
 									params.controllerLatency=lp.outControllerLatency;
 									params.oneByteLatency=lp.out1ByteLatency;
 									params.gap3Latency=lp.outGap3Latency;
