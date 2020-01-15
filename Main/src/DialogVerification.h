@@ -2,15 +2,21 @@
 #define VERIFICATIONDIALOG_H
 
 	class CVerifyVolumeDialog sealed:public CDialog{
-		const CDos *const dos;
 		BYTE nOptionsChecked;
 
 		void DoDataExchange(CDataExchange *pDX) override;
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 	public:
-		int verifyBootSector, verifyFat, verifyFilesystem;
-		int verifyDiskSurface;
-		int repairStyle;
+		struct TParams sealed{
+			const CDos *const dos;
+			int verifyBootSector, verifyFat, verifyFilesystem;
+			int verifyVolumeSurface;
+			int repairStyle;
+
+			TParams(const CDos *dos);
+
+			BYTE ConfirmFix(LPCTSTR problemDesc,LPCTSTR problemSolvingSuggestion) const;
+		} params;
 
 		CVerifyVolumeDialog(const CDos *dos);
 	};
