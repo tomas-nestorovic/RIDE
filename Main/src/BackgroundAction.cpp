@@ -159,7 +159,7 @@
 	CBackgroundMultiActionCancelable::CBackgroundMultiActionCancelable(int actionThreadPriority)
 		// ctor
 		: CBackgroundActionCancelable( IDR_ACTION_SEQUENCE )
-		, actionThreadPriority(  std::max( std::min(actionThreadPriority,THREAD_BASE_PRIORITY_MAX), THREAD_BASE_PRIORITY_MIN )  )
+		, actionThreadPriority(  std::max( std::min(actionThreadPriority,THREAD_PRIORITY_TIME_CRITICAL), THREAD_BASE_PRIORITY_MIN )  )
 		, nActions(0) {
 	}
 
@@ -171,7 +171,7 @@
 		r.fnName=name;
 	}
 
-	#define PADDING_ACTION		5
+	#define PADDING_ACTION		8
 	#define PADDING_STATUS		3
 
 	BOOL CBackgroundMultiActionCancelable::OnInitDialog(){
@@ -204,7 +204,16 @@
 		// - base
 		const BOOL result=__super::OnInitDialog();
 		// - displaying thread Priority
-		SendDlgItemMessage( ID_PRIORITY, CB_SETCURSEL, actionThreadPriority-THREAD_BASE_PRIORITY_MIN ); // zero-based index
+		if (actionThreadPriority<=THREAD_BASE_PRIORITY_MAX)
+			// time-non-critical Actions - user is free to change Worker's priority
+			SendDlgItemMessage( ID_PRIORITY, CB_SETCURSEL, actionThreadPriority-THREAD_BASE_PRIORITY_MIN ); // zero-based index
+		else{
+			// time-critical Actions - user must not change Worker's priority
+			SendDlgItemMessage(	ID_PRIORITY, CB_SETCURSEL,
+								SendDlgItemMessage( ID_PRIORITY, CB_ADDSTRING, 0, (LPARAM)_T("Real-time") )
+							);
+			Utils::EnableDlgControl( m_hWnd, ID_PRIORITY, false );
+		}
 		return result;
 	}
 
