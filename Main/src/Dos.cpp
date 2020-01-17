@@ -126,12 +126,12 @@ reportError:Utils::Information(buf);
 		if (formatBoot.mediumType!=TMedium::UNKNOWN) // Unknown Medium if creating a new Image
 			for( TCylinder cylMin=TMedium::GetProperties(formatBoot.mediumType)->cylinderRange.iMax; cylMin--; )
 				for( THead head=formatBoot.nHeads; head--; )
-					if (ERROR_EMPTY!=__isTrackEmpty__( cylMin, head, __getListOfStdSectors__(cylMin,head,bufferId), bufferId ))
+					if (ERROR_EMPTY!=__isTrackEmpty__( cylMin, head, GetListOfStdSectors(cylMin,head,bufferId), bufferId ))
 						return cylMin;
 		return 0;
 	}
 
-	TSector CDos::__getListOfStdSectors__(TCylinder cyl,THead head,PSectorId bufferId) const{
+	TSector CDos::GetListOfStdSectors(TCylinder cyl,THead head,PSectorId bufferId) const{
 		// populates Buffer with standard ("official") Sector IDs for given Track and returns their count (Zone Bit Recording currently NOT supported!)
 		for( TSector s=properties->firstSectorNumber,nSectors=formatBoot.nSectors; nSectors--; bufferId++ )
 			bufferId->cylinder=cyl, bufferId->side=sideMap[head], bufferId->sector=s++, bufferId->lengthCode=formatBoot.sectorLengthCode;
@@ -179,7 +179,7 @@ reportError:Utils::Information(buf);
 			// . checking if Cylinder empty
 			TSectorId bufferId[(TSector)-1];
 			for( THead head=0; head<ecp.dos->formatBoot.nHeads; head++ ){
-				const TStdWinError err=ecp.dos->__isTrackEmpty__( cyl, head, ecp.dos->__getListOfStdSectors__(cyl,head,bufferId), bufferId );
+				const TStdWinError err=ecp.dos->__isTrackEmpty__( cyl, head, ecp.dos->GetListOfStdSectors(cyl,head,bufferId), bufferId );
 				if (err!=ERROR_EMPTY)
 					return pAction->TerminateWithError(err);
 			}
@@ -320,7 +320,7 @@ reportError:Utils::Information(buf);
 			else{
 				// standard Sectors (their IDs generated into Buffer now)
 				// : generating IDs
-				nSectors=fp.dos->__getListOfStdSectors__( cyl, head, fp.bufferId );
+				nSectors=fp.dos->GetListOfStdSectors( cyl, head, fp.bufferId );
 				// : permutating them by specified Parameters (e.g. skew, etc.)
 				TSectorId stdSectors[(TSector)-1];
 				bool permutated[(TSector)-1];
@@ -448,7 +448,7 @@ reportError:Utils::Information(buf);
 		bool result=true; // assumption (all Tracks successfully added to FAT)
 		TSectorId ids[(TSector)-1];
 		for( TPhysicalAddress chs; nTracks--; )
-			for( TSector n=__getListOfStdSectors__( chs.cylinder=*cylinders++, chs.head=*heads++, ids ); n>0; ){
+			for( TSector n=GetListOfStdSectors( chs.cylinder=*cylinders++, chs.head=*heads++, ids ); n>0; ){
 				chs.sectorId=ids[--n];
 				result&=ModifyStdSectorStatus( chs, TSectorStatus::EMPTY );
 			}
@@ -459,7 +459,7 @@ reportError:Utils::Information(buf);
 		bool result=true; // assumption (all Tracks successfully added to FAT)
 		TSectorId ids[(TSector)-1];
 		for( TPhysicalAddress chs; nTracks--; )
-			for( TSector n=__getListOfStdSectors__( chs.cylinder=*cylinders++, chs.head=*heads++, ids ); n>0; ){
+			for( TSector n=GetListOfStdSectors( chs.cylinder=*cylinders++, chs.head=*heads++, ids ); n>0; ){
 				chs.sectorId=ids[--n];
 				result&=ModifyStdSectorStatus( chs, TSectorStatus::UNAVAILABLE );
 			}
@@ -494,7 +494,7 @@ reportError:Utils::Information(buf);
 				if (pAction->IsCancelled()) return ERROR_CANCELLED;
 				// : determining standard Empty Sectors
 				TSectorId bufferId[(TSector)-1],*pId=bufferId,*pEmptyId=bufferId;
-				TSector nSectors=fesp.dos->__getListOfStdSectors__(cyl,head,bufferId);
+				TSector nSectors=fesp.dos->GetListOfStdSectors(cyl,head,bufferId);
 				TSectorStatus statuses[(TSector)-1],*ps=statuses;
 				for( fesp.dos->GetSectorStatuses(cyl,head,nSectors,bufferId,statuses); nSectors-->0; pId++ )
 					if (*ps++==TSectorStatus::EMPTY)
@@ -645,6 +645,29 @@ reportError:Utils::Information(buf);
 		return true;
 	}
 
+	bool CDos::__verifyVolume__(CVerifyVolumeDialog &rd){
+		// True <=> volume verification was performed (even unsuccessfull), otherwise False (e.g. user cancelled)
+		// - displaying the Dialog
+		if (image->__reportWriteProtection__()) return false;
+		if (rd.DoModal()!=IDOK) return false;
+		// - verification
+		CBackgroundMultiActionCancelable bmac(THREAD_PRIORITY_BELOW_NORMAL);
+			if (rd.params.verifyBootSector)
+				bmac.AddAction( rd.params.verificationFunctions.fnBootSector, &rd.params, _T("Verifying boot sector") );
+			if (rd.params.verifyFat){
+				bmac.AddAction( rd.params.verificationFunctions.fnFatValues, &rd.params, _T("Verifying FAT") );
+				bmac.AddAction( rd.params.verificationFunctions.fnFatCrossedFiles, &rd.params, _T("Searching for crossed files") );
+				bmac.AddAction( rd.params.verificationFunctions.fnFatLostAllocUnits, &rd.params, _T("Searching for lost allocation units") );
+			}
+			if (rd.params.verifyFilesystem)
+				bmac.AddAction( rd.params.verificationFunctions.fnFilesystem, &rd.params, _T("Verifying filesystem") );
+			if (rd.params.verifyVolumeSurface)
+				bmac.AddAction( rd.params.verificationFunctions.fnVolumeSurface, &rd.params, _T("Scanning volume surface for bad sectors") );
+		bmac.Perform();
+		// - updating Views
+		image->UpdateAllViews(nullptr);
+		return true;
+	}
 
 
 
@@ -657,7 +680,7 @@ reportError:Utils::Information(buf);
 		for( TCylinder cyl=GetFirstCylinderWithEmptySector(); cyl<formatBoot.nCylinders; cyl++ )
 			for( THead head=0; head<formatBoot.nHeads; head++ ){
 				TSectorId bufferId[(TSector)-1];
-				TSector n=__getListOfStdSectors__(cyl,head,bufferId);
+				TSector n=GetListOfStdSectors(cyl,head,bufferId);
 				TSectorStatus statuses[(TSector)-1],*ps=statuses;
 				if (!GetSectorStatuses(cyl,head,n,bufferId,statuses) && rError==ERROR_SUCCESS) // first error of FAT
 					rError=ERROR_SECTOR_NOT_FOUND;
@@ -911,7 +934,7 @@ reportError:Utils::Information(buf);
 				for( item.chs.head=headA; item.chs.head<=headZ; item.chs.head++ ){
 					// . getting the list of standard Sectors
 					TSectorId bufferId[(TSector)-1],*pId=bufferId;
-					const TSector nSectors=__getListOfStdSectors__( item.chs.cylinder, item.chs.head, bufferId );
+					const TSector nSectors=GetListOfStdSectors( item.chs.cylinder, item.chs.head, bufferId );
 					// . filtering out only Empty standard Sectors
 					TSectorStatus statuses[(TSector)-1],*ps=statuses;
 					GetSectorStatuses( item.chs.cylinder, item.chs.head, nSectors, bufferId, statuses );

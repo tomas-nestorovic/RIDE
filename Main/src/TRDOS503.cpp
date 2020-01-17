@@ -579,8 +579,8 @@
 		chs.sectorId.lengthCode=TRDOS503_SECTOR_LENGTH_STD_CODE;
 		// - buffering the whole Directory (to eventually speed-up reading from a real floppy)
 		TSectorId buffer[TRDOS503_TRACK_SECTORS_COUNT];
-		trdos->__getListOfStdSectors__(0,0,buffer);
-		trdos->image->BufferTrackData( 0, 0, buffer, Utils::CByteIdentity(), TRDOS503_BOOT_SECTOR_NUMBER, true ); // including the Boot Sector (to not have to include another named constant)		
+		trdos->GetListOfStdSectors(0,0,buffer);
+		trdos->image->BufferTrackData( 0, 0, buffer, Utils::CByteIdentity(), TRDOS503_BOOT_SECTOR_NUMBER, true ); // including the Boot Sector (to not have to include another named constant)
 	}
 	bool CTRDOS503::TTrdosDirectoryTraversal::__existsNextEntry__(){
 		// True <=> another Entry in current Directory exists (Empty or not), otherwise False
@@ -739,7 +739,7 @@
 					// now on, so turning the switch off (and updating the Boot Sector)
 					TSectorId ids[(BYTE)-1];
 					TSectorStatus statuses[(BYTE)-1];
-					GetSectorStatuses(0,0,__getListOfStdSectors__(0,0,ids),ids,statuses);
+					GetSectorStatuses(0,0,GetListOfStdSectors(0,0,ids),ids,statuses);
 					for( BYTE n=TRDOS503_TRACK_SECTORS_COUNT; n>0; )
 						if (statuses[--n]==TSectorStatus::EMPTY){
 							boot->firstFree.track=1, boot->firstFree.sector=0;

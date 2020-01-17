@@ -296,7 +296,6 @@
 		void __writeProfileInt__(LPCTSTR entryName,int value) const;
 		bool __getProfileBool__(LPCTSTR entryName,bool defaultValue) const;
 		void __writeProfileBool__(LPCTSTR entryName,bool value) const;
-		TSector __getListOfStdSectors__(TCylinder cyl,THead head,PSectorId bufferId) const;
 		TCylinder __getLastOccupiedStdCylinder__() const;
 		TStdWinError __showDialogAndFormatStdCylinders__(CFormatDialog &rd,PCylinder bufCylinders,PHead bufHeads);
 		TStdWinError __formatStdCylinders__(const CFormatDialog &rd,PCylinder bufCylinders,PHead bufHeads);
@@ -306,6 +305,7 @@
 		bool __addStdTracksToFatAsEmpty__(TTrack nTracks,PCCylinder cylinders,PCHead heads);
 		bool __removeStdTracksFromFat__(TTrack nTracks,PCCylinder cylinders,PCHead heads);
 		bool __fillEmptySpace__(CFillEmptySpaceDialog &rd);
+		bool __verifyVolume__(CVerifyVolumeDialog &rd);
 		LPCTSTR __exportFileData__(PCFile file,CFile *fOut,DWORD nMaxDataBytesToExport) const;
 		TStdWinError __importFileData__(CFile *fIn,PFile fDesc,RCPathString fileName,RCPathString fileExt,DWORD fileSize,bool skipBadSectors,PFile &rFile,CFatPath &rFatPath);
 		PFile __findFile__(PCFile directory,RCPathString fileName,RCPathString fileExt,PCFile ignoreThisFile) const;
@@ -403,6 +403,7 @@
 		virtual TStdWinError ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile)=0;
 		PFile FindFileInCurrentDir(RCPathString fileName,RCPathString fileExt,PCFile ignoreThisFile) const;
 		// other
+		TSector GetListOfStdSectors(TCylinder cyl,THead head,PSectorId bufferId) const;
 		virtual TStdWinError CreateUserInterface(HWND hTdi);
 		virtual enum TCmdResult:BYTE{
 					REFUSED	=0,	// not carried out (e.g. because cannot)

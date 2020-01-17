@@ -96,6 +96,7 @@ namespace Utils{
 	void Warning(LPCTSTR text);
 	bool EnableDlgControl(HWND hDlg,WORD controlId,bool enabled);
 	bool EnableDlgControls(HWND hDlg,PCWORD buttonIds,bool enabled);
+	bool IsDlgControlEnabled(HWND hDlg,WORD controlId);
 	void OffsetDlgControl(HWND hDlg,WORD controlId,int dx,int dy);
 	void BytesToHigherUnits(DWORD bytes,float &rHigherUnit,LPCTSTR &rHigherUnitName);
 	void NavigateToUrlInDefaultBrowser(LPCTSTR url);

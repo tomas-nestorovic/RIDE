@@ -586,6 +586,11 @@ namespace Utils{
 		return enabled;
 	}
 
+	bool IsDlgControlEnabled(HWND hDlg,WORD controlId){
+		// True <=> the specified Dialog control is enabled, otherwise False
+		return ::IsWindowEnabled( ::GetDlgItem(hDlg,controlId) );
+	}
+
 	void OffsetDlgControl(HWND hDlg,WORD controlId,int dx,int dy){
 		// changes Dialog control position by [dx,dy]
 		const HWND hCtrl=::GetDlgItem(hDlg,controlId);

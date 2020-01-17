@@ -165,6 +165,8 @@
 
 	void CBackgroundMultiActionCancelable::AddAction(AFX_THREADPROC fnAction,LPCVOID actionParams,LPCTSTR name){
 		// orders another Action at the end of the list of Actions
+		if (fnAction==nullptr)
+			return;
 		auto &r=actions[nActions++];
 		r.fnAction=fnAction;
 		r.fnParams=actionParams;

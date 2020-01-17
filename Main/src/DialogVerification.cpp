@@ -1,11 +1,12 @@
 #include "stdafx.h"
 
-	CVerifyVolumeDialog::TParams::TParams(const CDos *dos)
+	CVerifyVolumeDialog::TParams::TParams(CDos *dos,const TVerificationFunctions &rvf)
 		// ctor
 		: dos(dos)
 		, verifyBootSector(BST_UNCHECKED) , verifyFat(BST_UNCHECKED) , verifyFilesystem(BST_UNCHECKED)
 		, verifyVolumeSurface(BST_UNCHECKED)
-		, repairStyle(0) {
+		, repairStyle(0)
+		, verificationFunctions(rvf) {
 	}
 
 	BYTE CVerifyVolumeDialog::TParams::ConfirmFix(LPCTSTR problemDesc,LPCTSTR problemSolutionSuggestion) const{
@@ -15,7 +16,7 @@
 				ASSERT(FALSE);
 			case 0:
 				// automatic fixing of each Problem
-				return IDOK;
+				return IDYES;
 			case 1:{
 				// fixing only manually confirmed Problems
 				TCHAR buf[2000];
@@ -33,12 +34,12 @@
 
 
 
-	CVerifyVolumeDialog::CVerifyVolumeDialog(const CDos *dos)
+	CVerifyVolumeDialog::CVerifyVolumeDialog(CDos *dos,const TVerificationFunctions &rvf)
 		// ctor
 		// - base
 		: CDialog(IDR_DOS_VERIFY)
 		// - initialization
-		, params(dos)
+		, params(dos,rvf)
 		, nOptionsChecked(0) {
 	}
 
@@ -54,9 +55,13 @@
 		// exchange of data from and to controls
 		DDX_Text( pDX, ID_DOS, CString(params.dos->properties->name) );
 		DDX_Check( pDX, ID_BOOT,	params.verifyBootSector );
+			Utils::EnableDlgControl( m_hWnd, ID_BOOT, params.verificationFunctions.fnBootSector );
 		DDX_Check( pDX, ID_FAT,		params.verifyFat );
+			Utils::EnableDlgControl( m_hWnd, ID_FAT, params.verificationFunctions.fnFatValues||params.verificationFunctions.fnFatCrossedFiles||params.verificationFunctions.fnFatLostAllocUnits );
 		DDX_Check( pDX, ID_FILE1,	params.verifyFilesystem );
+			Utils::EnableDlgControl( m_hWnd, ID_FILE1, params.verificationFunctions.fnFilesystem );
 		DDX_Check( pDX, ID_IMAGE,	params.verifyVolumeSurface );
+			Utils::EnableDlgControl( m_hWnd, ID_IMAGE, params.verificationFunctions.fnVolumeSurface );
 		DDX_CBIndex( pDX, ID_REPAIR, params.repairStyle );
 	}
 
@@ -66,9 +71,9 @@
 			case WM_NOTIFY:
 				// processing notification from child control
 				if (((LPNMHDR)lParam)->code==NM_CLICK){
-					CheckDlgButton( ID_BOOT, BST_CHECKED );
-					CheckDlgButton( ID_FAT, BST_CHECKED );
-					CheckDlgButton( ID_FILE1, BST_CHECKED );
+					CheckDlgButton( ID_BOOT, BST_CHECKED&&Utils::IsDlgControlEnabled(m_hWnd,ID_BOOT) );
+					CheckDlgButton( ID_FAT, BST_CHECKED&&Utils::IsDlgControlEnabled(m_hWnd,ID_FAT) );
+					CheckDlgButton( ID_FILE1, BST_CHECKED&&Utils::IsDlgControlEnabled(m_hWnd,ID_FILE1) );
 					wParam=ID_BOOT; // for the below fallthrough
 					//fallthrough
 				}else
