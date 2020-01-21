@@ -56,8 +56,9 @@
 	DWORD CFileManagerView::COleVirtualFileDataSource::__addFileToExport__(PTCHAR relativeDir,CDos::PFile file,LPFILEDESCRIPTOR lpfd,TStdWinError &rOutError){
 		// adds given File for exporting by initializing the FileDescriptor structure; returns the number of Files (and Directories) added by this command
 		// - checking if the File can be exported
-		const PTCHAR exportName=fileManager->DOS->GetFileExportNameAndExt(file,fileManager->DOS->generateShellCompliantExportNames,relativeDir+::lstrlen(relativeDir));
-		if (!exportName) return 0;
+		const CString exportName=fileManager->DOS->GetFileExportNameAndExt(file,fileManager->DOS->generateShellCompliantExportNames);
+		if (!exportName.GetLength()) return 0;
+		const PTCHAR pExportName=::lstrcpy( relativeDir+::lstrlen(relativeDir), exportName );
 		// - adding specified File
 		if (lpfd){
 			lpfd->dwFlags=FD_ATTRIBUTES|FD_FILESIZE;
@@ -81,7 +82,7 @@
 			const CDos::PFile originalDirectory=fileManager->DOS->currentDir;
 			if (rOutError=(fileManager->DOS->*fileManager->pDirectoryStructureManagement->fnChangeCurrentDir)(file))
 				return 0; // if error, quit
-			::lstrcat( exportName, _T("\\") );
+			::lstrcat( pExportName, _T("\\") );
 			// . enumerating "Subfiles"
 			if (const auto pdt=fileManager->DOS->BeginDirectoryTraversal())
 				while (pdt->AdvanceToNextEntry())
@@ -98,7 +99,7 @@
 			// File
 			rOutError=ERROR_SUCCESS;
 		// - recovering the RelativeDirectory and returning the result
-		*exportName='\0';
+		*pExportName='\0';
 		return result;
 	}
 
@@ -124,7 +125,7 @@
 		// generates the list of Files to transfer
 		if (lpFormatEtc->cfFormat==CRideApp::cfDescriptor){
 			// generating the list of Files for shell or another RIDE instance (i.e. CFSTR_FILEDESCRIPTOR array; in reality, transferred will be only files that will be actually selected
-			TCHAR relativeDir[MAX_PATH];
+			TCHAR relativeDir[32768]; // big enough to accommodate any path
 			// . determining the NumberOfFilesToExport
 			TStdWinError err;
 			*relativeDir='\0';

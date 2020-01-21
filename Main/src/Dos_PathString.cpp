@@ -67,7 +67,7 @@
 
 	CDos::CPathString &CDos::CPathString::operator+=(const CPathString &r){
 		// returns this string appended with specified string
-		r.CopyNullTerminatedTo( buf+nCharsInBuf, MAX_PATH-nCharsInBuf );
+		::memcpy( buf+nCharsInBuf, r.buf, (MAX_PATH-nCharsInBuf)*sizeof(TCHAR) );
 		return *this;
 	}
 
@@ -101,38 +101,27 @@
 		return true;
 	}
 
-	short CDos::CPathString::EscapeNullTerminatedTo(PTCHAR buffer,short bufferCharCapacity) const{
-		// returns the number of characters written to the Buffer when substituting non-alphanumeric characters with "URL-like" escape sequences
-		PTCHAR pWritten=buffer;
-		if (bufferCharCapacity>0){
-			// at least terminating null-character fits in
-			for( short i=0; i<nCharsInBuf; i++ ){
-				#ifdef UNICODE
-					WORD c=buf[i];
-				#else
-					BYTE c=buf[i];
-				#endif
-				if (::isalpha(c)){
-					if (--bufferCharCapacity>0)
-						*pWritten++=c;
-					else
-						break;
-				}else
-					if ((bufferCharCapacity-=3)>0)
-						pWritten+=::wsprintf( pWritten, _T("%%%02x"), c );
-					else
-						break;
-			}
-			*pWritten='\0';
+	CString CDos::CPathString::EscapeToString() const{
+		// returns a string with non-alphanumeric characters substituted with "URL-like" escape sequences
+		TCHAR buffer[16384], *pWritten=buffer;
+		for( short i=0,bufferCharCapacity=sizeof(buffer)/sizeof(TCHAR); i<nCharsInBuf; i++ ){
+			#ifdef UNICODE
+				WORD c=buf[i];
+			#else
+				BYTE c=buf[i];
+			#endif
+			if (::isalpha(c)){
+				if (--bufferCharCapacity>0)
+					*pWritten++=c;
+				else
+					break;
+			}else
+				if ((bufferCharCapacity-=3)>0)
+					pWritten+=::wsprintf( pWritten, _T("%%%02x"), c );
+				else
+					break;
 		}
-		return pWritten-buffer;
-	}
-
-	PTCHAR CDos::CPathString::CopyNullTerminatedTo(PTCHAR buffer,short bufferCharCapacity) const{
-		// copies the string to specified Buffer and returns pointer to the Buffer
-		const short nCharsToCopy=std::min<short>(nCharsInBuf,bufferCharCapacity-1);
-		if (nCharsToCopy>0)
-			static_cast<PTCHAR>(::memcpy( buffer, buf, nCharsToCopy*sizeof(TCHAR) ))[nCharsToCopy]='\0';
+		*pWritten='\0';
 		return buffer;
 	}
 

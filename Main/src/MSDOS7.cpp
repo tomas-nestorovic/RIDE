@@ -901,14 +901,15 @@ nextCluster:result++;
 			return ::lstrcpy(pOutBuffer,bufName);
 	}
 
-	PTCHAR CMSDOS7::GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const{
-		// populates Buffer with specified File's export name and extension and returns the Buffer; returns Null if File cannot be exported (e.g. a "dotdot" entry in MS-DOS); caller guarantees that the Buffer is at least MAX_PATH characters big
+	CString CMSDOS7::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
+		// returns File name concatenated with File extension for export of the File to another Windows application (e.g. Explorer)
 		if (!((PCDirectoryEntry)file)->shortNameEntry.__isDotOrDotdot__()){
 			CPathString bufName, bufExt;
 			GetFileNameOrExt( file, &bufName, &bufExt );
+			TCHAR buf[16384];
 			return __getFileExportNameAndExt__( bufName, bufExt, shellCompliant, buf );
 		}else
-			return nullptr;
+			return _T("");
 	}
 
 	TStdWinError CMSDOS7::ImportFile(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile){

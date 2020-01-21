@@ -696,9 +696,9 @@ reportError:Utils::Information(buf);
 		return 0; // caller should start looking for Empty Sectors from the beginning of disk
 	}
 
-	PTCHAR CDos::GetFileShellCompliantExportNameAndExt(PCFile file,PTCHAR bufNameExt) const{
+	CString CDos::GetFileShellCompliantExportNameAndExt(PCFile file) const{
 		// returns the Buffer populated with File name concatenated with File extension
-		return GetFileExportNameAndExt( file, true, bufNameExt );
+		return GetFileExportNameAndExt( file, true );
 	}
 
 	bool CDos::HasFileNameAndExt(PCFile file,RCPathString fileName,RCPathString fileExt) const{
@@ -812,10 +812,11 @@ reportError:Utils::Information(buf);
 		return nullptr;
 	}
 
-	PTCHAR CDos::GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const{
-		// populates Buffer with specified File's export name and extension and returns the Buffer; returns Null if File cannot be exported (e.g. a "dotdot" entry in MS-DOS); caller guarantees that the Buffer is at least MAX_PATH characters big
+	CString CDos::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
+		// returns File name concatenated with File extension for export of the File to another Windows application (e.g. Explorer)
 		CPathString fileName,fileExt;
 		GetFileNameOrExt( file, &fileName, &fileExt );
+		CString result;
 		if (shellCompliant){
 			// exporting to non-RIDE target (e.g. to the Explorer); excluding from the Buffer characters that are forbidden in FAT32 long file names
 			fileExt.ExcludeFat32LongNameInvalidChars();
@@ -823,20 +824,16 @@ reportError:Utils::Information(buf);
 				// valid export name - taking it as the result
 				if (fileExt.GetLength())
 					fileName+='.';
-				( fileName+=fileExt ).CopyNullTerminatedTo( buf, MAX_PATH );
+				result=fileName+=fileExt;
 			}else{
 				// invalid export name - generating an artifical one
 				static WORD fileId;
-				::wsprintf( buf, _T("File%05d.%s"), ++fileId, fileExt.GetString() );
+				result.Format( _T("File%05d.%s"), ++fileId, fileExt.GetString() );
 			}
-		}else{
+		}else
 			// exporting to another RIDE instance; substituting non-alphanumeric characters with "URL-like" escape sequences
-			short exportNameLength=fileName.EscapeNullTerminatedTo( buf, MAX_PATH );
-			if (MAX_PATH-++exportNameLength>0)
-				::lstrcat( buf, _T(".") );
-			fileExt.EscapeNullTerminatedTo( buf+exportNameLength, MAX_PATH-exportNameLength );
-		}
-		return buf;
+			result=fileName.EscapeToString()+'.'+fileExt.EscapeToString();
+		return result;
 	}
 
 	DWORD CDos::ExportFile(PCFile file,CFile *fOut,DWORD nBytesToExportMax,LPCTSTR *pOutError) const{
@@ -992,15 +989,15 @@ finished:
 
 	void CDos::ShowFileProcessingError(PCFile file,LPCTSTR cause) const{
 		// shows general error message on File being not processable due to occured Cause
-		TCHAR buf[MAX_PATH+50];
-		::wsprintf( buf, ERROR_MSG_CANNOT_PROCESS, GetFileShellCompliantExportNameAndExt(file,buf+50) );
-		Utils::FatalError(buf,cause);
+		CString s;
+		s.Format( ERROR_MSG_CANNOT_PROCESS, (LPCTSTR)GetFileShellCompliantExportNameAndExt(file) );
+		Utils::FatalError(s,cause);
 	}
 	void CDos::ShowFileProcessingError(PCFile file,TStdWinError cause) const{
 		// shows general error message on File being not processable due to occured Cause
-		TCHAR buf[MAX_PATH+50];
-		::wsprintf( buf, ERROR_MSG_CANNOT_PROCESS, GetFileShellCompliantExportNameAndExt(file,buf+50) );
-		Utils::FatalError(buf,cause);
+		CString s;
+		s.Format( ERROR_MSG_CANNOT_PROCESS, (LPCTSTR)GetFileShellCompliantExportNameAndExt(file) );
+		Utils::FatalError(s,cause);
 	}
 
 	CDos::PFile CDos::__findFile__(PCFile directory,RCPathString fileName,RCPathString fileExt,PCFile ignoreThisFile) const{

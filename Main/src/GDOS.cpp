@@ -409,15 +409,21 @@
 		return ERROR_SUCCESS;
 	}
 
-	PTCHAR CGDOS::GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const{
-		// populates Buffer with specified File's export name and extension and returns the Buffer; returns Null if File cannot be exported (e.g. a "dotdot" entry in MS-DOS); caller guarantees that the Buffer is at least MAX_PATH characters big
+	CString CGDOS::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
+		// returns File name concatenated with File extension for export of the File to another Windows application (e.g. Explorer)
 		const PDirectoryEntry de=(PDirectoryEntry)file;
-		__super::GetFileExportNameAndExt(de,shellCompliant,buf);
+		CString result=__super::GetFileExportNameAndExt(de,shellCompliant);
 		if (shellCompliant){
 			// exporting to non-RIDE target (e.g. to the Explorer); excluding from the Buffer characters that are forbidden in FAT32 long file names
 			TCHAR bufExt[16];
-			if (de!=ZX_DIR_ROOT)
-				::lstrcpy( _tcsrchr(buf,'.')+1, de->__getFileTypeDesc__(bufExt) );
+			if (de!=ZX_DIR_ROOT){
+				const int iDot=result.ReverseFind('.');
+				if (iDot>=0)
+					result=CString( result, result.ReverseFind('.')+1 );
+				else
+					result+='.';
+				result+=de->__getFileTypeDesc__(bufExt);
+			}
 		}else{
 			// exporting to another RIDE instance
 			TUniFileType uts;
@@ -435,9 +441,11 @@
 			TStdParameters stdParams=TStdParameters::Default;
 				if (const PCWORD pw=de->__getStdParameter1__()) stdParams.param1=*pw;
 				if (const PCWORD pw=de->__getStdParameter2__()) stdParams.param2=*pw;
-			__exportFileInformation__( buf+::lstrlen(buf), uts, stdParams, GetFileOfficialSize(de) );
+			TCHAR buf[80];
+			__exportFileInformation__( buf, uts, stdParams, GetFileOfficialSize(de) );
+			result+=buf;
 		}
-		return buf;
+		return result;
 	}
 
 	DWORD CGDOS::ExportFile(PCFile file,CFile *fOut,DWORD nBytesToExportMax,LPCTSTR *pOutError) const{

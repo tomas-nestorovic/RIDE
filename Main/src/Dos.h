@@ -55,8 +55,7 @@
 			short GetLength() const;
 			LPCTSTR GetString() const;
 			bool Equals(const CPathString &r,TFnCompareNames comparer) const;
-			short EscapeNullTerminatedTo(PTCHAR buffer,short bufferCharCapacity) const;
-			PTCHAR CopyNullTerminatedTo(PTCHAR buffer,short bufferCharCapacity) const;
+			CString EscapeToString() const;
 			CPathString &LowerCase();
 			CPathString &TrimRight(TCHAR c);
 			CPathString &ExcludeFat32LongNameInvalidChars();
@@ -377,7 +376,7 @@
 		virtual TCylinder GetFirstCylinderWithEmptySector() const;
 		// file system
 		virtual bool GetFileNameOrExt(PCFile file,PPathString pOutName,PPathString pOutExt) const=0;
-		PTCHAR GetFileShellCompliantExportNameAndExt(PCFile file,PTCHAR bufNameExt) const;
+		CString GetFileShellCompliantExportNameAndExt(PCFile file) const;
 		bool HasFileNameAndExt(PCFile file,RCPathString fileName,RCPathString fileExt) const;
 		virtual TStdWinError ChangeFileNameAndExt(PFile file,RCPathString newName,RCPathString newExt,PFile &rRenamedFile)=0;
 		virtual DWORD GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData,TGetFileSizeOptions option) const=0;
@@ -398,7 +397,7 @@
 		std::unique_ptr<TDirectoryTraversal> BeginDirectoryTraversal() const;
 		void MarkDirectorySectorAsDirty(PCFile file) const;
 		DWORD GetCountOfItemsInCurrentDir(TStdWinError &rError) const;
-		virtual PTCHAR GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const;
+		virtual CString GetFileExportNameAndExt(PCFile file,bool shellCompliant) const;
 		virtual DWORD ExportFile(PCFile file,CFile *fOut,DWORD nBytesToExportMax,LPCTSTR *pOutError) const;
 		virtual TStdWinError ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile)=0;
 		PFile FindFileInCurrentDir(RCPathString fileName,RCPathString fileExt,PCFile ignoreThisFile) const;

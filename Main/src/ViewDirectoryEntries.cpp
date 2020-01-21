@@ -31,7 +31,7 @@
 						switch (pdt->entryType){
 							case CDos::TDirectoryTraversal::SUBDIR:
 							case CDos::TDirectoryTraversal::FILE:
-								result=pdev->DOS->GetFileShellCompliantExportNameAndExt( pdt->entry, labelBuffer );
+								result=::lstrcpyn( labelBuffer, pdev->DOS->GetFileShellCompliantExportNameAndExt(pdt->entry), labelBufferCharsMax );
 								break;
 							case CDos::TDirectoryTraversal::EMPTY:
 								result=_T("[ empty ]");

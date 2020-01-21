@@ -283,12 +283,12 @@
 
 	#define INFO_ATTRIBUTES	_T("T%x")
 
-	PTCHAR CMDOS2::GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const{
-		// populates Buffer with specified File's export name and extension and returns the Buffer; returns Null if File cannot be exported (e.g. a "dotdot" entry in MS-DOS); caller guarantees that the Buffer is at least MAX_PATH characters big
-		const PDirectoryEntry de=(PDirectoryEntry)file;
-		__super::GetFileExportNameAndExt(de,shellCompliant,buf);
+	CString CMDOS2::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
+		// returns File name concatenated with File extension for export of the File to another Windows application (e.g. Explorer)
+		CString result=__super::GetFileExportNameAndExt(file,shellCompliant);
 		if (!shellCompliant){
 			// exporting to another RIDE instance
+			const PCDirectoryEntry de=(PCDirectoryEntry)file;
 			TUniFileType uts;
 			switch (de->extension){
 				case TDirectoryEntry::PROGRAM		: uts=TUniFileType::PROGRAM; break;
@@ -299,12 +299,13 @@
 				case TDirectoryEntry::SEQUENTIAL	: uts=TUniFileType::SEQUENTIAL; break;
 				default								: uts=TUniFileType::UNKNOWN; break;
 			}
-			const PTCHAR p=buf+::lstrlen(buf);
-			_stprintf(	p + __exportFileInformation__( p, uts, de->params, GetFileOfficialSize(de) ),
+			TCHAR buf[80];
+			_stprintf(	buf + __exportFileInformation__( buf, uts, de->params, GetFileOfficialSize(de) ),
 						INFO_ATTRIBUTES, de->attributes
 					);
+			result+=buf;
 		}
-		return buf;
+		return result;
 	}
 
 	TStdWinError CMDOS2::ImportFile(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile){

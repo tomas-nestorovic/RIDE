@@ -253,22 +253,24 @@
 
 	#define EXPORT_INFO_TAPE	_T("S%x")
 
-	PTCHAR CSpectrumDos::CTape::GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const{
-		// populates Buffer with specified File's export name and extension and returns the Buffer; returns Null if File cannot be exported (e.g. a "dotdot" entry in MS-DOS); caller guarantees that the Buffer is at least MAX_PATH characters big
-		const PTCHAR p=buf+::lstrlen( __super::GetFileExportNameAndExt(file,shellCompliant,buf) );
+	CString CSpectrumDos::CTape::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
+		// returns File name concatenated with File extension for export of the File to another Windows application (e.g. Explorer)
+		CString result=__super::GetFileExportNameAndExt(file,shellCompliant);
 		if (!shellCompliant){
 			const PCTapeFile tf=(PCTapeFile)file;
+			TCHAR buf[80];
 			if (const PCHeader h=tf->GetHeader())
 				// File with a Header
-				::wsprintf( p+__exportFileInformation__(p,h->GetUniFileType(),h->params,h->length,tf->dataBlockFlag), EXPORT_INFO_TAPE, tf->dataChecksum );
+				::wsprintf( buf+__exportFileInformation__(buf,h->GetUniFileType(),h->params,h->length,tf->dataBlockFlag), EXPORT_INFO_TAPE, tf->dataChecksum );
 			else if (tf->type==TTapeFile::HEADERLESS)
 				// Headerless File
-				::wsprintf( p+__exportFileInformation__(p,TUniFileType::HEADERLESS,TStdParameters::Default,tf->dataLength,tf->dataBlockFlag), EXPORT_INFO_TAPE, tf->dataChecksum );
+				::wsprintf( buf+__exportFileInformation__(buf,TUniFileType::HEADERLESS,TStdParameters::Default,tf->dataLength,tf->dataBlockFlag), EXPORT_INFO_TAPE, tf->dataChecksum );
 			else
 				// Fragment
-				__exportFileInformation__(p,TUniFileType::FRAGMENT,TStdParameters::Default,tf->dataLength);
+				__exportFileInformation__(buf,TUniFileType::FRAGMENT,TStdParameters::Default,tf->dataLength);
+			result+=buf;
 		}
-		return buf;
+		return result;
 	}
 
 	#define NUMBER_OF_BYTES_TO_ALLOCATE_FILE(dataLength)\

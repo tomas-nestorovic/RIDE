@@ -426,7 +426,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 					LPCTSTR zxName,zxExt,zxInfo;
 					BYTE zxNameLength=ZX_TAPE_FILE_NAME_LENGTH_MAX, zxExtLength=1;
 					TCHAR buf[MAX_PATH];
-					__parseFat32LongName__(	::lstrcpy(buf,name),
+					__parseFat32LongName__(	::lstrcpyn(buf,name,MAX_PATH),
 											zxName, zxNameLength,
 											zxExt, zxExtLength,
 											zxInfo
@@ -823,17 +823,17 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 		return ERROR_SUCCESS;
 	}
 
-	PTCHAR CBSDOS308::GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const{
-		// populates Buffer with specified File's export name and extension and returns the Buffer; returns Null if File cannot be exported (e.g. a "dotdot" entry in MS-DOS); caller guarantees that the Buffer is at least MAX_PATH characters big
-		__super::GetFileExportNameAndExt(file,shellCompliant,buf);
+	CString CBSDOS308::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
+		// returns File name concatenated with File extension for export of the File to another Windows application (e.g. Explorer)
+		CString result=__super::GetFileExportNameAndExt(file,shellCompliant);
 		if (!shellCompliant){
 			// exporting to another RIDE instance
-			const PTCHAR p=buf+::lstrlen(buf);
+			TCHAR buf[80];
 			if (IsDirectory(file)){
 				// root Subdirectory
 				const CDirsSector::PCSlot slot=(CDirsSector::PCSlot)file;
 				::wsprintf(
-					p+__exportFileInformation__( p, TUniFileType::SUBDIRECTORY ),
+					buf+__exportFileInformation__( buf, TUniFileType::SUBDIRECTORY ),
 					INFO_DIR, slot->nameChecksum
 				);
 			}else{
@@ -841,13 +841,14 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 				const PCDirectoryEntry de=(PCDirectoryEntry)file;
 				if (de->fileHasStdHeader)
 					// File with a header
-					__exportFileInformation__( p, de->file.stdHeader.GetUniFileType(), de->file.stdHeader.params, de->file.dataLength, de->file.dataFlag );
+					__exportFileInformation__( buf, de->file.stdHeader.GetUniFileType(), de->file.stdHeader.params, de->file.dataLength, de->file.dataFlag );
 				else
 					// Headerless File
-					__exportFileInformation__( p, TUniFileType::HEADERLESS, TStdParameters::Default, de->file.dataLength, de->file.dataFlag );
+					__exportFileInformation__( buf, TUniFileType::HEADERLESS, TStdParameters::Default, de->file.dataLength, de->file.dataFlag );
 			}
+			result+=buf;
 		}
-		return buf;
+		return result;
 	}
 
 	TStdWinError CBSDOS308::ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile){

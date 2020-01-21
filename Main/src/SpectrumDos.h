@@ -233,7 +233,7 @@
 		CSpectrumBase(PImage image,PCFormat pFormatBoot,TTrackScheme trackAccessScheme,PCProperties properties,UINT nResId,CSpectrumBaseFileManagerView *pFileManager,TGetFileSizeOptions getFileSizeDefaultOption);
 		~CSpectrumBase();
 
-		PTCHAR GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const;
+		CString GetFileExportNameAndExt(PCFile file,bool shellCompliant) const;
 		DWORD GetAttributes(PCFile file) const override;
 		TCmdResult ProcessCommand(WORD cmd) override;
 	};
@@ -340,7 +340,7 @@
 			DWORD GetAttributes(PCFile file) const override;
 			TStdWinError DeleteFile(PFile file) override;
 			std::unique_ptr<TDirectoryTraversal> BeginDirectoryTraversal(PCFile directory) const override;
-			PTCHAR GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const override;
+			CString GetFileExportNameAndExt(PCFile file,bool shellCompliant) const override;
 			TStdWinError ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile) override;
 			// other
 			TCmdResult ProcessCommand(WORD cmd) override;

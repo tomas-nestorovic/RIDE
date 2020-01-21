@@ -165,12 +165,13 @@
 
 
 
-	PTCHAR CSpectrumBase::GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const{
-		// populates Buffer with specified File's export name and extension and returns the Buffer; returns Null if File cannot be exported (e.g. a "dotdot" entry in MS-DOS); caller guarantees that the Buffer is at least MAX_PATH characters big
+	CString CSpectrumBase::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
+		// returns File name concatenated with File extension for export of the File to another Windows application (e.g. Explorer)
 		if (shellCompliant){
 			// exporting to non-RIDE target (e.g. to the Explorer); excluding from the Buffer characters that are forbidden in FAT32 long file names
 			CPathString fileName,fileExt;
 			GetFileNameOrExt( file, &fileName, &fileExt );
+			TCHAR buf[16384];
 			const PTCHAR pZxName=TZxRom::ZxToAscii( fileName, fileName.ExcludeFat32LongNameInvalidChars().GetLength(), buf );
 			if (short n=::lstrlen(pZxName)){
 				// valid export name - taking it as the result
@@ -180,13 +181,13 @@
 								TZxRom::ZxToAscii( fileExt, fileExtLength, pZxName+n )
 							);
 				}
-				return ::lstrcpy( buf, pZxName ); // for the export name+ext to start at the beginning of the Buffer
+				return pZxName;
 			}else
 				// invalid export name - generating an artifical one
-				return __super::GetFileExportNameAndExt(file,shellCompliant,buf);
+				return __super::GetFileExportNameAndExt(file,shellCompliant);
 		}else
 			// exporting to another RIDE instance; substituting non-alphanumeric characters with "URL-like" escape sequences
-			return __super::GetFileExportNameAndExt(file,shellCompliant,buf);
+			return __super::GetFileExportNameAndExt(file,shellCompliant);
 	}
 
 	DWORD CSpectrumBase::GetAttributes(PCFile file) const{

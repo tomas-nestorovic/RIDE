@@ -45,9 +45,9 @@
 			const DWORD size=DOS->GetFileOccupiedSize(file);
 			hexaEditor.Reset( pFileRW.get(), size, size );
 			// . updating the window caption
-			TCHAR bufCaption[20+MAX_PATH];
-			::wsprintf( bufCaption, LABEL _T(" (%s)"), DOS->GetFileShellCompliantExportNameAndExt(file,bufCaption+20) );
-			SetWindowText(bufCaption);
+			CString caption;
+			caption.Format( LABEL _T(" (%s)"), (LPCTSTR)DOS->GetFileShellCompliantExportNameAndExt(file) );
+			SetWindowText(caption);
 		}else
 			SetWindowText(LABEL);
 		//SetWindowPos( nullptr, 0,0, 0,0, SWP_NOZORDER|SWP_NOMOVE|SWP_NOSIZE|SWP_FRAMECHANGED|SWP_NOSENDCHANGING );

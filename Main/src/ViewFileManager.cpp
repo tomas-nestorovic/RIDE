@@ -491,10 +491,11 @@
 
 	void CFileManagerView::__addFileToTheEndOfList__(CDos::PCFile file){
 		// adds given File to the end of the list
-		TCHAR bufName[MAX_PATH];
+		const CString name=DOS->GetFileShellCompliantExportNameAndExt(file);
 		LVITEM lvi={ LVIF_TEXT|LVIF_PARAM, nativelyLastFile++ };
 			nativeOrderOfFiles[(PVOID)file]=lvi.iItem;
-			lvi.pszText=DOS->GetFileShellCompliantExportNameAndExt( (CDos::PCFile)( lvi.lParam=(LPARAM)file ), bufName );
+			lvi.lParam=(LPARAM)file;
+			lvi.pszText=const_cast<PTCHAR>( (LPCTSTR)name );
 		GetListCtrl().InsertItem(&lvi);
 	}
 
@@ -663,8 +664,8 @@
 	afx_msg void CFileManagerView::__browseCurrentDirInHexaMode__(){
 		// opens a new Tab with DirectoryEntries listed in an HexaEditor instance
 		CDirEntriesView *const deView=new CDirEntriesView( DOS, DOS->currentDir );
-		TCHAR label[80+MAX_PATH];
-		::wsprintf( label, _T("Dir \"%s\""), DOS->GetFileShellCompliantExportNameAndExt(DOS->currentDir,label+80) );
+		CString label;
+		label.Format( _T("Dir \"%s\""), (LPCTSTR)DOS->GetFileShellCompliantExportNameAndExt(DOS->currentDir) );
 		CTdiCtrl::AddTabLast( TDI_HWND, label, &deView->tab, true, TDI_TAB_CANCLOSE_ALWAYS, __onDirEntriesViewClosing__ );
 		ownedDirEntryViews.AddTail(deView);
 	}

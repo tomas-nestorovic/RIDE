@@ -145,17 +145,17 @@
 						// . appending each File (or block)
 						if (const auto pdt=tape->BeginDirectoryTraversal(ZX_DIR_ROOT))
 							for( BYTE blockData[65536]; const PCFile file=pdt->GetNextFileOrSubdir(); ){
-								TCHAR nameAndExt[MAX_PATH];
+								const CString nameAndExt=tape->GetFileExportNameAndExt( file, false );
 								PFile f;
 								if (const TStdWinError err=	CTape::pSingleInstance->ImportFile(
 																&CMemFile(blockData,sizeof(blockData)), 
 																tape->ExportFile( file, &CMemFile(blockData,sizeof(blockData)), sizeof(blockData), nullptr ),
-																tape->GetFileExportNameAndExt( file, false, nameAndExt ),
+																nameAndExt,
 																0, f
 															)
 								){
-									TCHAR msg[200+MAX_PATH];
-									::wsprintf( msg, _T("Failed to append block \"%s\""), nameAndExt );
+									CString msg;
+									msg.Format( _T("Failed to append block \"%s\""), (LPCTSTR)nameAndExt );
 									Utils::Information( msg, err, _T("Appended only partly.") );
 									break;
 								}

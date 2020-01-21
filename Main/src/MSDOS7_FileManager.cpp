@@ -149,14 +149,13 @@
 			}
 		}*/
 		// . drawing Information
-		TCHAR buf[MAX_PATH];
 		switch (pFileInfo-InformationList){
 			case INFORMATION_NAME_A_EXT:{
 				// icon, Name a Extension
 				const float dpiScaleFactor=Utils::LogicalUnitScaleFactor;
 				::DrawIconEx( dc, r.left,r.top, __getIcon__(de), 16*dpiScaleFactor,16*dpiScaleFactor, 0, nullptr, DI_NORMAL|DI_COMPAT );
 				r.left+=20*dpiScaleFactor;
-				::DrawText( dc, DOS->GetFileShellCompliantExportNameAndExt(de,buf),-1, &r, DT_SINGLELINE|DT_VCENTER );
+				::DrawText( dc, DOS->GetFileShellCompliantExportNameAndExt(de),-1, &r, DT_SINGLELINE|DT_VCENTER );
 				break;
 			}
 			case INFORMATION_SIZE:
@@ -166,7 +165,7 @@
 			case INFORMATION_ATTRIBUTES:{
 				// Attributes
 				BYTE attr=de->shortNameEntry.attributes;
-				PTCHAR t=::lstrcpy(buf,_T("ADVSHR"));
+				TCHAR buf[8], *t=::lstrcpy(buf,_T("ADVSHR"));
 				for( BYTE a=ATTRIBUTES_COUNT; a--; attr<<=1,t++ )
 					if (!(attr&32)) *t='-';
 				::DrawText( dc, buf,-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
@@ -194,10 +193,8 @@
 			case INFORMATION_NAME_A_EXT:
 				if (const int d=(f1->shortNameEntry.attributes&FILE_ATTRIBUTE_DIRECTORY)-(f2->shortNameEntry.attributes&FILE_ATTRIBUTE_DIRECTORY))
 					return -d; // Directories first
-				else{
-					TCHAR n1[MAX_PATH],n2[MAX_PATH];
-					return ::lstrcmpi( DOS->GetFileShellCompliantExportNameAndExt(f1,n1), DOS->GetFileShellCompliantExportNameAndExt(f2,n2) );
-				}
+				else
+					return ::lstrcmpi( DOS->GetFileShellCompliantExportNameAndExt(f1), DOS->GetFileShellCompliantExportNameAndExt(f2) );
 			case INFORMATION_SIZE:
 				return DOS->GetFileOfficialSize(f1)-DOS->GetFileOfficialSize(f2);
 			case INFORMATION_ATTRIBUTES:
@@ -265,17 +262,15 @@
 	CFileManagerView::PEditorBase CMSDOS7::CMsdos7FileManagerView::CreateFileInformationEditor(CDos::PFile file,BYTE infoId) const{
 		// creates and returns Editor of File's selected Information; returns Null if Information cannot be edited
 		switch (infoId){
-			case INFORMATION_NAME_A_EXT:{
-				TCHAR buf[MAX_PATH];
+			case INFORMATION_NAME_A_EXT:
 				return __createStdEditor__(	file,
-											DOS->GetFileShellCompliantExportNameAndExt(file,buf),
+											const_cast<PTCHAR>((LPCTSTR)DOS->GetFileShellCompliantExportNameAndExt(file)),
 											#ifdef UNICODE
 												PropGrid::String::DefineDynamicLengthEditorW( __onNameAndExtConfirmed__ )
 											#else
 												PropGrid::String::DefineDynamicLengthEditorA( __onNameAndExtConfirmed__ )
 											#endif
 										);
-			}
 			case INFORMATION_ATTRIBUTES:
 				return __createStdEditorWithEllipsis__( file, __editFileAttributes__ );
 			case INFORMATION_CREATED:

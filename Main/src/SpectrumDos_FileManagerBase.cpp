@@ -31,7 +31,7 @@
 		// - if File Name+Ext combination is irrelevant (headerless Files), returning current export Name+Ext
 		CPathString fileName, fileExt;
 		if (!DOS->GetFileNameOrExt( file, &fileName, &fileExt )) // name irrelevant
-			return DOS->GetFileExportNameAndExt( file, shellCompliant, pOutBuffer );
+			return ::lstrcpy(  pOutBuffer,  DOS->GetFileExportNameAndExt( file, shellCompliant )  );
 		// - generating a unique File Name+Ext
 		if (const auto pdt=DOS->BeginDirectoryTraversal()){
 			BYTE tmpDirEntry[2048]; // "big enough" to accommodate any ZX Spectrum DirectoryEntry
@@ -49,7 +49,7 @@
 				switch (DOS->ChangeFileNameAndExt( &tmpDirEntry, bufCopyName, fileExt, fExisting )){
 					case ERROR_SUCCESS:
 						// generated a unique Name for the next File copy - returning the final export name and extension
-						return DOS->GetFileExportNameAndExt( &tmpDirEntry, shellCompliant, pOutBuffer );
+						return ::lstrcpy(  pOutBuffer,  DOS->GetFileExportNameAndExt( &tmpDirEntry, shellCompliant )  );
 					case ERROR_CANNOT_MAKE:
 						// Directory full
 						return nullptr;

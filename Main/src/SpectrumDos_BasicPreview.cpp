@@ -572,12 +572,9 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 			// . opening the HTML-formatted content
 			listingView.Navigate2(tmpFileName);
 			// . updating the window caption
-			TCHAR buf[MAX_PATH],bufCaption[20+MAX_PATH];
-			::wsprintf(	bufCaption,
-						PREVIEW_LABEL " (%s)",
-						DOS->GetFileShellCompliantExportNameAndExt(file,buf)
-					);
-			SetWindowText(bufCaption);
+			CString caption;
+			caption.Format( PREVIEW_LABEL " (%s)", (LPCTSTR)DOS->GetFileShellCompliantExportNameAndExt(file) );
+			SetWindowText(caption);
 		}else
 			SetWindowText(PREVIEW_LABEL);
 		SetWindowPos( nullptr, 0,0, 0,0, SWP_NOZORDER|SWP_NOMOVE|SWP_NOSIZE|SWP_FRAMECHANGED );

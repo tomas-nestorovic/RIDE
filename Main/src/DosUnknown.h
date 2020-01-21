@@ -22,7 +22,7 @@
 		DWORD GetAttributes(PCFile file) const override;
 		TStdWinError DeleteFile(PFile) override;
 		std::unique_ptr<TDirectoryTraversal> BeginDirectoryTraversal(PCFile directory) const override;
-		PTCHAR GetFileExportNameAndExt(PCFile,bool,PTCHAR) const override;
+		CString GetFileExportNameAndExt(PCFile,bool) const override;
 		TStdWinError ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile) override;
 		// other
 		TStdWinError CreateUserInterface(HWND hTdi) override;

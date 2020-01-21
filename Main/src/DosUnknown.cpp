@@ -104,9 +104,9 @@
 		// initiates exploration of specified Directory through a DOS-specific DirectoryTraversal
 		return nullptr;
 	}
-	PTCHAR CUnknownDos::GetFileExportNameAndExt(PCFile,bool,PTCHAR) const{
-		// populates Buffer with specified File's export name and extension and returns the Buffer; returns Null if File cannot be exported (e.g. a "dotdot" entry in MS-DOS); caller guarantees that the Buffer is at least MAX_PATH characters big
-		return nullptr;
+	CString CUnknownDos::GetFileExportNameAndExt(PCFile,bool) const{
+		// returns File name concatenated with File extension for export of the File to another Windows application (e.g. Explorer)
+		return _T("");
 	}
 	TStdWinError CUnknownDos::ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile){
 		// imports specified File (physical or virtual) into the Image; returns Windows standard i/o error

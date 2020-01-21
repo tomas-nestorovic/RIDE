@@ -315,12 +315,12 @@
 
 	#define INFO_FILE_EX		_T("S%x")
 	
-	PTCHAR CTRDOS503::GetFileExportNameAndExt(PCFile file,bool shellCompliant,PTCHAR buf) const{
-		// populates Buffer with specified File's export name and extension and returns the Buffer; returns Null if File cannot be exported (e.g. a "dotdot" entry in MS-DOS); caller guarantees that the Buffer is at least MAX_PATH characters big
-		const PCDirectoryEntry de=(PCDirectoryEntry)file;
-		__super::GetFileExportNameAndExt(de,shellCompliant,buf);
+	CString CTRDOS503::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
+		// returns File name concatenated with File extension for export of the File to another Windows application (e.g. Explorer)
+		CString result=__super::GetFileExportNameAndExt(file,shellCompliant);
 		if (!shellCompliant){
 			// exporting to another RIDE instance
+			const PCDirectoryEntry de=(PCDirectoryEntry)file;
 			TStdParameters params=TStdParameters::Default;
 				__getStdParameter1__(de,params.param1), __getStdParameter2__(de,params.param2);
 			TUniFileType uts;
@@ -331,12 +331,13 @@
 					case TDirectoryEntry::PRINT		: uts=TUniFileType::PRINT; break;
 					default							: uts=TUniFileType::UNKNOWN; break;
 				}
-			const PTCHAR p=buf+::lstrlen(buf);
-			::wsprintf(	p+__exportFileInformation__( p, uts, params, de->__getOfficialFileSize__(nullptr) ),
+			TCHAR buf[80];
+			::wsprintf(	buf+__exportFileInformation__( buf, uts, params, de->__getOfficialFileSize__(nullptr) ),
 						INFO_FILE_EX, de->nSectors
 					);
+			result+=buf;
 		}
-		return buf;
+		return result;
 	}
 
 	TStdWinError CTRDOS503::ImportFile(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile){
@@ -705,8 +706,7 @@
 						dp.trdos->ShowFileProcessingError(de,errMsg);
 						return ERROR_CANCELLED; //TODO: making sure that the disk is in consistent state
 					}
-					TCHAR tmpName[MAX_PATH];
-					dp.trdos->GetFileExportNameAndExt(de,false,tmpName);
+					const CString tmpName=dp.trdos->GetFileExportNameAndExt(de,false);
 					// : importing File data from Buffer to new place in Image
 					PDirectoryEntry deFree=*pDeFree++;
 					*(PBYTE)deFree=TDirectoryEntry::END_OF_DIR; // marking the DirectoryEntry as the end of Directory (and thus Empty)

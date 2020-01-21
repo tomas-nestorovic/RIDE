@@ -199,10 +199,7 @@
 		// - drawing the converted image
 		InvalidateRect(nullptr,FALSE);
 		// - updaring window's caption
-		TCHAR bufZx[MAX_PATH], bufCaption[20+MAX_PATH];
-		::wsprintf(	bufCaption,
-					LABEL " (%s)",
-					DOS->GetFileShellCompliantExportNameAndExt(file,bufZx)
-				);
-		SetWindowText(bufCaption);
+		CString caption;
+		caption.Format( LABEL " (%s)", (LPCTSTR)DOS->GetFileShellCompliantExportNameAndExt(file) );
+		SetWindowText(caption);
 	}
