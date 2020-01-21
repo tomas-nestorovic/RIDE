@@ -68,6 +68,7 @@
 	CDos::CPathString &CDos::CPathString::operator+=(const CPathString &r){
 		// returns this string appended with specified string
 		::memcpy( buf+nCharsInBuf, r.buf, (MAX_PATH-nCharsInBuf)*sizeof(TCHAR) );
+		nCharsInBuf=std::min<short>( MAX_PATH, nCharsInBuf+r.nCharsInBuf );
 		return *this;
 	}
 
