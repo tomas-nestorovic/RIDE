@@ -491,7 +491,7 @@
 
 	void CFileManagerView::__addFileToTheEndOfList__(CDos::PCFile file){
 		// adds given File to the end of the list
-		const CString name=DOS->GetFileShellCompliantExportNameAndExt(file);
+		const CString name=DOS->GetFilePresentationNameAndExt(file);
 		LVITEM lvi={ LVIF_TEXT|LVIF_PARAM, nativelyLastFile++ };
 			nativeOrderOfFiles[(PVOID)file]=lvi.iItem;
 			lvi.lParam=(LPARAM)file;
@@ -665,7 +665,7 @@
 		// opens a new Tab with DirectoryEntries listed in an HexaEditor instance
 		CDirEntriesView *const deView=new CDirEntriesView( DOS, DOS->currentDir );
 		CString label;
-		label.Format( _T("Dir \"%s\""), (LPCTSTR)DOS->GetFileShellCompliantExportNameAndExt(DOS->currentDir) );
+		label.Format( _T("Dir \"%s\""), (LPCTSTR)DOS->GetFilePresentationNameAndExt(DOS->currentDir) );
 		CTdiCtrl::AddTabLast( TDI_HWND, label, &deView->tab, true, TDI_TAB_CANCLOSE_ALWAYS, __onDirEntriesViewClosing__ );
 		ownedDirEntryViews.AddTail(deView);
 	}

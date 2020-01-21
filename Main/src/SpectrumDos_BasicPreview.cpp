@@ -573,7 +573,7 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 			listingView.Navigate2(tmpFileName);
 			// . updating the window caption
 			CString caption;
-			caption.Format( PREVIEW_LABEL " (%s)", (LPCTSTR)DOS->GetFileShellCompliantExportNameAndExt(file) );
+			caption.Format( PREVIEW_LABEL " (%s)", (LPCTSTR)DOS->GetFilePresentationNameAndExt(file) );
 			SetWindowText(caption);
 		}else
 			SetWindowText(PREVIEW_LABEL);

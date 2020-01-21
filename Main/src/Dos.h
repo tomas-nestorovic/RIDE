@@ -376,7 +376,7 @@
 		virtual TCylinder GetFirstCylinderWithEmptySector() const;
 		// file system
 		virtual bool GetFileNameOrExt(PCFile file,PPathString pOutName,PPathString pOutExt) const=0;
-		CString GetFileShellCompliantExportNameAndExt(PCFile file) const;
+		CString GetFilePresentationNameAndExt(PCFile file) const;
 		bool HasFileNameAndExt(PCFile file,RCPathString fileName,RCPathString fileExt) const;
 		virtual TStdWinError ChangeFileNameAndExt(PFile file,RCPathString newName,RCPathString newExt,PFile &rRenamedFile)=0;
 		virtual DWORD GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData,TGetFileSizeOptions option) const=0;

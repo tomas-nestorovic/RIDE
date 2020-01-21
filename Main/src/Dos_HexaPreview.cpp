@@ -46,7 +46,7 @@
 			hexaEditor.Reset( pFileRW.get(), size, size );
 			// . updating the window caption
 			CString caption;
-			caption.Format( LABEL _T(" (%s)"), (LPCTSTR)DOS->GetFileShellCompliantExportNameAndExt(file) );
+			caption.Format( LABEL _T(" (%s)"), (LPCTSTR)DOS->GetFilePresentationNameAndExt(file) );
 			SetWindowText(caption);
 		}else
 			SetWindowText(LABEL);

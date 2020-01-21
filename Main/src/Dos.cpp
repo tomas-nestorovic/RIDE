@@ -696,9 +696,14 @@ reportError:Utils::Information(buf);
 		return 0; // caller should start looking for Empty Sectors from the beginning of disk
 	}
 
-	CString CDos::GetFileShellCompliantExportNameAndExt(PCFile file) const{
-		// returns the Buffer populated with File name concatenated with File extension
-		return GetFileExportNameAndExt( file, true );
+	CString CDos::GetFilePresentationNameAndExt(PCFile file) const{
+		// returns File name concatenated with File extension for presentation of the File to the user
+		CPathString name,ext;
+		GetFileNameOrExt( file, &name, &ext );
+		CString result=name.ExcludeFat32LongNameInvalidChars();
+		if (ext.ExcludeFat32LongNameInvalidChars().GetLength()>0)
+			(result+='.')+=ext;
+		return result;
 	}
 
 	bool CDos::HasFileNameAndExt(PCFile file,RCPathString fileName,RCPathString fileExt) const{
@@ -990,13 +995,13 @@ finished:
 	void CDos::ShowFileProcessingError(PCFile file,LPCTSTR cause) const{
 		// shows general error message on File being not processable due to occured Cause
 		CString s;
-		s.Format( ERROR_MSG_CANNOT_PROCESS, (LPCTSTR)GetFileShellCompliantExportNameAndExt(file) );
+		s.Format( ERROR_MSG_CANNOT_PROCESS, (LPCTSTR)GetFilePresentationNameAndExt(file) );
 		Utils::FatalError(s,cause);
 	}
 	void CDos::ShowFileProcessingError(PCFile file,TStdWinError cause) const{
 		// shows general error message on File being not processable due to occured Cause
 		CString s;
-		s.Format( ERROR_MSG_CANNOT_PROCESS, (LPCTSTR)GetFileShellCompliantExportNameAndExt(file) );
+		s.Format( ERROR_MSG_CANNOT_PROCESS, (LPCTSTR)GetFilePresentationNameAndExt(file) );
 		Utils::FatalError(s,cause);
 	}
 
