@@ -120,10 +120,10 @@
 		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
 		const CVerifyVolumeDialog::TParams &vp=*(CVerifyVolumeDialog::TParams *)pAction->GetParams();
 		const PImage image=vp.dos->image;
-		pAction->SetProgressTarget( image->GetCylinderCount() );
+		pAction->SetProgressTarget( vp.dos->formatBoot.nCylinders );
 		const auto sectorIdAndPositionIdentity=Utils::CByteIdentity();
 		TPhysicalAddress chs;
-		for( chs.cylinder=0; chs.cylinder<image->GetCylinderCount(); chs.cylinder++ )
+		for( chs.cylinder=0; chs.cylinder<vp.dos->formatBoot.nCylinders; chs.cylinder++ )
 			for( chs.head=0; chs.head<vp.dos->formatBoot.nHeads; chs.head++ ){
 				if (pAction->IsCancelled()) return ERROR_CANCELLED;
 				// . getting the list of standard Sectors
