@@ -155,13 +155,6 @@
 			PropGrid::AddPropertyW( hPropGrid, hAdvanced, L"FAT\xB9 start", &boot->fatStarts[0], pWordEditor );
 			PropGrid::AddPropertyW( hPropGrid, hAdvanced, L"FAT\xB2 start", &boot->fatStarts[1], pWordEditor );
 			PropGrid::AddProperty( hPropGrid, hAdvanced, _T("DIRS sector"), &boot->dirsLogSector, pWordEditor );
-
-
-		if (const auto pdt=tab.dos->BeginDirectoryTraversal())
-			while (pdt->AdvanceToNextEntry()){
-				const PCDirectoryEntry de=(PCDirectoryEntry)pdt->entry;
-				::Sleep(0);
-			}
 	}
 
 	void CBSDOS308::FlushToBootSector() const{
