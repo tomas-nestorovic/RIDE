@@ -116,7 +116,7 @@
 		else{
 			CPathString ext;
 			DOS->GetFileNameOrExt(de,nullptr,&ext);
-			if (*ext){
+			if (ext.GetLength()){
 				ext.LowerCase()+=',';
 				for( BYTE n=MSDOS7_FILE_ICONS_COUNT; --n>ICON_FILE_GENERAL; )
 					if (::strstr(ICON_INFOS[n].extensions,ext))
@@ -292,20 +292,17 @@
 		// - composing a unique Name+Extension combination for the next File copy
 		for( BYTE copyNumber=0; ++copyNumber; ){
 			// . composing the Name for the File copy
-			TCHAR buf[MAX_PATH+20];
-			if (((CMSDOS7 *)DOS)->dontShowLongFileNames){
+			CPathString fileCopyName;
+			if (((CMSDOS7 *)DOS)->dontShowLongFileNames)
 				// using only short "8.3" names
-				::lstrcpy( buf+::wsprintf(buf,_T("%d~"),copyNumber), fileName );
-				buf[MSDOS7_FILE_NAME_LENGTH_MAX]='\0'; // trimming to maximum number of characters
-			}else{
+				( fileCopyName.Format(_T("%d~"),copyNumber)+=fileName ).TrimToLength(MSDOS7_FILE_NAME_LENGTH_MAX);
+			else
 				// using long names
-				::lstrcpy( buf+::wsprintf(buf,_T("Copy %d - "),copyNumber), fileName );
-				buf[MAX_PATH]='\0'; // trimming to maximum number of characters
-			}
+				fileCopyName.Format(_T("Copy %d - "),copyNumber)+=fileName;
 			// . finding if a file with given Name+Ext combination already exists
-			if (!DOS->FindFileInCurrentDir(buf,fileExt,nullptr))
+			if (!DOS->FindFileInCurrentDir(fileCopyName,fileExt,nullptr))
 				// generated a unique Name for the next File copy - returning the final export name and extension
-				return ((CMSDOS7 *)DOS)->__getFileExportNameAndExt__( buf, fileExt, shellCompliant, pOutBuffer );
+				return __getFileExportNameAndExt__( fileCopyName, fileExt, shellCompliant, pOutBuffer );
 		}
 		return nullptr; // the Name for the next File copy cannot be generated
 	}

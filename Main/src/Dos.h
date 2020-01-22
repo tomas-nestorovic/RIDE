@@ -53,12 +53,13 @@
 			CPathString &operator+=(const CPathString &r);
 
 			short GetLength() const;
-			LPCTSTR GetString() const;
 			bool Equals(const CPathString &r,TFnCompareNames comparer) const;
 			CString EscapeToString() const;
 			CPathString &LowerCase();
 			CPathString &TrimRight(TCHAR c);
+			CPathString &TrimToLength(short nCharsMax);
 			CPathString &ExcludeFat32LongNameInvalidChars();
+			CPathString & AFX_CDECL Format(LPCTSTR format,...);
 		} *PPathString,&RPathString;
 		typedef const CPathString *PCPathString,&RCPathString;
 

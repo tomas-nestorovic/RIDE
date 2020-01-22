@@ -702,7 +702,7 @@ reportError:Utils::Information(buf);
 		GetFileNameOrExt( file, &name, &ext );
 		CString result=name.ExcludeFat32LongNameInvalidChars();
 		if (ext.ExcludeFat32LongNameInvalidChars().GetLength()>0)
-			(result+='.')+=ext;
+			result+=_T(".")+ext;
 		return result;
 	}
 
@@ -821,24 +821,22 @@ reportError:Utils::Information(buf);
 		// returns File name concatenated with File extension for export of the File to another Windows application (e.g. Explorer)
 		CPathString fileName,fileExt;
 		GetFileNameOrExt( file, &fileName, &fileExt );
-		CString result;
 		if (shellCompliant){
 			// exporting to non-RIDE target (e.g. to the Explorer); excluding from the Buffer characters that are forbidden in FAT32 long file names
-			fileExt.ExcludeFat32LongNameInvalidChars();
-			if (fileName.ExcludeFat32LongNameInvalidChars().GetLength()){
+			const CString ext=fileExt.ExcludeFat32LongNameInvalidChars();
+			if (fileName.ExcludeFat32LongNameInvalidChars().GetLength())
 				// valid export name - taking it as the result
-				if (fileExt.GetLength())
-					fileName+='.';
-				result=fileName+=fileExt;
-			}else{
+				return CString(fileName)+_T(".")+ext;
+			else{
 				// invalid export name - generating an artifical one
 				static WORD fileId;
-				result.Format( _T("File%05d.%s"), ++fileId, fileExt.GetString() );
+				CString result;
+				result.Format( _T("File%05d.%s"), ++fileId, (LPCTSTR)ext );
+				return result;
 			}
 		}else
 			// exporting to another RIDE instance; substituting non-alphanumeric characters with "URL-like" escape sequences
-			result=fileName.EscapeToString()+'.'+fileExt.EscapeToString();
-		return result;
+			return fileName.EscapeToString()+_T(".")+fileExt.EscapeToString();
 	}
 
 	DWORD CDos::ExportFile(PCFile file,CFile *fOut,DWORD nBytesToExportMax,LPCTSTR *pOutError) const{

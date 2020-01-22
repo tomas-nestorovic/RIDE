@@ -67,8 +67,9 @@
 
 	CDos::CPathString &CDos::CPathString::operator+=(const CPathString &r){
 		// returns this string appended with specified string
-		::memcpy( buf+nCharsInBuf, r.buf, (MAX_PATH-nCharsInBuf)*sizeof(TCHAR) );
-		nCharsInBuf=std::min<short>( MAX_PATH, nCharsInBuf+r.nCharsInBuf );
+		::memcpy( buf+nCharsInBuf, r.buf, (MAX_PATH-1-nCharsInBuf)*sizeof(TCHAR) ); // "-1" = terminating Null character
+		nCharsInBuf=std::min<short>( MAX_PATH-1, nCharsInBuf+r.nCharsInBuf );
+		buf[nCharsInBuf]='\0';
 		return *this;
 	}
 
@@ -86,10 +87,6 @@
 		return nCharsInBuf;
 	}
 
-	LPCTSTR CDos::CPathString::GetString() const{
-		return buf;
-	}
-
 	bool CDos::CPathString::Equals(const CPathString &r,TFnCompareNames comparer) const{
 		// True <=> the two strings are equal using the specified Comparer, otherwise False
 		if (nCharsInBuf!=r.nCharsInBuf)
@@ -105,7 +102,7 @@
 	CString CDos::CPathString::EscapeToString() const{
 		// returns a string with non-alphanumeric characters substituted with "URL-like" escape sequences
 		TCHAR buffer[16384], *pWritten=buffer;
-		for( short i=0,bufferCharCapacity=sizeof(buffer)/sizeof(TCHAR); i<nCharsInBuf; i++ ){
+		for( short i=0,bufferCharCapacity=sizeof(buffer)/sizeof(TCHAR)-1; i<nCharsInBuf; i++ ){ // "-1" = terminating Null character
 			#ifdef UNICODE
 				WORD c=buf[i];
 			#else
@@ -140,6 +137,13 @@
 		return *this;
 	}
 
+	CDos::CPathString &CDos::CPathString::TrimToLength(short nCharsMax){
+		// trims the string to specified maximum number of characters
+		nCharsInBuf=std::max<short>( 0, std::min(nCharsInBuf,nCharsMax) );
+		buf[nCharsInBuf]='\0';
+		return *this;
+	}
+
 	bool CDos::CPathString::IsValidFat32LongNameChar(WCHAR c){
 		// True <=> specified Character is valid in FAT32 long file names, otherwise False
 		static const WCHAR ForbiddenChars[]=L"%#&<>|/";
@@ -155,6 +159,16 @@
 		*pCompliant='\0';
 		nCharsInBuf=pCompliant-buf;
 		return *this;
+	}
+
+	CDos::CPathString & AFX_CDECL CDos::CPathString::Format(LPCTSTR format,...){
+		// returns this string formatted using wsprintf style
+		va_list argList;
+		va_start( argList, format );
+			TCHAR buf[16384];
+			::wvsprintf( buf, format, argList );
+		va_end(argList);
+		return *this=CPathString(buf);
 	}
 
 	CDos::CPathString CDos::CPathString::Unescape(LPCTSTR term){
