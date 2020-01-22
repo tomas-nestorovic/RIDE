@@ -341,19 +341,18 @@
 			// . FirstLogicalSector
 			//nop (set below)
 		// - changing the Extension according to the "universal" type valid across ZX platforms (as TR-DOS File "Picture.C" should be take on the name "Picture.B" under MDOS)
-		if (zxExt.GetLength())
-			switch (uts){
-				case TUniFileType::PROGRAM		: tmp.extension=TDirectoryEntry::PROGRAM; break;
-				case TUniFileType::CHAR_ARRAY	: tmp.extension=TDirectoryEntry::CHAR_ARRAY; break;
-				case TUniFileType::NUMBER_ARRAY	: tmp.extension=TDirectoryEntry::NUMBER_ARRAY; break;
-				case TUniFileType::BLOCK:
-				case TUniFileType::SCREEN		: tmp.extension=TDirectoryEntry::BLOCK; break;
-				case TUniFileType::SNAPSHOT_48k	: tmp.extension=TDirectoryEntry::SNAPSHOT; break;
-				case TUniFileType::SEQUENTIAL	: tmp.extension=TDirectoryEntry::SEQUENTIAL; break;
-				default							: tmp.extension=*zxExt; break;
-			}
-		else // if Extension not specified ...
-			tmp.extension=TDirectoryEntry::BLOCK; // ... defaulting to Block
+		switch (uts){
+			case TUniFileType::PROGRAM		: tmp.extension=TDirectoryEntry::PROGRAM; break;
+			case TUniFileType::CHAR_ARRAY	: tmp.extension=TDirectoryEntry::CHAR_ARRAY; break;
+			case TUniFileType::NUMBER_ARRAY	: tmp.extension=TDirectoryEntry::NUMBER_ARRAY; break;
+			case TUniFileType::BLOCK:
+			case TUniFileType::SCREEN		: tmp.extension=TDirectoryEntry::BLOCK; break;
+			case TUniFileType::SNAPSHOT_48k	: tmp.extension=TDirectoryEntry::SNAPSHOT; break;
+			case TUniFileType::SEQUENTIAL	: tmp.extension=TDirectoryEntry::SEQUENTIAL; break;
+			default:
+				tmp.extension= zxExt.GetLength() ? *zxExt : TDirectoryEntry::BLOCK;
+				break;
+		}
 		// - importing to Image
 		CFatPath fatPath(this,fileSize);
 		if (const TStdWinError err=__importFileData__( f, &tmp, zxName, tmp.extension, fileSize, true, rFile, fatPath ))

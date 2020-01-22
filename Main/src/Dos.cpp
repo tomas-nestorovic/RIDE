@@ -831,7 +831,8 @@ reportError:Utils::Information(buf);
 				// invalid export name - generating an artifical one
 				static WORD fileId;
 				CString result;
-				result.Format( _T("File%05d.%s"), ++fileId, (LPCTSTR)ext );
+				result.Format( _T("File%04d.%s"), ++fileId, (LPCTSTR)ext ); // "%05d" and above isn't recommended - some DOSes can't accommodate more than 8 characters in name field
+				if (fileId==9999) fileId=0;
 				return result;
 			}
 		}else

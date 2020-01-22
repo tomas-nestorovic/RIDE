@@ -876,8 +876,20 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 			// . first logical Sector
 			//nop (see below)
 		// - changing the Extension according to the "universal" type valid across ZX platforms (as TR-DOS File "Picture.C" should be take on the name "Picture.B" under MDOS)
+		TCHAR uftExt;
+		switch (uts){
+			case TUniFileType::PROGRAM	:
+			case TUniFileType::NUMBER_ARRAY:
+			case TUniFileType::CHAR_ARRAY:
+			case TUniFileType::BLOCK	: uftExt=uts; break;
+			case TUniFileType::SCREEN	: uftExt=TUniFileType::BLOCK; break;
+			default:
+				uftExt= zxExt.GetLength() ? *zxExt : TZxRom::TFileType::HEADERLESS;
+				break;
+		}
+		// - importing to Image
 		CFatPath fatPath( this, fileSize );
-		if (const TStdWinError err=__importFileData__( fIn, &tmp, zxName, zxExt, fileSize, true, rFile, fatPath ))
+		if (const TStdWinError err=__importFileData__( fIn, &tmp, zxName, uftExt, fileSize, true, rFile, fatPath ))
 			return err;
 		// - finishing initialization of DirectoryEntry of successfully imported File
 		const PDirectoryEntry de=(PDirectoryEntry)rFile;

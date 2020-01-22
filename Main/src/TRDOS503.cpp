@@ -368,17 +368,17 @@
 		if ( !fileSize&&!zeroLengthFilesEnabled || fileSizeOnDisk>0xff00)
 			return ERROR_BAD_LENGTH;
 		// - changing the Extension according to the "universal" type valid across ZX platforms (as MDOS File "Picture.B" should be take on the name "Picture.C" under TR-DOS)
-		TCHAR uftExt=*zxExt;
-		if (zxExt.GetLength())
-			switch (uts){
-				case TUniFileType::PROGRAM	: uftExt=TDirectoryEntry::BASIC_PRG; break;
-				case TUniFileType::CHAR_ARRAY:uftExt=TDirectoryEntry::DATA_FIELD; break;
-				case TUniFileType::BLOCK	:
-				case TUniFileType::SCREEN	: uftExt=TDirectoryEntry::BLOCK; break;
-				case TUniFileType::PRINT	: uftExt=TDirectoryEntry::PRINT; break;
-			}
-		else // if Extension not specified ...
-			uftExt=TDirectoryEntry::BLOCK; // ... defaulting to Block
+		TCHAR uftExt;
+		switch (uts){
+			case TUniFileType::PROGRAM	: uftExt=TDirectoryEntry::BASIC_PRG; break;
+			case TUniFileType::CHAR_ARRAY:uftExt=TDirectoryEntry::DATA_FIELD; break;
+			case TUniFileType::BLOCK	:
+			case TUniFileType::SCREEN	: uftExt=TDirectoryEntry::BLOCK; break;
+			case TUniFileType::PRINT	: uftExt=TDirectoryEntry::PRINT; break;
+			default:
+				uftExt= zxExt.GetLength() ? *zxExt : TDirectoryEntry::BLOCK;
+				break;
+		}
 		// - initializing the description of File to import
 		const PBootSector boot=__getBootSector__();
 		if (!boot)
