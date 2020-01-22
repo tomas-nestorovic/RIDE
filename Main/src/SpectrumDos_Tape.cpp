@@ -182,11 +182,8 @@
 				h->GetNameOrExt( pOutName, pOutExt );
 			else{
 				// Headerless File or Fragment
-				if (pOutName){
-					TCHAR bufName[16];
-					::wsprintf( bufName, _T("%08d"), idHeaderless++ ); // ID padded with zeros to eight digits (to make up an acceptable name even for TR-DOS)
-					*pOutName=bufName;
-				}
+				if (pOutName)
+					pOutName->Format( _T("%08d"), idHeaderless++ ); // ID padded with zeros to eight digits (to make up an acceptable name even for TR-DOS)
 				if (pOutExt)
 					*pOutExt=HEADERLESS_EXTENSION;
 				return false; // name irrelevant
@@ -203,6 +200,9 @@
 		// - renaming
 		if (const PHeader h=((PTapeFile)( rRenamedFile=file ))->GetHeader()){
 			// File with a Header
+			// . Extension must be specified
+			if (newExt.GetLength()<1)
+				return ERROR_BAD_FILE_TYPE;
 			// . making sure that a File with given NameAndExtension doesn't yet exist 
 			//nop (Files on tape may he equal names)
 			// . renaming
@@ -291,14 +291,11 @@
 		if (fileSize>FILE_LENGTH_MAX)
 			return ERROR_BAD_LENGTH;
 		// - converting the NameAndExtension to the "10.1" form usable for Tape
-		LPCTSTR zxName,zxExt,zxInfo;
-		BYTE zxNameLength=ZX_TAPE_FILE_NAME_LENGTH_MAX, zxExtLength=1;
-		TCHAR buf[MAX_PATH];
-		__parseFat32LongName__(	::lstrcpy(buf,nameAndExtension),
-								zxName, zxNameLength,
-								zxExt, zxExtLength,
-								zxInfo
-							);
+		CPathString zxName,zxExt; LPCTSTR zxInfo;
+		TCHAR buf[16384];
+		__parseFat32LongName__(	::lstrcpy(buf,nameAndExtension), zxName, zxExt, zxInfo );
+		zxName.TrimToLength(ZX_TAPE_FILE_NAME_LENGTH_MAX);
+		zxExt.TrimToLength(1);
 		// - processing import information
 		TStdParameters u=TStdParameters::Default;
 		TUniFileType uts=TUniFileType::HEADERLESS;
@@ -331,7 +328,7 @@
 					ASSERT(FALSE);
 				#else
 					::memcpy(	::memset(h->name,' ',ZX_TAPE_FILE_NAME_LENGTH_MAX),
-								zxName, ::lstrlen(zxName)
+								zxName, zxName.GetLength()
 							);
 				#endif
 				// . Size

@@ -423,14 +423,11 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 			if (!slot->subdirExists)
 				if (const TLogSector ls=__getFirstHealthyFreeSector__()){
 					// . parsing the Name (can be an import name with escaped Spectrum tokens)
-					LPCTSTR zxName,zxExt,zxInfo;
-					BYTE zxNameLength=ZX_TAPE_FILE_NAME_LENGTH_MAX, zxExtLength=1;
-					TCHAR buf[MAX_PATH];
-					__parseFat32LongName__(	::lstrcpyn(buf,name,MAX_PATH),
-											zxName, zxNameLength,
-											zxExt, zxExtLength,
-											zxInfo
-										);
+					CPathString zxName,zxExt; LPCTSTR zxInfo;
+					TCHAR buf[16384];
+					__parseFat32LongName__(	::lstrcpy(buf,name), zxName, zxExt, zxInfo );
+					zxName.TrimToLength(ZX_TAPE_FILE_NAME_LENGTH_MAX);
+					zxExt.TrimToLength(1);
 					// . validating type
 					int dirNameChecksum=-1;
 					if (zxInfo!=nullptr){
@@ -441,10 +438,9 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 						_stscanf( zxInfo+n, INFO_DIR, &dirNameChecksum );
 					}
 					// . validating Name
-					if (zxExtLength)
+					if (zxExt.GetLength())
 						return ERROR_INVALID_DATATYPE;
-					const CPathString dirName(zxName,zxNameLength);
-					if (const TStdWinError err=TDirectoryEntry(this,0).file.stdHeader.SetName(dirName))
+					if (const TStdWinError err=TDirectoryEntry(this,0).file.stdHeader.SetName(zxName))
 						return err;
 					// . indicating that the Slot is now occupied
 					slot->subdirExists=true;
@@ -458,7 +454,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 					const PDirectoryEntry de=dirsSector.TryGetDirectoryEntry(slot);
 					de->occupied=true;
 					ASSERT( &de->dir.name==&de->file.stdHeader.name );
-					de->file.stdHeader.SetName(dirName);
+					de->file.stdHeader.SetName(zxName);
 					slot->nameChecksum= dirNameChecksum>=0 ? dirNameChecksum : de->GetDirNameChecksum();
 					::memset( de->dir.comment, ' ', sizeof(de->dir.comment) );
 					dirsSector.MarkDirectoryEntryAsDirty(slot);
@@ -690,6 +686,9 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 			const PDirectoryEntry de=(PDirectoryEntry)file;
 			if (de->fileHasStdHeader){
 				// File with Header
+				// . Extension must be specified
+				if (newExt.GetLength()<1)
+					return ERROR_BAD_FILE_TYPE;
 				// . making sure that a File with given NameAndExtension doesn't yet exist
 				if ( rRenamedFile=FindFileInCurrentDir(newName,newExt,file) )
 					return ERROR_FILE_EXISTS;
@@ -854,14 +853,11 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 	TStdWinError CBSDOS308::ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile){
 		// imports specified File (physical or virtual) into the Image; returns Windows standard i/o error
 		// - converting the NameAndExtension to the "10.1" form usable for Tape
-		LPCTSTR zxName,zxExt,zxInfo;
-		BYTE zxNameLength=ZX_TAPE_FILE_NAME_LENGTH_MAX, zxExtLength=1;
-		TCHAR buf[MAX_PATH];
-		__parseFat32LongName__(	::lstrcpy(buf,nameAndExtension),
-								zxName, zxNameLength,
-								zxExt, zxExtLength,
-								zxInfo
-							);
+		CPathString zxName,zxExt; LPCTSTR zxInfo;
+		TCHAR buf[16384];
+		__parseFat32LongName__(	::lstrcpy(buf,nameAndExtension), zxName, zxExt, zxInfo );
+		zxName.TrimToLength(ZX_TAPE_FILE_NAME_LENGTH_MAX);
+		zxExt.TrimToLength(1);
 		// - only Files are allowed as items in root Subdirectories
 		TUniFileType uts;
 		__importFileInformation__( zxInfo, uts );
@@ -881,7 +877,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 			//nop (see below)
 		// - changing the Extension according to the "universal" type valid across ZX platforms (as TR-DOS File "Picture.C" should be take on the name "Picture.B" under MDOS)
 		CFatPath fatPath( this, fileSize );
-		if (const TStdWinError err=__importFileData__( fIn, &tmp, CPathString(zxName,zxNameLength), CPathString(zxExt,zxExtLength), fileSize, true, rFile, fatPath ))
+		if (const TStdWinError err=__importFileData__( fIn, &tmp, zxName, zxExt, fileSize, true, rFile, fatPath ))
 			return err;
 		// - finishing initialization of DirectoryEntry of successfully imported File
 		const PDirectoryEntry de=(PDirectoryEntry)rFile;

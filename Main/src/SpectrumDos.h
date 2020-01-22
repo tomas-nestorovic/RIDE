@@ -219,7 +219,7 @@
 		static const RGBQUAD Colors[16];
 		static DWORD idHeaderless;
 
-		static void __parseFat32LongName__(PTCHAR buf,LPCTSTR &rOutName,BYTE &rInOutNameLength,LPCTSTR &rOutExt,BYTE &rInOutExtLength,LPCTSTR &rOutZxInfo);
+		static void __parseFat32LongName__(PTCHAR buf,RPathString rOutName,RPathString rOutExt,LPCTSTR &rOutZxInfo);
 		static int __exportFileInformation__(PTCHAR buf,TUniFileType uniFileType);
 		static int __exportFileInformation__(PTCHAR buf,TUniFileType uniFileType,TStdParameters params,DWORD fileLength);
 		static int __exportFileInformation__(PTCHAR buf,TUniFileType uniFileType,TStdParameters params,DWORD fileLength,BYTE dataFlag);

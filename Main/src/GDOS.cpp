@@ -349,6 +349,8 @@
 		if (file==ZX_DIR_ROOT)
 			return ERROR_DIRECTORY;
 		// - checking that the NewName+NewExt combination follows the "10.1" convention
+		if (newExt.GetLength()<1)
+			return ERROR_BAD_FILE_TYPE;
 		if (newName.GetLength()>GDOS_FILE_NAME_LENGTH_MAX || newExt.GetLength()>1)
 			return ERROR_FILENAME_EXCED_RANGE;
 		// - making sure that a File with given NameAndExtension doesn't yet exist
@@ -419,7 +421,7 @@
 			if (de!=ZX_DIR_ROOT){
 				const int iDot=result.ReverseFind('.');
 				if (iDot>=0)
-					result=CString( result, result.ReverseFind('.')+1 );
+					result=CString( result, iDot+1 );
 				else
 					result+='.';
 				result+=de->__getFileTypeDesc__(bufExt);
@@ -464,14 +466,11 @@
 	TStdWinError CGDOS::ImportFile(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile){
 		// imports specified File (physical or virtual) into the Image; returns Windows standard i/o error
 		// - parsing the NameAndExtension into a usable "10.1" form
-		LPCTSTR zxName, zxExt, zxInfo;
-		BYTE zxNameLength=GDOS_FILE_NAME_LENGTH_MAX, zxExtLength=10; // 10 = Extension may be represented as text, e.g. "$-ARRAY", not just a single char, e.g. '0x03' (both representations are equal!)
-		TCHAR buf[MAX_PATH];
-		__parseFat32LongName__(	::lstrcpy(buf,nameAndExtension),
-								zxName, zxNameLength,
-								zxExt, zxExtLength,
-								zxInfo
-							);
+		CPathString zxName,zxExt; LPCTSTR zxInfo;
+		TCHAR buf[16384];
+		__parseFat32LongName__(	::lstrcpy(buf,nameAndExtension), zxName, zxExt, zxInfo );
+		zxName.TrimToLength(GDOS_FILE_NAME_LENGTH_MAX);
+		zxExt.TrimToLength(10); // 10 = Extension may be represented as text, e.g. "$-ARRAY", not just a single char, e.g. '0x03' (both representations are equal!)
 		// - getting import information
 		TStdParameters params=TStdParameters::Default;	TUniFileType uts; DWORD dw;
 		if (const int n=__importFileInformation__(zxInfo,uts,params,dw))
@@ -480,8 +479,8 @@
 		TDirectoryEntry tmp;
 			::ZeroMemory(&tmp,sizeof(tmp));
 			// . name
-			tmp.SetNameAndExt( CPathString(zxName,zxNameLength), CPathString(zxExt,zxExtLength) );
-			switch (zxExtLength){
+			tmp.SetNameAndExt( zxName, zxExt );
+			switch (zxExt.GetLength()){
 				case 0:
 					// no Extension provided - considering the File as Special
 					tmp.fileType=TDirectoryEntry::SPECIAL;
@@ -526,7 +525,7 @@
 			return ERROR_BAD_LENGTH;
 		// - importing to Image
 		CFatPath fatPath(this,offset+fileSize);
-		if (err=__importFileData__( f, &tmp, CPathString(zxName,zxNameLength), CPathString(tmp.fileType), fileSize, true, rFile, fatPath ))
+		if (err=__importFileData__( f, &tmp, zxName, CPathString(tmp.fileType), fileSize, true, rFile, fatPath ))
 			return err;
 		// - finishing initialization of DirectoryEntry of successfully imported File
 		const PDirectoryEntry de=(PDirectoryEntry)rFile;

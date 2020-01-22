@@ -46,7 +46,7 @@
 		Utils::InformationWithCheckableShowNoMore( text, INI_SPECTRUM, messageId );
 	}
 
-	void CSpectrumBase::__parseFat32LongName__(PTCHAR buf,LPCTSTR &rOutName,BYTE &rInOutNameLength,LPCTSTR &rOutExt,BYTE &rInOutExtLength,LPCTSTR &rOutZxInfo){
+	void CSpectrumBase::__parseFat32LongName__(PTCHAR buf,RPathString rOutName,RPathString rOutExt,LPCTSTR &rOutZxInfo){
 		// parses input FAT long name into three components: ZX Name (of LengthMax chars at most), single-char ZX Extension, and ZX Information
 		// - finding ZX import information
 		rOutZxInfo=nullptr; // assumption (no ZX import information found)
@@ -56,27 +56,14 @@
 				rOutZxInfo=pSpace;
 			}
 		// - finding, unescaping, and trimming the Extension
-		rOutName=buf; // Name (processed later) always starts at the beginning of Buffer
 		if (PTCHAR pExt=_tcsrchr(buf,'.')){
 			// Extension specified (Dot found)
-			*pExt++='\0', rOutExt=pExt;
-			rInOutExtLength=std::min<int>(	rInOutExtLength,
-											CPathString::Unescape( // unescaping the Extension
-												pExt, // in-place (unescaped string is never longer than escaped one)
-												TZxRom::AsciiToZx(pExt,pExt,nullptr) // converting in place to ZX charset
-											)
-										);
-			pExt[rInOutExtLength]='\0';
+			*pExt++='\0';
+			rOutExt=CPathString::Unescape( TZxRom::AsciiToZx(pExt,pExt,nullptr) ); // converting in place to ZX charset
 		}else // Extension not specified (Dot not found)
-			rOutExt=_T(""), rInOutExtLength=0;
+			rOutExt=_T("");
 		// - unescaping and trimming the Name
-		rInOutNameLength=std::min<int>(	rInOutNameLength,
-										CPathString::Unescape( // unescaping the Name
-											buf, // in-place (unescaped string is never longer than escaped one)
-											TZxRom::AsciiToZx(buf,buf,nullptr) // converting in place to ZX charset
-										)
-									);
-		buf[rInOutNameLength]='\0';
+		rOutName=CPathString::Unescape( TZxRom::AsciiToZx(buf,buf,nullptr) ); // converting in place to ZX charset
 	}
 
 	#define INFO_UNI	_T(" ZX%c")

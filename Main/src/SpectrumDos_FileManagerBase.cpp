@@ -40,10 +40,8 @@
 				// . composing the Name for the File copy
 				TCHAR postfix[8];
 				const BYTE n=::wsprintf(postfix,_T("%c%d"),255,copyNumber); // 255 = token of the "COPY" keyword
-				TCHAR bufCopyName[MAX_PATH];
-				::lstrcpy(	::lstrcpy(bufCopyName,fileName)  +  std::min<short>( fileName.GetLength(), nameCharsMax-n ), // trimming to maximum number of characters
-							postfix
-						);
+				CPathString bufCopyName=fileName;
+				bufCopyName.TrimToLength(nameCharsMax-n)+=postfix;
 				// . attempting to rename the TemporaryDirectoryEntry
 				CDos::PFile fExisting;
 				switch (DOS->ChangeFileNameAndExt( &tmpDirEntry, bufCopyName, fileExt, fExisting )){

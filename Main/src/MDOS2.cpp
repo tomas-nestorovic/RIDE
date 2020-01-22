@@ -222,6 +222,8 @@
 		if (file==ZX_DIR_ROOT)
 			return ERROR_DIRECTORY;
 		// - checking that the NewName+NewExt combination follows the "10.1" convention
+		if (newExt.GetLength()<1)
+			return ERROR_BAD_FILE_TYPE;
 		if (newName.GetLength()>MDOS2_FILE_NAME_LENGTH_MAX || newExt.GetLength()>1)
 			return ERROR_FILENAME_EXCED_RANGE;
 		// - making sure that a File with given NameAndExtension doesn't yet exist
@@ -311,14 +313,11 @@
 	TStdWinError CMDOS2::ImportFile(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile){
 		// imports specified File (physical or virtual) into the Image; returns Windows standard i/o error
 		// - parsing the NameAndExtension into a usable "10.1" form
-		LPCTSTR zxName,zxExt,zxInfo;
-		BYTE zxNameLength=MDOS2_FILE_NAME_LENGTH_MAX, zxExtLength=1;
-		TCHAR buf[MAX_PATH];
-		__parseFat32LongName__(	::lstrcpy(buf,nameAndExtension),
-								zxName, zxNameLength,
-								zxExt, zxExtLength,
-								zxInfo
-							);
+		CPathString zxName,zxExt; LPCTSTR zxInfo;
+		TCHAR buf[16384];
+		__parseFat32LongName__(	::lstrcpy(buf,nameAndExtension), zxName, zxExt, zxInfo );
+		zxName.TrimToLength(MDOS2_FILE_NAME_LENGTH_MAX);
+		zxExt.TrimToLength(1);
 		// - initializing the description of File to import
 		TDirectoryEntry tmp; // the description
 			::ZeroMemory(&tmp,sizeof(tmp));
@@ -342,19 +341,22 @@
 			// . FirstLogicalSector
 			//nop (set below)
 		// - changing the Extension according to the "universal" type valid across ZX platforms (as TR-DOS File "Picture.C" should be take on the name "Picture.B" under MDOS)
-		switch (uts){
-			case TUniFileType::PROGRAM		: tmp.extension=TDirectoryEntry::PROGRAM; break;
-			case TUniFileType::CHAR_ARRAY	: tmp.extension=TDirectoryEntry::CHAR_ARRAY; break;
-			case TUniFileType::NUMBER_ARRAY	: tmp.extension=TDirectoryEntry::NUMBER_ARRAY; break;
-			case TUniFileType::BLOCK:
-			case TUniFileType::SCREEN		: tmp.extension=TDirectoryEntry::BLOCK; break;
-			case TUniFileType::SNAPSHOT_48k	: tmp.extension=TDirectoryEntry::SNAPSHOT; break;
-			case TUniFileType::SEQUENTIAL	: tmp.extension=TDirectoryEntry::SEQUENTIAL; break;
-			default							: tmp.extension=*zxExt; break;
-		}
+		if (zxExt.GetLength())
+			switch (uts){
+				case TUniFileType::PROGRAM		: tmp.extension=TDirectoryEntry::PROGRAM; break;
+				case TUniFileType::CHAR_ARRAY	: tmp.extension=TDirectoryEntry::CHAR_ARRAY; break;
+				case TUniFileType::NUMBER_ARRAY	: tmp.extension=TDirectoryEntry::NUMBER_ARRAY; break;
+				case TUniFileType::BLOCK:
+				case TUniFileType::SCREEN		: tmp.extension=TDirectoryEntry::BLOCK; break;
+				case TUniFileType::SNAPSHOT_48k	: tmp.extension=TDirectoryEntry::SNAPSHOT; break;
+				case TUniFileType::SEQUENTIAL	: tmp.extension=TDirectoryEntry::SEQUENTIAL; break;
+				default							: tmp.extension=*zxExt; break;
+			}
+		else // if Extension not specified ...
+			tmp.extension=TDirectoryEntry::BLOCK; // ... defaulting to Block
 		// - importing to Image
 		CFatPath fatPath(this,fileSize);
-		if (const TStdWinError err=__importFileData__( f, &tmp, CPathString(zxName,zxNameLength), tmp.extension, fileSize, true, rFile, fatPath ))
+		if (const TStdWinError err=__importFileData__( f, &tmp, zxName, tmp.extension, fileSize, true, rFile, fatPath ))
 			return err;
 		// - finishing initialization of DirectoryEntry of successfully imported File
 		const PDirectoryEntry de=(PDirectoryEntry)rFile;
