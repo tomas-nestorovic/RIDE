@@ -702,7 +702,7 @@ reportError:Utils::Information(buf);
 		GetFileNameOrExt( file, &name, &ext );
 		CString result=name.ExcludeFat32LongNameInvalidChars();
 		if (ext.ExcludeFat32LongNameInvalidChars().GetLength()>0)
-			result+=_T(".")+ext;
+			result+=CString(".")+ext;
 		return result;
 	}
 
