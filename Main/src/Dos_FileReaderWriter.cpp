@@ -211,7 +211,7 @@
 			if (const LPCTSTR err=fatPath.GetItems(pItem,nItems))
 				return err;
 			else
-				return (pItem+d.quot)->chs.sectorId.ToString(labelBuffer);
+				return ::lstrcpyn( labelBuffer, (pItem+d.quot)->chs.sectorId.ToString(), labelBufferCharsMax );
 		}else
 			return nullptr;
 	}

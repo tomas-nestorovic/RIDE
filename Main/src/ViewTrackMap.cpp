@@ -331,8 +331,8 @@
 				xR+=*pLength++>>zoomLengthFactor;
 				if (point.x>=xL && point.x<=xR){
 					// cursor over a Sector
-					TCHAR buf[40],tmp[30];
-					::wsprintf(buf,_T("Tr%d, %s: "),track,pId->ToString(tmp));
+					TCHAR buf[40];
+					::wsprintf(buf,_T("Tr%d, %s: "),track,(LPCTSTR)pId->ToString());
 					switch (*pStatus){
 						case CDos::TSectorStatus::SYSTEM	: ::lstrcat(buf,_T("System")); break;
 						case CDos::TSectorStatus::UNAVAILABLE: ::lstrcat(buf,_T("Unavailable")); break;

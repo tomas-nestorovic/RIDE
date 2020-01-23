@@ -52,10 +52,11 @@
 		return *this;
 	}
 
-	PTCHAR TSectorId::ToString(PTCHAR buffer) const{
-		// fills the Buffer with string describing the Sector ID and returns the Buffer (caller guarantees that the Buffer is big enough)
-		::wsprintf(buffer,_T("ID={%d,%d,%d,%d}"),cylinder,side,sector,lengthCode);
-		return buffer;
+	CString TSectorId::ToString() const{
+		// returns a string describing the Sector's ID
+		CString result;
+		result.Format(_T("ID={%d,%d,%d,%d}"),cylinder,side,sector,lengthCode);
+		return result;
 	}
 
 	const TPhysicalAddress TPhysicalAddress::Invalid={ -1, -1, {-1,-1,-1,-1} };

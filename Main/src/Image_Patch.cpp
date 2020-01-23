@@ -58,8 +58,8 @@ terminateWithError:	return pAction->TerminateWithError(err);
 								goto errorDuringWriting;
 						}else{
 							err=::GetLastError();
-errorDuringWriting:			TCHAR buf[80],tmp[30];
-							::wsprintf(buf,_T("Cannot write to sector with %s on target Track %d"),chs.sectorId.ToString(tmp),chs.GetTrackNumber(pp.target->GetNumberOfFormattedSides(0)));
+errorDuringWriting:			TCHAR buf[80];
+							::wsprintf(buf,_T("Cannot write to sector with %s on target Track %d"),(LPCTSTR)chs.sectorId.ToString(),chs.GetTrackNumber(pp.target->GetNumberOfFormattedSides(0)));
 							switch (Utils::AbortRetryIgnore(buf,err,MB_DEFBUTTON2)){
 								case IDABORT:	goto terminateWithError;
 								case IDRETRY:	continue;

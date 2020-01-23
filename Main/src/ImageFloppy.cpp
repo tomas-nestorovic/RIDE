@@ -321,7 +321,7 @@
 				int lp=scannedTracks.infos[track+1].logicalPosition;
 				while (( lp-=lengths[--nSectors] )>logPos);
 				return	logPos==lp
-						? ids[nSectors].ToString(labelBuffer)
+						? ::lstrcpyn( labelBuffer, ids[nSectors].ToString(), labelBufferCharsMax )
 						: nullptr;
 			}
 		};

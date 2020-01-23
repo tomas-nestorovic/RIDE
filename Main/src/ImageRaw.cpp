@@ -507,7 +507,7 @@ trackNotFound:
 					__getPhysicalAddress__( logPos, track, sectorIndex, nullptr );
 					const div_t h=div( track, image->nHeads ); // Quotient = # of Cylinders to skip, Remainder = Head in a Cylinder
 					const TSectorId tmp={ h.quot, image->sideMap[h.rem], image->firstSectorNumber+sectorIndex, image->sectorLengthCode };
-					return tmp.ToString(labelBuffer);
+					return ::lstrcpyn( labelBuffer, tmp.ToString(), labelBufferCharsMax );
 				}else
 					return nullptr;
 			}

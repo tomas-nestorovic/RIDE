@@ -94,7 +94,7 @@
 									PCSourceSectorError psse=pErroneousTrack->erroneousSectors;
 									for( BYTE n=pErroneousTrack->nErroneousSectors; n; n--,psse++ ){
 										Utils::WriteToFile(fHtml,_T("<li>"));
-											::wsprintf( buffer, _T("<b>%s</b>. "), psse->id.ToString(buffer+40) );
+											::wsprintf( buffer, _T("<b>%s</b>. "), (LPCTSTR)psse->id.ToString() );
 											Utils::WriteToFile(fHtml,buffer);
 											LPCTSTR bitDescriptions[10],*pDesc=bitDescriptions;
 											psse->fdcStatus.GetDescriptionsOfSetBits(bitDescriptions);
@@ -206,7 +206,7 @@ terminateWithError:
 								// > creating message on Errors
 								LPCTSTR bitDescriptions[20],*pDesc=bitDescriptions; // 20 = surely big enough buffer
 								rFdcStatus.GetDescriptionsOfSetBits(bitDescriptions);
-								TCHAR buf[512],tmp[30],*p=buf+::wsprintf(buf,_T("Cannot read sector with %s on source Track %d.\n\n"),rp.chs.sectorId.ToString(tmp),rp.track);
+								TCHAR buf[512],*p=buf+::wsprintf(buf,_T("Cannot read sector with %s on source Track %d.\n\n"),(LPCTSTR)rp.chs.sectorId.ToString(),rp.track);
 								p+=::wsprintf( p, _T("\"Status register 1\" reports (0x%02X)\n"), rFdcStatus.reg1 );
 								if (*pDesc)
 									while (*pDesc)
@@ -419,8 +419,8 @@ reformatTrack:		if ( err=dp.target->FormatTrack(p.chs.cylinder,p.chs.head,nSecto
 								goto errorDuringWriting;
 						}else{
 							err=::GetLastError();
-errorDuringWriting:			TCHAR buf[80],tmp[30];
-							::wsprintf(buf,_T("Cannot write to sector with %s on target Track %d"),p.chs.sectorId.ToString(tmp),p.track);
+errorDuringWriting:			TCHAR buf[80];
+							::wsprintf(buf,_T("Cannot write to sector with %s on target Track %d"),(LPCTSTR)p.chs.sectorId.ToString(),p.track);
 							switch (Utils::AbortRetryIgnore(buf,err,MB_DEFBUTTON2)){
 								case IDABORT:	goto terminateWithError;
 								case IDRETRY:	continue;

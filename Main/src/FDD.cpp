@@ -187,8 +187,8 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 			||
 			::memcmp(data,fdd->dataBuffer,length) // Data written with error
 		){
-			TCHAR buf[80],tmp[30];
-			::wsprintf( buf, _T("Verification failed for sector with %s on Track %d."), id.ToString(tmp), chs.GetTrackNumber(2) );
+			TCHAR buf[80];
+			::wsprintf( buf, _T("Verification failed for sector with %s on Track %d."), (LPCTSTR)id.ToString(), chs.GetTrackNumber(2) );
 			const BYTE result=Utils::AbortRetryIgnore( buf, MB_DEFBUTTON2 );
 			modified=result==IDIGNORE; // saved successfully if commanded to ignore any errors
 			return result;
@@ -1088,8 +1088,8 @@ returnData:				outFdcStatuses[index]=psi->fdcStatus;
 						
 						// : informing on unability to reproduce some errors (until all errors are supported in the future)
 						if (pFdcStatus->reg1 & (FDC_ST1_NO_DATA)){
-							TCHAR buf[200],tmp[30];
-							::wsprintf( buf, _T("Not all errors can be reproduced on a real floppy for sector with %s."), chs.sectorId.ToString(tmp) );
+							TCHAR buf[200];
+							::wsprintf( buf, _T("Not all errors can be reproduced on a real floppy for sector with %s."), (LPCTSTR)chs.sectorId.ToString() );
 							Utils::Information(buf);
 							return LOG_ERROR(ERROR_BAD_COMMAND);
 						}
@@ -1669,8 +1669,8 @@ autodetermineLatencies:		// automatic determination of write latency values
 	}
 
 	static BYTE __reportSectorVerificationError__(RCPhysicalAddress chs){
-		TCHAR buf[100],tmp[30];
-		::wsprintf(buf,_T("Track %d verification failed for sector with %s"),chs.GetTrackNumber(2),chs.sectorId.ToString(tmp));
+		TCHAR buf[100];
+		::wsprintf(buf,_T("Track %d verification failed for sector with %s"),chs.GetTrackNumber(2),(LPCTSTR)chs.sectorId.ToString());
 		return Utils::AbortRetryIgnore( buf, ::GetLastError(), MB_DEFBUTTON2, _T("For copy-protected schemes, simply retrying usually helps.") );
 	}
 

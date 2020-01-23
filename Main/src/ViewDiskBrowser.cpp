@@ -206,7 +206,7 @@
 												if (chs.head<image->GetNumberOfFormattedSides(chs.cylinder)){ // Head number valid
 													TSectorId ids[(TSector)-1];
 													TSector s=0,const nSectors=image->ScanTrack( chs.cylinder, chs.head, ids );
-													for( TCHAR buf[80]; s<nSectors; lb.AddString(ids[s++].ToString(buf)) );
+													while (s<nSectors) lb.AddString(ids[s++].ToString());
 													lb.SetCurSel(0);
 												}
 											lb.Detach();
@@ -259,7 +259,7 @@
 		// - disposing the underlying File
 		f.reset();
 		// - base
-		CView::OnDestroy();
+		__super::OnDestroy();
 	}
 
 	afx_msg void CDiskBrowserView::__toggleWriteProtection__(){
