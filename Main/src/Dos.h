@@ -307,7 +307,9 @@
 		bool __fillEmptySpace__(CFillEmptySpaceDialog &rd);
 		bool __verifyVolume__(CVerifyVolumeDialog &rd);
 		LPCTSTR __exportFileData__(PCFile file,CFile *fOut,DWORD nMaxDataBytesToExport) const;
+		TStdWinError __importData__(CFile *fIn,DWORD fileSize,bool skipBadSectors,CFatPath &rFatPath);
 		TStdWinError __importFileData__(CFile *fIn,PFile fDesc,RCPathString fileName,RCPathString fileExt,DWORD fileSize,bool skipBadSectors,PFile &rFile,CFatPath &rFatPath);
+		bool __getFirstEmptyHealthySector__(bool skipBadSectors,TPhysicalAddress &rOutChs);
 		PFile __findFile__(PCFile directory,RCPathString fileName,RCPathString fileExt,PCFile ignoreThisFile) const;
 		TStdWinError __shiftFileContent__(const CFatPath &rFatPath,char nBytesShift) const;
 	public:

@@ -903,15 +903,25 @@ reportError:Utils::Information(buf);
 				}
 			if (err!=ERROR_SUCCESS)
 				return LOG_ERROR(err);
-		//}
-		// - checking if there's enough empty space on the disk
-		//if (const auto pdt=BeginDirectoryTraversal()){
-			if (fileSize>GetFreeSpaceInBytes(err)){
-				DeleteFile(rFile); // removing the above added File record from current Directory
-				return LOG_ERROR(ERROR_DISK_FULL);
-			}
 		}else
 			return LOG_ERROR(ERROR_PATH_NOT_FOUND);
+		// - importing the File to disk and recording its FatPath
+		if (const TStdWinError err=__importData__( f, fileSize, skipBadSectors, rFatPath )){
+			DeleteFile(rFile); // removing the above added File record from current Directory
+			return LOG_ERROR(err);
+		}
+		CFatPath::PCItem p;	DWORD n;
+		for( rFatPath.GetItems(p,n); n--; image->MarkSectorAsDirty(p++->chs) );
+		return ERROR_SUCCESS;
+	}
+
+	TStdWinError CDos::__importData__(CFile *f,DWORD fileSize,bool skipBadSectors,CFatPath &rFatPath){
+		// imports given File to the disk; returns Windows standard i/o error
+		LOG_ACTION(_T("data import"));
+		// - checking if there's enough empty space on the disk
+		TStdWinError err;
+		if (fileSize>GetFreeSpaceInBytes(err))
+			return LOG_ERROR(ERROR_DISK_FULL);
 		// - determining the initial range of Heads in which to search for free Sectors within each Cylinder
 		THead headZ; // last Head number
 		switch (trackAccessScheme){
@@ -943,6 +953,8 @@ reportError:Utils::Information(buf);
 					for( TSector s=0; s<nSectors; s++ )
 						if (*ps++==TSectorStatus::EMPTY)
 							bufferId[nEmptySectors++]=bufferId[s];
+					if (!nEmptySectors)
+						continue;
 					// . buffering Sectors from the same Track by the underlying Image, making them ready for IMMEDIATE usage
 					image->BufferTrackData( item.chs.cylinder, item.chs.head, bufferId, sectorIdAndPositionIdentity, nEmptySectors, true );
 					// . importing the File to Empty Sectors on the current Track
@@ -959,14 +971,14 @@ reportError:Utils::Information(buf);
 							}else if (!fileSize){ // zero-length File
 								item.value=TSectorStatus::RESERVED;
 								rFatPath.AddItem(&item);
-								goto finished;
+								return ERROR_SUCCESS;
 							}else{
 								f->Read(sectorData+properties->dataBeginOffsetInSector,fileSize);
 								if (w==fileSize) fileSize=0;
 								//image->MarkSectorAsDirty(...); // commented out as carried out below if whole import successfull
 								item.value=fileSize;
 								rFatPath.AddItem(&item);
-								goto finished;
+								return ERROR_SUCCESS;
 							}
 						}else{ // error when accessing discovered Empty Sector
 							TStdWinError err;
@@ -978,15 +990,27 @@ reportError:Utils::Information(buf);
 									continue; // ... and proceeding with the next Sector
 							}else
 								err=::GetLastError();
-							DeleteFile(rFile); // removing the above added File record from current Directory
 							return LOG_ERROR(err);
 						}
 					}
 				}
-finished:
-		CFatPath::PCItem p;	DWORD n;
-		for( rFatPath.GetItems(p,n); n--; image->MarkSectorAsDirty(p++->chs) );
-		return ERROR_SUCCESS;
+		return LOG_ERROR(ERROR_WRITE_FAULT);
+	}
+
+	bool CDos::__getFirstEmptyHealthySector__(bool skipBadSectors,TPhysicalAddress &rOutChs){
+		// True <=> a well readable Sector that is reported Empty exists and has been output, otherwise False; the problem of finding an empty Sector is a approached by importing a single Byte to the disk
+		BYTE buf;
+		CFatPath emptySector(this,sizeof(buf));
+		if (__importData__( 
+				&CMemFile(&buf,sizeof(buf)), sizeof(buf), skipBadSectors,
+				emptySector
+			)!=ERROR_SUCCESS
+		)
+			return false;
+		CFatPath::PCItem pItem; DWORD n;
+		emptySector.GetItems(pItem,n);
+		rOutChs=pItem->chs;
+		return true;
 	}
 
 	#define ERROR_MSG_CANNOT_PROCESS	_T("Cannot process \"%s\"")
