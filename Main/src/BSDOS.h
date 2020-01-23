@@ -199,7 +199,6 @@
 		TFatValue __getLogicalSectorFatItem__(TLogSector logSector) const;
 		bool __setLogicalSectorFatItem__(TLogSector logSector,TFatValue newValue) const;
 		BYTE __getFatChecksum__(BYTE fatCopy) const;
-		TLogSector __getFirstHealthyFreeSector__();
 		TLogSector __getNextHealthySectorWithoutFat__(TLogSector &rStart,TLogSector end) const;
 	public:
 		static const TProperties Properties;

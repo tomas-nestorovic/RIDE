@@ -293,25 +293,6 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 		return true; // FatPath (with or without error) successfully extracted from FAT
 	}
 
-	CBSDOS308::TLogSector CBSDOS308::__getFirstHealthyFreeSector__(){
-		// determines and returns the first LogicalSector that is reported Empty and well readable; returns 0 if no such LogicalSector exists
-		BYTE buf; PFile p;
-		CDirsSector::TSlot slotInit={0,0,0,0,2}; // eventually used for root Directory
-		TDirectoryEntry deInit(this,0); // eventually used for root Subdirectory
-		CFatPath emptySector(this,sizeof(buf));
-		if (__importFileData__(
-				&CMemFile(&buf,sizeof(buf)),
-				currentDir==ZX_DIR_ROOT ? (PFile)&slotInit : (PFile)&deInit,
-				_T(""), _T(""), sizeof(buf), true, p,
-				emptySector
-			)!=ERROR_SUCCESS
-		)
-			return 0;
-		DeleteFile(p); // deleting the imported auxiliary single-Byte File
-		CFatPath::PCItem pItem; DWORD n;
-		emptySector.GetItems(pItem,n);
-		return __fyzlog__(pItem->chs);
-	}
 
 
 
@@ -419,9 +400,10 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 		if (currentDir!=ZX_DIR_ROOT)
 			return ERROR_DIR_NOT_ROOT;
 		// - creating a new Subdirectory in the first empty Slot
+		TPhysicalAddress chs;
 		for( CDirsSector::PSlot slot=dirsSector.GetSlots(); IsDirectory(slot); slot++ )
 			if (!slot->subdirExists)
-				if (const TLogSector ls=__getFirstHealthyFreeSector__()){
+				if (__getFirstEmptyHealthySector__(true,chs)){
 					// . parsing the Name (can be an import name with escaped Spectrum tokens)
 					CPathString zxName,zxExt; LPCTSTR zxInfo;
 					TCHAR buf[16384];
@@ -443,6 +425,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 					if (const TStdWinError err=TDirectoryEntry(this,0).file.stdHeader.SetName(zxName))
 						return err;
 					// . indicating that the Slot is now occupied
+					const TLogSector ls=__fyzlog__(chs);
 					slot->subdirExists=true;
 					slot->firstSector=ls;
 					dirsSector.MarkAsDirty();
@@ -580,9 +563,10 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 			if (entry && !((PDirectoryEntry)entry)->occupied)
 				return entry;
 		// - allocating a new Directory Sector and returning the first DirectoryEntry in it
-		const TLogSector newLogSector=const_cast<CBSDOS308 *>(bsdos)->__getFirstHealthyFreeSector__();
-		if (newLogSector<2) // new healthy Sector couldn't be allocated
-			return nullptr;
+		TPhysicalAddress chs;
+		if (!const_cast<CBSDOS308 *>(bsdos)->__getFirstEmptyHealthySector__(true,chs))
+			return nullptr; // new healthy Sector couldn't be allocated
+		const TLogSector newLogSector=bsdos->__fyzlog__(chs);
 		CFatPath::PCItem pItem; DWORD n;
 		dirFatPath.GetItems(pItem,n);
 		if (bsdos->__setLogicalSectorFatItem__( // may fail if the last Sector in Directory is Bad
