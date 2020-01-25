@@ -681,7 +681,7 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 			if (const PCHeader h=tf->GetHeader()){
 				// File with Header
 				// . color distinction of Files based on their Type
-				if (!pdis->itemState&ODS_SELECTED)
+				if ((pdis->itemState&ODS_SELECTED)==0)
 					switch (h->type){
 						case TZxRom::PROGRAM		: ::SetTextColor(dc,FILE_MANAGER_COLOR_EXECUTABLE); break;
 						case TZxRom::NUMBER_ARRAY	: ::SetTextColor(dc,0xff00); break;
@@ -733,7 +733,7 @@ drawChecksum:			// checksum
 			}else if (tf->type==TTapeFile::HEADERLESS){
 				// Headerless File
 				// . color distinction of Files based on their Type
-				if (!pdis->itemState&ODS_SELECTED)
+				if ((pdis->itemState&ODS_SELECTED)==0)
 					::SetTextColor(dc,0x999999);
 				// . drawing Information
 				TCHAR bufT[MAX_PATH];
@@ -758,7 +758,7 @@ drawChecksum:			// checksum
 			}else{
 				// Fragment
 				// . color distinction of Files based on their Type
-				if (!pdis->itemState&ODS_SELECTED)
+				if ((pdis->itemState&ODS_SELECTED)==0)
 					::SetTextColor(dc,0x994444);
 				// . drawing Information
 				TCHAR bufT[MAX_PATH];
