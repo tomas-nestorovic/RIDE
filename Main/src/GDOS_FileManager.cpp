@@ -213,13 +213,10 @@
 			CFatPath::PCItem pItem; DWORD n;
 			if (nSectorsAfterRetyping>de->nSectors){
 				// adding one more Sector to the end of the File to accommodate the NewOffset (approached by importing a single-Byte File to the disk)
-				BYTE buf; PFile p;
-				CFatPath emptySector(gdos,sizeof(buf));
-				if (err=gdos->__importFileData__( &CMemFile(&buf,sizeof(buf)), &tmp, _T(""), _T(""), sizeof(buf), true, p, emptySector ))
+				CFatPath::TItem item;
+				if ( err=gdos->__getFirstEmptyHealthySector__(true,item.chs) )
 					goto error;
-				gdos->DeleteFile(p); // deleting the imported auxiliary single-Byte File
-				emptySector.GetItems(pItem,n);
-				fatPath.AddItem(pItem); // interconnecting with existing Sectors of the File below
+				fatPath.AddItem(&item); // interconnecting with existing Sectors of the File below
 			}
 			// . shifting the File content
 			if (const LPCTSTR errMsg=fatPath.GetItems(pItem,n)){
