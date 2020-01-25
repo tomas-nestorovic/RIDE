@@ -43,7 +43,7 @@
 		const HDC dc=pdis->hDC;
 		const PDirectoryEntry de=(PDirectoryEntry)pdis->itemData;
 		// . color distinction of Files based on their Type
-		if (!pdis->itemState&ODS_SELECTED)
+		if ((pdis->itemState&ODS_SELECTED)==0)
 			switch (de->fileType){
 				case TDirectoryEntry::BASIC			: ::SetTextColor(dc,FILE_MANAGER_COLOR_EXECUTABLE); break;
 				case TDirectoryEntry::CHAR_ARRAY	: ::SetTextColor(dc,0xff00ff); break;

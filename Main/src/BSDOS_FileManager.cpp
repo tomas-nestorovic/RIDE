@@ -118,7 +118,7 @@
 			// File
 			// . color distinction of Files based on their Type
 			const PCDirectoryEntry de=(PCDirectoryEntry)pdis->itemData;
-			if (!pdis->itemState&ODS_SELECTED)
+			if ((pdis->itemState&ODS_SELECTED)==0)
 				if (de->fileHasStdHeader)
 					// File with Header
 					switch (de->file.stdHeader.type){

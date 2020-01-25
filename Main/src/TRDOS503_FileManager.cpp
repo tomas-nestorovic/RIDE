@@ -59,7 +59,7 @@
 		const HDC dc=pdis->hDC;
 		const PCDirectoryEntry de=(PCDirectoryEntry)pdis->itemData;
 		// . color distinction of Files based on their Extension
-		if (!pdis->itemState&ODS_SELECTED)
+		if ((pdis->itemState&ODS_SELECTED)==0)
 			switch (de->extension){
 				case TDirectoryEntry::BASIC_PRG	: ::SetTextColor(dc,FILE_MANAGER_COLOR_EXECUTABLE); break;
 				case TDirectoryEntry::DATA_FIELD: ::SetTextColor(dc,0xff00ff); break;
