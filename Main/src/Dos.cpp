@@ -915,7 +915,7 @@ reportError:Utils::Information(buf);
 		return ERROR_SUCCESS;
 	}
 
-	TStdWinError CDos::__importData__(CFile *f,DWORD fileSize,bool skipBadSectors,CFatPath &rFatPath){
+	TStdWinError CDos::__importData__(CFile *f,DWORD fileSize,bool skipBadSectors,CFatPath &rFatPath) const{
 		// imports given File to the disk; returns Windows standard i/o error
 		LOG_ACTION(_T("data import"));
 		// - checking if there's enough empty space on the disk
@@ -983,7 +983,7 @@ reportError:Utils::Information(buf);
 						}else{ // error when accessing discovered Empty Sector
 							TStdWinError err;
 							if (skipBadSectors){
-								ModifyStdSectorStatus( item.chs, TSectorStatus::BAD ); // marking the Sector as Bad ...
+								const_cast<PDos>(this)->ModifyStdSectorStatus( item.chs, TSectorStatus::BAD ); // marking the Sector as Bad ...
 								if (fileSize>GetFreeSpaceInBytes(err))
 									err=ERROR_DISK_FULL;
 								else
@@ -997,20 +997,20 @@ reportError:Utils::Information(buf);
 		return LOG_ERROR(ERROR_WRITE_FAULT);
 	}
 
-	bool CDos::__getFirstEmptyHealthySector__(bool skipBadSectors,TPhysicalAddress &rOutChs){
-		// True <=> a well readable Sector that is reported Empty exists and has been output, otherwise False; the problem of finding an empty Sector is a approached by importing a single Byte to the disk
+	TStdWinError CDos::__getFirstEmptyHealthySector__(bool skipBadSectors,TPhysicalAddress &rOutChs) const{
+		// outputs a well readable Sector that is reported Empty (the problem of finding an empty Sector is a approached by importing a single Byte to the disk); returns Windows standard i/o error
 		BYTE buf;
 		CFatPath emptySector(this,sizeof(buf));
-		if (__importData__( 
+		if (const TStdWinError err=__importData__( 
 				&CMemFile(&buf,sizeof(buf)), sizeof(buf), skipBadSectors,
 				emptySector
-			)!=ERROR_SUCCESS
+			)
 		)
-			return false;
+			return err;
 		CFatPath::PCItem pItem; DWORD n;
 		emptySector.GetItems(pItem,n);
 		rOutChs=pItem->chs;
-		return true;
+		return ERROR_SUCCESS;
 	}
 
 	#define ERROR_MSG_CANNOT_PROCESS	_T("Cannot process \"%s\"")
