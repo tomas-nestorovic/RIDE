@@ -138,7 +138,7 @@
 		const HDC dc=pdis->hDC;
 		const PCDirectoryEntry de=(PCDirectoryEntry)pdis->itemData;
 		// . color distinction of Files based on their Extension; commented out as it doesn't look well
-/*		if (!pdis->itemState&ODS_SELECTED){
+/*		if ((pdis->itemState&ODS_SELECTED)==0){
 			DWORD extension=*(PDWORD)de->shortNameEntry.extension & 0xffffff;
 			::CharLower((PCHAR)&extension);
 			switch (extension){

@@ -294,7 +294,35 @@
 	}
 
 	CMSDOS7::TCluster32 CMSDOS7::__getFirstFreeHealthyCluster__() const{
-		// searches for and returns the first Cluster that's reported as Empty and is fully intact (i.e. is readable, and thus assumed also writeable); returns MSDOS7_FAT_CLUSTER_EOF is no free healthy Cluster can be found
+		// searches for and returns the first Cluster that's reported Empty and is fully intact (i.e. is readable, and thus assumed also writeable); returns MSDOS7_FAT_CLUSTER_EOF if no free healthy Cluster can be found
+		for( TPhysicalAddress chs; __getFirstEmptyHealthySector__(true,chs)==ERROR_SUCCESS; ){
+			// found an empty healthy Sector
+			// . checking whether the whole Cluster is healthy
+			const TCluster32 cluster=__logSector2cluster__( __fyzlog__(chs) );
+			bool healthy=true; // assumption
+			BYTE n;
+			for( TLogSector32 ls=__cluster2logSector__(cluster,n); n--; healthy&=__getHealthyLogicalSectorData__(ls++)!=nullptr );
+			// . if unhealthy, marking the Cluster as Bad in FAT and proceeding with the next Cluster
+			if (!healthy){
+				fat.SetClusterValue(cluster,MSDOS7_FAT_CLUSTER_BAD); // marking the Cluster as Bad
+				continue;
+			}
+			// . updating the information on first free Cluster
+			if (const PFsInfoSector fsInfoSector=fsInfo.GetSectorData()){
+				// for FAT32, using the FS-Info Sector
+				fsInfoSector->firstFreeCluster=cluster; // just in case the value was invalid
+				fsInfo.MarkSectorAsDirty();
+			}else
+				// for FAT32 without FS-Info Sector or for FAT16/FAT12, using the temporary information on first free Cluster
+				fat.firstFreeClusterTemp=cluster; // just in case the value was invalid
+			// . an empty healthy Cluster found - we are done
+			return cluster;
+		}
+		return MSDOS7_FAT_CLUSTER_EOF; // no free healhy Cluster found
+	}
+
+	TCylinder CMSDOS7::GetFirstCylinderWithEmptySector() const{
+		// determines and returns the first Cylinder which contains at least one Empty Sector
 		const TCluster32 clusterMax=MSDOS7_DATA_CLUSTER_FIRST+__getCountOfClusters__();
 		const PFsInfoSector fsInfoSector=fsInfo.GetSectorData();
 		TCluster32 result=MSDOS7_DATA_CLUSTER_FIRST;
@@ -306,40 +334,8 @@
 			// for FAT32 without FS-Info Sector or for FAT16/FAT12, using the temporary information on first free Cluster
 			if (fat.firstFreeClusterTemp<clusterMax)
 				result=fat.firstFreeClusterTemp;
-		while (result<clusterMax){
-			if (fat.GetClusterValue(result)==MSDOS7_FAT_CLUSTER_EMPTY){
-				// found an empty Cluster
-				// . checking it's readable (and thus assumed also writeable)
-				BYTE n;
-				for( TLogSector32 ls=__cluster2logSector__(result,n); n--; )
-					if (!__getHealthyLogicalSectorData__(ls++)){
-						// Sector not found - Cluster is unusable!
-						fat.SetClusterValue(result,MSDOS7_FAT_CLUSTER_BAD); // marking the Cluster as Bad
-						goto nextCluster;
-					}
-				// . updating the information on first free Cluster
-				if (fsInfoSector){
-					// for FAT32, using the FS-Info Sector
-					fsInfoSector->firstFreeCluster=result; // just in case the value was invalid
-					fsInfo.MarkSectorAsDirty();
-				}else
-					// for FAT32 without FS-Info Sector or for FAT16/FAT12, using the temporary information on first free Cluster
-					fat.firstFreeClusterTemp=result; // just in case the value was invalid
-				// . returning the result
-				return result;
-			}
-nextCluster:result++;
-		}
-		return MSDOS7_FAT_CLUSTER_EOF; // no free healhy Cluster found
-	}
-
-	TCylinder CMSDOS7::GetFirstCylinderWithEmptySector() const{
-		// determines and returns the first Cylinder which contains at least one Empty Sector
-		const TCluster32 c=__getFirstFreeHealthyCluster__();
-		if (c==MSDOS7_FAT_CLUSTER_EOF) // if no free healhy Cluster found ...
-			return -1; // ... formally returning the extreme Cylinder number to indicate that the disk is full
 		BYTE b;
-		return __logfyz__( __cluster2logSector__(c,b) ).cylinder;
+		return __logfyz__( __cluster2logSector__(result,b) ).cylinder;
 	}
 
 	#define FILE_ATTRIBUTE_LONGNAME			( FILE_ATTRIBUTE_READONLY | FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_VOLUME )
