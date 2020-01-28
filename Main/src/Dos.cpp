@@ -997,7 +997,7 @@ reportError:Utils::Information(buf);
 		return LOG_ERROR(ERROR_WRITE_FAULT);
 	}
 
-	TStdWinError CDos::__getFirstEmptyHealthySector__(bool skipBadSectors,TPhysicalAddress &rOutChs) const{
+	TStdWinError CDos::GetFirstEmptyHealthySector(bool skipBadSectors,TPhysicalAddress &rOutChs) const{
 		// outputs a well readable Sector that is reported Empty (the problem of finding an empty Sector is a approached by importing a single Byte to the disk); returns Windows standard i/o error
 		BYTE buf;
 		CFatPath emptySector(this,sizeof(buf));

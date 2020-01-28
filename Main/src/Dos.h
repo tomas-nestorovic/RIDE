@@ -309,7 +309,6 @@
 		LPCTSTR __exportFileData__(PCFile file,CFile *fOut,DWORD nMaxDataBytesToExport) const;
 		TStdWinError __importData__(CFile *fIn,DWORD fileSize,bool skipBadSectors,CFatPath &rFatPath) const;
 		TStdWinError __importFileData__(CFile *fIn,PFile fDesc,RCPathString fileName,RCPathString fileExt,DWORD fileSize,bool skipBadSectors,PFile &rFile,CFatPath &rFatPath);
-		TStdWinError __getFirstEmptyHealthySector__(bool skipBadSectors,TPhysicalAddress &rOutChs) const;
 		PFile __findFile__(PCFile directory,RCPathString fileName,RCPathString fileExt,PCFile ignoreThisFile) const;
 		TStdWinError __shiftFileContent__(const CFatPath &rFatPath,char nBytesShift) const;
 	public:
@@ -377,6 +376,7 @@
 		virtual bool GetFileFatPath(PCFile file,CFatPath &rFatPath) const=0;
 		virtual DWORD GetFreeSpaceInBytes(TStdWinError &rError) const;
 		virtual TCylinder GetFirstCylinderWithEmptySector() const;
+		TStdWinError GetFirstEmptyHealthySector(bool skipBadSectors,TPhysicalAddress &rOutChs) const;
 		// file system
 		virtual bool GetFileNameOrExt(PCFile file,PPathString pOutName,PPathString pOutExt) const=0;
 		CString GetFilePresentationNameAndExt(PCFile file) const;

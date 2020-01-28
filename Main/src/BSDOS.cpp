@@ -403,7 +403,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 		TPhysicalAddress chs;
 		for( CDirsSector::PSlot slot=dirsSector.GetSlots(); IsDirectory(slot); slot++ )
 			if (!slot->subdirExists)
-				if (__getFirstEmptyHealthySector__(true,chs)==ERROR_SUCCESS){
+				if (GetFirstEmptyHealthySector(true,chs)==ERROR_SUCCESS){
 					// . parsing the Name (can be an import name with escaped Spectrum tokens)
 					CPathString zxName,zxExt; LPCTSTR zxInfo;
 					TCHAR buf[16384];
@@ -564,7 +564,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 				return entry;
 		// - allocating a new Directory Sector and returning the first DirectoryEntry in it
 		TPhysicalAddress chs;
-		if (bsdos->__getFirstEmptyHealthySector__(true,chs)!=ERROR_SUCCESS)
+		if (bsdos->GetFirstEmptyHealthySector(true,chs)!=ERROR_SUCCESS)
 			return nullptr; // new healthy Sector couldn't be allocated
 		const TLogSector newLogSector=bsdos->__fyzlog__(chs);
 		CFatPath::PCItem pItem; DWORD n;

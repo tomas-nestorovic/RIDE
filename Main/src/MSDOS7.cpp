@@ -295,7 +295,7 @@
 
 	CMSDOS7::TCluster32 CMSDOS7::__getFirstFreeHealthyCluster__() const{
 		// searches for and returns the first Cluster that's reported Empty and is fully intact (i.e. is readable, and thus assumed also writeable); returns MSDOS7_FAT_CLUSTER_EOF if no free healthy Cluster can be found
-		for( TPhysicalAddress chs; __getFirstEmptyHealthySector__(true,chs)==ERROR_SUCCESS; ){
+		for( TPhysicalAddress chs; GetFirstEmptyHealthySector(true,chs)==ERROR_SUCCESS; ){
 			// found an empty healthy Sector
 			// . checking whether the whole Cluster is healthy
 			const TCluster32 cluster=__logSector2cluster__( __fyzlog__(chs) );

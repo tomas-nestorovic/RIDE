@@ -214,7 +214,7 @@
 			if (nSectorsAfterRetyping>de->nSectors){
 				// adding one more Sector to the end of the File to accommodate the NewOffset (approached by importing a single-Byte File to the disk)
 				CFatPath::TItem item;
-				if ( err=gdos->__getFirstEmptyHealthySector__(true,item.chs) )
+				if ( err=gdos->GetFirstEmptyHealthySector(true,item.chs) )
 					goto error;
 				fatPath.AddItem(&item); // interconnecting with existing Sectors of the File below
 			}
