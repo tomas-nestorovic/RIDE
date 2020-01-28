@@ -123,7 +123,7 @@
 		pAction->SetProgressTarget( vp.dos->formatBoot.nCylinders );
 		const auto sectorIdAndPositionIdentity=Utils::CByteIdentity();
 		TPhysicalAddress chs;
-		for( chs.cylinder=0; chs.cylinder<vp.dos->formatBoot.nCylinders; chs.cylinder++ )
+		for( chs.cylinder=vp.dos->GetFirstCylinderWithEmptySector(); chs.cylinder<vp.dos->formatBoot.nCylinders; chs.cylinder++ )
 			for( chs.head=0; chs.head<vp.dos->formatBoot.nHeads; chs.head++ ){
 				if (pAction->IsCancelled()) return ERROR_CANCELLED;
 				// . getting the list of standard Sectors
@@ -145,8 +145,8 @@
 					if (statuses[s]==CDos::TSectorStatus::EMPTY){
 						chs.sectorId=bufferId[s];
 						if (!image->GetHealthySectorData(chs)){
-							TCHAR buf[120], bufId[50];
-							::wsprintf( buf, _T("On Track %d, empty sector with %s is bad but is not marked so in the FAT."), chs.GetTrackNumber(vp.dos->formatBoot.nHeads), chs.sectorId.ToString(bufId) );
+							TCHAR buf[120];
+							::wsprintf( buf, _T("On Track %d, empty sector with %s is bad but is not marked so in the FAT."), chs.GetTrackNumber(vp.dos->formatBoot.nHeads), (LPCTSTR)chs.sectorId.ToString() );
 							switch (vp.ConfirmFix(buf,_T("Future data loss at stake if not marked so."))){
 								case IDCANCEL:
 									return pAction->TerminateWithError(ERROR_CANCELLED);

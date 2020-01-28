@@ -68,6 +68,7 @@ typedef const int *PCINT;
 #include "Image.h"
 #include "DialogFormatting.h"
 #include "DialogUnformatting.h"
+#include "DialogVerification.h"
 #include "ImageFloppy.h"
 #include "ImageRaw.h"
 #include "MGT.h"
@@ -88,7 +89,6 @@ typedef const int *PCINT;
 #include "DosUnknown.h"
 #include "DialogNewImage.h"
 #include "DialogEmptySpaceFilling.h"
-#include "DialogVerification.h"
 #include "Editor.h"
 
 #define DLL_UXTHEME		_T("UxTheme.dll")
