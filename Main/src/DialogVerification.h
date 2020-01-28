@@ -2,7 +2,7 @@
 #define VERIFICATIONDIALOG_H
 
 	struct TVerificationFunctions sealed{
-		static UINT AFX_CDECL FloppyCrossedFilesVerification_thread(PVOID pCancelableAction);
+		static UINT AFX_CDECL FloppyCrossLinkedFilesVerification_thread(PVOID pCancelableAction);
 		static UINT AFX_CDECL FloppyLostAllocationUnitsVerification_thread(PVOID pCancelableAction);
 
 		static UINT AFX_CDECL WholeDiskSurfaceVerification_thread(PVOID pCancelableAction);

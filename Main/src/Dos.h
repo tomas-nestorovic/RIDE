@@ -154,6 +154,7 @@
 				DWORD value;
 				TPhysicalAddress chs;
 			} *PCItem;
+			typedef TItem *PItem;
 
 			enum TError:BYTE{
 				OK				=0,
@@ -179,6 +180,7 @@
 
 			bool AddItem(PCItem pItem);
 			LPCTSTR GetItems(PCItem &rBuffer,DWORD &rnItems) const;
+			LPCTSTR GetItems(PItem &rBuffer,DWORD &rnItems) const;
 			DWORD GetNumberOfItems() const;
 			LPCTSTR GetErrorDesc() const;
 		};

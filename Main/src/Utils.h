@@ -93,6 +93,8 @@ namespace Utils{
 	BYTE AbortRetryIgnore(TStdWinError causeOfError,UINT defaultButton);
 	bool RetryCancel(LPCTSTR text);
 	bool RetryCancel(TStdWinError causeOfError);
+	BYTE CancelRetryContinue(LPCTSTR text,UINT defaultButton);
+	BYTE CancelRetryContinue(LPCTSTR text,TStdWinError causeOfError,UINT defaultButton,LPCTSTR consequence=nullptr);
 	void Warning(LPCTSTR text);
 	bool EnableDlgControl(HWND hDlg,WORD controlId,bool enabled);
 	bool EnableDlgControls(HWND hDlg,PCWORD buttonIds,bool enabled);

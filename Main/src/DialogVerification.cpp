@@ -115,6 +115,127 @@
 
 
 
+	#define WARNING_CROSSED_FILES	_T("Kept cross-linked, changes in one will affect the other")
+
+	UINT AFX_CDECL TVerificationFunctions::FloppyCrossLinkedFilesVerification_thread(PVOID pCancelableAction){
+		// thread to find and separate cross-linked Files on current volume
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
+		const CVerifyVolumeDialog::TParams &vp=*(CVerifyVolumeDialog::TParams *)pAction->GetParams();
+		// - checking preconditions (usable only for floppies)
+		if (vp.dos->formatBoot.nCylinders>FDD_CYLINDERS_MAX
+			||
+			vp.dos->formatBoot.nHeads>2
+			||
+			vp.dos->formatBoot.clusterSize!=1
+		)
+			return pAction->TerminateWithError(ERROR_NOT_SUPPORTED);
+		// - verifying the volume
+		const PImage image=vp.dos->image;
+		pAction->SetProgressTarget( vp.dos->formatBoot.nCylinders );
+		CMapWordToPtr sectorOccupation[FDD_CYLINDERS_MAX*2];
+		CFileManagerView::TFileList bfsFiles; // breadth first search, searching through Directories in breadth
+		CFileManagerView::TFileList visitedDirectories;
+		for( bfsFiles.AddTail((CDos::PFile)DOS_DIR_ROOT); bfsFiles.GetCount()>0; ){
+			if (pAction->IsCancelled()) return ERROR_CANCELLED;
+			const CDos::PFile file=bfsFiles.RemoveHead();
+			// . checking that the File's FatPath is unique
+			const CDos::CFatPath fatPath( vp.dos, file );
+			CDos::CFatPath::PItem pItem; DWORD nItems;
+			if (const LPCTSTR err=fatPath.GetItems(pItem,nItems))
+				return pAction->TerminateWithError(ERROR_OPEN_FAILED); // problems in FatPath must be taken care for elsewhere
+			if (!nItems)
+				continue; // makes no sense to test a File that occupies no space on the disk
+			const TCylinder firstFileCylinder=pItem->chs.cylinder;
+			bool fatModified=false; // assumption (the File is not cross-linked)
+			for( bool askedToAutoFixProblem=false; nItems--; pItem++ ){
+				// : checking preconditions
+				RCPhysicalAddress chs=pItem->chs;
+				if (chs.sectorId.cylinder!=chs.cylinder
+					||
+					chs.sectorId.side!=vp.dos->sideMap[chs.head]
+					||
+					chs.sectorId.sector<vp.dos->properties->firstSectorNumber || vp.dos->properties->firstSectorNumber+vp.dos->formatBoot.nSectors<=chs.sectorId.sector
+					||
+					chs.sectorId.lengthCode!=vp.dos->formatBoot.sectorLengthCode
+				)
+					return pAction->TerminateWithError(ERROR_NOT_SUPPORTED);
+				// : verifying that the Sector is not used by another File
+				const TTrack track=chs.GetTrackNumber();
+				CDos::PFile sectorOccupiedByFile;
+				if (sectorOccupation[track].Lookup( chs.sectorId.sector, sectorOccupiedByFile )){
+					// | asking whether or not to fix this problem
+					if (!askedToAutoFixProblem){
+						CString msg;
+						msg.Format( _T("%s \"%s\" is cross-linked with %s \"%s\""), vp.dos->IsDirectory(file)?_T("Directory"):_T("File"), (LPCTSTR)vp.dos->GetFilePresentationNameAndExt(file), vp.dos->IsDirectory(sectorOccupiedByFile)?_T("directory"):_T("file"), (LPCTSTR)vp.dos->GetFilePresentationNameAndExt(sectorOccupiedByFile) );
+						switch (vp.ConfirmFix( msg, WARNING_CROSSED_FILES )){
+							case IDCANCEL:
+								return pAction->TerminateWithError(ERROR_CANCELLED);
+							case IDNO:
+								goto nextFile;
+						}
+						askedToAutoFixProblem=true; // don't ask for the rest of this File's Sectors
+					}
+					// | reading the cross-linked Sector
+					PCSectorData crossLinkedSectorData;
+					while (!( crossLinkedSectorData=image->GetHealthySectorData(chs) )){
+						CString msg;
+						msg.Format( _T("Sector %s in \"%s\" %s is unreadable"), (LPCTSTR)chs.sectorId.ToString(), (LPCTSTR)vp.dos->GetFilePresentationNameAndExt(file), vp.dos->IsDirectory(file)?_T("directory"):_T("file") );
+						switch (Utils::CancelRetryContinue( msg, ::GetLastError(), MB_DEFBUTTON2, WARNING_CROSSED_FILES )){
+							case IDCANCEL:
+								return pAction->TerminateWithError(ERROR_CANCELLED);
+							case IDCONTINUE:
+								goto nextFile;
+						}
+					}
+					// | finding an empty healthy Sector in the volume
+					while (const TStdWinError err=vp.dos->GetFirstEmptyHealthySector(true,pItem->chs)){
+						CString msg;
+						msg.Format( _T("\"%s\" cannot be fixed"), (LPCTSTR)vp.dos->GetFilePresentationNameAndExt(file) );
+						switch (Utils::CancelRetryContinue( msg, err, MB_DEFBUTTON1 )){
+							case IDCANCEL:
+								return pAction->TerminateWithError(ERROR_CANCELLED);
+							case IDCONTINUE:
+								goto nextFile;
+						}
+					}
+					// | copying data to the found empty healthy Sector
+					::memcpy(	image->GetHealthySectorData(pItem->chs),
+								crossLinkedSectorData,
+								vp.dos->formatBoot.sectorLength
+							);
+					image->MarkSectorAsDirty(pItem->chs);
+					fatModified=true;
+				}
+				// : recording that given Sector is used by current File
+				sectorOccupation[track].SetAt( chs.sectorId.sector, file );
+			}
+			// . writing File's Modified FatPath back to FAT
+			if (fatModified)
+				vp.dos->ModifyFileFatPath( file, fatPath ); // all FAT Sectors by previous actions guaranteed to be readable
+nextFile:	// . if the File is actually a Directory, processing it recurrently
+			if (vp.dos->IsDirectory(file)){
+				if (const auto pdt=vp.dos->BeginDirectoryTraversal(file))
+					while (const CDos::PFile subfile=pdt->GetNextFileOrSubdir())
+						switch (pdt->entryType){
+							case CDos::TDirectoryTraversal::SUBDIR:
+								if (visitedDirectories.Find(subfile)!=nullptr) // the Subdirectory has already been processed
+									continue; // not processing it again
+								//fallthrough
+							case CDos::TDirectoryTraversal::FILE:
+								bfsFiles.AddTail(subfile);
+								break;
+							case CDos::TDirectoryTraversal::WARNING:
+								return pAction->TerminateWithError(pdt->warning);
+						}
+				visitedDirectories.AddTail(file);
+			}
+			// . informing on progress
+			pAction->UpdateProgress( firstFileCylinder );
+		}
+		pAction->UpdateProgressFinished();
+		return ERROR_SUCCESS;
+	}
+
 	UINT AFX_CDECL TVerificationFunctions::WholeDiskSurfaceVerification_thread(PVOID pCancelableAction){
 		// thread to verify if unreadable Empty Sectors on all volume Cylinders are marked in allocation table as Bad
 		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;

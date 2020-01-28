@@ -88,6 +88,12 @@
 		return GetErrorDesc();
 	}
 
+	LPCTSTR CDos::CFatPath::GetItems(PItem &rBuffer,DWORD &rnItems) const{
+		// retrieves pointer to the first Item in the Buffer and their number; returns textual description of this FatPath's error (or Null if error-less)
+		rBuffer=buffer, rnItems=GetNumberOfItems();
+		return GetErrorDesc();
+	}
+
 	DWORD CDos::CFatPath::GetNumberOfItems() const{
 		// returns the NumberOfItems currenty in the FileFatPath
 		return nItems;

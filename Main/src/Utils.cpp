@@ -567,6 +567,23 @@ namespace Utils{
 		return RetryCancel( __formatErrorCode__(bufCause,causeOfError) );
 	}
 
+	BYTE CancelRetryContinue(LPCTSTR text,UINT defaultButton){
+		// shows an cancel-retry-continue question
+		//if (!hParent) hParent=::GetActiveWindow();
+		LOG_DIALOG_DISPLAY(text);
+		return LOG_DIALOG_RESULT( ::MessageBox(0,text,_T("Question"),MB_ICONEXCLAMATION|MB_TASKMODAL|MB_CANCELTRYCONTINUE|defaultButton) );
+	}
+	BYTE CancelRetryContinue(LPCTSTR text,TStdWinError causeOfError,UINT defaultButton,LPCTSTR consequence){
+		// shows an cancel-retry-continue question along with its Cause
+		TCHAR bufCause[ERROR_BUFFER_SIZE], buf[2000];
+		const int n=::wsprintf( buf, ERROR_BECAUSE, text, __formatErrorCode__(bufCause,causeOfError) );
+		if (consequence)
+			::wsprintf( buf+n, ERROR_CONSEQUENCE, consequence );
+		return CancelRetryContinue(buf,defaultButton);
+	}
+
+
+
 	void Warning(LPCTSTR text){
 		// shows Textual warning
 		//if (!hParent) hParent=::GetActiveWindow();
