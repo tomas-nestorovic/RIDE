@@ -207,6 +207,11 @@
 		return true;
 	}
 
+	bool CTRDOS503::ModifyFileFatPath(PFile file,const CFatPath &rFatPath){
+		// True <=> a error-free FatPath of given File successfully written, otherwise False
+		return false; // once set, the FatPath cannot be modified
+	}
+
 	bool CTRDOS503::GetFileNameOrExt(PCFile file,PPathString pOutName,PPathString pOutExt) const{
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
 		if (file==ZX_DIR_ROOT){

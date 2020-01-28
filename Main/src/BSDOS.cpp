@@ -221,6 +221,24 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 		return __setLogicalSectorFatItem__( __fyzlog__(chs), value );
 	}
 
+	bool CBSDOS308::ModifyFileFatPath(PFile file,const CFatPath &rFatPath){
+		// True <=> a error-free FatPath of given File successfully written, otherwise False
+		CFatPath::PCItem pItem; DWORD nItems;
+		if (rFatPath.GetItems(pItem,nItems)) // if FatPath erroneous ...
+			return false; // ... we are done
+		const PDirectoryEntry de=(PDirectoryEntry)file;
+		if (DWORD fileSize=de->file.dataLength){
+			TLogSector ls = de->file.firstSector = __fyzlog__(pItem->chs);
+			for( WORD h; --nItems; ls=h,fileSize-=BSDOS_SECTOR_LENGTH_STD ) // all Sectors but the last one are Occupied in FatPath
+				__setLogicalSectorFatItem__( ls, TFatValue(true,true,h=__fyzlog__((++pItem)->chs)) ); // no need to test FAT Sector existence (already tested above)
+			__setLogicalSectorFatItem__(ls, // terminating the FatPath in FAT
+										TFatValue( true, false, fileSize )
+									);
+		}else // zero-length Files are in NOT in the FAT
+			de->file.firstSector=boot.GetSectorData()->dirsLogSector; // some sensible value
+		return true;
+	}
+
 	BYTE CBSDOS308::__getFatChecksum__(BYTE fatCopy) const{
 		// computes and returns the checksum of specified FAT copy
 		if (const PCBootSector bootSector=boot.GetSectorData()){
@@ -875,21 +893,8 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 		CFatPath fatPath( this, fileSize );
 		if (const TStdWinError err=__importFileData__( fIn, &tmp, zxName, uftExt, fileSize, true, rFile, fatPath ))
 			return err;
-		// - finishing initialization of DirectoryEntry of successfully imported File
-		const PDirectoryEntry de=(PDirectoryEntry)rFile;
-			// . FirstLogicalSector
-			CFatPath::PCItem item; DWORD n;
-			fatPath.GetItems(item,n);
-			TLogSector ls = de->file.firstSector = __fyzlog__(item->chs);
 		// - recording the FatPath in FAT
-		if (fileSize){ // only NON-zero-length Files are in FAT
-			for( WORD h; --n; ls=h,fileSize-=BSDOS_SECTOR_LENGTH_STD ) // all Sectors but the last one are Occupied in FatPath
-				__setLogicalSectorFatItem__( ls, TFatValue(true,true,h=__fyzlog__((++item)->chs)) ); // no need to test FAT Sector existence (already tested above)
-			__setLogicalSectorFatItem__(ls, // terminating the FatPath in FAT
-										TFatValue( true, false, fileSize )
-									);
-		}else
-			de->file.firstSector=boot.GetSectorData()->dirsLogSector; // some sensible value
+		ModifyFileFatPath( rFile, fatPath );
 		// - successfully imported to the Image
 		return ERROR_SUCCESS;
 	}

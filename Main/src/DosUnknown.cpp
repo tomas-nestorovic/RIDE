@@ -69,6 +69,10 @@
 		// True <=> FatPath of given File (even an erroneous FatPath) successfully retrieved, otherwise False
 		return false; //nop (doesn't have an allocation table)
 	}
+	bool CUnknownDos::ModifyFileFatPath(PFile,const CFatPath &){
+		// True <=> a error-free FatPath of given File successfully written, otherwise False
+		return false; //nop (doesn't have an allocation table)
+	}
 	DWORD CUnknownDos::GetFreeSpaceInBytes(TStdWinError &rError) const{
 		// computes and returns the empty space on disk
 		rError=ERROR_SUCCESS;
@@ -120,7 +124,7 @@
 
 	TStdWinError CUnknownDos::CreateUserInterface(HWND hTdi){
 		// creates DOS-specific Tabs in TDI; returns Windows standard i/o error
-		CDos::CreateUserInterface(hTdi); // guaranteed to always return ERROR_SUCCESS
+		__super::CreateUserInterface(hTdi); // guaranteed to always return ERROR_SUCCESS
 		CTdiCtrl::InsertTab( hTdi, 0, TRACK_MAP_TAB_LABEL, &trackMap.tab, true, nullptr, nullptr );
 		return ERROR_SUCCESS;
 	}

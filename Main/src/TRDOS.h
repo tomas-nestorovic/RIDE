@@ -160,6 +160,7 @@
 		bool GetSectorStatuses(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PSectorStatus buffer) const override;
 		bool ModifyStdSectorStatus(RCPhysicalAddress,TSectorStatus) override;
 		bool GetFileFatPath(PCFile file,CFatPath &rFatPath) const override;
+		bool ModifyFileFatPath(PFile file,const CFatPath &rFatPath) override;
 		DWORD GetFreeSpaceInBytes(TStdWinError &rError) const override;
 		// file system
 		bool GetFileNameOrExt(PCFile file,PPathString pOutName,PPathString pOutExt) const override;

@@ -200,6 +200,23 @@
 		return true; // FatPath (with or without error) successfully extracted from FAT
 	}
 
+	bool CMDOS2::ModifyFileFatPath(PFile file,const CFatPath &rFatPath){
+		// True <=> a error-free FatPath of given File successfully written, otherwise False
+		CFatPath::PCItem pItem; DWORD nItems;
+		if (rFatPath.GetItems(pItem,nItems)) // if FatPath erroneous ...
+			return false; // ... we are done
+		const PDirectoryEntry de=(PDirectoryEntry)file;
+		TLogSector ls = de->firstLogicalSector = __fyzlog__(pItem->chs);
+		for( WORD h; --nItems; ls=h ) // all Sectors but the last one are Occupied in FatPath
+			__setLogicalSectorFatItem__( ls, h=__fyzlog__((++pItem)->chs) ); // no need to test FAT Sector existence (already tested above)
+		__setLogicalSectorFatItem__(ls, // terminating the FatPath in FAT
+									pItem->value==TSectorStatus::RESERVED
+										? MDOS2_FAT_SECTOR_RESERVED
+										: pItem->value+MDOS2_FAT_SECTOR_EOF
+								);
+		return true;
+	}
+
 	bool CMDOS2::GetFileNameOrExt(PCFile file,PPathString pOutName,PPathString pOutExt) const{
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
 		if (file==ZX_DIR_ROOT){
@@ -357,20 +374,8 @@
 		CFatPath fatPath(this,fileSize);
 		if (const TStdWinError err=__importFileData__( f, &tmp, zxName, tmp.extension, fileSize, true, rFile, fatPath ))
 			return err;
-		// - finishing initialization of DirectoryEntry of successfully imported File
-		const PDirectoryEntry de=(PDirectoryEntry)rFile;
-			// . FirstLogicalSector
-			CFatPath::PCItem item; DWORD n;
-			fatPath.GetItems(item,n);
-			TLogSector ls = de->firstLogicalSector = __fyzlog__(item->chs);
 		// - recording the FatPath in FAT
-		for( WORD h; --n; ls=h ) // all Sectors but the last one are Occupied in FatPath
-			__setLogicalSectorFatItem__( ls, h=__fyzlog__((++item)->chs) ); // no need to test FAT Sector existence (already tested above)
-		__setLogicalSectorFatItem__(ls, // terminating the FatPath in FAT
-									item->value==TSectorStatus::RESERVED
-										? MDOS2_FAT_SECTOR_RESERVED
-										: item->value+MDOS2_FAT_SECTOR_EOF
-								);
+		ModifyFileFatPath( rFile, fatPath );
 		// - File successfully imported to Image
 		return ERROR_SUCCESS;
 	}

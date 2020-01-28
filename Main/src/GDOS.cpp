@@ -151,6 +151,22 @@
 		return result;
 	}
 
+	bool CGDOS::ModifyFileFatPath(PFile file,const CFatPath &rFatPath){
+		// True <=> a error-free FatPath of given File successfully written, otherwise False
+		CFatPath::PCItem pItem; DWORD nItems;
+		if (rFatPath.GetItems(pItem,nItems)) // if FatPath erroneous ...
+			return false; // ... we are done
+		const PDirectoryEntry de=(PDirectoryEntry)file;
+		TSectorInfo *psi=&de->firstSector;
+		while (nItems--){
+			psi->__setChs__(pItem->chs);
+			de->sectorAllocationBitmap.SetSectorAllocation(pItem->chs,true);
+			psi=&((PGdosSectorData)image->GetHealthySectorData(pItem++->chs))->nextSector;
+		}
+		psi->__setEof__();
+		return true;
+	}
+
 	bool CGDOS::ModifyStdSectorStatus(RCPhysicalAddress chs,TSectorStatus status){
 		// True <=> the Status of the specified DOS-standard Sector successfully changed, otherwise False
 		bool result=true; // assumption (Statuses of all Sectors successfully modified)
@@ -544,13 +560,7 @@
 				( (PGdosSectorData)image->GetHealthySectorData(item->chs) )->stdZxType=de->etc.stdZxType; // creating the standard data
 			}
 			// . initializing File's SectorAllocationBitmap and interconnecting Sectors that contain File's data
-			TSectorInfo *psi=&de->firstSector;
-			while (n--){
-				psi->__setChs__(item->chs);
-				de->sectorAllocationBitmap.SetSectorAllocation(item->chs,true);
-				psi=&((PGdosSectorData)image->GetHealthySectorData(item++->chs))->nextSector;
-			}
-			psi->__setEof__();
+			ModifyFileFatPath( de, fatPath );
 		// - File successfully imported to Image
 		return ERROR_SUCCESS;
 	}

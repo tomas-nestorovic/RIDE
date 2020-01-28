@@ -97,6 +97,12 @@
 			}
 		return false;
 	}
+
+	bool CSpectrumDos::CTape::ModifyFileFatPath(PFile file,const CFatPath &rFatPath){
+		// True <=> a error-free FatPath of given File successfully written, otherwise False
+		return false; // operation not applicable for a Tape
+	}
+
 	DWORD CSpectrumDos::CTape::GetFreeSpaceInBytes(TStdWinError &rError) const{
 		// computes and returns the empty space on disk
 		rError=ERROR_SUCCESS;

@@ -267,6 +267,24 @@
 		return true; // FatPath (with or without error) successfully extracted from FAT
 	}
 
+	bool CMSDOS7::ModifyFileFatPath(PFile file,const CFatPath &rFatPath){
+		// True <=> a error-free FatPath of given File successfully written, otherwise False
+		CFatPath::PCItem pItem; DWORD nItems;
+		if (rFatPath.GetItems(pItem,nItems)) // if FatPath erroneous ...
+			return false; // ... we are done
+		const PDirectoryEntry de=(PDirectoryEntry)file;
+		if (!de->shortNameEntry.size) // zero-length Files are in NOT in the FAT
+			return true;
+		TCluster32 cluster0=__logSector2cluster__(__fyzlog__( pItem++->chs ));
+		de->shortNameEntry.__setFirstCluster__(cluster0);
+		for( TCluster32 c; --nItems; cluster0=c ) // all Sectors but the last one are Occupied in FatPath
+			fat.SetClusterValue(cluster0, // no need to test readability of FAT Sector - tested by the caller
+								c=__logSector2cluster__(__fyzlog__(pItem++->chs))
+							);
+		fat.SetClusterValue( cluster0, MSDOS7_FAT_CLUSTER_EOF ); // terminating the File's FatPath in FAT
+		return true;
+	}
+
 	DWORD CMSDOS7::GetFreeSpaceInBytes(TStdWinError &rError) const{
 		// computes and returns the empty space on disk
 		rError=ERROR_SUCCESS;
@@ -970,13 +988,7 @@
 			fat.nFreeClustersTemp
 				-=(n+nSectorsInCluster-1)/nSectorsInCluster; // count of Directory Sectors rounded up to whole Clusters
 		// - marking newly occupied Clusters in the FAT
-		if (fileSize){ // only NON-zero-length Files are in FAT
-			for( DWORD h; --n; cluster0=h ) // all Sectors but the last one are Occupied in FatPath
-				fat.SetClusterValue(cluster0, // no need to test readability of FAT Sector - tested already above
-									h=__logSector2cluster__(__fyzlog__((++item)->chs))
-								);
-			fat.SetClusterValue( cluster0, MSDOS7_FAT_CLUSTER_EOF ); // terminating the File's FatPath in FAT
-		}
+		ModifyFileFatPath( de, fatPath );
 		// - File successfully imported to Image
 		return ERROR_SUCCESS;
 	}
