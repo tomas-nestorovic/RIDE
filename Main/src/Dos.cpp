@@ -656,7 +656,7 @@ reportError:Utils::Information(buf);
 				bmac.AddAction( rd.params.verificationFunctions.fnBootSector, &rd.params, _T("Verifying boot sector") );
 			if (rd.params.verifyFat){
 				bmac.AddAction( rd.params.verificationFunctions.fnFatValues, &rd.params, _T("Verifying FAT") );
-				bmac.AddAction( rd.params.verificationFunctions.fnFatCrossedFiles, &rd.params, _T("Searching for crossed files") );
+				bmac.AddAction( rd.params.verificationFunctions.fnFatCrossedFiles, &rd.params, _T("Searching for cross-linked files") );
 				bmac.AddAction( rd.params.verificationFunctions.fnFatLostAllocUnits, &rd.params, _T("Searching for lost allocation units") );
 			}
 			if (rd.params.verifyFilesystem)

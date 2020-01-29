@@ -160,9 +160,8 @@
 				)
 					return pAction->TerminateWithError(ERROR_NOT_SUPPORTED);
 				// : verifying that the Sector is not used by another File
-				const TTrack track=chs.GetTrackNumber();
 				CDos::PFile sectorOccupiedByFile;
-				if (sectorOccupation[track].Lookup( chs.sectorId.sector, sectorOccupiedByFile )){
+				if (sectorOccupation[chs.GetTrackNumber()].Lookup( chs.sectorId.sector, sectorOccupiedByFile )){
 					// | asking whether or not to fix this problem
 					if (!askedToAutoFixProblem){
 						CString msg;
@@ -198,6 +197,9 @@
 								goto nextFile;
 						}
 					}
+					// | reserving the found empty healthy Sector by marking it Bad so that it's excluded from available empty Sectors
+					if (!vp.dos->ModifyStdSectorStatus( pItem->chs, CDos::TSectorStatus::BAD ))
+						return pAction->TerminateWithError(ERROR_NOT_SUPPORTED); // DOS unable to reserve the above Sector
 					// | copying data to the found empty healthy Sector
 					::memcpy(	image->GetHealthySectorData(pItem->chs),
 								crossLinkedSectorData,
@@ -207,7 +209,7 @@
 					fatModified=true;
 				}
 				// : recording that given Sector is used by current File
-				sectorOccupation[track].SetAt( chs.sectorId.sector, file );
+				sectorOccupation[chs.GetTrackNumber()].SetAt( chs.sectorId.sector, file ); // PhysicalAddress might have been fixed above, hence using actual values refered by Chs
 			}
 			// . writing File's Modified FatPath back to FAT
 			if (fatModified)
