@@ -232,8 +232,9 @@
 
 		CSpectrumBase(PImage image,PCFormat pFormatBoot,TTrackScheme trackAccessScheme,PCProperties properties,UINT nResId,CSpectrumBaseFileManagerView *pFileManager,TGetFileSizeOptions getFileSizeDefaultOption);
 		~CSpectrumBase();
-
-		CString GetFileExportNameAndExt(PCFile file,bool shellCompliant) const;
+	public:
+		CString GetFilePresentationNameAndExt(PCFile file) const override;
+		CString GetFileExportNameAndExt(PCFile file,bool shellCompliant) const override;
 		DWORD GetAttributes(PCFile file) const override;
 		TCmdResult ProcessCommand(WORD cmd) override;
 	};

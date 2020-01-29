@@ -152,6 +152,14 @@
 
 
 
+	CString CSpectrumBase::GetFilePresentationNameAndExt(PCFile file) const{
+		// returns File name concatenated with File extension for presentation of the File to the user
+		CPathString name,ext;
+		GetFileNameOrExt( file, &name, &ext );
+		TCHAR buf[1024];
+		return TZxRom::ZxToAscii( name, ((name+='.')+=ext).GetLength(), buf );
+	}
+
 	CString CSpectrumBase::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
 		// returns File name concatenated with File extension for export of the File to another Windows application (e.g. Explorer)
 		if (shellCompliant){
