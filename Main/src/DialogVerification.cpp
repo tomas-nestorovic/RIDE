@@ -138,7 +138,7 @@
 		for( bfsFiles.AddTail((CDos::PFile)DOS_DIR_ROOT); bfsFiles.GetCount()>0; ){
 			if (pAction->IsCancelled()) return ERROR_CANCELLED;
 			const CDos::PFile file=bfsFiles.RemoveHead();
-			// . checking that the File's FatPath is unique
+			// . retrieving File's FatPath
 			const CDos::CFatPath fatPath( vp.dos, file );
 			CDos::CFatPath::PItem pItem; DWORD nItems;
 			if (const LPCTSTR err=fatPath.GetItems(pItem,nItems))
@@ -146,8 +146,26 @@
 			if (!nItems)
 				continue; // makes no sense to test a File that occupies no space on the disk
 			const TCylinder firstFileCylinder=pItem->chs.cylinder;
+			// . the changes in FAT must be transactional - all or nothing!
+			const struct TFatTransaction sealed{
+				const PDos dos;
+				const CDos::CFatPath &rFatPath;
+				TFatTransaction(PDos dos,const CDos::CFatPath &rFatPath)
+					: dos(dos) , rFatPath(rFatPath) {
+					CDos::CFatPath::PItem pItem; DWORD nItems;
+					for( rFatPath.GetItems(pItem,nItems); nItems--; pItem++->value=0 ); // "0" = Sector isn't cross-linked
+				}
+				~TFatTransaction(){
+					CDos::CFatPath::PItem pItem; DWORD nItems;
+					for( rFatPath.GetItems(pItem,nItems); nItems--; pItem++ )
+						if (pItem->value) // if Sector cross-linked ...
+							dos->ModifyStdSectorStatus( pItem->chs, CDos::TSectorStatus::EMPTY ); // ... reverting its reservation, setting it Empty again
+				}
+			} fatTransaction( vp.dos, fatPath );
+			// . checking that the File's FatPath is unique
 			bool fatModified=false; // assumption (the File is not cross-linked)
 			for( bool askedToAutoFixProblem=false; nItems--; pItem++ ){
+				if (pAction->IsCancelled()) return ERROR_CANCELLED;
 				// : checking preconditions
 				RCPhysicalAddress chs=pItem->chs;
 				if (chs.sectorId.cylinder!=chs.cylinder
@@ -198,7 +216,9 @@
 						}
 					}
 					// | reserving the found empty healthy Sector by marking it Bad so that it's excluded from available empty Sectors
-					if (!vp.dos->ModifyStdSectorStatus( pItem->chs, CDos::TSectorStatus::BAD ))
+					if (vp.dos->ModifyStdSectorStatus( pItem->chs, CDos::TSectorStatus::BAD ))
+						pItem->value=1; // Sector succesfully reserved
+					else
 						return pAction->TerminateWithError(ERROR_NOT_SUPPORTED); // DOS unable to reserve the above Sector
 					// | copying data to the found empty healthy Sector
 					::memcpy(	image->GetHealthySectorData(pItem->chs),
@@ -209,11 +229,13 @@
 					fatModified=true;
 				}
 				// : recording that given Sector is used by current File
-				sectorOccupation[chs.GetTrackNumber()].SetAt( chs.sectorId.sector, file ); // PhysicalAddress might have been fixed above, hence using actual values refered by Chs
+				sectorOccupation[chs.GetTrackNumber()].SetAt( chs.sectorId.sector, file ); // PhysicalAddress might have been fixed above, hence using actual values refered by pItem
 			}
 			// . writing File's Modified FatPath back to FAT
-			if (fatModified)
+			if (fatModified){
 				vp.dos->ModifyFileFatPath( file, fatPath ); // all FAT Sectors by previous actions guaranteed to be readable
+				for( fatPath.GetItems(pItem,nItems); nItems--; pItem++->value=0 ); // "0" = Sector isn't cross-linked
+			}
 nextFile:	// . if the File is actually a Directory, processing it recurrently
 			if (vp.dos->IsDirectory(file)){
 				if (const auto pdt=vp.dos->BeginDirectoryTraversal(file))
