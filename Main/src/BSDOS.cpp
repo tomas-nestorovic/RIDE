@@ -860,41 +860,58 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 		__parseFat32LongName__(	::lstrcpy(buf,nameAndExtension), zxName, zxExt, zxInfo );
 		zxName.TrimToLength(ZX_TAPE_FILE_NAME_LENGTH_MAX);
 		zxExt.TrimToLength(1);
-		// - only Files are allowed as items in root Subdirectories
+		// - importing
 		TUniFileType uts;
-		__importFileInformation__( zxInfo, uts );
-		if (uts==TUniFileType::SUBDIRECTORY)
-			return ERROR_CANNOT_MAKE;
-		// - initializing the description of File to import
-		TDirectoryEntry tmp( this, 0 );
-			// . import information
-			DWORD dw;
-			__importFileInformation__( zxInfo, uts, tmp.file.stdHeader.params, dw, tmp.file.dataFlag );
-			// . name and extension
-			tmp.fileHasStdHeader=uts!=TUniFileType::HEADERLESS; // and ChangeFileNameAndExt called below by __importFileData__
-			// . size
-			tmp.file.stdHeader.length = dw ? dw : fileSize;
-			tmp.file.dataLength=fileSize;
-			// . first logical Sector
-			//nop (see below)
-		// - changing the Extension according to the "universal" type valid across ZX platforms (as TR-DOS File "Picture.C" should be take on the name "Picture.B" under MDOS)
-		TCHAR uftExt;
-		switch (uts){
-			case TUniFileType::PROGRAM	:
-			case TUniFileType::NUMBER_ARRAY:
-			case TUniFileType::CHAR_ARRAY:
-			case TUniFileType::BLOCK	: uftExt=uts; break;
-			case TUniFileType::SCREEN	: uftExt=TUniFileType::BLOCK; break;
-			default:
-				uftExt= zxExt.GetLength() ? *zxExt : TZxRom::TFileType::HEADERLESS;
-				break;
+		const int n=__importFileInformation__( zxInfo, uts );
+		if (currentDir==ZX_DIR_ROOT){
+			// root Directory
+			// . only Subdirectories are allowed as items in the root Directory
+			if (uts!=TUniFileType::SUBDIRECTORY)
+				return ERROR_CANNOT_MAKE;
+			// . processing import information
+			int dirNameChecksum=-1;
+			_stscanf( zxInfo+n, INFO_DIR, &dirNameChecksum );
+			// . creating a Subdirectory with given name
+			if (const TStdWinError err=CreateSubdirectory( zxName, FILE_ATTRIBUTE_DIRECTORY, rFile ))
+				return err;
+			if (dirNameChecksum>=0)
+				( (CDirsSector::PSlot)rFile )->nameChecksum=dirNameChecksum;
+		}else{
+			// File
+			// . only Files are allowed as items in root Subdirectories
+			if (uts==TUniFileType::SUBDIRECTORY)
+				return ERROR_CANNOT_MAKE;
+			// . initializing the description of File to import
+			TDirectoryEntry tmp( this, 0 );
+				// : import information
+				DWORD dw;
+				__importFileInformation__( zxInfo, uts, tmp.file.stdHeader.params, dw, tmp.file.dataFlag );
+				// : name and extension
+				tmp.fileHasStdHeader=uts!=TUniFileType::HEADERLESS; // and ChangeFileNameAndExt called below by __importFileData__
+				// : size
+				tmp.file.stdHeader.length = dw ? dw : fileSize;
+				tmp.file.dataLength=fileSize;
+				// : first logical Sector
+				//nop (see below)
+			// . changing the Extension according to the "universal" type valid across ZX platforms (as TR-DOS File "Picture.C" should be take on the name "Picture.B" under MDOS)
+			TCHAR uftExt;
+			switch (uts){
+				case TUniFileType::PROGRAM	:
+				case TUniFileType::NUMBER_ARRAY:
+				case TUniFileType::CHAR_ARRAY:
+				case TUniFileType::BLOCK	: uftExt=uts; break;
+				case TUniFileType::SCREEN	: uftExt=TUniFileType::BLOCK; break;
+				default:
+					uftExt= zxExt.GetLength() ? *zxExt : TZxRom::TFileType::HEADERLESS;
+					break;
+			}
+			// . importing to Image
+			CFatPath fatPath( this, fileSize );
+			if (const TStdWinError err=__importFileData__( fIn, &tmp, zxName, uftExt, fileSize, true, rFile, fatPath ))
+				return err;
+			// . recording the FatPath in FAT
+			ModifyFileFatPath( rFile, fatPath );
 		}
-		// - importing to Image
-		CFatPath fatPath( this, fileSize );
-		if (const TStdWinError err=__importFileData__( fIn, &tmp, zxName, uftExt, fileSize, true, rFile, fatPath ))
-			return err;
-		// - recording the FatPath in FAT
-		ModifyFileFatPath( rFile, fatPath );
 		// - successfully imported to the Image
 		return ERROR_SUCCESS;
 	}
