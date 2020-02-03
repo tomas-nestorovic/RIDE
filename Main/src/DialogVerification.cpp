@@ -260,6 +260,182 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 		return ERROR_SUCCESS;
 	}
 
+	UINT AFX_CDECL TVerificationFunctions::FloppyLostSectorsVerification_thread(PVOID pCancelableAction){
+		// thread to find Sectors that are reported Occupied or Reserved but are actually not affiliated to any File
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
+		const CVerifyVolumeDialog::TParams &vp=*(CVerifyVolumeDialog::TParams *)pAction->GetParams();
+		// - checking preconditions (usable only for floppies)
+		if (vp.dos->formatBoot.nCylinders>FDD_CYLINDERS_MAX
+			||
+			vp.dos->formatBoot.nHeads>2
+			||
+			vp.dos->formatBoot.clusterSize!=1
+		)
+			return pAction->TerminateWithError(ERROR_NOT_SUPPORTED);
+		// - composing a picture of which Sectors are actually affiliated to which Files
+		const PImage image=vp.dos->image;
+		CMapWordToPtr sectorAffiliation[FDD_CYLINDERS_MAX*2];
+		CFileManagerView::TFileList bfsFiles; // in-breath search of Files
+		CFileManagerView::TFileList visitedDirectories;
+		for( bfsFiles.AddTail((CDos::PFile)DOS_DIR_ROOT); bfsFiles.GetCount()>0; ){
+			if (pAction->IsCancelled()) return ERROR_CANCELLED;
+			const CDos::PFile file=bfsFiles.RemoveHead();
+			// . retrieving File's FatPath
+			const CDos::CFatPath fatPath( vp.dos, file );
+			CDos::CFatPath::PItem pItem; DWORD nItems;
+			if (const LPCTSTR err=fatPath.GetItems(pItem,nItems))
+				return pAction->TerminateWithError(ERROR_OPEN_FAILED); // problems in FatPath must be taken care for elsewhere
+			if (!nItems)
+				continue; // makes no sense to test a File that occupies no space on the disk
+			// . recording Sectors affiliated to current File
+			while (nItems--){
+				if (pAction->IsCancelled()) return ERROR_CANCELLED;
+				// : checking preconditions
+				RCPhysicalAddress chs=pItem++->chs;
+				if (chs.sectorId.cylinder!=chs.cylinder
+					||
+					chs.sectorId.side!=vp.dos->sideMap[chs.head]
+					||
+					chs.sectorId.sector<vp.dos->properties->firstSectorNumber || vp.dos->properties->firstSectorNumber+vp.dos->formatBoot.nSectors<=chs.sectorId.sector
+					||
+					chs.sectorId.lengthCode!=vp.dos->formatBoot.sectorLengthCode
+				)
+					return pAction->TerminateWithError(ERROR_NOT_SUPPORTED);
+				// : recording affiliation
+				sectorAffiliation[chs.GetTrackNumber()].SetAt( chs.sectorId.sector, file );
+			}
+			// . if the File is actually a Directory, processing it recurrently
+			if (vp.dos->IsDirectory(file)){
+				if (const auto pdt=vp.dos->BeginDirectoryTraversal(file))
+					while (const CDos::PFile subfile=pdt->GetNextFileOrSubdir())
+						switch (pdt->entryType){
+							case CDos::TDirectoryTraversal::SUBDIR:
+								if (visitedDirectories.Find(subfile)!=nullptr) // the Subdirectory has already been processed
+									continue; // not processing it again
+								//fallthrough
+							case CDos::TDirectoryTraversal::FILE:
+								bfsFiles.AddTail(subfile);
+								break;
+							case CDos::TDirectoryTraversal::WARNING:
+								return pAction->TerminateWithError(pdt->warning);
+						}
+				visitedDirectories.AddTail(file);
+			}
+		}
+		// - verifying the volume
+		struct TDir sealed{
+			CDos::PFile handle;
+			bool createdAndSwitchedTo;
+			TDir()
+				: handle(nullptr) , createdAndSwitchedTo(false) {
+			}
+		} dir; // Directory to store Files addressing lost Sectors
+		WORD fileId=0;
+		pAction->SetProgressTarget( vp.dos->formatBoot.nCylinders );
+		const auto sectorIdAndPositionIdentity=Utils::CByteIdentity();
+		TPhysicalAddress chs;
+		for( chs.cylinder=0; chs.cylinder<vp.dos->formatBoot.nCylinders; chs.cylinder++ )
+			for( chs.head=0; chs.head<vp.dos->formatBoot.nHeads; chs.head++ ){
+				if (pAction->IsCancelled()) return ERROR_CANCELLED;
+				// . getting the list of standard Sectors
+				TSectorId bufferId[(TSector)-1];
+				const TSector nSectors=vp.dos->GetListOfStdSectors( chs.cylinder, chs.head, bufferId );
+				// . verifying whether officially Occupied or Reserved Sectors are actually affiliated to any File
+				CDos::TSectorStatus statuses[(TSector)-1];
+				vp.dos->GetSectorStatuses( chs.cylinder, chs.head, nSectors, bufferId, statuses );
+				for( TSector s=0; s<nSectors; s++ )
+					if (statuses[s]==CDos::TSectorStatus::OCCUPIED || statuses[s]==CDos::TSectorStatus::RESERVED){
+						// : checking preconditions
+						chs.sectorId=bufferId[s];
+						if (chs.sectorId.cylinder!=chs.cylinder
+							||
+							chs.sectorId.side!=vp.dos->sideMap[chs.head]
+							||
+							chs.sectorId.sector<vp.dos->properties->firstSectorNumber || vp.dos->properties->firstSectorNumber+vp.dos->formatBoot.nSectors<=chs.sectorId.sector
+							||
+							chs.sectorId.lengthCode!=vp.dos->formatBoot.sectorLengthCode
+						)
+							return pAction->TerminateWithError(ERROR_NOT_SUPPORTED);
+						// : verifying real affiliation
+						CDos::PFile file;
+						if (sectorAffiliation[chs.GetTrackNumber()].Lookup( chs.sectorId.sector, file ))
+							continue; // ok - Sector is reported Occupied or Reserved and is really affiliated
+						// : resolving the problem
+						CString msg;
+						msg.Format( _T("Sector with %s is reported occupied but is unaffiliated to any file or directory"), (LPCTSTR)chs.sectorId.ToString() );
+						switch (vp.ConfirmFix( msg, _T("Sector will be represented as a file.") )){
+							case IDCANCEL:
+								return pAction->TerminateWithError(ERROR_CANCELLED);
+							case IDNO:
+								continue;
+						}
+						// : if possible, creating a "LOSTnnnn" Directory to store temporary Files in
+						CDos::CFatPath::PItem pItem; DWORD nItems;
+						if (!dir.createdAndSwitchedTo){
+							if (const auto dsm=vp.dos->pFileManager->pDirectoryStructureManagement){ // yes, the Dos supports Directories
+								// > switching to the Root Directory
+								if (const TStdWinError err=(vp.dos->*dsm->fnChangeCurrentDir)(DOS_DIR_ROOT))
+									return pAction->TerminateWithError(err);
+								// > creating a "LOSTnnnn" Directory in Root
+								for( WORD dirId=1; dirId<10000; dirId++ ){
+									const TStdWinError err=(vp.dos->*dsm->fnCreateSubdir)( CDos::CPathString().Format(_T("LOST%04d"),dirId), FILE_ATTRIBUTE_DIRECTORY, dir.handle );
+									if (err==ERROR_SUCCESS){
+										const CDos::CFatPath fatPath( vp.dos, dir.handle );
+										if (const LPCTSTR err=fatPath.GetItems(pItem,nItems))
+											return pAction->TerminateWithError(ERROR_OPEN_FAILED); // errors shouldn't occur at this moment, but just to be sure
+										sectorAffiliation[pItem->chs.GetTrackNumber()].SetAt( pItem->chs.sectorId.sector, dir.handle );
+										break;
+									}else if (err!=ERROR_FILE_EXISTS)
+										return pAction->TerminateWithError(err);
+								}
+								if (!dir.handle)
+									return pAction->TerminateWithError(ERROR_CANNOT_MAKE);
+								// > switching to the "LOSTnnnn" Directory
+								if (const TStdWinError err=(vp.dos->*dsm->fnChangeCurrentDir)(dir.handle))
+									return pAction->TerminateWithError(err);
+							}
+							dir.createdAndSwitchedTo=true;
+						}
+						// : importing a Sector-long File, thus creating a valid directory entry
+						file=nullptr; // don't affiliate the lost Sector to a temporary File, mark it as Empty in FAT straight away
+						for( BYTE data[16384]; ++fileId<10000; ){
+							const TStdWinError err=vp.dos->ImportFile( &CMemFile(data,sizeof(data)), vp.dos->formatBoot.sectorLength, CDos::CPathString().Format(_T("LOST%04d"),fileId), 0, file );
+							if (err==ERROR_SUCCESS)
+								break;
+							else if (err!=ERROR_FILE_EXISTS){
+								CString msg;
+								msg.Format( _T("Data of sector with %s cannot be put into a temporary file"), (LPCTSTR)chs.sectorId.ToString() );
+								const BYTE result=Utils::QuestionYesNoCancel( msg, MB_DEFBUTTON1, err, _T("Mark the sector as empty?") );
+								if (result==IDCANCEL)
+									return pAction->TerminateWithError(ERROR_CANCELLED);
+								if (result==IDYES)
+									vp.dos->ModifyStdSectorStatus( chs, CDos::TSectorStatus::EMPTY );
+								break;
+							}
+						}
+						// : informing on progress
+						pAction->UpdateProgress( chs.cylinder );
+						// : if temporary File couldn't be created, proceeding with the next Sector
+						if (!file)
+							continue;
+						// : freeing up Sectors allocated to the temporary File
+						const CDos::CFatPath fatPath( vp.dos, file );
+						if (const LPCTSTR err=fatPath.GetItems(pItem,nItems))
+							return pAction->TerminateWithError(ERROR_OPEN_FAILED); // errors shouldn't occur at this moment, but just to be sure
+						if (nItems!=1)
+							return pAction->TerminateWithError(ERROR_OPEN_FAILED); // errors shouldn't occur at this moment, but just to be sure
+						vp.dos->ModifyStdSectorStatus( pItem->chs, CDos::TSectorStatus::EMPTY );
+						// : associating the lost Sector with the temporary File
+						pItem->chs=chs;
+						vp.dos->ModifyFileFatPath( file, fatPath );
+						sectorAffiliation[chs.GetTrackNumber()].SetAt( chs.sectorId.sector, file );
+					}
+			}
+		// - successfully verified
+		pAction->UpdateProgressFinished();
+		return ERROR_SUCCESS;
+	}
+
 	UINT AFX_CDECL TVerificationFunctions::WholeDiskSurfaceVerification_thread(PVOID pCancelableAction){
 		// thread to verify if unreadable Empty Sectors on all volume Cylinders are marked in allocation table as Bad
 		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
