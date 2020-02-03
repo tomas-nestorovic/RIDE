@@ -274,6 +274,7 @@
 		CDos::PFile GetPreviousSelectedFile(POSITION &pos) const;
 		DWORD GetCountOfSelectedFiles() const;
 		TStdWinError ImportFileAndResolveConflicts(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,const FILETIME &rCreated,const FILETIME &rLastRead,const FILETIME &rLastModified,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution);
+		void SwitchToDirectory(CDos::PFile directory);
 	};
 
 #endif // FILEMANAGERVIEW_H

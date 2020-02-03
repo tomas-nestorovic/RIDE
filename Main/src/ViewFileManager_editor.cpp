@@ -213,8 +213,7 @@
 		// - displaying the content of Subdirectory
 		if (__fileInfoFromColumnId__(lpia->iSubItem)->flags&TFileInfo::FileName)
 			if (DOS->IsDirectory(file)){
-				previousDirectories.AddHead(DOS->currentDir);
-				__switchToDirectory__(file);
+				SwitchToDirectory(file);
 				GetListCtrl().SendMessage( LVM_SCROLL, 0, -__getVerticalScrollPos__() ); // resetting the scroll position to zero pixels
 				__refreshDisplay__();
 				__informationWithCheckableShowNoMore__( FILE_MANAGER_MSG_DIR_GO_BACK, FILE_MANAGER_MSG_DIR_GO_BACK );

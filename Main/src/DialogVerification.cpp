@@ -391,8 +391,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 								if (!dir.handle)
 									return pAction->TerminateWithError(ERROR_CANNOT_MAKE);
 								// > switching to the "LOSTnnnn" Directory
-								if (const TStdWinError err=(vp.dos->*dsm->fnChangeCurrentDir)(dir.handle))
-									return pAction->TerminateWithError(err);
+								vp.dos->pFileManager->SwitchToDirectory(dir.handle);
 							}
 							dir.createdAndSwitchedTo=true;
 						}

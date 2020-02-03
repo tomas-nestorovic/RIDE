@@ -238,6 +238,7 @@
 			if (const TStdWinError err=(DOS->*pDirectoryStructureManagement->fnChangeCurrentDir)(directory))
 				Utils::FatalError(ERROR_MSG_CANT_CHANGE_DIRECTORY,err);
 	}
+
 	TStdWinError CFileManagerView::__switchToDirectory__(PTCHAR path) const{
 		// changes the current Directory; assumed that the Path is terminated by backslash; returns Windows standard i/o error
 		while (const PTCHAR backslash=_tcschr(path,'\\')){
@@ -260,6 +261,12 @@
 		return ERROR_SUCCESS;
 	}
 
+	void CFileManagerView::SwitchToDirectory(CDos::PFile directory){
+		// puts current Directory onto top of PreviousDirectories stack and switches to the Directory specified
+		previousDirectories.AddHead(DOS->currentDir);
+		__switchToDirectory__(directory);
+	}
+
 	afx_msg int CFileManagerView::OnMouseActivate(CWnd *topParent,UINT nHitTest,UINT message){
 		// activates the window to prevent from stealing the focus by the parent window
 		return MA_ACTIVATE;
@@ -273,8 +280,7 @@
 				if (POSITION pos=GetFirstSelectedFilePosition()){
 					const CDos::PFile item=GetNextSelectedFile(pos);
 					if (DOS->IsDirectory(item)){
-						previousDirectories.AddHead(DOS->currentDir);
-						__switchToDirectory__(item);
+						SwitchToDirectory(item);
 						GetListCtrl().SendMessage( LVM_SCROLL, 0, -__getVerticalScrollPos__() ); // resetting the scroll position to zero pixels
 						__refreshDisplay__();
 						__informationWithCheckableShowNoMore__( FILE_MANAGER_MSG_DIR_GO_BACK, FILE_MANAGER_MSG_DIR_GO_BACK );
