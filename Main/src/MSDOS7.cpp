@@ -755,10 +755,14 @@
 			currentDir=directory->shortNameEntry.__getFirstCluster__() ? directory : MSDOS7_DIR_ROOT;
 		else
 			currentDir=MSDOS7_DIR_ROOT;
-		currentDirId =	currentDir!=MSDOS7_DIR_ROOT
-						? ((PDirectoryEntry)currentDir)->shortNameEntry.__getFirstCluster__()
-						: 0;
 		return ERROR_SUCCESS;
+	}
+
+	DWORD CMSDOS7::GetDirectoryUid(PCFile dir) const{
+		// determines and returns the unique identifier of the Directory specified
+		return	dir!=MSDOS7_DIR_ROOT
+				? ((PCDirectoryEntry)dir)->shortNameEntry.__getFirstCluster__()
+				: 0;
 	}
 	
 	TStdWinError CMSDOS7::MoveFileToCurrDir(PDirectoryEntry de,LPCTSTR exportFileNameAndExt,PFile &rMovedFile){

@@ -288,7 +288,6 @@
 		const TFnCompareNames fnCompareNames;
 		const TTrackScheme trackAccessScheme; // single Scheme to access Tracks in Image
 		PFile currentDir;
-		DWORD currentDirId;
 		bool generateShellCompliantExportNames;
 		TGetFileSizeOptions getFileSizeDefaultOption;
 		
@@ -401,6 +400,7 @@
 		virtual TStdWinError DeleteFile(PFile file)=0;
 		virtual std::unique_ptr<TDirectoryTraversal> BeginDirectoryTraversal(PCFile directory) const=0;
 		std::unique_ptr<TDirectoryTraversal> BeginDirectoryTraversal() const;
+		virtual DWORD GetDirectoryUid(PCFile dir) const;
 		void MarkDirectorySectorAsDirty(PCFile file) const;
 		DWORD GetCountOfItemsInCurrentDir(TStdWinError &rError) const;
 		virtual CString GetFileExportNameAndExt(PCFile file,bool shellCompliant) const;

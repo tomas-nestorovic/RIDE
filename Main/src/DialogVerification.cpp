@@ -134,7 +134,7 @@
 		pAction->SetProgressTarget( vp.dos->formatBoot.nCylinders );
 		CMapWordToPtr sectorOccupation[FDD_CYLINDERS_MAX*2];
 		CFileManagerView::TFileList bfsFiles; // breadth first search, searching through Directories in breadth
-		CFileManagerView::TFileList visitedDirectories;
+		CPtrList visitedDirectories;
 		for( bfsFiles.AddTail((CDos::PFile)DOS_DIR_ROOT); bfsFiles.GetCount()>0; ){
 			if (pAction->IsCancelled()) return ERROR_CANCELLED;
 			const CDos::PFile file=bfsFiles.RemoveHead();
@@ -242,7 +242,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 					while (const CDos::PFile subfile=pdt->GetNextFileOrSubdir())
 						switch (pdt->entryType){
 							case CDos::TDirectoryTraversal::SUBDIR:
-								if (visitedDirectories.Find(subfile)!=nullptr) // the Subdirectory has already been processed
+								if (visitedDirectories.Find( (PVOID)vp.dos->GetDirectoryUid(subfile) )!=nullptr) // the Subdirectory has already been processed
 									continue; // not processing it again
 								//fallthrough
 							case CDos::TDirectoryTraversal::FILE:
@@ -276,7 +276,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 		const PImage image=vp.dos->image;
 		CMapWordToPtr sectorAffiliation[FDD_CYLINDERS_MAX*2];
 		CFileManagerView::TFileList bfsFiles; // in-breath search of Files
-		CFileManagerView::TFileList visitedDirectories;
+		CPtrList visitedDirectories;
 		for( bfsFiles.AddTail((CDos::PFile)DOS_DIR_ROOT); bfsFiles.GetCount()>0; ){
 			if (pAction->IsCancelled()) return ERROR_CANCELLED;
 			const CDos::PFile file=bfsFiles.RemoveHead();
@@ -310,7 +310,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 					while (const CDos::PFile subfile=pdt->GetNextFileOrSubdir())
 						switch (pdt->entryType){
 							case CDos::TDirectoryTraversal::SUBDIR:
-								if (visitedDirectories.Find(subfile)!=nullptr) // the Subdirectory has already been processed
+								if (visitedDirectories.Find( (PVOID)vp.dos->GetDirectoryUid(subfile) )!=nullptr) // the Subdirectory has already been processed
 									continue; // not processing it again
 								//fallthrough
 							case CDos::TDirectoryTraversal::FILE:

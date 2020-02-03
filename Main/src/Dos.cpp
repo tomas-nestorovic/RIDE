@@ -31,7 +31,7 @@
 		, sideMap(_sideMap) , menu(nResId) , pFileManager(_pFileManager)
 		, formatBoot(*_pFormatBoot) // information on Medium Format retrieved from Boot; this information has ALWAYS priority when manipulating data on the disk; changes in this structure must be projected back to Boot Sector using FlushToBootSector (e.g. called automatically by BootView)
 		, trackAccessScheme(trackAccessScheme) // single Scheme to access Tracks in Image
-		, currentDir(DOS_DIR_ROOT) , currentDirId(DOS_DIR_ROOT_ID)
+		, currentDir(DOS_DIR_ROOT)
 		, generateShellCompliantExportNames( __getProfileBool__(INI_SHELL_COMPLIANT_EXPORT_NAMES,true) ) // True <=> the GetFileExportNameAndExt function must produce names that are compliant with the FAT32 file system, otherwise False
 		, getFileSizeDefaultOption( (TGetFileSizeOptions)__getProfileInt__(INI_GETFILESIZE_OPTION,_getFileSizeDefaultOption) ) {
 	}
@@ -1213,6 +1213,16 @@ reportError:Utils::Information(buf);
 	std::unique_ptr<CDos::TDirectoryTraversal> CDos::BeginDirectoryTraversal() const{
 		// initiates exploration of current Directory through a DOS-specific DirectoryTraversal
 		return BeginDirectoryTraversal(currentDir);
+	}
+
+	DWORD CDos::GetDirectoryUid(PCFile dir) const{
+		// determines and returns the unique identifier of the Directory specified
+		if (dir==DOS_DIR_ROOT)
+			return DOS_DIR_ROOT_ID;
+		else{
+			ASSERT(FALSE);
+			return -1;
+		}
 	}
 
 	void CDos::MarkDirectorySectorAsDirty(PCFile file) const{

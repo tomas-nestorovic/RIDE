@@ -715,7 +715,7 @@
 				pAction->SetProgressTarget( rStatistics.finishedState );
 				// . recurrently collecting Statistics on selected Files
 				const CDos::PFile currentDirectory=dos->currentDir;
-				const TDirectoryEtc dirEtc={ dos->currentDirId, nullptr };
+				const TDirectoryEtc dirEtc={ dos->GetDirectoryUid(currentDirectory), nullptr };
 				for( POSITION pos=rFileManager.GetFirstSelectedFilePosition(); pos; ){
 					if (pAction->IsCancelled()) break;
 					if (const auto pdt=dos->BeginDirectoryTraversal(currentDirectory)){
@@ -738,7 +738,7 @@
 					if ((dos->*pDirStructMan->fnChangeCurrentDir)(pdt->entry)!=ERROR_SUCCESS)
 						return;
 					// . preventing from cycling infinitely (e.g. because of encountering a dotdot entry ".." in MS-DOS Directory)
-					const TDirectoryEtc dirEtc={ dos->currentDirId, dirPath };
+					const TDirectoryEtc dirEtc={ dos->GetDirectoryUid(dos->currentDir), dirPath };
 					for( PCDirectoryEtc pde=dirPath; pde!=nullptr; pde=pde->parent )
 						if (pde->dirId==dirEtc.dirId) return;
 					// . involving Directory into Statistics

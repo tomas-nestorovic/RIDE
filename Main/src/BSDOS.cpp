@@ -469,10 +469,14 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 	TStdWinError CBSDOS308::SwitchToDirectory(PFile slot){
 		// changes CurrentDirectory; returns Windows standard i/o error
 		currentDir=slot;
-		currentDirId =	currentDir!=ZX_DIR_ROOT
-						? *(PDWORD)slot
-						: 0;
 		return ERROR_SUCCESS;
+	}
+
+	DWORD CBSDOS308::GetDirectoryUid(PCFile slot) const{
+		// determines and returns the unique identifier of the Directory specified
+		return	slot!=ZX_DIR_ROOT
+				? *(PDWORD)slot
+				: 0;
 	}
 
 	TStdWinError CBSDOS308::MoveFileToCurrentDir(PFile file,LPCTSTR exportFileNameAndExt,PFile &rMovedFile){
