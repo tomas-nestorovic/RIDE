@@ -188,7 +188,7 @@
 					return true;
 				break;
 		}
-		return CDos::UpdateCommandUi(cmd,pCmdUI);
+		return __super::UpdateCommandUi(cmd,pCmdUI);
 	}
 
 	bool CSpectrumDos::__isTapeFileManagerShown__() const{
@@ -203,5 +203,5 @@
 			if (!CTape::pSingleInstance->CanCloseFrame(pFrame))
 				return FALSE;
 		// - base
-		return CDos::CanBeShutDown(pFrame);
+		return __super::CanBeShutDown(pFrame);
 	}

@@ -51,7 +51,7 @@
 			// . base (populating the FileManager with Files)
 			const CClientDC dc(this);
 			const HIMAGELIST icons=TBootSector::UReserved1::TGKFileManager::__getListOfDefaultIcons__(dc);
-			CSpectrumFileManagerView::OnUpdate( pSender, LVSIL_NORMAL, (CObject *)icons );
+			__super::OnUpdate( pSender, LVSIL_NORMAL, (CObject *)icons );
 			// . assigning Icons to individual Files
 			CListCtrl &lv=GetListCtrl();
 			LVITEM lvi={ LVIF_PARAM|LVIF_IMAGE, lv.GetItemCount() };
@@ -90,7 +90,7 @@
 			CMDOS2::__informationWithCheckableShowNoMore__(_T("This view imitates what the files would look like in George K's File Manager.\n\nAlthough possible, it's recommended to NOT edit the file names here and use the Report view instead.\nReason - not all characters can be properly shown and/or typed in!"),INI_MSG_GKFM);
 		}else
 			// Report view
-			CSpectrumFileManagerView::OnUpdate(pSender,lHint,pHint); // base (populating the FileManager with Files)
+			__super::OnUpdate(pSender,lHint,pHint); // base (populating the FileManager with Files)
 	}
 	
 	LRESULT CMDOS2::CMdos2FileManagerView::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
@@ -106,7 +106,7 @@
 				break;
 			}
 		}
-		return CSpectrumFileManagerView::WindowProc(msg,wParam,lParam);
+		return __super::WindowProc(msg,wParam,lParam);
 	}
 
 	void CMDOS2::CMdos2FileManagerView::DrawReportModeCell(PCFileInfo pFileInfo,LPDRAWITEMSTRUCT pdis) const{

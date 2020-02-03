@@ -50,7 +50,7 @@
 				break;
 			}
 		}
-		return CSpectrumFileManagerView::WindowProc(msg,wParam,lParam);
+		return __super::WindowProc(msg,wParam,lParam);
 	}
 
 	void CTRDOS503::CTrdosFileManagerView::DrawReportModeCell(PCFileInfo pFileInfo,LPDRAWITEMSTRUCT pdis) const{

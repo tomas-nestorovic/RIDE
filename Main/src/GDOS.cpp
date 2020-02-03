@@ -577,7 +577,8 @@
 
 	TStdWinError CGDOS::CreateUserInterface(HWND hTdi){
 		// creates DOS-specific Tabs in TDI; returns Windows standard i/o error
-		CSpectrumDos::CreateUserInterface(hTdi); // guaranteed to always return ERROR_SUCCESS
+		if (const TStdWinError err=__super::CreateUserInterface(hTdi))
+			return err;
 		CTdiCtrl::AddTabLast( hTdi, TRACK_MAP_TAB_LABEL, &trackMap.tab, false, TDI_TAB_CANCLOSE_NEVER, nullptr );
 		CTdiCtrl::AddTabLast( hTdi, FILE_MANAGER_TAB_LABEL, &fileManager.tab, true, TDI_TAB_CANCLOSE_NEVER, nullptr );
 		return ERROR_SUCCESS;
@@ -595,7 +596,7 @@
 				((CMainWindow *)app.m_pMainWnd)->OpenApplicationPresentationWebPage(_T("Tour"),_T("GDOS/tour.html"));
 				return TCmdResult::DONE;
 		}
-		return CSpectrumDos::ProcessCommand(cmd);
+		return __super::ProcessCommand(cmd);
 	}
 
 	bool CGDOS::UpdateCommandUi(WORD cmd,CCmdUI *pCmdUI) const{
@@ -605,7 +606,7 @@
 				pCmdUI->SetCheck(zeroLengthFilesEnabled);
 				return true;
 		}
-		return CSpectrumDos::UpdateCommandUi(cmd,pCmdUI);
+		return __super::UpdateCommandUi(cmd,pCmdUI);
 	}
 
 

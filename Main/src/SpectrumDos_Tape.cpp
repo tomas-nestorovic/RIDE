@@ -665,7 +665,7 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 			case WM_CREATE:{
 				// TapeFileManager just shown
 				// . base
-				CFileManagerView::WindowProc(msg,wParam,lParam);
+				__super::WindowProc(msg,wParam,lParam);
 				// . showing the Tape's ToolBar "after" the TapeFileManager's ToolBar
 				toolbar.__show__( tab.toolbar );
 				return 0;
@@ -675,7 +675,7 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 				toolbar.__hide__();
 				break;
 		}
-		return CFileManagerView::WindowProc(msg,wParam,lParam);
+		return __super::WindowProc(msg,wParam,lParam);
 	}
 
 	void CSpectrumDos::CTape::CTapeFileManagerView::DrawReportModeCell(PCFileInfo pFileInfo,LPDRAWITEMSTRUCT pdis) const{
