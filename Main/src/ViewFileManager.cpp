@@ -4,6 +4,8 @@
 
 	#define INI_FILEMANAGER	_T("FileManager")
 
+	#define INI_MSG_DIR_GO_BACK	_T("fmparent")
+
 	#define ORDER_NONE		255
 	#define ORDER_ASCENDING	128
 	#define ORDER_FILEINFO_ID	(~ORDER_ASCENDING)
@@ -266,6 +268,12 @@
 		// puts current Directory onto top of PreviousDirectories stack and switches to the Directory specified
 		previousDirectories.AddHead(DOS->currentDir);
 		__switchToDirectory__(directory);
+		if (::GetWindowThreadProcessId(m_hWnd,nullptr)==::GetCurrentThreadId()){
+			// can change controls only from within the thread that created them
+			GetListCtrl().SendMessage( LVM_SCROLL, 0, -__getVerticalScrollPos__() ); // resetting the scroll position to zero pixels
+			__refreshDisplay__();
+			__informationWithCheckableShowNoMore__( _T("See \"") FILE_MANAGER_TAB_LABEL _T("\" menu on how to navigate back."), INI_MSG_DIR_GO_BACK );
+		}
 	}
 
 	afx_msg int CFileManagerView::OnMouseActivate(CWnd *topParent,UINT nHitTest,UINT message){
@@ -280,12 +288,8 @@
 				// Enter - switching to selected Directory
 				if (POSITION pos=GetFirstSelectedFilePosition()){
 					const CDos::PFile item=GetNextSelectedFile(pos);
-					if (DOS->IsDirectory(item)){
+					if (DOS->IsDirectory(item))
 						SwitchToDirectory(item);
-						GetListCtrl().SendMessage( LVM_SCROLL, 0, -__getVerticalScrollPos__() ); // resetting the scroll position to zero pixels
-						__refreshDisplay__();
-						__informationWithCheckableShowNoMore__( FILE_MANAGER_MSG_DIR_GO_BACK, FILE_MANAGER_MSG_DIR_GO_BACK );
-					}
 				}
 				break;
 			default:

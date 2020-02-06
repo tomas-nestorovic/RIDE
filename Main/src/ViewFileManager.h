@@ -4,10 +4,7 @@
 	#define FILE_MANAGER_COLOR_EXECUTABLE	0xff0000
 	#define FILE_MANAGER_TAB_LABEL			_T("File manager")
 
-	#define FILE_MANAGER_INI_DIR_GO_BACK	_T("fmparent")
-
 	#define FILE_MANAGER_ERROR_RENAMING		_T("Cannot rename")
-	#define FILE_MANAGER_MSG_DIR_GO_BACK	_T("See \"") FILE_MANAGER_TAB_LABEL _T("\" menu on how to navigate back.")
 
 	class CFileManagerView; // forward
 	typedef CFileManagerView *PFileManagerView;

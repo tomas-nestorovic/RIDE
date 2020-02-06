@@ -212,13 +212,8 @@
 		const CDos::PFile file=(CDos::PFile)lv.GetItemData(lpia->iItem);
 		// - displaying the content of Subdirectory
 		if (__fileInfoFromColumnId__(lpia->iSubItem)->flags&TFileInfo::FileName)
-			if (DOS->IsDirectory(file)){
-				SwitchToDirectory(file);
-				GetListCtrl().SendMessage( LVM_SCROLL, 0, -__getVerticalScrollPos__() ); // resetting the scroll position to zero pixels
-				__refreshDisplay__();
-				__informationWithCheckableShowNoMore__( FILE_MANAGER_MSG_DIR_GO_BACK, FILE_MANAGER_MSG_DIR_GO_BACK );
-				return;
-			}
+			if (DOS->IsDirectory(file))
+				return SwitchToDirectory(file);
 		// - editing Information on which it was clicked (if editable)
 		if (displayMode==LVS_REPORT){
 			// current DisplayMode is Report
