@@ -212,6 +212,7 @@
 		dropTarget.Register(this);
 		DragAcceptFiles(); // to not pass the WM_DROPFILES message to the MainWindow (which would attempt to open the dropped File as an Image)
 		// - populating the FileManager and applying Ordering to Files
+		( (CMainWindow *)app.m_pMainWnd )->SetActiveView(this); // so that all File Manager's initialization chores are performed, e.g. MeasureItem method called
 		__changeDisplayMode__(displayMode+ID_FILEMANAGER_BIG_ICONS); // calls OnInitialUpdate/OnUpdate
 		// - restoring scroll position
 		lv.SendMessage( LVM_SCROLL, 0, scrollY );
