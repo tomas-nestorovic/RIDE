@@ -49,7 +49,7 @@
 		}else if (inProblemSolvingSection)
 			Utils::WriteToFile(*this,_T("No problems found."));
 		if (name) // nullptr used to do all the actions above
-			Utils::WriteToFile(  Utils::WriteToFile( Utils::WriteToFile(*this,_T("<h3>")), name ),  _T("</h3>")  );
+			Utils::WriteToFileFormatted( *this, _T("<h3>%s</h3>"), name );
 		inProblemSolvingSection=problemSolving;
 	}
 
@@ -61,16 +61,14 @@
 			Utils::WriteToFile(*this,_T("<ul>"));
 			itemListBegun=true;
 		}
-		Utils::WriteToFile( Utils::WriteToFile(*this,_T("<li>")), problemDesc );
+		Utils::WriteToFileFormatted( *this, _T("<li>%s"), problemDesc );
 		problemOpen=true;
 	}
 
 	void CVerifyVolumeDialog::TParams::CReportFile::CloseProblem(bool solved){
 		// ends an item on a repair of specified Problem by writing the specified Status
 		if (problemOpen){ // ignoring this call if no Problem actually open
-			TCHAR status[80];
-			::wsprintf( status, _T("<br><b>%s.</b>"), solved?_T("SOLVED"):_T("Skipped") );
-			Utils::WriteToFile( Utils::WriteToFile(*this,status), _T("</li>") );
+			Utils::WriteToFileFormatted( *this, _T("<br><b>%s.</b></li>"), solved?_T("SOLVED"):_T("Skipped") );
 			problemOpen=false;
 		}
 	}

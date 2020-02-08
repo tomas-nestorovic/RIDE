@@ -892,6 +892,15 @@ namespace Utils{
 		f.Write( text, ::lstrlen(text) );
 		return f;
 	}
+	CFile &WriteToFileFormatted(CFile &f,LPCTSTR format,...){
+		// writes Formatted string into the File
+		va_list argList;
+		va_start( argList, format );
+			TCHAR buf[16384];
+			f.Write(  buf,  ::wvsprintf( buf, format, argList )  );
+		va_end(argList);
+		return f;
+	}
 	CFile &WriteToFile(CFile &f,TCHAR chr){
 		// writes specified Character into the File
 		f.Write( &chr, sizeof(TCHAR) );

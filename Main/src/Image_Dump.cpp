@@ -51,7 +51,6 @@
 
 		void __exportErroneousTracksToHtml__(CFile &fHtml) const{
 			// exports SourceTrackErrors to given HTML file
-			TCHAR buffer[128];
 			Utils::WriteToFile(fHtml,_T("<html><head><style>body,td{font-size:13pt;margin:24pt}table{border:1pt solid black;spacing:10pt}td{vertical-align:top}td.caption{font-size:14pt;background:silver}</style></head><body>"));
 				Utils::WriteToFile(fHtml,_T("<h3>Overview</h3>"));
 					if (pOutErroneousTracks){
@@ -88,18 +87,15 @@
 						Utils::WriteToFile(fHtml,_T("<table><tr><td class=caption width=120>Track</td><td class=caption>Erroneous Sectors</td></tr>"));
 							for( const TSourceTrackErrors *pErroneousTrack=pOutErroneousTracks; pErroneousTrack; pErroneousTrack=pErroneousTrack->pNextErroneousTrack ){
 								Utils::WriteToFile(fHtml,_T("<tr><td>"));
-									::wsprintf( buffer, _T("Cyl %d, Head %d"), pErroneousTrack->cyl, pErroneousTrack->head );
-									Utils::WriteToFile(fHtml,buffer);
+									Utils::WriteToFileFormatted( fHtml, _T("Cyl %d, Head %d"), pErroneousTrack->cyl, pErroneousTrack->head );
 								Utils::WriteToFile(fHtml,_T("</td><td><ul>"));
 									PCSourceSectorError psse=pErroneousTrack->erroneousSectors;
 									for( BYTE n=pErroneousTrack->nErroneousSectors; n; n--,psse++ ){
 										Utils::WriteToFile(fHtml,_T("<li>"));
-											::wsprintf( buffer, _T("<b>%s</b>. "), (LPCTSTR)psse->id.ToString() );
-											Utils::WriteToFile(fHtml,buffer);
+											Utils::WriteToFileFormatted( fHtml, _T("<b>%s</b>. "), (LPCTSTR)psse->id.ToString() );
 											LPCTSTR bitDescriptions[10],*pDesc=bitDescriptions;
 											psse->fdcStatus.GetDescriptionsOfSetBits(bitDescriptions);
-											::wsprintf( buffer, _T("<i>SR1</i> (0x%02X): "), psse->fdcStatus.reg1 );
-											Utils::WriteToFile(fHtml,buffer);
+											Utils::WriteToFileFormatted( fHtml, _T("<i>SR1</i> (0x%02X): "), psse->fdcStatus.reg1 );
 											if (*pDesc){
 												Utils::WriteToFile(fHtml,*pDesc++);
 												while (*pDesc){
@@ -110,8 +106,7 @@
 												Utils::WriteToFile(fHtml,_T("No error"));
 											Utils::WriteToFile(fHtml,_T("."));
 											pDesc++; // skipping Null that terminates the list of bits set in Register 1
-											::wsprintf( buffer, _T(" <i>SR2</i> (0x%02X): "), psse->fdcStatus.reg2 );
-											Utils::WriteToFile(fHtml,buffer);
+											Utils::WriteToFileFormatted( fHtml, _T(" <i>SR2</i> (0x%02X): "), psse->fdcStatus.reg2 );
 											if (*pDesc){
 												Utils::WriteToFile(fHtml,*pDesc++);
 												while (*pDesc){

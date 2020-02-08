@@ -103,10 +103,7 @@
 				, specialFormattingOpen(TSpecialFormatting::NONE) {
 				__resetColors__();
 				// . writing the opening HTML tags
-				(CFormattedBasicListingFile &)Utils::WriteToFile(
-					*this << _T("<html><body style=\"background-color:#"),
-					*(PINT)&Colors[7], _T("%06x")
-				) << _T("\">");
+				Utils::WriteToFileFormatted( *this, _T("<html><body style=\"background-color:#%06x\">"), *(PCINT)&Colors[7] );
 			}
 			~CFormattedBasicListingFile(){
 				// dtor

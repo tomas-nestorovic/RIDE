@@ -658,9 +658,7 @@ reportError:Utils::Information(buf);
 			return false;
 		Utils::WriteToFile(rd.params.fReport,_T("<html><head><style>body,td{font-size:13pt;margin:24pt}</style></head><body>"));
 			rd.params.fReport.AddSection( _T("Overview"), false );
-			CString overview;
-			overview.Format( _T("<table><tr><td>Location:</td><td><b>%s</b></td></tr><tr><td>System:</td><td><b>%s</b></td></tr></table>"), image->GetPathName().GetLength()?image->GetPathName():_T("N/A"), properties->name );
-			Utils::WriteToFile( rd.params.fReport, overview );
+			Utils::WriteToFileFormatted( rd.params.fReport, _T("<table><tr><td>Location:</td><td><b>%s</b></td></tr><tr><td>System:</td><td><b>%s</b></td></tr></table>"), image->GetPathName().GetLength()?image->GetPathName():_T("N/A"), properties->name );
 		// - verification
 		CBackgroundMultiActionCancelable bmac(THREAD_PRIORITY_BELOW_NORMAL);
 			if (rd.params.verifyBootSector)
