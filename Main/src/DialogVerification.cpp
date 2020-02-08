@@ -11,6 +11,7 @@
 
 	BYTE CVerifyVolumeDialog::TParams::ConfirmFix(LPCTSTR problemDesc,LPCTSTR problemSolutionSuggestion) const{
 		// presents the occured problem along with suggestion how to solve it, and returns user's reaction
+		fReport.OpenProblem(problemDesc);
 		switch (repairStyle){
 			default:
 				ASSERT(FALSE);
@@ -27,6 +28,59 @@
 	}
 
 
+
+
+
+
+
+
+	CVerifyVolumeDialog::TParams::CReportFile::CReportFile()
+		// ctor
+		: itemListBegun(false) , problemOpen(false) , inProblemSolvingSection(false) {
+	}
+
+	void CVerifyVolumeDialog::TParams::CReportFile::AddSection(LPCTSTR name,bool problemSolving){
+		// begins in the Report a new section with specified Name
+		if (problemOpen)
+			CloseProblem(false);
+		if (itemListBegun){
+			Utils::WriteToFile(*this,_T("</ul>"));
+			itemListBegun=false;
+		}else if (inProblemSolvingSection)
+			Utils::WriteToFile(*this,_T("No problems found."));
+		if (name) // nullptr used to do all the actions above
+			Utils::WriteToFile(  Utils::WriteToFile( Utils::WriteToFile(*this,_T("<h3>")), name ),  _T("</h3>")  );
+		inProblemSolvingSection=problemSolving;
+	}
+
+	void CVerifyVolumeDialog::TParams::CReportFile::OpenProblem(LPCTSTR problemDesc){
+		// begins an item on a repair of specified Problem
+		if (problemOpen)
+			CloseProblem(false);
+		if (!itemListBegun){
+			Utils::WriteToFile(*this,_T("<ul>"));
+			itemListBegun=true;
+		}
+		Utils::WriteToFile( Utils::WriteToFile(*this,_T("<li>")), problemDesc );
+		problemOpen=true;
+	}
+
+	void CVerifyVolumeDialog::TParams::CReportFile::CloseProblem(bool solved){
+		// ends an item on a repair of specified Problem by writing the specified Status
+		if (problemOpen){ // ignoring this call if no Problem actually open
+			TCHAR status[80];
+			::wsprintf( status, _T("<br><b>%s.</b>"), solved?_T("SOLVED"):_T("Skipped") );
+			Utils::WriteToFile( Utils::WriteToFile(*this,status), _T("</li>") );
+			problemOpen=false;
+		}
+	}
+
+	void CVerifyVolumeDialog::TParams::CReportFile::Close(){
+		// closes the Report
+		AddSection(nullptr);
+		Utils::WriteToFile(*this,_T("</body></html>"));
+		__super::Close();
+	}
 
 
 
@@ -130,6 +184,7 @@
 		)
 			return pAction->TerminateWithError(ERROR_NOT_SUPPORTED);
 		// - verifying the volume
+		vp.fReport.AddSection(_T("Cross-linked files (floppy)"));
 		const PImage image=vp.dos->image;
 		pAction->SetProgressTarget( vp.dos->formatBoot.nCylinders );
 		CMapWordToPtr sectorOccupation[FDD_CYLINDERS_MAX*2];
@@ -236,6 +291,7 @@
 				vp.dos->ModifyFileFatPath( file, fatPath ); // all FAT Sectors by previous actions guaranteed to be readable
 				for( fatPath.GetItems(pItem,nItems); nItems--; pItem++->value=0 ); // "0" = Sector isn't cross-linked
 			}
+			vp.fReport.CloseProblem(true);
 nextFile:	// . if the File is actually a Directory, processing it recurrently
 			if (vp.dos->IsDirectory(file)){
 				if (const auto pdt=vp.dos->BeginDirectoryTraversal(file))
@@ -323,6 +379,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 			}
 		}
 		// - verifying the volume
+		vp.fReport.AddSection(_T("Lost sectors (floppy)"));
 		struct TDir sealed{
 			CDos::PFile handle;
 			bool createdAndSwitchedTo;
@@ -407,8 +464,10 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 								const BYTE result=Utils::QuestionYesNoCancel( msg, MB_DEFBUTTON1, err, _T("Mark the sector as empty?") );
 								if (result==IDCANCEL)
 									return pAction->TerminateWithError(ERROR_CANCELLED);
-								if (result==IDYES)
+								if (result==IDYES){
 									vp.dos->ModifyStdSectorStatus( chs, CDos::TSectorStatus::EMPTY );
+									vp.fReport.CloseProblem(true);
+								}
 								break;
 							}
 						}
@@ -428,6 +487,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 						pItem->chs=chs;
 						vp.dos->ModifyFileFatPath( file, fatPath );
 						sectorAffiliation[chs.GetTrackNumber()].SetAt( chs.sectorId.sector, file );
+						vp.fReport.CloseProblem(true);
 					}
 			}
 		// - successfully verified
@@ -440,6 +500,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
 		const CVerifyVolumeDialog::TParams &vp=*(CVerifyVolumeDialog::TParams *)pAction->GetParams();
 		const PImage image=vp.dos->image;
+		vp.fReport.AddSection(_T("Surface verification (whole disk)"));
 		pAction->SetProgressTarget( vp.dos->formatBoot.nCylinders );
 		const auto sectorIdAndPositionIdentity=Utils::CByteIdentity();
 		TPhysicalAddress chs;
@@ -474,6 +535,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 									continue;
 							}
 							vp.dos->ModifyStdSectorStatus( chs, CDos::TSectorStatus::BAD );
+							vp.fReport.CloseProblem(true);
 						}
 					}
 				pAction->UpdateProgress(chs.cylinder);

@@ -30,6 +30,16 @@
 			int verifyVolumeSurface;
 			int repairStyle;
 			const TVerificationFunctions verificationFunctions;
+			mutable class CReportFile sealed:public CFile{
+				bool itemListBegun, problemOpen, inProblemSolvingSection;
+			public:
+				CReportFile();
+
+				void AddSection(LPCTSTR name,bool problemSolving=true);
+				void OpenProblem(LPCTSTR problemDesc);
+				void CloseProblem(bool solved);
+				void Close() override;
+			} fReport;
 
 			TParams(CDos *dos,const TVerificationFunctions &rvf);
 

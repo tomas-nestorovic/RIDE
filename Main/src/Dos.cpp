@@ -650,6 +650,17 @@ reportError:Utils::Information(buf);
 		// - displaying the Dialog
 		if (image->__reportWriteProtection__()) return false;
 		if (rd.DoModal()!=IDOK) return false;
+		// - opening the HTML Report for writing
+		TCHAR tmpFileName[MAX_PATH];
+		::GetTempPath(MAX_PATH,tmpFileName);
+		::GetTempFileName( tmpFileName, nullptr, TRUE, tmpFileName );
+		if (!rd.params.fReport.Open( ::lstrcat(tmpFileName,_T(".html")), CFile::modeCreate|CFile::modeWrite ))
+			return false;
+		Utils::WriteToFile(rd.params.fReport,_T("<html><head><style>body,td{font-size:13pt;margin:24pt}</style></head><body>"));
+			rd.params.fReport.AddSection( _T("Overview"), false );
+			CString overview;
+			overview.Format( _T("<table><tr><td>Location:</td><td><b>%s</b></td></tr><tr><td>System:</td><td><b>%s</b></td></tr></table>"), image->GetPathName().GetLength()?image->GetPathName():_T("N/A"), properties->name );
+			Utils::WriteToFile( rd.params.fReport, overview );
 		// - verification
 		CBackgroundMultiActionCancelable bmac(THREAD_PRIORITY_BELOW_NORMAL);
 			if (rd.params.verifyBootSector)
@@ -664,6 +675,10 @@ reportError:Utils::Information(buf);
 			if (rd.params.verifyVolumeSurface)
 				bmac.AddAction( rd.params.verificationFunctions.fnVolumeSurface, &rd.params, _T("Scanning volume surface for bad sectors") );
 		bmac.Perform();
+		// - closing the HTML Report
+		rd.params.fReport.Close();
+		// - displaying the HTML Report
+		((CMainWindow *)app.m_pMainWnd)->OpenWebPage( _T("Verification results"), tmpFileName );
 		// - updating Views
 		image->UpdateAllViews(nullptr);
 		return true;
