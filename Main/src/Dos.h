@@ -373,9 +373,9 @@
 		virtual void FlushToBootSector() const=0; // projects information stored in internal FormatBoot back to the Boot Sector (e.g. called automatically by BootView)
 		// FAT
 		virtual bool GetSectorStatuses(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PSectorStatus buffer) const=0;
-		virtual bool ModifyStdSectorStatus(RCPhysicalAddress chs,TSectorStatus status)=0;
+		virtual bool ModifyStdSectorStatus(RCPhysicalAddress chs,TSectorStatus status) const=0;
 		virtual bool GetFileFatPath(PCFile file,CFatPath &rFatPath) const=0;
-		virtual bool ModifyFileFatPath(PFile file,const CFatPath &rFatPath)=0;
+		virtual bool ModifyFileFatPath(PFile file,const CFatPath &rFatPath) const=0;
 		virtual DWORD GetFreeSpaceInBytes(TStdWinError &rError) const;
 		virtual TCylinder GetFirstCylinderWithEmptySector() const;
 		TStdWinError GetFirstEmptyHealthySector(bool skipBadSectors,TPhysicalAddress &rOutChs) const;

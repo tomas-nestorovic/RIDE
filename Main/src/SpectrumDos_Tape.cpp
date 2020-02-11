@@ -77,10 +77,10 @@
 		// True <=> Statuses of all Sectors in the Track successfully retrieved and populated the Buffer, otherwise False
 		return true; // see FormatBoot initialization in ctor
 	}
-	bool CSpectrumDos::CTape::ModifyStdSectorStatus(RCPhysicalAddress,TSectorStatus){
+	bool CSpectrumDos::CTape::ModifyStdSectorStatus(RCPhysicalAddress,TSectorStatus) const{
 		// True <=> the Status of the specified DOS-standard Sector successfully changed, otherwise False
 		//nop (not applicable for Tape)
-		m_bModified=TRUE;
+		const_cast<CTape *>(this)->m_bModified=TRUE;
 		return true;
 	}
 	bool CSpectrumDos::CTape::GetFileFatPath(PCFile file,CFatPath &rFatPath) const{
@@ -98,7 +98,7 @@
 		return false;
 	}
 
-	bool CSpectrumDos::CTape::ModifyFileFatPath(PFile file,const CFatPath &rFatPath){
+	bool CSpectrumDos::CTape::ModifyFileFatPath(PFile file,const CFatPath &rFatPath) const{
 		// True <=> a error-free FatPath of given File successfully written, otherwise False
 		return false; // operation not applicable for a Tape
 	}

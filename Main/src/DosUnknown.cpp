@@ -61,7 +61,7 @@
 		while (nSectors--) *buffer++=TSectorStatus::UNKNOWN; // all Sector are Unknown by design
 		return true;
 	}
-	bool CUnknownDos::ModifyStdSectorStatus(RCPhysicalAddress,TSectorStatus){
+	bool CUnknownDos::ModifyStdSectorStatus(RCPhysicalAddress,TSectorStatus) const{
 		// True <=> the Status of the specified DOS-standard Sector successfully changed, otherwise False
 		return false; //nop (doesn't have an allocation table)
 	}
@@ -69,7 +69,7 @@
 		// True <=> FatPath of given File (even an erroneous FatPath) successfully retrieved, otherwise False
 		return false; //nop (doesn't have an allocation table)
 	}
-	bool CUnknownDos::ModifyFileFatPath(PFile,const CFatPath &){
+	bool CUnknownDos::ModifyFileFatPath(PFile,const CFatPath &) const{
 		// True <=> a error-free FatPath of given File successfully written, otherwise False
 		return false; //nop (doesn't have an allocation table)
 	}

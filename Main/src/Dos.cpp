@@ -996,7 +996,7 @@ reportError:Utils::Information(buf);
 						}else{ // error when accessing discovered Empty Sector
 							TStdWinError err;
 							if (skipBadSectors){
-								const_cast<PDos>(this)->ModifyStdSectorStatus( item.chs, TSectorStatus::BAD ); // marking the Sector as Bad ...
+								ModifyStdSectorStatus( item.chs, TSectorStatus::BAD ); // marking the Sector as Bad ...
 								if (fileSize>GetFreeSpaceInBytes(err))
 									err=ERROR_DISK_FULL;
 								else

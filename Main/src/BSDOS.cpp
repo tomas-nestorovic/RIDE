@@ -207,7 +207,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 		return valueWritten;
 	}
 
-	bool CBSDOS308::ModifyStdSectorStatus(RCPhysicalAddress chs,TSectorStatus status){
+	bool CBSDOS308::ModifyStdSectorStatus(RCPhysicalAddress chs,TSectorStatus status) const{
 		// True <=> the Status of the specified DOS-standard Sector successfully changed, otherwise False
 		TFatValue value=TFatValue::SectorUnknown;
 		switch (status){
@@ -221,7 +221,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 		return __setLogicalSectorFatItem__( __fyzlog__(chs), value );
 	}
 
-	bool CBSDOS308::ModifyFileFatPath(PFile file,const CFatPath &rFatPath){
+	bool CBSDOS308::ModifyFileFatPath(PFile file,const CFatPath &rFatPath) const{
 		// True <=> a error-free FatPath of given File successfully written, otherwise False
 		CFatPath::PCItem pItem; DWORD nItems;
 		if (rFatPath.GetItems(pItem,nItems)) // if FatPath erroneous ...

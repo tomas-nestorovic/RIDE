@@ -151,7 +151,7 @@
 		return result;
 	}
 
-	bool CGDOS::ModifyFileFatPath(PFile file,const CFatPath &rFatPath){
+	bool CGDOS::ModifyFileFatPath(PFile file,const CFatPath &rFatPath) const{
 		// True <=> a error-free FatPath of given File successfully written, otherwise False
 		CFatPath::PCItem pItem; DWORD nItems;
 		if (rFatPath.GetItems(pItem,nItems)) // if FatPath erroneous ...
@@ -167,7 +167,7 @@
 		return true;
 	}
 
-	bool CGDOS::ModifyStdSectorStatus(RCPhysicalAddress chs,TSectorStatus status){
+	bool CGDOS::ModifyStdSectorStatus(RCPhysicalAddress chs,TSectorStatus status) const{
 		// True <=> the Status of the specified DOS-standard Sector successfully changed, otherwise False
 		bool result=true; // assumption (Statuses of all Sectors successfully modified)
 		for( TGdosDirectoryTraversal dt(this); dt.__existsNextEntry__(); )

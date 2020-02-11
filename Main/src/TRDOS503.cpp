@@ -145,7 +145,7 @@
 		}
 		return result;
 	}
-	bool CTRDOS503::ModifyStdSectorStatus(RCPhysicalAddress,TSectorStatus){
+	bool CTRDOS503::ModifyStdSectorStatus(RCPhysicalAddress,TSectorStatus) const{
 		// True <=> the Status of the specified DOS-standard Sector successfully changed, otherwise False
 		return true; // True = silently ignoring this request (as there's not FAT) - otherwise the caller might show an error message
 	}
@@ -207,7 +207,7 @@
 		return true;
 	}
 
-	bool CTRDOS503::ModifyFileFatPath(PFile file,const CFatPath &rFatPath){
+	bool CTRDOS503::ModifyFileFatPath(PFile file,const CFatPath &rFatPath) const{
 		// True <=> a error-free FatPath of given File successfully written, otherwise False
 		return false; // once set, the FatPath cannot be modified
 	}

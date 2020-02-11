@@ -193,9 +193,9 @@
 		void FlushToBootSector() const override; // projects information stored in internal FormatBoot back to the Boot Sector (e.g. called automatically by BootView)
 		// FAT
 		bool GetSectorStatuses(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PSectorStatus buffer) const override;
-		bool ModifyStdSectorStatus(RCPhysicalAddress chs,TSectorStatus status) override;
+		bool ModifyStdSectorStatus(RCPhysicalAddress chs,TSectorStatus status) const override;
 		bool GetFileFatPath(PCFile file,CFatPath &rFatPath) const override;
-		bool ModifyFileFatPath(PFile file,const CFatPath &rFatPath) override;
+		bool ModifyFileFatPath(PFile file,const CFatPath &rFatPath) const override;
 		// file system
 		bool GetFileNameOrExt(PCFile file,PPathString pOutName,PPathString pOutExt) const override;
 		TStdWinError ChangeFileNameAndExt(PFile file,RCPathString newName,RCPathString newExt,PFile &rRenamedFile) override;

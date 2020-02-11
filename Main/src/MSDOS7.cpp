@@ -177,7 +177,7 @@
 		return result;
 	}
 
-	bool CMSDOS7::ModifyStdSectorStatus(RCPhysicalAddress chs,TSectorStatus status){
+	bool CMSDOS7::ModifyStdSectorStatus(RCPhysicalAddress chs,TSectorStatus status) const{
 		// True <=> the Status of the specified DOS-standard Sector successfully changed, otherwise False
 		if (const PCBootSector bootSector=boot.GetSectorData()){
 			// Boot Sector exists
@@ -267,7 +267,7 @@
 		return true; // FatPath (with or without error) successfully extracted from FAT
 	}
 
-	bool CMSDOS7::ModifyFileFatPath(PFile file,const CFatPath &rFatPath){
+	bool CMSDOS7::ModifyFileFatPath(PFile file,const CFatPath &rFatPath) const{
 		// True <=> a error-free FatPath of given File successfully written, otherwise False
 		CFatPath::PCItem pItem; DWORD nItems;
 		if (rFatPath.GetItems(pItem,nItems)) // if FatPath erroneous ...
