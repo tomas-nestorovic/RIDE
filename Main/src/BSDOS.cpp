@@ -226,16 +226,26 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 		CFatPath::PCItem pItem; DWORD nItems;
 		if (rFatPath.GetItems(pItem,nItems)) // if FatPath erroneous ...
 			return false; // ... we are done
-		const PDirectoryEntry de=(PDirectoryEntry)file;
-		if (DWORD fileSize=de->file.dataLength){
-			TLogSector ls = de->file.firstSector = __fyzlog__(pItem->chs);
-			for( WORD h; --nItems; ls=h,fileSize-=BSDOS_SECTOR_LENGTH_STD ) // all Sectors but the last one are Occupied in FatPath
+		if (IsDirectory(file)){
+			// root Subdirectory
+			TLogSector ls = ((CDirsSector::PSlot)file)->firstSector = __fyzlog__(pItem->chs);
+			for( WORD h; --nItems; ls=h )
 				__setLogicalSectorFatItem__( ls, TFatValue(true,true,h=__fyzlog__((++pItem)->chs)) ); // no need to test FAT Sector existence (already tested above)
 			__setLogicalSectorFatItem__(ls, // terminating the FatPath in FAT
-										TFatValue( true, false, fileSize )
+										TFatValue( true, false, BSDOS_SECTOR_LENGTH_STD )
 									);
-		}else // zero-length Files are in NOT in the FAT
-			de->file.firstSector=boot.GetSectorData()->dirsLogSector; // some sensible value
+		}else{
+			const PDirectoryEntry de=(PDirectoryEntry)file;
+			if (DWORD fileSize=de->file.dataLength){
+				TLogSector ls = de->file.firstSector = __fyzlog__(pItem->chs);
+				for( WORD h; --nItems; ls=h,fileSize-=BSDOS_SECTOR_LENGTH_STD ) // all Sectors but the last one are Occupied in FatPath
+					__setLogicalSectorFatItem__( ls, TFatValue(true,true,h=__fyzlog__((++pItem)->chs)) ); // no need to test FAT Sector existence (already tested above)
+				__setLogicalSectorFatItem__(ls, // terminating the FatPath in FAT
+											TFatValue( true, false, fileSize )
+										);
+			}else // zero-length Files are in NOT in the FAT
+				de->file.firstSector=boot.GetSectorData()->dirsLogSector; // some sensible value
+		}
 		return true;
 	}
 
