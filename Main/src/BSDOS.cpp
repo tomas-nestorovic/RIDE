@@ -467,6 +467,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 					ASSERT( &de->dir.name==&de->file.stdHeader.name );
 					de->file.stdHeader.SetName(zxName);
 					slot->nameChecksum= dirNameChecksum>=0 ? dirNameChecksum : de->GetDirNameChecksum();
+					slot->reserved2=2;
 					::memset( de->dir.comment, ' ', sizeof(de->dir.comment) );
 					dirsSector.MarkDirectoryEntryAsDirty(slot);
 					return ERROR_SUCCESS;
