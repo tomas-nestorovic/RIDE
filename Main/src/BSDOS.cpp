@@ -79,7 +79,7 @@
 			for( BYTE fatCopy=0; fatCopy<BSDOS_FAT_COPIES_MAX; fatCopy++ ){
 				TLogSector lsFat=bootSector->fatStarts[fatCopy];
 				if (PCFatValue fat=reinterpret_cast<PCFatValue>( __getHealthyLogicalSectorData__(lsFat) ))
-					for( TLogSector index=logSector; lsFat<BSDOS_FAT_ITEMS_PER_SECTOR; index-=BSDOS_FAT_ITEMS_PER_SECTOR ){
+					for( TLogSector index=logSector; lsFat<BSDOS_FAT_LOGSECTOR_MAX; index-=BSDOS_FAT_ITEMS_PER_SECTOR ){
 						const TFatValue value=fat[lsFat];
 						if (!value.occupied)
 							break; // next FAT copy
@@ -145,7 +145,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 									TLogSector lsFat=bootSector->fatStarts[fatCopy];
 									if (const PCFatValue fat=reinterpret_cast<PCFatValue>(__getHealthyLogicalSectorData__(lsFat)))
 										for( BYTE n=bootSector->nSectorsPerFat; n>0; n-- ){
-											if (lsFat>=BSDOS_FAT_ITEMS_PER_SECTOR)
+											if (lsFat>=BSDOS_FAT_LOGSECTOR_MAX)
 												break; // next FAT copy
 											const TFatValue value=fat[lsFat];
 											if (!value.occupied)
@@ -176,7 +176,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 			for( BYTE fatCopy=0; fatCopy<BSDOS_FAT_COPIES_MAX; fatCopy++ ){
 				const TLogSector lsFat0=bootSector->fatStarts[fatCopy];
 				if (PFatValue fat=reinterpret_cast<PFatValue>(__getHealthyLogicalSectorData__(lsFat0)))
-					for( TLogSector index=logSector,lsFat=lsFat0; lsFat<BSDOS_FAT_ITEMS_PER_SECTOR; index-=BSDOS_FAT_ITEMS_PER_SECTOR ){
+					for( TLogSector index=logSector,lsFat=lsFat0; lsFat<BSDOS_FAT_LOGSECTOR_MAX; index-=BSDOS_FAT_ITEMS_PER_SECTOR ){
 						const TFatValue value=fat[lsFat];
 						if (!value.occupied)
 							break; // next FAT copy
@@ -263,6 +263,53 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 			return result;
 		}else
 			return 0;
+	}
+
+	CBSDOS308::TLogSector CBSDOS308::__getEmptyHealthyFatSector__(bool allowFileFragmentation) const{
+		// 
+		// - first, searching for a healthy Sector that is reported Empty in existing FAT
+		TPhysicalAddress chs;
+		if (const TStdWinError err=GetFirstEmptyHealthySector(true,chs)) // if error finding (any) Empty healthy Sector ...
+			return 0; // ... we are unsuccessfully done
+		const TLogSector ls=__fyzlog__(chs);
+		if (ls<BSDOS_FAT_LOGSECTOR_MAX)
+			return ls;
+		// - if fragmentation of existing Files not Allowed, we are unsuccessfully done
+		if (!allowFileFragmentation)
+			return 0;
+		// - next, fragmenting an existing File, re-allocating one of its Sectors that begins before BSDOS_FAT_LOGSECTOR_MAX Sector
+		for( CDirsSector::CTraversal rt(this); const PCFile subdir=rt.GetNextFileOrSubdir(); ) // root traversal
+			for( TDirectoryEntry::CTraversal dt(this,subdir); const PFile file=dt.GetNextFileOrSubdir(); ){ // Subdirectory traversal
+				const CFatPath fatPath(this,file);
+				CFatPath::PItem pItem; DWORD nItems;
+				if (fatPath.GetItems(pItem,nItems))
+					continue; // can't re-allocate a Sector of a File whose FatPath is erroneous
+				for( ; nItems--; pItem++ ){
+					const TLogSector ls=__fyzlog__(pItem->chs);
+					if (ls<BSDOS_FAT_LOGSECTOR_MAX) // found a Sector that might be moved to make space for a FAT Sector
+						if (const PCSectorData data=__getHealthyLogicalSectorData__(ls)){ // the Sector is healthy
+							// . finding a replacement Empty healthy Sector
+							//nop (already found above)
+							// . copying existing Data to the above Empty Sector
+							const TLogSector lsEmpty=__fyzlog__(chs);
+							::memcpy(	__getHealthyLogicalSectorData__(lsEmpty), // readability guaranteed
+										data,
+										formatBoot.sectorLength
+									);
+							//__markLogicalSectorAsDirty__(lsEmpty); // postponed until below
+							// . changing File's FatPath
+							pItem->chs=chs;
+							if (!ModifyFileFatPath( file, fatPath )) // if FAT non-modifiable ...
+								break; // ... better attempting to re-allocate Sector of another File
+							__markLogicalSectorAsDirty__(lsEmpty);
+							// . successfully re-allocated a healthy Sector, making it now Empty
+							__setLogicalSectorFatItem__( ls, TFatValue::SectorEmpty );
+							return ls;
+						}
+				}
+			}
+		// - no healthy Sector could be re-allocated
+		return 0;
 	}
 
 	bool CBSDOS308::GetFileFatPath(PCFile file,CFatPath &rFatPath) const{
@@ -958,78 +1005,6 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 		return 0;
 	}
 
-/*	void CBSDOS308::InitializeEmptyMedium(CFormatDialog::PCParameters params){
-		// initializes a fresh formatted Medium (Boot, FAT, root dir, etc.)
-		// - initializing the Boot Sector
-		const PBootSector boot=TBootSector::GetData(image);
-		if (!boot) // Boot Sector may not be found
-			return;
-		::ZeroMemory( boot, sizeof(TBootSector) );
-			// . signatures
-			boot->signature1=0x02;
-			//boot->signature2 = boot->signature3 = 0x00; // commented out as see ZeroMemory above
-			// . bootstrap
-			boot->jmpInstruction.opCode=0x18; // "jr N" instruction
-			// . geometry
-			FlushToBootSector();
-			// . date this disk was formatted
-			CMSDOS7::TDateTime( CMSDOS7::TDateTime::GetCurrent() ).ToDWord(&boot->formattedDateTime);
-			// . label
-			::memcpy(	::memset( boot->diskName, ' ', sizeof(boot->diskName) ),
-						VOLUME_LABEL_DEFAULT_ANSI_8CHARS,
-						sizeof(VOLUME_LABEL_DEFAULT_ANSI_8CHARS)-1
-					);
-			// . disk ID
-			//TODO
-		// - FAT
-		TLogSector ls=1;
-		const TLogSector nSectorsTotal=formatBoot.GetCountOfAllSectors();
-		boot->nSectorsPerFat=(nSectorsTotal+BSDOS_FAT_ITEMS_PER_SECTOR-1)/BSDOS_FAT_ITEMS_PER_SECTOR;
-		boot->nBytesInFat=boot->nSectorsPerFat*BSDOS_SECTOR_LENGTH_STD;
-		TFatValue fatFirstSector[BSDOS_FAT_ITEMS_PER_SECTOR];
-			::ZeroMemory( fatFirstSector, sizeof(fatFirstSector) );
-			fatFirstSector[1]=TFatValue::SystemSector;
-		for( BYTE fatCopy=0; fatCopy<params->nAllocationTables; fatCopy++ ){
-			if (boot->fatStarts[fatCopy]=__getNextHealthySectorWithoutFat__(ls,BSDOS_FAT_ITEMS_PER_SECTOR))
-				for( BYTE nSectorsPerFatCopy=boot->nSectorsPerFat; --nSectorsPerFatCopy; ){
-					const TLogSector curr=ls;
-					if (const TLogSector next=__getNextHealthySectorWithoutFat__(ls,BSDOS_FAT_ITEMS_PER_SECTOR))
-						fatFirstSector[curr]=TFatValue(true,true,next);
-					else
-						return;
-				}
-			else
-				return;
-			fatFirstSector[ls]=TFatValue(true,false,BSDOS_SECTOR_LENGTH_STD);
-		}
-		::memcpy(	__getHealthyLogicalSectorData__(boot->fatStarts[0]),
-					fatFirstSector,
-					sizeof(fatFirstSector)
-				);
-		__setLogicalSectorFatItem__( 0, TFatValue( MAKEWORD(0,__getFatChecksum__(0)) ) );
-		switch (params->nAllocationTables){
-			case 1:
-				// just a single FAT copy wanted
-				boot->fatStarts[1]=boot->fatStarts[0]; // formally setting the second copy identical to the first one
-				break;
-			case 2:
-				// two FAT copies wanted
-				::memcpy(	__getHealthyLogicalSectorData__(boot->fatStarts[1]),
-							fatFirstSector,
-							sizeof(fatFirstSector)
-						);
-				__setLogicalSectorFatItem__( 0, TFatValue( MAKEWORD(0,__getFatChecksum__(1)) ) );
-				break;
-			default:
-				ASSERT(FALSE); // we shouldn't end up here!
-		}
-		// - root Directory
-		if (boot->dirsLogSector=__getNextHealthySectorWithoutFat__(ls,nSectorsTotal))
-			__setLogicalSectorFatItem__( ls, TFatValue(true,false,BSDOS_SECTOR_LENGTH_STD) );
-		else
-			return;
-	}
-*/
 	void CBSDOS308::InitializeEmptyMedium(CFormatDialog::PCParameters params){
 		// initializes a fresh formatted Medium (Boot, FAT, root dir, etc.)
 		// - initializing the Boot Sector
@@ -1059,7 +1034,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 		const TLogSector nSectorsTotal=formatBoot.GetCountOfAllSectors();
 		boot->nSectorsPerFat=(nSectorsTotal+BSDOS_FAT_ITEMS_PER_SECTOR-1)/BSDOS_FAT_ITEMS_PER_SECTOR;
 		boot->nBytesInFat=boot->nSectorsPerFat*BSDOS_SECTOR_LENGTH_STD;
-		TFatValue fatFirstSector[BSDOS_FAT_ITEMS_PER_SECTOR];
+		TFatValue fatFirstSector[BSDOS_FAT_LOGSECTOR_MAX];
 			::ZeroMemory( fatFirstSector, sizeof(fatFirstSector) );
 			fatFirstSector[1]=TFatValue::SystemSector;
 		for( BYTE fatCopy=0,fatSectors[UCHAR_MAX]; fatCopy<BSDOS_FAT_COPIES_MAX; fatCopy++ ){
@@ -1105,17 +1080,74 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 		if (reformatting){
 			// NOT formatting from scratch, just reformatting some Cylinders
 			// . BootSector must exist
-			const PCBootSector bootSector=boot.GetSectorData();
+			const PBootSector bootSector=boot.GetSectorData();
 			if (!bootSector)
 				return false;
-			// . collecting information for the upcoming Format change
-			const DWORD nNewSectorsTotal=f->GetCountOfAllSectors();
-			const BYTE nNewFatSectors=(nNewSectorsTotal+BSDOS_FAT_ITEMS_PER_SECTOR-1)/BSDOS_FAT_ITEMS_PER_SECTOR;
-			// . the count of Sectors per one FAT copy cannot increase
-			if (nNewFatSectors>bootSector->nSectorsPerFat){
-				Utils::Information(_T("Not all new cylinders can be added in FAT."));
+			// . briefly checking the state of FATs
+			#define MSG_MAIN		_T("Can't change disk format")
+			#define MSG_SUGGESTION	_T("Run disk verification and try again.")
+			TDirectoryEntry deFats[]={ TDirectoryEntry(this,bootSector->fatStarts[0]), TDirectoryEntry(this,bootSector->fatStarts[1]) };
+			CFatPath fats[]={ CFatPath(this,&deFats[0]), CFatPath(this,&deFats[1]) };
+			if (fats[0].GetNumberOfItems()!=fats[1].GetNumberOfItems()
+				||
+				bootSector->fatStarts[0]>=BSDOS_FAT_LOGSECTOR_MAX || bootSector->fatStarts[1]>=BSDOS_FAT_LOGSECTOR_MAX
+				||
+				!fats[0].AreAllSectorsReadable(this) || !fats[1].AreAllSectorsReadable(this)
+			){
+				Utils::Information(MSG_MAIN,_T("FATs don't seem intact"),MSG_SUGGESTION);
 				return false;
 			}
+			if (::memcmp( __getHealthyLogicalSectorData__(bootSector->fatStarts[0]), __getHealthyLogicalSectorData__(bootSector->fatStarts[1]), BSDOS_SECTOR_LENGTH_STD )){ // FAT copies are not identical (readability guaranteed by above actions); comparing their first Sectors suffices for this operation
+				Utils::Information(MSG_MAIN,_T("FATs are not identical"),MSG_SUGGESTION);
+				return false;
+			}
+			// . collecting information for the upcoming Format change
+			const DWORD nNewSectorsTotal=f->GetCountOfAllSectors();
+			const WORD nNewFatSectors=(nNewSectorsTotal+BSDOS_FAT_ITEMS_PER_SECTOR-1)/BSDOS_FAT_ITEMS_PER_SECTOR;
+			// . adjusting the FAT
+			deFats[0].file.dataLength = deFats[1].file.dataLength = nNewFatSectors*BSDOS_SECTOR_LENGTH_STD;
+			if (nNewFatSectors<bootSector->nSectorsPerFat)
+				// new FAT is shorter than the original one
+				for( BYTE i=0; i<BSDOS_FAT_COPIES_MAX; i++ ){
+					while (fats[i].GetNumberOfItems()>nNewFatSectors)
+						ModifyStdSectorStatus( fats[i].PopItem()->chs, TSectorStatus::EMPTY );
+					ModifyFileFatPath( &deFats[i], fats[i] ); // guaranteed to succeed
+				}
+			else if (nNewFatSectors>bootSector->nSectorsPerFat){
+				// new FAT is longer than the original one - TRANSACTIONALLY allocating new Sectors to each of FAT copies
+				bool allowFileFragmentation=false;
+				CFatPath fats[]={ CFatPath(this,&deFats[0]), CFatPath(this,&deFats[1]) };
+				for( BYTE i=0; i<BSDOS_FAT_COPIES_MAX; i++ )
+					for( CFatPath::TItem item; fats[i].GetNumberOfItems()<nNewFatSectors; )
+						if (const TLogSector ls=__getEmptyHealthyFatSector__(allowFileFragmentation)){
+							// new healthy FAT Sector successfully allocated
+							__setLogicalSectorFatItem__( ls, TFatValue::SectorErrorInDataField ); // reserving the Sector
+							bootSector->fatSectorsListing[(fats[i].GetNumberOfItems()-1)*2+i]=ls;
+							item.chs=__logfyz__(ls);
+							fats[i].AddItem(&item);
+						}else if (allowFileFragmentation){
+							// no new healthy FAT Sectors can be allocated despite possibility to fragment Files
+							Utils::FatalError( _T("Can't allocate necessary FAT sectors"), ERROR_FILE_SYSTEM_LIMITATION, MSG_SUGGESTION );
+							return false;
+						}else
+							// no new healthy FAT Sectors can be allocated without fragmenting some Files
+							if (Utils::QuestionYesNo( _T("Can't allocate necessary FAT sectors.\nFragment some files in favor of FAT?"), MB_DEFBUTTON2 ))
+								allowFileFragmentation=true; // allowing fragmentation and trying again
+							else
+								return false;
+				for( BYTE i=0; i<BSDOS_FAT_COPIES_MAX; i++ ){
+					for( WORD s=bootSector->nSectorsPerFat; s<nNewFatSectors; s++ )
+						::ZeroMemory(
+							__getHealthyLogicalSectorData__(__fyzlog__(fats[i].GetItem(s)->chs)), // guaranteed to succeed
+							BSDOS_SECTOR_LENGTH_STD
+						);
+					ModifyFileFatPath( &deFats[i], fats[i] ); // guaranteed to succeed
+				}
+				ModifyFileFatPath( &deFats[0], fats[0] ); // letting second FAT copy know Sectors allocated to first FAT copy; guaranteed to succeed
+			}
+			bootSector->nBytesInFat=( bootSector->nSectorsPerFat=nNewFatSectors )*BSDOS_SECTOR_LENGTH_STD;
+			boot.MarkSectorAsDirty();
+			__setLogicalSectorFatItem__( 0, TFatValue( MAKEWORD(0,__getFatChecksum__(0)) ) ); // both FAT copies are the same at the moment, hence getting checksum of one of them
 		}//else
 			// formatting from scratch (e.g. an empty disk)
 			//nop

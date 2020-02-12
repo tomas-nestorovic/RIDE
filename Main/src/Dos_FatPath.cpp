@@ -82,6 +82,15 @@
 		return true; // CDos-derivate performs additional validation
 	}
 
+	CDos::CFatPath::PCItem CDos::CFatPath::PopItem(){
+		// removes and returns the last Item; returns Null if no Items in the FatPath
+		if (nItems>0){
+			nItems--;
+			return --pLastItem;
+		}else
+			return nullptr;
+	}
+
 	LPCTSTR CDos::CFatPath::GetItems(PCItem &rBuffer,DWORD &rnItems) const{
 		// retrieves pointer to the first Item in the Buffer and their number; returns textual description of this FatPath's error (or Null if error-less)
 		rBuffer=buffer, rnItems=GetNumberOfItems();
@@ -94,9 +103,29 @@
 		return GetErrorDesc();
 	}
 
+	CDos::CFatPath::PCItem CDos::CFatPath::GetItem(DWORD i) const{
+		// returns I-th Item or Null
+		if (GetErrorDesc()) // FatPath erroneous
+			return nullptr;
+		if (i>=nItems) // request out of bounds
+			return nullptr;
+		return buffer+i;
+	}
+
 	DWORD CDos::CFatPath::GetNumberOfItems() const{
 		// returns the NumberOfItems currenty in the FileFatPath
 		return nItems;
+	}
+
+	bool CDos::CFatPath::AreAllSectorsReadable(const CDos *dos) const{
+		// True <=> all Sectors refered in the FatPath are healthy, otherwise False
+		PCItem p; DWORD n;
+		if (GetItems(p,n)) // error
+			return false;
+		while (n--)
+			if (!dos->image->GetHealthySectorData(p++->chs))
+				return false;
+		return true;
 	}
 
 	LPCTSTR CDos::CFatPath::GetErrorDesc() const{

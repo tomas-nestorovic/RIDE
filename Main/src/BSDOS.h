@@ -10,6 +10,8 @@
 	#define BSDOS_SECTOR_NUMBER_TEMP	(BSDOS_SECTOR_NUMBER_FIRST+1)
 
 	#define BSDOS_FAT_COPIES_MAX		2
+	#define BSDOS_FAT_LOGSECTOR_MIN		BSDOS_SECTOR_NUMBER_TEMP
+	#define BSDOS_FAT_LOGSECTOR_MAX		((BYTE)-1+1)
 
 	#define BSDOS_DIRS_SLOTS_COUNT		(BSDOS_SECTOR_LENGTH_STD/sizeof(CDirsSector::TSlot))
 
@@ -200,6 +202,7 @@
 		bool __setLogicalSectorFatItem__(TLogSector logSector,TFatValue newValue) const;
 		BYTE __getFatChecksum__(BYTE fatCopy) const;
 		TLogSector __getNextHealthySectorWithoutFat__(TLogSector &rStart,TLogSector end) const;
+		TLogSector __getEmptyHealthyFatSector__(bool allowFileFragmentation) const;
 	public:
 		static const TProperties Properties;
 

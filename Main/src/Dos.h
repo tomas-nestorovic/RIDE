@@ -179,9 +179,12 @@
 			~CFatPath();
 
 			bool AddItem(PCItem pItem);
+			PCItem PopItem();
 			LPCTSTR GetItems(PCItem &rBuffer,DWORD &rnItems) const;
 			LPCTSTR GetItems(PItem &rBuffer,DWORD &rnItems) const;
+			PCItem GetItem(DWORD i) const;
 			DWORD GetNumberOfItems() const;
+			bool AreAllSectorsReadable(const CDos *dos) const;
 			LPCTSTR GetErrorDesc() const;
 		};
 
