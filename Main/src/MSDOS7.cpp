@@ -1129,48 +1129,20 @@
 				// showing/hiding "dotdot" DirectoryEntries
 				__writeProfileBool__( INI_DONT_SHOW_DOTDOT, dontShowDotdotEntries=!dontShowDotdotEntries );
 				return TCmdResult::DONE_REDRAW;			
-			case ID_DOS_FORMAT:{
+			case ID_DOS_FORMAT:
 				// formatting Cylinders
-				TStdWinError err;
-				::SetLastError(ERROR_SUCCESS);
-				const PCylinder bufCylinders=(PCylinder)::calloc( HDD_HEADS_MAX*HDD_CYLINDERS_MAX, sizeof(TCylinder) ); // big enough buffer
-				if (( err=::GetLastError() )==ERROR_SUCCESS){
-					const PHead bufHeads=(PHead)::calloc( HDD_HEADS_MAX*HDD_CYLINDERS_MAX, sizeof(THead) ); // big enough buffer
-					if (( err=::GetLastError() )==ERROR_SUCCESS){
-						err=__showDialogAndFormatStdCylinders__(
-							CFormatDialog(this,nullptr,0),
-							bufCylinders, bufHeads
-						);
-						::free(bufHeads);
-					}
-					::free(bufCylinders);
-				}
-				if (err!=ERROR_SUCCESS){
+				if (const TStdWinError err=__showDialogAndFormatStdCylinders__( CFormatDialog(this,nullptr,0) )){
 					Utils::Information( DOS_ERR_CANNOT_FORMAT, err );
 					return TCmdResult::REFUSED;
 				}else
 					return TCmdResult::DONE_REDRAW;
-			}
 			case ID_DOS_UNFORMAT:{
 				// unformatting Cylinders
-				TStdWinError err;
-				const PCylinder bufCylinders=(PCylinder)::calloc( HDD_HEADS_MAX*HDD_CYLINDERS_MAX, sizeof(TCylinder) ); // big enough buffer
-				if (( err=::GetLastError() )==ERROR_SUCCESS){
-					const PHead bufHeads=(PHead)::calloc( HDD_HEADS_MAX*HDD_CYLINDERS_MAX, sizeof(THead) ); // big enough buffer
-					if (( err=::GetLastError() )==ERROR_SUCCESS){
-						const TCylinder cylMin=1+__getLastOccupiedStdCylinder__(), cylMax=image->GetCylinderCount()-1;
-						const CUnformatDialog::TStdUnformat stdUnformats[]={
-							{ STR_TRIM_TO_MIN_NUMBER_OF_CYLINDERS,	cylMin, cylMax }
-						};
-						err=__unformatStdCylinders__(
-							CUnformatDialog(this,stdUnformats,1),
-							bufCylinders, bufHeads
-						);
-						::free(bufHeads);
-					}
-					::free(bufCylinders);
-				}
-				if (err!=ERROR_SUCCESS){
+				const TCylinder cylMin=1+__getLastOccupiedStdCylinder__(), cylMax=image->GetCylinderCount()-1;
+				const CUnformatDialog::TStdUnformat stdUnformats[]={
+					{ STR_TRIM_TO_MIN_NUMBER_OF_CYLINDERS,	cylMin, cylMax }
+				};
+				if (const TStdWinError err=__showDialogAndUnformatStdCylinders__( CUnformatDialog(this,stdUnformats,1) )){
 					Utils::Information( DOS_ERR_CANNOT_UNFORMAT, err );
 					return TCmdResult::REFUSED;
 				}else

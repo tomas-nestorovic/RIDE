@@ -36,8 +36,6 @@
 				return TCmdResult::DONE_REDRAW;
 			case ID_DOS_FORMAT:{
 				// formatting standard Cylinders (i.e. with standard "official" Sectors)
-				TCylinder bufCylinders[FDD_CYLINDERS_MAX*2];// a "big enough" Buffer
-				THead bufHeads[FDD_CYLINDERS_MAX*2];		// a "big enough" Buffer
 				const TCylinder cylMin=std::min<int>( 1+__getLastOccupiedStdCylinder__(), formatBoot.nCylinders );
 				CFormatDialog::TStdFormat additionalFormats[]={
 					{ _T("Expand to 40 cylinders"),	cylMin, formatBoot, 1, 0, FDD_SECTOR_GAP3_STD, properties->stdFormats->params.nAllocationTables, properties->nRootDirectoryEntriesMax },
@@ -48,21 +46,19 @@
 				CFormatDialog d(this, additionalFormats,
 								cylMin&&formatBoot.mediumType!=TMedium::UNKNOWN ? FORMAT_ADDITIONAL_COUNT : 0 // AdditionalFormats available only if Image already formatted before
 							);
-				return	__showDialogAndFormatStdCylinders__( d, bufCylinders, bufHeads )==ERROR_SUCCESS
+				return	__showDialogAndFormatStdCylinders__(d)==ERROR_SUCCESS
 						? TCmdResult::DONE_REDRAW
 						: TCmdResult::REFUSED;
 			}
 			case ID_DOS_UNFORMAT:{
 				// unformatting Cylinders
-				TCylinder bufCylinders[FDD_CYLINDERS_MAX*2];// a "big enough" Buffer
-				THead bufHeads[FDD_CYLINDERS_MAX*2];		// a "big enough" Buffer
 				const TCylinder cylMin=1+__getLastOccupiedStdCylinder__(), cylMax=image->GetCylinderCount()-1;
 				const CUnformatDialog::TStdUnformat stdUnformats[]={
 					{ _T("Trim to 40 cylinders"),	40, cylMax },
 					{ _T("Trim to 80 cylinders"),	80, cylMax },
 					{ STR_TRIM_TO_MIN_NUMBER_OF_CYLINDERS,	cylMin, cylMax }
 				};
-				return	__unformatStdCylinders__( CUnformatDialog(this,stdUnformats,UNFORMAT_COUNT), bufCylinders, bufHeads )==ERROR_SUCCESS
+				return	__showDialogAndUnformatStdCylinders__( CUnformatDialog(this,stdUnformats,UNFORMAT_COUNT) )==ERROR_SUCCESS
 						? TCmdResult::DONE_REDRAW
 						: TCmdResult::REFUSED;
 			}

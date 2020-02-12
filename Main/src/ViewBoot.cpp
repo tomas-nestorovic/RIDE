@@ -77,62 +77,40 @@
 	bool WINAPI CBootView::__updateFatAfterChangingCylinderCount__(PVOID,int newValue){
 		// updates the FAT after the number of Cylinders in the FAT has been changed
 		const PDos dos=CDos::GetFocused();
+		// - making sure affected Cylinders are Empty
+		const TCylinder nCyl0=dos->formatBoot.nCylinders, cylA=std::min<int>(nCyl0,newValue), cylZ=std::max<int>(nCyl0,newValue);
+		const THead nHeads=dos->formatBoot.nHeads;
+		if (dos->AreStdCylindersEmpty(cylA,cylZ-1)!=ERROR_EMPTY){
+			Utils::Information( DOS_ERR_CANNOT_ACCEPT_VALUE, DOS_ERR_CYLINDERS_NOT_EMPTY, DOS_MSG_HIT_ESC );
+			return false;
+		}
+		// - validating new format (eventually extending existing FAT to accommodate new Cylinders, or shrinking FAT to spare space on the disk)
 		TFormat fmt=dos->formatBoot;
 			fmt.nCylinders=(TCylinder)newValue;
-		if (dos->ValidateFormatChangeAndReportProblem(false,&fmt)){
-			// new number of Cylinders acceptable
-			const TCylinder nCyl0=(TCylinder)dos->formatBoot.nCylinders, cylZ=std::max<int>(nCyl0,newValue);
-			const THead nHeads=dos->formatBoot.nHeads;
-			const TTrack nTracksMax=cylZ*nHeads;
-			TStdWinError err;
-			const PCylinder bufCylinders=(PCylinder)::calloc(nTracksMax,sizeof(TCylinder)); // a "big enough" buffer
-			if (( err=::GetLastError() )==ERROR_SUCCESS){
-				const PHead bufHeads=(PHead)::calloc(nTracksMax,sizeof(THead)); // a "big enough" buffer
-				if (( err=::GetLastError() )==ERROR_SUCCESS){
-					// . composing the list of Tracks that will be added to or removed from FAT
-					TTrack nTracks=0;
-					for( TCylinder cylA=std::min<int>(nCyl0,newValue); cylA<cylZ; cylA++ )
-						for( THead head=0; head<nHeads; head++,nTracks++ )
-							bufCylinders[nTracks]=cylA, bufHeads[nTracks]=head;
-					// . adding to or removing from FAT
-					if (( err=dos->__areStdCylindersEmpty__(nTracks,bufCylinders) )==ERROR_EMPTY){
-						// none of the Cylinders contains reachable data
-						dos->formatBoot.nCylinders=newValue; // accepting the new number of Cylinders
-						TCHAR bufMsg[500],*operationDesc;
-						if (newValue>nCyl0){ // adding Tracks to FAT
-							operationDesc=_T("added to FAT as empty");
-							::wsprintf( bufMsg, CYLINDER_OPERATION_FINISHED, operationDesc );
-							if (dos->__addStdTracksToFatAsEmpty__(nTracks,bufCylinders,bufHeads))
-								__informationWithCheckableShowNoMore__(bufMsg,CYLINDERS_ADDED_TO_FAT);
-							else{
-errorFAT:						::wsprintf( bufMsg+::lstrlen(bufMsg), _T("\n\n") FAT_SECTOR_UNMODIFIABLE, operationDesc );
-								Utils::Information(bufMsg,::GetLastError());
-							}
-						}else if (newValue<nCyl0){ // removing Tracks from FAT
-							operationDesc=_T("removed from FAT");
-							::wsprintf( bufMsg, CYLINDER_OPERATION_FINISHED, operationDesc );
-							if (dos->__removeStdTracksFromFat__(nTracks,bufCylinders,bufHeads))
-								__informationWithCheckableShowNoMore__(bufMsg,CYLINDERS_REMOVED_FROM_FAT);
-							else
-								goto errorFAT;
-						}
-						dos->FlushToBootSector();
-					}
-					::free(bufHeads);
-				}
-				::free(bufCylinders);
-			}
-			if (err!=ERROR_EMPTY){
-				if (err==ERROR_NOT_EMPTY)
-					Utils::Information(DOS_ERR_CANNOT_ACCEPT_VALUE,DOS_ERR_CYLINDERS_NOT_EMPTY,DOS_MSG_HIT_ESC);
-				else
-					Utils::Information(DOS_ERR_CANNOT_ACCEPT_VALUE,err,DOS_MSG_HIT_ESC);
-				return false;
-			}
-			dos->image->UpdateAllViews(nullptr);
-			return true;
-		}else
+		if (!dos->ValidateFormatChangeAndReportProblem(true,&fmt))
 			return false;
+		// - adding to or removing from FAT
+		TCHAR bufMsg[500];
+		if (newValue>nCyl0){
+			// adding Cylinders to FAT
+			::wsprintf( bufMsg, CYLINDER_OPERATION_FINISHED, _T("added to FAT as empty") );
+			if (dos->__addStdCylindersToFatAsEmpty__(cylA,cylZ-1))
+				__informationWithCheckableShowNoMore__(bufMsg,CYLINDERS_ADDED_TO_FAT);
+			else{
+				::lstrcat( bufMsg, _T("\n\n") FAT_SECTOR_UNMODIFIABLE );
+				Utils::Information( bufMsg, ::GetLastError() );
+			}
+		}else if (newValue<nCyl0){
+			// removing Cylinders from FAT
+			::wsprintf( bufMsg, CYLINDER_OPERATION_FINISHED, _T("removed from FAT") );
+			dos->__removeStdCylindersFromFat__(cylA,cylZ-1); // no error checking as its assumed that some Cylinders couldn't be marked in (eventually shrunk) FAT as Unavailable
+			__informationWithCheckableShowNoMore__(bufMsg,CYLINDERS_REMOVED_FROM_FAT);
+		}
+		// - accepting the new number of Cylinders
+		dos->formatBoot.nCylinders=newValue;
+		dos->FlushToBootSector();
+		dos->image->UpdateAllViews(nullptr);
+		return true;
 	}
 
 

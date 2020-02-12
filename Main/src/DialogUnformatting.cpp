@@ -54,11 +54,19 @@
 		DDX_Check( pDX, ID_BOOT		, updateBoot );
 		DDX_Check( pDX, ID_FAT		, removeTracksFromFat );
 		if (pDX->m_bSaveAndValidate){
-			TFormat f=dos->formatBoot;
-			f.nCylinders=cylA;
-			if (!dos->ValidateFormatChangeAndReportProblem(false,&f)){
-				pDX->PrepareEditCtrl(ID_CYLINDER);
+			// . checking that all Cylinders to unformat are Empty
+			if (ERROR_EMPTY!=dos->AreStdCylindersEmpty( cylA, cylZ )){
+				Utils::Information( DOS_ERR_CANNOT_UNFORMAT, DOS_ERR_CYLINDERS_NOT_EMPTY, DOS_MSG_CYLINDERS_UNCHANGED );
+				pDX->PrepareEditCtrl(ID_CYLINDER_N);
 				pDX->Fail();
+			// . checking that new format is acceptable
+			}else{
+				TFormat f=dos->formatBoot;
+				f.nCylinders=cylA;
+				if (!dos->ValidateFormatChangeAndReportProblem(cylA>0,&f)){
+					pDX->PrepareEditCtrl(ID_CYLINDER);
+					pDX->Fail();
+				}
 			}
 		}
 	}

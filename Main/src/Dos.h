@@ -258,7 +258,6 @@
 		static UINT AFX_CDECL __unformatTracks_thread__(PVOID _pCancelableAction);
 
 		TStdWinError __isTrackEmpty__(TCylinder cyl,THead head,TSector nSectors,PCSectorId sectors) const;
-		TStdWinError __areStdCylindersEmpty__(TTrack nCylinders,PCylinder bufCylinders) const;
 	protected:
 		class CFilePreview:public CFrameWnd{
 			const CWnd *const pView;
@@ -298,13 +297,13 @@
 		bool __getProfileBool__(LPCTSTR entryName,bool defaultValue) const;
 		void __writeProfileBool__(LPCTSTR entryName,bool value) const;
 		TCylinder __getLastOccupiedStdCylinder__() const;
-		TStdWinError __showDialogAndFormatStdCylinders__(CFormatDialog &rd,PCylinder bufCylinders,PHead bufHeads);
-		TStdWinError __formatStdCylinders__(const CFormatDialog &rd,PCylinder bufCylinders,PHead bufHeads);
-		TStdWinError __formatTracks__(TTrack nTracks,PCCylinder cylinders,PCHead heads,TSector nSectors,PSectorId bufferId,PCWORD bufferLength,const CFormatDialog::TParameters &rParams,bool showReport);
-		TStdWinError __unformatStdCylinders__(CUnformatDialog &rd,PCylinder bufCylinders,PHead bufHeads);
-		TStdWinError __unformatTracks__(TTrack nTracks,PCCylinder cylinders,PCHead heads);
-		bool __addStdTracksToFatAsEmpty__(TTrack nTracks,PCCylinder cylinders,PCHead heads);
-		bool __removeStdTracksFromFat__(TTrack nTracks,PCCylinder cylinders,PCHead heads);
+		TStdWinError __showDialogAndFormatStdCylinders__(CFormatDialog &rd);
+		TStdWinError __formatStdCylinders__(const CFormatDialog &rd);
+		TStdWinError __formatTracks__(const CFormatDialog::TParameters &rParams,PCHead head,TSector nSectors,PSectorId bufferId,PCWORD bufferLength,bool showReport) const;
+		TStdWinError __showDialogAndUnformatStdCylinders__(CUnformatDialog &rd);
+		TStdWinError __unformatTracks__(const CUnformatDialog &rd,PCHead head) const;
+		bool __addStdCylindersToFatAsEmpty__(TCylinder cylA,TCylinder cylZInclusive) const;
+		bool __removeStdCylindersFromFat__(TCylinder cylA,TCylinder cylZInclusive) const;
 		bool __fillEmptySpace__(CFillEmptySpaceDialog &rd);
 		bool __verifyVolume__(CVerifyVolumeDialog &rd);
 		LPCTSTR __exportFileData__(PCFile file,CFile *fOut,DWORD nMaxDataBytesToExport) const;
@@ -379,6 +378,7 @@
 		virtual DWORD GetFreeSpaceInBytes(TStdWinError &rError) const;
 		virtual TCylinder GetFirstCylinderWithEmptySector() const;
 		TStdWinError GetFirstEmptyHealthySector(bool skipBadSectors,TPhysicalAddress &rOutChs) const;
+		TStdWinError AreStdCylindersEmpty(TCylinder cylA,TCylinder cylZInclusive) const;
 		// file system
 		virtual bool GetFileNameOrExt(PCFile file,PPathString pOutName,PPathString pOutExt) const=0;
 		virtual CString GetFilePresentationNameAndExt(PCFile file) const;

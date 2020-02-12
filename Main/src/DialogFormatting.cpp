@@ -122,12 +122,20 @@
 		DDX_Check( pDX, ID_VERIFY_TRACK, addTracksToFat );
 		DDX_Check( pDX, ID_REPORT	, showReportOnFormatting );
 		if (pDX->m_bSaveAndValidate){
-			params.format.nCylinders++;
-				if (!dos->ValidateFormatChangeAndReportProblem(params.cylinder0>0,&params.format)){
-					pDX->PrepareEditCtrl(ID_CYLINDER_N);
-					pDX->Fail();
-				}
-			params.format.nCylinders--;
+			// . checking that all Cylinders to format are Empty
+			if (params.cylinder0>0 && ERROR_EMPTY!=dos->AreStdCylindersEmpty( params.cylinder0, params.format.nCylinders )){
+				Utils::Information( DOS_ERR_CANNOT_FORMAT, DOS_ERR_CYLINDERS_NOT_EMPTY, DOS_MSG_CYLINDERS_UNCHANGED );
+				pDX->PrepareEditCtrl(ID_CYLINDER_N);
+				pDX->Fail();
+			// . checking that new format is acceptable
+			}else{
+				params.format.nCylinders++;
+					if (!dos->ValidateFormatChangeAndReportProblem(params.cylinder0>0,&params.format)){
+						pDX->PrepareEditCtrl(ID_CYLINDER_N);
+						pDX->Fail();
+					}
+				params.format.nCylinders--;
+			}
 		}else{
 			__recognizeStandardFormat__(); // selecting StandardFormat in ComboBox
 			__toggleReportingOnFormatting__();

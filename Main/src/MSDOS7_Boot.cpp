@@ -539,7 +539,7 @@
 	bool CMSDOS7::ValidateFormatChangeAndReportProblem(bool reformatting,PCFormat f) const{
 		// True <=> specified Format is acceptable, otherwise False (and informing on error)
 		// - base
-		if (!CDos::ValidateFormatChangeAndReportProblem(reformatting,f))
+		if (!__super::ValidateFormatChangeAndReportProblem(reformatting,f))
 			return false;
 		// - new CountOfClusters mustn't overflow nor underflow limits of current FAT Type
 		if (reformatting){
