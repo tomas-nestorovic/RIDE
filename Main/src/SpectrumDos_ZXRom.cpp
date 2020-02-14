@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-	CSpectrumDos::TZxRom::TZxRom()
+	CSpectrumBase::TZxRom::TZxRom()
 		// ctor
 		// - creating the Font using which all text will be printed on screen
 		: font(FONT_COURIER_NEW,100,false,true) {
@@ -15,7 +15,7 @@
 
 
 
-	double CSpectrumDos::TZxRom::TNumberInternalForm::ToDouble() const{
+	double CSpectrumBase::TZxRom::TNumberInternalForm::ToDouble() const{
 		// returns the PC floating-point version of the ZX Spectrum number (even if the NumberInternalForm represents an integer)
 		// - attempting to convert the NumberInternalForm to a PC integer
 		if (!(*bytes|bytes[4])) // yes, seems like an integer representation, as Bytes[0]==Bytes[4]==0
@@ -67,7 +67,7 @@
 
 
 
-	const LPCSTR CSpectrumDos::TZxRom::Keywords[]={
+	const LPCSTR CSpectrumBase::TZxRom::Keywords[]={
 		_T("RND"), _T("INKEY$"), _T("PI"), _T("FN "), _T("POINT "), _T("SCREEN$ "), _T("ATTR "), _T("AT "), _T("TAB "), _T("VAL$ "), _T("CODE "), _T("VAL "), _T("LEN "), _T("SIN "), _T("COS "), _T("TAN "), _T("ASN "), _T("ACS "), _T("ATN "), _T("LN "), _T("EXP "), _T("INT "), _T("SQR "), _T("SGN "), _T("ABS "), _T("PEEK "), _T("IN "), _T("USR "), _T("STR$ "), _T("CHR$ "), _T("NOT "), _T("BIN "),
 		_T(" OR "), _T(" AND "), _T("<="), _T(">="), _T("<>"), _T(" LINE "), _T(" THEN "), _T(" TO "), _T(" STEP "), _T(" DEF FN "), _T(" CAT "), _T(" FORMAT "), _T(" MOVE "), _T(" ERASE "), _T(" OPEN #"), _T(" CLOSE #"), _T(" MERGE "), _T(" VERIFY "), _T(" BEEP "), _T(" CIRCLE "), _T(" INK "), _T(" PAPER "), _T(" FLASH "), _T(" BRIGHT "), _T(" INVERSE "), _T(" OVER "), _T(" OUT "), _T(" LPRINT "), _T(" LLIST "), _T(" STOP "), _T(" READ "), _T(" DATA "), _T(" RESTORE "),
 		_T(" NEW "), _T(" BORDER "), _T(" CONTINUE "), _T(" DIM "), _T(" REM "), _T(" FOR "), _T(" GO TO "), _T(" GO SUB "), _T(" INPUT "), _T(" LOAD "), _T(" LIST "), _T(" LET "), _T(" PAUSE "), _T(" NEXT "), _T(" POKE "), _T(" PRINT "), _T(" PLOT "), _T(" RUN "), _T(" SAVE "), _T(" RANDOMIZE "), _T(" IF "), _T(" CLS "), _T(" DRAW "), _T(" CLEAR "), _T(" RETURN "), _T(" COPY ")
@@ -76,7 +76,7 @@
 	// KEYWORD_TOKEN_FIRST corresponds to the "RND" Keyword in ZX Spectrum charset
 	#define KEYWORD_TOKEN_FIRST	165
 
-	PTCHAR CSpectrumDos::TZxRom::ZxToAscii(LPCSTR zx,BYTE zxLength,PTCHAR bufT,char zxBefore){
+	PTCHAR CSpectrumBase::TZxRom::ZxToAscii(LPCSTR zx,BYTE zxLength,PTCHAR bufT,char zxBefore){
 		// converts text from Spectrum character set to PC's current character set and returns the result in Buffer
 		bufT[0]=zxBefore; // initialization
 		PTCHAR t=1+bufT;
@@ -107,7 +107,7 @@
 		return 1+bufT; // "1+" = see initialization above
 	}
 
-	PTCHAR CSpectrumDos::TZxRom::AsciiToZx(LPCTSTR pc,PCHAR zx,PBYTE pOutZxLength){
+	PTCHAR CSpectrumBase::TZxRom::AsciiToZx(LPCTSTR pc,PCHAR zx,PBYTE pOutZxLength){
 		// converts text from PC's current character set to Spectrum character set and returns the result in Buffer
 		PCHAR buf=zx;
 		for( ; const TCHAR c=*pc; pc++ )
@@ -123,19 +123,19 @@
 		return zx;
 	}
 
-	bool CSpectrumDos::TZxRom::IsStdUdgSymbol(BYTE s){
+	bool CSpectrumBase::TZxRom::IsStdUdgSymbol(BYTE s){
 		// True <=> given Character is a standard UDG symbol, otherwise False
 		return 127<s && s<144;
 	}
 
-	LPCSTR CSpectrumDos::TZxRom::GetKeywordTranscript(BYTE k){
+	LPCSTR CSpectrumBase::TZxRom::GetKeywordTranscript(BYTE k){
 		// returns the textual representation of the given Keyword, or Null if the character is not a Keyword character
 		return	k>=KEYWORD_TOKEN_FIRST
 				? Keywords[k-KEYWORD_TOKEN_FIRST]
 				: nullptr;
 	}
 
-	WORD CSpectrumDos::TZxRom::PrintAt(HDC dc,LPCSTR zx,BYTE zxLength,RECT r,UINT drawTextFormat,char zxBefore) const{
+	WORD CSpectrumBase::TZxRom::PrintAt(HDC dc,LPCSTR zx,BYTE zxLength,RECT r,UINT drawTextFormat,char zxBefore) const{
 		// returns the number of ASCII characters to which the input ZX code has been converted and printed inside the given Rectangle
 		TCHAR buf[3000]; // a big-enough buffer to accommodate 255-times the keyword RANDOMIZE
 		const PCHAR pAscii=ZxToAscii( zx, zxLength, buf, zxBefore );
