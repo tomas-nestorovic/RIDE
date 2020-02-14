@@ -27,6 +27,44 @@
 		}
 	}
 
+	BYTE CVerifyVolumeDialog::TParams::ConfirmUnsignedValueFix(LPCTSTR locationName,LPCTSTR valueName,WORD valueOffset,DWORD value,DWORD rangeA,DWORD rangeZ) const{
+		// confirms an unsigned numeric value at specified Offset has a Value from Range={A,...,Z}; if not, presents the problem using standard formulation and returns user's reaction
+		if (rangeA<=value && value<=rangeZ)
+			return IDNO; // ok, Value in Range, carry on verification
+		int nHexaDigits;
+		if (rangeZ<=(BYTE)-1)
+			nHexaDigits=sizeof(BYTE);
+		else if (rangeZ<=(WORD)-1)
+			nHexaDigits=sizeof(WORD);
+		else
+			nHexaDigits=sizeof(DWORD);
+		nHexaDigits<<=1;
+		CString err, quotedValueName;
+		if (valueName)
+			quotedValueName.Format( _T(" \"%s\""), valueName );
+		err.Format( _T("Value%s at offset 0x%04X %s%s has invalid value %d (0x%0*X)"),
+					quotedValueName,
+					valueOffset,
+					locationName ? _T("in the ") : _T(""),
+					locationName ? locationName : _T(""),
+					value,
+					nHexaDigits, value
+				);
+		CString sol;
+		if (rangeA!=rangeZ)
+			sol.Format(	_T("The expected range is from %d (0x%0*X) to %d (0x%0*X)."),
+						rangeA,
+						nHexaDigits, rangeA,
+						rangeZ,
+						nHexaDigits, rangeZ
+					);
+		else
+			sol.Format(	_T("The correct value is %d (0x%0*X)."),
+						rangeA,
+						nHexaDigits, rangeA
+					);
+		return ConfirmFix( err, sol );
+	}
 
 
 
@@ -61,7 +99,7 @@
 			Utils::WriteToFile(*this,_T("<ul>"));
 			itemListBegun=true;
 		}
-		Utils::WriteToFileFormatted( *this, _T("<li>%s"), problemDesc );
+		Utils::WriteToFileFormatted( *this, _T("<li>%s."), problemDesc );
 		problemOpen=true;
 	}
 
@@ -86,12 +124,12 @@
 
 
 
-	CVerifyVolumeDialog::CVerifyVolumeDialog(CDos *dos,const TVerificationFunctions &rvf)
+	CVerifyVolumeDialog::CVerifyVolumeDialog(TParams &rvp)
 		// ctor
 		// - base
 		: CDialog(IDR_DOS_VERIFY)
 		// - initialization
-		, params(dos,rvf)
+		, params(rvp)
 		, nOptionsChecked(0) {
 	}
 
