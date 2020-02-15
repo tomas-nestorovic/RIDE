@@ -35,6 +35,7 @@
 		ON_WM_CREATE()
 		ON_WM_VSCROLL()
 		ON_WM_MOUSEMOVE()
+		ON_WM_LBUTTONUP()
 		ON_WM_DESTROY()
 		ON_MESSAGE(WM_TRACK_SCANNED,__drawTrack__)
 		ON_COMMAND_RANGE(ID_TRACKMAP_STATUS,ID_TRACKMAP_BAD_DATA,__changeDisplayType__)
@@ -309,47 +310,73 @@
 		return 0;
 	}
 
-	afx_msg void CTrackMapView::OnMouseMove(UINT nFlags,CPoint point){
-		// cursor moved over this view
+	bool CTrackMapView::__getPhysicalAddressFromPoint__(POINT point,TPhysicalAddress &rOutChs,BYTE &rnOutSectorsToSkip){
+		// True <=> given actual scroll position, the Point falls into a Sector, otherwise False
 		CClientDC dc(this);
 		OnPrepareDC(&dc);
 		dc.DPtoLP(&point);
 		point.y-=TRACK0_Y;
-		const PCImage image=IMAGE;
-		if (point.y>=0 && point.y<image->GetTrackCount()*TRACK_HEIGHT){
+		if (point.y>=0 && point.y<IMAGE->GetTrackCount()*TRACK_HEIGHT){
 			// cursor over a Track
 			const TTrack track=point.y/TRACK_HEIGHT;
-			const THead nSides=__getNumberOfFormattedSidesInImage__(image);
+			const THead nSides=__getNumberOfFormattedSidesInImage__(IMAGE);
 			point.x-=SECTOR1_X;
 			const div_t d=div((int)track,nSides);
 			TSectorId bufferId[(TSector)-1],*pId=bufferId;
 			WORD bufferLength[(TSector)-1],*pLength=bufferLength;
-			TSector nSectors=image->ScanTrack( d.quot, d.rem, bufferId, bufferLength );
-			CDos::TSectorStatus statuses[(TSector)-1],*pStatus=statuses;
-			DOS->GetSectorStatuses( d.quot, d.rem, nSectors, bufferId, statuses );
-			for( int xL=0,xR=0; nSectors--; pStatus++,pId++ ){
+			TSector nSectors=IMAGE->ScanTrack( d.quot, d.rem, bufferId, bufferLength );
+			for( int xL=0,xR=0; nSectors--; pId++ ){
 				xR+=*pLength++>>zoomLengthFactor;
 				if (point.x>=xL && point.x<=xR){
 					// cursor over a Sector
-					TCHAR buf[40];
-					::wsprintf(buf,_T("Tr%d, %s: "),track,(LPCTSTR)pId->ToString());
-					switch (*pStatus){
-						case CDos::TSectorStatus::SYSTEM	: ::lstrcat(buf,_T("System")); break;
-						case CDos::TSectorStatus::UNAVAILABLE: ::lstrcat(buf,_T("Unavailable")); break;
-						case CDos::TSectorStatus::SKIPPED	: ::lstrcat(buf,_T("Skipped")); break;
-						case CDos::TSectorStatus::BAD		: ::lstrcat(buf,_T("Bad")); break;
-						case CDos::TSectorStatus::OCCUPIED	: ::lstrcat(buf,_T("Occupied")); break;
-						case CDos::TSectorStatus::RESERVED	: ::lstrcat(buf,_T("Reserved")); break;
-						case CDos::TSectorStatus::EMPTY		: ::lstrcat(buf,_T("Empty")); break;
-						default								: ::lstrcat(buf,_T("Unknown")); break;
-					}
-					CMainWindow::__setStatusBarText__(buf);
-					return;
+					rOutChs.cylinder=d.quot, rOutChs.head=d.rem;
+					rOutChs.sectorId=*pId;
+					rnOutSectorsToSkip=pId-bufferId;
+					return true;
 				}
 				xL=xR+=SECTOR_MARGIN;
 			}
 		}
-		__updateStatusBarIfCursorOutsideAnySector__();
+		return false;
+	}
+
+	afx_msg void CTrackMapView::OnMouseMove(UINT nFlags,CPoint point){
+		// cursor moved over this view
+		TPhysicalAddress chs; BYTE nSectorsToSkip;
+		if (__getPhysicalAddressFromPoint__(point,chs,nSectorsToSkip)){
+			// cursor over a Sector
+			TCHAR buf[40];
+			::wsprintf( buf, _T("Tr%d, %s: "), chs.GetTrackNumber(__getNumberOfFormattedSidesInImage__(IMAGE)), (LPCTSTR)chs.sectorId.ToString() );
+			CDos::TSectorStatus status;
+			DOS->GetSectorStatuses( chs.cylinder, chs.head, 1, &chs.sectorId, &status );
+			switch (status){
+				case CDos::TSectorStatus::SYSTEM	: ::lstrcat(buf,_T("System")); break;
+				case CDos::TSectorStatus::UNAVAILABLE: ::lstrcat(buf,_T("Unavailable")); break;
+				case CDos::TSectorStatus::SKIPPED	: ::lstrcat(buf,_T("Skipped")); break;
+				case CDos::TSectorStatus::BAD		: ::lstrcat(buf,_T("Bad")); break;
+				case CDos::TSectorStatus::OCCUPIED	: ::lstrcat(buf,_T("Occupied")); break;
+				case CDos::TSectorStatus::RESERVED	: ::lstrcat(buf,_T("Reserved")); break;
+				case CDos::TSectorStatus::EMPTY		: ::lstrcat(buf,_T("Empty")); break;
+				default								: ::lstrcat(buf,_T("Unknown")); break;
+			}
+			CMainWindow::__setStatusBarText__(buf);
+		}else
+			__updateStatusBarIfCursorOutsideAnySector__();
+	}
+
+	afx_msg void CTrackMapView::OnLButtonUp(UINT nFlags,CPoint point){
+		// left mouse button released
+		if (app.IsInGodMode() && !IMAGE->IsWriteProtected()){
+			TPhysicalAddress chs; BYTE nSectorsToSkip;
+			if (__getPhysicalAddressFromPoint__(point,chs,nSectorsToSkip))
+				// cursor over a Sector
+				if (Utils::QuestionYesNo(_T("Make this sector unreadable?"),MB_DEFBUTTON1)){
+					WORD w;
+					IMAGE->GetSectorData( chs, nSectorsToSkip, false, &w, &TFdcStatus() );
+					IMAGE->MarkSectorAsDirty( chs, nSectorsToSkip, &TFdcStatus::SectorNotFound );
+					Invalidate();
+				}
+		}
 	}
 
 	afx_msg void CTrackMapView::OnDestroy(){

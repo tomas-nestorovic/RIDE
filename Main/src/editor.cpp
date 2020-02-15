@@ -122,7 +122,7 @@
 
 	BOOL CRideApp::InitInstance(){
 		// application initialization
-		if (!CWinApp::InitInstance())
+		if (!__super::InitInstance())
 			return FALSE;
 		// - creating/allocating resources
 		//nop
@@ -203,6 +203,7 @@
 			app.WriteProfileInt( INI_GENERAL, INI_CRASHED, nAppsRunning ); // assumption (the app has crashed)
 		#endif
 		// - parsing the command line
+		godMode=!::lstrcmpi( __targv[__argc-1], _T("--godmode") );
 		CCommandLineInfo cmdInfo;
 		ParseCommandLine(cmdInfo);
 		if (cmdInfo.m_nShellCommand==CCommandLineInfo::FileNew) // instead of displaying the "New image" dialog ...
@@ -227,6 +228,10 @@
 		return CWinApp::ExitInstance();
 	}
 
+	bool CRideApp::IsInGodMode() const{
+		// True <=> the application has been launched with the "--godmode" parameter, otherwise False
+		return godMode;
+	}
 
 	afx_msg void CRideApp::__createNewImage__(){
 		// initiates creation of new Image

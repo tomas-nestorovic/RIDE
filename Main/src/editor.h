@@ -5,6 +5,8 @@
 
 	class CRideApp sealed:public CWinApp{
 		DECLARE_MESSAGE_MAP()
+	private:
+		bool godMode;
 	public:
 		class CRecentFileListEx sealed:public CRecentFileList{
 			CDos::PCProperties openWith[ID_FILE_MRU_LAST+1-ID_FILE_MRU_FIRST];
@@ -27,6 +29,7 @@
 		CDocument *OpenDocumentFile(LPCTSTR lpszFileName) override;
 		void OnFileOpen(); // public wrapper
 		CRecentFileListEx *GetRecentFileList() const;
+		bool IsInGodMode() const;
 		#if _MFC_VER>=0x0A00
 		afx_msg void OnOpenRecentFile(UINT nID);
 		#else

@@ -33,9 +33,11 @@
 		void OnPrepareDC(CDC *pDC,CPrintInfo *pInfo=nullptr) override;
 		void OnDraw(CDC *pDC) override;
 		void PostNcDestroy() override;
+		bool __getPhysicalAddressFromPoint__(POINT point,TPhysicalAddress &rOutChs,BYTE &rnOutSectorsToSkip);
 		void __updateStatusBarIfCursorOutsideAnySector__() const;
 		afx_msg int OnCreate(LPCREATESTRUCT lpcs);
 		afx_msg void OnMouseMove(UINT nFlags,CPoint point);
+		afx_msg void OnLButtonUp(UINT nFlags,CPoint point);
 		afx_msg void OnDestroy();
 		afx_msg LRESULT __drawTrack__(WPARAM wParam,LPARAM lParam);
 		afx_msg void __changeDisplayType__(UINT id);
