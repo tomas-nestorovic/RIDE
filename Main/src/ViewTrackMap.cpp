@@ -368,14 +368,18 @@
 		// left mouse button released
 		if (app.IsInGodMode() && !IMAGE->IsWriteProtected()){
 			TPhysicalAddress chs; BYTE nSectorsToSkip;
-			if (__getPhysicalAddressFromPoint__(point,chs,nSectorsToSkip))
+			if (__getPhysicalAddressFromPoint__(point,chs,nSectorsToSkip)){
 				// cursor over a Sector
-				if (Utils::QuestionYesNo(_T("Make this sector unreadable?"),MB_DEFBUTTON1)){
-					WORD w;
-					IMAGE->GetSectorData( chs, nSectorsToSkip, false, &w, &TFdcStatus() );
-					IMAGE->MarkSectorAsDirty( chs, nSectorsToSkip, &TFdcStatus::SectorNotFound );
-					Invalidate();
-				}
+				WORD w; TFdcStatus sr;
+				IMAGE->GetSectorData( chs, nSectorsToSkip, false, &w, &sr );
+				if (!sr.IsWithoutError())
+					Utils::Information( _T("Sector already unhealthy.") );
+				else if (Utils::QuestionYesNo(_T("Make this sector unreadable?"),MB_DEFBUTTON1))
+					if (const TStdWinError err=IMAGE->MarkSectorAsDirty( chs, nSectorsToSkip, &TFdcStatus::SectorNotFound ))
+						Utils::FatalError( _T("Can't make unreadable"), err );
+					else
+						Invalidate();
+			}
 		}
 	}
 
