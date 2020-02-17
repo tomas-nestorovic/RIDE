@@ -128,6 +128,11 @@
 		return 127<s && s<144;
 	}
 
+	bool CSpectrumBase::TZxRom::IsPrintable(BYTE s){
+		// True <=> given character is directly printable (not just a modifier of paper, for instance), otherwise False
+		return s>=' ';
+	}
+
 	LPCSTR CSpectrumBase::TZxRom::GetKeywordTranscript(BYTE k){
 		// returns the textual representation of the given Keyword, or Null if the character is not a Keyword character
 		return	k>=KEYWORD_TOKEN_FIRST

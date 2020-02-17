@@ -96,6 +96,8 @@
 			inline
 			static bool IsStdUdgSymbol(BYTE s);
 			//inline
+			static bool IsPrintable(BYTE s);
+			//inline
 			static LPCSTR GetKeywordTranscript(BYTE k);
 
 			TZxRom();
@@ -156,6 +158,13 @@
 			static const TStdParameters Default;
 
 			WORD param1,param2;
+		};
+
+		#pragma pack(1)
+		struct TSpectrumVerificationParams:public CVerifyVolumeDialog::TParams{
+			TStdWinError VerifyAllCharactersPrintable(RCPhysicalAddress chs,LPCTSTR chsName,LPCTSTR valueName,PCHAR zx,BYTE zxLength,char paddingChar) const;
+
+			TSpectrumVerificationParams(CSpectrumBase *dos,const TVerificationFunctions &rvf);
 		};
 
 		class CSpectrumBaseFileManagerView:public CFileManagerView{

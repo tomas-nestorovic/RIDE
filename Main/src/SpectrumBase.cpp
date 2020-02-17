@@ -41,6 +41,57 @@
 
 
 
+	CSpectrumBase::TSpectrumVerificationParams::TSpectrumVerificationParams(CSpectrumBase *dos,const TVerificationFunctions &rvf)
+		// ctor
+		: CVerifyVolumeDialog::TParams(dos,rvf) {
+	}
+
+	TStdWinError CSpectrumBase::TSpectrumVerificationParams::VerifyAllCharactersPrintable(RCPhysicalAddress chs,LPCTSTR chsName,LPCTSTR valueName,PCHAR zx,BYTE zxLength,char paddingChar) const{
+		// confirms a ZX text field contains only printable characters; if not, presents the problem using standard formulation, and returns Windows standard i/o error
+		// - composing a list of unique Nonprintable ZX characters
+		char nonprintables[128], nNonprintables=0;
+		for( BYTE i=0; i<zxLength; i++ )
+			if (!TZxRom::IsPrintable(zx[i]))
+				if (!::memchr(nonprintables,zx[i],nNonprintables))
+					nonprintables[nNonprintables++]=zx[i];
+		// - if no Nonprintable characters found, we are successfully done
+		if (!nNonprintables)
+			return ERROR_SUCCESS;
+		// - composing and presenting the problem
+		CString msg;
+		msg.Format(	_T("The \"%s\" field %s%s contains non-printable characters %s"),
+					valueName,
+					chsName ? _T("in the ") : _T(""),
+					chsName ? chsName : _T(""),
+					(LPCTSTR)Utils::BytesToHexaText( nonprintables, nNonprintables, true )
+				);
+		switch (ConfirmFix( msg, _T("Their removal is suggested.") )){
+			case IDYES:{
+				// removing all non-printable characters from the pointed-to buffer
+				PCHAR pPrintable=zx;
+				for( BYTE i=0; i<zxLength; i++ )
+					if (TZxRom::IsPrintable(zx[i]))
+						*pPrintable++=zx[i];
+				::memset( pPrintable, paddingChar, zxLength-(pPrintable-zx) );
+				dos->image->MarkSectorAsDirty(chs);
+				fReport.CloseProblem(true);
+				//fallthrough
+			}
+			case IDNO:
+				return ERROR_SUCCESS; // even if fix rejected, this value has been verified
+			default:
+				return ERROR_CANCELLED;
+		}
+	}
+
+
+
+
+
+
+
+
+
 	void CSpectrumBase::__informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId){
 		// shows a MessageBox with added "Don't show anymore" check-box
 		Utils::InformationWithCheckableShowNoMore( text, INI_SPECTRUM, messageId );

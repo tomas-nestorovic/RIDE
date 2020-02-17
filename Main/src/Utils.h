@@ -101,6 +101,8 @@ namespace Utils{
 	bool IsDlgControlEnabled(HWND hDlg,WORD controlId);
 	void OffsetDlgControl(HWND hDlg,WORD controlId,int dx,int dy);
 	void BytesToHigherUnits(DWORD bytes,float &rHigherUnit,LPCTSTR &rHigherUnitName);
+	CString BytesToHexaText(PCBYTE bytes,BYTE nBytes,bool lastDelimitedWithAnd);
+	CString BytesToHexaText(const char *chars,BYTE nChars,bool lastDelimitedWithAnd);
 	void NavigateToUrlInDefaultBrowser(LPCTSTR url);
 	void DrawClosingCurlyBracket(HDC dc,int x,int yMin,int yMax);
 	void WrapControlsByClosingCurlyBracketWithText(CWnd *wnd,const CWnd *pCtrlA,const CWnd *pCtrlZ,LPCTSTR text,DWORD textColor);
