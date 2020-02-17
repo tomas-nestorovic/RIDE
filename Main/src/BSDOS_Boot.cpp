@@ -12,22 +12,7 @@
 		}
 		// - recognition attempt
 		if (const PCBootSector boot=TBootSector::GetData(image))
-			if (boot->jmpInstruction.opCode==0x18 // "jr N" instruction
-				&&
-				boot->signature1==0x02
-				&&
-				((boot->signature2|boot->signature3)==0x00)
-				&&
-				BSDOS_SECTOR_NUMBER_FIRST<boot->nSectorsPerTrack && boot->nSectorsPerTrack<=BSDOS_SECTOR_NUMBER_LAST
-				&&
-				1<=boot->nHeads && boot->nHeads<=2
-				&&
-				boot->nSectorsPerCluster>=1
-				&&
-				boot->nBytesInFat==BSDOS_SECTOR_LENGTH_STD*boot->nSectorsPerFat
-				&&
-				(boot->fatStarts[0]<BSDOS_SECTOR_LENGTH_STD/sizeof(TFatValue) || boot->fatStarts[1]<BSDOS_SECTOR_LENGTH_STD/sizeof(TFatValue))
-			){
+			if (boot->IsValid()){
 				if (boot->nSectorsPerTrack>BSDOS_SECTOR_NUMBER_LAST/2)
 					fmt.mediumType=TMedium::FLOPPY_HD;
 				fmt.nCylinders=boot->nCylinders;
@@ -39,6 +24,28 @@
 			}
 		// - not recognized
 		return ERROR_UNRECOGNIZED_VOLUME;
+	}
+
+	bool CBSDOS308::TBootSector::IsValid() const{
+		// True <=> this is a valid BS-DOS Boot Sector, otherwise False
+		return	jmpInstruction.opCode==0x18 // "jr N" instruction
+				&&
+				signature1==0x02
+				&&
+				((signature2|signature3)==0x00)
+				&&
+				BSDOS_SECTOR_NUMBER_FIRST<nSectorsPerTrack && nSectorsPerTrack<=BSDOS_SECTOR_NUMBER_LAST
+				&&
+				1<=nHeads && nHeads<=2
+				&&
+				nSectorsPerCluster>=1
+				&&
+				nBytesInFat==BSDOS_SECTOR_LENGTH_STD*nSectorsPerFat
+				&&
+				(	BSDOS_FAT_LOGSECTOR_MIN<=fatStarts[0] && fatStarts[0]<=BSDOS_FAT_LOGSECTOR_MAX
+					||
+					BSDOS_FAT_LOGSECTOR_MIN<=fatStarts[1] && fatStarts[1]<=BSDOS_FAT_LOGSECTOR_MAX
+				);
 	}
 
 	static PDos __instantiate__(PImage image,PCFormat pFormatBoot){
@@ -169,4 +176,50 @@
 			boot->nBytesInFat=BSDOS_SECTOR_LENGTH_STD*boot->nSectorsPerFat;
 			image->MarkSectorAsDirty(TBootSector::CHS);
 		}
+	}
+
+
+
+
+
+
+
+
+	UINT AFX_CDECL CBSDOS308::TBootSector::Verification_thread(PVOID pCancelableAction){
+		// thread to verify the Boot Sector
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
+		const TSpectrumVerificationParams &vp=*(TSpectrumVerificationParams *)pAction->GetParams();
+		const PBootSector boot=GetData(vp.dos->image);
+		vp.fReport.AddSection(BOOT_SECTOR_TAB_LABEL);
+		pAction->SetProgressTarget( 4 ); // see number of steps below
+		// - Step 1: verifying this is actually a BS-DOS disk
+		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, nullptr, boot->jmpInstruction.opCode, (BYTE)0x18 )) // "0x18" = "jr N" instruction
+			return pAction->TerminateWithError(err);
+		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, nullptr, boot->signature1, (BYTE)0x02 ))
+			return pAction->TerminateWithError(err);
+		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, nullptr, boot->signature2, (BYTE)0x00 ))
+			return pAction->TerminateWithError(err);
+		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, nullptr, boot->signature3, (BYTE)0x00 ))
+			return pAction->TerminateWithError(err);
+		pAction->UpdateProgress(1);
+		// - Step 2: verifying geometry
+		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Number of cylinders"), boot->nCylinders, (WORD)1, (WORD)FDD_CYLINDERS_MAX ))
+			return pAction->TerminateWithError(err);
+		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Number of heads"), boot->nHeads, (WORD)1, (WORD)2 ))
+			return pAction->TerminateWithError(err);
+		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Number of sectors"), boot->nSectorsPerTrack, (WORD)BSDOS_SECTOR_NUMBER_TEMP, (WORD)BSDOS_SECTOR_NUMBER_LAST ))
+			return pAction->TerminateWithError(err);
+		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Cluster size"), boot->nSectorsPerCluster, (WORD)1 ))
+			return pAction->TerminateWithError(err);
+		pAction->UpdateProgress(2);
+		// - Step 3: verifying ID checksum
+		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, _T("FAT Bytes"), boot->diskIdChecksum, __xorChecksum__(boot->diskId,sizeof(boot->diskId)) ))
+			return pAction->TerminateWithError(err);
+		pAction->UpdateProgress(3);
+		// - Step 4: verifying DiskName
+		if (const TStdWinError err=vp.VerifyAllCharactersPrintable( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Disk name"), boot->diskName, sizeof(boot->diskName), ' ' ))
+			return pAction->TerminateWithError(err);
+		pAction->UpdateProgress(4);
+		// - Boot Sector verified
+		return ERROR_SUCCESS;
 	}

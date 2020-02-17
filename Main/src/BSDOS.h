@@ -29,6 +29,7 @@
 
 			static TBootSector *GetData(PImage image);
 			static void WINAPI OnDiskIdChanged(PropGrid::PCustomParam bootSector);
+			static UINT AFX_CDECL Verification_thread(PVOID pCancelableAction);
 
 			struct{
 				BYTE opCode;
@@ -54,6 +55,8 @@
 			char diskComment[16];
 			BYTE diskId[32];
 			BYTE reserved3[928];
+
+			bool IsValid() const;
 		} *PBootSector;
 		typedef const TBootSector *PCBootSector;
 
