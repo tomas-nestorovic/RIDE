@@ -103,7 +103,7 @@
 		}else if (newValue<nCyl0){
 			// removing Cylinders from FAT
 			::wsprintf( bufMsg, CYLINDER_OPERATION_FINISHED, _T("removed from FAT") );
-			dos->__removeStdCylindersFromFat__(cylA,cylZ-1); // no error checking as its assumed that some Cylinders couldn't be marked in (eventually shrunk) FAT as Unavailable
+			dos->RemoveStdCylindersFromFat( cylA, cylZ-1 ); // no error checking as its assumed that some Cylinders couldn't be marked in (eventually shrunk) FAT as Unavailable
 			__informationWithCheckableShowNoMore__(bufMsg,CYLINDERS_REMOVED_FROM_FAT);
 		}
 		// - accepting the new number of Cylinders

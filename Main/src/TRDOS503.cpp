@@ -53,7 +53,7 @@
 	CTRDOS503::CTRDOS503(PImage image,PCFormat pFormatBoot,PCProperties pTrdosProps)
 		// ctor
 		// - base
-		: CSpectrumDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS,pTrdosProps, IDR_TRDOS, &fileManager, TGetFileSizeOptions::SizeOnDisk )
+		: CSpectrumDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS,pTrdosProps, IDR_TRDOS, &fileManager, TGetFileSizeOptions::SizeOnDisk, TSectorStatus::UNAVAILABLE )
 		// - initialization
 		, boot(	this,
 				(pTrdosProps==&Properties)*TRDOS503_BOOT_LABEL_LENGTH_MAX

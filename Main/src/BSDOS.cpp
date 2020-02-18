@@ -4,7 +4,7 @@
 	CBSDOS308::CBSDOS308(PImage image,PCFormat pFormatBoot)
 		// ctor
 		// - base
-		: CSpectrumDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS, &Properties, IDR_BSDOS, &fileManager, TGetFileSizeOptions::OfficialDataLength )
+		: CSpectrumDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS, &Properties, IDR_BSDOS, &fileManager, TGetFileSizeOptions::OfficialDataLength, TSectorStatus::UNKNOWN )
 		// - initialization
 		, trackMap(this)
 		, boot(this)
@@ -214,6 +214,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 			case TSectorStatus::UNAVAILABLE	: value=TFatValue::SectorUnavailable; break;
 			case TSectorStatus::BAD			: value=TFatValue::SectorErrorInDataField; break;
 			case TSectorStatus::EMPTY		: value=TFatValue::SectorEmpty; break;
+			case TSectorStatus::UNKNOWN		: value=TFatValue::SectorUnknown; break;
 			default:
 				ASSERT(FALSE);
 				break;

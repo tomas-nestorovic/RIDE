@@ -32,6 +32,17 @@
 		typedef PVOID PFile;
 		typedef LPCVOID PCFile;
 
+		typedef enum TSectorStatus:COLORREF{ // each value must be bigger than the biggest possible Sector length (typically 16384)
+			SYSTEM		=0xff40ff, // e.g. reserved for root Directory
+			UNAVAILABLE	=0x707070, // Sectors that are not included in FAT (e.g. beyond the FAT, or FAT Sector error)
+			SKIPPED		=0xb8b8b8, // e.g. deleted Files in TR-DOS
+			BAD			=0x0000ff,
+			OCCUPIED	=0xffcc99,
+			RESERVED	=0xffff99, // e.g. zero-length File in MDOS, or File with error during importing
+			EMPTY		=0xffffff, // reported as unallocated
+			UNKNOWN		=0x00ffff  // any Sector whose ID doesn't match any ID from the standard format, e.g. ID={2,1,0,3} for an MDOS Sector
+		} *PSectorStatus;
+
 		typedef class CPathString sealed{
 			short nCharsInBuf;
 			TCHAR buf[MAX_PATH];
@@ -258,7 +269,6 @@
 		static UINT AFX_CDECL __fillEmptyLastSectors_thread__(PVOID _pCancelableAction);
 		static UINT AFX_CDECL __fillEmptyDirEntries_thread__(PVOID _pCancelableAction);
 		static UINT AFX_CDECL __formatTracks_thread__(PVOID _pCancelableAction);
-		static UINT AFX_CDECL __unformatTracks_thread__(PVOID _pCancelableAction);
 
 		TStdWinError __isTrackEmpty__(TCylinder cyl,THead head,TSector nSectors,PCSectorId sectors) const;
 	protected:
@@ -289,11 +299,12 @@
 
 		const TFnCompareNames fnCompareNames;
 		const TTrackScheme trackAccessScheme; // single Scheme to access Tracks in Image
+		const TSectorStatus unformatFatStatus;
 		PFile currentDir;
 		bool generateShellCompliantExportNames;
 		TGetFileSizeOptions getFileSizeDefaultOption;
 		
-		CDos(PImage _image,PCFormat _pFormatBoot,TTrackScheme trackAccessScheme,PCProperties _properties,TFnCompareNames _fnCompareNames,PCSide _sideMap,UINT nResId,CFileManagerView * _pFileManager,TGetFileSizeOptions _getFileSizeDefaultOption);
+		CDos(PImage _image,PCFormat _pFormatBoot,TTrackScheme trackAccessScheme,PCProperties _properties,TFnCompareNames _fnCompareNames,PCSide _sideMap,UINT nResId,CFileManagerView * _pFileManager,TGetFileSizeOptions _getFileSizeDefaultOption,TSectorStatus unformatFatStatus);
 
 		int __getProfileInt__(LPCTSTR entryName,int defaultValue) const;
 		void __writeProfileInt__(LPCTSTR entryName,int value) const;
@@ -303,10 +314,7 @@
 		TStdWinError __showDialogAndFormatStdCylinders__(CFormatDialog &rd);
 		TStdWinError __formatStdCylinders__(const CFormatDialog &rd);
 		TStdWinError __formatTracks__(const CFormatDialog::TParameters &rParams,PCHead head,TSector nSectors,PSectorId bufferId,PCWORD bufferLength,bool showReport) const;
-		TStdWinError __showDialogAndUnformatStdCylinders__(CUnformatDialog &rd);
-		TStdWinError __unformatTracks__(const CUnformatDialog &rd,PCHead head) const;
 		bool __addStdCylindersToFatAsEmpty__(TCylinder cylA,TCylinder cylZInclusive) const;
-		bool __removeStdCylindersFromFat__(TCylinder cylA,TCylinder cylZInclusive) const;
 		bool __fillEmptySpace__(CFillEmptySpaceDialog &rd);
 		bool __verifyVolume__(CVerifyVolumeDialog &rd);
 		LPCTSTR __exportFileData__(PCFile file,CFile *fOut,DWORD nMaxDataBytesToExport) const;
@@ -315,17 +323,6 @@
 		PFile __findFile__(PCFile directory,RCPathString fileName,RCPathString fileExt,PCFile ignoreThisFile) const;
 		TStdWinError __shiftFileContent__(const CFatPath &rFatPath,char nBytesShift) const;
 	public:
-		typedef enum TSectorStatus:COLORREF{ // each value must be bigger than the biggest possible Sector length (typically 16384)
-			SYSTEM		=0xff40ff, // e.g. reserved for root Directory
-			UNAVAILABLE	=0x707070, // Sectors that are not included in FAT (e.g. beyond the FAT, or FAT Sector error)
-			SKIPPED		=0xb8b8b8, // e.g. deleted Files in TR-DOS
-			BAD			=0x0000ff,
-			OCCUPIED	=0xffcc99,
-			RESERVED	=0xffff99, // e.g. zero-length File in MDOS, or File with error during importing
-			EMPTY		=0xffffff, // reported as unallocated
-			UNKNOWN		=0x00ffff  // any Sector whose ID doesn't match any ID from the standard format, e.g. ID={2,1,0,3} for an MDOS Sector
-		} *PSectorStatus;
-
 		class CHexaPreview sealed:public CFilePreview{
 			CMemFile fEmpty;
 			std::unique_ptr<CFileReaderWriter> pFileRW;
@@ -382,6 +379,7 @@
 		virtual TCylinder GetFirstCylinderWithEmptySector() const;
 		TStdWinError GetFirstEmptyHealthySector(bool skipBadSectors,TPhysicalAddress &rOutChs) const;
 		TStdWinError AreStdCylindersEmpty(TCylinder cylA,TCylinder cylZInclusive) const;
+		bool RemoveStdCylindersFromFat(TCylinder cylA,TCylinder cylZInclusive) const;
 		// file system
 		virtual bool GetFileNameOrExt(PCFile file,PPathString pOutName,PPathString pOutExt) const=0;
 		virtual CString GetFilePresentationNameAndExt(PCFile file) const;

@@ -1,14 +1,66 @@
 #include "stdafx.h"
 
-	CUnformatDialog::CUnformatDialog(PDos _dos,PCStdUnformat _stdUnformats,BYTE _nStdUnformats)
+	CUnformatDialog::TParams::TParams(PDos dos,PCHead specificHeadOnly)
+		// ctor
+		: dos(dos) , specificHeadOnly(specificHeadOnly)
+		, cylA(0) , cylZInclusive(0) {
+	}
+
+	UINT AFX_CDECL CUnformatDialog::__unformatTracks_thread__(PVOID _pCancelableAction){
+		// thread to unformat specified Tracks
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
+		const TParams &ufp=*(TParams *)pAction->GetParams();
+		const TTrack nTracks=(ufp.cylZInclusive+1-ufp.cylA)*(ufp.specificHeadOnly!=nullptr?1:ufp.dos->formatBoot.nHeads);
+		pAction->SetProgressTarget( nTracks );
+		TCylinder cyl=ufp.cylZInclusive; // unformatting "backwards"
+		THead head= ufp.specificHeadOnly!=nullptr ? *ufp.specificHeadOnly : 0; // one particular or all Heads?
+		for( TTrack t=0; t<nTracks; pAction->UpdateProgress(++t) ){
+			if (pAction->IsCancelled()) return ERROR_CANCELLED;
+			// . unformatting
+			if (const TStdWinError err=ufp.dos->image->UnformatTrack(cyl,head))
+				return pAction->TerminateWithError(err);
+			// . next Track
+			if (ufp.specificHeadOnly!=nullptr) // one particular Head
+				cyl--;
+			else // all Heads
+				if (++head==ufp.dos->formatBoot.nHeads){
+					cyl--;
+					head=0;
+				}
+		}
+		return ERROR_SUCCESS;
+	}
+
+	TStdWinError CUnformatDialog::TParams::UnformatTracks() const{
+		// unformats given Tracks; returns Windows standard i/o error
+		if (dos->image->__reportWriteProtection__())
+			return ERROR_WRITE_PROTECT;
+		const TStdWinError err=	CBackgroundActionCancelable(
+									__unformatTracks_thread__,
+									this,
+									THREAD_PRIORITY_BELOW_NORMAL
+								).Perform();
+		if (err!=ERROR_SUCCESS)
+			Utils::FatalError(_T("Cannot unformat a track"),err);
+		return err;
+	}
+
+
+
+
+
+
+
+
+	CUnformatDialog::CUnformatDialog(PDos dos,PCStdUnformat stdUnformats,BYTE nStdUnformats)
 		// ctor
 		// - base
 		: CDialog(IDR_DOS_UNFORMAT)
 		// - initialization
-		, dos(_dos)
-		, updateBoot(BST_CHECKED) , removeTracksFromFat(BST_CHECKED)
-		, stdUnformats(_stdUnformats) , nStdUnformats(_nStdUnformats) {
-		cylA=cylZ=dos->image->GetCylinderCount()-1;
+		, params(dos,nullptr)
+		, stdUnformats(stdUnformats) , nStdUnformats(nStdUnformats)
+		, updateBoot(BST_CHECKED) , removeTracksFromFat(BST_CHECKED) {
+		params.cylA = params.cylZInclusive = dos->image->GetCylinderCount()-1;
 	}
 
 	BEGIN_MESSAGE_MAP(CUnformatDialog,CDialog)
@@ -29,10 +81,13 @@
 
 	#define UNFORMAT_CUSTOM		nullptr
 
+	#define DOS		params.dos
+	#define IMAGE	DOS->image
+
 	void CUnformatDialog::PreInitDialog(){
 		// dialog initialization
 		// - displaying DOS name
-		SetDlgItemText( ID_SYSTEM, dos->properties->name );
+		SetDlgItemText( ID_SYSTEM, DOS->properties->name );
 		// - populating dedicated ComboBox with available StandardUnformattings
 		CComboBox cb;
 		cb.Attach(GetDlgItem(ID_FORMAT)->m_hWnd);
@@ -46,24 +101,24 @@
 
 	void CUnformatDialog::DoDataExchange(CDataExchange *pDX){
 		// exchange of data from and to controls
-		const TMedium::PCProperties p=TMedium::GetProperties(dos->formatBoot.mediumType);
-		DDX_Text( pDX,	ID_CYLINDER_N,(RCylinder)cylZ );
-			DDV_MinMaxUInt( pDX, cylZ, p->cylinderRange.iMin, dos->image->GetCylinderCount()-1 );
-		DDX_Text( pDX,	ID_CYLINDER	,(RCylinder)cylA );
-			DDV_MinMaxUInt( pDX, cylA, p->cylinderRange.iMin, cylZ );
+		const TMedium::PCProperties p=TMedium::GetProperties(DOS->formatBoot.mediumType);
+		DDX_Text( pDX,	ID_CYLINDER_N,(RCylinder)params.cylZInclusive );
+			DDV_MinMaxUInt( pDX, params.cylZInclusive, p->cylinderRange.iMin, IMAGE->GetCylinderCount()-1 );
+		DDX_Text( pDX,	ID_CYLINDER	,(RCylinder)params.cylA );
+			DDV_MinMaxUInt( pDX, params.cylA, p->cylinderRange.iMin, params.cylZInclusive );
 		DDX_Check( pDX, ID_BOOT		, updateBoot );
 		DDX_Check( pDX, ID_FAT		, removeTracksFromFat );
 		if (pDX->m_bSaveAndValidate){
 			// . checking that all Cylinders to unformat are Empty
-			if (ERROR_EMPTY!=dos->AreStdCylindersEmpty( cylA, cylZ )){
+			if (ERROR_EMPTY!=DOS->AreStdCylindersEmpty( params.cylA, params.cylZInclusive )){
 				Utils::Information( DOS_ERR_CANNOT_UNFORMAT, DOS_ERR_CYLINDERS_NOT_EMPTY, DOS_MSG_CYLINDERS_UNCHANGED );
 				pDX->PrepareEditCtrl(ID_CYLINDER_N);
 				pDX->Fail();
 			// . checking that new format is acceptable
 			}else{
-				TFormat f=dos->formatBoot;
-				f.nCylinders=cylA;
-				if (!dos->ValidateFormatChangeAndReportProblem(cylA>0,&f)){
+				TFormat f=DOS->formatBoot;
+				f.nCylinders=params.cylA;
+				if (!DOS->ValidateFormatChangeAndReportProblem(params.cylA>0,&f)){
 					pDX->PrepareEditCtrl(ID_CYLINDER);
 					pDX->Fail();
 				}
@@ -104,10 +159,10 @@
 	afx_msg void CUnformatDialog::__recognizeStandardUnformat__(){
 		// determines if current settings represent one of DOS StandardUnformats (settings include # of Sides, Cylinders, Sectors, RootDirectoryItems, etc.); if StandardUnformat detected, it's selected in dedicated ComboBox
 		const HWND hComboBox=GetDlgItem(ID_FORMAT)->m_hWnd;
-		cylA=GetDlgItemInt(ID_CYLINDER), cylZ=GetDlgItemInt(ID_CYLINDER_N);
+		params.cylA=GetDlgItemInt(ID_CYLINDER), params.cylZInclusive=GetDlgItemInt(ID_CYLINDER_N);
 		PCStdUnformat psuf=stdUnformats;
 		for( BYTE n=0; n<nStdUnformats; psuf++,n++ )
-			if (psuf->cylA==cylA && psuf->cylZ==cylZ){
+			if (psuf->cylA==params.cylA && psuf->cylZ==params.cylZInclusive){
 				ComboBox_SetCurSel(hComboBox,n);
 				return;
 			}
@@ -123,4 +178,29 @@
 	afx_msg void CUnformatDialog::__warnOnPossibleInconsistency__(){
 		// draws curly brackets with warning on risking disk inconsistency
 		Invalidate(); // eventually warning on driving disk into an inconsistent state
+	}
+
+	TStdWinError CUnformatDialog::ShowModalAndUnformatStdCylinders(){
+		// unformats Cylinders using Parameters obtained from confirmed UnformatDialog (CDos-derivate and UnformatDialog guarantee that all parameters are valid); returns Windows standard i/o error
+		if (IMAGE->__reportWriteProtection__()) return ERROR_WRITE_PROTECT;
+		LOG_DIALOG_DISPLAY(_T("CUnformatDialog"));
+		if (LOG_DIALOG_RESULT(DoModal())!=IDOK) return ERROR_CANCELLED;
+		// - checking that all Cylinders to unformat are empty
+		//nop (tested in unformat dialog)
+		// - carrying out the unformatting
+		if (const TStdWinError err=params.UnformatTracks()){ // nullptr = all Heads
+			::SetLastError(err);
+			return LOG_ERROR(err);
+		}
+		// - removing unformatted Cylinders from Boot Sector and FAT (if commanded so)
+		if (updateBoot){
+			TCylinder &r=DOS->formatBoot.nCylinders;
+			if (1+params.cylZInclusive>=r)
+				r=std::min( r, params.cylA );
+			DOS->FlushToBootSector();
+		}
+		if (removeTracksFromFat)
+			DOS->RemoveStdCylindersFromFat( params.cylA, params.cylZInclusive ); // no error checking as its assumed that some Cylinders couldn't be marked in (eventually shrunk) FAT as Unavailable
+		IMAGE->UpdateAllViews(nullptr); // although updated already in UnformatTracks, here calling too as FormatBoot might have changed since then
+		return ERROR_SUCCESS;
 	}

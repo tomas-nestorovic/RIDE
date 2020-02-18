@@ -67,7 +67,6 @@ typedef const int *PCINT;
 #include "HexaEditor.h"
 #include "Image.h"
 #include "DialogFormatting.h"
-#include "DialogUnformatting.h"
 #include "DialogVerification.h"
 #include "ImageFloppy.h"
 #include "ImageRaw.h"
@@ -88,6 +87,7 @@ typedef const int *PCINT;
 #include "SpectrumDos.h"
 #include "DosUnknown.h"
 #include "DialogNewImage.h"
+#include "DialogUnformatting.h"
 #include "DialogEmptySpaceFilling.h"
 #include "Editor.h"
 

@@ -239,7 +239,7 @@
 
 		TSide sideMap[2]; // 2 = only one- or two-sided floppies are considered to be used with any ZX Spectrum derivate
 
-		CSpectrumBase(PImage image,PCFormat pFormatBoot,TTrackScheme trackAccessScheme,PCProperties properties,UINT nResId,CSpectrumBaseFileManagerView *pFileManager,TGetFileSizeOptions getFileSizeDefaultOption);
+		CSpectrumBase(PImage image,PCFormat pFormatBoot,TTrackScheme trackAccessScheme,PCProperties properties,UINT nResId,CSpectrumBaseFileManagerView *pFileManager,TGetFileSizeOptions getFileSizeDefaultOption,TSectorStatus unformatFatStatus);
 		~CSpectrumBase();
 	public:
 		CString GetFilePresentationNameAndExt(PCFile file) const override;
@@ -368,7 +368,7 @@
 
 		CTrackMapView trackMap;
 
-		CSpectrumDos(PImage image,PCFormat pFormatBoot,TTrackScheme trackAccessScheme,PCProperties properties,UINT nResId,CSpectrumBaseFileManagerView *pFileManager,TGetFileSizeOptions getFileSizeDefaultOption);
+		CSpectrumDos(PImage image,PCFormat pFormatBoot,TTrackScheme trackAccessScheme,PCProperties properties,UINT nResId,CSpectrumBaseFileManagerView *pFileManager,TGetFileSizeOptions getFileSizeDefaultOption,TSectorStatus unformatFatStatus);
 		~CSpectrumDos();
 	public:
 		TCmdResult ProcessCommand(WORD cmd) override;

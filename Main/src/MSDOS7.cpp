@@ -10,7 +10,7 @@
 	CMSDOS7::CMSDOS7(PImage image,PCFormat pFormatBoot)
 		// ctor
 		// - base
-		: CDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS, &Properties, ::lstrcmpi, CDos::StdSidesMap, IDR_MSDOS, &fileManager, TGetFileSizeOptions::OfficialDataLength )
+		: CDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS, &Properties, ::lstrcmpi, CDos::StdSidesMap, IDR_MSDOS, &fileManager, TGetFileSizeOptions::OfficialDataLength, TSectorStatus::UNAVAILABLE )
 		// - initialization
 		, fat(*this) , fsInfo(this)
 		, trackMap(this) , boot(this) , fileManager(this)
@@ -1142,7 +1142,7 @@
 				const CUnformatDialog::TStdUnformat stdUnformats[]={
 					{ STR_TRIM_TO_MIN_NUMBER_OF_CYLINDERS,	cylMin, cylMax }
 				};
-				if (const TStdWinError err=__showDialogAndUnformatStdCylinders__( CUnformatDialog(this,stdUnformats,1) )){
+				if (const TStdWinError err=CUnformatDialog(this,stdUnformats,1).ShowModalAndUnformatStdCylinders()){
 					Utils::Information( DOS_ERR_CANNOT_UNFORMAT, err );
 					return TCmdResult::REFUSED;
 				}else

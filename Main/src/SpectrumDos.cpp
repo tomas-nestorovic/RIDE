@@ -1,8 +1,8 @@
 #include "stdafx.h"
 
-	CSpectrumDos::CSpectrumDos(PImage image,PCFormat pFormatBoot,TTrackScheme trackAccessScheme,PCProperties properties,UINT nResId,CSpectrumBaseFileManagerView *pFileManager,TGetFileSizeOptions getFileSizeDefaultOption)
+	CSpectrumDos::CSpectrumDos(PImage image,PCFormat pFormatBoot,TTrackScheme trackAccessScheme,PCProperties properties,UINT nResId,CSpectrumBaseFileManagerView *pFileManager,TGetFileSizeOptions getFileSizeDefaultOption,TSectorStatus unformatFatStatus)
 		// ctor
-		: CSpectrumBase(image,pFormatBoot,trackAccessScheme,properties,nResId,pFileManager,getFileSizeDefaultOption)
+		: CSpectrumBase(image,pFormatBoot,trackAccessScheme,properties,nResId,pFileManager,getFileSizeDefaultOption,unformatFatStatus)
 		, trackMap(this) {
 	}
 
@@ -23,7 +23,6 @@
 	#define DOS tab.dos
 
 	#define FORMAT_ADDITIONAL_COUNT	2
-	#define	UNFORMAT_COUNT			3
 
 	#define TAPE_EXTENSION	_T(".tap")
 
@@ -58,9 +57,11 @@
 					{ _T("Trim to 80 cylinders"),	80, cylMax },
 					{ STR_TRIM_TO_MIN_NUMBER_OF_CYLINDERS,	cylMin, cylMax }
 				};
-				return	__showDialogAndUnformatStdCylinders__( CUnformatDialog(this,stdUnformats,UNFORMAT_COUNT) )==ERROR_SUCCESS
-						? TCmdResult::DONE_REDRAW
-						: TCmdResult::REFUSED;
+				if (const TStdWinError err=CUnformatDialog(this,stdUnformats,sizeof(stdUnformats)/sizeof(CUnformatDialog::TStdUnformat)).ShowModalAndUnformatStdCylinders()){
+					Utils::Information( DOS_ERR_CANNOT_UNFORMAT, err );
+					return TCmdResult::REFUSED;
+				}else
+					return TCmdResult::DONE_REDRAW;
 			}
 			case ID_FILE_CLOSE:
 			case ID_TAPE_CLOSE:

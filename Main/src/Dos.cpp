@@ -25,7 +25,7 @@
 	#define INI_SHELL_COMPLIANT_EXPORT_NAMES	_T("shcomp")
 	#define INI_GETFILESIZE_OPTION				_T("gfsopt")
 
-	CDos::CDos(PImage _image,PCFormat _pFormatBoot,TTrackScheme trackAccessScheme,PCProperties _properties,TFnCompareNames _fnCompareNames,PCSide _sideMap,UINT nResId,CFileManagerView *_pFileManager,TGetFileSizeOptions _getFileSizeDefaultOption)
+	CDos::CDos(PImage _image,PCFormat _pFormatBoot,TTrackScheme trackAccessScheme,PCProperties _properties,TFnCompareNames _fnCompareNames,PCSide _sideMap,UINT nResId,CFileManagerView *_pFileManager,TGetFileSizeOptions _getFileSizeDefaultOption,TSectorStatus unformatFatStatus)
 		// ctor
 		: image(_image) , properties(_properties) , fnCompareNames(_fnCompareNames)
 		, sideMap(_sideMap) , menu(nResId) , pFileManager(_pFileManager)
@@ -33,7 +33,8 @@
 		, trackAccessScheme(trackAccessScheme) // single Scheme to access Tracks in Image
 		, currentDir(DOS_DIR_ROOT)
 		, generateShellCompliantExportNames( __getProfileBool__(INI_SHELL_COMPLIANT_EXPORT_NAMES,true) ) // True <=> the GetFileExportNameAndExt function must produce names that are compliant with the FAT32 file system, otherwise False
-		, getFileSizeDefaultOption( (TGetFileSizeOptions)__getProfileInt__(INI_GETFILESIZE_OPTION,_getFileSizeDefaultOption) ) {
+		, getFileSizeDefaultOption( (TGetFileSizeOptions)__getProfileInt__(INI_GETFILESIZE_OPTION,_getFileSizeDefaultOption) )
+		, unformatFatStatus(unformatFatStatus) {
 	}
 
 	CDos::~CDos(){
@@ -386,74 +387,6 @@ reportError:Utils::Information(buf);
 		return err;
 	}
 
-	TStdWinError CDos::__showDialogAndUnformatStdCylinders__(CUnformatDialog &rd){
-		// unformats Cylinders using Parameters obtained from confirmed UnformatDialog (CDos-derivate and UnformatDialog guarantee that all parameters are valid); returns Windows standard i/o error
-		if (image->__reportWriteProtection__()) return ERROR_WRITE_PROTECT;
-		LOG_DIALOG_DISPLAY(_T("CUnformatDialog"));
-		if (LOG_DIALOG_RESULT(rd.DoModal())!=IDOK) return ERROR_CANCELLED;
-		// - checking that all Cylinders to unformat are empty
-		//nop (tested in unformat dialog)
-		// - carrying out the unformatting
-		if (const TStdWinError err=__unformatTracks__(rd,nullptr)){ // nullptr = all Heads
-			::SetLastError(err);
-			return LOG_ERROR(err);
-		}
-		// - removing unformatted Cylinders from Boot Sector and FAT (if commanded so)
-		if (rd.updateBoot){
-			if (1+rd.cylZ>=formatBoot.nCylinders)
-				formatBoot.nCylinders=std::min<>( formatBoot.nCylinders, rd.cylA );
-			FlushToBootSector();
-		}
-		if (rd.removeTracksFromFat)
-			__removeStdCylindersFromFat__( rd.cylA, rd.cylZ ); // no error checking as its assumed that some Cylinders couldn't be marked in (eventually shrunk) FAT as Unavailable
-		image->UpdateAllViews(nullptr); // although updated already in UnformatTracks, here calling too as FormatBoot might have changed since then
-		return ERROR_SUCCESS;
-	}
-	struct TUnfmtParams sealed{
-		const PCDos dos;
-		const TCylinder cylA,cylZInclusive;
-		const PCHead head;
-
-		TUnfmtParams(PCDos dos,TCylinder cylA,TCylinder cylZInclusive,PCHead head)
-			: dos(dos) , cylA(cylA) , cylZInclusive(cylZInclusive) , head(head) {
-		}
-	};
-	UINT AFX_CDECL CDos::__unformatTracks_thread__(PVOID _pCancelableAction){
-		// thread to unformat specified Tracks
-		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
-		const TUnfmtParams &ufp=*(TUnfmtParams *)pAction->GetParams();
-		const TTrack nTracks=(ufp.cylZInclusive+1-ufp.cylA)*(ufp.head!=nullptr?1:ufp.dos->formatBoot.nHeads);
-		pAction->SetProgressTarget( nTracks );
-		TCylinder cyl=ufp.cylZInclusive; // unformatting "backwards"
-		THead head= ufp.head!=nullptr ? *ufp.head : 0; // one particular or all Heads?
-		for( TTrack t=0; t<nTracks; pAction->UpdateProgress(++t) ){
-			if (pAction->IsCancelled()) return ERROR_CANCELLED;
-			// . unformatting
-			if (const TStdWinError err=ufp.dos->image->UnformatTrack(cyl,head))
-				return pAction->TerminateWithError(err);
-			// . next Track
-			if (ufp.head!=nullptr) // one particular Head
-				cyl--;
-			else // all Heads
-				if (++head==ufp.dos->formatBoot.nHeads){
-					cyl--;
-					head=0;
-				}
-		}
-		return ERROR_SUCCESS;
-	}
-	TStdWinError CDos::__unformatTracks__(const CUnformatDialog &rd,PCHead head) const{
-		// unformats given Tracks; returns Windows standard i/o error
-		const TStdWinError err=	CBackgroundActionCancelable(
-									__unformatTracks_thread__,
-									&TUnfmtParams( this, rd.cylA, rd.cylZ, head ),
-									THREAD_PRIORITY_BELOW_NORMAL
-								).Perform();
-		if (err!=ERROR_SUCCESS)
-			Utils::FatalError(_T("Cannot unformat a track"),err);
-		return err;
-	}
-
 	bool CDos::__addStdCylindersToFatAsEmpty__(TCylinder cylA,TCylinder cylZInclusive) const{
 		// records standard "official" Sectors in given Cylinder range as Empty into FAT
 		bool result=true; // assumption (all Tracks successfully added to FAT)
@@ -468,7 +401,7 @@ reportError:Utils::Information(buf);
 		return result;
 	}
 
-	bool CDos::__removeStdCylindersFromFat__(TCylinder cylA,TCylinder cylZInclusive) const{
+	bool CDos::RemoveStdCylindersFromFat(TCylinder cylA,TCylinder cylZInclusive) const{
 		// records standard "official" Sectors in given Cylinders as Unavailable
 		bool result=true; // assumption (all Tracks successfully removed from FAT)
 		TSectorId ids[(TSector)-1];
@@ -477,7 +410,7 @@ reportError:Utils::Information(buf);
 			for( chs.head=0; chs.head<formatBoot.nHeads; chs.head++ )
 				for( TSector n=GetListOfStdSectors(chs.cylinder,chs.head,ids); n>0; ){
 					chs.sectorId=ids[--n];
-					result&=ModifyStdSectorStatus( chs, TSectorStatus::UNAVAILABLE );
+					result&=ModifyStdSectorStatus( chs, unformatFatStatus );
 				}
 		return result;
 	}
