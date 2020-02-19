@@ -220,7 +220,7 @@
 					? ((PDirectoryEntry)file)->shortNameEntry.__getFirstCluster__()
 					: 0;
 		if (IsDirectory(file)){
-			item.chs=boot.GetPhysicalAddress();
+			item.chs=boot.GetPhysicalAddress(); // certainly not any Directory's PhysicalAddress
 			for( TMsdos7DirectoryTraversal dt(this,file); dt.__existsNextEntry__(); item.value++ )
 				if (item.chs!=dt.chs){
 					item.chs=dt.chs;
@@ -270,11 +270,37 @@
 	bool CMSDOS7::ModifyFileFatPath(PFile file,const CFatPath &rFatPath) const{
 		// True <=> a error-free FatPath of given File successfully written, otherwise False
 		CFatPath::PCItem pItem; DWORD nItems;
-		if (rFatPath.GetItems(pItem,nItems)) // if FatPath erroneous ...
+		if (rFatPath.GetItems(pItem,nItems)){ // if FatPath erroneous ...
+			ASSERT(false); // this shouldn't happen
 			return false; // ... we are done
+		}
 		const PDirectoryEntry de=(PDirectoryEntry)file;
-		if (!de->shortNameEntry.size) // zero-length Files are in NOT in the FAT
-			return true;
+		if (IsDirectory(de))
+			switch (fat.type){
+				case CFat::FAT12:
+				case CFat::FAT16:
+					if (file==DOS_DIR_ROOT)
+						return false; // Root Directory isn't recorded in FAT
+					break;
+				case CFat::FAT32:
+					if (file==DOS_DIR_ROOT){
+						UDirectoryEntry tmp;
+						::ZeroMemory( &tmp, sizeof(tmp) );
+						if (ModifyFileFatPath(&tmp,rFatPath))
+							if (const PBootSector bootSector=boot.GetSectorData()){
+								bootSector->fat32.rootDirectoryFirstCluster=tmp.shortNameEntry.__getFirstCluster__();
+								return true;
+							}
+						return false;
+					}
+					break;
+				default:
+					ASSERT(FALSE);
+					return false;
+			}
+		else
+			if (!de->shortNameEntry.size) // zero-length Files ...
+				return rFatPath.GetNumberOfItems()==0; // ... must in NOT be recorded in the FAT
 		TCluster32 cluster0=__logSector2cluster__(__fyzlog__( pItem++->chs ));
 		de->shortNameEntry.__setFirstCluster__(cluster0);
 		for( TCluster32 c; --nItems; cluster0=c ) // all Sectors but the last one are Occupied in FatPath
