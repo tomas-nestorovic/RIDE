@@ -326,8 +326,8 @@
 			if (fatModified){
 				vp.dos->ModifyFileFatPath( file, fatPath ); // all FAT Sectors by previous actions guaranteed to be readable
 				for( fatPath.GetItems(pItem,nItems); nItems--; pItem++->value=0 ); // "0" = Sector isn't cross-linked
+				vp.fReport.CloseProblem(true);
 			}
-			vp.fReport.CloseProblem(true);
 nextFile:	// . if the File is actually a Directory, processing it recurrently
 			if (vp.dos->IsDirectory(file)){
 				if (const auto pdt=vp.dos->BeginDirectoryTraversal(file))
