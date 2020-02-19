@@ -613,7 +613,8 @@ reportError:Utils::Information(buf);
 			if (rd.params.verifyBootSector)
 				bmac.AddAction( rd.params.verificationFunctions.fnBootSector, &rd.params, _T("Verifying boot sector") );
 			if (rd.params.verifyFat){
-				bmac.AddAction( rd.params.verificationFunctions.fnFatValues, &rd.params, _T("Verifying FAT") );
+				bmac.AddAction( rd.params.verificationFunctions.fnFatFullyReadable, &rd.params, _T("Checking if FAT readable") );
+				bmac.AddAction( rd.params.verificationFunctions.fnFatFilePathsOk, &rd.params, _T("Verifying file records in FAT") );
 				bmac.AddAction( rd.params.verificationFunctions.fnFatCrossedFiles, &rd.params, _T("Searching for cross-linked files") );
 				bmac.AddAction( rd.params.verificationFunctions.fnFatLostAllocUnits, &rd.params, _T("Searching for lost allocation units") );
 			}

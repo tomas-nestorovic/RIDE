@@ -2,13 +2,15 @@
 #define VERIFICATIONDIALOG_H
 
 	struct TVerificationFunctions sealed{
+		static UINT AFX_CDECL ReportOnFilesWithBadFatPath_thread(PVOID pCancelableAction);
 		static UINT AFX_CDECL FloppyCrossLinkedFilesVerification_thread(PVOID pCancelableAction);
 		static UINT AFX_CDECL FloppyLostSectorsVerification_thread(PVOID pCancelableAction);
 
 		static UINT AFX_CDECL WholeDiskSurfaceVerification_thread(PVOID pCancelableAction);
 
 		AFX_THREADPROC fnBootSector;
-		AFX_THREADPROC fnFatValues;
+		AFX_THREADPROC fnFatFullyReadable;
+		AFX_THREADPROC fnFatFilePathsOk;
 		AFX_THREADPROC fnFatCrossedFiles;
 		AFX_THREADPROC fnFatLostAllocUnits;
 		AFX_THREADPROC fnFilesystem;

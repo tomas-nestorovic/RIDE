@@ -147,7 +147,7 @@
 		DDX_Check( pDX, ID_BOOT,	params.verifyBootSector );
 			Utils::EnableDlgControl( m_hWnd, ID_BOOT, params.verificationFunctions.fnBootSector );
 		DDX_Check( pDX, ID_FAT,		params.verifyFat );
-			Utils::EnableDlgControl( m_hWnd, ID_FAT, params.verificationFunctions.fnFatValues||params.verificationFunctions.fnFatCrossedFiles||params.verificationFunctions.fnFatLostAllocUnits );
+			Utils::EnableDlgControl( m_hWnd, ID_FAT, params.verificationFunctions.fnFatFullyReadable||params.verificationFunctions.fnFatFilePathsOk||params.verificationFunctions.fnFatCrossedFiles||params.verificationFunctions.fnFatLostAllocUnits );
 		DDX_Check( pDX, ID_FILE1,	params.verifyFilesystem );
 			Utils::EnableDlgControl( m_hWnd, ID_FILE1, params.verificationFunctions.fnFilesystem );
 		DDX_Check( pDX, ID_IMAGE,	params.verifyVolumeSurface );
@@ -204,6 +204,53 @@
 
 
 
+
+	UINT AFX_CDECL TVerificationFunctions::ReportOnFilesWithBadFatPath_thread(PVOID pCancelableAction){
+		// thread to list Files with erroneous FatPath (just list them, without attempting for their recovery)
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
+		const CVerifyVolumeDialog::TParams &vp=*(CVerifyVolumeDialog::TParams *)pAction->GetParams();
+		vp.fReport.AddSection(_T("File sector linkage in FAT"));
+		const PImage image=vp.dos->image;
+		pAction->SetProgressTarget( vp.dos->formatBoot.nCylinders );
+		CFileManagerView::TFileList bfsFiles; // breadth first search, searching through Directories in breadth
+		CPtrList visitedDirectories;
+		for( bfsFiles.AddTail((CDos::PFile)DOS_DIR_ROOT); bfsFiles.GetCount()>0; ){
+			if (pAction->IsCancelled()) return ERROR_CANCELLED;
+			// . retrieving File's FatPath
+			const CDos::PFile file=bfsFiles.RemoveHead();
+			const CDos::CFatPath fatPath( vp.dos, file );
+			CDos::CFatPath::PItem pItem; DWORD nItems;
+			if (const LPCTSTR err=fatPath.GetItems(pItem,nItems)){
+				CString msg;
+				msg.Format( _T("The linkage of the \"%s\" %s is erroneous: %s"), (LPCTSTR)vp.dos->GetFilePresentationNameAndExt(file), vp.dos->IsDirectory(file)?_T("directory"):_T("file"), err );
+				vp.fReport.OpenProblem(msg);
+				vp.fReport.CloseProblem(false);
+			}
+			if (!nItems)
+				continue; // makes no sense to test a File that occupies no space on the disk
+			// . if the File is actually a Directory, processing it recurrently
+			if (vp.dos->IsDirectory(file)){
+				if (const auto pdt=vp.dos->BeginDirectoryTraversal(file))
+					while (const CDos::PFile subfile=pdt->GetNextFileOrSubdir())
+						switch (pdt->entryType){
+							case CDos::TDirectoryTraversal::SUBDIR:
+								if (visitedDirectories.Find( (PVOID)vp.dos->GetDirectoryUid(subfile) )!=nullptr) // the Subdirectory has already been processed
+									continue; // not processing it again
+								//fallthrough
+							case CDos::TDirectoryTraversal::FILE:
+								bfsFiles.AddTail(subfile);
+								break;
+							case CDos::TDirectoryTraversal::WARNING:
+								continue; // silently ignoring FAT unreadability - warnings should be taken care of elsewhere
+						}
+				visitedDirectories.AddTail(file);
+			}
+			// . informing on progress
+			pAction->UpdateProgress( pItem->chs.cylinder ); // File's first Cylinder
+		}
+		pAction->UpdateProgressFinished();
+		return ERROR_SUCCESS;
+	}
 
 	#define WARNING_CROSSED_FILES	_T("Kept cross-linked, changes in one will affect the other")
 

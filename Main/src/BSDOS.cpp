@@ -677,7 +677,8 @@
 				// volume verification
 				static const TVerificationFunctions vf={
 					TBootSector::Verification_thread, // Boot Sector
-					nullptr, // FAT
+					nullptr, // FAT readability
+					TVerificationFunctions::ReportOnFilesWithBadFatPath_thread, // FAT Files OK
 					TVerificationFunctions::FloppyCrossLinkedFilesVerification_thread, // FAT crossed Files
 					TVerificationFunctions::FloppyLostSectorsVerification_thread, // FAT lost allocation units
 					nullptr, // Filesystem
