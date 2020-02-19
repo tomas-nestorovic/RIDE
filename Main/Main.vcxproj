@@ -227,6 +227,7 @@
     <ClCompile Include="src\BackgroundAction.cpp" />
     <ClCompile Include="src\BSDOS.cpp" />
     <ClCompile Include="src\BSDOS_Boot.cpp" />
+    <ClCompile Include="src\BSDOS_FAT.cpp" />
     <ClCompile Include="src\BSDOS_FileManager.cpp" />
     <ClCompile Include="src\Debug.cpp" />
     <ClCompile Include="src\DialogVerification.cpp" />
