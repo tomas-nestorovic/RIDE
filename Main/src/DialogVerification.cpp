@@ -280,7 +280,7 @@
 			const CDos::CFatPath fatPath( vp.dos, file );
 			CDos::CFatPath::PItem pItem; DWORD nItems;
 			if (const LPCTSTR err=fatPath.GetItems(pItem,nItems))
-				return pAction->TerminateWithError(ERROR_OPEN_FAILED); // problems in FatPath must be taken care for elsewhere
+				continue; // silently ignoring problems in FatPath - warnings should be taken care of elsewhere
 			if (!nItems)
 				continue; // makes no sense to test a File that occupies no space on the disk
 			const TCylinder firstFileCylinder=pItem->chs.cylinder;
@@ -423,7 +423,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 			const CDos::CFatPath fatPath( vp.dos, file );
 			CDos::CFatPath::PItem pItem; DWORD nItems;
 			if (const LPCTSTR err=fatPath.GetItems(pItem,nItems))
-				return pAction->TerminateWithError(ERROR_OPEN_FAILED); // problems in FatPath must be taken care for elsewhere
+				continue; // silently ignoring problems in FatPath - warnings should be taken care of elsewhere
 			if (!nItems)
 				continue; // makes no sense to test a File that occupies no space on the disk
 			// . recording Sectors affiliated to current File
