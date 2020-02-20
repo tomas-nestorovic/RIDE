@@ -23,6 +23,7 @@
 		int progressTarget;
 	protected:
 		volatile bool bCancelled;
+		mutable volatile bool bTargetStateReached;
 		mutable int lastState;
 
 		CBackgroundActionCancelable(UINT dlgResId);

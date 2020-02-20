@@ -63,14 +63,14 @@
 	CBackgroundActionCancelable::CBackgroundActionCancelable(UINT dlgResId)
 		// ctor
 		: CDialog( dlgResId, app.m_pMainWnd )
-		, bCancelled(false) , lastState(0)
+		, bCancelled(false) , bTargetStateReached(false) , lastState(0)
 		, progressTarget(INT_MAX) {
 	}
 
 	CBackgroundActionCancelable::CBackgroundActionCancelable(AFX_THREADPROC fnAction,LPCVOID actionParams,int actionThreadPriority)
 		// ctor
 		: CDialog( IDR_ACTION_PROGRESS, app.m_pMainWnd )
-		, bCancelled(false)
+		, bCancelled(false) , bTargetStateReached(false)
 		, progressTarget(INT_MAX) {
 		BeginAnother( fnAction, actionParams, actionThreadPriority );
 	}
@@ -133,7 +133,10 @@
 				}
 			}else
 				// Worker finished - closing the window
-				::PostMessage( m_hWnd, WM_COMMAND, IDOK, 0 );
+				if (!bTargetStateReached){ // not sending the dialog-closure request twice
+					bTargetStateReached=true;
+					::PostMessage( m_hWnd, WM_COMMAND, IDOK, 0 );
+				}
 	}
 
 	void CBackgroundActionCancelable::UpdateProgressFinished() const{
@@ -247,6 +250,7 @@
 							lastState=0;
 							auto &r=actions[iCurrAction];
 							BeginAnother( r.fnAction, r.fnParams, actionThreadPriority );
+							bTargetStateReached=false;
 							Resume();
 							// . repositioning the progress-bar
 							const int y=painting.rcActions.top
