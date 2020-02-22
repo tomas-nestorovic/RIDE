@@ -1018,12 +1018,12 @@ reportError:Utils::Information(buf);
 		// - retrieving the FatPath Items
 		CFatPath::PCItem pItem; DWORD nItems;
 		if (rFatPath.GetItems(pItem,nItems))
-			return ERROR_IO_DEVICE;
+			return ERROR_GEN_FAILURE;
 		// - making sure all Sectors in the FatPath are readable
 		WORD w;
 		for( DWORD n=0; n<nItems; )
 			if (!image->GetHealthySectorData(pItem[n++].chs,&w))
-				return ERROR_SECTOR_NOT_FOUND;
+				return ::GetLastError();
 			else if (w!=formatBoot.sectorLength)
 				return ERROR_VOLMGR_DISK_SECTOR_SIZE_INVALID;
 		// - shifting

@@ -155,7 +155,7 @@
 			rError=ERROR_SUCCESS;
 			return boot->nFreeSectors*TRDOS503_SECTOR_LENGTH_STD;
 		}else{
-			rError=ERROR_SECTOR_NOT_FOUND;
+			rError=ERROR_VOLMGR_DISK_LAYOUT_INVALID;
 			return 0;
 		}
 	}
@@ -232,7 +232,7 @@
 		// tries to change given File's name and extension; returns Windows standard i/o error
 		// - can't change root Directory's name
 		if (file==ZX_DIR_ROOT)
-			return ERROR_DIRECTORY;
+			return ERROR_ACCESS_DENIED;
 		// - checking that the NewName+NewExt combination follows the "8.1" convention
 		if (newExt.GetLength()<1)
 			return ERROR_BAD_FILE_TYPE;
@@ -316,7 +316,7 @@
 					}
 				}
 			}else
-				return ERROR_DEVICE_NOT_AVAILABLE;
+				return ERROR_VOLMGR_DISK_LAYOUT_INVALID;
 		return ERROR_SUCCESS;
 	}
 
@@ -387,7 +387,7 @@
 		// - initializing the description of File to import
 		const PBootSector boot=__getBootSector__();
 		if (!boot)
-			return ERROR_DEVICE_NOT_AVAILABLE;
+			return ERROR_VOLMGR_DISK_LAYOUT_INVALID;
 		TDirectoryEntry tmp;
 			::ZeroMemory(&tmp,sizeof(tmp));
 			// . name
@@ -776,7 +776,7 @@
 							THREAD_PRIORITY_BELOW_NORMAL
 						).Perform();
 					else
-						__errorCannotDoCommand__(ERROR_DEVICE_NOT_AVAILABLE);
+						__errorCannotDoCommand__(ERROR_VOLMGR_DISK_LAYOUT_INVALID);
 				getFileSizeDefaultOption=gfs0;
 				return TCmdResult::DONE_REDRAW;
 			}

@@ -200,7 +200,7 @@
 					: true;
 		}else{
 			// Boot Sector doesn't exist (may happen after unsuccessfull formatting)
-			::SetLastError(ERROR_SECTOR_NOT_FOUND);
+			::SetLastError(ERROR_VOLMGR_DISK_LAYOUT_INVALID);
 			return false;
 		} 
 	}
@@ -670,9 +670,9 @@
 			TMsdos7DirectoryTraversal dt(this,currentDir);
 			for( BYTE n=(::lstrlen(longNameAndExt)+12)/13; n--; ) // 13 = number of characters in one LongNameEntry
 				if (!( *plnde++=dt.__allocateNewEntry__() ))
-					return ERROR_CANNOT_MAKE;
+					return ERROR_VOLMGR_DISK_NOT_ENOUGH_SPACE;
 			if (!( rRenamedFile=dt.__allocateNewEntry__() ))
-				return ERROR_CANNOT_MAKE;
+				return ERROR_VOLMGR_DISK_NOT_ENOUGH_SPACE;
 			// - initializing allocated LongNameEntries
 			WCHAR bufW[256], *pw=(PWCHAR)::memset(bufW,-1,sizeof(bufW));
 			#ifdef UNICODE
@@ -762,7 +762,7 @@
 				MarkDirectorySectorAsDirty(rCreatedSubdir);
 			}else{
 				fat.FreeChainOfClusters(cluster);
-				return ERROR_CANNOT_MAKE;
+				return ERROR_VOLMGR_DISK_NOT_ENOUGH_SPACE;
 			}
 		// - creating the "dot" and "dotdot" entries in newly created Subdirectory
 		TMsdos7DirectoryTraversal dt(this,rCreatedSubdir);
@@ -807,7 +807,7 @@
 				*newDe=*de;
 				*(PBYTE)de=UDirectoryEntry::EMPTY_ENTRY;
 			}else
-				return ERROR_CANNOT_MAKE;
+				return ERROR_VOLMGR_DISK_NOT_ENOUGH_SPACE;
 		// - if a Directory is being moved, changing the reference to the parent in the "dotdot" DirectoryEntry
 		if (IsDirectory(rMovedFile))
 			if (const PDirectoryEntry dotdot=(PDirectoryEntry)__findFile__(rMovedFile,_T(".."),_T(""),nullptr))
@@ -1033,7 +1033,8 @@
 
 	TStdWinError CMSDOS7::CreateUserInterface(HWND hTdi){
 		// creates DOS-specific Tabs in TDI; returns Windows standard i/o error
-		CDos::CreateUserInterface(hTdi); // guaranteed to always return ERROR_SUCCESS
+		if (const TStdWinError err=__super::CreateUserInterface(hTdi))
+			return err;
 		if (const PCBootSector bootSector=boot.GetSectorData())
 			if (bootSector->__isUsable__()){ // Boot Sector contains values that make sense
 				if (fat.type==CFat::FAT32)
@@ -1054,7 +1055,7 @@
 				CTdiCtrl::AddTabLast( hTdi, FILE_MANAGER_TAB_LABEL, &fileManager.tab, true, TDI_TAB_CANCLOSE_NEVER, nullptr );
 				return ERROR_SUCCESS;
 			}
-		return ERROR_REQUEST_REFUSED;
+		return ERROR_VOLMGR_DISK_LAYOUT_INVALID;
 	}
 
 

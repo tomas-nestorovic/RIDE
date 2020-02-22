@@ -190,6 +190,8 @@
 		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
 		const TSpectrumVerificationParams &vp=*(TSpectrumVerificationParams *)pAction->GetParams();
 		const PBootSector boot=GetData(vp.dos->image);
+		if (!boot)
+			return pAction->TerminateWithError(ERROR_VOLMGR_DISK_LAYOUT_INVALID);
 		vp.fReport.AddSection(BOOT_SECTOR_TAB_LABEL);
 		pAction->SetProgressTarget( 4 ); // see number of steps below
 		// - Step 1: verifying this is actually a BS-DOS disk

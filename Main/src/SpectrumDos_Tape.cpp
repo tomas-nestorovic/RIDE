@@ -202,7 +202,7 @@
 		// tries to change given File's name and extension; returns Windows standard i/o error
 		// - can't change root Directory's name
 		if (file==ZX_DIR_ROOT)
-			return ERROR_DIRECTORY;
+			return ERROR_ACCESS_DENIED;
 		// - renaming
 		if (const PHeader h=((PTapeFile)( rRenamedFile=file ))->GetHeader()){
 			// File with a Header
@@ -292,10 +292,10 @@
 		// imports specified File (physical or virtual) into the Image; returns Windows standard i/o error
 		// - checking if there's an empty slot in Tape's "Directory"
 		if (fileManager.nFiles==ZX_TAPE_FILE_COUNT_MAX)
-			return ERROR_CANNOT_MAKE;
+			return ERROR_VOLMGR_DISK_NOT_ENOUGH_SPACE;
 		// - checking if File length is within range
 		if (fileSize>FILE_LENGTH_MAX)
-			return ERROR_BAD_LENGTH;
+			return ERROR_FILE_TOO_LARGE;
 		// - converting the NameAndExtension to the "10.1" form usable for Tape
 		CPathString zxName,zxExt; LPCTSTR zxInfo;
 		TCHAR buf[16384];

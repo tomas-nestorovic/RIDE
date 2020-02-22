@@ -237,7 +237,7 @@
 		// tries to change given File's name and extension; returns Windows standard i/o error
 		// - can't change root Directory's name
 		if (file==ZX_DIR_ROOT)
-			return ERROR_DIRECTORY;
+			return ERROR_ACCESS_DENIED;
 		// - checking that the NewName+NewExt combination follows the "10.1" convention
 		if (newExt.GetLength()<1)
 			return ERROR_BAD_FILE_TYPE;

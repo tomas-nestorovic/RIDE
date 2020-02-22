@@ -151,7 +151,7 @@
 		// creates a new Subdirectory in CurrentDirectory; returns Windows standard i/o error
 		// - cannot create a new Subdirectory elsewhere but in the Root Directory
 		if (currentDir!=ZX_DIR_ROOT)
-			return ERROR_DIR_NOT_ROOT;
+			return ERROR_CANNOT_MAKE;
 		// - creating a new Subdirectory in the first empty Slot
 		TPhysicalAddress chs;
 		for( CDirsSector::PSlot slot=dirsSector.GetSlots(); IsDirectory(slot); slot++ )
@@ -169,12 +169,12 @@
 						TUniFileType uts;
 						const int n=__importFileInformation__( zxInfo, uts );
 						if (uts!=TUniFileType::SUBDIRECTORY)
-							return ERROR_CANNOT_MAKE;
+							return ERROR_BAD_FILE_TYPE;
 						_stscanf( zxInfo+n, INFO_DIR, &dirNameChecksum );
 					}
 					// . validating Name
 					if (zxExt.GetLength())
-						return ERROR_INVALID_DATATYPE;
+						return ERROR_FILENAME_EXCED_RANGE;
 					if (const TStdWinError err=TDirectoryEntry(this,0).file.stdHeader.SetName(zxName))
 						return err;
 					// . indicating that the Slot is now occupied
@@ -197,7 +197,7 @@
 					dirsSector.MarkDirectoryEntryAsDirty(slot);
 					return ERROR_SUCCESS;
 				}else
-					return ERROR_DISK_FULL;
+					return ERROR_VOLMGR_DISK_NOT_ENOUGH_SPACE;
 		// - Root Directory full
 		return ERROR_CANNOT_MAKE;
 	}
@@ -226,7 +226,7 @@
 		// - allocating a new DirectoryEntry in current Subdirectory
 		const PDirectoryEntry newDe=(PDirectoryEntry)TDirectoryEntry::CTraversal(this,currentDir).AllocateNewEntry();
 		if (!newDe)
-			return ERROR_CANNOT_MAKE;
+			return ERROR_VOLMGR_DISK_NOT_ENOUGH_SPACE;
 		// - copying the DirectoryEntry
 		const PDirectoryEntry oldDe=(PDirectoryEntry)file;
 		*newDe=*oldDe;
@@ -405,7 +405,7 @@
 		// tries to change given File's name and extension; returns Windows standard i/o error
 		if (file==ZX_DIR_ROOT)
 			// root Directory
-			return ERROR_DIR_NOT_ROOT; // can't rename root Directory
+			return ERROR_ACCESS_DENIED; // can't rename root Directory
 		else if (IsDirectory(file)){
 			// root Subdirectory
 			// . making sure that a Directory with given NameAndExtension doesn't yet exist
@@ -607,7 +607,7 @@
 			// root Directory
 			// . only Subdirectories are allowed as items in the root Directory
 			if (uts!=TUniFileType::SUBDIRECTORY)
-				return ERROR_CANNOT_MAKE;
+				return ERROR_BAD_FILE_TYPE;
 			// . processing import information
 			int dirNameChecksum=-1;
 			_stscanf( zxInfo+n, INFO_DIR, &dirNameChecksum );
@@ -620,7 +620,7 @@
 			// File
 			// . only Files are allowed as items in root Subdirectories
 			if (uts==TUniFileType::SUBDIRECTORY)
-				return ERROR_CANNOT_MAKE;
+				return ERROR_BAD_FILE_TYPE;
 			// . initializing the description of File to import
 			TDirectoryEntry tmp( this, 0 );
 				// : import information

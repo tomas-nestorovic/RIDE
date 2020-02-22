@@ -428,12 +428,12 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 	TStdWinError CDsk5::FormatTrack(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte){
 		// formats given Track {Cylinder,Head} to the requested NumberOfSectors, each with corresponding Length and FillerByte as initial content; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		if (nSectors>DSK_TRACKINFO_SECTORS_MAX) return ERROR_BAD_COMMAND;
+		if (nSectors>DSK_TRACKINFO_SECTORS_MAX) return ERROR_VHD_INVALID_TYPE;
 		WORD w=cyl*diskInfo.nHeads+head;
 		if (w>=DSK_REV5_TRACKS_MAX)
-			return ERROR_BAD_COMMAND;
+			return ERROR_VHD_INVALID_TYPE;
 		if (!params.rev5 && cyl>diskInfo.nCylinders)
-			return ERROR_BAD_COMMAND; // only at most one consecutive Track may be formatted at "standard" DSK
+			return ERROR_VHD_INVALID_TYPE; // only at most one consecutive Track may be formatted at "standard" DSK
 		if (!nSectors) // formatting to "no Sectors" ...
 			return UnformatTrack(cyl,head); // ... is translated as unformatting the Track
 		// - statistics about the new Track
