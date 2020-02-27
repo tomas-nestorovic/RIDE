@@ -158,7 +158,7 @@
 			PFile GetNextFileOrSubdir();
 		} *PDirectoryTraversal;
 
-		class CFatPath sealed{
+		class CFatPath{
 		public:
 			#pragma pack(1)
 			typedef const struct TItem sealed{
@@ -173,6 +173,7 @@
 				VALUE_CYCLE		=2, // cyclic path in FAT
 				VALUE_INVALID	=3, // nonsense value in FAT, e.g. out of certain range, e.g. beyond last Cluster number
 				VALUE_BAD_SECTOR=5, // value in FAT indicates a bad File data Sector; this value usually prelimiary terminates the path
+				LENGTH			=6, // path in FAT has incorrect length; this error is usually set by the caller
 				FILE			=16	// invalid File entry to find path of, e.g. an empty Directory entry
 			} error;
 		private:
@@ -189,11 +190,12 @@
 			CFatPath(const CDos *dos,RCPhysicalAddress chs); // ctor for editing a Sector (e.g. Boot Sector)
 			~CFatPath();
 
+			operator bool() const;
 			bool AddItem(PCItem pItem);
 			PCItem PopItem();
 			LPCTSTR GetItems(PCItem &rBuffer,DWORD &rnItems) const;
 			LPCTSTR GetItems(PItem &rBuffer,DWORD &rnItems) const;
-			PCItem GetItem(DWORD i) const;
+			PCItem GetHealthyItem(DWORD i) const;
 			DWORD GetNumberOfItems() const;
 			bool AreAllSectorsReadable(const CDos *dos) const;
 			LPCTSTR GetErrorDesc() const;

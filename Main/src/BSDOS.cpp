@@ -835,7 +835,7 @@
 				for( BYTE i=0; i<BSDOS_FAT_COPIES_MAX; i++ ){
 					for( WORD s=bootSector->nSectorsPerFat; s<nNewFatSectors; s++ )
 						::ZeroMemory(
-							__getHealthyLogicalSectorData__(__fyzlog__(fats[i].GetItem(s)->chs)), // guaranteed to succeed
+							__getHealthyLogicalSectorData__(__fyzlog__(fats[i].GetHealthyItem(s)->chs)), // guaranteed to succeed
 							BSDOS_SECTOR_LENGTH_STD
 						);
 					ModifyFileFatPath( &deFats[i], fats[i] ); // guaranteed to succeed

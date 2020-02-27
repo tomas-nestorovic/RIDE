@@ -4,10 +4,11 @@
 		// returns textual description of Error
 		switch (error){
 			case OK				: break;
-			case SECTOR			: return _T("FAT sector not found or read with CRC error.");
+			case SECTOR			: return _T("Invalid or unreadable FAT sector.");
 			case VALUE_CYCLE	: return _T("Cyclic path in the FAT.");
 			case VALUE_INVALID	: return _T("Invalid value in the FAT.");
 			case VALUE_BAD_SECTOR: return _T("Data sector marked as bad.");
+			case LENGTH			: return _T("Incorrect FAT path length.");
 			case FILE			: return _T("Invalid file descriptor.");
 			default:
 				ASSERT(FALSE); // unknown Error
@@ -71,6 +72,10 @@
 
 
 
+	CDos::CFatPath::operator bool() const{
+		return !error;
+	}
+
 	bool CDos::CFatPath::AddItem(PCItem pItem){
 		// True <=> FatPath extended with given Item is valid, otherwise False
 		// - VALIDATION: FatPath must be acyclic (detected by wanting to exceed the expected number of Items)
@@ -103,9 +108,9 @@
 		return GetErrorDesc();
 	}
 
-	CDos::CFatPath::PCItem CDos::CFatPath::GetItem(DWORD i) const{
+	CDos::CFatPath::PCItem CDos::CFatPath::GetHealthyItem(DWORD i) const{
 		// returns I-th Item or Null
-		if (GetErrorDesc()) // FatPath erroneous
+		if (error) // FatPath erroneous
 			return nullptr;
 		if (i>=nItems) // request out of bounds
 			return nullptr;
