@@ -13,6 +13,7 @@
 		ASSERT( sizeof(TFatValue)==sizeof(WORD) );
 		ASSERT( sizeof(TDirectoryEntry)==32 );
 		ASSERT( sizeof(CDirsSector::TSlot)==sizeof(DWORD) );
+		static_assert( BSDOS_FAT_COPIES_MAX==2, "The number of FAT copies must be exactly 2 otherwise major changes in the code are needed!" );
 	}
 
 
@@ -730,7 +731,7 @@
 		const TLogSector nSectorsTotal=formatBoot.GetCountOfAllSectors();
 		boot->nSectorsPerFat=(nSectorsTotal+BSDOS_FAT_ITEMS_PER_SECTOR-1)/BSDOS_FAT_ITEMS_PER_SECTOR;
 		boot->nBytesInFat=boot->nSectorsPerFat*BSDOS_SECTOR_LENGTH_STD;
-		TFatValue fatFirstSector[BSDOS_FAT_LOGSECTOR_MAX];
+		TFatValue fatFirstSector[BSDOS_FAT_ITEMS_PER_SECTOR];
 			::ZeroMemory( fatFirstSector, sizeof(fatFirstSector) );
 			fatFirstSector[1]=TFatValue::SystemSector;
 		for( BYTE fatCopy=0,fatSectors[UCHAR_MAX]; fatCopy<BSDOS_FAT_COPIES_MAX; fatCopy++ ){

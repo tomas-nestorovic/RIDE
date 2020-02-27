@@ -94,7 +94,7 @@
 				};
 			};
 
-			inline TFatValue();
+			TFatValue();
 			inline TFatValue(bool occupied,bool continuous,WORD info);
 			inline TFatValue(WORD w);
 
