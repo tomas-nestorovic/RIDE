@@ -172,7 +172,6 @@ BEGIN
     END
     POPUP "Help"
     BEGIN
-        MENUITEM "What's new (online)",         ID_HELP_WHATSNEW
         MENUITEM "FAQ (online)\tF1",            ID_HELP_FAQ
         MENUITEM "Check for updates (online)",  ID_APP_UPDATE
         MENUITEM "Report a bug (online)",       ID_HELP_REPORT_BUG
@@ -181,6 +180,7 @@ BEGIN
         BEGIN
             MENUITEM "Repository (GitHub)",         ID_HELP_REPOSITORY
             MENUITEM "Tutorials (online)",          ID_HELP_TUTORIALS
+            , GRAYED
         END
         MENUITEM SEPARATOR
         MENUITEM "Credits (online)",            ID_CREDITS
@@ -1782,7 +1782,6 @@ END
 STRINGTABLE DISCARDABLE 
 BEGIN
     ID_HELP_FAQ             "Read through Frequently Asked Questions (FAQ)"
-    ID_HELP_WHATSNEW        "See the application evolution over time"
 END
 
 STRINGTABLE DISCARDABLE 

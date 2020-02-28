@@ -115,7 +115,6 @@
 		ON_COMMAND(ID_FILE_CLOSE,__closeCurrentTab__)
 			ON_UPDATE_COMMAND_UI(ID_FILE_CLOSE,__closeCurrentTab_updateUI__)
 		ON_COMMAND(ID_RECOGNIZE,__changeAutomaticDiskRecognitionOrder__)
-		ON_COMMAND(ID_HELP_WHATSNEW,__openUrl_whatsNew__)
 		ON_COMMAND(ID_APP_UPDATE,__openUrl_checkForUpdates__)
 		ON_COMMAND(ID_HELP_FAQ,__openUrl_faq__)
 		ON_COMMAND(ID_HELP_REPORT_BUG,__openUrl_reportBug__)
@@ -272,11 +271,6 @@
 		// in new Tab opens the specified Document from application's on-line presentation
 		TCHAR url[MAX_PATH];
 		OpenWebPage( tabCaption, Utils::GetApplicationOnlineHtmlDocumentUrl(documentName,url) );
-	}
-
-	afx_msg void CMainWindow::__openUrl_whatsNew__(){
-		// opens the "What's New" page in a new Tab
-		OpenApplicationPresentationWebPage(_T("Change log"),_T("changelog.html"));
 	}
 
 	#define VERSION_LATEST_WEB	_T("usingLatest.html")
