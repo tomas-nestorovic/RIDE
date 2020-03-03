@@ -377,18 +377,28 @@ namespace Utils{
 	#define ERROR_BECAUSE		_T("%s because:\n\n%s")
 	#define ERROR_CONSEQUENCE	_T("\n\n\n%s")
 
-	void FatalError(LPCTSTR text,LPCTSTR causeOfError,LPCTSTR consequence){
-		// shows fatal error along with its Cause and immediate Consequence
+	CString ComposeErrorMessage(LPCTSTR text,LPCTSTR causeOfError,LPCTSTR consequence){
+		// compiles a message explaining the situation caused by the Error, and appends immediate Consequence it implies
 		TCHAR buf[2000];
 		const int n=::wsprintf( buf, ERROR_BECAUSE, text, causeOfError );
 		if (consequence)
 			::wsprintf( buf+n, ERROR_CONSEQUENCE, consequence );
-		FatalError(buf);
+		return buf;
+	}
+
+	CString ComposeErrorMessage(LPCTSTR text,TStdWinError causeOfError,LPCTSTR consequence){
+		// compiles a message explaining the situation caused by the Error, and appends immediate Consequence it implies
+		TCHAR buf[ERROR_BUFFER_SIZE];
+		return ComposeErrorMessage( text, __formatErrorCode__(buf,causeOfError), consequence );
+	}
+
+	void FatalError(LPCTSTR text,LPCTSTR causeOfError,LPCTSTR consequence){
+		// shows fatal error along with its Cause and immediate Consequence
+		FatalError( ComposeErrorMessage(text,causeOfError,consequence) );
 	}
 	void FatalError(LPCTSTR text,TStdWinError causeOfError,LPCTSTR consequence){
 		// shows fatal error along with its Cause and immediate Consequence
-		TCHAR buf[ERROR_BUFFER_SIZE];
-		FatalError( text, __formatErrorCode__(buf,causeOfError), consequence );
+		FatalError( ComposeErrorMessage(text,causeOfError,consequence) );
 	}
 
 
@@ -401,16 +411,11 @@ namespace Utils{
 	}
 	void Information(LPCTSTR text,LPCTSTR causeOfError,LPCTSTR consequence){
 		// shows Textual information along with its Cause and immediate Consequence
-		TCHAR buf[2000];
-		const int n=::wsprintf( buf, ERROR_BECAUSE, text, causeOfError );
-		if (consequence)
-			::wsprintf( buf+n, ERROR_CONSEQUENCE, consequence );
-		Information(buf);
+		Information( ComposeErrorMessage(text,causeOfError,consequence) );
 	}
 	void Information(LPCTSTR text,TStdWinError causeOfError,LPCTSTR consequence){
 		// shows Textual information along with its Cause and immediate Consequence
-		TCHAR buf[ERROR_BUFFER_SIZE];
-		Information( text, __formatErrorCode__(buf,causeOfError), consequence );
+		Information( ComposeErrorMessage(text,causeOfError,consequence) );
 	}
 
 
@@ -518,16 +523,11 @@ namespace Utils{
 	}
 	BYTE QuestionYesNoCancel(LPCTSTR text,UINT defaultButton,LPCTSTR causeOfError,LPCTSTR consequence){
 		// shows a yes-no question along with its Cause and immediate Consequence
-		TCHAR buf[2000];
-		const int n=::wsprintf( buf, ERROR_BECAUSE, text, causeOfError );
-		if (consequence)
-			::wsprintf( buf+n, ERROR_CONSEQUENCE, consequence );
-		return QuestionYesNoCancel(buf,defaultButton);
+		return QuestionYesNoCancel( ComposeErrorMessage(text,causeOfError,consequence), defaultButton );
 	}
 	BYTE QuestionYesNoCancel(LPCTSTR text,UINT defaultButton,TStdWinError causeOfError,LPCTSTR consequence){
 		// shows a yes-no question along with its Cause and immediate Consequence
-		TCHAR buf[ERROR_BUFFER_SIZE];
-		return QuestionYesNoCancel( text, defaultButton, __formatErrorCode__(buf,causeOfError), consequence );
+		return QuestionYesNoCancel( ComposeErrorMessage(text,causeOfError,consequence), defaultButton );
 	}
 
 
@@ -542,11 +542,7 @@ namespace Utils{
 
 	BYTE AbortRetryIgnore(LPCTSTR text,TStdWinError causeOfError,UINT defaultButton,LPCTSTR consequence){
 		// shows an abort-retry-ignore question along with its Cause
-		TCHAR bufCause[ERROR_BUFFER_SIZE], buf[2000];
-		const int n=::wsprintf( buf, ERROR_BECAUSE, text, __formatErrorCode__(bufCause,causeOfError) );
-		if (consequence)
-			::wsprintf( buf+n, ERROR_CONSEQUENCE, consequence );
-		return AbortRetryIgnore(buf,defaultButton);
+		return AbortRetryIgnore( ComposeErrorMessage(text,causeOfError,consequence), defaultButton );
 	}
 
 	BYTE AbortRetryIgnore(TStdWinError causeOfError,UINT defaultButton){
@@ -575,11 +571,7 @@ namespace Utils{
 	}
 	BYTE CancelRetryContinue(LPCTSTR text,TStdWinError causeOfError,UINT defaultButton,LPCTSTR consequence){
 		// shows an cancel-retry-continue question along with its Cause
-		TCHAR bufCause[ERROR_BUFFER_SIZE], buf[2000];
-		const int n=::wsprintf( buf, ERROR_BECAUSE, text, __formatErrorCode__(bufCause,causeOfError) );
-		if (consequence)
-			::wsprintf( buf+n, ERROR_CONSEQUENCE, consequence );
-		return CancelRetryContinue(buf,defaultButton);
+		return CancelRetryContinue( ComposeErrorMessage(text,causeOfError,consequence), defaultButton );
 	}
 
 
