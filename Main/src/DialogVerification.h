@@ -1,6 +1,8 @@
 #ifndef VERIFICATIONDIALOG_H
 #define VERIFICATIONDIALOG_H
 
+	#define FAT_VERIFICATION_READABILITY _T("FAT readability")
+
 	struct TVerificationFunctions sealed{
 		static UINT AFX_CDECL ReportOnFilesWithBadFatPath_thread(PVOID pCancelableAction);
 		static UINT AFX_CDECL FloppyCrossLinkedFilesVerification_thread(PVOID pCancelableAction);
@@ -28,6 +30,7 @@
 	public:
 		struct TParams{
 			const PDos dos;
+			mutable CBackgroundMultiActionCancelable action;
 			int verifyBootSector, verifyFat, verifyFilesystem;
 			int verifyVolumeSurface;
 			int repairStyle;
@@ -37,14 +40,21 @@
 			public:
 				CReportFile();
 
-				void AddSection(LPCTSTR name,bool problemSolving=true);
+				void OpenSection(LPCTSTR name,bool problemSolving=true);
+				void CloseSection(LPCTSTR errMsg=nullptr);
+				void AFX_CDECL LogWarning(LPCTSTR format,...);
+				//void LogError(
 				void OpenProblem(LPCTSTR problemDesc);
 				void CloseProblem(bool solved);
 				void Close() override;
 			} fReport;
 
 			TParams(CDos *dos,const TVerificationFunctions &rvf);
+			TParams(const TParams &); //=delete;
 
+			TStdWinError TerminateAndGoToNextAction(TStdWinError error) const;
+			TStdWinError TerminateAll(TStdWinError error) const;
+			TStdWinError CancelAll() const;
 			BYTE ConfirmFix(LPCTSTR problemDesc,LPCTSTR problemSolvingSuggestion) const;
 			BYTE ConfirmUnsignedValueFix(LPCTSTR locationName,LPCTSTR valueName,WORD valueOffset,DWORD value,DWORD rangeA,DWORD rangeZ) const;
 

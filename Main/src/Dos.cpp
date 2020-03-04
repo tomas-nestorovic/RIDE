@@ -606,10 +606,10 @@ reportError:Utils::Information(buf);
 		if (!rd.params.fReport.Open( ::lstrcat(tmpFileName,_T(".html")), CFile::modeCreate|CFile::modeWrite ))
 			return false;
 		Utils::WriteToFile(rd.params.fReport,_T("<html><head><style>body,td{font-size:13pt;margin:24pt}</style></head><body>"));
-			rd.params.fReport.AddSection( _T("Overview"), false );
+			rd.params.fReport.OpenSection( _T("Overview"), false );
 			Utils::WriteToFileFormatted( rd.params.fReport, _T("<table><tr><td>Location:</td><td><b>%s</b></td></tr><tr><td>System:</td><td><b>%s</b></td></tr></table>"), image->GetPathName().GetLength()?image->GetPathName():_T("N/A"), properties->name );
 		// - verification
-		CBackgroundMultiActionCancelable bmac(THREAD_PRIORITY_BELOW_NORMAL);
+		CBackgroundMultiActionCancelable &bmac=rd.params.action;
 			if (rd.params.verifyBootSector)
 				bmac.AddAction( rd.params.verificationFunctions.fnBootSector, &rd.params, _T("Verifying boot sector") );
 			if (rd.params.verifyFat){

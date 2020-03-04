@@ -189,38 +189,38 @@
 		// thread to verify the Boot Sector
 		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
 		const TSpectrumVerificationParams &vp=*(TSpectrumVerificationParams *)pAction->GetParams();
+		vp.fReport.OpenSection(BOOT_SECTOR_TAB_LABEL);
 		const PBootSector boot=GetData(vp.dos->image);
 		if (!boot)
-			return pAction->TerminateWithError(ERROR_VOLMGR_DISK_LAYOUT_INVALID);
-		vp.fReport.AddSection(BOOT_SECTOR_TAB_LABEL);
+			return vp.TerminateAll(ERROR_VOLMGR_DISK_LAYOUT_INVALID);
 		pAction->SetProgressTarget( 4 ); // see number of steps below
 		// - Step 1: verifying this is actually a BS-DOS disk
 		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, nullptr, boot->jmpInstruction.opCode, (BYTE)0x18 )) // "0x18" = "jr N" instruction
-			return pAction->TerminateWithError(err);
+			return vp.TerminateAll(err);
 		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, nullptr, boot->signature1, (BYTE)0x02 ))
-			return pAction->TerminateWithError(err);
+			return vp.TerminateAll(err);
 		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, nullptr, boot->signature2, (BYTE)0x00 ))
-			return pAction->TerminateWithError(err);
+			return vp.TerminateAll(err);
 		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, nullptr, boot->signature3, (BYTE)0x00 ))
-			return pAction->TerminateWithError(err);
+			return vp.TerminateAll(err);
 		pAction->UpdateProgress(1);
 		// - Step 2: verifying geometry
 		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Number of cylinders"), boot->nCylinders, (WORD)1, (WORD)FDD_CYLINDERS_MAX ))
-			return pAction->TerminateWithError(err);
+			return vp.TerminateAll(err);
 		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Number of heads"), boot->nHeads, (WORD)1, (WORD)2 ))
-			return pAction->TerminateWithError(err);
+			return vp.TerminateAll(err);
 		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Number of sectors"), boot->nSectorsPerTrack, (WORD)BSDOS_SECTOR_NUMBER_TEMP, (WORD)BSDOS_SECTOR_NUMBER_LAST ))
-			return pAction->TerminateWithError(err);
+			return vp.TerminateAll(err);
 		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Cluster size"), boot->nSectorsPerCluster, (WORD)1 ))
-			return pAction->TerminateWithError(err);
+			return vp.TerminateAll(err);
 		pAction->UpdateProgress(2);
 		// - Step 3: verifying ID checksum
 		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, _T("FAT Bytes"), boot->diskIdChecksum, __xorChecksum__(boot->diskId,sizeof(boot->diskId)) ))
-			return pAction->TerminateWithError(err);
+			return vp.TerminateAll(err);
 		pAction->UpdateProgress(3);
 		// - Step 4: verifying DiskName
 		if (const TStdWinError err=vp.VerifyAllCharactersPrintable( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Disk name"), boot->diskName, sizeof(boot->diskName), ' ' ))
-			return pAction->TerminateWithError(err);
+			return vp.TerminateAll(err);
 		pAction->UpdateProgress(4);
 		// - Boot Sector verified
 		return ERROR_SUCCESS;
