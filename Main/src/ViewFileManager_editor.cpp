@@ -289,8 +289,10 @@
 												);
 	}
 
-	void CFileManagerView::CIntegerEditor::DrawReportModeCell(int number,LPDRAWITEMSTRUCT pdis) const{
+	void CFileManagerView::CIntegerEditor::DrawReportModeCell(int number,LPDRAWITEMSTRUCT pdis,bool highlightRed) const{
 		// directly draws the integral Number
+		if (highlightRed)
+			::FillRect( pdis->hDC, &pdis->rcItem, CBrush(Utils::GetBlendedColor(::GetBkColor(pdis->hDC),COLOR_RED,.92f)) );
 		TCHAR buf[16];
 		::DrawText( pdis->hDC, _itot(number,buf,10),-1, &pdis->rcItem, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
 	}
@@ -301,7 +303,7 @@
 		RECT &r=pdis->rcItem;
 		const LONG statusWidth=(r.bottom-r.top)*4/3;
 		r.right-=statusWidth;
-		DrawReportModeCell( number, pdis );
+		DrawReportModeCell( number, pdis, !checkmark );
 		// - "check" or "cross" symbol
 		const HDC dc=pdis->hDC;
 		r.left=std::max<>(r.right,r.left), r.right+=statusWidth;

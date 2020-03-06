@@ -222,7 +222,7 @@
 
 			PEditorBase Create(CDos::PFile file,PBYTE pByte,PropGrid::Integer::TOnValueConfirmed fnOnConfirmed=__markDirectorySectorAsDirty__);
 			PEditorBase Create(CDos::PFile file,PWORD pWord,PropGrid::Integer::TOnValueConfirmed fnOnConfirmed=__markDirectorySectorAsDirty__);
-			void DrawReportModeCell(int number,LPDRAWITEMSTRUCT pdis) const;
+			void DrawReportModeCell(int number,LPDRAWITEMSTRUCT pdis,bool highlightRed=false) const;
 			void DrawReportModeCellWithCheckmark(int number,bool checkmark,LPDRAWITEMSTRUCT pdis) const;
 		} integerEditor;
 

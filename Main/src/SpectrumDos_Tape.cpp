@@ -708,11 +708,11 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 						break;
 					case INFORMATION_SIZE:
 						// Size
-						integerEditor.DrawReportModeCell( tf->dataLength, pdis );
+						integerEditor.DrawReportModeCell( tf->dataLength, pdis, tf->dataLength!=h->length );
 						break;
 					case INFORMATION_SIZE_REPORTED:
 						// Size
-						integerEditor.DrawReportModeCell( h->length, pdis );
+						integerEditor.DrawReportModeCell( h->length, pdis, tf->dataLength!=h->length );
 						break;
 					case INFORMATION_PARAM_1:
 						// start address / Basic start line
