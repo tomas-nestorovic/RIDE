@@ -99,8 +99,8 @@
 		// - waiting for the already running Worker
 		::WaitForSingleObject( *this, INFINITE );
 		// - returning the Result
-		TStdWinError result;
-		::GetExitCodeThread( *this, &result );
+		TStdWinError result=ERROR_SUCCESS;
+		::GetExitCodeThread( *this, (LPDWORD)&result );
 		return result;
 	}
 

@@ -292,7 +292,7 @@
 		// imports specified File (physical or virtual) into the Image; returns Windows standard i/o error
 		// - checking if there's an empty slot in Tape's "Directory"
 		if (fileManager.nFiles==ZX_TAPE_FILE_COUNT_MAX)
-			return ERROR_VOLMGR_DISK_NOT_ENOUGH_SPACE;
+			return Utils::ErrorByOs( ERROR_VOLMGR_DISK_NOT_ENOUGH_SPACE, ERROR_CANNOT_MAKE );
 		// - checking if File length is within range
 		if (fileSize>FILE_LENGTH_MAX)
 			return ERROR_FILE_TOO_LARGE;

@@ -155,7 +155,7 @@
 			rError=ERROR_SUCCESS;
 			return boot->nFreeSectors*TRDOS503_SECTOR_LENGTH_STD;
 		}else{
-			rError=ERROR_VOLMGR_DISK_LAYOUT_INVALID;
+			rError=Utils::ErrorByOs( ERROR_VOLMGR_DISK_LAYOUT_INVALID, ERROR_UNRECOGNIZED_VOLUME );
 			return 0;
 		}
 	}
@@ -316,7 +316,7 @@
 					}
 				}
 			}else
-				return ERROR_VOLMGR_DISK_LAYOUT_INVALID;
+				return Utils::ErrorByOs( ERROR_VOLMGR_DISK_LAYOUT_INVALID, ERROR_UNRECOGNIZED_VOLUME );
 		return ERROR_SUCCESS;
 	}
 
@@ -387,7 +387,7 @@
 		// - initializing the description of File to import
 		const PBootSector boot=__getBootSector__();
 		if (!boot)
-			return ERROR_VOLMGR_DISK_LAYOUT_INVALID;
+			return Utils::ErrorByOs( ERROR_VOLMGR_DISK_LAYOUT_INVALID, ERROR_UNRECOGNIZED_VOLUME );
 		TDirectoryEntry tmp;
 			::ZeroMemory(&tmp,sizeof(tmp));
 			// . name
@@ -776,7 +776,7 @@
 							THREAD_PRIORITY_BELOW_NORMAL
 						).Perform();
 					else
-						__errorCannotDoCommand__(ERROR_VOLMGR_DISK_LAYOUT_INVALID);
+						__errorCannotDoCommand__( Utils::ErrorByOs(ERROR_VOLMGR_DISK_LAYOUT_INVALID,ERROR_UNRECOGNIZED_VOLUME) );
 				getFileSizeDefaultOption=gfs0;
 				return TCmdResult::DONE_REDRAW;
 			}

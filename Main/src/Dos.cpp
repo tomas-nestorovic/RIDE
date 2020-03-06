@@ -1025,7 +1025,7 @@ reportError:Utils::Information(buf);
 			if (!image->GetHealthySectorData(pItem[n++].chs,&w))
 				return ::GetLastError();
 			else if (w!=formatBoot.sectorLength)
-				return ERROR_VOLMGR_DISK_SECTOR_SIZE_INVALID;
+				return Utils::ErrorByOs( ERROR_VOLMGR_DISK_SECTOR_SIZE_INVALID, ERROR_NOT_SUPPORTED );
 		// - shifting
 		const WORD nDataBytesInSector=w-properties->dataBeginOffsetInSector-properties->dataEndOffsetInSector;
 		if (nBytesShift<0){

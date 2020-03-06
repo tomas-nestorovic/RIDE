@@ -200,7 +200,7 @@
 					: true;
 		}else{
 			// Boot Sector doesn't exist (may happen after unsuccessfull formatting)
-			::SetLastError(ERROR_VOLMGR_DISK_LAYOUT_INVALID);
+			::SetLastError( Utils::ErrorByOs(ERROR_VOLMGR_DISK_LAYOUT_INVALID,ERROR_UNRECOGNIZED_VOLUME) );
 			return false;
 		} 
 	}
@@ -670,9 +670,9 @@
 			TMsdos7DirectoryTraversal dt(this,currentDir);
 			for( BYTE n=(::lstrlen(longNameAndExt)+12)/13; n--; ) // 13 = number of characters in one LongNameEntry
 				if (!( *plnde++=dt.__allocateNewEntry__() ))
-					return ERROR_VOLMGR_DISK_NOT_ENOUGH_SPACE;
+					return Utils::ErrorByOs( ERROR_VOLMGR_DISK_NOT_ENOUGH_SPACE, ERROR_CANNOT_MAKE );
 			if (!( rRenamedFile=dt.__allocateNewEntry__() ))
-				return ERROR_VOLMGR_DISK_NOT_ENOUGH_SPACE;
+				return Utils::ErrorByOs( ERROR_VOLMGR_DISK_NOT_ENOUGH_SPACE, ERROR_CANNOT_MAKE );
 			// - initializing allocated LongNameEntries
 			WCHAR bufW[256], *pw=(PWCHAR)::memset(bufW,-1,sizeof(bufW));
 			#ifdef UNICODE
@@ -762,7 +762,7 @@
 				MarkDirectorySectorAsDirty(rCreatedSubdir);
 			}else{
 				fat.FreeChainOfClusters(cluster);
-				return ERROR_VOLMGR_DISK_NOT_ENOUGH_SPACE;
+				return Utils::ErrorByOs( ERROR_VOLMGR_DISK_NOT_ENOUGH_SPACE, ERROR_CANNOT_MAKE );
 			}
 		// - creating the "dot" and "dotdot" entries in newly created Subdirectory
 		TMsdos7DirectoryTraversal dt(this,rCreatedSubdir);
@@ -807,7 +807,7 @@
 				*newDe=*de;
 				*(PBYTE)de=UDirectoryEntry::EMPTY_ENTRY;
 			}else
-				return ERROR_VOLMGR_DISK_NOT_ENOUGH_SPACE;
+				return Utils::ErrorByOs( ERROR_VOLMGR_DISK_NOT_ENOUGH_SPACE, ERROR_CANNOT_MAKE );
 		// - if a Directory is being moved, changing the reference to the parent in the "dotdot" DirectoryEntry
 		if (IsDirectory(rMovedFile))
 			if (const PDirectoryEntry dotdot=(PDirectoryEntry)__findFile__(rMovedFile,_T(".."),_T(""),nullptr))
@@ -1055,7 +1055,7 @@
 				CTdiCtrl::AddTabLast( hTdi, FILE_MANAGER_TAB_LABEL, &fileManager.tab, true, TDI_TAB_CANCLOSE_NEVER, nullptr );
 				return ERROR_SUCCESS;
 			}
-		return ERROR_VOLMGR_DISK_LAYOUT_INVALID;
+		return Utils::ErrorByOs( ERROR_VOLMGR_DISK_LAYOUT_INVALID, ERROR_UNRECOGNIZED_VOLUME );
 	}
 
 

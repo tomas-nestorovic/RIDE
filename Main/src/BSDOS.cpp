@@ -198,7 +198,7 @@
 					dirsSector.MarkDirectoryEntryAsDirty(slot);
 					return ERROR_SUCCESS;
 				}else
-					return ERROR_VOLMGR_DISK_NOT_ENOUGH_SPACE;
+					return Utils::ErrorByOs( ERROR_VOLMGR_DISK_NOT_ENOUGH_SPACE, ERROR_DISK_FULL );
 		// - Root Directory full
 		return ERROR_CANNOT_MAKE;
 	}
@@ -227,7 +227,7 @@
 		// - allocating a new DirectoryEntry in current Subdirectory
 		const PDirectoryEntry newDe=(PDirectoryEntry)TDirectoryEntry::CTraversal(this,currentDir).AllocateNewEntry();
 		if (!newDe)
-			return ERROR_VOLMGR_DISK_NOT_ENOUGH_SPACE;
+			return Utils::ErrorByOs( ERROR_VOLMGR_DISK_NOT_ENOUGH_SPACE, ERROR_DISK_FULL );
 		// - copying the DirectoryEntry
 		const PDirectoryEntry oldDe=(PDirectoryEntry)file;
 		*newDe=*oldDe;

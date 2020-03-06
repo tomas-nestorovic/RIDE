@@ -76,7 +76,7 @@
 			}
 			return ERROR_SUCCESS;
 		}else
-			return ERROR_VOLMGR_DISK_LAYOUT_INVALID;
+			return ERROR_UNRECOGNIZED_VOLUME;
 	}
 
 

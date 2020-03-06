@@ -49,7 +49,7 @@
 				if (fsInfo->__recognize__(MSDOS->formatBoot.sectorLength))
 					return fsInfo;
 				else
-					::SetLastError(ERROR_VOLMGR_DISK_LAYOUT_INVALID);
+					::SetLastError( Utils::ErrorByOs(ERROR_VOLMGR_DISK_LAYOUT_INVALID,ERROR_INVALID_DATA) );
 		// - FS Info Sector isn't readable or isn't recognized
 		return nullptr;
 	}

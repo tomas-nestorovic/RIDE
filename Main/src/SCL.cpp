@@ -89,7 +89,7 @@
 			if (const TStdWinError err=CImageRaw::SetMediumTypeAndGeometry(pFormat,sideMap,firstSectorNumber))
 				return err;
 		}else
-			return ERROR_VHD_FORMAT_UNKNOWN; // not a TRDOS format
+			return Utils::ErrorByOs( ERROR_VHD_FORMAT_UNKNOWN, ERROR_UNRECOGNIZED_MEDIA ); // not a TRDOS format
 		// - attempting to read as TRDOS 5.0x Image
 		if (f.m_hFile!=CFile::hFileNull){ // handle doesn't exist if creating a new Image
 			// . rewinding to the beginning to reload the content of the Image's underlying file
@@ -143,7 +143,7 @@ error:				f.Close();
 				}
 			}else
 				// not recognized as TRDOS 5.0x Image
-				return ERROR_VHD_FORMAT_UNKNOWN;
+				return Utils::ErrorByOs( ERROR_VHD_FORMAT_UNKNOWN, ERROR_UNRECOGNIZED_MEDIA );
 		}
 		// - Format and MediumType set successfully
 		return ERROR_SUCCESS;

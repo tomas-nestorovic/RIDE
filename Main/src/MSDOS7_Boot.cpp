@@ -231,7 +231,7 @@
 		)
 			return ERROR_SUCCESS;
 		else
-			return ERROR_VOLMGR_DISK_LAYOUT_PARTITIONS_TOO_SMALL;
+			return Utils::ErrorByOs( ERROR_VOLMGR_DISK_LAYOUT_PARTITIONS_TOO_SMALL, ERROR_UNRECOGNIZED_VOLUME );
 	}
 
 	PDos CMSDOS7::__instantiate__(PImage image,PCFormat pFormatBoot){

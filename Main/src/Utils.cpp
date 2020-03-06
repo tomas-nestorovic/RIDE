@@ -337,13 +337,20 @@ namespace Utils{
 
 
 
+	TStdWinError ErrorByOs(TStdWinError vistaOrNewer,TStdWinError xpOrOlder){
+		// returns the error code by observing the current operating system version; it's up to the caller to know whether specified error is supported by the OS
+		return	(::GetVersion()&0xff)<=5 // Windows XP or older
+				? xpOrOlder
+				: vistaOrNewer;
+	}
+
 	#define ERROR_BUFFER_SIZE	220
 
 	PTCHAR __formatErrorCode__(PTCHAR buf,TStdWinError errCode){
 		// generates into Buffer a message corresponding to the ErrorCode; assumed that the Buffer is at least ERROR_BUFFER_SIZE characters big
 		PTCHAR p;
-		if (errCode<=12000)
-			// "standard" error
+		if (errCode<=12000 || errCode>USHRT_MAX)
+			// "standard" or COM (HRESULT) error
 			p=buf+::FormatMessage(	FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, errCode, 0,
 									buf, ERROR_BUFFER_SIZE-20,
 									nullptr
@@ -362,7 +369,7 @@ namespace Utils{
 				::InternetGetLastResponseInfo( &tmp, buf, &bufLength );
 				p=buf+bufLength;
 			}
-		::wsprintf( p, _T("(Error %d)"), errCode );
+		::wsprintf( p, _T("(Error 0x%X)"), errCode );
 		return buf;
 	}
 

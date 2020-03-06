@@ -3,7 +3,7 @@
 
 #define MSG_HELP_CANCEL	_T("Don't need any help now.")
 
-typedef DWORD TStdWinError; // Windows standard i/o error
+typedef long TStdWinError; // Windows standard i/o error
 
 namespace Utils{
 
@@ -75,6 +75,7 @@ namespace Utils{
 
 	extern const float LogicalUnitScaleFactor;
 
+	TStdWinError ErrorByOs(TStdWinError vistaOrNewer,TStdWinError xpOrOlder);
 	CString ComposeErrorMessage(LPCTSTR text,LPCTSTR causeOfError,LPCTSTR consequence=nullptr);
 	CString ComposeErrorMessage(LPCTSTR text,TStdWinError causeOfError,LPCTSTR consequence=nullptr);
 	void FatalError(LPCTSTR text);

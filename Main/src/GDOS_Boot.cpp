@@ -21,7 +21,7 @@
 		if (err!=ERROR_SUCCESS)
 			return err;
 		if (image->GetCylinderCount()<GDOS_CYLINDERS_COUNT)
-			return ERROR_VOLMGR_DISK_LAYOUT_PARTITIONS_TOO_SMALL;
+			return Utils::ErrorByOs( ERROR_VOLMGR_DISK_LAYOUT_PARTITIONS_TOO_SMALL, ERROR_UNRECOGNIZED_VOLUME );
 		// - checking disjunction of File FatPaths in the root Directory (each Sector must be allocated to a single File or be unallocated)
 		const CGDOS gdos(image,pFormatBoot);
 		TDirectoryEntry::TSectorAllocationBitmap allocatedSectorsOnDisk;

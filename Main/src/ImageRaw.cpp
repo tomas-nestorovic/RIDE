@@ -359,21 +359,21 @@ trackNotFound:
 		for( TSector n=_nSectors; n; n--,pId++ ){
 			// . TEST: Number, Lengths and i/o errors of Sectors
 			if (pId->cylinder!=cyl || pId->side!=sideMap[head] || pId->lengthCode!=sectorLengthCode || *pw++!=sectorLength || !bufferFdcStatus++->IsWithoutError())
-				return ERROR_VHD_INVALID_STATE;
+				return Utils::ErrorByOs( ERROR_VHD_INVALID_STATE, ERROR_NOT_SUPPORTED );
 			// . TEST: uniqueness of SectorIDs
 			if (involvedSectors[pId->sector])
-				return ERROR_VHD_INVALID_TYPE;
+				return Utils::ErrorByOs( ERROR_VHD_INVALID_TYPE, ERROR_NOT_SUPPORTED );
 			// . passed all tests - recording Sector's number
 			involvedSectors[pId->sector]=TRUE;
 		}
 		const PCBYTE pFirstSectorNumber=(PCBYTE)::memchr(involvedSectors,TRUE,sizeof(involvedSectors));
 		if (!nCylinders) firstSectorNumber=pFirstSectorNumber-involvedSectors;
 		if (::memchr(pFirstSectorNumber,FALSE,nSectors)) // if missing some Sector -> error
-			return ERROR_VHD_INVALID_SIZE;
+			return Utils::ErrorByOs( ERROR_VHD_INVALID_SIZE, ERROR_NOT_SUPPORTED );
 		if (::memchr(pFirstSectorNumber+nSectors,TRUE,sizeof(involvedSectors)-firstSectorNumber-nSectors)) // if some Sector redundand -> error
-			return ERROR_VHD_INVALID_SIZE;
+			return Utils::ErrorByOs( ERROR_VHD_INVALID_SIZE, ERROR_NOT_SUPPORTED );
 		if (head>=nHeads)
-			return ERROR_VHD_INVALID_SIZE;
+			return Utils::ErrorByOs( ERROR_VHD_INVALID_SIZE, ERROR_NOT_SUPPORTED );
 		// - formatting
 		const DWORD nBytesOfTrack=nSectors*sectorLength;
 		if (nCylinders<=cyl)
