@@ -8,6 +8,10 @@
 		return result;
 	}
 
+	bool CTRDOS503::TSectorTrackPair::operator<(TSectorTrackPair other) const{
+		// True <=> location of this Sector is before the Other Sector, otherwise False
+		return track*TRDOS503_TRACK_SECTORS_COUNT+sector < other.track*TRDOS503_TRACK_SECTORS_COUNT+other.sector;
+	}
 
 
 
@@ -107,17 +111,20 @@
 			TSectorStatus status;
 		} regions[TRDOS503_FILE_COUNT_MAX+2],*pRgn=regions; // "+2" = empty space and terminator (see below)
 		pRgn->start.sector=TRDOS503_BOOT_SECTOR_NUMBER-TRDOS503_SECTOR_FIRST_NUMBER, pRgn->start.track=0; // just in case the first DirectoryEntry isn't found (as Sector not found)
-		// - 
+		// - composing a map of Regions on the disk
+		TSectorTrackPair lastRegionStart={0,0};
 		for( TTrdosDirectoryTraversal dt(this); dt.__existsNextEntry__(); )
 			if (dt.entryType!=TDirectoryTraversal::WARNING){
 				const PCDirectoryEntry de=(PCDirectoryEntry)dt.entry;
 				if ((dt.entryType==TDirectoryTraversal::FILE||dt.entryType==TDirectoryTraversal::CUSTOM) && !de->__isTemporary__()){
 					// (A|B)&C: A = existing File, B = Deleted File, C = not a temporary Entry in Directory (see also ImportFile)
-					const TSectorTrackPair tmp = pRgn->start = de->first;
+					if (de->first<lastRegionStart) // a File further in the Directory is reported to appear earlier on the disk; this shouldn't happen, but if it does ...
+						continue; // ... such File simply isn't included in the Regions
+					pRgn->start = de->first;
 					pRgn++->status=	*(PCBYTE)de!=TDirectoryEntry::DELETED
 									? TSectorStatus::OCCUPIED
 									: TSectorStatus::SKIPPED ;
-					pRgn->start = tmp+de->nSectors; // for the case that next DirectoryEntry not found (as Sector not found)
+					lastRegionStart = pRgn->start = de->first+de->nSectors; // for the case that next DirectoryEntry not found (as Sector not found)
 				}else{
 					// end of Directory, or Directory Sector not found
 					if (dt.entryType==TDirectoryTraversal::EMPTY || de->__isTemporary__()) // A|B; A = natural end of Directory, B = a temporary Entry in Directory (see also ImportFile)

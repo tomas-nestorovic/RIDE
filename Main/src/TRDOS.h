@@ -38,6 +38,7 @@
 			BYTE track;
 
 			TSectorTrackPair operator+(BYTE nSectors) const;
+			bool operator<(TSectorTrackPair other) const;
 		};
 
 		#pragma pack(1)
