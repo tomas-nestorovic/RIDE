@@ -64,14 +64,18 @@
 				// File Type
 				::DrawText( dc, de->__getFileTypeDesc__(bufT),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
 				break;
-			case INFORMATION_SIZE:
+			case INFORMATION_SIZE:{
 				// File Size
-				integerEditor.DrawReportModeCell( DOS->GetFileOfficialSize(de), pdis );
+				const DWORD sz=DOS->GetFileOfficialSize(de);
+				integerEditor.DrawReportModeCell( sz, pdis, (sz+GDOS_SECTOR_LENGTH_STD-1)/GDOS_SECTOR_LENGTH_STD!=de->nSectors );
 				break;
-			case INFORMATION_SECTOR_COUNT:
+			}
+			case INFORMATION_SECTOR_COUNT:{
 				// # of File Sectors
-				integerEditor.DrawReportModeCell( de->nSectors, pdis );
+				const DWORD sz=DOS->GetFileOfficialSize(de);
+				integerEditor.DrawReportModeCell( de->nSectors, pdis, (sz+GDOS_SECTOR_LENGTH_STD-1)/GDOS_SECTOR_LENGTH_STD!=de->nSectors );
 				break;
+			}
 			case INFORMATION_SECTOR_FIRST:
 				// first File Sector
 				::wsprintf( bufT, _T("Tr%d/Sec%d"), de->firstSector.__getChs__().GetTrackNumber(), de->firstSector.sector );
