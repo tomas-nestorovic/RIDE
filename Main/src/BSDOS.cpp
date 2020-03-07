@@ -358,7 +358,6 @@
 
 
 
-	#define HEADERLESS_TYPE			_T("Headerless")
 	#define HEADERLESS_N_A			_T("N/A")
 
 	bool CBSDOS308::GetFileNameOrExt(PCFile file,PPathString pOutName,PPathString pOutExt) const{

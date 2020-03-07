@@ -16,6 +16,8 @@
 	#define ZX_TAPE_EXTENSION_CHARS		TUniFileType::CHAR_ARRAY
 	#define ZX_TAPE_EXTENSION_BYTES		TUniFileType::BLOCK
 
+	#define ZX_TAPE_HEADERLESS_STR		_T("Headerless")
+
 	class CSpectrumBase:public CDos{
 		class CScreenPreview sealed:CFilePreview{
 			friend class CSpectrumBase;
@@ -91,6 +93,7 @@
 
 			static const LPCSTR Keywords[];
 
+			static LPCTSTR GetFileTypeName(TFileType type);
 			static PTCHAR ZxToAscii(LPCSTR zx,BYTE zxLength,PTCHAR buf,char zxBefore=' ');
 			static PTCHAR AsciiToZx(LPCTSTR pc,PCHAR zx,PBYTE pOutZxLength);
 			inline

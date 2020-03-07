@@ -114,10 +114,7 @@
 
 
 	#define HEADERLESS_EXTENSION	'H'
-	#define HEADERLESS_TYPE			_T("Headerless")
 	#define HEADERLESS_N_A			_T("N/A")
-
-	#define FRAGMENT_TYPE			_T("Fragment")
 
 	const TCHAR CSpectrumDos::CTape::Extensions[ZX_TAPE_EXTENSION_STD_COUNT]={
 		ZX_TAPE_EXTENSION_PROGRAM,
@@ -305,12 +302,69 @@
 		// - processing import information
 		TStdParameters u=TStdParameters::Default;
 		TUniFileType uts=TUniFileType::HEADERLESS;
-		int blockChecksum=-1; DWORD dw; BYTE blockFlag;
-		if (const int n=__importFileInformation__(zxInfo,uts,u,dw,blockFlag)){
+		int blockChecksum=-1; DWORD officialFileSize=fileSize; BYTE blockFlag;
+		if (const int n=__importFileInformation__(zxInfo,uts,u,officialFileSize,blockFlag)){
 			if (uts==TUniFileType::SCREEN)
 				uts=TUniFileType::BLOCK;
-			if (dw) fileSize=dw;
 			_stscanf( zxInfo+n, EXPORT_INFO_TAPE, &blockChecksum );
+		}
+		// - with user's intervention resolving the case that reported size is different from real size
+		if (officialFileSize!=fileSize){
+			// : defining the Dialog
+			CString msg;
+			msg.Format( _T("Real (%d) and reported (%d) sizes of \"%s\" differ."), fileSize, officialFileSize, nameAndExtension );
+			class CSuggestionDialog sealed:public Utils::CCommandDialog{
+				const bool offerFileSplit;
+				const TUniFileType uts;
+
+				void PreInitDialog() override{
+					// dialog initialization
+					// > base
+					__super::PreInitDialog();
+					// > supplying available actions
+					__addCommandButton__( IDYES, _T("Import as-is (recommended)") );
+					__addCommandButton__( IDNO, _T("Set reported size as real size (no Tape loading error)") );
+					if (offerFileSplit){
+						TZxRom::TFileType t=TZxRom::TFileType::HEADERLESS; // assumption
+						for( BYTE type=ZX_TAPE_EXTENSION_STD_COUNT; type--; )
+							if (Extensions[type]==uts){
+								// File can be imported with Header
+								t=(TZxRom::TFileType)type;
+								break;
+							}
+						TCHAR buf[200], tmp[80];
+						::wsprintf( buf, _T("Import as two separate blocks (%s and ") ZX_TAPE_HEADERLESS_STR _T(")"), TZxRom::GetFileTypeName(t) );
+						__addCommandButton__( IDRETRY, buf );
+					}
+					__addCommandButton__( IDCANCEL, _T("Cancel import") );
+				}
+			public:
+				CSuggestionDialog(LPCTSTR msg,bool offerFileSplit,TUniFileType uts)
+					// ctor
+					: Utils::CCommandDialog(msg)
+					, offerFileSplit(offerFileSplit) , uts(uts) {
+				}
+			} d( msg, officialFileSize<fileSize, uts );
+			// : showing the Dialog and processing its result
+			switch (d.DoModal()){
+				case IDNO:
+					officialFileSize=fileSize;
+					//fallthrough
+				case IDYES:
+					break;
+				case IDRETRY:{
+					// > Part 1: Program/Code/Chars/Numbers
+					if (const TStdWinError err=ImportFile( f, officialFileSize, nameAndExtension, winAttr, rFile ))
+						return err;
+					// > Part 2: Headerless remainder
+					fileSize-=officialFileSize;
+					TCHAR tmp[MAX_PATH];
+					__exportFileInformation__( ::lstrcpy(tmp,_T("H"))+1, TUniFileType::HEADERLESS, TStdParameters::Default, fileSize );
+					return ImportFile( f, fileSize, tmp, winAttr, rFile );
+				}
+				default:
+					return ERROR_CANCELLED;
+			}
 		}
 		// - creating File Header (if Extension known)
 		const PTapeFile tf=fileManager.files[fileManager.nFiles++]=(PTapeFile)::malloc( NUMBER_OF_BYTES_TO_ALLOCATE_FILE(fileSize) );
@@ -338,7 +392,7 @@
 							);
 				#endif
 				// . Size
-				h->length=fileSize;
+				h->length=officialFileSize;
 				// . Parameters
 				h->params=u;
 				break;
@@ -955,16 +1009,7 @@ drawChecksum:			// checksum
 
 	LPCTSTR WINAPI CSpectrumBase::CSpectrumBaseFileManagerView::CStdTapeHeaderBlockTypeEditor::__getDescription__(PVOID file,PropGrid::Enum::UValue stdType,PTCHAR,short){
 		// returns the textual description of the specified Type
-		switch ((TZxRom::TFileType)stdType.charValue){
-			case TZxRom::PROGRAM		: return _T("Program");
-			case TZxRom::NUMBER_ARRAY	: return _T("Numbers");
-			case TZxRom::CHAR_ARRAY		: return _T("Characters");
-			case TZxRom::CODE			: return _T("Bytes");
-			case TZxRom::HEADERLESS		: return HEADERLESS_TYPE;
-			case TZxRom::FRAGMENT		: return FRAGMENT_TYPE;
-			default:
-				return _T("<Unknown>");
-		}
+		return TZxRom::GetFileTypeName((TZxRom::TFileType)stdType.charValue);
 	}
 
 	CFileManagerView::PEditorBase CSpectrumBase::CSpectrumBaseFileManagerView::CStdTapeHeaderBlockTypeEditor::Create(PFile file,TZxRom::TFileType type,TDisplayTypes _types,PropGrid::Enum::TOnValueConfirmed onChanged){

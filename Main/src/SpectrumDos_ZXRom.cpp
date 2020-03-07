@@ -67,6 +67,22 @@
 
 
 
+	#define FRAGMENT_TYPE			_T("Fragment")
+
+	LPCTSTR CSpectrumBase::TZxRom::GetFileTypeName(TFileType type){
+		// returns the textual description of the specified Type
+		switch (type){
+			case TZxRom::PROGRAM		: return _T("Program");
+			case TZxRom::NUMBER_ARRAY	: return _T("Numbers");
+			case TZxRom::CHAR_ARRAY		: return _T("Characters");
+			case TZxRom::CODE			: return _T("Bytes");
+			case TZxRom::HEADERLESS		: return ZX_TAPE_HEADERLESS_STR;
+			case TZxRom::FRAGMENT		: return FRAGMENT_TYPE;
+			default:
+				return _T("<Unknown>");
+		}
+	}
+
 	const LPCSTR CSpectrumBase::TZxRom::Keywords[]={
 		_T("RND"), _T("INKEY$"), _T("PI"), _T("FN "), _T("POINT "), _T("SCREEN$ "), _T("ATTR "), _T("AT "), _T("TAB "), _T("VAL$ "), _T("CODE "), _T("VAL "), _T("LEN "), _T("SIN "), _T("COS "), _T("TAN "), _T("ASN "), _T("ACS "), _T("ATN "), _T("LN "), _T("EXP "), _T("INT "), _T("SQR "), _T("SGN "), _T("ABS "), _T("PEEK "), _T("IN "), _T("USR "), _T("STR$ "), _T("CHR$ "), _T("NOT "), _T("BIN "),
 		_T(" OR "), _T(" AND "), _T("<="), _T(">="), _T("<>"), _T(" LINE "), _T(" THEN "), _T(" TO "), _T(" STEP "), _T(" DEF FN "), _T(" CAT "), _T(" FORMAT "), _T(" MOVE "), _T(" ERASE "), _T(" OPEN #"), _T(" CLOSE #"), _T(" MERGE "), _T(" VERIFY "), _T(" BEEP "), _T(" CIRCLE "), _T(" INK "), _T(" PAPER "), _T(" FLASH "), _T(" BRIGHT "), _T(" INVERSE "), _T(" OVER "), _T(" OUT "), _T(" LPRINT "), _T(" LLIST "), _T(" STOP "), _T(" READ "), _T(" DATA "), _T(" RESTORE "),
