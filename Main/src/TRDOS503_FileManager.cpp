@@ -44,7 +44,7 @@
 				CStatusBar &rStatusBar=( (CMainWindow *)app.m_pMainWnd )->statusBar;
 				if (rStatusBar.m_hWnd){ // may not exist if the app is closing
 					rStatusBar.SetIndicators(Indicators,2);
-					rStatusBar.SetPaneInfo(1,ID_SEPARATOR,SBPS_NORMAL,90);
+					rStatusBar.SetPaneInfo(1,ID_SEPARATOR,SBPS_NORMAL,72);
 					rStatusBar.SetPaneText(1,DOS->properties->name);
 				}
 				break;
@@ -77,14 +77,18 @@
 				// File Extension
 				singleCharExtEditor.DrawReportModeCell( de->extension, pdis );
 				break;
-			case INFORMATION_SIZE:
+			case INFORMATION_SIZE:{
 				// File Size
-				integerEditor.DrawReportModeCell( de->__getOfficialFileSize__(nullptr), pdis );
+				const WORD sz=de->__getOfficialFileSize__(nullptr);
+				integerEditor.DrawReportModeCell( sz, pdis, (sz+TRDOS503_SECTOR_LENGTH_STD-1)/TRDOS503_SECTOR_LENGTH_STD!=de->nSectors );
 				break;
-			case INFORMATION_SECTORS_COUNT:
+			}
+			case INFORMATION_SECTORS_COUNT:{
 				// # of File Sectors
-				integerEditor.DrawReportModeCell( de->nSectors, pdis );
+				const WORD sz=de->__getOfficialFileSize__(nullptr);
+				integerEditor.DrawReportModeCell( de->nSectors, pdis, (sz+TRDOS503_SECTOR_LENGTH_STD-1)/TRDOS503_SECTOR_LENGTH_STD!=de->nSectors );
 				break;
+			}
 			case INFORMATION_FIRST_SECTOR:
 				// first File Sector
 				::wsprintf( bufT, _T("Tr%d/Sec%d"), de->first.track, de->first.sector );

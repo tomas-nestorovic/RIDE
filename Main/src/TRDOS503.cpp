@@ -320,7 +320,7 @@
 		return ERROR_SUCCESS;
 	}
 
-	#define INFO_FILE_EX		_T("S%x")
+	#define INFO_FILE_EX		_T("T%x")
 	
 	CString CTRDOS503::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
 		// returns File name concatenated with File extension for export of the File to another Windows application (e.g. Explorer)
