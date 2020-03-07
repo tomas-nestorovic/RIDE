@@ -200,7 +200,7 @@
 					: true;
 		}else{
 			// Boot Sector doesn't exist (may happen after unsuccessfull formatting)
-			::SetLastError( Utils::ErrorByOs(ERROR_VOLMGR_DISK_LAYOUT_INVALID,ERROR_UNRECOGNIZED_VOLUME) );
+			::SetLastError( Utils::ErrorByOs(ERROR_VOLMGR_DISK_INVALID,ERROR_UNRECOGNIZED_VOLUME) );
 			return false;
 		} 
 	}
@@ -1055,7 +1055,7 @@
 				CTdiCtrl::AddTabLast( hTdi, FILE_MANAGER_TAB_LABEL, &fileManager.tab, true, TDI_TAB_CANCLOSE_NEVER, nullptr );
 				return ERROR_SUCCESS;
 			}
-		return Utils::ErrorByOs( ERROR_VOLMGR_DISK_LAYOUT_INVALID, ERROR_UNRECOGNIZED_VOLUME );
+		return Utils::ErrorByOs( ERROR_VOLMGR_DISK_INVALID, ERROR_UNRECOGNIZED_VOLUME );
 	}
 
 

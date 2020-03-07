@@ -192,7 +192,7 @@
 		vp.fReport.OpenSection(BOOT_SECTOR_TAB_LABEL);
 		const PBootSector boot=GetData(vp.dos->image);
 		if (!boot)
-			return vp.TerminateAll( Utils::ErrorByOs(ERROR_VOLMGR_DISK_LAYOUT_INVALID,ERROR_UNRECOGNIZED_VOLUME) );
+			return vp.TerminateAll( Utils::ErrorByOs(ERROR_VOLMGR_DISK_INVALID,ERROR_UNRECOGNIZED_VOLUME) );
 		pAction->SetProgressTarget( 4 ); // see number of steps below
 		// - Step 1: verifying this is actually a BS-DOS disk
 		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, nullptr, boot->jmpInstruction.opCode, (BYTE)0x18 )) // "0x18" = "jr N" instruction
