@@ -104,12 +104,17 @@
 
 	bool CTRDOS503::GetSectorStatuses(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PSectorStatus buffer) const{
 		// True <=> Statuses of all Sectors in the Track successfully retrieved and populated the Buffer, otherwise False
+		const PCBootSector bootSector=__getBootSector__();
+		if (!bootSector){
+			while (nSectors--) *buffer++=TSectorStatus::UNKNOWN;
+			return false;
+		}
 		bool result=true; // assumption (Statuses of all Sectors retrieved)
 		// - composing the List of "regions" on disk
 		struct{
 			TSectorTrackPair start; // length determined as the difference between this and previous "region"
 			TSectorStatus status;
-		} regions[TRDOS503_FILE_COUNT_MAX+2],*pRgn=regions; // "+2" = empty space and terminator (see below)
+		} regions[TRDOS503_FILE_COUNT_MAX*2+2],*pRgn=regions; // "*2" = each File may be followed by a gap consisting of Unavailable Sectors, "+2" = empty space and terminator (see below)
 		pRgn->start.sector=TRDOS503_BOOT_SECTOR_NUMBER-TRDOS503_SECTOR_FIRST_NUMBER, pRgn->start.track=0; // just in case the first DirectoryEntry isn't found (as Sector not found)
 		// - composing a map of Regions on the disk
 		TSectorTrackPair lastRegionStart={0,0};
@@ -120,6 +125,10 @@
 					// (A|B)&C: A = existing File, B = Deleted File, C = not a temporary Entry in Directory (see also ImportFile)
 					if (de->first<lastRegionStart) // a File further in the Directory is reported to appear earlier on the disk; this shouldn't happen, but if it does ...
 						continue; // ... such File simply isn't included in the Regions
+					if (lastRegionStart<de->first){ // there is a "gap" of Unavailable Sectors
+						pRgn->start=lastRegionStart;
+						pRgn++->status=TSectorStatus::UNAVAILABLE;
+					}
 					pRgn->start = de->first;
 					pRgn++->status=	*(PCBYTE)de!=TDirectoryEntry::DELETED
 									? TSectorStatus::OCCUPIED
@@ -134,9 +143,12 @@
 					result=false;
 				}
 			}
+		if (lastRegionStart<bootSector->firstFree){ // there is a "gap" of Unavailable Sectors
+			pRgn->start=lastRegionStart;
+			pRgn++->status=TSectorStatus::UNAVAILABLE;
+		}
 		pRgn++->status=TSectorStatus::EMPTY, pRgn->start.sector=0, pRgn->start.track=formatBoot.nCylinders*formatBoot.nHeads; // terminator
 		// - determining the Statuses of Sectors
-		const PCBootSector bootSector=__getBootSector__();
 		for( const BYTE track=cyl*formatBoot.nHeads+head; nSectors--; bufferId++ ){
 			const TSector sector=bufferId->sector;
 			if (cyl>=formatBoot.nCylinders || head>=formatBoot.nHeads || bufferId->cylinder!=cyl || sector<TRDOS503_SECTOR_FIRST_NUMBER || formatBoot.nSectors<sector || bufferId->lengthCode!=TRDOS503_SECTOR_LENGTH_STD_CODE)
