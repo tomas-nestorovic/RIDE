@@ -50,7 +50,7 @@
 			} fReport;
 
 			TParams(CDos *dos,const TVerificationFunctions &rvf);
-			TParams(const TParams &); //=delete;
+			TParams(const TParams &);
 
 			TStdWinError TerminateAndGoToNextAction(TStdWinError error) const;
 			TStdWinError TerminateAll(TStdWinError error) const;

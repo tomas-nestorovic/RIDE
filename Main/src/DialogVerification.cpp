@@ -13,7 +13,8 @@
 	TStdWinError CVerifyVolumeDialog::TParams::TerminateAndGoToNextAction(TStdWinError error) const{
 		// terminates with specified Error the action which called this method
 		fReport.CloseSection( Utils::ComposeErrorMessage(_T("Can't finish this step"),error,_T("Some additional errors may remain, verification should be run once more!")) );
-		return action.TerminateWithError(ERROR_SUCCESS); // success = proceed with the next planned action
+		action.UpdateProgressFinished(); // proceed with the next planned action
+		return ERROR_SUCCESS;
 	}
 
 	TStdWinError CVerifyVolumeDialog::TParams::TerminateAll(TStdWinError error) const{
@@ -97,6 +98,7 @@
 
 	void CVerifyVolumeDialog::TParams::CReportFile::OpenSection(LPCTSTR name,bool problemSolving){
 		// begins in the Report a new section with specified Name
+		CloseSection();
 		Utils::WriteToFileFormatted( *this, _T("<h3>%s</h3>"), name );
 		inProblemSolvingSection=problemSolving;
 	}
