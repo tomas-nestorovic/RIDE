@@ -30,6 +30,35 @@
 
 
 
+	CBSDOS308::TFatCopyRetrievalEntry::TFatCopyRetrievalEntry(const CBSDOS308 *bsdos,PBootSector boot,BYTE onlyFatCopy)
+		// ctor
+		: TDirectoryEntry(	bsdos,
+							(	disabledFat=(onlyFatCopy+1)%BSDOS_FAT_COPIES_MAX,
+								disabledFatStart=boot->fatStarts[disabledFat],
+								boot->fatStarts[disabledFat]=0,
+								bsdos->__getHealthyLogicalSectorData__(boot->fatStarts[onlyFatCopy]) // if selected FAT copy's first Sector well readable ...
+									? 0 // ... doing nothing
+									: (boot->fatStarts[disabledFat]=disabledFatStart), // ... otherwise turning the other FAT copy on to retrieve the selected FAT copy Sectors
+								boot->fatStarts[onlyFatCopy]
+							)
+						)
+		, bootSector(boot) {
+	}
+
+	CBSDOS308::TFatCopyRetrievalEntry::~TFatCopyRetrievalEntry(){
+		// dtor
+		bootSector->fatStarts[disabledFat]=disabledFatStart;
+	}
+
+
+
+
+
+
+
+
+
+
 	inline
 	static bool isValidFatSectorNumber(CBSDOS308::TLogSector lsFat){
 		return BSDOS_FAT_LOGSECTOR_MIN<=lsFat && lsFat<BSDOS_FAT_LOGSECTOR_MAX;
@@ -65,7 +94,7 @@
 	bool CBSDOS308::GetSectorStatuses(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PSectorStatus buffer) const{
 		// True <=> Statuses of all Sectors in the Track successfully retrieved and populated the Buffer, otherwise False
 		bool result=true; // assumption (statuses of all Sectors successfully retrieved)
-		if (const PCBootSector bootSector=boot.GetSectorData())
+		if (const PBootSector bootSector=boot.GetSectorData())
 			for( const TLogSector logSectorBase=(formatBoot.nHeads*cyl+head)*formatBoot.nSectors-BSDOS_SECTOR_NUMBER_FIRST; nSectors--; bufferId++ ){
 				const TSector secNum=bufferId->sector;
 				if (cyl>=formatBoot.nCylinders || head>=formatBoot.nHeads || bufferId->cylinder!=cyl || bufferId->side!=sideMap[head] || secNum>formatBoot.nSectors || !secNum || bufferId->lengthCode!=BSDOS_SECTOR_LENGTH_STD_CODE) // condition for Sector must be ">", not ">=" (Sectors numbered from 1 - see also "|!id")
@@ -103,22 +132,10 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 								if (ls==bootSector->dirsLogSector)
 									goto systemSector;
 								// . FAT Sectors are System ones
-								for( BYTE fatCopy=0; fatCopy<BSDOS_FAT_COPIES_MAX; fatCopy++ ){
-									TLogSector lsFat=bootSector->fatStarts[fatCopy];
-									if (const PCFatValue fat=reinterpret_cast<PCFatValue>(__getHealthyLogicalSectorData__(lsFat)))
-										for( BYTE n=bootSector->nSectorsPerFat; n>0; n-- ){
-											if (lsFat>=BSDOS_FAT_LOGSECTOR_MAX)
-												break; // next FAT copy
-											const TFatValue value=fat[lsFat];
-											if (!value.occupied)
-												break; // next FAT copy
-											if (ls==lsFat)
-												goto systemSector;										
-											if (!value.continuous)
-												break; // next FAT copy
-											lsFat=value.info;
-										}
-								}								
+								const TPhysicalAddress chs={ cyl, head, *bufferId };
+								for( BYTE fatCopy=0; fatCopy<BSDOS_FAT_COPIES_MAX; fatCopy++ )
+									if (CFatPath( this, &TFatCopyRetrievalEntry(this,bootSector,fatCopy) ).ContainsSector(chs))
+										goto systemSector;
 								// . the Sector is Occupied
 								*buffer++=TSectorStatus::OCCUPIED;
 								break;
@@ -217,7 +234,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 	BYTE CBSDOS308::__getFatChecksum__(BYTE fatCopy) const{
 		// computes and returns the checksum of specified FAT copy
 		if (const PCBootSector bootSector=boot.GetSectorData()){
-			CFileReaderWriter frw( this, &TDirectoryEntry(this,bootSector->fatStarts[fatCopy]) );
+			CFileReaderWriter frw( this, &TFatCopyRetrievalEntry(this,bootSector->fatStarts[fatCopy]) );
 			frw.Seek( 2, CFile::SeekPosition::begin );
 			BYTE result=(4096-frw.GetLength())*0xff;
 			for( TFatValue v; frw.GetPosition()<frw.GetLength(); )

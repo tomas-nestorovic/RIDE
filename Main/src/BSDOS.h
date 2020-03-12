@@ -20,10 +20,10 @@
 
 	class CBSDOS308 sealed:public CSpectrumDos{
 		const CTrackMapView trackMap;
-
+	public:
 		typedef WORD TLogSector;
 		typedef PCWORD PCLogSector;
-
+	private:
 		#pragma pack(1)
 		typedef struct TBootSector sealed{
 			static const TPhysicalAddress CHS;
@@ -103,7 +103,7 @@
 		typedef const TFatValue *PCFatValue;
 
 		#pragma pack(1)
-		typedef struct TDirectoryEntry sealed{
+		typedef struct TDirectoryEntry{
 			class CTraversal sealed:public TDirectoryTraversal{
 				const CBSDOS308 *const bsdos;
 				const CFatPath dirFatPath;
@@ -144,6 +144,15 @@
 			BYTE GetDirNameChecksum() const;
 		} *PDirectoryEntry;
 		typedef const TDirectoryEntry *PCDirectoryEntry;
+
+		struct TFatCopyRetrievalEntry sealed:public TDirectoryEntry{
+			const PBootSector bootSector;
+			BYTE disabledFat;
+			TLogSector disabledFatStart;
+
+			TFatCopyRetrievalEntry(const CBSDOS308 *bsdos,PBootSector boot,BYTE onlyFatCopy);
+			~TFatCopyRetrievalEntry();
+		};
 
 		class CDirsSector sealed{
 			const CBSDOS308 *const bsdos;
