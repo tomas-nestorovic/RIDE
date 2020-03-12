@@ -312,7 +312,11 @@
 		if (officialFileSize!=fileSize){
 			// : defining the Dialog
 			CString msg;
-			msg.Format( _T("Real (%d) and reported (%d) sizes of \"%s\" differ."), fileSize, officialFileSize, nameAndExtension );
+			TTapeFile tmp;
+				tmp.type=TTapeFile::TType::STD_HEADER;
+				tmp.stdHeader.SetName(zxName);
+				tmp.stdHeader.SetFileType(uts);
+			msg.Format( _T("Real (%d) and reported (%d) sizes of \"%s\" differ."), fileSize, officialFileSize, (LPCTSTR)GetFilePresentationNameAndExt(&tmp) );
 			class CSuggestionDialog sealed:public Utils::CCommandDialog{
 				const bool offerFileSplit;
 				const TUniFileType uts;
