@@ -44,6 +44,12 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #include "..\res\resource.h"
 #include "..\..\Externals\fdrawcmd\fdrawcmd.h"
 
+#if _MFC_VER>=0x0A00
+#else
+	// reverting definitions for modern MFC to their states valid for Windows XP and earlier
+	#define ERROR_UNRECOGNIZED_VOLUME        1005L
+#endif
+
 class CImage; // forward
 typedef CImage *PImage;
 typedef const CImage *PCImage;
