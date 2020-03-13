@@ -108,7 +108,7 @@
 		return GetErrorDesc();
 	}
 
-	CDos::CFatPath::PCItem CDos::CFatPath::GetHealthyItem(DWORD i) const{
+	CDos::CFatPath::PItem CDos::CFatPath::GetHealthyItem(DWORD i) const{
 		// returns I-th Item or Null
 		if (error) // FatPath erroneous
 			return nullptr;
@@ -122,6 +122,16 @@
 		return nItems;
 	}
 
+	bool CDos::CFatPath::ContainsSector(RCPhysicalAddress chs) const{
+		// True <=> the FatPath has the specified Sector linked in, otherwise False
+		for( PCItem p=buffer; p<pLastItem; p++ )
+			if (p->chs==chs)
+				return true;
+		if (!buffer)
+			ASSERT(FALSE); // it's senseless to call this method for a dummy object!
+		return false;
+	}
+
 	bool CDos::CFatPath::AreAllSectorsReadable(const CDos *dos) const{
 		// True <=> all Sectors refered in the FatPath are healthy, otherwise False
 		PCItem p; DWORD n;
@@ -131,6 +141,14 @@
 			if (!dos->image->GetHealthySectorData(p++->chs))
 				return false;
 		return true;
+	}
+
+	DWORD CDos::CFatPath::GetPhysicalAddresses(TPhysicalAddress *pOutChs) const{
+		// returns the NumberOfItems of Items written to the output buffer; returns zero if the FatPath is erroneous
+		if (error)
+			return 0;
+		for( DWORD i=0; i<nItems; *pOutChs++=buffer[i++].chs );
+		return nItems;
 	}
 
 	LPCTSTR CDos::CFatPath::GetErrorDesc() const{

@@ -195,9 +195,11 @@
 			PCItem PopItem();
 			LPCTSTR GetItems(PCItem &rBuffer,DWORD &rnItems) const;
 			LPCTSTR GetItems(PItem &rBuffer,DWORD &rnItems) const;
-			PCItem GetHealthyItem(DWORD i) const;
+			PItem GetHealthyItem(DWORD i) const;
 			DWORD GetNumberOfItems() const;
+			bool ContainsSector(RCPhysicalAddress chs) const;
 			bool AreAllSectorsReadable(const CDos *dos) const;
+			DWORD GetPhysicalAddresses(TPhysicalAddress *pOutChs) const;
 			LPCTSTR GetErrorDesc() const;
 		};
 
@@ -217,7 +219,7 @@
 			const CFatPath fatPath;
 
 			CFileReaderWriter(const CDos *dos,PCFile file,bool wholeSectors=false); // ctor to read/edit an existing File on the Image
-			CFileReaderWriter(const CDos *dos,RCPhysicalAddress chs); // ctor to read/write particular Sector in the Image (e.g. Boot Sector)
+			CFileReaderWriter(const CDos *dos,RCPhysicalAddress chs); // ctor to read/edit particular Sector in the Image (e.g. Boot Sector)
 			~CFileReaderWriter();
 
 			// CFile methods
