@@ -520,11 +520,19 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 		pAction->UpdateProgress(++step);
 		// - recovering readability of both FAT copies
 		TDirectoryEntry deFat( BSDOS, boot->fatStarts[0] ); // both FAT copies are valid multi-sector structures, hence any of them can be refered to create this DirectoryEntry
-		for( BYTE i=0; i<BSDOS_FAT_COPIES_MAX; i++ ){
+		for( BYTE i=0,replacementDecision=0; i<BSDOS_FAT_COPIES_MAX; i++ ){
 			// . replacing erroneous Sectors
 			bool fatCopyModified=false; // assumption
 			for( BYTE s=0; s<boot->nSectorsPerFat; s++ )
 				if (!fatData[i][s]){
+					if (!replacementDecision) // not yet asked about what to do
+						replacementDecision=vp.ConfirmFix( _T("Some FAT sectors are bad"), _T("All should be replaced with healthy ones.") );
+					switch (replacementDecision){
+						case IDCANCEL:
+							return vp.CancelAll();
+						case IDNO:
+							continue;
+					}
 					TPhysicalAddress &rChs=pFats[i]->GetHealthyItem(s)->chs;
 					if (const TLogSector ls=BSDOS->__getEmptyHealthyFatSector__(true)){
 						// found a healthy Sector to replace the erroneous
@@ -549,6 +557,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 						fatData[i][s]=newData;
 						BSDOS->__markLogicalSectorAsDirty__(ls);
 						fatCopyModified=true;
+						vp.fReport.CloseProblem(true);
 					}else
 						vp.fReport.LogWarning( _T("FAT-%d sector with %s is unreadable and can't be replaced"), i, (LPCTSTR)rChs.sectorId.ToString() );
 				}
