@@ -69,6 +69,7 @@ typedef const WORD *PCWORD;
 typedef const int *PCINT;
 
 #include "Utils.h"
+#include "BackgroundAction.h"
 #include "MainWindow.h"
 #include "HexaEditor.h"
 #include "Image.h"
@@ -82,7 +83,6 @@ typedef const int *PCINT;
 #include "Dos.h"
 #include "Debug.h"
 #include "SCL.h"
-#include "BackgroundAction.h"
 #include "ViewCriticalSector.h"
 #include "ViewBoot.h"
 #include "ViewFileManager.h"
