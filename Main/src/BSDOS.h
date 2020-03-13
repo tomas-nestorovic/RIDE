@@ -206,6 +206,8 @@
 		} fileManager;
 
 		static TStdWinError __recognizeDisk__(PImage image,PFormat pFormatBoot);
+		static BYTE __getFatChecksum__(PCSectorData *pSectorData,WORD nSectors);
+		static UINT AFX_CDECL FatReadabilityVerification_thread(PVOID pCancelableAction);
 
 		TLogSector __fyzlog__(RCPhysicalAddress chs) const;
 		TPhysicalAddress __logfyz__(TLogSector ls) const;

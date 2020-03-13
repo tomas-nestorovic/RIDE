@@ -231,20 +231,31 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 		return true;
 	}
 
+	BYTE CBSDOS308::__getFatChecksum__(PCSectorData *pSectorData,WORD nSectors){
+		// computes and returns the checksum of specified FAT Sectors
+		BYTE result=(4096-nSectors*BSDOS_SECTOR_LENGTH_STD)*0xff;
+		while (nSectors>0)
+			if (const PCSectorData fatData=pSectorData[--nSectors])
+				for( WORD i=sizeof(TFatValue)*(nSectors==0); i<BSDOS_SECTOR_LENGTH_STD; result+=fatData[i++] ); // first Value in FAT's first Sectors isn't included in the checksum
+			else
+				result+=BSDOS_SECTOR_LENGTH_STD*0xff;
+		return result;
+
+	}
+
 	BYTE CBSDOS308::__getFatChecksum__(BYTE fatCopy) const{
 		// computes and returns the checksum of specified FAT copy
-		if (const PCBootSector bootSector=boot.GetSectorData()){
-			CFileReaderWriter frw( this, &TFatCopyRetrievalEntry(this,bootSector->fatStarts[fatCopy]) );
-			frw.Seek( 2, CFile::SeekPosition::begin );
-			BYTE result=(4096-frw.GetLength())*0xff;
-			for( TFatValue v; frw.GetPosition()<frw.GetLength(); )
-				if (frw.Read(&v,sizeof(v))==sizeof(v))
-					result+=v.lowerByte+v.upperByte;
-				else
-					result+=2*0xff;
-			return result;
-		}else
-			return 0;
+		if (const PBootSector bootSector=boot.GetSectorData())
+			if (const CFatPath tmp=CFatPath( this, &TFatCopyRetrievalEntry(this,bootSector,fatCopy) )){
+				PCSectorData sectorData[BSDOS_FAT_LOGSECTOR_MAX];
+				for( BYTE s=0; s<bootSector->nSectorsPerFat; s++ )
+					if (const auto pItem=tmp.GetHealthyItem(s))
+						sectorData[s]=image->GetHealthySectorData(pItem->chs);
+					else
+						sectorData[s]=nullptr;
+				return __getFatChecksum__( sectorData, bootSector->nSectorsPerFat );
+			}
+		return 0;
 	}
 
 	CBSDOS308::TLogSector CBSDOS308::__getEmptyHealthyFatSector__(bool allowFileFragmentation) const{
@@ -348,4 +359,250 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 			item.value=fatValue.info;
 		}while (fatValue.continuous); // until the natural correct end of a File is found
 		return true; // FatPath (with or without error) successfully extracted from FAT
+	}
+
+
+
+
+
+
+
+
+
+
+
+	#define BSDOS	static_cast<CBSDOS308 *>(vp.dos)
+	#define IMAGE	BSDOS->image
+
+	UINT AFX_CDECL CBSDOS308::FatReadabilityVerification_thread(PVOID pCancelableAction){
+		// thread to verify the FAT integrity
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
+		const TSpectrumVerificationParams &vp=*(TSpectrumVerificationParams *)pAction->GetParams();
+		vp.fReport.OpenSection(FAT_VERIFICATION_READABILITY);
+		// - verifying basic FAT information
+		const PBootSector boot=TBootSector::GetData(IMAGE);
+		if (!boot)
+			return vp.TerminateAll(ERROR_UNRECOGNIZED_VOLUME);
+		if (const TStdWinError err=vp.VerifyUnsignedValue( TBootSector::CHS, BOOT_SECTOR_LOCATION_STRING, _T("FAT sectors"), boot->nSectorsPerFat, (WORD)1, (WORD)4 ))
+			return vp.TerminateAll(err);
+		if (const TStdWinError err=vp.VerifyUnsignedValue( TBootSector::CHS, BOOT_SECTOR_LOCATION_STRING, _T("FAT Bytes"), boot->nBytesInFat, (WORD)(boot->nSectorsPerFat*BSDOS_SECTOR_LENGTH_STD) ))
+			return vp.TerminateAll(err);
+		pAction->SetProgressTarget(	1 // retrieving both FAT copies
+									+
+									boot->nSectorsPerFat*BSDOS_FAT_COPIES_MAX
+									+
+									1 // decision-making (e.g. initial detection if FAT copies are cross-linked)
+									+
+									1 // allocation of missing FAT Sectors
+									+
+									1 // checking FAT checksums
+									//+
+									//1 // splitting FATs, thus increasing disk safety
+								);
+		int step=0;
+		// Step 1: retrieving both FAT copies
+		const class CFatPathEx sealed:public CFatPath{
+		public:
+			CFatPathEx(PCDos dos,PCDirectoryEntry de,WORD nSectorsExpected)
+				: CFatPath( dos, de ) {
+				if (GetNumberOfItems()!=nSectorsExpected)
+					error=TError::LENGTH;
+			}
+		} fat1( BSDOS, &TFatCopyRetrievalEntry(BSDOS,boot,0), boot->nSectorsPerFat )
+		, fat2( BSDOS, &TFatCopyRetrievalEntry(BSDOS,boot,1), boot->nSectorsPerFat );
+		const CFatPath *pFats[]={ &fat1, &fat2 };
+		for( BYTE i=0; i<BSDOS_FAT_COPIES_MAX; i++ )
+			if (const LPCTSTR errMsg=pFats[i]->GetErrorDesc()){
+				CString msg, sol;
+				msg.Format( _T("FAT-%d is corrupted: %s"), 1+i, errMsg );
+				sol.Format( _T("A merge with FAT-%d is suggested."), 1+(i+1)%BSDOS_FAT_COPIES_MAX );
+				switch (vp.ConfirmFix( msg, sol )){
+					case IDCANCEL:
+						return vp.CancelAll();
+					case IDNO:
+						continue;
+				}
+				boot->fatStarts[i] = boot->fatStarts[(i+1)%BSDOS_FAT_COPIES_MAX];
+				pFats[i] = pFats[(i+1)%BSDOS_FAT_COPIES_MAX];
+				IMAGE->MarkSectorAsDirty(TBootSector::CHS);
+				vp.fReport.CloseProblem(true);
+			}
+
+		if (pFats[0]->error || pFats[1]->error) // for the remainder of the verification, it's needed that both FAT copies are intact ... 
+			return vp.TerminateAll(ERROR_VALIDATE_CONTINUE); // ... otherwise the results may be impredicatble
+		pAction->UpdateProgress( ++step );
+		// - Steps 2-(N-2): buffering FAT Sectors
+		PSectorData fatData[BSDOS_FAT_COPIES_MAX][BSDOS_FAT_LOGSECTOR_MAX];
+		for( BYTE s=0; s<boot->nSectorsPerFat; s++ )
+			for( BYTE i=0; i<BSDOS_FAT_COPIES_MAX; i++,pAction->UpdateProgress(++step) )
+				if (const auto pItem=pFats[i]->GetHealthyItem(s))
+					fatData[i][s]=IMAGE->GetHealthySectorData(pItem->chs);
+				else
+					fatData[i][s]=nullptr;
+		// - Step N-1: comparing the two FAT copies, eventually searching for a FAT instance that is a combination of both copies and has the correct checksum
+		bool fatCopiesAreIdentical=true; // assumption
+		for( BYTE s=0; s<boot->nSectorsPerFat; s++ )
+			if ( fatCopiesAreIdentical&=!( fatData[0][s]!=nullptr ^ fatData[1][s]!=nullptr ) ) // either both copies have or don't have readable Sectors
+				if (fatData[0][s]!=fatData[1][s]) // both FAT copies have readable Sectors
+					fatCopiesAreIdentical=!::memcmp( fatData[0][s], fatData[1][s], BSDOS_SECTOR_LENGTH_STD );
+		if (!fatCopiesAreIdentical)
+			switch (vp.ConfirmFix( _T("The FAT copies are not identical"), _T("A brute-force search for a valid FAT instance is suggested.") )){
+				case IDCANCEL:
+					return vp.CancelAll();
+				case IDNO:
+					return vp.TerminateAndGoToNextAction(ERROR_VALIDATE_CONTINUE);
+				case IDYES:{
+					// . searching for a FAT instance that is a combination of both copies and has the correct checksum
+					struct{
+						TPhysicalAddress chs[BSDOS_FAT_LOGSECTOR_MAX];
+						BYTE nSectorsBad;
+					} current, optimal; // FAT instance
+					optimal.nSectorsBad=-1; // -1 = absolutely unoptimal
+					DWORD fatCombination=0; // bitwise identification of a FAT instance; N-th bit reset = use N-th Sector from first FAT copy, otherwise use N-th Sector from second FAT copy
+					for( const DWORD fatLastCombination=1<<boot->nSectorsPerFat; fatCombination<fatLastCombination; fatCombination++ ){
+						current.nSectorsBad=0;
+						PCSectorData currentData[BSDOS_FAT_LOGSECTOR_MAX];
+						for( BYTE s=0; s<boot->nSectorsPerFat; s++ ){
+							const BYTE i=(fatCombination&1<<s)!=0;
+							current.chs[s]=pFats[i]->GetHealthyItem(s)->chs;
+							current.nSectorsBad+=( currentData[s]=fatData[i][s] )==nullptr;
+						}
+						if (current.nSectorsBad<optimal.nSectorsBad) // potentially a better FAT instance - need to check its checksum
+							if (*currentData){ // first Sector exists, so existing checksum can be obtained
+								const TFatValue v=*(TFatValue *)currentData[0];
+								if (__getFatChecksum__(currentData,boot->nSectorsPerFat)==v.upperByte)
+									// success - found an instance of FAT that has the expected checksum and has fewer bad Sectors
+									optimal=current;
+							}
+					}
+					if (optimal.nSectorsBad<boot->nSectorsPerFat){ // at least a sub-optimal FAT instance found
+						TDirectoryEntry de1(BSDOS,boot->fatStarts[0]), de2(BSDOS,boot->fatStarts[1]);
+						for( BYTE s=0; s<boot->nSectorsPerFat; s++ )
+							if (pFats[0]->GetHealthyItem(s)->chs!=optimal.chs[s]){ // let the first FAT copy be the valid one
+								std::swap( pFats[0]->GetHealthyItem(s)->chs, pFats[1]->GetHealthyItem(s)->chs );
+								std::swap( fatData[0][s], fatData[1][s] );
+							}
+						BSDOS->ModifyFileFatPath( &de1, *pFats[0] );
+							boot->fatStarts[0]=de1.file.firstSector;
+						BSDOS->ModifyFileFatPath( &de2, *pFats[1] );
+							boot->fatStarts[1]=de2.file.firstSector;
+						BSDOS->boot.MarkSectorAsDirty();
+						for( BYTE s=0; s<boot->nSectorsPerFat; s++ )
+							if (fatData[1][s]){ // if possible, spreading the optimal FAT instance to the second FAT copy
+								::memcpy( fatData[1][s], fatData[0][s], BSDOS_SECTOR_LENGTH_STD );
+								IMAGE->MarkSectorAsDirty( pFats[1]->GetHealthyItem(s)->chs );
+							}
+						vp.fReport.CloseProblem(true);
+						break; // solved - both FAT copies are identical now
+					}
+					// . declaring the correct FAT instance the more up-to-date copy of FAT
+					if (fatData[0][0] && fatData[1][0]){ // both FAT copies have readable first Sectors
+						const BYTE iSrc=*(PCBYTE)fatData[0][0]<=*(PCBYTE)fatData[1][0], iDst=(iSrc+1)%BSDOS_FAT_COPIES_MAX;
+						for( BYTE s=0; s<boot->nSectorsPerFat; s++ )
+							if (fatData[0][s] && fatData[1][s]){
+								::memcpy( fatData[iDst][s], fatData[iSrc][s], BSDOS_SECTOR_LENGTH_STD );
+								IMAGE->MarkSectorAsDirty( pFats[iDst]->GetHealthyItem(s)->chs );
+							}
+						vp.fReport.CloseProblem(true);
+						break; // solved - both FAT copies are identical now
+					}
+					// . declaring the correct FAT instance the copy which is has readable first Sector
+					const BYTE iSrc=(ULONG_PTR)fatData[0][0]<(ULONG_PTR)fatData[1][0], iDst=(iSrc+1)%BSDOS_FAT_COPIES_MAX;
+					for( BYTE s=0; s<boot->nSectorsPerFat; s++ )
+						if (fatData[0][s] && fatData[1][s]){
+							::memcpy( fatData[iDst][s], fatData[iSrc][s], BSDOS_SECTOR_LENGTH_STD );
+							IMAGE->MarkSectorAsDirty( pFats[iDst]->GetHealthyItem(s)->chs );
+						}
+					vp.fReport.CloseProblem(true);
+					break;
+				}
+			}
+		pAction->UpdateProgress(++step);
+		// - recovering readability of both FAT copies
+		TDirectoryEntry deFat( BSDOS, boot->fatStarts[0] ); // both FAT copies are valid multi-sector structures, hence any of them can be refered to create this DirectoryEntry
+		for( BYTE i=0; i<BSDOS_FAT_COPIES_MAX; i++ ){
+			// . replacing erroneous Sectors
+			bool fatCopyModified=false; // assumption
+			for( BYTE s=0; s<boot->nSectorsPerFat; s++ )
+				if (!fatData[i][s]){
+					TPhysicalAddress &rChs=pFats[i]->GetHealthyItem(s)->chs;
+					if (const TLogSector ls=BSDOS->__getEmptyHealthyFatSector__(true)){
+						// found a healthy Sector to replace the erroneous
+						// : marking the original Sector as Bad (first Sector of first FAT copy is guaranteed to be always readable, hence the information on the Bad Sector will be registered)
+						BSDOS->__setLogicalSectorFatItem__( BSDOS->__fyzlog__(rChs), TFatValue::SectorErrorInDataField );
+						// : replacing the erroneous Sector
+						rChs=BSDOS->__logfyz__(ls);
+						if (!BSDOS->ModifyFileFatPath( &deFat, *pFats[i] ))
+							return vp.TerminateAll(ERROR_FUNCTION_FAILED); // we shouldn't end up here but just to be sure
+						if (!s){
+							boot->fatStarts[i]=ls;
+							IMAGE->MarkSectorAsDirty(TBootSector::CHS);
+						}
+						// : initializing the replacement Sector
+						const PSectorData newData=BSDOS->__getHealthyLogicalSectorData__(ls);
+						if (!i)
+							// first FAT copy erroneous Sector declares all addressed Sectors are Empty
+							::ZeroMemory( newData, BSDOS_SECTOR_LENGTH_STD );
+						else
+							// second FAT copy mirrors the referential first FAT copy
+							::memcpy( newData, fatData[0][s], BSDOS_SECTOR_LENGTH_STD );
+						fatData[i][s]=newData;
+						BSDOS->__markLogicalSectorAsDirty__(ls);
+						fatCopyModified=true;
+					}else
+						vp.fReport.LogWarning( _T("FAT-%d sector with %s is unreadable and can't be replaced"), i, (LPCTSTR)rChs.sectorId.ToString() );
+				}
+			// . writing the FAT copy Sectors to the Boot Sector
+			bool fatCopySectorsMatch=true;
+			for( BYTE s=1; s<boot->nSectorsPerFat; s++ )
+				fatCopySectorsMatch&=boot->fatSectorsListing[i+2*(s-1)]==BSDOS->__fyzlog__( pFats[i]->GetHealthyItem(s)->chs );
+			if (!fatCopyModified && !fatCopySectorsMatch){ // although no modifications were made to the FAT copy, its Sectors don't match with those reported in the Boot Sector
+				CString msg;
+				msg.Format( _T("FAT-%d sectors don't match with those reported in disk boot"), i );
+				switch (vp.ConfirmFix( msg, _T("Replacement directly from FAT is suggested.") )){
+					case IDCANCEL:
+						return vp.CancelAll();
+					case IDNO:
+						continue;
+				}
+				vp.fReport.CloseProblem(true); // see below
+			}
+			for( BYTE s=1; s<boot->nSectorsPerFat; s++ )
+				boot->fatSectorsListing[i+2*(s-1)]=BSDOS->__fyzlog__( pFats[i]->GetHealthyItem(s)->chs );
+			IMAGE->MarkSectorAsDirty(TBootSector::CHS);
+		}
+		pAction->UpdateProgress(++step);
+		// - checking FAT copies checksums
+		for( BYTE i=0; i<BSDOS_FAT_COPIES_MAX; i++ )
+			if (const PFatValue v=(PFatValue)fatData[i][0]){ // first Sector exists
+				const BYTE correctChecksum=BSDOS->__getFatChecksum__(i);
+				if (v->upperByte!=correctChecksum){
+					TCHAR buf[80];
+					::wsprintf( buf, _T("FAT-%d checksum is incorrect"), i );
+					switch (vp.ConfirmFix( buf, _T("Checksum should be recalculated.") )){
+						case IDCANCEL:
+							return vp.CancelAll();
+						case IDNO:
+							continue;
+					}
+					v->upperByte=correctChecksum;
+					vp.fReport.CloseProblem(true);
+					IMAGE->MarkSectorAsDirty( pFats[i]->GetHealthyItem(0)->chs );
+				}
+			}
+		pAction->UpdateProgress(++step);
+		// - splitting FATs, thus increasing disk safety
+		/* // commented out, TODO eventually in the future
+		if (boot->fatStarts[0]==boot->fatStarts[1])
+			switch (vp.ConfirmFix( _T("The disk contains just one FAT copy"), _T("There should be also a second back-up copy.") )){
+				case IDCANCEL:
+					return vp.CancelAll();
+				case IDYES:{
+					//TODO
+					break;
+				}
+			}
+		pAction->UpdateProgress(++step);
+		*/
+		return ERROR_SUCCESS;
 	}
