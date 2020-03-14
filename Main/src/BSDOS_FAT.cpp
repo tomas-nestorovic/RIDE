@@ -395,6 +395,8 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 									+
 									1 // allocation of missing FAT Sectors
 									+
+									1 // checking that all Sectors beyond the official format are marked as Unknown
+									+
 									1 // checking FAT checksums
 									//+
 									//1 // splitting FATs, thus increasing disk safety
@@ -427,7 +429,6 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 				IMAGE->MarkSectorAsDirty(TBootSector::CHS);
 				vp.fReport.CloseProblem(true);
 			}
-
 		if (pFats[0]->error || pFats[1]->error) // for the remainder of the verification, it's needed that both FAT copies are intact ... 
 			return vp.TerminateAll(ERROR_VALIDATE_CONTINUE); // ... otherwise the results may be impredicatble
 		pAction->UpdateProgress( ++step );
@@ -580,6 +581,22 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 				boot->fatSectorsListing[i+2*(s-1)]=BSDOS->__fyzlog__( pFats[i]->GetHealthyItem(s)->chs );
 			IMAGE->MarkSectorAsDirty(TBootSector::CHS);
 		}
+		pAction->UpdateProgress(++step);
+		// - checking that all Sectors beyond the official format are marked as Unknown
+		for( TLogSector ls=BSDOS->formatBoot.GetCountOfAllSectors(),fixConfirmation=0; ls<boot->nSectorsPerFat*BSDOS_FAT_ITEMS_PER_SECTOR; ls++ )
+			if (BSDOS->__getLogicalSectorFatItem__(ls)!=TFatValue::SectorUnknown){
+				if (!fixConfirmation) // not yet asked about what to do
+					fixConfirmation=vp.ConfirmFix( _T("Sectors beyond the official format aren't marked as \"unknown\""), _T("") );
+				switch (fixConfirmation){
+					case IDCANCEL:
+						return vp.CancelAll();
+					case IDNO:
+						continue;
+				}
+				if (!BSDOS->__setLogicalSectorFatItem__( ls, TFatValue::SectorUnknown ))
+					return vp.TerminateAll(ERROR_FUNCTION_FAILED);
+				vp.fReport.CloseProblem(true);
+			}
 		pAction->UpdateProgress(++step);
 		// - checking FAT copies checksums
 		for( BYTE i=0; i<BSDOS_FAT_COPIES_MAX; i++ )
