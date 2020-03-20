@@ -509,8 +509,9 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 		struct TDir sealed{
 			CDos::PFile handle;
 			bool createdAndSwitchedTo;
+			WORD nLastKnownOccupiedSectors; // how many Sectors the Directory occupied last time we checked for its length
 			TDir()
-				: handle(nullptr) , createdAndSwitchedTo(false) {
+				: handle(nullptr) , createdAndSwitchedTo(false) , nLastKnownOccupiedSectors(0) {
 			}
 		} dir; // Directory to store Files addressing lost Sectors
 		WORD fileId=0;
@@ -562,13 +563,9 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 								// > creating a "LOSTnnnn" Directory in Root
 								for( WORD dirId=1; dirId<10000; dirId++ ){
 									const TStdWinError err=(vp.dos->*dsm->fnCreateSubdir)( CDos::CPathString().Format(_T("LOST%04d"),dirId), FILE_ATTRIBUTE_DIRECTORY, dir.handle );
-									if (err==ERROR_SUCCESS){
-										const CDos::CFatPath fatPath( vp.dos, dir.handle );
-										if (const LPCTSTR err=fatPath.GetItems(pItem,nItems))
-											return vp.TerminateAll(ERROR_OPEN_FAILED); // errors shouldn't occur at this moment, but just to be sure
-										sectorAffiliation[pItem->chs.GetTrackNumber()].SetAt( pItem->chs.sectorId.sector, dir.handle );
+									if (err==ERROR_SUCCESS)
 										break;
-									}else if (err!=ERROR_FILE_EXISTS)
+									else if (err!=ERROR_FILE_EXISTS)
 										return vp.TerminateAll(err);
 								}
 								if (!dir.handle)
@@ -595,6 +592,16 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 									vp.fReport.CloseProblem(true);
 								}
 								break;
+							}
+						}
+						// : registering affiliation of Sectors to the "LOSTxxxx" Directory
+						if (dir.createdAndSwitchedTo){
+							const CDos::CFatPath fatPath( vp.dos, dir.handle );
+							if (const LPCTSTR err=fatPath.GetItems(pItem,nItems))
+								return vp.TerminateAll(ERROR_OPEN_FAILED); // errors shouldn't occur at this moment, but just to be sure
+							while (dir.nLastKnownOccupiedSectors<nItems){
+								RCPhysicalAddress &chs=pItem[dir.nLastKnownOccupiedSectors++].chs;
+								sectorAffiliation[chs.GetTrackNumber()].SetAt( chs.sectorId.sector, dir.handle );
 							}
 						}
 						// : informing on progress
