@@ -545,10 +545,13 @@
 	PSectorData CImage::GetHealthySectorData(TCylinder cyl,THead head,PCSectorId pid,PWORD sectorLength){
 		// returns Data of a Sector on a given PhysicalAddress; returns Null if Sector not found or Track not formatted
 		TFdcStatus st;
+		::SetLastError(ERROR_SUCCESS); // assumption
 		if (const PSectorData data=GetSectorData(cyl,head,pid,0,true,sectorLength,&st))
-			return st.IsWithoutError() ? data : nullptr; // Data must be either without error, or none
-		else
-			return nullptr; // Sector not found
+			if (st.IsWithoutError()) // Data must be either without error ...
+				return data;
+		if (!::GetLastError())
+			::SetLastError(ERROR_SECTOR_NOT_FOUND);
+		return nullptr; // ... or none
 	}
 
 	PSectorData CImage::GetHealthySectorData(RCPhysicalAddress chs,PWORD sectorLength){

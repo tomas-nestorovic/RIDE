@@ -154,8 +154,10 @@
 		if (currentDir!=ZX_DIR_ROOT)
 			return ERROR_CANNOT_MAKE;
 		// - creating a new Subdirectory in the first empty Slot
-		TPhysicalAddress chs;
-		for( CDirsSector::PSlot slot=dirsSector.GetSlots(); IsDirectory(slot); slot++ )
+		CDirsSector::PSlot slot=dirsSector.GetSlots();
+		if (!slot) // DIRS Sector unreadable
+			return ::GetLastError();
+		for( TPhysicalAddress chs; IsDirectory(slot); slot++ )
 			if (!slot->subdirExists)
 				if (GetFirstEmptyHealthySector(true,chs)==ERROR_SUCCESS){
 					// . parsing the Name (can be an import name with escaped Spectrum tokens)
