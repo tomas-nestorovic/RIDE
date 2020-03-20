@@ -400,6 +400,8 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 									1 // checking FAT checksums
 									//+
 									//1 // splitting FATs, thus increasing disk safety
+									+
+									1 // checking the DIRS Sector isn't actually mapped to one of FAT Sectors
 								);
 		int step=0;
 		// Step 1: retrieving both FAT copies
@@ -630,5 +632,29 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 			}
 		pAction->UpdateProgress(++step);
 		*/
+		// - checking the DIRS Sector isn't actually cross-linked with one of FAT Sectors
+		TLogSector lsDirs=boot->dirsLogSector;
+		TPhysicalAddress chsDirs=BSDOS->__logfyz__(lsDirs);
+		boot->dirsLogSector=0;
+			const TSectorStatus lsDirsStatus=BSDOS->GetSectorStatus(chsDirs);
+		boot->dirsLogSector=lsDirs;
+		if (lsDirsStatus==TSectorStatus::SYSTEM) // yes, cross-linked with one of FAT Sectors
+			switch (vp.ConfirmFix( _T("DIRS sector cross-linked with FAT"), _T("Their split is suggested.") )){
+				case IDCANCEL:
+					return vp.CancelAll();
+				case IDNO:
+					return vp.TerminateAll(ERROR_VALIDATE_CONTINUE); // can't continue if fix suggestion rejected
+				case IDYES:
+					if (const TStdWinError err=BSDOS->GetFirstEmptyHealthySector(true,chsDirs))
+						return vp.TerminateAndGoToNextAction(err);
+					boot->dirsLogSector = lsDirs = BSDOS->__fyzlog__(chsDirs);
+					IMAGE->MarkSectorAsDirty(TBootSector::CHS);
+					::ZeroMemory( BSDOS->__getHealthyLogicalSectorData__(lsDirs), BSDOS_SECTOR_LENGTH_STD );
+					BSDOS->__markLogicalSectorAsDirty__(lsDirs);
+					BSDOS->__setLogicalSectorFatItem__( lsDirs, TFatValue(true,false,BSDOS_SECTOR_LENGTH_STD) );
+					vp.fReport.CloseProblem(true);
+					break;
+			}
+		pAction->UpdateProgress(++step);
 		return ERROR_SUCCESS;
 	}
