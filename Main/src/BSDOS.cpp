@@ -330,7 +330,7 @@
 		const TLogSector newLogSector=bsdos->__fyzlog__(chs);
 		CFatPath::PCItem pItem; DWORD n;
 		dirFatPath.GetItems(pItem,n);
-		if (bsdos->__setLogicalSectorFatItem__( // may fail if the last Sector in Directory is Bad
+		if (!bsdos->__setLogicalSectorFatItem__( // may fail if the last Sector in Directory is Bad
 				bsdos->__fyzlog__(pItem[n-1].chs),
 				TFatValue( true, true, newLogSector )
 			)
