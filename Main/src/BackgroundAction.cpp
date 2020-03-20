@@ -147,7 +147,8 @@
 	TStdWinError CBackgroundActionCancelable::TerminateWithError(TStdWinError error){
 		// initiates the termination of the Worker with specified Error
 		bCancelled=true;
-		PostMessage( WM_COMMAND, IDCANCEL );
+		if (m_hWnd)
+			PostMessage( WM_COMMAND, IDCANCEL );
 		return error;
 	}
 
