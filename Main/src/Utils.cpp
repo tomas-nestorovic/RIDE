@@ -114,12 +114,12 @@ namespace Utils{
 
 	CCommandDialog::CCommandDialog(LPCTSTR _information)
 		// ctor
-		: CDialog(IDR_ACTION_DIALOG) , information(_information) {
+		: CDialog(IDR_ACTION_DIALOG) , information(_information) , checkBoxStatus(BST_UNCHECKED) {
 	}
 
 	CCommandDialog::CCommandDialog(WORD dialogId,LPCTSTR _information)
 		// ctor
-		: CDialog(dialogId) , information(_information) {
+		: CDialog(dialogId) , information(_information) , checkBoxStatus(BST_UNCHECKED) {
 	}
 
 	void CCommandDialog::PreInitDialog(){
@@ -128,6 +128,11 @@ namespace Utils{
 		CDialog::PreInitDialog();
 		// - initializing the main message
 		SetDlgItemText( ID_INFORMATION, information );
+	}
+
+	void CCommandDialog::DoDataExchange(CDataExchange *pDX){
+		// exchange of data from and to controls
+		DDX_Check( pDX, ID_APPLY, checkBoxStatus );
 	}
 
 	typedef struct TCommandLikeButtonInfo sealed{
@@ -270,6 +275,27 @@ namespace Utils{
 		);
 	}
 
+	void CCommandDialog::__addCheckBox__(LPCTSTR caption){
+		// adds a check-box with given Caption
+		// - increasing the parent window size for the new check-box to fit in
+		CWnd *const pCheckBox=GetDlgItem(ID_APPLY);
+		CRect r,ch;
+		pCheckBox->GetClientRect(&ch);
+		GetWindowRect(&r);
+		SetWindowPos(	nullptr,
+						0,0, r.Width(), r.Height()+CMDBUTTON_MARGIN+3*ch.Height()/2,
+						SWP_NOZORDER|SWP_NOMOVE
+					);
+		GetClientRect(&r);
+		// - displaying the check-box
+		const CWnd *const pInformation=GetDlgItem(ID_INFORMATION);
+		RECT t;
+		pInformation->GetClientRect(&t);
+		pInformation->MapWindowPoints(this,&t);
+		pCheckBox->MoveWindow( t.left, r.bottom-t.top-ch.Height(), ch.Width(), ch.Height() );
+		pCheckBox->SetWindowText(caption);
+		pCheckBox->ShowWindow(SW_SHOW);
+	}
 
 
 

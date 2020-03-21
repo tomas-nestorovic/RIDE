@@ -1080,6 +1080,8 @@ CAPTION "What to do now?"
 FONT 8, "MS Sans Serif"
 BEGIN
     LTEXT           "x",ID_INFORMATION,7,7,258,8,NOT WS_GROUP
+    CONTROL         "Check1",ID_APPLY,"Button",BS_AUTOCHECKBOX | NOT 
+                    WS_VISIBLE | WS_TABSTOP,7,18,259,10
 END
 
 IDR_DSK_TYPE DIALOG DISCARDABLE  0, 0, 146, 97

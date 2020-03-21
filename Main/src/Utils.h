@@ -41,12 +41,16 @@ namespace Utils{
 		const LPCTSTR information;
 	protected:
 		void __addCommandButton__(WORD id,LPCTSTR caption);
+		void __addCheckBox__(LPCTSTR caption);
 
 		CCommandDialog(LPCTSTR _information);
 		CCommandDialog(WORD dialogId,LPCTSTR _information);
 
 		void PreInitDialog() override;
+		void DoDataExchange(CDataExchange *pDX) override;
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
+	public:
+		int checkBoxStatus;
 	};
 
 	typedef const struct TSplitButtonAction sealed{
