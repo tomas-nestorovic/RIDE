@@ -57,7 +57,7 @@
 		return nullptr; // the Name for the next File copy cannot be generated
 	}
 
-	TStdWinError CSpectrumDos::CSpectrumFileManagerView::ImportPhysicalFile(LPCTSTR pathAndName,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution){
+	TStdWinError CSpectrumDos::CSpectrumFileManagerView::ImportPhysicalFile(LPCTSTR pathAndName,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution){
 		// dragged cursor released above window
 		// - if the File "looks like an Tape Image", confirming its import by the user
 		if (const LPCTSTR extension=_tcsrchr(pathAndName,'.')){

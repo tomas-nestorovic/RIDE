@@ -271,7 +271,7 @@
 			}
 			// - importing Files
 			CDos::PFile importedFile;
-			TConflictResolution conflictResolution=TConflictResolution::UNDETERMINED;
+			DWORD conflictResolution=TConflictResolution::UNDETERMINED;
 			if (HGLOBAL hg=pDataObject->GetGlobalData(CF_HDROP)){
 				// importing physical Files (by dragging them from Explorer)
 				if (const HDROP hDrop=(HDROP)::GlobalLock(hg)){
@@ -385,11 +385,11 @@ importQuit2:		::GlobalUnlock(hg);
 	}
 
 
-	TStdWinError CFileManagerView::__skipNameConflict__(DWORD newFileSize,LPCTSTR newFileName,CDos::PFile conflict,TConflictResolution &rConflictedSiblingResolution) const{
+	TStdWinError CFileManagerView::__skipNameConflict__(DWORD newFileSize,LPCTSTR newFileName,CDos::PFile conflict,DWORD &rConflictedSiblingResolution) const{
 		// resolves conflict of File names by displaying a Dialog; returns Windows standard i/o error (ERROR_SUCCESS = import succeeded, ERROR_CANCELLED = import of a set of Files was cancelled, ERROR_* = other error)
 		const bool directory=DOS->IsDirectory(conflict);
 		BYTE b;
-		switch (rConflictedSiblingResolution){
+		switch (rConflictedSiblingResolution&~TConflictResolution::CUSTOM_MASK){
 			case TConflictResolution::MERGE	:b=IDYES; break;
 			case TConflictResolution::SKIP	:b=IDNO; break;
 			default:{
@@ -411,7 +411,9 @@ importQuit2:		::GlobalUnlock(hg);
 				CNameConflictResolutionDialog d( newFileName, directory?_T("directory"):_T("file"), bufOverwrite,bufSkip );
 				b=d.DoModal();
 				if (d.useForAllSubsequentConflicts==BST_CHECKED)
-					rConflictedSiblingResolution= b==IDYES ? TConflictResolution::MERGE : TConflictResolution::SKIP;
+					rConflictedSiblingResolution =	(rConflictedSiblingResolution&TConflictResolution::CUSTOM_MASK)
+													|
+													( b==IDYES ? TConflictResolution::MERGE : TConflictResolution::SKIP );
 			}
 		}
 		switch (b){
@@ -431,7 +433,7 @@ importQuit2:		::GlobalUnlock(hg);
 		}
 	}
 
-	TStdWinError CFileManagerView::__moveFile__(int &i,LPFILEDESCRIPTOR files,int nFiles,CDos::PFile &rMovedFile,TConflictResolution &rConflictedSiblingResolution){
+	TStdWinError CFileManagerView::__moveFile__(int &i,LPFILEDESCRIPTOR files,int nFiles,CDos::PFile &rMovedFile,DWORD &rConflictedSiblingResolution){
 		// moves virtual File within Image; returns Windows standard i/o error
 		const LPFILEDESCRIPTOR lpfd=files+i;
 		const LPCTSTR backslash=_tcsrchr(lpfd->cFileName,'\\');
@@ -451,7 +453,7 @@ importQuit2:		::GlobalUnlock(hg);
 					const CDos::PFile currentDirectory=DOS->currentDir;
 					__switchToDirectory__(rMovedFile);
 						bool allSubfilesMoved=true; // assumption
-						for( TConflictResolution csr=rConflictedSiblingResolution; i<j; ){
+						for( DWORD csr=rConflictedSiblingResolution; i<j; ){
 							CDos::PFile tmp;
 							err=__moveFile__( i, files, nFiles, tmp, csr );
 							allSubfilesMoved&=err==ERROR_SUCCESS;
@@ -470,7 +472,7 @@ importQuit2:		::GlobalUnlock(hg);
 		return err;
 	}
 
-	TStdWinError CFileManagerView::ImportFileAndResolveConflicts(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,const FILETIME &rCreated,const FILETIME &rLastRead,const FILETIME &rLastModified,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution){
+	TStdWinError CFileManagerView::ImportFileAndResolveConflicts(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,const FILETIME &rCreated,const FILETIME &rLastRead,const FILETIME &rLastModified,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution){
 		// imports physical or virtual File; returns Windows standard i/o error (ERROR_SUCCESS = imported successfully, ERROR_CANCELLED = import of a set of Files was cancelled, ERROR_* = other error)
 		do{
 			// - importing
@@ -512,7 +514,7 @@ importQuit2:		::GlobalUnlock(hg);
 		return ERROR_SUCCESS;
 	}
 
-	TStdWinError CFileManagerView::ImportPhysicalFile(LPCTSTR pathAndName,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution){
+	TStdWinError CFileManagerView::ImportPhysicalFile(LPCTSTR pathAndName,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution){
 		// imports physical File with given Name into current Directory; returns Windows standard i/o error
 		const LPCTSTR fileName=_tcsrchr(pathAndName,'\\')+1;
 		const DWORD winAttr=::GetFileAttributes(pathAndName);
@@ -532,7 +534,7 @@ importQuit2:		::GlobalUnlock(hg);
 					WIN32_FIND_DATA fd;
 					const HANDLE hFindFile=::FindFirstFile(::lstrcat(::lstrcpy(fd.cFileName,pathAndName),_T("\\*.*")),&fd);
 					if (hFindFile!=INVALID_HANDLE_VALUE){
-						for( TConflictResolution csr=rConflictedSiblingResolution; true; ){
+						for( DWORD csr=rConflictedSiblingResolution; true; ){
 							TCHAR buf[MAX_PATH];
 							if (::lstrcmp(fd.cFileName,_T(".")) && ::lstrcmp(fd.cFileName,_T(".."))){ // "dot" and "dotdot" entries skipped
 								CDos::PFile file;
@@ -607,7 +609,7 @@ importQuit2:		::GlobalUnlock(hg);
 
 	#define FD_ATTRIBUTES_MANDATORY	(FD_ATTRIBUTES|FD_FILESIZE)
 
-	TStdWinError CFileManagerView::__importVirtualFile__(int &i,LPCTSTR pathAndName,LPFILEDESCRIPTOR files,int nFiles,COleDataObject *pDataObject,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution){
+	TStdWinError CFileManagerView::__importVirtualFile__(int &i,LPCTSTR pathAndName,LPFILEDESCRIPTOR files,int nFiles,COleDataObject *pDataObject,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution){
 		// imports virtual File with given Name into current Directory; returns Windows standard i/o error
 		const LPFILEDESCRIPTOR lpfd=files+i;
 		// - making sure that FileDescriptor structure contains all mandatory information
@@ -634,7 +636,7 @@ importQuit2:		::GlobalUnlock(hg);
 			if (err==ERROR_SUCCESS){
 				const CDos::PFile currentDirectory=DOS->currentDir;
 				__switchToDirectory__(rImportedFile);
-					TConflictResolution csr=rConflictedSiblingResolution;
+					DWORD csr=rConflictedSiblingResolution;
 					for( CDos::PFile tmp; i<j; ){
 						err=__importVirtualFile__( i, files[i].cFileName, files, nFiles, pDataObject, tmp, csr );
 						if (err!=ERROR_SUCCESS && err!=ERROR_FILE_EXISTS)

@@ -40,10 +40,11 @@
 			LIST		=8
 		};
 
-		enum TConflictResolution:BYTE{
-			UNDETERMINED,
-			MERGE,
-			SKIP
+		enum TConflictResolution:DWORD{
+			UNDETERMINED=0,
+			MERGE		=0x80000000,
+			SKIP		=0x40000000,
+			CUSTOM_MASK	=0xf0000000 // lower 28 bits reserved for custom resolutions; the rest is reserved for standard resolution options from this enumeration
 		};
 	protected:
 		typedef const struct TDirectoryStructureManagement sealed{
@@ -118,9 +119,9 @@
 		char __columnIdFromFileInfo__(BYTE fileInfoIndex) const;
 		char __columnIdFromFileInfo__(PCFileInfo fi) const;
 		TStdWinError __switchToDirectory__(PTCHAR path) const;
-		TStdWinError __skipNameConflict__(DWORD newFileSize,LPCTSTR newFileName,CDos::PFile conflict,TConflictResolution &rConflictedSiblingResolution) const;
-		TStdWinError __moveFile__(int &i,LPFILEDESCRIPTOR files,int nFiles,CDos::PFile &rMovedFile,TConflictResolution &rConflictedSiblingResolution);
-		TStdWinError __importVirtualFile__(int &i,LPCTSTR pathAndName,LPFILEDESCRIPTOR files,int nFiles,COleDataObject *pDataObject,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution);
+		TStdWinError __skipNameConflict__(DWORD newFileSize,LPCTSTR newFileName,CDos::PFile conflict,DWORD &rConflictedSiblingResolution) const;
+		TStdWinError __moveFile__(int &i,LPFILEDESCRIPTOR files,int nFiles,CDos::PFile &rMovedFile,DWORD &rConflictedSiblingResolution);
+		TStdWinError __importVirtualFile__(int &i,LPCTSTR pathAndName,LPFILEDESCRIPTOR files,int nFiles,COleDataObject *pDataObject,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution);
 		CDos::PFile __getDirectoryUnderCursor__(CPoint &rPt) const;
 		afx_msg int OnCreate(LPCREATESTRUCT lpcs);
 		afx_msg int OnMouseActivate(CWnd *topParent,UINT nHitTest,UINT message);
@@ -257,7 +258,7 @@
 		virtual int CompareFiles(CDos::PCFile file1,CDos::PCFile file2,BYTE information) const=0;
 		virtual PEditorBase CreateFileInformationEditor(CDos::PFile file,BYTE infoId) const=0;
 		virtual PTCHAR GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant,PTCHAR pOutBuffer) const=0;
-		virtual TStdWinError ImportPhysicalFile(LPCTSTR pathAndName,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution);
+		virtual TStdWinError ImportPhysicalFile(LPCTSTR pathAndName,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution);
 	public:
 		static const CFileManagerView *pCurrentlyShown; // FileManager that is currently shown (a disk can have multiple volumes, each with its own FileManager)
 
@@ -270,7 +271,7 @@
 		POSITION GetLastSelectedFilePosition() const;
 		CDos::PFile GetPreviousSelectedFile(POSITION &pos) const;
 		DWORD GetCountOfSelectedFiles() const;
-		TStdWinError ImportFileAndResolveConflicts(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,const FILETIME &rCreated,const FILETIME &rLastRead,const FILETIME &rLastModified,CDos::PFile &rImportedFile,TConflictResolution &rConflictedSiblingResolution);
+		TStdWinError ImportFileAndResolveConflicts(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,const FILETIME &rCreated,const FILETIME &rLastRead,const FILETIME &rLastModified,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution);
 		void SwitchToDirectory(CDos::PFile directory);
 	};
 
