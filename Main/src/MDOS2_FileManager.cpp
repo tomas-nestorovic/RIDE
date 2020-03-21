@@ -195,7 +195,7 @@
 		}
 	}
 
-	TStdWinError CMDOS2::CMdos2FileManagerView::ImportPhysicalFile(LPCTSTR pathAndName,CDos::PFile &rImportedFile,BYTE &rConflictedSiblingResolution){
+	TStdWinError CMDOS2::CMdos2FileManagerView::ImportPhysicalFile(LPCTSTR pathAndName,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution){
 		// dragged cursor released above window
 		// - if the File "looks like an MDOS-File-Commander archivation file", confirming its import by the user
 		if (const LPCTSTR extension=_tcsrchr(pathAndName,'.')){ // has an Extension
