@@ -195,6 +195,83 @@
 		}
 	}
 
+	TStdWinError CMDOS2::CMdos2FileManagerView::ImportPhysicalFile(LPCTSTR pathAndName,CDos::PFile &rImportedFile,BYTE &rConflictedSiblingResolution){
+		// dragged cursor released above window
+		// - if the File "looks like an MDOS-File-Commander archivation file", confirming its import by the user
+		if (const LPCTSTR extension=_tcsrchr(pathAndName,'.')){ // has an Extension
+			TCHAR ext[MAX_PATH];
+			if (!::lstrcmp(::CharLower(::lstrcpy(ext,extension)),_T(".d_0"))){ // has correct Extension
+				#pragma pack(1)
+				struct TD_0 sealed{
+					BYTE version;
+					char signature[3]; // "D_0"
+					char fileSystemName[10]; // "MDOS_D4080"
+					TDirectoryEntry de;
+					BYTE bootValid;
+					BYTE dataXorChecksumValid;
+					BYTE zeroes[463];
+					BYTE dataXorChecksum; // is usually not computed, thus may be ignored
+					TBootSector boot;
+				} d_0;
+				CFileException e;
+				CFile f;
+				if (!f.Open( pathAndName, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary, &e ))
+					return e.m_cause;
+				if (f.Read(&d_0,sizeof(d_0))==sizeof(d_0))
+					if (d_0.version==0 && !::strncmp(d_0.signature,"D_0",sizeof(d_0.signature)) && !::strncmp(d_0.fileSystemName,"MDOS_D4080",sizeof(d_0.fileSystemName))){
+						// . defining the Dialog
+						const LPCTSTR nameAndExt=_tcsrchr(pathAndName,'\\')+1;
+						TCHAR buf[MAX_PATH+80];
+						::wsprintf( buf, _T("\"%s\" looks like MDOS File Commander's archivation file."), nameAndExt );
+						class CResolutionDialog sealed:public Utils::CCommandDialog{
+							void PreInitDialog() override{
+								// dialog initialization
+								// : base
+								__super::PreInitDialog();
+								// : supplying available actions
+								__addCommandButton__( IDYES, _T("Extract archived file (recommended)") );
+								__addCommandButton__( IDNO, _T("Import it as-is anyway") );
+								__addCommandButton__( IDCANCEL, _T("Cancel") );
+								__addCheckBox__( _T("Apply to all archives") );
+							}
+						public:
+							CResolutionDialog(LPCTSTR msg)
+								// ctor
+								: Utils::CCommandDialog(msg) {
+							}
+						} d(buf);
+						// . showing the Dialog and processing its result
+						const BYTE resolution =	rConflictedSiblingResolution&TConflictResolution::CUSTOM_MASK // previously wanted to apply the decision to all subsequent D_0 files?
+												? rConflictedSiblingResolution&TConflictResolution::CUSTOM_MASK
+												: d.DoModal();
+						if (d.checkBoxStatus==BST_CHECKED) // want to apply the decision to all subsequent D_0 files?
+							rConflictedSiblingResolution|=resolution;
+						switch (resolution){
+							case IDYES:{
+								// extracting and importing the archived data contained in the *.D_0 File
+								if (tab.dos->image->IsWriteProtected())
+									return ERROR_WRITE_PROTECT;
+								if (const TStdWinError err=ImportFileAndResolveConflicts( &f, f.GetLength()-f.GetPosition(), nameAndExt, 0, TFileDateTime::None, TFileDateTime::None, TFileDateTime::None, rImportedFile, rConflictedSiblingResolution ))
+									return err;
+								TDirectoryEntry &rde=*((PDirectoryEntry)rImportedFile);
+								const TLogSector ls=rde.firstLogicalSector;
+								rde=d_0.de;
+								rde.firstLogicalSector=ls;
+								return ERROR_SUCCESS;
+							}
+							case IDNO:
+								// importing the File to this Image anyway
+								break;
+							case IDCANCEL:
+								// cancelling the remainder of importing
+								return ERROR_CANCELLED;
+						}
+					}
+			}
+		}
+		// - importing the File
+		return __super::ImportPhysicalFile( pathAndName, rImportedFile, rConflictedSiblingResolution );
+	}
 
 
 

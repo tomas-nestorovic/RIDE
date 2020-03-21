@@ -474,6 +474,7 @@ importQuit2:		::GlobalUnlock(hg);
 
 	TStdWinError CFileManagerView::ImportFileAndResolveConflicts(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,const FILETIME &rCreated,const FILETIME &rLastRead,const FILETIME &rLastModified,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution){
 		// imports physical or virtual File; returns Windows standard i/o error (ERROR_SUCCESS = imported successfully, ERROR_CANCELLED = import of a set of Files was cancelled, ERROR_* = other error)
+		const auto fPosition=f->GetPosition();
 		do{
 			// - importing
 			TStdWinError err;
@@ -485,7 +486,7 @@ importQuit2:		::GlobalUnlock(hg);
 					: ERROR_NOT_SUPPORTED; // ... otherwise error
 			}else{
 				// importing a File
-				f->SeekToBegin();
+				f->Seek( fPosition, CFile::begin );
 				err=DOS->ImportFile( f, fileSize, nameAndExtension, winAttr, rImportedFile );
 			}
 			// - if Directory/File imported successfully, set its time stamps and quit
