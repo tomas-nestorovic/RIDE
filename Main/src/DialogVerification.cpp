@@ -297,7 +297,8 @@
 				visitedDirectories.AddTail(file);
 			}
 			// . informing on progress
-			pAction->UpdateProgress( pItem->chs.cylinder ); // File's first Cylinder
+			if (!fatPath.error)
+				pAction->UpdateProgress( pItem->chs.cylinder ); // File's first Cylinder
 		}
 		pAction->UpdateProgressFinished();
 		return ERROR_SUCCESS;
@@ -479,8 +480,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 			// . retrieving File's FatPath
 			const CDos::CFatPath fatPath( vp.dos, file );
 			CDos::CFatPath::PItem pItem; DWORD nItems;
-			if (const LPCTSTR err=fatPath.GetItems(pItem,nItems))
-				continue; // silently ignoring problems in FatPath - warnings should be taken care of elsewhere
+			fatPath.GetItems(pItem,nItems);
 			if (!nItems)
 				continue; // makes no sense to test a File that occupies no space on the disk
 			// . recording Sectors affiliated to current File
