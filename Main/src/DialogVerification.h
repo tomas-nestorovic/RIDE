@@ -2,6 +2,8 @@
 #define VERIFICATIONDIALOG_H
 
 	#define FAT_VERIFICATION_READABILITY _T("FAT readability")
+	#define FILESYSTEM_VERIFICATION		_T("Filesystem")
+	#define VERIFICATION_WARNING_SIGNIFICANT_PROBLEM	_T("There seems to be a significant problem with the disk - this step may take unpredictably longer to finish.\n\nTerminate it and proceed with the next step?")
 
 	struct TVerificationFunctions sealed{
 		static UINT AFX_CDECL ReportOnFilesWithBadFatPath_thread(PVOID pCancelableAction);
@@ -52,7 +54,8 @@
 			TParams(CDos *dos,const TVerificationFunctions &rvf);
 			TParams(const TParams &);
 
-			TStdWinError TerminateAndGoToNextAction(TStdWinError error) const;
+			template<typename T>
+			TStdWinError TerminateAndGoToNextAction(T error) const;
 			TStdWinError TerminateAll(TStdWinError error) const;
 			TStdWinError CancelAll() const;
 			BYTE ConfirmFix(LPCTSTR problemDesc,LPCTSTR problemSolvingSuggestion) const;

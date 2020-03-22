@@ -10,12 +10,16 @@
 		, verificationFunctions(rvf) {
 	}
 
-	TStdWinError CVerifyVolumeDialog::TParams::TerminateAndGoToNextAction(TStdWinError error) const{
+	template<typename T>
+	TStdWinError CVerifyVolumeDialog::TParams::TerminateAndGoToNextAction(T error) const{
 		// terminates with specified Error the action which called this method
 		fReport.CloseSection( Utils::ComposeErrorMessage(_T("Can't finish this step"),error,_T("Some additional errors may remain, verification should be run once more!")) );
 		action.UpdateProgressFinished(); // proceed with the next planned action
 		return ERROR_SUCCESS;
 	}
+
+	template TStdWinError CVerifyVolumeDialog::TParams::TerminateAndGoToNextAction<TStdWinError>(TStdWinError err) const;
+	template TStdWinError CVerifyVolumeDialog::TParams::TerminateAndGoToNextAction<LPCTSTR>(LPCTSTR err) const;
 
 	TStdWinError CVerifyVolumeDialog::TParams::TerminateAll(TStdWinError error) const{
 		// terminates all planned actions with specified Error
@@ -257,6 +261,7 @@
 		pAction->SetProgressTarget( vp.dos->formatBoot.nCylinders );
 		CFileManagerView::TFileList bfsFiles; // breadth first search, searching through Directories in breadth
 		CPtrList visitedDirectories;
+		DWORD nItemsVisited=0; // Files and Directories
 		for( bfsFiles.AddTail((CDos::PFile)DOS_DIR_ROOT); bfsFiles.GetCount()>0; ){
 			if (pAction->IsCancelled()) return vp.CancelAll();
 			// . retrieving File's FatPath
@@ -278,6 +283,9 @@
 								//fallthrough
 							case CDos::TDirectoryTraversal::FILE:
 								bfsFiles.AddTail(subfile);
+								if (++nItemsVisited==vp.dos->formatBoot.GetCountOfAllSectors())
+									if (Utils::QuestionYesNo(VERIFICATION_WARNING_SIGNIFICANT_PROBLEM,MB_DEFBUTTON1))
+										return vp.TerminateAndGoToNextAction(ERROR_CANCELLED);
 								break;
 							case CDos::TDirectoryTraversal::WARNING:{
 								CString s;
@@ -316,6 +324,7 @@
 		CMapWordToPtr sectorOccupation[FDD_CYLINDERS_MAX*2];
 		CFileManagerView::TFileList bfsFiles; // breadth first search, searching through Directories in breadth
 		CPtrList visitedDirectories;
+		DWORD nItemsVisited=0; // Files and Directories
 		for( bfsFiles.AddTail((CDos::PFile)DOS_DIR_ROOT); bfsFiles.GetCount()>0; ){
 			if (pAction->IsCancelled()) return vp.CancelAll();
 			const CDos::PFile file=bfsFiles.RemoveHead();
@@ -429,6 +438,9 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 								//fallthrough
 							case CDos::TDirectoryTraversal::FILE:
 								bfsFiles.AddTail(subfile);
+								if (++nItemsVisited==vp.dos->formatBoot.GetCountOfAllSectors())
+									if (Utils::QuestionYesNo(VERIFICATION_WARNING_SIGNIFICANT_PROBLEM,MB_DEFBUTTON1))
+										return vp.TerminateAndGoToNextAction(ERROR_CANCELLED);
 								break;
 							case CDos::TDirectoryTraversal::WARNING:
 								continue; // silently ignoring FAT unreadability - warnings should be taken care of elsewhere
@@ -455,10 +467,12 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 		)
 			return vp.TerminateAndGoToNextAction(ERROR_NOT_SUPPORTED);
 		// - composing a picture of which Sectors are actually affiliated to which Files
+		vp.fReport.OpenSection(_T("Lost sectors (floppy)"));
 		const PImage image=vp.dos->image;
 		CMapWordToPtr sectorAffiliation[FDD_CYLINDERS_MAX*2];
 		CFileManagerView::TFileList bfsFiles; // in-breath search of Files
 		CPtrList visitedDirectories;
+		DWORD nItemsVisited=0; // Files and Directories
 		for( bfsFiles.AddTail((CDos::PFile)DOS_DIR_ROOT); bfsFiles.GetCount()>0; ){
 			if (pAction->IsCancelled()) return vp.CancelAll();
 			const CDos::PFile file=bfsFiles.RemoveHead();
@@ -497,6 +511,9 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 								//fallthrough
 							case CDos::TDirectoryTraversal::FILE:
 								bfsFiles.AddTail(subfile);
+								if (++nItemsVisited==vp.dos->formatBoot.GetCountOfAllSectors())
+									if (Utils::QuestionYesNo(VERIFICATION_WARNING_SIGNIFICANT_PROBLEM,MB_DEFBUTTON1))
+										return vp.TerminateAndGoToNextAction(ERROR_CANCELLED);
 								break;
 							case CDos::TDirectoryTraversal::WARNING:
 								continue; // silently ignoring FAT unreadability - warnings should be taken care of elsewhere
@@ -505,7 +522,6 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 			}
 		}
 		// - verifying the volume
-		vp.fReport.OpenSection(_T("Lost sectors (floppy)"));
 		struct TDir sealed{
 			CDos::PFile handle;
 			bool createdAndSwitchedTo;
