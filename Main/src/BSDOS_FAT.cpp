@@ -645,14 +645,17 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 				case IDNO:
 					return vp.TerminateAll(ERROR_VALIDATE_CONTINUE); // can't continue if fix suggestion rejected
 				case IDYES:
-					if (const TStdWinError err=BSDOS->GetFirstEmptyHealthySector(true,chsDirs))
-						return vp.TerminateAndGoToNextAction(err);
-					boot->dirsLogSector = lsDirs = BSDOS->__fyzlog__(chsDirs);
-					IMAGE->MarkSectorAsDirty(TBootSector::CHS);
-					::ZeroMemory( BSDOS->__getHealthyLogicalSectorData__(lsDirs), BSDOS_SECTOR_LENGTH_STD );
-					BSDOS->__markLogicalSectorAsDirty__(lsDirs);
-					BSDOS->__setLogicalSectorFatItem__( lsDirs, TFatValue(true,false,BSDOS_SECTOR_LENGTH_STD) );
-					vp.fReport.CloseProblem(true);
+					if (const auto dirsDataOrg=BSDOS->dirsSector.GetSlots()){
+						if (const TStdWinError err=BSDOS->GetFirstEmptyHealthySector(true,chsDirs))
+							return vp.TerminateAndGoToNextAction(err);
+						boot->dirsLogSector = lsDirs = BSDOS->__fyzlog__(chsDirs);
+						IMAGE->MarkSectorAsDirty(TBootSector::CHS);
+						::memcpy( BSDOS->__getHealthyLogicalSectorData__(lsDirs), dirsDataOrg, BSDOS_SECTOR_LENGTH_STD );
+						BSDOS->__markLogicalSectorAsDirty__(lsDirs);
+						BSDOS->__setLogicalSectorFatItem__( lsDirs, TFatValue(true,false,BSDOS_SECTOR_LENGTH_STD) );
+						vp.fReport.CloseProblem(true);
+					}else
+						vp.fReport.LogWarning( _T("DIRS sector unreadable") );
 					break;
 			}
 		pAction->UpdateProgress(++step);
