@@ -636,6 +636,13 @@ reportError:Utils::Information(buf);
 
 
 
+	CDos::TSectorStatus CDos::GetSectorStatus(RCPhysicalAddress chs) const{
+		// determines and returns the Status of the Sector on the specified PhysicalAddress
+		TSectorStatus result;
+		GetSectorStatuses( chs.cylinder, chs.head, 1, &chs.sectorId, &result );
+		return result;
+	}
+
 	DWORD CDos::GetFreeSpaceInBytes(TStdWinError &rError) const{
 		// computes and returns the empty space on Image in Bytes
 		DWORD result=0; rError=ERROR_SUCCESS; // assumption (no empty space, no error)
