@@ -557,7 +557,7 @@ importQuit2:		::GlobalUnlock(hg);
 			// File
 			// . if the File "looks like an Image", confirming its import by the user
 			if (const LPCTSTR extension=_tcsrchr(pathAndName,'.'))
-				if (CImage::__determineTypeByExtension__(1+extension)!=nullptr){
+				if (CImage::__determineTypeByExtension__(extension)!=nullptr){
 					// : defining the Dialog
 					TCHAR buf[MAX_PATH+80];
 					::wsprintf( buf, _T("\"%s\" looks like an image."), _tcsrchr(pathAndName,'\\')+1 );
