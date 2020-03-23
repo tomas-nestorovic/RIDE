@@ -555,6 +555,31 @@ importQuit2:		::GlobalUnlock(hg);
 			return err;
 		}else{
 			// File
+			// . "God Mode" - automatic generation of random Files
+			if (app.IsInGodMode()){
+				int nItemsToGenerate, fileLengthMin, fileLengthMax, i;
+				if (_stscanf( fileName, _T("GODMODE %d F %d %d.%c"), &nItemsToGenerate, &fileLengthMin, &fileLengthMax, &i )==4){
+					// processing the request
+					char data[16384];
+					if (fileLengthMin<0) fileLengthMin=0;
+					if (fileLengthMax>sizeof(data)) fileLengthMax=sizeof(data);
+					for( static WORD fileId; nItemsToGenerate--; ){
+						const int fileLength=fileLengthMin+::rand()*(fileLengthMax-fileLengthMin)/RAND_MAX;
+						CDos::CPathString name;
+						do{
+							name.Format( _T("%04X.TMP"), fileId++ );
+							for( i=0; i<fileLength; i+=::wsprintf(data+i,_T("%s DATA "),(LPCSTR)name) );
+							if (const TStdWinError err=DOS->ImportFile( &CMemFile((PBYTE)data,sizeof(data)), fileLength, name, 0, rImportedFile ))
+								if (err==ERROR_FILE_EXISTS)
+									continue; // a File with a given Name already exists - trying another Name
+								else
+									return err;
+							break;
+						}while (true);
+					}
+					return ERROR_SUCCESS;
+				}
+			}
 			// . if the File "looks like an Image", confirming its import by the user
 			if (const LPCTSTR extension=_tcsrchr(pathAndName,'.'))
 				if (CImage::__determineTypeByExtension__(extension)!=nullptr){
