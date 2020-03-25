@@ -178,6 +178,8 @@
 				void ResetCurrentEntry(BYTE directoryFillerByte) const override;
 			};
 
+			static UINT AFX_CDECL Verification_thread(PVOID pCancelableAction);
+
 			CDirsSector(const CBSDOS308 *bsdos);
 
 			PSlot GetSlots() const;

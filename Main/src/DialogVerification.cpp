@@ -89,6 +89,44 @@
 		return ConfirmFix( err, sol );
 	}
 
+	bool CVerifyVolumeDialog::TParams::WarnIfUnsignedValueOutOfRange(LPCTSTR locationName,LPCTSTR valueName,WORD valueOffset,DWORD value,DWORD rangeA,DWORD rangeZ) const{
+		// issues a warning if unsigned numeric value at specified Offset has a Value out of Range={A,...,Z}
+		if (rangeA<=value && value<=rangeZ)
+			return false; // ok, Value in Range, carry on verification
+		int nHexaDigits;
+		if (rangeZ<=(BYTE)-1)
+			nHexaDigits=sizeof(BYTE);
+		else if (rangeZ<=(WORD)-1)
+			nHexaDigits=sizeof(WORD);
+		else
+			nHexaDigits=sizeof(DWORD);
+		nHexaDigits<<=1;
+		CString err, quotedValueName;
+		if (valueName)
+			quotedValueName.Format( _T(" \"%s\""), valueName );
+		err.Format( _T("Value%s at offset 0x%04X %s%s has invalid value %d (0x%0*X)"),
+					quotedValueName,
+					valueOffset,
+					locationName ? _T("in the ") : _T(""),
+					locationName ? locationName : _T(""),
+					value,
+					nHexaDigits, value
+				);
+		fReport.LogWarning(err);
+		switch (repairStyle){
+			default:
+				ASSERT(FALSE);
+			case 0:
+				// automatic fixing of each Problem
+				break;
+			case 1:{
+				// fixing only manually confirmed Problems
+				Utils::Information(err);
+				break;
+			}
+		}
+		return true;
+	}
 
 
 
@@ -536,7 +574,8 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 		TPhysicalAddress chs;
 		for( chs.cylinder=0; chs.cylinder<vp.dos->formatBoot.nCylinders; chs.cylinder++ )
 			for( chs.head=0; chs.head<vp.dos->formatBoot.nHeads; chs.head++ ){
-				if (pAction->IsCancelled()) return vp.CancelAll();
+				if (pAction->IsCancelled())
+					return vp.CancelAll();
 				// . getting the list of standard Sectors
 				TSectorId bufferId[(TSector)-1];
 				const TSector nSectors=vp.dos->GetListOfStdSectors( chs.cylinder, chs.head, bufferId );

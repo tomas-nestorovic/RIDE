@@ -60,6 +60,7 @@
 			TStdWinError CancelAll() const;
 			BYTE ConfirmFix(LPCTSTR problemDesc,LPCTSTR problemSolvingSuggestion) const;
 			BYTE ConfirmUnsignedValueFix(LPCTSTR locationName,LPCTSTR valueName,WORD valueOffset,DWORD value,DWORD rangeA,DWORD rangeZ) const;
+			bool WarnIfUnsignedValueOutOfRange(LPCTSTR locationName,LPCTSTR valueName,WORD valueOffset,DWORD value,DWORD rangeA,DWORD rangeZ) const;
 
 			template<typename T>
 			BYTE ConfirmUnsignedValueFix(LPCTSTR locationName,LPCTSTR valueName,LPCVOID locationBegin,const T &rValue,T rangeA,T rangeZ) const{
@@ -105,6 +106,23 @@
 			TStdWinError VerifyUnsignedValue(RCPhysicalAddress chs,LPCTSTR chsName,LPCTSTR valueName,T &rValue,T onlyValidValue) const{
 				// confirms an unsigned numeric value at specified Offset has a Value from Range={A,...,Z}; if not, presents the problem using standard formulation and returns user's reaction
 				return VerifyUnsignedValue( chs, chsName, valueName, rValue, onlyValidValue, onlyValidValue );
+			}
+
+			template<typename T>
+			TStdWinError WarnIfUnsignedValueOutOfRange(RCPhysicalAddress chs,LPCTSTR chsName,LPCTSTR valueName,const T &rValue,T rangeA,T rangeZ) const{
+				// issues a warning if unsigned numeric value at specified Offset has a Value out of Range={A,...,Z}; returns Windows standard i/o error
+				WORD w; TFdcStatus sr;
+				if (const PCSectorData data=dos->image->GetSectorData(chs,0,false,&w,&sr))
+					if (sr.IsWithoutError())
+						return	WarnIfUnsignedValueOutOfRange(
+									chsName, valueName,
+									(PCBYTE)&rValue-data,
+									rValue,
+									rangeA, rangeZ
+								)
+								? ERROR_INVALID_PARAMETER
+								: ERROR_SUCCESS;
+				return ::GetLastError();
 			}
 		} &params;
 

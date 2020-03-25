@@ -46,25 +46,33 @@
 		: CVerifyVolumeDialog::TParams(dos,rvf) {
 	}
 
-	TStdWinError CSpectrumBase::TSpectrumVerificationParams::VerifyAllCharactersPrintable(RCPhysicalAddress chs,LPCTSTR chsName,LPCTSTR valueName,PCHAR zx,BYTE zxLength,char paddingChar) const{
-		// confirms a ZX text field contains only printable characters; if not, presents the problem using standard formulation, and returns Windows standard i/o error
+	static CString getMessageIfSomeCharsNonPrintable(LPCTSTR locationName,LPCTSTR valueName,PCHAR zx,BYTE zxLength){
+		// composes and returns a message describing a problem that some non-printable characters are contained in specified ZX buffer
 		// - composing a list of unique Nonprintable ZX characters
 		char nonprintables[128], nNonprintables=0;
 		for( BYTE i=0; i<zxLength; i++ )
-			if (!TZxRom::IsPrintable(zx[i]))
+			if (!CSpectrumBase::TZxRom::IsPrintable(zx[i]))
 				if (!::memchr(nonprintables,zx[i],nNonprintables))
 					nonprintables[nNonprintables++]=zx[i];
+		// - composing the Message
+		CString msg;
+		if (nNonprintables)
+			msg.Format(	_T("The \"%s\" field %s%s contains non-printable characters %s"),
+						valueName,
+						locationName ? _T("in the ") : _T(""),
+						locationName ? locationName : _T(""),
+						(LPCTSTR)Utils::BytesToHexaText( nonprintables, nNonprintables, true )
+					);
+		return msg;
+	}
+
+	TStdWinError CSpectrumBase::TSpectrumVerificationParams::VerifyAllCharactersPrintable(RCPhysicalAddress chs,LPCTSTR chsName,LPCTSTR valueName,PCHAR zx,BYTE zxLength,char paddingChar) const{
+		// confirms a ZX text field contains only printable characters; if not, presents the problem using standard formulation, and returns Windows standard i/o error
 		// - if no Nonprintable characters found, we are successfully done
-		if (!nNonprintables)
+		const CString msg=getMessageIfSomeCharsNonPrintable( chsName, valueName, zx, zxLength );
+		if (!msg.GetLength())
 			return ERROR_SUCCESS;
 		// - composing and presenting the problem
-		CString msg;
-		msg.Format(	_T("The \"%s\" field %s%s contains non-printable characters %s"),
-					valueName,
-					chsName ? _T("in the ") : _T(""),
-					chsName ? chsName : _T(""),
-					(LPCTSTR)Utils::BytesToHexaText( nonprintables, nNonprintables, true )
-				);
 		switch (ConfirmFix( msg, _T("Their removal is suggested.") )){
 			case IDYES:{
 				// removing all non-printable characters from the pointed-to buffer
@@ -84,6 +92,28 @@
 		}
 	}
 
+	bool CSpectrumBase::TSpectrumVerificationParams::WarnSomeCharactersNonPrintable(LPCTSTR locationName,LPCTSTR valueName,PCHAR zx,BYTE zxLength) const{
+		// logs a warning if some characters in the ZX text field contains non-printable characters, listing them; returns Windows standard i/o error
+		// - if no Nonprintable characters found, we are successfully done
+		const CString msg=getMessageIfSomeCharsNonPrintable( locationName, valueName, zx, zxLength );
+		if (!msg.GetLength())
+			return false;
+		// - composing and logging the problem
+		fReport.LogWarning(msg);
+		switch (repairStyle){
+			default:
+				ASSERT(FALSE);
+			case 0:
+				// automatic fixing of each Problem
+				break;
+			case 1:{
+				// fixing only manually confirmed Problems
+				Utils::Information(msg);
+				break;
+			}
+		}
+		return true;
+	}
 
 
 
@@ -208,7 +238,10 @@
 		CPathString name,ext;
 		GetFileNameOrExt( file, &name, &ext );
 		TCHAR buf[1024];
-		return TZxRom::ZxToAscii( name, ((name+='.')+=ext).GetLength(), buf );
+		if (ext.GetLength())
+			return TZxRom::ZxToAscii( name, ((name+='.')+=ext).GetLength(), buf );
+		else
+			return TZxRom::ZxToAscii( name, name.GetLength(), buf );
 	}
 
 	CString CSpectrumBase::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{

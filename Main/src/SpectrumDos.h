@@ -166,6 +166,7 @@
 		#pragma pack(1)
 		struct TSpectrumVerificationParams:public CVerifyVolumeDialog::TParams{
 			TStdWinError VerifyAllCharactersPrintable(RCPhysicalAddress chs,LPCTSTR chsName,LPCTSTR valueName,PCHAR zx,BYTE zxLength,char paddingChar) const;
+			bool WarnSomeCharactersNonPrintable(LPCTSTR locationName,LPCTSTR valueName,PCHAR zx,BYTE zxLength) const;
 
 			TSpectrumVerificationParams(CSpectrumBase *dos,const TVerificationFunctions &rvf);
 		};

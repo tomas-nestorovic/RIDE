@@ -105,6 +105,162 @@
 		return 0;
 	}
 
+	#define BSDOS	static_cast<CBSDOS308 *>(vp.dos)
+	#define IMAGE	BSDOS->image
+
+	#define DIRS_SECTOR_LOCATION_STRING	_T("DIRS sector")
+
+	UINT AFX_CDECL CBSDOS308::CDirsSector::Verification_thread(PVOID pCancelableAction){
+		// thread to verify the Directories
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
+		const TSpectrumVerificationParams &vp=*(TSpectrumVerificationParams *)pAction->GetParams();
+		vp.fReport.OpenSection(FILESYSTEM_VERIFICATION);
+		const PBootSector boot=TBootSector::GetData(vp.dos->image);
+		if (!boot)
+			return vp.TerminateAll( Utils::ErrorByOs(ERROR_VOLMGR_DISK_INVALID,ERROR_UNRECOGNIZED_VOLUME) );
+		if (const TStdWinError err=vp.VerifyUnsignedValue( TBootSector::CHS, BOOT_SECTOR_LOCATION_STRING, _T("DIRS sector"), boot->dirsLogSector, (WORD)2, (WORD)BSDOS->formatBoot.GetCountOfAllSectors() ))
+			return vp.TerminateAll(err);
+		const TLogSector lsDirs=boot->dirsLogSector;
+		const TPhysicalAddress chsDirs=BSDOS->__logfyz__(lsDirs);
+		boot->dirsLogSector=0;
+			const TSectorStatus lsDirsStatus=BSDOS->GetSectorStatus(chsDirs);
+		boot->dirsLogSector=lsDirs;
+		if (lsDirsStatus==TSectorStatus::SYSTEM)
+			return vp.TerminateAndGoToNextAction( _T("DIRS cross-linked with another system sector.") );
+		pAction->SetProgressTarget(BSDOS_DIRS_SLOTS_COUNT);
+		if (const PSlot slots=BSDOS->dirsSector.GetSlots())
+			for( WORD i=0; i<BSDOS_DIRS_SLOTS_COUNT; pAction->UpdateProgress(++i) ){
+				const PSlot pSlot=slots+i;
+				if (pSlot->reserved2 ^ (*(PCBYTE)pSlot>>6)){
+					//TODO
+				}
+				if (pSlot->subdirExists){
+					// . checking that Directory's Sector linkage is ok
+					TCHAR strItemId[MAX_PATH];
+					PDirectoryEntry de=BSDOS->dirsSector.TryGetDirectoryEntry(pSlot);
+					if (de)
+						::wsprintf( strItemId, _T("Directory #%d (%s)"), i, (LPCTSTR)BSDOS->GetFilePresentationNameAndExt(pSlot) );
+					else
+						::wsprintf( strItemId, _T("Directory #%d"), i );
+					CFatPath fatPath(BSDOS,pSlot);
+					if (const LPCTSTR err=fatPath.GetErrorDesc()){
+						CString errMsg;
+						errMsg.Format( _T("%s: %s"), strItemId, err );
+						vp.fReport.OpenProblem(errMsg);
+						vp.fReport.CloseProblem(false);
+						vp.fReport.LogWarning( _T("All files in Directory #%d also skipped"), i );
+						continue; // skipping erroneous Directory
+					}
+					// . checking all Sectors readability
+					CFatPath::PItem p; DWORD n;
+					if (!fatPath.AreAllSectorsReadable(BSDOS)){
+						CString errMsg;
+						errMsg.Format( _T("%s: Not all sectors are readable"), strItemId );
+						switch (vp.ConfirmFix( errMsg, _T("Unreadable sectors should be excluded.") )){
+							case IDCANCEL:
+								return vp.CancelAll();
+							case IDNO:
+								continue; // skipping erroneous Directory
+						}
+						fatPath.GetItems(p,n);
+						for( DWORD i=0; i<n; i++ )
+							if (!IMAGE->GetHealthySectorData(p[i].chs))
+								if (!i){
+									// first Directory Sector must always exist
+									const TSlot slot0=*pSlot;
+									*pSlot=TSlot::Empty; // making guaranteed space for a ReplacementDirectory
+									PFile pReplacementDir;
+									if (const TStdWinError err=BSDOS->CreateSubdirectory( _T("Unnamed"), FILE_ATTRIBUTE_DIRECTORY, pReplacementDir )){
+										*pSlot=slot0;
+										return vp.TerminateAndGoToNextAction(err);
+									}
+									if (pReplacementDir!=pSlot){ // the ReplacementDirectory must be at the same position in the DIRS Sector
+										*pSlot=*(PCSlot)pReplacementDir;
+										*(PSlot)pReplacementDir=TSlot::Empty;
+									}
+									p[i].chs=BSDOS->__logfyz__(pSlot->firstSector);
+									BSDOS->__setLogicalSectorFatItem__( slot0.firstSector, TFatValue::SectorErrorInDataField );
+								}else{
+									// subsequent erroneous Directory Sectors must be removed
+									BSDOS->__setLogicalSectorFatItem__( BSDOS->__fyzlog__(p[i].chs), TFatValue::SectorErrorInDataField );
+									::memcpy( p+i, p+i+1, (n-(i+1))*sizeof(CFatPath::TItem) );
+									fatPath.PopItem();
+								}
+						if (!BSDOS->ModifyFileFatPath( pSlot, fatPath ))
+							return vp.TerminateAll(ERROR_FUNCTION_FAILED); // we shouldn't end up here but just to be sure
+						vp.fReport.CloseProblem(true);
+					}
+					// . checking basic information on the Directory
+					if (pSlot->nameChecksum!=de->GetDirNameChecksum()){
+						CString errMsg;
+						errMsg.Format( _T("%s: Directory name checksum incorrect"), strItemId );
+						switch (vp.ConfirmFix( errMsg, _T("Checksum should be recomputed.") )){
+							case IDCANCEL:
+								return vp.CancelAll();
+							case IDNO:
+								continue; // skipping erroneous Directory
+						}
+						pSlot->nameChecksum=de->GetDirNameChecksum();
+						vp.fReport.CloseProblem(true);
+					}
+					// . checking File information
+					TDirectoryEntry::CTraversal dt(BSDOS,pSlot);
+					dt.AdvanceToNextEntry(); // skipping zeroth DirectoryEntry, containing information on the Directory, verified above
+					for( int j=1; dt.AdvanceToNextEntry(); j++ )
+						if (( de=(PDirectoryEntry)dt.entry )->occupied){
+							if (de->fileHasStdHeader)
+								::wsprintf( strItemId, _T("Dir #%d / File #%d (%s)"), i, j, (LPCTSTR)BSDOS->GetFilePresentationNameAndExt(de) );
+							else
+								::wsprintf( strItemId, _T("Dir #%d / File #%d"), i, j );
+							// : MBD-CHECK/330
+							//TODO
+							// : a File must have at least a Header or Data
+							//TODO - MBD-CHECK/334
+							// : 
+							if (de->fileHasData){
+								CFatPath dummy(BSDOS->formatBoot.GetCountOfAllSectors());
+								if (!BSDOS->GetFileFatPath( de, dummy ))
+									return vp.TerminateAll(ERROR_FUNCTION_FAILED); // we shouldn't end up here but just to be sure
+								if (!dummy.error){
+									if ((de->file.dataLength+BSDOS_SECTOR_LENGTH_STD-1)/BSDOS_SECTOR_LENGTH_STD!=dummy.GetNumberOfItems()){
+										CString errMsg;
+										errMsg.Format( _T("%s: Length incorrect"), strItemId );
+										switch (vp.ConfirmFix( errMsg, _T("Length should be adopted from FAT.") )){
+											case IDCANCEL:
+												return vp.CancelAll();
+											case IDNO:
+												continue; // skipping erroneous File
+										}
+										de->file.dataLength=dummy.GetNumberOfItems()*BSDOS_SECTOR_LENGTH_STD;
+										vp.fReport.CloseProblem(true);
+									}
+								}else{
+									CString errMsg;
+									errMsg.Format( _T("%s: FAT error"), strItemId );
+									vp.fReport.OpenProblem(errMsg);
+									vp.fReport.CloseProblem(false);
+								}
+							}
+							// : checking File Name and Extension
+							if (de->fileHasStdHeader){
+								CTape::THeader &rh=de->file.stdHeader;
+								vp.WarnSomeCharactersNonPrintable( strItemId, _T("File name"), rh.name, sizeof(rh.name) );
+								if (!rh.SetFileType(rh.GetUniFileType())){
+									CString errMsg;
+									errMsg.Format( _T("%s: Non-standard file type"), strItemId );
+									vp.fReport.LogWarning( errMsg );
+								}
+							}
+						}
+				}
+			}
+		else{
+			vp.fReport.OpenProblem(_T("DIRS sector error"));
+			return vp.TerminateAndGoToNextAction( (TStdWinError)::GetLastError() );
+		}
+		return ERROR_SUCCESS;
+	}
+
 
 
 
@@ -683,7 +839,7 @@
 					TVerificationFunctions::ReportOnFilesWithBadFatPath_thread, // FAT Files OK
 					TVerificationFunctions::FloppyCrossLinkedFilesVerification_thread, // FAT crossed Files
 					TVerificationFunctions::FloppyLostSectorsVerification_thread, // FAT lost allocation units
-					nullptr, // Filesystem
+					CDirsSector::Verification_thread, // Filesystem
 					TVerificationFunctions::WholeDiskSurfaceVerification_thread // Volume surface
 				};
 				__verifyVolume__(
