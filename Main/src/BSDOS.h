@@ -213,6 +213,7 @@
 		TPhysicalAddress __logfyz__(TLogSector ls) const;
 		PSectorData __getHealthyLogicalSectorData__(TLogSector logSector) const;
 		void __markLogicalSectorAsDirty__(TLogSector logSector) const;
+		bool __isValidFatSectorNumber__(TLogSector lsFat) const;
 		TFatValue __getLogicalSectorFatItem__(TLogSector logSector) const;
 		bool __setLogicalSectorFatItem__(TLogSector logSector,TFatValue newValue) const;
 		BYTE __getFatChecksum__(BYTE fatCopy) const;

@@ -59,9 +59,8 @@
 
 
 
-	inline
-	static bool isValidFatSectorNumber(CBSDOS308::TLogSector lsFat){
-		return BSDOS_FAT_LOGSECTOR_MIN<=lsFat && lsFat<BSDOS_FAT_LOGSECTOR_MAX;
+	bool CBSDOS308::__isValidFatSectorNumber__(TLogSector lsFat) const{
+		return	BSDOS_FAT_LOGSECTOR_MIN<=lsFat && lsFat<std::min<DWORD>(BSDOS_FAT_LOGSECTOR_MAX,formatBoot.GetCountOfAllSectors());
 	}
 
 	CBSDOS308::TFatValue CBSDOS308::__getLogicalSectorFatItem__(TLogSector logSector) const{
@@ -70,7 +69,7 @@
 			for( BYTE fatCopy=0; fatCopy<BSDOS_FAT_COPIES_MAX; fatCopy++ ){
 				TLogSector lsFat=bootSector->fatStarts[fatCopy];
 				if (PCFatValue fat=reinterpret_cast<PCFatValue>( __getHealthyLogicalSectorData__(lsFat) ))
-					for( TLogSector index=logSector; isValidFatSectorNumber(lsFat); index-=BSDOS_FAT_ITEMS_PER_SECTOR ){
+					for( TLogSector index=logSector; __isValidFatSectorNumber__(lsFat); index-=BSDOS_FAT_ITEMS_PER_SECTOR ){
 						const TFatValue value=fat[lsFat];
 						if (!value.occupied)
 							break; // next FAT copy
@@ -155,7 +154,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 			for( BYTE fatCopy=0; fatCopy<BSDOS_FAT_COPIES_MAX; fatCopy++ ){
 				const TLogSector lsFat0=bootSector->fatStarts[fatCopy];
 				if (PFatValue fat=reinterpret_cast<PFatValue>(__getHealthyLogicalSectorData__(lsFat0)))
-					for( TLogSector index=logSector,lsFat=lsFat0; isValidFatSectorNumber(lsFat); index-=BSDOS_FAT_ITEMS_PER_SECTOR ){
+					for( TLogSector index=logSector,lsFat=lsFat0; __isValidFatSectorNumber__(lsFat); index-=BSDOS_FAT_ITEMS_PER_SECTOR ){
 						const TFatValue value=fat[lsFat];
 						if (!value.occupied)
 							break; // next FAT copy
@@ -170,11 +169,11 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 									const TFatValue oldValue=fat[index];
 									rFatChecksum-=oldValue.lowerByte+oldValue.upperByte;
 									rFatChecksum+=newValue.lowerByte+newValue.upperByte;
+									__markLogicalSectorAsDirty__(lsFat0);
 								}
 								fat[index]=newValue;
 								valueWritten=true;
 								__markLogicalSectorAsDirty__(lsFat);
-								__markLogicalSectorAsDirty__(lsFat0);
 							}
 							break; // next FAT copy
 						}
@@ -520,6 +519,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 					break;
 				}
 			}
+
 		pAction->UpdateProgress(++step);
 		// - recovering readability of both FAT copies
 		TDirectoryEntry deFat( BSDOS, boot->fatStarts[0] ); // both FAT copies are valid multi-sector structures, hence any of them can be refered to create this DirectoryEntry
