@@ -615,11 +615,15 @@ reportError:Utils::Information(buf);
 			if (rd.params.verifyFat){
 				bmac.AddAction( rd.params.verificationFunctions.fnFatFullyReadable, &rd.params, _T("Checking if FAT readable") );
 				bmac.AddAction( rd.params.verificationFunctions.fnFatFilePathsOk, &rd.params, _T("Verifying file records in FAT") );
-				bmac.AddAction( rd.params.verificationFunctions.fnFatCrossedFiles, &rd.params, _T("Searching for cross-linked files") );
-				bmac.AddAction( rd.params.verificationFunctions.fnFatLostAllocUnits, &rd.params, _T("Searching for lost allocation units") );
+				// continued after verification of the File system
 			}
 			if (rd.params.verifyFilesystem)
 				bmac.AddAction( rd.params.verificationFunctions.fnFilesystem, &rd.params, _T("Verifying filesystem") );
+			if (rd.params.verifyFat){
+				// continued verification of FAT
+				bmac.AddAction( rd.params.verificationFunctions.fnFatCrossedFiles, &rd.params, _T("Searching for cross-linked files") );
+				bmac.AddAction( rd.params.verificationFunctions.fnFatLostAllocUnits, &rd.params, _T("Searching for lost allocation units") );
+			}
 			if (rd.params.verifyVolumeSurface)
 				bmac.AddAction( rd.params.verificationFunctions.fnVolumeSurface, &rd.params, _T("Scanning volume surface for bad sectors") );
 		bmac.Perform();
