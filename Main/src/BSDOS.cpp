@@ -131,17 +131,25 @@
 		if (const PSlot slots=BSDOS->dirsSector.GetSlots())
 			for( WORD i=0; i<BSDOS_DIRS_SLOTS_COUNT; pAction->UpdateProgress(++i) ){
 				const PSlot pSlot=slots+i;
+				TCHAR strItemId[MAX_PATH];
+				::wsprintf( strItemId, _T("Directory #%d"), i );
 				if (pSlot->reserved2 ^ (*(PCBYTE)pSlot>>6)){
-					//TODO
+					CString errMsg;
+					errMsg.Format( _T("%s: Integrity error"), strItemId );
+					switch (vp.ConfirmFix( errMsg, _T("") )){
+						case IDCANCEL:
+							return vp.CancelAll();
+						case IDNO:
+							continue; // skipping erroneous Directory
+					}
+					pSlot->reserved2=*(PCBYTE)pSlot>>6;
+					vp.fReport.CloseProblem(true);
 				}
 				if (pSlot->subdirExists){
 					// . checking that Directory's Sector linkage is ok
-					TCHAR strItemId[MAX_PATH];
 					PDirectoryEntry de=BSDOS->dirsSector.TryGetDirectoryEntry(pSlot);
 					if (de)
 						::wsprintf( strItemId, _T("Directory #%d (%s)"), i, (LPCTSTR)BSDOS->GetFilePresentationNameAndExt(pSlot) );
-					else
-						::wsprintf( strItemId, _T("Directory #%d"), i );
 					CFatPath fatPath(BSDOS,pSlot);
 					if (const LPCTSTR err=fatPath.GetErrorDesc()){
 						CString errMsg;
@@ -212,10 +220,22 @@
 								::wsprintf( strItemId, _T("Dir #%d / File #%d (%s)"), i, j, (LPCTSTR)BSDOS->GetFilePresentationNameAndExt(de) );
 							else
 								::wsprintf( strItemId, _T("Dir #%d / File #%d"), i, j );
-							// : MBD-CHECK/330
-							//TODO
+							// : checking DirectoryEntry consistency
+							if (de->special^de->file.integrityCheckpoint1 || de->special^de->file.integrityCheckpoint2){
+								CString errMsg;
+								errMsg.Format( _T("%s: Integrity error"), strItemId );
+								switch (vp.ConfirmFix( errMsg, _T("") )){
+									case IDCANCEL:
+										return vp.CancelAll();
+									case IDNO:
+										continue; // skipping erroneous File
+								}
+								de->file.integrityCheckpoint1 = de->file.integrityCheckpoint2 = de->special;
+								vp.fReport.CloseProblem(true);
+							}
 							// : a File must have at least a Header or Data
-							//TODO - MBD-CHECK/334
+							if (!de->fileHasStdHeader && !de->fileHasData)
+								vp.fReport.LogWarning( _T("%s: Has neither header nor data"), strItemId ); // just a warning - maybe the Directory is tweaked to write certain message during its listing
 							// : 
 							if (de->fileHasData){
 								CFatPath dummy(BSDOS->formatBoot.GetCountOfAllSectors());

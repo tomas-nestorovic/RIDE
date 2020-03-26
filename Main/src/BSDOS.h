@@ -129,8 +129,10 @@
 					WORD reserved2;
 					DWORD dataLength;
 					BYTE dataFlag;
-					BYTE reserved3;
-					TLogSector firstSector;
+					BYTE reserved3:6;
+					BYTE integrityCheckpoint1:1;
+					TLogSector firstSector:14;
+					TLogSector integrityCheckpoint2:1;
 				} file;
 				struct{
 					BYTE reserved4;
