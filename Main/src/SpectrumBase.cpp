@@ -106,11 +106,13 @@
 			case 0:
 				// automatic fixing of each Problem
 				break;
-			case 1:{
+			case 1:
 				// fixing only manually confirmed Problems
 				Utils::Information(msg);
+				//fallthrough
+			case 2:
+				// automatic rejection of fix to any Problem
 				break;
-			}
 		}
 		return true;
 	}

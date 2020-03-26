@@ -47,6 +47,9 @@
 				::wsprintf( buf, _T("%s.\n\nFix this problem? %s"), problemDesc, problemSolutionSuggestion );
 				return Utils::QuestionYesNoCancel( buf, MB_DEFBUTTON1 );
 			}
+			case 2:
+				// automatic rejection of fix to any Problem
+				return IDNO;
 		}
 	}
 
@@ -119,11 +122,13 @@
 			case 0:
 				// automatic fixing of each Problem
 				break;
-			case 1:{
+			case 1:
 				// fixing only manually confirmed Problems
 				Utils::Information(err);
+				//fallthrough
+			case 2:
+				// automatic rejection of fix to any Problem
 				break;
-			}
 		}
 		return true;
 	}
