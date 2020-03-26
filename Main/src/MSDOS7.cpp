@@ -314,7 +314,11 @@
 	DWORD CMSDOS7::GetFreeSpaceInBytes(TStdWinError &rError) const{
 		// computes and returns the empty space on disk
 		rError=ERROR_SUCCESS;
-		const PCBootSector bootSector=boot.GetSectorData(); // guaranteed to be found at this point
+		const PCBootSector bootSector=boot.GetSectorData();
+		if (!bootSector){
+			rError=Utils::ErrorByOs( ERROR_VOLMGR_DISK_INVALID, ERROR_UNRECOGNIZED_VOLUME );
+			return 0;
+		}
 		const DWORD nBytesInCluster=bootSector->__getClusterSizeInBytes__();
 		if (const PFsInfoSector fsInfoSector=fsInfo.GetSectorData()){
 			// for FAT32, computing the free space quickly from available FS Info Sector
