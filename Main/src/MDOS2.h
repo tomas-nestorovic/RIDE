@@ -65,21 +65,36 @@
 				BYTE undefined[128];
 			} reserved1;
 			#pragma pack(1)
-			struct TInfo sealed{
-				BYTE driveFlags;
-				BYTE diskFlags;
-				BYTE nCylinders;
-				BYTE nSectors;
-			};
 			#pragma pack(1)
-			typedef struct TDiskAndDriveInfo sealed{
+			typedef const struct TDiskAndDriveInfo sealed{
+				struct TFlags sealed{
+					BYTE reserved2:2;
+					BYTE driveB:1;
+					BYTE driveD40:1;
+					BYTE doubleSided:1;
+					BYTE fortyCylDiskInD80:1;
+					BYTE stepSpeed:2;
+				};
+
 				static void WINAPI __pg_drawProperty__(PVOID,LPCVOID diskAndDriveInfo,short,PDRAWITEMSTRUCT pdis);
 				static bool WINAPI __pg_editProperty__(PVOID,PVOID diskAndDriveInfo,short);
 
-				TInfo disk,drive,reserved;
-			} *PDiskAndDriveInfo;
+				// drive info
+				BYTE driveConnected:1;
+				BYTE driveError:1;
+				// disk info
+				TFlags diskFlags;
+				BYTE nCylinders;
+				BYTE nSectors;
+				// drive info (continued)
+				BYTE driveLastSeekedCylinder;
+				TFlags driveFlags;
+				BYTE driveCylinders;
+				BYTE driveSectorsPerTrack;
+				DWORD unused;
+			} *PCDiskAndDriveInfo;
 			TDiskAndDriveInfo drives[4];
-			TDiskAndDriveInfo currDrive;
+			TDiskAndDriveInfo current;
 			DWORD reserved2;
 			char label[MDOS2_VOLUME_LABEL_LENGTH_MAX];
 			WORD diskID; // randomly chosen after formatting the disk and constant since

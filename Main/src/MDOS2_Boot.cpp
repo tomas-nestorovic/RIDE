@@ -13,11 +13,11 @@
 			if (const PCBootSector boot=(PCBootSector)image->GetHealthySectorData(TBootSector::CHS))
 				if (boot->sdos==SDOS_TEXT){
 					*pFormatBoot=Fmt;
-					if (( pFormatBoot->nCylinders=boot->currDrive.disk.nCylinders )
+					if (( pFormatBoot->nCylinders=boot->current.nCylinders )
 						*
-						( pFormatBoot->nHeads=1+(boot->currDrive.disk.diskFlags>>4) )
+						( pFormatBoot->nHeads=1+(boot->current.diskFlags.doubleSided) )
 						*
-						( pFormatBoot->nSectors=boot->currDrive.disk.nSectors )
+						( pFormatBoot->nSectors=boot->current.nSectors )
 						>= // testing minimal number of Sectors
 						MDOS2_DATA_LOGSECTOR_FIRST
 					)
@@ -65,32 +65,12 @@
 
 
 
-	struct TDriveInfo sealed{
-		int connected, error, letter, d40, stepping, lastTrack, nCylinders, nSectors;
-		int twosideFloppy, dsk40cyl;
-
-		TDriveInfo(PSectorData m){
-			// ctor
-			connected=*m&1;
-			error=(*m&2)>>1;
-			lastTrack=*(m+=4);
-			letter=(*++m&4)>>2;
-			d40=(*m&8)>>3;
-			twosideFloppy=(*m&16)>>4;
-			dsk40cyl=(*m&32)>>5;
-			stepping=(*m&192)>>6;
-			nCylinders=*++m;
-			nSectors=*++m;
-		}
-	};
-
 	void WINAPI CMDOS2::TBootSector::TDiskAndDriveInfo::__pg_drawProperty__(PVOID,LPCVOID diskAndDriveInfo,short,PDRAWITEMSTRUCT pdis){
 		// drawing the summary on MDOS drive
-		const TDiskAndDriveInfo *const pddi=(PDiskAndDriveInfo)diskAndDriveInfo; // drive information
+		const PCDiskAndDriveInfo pddi=(PCDiskAndDriveInfo)diskAndDriveInfo; // drive information
 		TCHAR buf[30];
-		if (pddi->disk.driveFlags&1){
-			const TDriveInfo di((PSectorData)pddi);
-			::wsprintf( buf, _T(" %c: D%d, %cS %dx%d"), 'A'+di.letter, 80-di.d40*40, di.twosideFloppy?'D':'S', di.nCylinders, di.nSectors );
+		if (pddi->driveConnected){
+			::wsprintf( buf, _T(" %c: D%d, %cS %dx%d"), 'A'+pddi->driveFlags.driveB, 80-pddi->driveFlags.driveD40*40, pddi->driveFlags.doubleSided?'D':'S', pddi->driveCylinders, pddi->driveSectorsPerTrack );
 		}else
 			::lstrcpy(buf,_T(" Disconnected"));
 		::DrawText(	pdis->hDC, buf,-1, &pdis->rcItem, DT_SINGLELINE|DT_LEFT|DT_VCENTER );
@@ -100,39 +80,54 @@
 		// - defining the Dialog
 		class CEditDialog sealed:public CDialog{
 		public:
-			TDriveInfo di;
+			int connected, error, letter, d40, stepping, lastCylinder, nCylinders, nSectors;
+			int doubleSided, dsk40cyl;
 		private:
 			void DoDataExchange(CDataExchange *pDX) override{
 				// exchange of data from and to controls
-				DDX_Check(	pDX, ID_CONNECTED	,di.connected);
-				DDX_Check(	pDX, ID_ERROR		,di.error);
-				DDX_Radio(	pDX, ID_DRIVEA		,di.letter);
-				DDX_Radio(	pDX, ID_D80			,di.d40);
-				DDX_Check(	pDX, ID_DSFLOPPY	,di.twosideFloppy);
-				DDX_Check(	pDX, ID_40D80		,di.dsk40cyl);
-				DDX_CBIndex(pDX, ID_STEPPING	,di.stepping);
-				DDX_Text(	pDX, ID_TRACK		,di.lastTrack);
-					DDV_MinMaxInt(	pDX, di.lastTrack, 0, 255 );
-				DDX_Text(	pDX, ID_CYLINDER	,di.nCylinders);
-					DDV_MinMaxInt(	pDX, di.nCylinders, CYLINDER_COUNT_MIN, CYLINDER_COUNT_MAX );
-				DDX_Text(	pDX, ID_SECTOR		,di.nSectors);
-					DDV_MinMaxInt(	pDX, di.nSectors, MDOS2_TRACK_SECTORS_MIN, MDOS2_TRACK_SECTORS_MAX );
+				DDX_Check(	pDX, ID_CONNECTED	,connected);
+				DDX_Check(	pDX, ID_ERROR		,error);
+				DDX_Radio(	pDX, ID_DRIVEA		,letter);
+				DDX_Radio(	pDX, ID_D80			,d40);
+				DDX_Check(	pDX, ID_DSFLOPPY	,doubleSided);
+				DDX_Check(	pDX, ID_40D80		,dsk40cyl);
+				DDX_CBIndex(pDX, ID_STEPPING	,stepping);
+				DDX_Text(	pDX, ID_TRACK		,lastCylinder);
+					DDV_MinMaxInt(	pDX, lastCylinder, 0, CYLINDER_COUNT_MAX );
+				DDX_Text(	pDX, ID_CYLINDER	,nCylinders);
+					DDV_MinMaxInt(	pDX, nCylinders, CYLINDER_COUNT_MIN, CYLINDER_COUNT_MAX );
+				DDX_Text(	pDX, ID_SECTOR		,nSectors);
+					DDV_MinMaxInt(	pDX, nSectors, MDOS2_TRACK_SECTORS_MIN, MDOS2_TRACK_SECTORS_MAX );
 			}
 		public:
-			CEditDialog(PDiskAndDriveInfo pddi)
+			CEditDialog(PCDiskAndDriveInfo pddi)
 				// ctor
 				: CDialog(IDR_MDOS_DRIVE_EDITOR)
-				, di((PSectorData)pddi) {
+				, connected(pddi->driveConnected)
+				, error(pddi->driveError)
+				, lastCylinder(pddi->driveLastSeekedCylinder)
+				, letter(pddi->driveFlags.driveB)
+				, d40(pddi->driveFlags.driveD40)
+				, doubleSided(pddi->driveFlags.doubleSided)
+				, dsk40cyl(pddi->driveFlags.fortyCylDiskInD80)
+				, stepping(pddi->driveFlags.stepSpeed)
+				, nCylinders(pddi->driveCylinders)
+				, nSectors(pddi->driveSectorsPerTrack) {
 			}
-		} d((PDiskAndDriveInfo)diskAndDriveInfo);
+		} d((PCDiskAndDriveInfo)diskAndDriveInfo);
 		// - showing the Dialog and processing its result
 		if (d.DoModal()==IDOK){
-			PSectorData p=(PSectorData)diskAndDriveInfo; // drive information
-			*p=d.di.connected|(d.di.error<<1);
-			*(p+=4)=d.di.lastTrack;
-			*++p=( d.di.letter|(d.di.d40<<1)|(d.di.twosideFloppy<<2)|(d.di.dsk40cyl<<3)|(d.di.stepping<<4) )<<2;
-			*++p=d.di.nCylinders;
-			*++p=d.di.nSectors;
+			TDiskAndDriveInfo *const p=(TDiskAndDriveInfo *)diskAndDriveInfo;
+			p->driveConnected=d.connected==BST_CHECKED;
+			p->driveError=d.error==BST_CHECKED;
+			p->driveLastSeekedCylinder=d.lastCylinder;
+			p->driveFlags.driveB=d.letter!=0;
+			p->driveFlags.driveD40=d.d40!=0;
+			p->driveFlags.doubleSided=d.doubleSided==BST_CHECKED;
+			p->driveFlags.fortyCylDiskInD80=d.dsk40cyl==BST_CHECKED;
+			p->driveFlags.stepSpeed=d.stepping;
+			p->driveCylinders=d.nCylinders;
+			p->driveSectorsPerTrack=d.nSectors;
 			return CBootView::__bootSectorModified__(nullptr,0);
 		}else
 			return false;
@@ -206,10 +201,10 @@
 		const HANDLE hDrives=PropGrid::AddCategory(hPropGrid,nullptr,_T("Drives"));
 			const PropGrid::PCEditor driveEditor=PropGrid::Custom::DefineEditor( 0, sizeof(TBootSector::TDiskAndDriveInfo), TBootSector::TDiskAndDriveInfo::__pg_drawProperty__, nullptr, TBootSector::TDiskAndDriveInfo::__pg_editProperty__ );
 			PropGrid::AddProperty(	hPropGrid, hDrives, _T("Used"),
-									&boot->currDrive,
+									&boot->current,
 									driveEditor
 								);
-			TBootSector::PDiskAndDriveInfo pddi=boot->drives; // drive information
+			TBootSector::TDiskAndDriveInfo *pddi=boot->drives; // drive information
 			for( TCHAR buf[]=_T("Drive @"); ++buf[6]<='D'; pddi++ )
 				PropGrid::AddProperty(	hPropGrid, hDrives, buf,
 										pddi,
@@ -236,12 +231,10 @@
 	void CMDOS2::FlushToBootSector() const{
 		// flushes internal Format information to the actual Boot Sector's data
 		if (const PBootSector boot=(PBootSector)image->GetHealthySectorData(TBootSector::CHS)){
-			boot->currDrive.disk.nCylinders=formatBoot.nCylinders;
-			if (formatBoot.nHeads==2)
-				boot->currDrive.disk.diskFlags|=16;
-			else
-				boot->currDrive.disk.diskFlags&=~16;
-			boot->currDrive.disk.nSectors=formatBoot.nSectors;
+			boot->current.nCylinders=formatBoot.nCylinders;
+			boot->current.diskFlags.fortyCylDiskInD80 = boot->current.driveFlags.fortyCylDiskInD80 = formatBoot.nCylinders==40;
+			boot->current.diskFlags.doubleSided=formatBoot.nHeads==2;
+			boot->current.nSectors=formatBoot.nSectors;
 			image->MarkSectorAsDirty(TBootSector::CHS);
 		}
 	}
@@ -252,14 +245,20 @@
 		WORD w;
 		if (const PBootSector boot=(PBootSector)image->GetHealthySectorData(TBootSector::CHS,&w)){ // Boot Sector may not be found
 			::ZeroMemory(boot,w);
-			// . the floppy was formatted in two-head D80-compatible drive
-			static const TBootSector::TDiskAndDriveInfo DefaultInfo={ 1, 16, 80, 9, 0, 16, 80, 9 };
-			boot->drives[0]=DefaultInfo;
-			// . floppy parameters
-			boot->currDrive=DefaultInfo;
+			// . Current drive
+			boot->current.driveConnected=true;
+			boot->current.driveError=false;
+			boot->current.driveFlags.driveB=false; // TODO: second PC drive
+			boot->current.driveFlags.driveD40=false; // TODO: 5.25" FDD
+			boot->current.driveFlags.doubleSided=true; // all modern PC drives are
+			boot->current.driveFlags.fortyCylDiskInD80=formatBoot.nCylinders==40; // 40-track disks were best avoided!
+			boot->current.driveCylinders=80; // TODO: see above DriveD40 flag
+			boot->current.driveSectorsPerTrack=9;
+			// . Current disk
+			boot->current.diskFlags=boot->current.driveFlags;
 			FlushToBootSector(); // already carried out in CDos::__formatStdCylinders__ but overwritten by ZeroMemory above
-			boot->currDrive.drive.diskFlags=boot->currDrive.disk.diskFlags; // flag on two-headed drive
 			// . label and identification
+			boot->drives[0]=boot->current;
 			::lstrcpyA( boot->label, VOLUME_LABEL_DEFAULT_ANSI_8CHARS );
 			Utils::RandomizeData( &boot->diskID, sizeof(boot->diskID) );
 			boot->sdos=SDOS_TEXT;
