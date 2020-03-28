@@ -708,15 +708,15 @@ BEGIN
                     WS_GROUP,67,98,39,10
     CONTROL         "Drive &B",ID_DRIVEB,"Button",BS_AUTORADIOBUTTON,131,98,
                     39,10
-    LTEXT           "Standard:",IDC_STATIC,16,110,32,8,NOT WS_GROUP
-    CONTROL         "&80 cylinders",ID_D80,"Button",BS_AUTORADIOBUTTON | 
-                    WS_GROUP,67,110,53,10
-    CONTROL         "&40 cylinders",ID_D40,"Button",BS_AUTORADIOBUTTON,131,
-                    110,53,10
-    CONTROL         "Operate on &double-sided floppy",ID_DSFLOPPY,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,16,125,114,10
-    CONTROL         "&Handle 40 cylinder floppy in D80",ID_40D80,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,16,138,118,10
+    LTEXT           "Drive model:",IDC_STATIC,16,110,40,8,NOT WS_GROUP
+    CONTROL         "D&80",ID_D80,"Button",BS_AUTORADIOBUTTON | WS_GROUP,67,
+                    110,29,10
+    CONTROL         "D&40",ID_D40,"Button",BS_AUTORADIOBUTTON,131,110,29,10
+    CONTROL         "&Double-sided drive",ID_DSFLOPPY,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,16,125,75,10
+    CONTROL         "Double distance between tracks on 40-track disk",
+                    ID_40D80,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,16,138,
+                    171,10
     LTEXT           "Ste&pping speed (2Mhz/1Mhz):",IDC_STATIC,16,154,96,8,
                     NOT WS_GROUP
     COMBOBOX        ID_STEPPING,119,152,60,61,CBS_DROPDOWNLIST | WS_VSCROLL | 
