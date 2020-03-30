@@ -32,6 +32,7 @@
 
 		CBootView(PDos dos,RCPhysicalAddress rChsBoot);
 
+		void OnSectorChanging() const override;
 		void OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint) override;
 		virtual void GetCommonBootParameters(RCommonBootParameters rParam,PSectorData boot)=0;
 		virtual void AddCustomBootParameters(HWND hPropGrid,HANDLE hGeometry,HANDLE hVolume,const TCommonBootParameters &rParam,PSectorData boot)=0;

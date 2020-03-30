@@ -25,11 +25,31 @@
 
 
 
+	CCriticalSectorView::CSectorReaderWriter::CSectorReaderWriter(PCDos dos,RCPhysicalAddress chs)
+		// ctor
+		: CDos::CFileReaderWriter(dos,chs) {
+	}
+
+	void CCriticalSectorView::CSectorReaderWriter::Write(LPCVOID lpBuf,UINT nCount){
+		// tries to write given NumberOfBytes from the Buffer to the current Position (increments the Position by the number of Bytes actually written)
+		__super::Write(lpBuf,nCount);
+		pCurrentlyShown->OnSectorChanging();
+	}
+
+
+
+
+
+
+
+
+
+
 	#define PROPGRID_WIDTH_DEFAULT	250
 
 	CCriticalSectorView::CCriticalSectorView(PDos dos,RCPhysicalAddress rChs)
 		// ctor
-		: tab(0,0,0,dos,this) , splitX(PROPGRID_WIDTH_DEFAULT) , chs(rChs)
+		: tab(0,0,0,dos,this) , splitX(PROPGRID_WIDTH_DEFAULT)
 		, fSectorData(dos,rChs) , hexaEditor(this) {
 	}
 
@@ -55,7 +75,7 @@
 			return -1;
 		// - getting Boot Sector data
 		WORD sectorDataRealLength=0; // initializing just in case the Sector is not found
-		IMAGE->GetHealthySectorData(chs,&sectorDataRealLength);
+		IMAGE->GetHealthySectorData( GetPhysicalAddress(), &sectorDataRealLength );
 		// - creating the Content
 		//CCreateContext cc;
 		//cc.m_pCurrentDoc=dos->image;
@@ -125,6 +145,11 @@
 		hexaEditor.SetEditable( !IMAGE->IsWriteProtected() );
 	}
 
+	void CCriticalSectorView::OnSectorChanging() const{
+		// custom action performed whenever the Sector data have been modified
+		//nop
+	}
+
 	void CCriticalSectorView::OnDraw(CDC *pDC){
 		// drawing
 	}
@@ -135,19 +160,15 @@
 	}
 
 	RCPhysicalAddress CCriticalSectorView::GetPhysicalAddress() const{
-		return chs;
+		return fSectorData.fatPath.GetHealthyItem(0)->chs;
 	}
 
 	void CCriticalSectorView::ChangeToSector(RCPhysicalAddress rChs){
 		// changes to a different Sector with the PhysicalAddress specified
-		CDos::CFileReaderWriter fNewSectorData( DOS, chs=rChs );
-		BYTE tmp[sizeof(CDos::CFileReaderWriter)];
-		::memcpy( tmp, &fSectorData, sizeof(CDos::CFileReaderWriter) );
-		::memcpy( &fSectorData, &fNewSectorData, sizeof(CDos::CFileReaderWriter) );
-		::memcpy( &fNewSectorData, tmp, sizeof(CDos::CFileReaderWriter) );
-		//TODO: the above is nasty but easy and fast - find a formally better solution?
+		fSectorData.fatPath.GetHealthyItem(0)->chs=rChs;
+		fSectorData.SeekToBegin();
 	}
 
 	void CCriticalSectorView::MarkSectorAsDirty() const{
-		IMAGE->MarkSectorAsDirty(chs);
+		IMAGE->MarkSectorAsDirty(GetPhysicalAddress());
 	}

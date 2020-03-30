@@ -14,13 +14,18 @@
 		afx_msg void __toggleWriteProtection__();
 		void __updateLookOfControls__();
 	protected:
-		TPhysicalAddress chs;
-		CDos::CFileReaderWriter fSectorData;
+		class CSectorReaderWriter sealed:public CDos::CFileReaderWriter{
+		public:
+			CSectorReaderWriter(PCDos dos,RCPhysicalAddress chs);
+
+			void Write(LPCVOID lpBuf,UINT nCount) override;
+		} fSectorData;
 		CWnd propGrid;
 		CHexaEditor hexaEditor;
 
 		CCriticalSectorView(PDos dos,RCPhysicalAddress rChs);
 
+		virtual void OnSectorChanging() const;
 		void OnDraw(CDC *pDC) override sealed;
 		void OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint) override;
 		void PostNcDestroy() override;

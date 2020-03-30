@@ -150,13 +150,18 @@
 							);
 	}
 
+	void CBootView::OnSectorChanging() const{
+		// custom action performed whenever the Sector data have been modified
+		DOS->FlushToBootSector(); // not allowing to change DOS-critical values otherwise than through the PropertyGrid
+	}
+
 	void CBootView::OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint){
 		// request to refresh the display of content
 		// - base
 		__super::OnUpdate( pSender, lHint, pHint );
 		// - getting Boot Sector data
 		WORD bootSectorDataRealLength=0; // initializing just in case the Boot Sector is not found
-		const PSectorData boot=IMAGE->GetHealthySectorData(chs,&bootSectorDataRealLength);
+		const PSectorData boot=IMAGE->GetHealthySectorData( GetPhysicalAddress(), &bootSectorDataRealLength );
 		// - populating the PropertyGrid with values from the Boot Sector (if any found)
 		if (boot){
 			// Boot Sector found - populating the PropertyGrid

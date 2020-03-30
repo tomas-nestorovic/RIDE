@@ -309,7 +309,7 @@
 
 	CMSDOS7::PBootSector CMSDOS7::CMsdos7BootView::GetSectorData() const{
 		// returns data of Boot Sector (or Null if Boot Sector unreadable)
-		return (PBootSector)IMAGE->GetHealthySectorData(chs);
+		return (PBootSector)IMAGE->GetHealthySectorData( GetPhysicalAddress() );
 	}
 
 	bool WINAPI CMSDOS7::CMsdos7BootView::__labelModified__(PropGrid::PCustomParam,LPCSTR newLabel,short newLabelChars){
