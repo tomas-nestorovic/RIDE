@@ -7,7 +7,7 @@
 	#define MDOS2_SECTOR_LENGTH_STD		512
 	#define MDOS2_SECTOR_LENGTH_STD_CODE	TFormat::LENGTHCODE_512
 
-	#define MDOS2_TRACK_SECTORS_MIN		1
+	#define MDOS2_TRACK_SECTORS_MIN		6
 	#define MDOS2_TRACK_SECTORS_MAX		10
 
 	#define MDOS2_FAT_ERROR				WORD(-1)
@@ -32,6 +32,8 @@
 		#pragma pack(1)
 		typedef struct TBootSector sealed{
 			static const TPhysicalAddress CHS;
+
+			static UINT AFX_CDECL Verification_thread(PVOID pCancelableAction);
 
 			#pragma pack(1)
 			union UReserved1{
@@ -64,7 +66,6 @@
 				} gkfm;
 				BYTE undefined[128];
 			} reserved1;
-			#pragma pack(1)
 			#pragma pack(1)
 			typedef const struct TDiskAndDriveInfo sealed{
 				struct TFlags sealed{

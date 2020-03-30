@@ -279,6 +279,97 @@
 
 
 
+	#define MDOS2	static_cast<CMDOS2 *>(vp.dos)
+	#define IMAGE	MDOS2->image
+
+	UINT AFX_CDECL CMDOS2::TBootSector::Verification_thread(PVOID pCancelableAction){
+		// thread to verify the Boot Sector
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
+		const TSpectrumVerificationParams &vp=*(TSpectrumVerificationParams *)pAction->GetParams();
+		vp.fReport.OpenSection(BOOT_SECTOR_TAB_LABEL);
+		const PBootSector boot=(PBootSector)IMAGE->GetHealthySectorData(TBootSector::CHS);
+		if (!boot)
+			return vp.TerminateAll( Utils::ErrorByOs(ERROR_VOLMGR_DISK_INVALID,ERROR_UNRECOGNIZED_VOLUME) );
+		// - verifying this is actually an MDOS disk
+		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, nullptr, boot->sdos, (DWORD)SDOS_TEXT ))
+			return vp.TerminateAll(err);
+		// - verifying Current drive information
+		if (!boot->current.driveConnected)
+			switch (vp.ConfirmFix( _T("Current drive is reported \"Disconnected\""), _T("The drive should be connected.") )){
+				case IDCANCEL:
+					return vp.CancelAll();
+				case IDNO:
+					break;
+				case IDYES:
+					vp.fReport.CloseProblem( boot->current.driveConnected=true );
+					IMAGE->MarkSectorAsDirty(CHS);
+					break;
+			}
+		if (boot->current.driveError)
+			vp.fReport.LogWarning( _T("An error is reported to have occured for current drive") );
+		// - verifying Current disk information
+		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Number of cylinders"), boot->current.nCylinders, (BYTE)1, (BYTE)FDD_CYLINDERS_MAX ))
+			return vp.TerminateAll(err);
+		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Number of sectors"), boot->current.nSectors, (BYTE)MDOS2_TRACK_SECTORS_MIN, (BYTE)MDOS2_TRACK_SECTORS_MAX ))
+			return vp.TerminateAll(err);
+		if (boot->current.diskFlags.driveD40 && boot->current.nCylinders>42){ // TODO: replace 42 with #defined constant
+			TCHAR msg[80];
+			::wsprintf( msg, _T("The disk has %d cylinders but claims to be formatted on D40"), boot->current.nCylinders );
+			switch (vp.ConfirmFix( msg, _T("It should claim D80.") )){
+				case IDCANCEL:
+					return vp.CancelAll();
+				case IDNO:
+					break;
+				case IDYES:
+					boot->current.diskFlags.driveD40=false;
+					IMAGE->MarkSectorAsDirty(CHS);
+					vp.fReport.CloseProblem(true);
+					break;
+			}
+		}
+		//TODO: boot->current.diskFlags.fortyCylDiskInD80
+		// - verifying Current drive information (continued)
+		if (const TStdWinError err=vp.WarnIfUnsignedValueOutOfRange( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Last seeked cylinder"), boot->current.driveLastSeekedCylinder, (BYTE)1, (BYTE)(boot->current.nCylinders-1) ))
+			if (err!=ERROR_INVALID_PARAMETER)
+				return vp.TerminateAll(err);
+		//TODO: boot->current.driveFlags.driveD40 checked against 5.25" PC drive
+		if (boot->current.driveFlags.driveD40 && boot->current.driveCylinders>42 // TODO: replace 42 with #defined constant
+			||
+			!boot->current.driveFlags.driveD40 && boot->current.driveCylinders>FDD_CYLINDERS_MAX
+		){
+			TCHAR msg[80], sug[80];
+			::wsprintf( msg, _T("The drive claims to be D%c0 with %d cylinders"), '8'-4*boot->current.driveFlags.driveD40, boot->current.driveCylinders );
+			const BYTE nCylindersGuaranteed= boot->current.driveFlags.driveD40 ? 42 : FDD_CYLINDERS_MAX; // TODO: replace 42 with #defined constant
+			::wsprintf( sug, _T("Guaranteed are just %d cylinders."), nCylindersGuaranteed );
+			switch (vp.ConfirmFix( msg, sug )){
+				case IDCANCEL:
+					return vp.CancelAll();
+				case IDNO:
+					break;
+				case IDYES:
+					boot->current.driveCylinders=nCylindersGuaranteed;
+					IMAGE->MarkSectorAsDirty(CHS);
+					vp.fReport.CloseProblem(true);
+					break;
+			}
+		}
+		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Drive sectors"), boot->current.driveSectorsPerTrack, (BYTE)MDOS2_TRACK_SECTORS_MIN, (BYTE)MDOS2_TRACK_SECTORS_MAX ))
+			return vp.TerminateAll(err);
+		// - verifying DiskName
+		if (const TStdWinError err=vp.VerifyAllCharactersPrintable( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Disk name"), boot->label, sizeof(boot->label), '\0' ))
+			return vp.TerminateAll(err);
+		// - Boot Sector verified
+		pAction->UpdateProgressFinished();
+		return ERROR_SUCCESS;
+	}
+
+
+
+
+
+
+
+
 
 	namespace D80{
 		static PImage __instantiate__(){
