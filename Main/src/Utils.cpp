@@ -655,16 +655,15 @@ namespace Utils{
 
 	CString BytesToHexaText(PCBYTE bytes,BYTE nBytes,bool lastDelimitedWithAnd){
 		// composes a string containing hexa-decimal notation of specified Bytes, the last Byte optionally separated with "and"; for example, given Bytes="HELLO", the returned string is "0x48, 0x45, 0x4C, 0x4C, and 0x4F"
+		lastDelimitedWithAnd&=nBytes>=2;
 		CString result;
-		while (nBytes--){
-			TCHAR tmp[8];
+		for( TCHAR tmp[8]; nBytes--; result+=tmp ){
 			::wsprintf( tmp, _T("0x%02X, "), *bytes++ );
 			if (!nBytes){ // this is the last Byte
 				if (lastDelimitedWithAnd)
 					result+=_T("and ");
 				tmp[4]='\0';
 			}
-			result+=tmp;
 		}
 		return result;
 	}

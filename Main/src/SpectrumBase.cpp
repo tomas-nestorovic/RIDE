@@ -46,14 +46,16 @@
 		: CVerifyVolumeDialog::TParams(dos,rvf) {
 	}
 
-	static CString getMessageIfSomeCharsNonPrintable(LPCTSTR locationName,LPCTSTR valueName,PCHAR zx,BYTE zxLength){
+	static CString getMessageIfSomeCharsNonPrintable(LPCTSTR locationName,LPCTSTR valueName,PCHAR zx,BYTE zxLength,char paddingChar){
 		// composes and returns a message describing a problem that some non-printable characters are contained in specified ZX buffer
 		// - composing a list of unique Nonprintable ZX characters
 		char nonprintables[128], nNonprintables=0;
-		for( BYTE i=0; i<zxLength; i++ )
-			if (!CSpectrumBase::TZxRom::IsPrintable(zx[i]))
-				if (!::memchr(nonprintables,zx[i],nNonprintables))
-					nonprintables[nNonprintables++]=zx[i];
+		for( BYTE i=0; i<zxLength; i++ ){
+			const char c=zx[i];
+			if (!CSpectrumBase::TZxRom::IsPrintable(c) && c!=paddingChar)
+				if (!::memchr(nonprintables,c,nNonprintables))
+					nonprintables[nNonprintables++]=c;
+		}
 		// - composing the Message
 		CString msg;
 		if (nNonprintables)
@@ -69,7 +71,7 @@
 	TStdWinError CSpectrumBase::TSpectrumVerificationParams::VerifyAllCharactersPrintable(RCPhysicalAddress chs,LPCTSTR chsName,LPCTSTR valueName,PCHAR zx,BYTE zxLength,char paddingChar) const{
 		// confirms a ZX text field contains only printable characters; if not, presents the problem using standard formulation, and returns Windows standard i/o error
 		// - if no Nonprintable characters found, we are successfully done
-		const CString msg=getMessageIfSomeCharsNonPrintable( chsName, valueName, zx, zxLength );
+		const CString msg=getMessageIfSomeCharsNonPrintable( chsName, valueName, zx, zxLength, paddingChar );
 		if (!msg.GetLength())
 			return ERROR_SUCCESS;
 		// - composing and presenting the problem
@@ -92,10 +94,10 @@
 		}
 	}
 
-	bool CSpectrumBase::TSpectrumVerificationParams::WarnSomeCharactersNonPrintable(LPCTSTR locationName,LPCTSTR valueName,PCHAR zx,BYTE zxLength) const{
+	bool CSpectrumBase::TSpectrumVerificationParams::WarnSomeCharactersNonPrintable(LPCTSTR locationName,LPCTSTR valueName,PCHAR zx,BYTE zxLength,char paddingChar) const{
 		// logs a warning if some characters in the ZX text field contains non-printable characters, listing them; returns Windows standard i/o error
 		// - if no Nonprintable characters found, we are successfully done
-		const CString msg=getMessageIfSomeCharsNonPrintable( locationName, valueName, zx, zxLength );
+		const CString msg=getMessageIfSomeCharsNonPrintable( locationName, valueName, zx, zxLength, paddingChar );
 		if (!msg.GetLength())
 			return false;
 		// - composing and logging the problem

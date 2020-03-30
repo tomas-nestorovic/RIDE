@@ -264,7 +264,7 @@
 							// : checking File Name and Extension
 							if (de->fileHasStdHeader){
 								CTape::THeader &rh=de->file.stdHeader;
-								vp.WarnSomeCharactersNonPrintable( strItemId, _T("File name"), rh.name, sizeof(rh.name) );
+								vp.WarnSomeCharactersNonPrintable( strItemId, _T("File name"), rh.name, sizeof(rh.name), ' ' );
 								if (!rh.SetFileType(rh.GetUniFileType())){
 									CString errMsg;
 									errMsg.Format( _T("%s: Non-standard file type"), strItemId );
