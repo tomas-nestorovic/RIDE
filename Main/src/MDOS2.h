@@ -7,9 +7,6 @@
 	#define MDOS2_SECTOR_LENGTH_STD		512
 	#define MDOS2_SECTOR_LENGTH_STD_CODE	TFormat::LENGTHCODE_512
 
-	#define MDOS2_TRACK_SECTORS_MIN		6
-	#define MDOS2_TRACK_SECTORS_MAX		10
-
 	#define MDOS2_FAT_ERROR				WORD(-1)
 	#define MDOS2_FAT_SECTOR_SYSTEM		0xddd
 	#define MDOS2_FAT_SECTOR_BAD		0xdff
@@ -22,6 +19,9 @@
 				(fatValue>=MDOS2_FAT_SECTOR_EOF && fatValue<=MDOS2_FAT_SECTOR_EOF+MDOS2_SECTOR_LENGTH_STD-1)
 
 	#define MDOS2_DIR_LOGSECTOR_FIRST	6 /* first logical Sector of root Directory */
+
+	#define MDOS2_TRACK_SECTORS_MIN		MDOS2_DIR_LOGSECTOR_FIRST /* FAT must be on a single Track */
+	#define MDOS2_TRACK_SECTORS_MAX		10
 
 	#define MDOS2_DATA_LOGSECTOR_FIRST	14 /* first logical Sector dedicated for data */
 

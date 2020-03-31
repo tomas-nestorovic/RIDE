@@ -13,7 +13,9 @@
 			if (const PCBootSector boot=(PCBootSector)image->GetHealthySectorData(TBootSector::CHS))
 				if (boot->sdos==SDOS_TEXT){
 					*pFormatBoot=Fmt;
-					if (( pFormatBoot->nCylinders=boot->current.nCylinders )
+					if (MDOS2_TRACK_SECTORS_MIN<=boot->current.nSectors && boot->current.nSectors<=MDOS2_TRACK_SECTORS_MAX
+						&&
+						( pFormatBoot->nCylinders=boot->current.nCylinders )
 						*
 						( pFormatBoot->nHeads=1+(boot->current.diskFlags.doubleSided) )
 						*

@@ -71,7 +71,8 @@
 	WORD CMDOS2::__getLogicalSectorFatItem__(TLogSector logSector) const{
 		// returns the value in FAT of the specified LogicalSector; returns MDOS2_FAT_ERROR if FAT Sector read error
 		div_t d=div( logSector, FAT_ITEMS_IN_SECTOR ); // determining the item ID in FAT Sector
-		if (PCSectorData itemAddress=__getHealthyLogicalSectorData__(FAT_LOGSECTOR_FIRST+d.quot)){
+		const TPhysicalAddress chs={ 0, 0, {0,sideMap[0],1+FAT_LOGSECTOR_FIRST+d.quot,MDOS2_SECTOR_LENGTH_STD_CODE} }; // "+1" = Sectors numbered from 1
+		if (PCSectorData itemAddress=image->GetHealthySectorData(chs)){
 			itemAddress+=( d.rem*=3 )/2;
 			if (d.rem&1) // item on odd address in FAT Sector
 				return (*itemAddress&0xf)*256 + itemAddress[1];
@@ -84,8 +85,8 @@
 		// True <=> LogicalSector item set in FAT to the specified Value, otherwise False; assumed that the Value contains only 12-bit number
 		ASSERT((value12&0xf000)==0); // must always be a 12-bit Value only
 		div_t d=div( logSector, FAT_ITEMS_IN_SECTOR );	// determining the item ID in FAT Sector
-		const TLogSector lsFat=FAT_LOGSECTOR_FIRST+d.quot;
-		if (PSectorData itemAddress=__getHealthyLogicalSectorData__(lsFat)){
+		const TPhysicalAddress chs={ 0, 0, {0,sideMap[0],1+FAT_LOGSECTOR_FIRST+d.quot,MDOS2_SECTOR_LENGTH_STD_CODE} }; // "+1" = Sectors numbered from 1
+		if (PSectorData itemAddress=image->GetHealthySectorData(chs)){
 			itemAddress+=( d.rem*=3 )/2;
 			if (d.rem&1){ // item on odd address in FAT Sector
 				*itemAddress=( *itemAddress&0xf0 )|( value12>>8 ); // not using "(value&0xf)>>8" as assumed that the Value is always only 12-bit
@@ -94,7 +95,7 @@
 				itemAddress[1]=( itemAddress[1]&0xf )|( (value12&0xf00)>>4 );
 				*itemAddress=value12;
 			}
-			__markLogicalSectorAsDirty__(lsFat);
+			image->MarkSectorAsDirty(chs);
 			return true;
 		}else
 			return false; // FAT i/o error
