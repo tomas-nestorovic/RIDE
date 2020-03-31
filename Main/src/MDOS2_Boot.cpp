@@ -329,7 +329,7 @@
 		}
 		//TODO: boot->current.diskFlags.fortyCylDiskInD80
 		// - verifying Current drive information (continued)
-		if (const TStdWinError err=vp.WarnIfUnsignedValueOutOfRange( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Last seeked cylinder"), boot->current.driveLastSeekedCylinder, (BYTE)1, (BYTE)(boot->current.nCylinders-1) ))
+		if (const TStdWinError err=vp.WarnIfUnsignedValueOutOfRange( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Last seeked cylinder"), boot->current.driveLastSeekedCylinder, (BYTE)0, (BYTE)(boot->current.nCylinders-1) ))
 			if (err!=ERROR_INVALID_PARAMETER)
 				return vp.TerminateAll(err);
 		//TODO: boot->current.driveFlags.driveD40 checked against 5.25" PC drive
