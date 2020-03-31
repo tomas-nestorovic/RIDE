@@ -190,6 +190,7 @@
 
 		static TStdWinError __recognizeDisk__(PImage image,PFormat pFormatBoot);
 		static void __informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId);
+		static UINT AFX_CDECL FatVerification_thread(PVOID pCancelableAction);
 
 		TDirectoryEntry deDefault;
 

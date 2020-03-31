@@ -218,6 +218,53 @@
 		return true;
 	}
 
+	UINT AFX_CDECL CMDOS2::FatVerification_thread(PVOID pCancelableAction){
+		// thread to verify the readability and correctness of the FAT
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
+		const TSpectrumVerificationParams &vp=*(TSpectrumVerificationParams *)pAction->GetParams();
+		vp.fReport.OpenSection(FAT_VERIFICATION_READABILITY);
+		// - verifying basic FAT information
+		const PMDOS2 mdos=static_cast<PMDOS2>(vp.dos);
+		const PImage image=mdos->image;
+		const PCBootSector boot=(PBootSector)image->GetHealthySectorData(TBootSector::CHS);
+		if (!boot)
+			return vp.TerminateAll(ERROR_UNRECOGNIZED_VOLUME);
+		pAction->SetProgressTarget(	MDOS2_DIR_LOGSECTOR_FIRST-FAT_LOGSECTOR_FIRST
+									+
+									1 // checking that all Sectors beyond the official format are marked as Unknown
+								);
+		int step=0;
+		// - Steps 1-N: verifying FAT Sectors readability
+		TPhysicalAddress chs={ 0, 0, {0,mdos->sideMap[0],FAT_LOGSECTOR_FIRST,MDOS2_SECTOR_LENGTH_STD_CODE} };
+		while (chs.sectorId.sector++<MDOS2_DIR_LOGSECTOR_FIRST){ // "++" = Sectors numbered from 1
+			if (!image->GetHealthySectorData(chs)){
+				TCHAR msg[80];
+				::wsprintf( msg, _T("FAT sector with %s is bad"), (LPCTSTR)chs.sectorId.ToString() );
+				vp.fReport.LogWarning(msg);
+			}
+			pAction->UpdateProgress(++step);
+		}
+		// - checking that all Sectors beyond the official format are marked as Unavailable
+		for( TLogSector ls=mdos->formatBoot.GetCountOfAllSectors(),fixConfirmation=0; ls<1705; ls++ ){ // 1705 = max number of items in FAT12
+			const WORD value=mdos->__getLogicalSectorFatItem__(ls);
+			if (value!=MDOS2_FAT_ERROR && value!=MDOS2_FAT_SECTOR_UNAVAILABLE){
+				if (!fixConfirmation) // not yet asked about what to do
+					fixConfirmation=vp.ConfirmFix( _T("Sectors beyond the official format aren't marked as \"unavailable\""), _T("") );
+				switch (fixConfirmation){
+					case IDCANCEL:
+						return vp.CancelAll();
+					case IDNO:
+						continue;
+				}
+				if (!mdos->__setLogicalSectorFatItem__( ls, MDOS2_FAT_SECTOR_UNAVAILABLE ))
+					return vp.TerminateAll(ERROR_FUNCTION_FAILED); // we shouldn't end up here but just to be sure
+				vp.fReport.CloseProblem(true);
+			}
+		}
+		pAction->UpdateProgressFinished();
+		return ERROR_SUCCESS;
+	}
+
 	bool CMDOS2::GetFileNameOrExt(PCFile file,PPathString pOutName,PPathString pOutExt) const{
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
 		if (file==ZX_DIR_ROOT){
