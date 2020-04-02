@@ -147,12 +147,12 @@
 					break;
 				case INFORMATION_SIZE:
 					// File Size
-					integerEditor.DrawReportModeCell( de->file.dataLength, pdis );
+					integerEditor.DrawReportModeCell( de->file.dataLength, pdis, de->fileHasStdHeader&&de->file.dataLength!=de->file.stdHeader.length );
 					break;
 				case INFORMATION_SIZE_REPORTED:
 					// File reported Size
 					if (de->fileHasStdHeader)
-						integerEditor.DrawReportModeCell( de->file.stdHeader.length, pdis );
+						integerEditor.DrawReportModeCell( de->file.stdHeader.length, pdis, de->file.dataLength!=de->file.stdHeader.length );
 					break;
 				case INFORMATION_STD_PARAM_1:
 					// start address / Basic start line
