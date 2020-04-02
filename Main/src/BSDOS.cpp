@@ -430,7 +430,7 @@
 		: reserved1(0) , special(false)
 		, occupied(true) , fileHasStdHeader(false) , fileHasData(true) {
 		file.reserved2=0x401;
-		file.reserved3=0;
+		file.integrityCheckpoint1 = file.integrityCheckpoint2 = special;
 		file.firstSector=firstSector;
 		CFatPath dummy( bsdos->formatBoot.GetCountOfAllSectors() );
 		bsdos->GetFileFatPath( this, dummy );
