@@ -177,7 +177,7 @@
 		rUniFileType=TUniFileType::UNKNOWN; // initialization
 		if (buf){ // Null if File has no import information
 			int n=0;
-			if (_stscanf( buf, INFO_UNI _T("%n"), &rUniFileType, &n ))
+			if (const int i=_stscanf( buf, INFO_UNI _T("%n"), &rUniFileType, &n ))
 				return n;
 		}
 		return 0;
@@ -186,11 +186,10 @@
 	int CSpectrumBase::__importFileInformation__(LPCTSTR buf,TUniFileType &rUniFileType,TStdParameters &rParams,DWORD &rFileLength){
 		// returns the number of characters recognized as import information normalized form (supplied by ExportFileInformation)
 		rParams=TStdParameters::Default, rFileLength=0; // initialization
-		if (buf){ // Null if File has no import information
-			const int N=__importFileInformation__( buf, rUniFileType );
+		if (const int N=__importFileInformation__( buf, rUniFileType )){ // Null if File has no import information
 			int n=0;
-			_stscanf( buf+N, INFO_STD _T("%n"), &rParams, &rFileLength, &n );
-			return N+n;
+			if (_stscanf( buf+N, INFO_STD _T("%n"), &rParams, &rFileLength, &n )==2)
+				return N+n;
 		}
 		return 0;
 	}
@@ -198,12 +197,12 @@
 	int CSpectrumBase::__importFileInformation__(LPCTSTR buf,TUniFileType &rUniFileType,TStdParameters &rParams,DWORD &rFileLength,BYTE &rDataFlag){
 		// returns the number of characters recognized as import information normalized form (supplied by ExportFileInformation)
 		rDataFlag=TZxRom::TStdBlockFlag::DATA; // assumption (block featuring Header has been saved using standard routine in ROM)
-		if (buf){ // Null if File has no import information
-			const int N=__importFileInformation__( buf, rUniFileType, rParams, rFileLength );
+		if (const int N=__importFileInformation__( buf, rUniFileType, rParams, rFileLength )){ // Null if File has no import information
 			int n=0,tmp=rDataFlag;
-			_stscanf( buf+N, INFO_FLAG _T("%n"), &tmp, &n );
-			rDataFlag=tmp;
-			return N+n;
+			if (_stscanf( buf+N, INFO_FLAG _T("%n"), &tmp, &n )){
+				rDataFlag=tmp;
+				return N+n;
+			}
 		}
 		return 0;
 	}
