@@ -236,31 +236,32 @@
 							// : a File must have at least a Header or Data
 							if (!de->fileHasStdHeader && !de->fileHasData)
 								vp.fReport.LogWarning( _T("%s: Has neither header nor data"), strItemId ); // just a warning - maybe the Directory is tweaked to write certain message during its listing
-							// : 
-							if (de->fileHasData){
-								CFatPath dummy(BSDOS->formatBoot.GetCountOfAllSectors());
-								if (!BSDOS->GetFileFatPath( de, dummy ))
-									return vp.TerminateAll(ERROR_FUNCTION_FAILED); // we shouldn't end up here but just to be sure
-								if (!dummy.error){
-									if ((de->file.dataLength+BSDOS_SECTOR_LENGTH_STD-1)/BSDOS_SECTOR_LENGTH_STD!=dummy.GetNumberOfItems()){
+							// : checking recorded DataLength corresponds with FAT information
+							if (de->fileHasData)
+								if (const CFatPath fatPath=CFatPath(BSDOS,de)){
+									DWORD lengthFromFat=0;
+									if (const DWORD nItems=fatPath.GetNumberOfItems())
+										lengthFromFat= (nItems-1)*BSDOS_SECTOR_LENGTH_STD + BSDOS->__getLogicalSectorFatItem__(BSDOS->__fyzlog__(fatPath.GetHealthyItem(nItems-1)->chs)).info;
+									if (de->file.dataLength!=lengthFromFat){
 										CString errMsg;
 										errMsg.Format( _T("%s: Length incorrect"), strItemId );
 										switch (vp.ConfirmFix( errMsg, _T("Length should be adopted from FAT.") )){
 											case IDCANCEL:
 												return vp.CancelAll();
 											case IDNO:
-												continue; // skipping erroneous File
+												break;
+											case IDYES:
+												de->file.dataLength=lengthFromFat;
+												vp.fReport.CloseProblem(true);
+												break;
 										}
-										de->file.dataLength=dummy.GetNumberOfItems()*BSDOS_SECTOR_LENGTH_STD;
-										vp.fReport.CloseProblem(true);
 									}
 								}else{
 									CString errMsg;
-									errMsg.Format( _T("%s: FAT error"), strItemId );
+									errMsg.Format( _T("%s: FAT error (%s)"), strItemId, fatPath.GetErrorDesc() );
 									vp.fReport.OpenProblem(errMsg);
 									vp.fReport.CloseProblem(false);
 								}
-							}
 							// : checking File Name and Extension
 							if (de->fileHasStdHeader){
 								CTape::THeader &rh=de->file.stdHeader;
