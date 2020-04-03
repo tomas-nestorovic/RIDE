@@ -137,7 +137,7 @@
 				break;
 			case INFORMATION_SIZE:
 				// File Size
-				integerEditor.DrawReportModeCell( MAKELONG(de->lengthLow,de->lengthHigh), pdis );
+				integerEditor.DrawReportModeCell( de->GetLength(), pdis );
 				break;
 			case INFORMATION_ATTRIBUTES:{
 				// File Attributes

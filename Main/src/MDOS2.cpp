@@ -327,9 +327,9 @@
 		else
 			switch (option){
 				case TGetFileSizeOptions::OfficialDataLength:
-					return MAKELONG( de->lengthLow, de->lengthHigh );
+					return de->GetLength();
 				case TGetFileSizeOptions::SizeOnDisk:
-					return (MAKELONG(de->lengthLow,de->lengthHigh)+MDOS2_SECTOR_LENGTH_STD-1)/MDOS2_SECTOR_LENGTH_STD * MDOS2_SECTOR_LENGTH_STD;
+					return (de->GetLength()+MDOS2_SECTOR_LENGTH_STD-1)/MDOS2_SECTOR_LENGTH_STD * MDOS2_SECTOR_LENGTH_STD;
 				default:
 					ASSERT(FALSE);
 					return 0;
@@ -407,12 +407,7 @@
 			// . name
 			//nop (ChangeFileNameAndExt called below by ImportFile)
 			// . size
-			union{
-				WORD d[2];
-				DWORD nBytesToImport;
-			};
-			nBytesToImport=fileSize;
-			tmp.lengthLow=d[0], tmp.lengthHigh=d[1];
+			tmp.SetLength(fileSize);
 			// . FirstLogicalSector
 			//nop (set below)
 		// - changing the Extension according to the "universal" type valid across ZX platforms (as TR-DOS File "Picture.C" should be take on the name "Picture.B" under MDOS)
@@ -520,6 +515,21 @@
 
 
 
+
+	DWORD CMDOS2::TDirectoryEntry::GetLength() const{
+		// determines and returns the File length
+		return MAKELONG(lengthLow,lengthHigh);
+	}
+
+	void CMDOS2::TDirectoryEntry::SetLength(DWORD fileLength){
+		// sets new FileLength
+		register union{
+			WORD d[2];
+			DWORD nBytesToImport;
+		};
+		nBytesToImport=fileLength;
+		lengthLow=d[0], lengthHigh=d[1];
+	}
 
 	bool CMDOS2::TDirectoryEntry::__editAttributesViaDialog__(){
 		// True <=> modified File Attributes confirmed, otherwise False

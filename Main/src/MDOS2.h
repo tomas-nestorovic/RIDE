@@ -140,6 +140,8 @@
 			BYTE lengthHigh; // upper Word of File size
 			BYTE reserved2[10];
 
+			DWORD GetLength() const;
+			void SetLength(DWORD fileLength);
 			bool __editAttributesViaDialog__();
 			PTCHAR __attributes2text__(PTCHAR buf,bool inclDashes) const;
 		} *PDirectoryEntry;
