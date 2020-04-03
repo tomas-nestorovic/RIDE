@@ -207,15 +207,25 @@
 		if (rFatPath.GetItems(pItem,nItems)) // if FatPath erroneous ...
 			return false; // ... we are done
 		const PDirectoryEntry de=(PDirectoryEntry)file;
-		TLogSector ls = de->firstLogicalSector = __fyzlog__(pItem->chs);
-		for( WORD h; --nItems; ls=h ) // all Sectors but the last one are Occupied in FatPath
-			__setLogicalSectorFatItem__( ls, h=__fyzlog__((++pItem)->chs) ); // no need to test FAT Sector existence (already tested above)
-		__setLogicalSectorFatItem__(ls, // terminating the FatPath in FAT
-									pItem->value==TSectorStatus::RESERVED
-										? MDOS2_FAT_SECTOR_RESERVED
-										: pItem->value+MDOS2_FAT_SECTOR_EOF
-								);
-		return true;
+		const DWORD fileLength=de->GetLength();
+		if (fileLength>0 && nItems>0){
+			// non-zero-length File
+			TLogSector ls = de->firstLogicalSector = __fyzlog__(pItem->chs);
+			for( WORD h; --nItems; ls=h ) // all Sectors but the last one are Occupied in FatPath
+				__setLogicalSectorFatItem__( ls, h=__fyzlog__((++pItem)->chs) ); // no need to test FAT Sector existence (already tested above)
+			__setLogicalSectorFatItem__(ls, // terminating the FatPath in FAT
+										fileLength%MDOS2_SECTOR_LENGTH_STD+MDOS2_FAT_SECTOR_EOF
+									);
+			return true;
+		}else if (!fileLength && nItems==1){
+			// zero-length File
+			__setLogicalSectorFatItem__(de->firstLogicalSector=__fyzlog__(pItem->chs),
+										MDOS2_FAT_SECTOR_RESERVED
+									);
+			return true;
+		}else
+			// erroneous assignment of a FatPath to a File
+			return false;
 	}
 
 	UINT AFX_CDECL CMDOS2::FatVerification_thread(PVOID pCancelableAction){
