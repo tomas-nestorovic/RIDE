@@ -192,7 +192,7 @@ IDR_MDOS MENU DISCARDABLE
 BEGIN
     POPUP "MDOS"
     BEGIN
-        MENUITEM "Verify...",                   ID_DOS_VERIFY, GRAYED
+        MENUITEM "Verify...",                   ID_DOS_VERIFY
         MENUITEM "Defragment...",               ID_DOS_DEFRAGMENT, GRAYED
         MENUITEM "Fill empty space...",         ID_DOS_FILL_EMPTY_SPACE
         POPUP "Tape"

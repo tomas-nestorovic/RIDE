@@ -457,6 +457,22 @@
 	CDos::TCmdResult CMDOS2::ProcessCommand(WORD cmd){
 		// returns the Result of processing a DOS-related command
 		switch (cmd){
+			case ID_DOS_VERIFY:{
+				// volume verification
+				static const TVerificationFunctions vf={
+					TBootSector::Verification_thread, // Boot Sector
+					FatVerification_thread, // FAT readability
+					TVerificationFunctions::ReportOnFilesWithBadFatPath_thread, // FAT Files OK
+					TVerificationFunctions::FloppyCrossLinkedFilesVerification_thread, // FAT crossed Files
+					TVerificationFunctions::FloppyLostSectorsVerification_thread, // FAT lost allocation units
+					TDirectoryEntry::Verification_thread, // Filesystem
+					TVerificationFunctions::WholeDiskSurfaceVerification_thread // Volume surface
+				};
+				__verifyVolume__(
+					CVerifyVolumeDialog( TSpectrumVerificationParams(this,vf) )
+				);
+				return TCmdResult::DONE_REDRAW;
+			}
 			case ID_MDOS_AUTODETECT:
 				// autodetecting MDOS Version
 				version=TVersion::AUTODETECT;
