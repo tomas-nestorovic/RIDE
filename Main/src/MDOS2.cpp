@@ -597,6 +597,106 @@
 		return buf;
 	}
 
+	UINT AFX_CDECL CMDOS2::TDirectoryEntry::Verification_thread(PVOID pCancelableAction){
+		// thread to verify the Directories
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
+		const TSpectrumVerificationParams &vp=*(TSpectrumVerificationParams *)pAction->GetParams();
+		vp.fReport.OpenSection(FILESYSTEM_VERIFICATION);
+		// - verifying basic Directory information
+		const PMDOS2 mdos=static_cast<PMDOS2>(vp.dos);
+		const PImage image=mdos->image;
+		const PCBootSector boot=(PBootSector)image->GetHealthySectorData(TBootSector::CHS);
+		if (!boot)
+			return vp.TerminateAll( Utils::ErrorByOs(ERROR_VOLMGR_DISK_INVALID,ERROR_UNRECOGNIZED_VOLUME) );
+		pAction->SetProgressTarget(	MDOS2_DATA_LOGSECTOR_FIRST-MDOS2_DIR_LOGSECTOR_FIRST
+									+
+									1 // checking that all DirectoryEntries are valid
+								);
+		int step=0;
+		// - Steps 1-N: verifying Directory Sectors readability
+		for( TLogSector ls=MDOS2_DIR_LOGSECTOR_FIRST; ls<MDOS2_DATA_LOGSECTOR_FIRST; ls++ ){
+			const TPhysicalAddress chs=mdos->__logfyz__(ls);
+			if (!image->GetHealthySectorData(chs))
+				vp.fReport.LogWarning( _T("Directory sector with %s is bad"), (LPCTSTR)chs.sectorId.ToString() );
+		}
+		// - verifying that all DirectoryEntries are valid
+		for( TMdos2DirectoryTraversal dt(mdos); dt.AdvanceToNextEntry(); )
+			if (dt.entryType==TDirectoryTraversal::FILE){
+				const PDirectoryEntry de=(PDirectoryEntry)dt.entry;
+				TCHAR strItemId[MAX_PATH+16];
+				::wsprintf( strItemId, _T("File \"%s\""), (LPCTSTR)mdos->GetFilePresentationNameAndExt(de) );
+				// . verifying Extension
+				switch (de->extension){
+					case TExtension::PROGRAM:
+					case TExtension::CHAR_ARRAY:
+					case TExtension::NUMBER_ARRAY:
+					case TExtension::BLOCK:
+					case TExtension::SNAPSHOT:
+					case TExtension::SEQUENTIAL:
+						break; //nop
+					default:
+						vp.fReport.LogWarning( _T("%s: Unknown extension"), strItemId );
+						break;
+				}
+				// . verifying Name
+				if (de->extension!=TExtension::PROGRAM)
+					// non-Program Files may contain non-printable characters
+					vp.WarnSomeCharactersNonPrintable( strItemId, _T("File name"), de->name, sizeof(de->name), '\0' );
+				else if (const TStdWinError err=vp.VerifyAllCharactersPrintable( dt.chs, strItemId, _T("File name"), de->name, sizeof(de->name), '\0' ))
+					// Program names are usually typed in by the user and thus may not contain non-printable characters
+					return vp.TerminateAll(err);
+				// . verifying Length
+				if (const CFatPath fatPath=CFatPath(mdos,de)){
+					DWORD lengthFromFat=0;
+					if (const DWORD nItems=fatPath.GetNumberOfItems()){
+						// a valid File (even a zero-length one) has always at least one Sector affiliated
+						if (mdos->GetSectorStatus(fatPath.GetHealthyItem(nItems-1)->chs)!=TSectorStatus::RESERVED){
+							// a non-zero-length File
+							const WORD lastSectorBytes=mdos->__getLogicalSectorFatItem__(mdos->__fyzlog__(fatPath.GetHealthyItem(nItems-1)->chs))-MDOS2_FAT_SECTOR_EOF;
+							lengthFromFat= (nItems-(lastSectorBytes>0))*MDOS2_SECTOR_LENGTH_STD + lastSectorBytes; // e.g., 1024 Bytes should be stored in nItems=2 Sectors (lastSectorBytes = 1024%512 = 0), NOT in three Sectors!
+						}
+						if (de->GetLength()!=lengthFromFat){
+							CString errMsg;
+							errMsg.Format( _T("%s: Length incorrect"), strItemId );
+							switch (vp.ConfirmFix( errMsg, _T("Length should be adopted from FAT.") )){
+								case IDCANCEL:
+									return vp.CancelAll();
+								case IDNO:
+									break;
+								case IDYES:
+									de->SetLength(lengthFromFat);
+									mdos->MarkDirectorySectorAsDirty(de);
+									vp.fReport.CloseProblem(true);
+									break;
+							}
+						}
+					}else{
+						// an invalid File has no Sectors affiliated; it's now known that anybody would ever do any tweaks to a Directory, hence this is highly likely an error in filesystem
+						CString errMsg;
+						errMsg.Format( _T("%s: No sectors affiliated"), strItemId );
+						switch (vp.ConfirmFix( errMsg, _T("File should be deleted") )){
+							case IDCANCEL:
+								return vp.CancelAll();
+							case IDNO:
+								break;
+							case IDYES:
+								if (const TStdWinError err=mdos->DeleteFile(de)) // an error shouldn't occur but just to be sure
+									vp.fReport.LogWarning( _T("%s: Can't delete the file"), strItemId );
+								else
+									vp.fReport.CloseProblem(true);
+								continue; // the File no longer exists
+						}
+					}
+				}else
+					vp.fReport.LogWarning( _T("%s: FAT error (%s)"), strItemId, fatPath.GetErrorDesc() );
+				// . verifying the starting Sector
+				if (de->firstLogicalSector>=mdos->formatBoot.GetCountOfAllSectors())
+					vp.fReport.LogWarning( _T("%s: First sector with %s out of disk"), strItemId, (LPCTSTR)mdos->__logfyz__(de->firstLogicalSector).sectorId.ToString() );
+			}
+		// - successfully verified
+		pAction->UpdateProgressFinished();
+		return ERROR_SUCCESS;
+	}
 
 
 
