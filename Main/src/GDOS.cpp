@@ -164,6 +164,7 @@
 			psi=&((PGdosSectorData)image->GetHealthySectorData(pItem++->chs))->nextSector;
 		}
 		psi->__setEof__();
+		MarkDirectorySectorAsDirty(de);
 		return true;
 	}
 

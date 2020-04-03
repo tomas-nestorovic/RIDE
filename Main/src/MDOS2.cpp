@@ -216,12 +216,14 @@
 			__setLogicalSectorFatItem__(ls, // terminating the FatPath in FAT
 										fileLength%MDOS2_SECTOR_LENGTH_STD+MDOS2_FAT_SECTOR_EOF
 									);
+			MarkDirectorySectorAsDirty(de);
 			return true;
 		}else if (!fileLength && nItems==1){
 			// zero-length File
 			__setLogicalSectorFatItem__(de->firstLogicalSector=__fyzlog__(pItem->chs),
 										MDOS2_FAT_SECTOR_RESERVED
 									);
+			MarkDirectorySectorAsDirty(de);
 			return true;
 		}else
 			// erroneous assignment of a FatPath to a File

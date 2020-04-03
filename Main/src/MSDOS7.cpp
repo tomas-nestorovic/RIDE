@@ -308,6 +308,7 @@
 								c=__logSector2cluster__(__fyzlog__(pItem++->chs))
 							);
 		fat.SetClusterValue( cluster0, MSDOS7_FAT_CLUSTER_EOF ); // terminating the File's FatPath in FAT
+		MarkDirectorySectorAsDirty(de);
 		return true;
 	}
 
