@@ -143,6 +143,7 @@
 							continue; // skipping erroneous Directory
 					}
 					pSlot->reserved2=*(PCBYTE)pSlot>>6;
+					BSDOS->dirsSector.MarkAsDirty();
 					vp.fReport.CloseProblem(true);
 				}
 				if (pSlot->subdirExists){
@@ -209,6 +210,7 @@
 								continue; // skipping erroneous Directory
 						}
 						pSlot->nameChecksum=de->GetDirNameChecksum();
+						BSDOS->dirsSector.MarkAsDirty();
 						vp.fReport.CloseProblem(true);
 					}
 					// . checking File information
@@ -231,6 +233,7 @@
 										continue; // skipping erroneous File
 								}
 								de->file.integrityCheckpoint1 = de->file.integrityCheckpoint2 = de->special;
+								BSDOS->MarkDirectorySectorAsDirty(de);
 								vp.fReport.CloseProblem(true);
 							}
 							// : a File must have at least a Header or Data
@@ -252,6 +255,7 @@
 												break;
 											case IDYES:
 												de->file.dataLength=lengthFromFat;
+												BSDOS->MarkDirectorySectorAsDirty(de);
 												vp.fReport.CloseProblem(true);
 												break;
 										}

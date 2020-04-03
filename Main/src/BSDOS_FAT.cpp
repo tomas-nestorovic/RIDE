@@ -215,6 +215,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 			__setLogicalSectorFatItem__(ls, // terminating the FatPath in FAT
 										TFatValue( true, false, BSDOS_SECTOR_LENGTH_STD )
 									);
+			dirsSector.MarkAsDirty();
 		}else{
 			const PDirectoryEntry de=(PDirectoryEntry)file;
 			if (DWORD fileSize=de->file.dataLength){
@@ -226,6 +227,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 										);
 			}else // zero-length Files are in NOT in the FAT
 				de->file.firstSector=boot.GetSectorData()->dirsLogSector; // some sensible value
+			MarkDirectorySectorAsDirty(de);
 		}
 		return true;
 	}
@@ -614,8 +616,8 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 							continue;
 					}
 					v->upperByte=correctChecksum;
-					vp.fReport.CloseProblem(true);
 					IMAGE->MarkSectorAsDirty( pFats[i]->GetHealthyItem(0)->chs );
+					vp.fReport.CloseProblem(true);
 				}
 			}
 		pAction->UpdateProgress(++step);
