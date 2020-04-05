@@ -44,6 +44,9 @@
 		: CFloppyImage(&Properties,true)
 		, diskInfo(params) {
 		::ZeroMemory(tracks,sizeof(tracks));
+		#ifdef _DEBUG
+		::ZeroMemory(tracksDebug,sizeof(tracksDebug));
+		#endif
 	}
 
 	CDsk5::~CDsk5(){
@@ -182,6 +185,30 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 
 	BOOL CDsk5::OnSaveDocument(LPCTSTR lpszPathName){
 		// True <=> this Image has been successfully saved, otherwise False
+		#ifdef _DEBUG
+			for( BYTE t=DSK_REV5_TRACKS_MAX; t--; )
+				if (tracks[t] && tracksDebug[t]){ // Track exists and read
+					const PTrackInfo ti=tracks[t];
+					PCSectorData dataStart=(PCSectorData)(ti+1);
+					const TSectorInfo *si=ti->sectorInfo;
+					TSectorDebug *&td=tracksDebug[t];
+					const TSectorDebug *sectorsDebug=td;
+					for( BYTE i=0; i<ti->nSectors; i++,dataStart+=__getSectorLength__(si++) )
+						if (!sectorsDebug[i].modified // Sector not marked Modified ...
+							&&
+							sectorsDebug[i].crc16!=GetCrc16Ccitt( dataStart, __getSectorLength__(si) ) // ... but its data show different CRC
+						){
+							TCHAR buf[200];
+							const TSectorId id={ si->cylinderNumber, si->sideNumber, si->sectorNumber, si->sectorLengthCode };
+							::wsprintf( buf, _T("Track %d: Sector with %s not marked as modified!"), t, (LPCTSTR)id.ToString() );
+							Utils::FatalError(buf);
+							return false;
+						}
+					::free(td), td=nullptr;
+				}
+			if (!Utils::QuestionYesNo( _T("All modified sectors successfully marked as \"dirty\".\n\nSave the disk now?"), MB_DEFBUTTON2 ))
+				return false;
+		#endif
 		CFile f;
 		if (!__openImageForWriting__(lpszPathName,&f)) return FALSE;
 		f.Write(&diskInfo,sizeof(TDiskInfo));
@@ -249,7 +276,19 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		// populates output buffers with specified Sectors' data, usable lengths, and FDC statuses; ALWAYS attempts to buffer all Sectors - caller is then to sort out eventual read errors (by observing the FDC statuses); caller can call ::GetLastError to discover the error for the last Sector in the input list
 		ASSERT( outBufferData!=nullptr && outBufferLengths!=nullptr && outFdcStatuses!=nullptr );
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		if (const PTrackInfo ti=__findTrack__(cyl,head))
+		if (const PTrackInfo ti=__findTrack__(cyl,head)){
+			#ifdef _DEBUG
+				if (tracksDebug[cyl*diskInfo.nHeads+head]==nullptr){ // Track read for the first time
+					TSectorDebug *const sectorsDebug=(TSectorDebug *)::calloc(ti->nSectors,sizeof(TSectorDebug));
+						PCSectorData dataStart=(PCSectorData)(ti+1);
+						const TSectorInfo *si=ti->sectorInfo;
+						for( BYTE i=0; i<ti->nSectors; i++,dataStart+=__getSectorLength__(si++) ){
+							sectorsDebug[i].modified=false;
+							sectorsDebug[i].crc16=GetCrc16Ccitt( dataStart, __getSectorLength__(si) );
+						}
+					tracksDebug[cyl*diskInfo.nHeads+head]=sectorsDebug;
+				}
+			#endif
 			for( const PSectorData trackDataStart=(PSectorData)(ti+1); nSectors-->0; ){
 				const TSectorId sectorId=*bufferId++;
 				PSectorData result=trackDataStart;
@@ -272,7 +311,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 					outBufferLengths++;
 				}
 			}
-		else
+		}else
 			while (nSectors-->0)
 				*outBufferData++=nullptr, *outFdcStatuses++=TFdcStatus::SectorNotFound;
 		::SetLastError( *--outBufferData ? ERROR_SUCCESS : ERROR_SECTOR_NOT_FOUND );
@@ -286,6 +325,9 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			for( TSector n=ti->nSectors; n--; si++ )
 				if (!nSectorsToSkip){
 					if (*si==chs.sectorId){ // Sector IDs are equal
+						#ifdef _DEBUG
+							tracksDebug[chs.cylinder*diskInfo.nHeads+chs.head][si-ti->sectorInfo].modified=true;
+						#endif
 						si->fdcStatus=*pFdcStatus;
 						m_bModified=TRUE;
 						return ERROR_SUCCESS;
@@ -495,6 +537,10 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			if (const PTrackInfo ti=__findTrack__(cyl,head)){
 				diskInfo.rev5_trackOffsets256[cyl*diskInfo.nHeads+head]=0;
 				::free(ti), tracks[cyl*diskInfo.nHeads+head]=nullptr;
+				#ifdef _DEBUG
+					if (TSectorDebug *&td=tracksDebug[cyl*diskInfo.nHeads+head])
+						::free(td), td=nullptr;
+				#endif
 			}
 			// . updating the NumberOfCylinders
 			for( cyl=diskInfo.nCylinders; cyl--; )

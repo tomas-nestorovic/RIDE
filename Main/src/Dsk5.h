@@ -51,6 +51,12 @@
 			TDiskInfo(const TParams &rParams);
 		} diskInfo;
 		PTrackInfo tracks[DSK_REV5_TRACKS_MAX]; // each TrackInfo followed by data of its Sectors
+		#ifdef _DEBUG
+		struct TSectorDebug sealed{
+			bool modified;
+			WORD crc16;
+		} *tracksDebug[DSK_REV5_TRACKS_MAX]; // debug information on Sectors as they appear on the Track
+		#endif
 
 		PTrackInfo __findTrack__(TCylinder cyl,THead head) const;
 		WORD __getSectorLength__(const TSectorInfo *si) const;
