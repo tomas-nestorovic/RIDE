@@ -117,8 +117,10 @@
 
 	void CDsk5::__freeAllTracks__(){
 		// disposes all Tracks
-		while (diskInfo.nCylinders--)
-			for( THead head=diskInfo.nHeads; head; UnformatTrack(diskInfo.nCylinders,--head) );
+		while (diskInfo.nCylinders>0){
+			for( THead head=diskInfo.nHeads; head; UnformatTrack(diskInfo.nCylinders-1,--head) );
+			diskInfo.nCylinders--;
+		}
 	}
 
 
