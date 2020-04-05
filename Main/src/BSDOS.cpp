@@ -189,6 +189,7 @@
 									}
 									p[i].chs=BSDOS->__logfyz__(pSlot->firstSector);
 									BSDOS->__setLogicalSectorFatItem__( slot0.firstSector, TFatValue::SectorErrorInDataField );
+									de=BSDOS->dirsSector.TryGetDirectoryEntry(pSlot);
 								}else{
 									// subsequent erroneous Directory Sectors must be removed
 									BSDOS->__setLogicalSectorFatItem__( BSDOS->__fyzlog__(p[i].chs), TFatValue::SectorErrorInDataField );
@@ -199,6 +200,8 @@
 							return vp.TerminateAll(ERROR_FUNCTION_FAILED); // we shouldn't end up here but just to be sure
 						vp.fReport.CloseProblem(true);
 					}
+					// . checking Directory Name against non-printable characters
+					vp.WarnSomeCharactersNonPrintable( strItemId, _T("Directory name"), de->file.stdHeader.name, sizeof(de->file.stdHeader.name), ' ' );
 					// . checking basic information on the Directory
 					if (pSlot->nameChecksum!=de->GetDirNameChecksum()){
 						CString errMsg;
@@ -269,7 +272,12 @@
 							// : checking File Name and Extension
 							if (de->fileHasStdHeader){
 								CTape::THeader &rh=de->file.stdHeader;
-								vp.WarnSomeCharactersNonPrintable( strItemId, _T("File name"), rh.name, sizeof(rh.name), ' ' );
+								if (rh.GetUniFileType()!=TUniFileType::PROGRAM)
+									// non-Program Files may contain non-printable characters
+									vp.WarnSomeCharactersNonPrintable( strItemId, _T("File name"), rh.name, sizeof(rh.name), ' ' );
+								else if (const TStdWinError err=vp.VerifyAllCharactersPrintable( dt.chs, strItemId, _T("File name"), rh.name, sizeof(rh.name), ' ' ))
+									// Program names are usually typed in by the user and thus may not contain non-printable characters
+									return vp.TerminateAll(err);
 								if (!rh.SetFileType(rh.GetUniFileType())){
 									CString errMsg;
 									errMsg.Format( _T("%s: Non-standard file type"), strItemId );

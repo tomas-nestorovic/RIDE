@@ -579,11 +579,11 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 					case IDNO:
 						continue;
 				}
-				vp.fReport.CloseProblem(true); // see below
+				for( BYTE s=1; s<boot->nSectorsPerFat; s++ )
+					boot->fatSectorsListing[i+2*(s-1)]=BSDOS->__fyzlog__( pFats[i]->GetHealthyItem(s)->chs );
+				IMAGE->MarkSectorAsDirty(TBootSector::CHS);
+				vp.fReport.CloseProblem(true);
 			}
-			for( BYTE s=1; s<boot->nSectorsPerFat; s++ )
-				boot->fatSectorsListing[i+2*(s-1)]=BSDOS->__fyzlog__( pFats[i]->GetHealthyItem(s)->chs );
-			IMAGE->MarkSectorAsDirty(TBootSector::CHS);
 		}
 		pAction->UpdateProgress(++step);
 		// - checking that all Sectors beyond the official format are marked as Unknown
