@@ -400,7 +400,7 @@ Utils::Information("--- EVERYTHING OK ---");
 		// generates Sector ID into the Buffer
 		*(PDWORD)buffer=SECTOR_SYNC_ID_ADDRESS_MARK, buffer+=sizeof(DWORD);
 		*buffer++=id->cylinder, *buffer++=id->side, *buffer++=id->sector, *buffer++=id->lengthCode;
-		TCrc crc=__getCrcCcitt__(buffer-8,8);
+		TCrc crc=GetCrc16Ccitt(buffer-8,8);
 		if (pFdcStatus->DescribesDataFieldCrcError()) crc=~crc;
 		*(TCrc *)buffer=crc, buffer+=sizeof(TCrc); // CRC
 	}
@@ -409,7 +409,7 @@ Utils::Information("--- EVERYTHING OK ---");
 		if (*(PDWORD)buffer==SECTOR_SYNC_ID_ADDRESS_MARK){
 			buffer+=sizeof(DWORD);
 			outId->cylinder=*buffer++, outId->side=*buffer++, outId->sector=*buffer++, outId->lengthCode=*buffer++;
-			*outCrcOk=__getCrcCcitt__(buffer-8,8)==*(TCrc *)buffer;
+			*outCrcOk=GetCrc16Ccitt(buffer-8,8)==*(TCrc *)buffer;
 			return 3+1+4+2; // 0xA1A1A1 synchronization + ID Address Mark + ID itself + CRC
 		}else
 			return 0;
@@ -420,7 +420,7 @@ Utils::Information("--- EVERYTHING OK ---");
 		*(PDWORD)buffer= SECTOR_SYNCHRONIZATION | dam<<24, buffer+=sizeof(DWORD);
 		buffer=(PSectorData)::memset( buffer, fillerByte, sectorLength )+sectorLength;
 		sectorLength+=3+1; // 0xA1A1A1 synchronization + DAM
-		TCrc crc=__getCrcCcitt__(buffer-sectorLength,sectorLength);
+		TCrc crc=GetCrc16Ccitt(buffer-sectorLength,sectorLength);
 		if (pFdcStatus->DescribesDataFieldCrcError()) crc=~crc;
 		*(TCrc *)buffer=crc, buffer+=sizeof(TCrc); // CRC
 	}

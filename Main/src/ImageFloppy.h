@@ -3,7 +3,7 @@
 
 	class CFloppyImage:public CImage{
 	protected:
-		static WORD __getCrcCcitt__(PCSectorData buffer,WORD length);
+		static WORD GetCrc16Ccitt(PCSectorData buffer,WORD length);
 
 		TMedium::TType floppyType; // DD/HD
 
