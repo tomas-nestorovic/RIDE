@@ -59,10 +59,11 @@
 		// - composing the Message
 		CString msg;
 		if (nNonprintables)
-			msg.Format(	_T("The \"%s\" field %s%s contains non-printable characters %s"),
+			msg.Format(	_T("The \"%s\" field %s%s contains non-printable character%c %s"),
 						valueName,
 						locationName ? _T("in the ") : _T(""),
 						locationName ? locationName : _T(""),
+						nNonprintables>1 ? 's' : ' ',
 						(LPCTSTR)Utils::BytesToHexaText( nonprintables, nNonprintables, true )
 					);
 		return msg;
