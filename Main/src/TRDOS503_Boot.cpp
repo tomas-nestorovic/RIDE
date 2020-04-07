@@ -5,6 +5,48 @@
 
 	const TPhysicalAddress CTRDOS503::TBootSector::CHS={ 0, 0, {0,0,TRDOS503_BOOT_SECTOR_NUMBER,TRDOS503_SECTOR_LENGTH_STD_CODE} };
 
+	UINT AFX_CDECL CTRDOS503::TBootSector::Verification_thread(PVOID pCancelableAction){
+		// thread to verify the Boot Sector
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
+		const TSpectrumVerificationParams &vp=*(TSpectrumVerificationParams *)pAction->GetParams();
+		vp.fReport.OpenSection(BOOT_SECTOR_TAB_LABEL);
+		const auto trdos=static_cast<CTRDOS503 *>(vp.dos);
+		const PImage image=trdos->image;
+		const PBootSector boot=__getBootSector__(image);
+		if (!boot)
+			return vp.TerminateAll( Utils::ErrorByOs(ERROR_VOLMGR_DISK_INVALID,ERROR_UNRECOGNIZED_VOLUME) );
+		// - verifying this is actually a TR-DOS disk
+		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, nullptr, boot->id, (BYTE)BOOT_ID ))
+			return vp.TerminateAll(err);
+		// - verifying constant fields
+		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, nullptr, boot->zero1, (BYTE)0 ))
+			return vp.TerminateAll(err);
+		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, nullptr, boot->zero2, (BYTE)0 ))
+			return vp.TerminateAll(err);
+		// - verifying geometry
+		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, nullptr, boot->format, TDiskFormat::DS80, TDiskFormat::SS40 ))
+			return vp.TerminateAll(err);
+		// - verifying information on Directory
+		BYTE nFiles=0, nDeletedFiles=0;
+		for( TTrdosDirectoryTraversal dt(trdos); dt.__existsNextEntry__(); ){
+			nFiles+=dt.entryType==TDirectoryTraversal::FILE;
+			nDeletedFiles+=dt.entryType==TDirectoryTraversal::CUSTOM;
+		}
+		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Count of files"), boot->nFiles, nFiles ))
+			return vp.TerminateAll(err);
+		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Count of deleted files"), boot->nFilesDeleted, nDeletedFiles ))
+			return vp.TerminateAll(err);
+		// - verifying information on free space
+		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Free sectors"), boot->nFreeSectors, (WORD)(trdos->formatBoot.GetCountOfAllSectors()-boot->firstFree.track*TRDOS503_TRACK_SECTORS_COUNT-boot->firstFree.sector) ))
+			return vp.TerminateAll(err);
+		// - verifying DiskName
+		if (const TStdWinError err=vp.VerifyAllCharactersPrintable( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Disk name"), boot->label, trdos->boot.nCharsInLabel, ' ' ))
+			return vp.TerminateAll(err);
+		// - Boot Sector verified
+		pAction->UpdateProgressFinished();
+		return ERROR_SUCCESS;
+	}
+
 	BYTE CTRDOS503::TBootSector::__getLabelLengthEstimation__() const{
 		// estimates and returns the Label length (useful for more precise TR-DOS version recognition)
 		if (const LPCSTR nullChar=(LPCSTR)::memchr(label,'\0',TRDOS503_BOOT_LABEL_LENGTH_MAX+sizeof(WORD)))

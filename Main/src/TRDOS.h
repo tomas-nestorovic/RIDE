@@ -45,6 +45,8 @@
 		typedef struct TBootSector sealed{
 			static const TPhysicalAddress CHS;
 
+			static UINT AFX_CDECL Verification_thread(PVOID pCancelableAction);
+
 			BYTE zero1; // end of Directory
 			BYTE reserved1[224];
 			TSectorTrackPair firstFree;
@@ -57,7 +59,7 @@
 			BYTE zero2;
 			BYTE nFilesDeleted;
 			char label[TRDOS503_BOOT_LABEL_LENGTH_MAX];
-			WORD zero3;
+			WORD reserved3; // e.g., for extended Label
 
 			BYTE __getLabelLengthEstimation__() const; // for TR-DOS version recognition
 			void __init__(PCFormat pFormatBoot,BYTE nCharsInLabel,bool userDataInSysTrackAllowed);
