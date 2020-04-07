@@ -107,7 +107,7 @@
 				for( POSITION pos=recognition.__getFirstRecognizedDosPosition__(); pos; ){
 					const CDos::PCProperties p=recognition.__getNextRecognizedDos__(pos);
 					if (!::memcmp(p->name,TRDOS_NAME_BASE,sizeof(TRDOS_NAME_BASE)-1)){
-						static const TFormat Fmt={ TMedium::FLOPPY_DD, FDD_CYLINDERS_MAX,2,TRDOS503_TRACK_SECTORS_COUNT, TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD, 1 };
+						static const TFormat Fmt={ TMedium::FLOPPY_DD, 80,2,TRDOS503_TRACK_SECTORS_COUNT, TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD, 1 };
 						pTrdos.reset( (CTRDOS503 *)p->fnInstantiate(this,&Fmt) );
 						break;
 					}
