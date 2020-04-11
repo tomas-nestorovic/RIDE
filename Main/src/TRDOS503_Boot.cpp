@@ -32,15 +32,15 @@
 			nFiles+=dt.entryType==TDirectoryTraversal::FILE;
 			nDeletedFiles+=dt.entryType==TDirectoryTraversal::CUSTOM;
 		}
-		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Count of files"), boot->nFiles, nFiles ))
+		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, VERIF_FILE_COUNT, boot->nFiles, nFiles ))
 			return vp.TerminateAll(err);
 		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Count of deleted files"), boot->nFilesDeleted, nDeletedFiles ))
 			return vp.TerminateAll(err);
 		// - verifying information on free space
-		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Free sectors"), boot->nFreeSectors, (WORD)(trdos->formatBoot.GetCountOfAllSectors()-boot->firstFree.track*TRDOS503_TRACK_SECTORS_COUNT-boot->firstFree.sector) ))
+		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, VERIF_SECTOR_FREE_COUNT, boot->nFreeSectors, (WORD)(trdos->formatBoot.GetCountOfAllSectors()-boot->firstFree.track*TRDOS503_TRACK_SECTORS_COUNT-boot->firstFree.sector) ))
 			return vp.TerminateAll(err);
 		// - verifying DiskName
-		if (const TStdWinError err=vp.VerifyAllCharactersPrintable( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Disk name"), boot->label, trdos->boot.nCharsInLabel, ' ' ))
+		if (const TStdWinError err=vp.VerifyAllCharactersPrintable( CHS, BOOT_SECTOR_LOCATION_STRING, VERIF_VOLUME_NAME, boot->label, trdos->boot.nCharsInLabel, ' ' ))
 			return vp.TerminateAll(err);
 		// - Boot Sector verified
 		pAction->UpdateProgressFinished();

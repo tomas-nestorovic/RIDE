@@ -135,7 +135,7 @@
 				::wsprintf( strItemId, _T("Directory #%d"), i );
 				if (pSlot->reserved2 ^ (*(PCBYTE)pSlot>>6)){
 					CString errMsg;
-					errMsg.Format( _T("%s: Integrity error"), strItemId );
+					errMsg.Format( VERIF_MSG_ITEM_INTEGRITY_ERR, strItemId );
 					switch (vp.ConfirmFix( errMsg, _T("") )){
 						case IDCANCEL:
 							return vp.CancelAll();
@@ -164,8 +164,8 @@
 					CFatPath::PItem p; DWORD n;
 					if (!fatPath.AreAllSectorsReadable(BSDOS)){
 						CString errMsg;
-						errMsg.Format( _T("%s: Not all sectors are readable"), strItemId );
-						switch (vp.ConfirmFix( errMsg, _T("Unreadable sectors should be excluded.") )){
+						errMsg.Format( VERIF_MSG_ITEM_BAD_SECTORS, strItemId );
+						switch (vp.ConfirmFix( errMsg, VERIF_MSG_BAD_SECTOR_EXCLUDE )){
 							case IDCANCEL:
 								return vp.CancelAll();
 							case IDNO:
@@ -201,12 +201,12 @@
 						vp.fReport.CloseProblem(true);
 					}
 					// . checking Directory Name against non-printable characters
-					vp.WarnSomeCharactersNonPrintable( strItemId, _T("Directory name"), de->file.stdHeader.name, sizeof(de->file.stdHeader.name), ' ' );
+					vp.WarnSomeCharactersNonPrintable( strItemId, VERIF_DIRECTORY_NAME, de->file.stdHeader.name, sizeof(de->file.stdHeader.name), ' ' );
 					// . checking basic information on the Directory
 					if (pSlot->nameChecksum!=de->GetDirNameChecksum()){
 						CString errMsg;
 						errMsg.Format( _T("%s: Directory name checksum incorrect"), strItemId );
-						switch (vp.ConfirmFix( errMsg, _T("Checksum should be recomputed.") )){
+						switch (vp.ConfirmFix( errMsg, VERIF_MSG_CHECKSUM_RECALC )){
 							case IDCANCEL:
 								return vp.CancelAll();
 							case IDNO:
@@ -228,7 +228,7 @@
 							// : checking DirectoryEntry consistency
 							if (de->special^de->file.integrityCheckpoint1 || de->special^de->file.integrityCheckpoint2){
 								CString errMsg;
-								errMsg.Format( _T("%s: Integrity error"), strItemId );
+								errMsg.Format( VERIF_MSG_ITEM_INTEGRITY_ERR, strItemId );
 								switch (vp.ConfirmFix( errMsg, _T("") )){
 									case IDCANCEL:
 										return vp.CancelAll();
@@ -250,8 +250,8 @@
 										lengthFromFat= (nItems-1)*BSDOS_SECTOR_LENGTH_STD + BSDOS->__getLogicalSectorFatItem__(BSDOS->__fyzlog__(fatPath.GetHealthyItem(nItems-1)->chs)).info;
 									if (de->file.dataLength!=lengthFromFat){
 										CString errMsg;
-										errMsg.Format( _T("%s: Length incorrect"), strItemId );
-										switch (vp.ConfirmFix( errMsg, _T("Length should be adopted from FAT.") )){
+										errMsg.Format( VERIF_MSG_ITEM_BAD_LENGTH, strItemId );
+										switch (vp.ConfirmFix( errMsg, VERIF_MSG_FILE_LENGTH_FROM_FAT )){
 											case IDCANCEL:
 												return vp.CancelAll();
 											case IDNO:
@@ -265,7 +265,7 @@
 									}
 								}else{
 									CString errMsg;
-									errMsg.Format( _T("%s: FAT error (%s)"), strItemId, fatPath.GetErrorDesc() );
+									errMsg.Format( VERIF_MSG_ITEM_FAT_ERROR, strItemId, fatPath.GetErrorDesc() );
 									vp.fReport.OpenProblem(errMsg);
 									vp.fReport.CloseProblem(false);
 								}
@@ -274,13 +274,13 @@
 								CTape::THeader &rh=de->file.stdHeader;
 								if (rh.GetUniFileType()!=TUniFileType::PROGRAM)
 									// non-Program Files may contain non-printable characters
-									vp.WarnSomeCharactersNonPrintable( strItemId, _T("File name"), rh.name, sizeof(rh.name), ' ' );
-								else if (const TStdWinError err=vp.VerifyAllCharactersPrintable( dt.chs, strItemId, _T("File name"), rh.name, sizeof(rh.name), ' ' ))
+									vp.WarnSomeCharactersNonPrintable( strItemId, VERIF_FILE_NAME, rh.name, sizeof(rh.name), ' ' );
+								else if (const TStdWinError err=vp.VerifyAllCharactersPrintable( dt.chs, strItemId, VERIF_FILE_NAME, rh.name, sizeof(rh.name), ' ' ))
 									// Program names are usually typed in by the user and thus may not contain non-printable characters
 									return vp.TerminateAll(err);
 								if (!rh.SetFileType(rh.GetUniFileType())){
 									CString errMsg;
-									errMsg.Format( _T("%s: Non-standard file type"), strItemId );
+									errMsg.Format( VERIF_MSG_FILE_NONSTANDARD, strItemId );
 									vp.fReport.LogWarning( errMsg );
 								}
 							}

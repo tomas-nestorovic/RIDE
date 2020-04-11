@@ -251,7 +251,7 @@
 		while (chs.sectorId.sector++<MDOS2_DIR_LOGSECTOR_FIRST){ // "++" = Sectors numbered from 1
 			if (!image->GetHealthySectorData(chs)){
 				TCHAR msg[80];
-				::wsprintf( msg, _T("FAT sector with %s is bad"), (LPCTSTR)chs.sectorId.ToString() );
+				::wsprintf( msg, VERIF_MSG_FAT_SECTOR_BAD, (LPCTSTR)chs.sectorId.ToString() );
 				vp.fReport.LogWarning(msg);
 			}
 			pAction->UpdateProgress(++step);
@@ -635,7 +635,7 @@
 		for( TLogSector ls=MDOS2_DIR_LOGSECTOR_FIRST; ls<MDOS2_DATA_LOGSECTOR_FIRST; ls++ ){
 			const TPhysicalAddress chs=mdos->__logfyz__(ls);
 			if (!image->GetHealthySectorData(chs))
-				vp.fReport.LogWarning( _T("Directory sector with %s is bad"), (LPCTSTR)chs.sectorId.ToString() );
+				vp.fReport.LogWarning( VERIF_MSG_DIR_SECTOR_BAD, (LPCTSTR)chs.sectorId.ToString() );
 		}
 		// - verifying that all DirectoryEntries are valid
 		for( TMdos2DirectoryTraversal dt(mdos); dt.AdvanceToNextEntry(); )
@@ -653,14 +653,14 @@
 					case TExtension::SEQUENTIAL:
 						break; //nop
 					default:
-						vp.fReport.LogWarning( _T("%s: Unknown extension"), strItemId );
+						vp.fReport.LogWarning( VERIF_MSG_FILE_NONSTANDARD, strItemId );
 						break;
 				}
 				// . verifying Name
 				if (de->extension!=TExtension::PROGRAM)
 					// non-Program Files may contain non-printable characters
-					vp.WarnSomeCharactersNonPrintable( strItemId, _T("File name"), de->name, sizeof(de->name), '\0' );
-				else if (const TStdWinError err=vp.VerifyAllCharactersPrintable( dt.chs, strItemId, _T("File name"), de->name, sizeof(de->name), '\0' ))
+					vp.WarnSomeCharactersNonPrintable( strItemId, VERIF_FILE_NAME, de->name, sizeof(de->name), '\0' );
+				else if (const TStdWinError err=vp.VerifyAllCharactersPrintable( dt.chs, strItemId, VERIF_FILE_NAME, de->name, sizeof(de->name), '\0' ))
 					// Program names are usually typed in by the user and thus may not contain non-printable characters
 					return vp.TerminateAll(err);
 				// . verifying Length
@@ -675,8 +675,8 @@
 						}
 						if (de->GetLength()!=lengthFromFat){
 							CString errMsg;
-							errMsg.Format( _T("%s: Length incorrect"), strItemId );
-							switch (vp.ConfirmFix( errMsg, _T("Length should be adopted from FAT.") )){
+							errMsg.Format( VERIF_MSG_ITEM_BAD_LENGTH, strItemId );
+							switch (vp.ConfirmFix( errMsg, VERIF_MSG_FILE_LENGTH_FROM_FAT )){
 								case IDCANCEL:
 									return vp.CancelAll();
 								case IDNO:
@@ -691,8 +691,8 @@
 					}else{
 						// an invalid File has no Sectors affiliated; it's now known that anybody would ever do any tweaks to a Directory, hence this is highly likely an error in filesystem
 						CString errMsg;
-						errMsg.Format( _T("%s: No sectors affiliated"), strItemId );
-						switch (vp.ConfirmFix( errMsg, _T("File should be deleted") )){
+						errMsg.Format( VERIF_MSG_ITEM_NO_SECTORS, strItemId );
+						switch (vp.ConfirmFix( errMsg, VERIF_MSG_FILE_DELETE )){
 							case IDCANCEL:
 								return vp.CancelAll();
 							case IDNO:
@@ -706,7 +706,7 @@
 						}
 					}
 				}else
-					vp.fReport.LogWarning( _T("%s: FAT error (%s)"), strItemId, fatPath.GetErrorDesc() );
+					vp.fReport.LogWarning( VERIF_MSG_ITEM_FAT_ERROR, strItemId, fatPath.GetErrorDesc() );
 				// . verifying the starting Sector
 				if (de->firstLogicalSector>=mdos->formatBoot.GetCountOfAllSectors())
 					vp.fReport.LogWarning( _T("%s: First sector with %s out of disk"), strItemId, (LPCTSTR)mdos->__logfyz__(de->firstLogicalSector).sectorId.ToString() );

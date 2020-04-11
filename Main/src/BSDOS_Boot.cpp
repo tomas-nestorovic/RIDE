@@ -205,13 +205,13 @@
 			return vp.TerminateAll(err);
 		pAction->UpdateProgress(1);
 		// - Step 2: verifying geometry
-		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Number of cylinders"), boot->nCylinders, (WORD)1, (WORD)FDD_CYLINDERS_MAX ))
+		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, VERIF_CYLINDER_COUNT, boot->nCylinders, (WORD)1, (WORD)FDD_CYLINDERS_MAX ))
 			return vp.TerminateAll(err);
-		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Number of heads"), boot->nHeads, (WORD)1, (WORD)2 ))
+		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, VERIF_HEAD_COUNT, boot->nHeads, (WORD)1, (WORD)2 ))
 			return vp.TerminateAll(err);
-		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Number of sectors"), boot->nSectorsPerTrack, (WORD)BSDOS_SECTOR_NUMBER_TEMP, (WORD)BSDOS_SECTOR_NUMBER_LAST ))
+		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, VERIF_SECTOR_COUNT, boot->nSectorsPerTrack, (WORD)BSDOS_SECTOR_NUMBER_TEMP, (WORD)BSDOS_SECTOR_NUMBER_LAST ))
 			return vp.TerminateAll(err);
-		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Cluster size"), boot->nSectorsPerCluster, (WORD)1 ))
+		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, VERIF_CLUSTER_SIZE, boot->nSectorsPerCluster, (WORD)1 ))
 			return vp.TerminateAll(err);
 		pAction->UpdateProgress(2);
 		// - Step 3: verifying ID checksum
@@ -219,7 +219,7 @@
 			return vp.TerminateAll(err);
 		pAction->UpdateProgress(3);
 		// - Step 4: verifying DiskName
-		if (const TStdWinError err=vp.VerifyAllCharactersPrintable( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Disk name"), boot->diskName, sizeof(boot->diskName), ' ' ))
+		if (const TStdWinError err=vp.VerifyAllCharactersPrintable( CHS, BOOT_SECTOR_LOCATION_STRING, VERIF_VOLUME_NAME, boot->diskName, sizeof(boot->diskName), ' ' ))
 			return vp.TerminateAll(err);
 		pAction->UpdateProgress(4);
 		// - Boot Sector verified

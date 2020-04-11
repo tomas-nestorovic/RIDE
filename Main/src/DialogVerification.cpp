@@ -347,8 +347,6 @@
 		return ERROR_SUCCESS;
 	}
 
-	#define WARNING_CROSSED_FILES	_T("Kept cross-linked, changes in one will affect the other")
-
 	UINT AFX_CDECL TVerificationFunctions::FloppyCrossLinkedFilesVerification_thread(PVOID pCancelableAction){
 		// thread to find and separate cross-linked Files on current volume
 		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
@@ -362,7 +360,7 @@
 		)
 			return vp.TerminateAndGoToNextAction(ERROR_NOT_SUPPORTED);
 		// - verifying the volume
-		vp.fReport.OpenSection(_T("Cross-linked files (floppy)"));
+		vp.fReport.OpenSection(FAT_VERIFICATION_CROSSLINKED _T(" (floppy)"));
 		const PImage image=vp.dos->image;
 		pAction->SetProgressTarget( vp.dos->formatBoot.nCylinders );
 		CMapWordToPtr sectorOccupation[FDD_CYLINDERS_MAX*2];
@@ -418,7 +416,7 @@
 					if (!askedToAutoFixProblem){
 						CString msg;
 						msg.Format( _T("%s \"%s\" is cross-linked with %s \"%s\""), vp.dos->IsDirectory(file)?_T("Directory"):_T("File"), (LPCTSTR)vp.dos->GetFilePresentationNameAndExt(file), vp.dos->IsDirectory(sectorOccupiedByFile)?_T("directory"):_T("file"), (LPCTSTR)vp.dos->GetFilePresentationNameAndExt(sectorOccupiedByFile) );
-						switch (vp.ConfirmFix( msg, WARNING_CROSSED_FILES )){
+						switch (vp.ConfirmFix( msg, VERIF_MSG_FILE_UNCROSS )){
 							case IDCANCEL:
 								return vp.CancelAll();
 							case IDNO:
@@ -431,7 +429,7 @@
 					while (!( crossLinkedSectorData=image->GetHealthySectorData(chs) )){
 						CString msg;
 						msg.Format( _T("Sector %s in \"%s\" %s is unreadable"), (LPCTSTR)chs.sectorId.ToString(), (LPCTSTR)vp.dos->GetFilePresentationNameAndExt(file), vp.dos->IsDirectory(file)?_T("directory"):_T("file") );
-						switch (Utils::CancelRetryContinue( msg, ::GetLastError(), MB_DEFBUTTON2, WARNING_CROSSED_FILES )){
+						switch (Utils::CancelRetryContinue( msg, ::GetLastError(), MB_DEFBUTTON2, VERIF_MSG_FILE_UNCROSS )){
 							case IDCANCEL:
 								return vp.CancelAll();
 							case IDCONTINUE:
@@ -511,7 +509,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 		)
 			return vp.TerminateAndGoToNextAction(ERROR_NOT_SUPPORTED);
 		// - composing a picture of which Sectors are actually affiliated to which Files
-		vp.fReport.OpenSection(_T("Lost sectors (floppy)"));
+		vp.fReport.OpenSection(FAT_VERIFICATION_LOSTSECTORS _T(" (floppy)"));
 		const PImage image=vp.dos->image;
 		CMapWordToPtr sectorAffiliation[FDD_CYLINDERS_MAX*2];
 		CFileManagerView::TFileList bfsFiles; // in-breath search of Files
@@ -693,7 +691,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
 		const CVerifyVolumeDialog::TParams &vp=*(CVerifyVolumeDialog::TParams *)pAction->GetParams();
 		const PImage image=vp.dos->image;
-		vp.fReport.OpenSection(_T("Surface verification (whole disk)"));
+		vp.fReport.OpenSection(SURFACE_VERIFICATION _T(" (whole disk)"));
 		pAction->SetProgressTarget( vp.dos->formatBoot.nCylinders );
 		const auto sectorIdAndPositionIdentity=Utils::CByteIdentity();
 		TPhysicalAddress chs;

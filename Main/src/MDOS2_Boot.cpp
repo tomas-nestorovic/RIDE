@@ -308,11 +308,11 @@
 					break;
 			}
 		if (boot->current.driveError)
-			vp.fReport.LogWarning( _T("An error is reported to have occured for current drive") );
+			vp.fReport.LogWarning( VERIF_MSG_DRIVE_ERROR );
 		// - verifying Current disk information
-		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Number of cylinders"), boot->current.nCylinders, (BYTE)1, (BYTE)FDD_CYLINDERS_MAX ))
+		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, VERIF_CYLINDER_COUNT, boot->current.nCylinders, (BYTE)1, (BYTE)FDD_CYLINDERS_MAX ))
 			return vp.TerminateAll(err);
-		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Number of sectors"), boot->current.nSectors, (BYTE)MDOS2_TRACK_SECTORS_MIN, (BYTE)MDOS2_TRACK_SECTORS_MAX ))
+		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, VERIF_SECTOR_COUNT, boot->current.nSectors, (BYTE)MDOS2_TRACK_SECTORS_MIN, (BYTE)MDOS2_TRACK_SECTORS_MAX ))
 			return vp.TerminateAll(err);
 		if (boot->current.diskFlags.driveD40 && boot->current.nCylinders>42){ // TODO: replace 42 with #defined constant
 			TCHAR msg[80];
@@ -358,7 +358,7 @@
 		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Drive sectors"), boot->current.driveSectorsPerTrack, (BYTE)MDOS2_TRACK_SECTORS_MIN, (BYTE)MDOS2_TRACK_SECTORS_MAX ))
 			return vp.TerminateAll(err);
 		// - verifying DiskName
-		if (const TStdWinError err=vp.VerifyAllCharactersPrintable( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Disk name"), boot->label, sizeof(boot->label), '\0' ))
+		if (const TStdWinError err=vp.VerifyAllCharactersPrintable( CHS, BOOT_SECTOR_LOCATION_STRING, VERIF_VOLUME_NAME, boot->label, sizeof(boot->label), '\0' ))
 			return vp.TerminateAll(err);
 		// - Boot Sector verified
 		pAction->UpdateProgressFinished();

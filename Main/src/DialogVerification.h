@@ -2,8 +2,39 @@
 #define VERIFICATIONDIALOG_H
 
 	#define FAT_VERIFICATION_READABILITY _T("FAT readability")
+	#define FAT_VERIFICATION_CROSSLINKED _T("Cross-linked files")
+	#define FAT_VERIFICATION_LOSTSECTORS _T("Lost sectors")
 	#define FILESYSTEM_VERIFICATION		_T("Filesystem")
+	#define SURFACE_VERIFICATION		_T("Surface verification")
 	#define VERIFICATION_WARNING_SIGNIFICANT_PROBLEM	_T("There seems to be a significant problem with the disk - this step may take unpredictably longer to finish.\n\nTerminate it and proceed with the next step?")
+
+	#define VERIF_CYLINDER_COUNT		_T("Number of cylinders")
+	#define VERIF_HEAD_COUNT			_T("Number of heads")
+	#define VERIF_SECTOR_COUNT			_T("Number of sectors")
+	#define VERIF_SECTOR_FREE_COUNT		_T("Free sectors")
+	#define VERIF_CLUSTER_SIZE			_T("Cluster size")
+	#define VERIF_FILE_COUNT			_T("Count of files")
+
+	#define VERIF_VOLUME_NAME			_T("Volume name")
+	#define VERIF_DIRECTORY_NAME		_T("Directory name")
+	#define VERIF_FILE_NAME				_T("File name")
+
+	#define VERIF_MSG_FAT_SECTOR_BAD	_T("FAT sector with %s is bad")
+	#define VERIF_MSG_DIR_SECTOR_BAD	_T("Directory sector with %s is bad")
+	#define VERIF_MSG_FILE_NONSTANDARD	_T("%s: Non-standard file type")
+	#define VERIF_MSG_ITEM_INTEGRITY_ERR _T("%s: Integrity error")
+	#define VERIF_MSG_ITEM_BAD_SECTORS	_T("%s: Not all sectors are readable")
+	#define VERIF_MSG_ITEM_BAD_LENGTH	_T("%s: Length incorrect")
+	#define VERIF_MSG_ITEM_FAT_ERROR	_T("%s: FAT error (%s)")
+	#define VERIF_MSG_ITEM_NO_SECTORS	_T("%s: No sectors affiliated")
+	#define VERIF_MSG_DRIVE_ERROR		_T("An error is reported to have occured for current drive")
+
+	#define VERIF_MSG_BAD_SECTOR_EXCLUDE	_T("Bad sectors should be excluded.")
+	#define VERIF_MSG_CHECKSUM_RECALC		_T("Checksum should be recomputed.")
+	#define VERIF_MSG_FILE_UNCROSS			_T("Kept cross-linked, changes in one will affect the other")
+	#define VERIF_MSG_FILE_LENGTH_FROM_FAT	_T("Length should be adopted from FAT.")
+	#define VERIF_MSG_FILE_DELETE			_T("File should be deleted")
+
 
 	struct TVerificationFunctions sealed{
 		static UINT AFX_CDECL ReportOnFilesWithBadFatPath_thread(PVOID pCancelableAction);
