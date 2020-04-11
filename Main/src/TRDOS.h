@@ -38,7 +38,8 @@
 			BYTE track;
 
 			TSectorTrackPair operator+(BYTE nSectors) const;
-			bool operator<(TSectorTrackPair other) const;
+			short operator-(const TSectorTrackPair other) const;
+			bool operator<(const TSectorTrackPair other) const;
 		};
 
 		#pragma pack(1)
@@ -141,6 +142,7 @@
 		static PBootSector __getBootSector__(PImage image);
 		static UINT AFX_CDECL __defragmentation_thread__(PVOID _pCancelableAction);
 		static void __informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId);
+		static UINT AFX_CDECL CrossLinkedFilesVerification_thread(PVOID pCancelableAction);
 
 		bool zeroLengthFilesEnabled,importToSysTrack;
 

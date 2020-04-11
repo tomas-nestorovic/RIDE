@@ -8,9 +8,14 @@
 		return result;
 	}
 
-	bool CTRDOS503::TSectorTrackPair::operator<(TSectorTrackPair other) const{
+	short CTRDOS503::TSectorTrackPair::operator-(const TSectorTrackPair other) const{
+		// computes and returns the distance (in Sectors) between this and the Other identifier
+		return track*TRDOS503_TRACK_SECTORS_COUNT+sector - (other.track*TRDOS503_TRACK_SECTORS_COUNT+other.sector);
+	}
+
+	bool CTRDOS503::TSectorTrackPair::operator<(const TSectorTrackPair other) const{
 		// True <=> location of this Sector is before the Other Sector, otherwise False
-		return track*TRDOS503_TRACK_SECTORS_COUNT+sector < other.track*TRDOS503_TRACK_SECTORS_COUNT+other.sector;
+		return *this-other<0;
 	}
 
 
@@ -213,6 +218,11 @@
 		for( item.value/=formatBoot.sectorLength; item.value--; ){ // each Item gets a unique Value
 			// . adding the Item to the FatPath
 			if (!rFatPath.AddItem(&item)) break; // also sets an error in FatPath
+			// . VALIDATION: Value must "make sense"
+			if (item.chs.sectorId.cylinder>=formatBoot.nCylinders){
+				rFatPath.error=CFatPath::TError::VALUE_INVALID;
+				break;
+			}
 			// . determining the PhysicalAddress of the next Sector
 			if (++item.chs.sectorId.sector>formatBoot.nSectors){
 				item.chs.sectorId.sector=TRDOS503_SECTOR_FIRST_NUMBER;
@@ -823,4 +833,107 @@
 			}
 		}
 		return __super::UpdateCommandUi(cmd,pCmdUI);
+	}
+
+
+
+
+
+
+
+
+
+	UINT AFX_CDECL CTRDOS503::CrossLinkedFilesVerification_thread(PVOID pCancelableAction){
+		// thread to find and separate cross-linked Files on current volume
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
+		const TSpectrumVerificationParams &vp=*(TSpectrumVerificationParams *)pAction->GetParams();
+		vp.fReport.OpenSection(FAT_VERIFICATION_CROSSLINKED);
+		const auto trdos=static_cast<CTRDOS503 *>(vp.dos);
+		const PImage image=trdos->image;
+		const PBootSector boot=__getBootSector__(image);
+		if (!boot)
+			return vp.TerminateAll( Utils::ErrorByOs(ERROR_VOLMGR_DISK_INVALID,ERROR_UNRECOGNIZED_VOLUME) );
+		// - getting list of Files (present and deleted)
+		PDirectoryEntry directory[TRDOS503_FILE_COUNT_MAX];
+		const BYTE nFiles=trdos->__getDirectory__(directory);
+		pAction->SetProgressTarget(nFiles);
+		// - sorting the list of Files by their logical distance from disk begin (InsertSort)
+		for( BYTE i=1,j; i<nFiles; i++ ){
+			const PDirectoryEntry de=directory[ j=i ];
+			bool warnedAboutWrongPosition=false;
+			do{
+				if (de->first<directory[j-1]->first){
+					if (!warnedAboutWrongPosition){
+						vp.fReport.LogWarning( _T("File \"%s\" at wrong position in directory, beware deleting it!"), (LPCTSTR)trdos->GetFilePresentationNameAndExt(de) );
+						warnedAboutWrongPosition=true;
+					}
+					directory[j]=directory[j-1];
+				}else
+					break;
+			}while (--j>0);
+			directory[j]=de;
+		}
+		// - determining the number of Sectors to shift each File's content by
+		WORD shiftSectors[TRDOS503_FILE_COUNT_MAX];
+		*shiftSectors=0; // first File won't be shifted
+		for( BYTE i=1; i<nFiles; i++ ){
+			const PCDirectoryEntry dePrev=directory[i-1];
+			const TSectorTrackPair endOfPrevFile=dePrev->first+dePrev->nSectors;
+			const PCDirectoryEntry de=directory[i];
+			shiftSectors[i]=shiftSectors[i-1];
+			if (de->first<endOfPrevFile)
+				shiftSectors[i]+=endOfPrevFile-de->first;
+		}
+		// - shifting the Files
+		const PCDirectoryEntry deLast=directory[nFiles-1];
+		for( BYTE i=nFiles,buffer[65536]; i; pAction->UpdateProgress(nFiles-i) )
+			if (const WORD n=shiftSectors[--i]){ // the File is cross-linked with another File
+				// . confirming the resolution
+				const PDirectoryEntry de=directory[i];
+				const CString &&fileName=trdos->GetFilePresentationNameAndExt(de);
+				TCHAR msg[300]; LPCTSTR suggestion;
+				if (shiftSectors[i-1]<n){
+					::wsprintf( msg, _T("File \"%s\" in conflict with \"%s\""), (LPCTSTR)fileName, (LPCTSTR)trdos->GetFilePresentationNameAndExt(directory[i-1]) );
+					suggestion=VERIF_MSG_FILE_UNCROSS;
+				}else{
+					::wsprintf( msg, _T("File \"%s\" must be shifted to resolve conflicts earlier on the disk"), (LPCTSTR)fileName );
+					suggestion=_T("");
+				}
+				switch (vp.ConfirmFix(msg,suggestion)){
+					case IDCANCEL:
+						return vp.CancelAll();
+					case IDNO:
+						return vp.TerminateAndGoToNextAction(ERROR_VALIDATE_CONTINUE);
+				}
+				// . reading the File
+				LPCTSTR err=nullptr;
+				const DWORD fileExportSize=trdos->ExportFile( de, &CMemFile(buffer,sizeof(buffer)), sizeof(buffer), &err );
+				if (err){
+					::wsprintf( msg, _T("%s: %s"), fileName, err );
+					return vp.TerminateAndGoToNextAction((LPCTSTR)msg);
+				}
+				// . writing the File to new location
+				if (fileExportSize){ // zero-length Files have no Sectors associated with them
+					const auto firstFree0=boot->firstFree;
+					boot->firstFree=de->first+n;
+					CFatPath fatPath( trdos, fileExportSize );
+					if (const TStdWinError err=trdos->__importData__( &CMemFile(buffer,fileExportSize), fileExportSize, false, fatPath )){
+						// relocation failed - reverting all changes
+						boot->firstFree=de->first;
+						trdos->__importData__( &CMemFile(buffer,fileExportSize), fileExportSize, false, CFatPath(UCHAR_MAX) );
+						boot->firstFree=firstFree0;
+						return vp.TerminateAndGoToNextAction(err);
+					}
+					if (!fatPath.MarkAllSectorsModified(image))
+						return vp.TerminateAll(ERROR_FUNCTION_FAILED); // we shouldn't end up here but just to be sure
+					de->first=boot->firstFree;
+					trdos->MarkDirectorySectorAsDirty(de);
+					boot->firstFree=deLast->first+deLast->nSectors;
+					image->MarkSectorAsDirty(TBootSector::CHS);
+				}
+				vp.fReport.CloseProblem(true);
+			}
+		// - successfully verified
+		pAction->UpdateProgressFinished();
+		return ERROR_SUCCESS;
 	}
