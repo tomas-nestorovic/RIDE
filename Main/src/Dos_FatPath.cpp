@@ -143,6 +143,16 @@
 		return true;
 	}
 
+	bool CDos::CFatPath::MarkAllSectorsModified(PImage image) const{
+		// True <=> all Sectors refered in the FatPath are healthy, otherwise False
+		PCItem p; DWORD n;
+		if (GetItems(p,n)) // error
+			return false;
+		while (n--)
+			image->MarkSectorAsDirty(p++->chs);
+		return true;
+	}
+
 	DWORD CDos::CFatPath::GetPhysicalAddresses(TPhysicalAddress *pOutChs) const{
 		// returns the NumberOfItems of Items written to the output buffer; returns zero if the FatPath is erroneous
 		if (error)

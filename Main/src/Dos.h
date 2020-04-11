@@ -199,6 +199,7 @@
 			DWORD GetNumberOfItems() const;
 			bool ContainsSector(RCPhysicalAddress chs) const;
 			bool AreAllSectorsReadable(const CDos *dos) const;
+			bool MarkAllSectorsModified(PImage image) const;
 			DWORD GetPhysicalAddresses(TPhysicalAddress *pOutChs) const;
 			LPCTSTR GetErrorDesc() const;
 		};

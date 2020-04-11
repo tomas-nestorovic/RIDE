@@ -884,8 +884,7 @@ reportError:Utils::Information(buf);
 			DeleteFile(rFile); // removing the above added File record from current Directory
 			return LOG_ERROR(err);
 		}
-		CFatPath::PCItem p;	DWORD n;
-		for( rFatPath.GetItems(p,n); n--; image->MarkSectorAsDirty(p++->chs) );
+		rFatPath.MarkAllSectorsModified(image);
 		return ERROR_SUCCESS;
 	}
 
