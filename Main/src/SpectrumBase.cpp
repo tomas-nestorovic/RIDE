@@ -287,13 +287,13 @@
 				// previewing File(s) on Spectrum screen
 				if (CScreenPreview::pSingleInstance)
 					CScreenPreview::pSingleInstance->DestroyWindow();
-				new CScreenPreview(	*CFileManagerView::pCurrentlyShown );
+				new CScreenPreview(	CFileManagerView::pCurrentlyShown ? *CFileManagerView::pCurrentlyShown : *CDos::GetFocused()->pFileManager );
 				return TCmdResult::DONE;
 			case ID_ZX_PREVIEWASBASIC:
 				// previewing File(s) as BASIC program(s)
 				if (CBasicPreview::pSingleInstance)
 					CBasicPreview::pSingleInstance->DestroyWindow();
-				new CBasicPreview( *CFileManagerView::pCurrentlyShown );
+				new CBasicPreview( CFileManagerView::pCurrentlyShown ? *CFileManagerView::pCurrentlyShown : *CDos::GetFocused()->pFileManager );
 				return TCmdResult::DONE;
 		}
 		return __super::ProcessCommand(cmd);
