@@ -875,6 +875,22 @@
 	CDos::TCmdResult CTRDOS503::ProcessCommand(WORD cmd){
 		// returns the Result of processing a DOS-related command
 		switch (cmd){
+			case ID_DOS_VERIFY:{
+				// volume verification
+				static const TVerificationFunctions vf={
+					TBootSector::Verification_thread, // Boot Sector
+					nullptr, // FAT readability (doesn't have FAT)
+					nullptr, // FAT Files OK (doesn't have FAT)
+					CrossLinkedFilesVerification_thread, // FAT crossed Files
+					nullptr, // FAT lost allocation units (doesn't have FAT)
+					TDirectoryEntry::Verification_thread, // Filesystem
+					TVerificationFunctions::WholeDiskSurfaceVerification_thread // Volume surface
+				};
+				__verifyVolume__(
+					CVerifyVolumeDialog( TSpectrumVerificationParams(this,vf) )
+				);
+				return TCmdResult::DONE_REDRAW;
+			}
 			case ID_DOS_FILE_ZERO_LENGTH:
 				// enabling/disabling importing of zero-length Files
 				__writeProfileBool__( INI_ALLOW_ZERO_LENGTH_FILES, zeroLengthFilesEnabled=!zeroLengthFilesEnabled );

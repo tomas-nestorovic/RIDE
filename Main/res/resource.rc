@@ -294,7 +294,7 @@ IDR_TRDOS MENU DISCARDABLE
 BEGIN
     POPUP "TR-DOS"
     BEGIN
-        MENUITEM "Verify...",                   ID_DOS_VERIFY, GRAYED
+        MENUITEM "Verify...",                   ID_DOS_VERIFY
         MENUITEM "Fill empty space...",         ID_DOS_FILL_EMPTY_SPACE
         MENUITEM "Wipe empty space\tCtrl+6",    ID_DOS_DEFRAGMENT
         POPUP "Tape"
