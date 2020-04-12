@@ -880,8 +880,99 @@
 				);
 				return TCmdResult::DONE_REDRAW;
 			}
+			case ID_FILE_SHIFT_UP:{
+				// shifting selected Files "up" (i.e. towards the beginning of the Directory)
+				if (!fileManager.m_hWnd) break; // giving up this command if FileManager not switched to
+				if (image->__reportWriteProtection__()) return TCmdResult::DONE;
+				const auto prev=BeginDirectoryTraversal(currentDir), curr=BeginDirectoryTraversal(currentDir);
+				if (currentDir!=ZX_DIR_ROOT) // skipping first DirectoryEntry
+					prev->AdvanceToNextEntry(), curr->AdvanceToNextEntry();
+				curr->AdvanceToNextEntry();
+				bool prevIsSelected=true; // initialization to prevent from shifting "before" the Directory
+				CFileManagerView::TFileList selectedFiles;
+				for( POSITION pos=fileManager.GetFirstSelectedFilePosition(); pos; ){
+					const PFile selected=fileManager.GetNextSelectedFile(pos);
+					while (curr->entry!=selected){
+						prev->AdvanceToNextEntry();
+						curr->AdvanceToNextEntry();
+						prevIsSelected=false;
+					}
+					if (!prevIsSelected){
+						// can swap items to shift Selected "up"
+						if (currentDir==ZX_DIR_ROOT)
+							std::swap( *(CDirsSector::PSlot)prev->entry, *(CDirsSector::PSlot)curr->entry );
+						else
+							std::swap( *(PDirectoryEntry)prev->entry, *(PDirectoryEntry)curr->entry );
+						MarkDirectorySectorAsDirty(prev->entry);
+						MarkDirectorySectorAsDirty(curr->entry);
+					}else
+						prev->AdvanceToNextEntry(), curr->AdvanceToNextEntry();
+					selectedFiles.AddTail(prev->entry);
+				}
+				fileManager.SelectFiles(selectedFiles);
+				return TCmdResult::DONE;
+			}
+			case ID_FILE_SHIFT_DOWN:{
+				// shifting selected Files "down" (i.e. towards the end of the Directory)
+				if (!fileManager.m_hWnd) break; // giving up this command if FileManager not switched to
+				if (image->__reportWriteProtection__()) return TCmdResult::DONE;
+				CFileManagerView::TFileList selectedFiles;
+				PFile nextSelected=nullptr;
+				for( POSITION pos=fileManager.GetLastSelectedFilePosition(); pos; ){
+					const PFile selected=fileManager.GetPreviousSelectedFile(pos);
+					const auto pdt=BeginDirectoryTraversal(currentDir);
+					do{
+						pdt->AdvanceToNextEntry();
+					}while (pdt->entry!=selected);
+					if (pdt->AdvanceToNextEntry() && pdt->entry!=nextSelected){ // A&B, A = an item "down" the Directory exists, B = the item isn't occupied by an also selected item (discovered in the previous iteration)
+						// can swap items to shift Selected "down"
+						if (currentDir==ZX_DIR_ROOT)
+							std::swap( *(CDirsSector::PSlot)pdt->entry, *(CDirsSector::PSlot)selected );
+						else
+							std::swap( *(PDirectoryEntry)pdt->entry, *(PDirectoryEntry)selected );
+						MarkDirectorySectorAsDirty(pdt->entry);
+						MarkDirectorySectorAsDirty(selected);
+						selectedFiles.AddTail( nextSelected=pdt->entry );
+					}else
+						selectedFiles.AddTail( nextSelected=selected );
+				}
+				fileManager.SelectFiles(selectedFiles);
+				return TCmdResult::DONE;
+			}
+			case ID_COMPUTE_CHECKSUM:
+				// recomputes the Checksum for selected Directories
+				if (!fileManager.m_hWnd) break; // giving up this command if FileManager not switched to
+				if (image->__reportWriteProtection__()) return TCmdResult::DONE;
+				for( POSITION pos=fileManager.GetFirstSelectedFilePosition(); pos; ){
+					const auto slot=(CDirsSector::PSlot)fileManager.GetNextSelectedFile(pos);
+					if (const auto de=dirsSector.TryGetDirectoryEntry(slot)){
+						slot->nameChecksum=de->GetDirNameChecksum();
+						dirsSector.MarkAsDirty();
+					}
+				}
+				fileManager.Invalidate();
+				return TCmdResult::DONE;
 		}
 		return __super::ProcessCommand(cmd);
+	}
+
+	bool CBSDOS308::UpdateCommandUi(WORD cmd,CCmdUI *pCmdUI) const{
+		// True <=> given Command-specific user interface successfully updated, otherwise False
+		switch (cmd){
+			case ID_FILE_SHIFT_UP:
+			case ID_FILE_SHIFT_DOWN:
+				if (!fileManager.m_hWnd) break; // giving up this command if FileManager not switched to
+				pCmdUI->Enable( fileManager.GetListCtrl().GetSelectedCount() );
+				return true;
+			case ID_COMPUTE_CHECKSUM:
+				if (!fileManager.m_hWnd) break; // giving up this command if FileManager not switched to
+				pCmdUI->Enable(	currentDir==ZX_DIR_ROOT
+								&&
+								fileManager.GetListCtrl().GetSelectedCount()
+							);
+				return true;
+		}
+		return __super::UpdateCommandUi(cmd,pCmdUI);
 	}
 
 	CBSDOS308::TLogSector CBSDOS308::__getNextHealthySectorWithoutFat__(TLogSector &rStart,TLogSector end) const{

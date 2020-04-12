@@ -618,6 +618,12 @@
 		}else
 			return (CDos::PFile)selectedFiles.GetPrev(pos);
 	}
+	void CFileManagerView::SelectFiles(const TFileList &selection){
+		// changes SelectedFile
+		selectedFiles.RemoveAll();
+		for( POSITION pos=selection.GetHeadPosition(); pos; selectedFiles.AddTail(selection.GetNext(pos)) );
+		RefreshDisplay();
+	}
 	DWORD CFileManagerView::GetCountOfSelectedFiles() const{
 		// returns the number of selected Files
 		if (::IsWindow(m_hWnd))

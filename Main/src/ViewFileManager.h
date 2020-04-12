@@ -269,6 +269,7 @@
 		CDos::PFile GetNextSelectedFile(POSITION &pos) const;
 		POSITION GetLastSelectedFilePosition() const;
 		CDos::PFile GetPreviousSelectedFile(POSITION &pos) const;
+		void SelectFiles(const TFileList &selection);
 		DWORD GetCountOfSelectedFiles() const;
 		TStdWinError ImportFileAndResolveConflicts(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,const FILETIME &rCreated,const FILETIME &rLastRead,const FILETIME &rLastModified,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution);
 		void SwitchToDirectory(CDos::PFile directory);

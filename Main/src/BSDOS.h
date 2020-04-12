@@ -199,12 +199,14 @@
 			static void WINAPI __onSubdirectoryNameChanged__(PropGrid::PCustomParam slot);
 			static bool WINAPI __fileTypeModified__(PVOID file,PropGrid::Enum::UValue newType);
 
+			CMainWindow::CDockableToolBar toolbar;
 			mutable CMSDOS7::TDateTime::CEditor dateTimeEditor;
 
 			void DrawReportModeCell(PCFileInfo pFileInfo,LPDRAWITEMSTRUCT pdis) const override;
 			int CompareFiles(PCFile file1,PCFile file2,BYTE information) const override;
 			PEditorBase CreateFileInformationEditor(PFile file,BYTE information) const override;
 			void OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint) override;
+			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 		public:
 			CBsdos308FileManagerView(CBSDOS308 *bsdos);
 		} fileManager;
@@ -253,6 +255,7 @@
 		// other
 		TStdWinError CreateUserInterface(HWND hTdi) override;
 		TCmdResult ProcessCommand(WORD cmd) override;
+		bool UpdateCommandUi(WORD cmd,CCmdUI *pCmdUI) const override;
 		void InitializeEmptyMedium(CFormatDialog::PCParameters) override;
 		bool ValidateFormatChangeAndReportProblem(bool reformatting,PCFormat f) const override;
 	};

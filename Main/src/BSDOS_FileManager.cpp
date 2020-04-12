@@ -38,6 +38,7 @@
 	CBSDOS308::CBsdos308FileManagerView::CBsdos308FileManagerView(CBSDOS308 *bsdos)
 		// ctor
 		: CSpectrumFileManagerView( bsdos, bsdos->zxRom, REPORT, LVS_REPORT, INFORMATION_COUNT, InformationList, ZX_TAPE_FILE_NAME_LENGTH_MAX, &DirManagement )
+		, toolbar( IDR_ZX_TAPE, ID_SUBDIRECTORY ) // "some" unique ID
 		, dateTimeEditor(this) {
 	}
 
@@ -70,6 +71,25 @@
 										(1<<INFORMATION_FLAG)+
 										(1<<INFORMATION_CREATED);
 		__super::OnUpdate(pSender,lHint,pHint);
+	}
+
+	LRESULT CBSDOS308::CBsdos308FileManagerView::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
+		// window procedure
+		switch (msg){
+			case WM_CREATE:
+				// FileManager just shown
+				// . base
+				if (const LRESULT err=__super::WindowProc(msg,wParam,lParam))
+					return err;
+				// . showing the Tape ToolBar "after" the FileManager's ToolBar
+				toolbar.__show__( tab.toolbar );
+				return 0;
+			case WM_DESTROY:
+				// FileManager destroyed - hiding the Tape ToolBar
+				toolbar.__hide__();
+				break;
+		}
+		return __super::WindowProc(msg,wParam,lParam);
 	}
 
 	void CBSDOS308::CBsdos308FileManagerView::DrawReportModeCell(PCFileInfo pFileInfo,LPDRAWITEMSTRUCT pdis) const{
