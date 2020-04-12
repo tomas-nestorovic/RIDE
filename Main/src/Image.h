@@ -80,6 +80,7 @@
 
 		bool operator==(const TFormat &fmt2) const;
 		DWORD GetCountOfAllSectors() const;
+		TTrack GetCountOfAllTracks() const;
 	} *PFormat;
 	typedef const TFormat *PCFormat;
 

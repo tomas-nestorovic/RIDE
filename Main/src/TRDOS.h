@@ -86,6 +86,8 @@
 			BYTE nSectors;
 			TSectorTrackPair first;
 
+			static UINT AFX_CDECL Verification_thread(PVOID pCancelableAction);
+
 			WORD __getOfficialFileSize__(PBYTE pnBytesReservedAfterData) const;
 			WORD __getFileSizeOnDisk__() const;
 			void __markTemporary__();
@@ -149,7 +151,7 @@
 		PBootSector __getBootSector__() const;
 		void InitializeEmptyMedium(CFormatDialog::PCParameters) override;
 		BYTE __getDirectory__(PDirectoryEntry *directory) const;
-		bool __parameterAfterData__(PCDirectoryEntry de,bool modify,PWORD pw) const;
+		bool __parameterAfterData__(PCDirectoryEntry de,bool modify,WORD &rw,bool *pAA80=nullptr) const;
 		bool __getStdParameter1__(PCDirectoryEntry de,WORD &rParam1) const;
 		bool __setStdParameter1__(PDirectoryEntry de,WORD newParam1);
 		bool __getStdParameter2__(PCDirectoryEntry de,WORD &rParam2) const;

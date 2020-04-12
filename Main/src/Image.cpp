@@ -20,6 +20,10 @@
 		// determines and returns the count of all Sectors
 		return nCylinders*nHeads*nSectors;
 	}
+	TTrack TFormat::GetCountOfAllTracks() const{
+		// determines and returns the count of all Tracks
+		return nCylinders*nHeads;
+	}
 
 
 

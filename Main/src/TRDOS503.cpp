@@ -54,6 +54,115 @@
 		return !first.track && first.sector==TRDOS503_BOOT_SECTOR_NUMBER-TRDOS503_SECTOR_FIRST_NUMBER;
 	}
 
+	#define VERIF_MSG_FILE_WRONG_ORDER	_T("File \"%s\" at wrong position in directory, beware deleting it!")
+
+	UINT AFX_CDECL CTRDOS503::TDirectoryEntry::Verification_thread(PVOID pCancelableAction){
+		// thread to verify the Directories
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
+		const TSpectrumVerificationParams &vp=*(TSpectrumVerificationParams *)pAction->GetParams();
+		vp.fReport.OpenSection(FILESYSTEM_VERIFICATION);
+		// - verifying basic Directory information
+		const PTRDOS503 trdos=static_cast<PTRDOS503>(vp.dos);
+		const PImage image=trdos->image;
+		const PCBootSector boot=(PBootSector)image->GetHealthySectorData(TBootSector::CHS);
+		if (!boot)
+			return vp.TerminateAll( Utils::ErrorByOs(ERROR_VOLMGR_DISK_INVALID,ERROR_UNRECOGNIZED_VOLUME) );
+		pAction->SetProgressTarget(	TRDOS503_BOOT_SECTOR_NUMBER-TRDOS503_SECTOR_FIRST_NUMBER
+									+
+									1 // checking that all DirectoryEntries are valid
+								);
+		// - Steps 1-N: verifying Directory Sectors readability
+		TPhysicalAddress chs={ 0, 0, {0,trdos->sideMap[0],TRDOS503_SECTOR_FIRST_NUMBER,TRDOS503_SECTOR_LENGTH_STD_CODE} };
+		while (chs.sectorId.sector<=TRDOS503_BOOT_SECTOR_NUMBER){
+			if (!image->GetHealthySectorData(chs))
+				vp.fReport.LogWarning( VERIF_MSG_DIR_SECTOR_BAD, (LPCTSTR)chs.sectorId.ToString() );
+			pAction->UpdateProgress( chs.sectorId.sector++ );
+		}
+		// - getting list of Files (present and deleted)
+		PDirectoryEntry directory[TRDOS503_FILE_COUNT_MAX];
+		const BYTE nFiles=trdos->__getDirectory__(directory);
+		pAction->SetProgressTarget(nFiles);
+		// - sorting the list of Files by their logical distance from disk begin (InsertSort)
+		for( BYTE i=1,j,skipReordering=0; i<nFiles; i++ ){
+			const TDirectoryEntry tmp=*directory[ j=i ];
+			bool askedAboutReordering=false;
+			do{
+				if (tmp.first<directory[j-1]->first){
+					if (skipReordering){
+						vp.fReport.LogWarning( VERIF_MSG_FILE_WRONG_ORDER, (LPCTSTR)trdos->GetFilePresentationNameAndExt(&tmp) );
+						break;
+					}
+					if (!askedAboutReordering){
+						TCHAR msg[MAX_PATH+100];
+						::wsprintf( msg, _T("File \"%s\" at wrong position in directory"), (LPCTSTR)trdos->GetFilePresentationNameAndExt(&tmp) );
+						switch (vp.ConfirmFix(msg,_T("Sorting by first sector suggested."))){
+							case IDCANCEL:
+								return vp.CancelAll();
+							case IDNO:
+								skipReordering=true;
+								j++; // to always show warning on misorder, see "j--" below
+								continue;
+						}
+						vp.fReport.CloseProblem( askedAboutReordering=true );
+					}
+					*directory[j]=*directory[j-1];
+					trdos->MarkDirectorySectorAsDirty(directory[j]);
+				}else
+					break;
+			}while (--j>0);
+			if (askedAboutReordering){
+				*directory[j]=tmp;
+				trdos->MarkDirectorySectorAsDirty(directory[j]);
+			}
+		}
+		// - verifying that all DirectoryEntries are valid
+		for( TTrdosDirectoryTraversal dt(trdos); dt.AdvanceToNextEntry(); )
+			if (dt.entryType==TDirectoryTraversal::FILE){
+				const PDirectoryEntry de=(PDirectoryEntry)dt.entry;
+				TCHAR strItemId[MAX_PATH+16];
+				::wsprintf( strItemId, _T("File \"%s\""), (LPCTSTR)trdos->GetFilePresentationNameAndExt(de) );
+				// . verifying Extension
+				switch (de->extension){
+					case TExtension::BASIC_PRG:
+					case TExtension::DATA_FIELD:
+					case TExtension::BLOCK:
+					case TExtension::PRINT:
+						break; //nop
+					default:
+						vp.fReport.LogWarning( VERIF_MSG_FILE_NONSTANDARD, strItemId );
+						break;
+				}
+				// . verifying Name
+				if (de->extension!=TExtension::BASIC_PRG)
+					// non-Program Files may contain non-printable characters
+					vp.WarnSomeCharactersNonPrintable( strItemId, VERIF_FILE_NAME, de->name, sizeof(de->name), ' ' );
+				else if (const TStdWinError err=vp.VerifyAllCharactersPrintable( dt.chs, strItemId, VERIF_FILE_NAME, de->name, sizeof(de->name), ' ' ))
+					// Program names are usually typed in by the user and thus may not contain non-printable characters
+					return vp.TerminateAll(err);
+				// . verifying the start Sector
+				if (de->first.track>=trdos->formatBoot.GetCountOfAllTracks()){
+					const CFatPath tmp(trdos,de);
+					CFatPath::PCItem p; DWORD n;
+					tmp.GetItems(p,n);
+					vp.fReport.LogWarning( _T("%s: First sector with %s out of disk"), strItemId, (LPCTSTR)p->chs.sectorId.ToString() );
+				}
+				// . verifying parameter after data
+				WORD w; bool AA80=false;
+				switch (de->extension){
+					case TDirectoryEntry::BASIC_PRG:
+					case TDirectoryEntry::DATA_FIELD:
+						if (!trdos->__parameterAfterData__(de,false,w,&AA80))
+							vp.fReport.LogWarning( _T("%s: Missing Parameter 1 after data"), strItemId );
+						else if (!AA80)
+							vp.fReport.LogWarning( _T("%s: Parameter 1 after data not prefixed with 0xAA80 mark"), strItemId );
+						break;
+				}
+			}
+		// - successfully verified
+		pAction->UpdateProgressFinished();
+		return ERROR_SUCCESS;
+	}
+
 
 
 	#define INI_TRDOS	_T("TRDOS")
@@ -463,10 +572,10 @@
 		return ERROR_SUCCESS;
 	}
 
-	bool CTRDOS503::__parameterAfterData__(PCDirectoryEntry de,bool modify,PWORD pw) const{
+	bool CTRDOS503::__parameterAfterData__(PCDirectoryEntry de,bool modify,WORD &rw,bool *pAA80) const{
 		// True <=> parameter after given File's data successfully get/set, otherwise False
 		WORD officialFileSize=de->__getOfficialFileSize__(nullptr);
-		WORD buf[2]={ 0xAA80, *pw }; // 0xAA80 = the mark that introduces a parameter "after" official data
+		WORD buf[2]={ 0xAA80, rw }; // 0xAA80 = the mark that introduces a parameter "after" official data
 		for( BYTE n=4,*p=(PBYTE)buf; n--; officialFileSize++ ){
 			const TSector sector=officialFileSize/TRDOS503_SECTOR_LENGTH_STD;
 			if (sector>=de->nSectors) return false;
@@ -482,7 +591,8 @@
 			}else
 				return false;
 		}
-		*pw=buf[1];
+		if (pAA80) *pAA80=*buf==0xAA80;
+		rw=buf[1];
 		return true;
 	}
 	bool CTRDOS503::__getStdParameter1__(PCDirectoryEntry de,WORD &rParam1) const{
@@ -493,7 +603,7 @@
 				//fallthrough
 			case TDirectoryEntry::DATA_FIELD:
 				// stream name
-				return __parameterAfterData__(de,false,&rParam1);
+				return __parameterAfterData__(de,false,rParam1);
 			case TDirectoryEntry::BLOCK:
 				// start address
 				//fallthrough
@@ -513,7 +623,7 @@
 				//fallthrough
 			case TDirectoryEntry::DATA_FIELD:
 				// stream name
-				return __parameterAfterData__(de,true,&newParam1);
+				return __parameterAfterData__(de,true,newParam1);
 			case TDirectoryEntry::BLOCK:
 				// start address
 				//fallthrough
@@ -864,7 +974,7 @@
 			do{
 				if (de->first<directory[j-1]->first){
 					if (!warnedAboutWrongPosition){
-						vp.fReport.LogWarning( _T("File \"%s\" at wrong position in directory, beware deleting it!"), (LPCTSTR)trdos->GetFilePresentationNameAndExt(de) );
+						vp.fReport.LogWarning( VERIF_MSG_FILE_WRONG_ORDER, (LPCTSTR)trdos->GetFilePresentationNameAndExt(de) );
 						warnedAboutWrongPosition=true;
 					}
 					directory[j]=directory[j-1];
