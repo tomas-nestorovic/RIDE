@@ -69,7 +69,7 @@
 		ON_COMMAND(ID_EDIT_PASTE,__pasteFilesFromClipboard__)
 			ON_UPDATE_COMMAND_UI(ID_EDIT_PASTE,__pasteFiles_updateUI__)
 		ON_NOTIFY_REFLECT(LVN_BEGINDRAG,__onBeginDrag__)
-		ON_COMMAND(ID_FILEMANAGER_REFRESH,__refreshDisplay__)
+		ON_COMMAND(ID_FILEMANAGER_REFRESH,RefreshDisplay)
 		ON_COMMAND(ID_FILEMANAGER_SUBDIR_CREATE,__createSubdirectory__)
 			ON_UPDATE_COMMAND_UI(ID_FILEMANAGER_SUBDIR_CREATE,__createSubdirectory_updateUI__)
 		ON_COMMAND(ID_FILEMANAGER_DIR_HEXAMODE,__browseCurrentDirInHexaMode__)
@@ -271,7 +271,7 @@
 		if (::GetWindowThreadProcessId(m_hWnd,nullptr)==::GetCurrentThreadId()){
 			// can change controls only from within the thread that created them
 			GetListCtrl().SendMessage( LVM_SCROLL, 0, -__getVerticalScrollPos__() ); // resetting the scroll position to zero pixels
-			__refreshDisplay__();
+			RefreshDisplay();
 			__informationWithCheckableShowNoMore__( _T("See \"") FILE_MANAGER_TAB_LABEL _T("\" menu on how to navigate back."), INI_MSG_DIR_GO_BACK );
 		}
 	}
@@ -371,7 +371,7 @@
 			TFileList filesToDelete;
 			for( POSITION pos=GetFirstSelectedFilePosition(); pos; filesToDelete.AddTail(GetNextSelectedFile(pos)) );
 			__deleteFiles__(filesToDelete);
-			if (::IsWindow(m_hWnd)) __refreshDisplay__();
+			if (::IsWindow(m_hWnd)) RefreshDisplay();
 			// . emptying the clipboard
 			if (ownedDataSource) ::OleSetClipboard(nullptr);
 		}
@@ -778,7 +778,7 @@
 		}
 	}
 
-	afx_msg void CFileManagerView::__refreshDisplay__(){
+	afx_msg void CFileManagerView::RefreshDisplay(){
 		// refreshing the View
 		// - saving the scroll position for later
 		scrollY=__getVerticalScrollPos__();

@@ -253,7 +253,6 @@
 		DROPEFFECT OnDragOver(COleDataObject *pDataObject,DWORD dwKeyState,CPoint point) override;
 		BOOL OnDrop(COleDataObject *pDataObject,DROPEFFECT dropEffect,CPoint point) override;
 		void PostNcDestroy() override;
-		afx_msg void __refreshDisplay__();
 		virtual void DrawReportModeCell(PCFileInfo pFileInfo,LPDRAWITEMSTRUCT pdis) const=0;
 		virtual int CompareFiles(CDos::PCFile file1,CDos::PCFile file2,BYTE information) const=0;
 		virtual PEditorBase CreateFileInformationEditor(CDos::PFile file,BYTE infoId) const=0;
@@ -273,6 +272,7 @@
 		DWORD GetCountOfSelectedFiles() const;
 		TStdWinError ImportFileAndResolveConflicts(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,const FILETIME &rCreated,const FILETIME &rLastRead,const FILETIME &rLastModified,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution);
 		void SwitchToDirectory(CDos::PFile directory);
+		afx_msg void RefreshDisplay();
 	};
 
 #endif // FILEMANAGERVIEW_H

@@ -513,6 +513,7 @@
 		switch (cmd){
 			case ID_FILE_SHIFT_UP:{
 				// shifting selected Files "up" (i.e. towards the beginning of Tape)
+				if (!fileManager.m_hWnd) break; // giving up this command if FileManager not switched to
 				if (__reportWriteProtection__()) return TCmdResult::DONE;
 				const CListCtrl &lv=fileManager.GetListCtrl();
 				short iPrevSelected=-1;
@@ -528,11 +529,12 @@
 						iPrevSelected=iSelected;
 				}
 				m_bModified=TRUE;
-				fileManager.__refreshDisplay__();
+				fileManager.RefreshDisplay();
 				return TCmdResult::DONE; // cannot use DONE_REDRAW as Tape is a companion to a disk Image
 			}
 			case ID_FILE_SHIFT_DOWN:{
 				// shifting selected Files "down" (i.e. towards the end of Tape)
+				if (!fileManager.m_hWnd) break; // giving up this command if FileManager not switched to
 				if (__reportWriteProtection__()) return TCmdResult::DONE;
 				// . reversing the list of Selected Files
 				const CListCtrl &lv=fileManager.GetListCtrl();
@@ -551,11 +553,12 @@
 						iNextSelected=iSelected;
 				}
 				m_bModified=TRUE;
-				fileManager.__refreshDisplay__();
+				fileManager.RefreshDisplay();
 				return TCmdResult::DONE; // cannot use DONE_REDRAW as Tape is a companion to a disk Image
 			}
 			case ID_COMPUTE_CHECKSUM:{
 				// recomputes the Checksum for selected Files
+				if (!fileManager.m_hWnd) break; // giving up this command if FileManager not switched to
 				if (__reportWriteProtection__()) return TCmdResult::DONE;
 				const CListCtrl &lv=fileManager.GetListCtrl();
 				for( POSITION pos=lv.GetFirstSelectedItemPosition(); pos; ){
@@ -564,7 +567,7 @@
 					tf->dataChecksumStatus=TTapeFile::TDataChecksumStatus::UNDETERMINED;
 				}
 				m_bModified=TRUE;
-				fileManager.__refreshDisplay__();
+				fileManager.Invalidate();
 				return TCmdResult::DONE; // cannot use DONE_REDRAW as Tape is a companion to a disk Image
 			}
 			case ID_FILE_SAVE:
@@ -581,6 +584,7 @@
 			case ID_FILE_SHIFT_UP:
 			case ID_FILE_SHIFT_DOWN:
 			case ID_COMPUTE_CHECKSUM:
+				if (!fileManager.m_hWnd) break; // giving up this command if FileManager not switched to
 				pCmdUI->Enable( fileManager.GetListCtrl().GetSelectedCount() );
 				return true;
 		}
@@ -720,14 +724,14 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 	LRESULT CSpectrumDos::CTape::CTapeFileManagerView::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
 		// window procedure
 		switch (msg){
-			case WM_CREATE:{
+			case WM_CREATE:
 				// TapeFileManager just shown
 				// . base
-				__super::WindowProc(msg,wParam,lParam);
+				if (const LRESULT err=__super::WindowProc(msg,wParam,lParam))
+					return err;
 				// . showing the Tape's ToolBar "after" the TapeFileManager's ToolBar
 				toolbar.__show__( tab.toolbar );
 				return 0;
-			}
 			case WM_DESTROY:
 				// TapeFileManager destroyed - hiding the Tape's ToolBar
 				toolbar.__hide__();

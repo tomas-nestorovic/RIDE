@@ -238,7 +238,7 @@
 		__switchToDirectory__(previousDirectories.RemoveHead());
 		GetListCtrl().SendMessage( LVM_SCROLL, 0, -__getVerticalScrollPos__() ); // resetting the scroll position to zero pixels
 		selectedFiles.AddHead( focusedFile=currDir );
-		__refreshDisplay__();
+		RefreshDisplay();
 	}
 
 	afx_msg void CFileManagerView::__navigateBack_updateUI__(CCmdUI *pCmdUI){

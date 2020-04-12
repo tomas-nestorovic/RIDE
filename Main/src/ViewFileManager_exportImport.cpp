@@ -187,7 +187,7 @@
 			// - if Files moved, deleting Files from Image
 			if (*(DROPEFFECT *)::GlobalLock(lpStgMedium->hGlobal)==DROPEFFECT_MOVE){
 				fileManager->__deleteFiles__(listOfFiles);
-				if (::IsWindow(fileManager->m_hWnd)) fileManager->__refreshDisplay__();
+				if (::IsWindow(fileManager->m_hWnd)) fileManager->RefreshDisplay();
 			}
 			::GlobalUnlock(lpStgMedium->hGlobal);
 			::GlobalFree(lpStgMedium->hGlobal);
@@ -372,12 +372,12 @@ importQuit2:		::GlobalUnlock(hg);
 			if (targetDirectory){ // it was switched from Original- to TargetDirectory above
 				__switchToDirectory__(originalDirectory);
 				selectedFiles.RemoveAll();
-				__refreshDisplay__(); // repopulating the content of the FileManager (empties the SelectedFiles list)
+				RefreshDisplay(); // repopulating the content of the FileManager (empties the SelectedFiles list)
 			}
 			// - refreshing the FileManager and scrolling to the last imported File
 			if (selectedFiles.GetCount()){ // may be empty if importing a single File that is already on the disk, and refusing to rewrite it
 				const LVFINDINFO lvfi={ LVFI_PARAM, nullptr, (LPARAM)selectedFiles.GetTail() };
-				__refreshDisplay__(); // repopulating the content of the FileManager (empties the SelectedFiles list)
+				RefreshDisplay(); // repopulating the content of the FileManager (empties the SelectedFiles list)
 				ListView_EnsureVisible( m_hWnd, ListView_FindItem(m_hWnd,0,&lvfi), false ); // scrolling to the last imported File
 			}
 		SetRedraw(TRUE);
