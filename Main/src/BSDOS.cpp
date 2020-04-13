@@ -884,30 +884,32 @@
 				// shifting selected Files "up" (i.e. towards the beginning of the Directory)
 				if (!fileManager.m_hWnd) break; // giving up this command if FileManager not switched to
 				if (image->__reportWriteProtection__()) return TCmdResult::DONE;
-				const auto prev=BeginDirectoryTraversal(currentDir), curr=BeginDirectoryTraversal(currentDir);
+				const auto pdt=BeginDirectoryTraversal(currentDir);
 				if (currentDir!=ZX_DIR_ROOT) // skipping first DirectoryEntry
-					prev->AdvanceToNextEntry(), curr->AdvanceToNextEntry();
-				curr->AdvanceToNextEntry();
-				bool prevIsSelected=true; // initialization to prevent from shifting "before" the Directory
+					pdt->AdvanceToNextEntry();
+				pdt->AdvanceToNextEntry();
+				PFile prev=nullptr; // initialization to prevent from shifting "before" the Directory
 				CFileManagerView::TFileList selectedFiles;
 				for( POSITION pos=fileManager.GetFirstSelectedFilePosition(); pos; ){
 					const PFile selected=fileManager.GetNextSelectedFile(pos);
-					while (curr->entry!=selected){
-						prev->AdvanceToNextEntry();
-						curr->AdvanceToNextEntry();
-						prevIsSelected=false;
+					while (pdt->entry!=selected){
+						if (pdt->entryType!=TDirectoryTraversal::WARNING)
+							prev=pdt->entry;
+						pdt->AdvanceToNextEntry();
 					}
-					if (!prevIsSelected){
+					if (prev){
 						// can swap items to shift Selected "up"
 						if (currentDir==ZX_DIR_ROOT)
-							std::swap( *(CDirsSector::PSlot)prev->entry, *(CDirsSector::PSlot)curr->entry );
+							std::swap( *(CDirsSector::PSlot)prev, *(CDirsSector::PSlot)pdt->entry );
 						else
-							std::swap( *(PDirectoryEntry)prev->entry, *(PDirectoryEntry)curr->entry );
-						MarkDirectorySectorAsDirty(prev->entry);
-						MarkDirectorySectorAsDirty(curr->entry);
-					}else
-						prev->AdvanceToNextEntry(), curr->AdvanceToNextEntry();
-					selectedFiles.AddTail(prev->entry);
+							std::swap( *(PDirectoryEntry)prev, *(PDirectoryEntry)pdt->entry );
+						MarkDirectorySectorAsDirty(prev);
+						MarkDirectorySectorAsDirty(pdt->entry);
+						selectedFiles.AddTail(prev);
+					}else{
+						selectedFiles.AddTail(pdt->entry);
+						pdt->AdvanceToNextEntry();
+					}
 				}
 				fileManager.SelectFiles(selectedFiles);
 				return TCmdResult::DONE;
@@ -921,10 +923,9 @@
 				for( POSITION pos=fileManager.GetLastSelectedFilePosition(); pos; ){
 					const PFile selected=fileManager.GetPreviousSelectedFile(pos);
 					const auto pdt=BeginDirectoryTraversal(currentDir);
-					do{
-						pdt->AdvanceToNextEntry();
-					}while (pdt->entry!=selected);
-					if (pdt->AdvanceToNextEntry() && pdt->entry!=nextSelected){ // A&B, A = an item "down" the Directory exists, B = the item isn't occupied by an also selected item (discovered in the previous iteration)
+					while (pdt->AdvanceToNextEntry() && pdt->entry!=selected);
+					while (pdt->AdvanceToNextEntry() && pdt->entryType==TDirectoryTraversal::WARNING);
+					if (pdt->entry!=nextSelected){ // the item "down" the Directory isn't occupied by an also selected item (discovered in the previous iteration)
 						// can swap items to shift Selected "down"
 						if (currentDir==ZX_DIR_ROOT)
 							std::swap( *(CDirsSector::PSlot)pdt->entry, *(CDirsSector::PSlot)selected );
