@@ -336,6 +336,34 @@
 				::EndPaint(hEditor,&ps);
 				return 0;
 			}
+			case WM_LBUTTONDOWN:{
+				// left mouse button pressed - moving the Caret as close to the cursor as possible
+				const BYTE caretPos0=rEditor.caret.position;
+				char tmp[sizeof(rEditor.buf)+1]; // "+1" = Caret factored in (see also "<=" in FOR cycle below)
+				::memcpy( tmp, rEditor.buf, rEditor.length );
+				::memmove( tmp+caretPos0+1, tmp+caretPos0, rEditor.length-caretPos0 );
+				tmp[caretPos0]=rEditor.caret.mode;
+				const int cursorX=GET_X_LPARAM(lParam)+rEditor.scrollX;
+				const CClientDC screen(nullptr);
+				int minDistance=INT_MAX;
+				for( rEditor.caret.position=0; rEditor.caret.position<=rEditor.length+1; rEditor.caret.position++ ){
+					CRect r;
+					const WORD nAsciiChars=rZxRom.PrintAt( // not actually printing anything, see DT_CALCRECT
+						screen, tmp, rEditor.caret.position,
+						r,
+						DT_CALCRECT | DT_SINGLELINE | DT_LEFT | DT_VCENTER | DT_NOPREFIX
+					);
+					const int dist=std::abs( nAsciiChars*rZxRom.font.charAvgWidth - cursorX ); // distance of Caret from mouse Cursor (excluding the Caret)
+					if (dist<minDistance)
+						minDistance=dist;
+					else{
+						rEditor.caret.position-=(--rEditor.caret.position>caretPos0);
+						break;
+					}
+				}
+				rEditor.caret.position=std::min( rEditor.caret.position, rEditor.length );
+				goto caretMoved;
+			}
 			case WM_KEYDOWN:{
 				// key pressed
 				switch (wParam){
