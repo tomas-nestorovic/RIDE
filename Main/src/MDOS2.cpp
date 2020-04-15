@@ -645,26 +645,49 @@
 				const PDirectoryEntry de=(PDirectoryEntry)dt.entry;
 				TCHAR strItemId[MAX_PATH+16];
 				::wsprintf( strItemId, _T("File \"%s\""), (LPCTSTR)mdos->GetFilePresentationNameAndExt(de) );
-				// . verifying Extension
+				// . verifying "the" and "by" Extension
 				switch (de->extension){
 					case TExtension::PROGRAM:
+					case TExtension::SNAPSHOT:
+						// executables
+						// : executable Names are usually typed in by the user and may thus not contain non-printable characters
+						if (const TStdWinError err=vp.VerifyAllCharactersPrintable( dt.chs, strItemId, VERIF_FILE_NAME, de->name, sizeof(de->name), '\0' ))
+							return vp.TerminateAll(err);
+						// : executable Attributes must indicate at least visibility, readability, and executability
+						#define ATTR_WHITE	(TDirectoryEntry::TAttribute::READABLE | TDirectoryEntry::TAttribute::EXECUTABLE)
+						if ((de->attributes&ATTR_WHITE)!=ATTR_WHITE){
+							CString msg;
+							msg.Format( _T("%s: Readability and/or executability attributes not set"), strItemId );
+							switch (vp.ConfirmFix( msg, _T("") )){
+								case IDCANCEL:
+									return vp.CancelAll();
+								case IDYES:
+									de->attributes|=ATTR_WHITE;
+									mdos->MarkDirectorySectorAsDirty(de);
+									vp.fReport.CloseProblem(true);
+									break;
+							}
+						}
+						if (de->attributes&TDirectoryEntry::TAttribute::HIDDEN)
+							vp.fReport.LogWarning( _T("%s: The program is hidden"), strItemId );
+						break;
 					case TExtension::CHAR_ARRAY:
 					case TExtension::NUMBER_ARRAY:
 					case TExtension::BLOCK:
-					case TExtension::SNAPSHOT:
 					case TExtension::SEQUENTIAL:
-						break; //nop
+						// non-executables
+						// : non-executables may contain non-printable characters in Names
+						vp.WarnSomeCharactersNonPrintable( strItemId, VERIF_FILE_NAME, de->name, sizeof(de->name), '\0' );
+						// : non-executable's Attributes must indicate at least readability
+						if ((de->attributes&TDirectoryEntry::TAttribute::READABLE)==0)
+							vp.fReport.LogWarning( _T("%s: Readability attribute not set"), strItemId ); // warning suffices - sometimes Files are not intended to be actually read (e.g. "Zadaj RUN" Files in Ultrasoft titles)
+						break;
 					default:
+						// unknown File type
 						vp.fReport.LogWarning( VERIF_MSG_FILE_NONSTANDARD, strItemId );
+						vp.WarnSomeCharactersNonPrintable( strItemId, VERIF_FILE_NAME, de->name, sizeof(de->name), '\0' );
 						break;
 				}
-				// . verifying Name
-				if (de->extension!=TExtension::PROGRAM)
-					// non-Program Files may contain non-printable characters
-					vp.WarnSomeCharactersNonPrintable( strItemId, VERIF_FILE_NAME, de->name, sizeof(de->name), '\0' );
-				else if (const TStdWinError err=vp.VerifyAllCharactersPrintable( dt.chs, strItemId, VERIF_FILE_NAME, de->name, sizeof(de->name), '\0' ))
-					// Program names are usually typed in by the user and thus may not contain non-printable characters
-					return vp.TerminateAll(err);
 				// . verifying Length
 				if (const CFatPath fatPath=CFatPath(mdos,de)){
 					DWORD lengthFromFat=0;
