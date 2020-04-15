@@ -148,7 +148,16 @@
 		// - saving CurrentPage scroll position for later
 		__saveCurrentPageScrollPosition__();
 		// - base (continuing with destruction)
-		CHtmlView::OnDestroy();
+		__super::OnDestroy();
+		// - bugfix to missing release of COM object in MFC
+		if (m_pBrowserApp){ // if bug not yet fixed
+			#if _MFC_VER>=0x0A00
+				m_pBrowserApp.Detach()->Release();
+			#else
+				m_pBrowserApp->Release();
+				m_pBrowserApp=nullptr;
+			#endif
+		}
 	}
 
 	afx_msg void CWebPageView::__navigateBack__(){
