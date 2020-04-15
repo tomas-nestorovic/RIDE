@@ -543,7 +543,7 @@ Utils::Information("--- EVERYTHING OK ---");
 		// - creating a temporary file in order to not break the Document-View architecture
 		TCHAR tmpFileName[MAX_PATH];
 		::GetTempPath(MAX_PATH,tmpFileName);
-		::GetTempFileName( tmpFileName, nullptr, TRUE, tmpFileName );
+		::GetTempFileName( tmpFileName, nullptr, FALSE, tmpFileName );
 		const CFile fTmp( m_strPathName=tmpFileName, CFile::modeCreate );
 		// - connecting to the Drive
 		__reset__();

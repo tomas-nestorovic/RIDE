@@ -712,7 +712,7 @@ errorDuringWriting:			TCHAR buf[80];
 						// | saving to temporary file
 						TCHAR tmpFileName[MAX_PATH];
 						::GetTempPath(MAX_PATH,tmpFileName);
-						::GetTempFileName( tmpFileName, nullptr, TRUE, tmpFileName );
+						::GetTempFileName( tmpFileName, nullptr, FALSE, tmpFileName );
 						d.dumpParams.__exportErroneousTracksToHtml__( CFile(::lstrcat(tmpFileName,_T(".html")),CFile::modeCreate|CFile::modeWrite) );
 						// | displaying
 						((CMainWindow *)app.m_pMainWnd)->OpenWebPage( _T("Dump results"), tmpFileName );

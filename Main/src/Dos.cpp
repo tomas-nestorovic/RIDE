@@ -602,7 +602,7 @@ reportError:Utils::Information(buf);
 		// - opening the HTML Report for writing
 		TCHAR tmpFileName[MAX_PATH];
 		::GetTempPath(MAX_PATH,tmpFileName);
-		::GetTempFileName( tmpFileName, nullptr, TRUE, tmpFileName );
+		::GetTempFileName( tmpFileName, nullptr, FALSE, tmpFileName );
 		if (!rd.params.fReport.Open( ::lstrcat(tmpFileName,_T(".html")), CFile::modeCreate|CFile::modeWrite ))
 			return false;
 		Utils::WriteToFile(rd.params.fReport,_T("<html><head><style>body,td{font-size:13pt;margin:24pt}</style></head><body>"));

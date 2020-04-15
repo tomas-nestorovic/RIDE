@@ -23,7 +23,7 @@
 		pSingleInstance=this;
 		// - creating the TemporaryFile to store HTML-formatted BASIC Listing
 		::GetTempPath(MAX_PATH,tmpFileName);
-		::GetTempFileName( tmpFileName, nullptr, TRUE, tmpFileName );
+		::GetTempFileName( tmpFileName, nullptr, FALSE, tmpFileName );
 		// - creating the ListingView
 		listingView.Create( nullptr, nullptr, WS_CHILD|WS_VISIBLE, rectDefault, this, AFX_IDW_PANE_FIRST, nullptr );
 		listingView.OnInitialUpdate();
