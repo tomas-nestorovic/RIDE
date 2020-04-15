@@ -13,7 +13,9 @@
 		: CSpectrumDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS, &Properties, IDR_MDOS, &fileManager, TGetFileSizeOptions::OfficialDataLength, TSectorStatus::UNAVAILABLE )
 		// - initialization
 		, boot(this) , fileManager(this) , version(AUTODETECT) {
-		deDefault.attributes=__getProfileInt__(INI_DEFAULT_ATTRIBUTES,0);
+		deDefault.attributes=__getProfileInt__(	INI_DEFAULT_ATTRIBUTES,
+												TDirectoryEntry::TAttribute::READABLE | TDirectoryEntry::TAttribute::WRITEABLE | TDirectoryEntry::TAttribute::EXECUTABLE | TDirectoryEntry::TAttribute::DELETABLE
+											);
 		__recognizeVersion__(); // recognition of MDOS on inserted disk
 	}
 
