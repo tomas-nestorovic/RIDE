@@ -241,14 +241,14 @@
 							}
 						} d(buf);
 						// . showing the Dialog and processing its result
-						const BYTE resolution =	rConflictedSiblingResolution&TConflictResolution::CUSTOM_MASK // previously wanted to apply the decision to all subsequent D_0 files?
-												? rConflictedSiblingResolution&TConflictResolution::CUSTOM_MASK
+						const BYTE resolution =	rConflictedSiblingResolution&0xff // previously wanted to apply the decision to all subsequent D_0 files?
+												? rConflictedSiblingResolution&0xff
 												: d.DoModal();
 						if (d.checkBoxStatus==BST_CHECKED) // want to apply the decision to all subsequent D_0 files?
 							rConflictedSiblingResolution|=resolution;
 						switch (resolution){
 							case IDYES:{
-								// extracting and importing the archived data contained in the *.D_0 File
+								// : extracting and importing the archived data contained in the *.D_0 File
 								if (tab.dos->image->IsWriteProtected())
 									return ERROR_WRITE_PROTECT;
 								if (const TStdWinError err=ImportFileAndResolveConflicts( &f, f.GetLength()-f.GetPosition(), tab.dos->GetFileExportNameAndExt(&d_0.de,false), 0, TFileDateTime::None, TFileDateTime::None, TFileDateTime::None, rImportedFile, rConflictedSiblingResolution ))
@@ -257,6 +257,45 @@
 								const TLogSector ls=rde.firstLogicalSector;
 								rde=d_0.de;
 								rde.firstLogicalSector=ls;
+								// : extracting and importing the archived Boot Sector
+								if (d_0.bootValid){
+									// > defining the Dialog
+									::wsprintf( buf, _T("\"%s\" has an archived boot sector."), nameAndExt );
+									class CBootResolutionDialog sealed:public Utils::CCommandDialog{
+										void PreInitDialog() override{
+											// dialog initialization
+											__super::PreInitDialog();
+											__addCommandButton__( IDYES, _T("Import achived boot sector, respecting current disk geometry (recommended)") );
+											__addCommandButton__( IDNO, _T("Ignore archived boot sector") );
+											__addCommandButton__( IDCANCEL, _T("Cancel") );
+											__addCheckBox__( _T("Apply to all archives") );
+										}
+									public:
+										CBootResolutionDialog(LPCTSTR msg)
+											// ctor
+											: Utils::CCommandDialog(msg) {
+										}
+									} d(buf);
+									// > showing the Dialog and processing its result
+									const WORD resolution =	rConflictedSiblingResolution&0xff00 // previously wanted to apply the decision to all subsequent archived Boot Sectors?
+															? rConflictedSiblingResolution&0xff00
+															: d.DoModal()<<8;
+									if (d.checkBoxStatus==BST_CHECKED) // want to apply the decision to all subsequent D_0 files?
+										rConflictedSiblingResolution|=resolution;
+									switch (resolution>>8){
+										case IDYES:
+											// importing archived Boot Sector and injecting to it actual geometry
+											if (const PBootSector boot=(PBootSector)tab.dos->image->GetHealthySectorData(TBootSector::CHS)){
+												*boot=d_0.boot;
+												tab.dos->FlushToBootSector();
+												break;
+											}else
+												return ERROR_UNRECOGNIZED_VOLUME;
+										case IDCANCEL:
+											// cancelling the remainder of importing
+											return ERROR_CANCELLED;
+									}
+								}
 								return ERROR_SUCCESS;
 							}
 							case IDNO:
