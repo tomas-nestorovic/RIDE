@@ -44,7 +44,7 @@
 			UNDETERMINED=0,
 			MERGE		=0x80000000,
 			SKIP		=0x40000000,
-			CUSTOM_MASK	=0xf0000000 // lower 28 bits reserved for custom resolutions; the rest is reserved for standard resolution options from this enumeration
+			CUSTOM_MASK	=0x0fffffff // lower 28 bits reserved for custom resolutions; the rest is reserved for standard resolution options from this enumeration
 		};
 	protected:
 		typedef const struct TDirectoryStructureManagement sealed{
