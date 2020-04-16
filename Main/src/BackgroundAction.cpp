@@ -111,7 +111,10 @@
 
 	void CBackgroundActionCancelable::SetProgressTarget(int targetState){
 		// sets Worker's target progress state, "100% completed"
-		SendDlgItemMessage( ID_STATE, PBM_SETRANGE32, 0, progressTarget=targetState );
+		::PostMessage(	::GetDlgItem(m_hWnd,ID_STATE),
+						PBM_SETRANGE32,
+						0,	progressTarget=targetState
+					);
 	}
 
 	void CBackgroundActionCancelable::SetProgressTargetInfinity(){
