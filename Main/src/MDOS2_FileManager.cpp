@@ -251,7 +251,7 @@
 								// extracting and importing the archived data contained in the *.D_0 File
 								if (tab.dos->image->IsWriteProtected())
 									return ERROR_WRITE_PROTECT;
-								if (const TStdWinError err=ImportFileAndResolveConflicts( &f, f.GetLength()-f.GetPosition(), nameAndExt, 0, TFileDateTime::None, TFileDateTime::None, TFileDateTime::None, rImportedFile, rConflictedSiblingResolution ))
+								if (const TStdWinError err=ImportFileAndResolveConflicts( &f, f.GetLength()-f.GetPosition(), tab.dos->GetFileExportNameAndExt(&d_0.de,false), 0, TFileDateTime::None, TFileDateTime::None, TFileDateTime::None, rImportedFile, rConflictedSiblingResolution ))
 									return err;
 								TDirectoryEntry &rde=*((PDirectoryEntry)rImportedFile);
 								const TLogSector ls=rde.firstLogicalSector;
