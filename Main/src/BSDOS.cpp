@@ -444,9 +444,10 @@
 		file.reserved2=0x401;
 		file.integrityCheckpoint1 = file.integrityCheckpoint2 = special;
 		file.firstSector=firstSector;
+		file.dataLength=firstSector<bsdos->formatBoot.GetCountOfAllSectors(); // has at least one Byte if FirstSector is valid
 		CFatPath dummy( bsdos->formatBoot.GetCountOfAllSectors() );
 		bsdos->GetFileFatPath( this, dummy );
-		file.dataLength=BSDOS_SECTOR_LENGTH_STD*dummy.GetNumberOfItems();
+		file.dataLength=BSDOS_SECTOR_LENGTH_STD*dummy.GetNumberOfItems(); // estimated DataLength computed from FAT
 	}
 
 	BYTE CBSDOS308::TDirectoryEntry::GetDirNameChecksum() const{
