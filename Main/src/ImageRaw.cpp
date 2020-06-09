@@ -1,13 +1,17 @@
 #include "stdafx.h"
 #include "GDOS.h"
 
-	static PImage __instantiate__(){
+	static LPCTSTR Recognize(PTCHAR){
+		static const char SingleDeviceName[]=_T("Raw data image\0");
+		return SingleDeviceName;
+	}
+	static PImage Instantiate(LPCTSTR){
 		return new CImageRaw( &CImageRaw::Properties, true );
 	}
 
 	const CImage::TProperties CImageRaw::Properties={
-		_T("Raw data image"),	// name
-		__instantiate__,		// instantiation function
+		Recognize,	// list of recognized device names
+		Instantiate, // instantiation function
 		_T("*.ima") IMAGE_FORMAT_SEPARATOR _T("*.img") IMAGE_FORMAT_SEPARATOR _T("*.dat") IMAGE_FORMAT_SEPARATOR _T("*.bin"),	// filter
 		(TMedium::TType)(TMedium::FLOPPY_ANY | TMedium::HDD_RAW), // supported Media
 		1,16384	// Sector supported min and max length

@@ -355,11 +355,15 @@
 
 
 	namespace TRD{
-		static PImage __instantiate__(){
+		static LPCTSTR Recognize(PTCHAR){
+			static const char SingleDeviceName[]=_T("TR-DOS image\0");
+			return SingleDeviceName;
+		}
+		static PImage Instantiate(LPCTSTR){
 			return new CImageRaw( &Properties, true );
 		}
-		const CImage::TProperties Properties={	_T("TR-DOS image"),// name
-												__instantiate__,// instantiation function
+		const CImage::TProperties Properties={	Recognize,// name
+												Instantiate,// instantiation function
 												_T("*.trd"),	// filter
 												TMedium::FLOPPY_DD,
 												TRDOS503_SECTOR_LENGTH_STD,TRDOS503_SECTOR_LENGTH_STD	// min and max length of storable Sectors

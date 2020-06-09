@@ -957,7 +957,7 @@ IDR_OPEN_CUSTOM DIALOG DISCARDABLE  0, 0, 321, 20
 STYLE WS_CHILD | WS_CLIPSIBLINGS
 FONT 8, "MS Sans Serif"
 BEGIN
-    CONTROL         "<a id=""DRV_A"">Access floppy inserted in internal drive A</a>. Simon Owen's <a href=""http://simonowen.com/fdrawcmd"">fdrawcmd</a> driver required.",
+    CONTROL         "<a id=""DRV_A"">Access real hardware on this computer</a> (additional drivers may be required).",
                     ID_DRIVEA,"SysLink",0x0,7,3,312,11
 END
 

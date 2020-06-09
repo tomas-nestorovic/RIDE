@@ -1,11 +1,15 @@
 #include "stdafx.h"
 #include "GDOS.h"
 
-	static PImage __instantiate__(){
+	static LPCTSTR Recognize(PTCHAR){
+		static const char SingleDeviceName[]=_T("MGT image\0");
+		return SingleDeviceName;
+	}
+	static PImage Instantiate(LPCTSTR){
 		return new CMGT;
 	}
-	const CImage::TProperties CMGT::Properties={_T("MGT"),// name
-												__instantiate__,// instantiation function
+	const CImage::TProperties CMGT::Properties={Recognize,	// list of recognized device names
+												Instantiate,// instantiation function
 												_T("*.mgt"),	// filter
 												TMedium::FLOPPY_DD, // supported Media
 												GDOS_SECTOR_LENGTH_STD, GDOS_SECTOR_LENGTH_STD	// Sector supported min and max length

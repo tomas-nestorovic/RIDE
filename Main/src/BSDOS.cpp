@@ -1142,12 +1142,16 @@
 
 
 	namespace MBD{
-		static PImage __instantiate__(){
+		static LPCTSTR Recognize(PTCHAR){
+			static const char SingleDeviceName[]=_T("MB-02 image\0");
+			return SingleDeviceName;
+		}
+		static PImage Instantiate(LPCTSTR){
 			return new CImageRaw( &Properties, true );
 		}
 		const CImage::TProperties Properties={
-			_T("MB-02 image"), // name
-			__instantiate__, // instantiation function
+			Recognize, // name
+			Instantiate, // instantiation function
 			_T("*.mbd"), // filter
 			TMedium::FLOPPY_ANY, // supported media
 			BSDOS_SECTOR_LENGTH_STD,BSDOS_SECTOR_LENGTH_STD	// min and max sector length

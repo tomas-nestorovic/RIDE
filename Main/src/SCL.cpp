@@ -1,12 +1,16 @@
 #include "stdafx.h"
 #include "TRDOS.h"
 
-	static PImage __instantiate__(){
+	static LPCTSTR Recognize(PTCHAR){
+		static const char SingleDeviceName[]=_T("SCL image\0");
+		return SingleDeviceName;
+	}
+	static PImage Instantiate(LPCTSTR){
 		return new CSCL;
 	}
 
-	const CImage::TProperties CSCL::Properties={_T("SCL image"),// name
-												__instantiate__,// instantiation function
+	const CImage::TProperties CSCL::Properties={Recognize,	// list of recognized device names
+												Instantiate,// instantiation function
 												_T("*.scl"),	// filter
 												TMedium::FLOPPY_DD, // supported Media
 												TRDOS503_SECTOR_LENGTH_STD,TRDOS503_SECTOR_LENGTH_STD	// Sector supported min and max length

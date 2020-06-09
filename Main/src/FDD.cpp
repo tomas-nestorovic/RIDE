@@ -519,12 +519,16 @@ Utils::Information("--- EVERYTHING OK ---");
 
 
 
-	static PImage __instantiate__(){
+	static LPCTSTR Recognize(PTCHAR deviceNameList){
+		static const char SingleDeviceName[]=_T("[ Physical floppy drive TODO: ]\0");
+		return SingleDeviceName;
+	}
+	static PImage Instantiate(LPCTSTR deviceName){
 		return new CFDD;
 	}
 	const CImage::TProperties CFDD::Properties={
-		_T("[ Physical floppy drive A: ]"),	// name
-		__instantiate__,	// instantiation function
+		Recognize,	// list of recognized device names
+		Instantiate,	// instantiation function
 		nullptr, // filter
 		TMedium::FLOPPY_ANY, // supported Media
 		128,SECTOR_LENGTH_MAX	// Sector supported min and max length

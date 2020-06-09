@@ -43,7 +43,7 @@
 		const WORD dosStdSectorLength=dosProps->stdFormats->params.format.sectorLength;
 		if (imageProps->supportedMedia&dosProps->supportedMedia) // DOS and Image support common Media
 			if (imageProps->sectorLengthMin<=dosStdSectorLength && dosStdSectorLength<=imageProps->sectorLengthMax)
-				rLBImage.SetItemDataPtr( rLBImage.AddString(imageProps->name), (PVOID)imageProps );
+				rLBImage.SetItemDataPtr( rLBImage.AddString(imageProps->fnRecognize(nullptr)), (PVOID)imageProps ); // Null as buffer = one Image represents only one "device" whose name is known at compile-time
 	}
 
 	void CNewImageDialog::__refreshListOfContainers__(){
@@ -64,7 +64,7 @@
 						for( POSITION pos=CImage::known.GetHeadPosition(); pos; )
 							__checkCompatibilityAndAddToOptions__( dosProps, lb, (CImage::PCProperties)CImage::known.GetNext(pos) );
 						__checkCompatibilityAndAddToOptions__( dosProps, lb, &CFDD::Properties );
-						lb.SetCurSel( lb.FindString(0,dosProps->typicalImage->name) );
+						lb.SetCurSel( lb.FindString(0,dosProps->typicalImage->fnRecognize(nullptr)) ); // Null as buffer = one Image represents only one "device" whose name is known at compile-time
 					lb.Detach();
 					SendMessage( WM_COMMAND, MAKELONG(ID_IMAGE,LBN_SELCHANGE), (LPARAM)pImageListBox->m_hWnd );
 					return;
@@ -98,13 +98,15 @@
 				CListBox lb;
 				lb.Attach((HWND)lParam);
 					const int iSelected=lb.GetCurSel();
-					if (Utils::EnableDlgControl( m_hWnd, IDOK, iSelected>=0 ))
+					if (Utils::EnableDlgControl( m_hWnd, IDOK, iSelected>=0 )){
 						fnImage=( (CImage::PCProperties)lb.GetItemData(iSelected) )->fnInstantiate;
+						lb.GetText( iSelected, deviceName );
+					}
 				lb.Detach();
 				return TRUE;
 			}
 		}
-		return CDialog::OnCommand(wParam,lParam);
+		return __super::OnCommand(wParam,lParam);
 	}
 
 	BOOL CNewImageDialog::OnNotify(WPARAM wParam,LPARAM lParam,LRESULT *pResult){

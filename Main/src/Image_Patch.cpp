@@ -130,7 +130,7 @@ errorDuringWriting:			TCHAR buf[80];
 									static const WORD Controls[]={ ID_CYLINDER, ID_CYLINDER_N, ID_HEAD, ID_GAP, IDOK, 0 };
 									if (Utils::EnableDlgControls( m_hWnd, Controls, sourceImageProperties==&CDsk5::Properties )){
 										// : interactivity
-										patchParams.source.reset( sourceImageProperties->fnInstantiate() );
+										patchParams.source.reset( sourceImageProperties->fnInstantiate(nullptr) ); // Null as buffer = one Image represents only one "device" whose name is known at compile-time
 										patchParams.source->OnOpenDocument(fileName);
 										patchParams.cylinderA=0, patchParams.cylinderZ=patchParams.source->GetCylinderCount()-1;
 										patchParams.nHeads=std::min<>( patchParams.source->GetNumberOfFormattedSides(0), patchParams.target->GetNumberOfFormattedSides(0) );

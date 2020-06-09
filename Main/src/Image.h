@@ -37,6 +37,8 @@
 	#define HDD_CYLINDERS_MAX	(TCylinder)-1
 	#define HDD_HEADS_MAX		63
 
+	#define DEVICE_NAME_CHARS_MAX 32
+
 	#pragma pack(1)
 	typedef const struct TMedium sealed{
 		enum TType:BYTE{
@@ -195,11 +197,12 @@
 		BOOL DoSave(LPCTSTR lpszPathName,BOOL bReplace) override;
 		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override; // enabling/disabling ToolBar buttons
 	public:
-		typedef CImage *(*TFnInstantiate)();
+		typedef LPCTSTR (*TFnRecognize)(PTCHAR deviceNameList);
+		typedef CImage *(*TFnInstantiate)(LPCTSTR deviceName);
 
 		#pragma pack(1)
 		typedef const struct TProperties sealed{
-			LPCTSTR name;
+			TFnRecognize fnRecognize;
 			TFnInstantiate fnInstantiate;
 			LPCTSTR filter; // filter for the "Open/Save file" dialogs (e.g. "*.d80;*.d40"); ATTENTION - must be all in lowercase (normalization) and the extension must always have right three characters (otherwise changes in DoSave needed)
 			TMedium::TType supportedMedia;

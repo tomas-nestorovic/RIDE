@@ -374,11 +374,15 @@
 
 
 	namespace D80{
-		static PImage __instantiate__(){
+		static LPCTSTR Recognize(PTCHAR){
+			static const char SingleDeviceName[]=_T("Didaktik D40/D80\0");
+			return SingleDeviceName;
+		}
+		static PImage Instantiate(LPCTSTR){
 			return new CImageRaw( &Properties, true );
 		}
-		const CImage::TProperties Properties={	_T("Didaktik D40/D80"),// name
-												__instantiate__,// instantiation function
+		const CImage::TProperties Properties={	Recognize,// name
+												Instantiate,// instantiation function
 												_T("*.d80") IMAGE_FORMAT_SEPARATOR _T("*.d40"),	// filter
 												TMedium::FLOPPY_DD,
 												MDOS2_SECTOR_LENGTH_STD, MDOS2_SECTOR_LENGTH_STD	// min and max length of storable Sectors

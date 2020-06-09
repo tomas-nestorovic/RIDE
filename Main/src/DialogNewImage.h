@@ -8,6 +8,7 @@
 		BOOL OnNotify(WPARAM wParam,LPARAM lParam,LRESULT *pResult) override;
 	public:
 		CImage::TFnInstantiate fnImage;
+		TCHAR deviceName[DEVICE_NAME_CHARS_MAX];
 		CDos::PCProperties dosProps;
 
 		CNewImageDialog();

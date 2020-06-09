@@ -1,10 +1,14 @@
 #include "stdafx.h"
 
-	static PImage __instantiate__(){
+	static LPCTSTR Recognize(PTCHAR){
+		static const char SingleDeviceName[]=_T("DSK (Rev.5)\0");
+		return SingleDeviceName;
+	}
+	static PImage Instantiate(LPCTSTR){
 		return new CDsk5;
 	}
-	const CImage::TProperties CDsk5::Properties={	_T("DSK (Rev.5)"),	// name
-													__instantiate__,	// instantiation function
+	const CImage::TProperties CDsk5::Properties={	Recognize,	// list of recognized device names
+													Instantiate,	// instantiation function
 													_T("*.dsk"), // filter
 													TMedium::FLOPPY_ANY, // supported Media
 													1,2*6144	// Sector supported min and max length

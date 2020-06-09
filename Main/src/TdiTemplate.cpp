@@ -70,6 +70,6 @@
 			Utils::FatalError(_T("Unknown container to load."));
 			return nullptr;
 		}
-		return p->fnInstantiate(); // instantiating recognized file Image
+		return p->fnInstantiate(nullptr); // instantiating recognized file Image; Null as buffer = one Image represents only one "device" whose name is known at compile-time
 		// caller is now to load the document, and then call AddDocument
 	}

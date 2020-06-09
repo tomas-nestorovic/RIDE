@@ -510,7 +510,7 @@ errorDuringWriting:			TCHAR buf[80];
 					// : instantiating Target Image
 					if (targetImageProperties){
 						LOG_ACTION(_T("Creating target image"));
-						dumpParams.target=std::unique_ptr<CImage>( targetImageProperties->fnInstantiate() );
+						dumpParams.target=std::unique_ptr<CImage>( targetImageProperties->fnInstantiate(fileName) );
 					}else{
 						Utils::FatalError(_T("Unknown destination to dump to."));
 						return pDX->Fail();

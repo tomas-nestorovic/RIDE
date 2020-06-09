@@ -244,7 +244,7 @@
 			CNewImageDialog d;
 			if (d.DoModal()!=IDOK) return;
 			// . creating selected Image
-			const PImage image=d.fnImage();
+			const PImage image=d.fnImage(d.deviceName);
 			// . formatting Image under selected DOS
 			PDos dos = image->dos = d.dosProps->fnInstantiate(image,&TFormat::Unknown);
 				image->writeProtected=false; // just to be sure
@@ -320,7 +320,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 							if (command==IDYES) break;
 							OnFileNew();
 							if (command==IDCANCEL) return nullptr;
-							image.reset( CImageRaw::Properties.fnInstantiate() );
+							image.reset( CImageRaw::Properties.fnInstantiate(nullptr) ); // Null as buffer = one Image represents only one "device" whose name is known at compile-time
 							goto openImage;
 						}
 						//fallthrough
@@ -443,7 +443,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 
 	
 
-	#define FDD_ACCESS	nullptr
+	#define REAL_DRIVE_ACCESS	nullptr
 
 	static HHOOK ofn_hHook;
 	static PTCHAR ofn_fileName;
@@ -454,18 +454,10 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		if (pcws->message==WM_NOTIFY && pcws->wParam==ID_DRIVEA) // notification regarding Drive A:
 			switch ( ((LPNMHDR)pcws->lParam)->code ){
 				case NM_CLICK:
-				case NM_RETURN:{
-					const PLITEM pItem=&( (PNMLINK)pcws->lParam )->item;
-					if (!pItem->iLink){
-						::EndDialog( ::GetParent(pcws->hwnd), IDOK );
-						ofn_fileName=FDD_ACCESS;
-					}else{
-						TCHAR bufT[200];
-						::WideCharToMultiByte(CP_ACP,0,pItem->szUrl,-1,bufT,sizeof(bufT)/sizeof(TCHAR),nullptr,nullptr);
-						Utils::NavigateToUrlInDefaultBrowser(bufT);
-					}
+				case NM_RETURN:
+					::EndDialog( ::GetParent(pcws->hwnd), IDOK );
+					ofn_fileName=REAL_DRIVE_ACCESS;
 					return 0;
-				}
 			}
 		return ::CallNextHookEx(ofn_hHook,kod,wParam,lParam);
 	}
@@ -477,7 +469,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		DWORD nFilters=0;
 		if (singleAllowedImage)
 			// list of Filters consists of only one item
-			::wsprintf( buf, _T("%s (%s)|%s|"), singleAllowedImage->name, singleAllowedImage->filter, singleAllowedImage->filter );
+			::wsprintf( buf, _T("%s (%s)|%s|"), singleAllowedImage->fnRecognize(nullptr), singleAllowedImage->filter, singleAllowedImage->filter ); // Null as buffer = one Image represents only one "device" whose name is known at compile-time
 		else{
 			// list of Filters consists of all recognizable Images
 			// . all known Images
@@ -488,7 +480,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			// . individual Images by extension
 			for( POSITION pos=CImage::known.GetHeadPosition(); pos; nFilters++ ){
 				const CImage::PCProperties p=(CImage::PCProperties)CImage::known.GetNext(pos);
-				a+=_stprintf( a, _T("%s (%s)|%s|"), p->name, p->filter, p->filter );
+				a+=_stprintf( a, _T("%s (%s)|%s|"), p->fnRecognize(nullptr), p->filter, p->filter ); // Null as buffer = one Image represents only one "device" whose name is known at compile-time
 			}
 		}
 		nFilters++;
@@ -510,7 +502,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			ofn_hHook=::SetWindowsHookEx( WH_CALLWNDPROC, __dlgOpen_hook__, 0, ::GetCurrentThreadId() );
 				dialogConfirmed=d.DoModal()==IDOK;
 			::UnhookWindowsHookEx(ofn_hHook);
-			if (ofn_fileName==FDD_ACCESS)
+			if (ofn_fileName==REAL_DRIVE_ACCESS){
 				::lstrcpy( fileName, FDD_A_LABEL ); // cannot directly write to FileName in the Hook procedure as the "Open/Save File" dialog writes '\0' to the buffer under Windows 7 and higher
 				return &CFDD::Properties;
 			}
