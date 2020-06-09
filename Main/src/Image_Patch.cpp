@@ -174,7 +174,7 @@ errorDuringWriting:			TCHAR buf[80];
 				// ctor
 				: CDialog(IDR_IMAGE_PATCH)
 				, patchParams(dos) , sourceImageProperties(nullptr)
-				, realtimeThreadPriority( dos->image->properties==&CFDD::Properties ) {
+				, realtimeThreadPriority( dos->image->properties->IsRealDevice() ) {
 				::lstrcpy( fileName, ELLIPSIS );
 			}
 		} d(GetActive()->dos);

@@ -207,6 +207,8 @@
 			LPCTSTR filter; // filter for the "Open/Save file" dialogs (e.g. "*.d80;*.d40"); ATTENTION - must be all in lowercase (normalization) and the extension must always have right three characters (otherwise changes in DoSave needed)
 			TMedium::TType supportedMedia;
 			WORD sectorLengthMin,sectorLengthMax;
+
+			bool IsRealDevice() const;
 		} *PCProperties;
 
 		class CSectorDataSerializer abstract:public CFile,public CHexaEditor::IContentAdviser{

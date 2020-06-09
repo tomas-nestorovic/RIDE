@@ -518,7 +518,7 @@ errorDuringWriting:			TCHAR buf[80];
 					// : suggesting to dump only Cylinders within the officially reported Format (where suitable to)
 					if (
 						#ifndef _DEBUG // checking if the Source is a floppy only in Release mode
-							dumpParams.source->properties==&CFDD::Properties
+							dumpParams.source->properties->IsRealDevice()
 							&&
 						#endif
 						dynamic_cast<CImageRaw *>(dumpParams.target.get())!=nullptr
@@ -610,11 +610,11 @@ errorDuringWriting:			TCHAR buf[80];
 										// > enabling/disabling controls
 										static const WORD Controls[]={ ID_CYLINDER, ID_CYLINDER_N, ID_HEAD, ID_GAP, ID_NUMBER, ID_DEFAULT1, IDOK, 0 };
 										Utils::EnableDlgControls( m_hWnd, Controls, nCompatibleMedia>0 );
-										GetDlgItem(ID_FORMAT)->EnableWindow(nCompatibleMedia && targetImageProperties==&CFDD::Properties);
-											CheckDlgButton( ID_FORMAT, targetImageProperties==&CFDD::Properties );
+										GetDlgItem(ID_FORMAT)->EnableWindow(nCompatibleMedia && targetImageProperties->IsRealDevice());
+											CheckDlgButton( ID_FORMAT, targetImageProperties->IsRealDevice() );
 										GetDlgItem(IDOK)->SetFocus();
-										// > automatically ticking the "Real-time thread priority" check-box if either the source or the target is a floppy drive
-										if (dos->image->properties==&CFDD::Properties || targetImageProperties==&CFDD::Properties)
+										// > automatically ticking the "Real-time thread priority" check-box if either the source or the target is a real drive
+										if (dos->image->properties->IsRealDevice() || targetImageProperties->IsRealDevice())
 											SendDlgItemMessage( ID_PRIORITY, BM_SETCHECK, BST_CHECKED );
 								}else
 									*fileName=c;

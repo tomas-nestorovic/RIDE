@@ -213,6 +213,18 @@
 
 
 
+	bool CImage::TProperties::IsRealDevice() const{
+		return filter==nullptr;
+	}
+
+
+
+
+
+
+
+
+
 	CImage::TExclusiveLocker::TExclusiveLocker(PCImage image)
 		// ctor
 		: image(image) {

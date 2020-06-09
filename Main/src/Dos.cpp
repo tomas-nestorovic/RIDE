@@ -254,7 +254,7 @@ reportError:Utils::Information(buf);
 			formatBoot=rd.params.format;
 			formatBoot.nCylinders++; // because Cylinders numbered from zero
 			InitializeEmptyMedium(&rd.params); // DOS-specific initialization of newly formatted Medium
-			if (dynamic_cast<CFDD *>(image)) // if formatted on floppy Drive ...
+			if (image->properties->IsRealDevice()) // if formatted a real device ...
 				if (!image->OnSaveDocument(nullptr)) // ... immediately saving all Modified Sectors (Boot, FAT, Dir,...)
 					return ::GetLastError();
 		}else{

@@ -5,7 +5,7 @@
 		: CDialog(IDR_DOS_FORMAT) , dos(_dos)
 		, updateBoot(BST_CHECKED)
 		, addTracksToFat(BST_CHECKED)
-		, showReportOnFormatting(dynamic_cast<CFDD *>(_dos->image)?BST_CHECKED:BST_UNCHECKED)
+		, showReportOnFormatting(_dos->image->properties->IsRealDevice()?BST_CHECKED:BST_UNCHECKED)
 		, additionalFormats(_additionalFormats) , nAdditionalFormats(_nAdditionalFormats) {
 		params.format.mediumType=dos->formatBoot.mediumType; // to initialize Parameters using the first suitable Format; it holds: MediumType==Unknown <=> this is initial formatting of an Image, MediumType!=Unknown <=> any subsequent formatting of the same Image
 	}
