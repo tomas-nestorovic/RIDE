@@ -103,7 +103,7 @@ typedef const int *PCINT;
 
 #define APP_FULLNAME	_T("Real and Imaginary Disk Editor")
 #define APP_ABBREVIATION _T("RIDE")
-#define APP_VERSION		_T("1.5 debug special")
+#define APP_VERSION		_T("1.5.2 debug special")
 #define APP_IDENTIFIER	APP_ABBREVIATION APP_VERSION
 #define APP_CLASSNAME	_T("Afx:tomascz.") APP_ABBREVIATION
 

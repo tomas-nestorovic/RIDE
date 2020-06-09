@@ -579,7 +579,7 @@ errorDuringWriting:			TCHAR buf[80];
 							case ID_FILE:{
 								const TCHAR c=*fileName;
 								*fileName='\0';
-								if (app.__doPromptFileName__( fileName, true, AFX_IDS_SAVEFILE, 0, nullptr )){
+								if (targetImageProperties=app.DoPromptFileName( fileName, true, AFX_IDS_SAVEFILE, 0, nullptr )){
 									// : compacting FileName in order to be better displayable on the button
 									CWnd *const pBtnFile=GetDlgItem(ID_FILE);
 									RECT r;
@@ -587,12 +587,7 @@ errorDuringWriting:			TCHAR buf[80];
 									TCHAR buf[MAX_PATH];
 									::PathCompactPath( CClientDC(pBtnFile), ::lstrcpy(buf,fileName), r.right-r.left );
 									pBtnFile->SetWindowText(buf);
-									// : determining TargetImageProperties
-									targetImageProperties=	!::lstrcmp(fileName,FDD_A_LABEL)
-															? &CFDD::Properties
-															: __determineTypeByExtension__(_tcsrchr(fileName,'.')); // Null <=> unknown container
 									// : adjusting interactivity
-									if (targetImageProperties){
 										// > populating ComboBox with Media supported by both DOS and Image
 										BYTE nCompatibleMedia;
 										switch (dos->formatBoot.mediumType){
@@ -621,7 +616,6 @@ errorDuringWriting:			TCHAR buf[80];
 										// > automatically ticking the "Real-time thread priority" check-box if either the source or the target is a floppy drive
 										if (dos->image->properties==&CFDD::Properties || targetImageProperties==&CFDD::Properties)
 											SendDlgItemMessage( ID_PRIORITY, BM_SETCHECK, BST_CHECKED );
-									}
 								}else
 									*fileName=c;
 								break;

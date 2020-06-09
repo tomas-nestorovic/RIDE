@@ -468,11 +468,11 @@
 				::strncat( bufFileName, 1+properties->filter, 4 ); // 1 = asterisk, 4 = dot and three-character extension (e.g. "*.d40")
 			}else
 				::lstrcpy(bufFileName,m_strPathName);
-			if (!CRideApp::__doPromptFileName__( bufFileName, false, AFX_IDS_SAVEFILE, OFN_HIDEREADONLY|OFN_PATHMUSTEXIST, properties ))
+			if (!CRideApp::DoPromptFileName( bufFileName, false, AFX_IDS_SAVEFILE, OFN_HIDEREADONLY|OFN_PATHMUSTEXIST, properties ))
 				return FALSE;
 		}else
 			::lstrcpy(bufFileName,lpszPathName);
-		return CDocument::DoSave( bufFileName, bReplace );
+		return __super::DoSave( bufFileName, bReplace );
 	}
 
 

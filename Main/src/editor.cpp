@@ -469,7 +469,8 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			}
 		return ::CallNextHookEx(ofn_hHook,kod,wParam,lParam);
 	}
-	bool CRideApp::__doPromptFileName__(PTCHAR fileName,bool fddAccessAllowed,UINT stdStringId,DWORD flags,CImage::PCProperties singleAllowedImage){
+
+	CImage::PCProperties CRideApp::DoPromptFileName(PTCHAR fileName,bool fddAccessAllowed,UINT stdStringId,DWORD flags,CImage::PCProperties singleAllowedImage){
 		// reimplementation of CDocManager::DoPromptFileName
 		// - creating the list of Filters
 		TCHAR buf[500],*a=buf; // an "always big enough" buffer
@@ -499,6 +500,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			d.m_ofn.nFilterIndex=1;
 			d.m_ofn.lpstrTitle=title;
 			d.m_ofn.lpstrFile=fileName;
+		bool dialogConfirmed;
 		if (fddAccessAllowed){
 			// . extending the standard Dialog with a control to access local floppy Drive
 			d.m_ofn.Flags|= OFN_ENABLETEMPLATE | OFN_EXPLORER;
@@ -506,20 +508,33 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			// . hooking, showing the Dialog, processing its Result, unhooking, and returning the Result
 			ofn_fileName=fileName;
 			ofn_hHook=::SetWindowsHookEx( WH_CALLWNDPROC, __dlgOpen_hook__, 0, ::GetCurrentThreadId() );
-				const bool result=d.DoModal()==IDOK;
+				dialogConfirmed=d.DoModal()==IDOK;
 			::UnhookWindowsHookEx(ofn_hHook);
 			if (ofn_fileName==FDD_ACCESS)
 				::lstrcpy( fileName, FDD_A_LABEL ); // cannot directly write to FileName in the Hook procedure as the "Open/Save File" dialog writes '\0' to the buffer under Windows 7 and higher
-			return result;
+				return &CFDD::Properties;
+			}
 		}else
-			return d.DoModal()==IDOK;
+			dialogConfirmed=d.DoModal()==IDOK;
+		if (dialogConfirmed){
+			// selected an Image
+			const LPCTSTR ext=_tcsrchr(fileName,'.');
+			if (singleAllowedImage){
+				if (CImage::__determineTypeByExtension__(ext)!=singleAllowedImage) // no or wrong file Extension?
+					::strncat( fileName, 1+singleAllowedImage->filter, 4 ); // 1 = asterisk, 4 = dot and three-character extension (e.g. "*.d40")
+				return singleAllowedImage;
+			}else
+				return CImage::__determineTypeByExtension__(ext); // Null <=> unknown container
+		}else
+			// Dialog cancelled
+			return nullptr;
 	}
 	void CRideApp::OnFileOpen(){
 		// public wrapper
 		//CWinApp::OnFileOpen();
 		TCHAR fileName[MAX_PATH];
 		*fileName='\0';
-		if (__doPromptFileName__( fileName, true, AFX_IDS_OPENFILE, OFN_FILEMUSTEXIST, nullptr )){
+		if (DoPromptFileName( fileName, true, AFX_IDS_OPENFILE, OFN_FILEMUSTEXIST, nullptr )){
 			if (const CDocument *const doc=CImage::GetActive())
 				if (doc->GetPathName()==fileName) // if attempting to open an already opened Image ...
 					return; // ... doing nothing

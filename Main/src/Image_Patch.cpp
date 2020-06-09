@@ -124,9 +124,7 @@ errorDuringWriting:			TCHAR buf[80];
 							case ID_FILE:{
 								const TCHAR c=*fileName;
 								*fileName='\0';
-								if (app.__doPromptFileName__( fileName, false, AFX_IDS_OPENFILE, 0, &CDsk5::Properties )){
-									// . determining SourceImageProperties
-									sourceImageProperties=__determineTypeByExtension__(_tcsrchr(fileName,'.')); // Null <=> unknown container
+								if (sourceImageProperties=app.DoPromptFileName( fileName, false, AFX_IDS_OPENFILE, 0, &CDsk5::Properties )){
 									// . adjusting interactivity and updating values
 									CWnd *const pBtnFile=GetDlgItem(ID_FILE);
 									static const WORD Controls[]={ ID_CYLINDER, ID_CYLINDER_N, ID_HEAD, ID_GAP, IDOK, 0 };
