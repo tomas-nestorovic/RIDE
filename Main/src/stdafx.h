@@ -92,6 +92,7 @@ typedef const int *PCINT;
 #include "ViewDiskBrowser.h"
 #include "SpectrumDos.h"
 #include "DosUnknown.h"
+#include "DialogRealDeviceSelection.h"
 #include "DialogNewImage.h"
 #include "DialogUnformatting.h"
 #include "DialogEmptySpaceFilling.h"

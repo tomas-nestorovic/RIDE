@@ -101,6 +101,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UndefinePreprocessorDefinitions>TDI_EXPORT;PROPGRID_EXPORT</UndefinePreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -194,6 +195,7 @@
     <ClInclude Include="src\DialogEmptySpaceFilling.h" />
     <ClInclude Include="src\DialogFormatting.h" />
     <ClInclude Include="src\DialogNewImage.h" />
+    <ClInclude Include="src\DialogRealDeviceSelection.h" />
     <ClInclude Include="src\DialogUnformatting.h" />
     <ClInclude Include="src\DialogVerification.h" />
     <ClInclude Include="src\Dos.h" />
@@ -230,6 +232,7 @@
     <ClCompile Include="src\BSDOS_FAT.cpp" />
     <ClCompile Include="src\BSDOS_FileManager.cpp" />
     <ClCompile Include="src\Debug.cpp" />
+    <ClCompile Include="src\DialogRealDeviceSelection.cpp" />
     <ClCompile Include="src\DialogVerification.cpp" />
     <ClCompile Include="src\Dos_HexaPreview.cpp" />
     <ClCompile Include="src\Dos_PathString.cpp" />

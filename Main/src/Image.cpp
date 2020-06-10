@@ -287,6 +287,7 @@
 	}
 
 	CPtrList CImage::known;
+	CPtrList CImage::devices;
 
 	CImage::PCProperties CImage::__determineTypeByExtension__(LPCTSTR extension){
 		// determines and returns Properties for an Image with a given Extension; returns Null if extension unknown

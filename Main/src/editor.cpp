@@ -145,6 +145,7 @@
 		CImage::known.AddTail( (PVOID)&CImageRaw::Properties );
 		CImage::known.AddTail( (PVOID)&CSCL::Properties );
 		CImage::known.AddTail( (PVOID)&TRD::Properties );
+		CImage::devices.AddTail( (PVOID)&CFDD::Properties );
 		CDos::known.AddTail( (PVOID)&CBSDOS308::Properties );
 		CDos::known.AddTail( (PVOID)&CGDOS::Properties );
 		CDos::known.AddTail( (PVOID)&CMDOS2::Properties );
@@ -271,6 +272,7 @@
 
 
 
+	static CImage::PCProperties imageProps;
 	CDos::PCProperties manuallyForceDos=nullptr; // Null = use automatic recognition
 
 	#define ENTERING_LIMITED_MODE	_T("\n\nContinuing to view the image in limited mode.")
@@ -280,10 +282,14 @@
 		app.m_pMainWnd->SetFocus(); // to immediately carry out actions that depend on focus
 		// - opening the Image
 		std::unique_ptr<CImage> image;
-		if (!::lstrcmp(lpszFileName,FDD_A_LABEL)){
-			// accessing the floppy in Drive A:
+		const CImage::PCProperties devProps=imageProps!=nullptr && imageProps->IsRealDevice()
+											? imageProps
+											: nullptr;
+		imageProps=nullptr; // information consumed, it's invalid in next call of this method
+		if (devProps){
+			// accessing a local real Device
 			OnFileNew(); // to close any previous Image
-			image.reset( new CFDD );
+			image.reset( devProps->fnInstantiate(lpszFileName) );
 			if (const TStdWinError err=image->Reset()){
 				Utils::FatalError(_T("Cannot access the floppy drive"),err);
 				return nullptr;
@@ -503,8 +509,14 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 				dialogConfirmed=d.DoModal()==IDOK;
 			::UnhookWindowsHookEx(ofn_hHook);
 			if (ofn_fileName==REAL_DRIVE_ACCESS){
-				::lstrcpy( fileName, FDD_A_LABEL ); // cannot directly write to FileName in the Hook procedure as the "Open/Save File" dialog writes '\0' to the buffer under Windows 7 and higher
-				return &CFDD::Properties;
+				// selection of real device to access
+				const PCImage image=CImage::GetActive();
+				CRealDeviceSelectionDialog d( image?image->dos->properties:&CUnknownDos::Properties );
+				if (d.DoModal()==IDOK){
+					::lstrcpy( fileName, d.deviceName ); // cannot directly write to FileName in the Hook procedure as the "Open/Save File" dialog writes '\0' to the buffer under Windows 7 and higher
+					return d.deviceProps;
+				}else
+					return nullptr;
 			}
 		}else
 			dialogConfirmed=d.DoModal()==IDOK;
@@ -526,7 +538,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		//CWinApp::OnFileOpen();
 		TCHAR fileName[MAX_PATH];
 		*fileName='\0';
-		if (DoPromptFileName( fileName, true, AFX_IDS_OPENFILE, OFN_FILEMUSTEXIST, nullptr )){
+		if (imageProps=DoPromptFileName( fileName, true, AFX_IDS_OPENFILE, OFN_FILEMUSTEXIST, nullptr )){
 			if (const CDocument *const doc=CImage::GetActive())
 				if (doc->GetPathName()==fileName) // if attempting to open an already opened Image ...
 					return; // ... doing nothing

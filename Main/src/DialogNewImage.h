@@ -6,6 +6,7 @@
 		BOOL OnInitDialog() override;
 		BOOL OnCommand(WPARAM wParam,LPARAM lParam) override;
 		BOOL OnNotify(WPARAM wParam,LPARAM lParam,LRESULT *pResult) override;
+		void OnOK() override;
 	public:
 		CImage::TFnInstantiate fnImage;
 		TCHAR deviceName[DEVICE_NAME_CHARS_MAX];

@@ -249,6 +249,7 @@
 		};
 
 		static CPtrList known; // list of known Images (registered in CRideApp::InitInstance)
+		static CPtrList devices; // list of known Devices (registered in CRideApp::InitInstance)
 
 		static CImage *GetActive();
 		static PCProperties __determineTypeByExtension__(LPCTSTR extension);

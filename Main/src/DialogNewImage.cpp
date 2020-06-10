@@ -46,6 +46,8 @@
 				rLBImage.SetItemDataPtr( rLBImage.AddString(imageProps->fnRecognize(nullptr)), (PVOID)imageProps ); // Null as buffer = one Image represents only one "device" whose name is known at compile-time
 	}
 
+	#define REAL_DEVICE_OPTION_STRING	_T("[ Compatible physical device ]")
+
 	void CNewImageDialog::__refreshListOfContainers__(){
 		// forces refreshing of the list of containers available for the selected DOS; eventually displays an error message
 		Utils::EnableDlgControl( m_hWnd, IDOK, false ); // need yet to select a container
@@ -63,7 +65,7 @@
 						lb.ResetContent();
 						for( POSITION pos=CImage::known.GetHeadPosition(); pos; )
 							__checkCompatibilityAndAddToOptions__( dosProps, lb, (CImage::PCProperties)CImage::known.GetNext(pos) );
-						__checkCompatibilityAndAddToOptions__( dosProps, lb, &CFDD::Properties );
+						lb.SetItemDataPtr( lb.AddString(REAL_DEVICE_OPTION_STRING), (PVOID)&CFDD::Properties ); // "some" real device
 						lb.SetCurSel( lb.FindString(0,dosProps->typicalImage->fnRecognize(nullptr)) ); // Null as buffer = one Image represents only one "device" whose name is known at compile-time
 					lb.Detach();
 					SendMessage( WM_COMMAND, MAKELONG(ID_IMAGE,LBN_SELCHANGE), (LPARAM)pImageListBox->m_hWnd );
@@ -162,4 +164,24 @@
 				}
 			}
 		return CDialog::OnNotify(wParam,lParam,pResult);
+	}
+
+	void CNewImageDialog::OnOK(){
+		// Dialog confirmed
+		if (::lstrcmp(deviceName,REAL_DEVICE_OPTION_STRING))
+			// selected one of Image containers
+			__super::OnOK();
+		else{
+			// selected a real Device option, displaying a dialog to select a real local Device
+			ShowWindow(SW_HIDE); // hiding the "New image" dialog to not distract attention from the following subdialog
+			CRealDeviceSelectionDialog d(dosProps);
+			if (d.DoModal()==IDOK){
+				// real Device selected
+				fnImage=d.deviceProps->fnInstantiate;
+				::lstrcpy( deviceName, d.deviceName );
+				__super::OnOK();
+			}else
+				// real Device selection cancelled
+				EndDialog(IDCANCEL);
+		}
 	}
