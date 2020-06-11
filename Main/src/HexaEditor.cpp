@@ -138,6 +138,8 @@
 
 
 
+	static bool mouseInNcArea;
+
 	void CHexaEditor::SetEditable(bool _editable){
 		// enables/disables possibility to edit the content of the File (see the Reset function)
 		editable=_editable;
@@ -163,27 +165,45 @@
 
 	void CHexaEditor::Reset(CFile *_f,int _minFileSize,int _maxFileSize){
 		// resets the HexaEditor and supplies it new File content
-		if (!( pContentAdviser=dynamic_cast<PContentAdviser>(  f=_f  ) ))
-			pContentAdviser=&DefaultContentAdviser;
-		caret=TCaret(0); // resetting the Caret and Selection
-		SetLogicalBounds( _minFileSize, _maxFileSize );
-		SetLogicalSize(f->GetLength());
-		if (::IsWindow(m_hWnd)){ // may be window-less if the owner is window-less
-			__refreshVertically__();
-			Invalidate(FALSE);
-		}
+		locker.Lock();
+			if (!( pContentAdviser=dynamic_cast<PContentAdviser>(  f=_f  ) ))
+				pContentAdviser=&DefaultContentAdviser;
+			caret=TCaret(0); // resetting the Caret and Selection
+			SetLogicalBounds( _minFileSize, _maxFileSize );
+			SetLogicalSize(f->GetLength());
+			if (::IsWindow(m_hWnd)){ // may be window-less if the owner is window-less
+				__refreshVertically__();
+				Invalidate(FALSE);
+			}
+		locker.Unlock();
 	}
 
 	void CHexaEditor::SetLogicalBounds(int _minFileSize,int _maxFileSize){
 		// changes the min and max File size
-		minFileSize=_minFileSize, maxFileSize=_maxFileSize;
+		locker.Lock();
+			if (mouseInNcArea){
+				// when in the non-client area (e.g. over a scrollbar), putting updated values aside
+				update.minFileSize=_minFileSize;
+				update.maxFileSize=_maxFileSize;
+			}else
+				// otherwise, updating the values normally
+				minFileSize=_minFileSize, maxFileSize=_maxFileSize;
+		locker.Unlock();
 	}
 
 	void CHexaEditor::SetLogicalSize(int _logicalSize){
 		// changes the LogicalSize of File content (originally set when Resetting the HexaEditor)
-		logicalSize=_logicalSize;
-		if (::IsWindow(m_hWnd)) // may be window-less if the owner is window-less
-			__refreshVertically__();
+		locker.Lock();
+			if (mouseInNcArea)
+				// when in the non-client area (e.g. over a scrollbar), putting updated values aside
+				update.logicalSize=_logicalSize;
+			else{
+				// otherwise, updating the values normally
+				logicalSize=_logicalSize;
+				if (::IsWindow(m_hWnd)) // may be window-less if the owner is window-less
+					__refreshVertically__();
+			}
+		locker.Unlock();
 	}
 
 	void CHexaEditor::GetVisiblePart(int &rLogicalBegin,int &rLogicalEnd) const{
@@ -261,7 +281,8 @@
 	void CHexaEditor::RepaintData(bool immediately) const{
 		// invalidates the "data" (the content below the Header), eventually repaints them Immediately
 		if (m_hWnd){
-			const_cast<CHexaEditor *>(this)->__refreshVertically__();
+			if (!mouseInNcArea) // when NOT in the non-client area (e.g. over a scrollbar), repainting normally
+				const_cast<CHexaEditor *>(this)->__refreshVertically__();
 			RECT rc;
 			GetClientRect(&rc);
 			rc.top=HEADER_HEIGHT;
@@ -847,6 +868,31 @@ leftMouseDragged:
 					int recordStart,recordLength;
 					pContentAdviser->GetRecordInfo( logPos, &recordStart, &recordLength, nullptr );
 					HexaEditor_SetSelection( m_hWnd, recordStart, recordStart+recordLength );
+				}
+				break;
+			}
+			case WM_NCMOUSEMOVE:{
+				// mouse moved in non-client area
+				locker.Lock();
+					mouseInNcArea=true;
+					update=*this;
+				locker.Unlock();
+				TRACKMOUSEEVENT tme={ sizeof(tme), TME_NONCLIENT|TME_LEAVE, m_hWnd, 0 };
+				::TrackMouseEvent(&tme);
+				break;
+			}
+			case WM_NCMOUSELEAVE:{
+				// mouse left non-client area
+				POINT pt;
+				::GetCursorPos(&pt);
+				const POINTS pts={ pt.x, pt.y };
+				if (SendMessage( WM_NCHITTEST, 0, *(PINT)&pts )!=HTVSCROLL){
+					// mouse left vertical scrollbar
+					locker.Lock();
+						*static_cast<TState *>(this)=update;
+						mouseInNcArea=false;
+					locker.Unlock();
+					RepaintData(true);
 				}
 				break;
 			}

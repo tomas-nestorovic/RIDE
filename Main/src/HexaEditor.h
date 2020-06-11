@@ -10,7 +10,12 @@
 	#define HexaEditor_GetCaretPos(hWnd)\
 		HexaEditor_GetSelection( hWnd, nullptr, nullptr )
 
-	class CHexaEditor:public CEditView{
+	struct TState{
+		int minFileSize,maxFileSize;
+		int logicalSize; // zero by default
+	};
+
+	class CHexaEditor:public CEditView, TState{
 	public:
 		typedef interface IContentAdviser{
 			virtual void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength,bool *pOutDataReady)=0;
@@ -66,12 +71,12 @@
 		} bookmarks;
 		PEmphasis emphases; // must be ordered ascending by A (and thus automatically also by Z)
 
+		mutable CCriticalSection locker;
 		CFile *f;
 		PContentAdviser pContentAdviser;
-		int minFileSize,maxFileSize;
-		int logicalSize; // zero by default
 		BYTE addrLength; // Address format length (see ADDRESS_FORMAT); modified in ShowAddresses
 		bool editable;
+		TState update;
 
 		int __firstByteInRowToLogicalPosition__(int row) const;
 		int __logicalPositionToRow__(int logPos) const;
