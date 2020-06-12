@@ -19,9 +19,10 @@
 		Create(IDR_FILEMANAGER_COMPARE_FILES);
 		const CString s=app.GetProfileString(INI_COMPARISON,INI_POSITION,_T(""));
 		if (!s.IsEmpty()){
-			RECT r;
-			_stscanf(s,_T("%d,%d,%d,%d"),&r.left,&r.top,&r.right,&r.bottom);
+			RECT r; int windowState=SW_NORMAL;
+			_stscanf(s,_T("%d,%d,%d,%d,%d"),&r.left,&r.top,&r.right,&r.bottom,&windowState);
 			::SetWindowPos( m_hWnd, 0, r.left,r.top, r.right-r.left,r.bottom-r.top, SWP_NOZORDER );
+			ShowWindow(windowState); // minimized/maximized/normal
 		}
 		// - initialization
 		file1.__init__(GetDlgItem(ID_FILE_MRU_FILE1),GetDlgItem(ID_FILE1)),
@@ -67,10 +68,10 @@ different:	Utils::Information(_T("No, the files differ in content! (File names a
 	void CFileManagerView::CFileComparisonDialog::OnCancel(){
 		// closes the FileComparisonDialog
 		// - saving window's current position for next time
-		RECT r;
-		GetWindowRect(&r);
+		WINDOWPLACEMENT wp={ sizeof(wp) };
+		GetWindowPlacement(&wp);
 		TCHAR buf[50];
-		_stprintf(buf,_T("%d,%d,%d,%d"),r);
+		::wsprintf(buf,_T("%d,%d,%d,%d,%d"),wp.rcNormalPosition,wp.showCmd);
 		app.WriteProfileString(INI_COMPARISON,INI_POSITION,buf);
 		// - closing
 		file1.Revoke(), file2.Revoke();

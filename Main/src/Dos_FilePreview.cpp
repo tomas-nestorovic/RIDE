@@ -23,13 +23,14 @@
 		const float scaleFactor=Utils::LogicalUnitScaleFactor;
 		const CString s=app.GetProfileString(iniSection,INI_POSITION,_T(""));
 		if (!s.IsEmpty()){
-			RECT r;
-			_stscanf(s,_T("%d,%d,%d,%d"),&r.left,&r.top,&r.right,&r.bottom);
+			RECT r; int windowState=SW_NORMAL;
+			_stscanf(s,_T("%d,%d,%d,%d,%d"),&r.left,&r.top,&r.right,&r.bottom,&windowState);
 			SetWindowPos(	nullptr,
 							r.left*scaleFactor, r.top*scaleFactor,
 							(r.right-r.left)*scaleFactor, (r.bottom-r.top)*scaleFactor,
 							SWP_NOZORDER
 						);
+			ShowWindow(windowState); // minimized/maximized/normal
 		}else{
 			RECT r={ 0, 0, initialWindowWidth*scaleFactor, initialWindowHeight*scaleFactor };
 			::AdjustWindowRect( &r, ::GetWindowLong(m_hWnd,GWL_STYLE), FALSE );
@@ -185,11 +186,11 @@
 			case WM_NCDESTROY:{
 				// window is about to be destroyed
 				// - saving current position on the Screen for next time
-				RECT r;
-				GetWindowRect(&r);
-				for( BYTE b=4; b; ((PINT)&r)[--b]/=Utils::LogicalUnitScaleFactor );
+				WINDOWPLACEMENT wp={ sizeof(wp) };
+				GetWindowPlacement(&wp);
+				for( BYTE b=4; b; ((PINT)&wp.rcNormalPosition)[--b]/=Utils::LogicalUnitScaleFactor );
 				TCHAR buf[80];
-				::wsprintf(buf,_T("%d,%d,%d,%d"),r);
+				::wsprintf(buf,_T("%d,%d,%d,%d,%d"),wp.rcNormalPosition,wp.showCmd);
 				app.WriteProfileString(iniSection,INI_POSITION,buf);
 				break;
 			}
