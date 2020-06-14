@@ -20,11 +20,14 @@
 		// True <=> Boot Sector has been recognized on the disk, otherwise False
 		TPhysicalAddress chs={ 0, 0, {0,0,1,-1} };
 		// - in case the Image is a physical floppy disk, determining the Type of Medium (type of floppy)
-		TFormat fmt={ TMedium::FLOPPY_DD, 1,1,MSDOS7_SECTOR_BKBOOT, MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD, 1 };
+		TFormat fmt={ TMedium::FLOPPY_DD_525, 1,1,MSDOS7_SECTOR_BKBOOT, MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD, 1 };
 		if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
-			fmt.mediumType=TMedium::FLOPPY_HD;
-			if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0))
-				return chs; // unknown Medium Type, any address will sooner or later cause a failure in access
+			fmt.mediumType=TMedium::FLOPPY_DD_350;
+			if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
+				fmt.mediumType=TMedium::FLOPPY_HD_350;
+				if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0))
+					return chs; // unknown Medium Type, any address will sooner or later cause a failure in access
+			}
 		}
 		// - recognizing the Boot Sector
 		if (pSuccess) *pSuccess=true; // assumption (Boot Sector found and successfully recognized)
@@ -107,10 +110,12 @@
 		nSectorsInCluster=pFormatBoot->clusterSize;
 		nFatCopies=params->nAllocationTables;
 		switch (pFormatBoot->mediumType){
-			case TMedium::FLOPPY_HD:
+			case TMedium::FLOPPY_HD_350:
 				medium=DISK_35_1440_DS_18;	break;
-			case TMedium::FLOPPY_DD:
+			case TMedium::FLOPPY_DD_350:
 				medium=DISK_35_720_DS_9;	break;
+			case TMedium::FLOPPY_DD_525:
+				medium=DISK_525_360_DS_9;	break;
 			case TMedium::HDD_RAW:
 				medium=DISK_HARD;			break;
 			default:
@@ -210,11 +215,14 @@
 	TStdWinError CMSDOS7::__recognizeDisk__(PImage image,PFormat pFormatBoot){
 		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
 		// - in case the Image is a physical floppy disk, determining the Type of Medium (type of floppy)
-		TFormat fmt={ TMedium::FLOPPY_DD, 1,1,MSDOS7_SECTOR_BKBOOT, MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD, 1 };
+		TFormat fmt={ TMedium::FLOPPY_DD_525, 1,1,MSDOS7_SECTOR_BKBOOT, MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD, 1 };
 		if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
-			fmt.mediumType=TMedium::FLOPPY_HD;
-			if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0))
-				return ERROR_UNRECOGNIZED_VOLUME; // unknown Medium Type
+			fmt.mediumType=TMedium::FLOPPY_DD_350;
+			if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
+				fmt.mediumType=TMedium::FLOPPY_HD_350;
+				if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0))
+					return ERROR_UNRECOGNIZED_VOLUME; // unknown Medium Type
+			}
 		}
 		// - finding Boot Sector
 		bool bootSectorRecognized;
@@ -242,12 +250,12 @@
 	#define ARCHIVE_CAPACITY	_T("Single archive (beware under WinNT!)")
 
 	static const CFormatDialog::TStdFormat StdFormats[]={
-		{ _T("Standard 1440 kB"), 0, {TMedium::FLOPPY_HD,79,2,18,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,1}, 1, 0, FDD_SECTOR_GAP3_STD, 2, 224 },
-		{ BOOSTED_CAPACITY, 0, {TMedium::FLOPPY_HD,FDD_CYLINDERS_MAX-1,2,21,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,2}, 2, 20, 5, 2, 128 },
-		{ ARCHIVE_CAPACITY, 0, {TMedium::FLOPPY_HD,FDD_CYLINDERS_MAX-1,2,21,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,16}, 2, 20, 5, 1, 16 },
-		{ _T("Standard 720 kB"), 0, {TMedium::FLOPPY_DD,79,2,9,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,1}, 1, 0, FDD_SECTOR_GAP3_STD, 2, 224 },
-		{ BOOSTED_CAPACITY, 0, {TMedium::FLOPPY_DD,FDD_CYLINDERS_MAX-1,2,10,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,2}, 2, 9, 5, 2, 128 },
-		{ ARCHIVE_CAPACITY, 0, {TMedium::FLOPPY_DD,FDD_CYLINDERS_MAX-1,2,10,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,16}, 2, 9, 5, 1, 16 },
+		{ _T("Standard 1440 kB"), 0, {TMedium::FLOPPY_HD_350,79,2,18,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,1}, 1, 0, FDD_SECTOR_GAP3_STD, 2, 224 },
+		{ BOOSTED_CAPACITY, 0, {TMedium::FLOPPY_HD_350,FDD_CYLINDERS_MAX-1,2,21,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,2}, 2, 20, 5, 2, 128 },
+		{ ARCHIVE_CAPACITY, 0, {TMedium::FLOPPY_HD_350,FDD_CYLINDERS_MAX-1,2,21,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,16}, 2, 20, 5, 1, 16 },
+		{ _T("Standard 720 kB"), 0, {TMedium::FLOPPY_DD_350,79,2,9,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,1}, 1, 0, FDD_SECTOR_GAP3_STD, 2, 224 },
+		{ BOOSTED_CAPACITY, 0, {TMedium::FLOPPY_DD_350,FDD_CYLINDERS_MAX-1,2,10,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,2}, 2, 9, 5, 2, 128 },
+		{ ARCHIVE_CAPACITY, 0, {TMedium::FLOPPY_DD_350,FDD_CYLINDERS_MAX-1,2,10,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,16}, 2, 9, 5, 1, 16 },
 		{ _T("Hard disk 50 MB"), 0, {TMedium::HDD_RAW,99,16,63,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,4}, 1, 0, FDD_SECTOR_GAP3_STD, 2, 224 }
 	};
 	const CDos::TProperties CMSDOS7::Properties={
@@ -256,7 +264,7 @@
 		90, // recognition priority (the bigger the number the earlier the DOS gets crack on the image)
 		__recognizeDisk__, // recognition function
 		__instantiate__, // instantiation function
-		(TMedium::TType)(TMedium::FLOPPY_DD|TMedium::FLOPPY_HD|TMedium::HDD_RAW),
+		(TMedium::TType)(TMedium::FLOPPY_ANY|TMedium::HDD_RAW),
 		&CImageRaw::Properties, // the most common Image to contain data for this DOS (e.g. *.D80 Image for MDOS)
 		7,	// number of std Formats
 		StdFormats, // std Formats

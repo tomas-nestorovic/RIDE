@@ -8,23 +8,27 @@
 
 	TStdWinError CMDOS2::__recognizeDisk__(PImage image,PFormat pFormatBoot){
 		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
-		static const TFormat Fmt={ TMedium::FLOPPY_DD, 1,1,10, MDOS2_SECTOR_LENGTH_STD_CODE,MDOS2_SECTOR_LENGTH_STD, 1 };
-		if (image->SetMediumTypeAndGeometry(&Fmt,StdSidesMap,1)==ERROR_SUCCESS)
-			if (const PCBootSector boot=(PCBootSector)image->GetHealthySectorData(TBootSector::CHS))
-				if (boot->sdos==SDOS_TEXT){
-					*pFormatBoot=Fmt;
-					if (MDOS2_TRACK_SECTORS_MIN<=boot->current.nSectors && boot->current.nSectors<=MDOS2_TRACK_SECTORS_MAX
-						&&
-						( pFormatBoot->nCylinders=boot->current.nCylinders )
-						*
-						( pFormatBoot->nHeads=1+(boot->current.diskFlags.doubleSided) )
-						*
-						( pFormatBoot->nSectors=boot->current.nSectors )
-						>= // testing minimal number of Sectors
-						MDOS2_DATA_LOGSECTOR_FIRST
-					)
-						return ERROR_SUCCESS;
-				}
+		TFormat fmt={ TMedium::FLOPPY_DD_525, 1,1,10, MDOS2_SECTOR_LENGTH_STD_CODE,MDOS2_SECTOR_LENGTH_STD, 1 };
+		if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
+			fmt.mediumType=TMedium::FLOPPY_DD_350;
+			if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0))
+				return ERROR_UNRECOGNIZED_VOLUME; // unknown Medium Type
+		}
+		if (const PCBootSector boot=(PCBootSector)image->GetHealthySectorData(TBootSector::CHS))
+			if (boot->sdos==SDOS_TEXT){
+				*pFormatBoot=fmt;
+				if (MDOS2_TRACK_SECTORS_MIN<=boot->current.nSectors && boot->current.nSectors<=MDOS2_TRACK_SECTORS_MAX
+					&&
+					( pFormatBoot->nCylinders=boot->current.nCylinders )
+					*
+					( pFormatBoot->nHeads=1+(boot->current.diskFlags.doubleSided) )
+					*
+					( pFormatBoot->nSectors=boot->current.nSectors )
+					>= // testing minimal number of Sectors
+					MDOS2_DATA_LOGSECTOR_FIRST
+				)
+					return ERROR_SUCCESS;
+			}
 		return ERROR_UNRECOGNIZED_VOLUME;
 	}
 
@@ -35,8 +39,9 @@
 		return new CMDOS2(image,pFormatBoot);
 	}
 	static const CFormatDialog::TStdFormat StdFormats[]={
-		{ _T("DS 80x9"), 0, {TMedium::FLOPPY_DD,79,2,9,MDOS2_SECTOR_LENGTH_STD_CODE,MDOS2_SECTOR_LENGTH_STD,1}, 1, 0, FDD_SECTOR_GAP3_STD, 1, 128 },
-		{ _T("DS 40x9 (beware under MDOS1!)"), 0, {TMedium::FLOPPY_DD,39,2,9,MDOS2_SECTOR_LENGTH_STD_CODE,MDOS2_SECTOR_LENGTH_STD,1}, 1, 0, FDD_SECTOR_GAP3_STD, 1, 128 }
+		{ _T("3.5\" DS 80x9"), 0, {TMedium::FLOPPY_DD_350,79,2,9,MDOS2_SECTOR_LENGTH_STD_CODE,MDOS2_SECTOR_LENGTH_STD,1}, 1, 0, FDD_SECTOR_GAP3_STD, 1, 128 },
+		{ _T("3.5\" DS 40x9 (beware under MDOS1!)"), 0, {TMedium::FLOPPY_DD_350,39,2,9,MDOS2_SECTOR_LENGTH_STD_CODE,MDOS2_SECTOR_LENGTH_STD,1}, 1, 0, FDD_SECTOR_GAP3_STD, 1, 128 },
+		{ _T("5.25\" DS 40x9"), 0, {TMedium::FLOPPY_DD_525,39,2,9,MDOS2_SECTOR_LENGTH_STD_CODE,MDOS2_SECTOR_LENGTH_STD,1}, 1, 0, FDD_SECTOR_GAP3_STD, 1, 128 }
 	};
 	const CDos::TProperties CMDOS2::Properties={
 		_T("MDOS 2.0"), // name
@@ -44,9 +49,9 @@
 		80, // recognition priority (the bigger the number the earlier the DOS gets crack on the image)
 		__recognizeDisk__, // recognition function
 		__instantiate__, // instantiation function
-		TMedium::FLOPPY_DD,
+		TMedium::FLOPPY_ANY_DD,
 		&D80::Properties, // the most common Image to contain data for this DOS (e.g. *.D80 Image for MDOS)
-		2,	// number of std Formats
+		3,	// number of std Formats
 		StdFormats, // std Formats
 		1,10, // range of supported number of Sectors
 		MDOS2_DATA_LOGSECTOR_FIRST, // minimal total number of Sectors required
@@ -384,7 +389,7 @@
 		const CImage::TProperties Properties={	Recognize,// name
 												Instantiate,// instantiation function
 												_T("*.d80") IMAGE_FORMAT_SEPARATOR _T("*.d40"),	// filter
-												TMedium::FLOPPY_DD,
+												TMedium::FLOPPY_ANY_DD,
 												MDOS2_SECTOR_LENGTH_STD, MDOS2_SECTOR_LENGTH_STD	// min and max length of storable Sectors
 											};
 	}

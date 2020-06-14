@@ -1182,10 +1182,8 @@ BEGIN
     DEFPUSHBUTTON   "OK",IDOK,43,64,50,14
     PUSHBUTTON      "Cancel",IDCANCEL,97,64,50,14
     LTEXT           "Floppy type:",IDC_STATIC,7,8,39,8,NOT WS_GROUP
-    CONTROL         "&DD",ID_FLOPPY_DD,"Button",BS_AUTORADIOBUTTON | 
-                    WS_GROUP,57,8,29,10
-    CONTROL         "&HD",ID_FLOPPY_HD,"Button",BS_AUTORADIOBUTTON,94,8,27,
-                    10
+    COMBOBOX        ID_MEDIUM,58,7,72,65,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
     LTEXT           "&Precision [µs]:",IDC_STATIC,7,24,45,8,NOT WS_GROUP
     COMBOBOX        ID_ACCURACY,58,22,72,76,CBS_DROPDOWNLIST | WS_VSCROLL | 
                     WS_TABSTOP
@@ -1751,6 +1749,16 @@ BEGIN
     0
 END
 
+IDR_FDD_LATENCY DLGINIT
+BEGIN
+    ID_MEDIUM, 0x403, 9, 0
+0x2e35, 0x3532, 0x2022, 0x4444, "\000" 
+    ID_MEDIUM, 0x403, 8, 0
+0x2e33, 0x2235, 0x4420, 0x0044, 
+    ID_MEDIUM, 0x403, 8, 0
+0x2e33, 0x2235, 0x4820, 0x0044, 
+    0
+END
 
 /////////////////////////////////////////////////////////////////////////////
 //

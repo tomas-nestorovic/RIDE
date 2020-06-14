@@ -1134,8 +1134,8 @@ returnData:				outFdcStatuses[index]=psi->fdcStatus;
 			LOG_MESSAGE(TMedium::GetDescription(_floppyType));
 		#endif
 		switch (_floppyType){
-			case TMedium::FLOPPY_DD:
-				// 2DD floppy
+			case TMedium::FLOPPY_DD_350:
+				// 3.5" 2DD floppy
 				switch (DRIVER){
 					case DRV_FDRAWCMD:{
 						transferSpeed=FD_RATE_250K;
@@ -1148,11 +1148,22 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 						break;
 				}
 				break;
-			case TMedium::FLOPPY_HD:
-				// HD floppy
+			case TMedium::FLOPPY_HD_350:
+				// 3.5" HD floppy
 				switch (DRIVER){
 					case DRV_FDRAWCMD:
 						transferSpeed=FD_RATE_500K;
+						goto fdrawcmd;
+					default:
+						ASSERT(FALSE);
+						break;
+				}
+				break;
+			case TMedium::FLOPPY_DD_525:
+				// 5.25" HD floppy
+				switch (DRIVER){
+					case DRV_FDRAWCMD:
+						transferSpeed=FD_RATE_300K;
 						goto fdrawcmd;
 					default:
 						ASSERT(FALSE);
@@ -1187,14 +1198,16 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 		// - setting the transfer speed according to current FloppyType (DD/HD)
 		__freeInternalTracks__();
 		switch (floppyType){ // set in base method to "pFormat->mediumType"
-			case TMedium::FLOPPY_DD:
-			case TMedium::FLOPPY_HD:
+			case TMedium::FLOPPY_DD_525:
+			case TMedium::FLOPPY_DD_350:
+			case TMedium::FLOPPY_HD_350:
 				// determining if corresponding FloppyType is inserted
 				return __setDataTransferSpeed__(floppyType);
 			default:
 				// automatically recognizing the Type of inserted floppy
-				if (__setAndEvaluateDataTransferSpeed__( floppyType=TMedium::FLOPPY_DD )==ERROR_SUCCESS) return ERROR_SUCCESS;
-				if (__setAndEvaluateDataTransferSpeed__( floppyType=TMedium::FLOPPY_HD )==ERROR_SUCCESS) return ERROR_SUCCESS;
+				if (__setAndEvaluateDataTransferSpeed__( floppyType=TMedium::FLOPPY_DD_525 )==ERROR_SUCCESS) return ERROR_SUCCESS;
+				if (__setAndEvaluateDataTransferSpeed__( floppyType=TMedium::FLOPPY_DD_350 )==ERROR_SUCCESS) return ERROR_SUCCESS;
+				if (__setAndEvaluateDataTransferSpeed__( floppyType=TMedium::FLOPPY_HD_350 )==ERROR_SUCCESS) return ERROR_SUCCESS;
 				return LOG_ERROR(ERROR_BAD_COMMAND);
 		}
 	}
@@ -1271,7 +1284,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 	#pragma pack(1)
 	struct TLatencyParams sealed{
 		CFDD *const fdd;
-		const bool ddFloppy; // double density floppy
+		const TMedium::TType floppyType;
 		const BYTE usAccuracy; // accuracy in microseconds
 		const BYTE nRepeats;
 		TCylinder cyl;	// healthy Track to use for computation of the latencies
@@ -1280,9 +1293,9 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 		float out1ByteLatency;		// microseconds
 		float outGap3Latency;		// microseconds
 
-		TLatencyParams(CFDD *fdd,bool ddFloppy,BYTE usAccuracy,BYTE nRepeats)
+		TLatencyParams(CFDD *fdd,TMedium::TType floppyType,BYTE usAccuracy,BYTE nRepeats)
 			: fdd(fdd)
-			, ddFloppy(ddFloppy)
+			, floppyType(floppyType)
 			, usAccuracy(usAccuracy) , nRepeats(nRepeats)
 			, cyl(0) , head(0) // a healthy Track will be found when determining the controller latency
 			, outControllerLatency(0) , out1ByteLatency(0) , outGap3Latency(0) {
@@ -1310,7 +1323,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 			TInterruption(const PBackgroundActionCancelable pAction,TLatencyParams &lp)
 				// ctor
 				: pAction(pAction)
-				, fdd(lp.fdd) , sectorLength(lp.ddFloppy?4096:8192)
+				, fdd(lp.fdd) , sectorLength(lp.floppyType==TMedium::FLOPPY_HD_350?8192:4096)
 				, rCyl(lp.cyl) , rHead(lp.head) // a healthy Track yet to be found
 				, sectorDataToWrite( ::VirtualAlloc(nullptr,SECTOR_LENGTH_MAX,MEM_COMMIT,PAGE_READWRITE) )
 				, usAccuracy(lp.usAccuracy) , nMicroseconds(0) {
@@ -1492,12 +1505,15 @@ Utils::Information(buf);}
 					SetDlgItemText( ID_MEDIUM, _T("Not inserted") );
 				// . attempting to recognize any previous format on the floppy
 				else
-					if (fdd->__setAndEvaluateDataTransferSpeed__(TMedium::FLOPPY_DD)==ERROR_SUCCESS){
-						fdd->floppyType=TMedium::FLOPPY_DD;
-						SetDlgItemText( ID_MEDIUM, _T("DD formatted") );
-					}else if (fdd->__setAndEvaluateDataTransferSpeed__(TMedium::FLOPPY_HD)==ERROR_SUCCESS){
-						fdd->floppyType=TMedium::FLOPPY_HD;
-						SetDlgItemText( ID_MEDIUM, _T("HD formatted") );
+					if (fdd->__setAndEvaluateDataTransferSpeed__(TMedium::FLOPPY_DD_525)==ERROR_SUCCESS){
+						fdd->floppyType=TMedium::FLOPPY_DD_525;
+						SetDlgItemText( ID_MEDIUM, _T("5.25\" DD formatted") );
+					}else if (fdd->__setAndEvaluateDataTransferSpeed__(TMedium::FLOPPY_DD_350)==ERROR_SUCCESS){
+						fdd->floppyType=TMedium::FLOPPY_DD_350;
+						SetDlgItemText( ID_MEDIUM, _T("3.5\" DD formatted") );
+					}else if (fdd->__setAndEvaluateDataTransferSpeed__(TMedium::FLOPPY_HD_350)==ERROR_SUCCESS){
+						fdd->floppyType=TMedium::FLOPPY_HD_350;
+						SetDlgItemText( ID_MEDIUM, _T("3.5\" HD formatted") );
 					}else
 						SetDlgItemText( ID_MEDIUM, _T("Not formatted or faulty") );
 				// . forcing redrawing (as the new text may be shorter than the original text, leaving the original partly visible)
@@ -1579,20 +1595,20 @@ autodetermineLatencies:		// automatic determination of write latency values
 								int floppyType,usAccuracy,nRepeats;
 
 								CLatencyAutoDeterminationDialog(const CFDD *fdd,CWnd *parent)
-									: CDialog(IDR_FDD_LATENCY,parent) , floppyType(-1) , usAccuracy(2) , nRepeats(3) {
+									: CDialog(IDR_FDD_LATENCY,parent) , floppyType(0) , usAccuracy(2) , nRepeats(3) {
 									switch (fdd->floppyType){
-										case TMedium::FLOPPY_DD: floppyType=0; break;
-										case TMedium::FLOPPY_HD: floppyType=1; break;
+										case TMedium::FLOPPY_DD_525: floppyType=0; break;
+										case TMedium::FLOPPY_DD_350: floppyType=1; break;
+										case TMedium::FLOPPY_HD_350: floppyType=2; break;
 									}
 								}
 								void PreInitDialog() override{
-									CDialog::PreInitDialog(); // base
+									__super::PreInitDialog(); // base
 									Utils::PopulateComboBoxWithSequenceOfNumbers( GetDlgItem(ID_ACCURACY)->m_hWnd, 1,nullptr, 6,nullptr );
 									Utils::PopulateComboBoxWithSequenceOfNumbers( GetDlgItem(ID_TEST)->m_hWnd, 1,_T("(worst)"), 9,_T("(best)") );
 								}
 								void DoDataExchange(CDataExchange *pDX) override{
-									DDX_Radio( pDX, ID_FLOPPY_DD,	floppyType );
-										DDV_MinMaxInt( pDX, floppyType, 0,1 );
+									DDX_CBIndex( pDX, ID_MEDIUM,	floppyType );
 									DDX_CBIndex( pDX, ID_ACCURACY,	usAccuracy );
 									DDX_CBIndex( pDX, ID_TEST,		nRepeats );
 								}
@@ -1602,7 +1618,13 @@ autodetermineLatencies:		// automatic determination of write latency values
 								__informationWithCheckableShowNoMore__( _T("Windows is NOT a real-time system! Computed latency will be valid only if using the floppy drive in very similar conditions as when they were computed (current conditions)!"), INI_MSG_LATENCY );
 								if (Utils::InformationOkCancel(_T("Insert an empty disk and hit OK."))){
 									CBackgroundMultiActionCancelable bmac( THREAD_PRIORITY_TIME_CRITICAL );
-										TLatencyParams lp( fdd, d.floppyType==0, 1+d.usAccuracy, 1+d.nRepeats );
+										TMedium::TType floppyType=TMedium::UNKNOWN;
+										switch (d.floppyType){
+											case 0: floppyType=TMedium::FLOPPY_DD_525; break;
+											case 1: floppyType=TMedium::FLOPPY_DD_350; break;
+											case 2: floppyType=TMedium::FLOPPY_HD_350; break;
+										}
+										TLatencyParams lp( fdd, floppyType, 1+d.usAccuracy, 1+d.nRepeats );
 										bmac.AddAction( __determineControllerAndOneByteLatency_thread__, &lp, _T("Determining controller latencies") );
 										bmac.AddAction( __determineGap3Latency_thread__, &lp, _T("Determining minimal Gap3 size") );
 									if (const TStdWinError err=bmac.Perform()){
@@ -1688,7 +1710,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 
 	BYTE CFDD::__getMaximumSectorLengthCode__() const{
 		// returns the maximum LengthCode given the actual FloppyType
-		return 5+(floppyType==TMedium::FLOPPY_HD);
+		return 5+(floppyType==TMedium::FLOPPY_HD_350);
 	}
 
 	static BYTE __reportSectorVerificationError__(RCPhysicalAddress chs){

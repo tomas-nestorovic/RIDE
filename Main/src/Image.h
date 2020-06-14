@@ -42,11 +42,13 @@
 	#pragma pack(1)
 	typedef const struct TMedium sealed{
 		enum TType:BYTE{
-			UNKNOWN		=(BYTE)-1,
-			FLOPPY_HD	=1,
-			FLOPPY_DD	=2,
-			FLOPPY_ANY	=TMedium::FLOPPY_DD|TMedium::FLOPPY_HD,
-			HDD_RAW		=4
+			UNKNOWN			=(BYTE)-1,
+			FLOPPY_HD_350	=1,
+			FLOPPY_DD_350	=2,
+			FLOPPY_DD_525	=4,
+			FLOPPY_ANY_DD	=FLOPPY_DD_350|FLOPPY_DD_525,
+			FLOPPY_ANY		=FLOPPY_HD_350|FLOPPY_ANY_DD,
+			HDD_RAW			=8
 		};
 		#pragma pack(1)
 		typedef const struct TProperties sealed{

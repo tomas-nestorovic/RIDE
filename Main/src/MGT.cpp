@@ -11,7 +11,7 @@
 	const CImage::TProperties CMGT::Properties={Recognize,	// list of recognized device names
 												Instantiate,// instantiation function
 												_T("*.mgt"),	// filter
-												TMedium::FLOPPY_DD, // supported Media
+												TMedium::FLOPPY_DD_350, // supported Media
 												GDOS_SECTOR_LENGTH_STD, GDOS_SECTOR_LENGTH_STD	// Sector supported min and max length
 											};
 

@@ -21,7 +21,7 @@
 		44, // recognition priority (the bigger the number the earlier the DOS gets crack on the image)
 		__recognizeDisk__, // recognition function
 		__instantiate__, // instantiation function
-		TMedium::FLOPPY_DD,
+		TMedium::FLOPPY_ANY_DD,
 		&TRD::Properties, // the most common Image to contain data for this DOS (e.g. *.D80 Image for MDOS)
 		4,	// number of std Formats
 		StdFormats, // std Formats

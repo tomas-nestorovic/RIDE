@@ -5,7 +5,7 @@
 		return new CGDOS(image,pFormatBoot);
 	}
 	static const CFormatDialog::TStdFormat StdFormats[]={
-		{ _T("DS 80x10"), 0, {TMedium::FLOPPY_DD,GDOS_CYLINDERS_COUNT-1,2,GDOS_TRACK_SECTORS_COUNT,GDOS_SECTOR_LENGTH_STD_CODE,GDOS_SECTOR_LENGTH_STD,1}, 1, 0, FDD_SECTOR_GAP3_STD, 1, GDOS_DIR_FILES_COUNT_MAX }
+		{ _T("DS 80x10"), 0, {TMedium::FLOPPY_DD_350,GDOS_CYLINDERS_COUNT-1,2,GDOS_TRACK_SECTORS_COUNT,GDOS_SECTOR_LENGTH_STD_CODE,GDOS_SECTOR_LENGTH_STD,1}, 1, 0, FDD_SECTOR_GAP3_STD, 1, GDOS_DIR_FILES_COUNT_MAX }
 	};
 
 	TStdWinError CGDOS::__recognizeDisk__(PImage image,PFormat pFormatBoot){
@@ -57,7 +57,7 @@
 		20, // recognition priority (the bigger the number the earlier the DOS gets crack on the image)
 		__recognizeDisk__, // recognition function
 		__instantiate__, // instantiation function
-		TMedium::FLOPPY_DD,
+		TMedium::FLOPPY_DD_350,
 		&CMGT::Properties, // the most common Image to contain data for this DOS (e.g. *.D80 Image for MDOS)
 		1,	// number of std Formats
 		StdFormats, // std Formats
