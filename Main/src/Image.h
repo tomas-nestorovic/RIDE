@@ -37,7 +37,7 @@
 	#define HDD_CYLINDERS_MAX	(TCylinder)-1
 	#define HDD_HEADS_MAX		63
 
-	#define DEVICE_NAME_CHARS_MAX 32
+	#define DEVICE_NAME_CHARS_MAX 48
 
 	#pragma pack(1)
 	typedef const struct TMedium sealed{

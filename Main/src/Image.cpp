@@ -369,7 +369,7 @@
 			return;
 		// - if this Image is in existing file, verifying that the file can be modified
 		const CString &path=GetPathName();
-		if (!path.IsEmpty() && path!=FDD_A_LABEL){
+		if (!path.IsEmpty() && !properties->IsRealDevice()){
 			const DWORD attr=::GetFileAttributes(path);
 			if (attr!=(DWORD)INVALID_HANDLE_VALUE && attr&FILE_ATTRIBUTE_READONLY)
 				return Utils::FatalError(_T("Cannot toggle the write protection"),_T("The file is read-only."));
