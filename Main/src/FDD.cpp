@@ -519,12 +519,27 @@ Utils::Information("--- EVERYTHING OK ---");
 
 
 
+	#define FDD_FDRAWCMD_NAME_PATTERN _T("Internal floppy drive %c: (fdrawcmd.sys)")
+
 	static LPCTSTR Recognize(PTCHAR deviceNameList){
-		static const char SingleDeviceName[]=_T("[ Physical floppy drive TODO: ]\0");
-		return SingleDeviceName;
+		PTCHAR p=deviceNameList;
+		// - Simon Owen's fdrawcmd.sys
+		for( TCHAR drvId[]=_T("\\\\.\\fdraw0"); drvId[9]<'4'; drvId[9]++ ){
+			const HANDLE hFdd=::CreateFile( drvId, GENERIC_READ|GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr); //FILE_SHARE_WRITE
+			if (hFdd!=INVALID_HANDLE_VALUE){ // Driver installed and exclusive access allowed to the A: drive
+				p+=::wsprintf( p, FDD_FDRAWCMD_NAME_PATTERN, drvId[9]-'0'+'A' ) + 1;
+				::CloseHandle(hFdd);
+			}else
+				break;
+		}
+		// - TODO: other drivers for internal floppy drives
+		//
+		// - no further drives found
+		*p='\0';
+		return deviceNameList;
 	}
 	static PImage Instantiate(LPCTSTR deviceName){
-		return new CFDD;
+		return new CFDD(deviceName);
 	}
 	const CImage::TProperties CFDD::Properties={
 		Recognize,	// list of recognized device names
@@ -536,12 +551,13 @@ Utils::Information("--- EVERYTHING OK ---");
 
 	#define FDD_THREAD_PRIORITY_DEFAULT	THREAD_PRIORITY_ABOVE_NORMAL
 
-	CFDD::CFDD()
+	CFDD::CFDD(LPCTSTR deviceName)
 		// ctor
 		// - base
 		: CFloppyImage(&Properties,true)
 		// - initialization
 		, dataBuffer( ::VirtualAlloc(nullptr,SECTOR_LENGTH_MAX,MEM_COMMIT,PAGE_READWRITE) ) {
+		::lstrcpy( devicePatternName, deviceName );
 		LOG_ACTION(_T("CFDD::ctor"));
 		::ZeroMemory( internalTracks, sizeof(internalTracks) );
 		// - creating a temporary file in order to not break the Document-View architecture
@@ -588,7 +604,10 @@ Utils::Information("--- EVERYTHING OK ---");
 				LOG_ACTION(_T("TStdWinError CFDD::__connectToFloppyDrive__ DRV_FDRAWCMD"));
 				// . connecting to "A:"
 				do{
-					_HANDLE=::CreateFile( _T("\\\\.\\fdraw0"), GENERIC_READ|GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr); //FILE_SHARE_WRITE
+					TCHAR driveLetter, drvId[16];
+					_stscanf( devicePatternName, FDD_FDRAWCMD_NAME_PATTERN, &driveLetter );
+					::wsprintf( drvId, _T("\\\\.\\fdraw%c"), driveLetter-'A'+'0' );
+					_HANDLE=::CreateFile( drvId, GENERIC_READ|GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr); //FILE_SHARE_WRITE
 					if (_HANDLE!=INVALID_HANDLE_VALUE) break; // Driver installed and exclusive access allowed to the A: drive
 error:				switch (const TStdWinError err=::GetLastError()){
 						case ERROR_FILE_NOT_FOUND: // "file not found" error ...
@@ -2067,7 +2086,7 @@ error:		return LOG_ERROR(::GetLastError());
 	}
 
 	void CFDD::SetTitle(LPCTSTR){
-		CDocument::SetTitle(FDD_A_LABEL);
+		CDocument::SetTitle(devicePatternName);
 	}
 
 	void CFDD::SetPathName(LPCTSTR,BOOL){

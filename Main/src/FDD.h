@@ -1,9 +1,6 @@
 #ifndef FDD_H
 #define FDD_H
 
-	#define FDD_A_LABEL	_T("\"Floppy drive A:\"")
-	#define FDD_B_LABEL	_T("\"Floppy drive B:\"") // not implemented at the moment - ready for future use
-
 	class CFDD sealed:public CFloppyImage{
 	public:
 		enum TSupportedDriver{
@@ -11,6 +8,7 @@
 			DRV_FDRAWCMD=1
 		};
 	private:
+		TCHAR devicePatternName[DEVICE_NAME_CHARS_MAX];
 		#pragma pack(1)
 		struct TParams sealed{
 			float controllerLatency,oneByteLatency,gap3Latency;
@@ -121,7 +119,7 @@
 	public:
 		static const TProperties Properties;
 
-		CFDD();
+		CFDD(LPCTSTR deviceName);
 		~CFDD();
 
 		BOOL OnOpenDocument(LPCTSTR) override;
