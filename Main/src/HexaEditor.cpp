@@ -144,8 +144,11 @@
 		// enables/disables possibility to edit the content of the File (see the Reset function)
 		editable=_editable;
 		if (::IsWindow(m_hWnd)){ // may be window-less if the owner is window-less
-			caret=TCaret( __firstByteInRowToLogicalPosition__(GetScrollPos(SB_VERT)) ); // resetting the Caret and thus the Selection
-			app.m_pMainWnd->SetFocus(); // for the Caret to disappear
+			if (::GetFocus()==m_hWnd){
+				__refreshCaretDisplay__();
+				SetFocus();
+				ShowCaret();
+			}
 			Invalidate(FALSE);
 		}
 	}
@@ -298,6 +301,10 @@
 
 	void CHexaEditor::__refreshCaretDisplay__() const{
 		// shows Caret on screen at position that corresponds with Caret's actual Position in the underlying File content (e.g. the 12345-th Byte of the File)
+		#define CARET_DISABLED_HEIGHT 2
+		::CreateCaret(	m_hWnd, nullptr, (2-caret.ascii)*font.charAvgWidth,
+						!editable*CARET_DISABLED_HEIGHT + editable*font.charHeight // either N (if not Editable) or CharHeight (if Editable)
+					);
 		int currRecordStart, currRecordLength=1;
 		pContentAdviser->GetRecordInfo( caret.position, &currRecordStart, &currRecordLength, nullptr );
 		const div_t d=div(caret.position-currRecordStart,currRecordLength);
@@ -311,6 +318,7 @@
 				pos.x=(addrLength+ADDRESS_SPACE_LENGTH+HEXA_FORMAT_LENGTH*nBytesInRow+HEXA_SPACE_LENGTH+pos.x)*font.charAvgWidth;
 			else // Caret in the Hexa area
 				pos.x=(addrLength+ADDRESS_SPACE_LENGTH+HEXA_FORMAT_LENGTH*pos.x)*font.charAvgWidth;
+			pos.y+=!editable*(font.charHeight-CARET_DISABLED_HEIGHT);
 			SetCaretPos(pos);
 		/*}else{ // commented out as it never occurs
 			// Caret "above" the header
@@ -373,7 +381,6 @@
 				return 0;
 			case WM_KEYDOWN:{
 				// key pressed
-				if (!editable) return 0; // if window disabled, focus cannot be acquired
 				const bool ctrl=::GetKeyState(VK_CONTROL)<0;
 				switch (wParam){
 					case VK_LEFT:{
@@ -466,6 +473,7 @@ moveCaretDown:			const int iRow=__logicalPositionToRow__(caret.position);
 						goto caretCorrectlyMoveTo;
 					case VK_DELETE:{
 editDelete:				// deleting the Byte after Caret, or deleting the Selection
+						if (!editable) return 0; // can't edit content of a disabled window
 						// . if Selection not set, setting it as the Byte immediately after Caret
 						if (caret.selectionA==caret.position)
 							if (caret.position<f->GetLength()) caret.selectionA=caret.position++;
@@ -509,6 +517,7 @@ deleteSelection:		int posSrc=std::max<>(caret.selectionA,caret.position), posDst
 					}
 					case VK_BACK:
 						// deleting the Byte before Caret, or deleting the Selection
+						if (!editable) return 0; // can't edit content of a disabled window
 						// . if Selection not set, setting it as the Byte immediately before Caret
 						if (caret.selectionA==caret.position)
 							if (caret.position) caret.selectionA=caret.position-1;
@@ -520,6 +529,7 @@ deleteSelection:		int posSrc=std::max<>(caret.selectionA,caret.position), posDst
 						::SetFocus(hPreviouslyFocusedWnd);
 						break;
 					default:
+						if (!editable) return 0; // can't edit content of a disabled window
 						if (ctrl){
 							// a shortcut other than Caret positioning
 							return 0;
@@ -551,6 +561,7 @@ changeHalfbyte:					if (caret.position<maxFileSize){
 			}
 			case WM_CHAR:
 				// character
+				if (!editable) return 0; // can't edit content of a disabled window
 				if (caret.ascii) // here Ascii mode; Hexa mode handled in WM_KEYDOWN
 					// Ascii modification
 					if (::GetAsyncKeyState(VK_CONTROL)>=0 && ::isprint(wParam)) // Ctrl not pressed, thus character printable
@@ -565,10 +576,7 @@ changeHalfbyte:					if (caret.position<maxFileSize){
 				return 0;
 			case WM_CONTEXTMENU:{
 				// context menu invocation
-				if (!editable) return 0; // if window disabled, no context actions can be performed
-				CMenu contextMenu;
-				contextMenu.LoadMenu(IDR_HEXAEDITOR);
-				CMenu &mnu=*contextMenu.GetSubMenu(0);
+				Utils::CRideContextMenu mnu( IDR_HEXAEDITOR, this );
 				const bool selectionExists=caret.selectionA!=caret.position;
 				mnu.EnableMenuItem( ID_BOOKMARK_TOGGLE, (MF_DISABLED|MF_GRAYED)*selectionExists );
 				mnu.CheckMenuItem( ID_BOOKMARK_TOGGLE, MF_CHECKED*(bookmarks.__getNearestNextBookmarkPosition__(caret.position)==caret.position) );
@@ -613,7 +621,6 @@ changeHalfbyte:					if (caret.position<maxFileSize){
 			}
 			case WM_COMMAND:
 				// processing a command
-				if (!editable) return 0;
 				switch (LOWORD(wParam)){
 					case ID_BOOKMARK_TOGGLE:
 						// toggling a Bookmark at Caret's Position
@@ -672,6 +679,7 @@ changeHalfbyte:					if (caret.position<maxFileSize){
 					}
 					case ID_ZERO:
 						// resetting Selection with zeros
+						if (!editable) return 0; // can't edit content of a disabled window
 						i=0;
 resetSelectionWithValue:BYTE buf[65536];
 						::memset( buf, i, sizeof(buf) );
@@ -687,6 +695,7 @@ resetSelectionWithValue:BYTE buf[65536];
 						goto caretCorrectlyMoveTo;
 					case ID_NUMBER:{
 						// resetting Selection with user-defined value
+						if (!editable) return 0; // can't edit content of a disabled window
 						// . defining the Dialog
 						class CResetDialog sealed:public CDialog{
 							BOOL OnInitDialog() override{
@@ -744,6 +753,7 @@ resetSelectionWithValue:BYTE buf[65536];
 						return 0;
 					case ID_EDIT_PASTE:{
 						// pasting binary data from clipboard at the Position of Caret
+						if (!editable) return 0; // can't edit content of a disabled window
 						COleDataObject odo;
 						odo.AttachClipboard();
 						if (const HGLOBAL hg=odo.GetGlobalData(cfBinary)){
@@ -841,7 +851,6 @@ resetSelectionWithValue:BYTE buf[65536];
 				if (cursorPos0==lParam) return 0; // actually no Cursor movement occured
 				cursorPos0=lParam;
 leftMouseDragged:
-				if (!editable) break; // if window NotEditable, ignoring any mouse events and just focusing the window to receive MouseWheel messages
 				const int logPos=__logicalPositionFromPoint__(CPoint(lParam),&caret.ascii);
 				if (logPos>=0)
 					// in either Hexa or Ascii areas
@@ -855,7 +864,6 @@ leftMouseDragged:
 					break;
 				}
 				__super::WindowProc(msg,wParam,lParam); // to set focus and accept WM_KEY* messages
-				CreateSolidCaret( (2-caret.ascii)*font.charAvgWidth, font.charHeight );
 				ShowCaret();
 				goto caretCorrectlyMoveTo;
 			}
@@ -899,8 +907,6 @@ leftMouseDragged:
 			case WM_SETFOCUS:
 				// window has received focus
 				hPreviouslyFocusedWnd=(HWND)wParam; // the window that is losing the focus (may be refocused later when Enter is pressed)
-				if (!editable) return 0;
-				CreateSolidCaret( (2-caret.ascii)*font.charAvgWidth, font.charHeight );
 				ShowCaret();
 				goto caretRefresh;
 			case WM_KILLFOCUS:
@@ -1202,19 +1208,21 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 					case ID_EDIT_SELECT_ALL:
 					case ID_EDIT_SELECT_NONE:
 					case ID_EDIT_SELECT_CURRENT:
-					case ID_EDIT_DELETE:
-					case ID_ZERO:
-					case ID_NUMBER:
 					case ID_NEXT:
 					case ID_PREV:
 					case ID_NAVIGATE_ADDRESS:
+						((CCmdUI *)pExtra)->Enable(true);
+						return TRUE;
+					case ID_EDIT_DELETE:
+					case ID_ZERO:
+					case ID_NUMBER:
 						((CCmdUI *)pExtra)->Enable(editable);
 						return TRUE;
 					case ID_BOOKMARK_PREV:
-						((CCmdUI *)pExtra)->Enable( editable && bookmarks.__getNearestNextBookmarkPosition__(0)<caret.position );
+						((CCmdUI *)pExtra)->Enable( bookmarks.__getNearestNextBookmarkPosition__(0)<caret.position );
 						return TRUE;
 					case ID_BOOKMARK_NEXT:
-						((CCmdUI *)pExtra)->Enable( editable && bookmarks.__getNearestNextBookmarkPosition__(caret.position+1)<BOOKMARK_POSITION_INFINITY );
+						((CCmdUI *)pExtra)->Enable( bookmarks.__getNearestNextBookmarkPosition__(caret.position+1)<BOOKMARK_POSITION_INFINITY );
 						return TRUE;
 					case ID_IMAGE_PROTECT:
 						break; // leaving up to a higher logic to decide if write-protection can be removed

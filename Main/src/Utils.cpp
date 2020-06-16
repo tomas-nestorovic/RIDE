@@ -112,6 +112,45 @@ namespace Utils{
 
 
 
+	static void RouteContextMenu(CWnd *pUiUpdater,CMenu *pContextMenu){
+		// leveraging OnCmdMsg processing to adjust UI of the ContextMenu
+		CCmdUI state;
+			state.m_pMenu=pContextMenu;
+			state.m_pParentMenu=pContextMenu;
+			state.m_nIndexMax=pContextMenu->GetMenuItemCount();
+		for( state.m_nIndex=0; state.m_nIndex<state.m_nIndexMax; state.m_nIndex++ )
+			switch ( state.m_nID=pContextMenu->GetMenuItemID(state.m_nIndex) ){
+				case 0:
+					// menu separators and invalid commands are ignored
+					continue;
+				case UINT_MAX:
+					// recurrently routing Submenus
+					if(CMenu *const pSubMenu=pContextMenu->GetSubMenu(state.m_nIndex))
+						RouteContextMenu( pUiUpdater, pSubMenu );
+					break;
+				default:
+					// normal menu item
+					state.m_pSubMenu=nullptr;
+					state.DoUpdate( pUiUpdater, FALSE ); // False = Auto disable unroutable items
+					break;
+			}
+	}
+
+	CRideContextMenu::CRideContextMenu(UINT idMenuRes,CWnd *pUiUpdater){
+		// ctor
+		parent.LoadMenu(idMenuRes);
+		m_hMenu=parent.GetSubMenu(0)->m_hMenu;
+		RouteContextMenu( pUiUpdater, this );
+	}
+
+	CRideContextMenu::~CRideContextMenu(){
+		// dtor
+		m_hMenu=(HMENU)INVALID_HANDLE_VALUE; // whole menu will be disposed by disposing the Parent
+	}
+
+
+
+
 	CCommandDialog::CCommandDialog(LPCTSTR _information)
 		// ctor
 		: CDialog(IDR_ACTION_DIALOG) , information(_information) , checkBoxStatus(BST_UNCHECKED) {

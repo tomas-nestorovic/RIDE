@@ -37,6 +37,13 @@ namespace Utils{
 		SIZE GetTextSize(LPCTSTR text) const;
 	};
 
+	class CRideContextMenu sealed:public ::CMenu{
+		CMenu parent;
+	public:
+		CRideContextMenu(UINT idMenuRes,CWnd *pUiUpdater=nullptr);
+		~CRideContextMenu();
+	};
+
 	class CCommandDialog:public CDialog{
 		const LPCTSTR information;
 	protected:
