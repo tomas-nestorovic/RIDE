@@ -471,6 +471,19 @@ moveCaretDown:			const int iRow=__logicalPositionToRow__(caret.position);
 					case VK_END:
 						caret.position=( ctrl ? f->GetLength() : __firstByteInRowToLogicalPosition__(__logicalPositionToRow__(caret.position)+1)-1 );
 						goto caretCorrectlyMoveTo;
+					case VK_TAB:{
+						const HWND hDlg=::GetTopWindow(m_hWnd);
+						const bool shiftPressed=::GetKeyState(VK_SHIFT)<0;
+						if (shiftPressed ^ caret.ascii){
+							// leaving the HexaEditor control if (a) Tab alone pressed while in Ascii part, or (b) Shift+Tab pressed while in the hexa part
+							::SetFocus(  ::GetNextDlgTabItem( hDlg, m_hWnd, shiftPressed )  );
+							break;
+						}else{
+							// switching between the Ascii and hexa parts
+							caret.ascii=!caret.ascii;
+							goto caretRefresh;
+						}
+					}
 					case VK_DELETE:{
 editDelete:				// deleting the Byte after Caret, or deleting the Selection
 						if (!editable) return 0; // can't edit content of a disabled window
