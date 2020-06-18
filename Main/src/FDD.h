@@ -85,6 +85,7 @@
 			HANDLE handle;
 			TSupportedDriver driver;
 			bool calibrated, preferRelativeSeeking;
+			bool doubleTrackStep, userForcedDoubleTrackStep;
 			TCylinder position;
 
 			TFddHead(); //ctor

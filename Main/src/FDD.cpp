@@ -16,6 +16,7 @@
 	#define INI_CALIBRATE_SECTOR_ERROR	_T("clberr")
 	#define INI_CALIBRATE_FORMATTING	_T("clbfmt")
 	#define INI_MOTOR_OFF_SECONDS		_T("mtroff")
+	#define INI_TRACK_DOUBLE_STEP		_T("dbltrk")
 	#define INI_VERIFY_FORMATTING		_T("vrftr")
 	#define INI_VERIFY_WRITTEN_DATA		_T("vrfdt")
 	#define INI_SEEKING					_T("seek")
@@ -450,11 +451,14 @@ Utils::Information("--- EVERYTHING OK ---");
 		// ctor
 		: handle(INVALID_HANDLE_VALUE) // see Reset
 		, calibrated(false) , position(0)
+		, doubleTrackStep( app.GetProfileInt(INI_FDD,INI_TRACK_DOUBLE_STEP,false)!=0 )
+		, userForcedDoubleTrackStep(false) // True once the ID_40D80 button in Settings dialog is pressed
 		, preferRelativeSeeking( app.GetProfileInt(INI_FDD,INI_SEEKING,0)!=0 ) {
 	}
 
 	CFDD::TFddHead::~TFddHead(){
 		// dtor
+		app.WriteProfileInt( INI_FDD, INI_TRACK_DOUBLE_STEP, doubleTrackStep );
 		app.WriteProfileInt( INI_FDD, INI_SEEKING, preferRelativeSeeking );
 	}
 
@@ -469,12 +473,12 @@ Utils::Information("--- EVERYTHING OK ---");
 				switch (driver){
 					case DRV_FDRAWCMD:
 						if (preferRelativeSeeking && cyl>position){ // RelativeSeeking is allowed only to higher Cylinder numbers
-							FD_RELATIVE_SEEK_PARAMS rsp={ FD_OPTION_MT|FD_OPTION_DIR, 0, cyl-position };
+							FD_RELATIVE_SEEK_PARAMS rsp={ FD_OPTION_MT|FD_OPTION_DIR, 0, (cyl-position)<<doubleTrackStep };
 							LOG_ACTION(_T("DeviceIoControl FD_RELATIVE_SEEK_PARAMS"));
 							seeked=::DeviceIoControl( handle, IOCTL_FDCMD_RELATIVE_SEEK, &rsp,sizeof(rsp), nullptr,0, &nBytesTransferred, nullptr )!=0;
 							LOG_BOOL(seeked);
 						}else{
-							FD_SEEK_PARAMS sp={ cyl, 0 };
+							FD_SEEK_PARAMS sp={ cyl<<doubleTrackStep, 0 };
 							LOG_ACTION(_T("DeviceIoControl FD_SEEK_PARAMS"));
 							seeked=::DeviceIoControl( handle, IOCTL_FDCMD_SEEK, &sp,sizeof(sp), nullptr,0, &nBytesTransferred, nullptr )!=0;
 							LOG_BOOL(seeked);
@@ -786,7 +790,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		LOG_ACTION(_T("TCylinder CFDD::GetCylinderCount"));
 		return	GetNumberOfFormattedSides(0) // if zeroth Cylinder exists ...
-				? FDD_CYLINDERS_MAX // ... then it's assumed that there is the maximum number of Cylinders available (the actual number may be adjusted by systematically scanning the Tracks)
+				? FDD_CYLINDERS_MAX>>fddHead.doubleTrackStep // ... then it's assumed that there is the maximum number of Cylinders available (the actual number may be adjusted by systematically scanning the Tracks)
 				: 0; // ... otherwise the floppy is considered not formatted
 	}
 
@@ -1496,6 +1500,7 @@ Utils::Information(buf);}
 		// - defining the Dialog
 		class CSettingDialog sealed:public CDialog{
 			CFDD *const fdd;
+			TCHAR doubleTrackDistanceTextOrg[80];
 
 			void __refreshMediumInformation__(){
 				// detects a floppy in the Drive and attempts to recognize its Type
@@ -1508,23 +1513,41 @@ Utils::Information(buf);}
 					if (fdd->__setAndEvaluateDataTransferSpeed__(TMedium::FLOPPY_DD_525)==ERROR_SUCCESS){
 						fdd->floppyType=TMedium::FLOPPY_DD_525;
 						SetDlgItemText( ID_MEDIUM, _T("5.25\" DD formatted") );
+						const bool doubleTrackStep0=fdd->fddHead.doubleTrackStep;
+							fdd->fddHead.doubleTrackStep=false;
+							const PInternalTrack pit0=__REFER_TO_TRACK(fdd,1,0);
+								fdd->fddHead.__seekTo__(0);
+								const PInternalTrack pit=fdd->__scanTrack__(1,0);
+									CheckDlgButton( ID_40D80, pit->nSectors==0 );
+								delete pit;
+							__REFER_TO_TRACK(fdd,1,0)=pit0;
+						fdd->fddHead.doubleTrackStep=doubleTrackStep0;
+						Utils::EnableDlgControl( m_hWnd, ID_40D80, true );
 					}else if (fdd->__setAndEvaluateDataTransferSpeed__(TMedium::FLOPPY_DD_350)==ERROR_SUCCESS){
 						fdd->floppyType=TMedium::FLOPPY_DD_350;
 						SetDlgItemText( ID_MEDIUM, _T("3.5\" DD formatted") );
+						CheckDlgButton( ID_40D80,  Utils::EnableDlgControl( m_hWnd, ID_40D80, false )  );
 					}else if (fdd->__setAndEvaluateDataTransferSpeed__(TMedium::FLOPPY_HD_350)==ERROR_SUCCESS){
 						fdd->floppyType=TMedium::FLOPPY_HD_350;
 						SetDlgItemText( ID_MEDIUM, _T("3.5\" HD formatted") );
-					}else
+						CheckDlgButton( ID_40D80,  Utils::EnableDlgControl( m_hWnd, ID_40D80, false )  );
+					}else{
 						SetDlgItemText( ID_MEDIUM, _T("Not formatted or faulty") );
+						CheckDlgButton( ID_40D80, false );
+						Utils::EnableDlgControl( m_hWnd, ID_40D80, true );
+					}
 				// . forcing redrawing (as the new text may be shorter than the original text, leaving the original partly visible)
 				GetDlgItem(ID_MEDIUM)->Invalidate();
 			}
 			void PreInitDialog() override{
 				// dialog initialization
 				// . base
-				CDialog::PreInitDialog();
+				__super::PreInitDialog();
 				// . displaying controller information
 				SetDlgItemText( ID_SYSTEM, fdd->__getControllerType__() );
+				// . if DoubleTrackStep changed manually, adjusting the text of the ID_40D80 checkbox
+				if (fdd->fddHead.userForcedDoubleTrackStep)
+					WindowProc( WM_COMMAND, ID_40D80, 0 );
 				// . displaying inserted Medium information
 				__refreshMediumInformation__();
 			}
@@ -1644,8 +1667,15 @@ autodetermineLatencies:		// automatic determination of write latency values
 						switch (wParam){
 							case ID_RECOVER:
 								// refreshing information on (inserted) floppy
+								SetDlgItemText( ID_40D80, doubleTrackDistanceTextOrg );
 								__refreshMediumInformation__();
 								break;
+							case ID_40D80:{
+								// track distance changed manually
+								TCHAR buf[sizeof(doubleTrackDistanceTextOrg)/sizeof(TCHAR)+20];
+								SetDlgItemText( ID_40D80, ::lstrcat(::lstrcpy(buf,doubleTrackDistanceTextOrg),_T(" (user forced)")) );
+								break;
+							}
 							case ID_ZERO:
 							case ID_CYLINDER_N:
 								// adjusting possibility to edit the CalibrationStep according to selected option
@@ -1653,6 +1683,8 @@ autodetermineLatencies:		// automatic determination of write latency values
 								break;
 							case IDOK:
 								// attempting to confirm the Dialog
+								fdd->fddHead.doubleTrackStep=IsDlgButtonChecked( ID_40D80 )!=BST_UNCHECKED;
+								fdd->fddHead.userForcedDoubleTrackStep=::lstrlen(doubleTrackDistanceTextOrg)!=GetDlgItemText(ID_40D80,nullptr,0);
 								if (!app.GetProfileInt( INI_FDD, INI_LATENCY_DETERMINED, FALSE ))
 									switch (Utils::QuestionYesNoCancel(_T("Latencies not yet determined, I/O operations may perform suboptimal.\n\nAutodetermine latencies now?"),MB_DEFBUTTON1)){
 										case IDYES:
@@ -1675,6 +1707,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 			CSettingDialog(CFDD *_fdd)
 				// ctor
 				: CDialog(IDR_FDD_ACCESS) , fdd(_fdd) , params(_fdd->params) {
+				GetDlgItemText( ID_40D80,  doubleTrackDistanceTextOrg, sizeof(doubleTrackDistanceTextOrg)/sizeof(TCHAR) );
 			}
 		} d(this);
 		// - showing the Dialog and processing its result
