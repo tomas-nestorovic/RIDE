@@ -66,7 +66,7 @@
 					case ID_NAVIGATE_NEXTTRACK:
 					case ID_NAVIGATE_NEXTCYLINDER:
 					case ID_NAVIGATE_SECTOR:
-						((CCmdUI *)pExtra)->Enable( IsEditable() );
+						((CCmdUI *)pExtra)->Enable( TRUE );
 						return TRUE;
 				}
 				break;
