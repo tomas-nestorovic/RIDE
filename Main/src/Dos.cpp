@@ -775,7 +775,7 @@ reportError:Utils::Information(buf);
 				// . reading Sectors from the same Track in the underlying Image
 				WORD w;
 				for( TSector s=0; s<nSectors; s++ )
-					if (const PCSectorData sectorData=image->GetSectorData(currCyl,currHead,bufferId+s,0,true,&w,&TFdcStatus())){
+					if (const PCSectorData sectorData=image->GetHealthySectorData(currCyl,currHead,bufferId+s,&w)){
 						w-=d.rem+properties->dataBeginOffsetInSector+properties->dataEndOffsetInSector;
 						if (w<nDataBytesToExport){
 							fOut->Write(sectorData+properties->dataBeginOffsetInSector+d.rem,w);
