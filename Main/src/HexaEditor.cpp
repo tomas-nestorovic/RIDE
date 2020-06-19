@@ -690,6 +690,34 @@ changeHalfbyte:					if (caret.position<maxFileSize){
 						RepaintData();
 						goto caretRefresh;
 					}
+					case ID_EDIT_SELECT_SAVE:{
+						// saving Selection as
+						TCHAR fileName[MAX_PATH];
+						CString title;
+							title.LoadString(AFX_IDS_SAVEFILE);
+						CFileDialog d( FALSE, _T(""), nullptr, OFN_OVERWRITEPROMPT, nullptr, this );
+							d.m_ofn.lStructSize=sizeof(OPENFILENAME); // to show the "Places bar"
+							d.m_ofn.lpstrTitle=title;
+							d.m_ofn.lpstrFile=::lstrcpy( fileName, _T("selection.bin") );
+						if (d.DoModal()==IDOK){
+							CFileException e;
+							CFile fDest;
+							if (fDest.Open( fileName, CFile::modeWrite|CFile::modeCreate|CFile::shareDenyWrite|CFile::typeBinary, &e ))
+								for( DWORD nBytesToSave=std::max(caret.selectionA,caret.position)-f->Seek(std::min(caret.selectionA,caret.position),CFile::begin),n; nBytesToSave; nBytesToSave-=n ){
+									BYTE buf[65536];
+									n=f->Read(  buf,  std::min<UINT>( nBytesToSave, sizeof(buf) )  );
+									fDest.Write( buf, n );
+									if (::GetLastError()==ERROR_READ_FAULT){
+										Utils::Information( _T("Selection saved only partially"), ERROR_READ_FAULT );
+										break;
+									}
+								}
+							else
+								Utils::FatalError( _T("Can't save selection"), e.m_cause );
+						}
+						SetFocus(); // restoring focus lost by displaying the "Save as" dialog
+						return 0;
+					}
 					case ID_ZERO:
 						// resetting Selection with zeros
 						if (!editable) return 0; // can't edit content of a disabled window
@@ -1206,6 +1234,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 				// update
 				switch (nID){
 					case ID_EDIT_COPY:
+					case ID_EDIT_SELECT_SAVE:
 						((CCmdUI *)pExtra)->Enable( caret.selectionA!=caret.position );
 						return TRUE;
 					case ID_EDIT_PASTE:{
@@ -1247,6 +1276,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 					case ID_EDIT_SELECT_ALL:
 					case ID_EDIT_SELECT_NONE:
 					case ID_EDIT_SELECT_CURRENT:
+					case ID_EDIT_SELECT_SAVE:
 					case ID_EDIT_COPY:
 					case ID_EDIT_PASTE:
 					case ID_EDIT_DELETE:

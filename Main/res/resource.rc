@@ -353,6 +353,8 @@ BEGIN
             MENUITEM "Nothing\tCtrl+Shift+A",       ID_EDIT_SELECT_NONE
             MENUITEM SEPARATOR
             MENUITEM "Current item\tCtrl+R",        ID_EDIT_SELECT_CURRENT
+            MENUITEM SEPARATOR
+            MENUITEM "Save as...",                  ID_EDIT_SELECT_SAVE
         END
         POPUP "Reset"
         BEGIN
@@ -467,6 +469,8 @@ BEGIN
             MENUITEM "Current sector\tCtrl+R",      ID_EDIT_SELECT_CURRENT
             MENUITEM "Current track\tCtrl+T",       ID_SELECT_CURRENT_TRACK
             MENUITEM "Current cylinder",            ID_SELECT_CURRENT_CYLINDER
+            MENUITEM SEPARATOR
+            MENUITEM "Save as...",                  ID_EDIT_SELECT_SAVE
         END
         POPUP "Reset"
         BEGIN
@@ -510,6 +514,8 @@ BEGIN
             MENUITEM "Nothing\tCtrl+Shift+A",       ID_EDIT_SELECT_NONE
             MENUITEM SEPARATOR
             MENUITEM "Current entry\tCtrl+R",       ID_EDIT_SELECT_CURRENT
+            MENUITEM SEPARATOR
+            MENUITEM "Save as...",                  ID_EDIT_SELECT_SAVE
         END
         POPUP "Reset"
         BEGIN

@@ -229,6 +229,7 @@
 #define ID_COMPUTE_CHECKSUM             40260
 #define ID_ZOOM_OUT                     40267
 #define ID_ZOOM_IN                      40268
+#define ID_EDIT_SELECT_SAVE             40270
 #define ID_Y                            58113
 #define ID_W                            58114
 #define ID_H                            58115
