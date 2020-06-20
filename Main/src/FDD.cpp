@@ -1190,11 +1190,15 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 		if (const TStdWinError err=__setDataTransferSpeed__(_floppyType))
 			return LOG_ERROR(err);
 		// - scanning zeroth Track - if it can be read, we have set the correct transfer speed
-		__unformatInternalTrack__(0,0); // initialization; disposing internal information on actual Track format
-		const TInternalTrack *const pit=__scanTrack__(0,0);
-		return	pit && pit->nSectors // if Track can be scanned and its Sectors recognized ...
-				? ERROR_SUCCESS	// ... then the TransferSpeed has been set correctly
-				: LOG_ERROR(ERROR_INVALID_DATA);
+		const PInternalTrack pit0=REFER_TO_TRACK(0,0); // backing up original Track, if any
+			REFER_TO_TRACK(0,0)=nullptr; // the Track hasn't been scanned yet
+			const TInternalTrack *const pit=__scanTrack__(0,0);
+			const TStdWinError result =	pit && pit->nSectors // if Track can be scanned and its Sectors recognized ...
+										? ERROR_SUCCESS	// ... then the TransferSpeed has been set correctly
+										: LOG_ERROR(ERROR_INVALID_DATA);
+			__unformatInternalTrack__(0,0);
+		REFER_TO_TRACK(0,0)=pit0; // restoring original Track
+		return result;
 	}
 
 	TStdWinError CFDD::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){
