@@ -462,6 +462,11 @@ Utils::Information("--- EVERYTHING OK ---");
 		app.WriteProfileInt( INI_FDD, INI_SEEKING, preferRelativeSeeking );
 	}
 
+	bool CFDD::TFddHead::SeekHome(){
+		// True <=> Head seeked "home", otherwise False and reporting the error
+		return __seekTo__(0);
+	}
+
 	bool CFDD::TFddHead::__seekTo__(TCylinder cyl){
 		// True <=> Head seeked to specified Cylinder, otherwise False and reporting the error
 		if (cyl!=position){
@@ -1502,6 +1507,18 @@ Utils::Information(buf);}
 			CFDD *const fdd;
 			TCHAR doubleTrackDistanceTextOrg[80];
 
+			bool IsDoubleTrackDistanceForcedByUser() const{
+				// True <=> user has manually overridden DoubleTrackDistance setting, otherwise False
+				return ::lstrlen(doubleTrackDistanceTextOrg)!=::GetWindowTextLength( ::GetDlgItem(m_hWnd,ID_40D80) );
+			}
+
+			bool AreSomeTracksFormatted() const{
+				// True <=> some Tracks are known to be already formatted, otherwise False
+				bool result=false;
+				for( BYTE t=sizeof(fdd->internalTracks)/sizeof(PInternalTrack); t>0; result|=fdd->internalTracks[--t]!=nullptr );
+				return result;
+			}
+
 			void __refreshMediumInformation__(){
 				// detects a floppy in the Drive and attempts to recognize its Type
 				// . making sure that a floppy is in the Drive
@@ -1513,16 +1530,19 @@ Utils::Information(buf);}
 					if (fdd->__setAndEvaluateDataTransferSpeed__(TMedium::FLOPPY_DD_525)==ERROR_SUCCESS){
 						fdd->floppyType=TMedium::FLOPPY_DD_525;
 						SetDlgItemText( ID_MEDIUM, _T("5.25\" DD formatted") );
-						const bool doubleTrackStep0=fdd->fddHead.doubleTrackStep;
-							fdd->fddHead.doubleTrackStep=false;
-							const PInternalTrack pit0=__REFER_TO_TRACK(fdd,1,0);
-								fdd->fddHead.__seekTo__(0);
-								const PInternalTrack pit=fdd->__scanTrack__(1,0);
-									CheckDlgButton( ID_40D80, pit->nSectors==0 );
-								delete pit;
-							__REFER_TO_TRACK(fdd,1,0)=pit0;
-						fdd->fddHead.doubleTrackStep=doubleTrackStep0;
-						Utils::EnableDlgControl( m_hWnd, ID_40D80, true );
+						if (Utils::EnableDlgControl( m_hWnd, ID_40D80, !AreSomeTracksFormatted() )){
+							fdd->fddHead.SeekHome();
+							const bool doubleTrackStep0=fdd->fddHead.doubleTrackStep;
+								fdd->fddHead.doubleTrackStep=false;
+								const PInternalTrack pit0=__REFER_TO_TRACK(fdd,1,0); // backing up original Track, if any
+									__REFER_TO_TRACK(fdd,1,0)=nullptr; // the Track hasn't been scanned yet
+									const PInternalTrack pit=fdd->__scanTrack__(1,0);
+										CheckDlgButton( ID_40D80, pit->nSectors==0 );
+									fdd->__unformatInternalTrack__(1,0);
+								__REFER_TO_TRACK(fdd,1,0)=pit0; // restoring original Track
+							fdd->fddHead.doubleTrackStep=doubleTrackStep0;
+							fdd->fddHead.SeekHome();
+						}
 					}else if (fdd->__setAndEvaluateDataTransferSpeed__(TMedium::FLOPPY_DD_350)==ERROR_SUCCESS){
 						fdd->floppyType=TMedium::FLOPPY_DD_350;
 						SetDlgItemText( ID_MEDIUM, _T("3.5\" DD formatted") );
@@ -1546,8 +1566,10 @@ Utils::Information(buf);}
 				// . displaying controller information
 				SetDlgItemText( ID_SYSTEM, fdd->__getControllerType__() );
 				// . if DoubleTrackStep changed manually, adjusting the text of the ID_40D80 checkbox
+				GetDlgItemText( ID_40D80,  doubleTrackDistanceTextOrg, sizeof(doubleTrackDistanceTextOrg)/sizeof(TCHAR) );
 				if (fdd->fddHead.userForcedDoubleTrackStep)
 					WindowProc( WM_COMMAND, ID_40D80, 0 );
+				CheckDlgButton( ID_40D80, fdd->fddHead.doubleTrackStep );
 				// . displaying inserted Medium information
 				__refreshMediumInformation__();
 			}
@@ -1667,7 +1689,8 @@ autodetermineLatencies:		// automatic determination of write latency values
 						switch (wParam){
 							case ID_RECOVER:
 								// refreshing information on (inserted) floppy
-								SetDlgItemText( ID_40D80, doubleTrackDistanceTextOrg );
+								if (!AreSomeTracksFormatted()) // if no Tracks are yet formatted ...
+									SetDlgItemText( ID_40D80, doubleTrackDistanceTextOrg ); // ... then resetting the flag that user has overridden DoubleTrackDistance
 								__refreshMediumInformation__();
 								break;
 							case ID_40D80:{
@@ -1684,7 +1707,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 							case IDOK:
 								// attempting to confirm the Dialog
 								fdd->fddHead.doubleTrackStep=IsDlgButtonChecked( ID_40D80 )!=BST_UNCHECKED;
-								fdd->fddHead.userForcedDoubleTrackStep=::lstrlen(doubleTrackDistanceTextOrg)!=GetDlgItemText(ID_40D80,nullptr,0);
+								fdd->fddHead.userForcedDoubleTrackStep=IsDoubleTrackDistanceForcedByUser();
 								if (!app.GetProfileInt( INI_FDD, INI_LATENCY_DETERMINED, FALSE ))
 									switch (Utils::QuestionYesNoCancel(_T("Latencies not yet determined, I/O operations may perform suboptimal.\n\nAutodetermine latencies now?"),MB_DEFBUTTON1)){
 										case IDYES:
@@ -1707,7 +1730,6 @@ autodetermineLatencies:		// automatic determination of write latency values
 			CSettingDialog(CFDD *_fdd)
 				// ctor
 				: CDialog(IDR_FDD_ACCESS) , fdd(_fdd) , params(_fdd->params) {
-				GetDlgItemText( ID_40D80,  doubleTrackDistanceTextOrg, sizeof(doubleTrackDistanceTextOrg)/sizeof(TCHAR) );
 			}
 		} d(this);
 		// - showing the Dialog and processing its result

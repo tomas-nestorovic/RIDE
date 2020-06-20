@@ -91,6 +91,7 @@
 			TFddHead(); //ctor
 			~TFddHead(); //dtor
 
+			bool SeekHome();
 			bool __seekTo__(TCylinder cyl);
 			bool __calibrate__();
 		} fddHead;
