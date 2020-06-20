@@ -31,10 +31,7 @@
 
 	CFDD::TParams::TParams()
 		// ctor
-		: controllerLatency( app.GetProfileInt(INI_FDD,INI_LATENCY_CONTROLLER,86000)/1000.0f )
-		, oneByteLatency( app.GetProfileInt(INI_FDD,INI_LATENCY_1BYTE,32000)/1000.0f )
-		, gap3Latency( app.GetProfileInt(INI_FDD,INI_LATENCY_GAP3,FDD_SECTOR_GAP3_STD*4/5*32000)/1000.0f ) // "4/5" = giving the FDC 20% tolerance for Gap3
-		, calibrationAfterError( (TCalibrationAfterError)app.GetProfileInt(INI_FDD,INI_CALIBRATE_SECTOR_ERROR,TCalibrationAfterError::ONCE_PER_CYLINDER) )
+		: calibrationAfterError( (TCalibrationAfterError)app.GetProfileInt(INI_FDD,INI_CALIBRATE_SECTOR_ERROR,TCalibrationAfterError::ONCE_PER_CYLINDER) )
 		, calibrationStepDuringFormatting( app.GetProfileInt(INI_FDD,INI_CALIBRATE_FORMATTING,0) )
 		, verifyFormattedTracks( app.GetProfileInt(INI_FDD,INI_VERIFY_FORMATTING,true)!=0 )
 		, verifyWrittenData( app.GetProfileInt(INI_FDD,INI_VERIFY_WRITTEN_DATA,false)!=0 )
@@ -44,9 +41,6 @@
 
 	CFDD::TParams::~TParams(){
 		// dtor
-		app.WriteProfileInt( INI_FDD, INI_LATENCY_CONTROLLER, controllerLatency*1000 );
-		app.WriteProfileInt( INI_FDD, INI_LATENCY_1BYTE, oneByteLatency*1000 );
-		app.WriteProfileInt( INI_FDD, INI_LATENCY_GAP3, gap3Latency*1000 );
 		app.WriteProfileInt( INI_FDD, INI_CALIBRATE_SECTOR_ERROR,calibrationAfterError );
 		app.WriteProfileInt( INI_FDD, INI_CALIBRATE_FORMATTING,calibrationStepDuringFormatting );
 		app.WriteProfileInt( INI_FDD, INI_MOTOR_OFF_SECONDS,nSecondsToTurningMotorOff );
@@ -222,7 +216,7 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 				if (s) // ... then simply inferring them
 					psi->startMicroseconds=	sectors[s-1].endMicroseconds
 											+
-											(BYTE)sectorStartsMicroseconds * fdd->params.oneByteLatency;	// default inter-sector Gap3 length in microseconds
+											(BYTE)sectorStartsMicroseconds * fdd->fddHead.profile.oneByteLatency;	// default inter-sector Gap3 length in microseconds
 				else
 					psi->startMicroseconds=0; // the first Sector starts immediately after the index pulse
 			psi->endMicroseconds=	psi->startMicroseconds // inferring end of Sector from its lengths and general IBM track layout specification
@@ -249,7 +243,7 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 										+
 										sizeof(TCrc) // data CRC
 									) *
-									fdd->params.oneByteLatency; // usually 32 microseconds
+									fdd->fddHead.profile.oneByteLatency; // usually 32 microseconds
 		}
 		// - determining which Sector numbers are already taken on the Track
 		bool numbersTaken[(TSector)-1+1];
@@ -462,6 +456,35 @@ Utils::Information("--- EVERYTHING OK ---");
 		app.WriteProfileInt( INI_FDD, INI_SEEKING, preferRelativeSeeking );
 	}
 
+	CFDD::TFddHead::TProfile::TProfile()
+		// ctor
+		: controllerLatency(86)
+		, oneByteLatency(32)
+		, gap3Latency( .8f * oneByteLatency*FDD_SECTOR_GAP3_STD ) { // ".8" = giving the FDC 20% tolerance for Gap3
+	}
+
+	static void GetFddProfileName(PTCHAR buf,TCHAR driveLetter,TMedium::TType floppyType){
+		::wsprintf( buf, INI_FDD _T("_%c_%d"), driveLetter, floppyType );
+	}
+
+	void CFDD::TFddHead::TProfile::Load(TCHAR driveLetter,TMedium::TType floppyType){
+		// loads the Profile for specified Drive and FloppyType
+		TCHAR iniSection[16];
+		GetFddProfileName( iniSection, driveLetter, floppyType );
+		controllerLatency=app.GetProfileInt( iniSection, INI_LATENCY_CONTROLLER, 86000 )/1000.0f;
+		oneByteLatency=app.GetProfileInt( iniSection, INI_LATENCY_1BYTE, 32000 )/1000.0f;
+		gap3Latency=app.GetProfileInt( iniSection, INI_LATENCY_GAP3, FDD_SECTOR_GAP3_STD*4/5*32000 )/1000.0f; // "4/5" = giving the FDC 20% tolerance for Gap3
+	}
+
+	void CFDD::TFddHead::TProfile::Save(TCHAR driveLetter,TMedium::TType floppyType) const{
+		// saves the Profile for specified Drive and FloppyType
+		TCHAR iniSection[16];
+		GetFddProfileName( iniSection, driveLetter, floppyType );
+		app.WriteProfileInt( iniSection, INI_LATENCY_CONTROLLER, controllerLatency*1000 );
+		app.WriteProfileInt( iniSection, INI_LATENCY_1BYTE, oneByteLatency*1000 );
+		app.WriteProfileInt( iniSection, INI_LATENCY_GAP3, gap3Latency*1000 );
+	}
+
 	bool CFDD::TFddHead::SeekHome(){
 		// True <=> Head seeked "home", otherwise False and reporting the error
 		return __seekTo__(0);
@@ -613,9 +636,8 @@ Utils::Information("--- EVERYTHING OK ---");
 				LOG_ACTION(_T("TStdWinError CFDD::__connectToFloppyDrive__ DRV_FDRAWCMD"));
 				// . connecting to "A:"
 				do{
-					TCHAR driveLetter, drvId[16];
-					_stscanf( devicePatternName, FDD_FDRAWCMD_NAME_PATTERN, &driveLetter );
-					::wsprintf( drvId, _T("\\\\.\\fdraw%c"), driveLetter-'A'+'0' );
+					TCHAR drvId[16];
+					::wsprintf( drvId, _T("\\\\.\\fdraw%c"), GetDriveLetter()-'A'+'0' );
 					_HANDLE=::CreateFile( drvId, GENERIC_READ|GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr); //FILE_SHARE_WRITE
 					if (_HANDLE!=INVALID_HANDLE_VALUE) break; // Driver installed and exclusive access allowed to the A: drive
 error:				switch (const TStdWinError err=::GetLastError()){
@@ -660,6 +682,13 @@ error:				switch (const TStdWinError err=::GetLastError()){
 			::CloseHandle(_HANDLE);
 			_HANDLE=INVALID_HANDLE_VALUE;
 		}
+	}
+
+	TCHAR CFDD::GetDriveLetter() const{
+		// returns the DriveLetter of currently accessed floppy drive
+		TCHAR driveLetter;
+		_stscanf( devicePatternName, FDD_FDRAWCMD_NAME_PATTERN, &driveLetter );
+		return driveLetter;
 	}
 
 
@@ -720,7 +749,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 					for( TSector n=0; n<pit->nSectors; n++ ){
 						TInternalTrack::TSectorInfo &si=pit->sectors[n];
 						if (si.modified && !justSavedSectors[n]){
-							if (si.startMicroseconds-lastSectorEndMicroseconds>=params.gap3Latency) // sufficient distance between this and previously saved Sectors, so both of them can be processed in a single disk revolution
+							if (si.startMicroseconds-lastSectorEndMicroseconds>=fddHead.profile.gap3Latency) // sufficient distance between this and previously saved Sectors, so both of them can be processed in a single disk revolution
 								if (const TStdWinError err=si.__saveToDisk__( this, pit, n, false )) // False = verification carried out below
 									return err;
 								else{
@@ -739,7 +768,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 					for( TSector n=0; n<pit->nSectors; n++ ){
 						TInternalTrack::TSectorInfo &si=pit->sectors[n];
 						if (si.modified)
-							if (si.startMicroseconds-lastSectorEndMicroseconds>=params.gap3Latency){ // sufficient distance between this and previously saved Sectors, so both of them can be processed in a single disk revolution
+							if (si.startMicroseconds-lastSectorEndMicroseconds>=fddHead.profile.gap3Latency){ // sufficient distance between this and previously saved Sectors, so both of them can be processed in a single disk revolution
 								if (si.__verifySaving__( this, pit, n )==IDABORT)
 									return ERROR_CANCELLED;
 								lastSectorEndMicroseconds=si.endMicroseconds;
@@ -876,7 +905,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 					int usSum=0; // sum of Gap3 Microseconds
 					const TInternalTrack::TSectorInfo *psi=pit->sectors;
 					for( TSector s=0; s<pit->nSectors-1; usSum-=psi->endMicroseconds,s++,psi++,usSum+=psi->startMicroseconds );
-					*pAvgGap3=usSum/((pit->nSectors-1)*params.oneByteLatency);
+					*pAvgGap3=usSum/((pit->nSectors-1)*fddHead.profile.oneByteLatency);
 				}else
 					*pAvgGap3=FDD_SECTOR_GAP3_STD;
 			return pit->nSectors;
@@ -933,7 +962,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 
 	TStdWinError CFDD::__setTimeBeforeInterruptingTheFdc__(WORD nDataBytesBeforeInterruption) const{
 		// registers a request to interrupt the following write/format command after specified NumberOfBytes plus additional NumberOfMicrosends; returns Windows standard i/o error
-		return __setTimeBeforeInterruptingTheFdc__( nDataBytesBeforeInterruption, params.controllerLatency );
+		return __setTimeBeforeInterruptingTheFdc__( nDataBytesBeforeInterruption, fddHead.profile.controllerLatency );
 	}
 
 	bool CFDD::__bufferSectorData__(TCylinder cyl,THead head,PCSectorId psi,WORD sectorLength,const TInternalTrack *pit,BYTE nSectorsToSkip,TFdcStatus *pFdcStatus) const{
@@ -1044,7 +1073,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 					TInternalTrack::TSectorInfo &si=pit->sectors[n];
 					for( TSector s=0; s<nSectors; s++ )
 						if (!alreadyPlannedSectors[s] && bufferId[s]==si.id) // one of the Sectors requested to read
-							if (si.startMicroseconds-lastSectorEndMicroseconds>=params.gap3Latency){ // sufficient distance between this and previously read Sectors, so both of them can be read in a single disk revolution
+							if (si.startMicroseconds-lastSectorEndMicroseconds>=fddHead.profile.gap3Latency){ // sufficient distance between this and previously read Sectors, so both of them can be read in a single disk revolution
 								planEnd->psi=&si, planEnd->indexIntoOutputBuffers=s;
 								planEnd++;
 								lastSectorEndMicroseconds=si.endMicroseconds;
@@ -1560,6 +1589,9 @@ Utils::Information(buf);}
 						CheckDlgButton( ID_40D80, false );
 						Utils::EnableDlgControl( m_hWnd, ID_40D80, true );
 					}
+				// . loading the Profile associated with the current drive and FloppyType
+				profile.Load( fdd->GetDriveLetter(), fdd->floppyType );
+				__exchangeLatency__( &CDataExchange(this,FALSE) );
 				// . forcing redrawing (as the new text may be shorter than the original text, leaving the original partly visible)
 				GetDlgItem(ID_MEDIUM)->Invalidate();
 			}
@@ -1579,9 +1611,9 @@ Utils::Information(buf);}
 			}
 			void __exchangeLatency__(CDataExchange* pDX){
 				// exchange of latency-related data from and to controls
-				DDX_Text( pDX,	ID_LATENCY,	params.controllerLatency );
-				DDX_Text( pDX,	ID_NUMBER2,	params.oneByteLatency );
-				DDX_Text( pDX,	ID_GAP,		params.gap3Latency );
+				DDX_Text( pDX,	ID_LATENCY,	profile.controllerLatency );
+				DDX_Text( pDX,	ID_NUMBER2,	profile.oneByteLatency );
+				DDX_Text( pDX,	ID_GAP,		profile.gap3Latency );
 			}
 			void DoDataExchange(CDataExchange* pDX) override{
 				// exchange of data from and to controls
@@ -1680,11 +1712,13 @@ autodetermineLatencies:		// automatic determination of write latency values
 										Utils::FatalError(_T("Couldn't autodetermine"),err);
 										break;
 									}
-									params.controllerLatency=lp.outControllerLatency;
-									params.oneByteLatency=lp.out1ByteLatency;
-									params.gap3Latency=lp.outGap3Latency;
+									profile.controllerLatency=lp.outControllerLatency;
+									profile.oneByteLatency=lp.out1ByteLatency;
+									profile.gap3Latency=lp.outGap3Latency;
 									__exchangeLatency__( &CDataExchange(this,FALSE) );
-									app.WriteProfileInt( INI_FDD, INI_LATENCY_DETERMINED, TRUE ); // latencies hereby at least once determined
+									TCHAR iniSection[16];
+									GetFddProfileName( iniSection, fdd->GetDriveLetter(), fdd->floppyType );
+									app.WriteProfileInt( iniSection, INI_LATENCY_DETERMINED, TRUE ); // latencies hereby at least once determined
 								}
 							}
 						}
@@ -1712,14 +1746,16 @@ autodetermineLatencies:		// automatic determination of write latency values
 								// attempting to confirm the Dialog
 								fdd->fddHead.doubleTrackStep=IsDlgButtonChecked( ID_40D80 )!=BST_UNCHECKED;
 								fdd->fddHead.userForcedDoubleTrackStep=IsDoubleTrackDistanceForcedByUser();
-								if (!app.GetProfileInt( INI_FDD, INI_LATENCY_DETERMINED, FALSE ))
+								TCHAR iniSection[16];
+								GetFddProfileName( iniSection, fdd->GetDriveLetter(), fdd->floppyType );
+								if (!app.GetProfileInt( iniSection, INI_LATENCY_DETERMINED, FALSE ))
 									switch (Utils::QuestionYesNoCancel(_T("Latencies not yet determined, I/O operations may perform suboptimal.\n\nAutodetermine latencies now?"),MB_DEFBUTTON1)){
 										case IDYES:
 											msg=WM_PAINT; // changing the Message to one that won't close the Dialog
 											goto autodetermineLatencies;
 										case IDCANCEL:
-											Utils::Information(_T("Okay, won't bother you again. Please click on the \"Autodetermine\" button later - it really pays off!"));
-											app.WriteProfileInt( INI_FDD, INI_LATENCY_DETERMINED, TRUE ); // pretend that latencies hereby determined
+											Utils::Information(_T("Okay, won't bother you again. Please click on the \"Autodetermine\" button later - it pays off!"));
+											app.WriteProfileInt( iniSection, INI_LATENCY_DETERMINED, TRUE ); // pretend that latencies hereby determined
 											break;
 									}
 								break;
@@ -1730,16 +1766,18 @@ autodetermineLatencies:		// automatic determination of write latency values
 			}
 		public:
 			TParams params;
+			TFddHead::TProfile profile;
 
 			CSettingDialog(CFDD *_fdd)
 				// ctor
-				: CDialog(IDR_FDD_ACCESS) , fdd(_fdd) , params(_fdd->params) {
+				: CDialog(IDR_FDD_ACCESS) , fdd(_fdd) , params(_fdd->params) , profile(_fdd->fddHead.profile) {
 			}
 		} d(this);
 		// - showing the Dialog and processing its result
 		LOG_DIALOG_DISPLAY(_T("CSettingDialog"));
 		if (d.DoModal()==IDOK){
 			params=d.params;
+			( fddHead.profile=d.profile ).Save( GetDriveLetter(), floppyType );
 			__setSecondsBeforeTurningMotorOff__(params.nSecondsToTurningMotorOff);
 			return true;
 		}else
@@ -1803,7 +1841,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 				// : writing FillerByte as test data
 				const FD_ID_HEADER &rih=fmt.Headers[0];
 				WORD sectorBytes=__getUsableSectorLength__(rih.size);
-				__setTimeBeforeInterruptingTheFdc__( sectorBytes, params.controllerLatency+1*params.oneByteLatency ); // "X*" = reserve to guarantee that really all test data written
+				__setTimeBeforeInterruptingTheFdc__( sectorBytes, fddHead.profile.controllerLatency+1*fddHead.profile.oneByteLatency ); // "X*" = reserve to guarantee that really all test data written
 				FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM|FD_OPTION_SK, chs.head, rih.cyl,rih.head,rih.sector,rih.size, rih.sector+1, 1, 0xff };
 				{	LOG_ACTION(_T("DeviceIoControl IOCTL_FDCMD_WRITE_DATA"));
 					if (!::DeviceIoControl( _HANDLE, IOCTL_FDCMD_WRITE_DATA, &rwp,sizeof(rwp), ::memset(dataBuffer,fillerByte,sectorBytes),__getOfficialSectorLength__(rih.size), &nBytesTransferred, nullptr ))
@@ -1999,7 +2037,7 @@ formatStandardWay:
 					}
 					bufferId+=pFormatStep->nLastSectorsValid;
 					pFormatStep->interruption.nBytes=( pFormatStep->nSectorsOnTrack=pFormatStep->nLastSectorsValid )*sizeof(FD_ID_HEADER);
-					pFormatStep->interruption.nMicroseconds=params.controllerLatency+*bufferLength/2*params.oneByteLatency;
+					pFormatStep->interruption.nMicroseconds=fddHead.profile.controllerLatency+*bufferLength/2*fddHead.profile.oneByteLatency;
 //pFormatStep->__debug__();
 					nBytesReserved=pFormatStep++->__getNumberOfNecessaryBytes__();
 				}else
@@ -2033,7 +2071,7 @@ Utils::Information(buf);}
 					WORD nBytesFormatted;
 					if (sr.DescribesMissingDam()){
 						// Sector misses its data part
-						pFormatStep->interruption.nMicroseconds=params.controllerLatency+(GAP2_BYTES_COUNT+SYNCHRONIZATION_BYTES_COUNT-2)*params.oneByteLatency; // "-2" = damaging the A1A1A1 mark
+						pFormatStep->interruption.nMicroseconds=fddHead.profile.controllerLatency+(GAP2_BYTES_COUNT+SYNCHRONIZATION_BYTES_COUNT-2)*fddHead.profile.oneByteLatency; // "-2" = damaging the A1A1A1 mark
 						/*if (sr.DescribesIdFieldCrcError()){ // commented out as SamDisk doesn't reproduce this error neither [info by Simon Owen]
 							// Sector misses its data part, and its ID Field is corrupted
 							*(pFormatStep+1)=*pFormatStep; // the preceeding Step (as formatted "backwards") is creation of a correct ID Field
@@ -2046,7 +2084,7 @@ Utils::Information(buf);}
 						//if (!nReservedSectors) pFormatStep->gap3=gap3+nBytesReserved;
 					}else{
 						// Sector is complete
-						pFormatStep->interruption.nMicroseconds=params.controllerLatency+sectorLength/2*params.oneByteLatency;
+						pFormatStep->interruption.nMicroseconds=fddHead.profile.controllerLatency+sectorLength/2*fddHead.profile.oneByteLatency;
 						/*if (sr.DescribesIdFieldCrcError()){ // commented out as SamDisk doesn't reproduce this error neither [info by Simon Owen]
 							// Sector misses its data part, and its ID Field is corrupted
 							*(pFormatStep+1)=*pFormatStep; // the preceeding Step (as formatted "backwards") is creation of a correct ID Field

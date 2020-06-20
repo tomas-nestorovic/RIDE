@@ -11,7 +11,6 @@
 		TCHAR devicePatternName[DEVICE_NAME_CHARS_MAX];
 		#pragma pack(1)
 		struct TParams sealed{
-			float controllerLatency,oneByteLatency,gap3Latency;
 			enum TCalibrationAfterError{
 				NONE				=0,
 				ONCE_PER_CYLINDER	=1,
@@ -87,6 +86,14 @@
 			bool calibrated, preferRelativeSeeking;
 			bool doubleTrackStep, userForcedDoubleTrackStep;
 			TCylinder position;
+			struct TProfile sealed{
+				float controllerLatency,oneByteLatency,gap3Latency;
+				
+				TProfile();
+
+				void Load(TCHAR driveLetter,TMedium::TType floppyType);
+				void Save(TCHAR driveLetter,TMedium::TType floppyType) const;
+			} profile;
 
 			TFddHead(); //ctor
 			~TFddHead(); //dtor
@@ -99,6 +106,7 @@
 
 		TStdWinError __connectToFloppyDrive__(TSupportedDriver _driver);
 		void __disconnectFromFloppyDrive__();
+		TCHAR GetDriveLetter() const;
 		TStdWinError __reset__();
 		bool __isFloppyInserted__() const;
 		TStdWinError __setDataTransferSpeed__(TMedium::TType _floppyType);
