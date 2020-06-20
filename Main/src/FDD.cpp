@@ -1793,7 +1793,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 	TStdWinError CFDD::Reset(){
 		// resets internal representation of the disk (e.g. by disposing all content without warning)
 		// - displaying message
-		__informationWithCheckableShowNoMore__( _T("Only 3.5\" internal drives mapped as \"A:\" are supported. To spare both floppy and drive, all activity is buffered: CHANGES (WRITINGS, DELETIONS) MADE TO THE FLOPPY ARE SAVED ONLY WHEN YOU COMMAND SO (Ctrl+S). If you don't save them, they will NOT appear on the disk next time. FORMATTING DESTROYS THE CONTENT IMMEDIATELLY!"), INI_MSG_RESET );
+		__informationWithCheckableShowNoMore__( _T("To spare both floppy and drive, all activity is buffered: CHANGES (WRITINGS, DELETIONS) MADE TO THE FLOPPY ARE SAVED ONLY WHEN YOU COMMAND SO (Ctrl+S). If you don't save them, they will NOT appear on the disk next time. FORMATTING DESTROYS THE CONTENT IMMEDIATELLY!"), INI_MSG_RESET );
 		// - resetting
 		LOG_ACTION(_T("TStdWinError CFDD::Reset"));
 		const TStdWinError err=__reset__();
