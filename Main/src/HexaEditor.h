@@ -101,6 +101,7 @@
 		void Reset(CFile *_f,int _minFileSize,int _maxFileSize);
 		void SetLogicalBounds(int _minFileSize,int _maxFileSize);
 		void SetLogicalSize(int _logicalSize);
+		void ScrollTo(int logicalPos,bool moveAlsoCaret=false);
 		void GetVisiblePart(int &rLogicalBegin,int &rLogicalEnd) const;
 		void AddEmphasis(int a,int z);
 		void CancelAllEmphases();

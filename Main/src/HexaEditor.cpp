@@ -216,6 +216,14 @@
 		rLogicalEnd=__firstByteInRowToLogicalPosition__(i+nRowsDisplayed);
 	}
 
+	void CHexaEditor::ScrollTo(int logicalPos,bool moveAlsoCaret){
+		// independently from Caret, displays specified LogicalPosition
+		if (moveAlsoCaret)
+			caret.selectionA = caret.position = logicalPos;
+		__refreshVertically__();
+		__scrollToRow__( __logicalPositionToRow__(logicalPos) );
+	}
+
 	void CHexaEditor::AddEmphasis(int a,int z){
 		// adds a new Emphasis into the list and orders the list by beginnings A (and thus also by endings Z; insertsort)
 		PEmphasis *p=&emphases;

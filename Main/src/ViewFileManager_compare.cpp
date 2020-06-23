@@ -53,14 +53,21 @@
 		DWORD length1=file1.size, length2=file2.size;
 		for( DWORD nBytesRead; length1&&length2; length1-=nBytesRead,length2-=nBytesRead ){
 			BYTE buf1[65536],buf2[65536];
-			if (( nBytesRead=file1.f->Read(buf1,sizeof(buf1)) )!=file2.f->Read(buf2,sizeof(buf2)))
-				goto different;
-			if (::memcmp(buf1,buf2,nBytesRead))
-				goto different;
+			nBytesRead=std::min( file1.f->Read(buf1,sizeof(buf1)), file2.f->Read(buf2,sizeof(buf2)) );
+			if (::memcmp(buf1,buf2,nBytesRead)){ // doing fast assembly language comparison first ...
+				DWORD i=0;
+				for( ; i<nBytesRead; i++ ) // ... and only if there's actually a difference, finding the position of that difference using slow FOR-loop
+					if (buf1[i]!=buf2[i])
+						break;
+				length1-=i, length2-=i;
+				break;
+			}
 		}
-		if (length1||length2)
-different:	Utils::Information(_T("No, the files differ in content! (File names are ignored.)"));
-		else
+		if (length1||length2){
+			file1.hexaComparison.ScrollTo( file1.size-length1, true );
+			file2.hexaComparison.ScrollTo( file2.size-length1, true );
+			Utils::Information(_T("No, the files differ in content! (File names are ignored.)"));
+		}else
 			Utils::Information(_T("Yes, the file contents are identical! (File names are ignored.)"));
 		file1.f->SeekToBegin(), file2.f->SeekToBegin();
 	}
@@ -199,7 +206,8 @@ different:	Utils::Information(_T("No, the files differ in content! (File names a
 		// - recovering the scroll position (its reset in Reset)
 		hexaComparison.SetScrollInfo( SB_VERT, &si, TRUE );
 		// - Drop always succeeds
-		::EnableWindow( rDialog.hCompareButton, rDialog.file1.f&&rDialog.file2.f );
+		if (Utils::EnableDlgControl( rDialog.m_hWnd, IDOK, rDialog.file1.f&&rDialog.file2.f ))
+			rDialog.OnOK(); // if both Files specified, automatically triggering the comparison
 	}
 
 	DROPEFFECT CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::OnDragEnter(CWnd *,COleDataObject *pDataObject,DWORD dwKeyState,CPoint point){
