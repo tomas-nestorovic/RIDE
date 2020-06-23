@@ -621,7 +621,7 @@
 	void CFileManagerView::SelectFiles(const TFileList &selection){
 		// changes SelectedFile
 		selectedFiles.RemoveAll();
-		for( POSITION pos=selection.GetHeadPosition(); pos; selectedFiles.AddTail(selection.GetNext(pos)) );
+		for( POSITION pos=selection.GetHeadPosition(); pos; selectedFiles.AddTail((PVOID)selection.GetNext(pos)) );
 		RefreshDisplay();
 	}
 	DWORD CFileManagerView::GetCountOfSelectedFiles() const{
