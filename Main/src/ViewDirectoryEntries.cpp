@@ -52,6 +52,7 @@
 		: CHexaEditor( this, nullptr, Utils::CreateSubmenuByContainedCommand(IDR_DIRECTORYBROWSER,ID_DEFAULT1) )
 		// - initialization
 		, tab( IDR_DIRECTORYBROWSER, IDR_HEXAEDITOR, ID_CYLINDER, dos, this )
+		, navigatedToFirstSelectedFile(false)
 		, iScrollY(0)
 		, directory(directory) {
 	}
@@ -92,6 +93,17 @@
 		// - recovering the Scroll position and repainting the view (by setting its editability)
 		SetScrollPos( SB_VERT, iScrollY );
 		SetEditable( !IMAGE->IsWriteProtected() );
+		// - navigating to the first selected Item
+		if (!navigatedToFirstSelectedFile)
+			if (POSITION pos=DOS->pFileManager->GetFirstSelectedFilePosition())
+				if (const auto pdt=DOS->BeginDirectoryTraversal()){
+					int iPos=0;
+					for( const CDos::PFile item=DOS->pFileManager->GetNextSelectedFile(pos); pdt->AdvanceToNextEntry(); iPos+=pdt->entrySize )
+						if (pdt->entry==item){
+							ScrollTo( iPos, navigatedToFirstSelectedFile=true );
+							break;
+						}
+				}
 		return 0;
 	}
 

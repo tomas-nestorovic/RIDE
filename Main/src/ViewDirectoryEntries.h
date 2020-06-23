@@ -4,6 +4,7 @@
 	class CDirEntriesView sealed:public CHexaEditor{
 		DECLARE_MESSAGE_MAP()
 	private:
+		bool navigatedToFirstSelectedFile;
 		int iScrollY; // ScrollBar position
 		std::unique_ptr<CDos::CFileReaderWriter> f;
 
