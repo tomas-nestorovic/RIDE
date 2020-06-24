@@ -73,6 +73,20 @@
 		const PTdiInfo pTdiInfo=GET_TDI_INFO(hTdi);
 		const WNDPROC wndProc0=pTdiInfo->wndProc0;
 		switch (msg){
+			case WM_MOUSEACTIVATE:
+				// preventing the focus from being stolen by the parent
+				return MA_ACTIVATE;
+			case WM_SETFOCUS:
+				// window has received focus
+				if (pTdiInfo->currentTabContent!=nullptr){
+					// some Tab shown
+					const HWND hContent=pTdiInfo->params.fnGetHwnd(pTdiInfo->currentTabContent);
+					if (hContent==(HWND)wParam) // if the window that loses the focus is the Content ...
+						break; // ... preventing from potential infinite loop by better accepting the focus
+					::SetFocus(hContent); // otherwise forwarding focus to the Content instead of keeping it
+					return 0;
+				}else
+					break;
 			case WM_PAINT:
 				// drawing
 				if (TabCtrl_GetItemCount(hTdi))
@@ -112,6 +126,7 @@
 						pDraggedTabInfo=new TDraggedTabInfo(hTdi,tabId);
 						::SetCapture(hTdi); // want to always know when the dragging ends
 					}
+					return 0;
 				}
 				break;
 			}
