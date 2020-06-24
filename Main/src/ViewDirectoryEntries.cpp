@@ -91,7 +91,7 @@
 		// - displaying the content
 		OnUpdate(nullptr,0,nullptr);
 		// - recovering the Scroll position and repainting the view (by setting its editability)
-		SetScrollPos( SB_VERT, iScrollY );
+		ScrollToRow( iScrollY, true );
 		SetEditable( !IMAGE->IsWriteProtected() );
 		// - navigating to the first selected Item
 		if (!navigatedToFirstSelectedFile)
@@ -120,7 +120,7 @@
 		// - disposing the underlying File
 		f.reset();
 		// - base
-		CView::OnDestroy();
+		__super::OnDestroy();
 	}
 
 	afx_msg void CDirEntriesView::__toggleWriteProtection__(){
