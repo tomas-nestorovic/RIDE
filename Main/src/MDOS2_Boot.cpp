@@ -255,11 +255,11 @@
 			// . Current drive
 			boot->current.driveConnected=true;
 			boot->current.driveError=false;
-			boot->current.driveFlags.driveB=false; // TODO: second PC drive
-			boot->current.driveFlags.driveD40=false; // TODO: 5.25" FDD
+			boot->current.driveFlags.driveB=formatBoot.mediumType==TMedium::FLOPPY_DD_525; // 5.25" drives are typically mapped as B's; this flag is not important
+			boot->current.driveFlags.driveD40=formatBoot.mediumType==TMedium::FLOPPY_DD_525;
 			boot->current.driveFlags.doubleSided=true; // all modern PC drives are
 			boot->current.driveFlags.fortyCylDiskInD80=formatBoot.nCylinders==40; // 40-track disks were best avoided!
-			boot->current.driveCylinders=80; // TODO: see above DriveD40 flag
+			boot->current.driveCylinders= formatBoot.mediumType==TMedium::FLOPPY_DD_525 ? 40 : 80;
 			boot->current.driveSectorsPerTrack=9;
 			// . Current disk
 			boot->current.diskFlags=boot->current.driveFlags;
@@ -285,6 +285,8 @@
 
 
 
+
+	#define D40_CYLINDERS_MAX	(FDD_CYLINDERS_MAX-40)
 
 	#define MDOS2	static_cast<CMDOS2 *>(vp.dos)
 	#define IMAGE	MDOS2->image
@@ -319,7 +321,7 @@
 			return vp.TerminateAll(err);
 		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, VERIF_SECTOR_COUNT, boot->current.nSectors, (BYTE)MDOS2_TRACK_SECTORS_MIN, (BYTE)MDOS2_TRACK_SECTORS_MAX ))
 			return vp.TerminateAll(err);
-		if (boot->current.diskFlags.driveD40 && boot->current.nCylinders>42){ // TODO: replace 42 with #defined constant
+		if (boot->current.diskFlags.driveD40 && boot->current.nCylinders>D40_CYLINDERS_MAX){
 			TCHAR msg[80];
 			::wsprintf( msg, _T("The disk has %d cylinders but claims to be formatted on D40"), boot->current.nCylinders );
 			switch (vp.ConfirmFix( msg, _T("It should claim D80.") )){
@@ -334,19 +336,40 @@
 					break;
 			}
 		}
-		//TODO: boot->current.diskFlags.fortyCylDiskInD80
+		if (boot->current.diskFlags.driveD40 && !boot->current.diskFlags.fortyCylDiskInD80){
+			CDialog d( IDR_MDOS_DRIVE_EDITOR );
+			d.ShowWindow(SW_HIDE);
+			TCHAR buf[180],txt[80];
+			d.GetDlgItemText( ID_40D80, txt, sizeof(txt)/sizeof(TCHAR) );
+			vp.fReport.LogWarning( _T("D40's often contained 80-track drives, please revise the \"%s\" setting"), txt );
+		}
 		// - verifying Current drive information (continued)
 		if (const TStdWinError err=vp.WarnIfUnsignedValueOutOfRange( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Last seeked cylinder"), boot->current.driveLastSeekedCylinder, (BYTE)0, (BYTE)(boot->current.nCylinders-1) ))
 			if (err!=ERROR_INVALID_PARAMETER)
 				return vp.TerminateAll(err);
-		//TODO: boot->current.driveFlags.driveD40 checked against 5.25" PC drive
-		if (boot->current.driveFlags.driveD40 && boot->current.driveCylinders>42 // TODO: replace 42 with #defined constant
+		if (boot->current.driveFlags.driveD40 ^ MDOS2->formatBoot.mediumType==TMedium::FLOPPY_DD_525){
+			TCHAR msg[80], sug[80];
+			_stprintf( msg, _T("The actual %.2f\" disk claims to be inserted in a D%c0 drive"), MDOS2->formatBoot.mediumType==TMedium::FLOPPY_DD_525?5.25f:3.5, '8'-4*boot->current.driveFlags.driveD40 );
+			::wsprintf( sug, _T("It should be a D%c0 drive."), '4'+4*boot->current.driveFlags.driveD40 );
+			switch (vp.ConfirmFix( msg, sug )){
+				case IDCANCEL:
+					return vp.CancelAll();
+				case IDNO:
+					break;
+				case IDYES:
+					boot->current.driveFlags.driveD40=!boot->current.driveFlags.driveD40;
+					IMAGE->MarkSectorAsDirty(CHS);
+					vp.fReport.CloseProblem(true);
+					break;
+			}
+		}
+		if (boot->current.driveFlags.driveD40 && boot->current.driveCylinders>D40_CYLINDERS_MAX
 			||
 			!boot->current.driveFlags.driveD40 && boot->current.driveCylinders>FDD_CYLINDERS_MAX
 		){
 			TCHAR msg[80], sug[80];
 			::wsprintf( msg, _T("The drive claims to be D%c0 with %d cylinders"), '8'-4*boot->current.driveFlags.driveD40, boot->current.driveCylinders );
-			const BYTE nCylindersGuaranteed= boot->current.driveFlags.driveD40 ? 42 : FDD_CYLINDERS_MAX; // TODO: replace 42 with #defined constant
+			const BYTE nCylindersGuaranteed= boot->current.driveFlags.driveD40 ? D40_CYLINDERS_MAX : FDD_CYLINDERS_MAX;
 			::wsprintf( sug, _T("Guaranteed are just %d cylinders."), nCylindersGuaranteed );
 			switch (vp.ConfirmFix( msg, sug )){
 				case IDCANCEL:
