@@ -1583,8 +1583,9 @@ Utils::Information(buf);}
 						CheckDlgButton( ID_40D80,  Utils::EnableDlgControl( m_hWnd, ID_40D80, false )  );
 					}else if (fdd->__setAndEvaluateDataTransferSpeed__(TMedium::FLOPPY_HD_350)==ERROR_SUCCESS){
 						fdd->floppyType=TMedium::FLOPPY_HD_350;
-						SetDlgItemText( ID_MEDIUM, _T("3.5\" HD formatted") );
-						CheckDlgButton( ID_40D80,  Utils::EnableDlgControl( m_hWnd, ID_40D80, false )  );
+						SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" HD formatted") );
+						CheckDlgButton( ID_40D80, false );
+						Utils::EnableDlgControl( m_hWnd, ID_40D80, true );
 					}else{
 						SetDlgItemText( ID_MEDIUM, _T("Not formatted or faulty") );
 						CheckDlgButton( ID_40D80, false );
