@@ -445,7 +445,8 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			TCHAR errMsg[100];
 			::wsprintf( errMsg, _T("Cannot use \"%s\" to access the medium"), dosProps->name );
 			Utils::FatalError(errMsg,err);
-			CMainWindow::CTdiTemplate::pSingleInstance->__closeDocument__();
+			image.release(); // leaving Image disposal upon TdiTemplate ...
+			CMainWindow::CTdiTemplate::pSingleInstance->__closeDocument__(); // ... here
 			return nullptr;
 		}
 		// - informing on what to do in case of DOS misrecognition
