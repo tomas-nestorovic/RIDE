@@ -17,20 +17,34 @@
 		return openWith[nIndex];
 	}
 
-	void CRideApp::CRecentFileListEx::Add(LPCTSTR lpszPathName,CDos::PCProperties dosProps){
+	CImage::PCProperties CRideApp::CRecentFileListEx::GetMruDevice(int nIndex) const{
+		// returns the Properties of the Device most recently used to access a real medium
+		ASSERT( 0<=nIndex && nIndex<m_nSize );
+		return m_deviceProps[nIndex];
+	}
+
+	void CRideApp::CRecentFileListEx::Add(LPCTSTR lpszPathName,CDos::PCProperties dosProps,CImage::PCProperties deviceProps){
 		// add the file to the list
 		ASSERT( lpszPathName );
 		ASSERT( dosProps!=nullptr ); // use Properties of the Unknown DOS if automatic recognition should be used
+		// - check whether MRU entry already exists
 		int i=0;
-		while (i<m_nSize)
+		while (i<m_nSize-1)
 			if (m_arrNames[i].CompareNoCase(lpszPathName))
 				i++;
 			else
 				break;
+		// - move MRU entries before this one down
 		TCHAR fileName[MAX_PATH];
-		__super::Add( ::lstrcpy(fileName,lpszPathName) ); // handing over a copy as MFC may (for some reason) corrupt the original string
+		::lstrcpy( fileName, lpszPathName ); // creating a copy as MFC may (for some reason) corrupt the original string
+		for( int j=i; j>0; j-- )
+			m_arrNames[j]=m_arrNames[j-1];
 		::memmove( openWith+1, openWith, i*sizeof(openWith[0]) );
+		::memmove( m_deviceProps+1, m_deviceProps, i*sizeof(m_deviceProps[0]) );
+		// - place this one at the beginning
+		m_arrNames[0]=fileName;
 		openWith[0]=dosProps;
+		m_deviceProps[0]=deviceProps;
 	}
 
 	void CRideApp::CRecentFileListEx::Remove(int nIndex){
@@ -39,23 +53,37 @@
 		__super::Remove(nIndex);
 		::memmove( openWith+nIndex, openWith+nIndex+1, (m_nSize-nIndex-1)*sizeof(openWith[0]) );
 		openWith[m_nSize-1]=&CUnknownDos::Properties;
+		::memmove( m_deviceProps+nIndex, m_deviceProps+nIndex+1, (m_nSize-nIndex-1)*sizeof(m_deviceProps[0]) );
+		m_deviceProps[m_nSize-1]=nullptr;
 	}
 
-	#define PREFIX_MRU_DOS _T("Dos")
+	#define PREFIX_MRU_DOS		_T("Dos")
+	#define PREFIX_MRU_DEVICE	_T("Dev")
 
 	void CRideApp::CRecentFileListEx::ReadList(){
 		// reads the MRU files list
 		__super::ReadList();
 		TCHAR entryName[200];
-		::lstrcpy( entryName, PREFIX_MRU_DOS );
 		for( int iMru=0; iMru<m_nSize; iMru++ ){
+			// . explicitly forced DOS
 			openWith[iMru]=&CUnknownDos::Properties; // assumption (automatic recognition should be used)
-			::wsprintf( entryName+(sizeof(PREFIX_MRU_DOS)/sizeof(TCHAR)-1), m_strEntryFormat, iMru+1 );
+			::wsprintf( ::lstrcpy(entryName,PREFIX_MRU_DOS)+(sizeof(PREFIX_MRU_DOS)/sizeof(TCHAR)-1), m_strEntryFormat, iMru+1 );
 			const CDos::TId dosId=app.GetProfileInt( m_strSectionName, entryName, 0 );
 			for( POSITION pos=CDos::known.GetHeadPosition(); pos; ){
 				const CDos::PCProperties props=(CDos::PCProperties)CDos::known.GetNext(pos);
 				if (props->id==dosId){
 					openWith[iMru]=props;
+					break;
+				}
+			}
+			// . real Device
+			m_deviceProps[iMru]=nullptr; // assumption (actually an Image, not a real Device)
+			::wsprintf( ::lstrcpy(entryName,PREFIX_MRU_DEVICE)+(sizeof(PREFIX_MRU_DEVICE)/sizeof(TCHAR)-1), m_strEntryFormat, iMru+1 );
+			const CDos::TId devId=app.GetProfileInt( m_strSectionName, entryName, 0 );
+			for( POSITION pos=CImage::devices.GetHeadPosition(); pos; ){
+				const CImage::PCProperties props=(CImage::PCProperties)CImage::devices.GetNext(pos);
+				if (props->id==devId){
+					m_deviceProps[iMru]=props;
 					break;
 				}
 			}
@@ -66,12 +94,16 @@
 		// writes the MRU files list
 		__super::WriteList();
 		TCHAR entryName[200];
-		::lstrcpy( entryName, PREFIX_MRU_DOS );
-		for( int iMru=0; iMru<m_nSize; iMru++ ){
-			::wsprintf( entryName+(sizeof(PREFIX_MRU_DOS)/sizeof(TCHAR)-1), m_strEntryFormat, iMru+1 );
-			if (!m_arrNames[iMru].IsEmpty())
+		for( int iMru=0; iMru<m_nSize; iMru++ )
+			if (!m_arrNames[iMru].IsEmpty()){
+				// . explicitly forced DOS
+				::wsprintf( ::lstrcpy(entryName,PREFIX_MRU_DOS)+(sizeof(PREFIX_MRU_DOS)/sizeof(TCHAR)-1), m_strEntryFormat, iMru+1 );
 				app.WriteProfileInt( m_strSectionName, entryName, openWith[iMru]->id );
-		}
+				// . real Device
+				::wsprintf( ::lstrcpy(entryName,PREFIX_MRU_DEVICE)+(sizeof(PREFIX_MRU_DEVICE)/sizeof(TCHAR)-1), m_strEntryFormat, iMru+1 );
+				if (m_deviceProps[iMru])
+					app.WriteProfileInt( m_strSectionName, entryName, m_deviceProps[iMru]->id );
+			}
 	}
 
 
@@ -272,7 +304,7 @@
 
 
 
-	static CImage::PCProperties imageProps;
+	CImage::PCProperties imageProps=nullptr; // Null = an Image, not a real Device
 	CDos::PCProperties manuallyForceDos=nullptr; // Null = use automatic recognition
 
 	#define ENTERING_LIMITED_MODE	_T("\n\nContinuing to view the image in limited mode.")

@@ -10,11 +10,13 @@
 	public:
 		class CRecentFileListEx sealed:public CRecentFileList{
 			CDos::PCProperties openWith[ID_FILE_MRU_LAST+1-ID_FILE_MRU_FIRST];
+			CImage::PCProperties m_deviceProps[ID_FILE_MRU_LAST+1-ID_FILE_MRU_FIRST];
 		public:
 			CRecentFileListEx(const CRecentFileList &rStdMru);
 
 			CDos::PCProperties GetDosMruFileOpenWith(int nIndex) const;
-			void Add(LPCTSTR lpszPathName,CDos::PCProperties dosProps);
+			CImage::PCProperties GetMruDevice(int nIndex) const;
+			void Add(LPCTSTR lpszPathName,CDos::PCProperties dosProps,CImage::PCProperties deviceProps);
 			void Remove(int nIndex) override;
 			void ReadList() override;
 			void WriteList() override;
