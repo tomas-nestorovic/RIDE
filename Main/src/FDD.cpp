@@ -2207,5 +2207,7 @@ error:		return LOG_ERROR(::GetLastError());
 	}
 
 	void CFDD::SetPathName(LPCTSTR,BOOL bAddToMRU){
-		__super::SetPathName( devicePatternName, bAddToMRU );
+		const auto tmpFile0=m_strPathName;
+			__super::SetPathName( devicePatternName, bAddToMRU );
+		m_strPathName=tmpFile0;
 	}
