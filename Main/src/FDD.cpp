@@ -574,6 +574,7 @@ Utils::Information("--- EVERYTHING OK ---");
 		return new CFDD(deviceName);
 	}
 	const CImage::TProperties CFDD::Properties={
+		MAKE_IMAGE_ID('I','n','t','P','c','F','d','d'), // a unique identifier
 		Recognize,	// list of recognized device names
 		Instantiate,	// instantiation function
 		nullptr, // filter
@@ -2204,10 +2205,6 @@ error:		return LOG_ERROR(::GetLastError());
 		}
 	}
 
-	void CFDD::SetTitle(LPCTSTR){
-		CDocument::SetTitle(devicePatternName);
-	}
-
-	void CFDD::SetPathName(LPCTSTR,BOOL){
-		//CDocument::SetPathName(tmpFileName,FALSE);
+	void CFDD::SetPathName(LPCTSTR,BOOL bAddToMRU){
+		__super::SetPathName( devicePatternName, bAddToMRU );
 	}

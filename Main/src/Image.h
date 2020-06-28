@@ -170,6 +170,10 @@
 
 
 
+
+	#define MAKE_IMAGE_ID(char1,char2,char3,char4,char5,char6,char7,char8)\
+		( (((((((CImage::TId)char1<<4^char2)<<4^char3)<<4^char4)<<4^char5)<<4^char6)<<4^char7)<<4^char8 )
+
 	class CImage:public CDocument{
 		friend class CRideApp;
 		friend class CTrackMapView;
@@ -199,11 +203,13 @@
 		BOOL DoSave(LPCTSTR lpszPathName,BOOL bReplace) override;
 		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override; // enabling/disabling ToolBar buttons
 	public:
+		typedef DWORD TId;
 		typedef LPCTSTR (*TFnRecognize)(PTCHAR deviceNameList);
 		typedef CImage *(*TFnInstantiate)(LPCTSTR deviceName);
 
 		#pragma pack(1)
 		typedef const struct TProperties sealed{
+			TId id; // container's unique identifier (see other containers to be REALLY unique!)
 			TFnRecognize fnRecognize;
 			TFnInstantiate fnInstantiate;
 			LPCTSTR filter; // filter for the "Open/Save file" dialogs (e.g. "*.d80;*.d40"); ATTENTION - must be all in lowercase (normalization) and the extension must always have right three characters (otherwise changes in DoSave needed)

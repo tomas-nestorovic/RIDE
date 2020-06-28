@@ -8,7 +8,8 @@
 	static PImage Instantiate(LPCTSTR){
 		return new CMGT;
 	}
-	const CImage::TProperties CMGT::Properties={Recognize,	// list of recognized device names
+	const CImage::TProperties CMGT::Properties={MAKE_IMAGE_ID('G','D','O','S','_','M','G','T'), // a unique identifier
+												Recognize,	// list of recognized device names
 												Instantiate,// instantiation function
 												_T("*.mgt"),	// filter
 												TMedium::FLOPPY_DD_350, // supported Media

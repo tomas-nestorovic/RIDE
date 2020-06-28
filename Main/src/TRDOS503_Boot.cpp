@@ -365,7 +365,8 @@
 		static PImage Instantiate(LPCTSTR){
 			return new CImageRaw( &Properties, true );
 		}
-		const CImage::TProperties Properties={	Recognize,// name
+		const CImage::TProperties Properties={	MAKE_IMAGE_ID('T','R','D','O','S','T','R','D'), // a unique identifier
+												Recognize,// name
 												Instantiate,// instantiation function
 												_T("*.trd"),	// filter
 												TMedium::FLOPPY_ANY_DD,

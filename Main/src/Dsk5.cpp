@@ -7,7 +7,8 @@
 	static PImage Instantiate(LPCTSTR){
 		return new CDsk5;
 	}
-	const CImage::TProperties CDsk5::Properties={	Recognize,	// list of recognized device names
+	const CImage::TProperties CDsk5::Properties={	MAKE_IMAGE_ID('D','s','k','_','R','e','v','5'), // a unique identifier
+													Recognize,	// list of recognized device names
 													Instantiate,	// instantiation function
 													_T("*.dsk"), // filter
 													TMedium::FLOPPY_ANY, // supported Media

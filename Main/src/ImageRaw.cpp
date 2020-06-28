@@ -10,6 +10,7 @@
 	}
 
 	const CImage::TProperties CImageRaw::Properties={
+		MAKE_IMAGE_ID('I','m','a','g','e','R','a','w'), // a unique identifier
 		Recognize,	// list of recognized device names
 		Instantiate, // instantiation function
 		_T("*.ima") IMAGE_FORMAT_SEPARATOR _T("*.img") IMAGE_FORMAT_SEPARATOR _T("*.dat") IMAGE_FORMAT_SEPARATOR _T("*.bin"),	// filter

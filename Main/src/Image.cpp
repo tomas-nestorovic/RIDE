@@ -634,7 +634,8 @@
 			if (CRideApp::CRecentFileListEx *const pMru=app.GetRecentFileList()){
 				extern CDos::PCProperties manuallyForceDos;
 				pMru->Add(	lpszPathName,
-							!manuallyForceDos ? &CUnknownDos::Properties : dos->properties
+							!manuallyForceDos ? &CUnknownDos::Properties : dos->properties,
+							properties->IsRealDevice() ? properties : nullptr
 						);
 			}
 	}

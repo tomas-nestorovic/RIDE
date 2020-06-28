@@ -1150,6 +1150,7 @@
 			return new CImageRaw( &Properties, true );
 		}
 		const CImage::TProperties Properties={
+			MAKE_IMAGE_ID('B','S','D','O','S','M','B','D'), // a unique identifier
 			Recognize, // name
 			Instantiate, // instantiation function
 			_T("*.mbd"), // filter

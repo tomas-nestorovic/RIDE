@@ -9,7 +9,8 @@
 		return new CSCL;
 	}
 
-	const CImage::TProperties CSCL::Properties={Recognize,	// list of recognized device names
+	const CImage::TProperties CSCL::Properties={MAKE_IMAGE_ID('T','R','D','O','S','S','C','L'), // a unique identifier
+												Recognize,	// list of recognized device names
 												Instantiate,// instantiation function
 												_T("*.scl"),	// filter
 												TMedium::FLOPPY_ANY_DD, // supported Media
