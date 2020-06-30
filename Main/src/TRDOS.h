@@ -86,6 +86,8 @@
 			BYTE nSectors;
 			TSectorTrackPair first;
 
+			static const char KnownExtensions[];
+
 			static UINT AFX_CDECL Verification_thread(PVOID pCancelableAction);
 
 			WORD __getOfficialFileSize__(PBYTE pnBytesReservedAfterData) const;

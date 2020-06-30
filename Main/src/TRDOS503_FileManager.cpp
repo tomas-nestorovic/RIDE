@@ -75,7 +75,7 @@
 				break;
 			case INFORMATION_EXTENSION:
 				// File Extension
-				singleCharExtEditor.DrawReportModeCell( de->extension, pdis );
+				singleCharExtEditor.DrawReportModeCell( de->extension, pdis, TDirectoryEntry::KnownExtensions );
 				break;
 			case INFORMATION_SIZE:{
 				// File Size
