@@ -129,7 +129,7 @@
 			case INFORMATION_EXTENSION:
 				// File Extension
 				r.right-=5;
-				singleCharExtEditor.DrawReportModeCell( de->extension, pdis );
+				singleCharExtEditor.DrawReportModeCell( de->extension, pdis, TDirectoryEntry::KnownExtensions );
 				break;
 			case INFORMATION_NAME:
 				// File Name

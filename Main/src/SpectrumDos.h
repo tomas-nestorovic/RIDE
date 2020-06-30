@@ -184,7 +184,7 @@
 				CSingleCharExtensionEditor(const CSpectrumBaseFileManagerView *pZxFileManager);
 
 				PEditorBase Create(PFile file);
-				void DrawReportModeCell(BYTE extension,LPDRAWITEMSTRUCT pdis) const;
+				void DrawReportModeCell(BYTE extension,LPDRAWITEMSTRUCT pdis,LPCSTR knownExtensions=nullptr) const;
 			} singleCharExtEditor;
 
 			mutable class CVarLengthCommandLineEditor sealed{

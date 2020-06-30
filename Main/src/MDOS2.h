@@ -140,6 +140,8 @@
 			BYTE lengthHigh; // upper Word of File size
 			BYTE reserved2[10];
 
+			static const char KnownExtensions[];
+
 			static UINT AFX_CDECL Verification_thread(PVOID pCancelableAction);
 
 			DWORD GetLength() const;

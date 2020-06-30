@@ -162,8 +162,11 @@
 		::SendMessage( result->hEditor, WM_SETFONT, (WPARAM)pZxFileManager->rFont.m_hObject, 0 );
 		return result;
 	}
-	void CSpectrumBase::CSpectrumBaseFileManagerView::CSingleCharExtensionEditor::DrawReportModeCell(BYTE extension,LPDRAWITEMSTRUCT pdis) const{
+	void CSpectrumBase::CSpectrumBaseFileManagerView::CSingleCharExtensionEditor::DrawReportModeCell(BYTE extension,LPDRAWITEMSTRUCT pdis,LPCSTR knownExtensions) const{
 		// directly draws File's single-character Extension
+		if (knownExtensions) // want to highlight in red unknown Extensions
+			if (!::strchr(knownExtensions,extension))
+				::FillRect( pdis->hDC, &pdis->rcItem, CBrush(Utils::GetBlendedColor(::GetBkColor(pdis->hDC),COLOR_RED,.92f)) );
 		pZxFileManager->zxRom.PrintAt( pdis->hDC, (LPCSTR)&extension, 1, pdis->rcItem, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
 	}
 
