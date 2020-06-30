@@ -1813,9 +1813,13 @@ autodetermineLatencies:		// automatic determination of write latency values
 	}
 
 	static BYTE __reportSectorVerificationError__(RCPhysicalAddress chs){
-		TCHAR buf[100];
-		::wsprintf(buf,_T("Track %d verification failed for sector with %s"),chs.GetTrackNumber(2),(LPCTSTR)chs.sectorId.ToString());
-		return Utils::AbortRetryIgnore( buf, ::GetLastError(), MB_DEFBUTTON2, _T("For copy-protected schemes, simply retrying usually helps.") );
+		CDialog d( IDR_DOS_FORMAT );
+		d.ShowWindow(SW_HIDE);
+		TCHAR buf[100],sug[480];
+		d.GetWindowText( buf, sizeof(buf)/sizeof(TCHAR) );
+		::wsprintf( sug, _T("- Has the correct medium been set in the \"%s\" dialog?\n- For copy-protected schemes, simply retrying often helps."), buf );
+		::wsprintf( buf, _T("Track %d verification failed for sector with %s"), chs.GetTrackNumber(2), (LPCTSTR)chs.sectorId.ToString() );
+		return Utils::AbortRetryIgnore( buf, ::GetLastError(), MB_DEFBUTTON2, sug );
 	}
 
 	TStdWinError CFDD::__formatToOneLongVerifiedSector__(RCPhysicalAddress chs,BYTE fillerByte){
