@@ -289,15 +289,15 @@ error:			*de=tmp; // recovering the original DirectoryEntry
 			tmp.fileType=(TDirectoryEntry::TFileType)extension.charValue;
 		return tmp.__getFileTypeDesc__(buf);
 	}
-	CFileManagerView::PEditorBase CGDOS::CGdosFileManagerView::CExtensionEditor::Create(PDirectoryEntry de){
+	CFileManagerView::PEditorBase CGDOS::CGdosFileManagerView::CExtensionEditor::Create(PDirectoryEntry de) const{
 		// creates and returns the Editor of File "extension"
 		const PDos dos=CDos::GetFocused();
-		const CSpectrumFileManagerView *const pZxFileManager=(CSpectrumFileManagerView *)dos->pFileManager;
-		const PEditorBase result=pZxFileManager->__createStdEditor__(
+		RCFileManagerView &rfm=*CDos::GetFocused()->pFileManager;
+		const PEditorBase result=CreateStdEditor(
 			de, &( data=de->fileType ),
 			PropGrid::Enum::DefineConstStringListEditorA( sizeof(data), __createValues__, __getDescription__, __freeValues__, __onChanged__ )
 		);
-		::SendMessage( result->hEditor, WM_SETFONT, (WPARAM)pZxFileManager->rFont.m_hObject, 0 );
+		::SendMessage( result->hEditor, WM_SETFONT, (WPARAM)rfm.rFont.m_hObject, 0 );
 		return result;
 	}
 
@@ -320,5 +320,5 @@ error:			*de=tmp; // recovering the original DirectoryEntry
 
 	CFileManagerView::PEditorBase CGDOS::CGdosFileManagerView::CEtcEditor::Create(PDirectoryEntry de){
 		// creates and returns an Editor of File's Etc information
-		return CDos::GetFocused()->pFileManager->__createStdEditorWithEllipsis__( de, __onEllipsisClick__ );
+		return CreateStdEditorWithEllipsis( de, __onEllipsisClick__ );
 	}

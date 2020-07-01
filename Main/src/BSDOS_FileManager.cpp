@@ -38,8 +38,7 @@
 	CBSDOS308::CBsdos308FileManagerView::CBsdos308FileManagerView(CBSDOS308 *bsdos)
 		// ctor
 		: CSpectrumFileManagerView( bsdos, bsdos->zxRom, REPORT, LVS_REPORT, INFORMATION_COUNT, InformationList, ZX_TAPE_FILE_NAME_LENGTH_MAX, &DirManagement )
-		, toolbar( IDR_ZX_TAPE, ID_SUBDIRECTORY ) // "some" unique ID
-		, dateTimeEditor(this) {
+		, toolbar( IDR_ZX_TAPE, ID_SUBDIRECTORY ) { // "some" unique ID
 	}
 
 

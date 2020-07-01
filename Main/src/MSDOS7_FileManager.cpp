@@ -33,7 +33,8 @@
 		// - creating presentation Font
 		, font(FONT_LUCIDA_CONSOLE,108,false,true,58)
 		// - initialization of editors
-		, dateTimeEditor(this) {
+		//nop
+		{
 	}
 
 	CMSDOS7::CMsdos7FileManagerView::~CMsdos7FileManagerView(){
@@ -263,16 +264,17 @@
 		// creates and returns Editor of File's selected Information; returns Null if Information cannot be edited
 		switch (infoId){
 			case INFORMATION_NAME_A_EXT:
-				return __createStdEditor__(	file,
-											const_cast<PTCHAR>((LPCTSTR)DOS->GetFilePresentationNameAndExt(file)),
-											#ifdef UNICODE
-												PropGrid::String::DefineDynamicLengthEditorW( __onNameAndExtConfirmed__ )
-											#else
-												PropGrid::String::DefineDynamicLengthEditorA( __onNameAndExtConfirmed__ )
-											#endif
-										);
+				return	CValueEditorBase::CreateStdEditor(
+							file,
+							const_cast<PTCHAR>((LPCTSTR)DOS->GetFilePresentationNameAndExt(file)),
+							#ifdef UNICODE
+								PropGrid::String::DefineDynamicLengthEditorW( __onNameAndExtConfirmed__ )
+							#else
+								PropGrid::String::DefineDynamicLengthEditorA( __onNameAndExtConfirmed__ )
+							#endif
+						);
 			case INFORMATION_ATTRIBUTES:
-				return __createStdEditorWithEllipsis__( file, __editFileAttributes__ );
+				return CValueEditorBase::CreateStdEditorWithEllipsis( file, __editFileAttributes__ );
 			case INFORMATION_CREATED:
 				return dateTimeEditor.Create( file, &((PDirectoryEntry)file)->shortNameEntry.timeAndDateCreated );
 			case INFORMATION_READ:
@@ -422,27 +424,22 @@
 
 
 
-	CMSDOS7::TDateTime::CEditor::CEditor(const CFileManagerView *pFileManager)
-		// ctor
-		: pFileManager(pFileManager) {
-	}
-
 	CFileManagerView::PEditorBase CMSDOS7::TDateTime::CEditor::Create(PFile file,PDWORD pMsdosTimeAndDate){
 		// creates and returns an Editor of File DateTime stamp
-		return pFileManager->__createStdEditorWithEllipsis__( file, pMsdosTimeAndDate, sizeof(DWORD), __editFileDateTime__ );
+		return CreateStdEditorWithEllipsis( file, pMsdosTimeAndDate, sizeof(DWORD), __editFileDateTime__ );
 	}
 
 	CFileManagerView::PEditorBase CMSDOS7::TDateTime::CEditor::Create(PFile file,PWORD pMsdosDate){
 		// creates and returns an Editor of File Date stamp
-		return pFileManager->__createStdEditorWithEllipsis__( file, pMsdosDate, sizeof(WORD), __editFileDateTime__ );
+		return CreateStdEditorWithEllipsis( file, pMsdosDate, sizeof(WORD), __editFileDateTime__ );
 	}
 
-	void CMSDOS7::TDateTime::CEditor::DrawReportModeCell(DWORD msdosTimeAndDate,LPDRAWITEMSTRUCT pdis,BYTE horizonalAlignment) const{
+	void CMSDOS7::TDateTime::CEditor::DrawReportModeCell(DWORD msdosTimeAndDate,LPDRAWITEMSTRUCT pdis,BYTE horizonalAlignment){
 		// draws the MS-DOS File date&time information
 		TDateTime(msdosTimeAndDate).DrawInPropGrid( pdis->hDC, pdis->rcItem, false, horizonalAlignment );
 	}
 
-	void CMSDOS7::TDateTime::CEditor::DrawReportModeCell(WORD msdosDate,LPDRAWITEMSTRUCT pdis,BYTE horizonalAlignment) const{
+	void CMSDOS7::TDateTime::CEditor::DrawReportModeCell(WORD msdosDate,LPDRAWITEMSTRUCT pdis,BYTE horizonalAlignment){
 		// draws the MS-DOS File date information
 		TDateTime(msdosDate).DrawInPropGrid( pdis->hDC, pdis->rcItem, true, horizonalAlignment );
 	}

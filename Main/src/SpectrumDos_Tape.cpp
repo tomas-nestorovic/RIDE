@@ -995,11 +995,6 @@ drawChecksum:			// checksum
 		return true;
 	}
 
-	CSpectrumBase::CSpectrumBaseFileManagerView::CStdTapeHeaderBlockTypeEditor::CStdTapeHeaderBlockTypeEditor(const CSpectrumBaseFileManagerView *pZxFileManager)
-		// ctor
-		: pZxFileManager(pZxFileManager) {
-	}
-
 	PropGrid::Enum::PCValueList WINAPI CSpectrumBase::CSpectrumBaseFileManagerView::CStdTapeHeaderBlockTypeEditor::__createValues__(PVOID file,WORD &rnValues){
 		// returns the list of standard File Types
 		static const TZxRom::TFileType List[]={
@@ -1020,18 +1015,19 @@ drawChecksum:			// checksum
 		return TZxRom::GetFileTypeName((TZxRom::TFileType)stdType.charValue);
 	}
 
-	CFileManagerView::PEditorBase CSpectrumBase::CSpectrumBaseFileManagerView::CStdTapeHeaderBlockTypeEditor::Create(PFile file,TZxRom::TFileType type,TDisplayTypes _types,PropGrid::Enum::TOnValueConfirmed onChanged){
+	CFileManagerView::PEditorBase CSpectrumBase::CSpectrumBaseFileManagerView::CStdTapeHeaderBlockTypeEditor::Create(PFile file,TZxRom::TFileType type,TDisplayTypes _types,PropGrid::Enum::TOnValueConfirmed onChanged) const{
 		// creates and returns an Editor of standard File Type
 		types=_types;
-		const PEditorBase result=pZxFileManager->__createStdEditor__(
+		const PEditorBase result=CreateStdEditor(
 			file, &( data=type ),
 			PropGrid::Enum::DefineConstStringListEditorA( sizeof(data), __createValues__, __getDescription__, nullptr, onChanged )
 		);
-		::SendMessage( CEditorBase::pSingleShown->hEditor, WM_SETFONT, (WPARAM)pZxFileManager->rFont.m_hObject, 0 );
+		RCFileManagerView &rfm=*CDos::GetFocused()->pFileManager;
+		::SendMessage( CEditorBase::pSingleShown->hEditor, WM_SETFONT, (WPARAM)rfm.rFont.m_hObject, 0 );
 		return result;
 	}
 
-	void CSpectrumBase::CSpectrumBaseFileManagerView::CStdTapeHeaderBlockTypeEditor::DrawReportModeCell(BYTE type,LPDRAWITEMSTRUCT pdis) const{
+	void CSpectrumBase::CSpectrumBaseFileManagerView::CStdTapeHeaderBlockTypeEditor::DrawReportModeCell(BYTE type,LPDRAWITEMSTRUCT pdis){
 		// directly draws the block Type
 		PropGrid::Enum::UValue v;
 			v.longValue=type;

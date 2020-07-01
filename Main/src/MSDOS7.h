@@ -249,15 +249,12 @@
 		} fsInfo;
 	public:
 		struct TDateTime sealed:public TFileDateTime{
-			class CEditor sealed{
-				const CFileManagerView *const pFileManager;
+			class CEditor sealed:public CFileManagerView::CValueEditorBase{
 			public:
-				CEditor(const CFileManagerView *pFileManager);
-
-				CFileManagerView::PEditorBase Create(PFile file,PDWORD pMsdosTimeAndDate);
-				CFileManagerView::PEditorBase Create(PFile file,PWORD pMsdosDate);
-				void DrawReportModeCell(DWORD msdosTimeAndDate,LPDRAWITEMSTRUCT pdis,BYTE horizonalAlignment=DT_RIGHT) const;
-				void DrawReportModeCell(WORD msdosDate,LPDRAWITEMSTRUCT pdis,BYTE horizonalAlignment=DT_RIGHT) const;
+				static CFileManagerView::PEditorBase Create(PFile file,PDWORD pMsdosTimeAndDate);
+				static CFileManagerView::PEditorBase Create(PFile file,PWORD pMsdosDate);
+				static void DrawReportModeCell(DWORD msdosTimeAndDate,LPDRAWITEMSTRUCT pdis,BYTE horizonalAlignment=DT_RIGHT);
+				static void DrawReportModeCell(WORD msdosDate,LPDRAWITEMSTRUCT pdis,BYTE horizonalAlignment=DT_RIGHT);
 			};
 
 			static const SYSTEMTIME Epoch[];

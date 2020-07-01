@@ -141,19 +141,19 @@
 			static bool WINAPI __onStdParam1Changed__(PVOID file,int newWordValue);
 			static bool WINAPI __onStdParam2Changed__(PVOID file,int newWordValue);
 
-			mutable class CExtensionEditor sealed{
+			class CExtensionEditor sealed:public CValueEditorBase{
 				static bool WINAPI __onChanged__(PVOID file,PropGrid::Enum::UValue newExt);
 				static LPCTSTR WINAPI __getDescription__(PVOID file,PropGrid::Enum::UValue extension,PTCHAR buf,short bufCapacity);
 
-				BYTE data;
+				mutable BYTE data;
 			public:
-				PEditorBase Create(PDirectoryEntry de);
+				PEditorBase Create(PDirectoryEntry de) const;
 			} extensionEditor;
 
-			mutable class CEtcEditor sealed{
+			class CEtcEditor sealed:public CValueEditorBase{
 				static bool WINAPI __onEllipsisClick__(PVOID file,PVOID,short);
 			public:
-				PEditorBase Create(PDirectoryEntry de);
+				static PEditorBase Create(PDirectoryEntry de);
 			} etcEditor;
 
 			void DrawReportModeCell(PCFileInfo pFileInfo,LPDRAWITEMSTRUCT pdis) const override;

@@ -174,9 +174,14 @@
 			void Repaint() const;
 		} *PEditorBase;
 
-		PEditorBase __createStdEditor__(CDos::PFile file,PropGrid::PValue value,PropGrid::PCEditor editor) const;
-		PEditorBase __createStdEditorWithEllipsis__(CDos::PFile file,PropGrid::TOnEllipsisButtonClicked buttonAction) const;
-		PEditorBase __createStdEditorWithEllipsis__(CDos::PFile file,PropGrid::PValue value,PropGrid::TSize valueSize,PropGrid::TOnEllipsisButtonClicked buttonAction) const;
+		class CValueEditorBase abstract{
+		protected:
+			static void DrawRedHighlight(LPDRAWITEMSTRUCT pdis);
+		public:
+			static PEditorBase CreateStdEditor(CDos::PFile file,PropGrid::PValue value,PropGrid::PCEditor editor);
+			static PEditorBase CreateStdEditorWithEllipsis(CDos::PFile file,PropGrid::TOnEllipsisButtonClicked buttonAction);
+			static PEditorBase CreateStdEditorWithEllipsis(CDos::PFile file,PropGrid::PValue value,PropGrid::TSize valueSize,PropGrid::TOnEllipsisButtonClicked buttonAction);
+		};
 	protected:
 		class CFileComparisonDialog sealed:public CDialog{
 			CMemFile fEmpty;
@@ -216,15 +221,12 @@
 			CFileComparisonDialog();
 		};
 
-		mutable class CIntegerEditor sealed{
-			const CFileManagerView *const pFileManager;
+		class CIntegerEditor sealed:public CValueEditorBase{
 		public:
-			CIntegerEditor(const CFileManagerView *pFileManager);
-
-			PEditorBase Create(CDos::PFile file,PBYTE pByte,PropGrid::Integer::TOnValueConfirmed fnOnConfirmed=__markDirectorySectorAsDirty__);
-			PEditorBase Create(CDos::PFile file,PWORD pWord,PropGrid::Integer::TOnValueConfirmed fnOnConfirmed=__markDirectorySectorAsDirty__);
-			void DrawReportModeCell(int number,LPDRAWITEMSTRUCT pdis,bool highlightRed=false) const;
-			void DrawReportModeCellWithCheckmark(int number,bool checkmark,LPDRAWITEMSTRUCT pdis) const;
+			static PEditorBase Create(CDos::PFile file,PBYTE pByte,PropGrid::Integer::TOnValueConfirmed fnOnConfirmed=__markDirectorySectorAsDirty__);
+			static PEditorBase Create(CDos::PFile file,PWORD pWord,PropGrid::Integer::TOnValueConfirmed fnOnConfirmed=__markDirectorySectorAsDirty__);
+			static void DrawReportModeCell(int number,LPDRAWITEMSTRUCT pdis,bool highlightRed=false);
+			static void DrawReportModeCellWithCheckmark(int number,bool checkmark,LPDRAWITEMSTRUCT pdis);
 		} integerEditor;
 
 		static int CALLBACK __orderFiles__(LPARAM file1,LPARAM file2,LPARAM orderingInfo);

@@ -174,34 +174,34 @@
 		class CSpectrumBaseFileManagerView:public CFileManagerView{
 			const BYTE nameCharsMax;
 		protected:
-			mutable class CSingleCharExtensionEditor sealed{
+			class CSingleCharExtensionEditor sealed:public CValueEditorBase{
 				static bool WINAPI __onChanged__(PVOID file,PropGrid::Enum::UValue newExt);
 				static LPCTSTR WINAPI __getDescription__(PVOID file,PropGrid::Enum::UValue extension,PTCHAR buf,short bufCapacity);
 
-				const CSpectrumBaseFileManagerView *const pZxFileManager;
-				BYTE data;
+				const CSpectrumBaseFileManagerView &rZxFileManager;
+				mutable BYTE data;
 			public:
-				CSingleCharExtensionEditor(const CSpectrumBaseFileManagerView *pZxFileManager);
+				CSingleCharExtensionEditor(const CSpectrumBaseFileManagerView &rZxFileManager);
 
-				PEditorBase Create(PFile file);
+				PEditorBase Create(PFile file) const;
 				void DrawReportModeCell(BYTE extension,LPDRAWITEMSTRUCT pdis,LPCSTR knownExtensions=nullptr) const;
 			} singleCharExtEditor;
 
-			mutable class CVarLengthCommandLineEditor sealed{
+			class CVarLengthCommandLineEditor sealed:public CValueEditorBase{
 				static bool WINAPI __onCmdLineConfirmed__(PVOID file,HWND,PVOID value);
 				static bool WINAPI __onFileNameConfirmed__(PVOID file,HWND,PVOID);
 
-				const CSpectrumBaseFileManagerView *const pZxFileManager;
-				TCHAR bufOldCmd[256];
+				const CSpectrumBaseFileManagerView &rZxFileManager;
+				mutable TCHAR bufOldCmd[256];
 			public:
-				CVarLengthCommandLineEditor(const CSpectrumBaseFileManagerView *pZxFileManager);
+				CVarLengthCommandLineEditor(const CSpectrumBaseFileManagerView &rZxFileManager);
 
-				PEditorBase Create(PFile file,PCHAR cmd,BYTE cmdLengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged=__markDirectorySectorAsDirty__);
-				PEditorBase CreateForFileName(PFile file,BYTE fileNameLengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged=__markDirectorySectorAsDirty__);
+				PEditorBase Create(PFile file,PCHAR cmd,BYTE cmdLengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged=__markDirectorySectorAsDirty__) const;
+				PEditorBase CreateForFileName(PFile file,BYTE fileNameLengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged=__markDirectorySectorAsDirty__) const;
 				void DrawReportModeCell(LPCSTR cmd,BYTE cmdLength,char paddingChar,LPDRAWITEMSTRUCT pdis) const;
 			} varLengthCommandLineEditor;
 
-			mutable class CStdTapeHeaderBlockTypeEditor sealed{
+			class CStdTapeHeaderBlockTypeEditor sealed:public CValueEditorBase{
 			public:
 				enum TDisplayTypes{
 					STD_ONLY,
@@ -212,14 +212,12 @@
 				static PropGrid::Enum::PCValueList WINAPI __createValues__(PVOID file,WORD &rnValues);
 				static LPCTSTR WINAPI __getDescription__(PVOID file,PropGrid::Enum::UValue stdType,PTCHAR,short);
 
-				const CSpectrumBaseFileManagerView *const pZxFileManager;
-				BYTE data;
-				TDisplayTypes types;
+				mutable BYTE data;
+				mutable TDisplayTypes types;
 			public:				
-				CStdTapeHeaderBlockTypeEditor(const CSpectrumBaseFileManagerView *pZxFileManager);
+				static void DrawReportModeCell(BYTE type,LPDRAWITEMSTRUCT pdis);
 
-				PEditorBase Create(PFile file,TZxRom::TFileType type,TDisplayTypes _types,PropGrid::Enum::TOnValueConfirmed onChanged);
-				void DrawReportModeCell(BYTE type,LPDRAWITEMSTRUCT pdis) const;
+				PEditorBase Create(PFile file,TZxRom::TFileType type,TDisplayTypes _types,PropGrid::Enum::TOnValueConfirmed onChanged) const;
 			} stdTapeHeaderTypeEditor;
 
 			PTCHAR GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant,PTCHAR pOutBuffer) const override sealed;

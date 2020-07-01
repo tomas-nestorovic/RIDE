@@ -185,7 +185,7 @@
 			case INFORMATION_NAME:
 				return varLengthCommandLineEditor.CreateForFileName( de, MDOS2_FILE_NAME_LENGTH_MAX, '\0' );
 			case INFORMATION_ATTRIBUTES:
-				return __createStdEditorWithEllipsis__( de, __editFileAttributes__ );
+				return CValueEditorBase::CreateStdEditorWithEllipsis( de, __editFileAttributes__ );
 			case INFORMATION_PARAM_1:
 				return integerEditor.Create( de, &de->params.param1 );
 			case INFORMATION_PARAM_2:

@@ -6,9 +6,8 @@
 		// ctor
 		: CFileManagerView( dos, supportedDisplayModes, initialDisplayMode, rZxRom.font, 3, nInformation, informationList, pDirManagement )
 		, zxRom(rZxRom) , nameCharsMax(nameCharsMax)
-		, singleCharExtEditor(this)
-		, varLengthCommandLineEditor(this)
-		, stdTapeHeaderTypeEditor(this) {
+		, singleCharExtEditor(*this)
+		, varLengthCommandLineEditor(*this) {
 	}
 
 	CSpectrumDos::CSpectrumFileManagerView::CSpectrumFileManagerView(PDos dos,const TZxRom &rZxRom,BYTE supportedDisplayModes,BYTE initialDisplayMode,BYTE nInformation,PCFileInfo informationList,BYTE nameCharsMax,PCDirectoryStructureManagement pDirManagement)
@@ -114,9 +113,9 @@
 
 
 
-	CSpectrumBase::CSpectrumBaseFileManagerView::CSingleCharExtensionEditor::CSingleCharExtensionEditor(const CSpectrumBaseFileManagerView *pZxFileManager)
+	CSpectrumBase::CSpectrumBaseFileManagerView::CSingleCharExtensionEditor::CSingleCharExtensionEditor(const CSpectrumBaseFileManagerView &rZxFileManager)
 		// ctor
-		: pZxFileManager(pZxFileManager) {
+		: rZxFileManager(rZxFileManager) {
 	}
 
 	#define EXTENSION_MIN	32
@@ -151,23 +150,23 @@
 		// sets the Buffer to textual description of given Extension and returns its beginning in the Buffer
 		return TZxRom::ZxToAscii( &extension.charValue, 1, buf );
 	}
-	CFileManagerView::PEditorBase CSpectrumBase::CSpectrumBaseFileManagerView::CSingleCharExtensionEditor::Create(PFile file){
+	CFileManagerView::PEditorBase CSpectrumBase::CSpectrumBaseFileManagerView::CSingleCharExtensionEditor::Create(PFile file) const{
 		// creates and returns an Editor of File's single-character Extension
 		CPathString ext;
-		pZxFileManager->DOS->GetFileNameOrExt(file,nullptr,&ext);
-		const PEditorBase result=pZxFileManager->__createStdEditor__(
+		rZxFileManager.DOS->GetFileNameOrExt(file,nullptr,&ext);
+		const PEditorBase result=CreateStdEditor(
 			file, &( data=*ext ),
 			PropGrid::Enum::DefineConstStringListEditorA( sizeof(data), __createValues__, __getDescription__, __freeValues__, __onChanged__ )
 		);
-		::SendMessage( result->hEditor, WM_SETFONT, (WPARAM)pZxFileManager->rFont.m_hObject, 0 );
+		::SendMessage( result->hEditor, WM_SETFONT, (WPARAM)rZxFileManager.rFont.m_hObject, 0 );
 		return result;
 	}
 	void CSpectrumBase::CSpectrumBaseFileManagerView::CSingleCharExtensionEditor::DrawReportModeCell(BYTE extension,LPDRAWITEMSTRUCT pdis,LPCSTR knownExtensions) const{
 		// directly draws File's single-character Extension
 		if (knownExtensions) // want to highlight in red unknown Extensions
 			if (!::strchr(knownExtensions,extension))
-				::FillRect( pdis->hDC, &pdis->rcItem, CBrush(Utils::GetBlendedColor(::GetBkColor(pdis->hDC),COLOR_RED,.92f)) );
-		pZxFileManager->zxRom.PrintAt( pdis->hDC, (LPCSTR)&extension, 1, pdis->rcItem, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
+				DrawRedHighlight(pdis);
+		rZxFileManager.zxRom.PrintAt( pdis->hDC, (LPCSTR)&extension, 1, pdis->rcItem, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
 	}
 
 
@@ -179,9 +178,9 @@
 
 
 
-	CSpectrumBase::CSpectrumBaseFileManagerView::CVarLengthCommandLineEditor::CVarLengthCommandLineEditor(const CSpectrumBaseFileManagerView *pZxFileManager)
+	CSpectrumBase::CSpectrumBaseFileManagerView::CVarLengthCommandLineEditor::CVarLengthCommandLineEditor(const CSpectrumBaseFileManagerView &rZxFileManager)
 		// ctor
-		: pZxFileManager(pZxFileManager) {
+		: rZxFileManager(rZxFileManager) {
 	}
 
 	bool WINAPI CSpectrumBase::CSpectrumBaseFileManagerView::CVarLengthCommandLineEditor::__onCmdLineConfirmed__(PVOID file,HWND,PVOID value){
@@ -194,14 +193,14 @@
 		return true;
 	}
 
-	CFileManagerView::PEditorBase CSpectrumBase::CSpectrumBaseFileManagerView::CVarLengthCommandLineEditor::Create(PFile file,PCHAR cmd,BYTE cmdLengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged){
+	CFileManagerView::PEditorBase CSpectrumBase::CSpectrumBaseFileManagerView::CVarLengthCommandLineEditor::Create(PFile file,PCHAR cmd,BYTE cmdLengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged) const{
 		// creates and returns the Editor of Spectrum command line
 		ASSERT(cmdLengthMax<sizeof(bufOldCmd)/sizeof(TCHAR));
 		#ifdef UNICODE
 			ASSERT(FALSE);
 		#else
 			::memcpy( bufOldCmd, cmd, cmdLengthMax );
-			return	pZxFileManager->__createStdEditor__( 
+			return	CreateStdEditor( 
 						file,
 						cmd,
 						TZxRom::CLineComposerPropGridEditor::Define( cmdLengthMax, paddingChar, __onCmdLineConfirmed__, onChanged )
@@ -227,18 +226,18 @@
 			return true;
 	}
 
-	CFileManagerView::PEditorBase CSpectrumBase::CSpectrumBaseFileManagerView::CVarLengthCommandLineEditor::CreateForFileName(PFile file,BYTE fileNameLengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged){
+	CFileManagerView::PEditorBase CSpectrumBase::CSpectrumBaseFileManagerView::CVarLengthCommandLineEditor::CreateForFileName(PFile file,BYTE fileNameLengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged) const{
 		// creates and returns the Editor of File Name
 		ASSERT(fileNameLengthMax<sizeof(bufOldCmd)/sizeof(TCHAR));
 		CPathString oldName;
-		pZxFileManager->DOS->GetFileNameOrExt( file, &oldName, nullptr );
+		rZxFileManager.DOS->GetFileNameOrExt( file, &oldName, nullptr );
 		::memset( bufOldCmd, paddingChar, fileNameLengthMax );
 		#ifdef UNICODE
 			ASSERT(FALSE);
 		#else
 			::memcpy( bufOldCmd, oldName, oldName.GetLength() );
 		#endif
-		return	pZxFileManager->__createStdEditor__(
+		return	CreateStdEditor(
 					file,
 					bufOldCmd,
 					TZxRom::CLineComposerPropGridEditor::Define( fileNameLengthMax, paddingChar, __onFileNameConfirmed__, onChanged )
@@ -248,5 +247,5 @@
 	void CSpectrumBase::CSpectrumBaseFileManagerView::CVarLengthCommandLineEditor::DrawReportModeCell(LPCSTR cmd,BYTE cmdLength,char paddingChar,LPDRAWITEMSTRUCT pdis) const{
 		// directly draws FileName
 		CPathString tmp( cmd, cmdLength );
-		pZxFileManager->zxRom.PrintAt( pdis->hDC, tmp, tmp.TrimRight(paddingChar).GetLength(), pdis->rcItem, DT_SINGLELINE|DT_VCENTER );
+		rZxFileManager.zxRom.PrintAt( pdis->hDC, tmp, tmp.TrimRight(paddingChar).GetLength(), pdis->rcItem, DT_SINGLELINE|DT_VCENTER );
 	}

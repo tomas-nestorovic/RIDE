@@ -33,8 +33,7 @@
 		, reportModeDisplayedInfosPrev(0) // no columns have been shown previously ...
 		, reportModeDisplayedInfos(-1) // ... and now wanting to show them all
 		, ordering(ORDER_NONE) , focusedFile(nullptr) , scrollY(0) , ownedDataSource(nullptr)
-		, pDirectoryStructureManagement(pDirectoryStructureManagement)
-		, integerEditor(this) {
+		, pDirectoryStructureManagement(pDirectoryStructureManagement) {
 		// - switching to default DisplayMode
 /*		const WORD id=displayMode+ID_FILEMANAGER_BIG_ICONS;
 		CToolBarCtrl &tb=toolbar.GetToolBarCtrl();
