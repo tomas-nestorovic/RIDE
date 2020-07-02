@@ -528,6 +528,7 @@ namespace Utils{
 												CHECKBOX_MARGIN,checkBoxY,checkBoxSize.cx,checkBoxSize.cy,hMsgBox,0,AfxGetInstanceHandle(),nullptr
 											);
 					//Button_SetCheck(hCheckBox,checkBoxChecked);
+					::UnhookWindowsHookEx(hMsgBoxHook); // the hook is no longer needed (and may actually be in collision with MFC!), so let's better remove it asap
 				}
 				return 0;
 			}
@@ -550,7 +551,7 @@ namespace Utils{
 		checkBoxChecked=BST_UNCHECKED, checkBoxMessage=checkBoxCaption;
 		Information(textInformation);
 		// - unhooking the MessageBox
-		::UnhookWindowsHookEx(hMsgBoxHook);
+		//::UnhookWindowsHookEx(hMsgBoxHook); // commented out as unhooked in the MessageBox window procedure
 		return checkBoxChecked!=BST_UNCHECKED;
 	}
 	void InformationWithCheckableShowNoMore(LPCTSTR text,LPCTSTR sectionId,LPCTSTR messageId){
