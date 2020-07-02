@@ -235,13 +235,13 @@
 		// exchange of data from and to controls
 		DDX_Text( pDX, ID_DOS, CString(params.dos->properties->name) );
 		DDX_Check( pDX, ID_BOOT,	params.verifyBootSector );
-			Utils::EnableDlgControl( m_hWnd, ID_BOOT, params.verificationFunctions.fnBootSector );
+			Utils::EnableDlgControl( m_hWnd, ID_BOOT, params.verificationFunctions.fnBootSector!=nullptr );
 		DDX_Check( pDX, ID_FAT,		params.verifyFat );
 			Utils::EnableDlgControl( m_hWnd, ID_FAT, params.verificationFunctions.fnFatFullyReadable||params.verificationFunctions.fnFatFilePathsOk||params.verificationFunctions.fnFatCrossedFiles||params.verificationFunctions.fnFatLostAllocUnits );
 		DDX_Check( pDX, ID_FILE1,	params.verifyFilesystem );
-			Utils::EnableDlgControl( m_hWnd, ID_FILE1, params.verificationFunctions.fnFilesystem );
+			Utils::EnableDlgControl( m_hWnd, ID_FILE1, params.verificationFunctions.fnFilesystem!=nullptr );
 		DDX_Check( pDX, ID_IMAGE,	params.verifyVolumeSurface );
-			Utils::EnableDlgControl( m_hWnd, ID_IMAGE, params.verificationFunctions.fnVolumeSurface );
+			Utils::EnableDlgControl( m_hWnd, ID_IMAGE, params.verificationFunctions.fnVolumeSurface!=nullptr );
 		DDX_CBIndex( pDX, ID_REPAIR, params.repairStyle );
 	}
 

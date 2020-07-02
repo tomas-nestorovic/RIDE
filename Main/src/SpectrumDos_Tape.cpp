@@ -336,7 +336,7 @@
 								t=(TZxRom::TFileType)type;
 								break;
 							}
-						TCHAR buf[200], tmp[80];
+						TCHAR buf[200];
 						::wsprintf( buf, _T("Import as two separate blocks (%s and ") ZX_TAPE_HEADERLESS_STR _T(")"), TZxRom::GetFileTypeName(t) );
 						__addCommandButton__( IDRETRY, buf );
 					}
@@ -804,7 +804,6 @@ drawChecksum:			// checksum
 				if ((pdis->itemState&ODS_SELECTED)==0)
 					::SetTextColor(dc,0x999999);
 				// . drawing Information
-				TCHAR bufT[MAX_PATH];
 				switch (pFileInfo-InformationList){
 					case INFORMATION_TYPE:
 						// Type
@@ -829,7 +828,6 @@ drawChecksum:			// checksum
 				if ((pdis->itemState&ODS_SELECTED)==0)
 					::SetTextColor(dc,0x994444);
 				// . drawing Information
-				TCHAR bufT[MAX_PATH];
 				switch (pFileInfo-InformationList){
 					case INFORMATION_TYPE:
 						// Type

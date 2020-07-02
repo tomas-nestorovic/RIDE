@@ -669,7 +669,7 @@ namespace Utils{
 
 	bool IsDlgControlEnabled(HWND hDlg,WORD controlId){
 		// True <=> the specified Dialog control is enabled, otherwise False
-		return ::IsWindowEnabled( ::GetDlgItem(hDlg,controlId) );
+		return ::IsWindowEnabled( ::GetDlgItem(hDlg,controlId) )!=FALSE;
 	}
 
 	void OffsetDlgControl(HWND hDlg,WORD controlId,int dx,int dy){

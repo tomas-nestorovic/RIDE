@@ -501,12 +501,12 @@ Utils::Information("--- EVERYTHING OK ---");
 				switch (driver){
 					case DRV_FDRAWCMD:
 						if (preferRelativeSeeking && cyl>position){ // RelativeSeeking is allowed only to higher Cylinder numbers
-							FD_RELATIVE_SEEK_PARAMS rsp={ FD_OPTION_MT|FD_OPTION_DIR, 0, (cyl-position)<<doubleTrackStep };
+							FD_RELATIVE_SEEK_PARAMS rsp={ FD_OPTION_MT|FD_OPTION_DIR, 0, (cyl-position)<<(BYTE)doubleTrackStep };
 							LOG_ACTION(_T("DeviceIoControl FD_RELATIVE_SEEK_PARAMS"));
 							seeked=::DeviceIoControl( handle, IOCTL_FDCMD_RELATIVE_SEEK, &rsp,sizeof(rsp), nullptr,0, &nBytesTransferred, nullptr )!=0;
 							LOG_BOOL(seeked);
 						}else{
-							FD_SEEK_PARAMS sp={ cyl<<doubleTrackStep, 0 };
+							FD_SEEK_PARAMS sp={ cyl<<(BYTE)doubleTrackStep, 0 };
 							LOG_ACTION(_T("DeviceIoControl FD_SEEK_PARAMS"));
 							seeked=::DeviceIoControl( handle, IOCTL_FDCMD_SEEK, &sp,sizeof(sp), nullptr,0, &nBytesTransferred, nullptr )!=0;
 							LOG_BOOL(seeked);
@@ -825,7 +825,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		LOG_ACTION(_T("TCylinder CFDD::GetCylinderCount"));
 		return	GetNumberOfFormattedSides(0) // if zeroth Cylinder exists ...
-				? FDD_CYLINDERS_MAX>>fddHead.doubleTrackStep // ... then it's assumed that there is the maximum number of Cylinders available (the actual number may be adjusted by systematically scanning the Tracks)
+				? FDD_CYLINDERS_MAX>>(BYTE)fddHead.doubleTrackStep // ... then it's assumed that there is the maximum number of Cylinders available (the actual number may be adjusted by systematically scanning the Tracks)
 				: 0; // ... otherwise the floppy is considered not formatted
 	}
 
