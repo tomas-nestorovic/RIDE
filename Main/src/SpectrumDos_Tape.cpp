@@ -1029,5 +1029,7 @@ drawChecksum:			// checksum
 		// directly draws the block Type
 		PropGrid::Enum::UValue v;
 			v.longValue=type;
+		if (!TZxRom::IsKnownFileType((TZxRom::TFileType)v.longValue))
+			DrawRedHighlight(pdis);
 		::DrawText( pdis->hDC, __getDescription__(nullptr,v,nullptr,0),-1, &pdis->rcItem, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
 	}

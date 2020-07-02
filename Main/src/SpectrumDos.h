@@ -93,6 +93,7 @@
 
 			static const LPCSTR Keywords[];
 
+			static bool IsKnownFileType(TFileType type);
 			static LPCTSTR GetFileTypeName(TFileType type);
 			static PTCHAR ZxToAscii(LPCSTR zx,BYTE zxLength,PTCHAR buf,char zxBefore=' ');
 			static PTCHAR AsciiToZx(LPCTSTR pc,PCHAR zx,PBYTE pOutZxLength);

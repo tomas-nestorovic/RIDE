@@ -67,6 +67,13 @@
 
 
 
+	#define UNKNOWN_TYPE			_T("<Unknown>")
+
+	bool CSpectrumBase::TZxRom::IsKnownFileType(TFileType type){
+		// True <=> the Type is one of those defined in the TFileType enumeration, otherwise False
+		return GetFileTypeName(type)!=UNKNOWN_TYPE;
+	}
+
 	#define FRAGMENT_TYPE			_T("Fragment")
 
 	LPCTSTR CSpectrumBase::TZxRom::GetFileTypeName(TFileType type){
@@ -79,7 +86,7 @@
 			case TZxRom::HEADERLESS		: return ZX_TAPE_HEADERLESS_STR;
 			case TZxRom::FRAGMENT		: return FRAGMENT_TYPE;
 			default:
-				return _T("<Unknown>");
+				return UNKNOWN_TYPE;
 		}
 	}
 
