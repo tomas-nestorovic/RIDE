@@ -43,6 +43,36 @@
 			~CScreenPreview();			
 		};
 
+		class CAssemblerPreview sealed:public CFilePreview{
+			TCHAR tmpFileName[MAX_PATH];
+			CWebPageView contentView;
+			union{
+				BYTE info;
+				struct{
+					BYTE address:1;
+					BYTE machineCode:1;
+					BYTE instruction:1;
+					BYTE colorSyntax:1;
+					BYTE capitalSyntax:1;
+				};
+			} features;
+			enum TNumberFormat{
+				HexaHashtag,// e.g. #3039
+				Hexa0x,		// e.g. 0x3039
+				HexaH,		// e.g. 3039h
+				Decadic		// e.g. 12345
+			} numberFormat;
+		protected:
+			void ParseZ80BinaryFileAndGenerateHtmlFormattedContent(CFile &fIn,CFile &f) const;
+			void RefreshPreview() override;
+			BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
+		public:
+			static CAssemblerPreview *pSingleInstance; // only single file can be previewed at a time
+
+			CAssemblerPreview(const CFileManagerView &rFileManager);
+			~CAssemblerPreview();
+		};
+
 		class CBasicPreview sealed:public CFilePreview{
 			TCHAR tmpFileName[MAX_PATH];
 			CWebPageView listingView;

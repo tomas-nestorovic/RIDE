@@ -50,6 +50,7 @@
 #define IDR_DOS_VERIFY                  214
 #define IDR_ACTION_SEQUENCE             216
 #define IDR_DRIVE_ACCESS                217
+#define IDR_SPECTRUM_PREVIEW_ASSEMBLER  218
 #define ID_HIDDEN                       1018
 #define ID_SYSTEM                       1019
 #define ID_CONNECTED                    1020
@@ -94,6 +95,9 @@
 #define ID_ATTRIBUTE                    1098
 #define ID_APPLY                        1103
 #define ID_DEFAULT1                     1104
+#define ID_DEFAULT2                     1105
+#define ID_DEFAULT3                     1106
+#define ID_DEFAULT4                     1107
 #define ID_REPORT                       1108
 #define ID_DRIVE                        1109
 #define ID_INFORMATION                  1110
@@ -152,7 +156,6 @@
 #define ID_DOS_FORMAT                   40097
 #define ID_NUMBER2                      40098
 #define ID_OPEN_AS                      40101
-#define ID_DEFAULT2                     40102
 #define ID_TAPE_NEW                     40108
 #define ID_TAPE_APPEND                  40109
 #define ID_TAPE_OPEN                    40110
@@ -230,6 +233,8 @@
 #define ID_ZOOM_OUT                     40267
 #define ID_ZOOM_IN                      40268
 #define ID_EDIT_SELECT_SAVE             40270
+#define ID_ADDRESS                      40271
+#define ID_ZX_PREVIEWASASSEMBLER        40277
 #define ID_Y                            58113
 #define ID_W                            58114
 #define ID_H                            58115
@@ -241,8 +246,8 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        218
-#define _APS_NEXT_COMMAND_VALUE         40271
+#define _APS_NEXT_RESOURCE_VALUE        219
+#define _APS_NEXT_COMMAND_VALUE         40280
 #define _APS_NEXT_CONTROL_VALUE         1185
 #define _APS_NEXT_SYMED_VALUE           103
 #endif

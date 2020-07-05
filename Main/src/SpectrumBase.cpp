@@ -295,6 +295,12 @@
 					CBasicPreview::pSingleInstance->DestroyWindow();
 				new CBasicPreview( CFileManagerView::pCurrentlyShown ? *CFileManagerView::pCurrentlyShown : *CDos::GetFocused()->pFileManager );
 				return TCmdResult::DONE;
+			case ID_ZX_PREVIEWASASSEMBLER:
+				// previewing File as Z80 assembler
+				if (CAssemblerPreview::pSingleInstance)
+					CAssemblerPreview::pSingleInstance->DestroyWindow();
+				new CAssemblerPreview( CFileManagerView::pCurrentlyShown ? *CFileManagerView::pCurrentlyShown : *CDos::GetFocused()->pFileManager );
+				return TCmdResult::DONE;
 		}
 		return __super::ProcessCommand(cmd);
 	}

@@ -395,6 +395,9 @@
     <ClCompile Include="src\DialogRealDeviceSelection.cpp">
       <Filter>Source Files\Utils</Filter>
     </ClCompile>
+    <ClCompile Include="src\SpectrumDos_AssemblerPreview.cpp">
+      <Filter>Source Files\Dos\Spectrum</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="res\resource.rc">

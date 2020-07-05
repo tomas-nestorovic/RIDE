@@ -62,6 +62,7 @@ END
 IDR_MDOS ACCELERATORS DISCARDABLE 
 BEGIN
     "4",            ID_ZX_PREVIEWASSCREEN,  VIRTKEY, CONTROL, NOINVERT
+    "8",            ID_ZX_PREVIEWASASSEMBLER, VIRTKEY, CONTROL, NOINVERT
     "B",            ID_DOS_PREVIEWASBINARY, VIRTKEY, CONTROL, NOINVERT
     "F",            ID_DOS_FORMAT,          VIRTKEY, SHIFT, CONTROL, 
                                                     NOINVERT
@@ -72,6 +73,7 @@ IDR_TRDOS ACCELERATORS DISCARDABLE
 BEGIN
     "4",            ID_ZX_PREVIEWASSCREEN,  VIRTKEY, CONTROL, NOINVERT
     "6",            ID_DOS_DEFRAGMENT,      VIRTKEY, CONTROL, NOINVERT
+    "8",            ID_ZX_PREVIEWASASSEMBLER, VIRTKEY, CONTROL, NOINVERT
     "B",            ID_DOS_PREVIEWASBINARY, VIRTKEY, CONTROL, NOINVERT
     "E",            ID_DOS_FILE_LENGTH_OCCUPIED_SECTORS, VIRTKEY, CONTROL, 
                                                     NOINVERT
@@ -92,6 +94,7 @@ END
 IDR_GDOS ACCELERATORS DISCARDABLE 
 BEGIN
     "4",            ID_ZX_PREVIEWASSCREEN,  VIRTKEY, CONTROL, NOINVERT
+    "8",            ID_ZX_PREVIEWASASSEMBLER, VIRTKEY, CONTROL, NOINVERT
     "B",            ID_DOS_PREVIEWASBINARY, VIRTKEY, CONTROL, NOINVERT
     "F",            ID_DOS_FORMAT,          VIRTKEY, SHIFT, CONTROL, 
                                                     NOINVERT
@@ -133,6 +136,7 @@ END
 IDR_BSDOS ACCELERATORS DISCARDABLE 
 BEGIN
     "4",            ID_ZX_PREVIEWASSCREEN,  VIRTKEY, CONTROL, NOINVERT
+    "8",            ID_ZX_PREVIEWASASSEMBLER, VIRTKEY, CONTROL, NOINVERT
     "B",            ID_DOS_PREVIEWASBINARY, VIRTKEY, CONTROL, NOINVERT
     "F",            ID_DOS_FORMAT,          VIRTKEY, SHIFT, CONTROL, 
                                                     NOINVERT
@@ -223,6 +227,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Show as Screen$\tCtrl+4",     ID_ZX_PREVIEWASSCREEN
         MENUITEM "Show as BASIC program\tCtrl+K", ID_ZX_PREVIEWASBASIC
+        MENUITEM "Show as Z80 assembler\tCtrl+8", ID_ZX_PREVIEWASASSEMBLER
         MENUITEM "Show as binary\tCtrl+B",      ID_DOS_PREVIEWASBINARY
         MENUITEM SEPARATOR
         MENUITEM "Take a tour (online)",        ID_DOS_TAKEATOUR
@@ -323,6 +328,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Show as Screen$\tCtrl+4",     ID_ZX_PREVIEWASSCREEN
         MENUITEM "Show as BASIC program\tCtrl+K", ID_ZX_PREVIEWASBASIC
+        MENUITEM "Show as Z80 assembler\tCtrl+8", ID_ZX_PREVIEWASASSEMBLER
         MENUITEM "Show as binary\tCtrl+B",      ID_DOS_PREVIEWASBINARY
         MENUITEM SEPARATOR
         MENUITEM "Take a tour (online)",        ID_DOS_TAKEATOUR, GRAYED
@@ -421,6 +427,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Show as Screen$\tCtrl+4",     ID_ZX_PREVIEWASSCREEN
         MENUITEM "Show as BASIC program\tCtrl+K", ID_ZX_PREVIEWASBASIC
+        MENUITEM "Show as Z80 assembler\tCtrl+8", ID_ZX_PREVIEWASASSEMBLER
         MENUITEM "Show as binary\tCtrl+B",      ID_DOS_PREVIEWASBINARY
         MENUITEM SEPARATOR
         MENUITEM "Take a tour (online)",        ID_DOS_TAKEATOUR, GRAYED
@@ -560,10 +567,38 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Show as Screen$\tCtrl+4",     ID_ZX_PREVIEWASSCREEN
         MENUITEM "Show as BASIC program\tCtrl+K", ID_ZX_PREVIEWASBASIC
+        MENUITEM "Show as Z80 assembler\tCtrl+8", ID_ZX_PREVIEWASASSEMBLER
         MENUITEM "Show as binary\tCtrl+B",      ID_DOS_PREVIEWASBINARY
     END
 END
 
+IDR_SPECTRUM_PREVIEW_ASSEMBLER MENU DISCARDABLE 
+BEGIN
+    POPUP "Preview"
+    BEGIN
+        POPUP "Columns"
+        BEGIN
+            MENUITEM "Address",                     ID_ADDRESS, CHECKED
+            MENUITEM "Machine code",                ID_DATA, CHECKED
+            MENUITEM "Instruction",                 ID_INFORMATION, CHECKED
+        END
+        POPUP "Number format"
+        BEGIN
+            MENUITEM "Hexa #12EF",                  ID_DEFAULT1
+            MENUITEM "Hexa 0x12EF",                 ID_DEFAULT2
+            MENUITEM "Hexa 12EFh",                  ID_DEFAULT3
+            MENUITEM SEPARATOR
+            MENUITEM "Decadic ",                    ID_DEFAULT4
+        END
+        MENUITEM "Color syntax",                ID_COLOR
+        MENUITEM "Capital syntax",              ID_ALIGN
+        MENUITEM SEPARATOR
+        MENUITEM "Next file\tRight",            ID_NEXT
+        MENUITEM "Previous file\tLeft",         ID_PREV
+        MENUITEM SEPARATOR
+        MENUITEM "Close\tEsc",                  IDCLOSE
+    END
+END
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -1920,6 +1955,7 @@ END
 STRINGTABLE DISCARDABLE 
 BEGIN
     ID_BOOKMARK_DELETEALL   "Irreversively delete all set bookmarks"
+    ID_ZX_PREVIEWASASSEMBLER "Show file as assembler listing"
 END
 
 #endif    // Neutral resources

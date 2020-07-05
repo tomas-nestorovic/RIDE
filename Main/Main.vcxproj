@@ -282,6 +282,7 @@
     <ClCompile Include="src\SCL.cpp" />
     <ClCompile Include="src\SpectrumBase.cpp" />
     <ClCompile Include="src\SpectrumDos.cpp" />
+    <ClCompile Include="src\SpectrumDos_AssemblerPreview.cpp" />
     <ClCompile Include="src\SpectrumDos_BasicPreview.cpp" />
     <ClCompile Include="src\SpectrumDos_ScreenPreview.cpp" />
     <ClCompile Include="src\SpectrumDos_Tape.cpp" />
