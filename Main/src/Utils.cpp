@@ -503,45 +503,47 @@ namespace Utils{
 	static LRESULT CALLBACK __addCheckBox_hook__(int msg,WPARAM wParam,LPARAM lParam){
 		// hooking the MessageBox
 		static HWND hCheckBox;
-		static int checkBoxY;
-		static SIZE checkBoxSize;
 		switch (msg){
-			case HCBT_CREATEWND:{
-				// a new window is just being created (but don't necessarily have to be right the MessageBox)
-				const LPCREATESTRUCT lpcs=((LPCBT_CREATEWND)lParam)->lpcs;
-				if ( lpcs->lpszClass==MAKEINTRESOURCE(WC_DIALOG) ){
-					// the window that is being created is a MessageBox (but at the moment it doesn't yet have the window procedure set and we therefore cannot add the CheckBox)
+			case HCBT_ACTIVATE:{
+				// the window is about to be activated
+				if (!hMsgBox){
+					// the window to be activated is a fresh created MessageBox
 					hMsgBox=(HWND)wParam;
+					// . determining the size of the CheckBox with specified text
+					SIZE checkBoxSize;
 					const HDC dc=::GetDC(hMsgBox);
-						::GetTextExtentPoint32(dc,checkBoxMessage,::lstrlen(checkBoxMessage),&checkBoxSize);
+						::GetTextExtentPoint32( dc, checkBoxMessage, ::lstrlen(checkBoxMessage), &checkBoxSize );
 					::ReleaseDC(hMsgBox,dc);
 					checkBoxSize.cx+=16+CHECKBOX_MARGIN; // 16 = the size of the "checked" icon
-					checkBoxY=lpcs->cy - ::GetSystemMetrics(SM_CYCAPTION) - ::GetSystemMetrics(SM_CYBORDER);
-					lpcs->cy+=checkBoxSize.cy+CHECKBOX_MARGIN;
-					if (lpcs->cx<checkBoxSize.cx+2*CHECKBOX_MARGIN)
-						lpcs->cx=checkBoxSize.cx+2*CHECKBOX_MARGIN;
-				}else if ( !hCheckBox && hMsgBox ){
-					// the window that is being created is MessageBox's child window (e.g. a button)
-					hCheckBox++; // for this branch to be not entered when creating the CheckBox ...
-					hCheckBox=::CreateWindow(	WC_BUTTON, checkBoxMessage, // ... that is, here!
+					// . adjusting the size of the MessageBox dialog to accommodate the CheckBox
+					CRect r;
+					::GetWindowRect( hMsgBox, &r );
+					::SetWindowPos(	hMsgBox, 0,
+									0,0,
+									std::max<int>( r.Width(), checkBoxSize.cx+2*CHECKBOX_MARGIN ),  r.Height()+CHECKBOX_MARGIN+checkBoxSize.cy,
+									SWP_NOZORDER | SWP_NOMOVE
+								);
+					// . creating the CheckBox
+					hCheckBox=::CreateWindow(	WC_BUTTON, checkBoxMessage,
 												WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX | checkBoxChecked,
-												CHECKBOX_MARGIN,checkBoxY,checkBoxSize.cx,checkBoxSize.cy,hMsgBox,0,AfxGetInstanceHandle(),nullptr
+												CHECKBOX_MARGIN,  r.Height() - ::GetSystemMetrics(SM_CYCAPTION) - ::GetSystemMetrics(SM_CYBORDER),
+												checkBoxSize.cx, checkBoxSize.cy,
+												hMsgBox, 0, AfxGetInstanceHandle(), nullptr
 											);
-					//Button_SetCheck(hCheckBox,checkBoxChecked);
-					::UnhookWindowsHookEx(hMsgBoxHook); // the hook is no longer needed (and may actually be in collision with MFC!), so let's better remove it asap
 				}
-				return 0;
+				break;
 			}
 			case HCBT_DESTROYWND:
-				// a window is just being destroyed (but don't necessarily have to be right the MessageBox)
+				// a window is about to be destroyed
 				if ((HWND)wParam==hMsgBox){
+					// the window to be destroyed is the MessageBox
 					checkBoxChecked=Button_GetCheck(hCheckBox);
 					::DestroyWindow(hCheckBox);
-					hCheckBox=0;
+					hCheckBox = hMsgBox = 0;
 				}
 				break;
 		}
-		return ::CallNextHookEx(hMsgBoxHook,msg,wParam,lParam);
+		return ::CallNextHookEx(0,msg,wParam,lParam);
 	}
 	bool InformationWithCheckBox(LPCTSTR textInformation,LPCTSTR checkBoxCaption){
 		// shows Textual information with CheckBox in the lower bottom corner
@@ -551,7 +553,7 @@ namespace Utils{
 		checkBoxChecked=BST_UNCHECKED, checkBoxMessage=checkBoxCaption;
 		Information(textInformation);
 		// - unhooking the MessageBox
-		//::UnhookWindowsHookEx(hMsgBoxHook); // commented out as unhooked in the MessageBox window procedure
+		::UnhookWindowsHookEx(hMsgBoxHook);
 		return checkBoxChecked!=BST_UNCHECKED;
 	}
 	void InformationWithCheckableShowNoMore(LPCTSTR text,LPCTSTR sectionId,LPCTSTR messageId){
