@@ -754,28 +754,27 @@
 						Utils::WriteToFile( f, _T("</td>") );
 					}
 					if (features.instruction){
-						if (const LPCTSTR percent=_tcschr( argSyntax, '%' )){
-							TCHAR format[sizeof(argSyntaxBuf)/sizeof(TCHAR)], param[64];
-							TCHAR c=' ';
-							std::swap( ::lstrcpy(format,argSyntax)[percent-argSyntax+2], c );
-							switch (c){
+						TCHAR format[sizeof(argSyntaxBuf)/sizeof(TCHAR)], params[2][64];
+						for( TCHAR i=0,*p=::lstrcpy(format,argSyntax); const PTCHAR percent=_tcschr(p,'%'); p=percent+1,i++ ){
+							switch (percent[2]){
 								case 'j':
-									::lstrcpy( param, _T("(<span class=pair>hl</span>)") );
+									::lstrcpy( params[i], _T("(<span class=pair>hl</span>)") );
 									break;
 								case 'h':
-									::wsprintf( param, _T("<i>High</i>(<span class=pair>%.2s</span>)"), registerPairs+4 );
+									::wsprintf( params[i], _T("<i>High</i>(<span class=pair>%.2s</span>)"), registerPairs+4 );
 									break;
 								case 'l':
-									::wsprintf( param, _T("<i>Low</i>(<span class=pair>%.2s</span>)"), registerPairs+4 );
+									::wsprintf( params[i], _T("<i>Low</i>(<span class=pair>%.2s</span>)"), registerPairs+4 );
 									break;
 								case 'i':
 									op.Parse( op.index, op.strB );
-									::wsprintf( param, _T("(<span class=pair>%.2s</span>+%s)"), registerPairs+4, op.strB );
+									::wsprintf( params[i], _T("(<span class=pair>%.2s</span>+%s)"), registerPairs+4, op.strB );
 									break;
 							}
-							::wsprintf( argSyntaxBuf, format, param );
-							argSyntax=argSyntaxBuf;
+							percent[2]=' ';
 						}
+						::wsprintf( argSyntaxBuf, format, params[0], params[1] );
+						argSyntax=argSyntaxBuf;
 						TCHAR instBuf[8];
 						if (features.capitalSyntax){
 							inst=::CharUpper( ::lstrcpy(instBuf,inst) );
