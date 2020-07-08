@@ -442,12 +442,20 @@ BEGIN
         MENUITEM "Show non-printable chars",    ID_PRINT
         POPUP "Five Bytes after (0x14)"
         BEGIN
-            MENUITEM "Don't show",                  ID_ZX_BASIC_BINARY_DONTSHOW
-            , CHECKED
             MENUITEM "Show as raw Bytes",           ID_ZX_BASIC_BINARY_SHOWRAW
 
             MENUITEM "Show as number",              ID_ZX_BASIC_BINARY_SHOWNUMBER
 
+            MENUITEM SEPARATOR
+            MENUITEM "Don't show",                  ID_ZX_BASIC_BINARY_DONTSHOW
+            , CHECKED
+        END
+        POPUP "Data after BASIC"
+        BEGIN
+            MENUITEM "Show as variables",           ID_VARIABLE, CHECKED
+            MENUITEM "Show as Z80 instructions",    ID_INSTRUCTION
+            MENUITEM SEPARATOR
+            MENUITEM "Don't show",                  ID_NONE
         END
         MENUITEM SEPARATOR
         MENUITEM "Next file\tRight",            ID_NEXT

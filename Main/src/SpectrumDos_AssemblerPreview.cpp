@@ -2,43 +2,47 @@
 
 	CSpectrumBase::CAssemblerPreview *CSpectrumBase::CAssemblerPreview::pSingleInstance;
 
-	#define INI_PREVIEW	_T("ZxZ80")
-
 	#define PREVIEW_WIDTH_DEFAULT	750
 	#define PREVIEW_HEIGHT_DEFAULT	300
 
 	#define INI_FEATURES		_T("feats")
 	#define INI_NUMBER_FORMAT	_T("numfmt")
 
-	CSpectrumBase::CAssemblerPreview::CAssemblerPreview(const CFileManagerView &rFileManager)
+	CSpectrumBase::CAssemblerPreview::CAssemblerPreview(const CFileManagerView &rFileManager,DWORD resourceId,LPCTSTR iniSection)
 		// ctor
 		// - base
-		: CFilePreview(	&contentView, INI_PREVIEW, rFileManager, PREVIEW_WIDTH_DEFAULT, PREVIEW_HEIGHT_DEFAULT, IDR_SPECTRUM_PREVIEW_ASSEMBLER )
+		: CFilePreview(	&contentView, iniSection, rFileManager, PREVIEW_WIDTH_DEFAULT, PREVIEW_HEIGHT_DEFAULT, resourceId )
 		, contentView(_T(""))
-		, numberFormat( (TNumberFormat)app.GetProfileInt(INI_PREVIEW,INI_NUMBER_FORMAT,TNumberFormat::HexaHashtag) ) {
+		, numberFormat( (TNumberFormat)app.GetProfileInt(iniSection,INI_NUMBER_FORMAT,TNumberFormat::HexaHashtag) ) {
 		// - initialization
 		features.info=-1; // by default, show all columns and turn on all other features ...
 		features.capitalSyntax=0; // ... except for the CapitalSyntax
-		features.info=app.GetProfileInt( INI_PREVIEW, INI_FEATURES, features.info );
-		pSingleInstance=this;
+		features.info=app.GetProfileInt( iniSection, INI_FEATURES, features.info );
 		// - creating the TemporaryFile to store HTML-formatted content in
 		::GetTempPath( sizeof(tmpFileName)/sizeof(TCHAR), tmpFileName );
 		::GetTempFileName( tmpFileName, nullptr, FALSE, tmpFileName );
 		// - creating the ContentView
 		contentView.Create( nullptr, nullptr, WS_CHILD|WS_VISIBLE, rectDefault, this, AFX_IDW_PANE_FIRST, nullptr );
 		contentView.OnInitialUpdate();
-		// - showing the first File
-		__showNextFile__();
+	}
+
+	CSpectrumBase::CAssemblerPreview *CSpectrumBase::CAssemblerPreview::CreateInstance(const CFileManagerView &rFileManager){
+		// creates and returns a new instance
+		ASSERT( pSingleInstance==nullptr );
+		pSingleInstance=new CAssemblerPreview( rFileManager, IDR_SPECTRUM_PREVIEW_ASSEMBLER, _T("ZxZ80") );
+		pSingleInstance->__showNextFile__();
+		return pSingleInstance;
 	}
 
 	CSpectrumBase::CAssemblerPreview::~CAssemblerPreview(){
 		// dtor
 		// - saving the settings
-		app.WriteProfileInt( INI_PREVIEW, INI_FEATURES, features.info );
-		app.WriteProfileInt( INI_PREVIEW, INI_NUMBER_FORMAT, numberFormat );
+		app.WriteProfileInt( iniSection, INI_FEATURES, features.info );
+		app.WriteProfileInt( iniSection, INI_NUMBER_FORMAT, numberFormat );
 		// - uninitialization
 		::DeleteFile(tmpFileName);
-		pSingleInstance=nullptr;
+		if (pSingleInstance==this) // NOT a derived class ...
+			pSingleInstance=nullptr; // ... thus managing the SingleInstance
 	}
 
 

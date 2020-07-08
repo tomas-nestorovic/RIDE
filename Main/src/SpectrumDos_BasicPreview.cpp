@@ -10,23 +10,18 @@
 	#define INI_APPLY_COLORS			_T("clr")
 	#define INI_SHOW_NONPRINTABLE_CHARS	_T("prn")
 	#define INI_SHOW_INTERNAL_BINARY	_T("bin")
+	#define INI_INTERPRET_PAST_BASIC	_T("past")
 
 	CSpectrumBase::CBasicPreview::CBasicPreview(const CFileManagerView &rFileManager)
 		// ctor
 		// - base
-		: CFilePreview(	&listingView, INI_PREVIEW, rFileManager, PREVIEW_WIDTH_DEFAULT, PREVIEW_HEIGHT_DEFAULT, IDR_SPECTRUM_PREVIEW_BASIC )
-		, listingView(_T(""))
+		: CAssemblerPreview( rFileManager, IDR_SPECTRUM_PREVIEW_BASIC, INI_PREVIEW )
 		, applyColors( app.GetProfileInt(INI_PREVIEW,INI_APPLY_COLORS,true)!=0 )
 		, showNonprintableChars( app.GetProfileInt(INI_PREVIEW,INI_SHOW_NONPRINTABLE_CHARS,false)!=0 )
+		, dataAfterBasic( (TDataAfterBasic)app.GetProfileInt(INI_PREVIEW,INI_INTERPRET_PAST_BASIC,TDataAfterBasic::SHOW_AS_VARIABLES) )
 		, binaryAfter0x14( (TBinaryAfter0x14)app.GetProfileInt(INI_PREVIEW,INI_SHOW_INTERNAL_BINARY,TBinaryAfter0x14::DONT_SHOW) ) {
 		// - initialization
 		pSingleInstance=this;
-		// - creating the TemporaryFile to store HTML-formatted BASIC Listing
-		::GetTempPath(MAX_PATH,tmpFileName);
-		::GetTempFileName( tmpFileName, nullptr, FALSE, tmpFileName );
-		// - creating the ListingView
-		listingView.Create( nullptr, nullptr, WS_CHILD|WS_VISIBLE, rectDefault, this, AFX_IDW_PANE_FIRST, nullptr );
-		listingView.OnInitialUpdate();
 		// - showing the first File
 		__showNextFile__();
 	}
@@ -37,8 +32,8 @@
 		app.WriteProfileInt(INI_PREVIEW,INI_APPLY_COLORS,applyColors);
 		app.WriteProfileInt(INI_PREVIEW,INI_SHOW_NONPRINTABLE_CHARS,showNonprintableChars);
 		app.WriteProfileInt(INI_PREVIEW,INI_SHOW_INTERNAL_BINARY,binaryAfter0x14);
+		app.WriteProfileInt(INI_PREVIEW,INI_INTERPRET_PAST_BASIC,dataAfterBasic);
 		// - uninitialization
-		::DeleteFile(tmpFileName);
 		pSingleInstance=nullptr;
 	}
 
@@ -414,151 +409,159 @@ defaultPrinting:				if (b<' ')
 errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure!</p>");
 			return;
 		}
-		// - generating the HTML-formatted list of BASIC variables
-		listing << _T("<h2>Variables (Run-time States)</h2>");
-		listing << HTML_TABLE_BEGIN;
-			if (frw.GetPosition()>=frw.GetLength())
-				listing << _T("None");
-			else
-				do{
-					BYTE variableType;
-					if (error=frw.Read(&variableType,sizeof(variableType))!=sizeof(variableType)) // error
-						break;
-					listing << _T("<tr><td align=right valign=top><b>");
-						TCHAR varName[256],*pVarName=varName;
-						*pVarName++=(variableType&31)+'@'; // extracting Variable's name first capital letter
-						*pVarName='\0'; // terminating the Variable name as most of the names may consist only of just one letter (further chars eventually added below)
-						#define HTML_END_OF_NAME_AND_START_OF_VALUE _T("</b></td><td valign=top>=</td><td valign=top>")
-						switch (variableType&0xe0){ // masking out the part of the first Byte that determines the Type of the Variable
-							case 0x40:{
-								// string Variable (always with a single-letter name)
-								WORD strLength;
-								if (error=frw.Read(&strLength,sizeof(strLength))!=sizeof(strLength)) // error
-									break;
-								BYTE strBytes[65536];
-								if (error=frw.Read(strBytes,strLength)!=strLength) // error
-									break;
-								(  listing << ::CharUpper(varName) << _T(":string(") << (int)strLength << _T(")") HTML_END_OF_NAME_AND_START_OF_VALUE ).__parseBasicLine__( strBytes, strLength );
+		// - interpreting data "after" the Basic program
+		switch (dataAfterBasic){
+			case SHOW_AS_VARIABLES:
+				// generating the HTML-formatted list of BASIC variables
+				listing << _T("<h2>Variables (Run-time States)</h2>");
+				listing << HTML_TABLE_BEGIN;
+					if (frw.GetPosition()>=frw.GetLength())
+						listing << _T("None");
+					else
+						do{
+							BYTE variableType;
+							if (error=frw.Read(&variableType,sizeof(variableType))!=sizeof(variableType)) // error
 								break;
-							}
-							case 0x80:{
-								// number array Variable (always with a single-letter name)
-								WORD nBytesInTotal;
-								if (error=frw.Read(&nBytesInTotal,sizeof(nBytesInTotal))!=sizeof(nBytesInTotal)) // error
-									break;
-								BYTE nDimensions;
-								if (error=frw.Read(&nDimensions,sizeof(nDimensions))!=sizeof(nDimensions)) // error
-									break;
-								if (error=!nDimensions)
-									break;
-								int nItems=1;
-								WORD dimensionSizes[(BYTE)-1];
-								for( WORD n=0,tmp; n<nDimensions; nItems*=(dimensionSizes[n++]=tmp) )
-									if (error=frw.Read(&tmp,sizeof(tmp))!=sizeof(tmp)) // error
+							listing << _T("<tr><td align=right valign=top><b>");
+								TCHAR varName[256],*pVarName=varName;
+								*pVarName++=(variableType&31)+'@'; // extracting Variable's name first capital letter
+								*pVarName='\0'; // terminating the Variable name as most of the names may consist only of just one letter (further chars eventually added below)
+								#define HTML_END_OF_NAME_AND_START_OF_VALUE _T("</b></td><td valign=top>=</td><td valign=top>")
+								switch (variableType&0xe0){ // masking out the part of the first Byte that determines the Type of the Variable
+									case 0x40:{
+										// string Variable (always with a single-letter name)
+										WORD strLength;
+										if (error=frw.Read(&strLength,sizeof(strLength))!=sizeof(strLength)) // error
+											break;
+										BYTE strBytes[65536];
+										if (error=frw.Read(strBytes,strLength)!=strLength) // error
+											break;
+										(  listing << ::CharUpper(varName) << _T(":string(") << (int)strLength << _T(")") HTML_END_OF_NAME_AND_START_OF_VALUE ).__parseBasicLine__( strBytes, strLength );
 										break;
-								if (error|=!nItems || nItems*sizeof(TZxRom::TNumberInternalForm)>frw.GetLength()-frw.GetPosition())
-									break;
-								listing << ::CharUpper(varName) << _T(":number");
-								for( BYTE n=0; n<nDimensions; listing << _T("[") << (int)dimensionSizes[n++] << _T("]") );
-								listing << HTML_END_OF_NAME_AND_START_OF_VALUE << _T(" { ");
-									for( TZxRom::TNumberInternalForm number; nItems-->0; ){
-										frw.Read(&number,sizeof(number));
-										Utils::WriteToFile( listing, number.ToDouble() );
-										listing << _T(", ");
 									}
-									listing.Seek(-2,CFile::current); // dismissing the ", " string added after the last Item in the array
-								listing << _T(" }");
-								break;
-							}
-							case 0xA0:{
-								// number Variable with a multi-letter name
-								char c=0;
-								do{
-									if (error=frw.Read(&c,sizeof(c))!=sizeof(c)) // error
+									case 0x80:{
+										// number array Variable (always with a single-letter name)
+										WORD nBytesInTotal;
+										if (error=frw.Read(&nBytesInTotal,sizeof(nBytesInTotal))!=sizeof(nBytesInTotal)) // error
+											break;
+										BYTE nDimensions;
+										if (error=frw.Read(&nDimensions,sizeof(nDimensions))!=sizeof(nDimensions)) // error
+											break;
+										if (error=!nDimensions)
+											break;
+										int nItems=1;
+										WORD dimensionSizes[(BYTE)-1];
+										for( WORD n=0,tmp; n<nDimensions; nItems*=(dimensionSizes[n++]=tmp) )
+											if (error=frw.Read(&tmp,sizeof(tmp))!=sizeof(tmp)) // error
+												break;
+										if (error|=!nItems || nItems*sizeof(TZxRom::TNumberInternalForm)>frw.GetLength()-frw.GetPosition())
+											break;
+										listing << ::CharUpper(varName) << _T(":number");
+										for( BYTE n=0; n<nDimensions; listing << _T("[") << (int)dimensionSizes[n++] << _T("]") );
+										listing << HTML_END_OF_NAME_AND_START_OF_VALUE << _T(" { ");
+											for( TZxRom::TNumberInternalForm number; nItems-->0; ){
+												frw.Read(&number,sizeof(number));
+												Utils::WriteToFile( listing, number.ToDouble() );
+												listing << _T(", ");
+											}
+											listing.Seek(-2,CFile::current); // dismissing the ", " string added after the last Item in the array
+										listing << _T(" }");
 										break;
-									*pVarName++=c&127;
-								}while (c>0);
-								if (error=c>=0) // if the last letter in Variable's name doesn't have the highest bit set ...
-									break; // ... then it's an error
-								*pVarName='\0';
-								//fallthrough
-							}
-							case 0x60:{
-								// number Variable with a single-letter name
-								TZxRom::TNumberInternalForm number;
-								if (error=frw.Read(&number,sizeof(number))!=sizeof(number)) // error
-									break;
-								Utils::WriteToFile(	listing << ::CharUpper(varName) << _T(":number") << HTML_END_OF_NAME_AND_START_OF_VALUE,
-														number.ToDouble()
-													);
-								break;
-							}
-							case 0xC0:{
-								// character array Variable (always with a single-letter name)
-								WORD nBytesInTotal;
-								if (error=frw.Read(&nBytesInTotal,sizeof(nBytesInTotal))!=sizeof(nBytesInTotal)) // error
-									break;
-								BYTE nDimensions;
-								if (error=frw.Read(&nDimensions,sizeof(nDimensions))!=sizeof(nDimensions)) // error
-									break;
-								if (error=!nDimensions)
-									break;
-								int nItems=1;
-								WORD dimensionSizes[(BYTE)-1];
-								for( WORD n=0,tmp; n<nDimensions; nItems*=(dimensionSizes[n++]=tmp) )
-									if (error=frw.Read(&tmp,sizeof(tmp))!=sizeof(tmp)) // error
-										break;
-								if (error|=!nItems || nItems*sizeof(BYTE)>frw.GetLength()-frw.GetPosition())
-									break;
-								listing << ::CharUpper(varName) << _T(":char");
-								for( BYTE n=0; n<nDimensions; listing << _T("[") << (int)dimensionSizes[n++] << _T("]") );
-								listing << HTML_END_OF_NAME_AND_START_OF_VALUE << _T(" { ");
-									for( BYTE byte; nItems-->0; ){
-										frw.Read(&byte,sizeof(byte));
-										listing << _T("'");
-											listing.__parseBasicLine__(&byte,1);
-										listing << _T("', ");
 									}
-									listing.Seek(-2,CFile::current); // dismissing the ", " string added after the last Item in the array
-								listing << _T(" }");
-								break;
-							}
-							case 0xE0:{
-								// FOR-cycle control Variable (always with a single-letter name)
-								TZxRom::TNumberInternalForm from,to,step;
-								if (error=frw.Read(&from,sizeof(from))!=sizeof(from)) // error
-									break;
-								if (error=frw.Read(&to,sizeof(to))!=sizeof(to)) // error
-									break;
-								if (error=frw.Read(&step,sizeof(step))!=sizeof(step)) // error
-									break;
-								BYTE tmp[sizeof(WORD)+sizeof(BYTE)]; // Word = line number to jump to after the Next clause, Byte = command number in the line indicated by the Word
-								if (error=frw.Read(tmp,sizeof(tmp))!=sizeof(tmp)) // error
-									break;
-								listing << ::CharUpper(varName) << _T(":iterator") << HTML_END_OF_NAME_AND_START_OF_VALUE << _T("for( ");
-								Utils::WriteToFile(	listing << varName << _T(":number="),
-														from.ToDouble()
-													);
-								const double d=step.ToDouble();
-								Utils::WriteToFile(	listing << _T("; ") << varName << (d>=0?_T("<="):_T(">=")),
-														to.ToDouble()
-													);
-								Utils::WriteToFile(	listing << _T("; ") << varName << _T("+="),
-														d
-													);
-								listing << _T(" )");
-								break;
-							}
-							default:
-								error=true;
-								break;
-						}
-					listing << _T("</td></tr>");
-				} while (frw.GetPosition()<frw.GetLength());
-		listing << _T("</table>");
-		// - Error in variables
-		if (error)
-			goto errorInBasic;
+									case 0xA0:{
+										// number Variable with a multi-letter name
+										char c=0;
+										do{
+											if (error=frw.Read(&c,sizeof(c))!=sizeof(c)) // error
+												break;
+											*pVarName++=c&127;
+										}while (c>0);
+										if (error=c>=0) // if the last letter in Variable's name doesn't have the highest bit set ...
+											break; // ... then it's an error
+										*pVarName='\0';
+										//fallthrough
+									}
+									case 0x60:{
+										// number Variable with a single-letter name
+										TZxRom::TNumberInternalForm number;
+										if (error=frw.Read(&number,sizeof(number))!=sizeof(number)) // error
+											break;
+										Utils::WriteToFile(	listing << ::CharUpper(varName) << _T(":number") << HTML_END_OF_NAME_AND_START_OF_VALUE,
+																number.ToDouble()
+															);
+										break;
+									}
+									case 0xC0:{
+										// character array Variable (always with a single-letter name)
+										WORD nBytesInTotal;
+										if (error=frw.Read(&nBytesInTotal,sizeof(nBytesInTotal))!=sizeof(nBytesInTotal)) // error
+											break;
+										BYTE nDimensions;
+										if (error=frw.Read(&nDimensions,sizeof(nDimensions))!=sizeof(nDimensions)) // error
+											break;
+										if (error=!nDimensions)
+											break;
+										int nItems=1;
+										WORD dimensionSizes[(BYTE)-1];
+										for( WORD n=0,tmp; n<nDimensions; nItems*=(dimensionSizes[n++]=tmp) )
+											if (error=frw.Read(&tmp,sizeof(tmp))!=sizeof(tmp)) // error
+												break;
+										if (error|=!nItems || nItems*sizeof(BYTE)>frw.GetLength()-frw.GetPosition())
+											break;
+										listing << ::CharUpper(varName) << _T(":char");
+										for( BYTE n=0; n<nDimensions; listing << _T("[") << (int)dimensionSizes[n++] << _T("]") );
+										listing << HTML_END_OF_NAME_AND_START_OF_VALUE << _T(" { ");
+											for( BYTE byte; nItems-->0; ){
+												frw.Read(&byte,sizeof(byte));
+												listing << _T("'");
+													listing.__parseBasicLine__(&byte,1);
+												listing << _T("', ");
+											}
+											listing.Seek(-2,CFile::current); // dismissing the ", " string added after the last Item in the array
+										listing << _T(" }");
+										break;
+									}
+									case 0xE0:{
+										// FOR-cycle control Variable (always with a single-letter name)
+										TZxRom::TNumberInternalForm from,to,step;
+										if (error=frw.Read(&from,sizeof(from))!=sizeof(from)) // error
+											break;
+										if (error=frw.Read(&to,sizeof(to))!=sizeof(to)) // error
+											break;
+										if (error=frw.Read(&step,sizeof(step))!=sizeof(step)) // error
+											break;
+										BYTE tmp[sizeof(WORD)+sizeof(BYTE)]; // Word = line number to jump to after the Next clause, Byte = command number in the line indicated by the Word
+										if (error=frw.Read(tmp,sizeof(tmp))!=sizeof(tmp)) // error
+											break;
+										listing << ::CharUpper(varName) << _T(":iterator") << HTML_END_OF_NAME_AND_START_OF_VALUE << _T("for( ");
+										Utils::WriteToFile(	listing << varName << _T(":number="),
+																from.ToDouble()
+															);
+										const double d=step.ToDouble();
+										Utils::WriteToFile(	listing << _T("; ") << varName << (d>=0?_T("<="):_T(">=")),
+																to.ToDouble()
+															);
+										Utils::WriteToFile(	listing << _T("; ") << varName << _T("+="),
+																d
+															);
+										listing << _T(" )");
+										break;
+									}
+									default:
+										error=true;
+										break;
+								}
+							listing << _T("</td></tr>");
+						} while (frw.GetPosition()<frw.GetLength());
+				listing << _T("</table>");
+				if (error)
+					goto errorInBasic;
+				break;
+			case SHOW_AS_MACHINE_CODE:
+				// generating the HTML-formatted listing of machine code
+				ParseZ80BinaryFileAndGenerateHtmlFormattedContent( frw, listing );
+				break;
+		}
 	}
 
 	void CSpectrumBase::CBasicPreview::RefreshPreview(){
@@ -567,7 +570,7 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 			// . describing the BASIC file using HTML-formatted text
 			__parseBasicFileAndGenerateHtmlFormattedContent__(file);
 			// . opening the HTML-formatted content
-			listingView.Navigate2(tmpFileName);
+			contentView.Navigate2(tmpFileName);
 			// . updating the window caption
 			CString caption;
 			caption.Format( PREVIEW_LABEL " (%s)", (LPCTSTR)DOS->GetFilePresentationNameAndExt(file) );
@@ -597,6 +600,12 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 						((CCmdUI *)pExtra)->Enable(TRUE);
 						((CCmdUI *)pExtra)->SetCheck(nID==binaryAfter0x14+ID_ZX_BASIC_BINARY_DONTSHOW);
 						return TRUE;
+					case ID_NONE:
+					case ID_VARIABLE:
+					case ID_INSTRUCTION:
+						((CCmdUI *)pExtra)->Enable(TRUE);
+						((CCmdUI *)pExtra)->SetCheck(nID==dataAfterBasic);
+						return TRUE;
 				}
 				break;
 			case CN_COMMAND:
@@ -614,6 +623,12 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 					case ID_ZX_BASIC_BINARY_SHOWRAW:
 					case ID_ZX_BASIC_BINARY_SHOWNUMBER:
 						binaryAfter0x14=(TBinaryAfter0x14)(nID-ID_ZX_BASIC_BINARY_DONTSHOW);
+						RefreshPreview();
+						return TRUE;
+					case ID_NONE:
+					case ID_VARIABLE:
+					case ID_INSTRUCTION:
+						dataAfterBasic=(TDataAfterBasic)nID;
 						RefreshPreview();
 						return TRUE;
 				}

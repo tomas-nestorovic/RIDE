@@ -43,9 +43,7 @@
 			~CScreenPreview();			
 		};
 
-		class CAssemblerPreview sealed:public CFilePreview{
-			TCHAR tmpFileName[MAX_PATH];
-			CWebPageView contentView;
+		class CAssemblerPreview:public CFilePreview{
 			union{
 				BYTE info;
 				struct{
@@ -63,25 +61,34 @@
 				Decadic		// e.g. 12345
 			} numberFormat;
 		protected:
+			TCHAR tmpFileName[MAX_PATH];
+			CWebPageView contentView;
+
+			CAssemblerPreview(const CFileManagerView &rFileManager,DWORD resourceId,LPCTSTR iniSection);
+
 			void ParseZ80BinaryFileAndGenerateHtmlFormattedContent(CFile &fIn,CFile &f) const;
 			void RefreshPreview() override;
 			BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
 		public:
 			static CAssemblerPreview *pSingleInstance; // only single file can be previewed at a time
 
-			CAssemblerPreview(const CFileManagerView &rFileManager);
+			static CAssemblerPreview *CreateInstance(const CFileManagerView &rFileManager);
+
 			~CAssemblerPreview();
 		};
 
-		class CBasicPreview sealed:public CFilePreview{
-			TCHAR tmpFileName[MAX_PATH];
-			CWebPageView listingView;
+		class CBasicPreview sealed:public CAssemblerPreview{
 			bool applyColors,showNonprintableChars;
 			enum TBinaryAfter0x14{
 				DONT_SHOW,
 				SHOW_AS_RAW_BYTES,
 				SHOW_AS_NUMBER
 			} binaryAfter0x14;
+			enum TDataAfterBasic{
+				DONT_INTERPRET		=ID_NONE,
+				SHOW_AS_VARIABLES	=ID_VARIABLE,
+				SHOW_AS_MACHINE_CODE=ID_INSTRUCTION
+			} dataAfterBasic;
 
 			void __parseBasicFileAndGenerateHtmlFormattedContent__(PCFile file) const;
 			void RefreshPreview() override;
