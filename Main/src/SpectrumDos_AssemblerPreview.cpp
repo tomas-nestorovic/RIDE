@@ -208,7 +208,7 @@
 				if (error=!op.Read(op.code)) // error
 					break;
 				LPCTSTR inst; // Z80 instruction ...
-				TCHAR argSyntaxBuf[64]; *argSyntaxBuf='\0'; LPCTSTR argSyntax=argSyntaxBuf; // ... and its argument syntax (by default none)
+				TCHAR argSyntaxBuf[256]; *argSyntaxBuf='\0'; LPCTSTR argSyntax=argSyntaxBuf; // ... and its argument syntax (by default none)
 				switch (op.code){
 					case 0x00: // nop
 						inst=Z80_INST_NOP;
@@ -755,7 +755,7 @@
 					}
 					if (features.instruction){
 						if (const LPCTSTR percent=_tcschr( argSyntax, '%' )){
-							TCHAR format[sizeof(argSyntaxBuf)/sizeof(TCHAR)], param[16];
+							TCHAR format[sizeof(argSyntaxBuf)/sizeof(TCHAR)], param[64];
 							TCHAR c=' ';
 							std::swap( ::lstrcpy(format,argSyntax)[percent-argSyntax+2], c );
 							switch (c){
