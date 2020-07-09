@@ -227,6 +227,11 @@
 	afx_msg void CRideApp::OnOpenRecentFile(UINT nID){
 		// opens document from the MRU files list under the given index
 		// - base
+		extern CImage::PCProperties imageProps;
+		imageProps=app.GetRecentFileList()->GetMruDevice(nID-ID_FILE_MRU_FIRST);
+		extern CDos::PCProperties manuallyForceDos;
+		const CDos::PCProperties dosProps=app.GetRecentFileList()->GetDosMruFileOpenWith(nID-ID_FILE_MRU_FIRST);
+		manuallyForceDos= dosProps==&CUnknownDos::Properties ? nullptr : dosProps;
 		__super::OnOpenRecentFile(nID);
 		// - if no Image opened, it wasn't found in which case it was removed from the MRU files list - projecting the updated MRU files list to the just shown introductory GuidePost
 		if (!CImage::GetActive()){
