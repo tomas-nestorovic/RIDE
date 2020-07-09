@@ -16,6 +16,7 @@
 		// ctor
 		// - base
 		: CAssemblerPreview( rFileManager, IDR_SPECTRUM_PREVIEW_BASIC, INI_PREVIEW )
+		, machineCodeMenu(IDR_SPECTRUM_PREVIEW_ASSEMBLER)
 		, applyColors( app.GetProfileInt(INI_PREVIEW,INI_APPLY_COLORS,true)!=0 )
 		, showNonprintableChars( app.GetProfileInt(INI_PREVIEW,INI_SHOW_NONPRINTABLE_CHARS,false)!=0 )
 		, dataAfterBasic( (TDataAfterBasic)app.GetProfileInt(INI_PREVIEW,INI_INTERPRET_PAST_BASIC,TDataAfterBasic::SHOW_AS_VARIABLES) )
@@ -566,6 +567,7 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 
 	void CSpectrumBase::CBasicPreview::RefreshPreview(){
 		// refreshes the Preview (e.g. when switched to another File)
+		// - composing and displaying the content
 		if (const PCFile file=pdt->entry){
 			// . describing the BASIC file using HTML-formatted text
 			__parseBasicFileAndGenerateHtmlFormattedContent__(file);
@@ -577,6 +579,15 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 			SetWindowText(caption);
 		}else
 			SetWindowText(PREVIEW_LABEL);
+		// - hiding/displaying additional menus
+		GetMenu()->RemoveMenu( (UINT)::GetSubMenu(machineCodeMenu.hMenu,0), MF_BYCOMMAND|MF_POPUP );
+		if (dataAfterBasic==TDataAfterBasic::SHOW_AS_MACHINE_CODE)
+			GetMenu()->InsertMenu(	1,
+									MF_BYPOSITION | MF_POPUP,
+									(UINT)::GetSubMenu(machineCodeMenu.hMenu,0),
+									_T("Machine code")
+								);
+		// - refreshing the non-client area (TODO: why?)
 		SetWindowPos( nullptr, 0,0, 0,0, SWP_NOZORDER|SWP_NOMOVE|SWP_NOSIZE|SWP_FRAMECHANGED );
 	}
 

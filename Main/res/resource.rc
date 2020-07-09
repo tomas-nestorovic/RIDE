@@ -598,7 +598,7 @@ BEGIN
             MENUITEM SEPARATOR
             MENUITEM "Decadic ",                    ID_DEFAULT4
         END
-        MENUITEM "Color syntax",                ID_COLOR
+        MENUITEM "Color syntax",                ID_ACCURACY
         MENUITEM "Capital syntax",              ID_ALIGN
         MENUITEM SEPARATOR
         MENUITEM "Next file\tRight",            ID_NEXT

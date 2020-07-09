@@ -840,7 +840,7 @@
 						((CCmdUI *)pExtra)->Enable(TRUE);
 						((CCmdUI *)pExtra)->SetCheck(features.instruction);
 						return TRUE;
-					case ID_COLOR:
+					case ID_ACCURACY:
 						((CCmdUI *)pExtra)->Enable(TRUE);
 						((CCmdUI *)pExtra)->SetCheck(features.colorSyntax);
 						return TRUE;
@@ -872,7 +872,7 @@
 						features.instruction=!features.instruction;
 						RefreshPreview();
 						return TRUE;
-					case ID_COLOR:
+					case ID_ACCURACY:
 						features.colorSyntax=!features.colorSyntax;
 						RefreshPreview();
 						return TRUE;

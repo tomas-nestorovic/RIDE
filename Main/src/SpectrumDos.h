@@ -78,6 +78,7 @@
 		};
 
 		class CBasicPreview sealed:public CAssemblerPreview{
+			const CMainWindow::TDynMenu machineCodeMenu;
 			bool applyColors,showNonprintableChars;
 			enum TBinaryAfter0x14{
 				DONT_SHOW,
