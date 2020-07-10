@@ -125,16 +125,16 @@
 	#define Z80_INST_SUB	_T("sub")
 	#define Z80_INST_XOR	_T("xor")
 
-	void CSpectrumBase::CAssemblerPreview::ParseZ80BinaryFileAndGenerateHtmlFormattedContent(CFile &fIn,WORD orgAddress,CFile &f) const{
+	void CSpectrumBase::CAssemblerPreview::ParseZ80BinaryFileAndGenerateHtmlFormattedContent(CFile &fIn,WORD orgAddress,CFile &f,bool smallerHeading) const{
 		// generates HTML-formatted Z80 instruction listing of the input File into a temporary file
-		Utils::WriteToFile( f, _T("<h2>Z80 Instructions</h2>") );
+		Utils::WriteToFileFormatted( f, _T("<h%c style=\"font-family:revert\">Z80 Instructions</h%c>"), '2'+smallerHeading, '2'+smallerHeading );
 		if (fIn.GetPosition()>=fIn.GetLength())
 			Utils::WriteToFile( f, _T("None") );
 		else{
 			bool error=false; // assumption (no parsing error)
 			if (features.colorSyntax)
 				Utils::WriteToFile( f, _T("<style>span.num{color:#D00} span.pair{color:#00C} span.inst{color:#333;font-weight:bold}</style>") );
-			Utils::WriteToFile( f, _T("<table cellpadding=3 cellspacing=0 style=\"font-family:'Courier New'\">") );
+			Utils::WriteToFile( f, _T("<table cellpadding=3 cellspacing=0 style=\"font-family:'Courier New';font-size:100%\">") );
 			struct TOp sealed{
 				const TNumberFormat numberFormat;
 				CFile &fIn;

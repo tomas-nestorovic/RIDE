@@ -9,6 +9,7 @@
 
 	#define INI_APPLY_COLORS			_T("clr")
 	#define INI_SHOW_NONPRINTABLE_CHARS	_T("prn")
+	#define INI_SHOW_REM_AS_MACHINE_CODE _T("rem")
 	#define INI_SHOW_INTERNAL_BINARY	_T("bin")
 	#define INI_INTERPRET_PAST_BASIC	_T("past")
 
@@ -19,6 +20,7 @@
 		, machineCodeMenu(IDR_SPECTRUM_PREVIEW_ASSEMBLER)
 		, applyColors( app.GetProfileInt(INI_PREVIEW,INI_APPLY_COLORS,true)!=0 )
 		, showNonprintableChars( app.GetProfileInt(INI_PREVIEW,INI_SHOW_NONPRINTABLE_CHARS,false)!=0 )
+		, showRemAsMachineCode( app.GetProfileInt(INI_PREVIEW,INI_SHOW_REM_AS_MACHINE_CODE,false)!=0 )
 		, dataAfterBasic( (TDataAfterBasic)app.GetProfileInt(INI_PREVIEW,INI_INTERPRET_PAST_BASIC,TDataAfterBasic::SHOW_AS_VARIABLES) )
 		, binaryAfter0x14( (TBinaryAfter0x14)app.GetProfileInt(INI_PREVIEW,INI_SHOW_INTERNAL_BINARY,TBinaryAfter0x14::DONT_SHOW) ) {
 		// - initialization
@@ -32,6 +34,7 @@
 		// - saving the settings
 		app.WriteProfileInt(INI_PREVIEW,INI_APPLY_COLORS,applyColors);
 		app.WriteProfileInt(INI_PREVIEW,INI_SHOW_NONPRINTABLE_CHARS,showNonprintableChars);
+		app.WriteProfileInt(INI_PREVIEW,INI_SHOW_REM_AS_MACHINE_CODE,showRemAsMachineCode);
 		app.WriteProfileInt(INI_PREVIEW,INI_SHOW_INTERNAL_BINARY,binaryAfter0x14);
 		app.WriteProfileInt(INI_PREVIEW,INI_INTERPRET_PAST_BASIC,dataAfterBasic);
 		// - uninitialization
@@ -398,8 +401,27 @@ defaultPrinting:				if (b<' ')
 						//listing << _T("</td>"); // commented out as written in the following command
 						// | adding a new cell to the "BASIC Listing" column
 						listing << _T("</b></td><td style=\"padding-left:5pt\">");
-							if (nBytesOfLine)
+							if (nBytesOfLine){
 								listing.__parseBasicLine__( lineBytes, nBytesOfLine-1 ); // "-1" = skipping the terminating Enter character (0x0d)
+								if (showRemAsMachineCode)
+									for( PBYTE p=lineBytes; nBytesOfLine>0; p++,nBytesOfLine-- )
+										if (*p==0xea){ // begin of REM command
+											const PBYTE remStart=++p;
+											for( ; --nBytesOfLine>0; p++ )
+												if (*p==':') // end of REM command
+													break;
+											listing.__endApplicationOfColors__();
+												listing << _T("<small>");
+													ParseZ80BinaryFileAndGenerateHtmlFormattedContent(
+														CMemFile( remStart, p-1-remStart ),
+														0,
+														listing,
+														true
+													);
+												listing << _T("</small>");
+											listing.__startApplicationOfColors__();
+										}
+							}
 						//Utils::WriteToFile(fTmp,_T("</td>")); // commented out as written in the following command
 					listing << _T("</td></tr>");
 				} while (frw.GetPosition()<frw.GetLength());
@@ -581,7 +603,7 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 			SetWindowText(PREVIEW_LABEL);
 		// - hiding/displaying additional menus
 		GetMenu()->RemoveMenu( (UINT)::GetSubMenu(machineCodeMenu.hMenu,0), MF_BYCOMMAND|MF_POPUP );
-		if (dataAfterBasic==TDataAfterBasic::SHOW_AS_MACHINE_CODE)
+		if (dataAfterBasic==TDataAfterBasic::SHOW_AS_MACHINE_CODE || showRemAsMachineCode)
 			GetMenu()->InsertMenu(	1,
 									MF_BYPOSITION | MF_POPUP,
 									(UINT)::GetSubMenu(machineCodeMenu.hMenu,0),
@@ -604,6 +626,10 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 					case ID_PRINT:
 						((CCmdUI *)pExtra)->Enable(TRUE);
 						((CCmdUI *)pExtra)->SetCheck(showNonprintableChars);
+						return TRUE;
+					case ID_COMMENT:
+						((CCmdUI *)pExtra)->Enable(TRUE);
+						((CCmdUI *)pExtra)->SetCheck(showRemAsMachineCode);
 						return TRUE;
 					case ID_ZX_BASIC_BINARY_DONTSHOW:
 					case ID_ZX_BASIC_BINARY_SHOWRAW:
@@ -628,6 +654,10 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 						return TRUE;
 					case ID_PRINT:
 						showNonprintableChars=!showNonprintableChars;
+						RefreshPreview();
+						return TRUE;
+					case ID_COMMENT:
+						showRemAsMachineCode=!showRemAsMachineCode;
 						RefreshPreview();
 						return TRUE;
 					case ID_ZX_BASIC_BINARY_DONTSHOW:

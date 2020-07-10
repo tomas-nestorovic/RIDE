@@ -68,7 +68,7 @@
 
 			CAssemblerPreview(const CFileManagerView &rFileManager,DWORD resourceId,LPCTSTR iniSection);
 
-			void ParseZ80BinaryFileAndGenerateHtmlFormattedContent(CFile &fIn,WORD orgAddress,CFile &f) const;
+			void ParseZ80BinaryFileAndGenerateHtmlFormattedContent(CFile &fIn,WORD orgAddress,CFile &f,bool smallerHeading=false) const;
 			void RefreshPreview() override;
 			BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
 		public:
@@ -81,7 +81,7 @@
 
 		class CBasicPreview sealed:public CAssemblerPreview{
 			const CMainWindow::TDynMenu machineCodeMenu;
-			bool applyColors,showNonprintableChars;
+			bool applyColors,showNonprintableChars,showRemAsMachineCode;
 			enum TBinaryAfter0x14{
 				DONT_SHOW,
 				SHOW_AS_RAW_BYTES,

@@ -237,6 +237,7 @@
 #define ID_ZX_PREVIEWASASSEMBLER        40277
 #define ID_VARIABLE                     40280
 #define ID_INSTRUCTION                  40281
+#define ID_COMMENT                      40283
 #define ID_Y                            58113
 #define ID_W                            58114
 #define ID_H                            58115
@@ -249,7 +250,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        219
-#define _APS_NEXT_COMMAND_VALUE         40282
+#define _APS_NEXT_COMMAND_VALUE         40284
 #define _APS_NEXT_CONTROL_VALUE         1185
 #define _APS_NEXT_SYMED_VALUE           103
 #endif
