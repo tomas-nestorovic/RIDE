@@ -6,6 +6,8 @@
 
 	#define ZX_DIR_ROOT		DOS_DIR_ROOT
 
+	#define ZX_BASIC_START_ADDR			0x5ccb
+
 	#define ZX_TAPE_FILE_NAME_LENGTH_MAX	10
 
 	#define ZX_TAPE_FILE_COUNT_MAX			2048
@@ -66,7 +68,7 @@
 
 			CAssemblerPreview(const CFileManagerView &rFileManager,DWORD resourceId,LPCTSTR iniSection);
 
-			void ParseZ80BinaryFileAndGenerateHtmlFormattedContent(CFile &fIn,CFile &f) const;
+			void ParseZ80BinaryFileAndGenerateHtmlFormattedContent(CFile &fIn,WORD orgAddress,CFile &f) const;
 			void RefreshPreview() override;
 			BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
 		public:

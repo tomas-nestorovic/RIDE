@@ -125,9 +125,9 @@
 	#define Z80_INST_SUB	_T("sub")
 	#define Z80_INST_XOR	_T("xor")
 
-	void CSpectrumBase::CAssemblerPreview::ParseZ80BinaryFileAndGenerateHtmlFormattedContent(CFile &fIn,CFile &f) const{
+	void CSpectrumBase::CAssemblerPreview::ParseZ80BinaryFileAndGenerateHtmlFormattedContent(CFile &fIn,WORD orgAddress,CFile &f) const{
 		// generates HTML-formatted Z80 instruction listing of the input File into a temporary file
-		Utils::WriteToFile( f, _T("<h2>Z80 Assembler Listing</h2>") );
+		Utils::WriteToFile( f, _T("<h2>Z80 Instructions</h2>") );
 		if (fIn.GetPosition()>=fIn.GetLength())
 			Utils::WriteToFile( f, _T("None") );
 		else{
@@ -201,7 +201,7 @@
 					orgAddress+=length;
 					length=0;
 				}
-			} op( numberFormat, fIn, 0 ); // Z80 instruction with parameters
+			} op( numberFormat, fIn, orgAddress ); // Z80 instruction with parameters
 			static const TCHAR Registers[]=_T("bcdehlfa");
 			static const TCHAR RegisterPairsStd[]=_T("bcdehlsp");
 			static const TCHAR OperandsStd[]=_T("   b   c   d   e   h   l %sj   a");
@@ -808,7 +808,25 @@
 			// . generating the HTML-formatted content
 			CFile f( tmpFileName, CFile::modeWrite|CFile::modeCreate );
 				Utils::WriteToFileFormatted( f, _T("<html><body style=\"background-color:#%06x\">"), *(PCINT)&Colors[7] );
-					ParseZ80BinaryFileAndGenerateHtmlFormattedContent( frw, f );
+					TUniFileType uft; TStdParameters params; DWORD tmp;
+					__importFileInformation__(
+						_tcsrchr( DOS->GetFileExportNameAndExt(file,false), ' ' ),
+						uft, params, tmp
+					);
+					WORD orgAddress;
+					switch (uft){
+						case TUniFileType::PROGRAM:
+							orgAddress=ZX_BASIC_START_ADDR;
+							break;
+						case TUniFileType::BLOCK:
+						case TUniFileType::SCREEN:
+							orgAddress=params.param1;
+							break;
+						default:
+							orgAddress=0;
+							break;
+					}
+					ParseZ80BinaryFileAndGenerateHtmlFormattedContent( frw, orgAddress, f );
 				Utils::WriteToFile( f, _T("</body></html>") );
 			f.Close();
 			// . opening the HTML-formatted content
