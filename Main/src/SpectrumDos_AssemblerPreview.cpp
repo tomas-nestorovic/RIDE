@@ -757,6 +757,15 @@
 								Utils::WriteToFileFormatted( f, _T("%02X "), op.machineCode[i] );
 						Utils::WriteToFile( f, _T("</td>") );
 					}
+					if (features.machineCodeChars){
+						Utils::WriteToFile( f, _T("<td style=\"padding-right:40pt\">") );
+							for( BYTE i=0; i<op.length; i++ )
+								if ( ::isprint(op.machineCode[i]) && !::isspace(op.machineCode[i]))
+									Utils::WriteToFileFormatted( f, _T("&#%d;&nbsp;"), op.machineCode[i] );
+								else
+									Utils::WriteToFile( f, _T("&#8729;&nbsp;") ); // small bullet
+						Utils::WriteToFile( f, _T("</td>") );
+					}
 					if (features.instruction){
 						TCHAR format[sizeof(argSyntaxBuf)/sizeof(TCHAR)], params[2][64];
 						for( TCHAR i=0,*p=::lstrcpy(format,argSyntax); const PTCHAR percent=_tcschr(p,'%'); p=percent+1,i++ ){
@@ -854,6 +863,10 @@
 						((CCmdUI *)pExtra)->Enable(TRUE);
 						((CCmdUI *)pExtra)->SetCheck(features.machineCode);
 						return TRUE;
+					case ID_IDFIELD:
+						((CCmdUI *)pExtra)->Enable(TRUE);
+						((CCmdUI *)pExtra)->SetCheck(features.machineCodeChars);
+						return TRUE;						
 					case ID_INFORMATION:
 						((CCmdUI *)pExtra)->Enable(TRUE);
 						((CCmdUI *)pExtra)->SetCheck(features.instruction);
@@ -884,6 +897,10 @@
 						return TRUE;
 					case ID_DATA:
 						features.machineCode=!features.machineCode;
+						RefreshPreview();
+						return TRUE;
+					case ID_IDFIELD:
+						features.machineCodeChars=!features.machineCodeChars;
 						RefreshPreview();
 						return TRUE;
 					case ID_INFORMATION:

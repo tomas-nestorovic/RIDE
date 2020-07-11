@@ -51,6 +51,7 @@
 				struct{
 					BYTE address:1;
 					BYTE machineCode:1;
+					BYTE machineCodeChars:1;
 					BYTE instruction:1;
 					BYTE colorSyntax:1;
 					BYTE capitalSyntax:1;

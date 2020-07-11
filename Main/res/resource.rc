@@ -584,6 +584,7 @@ BEGIN
         BEGIN
             MENUITEM "Address",                     ID_ADDRESS, CHECKED
             MENUITEM "Machine code",                ID_DATA, CHECKED
+            MENUITEM "Machine code chars",          ID_IDFIELD, CHECKED
             MENUITEM "Instruction",                 ID_INFORMATION, CHECKED
         END
         POPUP "Number format"
