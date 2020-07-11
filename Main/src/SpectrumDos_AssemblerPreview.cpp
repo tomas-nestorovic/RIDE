@@ -18,6 +18,7 @@
 		features.info=-1; // by default, show all columns and turn on all other features ...
 		features.capitalSyntax=0; // ... except for the CapitalSyntax
 		features.info=app.GetProfileInt( iniSection, INI_FEATURES, features.info );
+		constantInput.pfIn=nullptr; // no permanently existing input file
 		// - creating the TemporaryFile to store HTML-formatted content in
 		::GetTempPath( sizeof(tmpFileName)/sizeof(TCHAR), tmpFileName );
 		::GetTempFileName( tmpFileName, nullptr, FALSE, tmpFileName );
@@ -810,7 +811,11 @@
 		// - generating the HTML-formatted content
 		CFile f( tmpFileName, CFile::modeWrite|CFile::modeCreate );
 			Utils::WriteToFileFormatted( f, _T("<html><body style=\"background-color:#%06x\">"), *(PCINT)&Colors[7] );
-				ParseZ80BinaryFileAndGenerateHtmlFormattedContent( fIn, orgAddress, f );
+				constantInput.pfIn=&fIn; // remembering the input file for Content refresh
+				constantInput.orgAddress=orgAddress;
+				const auto fInPos=fIn.GetPosition();
+					ParseZ80BinaryFileAndGenerateHtmlFormattedContent( fIn, orgAddress, f );
+				fIn.Seek( fInPos, CFile::begin );
 			Utils::WriteToFile( f, _T("</body></html>") );
 		f.Close();
 		// - opening the HTML-formatted content
@@ -819,7 +824,9 @@
 
 	void CSpectrumBase::CAssemblerPreview::RefreshPreview(){
 		// refreshes the Preview (e.g. when switched to another File)
-		if (const PCFile file=pdt->entry){
+		if (constantInput.pfIn!=nullptr)
+			ParseZ80BinaryFileAndShowContent( *constantInput.pfIn, constantInput.orgAddress );
+		else if (const PCFile file=pdt->entry){
 			// . creating the File reader
 			CFileReaderWriter frw(DOS,pdt->entry);
 			BYTE a,z;
@@ -846,6 +853,7 @@
 					break;
 			}
 			ParseZ80BinaryFileAndShowContent( frw, orgAddress );
+			constantInput.pfIn=nullptr; // the FileReaderWriter is a local object not to be remembered
 			// . updating the window caption
 			CString caption;
 			caption.Format( PREVIEW_LABEL " (%s)", (LPCTSTR)DOS->GetFilePresentationNameAndExt(file) );
@@ -892,6 +900,13 @@
 						((CCmdUI *)pExtra)->Enable(TRUE);
 						((CCmdUI *)pExtra)->SetCheck( nID-ID_DEFAULT1 == numberFormat );
 						return TRUE;
+					case ID_NEXT:
+					case ID_PREV:
+						if (constantInput.pfIn!=nullptr){
+							((CCmdUI *)pExtra)->Enable(FALSE);
+							return TRUE;
+						}else
+							break;
 				}
 				break;
 			case CN_COMMAND:

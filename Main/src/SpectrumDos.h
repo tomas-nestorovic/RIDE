@@ -64,6 +64,10 @@
 				HexaH,		// e.g. 3039h
 				Decadic		// e.g. 12345
 			} numberFormat;
+			struct{
+				CFile *pfIn;
+				WORD orgAddress;
+			} constantInput;
 		protected:
 			TCHAR tmpFileName[MAX_PATH];
 			CWebPageView contentView;
