@@ -458,11 +458,6 @@ BEGIN
             MENUITEM SEPARATOR
             MENUITEM "Don't show",                  ID_NONE
         END
-        MENUITEM SEPARATOR
-        MENUITEM "Next file\tRight",            ID_NEXT
-        MENUITEM "Previous file\tLeft",         ID_PREV
-        MENUITEM SEPARATOR
-        MENUITEM "Close\tEsc",                  IDCLOSE
     END
 END
 
@@ -601,6 +596,13 @@ BEGIN
         END
         MENUITEM "Color syntax",                ID_ACCURACY
         MENUITEM "Capital syntax",              ID_ALIGN
+    END
+END
+
+IDR_DOS_PREVIEW_BASE MENU DISCARDABLE 
+BEGIN
+    POPUP "Preview"
+    BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Next file\tRight",            ID_NEXT
         MENUITEM "Previous file\tLeft",         ID_PREV

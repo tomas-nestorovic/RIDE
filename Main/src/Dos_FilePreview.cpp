@@ -37,6 +37,18 @@
 			r.bottom+=::GetSystemMetrics(SM_CYCAPTION);
 			SetWindowPos( nullptr, 0,0, r.right-r.left,r.bottom-r.top, SWP_NOZORDER );
 		}
+		// - if some menu exists, extending it with default items
+		if (const CMenu *const pMenu=GetMenu())
+			if (CMenu *const pSubmenu=pMenu->GetSubMenu(0)){
+				const Utils::CRideContextMenu defaultMenu( IDR_DOS_PREVIEW_BASE, this );
+				for( BYTE i=0; i<defaultMenu.GetMenuItemCount(); i++ )
+					if (const auto id=defaultMenu.GetMenuItemID(i)){
+						TCHAR buf[80];
+						defaultMenu.GetMenuString( i, buf, sizeof(buf)/sizeof(TCHAR), MF_BYPOSITION );
+						pSubmenu->AppendMenu( MF_BYCOMMAND|MF_STRING, id, buf );
+					}else
+						pSubmenu->AppendMenu( MF_SEPARATOR );
+			}
 	}
 
 
