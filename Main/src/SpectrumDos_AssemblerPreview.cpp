@@ -29,7 +29,7 @@
 	CSpectrumBase::CAssemblerPreview *CSpectrumBase::CAssemblerPreview::CreateInstance(const CFileManagerView &rFileManager){
 		// creates and returns a new instance
 		ASSERT( pSingleInstance==nullptr );
-		pSingleInstance=new CAssemblerPreview( rFileManager, IDR_SPECTRUM_PREVIEW_ASSEMBLER, _T("ZxZ80") );
+		pSingleInstance=new CAssemblerPreview( rFileManager );
 		pSingleInstance->__showNextFile__();
 		return pSingleInstance;
 	}
@@ -805,6 +805,18 @@
 		}
 	}
 
+	void CSpectrumBase::CAssemblerPreview::ParseZ80BinaryFileAndShowContent(CFile &fIn,WORD orgAddress){
+		// generates HTML-formatted Z80 instruction listing of the input File into a temporary file, and then shows it
+		// - generating the HTML-formatted content
+		CFile f( tmpFileName, CFile::modeWrite|CFile::modeCreate );
+			Utils::WriteToFileFormatted( f, _T("<html><body style=\"background-color:#%06x\">"), *(PCINT)&Colors[7] );
+				ParseZ80BinaryFileAndGenerateHtmlFormattedContent( fIn, orgAddress, f );
+			Utils::WriteToFile( f, _T("</body></html>") );
+		f.Close();
+		// - opening the HTML-formatted content
+		contentView.Navigate2(tmpFileName);
+	}
+
 	void CSpectrumBase::CAssemblerPreview::RefreshPreview(){
 		// refreshes the Preview (e.g. when switched to another File)
 		if (const PCFile file=pdt->entry){
@@ -815,31 +827,25 @@
 			frw.SetLength( a+fileOfficialSize ); // ignoring appended custom data (e.g. as in TR-DOS)
 			frw.Seek( a, CFile::begin ); // ignoring prepended custom data (e.g. as in GDOS)
 			// . generating the HTML-formatted content
-			CFile f( tmpFileName, CFile::modeWrite|CFile::modeCreate );
-				Utils::WriteToFileFormatted( f, _T("<html><body style=\"background-color:#%06x\">"), *(PCINT)&Colors[7] );
-					TUniFileType uft; TStdParameters params; DWORD tmp;
-					__importFileInformation__(
-						_tcsrchr( DOS->GetFileExportNameAndExt(file,false), ' ' ),
-						uft, params, tmp
-					);
-					WORD orgAddress;
-					switch (uft){
-						case TUniFileType::PROGRAM:
-							orgAddress=ZX_BASIC_START_ADDR;
-							break;
-						case TUniFileType::BLOCK:
-						case TUniFileType::SCREEN:
-							orgAddress=params.param1;
-							break;
-						default:
-							orgAddress=0;
-							break;
-					}
-					ParseZ80BinaryFileAndGenerateHtmlFormattedContent( frw, orgAddress, f );
-				Utils::WriteToFile( f, _T("</body></html>") );
-			f.Close();
-			// . opening the HTML-formatted content
-			contentView.Navigate2(tmpFileName);
+			TUniFileType uft; TStdParameters params; DWORD tmp;
+			__importFileInformation__(
+				_tcsrchr( DOS->GetFileExportNameAndExt(file,false), ' ' ),
+				uft, params, tmp
+			);
+			WORD orgAddress;
+			switch (uft){
+				case TUniFileType::PROGRAM:
+					orgAddress=ZX_BASIC_START_ADDR;
+					break;
+				case TUniFileType::BLOCK:
+				case TUniFileType::SCREEN:
+					orgAddress=params.param1;
+					break;
+				default:
+					orgAddress=0;
+					break;
+			}
+			ParseZ80BinaryFileAndShowContent( frw, orgAddress );
 			// . updating the window caption
 			CString caption;
 			caption.Format( PREVIEW_LABEL " (%s)", (LPCTSTR)DOS->GetFilePresentationNameAndExt(file) );
