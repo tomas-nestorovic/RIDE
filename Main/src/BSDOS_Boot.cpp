@@ -142,6 +142,30 @@
 		CBootView::__bootSectorModified__(boot);
 	}
 
+	bool WINAPI CBSDOS308::TBootSector::ShowBootstrapMachineCode(PropGrid::PCustomParam bootSector,int hyperlinkId,LPCTSTR hyperlinkName){
+		// True <=> PropertyGrid's Editor can be destroyed after this function has terminated, otherwise False
+		class CPreviewDialog sealed:public CAssemblerPreview{
+			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
+				if (msg==WM_DESTROY)
+					EndModalLoop(IDCLOSE);
+				return __super::WindowProc(msg,wParam,lParam);
+			}
+			void PostNcDestroy() override{
+			}
+		public:
+			CPreviewDialog()
+				: CAssemblerPreview( *CDos::GetFocused()->pFileManager ) {
+			}
+		} preview;
+		app.m_pMainWnd->BeginModalState();
+			const PBootSector boot=(PBootSector)bootSector;
+			CMemFile fBootstrap( (PBYTE)boot+boot->jmpInstruction.param, BSDOS_SECTOR_LENGTH_STD-boot->jmpInstruction.param );
+			preview.ParseZ80BinaryFileAndShowContent( fBootstrap, 0 );
+			preview.RunModalLoop( MLF_SHOWONIDLE|MLF_NOIDLEMSG );
+		app.m_pMainWnd->EndModalState();
+		return true; // True = destroy PropertyGrid's Editor
+	}
+
 	void CBSDOS308::CBsdosBootView::AddCustomBootParameters(HWND hPropGrid,HANDLE hGeometry,HANDLE hVolume,const TCommonBootParameters &rParam,PSectorData _boot){
 		// gets DOS-specific parameters from the Boot
 		const PBootSector boot=reinterpret_cast<PBootSector>(_boot);
@@ -165,6 +189,12 @@
 			PropGrid::AddPropertyW( hPropGrid, hAdvanced, L"FAT\xB9 start", &boot->fatStarts[0], pWordEditor );
 			PropGrid::AddPropertyW( hPropGrid, hAdvanced, L"FAT\xB2 start", &boot->fatStarts[1], pWordEditor );
 			PropGrid::AddProperty( hPropGrid, hAdvanced, _T("DIRS sector"), &boot->dirsLogSector, pWordEditor );
+		const HANDLE hBootstrap=PropGrid::AddCategory( hPropGrid, nullptr, _T("Bootstrap") );
+		PropGrid::AddProperty(	hPropGrid, hBootstrap, _T(""),
+								_T("<a>Show machine code</a>"),
+								PropGrid::Hyperlink::DefineEditorA(TBootSector::ShowBootstrapMachineCode),
+								boot
+							);
 	}
 
 	void CBSDOS308::FlushToBootSector() const{

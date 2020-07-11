@@ -30,6 +30,7 @@
 
 			static TBootSector *GetData(PImage image);
 			static void WINAPI OnDiskIdChanged(PropGrid::PCustomParam bootSector);
+			static bool WINAPI ShowBootstrapMachineCode(PropGrid::PCustomParam bootSector,int hyperlinkId,LPCTSTR hyperlinkName);
 			static UINT AFX_CDECL Verification_thread(PVOID pCancelableAction);
 
 			struct{
