@@ -89,7 +89,14 @@
 
 		class CBasicPreview sealed:public CAssemblerPreview{
 			const CMainWindow::TDynMenu machineCodeMenu;
-			bool applyColors,showNonprintableChars,showRemAsMachineCode;
+			union{
+				BYTE info;
+				struct{
+					BYTE applyColors:1;
+					BYTE showNonprintableChars:1;
+					BYTE showRemAsMachineCode:1;
+				};
+			} features;
 			enum TBinaryAfter0x14{
 				DONT_SHOW,
 				SHOW_AS_RAW_BYTES,

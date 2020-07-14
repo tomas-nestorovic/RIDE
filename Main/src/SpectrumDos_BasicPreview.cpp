@@ -7,9 +7,7 @@
 	#define PREVIEW_WIDTH_DEFAULT	750
 	#define PREVIEW_HEIGHT_DEFAULT	300
 
-	#define INI_APPLY_COLORS			_T("clr")
-	#define INI_SHOW_NONPRINTABLE_CHARS	_T("prn")
-	#define INI_SHOW_REM_AS_MACHINE_CODE _T("rem")
+	#define INI_FEATURES				_T("feats")
 	#define INI_SHOW_INTERNAL_BINARY	_T("bin")
 	#define INI_INTERPRET_PAST_BASIC	_T("past")
 
@@ -18,12 +16,12 @@
 		// - base
 		: CAssemblerPreview( rFileManager, IDR_SPECTRUM_PREVIEW_BASIC, INI_PREVIEW )
 		, machineCodeMenu(IDR_SPECTRUM_PREVIEW_ASSEMBLER)
-		, applyColors( app.GetProfileInt(INI_PREVIEW,INI_APPLY_COLORS,true)!=0 )
-		, showNonprintableChars( app.GetProfileInt(INI_PREVIEW,INI_SHOW_NONPRINTABLE_CHARS,false)!=0 )
-		, showRemAsMachineCode( app.GetProfileInt(INI_PREVIEW,INI_SHOW_REM_AS_MACHINE_CODE,false)!=0 )
 		, dataAfterBasic( (TDataAfterBasic)app.GetProfileInt(INI_PREVIEW,INI_INTERPRET_PAST_BASIC,TDataAfterBasic::SHOW_AS_VARIABLES) )
 		, binaryAfter0x14( (TBinaryAfter0x14)app.GetProfileInt(INI_PREVIEW,INI_SHOW_INTERNAL_BINARY,TBinaryAfter0x14::DONT_SHOW) ) {
 		// - initialization
+		features.info=0; // by default all extra Features off ...
+		features.applyColors=true; // ... except for the application of colors
+		features.info=app.GetProfileInt( INI_PREVIEW, INI_FEATURES, features.info );
 		pSingleInstance=this;
 		// - showing the first File
 		__showNextFile__();
@@ -32,9 +30,7 @@
 	CSpectrumBase::CBasicPreview::~CBasicPreview(){
 		// dtor
 		// - saving the settings
-		app.WriteProfileInt(INI_PREVIEW,INI_APPLY_COLORS,applyColors);
-		app.WriteProfileInt(INI_PREVIEW,INI_SHOW_NONPRINTABLE_CHARS,showNonprintableChars);
-		app.WriteProfileInt(INI_PREVIEW,INI_SHOW_REM_AS_MACHINE_CODE,showRemAsMachineCode);
+		app.WriteProfileInt( INI_PREVIEW, INI_FEATURES, features.info );
 		app.WriteProfileInt(INI_PREVIEW,INI_SHOW_INTERNAL_BINARY,binaryAfter0x14);
 		app.WriteProfileInt(INI_PREVIEW,INI_INTERPRET_PAST_BASIC,dataAfterBasic);
 		// - uninitialization
@@ -112,7 +108,7 @@
 
 			void __startApplicationOfColors__(){
 				// writes opening tag that changes the subsequent text display
-				if (rBasicPreview.applyColors){
+				if (rBasicPreview.features.applyColors){
 					TCHAR buf[128];
 					::wsprintf(	buf,
 								_T("<span style=\"color:#%06x;background:#%06x%s\">"),
@@ -125,13 +121,13 @@
 			}
 			void __endApplicationOfColors__(){
 				// writes closing tag that changes the subsequent text display to default again
-				if (rBasicPreview.applyColors)
+				if (rBasicPreview.features.applyColors)
 					*this << _T("</span>"); // the "<<" operator automatically closes any previous SpecialFormatting
 			}
 
 			void __writeNonprintableChar__(BYTE c){
 				// describes the (non-printable) Character using printable HTML-formatted text
-				if (rBasicPreview.showNonprintableChars){
+				if (rBasicPreview.features.showNonprintableChars){
 					// . opening the SpecialFormatting
 					if (specialFormattingOpen!=TSpecialFormatting::NONPRINTABLE_CHARS){
 						*this << _T("<span style=\"border:1pt solid\">"); // the "<<" operator automatically closes any previous SpecialFormatting
@@ -403,7 +399,7 @@ defaultPrinting:				if (b<' ')
 						listing << _T("</b></td><td style=\"padding-left:5pt\">");
 							if (nBytesOfLine){
 								listing.__parseBasicLine__( lineBytes, nBytesOfLine-1 ); // "-1" = skipping the terminating Enter character (0x0d)
-								if (showRemAsMachineCode)
+								if (features.showRemAsMachineCode)
 									for( PBYTE p=lineBytes; nBytesOfLine>0; p++,nBytesOfLine-- )
 										if (*p==0xea){ // begin of REM command
 											const PBYTE remStart=++p;
@@ -603,7 +599,7 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 			SetWindowText(PREVIEW_LABEL);
 		// - hiding/displaying additional menus
 		GetMenu()->RemoveMenu( (UINT)::GetSubMenu(machineCodeMenu.hMenu,0), MF_BYCOMMAND|MF_POPUP );
-		if (dataAfterBasic==TDataAfterBasic::SHOW_AS_MACHINE_CODE || showRemAsMachineCode)
+		if (dataAfterBasic==TDataAfterBasic::SHOW_AS_MACHINE_CODE || features.showRemAsMachineCode)
 			GetMenu()->InsertMenu(	1,
 									MF_BYPOSITION | MF_POPUP,
 									(UINT)::GetSubMenu(machineCodeMenu.hMenu,0),
@@ -621,15 +617,15 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 				switch (nID){
 					case ID_COLOR:
 						((CCmdUI *)pExtra)->Enable(TRUE);
-						((CCmdUI *)pExtra)->SetCheck(applyColors);
+						((CCmdUI *)pExtra)->SetCheck(features.applyColors);
 						return TRUE;
 					case ID_PRINT:
 						((CCmdUI *)pExtra)->Enable(TRUE);
-						((CCmdUI *)pExtra)->SetCheck(showNonprintableChars);
+						((CCmdUI *)pExtra)->SetCheck(features.showNonprintableChars);
 						return TRUE;
 					case ID_COMMENT:
 						((CCmdUI *)pExtra)->Enable(TRUE);
-						((CCmdUI *)pExtra)->SetCheck(showRemAsMachineCode);
+						((CCmdUI *)pExtra)->SetCheck(features.showRemAsMachineCode);
 						return TRUE;
 					case ID_ZX_BASIC_BINARY_DONTSHOW:
 					case ID_ZX_BASIC_BINARY_SHOWRAW:
@@ -649,15 +645,15 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 				// command
 				switch (nID){
 					case ID_COLOR:
-						applyColors=!applyColors;
+						features.applyColors=!features.applyColors;
 						RefreshPreview();
 						return TRUE;
 					case ID_PRINT:
-						showNonprintableChars=!showNonprintableChars;
+						features.showNonprintableChars=!features.showNonprintableChars;
 						RefreshPreview();
 						return TRUE;
 					case ID_COMMENT:
-						showRemAsMachineCode=!showRemAsMachineCode;
+						features.showRemAsMachineCode=!features.showRemAsMachineCode;
 						RefreshPreview();
 						return TRUE;
 					case ID_ZX_BASIC_BINARY_DONTSHOW:
