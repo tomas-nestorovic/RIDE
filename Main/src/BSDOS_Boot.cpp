@@ -155,12 +155,12 @@
 		public:
 			CPreviewDialog()
 				: CAssemblerPreview( *CDos::GetFocused()->pFileManager ) {
+				__showNextFile__();
 			}
 		} preview;
 		app.m_pMainWnd->BeginModalState();
-			const PBootSector boot=(PBootSector)bootSector;
-			CMemFile fBootstrap( (PBYTE)boot+boot->jmpInstruction.param, BSDOS_SECTOR_LENGTH_STD-boot->jmpInstruction.param );
-			preview.ParseZ80BinaryFileAndShowContent( fBootstrap, 0 );
+			CMemFile fBootstrap( (PBYTE)bootSector, BSDOS_SECTOR_LENGTH_STD );
+			preview.ParseZ80BinaryFileAndShowContent( fBootstrap, 0x8000 ); // the address to which the Boot Sector is loaded in MB-02
 			preview.RunModalLoop( MLF_SHOWONIDLE|MLF_NOIDLEMSG );
 		app.m_pMainWnd->EndModalState();
 		return true; // True = destroy PropertyGrid's Editor
