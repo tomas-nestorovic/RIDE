@@ -441,6 +441,7 @@ BEGIN
         MENUITEM "Apply colors",                ID_COLOR, CHECKED
         MENUITEM "Show non-printable chars",    ID_PRINT
         MENUITEM "Show REM as Z80 instructions", ID_COMMENT
+        MENUITEM "Always wrap lines",           ID_READABLE
         POPUP "Five Bytes after (0x14)"
         BEGIN
             MENUITEM "Show as raw Bytes",           ID_ZX_BASIC_BINARY_SHOWRAW

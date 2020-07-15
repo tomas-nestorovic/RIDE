@@ -95,6 +95,7 @@
 					BYTE applyColors:1;
 					BYTE showNonprintableChars:1;
 					BYTE showRemAsMachineCode:1;
+					BYTE wrapLines:1;
 				};
 			} features;
 			enum TBinaryAfter0x14{

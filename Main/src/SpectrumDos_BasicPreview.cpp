@@ -217,7 +217,8 @@
 			void __parseBasicLine__(PCBYTE pLineStart,WORD nBytesOfLine){
 				// parses a BASIC line of given length and writes corresponding HTML-formatted text into this file
 				__startApplicationOfColors__();
-					bool isLastWrittenCharNbsp=false; // True <=> the last character written to the TemporaryFile is a non-breakable space, otherwise False
+					bool isLastWrittenCharSpace=false; // True <=> the last character written to the TemporaryFile is a space, otherwise False
+					bool isLastWrittenCharBreakable=false; // True <=> the last character written to the TemporaryFile is breakable (e.g. space 0x32), otherwise False
 					for( const PCBYTE pLineEnd=pLineStart+nBytesOfLine; pLineStart<pLineEnd; ){
 						const BYTE b=*pLineStart++;
 						switch (b){
@@ -307,8 +308,12 @@ writeTwoNonprintableChars:			__writeNonprintableChar__(b);
 								else
 									goto defaultPrinting; // to display the non-printable characters
 							case ' ':
-								// each explicit space character is output
-								*this << _T("&nbsp;"); // non-breakable space
+								if (isLastWrittenCharBreakable || !rBasicPreview.features.wrapLines) // A|B, A = last written space is a classical "breakable" 0x32 one, B = no line breaks allowed
+									*this << _T("&nbsp;"); // non-breakable space
+								else{
+									*this << _T(" "); // classical "breakable" space
+									isLastWrittenCharBreakable=true;
+								}
 								break;
 							case '&':
 								// the "ampersand" symbol is not an escape for a hexadecimal literal
@@ -343,7 +348,7 @@ defaultPrinting:				if (b<' ')
 									__writeStdUdgSymbol__(b);
 								else if (const LPCSTR keywordTranscript=TZxRom::GetKeywordTranscript(b))
 									// writing a Keyword including its start and trail spaces (will be correctly formatted by the HTML parser when displayed)
-									*this << ( keywordTranscript + (int)(isLastWrittenCharNbsp&&*keywordTranscript==' ') ); // skipping initial space should it be preceeded by a non-breakable space in the TemporaryFile (as incorrectly two spaces would be displayed in the Listing)
+									*this << ( keywordTranscript + (int)(isLastWrittenCharSpace&&*keywordTranscript==' ') ); // skipping initial space should it be preceeded by a non-breakable space in the TemporaryFile (as incorrectly two spaces would be displayed in the Listing)
 								else{
 									// a character that doesn't require a special treatment - just converting between ZX Spectrum and Ascii charsets
 									TCHAR buf[16];
@@ -351,7 +356,7 @@ defaultPrinting:				if (b<' ')
 								}
 								break;
 						}
-						isLastWrittenCharNbsp=b==' ';
+						isLastWrittenCharBreakable&=( isLastWrittenCharSpace=b==' ' );
 					}
 				__endApplicationOfColors__();
 			}
@@ -627,6 +632,10 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 						((CCmdUI *)pExtra)->Enable(TRUE);
 						((CCmdUI *)pExtra)->SetCheck(features.showRemAsMachineCode);
 						return TRUE;
+					case ID_READABLE:
+						((CCmdUI *)pExtra)->Enable(TRUE);
+						((CCmdUI *)pExtra)->SetCheck(features.wrapLines);
+						return TRUE;
 					case ID_ZX_BASIC_BINARY_DONTSHOW:
 					case ID_ZX_BASIC_BINARY_SHOWRAW:
 					case ID_ZX_BASIC_BINARY_SHOWNUMBER:
@@ -654,6 +663,10 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 						return TRUE;
 					case ID_COMMENT:
 						features.showRemAsMachineCode=!features.showRemAsMachineCode;
+						RefreshPreview();
+						return TRUE;
+					case ID_READABLE:
+						features.wrapLines=!features.wrapLines;
 						RefreshPreview();
 						return TRUE;
 					case ID_ZX_BASIC_BINARY_DONTSHOW:
