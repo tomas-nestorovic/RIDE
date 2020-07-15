@@ -7,7 +7,7 @@
 	#define PREVIEW_WIDTH_DEFAULT	750
 	#define PREVIEW_HEIGHT_DEFAULT	300
 
-	#define INI_FEATURES				_T("feats")
+	#define INI_FEATURES				_T("basfeats")
 	#define INI_SHOW_INTERNAL_BINARY	_T("bin")
 	#define INI_INTERPRET_PAST_BASIC	_T("past")
 
@@ -400,10 +400,10 @@ defaultPrinting:				if (b<' ')
 							if (nBytesOfLine){
 								listing.__parseBasicLine__( lineBytes, nBytesOfLine-1 ); // "-1" = skipping the terminating Enter character (0x0d)
 								if (features.showRemAsMachineCode)
-									for( PBYTE p=lineBytes; nBytesOfLine>0; p++,nBytesOfLine-- )
+									for( PBYTE p=lineBytes,pEndOfLine=p+nBytesOfLine; p<pEndOfLine; p++ )
 										if (*p==0xea){ // begin of REM command
 											const PBYTE remStart=++p;
-											for( ; --nBytesOfLine>0; p++ )
+											for( ; p<pEndOfLine; p++ )
 												if (*p==':') // end of REM command
 													break;
 											listing.__endApplicationOfColors__();
