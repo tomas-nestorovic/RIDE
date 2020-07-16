@@ -28,7 +28,7 @@
 	typedef const THead *PCHead;
 	typedef const TSide *PCSide;
 	typedef const TSector *PCSector;
-	typedef WORD TTrack,*PTrack;
+	typedef int TTrack,*PTrack;
 
 	#define FDD_CYLINDERS_MAX	82
 	#define FDD_SECTORS_MAX		64
@@ -84,6 +84,7 @@
 
 		bool operator==(const TFormat &fmt2) const;
 		DWORD GetCountOfAllSectors() const;
+		WORD GetCountOfSectorsPerCylinder() const;
 		TTrack GetCountOfAllTracks() const;
 	} *PFormat;
 	typedef const TFormat *PCFormat;

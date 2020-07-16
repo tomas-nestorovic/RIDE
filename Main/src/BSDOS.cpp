@@ -1024,7 +1024,7 @@
 						return;
 			TLogSector curr = boot->fatStarts[fatCopy] = fatSectors[0];
 			for( BYTE s=1; s<boot->nSectorsPerFat; s++ ){
-				const TLogSector next=fatSectors[s];
+				const BYTE next=fatSectors[s];
 				fatFirstSector[curr]=TFatValue( true, true, boot->fatSectorsListing[fatCopy+2*(s-1)]=next );
 				curr=next;
 			}

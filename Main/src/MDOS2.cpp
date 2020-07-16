@@ -178,7 +178,7 @@
 		if (!( item.value=((PDirectoryEntry)file)->firstLogicalSector ))
 			return true;
 		// - extracting the FatPath from FAT
-		const TLogSector logSectorMax=formatBoot.GetCountOfAllSectors();
+		const DWORD logSectorMax=formatBoot.GetCountOfAllSectors();
 		do{
 			// . determining Sector's PhysicalAddress
 			item.chs=__logfyz__(item.value);

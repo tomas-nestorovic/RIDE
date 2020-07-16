@@ -275,9 +275,12 @@ error:			*de=tmp; // recovering the original DirectoryEntry
 	}
 	static PropGrid::Enum::PCValueList WINAPI __createValues__(PVOID file,WORD &rnValues){
 		// creates and returns the List of possible File "extensions"
-		PBYTE list=(PBYTE)::malloc( rnValues=EXTENSION_MAX+1-EXTENSION_MIN ), a=list;
-		for( WORD p=EXTENSION_MIN; p<=EXTENSION_MAX; *a++=p++ );
-		return (PropGrid::Enum::PCValueList)list;
+		rnValues=EXTENSION_MAX+1-EXTENSION_MIN;
+		return	(PropGrid::Enum::PCValueList)::memcpy(
+					::malloc(rnValues),
+					Utils::CByteIdentity()+EXTENSION_MIN,
+					rnValues
+				);
 	}
 	static void WINAPI __freeValues__(PVOID,PropGrid::Enum::PCValueList values){
 		// disposes the List of possible File "extensions"

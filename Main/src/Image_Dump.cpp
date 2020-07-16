@@ -130,7 +130,7 @@
 	#define ACCEPT_OPTIONS_COUNT	4
 	#define ACCEPT_ERROR_ID			IDOK
 
-	#define NO_ERROR	_T("- no error\n")
+	#define NO_STATUS_ERROR	_T("- no error\n")
 
 	static UINT AFX_CDECL __dump_thread__(PVOID _pCancelableAction){
 		// threat to copy Tracks
@@ -207,14 +207,14 @@ terminateWithError:
 									while (*pDesc)
 										p+=::wsprintf( p, _T("- %s\n"), *pDesc++ );
 								else
-									p+=::lstrlen(::lstrcpy(p,NO_ERROR));
+									p+=::lstrlen(::lstrcpy(p,NO_STATUS_ERROR));
 								pDesc++; // skipping Null that terminates list of bits set in Register 1
 								p+=::wsprintf( p, _T("\n\"Status register 2\" reports (0x%02X)\n"), rFdcStatus.reg2 );
 								if (*pDesc)
 									while (*pDesc)
 										p+=::wsprintf( p, _T("- %s\n"), *pDesc++ );
 								else
-									p+=::lstrlen(::lstrcpy(p,NO_ERROR));
+									p+=::lstrlen(::lstrcpy(p,NO_STATUS_ERROR));
 								SetDlgItemText( ID_ERROR, buf );
 								// > converting the "Accept" button to a SplitButton
 								static const Utils::TSplitButtonAction Actions[ACCEPT_OPTIONS_COUNT]={
@@ -304,7 +304,10 @@ terminateWithError:
 																		DoDataExchange( &CDataExchange(this,FALSE) ); // updating visuals
 																		break;
 																	case ID_DEFAULT2:
-																		dataFieldSubstituteFillerByte= dosProps!=&CUnknownDos::Properties ? dosProps->sectorFillerByte : ::GetTickCount() ;
+																		if (dosProps!=&CUnknownDos::Properties)
+																			dataFieldSubstituteFillerByte=dosProps->sectorFillerByte;
+																		else
+																			Utils::RandomizeData( &dataFieldSubstituteFillerByte, sizeof(dataFieldSubstituteFillerByte) );
 																		DoDataExchange( &CDataExchange(this,FALSE) ); // updating visuals
 																		break;
 																}

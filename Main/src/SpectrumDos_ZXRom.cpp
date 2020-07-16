@@ -99,7 +99,7 @@
 	// KEYWORD_TOKEN_FIRST corresponds to the "RND" Keyword in ZX Spectrum charset
 	#define KEYWORD_TOKEN_FIRST	165
 
-	PTCHAR CSpectrumBase::TZxRom::ZxToAscii(LPCSTR zx,BYTE zxLength,PTCHAR bufT,char zxBefore){
+	PTCHAR CSpectrumBase::TZxRom::ZxToAscii(LPCSTR zx,short zxLength,PTCHAR bufT,char zxBefore){
 		// converts text from Spectrum character set to PC's current character set and returns the result in Buffer
 		bufT[0]=zxBefore; // initialization
 		PTCHAR t=1+bufT;
@@ -163,7 +163,7 @@
 				: nullptr;
 	}
 
-	WORD CSpectrumBase::TZxRom::PrintAt(HDC dc,LPCSTR zx,BYTE zxLength,RECT r,UINT drawTextFormat,char zxBefore) const{
+	WORD CSpectrumBase::TZxRom::PrintAt(HDC dc,LPCSTR zx,short zxLength,RECT r,UINT drawTextFormat,char zxBefore) const{
 		// returns the number of ASCII characters to which the input ZX code has been converted and printed inside the given Rectangle
 		TCHAR buf[3000]; // a big-enough buffer to accommodate 255-times the keyword RANDOMIZE
 		const PCHAR pAscii=ZxToAscii( zx, zxLength, buf, zxBefore );

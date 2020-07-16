@@ -18,11 +18,15 @@
 	}
 	DWORD TFormat::GetCountOfAllSectors() const{
 		// determines and returns the count of all Sectors
-		return nCylinders*nHeads*nSectors;
+		return (DWORD)nCylinders*nHeads*nSectors;
+	}
+	WORD TFormat::GetCountOfSectorsPerCylinder() const{
+		// determines and returns the count of all Sectors on a single Cylinder
+		return (WORD)nHeads*nSectors;
 	}
 	TTrack TFormat::GetCountOfAllTracks() const{
 		// determines and returns the count of all Tracks
-		return nCylinders*nHeads;
+		return (TTrack)nCylinders*nHeads;
 	}
 
 

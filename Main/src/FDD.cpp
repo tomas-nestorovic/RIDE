@@ -746,7 +746,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 				::ZeroMemory(justSavedSectors,pit->nSectors);
 				do{
 					allSectorsProcessed=true; // assumption
-					int lastSectorEndMicroseconds=INT_MIN/2;
+					float lastSectorEndMicroseconds=-60000; // minus one minute
 					for( TSector n=0; n<pit->nSectors; n++ ){
 						TInternalTrack::TSectorInfo &si=pit->sectors[n];
 						if (si.modified && !justSavedSectors[n]){
@@ -765,7 +765,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 				// : verification
 				do{
 					allSectorsProcessed=true; // assumption
-					int lastSectorEndMicroseconds=INT_MIN/2;
+					float lastSectorEndMicroseconds=-60000; // minus one minute
 					for( TSector n=0; n<pit->nSectors; n++ ){
 						TInternalTrack::TSectorInfo &si=pit->sectors[n];
 						if (si.modified)
@@ -903,7 +903,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 			}
 			if (pAvgGap3)
 				if (pit->nSectors>1){
-					int usSum=0; // sum of Gap3 Microseconds
+					float usSum=0; // sum of Gap3 Microseconds
 					const TInternalTrack::TSectorInfo *psi=pit->sectors;
 					for( TSector s=0; s<pit->nSectors-1; usSum-=psi->endMicroseconds,s++,psi++,usSum+=psi->startMicroseconds );
 					*pAvgGap3=usSum/((pit->nSectors-1)*fddHead.profile.oneByteLatency);
@@ -944,7 +944,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		}
 	}
 
-	TStdWinError CFDD::__setTimeBeforeInterruptingTheFdc__(WORD nDataBytesBeforeInterruption,WORD nMicrosecondsAfterLastDataByteWritten) const{
+	TStdWinError CFDD::__setTimeBeforeInterruptingTheFdc__(WORD nDataBytesBeforeInterruption,float nMicrosecondsAfterLastDataByteWritten) const{
 		// registers a request to interrupt the following write/format command after specified NumberOfBytes plus additional NumberOfMicrosends; returns Windows standard i/o error
 		LOG_ACTION(_T("TStdWinError CFDD::__setTimeBeforeInterruptingTheFdc__"));
 		DWORD nBytesTransferred;
@@ -1069,7 +1069,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 			BYTE alreadyPlannedSectors[(TSector)-1];
 			::ZeroMemory(alreadyPlannedSectors,nSectors);
 			for( BYTE nSectorsToPlan=nSectors; planEnd-plan<nSectors && nSectorsToPlan; nSectorsToPlan-- ){ // A&B, A = all Sectors requested to read planned, B = all Sectors are planned in N iterations in the worst case (preventing infinite loop in case that at least one Sector isn't found on the Track)
-				int lastSectorEndMicroseconds=INT_MIN/2;
+				float lastSectorEndMicroseconds=-60000; // minus one minute
 				for( TSector n=0; n<pit->nSectors; n++ ){
 					TInternalTrack::TSectorInfo &si=pit->sectors[n];
 					for( TSector s=0; s<nSectors; s++ )
@@ -1361,7 +1361,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 		public:
 			const WORD sectorLength;
 			TSectorId sectorId;
-			WORD nMicroseconds;
+			float nMicroseconds;
 
 			TInterruption(const PBackgroundActionCancelable pAction,TLatencyParams &lp)
 				// ctor
@@ -2011,7 +2011,8 @@ formatStandardWay:
 					PCSectorId validSectorIDs;
 					BYTE gap3;
 					struct{
-						WORD nBytes,nMicroseconds;
+						WORD nBytes;
+						float nMicroseconds;
 					} interruption;
 
 					WORD __getNumberOfNecessaryBytes__() const{
@@ -2021,7 +2022,7 @@ formatStandardWay:
 					void __debug__() const{
 						TCHAR buf[200];
 						::wsprintf(buf,_T("sectorLengthCode=%d\nnSectorsOnTrack=%d\nnLastSectorsValid=%d\ngap3=%d\n,nBytes=%d\nnMicroseconds=%d"),
-							sectorLengthCode,nSectorsOnTrack,nLastSectorsValid,gap3,interruption.nBytes,interruption.nMicroseconds
+							sectorLengthCode,nSectorsOnTrack,nLastSectorsValid,gap3,interruption.nBytes,(int)interruption.nMicroseconds
 						);
 						Utils::Information(buf);
 					}

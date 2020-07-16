@@ -238,8 +238,8 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 		while (nSectors>0)
 			if (const PCSectorData fatData=pSectorData[--nSectors])
 				for( WORD i=sizeof(TFatValue)*(nSectors==0); i<BSDOS_SECTOR_LENGTH_STD; result+=fatData[i++] ); // first Value in FAT's first Sectors isn't included in the checksum
-			else
-				result+=BSDOS_SECTOR_LENGTH_STD*0xff;
+			//else
+				//result+=BSDOS_SECTOR_LENGTH_STD*0xff; // commented out as adding zero
 		return result;
 
 	}
@@ -312,7 +312,8 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 		CFatPath::TItem item;
 		if (file==ZX_DIR_ROOT){
 			if (const PCBootSector bootSector=boot.GetSectorData()){
-				item.chs=__logfyz__( item.value=bootSector->dirsLogSector );
+				item.value=bootSector->dirsLogSector;
+				item.chs=__logfyz__(bootSector->dirsLogSector);
 				rFatPath.AddItem(&item);
 			}else
 				rFatPath.error=CFatPath::TError::VALUE_BAD_SECTOR;
@@ -331,7 +332,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 		if (!de->fileHasData || !de->file.dataLength)
 			return true;
 		// - extracting the FatPath from FAT
-		const TLogSector logSectorMax=formatBoot.GetCountOfAllSectors();
+		const DWORD logSectorMax=formatBoot.GetCountOfAllSectors();
 		TFatValue fatValue = item.value = de->file.firstSector;
 		do{
 			// . determining Sector's PhysicalAddress

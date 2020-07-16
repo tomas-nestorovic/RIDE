@@ -40,7 +40,7 @@
 				BYTE seqNum; // "zero-based" sequence number of this Sector on containing Track
 				TSectorId id;
 				WORD length;
-				int startMicroseconds,endMicroseconds; // counted from the index pulse
+				float startMicroseconds,endMicroseconds; // counted from the index pulse
 				PSectorData data;
 				TFdcStatus fdcStatus;
 				bool modified;
@@ -119,7 +119,7 @@
 		PInternalTrack __scanTrack__(TCylinder cyl,THead head);
 		void __setWaitingForIndex__() const;
 		void __setNumberOfSectorsToSkipOnCurrentTrack__(BYTE _nSectorsToSkip) const;
-		TStdWinError __setTimeBeforeInterruptingTheFdc__(WORD nDataBytesBeforeInterruption,WORD nMicrosecondsAfterLastDataByteWritten) const;
+		TStdWinError __setTimeBeforeInterruptingTheFdc__(WORD nDataBytesBeforeInterruption,float nMicrosecondsAfterLastDataByteWritten) const;
 		TStdWinError __setTimeBeforeInterruptingTheFdc__(WORD nDataBytesBeforeInterruption) const;
 		bool __bufferSectorData__(TCylinder cyl,THead head,PCSectorId psi,WORD sectorLength,const TInternalTrack *pit,BYTE nSectorsToSkip,TFdcStatus *pFdcStatus) const;
 		bool __bufferSectorData__(RCPhysicalAddress chs,WORD sectorLength,const TInternalTrack *pit,BYTE nSectorsToSkip,TFdcStatus *pFdcStatus) const;

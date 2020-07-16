@@ -151,7 +151,7 @@
 
 			static bool IsKnownFileType(TFileType type);
 			static LPCTSTR GetFileTypeName(TFileType type);
-			static PTCHAR ZxToAscii(LPCSTR zx,BYTE zxLength,PTCHAR buf,char zxBefore=' ');
+			static PTCHAR ZxToAscii(LPCSTR zx,short zxLength,PTCHAR buf,char zxBefore=' ');
 			static PTCHAR AsciiToZx(LPCTSTR pc,PCHAR zx,PBYTE pOutZxLength);
 			inline
 			static bool IsStdUdgSymbol(BYTE s);
@@ -194,7 +194,7 @@
 				BYTE GetCurrentZxTextLength() const;
 			} lineComposerPropGridEditor;
 
-			WORD PrintAt(HDC dc,LPCSTR zx,BYTE zxLength,RECT r,UINT drawTextFormat,char zxBefore=' ') const;
+			WORD PrintAt(HDC dc,LPCSTR zx,short zxLength,RECT r,UINT drawTextFormat,char zxBefore=' ') const;
 		} zxRom;
 	protected:
 		enum TUniFileType:char{ // ZX platform-independent File types ("universal" types) - used during exporting/importing of Files across ZX platforms

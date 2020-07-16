@@ -402,10 +402,10 @@
 				break;
 			}
 		// - importing File Data
-		f->Read( tf->data, fileSize );
+		f->Read( tf->data, tf->dataLength );
 		tf->dataChecksum =	blockChecksum>=0
 							? blockChecksum
-							: __getChecksum__( tf->dataBlockFlag, tf->data, fileSize );
+							: __getChecksum__( tf->dataBlockFlag, tf->data, tf->dataLength );
 		// - File successfully imported into Tape
 		m_bModified=TRUE;
 		return ERROR_SUCCESS;

@@ -506,7 +506,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		do{
 			if (const PTrackInfo ti = tracks[w] = (PTrackInfo)::malloc(trackLength)){
 				diskInfo.nCylinders=std::max<TCylinder>( diskInfo.nCylinders, 1+cyl ); // updating the NumberOfCylinders
-				diskInfo.std_trackLength=std::max<WORD>( diskInfo.std_trackLength, trackLength );
+				diskInfo.std_trackLength=std::max<DWORD>( diskInfo.std_trackLength, trackLength );
 				diskInfo.rev5_trackOffsets256[w]=trackLength>>8; 
 				// . initializing the TrackInfo structure
 				::ZeroMemory(ti,sizeof(TTrackInfo));
