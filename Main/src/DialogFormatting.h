@@ -26,7 +26,7 @@
 		const PCStdFormat additionalFormats;
 		const BYTE nAdditionalFormats;
 
-		void __selectClusterSize__(CComboBox &rcb,TSector clusterSize) const;
+		void __selectClusterSize__(CComboBox &rcb,WORD nSectorsPerCluster) const;
 		void PreInitDialog() override;
 		void DoDataExchange(CDataExchange *pDX) override;
 		BOOL OnNotify(WPARAM wParam,LPARAM lParam,LRESULT *pResult) override;

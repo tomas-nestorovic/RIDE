@@ -24,7 +24,7 @@
 		const Utils::CRideFont buttonCaptionFont;
 		BYTE nCategories;
 		struct{
-			short posY;
+			LONG posY;
 			WCHAR webdingsGlyph;
 		} categories[5];
 		CRect rcCurrContent;

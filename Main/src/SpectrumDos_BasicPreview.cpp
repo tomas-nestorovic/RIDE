@@ -375,7 +375,7 @@ defaultPrinting:				if (b<' ')
 					if (error=frw.Read(&lineNumber,sizeof(WORD))!=sizeof(WORD)) // error
 						break;
 					if (lineNumber>0x39ff){ // invalid LineNumber ...
-						frw.Seek( -sizeof(WORD), CFile::current ); // put the LineNumber back
+						frw.Seek( -(int)sizeof(WORD), CFile::current ); // put the LineNumber back
 						break; // ... is a correct end of BASIC program
 					}
 					WORD nBytesOfLine;

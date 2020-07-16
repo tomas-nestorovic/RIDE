@@ -68,6 +68,8 @@ typedef const BYTE *PCBYTE;
 typedef const WORD *PCWORD;
 typedef const int *PCINT;
 
+#pragma warning( disable : 4228 ) // non-standard language extension
+
 #include "Utils.h"
 #include "BackgroundAction.h"
 #include "MainWindow.h"

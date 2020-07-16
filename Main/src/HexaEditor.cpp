@@ -1198,10 +1198,10 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 							}else if (!isEof){
 								// Record's data are not yet known - caller will refresh the HexaEditor when data for this Record are known
 								f->Seek( address+=nBytesExpected, CFile::begin );
-								#define ERR_MSG	_T("» Fetching data ... «")
+								#define STATUS_MSG	_T("» Fetching data ... «")
 								dc.SetContentPrintState( CHexaPaintDC::Unknown, COLOR_WHITE );
-								dc.DrawText( ERR_MSG, -1, &rcHexa, DT_LEFT|DT_TOP );
-								rcHexa.left+=(sizeof(ERR_MSG)-sizeof(TCHAR))*font.charAvgWidth;
+								dc.DrawText( STATUS_MSG, -1, &rcHexa, DT_LEFT|DT_TOP );
+								rcHexa.left+=(sizeof(STATUS_MSG)-sizeof(TCHAR))*font.charAvgWidth;
 							}
 							// : filling the rest of the Row with background color (e.g. the last Row in a Record may not span up to the end)
 							if (rcHexa.left<rcHexa.right) // to not paint over the scrollbar

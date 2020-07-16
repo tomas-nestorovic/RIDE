@@ -106,7 +106,7 @@
 		while (zxLength--){
 			const BYTE z=*zx++;
 			if (!z)
-				*t++=255; // null character
+				*t++=(char)255; // null character
 			else if (z==96)
 				*t++=(char)163; // Pound sign, £
 			else if (z<=126)

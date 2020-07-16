@@ -212,7 +212,7 @@
 				return true;
 			}
 			// . getting the File FatPath with enough Sectors to accommodate the NewOffset before shifting the content
-			const WORD nSectorsAfterRetyping=(newDataSize+newOffset+GDOS_SECTOR_LENGTH_STD-sizeof(TSectorInfo)-1)/(GDOS_SECTOR_LENGTH_STD-sizeof(TSectorInfo));
+			const DWORD nSectorsAfterRetyping=(newDataSize+newOffset+GDOS_SECTOR_LENGTH_STD-sizeof(TSectorInfo)-1)/(GDOS_SECTOR_LENGTH_STD-sizeof(TSectorInfo));
 			CFatPath fatPath(gdos,&tmp);
 			CFatPath::PCItem pItem; DWORD n;
 			if (nSectorsAfterRetyping>de->nSectors){
@@ -248,7 +248,7 @@ error:			*de=tmp; // recovering the original DirectoryEntry
 					}
 				}else
 					de->firstSector.__setEof__();
-				for( WORD w=nSectorsAfterRetyping; w<de->nSectors; de->sectorAllocationBitmap.SetSectorAllocation((pItem+w++)->chs,false) );
+				for( DWORD w=nSectorsAfterRetyping; w<de->nSectors; de->sectorAllocationBitmap.SetSectorAllocation((pItem+w++)->chs,false) );
 			}else if (nSectorsAfterRetyping>de->nSectors){
 				// File has become longer (by shifting its data "to the right")
 				ASSERT(nSectorsAfterRetyping==1+de->nSectors); // File can be longer only by a single Sector

@@ -153,7 +153,7 @@
 			static LPCTSTR GetFileTypeName(TFileType type);
 			static PTCHAR ZxToAscii(LPCSTR zx,short zxLength,PTCHAR buf,char zxBefore=' ');
 			static PTCHAR AsciiToZx(LPCTSTR pc,PCHAR zx,PBYTE pOutZxLength);
-			inline
+			//inline
 			static bool IsStdUdgSymbol(BYTE s);
 			//inline
 			static bool IsPrintable(BYTE s);

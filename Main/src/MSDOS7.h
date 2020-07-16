@@ -157,8 +157,8 @@
 
 		#pragma pack(1)
 		typedef union UDirectoryEntry{
-			enum TSpecial:char{
-				EMPTY_ENTRY		=(char)0xe5,
+			enum:BYTE{
+				EMPTY_ENTRY		=0xe5,
 				LONG_NAME_END	=0x40,
 				DIRECTORY_END	=0
 			};

@@ -143,7 +143,7 @@
 				SUBDIR	=2, // current Entry is a Subdirectory
 				CUSTOM	=3,	// current Entry is occupied and only a CDos-derivate knows how to process it (e.g., see long file name entries in MS-DOS); such entries are skipped in all basic CDos routines
 				WARNING	=4,	// Directory Sector not found, but may be also another error/warning; continuing to traverse the Directory usually suffices (as virtually in all CDos routines)
-				END		=-1 // end of Directory reached, no more DirectoryEntries can be retrieved
+				END		=99 // end of Directory reached, no more DirectoryEntries can be retrieved
 			} entryType;
 			union{
 				PFile entry;

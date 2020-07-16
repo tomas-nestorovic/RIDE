@@ -70,11 +70,11 @@
 		GetDlgItem(ID_DRIVE)->ShowWindow( bootSectorAlreadyExists ? SW_SHOW : SW_HIDE );
 	}
 
-	void CFormatDialog::__selectClusterSize__(CComboBox &rcb,TSector clusterSize) const{
+	void CFormatDialog::__selectClusterSize__(CComboBox &rcb,WORD nSectorsPerCluster) const{
 		// selects an item that corresponds with the chosen ClusterSize in the specified ComboBox
 		rcb.SetCurSel(-1); // cancelling previous selection
 		for( BYTE n=rcb.GetCount(); n--; )
-			if (rcb.GetItemData(n)==clusterSize){
+			if (rcb.GetItemData(n)==nSectorsPerCluster){
 				rcb.SetCurSel(n);
 				break;
 			}
