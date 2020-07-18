@@ -253,8 +253,9 @@
 		// hides CurrentTabContent
 		if (!currentTabContent) return; // already hidden
 		::ShowWindow( hBtnCloseCurrentTab, SW_HIDE );
-		params.fnHideContent( params.customParam, currentTabContent );
+		const CTdiCtrl::TTab::PContent tabContent=currentTabContent;
 		currentTabContent=nullptr;
+		params.fnHideContent( params.customParam, tabContent );
 	}
 
 	void TTdiInfo::__switchToTab__(int i){
