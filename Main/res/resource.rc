@@ -238,14 +238,18 @@ IDR_TRACKMAP MENU DISCARDABLE
 BEGIN
     POPUP "Track map"
     BEGIN
-        MENUITEM "Sector status",               ID_TRACKMAP_STATUS
-        MENUITEM "Sector data",                 ID_TRACKMAP_DATA
-        MENUITEM "Bad sector data (if any)",    ID_TRACKMAP_BAD_DATA
+        POPUP "Sector display"
+        BEGIN
+            MENUITEM "Status",                      ID_TRACKMAP_STATUS
+            MENUITEM "Data",                        ID_TRACKMAP_DATA
+            MENUITEM "Bad data (if any)",           ID_TRACKMAP_BAD_DATA
+            MENUITEM SEPARATOR
+            MENUITEM "Numbering",                   ID_TRACKMAP_NUMBERING
+        END
         MENUITEM SEPARATOR
         MENUITEM "Zoom in",                     ID_ZOOM_IN
         MENUITEM "Zoom out",                    ID_ZOOM_OUT
         MENUITEM SEPARATOR
-        MENUITEM "Numbering",                   ID_TRACKMAP_NUMBERING
         POPUP "Helpers"
         BEGIN
             MENUITEM "Statistics",                  ID_TRACKMAP_STATISTICS
