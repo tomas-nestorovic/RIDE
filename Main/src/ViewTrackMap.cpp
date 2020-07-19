@@ -2,6 +2,8 @@
 
 	#define INI_TRACKMAP		_T("TrackMap")
 
+	#define INI_FILE_SELECTION_COLOR	_T("fscol")
+
 	#define VIEW_PADDING		25
 	#define VIEW_HEADER_HEIGHT	(TRACK_HEIGHT+VIEW_PADDING/2)
 
@@ -19,7 +21,8 @@
 	CTrackMapView::CTrackMapView(PDos _dos)
 		// ctor
 		: tab( IDR_TRACKMAP, IDR_TRACKMAP, ID_CYLINDER, _dos, this )
-		, displayType(TDisplayType::STATUS) , showSectorNumbers(false) , highlightBadSectors(false) , iScrollX(0) , iScrollY(0) , scanner(this)
+		, displayType(TDisplayType::STATUS) , showSectorNumbers(false) , highlightBadSectors(false) , showSelectedFiles(_dos->pFileManager!=nullptr) , iScrollX(0) , iScrollY(0) , scanner(this)
+		, fileSelectionColor( app.GetProfileInt(INI_TRACKMAP,INI_FILE_SELECTION_COLOR,::GetSysColor(COLOR_ACTIVECAPTION)) )
 		, zoomLengthFactor(3) {
 		::ZeroMemory( &longestTrack, sizeof(longestTrack) );
 		::ZeroMemory( rainbowBrushes, sizeof(rainbowBrushes) );
@@ -48,9 +51,16 @@
 			ON_UPDATE_COMMAND_UI(ID_ZOOM_IN,__zoomIn_updateUI__)
 		ON_COMMAND(ID_ZOOM_OUT,__zoomOut__)
 			ON_UPDATE_COMMAND_UI(ID_ZOOM_OUT,__zoomOut_updateUI__)
+		ON_COMMAND(ID_FILE,__showSelectedFiles__)
+			ON_UPDATE_COMMAND_UI(ID_FILE,__showSelectedFiles_updateUI__)
+		ON_COMMAND(ID_COLOR,__changeFileSelectionColor__)
 		ON_COMMAND(ID_TRACKMAP_STATISTICS,__showDiskStatistics__)
 	END_MESSAGE_MAP()
 
+	CTrackMapView::~CTrackMapView(){
+		// dtor
+		app.WriteProfileInt( INI_TRACKMAP, INI_FILE_SELECTION_COLOR, fileSelectionColor );
+	}
 
 
 
@@ -270,29 +280,30 @@
 				::SelectObject(dc,hBrush0);
 			::SelectObject(dc,font0);
 			// . drawing current selection in FileManager
-			if (const CFileManagerView *const pFileManager=DOS->pFileManager){
-				::SelectObject(dc,::GetStockObject(NULL_BRUSH));
-				const LOGPEN pen={ PS_SOLID, 2,2, ::GetSysColor(COLOR_ACTIVECAPTION) };
-				const HGDIOBJ hPen0=::SelectObject( dc, ::CreatePenIndirect(&pen) );
-					for( POSITION pos=pFileManager->GetFirstSelectedFilePosition(); pos; ){
-						const CDos::CFatPath fatPath( DOS, pFileManager->GetNextSelectedFile(pos) );
-						CDos::CFatPath::PCItem item; DWORD n;
-						if (!fatPath.GetItems(item,n)) // FatPath valid
-							for( const THead nSides=__getNumberOfFormattedSidesInImage__(IMAGE); n--; item++ )
-								if (trackNumber==item->chs.GetTrackNumber(nSides)){
-									// this Sector (in currently drawn Track) belongs to one of selected Files
-									PCSectorId pRefId=&item->chs.sectorId, bufferId=rti.bufferId;
-									PCWORD pw=rti.bufferLength;
-									r.left=SECTOR1_X;
-									for( TSector nSectors=rti.nSectors; nSectors--; r.left+=(*pw++>>zoomLengthFactor)+SECTOR_MARGIN )
-										if (*pRefId==*bufferId++)
-											break;
-									r.right=r.left+1+(*pw>>zoomLengthFactor); // "1+" = to correctly display a zero-length Sector
-									dc.Rectangle(&r);
-								}
-					}
-				::DeleteObject( ::SelectObject(dc,hPen0) );
-			}
+			if (showSelectedFiles)
+				if (const CFileManagerView *const pFileManager=DOS->pFileManager){
+					::SelectObject(dc,::GetStockObject(NULL_BRUSH));
+					const LOGPEN pen={ PS_SOLID, 2,2, fileSelectionColor };
+					const HGDIOBJ hPen0=::SelectObject( dc, ::CreatePenIndirect(&pen) );
+						for( POSITION pos=pFileManager->GetFirstSelectedFilePosition(); pos; ){
+							const CDos::CFatPath fatPath( DOS, pFileManager->GetNextSelectedFile(pos) );
+							CDos::CFatPath::PCItem item; DWORD n;
+							if (!fatPath.GetItems(item,n)) // FatPath valid
+								for( const THead nSides=__getNumberOfFormattedSidesInImage__(IMAGE); n--; item++ )
+									if (trackNumber==item->chs.GetTrackNumber(nSides)){
+										// this Sector (in currently drawn Track) belongs to one of selected Files
+										PCSectorId pRefId=&item->chs.sectorId, bufferId=rti.bufferId;
+										PCWORD pw=rti.bufferLength;
+										r.left=SECTOR1_X;
+										for( TSector nSectors=rti.nSectors; nSectors--; r.left+=(*pw++>>zoomLengthFactor)+SECTOR_MARGIN )
+											if (*pRefId==*bufferId++)
+												break;
+										r.right=r.left+1+(*pw>>zoomLengthFactor); // "1+" = to correctly display a zero-length Sector
+										dc.Rectangle(&r);
+									}
+						}
+					::DeleteObject( ::SelectObject(dc,hPen0) );
+				}
 			// . next Track
 			scanner.params.criticalSection.Lock();
 				scanner.params.x++;
@@ -490,6 +501,26 @@
 		// projects possibility to even more zoom in the view
 		pCmdUI->Enable( zoomLengthFactor>0 );
 	}
+
+	afx_msg void CTrackMapView::__showSelectedFiles__(){
+		// toggles display of Sectors occupied by one of Files selected in the FileManager
+		showSelectedFiles=!showSelectedFiles;
+		Invalidate(TRUE);
+	}
+	afx_msg void CTrackMapView::__showSelectedFiles_updateUI__(CCmdUI *pCmdUI){
+		pCmdUI->SetCheck( showSelectedFiles );
+		pCmdUI->Enable( DOS->pFileManager!=nullptr ? DOS->pFileManager->GetCountOfSelectedFiles()>0 : false );
+	}
+
+	afx_msg void CTrackMapView::__changeFileSelectionColor__(){
+		// displays the Color Picker dialog to select a new color for File selection display
+		CColorDialog d( fileSelectionColor );
+		if (d.DoModal()==IDOK){
+			fileSelectionColor=d.GetColor();
+			Invalidate(TRUE);
+		}
+	}
+
 
 
 	struct TStatisticParams sealed{

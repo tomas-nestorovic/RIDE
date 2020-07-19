@@ -29,8 +29,9 @@
 			CEvent scanNextTrack;
 			TTrackScanner(const CTrackMapView *pvtm); // ctor
 		} scanner;
-		bool showSectorNumbers,highlightBadSectors;
+		bool showSectorNumbers,highlightBadSectors,showSelectedFiles;
 		BYTE zoomLengthFactor;
+		COLORREF fileSelectionColor;
 
 		void OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint) override;
 		BOOL OnScroll(UINT nScrollCode,UINT nPos,BOOL bDoScroll=TRUE) override;
@@ -53,11 +54,15 @@
 			afx_msg void __zoomOut_updateUI__(CCmdUI *pCmdUI);
 		afx_msg void __zoomIn__();
 			afx_msg void __zoomIn_updateUI__(CCmdUI *pCmdUI);
+		afx_msg void __showSelectedFiles__();
+			afx_msg void __showSelectedFiles_updateUI__(CCmdUI *pCmdUI);
+		afx_msg void __changeFileSelectionColor__();
 		afx_msg void __showDiskStatistics__();
 	public:
 		const CMainWindow::CTdiView::TTab tab;
 
 		CTrackMapView(PDos _dos);
+		~CTrackMapView();
 	};
 
 #endif // TRACKMAPVIEW_H

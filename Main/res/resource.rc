@@ -246,6 +246,11 @@ BEGIN
             MENUITEM SEPARATOR
             MENUITEM "Numbering",                   ID_TRACKMAP_NUMBERING
         END
+        POPUP "File selection"
+        BEGIN
+            MENUITEM "Show",                        ID_FILE
+            MENUITEM "Color...",                    ID_COLOR
+        END
         MENUITEM SEPARATOR
         MENUITEM "Zoom in",                     ID_ZOOM_IN
         MENUITEM "Zoom out",                    ID_ZOOM_OUT
