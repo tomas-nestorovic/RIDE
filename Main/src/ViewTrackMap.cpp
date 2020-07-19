@@ -2,12 +2,12 @@
 
 	#define INI_TRACKMAP		_T("TrackMap")
 
-	#define VIEW_WIDTH			600
 	#define VIEW_PADDING		25
 	#define VIEW_HEADER_HEIGHT	(TRACK_HEIGHT+VIEW_PADDING/2)
 
 	#define TRACK_HEIGHT		17
 	#define TRACK0_Y			(VIEW_PADDING+VIEW_HEADER_HEIGHT)
+	#define TRACK_PADDING_RIGHT	100
 
 	#define SECTOR_HEIGHT		(TRACK_HEIGHT-6)
 	#define SECTOR1_X			(VIEW_PADDING+100)
@@ -19,8 +19,9 @@
 	CTrackMapView::CTrackMapView(PDos _dos)
 		// ctor
 		: tab( IDR_TRACKMAP, IDR_TRACKMAP, ID_CYLINDER, _dos, this )
-		, displayType(TDisplayType::STATUS) , showSectorNumbers(false) , highlightBadSectors(false) , iScrollY(0) , scanner(this)
+		, displayType(TDisplayType::STATUS) , showSectorNumbers(false) , highlightBadSectors(false) , iScrollX(0) , iScrollY(0) , scanner(this)
 		, zoomLengthFactor(3) {
+		::ZeroMemory( &longestTrack, sizeof(longestTrack) );
 		::ZeroMemory( rainbowBrushes, sizeof(rainbowBrushes) );
 	}
 
@@ -33,6 +34,7 @@
 
 	BEGIN_MESSAGE_MAP(CTrackMapView,CScrollView)
 		ON_WM_CREATE()
+		ON_WM_HSCROLL()
 		ON_WM_VSCROLL()
 		ON_WM_MOUSEMOVE()
 		ON_WM_LBUTTONUP()
@@ -63,33 +65,63 @@
 	void CTrackMapView::OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint){
 		// request to refresh the display of content
 		// - updating the logical dimensions
-		SetScrollSizes(MM_TEXT,CSize( VIEW_WIDTH, Utils::LogicalUnitScaleFactor*(VIEW_PADDING*2+VIEW_HEADER_HEIGHT+IMAGE->GetTrackCount()*TRACK_HEIGHT) ));
+		__updateLogicalDimensions__();
 		// - base
-		CScrollView::OnUpdate(pSender,lHint,pHint);
+		__super::OnUpdate(pSender,lHint,pHint);
+	}
+
+	void CTrackMapView::__updateLogicalDimensions__(){
+		// adjusts logical dimensions to accommodate the LongestTrack in the Image horizontally, and all Tracks in the Image vertically
+		SetScrollSizes(
+			MM_TEXT,
+			CSize(
+				Utils::LogicalUnitScaleFactor*( SECTOR1_X+(longestTrack.nBytes>>zoomLengthFactor)+longestTrack.nSectors*SECTOR_MARGIN ),
+				Utils::LogicalUnitScaleFactor*( VIEW_PADDING*2+VIEW_HEADER_HEIGHT+IMAGE->GetTrackCount()*TRACK_HEIGHT )
+			)
+		);
 	}
 
 	BOOL CTrackMapView::OnScroll(UINT nScrollCode, UINT nPos, BOOL bDoScroll){
 		// scrolls the View's content in given way
-		// - vertical ScrollBar
-		SCROLLINFO ysi;
-		GetScrollInfo( SB_VERT, &ysi, SIF_POS|SIF_TRACKPOS|SIF_RANGE|SIF_PAGE );
-		int iScrollY0=ysi.nPos;
-		switch (HIBYTE(nScrollCode)){
-			case SB_TOP		: ysi.nPos=0;				break;
-			case SB_BOTTOM	: ysi.nPos=INT_MAX;			break;
-			case SB_LINEUP	: ysi.nPos-=m_lineDev.cy;	break;
-			case SB_LINEDOWN: ysi.nPos+=m_lineDev.cy;	break;
-			case SB_PAGEUP	: ysi.nPos-=m_pageDev.cy;	break;
-			case SB_PAGEDOWN: ysi.nPos+=m_pageDev.cy;	break;
-			case SB_THUMBTRACK:	ysi.nPos=ysi.nTrackPos;	break;
+		SCROLLINFO si={ sizeof(si) };
+		// - horizontal ScrollBar
+		GetScrollInfo( SB_HORZ, &si, SIF_POS|SIF_TRACKPOS|SIF_RANGE|SIF_PAGE );
+		int iScroll0=si.nPos;
+		switch (LOBYTE(nScrollCode)){
+			case SB_LEFT		: si.nPos=0;			break;
+			case SB_RIGHT		: si.nPos=INT_MAX;		break;
+			case SB_LINELEFT	: si.nPos-=m_lineDev.cx;break;
+			case SB_LINERIGHT	: si.nPos+=m_lineDev.cx;break;
+			case SB_PAGELEFT	: si.nPos-=m_pageDev.cx;break;
+			case SB_PAGERIGHT	: si.nPos+=m_pageDev.cx;break;
+			case SB_THUMBTRACK	: si.nPos=si.nTrackPos;	break;
 		}
-		if (ysi.nPos<0) ysi.nPos=0;
-		else if (ysi.nPos>ysi.nMax-ysi.nPage) ysi.nPos=ysi.nMax-ysi.nPage;
+		if (si.nPos<0) si.nPos=0;
+		else if (si.nPos>si.nMax-si.nPage) si.nPos=si.nMax-si.nPage;
+		ScrollWindow(	// "base"
+						(iScroll0-si.nPos),//*Utils::GetLogicalUnitScaleFactor(CClientDC(this))
+						0
+					); 
+		SetScrollInfo(SB_HORZ,&si,TRUE);
+		// - vertical ScrollBar
+		GetScrollInfo( SB_VERT, &si, SIF_POS|SIF_TRACKPOS|SIF_RANGE|SIF_PAGE );
+		iScroll0=si.nPos;
+		switch (HIBYTE(nScrollCode)){
+			case SB_TOP		: si.nPos=0;				break;
+			case SB_BOTTOM	: si.nPos=INT_MAX;			break;
+			case SB_LINEUP	: si.nPos-=m_lineDev.cy;	break;
+			case SB_LINEDOWN: si.nPos+=m_lineDev.cy;	break;
+			case SB_PAGEUP	: si.nPos-=m_pageDev.cy;	break;
+			case SB_PAGEDOWN: si.nPos+=m_pageDev.cy;	break;
+			case SB_THUMBTRACK:	si.nPos=si.nTrackPos;	break;
+		}
+		if (si.nPos<0) si.nPos=0;
+		else if (si.nPos>si.nMax-si.nPage) si.nPos=si.nMax-si.nPage;
 		ScrollWindow(	// "base"
 						0,
-						(iScrollY0-ysi.nPos)//*Utils::GetLogicalUnitScaleFactor(CClientDC(this))
+						(iScroll0-si.nPos)//*Utils::GetLogicalUnitScaleFactor(CClientDC(this))
 					); 
-		SetScrollInfo(SB_VERT,&ysi,TRUE);
+		SetScrollInfo(SB_VERT,&si,TRUE);
 		return TRUE;
 	}
 
@@ -152,6 +184,15 @@
 
 	afx_msg LRESULT CTrackMapView::__drawTrack__(WPARAM trackNumber,LPARAM pTrackInfo){
 		// draws scanned Track
+		// - adjusting logical dimensions to accommodate the LongestTrack
+		const TTrackInfo &rti=*(TTrackInfo *)pTrackInfo;
+		int nBytesOnTrack=0;
+		for( TSector s=rti.nSectors; s>0; nBytesOnTrack+=rti.bufferLength[--s] );
+		if (rti.nSectors>longestTrack.nSectors || nBytesOnTrack>longestTrack.nBytes){
+			longestTrack.nSectors=rti.nSectors;
+			longestTrack.nBytes=nBytesOnTrack;
+			__updateLogicalDimensions__();
+		}
 		// - drawing
 		if (scanner.params.x==(TTrack)trackNumber){
 			// received scanned information of expected Track to draw
@@ -160,7 +201,6 @@
 			// . basic drawing
 			::SetBkMode(dc,TRANSPARENT);
 			const HGDIOBJ font0=::SelectObject(dc,Utils::CRideFont::Std);
-				const TTrackInfo &rti=*(TTrackInfo *)pTrackInfo;
 				TCHAR buf[16];
 				// : drawing Cylinder and Side numbers
 				const int y=TRACK0_Y+trackNumber*TRACK_HEIGHT;
@@ -288,9 +328,10 @@
 	afx_msg int CTrackMapView::OnCreate(LPCREATESTRUCT lpcs){
 		// window created
 		// - base
-		if (CScrollView::OnCreate(lpcs)==-1) return -1;
+		if (__super::OnCreate(lpcs)==-1) return -1;
 		OnInitialUpdate(); // because isn't called automatically by OnCreate; calls SetScrollSizes via OnUpdate
 		// - recovering the scroll position
+		SetScrollPos( SB_HORZ, iScrollX, FALSE );
 		SetScrollPos( SB_VERT, iScrollY, FALSE );
 		// - updating the MainWindow's StatusBar
 		__updateStatusBarIfCursorOutsideAnySector__();
@@ -387,11 +428,12 @@
 	afx_msg void CTrackMapView::OnDestroy(){
 		// window destroyed
 		// - saving scrolling position for later
+		iScrollX=GetScrollPos(SB_HORZ);
 		iScrollY=GetScrollPos(SB_VERT);
 		// - disposing the RainbowPens (assuming that the FillerByte color is a stock object)
 		for( int t=TRACK_MAP_COLORS_COUNT; t--; ::DeleteObject(rainbowBrushes[t]) );
 		// - base
-		CScrollView::OnDestroy();
+		__super::OnDestroy();
 	}
 
 	afx_msg void CTrackMapView::__changeDisplayType__(UINT id){
@@ -418,6 +460,7 @@
 	afx_msg void CTrackMapView::__zoomOut__(){
 		// zooms out the view
 		zoomLengthFactor++;
+		__updateLogicalDimensions__();
 		Invalidate(TRUE);
 	}
 	afx_msg void CTrackMapView::__zoomOut_updateUI__(CCmdUI *pCmdUI){
@@ -428,6 +471,7 @@
 	afx_msg void CTrackMapView::__zoomIn__(){
 		// zooms in the view
 		zoomLengthFactor--;
+		__updateLogicalDimensions__();
 		Invalidate(TRUE);
 	}
 	afx_msg void CTrackMapView::__zoomIn_updateUI__(CCmdUI *pCmdUI){

@@ -8,7 +8,11 @@
 	class CTrackMapView sealed:public CScrollView{
 		DECLARE_MESSAGE_MAP()
 	private:
-		int iScrollY; // ScrollBar position
+		int iScrollX, iScrollY; // ScrollBar position
+		struct{
+			TSector nSectors;
+			int nBytes;
+		} longestTrack; // to infer maximum horizontal scroll position
 		enum TDisplayType:WORD{
 			STATUS		=ID_TRACKMAP_STATUS,
 			DATA_OK_ONLY=ID_TRACKMAP_DATA,
@@ -35,6 +39,7 @@
 		void PostNcDestroy() override;
 		bool __getPhysicalAddressFromPoint__(POINT point,TPhysicalAddress &rOutChs,BYTE &rnOutSectorsToSkip);
 		void __updateStatusBarIfCursorOutsideAnySector__() const;
+		void __updateLogicalDimensions__();
 		afx_msg int OnCreate(LPCREATESTRUCT lpcs);
 		afx_msg void OnMouseMove(UINT nFlags,CPoint point);
 		afx_msg void OnLButtonUp(UINT nFlags,CPoint point);
