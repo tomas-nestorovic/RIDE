@@ -199,6 +199,8 @@
 			CClientDC dc(this);
 			OnPrepareDC(&dc);
 			// . basic drawing
+			CRect rc;
+			GetClientRect(&rc);
 			::SetBkMode(dc,TRANSPARENT);
 			const HGDIOBJ font0=::SelectObject(dc,Utils::CRideFont::Std);
 				TCHAR buf[16];
@@ -210,6 +212,7 @@
 					::wsprintf(buf,_T("\t%d\t0"),rti.cylinder);
 				::TabbedTextOut( dc, 0,y, buf,-1, 3,Tabs, 0 );
 				// : drawing Sectors
+				iScrollX=GetScrollPos(SB_HORZ)/Utils::LogicalUnitScaleFactor;
 				PCSectorId pId=rti.bufferId;
 				PCWORD pLength=rti.bufferLength;
 				TSector nSectors=rti.nSectors;
@@ -219,20 +222,29 @@
 						// drawing Sector Statuses
 						CDos::TSectorStatus statuses[(TSector)-1],*ps=statuses;
 						DOS->GetSectorStatuses( rti.cylinder, rti.head, nSectors, pId, statuses );
-						for( ; nSectors--; r.left=r.right+=SECTOR_MARGIN ){
+						for( ; nSectors--; r.left=r.right+=SECTOR_MARGIN,ps++,pId++ ){
 							r.right+=1+(*pLength++>>zoomLengthFactor); // "1+" = to correctly display a zero-length Sector
-							const CBrush brush(*ps++);
-							const HGDIOBJ hBrush0=::SelectObject(dc,brush);
-							dc.Rectangle(&r);
-							if (showSectorNumbers) // drawing Sector numbers
-								::DrawText( dc, _itot(pId++->sector,buf,10),-1, &r, DT_CENTER|DT_VCENTER|DT_SINGLELINE );
+							if (iScrollX<r.right || r.left<iScrollX+rc.Width()){
+								// Sector in horizontally visible part of the TrackMap
+								const CBrush brush(*ps);
+								const HGDIOBJ hBrush0=::SelectObject(dc,brush);
+									dc.Rectangle(&r);
+									if (showSectorNumbers) // drawing Sector numbers
+										::DrawText( dc, _itot(pId->sector,buf,10),-1, &r, DT_CENTER|DT_VCENTER|DT_SINGLELINE );
+								::SelectObject(dc,hBrush0);
+							}
 							r.right--; // compensating for correctly displaying zero-length Sectors
 						}
 					}else
 						// drawing Sector data
-						for( const PCSectorData *pData=rti.bufferSectorData; nSectors--; r.left=r.right+=SECTOR_MARGIN ){
+						for( const PCSectorData *pData=rti.bufferSectorData; nSectors--; r.left=r.right+=SECTOR_MARGIN,pData++ ){
 							const WORD w=*pLength++>>zoomLengthFactor;
-							if (PCBYTE sample=(PCBYTE)*pData++){
+							if (r.right+w<=iScrollX || iScrollX+rc.Width()<=r.left){
+								// Sector out of horizontally visible part of the TrackMap
+								r.right+=w;
+								continue;
+							}
+							if (PCBYTE sample=(PCBYTE)*pData){
 								// Sector found - drawing its data
 								RECT rcSample=r;
 									rcSample.right=rcSample.left+2;
