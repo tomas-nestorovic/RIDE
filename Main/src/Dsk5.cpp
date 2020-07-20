@@ -125,10 +125,8 @@
 
 	void CDsk5::__freeAllTracks__(){
 		// disposes all Tracks
-		while (diskInfo.nCylinders>0){
+		while (diskInfo.nCylinders>0)
 			for( THead head=diskInfo.nHeads; head; UnformatTrack(diskInfo.nCylinders-1,--head) );
-			diskInfo.nCylinders--;
-		}
 	}
 
 
@@ -549,10 +547,9 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			}
 			// . updating the NumberOfCylinders
 			for( cyl=diskInfo.nCylinders; cyl--; )
-				if (__findTrack__(cyl,0)!=__findTrack__(cyl,1)){ // equal only if both Sides are Null
-					diskInfo.nCylinders=1+cyl;
+				if (__findTrack__(cyl,0)!=__findTrack__(cyl,1)) // equal only if both Sides are Null
 					break;
-				}
+			diskInfo.nCylinders=1+cyl;
 			m_bModified=TRUE;
 			return ERROR_SUCCESS;
 		}else
