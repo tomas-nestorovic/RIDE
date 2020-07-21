@@ -129,7 +129,9 @@
 			p->driveError=d.error==BST_CHECKED;
 			p->driveLastSeekedCylinder=d.lastCylinder;
 			p->driveFlags.driveB=d.letter!=0;
-			p->driveFlags.driveD40=d.d40!=0;
+			CDos::GetFocused()->formatBoot.mediumType =	(p->driveFlags.driveD40=d.d40!=0)
+														? TMedium::FLOPPY_DD_525
+														: TMedium::FLOPPY_DD_350;
 			p->driveFlags.doubleSided=d.doubleSided==BST_CHECKED;
 			p->driveFlags.fortyCylDiskInD80=d.dsk40cyl==BST_CHECKED;
 			p->driveFlags.stepSpeed=d.stepping;
@@ -331,6 +333,7 @@
 					break;
 				case IDYES:
 					boot->current.diskFlags.driveD40=false;
+					MDOS2->formatBoot.mediumType=TMedium::FLOPPY_DD_350;
 					IMAGE->MarkSectorAsDirty(CHS);
 					vp.fReport.CloseProblem(true);
 					break;
@@ -357,7 +360,9 @@
 				case IDNO:
 					break;
 				case IDYES:
-					boot->current.driveFlags.driveD40=!boot->current.driveFlags.driveD40;
+					MDOS2->formatBoot.mediumType =	(boot->current.driveFlags.driveD40=!boot->current.driveFlags.driveD40)
+													? TMedium::FLOPPY_DD_525
+													: TMedium::FLOPPY_DD_350;
 					IMAGE->MarkSectorAsDirty(CHS);
 					vp.fReport.CloseProblem(true);
 					break;
