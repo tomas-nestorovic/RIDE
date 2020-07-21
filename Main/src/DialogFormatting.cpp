@@ -97,6 +97,10 @@
 			DDV_MinMaxUInt( pDX, params.format.nSectors, std::max<int>(propMedium->sectorRange.iMin,propDos->nSectorsOnTrackMin), std::min<int>(propMedium->sectorRange.iMax,propDos->nSectorsOnTrackMax) );
 		DDX_Text( pDX,	ID_SIZE	,(short &)params.format.sectorLength );
 			DDV_MinMaxUInt( pDX, params.format.sectorLength, propImage->sectorLengthMin, propImage->sectorLengthMax );
+			if (pDX->m_bSaveAndValidate)
+				params.format.sectorLengthCode=CImage::__getSectorLengthCode__(params.format.sectorLength);
+			else
+				params.format.sectorLengthCode=dos->formatBoot.sectorLengthCode;
 		DDX_Text( pDX,	ID_INTERLEAVE,params.interleaving);
 			DDV_MinMaxUInt( pDX, params.interleaving, 1, params.format.nSectors );
 		DDX_Text( pDX,	ID_SKEW	,params.skew);

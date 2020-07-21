@@ -190,8 +190,6 @@
 	protected:
 		static bool __openImageForReading__(LPCTSTR fileName,CFile *f);
 		static bool __openImageForWriting__(LPCTSTR fileName,CFile *f);
-		static BYTE __getSectorLengthCode__(WORD sectorLength);
-		static WORD __getOfficialSectorLength__(BYTE sectorLengthCode);
 
 		struct TExclusiveLocker sealed{
 			const PCImage image;
@@ -263,6 +261,8 @@
 		static CImage *GetActive();
 		static PCProperties __determineTypeByExtension__(LPCTSTR extension);
 		static BYTE __populateComboBoxWithCompatibleMedia__(HWND hComboBox,WORD dosSupportedMedia,PCProperties imageProperties);
+		static TFormat::TLengthCode __getSectorLengthCode__(WORD sectorLength);
+		static WORD __getOfficialSectorLength__(BYTE sectorLengthCode);
 
 		const PCProperties properties;
 		CMainWindow::CDockableToolBar toolbar;

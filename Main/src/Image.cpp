@@ -280,11 +280,11 @@
 
 	#define LENGTH_CODE_BASE	0x80
 
-	BYTE CImage::__getSectorLengthCode__(WORD sectorLength){
+	TFormat::TLengthCode CImage::__getSectorLengthCode__(WORD sectorLength){
 		// returns the code of the SectorLength
 		BYTE lengthCode=0;
 		while (sectorLength>LENGTH_CODE_BASE) sectorLength>>=1, lengthCode++;
-		return lengthCode;
+		return (TFormat::TLengthCode)lengthCode;
 	}
 
 	WORD CImage::__getOfficialSectorLength__(BYTE sectorLengthCode){
