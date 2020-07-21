@@ -44,6 +44,7 @@
 		afx_msg int OnCreate(LPCREATESTRUCT lpcs);
 		afx_msg void OnMouseMove(UINT nFlags,CPoint point);
 		afx_msg void OnLButtonUp(UINT nFlags,CPoint point);
+		afx_msg BOOL OnMouseWheel(UINT nFlags,short delta,CPoint point);
 		afx_msg void OnDestroy();
 		afx_msg LRESULT __drawTrack__(WPARAM wParam,LPARAM lParam);
 		afx_msg void __changeDisplayType__(UINT id);

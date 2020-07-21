@@ -41,6 +41,7 @@
 		ON_WM_VSCROLL()
 		ON_WM_MOUSEMOVE()
 		ON_WM_LBUTTONUP()
+		ON_WM_MOUSEWHEEL()
 		ON_WM_DESTROY()
 		ON_MESSAGE(WM_TRACK_SCANNED,__drawTrack__)
 		ON_COMMAND_RANGE(ID_TRACKMAP_STATUS,ID_TRACKMAP_BAD_DATA,__changeDisplayType__)
@@ -448,6 +449,23 @@
 		}
 	}
 
+	#define CAN_ZOOM_IN		(zoomLengthFactor>0)
+	#define CAN_ZOOM_OUT	(zoomLengthFactor<8)
+
+	afx_msg BOOL CTrackMapView::OnMouseWheel(UINT nFlags,short delta,CPoint point){
+		// mouse wheel was rotated
+		if (nFlags&MK_CONTROL){
+			// Ctrl key is down - changing the zoom
+			if (delta>0)
+				__zoomIn__();
+			else
+				__zoomOut__();
+			return TRUE;
+		}else
+			// Ctrl key is not down - scrolling the content
+			return __super::OnMouseWheel( nFlags, delta, point );
+	}
+
 	afx_msg void CTrackMapView::OnDestroy(){
 		// window destroyed
 		// - saving scrolling position for later
@@ -482,24 +500,28 @@
 
 	afx_msg void CTrackMapView::__zoomOut__(){
 		// zooms out the view
-		zoomLengthFactor++;
-		__updateLogicalDimensions__();
-		Invalidate(TRUE);
+		if (CAN_ZOOM_OUT){
+			zoomLengthFactor++;
+			__updateLogicalDimensions__();
+			Invalidate(TRUE);
+		}
 	}
 	afx_msg void CTrackMapView::__zoomOut_updateUI__(CCmdUI *pCmdUI){
 		// projects possibility to even more zoom out the view
-		pCmdUI->Enable( zoomLengthFactor<8 );
+		pCmdUI->Enable( CAN_ZOOM_OUT );
 	}
 
 	afx_msg void CTrackMapView::__zoomIn__(){
 		// zooms in the view
-		zoomLengthFactor--;
-		__updateLogicalDimensions__();
-		Invalidate(TRUE);
+		if (CAN_ZOOM_IN){
+			zoomLengthFactor--;
+			__updateLogicalDimensions__();
+			Invalidate(TRUE);
+		}
 	}
 	afx_msg void CTrackMapView::__zoomIn_updateUI__(CCmdUI *pCmdUI){
 		// projects possibility to even more zoom in the view
-		pCmdUI->Enable( zoomLengthFactor>0 );
+		pCmdUI->Enable( CAN_ZOOM_IN );
 	}
 
 	afx_msg void CTrackMapView::__showSelectedFiles__(){
