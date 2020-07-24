@@ -378,14 +378,14 @@
 			rParam.clusterSize=true;
 	}
 
-	bool WINAPI CMSDOS7::CMsdos7BootView::__onMediumChanged__(PVOID,PropGrid::Enum::UValue newValue){
+	void WINAPI CMSDOS7::CMsdos7BootView::__onMediumChanged__(PropGrid::PCustomParam){
 		// Medium Type changed via PropertyGrid
 		CMSDOS7 *const msdos=(CMSDOS7 *)CDos::GetFocused();
+		const PCBootSector boot=msdos->boot.GetSectorData();
 		// - changing the Medium Type in FAT
-		msdos->fat.SetClusterValue( 0, msdos->fat.GetClusterValue(0)&0xffffff00|(BYTE)newValue.charValue );
+		msdos->fat.SetClusterValue( 0, msdos->fat.GetClusterValue(0)&0xffffff00|boot->medium );
 		// - propagating the Medium type that has just been changed in Boot Sector to the inner FormatBoot structure
 		msdos->__adoptMediumFromBootSector__();
-		return __bootSectorModified__(nullptr,0);
 	}
 	PropGrid::Enum::PCValueList WINAPI CMSDOS7::CMsdos7BootView::__getListOfMedia__(PVOID,WORD &rnMedia){
 		// returns the List of known Media
@@ -468,7 +468,7 @@
 			// . Medium
 			PropGrid::AddProperty(	hPropGrid, hGeometryAdvanced, _T("Medium"),
 									&boot->medium,
-									PropGrid::Enum::DefineConstStringListEditorA( sizeof(TBootSector::TMsdosMedium), __getListOfMedia__, __getMediumDescription__, nullptr, __onMediumChanged__ )
+									PropGrid::Enum::DefineConstStringListEditorA( sizeof(TBootSector::TMsdosMedium), __getListOfMedia__, __getMediumDescription__, nullptr, __bootSectorModified__, __onMediumChanged__ )
 								);
 			// . number of Sectors on the disk
 			if (fatType==CFat::FAT32 || boot->nSectorsInTotal16==0)
