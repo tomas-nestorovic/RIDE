@@ -60,7 +60,7 @@
 				fmt.sectorLength=(WORD)newValue;
 			else if (criticalValueId==CRITICAL_VALUE_CLUSTER_SIZE)
 				fmt.clusterSize=(TSector)newValue;
-			if (!dos->ValidateFormatChangeAndReportProblem(false,&fmt))
+			if (!dos->ValidateFormatChangeAndReportProblem(true,true,fmt))
 				return false;
 			// . accepting the new format
 			dos->formatBoot=fmt;
@@ -87,7 +87,7 @@
 		// - validating new format (eventually extending existing FAT to accommodate new Cylinders, or shrinking FAT to spare space on the disk)
 		TFormat fmt=dos->formatBoot;
 			fmt.nCylinders=(TCylinder)newValue;
-		if (!dos->ValidateFormatChangeAndReportProblem(true,&fmt))
+		if (!dos->ValidateFormatChangeAndReportProblem(true,true,fmt))
 			return false;
 		// - adding to or removing from FAT
 		TCHAR bufMsg[500];

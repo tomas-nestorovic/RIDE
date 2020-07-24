@@ -1051,14 +1051,14 @@
 				__setLogicalSectorFatItem__( ls, TFatValue::SectorErrorInDataField );
 	}
 
-	bool CBSDOS308::ValidateFormatChangeAndReportProblem(bool reformatting,PCFormat f) const{
+	bool CBSDOS308::ValidateFormatChangeAndReportProblem(bool considerBoot,bool considerFat,RCFormat f) const{
 		// True <=> specified Format is acceptable, otherwise False (and informing on error)
 		// - base
-		if (!__super::ValidateFormatChangeAndReportProblem(reformatting,f))
+		if (!__super::ValidateFormatChangeAndReportProblem(considerBoot,considerFat,f))
 			return false;
 		// - adjusting the size of FAT by either adding extra Sectors to it (if formatting) or removing existing Sectors from it (if unformatting)
-		if (reformatting){
-			// NOT formatting from scratch, just reformatting some Cylinders
+		if (considerFat){
+			// the new Format should affect --existing-- FAT
 			// . BootSector must exist
 			const PBootSector bootSector=boot.GetSectorData();
 			if (!bootSector)
@@ -1082,7 +1082,7 @@
 				return false;
 			}
 			// . collecting information for the upcoming Format change
-			const DWORD nNewSectorsTotal=f->GetCountOfAllSectors();
+			const DWORD nNewSectorsTotal=f.GetCountOfAllSectors();
 			const WORD nNewFatSectors=(nNewSectorsTotal+BSDOS_FAT_ITEMS_PER_SECTOR-1)/BSDOS_FAT_ITEMS_PER_SECTOR;
 			// . adjusting the FAT
 			deFats[0].file.dataLength = deFats[1].file.dataLength = nNewFatSectors*BSDOS_SECTOR_LENGTH_STD;
@@ -1129,7 +1129,7 @@
 			boot.MarkSectorAsDirty();
 			__setLogicalSectorFatItem__( 0, TFatValue( MAKEWORD(0,__getFatChecksum__(0)) ) ); // both FAT copies are the same at the moment, hence getting checksum of one of them
 		}//else
-			// formatting from scratch (e.g. an empty disk)
+			// the new Format shouldn't be officially adopted in FAT (e.g. formatting from scratch a yet empty disk)
 			//nop
 		// - new Format is acceptable
 		return true;

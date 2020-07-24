@@ -236,7 +236,7 @@
 			case SS40:
 				fmt.nCylinders=40,fmt.nHeads=1; break;
 		}
-		if (!trdos->ValidateFormatChangeAndReportProblem(false,&fmt))
+		if (!trdos->ValidateFormatChangeAndReportProblem(true,true,fmt))
 			return false;
 		if (boot->firstFree.track/fmt.nHeads>=fmt.nCylinders){
 			Utils::Information(_T("Cannot modify the format as there are occupied sectors exceeding it."));

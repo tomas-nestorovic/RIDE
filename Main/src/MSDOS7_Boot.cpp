@@ -542,16 +542,16 @@
 		}
 	}
 
-	#define ERR_MSG_FORMAT_CYLINDER_RANGE	_T("Given the current number of heads, sectors per track, and cluster size, the %simum number of cylinders is limited to %d for this instance of FAT%d. ")
+	#define ERR_MSG_FORMAT_CYLINDER_RANGE	_T("Given current number of heads, sectors per track, and cluster size, the %simum number of cylinders is limited to %d for this instance of FAT%d. ")
 
-	bool CMSDOS7::ValidateFormatChangeAndReportProblem(bool reformatting,PCFormat f) const{
+	bool CMSDOS7::ValidateFormatChangeAndReportProblem(bool considerBoot,bool considerFat,RCFormat f) const{
 		// True <=> specified Format is acceptable, otherwise False (and informing on error)
 		// - base
-		if (!__super::ValidateFormatChangeAndReportProblem(reformatting,f))
+		if (!__super::ValidateFormatChangeAndReportProblem(considerBoot,considerFat,f))
 			return false;
 		// - new CountOfClusters mustn't overflow nor underflow limits of current FAT Type
-		if (reformatting){
-			// NOT formatting from scratch, just reformatting some Cylinders
+		if (considerFat){
+			// the new Format should affect --existing-- FAT
 			const PCBootSector bootSector=boot.GetSectorData();
 			if (!bootSector)
 				return false;
@@ -565,8 +565,8 @@
 											bootSector->__getCountOfNondataSectors__()
 										)/
 										formatBoot.GetCountOfSectorsPerCylinder();
-			if (f->nCylinders>nCylindersMax){
-				TCHAR buf[200];
+			if (f.nCylinders>nCylindersMax){
+				TCHAR buf[512];
 				::wsprintf(buf,ERR_MSG_FORMAT_CYLINDER_RANGE _T("The type of FAT can be changed only by formatting from Cylinder 0."),"max",nCylindersMax,4*fat.type);
 				Utils::Information(buf);
 				return false;
@@ -578,14 +578,14 @@
 											bootSector->__getCountOfNondataSectors__()
 										)/
 										formatBoot.GetCountOfSectorsPerCylinder();
-			if (f->nCylinders<nCylindersMin){
-				TCHAR buf[200];
+			if (f.nCylinders<nCylindersMin){
+				TCHAR buf[512];
 				::wsprintf(buf,ERR_MSG_FORMAT_CYLINDER_RANGE _T("The type of FAT cannot be changed."),"min",nCylindersMin,4*fat.type);
 				Utils::Information(buf);
 				return false;
 			}
 		}//else
-			// formatting from scratch (e.g. an empty disk)
+			// the new Format shouldn't be officially adopted in FAT (e.g. formatting from scratch a yet empty disk)
 			//nop
 		// - new Format is acceptable
 		return true;

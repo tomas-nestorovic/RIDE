@@ -87,7 +87,7 @@
 		WORD GetCountOfSectorsPerCylinder() const;
 		TTrack GetCountOfAllTracks() const;
 	} *PFormat;
-	typedef const TFormat *PCFormat;
+	typedef const TFormat *PCFormat,&RCFormat;
 
 	#pragma pack(1)
 	typedef struct TSectorId sealed{

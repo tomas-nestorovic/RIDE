@@ -118,7 +118,7 @@
 			}else{
 				TFormat f=DOS->formatBoot;
 				f.nCylinders=params.cylA;
-				if (!DOS->ValidateFormatChangeAndReportProblem(params.cylA>0,&f)){
+				if (!DOS->ValidateFormatChangeAndReportProblem( updateBoot&&params.cylA>0, removeTracksFromFat&&params.cylA>0, f )){
 					pDX->PrepareEditCtrl(ID_CYLINDER);
 					pDX->Fail();
 				}

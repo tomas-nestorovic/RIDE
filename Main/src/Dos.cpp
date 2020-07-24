@@ -105,10 +105,10 @@
 		__writeProfileInt__( entryName, value );
 	}
 
-	bool CDos::ValidateFormatChangeAndReportProblem(bool reformatting,PCFormat f) const{
+	bool CDos::ValidateFormatChangeAndReportProblem(bool considerBoot,bool considerFat,RCFormat f) const{
 		// True <=> specified Format is acceptable, otherwise False (and informing on error)
-		const DWORD nSectorsInTotal=f->GetCountOfAllSectors();
-		const WORD clusterSize=f->clusterSize*( f->sectorLength - properties->dataBeginOffsetInSector - properties->dataEndOffsetInSector );
+		const DWORD nSectorsInTotal=f.GetCountOfAllSectors();
+		const WORD clusterSize=f.clusterSize*( f.sectorLength - properties->dataBeginOffsetInSector - properties->dataEndOffsetInSector );
 		TCHAR buf[200];
 		if (nSectorsInTotal<properties->nSectorsInTotalMin){ // occurs only when fresh formatting a new Image
 			::wsprintf(buf,_T("The minimum total number of sectors for a \"%s\" disk is %d (the new geometry makes up only %d)."),properties->name,properties->nSectorsInTotalMin,nSectorsInTotal);

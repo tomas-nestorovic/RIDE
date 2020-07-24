@@ -134,7 +134,7 @@
 			// . checking that new format is acceptable
 			}else{
 				params.format.nCylinders++;
-					if (!dos->ValidateFormatChangeAndReportProblem(params.cylinder0>0,&params.format)){
+					if (!dos->ValidateFormatChangeAndReportProblem( updateBoot&&params.cylinder0>0, addTracksToFat&&params.cylinder0>0, params.format )){
 						pDX->PrepareEditCtrl(ID_CYLINDER_N);
 						pDX->Fail();
 					}
