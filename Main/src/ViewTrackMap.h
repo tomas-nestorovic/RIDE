@@ -64,6 +64,8 @@
 
 		CTrackMapView(PDos _dos);
 		~CTrackMapView();
+
+		afx_msg void RefreshDisplay();
 	};
 
 #endif // TRACKMAPVIEW_H

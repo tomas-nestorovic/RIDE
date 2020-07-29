@@ -56,6 +56,7 @@
 			ON_UPDATE_COMMAND_UI(ID_FILE,__showSelectedFiles_updateUI__)
 		ON_COMMAND(ID_COLOR,__changeFileSelectionColor__)
 		ON_COMMAND(ID_TRACKMAP_STATISTICS,__showDiskStatistics__)
+		ON_COMMAND(ID_REFRESH,RefreshDisplay)
 	END_MESSAGE_MAP()
 
 	CTrackMapView::~CTrackMapView(){
@@ -541,6 +542,11 @@
 			fileSelectionColor=d.GetColor();
 			Invalidate(TRUE);
 		}
+	}
+
+	afx_msg void CTrackMapView::RefreshDisplay(){
+		// refreshing the View
+		OnUpdate(nullptr,0,nullptr);
 	}
 
 

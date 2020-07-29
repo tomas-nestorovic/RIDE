@@ -261,6 +261,8 @@ BEGIN
             MENUITEM "Legend",                      ID_TRACKMAP_LEGEND
             , GRAYED
         END
+        MENUITEM SEPARATOR
+        MENUITEM "Refresh",                 ID_REFRESH
     END
 END
 
