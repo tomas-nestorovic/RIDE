@@ -361,7 +361,9 @@ BEGIN
         MENUITEM "Bookmark here\tCtrl+K",       ID_BOOKMARK_TOGGLE
         MENUITEM SEPARATOR
         MENUITEM "Copy\tCtrl+C",                ID_EDIT_COPY
+        MENUITEM "Copy to file...",             ID_FILE_SAVE_COPY_AS
         MENUITEM "Paste\tCtrl+V",               ID_EDIT_PASTE
+        MENUITEM "Paste from file...",          ID_EDIT_PASTE_SPECIAL
         MENUITEM "Delete\tDel",                 ID_EDIT_DELETE
         MENUITEM SEPARATOR
         POPUP "Select"
@@ -370,8 +372,6 @@ BEGIN
             MENUITEM "Nothing\tCtrl+Shift+A",       ID_EDIT_SELECT_NONE
             MENUITEM SEPARATOR
             MENUITEM "Current item\tCtrl+R",        ID_EDIT_SELECT_CURRENT
-            MENUITEM SEPARATOR
-            MENUITEM "Save as...",                  ID_EDIT_SELECT_SAVE
         END
         POPUP "Reset"
         BEGIN
@@ -481,7 +481,9 @@ BEGIN
         MENUITEM "Delete all bookmarks",        ID_BOOKMARK_DELETEALL
         MENUITEM SEPARATOR
         MENUITEM "Copy\tCtrl+C",                ID_EDIT_COPY
+        MENUITEM "Copy to file...",             ID_FILE_SAVE_COPY_AS
         MENUITEM "Paste\tCtrl+V",               ID_EDIT_PASTE
+        MENUITEM "Paste from file...",          ID_EDIT_PASTE_SPECIAL
         MENUITEM "Delete\tDel",                 ID_EDIT_DELETE
         MENUITEM SEPARATOR
         POPUP "Select"
@@ -492,8 +494,7 @@ BEGIN
             MENUITEM "Current sector\tCtrl+R",      ID_EDIT_SELECT_CURRENT
             MENUITEM "Current track\tCtrl+T",       ID_SELECT_CURRENT_TRACK
             MENUITEM "Current cylinder",            ID_SELECT_CURRENT_CYLINDER
-            MENUITEM SEPARATOR
-            MENUITEM "Save as...",                  ID_EDIT_SELECT_SAVE
+
         END
         POPUP "Reset"
         BEGIN
@@ -528,7 +529,9 @@ BEGIN
         MENUITEM "Delete all bookmarks",        ID_BOOKMARK_DELETEALL
         MENUITEM SEPARATOR
         MENUITEM "Copy\tCtrl+C",                ID_EDIT_COPY
+        MENUITEM "Copy to file...",             ID_FILE_SAVE_COPY_AS
         MENUITEM "Paste\tCtrl+V",               ID_EDIT_PASTE
+        MENUITEM "Paste from file...",          ID_EDIT_PASTE_SPECIAL
         MENUITEM "Delete\tDel",                 ID_EDIT_DELETE
         MENUITEM SEPARATOR
         POPUP "Select"
@@ -537,8 +540,6 @@ BEGIN
             MENUITEM "Nothing\tCtrl+Shift+A",       ID_EDIT_SELECT_NONE
             MENUITEM SEPARATOR
             MENUITEM "Current entry\tCtrl+R",       ID_EDIT_SELECT_CURRENT
-            MENUITEM SEPARATOR
-            MENUITEM "Save as...",                  ID_EDIT_SELECT_SAVE
         END
         POPUP "Reset"
         BEGIN

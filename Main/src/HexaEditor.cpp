@@ -705,7 +705,7 @@ changeHalfbyte:					if (caret.position<maxFileSize){
 						RepaintData();
 						goto caretRefresh;
 					}
-					case ID_EDIT_SELECT_SAVE:{
+					case ID_FILE_SAVE_COPY_AS:{
 						// saving Selection as
 						TCHAR fileName[MAX_PATH];
 						CString title;
@@ -731,6 +731,34 @@ changeHalfbyte:					if (caret.position<maxFileSize){
 								Utils::FatalError( _T("Can't save selection"), e.m_cause );
 						}
 						SetFocus(); // restoring focus lost by displaying the "Save as" dialog
+						return 0;
+					}
+					case ID_EDIT_PASTE_SPECIAL:{
+						// pasting content of a file at current Caret Position
+						TCHAR fileName[MAX_PATH];
+						CString title;
+							title.LoadString(AFX_IDS_OPENFILE);
+						CFileDialog d( TRUE, _T(""), nullptr, OFN_FILEMUSTEXIST, nullptr, this );
+							d.m_ofn.lStructSize=sizeof(OPENFILENAME); // to show the "Places bar"
+							d.m_ofn.lpstrTitle=title;
+							*( d.m_ofn.lpstrFile=fileName )='\0';
+						if (d.DoModal()==IDOK){
+							CFileException e;
+							CFile fSrc;
+							if (fSrc.Open( fileName, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary, &e ))
+								for( DWORD nBytesToRead=maxFileSize-f->Seek(caret.position,CFile::begin),n; nBytesToRead>0; nBytesToRead-=n ){
+									BYTE buf[65536];
+									n=fSrc.Read(  buf,  std::min<UINT>( nBytesToRead, sizeof(buf) )  );
+									f->Write( buf, n );
+									if (::GetLastError()==ERROR_WRITE_FAULT){
+										Utils::Information( _T("Selection saved only partially"), ERROR_WRITE_FAULT );
+										break;
+									}
+								}
+							else
+								Utils::FatalError( _T("Can't paste file content"), e.m_cause );
+						}
+						SetFocus(); // restoring focus lost by displaying the "Open" dialog
 						return 0;
 					}
 					case ID_ZERO:
@@ -1245,7 +1273,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 				// update
 				switch (nID){
 					case ID_EDIT_COPY:
-					case ID_EDIT_SELECT_SAVE:
+					case ID_FILE_SAVE_COPY_AS:
 						((CCmdUI *)pExtra)->Enable( caret.selectionA!=caret.position );
 						return TRUE;
 					case ID_EDIT_PASTE:{
@@ -1266,6 +1294,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 					case ID_NAVIGATE_ADDRESS:
 						((CCmdUI *)pExtra)->Enable(true);
 						return TRUE;
+					case ID_EDIT_PASTE_SPECIAL:
 					case ID_EDIT_DELETE:
 					case ID_ZERO:
 					case ID_NUMBER:
@@ -1287,9 +1316,10 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 					case ID_EDIT_SELECT_ALL:
 					case ID_EDIT_SELECT_NONE:
 					case ID_EDIT_SELECT_CURRENT:
-					case ID_EDIT_SELECT_SAVE:
+					case ID_FILE_SAVE_COPY_AS:
 					case ID_EDIT_COPY:
 					case ID_EDIT_PASTE:
+					case ID_EDIT_PASTE_SPECIAL:
 					case ID_EDIT_DELETE:
 					case ID_BOOKMARK_TOGGLE:
 					case ID_BOOKMARK_PREV:
