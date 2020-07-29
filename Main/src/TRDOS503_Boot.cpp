@@ -228,12 +228,16 @@
 		TFormat fmt=*pf;
 		switch ((TDiskFormat)newValue.charValue){
 			case DS80:
+				fmt.mediumType=TMedium::FLOPPY_DD_350;
 				fmt.nCylinders=80,fmt.nHeads=2; break;
 			case DS40:
+				fmt.mediumType=TMedium::FLOPPY_DD_525;
 				fmt.nCylinders=40,fmt.nHeads=2; break;
 			case SS80:
+				fmt.mediumType=TMedium::FLOPPY_DD_350;
 				fmt.nCylinders=80,fmt.nHeads=1; break;
 			case SS40:
+				fmt.mediumType=TMedium::FLOPPY_DD_525;
 				fmt.nCylinders=40,fmt.nHeads=1; break;
 		}
 		if (!trdos->ValidateFormatChangeAndReportProblem(true,true,fmt))
