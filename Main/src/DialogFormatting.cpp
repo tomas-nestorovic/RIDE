@@ -68,6 +68,11 @@
 		static const WORD Controls[]={ ID_MEDIUM, ID_CLUSTER, ID_FAT, ID_DIRECTORY, 0 };
 		Utils::EnableDlgControls( m_hWnd, Controls, !bootSectorAlreadyExists );
 		GetDlgItem(ID_DRIVE)->ShowWindow( bootSectorAlreadyExists ? SW_SHOW : SW_HIDE );
+		if (!bootSectorAlreadyExists){
+			CRect rc;
+			GetDlgItem(ID_FORMAT)->GetClientRect(&rc);
+			GetDlgItem(ID_MEDIUM)->SetWindowPos( nullptr, 0,0, rc.Width(),rc.Height(), SWP_NOZORDER|SWP_NOMOVE );
+		}
 	}
 
 	void CFormatDialog::__selectClusterSize__(CComboBox &rcb,WORD nSectorsPerCluster) const{
@@ -161,11 +166,20 @@
 		if (pcws->wParam==ID_DRIVE) // notification regarding Drive A:
 			switch (pcws->message){
 				case NM_CLICK:
-				case NM_RETURN:{
-					Utils::Information(_T("Media sometimes introduce themselves wrongly (e.g. copy-protection). The introduction (if any) can be changed in the \"") BOOT_SECTOR_TAB_LABEL _T("\" tab."));
+				case NM_RETURN:
+					if (Utils::QuestionYesNo(_T("Media may introduce themselves wrongly (e.g. copy-protection). Instead of here, the introduction (if any) can be changed in the \"") BOOT_SECTOR_TAB_LABEL _T("\" tab.\n\nUnlock this setting anyway?"),MB_DEFBUTTON2)){
+						GetDlgItem(ID_DRIVE)->ShowWindow( SW_HIDE );
+						CRect rc;
+						GetDlgItem(ID_FORMAT)->GetClientRect(&rc);
+						const HWND hMedium=::GetDlgItem( m_hWnd, ID_MEDIUM);
+						const LPCTSTR currMediumDesc=TMedium::GetDescription((TMedium::TType)ComboBox_GetItemData( hMedium, ComboBox_GetCurSel(hMedium) ));
+						CImage::__populateComboBoxWithCompatibleMedia__( hMedium, dos->properties->supportedMedia, dos->image->properties );
+						ComboBox_SelectString( hMedium, 0, currMediumDesc );
+						::SetWindowPos( hMedium, nullptr, 0,0, rc.Width(),rc.Height(), SWP_NOZORDER|SWP_NOMOVE );
+						::EnableWindow( hMedium, TRUE );
+					}
 					*pResult=0;
 					return TRUE;
-				}
 			}
 		return CDialog::OnNotify(wParam,lParam,pResult);
 	}
