@@ -143,6 +143,16 @@ BEGIN
     "K",            ID_ZX_PREVIEWASBASIC,   VIRTKEY, CONTROL, NOINVERT
 END
 
+IDR_TRACKMAP ACCELERATORS DISCARDABLE 
+BEGIN
+    "+",            ID_ZOOM_IN,             ASCII,  NOINVERT
+    "-",            ID_ZOOM_OUT,            ASCII,  NOINVERT
+    "1",            ID_TRACKMAP_STATUS,     VIRTKEY, CONTROL, NOINVERT
+    "2",            ID_TRACKMAP_DATA,       VIRTKEY, CONTROL, NOINVERT
+    "3",            ID_TRACKMAP_BAD_DATA,   VIRTKEY, CONTROL, NOINVERT
+    "E",            ID_FILE,                VIRTKEY, CONTROL, NOINVERT
+    VK_F5,          ID_REFRESH,             VIRTKEY, NOINVERT
+END
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -240,20 +250,20 @@ BEGIN
     BEGIN
         POPUP "Sector display"
         BEGIN
-            MENUITEM "Status",                      ID_TRACKMAP_STATUS
-            MENUITEM "Data",                        ID_TRACKMAP_DATA
-            MENUITEM "Bad data (if any)",           ID_TRACKMAP_BAD_DATA
+            MENUITEM "Status\tCtrl+1",              ID_TRACKMAP_STATUS
+            MENUITEM "Data\tCtrl+2",                ID_TRACKMAP_DATA
+            MENUITEM "Bad data (if any)\tCtrl+3",   ID_TRACKMAP_BAD_DATA
             MENUITEM SEPARATOR
             MENUITEM "Numbering",                   ID_TRACKMAP_NUMBERING
         END
         POPUP "File selection"
         BEGIN
-            MENUITEM "Show",                        ID_FILE
+            MENUITEM "Show\tCtrl+E",                ID_FILE
             MENUITEM "Color...",                    ID_COLOR
         END
         MENUITEM SEPARATOR
-        MENUITEM "Zoom in",                     ID_ZOOM_IN
-        MENUITEM "Zoom out",                    ID_ZOOM_OUT
+        MENUITEM "Zoom in\t+",                  ID_ZOOM_IN
+        MENUITEM "Zoom out\t–",                 ID_ZOOM_OUT
         MENUITEM SEPARATOR
         POPUP "Helpers"
         BEGIN
@@ -262,7 +272,7 @@ BEGIN
             , GRAYED
         END
         MENUITEM SEPARATOR
-        MENUITEM "Refresh",                 ID_REFRESH
+        MENUITEM "Refresh\tF5",                 ID_REFRESH
     END
 END
 
