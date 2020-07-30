@@ -746,12 +746,12 @@ changeHalfbyte:					if (caret.position<maxFileSize){
 							CFileException e;
 							CFile fSrc;
 							if (fSrc.Open( fileName, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary, &e ))
-								for( DWORD nBytesToRead=maxFileSize-f->Seek(caret.position,CFile::begin),n; nBytesToRead>0; nBytesToRead-=n ){
+								for( DWORD nBytesToRead=std::min( fSrc.GetLength(), maxFileSize-f->Seek(caret.position,CFile::begin) ),n; nBytesToRead>0; nBytesToRead-=n ){
 									BYTE buf[65536];
 									n=fSrc.Read(  buf,  std::min<UINT>( nBytesToRead, sizeof(buf) )  );
 									f->Write( buf, n );
 									if (::GetLastError()==ERROR_WRITE_FAULT){
-										Utils::Information( _T("Selection saved only partially"), ERROR_WRITE_FAULT );
+										Utils::Information( _T("Pasted only partially"), ERROR_WRITE_FAULT );
 										break;
 									}
 								}
