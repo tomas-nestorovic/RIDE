@@ -19,10 +19,12 @@
 
 	#define INI_VERSION		_T("ver")
 	#define INI_CREATOR		_T("crt")
+	#define INI_EMPTY_TRACKS _T("pet")
 
 	CDsk5::TParams::TParams()
 		// ctor
-		: rev5( app.GetProfileInt(INI_DSK,INI_VERSION,1)!=0 ) {
+		: rev5( app.GetProfileInt(INI_DSK,INI_VERSION,1)!=0 )
+		, preserveEmptyTracks( app.GetProfileIntA(INI_DSK,INI_EMPTY_TRACKS,0)!=0 ) {
 	}
 
 	#define STD_HEADER		"MV - CPC" /* suffices to recognize "standard" DSK format */
@@ -125,8 +127,11 @@
 
 	void CDsk5::__freeAllTracks__(){
 		// disposes all Tracks
-		while (diskInfo.nCylinders>0)
-			for( THead head=diskInfo.nHeads; head; UnformatTrack(diskInfo.nCylinders-1,--head) );
+		const bool pet0=params.preserveEmptyTracks;
+		params.preserveEmptyTracks=false;
+			while (diskInfo.nCylinders>0)
+				for( THead head=diskInfo.nHeads; head; UnformatTrack(diskInfo.nCylinders-1,--head) );
+		params.preserveEmptyTracks=pet0;
 	}
 
 
@@ -377,8 +382,8 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				// . Creator
 				const BYTE nCyls=rDiskInfo.nCylinders;
 				rDiskInfo.nCylinders=0; // converting the Creator field to a null-terminated string
-				DDX_Text( pDX, ID_CREATOR, rDiskInfo.creator, sizeof(rDiskInfo.creator)+1 ); // "+1" = terminal Null character
-					DDV_MaxChars( pDX, rDiskInfo.creator, sizeof(rDiskInfo.creator) );
+					DDX_Text( pDX, ID_CREATOR, rDiskInfo.creator, sizeof(rDiskInfo.creator)+1 ); // "+1" = terminal Null character
+						DDV_MaxChars( pDX, rDiskInfo.creator, sizeof(rDiskInfo.creator) );
 					if (!pDX->m_bSaveAndValidate){
 						// populating the Creator combo-box with preset names
 						CComboBox cb;
@@ -393,6 +398,10 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 						cb.Detach();
 					}
 				rDiskInfo.nCylinders=nCyls;
+				// . preservation of empty Tracks
+				i=rParams.preserveEmptyTracks;
+				DDX_Check( pDX, ID_TRACK, i );
+				rParams.preserveEmptyTracks=i!=BST_UNCHECKED;
 			}
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 				// window procedure
@@ -444,6 +453,14 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		} d(allowTypeBeChanged,params,diskInfo);
 		// - showing the Dialog and processing its result
 		if (d.DoModal()==IDOK){
+			// . saving settings
+			app.WriteProfileInt( INI_DSK, INI_VERSION, params.rev5 );
+			app.WriteProfileInt( INI_DSK, INI_EMPTY_TRACKS, params.preserveEmptyTracks );
+			const BYTE nCyls=diskInfo.nCylinders;
+			diskInfo.nCylinders=0; // converting the Creator field to a null-terminated string
+				app.WriteProfileString( INI_DSK, INI_CREATOR, diskInfo.creator );
+			diskInfo.nCylinders=nCyls;
+			// . marking the Image as "dirty"
 			SetModifiedFlag(TRUE);
 			return true;
 		}else
@@ -459,17 +476,9 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 	TStdWinError CDsk5::Reset(){
 		// resets internal representation of the disk (e.g. by disposing all content without warning)
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		if (__showOptions__(true)){
-			// . saving settings
-			app.WriteProfileInt( INI_DSK, INI_VERSION, params.rev5 );
-			const BYTE nCyls=diskInfo.nCylinders;
-			diskInfo.nCylinders=0; // converting the Creator field to a null-terminated string
-				app.WriteProfileString( INI_DSK, INI_CREATOR, diskInfo.creator );
-			diskInfo.nCylinders=nCyls;
-			// . resetting this Image using the above parameters
-			return __reset__();
-		}else
-			return ERROR_CANCELLED;
+		return	__showOptions__(true)
+				? __reset__() // resetting this Image using actual Parameters
+				: ERROR_CANCELLED;
 	}
 
 	TStdWinError CDsk5::FormatTrack(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte){
@@ -546,10 +555,14 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				#endif
 			}
 			// . updating the NumberOfCylinders
-			for( cyl=diskInfo.nCylinders; cyl--; )
-				if (__findTrack__(cyl,0)!=__findTrack__(cyl,1)) // equal only if both Sides are Null
-					break;
-			diskInfo.nCylinders=1+cyl;
+			if (params.preserveEmptyTracks)
+				diskInfo.nCylinders=std::max<BYTE>( 1+cyl, diskInfo.nCylinders );
+			else{
+				for( cyl=diskInfo.nCylinders; cyl--; )
+					if (__findTrack__(cyl,0)!=__findTrack__(cyl,1)) // equal only if both Sides are Null
+						break;
+				diskInfo.nCylinders=1+cyl;
+			}
 			m_bModified=TRUE;
 			return ERROR_SUCCESS;
 		}else

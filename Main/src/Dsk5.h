@@ -36,6 +36,7 @@
 
 		struct TParams sealed{
 			bool rev5;
+			bool preserveEmptyTracks;
 
 			TParams();
 		} params;

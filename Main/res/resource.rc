@@ -1161,15 +1161,15 @@ BEGIN
                     WS_VISIBLE | WS_TABSTOP,7,18,259,10
 END
 
-IDR_DSK_TYPE DIALOG DISCARDABLE  0, 0, 146, 97
+IDR_DSK_TYPE DIALOG DISCARDABLE  0, 0, 146, 111
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
 CAPTION "DSK image settings"
 FONT 8, "MS Sans Serif"
 BEGIN
-    DEFPUSHBUTTON   "OK",IDOK,63,76,40,14
-    PUSHBUTTON      "Cancel",IDCANCEL,107,76,32,14
+    DEFPUSHBUTTON   "OK",IDOK,63,90,40,14
+    PUSHBUTTON      "Cancel",IDCANCEL,107,90,32,14
     CONTROL         "<a id=""ID_HELP"">Need help?</a>",ID_HELP_INDEX,"SysLink",
-                    WS_TABSTOP,7,79,45,11
+                    WS_TABSTOP,7,93,45,11
     LTEXT           "Type:",IDC_STATIC,7,7,19,8
     CONTROL         "&Standard",ID_STANDARD,"Button",BS_AUTORADIOBUTTON | 
                     WS_GROUP,39,7,45,10
@@ -1177,9 +1177,12 @@ BEGIN
                     BS_AUTORADIOBUTTON,39,20,100,10
     CONTROL         "&Patch",ID_PROTECTED,"Button",BS_AUTORADIOBUTTON,39,33,
                     35,10
-    LTEXT           "&Creator:",IDC_STATIC,7,51,26,8
-    COMBOBOX        ID_CREATOR,39,50,100,67,CBS_DROPDOWN | WS_VSCROLL | 
+    LTEXT           "&Creator:",IDC_STATIC,7,49,26,8
+    COMBOBOX        ID_CREATOR,39,48,100,67,CBS_DROPDOWN | WS_VSCROLL | 
                     WS_TABSTOP
+    LTEXT           "Other:",IDC_STATIC,7,67,20,8
+    CONTROL         "Preserve &empty tracks",ID_TRACK,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,39,67,86,10
 END
 
 IDR_IMAGE_DUMP_ERROR DIALOG DISCARDABLE  0, 0, 253, 125
@@ -1649,7 +1652,7 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 139
         TOPMARGIN, 7
-        BOTTOMMARGIN, 90
+        BOTTOMMARGIN, 104
     END
 
     IDR_IMAGE_DUMP_ERROR, DIALOG
