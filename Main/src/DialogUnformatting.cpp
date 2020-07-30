@@ -117,7 +117,8 @@
 			// . checking that new format is acceptable
 			}else{
 				TFormat f=DOS->formatBoot;
-				f.nCylinders=params.cylA;
+				if (f.nCylinders<=params.cylZInclusive+1)
+					f.nCylinders=std::min( f.nCylinders, params.cylA );
 				if (!DOS->ValidateFormatChangeAndReportProblem( updateBoot&&params.cylA>0, removeTracksFromFat&&params.cylA>0, f )){
 					pDX->PrepareEditCtrl(ID_CYLINDER);
 					pDX->Fail();
