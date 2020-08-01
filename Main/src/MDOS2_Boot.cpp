@@ -339,12 +339,12 @@
 					break;
 			}
 		}
-		if (boot->current.diskFlags.driveD40 && !boot->current.diskFlags.fortyCylDiskInD80){
-			CDialog d( IDR_MDOS_DRIVE_EDITOR );
-			d.ShowWindow(SW_HIDE);
+		if (boot->current.diskFlags.driveD40 && !(boot->current.diskFlags.fortyCylDiskInD80&&boot->current.driveFlags.fortyCylDiskInD80)){
 			TCHAR txt[80];
-			d.GetDlgItemText( ID_40D80, txt, sizeof(txt)/sizeof(TCHAR) );
-			vp.fReport.LogWarning( _T("D40's often contained 80-track drives, please revise the \"%s\" setting"), txt );
+			vp.fReport.LogWarning(
+				_T("D40's often contained 80-track drives, please revise the \"%s\" setting"),
+				Utils::GetDialogTemplateItemText( IDR_MDOS_DRIVE_EDITOR, ID_40D80, txt, sizeof(txt)/sizeof(TCHAR) )
+			);
 		}
 		// - verifying Current drive information (continued)
 		if (const TStdWinError err=vp.WarnIfUnsignedValueOutOfRange( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Last seeked cylinder"), boot->current.driveLastSeekedCylinder, (BYTE)0, (BYTE)(boot->current.nCylinders-1) ))

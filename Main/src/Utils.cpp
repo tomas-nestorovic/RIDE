@@ -683,6 +683,27 @@ namespace Utils{
 		::SetWindowPos( hCtrl, 0, pt.x+dx, pt.y+dy, 0, 0, SWP_NOZORDER|SWP_NOSIZE );
 	}
 
+	PTCHAR GetDialogTemplateItemText(UINT idDlgRes,WORD idItem,PTCHAR chars,WORD nCharsMax){
+		// determines and returns the length of the text associated with given dialog item
+		PTCHAR result=nullptr; // assumption (text can't be determined, e.g. because no such item exists)
+		if (const HRSRC hRes=::FindResource( app.m_hInstance, MAKEINTRESOURCE(idDlgRes), RT_DIALOG ))
+			if (const HGLOBAL gRes=::LoadResource( app.m_hInstance, hRes )){
+				if (const LPCDLGTEMPLATE lpRes=(LPCDLGTEMPLATE)::LockResource( gRes )){
+					class CTmpDlg sealed:public CDialog{
+					public:
+						CTmpDlg(LPCDLGTEMPLATE lpRes){
+							CreateDlgIndirect( lpRes, nullptr );
+						}
+					} d(lpRes);
+					d.GetDlgItemText( idItem, chars, nCharsMax );
+					result=chars;
+					::UnlockResource(gRes);
+				}
+				::FreeResource( gRes );
+			}
+		return result;
+	}
+
 	void BytesToHigherUnits(DWORD bytes,float &rHigherUnit,LPCTSTR &rHigherUnitName){
 		// converts Bytes to suitable HigherUnits (e.g. "12345 Bytes" to "12.345 kiB")
 		if (bytes>=0x40000000)

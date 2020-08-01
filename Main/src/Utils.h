@@ -114,6 +114,7 @@ namespace Utils{
 	bool EnableDlgControls(HWND hDlg,PCWORD buttonIds,bool enabled);
 	bool IsDlgControlEnabled(HWND hDlg,WORD controlId);
 	void OffsetDlgControl(HWND hDlg,WORD controlId,int dx,int dy);
+	PTCHAR GetDialogTemplateItemText(UINT idDlgRes,WORD idItem,PTCHAR chars,WORD nCharsMax);
 	void BytesToHigherUnits(DWORD bytes,float &rHigherUnit,LPCTSTR &rHigherUnitName);
 	CString BytesToHexaText(PCBYTE bytes,BYTE nBytes,bool lastDelimitedWithAnd);
 	CString BytesToHexaText(const char *chars,BYTE nChars,bool lastDelimitedWithAnd);
