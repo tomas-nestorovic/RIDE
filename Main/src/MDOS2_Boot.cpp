@@ -137,6 +137,7 @@
 			p->driveFlags.stepSpeed=d.stepping;
 			p->driveCylinders=d.nCylinders;
 			p->driveSectorsPerTrack=d.nSectors;
+			p->diskFlags=p->driveFlags;
 			return CBootView::__bootSectorModified__(nullptr,0);
 		}else
 			return false;
@@ -241,7 +242,6 @@
 		// flushes internal Format information to the actual Boot Sector's data
 		if (const PBootSector boot=(PBootSector)image->GetHealthySectorData(TBootSector::CHS)){
 			boot->current.nCylinders=formatBoot.nCylinders;
-			boot->current.diskFlags.fortyCylDiskInD80 = boot->current.driveFlags.fortyCylDiskInD80 = formatBoot.nCylinders==40;
 			boot->current.diskFlags.doubleSided=formatBoot.nHeads==2;
 			boot->current.nSectors=formatBoot.nSectors;
 			image->MarkSectorAsDirty(TBootSector::CHS);
