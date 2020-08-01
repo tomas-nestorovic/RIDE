@@ -1181,8 +1181,8 @@ BEGIN
     COMBOBOX        ID_CREATOR,39,48,100,67,CBS_DROPDOWN | WS_VSCROLL | 
                     WS_TABSTOP
     LTEXT           "Other:",IDC_STATIC,7,67,20,8
-    CONTROL         "Preserve &empty tracks",ID_TRACK,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,39,67,86,10
+    CONTROL         "Preserve &empty tail tracks",ID_TRACK,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,39,67,97,10
 END
 
 IDR_IMAGE_DUMP_ERROR DIALOG DISCARDABLE  0, 0, 253, 125
@@ -1423,23 +1423,25 @@ BEGIN
                     ID_AUTO,"SysLink",0x20,7,117,244,11
 END
 
-IDR_HEXAEDITOR_RESETSELECTION DIALOG DISCARDABLE  0, 0, 148, 95
+IDR_HEXAEDITOR_RESETSELECTION DIALOG DISCARDABLE  0, 0, 148, 106
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
 CAPTION "Reset selection"
 FONT 8, "MS Sans Serif"
 BEGIN
-    EDITTEXT        ID_NUMBER,69,48,40,12,ES_AUTOHSCROLL | ES_NUMBER | NOT 
-                    WS_BORDER
-    CONTROL         "Custom value:",ID_NUMBER2,"Button",BS_AUTORADIOBUTTON | 
-                    WS_GROUP | WS_TABSTOP,7,48,59,10
-    CONTROL         "Data sector default",ID_DATA,"Button",
-                    BS_AUTORADIOBUTTON | WS_TABSTOP,7,35,134,10
-    CONTROL         "Directory sector default",ID_DIRECTORY,"Button",
-                    BS_AUTORADIOBUTTON | WS_TABSTOP,7,23,134,10
     LTEXT           "Enter Byte to reset selection with:",IDC_STATIC,7,7,106,
                     8,NOT WS_GROUP
-    DEFPUSHBUTTON   "OK",IDOK,91,74,50,14
-    PUSHBUTTON      "Cancel",IDCANCEL,38,74,50,14
+    CONTROL         "Directory &sector default",ID_DIRECTORY,"Button",
+                    BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,7,23,134,10
+    CONTROL         "&Data sector default",ID_DATA,"Button",
+                    BS_AUTORADIOBUTTON | WS_TABSTOP,7,35,134,10
+    CONTROL         "&Gaussian noise",ID_DATAFIELD,"Button",
+                    BS_AUTORADIOBUTTON,7,48,64,10
+    CONTROL         "Custom &value:",ID_NUMBER2,"Button",BS_AUTORADIOBUTTON | 
+                    WS_TABSTOP,7,61,59,10
+    EDITTEXT        ID_NUMBER,69,61,40,12,ES_AUTOHSCROLL | ES_NUMBER | NOT 
+                    WS_BORDER
+    DEFPUSHBUTTON   "OK",IDOK,38,85,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,91,85,50,14
 END
 
 IDR_GUIDEPOST DIALOG DISCARDABLE  0, 0, 301, 134
@@ -1737,7 +1739,7 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 141
         TOPMARGIN, 7
-        BOTTOMMARGIN, 88
+        BOTTOMMARGIN, 99
     END
 
     IDR_GUIDEPOST, DIALOG

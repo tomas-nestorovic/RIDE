@@ -746,7 +746,7 @@ changeHalfbyte:					if (caret.position<maxFileSize){
 							CFileException e;
 							CFile fSrc;
 							if (fSrc.Open( fileName, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary, &e ))
-								for( DWORD nBytesToRead=std::min( fSrc.GetLength(), maxFileSize-f->Seek(caret.position,CFile::begin) ),n; nBytesToRead>0; nBytesToRead-=n ){
+								for( DWORD nBytesToRead=std::min<DWORD>( fSrc.GetLength(), maxFileSize-f->Seek(caret.position,CFile::begin) ),n; nBytesToRead>0; nBytesToRead-=n ){
 									BYTE buf[65536];
 									n=fSrc.Read(  buf,  std::min<UINT>( nBytesToRead, sizeof(buf) )  );
 									f->Write( buf, n );
@@ -765,10 +765,13 @@ changeHalfbyte:					if (caret.position<maxFileSize){
 						// resetting Selection with zeros
 						if (!editable) return 0; // can't edit content of a disabled window
 						i=0;
-resetSelectionWithValue:BYTE buf[65536];
-						::memset( buf, i, sizeof(buf) );
-						for( DWORD nBytesToReset=std::max<>(caret.selectionA,caret.position)-f->Seek(std::min<>(caret.selectionA,caret.position),CFile::begin),n; nBytesToReset; nBytesToReset-=n ){
+resetSelectionWithValue:BYTE buf[65535];
+						if (i>=0) // some constant value
+							::memset( buf, i, sizeof(buf) );
+						for( DWORD nBytesToReset=std::max(caret.selectionA,caret.position)-f->Seek(std::min(caret.selectionA,caret.position),CFile::begin),n; nBytesToReset; nBytesToReset-=n ){
 							n=std::min<UINT>( nBytesToReset, sizeof(buf) );
+							if (i<0) // Gaussian noise
+								Utils::RandomizeData( buf, sizeof(buf) );
 							f->Write( buf, n );
 							if (::GetLastError()==ERROR_WRITE_FAULT){
 								Utils::Information( _T("Selection only partially reset"), ERROR_WRITE_FAULT );
@@ -791,8 +794,9 @@ resetSelectionWithValue:BYTE buf[65536];
 								return __super::OnInitDialog();
 							}
 							void DoDataExchange(CDataExchange *pDX) override{
-								DDX_Radio( pDX, ID_NUMBER2, iRadioSel );
-								DDX_Text( pDX, ID_NUMBER, value );
+								DDX_Radio( pDX, ID_DIRECTORY, iRadioSel );
+								if (!pDX->m_bSaveAndValidate || iRadioSel==3)
+									DDX_Text( pDX, ID_NUMBER, value );
 							}
 							LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 								if (msg==WM_COMMAND)
@@ -808,7 +812,7 @@ resetSelectionWithValue:BYTE buf[65536];
 								: CDialog( IDR_HEXAEDITOR_RESETSELECTION )
 								, directoryDefaultByte( CDos::GetFocused()->properties->directoryFillerByte )
 								, dataDefaultByte( CDos::GetFocused()->properties->sectorFillerByte )
-								, iRadioSel(0) , value(0) {
+								, iRadioSel(3) , value(0) {
 							}
 						} d;
 						// . showing the Dialog and processing its result
@@ -817,9 +821,10 @@ resetSelectionWithValue:BYTE buf[65536];
 						caret=caret0;
 						if (dlgConfirmed){
 							switch (d.iRadioSel){
-								case 0: i=d.value; break;
+								case 0: i=d.directoryDefaultByte; break;
 								case 1: i=d.dataDefaultByte; break;
-								case 2: i=d.directoryDefaultByte; break;
+								case 2: i=-1; break;
+								case 3: i=d.value; break;
 								default:
 									ASSERT(FALSE);
 							}
