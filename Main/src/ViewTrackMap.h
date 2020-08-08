@@ -9,9 +9,13 @@
 		DECLARE_MESSAGE_MAP()
 	private:
 		int iScrollX, iScrollY; // ScrollBar position
-		struct{
+		struct TTrackLength sealed{
 			TSector nSectors;
 			int nBytes;
+			TTrackLength(TSector nSectors,int nBytes); // ctor
+			int GetPixelCount(BYTE zoomFactor) const;
+			BYTE GetZoomFactorToFitWidth(int windowWidth) const;
+			bool operator<(const TTrackLength &r) const;
 		} longestTrack; // to infer maximum horizontal scroll position
 		enum TDisplayType:WORD{
 			STATUS		=ID_TRACKMAP_STATUS,
@@ -29,7 +33,7 @@
 			CEvent scanNextTrack;
 			TTrackScanner(const CTrackMapView *pvtm); // ctor
 		} scanner;
-		bool showSectorNumbers,highlightBadSectors,showSelectedFiles;
+		bool showSectorNumbers,fitLongestTrackInWindow,showSelectedFiles;
 		BYTE zoomLengthFactor;
 		COLORREF fileSelectionColor;
 
@@ -42,6 +46,7 @@
 		void __updateStatusBarIfCursorOutsideAnySector__() const;
 		void __updateLogicalDimensions__();
 		afx_msg int OnCreate(LPCREATESTRUCT lpcs);
+		afx_msg void OnSize(UINT nType,int cx,int cy);
 		afx_msg void OnMouseMove(UINT nFlags,CPoint point);
 		afx_msg void OnLButtonUp(UINT nFlags,CPoint point);
 		afx_msg BOOL OnMouseWheel(UINT nFlags,short delta,CPoint point);
@@ -55,6 +60,8 @@
 			afx_msg void __zoomOut_updateUI__(CCmdUI *pCmdUI);
 		afx_msg void __zoomIn__();
 			afx_msg void __zoomIn_updateUI__(CCmdUI *pCmdUI);
+		afx_msg void __zoomFitWidth__();
+			afx_msg void __zoomFitWidth_updateUI__(CCmdUI *pCmdUI);
 		afx_msg void __showSelectedFiles__();
 			afx_msg void __showSelectedFiles_updateUI__(CCmdUI *pCmdUI);
 		afx_msg void __changeFileSelectionColor__();

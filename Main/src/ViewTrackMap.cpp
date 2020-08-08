@@ -21,10 +21,10 @@
 	CTrackMapView::CTrackMapView(PDos _dos)
 		// ctor
 		: tab( IDR_TRACKMAP, IDR_TRACKMAP, ID_CYLINDER, _dos, this )
-		, displayType(TDisplayType::STATUS) , showSectorNumbers(false) , highlightBadSectors(false) , showSelectedFiles(_dos->pFileManager!=nullptr) , iScrollX(0) , iScrollY(0) , scanner(this)
+		, displayType(TDisplayType::STATUS) , showSectorNumbers(false) , fitLongestTrackInWindow(false) , showSelectedFiles(_dos->pFileManager!=nullptr) , iScrollX(0) , iScrollY(0) , scanner(this)
 		, fileSelectionColor( app.GetProfileInt(INI_TRACKMAP,INI_FILE_SELECTION_COLOR,::GetSysColor(COLOR_ACTIVECAPTION)) )
+		, longestTrack(0,0)
 		, zoomLengthFactor(3) {
-		::ZeroMemory( &longestTrack, sizeof(longestTrack) );
 		::ZeroMemory( rainbowBrushes, sizeof(rainbowBrushes) );
 	}
 
@@ -37,6 +37,7 @@
 
 	BEGIN_MESSAGE_MAP(CTrackMapView,CScrollView)
 		ON_WM_CREATE()
+		ON_WM_SIZE()
 		ON_WM_HSCROLL()
 		ON_WM_VSCROLL()
 		ON_WM_MOUSEMOVE()
@@ -52,6 +53,8 @@
 			ON_UPDATE_COMMAND_UI(ID_ZOOM_IN,__zoomIn_updateUI__)
 		ON_COMMAND(ID_ZOOM_OUT,__zoomOut__)
 			ON_UPDATE_COMMAND_UI(ID_ZOOM_OUT,__zoomOut_updateUI__)
+		ON_COMMAND(ID_ZOOM_FIT,__zoomFitWidth__)
+			ON_UPDATE_COMMAND_UI(ID_ZOOM_FIT,__zoomFitWidth_updateUI__)
 		ON_COMMAND(ID_FILE,__showSelectedFiles__)
 			ON_UPDATE_COMMAND_UI(ID_FILE,__showSelectedFiles_updateUI__)
 		ON_COMMAND(ID_COLOR,__changeFileSelectionColor__)
@@ -62,6 +65,38 @@
 	CTrackMapView::~CTrackMapView(){
 		// dtor
 		app.WriteProfileInt( INI_TRACKMAP, INI_FILE_SELECTION_COLOR, fileSelectionColor );
+	}
+
+
+
+
+
+
+
+
+	#define CAN_ZOOM_IN		(zoomLengthFactor>0)
+	#define CAN_ZOOM_OUT	(zoomLengthFactor<8)
+
+	CTrackMapView::TTrackLength::TTrackLength(TSector nSectors,int nBytes)
+		// ctor
+		: nSectors(nSectors) , nBytes(nBytes) {
+	}
+
+	inline
+	int CTrackMapView::TTrackLength::GetPixelCount(BYTE zoomFactor) const{
+		return	SECTOR1_X + (nBytes>>zoomFactor) + nSectors*SECTOR_MARGIN;
+	}
+
+	BYTE CTrackMapView::TTrackLength::GetZoomFactorToFitWidth(int windowWidth) const{
+		BYTE zoomLengthFactor=0;
+		while (GetPixelCount(zoomLengthFactor)>windowWidth && CAN_ZOOM_OUT)
+			zoomLengthFactor++;
+		return zoomLengthFactor;
+	}
+
+	inline
+	bool CTrackMapView::TTrackLength::operator<(const TTrackLength &r) const{
+		return	GetPixelCount(0) < r.GetPixelCount(0);
 	}
 
 
@@ -87,7 +122,7 @@
 		SetScrollSizes(
 			MM_TEXT,
 			CSize(
-				Utils::LogicalUnitScaleFactor*( SECTOR1_X+(longestTrack.nBytes>>zoomLengthFactor)+longestTrack.nSectors*SECTOR_MARGIN ),
+				Utils::LogicalUnitScaleFactor*( longestTrack.GetPixelCount(zoomLengthFactor) ),
 				Utils::LogicalUnitScaleFactor*( VIEW_PADDING*2+VIEW_HEADER_HEIGHT+IMAGE->GetTrackCount()*TRACK_HEIGHT )
 			)
 		);
@@ -200,9 +235,16 @@
 		const TTrackInfo &rti=*(TTrackInfo *)pTrackInfo;
 		int nBytesOnTrack=0;
 		for( TSector s=rti.nSectors; s>0; nBytesOnTrack+=rti.bufferLength[--s] );
-		if (rti.nSectors>longestTrack.nSectors || nBytesOnTrack>longestTrack.nBytes){
-			longestTrack.nSectors=rti.nSectors;
-			longestTrack.nBytes=nBytesOnTrack;
+		const TTrackLength tmp( rti.nSectors, nBytesOnTrack );
+		if (longestTrack<tmp){
+			longestTrack=tmp;
+			if (fitLongestTrackInWindow){
+				CRect rc;
+				GetClientRect(&rc);
+				zoomLengthFactor=longestTrack.GetZoomFactorToFitWidth(rc.Width());
+				Invalidate();
+				return 0;
+			}
 			__updateLogicalDimensions__();
 		}
 		// - drawing
@@ -376,6 +418,12 @@
 		return 0;
 	}
 
+	afx_msg void CTrackMapView::OnSize(UINT nType,int cx,int cy){
+		// window size changed
+		if (fitLongestTrackInWindow)
+			zoomLengthFactor=longestTrack.GetZoomFactorToFitWidth(cx);
+	}
+
 	bool CTrackMapView::__getPhysicalAddressFromPoint__(POINT point,TPhysicalAddress &rOutChs,BYTE &rnOutSectorsToSkip){
 		// True <=> given actual scroll position, the Point falls into a Sector, otherwise False
 		CClientDC dc(this);
@@ -450,9 +498,6 @@
 		}
 	}
 
-	#define CAN_ZOOM_IN		(zoomLengthFactor>0)
-	#define CAN_ZOOM_OUT	(zoomLengthFactor<8)
-
 	afx_msg BOOL CTrackMapView::OnMouseWheel(UINT nFlags,short delta,CPoint point){
 		// mouse wheel was rotated
 		if (nFlags&MK_CONTROL){
@@ -502,6 +547,7 @@
 	afx_msg void CTrackMapView::__zoomOut__(){
 		// zooms out the view
 		if (CAN_ZOOM_OUT){
+			fitLongestTrackInWindow=false;
 			zoomLengthFactor++;
 			__updateLogicalDimensions__();
 			Invalidate(TRUE);
@@ -515,6 +561,7 @@
 	afx_msg void CTrackMapView::__zoomIn__(){
 		// zooms in the view
 		if (CAN_ZOOM_IN){
+			fitLongestTrackInWindow=false;
 			zoomLengthFactor--;
 			__updateLogicalDimensions__();
 			Invalidate(TRUE);
@@ -523,6 +570,21 @@
 	afx_msg void CTrackMapView::__zoomIn_updateUI__(CCmdUI *pCmdUI){
 		// projects possibility to even more zoom in the view
 		pCmdUI->Enable( CAN_ZOOM_IN );
+	}
+
+	afx_msg void CTrackMapView::__zoomFitWidth__(){
+		// zooms in the view
+		if ( fitLongestTrackInWindow=!fitLongestTrackInWindow ){
+			CRect rc;
+			GetClientRect(&rc);
+			zoomLengthFactor=longestTrack.GetZoomFactorToFitWidth(rc.Width());
+			__updateLogicalDimensions__();
+			Invalidate(TRUE);
+		}
+	}
+	afx_msg void CTrackMapView::__zoomFitWidth_updateUI__(CCmdUI *pCmdUI){
+		// projects possibility to even more zoom in the view
+		pCmdUI->SetCheck( fitLongestTrackInWindow );
 	}
 
 	afx_msg void CTrackMapView::__showSelectedFiles__(){

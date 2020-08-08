@@ -147,6 +147,7 @@ IDR_TRACKMAP ACCELERATORS DISCARDABLE
 BEGIN
     "+",            ID_ZOOM_IN,             ASCII,  NOINVERT
     "-",            ID_ZOOM_OUT,            ASCII,  NOINVERT
+    "0",            ID_ZOOM_FIT,            VIRTKEY, CONTROL, NOINVERT
     "1",            ID_TRACKMAP_STATUS,     VIRTKEY, CONTROL, NOINVERT
     "2",            ID_TRACKMAP_DATA,       VIRTKEY, CONTROL, NOINVERT
     "3",            ID_TRACKMAP_BAD_DATA,   VIRTKEY, CONTROL, NOINVERT
@@ -262,6 +263,7 @@ BEGIN
             MENUITEM "Color...",                    ID_COLOR
         END
         MENUITEM SEPARATOR
+        MENUITEM "Zoom to fit\tCtrl+0",         ID_ZOOM_FIT
         MENUITEM "Zoom in\t+",                  ID_ZOOM_IN
         MENUITEM "Zoom out\t–",                 ID_ZOOM_OUT
         MENUITEM SEPARATOR
@@ -663,6 +665,7 @@ BEGIN
     SEPARATOR
     BUTTON      ID_ZOOM_OUT
     BUTTON      ID_ZOOM_IN
+    BUTTON      ID_ZOOM_FIT
 END
 
 IDR_FILEMANAGER TOOLBAR DISCARDABLE  16, 16
