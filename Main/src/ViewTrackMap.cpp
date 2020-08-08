@@ -84,7 +84,7 @@
 
 	inline
 	int CTrackMapView::TTrackLength::GetPixelCount(BYTE zoomFactor) const{
-		return	SECTOR1_X + (nBytes>>zoomFactor) + nSectors*SECTOR_MARGIN;
+		return	(  SECTOR1_X + (nBytes>>zoomFactor) + nSectors*SECTOR_MARGIN  )*Utils::LogicalUnitScaleFactor;
 	}
 
 	BYTE CTrackMapView::TTrackLength::GetZoomFactorToFitWidth(int windowWidth) const{
