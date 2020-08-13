@@ -35,7 +35,7 @@
 		, calibrationStepDuringFormatting( app.GetProfileInt(INI_FDD,INI_CALIBRATE_FORMATTING,0) )
 		, verifyFormattedTracks( app.GetProfileInt(INI_FDD,INI_VERIFY_FORMATTING,true)!=0 )
 		, verifyWrittenData( app.GetProfileInt(INI_FDD,INI_VERIFY_WRITTEN_DATA,false)!=0 )
-		, nSecondsToTurningMotorOff( app.GetProfileInt(INI_FDD,INI_MOTOR_OFF_SECONDS,2) ) // 0 = 1 second, 1 = 2 seconds, 2 = 3 seconds
+		, nSecondsToTurnMotorOff( app.GetProfileInt(INI_FDD,INI_MOTOR_OFF_SECONDS,2) ) // 0 = 1 second, 1 = 2 seconds, 2 = 3 seconds
 		, readWholeTrackAsFirstSector(false) {
 	}
 
@@ -43,7 +43,7 @@
 		// dtor
 		app.WriteProfileInt( INI_FDD, INI_CALIBRATE_SECTOR_ERROR,calibrationAfterError );
 		app.WriteProfileInt( INI_FDD, INI_CALIBRATE_FORMATTING,calibrationStepDuringFormatting );
-		app.WriteProfileInt( INI_FDD, INI_MOTOR_OFF_SECONDS,nSecondsToTurningMotorOff );
+		app.WriteProfileInt( INI_FDD, INI_MOTOR_OFF_SECONDS,nSecondsToTurnMotorOff );
 		app.WriteProfileInt( INI_FDD, INI_VERIFY_FORMATTING,verifyFormattedTracks );
 		app.WriteProfileInt( INI_FDD, INI_VERIFY_WRITTEN_DATA,verifyWrittenData );
 	}
@@ -193,8 +193,6 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 		}
 	}
 
-	typedef WORD TCrc;
-
 	#define ALLOCATE_SECTOR_DATA(length)	(PSectorData)::malloc(length)
 	#define FREE_SECTOR_DATA(data)			::free(data)
 
@@ -216,7 +214,7 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 				if (s) // ... then simply inferring them
 					psi->startNanoseconds=	sectors[s-1].endNanoseconds
 											+
-											(BYTE)sectorStartsNanoseconds * fdd->fddHead.profile.oneByteLatency;	// default inter-sector Gap3 length in microseconds
+											(BYTE)sectorStartsNanoseconds * fdd->fddHead.profile.oneByteLatency;	// default inter-sector Gap3 length in nanoseconds
 				else
 					psi->startNanoseconds=0; // the first Sector starts immediately after the index pulse
 			psi->endNanoseconds=	psi->startNanoseconds // inferring end of Sector from its lengths and general IBM track layout specification
@@ -229,7 +227,7 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 										+
 										4	// Sector ID
 										+
-										sizeof(TCrc) // Sector ID CRC
+										sizeof(TCrc16) // Sector ID CRC
 										+
 										22	// Gap2: N Bytes 0x4E
 										+
@@ -241,7 +239,7 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 										+
 										psi->length// data
 										+
-										sizeof(TCrc) // data CRC
+										sizeof(TCrc16) // data CRC
 									) *
 									fdd->fddHead.profile.oneByteLatency; // usually 32 microseconds
 		}
@@ -346,7 +344,7 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 											3, 60, 0xe5,
 											TFdIdHeader(sectors[0].id)
 										};
-					FD_SHORT_WRITE_PARAMS swp={ sizeof(FD_ID_HEADER), fdd->params.controllerLatency+(sizeof(TCrc)+1)*fdd->params.oneByteLatency }; // "+1" = just to be sure
+					FD_SHORT_WRITE_PARAMS swp={ sizeof(FD_ID_HEADER), fdd->params.controllerLatency+(sizeof(TCrc16)+1)*fdd->params.oneByteLatency }; // "+1" = just to be sure
 					::DeviceIoControl( fdd->_HANDLE, IOCTL_FD_SET_SHORT_WRITE, &swp,sizeof(swp), nullptr,0, &nBytesTransferred, nullptr );
 					::DeviceIoControl( fdd->_HANDLE, IOCTL_FDCMD_FORMAT_TRACK, &fp,sizeof(fp)+8, nullptr,0, &nBytesTransferred, nullptr ); // cannot use IF because DeviceIoControl returns an error when formatting with bad CRC
 					break;
@@ -395,16 +393,16 @@ Utils::Information("--- EVERYTHING OK ---");
 		// generates Sector ID into the Buffer
 		*(PDWORD)buffer=SECTOR_SYNC_ID_ADDRESS_MARK, buffer+=sizeof(DWORD);
 		*buffer++=id->cylinder, *buffer++=id->side, *buffer++=id->sector, *buffer++=id->lengthCode;
-		TCrc crc=GetCrc16Ccitt(buffer-8,8);
+		TCrc16 crc=GetCrc16Ccitt(buffer-8,8);
 		if (pFdcStatus->DescribesDataFieldCrcError()) crc=~crc;
-		*(TCrc *)buffer=crc, buffer+=sizeof(TCrc); // CRC
+		*(TCrc16 *)buffer=crc, buffer+=sizeof(TCrc16); // CRC
 	}
 	BYTE CFDD::TInternalTrack::TRawContent::__containsBufferSectorId__(PCSectorData buffer,TSectorId *outId,bool *outCrcOk){
 		// returns the number of Bytes of a Sector ID recognized at the front of the Buffer; returns 0 if no Sector ID recognized
 		if (*(PDWORD)buffer==SECTOR_SYNC_ID_ADDRESS_MARK){
 			buffer+=sizeof(DWORD);
 			outId->cylinder=*buffer++, outId->side=*buffer++, outId->sector=*buffer++, outId->lengthCode=*buffer++;
-			*outCrcOk=GetCrc16Ccitt(buffer-8,8)==*(TCrc *)buffer;
+			*outCrcOk=GetCrc16Ccitt(buffer-8,8)==*(TCrc16 *)buffer;
 			return 3+1+4+2; // 0xA1A1A1 synchronization + ID Address Mark + ID itself + CRC
 		}else
 			return 0;
@@ -415,9 +413,9 @@ Utils::Information("--- EVERYTHING OK ---");
 		*(PDWORD)buffer= SECTOR_SYNCHRONIZATION | dam<<24, buffer+=sizeof(DWORD);
 		buffer=(PSectorData)::memset( buffer, fillerByte, sectorLength )+sectorLength;
 		sectorLength+=3+1; // 0xA1A1A1 synchronization + DAM
-		TCrc crc=GetCrc16Ccitt(buffer-sectorLength,sectorLength);
+		TCrc16 crc=GetCrc16Ccitt(buffer-sectorLength,sectorLength);
 		if (pFdcStatus->DescribesDataFieldCrcError()) crc=~crc;
-		*(TCrc *)buffer=crc, buffer+=sizeof(TCrc); // CRC
+		*(TCrc16 *)buffer=crc, buffer+=sizeof(TCrc16); // CRC
 	}
 
 	CFDD::TInternalTrack::TRawContent::TRawContent()
@@ -962,7 +960,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 	}
 
 	TStdWinError CFDD::__setTimeBeforeInterruptingTheFdc__(WORD nDataBytesBeforeInterruption) const{
-		// registers a request to interrupt the following write/format command after specified NumberOfBytes plus additional NumberOfMicrosends; returns Windows standard i/o error
+		// registers a request to interrupt the following write/format command after specified NumberOfBytes plus additional NumberOfNanosends; returns Windows standard i/o error
 		return __setTimeBeforeInterruptingTheFdc__( nDataBytesBeforeInterruption, fddHead.profile.controllerLatency );
 	}
 
@@ -1043,7 +1041,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 							TInternalTrack::TRawContent::__generateSectorId__(pData,pid,&TFdcStatus::WithoutError);
 							TInternalTrack::TRawContent::__generateGap__(pData,22);
 							TInternalTrack::TRawContent::__generateSectorDefaultData__( pData, TDataAddressMark::DATA_RECORD, 0, 0, &TFdcStatus::WithoutError );
-							::memcpy( pData-sizeof(TCrc), dataBuffer, __getUsableSectorLength__(pit->rawContent.id.lengthCode) ); // assumed that UsableSectorLength < OfficialSectorLength (and thus not written outside allocated memory)
+							::memcpy( pData-sizeof(TCrc16), dataBuffer, __getUsableSectorLength__(pit->rawContent.id.lengthCode) ); // assumed that UsableSectorLength < OfficialSectorLength (and thus not written outside allocated memory)
 						}//else
 							//return nullptr; // commented out as it holds that "pid->rawContent.data==Null"
 					}
@@ -1057,7 +1055,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 			#ifdef LOGGING_ENABLED			
 				TCHAR buf[4000];
 				for( TCHAR n=0,*p=buf; n<pit->nSectors; n++ ){
-					const int i=::wsprintf(p,_T("%d:<%d,%d> "),n,pit->sectors[n].startMicroseconds,pit->sectors[n].endMicroseconds);
+					const int i=::wsprintf(p,_T("%d:<%d,%d> "),n,pit->sectors[n].startNanoseconds,pit->sectors[n].endNanoseconds);
 					p+=i;
 				}
 				LOG_MESSAGE(buf);
@@ -1379,8 +1377,8 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 			}
 
 			TStdWinError __writeSectorData__(WORD nBytesToWrite) const{
-				// writes SectorData to the current Track and interrupts the controller after specified NumberOfBytesToWrite and Microseconds; returns Windows standard i/o error
-				// : setting controller interruption to the specified NumberOfBytesToWrite and Microseconds
+				// writes SectorData to the current Track and interrupts the controller after specified NumberOfBytesToWrite and Nanoseconds; returns Windows standard i/o error
+				// : setting controller interruption to the specified NumberOfBytesToWrite and Nanoseconds
 				if (const TStdWinError err=fdd->__setTimeBeforeInterruptingTheFdc__( nBytesToWrite, nNanoseconds ))
 					return err;
 				// : writing
@@ -1663,7 +1661,7 @@ Utils::Information(buf);}
 			afx_msg void OnPaint(){
 				// drawing
 				// - base
-				CDialog::OnPaint();
+				__super::OnPaint();
 				// - drawing of curly brackets
 				Utils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_LATENCY), GetDlgItem(ID_GAP), nullptr, 0 );
 				Utils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_NONE), GetDlgItem(ID_SECTOR), _T("if error encountered"), 0 );
@@ -1770,7 +1768,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 						}
 						break;
 				}
-				return CDialog::WindowProc(msg,wParam,lParam);
+				return __super::WindowProc(msg,wParam,lParam);
 			}
 		public:
 			TParams params;
@@ -1786,7 +1784,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 		if (d.DoModal()==IDOK){
 			params=d.params;
 			( fddHead.profile=d.profile ).Save( GetDriveLetter(), floppyType );
-			__setSecondsBeforeTurningMotorOff__(params.nSecondsToTurningMotorOff);
+			__setSecondsBeforeTurningMotorOff__(params.nSecondsToTurnMotorOff);
 			return true;
 		}else
 			return LOG_BOOL(false);

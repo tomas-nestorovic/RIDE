@@ -55,7 +55,7 @@
 		#ifdef _DEBUG
 		struct TSectorDebug sealed{
 			bool modified;
-			WORD crc16;
+			TCrc16 crc16;
 		} *tracksDebug[DSK_REV5_TRACKS_MAX]; // debug information on Sectors as they appear on the Track
 		#endif
 

@@ -16,7 +16,7 @@
 				ONCE_PER_CYLINDER	=1,
 				FOR_EACH_SECTOR		=2
 			} calibrationAfterError;
-			BYTE calibrationStepDuringFormatting, nSecondsToTurningMotorOff;
+			BYTE calibrationStepDuringFormatting, nSecondsToTurnMotorOff;
 			bool verifyFormattedTracks, verifyWrittenData;
 			bool readWholeTrackAsFirstSector; // for experimental purposes only - set never to True in Release mode!
 

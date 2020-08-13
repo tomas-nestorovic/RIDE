@@ -2,9 +2,9 @@
 
 	#define CRC16_POLYNOM 0x1021
 
-	WORD CFloppyImage::GetCrc16Ccitt(PCSectorData buffer,WORD length){
+	CFloppyImage::TCrc16 CFloppyImage::GetCrc16Ccitt(PCSectorData buffer,WORD length){
 		// computes and returns CRC-CCITT (0xFFFF) of data with a given Length in Buffer
-		WORD result=0xFFFF;
+		TCrc16 result=0xFFFF;
 		while (length--){
 			BYTE x = result>>8 ^ *buffer++;
 			x ^= x>>4;
