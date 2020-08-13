@@ -202,7 +202,7 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 
 	static const TFdcStatus TrackRawContentIoError(FDC_ST1_DATA_ERROR,FDC_ST2_CRC_ERROR_IN_DATA);
 
-	CFDD::TInternalTrack::TInternalTrack(const CFDD *fdd,TCylinder cyl,THead head,TSector _nSectors,PCSectorId bufferId,PCINT sectorStartsMicroseconds)
+	CFDD::TInternalTrack::TInternalTrack(const CFDD *fdd,TCylinder cyl,THead head,TSector _nSectors,PCSectorId bufferId,PCINT sectorStartsNanoseconds)
 		// ctor
 		// - initialization
 		: cylinder(cyl) , head(head)
@@ -210,16 +210,16 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 		TInternalTrack::TSectorInfo *psi=sectors;
 		for( BYTE s=0; s<nSectors; psi++->seqNum=s++ ){
 			psi->length=fdd->__getUsableSectorLength__(( psi->id=*bufferId++ ).lengthCode );
-			if (sectorStartsMicroseconds>(PCINT)0x100) // if start times provided (that is, if no Gap3 information from <0;255> provided) ...
-				psi->startMicroseconds=*sectorStartsMicroseconds++; // ... they are used
-			else // if no start times provided (that is, if just Gap3 information from <0;255> provided) ...
+			if (sectorStartsNanoseconds>(PCINT)0x100) // if start times provided (that is, if no Gap3 information from <0;255> Bytes provided) ...
+				psi->startNanoseconds=*sectorStartsNanoseconds++; // ... they are used
+			else // if no start times provided (that is, if just Gap3 information from <0;255> Bytes provided) ...
 				if (s) // ... then simply inferring them
-					psi->startMicroseconds=	sectors[s-1].endMicroseconds
+					psi->startNanoseconds=	sectors[s-1].endNanoseconds
 											+
-											(BYTE)sectorStartsMicroseconds * fdd->fddHead.profile.oneByteLatency;	// default inter-sector Gap3 length in microseconds
+											(BYTE)sectorStartsNanoseconds * fdd->fddHead.profile.oneByteLatency;	// default inter-sector Gap3 length in microseconds
 				else
-					psi->startMicroseconds=0; // the first Sector starts immediately after the index pulse
-			psi->endMicroseconds=	psi->startMicroseconds // inferring end of Sector from its lengths and general IBM track layout specification
+					psi->startNanoseconds=0; // the first Sector starts immediately after the index pulse
+			psi->endNanoseconds=	psi->startNanoseconds // inferring end of Sector from its lengths and general IBM track layout specification
 									+
 									(	12	// N Bytes 0x00 (see IBM's track layout specification)
 										+
@@ -458,9 +458,9 @@ Utils::Information("--- EVERYTHING OK ---");
 
 	CFDD::TFddHead::TProfile::TProfile()
 		// ctor
-		: controllerLatency(86)
-		, oneByteLatency(32)
-		, gap3Latency( .8f * oneByteLatency*FDD_SECTOR_GAP3_STD ) { // ".8" = giving the FDC 20% tolerance for Gap3
+		: controllerLatency(86e3)
+		, oneByteLatency(32e3)
+		, gap3Latency( oneByteLatency*FDD_SECTOR_GAP3_STD * 4/5 ) { // "4/5" = giving the FDC 20% tolerance for Gap3
 	}
 
 	static void GetFddProfileName(PTCHAR buf,TCHAR driveLetter,TMedium::TType floppyType){
@@ -471,18 +471,18 @@ Utils::Information("--- EVERYTHING OK ---");
 		// loads the Profile for specified Drive and FloppyType
 		TCHAR iniSection[16];
 		GetFddProfileName( iniSection, driveLetter, floppyType );
-		controllerLatency=app.GetProfileInt( iniSection, INI_LATENCY_CONTROLLER, 86000 )/1000.0f;
-		oneByteLatency=app.GetProfileInt( iniSection, INI_LATENCY_1BYTE, 32000 )/1000.0f;
-		gap3Latency=app.GetProfileInt( iniSection, INI_LATENCY_GAP3, FDD_SECTOR_GAP3_STD*4/5*32000 )/1000.0f; // "4/5" = giving the FDC 20% tolerance for Gap3
+		controllerLatency=app.GetProfileInt( iniSection, INI_LATENCY_CONTROLLER, 86e3 );
+		oneByteLatency=app.GetProfileInt( iniSection, INI_LATENCY_1BYTE, 32e3 );
+		gap3Latency=app.GetProfileInt( iniSection, INI_LATENCY_GAP3, oneByteLatency*FDD_SECTOR_GAP3_STD*4/5 ); // "4/5" = giving the FDC 20% tolerance for Gap3
 	}
 
 	void CFDD::TFddHead::TProfile::Save(TCHAR driveLetter,TMedium::TType floppyType) const{
 		// saves the Profile for specified Drive and FloppyType
 		TCHAR iniSection[16];
 		GetFddProfileName( iniSection, driveLetter, floppyType );
-		app.WriteProfileInt( iniSection, INI_LATENCY_CONTROLLER, controllerLatency*1000 );
-		app.WriteProfileInt( iniSection, INI_LATENCY_1BYTE, oneByteLatency*1000 );
-		app.WriteProfileInt( iniSection, INI_LATENCY_GAP3, gap3Latency*1000 );
+		app.WriteProfileInt( iniSection, INI_LATENCY_CONTROLLER, controllerLatency );
+		app.WriteProfileInt( iniSection, INI_LATENCY_1BYTE, oneByteLatency );
+		app.WriteProfileInt( iniSection, INI_LATENCY_GAP3, gap3Latency );
 	}
 
 	bool CFDD::TFddHead::SeekHome(){
@@ -746,16 +746,16 @@ error:				switch (const TStdWinError err=::GetLastError()){
 				::ZeroMemory(justSavedSectors,pit->nSectors);
 				do{
 					allSectorsProcessed=true; // assumption
-					float lastSectorEndMicroseconds=-60000; // minus one minute
+					int lastSectorEndNanoseconds=-1e9; // minus one second
 					for( TSector n=0; n<pit->nSectors; n++ ){
 						TInternalTrack::TSectorInfo &si=pit->sectors[n];
 						if (si.modified && !justSavedSectors[n]){
-							if (si.startMicroseconds-lastSectorEndMicroseconds>=fddHead.profile.gap3Latency) // sufficient distance between this and previously saved Sectors, so both of them can be processed in a single disk revolution
+							if (si.startNanoseconds-lastSectorEndNanoseconds>=fddHead.profile.gap3Latency) // sufficient distance between this and previously saved Sectors, so both of them can be processed in a single disk revolution
 								if (const TStdWinError err=si.__saveToDisk__( this, pit, n, false )) // False = verification carried out below
 									return err;
 								else{
 									si.modified=params.verifyWrittenData; // no longer Modified if Verification turned off
-									lastSectorEndMicroseconds=si.endMicroseconds;
+									lastSectorEndNanoseconds=si.endNanoseconds;
 									justSavedSectors[n]=true;
 								}
 							allSectorsProcessed=false; // will need one more cycle iteration to eventually find out that all Sectors are processed OK
@@ -765,14 +765,14 @@ error:				switch (const TStdWinError err=::GetLastError()){
 				// : verification
 				do{
 					allSectorsProcessed=true; // assumption
-					float lastSectorEndMicroseconds=-60000; // minus one minute
+					int lastSectorEndNanoseconds=-1e9; // minus one second
 					for( TSector n=0; n<pit->nSectors; n++ ){
 						TInternalTrack::TSectorInfo &si=pit->sectors[n];
 						if (si.modified)
-							if (si.startMicroseconds-lastSectorEndMicroseconds>=fddHead.profile.gap3Latency){ // sufficient distance between this and previously saved Sectors, so both of them can be processed in a single disk revolution
+							if (si.startNanoseconds-lastSectorEndNanoseconds>=fddHead.profile.gap3Latency){ // sufficient distance between this and previously saved Sectors, so both of them can be processed in a single disk revolution
 								if (si.__verifySaving__( this, pit, n )==IDABORT)
 									return ERROR_CANCELLED;
-								lastSectorEndMicroseconds=si.endMicroseconds;
+								lastSectorEndNanoseconds=si.endNanoseconds;
 								allSectorsProcessed=false; // will need one more cycle iteration to eventually find out that all Sectors are processed OK
 							}
 					}
@@ -867,7 +867,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 								break;
 							TSectorId bufferId[(TSector)-1]; int sectorTimes[(TSector)-1];
 							for( BYTE n=0; n<sectors.n; n++ )
-								bufferId[n]=sectors.header[n], sectorTimes[n]=sectors.header[n].reltime;
+								bufferId[n]=sectors.header[n], sectorTimes[n]=sectors.header[n].reltime*1000; // "*1000" = microseconds to nanoseconds
 							return REFER_TO_TRACK(cyl,head) = new TInternalTrack( this, cyl, head, sectors.n, bufferId, sectorTimes );
 						}
 						default:
@@ -879,7 +879,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		return nullptr;
 	}
 
-	TSector CFDD::ScanTrack(TCylinder cyl,THead head,PSectorId bufferId,PWORD bufferLength,PINT startTimesMicroseconds,PBYTE pAvgGap3) const{
+	TSector CFDD::ScanTrack(TCylinder cyl,THead head,PSectorId bufferId,PWORD bufferLength,PINT startTimesNanoseconds,PBYTE pAvgGap3) const{
 		// returns the number of Sectors found in given Track, and eventually populates the Buffer with their IDs (if Buffer!=Null); returns 0 if Track not formatted or not found
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (const PInternalTrack pit=((CFDD *)this)->__scanTrack__(cyl,head)){
@@ -889,8 +889,8 @@ error:				switch (const TStdWinError err=::GetLastError()){
 					*bufferId++=pit->rawContent.id;
 				if (bufferLength)
 					*bufferLength++=__getUsableSectorLength__(pit->rawContent.id.lengthCode);
-				if (startTimesMicroseconds)
-					*startTimesMicroseconds++=0; // not applicable, so "some" sensible value
+				if (startTimesNanoseconds)
+					*startTimesNanoseconds++=0; // not applicable, so "some" sensible value
 			}
 			const TInternalTrack::TSectorInfo *psi=pit->sectors;
 			for( TSector s=0; s<pit->nSectors; s++,psi++ ){
@@ -898,15 +898,15 @@ error:				switch (const TStdWinError err=::GetLastError()){
 					*bufferId++=psi->id;
 				if (bufferLength)
 					*bufferLength++=psi->length;
-				if (startTimesMicroseconds)
-					*startTimesMicroseconds++=psi->startMicroseconds;
+				if (startTimesNanoseconds)
+					*startTimesNanoseconds++=psi->startNanoseconds;
 			}
 			if (pAvgGap3)
 				if (pit->nSectors>1){
-					float usSum=0; // sum of Gap3 Microseconds
+					int nsSum=0; // sum of Gap3 nanoseconds
 					const TInternalTrack::TSectorInfo *psi=pit->sectors;
-					for( TSector s=0; s<pit->nSectors-1; usSum-=psi->endMicroseconds,s++,psi++,usSum+=psi->startMicroseconds );
-					*pAvgGap3=usSum/((pit->nSectors-1)*fddHead.profile.oneByteLatency);
+					for( TSector s=0; s<pit->nSectors-1; nsSum-=psi->endNanoseconds,s++,psi++,nsSum+=psi->startNanoseconds );
+					*pAvgGap3=nsSum/((pit->nSectors-1)*fddHead.profile.oneByteLatency);
 				}else
 					*pAvgGap3=FDD_SECTOR_GAP3_STD;
 			return pit->nSectors;
@@ -944,13 +944,13 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		}
 	}
 
-	TStdWinError CFDD::__setTimeBeforeInterruptingTheFdc__(WORD nDataBytesBeforeInterruption,float nMicrosecondsAfterLastDataByteWritten) const{
-		// registers a request to interrupt the following write/format command after specified NumberOfBytes plus additional NumberOfMicrosends; returns Windows standard i/o error
+	TStdWinError CFDD::__setTimeBeforeInterruptingTheFdc__(WORD nDataBytesBeforeInterruption,int nNanosecondsAfterLastDataByteWritten) const{
+		// registers a request to interrupt the following write/format command after specified NumberOfBytes plus additional NumberOfNanoseconds; returns Windows standard i/o error
 		LOG_ACTION(_T("TStdWinError CFDD::__setTimeBeforeInterruptingTheFdc__"));
 		DWORD nBytesTransferred;
 		switch (DRIVER){
 			case DRV_FDRAWCMD:{
-				FD_SHORT_WRITE_PARAMS swp={ nDataBytesBeforeInterruption, nMicrosecondsAfterLastDataByteWritten };
+				FD_SHORT_WRITE_PARAMS swp={ nDataBytesBeforeInterruption, nNanosecondsAfterLastDataByteWritten/1000 }; // "/1000" = nanoseconds to microseconds
 				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_SHORT_WRITE, &swp,sizeof(swp), nullptr,0, &nBytesTransferred, nullptr )!=0
 						? ERROR_SUCCESS
 						: LOG_ERROR(::GetLastError());
@@ -1069,15 +1069,15 @@ error:				switch (const TStdWinError err=::GetLastError()){
 			BYTE alreadyPlannedSectors[(TSector)-1];
 			::ZeroMemory(alreadyPlannedSectors,nSectors);
 			for( BYTE nSectorsToPlan=nSectors; planEnd-plan<nSectors && nSectorsToPlan; nSectorsToPlan-- ){ // A&B, A = all Sectors requested to read planned, B = all Sectors are planned in N iterations in the worst case (preventing infinite loop in case that at least one Sector isn't found on the Track)
-				float lastSectorEndMicroseconds=-60000; // minus one minute
+				int lastSectorEndNanoseconds=-1e9; // minus one second
 				for( TSector n=0; n<pit->nSectors; n++ ){
 					TInternalTrack::TSectorInfo &si=pit->sectors[n];
 					for( TSector s=0; s<nSectors; s++ )
 						if (!alreadyPlannedSectors[s] && bufferId[s]==si.id) // one of the Sectors requested to read
-							if (si.startMicroseconds-lastSectorEndMicroseconds>=fddHead.profile.gap3Latency){ // sufficient distance between this and previously read Sectors, so both of them can be read in a single disk revolution
+							if (si.startNanoseconds-lastSectorEndNanoseconds>=fddHead.profile.gap3Latency){ // sufficient distance between this and previously read Sectors, so both of them can be read in a single disk revolution
 								planEnd->psi=&si, planEnd->indexIntoOutputBuffers=s;
 								planEnd++;
-								lastSectorEndMicroseconds=si.endMicroseconds;
+								lastSectorEndNanoseconds=si.endNanoseconds;
 								alreadyPlannedSectors[s]=true;
 								break;
 							}
@@ -1328,18 +1328,18 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 	struct TLatencyParams sealed{
 		CFDD *const fdd;
 		const TMedium::TType floppyType;
-		const BYTE usAccuracy; // accuracy in microseconds
+		const WORD nsAccuracy; // accuracy in nanoseconds
 		const BYTE nRepeats;
 		TCylinder cyl;	// healthy Track to use for computation of the latencies
 		THead head;		// healthy Track to use for computation of the latencies
-		float outControllerLatency; // microseconds
-		float out1ByteLatency;		// microseconds
-		float outGap3Latency;		// microseconds
+		int outControllerLatency;	// nanoseconds
+		int out1ByteLatency;		// nanoseconds
+		int outGap3Latency;			// nanoseconds
 
-		TLatencyParams(CFDD *fdd,TMedium::TType floppyType,BYTE usAccuracy,BYTE nRepeats)
+		TLatencyParams(CFDD *fdd,TMedium::TType floppyType,WORD nsAccuracy,BYTE nRepeats)
 			: fdd(fdd)
 			, floppyType(floppyType)
-			, usAccuracy(usAccuracy) , nRepeats(nRepeats)
+			, nsAccuracy(nsAccuracy) , nRepeats(nRepeats)
 			, cyl(0) , head(0) // a healthy Track will be found when determining the controller latency
 			, outControllerLatency(0) , out1ByteLatency(0) , outGap3Latency(0) {
 		}
@@ -1357,11 +1357,11 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 			TCylinder &rCyl;
 			THead &rHead;
 			const PVOID sectorDataToWrite;
-			const BYTE usAccuracy; // microseconds
+			const WORD nsAccuracy; // nanoseconds
 		public:
 			const WORD sectorLength;
 			TSectorId sectorId;
-			float nMicroseconds;
+			int nNanoseconds;
 
 			TInterruption(const PBackgroundActionCancelable pAction,TLatencyParams &lp)
 				// ctor
@@ -1369,7 +1369,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 				, fdd(lp.fdd) , sectorLength(lp.floppyType==TMedium::FLOPPY_HD_350?8192:4096)
 				, rCyl(lp.cyl) , rHead(lp.head) // a healthy Track yet to be found
 				, sectorDataToWrite( ::VirtualAlloc(nullptr,SECTOR_LENGTH_MAX,MEM_COMMIT,PAGE_READWRITE) )
-				, usAccuracy(lp.usAccuracy) , nMicroseconds(0) {
+				, nsAccuracy(lp.nsAccuracy) , nNanoseconds(0) {
 				sectorId.lengthCode=__getSectorLengthCode__(sectorLength); // any Cylinder/Side/Sector values will do, so letting them uninitialized
 				::memset( sectorDataToWrite, TEST_BYTE, sectorLength );
 			}
@@ -1381,7 +1381,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 			TStdWinError __writeSectorData__(WORD nBytesToWrite) const{
 				// writes SectorData to the current Track and interrupts the controller after specified NumberOfBytesToWrite and Microseconds; returns Windows standard i/o error
 				// : setting controller interruption to the specified NumberOfBytesToWrite and Microseconds
-				if (const TStdWinError err=fdd->__setTimeBeforeInterruptingTheFdc__( nBytesToWrite, nMicroseconds ))
+				if (const TStdWinError err=fdd->__setTimeBeforeInterruptingTheFdc__( nBytesToWrite, nNanoseconds ))
 					return err;
 				// : writing
 				DWORD nBytesTransferred;
@@ -1405,25 +1405,25 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 			}
 			TStdWinError __setInterruptionToWriteSpecifiedNumberOfBytes__(WORD nBytes){
 				// sets this Interruption so that the specified NumberOfBytes is written to current Track; returns Windows standard i/o error
-				// : initialization using the default NumberOfMicroseconds
-				nMicroseconds=20;
-				// : increasing the NumberOfMicroseconds until the specified NumberOfBytes is written for the first time
+				// : initialization using the default NumberOfNanoseconds
+				nNanoseconds=20e3;
+				// : increasing the NumberOfNanoseconds until the specified NumberOfBytes is written for the first time
 				do{
 					if (pAction->IsCancelled()) return ERROR_CANCELLED;
-					nMicroseconds+=usAccuracy;
+					nNanoseconds+=nsAccuracy;
 					if (const TStdWinError err=__writeSectorData__(nBytes))
 						return err;
 				}while (__getNumberOfWrittenBytes__()<nBytes);
-				const float nMicrosecondsA=nMicroseconds;
-				// : increasing the NumberOfMicroseconds until a higher NumberOfBytes is written for the first time
+				const int nNanosecondsA=nNanoseconds;
+				// : increasing the NumberOfNanoseconds until a higher NumberOfBytes is written for the first time
 				do{
 					if (pAction->IsCancelled()) return ERROR_CANCELLED;
-					nMicroseconds+=usAccuracy;
+					nNanoseconds+=nsAccuracy;
 					if (const TStdWinError err=__writeSectorData__(nBytes))
 						return err;
 				}while (__getNumberOfWrittenBytes__()<=nBytes);
-				// : the resulting NumberOfMicroseconds is the average of when the NumberOfBytes has been written for the first and last time
-				nMicroseconds=(nMicrosecondsA+nMicroseconds)/2;
+				// : the resulting NumberOfNanoseconds is the average of when the NumberOfBytes has been written for the first and last time
+				nNanoseconds=(nNanosecondsA+nNanoseconds)/2;
 				return ERROR_SUCCESS;
 			}
 		} interruption( pAction, lp );
@@ -1458,8 +1458,8 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 			const WORD nBytes=interruption.sectorLength/2;
 			if (const TStdWinError err=interruption.__setInterruptionToWriteSpecifiedNumberOfBytes__(nBytes))
 				return LOG_ERROR(pAction->TerminateWithError(err));
-			const float nControllerMicroseconds=interruption.nMicroseconds;
-			lp.outControllerLatency+=nControllerMicroseconds; // below divided by the number of attempts to get an average
+			const int nControllerNanoseconds=interruption.nNanoseconds;
+			lp.outControllerLatency+=nControllerNanoseconds; // below divided by the number of attempts to get an average
 /*
 {TCHAR buf[80];
 ::wsprintf(buf,_T("nMicrosecondsA=%d"),(int)(nControllerMicroseconds*1000));
@@ -1468,18 +1468,18 @@ Utils::Information(buf);}
 			pAction->UpdateProgress(++state);
 			// . STEP 3: experimentally determining the latency of one Byte
 			if (pAction->IsCancelled()) return LOG_ERROR(ERROR_CANCELLED);
-			const float p = interruption.nMicroseconds = 65000;
+			const int p = interruption.nNanoseconds = 65e6; // let's see how many Bytes are written during the 65 millisecond time frame
 			if (const TStdWinError err=interruption.__writeSectorData__(nBytes))
 				return LOG_ERROR(pAction->TerminateWithError(err));
-			const float n=interruption.__getNumberOfWrittenBytes__();
-			const float nMicrosecondsPerByte=( p - nControllerMicroseconds ) / ( n - nBytes );
+			const int n=interruption.__getNumberOfWrittenBytes__();
+			const int nNanosecondsPerByte=( p - nControllerNanoseconds ) / ( n - nBytes );
 /*
 {TCHAR buf[80];
 ::wsprintf(buf,_T("oneByteLatency=%d"),(int)(nMicrosecondsPerByte*1000));
 Utils::Information(buf);}
 //*/
 			//lp.out1ByteLatency+=( n - sectorLength ) / ( p - nMicrosecondsZ );
-			lp.out1ByteLatency+=nMicrosecondsPerByte; // below divided by the number of attempts to get an average
+			lp.out1ByteLatency+=nNanosecondsPerByte; // below divided by the number of attempts to get an average
 			pAction->UpdateProgress(++state);
 		}
 		// - computing the final latency values
@@ -1518,9 +1518,9 @@ Utils::Information(buf);}
 				const Utils::CLocalTime startTime;
 					lp.fdd->GetHealthySectorData( lp.cyl, lp.head, &SectorIds[1], &w );
 				const Utils::CLocalTime endTime;
-				const int deltaMicroseconds=(endTime-startTime).ToMilliseconds()*1000;
+				const int deltaNanoseconds=(endTime-startTime).ToMilliseconds()*1e6;
 				// . STEP 2.4: determining if the readings took more than just one disk revolution or more
-				if (deltaMicroseconds>=pit->sectors[1].endMicroseconds-pit->sectors[0].endMicroseconds+4000) // 4000 = allowing circa 30 Bytes as a limit of detecting a single disk revolution
+				if (deltaNanoseconds>=pit->sectors[1].endNanoseconds-pit->sectors[0].endNanoseconds+4e6) // 4e6 = allowing circa 120 Bytes as a limit of detecting a single disk revolution
 					break;
 				c++;
 			}
@@ -1613,9 +1613,15 @@ Utils::Information(buf);}
 			}
 			void __exchangeLatency__(CDataExchange* pDX){
 				// exchange of latency-related data from and to controls
-				DDX_Text( pDX,	ID_LATENCY,	profile.controllerLatency );
-				DDX_Text( pDX,	ID_NUMBER2,	profile.oneByteLatency );
-				DDX_Text( pDX,	ID_GAP,		profile.gap3Latency );
+				float tmp=profile.controllerLatency/1e3f;
+					DDX_Text( pDX,	ID_LATENCY,	tmp );
+				profile.controllerLatency=tmp*1e3f;
+				tmp=profile.oneByteLatency/1e3f;
+					DDX_Text( pDX,	ID_NUMBER2,	tmp );
+				profile.oneByteLatency=tmp*1e3f;
+				tmp=profile.gap3Latency/1e3f;
+					DDX_Text( pDX,	ID_GAP,		tmp );
+				profile.gap3Latency=tmp*1e3f;
 			}
 			void DoDataExchange(CDataExchange* pDX) override{
 				// exchange of data from and to controls
@@ -1633,10 +1639,10 @@ Utils::Information(buf);}
 				else
 					SetDlgItemInt(ID_NUMBER,4,FALSE);
 				params.calibrationStepDuringFormatting=tmp;
-				// . NumberOfSecondsToTurningMotorOff
-				tmp=params.nSecondsToTurningMotorOff;
+				// . NumberOfSecondsToTurnMotorOff
+				tmp=params.nSecondsToTurnMotorOff;
 				DDX_CBIndex( pDX, ID_ROTATION,	tmp );
-				params.nSecondsToTurningMotorOff=tmp;
+				params.nSecondsToTurnMotorOff=tmp;
 				// . FormattedTracksVerification
 				tmp=params.verifyFormattedTracks;
 				DDX_Check( pDX,	ID_VERIFY_TRACK,	tmp );
@@ -1707,7 +1713,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 											case 1: floppyType=TMedium::FLOPPY_DD_350; break;
 											case 2: floppyType=TMedium::FLOPPY_HD_350; break;
 										}
-										TLatencyParams lp( fdd, floppyType, 1+d.usAccuracy, 1+d.nRepeats );
+										TLatencyParams lp( fdd, floppyType, (1+d.usAccuracy)*1000, 1+d.nRepeats );
 										bmac.AddAction( __determineControllerAndOneByteLatency_thread__, &lp, _T("Determining controller latencies") );
 										bmac.AddAction( __determineGap3Latency_thread__, &lp, _T("Determining minimal Gap3 size") );
 									if (const TStdWinError err=bmac.Perform()){
@@ -1888,10 +1894,10 @@ autodetermineLatencies:		// automatic determination of write latency values
 	#define RESERVED_SECTOR_LENGTH_CODE		0
 
 	#define NUMBER_OF_BYTES_OCCUPIED_BY_ID\
-		( SYNCHRONIZATION_BYTES_COUNT + sizeof(TIdAddressMark) + sizeof(FD_ID_HEADER) + sizeof(TCrc) )
+		( SYNCHRONIZATION_BYTES_COUNT + sizeof(TIdAddressMark) + sizeof(FD_ID_HEADER) + sizeof(TCrc16) )
 
 	#define NUMBER_OF_OCCUPIED_BYTES(nSectors,sectorLength,gap3,withoutLastGap3)\
-		( nSectors*( NUMBER_OF_BYTES_OCCUPIED_BY_ID + GAP2_BYTES_COUNT + SYNCHRONIZATION_BYTES_COUNT + sizeof(TDataAddressMark) + sectorLength + sizeof(TCrc) + gap3 )  -  withoutLastGap3*gap3 )
+		( nSectors*( NUMBER_OF_BYTES_OCCUPIED_BY_ID + GAP2_BYTES_COUNT + SYNCHRONIZATION_BYTES_COUNT + sizeof(TDataAddressMark) + sectorLength + sizeof(TCrc16) + gap3 )  -  withoutLastGap3*gap3 )
 
 	TStdWinError CFDD::FormatTrack(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte){
 		// formats given Track {Cylinder,Head} to the requested NumberOfSectors, each with corresponding Length and FillerByte as initial content; returns Windows standard i/o error
@@ -2012,7 +2018,7 @@ formatStandardWay:
 					BYTE gap3;
 					struct{
 						WORD nBytes;
-						float nMicroseconds;
+						int nNanoseconds;
 					} interruption;
 
 					WORD __getNumberOfNecessaryBytes__() const{
@@ -2021,8 +2027,8 @@ formatStandardWay:
 					}
 					void __debug__() const{
 						TCHAR buf[200];
-						::wsprintf(buf,_T("sectorLengthCode=%d\nnSectorsOnTrack=%d\nnLastSectorsValid=%d\ngap3=%d\n,nBytes=%d\nnMicroseconds=%d"),
-							sectorLengthCode,nSectorsOnTrack,nLastSectorsValid,gap3,interruption.nBytes,(int)interruption.nMicroseconds
+						::wsprintf(buf,_T("sectorLengthCode=%d\nnSectorsOnTrack=%d\nnLastSectorsValid=%d\ngap3=%d\n,nBytes=%d\nnNanoseconds=%d"),
+							sectorLengthCode,nSectorsOnTrack,nLastSectorsValid,gap3,interruption.nBytes,interruption.nNanoseconds
 						);
 						Utils::Information(buf);
 					}
@@ -2044,7 +2050,7 @@ formatStandardWay:
 					}
 					bufferId+=pFormatStep->nLastSectorsValid;
 					pFormatStep->interruption.nBytes=( pFormatStep->nSectorsOnTrack=pFormatStep->nLastSectorsValid )*sizeof(FD_ID_HEADER);
-					pFormatStep->interruption.nMicroseconds=fddHead.profile.controllerLatency+*bufferLength/2*fddHead.profile.oneByteLatency;
+					pFormatStep->interruption.nNanoseconds=fddHead.profile.controllerLatency+*bufferLength/2*fddHead.profile.oneByteLatency;
 //pFormatStep->__debug__();
 					nBytesReserved=pFormatStep++->__getNumberOfNecessaryBytes__();
 				}else
@@ -2078,7 +2084,7 @@ Utils::Information(buf);}
 					WORD nBytesFormatted;
 					if (sr.DescribesMissingDam()){
 						// Sector misses its data part
-						pFormatStep->interruption.nMicroseconds=fddHead.profile.controllerLatency+(GAP2_BYTES_COUNT+SYNCHRONIZATION_BYTES_COUNT-2)*fddHead.profile.oneByteLatency; // "-2" = damaging the A1A1A1 mark
+						pFormatStep->interruption.nNanoseconds=fddHead.profile.controllerLatency+(GAP2_BYTES_COUNT+SYNCHRONIZATION_BYTES_COUNT-2)*fddHead.profile.oneByteLatency; // "-2" = damaging the A1A1A1 mark
 						/*if (sr.DescribesIdFieldCrcError()){ // commented out as SamDisk doesn't reproduce this error neither [info by Simon Owen]
 							// Sector misses its data part, and its ID Field is corrupted
 							*(pFormatStep+1)=*pFormatStep; // the preceeding Step (as formatted "backwards") is creation of a correct ID Field
@@ -2091,7 +2097,7 @@ Utils::Information(buf);}
 						//if (!nReservedSectors) pFormatStep->gap3=gap3+nBytesReserved;
 					}else{
 						// Sector is complete
-						pFormatStep->interruption.nMicroseconds=fddHead.profile.controllerLatency+sectorLength/2*fddHead.profile.oneByteLatency;
+						pFormatStep->interruption.nNanoseconds=fddHead.profile.controllerLatency+sectorLength/2*fddHead.profile.oneByteLatency;
 						/*if (sr.DescribesIdFieldCrcError()){ // commented out as SamDisk doesn't reproduce this error neither [info by Simon Owen]
 							// Sector misses its data part, and its ID Field is corrupted
 							*(pFormatStep+1)=*pFormatStep; // the preceeding Step (as formatted "backwards") is creation of a correct ID Field
@@ -2116,7 +2122,7 @@ formatCustomWay:
 				for( const TFormatStep *pfs=pFormatStep; pfs-->formatPlan; ){
 					__setWaitingForIndex__();
 					// : setting shortened formatting
-					__setTimeBeforeInterruptingTheFdc__( pfs->interruption.nBytes, pfs->interruption.nMicroseconds );
+					__setTimeBeforeInterruptingTheFdc__( pfs->interruption.nBytes, pfs->interruption.nNanoseconds );
 					// : formatting
 					#pragma pack(1)
 					struct{

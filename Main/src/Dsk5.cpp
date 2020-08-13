@@ -258,7 +258,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		return diskInfo.nHeads;
 	}
 
-	TSector CDsk5::ScanTrack(TCylinder cyl,THead head,PSectorId bufferId,PWORD bufferLength,PINT startTimesMicroseconds,PBYTE pAvgGap3) const{
+	TSector CDsk5::ScanTrack(TCylinder cyl,THead head,PSectorId bufferId,PWORD bufferLength,PINT startTimesNanoseconds,PBYTE pAvgGap3) const{
 		// returns the number of Sectors found in given Track, and eventually populates the Buffer with their IDs (if Buffer!=Null); returns 0 if Track not formatted or not found
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (const PTrackInfo ti=__findTrack__(cyl,head)){
@@ -270,7 +270,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				}
 				if (bufferLength)
 					*bufferLength++=__getSectorLength__(si);
-				//if (startTimesMicroseconds)
+				//if (startTimesNanoseconds)
 					//TODO
 			}
 			if (pAvgGap3)
