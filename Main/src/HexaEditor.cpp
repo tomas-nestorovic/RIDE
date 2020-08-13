@@ -188,9 +188,11 @@
 				// when in the non-client area (e.g. over a scrollbar), putting updated values aside
 				update.minFileSize=_minFileSize;
 				update.maxFileSize=_maxFileSize;
-			}else
+			}else{
 				// otherwise, updating the values normally
-				minFileSize=_minFileSize, maxFileSize=_maxFileSize;
+				minFileSize = update.minFileSize = _minFileSize; // setting also Update just in case the cursor is in non-client area
+				maxFileSize = update.maxFileSize = _maxFileSize;
+			}
 		locker.Unlock();
 	}
 
@@ -202,7 +204,7 @@
 				update.logicalSize=_logicalSize;
 			else{
 				// otherwise, updating the values normally
-				logicalSize=_logicalSize;
+				logicalSize = update.logicalSize = _logicalSize; // setting also Update just in case the cursor is in non-client area
 				if (::IsWindow(m_hWnd)) // may be window-less if the owner is window-less
 					__refreshVertically__();
 			}
