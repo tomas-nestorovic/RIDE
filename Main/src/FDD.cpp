@@ -1704,6 +1704,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 							if (d.DoModal()==IDOK){
 								__informationWithCheckableShowNoMore__( _T("Windows is NOT a real-time system! Computed latency will be valid only if using the floppy drive in very similar conditions as when they were computed (current conditions)!"), INI_MSG_LATENCY );
 								if (Utils::InformationOkCancel(_T("Insert an empty disk and hit OK."))){
+									// : composing a parallel multi-action
 									CBackgroundMultiActionCancelable bmac( THREAD_PRIORITY_TIME_CRITICAL );
 										TMedium::TType floppyType=TMedium::UNKNOWN;
 										switch (d.floppyType){
@@ -1714,10 +1715,19 @@ autodetermineLatencies:		// automatic determination of write latency values
 										TLatencyParams lp( fdd, floppyType, (1+d.usAccuracy)*1000, 1+d.nRepeats );
 										bmac.AddAction( __determineControllerAndOneByteLatency_thread__, &lp, _T("Determining controller latencies") );
 										bmac.AddAction( __determineGap3Latency_thread__, &lp, _T("Determining minimal Gap3 size") );
-									if (const TStdWinError err=bmac.Perform()){
+									// : backing up existing InternalTracks and performing the multi-action
+									BYTE internalTracksOrg[sizeof(fdd->internalTracks)];
+									::memcpy( internalTracksOrg, fdd->internalTracks, sizeof(internalTracksOrg) );
+									::ZeroMemory( fdd->internalTracks, sizeof(internalTracksOrg) );
+										const TStdWinError err=bmac.Perform();
+										fdd->__freeInternalTracks__();
+									::memcpy( fdd->internalTracks, internalTracksOrg, sizeof(internalTracksOrg) );
+									// : reporting on problems and quitting
+									if (err){
 										Utils::FatalError(_T("Couldn't autodetermine"),err);
 										break;
 									}
+									// : adopting the found latencies to current floppy Profile
 									profile.controllerLatency=lp.outControllerLatency;
 									profile.oneByteLatency=lp.out1ByteLatency;
 									profile.gap3Latency=lp.outGap3Latency;
