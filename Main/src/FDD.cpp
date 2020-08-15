@@ -455,9 +455,9 @@ Utils::Information("--- EVERYTHING OK ---");
 	}
 
 	CFDD::TFddHead::TProfile::TProfile()
-		// ctor
+		// ctor (the defaults for a 2DD floppy)
 		: controllerLatency(86e3)
-		, oneByteLatency(32e3)
+		, oneByteLatency(FDD_NANOSECONDS_PER_DD_BYTE)
 		, gap3Latency( oneByteLatency*FDD_SECTOR_GAP3_STD * 4/5 ) { // "4/5" = giving the FDC 20% tolerance for Gap3
 	}
 
@@ -465,12 +465,24 @@ Utils::Information("--- EVERYTHING OK ---");
 		::wsprintf( buf, INI_FDD _T("_%c_%d"), driveLetter, floppyType );
 	}
 
-	void CFDD::TFddHead::TProfile::Load(TCHAR driveLetter,TMedium::TType floppyType){
+	void CFDD::TFddHead::TProfile::Load(TCHAR driveLetter,TMedium::TType floppyType,int defaultNanosecondsPerByte){
 		// loads the Profile for specified Drive and FloppyType
 		TCHAR iniSection[16];
 		GetFddProfileName( iniSection, driveLetter, floppyType );
-		controllerLatency=app.GetProfileInt( iniSection, INI_LATENCY_CONTROLLER, 86e3 );
-		oneByteLatency=app.GetProfileInt( iniSection, INI_LATENCY_1BYTE, 32e3 );
+		switch (floppyType){
+			case TMedium::FLOPPY_DD_350:
+			case TMedium::FLOPPY_DD_525:
+				controllerLatency=app.GetProfileInt( iniSection, INI_LATENCY_CONTROLLER, 86e3 );
+				break;
+			case TMedium::FLOPPY_HD_350:
+				controllerLatency=app.GetProfileInt( iniSection, INI_LATENCY_CONTROLLER, 86e3/2 );
+				break;
+			default:
+				ASSERT(FALSE);
+				controllerLatency=FDD_NANOSECONDS_PER_DD_BYTE;
+				break;
+		}
+		oneByteLatency=app.GetProfileInt( iniSection, INI_LATENCY_1BYTE, defaultNanosecondsPerByte );
 		gap3Latency=app.GetProfileInt( iniSection, INI_LATENCY_GAP3, oneByteLatency*FDD_SECTOR_GAP3_STD*4/5 ); // "4/5" = giving the FDC 20% tolerance for Gap3
 	}
 
@@ -911,6 +923,19 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		}else
 			// Track failed to be scanned
 			return 0;
+	}
+
+	int CFDD::EstimateNanosecondsPerOneByte() const{
+		// 
+		switch (floppyType){
+			case TMedium::FLOPPY_HD_350:
+				return FDD_NANOSECONDS_PER_DD_BYTE/2;
+			case TMedium::FLOPPY_DD_350:
+			case TMedium::FLOPPY_DD_525:
+				return FDD_NANOSECONDS_PER_DD_BYTE;
+			default:
+				return __super::EstimateNanosecondsPerOneByte();
+		}
 	}
 
 	void CFDD::__setWaitingForIndex__() const{
@@ -1590,7 +1615,7 @@ Utils::Information(buf);}
 						EnableDlgItem( ID_40D80 );
 					}
 				// . loading the Profile associated with the current drive and FloppyType
-				profile.Load( fdd->GetDriveLetter(), fdd->floppyType );
+				profile.Load( fdd->GetDriveLetter(), fdd->floppyType, fdd->EstimateNanosecondsPerOneByte() );
 				__exchangeLatency__( &CDataExchange(this,FALSE) );
 				// . forcing redrawing (as the new text may be shorter than the original text, leaving the original partly visible)
 				GetDlgItem(ID_MEDIUM)->Invalidate();

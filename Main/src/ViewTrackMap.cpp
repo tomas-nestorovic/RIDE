@@ -21,8 +21,9 @@
 	CTrackMapView::CTrackMapView(PDos _dos)
 		// ctor
 		: tab( IDR_TRACKMAP, IDR_TRACKMAP, ID_CYLINDER, _dos, this )
-		, displayType(TDisplayType::STATUS) , showSectorNumbers(false) , fitLongestTrackInWindow(false) , showSelectedFiles(_dos->pFileManager!=nullptr) , iScrollX(0) , iScrollY(0) , scanner(this)
+		, displayType(TDisplayType::STATUS) , showSectorNumbers(false) , showTimed(false) , fitLongestTrackInWindow(false) , showSelectedFiles(_dos->pFileManager!=nullptr) , iScrollX(0) , iScrollY(0) , scanner(this)
 		, fileSelectionColor( app.GetProfileInt(INI_TRACKMAP,INI_FILE_SELECTION_COLOR,::GetSysColor(COLOR_ACTIVECAPTION)) )
+		, nNanosecondsPerByte(_dos->image->EstimateNanosecondsPerOneByte() )
 		, longestTrack(0,0)
 		, zoomLengthFactor(3) {
 		::ZeroMemory( rainbowBrushes, sizeof(rainbowBrushes) );
@@ -49,6 +50,8 @@
 			ON_UPDATE_COMMAND_UI_RANGE(ID_TRACKMAP_STATUS,ID_TRACKMAP_BAD_DATA,__changeDisplayType_updateUI__)
 		ON_COMMAND(ID_TRACKMAP_NUMBERING,__toggleSectorNumbering__)
 			ON_UPDATE_COMMAND_UI(ID_TRACKMAP_NUMBERING,__toggleSectorNumbering_updateUI__)
+		ON_COMMAND(ID_TIME,__toggleTiming__)
+			ON_UPDATE_COMMAND_UI(ID_TIME,__toggleTiming_updateUI__)
 		ON_COMMAND(ID_ZOOM_IN,__zoomIn__)
 			ON_UPDATE_COMMAND_UI(ID_ZOOM_IN,__zoomIn_updateUI__)
 		ON_COMMAND(ID_ZOOM_OUT,__zoomOut__)
@@ -77,6 +80,12 @@
 	#define CAN_ZOOM_IN		(zoomLengthFactor>0)
 	#define CAN_ZOOM_OUT	(zoomLengthFactor<8)
 
+	inline
+	CTrackMapView::TTrackLength CTrackMapView::TTrackLength::FromTime(int nNanosecondsTotal,int nNanosecondsPerByte){
+		return TTrackLength( 1, nNanosecondsTotal/nNanosecondsPerByte );
+	}
+
+	inline
 	CTrackMapView::TTrackLength::TTrackLength(TSector nSectors,int nBytes)
 		// ctor
 		: nSectors(nSectors) , nBytes(nBytes) {
@@ -122,8 +131,14 @@
 		SetScrollSizes(
 			MM_TEXT,
 			CSize(
-				Utils::LogicalUnitScaleFactor*( longestTrack.GetPixelCount(zoomLengthFactor) ),
-				Utils::LogicalUnitScaleFactor*( VIEW_PADDING*2+VIEW_HEADER_HEIGHT+IMAGE->GetTrackCount()*TRACK_HEIGHT )
+				Utils::LogicalUnitScaleFactor*(
+					showTimed
+					? TTrackLength::FromTime(longestTrackNanoseconds,nNanosecondsPerByte).GetPixelCount(zoomLengthFactor)
+					: longestTrack.GetPixelCount(zoomLengthFactor)
+				),
+				Utils::LogicalUnitScaleFactor*(
+					VIEW_PADDING*2+VIEW_HEADER_HEIGHT+IMAGE->GetTrackCount()*TRACK_HEIGHT
+				)
 			)
 		);
 	}
@@ -184,6 +199,7 @@
 		TSectorId bufferId[(TSector)-1];
 		PSectorData bufferSectorData[(TSector)-1];
 		WORD bufferLength[(TSector)-1];
+		int bufferStartNanoseconds[(TSector)-1];
 	};
 	UINT AFX_CDECL CTrackMapView::TTrackScanner::__thread__(PVOID _pBackgroundAction){
 		// scanning of Tracks
@@ -192,7 +208,7 @@
 		TTrackScanner &rts=pvtm->scanner;
 		const PImage image=pvtm->IMAGE;
 		const Utils::CByteIdentity sectorIdAndPositionIdentity;
-		for( TTrackInfo si; const THead nSides=__getNumberOfFormattedSidesInImage__(image); ){ // "nSides==0" if disk without any Track (e.g. when opening RawImage of zero length, or if opening a corrupted DSK Image)
+		for( TTrackInfo ti; const THead nSides=__getNumberOfFormattedSidesInImage__(image); ){ // "nSides==0" if disk without any Track (e.g. when opening RawImage of zero length, or if opening a corrupted DSK Image)
 			// . waiting for request to scan the next Track
 			rts.scanNextTrack.Lock();
 			// . getting the TrackNumber to scan
@@ -201,20 +217,20 @@
 			rts.params.criticalSection.Unlock();
 			const div_t d=div(trackNumber,nSides);
 			// . scanning the Track to draw its Sector Statuses
-			si.cylinder=d.quot, si.head=d.rem;
+			ti.cylinder=d.quot, ti.head=d.rem;
 			//if (pvtm->displayType==TDisplayType::STATUS) // commented out because this scanning always needed
-				si.nSectors=image->ScanTrack( si.cylinder, si.head, si.bufferId, si.bufferLength );
+			ti.nSectors=image->ScanTrack( ti.cylinder, ti.head, ti.bufferId, ti.bufferLength, ti.bufferStartNanoseconds );
 			// . scanning the Track to draw its Sector data
 			if (pvtm->displayType>=TDisplayType::DATA_OK_ONLY){
 				TFdcStatus statuses[(TSector)-1];
-				image->GetTrackData( si.cylinder, si.head, si.bufferId, sectorIdAndPositionIdentity, si.nSectors, false, si.bufferSectorData, si.bufferLength, statuses );
-				for( TSector n=0; n<si.nSectors; n++ )
+				image->GetTrackData( ti.cylinder, ti.head, ti.bufferId, sectorIdAndPositionIdentity, ti.nSectors, false, ti.bufferSectorData, ti.bufferLength, statuses );
+				for( TSector n=0; n<ti.nSectors; n++ )
 					if (pvtm->displayType!=TDisplayType::DATA_ALL && !statuses[n].IsWithoutError())
-						si.bufferSectorData[n]=nullptr;
+						ti.bufferSectorData[n]=nullptr;
 			}
 			// . sending scanned information for drawing
 			if (::IsWindow(pvtm->m_hWnd)) // TrackMap may not exist if, for instance, switched to another view while still scanning some Track(s)
-				pvtm->PostMessage( WM_TRACK_SCANNED, trackNumber, (LPARAM)&si );
+				pvtm->PostMessage( WM_TRACK_SCANNED, trackNumber, (LPARAM)&ti );
 		}
 		return ERROR_SUCCESS;
 	}
@@ -235,13 +251,22 @@
 		const TTrackInfo &rti=*(TTrackInfo *)pTrackInfo;
 		int nBytesOnTrack=0;
 		for( TSector s=rti.nSectors; s>0; nBytesOnTrack+=rti.bufferLength[--s] );
+		const int nNanosecondsOnTrack =	rti.nSectors>0
+										? rti.bufferStartNanoseconds[rti.nSectors-1]+rti.bufferLength[rti.nSectors-1]*nNanosecondsPerByte
+										: 0;
 		const TTrackLength tmp( rti.nSectors, nBytesOnTrack );
-		if (longestTrack<tmp){
+		if (!showTimed && longestTrack<tmp
+			||
+			showTimed && longestTrackNanoseconds<nNanosecondsOnTrack
+		){
 			longestTrack=tmp;
+			longestTrackNanoseconds=nNanosecondsOnTrack;
 			if (fitLongestTrackInWindow){
 				CRect rc;
 				GetClientRect(&rc);
-				zoomLengthFactor=longestTrack.GetZoomFactorToFitWidth(rc.Width());
+				zoomLengthFactor =	showTimed
+									? TTrackLength::FromTime(longestTrackNanoseconds,nNanosecondsPerByte).GetZoomFactorToFitWidth(rc.Width())
+									: longestTrack.GetZoomFactorToFitWidth(rc.Width());
 				Invalidate();
 				return 0;
 			}
@@ -267,50 +292,53 @@
 				::TabbedTextOut( dc, 0,y, buf,-1, 3,Tabs, 0 );
 				// : drawing Sectors
 				iScrollX=GetScrollPos(SB_HORZ)/Utils::LogicalUnitScaleFactor;
-				PCSectorId pId=rti.bufferId;
-				PCWORD pLength=rti.bufferLength;
-				TSector nSectors=rti.nSectors;
+				int sectorStartPixels[(TSector)-1];
+				if (showTimed)
+					for( TSector s=0; s<rti.nSectors; s++ )
+						sectorStartPixels[s] =	SECTOR1_X + (rti.bufferStartNanoseconds[s]/nNanosecondsPerByte>>zoomLengthFactor);
+				else
+					for( TSector s=0; s<rti.nSectors; s++ )
+						sectorStartPixels[s] =	s>0
+												? sectorStartPixels[s-1]+(rti.bufferLength[s-1]>>zoomLengthFactor)+SECTOR_MARGIN
+												: SECTOR1_X;
 				RECT r={ SECTOR1_X, y+(TRACK_HEIGHT-SECTOR_HEIGHT)/2, SECTOR1_X, y+(TRACK_HEIGHT+SECTOR_HEIGHT)/2 };
 				const HGDIOBJ hBrush0=::SelectObject(dc,Utils::CRideBrush::White);
 					if (displayType==TDisplayType::STATUS){
 						// drawing Sector Statuses
-						CDos::TSectorStatus statuses[(TSector)-1],*ps=statuses;
-						DOS->GetSectorStatuses( rti.cylinder, rti.head, nSectors, pId, statuses );
-						for( ; nSectors--; r.left=r.right+=SECTOR_MARGIN,ps++,pId++ ){
-							r.right+=1+(*pLength++>>zoomLengthFactor); // "1+" = to correctly display a zero-length Sector
+						CDos::TSectorStatus statuses[(TSector)-1];
+						DOS->GetSectorStatuses( rti.cylinder, rti.head, rti.nSectors, rti.bufferId, statuses );
+						for( TSector s=0; s<rti.nSectors; s++ ){
+							r.left=sectorStartPixels[s];
+							r.right=r.left+1+(rti.bufferLength[s]>>zoomLengthFactor); // "1+" = to correctly display a zero-length Sector
 							if (iScrollX<r.right || r.left<iScrollX+rc.Width()){
 								// Sector in horizontally visible part of the TrackMap
-								const CBrush brush(*ps);
+								const CBrush brush(statuses[s]);
 								const HGDIOBJ hBrush0=::SelectObject(dc,brush);
 									dc.Rectangle(&r);
 									if (showSectorNumbers) // drawing Sector numbers
-										::DrawText( dc, _itot(pId->sector,buf,10),-1, &r, DT_CENTER|DT_VCENTER|DT_SINGLELINE );
+										::DrawText( dc, _itot(rti.bufferId[s].sector,buf,10),-1, &r, DT_CENTER|DT_VCENTER|DT_SINGLELINE );
 								::SelectObject(dc,hBrush0);
 							}
-							r.right--; // compensating for correctly displaying zero-length Sectors
 						}
 					}else
 						// drawing Sector data
-						for( const PCSectorData *pData=rti.bufferSectorData; nSectors--; r.left=r.right+=SECTOR_MARGIN,pData++ ){
-							const WORD w=*pLength++>>zoomLengthFactor;
-							if (r.right+w<=iScrollX || iScrollX+rc.Width()<=r.left){
+						for( TSector s=0; s<rti.nSectors; s++ ){
+							r.left=sectorStartPixels[s];
+							r.right=r.left+1+(rti.bufferLength[s]>>zoomLengthFactor); // "1+" = to correctly display a zero-length Sector
+							WORD w=rti.bufferLength[s]>>zoomLengthFactor;
+							if (r.right+w<=iScrollX || iScrollX+rc.Width()<=r.left)
 								// Sector out of horizontally visible part of the TrackMap
-								r.right+=w;
 								continue;
-							}
-							if (PCBYTE sample=(PCBYTE)*pData){
+							if (PCBYTE sample=(PCBYTE)rti.bufferSectorData[s]){
 								// Sector found - drawing its data
 								RECT rcSample=r;
-									rcSample.right=rcSample.left+2;
-								for( WORD n=w; n--; sample+=(1<<zoomLengthFactor),rcSample.left++,rcSample.right++ )
+								for( rcSample.right=rcSample.left+2; w--; sample+=(1<<zoomLengthFactor),rcSample.left++,rcSample.right++ )
 									::FillRect( dc, &rcSample, rainbowBrushes[*sample] );
-								r.right+=1+w; // "1+" = to correctly display a zero-length Sector
 								::SelectObject( dc, ::GetStockObject(NULL_BRUSH) );
 								dc.Rectangle(&r);
 							}else{
 								// Sector not found - drawing crossing-out
 								const HGDIOBJ hPen0=::SelectObject(dc,Utils::CRidePen::RedHairline);
-									r.right+=1+w; // "1+" = to correctly display a zero-length Sector
 									::SelectObject( dc, Utils::CRideBrush::White );
 									dc.Rectangle(&r);
 									::MoveToEx( dc, r.left, r.top, nullptr );
@@ -319,7 +347,6 @@
 									::LineTo( dc, r.right, r.top);
 								::SelectObject(dc,hPen0);
 							}
-							r.right--; // compensating for correctly displaying zero-length Sectors
 						}
 				::SelectObject(dc,hBrush0);
 			::SelectObject(dc,font0);
@@ -336,13 +363,12 @@
 								for( const THead nSides=__getNumberOfFormattedSidesInImage__(IMAGE); n--; item++ )
 									if (trackNumber==item->chs.GetTrackNumber(nSides)){
 										// this Sector (in currently drawn Track) belongs to one of selected Files
-										PCSectorId pRefId=&item->chs.sectorId, bufferId=rti.bufferId;
-										PCWORD pw=rti.bufferLength;
-										r.left=SECTOR1_X;
-										for( TSector nSectors=rti.nSectors; nSectors--; r.left+=(*pw++>>zoomLengthFactor)+SECTOR_MARGIN )
-											if (*pRefId==*bufferId++)
+										TSector s=0;
+										for( PCSectorId pRefId=&item->chs.sectorId; s<rti.nSectors; s++ )
+											if (*pRefId==rti.bufferId[s])
 												break;
-										r.right=r.left+1+(*pw>>zoomLengthFactor); // "1+" = to correctly display a zero-length Sector
+										r.left=sectorStartPixels[s];
+										r.right=r.left+1+(rti.bufferLength[s]>>zoomLengthFactor); // "1+" = to correctly display a zero-length Sector
 										dc.Rectangle(&r);
 									}
 						}
@@ -421,7 +447,9 @@
 	afx_msg void CTrackMapView::OnSize(UINT nType,int cx,int cy){
 		// window size changed
 		if (fitLongestTrackInWindow)
-			zoomLengthFactor=longestTrack.GetZoomFactorToFitWidth(cx);
+			zoomLengthFactor =	showTimed
+								? TTrackLength::FromTime(longestTrackNanoseconds,nNanosecondsPerByte).GetZoomFactorToFitWidth(cx)
+								: longestTrack.GetZoomFactorToFitWidth(cx);
 	}
 
 	bool CTrackMapView::__getPhysicalAddressFromPoint__(POINT point,TPhysicalAddress &rOutChs,BYTE &rnOutSectorsToSkip){
@@ -544,6 +572,17 @@
 		pCmdUI->Enable(displayType==TDisplayType::STATUS);
 	}
 
+	afx_msg void CTrackMapView::__toggleTiming__(){
+		// commanded to toggle timed display of Sectors
+		showTimed=!showTimed;
+		Invalidate(TRUE);
+	}
+	afx_msg void CTrackMapView::__toggleTiming_updateUI__(CCmdUI *pCmdUI){
+		// projecting possibility of timed display of Sectors
+		pCmdUI->SetCheck(showTimed);
+		pCmdUI->Enable(longestTrackNanoseconds>0);
+	}
+
 	afx_msg void CTrackMapView::__zoomOut__(){
 		// zooms out the view
 		if (CAN_ZOOM_OUT){
@@ -577,7 +616,9 @@
 		if ( fitLongestTrackInWindow=!fitLongestTrackInWindow ){
 			CRect rc;
 			GetClientRect(&rc);
-			zoomLengthFactor=longestTrack.GetZoomFactorToFitWidth(rc.Width());
+			zoomLengthFactor =	showTimed
+								? TTrackLength::FromTime(longestTrackNanoseconds,nNanosecondsPerByte).GetZoomFactorToFitWidth(rc.Width())
+								: longestTrack.GetZoomFactorToFitWidth(rc.Width());
 			__updateLogicalDimensions__();
 			Invalidate(TRUE);
 		}

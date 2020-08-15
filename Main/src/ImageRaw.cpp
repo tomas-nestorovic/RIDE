@@ -184,8 +184,8 @@
 				}
 				if (bufferLength)
 					*bufferLength++=sectorLength;
-				//if (startTimesNanoseconds)
-					//TODO
+				if (startTimesNanoseconds)
+					*startTimesNanoseconds++=INT_MIN; // timing is not applicable for this kind of Image
 			}
 			if (pAvgGap3)
 				*pAvgGap3=FDD_SECTOR_GAP3_STD;

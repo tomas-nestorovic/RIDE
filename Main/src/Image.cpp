@@ -544,6 +544,11 @@
 		return true;
 	}
 
+	int CImage::EstimateNanosecondsPerOneByte() const{
+		//
+		return 1;
+	}
+
 	void CImage::BufferTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors){
 		// buffers Sectors in the same Track by the underlying Image, making them ready for IMMEDIATE usage - later than immediate calls to GetSectorData may be slower
 		LOG_TRACK_ACTION(cyl,head,_T("void CImage::BufferTrackData"));

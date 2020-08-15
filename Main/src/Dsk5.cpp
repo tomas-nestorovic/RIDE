@@ -270,8 +270,8 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				}
 				if (bufferLength)
 					*bufferLength++=__getSectorLength__(si);
-				//if (startTimesNanoseconds)
-					//TODO
+				if (startTimesNanoseconds)
+					*startTimesNanoseconds++=INT_MIN; // timing is not applicable for this kind of Image
 			}
 			if (pAvgGap3)
 				*pAvgGap3=ti->gap3;

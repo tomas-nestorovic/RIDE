@@ -8,15 +8,21 @@
 	class CTrackMapView sealed:public CScrollView{
 		DECLARE_MESSAGE_MAP()
 	private:
+		const int nNanosecondsPerByte;
 		int iScrollX, iScrollY; // ScrollBar position
 		struct TTrackLength sealed{
+			static TTrackLength FromTime(int nNanosecondsTotal,int nNanosecondsPerByte);
+
 			TSector nSectors;
 			int nBytes;
+
 			TTrackLength(TSector nSectors,int nBytes); // ctor
+
 			int GetPixelCount(BYTE zoomFactor) const;
 			BYTE GetZoomFactorToFitWidth(int windowWidth) const;
 			bool operator<(const TTrackLength &r) const;
 		} longestTrack; // to infer maximum horizontal scroll position
+		int longestTrackNanoseconds;
 		enum TDisplayType:WORD{
 			STATUS		=ID_TRACKMAP_STATUS,
 			DATA_OK_ONLY=ID_TRACKMAP_DATA,
@@ -33,7 +39,7 @@
 			CEvent scanNextTrack;
 			TTrackScanner(const CTrackMapView *pvtm); // ctor
 		} scanner;
-		bool showSectorNumbers,fitLongestTrackInWindow,showSelectedFiles;
+		bool showSectorNumbers,showTimed,fitLongestTrackInWindow,showSelectedFiles;
 		BYTE zoomLengthFactor;
 		COLORREF fileSelectionColor;
 
@@ -56,6 +62,8 @@
 			afx_msg void __changeDisplayType_updateUI__(CCmdUI *pCmdUI);
 		afx_msg void __toggleSectorNumbering__();
 			afx_msg void __toggleSectorNumbering_updateUI__(CCmdUI *pCmdUI);
+		afx_msg void __toggleTiming__();
+			afx_msg void __toggleTiming_updateUI__(CCmdUI *pCmdUI);
 		afx_msg void __zoomOut__();
 			afx_msg void __zoomOut_updateUI__(CCmdUI *pCmdUI);
 		afx_msg void __zoomIn__();
