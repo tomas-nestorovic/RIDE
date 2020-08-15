@@ -519,7 +519,7 @@
 						if (const TStdWinError err=IMAGE->UnformatTrack( chs.cylinder, chs.head ))
 							return Utils::FatalError( _T("Can't unformat"), err );
 				}else if (Utils::QuestionYesNo(_T("Make this sector unreadable?"),MB_DEFBUTTON1))
-					if (const TStdWinError err=IMAGE->MarkSectorAsDirty( chs, nSectorsToSkip, &TFdcStatus::SectorNotFound ))
+					if (const TStdWinError err=IMAGE->MarkSectorAsDirty( chs, nSectorsToSkip, &TFdcStatus::DeletedDam ))
 						return Utils::FatalError( _T("Can't make unreadable"), err );
 				Invalidate();
 			}

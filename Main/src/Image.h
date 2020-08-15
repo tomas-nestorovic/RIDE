@@ -147,6 +147,7 @@
 	typedef const struct TFdcStatus sealed{
 		static const TFdcStatus WithoutError;
 		static const TFdcStatus SectorNotFound;
+		static const TFdcStatus DeletedDam;
 
 		BYTE reg1,reg2;
 

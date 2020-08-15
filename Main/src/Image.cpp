@@ -96,6 +96,7 @@
 
 	const TFdcStatus TFdcStatus::WithoutError;
 	const TFdcStatus TFdcStatus::SectorNotFound( FDC_ST1_DATA_ERROR, FDC_ST2_CRC_ERROR_IN_DATA );
+	const TFdcStatus TFdcStatus::DeletedDam( FDC_ST1_NO_DATA, FDC_ST2_DELETED_DAM );
 
 	TFdcStatus::TFdcStatus()
 		// ctor
