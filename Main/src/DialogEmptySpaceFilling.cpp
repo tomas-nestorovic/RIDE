@@ -3,7 +3,7 @@
 	CFillEmptySpaceDialog::CFillEmptySpaceDialog(const CDos *dos)
 		// ctor
 		// - base
-		: CDialog(IDR_DOS_FILL_EMPTY_SPACE)
+		: Utils::CRideDialog(IDR_DOS_FILL_EMPTY_SPACE)
 		// - initialization
 		, dos(dos)
 		, dosProps(dos->properties)
@@ -43,13 +43,9 @@
 	afx_msg void CFillEmptySpaceDialog::__enableOkButton__(UINT id){
 		// projecting feasibility into UI
 		nOptionsChecked+=-1+2*(IsDlgButtonChecked(id)==BST_CHECKED);
-		GetDlgItem(ID_RECURRENCY)->EnableWindow(
-			IsDlgButtonChecked(ID_FILE)==BST_CHECKED && dos->pFileManager->pDirectoryStructureManagement!=nullptr
-		);
-		GetDlgItem(ID_SUBDIRECTORY)->EnableWindow(
-			IsDlgButtonChecked(ID_DIRECTORY)==BST_CHECKED && dos->pFileManager->pDirectoryStructureManagement!=nullptr
-		);
-		GetDlgItem(IDOK)->EnableWindow( nOptionsChecked>0 );
+		EnableDlgItem(  ID_RECURRENCY,  IsDlgButtonChecked(ID_FILE)==BST_CHECKED && dos->pFileManager->pDirectoryStructureManagement!=nullptr  );
+		EnableDlgItem( ID_SUBDIRECTORY,  IsDlgButtonChecked(ID_DIRECTORY)==BST_CHECKED && dos->pFileManager->pDirectoryStructureManagement!=nullptr  );
+		EnableDlgItem( IDOK, nOptionsChecked>0 );
 	}
 
 	afx_msg void CFillEmptySpaceDialog::__setDefaultFillerByteForGeneralSectors__(){

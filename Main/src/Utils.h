@@ -44,7 +44,31 @@ namespace Utils{
 		~CRideContextMenu();
 	};
 
-	class CCommandDialog:public CDialog{
+	class CRideDialog:public CDialog{
+	protected:
+		CRideDialog();
+	public:
+		static PTCHAR GetDialogTemplateItemText(UINT idDlgRes,WORD idItem,PTCHAR chars,WORD nCharsMax);
+		static void DrawClosingCurlyBracket(HDC dc,int x,int yMin,int yMax);
+
+		CRideDialog(LPCTSTR lpszTemplateName,CWnd *pParentWnd=nullptr);
+		CRideDialog(UINT nIDTemplate,CWnd *pParentWnd=nullptr);
+
+		bool EnableDlgItem(WORD id,bool enabled=true) const;
+		bool EnableDlgItems(PCWORD pIds,bool enabled) const;
+		bool ShowDlgItem(WORD id,bool show=true) const;
+		bool IsDlgItemEnabled(WORD id) const;
+		RECT GetDlgItemClientRect(WORD id) const;
+		RECT MapDlgItemClientRect(WORD id) const;
+		POINT MapDlgItemClientOrigin(WORD id) const;
+		void OffsetDlgItem(WORD id,int dx,int dy) const;
+		void WrapDlgItemsByClosingCurlyBracketWithText(WORD idA,WORD idZ,LPCTSTR text,DWORD textColor) const;
+		void SetDlgItemSingleCharUsingFont(WORD id,WCHAR singleChar,HFONT hFont) const;
+		void SetDlgItemSingleCharUsingFont(WORD id,WCHAR singleChar,LPCTSTR fontFace,int fontPointSize) const;
+		void PopulateDlgComboBoxWithSequenceOfNumbers(WORD cbId,BYTE iStartValue,LPCTSTR strStartValueDesc,BYTE iEndValue,LPCTSTR strEndValueDesc) const;
+	};
+
+	class CCommandDialog:public CRideDialog{
 		const LPCTSTR information;
 	protected:
 		void __addCommandButton__(WORD id,LPCTSTR caption);
@@ -110,21 +134,12 @@ namespace Utils{
 	BYTE CancelRetryContinue(LPCTSTR text,UINT defaultButton);
 	BYTE CancelRetryContinue(LPCTSTR text,TStdWinError causeOfError,UINT defaultButton,LPCTSTR consequence=nullptr);
 	void Warning(LPCTSTR text);
-	bool EnableDlgControl(HWND hDlg,WORD controlId,bool enabled);
-	bool EnableDlgControls(HWND hDlg,PCWORD buttonIds,bool enabled);
-	bool IsDlgControlEnabled(HWND hDlg,WORD controlId);
-	void OffsetDlgControl(HWND hDlg,WORD controlId,int dx,int dy);
-	PTCHAR GetDialogTemplateItemText(UINT idDlgRes,WORD idItem,PTCHAR chars,WORD nCharsMax);
 	void BytesToHigherUnits(DWORD bytes,float &rHigherUnit,LPCTSTR &rHigherUnitName);
 	CString BytesToHexaText(PCBYTE bytes,BYTE nBytes,bool lastDelimitedWithAnd);
 	CString BytesToHexaText(const char *chars,BYTE nChars,bool lastDelimitedWithAnd);
 	void NavigateToUrlInDefaultBrowser(LPCTSTR url);
-	void DrawClosingCurlyBracket(HDC dc,int x,int yMin,int yMax);
-	void WrapControlsByClosingCurlyBracketWithText(CWnd *wnd,const CWnd *pCtrlA,const CWnd *pCtrlZ,LPCTSTR text,DWORD textColor);
 	void ConvertToSplitButton(HWND hStdBtn,PCSplitButtonAction pAction,BYTE nActions);
 	void ConvertToCommandLikeButton(HWND hStdBtn,WCHAR wingdingsGlyphBeforeText=0xf0e8,COLORREF textColor=0,int glyphPointSizeIncrement=0,COLORREF glyphColor=0); // 0xf0e8 = arrow right
-	void SetSingleCharTextUsingFont(HWND hWnd,WCHAR singleChar,LPCTSTR fontFace,int fontPointSize);
-	void PopulateComboBoxWithSequenceOfNumbers(HWND hComboBox,BYTE iStartValue,LPCTSTR strStartValueDesc,BYTE iEndValue,LPCTSTR strEndValueDesc);
 	float ScaleLogicalUnit(HDC dc);
 	void UnscaleLogicalUnit(PINT values,BYTE nValues);
 	COLORREF GetSaturatedColor(COLORREF color,float saturationFactor);

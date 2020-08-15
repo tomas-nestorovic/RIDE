@@ -1285,7 +1285,7 @@ reportError:Utils::Information(buf);
 	bool CDos::TFileDateTime::Edit(bool dateEditingEnabled,bool timeEditingEnabled,const SYSTEMTIME *epoch){
 		// True <=> user confirmed the shown editation dialog and accepted the new value, otherwise False
 		// - defining the Dialog
-		class TDateTimeDialog sealed:public CDialog{
+		class TDateTimeDialog sealed:public Utils::CRideDialog{
 			void DoDataExchange(CDataExchange *pDX) override{
 				// exchange of data from and to controls
 				SYSTEMTIME st;
@@ -1299,8 +1299,8 @@ reportError:Utils::Information(buf);
 				}else{
 					// loading the date and time values
 					// . adjusting interactivity
-					Utils::EnableDlgControl( m_hWnd, ID_DATE, dateEditingEnabled );
-					Utils::EnableDlgControl( m_hWnd, ID_TIME, timeEditingEnabled );
+					EnableDlgItem( ID_DATE, dateEditingEnabled );
+					EnableDlgItem( ID_TIME, timeEditingEnabled );
 					// . restricting the Date control to specified Epoch only
 					SendDlgItemMessage( ID_DATE, MCM_SETRANGE, GDTR_MIN|GDTR_MAX, (LPARAM)epoch );
 					// . loading
@@ -1332,7 +1332,7 @@ reportError:Utils::Information(buf);
 								break;
 						}
 				}
-				return CDialog::WindowProc(msg,wParam,lParam);
+				return __super::WindowProc(msg,wParam,lParam);
 			}
 		public:
 			const bool dateEditingEnabled, timeEditingEnabled;
@@ -1340,7 +1340,7 @@ reportError:Utils::Information(buf);
 			FILETIME ft;
 
 			TDateTimeDialog(const FILETIME &rDateTime,bool dateEditingEnabled,bool timeEditingEnabled,const SYSTEMTIME *epoch)
-				: CDialog(IDR_DOS_DATETIME_EDIT)
+				: Utils::CRideDialog(IDR_DOS_DATETIME_EDIT)
 				, dateEditingEnabled(dateEditingEnabled) , timeEditingEnabled(timeEditingEnabled) , epoch(epoch)
 				, ft(rDateTime) {
 			}
@@ -1368,7 +1368,7 @@ reportError:Utils::Information(buf);
 	CDos::CHexaValuePropGridEditor::CHexaValuePropGridEditor(PropGrid::PValue value,PropGrid::TSize valueSize)
 		// ctor
 		// - base
-		: CDialog(IDR_DOS_PROPGRID_HEXAEDITOR)
+		: Utils::CRideDialog(IDR_DOS_PROPGRID_HEXAEDITOR)
 		// - initialization
 		, hexaEditor(nullptr)
 		, f( (PBYTE)::memcpy(newValueBuffer,value,valueSize), valueSize ) {
@@ -1380,11 +1380,7 @@ reportError:Utils::Information(buf);
 		// - base
 		__super::PreInitDialog();
 		// - creating and showing the HexaEditor at the position of the placeholder (see Dialog's resource)
-		RECT r;
-		const CWnd *const pPlaceholder=GetDlgItem(ID_FILE);
-		pPlaceholder->GetClientRect(&r);
-		pPlaceholder->MapWindowPoints(this,&r);
-		hexaEditor.Create( nullptr, nullptr, WS_CHILD|WS_VISIBLE, r, this, 0 );
+		hexaEditor.Create( nullptr, nullptr, WS_CHILD|WS_VISIBLE, MapDlgItemClientRect(ID_FILE), this, 0 );
 	}
 
 	void WINAPI CDos::CHexaValuePropGridEditor::DrawValue(PropGrid::PCustomParam,PropGrid::PCValue value,PropGrid::TSize valueSize,PDRAWITEMSTRUCT pdis){

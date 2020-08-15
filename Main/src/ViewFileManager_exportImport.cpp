@@ -590,7 +590,7 @@ importQuit2:		::GlobalUnlock(hg);
 						void PreInitDialog() override{
 							// dialog initialization
 							// | base
-							Utils::CCommandDialog::PreInitDialog();
+							__super::PreInitDialog();
 							// | supplying available actions
 							__addCommandButton__( IDYES, _T("Open it in new instance of ") APP_ABBREVIATION _T(" (recommended)") );
 							__addCommandButton__( IDNO, _T("Import it to this image anyway") );
@@ -785,16 +785,13 @@ importQuit2:		::GlobalUnlock(hg);
 		switch (msg){
 			case WM_PAINT:{
 				// . base
-				Utils::CCommandDialog::WindowProc(msg,wParam,lParam);
+				__super::WindowProc(msg,wParam,lParam);
 				// . drawing curly brackets
-				const CWnd *const pBteReplace=GetDlgItem(IDYES), *const pBtnSkip=GetDlgItem(IDNO);
-				RECT r1,r2;
-				pBteReplace->GetClientRect(&r1), pBteReplace->MapWindowPoints(this,&r1);
-				pBtnSkip->GetClientRect(&r2), pBtnSkip->MapWindowPoints(this,&r2);
+				const RECT r1=MapDlgItemClientRect(IDYES), r2=MapDlgItemClientRect(IDNO);
 				RECT r={ r1.right+3, r1.top-2, 1000, r2.bottom+2 };
-				Utils::DrawClosingCurlyBracket( CClientDC(this), r.left, r.top, r.bottom );
+				DrawClosingCurlyBracket( CClientDC(this), r.left, r.top, r.bottom );
 				return 0;
 			}
 		}
-		return Utils::CCommandDialog::WindowProc(msg,wParam,lParam);
+		return __super::WindowProc(msg,wParam,lParam);
 	}

@@ -557,11 +557,11 @@
 		// True <=> modified File Attributes confirmed, otherwise False
 		// - defining the Dialog
 		static const WORD Controls[]={ ID_HIDDEN, ID_SYSTEM, ID_PROTECTED, ID_ARCHIVE, ID_READABLE, ID_WRITABLE, ID_EXECUTABLE, ID_DELETABLE };
-		class CAttributesDialog sealed:public CDialog{
+		class CAttributesDialog sealed:public Utils::CRideDialog{
 			void DoDataExchange(CDataExchange *pDX) override{
 				// exchange of data from and to controls
 				if (pDX->m_bSaveAndValidate)
-					for( BYTE i=0; i<8; attributes=(attributes<<1)|(BYTE)Button_GetCheck(::GetDlgItem(m_hWnd,Controls[i++])) );
+					for( BYTE i=0; i<8; attributes=(attributes<<1)|(BYTE)IsDlgButtonChecked(Controls[i++]) );
 				else
 					for( BYTE i=8; i--; CheckDlgButton(Controls[i],attributes&1),attributes>>=1 );
 			}
@@ -570,28 +570,26 @@
 				if (msg==WM_PAINT){
 					// drawing
 					// . base
-					CDialog::WindowProc(msg,wParam,lParam);
+					__super::WindowProc(msg,wParam,lParam);
 					// . drawing curly brackets
-					const CWnd *const p1=GetDlgItem(ID_READABLE), *p2=GetDlgItem(ID_DELETABLE);
-					RECT r1,r2;
-					p1->GetClientRect(&r1), p1->MapWindowPoints(this,&r1);
-					p2->GetClientRect(&r2), p2->MapWindowPoints(this,&r2);
-					Utils::DrawClosingCurlyBracket(CClientDC(this),
-													r1.right+8,
-													r1.top-3, r2.bottom+3
-												);
+					const RECT r1=MapDlgItemClientRect(ID_READABLE), r2=MapDlgItemClientRect(ID_DELETABLE);
+					DrawClosingCurlyBracket(
+						CClientDC(this),
+						r1.right+8,
+						r1.top-3, r2.bottom+3
+					);
 					return 0;
 				}else if (msg==WM_NOTIFY && wParam==ID_ATTRIBUTE)
 					// notification regarding the "RWED" Attributes
 					if (((LPNMHDR)lParam)->code==NM_CLICK)
 						for( BYTE i=4; i<8; CheckDlgButton(Controls[i++],BST_CHECKED) );
-				return CDialog::WindowProc(msg,wParam,lParam);
+				return __super::WindowProc(msg,wParam,lParam);
 			}
 		public:
 			BYTE attributes;
 			CAttributesDialog(BYTE _attributes)
 				// ctor
-				: CDialog(IDR_MDOS_FILE_ATTRIBUTES_EDITOR)
+				: Utils::CRideDialog(IDR_MDOS_FILE_ATTRIBUTES_EDITOR)
 				, attributes(_attributes) {
 			}
 		} d( attributes );

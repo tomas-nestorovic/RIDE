@@ -62,14 +62,14 @@
 
 	CBackgroundActionCancelable::CBackgroundActionCancelable(UINT dlgResId)
 		// ctor
-		: CDialog( dlgResId, app.m_pMainWnd )
+		: Utils::CRideDialog( dlgResId, app.m_pMainWnd )
 		, bCancelled(false) , bTargetStateReached(false) , lastState(0)
 		, progressTarget(INT_MAX) {
 	}
 
 	CBackgroundActionCancelable::CBackgroundActionCancelable(AFX_THREADPROC fnAction,LPCVOID actionParams,int actionThreadPriority)
 		// ctor
-		: CDialog( IDR_ACTION_PROGRESS, app.m_pMainWnd )
+		: Utils::CRideDialog( IDR_ACTION_PROGRESS, app.m_pMainWnd )
 		, bCancelled(false) , bTargetStateReached(false)
 		, progressTarget(INT_MAX) {
 		BeginAnother( fnAction, actionParams, actionThreadPriority );
@@ -186,16 +186,13 @@
 	BOOL CBackgroundMultiActionCancelable::OnInitDialog(){
 		// dialog initialization
 		// - initializing the Painting information
-		CPoint pt(0,0);
-		GetDlgItem(ID_INFORMATION)->MapWindowPoints( this, &pt, 1 );
+		const CPoint pt=MapDlgItemClientOrigin(ID_INFORMATION);
 		painting.glyphX=pt.x+14;
 		painting.charHeight=Utils::CRideFont(m_hWnd).charHeight;
-		CRect rc;
-		GetDlgItem(ID_STATE)->GetClientRect(&rc);
+		CRect rc=GetDlgItemClientRect(ID_STATE);
 		painting.progressHeight=rc.Height();
 		rc.bottom += nActions*(painting.charHeight+PADDING_ACTION) + 2*PADDING_STATUS;
-		GetDlgItem(ID_STATE)->MapWindowPoints( this, &(pt=CPoint(0,0)), 1 );
-		rc.OffsetRect(pt);
+		rc.OffsetRect( MapDlgItemClientOrigin(ID_STATE) );
 		painting.rcActions=rc;
 		const int rcActionsHeight=painting.rcActions.Height();
 		// - adjusting the size of window to display all Action Names
@@ -204,9 +201,9 @@
 						rc.Width(), rc.Height()+rcActionsHeight,
 						SWP_NOZORDER|SWP_NOMOVE
 					);
-		Utils::OffsetDlgControl( m_hWnd, ID_STANDARD, 0, rcActionsHeight );
-		Utils::OffsetDlgControl( m_hWnd, ID_PRIORITY, 0, rcActionsHeight );
-		Utils::OffsetDlgControl( m_hWnd, IDCANCEL, 0, rcActionsHeight );
+		OffsetDlgItem( ID_STANDARD, 0, rcActionsHeight );
+		OffsetDlgItem( ID_PRIORITY, 0, rcActionsHeight );
+		OffsetDlgItem( IDCANCEL, 0, rcActionsHeight );
 		// - launching the first Action in combo-box
 		iCurrAction=-1;
 		SendMessage( WM_COMMAND, IDOK );
@@ -221,7 +218,7 @@
 			SendDlgItemMessage(	ID_PRIORITY, CB_SETCURSEL,
 								SendDlgItemMessage( ID_PRIORITY, CB_ADDSTRING, 0, (LPARAM)_T("Real-time") )
 							);
-			Utils::EnableDlgControl( m_hWnd, ID_PRIORITY, false );
+			EnableDlgItem( ID_PRIORITY, false );
 		}
 		return result;
 	}

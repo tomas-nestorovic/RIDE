@@ -97,10 +97,11 @@
 	afx_msg void CMainWindow::__changeAutomaticDiskRecognitionOrder__(){
 		// shows the Dialog to manually modify the recognition order of DOS
 		// - defining the Dialog
-		class CAutomaticRecognitionOrderDialog sealed:public CDialog{
+		class CAutomaticRecognitionOrderDialog sealed:public Utils::CRideDialog{
 		public:
 			CDos::CRecognition recognition;
 		private:
+			const Utils::CRideFont symbolFont;
 			CDos::PCProperties newlyDetectedDoses[256];
 
 			void __repopulateListBoxesAndUpdateInteractivity__() const{
@@ -117,10 +118,10 @@
 							lb.SetItemDataPtr( lb.AddString(props->name), (PVOID)props );
 					lb.SetTopIndex(scrollY), lb.SetCurSel(iSelected);
 					// : updating interaction possibilities
-					GetDlgItem(ID_UP)->EnableWindow(iSelected>0);
-					GetDlgItem(ID_DOWN)->EnableWindow(iSelected>=0 && iSelected<lb.GetCount()-1);
-					GetDlgItem(ID_REMOVE)->EnableWindow(iSelected>=0);
-					GetDlgItem(ID_ORDER)->EnableWindow(lb.GetCount());
+					EnableDlgItem( ID_UP, iSelected>0 );
+					EnableDlgItem( ID_DOWN, iSelected>=0 && iSelected<lb.GetCount()-1 );
+					EnableDlgItem( ID_REMOVE, iSelected>=0 );
+					EnableDlgItem( ID_ORDER, lb.GetCount()>0 );
 				lb.Detach();
 				// . populating the ListBox with DOSes that don't take part in the recognition process
 				lb.Attach( GetDlgItem(ID_HIDDEN)->m_hWnd );
@@ -133,7 +134,7 @@
 						}
 					lb.SetTopIndex(scrollY), lb.SetCurSel(iSelected);
 					// : updating interaction possibilities
-					GetDlgItem(ID_ADD)->EnableWindow(iSelected>=0);
+					EnableDlgItem( ID_ADD, iSelected>=0 );
 				lb.Detach();
 			}
 
@@ -155,13 +156,13 @@
 				// - populating the ListBoxes with current Recognition Order
 				__repopulateListBoxesAndUpdateInteractivity__();
 				// - setting graphical symbols to buttons that organize the Recognition Order
-				Utils::SetSingleCharTextUsingFont( GetDlgItem(ID_UP)->m_hWnd, 0xf0e1, FONT_WINGDINGS, 110 );
-				Utils::SetSingleCharTextUsingFont( GetDlgItem(ID_DOWN)->m_hWnd, 0xf0e2, FONT_WINGDINGS, 110 );
-				Utils::SetSingleCharTextUsingFont( GetDlgItem(ID_ADD)->m_hWnd, 0xf0e7, FONT_WINGDINGS, 110 );
-				Utils::SetSingleCharTextUsingFont( GetDlgItem(ID_REMOVE)->m_hWnd, 0xf0e8, FONT_WINGDINGS, 110 );
+				SetDlgItemSingleCharUsingFont( ID_UP, 0xf0e1, symbolFont );
+				SetDlgItemSingleCharUsingFont( ID_DOWN, 0xf0e2, symbolFont );
+				SetDlgItemSingleCharUsingFont( ID_ADD, 0xf0e7, symbolFont );
+				SetDlgItemSingleCharUsingFont( ID_REMOVE, 0xf0e8, symbolFont );
 				// - (dis)allowing the Cancel button
 				#ifndef _DEBUG
-					GetDlgItem(IDCANCEL)->EnableWindow(*newlyDetectedDoses==nullptr); // if NewDoses were detected, the Dialog cannot be cancelled - Recognition Order with NewDetectedDoses must be confirmed
+					EnableDlgItem( IDCANCEL, *newlyDetectedDoses==nullptr ); // if NewDoses were detected, the Dialog cannot be cancelled - Recognition Order with NewDetectedDoses must be confirmed
 				#endif
 			}
 
@@ -290,7 +291,7 @@
 										void PreInitDialog() override{
 											// dialog initialization
 											// : base
-											Utils::CCommandDialog::PreInitDialog();
+											__super::PreInitDialog();
 											// : supplying available actions
 											__addCommandButton__( ID_DRIVE, _T("What is a recognition sequence good for?") );
 											__addCommandButton__( IDCANCEL, MSG_HELP_CANCEL );
@@ -318,7 +319,8 @@
 		public:
 			CAutomaticRecognitionOrderDialog()
 				// ctor
-				: CDialog(IDR_DOS_RECOGNITION) {
+				: Utils::CRideDialog(IDR_DOS_RECOGNITION)
+				, symbolFont(FONT_WINGDINGS,110,false,true) {
 			}
 		} d;
 		// - showing the Dialog and processing its result

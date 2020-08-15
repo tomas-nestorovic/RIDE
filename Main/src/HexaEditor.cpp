@@ -786,7 +786,7 @@ resetSelectionWithValue:BYTE buf[65535];
 						// resetting Selection with user-defined value
 						if (!editable) return 0; // can't edit content of a disabled window
 						// . defining the Dialog
-						class CResetDialog sealed:public CDialog{
+						class CResetDialog sealed:public Utils::CRideDialog{
 							BOOL OnInitDialog() override{
 								TCHAR buf[80];
 								::wsprintf( buf+GetDlgItemText(ID_DIRECTORY,buf,sizeof(buf)/sizeof(TCHAR)), _T(" (0x%02X)"), directoryDefaultByte );
@@ -802,7 +802,7 @@ resetSelectionWithValue:BYTE buf[65535];
 							}
 							LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 								if (msg==WM_COMMAND)
-									Utils::EnableDlgControl( m_hWnd, ID_NUMBER, IsDlgButtonChecked(ID_NUMBER2)==BST_CHECKED );
+									EnableDlgItem( ID_NUMBER, IsDlgButtonChecked(ID_NUMBER2)==BST_CHECKED );
 								return __super::WindowProc(msg,wParam,lParam);
 							}
 						public:
@@ -811,7 +811,7 @@ resetSelectionWithValue:BYTE buf[65535];
 							BYTE value;
 
 							CResetDialog()
-								: CDialog( IDR_HEXAEDITOR_RESETSELECTION )
+								: Utils::CRideDialog( IDR_HEXAEDITOR_RESETSELECTION )
 								, directoryDefaultByte( CDos::GetFocused()->properties->directoryFillerByte )
 								, dataDefaultByte( CDos::GetFocused()->properties->sectorFillerByte )
 								, iRadioSel(3) , value(0) {

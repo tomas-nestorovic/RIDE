@@ -240,9 +240,9 @@
 			void DoDataExchange(CDataExchange *pDX) override{
 				static const WORD Controls[]={ ID_ARCHIVE, ID_DIRECTORY, ID_VOLUME, ID_SYSTEM, ID_HIDDEN, ID_READONLY };
 				if (pDX->m_bSaveAndValidate)
-					for( BYTE i=0; i<ATTRIBUTES_COUNT; attributes=(attributes<<1)|(BYTE)Button_GetCheck(::GetDlgItem(m_hWnd,Controls[i++])) );
+					for( BYTE i=0; i<ATTRIBUTES_COUNT; attributes=(attributes<<1)|(BYTE)IsDlgButtonChecked(Controls[i++]) );
 				else
-					for( BYTE i=ATTRIBUTES_COUNT; i--; Button_SetCheck(::GetDlgItem(m_hWnd,Controls[i]),attributes&1),attributes>>=1 );
+					for( BYTE i=ATTRIBUTES_COUNT; i--; CheckDlgButton(Controls[i],attributes&1),attributes>>=1 );
 			}
 		public:
 			BYTE attributes;

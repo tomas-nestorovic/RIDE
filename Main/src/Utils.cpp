@@ -11,7 +11,7 @@ namespace Utils{
 	const CRidePen CRidePen::WhiteHairline(0,0xffffff);
 	const CRidePen CRidePen::RedHairline(0,0xff);
 
-
+	
 
 
 	CRideBrush::CRideBrush(int stockObjectId){
@@ -153,18 +153,18 @@ namespace Utils{
 
 	CCommandDialog::CCommandDialog(LPCTSTR _information)
 		// ctor
-		: CDialog(IDR_ACTION_DIALOG) , information(_information) , checkBoxStatus(BST_UNCHECKED) {
+		: CRideDialog(IDR_ACTION_DIALOG) , information(_information) , checkBoxStatus(BST_UNCHECKED) {
 	}
 
 	CCommandDialog::CCommandDialog(WORD dialogId,LPCTSTR _information)
 		// ctor
-		: CDialog(dialogId) , information(_information) , checkBoxStatus(BST_UNCHECKED) {
+		: CRideDialog(dialogId) , information(_information) , checkBoxStatus(BST_UNCHECKED) {
 	}
 
 	void CCommandDialog::PreInitDialog(){
 		// dialog initialization
 		// - base
-		CDialog::PreInitDialog();
+		__super::PreInitDialog();
 		// - initializing the main message
 		SetDlgItemText( ID_INFORMATION, information );
 	}
@@ -284,7 +284,7 @@ namespace Utils{
 				}
 				break;
 		}
-		return CDialog::WindowProc(msg,wParam,lParam);
+		return __super::WindowProc(msg,wParam,lParam);
 	}
 
 	#define CMDBUTTON_HEIGHT	32
@@ -301,10 +301,7 @@ namespace Utils{
 					);
 		GetClientRect(&r);
 		// - creating a new "command-like" Button
-		RECT t;
-		const CWnd *const pInformation=GetDlgItem(ID_INFORMATION);
-		pInformation->GetClientRect(&t);
-		pInformation->MapWindowPoints(this,&t);
+		const RECT t=MapDlgItemClientRect(ID_INFORMATION);
 		ConvertToCommandLikeButton(
 			::CreateWindow( WC_BUTTON,caption,
 							WS_CHILD|WS_VISIBLE,
@@ -327,10 +324,7 @@ namespace Utils{
 					);
 		GetClientRect(&r);
 		// - displaying the check-box
-		const CWnd *const pInformation=GetDlgItem(ID_INFORMATION);
-		RECT t;
-		pInformation->GetClientRect(&t);
-		pInformation->MapWindowPoints(this,&t);
+		const RECT t=MapDlgItemClientRect(ID_INFORMATION);
 		pCheckBox->MoveWindow( t.left, r.bottom-t.top-ch.Height(), ch.Width(), ch.Height() );
 		pCheckBox->SetWindowText(caption);
 		pCheckBox->ShowWindow(SW_SHOW);
@@ -657,33 +651,86 @@ namespace Utils{
 		::MessageBox(::GetActiveWindow(),text,_T("Warning"),MB_ICONINFORMATION|MB_TASKMODAL);
 	}
 
-	bool EnableDlgControl(HWND hDlg,WORD controlId,bool enabled){
+
+
+
+
+
+
+
+
+
+
+	CRideDialog::CRideDialog(){
+		// ctor
+	}
+
+	CRideDialog::CRideDialog(LPCTSTR lpszTemplateName,CWnd *pParentWnd)
+		// ctor
+		: CDialog(lpszTemplateName,pParentWnd) {
+	}
+
+	CRideDialog::CRideDialog(UINT nIDTemplate,CWnd *pParentWnd)
+		// ctor
+		: CDialog(nIDTemplate,pParentWnd) {
+	}
+
+	bool CRideDialog::EnableDlgItem(WORD id,bool enabled) const{
 		// enables/disables the specified Dialog control and returns this new state
-		::EnableWindow( ::GetDlgItem(hDlg,controlId), enabled );
+		::EnableWindow( ::GetDlgItem(m_hWnd,id), enabled );
 		return enabled;
 	}
 
-	bool EnableDlgControls(HWND hDlg,PCWORD controlIds,bool enabled){
+	bool CRideDialog::EnableDlgItems(PCWORD pIds,bool enabled) const{
 		// enables/disables all specified Dialog controls and returns this new state
-		while (const WORD id=*controlIds++)
-			::EnableWindow( ::GetDlgItem(hDlg,id), enabled );
+		while (const WORD id=*pIds++)
+			::EnableWindow( ::GetDlgItem(m_hWnd,id), enabled );
 		return enabled;
 	}
 
-	bool IsDlgControlEnabled(HWND hDlg,WORD controlId){
-		// True <=> the specified Dialog control is enabled, otherwise False
-		return ::IsWindowEnabled( ::GetDlgItem(hDlg,controlId) )!=FALSE;
+	bool CRideDialog::ShowDlgItem(WORD id,bool show) const{
+		// shows/hides the specified Dialog control and returns this new state
+		::ShowWindow( ::GetDlgItem(m_hWnd,id), show?SW_SHOW:SW_HIDE );
+		return show;
 	}
 
-	void OffsetDlgControl(HWND hDlg,WORD controlId,int dx,int dy){
+	bool CRideDialog::IsDlgItemEnabled(WORD id) const{
+		// True <=> the specified Dialog control is enabled, otherwise False
+		return ::IsWindowEnabled( ::GetDlgItem(m_hWnd,id) )!=FALSE;
+	}
+
+	RECT CRideDialog::GetDlgItemClientRect(WORD id) const{
+		// determines the client area of specified Dialog control
+		RECT tmp;
+		::GetClientRect( ::GetDlgItem(m_hWnd,id), &tmp );
+		return tmp;
+	}
+
+	RECT CRideDialog::MapDlgItemClientRect(WORD id) const{
+		//
+		const HWND hItem=::GetDlgItem(m_hWnd,id);
+		RECT tmp;
+		::GetClientRect( hItem, &tmp );
+		::MapWindowPoints( hItem, m_hWnd, (LPPOINT)&tmp, 2 );
+		return tmp;
+	}
+
+	POINT CRideDialog::MapDlgItemClientOrigin(WORD id) const{
+		//
+		POINT tmp={};
+		::MapWindowPoints( ::GetDlgItem(m_hWnd,id), m_hWnd, &tmp, 1 );
+		return tmp;
+	}
+
+	void CRideDialog::OffsetDlgItem(WORD id,int dx,int dy) const{
 		// changes Dialog control position by [dx,dy]
-		const HWND hCtrl=::GetDlgItem(hDlg,controlId);
+		const HWND hCtrl=::GetDlgItem(m_hWnd,id);
 		POINT pt={};
-		::MapWindowPoints( hCtrl, hDlg, &pt, 1 );
+		::MapWindowPoints( hCtrl, m_hWnd, &pt, 1 );
 		::SetWindowPos( hCtrl, 0, pt.x+dx, pt.y+dy, 0, 0, SWP_NOZORDER|SWP_NOSIZE );
 	}
 
-	PTCHAR GetDialogTemplateItemText(UINT idDlgRes,WORD idItem,PTCHAR chars,WORD nCharsMax){
+	PTCHAR CRideDialog::GetDialogTemplateItemText(UINT idDlgRes,WORD idItem,PTCHAR chars,WORD nCharsMax){
 		// determines and returns the length of the text associated with given dialog item
 		PTCHAR result=nullptr; // assumption (text can't be determined, e.g. because no such item exists)
 		if (const HRSRC hRes=::FindResource( app.m_hInstance, MAKEINTRESOURCE(idDlgRes), RT_DIALOG ))
@@ -692,7 +739,7 @@ namespace Utils{
 					class CTmpDlg sealed:public CDialog{
 					public:
 						CTmpDlg(LPCDLGTEMPLATE lpRes){
-							CreateDlgIndirect( lpRes, nullptr );
+							CreateDlgIndirect( lpRes, nullptr, app.m_hInstance );
 						}
 					} d(lpRes);
 					d.GetDlgItemText( idItem, chars, nCharsMax );
@@ -703,6 +750,85 @@ namespace Utils{
 			}
 		return result;
 	}
+
+	#define BRACKET_CURLY_FONT_SIZE	12
+
+	void CRideDialog::DrawClosingCurlyBracket(HDC dc,int x,int yMin,int yMax){
+		// draws a closing curly bracket at position X and wrapping all points in {yMin,...,yMax}
+		const CRideFont font( FONT_SYMBOL, BRACKET_CURLY_FONT_SIZE*10, false, true );
+		::SetBkMode(dc,TRANSPARENT);
+		const HGDIOBJ hFont0=::SelectObject(dc,font);
+			RECT r={ x, yMin, x+100, yMax };
+			static const WCHAR CurveUpper=0xf0fc;
+			::DrawTextW( dc, &CurveUpper,1, &r, DT_LEFT|DT_TOP|DT_SINGLELINE );
+			static const WCHAR CurveLower=0xf0fe;
+			::DrawTextW( dc, &CurveLower,1, &r, DT_LEFT|DT_BOTTOM|DT_SINGLELINE );
+			static const WCHAR CurveMiddle=0xf0fd;
+			::DrawTextW( dc, &CurveMiddle,1, &r, DT_LEFT|DT_VCENTER|DT_SINGLELINE );
+			SIZE fontSize;
+			::GetTextExtentPoint32W(dc,&CurveMiddle,1,&fontSize);
+			r.top+=fontSize.cy/5, r.bottom-=fontSize.cy/5;
+			while (r.bottom-r.top>2.2*fontSize.cy){
+				static const WCHAR CurveStraight=0xf0ef;
+				::DrawTextW( dc, &CurveStraight,1, &r, DT_LEFT|DT_TOP|DT_SINGLELINE );
+				::DrawTextW( dc, &CurveStraight,1, &r, DT_LEFT|DT_BOTTOM|DT_SINGLELINE );
+				r.top++, r.bottom--;
+			}
+		::SelectObject(dc,hFont0);
+	}
+
+	void CRideDialog::WrapDlgItemsByClosingCurlyBracketWithText(WORD idA,WORD idZ,LPCTSTR text,DWORD textColor) const{
+		// wraps ControlsA-Z from right using closing curly brackets and draws given Text in given Color
+		// - drawing curly brackets
+		const RECT rcA=MapDlgItemClientRect(idA), rcZ=MapDlgItemClientRect(idZ);
+		RECT r={ std::max(rcA.right,rcZ.right)+5, rcA.top-6, 1000, rcZ.bottom+6 };
+		CClientDC dc( const_cast<CRideDialog *>(this) );
+		dc.SetTextColor( textColor );
+		DrawClosingCurlyBracket( dc, r.left, r.top, r.bottom );
+		// . text
+		r.left+=14*LogicalUnitScaleFactor;
+		const HGDIOBJ hFont0=::SelectObject( dc, GetFont()->m_hObject );
+			dc.DrawText( text,-1, &r, DT_VCENTER|DT_SINGLELINE );
+		::SelectObject(dc,hFont0);
+	}
+
+	void CRideDialog::SetDlgItemSingleCharUsingFont(WORD controlId,WCHAR singleChar,HFONT hFont) const{
+		// sets given window's text to the SingleCharacter displayed in specified Font
+		const HWND hCtrl=::GetDlgItem(m_hWnd,controlId);
+		const WCHAR buf[]={ singleChar, '\0' };
+		::SetWindowTextW( hCtrl, buf );
+		::SendMessage( hCtrl, WM_SETFONT, (WPARAM)hFont, 0 );
+	}
+
+	void CRideDialog::SetDlgItemSingleCharUsingFont(WORD controlId,WCHAR singleChar,LPCTSTR fontFace,int fontPointSize) const{
+		// sets given window's text to the SingleCharacter displayed in specified Font
+		SetDlgItemSingleCharUsingFont( controlId, singleChar, (HFONT)CRideFont(fontFace,fontPointSize,false,true).Detach() );
+	}
+
+	void CRideDialog::PopulateDlgComboBoxWithSequenceOfNumbers(WORD controlId,BYTE iStartValue,LPCTSTR strStartValueDesc,BYTE iEndValue,LPCTSTR strEndValueDesc) const{
+		// fills ComboBox with integral numbers from the {Start,End} range (in ascending order)
+		const HWND hComboBox=::GetDlgItem(m_hWnd,controlId);
+		TCHAR buf[80];
+		::wsprintf( buf, _T("%d %s"), iStartValue, strStartValueDesc );
+		ComboBox_AddString( hComboBox, buf );
+		while (++iStartValue<iEndValue)
+			ComboBox_AddString( hComboBox, _itot(iStartValue,buf,10) );
+		::wsprintf( buf, _T("%d %s"), iEndValue, strEndValueDesc );
+		ComboBox_AddString( hComboBox, buf );
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	void BytesToHigherUnits(DWORD bytes,float &rHigherUnit,LPCTSTR &rHigherUnitName){
 		// converts Bytes to suitable HigherUnits (e.g. "12345 Bytes" to "12.345 kiB")
@@ -753,49 +879,6 @@ namespace Utils{
 				}else
 					FatalError(_T("Couldn't copy to clipboard"),::GetLastError());
 		}
-	}
-
-	#define BRACKET_CURLY_FONT_SIZE	12
-
-	void DrawClosingCurlyBracket(HDC dc,int x,int yMin,int yMax){
-		// draws a closing curly bracket at position X and wrapping all points in {yMin,...,yMax}
-		const CRideFont font( FONT_SYMBOL, BRACKET_CURLY_FONT_SIZE*10, false, true );
-		::SetBkMode(dc,TRANSPARENT);
-		const HFONT hFont0=(HFONT)::SelectObject(dc,font);
-			RECT r={ x, yMin, x+100, yMax };
-			static const WCHAR CurveUpper=0xf0fc;
-			::DrawTextW( dc, &CurveUpper,1, &r, DT_LEFT|DT_TOP|DT_SINGLELINE );
-			static const WCHAR CurveLower=0xf0fe;
-			::DrawTextW( dc, &CurveLower,1, &r, DT_LEFT|DT_BOTTOM|DT_SINGLELINE );
-			static const WCHAR CurveMiddle=0xf0fd;
-			::DrawTextW( dc, &CurveMiddle,1, &r, DT_LEFT|DT_VCENTER|DT_SINGLELINE );
-			SIZE fontSize;
-			::GetTextExtentPoint32W(dc,&CurveMiddle,1,&fontSize);
-			r.top+=fontSize.cy/5, r.bottom-=fontSize.cy/5;
-			while (r.bottom-r.top>2.2*fontSize.cy){
-				static const WCHAR CurveStraight=0xf0ef;
-				::DrawTextW( dc, &CurveStraight,1, &r, DT_LEFT|DT_TOP|DT_SINGLELINE );
-				::DrawTextW( dc, &CurveStraight,1, &r, DT_LEFT|DT_BOTTOM|DT_SINGLELINE );
-				r.top++, r.bottom--;
-			}
-		::SelectObject(dc,hFont0);
-	}
-
-	void WrapControlsByClosingCurlyBracketWithText(CWnd *wnd,const CWnd *pCtrlA,const CWnd *pCtrlZ,LPCTSTR text,DWORD textColor){
-		// wraps ControlsA-Z from right using closing curly brackets and draws given Text in given Color
-		// - drawing curly brackets
-		RECT rCtrlA,rCtrlZ;
-		pCtrlA->GetClientRect(&rCtrlA), pCtrlA->MapWindowPoints(wnd,&rCtrlA);
-		pCtrlZ->GetClientRect(&rCtrlZ), pCtrlZ->MapWindowPoints(wnd,&rCtrlZ);
-		RECT r={ std::max<>(rCtrlA.right,rCtrlZ.right)+5, rCtrlA.top-6, 1000, rCtrlZ.bottom+6 };
-		CClientDC dc(wnd);
-		dc.SetTextColor( textColor );
-		DrawClosingCurlyBracket( dc, r.left, r.top, r.bottom );
-		// . text
-		r.left+=14*LogicalUnitScaleFactor;
-		const HFONT hFont0=(HFONT)::SelectObject( dc, pCtrlA->GetFont()->m_hObject );
-			dc.DrawText( text,-1, &r, DT_VCENTER|DT_SINGLELINE );
-		::SelectObject(dc,hFont0);
 	}
 
 
@@ -925,24 +1008,6 @@ namespace Utils{
 						)
 					);
 		::InvalidateRect(hStdBtn,nullptr,FALSE);
-	}
-
-	void SetSingleCharTextUsingFont(HWND hWnd,WCHAR singleChar,LPCTSTR fontFace,int fontPointSize){
-		// sets given window's text to the SingleCharacter displayed in specified Font
-		const WCHAR buf[]={ singleChar, '\0' };
-		::SetWindowTextW( hWnd, buf );
-		::SendMessage( hWnd, WM_SETFONT, (WPARAM)CRideFont(fontFace,fontPointSize,false,true).Detach(), 0 );
-	}
-
-	void PopulateComboBoxWithSequenceOfNumbers(HWND hComboBox,BYTE iStartValue,LPCTSTR strStartValueDesc,BYTE iEndValue,LPCTSTR strEndValueDesc){
-		// fills ComboBox with integral numbers from the {Start,End} range (in ascending order)
-		TCHAR buf[80];
-		::wsprintf( buf, _T("%d %s"), iStartValue, strStartValueDesc );
-		ComboBox_AddString( hComboBox, buf );
-		while (++iStartValue<iEndValue)
-			ComboBox_AddString( hComboBox, _itot(iStartValue,buf,10) );
-		::wsprintf( buf, _T("%d %s"), iEndValue, strEndValueDesc );
-		ComboBox_AddString( hComboBox, buf );
 	}
 
 	#define SCREEN_DPI_DEFAULT	96

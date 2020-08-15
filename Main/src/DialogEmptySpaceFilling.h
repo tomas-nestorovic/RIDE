@@ -1,7 +1,7 @@
 #ifndef FILLEMPTYSPACEDIALOG_H
 #define FILLEMPTYSPACEDIALOG_H
 
-	class CFillEmptySpaceDialog sealed:public CDialog{
+	class CFillEmptySpaceDialog sealed:public Utils::CRideDialog{
 		DECLARE_MESSAGE_MAP()
 	private:
 		const CDos *const dos;

@@ -1535,7 +1535,7 @@ Utils::Information(buf);}
 	bool CFDD::__showSettingDialog__(){
 		// True <=> the SettingDialog shown and new values adopted, otherwise False
 		// - defining the Dialog
-		class CSettingDialog sealed:public CDialog{
+		class CSettingDialog sealed:public Utils::CRideDialog{
 			CFDD *const fdd;
 			TCHAR doubleTrackDistanceTextOrg[80];
 
@@ -1562,7 +1562,7 @@ Utils::Information(buf);}
 					if (fdd->__setAndEvaluateDataTransferSpeed__(TMedium::FLOPPY_DD_525)==ERROR_SUCCESS){
 						fdd->floppyType=TMedium::FLOPPY_DD_525;
 						SetDlgItemText( ID_MEDIUM, _T("5.25\" DD formatted") );
-						if (Utils::EnableDlgControl( m_hWnd, ID_40D80, !AreSomeTracksFormatted() )){
+						if (EnableDlgItem( ID_40D80, !AreSomeTracksFormatted() )){
 							fdd->fddHead.SeekHome();
 							const bool doubleTrackStep0=fdd->fddHead.doubleTrackStep;
 								fdd->fddHead.doubleTrackStep=false;
@@ -1578,16 +1578,16 @@ Utils::Information(buf);}
 					}else if (fdd->__setAndEvaluateDataTransferSpeed__(TMedium::FLOPPY_DD_350)==ERROR_SUCCESS){
 						fdd->floppyType=TMedium::FLOPPY_DD_350;
 						SetDlgItemText( ID_MEDIUM, _T("3.5\" DD formatted") );
-						CheckDlgButton( ID_40D80,  Utils::EnableDlgControl( m_hWnd, ID_40D80, false )  );
+						CheckDlgButton( ID_40D80,  EnableDlgItem( ID_40D80, false )  );
 					}else if (fdd->__setAndEvaluateDataTransferSpeed__(TMedium::FLOPPY_HD_350)==ERROR_SUCCESS){
 						fdd->floppyType=TMedium::FLOPPY_HD_350;
 						SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" HD formatted") );
 						CheckDlgButton( ID_40D80, false );
-						Utils::EnableDlgControl( m_hWnd, ID_40D80, true );
+						EnableDlgItem( ID_40D80 );
 					}else{
 						SetDlgItemText( ID_MEDIUM, _T("Not formatted or faulty") );
 						CheckDlgButton( ID_40D80, false );
-						Utils::EnableDlgControl( m_hWnd, ID_40D80, true );
+						EnableDlgItem( ID_40D80 );
 					}
 				// . loading the Profile associated with the current drive and FloppyType
 				profile.Load( fdd->GetDriveLetter(), fdd->floppyType );
@@ -1630,7 +1630,7 @@ Utils::Information(buf);}
 				DDX_Radio( pDX,	ID_NONE,		tmp );
 				params.calibrationAfterError=(TParams::TCalibrationAfterError)tmp;
 				// . CalibrationStepDuringFormatting
-				GetDlgItem(ID_NUMBER)->EnableWindow( tmp=params.calibrationStepDuringFormatting!=0 );
+				EnableDlgItem( ID_NUMBER, tmp=params.calibrationStepDuringFormatting!=0 );
 				DDX_Radio( pDX,	ID_ZERO,		tmp );
 				if (tmp)
 					DDX_Text( pDX,	ID_NUMBER,	tmp=params.calibrationStepDuringFormatting );
@@ -1663,9 +1663,9 @@ Utils::Information(buf);}
 				// - base
 				__super::OnPaint();
 				// - drawing of curly brackets
-				Utils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_LATENCY), GetDlgItem(ID_GAP), nullptr, 0 );
-				Utils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_NONE), GetDlgItem(ID_SECTOR), _T("if error encountered"), 0 );
-				Utils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_ZERO), GetDlgItem(ID_CYLINDER_N), _T("when formatting"), 0 );
+				WrapDlgItemsByClosingCurlyBracketWithText( ID_LATENCY, ID_GAP, nullptr, 0 );
+				WrapDlgItemsByClosingCurlyBracketWithText( ID_NONE, ID_SECTOR, _T("if error encountered"), 0 );
+				WrapDlgItemsByClosingCurlyBracketWithText( ID_ZERO, ID_CYLINDER_N, _T("when formatting"), 0 );
 			}
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 				// window procedure
@@ -1677,12 +1677,12 @@ Utils::Information(buf);}
 						if (wParam==ID_AUTO && ((LPNMHDR)lParam)->code==NM_CLICK){
 autodetermineLatencies:		// automatic determination of write latency values
 							// . defining the Dialog
-							class CLatencyAutoDeterminationDialog sealed:public CDialog{
+							class CLatencyAutoDeterminationDialog sealed:public Utils::CRideDialog{
 							public:
 								int floppyType,usAccuracy,nRepeats;
 
 								CLatencyAutoDeterminationDialog(const CFDD *fdd,CWnd *parent)
-									: CDialog(IDR_FDD_LATENCY,parent) , floppyType(0) , usAccuracy(2) , nRepeats(3) {
+									: Utils::CRideDialog(IDR_FDD_LATENCY,parent) , floppyType(0) , usAccuracy(2) , nRepeats(3) {
 									switch (fdd->floppyType){
 										case TMedium::FLOPPY_DD_525: floppyType=0; break;
 										case TMedium::FLOPPY_DD_350: floppyType=1; break;
@@ -1691,8 +1691,8 @@ autodetermineLatencies:		// automatic determination of write latency values
 								}
 								void PreInitDialog() override{
 									__super::PreInitDialog(); // base
-									Utils::PopulateComboBoxWithSequenceOfNumbers( GetDlgItem(ID_ACCURACY)->m_hWnd, 1,nullptr, 6,nullptr );
-									Utils::PopulateComboBoxWithSequenceOfNumbers( GetDlgItem(ID_TEST)->m_hWnd, 1,_T("(worst)"), 9,_T("(best)") );
+									PopulateDlgComboBoxWithSequenceOfNumbers( ID_ACCURACY, 1,nullptr, 6,nullptr );
+									PopulateDlgComboBoxWithSequenceOfNumbers( ID_TEST, 1,_T("(worst)"), 9,_T("(best)") );
 								}
 								void DoDataExchange(CDataExchange *pDX) override{
 									DDX_CBIndex( pDX, ID_MEDIUM,	floppyType );
@@ -1756,7 +1756,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 							case ID_ZERO:
 							case ID_CYLINDER_N:
 								// adjusting possibility to edit the CalibrationStep according to selected option
-								GetDlgItem(ID_NUMBER)->EnableWindow(wParam!=ID_ZERO);
+								EnableDlgItem( ID_NUMBER, wParam!=ID_ZERO );
 								break;
 							case IDOK:
 								// attempting to confirm the Dialog
@@ -1786,7 +1786,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 
 			CSettingDialog(CFDD *_fdd)
 				// ctor
-				: CDialog(IDR_FDD_ACCESS) , fdd(_fdd) , params(_fdd->params) , profile(_fdd->fddHead.profile) {
+				: Utils::CRideDialog(IDR_FDD_ACCESS) , fdd(_fdd) , params(_fdd->params) , profile(_fdd->fddHead.profile) {
 			}
 		} d(this);
 		// - showing the Dialog and processing its result

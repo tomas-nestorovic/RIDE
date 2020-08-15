@@ -3,7 +3,7 @@
 
 	#define STR_TRIM_TO_MIN_NUMBER_OF_CYLINDERS	_T("Trim to minimum # of cylinders")
 
-	class CUnformatDialog sealed:protected CDialog{
+	class CUnformatDialog sealed:protected Utils::CRideDialog{
 		DECLARE_MESSAGE_MAP()
 	public:
 		typedef const struct TStdUnformat sealed{

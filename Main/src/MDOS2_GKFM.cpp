@@ -242,7 +242,7 @@
 	bool WINAPI CMDOS2::TBootSector::UReserved1::TGKFileManager::__pg_editProperty__(PVOID,PVOID bootSector,short){
 		// True <=> edited values of GK's File Manager in PropertyGrid confirmed, otherwise False
 		// - defining the Dialog
-		class CEditDialog sealed:public CDialog{
+		class CEditDialog sealed:public Utils::CRideDialog{
 		public:
 			TBootSector boot;
 			TGKFileManager &rGkfm;
@@ -297,7 +297,6 @@
 					DDV_MinMaxInt( pDX, rGkfm.dx, 0, rGkfm.w );
 				DDX_Text(	pDX, ID_DY		,rGkfm.dy);
 					DDV_MinMaxInt( pDX, rGkfm.dy, 0, rGkfm.h );
-				const HWND hText=GetDlgItem(ID_DATA)->m_hWnd;
 				TCHAR bufT[GKFM_TEXT_MAX+100]; // "+100" = just to be sure
 				if (pDX->m_bSaveAndValidate){
 					// . determining the max length of Text (mustn't collide with important regions in MDOS Boot Sector)
@@ -315,7 +314,7 @@ errorText:				TCHAR buf[400];
 						pDX->Fail();
 					}
 					// . converting char-sets PC->Desktop
-					::GetWindowText(hText,bufT,sizeof(bufT)/sizeof(TCHAR));
+					GetDlgItemText( ID_DATA, bufT, sizeof(bufT)/sizeof(TCHAR) );
 					for( PTCHAR a=bufT; const TCHAR z=*a++; nCharsD++ ){
 						switch (z){
 							case '\r':
@@ -333,15 +332,14 @@ errorText:				TCHAR buf[400];
 				}else{
 					// reading text into dedicated control
 					__getTextFromBoot__(&boot,bufT);
-					::SetWindowText(hText,bufT);
+					SetDlgItemText( ID_DATA, bufT );
 				}
 			}
 			LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam) override{
 				// window procedure
 				if (message==WM_PAINT){
 					// drawing icons
-					POINT iconPosition={0,0};
-					GetDlgItem(ID_IMAGE)->MapWindowPoints(this,&iconPosition,1);
+					const POINT iconPosition=MapDlgItemClientOrigin(ID_IMAGE);
 					const CClientDC dc(this);
 					const int iDc0=::SaveDC(dc);
 						::SetViewportOrgEx(dc,iconPosition.x,iconPosition.y,nullptr);
@@ -349,12 +347,12 @@ errorText:				TCHAR buf[400];
 						__drawIcon__( __getIconDataFromBoot__(&boot), dc, 2 );
 					::RestoreDC(dc,iDc0);
 				}
-				return CDialog::WindowProc(message,wParam,lParam);
+				return __super::WindowProc(message,wParam,lParam);
 			}
 		public:
 			CEditDialog(PBootSector _boot)
 				// ctor
-				: CDialog(IDR_MDOS_GKFM_EDITOR)
+				: Utils::CRideDialog(IDR_MDOS_GKFM_EDITOR)
 				, boot(*_boot) , rGkfm(boot.reserved1.gkfm) {
 				// - window parameters
 				const BYTE color=rGkfm.color;

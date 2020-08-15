@@ -183,7 +183,7 @@
 			static PEditorBase CreateStdEditorWithEllipsis(CDos::PFile file,PropGrid::PValue value,PropGrid::TSize valueSize,PropGrid::TOnEllipsisButtonClicked buttonAction);
 		};
 	protected:
-		class CFileComparisonDialog sealed:public CDialog{
+		class CFileComparisonDialog sealed:public Utils::CRideDialog{
 			CMemFile fEmpty;
 			POINT padding;
 			int buttonWidth,buttonHeight,addressColumnWidth;

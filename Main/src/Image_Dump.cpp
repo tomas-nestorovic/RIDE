@@ -187,7 +187,7 @@ terminateWithError:
 					// : reporting SourceSector Errors if A&B, A = automatically not accepted Errors exist, B = Error reporting for current Track is enabled
 					if (bufferFdcStatus[s].ToWord()&~p.acceptance.automaticallyAcceptedErrors && !p.acceptance.remainingErrorsOnTrack){
 						// | Dialog definition
-						class CErroneousSectorDialog sealed:public CDialog{
+						class CErroneousSectorDialog sealed:public Utils::CRideDialog{
 							const TDumpParams &dp;
 							TParams &rp;
 							const PSectorData sectorData;
@@ -197,7 +197,7 @@ terminateWithError:
 							void PreInitDialog() override{
 								// dialog initialization
 								// > base
-								CDialog::PreInitDialog();
+								__super::PreInitDialog();
 								// > creating message on Errors
 								LPCTSTR bitDescriptions[20],*pDesc=bitDescriptions; // 20 = surely big enough buffer
 								rFdcStatus.GetDescriptionsOfSetBits(bitDescriptions);
@@ -227,7 +227,7 @@ terminateWithError:
 								Utils::ConvertToSplitButton( pBtnAccept->m_hWnd, Actions, ACCEPT_OPTIONS_COUNT );
 								pBtnAccept->EnableWindow( dynamic_cast<CImageRaw *>(dp.target.get())==nullptr ); // accepting errors is allowed only if the Target Image can accept them
 								// > enabling/disabling the "Recover" button
-								GetDlgItem(ID_RECOVER)->EnableWindow( rFdcStatus.DescribesIdFieldCrcError() || rFdcStatus.DescribesDataFieldCrcError() );
+								EnableDlgItem( ID_RECOVER, rFdcStatus.DescribesIdFieldCrcError() || rFdcStatus.DescribesDataFieldCrcError() );
 							}
 							LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 								// window procedure
@@ -254,7 +254,7 @@ terminateWithError:
 											case ID_RECOVER:{
 												// Sector recovery
 												// : Dialog definition
-												class CSectorRecoveryDialog sealed:public CDialog{
+												class CSectorRecoveryDialog sealed:public Utils::CRideDialog{
 												public:
 													int idFieldRecoveryType, dataFieldRecoveryType;
 													TSectorId idFieldSubstituteSectorId;
@@ -278,20 +278,20 @@ terminateWithError:
 																::wsprintf( bufSectorId, _T("%d.%d.%d.%d"), idFieldSubstituteSectorId.cylinder, idFieldSubstituteSectorId.side, idFieldSubstituteSectorId.sector, idFieldSubstituteSectorId.lengthCode );
 															DDX_Text( pDX, ID_IDFIELD_VALUE, bufSectorId, sizeof(bufSectorId)/sizeof(TCHAR) );
 															static const WORD IdFieldRecoveryOptions[]={ ID_IDFIELD, ID_IDFIELD_CRC, ID_IDFIELD_REPLACE, 0 };
-															Utils::EnableDlgControls( m_hWnd, IdFieldRecoveryOptions, rFdcStatus.DescribesIdFieldCrcError() );
+															EnableDlgItems( IdFieldRecoveryOptions, rFdcStatus.DescribesIdFieldCrcError() );
 															static const WORD IdFieldReplaceOption[]={ ID_IDFIELD_VALUE, ID_DEFAULT1, 0 };
-															Utils::EnableDlgControls( m_hWnd, IdFieldReplaceOption, idFieldRecoveryType==2 );
+															EnableDlgItems( IdFieldReplaceOption, idFieldRecoveryType==2 );
 														// | "Data Field" region
 														DDX_Radio( pDX, ID_DATAFIELD, dataFieldRecoveryType );
 															DDX_Text( pDX, ID_DATAFIELD_FILLERBYTE, dataFieldSubstituteFillerByte );
 															if (dosProps==&CUnknownDos::Properties)
-																GetDlgItem(ID_DEFAULT2)->SetWindowText(_T("Random value"));
+																SetDlgItemText( ID_DEFAULT2, _T("Random value") );
 															static const WORD DataFieldRecoveryOptions[]={ ID_DATAFIELD, ID_DATAFIELD_CRC, ID_DATAFIELD_REPLACE, 0 };
-															Utils::EnableDlgControls( m_hWnd, DataFieldRecoveryOptions, rFdcStatus.DescribesDataFieldCrcError() );
+															EnableDlgItems( DataFieldRecoveryOptions, rFdcStatus.DescribesDataFieldCrcError() );
 															static const WORD DataFieldReplaceOption[]={ ID_DATAFIELD_FILLERBYTE, ID_DEFAULT2, 0 };
-															Utils::EnableDlgControls( m_hWnd, DataFieldReplaceOption, dataFieldRecoveryType==2 );
+															EnableDlgItems( DataFieldReplaceOption, dataFieldRecoveryType==2 );
 														// | interactivity
-														GetDlgItem(IDOK)->EnableWindow(idFieldRecoveryType|dataFieldRecoveryType);
+														EnableDlgItem( IDOK, idFieldRecoveryType|dataFieldRecoveryType );
 													}
 													LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 														switch (msg){
@@ -320,7 +320,7 @@ terminateWithError:
 													}
 												public:
 													CSectorRecoveryDialog(const CDos *dos,const TParams &rParams,const TFdcStatus &rFdcStatus)
-														: CDialog(IDR_IMAGE_DUMP_ERROR_RESOLUTION)
+														: Utils::CRideDialog(IDR_IMAGE_DUMP_ERROR_RESOLUTION)
 														, dosProps(dos->properties) , rParams(rParams) , rFdcStatus(rFdcStatus)
 														, idFieldRecoveryType(0) , idFieldSubstituteSectorId(rParams.chs.sectorId)
 														, dataFieldRecoveryType(0) , dataFieldSubstituteFillerByte(dos->properties->sectorFillerByte) {
@@ -355,12 +355,12 @@ terminateWithError:
 										}
 										break;
 								}
-								return CDialog::WindowProc(msg,wParam,lParam);
+								return __super::WindowProc(msg,wParam,lParam);
 							}
 						public:
 							CErroneousSectorDialog(const TDumpParams &dp,TParams &_rParams,PSectorData sectorData,WORD sectorLength,TFdcStatus &rFdcStatus)
 								// ctor
-								: CDialog(IDR_IMAGE_DUMP_ERROR)
+								: Utils::CRideDialog(IDR_IMAGE_DUMP_ERROR)
 								, dp(dp) , rp(_rParams) , sectorData(sectorData) , sectorLength(sectorLength) , rFdcStatus(rFdcStatus) {
 							}
 						} d(dp,p,bufferSectorData[s],bufferLength[s],bufferFdcStatus[s]);
@@ -455,13 +455,13 @@ errorDuringWriting:			TCHAR buf[80];
 		// dumps this Image to a chosen target
 		const PDos dos=GetActive()->dos;
 		// - defining the Dialog
-		class CDumpDialog sealed:public CDialog{
+		class CDumpDialog sealed:public Utils::CRideDialog{
 			const PDos dos;
 
 			void PreInitDialog() override{
 				// dialog initialization
 				// . base
-				CDialog::PreInitDialog();
+				__super::PreInitDialog();
 				// . adjusting text in button next to FillerByte edit box
 				if (dos->properties==&CUnknownDos::Properties)
 					SetDlgItemText( ID_DEFAULT1, _T("Random value") );
@@ -484,7 +484,7 @@ errorDuringWriting:			TCHAR buf[80];
 					const HWND hComboBox=GetDlgItem(ID_MEDIUM)->m_hWnd;
 					TMedium::TType mt=(TMedium::TType)ComboBox_GetItemData( hComboBox, ComboBox_GetCurSel(hComboBox) );
 				}else{
-					GetDlgItem(ID_FILE)->SetWindowText(ELLIPSIS);
+					SetDlgItemText( ID_FILE, ELLIPSIS );
 					__populateComboBoxWithCompatibleMedia__( hMedium, 0, nullptr ); // if FileName not set, Medium cannot be determined
 				}
 				CComboBox cbMedium;
@@ -534,7 +534,7 @@ errorDuringWriting:			TCHAR buf[80];
 									void PreInitDialog() override{
 										// dialog initialization
 										// : base
-										Utils::CCommandDialog::PreInitDialog();
+										__super::PreInitDialog();
 										// : supplying available actions
 										__addCommandButton__( IDYES, _T("Continue with format adopted from boot sector (recommended)") );
 										__addCommandButton__( IDNO, _T("Continue with current settings (cylinders beyond official format may fail!)") );
@@ -565,11 +565,11 @@ errorDuringWriting:			TCHAR buf[80];
 			afx_msg void OnPaint(){
 				// painting
 				// . base
-				CDialog::OnPaint();
+				__super::OnPaint();
 				// . painting curly brackets
 				TCHAR buf[32];
 				::wsprintf(buf,_T("%d cylinder(s)"),GetDlgItemInt(ID_CYLINDER_N)+1-GetDlgItemInt(ID_CYLINDER));
-				Utils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_CYLINDER), GetDlgItem(ID_CYLINDER_N), buf, 0 );
+				WrapDlgItemsByClosingCurlyBracketWithText( ID_CYLINDER, ID_CYLINDER_N, buf, 0 );
 			}
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 				// window procedure
@@ -613,8 +613,8 @@ errorDuringWriting:			TCHAR buf[80];
 										}
 										// > enabling/disabling controls
 										static const WORD Controls[]={ ID_CYLINDER, ID_CYLINDER_N, ID_HEAD, ID_GAP, ID_NUMBER, ID_DEFAULT1, IDOK, 0 };
-										Utils::EnableDlgControls( m_hWnd, Controls, nCompatibleMedia>0 );
-										GetDlgItem(ID_FORMAT)->EnableWindow(nCompatibleMedia && targetImageProperties->IsRealDevice());
+										EnableDlgItems( Controls, nCompatibleMedia>0 );
+										EnableDlgItem( ID_FORMAT, nCompatibleMedia && targetImageProperties->IsRealDevice() );
 											CheckDlgButton( ID_FORMAT, targetImageProperties->IsRealDevice() );
 										GetDlgItem(IDOK)->SetFocus();
 										// > automatically ticking the "Real-time thread priority" check-box if either the source or the target is a real drive
@@ -640,7 +640,7 @@ errorDuringWriting:			TCHAR buf[80];
 								void PreInitDialog() override{
 									// dialog initialization
 									// : base
-									Utils::CCommandDialog::PreInitDialog();
+									__super::PreInitDialog();
 									// : supplying available actions
 									__addCommandButton__( ID_IMAGE, _T("How do I create an image of a real floppy disk?") );
 									__addCommandButton__( ID_DRIVE, _T("How do I save an image back to a real floppy disk?") );
@@ -673,7 +673,7 @@ errorDuringWriting:			TCHAR buf[80];
 						}
 						break;
 				}
-				return CDialog::WindowProc(msg,wParam,lParam);
+				return __super::WindowProc(msg,wParam,lParam);
 			}
 		public:
 			TCHAR fileName[MAX_PATH];
@@ -683,7 +683,7 @@ errorDuringWriting:			TCHAR buf[80];
 
 			CDumpDialog(PDos _dos)
 				// ctor
-				: CDialog(IDR_IMAGE_DUMP)
+				: Utils::CRideDialog(IDR_IMAGE_DUMP)
 				, dos(_dos) , targetImageProperties(nullptr) , dumpParams(_dos)
 				, realtimeThreadPriority(BST_UNCHECKED)
 				, showReport(BST_CHECKED) {

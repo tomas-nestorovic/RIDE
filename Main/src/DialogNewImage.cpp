@@ -2,7 +2,7 @@
 
 	CNewImageDialog::CNewImageDialog()
 		// ctor
-		: CDialog(IDR_IMAGE_NEW)
+		: Utils::CRideDialog(IDR_IMAGE_NEW)
 		, fnImage(nullptr) , dosProps(nullptr) {
 	}
 
@@ -16,11 +16,9 @@
 	BOOL CNewImageDialog::OnInitDialog(){
 		// dialog initialization
 		// - base
-		CDialog::OnInitDialog();
+		__super::OnInitDialog();
 		// - positioning and scaling the Error box to match the Image list-box
-		RECT rc;
-		GetDlgItem(ID_IMAGE)->GetWindowRect(&rc);
-		ScreenToClient(&rc);
+		const RECT rc=MapDlgItemClientRect(ID_IMAGE);
 		GetDlgItem(ID_ERROR)->SetWindowPos( nullptr, rc.left, rc.top, rc.right-rc.left, rc.bottom-rc.top, SWP_NOZORDER );
 		// - populating the list of available DOSes
 		CListBox lb;
@@ -50,8 +48,8 @@
 
 	void CNewImageDialog::__refreshListOfContainers__(){
 		// forces refreshing of the list of containers available for the selected DOS; eventually displays an error message
-		Utils::EnableDlgControl( m_hWnd, IDOK, false ); // need yet to select a container
-		CWnd *const pImageListBox=GetDlgItem(ID_IMAGE), *const pErrorBox=GetDlgItem(ID_ERROR);
+		EnableDlgItem( IDOK, false ); // need yet to select a container
+		CWnd *const pImageListBox=GetDlgItem(ID_IMAGE);
 		// - checking if the selected DOS is among those which participate in the automatic recognition sequence
 		if (dosProps){
 			// some DOS selected
@@ -61,7 +59,7 @@
 					// yes, DOS participates in the automatic recognition sequence
 					CListBox lb;
 					lb.Attach(pImageListBox->m_hWnd);
-						lb.ShowWindow(SW_SHOW), pErrorBox->ShowWindow(SW_HIDE);
+						lb.ShowWindow(SW_SHOW), ShowDlgItem(ID_ERROR,false);
 						lb.ResetContent();
 						for( POSITION pos=CImage::known.GetHeadPosition(); pos; )
 							__checkCompatibilityAndAddToOptions__( dosProps, lb, (CImage::PCProperties)CImage::known.GetNext(pos) );
@@ -73,7 +71,7 @@
 				}
 		}
 		// - the selected DOS doesn't participate in the automatic recognition sequence
-		pErrorBox->ShowWindow(SW_SHOW), pImageListBox->ShowWindow(SW_HIDE);
+		ShowDlgItem(ID_ERROR), pImageListBox->ShowWindow(SW_HIDE);
 		TCHAR errMsg[200];
 		if (dosProps)
 			::wsprintf( errMsg, _T("Can't create a disk of \"%s\" as it doesn't participate in automatic recognition.\n\n<a>Change the recognition sequence</a>"), dosProps->name );
@@ -100,7 +98,7 @@
 				CListBox lb;
 				lb.Attach((HWND)lParam);
 					const int iSelected=lb.GetCurSel();
-					if (Utils::EnableDlgControl( m_hWnd, IDOK, iSelected>=0 )){
+					if (EnableDlgItem( IDOK, iSelected>=0 )){
 						fnImage=( (CImage::PCProperties)lb.GetItemData(iSelected) )->fnInstantiate;
 						lb.GetText( iSelected, deviceName );
 					}
@@ -123,7 +121,7 @@
 						void PreInitDialog() override{
 							// dialog initialization
 							// : base
-							Utils::CCommandDialog::PreInitDialog();
+							__super::PreInitDialog();
 							// : supplying available actions
 							__addCommandButton__( ID_DRIVE, _T("Does the application co-work with real floppy drives?") );
 							__addCommandButton__( ID_FORMAT, _T("How do I format a real floppy using this application?") );
@@ -163,7 +161,7 @@
 					return TRUE;
 				}
 			}
-		return CDialog::OnNotify(wParam,lParam,pResult);
+		return __super::OnNotify(wParam,lParam,pResult);
 	}
 
 	void CNewImageDialog::OnOK(){

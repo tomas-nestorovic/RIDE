@@ -19,7 +19,7 @@
 
 
 
-	class CIntroductoryGuidePost sealed:public CDialog{
+	class CIntroductoryGuidePost sealed:public Utils::CRideDialog{
 		const Utils::CRideFont sectionTitleFont;
 		const Utils::CRideFont buttonCaptionFont;
 		BYTE nCategories;
@@ -31,7 +31,7 @@
 
 		CIntroductoryGuidePost()
 			// ctor
-			: CDialog(IDR_GUIDEPOST)
+			: Utils::CRideDialog(IDR_GUIDEPOST)
 			, sectionTitleFont( FONT_MS_SANS_SERIF, 90, true, true )
 			, buttonCaptionFont( FONT_MS_SANS_SERIF, 80, false, true )
 			, nCategories(0) {
@@ -132,8 +132,7 @@
 					__super::WindowProc(msg,wParam,lParam);
 					// . header background
 					const CClientDC dc(this);
-					RECT rc;
-					GetDlgItem(ID_HEAD)->GetClientRect(&rc);
+					RECT rc=GetDlgItemClientRect(ID_HEAD);
 					::FillRect( dc, &rc, Utils::CRideBrush::White );
 					// . application title
 					::SetBkMode(dc,TRANSPARENT);

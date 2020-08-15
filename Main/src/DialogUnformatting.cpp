@@ -55,7 +55,7 @@
 	CUnformatDialog::CUnformatDialog(PDos dos,PCStdUnformat stdUnformats,BYTE nStdUnformats)
 		// ctor
 		// - base
-		: CDialog(IDR_DOS_UNFORMAT)
+		: Utils::CRideDialog(IDR_DOS_UNFORMAT)
 		// - initialization
 		, params(dos,nullptr)
 		, stdUnformats(stdUnformats) , nStdUnformats(nStdUnformats)
@@ -130,16 +130,15 @@
 	afx_msg void CUnformatDialog::OnPaint(){
 		// drawing
 		// - base
-		CDialog::OnPaint();
+		__super::OnPaint();
 		// - drawing curly brackets and number of Cylinders
 		TCHAR buf[20];
 		::wsprintf( buf, _T("%d cylinder(s)"), GetDlgItemInt(ID_CYLINDER_N)+1-GetDlgItemInt(ID_CYLINDER) );
-		Utils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_CYLINDER), GetDlgItem(ID_CYLINDER_N), buf, ::GetSysColor(COLOR_3DSHADOW) );
+		WrapDlgItemsByClosingCurlyBracketWithText( ID_CYLINDER, ID_CYLINDER_N, buf, ::GetSysColor(COLOR_3DSHADOW) );
 		// - drawing curly brackets with warning on risking disk inconsistency
 		if (!(IsDlgButtonChecked(ID_BOOT) & IsDlgButtonChecked(ID_FAT)))
-			Utils::WrapControlsByClosingCurlyBracketWithText(
-				this,
-				GetDlgItem(ID_BOOT), GetDlgItem(ID_FAT),
+			WrapDlgItemsByClosingCurlyBracketWithText(
+				ID_BOOT, ID_FAT,
 				WARNING_MSG_CONSISTENCY_AT_STAKE, COLOR_BLACK
 			);
 	}

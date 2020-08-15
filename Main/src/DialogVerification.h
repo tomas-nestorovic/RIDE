@@ -55,7 +55,7 @@
 
 
 
-	class CVerifyVolumeDialog sealed:public CDialog{
+	class CVerifyVolumeDialog sealed:public Utils::CRideDialog{
 		BYTE nOptionsChecked;
 
 		void DoDataExchange(CDataExchange *pDX) override;

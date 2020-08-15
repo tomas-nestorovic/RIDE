@@ -2,7 +2,7 @@
 
 	CFormatDialog::CFormatDialog(PDos _dos,PCStdFormat _additionalFormats,BYTE _nAdditionalFormats)
 		// ctor
-		: CDialog(IDR_DOS_FORMAT) , dos(_dos)
+		: Utils::CRideDialog(IDR_DOS_FORMAT) , dos(_dos)
 		, updateBoot(BST_CHECKED)
 		, addTracksToFat(BST_CHECKED)
 		, showReportOnFormatting(_dos->image->properties->IsRealDevice()?BST_CHECKED:BST_UNCHECKED)
@@ -64,13 +64,12 @@
 		__onMediumChanged__();
 		// - adjusting interactivity
 		const bool bootSectorAlreadyExists=((CMainWindow *)app.m_pMainWnd)->pTdi->__getCurrentTab__()!=nullptr;
-		GetDlgItem(ID_CYLINDER)->EnableWindow(bootSectorAlreadyExists);
+		EnableDlgItem( ID_CYLINDER, bootSectorAlreadyExists );
 		static const WORD Controls[]={ ID_MEDIUM, ID_CLUSTER, ID_FAT, ID_DIRECTORY, 0 };
-		Utils::EnableDlgControls( m_hWnd, Controls, !bootSectorAlreadyExists );
-		GetDlgItem(ID_DRIVE)->ShowWindow( bootSectorAlreadyExists ? SW_SHOW : SW_HIDE );
+		EnableDlgItems( Controls, !bootSectorAlreadyExists );
+		ShowDlgItem( ID_DRIVE, bootSectorAlreadyExists );
 		if (!bootSectorAlreadyExists){
-			CRect rc;
-			GetDlgItem(ID_FORMAT)->GetClientRect(&rc);
+			const CRect rc=GetDlgItemClientRect(ID_FORMAT);
 			GetDlgItem(ID_MEDIUM)->SetWindowPos( nullptr, 0,0, rc.Width(),rc.Height(), SWP_NOZORDER|SWP_NOMOVE );
 		}
 	}
@@ -168,9 +167,8 @@
 				case NM_CLICK:
 				case NM_RETURN:
 					if (Utils::QuestionYesNo(_T("Media may introduce themselves wrongly (e.g. copy-protection). Instead of here, the introduction (if any) can be changed in the \"") BOOT_SECTOR_TAB_LABEL _T("\" tab.\n\nUnlock this setting anyway?"),MB_DEFBUTTON2)){
-						GetDlgItem(ID_DRIVE)->ShowWindow( SW_HIDE );
-						CRect rc;
-						GetDlgItem(ID_FORMAT)->GetClientRect(&rc);
+						ShowDlgItem( ID_DRIVE, false );
+						const CRect rc=GetDlgItemClientRect(ID_FORMAT);
 						const HWND hMedium=::GetDlgItem( m_hWnd, ID_MEDIUM);
 						const LPCTSTR currMediumDesc=TMedium::GetDescription((TMedium::TType)ComboBox_GetItemData( hMedium, ComboBox_GetCurSel(hMedium) ));
 						CImage::__populateComboBoxWithCompatibleMedia__( hMedium, dos->properties->supportedMedia, dos->image->properties );
@@ -181,23 +179,23 @@
 					*pResult=0;
 					return TRUE;
 			}
-		return CDialog::OnNotify(wParam,lParam,pResult);
+		return __super::OnNotify(wParam,lParam,pResult);
 	}
 
 	afx_msg void CFormatDialog::OnPaint(){
 		// drawing
 		// - base
-		CDialog::OnPaint();
+		__super::OnPaint();
 		// - drawing curly brackets with the number of Cylinders
 		TCHAR buf[80];
 		::wsprintf( buf, _T("%d cylinder(s)"), GetDlgItemInt(ID_CYLINDER_N)+1-GetDlgItemInt(ID_CYLINDER) );
-		Utils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_CYLINDER), GetDlgItem(ID_CYLINDER_N), buf, ::GetSysColor(COLOR_3DSHADOW) );
+		WrapDlgItemsByClosingCurlyBracketWithText( ID_CYLINDER, ID_CYLINDER_N, buf, ::GetSysColor(COLOR_3DSHADOW) );
 		// - drawing curly brackets with Track length
 		switch (params.format.mediumType){
 			case TMedium::FLOPPY_DD_525:
 			case TMedium::FLOPPY_DD_350:
 			case TMedium::FLOPPY_HD_350:{
-				Utils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_SECTOR), GetDlgItem(ID_GAP), _T(""), ::GetSysColor(COLOR_3DSHADOW) );
+				WrapDlgItemsByClosingCurlyBracketWithText( ID_SECTOR, ID_GAP, _T(""), ::GetSysColor(COLOR_3DSHADOW) );
 				const WORD nBytesOnTrack=65 // Gap 1
 										+
 										GetDlgItemInt(ID_SECTOR)
@@ -212,20 +210,19 @@
 										);
 				::wsprintf( buf, _T("%d Bytes per track\n(see <a id=\"ID_TRACK\">IBM norm</a>)"), nBytesOnTrack );
 				SetDlgItemText(ID_TRACK,buf);
-				GetDlgItem(ID_TRACK)->ShowWindow(SW_SHOW);
+				ShowDlgItem(ID_TRACK);
 				break;
 			}
 			case TMedium::HDD_RAW:
 			default:
-				Utils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_SECTOR), GetDlgItem(ID_GAP), _T("N/A Bytes per track"), ::GetSysColor(COLOR_3DSHADOW) );
-				GetDlgItem(ID_TRACK)->ShowWindow(SW_HIDE);
+				WrapDlgItemsByClosingCurlyBracketWithText( ID_SECTOR, ID_GAP, _T("N/A Bytes per track"), ::GetSysColor(COLOR_3DSHADOW) );
+				ShowDlgItem( ID_TRACK, false );
 				break;
 		}
 		// - drawing curly brackets with warning on risking disk inconsistency
 		if (!(IsDlgButtonChecked(ID_BOOT) & IsDlgButtonChecked(ID_VERIFY_TRACK)))
-			Utils::WrapControlsByClosingCurlyBracketWithText(
-				this,
-				GetDlgItem(ID_BOOT), GetDlgItem(ID_VERIFY_TRACK),
+			WrapDlgItemsByClosingCurlyBracketWithText(
+				ID_BOOT, ID_VERIFY_TRACK,
 				WARNING_MSG_CONSISTENCY_AT_STAKE, COLOR_BLACK
 			);
 	}
@@ -271,11 +268,11 @@
 			// selected a StandardFormat
 			SetDlgItemInt( ID_HEAD		,f->params.format.nHeads );
 			SetDlgItemInt( ID_CYLINDER	,f->params.cylinder0 );
-			SetDlgItemInt( ID_CYLINDER_N	,f->params.format.nCylinders );
+			SetDlgItemInt( ID_CYLINDER_N,f->params.format.nCylinders );
 			SetDlgItemInt( ID_SECTOR	,f->params.format.nSectors );
-			SetDlgItemInt( ID_SIZE	,f->params.format.sectorLength );
+			SetDlgItemInt( ID_SIZE		,f->params.format.sectorLength );
 			SetDlgItemInt( ID_INTERLEAVE,f->params.interleaving );
-			SetDlgItemInt( ID_SKEW	,f->params.skew );
+			SetDlgItemInt( ID_SKEW		,f->params.skew );
 			SetDlgItemInt( ID_GAP		,f->params.gap3 );
 			SetDlgItemInt( ID_FAT		,f->params.nAllocationTables );
 			CComboBox cb;
@@ -292,7 +289,7 @@
 		// determines if current settings represent one of DOS StandardFormats (settings include # of Sides, Cylinders, Sectors, RootDirectoryItems, etc.); if StandardFormat detected, it's selected in dedicated ComboBox
 		// - enabling/disabling Boot and FAT modification
 		static const WORD Controls[]={ ID_BOOT, ID_VERIFY_TRACK, 0 }; // Boot and FAT modification allowed only if NOT formatting from zeroth Track (e.g. when NOT creating a new Image)
-		if (!Utils::EnableDlgControls( m_hWnd, Controls, GetDlgItemInt(ID_CYLINDER)>0 )){
+		if (!EnableDlgItems( Controls, GetDlgItemInt(ID_CYLINDER)>0 )){
 			// if formatting from zeroth Track, Boot and FAT modification always necessary (e.g. when creating a new Image)
 			CheckDlgButton(ID_BOOT,BST_CHECKED);
 			CheckDlgButton(ID_VERIFY_TRACK,BST_CHECKED);
@@ -325,7 +322,7 @@
 	afx_msg void CFormatDialog::__toggleReportingOnFormatting__(){
 		// if SectorVerification allowed, enables ReportingOnFormatting, otherwise disables ReportingOnFormatting
 		const bool verifyTracks=IsDlgButtonChecked(ID_VERIFY_TRACK)==BST_CHECKED;
-		GetDlgItem(ID_REPORT)->EnableWindow(verifyTracks);
+		EnableDlgItem( ID_REPORT, verifyTracks );
 		CheckDlgButton( ID_REPORT, verifyTracks&&showReportOnFormatting );
 		Invalidate(); // eventually warning on driving disk into an inconsistent state
 	}

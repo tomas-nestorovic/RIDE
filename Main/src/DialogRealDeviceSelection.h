@@ -1,7 +1,7 @@
 #ifndef REALDEVICESELECTIONDIALOG_H
 #define REALDEVICESELECTIONDIALOG_H
 
-	class CRealDeviceSelectionDialog sealed:public CDialog{
+	class CRealDeviceSelectionDialog sealed:public Utils::CRideDialog{
 		const CDos::PCProperties dosProps;
 
 		void refreshListOfDevices();

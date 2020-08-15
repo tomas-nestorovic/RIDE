@@ -652,7 +652,7 @@
 					FILETIME ft;
 					::GetSystemTimeAsFileTime(&ft);
 					dos->SetFileTimeStamps( subdirectory, &ft, &ft, &ft );
-					CDialog::OnOK();
+					__super::OnOK();
 				}
 			}
 		public:

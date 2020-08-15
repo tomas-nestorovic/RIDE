@@ -1,7 +1,7 @@
 #ifndef NEWIMAGEDIALOG_H
 #define NEWIMAGEDIALOG_H
 
-	class CNewImageDialog sealed:public CDialog{
+	class CNewImageDialog sealed:public Utils::CRideDialog{
 		void __refreshListOfContainers__();
 		BOOL OnInitDialog() override;
 		BOOL OnCommand(WPARAM wParam,LPARAM lParam) override;

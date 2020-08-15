@@ -119,7 +119,7 @@
 			bool Edit(bool dateEditingEnabled,bool timeEditingEnabled,const SYSTEMTIME *epoch);
 		};
 
-		class CHexaValuePropGridEditor sealed:public CDialog{
+		class CHexaValuePropGridEditor sealed:public Utils::CRideDialog{
 			BYTE newValueBuffer[2048];
 			CHexaEditor hexaEditor;
 			CMemFile f;

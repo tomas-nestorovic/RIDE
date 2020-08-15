@@ -148,7 +148,8 @@
 						// . seeking at the Cursor Position to determine the PhysicalAddress
 						f->Seek( HexaEditor_GetCaretPos(m_hWnd), CFile::begin );
 						// . defining the Dialog
-						class CGoToSectorDialog sealed:public CDialog{
+						class CGoToSectorDialog sealed:public Utils::CRideDialog{
+							const Utils::CRideFont symbolFont;
 							const PCImage image;
 
 							BOOL OnInitDialog() override{
@@ -156,8 +157,8 @@
 								// : base
 								__super::OnInitDialog();
 								// : setting arrows indicating the flow of interaction
-								Utils::SetSingleCharTextUsingFont( ::GetDlgItem(m_hWnd,ID_CYLINDER_N), 0xf0e0, FONT_WINGDINGS, 125 );
-								Utils::SetSingleCharTextUsingFont( ::GetDlgItem(m_hWnd,ID_TRACK), 0xf0e0, FONT_WINGDINGS, 125 );
+								SetDlgItemSingleCharUsingFont( ID_CYLINDER_N, 0xf0e0, symbolFont );
+								SetDlgItemSingleCharUsingFont( ID_TRACK, 0xf0e0, symbolFont );
 								// : populating the Cylinder listbox with available Cylinder numbers and pre-selecting current Cylinder
 								const BYTE sectorIndexOnTrackBk=sectorIndexOnTrack; const TPhysicalAddress chsBk=chs;
 								TCHAR buf[80];
@@ -217,7 +218,7 @@
 											CListBox lb;
 											lb.Attach( ::GetDlgItem(m_hWnd,ID_SECTOR) );
 												const int iSel=lb.GetCurSel();
-												if (Utils::EnableDlgControl(m_hWnd,IDOK,iSel>=0)){
+												if (EnableDlgItem(IDOK,iSel>=0)){
 													TSectorId ids[(TSector)-1];
 													image->ScanTrack( chs.cylinder, chs.head, ids );
 													chs.sectorId=ids[ sectorIndexOnTrack=iSel ];
@@ -233,7 +234,8 @@
 							TPhysicalAddress chs;
 
 							CGoToSectorDialog(PCImage image,BYTE rSectorIndexOnTrack,RCPhysicalAddress rChs)
-								: CDialog(IDR_DISKBROWSER_GOTOSECTOR)
+								: Utils::CRideDialog(IDR_DISKBROWSER_GOTOSECTOR)
+								, symbolFont( FONT_WINGDINGS, 125, false, true )
 								, image(image)
 								, sectorIndexOnTrack(rSectorIndexOnTrack) , chs(rChs) {
 							}

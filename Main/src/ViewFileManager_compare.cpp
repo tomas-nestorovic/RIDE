@@ -122,11 +122,11 @@
 				break;
 			case WM_NCDESTROY:
 				// destroying the window's non-client area
-				CDialog::WindowProc(msg,wParam,lParam);
+				__super::WindowProc(msg,wParam,lParam);
 				delete pSingleInstance, pSingleInstance=nullptr;
 				return 0;
 		}
-		return CDialog::WindowProc(msg,wParam,lParam);
+		return __super::WindowProc(msg,wParam,lParam);
 	}
 
 
@@ -206,7 +206,7 @@
 		// - recovering the scroll position (its reset in Reset)
 		hexaComparison.SetScrollInfo( SB_VERT, &si, TRUE );
 		// - Drop always succeeds
-		if (Utils::EnableDlgControl( rDialog.m_hWnd, IDOK, rDialog.file1.f&&rDialog.file2.f ))
+		if (rDialog.EnableDlgItem( IDOK, rDialog.file1.f&&rDialog.file2.f ))
 			rDialog.OnOK(); // if both Files specified, automatically triggering the comparison
 	}
 

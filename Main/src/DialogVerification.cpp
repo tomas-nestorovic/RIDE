@@ -217,7 +217,7 @@
 	CVerifyVolumeDialog::CVerifyVolumeDialog(TParams &rvp)
 		// ctor
 		// - base
-		: CDialog(IDR_DOS_VERIFY)
+		: Utils::CRideDialog(IDR_DOS_VERIFY)
 		// - initialization
 		, params(rvp)
 		, nOptionsChecked(0) {
@@ -235,13 +235,13 @@
 		// exchange of data from and to controls
 		DDX_Text( pDX, ID_DOS, CString(params.dos->properties->name) );
 		DDX_Check( pDX, ID_BOOT,	params.verifyBootSector );
-			Utils::EnableDlgControl( m_hWnd, ID_BOOT, params.verificationFunctions.fnBootSector!=nullptr );
+			EnableDlgItem( ID_BOOT, params.verificationFunctions.fnBootSector!=nullptr );
 		DDX_Check( pDX, ID_FAT,		params.verifyFat );
-			Utils::EnableDlgControl( m_hWnd, ID_FAT, params.verificationFunctions.fnFatFullyReadable||params.verificationFunctions.fnFatFilePathsOk||params.verificationFunctions.fnFatCrossedFiles||params.verificationFunctions.fnFatLostAllocUnits );
+			EnableDlgItem( ID_FAT, params.verificationFunctions.fnFatFullyReadable||params.verificationFunctions.fnFatFilePathsOk||params.verificationFunctions.fnFatCrossedFiles||params.verificationFunctions.fnFatLostAllocUnits );
 		DDX_Check( pDX, ID_FILE1,	params.verifyFilesystem );
-			Utils::EnableDlgControl( m_hWnd, ID_FILE1, params.verificationFunctions.fnFilesystem!=nullptr );
+			EnableDlgItem( ID_FILE1, params.verificationFunctions.fnFilesystem!=nullptr );
 		DDX_Check( pDX, ID_IMAGE,	params.verifyVolumeSurface );
-			Utils::EnableDlgControl( m_hWnd, ID_IMAGE, params.verificationFunctions.fnVolumeSurface!=nullptr );
+			EnableDlgItem( ID_IMAGE, params.verificationFunctions.fnVolumeSurface!=nullptr );
 		DDX_CBIndex( pDX, ID_REPAIR, params.repairStyle );
 	}
 
@@ -251,9 +251,9 @@
 			case WM_NOTIFY:
 				// processing notification from child control
 				if (((LPNMHDR)lParam)->code==NM_CLICK){
-					CheckDlgButton( ID_BOOT, BST_CHECKED&&Utils::IsDlgControlEnabled(m_hWnd,ID_BOOT) );
-					CheckDlgButton( ID_FAT, BST_CHECKED&&Utils::IsDlgControlEnabled(m_hWnd,ID_FAT) );
-					CheckDlgButton( ID_FILE1, BST_CHECKED&&Utils::IsDlgControlEnabled(m_hWnd,ID_FILE1) );
+					CheckDlgButton( ID_BOOT, BST_CHECKED&&IsDlgItemEnabled(ID_BOOT) );
+					CheckDlgButton( ID_FAT, BST_CHECKED&&IsDlgItemEnabled(ID_FAT) );
+					CheckDlgButton( ID_FILE1, BST_CHECKED&&IsDlgItemEnabled(ID_FILE1) );
 					wParam=ID_BOOT; // for the below fallthrough
 					//fallthrough
 				}else
@@ -269,7 +269,7 @@
 									(IsDlgButtonChecked(ID_FILE1)==BST_CHECKED)
 									+
 									(IsDlgButtonChecked(ID_IMAGE)==BST_CHECKED);
-					GetDlgItem(IDOK)->EnableWindow( nOptionsChecked>0 );
+					EnableDlgItem( IDOK, nOptionsChecked>0 );
 				}
 				break;
 			case WM_PAINT:{
@@ -277,7 +277,7 @@
 				// . base
 				const LRESULT result=__super::WindowProc(msg,wParam,lParam);
 				// . wrapping full integrity check options in a curly bracket
-				Utils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_BOOT), GetDlgItem(ID_FILE1), nullptr, 0 );
+				WrapDlgItemsByClosingCurlyBracketWithText( ID_BOOT, ID_FILE1, nullptr, 0 );
 				return result;
 			}
 		}

@@ -3,7 +3,7 @@
 
 	#define WARNING_MSG_CONSISTENCY_AT_STAKE	_T("Consistency at stake!")
 
-	class CFormatDialog sealed:public CDialog{
+	class CFormatDialog sealed:public Utils::CRideDialog{
 		DECLARE_MESSAGE_MAP()
 	public:
 		#pragma pack(1)

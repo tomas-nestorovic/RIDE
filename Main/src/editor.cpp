@@ -341,7 +341,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 								void PreInitDialog() override{
 									// dialog initialization
 									// : base
-									Utils::CCommandDialog::PreInitDialog();
+									__super::PreInitDialog();
 									// : supplying available actions
 									__addCommandButton__( IDYES, _T("Open at least valid part of it") );
 									__addCommandButton__( IDNO, _T("Try to open it as a raw sector image") );
@@ -399,7 +399,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 						}
 					lb.Detach();
 					// - base
-					return CDialog::OnInitDialog();
+					return __super::OnInitDialog();
 				}
 				void CDosSelectionDialog::DoDataExchange(CDataExchange *pDX){
 					// exchange of data from and to controls

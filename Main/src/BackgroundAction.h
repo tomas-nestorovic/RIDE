@@ -19,7 +19,7 @@
 	} *PCBackgroundAction;
 
 
-	typedef class CBackgroundActionCancelable:public CBackgroundAction,public CDialog{
+	typedef class CBackgroundActionCancelable:public CBackgroundAction,public Utils::CRideDialog{
 		int progressTarget;
 	protected:
 		volatile bool bCancelled;

@@ -76,7 +76,7 @@ errorDuringWriting:			TCHAR buf[80];
 	void CImage::__patch__(){
 		// patches this Image
 		// - defining the Dialog
-		class CPatchDialog sealed:public CDialog{
+		class CPatchDialog sealed:public Utils::CRideDialog{
 			void DoDataExchange(CDataExchange *pDX) override{
 				// transferring data to and from controls
 				if (pDX->m_bSaveAndValidate){
@@ -90,7 +90,7 @@ errorDuringWriting:			TCHAR buf[80];
 						pDX->Fail();
 					}
 				}else
-					GetDlgItem(ID_FILE)->SetWindowText(ELLIPSIS);
+					SetDlgItemText( ID_FILE, ELLIPSIS );
 				DDX_Text( pDX,	ID_CYLINDER,	(RCylinder)patchParams.cylinderA );
 					if (patchParams.source)
 						DDV_MinMaxUInt( pDX,patchParams.cylinderA, 0, patchParams.source->GetCylinderCount()-1 );
@@ -107,11 +107,11 @@ errorDuringWriting:			TCHAR buf[80];
 			afx_msg void OnPaint(){
 				// painting
 				// - base
-				CDialog::OnPaint();
+				__super::OnPaint();
 				// - painting curly brackets
 				TCHAR buf[32];
 				::wsprintf(buf,_T("%d cylinder(s)"),GetDlgItemInt(ID_CYLINDER_N)+1-GetDlgItemInt(ID_CYLINDER));
-				Utils::WrapControlsByClosingCurlyBracketWithText( this, GetDlgItem(ID_CYLINDER), GetDlgItem(ID_CYLINDER_N), buf, 0 );
+				WrapDlgItemsByClosingCurlyBracketWithText( ID_CYLINDER, ID_CYLINDER_N, buf, 0 );
 			}
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 				// window procedure
@@ -128,7 +128,7 @@ errorDuringWriting:			TCHAR buf[80];
 									// . adjusting interactivity and updating values
 									CWnd *const pBtnFile=GetDlgItem(ID_FILE);
 									static const WORD Controls[]={ ID_CYLINDER, ID_CYLINDER_N, ID_HEAD, ID_GAP, IDOK, 0 };
-									if (Utils::EnableDlgControls( m_hWnd, Controls, sourceImageProperties==&CDsk5::Properties )){
+									if (EnableDlgItems( Controls, sourceImageProperties==&CDsk5::Properties )){
 										// : interactivity
 										patchParams.source.reset( sourceImageProperties->fnInstantiate(nullptr) ); // Null as buffer = one Image represents only one "device" whose name is known at compile-time
 										patchParams.source->OnOpenDocument(fileName);
@@ -162,7 +162,7 @@ errorDuringWriting:			TCHAR buf[80];
 						break;
 
 				}
-				return CDialog::WindowProc(msg,wParam,lParam);
+				return __super::WindowProc(msg,wParam,lParam);
 			}
 		public:
 			TCHAR fileName[MAX_PATH];
@@ -172,7 +172,7 @@ errorDuringWriting:			TCHAR buf[80];
 
 			CPatchDialog(PDos dos)
 				// ctor
-				: CDialog(IDR_IMAGE_PATCH)
+				: Utils::CRideDialog(IDR_IMAGE_PATCH)
 				, patchParams(dos) , sourceImageProperties(nullptr)
 				, realtimeThreadPriority( dos->image->properties->IsRealDevice() ) {
 				::lstrcpy( fileName, ELLIPSIS );

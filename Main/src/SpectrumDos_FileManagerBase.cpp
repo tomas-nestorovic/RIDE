@@ -69,7 +69,7 @@
 					void PreInitDialog() override{
 						// dialog initialization
 						// : base
-						Utils::CCommandDialog::PreInitDialog();
+						__super::PreInitDialog();
 						// : supplying available actions
 						__addCommandButton__( IDYES, _T("Open it in a new tab (recommended)") );
 						__addCommandButton__( IDNO, _T("Import it to this image anyway") );

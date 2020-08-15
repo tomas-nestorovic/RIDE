@@ -370,7 +370,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 	bool CDsk5::__showOptions__(bool allowTypeBeChanged){
 		// True <=> Parameters and/or DiskInfo have changed, otherwise False
 		// - defining the Dialog
-		class CTypeSelectionDialog sealed:public CDialog{
+		class CTypeSelectionDialog sealed:public Utils::CRideDialog{
 			void DoDataExchange(CDataExchange *pDX) override{
 				// exchange of data from and to controls
 				// . Type
@@ -378,7 +378,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				DDX_Radio( pDX, ID_STANDARD, i );
 				rParams.rev5=i>0;
 				static const WORD Controls[]={ ID_STANDARD, ID_DRIVE, ID_PROTECTED, 0 } ;
-				Utils::EnableDlgControls( m_hWnd, Controls, allowTypeBeChanged );
+				EnableDlgItems( Controls, allowTypeBeChanged );
 				// . Creator
 				const BYTE nCyls=rDiskInfo.nCylinders;
 				rDiskInfo.nCylinders=0; // converting the Creator field to a null-terminated string
@@ -413,7 +413,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 								void PreInitDialog() override{
 									// dialog initialization
 									// : base
-									Utils::CCommandDialog::PreInitDialog();
+									__super::PreInitDialog();
 									// : supplying available actions
 									__addCommandButton__( ID_SIZE, _T("Which version of DSK image should I prefer?") );
 									__addCommandButton__( ID_FORMAT, _T("How do I merge two images? What is a \"patch\"?") );
@@ -438,7 +438,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 						}
 						break;
 				}
-				return CDialog::WindowProc(msg,wParam,lParam);
+				return __super::WindowProc(msg,wParam,lParam);
 			}
 		public:
 			const bool allowTypeBeChanged;
@@ -446,7 +446,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			TDiskInfo &rDiskInfo;
 
 			CTypeSelectionDialog(bool allowTypeBeChanged,TParams &rParams,TDiskInfo &rDiskInfo)
-				: CDialog(IDR_DSK_TYPE)
+				: Utils::CRideDialog(IDR_DSK_TYPE)
 				, allowTypeBeChanged(allowTypeBeChanged)
 				, rParams(rParams) , rDiskInfo(rDiskInfo) {
 			}

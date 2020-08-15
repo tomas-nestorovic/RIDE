@@ -2,7 +2,7 @@
 
 	CRealDeviceSelectionDialog::CRealDeviceSelectionDialog(CDos::PCProperties dosProps)
 		// ctor
-		: CDialog(IDR_DRIVE_ACCESS)
+		: Utils::CRideDialog(IDR_DRIVE_ACCESS)
 		, deviceProps(nullptr) , dosProps(dosProps) {
 	}
 
@@ -18,9 +18,7 @@
 		// - base
 		__super::OnInitDialog();
 		// - positioning and scaling the Error box to match the Image list-box
-		RECT rc;
-		GetDlgItem(ID_IMAGE)->GetWindowRect(&rc);
-		ScreenToClient(&rc);
+		const RECT rc=MapDlgItemClientRect(ID_IMAGE);
 		GetDlgItem(ID_ERROR)->SetWindowPos( nullptr, rc.left, rc.top, rc.right-rc.left, rc.bottom-rc.top, SWP_NOZORDER );
 		// - populating the list with devices compatible with specified DOS
 		refreshListOfDevices();
@@ -38,13 +36,13 @@
 
 	void CRealDeviceSelectionDialog::refreshListOfDevices(){
 		// forces refreshing of the list of containers available for the selected DOS; eventually displays an error message
-		Utils::EnableDlgControl( m_hWnd, IDOK, false ); // need yet to select a container
-		CWnd *const pDeviceListBox=GetDlgItem(ID_IMAGE), *const pErrorBox=GetDlgItem(ID_ERROR);
+		EnableDlgItem( IDOK, false ); // need yet to select a container
+		CWnd *const pDeviceListBox=GetDlgItem(ID_IMAGE);
 		// - populating the list with devices compatible with specified DOS
 		CListBox lb;
 		lb.Attach(pDeviceListBox->m_hWnd);
 			lb.ResetContent();
-			lb.ShowWindow(SW_SHOW), pErrorBox->ShowWindow(SW_HIDE);
+			lb.ShowWindow(SW_SHOW), ShowDlgItem(ID_ERROR,false);
 			lb.SetItemDataPtr( lb.AddString(_T("-- Select --")), (PVOID)&CUnknownDos::Properties );
 			lb.SetCurSel(0);
 			const WORD dosStdSectorLength=dosProps->stdFormats->params.format.sectorLength;
@@ -68,7 +66,7 @@
 			pDeviceListBox->SetFocus();
 		// - otherwise, displaying an error message
 		else{
-			pErrorBox->ShowWindow(SW_SHOW), pDeviceListBox->ShowWindow(SW_HIDE);
+			ShowDlgItem(ID_ERROR), pDeviceListBox->ShowWindow(SW_HIDE);
 			TCHAR errMsg[200];
 			::wsprintf( errMsg, _T("No local physical device compatible with \"%s\" found."), dosProps->name );
 			SetDlgItemText( ID_ERROR, errMsg );
@@ -83,7 +81,7 @@
 				CListBox lb;
 				lb.Attach((HWND)lParam);
 					const int iSelected=lb.GetCurSel();
-					if (Utils::EnableDlgControl( m_hWnd, IDOK, iSelected>0 )){
+					if (EnableDlgItem( IDOK, iSelected>0 )){
 						deviceProps=(CImage::PCProperties)lb.GetItemData(iSelected);
 						lb.GetText( iSelected, deviceName );
 					}
