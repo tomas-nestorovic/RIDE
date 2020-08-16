@@ -23,7 +23,6 @@
 		: tab( IDR_TRACKMAP, IDR_TRACKMAP, ID_CYLINDER, _dos, this )
 		, displayType(TDisplayType::STATUS) , showSectorNumbers(false) , showTimed(false) , fitLongestTrackInWindow(false) , showSelectedFiles(_dos->pFileManager!=nullptr) , iScrollX(0) , iScrollY(0) , scanner(this)
 		, fileSelectionColor( app.GetProfileInt(INI_TRACKMAP,INI_FILE_SELECTION_COLOR,::GetSysColor(COLOR_ACTIVECAPTION)) )
-		, nNanosecondsPerByte(_dos->image->EstimateNanosecondsPerOneByte() )
 		, longestTrack(0,0)
 		, zoomLengthFactor(3) {
 		::ZeroMemory( rainbowBrushes, sizeof(rainbowBrushes) );
@@ -133,7 +132,7 @@
 			CSize(
 				Utils::LogicalUnitScaleFactor*(
 					showTimed
-					? TTrackLength::FromTime(longestTrackNanoseconds,nNanosecondsPerByte).GetPixelCount(zoomLengthFactor)
+					? TTrackLength::FromTime(longestTrackNanoseconds,IMAGE->EstimateNanosecondsPerOneByte()).GetPixelCount(zoomLengthFactor)
 					: longestTrack.GetPixelCount(zoomLengthFactor)
 				),
 				Utils::LogicalUnitScaleFactor*(
@@ -245,6 +244,7 @@
 
 	void CTrackMapView::TimesToPixels(TSector nSectors,PINT pInOutBuffer,PCWORD pInSectorLengths) const{
 		// converts times (in nanoseconds) in Buffer to pixels
+		const int nNanosecondsPerByte=IMAGE->EstimateNanosecondsPerOneByte();
 		if (showTimed)
 			for( TSector s=0; s<nSectors; s++ )
 				pInOutBuffer[s] =	SECTOR1_X + (pInOutBuffer[s]/nNanosecondsPerByte>>zoomLengthFactor);
@@ -263,6 +263,7 @@
 		const TTrackInfo &rti=*(TTrackInfo *)pTrackInfo;
 		int nBytesOnTrack=0;
 		for( TSector s=rti.nSectors; s>0; nBytesOnTrack+=rti.bufferLength[--s] );
+		const int nNanosecondsPerByte=IMAGE->EstimateNanosecondsPerOneByte();
 		const int nNanosecondsOnTrack =	rti.nSectors>0
 										? rti.bufferStartNanoseconds[rti.nSectors-1]+rti.bufferLength[rti.nSectors-1]*nNanosecondsPerByte
 										: 0;
@@ -453,7 +454,7 @@
 		// window size changed
 		if (fitLongestTrackInWindow)
 			zoomLengthFactor =	showTimed
-								? TTrackLength::FromTime(longestTrackNanoseconds,nNanosecondsPerByte).GetZoomFactorToFitWidth(cx)
+								? TTrackLength::FromTime(longestTrackNanoseconds,IMAGE->EstimateNanosecondsPerOneByte()).GetZoomFactorToFitWidth(cx)
 								: longestTrack.GetZoomFactorToFitWidth(cx);
 	}
 
@@ -620,7 +621,7 @@
 			CRect rc;
 			GetClientRect(&rc);
 			zoomLengthFactor =	showTimed
-								? TTrackLength::FromTime(longestTrackNanoseconds,nNanosecondsPerByte).GetZoomFactorToFitWidth(rc.Width())
+								? TTrackLength::FromTime(longestTrackNanoseconds,IMAGE->EstimateNanosecondsPerOneByte()).GetZoomFactorToFitWidth(rc.Width())
 								: longestTrack.GetZoomFactorToFitWidth(rc.Width());
 			__updateLogicalDimensions__();
 			Invalidate(TRUE);

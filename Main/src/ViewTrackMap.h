@@ -8,7 +8,6 @@
 	class CTrackMapView sealed:public CScrollView{
 		DECLARE_MESSAGE_MAP()
 	private:
-		const int nNanosecondsPerByte;
 		int iScrollX, iScrollY; // ScrollBar position
 		struct TTrackLength sealed{
 			static TTrackLength FromTime(int nNanosecondsTotal,int nNanosecondsPerByte);
