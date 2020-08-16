@@ -456,7 +456,7 @@ Utils::Information("--- EVERYTHING OK ---");
 
 	CFDD::TFddHead::TProfile::TProfile()
 		// ctor (the defaults for a 2DD floppy)
-		: controllerLatency(86e3)
+		: controllerLatency(TIME_MICRO(86))
 		, oneByteLatency(FDD_NANOSECONDS_PER_DD_BYTE)
 		, gap3Latency( oneByteLatency*FDD_350_SECTOR_GAP3 * 4/5 ) { // "4/5" = giving the FDC 20% tolerance for Gap3
 	}
@@ -472,10 +472,10 @@ Utils::Information("--- EVERYTHING OK ---");
 		switch (floppyType){
 			case TMedium::FLOPPY_DD_350:
 			case TMedium::FLOPPY_DD_525:
-				controllerLatency=app.GetProfileInt( iniSection, INI_LATENCY_CONTROLLER, 86e3 );
+				controllerLatency=app.GetProfileInt( iniSection, INI_LATENCY_CONTROLLER, TIME_MICRO(86) );
 				break;
 			case TMedium::FLOPPY_HD_350:
-				controllerLatency=app.GetProfileInt( iniSection, INI_LATENCY_CONTROLLER, 86e3/2 );
+				controllerLatency=app.GetProfileInt( iniSection, INI_LATENCY_CONTROLLER, TIME_MICRO(86)/2 );
 				break;
 			default:
 				ASSERT(FALSE);
@@ -756,7 +756,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 				::ZeroMemory(justSavedSectors,pit->nSectors);
 				do{
 					allSectorsProcessed=true; // assumption
-					int lastSectorEndNanoseconds=-1e9; // minus one second
+					int lastSectorEndNanoseconds=TIME_SECOND(-1); // minus one second
 					for( TSector n=0; n<pit->nSectors; n++ ){
 						TInternalTrack::TSectorInfo &si=pit->sectors[n];
 						if (si.modified && !justSavedSectors[n]){
@@ -775,7 +775,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 				// : verification
 				do{
 					allSectorsProcessed=true; // assumption
-					int lastSectorEndNanoseconds=-1e9; // minus one second
+					int lastSectorEndNanoseconds=TIME_SECOND(-1); // minus one second
 					for( TSector n=0; n<pit->nSectors; n++ ){
 						TInternalTrack::TSectorInfo &si=pit->sectors[n];
 						if (si.modified)
@@ -877,7 +877,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 								break;
 							TSectorId bufferId[(TSector)-1]; int sectorTimes[(TSector)-1];
 							for( BYTE n=0; n<sectors.n; n++ )
-								bufferId[n]=sectors.header[n], sectorTimes[n]=sectors.header[n].reltime*1000; // "*1000" = microseconds to nanoseconds
+								bufferId[n]=sectors.header[n], sectorTimes[n]=TIME_MICRO( sectors.header[n].reltime );
 							return REFER_TO_TRACK(cyl,head) = new TInternalTrack( this, cyl, head, sectors.n, bufferId, sectorTimes );
 						}
 						default:
@@ -926,7 +926,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 	}
 
 	int CFDD::EstimateNanosecondsPerOneByte() const{
-		// 
+		// estimates and returns the number of Nanoseconds that represent a single Byte on the Medium
 		switch (floppyType){
 			case TMedium::FLOPPY_HD_350:
 				return FDD_NANOSECONDS_PER_DD_BYTE/2;
@@ -1092,7 +1092,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 			BYTE alreadyPlannedSectors[(TSector)-1];
 			::ZeroMemory(alreadyPlannedSectors,nSectors);
 			for( BYTE nSectorsToPlan=nSectors; planEnd-plan<nSectors && nSectorsToPlan; nSectorsToPlan-- ){ // A&B, A = all Sectors requested to read planned, B = all Sectors are planned in N iterations in the worst case (preventing infinite loop in case that at least one Sector isn't found on the Track)
-				int lastSectorEndNanoseconds=-1e9; // minus one second
+				int lastSectorEndNanoseconds=TIME_SECOND(-1); // minus one second
 				for( TSector n=0; n<pit->nSectors; n++ ){
 					TInternalTrack::TSectorInfo &si=pit->sectors[n];
 					for( TSector s=0; s<nSectors; s++ )
@@ -1259,7 +1259,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 		LOG_ACTION(_T("TStdWinError CFDD::SetMediumTypeAndGeometry"));
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - base
-		if (const TStdWinError err=CFloppyImage::SetMediumTypeAndGeometry(pFormat,sideMap,firstSectorNumber))
+		if (const TStdWinError err=__super::SetMediumTypeAndGeometry(pFormat,sideMap,firstSectorNumber))
 			return LOG_ERROR(err);
 		// - setting the transfer speed according to current FloppyType (DD/HD)
 		__freeInternalTracks__();
@@ -1429,7 +1429,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 			TStdWinError __setInterruptionToWriteSpecifiedNumberOfBytes__(WORD nBytes){
 				// sets this Interruption so that the specified NumberOfBytes is written to current Track; returns Windows standard i/o error
 				// : initialization using the default NumberOfNanoseconds
-				nNanoseconds=20e3;
+				nNanoseconds=TIME_MICRO(20);
 				// : increasing the NumberOfNanoseconds until the specified NumberOfBytes is written for the first time
 				do{
 					if (pAction->IsCancelled()) return ERROR_CANCELLED;
@@ -1491,7 +1491,7 @@ Utils::Information(buf);}
 			pAction->UpdateProgress(++state);
 			// . STEP 3: experimentally determining the latency of one Byte
 			if (pAction->IsCancelled()) return LOG_ERROR(ERROR_CANCELLED);
-			const int p = interruption.nNanoseconds = 65e6; // let's see how many Bytes are written during the 65 millisecond time frame
+			const int p = interruption.nNanoseconds = TIME_MILLI(65); // let's see how many Bytes are written during the 65 millisecond time frame
 			if (const TStdWinError err=interruption.__writeSectorData__(nBytes))
 				return LOG_ERROR(pAction->TerminateWithError(err));
 			const int n=interruption.__getNumberOfWrittenBytes__();
@@ -1542,9 +1542,9 @@ Utils::Information(buf);}
 				const Utils::CLocalTime startTime;
 					lp.fdd->GetHealthySectorData( lp.cyl, lp.head, &SectorIds[1], &w );
 				const Utils::CLocalTime endTime;
-				const int deltaNanoseconds=(endTime-startTime).ToMilliseconds()*1e6;
+				const int deltaNanoseconds=TIME_MILLI( (endTime-startTime).ToMilliseconds() );
 				// . STEP 2.4: determining if the readings took more than just one disk revolution or more
-				if (deltaNanoseconds>=pit->sectors[1].endNanoseconds-pit->sectors[0].endNanoseconds+4e6) // 4e6 = allowing circa 120 Bytes as a limit of detecting a single disk revolution
+				if (deltaNanoseconds>=pit->sectors[1].endNanoseconds-pit->sectors[0].endNanoseconds+TIME_MILLI(4)) // 4e6 = allowing circa 120 Bytes as a limit of detecting a single disk revolution
 					break;
 				c++;
 			}
@@ -1738,7 +1738,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 											case 1: floppyType=TMedium::FLOPPY_DD_350; break;
 											case 2: floppyType=TMedium::FLOPPY_HD_350; break;
 										}
-										TLatencyParams lp( fdd, floppyType, (1+d.usAccuracy)*1000, 1+d.nRepeats );
+										TLatencyParams lp( fdd, floppyType, TIME_MICRO(1+d.usAccuracy), 1+d.nRepeats );
 										bmac.AddAction( __determineControllerAndOneByteLatency_thread__, &lp, _T("Determining controller latencies") );
 										bmac.AddAction( __determineGap3Latency_thread__, &lp, _T("Determining minimal Gap3 size") );
 									// : backing up existing InternalTracks and performing the multi-action

@@ -129,6 +129,11 @@ typedef const int *PCINT;
 #define COLOR_YELLOW 0xffff
 #define COLOR_RED	0xff
 
+#define TIME_NANO(n)	(n)
+#define TIME_MICRO(u)	((u)*1000)
+#define TIME_MILLI(m)	((m)*1000000)
+#define TIME_SECOND(s)	((s)*1000000000)
+
 #undef min
 #undef max
 
