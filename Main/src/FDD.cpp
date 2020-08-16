@@ -1716,7 +1716,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 								}
 								void PreInitDialog() override{
 									__super::PreInitDialog(); // base
-									PopulateDlgComboBoxWithSequenceOfNumbers( ID_ACCURACY, 1,nullptr, 6,nullptr );
+									PopulateDlgComboBoxWithSequenceOfNumbers( ID_ACCURACY, 1,_T("(highest)"), 6,_T("(lowest)") );
 									PopulateDlgComboBoxWithSequenceOfNumbers( ID_TEST, 1,_T("(worst)"), 9,_T("(best)") );
 								}
 								void DoDataExchange(CDataExchange *pDX) override{
@@ -1744,22 +1744,34 @@ autodetermineLatencies:		// automatic determination of write latency values
 									BYTE internalTracksOrg[sizeof(fdd->internalTracks)];
 									::memcpy( internalTracksOrg, fdd->internalTracks, sizeof(internalTracksOrg) );
 									::ZeroMemory( fdd->internalTracks, sizeof(internalTracksOrg) );
-										const TStdWinError err=bmac.Perform();
-										fdd->__freeInternalTracks__();
+										const auto floppyTypeOrg=fdd->floppyType;
+										fdd->__setDataTransferSpeed__( fdd->floppyType=floppyType ); // setting transfer speed according to selected FloppyType
+											fdd->locker.Unlock(); // preventing from deadlock if decided to determine latencies while the disk is already open
+												const TStdWinError err=bmac.Perform();
+												fdd->__freeInternalTracks__();
+											fdd->locker.Lock(); // locking it back
+										fdd->__setDataTransferSpeed__( fdd->floppyType=floppyTypeOrg ); // reverting to original FloppyType
 									::memcpy( fdd->internalTracks, internalTracksOrg, sizeof(internalTracksOrg) );
 									// : reporting on problems and quitting
 									if (err){
 										Utils::FatalError(_T("Couldn't autodetermine"),err);
 										break;
 									}
+									// : saving determined latencies to corresponding floppy Profile
+									TFddHead::TProfile tmp;
+										tmp.Load( fdd->GetDriveLetter(), floppyType, FDD_NANOSECONDS_PER_DD_BYTE );
+											tmp.controllerLatency=lp.outControllerLatency;
+											tmp.oneByteLatency=lp.out1ByteLatency;
+											tmp.gap3Latency=lp.outGap3Latency;
+										tmp.Save( fdd->GetDriveLetter(), floppyType );
+										TCHAR iniSection[16];
+										GetFddProfileName( iniSection, fdd->GetDriveLetter(), floppyType );
+										app.WriteProfileInt( iniSection, INI_LATENCY_DETERMINED, TRUE ); // latencies hereby at least once determined
 									// : adopting the found latencies to current floppy Profile
-									profile.controllerLatency=lp.outControllerLatency;
-									profile.oneByteLatency=lp.out1ByteLatency;
-									profile.gap3Latency=lp.outGap3Latency;
-									__exchangeLatency__( &CDataExchange(this,FALSE) );
-									TCHAR iniSection[16];
-									GetFddProfileName( iniSection, fdd->GetDriveLetter(), fdd->floppyType );
-									app.WriteProfileInt( iniSection, INI_LATENCY_DETERMINED, TRUE ); // latencies hereby at least once determined
+									if (floppyType==fdd->floppyType){
+										profile=tmp;
+										__exchangeLatency__( &CDataExchange(this,FALSE) );
+									}
 								}
 							}
 						}

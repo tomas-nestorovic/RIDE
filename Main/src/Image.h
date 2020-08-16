@@ -182,7 +182,6 @@
 		friend class CTrackMapView;
 		friend class CFileManagerView;
 
-		mutable CCriticalSection locker;
 		const bool hasEditableSettings;
 		bool writeProtected;
 
@@ -199,6 +198,7 @@
 			~TExclusiveLocker();
 		};
 
+		mutable CCriticalSection locker;
 		bool canBeModified;
 
 		BOOL DoSave(LPCTSTR lpszPathName,BOOL bReplace) override;
