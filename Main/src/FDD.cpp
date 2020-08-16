@@ -1451,7 +1451,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 			}
 		} interruption( pAction, lp );
 		// - testing
-		const TExclusiveLocker locker(lp.fdd); // locking the access so that no one can disturb during the testing
+		//const TExclusiveLocker locker(lp.fdd); // locking the access so that no one can disturb during the testing; commented out to not cause a deadlock (e.g. with worker thread of TrackMap)
 		for( BYTE c=lp.nRepeats,state=0; c--; ){
 			// . STEP 1: writing the test Sector (DD = 4kB, HD = 8kB)
 			do{
@@ -1515,7 +1515,7 @@ Utils::Information(buf);}
 		TLatencyParams &lp=*(TLatencyParams *)pAction->GetParams();
 		const BYTE targetGap3= lp.fdd->floppyType==TMedium::FLOPPY_DD_525 ? FDD_525_SECTOR_GAP3 : FDD_350_SECTOR_GAP3;
 		pAction->SetProgressTarget( targetGap3 );
-		const TExclusiveLocker locker(lp.fdd); // locking the access so that no one can disturb during the testing
+		//const TExclusiveLocker locker(lp.fdd); // locking the access so that no one can disturb during the testing; commented out to not cause a deadlock (e.g. with worker thread of TrackMap)
 		for( BYTE gap3=1; gap3<targetGap3; pAction->UpdateProgress(gap3+=3) ){
 			if (pAction->IsCancelled()) return LOG_ERROR(ERROR_CANCELLED);
 			// . STEP 1: writing two test Sectors
@@ -1747,10 +1747,8 @@ autodetermineLatencies:		// automatic determination of write latency values
 									::ZeroMemory( fdd->internalTracks, sizeof(internalTracksOrg) );
 										const auto floppyTypeOrg=fdd->floppyType;
 										fdd->__setDataTransferSpeed__( fdd->floppyType=floppyType ); // setting transfer speed according to selected FloppyType
-											fdd->locker.Unlock(); // preventing from deadlock if decided to determine latencies while the disk is already open
-												const TStdWinError err=bmac.Perform();
-												fdd->__freeInternalTracks__();
-											fdd->locker.Lock(); // locking it back
+											const TStdWinError err=bmac.Perform();
+											fdd->__freeInternalTracks__();
 										fdd->__setDataTransferSpeed__( fdd->floppyType=floppyTypeOrg ); // reverting to original FloppyType
 									::memcpy( fdd->internalTracks, internalTracksOrg, sizeof(internalTracksOrg) );
 									// : reporting on problems and quitting
@@ -1840,7 +1838,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 
 	void CFDD::EditSettings(){
 		// displays dialog with editable settings and reflects changes made by the user into the Image's inner state
-		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		//EXCLUSIVELY_LOCK_THIS_IMAGE(); // commented out as the following dialog is blocking
 		__showSettingDialog__();
 	}
 
