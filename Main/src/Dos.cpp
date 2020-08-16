@@ -1144,7 +1144,7 @@ reportError:Utils::Information(buf);
 
 	BYTE CDos::TProperties::GetValidGap3ForMedium(TMedium::TType medium) const{
 		// infers and returns the minimum Gap3 value applicable for all available StandardFormats that regard the specified Medium
-		BYTE result=FDD_SECTOR_GAP3_STD;
+		BYTE result=FDD_350_SECTOR_GAP3;
 		CFormatDialog::PCStdFormat pStdFmt=stdFormats;
 		for( BYTE n=nStdFormats; n-->0; pStdFmt++ )
 			if (pStdFmt->params.format.mediumType & medium)

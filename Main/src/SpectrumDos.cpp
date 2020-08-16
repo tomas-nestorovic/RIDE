@@ -37,8 +37,8 @@
 				// formatting standard Cylinders (i.e. with standard "official" Sectors)
 				const TCylinder cylMin=std::min<int>( 1+__getLastOccupiedStdCylinder__(), formatBoot.nCylinders );
 				CFormatDialog::TStdFormat additionalFormats[]={
-					{ _T("Expand to 40 cylinders"),	cylMin, formatBoot, 1, 0, FDD_SECTOR_GAP3_STD, properties->stdFormats->params.nAllocationTables, properties->nRootDirectoryEntriesMax },
-					{ _T("Expand to 80 cylinders"),	cylMin, formatBoot, 1, 0, FDD_SECTOR_GAP3_STD, properties->stdFormats->params.nAllocationTables, properties->nRootDirectoryEntriesMax }
+					{ _T("Expand to 40 cylinders"),	cylMin, formatBoot, 1, 0, FDD_525_SECTOR_GAP3, properties->stdFormats->params.nAllocationTables, properties->nRootDirectoryEntriesMax },
+					{ _T("Expand to 80 cylinders"),	cylMin, formatBoot, 1, 0, FDD_350_SECTOR_GAP3, properties->stdFormats->params.nAllocationTables, properties->nRootDirectoryEntriesMax }
 				};
 					additionalFormats[0].params.format.nCylinders=39;
 					additionalFormats[1].params.format.nCylinders=79;

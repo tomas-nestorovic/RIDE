@@ -130,7 +130,7 @@
 							bufferId[n]=pit->sectors[n].id, bufferLength[n]=pit->sectors[n].length, bufferStatus[n]=TFdcStatus::WithoutError;
 						__REFER_TO_TRACK(fdd,cyl,head)=nullptr; // detaching the Track internal representation for it to be not destroyed during reformatting of the Track
 						err=fdd->FormatTrack(	cyl, head, pit->nSectors, bufferId, bufferLength, bufferStatus,
-												FDD_SECTOR_GAP3_STD, // if gap too small (e.g. 10) it's highly likely that sectors would be missed in a single disk revolution (so for instance, reading 9 sectors would require 9 disk revolutions)
+												fdd->floppyType==TMedium::FLOPPY_DD_525 ? FDD_525_SECTOR_GAP3 : FDD_350_SECTOR_GAP3, // if gap too small (e.g. 10) it's highly likely that sectors would be missed in a single disk revolution (so for instance, reading 9 sectors would require 9 disk revolutions)
 												fdd->dos->properties->sectorFillerByte
 											);
 						if (err!=ERROR_SUCCESS){ // if formatting failed ...
@@ -458,7 +458,7 @@ Utils::Information("--- EVERYTHING OK ---");
 		// ctor (the defaults for a 2DD floppy)
 		: controllerLatency(86e3)
 		, oneByteLatency(FDD_NANOSECONDS_PER_DD_BYTE)
-		, gap3Latency( oneByteLatency*FDD_SECTOR_GAP3_STD * 4/5 ) { // "4/5" = giving the FDC 20% tolerance for Gap3
+		, gap3Latency( oneByteLatency*FDD_350_SECTOR_GAP3 * 4/5 ) { // "4/5" = giving the FDC 20% tolerance for Gap3
 	}
 
 	static void GetFddProfileName(PTCHAR buf,TCHAR driveLetter,TMedium::TType floppyType){
@@ -483,7 +483,7 @@ Utils::Information("--- EVERYTHING OK ---");
 				break;
 		}
 		oneByteLatency=app.GetProfileInt( iniSection, INI_LATENCY_1BYTE, defaultNanosecondsPerByte );
-		gap3Latency=app.GetProfileInt( iniSection, INI_LATENCY_GAP3, oneByteLatency*FDD_SECTOR_GAP3_STD*4/5 ); // "4/5" = giving the FDC 20% tolerance for Gap3
+		gap3Latency=app.GetProfileInt( iniSection, INI_LATENCY_GAP3, oneByteLatency*FDD_350_SECTOR_GAP3*4/5 ); // "4/5" = giving the FDC 20% tolerance for Gap3
 	}
 
 	void CFDD::TFddHead::TProfile::Save(TCHAR driveLetter,TMedium::TType floppyType) const{
@@ -918,7 +918,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 					for( TSector s=0; s<pit->nSectors-1; nsSum-=psi->endNanoseconds,s++,psi++,nsSum+=psi->startNanoseconds );
 					*pAvgGap3=nsSum/((pit->nSectors-1)*fddHead.profile.oneByteLatency);
 				}else
-					*pAvgGap3=FDD_SECTOR_GAP3_STD;
+					*pAvgGap3= floppyType==TMedium::FLOPPY_DD_525 ? FDD_525_SECTOR_GAP3 : FDD_350_SECTOR_GAP3;
 			return pit->nSectors;
 		}else
 			// Track failed to be scanned
@@ -1410,7 +1410,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 				DWORD nBytesTransferred;
 				switch (fdd->DRIVER){
 					case DRV_FDRAWCMD:{
-						FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM, rHead, sectorId.cylinder,sectorId.side,sectorId.sector,sectorId.lengthCode, sectorId.sector+1, FDD_SECTOR_GAP3_STD/2, sectorId.lengthCode?0xff:0x80 };
+						FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM, rHead, sectorId.cylinder,sectorId.side,sectorId.sector,sectorId.lengthCode, sectorId.sector+1, FDD_350_SECTOR_GAP3/2, sectorId.lengthCode?0xff:0x80 };
 						return	::DeviceIoControl( fdd->_HANDLE, IOCTL_FDCMD_WRITE_DATA, &rwp,sizeof(rwp), sectorDataToWrite,sectorLength, &nBytesTransferred, nullptr )!=0
 								? ERROR_SUCCESS
 								: LOG_ERROR(::GetLastError());
@@ -1423,7 +1423,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 			WORD __getNumberOfWrittenBytes__() const{
 				// counts and returns the number of TestBytes actually written in the most recent call to __writeSectorData__
 				PCBYTE p=(PCBYTE)fdd->dataBuffer;
-				for( fdd->__bufferSectorData__(rCyl,rHead,&sectorId,sectorLength,&TInternalTrack(fdd,rCyl,rHead,1,&sectorId,(PCINT)FDD_SECTOR_GAP3_STD),0,&TFdcStatus()); *p==TEST_BYTE; p++ );
+				for( fdd->__bufferSectorData__(rCyl,rHead,&sectorId,sectorLength,&TInternalTrack(fdd,rCyl,rHead,1,&sectorId,(PCINT)FDD_350_SECTOR_GAP3),0,&TFdcStatus()); *p==TEST_BYTE; p++ );
 				return p-(PCBYTE)fdd->dataBuffer;
 			}
 			TStdWinError __setInterruptionToWriteSpecifiedNumberOfBytes__(WORD nBytes){
@@ -1462,13 +1462,13 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 				// : formatting Track to a single Sector
 				const bool vft0=lp.fdd->params.verifyFormattedTracks;
 				lp.fdd->params.verifyFormattedTracks=false;
-					const TStdWinError err=lp.fdd->FormatTrack( lp.cyl, lp.head, 1,&interruption.sectorId,&interruption.sectorLength,&TFdcStatus::WithoutError, FDD_SECTOR_GAP3_STD, 0 );
+					const TStdWinError err=lp.fdd->FormatTrack( lp.cyl, lp.head, 1,&interruption.sectorId,&interruption.sectorLength,&TFdcStatus::WithoutError, FDD_350_SECTOR_GAP3, 0 );
 				lp.fdd->params.verifyFormattedTracks=vft0;
 				if (err!=ERROR_SUCCESS)
 					return LOG_ERROR(pAction->TerminateWithError(err));
 				// : verifying the single formatted Sector
 				TFdcStatus sr;
-				lp.fdd->__bufferSectorData__( lp.cyl, lp.head, &interruption.sectorId, interruption.sectorLength, &TInternalTrack(lp.fdd,lp.cyl,lp.head,1,&interruption.sectorId,(PCINT)FDD_SECTOR_GAP3_STD), 0, &sr );
+				lp.fdd->__bufferSectorData__( lp.cyl, lp.head, &interruption.sectorId, interruption.sectorLength, &TInternalTrack(lp.fdd,lp.cyl,lp.head,1,&interruption.sectorId,(PCINT)FDD_350_SECTOR_GAP3), 0, &sr );
 				if (sr.IsWithoutError())
 					break; // yes, a healthy Track has been found - using it for computation of all latencies
 				// : attempting to create a Sector WithoutErrors on another Track
@@ -1513,9 +1513,10 @@ Utils::Information(buf);}
 		// thread to automatically determine the Gap3 latency
 		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
 		TLatencyParams &lp=*(TLatencyParams *)pAction->GetParams();
-		pAction->SetProgressTarget( FDD_SECTOR_GAP3_STD );
+		const BYTE targetGap3= lp.fdd->floppyType==TMedium::FLOPPY_DD_525 ? FDD_525_SECTOR_GAP3 : FDD_350_SECTOR_GAP3;
+		pAction->SetProgressTarget( targetGap3 );
 		const TExclusiveLocker locker(lp.fdd); // locking the access so that no one can disturb during the testing
-		for( BYTE gap3=1; gap3<FDD_SECTOR_GAP3_STD; pAction->UpdateProgress(gap3+=3) ){
+		for( BYTE gap3=1; gap3<targetGap3; pAction->UpdateProgress(gap3+=3) ){
 			if (pAction->IsCancelled()) return LOG_ERROR(ERROR_CANCELLED);
 			// . STEP 1: writing two test Sectors
 			static const TSectorId SectorIds[]={ {1,0,1,2}, {1,0,2,2} };
@@ -1553,7 +1554,7 @@ Utils::Information(buf);}
 				return pAction->TerminateWithError(ERROR_SUCCESS);
 			}
 		}
-		lp.outGap3Latency=FDD_SECTOR_GAP3_STD*lp.out1ByteLatency;
+		lp.outGap3Latency=targetGap3*lp.out1ByteLatency;
 		return ERROR_SUCCESS;
 	}
 
@@ -1920,7 +1921,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 						}
 			}else
 				// if verification turned off, assuming well formatted Track structure, hence avoiding the need of its scanning
-				REFER_TO_TRACK(chs.cylinder,chs.head) = new TInternalTrack( this, chs.cylinder, chs.head, 1, &chs.sectorId, (PCINT)FDD_SECTOR_GAP3_STD ); // Gap3 = calculate Sector start times from information of this Gap3 and individual Sector lengths
+				REFER_TO_TRACK(chs.cylinder,chs.head) = new TInternalTrack( this, chs.cylinder, chs.head, 1, &chs.sectorId, (PCINT)FDD_350_SECTOR_GAP3 ); // Gap3 = calculate Sector start times from information of this Gap3 and individual Sector lengths
 			// . Track formatted successfully
 			break;
 		}while (true);
