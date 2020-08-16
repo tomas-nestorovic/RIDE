@@ -48,6 +48,7 @@
 		void OnPrepareDC(CDC *pDC,CPrintInfo *pInfo=nullptr) override;
 		void OnDraw(CDC *pDC) override;
 		void PostNcDestroy() override;
+		void TimesToPixels(TSector nSectors,PINT pInOutBuffer,PCWORD pInSectorLengths) const;
 		bool __getPhysicalAddressFromPoint__(POINT point,TPhysicalAddress &rOutChs,BYTE &rnOutSectorsToSkip);
 		void __updateStatusBarIfCursorOutsideAnySector__() const;
 		void __updateLogicalDimensions__();

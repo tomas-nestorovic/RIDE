@@ -243,6 +243,18 @@
 		Utils::ScaleLogicalUnit(*pDC);
 	}
 
+	void CTrackMapView::TimesToPixels(TSector nSectors,PINT pInOutBuffer,PCWORD pInSectorLengths) const{
+		// converts times (in nanoseconds) in Buffer to pixels
+		if (showTimed)
+			for( TSector s=0; s<nSectors; s++ )
+				pInOutBuffer[s] =	SECTOR1_X + (pInOutBuffer[s]/nNanosecondsPerByte>>zoomLengthFactor);
+		else
+			for( TSector s=0; s<nSectors; s++ )
+				pInOutBuffer[s] =	s>0
+									? pInOutBuffer[s-1]+(pInSectorLengths[s-1]>>zoomLengthFactor)+SECTOR_MARGIN
+									: SECTOR1_X;
+	}
+
 	static const int Tabs[]={ VIEW_PADDING, VIEW_PADDING+60, SECTOR1_X };
 
 	afx_msg LRESULT CTrackMapView::__drawTrack__(WPARAM trackNumber,LPARAM pTrackInfo){
@@ -293,14 +305,7 @@
 				// : drawing Sectors
 				iScrollX=GetScrollPos(SB_HORZ)/Utils::LogicalUnitScaleFactor;
 				int sectorStartPixels[(TSector)-1];
-				if (showTimed)
-					for( TSector s=0; s<rti.nSectors; s++ )
-						sectorStartPixels[s] =	SECTOR1_X + (rti.bufferStartNanoseconds[s]/nNanosecondsPerByte>>zoomLengthFactor);
-				else
-					for( TSector s=0; s<rti.nSectors; s++ )
-						sectorStartPixels[s] =	s>0
-												? sectorStartPixels[s-1]+(rti.bufferLength[s-1]>>zoomLengthFactor)+SECTOR_MARGIN
-												: SECTOR1_X;
+				TimesToPixels( rti.nSectors, (PINT)::memcpy(sectorStartPixels,rti.bufferStartNanoseconds,rti.nSectors*sizeof(int)), rti.bufferLength );
 				RECT r={ SECTOR1_X, y+(TRACK_HEIGHT-SECTOR_HEIGHT)/2, SECTOR1_X, y+(TRACK_HEIGHT+SECTOR_HEIGHT)/2 };
 				const HGDIOBJ hBrush0=::SelectObject(dc,Utils::CRideBrush::White);
 					if (displayType==TDisplayType::STATUS){
@@ -462,22 +467,20 @@
 			// cursor over a Track
 			const TTrack track=point.y/TRACK_HEIGHT;
 			const THead nSides=__getNumberOfFormattedSidesInImage__(IMAGE);
-			point.x-=SECTOR1_X;
 			const div_t d=div((int)track,nSides);
-			TSectorId bufferId[(TSector)-1],*pId=bufferId;
-			WORD bufferLength[(TSector)-1],*pLength=bufferLength;
-			TSector nSectors=IMAGE->ScanTrack( d.quot, d.rem, bufferId, bufferLength );
-			for( int xL=0,xR=0; nSectors--; pId++ ){
-				xR+=*pLength++>>zoomLengthFactor;
-				if (point.x>=xL && point.x<=xR){
+			TSectorId bufferId[(TSector)-1];
+			WORD bufferLength[(TSector)-1];
+			int bufferStarts[(TSector)-1];
+			const TSector nSectors=IMAGE->ScanTrack( d.quot, d.rem, bufferId, bufferLength, bufferStarts );
+			TimesToPixels( nSectors, bufferStarts, bufferLength );
+			for( TSector s=0; s<nSectors; s++ )
+				if (bufferStarts[s]<=point.x && point.x<=bufferStarts[s]+(bufferLength[s]>>zoomLengthFactor)){
 					// cursor over a Sector
 					rOutChs.cylinder=d.quot, rOutChs.head=d.rem;
-					rOutChs.sectorId=*pId;
-					rnOutSectorsToSkip=pId-bufferId;
+					rOutChs.sectorId=bufferId[s];
+					rnOutSectorsToSkip=s;
 					return true;
 				}
-				xL=xR+=SECTOR_MARGIN;
-			}
 		}
 		return false;
 	}
