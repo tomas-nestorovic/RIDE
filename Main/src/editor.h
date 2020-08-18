@@ -22,7 +22,7 @@
 			void WriteList() override;
 		};
 
-		static CImage::PCProperties DoPromptFileName(PTCHAR fileName,bool fddAccessAllowed,UINT stdStringId,DWORD flags,CImage::PCProperties singleAllowedImage);
+		static CImage::PCProperties DoPromptFileName(PTCHAR fileName,bool deviceAccessAllowed,UINT stdStringId,DWORD flags,CImage::PCProperties singleAllowedImage);
 
 		static CLIPFORMAT cfDescriptor,cfRideFileList,cfContent,cfPreferredDropEffect,cfPerformedDropEffect,cfPasteSucceeded;
 
@@ -40,6 +40,7 @@
 		afx_msg void __createNewImage__();
 		afx_msg void __openImage__();
 		afx_msg void __openImageAs__();
+		afx_msg void __openDevice__();
 		afx_msg void __showAbout__();
 	};
 

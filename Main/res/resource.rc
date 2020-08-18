@@ -33,6 +33,7 @@ BEGIN
     "O",            ID_FILE_OPEN,           VIRTKEY, CONTROL, NOINVERT
     "S",            ID_FILE_SAVE,           VIRTKEY, CONTROL, NOINVERT
     VK_F1,          ID_HELP_FAQ,            VIRTKEY, NOINVERT
+    VK_F2,          ID_OPEN_DEVICE,         VIRTKEY, CONTROL, NOINVERT
     VK_F4,          ID_FILE_CLOSE,          VIRTKEY, CONTROL, NOINVERT
     VK_TAB,         ID_TDI_SWITCH,          VIRTKEY, CONTROL, NOINVERT
     VK_TAB,         ID_TDI_SWITCH_BACK,     VIRTKEY, SHIFT, CONTROL, 
@@ -168,6 +169,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "&Open...\tCtrl+O",            ID_FILE_OPEN
         MENUITEM "Open &as...",                 ID_OPEN_AS
+        MENUITEM "Open device...\tCtrl+F2",     ID_OPEN_DEVICE
         MENUITEM "&Save\tCtrl+S",               ID_FILE_SAVE
         MENUITEM "Sa&ve as...",                 ID_FILE_SAVE_AS
         MENUITEM "&Close\tCtrl+F4",             ID_FILE_CLOSE

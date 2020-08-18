@@ -118,6 +118,7 @@
 	#define INI_MSG_OPEN_AS		_T("msgopenas")
 	#define INI_MSG_READONLY	_T("msgro")
 	#define INI_MSG_FAQ			_T("1stfaq")
+	#define INI_MSG_DEVICE_SHORT _T("devshrt")
 
 	#define INI_CRASHED			_T("crash")
 
@@ -135,6 +136,7 @@
 		ON_COMMAND(ID_FILE_OPEN,__openImage__)
 		ON_COMMAND_RANGE(ID_FILE_MRU_FIRST,ID_FILE_MRU_LAST,OnOpenRecentFile)
 		ON_COMMAND(ID_OPEN_AS,__openImageAs__)
+		ON_COMMAND(ID_OPEN_DEVICE,__openDevice__)
 		ON_COMMAND(ID_APP_ABOUT,__showAbout__ )
 	END_MESSAGE_MAP()
 
@@ -461,6 +463,30 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		OnFileOpen();
 	}
 
+	static CImage::PCProperties ChooseLocalDevice(PTCHAR pOutDeviceName){
+		const PCImage image=CImage::GetActive();
+		CRealDeviceSelectionDialog d( image?image->dos->properties:&CUnknownDos::Properties );
+		if (d.DoModal()==IDOK){
+			::lstrcpy( pOutDeviceName, d.deviceName ); // cannot directly write to FileName in the Hook procedure as the "Open/Save File" dialog writes '\0' to the buffer under Windows 7 and higher
+			return d.deviceProps;
+		}else
+			return nullptr;
+	}
+
+	afx_msg void CRideApp::__openDevice__(){
+		// opens access to a local real device
+		Utils::InformationWithCheckableShowNoMore( _T("This is a shorthand to access local devices. The longer way via \"Open\" and \"Open as\" commands may offer more possibilities."), INI_GENERAL, INI_MSG_DEVICE_SHORT );
+		manuallyForceDos=nullptr; // use automatic recognition
+		TCHAR deviceName[MAX_PATH];
+		*deviceName='\0';
+		if (imageProps=ChooseLocalDevice( deviceName )){
+			if (const CDocument *const doc=CImage::GetActive())
+				if (doc->GetPathName()==deviceName) // if attempting to open an already opened Image ...
+					return; // ... doing nothing
+			OpenDocumentFile(deviceName);
+		}
+	}
+
 	afx_msg void CRideApp::__openImageAs__(){
 		// opens Image and lets user to determine suitable DOS
 		manuallyForceDos=&CUnknownDos::Properties; // show dialog to manually pick a DOS
@@ -490,7 +516,12 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 	static LRESULT CALLBACK __dlgOpen_hook__(int kod,WPARAM wParam,LPARAM lParam){
 		// hooking the "Open/Save File" dialogs
 		const LPCWPSTRUCT pcws=(LPCWPSTRUCT)lParam;
-		if (pcws->message==WM_NOTIFY && pcws->wParam==ID_DRIVEA) // notification regarding Drive A:
+		if (pcws->message==WM_INITDIALOG)
+			Utils::CRideDialog::SetDlgItemSingleCharUsingFont(
+				pcws->hwnd, ID_COMMENT,
+				L'\xf0e8', (HFONT)Utils::CRideFont(FONT_WINGDINGS,190,false,true).Detach() // a thick arrow right
+			);
+		else if (pcws->message==WM_NOTIFY && pcws->wParam==ID_DRIVEA) // notification regarding Drive A:
 			switch ( ((LPNMHDR)pcws->lParam)->code ){
 				case NM_CLICK:
 				case NM_RETURN:
@@ -501,7 +532,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		return ::CallNextHookEx(ofn_hHook,kod,wParam,lParam);
 	}
 
-	CImage::PCProperties CRideApp::DoPromptFileName(PTCHAR fileName,bool fddAccessAllowed,UINT stdStringId,DWORD flags,CImage::PCProperties singleAllowedImage){
+	CImage::PCProperties CRideApp::DoPromptFileName(PTCHAR fileName,bool deviceAccessAllowed,UINT stdStringId,DWORD flags,CImage::PCProperties singleAllowedImage){
 		// reimplementation of CDocManager::DoPromptFileName
 		// - creating the list of Filters
 		TCHAR buf[500],*a=buf; // an "always big enough" buffer
@@ -532,8 +563,8 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			d.m_ofn.lpstrTitle=title;
 			d.m_ofn.lpstrFile=fileName;
 		bool dialogConfirmed;
-		if (fddAccessAllowed){
-			// . extending the standard Dialog with a control to access local floppy Drive
+		if (deviceAccessAllowed){
+			// . extending the standard Dialog with a control to access local devices
 			d.m_ofn.Flags|= OFN_ENABLETEMPLATE | OFN_EXPLORER;
 			d.m_ofn.lpTemplateName=MAKEINTRESOURCE(IDR_OPEN_CUSTOM);
 			// . hooking, showing the Dialog, processing its Result, unhooking, and returning the Result
@@ -541,16 +572,9 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			ofn_hHook=::SetWindowsHookEx( WH_CALLWNDPROC, __dlgOpen_hook__, 0, ::GetCurrentThreadId() );
 				dialogConfirmed=d.DoModal()==IDOK;
 			::UnhookWindowsHookEx(ofn_hHook);
-			if (ofn_fileName==REAL_DRIVE_ACCESS){
+			if (ofn_fileName==REAL_DRIVE_ACCESS)
 				// selection of real device to access
-				const PCImage image=CImage::GetActive();
-				CRealDeviceSelectionDialog d( image?image->dos->properties:&CUnknownDos::Properties );
-				if (d.DoModal()==IDOK){
-					::lstrcpy( fileName, d.deviceName ); // cannot directly write to FileName in the Hook procedure as the "Open/Save File" dialog writes '\0' to the buffer under Windows 7 and higher
-					return d.deviceProps;
-				}else
-					return nullptr;
-			}
+				return ChooseLocalDevice(fileName);
 		}else
 			dialogConfirmed=d.DoModal()==IDOK;
 		if (dialogConfirmed){
