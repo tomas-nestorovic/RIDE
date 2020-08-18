@@ -67,8 +67,9 @@
 		// - otherwise, displaying an error message
 		else{
 			ShowDlgItem(ID_ERROR), pDeviceListBox->ShowWindow(SW_HIDE);
-			TCHAR errMsg[200];
-			::wsprintf( errMsg, _T("No local physical device compatible with \"%s\" found."), dosProps->name );
+			TCHAR errMsg[200], quotedDosName[50];
+			::wsprintf( quotedDosName, _T("\"%s\""), dosProps->name );
+			::wsprintf( errMsg, _T("No local physical device compatible with %s found."), dosProps!=&CUnknownDos::Properties?quotedDosName:_T("any DOS") );
 			SetDlgItemText( ID_ERROR, errMsg );
 		}
 	}
