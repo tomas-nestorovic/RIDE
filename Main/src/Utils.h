@@ -50,6 +50,7 @@ namespace Utils{
 	public:
 		static PTCHAR GetDialogTemplateItemText(UINT idDlgRes,WORD idItem,PTCHAR chars,WORD nCharsMax);
 		static void DrawClosingCurlyBracket(HDC dc,int x,int yMin,int yMax);
+		static void SetDlgItemSingleCharUsingFont(HWND hDlg,WORD id,WCHAR singleChar,HFONT hFont);
 
 		CRideDialog(LPCTSTR lpszTemplateName,CWnd *pParentWnd=nullptr);
 		CRideDialog(UINT nIDTemplate,CWnd *pParentWnd=nullptr);

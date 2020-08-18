@@ -792,12 +792,17 @@ namespace Utils{
 		::SelectObject(dc,hFont0);
 	}
 
-	void CRideDialog::SetDlgItemSingleCharUsingFont(WORD controlId,WCHAR singleChar,HFONT hFont) const{
+	void CRideDialog::SetDlgItemSingleCharUsingFont(HWND hDlg,WORD controlId,WCHAR singleChar,HFONT hFont){
 		// sets given window's text to the SingleCharacter displayed in specified Font
-		const HWND hCtrl=::GetDlgItem(m_hWnd,controlId);
+		const HWND hCtrl=::GetDlgItem(hDlg,controlId);
 		const WCHAR buf[]={ singleChar, '\0' };
 		::SetWindowTextW( hCtrl, buf );
 		::SendMessage( hCtrl, WM_SETFONT, (WPARAM)hFont, 0 );
+	}
+
+	void CRideDialog::SetDlgItemSingleCharUsingFont(WORD controlId,WCHAR singleChar,HFONT hFont) const{
+		// sets given window's text to the SingleCharacter displayed in specified Font
+		SetDlgItemSingleCharUsingFont( m_hWnd, controlId, singleChar, hFont );
 	}
 
 	void CRideDialog::SetDlgItemSingleCharUsingFont(WORD controlId,WCHAR singleChar,LPCTSTR fontFace,int fontPointSize) const{
