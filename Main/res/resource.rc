@@ -256,6 +256,7 @@ BEGIN
             MENUITEM "Bad data (if any)\tCtrl+3",   ID_TRACKMAP_BAD_DATA
             MENUITEM SEPARATOR
             MENUITEM "Numbering",                   ID_TRACKMAP_NUMBERING
+            MENUITEM "Timing (approx.)",            ID_TRACKMAP_TIMING
         END
         POPUP "File selection"
         BEGIN
@@ -662,7 +663,7 @@ BEGIN
     BUTTON      ID_TRACKMAP_BAD_DATA
     SEPARATOR
     BUTTON      ID_TRACKMAP_NUMBERING
-    BUTTON      ID_TIME
+    BUTTON      ID_TRACKMAP_TIMING
     SEPARATOR
     BUTTON      ID_ZOOM_OUT
     BUTTON      ID_ZOOM_IN
@@ -2000,6 +2001,7 @@ STRINGTABLE DISCARDABLE
 BEGIN
     ID_BOOKMARK_DELETEALL   "Irreversively delete all set bookmarks"
     ID_ZX_PREVIEWASASSEMBLER "Show file as assembler listing"
+    ID_TRACKMAP_TIMING      "Show sectors on timeline from index pulse\nTrack timeline (approx.)"
 END
 
 #endif    // Neutral resources

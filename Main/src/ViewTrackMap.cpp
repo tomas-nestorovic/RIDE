@@ -49,8 +49,8 @@
 			ON_UPDATE_COMMAND_UI_RANGE(ID_TRACKMAP_STATUS,ID_TRACKMAP_BAD_DATA,__changeDisplayType_updateUI__)
 		ON_COMMAND(ID_TRACKMAP_NUMBERING,__toggleSectorNumbering__)
 			ON_UPDATE_COMMAND_UI(ID_TRACKMAP_NUMBERING,__toggleSectorNumbering_updateUI__)
-		ON_COMMAND(ID_TIME,__toggleTiming__)
-			ON_UPDATE_COMMAND_UI(ID_TIME,__toggleTiming_updateUI__)
+		ON_COMMAND(ID_TRACKMAP_TIMING,__toggleTiming__)
+			ON_UPDATE_COMMAND_UI(ID_TRACKMAP_TIMING,__toggleTiming_updateUI__)
 		ON_COMMAND(ID_ZOOM_IN,__zoomIn__)
 			ON_UPDATE_COMMAND_UI(ID_ZOOM_IN,__zoomIn_updateUI__)
 		ON_COMMAND(ID_ZOOM_OUT,__zoomOut__)
@@ -263,17 +263,21 @@
 		const TTrackInfo &rti=*(TTrackInfo *)pTrackInfo;
 		int nBytesOnTrack=0;
 		for( TSector s=rti.nSectors; s>0; nBytesOnTrack+=rti.bufferLength[--s] );
+		bool outdated=false;
+		const TTrackLength tmp( rti.nSectors, nBytesOnTrack );
+		if (longestTrack<tmp){
+			longestTrack=tmp;
+			outdated|=!showTimed;
+		}
 		const int nNanosecondsPerByte=IMAGE->EstimateNanosecondsPerOneByte();
 		const int nNanosecondsOnTrack =	rti.nSectors>0
 										? rti.bufferStartNanoseconds[rti.nSectors-1]+rti.bufferLength[rti.nSectors-1]*nNanosecondsPerByte
 										: 0;
-		const TTrackLength tmp( rti.nSectors, nBytesOnTrack );
-		if (!showTimed && longestTrack<tmp
-			||
-			showTimed && longestTrackNanoseconds<nNanosecondsOnTrack
-		){
-			longestTrack=tmp;
+		if (longestTrackNanoseconds<nNanosecondsOnTrack){
 			longestTrackNanoseconds=nNanosecondsOnTrack;
+			outdated|=showTimed;
+		}
+		if (outdated)
 			if (fitLongestTrackInWindow){
 				CRect rc;
 				GetClientRect(&rc);
@@ -282,9 +286,8 @@
 									: longestTrack.GetZoomFactorToFitWidth(rc.Width());
 				Invalidate();
 				return 0;
-			}
-			__updateLogicalDimensions__();
-		}
+			}else
+				__updateLogicalDimensions__();
 		// - drawing
 		if (scanner.params.x==(TTrack)trackNumber){
 			// received scanned information of expected Track to draw

@@ -239,6 +239,7 @@
 #define ID_VARIABLE                     40280
 #define ID_INSTRUCTION                  40281
 #define ID_COMMENT                      40283
+#define ID_TRACKMAP_TIMING              40285
 #define ID_REFRESH                      40290
 #define ID_Y                            58113
 #define ID_W                            58114
