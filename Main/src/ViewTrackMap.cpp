@@ -23,7 +23,7 @@
 		: tab( IDR_TRACKMAP, IDR_TRACKMAP, ID_CYLINDER, _dos, this )
 		, displayType(TDisplayType::STATUS) , showSectorNumbers(false) , showTimed(false) , fitLongestTrackInWindow(false) , showSelectedFiles(_dos->pFileManager!=nullptr) , iScrollX(0) , iScrollY(0) , scanner(this)
 		, fileSelectionColor( app.GetProfileInt(INI_TRACKMAP,INI_FILE_SELECTION_COLOR,::GetSysColor(COLOR_ACTIVECAPTION)) )
-		, longestTrack(0,0)
+		, longestTrack(0,0) , longestTrackNanoseconds(0)
 		, zoomLengthFactor(3) {
 		::ZeroMemory( rainbowBrushes, sizeof(rainbowBrushes) );
 	}
@@ -81,7 +81,7 @@
 
 	inline
 	CTrackMapView::TTrackLength CTrackMapView::TTrackLength::FromTime(int nNanosecondsTotal,int nNanosecondsPerByte){
-		return TTrackLength( 1, nNanosecondsTotal/nNanosecondsPerByte );
+		return TTrackLength( 0, nNanosecondsTotal/nNanosecondsPerByte );
 	}
 
 	inline
@@ -92,11 +92,12 @@
 
 	inline
 	int CTrackMapView::TTrackLength::GetPixelCount(BYTE zoomFactor) const{
-		return	(  SECTOR1_X + (nBytes>>zoomFactor) + nSectors*SECTOR_MARGIN  )*Utils::LogicalUnitScaleFactor;
+		return (nBytes>>zoomFactor) + nSectors*SECTOR_MARGIN;
 	}
 
 	BYTE CTrackMapView::TTrackLength::GetZoomFactorToFitWidth(int windowWidth) const{
 		BYTE zoomLengthFactor=0;
+		windowWidth=windowWidth/Utils::LogicalUnitScaleFactor-SECTOR1_X;
 		while (GetPixelCount(zoomLengthFactor)>windowWidth && CAN_ZOOM_OUT)
 			zoomLengthFactor++;
 		return zoomLengthFactor;
@@ -132,8 +133,8 @@
 			CSize(
 				Utils::LogicalUnitScaleFactor*(
 					showTimed
-					? TTrackLength::FromTime(longestTrackNanoseconds,IMAGE->EstimateNanosecondsPerOneByte()).GetPixelCount(zoomLengthFactor)
-					: longestTrack.GetPixelCount(zoomLengthFactor)
+					? SECTOR1_X + TTrackLength::FromTime(longestTrackNanoseconds,IMAGE->EstimateNanosecondsPerOneByte()).GetPixelCount(zoomLengthFactor) + SECTOR_MARGIN
+					: SECTOR1_X + longestTrack.GetPixelCount(zoomLengthFactor)
 				),
 				Utils::LogicalUnitScaleFactor*(
 					VIEW_PADDING*2+VIEW_HEADER_HEIGHT+IMAGE->GetTrackCount()*TRACK_HEIGHT
@@ -400,7 +401,48 @@
 		// - drawing TrackMap header
 		const HDC dc=*pDC;
 		const HGDIOBJ font0=::SelectObject(dc,Utils::CRideFont::StdBold);
-			::TabbedTextOut( dc, 0,VIEW_PADDING, _T("\tCylinder\tHead\tSectors"),-1, 3,Tabs, 0 );
+			::TabbedTextOut( dc, 0,VIEW_PADDING, _T("\tCylinder\tHead"),-1, 2,Tabs, 0 );
+			if (showTimed){
+				// . drawing horizontal line representing the timeline
+				const Utils::CRideFont &rFont=Utils::CRideFont::StdBold;
+				const POINT ptA={ SECTOR1_X, VIEW_PADDING+rFont.charHeight };
+				pDC->MoveTo(ptA);
+				const int nNanosecondsPerByte=IMAGE->EstimateNanosecondsPerOneByte();
+				const POINT ptZ={ ptA.x+TTrackLength::FromTime(longestTrackNanoseconds,nNanosecondsPerByte).GetPixelCount(zoomLengthFactor), ptA.y };
+				pDC->LineTo(ptZ);
+				// . determinining the primary granuality of the timeline
+				static const TCHAR TimePrefixes[]=_T("nnnuuummm"); // nano, micro, milli
+				TCHAR label[16];
+				int intervalBig=1, unitPrefix=0;
+				for( int ns=longestTrackNanoseconds; true; intervalBig*=10 ){
+					::wsprintf( label, _T("%d %cs"), ns, TimePrefixes[unitPrefix] );
+					if (rFont.GetTextSize(label).cx<TTrackLength::FromTime(intervalBig,nNanosecondsPerByte).GetPixelCount(zoomLengthFactor))
+						// the consecutive Labels won't overlap - adopting it
+						break;
+					else if (++unitPrefix%3==0)
+						ns/=1000;
+				}
+				// . drawing secondary time marks on the timeline
+				if (const int intervalSmall=intervalBig/10)
+					for( int ns=0; ns<longestTrackNanoseconds; ns+=intervalSmall ){
+						const int x=SECTOR1_X + TTrackLength::FromTime(ns,nNanosecondsPerByte).GetPixelCount(zoomLengthFactor);
+						pDC->MoveTo( x, ptA.y );
+						pDC->LineTo( x, ptA.y-4 );
+					}
+				// . drawing primary time marks on the timeline along with respective times
+				int k=1;
+				for( int i=unitPrefix/3; i--; k*=1000 );
+				for( int ns=0; ns<longestTrackNanoseconds; ns+=intervalBig ){
+					const int x=SECTOR1_X + TTrackLength::FromTime(ns,nNanosecondsPerByte).GetPixelCount(zoomLengthFactor);
+					pDC->MoveTo( x, ptA.y );
+					pDC->LineTo( x, ptA.y-7 );
+					::TextOut(	dc,
+								x, ptA.y-7-rFont.charHeight,
+								label,  ::wsprintf( label, _T("%d %cs"), ns/k, TimePrefixes[unitPrefix] )
+							);
+				}
+			}else
+				::TabbedTextOut( dc, 0,VIEW_PADDING, _T("\t\t\tSectors"),-1, 3,Tabs, 0 );
 		::SelectObject(dc,font0);
 		// - determining the range of Tracks to scan
 		const int iScrollY=GetScrollPos(SB_VERT)/Utils::LogicalUnitScaleFactor;
