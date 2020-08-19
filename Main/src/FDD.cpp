@@ -925,19 +925,6 @@ error:				switch (const TStdWinError err=::GetLastError()){
 			return 0;
 	}
 
-	int CFDD::EstimateNanosecondsPerOneByte() const{
-		// estimates and returns the number of Nanoseconds that represent a single Byte on the Medium
-		switch (floppyType){
-			case TMedium::FLOPPY_HD_350:
-				return FDD_NANOSECONDS_PER_DD_BYTE/2;
-			case TMedium::FLOPPY_DD_350:
-			case TMedium::FLOPPY_DD_525:
-				return FDD_NANOSECONDS_PER_DD_BYTE;
-			default:
-				return __super::EstimateNanosecondsPerOneByte();
-		}
-	}
-
 	void CFDD::__setWaitingForIndex__() const{
 		// sets waiting for the index pulse before executing the next command
 		LOG_ACTION(_T("void CFDD::__setWaitingForIndex__"));

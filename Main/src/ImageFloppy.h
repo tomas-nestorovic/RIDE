@@ -14,6 +14,8 @@
 		WORD __getUsableSectorLength__(BYTE sectorLengthCode) const;
 		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
 		std::unique_ptr<CSectorDataSerializer> CreateSectorDataSerializer(CHexaEditor *pParentHexaEditor) override sealed;
+		int EstimateNanosecondsPerOneByte() const override;
+		virtual void EstimateTrackTiming(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PINT startTimesNanoseconds) const;
 	};
 
 #endif // IMAGEFLOPPY_H

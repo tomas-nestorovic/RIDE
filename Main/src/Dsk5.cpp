@@ -270,9 +270,9 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				}
 				if (bufferLength)
 					*bufferLength++=__getSectorLength__(si);
-				if (startTimesNanoseconds)
-					*startTimesNanoseconds++=INT_MIN; // timing is not applicable for this kind of Image
 			}
+			if (startTimesNanoseconds)
+				EstimateTrackTiming( cyl, head, ti->nSectors, bufferId-ti->nSectors, bufferLength-ti->nSectors, startTimesNanoseconds );
 			if (pAvgGap3)
 				*pAvgGap3=ti->gap3;
 			return ti->nSectors;
