@@ -642,7 +642,7 @@
 	afx_msg void CTrackMapView::__toggleTiming__(){
 		// commanded to toggle timed display of Sectors
 		showTimed=!showTimed;
-		Invalidate(TRUE);
+		OnUpdate( nullptr, 0, nullptr );
 	}
 	afx_msg void CTrackMapView::__toggleTiming_updateUI__(CCmdUI *pCmdUI){
 		// projecting possibility of timed display of Sectors
