@@ -245,11 +245,11 @@
 
 	void CTrackMapView::TimesToPixels(TSector nSectors,PINT pInOutBuffer,PCWORD pInSectorLengths) const{
 		// converts times (in nanoseconds) in Buffer to pixels
-		const int nNanosecondsPerByte=IMAGE->EstimateNanosecondsPerOneByte();
-		if (showTimed)
+		if (showTimed){
+			const int nNanosecondsPerByte=IMAGE->EstimateNanosecondsPerOneByte();
 			for( TSector s=0; s<nSectors; s++ )
 				pInOutBuffer[s] =	SECTOR1_X + (pInOutBuffer[s]/nNanosecondsPerByte>>zoomLengthFactor);
-		else
+		}else
 			for( TSector s=0; s<nSectors; s++ )
 				pInOutBuffer[s] =	s>0
 									? pInOutBuffer[s-1]+(pInSectorLengths[s-1]>>zoomLengthFactor)+SECTOR_MARGIN
@@ -411,7 +411,7 @@
 				const POINT ptZ={ ptA.x+TTrackLength::FromTime(longestTrackNanoseconds,nNanosecondsPerByte).GetPixelCount(zoomLengthFactor), ptA.y };
 				pDC->LineTo(ptZ);
 				// . determinining the primary granuality of the timeline
-				static const TCHAR TimePrefixes[]=_T("nnnuuummm"); // nano, micro, milli
+				static const TCHAR TimePrefixes[]=_T("nnnµµµmmm"); // nano, micro, milli
 				TCHAR label[16];
 				int intervalBig=1, unitPrefix=0;
 				for( int ns=longestTrackNanoseconds; true; intervalBig*=10 ){
@@ -463,7 +463,7 @@
 		//nop (View destroyed by its owner)
 	}
 
-	void CTrackMapView::__updateStatusBarIfCursorOutsideAnySector__() const{
+	void CTrackMapView::ResetStatusBarMessage() const{
 		// updates the MainWindow's StatusBar when cursor isn't over any Sector
 		CMainWindow::__setStatusBarText__(nullptr);
 	}
@@ -478,7 +478,7 @@
 		SetScrollPos( SB_HORZ, iScrollX, FALSE );
 		SetScrollPos( SB_VERT, iScrollY, FALSE );
 		// - updating the MainWindow's StatusBar
-		__updateStatusBarIfCursorOutsideAnySector__();
+		ResetStatusBarMessage();
 		// - creating RainbowBrushes, see "Using out-of-phase sine waves to make rainbows" at http://krazydad.com/tutorials/makecolors.php
 		for( int t=TRACK_MAP_COLORS_COUNT; t--; )
 			rainbowBrushes[t]=(HBRUSH)CBrush( RGB(	128 + 127*sin( (float)2*M_PI*t/TRACK_MAP_COLORS_COUNT ),
@@ -503,7 +503,7 @@
 								: longestTrack.GetZoomFactorToFitWidth(cx);
 	}
 
-	bool CTrackMapView::__getPhysicalAddressFromPoint__(POINT point,TPhysicalAddress &rOutChs,BYTE &rnOutSectorsToSkip){
+	bool CTrackMapView::GetPhysicalAddressAndNanosecondsFromPoint(POINT point,TPhysicalAddress &rOutChs,BYTE &rnOutSectorsToSkip,int &rOutNanoseconds){
 		// True <=> given actual scroll position, the Point falls into a Sector, otherwise False
 		CClientDC dc(this);
 		OnPrepareDC(&dc);
@@ -511,9 +511,16 @@
 		point.y-=TRACK0_Y;
 		if (point.y>=0 && point.y<IMAGE->GetTrackCount()*TRACK_HEIGHT){
 			// cursor over a Track
+			// . estimating the time on timeline at which the cursor points to
+			if (showTimed){
+				const int ns=((point.x-SECTOR1_X)<<zoomLengthFactor)*IMAGE->EstimateNanosecondsPerOneByte();
+				rOutNanoseconds= ns<=longestTrackNanoseconds ? ns : -1;
+			}else
+				rOutNanoseconds=-1;
+			// . determining the Sector on which the cursor hovers
 			const TTrack track=point.y/TRACK_HEIGHT;
 			const THead nSides=__getNumberOfFormattedSidesInImage__(IMAGE);
-			const div_t d=div((int)track,nSides);
+			const div_t d=div(track,nSides);
 			TSectorId bufferId[(TSector)-1];
 			WORD bufferLength[(TSector)-1];
 			int bufferStarts[(TSector)-1];
@@ -533,33 +540,44 @@
 
 	afx_msg void CTrackMapView::OnMouseMove(UINT nFlags,CPoint point){
 		// cursor moved over this view
-		TPhysicalAddress chs; BYTE nSectorsToSkip;
-		if (__getPhysicalAddressFromPoint__(point,chs,nSectorsToSkip)){
+		TPhysicalAddress chs; BYTE nSectorsToSkip; int nanoseconds;
+		const bool cursorOverSector=GetPhysicalAddressAndNanosecondsFromPoint(point,chs,nSectorsToSkip,nanoseconds);
+		TCHAR buf[80], *p=buf; *p='\0';
+		if (showTimed && nanoseconds>=0){
+			// cursor in timeline range
+			float unit; TCHAR unitPrefix;
+			if (nanoseconds>TIME_MILLI(1))
+				unit=nanoseconds/1e6f, unitPrefix='m';
+			else if (nanoseconds>TIME_MICRO(1))
+				unit=nanoseconds/1e3f, unitPrefix='µ';
+			else
+				unit=nanoseconds, unitPrefix='n';
+			p+=_stprintf( buf, _T("T = approx. %.2f %cs%c  "), unit, unitPrefix, cursorOverSector?',':'\0' );
+		}
+		if (cursorOverSector){
 			// cursor over a Sector
-			TCHAR buf[40];
-			::wsprintf( buf, _T("Tr%d, %s: "), chs.GetTrackNumber(__getNumberOfFormattedSidesInImage__(IMAGE)), (LPCTSTR)chs.sectorId.ToString() );
+			::wsprintf( p, _T("Tr%d, %s: "), chs.GetTrackNumber(__getNumberOfFormattedSidesInImage__(IMAGE)), (LPCTSTR)chs.sectorId.ToString() );
 			CDos::TSectorStatus status;
 			DOS->GetSectorStatuses( chs.cylinder, chs.head, 1, &chs.sectorId, &status );
 			switch (status){
-				case CDos::TSectorStatus::SYSTEM	: ::lstrcat(buf,_T("System")); break;
-				case CDos::TSectorStatus::UNAVAILABLE: ::lstrcat(buf,_T("Unavailable")); break;
-				case CDos::TSectorStatus::SKIPPED	: ::lstrcat(buf,_T("Skipped")); break;
-				case CDos::TSectorStatus::BAD		: ::lstrcat(buf,_T("Bad")); break;
-				case CDos::TSectorStatus::OCCUPIED	: ::lstrcat(buf,_T("Occupied")); break;
-				case CDos::TSectorStatus::RESERVED	: ::lstrcat(buf,_T("Reserved")); break;
-				case CDos::TSectorStatus::EMPTY		: ::lstrcat(buf,_T("Empty")); break;
-				default								: ::lstrcat(buf,_T("Unknown")); break;
+				case CDos::TSectorStatus::SYSTEM	: ::lstrcat(p,_T("System")); break;
+				case CDos::TSectorStatus::UNAVAILABLE: ::lstrcat(p,_T("Unavailable")); break;
+				case CDos::TSectorStatus::SKIPPED	: ::lstrcat(p,_T("Skipped")); break;
+				case CDos::TSectorStatus::BAD		: ::lstrcat(p,_T("Bad")); break;
+				case CDos::TSectorStatus::OCCUPIED	: ::lstrcat(p,_T("Occupied")); break;
+				case CDos::TSectorStatus::RESERVED	: ::lstrcat(p,_T("Reserved")); break;
+				case CDos::TSectorStatus::EMPTY		: ::lstrcat(p,_T("Empty")); break;
+				default								: ::lstrcat(p,_T("Unknown")); break;
 			}
-			CMainWindow::__setStatusBarText__(buf);
-		}else
-			__updateStatusBarIfCursorOutsideAnySector__();
+		}	
+		CMainWindow::__setStatusBarText__(buf);
 	}
 
 	afx_msg void CTrackMapView::OnLButtonUp(UINT nFlags,CPoint point){
 		// left mouse button released
 		if (app.IsInGodMode() && !IMAGE->IsWriteProtected()){
-			TPhysicalAddress chs; BYTE nSectorsToSkip;
-			if (__getPhysicalAddressFromPoint__(point,chs,nSectorsToSkip)){
+			TPhysicalAddress chs; BYTE nSectorsToSkip; int nanoseconds;
+			if (GetPhysicalAddressAndNanosecondsFromPoint(point,chs,nSectorsToSkip,nanoseconds)){
 				// cursor over a Sector
 				WORD w; TFdcStatus sr;
 				IMAGE->GetSectorData( chs, nSectorsToSkip, false, &w, &sr );

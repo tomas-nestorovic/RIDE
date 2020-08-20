@@ -48,8 +48,8 @@
 		void OnDraw(CDC *pDC) override;
 		void PostNcDestroy() override;
 		void TimesToPixels(TSector nSectors,PINT pInOutBuffer,PCWORD pInSectorLengths) const;
-		bool __getPhysicalAddressFromPoint__(POINT point,TPhysicalAddress &rOutChs,BYTE &rnOutSectorsToSkip);
-		void __updateStatusBarIfCursorOutsideAnySector__() const;
+		bool GetPhysicalAddressAndNanosecondsFromPoint(POINT point,TPhysicalAddress &rOutChs,BYTE &rnOutSectorsToSkip,int &rOutNanoseconds);
+		void ResetStatusBarMessage() const;
 		void __updateLogicalDimensions__();
 		afx_msg int OnCreate(LPCREATESTRUCT lpcs);
 		afx_msg void OnSize(UINT nType,int cx,int cy);
