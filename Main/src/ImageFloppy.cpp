@@ -43,6 +43,20 @@
 			return officialLength;
 	}
 
+	TFormat::TLengthCode CFloppyImage::GetMaximumSectorLengthCode() const{
+		// returns the maximum LengthCode given the actual FloppyType
+		switch (floppyType){
+			case TMedium::FLOPPY_DD_350:
+			case TMedium::FLOPPY_DD_525:
+				return TFormat::LENGTHCODE_4096;
+			case TMedium::FLOPPY_HD_350:
+				return TFormat::LENGTHCODE_8192;
+			default:
+				ASSERT(FALSE);
+				return TFormat::LENGTHCODE_128;
+		}
+	}
+
 	TStdWinError CFloppyImage::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();

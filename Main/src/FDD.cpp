@@ -83,7 +83,7 @@
 					if (fdcStatus.reg2 & FDC_ST2_CRC_ERROR_IN_DATA)
 						if ( err=fdd->__setTimeBeforeInterruptingTheFdc__(length) )
 							return err;
-					if (id.lengthCode>fdd->__getMaximumSectorLengthCode__())
+					if (id.lengthCode>fdd->GetMaximumSectorLengthCode())
 						fdd->__setWaitingForIndex__();
 					// . writing Sector
 					FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM, pit->head, id.cylinder,id.side,id.sector,id.lengthCode, id.sector+1, 1, 0xff };
@@ -250,7 +250,7 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 		// - choosing the Sector ID under which the whole Track RawContent will appear
 		rawContent.id.cylinder=cyl, rawContent.id.side=head;
 		for( rawContent.id.sector=0; numbersTaken[rawContent.id.sector]; rawContent.id.sector++ );
-		rawContent.length128=__getOfficialSectorLength__( rawContent.id.lengthCode=1+fdd->__getMaximumSectorLengthCode__() ); // "1+" = for the Sector to cover the whole Track
+		rawContent.length128=__getOfficialSectorLength__( rawContent.id.lengthCode=1+fdd->GetMaximumSectorLengthCode() ); // "1+" = for the Sector to cover the whole Track
 	}
 
 	CFDD::TInternalTrack::~TInternalTrack(){
@@ -1844,11 +1844,6 @@ autodetermineLatencies:		// automatic determination of write latency values
 		return __showSettingDialog__() ? ERROR_SUCCESS : LOG_ERROR(ERROR_CANCELLED);
 	}
 
-	BYTE CFDD::__getMaximumSectorLengthCode__() const{
-		// returns the maximum LengthCode given the actual FloppyType
-		return 5+(floppyType==TMedium::FLOPPY_HD_350);
-	}
-
 	static BYTE ReportSectorVerificationError(RCPhysicalAddress chs){
 		TCHAR buf[100],sug[480];
 		::wsprintf(
@@ -1960,7 +1955,7 @@ error:				return LOG_ERROR(::GetLastError());
 			CUSTOM
 		} formatStyle;
 		const BYTE referenceLengthCode=bufferId->lengthCode;
-		if (nSectors==1 && referenceLengthCode>__getMaximumSectorLengthCode__())
+		if (nSectors==1 && referenceLengthCode>GetMaximumSectorLengthCode())
 			formatStyle=TFormatStyle::ONE_LONG_SECTOR;
 		else{
 			formatStyle=TFormatStyle::STANDARD; // assumption
@@ -2036,7 +2031,7 @@ formatStandardWay:
 				__unformatInternalTrack__(cyl,head);
 				// . verifying Track surface (if requested to) by writing maximum number of known Bytes to it and trying to read them back
 				if (params.verifyFormattedTracks){
-					const TPhysicalAddress chs={ cyl, head, {0,0,0,__getMaximumSectorLengthCode__()+1} };
+					const TPhysicalAddress chs={ cyl, head, {0,0,0,GetMaximumSectorLengthCode()+1} };
 					if (__formatToOneLongVerifiedSector__( chs, fillerByte )!=ERROR_SUCCESS)
 						goto error;
 				}

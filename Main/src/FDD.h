@@ -114,7 +114,6 @@
 		void __setSecondsBeforeTurningMotorOff__(BYTE nSeconds) const;
 		LPCTSTR __getControllerType__() const;
 		bool __showSettingDialog__();
-		BYTE __getMaximumSectorLengthCode__() const;
 		PInternalTrack __getScannedTrack__(TCylinder cyl,THead head) const;
 		PInternalTrack __scanTrack__(TCylinder cyl,THead head);
 		void __setWaitingForIndex__() const;
