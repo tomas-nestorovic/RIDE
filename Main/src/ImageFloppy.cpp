@@ -34,7 +34,7 @@
 
 
 
-	WORD CFloppyImage::__getUsableSectorLength__(BYTE sectorLengthCode) const{
+	WORD CFloppyImage::GetUsableSectorLength(BYTE sectorLengthCode) const{
 		// determines and returns usable portion of a Sector based on supplied LenghtCode and actual FloppyType
 		const WORD officialLength=__getOfficialSectorLength__(sectorLengthCode);
 		if ((floppyType&TMedium::FLOPPY_ANY_DD)!=0 || floppyType==TMedium::UNKNOWN) // Unknown = if FloppyType not set (e.g. if DOS Unknown), the floppy is by default considered as a one with the lowest capacity

@@ -11,7 +11,7 @@
 
 		CFloppyImage(PCProperties properties,bool hasEditableSettings);
 
-		WORD __getUsableSectorLength__(BYTE sectorLengthCode) const;
+		WORD GetUsableSectorLength(BYTE sectorLengthCode) const;
 		TFormat::TLengthCode GetMaximumSectorLengthCode() const;
 		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
 		std::unique_ptr<CSectorDataSerializer> CreateSectorDataSerializer(CHexaEditor *pParentHexaEditor) override sealed;

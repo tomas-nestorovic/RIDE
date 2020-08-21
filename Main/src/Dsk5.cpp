@@ -113,7 +113,7 @@
 			return si->rev5_sectorLength+0x7f & 0xff80; // rounding up to whole multiples of 128
 		else
 			return	si->__hasValidSectorLengthCode__() // if Code valid ...
-					? __getUsableSectorLength__(si->sectorLengthCode) // ... it's possible to determine UsableLength (e.g. for 2DD floppy 0..6144 Bytes)
+					? GetUsableSectorLength(si->sectorLengthCode) // ... it's possible to determine UsableLength (e.g. for 2DD floppy 0..6144 Bytes)
 					: 0; // ... otherwise zero length
 	}
 

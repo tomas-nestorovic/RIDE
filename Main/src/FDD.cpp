@@ -207,7 +207,7 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 		, nSectors(_nSectors) , sectors((TSectorInfo *)::ZeroMemory(::calloc(_nSectors,sizeof(TSectorInfo)),_nSectors*sizeof(TSectorInfo))) {
 		TInternalTrack::TSectorInfo *psi=sectors;
 		for( BYTE s=0; s<nSectors; psi++->seqNum=s++ ){
-			psi->length=fdd->__getUsableSectorLength__(( psi->id=*bufferId++ ).lengthCode );
+			psi->length=fdd->GetUsableSectorLength(( psi->id=*bufferId++ ).lengthCode );
 			if (sectorStartsNanoseconds>(PCINT)0x100) // if start times provided (that is, if no Gap3 information from <0;255> Bytes provided) ...
 				psi->startNanoseconds=*sectorStartsNanoseconds++; // ... they are used
 			else // if no start times provided (that is, if just Gap3 information from <0;255> Bytes provided) ...
@@ -328,7 +328,7 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 			// . saving RawContent
 			const TSectorInfo si={	// if uncommented, revise the correspondence to actual structure members
 									rawContent.id,
-									fdd->__getUsableSectorLength__(rawContent.id.lengthCode),
+									fdd->GetUsableSectorLength(rawContent.id.lengthCode),
 									(PSectorData)pData,
 									TFdcStatus(
 										FDC_ST1_DATA_ERROR,
@@ -355,7 +355,7 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 			}
 Utils::Information("--- EVERYTHING OK ---");
 			// . verifying that the first Sector on Track is reachable (i.e. hasn't been rewritten by the ID, see above)
-			if (const TFdcStatus fdcStatus=fdd->__bufferSectorData__(chs,fdd->__getUsableSectorLength__(chs.sectorId.lengthCode)))
+			if (const TFdcStatus fdcStatus=fdd->__bufferSectorData__(chs,fdd->GetUsableSectorLength(chs.sectorId.lengthCode)))
 				if (fdcStatus.reg1 & FDC_ST1_NO_DATA) // if first Sector on Track not reachable ...
 					continue; // ... it suffices to repeat the saving cycle
 					
@@ -898,7 +898,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 				if (bufferId)
 					*bufferId++=pit->rawContent.id;
 				if (bufferLength)
-					*bufferLength++=__getUsableSectorLength__(pit->rawContent.id.lengthCode);
+					*bufferLength++=GetUsableSectorLength(pit->rawContent.id.lengthCode);
 				if (startTimesNanoseconds)
 					*startTimesNanoseconds++=0; // not applicable, so "some" sensible value
 			}
@@ -1053,13 +1053,13 @@ error:				switch (const TStdWinError err=::GetLastError()){
 							TInternalTrack::TRawContent::__generateSectorId__(pData,pid,&TFdcStatus::WithoutError);
 							TInternalTrack::TRawContent::__generateGap__(pData,22);
 							TInternalTrack::TRawContent::__generateSectorDefaultData__( pData, TDataAddressMark::DATA_RECORD, 0, 0, &TFdcStatus::WithoutError );
-							::memcpy( pData-sizeof(TCrc16), dataBuffer, __getUsableSectorLength__(pit->rawContent.id.lengthCode) ); // assumed that UsableSectorLength < OfficialSectorLength (and thus not written outside allocated memory)
+							::memcpy( pData-sizeof(TCrc16), dataBuffer, GetUsableSectorLength(pit->rawContent.id.lengthCode) ); // assumed that UsableSectorLength < OfficialSectorLength (and thus not written outside allocated memory)
 						}//else
 							//return nullptr; // commented out as it holds that "pid->rawContent.data==Null"
 					}
 					bufferId++, nSectors--;
 					*outBufferData++=pit->rawContent.data;
-					*outBufferLengths++=__getUsableSectorLength__(pit->rawContent.id.lengthCode);
+					*outBufferLengths++=GetUsableSectorLength(pit->rawContent.id.lengthCode);
 					*outFdcStatuses++=TFdcStatus::WithoutError;
 				}
 			//*/
@@ -1337,7 +1337,6 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 	#pragma pack(1)
 	struct TLatencyParams sealed{
 		CFDD *const fdd;
-		const TMedium::TType floppyType;
 		const WORD nsAccuracy; // accuracy in nanoseconds
 		const BYTE nRepeats;
 		TCylinder cyl;	// healthy Track to use for computation of the latencies
@@ -1346,9 +1345,8 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 		int out1ByteLatency;		// nanoseconds
 		int outGap3Latency;			// nanoseconds
 
-		TLatencyParams(CFDD *fdd,TMedium::TType floppyType,WORD nsAccuracy,BYTE nRepeats)
+		TLatencyParams(CFDD *fdd,WORD nsAccuracy,BYTE nRepeats)
 			: fdd(fdd)
-			, floppyType(floppyType)
 			, nsAccuracy(nsAccuracy) , nRepeats(nRepeats)
 			, cyl(0) , head(0) // a healthy Track will be found when determining the controller latency
 			, outControllerLatency(0) , out1ByteLatency(0) , outGap3Latency(0) {
@@ -1376,7 +1374,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 			TInterruption(const PBackgroundActionCancelable pAction,TLatencyParams &lp)
 				// ctor
 				: pAction(pAction)
-				, fdd(lp.fdd) , sectorLength(lp.floppyType==TMedium::FLOPPY_HD_350?8192:4096)
+				, fdd(lp.fdd) , sectorLength(lp.fdd->__getOfficialSectorLength__(lp.fdd->GetMaximumSectorLengthCode()))
 				, rCyl(lp.cyl) , rHead(lp.head) // a healthy Track yet to be found
 				, sectorDataToWrite( ::VirtualAlloc(nullptr,SECTOR_LENGTH_MAX,MEM_COMMIT,PAGE_READWRITE) )
 				, nsAccuracy(lp.nsAccuracy) , nNanoseconds(0) {
@@ -1725,7 +1723,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 											case 1: floppyType=TMedium::FLOPPY_DD_350; break;
 											case 2: floppyType=TMedium::FLOPPY_HD_350; break;
 										}
-										TLatencyParams lp( fdd, floppyType, TIME_MICRO(1+d.usAccuracy), 1+d.nRepeats );
+										TLatencyParams lp( fdd, TIME_MICRO(1+d.usAccuracy), 1+d.nRepeats );
 										bmac.AddAction( __determineControllerAndOneByteLatency_thread__, &lp, _T("Determining controller latencies") );
 										bmac.AddAction( __determineGap3Latency_thread__, &lp, _T("Determining minimal Gap3 size") );
 									// : backing up existing InternalTracks and performing the multi-action
@@ -1878,7 +1876,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 				LOG_ACTION(_T("format verification"));
 				// : writing FillerByte as test data
 				const FD_ID_HEADER &rih=fmt.Headers[0];
-				WORD sectorBytes=__getUsableSectorLength__(rih.size);
+				WORD sectorBytes=GetUsableSectorLength(rih.size);
 				__setTimeBeforeInterruptingTheFdc__( sectorBytes, fddHead.profile.controllerLatency+1*fddHead.profile.oneByteLatency ); // "X*" = reserve to guarantee that really all test data written
 				FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM|FD_OPTION_SK, chs.head, rih.cyl,rih.head,rih.sector,rih.size, rih.sector+1, 1, 0xff };
 				{	LOG_ACTION(_T("DeviceIoControl IOCTL_FDCMD_WRITE_DATA"));
