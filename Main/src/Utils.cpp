@@ -730,25 +730,54 @@ namespace Utils{
 		::SetWindowPos( hCtrl, 0, pt.x+dx, pt.y+dy, 0, 0, SWP_NOZORDER|SWP_NOSIZE );
 	}
 
-	PTCHAR CRideDialog::GetDialogTemplateItemText(UINT idDlgRes,WORD idItem,PTCHAR chars,WORD nCharsMax){
-		// determines and returns the length of the text associated with given dialog item
-		PTCHAR result=nullptr; // assumption (text can't be determined, e.g. because no such item exists)
-		if (const HRSRC hRes=::FindResource( app.m_hInstance, MAKEINTRESOURCE(idDlgRes), RT_DIALOG ))
-			if (const HGLOBAL gRes=::LoadResource( app.m_hInstance, hRes )){
-				if (const LPCDLGTEMPLATE lpRes=(LPCDLGTEMPLATE)::LockResource( gRes )){
-					class CTmpDlg sealed:public CDialog{
-					public:
-						CTmpDlg(LPCDLGTEMPLATE lpRes){
-							CreateDlgIndirect( lpRes, nullptr, app.m_hInstance );
-						}
-					} d(lpRes);
-					d.GetDlgItemText( idItem, chars, nCharsMax );
-					result=chars;
-					::UnlockResource(gRes);
-				}
-				::FreeResource( gRes );
+	class CTempDlg sealed:public CDialog{
+		const HRSRC hRes;
+		const HGLOBAL gRes;
+		const LPCDLGTEMPLATE lpRes;
+	public:
+		CTempDlg(UINT idDlgRes)
+			// ctor
+			: hRes(
+				::FindResource( app.m_hInstance, MAKEINTRESOURCE(idDlgRes), RT_DIALOG )		)
+			, gRes(
+				hRes!=nullptr
+				? ::LoadResource( app.m_hInstance, hRes )
+				: nullptr	)
+			, lpRes(
+				(LPCDLGTEMPLATE)::LockResource( gRes )	) {
+			if (lpRes)
+				CreateDlgIndirect( lpRes, nullptr, app.m_hInstance );
+		}
+
+		~CTempDlg(){
+			// dtor
+			if (gRes){
+				::UnlockResource(gRes);
+				::FreeResource(gRes);
 			}
-		return result;
+		}
+
+		operator bool() const{
+			return m_hWnd!=0;
+		}
+	};
+
+	LPCTSTR CRideDialog::GetDialogTemplateCaptionText(UINT idDlgRes,PTCHAR chars,WORD nCharsMax){
+		// in given Dialog resource retrieves the caption associated with that Dialog
+		if (const CTempDlg d=idDlgRes){
+			d.GetWindowText( chars, nCharsMax );
+			return chars;
+		}else
+			return nullptr;
+	}
+
+	LPCTSTR CRideDialog::GetDialogTemplateItemText(UINT idDlgRes,WORD idItem,PTCHAR chars,WORD nCharsMax){
+		// in given Dialog resource finds the item with specified ID and retrieves the text associated with that item
+		if (const CTempDlg d=idDlgRes){
+			d.GetDlgItemText( idItem, chars, nCharsMax );
+			return chars;
+		}else
+			return nullptr;
 	}
 
 	#define BRACKET_CURLY_FONT_SIZE	12

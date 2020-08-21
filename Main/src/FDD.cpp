@@ -1849,12 +1849,12 @@ autodetermineLatencies:		// automatic determination of write latency values
 		return 5+(floppyType==TMedium::FLOPPY_HD_350);
 	}
 
-	static BYTE __reportSectorVerificationError__(RCPhysicalAddress chs){
-		CDialog d( IDR_DOS_FORMAT );
-		d.ShowWindow(SW_HIDE);
+	static BYTE ReportSectorVerificationError(RCPhysicalAddress chs){
 		TCHAR buf[100],sug[480];
-		d.GetWindowText( buf, sizeof(buf)/sizeof(TCHAR) );
-		::wsprintf( sug, _T("- Has the correct medium been set in the \"%s\" dialog?\n- For copy-protected schemes, simply retrying often helps."), buf );
+		::wsprintf(
+			sug, _T("- Has the correct medium been set in the \"%s\" dialog?\n- For copy-protected schemes, simply retrying often helps."),
+			Utils::CRideDialog::GetDialogTemplateCaptionText( IDR_DOS_FORMAT, buf, sizeof(buf)/sizeof(TCHAR) )
+		);
 		::wsprintf( buf, _T("Track %d verification failed for sector with %s"), chs.GetTrackNumber(2), (LPCTSTR)chs.sectorId.ToString() );
 		return Utils::AbortRetryIgnore( buf, ::GetLastError(), MB_DEFBUTTON2, sug );
 	}
@@ -1899,7 +1899,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 					if (::GetLastError()==ERROR_FLOPPY_ID_MARK_NOT_FOUND) // this is an error for which it usually suffices ...
 						continue; // ... to repeat the formatting cycle
 					else
-						switch (__reportSectorVerificationError__(chs)){
+						switch (ReportSectorVerificationError(chs)){
 							case IDABORT:	return LOG_ERROR(ERROR_CANCELLED);
 							case IDRETRY:	continue;
 							case IDIGNORE:	break;
@@ -2008,7 +2008,7 @@ formatStandardWay:
 					for( TSector n=0; n<nSectors; n++ ){
 						const TPhysicalAddress chs={ cyl, head, bufferId[n] };
 						if (!statuses[n].IsWithoutError())
-							switch (__reportSectorVerificationError__(chs)){
+							switch (ReportSectorVerificationError(chs)){
 								case IDABORT:	return LOG_ERROR(ERROR_CANCELLED);
 								case IDRETRY:	goto formatStandardWay;
 								case IDIGNORE:	break;
@@ -2181,7 +2181,7 @@ formatCustomWay:
 						TFdcStatus sr;
 						__bufferSectorData__( chs, bufferLength[n], &it, n, &sr );
 						if (bufferFdcStatus[n].DescribesMissingDam()^sr.DescribesMissingDam())
-							switch (__reportSectorVerificationError__(chs)){
+							switch (ReportSectorVerificationError(chs)){
 								case IDABORT:	return LOG_ERROR(ERROR_CANCELLED);
 								case IDRETRY:	goto formatCustomWay;
 								case IDIGNORE:	break;
