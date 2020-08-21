@@ -272,7 +272,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 					*bufferLength++=__getSectorLength__(si);
 			}
 			if (startTimesNanoseconds)
-				EstimateTrackTiming( cyl, head, ti->nSectors, bufferId-ti->nSectors, bufferLength-ti->nSectors, startTimesNanoseconds );
+				EstimateTrackTiming( cyl, head, ti->nSectors, bufferId-ti->nSectors, bufferLength-ti->nSectors, ti->gap3, startTimesNanoseconds );
 			if (pAvgGap3)
 				*pAvgGap3=ti->gap3;
 			return ti->nSectors;

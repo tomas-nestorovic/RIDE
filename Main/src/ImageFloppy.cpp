@@ -342,9 +342,9 @@
 		}
 	}
 
-	void CFloppyImage::EstimateTrackTiming(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PINT startTimesNanoseconds) const{
+	void CFloppyImage::EstimateTrackTiming(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,BYTE gap3,PINT startTimesNanoseconds) const{
 		// given specified Track and Sectors that it contains, estimates the positions of these Sectors
-		const BYTE gap3= floppyType==TMedium::FLOPPY_DD_525 ? FDD_525_SECTOR_GAP3 : FDD_350_SECTOR_GAP3;
+		//const BYTE gap3= floppyType==TMedium::FLOPPY_DD_525 ? FDD_525_SECTOR_GAP3 : FDD_350_SECTOR_GAP3;
 		const int nNanosecondsPerByte=EstimateNanosecondsPerOneByte();
 		for( TSector s=0; s<nSectors; s++ )
 			if (s>0){
