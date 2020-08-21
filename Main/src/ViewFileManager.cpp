@@ -363,7 +363,7 @@
 		// - at least one File must be selected
 		if (!GetListCtrl().GetSelectedCount()) return;
 		// - if Image WriteProtected, no Files can be deleted
-		if (IMAGE->__reportWriteProtection__()) return;
+		if (IMAGE->ReportWriteProtection()) return;
 		// - deleting upon confirmation
 		if (Utils::QuestionYesNo( _T("Selected item(s) will be deleted.\n\nContinue?"), MB_DEFBUTTON2 )){
 			// . deleting
@@ -637,7 +637,7 @@
 	afx_msg void CFileManagerView::__createSubdirectory__(){
 		// initiates the creation of Subdirectory in current Directory
 		// - if Image WriteProtected, quit
-		if (IMAGE->__reportWriteProtection__()) return;
+		if (IMAGE->ReportWriteProtection()) return;
 		// - definition and instantiation of Dialog
 		class CNewSubdirectoryDialog sealed:public CDialog{
 			const PDos dos;

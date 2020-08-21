@@ -144,7 +144,7 @@
 	BOOL CDsk5::OnOpenDocument(LPCTSTR lpszPathName){
 		// True <=> Image opened successfully, otherwise False
 		CFile f;
-		if (!__openImageForReading__(lpszPathName,&f)) return FALSE;
+		if (!OpenImageForReading(lpszPathName,&f)) return FALSE;
 		// - if data shorter than an empty Image, resetting to empty Image
 		const WORD nDiskInfoBytesRead=f.Read(&diskInfo,sizeof(TDiskInfo));
 		if (!nDiskInfoBytesRead){
@@ -218,7 +218,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				return false;
 		#endif
 		CFile f;
-		if (!__openImageForWriting__(lpszPathName,&f)) return FALSE;
+		if (!OpenImageForWriting(lpszPathName,&f)) return FALSE;
 		f.Write(&diskInfo,sizeof(TDiskInfo));
 		const PTrackInfo *ppti=tracks;
 		if (params.rev5){

@@ -186,12 +186,12 @@
 		const bool hasEditableSettings;
 		bool writeProtected;
 
-		void __dump__() const;
-		void __patch__();
+		void Dump() const;
+		void Patch();
 		void OnCloseDocument() override sealed;
 	protected:
-		static bool __openImageForReading__(LPCTSTR fileName,CFile *f);
-		static bool __openImageForWriting__(LPCTSTR fileName,CFile *f);
+		static bool OpenImageForReading(LPCTSTR fileName,CFile *f);
+		static bool OpenImageForWriting(LPCTSTR fileName,CFile *f);
 
 		struct TExclusiveLocker sealed{
 			const PCImage image;
@@ -262,10 +262,10 @@
 		static CPtrList devices; // list of known Devices (registered in CRideApp::InitInstance)
 
 		static CImage *GetActive();
-		static PCProperties __determineTypeByExtension__(LPCTSTR extension);
-		static BYTE __populateComboBoxWithCompatibleMedia__(HWND hComboBox,WORD dosSupportedMedia,PCProperties imageProperties);
-		static TFormat::TLengthCode __getSectorLengthCode__(WORD sectorLength);
-		static WORD __getOfficialSectorLength__(BYTE sectorLengthCode);
+		static PCProperties DetermineTypeByExtension(LPCTSTR extension);
+		static BYTE PopulateComboBoxWithCompatibleMedia(HWND hComboBox,WORD dosSupportedMedia,PCProperties imageProperties);
+		static TFormat::TLengthCode GetSectorLengthCode(WORD sectorLength);
+		static WORD GetOfficialSectorLength(BYTE sectorLengthCode);
 
 		const PCProperties properties;
 		CMainWindow::CDockableToolBar toolbar;
@@ -301,8 +301,8 @@
 		virtual TStdWinError PresumeHealthyTrackStructure(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,BYTE gap3,BYTE fillerByte);
 		virtual TStdWinError UnformatTrack(TCylinder cyl,THead head)=0;
 		virtual std::unique_ptr<CSectorDataSerializer> CreateSectorDataSerializer(CHexaEditor *pParentHexaEditor)=0;
-		bool __reportWriteProtection__() const;
-		void __toggleWriteProtection__();
+		bool ReportWriteProtection() const;
+		void ToggleWriteProtection();
 		void SetPathName(LPCTSTR lpszPathName,BOOL bAddToMRU=TRUE) override;
 		BOOL CanCloseFrame(CFrameWnd* pFrame) override;
 	};

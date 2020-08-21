@@ -57,7 +57,7 @@
 		ON_WM_CREATE()
 		ON_WM_SIZE()
 		ON_WM_KILLFOCUS()
-		ON_COMMAND(ID_IMAGE_PROTECT,__toggleWriteProtection__)
+		ON_COMMAND(ID_IMAGE_PROTECT,ToggleWriteProtection)
 		ON_WM_DESTROY()
 	END_MESSAGE_MAP()
 
@@ -134,9 +134,9 @@
 		pCurrentlyShown=nullptr;
 	}
 
-	afx_msg void CCriticalSectorView::__toggleWriteProtection__(){
+	afx_msg void CCriticalSectorView::ToggleWriteProtection(){
 		// toggles Image's WriteProtection flag
-		IMAGE->__toggleWriteProtection__(); // "base"
+		IMAGE->ToggleWriteProtection(); // "base"
 		__updateLookOfControls__();
 	}
 

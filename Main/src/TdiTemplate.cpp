@@ -64,7 +64,7 @@
 		// - opening the requested document
 		const LPCTSTR extension=_tcsrchr(lpszPathName,'.');
 		const CImage::PCProperties p=	extension // recognizing file Image by its extension
-										? CImage::__determineTypeByExtension__(extension)
+										? CImage::DetermineTypeByExtension(extension)
 										: nullptr;
 		if (!p){
 			Utils::FatalError(_T("Unknown container to load."));

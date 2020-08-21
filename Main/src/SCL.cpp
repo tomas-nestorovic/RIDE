@@ -58,7 +58,7 @@
 		if (const CTRDOS503::PCBootSector boot=CTRDOS503::__getBootSector__(this)){
 			if (f.m_hFile!=CFile::hFileNull) // Image's underlying file doesn't exist if saving a fresh formatted Image
 				f.Close();
-			if (!__openImageForWriting__(lpszPathName,&f))
+			if (!OpenImageForWriting(lpszPathName,&f))
 				return FALSE;
 			// - saving Header
 			TSclHeader header;

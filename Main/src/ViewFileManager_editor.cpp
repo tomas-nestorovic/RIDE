@@ -143,7 +143,7 @@
 		if (CEditorBase::pSingleShown)
 			return;
 		// - Image mustn't be WriteProtected, otherwise quitting
-		if (IMAGE->__reportWriteProtection__())
+		if (IMAGE->ReportWriteProtection())
 			return;
 		// - at least one File must be selected
 		CListCtrl &lv=GetListCtrl();
@@ -225,7 +225,7 @@
 			// current DisplayMode is Report
 			if (!CEditorBase::pSingleShown && lpia->iSubItem>-1){
 				// !A&B; A = no Editor shown, B = double-clicked on File Information (column)
-				if (IMAGE->__reportWriteProtection__()) return; // if Image WriteProtected, informing and quitting
+				if (IMAGE->ReportWriteProtection()) return; // if Image WriteProtected, informing and quitting
 				const auto fileInfo=__fileInfoFromColumnId__(lpia->iSubItem);
 				if (!CreateFileInformationEditor(file, editedInformationId=fileInfo-informationList )){
 					TCHAR buf[200];

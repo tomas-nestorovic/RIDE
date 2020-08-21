@@ -94,7 +94,7 @@
 							return TCmdResult::DONE; // ... we are done (successfully)
 					// . inserting a blank Tape (by creating a new underlying physical file and opening it)
 					CFile( fileName, CFile::modeCreate|CFile::shareDenyRead|CFile::typeBinary ).Close(); // creating the underlying file on local disk
-					( CTape::pSingleInstance=new CTape(fileName,this,true) )->__toggleWriteProtection__(); // new Tape is not WriteProtected
+					( CTape::pSingleInstance=new CTape(fileName,this,true) )->ToggleWriteProtection(); // new Tape is not WriteProtected
 					return TCmdResult::DONE;
 				}else
 					return TCmdResult::DONE_REDRAW;

@@ -923,7 +923,7 @@
 			}
 			case ID_DOS_DEFRAGMENT:{
 				// defragmenting the disk
-				if (image->__reportWriteProtection__()) return TCmdResult::DONE;
+				if (image->ReportWriteProtection()) return TCmdResult::DONE;
 				const TGetFileSizeOptions gfs0=getFileSizeDefaultOption;
 					getFileSizeDefaultOption=TGetFileSizeOptions::SizeOnDisk; // during the defragmentation, File size is given by the number of Sectors in FatPath (as some Files lie about its size in their DirectoryEntries as part of copy-protection scheme)
 					if (const PBootSector boot=__getBootSector__())

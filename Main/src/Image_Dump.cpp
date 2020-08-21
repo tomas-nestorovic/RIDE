@@ -451,7 +451,7 @@ errorDuringWriting:			TCHAR buf[80];
 		return ERROR_SUCCESS;
 	}
 
-	void CImage::__dump__() const{
+	void CImage::Dump() const{
 		// dumps this Image to a chosen target
 		const PDos dos=GetActive()->dos;
 		// - defining the Dialog
@@ -485,7 +485,7 @@ errorDuringWriting:			TCHAR buf[80];
 					TMedium::TType mt=(TMedium::TType)ComboBox_GetItemData( hComboBox, ComboBox_GetCurSel(hComboBox) );
 				}else{
 					SetDlgItemText( ID_FILE, ELLIPSIS );
-					__populateComboBoxWithCompatibleMedia__( hMedium, 0, nullptr ); // if FileName not set, Medium cannot be determined
+					PopulateComboBoxWithCompatibleMedia( hMedium, 0, nullptr ); // if FileName not set, Medium cannot be determined
 				}
 				CComboBox cbMedium;
 				cbMedium.Attach(hMedium);
@@ -598,14 +598,14 @@ errorDuringWriting:			TCHAR buf[80];
 											case TMedium::FLOPPY_DD_350:
 											case TMedium::FLOPPY_HD_350:
 												// source Image is a floppy - enabling dumping to any kind of a floppy (motivation: some copy-protection schemes feature misleading information on the kind of floppy; e.g., "Teen Agent" [or "Agent mlicnak"] installation disk #2 and #3 are introduced as 2DD floppies while they really are HD!)
-												nCompatibleMedia=__populateComboBoxWithCompatibleMedia__(	GetDlgItem(ID_MEDIUM)->m_hWnd,
+												nCompatibleMedia=PopulateComboBoxWithCompatibleMedia(	GetDlgItem(ID_MEDIUM)->m_hWnd,
 																											dos->properties->supportedMedia&TMedium::FLOPPY_ANY,
 																											targetImageProperties
 																										);
 												break;
 											default:
 												// source Image is a hard-disk
-												nCompatibleMedia=__populateComboBoxWithCompatibleMedia__(	GetDlgItem(ID_MEDIUM)->m_hWnd,
+												nCompatibleMedia=PopulateComboBoxWithCompatibleMedia(	GetDlgItem(ID_MEDIUM)->m_hWnd,
 																											dos->formatBoot.mediumType,
 																											targetImageProperties
 																										);

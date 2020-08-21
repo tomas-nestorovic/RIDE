@@ -1123,7 +1123,7 @@
 			case ID_MSDOS_REMOVE_LONG_NAMES:{
 				// removing long File names
 				// . cannot proceed if Image is WriteProtected
-				if (image->__reportWriteProtection__())
+				if (image->ReportWriteProtection())
 					return TCmdResult::REFUSED;
 				// . defining the Dialog
 				class CLongFileNamesRemovalDialog sealed:public CDialog{

@@ -514,7 +514,7 @@
 			case ID_FILE_SHIFT_UP:{
 				// shifting selected Files "up" (i.e. towards the beginning of Tape)
 				if (!fileManager.m_hWnd) break; // giving up this command if FileManager not switched to
-				if (__reportWriteProtection__()) return TCmdResult::DONE;
+				if (ReportWriteProtection()) return TCmdResult::DONE;
 				const CListCtrl &lv=fileManager.GetListCtrl();
 				short iPrevSelected=-1;
 				for( POSITION pos=lv.GetFirstSelectedItemPosition(); pos; ){
@@ -535,7 +535,7 @@
 			case ID_FILE_SHIFT_DOWN:{
 				// shifting selected Files "down" (i.e. towards the end of Tape)
 				if (!fileManager.m_hWnd) break; // giving up this command if FileManager not switched to
-				if (__reportWriteProtection__()) return TCmdResult::DONE;
+				if (ReportWriteProtection()) return TCmdResult::DONE;
 				// . reversing the list of Selected Files
 				const CListCtrl &lv=fileManager.GetListCtrl();
 				CFileManagerView::TFileList selectedIndices;
@@ -559,7 +559,7 @@
 			case ID_COMPUTE_CHECKSUM:{
 				// recomputes the Checksum for selected Files
 				if (!fileManager.m_hWnd) break; // giving up this command if FileManager not switched to
-				if (__reportWriteProtection__()) return TCmdResult::DONE;
+				if (ReportWriteProtection()) return TCmdResult::DONE;
 				const CListCtrl &lv=fileManager.GetListCtrl();
 				for( POSITION pos=lv.GetFirstSelectedItemPosition(); pos; ){
 					const PTapeFile tf=fileManager.files[lv.GetNextSelectedItem(pos)];

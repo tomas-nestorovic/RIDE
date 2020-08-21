@@ -884,7 +884,7 @@
 			case ID_FILE_SHIFT_UP:{
 				// shifting selected Files "up" (i.e. towards the beginning of the Directory)
 				if (!fileManager.m_hWnd) break; // giving up this command if FileManager not switched to
-				if (image->__reportWriteProtection__()) return TCmdResult::DONE;
+				if (image->ReportWriteProtection()) return TCmdResult::DONE;
 				const auto pdt=BeginDirectoryTraversal(currentDir);
 				if (currentDir!=ZX_DIR_ROOT) // skipping first DirectoryEntry
 					pdt->AdvanceToNextEntry();
@@ -918,7 +918,7 @@
 			case ID_FILE_SHIFT_DOWN:{
 				// shifting selected Files "down" (i.e. towards the end of the Directory)
 				if (!fileManager.m_hWnd) break; // giving up this command if FileManager not switched to
-				if (image->__reportWriteProtection__()) return TCmdResult::DONE;
+				if (image->ReportWriteProtection()) return TCmdResult::DONE;
 				CFileManagerView::TFileList selectedFiles;
 				PFile nextSelected=nullptr;
 				for( POSITION pos=fileManager.GetLastSelectedFilePosition(); pos; ){
@@ -944,7 +944,7 @@
 			case ID_COMPUTE_CHECKSUM:
 				// recomputes the Checksum for selected Directories
 				if (!fileManager.m_hWnd) break; // giving up this command if FileManager not switched to
-				if (image->__reportWriteProtection__()) return TCmdResult::DONE;
+				if (image->ReportWriteProtection()) return TCmdResult::DONE;
 				for( POSITION pos=fileManager.GetFirstSelectedFilePosition(); pos; ){
 					const auto slot=(CDirsSector::PSlot)fileManager.GetNextSelectedFile(pos);
 					if (const auto de=dirsSector.TryGetDirectoryEntry(slot)){

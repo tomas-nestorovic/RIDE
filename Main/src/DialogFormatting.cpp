@@ -57,9 +57,9 @@
 		cb.Detach();
 		// - populating dedicated ComboBox with Media supported by both DOS and Image
 		if (params.format.mediumType==TMedium::UNKNOWN)
-			CImage::__populateComboBoxWithCompatibleMedia__( GetDlgItem(ID_MEDIUM)->m_hWnd, propDos->supportedMedia, dos->image->properties );
+			CImage::PopulateComboBoxWithCompatibleMedia( GetDlgItem(ID_MEDIUM)->m_hWnd, propDos->supportedMedia, dos->image->properties );
 		else
-			CImage::__populateComboBoxWithCompatibleMedia__( GetDlgItem(ID_MEDIUM)->m_hWnd, params.format.mediumType, dos->image->properties );
+			CImage::PopulateComboBoxWithCompatibleMedia( GetDlgItem(ID_MEDIUM)->m_hWnd, params.format.mediumType, dos->image->properties );
 		params.format.mediumType=TMedium::UNKNOWN; // to initialize Parameters using the first suitable Format; it holds: MediumType==Unknown <=> initial formatting of an Image, MediumType!=Unknown <=> any subsequent formatting of the same Image
 		__onMediumChanged__();
 		// - adjusting interactivity
@@ -102,7 +102,7 @@
 		DDX_Text( pDX,	ID_SIZE	,(short &)params.format.sectorLength );
 			DDV_MinMaxUInt( pDX, params.format.sectorLength, propImage->sectorLengthMin, propImage->sectorLengthMax );
 			if (pDX->m_bSaveAndValidate)
-				params.format.sectorLengthCode=CImage::__getSectorLengthCode__(params.format.sectorLength);
+				params.format.sectorLengthCode=CImage::GetSectorLengthCode(params.format.sectorLength);
 			else
 				params.format.sectorLengthCode=dos->formatBoot.sectorLengthCode;
 		DDX_Text( pDX,	ID_INTERLEAVE,params.interleaving);
@@ -171,7 +171,7 @@
 						const CRect rc=GetDlgItemClientRect(ID_FORMAT);
 						const HWND hMedium=::GetDlgItem( m_hWnd, ID_MEDIUM);
 						const LPCTSTR currMediumDesc=TMedium::GetDescription((TMedium::TType)ComboBox_GetItemData( hMedium, ComboBox_GetCurSel(hMedium) ));
-						CImage::__populateComboBoxWithCompatibleMedia__( hMedium, dos->properties->supportedMedia, dos->image->properties );
+						CImage::PopulateComboBoxWithCompatibleMedia( hMedium, dos->properties->supportedMedia, dos->image->properties );
 						ComboBox_SelectString( hMedium, 0, currMediumDesc );
 						::SetWindowPos( hMedium, nullptr, 0,0, rc.Width(),rc.Height(), SWP_NOZORDER|SWP_NOMOVE );
 						::EnableWindow( hMedium, TRUE );

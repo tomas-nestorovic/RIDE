@@ -11,7 +11,7 @@
 		afx_msg void OnSize(UINT nType,int cx,int cy);
 		afx_msg void OnKillFocus(CWnd *newFocus);
 		afx_msg void OnDestroy();
-		afx_msg void __toggleWriteProtection__();
+		afx_msg void ToggleWriteProtection();
 		void __updateLookOfControls__();
 	protected:
 		class CSectorReaderWriter sealed:public CDos::CFileReaderWriter{

@@ -59,7 +59,7 @@
 
 	BEGIN_MESSAGE_MAP(CDirEntriesView,CHexaEditor)
 		ON_WM_CREATE()
-		ON_COMMAND(ID_IMAGE_PROTECT,__toggleWriteProtection__)
+		ON_COMMAND(ID_IMAGE_PROTECT,ToggleWriteProtection)
 		ON_COMMAND(ID_FILE_CLOSE,__closeView__)
 		ON_WM_DESTROY()
 	END_MESSAGE_MAP()
@@ -123,9 +123,9 @@
 		__super::OnDestroy();
 	}
 
-	afx_msg void CDirEntriesView::__toggleWriteProtection__(){
+	afx_msg void CDirEntriesView::ToggleWriteProtection(){
 		// toggles Image's WriteProtection flag
-		IMAGE->__toggleWriteProtection__(); // "base"
+		IMAGE->ToggleWriteProtection(); // "base"
 		SetEditable( !IMAGE->IsWriteProtected() );
 	}
 

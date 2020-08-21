@@ -285,7 +285,7 @@
 										selectedFiles.AddTail(importedFile);
 									break;
 								case ERROR_WRITE_PROTECT:
-									IMAGE->__reportWriteProtection__();
+									IMAGE->ReportWriteProtection();
 									dropEffect=DROPEFFECT_NONE;
 									//fallthrough
 								case ERROR_CANCELLED:
@@ -298,7 +298,7 @@
 importQuit1:		::DragFinish(hDrop);
 					::GlobalUnlock(hg);
 				}
-			}else if (!IMAGE->__reportWriteProtection__()){
+			}else if (!IMAGE->ReportWriteProtection()){
 				// importing virtual Files (by dragging them from FileManager, no matter if this one or across applications)
 				if (!( hg=pDataObject->GetGlobalData(CRideApp::cfRideFileList) )) // if RIDE native list of Files not available ...
 					hg=pDataObject->GetGlobalData(CRideApp::cfDescriptor); // ... then settle with shell native list of Files
@@ -582,7 +582,7 @@ importQuit2:		::GlobalUnlock(hg);
 			}
 			// . if the File "looks like an Image", confirming its import by the user
 			if (const LPCTSTR extension=_tcsrchr(pathAndName,'.'))
-				if (CImage::__determineTypeByExtension__(extension)!=nullptr){
+				if (CImage::DetermineTypeByExtension(extension)!=nullptr){
 					// : defining the Dialog
 					TCHAR buf[MAX_PATH+80];
 					::wsprintf( buf, _T("\"%s\" looks like an image."), _tcsrchr(pathAndName,'\\')+1 );
@@ -706,7 +706,7 @@ importQuit2:		::GlobalUnlock(hg);
 
 	afx_msg void CFileManagerView::__cutFilesToClipboard__(){
 		// moves selected Files from Image to clipboard
-		if (IMAGE->__reportWriteProtection__()) return;
+		if (IMAGE->ReportWriteProtection()) return;
 		( new COleVirtualFileDataSource(this,DROPEFFECT_MOVE) )->SetClipboard();
 	}
 

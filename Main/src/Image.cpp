@@ -261,12 +261,12 @@
 		return (PImage)CMainWindow::CTdiTemplate::pSingleInstance->__getDocument__();
 	}
 
-	bool CImage::__openImageForReading__(LPCTSTR fileName,CFile *f){
+	bool CImage::OpenImageForReading(LPCTSTR fileName,CFile *f){
 		// True <=> File successfully opened for reading, otherwise False
 		return f->Open( fileName, CFile::modeRead|CFile::typeBinary|CFile::shareDenyWrite )!=FALSE;
 	}
 
-	bool CImage::__openImageForWriting__(LPCTSTR fileName,CFile *f){
+	bool CImage::OpenImageForWriting(LPCTSTR fileName,CFile *f){
 		// True <=> File successfully opened for writing, otherwise False
 		if (f->Open( fileName, CFile::modeCreate|CFile::modeWrite|CFile::typeBinary|CFile::shareExclusive )!=FALSE){
 			::SetLastError(ERROR_SUCCESS); // because the last error might have been 183 (File cannot be created because it already exists)
@@ -281,14 +281,14 @@
 
 	#define LENGTH_CODE_BASE	0x80
 
-	TFormat::TLengthCode CImage::__getSectorLengthCode__(WORD sectorLength){
+	TFormat::TLengthCode CImage::GetSectorLengthCode(WORD sectorLength){
 		// returns the code of the SectorLength
 		BYTE lengthCode=0;
 		while (sectorLength>LENGTH_CODE_BASE) sectorLength>>=1, lengthCode++;
 		return (TFormat::TLengthCode)lengthCode;
 	}
 
-	WORD CImage::__getOfficialSectorLength__(BYTE sectorLengthCode){
+	WORD CImage::GetOfficialSectorLength(BYTE sectorLengthCode){
 		// returns the official size in Bytes of a Sector with the given LengthCode
 		return LENGTH_CODE_BASE<<sectorLengthCode;
 	}
@@ -296,7 +296,7 @@
 	CPtrList CImage::known;
 	CPtrList CImage::devices;
 
-	CImage::PCProperties CImage::__determineTypeByExtension__(LPCTSTR extension){
+	CImage::PCProperties CImage::DetermineTypeByExtension(LPCTSTR extension){
 		// determines and returns Properties for an Image with a given Extension; returns Null if extension unknown
 		if (extension){
 			TCHAR buf[MAX_PATH];
@@ -312,7 +312,7 @@
 		return nullptr;
 	}
 
-	BYTE CImage::__populateComboBoxWithCompatibleMedia__(HWND hComboBox,WORD dosSupportedMedia,PCProperties imageProperties){
+	BYTE CImage::PopulateComboBoxWithCompatibleMedia(HWND hComboBox,WORD dosSupportedMedia,PCProperties imageProperties){
 		// populates ComboBox with Media supported both by DOS and Image, and returns their number (or zero if there is no intersection)
 		CComboBox cb;
 		cb.Attach(hComboBox);
@@ -369,7 +369,7 @@
 		//nop (CDocument::OnCloseDocument destroys parent FrameWnd (MainWindow) - this must exist even after the document was closed)
 	}
 
-	void CImage::__toggleWriteProtection__(){
+	void CImage::ToggleWriteProtection(){
 		// toggles Image's WriteProtection flag
 		// - cannot toggle if not allowed to write to the Image (e.g. because the Image has been opened from a CD-ROM)
 		if (!canBeModified)
@@ -385,7 +385,7 @@
 		writeProtected=!writeProtected;
 	}
 
-	bool CImage::__reportWriteProtection__() const{
+	bool CImage::ReportWriteProtection() const{
 		// True <=> Image is WriteProtected and a warning window has been shown, otherwise False
 		if (writeProtected){
 			Utils::Information(_T("This operation requires the image to be accessible for writing.\n\nRemove the write protection and try again."));
@@ -444,7 +444,7 @@
 						return TRUE;
 					case ID_IMAGE_PROTECT:
 						// . toggling WriteProtection
-						__toggleWriteProtection__();
+						ToggleWriteProtection();
 						// . refreshing known windows that depend on Image's WriteProtection flag
 						if (CDos::CHexaPreview::pSingleInstance) 
 							CDos::CHexaPreview::pSingleInstance->hexaEditor.SetEditable(!writeProtected);
@@ -453,11 +453,11 @@
 						EditSettings();
 						return TRUE;
 					case ID_IMAGE_DUMP:
-						__dump__();
+						Dump();
 						return TRUE;
 					case ID_IMAGE_PATCH:
-						if (!__reportWriteProtection__()){
-							__patch__();
+						if (!ReportWriteProtection()){
+							Patch();
 							UpdateAllViews(nullptr,0,nullptr);
 						}
 						return TRUE;

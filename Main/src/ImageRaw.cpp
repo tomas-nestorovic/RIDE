@@ -86,13 +86,13 @@
 		// True <=> Image opened successfully, otherwise False
 		// - opening
 		if (!__openImageForReadingAndWriting__(lpszPathName)) // if cannot open for both reading and writing ...
-			if (!__openImageForReading__(lpszPathName,&f)) // ... trying to open at least for reading, and if neither this works ...
+			if (!OpenImageForReading(lpszPathName,&f)) // ... trying to open at least for reading, and if neither this works ...
 				return FALSE; // ... the Image cannot be open in any way
 			else
 				canBeModified=false;
 		// - currently without geometry (DOS must call SetMediumTypeAndGeometry)
 		if ( sizeWithoutGeometry=f.GetLength() )
-			nCylinders=1, nHeads=1, nSectors=1, sectorLengthCode=__getSectorLengthCode__( sectorLength=std::min<DWORD>(sizeWithoutGeometry,(WORD)-1) );
+			nCylinders=1, nHeads=1, nSectors=1, sectorLengthCode=GetSectorLengthCode( sectorLength=std::min<DWORD>(sizeWithoutGeometry,(WORD)-1) );
 		return TRUE;
 	}
 
@@ -125,7 +125,7 @@
 		// - saving
 		CFile fTmp;
 		const bool savingToCurrentFile=lpszPathName==m_strPathName;
-		if (!savingToCurrentFile && !__openImageForWriting__(lpszPathName,&fTmp))
+		if (!savingToCurrentFile && !OpenImageForWriting(lpszPathName,&fTmp))
 			return FALSE;
 		if (f.m_hFile!=CFile::hFileNull) // handle doesn't exist when creating new Image
 			f.Seek(0,CFile::begin);
@@ -269,7 +269,7 @@ trackNotFound:
 		sideMap=_sideMap, firstSectorNumber=_firstSectorNumber;
 		if (pFormat->mediumType!=TMedium::UNKNOWN){
 			// MediumType and its Format are already known
-			nHeads=pFormat->nHeads, nSectors=pFormat->nSectors, sectorLengthCode=__getSectorLengthCode__( sectorLength=pFormat->sectorLength );
+			nHeads=pFormat->nHeads, nSectors=pFormat->nSectors, sectorLengthCode=GetSectorLengthCode( sectorLength=pFormat->sectorLength );
 			if (fileSize){ // some Cylinders exist only if Image contains some data (may not exist if Image not yet formatted)
 				__freeBufferOfCylinders__();
 				const int nSectorsInTotal=fileSize/sectorLength;
@@ -303,7 +303,7 @@ trackNotFound:
 			// MediumType and/or its Format were not successfully determined (DosUnknown)
 			__freeBufferOfCylinders__();
 			if (fileSize){
-				nCylinders=1, nHeads=1, nSectors=1, sectorLengthCode=__getSectorLengthCode__( sectorLength=std::min<DWORD>(fileSize,(WORD)-1) );
+				nCylinders=1, nHeads=1, nSectors=1, sectorLengthCode=GetSectorLengthCode( sectorLength=std::min<DWORD>(fileSize,(WORD)-1) );
 				::ZeroMemory( bufferOfCylinders=(PVOID *)::malloc(sizeof(PVOID)), sizeof(PVOID) );
 			}//else
 				//nop (see ctor, or specifically OnOpenDocument)

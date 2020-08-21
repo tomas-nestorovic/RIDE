@@ -200,7 +200,7 @@ reportError:Utils::Information(buf);
 
 	TStdWinError CDos::__showDialogAndFormatStdCylinders__(CFormatDialog &rd){
 		// formats Cylinders using parameters obtained from the confirmed FormatDialog (CDos-derivate and FormatDialog guarantee that all parameters are valid); returns Windows standard i/o error
-		if (image->__reportWriteProtection__()) return ERROR_WRITE_PROTECT;
+		if (image->ReportWriteProtection()) return ERROR_WRITE_PROTECT;
 		LOG_DIALOG_DISPLAY(_T("CFormatDialog"));
 		if (LOG_DIALOG_RESULT(rd.DoModal())!=IDOK){
 			::SetLastError(ERROR_CANCELLED);
@@ -571,7 +571,7 @@ reportError:Utils::Information(buf);
 	}
 	bool CDos::__fillEmptySpace__(CFillEmptySpaceDialog &rd){
 		// True <=> filling of empty space on disk with specified FillerBytes was successfull, otherwise False
-		if (image->__reportWriteProtection__()) return false;
+		if (image->ReportWriteProtection()) return false;
 		if (rd.DoModal()!=IDOK) return false;
 		// - filling
 		CBackgroundMultiActionCancelable bmac(THREAD_PRIORITY_BELOW_NORMAL);
@@ -597,7 +597,7 @@ reportError:Utils::Information(buf);
 	bool CDos::__verifyVolume__(CVerifyVolumeDialog &rd){
 		// True <=> volume verification was performed (even unsuccessfull), otherwise False (e.g. user cancelled)
 		// - displaying the Dialog
-		if (image->__reportWriteProtection__()) return false;
+		if (image->ReportWriteProtection()) return false;
 		if (rd.DoModal()!=IDOK) return false;
 		// - opening the HTML Report for writing
 		TCHAR tmpFileName[MAX_PATH];

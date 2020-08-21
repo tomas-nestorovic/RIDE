@@ -9,7 +9,7 @@
 
 		afx_msg int OnCreate(LPCREATESTRUCT lpcs);
 		afx_msg void OnDestroy();
-		afx_msg void __toggleWriteProtection__();
+		afx_msg void ToggleWriteProtection();
 		afx_msg void __closeView__();
 		void OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint) override;
 		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;

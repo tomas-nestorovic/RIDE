@@ -33,7 +33,7 @@
 
 	TStdWinError CUnformatDialog::TParams::UnformatTracks() const{
 		// unformats given Tracks; returns Windows standard i/o error
-		if (dos->image->__reportWriteProtection__())
+		if (dos->image->ReportWriteProtection())
 			return ERROR_WRITE_PROTECT;
 		const TStdWinError err=	CBackgroundActionCancelable(
 									__unformatTracks_thread__,
@@ -182,7 +182,7 @@
 
 	TStdWinError CUnformatDialog::ShowModalAndUnformatStdCylinders(){
 		// unformats Cylinders using Parameters obtained from confirmed UnformatDialog (CDos-derivate and UnformatDialog guarantee that all parameters are valid); returns Windows standard i/o error
-		if (IMAGE->__reportWriteProtection__()) return ERROR_WRITE_PROTECT;
+		if (IMAGE->ReportWriteProtection()) return ERROR_WRITE_PROTECT;
 		LOG_DIALOG_DISPLAY(_T("CUnformatDialog"));
 		if (LOG_DIALOG_RESULT(DoModal())!=IDOK) return ERROR_CANCELLED;
 		// - checking that all Cylinders to unformat are empty

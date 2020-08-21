@@ -581,11 +581,11 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			// selected an Image
 			const LPCTSTR ext=_tcsrchr(fileName,'.');
 			if (singleAllowedImage){
-				if (CImage::__determineTypeByExtension__(ext)!=singleAllowedImage) // no or wrong file Extension?
+				if (CImage::DetermineTypeByExtension(ext)!=singleAllowedImage) // no or wrong file Extension?
 					::strncat( fileName, 1+singleAllowedImage->filter, 4 ); // 1 = asterisk, 4 = dot and three-character extension (e.g. "*.d40")
 				return singleAllowedImage;
 			}else
-				return CImage::__determineTypeByExtension__(ext); // Null <=> unknown container
+				return CImage::DetermineTypeByExtension(ext); // Null <=> unknown container
 		}else
 			// Dialog cancelled
 			return nullptr;

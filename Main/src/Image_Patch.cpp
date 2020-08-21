@@ -73,7 +73,7 @@ errorDuringWriting:			TCHAR buf[80];
 		return ERROR_SUCCESS;
 	}
 
-	void CImage::__patch__(){
+	void CImage::Patch(){
 		// patches this Image
 		// - defining the Dialog
 		class CPatchDialog sealed:public Utils::CRideDialog{
