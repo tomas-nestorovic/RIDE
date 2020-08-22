@@ -509,14 +509,14 @@
 		OnPrepareDC(&dc);
 		dc.DPtoLP(&point);
 		point.y-=TRACK0_Y;
+		rOutNanoseconds=-1; // initialization (time could not be determined)
 		if (point.y>=0 && point.y<IMAGE->GetTrackCount()*TRACK_HEIGHT){
 			// cursor over a Track
 			// . estimating the time on timeline at which the cursor points to
 			if (showTimed){
 				const int ns=((point.x-SECTOR1_X)<<zoomLengthFactor)*IMAGE->EstimateNanosecondsPerOneByte();
 				rOutNanoseconds= ns<=longestTrackNanoseconds ? ns : -1;
-			}else
-				rOutNanoseconds=-1;
+			}
 			// . determining the Sector on which the cursor hovers
 			const TTrack track=point.y/TRACK_HEIGHT;
 			const THead nSides=__getNumberOfFormattedSidesInImage__(IMAGE);
