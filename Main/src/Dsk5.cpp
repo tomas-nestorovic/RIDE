@@ -272,7 +272,12 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 					*bufferLength++=__getSectorLength__(si);
 			}
 			if (startTimesNanoseconds)
-				EstimateTrackTiming( cyl, head, ti->nSectors, bufferId-ti->nSectors, bufferLength-ti->nSectors, ti->gap3, startTimesNanoseconds );
+				if (floppyType!=TMedium::UNKNOWN || app.IsInGodMode())
+					// unsupported DOSes don't set up FloppyType but "some" timing may still be shown in God Mode
+					EstimateTrackTiming( cyl, head, ti->nSectors, bufferId-ti->nSectors, bufferLength-ti->nSectors, ti->gap3, startTimesNanoseconds );
+				else
+					// timing is not applicable for this kind of Image
+					for( TSector s=ti->nSectors; s>0; startTimesNanoseconds[--s]=INT_MIN );
 			if (pAvgGap3)
 				*pAvgGap3=ti->gap3;
 			return ti->nSectors;
