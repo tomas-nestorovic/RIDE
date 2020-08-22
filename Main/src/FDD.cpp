@@ -1594,11 +1594,11 @@ Utils::Information(buf);}
 						fdd->floppyType=TMedium::FLOPPY_HD_350;
 						SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" HD formatted") );
 						CheckDlgButton( ID_40D80, false );
-						EnableDlgItem( ID_40D80 );
+						EnableDlgItem( ID_40D80, !AreSomeTracksFormatted() );
 					}else{
 						SetDlgItemText( ID_MEDIUM, _T("Not formatted or faulty") );
 						CheckDlgButton( ID_40D80, false );
-						EnableDlgItem( ID_40D80 );
+						EnableDlgItem( ID_40D80, !AreSomeTracksFormatted() );
 					}
 				// . loading the Profile associated with the current drive and FloppyType
 				profile.Load( fdd->GetDriveLetter(), fdd->floppyType, fdd->EstimateNanosecondsPerOneByte() );
@@ -1812,7 +1812,10 @@ autodetermineLatencies:		// automatic determination of write latency values
 		} d(this);
 		// - showing the Dialog and processing its result
 		LOG_DIALOG_DISPLAY(_T("CSettingDialog"));
-		if (d.DoModal()==IDOK){
+		const auto floppyTypeOrg=floppyType;
+			const bool dialogConfirmed=d.DoModal()==IDOK;
+		__setDataTransferSpeed__( floppyType=floppyTypeOrg ); // reverting to original FloppyType, should it be changed in the Dialog
+		if (dialogConfirmed){
 			params=d.params;
 			( fddHead.profile=d.profile ).Save( GetDriveLetter(), floppyType );
 			__setSecondsBeforeTurningMotorOff__(params.nSecondsToTurnMotorOff);
