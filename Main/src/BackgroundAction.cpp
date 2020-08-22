@@ -63,6 +63,7 @@
 	CBackgroundActionCancelable::CBackgroundActionCancelable(UINT dlgResId)
 		// ctor
 		: Utils::CRideDialog( dlgResId, app.m_pMainWnd )
+		, callerThreadPriorityOrg( ::GetThreadPriority(::GetCurrentThread()) )
 		, bCancelled(false) , bTargetStateReached(false) , lastState(0)
 		, progressTarget(INT_MAX) {
 	}
@@ -70,9 +71,16 @@
 	CBackgroundActionCancelable::CBackgroundActionCancelable(AFX_THREADPROC fnAction,LPCVOID actionParams,int actionThreadPriority)
 		// ctor
 		: Utils::CRideDialog( IDR_ACTION_PROGRESS, app.m_pMainWnd )
+		, callerThreadPriorityOrg( ::GetThreadPriority(::GetCurrentThread()) )
 		, bCancelled(false) , bTargetStateReached(false)
 		, progressTarget(INT_MAX) {
 		BeginAnother( fnAction, actionParams, actionThreadPriority );
+		ChangeWorkerPriority( actionThreadPriority ); // making sure the caller is always responsive by temporarily elevating its priority
+	}
+
+	CBackgroundActionCancelable::~CBackgroundActionCancelable(){
+		// dtor
+		::SetThreadPriority( ::GetCurrentThread(), callerThreadPriorityOrg ); // recovering caller's original priority
 	}
 
 
@@ -99,9 +107,21 @@
 		// - waiting for the already running Worker
 		::WaitForSingleObject( *this, INFINITE );
 		// - returning the Result
-		TStdWinError result=ERROR_SUCCESS;
-		::GetExitCodeThread( *this, (LPDWORD)&result );
+		DWORD result=ERROR_SUCCESS;
+		::GetExitCodeThread( *this, &result );
 		return result;
+	}
+
+	void CBackgroundActionCancelable::ChangeWorkerPriority(int newPriority){
+		// changes Worker's priority
+		// - Worker's priority
+		::SetThreadPriority( *this, newPriority );
+		// - making sure the caller is always responsive by temporarily elevating its priority
+		if (newPriority>callerThreadPriorityOrg+2)
+			::SetThreadPriority(
+				::GetCurrentThread(),
+				std::min( newPriority-2, THREAD_PRIORITY_HIGHEST )
+			);
 	}
 
 	bool CBackgroundActionCancelable::IsCancelled() const volatile{
@@ -168,6 +188,7 @@
 		: CBackgroundActionCancelable( IDR_ACTION_SEQUENCE )
 		, actionThreadPriority(  std::max( std::min(actionThreadPriority,THREAD_PRIORITY_TIME_CRITICAL), THREAD_BASE_PRIORITY_MIN )  )
 		, nActions(0) {
+		ChangeWorkerPriority( actionThreadPriority ); // making sure the caller is always responsive by temporarily elevating its priority
 	}
 
 	void CBackgroundMultiActionCancelable::AddAction(AFX_THREADPROC fnAction,LPCVOID actionParams,LPCTSTR name){
@@ -242,7 +263,7 @@
 					case MAKELONG(ID_PRIORITY,CBN_SELCHANGE):
 						// Action Priority has been changed
 						actionThreadPriority=SendDlgItemMessage(ID_PRIORITY,CB_GETCURSEL)+THREAD_BASE_PRIORITY_MIN;
-						::SetThreadPriority( *this, actionThreadPriority );
+						ChangeWorkerPriority( actionThreadPriority );
 						return 0;
 					case IDOK:
 						// current Action has finished - proceeding with the next one

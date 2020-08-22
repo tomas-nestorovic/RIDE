@@ -22,16 +22,19 @@
 	typedef class CBackgroundActionCancelable:public CBackgroundAction,public Utils::CRideDialog{
 		int progressTarget;
 	protected:
+		const int callerThreadPriorityOrg;
 		volatile bool bCancelled;
 		mutable volatile bool bTargetStateReached;
 		mutable int lastState;
 
 		CBackgroundActionCancelable(UINT dlgResId);
 
+		void ChangeWorkerPriority(int newPriority);
 		BOOL OnInitDialog() override;
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 	public:
 		CBackgroundActionCancelable(AFX_THREADPROC fnAction,LPCVOID actionParams,int actionThreadPriority);
+		~CBackgroundActionCancelable();
 
 		TStdWinError Perform();
 		bool IsCancelled() const volatile;
