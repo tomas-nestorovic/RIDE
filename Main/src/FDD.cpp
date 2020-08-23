@@ -470,16 +470,15 @@ Utils::Information("--- EVERYTHING OK ---");
 		TCHAR iniSection[16];
 		GetFddProfileName( iniSection, driveLetter, floppyType );
 		switch (floppyType){
+			default:
+				ASSERT(FALSE);
+				//fallthrough
 			case TMedium::FLOPPY_DD_350:
 			case TMedium::FLOPPY_DD_525:
 				controllerLatency=app.GetProfileInt( iniSection, INI_LATENCY_CONTROLLER, TIME_MICRO(86) );
 				break;
 			case TMedium::FLOPPY_HD_350:
 				controllerLatency=app.GetProfileInt( iniSection, INI_LATENCY_CONTROLLER, TIME_MICRO(86)/2 );
-				break;
-			default:
-				ASSERT(FALSE);
-				controllerLatency=FDD_NANOSECONDS_PER_DD_BYTE;
 				break;
 		}
 		oneByteLatency=app.GetProfileInt( iniSection, INI_LATENCY_1BYTE, defaultNanosecondsPerByte );
@@ -1566,7 +1565,8 @@ Utils::Information(buf);}
 				// detects a floppy in the Drive and attempts to recognize its Type
 				// . making sure that a floppy is in the Drive
 				fdd->floppyType=TMedium::UNKNOWN; // assumption (floppy not inserted or not recognized)
-				if (!fdd->__isFloppyInserted__())
+				static const WORD Interactivity[]={ ID_LATENCY, ID_NUMBER2, ID_GAP };
+				if (!EnableDlgItems( Interactivity, fdd->__isFloppyInserted__() ))
 					SetDlgItemText( ID_MEDIUM, _T("Not inserted") );
 				// . attempting to recognize any previous format on the floppy
 				else
@@ -1753,7 +1753,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 										app.WriteProfileInt( iniSection, INI_LATENCY_DETERMINED, TRUE ); // latencies hereby at least once determined
 									// : adopting the found latencies to current floppy Profile
 									if (floppyType==fdd->floppyType){
-										profile=tmp;
+										fdd->fddHead.profile = profile = tmp;
 										__exchangeLatency__( &CDataExchange(this,FALSE) );
 									}
 								}
@@ -1817,7 +1817,6 @@ autodetermineLatencies:		// automatic determination of write latency values
 		__setDataTransferSpeed__( floppyType=floppyTypeOrg ); // reverting to original FloppyType, should it be changed in the Dialog
 		if (dialogConfirmed){
 			params=d.params;
-			( fddHead.profile=d.profile ).Save( GetDriveLetter(), floppyType );
 			__setSecondsBeforeTurningMotorOff__(params.nSecondsToTurnMotorOff);
 			return true;
 		}else
