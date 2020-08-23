@@ -72,7 +72,7 @@
 		// ctor
 		: Utils::CRideDialog( IDR_ACTION_PROGRESS, app.m_pMainWnd )
 		, callerThreadPriorityOrg( ::GetThreadPriority(::GetCurrentThread()) )
-		, bCancelled(false) , bTargetStateReached(false)
+		, bCancelled(false) , bTargetStateReached(false) , lastState(0)
 		, progressTarget(INT_MAX) {
 		BeginAnother( fnAction, actionParams, actionThreadPriority );
 		ChangeWorkerPriority( actionThreadPriority ); // making sure the caller is always responsive by temporarily elevating its priority
@@ -120,7 +120,7 @@
 		if (newPriority>callerThreadPriorityOrg+2)
 			::SetThreadPriority(
 				::GetCurrentThread(),
-				std::min( newPriority-2, THREAD_PRIORITY_HIGHEST )
+				std::max(  THREAD_PRIORITY_NORMAL,  std::min( newPriority-2, THREAD_PRIORITY_HIGHEST )  )
 			);
 	}
 
