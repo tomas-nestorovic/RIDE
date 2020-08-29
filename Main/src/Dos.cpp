@@ -380,7 +380,7 @@ reportError:Utils::Information(buf);
 		const TStdWinError err=	CBackgroundActionCancelable(
 									__formatTracks_thread__,
 									&TFmtParams( this, rParams, head, nSectors, bufferId, bufferLength, showReport ),
-									THREAD_PRIORITY_BELOW_NORMAL
+									THREAD_PRIORITY_TIME_CRITICAL
 								).Perform();
 		if (err!=ERROR_SUCCESS)
 			Utils::FatalError(_T("Cannot format a track"),err);
