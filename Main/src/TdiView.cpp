@@ -22,6 +22,7 @@
 	class CIntroductoryGuidePost sealed:public Utils::CRideDialog{
 		const Utils::CRideFont sectionTitleFont;
 		const Utils::CRideFont buttonCaptionFont;
+		const int singleLineButtonHeight;
 		BYTE nCategories;
 		struct{
 			LONG posY;
@@ -34,6 +35,7 @@
 			: Utils::CRideDialog(IDR_GUIDEPOST)
 			, sectionTitleFont( FONT_MS_SANS_SERIF, 90, true, true )
 			, buttonCaptionFont( FONT_MS_SANS_SERIF, 80, false, true )
+			, singleLineButtonHeight( buttonCaptionFont.charHeight+2*(1+::GetSystemMetrics(SM_CYBORDER)) )
 			, nCategories(0) {
 		}
 
@@ -62,11 +64,10 @@
 		void __addButton__(LPCTSTR caption,UINT id,WCHAR wingdingsGlyphBeforeText='\0',COLORREF glyphColor=COLOR_BLACK){
 			// adds a new button under currently open category
 			ASSERT(nCategories>0); // a category must currently be open
-			const int height=buttonCaptionFont.charHeight+2*(1+::GetSystemMetrics(SM_CYBORDER));
 			Utils::ConvertToCommandLikeButton(
 				::CreateWindow(
 					WC_BUTTON, caption, WS_VISIBLE|WS_CHILD,
-					rcCurrContent.left,rcCurrContent.top, rcCurrContent.Width(),height,
+					rcCurrContent.left,rcCurrContent.top, rcCurrContent.Width(),singleLineButtonHeight,
 					m_hWnd, (HMENU)id, app.m_hInstance, nullptr
 				),
 				wingdingsGlyphBeforeText,
@@ -75,7 +76,20 @@
 				glyphColor
 			);
 			SendDlgItemMessage( id, WM_SETFONT, (WPARAM)buttonCaptionFont.m_hObject );
-			rcCurrContent.top+=height;
+			rcCurrContent.top+=singleLineButtonHeight;
+		}
+
+		void __addHyperlinkText__(LPCWSTR hyperlinkText){
+			// adds a new static text under currently open category
+			::SendMessage(
+				::CreateWindowW(
+					WC_LINK, hyperlinkText, WS_VISIBLE|WS_CHILD|SS_CENTERIMAGE,
+					rcCurrContent.left,rcCurrContent.top, rcCurrContent.Width(),singleLineButtonHeight,
+					m_hWnd, 0, app.m_hInstance, nullptr
+				),
+				WM_SETFONT, (WPARAM)buttonCaptionFont.m_hObject, 0
+			);
+			rcCurrContent.top+=singleLineButtonHeight;
 		}
 
 		void PreInitDialog() override{
@@ -104,8 +118,10 @@
 					::PathCompactPath( CClientDC(this), buf, rcCurrContent.Width() );
 					__addButton__( buf, ID_FILE_MRU_FILE1+i, 0xf030, 0x47bbbb );
 				}
-				if (!i)
-					__addStaticText__( _T("Currently none. Files you open or drives you access will be shown here."), buttonCaptionFont );
+				if (!i){
+					//__addStaticText__( _T("Currently none. Files you open or drives you access will be shown here."), buttonCaptionFont );
+					__addHyperlinkText__( L"Currently none. Begin by <a id=\"OPENIMG\">opening an image</a> or <a id=\"ACCSDRV\">accessing a drive</a>." );
+				}
 			// - composing the "FAQ" section
 			__addCategory__( _T("Frequent questions (network connection needed)"), 0xf0a8 );
 				#define HELP_GLYPH_COLOR	0x585858
@@ -121,6 +137,11 @@
 			CRect rc;
 			GetWindowRect(&rc);
 			SetWindowPos( nullptr, 0,0, rc.Width(), rcCurrContent.top+20, SWP_NOZORDER|SWP_NOMOVE|SWP_FRAMECHANGED );
+		}
+
+		void OnCancel() override{
+			// the Dialog is about the be closed
+			//nop (user can't close the Guidepost)
 		}
 
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
@@ -173,6 +194,16 @@
 						case ID_TAPE_OPEN:
 							((CMainWindow *)app.m_pMainWnd)->OpenApplicationPresentationWebPage(TAB_TITLE,_T("faq_supportedTapes.html"));
 							return 0;
+					}
+					break;
+				case WM_NOTIFY:
+					if (((LPNMHDR)lParam)->code==NM_CLICK){ // some hyperlink clicked
+						const PNMLINK pNmLink=(PNMLINK)lParam;
+						if (!::lstrcmpW(pNmLink->item.szID,L"OPENIMG"))
+							app.__openImage__();
+						else if (!::lstrcmpW(pNmLink->item.szID,L"ACCSDRV"))
+							app.__openDevice__();
+						return 0;
 					}
 					break;
 				case WM_NCDESTROY:
