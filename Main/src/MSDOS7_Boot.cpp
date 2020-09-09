@@ -98,6 +98,26 @@
 		pFormat->clusterSize=nSectorsInCluster;
 	}
 
+	TMedium::TType CMSDOS7::TBootSector::GetMediumType() const{
+		// extracts information on MediumType from this Boot Sector
+		switch (medium){
+			case DISK_35_1440_DS_18:
+				return TMedium::FLOPPY_HD_350;
+			case DISK_35_720_DS_9:
+				return TMedium::FLOPPY_DD_350;
+			case DISK_525_180_SS_9:
+			case DISK_525_360_DS_9:
+			case DISK_525_160_SS_8:
+			case DISK_525_320_DS_8:
+				return TMedium::FLOPPY_DD_525;
+			case DISK_HARD:
+				return TMedium::HDD_RAW;
+			default:
+				ASSERT(FALSE);
+				return TMedium::UNKNOWN;
+		}
+	}
+
 	void CMSDOS7::TBootSector::__init__(PCFormat pFormatBoot,CFormatDialog::PCParameters params,CFat &rOutFat){
 		// initializes this Boot Sector
 		const DWORD nSectorsInTotal=pFormatBoot->GetCountOfAllSectors();
@@ -236,9 +256,14 @@
 		if (pFormatBoot->GetCountOfAllSectors()
 			>= // testing minimal number of Sectors
 			__cluster2logSector__( MSDOS7_DATA_CLUSTER_FIRST, bootSector )
-		)
+		){
+			if (!image->properties->IsRealDevice()){ // if this is NOT a real Device ...
+				const TMedium::TType officialMediumType=bootSector->GetMediumType();
+				if (officialMediumType!=TMedium::UNKNOWN)
+					pFormatBoot->mediumType=officialMediumType; // ... adopting the OfficialMediumType from BootSector
+			}
 			return ERROR_SUCCESS;
-		else
+		}else
 			return Utils::ErrorByOs( ERROR_VOLMGR_DISK_LAYOUT_PARTITIONS_TOO_SMALL, ERROR_UNRECOGNIZED_VOLUME );
 	}
 
