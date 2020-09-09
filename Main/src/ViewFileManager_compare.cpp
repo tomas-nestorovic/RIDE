@@ -108,9 +108,9 @@
 				::SetWindowPos( file1.hexaComparison.m_hWnd, 0, hexa1X-addressColumnWidth,hexaY, addressColumnWidth+hexa2W,hexaH, SWP_NOZORDER|SWP_SHOWWINDOW );
 				::SetWindowPos( file2.hexaComparison.m_hWnd, 0, hexa2X,hexaY, hexa2W,hexaH, SWP_NOZORDER|SWP_SHOWWINDOW );
 				// . laying out buttons (can't use "GetDlgItem(.)->..." because buttons don't exist immediately after the Dialog has been created)
-				const int buttonX=wndW-padding.x-buttonWidth+1, tlacitkoY=wndH-padding.y-buttonHeight;
-				::SetWindowPos( GetDlgItemHwnd(IDCANCEL), nullptr, buttonX,tlacitkoY, 0,0, SWP_NOZORDER|SWP_NOSIZE );
-				::SetWindowPos( GetDlgItemHwnd(IDOK), nullptr, buttonX-padding.x-buttonWidth,tlacitkoY, 0,0, SWP_NOZORDER|SWP_NOSIZE );
+				const int buttonX=wndW-padding.x-buttonWidth+1, buttonY=wndH-padding.y-buttonHeight;
+				SetDlgItemPos( IDCANCEL, buttonX, buttonY );
+				SetDlgItemPos( IDOK, buttonX-padding.x-buttonWidth, buttonY );
 				break;
 			}
 			case WM_COMMAND:
