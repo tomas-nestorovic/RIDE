@@ -90,7 +90,7 @@
 		SetDlgItemText( ID_SYSTEM, DOS->properties->name );
 		// - populating dedicated ComboBox with available StandardUnformattings
 		CComboBox cb;
-		cb.Attach(GetDlgItem(ID_FORMAT)->m_hWnd);
+		cb.Attach(GetDlgItemHwnd(ID_FORMAT));
 			PCStdUnformat psuf=stdUnformats;
 			for( BYTE n=nStdUnformats; n--; psuf++ )
 				cb.SetItemDataPtr( cb.AddString(psuf->name), (PVOID)psuf );
@@ -145,7 +145,7 @@
 
 	afx_msg void CUnformatDialog::__onUnformatChanged__(){
 		// selected another Unformat in ComboBox
-		const HWND hComboBox=GetDlgItem(ID_FORMAT)->m_hWnd;
+		const HWND hComboBox=GetDlgItemHwnd(ID_FORMAT);
 		const int idUnformat=ComboBox_GetCurSel(hComboBox);
 		if (const PCStdUnformat psuf=(PCStdUnformat)ComboBox_GetItemData(hComboBox,idUnformat)){
 			// StandardUnformatting
@@ -158,7 +158,7 @@
 
 	afx_msg void CUnformatDialog::__recognizeStandardUnformat__(){
 		// determines if current settings represent one of DOS StandardUnformats (settings include # of Sides, Cylinders, Sectors, RootDirectoryItems, etc.); if StandardUnformat detected, it's selected in dedicated ComboBox
-		const HWND hComboBox=GetDlgItem(ID_FORMAT)->m_hWnd;
+		const HWND hComboBox=GetDlgItemHwnd(ID_FORMAT);
 		params.cylA=GetDlgItemInt(ID_CYLINDER), params.cylZInclusive=GetDlgItemInt(ID_CYLINDER_N);
 		PCStdUnformat psuf=stdUnformats;
 		for( BYTE n=0; n<nStdUnformats; psuf++,n++ )

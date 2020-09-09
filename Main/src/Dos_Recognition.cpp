@@ -110,7 +110,7 @@
 				CDos::PCProperties props;
 				CListBox lb;
 				// . populating the ListBox with DOSes that take part in the recognition process
-				lb.Attach( GetDlgItem(ID_DOS)->m_hWnd );
+				lb.Attach( GetDlgItemHwnd(ID_DOS) );
 					// : populating
 					int scrollY=lb.GetTopIndex(), iSelected=lb.GetCurSel();
 						lb.ResetContent();
@@ -124,7 +124,7 @@
 					EnableDlgItem( ID_ORDER, lb.GetCount()>0 );
 				lb.Detach();
 				// . populating the ListBox with DOSes that don't take part in the recognition process
-				lb.Attach( GetDlgItem(ID_HIDDEN)->m_hWnd );
+				lb.Attach( GetDlgItemHwnd(ID_HIDDEN) );
 					// : populating
 					scrollY=lb.GetTopIndex(), iSelected=lb.GetCurSel();
 						lb.ResetContent();
@@ -214,7 +214,7 @@
 					case WM_COMMAND:{
 						// processing a command
 						CListBox lb;
-						lb.Attach( GetDlgItem(ID_DOS)->m_hWnd ); // attaching the ListBox of recognized DOSes right away as most commands work with it
+						lb.Attach( GetDlgItemHwnd(ID_DOS) ); // attaching the ListBox of recognized DOSes right away as most commands work with it
 							CDos::PCProperties props=(CDos::PCProperties)lb.GetItemDataPtr(lb.GetCurSel());
 							BYTE i=recognition.__getOrderIndex__(props); // indexing starts from 1
 							switch (wParam){
@@ -249,7 +249,7 @@
 									// adding selected ignored DOS to the Recognition Order
 									// . removing the DOS from "ignored portion" of the Recognition Order
 									CListBox lbIgnored;
-									lbIgnored.Attach( GetDlgItem(ID_HIDDEN)->m_hWnd );
+									lbIgnored.Attach( GetDlgItemHwnd(ID_HIDDEN) );
 										props=(CDos::PCProperties)lbIgnored.GetItemDataPtr(lbIgnored.GetCurSel());
 										i=recognition.__getOrderIndex__(props); // indexing starts from 1
 										::memmove(	&recognition.order[i],

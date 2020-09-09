@@ -30,7 +30,7 @@
 		padding.x=padding.y=0;
 		::MapWindowPoints(file1.hLabel,m_hWnd,&padding,1);
 		RECT r;
-		::GetClientRect( hCompareButton=GetDlgItem(IDOK)->m_hWnd ,&r);
+		::GetClientRect( hCompareButton=GetDlgItemHwnd(IDOK) ,&r);
 		buttonWidth=r.right, buttonHeight=r.bottom, addressColumnWidth=file2.hexaComparison.ShowAddressBand(false);
 		GetClientRect(&r);
 		// - updating control layout
@@ -109,8 +109,8 @@
 				::SetWindowPos( file2.hexaComparison.m_hWnd, 0, hexa2X,hexaY, hexa2W,hexaH, SWP_NOZORDER|SWP_SHOWWINDOW );
 				// . laying out buttons (can't use "GetDlgItem(.)->..." because buttons don't exist immediately after the Dialog has been created)
 				const int buttonX=wndW-padding.x-buttonWidth+1, tlacitkoY=wndH-padding.y-buttonHeight;
-				::SetWindowPos( ::GetDlgItem(m_hWnd,IDCANCEL), nullptr, buttonX,tlacitkoY, 0,0, SWP_NOZORDER|SWP_NOSIZE );
-				::SetWindowPos( ::GetDlgItem(m_hWnd,IDOK), nullptr, buttonX-padding.x-buttonWidth,tlacitkoY, 0,0, SWP_NOZORDER|SWP_NOSIZE );
+				::SetWindowPos( GetDlgItemHwnd(IDCANCEL), nullptr, buttonX,tlacitkoY, 0,0, SWP_NOZORDER|SWP_NOSIZE );
+				::SetWindowPos( GetDlgItemHwnd(IDOK), nullptr, buttonX-padding.x-buttonWidth,tlacitkoY, 0,0, SWP_NOZORDER|SWP_NOSIZE );
 				break;
 			}
 			case WM_COMMAND:

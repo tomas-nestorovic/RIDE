@@ -468,7 +468,7 @@ errorDuringWriting:			TCHAR buf[80];
 			}
 			void DoDataExchange(CDataExchange *pDX) override{
 				// transferring data to and from controls
-				const HWND hMedium=GetDlgItem(ID_MEDIUM)->m_hWnd;
+				const HWND hMedium=GetDlgItemHwnd(ID_MEDIUM);
 				if (pDX->m_bSaveAndValidate){
 					// : FileName must be known
 					pDX->PrepareEditCtrl(ID_FILE);
@@ -481,7 +481,7 @@ errorDuringWriting:			TCHAR buf[80];
 					}
 					// : Medium must be supported by both DOS and Image
 					pDX->PrepareEditCtrl(ID_MEDIUM);
-					const HWND hComboBox=GetDlgItem(ID_MEDIUM)->m_hWnd;
+					const HWND hComboBox=GetDlgItemHwnd(ID_MEDIUM);
 					TMedium::TType mt=(TMedium::TType)ComboBox_GetItemData( hComboBox, ComboBox_GetCurSel(hComboBox) );
 				}else{
 					SetDlgItemText( ID_FILE, ELLIPSIS );
@@ -598,17 +598,19 @@ errorDuringWriting:			TCHAR buf[80];
 											case TMedium::FLOPPY_DD_350:
 											case TMedium::FLOPPY_HD_350:
 												// source Image is a floppy - enabling dumping to any kind of a floppy (motivation: some copy-protection schemes feature misleading information on the kind of floppy; e.g., "Teen Agent" [or "Agent mlicnak"] installation disk #2 and #3 are introduced as 2DD floppies while they really are HD!)
-												nCompatibleMedia=PopulateComboBoxWithCompatibleMedia(	GetDlgItem(ID_MEDIUM)->m_hWnd,
-																											dos->properties->supportedMedia&TMedium::FLOPPY_ANY,
-																											targetImageProperties
-																										);
+												nCompatibleMedia=PopulateComboBoxWithCompatibleMedia(
+													GetDlgItemHwnd(ID_MEDIUM),
+													dos->properties->supportedMedia&TMedium::FLOPPY_ANY,
+													targetImageProperties
+												);
 												break;
 											default:
 												// source Image is a hard-disk
-												nCompatibleMedia=PopulateComboBoxWithCompatibleMedia(	GetDlgItem(ID_MEDIUM)->m_hWnd,
-																											dos->formatBoot.mediumType,
-																											targetImageProperties
-																										);
+												nCompatibleMedia=PopulateComboBoxWithCompatibleMedia(
+													GetDlgItemHwnd(ID_MEDIUM),
+													dos->formatBoot.mediumType,
+													targetImageProperties
+												);
 												break;
 										}
 										// > enabling/disabling controls
@@ -616,7 +618,7 @@ errorDuringWriting:			TCHAR buf[80];
 										EnableDlgItems( Controls, nCompatibleMedia>0 );
 										EnableDlgItem( ID_FORMAT, nCompatibleMedia && targetImageProperties->IsRealDevice() );
 											CheckDlgButton( ID_FORMAT, targetImageProperties->IsRealDevice() );
-										GetDlgItem(IDOK)->SetFocus();
+										FocusDlgItem(IDOK);
 										// > automatically ticking the "Real-time thread priority" check-box if either the source or the target is a real drive
 										if (dos->image->properties->IsRealDevice() || targetImageProperties->IsRealDevice())
 											SendDlgItemMessage( ID_PRIORITY, BM_SETCHECK, BST_CHECKED );

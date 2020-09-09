@@ -392,7 +392,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 					if (!pDX->m_bSaveAndValidate){
 						// populating the Creator combo-box with preset names
 						CComboBox cb;
-						cb.Attach(GetDlgItem(ID_CREATOR)->m_hWnd);
+						cb.Attach(GetDlgItemHwnd(ID_CREATOR));
 							TCHAR buf[80];
 							cb.AddString( ::lstrcpyn(buf,APP_ABBREVIATION _T(" ") APP_VERSION,sizeof(rDiskInfo.creator)+1) );
 							DWORD dw=sizeof(buf)/sizeof(TCHAR);

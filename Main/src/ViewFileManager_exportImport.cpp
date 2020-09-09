@@ -766,13 +766,13 @@ importQuit2:		::GlobalUnlock(hg);
 		__super::PreInitDialog();
 		// - initializing the "Replace" button
 		SetDlgItemText( IDYES, captionForReplaceButton );
-		Utils::ConvertToCommandLikeButton( GetDlgItem(IDYES)->m_hWnd );
+		Utils::ConvertToCommandLikeButton( GetDlgItemHwnd(IDYES) );
 		// - initializing the "Skip" button
 		SetDlgItemText( IDNO, captionForSkipButton );
-		Utils::ConvertToCommandLikeButton( GetDlgItem(IDNO)->m_hWnd );
+		Utils::ConvertToCommandLikeButton( GetDlgItemHwnd(IDNO) );
 		// - initializing the "Cancel" button
 		SetDlgItemText( IDCANCEL, _T("Quit importing") );
-		Utils::ConvertToCommandLikeButton( GetDlgItem(IDCANCEL)->m_hWnd );
+		Utils::ConvertToCommandLikeButton( GetDlgItemHwnd(IDCANCEL) );
 	}
 
 	void CFileManagerView::CNameConflictResolutionDialog::DoDataExchange(CDataExchange *pDX){

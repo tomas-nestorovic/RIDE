@@ -56,14 +56,19 @@ namespace Utils{
 		CRideDialog(LPCTSTR lpszTemplateName,CWnd *pParentWnd=nullptr);
 		CRideDialog(UINT nIDTemplate,CWnd *pParentWnd=nullptr);
 
+		HWND GetDlgItemHwnd(WORD id) const;
 		bool EnableDlgItem(WORD id,bool enabled=true) const;
 		bool EnableDlgItems(PCWORD pIds,bool enabled) const;
 		bool ShowDlgItem(WORD id,bool show=true) const;
+		void FocusDlgItem(WORD id) const;
 		bool IsDlgItemEnabled(WORD id) const;
 		RECT GetDlgItemClientRect(WORD id) const;
 		RECT MapDlgItemClientRect(WORD id) const;
 		POINT MapDlgItemClientOrigin(WORD id) const;
 		void OffsetDlgItem(WORD id,int dx,int dy) const;
+		void SetDlgItemPos(WORD id,int x,int y,int cx=0,int cy=0) const;
+		void SetDlgItemPos(WORD id,const RECT &rc) const;
+		void SetDlgItemSize(WORD id,int cx,int cy) const;
 		void WrapDlgItemsByClosingCurlyBracketWithText(WORD idA,WORD idZ,LPCTSTR text,DWORD textColor) const;
 		void SetDlgItemSingleCharUsingFont(WORD id,WCHAR singleChar,HFONT hFont) const;
 		void SetDlgItemSingleCharUsingFont(WORD id,WCHAR singleChar,LPCTSTR fontFace,int fontPointSize) const;

@@ -18,11 +18,10 @@
 		// - base
 		__super::OnInitDialog();
 		// - positioning and scaling the Error box to match the Image list-box
-		const RECT rc=MapDlgItemClientRect(ID_IMAGE);
-		GetDlgItem(ID_ERROR)->SetWindowPos( nullptr, rc.left, rc.top, rc.right-rc.left, rc.bottom-rc.top, SWP_NOZORDER );
+		SetDlgItemPos( ID_ERROR, MapDlgItemClientRect(ID_IMAGE) );
 		// - populating the list of available DOSes
 		CListBox lb;
-		lb.Attach(GetDlgItem(ID_DOS)->m_hWnd);
+		lb.Attach(GetDlgItemHwnd(ID_DOS));
 			lb.SetItemDataPtr( lb.AddString(_T("-- Select --")), (PVOID)&CUnknownDos::Properties );
 			for( POSITION pos=CDos::known.GetHeadPosition(); pos; ){
 				const CDos::PCProperties p=(CDos::PCProperties)CDos::known.GetNext(pos);

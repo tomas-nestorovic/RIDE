@@ -163,16 +163,16 @@
 								const BYTE sectorIndexOnTrackBk=sectorIndexOnTrack; const TPhysicalAddress chsBk=chs;
 								TCHAR buf[80];
 								CListBox lb;
-								lb.Attach( ::GetDlgItem(m_hWnd,ID_CYLINDER) );
+								lb.Attach( GetDlgItemHwnd(ID_CYLINDER) );
 									for( TCylinder cyl=0; cyl<image->GetCylinderCount(); lb.AddString(::_itot(cyl++,buf,10)) );
 									lb.SetCurSel(chsBk.cylinder);
 								lb.Detach();
 								SendMessage( WM_COMMAND, MAKELONG(ID_CYLINDER,LBN_SELCHANGE) ); // populating the Head listbox
 								// : pre-selecting current Head
-								ListBox_SetCurSel( ::GetDlgItem(m_hWnd,ID_HEAD), chsBk.head );
+								ListBox_SetCurSel( GetDlgItemHwnd(ID_HEAD), chsBk.head );
 								SendMessage( WM_COMMAND, MAKELONG(ID_HEAD,LBN_SELCHANGE) ); // populating the Sector listbox
 								// : pre-selecting current Sector
-								ListBox_SetCurSel( ::GetDlgItem(m_hWnd,ID_SECTOR), sectorIndexOnTrackBk );
+								ListBox_SetCurSel( GetDlgItemHwnd(ID_SECTOR), sectorIndexOnTrackBk );
 								sectorIndexOnTrack=sectorIndexOnTrackBk;
 								return TRUE;
 							}
@@ -183,10 +183,10 @@
 										case MAKELONG(ID_CYLINDER,LBN_SELCHANGE):{
 											// Cylinder selection has changed
 											CListBox lb;
-											lb.Attach( ::GetDlgItem(m_hWnd,ID_CYLINDER) );
+											lb.Attach( GetDlgItemHwnd(ID_CYLINDER) );
 												chs.cylinder=lb.GetCurSel();
 											lb.Detach();
-											lb.Attach( ::GetDlgItem(m_hWnd,ID_HEAD) );
+											lb.Attach( GetDlgItemHwnd(ID_HEAD) );
 												lb.ResetContent();
 												if (chs.cylinder<image->GetCylinderCount()){ // Cylinder number valid
 													TCHAR buf[80];
@@ -199,10 +199,10 @@
 										case MAKELONG(ID_HEAD,LBN_SELCHANGE):{
 											// Head selection has changed
 											CListBox lb;
-											lb.Attach( ::GetDlgItem(m_hWnd,ID_HEAD) );
+											lb.Attach( GetDlgItemHwnd(ID_HEAD) );
 												chs.head=lb.GetCurSel();
 											lb.Detach();
-											lb.Attach( ::GetDlgItem(m_hWnd,ID_SECTOR) );
+											lb.Attach( GetDlgItemHwnd(ID_SECTOR) );
 												lb.ResetContent();
 												if (chs.head<image->GetNumberOfFormattedSides(chs.cylinder)){ // Head number valid
 													TSectorId ids[(TSector)-1];
@@ -216,7 +216,7 @@
 										case MAKELONG(ID_SECTOR,LBN_SELCHANGE):{
 											// Sector selection has changed
 											CListBox lb;
-											lb.Attach( ::GetDlgItem(m_hWnd,ID_SECTOR) );
+											lb.Attach( GetDlgItemHwnd(ID_SECTOR) );
 												const int iSel=lb.GetCurSel();
 												if (EnableDlgItem(IDOK,iSel>=0)){
 													TSectorId ids[(TSector)-1];

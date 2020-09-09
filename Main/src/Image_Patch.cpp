@@ -143,7 +143,7 @@ errorDuringWriting:			TCHAR buf[80];
 										pBtnFile->SetWindowText(buf);
 									}else
 										pBtnFile->SetWindowText( ::lstrcpy(fileName,ELLIPSIS) );
-									GetDlgItem(IDOK)->SetFocus();
+									FocusDlgItem(IDOK);
 								}else
 									*fileName=c;
 								break;

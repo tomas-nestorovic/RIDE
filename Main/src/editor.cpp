@@ -389,12 +389,12 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		}else{
 			// manual recognition of suitable DOS by user
 			// . defining the Dialog
-			class CDosSelectionDialog sealed:public CDialog{
+			class CDosSelectionDialog sealed:public Utils::CRideDialog{
 				BOOL OnInitDialog() override{
 					// initialization
 					// - populating the list of known DOSes
 					CListBox lb;
-					lb.Attach(GetDlgItem(ID_DOS)->m_hWnd);
+					lb.Attach(GetDlgItemHwnd(ID_DOS));
 						for( POSITION pos=CDos::known.GetHeadPosition(); pos; ){
 							const CDos::PCProperties p=(CDos::PCProperties)CDos::known.GetNext(pos);
 							lb.SetItemDataPtr( lb.AddString(p->name), (PVOID)p );
@@ -408,7 +408,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 					DDX_LBIndex( pDX, ID_DOS	,(int &)dosProps );
 					if (pDX->m_bSaveAndValidate){
 						CListBox lb;
-						lb.Attach(GetDlgItem(ID_DOS)->m_hWnd);
+						lb.Attach(GetDlgItemHwnd(ID_DOS));
 							dosProps=(CDos::PCProperties)lb.GetItemDataPtr((int)dosProps);
 						lb.Detach();
 					}
@@ -418,7 +418,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 
 				CDosSelectionDialog()
 					// ctor
-					: CDialog(IDR_DOS_UNKNOWN) , dosProps(nullptr) {
+					: Utils::CRideDialog(IDR_DOS_UNKNOWN) , dosProps(nullptr) {
 				}
 			} d;
 			// . showing the Dialog and processing its result

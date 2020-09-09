@@ -47,7 +47,7 @@
 		SetDlgItemText( ID_SYSTEM, propDos->name );
 		// - populating dedicated ComboBox with possible Cluster sizes
 		CComboBox cb;
-		cb.Attach(GetDlgItem(ID_CLUSTER)->m_hWnd);
+		cb.Attach(GetDlgItemHwnd(ID_CLUSTER));
 			for( WORD nMax=propDos->nSectorsInClusterMax,n=1; n<=nMax; n<<=1 ){
 				TCHAR buf[32];
 				::wsprintf(buf,_T("%d sectors"),n);
@@ -57,9 +57,9 @@
 		cb.Detach();
 		// - populating dedicated ComboBox with Media supported by both DOS and Image
 		if (params.format.mediumType==TMedium::UNKNOWN)
-			CImage::PopulateComboBoxWithCompatibleMedia( GetDlgItem(ID_MEDIUM)->m_hWnd, propDos->supportedMedia, dos->image->properties );
+			CImage::PopulateComboBoxWithCompatibleMedia( GetDlgItemHwnd(ID_MEDIUM), propDos->supportedMedia, dos->image->properties );
 		else
-			CImage::PopulateComboBoxWithCompatibleMedia( GetDlgItem(ID_MEDIUM)->m_hWnd, params.format.mediumType, dos->image->properties );
+			CImage::PopulateComboBoxWithCompatibleMedia( GetDlgItemHwnd(ID_MEDIUM), params.format.mediumType, dos->image->properties );
 		params.format.mediumType=TMedium::UNKNOWN; // to initialize Parameters using the first suitable Format; it holds: MediumType==Unknown <=> initial formatting of an Image, MediumType!=Unknown <=> any subsequent formatting of the same Image
 		__onMediumChanged__();
 		// - adjusting interactivity
@@ -70,7 +70,7 @@
 		ShowDlgItem( ID_DRIVE, bootSectorAlreadyExists );
 		if (!bootSectorAlreadyExists){
 			const CRect rc=GetDlgItemClientRect(ID_FORMAT);
-			GetDlgItem(ID_MEDIUM)->SetWindowPos( nullptr, 0,0, rc.Width(),rc.Height(), SWP_NOZORDER|SWP_NOMOVE );
+			SetDlgItemSize( ID_MEDIUM, rc.Width(), rc.Height() );
 		}
 	}
 
@@ -88,7 +88,7 @@
 		// exchange of data from and to controls
 		const CDos::PCProperties propDos=dos->properties;
 		const CImage::PCProperties propImage=dos->image->properties;
-		const HWND hMedium=GetDlgItem(ID_MEDIUM)->m_hWnd;
+		const HWND hMedium=GetDlgItemHwnd(ID_MEDIUM);
 		const TMedium::PCProperties propMedium=TMedium::GetProperties((TMedium::TType)ComboBox_GetItemData( hMedium, ComboBox_GetCurSel(hMedium) ));
 		DDX_Text( pDX,	ID_CYLINDER_N,(RCylinder)params.format.nCylinders );
 			DDV_MinMaxUInt( pDX, params.format.nCylinders, propMedium->cylinderRange.iMin, propMedium->cylinderRange.iMax );
@@ -111,7 +111,7 @@
 			DDV_MinMaxUInt( pDX, params.skew, 0, params.format.nSectors-1 );
 		DDX_Text( pDX,	ID_GAP		,params.gap3 );
 		CComboBox cb;
-		cb.Attach(GetDlgItem(ID_CLUSTER)->m_hWnd);
+		cb.Attach(GetDlgItemHwnd(ID_CLUSTER));
 			if (pDX->m_bSaveAndValidate){
 				const int sel=cb.GetCurSel();
 				if (sel<0){
@@ -169,7 +169,7 @@
 					if (Utils::QuestionYesNo(_T("Media may introduce themselves wrongly (e.g. copy-protection). Instead of here, the introduction (if any) can be changed in the \"") BOOT_SECTOR_TAB_LABEL _T("\" tab.\n\nUnlock this setting anyway?"),MB_DEFBUTTON2)){
 						ShowDlgItem( ID_DRIVE, false );
 						const CRect rc=GetDlgItemClientRect(ID_FORMAT);
-						const HWND hMedium=::GetDlgItem( m_hWnd, ID_MEDIUM);
+						const HWND hMedium=GetDlgItemHwnd(ID_MEDIUM);
 						const LPCTSTR currMediumDesc=TMedium::GetDescription((TMedium::TType)ComboBox_GetItemData( hMedium, ComboBox_GetCurSel(hMedium) ));
 						CImage::PopulateComboBoxWithCompatibleMedia( hMedium, dos->properties->supportedMedia, dos->image->properties );
 						ComboBox_SelectString( hMedium, 0, currMediumDesc );
@@ -231,11 +231,11 @@
 		// Medium changed in corresponding ComboBox
 		// - getting the currently SelectedMediumType
 		CComboBox cb;
-		cb.Attach(GetDlgItem(ID_MEDIUM)->m_hWnd);
+		cb.Attach(GetDlgItemHwnd(ID_MEDIUM));
 			const TMedium::TType selectedMediumType=(TMedium::TType)cb.GetItemData( cb.GetCurSel() );
 		cb.Detach();
 		// - populating dedicated ComboBox with StandardFormats available for currently SelectedMediumType
-		cb.Attach(GetDlgItem(ID_FORMAT)->m_hWnd);
+		cb.Attach(GetDlgItemHwnd(ID_FORMAT));
 			cb.ResetContent();
 			// . StandardFormats
 			const CDos::PCProperties dosProps=dos->properties;
@@ -263,7 +263,7 @@
 
 	afx_msg void CFormatDialog::__onFormatChanged__(){
 		// Format changed in dedicated ComboBox
-		const HWND hComboBox=GetDlgItem(ID_FORMAT)->m_hWnd;
+		const HWND hComboBox=GetDlgItemHwnd(ID_FORMAT);
 		if (const PCStdFormat f=(PCStdFormat)ComboBox_GetItemData(hComboBox, ComboBox_GetCurSel(hComboBox) )){
 			// selected a StandardFormat
 			SetDlgItemInt( ID_HEAD		,f->params.format.nHeads );
@@ -276,7 +276,7 @@
 			SetDlgItemInt( ID_GAP		,f->params.gap3 );
 			SetDlgItemInt( ID_FAT		,f->params.nAllocationTables );
 			CComboBox cb;
-			cb.Attach(GetDlgItem(ID_CLUSTER)->m_hWnd);
+			cb.Attach(GetDlgItemHwnd(ID_CLUSTER));
 				__selectClusterSize__(cb,f->params.format.clusterSize);
 			cb.Detach();
 			SetDlgItemInt( ID_DIRECTORY	,f->params.nRootDirectoryEntries );
@@ -296,10 +296,10 @@
 		}
 		Invalidate(); // eventually warning on driving disk into an inconsistent state
 		// - Recognizing StandardFormat
-		const HWND hFormat=GetDlgItem(ID_FORMAT)->m_hWnd;
+		const HWND hFormat=GetDlgItemHwnd(ID_FORMAT);
 		const BYTE nFormatsInTotal=ComboBox_GetCount(hFormat);
 		params.cylinder0=GetDlgItemInt(ID_CYLINDER);
-		const HWND hCluster=GetDlgItem(ID_CLUSTER)->m_hWnd;
+		const HWND hCluster=GetDlgItemHwnd(ID_CLUSTER);
 		const BYTE interleaving=GetDlgItemInt(ID_INTERLEAVE), skew=GetDlgItemInt(ID_SKEW), gap3=GetDlgItemInt(ID_GAP), nAllocationTables=GetDlgItemInt(ID_FAT);
 		const WORD nRootDirectoryEntries=GetDlgItemInt(ID_DIRECTORY);
 		const TFormat f={ TMedium::UNKNOWN, GetDlgItemInt(ID_CYLINDER_N), GetDlgItemInt(ID_HEAD), GetDlgItemInt(ID_SECTOR), dos->formatBoot.sectorLengthCode, GetDlgItemInt(ID_SIZE), ComboBox_GetItemData(hCluster,ComboBox_GetCurSel(hCluster)) };

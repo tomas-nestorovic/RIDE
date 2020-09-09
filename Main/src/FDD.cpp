@@ -1551,7 +1551,7 @@ Utils::Information(buf);}
 
 			bool IsDoubleTrackDistanceForcedByUser() const{
 				// True <=> user has manually overridden DoubleTrackDistance setting, otherwise False
-				return ::lstrlen(doubleTrackDistanceTextOrg)!=::GetWindowTextLength( ::GetDlgItem(m_hWnd,ID_40D80) );
+				return ::lstrlen(doubleTrackDistanceTextOrg)!=::GetWindowTextLength( GetDlgItemHwnd(ID_40D80) );
 			}
 
 			bool AreSomeTracksFormatted() const{

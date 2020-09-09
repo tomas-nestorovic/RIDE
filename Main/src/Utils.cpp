@@ -675,6 +675,11 @@ namespace Utils{
 		: CDialog(nIDTemplate,pParentWnd) {
 	}
 
+	HWND CRideDialog::GetDlgItemHwnd(WORD id) const{
+		// determines and returns the handle of the item specified by its Id
+		return ::GetDlgItem( m_hWnd, id );
+	}
+
 	bool CRideDialog::EnableDlgItem(WORD id,bool enabled) const{
 		// enables/disables the specified Dialog control and returns this new state
 		::EnableWindow( ::GetDlgItem(m_hWnd,id), enabled );
@@ -692,6 +697,11 @@ namespace Utils{
 		// shows/hides the specified Dialog control and returns this new state
 		::ShowWindow( ::GetDlgItem(m_hWnd,id), show?SW_SHOW:SW_HIDE );
 		return show;
+	}
+
+	void CRideDialog::FocusDlgItem(WORD id) const{
+		// sets keyboard focus on item specified by its Id
+		::SetFocus( ::GetDlgItem(m_hWnd,id) );
 	}
 
 	bool CRideDialog::IsDlgItemEnabled(WORD id) const{
@@ -728,6 +738,27 @@ namespace Utils{
 		POINT pt={};
 		::MapWindowPoints( hCtrl, m_hWnd, &pt, 1 );
 		::SetWindowPos( hCtrl, 0, pt.x+dx, pt.y+dy, 0, 0, SWP_NOZORDER|SWP_NOSIZE );
+	}
+
+	void CRideDialog::SetDlgItemPos(WORD id,int x,int y,int cx,int cy) const{
+		// changes Dialog control position and size
+		::SetWindowPos(
+			::GetDlgItem(m_hWnd,id),
+			0,
+			x, y,
+			cx, cy,
+			SWP_NOZORDER | (x|y?0:SWP_NOMOVE) | (cx|cy?0:SWP_NOSIZE)
+		);
+	}
+
+	void CRideDialog::SetDlgItemPos(WORD id,const RECT &rc) const{
+		// changes Dialog control position and size
+		SetDlgItemPos( id, rc.left,rc.top, rc.right-rc.left,rc.bottom-rc.top );
+	}
+
+	void CRideDialog::SetDlgItemSize(WORD id,int cx,int cy) const{
+		// changes Dialog control size
+		SetDlgItemPos( id, 0,0, cx,cy );
 	}
 
 	class CTempDlg sealed:public CDialog{

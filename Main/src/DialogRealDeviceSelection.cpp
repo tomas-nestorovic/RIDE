@@ -18,8 +18,7 @@
 		// - base
 		__super::OnInitDialog();
 		// - positioning and scaling the Error box to match the Image list-box
-		const RECT rc=MapDlgItemClientRect(ID_IMAGE);
-		GetDlgItem(ID_ERROR)->SetWindowPos( nullptr, rc.left, rc.top, rc.right-rc.left, rc.bottom-rc.top, SWP_NOZORDER );
+		SetDlgItemPos( ID_ERROR, MapDlgItemClientRect(ID_IMAGE) );
 		// - populating the list with devices compatible with specified DOS
 		refreshListOfDevices();
 		// - done

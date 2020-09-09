@@ -131,7 +131,7 @@
 
 	void CBackgroundActionCancelable::SetProgressTarget(int targetState){
 		// sets Worker's target progress state, "100% completed"
-		::PostMessage(	::GetDlgItem(m_hWnd,ID_STATE),
+		::PostMessage(	GetDlgItemHwnd(ID_STATE),
 						PBM_SETRANGE32,
 						0,	progressTarget=targetState
 					);
@@ -281,7 +281,7 @@
 										+
 										painting.charHeight+PADDING_STATUS;
 							SendDlgItemMessage( ID_STATE, PBM_SETPOS, 0 ); // zeroing the progress-bar
-							GetDlgItem(ID_STATE)->SetWindowPos( nullptr, painting.rcActions.left, y, 0, 0, SWP_NOZORDER|SWP_NOSIZE );
+							SetDlgItemPos( ID_STATE, painting.rcActions.left, y );
 							// . repainting the list of Actions
 							Invalidate();
 							return 0;
