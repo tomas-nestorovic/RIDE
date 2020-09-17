@@ -563,28 +563,31 @@ deleteSelection:		int posSrc=std::max<>(caret.selectionA,caret.position), posDst
 						if (ctrl){
 							// a shortcut other than Caret positioning
 							return 0;
-						}else if (!caret.ascii) // here Hexa mode; Ascii mode handled in WM_CHAR
+						}else if (!caret.ascii){ // here Hexa mode; Ascii mode handled in WM_CHAR
 							// Hexa modification
-							if (wParam>='0' && wParam<='9'){
+							if (wParam>='0' && wParam<='9')
 								wParam-='0';
-changeHalfbyte:					if (caret.position<maxFileSize){
-									BYTE b=0;
-									f->Seek(caret.position,CFile::begin);
-									f->Read(&b,1);
-									b= b<<4 | wParam;
-									if (caret.position<f->GetLength()) f->Seek(-1,CFile::current);
-									f->Write(&b,1);
-									if ( caret.hexaLow=!caret.hexaLow )
-										caret.position++;
-									caret.selectionA=caret.position; // cancelling any Selection
-									RepaintData();
-									goto caretRefresh;
-								}else
-									__showMessage__(MESSAGE_LIMIT_UPPER);
-							}else if (wParam>='A' && wParam<='F'){
+							else if (wParam>=VK_NUMPAD0 && wParam<=VK_NUMPAD9)
+								wParam-=VK_NUMPAD0;
+							else if (wParam>='A' && wParam<='F')
 								wParam-='A'-10;
-								goto changeHalfbyte;
-							}
+							else
+								break;
+							if (caret.position<maxFileSize){
+								BYTE b=0;
+								f->Seek(caret.position,CFile::begin);
+								f->Read(&b,1);
+								b= b<<4 | wParam;
+								if (caret.position<f->GetLength()) f->Seek(-1,CFile::current);
+								f->Write(&b,1);
+								if ( caret.hexaLow=!caret.hexaLow )
+									caret.position++;
+								caret.selectionA=caret.position; // cancelling any Selection
+								RepaintData();
+								goto caretRefresh;
+							}else
+								__showMessage__(MESSAGE_LIMIT_UPPER);
+						}
 						break;
 				}
 				break;
