@@ -13,6 +13,11 @@
 		return (LOBYTE(result)<<8) + HIBYTE(result);
 	}
 
+	bool CFloppyImage::IsValidSectorLengthCode(BYTE lengthCode){
+		// True <=> SectorLengthCode complies with Simon Owen's recommendation (interval 0..7), otherwise False
+		return (lengthCode&0xf8)==0;
+	}
+
 
 
 
@@ -36,6 +41,8 @@
 
 	WORD CFloppyImage::GetUsableSectorLength(BYTE sectorLengthCode) const{
 		// determines and returns usable portion of a Sector based on supplied LenghtCode and actual FloppyType
+		if (!IsValidSectorLengthCode(sectorLengthCode))
+			return 0; // e.g. only copy-protection marks
 		const WORD officialLength=GetOfficialSectorLength(sectorLengthCode);
 		if ((floppyType&TMedium::FLOPPY_ANY_DD)!=0 || floppyType==TMedium::UNKNOWN) // Unknown = if FloppyType not set (e.g. if DOS Unknown), the floppy is by default considered as a one with the lowest capacity
 			return std::min<>( (WORD)6144, officialLength );

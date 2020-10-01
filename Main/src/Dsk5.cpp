@@ -109,12 +109,9 @@
 
 	WORD CDsk5::__getSectorLength__(const TSectorInfo *si) const{
 		// determines and returns Sector length given its LengthCode and/or reported SectorLength
-		if (params.rev5)
-			return si->rev5_sectorLength+0x7f & 0xff80; // rounding up to whole multiples of 128
-		else
-			return	si->__hasValidSectorLengthCode__() // if Code valid ...
-					? GetUsableSectorLength(si->sectorLengthCode) // ... it's possible to determine UsableLength (e.g. for 2DD floppy 0..6144 Bytes)
-					: 0; // ... otherwise zero length
+		return	params.rev5
+				? si->rev5_sectorLength+0x7f & 0xff80 // rounding up to whole multiples of 128
+				: GetUsableSectorLength(si->sectorLengthCode);
 	}
 
 	WORD CDsk5::__getTrackLength256__(const TTrackInfo *ti) const{
@@ -355,7 +352,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - base
-		if (const TStdWinError err=CFloppyImage::SetMediumTypeAndGeometry( pFormat, sideMap, firstSectorNumber ))
+		if (const TStdWinError err=__super::SetMediumTypeAndGeometry( pFormat, sideMap, firstSectorNumber ))
 			return err;
 		// - changes in geometry allowed only if Image is empty
 		if (!diskInfo.nCylinders)

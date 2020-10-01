@@ -6,6 +6,7 @@
 		typedef WORD TCrc16;
 
 		static TCrc16 GetCrc16Ccitt(PCSectorData buffer,WORD length);
+		static bool IsValidSectorLengthCode(BYTE lengthCode);
 
 		TMedium::TType floppyType; // DD/HD
 
