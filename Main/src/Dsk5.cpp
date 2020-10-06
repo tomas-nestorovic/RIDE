@@ -380,7 +380,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				DDX_Radio( pDX, ID_STANDARD, i );
 				rParams.rev5=i>0;
 				static const WORD Controls[]={ ID_STANDARD, ID_DRIVE, ID_PROTECTED, 0 } ;
-				EnableDlgItems( Controls, allowTypeBeChanged );
+				EnableDlgItems( Controls, !readOnly&&allowTypeBeChanged );
 				// . Creator
 				const BYTE nCyls=rDiskInfo.nCylinders;
 				rDiskInfo.nCylinders=0; // converting the Creator field to a null-terminated string
@@ -400,10 +400,12 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 						cb.Detach();
 					}
 				rDiskInfo.nCylinders=nCyls;
+				EnableDlgItem( ID_CREATOR, !readOnly );
 				// . preservation of empty Tracks
 				i=rParams.preserveEmptyTracks;
 				DDX_Check( pDX, ID_TRACK, i );
 				rParams.preserveEmptyTracks=i!=BST_UNCHECKED;
+				EnableDlgItem( ID_TRACK, !readOnly );
 			}
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 				// window procedure
@@ -443,16 +445,17 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				return __super::WindowProc(msg,wParam,lParam);
 			}
 		public:
-			const bool allowTypeBeChanged;
+			const bool readOnly,allowTypeBeChanged;
 			TParams &rParams;
 			TDiskInfo &rDiskInfo;
 
-			CTypeSelectionDialog(bool allowTypeBeChanged,TParams &rParams,TDiskInfo &rDiskInfo)
+			CTypeSelectionDialog(bool allowTypeBeChanged,CDsk5 &dsk)
 				: Utils::CRideDialog(IDR_DSK_TYPE)
+				, readOnly(dsk.IsWriteProtected())
 				, allowTypeBeChanged(allowTypeBeChanged)
-				, rParams(rParams) , rDiskInfo(rDiskInfo) {
+				, rParams(dsk.params) , rDiskInfo(dsk.diskInfo) {
 			}
-		} d(allowTypeBeChanged,params,diskInfo);
+		} d(allowTypeBeChanged,*this);
 		// - showing the Dialog and processing its result
 		if (d.DoModal()==IDOK){
 			// . saving settings
