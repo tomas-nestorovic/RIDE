@@ -852,6 +852,16 @@ namespace Utils{
 		::SelectObject(dc,hFont0);
 	}
 
+	void CRideDialog::SetDlgItemFormattedText(WORD id,LPCTSTR format,...) const{
+		// sets given window's text to the text Formatted using given string and parameters; returns the number of characters set
+		va_list argList;
+		va_start( argList, format );
+			TCHAR buf[16384];
+			::wvsprintf( buf, format, argList );
+		va_end(argList);
+		::SetWindowText( ::GetDlgItem(m_hWnd,id), buf );
+	}
+
 	void CRideDialog::SetDlgItemSingleCharUsingFont(HWND hDlg,WORD controlId,WCHAR singleChar,HFONT hFont){
 		// sets given window's text to the SingleCharacter displayed in specified Font
 		const HWND hCtrl=::GetDlgItem(hDlg,controlId);
