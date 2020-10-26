@@ -2,15 +2,20 @@
 
 	#define CRC16_POLYNOM 0x1021
 
-	CFloppyImage::TCrc16 CFloppyImage::GetCrc16Ccitt(PCSectorData buffer,WORD length){
+	CFloppyImage::TCrc16 CFloppyImage::GetCrc16Ccitt(TCrc16 seed,LPCVOID bytes,WORD nBytes){
 		// computes and returns CRC-CCITT (0xFFFF) of data with a given Length in Buffer
-		TCrc16 result=0xFFFF;
-		while (length--){
+		TCrc16 result= (LOBYTE(seed)<<8) + HIBYTE(seed);
+		for( PCBYTE buffer=(PCBYTE)bytes; nBytes--; ){
 			BYTE x = result>>8 ^ *buffer++;
 			x ^= x>>4;
 			result = (result<<8) ^ (WORD)(x<<12) ^ (WORD)(x<<5) ^ (WORD)x;
 		}
 		return (LOBYTE(result)<<8) + HIBYTE(result);
+	}
+
+	CFloppyImage::TCrc16 CFloppyImage::GetCrc16Ccitt(LPCVOID bytes,WORD nBytes){
+		// computes and returns CRC-CCITT (0xFFFF) of data with a given Length in Buffer
+		return GetCrc16Ccitt( 0xffff, bytes, nBytes );
 	}
 
 	bool CFloppyImage::IsValidSectorLengthCode(BYTE lengthCode){
@@ -68,7 +73,7 @@
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		floppyType=pFormat->mediumType;
-		return ERROR_SUCCESS;
+		return __super::SetMediumTypeAndGeometry( pFormat, sideMap, firstSectorNumber );
 	}
 
 	std::unique_ptr<CImage::CSectorDataSerializer> CFloppyImage::CreateSectorDataSerializer(CHexaEditor *pParentHexaEditor){

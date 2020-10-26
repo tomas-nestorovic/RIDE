@@ -2,12 +2,13 @@
 #define IMAGEFLOPPY_H
 
 	class CFloppyImage:public CImage{
-	protected:
+	public:
 		typedef WORD TCrc16;
 
-		static TCrc16 GetCrc16Ccitt(PCSectorData buffer,WORD length);
+		static TCrc16 GetCrc16Ccitt(TCrc16 seed,LPCVOID bytes,WORD nBytes);
+		static TCrc16 GetCrc16Ccitt(LPCVOID bytes,WORD nBytes);
 		static bool IsValidSectorLengthCode(BYTE lengthCode);
-
+	protected:
 		TMedium::TType floppyType; // DD/HD
 
 		CFloppyImage(PCProperties properties,bool hasEditableSettings);
