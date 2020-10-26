@@ -324,10 +324,11 @@ trackNotFound:
 		return __setMediumTypeAndGeometry__(pFormat,sideMap,firstSectorNumber);
 	}
 
-	void CImageRaw::EditSettings(){
-		// displays dialog with editable settings and reflects changes made by the user into the Image's inner state
+	bool CImageRaw::EditSettings(bool initialEditing){
+		// True <=> new settings have been accepted (and adopted by this Image), otherwise False
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		//TODO
+		return true;
 	}
 
 	TStdWinError CImageRaw::Reset(){

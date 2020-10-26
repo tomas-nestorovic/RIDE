@@ -145,7 +145,7 @@
 		// - if data shorter than an empty Image, resetting to empty Image
 		const WORD nDiskInfoBytesRead=f.Read(&diskInfo,sizeof(TDiskInfo));
 		if (!nDiskInfoBytesRead){
-			__reset__(); // to correctly initialize using current Parameters
+			Reset(); // to correctly initialize using current Parameters
 			return TRUE;
 		}else if (nDiskInfoBytesRead<sizeof(TDiskInfo)){
 formatError: ::SetLastError(ERROR_BAD_FORMAT);
@@ -360,17 +360,9 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		return ERROR_SUCCESS;
 	}
 
-	TStdWinError CDsk5::__reset__(){
-		// resets internal representation of the disk (e.g. by disposing all content without warning)
-		// - disposing existing Tracks
-		__freeAllTracks__();
-		// - reinitializing to an empty Image
-		diskInfo=TDiskInfo(params);
-		return ERROR_SUCCESS;
-	}
-
-	bool CDsk5::__showOptions__(bool allowTypeBeChanged){
-		// True <=> Parameters and/or DiskInfo have changed, otherwise False
+	bool CDsk5::EditSettings(bool initialEditing){
+		// True <=> new settings have been accepted (and adopted by this Image), otherwise False
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - defining the Dialog
 		class CTypeSelectionDialog sealed:public Utils::CRideDialog{
 			void DoDataExchange(CDataExchange *pDX) override{
@@ -455,7 +447,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				, allowTypeBeChanged(allowTypeBeChanged)
 				, rParams(dsk.params) , rDiskInfo(dsk.diskInfo) {
 			}
-		} d(allowTypeBeChanged,*this);
+		} d(initialEditing,*this);
 		// - showing the Dialog and processing its result
 		if (d.DoModal()==IDOK){
 			// . saving settings
@@ -472,18 +464,14 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			return false;
 	}
 
-	void CDsk5::EditSettings(){
-		// displays dialog with editable settings and reflects changes made by the user into the Image's inner state
-		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		__showOptions__(false); // allowing changes in everything but Type of DSK Image (Std vs Rev5)
-	}
-
 	TStdWinError CDsk5::Reset(){
 		// resets internal representation of the disk (e.g. by disposing all content without warning)
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		return	__showOptions__(true)
-				? __reset__() // resetting this Image using actual Parameters
-				: ERROR_CANCELLED;
+		// - disposing existing Tracks
+		__freeAllTracks__();
+		// - reinitializing to an empty Image
+		diskInfo=TDiskInfo(params);
+		return ERROR_SUCCESS;
 	}
 
 	TStdWinError CDsk5::FormatTrack(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte){

@@ -113,7 +113,6 @@
 		TStdWinError __setAndEvaluateDataTransferSpeed__(TMedium::TType _floppyType);
 		void __setSecondsBeforeTurningMotorOff__(BYTE nSeconds) const;
 		LPCTSTR __getControllerType__() const;
-		bool __showSettingDialog__();
 		PInternalTrack __getScannedTrack__(TCylinder cyl,THead head) const;
 		PInternalTrack __scanTrack__(TCylinder cyl,THead head);
 		void __setWaitingForIndex__() const;
@@ -139,7 +138,7 @@
 		void GetTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses) override;
 		TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus) override;
 		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
-		void EditSettings() override;
+		bool EditSettings(bool initialEditing) override;
 		TStdWinError Reset() override;
 		TStdWinError SaveTrack(TCylinder cyl,THead head) override;
 		TStdWinError FormatTrack(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte) override;

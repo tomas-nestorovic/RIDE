@@ -450,7 +450,7 @@
 							CDos::CHexaPreview::pSingleInstance->hexaEditor.SetEditable(!writeProtected);
 						return TRUE;
 					case ID_IMAGE_SETTINGS:
-						EditSettings();
+						EditSettings(false);
 						return TRUE;
 					case ID_IMAGE_DUMP:
 						Dump();

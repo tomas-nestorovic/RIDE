@@ -324,7 +324,11 @@
 			// accessing a local real Device
 			OnFileNew(); // to close any previous Image
 			image.reset( devProps->fnInstantiate(lpszFileName) );
-			if (const TStdWinError err=image->Reset()){
+			TStdWinError err=ERROR_CANCELLED;
+			if (!image->EditSettings(true)
+				||
+				( err=image->Reset() )
+			){
 				Utils::FatalError(_T("Cannot access the floppy drive"),err);
 				return nullptr;
 				//AfxThrowFileException( CFileException::OsErrorToException(err), err, FDD_A_LABEL );

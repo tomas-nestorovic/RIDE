@@ -696,7 +696,10 @@ errorDuringWriting:			TCHAR buf[80];
 		if (d.DoModal()==IDOK){
 			// . resetting Target Image
 			d.dumpParams.target->dos=dos;
-			TStdWinError err=d.dumpParams.target->Reset();
+			TStdWinError err=ERROR_CANCELLED;
+			if (!d.dumpParams.target->EditSettings(true))
+				goto error;
+			err=d.dumpParams.target->Reset();
 			if (err!=ERROR_SUCCESS)
 				goto error;
 			// . dumping

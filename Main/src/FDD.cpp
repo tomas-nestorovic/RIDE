@@ -608,7 +608,7 @@ Utils::Information("--- EVERYTHING OK ---");
 		::GetTempFileName( tmpFileName, nullptr, FALSE, tmpFileName );
 		const CFile fTmp( m_strPathName=tmpFileName, CFile::modeCreate );
 		// - connecting to the Drive
-		__reset__();
+		Reset();
 	}
 
 	CFDD::~CFDD(){
@@ -1277,20 +1277,6 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 		}
 	}
 
-	TStdWinError CFDD::__reset__(){
-		// resets internal representation of the disk (e.g. by disposing all content without warning)
-		LOG_ACTION(_T("TStdWinError CFDD::__reset__"));
-		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		// - disposing all InternalTracks
-		__freeInternalTracks__();
-		// - re-connecting to the Drive
-		__disconnectFromFloppyDrive__();
-		if (const TStdWinError err=__connectToFloppyDrive__(DRV_AUTO))
-			return LOG_ERROR(err);
-		// - sending Head home
-		return fddHead.__calibrate__() ? ERROR_SUCCESS : LOG_ERROR(::GetLastError());
-	}
-
 	bool CFDD::__isFloppyInserted__() const{
 		// True <=> (some) floppy is inserted in the Drive, otherwise False
 		LOG_ACTION(_T("bool CFDD::__isFloppyInserted__"));
@@ -1542,23 +1528,18 @@ Utils::Information(buf);}
 		return ERROR_SUCCESS;
 	}
 
-	bool CFDD::__showSettingDialog__(){
-		// True <=> the SettingDialog shown and new values adopted, otherwise False
+	bool CFDD::EditSettings(bool initialEditing){
+		// True <=> new settings have been accepted (and adopted by this Image), otherwise False
+		//EXCLUSIVELY_LOCK_THIS_IMAGE(); // commented out as the following Dialog creates a parallel thread that in turn would attempt to lock this Image, yielding a deadlock
 		// - defining the Dialog
 		class CSettingDialog sealed:public Utils::CRideDialog{
+			const bool initialEditing;
 			CFDD *const fdd;
 			TCHAR doubleTrackDistanceTextOrg[80];
 
 			bool IsDoubleTrackDistanceForcedByUser() const{
 				// True <=> user has manually overridden DoubleTrackDistance setting, otherwise False
 				return ::lstrlen(doubleTrackDistanceTextOrg)!=::GetWindowTextLength( GetDlgItemHwnd(ID_40D80) );
-			}
-
-			bool AreSomeTracksFormatted() const{
-				// True <=> some Tracks are known to be already formatted, otherwise False
-				bool result=false;
-				for( BYTE t=sizeof(fdd->internalTracks)/sizeof(PInternalTrack); t>0; result|=fdd->internalTracks[--t]!=nullptr );
-				return result;
 			}
 
 			void __refreshMediumInformation__(){
@@ -1573,7 +1554,7 @@ Utils::Information(buf);}
 					if (fdd->__setAndEvaluateDataTransferSpeed__(TMedium::FLOPPY_DD_525)==ERROR_SUCCESS){
 						fdd->floppyType=TMedium::FLOPPY_DD_525;
 						SetDlgItemText( ID_MEDIUM, _T("5.25\" DD formatted") );
-						if (EnableDlgItem( ID_40D80, !AreSomeTracksFormatted() )){
+						if (EnableDlgItem( ID_40D80, initialEditing )){
 							fdd->fddHead.SeekHome();
 							const bool doubleTrackStep0=fdd->fddHead.doubleTrackStep;
 								fdd->fddHead.doubleTrackStep=false;
@@ -1594,11 +1575,11 @@ Utils::Information(buf);}
 						fdd->floppyType=TMedium::FLOPPY_HD_350;
 						SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" HD formatted") );
 						CheckDlgButton( ID_40D80, false );
-						EnableDlgItem( ID_40D80, !AreSomeTracksFormatted() );
+						EnableDlgItem( ID_40D80, initialEditing );
 					}else{
 						SetDlgItemText( ID_MEDIUM, _T("Not formatted or faulty") );
 						CheckDlgButton( ID_40D80, false );
-						EnableDlgItem( ID_40D80, !AreSomeTracksFormatted() );
+						EnableDlgItem( ID_40D80, initialEditing );
 					}
 				// . loading the Profile associated with the current drive and FloppyType
 				profile.Load( fdd->GetDriveLetter(), fdd->floppyType, fdd->EstimateNanosecondsPerOneByte() );
@@ -1764,7 +1745,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 						switch (wParam){
 							case ID_RECOVER:
 								// refreshing information on (inserted) floppy
-								if (!AreSomeTracksFormatted()) // if no Tracks are yet formatted ...
+								if (initialEditing) // if no Tracks are yet formatted ...
 									SetDlgItemText( ID_40D80, doubleTrackDistanceTextOrg ); // ... then resetting the flag that user has overridden DoubleTrackDistance
 								__refreshMediumInformation__();
 								break;
@@ -1805,11 +1786,11 @@ autodetermineLatencies:		// automatic determination of write latency values
 			TParams params;
 			TFddHead::TProfile profile;
 
-			CSettingDialog(CFDD *_fdd)
+			CSettingDialog(CFDD *_fdd,bool initialEditing)
 				// ctor
-				: Utils::CRideDialog(IDR_FDD_ACCESS) , fdd(_fdd) , params(_fdd->params) , profile(_fdd->fddHead.profile) {
+				: Utils::CRideDialog(IDR_FDD_ACCESS) , fdd(_fdd) , params(_fdd->params) , profile(_fdd->fddHead.profile) , initialEditing(initialEditing) {
 			}
-		} d(this);
+		} d(this,initialEditing);
 		// - showing the Dialog and processing its result
 		LOG_DIALOG_DISPLAY(_T("CSettingDialog"));
 		const auto floppyTypeOrg=floppyType;
@@ -1818,30 +1799,28 @@ autodetermineLatencies:		// automatic determination of write latency values
 		if (dialogConfirmed){
 			params=d.params;
 			__setSecondsBeforeTurningMotorOff__(params.nSecondsToTurnMotorOff);
+			__informationWithCheckableShowNoMore__( _T("To spare both floppy and drive, all activity is buffered: CHANGES (WRITINGS, DELETIONS) MADE TO THE FLOPPY ARE SAVED ONLY WHEN YOU COMMAND SO (Ctrl+S). If you don't save them, they will NOT appear on the disk next time. FORMATTING DESTROYS THE CONTENT IMMEDIATELLY!"), INI_MSG_RESET );
 			return true;
 		}else
 			return LOG_BOOL(false);
 	}
 
-	void CFDD::EditSettings(){
-		// displays dialog with editable settings and reflects changes made by the user into the Image's inner state
-		//EXCLUSIVELY_LOCK_THIS_IMAGE(); // commented out as the following dialog is blocking
-		__showSettingDialog__();
-	}
-
 	TStdWinError CFDD::Reset(){
 		// resets internal representation of the disk (e.g. by disposing all content without warning)
-		// - displaying message
-		__informationWithCheckableShowNoMore__( _T("To spare both floppy and drive, all activity is buffered: CHANGES (WRITINGS, DELETIONS) MADE TO THE FLOPPY ARE SAVED ONLY WHEN YOU COMMAND SO (Ctrl+S). If you don't save them, they will NOT appear on the disk next time. FORMATTING DESTROYS THE CONTENT IMMEDIATELLY!"), INI_MSG_RESET );
 		// - resetting
 		LOG_ACTION(_T("TStdWinError CFDD::Reset"));
-		const TStdWinError err=__reset__();
-		#ifndef _DEBUG // checking Error only in Release mode (in Debug mode despite Error wanting to proceed up the setting dialog)
-			if (err!=ERROR_SUCCESS)
-				return LOG_ERROR(err);
-		#endif
-		// - showing the settings and applying its results to the Drive access
-		return __showSettingDialog__() ? ERROR_SUCCESS : LOG_ERROR(ERROR_CANCELLED);
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		// - disposing all InternalTracks
+		__freeInternalTracks__();
+		// - re-connecting to the Drive
+		__disconnectFromFloppyDrive__();
+		if (const TStdWinError err=__connectToFloppyDrive__(DRV_AUTO))
+			return LOG_ERROR(err);
+		// - sending Head home
+		if (!fddHead.__calibrate__())
+			return LOG_ERROR(::GetLastError());
+		// - successfully reset
+		return ERROR_SUCCESS;
 	}
 
 	static BYTE ReportSectorVerificationError(RCPhysicalAddress chs){

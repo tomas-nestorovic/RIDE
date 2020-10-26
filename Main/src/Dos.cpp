@@ -225,6 +225,8 @@ reportError:Utils::Information(buf);
 			// request to format from the beginning of disk - warning that all data will be destroyed
 			if (!Utils::QuestionYesNo(_T("About to format the whole image and destroy all data.\n\nContinue?!"),MB_DEFBUTTON2))
 				return ERROR_CANCELLED;
+			if (!image->EditSettings(true))
+				return ERROR_CANCELLED;
 			if (const TStdWinError err=image->Reset())
 				return err;
 			if (const TStdWinError err=image->SetMediumTypeAndGeometry( &rd.params.format, sideMap, properties->firstSectorNumber ))
