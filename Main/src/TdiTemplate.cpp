@@ -61,15 +61,9 @@
 		// - creating a new document doesn't require opening any existing document
 		if (!lpszPathName)
 			return nullptr;
-		// - opening the requested document
-		const LPCTSTR extension=_tcsrchr(lpszPathName,'.');
-		const CImage::PCProperties p=	extension // recognizing file Image by its extension
-										? CImage::DetermineTypeByExtension(extension)
-										: nullptr;
-		if (!p){
-			Utils::FatalError(_T("Unknown container to load."));
-			return nullptr;
-		}
-		return p->fnInstantiate(nullptr); // instantiating recognized file Image; Null as buffer = one Image represents only one "device" whose name is known at compile-time
-		// caller is now to load the document, and then call AddDocument
+		// - opening the requested document (caller is now to load the document, and then call AddDocument)
+		if (const CImage::PCProperties p=CImage::DetermineType(lpszPathName))
+			return p->fnInstantiate(nullptr); // instantiating recognized file Image; Null as buffer = one Image represents only one "device" whose name is known at compile-time
+		Utils::FatalError(_T("Unknown container to load."));
+		return nullptr;
 	}

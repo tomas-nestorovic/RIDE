@@ -296,20 +296,22 @@
 	CPtrList CImage::known;
 	CPtrList CImage::devices;
 
-	CImage::PCProperties CImage::DetermineTypeByExtension(LPCTSTR extension){
-		// determines and returns Properties for an Image with a given Extension; returns Null if extension unknown
-		if (extension){
-			TCHAR buf[MAX_PATH];
-			::lstrcat( ::CharLower(::lstrcpy(buf,extension)), IMAGE_FORMAT_SEPARATOR );
-			for( POSITION pos=known.GetHeadPosition(); pos; ){
-				const CImage::PCProperties p=(CImage::PCProperties)CImage::known.GetNext(pos);
-				TCHAR tmp[40];
-				::lstrcat( ::CharLower(::lstrcpy(tmp,p->filter)), IMAGE_FORMAT_SEPARATOR );
-				if (_tcsstr(tmp,buf))
-					return p;
-			}
+	CImage::PCProperties CImage::DetermineType(LPCTSTR fileName){
+		// determines and returns Properties for an Image with a given FileName; returns Null if the file represents an unknown Image
+		CImage::PCProperties result=nullptr; // assumption (unknown Image type)
+		int nLongestExtChars=-1;
+		const LPCTSTR fileNameEnd=fileName+::lstrlen(fileName);
+		for( POSITION pos=known.GetHeadPosition(); pos; ){
+			const CImage::PCProperties p=(CImage::PCProperties)CImage::known.GetNext(pos);
+			TCHAR tmp[40], *pFilter=_tcstok( ::lstrcpy(tmp,p->filter), IMAGE_FORMAT_SEPARATOR );
+			do{
+				const int nExtChars=::lstrlen(pFilter);
+				if (!::lstrcmpi(fileNameEnd-::lstrlen(pFilter)+1,pFilter+1)) // "+1" = asterisk as in "*.D40"
+					if (nExtChars>nLongestExtChars)
+						nLongestExtChars=nExtChars, result=p;
+			}while ( pFilter=_tcstok(nullptr,IMAGE_FORMAT_SEPARATOR) );
 		}
-		return nullptr;
+		return result;
 	}
 
 	BYTE CImage::PopulateComboBoxWithCompatibleMedia(HWND hComboBox,WORD dosSupportedMedia,PCProperties imageProperties){

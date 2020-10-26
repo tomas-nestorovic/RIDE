@@ -262,7 +262,7 @@
 		static CPtrList devices; // list of known Devices (registered in CRideApp::InitInstance)
 
 		static CImage *GetActive();
-		static PCProperties DetermineTypeByExtension(LPCTSTR extension);
+		static PCProperties DetermineType(LPCTSTR fileName);
 		static BYTE PopulateComboBoxWithCompatibleMedia(HWND hComboBox,WORD dosSupportedMedia,PCProperties imageProperties);
 		static TFormat::TLengthCode GetSectorLengthCode(WORD sectorLength);
 		static WORD GetOfficialSectorLength(BYTE sectorLengthCode);

@@ -583,13 +583,15 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			dialogConfirmed=d.DoModal()==IDOK;
 		if (dialogConfirmed){
 			// selected an Image
-			const LPCTSTR ext=_tcsrchr(fileName,'.');
 			if (singleAllowedImage){
-				if (CImage::DetermineTypeByExtension(ext)!=singleAllowedImage) // no or wrong file Extension?
-					::strncat( fileName, 1+singleAllowedImage->filter, 4 ); // 1 = asterisk, 4 = dot and three-character extension (e.g. "*.d40")
+				if (CImage::DetermineType(fileName)!=singleAllowedImage) // not the expected Image type?
+					if (const LPCTSTR separator=::strchr(singleAllowedImage->filter,*IMAGE_FORMAT_SEPARATOR)) // are there more than one possible extension
+						::strncat( fileName, 1+singleAllowedImage->filter, separator-1-singleAllowedImage->filter ); // 1 = asterisk
+					else
+						::lstrcat( fileName, 1+singleAllowedImage->filter ); // 1 = asterisk
 				return singleAllowedImage;
 			}else
-				return CImage::DetermineTypeByExtension(ext); // Null <=> unknown container
+				return CImage::DetermineType(fileName); // Null <=> unknown container
 		}else
 			// Dialog cancelled
 			return nullptr;
