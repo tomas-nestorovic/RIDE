@@ -271,7 +271,9 @@
 	int CHexaEditor::__scrollToRow__(int row){
 		// scrolls the HexaEditor so that the specified Row is shown as the first one from top; returns the Row number to which it has been really scrolled to
 		// - Row must be in expected limits
-		const int scrollMax=nLogicalRows-nRowsOnPage;
+		locker.Lock();
+			const int scrollMax=nLogicalRows-nRowsOnPage;
+		locker.Unlock();
 		if (row<0) row=0;
 		else if (row>scrollMax) row=scrollMax;
 		// - redrawing HexaEditor's client and non-client areas
@@ -287,22 +289,24 @@
 	void CHexaEditor::__refreshVertically__(){
 		// refreshes all parameters that relate to vertical axis
 		// - determining the total number of Rows
-		nLogicalRows=__logicalPositionToRow__( std::max<int>(f->GetLength(),logicalSize) );
+		locker.Lock();
+			nLogicalRows=__logicalPositionToRow__( std::max<int>(f->GetLength(),logicalSize) );
+		locker.Unlock();
 		// - setting the scrolling dimensions
 		RECT r;
 		GetClientRect(&r);
 		nRowsDisplayed=std::max<>( 0L, (r.bottom-r.top)/font.charHeight-HEADER_LINES_COUNT );
 		nRowsOnPage=std::max<>( 0, nRowsDisplayed-1 );
-		SCROLLINFO si={ sizeof(si), SIF_RANGE|SIF_PAGE, 0,nLogicalRows-1, nRowsOnPage };
-		SetScrollInfo( SB_VERT, &si, TRUE );
-		//PostMessage( WM_HEXA_PAINTSCROLLBARS );
+		PostMessage( WM_HEXA_PAINTSCROLLBARS );
 	}
 
 	void CHexaEditor::RepaintData(bool immediately) const{
 		// invalidates the "data" (the content below the Header), eventually repaints them Immediately
 		if (m_hWnd){
-			if (!mouseInNcArea) // when NOT in the non-client area (e.g. over a scrollbar), repainting normally
-				const_cast<CHexaEditor *>(this)->__refreshVertically__();
+			locker.Lock();
+				if (!mouseInNcArea) // when NOT in the non-client area (e.g. over a scrollbar), repainting normally
+					const_cast<CHexaEditor *>(this)->__refreshVertically__();
+			locker.Unlock();
 			RECT rc;
 			GetClientRect(&rc);
 			rc.top=HEADER_HEIGHT;
@@ -395,6 +399,7 @@
 				cfBinary=::RegisterClipboardFormat(CLIPFORMAT_BINARY);
 				// . recovering the scroll position
 				//SetScrollPos( SB_VERT, iScrollY, FALSE );
+				__refreshVertically__();
 				return 0;
 			case WM_KEYDOWN:{
 				// key pressed
@@ -977,7 +982,6 @@ leftMouseDragged:
 				// mouse moved in non-client area
 				locker.Lock();
 					mouseInNcArea=true;
-					update=*this;
 				locker.Unlock();
 				TRACKMOUSEEVENT tme={ sizeof(tme), TME_NONCLIENT|TME_LEAVE, m_hWnd, 0 };
 				::TrackMouseEvent(&tme);
@@ -1268,8 +1272,14 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 			}
 			case WM_HEXA_PAINTSCROLLBARS:{
 				// repainting the scrollbars
-				const BOOL scrollbarNecessary=nRowsOnPage<nLogicalRows;
-				ShowScrollBar(SB_VERT,scrollbarNecessary);
+				locker.Lock();
+					SCROLLINFO si={ sizeof(si), SIF_RANGE|SIF_PAGE, 0,nLogicalRows-1, nRowsOnPage };
+					SetScrollInfo( SB_VERT, &si, TRUE );
+					if (mouseInNcArea){
+						const BOOL scrollbarNecessary=nRowsOnPage<nLogicalRows;
+						ShowScrollBar(SB_VERT,scrollbarNecessary);
+					}
+				locker.Unlock();
 				return 0;
 			}
 		}

@@ -13,6 +13,11 @@
 	struct TState{
 		int minFileSize,maxFileSize;
 		int logicalSize; // zero by default
+
+		inline
+		TState(){
+			::ZeroMemory( this, sizeof(*this) );
+		}
 	};
 
 	class CHexaEditor:public CEditView, TState{
