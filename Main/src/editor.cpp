@@ -7,6 +7,8 @@
 #include "CapsBase.h"
 #include "IPF.h"
 #include "CtRaw.h"
+#include "KryoFluxBase.h"
+#include "KryoFluxStreams.h"
 
 	CRideApp::CRecentFileListEx::CRecentFileListEx(const CRecentFileList &rStdMru)
 		// ctor
@@ -179,6 +181,7 @@
 		CImage::known.AddTail( (PVOID)&D80::Properties );
 		CImage::known.AddTail( (PVOID)&CDsk5::Properties );
 		CImage::known.AddTail( (PVOID)&CIpf::Properties );
+		CImage::known.AddTail( (PVOID)&CKryoFluxStreams::Properties );
 		CImage::known.AddTail( (PVOID)&MBD::Properties );
 		CImage::known.AddTail( (PVOID)&CMGT::Properties );
 		CImage::known.AddTail( (PVOID)&CImageRaw::Properties );
