@@ -6,6 +6,7 @@
 #include "BSDOS.h"
 #include "CapsBase.h"
 #include "IPF.h"
+#include "CtRaw.h"
 
 	CRideApp::CRecentFileListEx::CRecentFileListEx(const CRecentFileList &rStdMru)
 		// ctor
@@ -174,6 +175,7 @@
 		cfPerformedDropEffect=::RegisterClipboardFormat(CFSTR_PERFORMEDDROPEFFECT);
 		cfPasteSucceeded=::RegisterClipboardFormat(CFSTR_PASTESUCCEEDED);
 		// - registering recognizable Image types and known DOSes (in alphabetical order)
+		CImage::known.AddTail( (PVOID)&CCtRaw::Properties );
 		CImage::known.AddTail( (PVOID)&D80::Properties );
 		CImage::known.AddTail( (PVOID)&CDsk5::Properties );
 		CImage::known.AddTail( (PVOID)&CIpf::Properties );

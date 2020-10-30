@@ -189,6 +189,9 @@
     <ClInclude Include="src\CapsBase.h">
       <Filter>Header Files\Image</Filter>
     </ClInclude>
+    <ClInclude Include="src\CtRaw.h">
+      <Filter>Header Files\Image</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\editor.cpp">
@@ -411,6 +414,9 @@
       <Filter>Source Files\Image</Filter>
     </ClCompile>
     <ClCompile Include="src\CapsBase.cpp">
+      <Filter>Source Files\Image</Filter>
+    </ClCompile>
+    <ClCompile Include="src\CtRaw.cpp">
       <Filter>Source Files\Image</Filter>
     </ClCompile>
   </ItemGroup>

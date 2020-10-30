@@ -200,6 +200,7 @@
     <ClInclude Include="src\BackgroundAction.h" />
     <ClInclude Include="src\BSDOS.h" />
     <ClInclude Include="src\CapsBase.h" />
+    <ClInclude Include="src\CtRaw.h" />
     <ClInclude Include="src\Debug.h" />
     <ClInclude Include="src\DialogEmptySpaceFilling.h" />
     <ClInclude Include="src\DialogFormatting.h" />
@@ -242,6 +243,7 @@
     <ClCompile Include="src\BSDOS_FAT.cpp" />
     <ClCompile Include="src\BSDOS_FileManager.cpp" />
     <ClCompile Include="src\CapsBase.cpp" />
+    <ClCompile Include="src\CtRaw.cpp" />
     <ClCompile Include="src\Debug.cpp" />
     <ClCompile Include="src\DialogRealDeviceSelection.cpp" />
     <ClCompile Include="src\DialogVerification.cpp" />
