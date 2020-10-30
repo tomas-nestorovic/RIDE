@@ -214,6 +214,7 @@
     <ClInclude Include="src\FDD.h" />
     <ClInclude Include="src\GDOS.h" />
     <ClInclude Include="src\HexaEditor.h" />
+    <ClInclude Include="src\IPF.h" />
     <ClInclude Include="src\MainWindow.h" />
     <ClInclude Include="src\Image.h" />
     <ClInclude Include="src\ImageFloppy.h" />
@@ -270,6 +271,7 @@
     <ClCompile Include="src\HexaEditor.cpp" />
     <ClCompile Include="src\Image_SectorDataSerializer.cpp" />
     <ClCompile Include="src\Image_TrackRW.cpp" />
+    <ClCompile Include="src\IPF.cpp" />
     <ClCompile Include="src\MainWindow.cpp" />
     <ClCompile Include="src\Image.cpp" />
     <ClCompile Include="src\ImageFloppy.cpp" />

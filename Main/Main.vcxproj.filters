@@ -183,6 +183,9 @@
     <ClInclude Include="src\DialogRealDeviceSelection.h">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
+    <ClInclude Include="src\IPF.h">
+      <Filter>Header Files\Image</Filter>
+    </ClInclude>
     <ClInclude Include="src\CapsBase.h">
       <Filter>Header Files\Image</Filter>
     </ClInclude>
@@ -402,6 +405,9 @@
       <Filter>Source Files\Dos\Spectrum</Filter>
     </ClCompile>
     <ClCompile Include="src\Image_TrackRW.cpp">
+      <Filter>Source Files\Image</Filter>
+    </ClCompile>
+    <ClCompile Include="src\IPF.cpp">
       <Filter>Source Files\Image</Filter>
     </ClCompile>
     <ClCompile Include="src\CapsBase.cpp">

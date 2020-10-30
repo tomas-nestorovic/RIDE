@@ -4,6 +4,8 @@
 #include "TRDOS.h"
 #include "GDOS.h"
 #include "BSDOS.h"
+#include "CapsBase.h"
+#include "IPF.h"
 
 	CRideApp::CRecentFileListEx::CRecentFileListEx(const CRecentFileList &rStdMru)
 		// ctor
@@ -174,6 +176,7 @@
 		// - registering recognizable Image types and known DOSes (in alphabetical order)
 		CImage::known.AddTail( (PVOID)&D80::Properties );
 		CImage::known.AddTail( (PVOID)&CDsk5::Properties );
+		CImage::known.AddTail( (PVOID)&CIpf::Properties );
 		CImage::known.AddTail( (PVOID)&MBD::Properties );
 		CImage::known.AddTail( (PVOID)&CMGT::Properties );
 		CImage::known.AddTail( (PVOID)&CImageRaw::Properties );
