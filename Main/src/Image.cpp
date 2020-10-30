@@ -627,6 +627,15 @@
 		MarkSectorAsDirty(chs,0,&TFdcStatus::WithoutError);
 	}
 
+	TStdWinError CImage::GetInsertedMediumType(TCylinder,TMedium::TType &rOutMediumType) const{
+		// recognizes a Medium inserted in the Drive; returns Windows standard i/o error
+		if (dos!=nullptr){
+			rOutMediumType=dos->formatBoot.mediumType; // returning officially recognized Medium
+			return ERROR_SUCCESS;
+		}else
+			return ERROR_NO_MEDIA_IN_DRIVE;
+	}
+
 	TStdWinError CImage::SetMediumTypeAndGeometry(PCFormat,PCSide,TSector){
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		return ERROR_SUCCESS;

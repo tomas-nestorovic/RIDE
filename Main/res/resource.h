@@ -52,6 +52,7 @@
 #define IDR_DRIVE_ACCESS                217
 #define IDR_SPECTRUM_PREVIEW_ASSEMBLER  218
 #define IDR_DOS_PREVIEW_BASE            219
+#define IDR_KRYOFLUX_ACCESS             220
 #define IDR_CAPS                        221
 #define ID_HIDDEN                       1018
 #define ID_SYSTEM                       1019

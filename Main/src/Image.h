@@ -418,6 +418,7 @@
 		PSectorData GetHealthySectorDataOfUnknownLength(TPhysicalAddress &rChs,PWORD sectorLength);
 		virtual TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus)=0;
 		void MarkSectorAsDirty(RCPhysicalAddress chs);
+		virtual TStdWinError GetInsertedMediumType(TCylinder cyl,TMedium::TType &rOutMediumType) const;
 		virtual TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber);
 		virtual bool EditSettings(bool initialEditing)=0;
 		virtual TStdWinError Reset()=0;
