@@ -40,6 +40,7 @@
 	#define HDD_HEADS_MAX		63
 
 	#define DEVICE_NAME_CHARS_MAX 48
+	#define DEVICE_REVOLUTIONS_MAX 8
 
 	#pragma pack(1)
 	typedef const struct TMedium sealed{
@@ -148,6 +149,9 @@
 	typedef const struct TFdcStatus sealed{
 		static const TFdcStatus WithoutError;
 		static const TFdcStatus SectorNotFound;
+		static const TFdcStatus IdFieldCrcError;
+		static const TFdcStatus DataFieldCrcError;
+		static const TFdcStatus NoDataField;
 		static const TFdcStatus DeletedDam;
 
 		BYTE reg1,reg2;
@@ -155,6 +159,7 @@
 		TFdcStatus();
 		TFdcStatus(BYTE _reg1,BYTE _reg2);
 
+		void ExtendWith(TFdcStatus st);
 		WORD ToWord() const;
 		void GetDescriptionsOfSetBits(LPCTSTR *pDescriptions) const;
 		bool IsWithoutError() const;
@@ -220,6 +225,127 @@
 
 			bool IsRealDevice() const;
 		} *PCProperties;
+
+		class CTrackReader{
+		public:
+			typedef int TLogTime,*PLogTime;
+			typedef const TLogTime *PCLogTime;
+
+			typedef BYTE TCodecSet;
+
+			enum TCodec:TCodecSet{
+				FM			=1,
+				MFM			=2,
+				//AMIGA		=4,
+				//GCR		=8,
+				UNDETERMINED=FM|MFM//|AMIGA|GCR
+			};
+
+			enum TMethod:BYTE{
+				FDD_KEIR_FRASIER	=1,
+				FDD_METHODS			=FDD_KEIR_FRASIER
+			};
+
+			struct TProfile sealed{
+				static const TProfile HD_350;
+				static const TProfile DD_350;
+				static const TProfile DD_525;
+
+				TLogTime iwTimeDefault; // inspection window default size
+				TLogTime iwTime; // inspection window size; a "1" is expected in its centre
+				TLogTime iwTimeMin,iwTimeMax; // inspection window possible time range
+				BYTE adjustmentPercentMax; // percentual "speed" in inspection window adjustment
+			} profile;
+		protected:
+			const PLogTime logTimes; // absolute logical times since the start of recording
+			DWORD iNextTime,nLogTimes;
+			TLogTime indexPulses[DEVICE_REVOLUTIONS_MAX];
+			BYTE nIndexPulses;
+			TLogTime currentTime;
+			TCodec codec;
+			TMedium::TType mediumType;
+			BYTE nConsecutiveZerosMax; // # of consecutive zeroes to lose synchronization; e.g. 3 for MFM code
+			DWORD nConsecutiveZeros;
+
+			CTrackReader(PLogTime logTimes,DWORD nLogTimes,PCLogTime indexPulses,BYTE nIndexPulses,TMedium::TType mediumType,TCodec codec);
+		public:
+			CTrackReader(const CTrackReader &rTrackReader);
+			CTrackReader(CTrackReader &&rTrackReader);
+			~CTrackReader();
+
+			inline
+			operator bool() const{
+				// True <=> not all LogicalTimes yet read, otherwise False
+				return iNextTime<nLogTimes;
+			}
+
+			inline
+			BYTE GetIndexCount() const{
+				// returns the number of IndexPulses recorded
+				return nIndexPulses;
+			}
+
+			inline
+			TLogTime GetCurrentTime() const{
+				// returns the LogicalTime ellapsed from the beginning of recording
+				return currentTime;
+			}
+
+			inline
+			void RewindToIndex(BYTE index){
+				// navigates back to the first Flux found just after the index pulse
+				SetCurrentTime( GetIndexTime(index) );
+			}
+
+
+			void SetCurrentTime(TLogTime logTime);
+			TLogTime GetIndexTime(BYTE index) const;
+			TLogTime ReadTime();
+			void SetCodec(TCodec codec);
+			void SetMediumType(TMedium::TType mediumType);
+			bool ReadBit();
+			bool ReadBits16(WORD &rOut);
+			bool ReadBits32(DWORD &rOut);
+			//TSector Scan(BYTE revolutionIndex,PSectorId pOutFoundSectors,PLogTime pOutDataStart);
+			WORD ScanFm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses);
+			WORD ScanMfm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses);
+			TFdcStatus ReadData(WORD nBytesToRead,LPBYTE buffer);
+			TFdcStatus ReadDataFm(WORD nBytesToRead,LPBYTE buffer);
+			TFdcStatus ReadDataMfm(WORD nBytesToRead,LPBYTE buffer);
+		};
+
+		class CTrackReaderWriter:public CTrackReader{
+			const DWORD nLogTimesMax;
+		public:
+			CTrackReaderWriter(DWORD nLogTimesMax);
+			CTrackReaderWriter(const CTrackReaderWriter &rTrackReaderWriter);
+			CTrackReaderWriter(CTrackReaderWriter &&rTrackReaderWriter);
+
+			inline
+			PLogTime GetBuffer() const{
+				// returns the inner buffer
+				return logTimes;
+			}
+
+			inline
+			void AddTime(TLogTime logTime){
+				// appends LogicalTime at the end of the Track
+				ASSERT( nLogTimes<nLogTimesMax );
+				ASSERT( logTime>=0 );
+				logTimes[nLogTimes++]=logTime;
+			}
+
+			inline
+			void AddIndexTime(TLogTime logTime){
+				// appends LogicalTime representing the position of the index pulse on the disk
+				ASSERT( nIndexPulses<DEVICE_REVOLUTIONS_MAX );
+				ASSERT( logTime>=0 );
+				indexPulses[nIndexPulses++]=logTime;
+			}
+
+			void AddTimes(PCLogTime logTimes,DWORD nLogTimes);
+			//bool WriteBits(PLogTime fluxes,DWORD nFluxes);
+		};
 
 		class CSectorDataSerializer abstract:public CFile,public CHexaEditor::IContentAdviser{
 		protected:

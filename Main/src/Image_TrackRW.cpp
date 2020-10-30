@@ -1,0 +1,381 @@
+#include "stdafx.h"
+
+	CImage::CTrackReader::CTrackReader(PLogTime _logTimes,DWORD nLogTimes,PCLogTime indexPulses,BYTE _nIndexPulses,TMedium::TType mediumType,TCodec codec)
+		// ctor
+		: logTimes(_logTimes+1) , nLogTimes(nLogTimes) // "+1" = hidden item represents reference counter
+		, nIndexPulses(  std::min<BYTE>( DEVICE_REVOLUTIONS_MAX, _nIndexPulses )  )
+		, iNextTime(0) , currentTime(0)
+		, nConsecutiveZeros(0) {
+		::memcpy( this->indexPulses, indexPulses, nIndexPulses*sizeof(TLogTime) );
+		logTimes[-1]=1; // initializing the reference counter
+		SetCodec(codec); // setting values associated with the specified Codec
+		SetMediumType(mediumType); // setting values associated with the specified MediumType
+	}
+
+	CImage::CTrackReader::CTrackReader(const CTrackReader &rTrackReader)
+		// copy ctor
+		: logTimes(rTrackReader.logTimes) {
+		::memcpy( this, &rTrackReader, sizeof(*this) );
+		::InterlockedIncrement( (PUINT)logTimes-1 ); // increasing the reference counter
+	}
+
+	CImage::CTrackReader::CTrackReader(CTrackReader &&rTrackReader)
+		// move ctor
+		: logTimes(rTrackReader.logTimes) {
+		::memcpy( this, &rTrackReader, sizeof(*this) );
+		::InterlockedIncrement( (PUINT)logTimes-1 ); // increasing the reference counter
+	}
+
+	CImage::CTrackReader::~CTrackReader(){
+		// dtor
+		if (!::InterlockedDecrement( (PUINT)logTimes-1 )) // decreasing the reference counter
+			::free(logTimes-1);
+	}
+
+
+
+
+	void CImage::CTrackReader::SetCurrentTime(TLogTime logTime){
+		// seeks to the specified LogicalTime
+		if (!nLogTimes)
+			return;
+		if (logTime<*logTimes){
+			iNextTime=0;
+			currentTime=std::max( logTime, 0 );
+			return;
+		}
+		DWORD L=0, R=nLogTimes;
+		do{
+			const DWORD M=(L+R)/2;
+			if (logTimes[L]<=logTime && logTime<logTimes[M])
+				R=M;
+			else
+				L=M;
+		}while (R-L>1);
+		iNextTime=R;
+		currentTime= R<nLogTimes ? logTime : logTimes[L];
+	}
+
+	CImage::CTrackReader::TLogTime CImage::CTrackReader::GetIndexTime(BYTE index) const{
+		// returns the Time at which the specified IndexPulse occurs
+		if (!nLogTimes || (nIndexPulses|index)==0)
+			return 0;
+		else
+			return	index<nIndexPulses
+					? indexPulses[index]
+					: logTimes[nLogTimes-1];
+	}
+
+	CImage::CTrackReader::TLogTime CImage::CTrackReader::ReadTime(){
+		// returns the next LogicalTime (or zero if all time information already read)
+		if (*this){
+			const TLogTime result= logTimes[iNextTime] - currentTime;
+			currentTime=logTimes[iNextTime++];
+			return result;
+		}else
+			return 0;
+	}
+
+	void CImage::CTrackReader::SetCodec(TCodec codec){
+		// changes the interpretation of recorded LogicalTimes according to the new Codec
+		switch ( this->codec=codec ){
+			default:
+				ASSERT(FALSE); // we shouldn't end up here, this value must be set for all implemented Codecs!
+				//fallthrough
+			case TCodec::FM:
+				nConsecutiveZerosMax=1;
+				break;
+			case TCodec::MFM:
+				nConsecutiveZerosMax=3;
+				break;
+		}
+	}
+
+	const CImage::CTrackReader::TProfile CImage::CTrackReader::TProfile::HD_350={
+		TIME_MICRO(1), // iwTimeDefault = 1 second / 500kb = 2 us -> 1 us for MFM encoding
+		TIME_MICRO(1), // iwTime
+		TIME_NANO(830), TIME_NANO(1170), // iwTimeMin, iwTimeMax
+		30 // adjustmentPercentMax
+	};
+
+	const CImage::CTrackReader::TProfile CImage::CTrackReader::TProfile::DD_350={
+		TIME_MICRO(2), // iwTimeDefault = 1 second / 250kb = 4 us -> 2 us for MFM encoding
+		TIME_MICRO(2), // iwTime
+		TIME_NANO(1830), TIME_NANO(2170), // iwTimeMin, iwTimeMax
+		30 // adjustmentPercentMax
+	};
+
+	const CImage::CTrackReader::TProfile CImage::CTrackReader::TProfile::DD_525={
+		TIME_NANO(1666), // iwTimeDefault = 1 second / 300kb = 3.333 us -> 1.666 us for MFM encoding
+		TIME_NANO(1666), // iwTime
+		TIME_NANO(1506), TIME_NANO(1826), // iwTimeMin, iwTimeMax
+		30 // adjustmentPercentMax
+	};
+
+	void CImage::CTrackReader::SetMediumType(TMedium::TType mediumType){
+		// changes the interpretation of recorded LogicalTimes according to the new MediumType
+		switch ( this->mediumType=mediumType ){
+			default:
+				ASSERT(FALSE); // we shouldn't end-up here, all Media Types applicable for general Track description should be covered
+				//fallthrough
+			case TMedium::FLOPPY_DD_350:
+				profile=TProfile::DD_350;
+				break;
+			case TMedium::FLOPPY_DD_525:
+				profile=TProfile::DD_525;
+				break;
+			case TMedium::FLOPPY_HD_350:
+				profile=TProfile::HD_350;
+				break;
+		}
+	}
+
+	bool CImage::CTrackReader::ReadBit(){
+		// returns first bit not yet read
+		//switch (method){
+			//case TMethod::FDD_KEIR_FRASIER:
+			// FDC-like flux reversal decoding from Keir Frasier's Disk-Utilities/libdisk
+			#ifdef _DEBUG
+				if (!*this)
+					ASSERT(FALSE); // this method mustn't be called when there's nothing actually to be read!
+			#endif
+			// - 
+			const TLogTime iwTimeHalf=profile.iwTime/2;
+			while (logTimes[iNextTime]-currentTime<iwTimeHalf)
+				if (*this)
+					iNextTime++;
+				else
+					return 0;
+			// - 
+			currentTime+=profile.iwTime;
+			// - 
+			const TLogTime diff=logTimes[iNextTime]-currentTime;
+			while (diff>=iwTimeHalf){
+				nConsecutiveZeros++;
+				return 0;
+			}
+			// - adjust data frequency according to phase mismatch
+			if (nConsecutiveZeros<=nConsecutiveZerosMax)
+				// in sync - adjust inspection window by percentage of phase mismatch
+				profile.iwTime+= diff * profile.adjustmentPercentMax/100;
+			else
+				// out of sync - adjust inspection window towards its Default size
+				profile.iwTime+= (profile.iwTimeDefault-profile.iwTime) * profile.adjustmentPercentMax/100;
+			// - keep the inspection window size within limits
+			if (profile.iwTime<profile.iwTimeMin)
+				profile.iwTime=profile.iwTimeMin;
+			else if (profile.iwTime>profile.iwTimeMax)
+				profile.iwTime=profile.iwTimeMax;
+			// - a "1" recognized
+			nConsecutiveZeros=0;
+			return 1;
+		//}
+	}
+
+	bool CImage::CTrackReader::ReadBits16(WORD &rOut){
+		// True <=> at least 16 bits have not yet been read, otherwise False
+		//if (method&TMethod::FDD_METHODS){
+			for( BYTE n=16; n-->0; rOut=(rOut<<1)|ReadBit() )
+				if (!*this)
+					return false;
+			return true;
+		//}
+	}
+
+	bool CImage::CTrackReader::ReadBits32(DWORD &rOut){
+		// True <=> at least 32 bits have not yet been read, otherwise False
+		//if (method&TMethod::FDD_METHODS){
+			for( BYTE n=32; n-->0; rOut=(rOut<<1)|ReadBit() )
+				if (!*this)
+					return false;
+			return true;
+		//}
+	}
+
+
+
+
+
+
+
+
+
+
+
+	WORD CImage::CTrackReader::ScanFm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses){
+		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
+		ASSERT( pOutFoundSectors!=nullptr && pOutIdEnds!=nullptr );
+		RewindToIndex(0);
+		//TODO
+		return 0;
+	}
+
+	TFdcStatus CImage::CTrackReader::ReadDataFm(WORD nBytesToRead,LPBYTE buffer){
+		// attempts to read specified amount of Bytes into the Buffer, starting at current position; returns the amount of Bytes actually read
+		ASSERT( codec==TCodec::FM );
+		//TODO
+		return TFdcStatus::SectorNotFound;
+	}
+
+
+
+
+
+
+
+
+
+
+	namespace MFM{
+		static BYTE DecodeByte(WORD w){
+			BYTE result=0;
+			for( BYTE n=8; n-->0; w<<=1,w<<=1 )
+				result=(result<<1)|((w&0x4000)!=0);
+			return result;
+		}
+		static WORD DecodeBigEndianWord(DWORD dw){
+			WORD result=0;
+			for( BYTE n=16; n-->0; dw<<=1,dw<<=1 )
+				result=(result<<1)|((dw&0x40000000)!=0);
+			return (LOBYTE(result)<<8) + HIBYTE(result);
+		}
+	}
+
+	WORD CImage::CTrackReader::ScanMfm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses){
+		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
+		ASSERT( pOutFoundSectors!=nullptr && pOutIdEnds!=nullptr );
+		// - some Sectors may start just after the IndexPulse (e.g. MDOS 1.0); preparing the scanner for this eventuality by adjusting the frequency and phase shortly BEFORE the IndexPulse
+		const TLogTime indexTime=GetIndexTime(0);
+		for( SetCurrentTime(indexTime-10*profile.iwTimeDefault); currentTime<indexTime; ReadBit() ); // "N*" = number of 0x00 Bytes before the 0xA1 clock-distorted mark
+		// - scanning
+		WORD nSectors=0, w, sync1=0; DWORD sync23=0;
+		for( const TLogTime revolutionEndTime=GetIndexTime(nIndexPulses+1); *this; ){
+			// . searching for three consecutive 0xA1 distorted synchronization Bytes
+			sync23=	(sync23<<1) | ((sync1&0x8000)!=0);
+			sync1 =	(sync1<<1) | ReadBit();
+			if ((sync1&0xffdf)!=0x4489 || (sync23&0xffdfffdf)!=0x44894489)
+				continue;
+			// . an ID Field mark should follow the synchronization
+			if (!ReadBits16(w)) // Track end encountered
+				break;
+			if (MFM::DecodeByte(w)!=0xfe) // not the expected ID Field mark
+				continue;
+			struct{
+				BYTE sync[3], idFieldAm, cyl, side, sector, length;
+			} data={ 0xa1, 0xa1, 0xa1, 0xfe };
+			// . reading SectorId
+			TSectorId &rid=*pOutFoundSectors++;
+			if (!ReadBits16(w)) // Track end encountered
+				break;
+			rid.cylinder = data.cyl = MFM::DecodeByte(w);
+			if (!ReadBits16(w)) // Track end encountered
+				break;
+			rid.side = data.side = MFM::DecodeByte(w);
+			if (!ReadBits16(w)) // Track end encountered
+				break;
+			rid.sector = data.sector = MFM::DecodeByte(w);
+			if (!ReadBits16(w)) // Track end encountered
+				break;
+			rid.lengthCode = data.length = MFM::DecodeByte(w);
+			// . reading and comparing ID Field's CRC
+			DWORD dw;
+			*pOutIdStatuses++ =	!ReadBits32(dw) || MFM::DecodeBigEndianWord(dw)!=CFloppyImage::GetCrc16Ccitt(&data,sizeof(data)) // no or wrong IdField CRC
+								? TFdcStatus::IdFieldCrcError
+								: TFdcStatus::WithoutError;
+			*pOutIdEnds++=currentTime;
+			*pOutIdProfiles++=profile;
+			// . sector found
+			nSectors++;
+			sync1=0; // invalidating "buffered" synchronization
+		}
+		// - returning the result
+		return nSectors;
+	}
+
+	TFdcStatus CImage::CTrackReader::ReadDataMfm(WORD nBytesToRead,LPBYTE buffer){
+		// attempts to read specified amount of Bytes into the Buffer, starting at position pointed to by the BitReader; returns the amount of Bytes actually read
+		ASSERT( codec==TCodec::MFM );
+		// - searching for the nearest three consecutive 0xA1 distorted synchronization Bytes
+		WORD w, sync1=0; DWORD sync23=0;
+		while (*this){
+			sync23=	(sync23<<1) | ((sync1&0x8000)!=0);
+			sync1 =	(sync1<<1) | ReadBit();
+			if ((sync1&0xffdf)==0x4489 && (sync23&0xffdfffdf)==0x44894489)
+				break;
+		}
+		if (!*this) // Track end encountered
+			return TFdcStatus::NoDataField;
+		// - a Data Field mark should follow the synchronization
+		if (!ReadBits16(w)) // Track end encountered
+			return TFdcStatus::NoDataField;
+		const BYTE preamble[]={ 0xa1, 0xa1, 0xa1, MFM::DecodeByte(w) };
+		TFdcStatus result;
+		switch (preamble[3]){ // branching on observed data address mark
+			case 0xfb: case 0xfa: // normal data (+alt)
+				result=TFdcStatus::WithoutError;
+				break;
+			case 0xf8: case 0xf9: // deleted data (+alt)
+				result=TFdcStatus::DeletedDam;
+				break;
+			default:
+				return TFdcStatus::NoDataField; // not the expected Data mark
+		}
+		// - reading specified amount of Bytes into the Buffer
+		PBYTE p=buffer;
+		while (*this && nBytesToRead-->0){
+			if (!ReadBits16(w)){ // Track end encountered
+				result.ExtendWith( TFdcStatus::DataFieldCrcError );
+				break;
+			}
+			*p++=MFM::DecodeByte(w);
+		}
+		if (!*this)
+			return result;
+		// - reading and comparing Data Field's CRC
+		DWORD dw;
+		if (!ReadBits32(dw) || MFM::DecodeBigEndianWord(dw)!=CFloppyImage::GetCrc16Ccitt(CFloppyImage::GetCrc16Ccitt(&preamble,sizeof(preamble)),buffer,p-buffer)) // no or wrong Data Field CRC
+			result.ExtendWith( TFdcStatus::DataFieldCrcError );
+		return result;
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+	CImage::CTrackReaderWriter::CTrackReaderWriter(DWORD nLogTimesMax)
+		// ctor
+		: CTrackReader( (PLogTime)::calloc(nLogTimesMax+1,sizeof(TLogTime)), 0, nullptr, 0, TMedium::FLOPPY_DD_350, TCodec::MFM ) // "+1" = hidden item represents reference counter
+		, nLogTimesMax(nLogTimesMax) {
+	}
+
+	CImage::CTrackReaderWriter::CTrackReaderWriter(const CTrackReaderWriter &rTrackReaderWriter)
+		// copy ctor
+		: CTrackReader( rTrackReaderWriter )
+		, nLogTimesMax( rTrackReaderWriter.nLogTimesMax ) {
+	}
+	
+	CImage::CTrackReaderWriter::CTrackReaderWriter(CTrackReaderWriter &&rTrackReaderWriter)
+		// move ctor
+		: CTrackReader( std::move(rTrackReaderWriter) )
+		, nLogTimesMax( rTrackReaderWriter.nLogTimesMax ) {
+	}
+	
+	void CImage::CTrackReaderWriter::AddTimes(PCLogTime logTimes,DWORD nLogTimes){
+		// appends given amount of LogicalTimes at the end of the Track
+		ASSERT( this->nLogTimes+nLogTimes<=nLogTimesMax );
+		if (this->logTimes+this->nLogTimes==logTimes)
+			// caller wrote directly into the buffer (e.g. creation of initial content); faster than calling N-times AddTime
+			this->nLogTimes+=nLogTimes;
+		else{
+			// caller used its own buffer to store new LogicalTimes
+			::memcpy( this->logTimes, logTimes, nLogTimes*sizeof(TLogTime) );
+			this->nLogTimes+=nLogTimes;
+		}
+	}

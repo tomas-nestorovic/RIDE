@@ -1,6 +1,7 @@
 #ifndef STDAFX_H
 #define STDAFX_H
 
+#include <cstdint>
 #define _USE_MATH_DEFINES // for M_PI to be defined
 #include <cmath>
 #include <algorithm>

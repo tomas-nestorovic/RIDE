@@ -267,6 +267,7 @@
     <ClCompile Include="src\GDOS_FileManager.cpp" />
     <ClCompile Include="src\HexaEditor.cpp" />
     <ClCompile Include="src\Image_SectorDataSerializer.cpp" />
+    <ClCompile Include="src\Image_TrackRW.cpp" />
     <ClCompile Include="src\MainWindow.cpp" />
     <ClCompile Include="src\Image.cpp" />
     <ClCompile Include="src\ImageFloppy.cpp" />

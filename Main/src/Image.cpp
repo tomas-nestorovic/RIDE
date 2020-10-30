@@ -96,6 +96,9 @@
 
 	const TFdcStatus TFdcStatus::WithoutError;
 	const TFdcStatus TFdcStatus::SectorNotFound( FDC_ST1_DATA_ERROR, FDC_ST2_CRC_ERROR_IN_DATA );
+	const TFdcStatus TFdcStatus::IdFieldCrcError( FDC_ST1_DATA_ERROR|FDC_ST1_NO_DATA, 0 );
+	const TFdcStatus TFdcStatus::DataFieldCrcError( FDC_ST1_DATA_ERROR, FDC_ST2_CRC_ERROR_IN_DATA );
+	const TFdcStatus TFdcStatus::NoDataField( FDC_ST1_NO_ADDRESS_MARK, FDC_ST2_NOT_DAM );
 	const TFdcStatus TFdcStatus::DeletedDam( FDC_ST1_NO_DATA, FDC_ST2_DELETED_DAM );
 
 	TFdcStatus::TFdcStatus()
@@ -107,6 +110,11 @@
 		// ctor
 		: reg1(_reg1 & (FDC_ST1_END_OF_CYLINDER|FDC_ST1_DATA_ERROR|FDC_ST1_NO_DATA|FDC_ST1_NO_ADDRESS_MARK))
 		, reg2(_reg2 & (FDC_ST2_DELETED_DAM|FDC_ST2_CRC_ERROR_IN_DATA|FDC_ST2_NOT_DAM)) {
+	}
+
+	void TFdcStatus::ExtendWith(TFdcStatus st){
+		// "unites" both this and specified Statuses
+		reg1|=st.reg1, reg2|=st.reg2;
 	}
 
 	WORD TFdcStatus::ToWord() const{
