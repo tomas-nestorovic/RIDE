@@ -45,6 +45,8 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #include "..\res\resource.h"
 #include "..\..\Externals\fdrawcmd\fdrawcmd.h"
 
+#include "CapsLibAll.h"
+
 #if _MFC_VER>=0x0A00
 #else
 	// reverting definitions for modern MFC to their states valid for Windows XP and earlier

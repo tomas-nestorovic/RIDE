@@ -52,6 +52,7 @@
 #define IDR_DRIVE_ACCESS                217
 #define IDR_SPECTRUM_PREVIEW_ASSEMBLER  218
 #define IDR_DOS_PREVIEW_BASE            219
+#define IDR_CAPS                        221
 #define ID_HIDDEN                       1018
 #define ID_SYSTEM                       1019
 #define ID_CONNECTED                    1020
@@ -253,7 +254,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        220
+#define _APS_NEXT_RESOURCE_VALUE        223
 #define _APS_NEXT_COMMAND_VALUE         40291
 #define _APS_NEXT_CONTROL_VALUE         1185
 #define _APS_NEXT_SYMED_VALUE           103

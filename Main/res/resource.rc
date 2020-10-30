@@ -1514,6 +1514,29 @@ BEGIN
 END
 
 
+IDR_CAPS DIALOGEX 0, 0, 186, 127
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
+CAPTION "CAPS file information"
+FONT 8, "MS Sans Serif"
+BEGIN
+    PUSHBUTTON      "Close",IDCANCEL,129,106,50,14
+    CONTROL         "CAPS library:",IDC_STATIC,"Static",SS_LEFTNOWORDWRAP | 
+                    WS_GROUP,7,9,42,8,WS_EX_TRANSPARENT
+    LTEXT           "Static",ID_SYSTEM,56,9,123,11
+    CONTROL         "",IDC_STATIC,"Static",SS_GRAYRECT,7,21,172,1
+    LTEXT           "Medium:",IDC_STATIC,7,26,28,8
+    LTEXT           "Static",ID_MEDIUM,56,26,116,8
+    LTEXT           "Release ID:",IDC_STATIC,7,39,38,8
+    LTEXT           "Static",ID_ARCHIVE,56,39,114,8
+    LTEXT           "Revision:",IDC_STATIC,7,52,30,8
+    LTEXT           "Static",ID_ACCURACY,56,52,114,8
+    LTEXT           "Created:",IDC_STATIC,7,65,28,8
+    LTEXT           "Static",ID_DATE,56,65,114,8
+    LTEXT           "Platforms:",IDC_STATIC,7,79,32,8
+    LTEXT           "Static",ID_DOS,56,78,123,20
+END
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // DESIGNINFO
@@ -1777,6 +1800,14 @@ BEGIN
         RIGHTMARGIN, 179
         TOPMARGIN, 7
         BOTTOMMARGIN, 95
+    END
+
+    IDR_CAPS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 120
     END
 END
 #endif    // APSTUDIO_INVOKED
