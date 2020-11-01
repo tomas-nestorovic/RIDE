@@ -978,30 +978,6 @@ leftMouseDragged:
 				}
 				break;
 			}
-			case WM_NCMOUSEMOVE:{
-				// mouse moved in non-client area
-				locker.Lock();
-					mouseInNcArea=true;
-				locker.Unlock();
-				TRACKMOUSEEVENT tme={ sizeof(tme), TME_NONCLIENT|TME_LEAVE, m_hWnd, 0 };
-				::TrackMouseEvent(&tme);
-				break;
-			}
-			case WM_NCMOUSELEAVE:{
-				// mouse left non-client area
-				POINT pt;
-				::GetCursorPos(&pt);
-				const POINTS pts={ pt.x, pt.y };
-				if (SendMessage( WM_NCHITTEST, 0, *(PINT)&pts )!=HTVSCROLL){
-					// mouse left vertical scrollbar
-					locker.Lock();
-						*static_cast<TState *>(this)=update;
-						mouseInNcArea=false;
-					locker.Unlock();
-					RepaintData(true);
-				}
-				break;
-			}
 			case WM_SETFOCUS:
 				// window has received focus
 				hPreviouslyFocusedWnd=(HWND)wParam; // the window that is losing the focus (may be refocused later when Enter is pressed)
@@ -1045,7 +1021,31 @@ leftMouseDragged:
 				// . scrolling
 				__scrollToRow__(si.nPos);
 				::DestroyCaret();
-				return 0;
+				//fallthrough (the "thumb" might have been released outside the scrollbar area)
+			}
+			case WM_NCMOUSEMOVE:{
+				// mouse moved in non-client area
+				locker.Lock();
+					mouseInNcArea=true;
+				locker.Unlock();
+				TRACKMOUSEEVENT tme={ sizeof(tme), TME_NONCLIENT|TME_LEAVE, m_hWnd, 0 };
+				::TrackMouseEvent(&tme);
+				break;
+			}
+			case WM_NCMOUSELEAVE:{
+				// mouse left non-client area
+				POINT pt;
+				::GetCursorPos(&pt);
+				const POINTS pts={ pt.x, pt.y };
+				if (SendMessage( WM_NCHITTEST, 0, *(PINT)&pts )!=HTVSCROLL){
+					// mouse left vertical scrollbar
+					locker.Lock();
+						*static_cast<TState *>(this)=update;
+						mouseInNcArea=false;
+					locker.Unlock();
+					RepaintData(true);
+				}
+				break;
 			}
 			case EM_GETSEL:
 				// gets current Selection
