@@ -8,20 +8,22 @@
 	class CTrackMapView sealed:public CScrollView{
 		DECLARE_MESSAGE_MAP()
 	private:
+		typedef Utils::CTimeline::TLogTime TLogTime;
+
 		int iScrollX, iScrollY; // ScrollBar position
 		struct TTrackLength sealed{
-			static TTrackLength FromTime(int nNanosecondsTotal,int nNanosecondsPerByte);
+			static TTrackLength FromTime(TLogTime nNanosecondsTotal,TLogTime nNanosecondsPerByte);
 
 			TSector nSectors;
 			int nBytes;
 
 			TTrackLength(TSector nSectors,int nBytes); // ctor
 
-			int GetPixelCount(BYTE zoomFactor) const;
-			BYTE GetZoomFactorToFitWidth(int windowWidth) const;
+			int GetUnitCount(BYTE zoomFactor) const;
+			BYTE GetZoomFactorToFitWidth(int pixelWidth) const;
 			bool operator<(const TTrackLength &r) const;
 		} longestTrack; // to infer maximum horizontal scroll position
-		int longestTrackNanoseconds;
+		TLogTime longestTrackNanoseconds;
 		enum TDisplayType:WORD{
 			STATUS		=ID_TRACKMAP_STATUS,
 			DATA_OK_ONLY=ID_TRACKMAP_DATA,

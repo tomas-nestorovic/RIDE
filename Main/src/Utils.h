@@ -116,6 +116,27 @@ namespace Utils{
 		DWORD ToMilliseconds() const;
 	};
 
+	class CTimeline{
+	public:
+		typedef int TLogTime;
+	protected:
+		const TLogTime logTimePerUnit;
+		const TLogTime logTimeLength;
+
+		TLogTime PixelToTime(int pixelX) const;
+	public:
+		BYTE zoomFactor;
+
+		CTimeline(TLogTime logTimeLength,TLogTime logTimePerUnit,BYTE initZoomFactor);
+
+		void SetLength(TLogTime logTime);
+		void Draw(HDC dc,const CRideFont &font) const;
+		int GetUnitCount(TLogTime logTime,BYTE zoomFactor) const;
+		int GetUnitCount(TLogTime logTime) const;
+		int GetUnitCount() const;
+		BYTE GetZoomFactorToFitWidth(int nUnits,BYTE zoomFactorMax) const;
+	};
+
 	extern const float LogicalUnitScaleFactor;
 
 	TStdWinError ErrorByOs(TStdWinError vistaOrNewer,TStdWinError xpOrOlder);

@@ -396,6 +396,91 @@ namespace Utils{
 
 
 
+
+	CTimeline::CTimeline(TLogTime logTimeLength,TLogTime logTimePerUnit,BYTE initZoomFactor)
+		// ctor
+		: logTimeLength(logTimeLength) , logTimePerUnit(logTimePerUnit)
+		, zoomFactor(initZoomFactor) {
+	}
+
+	void CTimeline::Draw(HDC dc,const CRideFont &font) const{
+		// draws a timeline starting at current origin
+		// - drawing horizontal line representing the timeline
+		::MoveToEx( dc, 0,0, nullptr );
+		const auto nUnitsTotal=GetUnitCount();
+		::LineTo( dc, nUnitsTotal,0 );
+		// - determinining the primary granuality of the timeline
+		static const TCHAR TimePrefixes[]=_T("nnnµµµmmm"); // nano, micro, milli
+		TCHAR label[32];
+		TLogTime intervalBig=1, unitPrefix=0;
+		for( TLogTime t=logTimeLength; true; intervalBig*=10 ){
+			::wsprintf( label, _T("%d %cs"), t, TimePrefixes[unitPrefix] );
+			if (font.GetTextSize(label).cx<GetUnitCount(intervalBig))
+				// the consecutive Labels won't overlap - adopting it
+				break;
+			else if (++unitPrefix%3==0)
+				t/=1000;
+		}
+		// - determining the visible range to draw
+		POINT org;
+		::GetViewportOrgEx( dc, &org );
+		const TLogTime timeA=std::max( PixelToTime(-org.x), 0 )/intervalBig*intervalBig;
+		CRect rcClient;
+		::GetClientRect( ::WindowFromDC(dc), &rcClient );
+		const TLogTime timeZ=std::min( logTimeLength, (PixelToTime(std::max(-org.x,0L)+rcClient.Width())+intervalBig-1)/intervalBig*intervalBig ); // rounding to whole multiples of IntervalBig
+		// - drawing secondary time marks on the timeline
+		if (const TLogTime intervalSmall=intervalBig/10)
+			for( TLogTime t=timeA; t<timeZ; t+=intervalSmall ){
+				const auto x=GetUnitCount(t);
+				::MoveToEx( dc, x,0, nullptr );
+				::LineTo( dc, x,-4 );
+			}
+		// - drawing primary time marks on the timeline along with respective times
+		int k=1;
+		for( int i=unitPrefix/3; i--; k*=1000 );
+		for( TLogTime t=timeA; t<timeZ; t+=intervalBig ){
+			const auto x=GetUnitCount(t);
+			::MoveToEx( dc, x,0, nullptr );
+			::LineTo( dc, x,-7 );
+			::TextOut(	dc,
+						x, -7-font.charHeight,
+						label,  ::wsprintf( label, _T("%d %cs"), t/k, TimePrefixes[unitPrefix] )
+					);
+		}
+	}
+
+	CTimeline::TLogTime CTimeline::PixelToTime(int pixelX) const{
+		return	((int)(pixelX/LogicalUnitScaleFactor)<<zoomFactor)*logTimePerUnit;
+	}
+
+	int CTimeline::GetUnitCount(TLogTime logTime,BYTE zoomFactor) const{
+		return	logTime/logTimePerUnit>>zoomFactor;
+	}
+
+	int CTimeline::GetUnitCount(TLogTime logTime) const{
+		return	GetUnitCount( logTime, zoomFactor );
+	}
+
+	int CTimeline::GetUnitCount() const{
+		return	GetUnitCount( logTimeLength );
+	}
+
+	BYTE CTimeline::GetZoomFactorToFitWidth(int nUnits,BYTE zoomFactorMax) const{
+		BYTE zf=0;
+		while (GetUnitCount(logTimeLength,zf)>nUnits && zf<zoomFactorMax)
+			zf++;
+		return zf;
+	}
+
+
+
+
+
+
+
+
+
+
 	TStdWinError ErrorByOs(TStdWinError vistaOrNewer,TStdWinError xpOrOlder){
 		// returns the error code by observing the current operating system version; it's up to the caller to know whether specified error is supported by the OS
 		return	(::GetVersion()&0xff)<=5 // Windows XP or older
