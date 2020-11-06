@@ -405,12 +405,8 @@ namespace Utils{
 
 	void CTimeline::Draw(HDC dc,const CRideFont &font) const{
 		// draws a timeline starting at current origin
-		// - drawing horizontal line representing the timeline
-		::MoveToEx( dc, 0,0, nullptr );
-		const auto nUnitsTotal=GetUnitCount();
-		::LineTo( dc, nUnitsTotal,0 );
 		// - determinining the primary granuality of the timeline
-		static const TCHAR TimePrefixes[]=_T("nnnµµµmmm"); // nano, micro, milli
+		static const TCHAR TimePrefixes[]=_T("nnnµµµmmm   "); // nano, micro, milli, no-prefix
 		TCHAR label[32];
 		TLogTime intervalBig=1, unitPrefix=0;
 		for( TLogTime t=logTimeLength; true; intervalBig*=10 ){
@@ -427,30 +423,39 @@ namespace Utils{
 		const TLogTime timeA=std::max( PixelToTime(-org.x), 0 )/intervalBig*intervalBig;
 		CRect rcClient;
 		::GetClientRect( ::WindowFromDC(dc), &rcClient );
-		const TLogTime timeZ=std::min( logTimeLength, (PixelToTime(std::max(-org.x,0L)+rcClient.Width())+intervalBig-1)/intervalBig*intervalBig ); // rounding to whole multiples of IntervalBig
-		// - drawing secondary time marks on the timeline
-		if (const TLogTime intervalSmall=intervalBig/10)
-			for( TLogTime t=timeA; t<timeZ; t+=intervalSmall ){
-				const auto x=GetUnitCount(t);
+		const TLogTime timeZ=std::min<LONGLONG>( logTimeLength, ((LONGLONG)PixelToTime(std::max(-org.x,0L)+rcClient.Width())+intervalBig-1)/intervalBig*intervalBig ); // rounding to whole multiples of IntervalBig
+		// - drawing using a workaround to overcome the coordinate space limits
+		const int nUnitsA=GetUnitCount(timeA);
+		::SetViewportOrgEx( dc, nUnitsA*LogicalUnitScaleFactor+org.x, org.y, nullptr );
+			// . horizontal line representing the timeline
+			::MoveToEx( dc, 0,0, nullptr );
+			::LineTo( dc, GetUnitCount(timeZ)-nUnitsA, 0 );
+			// . drawing secondary time marks on the timeline
+			const TLogTime tVisible=timeZ-timeA;
+			if (const TLogTime intervalSmall=intervalBig/10)
+				for( TLogTime t=timeA; t<timeZ; t+=intervalSmall ){
+					const auto x=GetUnitCount(t)-nUnitsA;
+					::MoveToEx( dc, x,0, nullptr );
+					::LineTo( dc, x,-4 );
+				}
+			// . drawing primary time marks on the timeline along with respective times
+			int k=1;
+			for( int i=unitPrefix/3; i--; k*=1000 );
+			for( TLogTime t=timeA; t<timeZ; t+=intervalBig ){
+				const auto x=GetUnitCount(t)-nUnitsA;
 				::MoveToEx( dc, x,0, nullptr );
-				::LineTo( dc, x,-4 );
+				::LineTo( dc, x,-7 );
+				::TextOut(	dc,
+							x, -7-font.charHeight,
+							label,  ::wsprintf( label, _T("%d %cs"), t/k, TimePrefixes[unitPrefix] )
+						);
 			}
-		// - drawing primary time marks on the timeline along with respective times
-		int k=1;
-		for( int i=unitPrefix/3; i--; k*=1000 );
-		for( TLogTime t=timeA; t<timeZ; t+=intervalBig ){
-			const auto x=GetUnitCount(t);
-			::MoveToEx( dc, x,0, nullptr );
-			::LineTo( dc, x,-7 );
-			::TextOut(	dc,
-						x, -7-font.charHeight,
-						label,  ::wsprintf( label, _T("%d %cs"), t/k, TimePrefixes[unitPrefix] )
-					);
-		}
+		::SetViewportOrgEx( dc, org.x, org.y, nullptr );
 	}
 
-	CTimeline::TLogTime CTimeline::PixelToTime(int pixelX) const{
-		return	((int)(pixelX/LogicalUnitScaleFactor)<<zoomFactor)*logTimePerUnit;
+	TLogTime CTimeline::PixelToTime(int pixelX) const{
+		const auto tmp=((LONGLONG)(pixelX/LogicalUnitScaleFactor)<<zoomFactor)*logTimePerUnit;
+		return	tmp<INT_MAX ? tmp : INT_MAX;
 	}
 
 	int CTimeline::GetUnitCount(TLogTime logTime,BYTE zoomFactor) const{

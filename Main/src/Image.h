@@ -228,9 +228,6 @@
 
 		class CTrackReader{
 		public:
-			typedef int TLogTime,*PLogTime;
-			typedef const TLogTime *PCLogTime;
-
 			typedef BYTE TCodecSet;
 
 			enum TCodec:TCodecSet{
@@ -300,6 +297,7 @@
 
 			void SetCurrentTime(TLogTime logTime);
 			TLogTime GetIndexTime(BYTE index) const;
+			TLogTime GetTotalTime() const;
 			TLogTime ReadTime();
 			void SetCodec(TCodec codec);
 			void SetMediumType(TMedium::TType mediumType);
@@ -405,8 +403,8 @@
 		virtual TCylinder GetCylinderCount() const=0;
 		virtual THead GetNumberOfFormattedSides(TCylinder cyl) const=0;
 		TTrack GetTrackCount() const;
-		virtual TSector ScanTrack(TCylinder cyl,THead head,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PINT startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const=0;
-		virtual int EstimateNanosecondsPerOneByte() const;
+		virtual TSector ScanTrack(TCylinder cyl,THead head,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const=0;
+		virtual TLogTime EstimateNanosecondsPerOneByte() const;
 		bool IsTrackHealthy(TCylinder cyl,THead head);
 		virtual void GetTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses)=0;
 		void BufferTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors);

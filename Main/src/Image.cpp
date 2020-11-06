@@ -555,7 +555,7 @@
 		return true;
 	}
 
-	int CImage::EstimateNanosecondsPerOneByte() const{
+	TLogTime CImage::EstimateNanosecondsPerOneByte() const{
 		// estimates and returns the number of Nanoseconds that represent a single Byte on the Medium
 		return 1;
 	}

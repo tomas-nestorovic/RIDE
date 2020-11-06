@@ -40,7 +40,7 @@
 				BYTE seqNum; // "zero-based" sequence number of this Sector on containing Track
 				TSectorId id;
 				WORD length;
-				int startNanoseconds,endNanoseconds; // counted from the index pulse
+				TLogTime startNanoseconds,endNanoseconds; // counted from the index pulse
 				PSectorData data;
 				TFdcStatus fdcStatus;
 				bool modified;
@@ -87,11 +87,11 @@
 			bool doubleTrackStep, userForcedDoubleTrackStep;
 			TCylinder position;
 			struct TProfile sealed{
-				int controllerLatency,oneByteLatency,gap3Latency; // in nanoseconds
+				TLogTime controllerLatency,oneByteLatency,gap3Latency; // in nanoseconds
 				
 				TProfile();
 
-				void Load(TCHAR driveLetter,TMedium::TType floppyType,int defaultNanosecondsPerByte);
+				void Load(TCHAR driveLetter,TMedium::TType floppyType,TLogTime defaultNanosecondsPerByte);
 				void Save(TCHAR driveLetter,TMedium::TType floppyType) const;
 			} profile;
 
@@ -117,7 +117,7 @@
 		PInternalTrack __scanTrack__(TCylinder cyl,THead head);
 		void __setWaitingForIndex__() const;
 		void __setNumberOfSectorsToSkipOnCurrentTrack__(BYTE _nSectorsToSkip) const;
-		TStdWinError __setTimeBeforeInterruptingTheFdc__(WORD nDataBytesBeforeInterruption,int nNanosecondsAfterLastDataByteWritten) const;
+		TStdWinError __setTimeBeforeInterruptingTheFdc__(WORD nDataBytesBeforeInterruption,TLogTime nNanosecondsAfterLastDataByteWritten) const;
 		TStdWinError __setTimeBeforeInterruptingTheFdc__(WORD nDataBytesBeforeInterruption) const;
 		bool __bufferSectorData__(TCylinder cyl,THead head,PCSectorId psi,WORD sectorLength,const TInternalTrack *pit,BYTE nSectorsToSkip,TFdcStatus *pFdcStatus) const;
 		bool __bufferSectorData__(RCPhysicalAddress chs,WORD sectorLength,const TInternalTrack *pit,BYTE nSectorsToSkip,TFdcStatus *pFdcStatus) const;
@@ -134,7 +134,7 @@
 		BOOL OnSaveDocument(LPCTSTR) override;
 		TCylinder GetCylinderCount() const override;
 		THead GetNumberOfFormattedSides(TCylinder cyl) const override;
-		TSector ScanTrack(TCylinder cyl,THead head,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PINT startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const override;
+		TSector ScanTrack(TCylinder cyl,THead head,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const override;
 		void GetTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses) override;
 		TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus) override;
 		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;

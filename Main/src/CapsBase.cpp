@@ -141,7 +141,7 @@
 
 
 
-	CImage::CTrackReader::TLogTime CCapsBase::TInternalSector::GetAverageIdEndTime(const CTrackReader &tr) const{
+	TLogTime CCapsBase::TInternalSector::GetAverageIdEndTime(const CTrackReader &tr) const{
 		// returns the average time of at which the Sector ID ends
 		LONGLONG sum=0; BYTE n=0;
 		for( BYTE r=0; r<nRevolutions; r++ )
@@ -205,7 +205,7 @@
 				return nullptr;
 			}
 		trw.AddIndexTime(0);
-		CTrackReader::TLogTime currentTime=0, *pFluxTimeBuffer=trw.GetBuffer(), *pFluxTime=pFluxTimeBuffer, nextIndexBits=*nBitsPerTrack;
+		TLogTime currentTime=0, *pFluxTimeBuffer=trw.GetBuffer(), *pFluxTime=pFluxTimeBuffer, nextIndexBits=*nBitsPerTrack;
 		BYTE rev=0;
 		for( CBitReader br(cti,lockFlags); br; ){
 			// . adding new flux
@@ -237,7 +237,7 @@
 			// . determining the Codec to be used in the NEXT iteration for decoding
 			for( codecs&=~c; (codecs&next)==0&&(next&TCodec::UNDETERMINED)!=0; next<<=1 );
 			// . scanning the Track and if no Sector recognized, continuing with Next Codec
-			TSectorId ids[DEVICE_REVOLUTIONS_MAX*(TSector)-1]; CTrackReader::TLogTime idEnds[DEVICE_REVOLUTIONS_MAX*(TSector)-1]; TProfile idProfiles[DEVICE_REVOLUTIONS_MAX*(TSector)-1]; TFdcStatus statuses[DEVICE_REVOLUTIONS_MAX*(TSector)-1];
+			TSectorId ids[DEVICE_REVOLUTIONS_MAX*(TSector)-1]; TLogTime idEnds[DEVICE_REVOLUTIONS_MAX*(TSector)-1]; TProfile idProfiles[DEVICE_REVOLUTIONS_MAX*(TSector)-1]; TFdcStatus statuses[DEVICE_REVOLUTIONS_MAX*(TSector)-1];
 			WORD nSectorsFound;
 			switch (c){
 				case TCodec::FM:
@@ -257,7 +257,7 @@
 			class CLongestCommonSubstring sealed{
 				const CTrackReader &tr;
 				PCSectorId rowIds; // iterated over R in the LCS method
-				CTrackReader::PCLogTime rowIdEndTimes; // iterated over R in the LCS method
+				PCLogTime rowIdEndTimes; // iterated over R in the LCS method
 				struct TBacktrackValue{
 					enum:BYTE{
 						None, Left, Top, Diagonal
@@ -316,7 +316,7 @@
 					return	a.revolutions[ra].idEndTime-tr.GetIndexTime(ra) > b.revolutions[rb].idEndTime-tr.GetIndexTime(rb);
 				}*/
 
-				void Merge(BYTE rev,TSector nIds,PCSectorId ids,CTrackReader::PCLogTime idEnds,const TProfile *idProfiles,PCFdcStatus idStatuses){
+				void Merge(BYTE rev,TSector nIds,PCSectorId ids,PCLogTime idEnds,const TProfile *idProfiles,PCFdcStatus idStatuses){
 					// : performing a naive LCS algorithm
 					rowIds=ids, rowIdEndTimes=idEnds;
 					::ZeroMemory( backtrackTable, (nIds+1)*(nUniqueSectors+1)*sizeof(TBacktrackValue) );
@@ -361,7 +361,7 @@
 			} lcs(trw);
 			WORD start,end=0;
 			for( BYTE rev=0; rev<tr.GetIndexCount()-1; rev++ ){
-				const CTrackReader::TLogTime revEndTime=tr.GetIndexTime(rev+1); // revolution end Time
+				const TLogTime revEndTime=tr.GetIndexTime(rev+1); // revolution end Time
 				for( start=end; idEnds[end]<revEndTime; end++ );
 				lcs.Merge( rev, end-start, ids+start, idEnds+start, idProfiles+start, statuses+start );
 			}
@@ -457,7 +457,7 @@
 		return capsImageInfo.maxhead+1; // the last INCLUSIVE Head plus one
 	}
 
-	TSector CCapsBase::ScanTrack(TCylinder cyl,THead head,PSectorId bufferId,PWORD bufferLength,PINT startTimesNanoseconds,PBYTE pAvgGap3) const{
+	TSector CCapsBase::ScanTrack(TCylinder cyl,THead head,PSectorId bufferId,PWORD bufferLength,PLogTime startTimesNanoseconds,PBYTE pAvgGap3) const{
 		// returns the number of Sectors found in given Track, and eventually populates the Buffer with their IDs (if Buffer!=Null); returns 0 if Track not formatted or not found
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - checking that specified Track actually CAN exist

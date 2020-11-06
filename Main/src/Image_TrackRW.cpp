@@ -56,7 +56,7 @@
 		currentTime= R<nLogTimes ? logTime : logTimes[L];
 	}
 
-	CImage::CTrackReader::TLogTime CImage::CTrackReader::GetIndexTime(BYTE index) const{
+	TLogTime CImage::CTrackReader::GetIndexTime(BYTE index) const{
 		// returns the Time at which the specified IndexPulse occurs
 		if (!nLogTimes || (nIndexPulses|index)==0)
 			return 0;
@@ -66,7 +66,12 @@
 					: logTimes[nLogTimes-1];
 	}
 
-	CImage::CTrackReader::TLogTime CImage::CTrackReader::ReadTime(){
+	TLogTime CImage::CTrackReader::GetTotalTime() const{
+		// returns the last recorded Time
+		return	nLogTimes>0 ? logTimes[nLogTimes-1] : 0;
+	}
+
+	TLogTime CImage::CTrackReader::ReadTime(){
 		// returns the next LogicalTime (or zero if all time information already read)
 		if (*this){
 			const TLogTime result= logTimes[iNextTime] - currentTime;

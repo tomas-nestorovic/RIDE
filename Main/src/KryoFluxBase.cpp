@@ -382,7 +382,7 @@ badFormat:		errorState=ERROR_BAD_FORMAT;
 		// creates and returns a Track representation of the Stream data
 		CTrackReaderWriter result( nFluxes );
 		DWORD sampleCounter=0;
-		CTrackReaderWriter::TLogTime prevTime=0,*buffer=result.GetBuffer(),*pLogTime=buffer;
+		TLogTime prevTime=0,*buffer=result.GetBuffer(),*pLogTime=buffer;
 		BYTE nearestIndexPulse=0;
 		DWORD nearestIndexPulsePos= nIndexPulses>0 ? indexPulses[0].posInStreamData : -1;
 		for( PCBYTE pis=inStreamData,pLastInStreamData=pis+inStreamDataLength; pis<pLastInStreamData; ){
@@ -418,7 +418,7 @@ badFormat:		errorState=ERROR_BAD_FORMAT;
 					result.AddIndexTime( prevTime + tmp/SAMPLE_CLOCK_DEFAULT );
 				}else{ // custom Sample-Clock, involving floating-point number computation
 					const double tmp=(double)TIME_SECOND(1)*sampleCounter; // temporary 64-bit precision even on 32-bit machines
-					result.AddIndexTime( prevTime + (CTrackReaderWriter::TLogTime)(tmp/sck) );
+					result.AddIndexTime( prevTime + (TLogTime)(tmp/sck) );
 				}
 				nearestIndexPulsePos= ++nearestIndexPulse<nIndexPulses ? indexPulses[nearestIndexPulse].posInStreamData : -1;
 			}
@@ -428,7 +428,7 @@ badFormat:		errorState=ERROR_BAD_FORMAT;
 				*pLogTime++= prevTime += tmp/SAMPLE_CLOCK_DEFAULT;
 			}else{ // custom Sample-Clock, involving floating-point number computation
 				const double tmp=(double)TIME_SECOND(1)*sampleCounter; // temporary 64-bit precision even on 32-bit machines
-				*pLogTime++= prevTime += (CTrackReaderWriter::TLogTime)(tmp/sck);
+				*pLogTime++= prevTime += (TLogTime)(tmp/sck);
 			}
 			sampleCounter=0;
 		}

@@ -117,8 +117,6 @@ namespace Utils{
 	};
 
 	class CTimeline{
-	public:
-		typedef int TLogTime;
 	protected:
 		const TLogTime logTimePerUnit;
 		const TLogTime logTimeLength;

@@ -8,8 +8,6 @@
 	class CTrackMapView sealed:public CScrollView{
 		DECLARE_MESSAGE_MAP()
 	private:
-		typedef Utils::CTimeline::TLogTime TLogTime;
-
 		int iScrollX, iScrollY; // ScrollBar position
 		struct TTrackLength sealed{
 			static TTrackLength FromTime(TLogTime nNanosecondsTotal,TLogTime nNanosecondsPerByte);
@@ -50,7 +48,7 @@
 		void OnDraw(CDC *pDC) override;
 		void PostNcDestroy() override;
 		void TimesToPixels(TSector nSectors,PINT pInOutBuffer,PCWORD pInSectorLengths) const;
-		bool GetPhysicalAddressAndNanosecondsFromPoint(POINT point,TPhysicalAddress &rOutChs,BYTE &rnOutSectorsToSkip,int &rOutNanoseconds);
+		bool GetPhysicalAddressAndNanosecondsFromPoint(POINT point,TPhysicalAddress &rOutChs,BYTE &rnOutSectorsToSkip,TLogTime &rOutNanoseconds);
 		void ResetStatusBarMessage() const;
 		void __updateLogicalDimensions__();
 		afx_msg int OnCreate(LPCREATESTRUCT lpcs);

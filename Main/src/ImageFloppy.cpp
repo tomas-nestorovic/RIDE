@@ -355,7 +355,7 @@
 		return std::unique_ptr<CSectorDataSerializer>(new CSerializer( pParentHexaEditor, this ));
 	}
 
-	int CFloppyImage::EstimateNanosecondsPerOneByte() const{
+	TLogTime CFloppyImage::EstimateNanosecondsPerOneByte() const{
 		// estimates and returns the number of Nanoseconds that represent a single Byte on the Medium
 		switch (floppyType){
 			case TMedium::FLOPPY_HD_350:
@@ -368,10 +368,10 @@
 		}
 	}
 
-	void CFloppyImage::EstimateTrackTiming(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,BYTE gap3,PINT startTimesNanoseconds) const{
+	void CFloppyImage::EstimateTrackTiming(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,BYTE gap3,PLogTime startTimesNanoseconds) const{
 		// given specified Track and Sectors that it contains, estimates the positions of these Sectors
 		//const BYTE gap3= floppyType==TMedium::FLOPPY_DD_525 ? FDD_525_SECTOR_GAP3 : FDD_350_SECTOR_GAP3;
-		const int nNanosecondsPerByte=EstimateNanosecondsPerOneByte();
+		const TLogTime nNanosecondsPerByte=EstimateNanosecondsPerOneByte();
 		for( TSector s=0; s<nSectors; s++ )
 			if (s>0){
 				startTimesNanoseconds[s] =	startTimesNanoseconds[s-1] + (bufferLength[s-1]+gap3)*nNanosecondsPerByte;

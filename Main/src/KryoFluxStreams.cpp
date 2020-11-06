@@ -76,7 +76,7 @@
 		return FALSE;
 	}
 
-	TSector CKryoFluxStreams::ScanTrack(TCylinder cyl,THead head,PSectorId bufferId,PWORD bufferLength,PINT startTimesNanoseconds,PBYTE pAvgGap3) const{
+	TSector CKryoFluxStreams::ScanTrack(TCylinder cyl,THead head,PSectorId bufferId,PWORD bufferLength,PLogTime startTimesNanoseconds,PBYTE pAvgGap3) const{
 		// returns the number of Sectors found in given Track, and eventually populates the Buffer with their IDs (if Buffer!=Null); returns 0 if Track not formatted or not found
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - checking that specified Track actually CAN exist

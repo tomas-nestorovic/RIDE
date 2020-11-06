@@ -201,7 +201,7 @@
 		TSectorId bufferId[(TSector)-1];
 		PSectorData bufferSectorData[(TSector)-1];
 		WORD bufferLength[(TSector)-1];
-		int bufferStartNanoseconds[(TSector)-1];
+		TLogTime bufferStartNanoseconds[(TSector)-1];
 	};
 	UINT AFX_CDECL CTrackMapView::TTrackScanner::__thread__(PVOID _pBackgroundAction){
 		// scanning of Tracks
@@ -248,7 +248,7 @@
 	void CTrackMapView::TimesToPixels(TSector nSectors,PINT pInOutBuffer,PCWORD pInSectorLengths) const{
 		// converts times (in nanoseconds) in Buffer to pixels
 		if (showTimed){
-			const int nNanosecondsPerByte=IMAGE->EstimateNanosecondsPerOneByte();
+			const TLogTime nNanosecondsPerByte=IMAGE->EstimateNanosecondsPerOneByte();
 			for( TSector s=0; s<nSectors; s++ )
 				pInOutBuffer[s] =	SECTOR1_X + (pInOutBuffer[s]/nNanosecondsPerByte>>zoomLengthFactor);
 		}else
@@ -272,10 +272,10 @@
 			longestTrack=tmp;
 			outdated|=!showTimed;
 		}
-		const int nNanosecondsPerByte=IMAGE->EstimateNanosecondsPerOneByte();
-		const int nNanosecondsOnTrack =	rti.nSectors>0
-										? rti.bufferStartNanoseconds[rti.nSectors-1]+rti.bufferLength[rti.nSectors-1]*nNanosecondsPerByte
-										: 0;
+		const TLogTime nNanosecondsPerByte=IMAGE->EstimateNanosecondsPerOneByte();
+		const TLogTime nNanosecondsOnTrack =rti.nSectors>0
+											? rti.bufferStartNanoseconds[rti.nSectors-1]+rti.bufferLength[rti.nSectors-1]*nNanosecondsPerByte
+											: 0;
 		if (longestTrackNanoseconds<nNanosecondsOnTrack){
 			longestTrackNanoseconds=nNanosecondsOnTrack;
 			outdated|=showTimed;
@@ -473,7 +473,7 @@
 								: longestTrack.GetZoomFactorToFitWidth(cx);
 	}
 
-	bool CTrackMapView::GetPhysicalAddressAndNanosecondsFromPoint(POINT point,TPhysicalAddress &rOutChs,BYTE &rnOutSectorsToSkip,int &rOutNanoseconds){
+	bool CTrackMapView::GetPhysicalAddressAndNanosecondsFromPoint(POINT point,TPhysicalAddress &rOutChs,BYTE &rnOutSectorsToSkip,TLogTime &rOutNanoseconds){
 		// True <=> given actual scroll position, the Point falls into a Sector, otherwise False
 		CClientDC dc(this);
 		OnPrepareDC(&dc);
@@ -484,7 +484,7 @@
 			// cursor over a Track
 			// . estimating the time on timeline at which the cursor points to
 			if (showTimed){
-				const int ns=((point.x-SECTOR1_X)<<zoomLengthFactor)*IMAGE->EstimateNanosecondsPerOneByte();
+				const TLogTime ns=((point.x-SECTOR1_X)<<zoomLengthFactor)*IMAGE->EstimateNanosecondsPerOneByte();
 				rOutNanoseconds= ns<=longestTrackNanoseconds ? ns : -1;
 			}
 			// . determining the Sector on which the cursor hovers
@@ -493,7 +493,7 @@
 			const div_t d=div(track,nSides);
 			TSectorId bufferId[(TSector)-1];
 			WORD bufferLength[(TSector)-1];
-			int bufferStarts[(TSector)-1];
+			TLogTime bufferStarts[(TSector)-1];
 			const TSector nSectors=IMAGE->ScanTrack( d.quot, d.rem, bufferId, bufferLength, bufferStarts );
 			TimesToPixels( nSectors, bufferStarts, bufferLength );
 			for( TSector s=0; s<nSectors; s++ )
@@ -510,7 +510,7 @@
 
 	afx_msg void CTrackMapView::OnMouseMove(UINT nFlags,CPoint point){
 		// cursor moved over this view
-		TPhysicalAddress chs; BYTE nSectorsToSkip; int nanoseconds;
+		TPhysicalAddress chs; BYTE nSectorsToSkip; TLogTime nanoseconds;
 		const bool cursorOverSector=GetPhysicalAddressAndNanosecondsFromPoint(point,chs,nSectorsToSkip,nanoseconds);
 		TCHAR buf[80], *p=buf; *p='\0';
 		if (showTimed && nanoseconds>=0){
@@ -546,7 +546,7 @@
 	afx_msg void CTrackMapView::OnLButtonUp(UINT nFlags,CPoint point){
 		// left mouse button released
 		if (app.IsInGodMode() && !IMAGE->IsWriteProtected()){
-			TPhysicalAddress chs; BYTE nSectorsToSkip; int nanoseconds;
+			TPhysicalAddress chs; BYTE nSectorsToSkip; TLogTime nanoseconds;
 			if (GetPhysicalAddressAndNanosecondsFromPoint(point,chs,nSectorsToSkip,nanoseconds)){
 				// cursor over a Sector
 				WORD w; TFdcStatus sr;
