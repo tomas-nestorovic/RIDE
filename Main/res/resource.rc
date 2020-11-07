@@ -1520,21 +1520,21 @@ FONT 8, "MS Sans Serif"
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,115,193,50,14
     PUSHBUTTON      "Cancel",IDCANCEL,168,193,50,14
-    LTEXT           "Firmware:",ID_STATIC,7,8,31,8,NOT WS_GROUP
+    LTEXT           "Firmware:",IDC_STATIC,7,8,31,8,NOT WS_GROUP
     LTEXT           "Static",ID_SYSTEM,71,8,147,8,NOT WS_GROUP
-    LTEXT           "Flux decoder:",ID_STATIC,7,25,44,8,NOT WS_GROUP
+    LTEXT           "Flux decoder:",IDC_STATIC,7,25,44,8,NOT WS_GROUP
     COMBOBOX        ID_ACCURACY,71,23,147,46,CBS_DROPDOWNLIST | WS_VSCROLL | 
                     WS_TABSTOP
-    LTEXT           "&Medium:",ID_STATIC,7,42,28,8,NOT WS_GROUP
+    LTEXT           "&Medium:",IDC_STATIC,7,42,28,8,NOT WS_GROUP
     CONTROL         "Static",ID_MEDIUM,"Static",SS_SIMPLE | WS_BORDER,71,41,
                     96,13
     PUSHBUTTON      "Refresh",ID_RECOVER,170,41,48,13
     CONTROL         "Double track distance",ID_40D80,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,71,58,147,10
-    LTEXT           "Motor &off after [s]:",ID_STATIC,7,75,56,8,NOT WS_GROUP
+    LTEXT           "Motor &off after [s]:",IDC_STATIC,7,75,56,8,NOT WS_GROUP
     COMBOBOX        ID_ROTATION,71,73,96,46,CBS_DROPDOWNLIST | WS_VSCROLL | 
                     WS_TABSTOP
-    LTEXT           "Calibrate head:",ID_STATIC,7,92,48,8,NOT WS_GROUP
+    LTEXT           "Calibrate head:",IDC_STATIC,7,92,48,8,NOT WS_GROUP
     CONTROL         "Never",ID_NONE,"Button",BS_AUTORADIOBUTTON | WS_GROUP,
                     70,92,74,10
     CONTROL         "O&nce per cylinder",ID_CYLINDER,"Button",
@@ -1547,7 +1547,7 @@ BEGIN
                     31,10
     EDITTEXT        ID_NUMBER,102,142,16,12,ES_RIGHT | ES_AUTOHSCROLL | 
                     ES_NUMBER | WS_DISABLED | NOT WS_BORDER
-    LTEXT           "-th cyl.",ID_STATIC,118,142,22,8,NOT WS_GROUP
+    LTEXT           "-th cyl.",IDC_STATIC,118,142,22,8,NOT WS_GROUP
     CONTROL         "&Verify formatted tracks before writing any data (recommended)",
                     ID_VERIFY_TRACK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
                     157,211,10
