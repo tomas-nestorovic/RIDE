@@ -245,7 +245,7 @@
 		Utils::ScaleLogicalUnit(*pDC);
 	}
 
-	void CTrackMapView::TimesToPixels(TSector nSectors,PINT pInOutBuffer,PCWORD pInSectorLengths) const{
+	void CTrackMapView::TimesToPixels(TSector nSectors,PLogTime pInOutBuffer,PCWORD pInSectorLengths) const{
 		// converts times (in nanoseconds) in Buffer to pixels
 		if (showTimed){
 			const TLogTime nNanosecondsPerByte=IMAGE->EstimateNanosecondsPerOneByte();

@@ -65,7 +65,7 @@
 				~TRawContent();
 			} rawContent;
 
-			TInternalTrack(const CFDD *fdd,TCylinder cyl,THead head,TSector _nSectors,PCSectorId bufferId,PCINT sectorStartsNanoseconds); //ctor
+			TInternalTrack(const CFDD *fdd,TCylinder cyl,THead head,TSector _nSectors,PCSectorId bufferId,PCLogTime sectorStartsNanoseconds); //ctor
 			~TInternalTrack(); //dtor
 
 			bool __isIdDuplicated__(PCSectorId id) const;

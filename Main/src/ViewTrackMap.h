@@ -47,7 +47,7 @@
 		void OnPrepareDC(CDC *pDC,CPrintInfo *pInfo=nullptr) override;
 		void OnDraw(CDC *pDC) override;
 		void PostNcDestroy() override;
-		void TimesToPixels(TSector nSectors,PINT pInOutBuffer,PCWORD pInSectorLengths) const;
+		void TimesToPixels(TSector nSectors,PLogTime pInOutBuffer,PCWORD pInSectorLengths) const;
 		bool GetPhysicalAddressAndNanosecondsFromPoint(POINT point,TPhysicalAddress &rOutChs,BYTE &rnOutSectorsToSkip,TLogTime &rOutNanoseconds);
 		void ResetStatusBarMessage() const;
 		void __updateLogicalDimensions__();
