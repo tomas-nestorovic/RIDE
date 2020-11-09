@@ -1,33 +1,33 @@
 #include "stdafx.h"
 
-	CMainWindow::TDynMenu::TDynMenu(UINT nResId)
+	CMainWindow::CDynMenu::CDynMenu(UINT nResId)
 		// ctor
-		: hMenu( ::LoadMenu(AfxGetInstanceHandle(),(LPCTSTR)nResId) )
-		, hAccel( ::LoadAccelerators(AfxGetInstanceHandle(),(LPCTSTR)nResId) ) {
+		: hAccel( ::LoadAccelerators(AfxGetInstanceHandle(),(LPCTSTR)nResId) ) {
+		if (nResId!=0)
+			LoadMenu(nResId);
 	}
-	CMainWindow::TDynMenu::~TDynMenu(){
+	CMainWindow::CDynMenu::~CDynMenu(){
 		// dtor
 		::DestroyAcceleratorTable(hAccel);
-		::DestroyMenu(hMenu);
 	}
 
-	void CMainWindow::TDynMenu::__show__(UINT position) const{
+	void CMainWindow::CDynMenu::Show(UINT position) const{
 		// shows this Menu in MainWindow's menu
-		if (hMenu){ // may not if the MainWindow is being closed
+		if (m_hMenu){ // may not if the MainWindow is being closed
 			TCHAR buf[30];
-			::GetMenuString(hMenu,0,buf,sizeof(buf)/sizeof(TCHAR),MF_BYPOSITION);
+			::GetMenuString(m_hMenu,0,buf,sizeof(buf)/sizeof(TCHAR),MF_BYPOSITION);
 			app.m_pMainWnd->GetMenu()->InsertMenu(	position,
 													MF_BYPOSITION | MF_POPUP,
-													(UINT)::GetSubMenu(hMenu,0),
+													(UINT)::GetSubMenu(m_hMenu,0),
 													buf
 												);
 			app.m_pMainWnd->DrawMenuBar();
 		}
 	}
-	void CMainWindow::TDynMenu::__hide__() const{
+	void CMainWindow::CDynMenu::Hide() const{
 		// removes this Menu from MainWindow's menu
-		if (hMenu && app.m_pMainWnd){ // may not if the MainWindow is being closed
-			app.m_pMainWnd->GetMenu()->RemoveMenu( (UINT)::GetSubMenu(hMenu,0), MF_BYCOMMAND|MF_POPUP );
+		if (m_hMenu && app.m_pMainWnd){ // may not if the MainWindow is being closed
+			app.m_pMainWnd->GetMenu()->RemoveMenu( (UINT)::GetSubMenu(m_hMenu,0), MF_BYCOMMAND|MF_POPUP );
 			app.m_pMainWnd->DrawMenuBar();
 		}
 	}
@@ -48,7 +48,7 @@
 		}
 	}
 
-	void CMainWindow::CDockableToolBar::__show__(const CToolBar &rDockNextTo){
+	void CMainWindow::CDockableToolBar::Show(const CToolBar &rDockNextTo){
 		// shows this ToolBar docked immediately next to the specified existing one
 		if (m_hWnd && rDockNextTo.m_hWnd){ // only if both ToolBars exist (may not if the MainWindow is being closed)
 			RECT r;
@@ -60,7 +60,7 @@
 		}
 	}
 
-	void CMainWindow::CDockableToolBar::__hide__(){
+	void CMainWindow::CDockableToolBar::Hide(){
 		// hides this Toolbar
 		if (m_hWnd) // this ToolBar is destroyed automatically when the MainWindow is being closed
 			( (CMainWindow *)app.m_pMainWnd )->ShowControlBar(this,FALSE,FALSE);

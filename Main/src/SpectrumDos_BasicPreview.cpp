@@ -603,11 +603,11 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 		}else
 			SetWindowText(PREVIEW_LABEL);
 		// - hiding/displaying additional menus
-		GetMenu()->RemoveMenu( (UINT)::GetSubMenu(machineCodeMenu.hMenu,0), MF_BYCOMMAND|MF_POPUP );
+		GetMenu()->RemoveMenu( (UINT)::GetSubMenu(machineCodeMenu.m_hMenu,0), MF_BYCOMMAND|MF_POPUP );
 		if (dataAfterBasic==TDataAfterBasic::SHOW_AS_MACHINE_CODE || features.showRemAsMachineCode)
 			GetMenu()->InsertMenu(	1,
 									MF_BYPOSITION | MF_POPUP,
-									(UINT)::GetSubMenu(machineCodeMenu.hMenu,0),
+									(UINT)::GetSubMenu(machineCodeMenu.m_hMenu,0),
 									_T("Machine code")
 								);
 		// - refreshing the non-client area (TODO: why?)

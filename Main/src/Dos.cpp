@@ -43,7 +43,7 @@
 		if (CHexaPreview::pSingleInstance && &CHexaPreview::pSingleInstance->rFileManager==pFileManager)
 			CHexaPreview::pSingleInstance->DestroyWindow();
 		// - hiding DOS Menu
-		menu.__hide__();
+		menu.Hide();
 		// - removing Tabs from TDI
 		//nop (see CTdiTemplate)
 	}

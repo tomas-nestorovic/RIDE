@@ -730,11 +730,11 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 				if (const LRESULT err=__super::WindowProc(msg,wParam,lParam))
 					return err;
 				// . showing the Tape's ToolBar "after" the TapeFileManager's ToolBar
-				toolbar.__show__( tab.toolbar );
+				toolbar.Show( tab.toolbar );
 				return 0;
 			case WM_DESTROY:
 				// TapeFileManager destroyed - hiding the Tape's ToolBar
-				toolbar.__hide__();
+				toolbar.Hide();
 				break;
 		}
 		return __super::WindowProc(msg,wParam,lParam);

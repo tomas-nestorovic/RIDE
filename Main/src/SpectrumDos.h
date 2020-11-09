@@ -88,7 +88,7 @@
 		};
 
 		class CBasicPreview sealed:public CAssemblerPreview{
-			const CMainWindow::TDynMenu machineCodeMenu;
+			const CMainWindow::CDynMenu machineCodeMenu;
 			union{
 				BYTE info;
 				struct{

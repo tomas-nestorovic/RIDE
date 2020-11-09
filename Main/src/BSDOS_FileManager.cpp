@@ -81,11 +81,11 @@
 				if (const LRESULT err=__super::WindowProc(msg,wParam,lParam))
 					return err;
 				// . showing the Tape ToolBar "after" the FileManager's ToolBar
-				toolbar.__show__( tab.toolbar );
+				toolbar.Show( tab.toolbar );
 				return 0;
 			case WM_DESTROY:
 				// FileManager destroyed - hiding the Tape ToolBar
-				toolbar.__hide__();
+				toolbar.Hide();
 				break;
 		}
 		return __super::WindowProc(msg,wParam,lParam);

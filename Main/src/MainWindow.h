@@ -26,15 +26,14 @@
 		afx_msg void __openUrl_tutorials__();
 		afx_msg void __openUrl_credits__();
 	public:
-		struct TDynMenu sealed{
-			const HMENU hMenu;
+		struct CDynMenu:public CMenu{
 			const HACCEL hAccel;
 
-			TDynMenu(UINT nResId);
-			~TDynMenu();
+			CDynMenu(UINT nResId);
+			~CDynMenu();
 		public:
-			void __show__(UINT position) const;
-			void __hide__() const;
+			void Show(UINT position) const;
+			void Hide() const;
 		};
 
 		class CDockableToolBar sealed:public CToolBar{
@@ -42,8 +41,8 @@
 		public:
 			CDockableToolBar(UINT nResId,UINT id);
 
-			void __show__(const CToolBar &rDockNextTo);
-			void __hide__();
+			void Show(const CToolBar &rDockNextTo);
+			void Hide();
 		};
 
 		class CTdiTemplate sealed:public CSingleDocTemplate{
@@ -70,7 +69,7 @@
 
 			typedef struct TTab sealed{
 				const PDos dos; // DOS that gets into focus when switched to this Tab (e.g. CSpectrumDos::CTape)
-				const TDynMenu menu;
+				const CDynMenu menu;
 				const PView view;
 				CDockableToolBar toolbar;
 				TTab(UINT nMenuResId,UINT nToolbarResId,UINT nToolBarId,PDos _dos,PView _view); // ctor

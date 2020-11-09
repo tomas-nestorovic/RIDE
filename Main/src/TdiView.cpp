@@ -327,20 +327,20 @@
 		const PView view=tab->view;
 		// - showing the Menus associated with the DOS and View 
 		if (IS_TAB_PART_OF_DOS(tab)){ // the Tab is part of a DOS (e.g. a WebPage is usually not part of any DOS)
-			CImage::GetActive()->dos->menu.__show__(MENU_POSITION_DOS);
-			tab->menu.__show__(MENU_POSITION_VIEW);
+			CImage::GetActive()->dos->menu.Show(MENU_POSITION_DOS);
+			tab->menu.Show(MENU_POSITION_VIEW);
 		}else
-			tab->menu.__show__(MENU_POSITION_DOS); // showing the View's Menu at the DOS's position
+			tab->menu.Show(MENU_POSITION_DOS); // showing the View's Menu at the DOS's position
 		// - showing Image's ToolBar (guaranteed that the Toolbar always exists)
 		CMainWindow *const pMainWindow=(CMainWindow *)app.m_pMainWnd;
 		if (IS_TAB_PART_OF_DOS(tab)){ // the Tab is part of a DOS (e.g. a WebPage is usually not part of any DOS)
-			tab->dos->image->toolbar.__show__(pMainWindow->toolbar);
+			tab->dos->image->toolbar.Show(pMainWindow->toolbar);
 		}
 		// - showing the Tab's ToolBar (e.g. the FileManager's ToolBar)
 		if (IS_TAB_PART_OF_DOS(tab)) // the Tab is part of a DOS (e.g. a WebPage is usually not part of any DOS)
-			tab->toolbar.__show__( tab->dos->image->toolbar );
+			tab->toolbar.Show( tab->dos->image->toolbar );
 		else
-			tab->toolbar.__show__( pMainWindow->toolbar );
+			tab->toolbar.Show( pMainWindow->toolbar );
 		// - showing the associated View
 		__setStatusBarText__(nullptr); // StatusBar without text
 		RECT r;
@@ -374,14 +374,14 @@
 				image->RemoveView(view); // View added into the list when shown, see CCreateContext
 		::DestroyWindow( view->m_hWnd );
 		// - hiding the Tab's ToolBar (e.g. the FileManager's ToolBar)
-		tab->toolbar.__hide__();
+		tab->toolbar.Hide();
 		// - hiding the Image's ToolBar (guaranteed that the Toolbar always exists)
 		if (IS_TAB_PART_OF_DOS(tab))
-			tab->dos->image->toolbar.__hide__();
+			tab->dos->image->toolbar.Hide();
 		// - hiding the Menus associated with the DOS and View 
-		tab->menu.__hide__();
+		tab->menu.Hide();
 		if (IS_TAB_PART_OF_DOS(tab))
-			CImage::GetActive()->dos->menu.__hide__();
+			CImage::GetActive()->dos->menu.Hide();
 		// - resetting the StatusBar
 		__resetStatusBar__();
 		// - displaying the introductory GuidePost if this was the last Tab in the TDI

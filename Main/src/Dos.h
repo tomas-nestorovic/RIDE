@@ -368,7 +368,7 @@
 
 		CFileManagerView *const pFileManager;
 		const PCSide sideMap; // how Heads map to Side numbers (Head->Side)
-		const CMainWindow::TDynMenu menu;
+		const CMainWindow::CDynMenu menu;
 		TFormat formatBoot; // information on Medium Format retrieved from Boot; this information has ALWAYS priority if handling the disk; changes in this structure must be projected back to Boot Sector using FlushToBootSector (e.g. called automatically by BootView)
 
 		virtual ~CDos();
