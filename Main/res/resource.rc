@@ -156,6 +156,15 @@ BEGIN
     VK_F5,          ID_REFRESH,             VIRTKEY, NOINVERT
 END
 
+IDR_TRACK_EDITOR ACCELERATORS DISCARDABLE 
+BEGIN
+    "+",            ID_ZOOM_IN,             ASCII,  NOINVERT
+    "-",            ID_ZOOM_OUT,            ASCII,  NOINVERT
+    "0",            ID_ZOOM_FIT,            VIRTKEY, CONTROL, NOINVERT
+    VK_ESCAPE,      IDCANCEL,               VIRTKEY, NOINVERT
+END
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Menu
@@ -639,6 +648,19 @@ BEGIN
         MENUITEM "Close\tEsc",                  IDCLOSE
     END
 END
+
+IDR_TRACK_EDITOR MENU DISCARDABLE 
+BEGIN
+    POPUP "Preview"
+    BEGIN
+        MENUITEM "Zoom in\t+",                  ID_ZOOM_IN
+        MENUITEM "Zoom out\t–",                 ID_ZOOM_OUT
+        MENUITEM "Zoom to fit\tCtrl+0",         ID_ZOOM_FIT
+        MENUITEM SEPARATOR
+        MENUITEM "Close\tEsc",                  IDCANCEL
+    END
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -1578,6 +1600,18 @@ BEGIN
     LTEXT           "Static",ID_DOS,56,78,123,20
 END
 
+IDR_TRACK_EDITOR DIALOG DISCARDABLE  0, 0, 442, 149
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
+CAPTION ""
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,332,128,50,14,NOT WS_VISIBLE | WS_DISABLED
+    PUSHBUTTON      "Cancel",IDCANCEL,385,128,50,14
+    LTEXT           "",ID_TRACK,0,0,441,117,NOT WS_VISIBLE | WS_BORDER | NOT 
+                    WS_GROUP
+    CONTROL         "Slider1",ID_ACCURACY,"msctls_trackbar32",TBS_BOTH | 
+                    TBS_NOTICKS | WS_BORDER,0,117,149,17
+END
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -1858,6 +1892,11 @@ BEGIN
         RIGHTMARGIN, 179
         TOPMARGIN, 7
         BOTTOMMARGIN, 120
+    END
+
+    IDR_TRACK_EDITOR, DIALOG
+    BEGIN
+        BOTTOMMARGIN, 142
     END
 END
 #endif    // APSTUDIO_INVOKED

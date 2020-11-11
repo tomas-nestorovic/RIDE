@@ -473,7 +473,7 @@
 								: longestTrack.GetZoomFactorToFitWidth(cx);
 	}
 
-	bool CTrackMapView::GetPhysicalAddressAndNanosecondsFromPoint(POINT point,TPhysicalAddress &rOutChs,BYTE &rnOutSectorsToSkip,TLogTime &rOutNanoseconds){
+	CTrackMapView::TCursorPos CTrackMapView::GetPhysicalAddressAndNanosecondsFromPoint(POINT point,TPhysicalAddress &rOutChs,BYTE &rnOutSectorsToSkip,int &rOutNanoseconds){
 		// True <=> given actual scroll position, the Point falls into a Sector, otherwise False
 		CClientDC dc(this);
 		OnPrepareDC(&dc);
@@ -494,24 +494,24 @@
 			TSectorId bufferId[(TSector)-1];
 			WORD bufferLength[(TSector)-1];
 			TLogTime bufferStarts[(TSector)-1];
-			const TSector nSectors=IMAGE->ScanTrack( d.quot, d.rem, bufferId, bufferLength, bufferStarts );
+			const TSector nSectors=IMAGE->ScanTrack( rOutChs.cylinder=d.quot, rOutChs.head=d.rem, bufferId, bufferLength, bufferStarts );
 			TimesToPixels( nSectors, bufferStarts, bufferLength );
 			for( TSector s=0; s<nSectors; s++ )
 				if (bufferStarts[s]<=point.x && point.x<=bufferStarts[s]+(bufferLength[s]>>zoomLengthFactor)){
 					// cursor over a Sector
-					rOutChs.cylinder=d.quot, rOutChs.head=d.rem;
 					rOutChs.sectorId=bufferId[s];
 					rnOutSectorsToSkip=s;
-					return true;
+					return TCursorPos::SECTOR;
 				}
+			return TCursorPos::TRACK;
 		}
-		return false;
+		return TCursorPos::NONE;
 	}
 
 	afx_msg void CTrackMapView::OnMouseMove(UINT nFlags,CPoint point){
 		// cursor moved over this view
 		TPhysicalAddress chs; BYTE nSectorsToSkip; TLogTime nanoseconds;
-		const bool cursorOverSector=GetPhysicalAddressAndNanosecondsFromPoint(point,chs,nSectorsToSkip,nanoseconds);
+		const bool cursorOverSector=GetPhysicalAddressAndNanosecondsFromPoint(point,chs,nSectorsToSkip,nanoseconds)==TCursorPos::SECTOR;
 		TCHAR buf[80], *p=buf; *p='\0';
 		if (showTimed && nanoseconds>=0){
 			// cursor in timeline range
@@ -545,21 +545,31 @@
 
 	afx_msg void CTrackMapView::OnLButtonUp(UINT nFlags,CPoint point){
 		// left mouse button released
-		if (app.IsInGodMode() && !IMAGE->IsWriteProtected()){
-			TPhysicalAddress chs; BYTE nSectorsToSkip; TLogTime nanoseconds;
-			if (GetPhysicalAddressAndNanosecondsFromPoint(point,chs,nSectorsToSkip,nanoseconds)){
-				// cursor over a Sector
-				WORD w; TFdcStatus sr;
-				IMAGE->GetSectorData( chs, nSectorsToSkip, false, &w, &sr );
-				if (!sr.IsWithoutError()){
-					if (Utils::QuestionYesNo(_T("Unformat this track?"),MB_DEFBUTTON1))
-						if (const TStdWinError err=IMAGE->UnformatTrack( chs.cylinder, chs.head ))
-							return Utils::FatalError( _T("Can't unformat"), err );
-				}else if (Utils::QuestionYesNo(_T("Make this sector unreadable?"),MB_DEFBUTTON1))
-					if (const TStdWinError err=IMAGE->MarkSectorAsDirty( chs, nSectorsToSkip, &TFdcStatus::DeletedDam ))
-						return Utils::FatalError( _T("Can't make unreadable"), err );
-				Invalidate();
-			}
+		TPhysicalAddress chs; BYTE nSectorsToSkip; int nanoseconds;
+		switch (GetPhysicalAddressAndNanosecondsFromPoint(point,chs,nSectorsToSkip,nanoseconds)){
+			case TCursorPos::TRACK:
+				// clicked on a Track
+				if (const auto tr=IMAGE->GetTrackDescription( chs.cylinder, chs.head )){
+					TCHAR caption[80];
+					::wsprintf( caption, _T("Track %d  (Cyl=%d, Head=%d)"), chs.GetTrackNumber(__getNumberOfFormattedSidesInImage__(IMAGE)), chs.cylinder, chs.head );
+					tr->ShowModal(caption);
+				}
+				break;
+			case TCursorPos::SECTOR:
+				// clicked on a Sector
+				if (app.IsInGodMode() && !IMAGE->IsWriteProtected()){
+					WORD w; TFdcStatus sr;
+					IMAGE->GetSectorData( chs, nSectorsToSkip, false, &w, &sr );
+					if (!sr.IsWithoutError()){
+						if (Utils::QuestionYesNo(_T("Unformat this track?"),MB_DEFBUTTON1))
+							if (const TStdWinError err=IMAGE->UnformatTrack( chs.cylinder, chs.head ))
+								return Utils::FatalError( _T("Can't unformat"), err );
+					}else if (Utils::QuestionYesNo(_T("Make this sector unreadable?"),MB_DEFBUTTON1))
+						if (const TStdWinError err=IMAGE->MarkSectorAsDirty( chs, nSectorsToSkip, &TFdcStatus::DeletedDam ))
+							return Utils::FatalError( _T("Can't make unreadable"), err );
+					Invalidate();
+				}
+				break;
 		}
 	}
 

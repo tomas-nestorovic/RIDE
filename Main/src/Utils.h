@@ -119,19 +119,20 @@ namespace Utils{
 	class CTimeline{
 	protected:
 		const TLogTime logTimePerUnit;
-		const TLogTime logTimeLength;
 
 		TLogTime PixelToTime(int pixelX) const;
 	public:
+		const TLogTime logTimeLength;
 		BYTE zoomFactor;
 
 		CTimeline(TLogTime logTimeLength,TLogTime logTimePerUnit,BYTE initZoomFactor);
 
 		void SetLength(TLogTime logTime);
-		void Draw(HDC dc,const CRideFont &font) const;
+		void Draw(HDC dc,const CRideFont &font,PLogTime pOutVisibleStart=nullptr,PLogTime pOutVisibleEnd=nullptr) const;
 		int GetUnitCount(TLogTime logTime,BYTE zoomFactor) const;
 		int GetUnitCount(TLogTime logTime) const;
 		int GetUnitCount() const;
+		TLogTime GetTime(int nUnits) const;
 		BYTE GetZoomFactorToFitWidth(int nUnits,BYTE zoomFactorMax) const;
 	};
 

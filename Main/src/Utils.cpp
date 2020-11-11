@@ -403,7 +403,7 @@ namespace Utils{
 		, zoomFactor(initZoomFactor) {
 	}
 
-	void CTimeline::Draw(HDC dc,const CRideFont &font) const{
+	void CTimeline::Draw(HDC dc,const CRideFont &font,PLogTime pOutVisibleStart,PLogTime pOutVisibleEnd) const{
 		// draws a timeline starting at current origin
 		// - determinining the primary granuality of the timeline
 		static const TCHAR TimePrefixes[]=_T("nnnµµµmmm   "); // nano, micro, milli, no-prefix
@@ -421,9 +421,13 @@ namespace Utils{
 		POINT org;
 		::GetViewportOrgEx( dc, &org );
 		const TLogTime timeA=std::max( PixelToTime(-org.x), 0 )/intervalBig*intervalBig;
+		if (pOutVisibleStart!=nullptr)
+			*pOutVisibleStart=timeA;
 		CRect rcClient;
 		::GetClientRect( ::WindowFromDC(dc), &rcClient );
 		const TLogTime timeZ=std::min<LONGLONG>( logTimeLength, ((LONGLONG)PixelToTime(std::max(-org.x,0L)+rcClient.Width())+intervalBig-1)/intervalBig*intervalBig ); // rounding to whole multiples of IntervalBig
+		if (pOutVisibleEnd!=nullptr)
+			*pOutVisibleEnd=timeZ;
 		// - drawing using a workaround to overcome the coordinate space limits
 		const int nUnitsA=GetUnitCount(timeA);
 		::SetViewportOrgEx( dc, nUnitsA*LogicalUnitScaleFactor+org.x, org.y, nullptr );
@@ -431,7 +435,6 @@ namespace Utils{
 			::MoveToEx( dc, 0,0, nullptr );
 			::LineTo( dc, GetUnitCount(timeZ)-nUnitsA, 0 );
 			// . drawing secondary time marks on the timeline
-			const TLogTime tVisible=timeZ-timeA;
 			if (const TLogTime intervalSmall=intervalBig/10)
 				for( TLogTime t=timeA; t<timeZ; t+=intervalSmall ){
 					const auto x=GetUnitCount(t)-nUnitsA;
@@ -454,8 +457,7 @@ namespace Utils{
 	}
 
 	TLogTime CTimeline::PixelToTime(int pixelX) const{
-		const auto tmp=((LONGLONG)(pixelX/LogicalUnitScaleFactor)<<zoomFactor)*logTimePerUnit;
-		return	tmp<INT_MAX ? tmp : INT_MAX;
+		return	GetTime( pixelX/LogicalUnitScaleFactor );
 	}
 
 	int CTimeline::GetUnitCount(TLogTime logTime,BYTE zoomFactor) const{
@@ -468,6 +470,11 @@ namespace Utils{
 
 	int CTimeline::GetUnitCount() const{
 		return	GetUnitCount( logTimeLength );
+	}
+
+	TLogTime CTimeline::GetTime(int nUnits) const{
+		const auto tmp=((LONGLONG)nUnits<<zoomFactor)*logTimePerUnit;
+		return	tmp<INT_MAX ? tmp : INT_MAX;
 	}
 
 	BYTE CTimeline::GetZoomFactorToFitWidth(int nUnits,BYTE zoomFactorMax) const{

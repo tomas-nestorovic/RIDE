@@ -669,3 +669,10 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 		return ERROR_SUCCESS;
 	}
 
+	std::unique_ptr<CImage::CTrackReader> CCapsBase::GetTrackDescription(TCylinder cyl,THead head) const{
+		// returns specified Track general description, represented using neutral LogicalTimes; returns Null if such description not available
+		if (const PCInternalTrack pit=internalTracks[cyl][head])
+			return std::unique_ptr<CTrackReader>(  new CTrackReader(*pit)  );
+		else
+			return __super::GetTrackDescription(cyl,head);
+	}

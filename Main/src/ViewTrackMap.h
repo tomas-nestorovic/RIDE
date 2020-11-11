@@ -48,7 +48,7 @@
 		void OnDraw(CDC *pDC) override;
 		void PostNcDestroy() override;
 		void TimesToPixels(TSector nSectors,PLogTime pInOutBuffer,PCWORD pInSectorLengths) const;
-		bool GetPhysicalAddressAndNanosecondsFromPoint(POINT point,TPhysicalAddress &rOutChs,BYTE &rnOutSectorsToSkip,TLogTime &rOutNanoseconds);
+		enum TCursorPos{ NONE, TRACK, SECTOR } GetPhysicalAddressAndNanosecondsFromPoint(POINT point,TPhysicalAddress &rOutChs,BYTE &rnOutSectorsToSkip,int &rOutNanoseconds);
 		void ResetStatusBarMessage() const;
 		void __updateLogicalDimensions__();
 		afx_msg int OnCreate(LPCREATESTRUCT lpcs);

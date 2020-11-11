@@ -54,6 +54,7 @@
 #define IDR_DOS_PREVIEW_BASE            219
 #define IDR_KRYOFLUX_ACCESS             220
 #define IDR_CAPS                        221
+#define IDR_TRACK_EDITOR                222
 #define ID_HIDDEN                       1018
 #define ID_SYSTEM                       1019
 #define ID_CONNECTED                    1020

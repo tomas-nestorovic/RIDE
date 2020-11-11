@@ -312,6 +312,7 @@
 			//TFdcStatus ReadData(WORD nBytesToRead,LPBYTE buffer);
 			TFdcStatus ReadDataFm(WORD nBytesToRead,LPBYTE buffer);
 			TFdcStatus ReadDataMfm(WORD nBytesToRead,LPBYTE buffer);
+			void ShowModal(LPCTSTR caption) const;
 		};
 
 		class CTrackReaderWriter:public CTrackReader{
