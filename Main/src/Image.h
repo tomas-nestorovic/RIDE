@@ -252,12 +252,14 @@
 				TLogTime iwTime; // inspection window size; a "1" is expected in its centre
 				TLogTime iwTimeMin,iwTimeMax; // inspection window possible time range
 				BYTE adjustmentPercentMax; // percentual "speed" in inspection window adjustment
+
+				void Reset();
 			} profile;
 		protected:
 			const PLogTime logTimes; // absolute logical times since the start of recording
 			DWORD iNextTime,nLogTimes;
-			TLogTime indexPulses[DEVICE_REVOLUTIONS_MAX];
-			BYTE nIndexPulses;
+			TLogTime indexPulses[DEVICE_REVOLUTIONS_MAX+1];
+			BYTE iNextIndexPulse,nIndexPulses;
 			TLogTime currentTime;
 			TCodec codec;
 			TMedium::TType mediumType;
@@ -307,7 +309,7 @@
 			//TSector Scan(BYTE revolutionIndex,PSectorId pOutFoundSectors,PLogTime pOutDataStart);
 			WORD ScanFm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses);
 			WORD ScanMfm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses);
-			TFdcStatus ReadData(WORD nBytesToRead,LPBYTE buffer);
+			//TFdcStatus ReadData(WORD nBytesToRead,LPBYTE buffer);
 			TFdcStatus ReadDataFm(WORD nBytesToRead,LPBYTE buffer);
 			TFdcStatus ReadDataMfm(WORD nBytesToRead,LPBYTE buffer);
 		};
@@ -420,6 +422,7 @@
 		virtual TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber);
 		virtual bool EditSettings(bool initialEditing)=0;
 		virtual TStdWinError Reset()=0;
+		virtual std::unique_ptr<CTrackReader> GetTrackDescription(TCylinder cyl,THead head) const;
 		virtual TStdWinError SaveTrack(TCylinder cyl,THead head);
 		virtual TStdWinError FormatTrack(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte)=0;
 		virtual bool RequiresFormattedTracksVerification() const;

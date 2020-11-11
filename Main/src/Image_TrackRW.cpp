@@ -3,10 +3,11 @@
 	CImage::CTrackReader::CTrackReader(PLogTime _logTimes,DWORD nLogTimes,PCLogTime indexPulses,BYTE _nIndexPulses,TMedium::TType mediumType,TCodec codec)
 		// ctor
 		: logTimes(_logTimes+1) , nLogTimes(nLogTimes) // "+1" = hidden item represents reference counter
-		, nIndexPulses(  std::min<BYTE>( DEVICE_REVOLUTIONS_MAX, _nIndexPulses )  )
+		, iNextIndexPulse(0) , nIndexPulses(  std::min<BYTE>( DEVICE_REVOLUTIONS_MAX, _nIndexPulses )  )
 		, iNextTime(0) , currentTime(0)
 		, nConsecutiveZeros(0) {
 		::memcpy( this->indexPulses, indexPulses, nIndexPulses*sizeof(TLogTime) );
+		this->indexPulses[nIndexPulses]=INT_MAX; // a virtual IndexPulse in infinity
 		logTimes[-1]=1; // initializing the reference counter
 		SetCodec(codec); // setting values associated with the specified Codec
 		SetMediumType(mediumType); // setting values associated with the specified MediumType
@@ -39,9 +40,14 @@
 		// seeks to the specified LogicalTime
 		if (!nLogTimes)
 			return;
+		if (logTime<0)
+			logTime=0;
+		for( iNextIndexPulse=0; iNextIndexPulse<nIndexPulses; iNextIndexPulse++ )
+			if (logTime<=indexPulses[iNextIndexPulse])
+				break;
 		if (logTime<*logTimes){
 			iNextTime=0;
-			currentTime=std::max( logTime, 0 );
+			currentTime=logTime;
 			return;
 		}
 		DWORD L=0, R=nLogTimes;
@@ -73,12 +79,7 @@
 
 	TLogTime CImage::CTrackReader::ReadTime(){
 		// returns the next LogicalTime (or zero if all time information already read)
-		if (*this){
-			const TLogTime result= logTimes[iNextTime] - currentTime;
-			currentTime=logTimes[iNextTime++];
-			return result;
-		}else
-			return 0;
+		return	*this ? logTimes[iNextTime++] : 0;
 	}
 
 	void CImage::CTrackReader::SetCodec(TCodec codec){
@@ -137,6 +138,12 @@
 
 	bool CImage::CTrackReader::ReadBit(){
 		// returns first bit not yet read
+		// - if we just crossed an IndexPulse, resetting the Profile
+		if (currentTime>=indexPulses[iNextIndexPulse]){
+			profile.Reset();
+			iNextIndexPulse++;
+		}
+		// - reading next bit
 		//switch (method){
 			//case TMethod::FDD_KEIR_FRASIER:
 			// FDC-like flux reversal decoding from Keir Frasier's Disk-Utilities/libdisk
@@ -341,6 +348,22 @@
 		if (!ReadBits32(dw) || MFM::DecodeBigEndianWord(dw)!=CFloppyImage::GetCrc16Ccitt(CFloppyImage::GetCrc16Ccitt(&preamble,sizeof(preamble)),buffer,p-buffer)) // no or wrong Data Field CRC
 			result.ExtendWith( TFdcStatus::DataFieldCrcError );
 		return result;
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+	void CImage::CTrackReader::TProfile::Reset(){
+		iwTime=iwTimeDefault;
 	}
 
 
