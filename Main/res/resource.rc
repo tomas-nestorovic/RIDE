@@ -657,6 +657,8 @@ BEGIN
         MENUITEM "Zoom out\t–",                 ID_ZOOM_OUT
         MENUITEM "Zoom to fit\tCtrl+0",         ID_ZOOM_FIT
         MENUITEM SEPARATOR
+        MENUITEM "Show inspection",             ID_RECOGNIZE
+        MENUITEM SEPARATOR
         MENUITEM "Close\tEsc",                  IDCANCEL
     END
 END

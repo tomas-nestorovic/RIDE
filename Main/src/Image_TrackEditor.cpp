@@ -3,8 +3,10 @@
 	#define ZOOM_FACTOR_MAX	24
 
 	class CTrackEditor sealed:public Utils::CRideDialog{
+		const CImage::CTrackReader &tr;
 		const LPCTSTR caption;
 		CMainWindow::CDynMenu menu;
+		PLogTime iwEndTimes;
 		HANDLE hAutoscrollTimer;
 		
 		class CTimeEditor sealed:public CScrollView{
@@ -12,6 +14,7 @@
 			Utils::CTimeline timeline;
 			CImage::CTrackReader tr;
 			TLogTime scrollTime;
+			PCLogTime iwEndTimes; // inspection window end Times (aka. at which Time they end; the end determines the beginning of the immediately next inspection window)
 
 			void OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint) override{
 				// request to refresh the display of content
@@ -69,6 +72,27 @@
 				::SetBkMode( dc, TRANSPARENT );
 				TLogTime timeA,timeZ; // visible region
 				timeline.Draw( dc, Utils::CRideFont::StdBold, &timeA, &timeZ );
+				// . drawing inspection windows (if any)
+				if (iwEndTimes){
+					// : determining the first visible inspection window
+					DWORD L=0, R=timeline.logTimeLength/tr.profile.iwTimeMin;
+					do{
+						const DWORD M=(L+R)/2;
+						if (iwEndTimes[L]<=timeA && timeA<iwEndTimes[M])
+							R=M;
+						else
+							L=M;
+					}while (R-L>1);
+					// : drawing visible inspection windows
+					const CBrush brushDarker(0xE4E4B3), brushLighter(0xECECCE);
+					TLogTime tA=iwEndTimes[L], tZ;
+					RECT rc={ timeline.GetUnitCount(tA), 1, 0, 40 };
+					while (tA<timeZ){
+						rc.right=timeline.GetUnitCount( tZ=iwEndTimes[++L] );
+						::FillRect( dc, &rc, L&1?brushLighter:brushDarker );
+						tA=tZ, rc.left=rc.right;
+					}
+				}
 				// . drawing Index pulses
 				BYTE i=0;
 				while (i<tr.GetIndexCount() && tr.GetIndexTime(i)<timeA) // invisible indices before visible region
@@ -101,7 +125,7 @@
 				: penIndex( 2, 0xff0000 )
 				, timeline( tr.GetTotalTime(), 1, 10 )
 				, tr(tr)
-				, scrollTime(0) {
+				, scrollTime(0) , iwEndTimes(nullptr) {
 			}
 
 			inline const Utils::CTimeline &GetTimeline() const{
@@ -141,6 +165,15 @@
 							);
 				scrollTime=t;
 				Invalidate(FALSE);
+			}
+
+			inline PCLogTime GetInspectionWindowEndTimes() const{
+				return iwEndTimes;
+			}
+
+			inline void SetInspectionWindowEndTimes(PCLogTime iwEndTimes){
+				this->iwEndTimes=iwEndTimes;
+				Invalidate();
 			}
 		} timeEditor;
 
@@ -215,6 +248,30 @@
 			return __super::WindowProc( msg, wParam, lParam );
 		}
 
+		static UINT AFX_CDECL CreateInspectionWindowList_thread(PVOID _pCancelableAction){
+			// thread to create list of inspection windows used to recognize data in the Track
+			const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
+			CTrackEditor &rte=*(CTrackEditor *)pAction->GetParams();
+			CImage::CTrackReader tr=rte.tr;
+			tr.SetCurrentTime(0);
+			tr.profile.Reset();
+			const auto nIwsMax=tr.GetTotalTime()/tr.profile.iwTimeMin+2;
+			if (rte.iwEndTimes=(PLogTime)::calloc( sizeof(TLogTime), nIwsMax )){
+				if (pAction->IsCancelled()){
+					::free(rte.iwEndTimes), rte.iwEndTimes=nullptr;
+					return ERROR_CANCELLED;
+				}
+				PLogTime t=rte.iwEndTimes;
+				*t++=0; // beginning of the very first inspection window
+				for( pAction->SetProgressTarget(tr.GetTotalTime()); tr; pAction->UpdateProgress(*t++=tr.GetCurrentTime()) )
+					tr.ReadBit();
+				for( const PLogTime last=rte.iwEndTimes+nIwsMax; t<last; )
+					*t++=INT_MAX; // flooding unused part of the buffer with sensible Times
+				return pAction->TerminateWithError(ERROR_SUCCESS);
+			}else
+				return pAction->TerminateWithError(ERROR_NOT_ENOUGH_MEMORY);
+		}
+
 		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){
 			// command processing
 			switch (nCode){
@@ -230,6 +287,9 @@
 							//fallthrough
 						case ID_ZOOM_FIT:
 						case IDCANCEL:
+							return TRUE;
+						case ID_RECOGNIZE:
+							pCmdUi->SetCheck( timeEditor.GetInspectionWindowEndTimes()!=nullptr );
 							return TRUE;
 					}
 					break;
@@ -252,6 +312,15 @@
 						case IDCANCEL:
 							EndDialog(nID);
 							return TRUE;
+						case ID_RECOGNIZE:
+							if (timeEditor.GetInspectionWindowEndTimes()!=nullptr)
+								timeEditor.SetInspectionWindowEndTimes(nullptr);
+							else{
+								if (iwEndTimes==nullptr)
+									CBackgroundActionCancelable( CreateInspectionWindowList_thread, this, THREAD_PRIORITY_LOWEST ).Perform();
+								timeEditor.SetInspectionWindowEndTimes(iwEndTimes);
+							}
+							return TRUE;
 					}
 					break;
 			}
@@ -264,9 +333,17 @@
 			// - base
 			: Utils::CRideDialog(IDR_TRACK_EDITOR)
 			// - initialization
+			, tr(tr)
 			, caption(caption) , menu( IDR_TRACK_EDITOR )
 			, timeEditor(tr)
+			, iwEndTimes(nullptr)
 			, hAutoscrollTimer(INVALID_HANDLE_VALUE) {
+		}
+
+		~CTrackEditor(){
+			// dtor
+			if (iwEndTimes)
+				::free(iwEndTimes);
 		}
 	};
 
