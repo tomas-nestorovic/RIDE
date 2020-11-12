@@ -20,7 +20,7 @@
 				// request to refresh the display of content
 				SetScrollSizes(
 					MM_TEXT,
-					CSize( Utils::LogicalUnitScaleFactor*timeline.GetUnitCount(), 0 )
+					CSize( timeline.GetUnitCount(), 0 )
 				);
 			}
 
@@ -57,12 +57,12 @@
 				//
 				// . base
 				__super::OnPrepareDC(pDC,pInfo);
+				// . scaling
+				Utils::ScaleLogicalUnit(*pDC);
 				// . changing the viewport
 				CRect rc;
 				GetClientRect(&rc);
-				pDC->SetViewportOrg( -GetTimeline().GetUnitCount(scrollTime), rc.Height()/2 );
-				// . scaling
-				Utils::ScaleLogicalUnit(*pDC);
+				pDC->SetViewportOrg( -GetTimeline().GetUnitCount(scrollTime)*Utils::LogicalUnitScaleFactor, rc.Height()/2 );
 			}
 
 			void OnDraw(CDC *pDC) override{
@@ -160,7 +160,7 @@
 					si.nPos=timeline.GetUnitCount(t);
 				SetScrollInfo( SB_HORZ, &si, TRUE );
 				ScrollWindow(	// "base"
-								timeline.GetUnitCount(scrollTime)-si.nPos,//*Utils::GetLogicalUnitScaleFactor(CClientDC(this))
+								(timeline.GetUnitCount(scrollTime)-si.nPos)*Utils::LogicalUnitScaleFactor,
 								0
 							);
 				scrollTime=t;
