@@ -23,13 +23,14 @@
 				return errorState;
 			}
 
-			CTrackReaderWriter ToTrack() const;
+			CTrackReaderWriter ToTrack(const CKryoFluxBase &kfb) const;
 		};
 
 		struct TParams{
 			// persistent (saved and loaded)
 			enum TFluxDecoder{
-				KEIR_FRASIER
+				KEIR_FRASIER,
+				KEIR_FRASIER_MODIFIED
 			} fluxDecoder;
 			enum TCalibrationAfterError{
 				NONE				=0,

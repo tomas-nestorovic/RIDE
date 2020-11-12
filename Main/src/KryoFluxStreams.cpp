@@ -104,7 +104,7 @@
 				const CKfStream kfStream( data, f.GetLength() );
 				if (!kfStream.GetError()){
 					// it's a KryoFlux Stream whose data make sense
-					CTrackReaderWriter trw=kfStream.ToTrack();
+					CTrackReaderWriter trw=kfStream.ToTrack(*this);
 						trw.SetMediumType(floppyType);
 					internalTracks[cyl][head]=CInternalTrack::CreateFrom( *this, trw );
 					nSectors=__super::ScanTrack( cyl, head, bufferId, bufferLength, startTimesNanoseconds, pAvgGap3 );

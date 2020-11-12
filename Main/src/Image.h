@@ -238,9 +238,10 @@
 				UNDETERMINED=FM|MFM//|AMIGA|GCR
 			};
 
-			enum TMethod:BYTE{
+			enum TDecoderMethod:BYTE{
 				FDD_KEIR_FRASIER	=1,
-				FDD_METHODS			=FDD_KEIR_FRASIER
+				FDD_KEIR_FRASIER_MODIFIED =2,
+				FDD_METHODS			=FDD_KEIR_FRASIER|FDD_KEIR_FRASIER_MODIFIED
 			};
 
 			struct TProfile sealed{
@@ -257,6 +258,7 @@
 			} profile;
 		protected:
 			const PLogTime logTimes; // absolute logical times since the start of recording
+			const TDecoderMethod method;
 			DWORD iNextTime,nLogTimes;
 			TLogTime indexPulses[DEVICE_REVOLUTIONS_MAX+1];
 			BYTE iNextIndexPulse,nIndexPulses;
@@ -266,9 +268,9 @@
 			BYTE nConsecutiveZerosMax; // # of consecutive zeroes to lose synchronization; e.g. 3 for MFM code
 			DWORD nConsecutiveZeros;
 
-			CTrackReader(PLogTime logTimes,DWORD nLogTimes,PCLogTime indexPulses,BYTE nIndexPulses,TMedium::TType mediumType,TCodec codec);
+			CTrackReader(PLogTime logTimes,DWORD nLogTimes,PCLogTime indexPulses,BYTE nIndexPulses,TMedium::TType mediumType,TCodec codec,TDecoderMethod method);
 		public:
-			CTrackReader(const CTrackReader &rTrackReader);
+			CTrackReader(const CTrackReader &tr);
 			CTrackReader(CTrackReader &&rTrackReader);
 			~CTrackReader();
 
@@ -318,7 +320,7 @@
 		class CTrackReaderWriter:public CTrackReader{
 			const DWORD nLogTimesMax;
 		public:
-			CTrackReaderWriter(DWORD nLogTimesMax);
+			CTrackReaderWriter(DWORD nLogTimesMax,TDecoderMethod method);
 			CTrackReaderWriter(const CTrackReaderWriter &rTrackReaderWriter);
 			CTrackReaderWriter(CTrackReaderWriter &&rTrackReaderWriter);
 

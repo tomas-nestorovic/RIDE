@@ -31,7 +31,7 @@
 	CKryoFluxBase::TParams::TParams()
 		// ctor
 		// - persistent (saved and loaded)
-		: fluxDecoder( (TFluxDecoder)app.GetProfileInt(INI_KRYOFLUX,INI_FLUX_DECODER,TFluxDecoder::KEIR_FRASIER) )
+		: fluxDecoder( (TFluxDecoder)app.GetProfileInt(INI_KRYOFLUX,INI_FLUX_DECODER,TFluxDecoder::KEIR_FRASIER_MODIFIED) )
 		, calibrationAfterError( (TCalibrationAfterError)app.GetProfileInt(INI_KRYOFLUX,INI_CALIBRATE_SECTOR_ERROR,TCalibrationAfterError::ONCE_PER_CYLINDER) )
 		, calibrationStepDuringFormatting( app.GetProfileInt(INI_KRYOFLUX,INI_CALIBRATE_FORMATTING,0) )
 		, nSecondsToTurnMotorOff( app.GetProfileInt(INI_KRYOFLUX,INI_MOTOR_OFF_SECONDS,2) ) // 0 = 1 second, 1 = 2 seconds, 2 = 3 seconds
@@ -378,9 +378,18 @@ badFormat:		errorState=ERROR_BAD_FORMAT;
 			errorState=ERROR_BAD_FILE_TYPE;
 	}
 
-	CImage::CTrackReaderWriter CKryoFluxBase::CKfStream::ToTrack() const{
+	CImage::CTrackReaderWriter CKryoFluxBase::CKfStream::ToTrack(const CKryoFluxBase &kfb) const{
 		// creates and returns a Track representation of the Stream data
-		CTrackReaderWriter result( nFluxes );
+		CTrackReader::TDecoderMethod decoderMethod;
+		switch (kfb.params.fluxDecoder){
+			case TParams::TFluxDecoder::KEIR_FRASIER:
+				decoderMethod=CTrackReader::TDecoderMethod::FDD_KEIR_FRASIER; break;
+			case TParams::TFluxDecoder::KEIR_FRASIER_MODIFIED:
+				decoderMethod=CTrackReader::TDecoderMethod::FDD_KEIR_FRASIER_MODIFIED; break;
+			default:
+				ASSERT(FALSE); break;
+		}
+		CTrackReaderWriter result( nFluxes, decoderMethod );
 		DWORD sampleCounter=0;
 		TLogTime prevTime=0,*buffer=result.GetBuffer(),*pLogTime=buffer;
 		BYTE nearestIndexPulse=0;

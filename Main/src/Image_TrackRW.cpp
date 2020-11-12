@@ -1,10 +1,11 @@
 #include "stdafx.h"
 
-	CImage::CTrackReader::CTrackReader(PLogTime _logTimes,DWORD nLogTimes,PCLogTime indexPulses,BYTE _nIndexPulses,TMedium::TType mediumType,TCodec codec)
+	CImage::CTrackReader::CTrackReader(PLogTime _logTimes,DWORD nLogTimes,PCLogTime indexPulses,BYTE _nIndexPulses,TMedium::TType mediumType,TCodec codec,TDecoderMethod method)
 		// ctor
 		: logTimes(_logTimes+1) , nLogTimes(nLogTimes) // "+1" = hidden item represents reference counter
 		, iNextIndexPulse(0) , nIndexPulses(  std::min<BYTE>( DEVICE_REVOLUTIONS_MAX, _nIndexPulses )  )
 		, iNextTime(0) , currentTime(0)
+		, method(method)
 		, nConsecutiveZeros(0) {
 		::memcpy( this->indexPulses, indexPulses, nIndexPulses*sizeof(TLogTime) );
 		this->indexPulses[nIndexPulses]=INT_MAX; // a virtual IndexPulse in infinity
@@ -13,16 +14,16 @@
 		SetMediumType(mediumType); // setting values associated with the specified MediumType
 	}
 
-	CImage::CTrackReader::CTrackReader(const CTrackReader &rTrackReader)
+	CImage::CTrackReader::CTrackReader(const CTrackReader &tr)
 		// copy ctor
-		: logTimes(rTrackReader.logTimes) {
-		::memcpy( this, &rTrackReader, sizeof(*this) );
+		: logTimes(tr.logTimes) , method(tr.method) {
+		::memcpy( this, &tr, sizeof(*this) );
 		::InterlockedIncrement( (PUINT)logTimes-1 ); // increasing the reference counter
 	}
 
 	CImage::CTrackReader::CTrackReader(CTrackReader &&rTrackReader)
 		// move ctor
-		: logTimes(rTrackReader.logTimes) {
+		: logTimes(rTrackReader.logTimes) , method(rTrackReader.method) {
 		::memcpy( this, &rTrackReader, sizeof(*this) );
 		::InterlockedIncrement( (PUINT)logTimes-1 ); // increasing the reference counter
 	}
@@ -144,44 +145,76 @@
 			iNextIndexPulse++;
 		}
 		// - reading next bit
-		//switch (method){
-			//case TMethod::FDD_KEIR_FRASIER:
-			// FDC-like flux reversal decoding from Keir Frasier's Disk-Utilities/libdisk
-			#ifdef _DEBUG
-				if (!*this)
-					ASSERT(FALSE); // this method mustn't be called when there's nothing actually to be read!
-			#endif
-			// - 
-			const TLogTime iwTimeHalf=profile.iwTime/2;
-			while (logTimes[iNextTime]-currentTime<iwTimeHalf)
-				if (*this)
-					iNextTime++;
-				else
+		#ifdef _DEBUG
+			if (!*this)
+				ASSERT(FALSE); // this method mustn't be called when there's nothing actually to be read!
+		#endif
+		switch (method){
+			case TDecoderMethod::FDD_KEIR_FRASIER:{
+				// FDC-like flux reversal decoding from Keir Frasier's Disk-Utilities/libdisk
+				// - reading some more from the Track
+				const TLogTime iwTimeHalf=profile.iwTime/2;
+				while (logTimes[iNextTime]-currentTime<iwTimeHalf)
+					if (*this)
+						iNextTime++;
+					else
+						return 0;
+				// - detecting zero (longer than 3/2 of an inspection window)
+				currentTime+=profile.iwTime;
+				const TLogTime diff=logTimes[iNextTime]-currentTime;
+				while (diff>=iwTimeHalf){
+					nConsecutiveZeros++;
 					return 0;
-			// - 
-			currentTime+=profile.iwTime;
-			// - 
-			const TLogTime diff=logTimes[iNextTime]-currentTime;
-			while (diff>=iwTimeHalf){
-				nConsecutiveZeros++;
-				return 0;
+				}
+				// - adjust data frequency according to phase mismatch
+				if (nConsecutiveZeros<=nConsecutiveZerosMax)
+					// in sync - adjust inspection window by percentage of phase mismatch
+					profile.iwTime+= diff * profile.adjustmentPercentMax/100;
+				else
+					// out of sync - adjust inspection window towards its Default size
+					profile.iwTime+= (profile.iwTimeDefault-profile.iwTime) * profile.adjustmentPercentMax/100;
+				// - keep the inspection window size within limits
+				if (profile.iwTime<profile.iwTimeMin)
+					profile.iwTime=profile.iwTimeMin;
+				else if (profile.iwTime>profile.iwTimeMax)
+					profile.iwTime=profile.iwTimeMax;
+				// - a "1" recognized
+				nConsecutiveZeros=0;
+				return 1;
 			}
-			// - adjust data frequency according to phase mismatch
-			if (nConsecutiveZeros<=nConsecutiveZerosMax)
-				// in sync - adjust inspection window by percentage of phase mismatch
-				profile.iwTime+= diff * profile.adjustmentPercentMax/100;
-			else
-				// out of sync - adjust inspection window towards its Default size
-				profile.iwTime+= (profile.iwTimeDefault-profile.iwTime) * profile.adjustmentPercentMax/100;
-			// - keep the inspection window size within limits
-			if (profile.iwTime<profile.iwTimeMin)
-				profile.iwTime=profile.iwTimeMin;
-			else if (profile.iwTime>profile.iwTimeMax)
-				profile.iwTime=profile.iwTimeMax;
-			// - a "1" recognized
-			nConsecutiveZeros=0;
-			return 1;
-		//}
+			case TDecoderMethod::FDD_KEIR_FRASIER_MODIFIED:{
+				// modified FDC-like flux reversal decoding from Keir Frasier's Disk-Utilities/libdisk
+				// - detecting zero
+				const TLogTime iwTimeHalf=profile.iwTime/2;
+				const TLogTime diff=logTimes[iNextTime]-currentTime;
+				currentTime+=profile.iwTime;
+				if (diff>=profile.iwTime){
+					nConsecutiveZeros++;
+					return 0;
+				}
+				// - reading some more from the Track for the next time
+				while (logTimes[iNextTime]-currentTime<iwTimeHalf)
+					if (*this)
+						iNextTime++;
+					else
+						return 0;
+				// - adjust data frequency according to phase mismatch
+				if (nConsecutiveZeros<=nConsecutiveZerosMax)
+					// in sync - adjust inspection window by percentage of phase mismatch
+					profile.iwTime+= (diff-iwTimeHalf) * profile.adjustmentPercentMax/100;
+				else
+					// out of sync - adjust inspection window towards its Default size
+					profile.iwTime+= (profile.iwTimeDefault-profile.iwTime) * profile.adjustmentPercentMax/100;
+				// - keep the inspection window size within limits
+				if (profile.iwTime<profile.iwTimeMin)
+					profile.iwTime=profile.iwTimeMin;
+				else if (profile.iwTime>profile.iwTimeMax)
+					profile.iwTime=profile.iwTimeMax;
+				// - a "1" recognized
+				nConsecutiveZeros=0;
+				return 1;
+			}
+		}
 	}
 
 	bool CImage::CTrackReader::ReadBits16(WORD &rOut){
@@ -377,9 +410,9 @@
 
 
 
-	CImage::CTrackReaderWriter::CTrackReaderWriter(DWORD nLogTimesMax)
+	CImage::CTrackReaderWriter::CTrackReaderWriter(DWORD nLogTimesMax,TDecoderMethod method)
 		// ctor
-		: CTrackReader( (PLogTime)::calloc(nLogTimesMax+1,sizeof(TLogTime)), 0, nullptr, 0, TMedium::FLOPPY_DD_350, TCodec::MFM ) // "+1" = hidden item represents reference counter
+		: CTrackReader( (PLogTime)::calloc(nLogTimesMax+1,sizeof(TLogTime)), 0, nullptr, 0, TMedium::FLOPPY_DD_350, TCodec::MFM, method ) // "+1" = hidden item represents reference counter
 		, nLogTimesMax(nLogTimesMax) {
 	}
 
