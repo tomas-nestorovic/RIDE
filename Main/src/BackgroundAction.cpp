@@ -62,7 +62,7 @@
 
 	CBackgroundActionCancelable::CBackgroundActionCancelable(UINT dlgResId)
 		// ctor
-		: Utils::CRideDialog( dlgResId, app.m_pMainWnd )
+		: Utils::CRideDialog( dlgResId, CWnd::GetActiveWindow() )
 		, callerThreadPriorityOrg( ::GetThreadPriority(::GetCurrentThread()) )
 		, bCancelled(false) , bTargetStateReached(false) , lastState(0)
 		, progressTarget(INT_MAX) {
@@ -70,7 +70,7 @@
 
 	CBackgroundActionCancelable::CBackgroundActionCancelable(AFX_THREADPROC fnAction,LPCVOID actionParams,int actionThreadPriority)
 		// ctor
-		: Utils::CRideDialog( IDR_ACTION_PROGRESS, app.m_pMainWnd )
+		: Utils::CRideDialog( IDR_ACTION_PROGRESS, CWnd::GetActiveWindow() )
 		, callerThreadPriorityOrg( ::GetThreadPriority(::GetCurrentThread()) )
 		, bCancelled(false) , bTargetStateReached(false) , lastState(0)
 		, progressTarget(INT_MAX) {
