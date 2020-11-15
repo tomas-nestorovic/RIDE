@@ -10,12 +10,115 @@
 		HANDLE hAutoscrollTimer;
 		
 		class CTimeEditor sealed:public CScrollView{
-			const Utils::CRidePen penIndex;
 			Utils::CTimeline timeline;
 			CImage::CTrackReader tr;
 			TLogTime scrollTime;
 			PCLogTime iwEndTimes; // inspection window end Times (aka. at which Time they end; the end determines the beginning of the immediately next inspection window)
 			TLogTime draggedTime; // Time at which left mouse button has been pressed
+			struct TTrackPainter sealed{
+				const CBackgroundAction action;
+				struct{
+					CCriticalSection locker;
+					WORD id;
+					TLogTime timeA,timeZ; // visible region
+					BYTE zoomFactor;
+				} params;
+				CEvent repaintEvent;
+
+				static UINT AFX_CDECL Thread(PVOID _pBackgroundAction){
+					// thread to paint the Track according to specified Parameters
+					const PCBackgroundAction pAction=(PCBackgroundAction)_pBackgroundAction;
+					CTimeEditor &rte=*(CTimeEditor *)pAction->GetParams();
+					TTrackPainter &p=rte.painter;
+					const Utils::CRidePen penIndex( 2, 0xff0000 );
+					for( CImage::CTrackReader tr=rte.tr; true; ){
+						// . waiting for next request to paint the Track
+						p.repaintEvent.Lock();
+						if (!::IsWindow(rte.m_hWnd)) // window closed?
+							break;
+						// . retrieving the Parameters
+						CClientDC dc(&rte);
+						p.params.locker.Lock();
+							const WORD id=p.params.id;
+							TLogTime timeA=p.params.timeA, timeZ=p.params.timeZ;
+							rte.OnPrepareDC(&dc);
+						p.params.locker.Unlock();
+						if (timeA<0 && timeZ<0) // window closing?
+							break;
+						::SetBkMode( dc, TRANSPARENT );
+						// . drawing inspection windows (if any)
+						bool continuePainting=true;
+						if (rte.iwEndTimes){
+							// : determining the first visible inspection window
+							DWORD L=0, R=rte.timeline.logTimeLength/tr.profile.iwTimeMin;
+							do{
+								const DWORD M=(L+R)/2;
+								if (rte.iwEndTimes[L]<=timeA && timeA<rte.iwEndTimes[M])
+									R=M;
+								else
+									L=M;
+							}while (R-L>1);
+							// : drawing visible inspection windows (avoiding the GDI coordinate limitations by moving the viewport origin)
+							const CBrush brushDarker(0xE4E4B3), brushLighter(0xECECCE);
+							TLogTime tA=rte.iwEndTimes[L], tZ;
+							RECT rc={ 0, 1, 0, 40 };
+							POINT org;
+							::GetViewportOrgEx( dc, &org );
+							const int nUnitsA=rte.timeline.GetUnitCount(tA);
+							::SetViewportOrgEx( dc, nUnitsA*Utils::LogicalUnitScaleFactor+org.x, org.y, nullptr );
+								while (continuePainting && tA<timeZ){
+									rc.right=rte.timeline.GetUnitCount( tZ=rte.iwEndTimes[++L] )-nUnitsA;
+									p.params.locker.Lock();
+										if ( continuePainting=p.params.id==id )
+											::FillRect( dc, &rc, L&1?brushLighter:brushDarker );
+									p.params.locker.Unlock();
+									tA=tZ, rc.left=rc.right;
+								}
+							::SetViewportOrgEx( dc, org.x, org.y, nullptr );
+							if (!continuePainting) // new paint request?
+								continue;
+						}
+						// . drawing Index pulses
+						BYTE i=0;
+						while (i<tr.GetIndexCount() && tr.GetIndexTime(i)<timeA) // skipping invisible indices before visible region
+							i++;
+						const HGDIOBJ hPen0=::SelectObject( dc, penIndex );
+							::SetTextColor( dc, 0xff0000 );
+							for( TCHAR buf[16]; continuePainting && i<tr.GetIndexCount() && tr.GetIndexTime(i)<timeZ; i++ ){ // visible indices
+								const int x=rte.timeline.GetUnitCount( tr.GetIndexTime(i) );
+								p.params.locker.Lock();
+									if ( continuePainting=p.params.id==id ){
+										::MoveToEx( dc, x,-60, nullptr );
+										::LineTo( dc, x,60 );
+										::TextOut( dc, x+4,-60, buf, ::wsprintf(buf,_T("Index %d"),i) );
+									}
+								p.params.locker.Unlock();
+							}
+						::SelectObject( dc, hPen0 );
+						if (!continuePainting) // new paint request?
+							continue;
+						// . drawing Times
+						tr.SetCurrentTime(timeA);
+						for( TLogTime t=timeA; continuePainting && t<timeZ; t=tr.ReadTime() ){
+							const int x=rte.timeline.GetUnitCount(t);
+							p.params.locker.Lock();
+								if ( continuePainting=p.params.id==id ){
+									::MoveToEx( dc, x,0, nullptr );
+									::LineTo( dc, x,30 );
+								}
+							p.params.locker.Unlock();
+						}
+						if (!continuePainting) // new paint request?
+							continue;
+					}
+					return ERROR_SUCCESS;
+				}
+
+				TTrackPainter(const CTimeEditor &te)
+					// ctor
+					: action( Thread, &te, THREAD_PRIORITY_IDLE ) {
+				}
+			} painter;
 
 			void OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint) override{
 				// request to refresh the display of content
@@ -28,6 +131,10 @@
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 				// window procedure
 				switch (msg){
+					case WM_CREATE:
+						// window created
+						painter.action.Resume();
+						break;
 					case WM_MOUSEACTIVATE:
 						// preventing the focus from being stolen by the parent
 						return MA_ACTIVATE;
@@ -67,6 +174,16 @@
 								-
 								(  scrollTime+timeline.GetTime( GET_X_LPARAM(lParam)/Utils::LogicalUnitScaleFactor )  )
 							);
+						break;
+					case WM_DESTROY:
+						// window about to be destroyed
+						// . letting the Painter finish normally
+						painter.params.locker.Lock();
+							painter.params.id++;
+							painter.params.timeA = painter.params.timeZ = INT_MIN;
+						painter.params.locker.Unlock();
+						painter.repaintEvent.SetEvent();
+						// . base
 						break;
 				}
 				return __super::WindowProc( msg, wParam, lParam );
@@ -108,54 +225,13 @@
 				// . drawing the Timeline
 				const HDC dc=*pDC;
 				::SetBkMode( dc, TRANSPARENT );
-				TLogTime timeA,timeZ; // visible region
-				timeline.Draw( dc, Utils::CRideFont::StdBold, &timeA, &timeZ );
-				// . drawing inspection windows (if any)
-				if (iwEndTimes){
-					// : determining the first visible inspection window
-					DWORD L=0, R=timeline.logTimeLength/tr.profile.iwTimeMin;
-					do{
-						const DWORD M=(L+R)/2;
-						if (iwEndTimes[L]<=timeA && timeA<iwEndTimes[M])
-							R=M;
-						else
-							L=M;
-					}while (R-L>1);
-					// : drawing visible inspection windows (avoiding the GDI coordinate limitations by moving the viewport origin)
-					const CBrush brushDarker(0xE4E4B3), brushLighter(0xECECCE);
-					TLogTime tA=iwEndTimes[L], tZ;
-					RECT rc={ 0, 1, 0, 40 };
-					POINT org;
-					::GetViewportOrgEx( dc, &org );
-					const int nUnitsA=timeline.GetUnitCount(tA);
-					::SetViewportOrgEx( dc, nUnitsA*Utils::LogicalUnitScaleFactor+org.x, org.y, nullptr );
-						while (tA<timeZ){
-							rc.right=timeline.GetUnitCount( tZ=iwEndTimes[++L] )-nUnitsA;
-							::FillRect( dc, &rc, L&1?brushLighter:brushDarker );
-							tA=tZ, rc.left=rc.right;
-						}
-					::SetViewportOrgEx( dc, org.x, org.y, nullptr );
-				}
-				// . drawing Index pulses
-				BYTE i=0;
-				while (i<tr.GetIndexCount() && tr.GetIndexTime(i)<timeA) // invisible indices before visible region
-					i++;
-				const HGDIOBJ hPen0=::SelectObject( dc, penIndex );
-					::SetTextColor( dc, 0xff0000 );
-					for( TCHAR buf[16]; i<tr.GetIndexCount() && tr.GetIndexTime(i)<timeZ; i++ ){ // visible indices
-						const int x=timeline.GetUnitCount( tr.GetIndexTime(i) );
-						::MoveToEx( dc, x,-60, nullptr );
-						::LineTo( dc, x,60 );
-						::TextOut( dc, x+4,-60, buf, ::wsprintf(buf,_T("Index %d"),i) );
-					}
-				::SelectObject( dc, hPen0 );
-				// . drawing Times
-				tr.SetCurrentTime(timeA);
-				for( TLogTime t=timeA; t<timeZ; t=tr.ReadTime() ){
-					const int x=timeline.GetUnitCount(t);
-					::MoveToEx( dc, x,0, nullptr );
-					::LineTo( dc, x,30 );
-				}
+				painter.params.locker.Lock();
+					painter.params.id++;
+					timeline.Draw( dc, Utils::CRideFont::StdBold, &painter.params.timeA, &painter.params.timeZ );
+					painter.params.zoomFactor=timeline.zoomFactor;
+				painter.params.locker.Unlock();
+				// . drawing the rest in parallel thread due to computational complexity if painting the whole Track
+				painter.repaintEvent.SetEvent();
 			}
 
 			void PostNcDestroy() override{
@@ -165,9 +241,9 @@
 		public:
 			CTimeEditor(const CImage::CTrackReader &tr)
 				// ctor
-				: penIndex( 2, 0xff0000 )
-				, timeline( tr.GetTotalTime(), 1, 10 )
+				: timeline( tr.GetTotalTime(), 1, 10 )
 				, tr(tr)
+				, painter(*this)
 				, draggedTime(-1)
 				, scrollTime(0) , iwEndTimes(nullptr) {
 			}
@@ -201,6 +277,9 @@
 					si.fMask=SIF_POS;
 					si.nPos=timeline.GetUnitCount(t);
 				SetScrollInfo( SB_HORZ, &si, TRUE );
+				painter.params.locker.Lock();
+					painter.params.id++; // stopping current painting
+				painter.params.locker.Unlock();
 				ScrollWindow(	// "base"
 								(timeline.GetUnitCount(scrollTime)-si.nPos)*Utils::LogicalUnitScaleFactor,
 								0
