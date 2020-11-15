@@ -15,6 +15,7 @@
 			CImage::CTrackReader tr;
 			TLogTime scrollTime;
 			PCLogTime iwEndTimes; // inspection window end Times (aka. at which Time they end; the end determines the beginning of the immediately next inspection window)
+			TLogTime draggedTime; // Time at which left mouse button has been pressed
 
 			void OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint) override{
 				// request to refresh the display of content
@@ -30,6 +31,26 @@
 					case WM_MOUSEACTIVATE:
 						// preventing the focus from being stolen by the parent
 						return MA_ACTIVATE;
+					case WM_LBUTTONDOWN:
+						// left mouse button pressed
+						SetFocus();
+						draggedTime=scrollTime+timeline.GetTime( GET_X_LPARAM(lParam)/Utils::LogicalUnitScaleFactor );
+						break;
+					case WM_LBUTTONUP:
+						// left mouse button released
+						draggedTime=-1;
+						break;
+					case WM_MOUSEMOVE:
+						// mouse moved
+						if (draggedTime>0) // left mouse button pressed
+							SetScrollTime(
+								scrollTime
+								+
+								draggedTime
+								-
+								(  scrollTime+timeline.GetTime( GET_X_LPARAM(lParam)/Utils::LogicalUnitScaleFactor )  )
+							);
+						break;
 				}
 				return __super::WindowProc( msg, wParam, lParam );
 			}
@@ -130,6 +151,7 @@
 				: penIndex( 2, 0xff0000 )
 				, timeline( tr.GetTotalTime(), 1, 10 )
 				, tr(tr)
+				, draggedTime(-1)
 				, scrollTime(0) , iwEndTimes(nullptr) {
 			}
 
