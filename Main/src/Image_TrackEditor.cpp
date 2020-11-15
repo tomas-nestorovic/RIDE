@@ -62,7 +62,7 @@
 				// . changing the viewport
 				CRect rc;
 				GetClientRect(&rc);
-				pDC->SetViewportOrg( -GetTimeline().GetUnitCount(scrollTime)*Utils::LogicalUnitScaleFactor, rc.Height()/2 );
+				pDC->SetViewportOrg( -timeline.GetUnitCount(scrollTime)*Utils::LogicalUnitScaleFactor, rc.Height()/2 );
 			}
 
 			void OnDraw(CDC *pDC) override{
@@ -83,15 +83,20 @@
 						else
 							L=M;
 					}while (R-L>1);
-					// : drawing visible inspection windows
+					// : drawing visible inspection windows (avoiding the GDI coordinate limitations by moving the viewport origin)
 					const CBrush brushDarker(0xE4E4B3), brushLighter(0xECECCE);
 					TLogTime tA=iwEndTimes[L], tZ;
-					RECT rc={ timeline.GetUnitCount(tA), 1, 0, 40 };
-					while (tA<timeZ){
-						rc.right=timeline.GetUnitCount( tZ=iwEndTimes[++L] );
-						::FillRect( dc, &rc, L&1?brushLighter:brushDarker );
-						tA=tZ, rc.left=rc.right;
-					}
+					RECT rc={ 0, 1, 0, 40 };
+					POINT org;
+					::GetViewportOrgEx( dc, &org );
+					const int nUnitsA=timeline.GetUnitCount(tA);
+					::SetViewportOrgEx( dc, nUnitsA*Utils::LogicalUnitScaleFactor+org.x, org.y, nullptr );
+						while (tA<timeZ){
+							rc.right=timeline.GetUnitCount( tZ=iwEndTimes[++L] )-nUnitsA;
+							::FillRect( dc, &rc, L&1?brushLighter:brushDarker );
+							tA=tZ, rc.left=rc.right;
+						}
+					::SetViewportOrgEx( dc, org.x, org.y, nullptr );
 				}
 				// . drawing Index pulses
 				BYTE i=0;
@@ -133,9 +138,7 @@
 			}
 
 			void SetZoomFactor(BYTE newZoomFactor,int focusUnitX){
-				TLogTime t=scrollTime+timeline.GetTime(focusUnitX);
-				if (t<0) t=0;
-				else if (t>timeline.logTimeLength) t=timeline.logTimeLength;
+				const TLogTime t=scrollTime+timeline.GetTime(focusUnitX);
 				timeline.zoomFactor=newZoomFactor;
 				OnUpdate( nullptr, 0, nullptr );
 				SetScrollTime(  timeline.GetTime( timeline.GetUnitCount(t)-focusUnitX )  );
@@ -257,14 +260,14 @@
 			tr.profile.Reset();
 			const auto nIwsMax=tr.GetTotalTime()/tr.profile.iwTimeMin+2;
 			if (rte.iwEndTimes=(PLogTime)::calloc( sizeof(TLogTime), nIwsMax )){
-				if (pAction->IsCancelled()){
-					::free(rte.iwEndTimes), rte.iwEndTimes=nullptr;
-					return ERROR_CANCELLED;
-				}
 				PLogTime t=rte.iwEndTimes;
 				*t++=0; // beginning of the very first inspection window
 				for( pAction->SetProgressTarget(tr.GetTotalTime()); tr; pAction->UpdateProgress(*t++=tr.GetCurrentTime()) )
-					tr.ReadBit();
+					if (pAction->IsCancelled()){
+						::free(rte.iwEndTimes), rte.iwEndTimes=nullptr;
+						return ERROR_CANCELLED;
+					}else
+						tr.ReadBit();
 				for( const PLogTime last=rte.iwEndTimes+nIwsMax; t<last; )
 					*t++=INT_MAX; // flooding unused part of the buffer with sensible Times
 				return pAction->TerminateWithError(ERROR_SUCCESS);
