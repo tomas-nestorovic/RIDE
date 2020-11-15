@@ -281,11 +281,11 @@
 					painter.params.id++; // stopping current painting
 				painter.params.locker.Unlock();
 				ScrollWindow(	// "base"
-								(timeline.GetUnitCount(scrollTime)-si.nPos)*Utils::LogicalUnitScaleFactor,
+								(int)(timeline.GetUnitCount(scrollTime)*Utils::LogicalUnitScaleFactor) - (int)(si.nPos*Utils::LogicalUnitScaleFactor),
 								0
 							);
 				scrollTime=t;
-				Invalidate(FALSE);
+				painter.repaintEvent.SetEvent();
 			}
 
 			inline PCLogTime GetInspectionWindowEndTimes() const{
