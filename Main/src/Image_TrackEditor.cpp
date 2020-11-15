@@ -40,6 +40,23 @@
 						// left mouse button released
 						draggedTime=-1;
 						break;
+					case WM_MOUSEWHEEL:{
+						// mouse wheel was rotated
+						POINT cursor;
+						GetCursorPos(&cursor);
+						ScreenToClient(&cursor);
+						const int nUnitsX=cursor.x/Utils::LogicalUnitScaleFactor;
+						if ((short)HIWORD(wParam)<0 && timeline.zoomFactor<ZOOM_FACTOR_MAX)
+							// want zoom out and still can zoom out
+							SetZoomFactor( timeline.zoomFactor+1, nUnitsX );
+						else if ((short)HIWORD(wParam)>0 && timeline.zoomFactor>0)
+							// want zoom in and still can zoom in
+							SetZoomFactor( timeline.zoomFactor-1, nUnitsX );
+						else
+							// can't process the zoom request
+							return 0;
+						//fallthrough
+					}
 					case WM_MOUSEMOVE:
 						// mouse moved
 						if (draggedTime>0) // left mouse button pressed
