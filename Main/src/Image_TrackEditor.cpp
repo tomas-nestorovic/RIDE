@@ -131,10 +131,6 @@
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 				// window procedure
 				switch (msg){
-					case WM_CREATE:
-						// window created
-						painter.action.Resume();
-						break;
 					case WM_MOUSEACTIVATE:
 						// preventing the focus from being stolen by the parent
 						return MA_ACTIVATE;
@@ -162,6 +158,7 @@
 						else
 							// can't process the zoom request
 							return 0;
+						lParam=cursor.x;
 						//fallthrough
 					}
 					case WM_MOUSEMOVE:
@@ -252,6 +249,13 @@
 				, scrollTime(0) , iwEndTimes(nullptr) {
 			}
 
+			void OnInitialUpdate() override{
+				// called after window creation
+				__super::OnInitialUpdate();
+				SetZoomFactor( timeline.zoomFactor, 0 ); // initialization
+				painter.action.Resume();
+			}
+
 			inline const Utils::CTimeline &GetTimeline() const{
 				return timeline;
 			}
@@ -262,6 +266,10 @@
 				OnUpdate( nullptr, 0, nullptr );
 				SetScrollTime(  timeline.GetTime( timeline.GetUnitCount(t)-focusUnitX )  );
 				Invalidate();
+				CRect rc;
+				GetClientRect(&rc);
+				m_lineDev.cx=std::max( timeline.GetUnitCount(tr.profile.iwTimeDefault)*Utils::LogicalUnitScaleFactor, 1.f ); // in device units
+				m_pageDev.cx=rc.Width()*.9f; // in device units
 			}
 
 			void SetZoomFactorCenter(BYTE newZoomFactor){
@@ -319,11 +327,12 @@
 			// - creating the TimeEditor
 			timeEditor.Create( nullptr, nullptr, WS_CHILD|WS_VISIBLE, MapDlgItemClientRect(ID_TRACK), this, 0 );
 			timeEditor.OnInitialUpdate(); // because hasn't been called automatically
+			timeEditor.SetFocus();
 			// - setting up the Accuracy slider
 			SendDlgItemMessage( ID_ACCURACY, TBM_SETRANGEMAX, FALSE, 2*AUTOSCROLL_HALF );
 			SendDlgItemMessage( ID_ACCURACY, TBM_SETPOS, TRUE, AUTOSCROLL_HALF );
 			SendDlgItemMessage( ID_ACCURACY, TBM_SETTHUMBLENGTH, TRUE, 50 );
-			return TRUE;
+			return FALSE; // False = focus already set manually
 		}
 
 		BOOL PreTranslateMessage(PMSG pMsg) override{
@@ -352,6 +361,7 @@
 							hAutoscrollTimer=INVALID_HANDLE_VALUE;
 							i=HIWORD(wParam);
 							SendDlgItemMessage( ID_ACCURACY, TBM_SETPOS, TRUE, AUTOSCROLL_HALF );
+							timeEditor.SetFocus();
 							break;
 						case TB_THUMBTRACK:
 							// "thumb" dragged
