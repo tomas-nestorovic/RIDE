@@ -300,6 +300,17 @@
 				painter.repaintEvent.SetEvent();
 			}
 
+			TLogTime GetCenterTime() const{
+				CRect rc;
+				GetClientRect(&rc);
+				return scrollTime+timeline.GetTime( rc.Width()/(Utils::LogicalUnitScaleFactor*2.f) );
+			}
+
+			void SetCenterTime(TLogTime t){
+				scrollTime=0; // base time for GetCenterTime
+				SetScrollTime( t-GetCenterTime() );
+			}
+
 			inline PCLogTime GetInspectionWindowEndTimes() const{
 				return iwEndTimes;
 			}
@@ -426,6 +437,12 @@
 						case ID_RECOGNIZE:
 							pCmdUi->SetCheck( timeEditor.GetInspectionWindowEndTimes()!=nullptr );
 							return TRUE;
+						case ID_PREV:
+							pCmdUi->SetCheck( tr.GetIndexCount()>0 && timeEditor.GetCenterTime()>tr.GetIndexTime(0) );
+							return TRUE;
+						case ID_NEXT:
+							pCmdUi->SetCheck( tr.GetIndexCount()>0 && timeEditor.GetCenterTime()<tr.GetIndexTime(tr.GetIndexCount()-1) );
+							return TRUE;
 					}
 					break;
 				}
@@ -456,6 +473,20 @@
 								timeEditor.SetInspectionWindowEndTimes(iwEndTimes);
 							}
 							return TRUE;
+						case ID_PREV:{
+							BYTE i=0;
+							for( const TLogTime tCenter=timeEditor.GetCenterTime(); i<tr.GetIndexCount()&&tCenter>tr.GetIndexTime(i); i++ );
+							if (i>0)
+								timeEditor.SetCenterTime( tr.GetIndexTime(i-1) );
+							return TRUE;
+						}
+						case ID_NEXT:{
+							BYTE i=0;
+							for( const TLogTime tCenter=timeEditor.GetCenterTime(); i<tr.GetIndexCount()&&tCenter>=tr.GetIndexTime(i); i++ );
+							if (i<tr.GetIndexCount())
+								timeEditor.SetCenterTime( tr.GetIndexTime(i) );
+							return TRUE;
+						}
 					}
 					break;
 			}

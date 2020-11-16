@@ -162,6 +162,8 @@ BEGIN
     "-",            ID_ZOOM_OUT,            ASCII,  NOINVERT
     "0",            ID_ZOOM_FIT,            VIRTKEY, CONTROL, NOINVERT
     VK_ESCAPE,      IDCANCEL,               VIRTKEY, NOINVERT
+    VK_NEXT,        ID_NEXT,                VIRTKEY, CONTROL, NOINVERT
+    VK_PRIOR,       ID_PREV,                VIRTKEY, CONTROL, NOINVERT
 END
 
 
@@ -653,6 +655,12 @@ IDR_TRACK_EDITOR MENU DISCARDABLE
 BEGIN
     POPUP "Preview"
     BEGIN
+        POPUP "Go to"
+        BEGIN
+            MENUITEM "Previous index\tCtrl+PgUp",   ID_PREV
+            MENUITEM "Next index\tCtrl+PgDown",     ID_NEXT
+        END
+        MENUITEM SEPARATOR
         MENUITEM "Zoom in\t+",                  ID_ZOOM_IN
         MENUITEM "Zoom out\t–",                 ID_ZOOM_OUT
         MENUITEM "Zoom to fit\tCtrl+0",         ID_ZOOM_FIT
