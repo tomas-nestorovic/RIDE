@@ -44,6 +44,11 @@ namespace Utils{
 		~CRideContextMenu();
 	};
 
+	typedef const struct TSplitButtonAction sealed{
+		WORD commandId;
+		LPCTSTR commandCaption;
+	} *PCSplitButtonAction;
+
 	class CRideDialog:public CDialog{
 	protected:
 		CRideDialog();
@@ -52,6 +57,7 @@ namespace Utils{
 		static LPCTSTR GetDialogTemplateItemText(UINT idDlgRes,WORD idItem,PTCHAR chars,WORD nCharsMax);
 		static void DrawClosingCurlyBracket(HDC dc,int x,int yMin,int yMax);
 		static void SetDlgItemSingleCharUsingFont(HWND hDlg,WORD id,WCHAR singleChar,HFONT hFont);
+		static void ConvertToCommandLikeButton(HWND hStdBtn,WCHAR wingdingsGlyphBeforeText=0xf0e8,COLORREF textColor=0,int glyphPointSizeIncrement=0,COLORREF glyphColor=0); // 0xf0e8 = arrow right
 
 		CRideDialog(LPCTSTR lpszTemplateName,CWnd *pParentWnd=nullptr);
 		CRideDialog(UINT nIDTemplate,CWnd *pParentWnd=nullptr);
@@ -74,6 +80,7 @@ namespace Utils{
 		void SetDlgItemSingleCharUsingFont(WORD id,WCHAR singleChar,HFONT hFont) const;
 		void SetDlgItemSingleCharUsingFont(WORD id,WCHAR singleChar,LPCTSTR fontFace,int fontPointSize) const;
 		void PopulateDlgComboBoxWithSequenceOfNumbers(WORD cbId,BYTE iStartValue,LPCTSTR strStartValueDesc,BYTE iEndValue,LPCTSTR strEndValueDesc) const;
+		void ConvertDlgButtonToSplitButton(WORD id,PCSplitButtonAction pAction,BYTE nActions) const;
 	};
 
 	class CCommandDialog:public CRideDialog{
@@ -91,11 +98,6 @@ namespace Utils{
 	public:
 		int checkBoxStatus;
 	};
-
-	typedef const struct TSplitButtonAction sealed{
-		WORD commandId;
-		LPCTSTR commandCaption;
-	} *PCSplitButtonAction;
 
 	class CByteIdentity sealed{
 		BYTE values[(BYTE)-1+1];
@@ -166,8 +168,6 @@ namespace Utils{
 	CString BytesToHexaText(PCBYTE bytes,BYTE nBytes,bool lastDelimitedWithAnd);
 	CString BytesToHexaText(const char *chars,BYTE nChars,bool lastDelimitedWithAnd);
 	void NavigateToUrlInDefaultBrowser(LPCTSTR url);
-	void ConvertToSplitButton(HWND hStdBtn,PCSplitButtonAction pAction,BYTE nActions);
-	void ConvertToCommandLikeButton(HWND hStdBtn,WCHAR wingdingsGlyphBeforeText=0xf0e8,COLORREF textColor=0,int glyphPointSizeIncrement=0,COLORREF glyphColor=0); // 0xf0e8 = arrow right
 	float ScaleLogicalUnit(HDC dc);
 	void UnscaleLogicalUnit(PINT values,BYTE nValues);
 	COLORREF GetSaturatedColor(COLORREF color,float saturationFactor);

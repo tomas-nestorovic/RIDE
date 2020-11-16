@@ -223,9 +223,8 @@ terminateWithError:
 									{ ID_TRACK, _T("Accept all errors in this track") },
 									{ ID_IMAGE, _T("Accept all errors on the disk") }
 								};
-								CWnd *const pBtnAccept=GetDlgItem(IDOK);
-								Utils::ConvertToSplitButton( pBtnAccept->m_hWnd, Actions, ACCEPT_OPTIONS_COUNT );
-								pBtnAccept->EnableWindow( dynamic_cast<CImageRaw *>(dp.target.get())==nullptr ); // accepting errors is allowed only if the Target Image can accept them
+								ConvertDlgButtonToSplitButton( IDOK, Actions, ACCEPT_OPTIONS_COUNT );
+								EnableDlgItem( IDOK, dynamic_cast<CImageRaw *>(dp.target.get())==nullptr ); // accepting errors is allowed only if the Target Image can accept them
 								// > enabling/disabling the "Recover" button
 								EnableDlgItem( ID_RECOVER, rFdcStatus.DescribesIdFieldCrcError() || rFdcStatus.DescribesDataFieldCrcError() );
 							}

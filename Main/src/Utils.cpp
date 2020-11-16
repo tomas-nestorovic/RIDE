@@ -1153,8 +1153,9 @@ namespace Utils{
 		return ::CallWindowProc( wndProc0, hSplitBtn, msg, wParam, lParam );
 	}
 
-	void ConvertToSplitButton(HWND hStdBtn,PCSplitButtonAction pAction,BYTE nActions){
+	void CRideDialog::ConvertDlgButtonToSplitButton(WORD id,PCSplitButtonAction pAction,BYTE nActions) const{
 		// converts an existing standard button to a SplitButton featuring specified additional Actions
+		const HWND hStdBtn=GetDlgItemHwnd(id);
 		::SetWindowText(hStdBtn,nullptr);
 		::SetWindowLong(hStdBtn,GWL_ID,pAction->commandId); // 0.Action is the default
 		::SetWindowLong(hStdBtn, GWL_USERDATA,
@@ -1168,7 +1169,7 @@ namespace Utils{
 		::InvalidateRect(hStdBtn,nullptr,TRUE);
 	}
 
-	void ConvertToCommandLikeButton(HWND hStdBtn,WCHAR wingdingsGlyphBeforeText,COLORREF textColor,int glyphPointSizeIncrement,COLORREF glyphColor){
+	void CRideDialog::ConvertToCommandLikeButton(HWND hStdBtn,WCHAR wingdingsGlyphBeforeText,COLORREF textColor,int glyphPointSizeIncrement,COLORREF glyphColor){
 		// converts an existing standard button to a "command-like" one known from Windows Vista, featuring specified GlypfBeforeText ('\0' = no Glyph)
 		::SetWindowLong( hStdBtn, GWL_STYLE, ::GetWindowLong(hStdBtn,GWL_STYLE)|BS_OWNERDRAW );
 		::SetWindowLong(hStdBtn,

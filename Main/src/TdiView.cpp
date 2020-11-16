@@ -64,7 +64,7 @@
 		void __addButton__(LPCTSTR caption,UINT id,WCHAR wingdingsGlyphBeforeText='\0',COLORREF glyphColor=COLOR_BLACK){
 			// adds a new button under currently open category
 			ASSERT(nCategories>0); // a category must currently be open
-			Utils::ConvertToCommandLikeButton(
+			ConvertToCommandLikeButton(
 				::CreateWindow(
 					WC_BUTTON, caption, WS_VISIBLE|WS_CHILD,
 					rcCurrContent.left,rcCurrContent.top, rcCurrContent.Width(),singleLineButtonHeight,
