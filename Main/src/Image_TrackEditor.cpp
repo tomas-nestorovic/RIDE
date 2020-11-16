@@ -18,56 +18,56 @@
 			struct TTrackPainter sealed{
 				const CBackgroundAction action;
 				struct{
-					CCriticalSection locker;
+					mutable CCriticalSection locker;
 					WORD id;
 					TLogTime timeA,timeZ; // visible region
 					BYTE zoomFactor;
 				} params;
-				CEvent repaintEvent;
+				mutable CEvent repaintEvent;
 
 				static UINT AFX_CDECL Thread(PVOID _pBackgroundAction){
 					// thread to paint the Track according to specified Parameters
 					const PCBackgroundAction pAction=(PCBackgroundAction)_pBackgroundAction;
-					CTimeEditor &rte=*(CTimeEditor *)pAction->GetParams();
-					TTrackPainter &p=rte.painter;
+					const CTimeEditor &te=*(CTimeEditor *)pAction->GetParams();
+					const TTrackPainter &p=te.painter;
 					const Utils::CRidePen penIndex( 2, 0xff0000 );
-					for( CImage::CTrackReader tr=rte.tr; true; ){
+					for( CImage::CTrackReader tr=te.tr; true; ){
 						// . waiting for next request to paint the Track
 						p.repaintEvent.Lock();
-						if (!::IsWindow(rte.m_hWnd)) // window closed?
+						if (!::IsWindow(te.m_hWnd)) // window closed?
 							break;
 						// . retrieving the Parameters
-						CClientDC dc(&rte);
+						CClientDC dc( const_cast<CTimeEditor *>(&te) );
 						p.params.locker.Lock();
 							const WORD id=p.params.id;
 							TLogTime timeA=p.params.timeA, timeZ=p.params.timeZ;
-							rte.OnPrepareDC(&dc);
+							te.PrepareDC(&dc);
 						p.params.locker.Unlock();
 						if (timeA<0 && timeZ<0) // window closing?
 							break;
 						::SetBkMode( dc, TRANSPARENT );
 						// . drawing inspection windows (if any)
 						bool continuePainting=true;
-						if (rte.iwEndTimes){
+						if (te.iwEndTimes){
 							// : determining the first visible inspection window
-							DWORD L=0, R=rte.timeline.logTimeLength/tr.profile.iwTimeMin;
+							DWORD L=0, R=te.timeline.logTimeLength/tr.profile.iwTimeMin;
 							do{
 								const DWORD M=(L+R)/2;
-								if (rte.iwEndTimes[L]<=timeA && timeA<rte.iwEndTimes[M])
+								if (te.iwEndTimes[L]<=timeA && timeA<te.iwEndTimes[M])
 									R=M;
 								else
 									L=M;
 							}while (R-L>1);
 							// : drawing visible inspection windows (avoiding the GDI coordinate limitations by moving the viewport origin)
 							const CBrush brushDarker(0xE4E4B3), brushLighter(0xECECCE);
-							TLogTime tA=rte.iwEndTimes[L], tZ;
+							TLogTime tA=te.iwEndTimes[L], tZ;
 							RECT rc={ 0, 1, 0, 40 };
 							POINT org;
 							::GetViewportOrgEx( dc, &org );
-							const int nUnitsA=rte.timeline.GetUnitCount(tA);
+							const int nUnitsA=te.timeline.GetUnitCount(tA);
 							::SetViewportOrgEx( dc, nUnitsA*Utils::LogicalUnitScaleFactor+org.x, org.y, nullptr );
 								while (continuePainting && tA<timeZ){
-									rc.right=rte.timeline.GetUnitCount( tZ=rte.iwEndTimes[++L] )-nUnitsA;
+									rc.right=te.timeline.GetUnitCount( tZ=te.iwEndTimes[++L] )-nUnitsA;
 									p.params.locker.Lock();
 										if ( continuePainting=p.params.id==id )
 											::FillRect( dc, &rc, L&1?brushLighter:brushDarker );
@@ -85,7 +85,7 @@
 						const HGDIOBJ hPen0=::SelectObject( dc, penIndex );
 							::SetTextColor( dc, 0xff0000 );
 							for( TCHAR buf[16]; continuePainting && i<tr.GetIndexCount() && tr.GetIndexTime(i)<timeZ; i++ ){ // visible indices
-								const int x=rte.timeline.GetUnitCount( tr.GetIndexTime(i) );
+								const int x=te.timeline.GetUnitCount( tr.GetIndexTime(i) );
 								p.params.locker.Lock();
 									if ( continuePainting=p.params.id==id ){
 										::MoveToEx( dc, x,-60, nullptr );
@@ -100,7 +100,7 @@
 						// . drawing Times
 						tr.SetCurrentTime(timeA);
 						for( TLogTime t=timeA; continuePainting && t<timeZ; t=tr.ReadTime() ){
-							const int x=rte.timeline.GetUnitCount(t);
+							const int x=te.timeline.GetUnitCount(t);
 							p.params.locker.Lock();
 								if ( continuePainting=p.params.id==id ){
 									::MoveToEx( dc, x,0, nullptr );
@@ -208,16 +208,20 @@
 				return TRUE;
 			}
 
-			void OnPrepareDC(CDC *pDC,CPrintInfo *pInfo=nullptr) override{
+			void PrepareDC(CDC *pDC) const{
 				//
-				// . base
-				__super::OnPrepareDC(pDC,pInfo);
 				// . scaling
 				Utils::ScaleLogicalUnit(*pDC);
 				// . changing the viewport
 				CRect rc;
 				GetClientRect(&rc);
 				pDC->SetViewportOrg( -timeline.GetUnitCount(scrollTime)*Utils::LogicalUnitScaleFactor, rc.Height()/2 );
+			}
+
+			void OnPrepareDC(CDC *pDC,CPrintInfo *pInfo=nullptr) override{
+				//
+				__super::OnPrepareDC(pDC,pInfo);
+				PrepareDC(pDC);
 			}
 
 			void OnDraw(CDC *pDC) override{
