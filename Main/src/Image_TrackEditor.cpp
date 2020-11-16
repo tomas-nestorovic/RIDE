@@ -172,6 +172,29 @@
 								(  scrollTime+timeline.GetTime( GET_X_LPARAM(lParam)/Utils::LogicalUnitScaleFactor )  )
 							);
 						break;
+					case WM_KEYDOWN:
+						// key pressed
+						switch (wParam){
+							case VK_HOME:
+								SetScrollTime(0);
+								break;
+							case VK_END:
+								SetScrollTime(timeline.logTimeLength);
+								break;
+							case VK_PRIOR:	// page up
+								OnScroll( SB_PAGELEFT, 0 );
+								break;
+							case VK_NEXT:	// page down
+								OnScroll( SB_PAGERIGHT, 0 );
+								break;
+							case VK_LEFT:
+								OnScroll( SB_LINELEFT, 0 );
+								break;
+							case VK_RIGHT:
+								OnScroll( SB_LINERIGHT, 0 );
+								break;
+						}
+						break;
 					case WM_DESTROY:
 						// window about to be destroyed
 						// . letting the Painter finish normally
