@@ -112,21 +112,21 @@ namespace Utils{
 
 
 
-	static void RouteContextMenu(CWnd *pUiUpdater,CMenu *pContextMenu){
+	void CRideContextMenu::UpdateUI(CWnd *pUiUpdater,CMenu *pMenu){
 		// leveraging OnCmdMsg processing to adjust UI of the ContextMenu
 		CCmdUI state;
-			state.m_pMenu=pContextMenu;
-			state.m_pParentMenu=pContextMenu;
-			state.m_nIndexMax=pContextMenu->GetMenuItemCount();
+			state.m_pMenu=pMenu;
+			state.m_pParentMenu=pMenu;
+			state.m_nIndexMax=pMenu->GetMenuItemCount();
 		for( state.m_nIndex=0; state.m_nIndex<state.m_nIndexMax; state.m_nIndex++ )
-			switch ( state.m_nID=pContextMenu->GetMenuItemID(state.m_nIndex) ){
+			switch ( state.m_nID=pMenu->GetMenuItemID(state.m_nIndex) ){
 				case 0:
 					// menu separators and invalid commands are ignored
 					continue;
 				case UINT_MAX:
-					// recurrently routing Submenus
-					if(CMenu *const pSubMenu=pContextMenu->GetSubMenu(state.m_nIndex))
-						RouteContextMenu( pUiUpdater, pSubMenu );
+					// recurrently updating Submenus
+					if(CMenu *const pSubMenu=pMenu->GetSubMenu(state.m_nIndex))
+						UpdateUI( pUiUpdater, pSubMenu );
 					break;
 				default:
 					// normal menu item
@@ -140,7 +140,7 @@ namespace Utils{
 		// ctor
 		parent.LoadMenu(idMenuRes);
 		m_hMenu=parent.GetSubMenu(0)->m_hMenu;
-		RouteContextMenu( pUiUpdater, this );
+		UpdateUI( pUiUpdater, this );
 	}
 
 	CRideContextMenu::~CRideContextMenu(){

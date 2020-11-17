@@ -40,6 +40,8 @@ namespace Utils{
 	class CRideContextMenu sealed:public ::CMenu{
 		CMenu parent;
 	public:
+		static void UpdateUI(CWnd *pUiUpdater,CMenu *pMenu);
+
 		CRideContextMenu(UINT idMenuRes,CWnd *pUiUpdater=nullptr);
 		~CRideContextMenu();
 	};

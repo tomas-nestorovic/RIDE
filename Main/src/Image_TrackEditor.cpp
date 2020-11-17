@@ -379,6 +379,13 @@
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 			// window procedure
 			switch (msg){
+				case WM_INITMENU:{
+					CMenu tmp;
+					tmp.Attach( (HMENU)wParam );
+						Utils::CRideContextMenu::UpdateUI( this, &tmp );
+					tmp.Detach();
+					return 0;
+				}
 				case WM_TIMER:
 					// timer tick
 					wParam=TB_THUMBTRACK, lParam=(LPARAM)GetDlgItemHwnd(ID_ACCURACY);
@@ -461,10 +468,10 @@
 							pCmdUi->SetCheck( timeEditor.GetInspectionWindowEndTimes()!=nullptr );
 							return TRUE;
 						case ID_PREV:
-							pCmdUi->SetCheck( tr.GetIndexCount()>0 && timeEditor.GetCenterTime()>tr.GetIndexTime(0) );
+							pCmdUi->Enable( tr.GetIndexCount()>0 && timeEditor.GetCenterTime()>tr.GetIndexTime(0) );
 							return TRUE;
 						case ID_NEXT:
-							pCmdUi->SetCheck( tr.GetIndexCount()>0 && timeEditor.GetCenterTime()<tr.GetIndexTime(tr.GetIndexCount()-1) );
+							pCmdUi->Enable( tr.GetIndexCount()>0 && timeEditor.GetCenterTime()<tr.GetIndexTime(tr.GetIndexCount()-1) );
 							return TRUE;
 					}
 					break;
