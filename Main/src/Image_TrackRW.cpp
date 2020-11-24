@@ -101,7 +101,7 @@
 	const CImage::CTrackReader::TProfile CImage::CTrackReader::TProfile::HD_350={
 		TIME_MICRO(1), // iwTimeDefault = 1 second / 500kb = 2 us -> 1 us for MFM encoding
 		TIME_MICRO(1), // iwTime
-		TIME_NANO(830), TIME_NANO(1170), // iwTimeMin, iwTimeMax
+		TIME_NANO(930), TIME_NANO(1070), // iwTimeMin, iwTimeMax
 		30 // adjustmentPercentMax
 	};
 
