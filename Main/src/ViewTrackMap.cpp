@@ -416,12 +416,12 @@
 		::SelectObject(dc,font0);
 		// - determining the range of Tracks to scan
 		const int iScrollY=GetScrollPos(SB_VERT)/Utils::LogicalUnitScaleFactor;
-		RECT r;
+		CRect r;
 		GetClientRect(&r);
 		const TTrack nTracks=IMAGE->GetTrackCount();
 		scanner.params.criticalSection.Lock();
-			scanner.params.a=std::max<>( 0, (iScrollY-TRACK0_Y)/TRACK_HEIGHT );
-			scanner.params.z=std::min<LONG>( nTracks, std::max<>( 0L, (iScrollY+r.bottom-r.top-TRACK0_Y+TRACK_HEIGHT-1)/TRACK_HEIGHT ) );
+			scanner.params.a=std::max( 0, (iScrollY-TRACK0_Y)/TRACK_HEIGHT );
+			scanner.params.z=std::min<LONG>( nTracks, std::max( 0L, (iScrollY+(LONG)(r.Height()/Utils::LogicalUnitScaleFactor)-TRACK0_Y+TRACK_HEIGHT-1)/TRACK_HEIGHT ) );
 			scanner.params.x=scanner.params.a;
 		scanner.params.criticalSection.Unlock();
 		// - launching the Scanner of Tracks
