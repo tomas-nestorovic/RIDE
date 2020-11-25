@@ -1185,7 +1185,7 @@
 				((CMainWindow *)app.m_pMainWnd)->OpenApplicationPresentationWebPage(_T("Tour"),_T("MSDOS71/tour.html"));
 				return TCmdResult::DONE;
 		}
-		return CDos::ProcessCommand(cmd);
+		return __super::ProcessCommand(cmd);
 	}
 
 	bool CMSDOS7::UpdateCommandUi(WORD cmd,CCmdUI *pCmdUI) const{
@@ -1201,7 +1201,7 @@
 				pCmdUI->SetCheck( dontShowDotdotEntries );
 				return TRUE;
 		}
-		return CDos::UpdateCommandUi(cmd,pCmdUI);
+		return __super::UpdateCommandUi(cmd,pCmdUI);
 	}
 
 	void CMSDOS7::InitializeEmptyMedium(CFormatDialog::PCParameters params){

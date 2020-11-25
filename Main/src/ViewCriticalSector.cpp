@@ -129,7 +129,7 @@
 		// - disposing the Content
 		content.reset();
 		// - base
-		CView::OnDestroy();
+		__super::OnDestroy();
 		// - no Boot is currently being displayed
 		pCurrentlyShown=nullptr;
 	}

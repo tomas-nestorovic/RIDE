@@ -1418,6 +1418,6 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 			return TRUE;
 		}else
 			// other form of rendering than the "File" one (i.e. other than CFSTR_FILECONTENTS)
-			return COleDataSource::OnRenderFileData(lpFormatEtc,pFile);
+			return __super::OnRenderFileData(lpFormatEtc,pFile);
 	}*/
 

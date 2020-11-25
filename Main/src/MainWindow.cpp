@@ -172,13 +172,13 @@
 				// active DOS (e.g. MDOS when a WebPage is focused)
 				if (::TranslateAccelerator(m_hWnd,image->dos->menu.hAccel,pMsg)) return TRUE;
 		}
-		return CFrameWnd::PreTranslateMessage(pMsg); // base
+		return __super::PreTranslateMessage(pMsg); // base
 	}
 
 	afx_msg int CMainWindow::OnCreate(LPCREATESTRUCT lpcs){
 		// window created
 		// - base
-		if (CFrameWnd::OnCreate(lpcs)==-1) return -1;
+		if (__super::OnCreate(lpcs)==-1) return -1;
 		EnableDocking(CBRS_ALIGN_ANY);
 		m_bAutoMenuEnable=false;
 		// - creating the TDI
@@ -226,7 +226,7 @@
 	afx_msg void CMainWindow::OnInitMenu(CMenu *menu){
 		// clicked somewhere in the main menu
 		SetFocus(); // to immediately carry out actions that depend on focus
-		CFrameWnd::OnInitMenu(menu);
+		__super::OnInitMenu(menu);
 	}
 
 	afx_msg void CMainWindow::__imageOperation_updateUI__(CCmdUI *pCmdUI){

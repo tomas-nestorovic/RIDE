@@ -118,7 +118,7 @@
 		// - preferring IStream whenever it's possible (speed reasons)
 		if (lpFormatEtc->tymed&TYMED_ISTREAM) lpFormatEtc->tymed=TYMED_ISTREAM;
 		// - rendering
-		return COleDataSource::OnRenderData(lpFormatEtc,lpStgMedium);
+		return __super::OnRenderData(lpFormatEtc,lpStgMedium);
 	}
 
 	BOOL CFileManagerView::COleVirtualFileDataSource::OnRenderGlobalData(LPFORMATETC lpFormatEtc, HGLOBAL *phGlobal){
@@ -156,7 +156,7 @@
 			return TRUE;
 		}else
 			// other form of generating (i.e. other than using CFSTR_FILEDESCRIPTOR)
-			return COleDataSource::OnRenderGlobalData(lpFormatEtc,phGlobal);
+			return __super::OnRenderGlobalData(lpFormatEtc,phGlobal);
 	}
 
 	BOOL CFileManagerView::COleVirtualFileDataSource::OnRenderFileData(LPFORMATETC lpFormatEtc,CFile *pFile){
@@ -177,7 +177,7 @@
 			return TRUE;
 		}else
 			// other form of exporting (i.e. other than using CFSTR_FILECONTENTS)
-			return COleDataSource::OnRenderFileData(lpFormatEtc,pFile);
+			return __super::OnRenderFileData(lpFormatEtc,pFile);
 	}
 
 	BOOL CFileManagerView::COleVirtualFileDataSource::OnSetData(LPFORMATETC lpFormatEtc,LPSTGMEDIUM lpStgMedium,BOOL bRelease){
@@ -196,7 +196,7 @@
 				::OleSetClipboard(nullptr);
 			return TRUE;
 		}else
-			return COleDataSource::OnSetData(lpFormatEtc,lpStgMedium,bRelease);
+			return __super::OnSetData(lpFormatEtc,lpStgMedium,bRelease);
 	}
 
 

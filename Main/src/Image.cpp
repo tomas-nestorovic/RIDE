@@ -481,7 +481,7 @@
 				}
 				break;
 		}
-		return CDocument::OnCmdMsg(nID,nCode,pExtra,pHandlerInfo);
+		return __super::OnCmdMsg(nID,nCode,pExtra,pHandlerInfo);
 	}
 
 	BOOL CImage::DoSave(LPCTSTR lpszPathName,BOOL bReplace){
@@ -681,5 +681,5 @@
 		if (!dos->CanBeShutDown(pFrame))
 			return FALSE;
 		// - then attempting to close this Image
-		return CDocument::CanCloseFrame(pFrame);
+		return __super::CanCloseFrame(pFrame);
 	}

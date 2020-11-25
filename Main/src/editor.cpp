@@ -268,7 +268,7 @@
 		// - the app hasn't crashed
 		app.WriteProfileInt( INI_GENERAL, INI_CRASHED, app.GetProfileInt(INI_GENERAL,INI_CRASHED,1)-1 );
 		// - base
-		return CWinApp::ExitInstance();
+		return __super::ExitInstance();
 	}
 
 	bool CRideApp::IsInGodMode() const{
@@ -606,7 +606,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 	}
 	void CRideApp::OnFileOpen(){
 		// public wrapper
-		//CWinApp::OnFileOpen();
+		//__super::OnFileOpen();
 		TCHAR fileName[MAX_PATH];
 		*fileName='\0';
 		if (imageProps=DoPromptFileName( fileName, true, AFX_IDS_OPENFILE, OFN_FILEMUSTEXIST, nullptr )){

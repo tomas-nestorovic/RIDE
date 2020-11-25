@@ -82,7 +82,7 @@
 		if (rStatusBar.m_hWnd) // may not exist if the app is closing
 			rStatusBar.SetPaneText( 1, buf );
 		// - base
-		CFileManagerView::OnUpdate(pSender,lHint,pHint);
+		__super::OnUpdate(pSender,lHint,pHint);
 	}
 
 	LRESULT CMSDOS7::CMsdos7FileManagerView::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
@@ -107,7 +107,7 @@
 				for( BYTE n=MSDOS7_FILE_ICONS_COUNT; n; ::DestroyIcon(icons[--n]) );
 				break;
 		}
-		return CFileManagerView::WindowProc(msg,wParam,lParam);
+		return __super::WindowProc(msg,wParam,lParam);
 	}
 
 	HICON CMSDOS7::CMsdos7FileManagerView::__getIcon__(PCDirectoryEntry de) const{

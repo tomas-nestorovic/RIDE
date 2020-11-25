@@ -91,7 +91,7 @@
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - base (allowed are only TRDOS-compliant formats)
 		if (pFormat->nSectors==TRDOS503_TRACK_SECTORS_COUNT && pFormat->sectorLength==TRDOS503_SECTOR_LENGTH_STD && pFormat->sectorLengthCode==TRDOS503_SECTOR_LENGTH_STD_CODE){
-			if (const TStdWinError err=CImageRaw::SetMediumTypeAndGeometry(pFormat,sideMap,firstSectorNumber))
+			if (const TStdWinError err=__super::SetMediumTypeAndGeometry(pFormat,sideMap,firstSectorNumber))
 				return err;
 		}else
 			return Utils::ErrorByOs( ERROR_VHD_FORMAT_UNKNOWN, ERROR_UNRECOGNIZED_MEDIA ); // not a TRDOS format

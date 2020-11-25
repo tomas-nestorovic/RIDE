@@ -62,7 +62,7 @@
 	BOOL CWebPageView::Create(LPCTSTR,LPCTSTR,DWORD dwStyle,const RECT &rect,CWnd *pParentWnd,UINT nID,CCreateContext *){
 		// True <=> window created successfully, otherwise False
 		// - base
-		if (!CHtmlView::Create(nullptr,nullptr,dwStyle,rect,pParentWnd,nID,nullptr)) // (CCreateContext *)==nullptr => doesn't allow current Image to get crack on MFC commands
+		if (!__super::Create(nullptr,nullptr,dwStyle,rect,pParentWnd,nID,nullptr)) // (CCreateContext *)==nullptr => doesn't allow current Image to get crack on MFC commands
 			return FALSE;
 		// - performing initial update as the method isn't called automatically during OnCreate
 		OnInitialUpdate(); // calls SetScrollSizes via OnUpdate
@@ -74,7 +74,7 @@
 	void CWebPageView::OnBeforeNavigate2(LPCTSTR lpszURL,DWORD nFlags,LPCTSTR lpszTargetFrameName,CByteArray &baPostedData,LPCTSTR lpszHeaders,BOOL *pbCancel){
 		// request to navigate to new Page with given URL
 		// - base
-		CHtmlView::OnBeforeNavigate2(lpszURL,nFlags,lpszTargetFrameName,baPostedData,lpszHeaders,pbCancel);
+		__super::OnBeforeNavigate2(lpszURL,nFlags,lpszTargetFrameName,baPostedData,lpszHeaders,pbCancel);
 		// - ignoring refreshing of CurrentPage
 		if (history.currentPage->url==lpszURL)
 			return;
@@ -96,7 +96,7 @@
 	void CWebPageView::OnDocumentComplete(LPCTSTR strURL){
 		// Page with given URL loaded
 		// - base
-		CHtmlView::OnDocumentComplete(strURL);
+		__super::OnDocumentComplete(strURL);
 		// - recovering scroll position
 		if (!navigationToLabel)
 			if (const LPDISPATCH disp=GetHtmlDocument()){
