@@ -117,6 +117,7 @@
 				TTrackPainter(const CTimeEditor &te)
 					// ctor
 					: action( Thread, &te, THREAD_PRIORITY_IDLE ) {
+					params.timeA = params.timeZ = 0;
 				}
 			} painter;
 
