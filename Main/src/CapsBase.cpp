@@ -604,12 +604,20 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 				}
 		}else{
 			// a particular Medium specified
-			// . disposing all previously cached data
-			if (const TStdWinError err=Reset())
-				return err;
 			// . base
+			const bool newMediumTypeDifferent=floppyType!=pFormat->mediumType;
 			if (const TStdWinError err=__super::SetMediumTypeAndGeometry( pFormat, sideMap, firstSectorNumber ))
 				return err;
+			// . reinterpreting the fluxes
+			if (newMediumTypeDifferent && pFormat->mediumType!=TMedium::UNKNOWN)
+				for( TCylinder cyl=0; cyl<FDD_CYLINDERS_MAX; cyl++ )
+					for( THead head=0; head<2; head++ )
+						if (auto &rit=internalTracks[cyl][head]){
+							CTrackReaderWriter trw=*rit;
+								trw.SetMediumType( pFormat->mediumType );
+							delete rit;
+							rit=CInternalTrack::CreateFrom( *this, trw );
+						}
 			// . seeing if some Sectors can be recognized in any of Tracks
 			for( TCylinder cyl=0; cyl<3; cyl++ ) // examining just first N Cylinders
 				for( THead head=2; head>0; )
