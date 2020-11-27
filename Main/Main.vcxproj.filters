@@ -198,6 +198,9 @@
     <ClInclude Include="src\KryoFluxStreams.h">
       <Filter>Header Files\Image</Filter>
     </ClInclude>
+    <ClInclude Include="src\KryoFluxDevice.h">
+      <Filter>Header Files\Image</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\editor.cpp">
@@ -432,6 +435,9 @@
       <Filter>Source Files\Image</Filter>
     </ClCompile>
     <ClCompile Include="src\Image_TrackEditor.cpp">
+      <Filter>Source Files\Image</Filter>
+    </ClCompile>
+    <ClCompile Include="src\KryoFluxDevice.cpp">
       <Filter>Source Files\Image</Filter>
     </ClCompile>
   </ItemGroup>

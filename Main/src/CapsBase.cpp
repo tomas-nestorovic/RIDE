@@ -621,8 +621,13 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 			// . seeing if some Sectors can be recognized in any of Tracks
 			for( TCylinder cyl=0; cyl<3; cyl++ ) // examining just first N Cylinders
 				for( THead head=2; head>0; )
-					if (ScanTrack(cyl,--head)!=0)
+					if (ScanTrack(cyl,--head)!=0){
+						if (!IsTrackHealthy(cyl,head)){ // if Track read with errors ...
+							auto &rit=internalTracks[cyl][head];
+							delete rit, rit=nullptr; // ... disposing it and letting DOS later read it once again
+						}
 						return ERROR_SUCCESS;
+					}
 		}
 		// - no data could be recognized on any of Tracks
 		return ERROR_NOT_SUPPORTED;
@@ -666,14 +671,19 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 		return true;
 	}
 
-	TStdWinError CCapsBase::Reset(){
-		// resets internal representation of the disk (e.g. by disposing all content without warning)
-		EXCLUSIVELY_LOCK_THIS_IMAGE();
+	void CCapsBase::DestroyAllTracks(){
+		// disposes all InternalTracks created thus far
 		for( TCylinder cyl=0; cyl<FDD_CYLINDERS_MAX; cyl++ )
 			for( THead head=0; head<2; head++ )
 				if (auto &rit=internalTracks[cyl][head])
 					delete rit, rit=nullptr;
 		::CAPSUnlockAllTracks( capsDeviceHandle );
+	}
+
+	TStdWinError CCapsBase::Reset(){
+		// resets internal representation of the disk (e.g. by disposing all content without warning)
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		DestroyAllTracks();
 		return ERROR_SUCCESS;
 	}
 

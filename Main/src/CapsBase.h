@@ -83,6 +83,8 @@
 		mutable CTrackReader::TCodec lastSuccessfullCodec;
 
 		CCapsBase(PCProperties properties,bool hasEditableSettings);
+
+		void DestroyAllTracks();
 	public:
 		~CCapsBase();
 

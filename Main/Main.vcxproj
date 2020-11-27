@@ -69,8 +69,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\WINDDK\inc\mfc42;..\Externals\capsimg;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\WINDDK\lib\mfc\i386;..\Externals\capsimg;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\WINDDK\inc\mfc42;C:\WINDDK\inc\ddk\wxp;..\Externals\capsimg;..\Externals\winusb;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\WINDDK\lib\mfc\i386;..\Externals\capsimg;..\Externals\winusb;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug in RAMdisk|Win32'">
     <LinkIncremental>true</LinkIncremental>
@@ -87,8 +87,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release MFC 4.2|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>..\Externals\CrtNew;..\Externals\capsimg;C:\WINDDK\inc\mfc42;$(IncludePath)</IncludePath>
-    <LibraryPath>..\Externals\CrtNew;..\Externals\capsimg;D:\puvodni\zaloha\Program Files\Visual Studio 6\VC98\MFC\Lib;D:\puvodni\zaloha\Program Files\Visual Studio 6\Microsoft Platform SDK for Windows XP SP2\Lib;D:\puvodni\zaloha\Program Files\Visual Studio 6\VC98\Lib</LibraryPath>
+    <IncludePath>..\Externals\CrtNew;..\Externals\capsimg;C:\WINDDK\inc\mfc42;..\Externals\winusb;$(IncludePath)</IncludePath>
+    <LibraryPath>..\Externals\CrtNew;..\Externals\capsimg;D:\puvodni\zaloha\Program Files\Visual Studio 6\VC98\MFC\Lib;D:\puvodni\zaloha\Program Files\Visual Studio 6\Microsoft Platform SDK for Windows XP SP2\Lib;D:\puvodni\zaloha\Program Files\Visual Studio 6\VC98\Lib;..\Externals\winusb</LibraryPath>
     <GenerateManifest>true</GenerateManifest>
     <EmbedManifest>true</EmbedManifest>
     <ReferencePath />
@@ -107,7 +107,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>comctl32.lib;shlwapi.lib;msimg32.lib;wininet.lib;capsimg.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;shlwapi.lib;msimg32.lib;wininet.lib;capsimg.lib;winusb.lib;setupapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize>1500000</StackReserveSize>
     </Link>
   </ItemDefinitionGroup>
@@ -123,7 +123,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>comctl32.lib;shlwapi.lib;msimg32.lib;wininet.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;shlwapi.lib;msimg32.lib;wininet.lib;capsimg.lib;winusb.lib;setupapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize>1500000</StackReserveSize>
     </Link>
   </ItemDefinitionGroup>
@@ -151,7 +151,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>comctl32.lib;shlwapi.lib;wininet.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;shlwapi.lib;msimg32.lib;wininet.lib;capsimg.lib;winusb.lib;setupapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <EnableUAC>true</EnableUAC>
       <StackReserveSize>1500000</StackReserveSize>
     </Link>
@@ -185,7 +185,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>comctl32.lib;shlwapi.lib;wininet.lib;capsimg.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;shlwapi.lib;wininet.lib;capsimg.lib;winusb.lib;setupapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <EnableUAC>false</EnableUAC>
       <LinkTimeCodeGeneration>PGOptimization</LinkTimeCodeGeneration>
       <StackReserveSize>1500000</StackReserveSize>
@@ -217,6 +217,7 @@
     <ClInclude Include="src\HexaEditor.h" />
     <ClInclude Include="src\IPF.h" />
     <ClInclude Include="src\KryoFluxBase.h" />
+    <ClInclude Include="src\KryoFluxDevice.h" />
     <ClInclude Include="src\KryoFluxStreams.h" />
     <ClInclude Include="src\MainWindow.h" />
     <ClInclude Include="src\Image.h" />
@@ -278,6 +279,7 @@
     <ClCompile Include="src\Image_TrackRW.cpp" />
     <ClCompile Include="src\IPF.cpp" />
     <ClCompile Include="src\KryoFluxBase.cpp" />
+    <ClCompile Include="src\KryoFluxDevice.cpp" />
     <ClCompile Include="src\KryoFluxStreams.cpp" />
     <ClCompile Include="src\MainWindow.cpp" />
     <ClCompile Include="src\Image.cpp" />

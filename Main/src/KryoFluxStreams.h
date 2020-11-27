@@ -3,6 +3,8 @@
 
 	class CKryoFluxStreams sealed:public CKryoFluxBase{
 		TCHAR nameBase[MAX_PATH];
+
+		TStdWinError UploadFirmware() override;
 	public:
 		static const TProperties Properties;
 

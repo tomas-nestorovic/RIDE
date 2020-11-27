@@ -38,6 +38,8 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #include <Vsstyle.h>
 #include <MsHTML.h>
 #include <WinInet.h>
+#include <setupapi.h>
+#include <guiddef.h>
 
 #include "..\..\Tdi\src\api.h"
 #include "..\..\PropGrid\src\api.h"
@@ -46,6 +48,9 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #include "..\..\Externals\fdrawcmd\fdrawcmd.h"
 
 #include "CapsLibAll.h"
+
+#undef _MP
+#include "winusb.h"
 
 #if _MFC_VER>=0x0A00
 #else

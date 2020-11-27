@@ -9,6 +9,7 @@
 #include "CtRaw.h"
 #include "KryoFluxBase.h"
 #include "KryoFluxStreams.h"
+#include "KryoFluxDevice.h"
 
 	CRideApp::CRecentFileListEx::CRecentFileListEx(const CRecentFileList &rStdMru)
 		// ctor
@@ -188,6 +189,7 @@
 		CImage::known.AddTail( (PVOID)&CSCL::Properties );
 		CImage::known.AddTail( (PVOID)&TRD::Properties );
 		CImage::devices.AddTail( (PVOID)&CFDD::Properties );
+		CImage::devices.AddTail( (PVOID)&CKryoFluxDevice::Properties );
 		CDos::known.AddTail( (PVOID)&CBSDOS308::Properties );
 		CDos::known.AddTail( (PVOID)&CGDOS::Properties );
 		CDos::known.AddTail( (PVOID)&CMDOS2::Properties );

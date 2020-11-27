@@ -46,7 +46,7 @@
 					devProps->sectorLengthMin<=dosStdSectorLength && dosStdSectorLength<=devProps->sectorLengthMax
 				){
 					TCHAR deviceNames[4*DEVICE_NAME_CHARS_MAX+1]; // up to 4 Devices, "+1" = terminating null-character
-					for( LPCTSTR p=devProps->fnRecognize(deviceNames); *p; p+=::lstrlen(p)+1 )
+					for( LPCTSTR p=devProps->fnRecognize(deviceNames); p&&*p; p+=::lstrlen(p)+1 )
 						lb.SetItemDataPtr( lb.AddString(p), (PVOID)devProps );
 				}
 			}

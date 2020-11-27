@@ -28,6 +28,7 @@
 
 		struct TParams{
 			// persistent (saved and loaded)
+			CString firmwareFileName;
 			enum TFluxDecoder{
 				KEIR_FRASIER,
 				KEIR_FRASIER_MODIFIED
@@ -50,6 +51,8 @@
 
 		CKryoFluxBase(PCProperties properties,LPCTSTR firmware);
 
+		virtual TStdWinError UploadFirmware()=0;
+	public:
 		//BOOL OnOpenDocument(LPCTSTR lpszPathName) override;
 		//BOOL OnSaveDocument(LPCTSTR lpszPathName) override;
 		//TCylinder GetCylinderCount() const override;
