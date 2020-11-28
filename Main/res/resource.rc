@@ -665,6 +665,8 @@ BEGIN
         MENUITEM "Zoom out\t–",                 ID_ZOOM_OUT
         MENUITEM "Zoom to fit\tCtrl+0",         ID_ZOOM_FIT
         MENUITEM SEPARATOR
+        MENUITEM "Show cursor time",            ID_TIME
+        MENUITEM "Show time spacing",           ID_GAP
         MENUITEM "Show inspection",             ID_RECOGNIZE
         MENUITEM SEPARATOR
         MENUITEM "Close\tEsc",                  IDCANCEL
@@ -1612,7 +1614,6 @@ END
 
 IDR_TRACK_EDITOR DIALOG DISCARDABLE  0, 0, 442, 149
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
-CAPTION ""
 FONT 8, "MS Sans Serif"
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,332,128,50,14,NOT WS_VISIBLE | WS_DISABLED

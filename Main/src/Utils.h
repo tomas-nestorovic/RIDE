@@ -132,6 +132,7 @@ namespace Utils{
 		CTimeline(TLogTime logTimeLength,TLogTime logTimePerUnit,BYTE initZoomFactor);
 
 		void SetLength(TLogTime logTime);
+		int TimeToReadableString(TLogTime logTime,PTCHAR buffer) const;
 		void Draw(HDC dc,const CRideFont &font,PLogTime pOutVisibleStart=nullptr,PLogTime pOutVisibleEnd=nullptr) const;
 		int GetUnitCount(TLogTime logTime,BYTE zoomFactor) const;
 		int GetUnitCount(TLogTime logTime) const;

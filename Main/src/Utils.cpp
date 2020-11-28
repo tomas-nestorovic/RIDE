@@ -403,10 +403,20 @@ namespace Utils{
 		, zoomFactor(initZoomFactor) {
 	}
 
+	static const TCHAR TimePrefixes[]=_T("nnnµµµmmm   "); // nano, micro, milli, no-prefix
+
+	int CTimeline::TimeToReadableString(TLogTime logTime,PTCHAR buffer) const{
+		// converts specified Time to string with same level of detail as Drawn on the timeline
+		BYTE unitPrefix=0;
+		div_t d={ logTime, 0 };
+		while (d.quot>=1000)
+			d=div(d.quot,1000), unitPrefix+=3;
+		return	::wsprintf( buffer, _T("%d.%03d %cs"), d.quot, d.rem, TimePrefixes[unitPrefix] );
+	}
+
 	void CTimeline::Draw(HDC dc,const CRideFont &font,PLogTime pOutVisibleStart,PLogTime pOutVisibleEnd) const{
 		// draws a timeline starting at current origin
 		// - determinining the primary granuality of the timeline
-		static const TCHAR TimePrefixes[]=_T("nnnµµµmmm   "); // nano, micro, milli, no-prefix
 		TCHAR label[32];
 		TLogTime intervalBig=1, unitPrefix=0;
 		for( TLogTime t=logTimeLength; true; intervalBig*=10 ){

@@ -63,6 +63,16 @@
 		currentTime= R<nLogTimes ? logTime : logTimes[L];
 	}
 
+	void CImage::CTrackReader::TruncateCurrentTime(){
+		// truncates CurrentTime to the nearest lower LogicalTime
+		if (!iNextTime)
+			currentTime=0;
+		if (iNextTime<nLogTimes)
+			currentTime=logTimes[iNextTime-1];
+		else
+			currentTime=logTimes[nLogTimes-1];
+	}
+
 	TLogTime CImage::CTrackReader::GetIndexTime(BYTE index) const{
 		// returns the Time at which the specified IndexPulse occurs
 		if (!nLogTimes || (nIndexPulses|index)==0)

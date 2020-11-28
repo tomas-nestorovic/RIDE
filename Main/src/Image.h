@@ -300,6 +300,7 @@
 
 
 			void SetCurrentTime(TLogTime logTime);
+			void TruncateCurrentTime();
 			TLogTime GetIndexTime(BYTE index) const;
 			TLogTime GetTotalTime() const;
 			TLogTime ReadTime();

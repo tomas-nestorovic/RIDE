@@ -5,6 +5,8 @@
 	#define TIME_HEIGHT		30
 	#define IW_HEIGHT		(TIME_HEIGHT+10)
 	#define INDEX_HEIGHT	60
+	#define LINE_EXTENSION	5
+	#define SPACING_HEIGHT	(IW_HEIGHT+LINE_EXTENSION)
 
 	class CTrackEditor sealed:public Utils::CRideDialog{
 		const CImage::CTrackReader &tr;
@@ -12,6 +14,12 @@
 		CMainWindow::CDynMenu menu;
 		PLogTime iwEndTimes;
 		HANDLE hAutoscrollTimer;
+
+		enum TCursorFeatures:BYTE{
+			TIME	=1,
+			SPACING	=2,
+			DEFAULT	= TIME//|SPACING
+		};
 		
 		class CTimeEditor sealed:public CScrollView{
 			Utils::CTimeline timeline;
@@ -19,6 +27,9 @@
 			TLogTime scrollTime;
 			PCLogTime iwEndTimes; // inspection window end Times (aka. at which Time they end; the end determines the beginning of the immediately next inspection window)
 			TLogTime draggedTime; // Time at which left mouse button has been pressed
+			TLogTime cursorTime; // Time over which the cursor hovers
+			BYTE cursorFeatures; // OR-ed TCursorFeatures values
+			bool cursorFeaturesShown; // internally used for painting
 			struct TTrackPainter sealed{
 				const CBackgroundAction action;
 				struct{
@@ -133,6 +144,53 @@
 				);
 			}
 
+			void PaintCursorFeaturesInverted(bool show){
+				// paints CursorTime by inverting pixels; painting twice the same CursorTime shows nothing
+				if ((show^cursorFeaturesShown)!=0 && cursorFeatures!=0){
+					CClientDC dc(this);
+					PrepareDC(&dc);
+					::SetROP2( dc, R2_NOT );
+					const auto &font=Utils::CRideFont::Std;
+					const HDC dcMem=::CreateCompatibleDC(dc);
+						::SetTextColor( dcMem, COLOR_WHITE );
+						::SetBkMode( dcMem, TRANSPARENT );
+						const HGDIOBJ hFont0=::SelectObject( dcMem, font );
+							TCHAR label[32];
+							const int x=timeline.GetUnitCount(cursorTime);
+							// . painting vertical line to indicate current position on the Timeline
+							if (IsFeatureShown(TCursorFeatures::TIME)){
+								::MoveToEx( dc, x, -500, nullptr );
+								::LineTo( dc, x, 500 );
+								const SIZE sz=font.GetTextSize( label, timeline.TimeToReadableString(cursorTime,label) );
+								const HGDIOBJ hBmp0=::SelectObject( dcMem, ::CreateCompatibleBitmap(dc,sz.cx,sz.cy) );
+									::TextOut( dcMem, 0,0, label,sizeof(label)/sizeof(TCHAR) );
+									::BitBlt( dc, x+4,-80, sz.cx,sz.cy, dcMem, 0,0, SRCINVERT );
+								::DeleteObject( ::SelectObject(dcMem,hBmp0) );
+							}
+							// . painting space between neighboring Times at current position
+							if (IsFeatureShown(TCursorFeatures::SPACING) && cursorTime<timeline.logTimeLength){
+								tr.SetCurrentTime(cursorTime);
+								tr.TruncateCurrentTime();
+								const TLogTime a=tr.GetCurrentTime(), z=tr.ReadTime();
+								const int xa=timeline.GetUnitCount(a), xz=timeline.GetUnitCount(z);
+								const SIZE sz=font.GetTextSize( label, timeline.TimeToReadableString(z-a,label) );
+								const HGDIOBJ hBmp0=::SelectObject( dcMem, ::CreateCompatibleBitmap(dc,sz.cx,sz.cy) );
+									::TextOut( dcMem, 0,0, label,sizeof(label)/sizeof(TCHAR) );
+									::BitBlt( dc, (xz+xa-sz.cx)/2,SPACING_HEIGHT+LINE_EXTENSION/2, sz.cx,sz.cy, dcMem, 0,0, SRCINVERT );
+								::DeleteObject( ::SelectObject(dcMem,hBmp0) );
+								::MoveToEx( dc, xa, TIME_HEIGHT, nullptr );
+								::LineTo( dc, xa, SPACING_HEIGHT+LINE_EXTENSION );
+								::MoveToEx( dc, xz, TIME_HEIGHT, nullptr );
+								::LineTo( dc, xz, SPACING_HEIGHT+LINE_EXTENSION );
+								::MoveToEx( dc, xa-LINE_EXTENSION, SPACING_HEIGHT, nullptr );
+								::LineTo( dc, xz+LINE_EXTENSION, SPACING_HEIGHT );
+							}
+						::SelectObject( dcMem, hFont0 );
+					::DeleteDC(dcMem);
+				}
+				cursorFeaturesShown=show;
+			}
+
 			inline TLogTime ClientPixelToTime(int pixel) const{
 				return	std::min(
 							scrollTime + timeline.GetTime( pixel/Utils::LogicalUnitScaleFactor ),
@@ -150,10 +208,10 @@
 						// left mouse button pressed
 						SetFocus();
 						draggedTime=ClientPixelToTime( GET_X_LPARAM(lParam) );
-						break;
-					case WM_LBUTTONUP:
-						// left mouse button released
-						draggedTime=-1;
+						//fallthrough
+					case WM_ERASEBKGND:
+						// drawing the background
+						PaintCursorFeaturesInverted(false);
 						break;
 					case WM_MOUSEWHEEL:{
 						// mouse wheel was rotated
@@ -173,6 +231,10 @@
 						lParam=cursor.x;
 						//fallthrough
 					}
+					case WM_LBUTTONUP:
+						// left mouse button released
+						draggedTime=-1;
+						//fallthrough
 					case WM_MOUSEMOVE:
 						// mouse moved
 						if (draggedTime>=0) // left mouse button pressed
@@ -183,6 +245,11 @@
 								-
 								ClientPixelToTime( GET_X_LPARAM(lParam) )
 							);
+						else{
+							PaintCursorFeaturesInverted(false);
+								cursorTime=ClientPixelToTime( GET_X_LPARAM(lParam) );
+							PaintCursorFeaturesInverted(true);
+						}
 						break;
 					case WM_KEYDOWN:
 						// key pressed
@@ -258,6 +325,8 @@
 
 			void OnDraw(CDC *pDC) override{
 				// drawing the LogicalTimes
+				// . hiding CursorTime information
+				PaintCursorFeaturesInverted(false);
 				// . drawing the Timeline
 				const HDC dc=*pDC;
 				::SetBkMode( dc, TRANSPARENT );
@@ -281,6 +350,7 @@
 				, tr(tr)
 				, painter(*this)
 				, draggedTime(-1)
+				, cursorTime(-1) , cursorFeaturesShown(false) , cursorFeatures(TCursorFeatures::DEFAULT)
 				, scrollTime(0) , iwEndTimes(nullptr) {
 			}
 
@@ -327,6 +397,7 @@
 				painter.params.locker.Lock();
 					painter.params.id++; // stopping current painting
 				painter.params.locker.Unlock();
+				PaintCursorFeaturesInverted(false);
 				ScrollWindow(	// "base"
 								(int)(timeline.GetUnitCount(scrollTime)*Utils::LogicalUnitScaleFactor) - (int)(si.nPos*Utils::LogicalUnitScaleFactor),
 								0
@@ -353,6 +424,20 @@
 			inline void SetInspectionWindowEndTimes(PCLogTime iwEndTimes){
 				this->iwEndTimes=iwEndTimes;
 				Invalidate();
+			}
+
+			inline bool IsFeatureShown(TCursorFeatures cf) const{
+				return (cursorFeatures&cf)!=0;
+			}
+
+			void ToggleFeature(TCursorFeatures cf){
+				const bool cfs0=cursorFeaturesShown;
+				PaintCursorFeaturesInverted(false);
+					if (IsFeatureShown(cf))
+						cursorFeatures&=~cf;
+					else
+						cursorFeatures|=cf;
+				PaintCursorFeaturesInverted(cfs0);
 			}
 		} timeEditor;
 
@@ -476,6 +561,12 @@
 						case ID_ZOOM_FIT:
 						case IDCANCEL:
 							return TRUE;
+						case ID_TIME:
+							pCmdUi->SetCheck( timeEditor.IsFeatureShown(TCursorFeatures::TIME) );
+							return TRUE;
+						case ID_GAP:
+							pCmdUi->SetCheck( timeEditor.IsFeatureShown(TCursorFeatures::SPACING) );
+							return TRUE;
 						case ID_RECOGNIZE:
 							pCmdUi->SetCheck( timeEditor.GetInspectionWindowEndTimes()!=nullptr );
 							return TRUE;
@@ -505,6 +596,12 @@
 						}
 						case IDCANCEL:
 							EndDialog(nID);
+							return TRUE;
+						case ID_TIME:
+							timeEditor.ToggleFeature(TCursorFeatures::TIME);
+							return TRUE;
+						case ID_GAP:
+							timeEditor.ToggleFeature(TCursorFeatures::SPACING);
 							return TRUE;
 						case ID_RECOGNIZE:
 							if (timeEditor.GetInspectionWindowEndTimes()!=nullptr)
