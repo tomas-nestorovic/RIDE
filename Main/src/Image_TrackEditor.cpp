@@ -2,6 +2,10 @@
 
 	#define ZOOM_FACTOR_MAX	24
 
+	#define TIME_HEIGHT		30
+	#define IW_HEIGHT		(TIME_HEIGHT+10)
+	#define INDEX_HEIGHT	60
+
 	class CTrackEditor sealed:public Utils::CRideDialog{
 		const CImage::CTrackReader &tr;
 		const LPCTSTR caption;
@@ -61,7 +65,7 @@
 							// : drawing visible inspection windows (avoiding the GDI coordinate limitations by moving the viewport origin)
 							const CBrush brushDarker(0xE4E4B3), brushLighter(0xECECCE);
 							TLogTime tA=te.iwEndTimes[L], tZ;
-							RECT rc={ 0, 1, 0, 40 };
+							RECT rc={ 0, 1, 0, IW_HEIGHT };
 							POINT org;
 							::GetViewportOrgEx( dc, &org );
 							const int nUnitsA=te.timeline.GetUnitCount(tA);
@@ -88,9 +92,9 @@
 								const int x=te.timeline.GetUnitCount( tr.GetIndexTime(i) );
 								p.params.locker.Lock();
 									if ( continuePainting=p.params.id==id ){
-										::MoveToEx( dc, x,-60, nullptr );
-										::LineTo( dc, x,60 );
-										::TextOut( dc, x+4,-60, buf, ::wsprintf(buf,_T("Index %d"),i) );
+										::MoveToEx( dc, x,-INDEX_HEIGHT, nullptr );
+										::LineTo( dc, x,INDEX_HEIGHT );
+										::TextOut( dc, x+4,-INDEX_HEIGHT, buf, ::wsprintf(buf,_T("Index %d"),i) );
 									}
 								p.params.locker.Unlock();
 							}
@@ -99,12 +103,12 @@
 							continue;
 						// . drawing Times
 						tr.SetCurrentTime(timeA);
-						for( TLogTime t=timeA; continuePainting && t<timeZ; t=tr.ReadTime() ){
+						for( TLogTime t=timeA; continuePainting && t<=timeZ; t=tr.ReadTime() ){
 							const int x=te.timeline.GetUnitCount(t);
 							p.params.locker.Lock();
 								if ( continuePainting=p.params.id==id ){
 									::MoveToEx( dc, x,0, nullptr );
-									::LineTo( dc, x,30 );
+									::LineTo( dc, x,TIME_HEIGHT );
 								}
 							p.params.locker.Unlock();
 						}
@@ -129,6 +133,13 @@
 				);
 			}
 
+			inline TLogTime ClientPixelToTime(int pixel) const{
+				return	std::min(
+							scrollTime + timeline.GetTime( pixel/Utils::LogicalUnitScaleFactor ),
+							timeline.logTimeLength
+						);
+			}
+
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 				// window procedure
 				switch (msg){
@@ -138,7 +149,7 @@
 					case WM_LBUTTONDOWN:
 						// left mouse button pressed
 						SetFocus();
-						draggedTime=scrollTime+timeline.GetTime( GET_X_LPARAM(lParam)/Utils::LogicalUnitScaleFactor );
+						draggedTime=ClientPixelToTime( GET_X_LPARAM(lParam) );
 						break;
 					case WM_LBUTTONUP:
 						// left mouse button released
@@ -164,13 +175,13 @@
 					}
 					case WM_MOUSEMOVE:
 						// mouse moved
-						if (draggedTime>0) // left mouse button pressed
+						if (draggedTime>=0) // left mouse button pressed
 							SetScrollTime(
 								scrollTime
 								+
 								draggedTime
 								-
-								(  scrollTime+timeline.GetTime( GET_X_LPARAM(lParam)/Utils::LogicalUnitScaleFactor )  )
+								ClientPixelToTime( GET_X_LPARAM(lParam) )
 							);
 						break;
 					case WM_KEYDOWN:
