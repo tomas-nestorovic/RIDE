@@ -7,6 +7,7 @@
 	#define INDEX_HEIGHT	60
 	#define LINE_EXTENSION	5
 	#define SPACING_HEIGHT	(IW_HEIGHT+LINE_EXTENSION)
+	#define IW_TIME_HEIGHT	(SPACING_HEIGHT+20)
 
 	class CTrackEditor sealed:public Utils::CRideDialog{
 		const CImage::CTrackReader &tr;
@@ -65,14 +66,7 @@
 						bool continuePainting=true;
 						if (te.iwEndTimes){
 							// : determining the first visible inspection window
-							DWORD L=0, R=te.timeline.logTimeLength/tr.profile.iwTimeMin;
-							do{
-								const DWORD M=(L+R)/2;
-								if (te.iwEndTimes[L]<=timeA && timeA<te.iwEndTimes[M])
-									R=M;
-								else
-									L=M;
-							}while (R-L>1);
+							int L=te.GetInspectionWindow(timeA);
 							// : drawing visible inspection windows (avoiding the GDI coordinate limitations by moving the viewport origin)
 							const CBrush brushDarker(0xE4E4B3), brushLighter(0xECECCE);
 							TLogTime tA=te.iwEndTimes[L], tZ;
@@ -144,9 +138,23 @@
 				);
 			}
 
+			int GetInspectionWindow(TLogTime logTime) const{
+				// returns the index of inspection window at specified LogicalTime
+				ASSERT( iwEndTimes!=nullptr );
+				int L=0, R=timeline.logTimeLength/tr.profile.iwTimeMin;
+				do{
+					const DWORD M=(L+R)/2;
+					if (iwEndTimes[L]<=logTime && logTime<iwEndTimes[M])
+						R=M;
+					else
+						L=M;
+				}while (R-L>1);
+				return L;
+			}
+
 			void PaintCursorFeaturesInverted(bool show){
 				// paints CursorTime by inverting pixels; painting twice the same CursorTime shows nothing
-				if ((show^cursorFeaturesShown)!=0 && cursorFeatures!=0){
+				if ((show^cursorFeaturesShown)!=0 && (cursorFeatures!=0||iwEndTimes!=nullptr)){
 					CClientDC dc(this);
 					PrepareDC(&dc);
 					::SetROP2( dc, R2_NOT );
@@ -184,6 +192,23 @@
 								::LineTo( dc, xz, SPACING_HEIGHT+LINE_EXTENSION );
 								::MoveToEx( dc, xa-LINE_EXTENSION, SPACING_HEIGHT, nullptr );
 								::LineTo( dc, xz+LINE_EXTENSION, SPACING_HEIGHT );
+							}
+							// . painting inspection window size at current position
+							if (iwEndTimes!=nullptr && cursorTime<timeline.logTimeLength){
+								const int i=GetInspectionWindow(cursorTime);
+								const TLogTime a=iwEndTimes[i], z=iwEndTimes[i+1];
+								const int xa=timeline.GetUnitCount(a), xz=timeline.GetUnitCount(z);
+								const SIZE sz=font.GetTextSize( label, timeline.TimeToReadableString(z-a,label) );
+								const HGDIOBJ hBmp0=::SelectObject( dcMem, ::CreateCompatibleBitmap(dc,sz.cx,sz.cy) );
+									::TextOut( dcMem, 0,0, label,sizeof(label)/sizeof(TCHAR) );
+									::BitBlt( dc, (xz+xa-sz.cx)/2,IW_TIME_HEIGHT+LINE_EXTENSION/2, sz.cx,sz.cy, dcMem, 0,0, SRCINVERT );
+								::DeleteObject( ::SelectObject(dcMem,hBmp0) );
+								::MoveToEx( dc, xa, IW_HEIGHT, nullptr );
+								::LineTo( dc, xa, IW_TIME_HEIGHT+LINE_EXTENSION );
+								::MoveToEx( dc, xz, IW_HEIGHT, nullptr );
+								::LineTo( dc, xz, IW_TIME_HEIGHT+LINE_EXTENSION );
+								::MoveToEx( dc, xa-LINE_EXTENSION, IW_TIME_HEIGHT, nullptr );
+								::LineTo( dc, xz+LINE_EXTENSION, IW_TIME_HEIGHT );
 							}
 						::SelectObject( dcMem, hFont0 );
 					::DeleteDC(dcMem);
