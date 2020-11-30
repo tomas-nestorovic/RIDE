@@ -559,6 +559,17 @@
 				CTrackReaderWriter trw=kfStream.ToTrack(*this);
 				if (floppyType!=TMedium::UNKNOWN) // may be unknown if Medium is still being recognized
 					trw.SetMediumType(floppyType);
+				if (params.normalizeReadTracks)
+					switch (floppyType){
+						case TMedium::FLOPPY_HD_350:
+						case TMedium::FLOPPY_DD_350:
+						case TMedium::FLOPPY_DD_525:
+							trw.Normalize( TIME_MILLI(200) );
+							break;
+						default:
+							ASSERT(FALSE);
+							break;
+					}
 				internalTracks[cyl][head]=CInternalTrack::CreateFrom( *this, trw );
 				__super::ScanTrack( cyl, head, bufferId, bufferLength, startTimesNanoseconds, pAvgGap3 );
 			}

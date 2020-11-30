@@ -349,6 +349,7 @@
 
 			void AddTimes(PCLogTime logTimes,DWORD nLogTimes);
 			//bool WriteBits(PLogTime fluxes,DWORD nFluxes);
+			void Normalize(TLogTime correctIndexDistance);
 		};
 
 		class CSectorDataSerializer abstract:public CFile,public CHexaEditor::IContentAdviser{

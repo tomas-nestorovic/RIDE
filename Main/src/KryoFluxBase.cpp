@@ -24,6 +24,7 @@
 	#define INI_FLUX_DECODER			_T("decod")
 	#define INI_CALIBRATE_SECTOR_ERROR	_T("clberr")
 	#define INI_CALIBRATE_FORMATTING	_T("clbfmt")
+	#define INI_NORMALIZE_READ_TRACKS	_T("nrt")
 	#define INI_VERIFY_FORMATTING		_T("vrftr")
 	#define INI_VERIFY_WRITTEN_DATA		_T("vrfdt")
 
@@ -35,6 +36,7 @@
 		, fluxDecoder( (TFluxDecoder)app.GetProfileInt(INI_KRYOFLUX,INI_FLUX_DECODER,TFluxDecoder::KEIR_FRASIER_MODIFIED) )
 		, calibrationAfterError( (TCalibrationAfterError)app.GetProfileInt(INI_KRYOFLUX,INI_CALIBRATE_SECTOR_ERROR,TCalibrationAfterError::ONCE_PER_CYLINDER) )
 		, calibrationStepDuringFormatting( app.GetProfileInt(INI_KRYOFLUX,INI_CALIBRATE_FORMATTING,0) )
+		, normalizeReadTracks( app.GetProfileInt(INI_KRYOFLUX,INI_NORMALIZE_READ_TRACKS,true)!=0 )
 		, verifyFormattedTracks( app.GetProfileInt(INI_KRYOFLUX,INI_VERIFY_FORMATTING,true)!=0 )
 		, verifyWrittenData( app.GetProfileInt(INI_KRYOFLUX,INI_VERIFY_WRITTEN_DATA,false)!=0 )
 		// - volatile (current session only)
@@ -49,6 +51,7 @@
 		app.WriteProfileInt( INI_KRYOFLUX, INI_FLUX_DECODER, fluxDecoder );
 		app.WriteProfileInt( INI_KRYOFLUX, INI_CALIBRATE_SECTOR_ERROR, calibrationAfterError );
 		app.WriteProfileInt( INI_KRYOFLUX, INI_CALIBRATE_FORMATTING, calibrationStepDuringFormatting );
+		app.WriteProfileInt( INI_KRYOFLUX, INI_NORMALIZE_READ_TRACKS, normalizeReadTracks );
 		app.WriteProfileInt( INI_KRYOFLUX, INI_VERIFY_FORMATTING, verifyFormattedTracks );
 		app.WriteProfileInt( INI_KRYOFLUX, INI_VERIFY_WRITTEN_DATA, verifyWrittenData );
 	}
@@ -140,6 +143,10 @@
 				else
 					SetDlgItemInt(ID_NUMBER,4,FALSE);
 				params.calibrationStepDuringFormatting=tmp;
+				// . NormalizeReadTracks
+				tmp=params.normalizeReadTracks;
+				DDX_Check( pDX,	ID_TRACK,		tmp );
+				params.normalizeReadTracks=tmp!=0;
 				// . FormattedTracksVerification
 				tmp=params.verifyFormattedTracks;
 				DDX_Check( pDX,	ID_VERIFY_TRACK,	tmp );

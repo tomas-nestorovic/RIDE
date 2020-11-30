@@ -39,6 +39,7 @@
 				FOR_EACH_SECTOR		=2
 			} calibrationAfterError;
 			BYTE calibrationStepDuringFormatting;
+			bool normalizeReadTracks;
 			bool verifyFormattedTracks, verifyWrittenData;
 			// volatile (current session only)
 			bool doubleTrackStep, userForcedDoubleTrackStep;

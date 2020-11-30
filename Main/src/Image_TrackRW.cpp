@@ -450,3 +450,27 @@
 			this->nLogTimes+=nLogTimes;
 		}
 	}
+
+	void CImage::CTrackReaderWriter::Normalize(TLogTime correctIndexDistance){
+		// places neighboring Indices exactly specified Distance away, interpolating the Track timing in between
+		// - in-place interpolation
+		const PCLogTime pLast=logTimes+nLogTimes;
+		if (correctIndexDistance>0){
+			RewindToIndex(0);
+			PLogTime pTime=logTimes+iNextTime;
+			TLogTime orgRevStart=currentTime; // revolution start before modification
+			for( BYTE i=1; i<nIndexPulses; i++ ){
+				const TLogTime orgRevEnd=GetIndexTime(i); // revolution end before modification
+					const TLogTime orgIndexDistance=orgRevEnd-orgRevStart;
+					while (pTime<pLast && *pTime<=orgRevEnd){
+						*pTime = currentTime+(LONGLONG)(*pTime-orgRevStart)*correctIndexDistance/orgIndexDistance;
+						pTime++;
+					}
+				orgRevStart=orgRevEnd;
+				currentTime = indexPulses[i] = indexPulses[i-1]+correctIndexDistance;
+			}
+			for( const TLogTime dt=currentTime-orgRevStart; pTime<pLast; *pTime+++=dt ); // offsetting the remainder of the Track
+		}
+		// - correctly re-initializing this object's state
+		SetCurrentTime(0);
+	}

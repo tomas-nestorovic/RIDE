@@ -111,6 +111,17 @@
 					// it's a KryoFlux Stream whose data make sense
 					CTrackReaderWriter trw=kfStream.ToTrack(*this);
 						trw.SetMediumType(floppyType);
+						if (params.normalizeReadTracks)
+							switch (floppyType){
+								case TMedium::FLOPPY_HD_350:
+								case TMedium::FLOPPY_DD_350:
+								case TMedium::FLOPPY_DD_525:
+									trw.Normalize( TIME_MILLI(200) );
+									break;
+								default:
+									ASSERT(FALSE);
+									break;
+							}
 					internalTracks[cyl][head]=CInternalTrack::CreateFrom( *this, trw );
 					nSectors=__super::ScanTrack( cyl, head, bufferId, bufferLength, startTimesNanoseconds, pAvgGap3 );
 				}
