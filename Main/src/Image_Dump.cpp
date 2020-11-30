@@ -290,7 +290,7 @@ terminateWithError:
 															static const WORD DataFieldReplaceOption[]={ ID_DATAFIELD_FILLERBYTE, ID_DEFAULT2, 0 };
 															EnableDlgItems( DataFieldReplaceOption, dataFieldRecoveryType==2 );
 														// | interactivity
-														EnableDlgItem( IDOK, idFieldRecoveryType|dataFieldRecoveryType );
+														EnableDlgItem( IDOK, (idFieldRecoveryType|dataFieldRecoveryType)!=0 );
 													}
 													LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 														switch (msg){

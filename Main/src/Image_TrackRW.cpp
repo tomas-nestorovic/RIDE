@@ -224,6 +224,9 @@
 				nConsecutiveZeros=0;
 				return 1;
 			}
+			default:
+				ASSERT(FALSE);
+				return 0;
 		}
 	}
 
