@@ -38,7 +38,7 @@
 				ONCE_PER_CYLINDER	=1,
 				FOR_EACH_SECTOR		=2
 			} calibrationAfterError;
-			BYTE calibrationStepDuringFormatting, nSecondsToTurnMotorOff;
+			BYTE calibrationStepDuringFormatting;
 			bool verifyFormattedTracks, verifyWrittenData;
 			// volatile (current session only)
 			bool doubleTrackStep, userForcedDoubleTrackStep;

@@ -24,7 +24,6 @@
 	#define INI_FLUX_DECODER			_T("decod")
 	#define INI_CALIBRATE_SECTOR_ERROR	_T("clberr")
 	#define INI_CALIBRATE_FORMATTING	_T("clbfmt")
-	#define INI_MOTOR_OFF_SECONDS		_T("mtroff")
 	#define INI_VERIFY_FORMATTING		_T("vrftr")
 	#define INI_VERIFY_WRITTEN_DATA		_T("vrfdt")
 
@@ -36,7 +35,6 @@
 		, fluxDecoder( (TFluxDecoder)app.GetProfileInt(INI_KRYOFLUX,INI_FLUX_DECODER,TFluxDecoder::KEIR_FRASIER_MODIFIED) )
 		, calibrationAfterError( (TCalibrationAfterError)app.GetProfileInt(INI_KRYOFLUX,INI_CALIBRATE_SECTOR_ERROR,TCalibrationAfterError::ONCE_PER_CYLINDER) )
 		, calibrationStepDuringFormatting( app.GetProfileInt(INI_KRYOFLUX,INI_CALIBRATE_FORMATTING,0) )
-		, nSecondsToTurnMotorOff( app.GetProfileInt(INI_KRYOFLUX,INI_MOTOR_OFF_SECONDS,2) ) // 0 = 1 second, 1 = 2 seconds, 2 = 3 seconds
 		, verifyFormattedTracks( app.GetProfileInt(INI_KRYOFLUX,INI_VERIFY_FORMATTING,true)!=0 )
 		, verifyWrittenData( app.GetProfileInt(INI_KRYOFLUX,INI_VERIFY_WRITTEN_DATA,false)!=0 )
 		// - volatile (current session only)
@@ -51,7 +49,6 @@
 		app.WriteProfileInt( INI_KRYOFLUX, INI_FLUX_DECODER, fluxDecoder );
 		app.WriteProfileInt( INI_KRYOFLUX, INI_CALIBRATE_SECTOR_ERROR, calibrationAfterError );
 		app.WriteProfileInt( INI_KRYOFLUX, INI_CALIBRATE_FORMATTING, calibrationStepDuringFormatting );
-		app.WriteProfileInt( INI_KRYOFLUX, INI_MOTOR_OFF_SECONDS, nSecondsToTurnMotorOff );
 		app.WriteProfileInt( INI_KRYOFLUX, INI_VERIFY_FORMATTING, verifyFormattedTracks );
 		app.WriteProfileInt( INI_KRYOFLUX, INI_VERIFY_WRITTEN_DATA, verifyWrittenData );
 	}
@@ -131,10 +128,6 @@
 				int tmp=params.fluxDecoder;
 				DDX_CBIndex( pDX, ID_ACCURACY,	tmp );
 				params.fluxDecoder=(TParams::TFluxDecoder)tmp;
-				// . NumberOfSecondsToTurnMotorOff
-				tmp=params.nSecondsToTurnMotorOff;
-				DDX_CBIndex( pDX, ID_ROTATION,	tmp );
-				params.nSecondsToTurnMotorOff=tmp;
 				// . CalibrationAfterError
 				tmp=params.calibrationAfterError;
 				DDX_Radio( pDX,	ID_NONE,		tmp );

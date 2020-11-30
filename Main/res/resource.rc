@@ -1565,9 +1565,6 @@ BEGIN
     PUSHBUTTON      "Refresh",ID_RECOVER,170,41,48,13
     CONTROL         "Double track distance",ID_40D80,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,71,58,147,10
-    LTEXT           "Motor &off after [s]:",IDC_STATIC,7,75,56,8,NOT WS_GROUP
-    COMBOBOX        ID_ROTATION,71,73,96,46,CBS_DROPDOWNLIST | WS_VSCROLL | 
-                    WS_TABSTOP
     LTEXT           "Calibrate head:",IDC_STATIC,7,92,48,8,NOT WS_GROUP
     CONTROL         "Never",ID_NONE,"Button",BS_AUTORADIOBUTTON | WS_GROUP,
                     70,92,74,10
@@ -1992,12 +1989,6 @@ BEGIN
 0x6f4d, 0x6964, 0x6966, 0x6465, 0x4b20, 0x6965, 0x2072, 0x7246, 0x7361, 
 0x6569, 0x2772, 0x2073, 0x4446, 0x2d43, 0x696c, 0x656b, 0x6420, 0x6365, 
 0x646f, 0x7265, "\000" 
-    ID_ROTATION, 0x403, 2, 0
-0x0031, 
-    ID_ROTATION, 0x403, 2, 0
-0x0032, 
-    ID_ROTATION, 0x403, 2, 0
-0x0033, 
     0
 END
 
