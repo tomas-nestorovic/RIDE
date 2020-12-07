@@ -579,7 +579,7 @@
 				break;
 			// . attempting to return good data
 			if (const PCInternalTrack pit=internalTracks[cyl][head]){ // may be Null if, e.g., device manually reset, disconnected, etc.
-				if (const_cast<CKryoFluxDevice *>(this)->IsTrackHealthy(cyl,head))
+				if (const_cast<CKryoFluxDevice *>(this)->IsTrackHealthy(cyl,head) || !pit->nSectors) // Track explicitly healthy or without Sectors
 					return pit->nSectors;
 				switch (params.calibrationAfterError){
 					case TParams::TCalibrationAfterError::NONE:
