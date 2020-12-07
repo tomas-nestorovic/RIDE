@@ -307,6 +307,7 @@
 							painter.params.timeA = painter.params.timeZ = INT_MIN;
 						painter.params.locker.Unlock();
 						painter.repaintEvent.SetEvent();
+						::WaitForSingleObject( painter.action, INFINITE );
 						// . base
 						break;
 				}
