@@ -696,6 +696,13 @@ errorDuringWriting:			TCHAR buf[80];
 			// . resetting Target Image
 			d.dumpParams.target->dos=dos;
 			TStdWinError err=ERROR_CANCELLED;
+			if (d.dumpParams.target->IsWriteProtected()){
+				d.dumpParams.target->ToggleWriteProtection();
+				if (d.dumpParams.target->IsWriteProtected()){
+					err=ERROR_WRITE_PROTECT;
+					goto error;
+				}
+			}
 			if (!d.dumpParams.target->EditSettings(true))
 				goto error;
 			err=d.dumpParams.target->Reset();
