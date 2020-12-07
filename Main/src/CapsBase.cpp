@@ -205,7 +205,8 @@
 				return nullptr;
 			}
 		trw.AddIndexTime(0);
-		TLogTime currentTime=0, *pFluxTimeBuffer=trw.GetBuffer(), *pFluxTime=pFluxTimeBuffer, nextIndexBits=*nBitsPerTrack;
+		TLogTime currentTime=0, *pFluxTimeBuffer=trw.GetBuffer(), *pFluxTime=pFluxTimeBuffer;
+		UDWORD nextIndexBits=*nBitsPerTrack;
 		BYTE rev=0;
 		for( CBitReader br(cti,lockFlags); br; ){
 			// . adding new flux
@@ -238,20 +239,10 @@
 			for( codecs&=~c; (codecs&next)==0&&(next&TCodec::UNDETERMINED)!=0; next<<=1 );
 			// . scanning the Track and if no Sector recognized, continuing with Next Codec
 			TSectorId ids[DEVICE_REVOLUTIONS_MAX*(TSector)-1]; TLogTime idEnds[DEVICE_REVOLUTIONS_MAX*(TSector)-1]; TProfile idProfiles[DEVICE_REVOLUTIONS_MAX*(TSector)-1]; TFdcStatus statuses[DEVICE_REVOLUTIONS_MAX*(TSector)-1];
-			WORD nSectorsFound;
-			switch (c){
-				case TCodec::FM:
-					if ( nSectorsFound=tr.ScanFm(ids,idEnds,idProfiles,statuses) )
-						break;
-					continue;
-				case TCodec::MFM:
-					if ( nSectorsFound=tr.ScanMfm(ids,idEnds,idProfiles,statuses) )
-						break;
-					continue;
-				default:
-					ASSERT(FALSE); // we shouldn't end up here - check if all Codecs are included in the Switch statement!
-					continue;
-			}
+			tr.SetCodec(c);
+			const WORD nSectorsFound=tr.Scan( ids, idEnds, idProfiles, statuses );
+			if (!nSectorsFound)
+				continue;
 			// . putting the found Sectors over all complete disk revolutions together (some might have not been recognized in one revolution, but might in another revolution)
 			idEnds[nSectorsFound]=INT_MAX; // stop-condition
 			class CLongestCommonSubstring sealed{
@@ -374,21 +365,14 @@
 	void CCapsBase::CInternalTrack::ReadSector(TInternalSector &ris){
 		// buffers specified Revolution of the Sector (assumed part of this Track)
 		auto &currRev=ris.revolutions[ris.currentRevolution];
-		SetCurrentTime( currRev.idEndTime );
-		profile=currRev.idEndProfile;
 		const WORD sectorOfficialLength=GetOfficialSectorLength( ris.id.lengthCode );
 		BYTE buffer[16384]; // big enough to contain the longest possible Sector
-		switch (codec){
-			case TCodec::FM:
-				currRev.fdcStatus.ExtendWith( ReadDataFm(sectorOfficialLength,buffer) );
-				break;
-			case TCodec::MFM:
-				currRev.fdcStatus.ExtendWith( ReadDataMfm(sectorOfficialLength,buffer) );
-				break;
-			default:
-				ASSERT(FALSE); // we shouldn't end up here - all Codecs should be included in the Switch statement!
-				break;
-		}
+		currRev.fdcStatus.ExtendWith(
+			ReadData(
+				currRev.idEndTime, currRev.idEndProfile,
+				sectorOfficialLength, buffer
+			)
+		);
 		if (!currRev.fdcStatus.DescribesMissingDam()) // "some" data found
 			currRev.data=(PSectorData)::memcpy( ::malloc(sectorOfficialLength), buffer, sectorOfficialLength );
 	}

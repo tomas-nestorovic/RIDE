@@ -250,6 +250,36 @@
 		//}
 	}
 
+	WORD CImage::CTrackReader::Scan(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *pOutParseEvents){
+		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
+		profile.Reset();
+		if (pOutParseEvents)
+			pOutParseEvents->type=TParseEvent::NONE; // initialization
+		switch (codec){
+			case TCodec::FM:
+				return ScanFm( pOutFoundSectors, pOutIdEnds, pOutIdProfiles, pOutIdStatuses, pOutParseEvents );
+			case TCodec::MFM:
+				return ScanMfm( pOutFoundSectors, pOutIdEnds, pOutIdProfiles, pOutIdStatuses, pOutParseEvents );
+			default:
+				ASSERT(FALSE); // we shouldn't end up here - check if all Codecs are included in the Switch statement!
+				return 0;
+		}
+	}
+
+	TFdcStatus CImage::CTrackReader::ReadData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,LPBYTE buffer){
+		// attempts to read specified amount of Bytes into the Buffer, starting at position pointed to by the BitReader; returns the amount of Bytes actually read
+		SetCurrentTime( idEndTime );
+		profile=idEndProfile;
+		switch (codec){
+			case TCodec::FM:
+				return ReadDataFm( nBytesToRead, buffer );
+			case TCodec::MFM:
+				return ReadDataMfm( nBytesToRead, buffer );
+			default:
+				ASSERT(FALSE); // we shouldn't end up here - all Codecs should be included in the Switch statement!
+				return TFdcStatus::NoDataField;
+		}
+	}
 
 
 
