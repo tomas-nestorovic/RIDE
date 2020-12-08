@@ -4,10 +4,11 @@
 
 	#define TIME_HEIGHT		30
 	#define IW_HEIGHT		(TIME_HEIGHT+10)
-	#define INDEX_HEIGHT	60
+	#define INDEX_HEIGHT	64
 	#define LINE_EXTENSION	5
 	#define SPACING_HEIGHT	(IW_HEIGHT+LINE_EXTENSION)
 	#define IW_TIME_HEIGHT	(SPACING_HEIGHT+20)
+	#define EVENT_HEIGHT	30
 
 	class CTrackEditor sealed:public Utils::CRideDialog{
 		const CImage::CTrackReader &tr;
@@ -19,6 +20,7 @@
 		enum TCursorFeatures:BYTE{
 			TIME	=1,
 			SPACING	=2,
+			STRUCT	=4,
 			DEFAULT	= TIME//|SPACING
 		};
 		
@@ -27,6 +29,7 @@
 			CImage::CTrackReader tr;
 			TLogTime scrollTime;
 			PCLogTime iwEndTimes; // inspection window end Times (aka. at which Time they end; the end determines the beginning of the immediately next inspection window)
+			CImage::CTrackReader::PCParseEvent parseEvents;
 			TLogTime draggedTime; // Time at which left mouse button has been pressed
 			TLogTime cursorTime; // Time over which the cursor hovers
 			BYTE cursorFeatures; // OR-ed TCursorFeatures values
@@ -47,6 +50,17 @@
 					const CTimeEditor &te=*(CTimeEditor *)pAction->GetParams();
 					const TTrackPainter &p=te.painter;
 					const Utils::CRidePen penIndex( 2, 0xff0000 );
+					typedef const CImage::CTrackReader::TParseEvent TParseEvent,*PCParseEvent;
+					const Utils::CRideBrush parseEventBrushes[TParseEvent::LAST]={
+						TParseEvent::TypeColors[0],
+						TParseEvent::TypeColors[1],
+						TParseEvent::TypeColors[2],
+						TParseEvent::TypeColors[3],
+						TParseEvent::TypeColors[4],
+						TParseEvent::TypeColors[5],
+						TParseEvent::TypeColors[6],
+						TParseEvent::TypeColors[7]
+					};
 					for( CImage::CTrackReader tr=te.tr; true; ){
 						// . waiting for next request to paint the Track
 						p.repaintEvent.Lock();
@@ -84,6 +98,61 @@
 									tA=tZ, rc.left=rc.right;
 								}
 							::SetViewportOrgEx( dc, org.x, org.y, nullptr );
+							if (!continuePainting) // new paint request?
+								continue;
+						}
+						// . drawing ParseEvents
+						if (PCParseEvent pe=te.GetParseEvents()){
+							const Utils::CRideFont &font=Utils::CRideFont::Std;
+							const auto dcSettings0=::SaveDC(dc);
+								POINT org;
+								::GetViewportOrgEx( dc, &org );
+								const int nUnitsA=te.timeline.GetUnitCount(te.GetScrollTime());
+								::SetViewportOrgEx( dc, 0, org.y, nullptr );
+								::SelectObject( dc, font );
+								::SetBkMode( dc, OPAQUE );
+								while (continuePainting && pe->type!=TParseEvent::NONE){
+									const TLogTime a=std::max(timeA,pe->tStart), z=std::min(timeZ,pe->tEnd);
+									if (a<z){ // ParseEvent visible
+										const int xa=te.timeline.GetUnitCount(a)-nUnitsA, xz=te.timeline.GetUnitCount(z)-nUnitsA;
+										char label[80];
+										switch (pe->type){
+											case TParseEvent::SYNC_3BYTES:
+												::wsprintfA( label, _T("0x%06X sync"), pe->dw);
+												break;
+											case TParseEvent::MARK_1BYTE:
+												::wsprintfA( label, _T("0x%02X mark"), pe->dw );
+												break;
+											case TParseEvent::PREAMBLE:
+												::wsprintfA( label, _T("Preamble (%d Bytes)"), pe->dw );
+												break;
+											case TParseEvent::DATA:
+												::wsprintfA( label, _T("Data (%d Bytes)"), pe->dw);
+												break;
+											case TParseEvent::CRC_OK:
+												::wsprintfA( label, _T("0x%X ok CRC"), pe->dw);
+												break;
+											case TParseEvent::CRC_BAD:
+												::wsprintfA( label, _T("0x%X bad CRC"), pe->dw );
+												break;
+											default:
+												::lstrcpyA( label, pe->lpszCustom );
+												break;
+										}
+										RECT rcLabel={ te.timeline.GetUnitCount(pe->tStart)-nUnitsA, -1000, xz, -EVENT_HEIGHT-3 };
+										p.params.locker.Lock();
+											if ( continuePainting=p.params.id==id ){
+												const BYTE i=std::min<BYTE>(TParseEvent::LAST-1,pe->type);
+												::SelectObject( dc, parseEventBrushes[i] );
+												::BitBlt( dc, xa,-EVENT_HEIGHT, xz-xa,EVENT_HEIGHT, CClientDC(nullptr), 0,0, 0xa000c9 ); // ternary raster operation "dest AND pattern" (excluding "src", hence the use of screen DC)
+												::SetTextColor( dc, TParseEvent::TypeColors[i] );
+												::DrawTextA( dc, label,-1, &rcLabel, DT_LEFT|DT_BOTTOM|DT_SINGLELINE );
+											}
+										p.params.locker.Unlock();
+									}
+									pe=pe->GetNext();
+								}
+							::RestoreDC( dc, dcSettings0 );
 							if (!continuePainting) // new paint request?
 								continue;
 						}
@@ -172,7 +241,7 @@
 								const SIZE sz=font.GetTextSize( label, timeline.TimeToReadableString(cursorTime,label) );
 								const HGDIOBJ hBmp0=::SelectObject( dcMem, ::CreateCompatibleBitmap(dc,sz.cx,sz.cy) );
 									::TextOut( dcMem, 0,0, label,sizeof(label)/sizeof(TCHAR) );
-									::BitBlt( dc, x+4,-80, sz.cx,sz.cy, dcMem, 0,0, SRCINVERT );
+									::BitBlt( dc, x+2,-80, sz.cx,sz.cy, dcMem, 0,0, SRCINVERT );
 								::DeleteObject( ::SelectObject(dcMem,hBmp0) );
 							}
 							// . painting space between neighboring Times at current position
@@ -377,7 +446,7 @@
 				, painter(*this)
 				, draggedTime(-1)
 				, cursorTime(-1) , cursorFeaturesShown(false) , cursorFeatures(TCursorFeatures::DEFAULT)
-				, scrollTime(0) , iwEndTimes(nullptr) {
+				, scrollTime(0) , iwEndTimes(nullptr) , parseEvents(nullptr) {
 			}
 
 			void OnInitialUpdate() override{
@@ -450,6 +519,16 @@
 			inline void SetInspectionWindowEndTimes(PCLogTime iwEndTimes){
 				this->iwEndTimes=iwEndTimes;
 				Invalidate();
+			}
+
+			inline CImage::CTrackReader::PCParseEvent GetParseEvents() const{
+				return parseEvents;
+			}
+
+			void SetParseEvents(CImage::CTrackReader::PCParseEvent buffer){
+				ASSERT( parseEvents==nullptr ); // can set only once
+				const auto nBytes=(PCBYTE)buffer->GetLast()-(PCBYTE)buffer+sizeof(CImage::CTrackReader::TParseEvent); // "+sizeof" = including the terminal None ParseEvent
+				parseEvents=(CImage::CTrackReader::PCParseEvent)::memcpy( ::malloc(nBytes), buffer, nBytes );
 			}
 
 			inline bool IsFeatureShown(TCursorFeatures cf) const{
@@ -571,6 +650,27 @@
 				return pAction->TerminateWithError(ERROR_NOT_ENOUGH_MEMORY);
 		}
 
+		static UINT AFX_CDECL CreateParseEventsList_thread(PVOID _pCancelableAction){
+			// thread to create list of inspection windows used to recognize data in the Track
+			const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
+			typedef CImage::CTrackReader::TParseEvent TParseEvent,*PParseEvent;
+			CTrackEditor &rte=*(CTrackEditor *)pAction->GetParams();
+			CImage::CTrackReader tr=rte.tr;
+			TParseEvent peBuffer[5000], *pe=peBuffer; // capacity should suffice for any Track of any platform
+			BYTE dummy[16384]; // big enough to contain data of Sector of any floppy type
+			TSectorId ids[DEVICE_REVOLUTIONS_MAX*(TSector)-1]; TLogTime idEnds[DEVICE_REVOLUTIONS_MAX*(TSector)-1]; CImage::CTrackReader::TProfile idProfiles[DEVICE_REVOLUTIONS_MAX*(TSector)-1];
+			const WORD nSectorsFound=tr.Scan( ids, idEnds, idProfiles, (TFdcStatus *)dummy, peBuffer );
+			pAction->SetProgressTarget(tr.GetTotalTime());
+			for( WORD s=0; s<nSectorsFound; s++,pAction->UpdateProgress(tr.GetCurrentTime()) ){
+				if (pAction->IsCancelled())
+					return ERROR_CANCELLED;
+				pe=const_cast<PParseEvent>(pe->GetLast());
+				tr.ReadData( idEnds[s], idProfiles[s], CImage::GetOfficialSectorLength(ids[s].lengthCode), dummy, pe );
+			}
+			rte.timeEditor.SetParseEvents(peBuffer);
+			return pAction->TerminateWithError(ERROR_SUCCESS);
+		}
+
 		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){
 			// command processing
 			switch (nCode){
@@ -595,6 +695,9 @@
 							return TRUE;
 						case ID_RECOGNIZE:
 							pCmdUi->SetCheck( timeEditor.GetInspectionWindowEndTimes()!=nullptr );
+							return TRUE;
+						case ID_SYSTEM:
+							pCmdUi->SetCheck( timeEditor.IsFeatureShown(TCursorFeatures::STRUCT) );
 							return TRUE;
 						case ID_PREV:
 							pCmdUi->Enable( tr.GetIndexCount()>0 && timeEditor.GetCenterTime()>tr.GetIndexTime(0) );
@@ -637,6 +740,15 @@
 									CBackgroundActionCancelable( CreateInspectionWindowList_thread, this, THREAD_PRIORITY_LOWEST ).Perform();
 								timeEditor.SetInspectionWindowEndTimes(iwEndTimes);
 							}
+							return TRUE;
+						case ID_SYSTEM:
+							timeEditor.ToggleFeature(TCursorFeatures::STRUCT);
+							if (timeEditor.IsFeatureShown(TCursorFeatures::STRUCT))
+								if (timeEditor.GetParseEvents()==nullptr)
+									if (CBackgroundActionCancelable( CreateParseEventsList_thread, this, THREAD_PRIORITY_LOWEST ).Perform()!=ERROR_SUCCESS)
+										timeEditor.ToggleFeature(TCursorFeatures::STRUCT);
+									else
+										timeEditor.Invalidate();
 							return TRUE;
 						case ID_PREV:{
 							BYTE i=0;

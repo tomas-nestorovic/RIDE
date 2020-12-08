@@ -255,30 +255,44 @@
 		profile.Reset();
 		if (pOutParseEvents)
 			pOutParseEvents->type=TParseEvent::NONE; // initialization
+		WORD nSectorsFound;
 		switch (codec){
 			case TCodec::FM:
-				return ScanFm( pOutFoundSectors, pOutIdEnds, pOutIdProfiles, pOutIdStatuses, pOutParseEvents );
+				nSectorsFound=ScanFm( pOutFoundSectors, pOutIdEnds, pOutIdProfiles, pOutIdStatuses, pOutParseEvents );
+				break;
 			case TCodec::MFM:
-				return ScanMfm( pOutFoundSectors, pOutIdEnds, pOutIdProfiles, pOutIdStatuses, pOutParseEvents );
+				nSectorsFound=ScanMfm( pOutFoundSectors, pOutIdEnds, pOutIdProfiles, pOutIdStatuses, pOutParseEvents );
+				break;
 			default:
 				ASSERT(FALSE); // we shouldn't end up here - check if all Codecs are included in the Switch statement!
 				return 0;
 		}
+		if (pOutParseEvents)
+			pOutParseEvents->type=TParseEvent::NONE; // termination
+		return nSectorsFound;
 	}
 
-	TFdcStatus CImage::CTrackReader::ReadData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,LPBYTE buffer){
+	TFdcStatus CImage::CTrackReader::ReadData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,LPBYTE buffer,TParseEvent *pOutParseEvents){
 		// attempts to read specified amount of Bytes into the Buffer, starting at position pointed to by the BitReader; returns the amount of Bytes actually read
 		SetCurrentTime( idEndTime );
 		profile=idEndProfile;
+		if (pOutParseEvents)
+			pOutParseEvents->type=TParseEvent::NONE; // initialization
+		TFdcStatus st;
 		switch (codec){
 			case TCodec::FM:
-				return ReadDataFm( nBytesToRead, buffer );
+				st=ReadDataFm( nBytesToRead, buffer, pOutParseEvents );
+				break;
 			case TCodec::MFM:
-				return ReadDataMfm( nBytesToRead, buffer );
+				st=ReadDataMfm( nBytesToRead, buffer, pOutParseEvents );
+				break;
 			default:
 				ASSERT(FALSE); // we shouldn't end up here - all Codecs should be included in the Switch statement!
 				return TFdcStatus::NoDataField;
 		}
+		if (pOutParseEvents)
+			pOutParseEvents->type=TParseEvent::NONE; // termination
+		return st;
 	}
 
 
@@ -290,7 +304,56 @@
 
 
 
-	WORD CImage::CTrackReader::ScanFm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses){
+
+	const COLORREF CImage::CTrackReader::TParseEvent::TypeColors[LAST]={
+		0,			// None
+		0xa398c2,	// sync 3 Bytes
+		0x82c5e7,	// mark 1 Byte
+		0xccd4f2,	// preamble
+		0xc4886c,	// data (variable length)
+		0x91d04d,	// CRC ok
+		0x6857ff,	// CRC bad
+		0xa79b8a	// custom (variable string)
+	};
+
+	inline
+	CImage::CTrackReader::TParseEvent::TParseEvent(TType type,TLogTime tStart,TLogTime tEnd,DWORD data)
+		// ctor
+		: type(type)
+		, tStart(tStart) , tEnd(tEnd) {
+		dw=data;
+	}
+
+	void CImage::CTrackReader::TParseEvent::WriteCustom(TParseEvent *&buffer,TLogTime tStart,TLogTime tEnd,LPCSTR lpszCustom){
+		*buffer=TParseEvent( (TType)(sizeof(TParseEvent)+::lstrlenA(lpszCustom)), tStart, tEnd, 0 );
+		::lstrcpyA(buffer->lpszCustom,lpszCustom);
+		buffer=const_cast<TParseEvent *>(buffer->GetNext());
+	}
+
+	const CImage::CTrackReader::TParseEvent *CImage::CTrackReader::TParseEvent::GetNext() const{
+		return	(PCParseEvent)(  (PCBYTE)this+std::max<BYTE>( type, sizeof(TParseEvent) )  );
+	}
+
+	const CImage::CTrackReader::TParseEvent *CImage::CTrackReader::TParseEvent::GetLast() const{
+		PCParseEvent pe=this;
+		while (pe->type!=NONE)
+			pe=pe->GetNext();
+		return pe;
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+	WORD CImage::CTrackReader::ScanFm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *&pOutParseEvents){
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
 		ASSERT( pOutFoundSectors!=nullptr && pOutIdEnds!=nullptr );
 		RewindToIndex(0);
@@ -298,7 +361,7 @@
 		return 0;
 	}
 
-	TFdcStatus CImage::CTrackReader::ReadDataFm(WORD nBytesToRead,LPBYTE buffer){
+	TFdcStatus CImage::CTrackReader::ReadDataFm(WORD nBytesToRead,LPBYTE buffer,TParseEvent *&pOutParseEvents){
 		// attempts to read specified amount of Bytes into the Buffer, starting at current position; returns the amount of Bytes actually read
 		ASSERT( codec==TCodec::FM );
 		//TODO
@@ -329,29 +392,41 @@
 		}
 	}
 
-	WORD CImage::CTrackReader::ScanMfm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses){
+	WORD CImage::CTrackReader::ScanMfm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *&pOutParseEvents){
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
 		ASSERT( pOutFoundSectors!=nullptr && pOutIdEnds!=nullptr );
 		// - some Sectors may start just after the IndexPulse (e.g. MDOS 1.0); preparing the scanner for this eventuality by adjusting the frequency and phase shortly BEFORE the IndexPulse
 		const TLogTime indexTime=GetIndexTime(0);
 		for( SetCurrentTime(indexTime-10*profile.iwTimeDefault); currentTime<indexTime; ReadBit() ); // "N*" = number of 0x00 Bytes before the 0xA1 clock-distorted mark
 		// - scanning
+		TLogTime tEventStart;
+		TLogTime tSyncStarts[64]; BYTE iSyncStart=0;
 		WORD nSectors=0, w, sync1=0; DWORD sync23=0;
 		for( const TLogTime revolutionEndTime=GetIndexTime(nIndexPulses+1); *this; ){
 			// . searching for three consecutive 0xA1 distorted synchronization Bytes
+			tSyncStarts[iSyncStart++&63]=currentTime;
 			sync23=	(sync23<<1) | ((sync1&0x8000)!=0);
 			sync1 =	(sync1<<1) | ReadBit();
 			if ((sync1&0xffdf)!=0x4489 || (sync23&0xffdfffdf)!=0x44894489)
 				continue;
+			if (pOutParseEvents)
+				*pOutParseEvents++=TParseEvent( TParseEvent::SYNC_3BYTES, tSyncStarts[(iSyncStart+256-48)&63], currentTime, 0xa1a1a1 );
 			// . an ID Field mark should follow the synchronization
+			tEventStart=currentTime;
 			if (!ReadBits16(w)) // Track end encountered
 				break;
-			if (MFM::DecodeByte(w)!=0xfe) // not the expected ID Field mark
+			if (MFM::DecodeByte(w)!=0xfe){ // not the expected ID Field mark
+				if (pOutParseEvents)
+					pOutParseEvents--; // dismiss the synchronization ParseEvent
 				continue;
+			}
 			struct{
 				BYTE sync[3], idFieldAm, cyl, side, sector, length;
 			} data={ 0xa1, 0xa1, 0xa1, 0xfe };
+			if (pOutParseEvents)
+				*pOutParseEvents++=TParseEvent( TParseEvent::MARK_1BYTE, tEventStart, currentTime, data.idFieldAm );
 			// . reading SectorId
+			tEventStart=currentTime;
 			TSectorId &rid=*pOutFoundSectors++;
 			if (!ReadBits16(w)) // Track end encountered
 				break;
@@ -365,13 +440,19 @@
 			if (!ReadBits16(w)) // Track end encountered
 				break;
 			rid.lengthCode = data.length = MFM::DecodeByte(w);
+			if (pOutParseEvents)
+				TParseEvent::WriteCustom( pOutParseEvents, tEventStart, currentTime, rid.ToString() );
 			// . reading and comparing ID Field's CRC
+			tEventStart=currentTime;
 			DWORD dw;
-			*pOutIdStatuses++ =	!ReadBits32(dw) || MFM::DecodeBigEndianWord(dw)!=CFloppyImage::GetCrc16Ccitt(&data,sizeof(data)) // no or wrong IdField CRC
+			const bool crcBad=!ReadBits32(dw) || MFM::DecodeBigEndianWord(dw)!=CFloppyImage::GetCrc16Ccitt(&data,sizeof(data)); // no or wrong IdField CRC
+			*pOutIdStatuses++ =	crcBad 
 								? TFdcStatus::IdFieldCrcError
 								: TFdcStatus::WithoutError;
 			*pOutIdEnds++=currentTime;
 			*pOutIdProfiles++=profile;
+			if (pOutParseEvents)
+				*pOutParseEvents++=TParseEvent( crcBad?TParseEvent::CRC_BAD:TParseEvent::CRC_OK, tEventStart, currentTime, MFM::DecodeBigEndianWord(dw) );
 			// . sector found
 			nSectors++;
 			sync1=0; // invalidating "buffered" synchronization
@@ -380,12 +461,15 @@
 		return nSectors;
 	}
 
-	TFdcStatus CImage::CTrackReader::ReadDataMfm(WORD nBytesToRead,LPBYTE buffer){
+	TFdcStatus CImage::CTrackReader::ReadDataMfm(WORD nBytesToRead,LPBYTE buffer,TParseEvent *&pOutParseEvents){
 		// attempts to read specified amount of Bytes into the Buffer, starting at position pointed to by the BitReader; returns the amount of Bytes actually read
 		ASSERT( codec==TCodec::MFM );
 		// - searching for the nearest three consecutive 0xA1 distorted synchronization Bytes
+		TLogTime tEventStart;
+		TLogTime tSyncStarts[64]; BYTE iSyncStart=0;
 		WORD w, sync1=0; DWORD sync23=0;
 		while (*this){
+			tSyncStarts[iSyncStart++&63]=currentTime;
 			sync23=	(sync23<<1) | ((sync1&0x8000)!=0);
 			sync1 =	(sync1<<1) | ReadBit();
 			if ((sync1&0xffdf)==0x4489 && (sync23&0xffdfffdf)==0x44894489)
@@ -393,7 +477,10 @@
 		}
 		if (!*this) // Track end encountered
 			return TFdcStatus::NoDataField;
+		if (pOutParseEvents)
+			*pOutParseEvents++=TParseEvent( TParseEvent::SYNC_3BYTES, tSyncStarts[(iSyncStart+256-48)&63], currentTime, 0xa1a1a1 );
 		// - a Data Field mark should follow the synchronization
+		tEventStart=currentTime;
 		if (!ReadBits16(w)) // Track end encountered
 			return TFdcStatus::NoDataField;
 		const BYTE preamble[]={ 0xa1, 0xa1, 0xa1, MFM::DecodeByte(w) };
@@ -408,7 +495,10 @@
 			default:
 				return TFdcStatus::NoDataField; // not the expected Data mark
 		}
+		if (pOutParseEvents)
+			*pOutParseEvents++=TParseEvent( TParseEvent::MARK_1BYTE, tEventStart, currentTime, preamble[3] );
 		// - reading specified amount of Bytes into the Buffer
+		tEventStart=currentTime;
 		PBYTE p=buffer;
 		while (*this && nBytesToRead-->0){
 			if (!ReadBits16(w)){ // Track end encountered
@@ -419,10 +509,17 @@
 		}
 		if (!*this)
 			return result;
+		if (pOutParseEvents)
+			*pOutParseEvents++=TParseEvent( TParseEvent::DATA, tEventStart, currentTime, p-buffer );
 		// - reading and comparing Data Field's CRC
+		tEventStart=currentTime;
 		DWORD dw;
-		if (!ReadBits32(dw) || MFM::DecodeBigEndianWord(dw)!=CFloppyImage::GetCrc16Ccitt(CFloppyImage::GetCrc16Ccitt(&preamble,sizeof(preamble)),buffer,p-buffer)) // no or wrong Data Field CRC
+		CFloppyImage::TCrc16 crc=0;
+		const bool crcBad=!ReadBits32(dw) || MFM::DecodeBigEndianWord(dw)!=( crc=CFloppyImage::GetCrc16Ccitt(CFloppyImage::GetCrc16Ccitt(&preamble,sizeof(preamble)),buffer,p-buffer) ); // no or wrong Data Field CRC
+		if (crcBad)
 			result.ExtendWith( TFdcStatus::DataFieldCrcError );
+		if (pOutParseEvents)
+			*pOutParseEvents++=TParseEvent( crcBad?TParseEvent::CRC_BAD:TParseEvent::CRC_OK, tEventStart, currentTime, crc );
 		return result;
 	}
 

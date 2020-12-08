@@ -19,6 +19,7 @@ namespace Utils{
 		static const CRideBrush None, Black, White, BtnFace, Selection;
 
 		CRideBrush(int stockObjectId);
+		CRideBrush(COLORREF solidColor);
 		CRideBrush(bool sysColor,int sysColorId);
 
 		operator COLORREF() const;

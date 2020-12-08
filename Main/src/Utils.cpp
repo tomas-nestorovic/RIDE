@@ -19,6 +19,11 @@ namespace Utils{
 		CreateStockObject(stockObjectId);
 	}
 
+	CRideBrush::CRideBrush(COLORREF solidColor){
+		// ctor
+		CreateSolidBrush(solidColor);
+	}
+
 	CRideBrush::CRideBrush(bool sysColor,int sysColorId){
 		// ctor
 		CreateSysColorBrush(sysColorId);

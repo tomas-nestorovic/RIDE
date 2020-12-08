@@ -256,6 +256,36 @@
 
 				void Reset();
 			} profile;
+
+			typedef const struct TParseEvent sealed{
+				enum TType:BYTE{
+					NONE,			// used as terminator in a list of Events
+					SYNC_3BYTES,	// dw
+					MARK_1BYTE,		// b
+					PREAMBLE,		// dw (length)
+					DATA,			// dw (length)
+					CRC_OK,			// dw
+					CRC_BAD,		// dw
+					CUSTOM,			// lpsz; {Custom..255} Types determine length of this structure in Bytes
+					LAST
+				} type;
+				TLogTime tStart, tEnd;
+				union{
+					BYTE b;
+					DWORD dw;
+					char lpszCustom[sizeof(DWORD)]; // description of Custom ParseEvent
+				};
+
+				static const COLORREF TypeColors[LAST];
+
+				static void WriteCustom(TParseEvent *&buffer,TLogTime tStart,TLogTime tEnd,LPCSTR lpszCustom);
+
+				inline TParseEvent(){}
+				TParseEvent(TType type,TLogTime tStart,TLogTime tEnd,DWORD data);
+
+				const TParseEvent *GetNext() const;
+				const TParseEvent *GetLast() const;
+			} *PCParseEvent;
 		protected:
 			const PLogTime logTimes; // absolute logical times since the start of recording
 			const TDecoderMethod method;
@@ -270,10 +300,10 @@
 
 			CTrackReader(PLogTime logTimes,DWORD nLogTimes,PCLogTime indexPulses,BYTE nIndexPulses,TMedium::TType mediumType,TCodec codec,TDecoderMethod method);
 
-			WORD ScanFm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses);
-			WORD ScanMfm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses);
-			TFdcStatus ReadDataFm(WORD nBytesToRead,LPBYTE buffer);
-			TFdcStatus ReadDataMfm(WORD nBytesToRead,LPBYTE buffer);
+			WORD ScanFm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *&pOutParseEvents);
+			WORD ScanMfm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *&pOutParseEvents);
+			TFdcStatus ReadDataFm(WORD nBytesToRead,LPBYTE buffer,TParseEvent *&pOutParseEvents);
+			TFdcStatus ReadDataMfm(WORD nBytesToRead,LPBYTE buffer,TParseEvent *&pOutParseEvents);
 		public:
 			CTrackReader(const CTrackReader &tr);
 			CTrackReader(CTrackReader &&rTrackReader);
@@ -314,8 +344,8 @@
 			bool ReadBit();
 			bool ReadBits16(WORD &rOut);
 			bool ReadBits32(DWORD &rOut);
-			WORD Scan(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses);
-			TFdcStatus ReadData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,LPBYTE buffer);
+			WORD Scan(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *pOutParseEvents=nullptr);
+			TFdcStatus ReadData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,LPBYTE buffer,TParseEvent *pOutParseEvents=nullptr);
 			void ShowModal(LPCTSTR caption) const;
 		};
 

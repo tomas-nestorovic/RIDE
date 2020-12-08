@@ -668,6 +668,7 @@ BEGIN
         MENUITEM "Show cursor time",            ID_TIME
         MENUITEM "Show time spacing",           ID_GAP
         MENUITEM "Show inspection",             ID_RECOGNIZE
+        MENUITEM "Show structure",              ID_SYSTEM
         MENUITEM SEPARATOR
         MENUITEM "Close\tEsc",                  IDCANCEL
     END
