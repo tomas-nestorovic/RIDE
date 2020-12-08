@@ -10,6 +10,9 @@
 	#define IW_TIME_HEIGHT	(SPACING_HEIGHT+20)
 	#define EVENT_HEIGHT	30
 
+	typedef CImage::CTrackReader::TParseEvent TParseEvent,*PParseEvent;
+	typedef const TParseEvent *PCParseEvent;
+
 	class CTrackEditor sealed:public Utils::CRideDialog{
 		const CImage::CTrackReader &tr;
 		const LPCTSTR caption;
@@ -50,7 +53,6 @@
 					const CTimeEditor &te=*(CTimeEditor *)pAction->GetParams();
 					const TTrackPainter &p=te.painter;
 					const Utils::CRidePen penIndex( 2, 0xff0000 );
-					typedef const CImage::CTrackReader::TParseEvent TParseEvent,*PCParseEvent;
 					const Utils::CRideBrush parseEventBrushes[TParseEvent::LAST]={
 						TParseEvent::TypeColors[0],
 						TParseEvent::TypeColors[1],
@@ -111,7 +113,7 @@
 								::SetViewportOrgEx( dc, 0, org.y, nullptr );
 								::SelectObject( dc, font );
 								::SetBkMode( dc, OPAQUE );
-								while (continuePainting && pe->type!=TParseEvent::NONE){
+								while (continuePainting && !pe->IsEmpty()){
 									const TLogTime a=std::max(timeA,pe->tStart), z=std::min(timeZ,pe->tEnd);
 									if (a<z){ // ParseEvent visible
 										const int xa=te.timeline.GetUnitCount(a)-nUnitsA, xz=te.timeline.GetUnitCount(z)-nUnitsA;
@@ -527,7 +529,7 @@
 
 			void SetParseEvents(CImage::CTrackReader::PCParseEvent buffer){
 				ASSERT( parseEvents==nullptr ); // can set only once
-				const auto nBytes=(PCBYTE)buffer->GetLast()-(PCBYTE)buffer+sizeof(CImage::CTrackReader::TParseEvent); // "+sizeof" = including the terminal None ParseEvent
+				const auto nBytes=(PCBYTE)buffer->GetLast()->GetNext()-(PCBYTE)buffer+sizeof(CImage::CTrackReader::TParseEvent); // "+sizeof" = including the terminal None ParseEvent
 				parseEvents=(CImage::CTrackReader::PCParseEvent)::memcpy( ::malloc(nBytes), buffer, nBytes );
 			}
 
@@ -653,7 +655,6 @@
 		static UINT AFX_CDECL CreateParseEventsList_thread(PVOID _pCancelableAction){
 			// thread to create list of inspection windows used to recognize data in the Track
 			const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
-			typedef CImage::CTrackReader::TParseEvent TParseEvent,*PParseEvent;
 			CTrackEditor &rte=*(CTrackEditor *)pAction->GetParams();
 			CImage::CTrackReader tr=rte.tr;
 			TParseEvent peBuffer[5000], *pe=peBuffer; // capacity should suffice for any Track of any platform
@@ -664,7 +665,7 @@
 			for( WORD s=0; s<nSectorsFound; s++,pAction->UpdateProgress(tr.GetCurrentTime()) ){
 				if (pAction->IsCancelled())
 					return ERROR_CANCELLED;
-				pe=const_cast<PParseEvent>(pe->GetLast());
+				pe=const_cast<PParseEvent>(pe->GetLast()->GetNext());
 				tr.ReadData( idEnds[s], idProfiles[s], CImage::GetOfficialSectorLength(ids[s].lengthCode), dummy, pe );
 			}
 			rte.timeEditor.SetParseEvents(peBuffer);
@@ -704,6 +705,18 @@
 							return TRUE;
 						case ID_NEXT:
 							pCmdUi->Enable( tr.GetIndexCount()>0 && timeEditor.GetCenterTime()<tr.GetIndexTime(tr.GetIndexCount()-1) );
+							return TRUE;
+						case ID_FILE_SHIFT_DOWN:
+							pCmdUi->Enable( timeEditor.GetParseEvents() && timeEditor.GetCenterTime()>timeEditor.GetParseEvents()->tStart );
+							return TRUE;
+						case ID_FILE_SHIFT_UP:
+							pCmdUi->Enable( timeEditor.GetParseEvents() && timeEditor.GetCenterTime()<timeEditor.GetParseEvents()->GetLast()->tStart );
+							return TRUE;
+						case ID_DOWN:
+							pCmdUi->Enable( timeEditor.GetScrollTime()>0 );
+							return TRUE;
+						case ID_UP:
+							pCmdUi->Enable( timeEditor.GetScrollTime()<tr.GetTotalTime() );
 							return TRUE;
 					}
 					break;
@@ -764,6 +777,25 @@
 								timeEditor.SetCenterTime( tr.GetIndexTime(i) );
 							return TRUE;
 						}
+						case ID_FILE_SHIFT_DOWN:{
+							PCParseEvent pe=timeEditor.GetParseEvents(), prev=nullptr;
+							for( const TLogTime tCenter=timeEditor.GetCenterTime(); !pe->IsEmpty()&&tCenter>pe->tStart; pe=pe->GetNext() )
+								prev=pe;
+							if (prev!=nullptr)
+								timeEditor.SetCenterTime( prev->tStart );
+							return TRUE;
+						}
+						case ID_FILE_SHIFT_UP:{
+							PCParseEvent pe=timeEditor.GetParseEvents();
+							for( const TLogTime tCenter=timeEditor.GetCenterTime(); !pe->IsEmpty()&&tCenter>=pe->tStart; pe=pe->GetNext() );
+							if (!pe->IsEmpty())
+								timeEditor.SetCenterTime( pe->tStart );
+							return TRUE;
+						}
+						//case ID_DOWN:	// commented out as coped with already in WM_KEYDOWN handler
+							//return TRUE;
+						//case ID_UP:	// commented out as coped with already in WM_KEYDOWN handler
+							//return TRUE;
 					}
 					break;
 			}

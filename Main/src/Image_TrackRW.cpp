@@ -253,8 +253,6 @@
 	WORD CImage::CTrackReader::Scan(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *pOutParseEvents){
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
 		profile.Reset();
-		if (pOutParseEvents)
-			pOutParseEvents->type=TParseEvent::NONE; // initialization
 		WORD nSectorsFound;
 		switch (codec){
 			case TCodec::FM:
@@ -268,7 +266,7 @@
 				return 0;
 		}
 		if (pOutParseEvents)
-			pOutParseEvents->type=TParseEvent::NONE; // termination
+			*pOutParseEvents=TParseEvent::Empty; // termination
 		return nSectorsFound;
 	}
 
@@ -276,8 +274,6 @@
 		// attempts to read specified amount of Bytes into the Buffer, starting at position pointed to by the BitReader; returns the amount of Bytes actually read
 		SetCurrentTime( idEndTime );
 		profile=idEndProfile;
-		if (pOutParseEvents)
-			pOutParseEvents->type=TParseEvent::NONE; // initialization
 		TFdcStatus st;
 		switch (codec){
 			case TCodec::FM:
@@ -291,7 +287,7 @@
 				return TFdcStatus::NoDataField;
 		}
 		if (pOutParseEvents)
-			pOutParseEvents->type=TParseEvent::NONE; // termination
+			*pOutParseEvents=TParseEvent::Empty; // termination
 		return st;
 	}
 
@@ -304,6 +300,8 @@
 
 
 
+
+	const CImage::CTrackReader::TParseEvent CImage::CTrackReader::TParseEvent::Empty(EMPTY,0,0,0);
 
 	const COLORREF CImage::CTrackReader::TParseEvent::TypeColors[LAST]={
 		0,			// None
@@ -335,9 +333,10 @@
 	}
 
 	const CImage::CTrackReader::TParseEvent *CImage::CTrackReader::TParseEvent::GetLast() const{
+		if (IsEmpty()) // this is already the last Event
+			return this;
 		PCParseEvent pe=this;
-		while (pe->type!=NONE)
-			pe=pe->GetNext();
+		for( PCParseEvent next; !(next=pe->GetNext())->IsEmpty(); pe=next );
 		return pe;
 	}
 

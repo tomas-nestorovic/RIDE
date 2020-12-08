@@ -259,7 +259,7 @@
 
 			typedef const struct TParseEvent sealed{
 				enum TType:BYTE{
-					NONE,			// used as terminator in a list of Events
+					EMPTY,			// used as terminator in a list of Events
 					SYNC_3BYTES,	// dw
 					MARK_1BYTE,		// b
 					PREAMBLE,		// dw (length)
@@ -276,6 +276,7 @@
 					char lpszCustom[sizeof(DWORD)]; // description of Custom ParseEvent
 				};
 
+				static const TParseEvent Empty;
 				static const COLORREF TypeColors[LAST];
 
 				static void WriteCustom(TParseEvent *&buffer,TLogTime tStart,TLogTime tEnd,LPCSTR lpszCustom);
@@ -283,6 +284,7 @@
 				inline TParseEvent(){}
 				TParseEvent(TType type,TLogTime tStart,TLogTime tEnd,DWORD data);
 
+				inline bool IsEmpty() const{ return type==EMPTY; }
 				const TParseEvent *GetNext() const;
 				const TParseEvent *GetLast() const;
 			} *PCParseEvent;

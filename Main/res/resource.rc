@@ -162,8 +162,10 @@ BEGIN
     "-",            ID_ZOOM_OUT,            ASCII,  NOINVERT
     "0",            ID_ZOOM_FIT,            VIRTKEY, CONTROL, NOINVERT
     VK_ESCAPE,      IDCANCEL,               VIRTKEY, NOINVERT
+    VK_LEFT,        ID_FILE_SHIFT_DOWN,     VIRTKEY, CONTROL, NOINVERT
     VK_NEXT,        ID_NEXT,                VIRTKEY, CONTROL, NOINVERT
     VK_PRIOR,       ID_PREV,                VIRTKEY, CONTROL, NOINVERT
+    VK_RIGHT,       ID_FILE_SHIFT_UP,       VIRTKEY, CONTROL, NOINVERT
 END
 
 
@@ -657,6 +659,12 @@ BEGIN
     BEGIN
         POPUP "Go to"
         BEGIN
+            MENUITEM "Previous window\tLeft",       ID_DOWN
+            MENUITEM "Next window\tRight",          ID_UP
+            MENUITEM SEPARATOR
+            MENUITEM "Previous event\tCtrl+Left",   ID_FILE_SHIFT_DOWN
+            MENUITEM "Next event\tCtrl+Right",      ID_FILE_SHIFT_UP
+            MENUITEM SEPARATOR
             MENUITEM "Previous index\tCtrl+PgUp",   ID_PREV
             MENUITEM "Next index\tCtrl+PgDown",     ID_NEXT
         END
