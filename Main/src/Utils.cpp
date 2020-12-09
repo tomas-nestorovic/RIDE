@@ -110,9 +110,9 @@ namespace Utils{
 		return GetTextSize( text, ::lstrlen(text) );
 	}
 
-	const CRideFont CRideFont::Small(FONT_MS_SANS_SERIF,70);
-	const CRideFont CRideFont::Std(FONT_MS_SANS_SERIF,90);
-	const CRideFont CRideFont::StdBold(FONT_MS_SANS_SERIF,90,true);
+	const CRideFont CRideFont::Small(FONT_MS_SANS_SERIF,70,false,true);
+	const CRideFont CRideFont::Std(FONT_MS_SANS_SERIF,90,false,true);
+	const CRideFont CRideFont::StdBold(FONT_MS_SANS_SERIF,90,true,true);
 
 
 
@@ -445,7 +445,9 @@ namespace Utils{
 			*pOutVisibleEnd=timeZ;
 		// - drawing using a workaround to overcome the coordinate space limits
 		const int nUnitsA=GetUnitCount(timeA);
-		::SetViewportOrgEx( dc, nUnitsA*LogicalUnitScaleFactor+org.x, org.y, nullptr );
+		const auto dcSettings0=::SaveDC(dc);
+			::SetViewportOrgEx( dc, nUnitsA*LogicalUnitScaleFactor+org.x, org.y, nullptr );
+			::SelectObject( dc, font );
 			// . horizontal line representing the timeline
 			::MoveToEx( dc, 0,0, nullptr );
 			::LineTo( dc, GetUnitCount(timeZ)-nUnitsA, 0 );
@@ -464,11 +466,11 @@ namespace Utils{
 				::MoveToEx( dc, x,0, nullptr );
 				::LineTo( dc, x,-7 );
 				::TextOut(	dc,
-							x, -7-font.charHeight,
+							x, -7-font.charHeight/Utils::LogicalUnitScaleFactor,
 							label,  ::wsprintf( label, _T("%d %cs"), t/k, TimePrefixes[unitPrefix] )
 						);
 			}
-		::SetViewportOrgEx( dc, org.x, org.y, nullptr );
+		::RestoreDC(dc,dcSettings0);
 	}
 
 	TLogTime CTimeline::PixelToTime(int pixelX) const{

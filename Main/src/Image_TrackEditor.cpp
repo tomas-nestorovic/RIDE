@@ -162,8 +162,10 @@
 						BYTE i=0;
 						while (i<tr.GetIndexCount() && tr.GetIndexTime(i)<timeA) // skipping invisible indices before visible region
 							i++;
-						const HGDIOBJ hPen0=::SelectObject( dc, penIndex );
+						const auto dcSettings0=::SaveDC(dc);
+							::SelectObject( dc, penIndex );
 							::SetTextColor( dc, 0xff0000 );
+							::SelectObject( dc, Utils::CRideFont::Std );
 							for( TCHAR buf[16]; continuePainting && i<tr.GetIndexCount() && tr.GetIndexTime(i)<timeZ; i++ ){ // visible indices
 								const int x=te.timeline.GetUnitCount( tr.GetIndexTime(i) );
 								p.params.locker.Lock();
@@ -174,7 +176,7 @@
 									}
 								p.params.locker.Unlock();
 							}
-						::SelectObject( dc, hPen0 );
+						::RestoreDC(dc,dcSettings0);
 						if (!continuePainting) // new paint request?
 							continue;
 						// . drawing Times
@@ -233,6 +235,7 @@
 					const HDC dcMem=::CreateCompatibleDC(dc);
 						::SetTextColor( dcMem, COLOR_WHITE );
 						::SetBkMode( dcMem, TRANSPARENT );
+						Utils::ScaleLogicalUnit(dcMem);
 						const HGDIOBJ hFont0=::SelectObject( dcMem, font );
 							TCHAR label[32];
 							const int x=timeline.GetUnitCount(cursorTime);
@@ -429,7 +432,7 @@
 				::SetBkMode( dc, TRANSPARENT );
 				painter.params.locker.Lock();
 					painter.params.id++;
-					timeline.Draw( dc, Utils::CRideFont::StdBold, &painter.params.timeA, &painter.params.timeZ );
+					timeline.Draw( dc, Utils::CRideFont::Std, &painter.params.timeA, &painter.params.timeZ );
 					painter.params.zoomFactor=timeline.zoomFactor;
 				painter.params.locker.Unlock();
 				// . drawing the rest in parallel thread due to computational complexity if painting the whole Track
