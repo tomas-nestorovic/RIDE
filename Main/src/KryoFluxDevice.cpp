@@ -95,7 +95,7 @@
 		// - enumerating connected floppy drives
 		PTCHAR p=deviceNameList;
 			for( BYTE fddId=0; fddId<KF_DRIVES_MAX; fddId++ )
-				if (CKryoFluxDevice( TDriver::WINUSB, fddId ).fddFound)
+				//if (CKryoFluxDevice( TDriver::WINUSB, fddId ).fddFound)
 					p+=::wsprintf( p, KF_DEVICE_NAME_PATTERN, fddId+'0', KF_ACCESS_DRIVER_WINUSB )+1; // "+1" = null-terminated items		
 		// - no further access possibilities
 		*p='\0'; // null-terminated list
