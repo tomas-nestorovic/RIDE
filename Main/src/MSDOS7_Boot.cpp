@@ -131,7 +131,7 @@
 		nFatCopies=params->nAllocationTables;
 		switch (pFormatBoot->mediumType){
 			case TMedium::FLOPPY_HD_350:
-			case TMedium::FLOPPY_HD_525:
+			case TMedium::FLOPPY_HD_525: //TODO: is it correct?
 				medium=DISK_35_1440_DS_18;	break;
 			case TMedium::FLOPPY_DD:
 				medium=DISK_35_720_DS_9;	break;

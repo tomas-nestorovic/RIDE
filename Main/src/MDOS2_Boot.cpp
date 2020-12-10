@@ -333,7 +333,7 @@
 					break;
 				case IDYES:
 					boot->current.diskFlags.driveD40=false;
-					MDOS2->formatBoot.mediumType=TMedium::FLOPPY_DD_525; // likely 360 rpm in PC
+					MDOS2->formatBoot.mediumType=TMedium::FLOPPY_DD_350;
 					IMAGE->MarkSectorAsDirty(CHS);
 					vp.fReport.CloseProblem(true);
 					break;
