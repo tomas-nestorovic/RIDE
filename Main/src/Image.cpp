@@ -535,7 +535,27 @@
 		return GetCylinderCount()*GetNumberOfFormattedSides(0);
 	}
 
-	bool CImage::IsTrackHealthy(TCylinder cyl,THead head){
+	TSector CImage::GetCountOfHealthySectors(TCylinder cyl,THead head) const{
+		// returns the number of Sectors whose data are healthy
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		// - if Track is empty, assuming the Track surface is damaged, so the Track is NOT healthy
+		TSectorId bufferId[(BYTE)-1]; WORD bufferLength[(BYTE)-1];
+		const TSector nSectors=ScanTrack(cyl,head,bufferId,bufferLength);
+		if (!nSectors)
+			return 0;
+		// - counting the number of healthy Sectors
+		TSector nHealthySectors=0;
+		for( TSector s=0; s<nSectors; s++ ){
+			const TPhysicalAddress chs={ cyl, head, bufferId[s] };
+			WORD w; TFdcStatus st;
+			nHealthySectors+=	const_cast<PImage>(this)->GetSectorData(chs,s,false,&w,&st)!=nullptr
+								&&
+								st.IsWithoutError();
+		}
+		return nHealthySectors;
+	}
+
+	bool CImage::IsTrackHealthy(TCylinder cyl,THead head) const{
 		// True <=> specified Track is not empty and contains only well readable Sectors, otherwise False
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		LOG_ACTION(_T("bool CImage::IsTrackHealthy"));
@@ -545,16 +565,7 @@
 		if (!nSectors)
 			return LOG_BOOL(false);
 		// - if any of the Sectors cannot be read without error, the Track is NOT healthy
-		for( TSector s=0; s<nSectors; s++ ){
-			const TPhysicalAddress chs={ cyl, head, bufferId[s] };
-			WORD w; TFdcStatus st;
-			if (!GetSectorData(chs,s,false,&w,&st))
-				return LOG_BOOL(false);
-			if (!st.IsWithoutError())
-				return LOG_BOOL(false);
-		}
-		// - the Track is healthy
-		return true;
+		return	LOG_BOOL( GetCountOfHealthySectors(cyl,head)==nSectors );
 	}
 
 	TLogTime CImage::EstimateNanosecondsPerOneByte() const{

@@ -553,20 +553,26 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 		// - enumerating possible floppy Types and attempting to recognize some Sectors
 		CTrackReaderWriter trw=*pit;
 		delete pit;
+		WORD nHealthySectorsMax=0; // arbitering the MediumType by the # of healthy Sectors
+		TMedium::TType bestMediumType=TMedium::UNKNOWN;
 		for( DWORD type=1; type!=0; type<<=1 )
 			if (type&TMedium::FLOPPY_ANY){
 				trw.SetMediumType( rOutMediumType=(TMedium::TType)type );
 				if ( pit=CInternalTrack::CreateFrom( *this, trw ) ){
-					const TSector nSectors=pit->nSectors;
+					std::swap( internalTracks[cyl][0], pit );
+						const TSector nHealthySectors=GetCountOfHealthySectors(cyl,0);
+					std::swap( internalTracks[cyl][0], pit );
 					delete pit;
-					if (nSectors>0)
-						return ERROR_SUCCESS;
+					if (nHealthySectors>nHealthySectorsMax)
+						nHealthySectorsMax=nHealthySectors, bestMediumType=rOutMediumType;
 				}
 			}
-		// - no Sectors recognized, thus Medium not recognized
-		rOutMediumType=TMedium::UNKNOWN;
+		// - Medium (possibly) recognized
+		rOutMediumType=bestMediumType; // may be TMedium::UNKNOWN
 		return ERROR_SUCCESS;
 	}
+
+	#define SCANNED_CYLINDERS	3
 
 	TStdWinError CCapsBase::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
@@ -577,13 +583,23 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (pFormat->mediumType==TMedium::UNKNOWN){
 			// no particular Medium specified - enumerating all supported floppy Types
+			WORD nHealthySectorsMax=0; // arbitering the MediumType by the # of healthy Sectors
+			TMedium::TType bestMediumType=TMedium::UNKNOWN;
 			TFormat tmp=*pFormat;
 			for( DWORD type=1; type!=0; type<<=1 )
 				if (type&TMedium::FLOPPY_ANY){
+					WORD nHealthySectorsCurr=0;
 					tmp.mediumType=(TMedium::TType)type;
-					if (ERROR_SUCCESS==SetMediumTypeAndGeometry( &tmp, sideMap, firstSectorNumber ))
-						return ERROR_SUCCESS;
+					SetMediumTypeAndGeometry( &tmp, sideMap, firstSectorNumber );
+					for( TCylinder cyl=0; cyl<SCANNED_CYLINDERS; cyl++ ) // counting the # of healthy Sectors
+						for( THead head=2; head>0; nHealthySectorsCurr+=GetCountOfHealthySectors(cyl,--head) );
+					if (nHealthySectorsCurr>nHealthySectorsMax)
+						nHealthySectorsMax=nHealthySectorsCurr, bestMediumType=tmp.mediumType;
 				}
+			if (nHealthySectorsMax>0){
+				tmp.mediumType=bestMediumType;
+				return SetMediumTypeAndGeometry( &tmp, sideMap, firstSectorNumber );
+			}
 		}else{
 			// a particular Medium specified
 			// . base
@@ -601,7 +617,7 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 							rit=CInternalTrack::CreateFrom( *this, trw );
 						}
 			// . seeing if some Sectors can be recognized in any of Tracks
-			for( TCylinder cyl=0; cyl<3; cyl++ ) // examining just first N Cylinders
+			for( TCylinder cyl=0; cyl<SCANNED_CYLINDERS; cyl++ ) // examining just first N Cylinders
 				for( THead head=2; head>0; )
 					if (ScanTrack(cyl,--head)!=0){
 						if (!IsTrackHealthy(cyl,head)){ // if Track read with errors ...
