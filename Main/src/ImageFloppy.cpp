@@ -49,8 +49,8 @@
 		if (!IsValidSectorLengthCode(sectorLengthCode))
 			return 0; // e.g. only copy-protection marks
 		const WORD officialLength=GetOfficialSectorLength(sectorLengthCode);
-		if ((floppyType&TMedium::FLOPPY_ANY_DD)!=0 || floppyType==TMedium::UNKNOWN) // Unknown = if FloppyType not set (e.g. if DOS Unknown), the floppy is by default considered as a one with the lowest capacity
-			return std::min<>( (WORD)6144, officialLength );
+		if ((floppyType&TMedium::FLOPPY_DD_ANY)!=0 || floppyType==TMedium::UNKNOWN) // Unknown = if FloppyType not set (e.g. if DOS Unknown), the floppy is by default considered as a one with the lowest capacity
+			return std::min( (WORD)6144, officialLength );
 		else
 			return officialLength;
 	}
@@ -58,9 +58,10 @@
 	TFormat::TLengthCode CFloppyImage::GetMaximumSectorLengthCode() const{
 		// returns the maximum LengthCode given the actual FloppyType
 		switch (floppyType){
-			case TMedium::FLOPPY_DD_350:
+			case TMedium::FLOPPY_DD:
 			case TMedium::FLOPPY_DD_525:
 				return TFormat::LENGTHCODE_4096;
+			case TMedium::FLOPPY_HD_525:
 			case TMedium::FLOPPY_HD_350:
 				return TFormat::LENGTHCODE_8192;
 			default:
@@ -359,10 +360,12 @@
 		// estimates and returns the number of Nanoseconds that represent a single Byte on the Medium
 		switch (floppyType){
 			case TMedium::FLOPPY_HD_350:
+			case TMedium::FLOPPY_HD_525:
 				return FDD_NANOSECONDS_PER_DD_BYTE/2;
-			case TMedium::FLOPPY_DD_350:
-			case TMedium::FLOPPY_DD_525:
+			case TMedium::FLOPPY_DD:
 				return FDD_NANOSECONDS_PER_DD_BYTE;
+			case TMedium::FLOPPY_DD_525:
+				return FDD_NANOSECONDS_PER_DD_BYTE*5/6;
 			default:
 				return __super::EstimateNanosecondsPerOneByte();
 		}

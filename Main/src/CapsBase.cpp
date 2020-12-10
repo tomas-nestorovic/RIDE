@@ -191,17 +191,17 @@
 		for( UDWORD rev=0; rev<cti.trackcnt; rev++ )
 			nBitsTotally += nBitsPerTrack[rev] = CBitReader(cti,rev,lockFlags).Count;
 		CTrackReaderWriter trw( nBitsTotally, CTrackReader::FDD_KEIR_FRASIER_MODIFIED ); // pessimistic estimation of # of fluxes
-			if (*nBitsPerTrack>TIME_MILLI(200)/(2*CTrackReader::TProfile::HD_350.iwTimeDefault)*110/100) // "2*" = MFM encoding
-				// likely a 3.5" HD medium (10% tollerance)
+			if (*nBitsPerTrack>TIME_MILLI(200)/(2*CTrackReader::TProfile::HD.iwTimeDefault)*110/100) // "2*" = MFM encoding
+				// likely an HD medium (10% tollerance)
 				trw.SetMediumType( TMedium::FLOPPY_HD_350 );
-			else if (*nBitsPerTrack>TIME_MILLI(200)/(2*CTrackReader::TProfile::DD_350.iwTimeDefault)*110/100) // "2*" = MFM encoding
-				// likely a 3.5" DD medium (10% tollerance)
-				trw.SetMediumType( TMedium::FLOPPY_DD_350 );
-			else if (*nBitsPerTrack>TIME_MILLI(200)/(2*CTrackReader::TProfile::DD_525.iwTimeDefault)*110/100) // "2*" = MFM encoding
-				// likely a 5.25" DD medium (10% tollerance)
-				trw.SetMediumType( TMedium::FLOPPY_DD_350 );
+			else if (*nBitsPerTrack>TIME_MILLI(200)/(2*CTrackReader::TProfile::DD.iwTimeDefault)*110/100) // "2*" = MFM encoding
+				// likely a 3.5" DD or 5.25" medium in 300 RPM drive (10% tollerance)
+				trw.SetMediumType( TMedium::FLOPPY_DD );
+			else if (*nBitsPerTrack>TIME_SECOND(1)/(6*2*CTrackReader::TProfile::DD_525.iwTimeDefault)*110/100) // "2*" = MFM encoding
+				// likely a 5.25" DD medium in 360 RPM drive (10% tollerance)
+				trw.SetMediumType( TMedium::FLOPPY_DD_525 );
 			else{
-				ASSERT(FALSE); //TODO: 5.25" SD medium
+				ASSERT(FALSE); //TODO: 8" SD medium
 				return nullptr;
 			}
 		trw.AddIndexTime(0);
@@ -474,8 +474,9 @@
 					*bufferLength++=GetUsableSectorLength( ris.id.lengthCode );
 				if (startTimesNanoseconds)
 					switch (floppyType){
-						case TMedium::FLOPPY_DD_350:
 						case TMedium::FLOPPY_DD_525:
+						case TMedium::FLOPPY_DD:
+						case TMedium::FLOPPY_HD_525:
 						case TMedium::FLOPPY_HD_350:
 							*startTimesNanoseconds++=ris.GetAverageIdEndTime(*pit);
 							break;

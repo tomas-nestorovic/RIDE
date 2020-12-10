@@ -594,7 +594,8 @@ errorDuringWriting:			TCHAR buf[80];
 										BYTE nCompatibleMedia;
 										switch (dos->formatBoot.mediumType){
 											case TMedium::FLOPPY_DD_525:
-											case TMedium::FLOPPY_DD_350:
+											case TMedium::FLOPPY_DD:
+											case TMedium::FLOPPY_HD_525:
 											case TMedium::FLOPPY_HD_350:
 												// source Image is a floppy - enabling dumping to any kind of a floppy (motivation: some copy-protection schemes feature misleading information on the kind of floppy; e.g., "Teen Agent" [or "Agent mlicnak"] installation disk #2 and #3 are introduced as 2DD floppies while they really are HD!)
 												nCompatibleMedia=PopulateComboBoxWithCompatibleMedia(

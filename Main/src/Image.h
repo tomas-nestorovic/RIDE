@@ -46,12 +46,15 @@
 	typedef const struct TMedium sealed{
 		enum TType:BYTE{
 			UNKNOWN			=(BYTE)-1,
-			FLOPPY_HD_350	=1,
-			FLOPPY_DD_350	=2,
-			FLOPPY_DD_525	=4,
-			FLOPPY_ANY_DD	=FLOPPY_DD_350|FLOPPY_DD_525,
-			FLOPPY_ANY		=FLOPPY_HD_350|FLOPPY_ANY_DD,
-			HDD_RAW			=8
+			FLOPPY_HD_350	=1, // 3.5" HD
+			FLOPPY_HD_525	=2, // 5.25" HD in 360 RPM drive
+			FLOPPY_HD_ANY	=FLOPPY_HD_350|FLOPPY_HD_525,
+			FLOPPY_DD		=4, // 3.5" DD or 5.25" DD in 300 RPM drive
+			FLOPPY_DD_525	=8, // 5.25" DD in 360 RPM drive
+			FLOPPY_DD_ANY	=FLOPPY_DD|FLOPPY_DD_525,
+			FLOPPY_ANY		=FLOPPY_HD_ANY|FLOPPY_DD_ANY,
+			HDD_RAW			=16,
+			ANY				=HDD_RAW|FLOPPY_ANY
 		};
 		#pragma pack(1)
 		typedef const struct TProperties sealed{
@@ -245,9 +248,9 @@
 			};
 
 			struct TProfile sealed{
-				static const TProfile HD_350;
-				static const TProfile DD_350;
-				static const TProfile DD_525;
+				static const TProfile HD;		// 3.5" HD or 5.25" HD in 360 RPM drive
+				static const TProfile DD;		// 3.5" DD or 5.25" DD in 300 RPM drive
+				static const TProfile DD_525;	// 5.25" DD in 360 RPM drive
 
 				TLogTime iwTimeDefault; // inspection window default size
 				TLogTime iwTime; // inspection window size; a "1" is expected in its centre

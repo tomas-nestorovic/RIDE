@@ -13,7 +13,7 @@
 												Recognize,	// list of recognized device names
 												Instantiate,// instantiation function
 												_T("*.scl"),	// filter
-												TMedium::FLOPPY_ANY_DD, // supported Media
+												TMedium::FLOPPY_DD_ANY, // supported Media
 												TRDOS503_SECTOR_LENGTH_STD,TRDOS503_SECTOR_LENGTH_STD	// Sector supported min and max length
 											};
 
@@ -112,7 +112,7 @@
 				for( POSITION pos=recognition.__getFirstRecognizedDosPosition__(); pos; ){
 					const CDos::PCProperties p=recognition.__getNextRecognizedDos__(pos);
 					if (!::memcmp(p->name,TRDOS_NAME_BASE,sizeof(TRDOS_NAME_BASE)-1)){
-						static const TFormat Fmt={ TMedium::FLOPPY_DD_350, 80,2,TRDOS503_TRACK_SECTORS_COUNT, TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD, 1 };
+						static const TFormat Fmt={ TMedium::FLOPPY_DD, 80,2,TRDOS503_TRACK_SECTORS_COUNT, TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD, 1 };
 						pTrdos.reset( (CTRDOS503 *)p->fnInstantiate(this,&Fmt) );
 						break;
 					}

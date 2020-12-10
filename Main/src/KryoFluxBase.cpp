@@ -81,7 +81,7 @@
 				else
 					switch (mt){
 						case TMedium::FLOPPY_DD_525:
-							SetDlgItemText( ID_MEDIUM, _T("5.25\" DD formatted") );
+							SetDlgItemText( ID_MEDIUM, _T("5.25\" DD formatted, 360 RPM drive") );
 							if (EnableDlgItem( ID_40D80, initialEditing )){
 								const bool doubleTrackStep0=rkfb.params.doubleTrackStep;
 									rkfb.params.doubleTrackStep=false;
@@ -91,12 +91,16 @@
 								rkfb.GetInsertedMediumType(0,mt); // a workaround to make floppy Drive head seek home
 							}
 							break;
-						case TMedium::FLOPPY_DD_350:
-							SetDlgItemText( ID_MEDIUM, _T("3.5\" DD formatted") );
+						case TMedium::FLOPPY_DD:
+							SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" DD formatted, 300 RPM drive") );
 							CheckDlgButton( ID_40D80,  EnableDlgItem( ID_40D80, false )  );
 							break;
+						case TMedium::FLOPPY_HD_525:
+							SetDlgItemText( ID_MEDIUM, _T("5.25\" HD formatted, 360 RPM drive") );
+							CheckDlgButton( ID_40D80, false );
+							EnableDlgItem( ID_40D80, initialEditing );
 						case TMedium::FLOPPY_HD_350:
-							SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" HD formatted") );
+							SetDlgItemText( ID_MEDIUM, _T("3.5\" HD formatted") );
 							CheckDlgButton( ID_40D80, false );
 							EnableDlgItem( ID_40D80, initialEditing );
 							break;

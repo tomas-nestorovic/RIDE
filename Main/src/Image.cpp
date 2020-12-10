@@ -186,8 +186,9 @@
 	LPCTSTR TMedium::GetDescription(TType mediumType){
 		// returns the string description of a given MediumType
 		switch (mediumType){
-			case FLOPPY_DD_525	: return _T("5.25\" 2DD floppy");
-			case FLOPPY_DD_350	: return _T("3.5\" 2DD floppy");
+			case FLOPPY_DD_525	: return _T("5.25\" 2DD floppy, 360 RPM drive");
+			case FLOPPY_DD		: return _T("3.5\"/5.25\" 2DD floppy, 300 RPM drive");
+			case FLOPPY_HD_525	: return _T("5.25\" HD floppy, 360 RPM drive");
 			case FLOPPY_HD_350	: return _T("3.5\" HD floppy");
 			case HDD_RAW	: return _T("Hard disk (without MBR support)");
 			default:
@@ -199,7 +200,8 @@
 		// returns properties of a given MediumType
 		switch (mediumType){
 			case FLOPPY_DD_525:
-			case FLOPPY_DD_350:
+			case FLOPPY_DD:
+			case FLOPPY_HD_525:
 			case FLOPPY_HD_350:{
 				static const TProperties P={{ 1, FDD_CYLINDERS_MAX }, // supported range of Cylinders (min and max)
 											{ 1, 2 },	// supported range of Heads (min and max)

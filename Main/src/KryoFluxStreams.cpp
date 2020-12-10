@@ -114,9 +114,12 @@
 						if (params.normalizeReadTracks)
 							switch (floppyType){
 								case TMedium::FLOPPY_HD_350:
-								case TMedium::FLOPPY_DD_350:
+								case TMedium::FLOPPY_DD:
 								case TMedium::FLOPPY_DD_525:
 									trw.Normalize( TIME_MILLI(200) );
+									break;
+								case TMedium::FLOPPY_HD_525:
+									trw.Normalize( TIME_SECOND(1)/6 );
 									break;
 								default:
 									ASSERT(FALSE);

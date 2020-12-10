@@ -193,7 +193,8 @@
 		// - drawing curly brackets with Track length
 		switch (params.format.mediumType){
 			case TMedium::FLOPPY_DD_525:
-			case TMedium::FLOPPY_DD_350:
+			case TMedium::FLOPPY_DD:
+			case TMedium::FLOPPY_HD_525:
 			case TMedium::FLOPPY_HD_350:{
 				WrapDlgItemsByClosingCurlyBracketWithText( ID_SECTOR, ID_GAP, _T(""), ::GetSysColor(COLOR_3DSHADOW) );
 				const WORD nBytesOnTrack=65 // Gap 1

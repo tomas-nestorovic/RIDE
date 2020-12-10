@@ -108,14 +108,14 @@
 		}
 	}
 
-	const CImage::CTrackReader::TProfile CImage::CTrackReader::TProfile::HD_350={
+	const CImage::CTrackReader::TProfile CImage::CTrackReader::TProfile::HD={
 		TIME_MICRO(1), // iwTimeDefault = 1 second / 500kb = 2 us -> 1 us for MFM encoding
 		TIME_MICRO(1), // iwTime
 		TIME_NANO(930), TIME_NANO(1070), // iwTimeMin, iwTimeMax
 		30 // adjustmentPercentMax
 	};
 
-	const CImage::CTrackReader::TProfile CImage::CTrackReader::TProfile::DD_350={
+	const CImage::CTrackReader::TProfile CImage::CTrackReader::TProfile::DD={
 		TIME_MICRO(2), // iwTimeDefault = 1 second / 250kb = 4 us -> 2 us for MFM encoding
 		TIME_MICRO(2), // iwTime
 		TIME_NANO(1830), TIME_NANO(2170), // iwTimeMin, iwTimeMax
@@ -135,14 +135,15 @@
 			default:
 				ASSERT(FALSE); // we shouldn't end-up here, all Media Types applicable for general Track description should be covered
 				//fallthrough
-			case TMedium::FLOPPY_DD_350:
-				profile=TProfile::DD_350;
+			case TMedium::FLOPPY_DD:
+				profile=TProfile::DD;
 				break;
 			case TMedium::FLOPPY_DD_525:
 				profile=TProfile::DD_525;
 				break;
 			case TMedium::FLOPPY_HD_350:
-				profile=TProfile::HD_350;
+			case TMedium::FLOPPY_HD_525:
+				profile=TProfile::HD;
 				break;
 		}
 	}
@@ -551,7 +552,7 @@
 
 	CImage::CTrackReaderWriter::CTrackReaderWriter(DWORD nLogTimesMax,TDecoderMethod method)
 		// ctor
-		: CTrackReader( (PLogTime)::calloc(nLogTimesMax+1,sizeof(TLogTime)), 0, nullptr, 0, TMedium::FLOPPY_DD_350, TCodec::MFM, method ) // "+1" = hidden item represents reference counter
+		: CTrackReader( (PLogTime)::calloc(nLogTimesMax+1,sizeof(TLogTime)), 0, nullptr, 0, TMedium::FLOPPY_DD, TCodec::MFM, method ) // "+1" = hidden item represents reference counter
 		, nLogTimesMax(nLogTimesMax) {
 	}
 
