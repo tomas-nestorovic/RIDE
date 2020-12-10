@@ -385,6 +385,7 @@
 
 			void AddTimes(PCLogTime logTimes,DWORD nLogTimes);
 			//bool WriteBits(PLogTime fluxes,DWORD nFluxes);
+			bool Normalize();
 			void Normalize(TLogTime correctIndexDistance);
 		};
 

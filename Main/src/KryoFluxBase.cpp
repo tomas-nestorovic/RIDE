@@ -229,6 +229,23 @@
 		return ERROR_NOT_SUPPORTED;
 	}
 
+	TStdWinError CKryoFluxBase::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){
+		// sets the given MediumType and its geometry; returns Windows standard i/o error
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		// - "re-normalizing" already read Tracks according to the new Medium
+		if (params.normalizeReadTracks)
+			if (pFormat->mediumType!=TMedium::UNKNOWN) // a particular Medium specified ...
+				if (floppyType!=pFormat->mediumType) // ... and it's different
+					for( TCylinder cyl=0; cyl<FDD_CYLINDERS_MAX; cyl++ )
+						for( THead head=0; head<2; head++ )
+							if (auto pit=internalTracks[cyl][head]){
+								pit->SetMediumType(pFormat->mediumType);
+								pit->Normalize();
+							}
+		// - base
+		return __super::SetMediumTypeAndGeometry( pFormat, sideMap, firstSectorNumber );
+	}
+
 	TStdWinError CKryoFluxBase::FormatTrack(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte){
 		// formats given Track {Cylinder,Head} to the requested NumberOfSectors, each with corresponding Length and FillerByte as initial content; returns Windows standard i/o error
 		return ERROR_NOT_SUPPORTED;

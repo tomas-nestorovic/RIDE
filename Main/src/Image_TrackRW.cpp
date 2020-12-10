@@ -581,6 +581,23 @@
 		}
 	}
 
+	bool CImage::CTrackReaderWriter::Normalize(){
+		// True <=> asked and successfully normalized for a known MediumType, otherwise False
+		switch (mediumType){
+			case TMedium::FLOPPY_HD_350:
+			case TMedium::FLOPPY_DD:
+			case TMedium::FLOPPY_DD_525: // 5.25" DD floppy should be used with 300 RPM drive!
+				Normalize( TIME_MILLI(200) );
+				return true;
+			case TMedium::FLOPPY_HD_525:
+				Normalize( TIME_SECOND(1)/6 );
+				return true;
+			default:
+				ASSERT(FALSE);
+				return false;
+		}
+	}
+
 	void CImage::CTrackReaderWriter::Normalize(TLogTime correctIndexDistance){
 		// places neighboring Indices exactly specified Distance away, interpolating the Track timing in between
 		// - in-place interpolation
