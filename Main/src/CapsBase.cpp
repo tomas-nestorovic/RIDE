@@ -476,18 +476,12 @@
 				if (bufferLength)
 					*bufferLength++=GetUsableSectorLength( ris.id.lengthCode );
 				if (startTimesNanoseconds)
-					switch (floppyType){
-						case TMedium::FLOPPY_DD_525:
-						case TMedium::FLOPPY_DD:
-						case TMedium::FLOPPY_HD_525:
-						case TMedium::FLOPPY_HD_350:
-							*startTimesNanoseconds++=ris.GetAverageIdEndTime(*pit);
-							break;
-						default:
-							ASSERT(FALSE); // we shouldn't end up here - all Media Types should be covered!
-							*startTimesNanoseconds++=-1;
-							break;
-
+					if (floppyType&TMedium::FLOPPY_ANY)
+						*startTimesNanoseconds++=ris.GetAverageIdEndTime(*pit);
+					else{
+						ASSERT(FALSE); // we shouldn't end up here - all floppy Types should be covered!
+						*startTimesNanoseconds++=-1;
+						break;
 					}
 			}
 			if (pAvgGap3)

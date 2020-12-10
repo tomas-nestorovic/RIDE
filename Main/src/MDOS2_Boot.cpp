@@ -333,7 +333,7 @@
 					break;
 				case IDYES:
 					boot->current.diskFlags.driveD40=false;
-					MDOS2->formatBoot.mediumType=TMedium::FLOPPY_DD_350;
+					MDOS2->formatBoot.mediumType=TMedium::FLOPPY_DD;
 					IMAGE->MarkSectorAsDirty(CHS);
 					vp.fReport.CloseProblem(true);
 					break;

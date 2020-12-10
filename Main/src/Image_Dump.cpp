@@ -592,27 +592,20 @@ errorDuringWriting:			TCHAR buf[80];
 									// : adjusting interactivity
 										// > populating ComboBox with Media supported by both DOS and Image
 										BYTE nCompatibleMedia;
-										switch (dos->formatBoot.mediumType){
-											case TMedium::FLOPPY_DD_525:
-											case TMedium::FLOPPY_DD:
-											case TMedium::FLOPPY_HD_525:
-											case TMedium::FLOPPY_HD_350:
-												// source Image is a floppy - enabling dumping to any kind of a floppy (motivation: some copy-protection schemes feature misleading information on the kind of floppy; e.g., "Teen Agent" [or "Agent mlicnak"] installation disk #2 and #3 are introduced as 2DD floppies while they really are HD!)
-												nCompatibleMedia=PopulateComboBoxWithCompatibleMedia(
-													GetDlgItemHwnd(ID_MEDIUM),
-													dos->properties->supportedMedia&TMedium::FLOPPY_ANY,
-													targetImageProperties
-												);
-												break;
-											default:
-												// source Image is a hard-disk
-												nCompatibleMedia=PopulateComboBoxWithCompatibleMedia(
-													GetDlgItemHwnd(ID_MEDIUM),
-													dos->formatBoot.mediumType,
-													targetImageProperties
-												);
-												break;
-										}
+										if (dos->formatBoot.mediumType&TMedium::FLOPPY_ANY)
+											// source Image is a floppy - enabling dumping to any kind of a floppy (motivation: some copy-protection schemes feature misleading information on the kind of floppy; e.g., "Teen Agent" [or "Agent mlicnak"] installation disk #2 and #3 are introduced as 2DD floppies while they really are HD!)
+											nCompatibleMedia=PopulateComboBoxWithCompatibleMedia(
+												GetDlgItemHwnd(ID_MEDIUM),
+												dos->properties->supportedMedia&TMedium::FLOPPY_ANY,
+												targetImageProperties
+											);
+										else
+											// source Image is a hard-disk
+											nCompatibleMedia=PopulateComboBoxWithCompatibleMedia(
+												GetDlgItemHwnd(ID_MEDIUM),
+												dos->formatBoot.mediumType,
+												targetImageProperties
+											);
 										// > enabling/disabling controls
 										static const WORD Controls[]={ ID_CYLINDER, ID_CYLINDER_N, ID_HEAD, ID_GAP, ID_NUMBER, ID_DEFAULT1, IDOK, 0 };
 										EnableDlgItems( Controls, nCompatibleMedia>0 );

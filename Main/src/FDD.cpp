@@ -1253,20 +1253,16 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 			return LOG_ERROR(err);
 		// - setting the transfer speed according to current FloppyType (DD/HD)
 		__freeInternalTracks__();
-		switch (floppyType){ // set in base method to "pFormat->mediumType"
-			case TMedium::FLOPPY_DD_525:
-			case TMedium::FLOPPY_DD:
-			case TMedium::FLOPPY_HD_525:
-			case TMedium::FLOPPY_HD_350:
-				// determining if corresponding FloppyType is inserted
-				return __setDataTransferSpeed__(floppyType);
-			default:
-				// automatically recognizing the Type of inserted floppy
-				if (__setAndEvaluateDataTransferSpeed__( floppyType=TMedium::FLOPPY_DD_525 )==ERROR_SUCCESS) return ERROR_SUCCESS;
-				if (__setAndEvaluateDataTransferSpeed__( floppyType=TMedium::FLOPPY_DD	   )==ERROR_SUCCESS) return ERROR_SUCCESS;
-				if (__setAndEvaluateDataTransferSpeed__( floppyType=TMedium::FLOPPY_HD_525 )==ERROR_SUCCESS) return ERROR_SUCCESS;
-				if (__setAndEvaluateDataTransferSpeed__( floppyType=TMedium::FLOPPY_HD_350 )==ERROR_SUCCESS) return ERROR_SUCCESS;
-				return LOG_ERROR(ERROR_BAD_COMMAND);
+		if (floppyType&TMedium::FLOPPY_ANY) // set in base method to "pFormat->mediumType"
+			// determining if corresponding FloppyType is inserted
+			return __setDataTransferSpeed__(floppyType);
+		else{
+			// automatically recognizing the Type of inserted floppy
+			if (__setAndEvaluateDataTransferSpeed__( floppyType=TMedium::FLOPPY_DD_525 )==ERROR_SUCCESS) return ERROR_SUCCESS;
+			if (__setAndEvaluateDataTransferSpeed__( floppyType=TMedium::FLOPPY_DD	   )==ERROR_SUCCESS) return ERROR_SUCCESS;
+			if (__setAndEvaluateDataTransferSpeed__( floppyType=TMedium::FLOPPY_HD_525 )==ERROR_SUCCESS) return ERROR_SUCCESS;
+			if (__setAndEvaluateDataTransferSpeed__( floppyType=TMedium::FLOPPY_HD_350 )==ERROR_SUCCESS) return ERROR_SUCCESS;
+			return LOG_ERROR(ERROR_BAD_COMMAND);
 		}
 	}
 
