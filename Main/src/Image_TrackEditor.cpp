@@ -563,6 +563,14 @@
 					PaintCursorFeaturesInverted(cfs0);
 				painter.params.locker.Unlock();
 			}
+
+			void ShowAllFeatures(){
+				painter.params.locker.Lock();
+					PaintCursorFeaturesInverted(false);
+						cursorFeatures=-1;
+					Invalidate();
+				painter.params.locker.Unlock();
+			}
 		} timeEditor;
 
 		#define AUTOSCROLL_HALF	64
@@ -727,6 +735,8 @@
 							return TRUE;
 						case ID_SYSTEM:
 							pCmdUi->SetCheck( timeEditor.IsFeatureShown(TCursorFeatures::STRUCT) );
+							//fallthrough
+						case ID_TRACK:
 							return TRUE;
 						case ID_PREV:
 							pCmdUi->Enable( tr.GetIndexCount()>0 && timeEditor.GetCenterTime()>tr.GetIndexTime(0) );
@@ -789,6 +799,14 @@
 							timeEditor.ToggleFeature(TCursorFeatures::STRUCT);
 							timeEditor.Invalidate();
 							return TRUE;
+						case ID_TRACK:{
+							CBackgroundMultiActionCancelable bmac(THREAD_PRIORITY_LOWEST);
+								bmac.AddAction( CreateInspectionWindowList_thread, this, _T("Inspection") );
+								bmac.AddAction( CreateParseEventsList_thread, this, _T("Structure") );
+							if (bmac.Perform()==ERROR_SUCCESS)
+								timeEditor.ShowAllFeatures();
+							return TRUE;
+						}
 						case ID_PREV:{
 							BYTE i=0;
 							for( const TLogTime tCenter=timeEditor.GetCenterTime(); i<tr.GetIndexCount()&&tCenter>tr.GetIndexTime(i); i++ );

@@ -166,6 +166,7 @@ BEGIN
     VK_NEXT,        ID_NEXT,                VIRTKEY, CONTROL, NOINVERT
     VK_PRIOR,       ID_PREV,                VIRTKEY, CONTROL, NOINVERT
     VK_RIGHT,       ID_FILE_SHIFT_UP,       VIRTKEY, CONTROL, NOINVERT
+    "W",            ID_TRACK,               VIRTKEY, CONTROL, NOINVERT
 END
 
 
@@ -677,6 +678,7 @@ BEGIN
         MENUITEM "Show time spacing",           ID_GAP
         MENUITEM "Show inspection",             ID_RECOGNIZE
         MENUITEM "Show structure",              ID_SYSTEM
+        MENUITEM "(Show all)\tCtrl+W",          ID_TRACK
         MENUITEM SEPARATOR
         MENUITEM "Close\tEsc",                  IDCANCEL
     END
