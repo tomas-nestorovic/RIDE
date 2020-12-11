@@ -483,7 +483,7 @@
 	}
 
 	bool CKryoFluxDevice::SeekTo(TCylinder cyl) const{
-		return	SendRequest( TRequest::TRACK, cyl )==ERROR_SUCCESS;
+		return	SendRequest( TRequest::TRACK, cyl<<(BYTE)params.doubleTrackStep )==ERROR_SUCCESS;
 	}
 
 	inline
