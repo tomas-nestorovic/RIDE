@@ -129,6 +129,7 @@
 	#define CYLINDER_COUNT_MIN	1
 	#define CYLINDER_COUNT_MAX	FDD_CYLINDERS_MAX
 
+	// 5.25" drives are likely 360 rpm ones in PC
 	#define DS80_CAPTION	_T("3.5\" DS 80 cylinders")
 	#define DS40_CAPTION	_T("5.25\" DS 40 cylinders, 360 rpm")
 	#define SS80_CAPTION	_T("3.5\" SS 80 cylinders")
@@ -140,6 +141,7 @@
 
 	#define TRDOS_SECTOR_GAP3	32 /* smaller than regular IBM norm-compliant Gap to make sure all 16 Sectors fit in a Track */
 
+	// 5.25" drives are likely 360 rpm ones in PC
 	const CFormatDialog::TStdFormat CTRDOS503::StdFormats[]={ // zeroth position must always be occupied by the biggest capacity
 		{ DS80_CAPTION, 0, {TMedium::FLOPPY_DD,    79,2,TRDOS503_TRACK_SECTORS_COUNT,TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD,1}, 1, 0, TRDOS_SECTOR_GAP3, 0, 128 },
 		{ DS40_CAPTION, 0, {TMedium::FLOPPY_DD_525,39,2,TRDOS503_TRACK_SECTORS_COUNT,TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD,1}, 1, 0, TRDOS_SECTOR_GAP3, 0, 128 },
