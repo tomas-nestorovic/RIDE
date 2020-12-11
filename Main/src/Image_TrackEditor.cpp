@@ -17,13 +17,13 @@
 		const CImage::CTrackReader &tr;
 		const LPCTSTR caption;
 		CMainWindow::CDynMenu menu;
-		PLogTime iwEndTimes;
 		HANDLE hAutoscrollTimer;
 
 		enum TCursorFeatures:BYTE{
 			TIME	=1,
 			SPACING	=2,
-			STRUCT	=4,
+			INSPECT	=4,
+			STRUCT	=8,
 			DEFAULT	= TIME//|SPACING
 		};
 		
@@ -52,6 +52,7 @@
 					const PCBackgroundAction pAction=(PCBackgroundAction)_pBackgroundAction;
 					const CTimeEditor &te=*(CTimeEditor *)pAction->GetParams();
 					const TTrackPainter &p=te.painter;
+					const CBrush iwBrushDarker(0xE4E4B3), iwBrushLighter(0xECECCE);
 					const Utils::CRidePen penIndex( 2, 0xff0000 );
 					const Utils::CRideBrush parseEventBrushes[TParseEvent::LAST]={
 						TParseEvent::TypeColors[0],
@@ -80,11 +81,10 @@
 						::SetBkMode( dc, TRANSPARENT );
 						// . drawing inspection windows (if any)
 						bool continuePainting=true;
-						if (te.iwEndTimes){
+						if (te.IsFeatureShown(TCursorFeatures::INSPECT)){
 							// : determining the first visible inspection window
 							int L=te.GetInspectionWindow(timeA);
 							// : drawing visible inspection windows (avoiding the GDI coordinate limitations by moving the viewport origin)
-							const CBrush brushDarker(0xE4E4B3), brushLighter(0xECECCE);
 							TLogTime tA=te.iwEndTimes[L], tZ;
 							RECT rc={ 0, 1, 0, IW_HEIGHT };
 							POINT org;
@@ -95,7 +95,7 @@
 									rc.right=te.timeline.GetUnitCount( tZ=te.iwEndTimes[++L] )-nUnitsA;
 									p.params.locker.Lock();
 										if ( continuePainting=p.params.id==id )
-											::FillRect( dc, &rc, L&1?brushLighter:brushDarker );
+											::FillRect( dc, &rc, L&1?iwBrushLighter:iwBrushDarker );
 									p.params.locker.Unlock();
 									tA=tZ, rc.left=rc.right;
 								}
@@ -104,7 +104,8 @@
 								continue;
 						}
 						// . drawing ParseEvents
-						if (PCParseEvent pe=te.GetParseEvents()){
+						if (te.IsFeatureShown(TCursorFeatures::STRUCT)){
+							PCParseEvent pe=te.GetParseEvents();
 							const Utils::CRideFont &font=Utils::CRideFont::Std;
 							const auto dcSettings0=::SaveDC(dc);
 								POINT org;
@@ -227,7 +228,7 @@
 
 			void PaintCursorFeaturesInverted(bool show){
 				// paints CursorTime by inverting pixels; painting twice the same CursorTime shows nothing
-				if ((show^cursorFeaturesShown)!=0 && (cursorFeatures!=0||iwEndTimes!=nullptr)){
+				if ((show^cursorFeaturesShown)!=0 && cursorFeatures!=0){
 					CClientDC dc(this);
 					PrepareDC(&dc);
 					::SetROP2( dc, R2_NOT );
@@ -243,9 +244,10 @@
 							if (IsFeatureShown(TCursorFeatures::TIME)){
 								::MoveToEx( dc, x, -500, nullptr );
 								::LineTo( dc, x, 500 );
-								const SIZE sz=font.GetTextSize( label, timeline.TimeToReadableString(cursorTime,label) );
+								const int nLabelChars=timeline.TimeToReadableString(cursorTime,label);
+								const SIZE sz=font.GetTextSize( label, nLabelChars );
 								const HGDIOBJ hBmp0=::SelectObject( dcMem, ::CreateCompatibleBitmap(dc,sz.cx,sz.cy) );
-									::TextOut( dcMem, 0,0, label,sizeof(label)/sizeof(TCHAR) );
+									::TextOut( dcMem, 0,0, label,nLabelChars );
 									::BitBlt( dc, x+2,-80, sz.cx,sz.cy, dcMem, 0,0, SRCINVERT );
 								::DeleteObject( ::SelectObject(dcMem,hBmp0) );
 							}
@@ -255,9 +257,10 @@
 								tr.TruncateCurrentTime();
 								const TLogTime a=tr.GetCurrentTime(), z=tr.ReadTime();
 								const int xa=timeline.GetUnitCount(a), xz=timeline.GetUnitCount(z);
-								const SIZE sz=font.GetTextSize( label, timeline.TimeToReadableString(z-a,label) );
+								const int nLabelChars=timeline.TimeToReadableString(z-a,label);
+								const SIZE sz=font.GetTextSize( label, nLabelChars );
 								const HGDIOBJ hBmp0=::SelectObject( dcMem, ::CreateCompatibleBitmap(dc,sz.cx,sz.cy) );
-									::TextOut( dcMem, 0,0, label,sizeof(label)/sizeof(TCHAR) );
+									::TextOut( dcMem, 0,0, label,nLabelChars );
 									::BitBlt( dc, (xz+xa-sz.cx)/2,SPACING_HEIGHT+LINE_EXTENSION/2, sz.cx,sz.cy, dcMem, 0,0, SRCINVERT );
 								::DeleteObject( ::SelectObject(dcMem,hBmp0) );
 								::MoveToEx( dc, xa, TIME_HEIGHT, nullptr );
@@ -268,13 +271,14 @@
 								::LineTo( dc, xz+LINE_EXTENSION, SPACING_HEIGHT );
 							}
 							// . painting inspection window size at current position
-							if (iwEndTimes!=nullptr && cursorTime<timeline.logTimeLength){
+							if (IsFeatureShown(TCursorFeatures::INSPECT) && cursorTime<timeline.logTimeLength){
 								const int i=GetInspectionWindow(cursorTime);
 								const TLogTime a=iwEndTimes[i], z=iwEndTimes[i+1];
 								const int xa=timeline.GetUnitCount(a), xz=timeline.GetUnitCount(z);
-								const SIZE sz=font.GetTextSize( label, timeline.TimeToReadableString(z-a,label) );
+								const int nLabelChars=timeline.TimeToReadableString(z-a,label);
+								const SIZE sz=font.GetTextSize( label, nLabelChars );
 								const HGDIOBJ hBmp0=::SelectObject( dcMem, ::CreateCompatibleBitmap(dc,sz.cx,sz.cy) );
-									::TextOut( dcMem, 0,0, label,sizeof(label)/sizeof(TCHAR) );
+									::TextOut( dcMem, 0,0, label,nLabelChars );
 									::BitBlt( dc, (xz+xa-sz.cx)/2,IW_TIME_HEIGHT+LINE_EXTENSION/2, sz.cx,sz.cy, dcMem, 0,0, SRCINVERT );
 								::DeleteObject( ::SelectObject(dcMem,hBmp0) );
 								::MoveToEx( dc, xa, IW_HEIGHT, nullptr );
@@ -453,6 +457,14 @@
 				, cursorTime(-1) , cursorFeaturesShown(false) , cursorFeatures(TCursorFeatures::DEFAULT)
 				, scrollTime(0) , iwEndTimes(nullptr) , parseEvents(nullptr) {
 			}
+			
+			~CTimeEditor(){
+				// dtor
+				if (parseEvents)
+					::free((PVOID)parseEvents);
+				if (iwEndTimes)
+					::free((PVOID)iwEndTimes);
+			}
 
 			void OnInitialUpdate() override{
 				// called after window creation
@@ -522,8 +534,8 @@
 			}
 
 			inline void SetInspectionWindowEndTimes(PCLogTime iwEndTimes){
-				this->iwEndTimes=iwEndTimes;
-				Invalidate();
+				ASSERT( this->iwEndTimes==nullptr ); // can set only once
+				this->iwEndTimes=iwEndTimes; // now responsible for disposing!
 			}
 
 			inline CImage::CTrackReader::PCParseEvent GetParseEvents() const{
@@ -541,13 +553,15 @@
 			}
 
 			void ToggleFeature(TCursorFeatures cf){
-				const bool cfs0=cursorFeaturesShown;
-				PaintCursorFeaturesInverted(false);
-					if (IsFeatureShown(cf))
-						cursorFeatures&=~cf;
-					else
-						cursorFeatures|=cf;
-				PaintCursorFeaturesInverted(cfs0);
+				painter.params.locker.Lock();
+					const bool cfs0=cursorFeaturesShown;
+					PaintCursorFeaturesInverted(false);
+						if (IsFeatureShown(cf))
+							cursorFeatures&=~cf;
+						else
+							cursorFeatures|=cf;
+					PaintCursorFeaturesInverted(cfs0);
+				painter.params.locker.Unlock();
 			}
 		} timeEditor;
 
@@ -635,22 +649,28 @@
 			// thread to create list of inspection windows used to recognize data in the Track
 			const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
 			CTrackEditor &rte=*(CTrackEditor *)pAction->GetParams();
+			if (rte.timeEditor.GetInspectionWindowEndTimes()!=nullptr){ // already set?
+				pAction->UpdateProgressFinished();
+				return ERROR_SUCCESS;
+			}
 			CImage::CTrackReader tr=rte.tr;
 			tr.SetCurrentTime(0);
 			tr.profile.Reset();
 			const auto nIwsMax=tr.GetTotalTime()/tr.profile.iwTimeMin+2;
-			if (rte.iwEndTimes=(PLogTime)::calloc( sizeof(TLogTime), nIwsMax )){
-				PLogTime t=rte.iwEndTimes;
+			if (const PLogTime iwEndTimes=(PLogTime)::calloc( sizeof(TLogTime), nIwsMax )){
+				PLogTime t=iwEndTimes;
 				*t++=0; // beginning of the very first inspection window
 				for( pAction->SetProgressTarget(tr.GetTotalTime()); tr; pAction->UpdateProgress(*t++=tr.GetCurrentTime()) )
 					if (pAction->IsCancelled()){
-						::free(rte.iwEndTimes), rte.iwEndTimes=nullptr;
+						::free(iwEndTimes);
 						return ERROR_CANCELLED;
 					}else
 						tr.ReadBit();
-				for( const PLogTime last=rte.iwEndTimes+nIwsMax; t<last; )
+				for( const PLogTime last=iwEndTimes+nIwsMax; t<last; )
 					*t++=INT_MAX; // flooding unused part of the buffer with sensible Times
-				return pAction->TerminateWithError(ERROR_SUCCESS);
+				rte.timeEditor.SetInspectionWindowEndTimes(iwEndTimes);
+				pAction->UpdateProgressFinished();
+				return ERROR_SUCCESS;
 			}else
 				return pAction->TerminateWithError(ERROR_NOT_ENOUGH_MEMORY);
 		}
@@ -659,6 +679,10 @@
 			// thread to create list of inspection windows used to recognize data in the Track
 			const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
 			CTrackEditor &rte=*(CTrackEditor *)pAction->GetParams();
+			if (rte.timeEditor.GetParseEvents()!=nullptr){ // already set?
+				pAction->UpdateProgressFinished();
+				return ERROR_SUCCESS;
+			}
 			CImage::CTrackReader tr=rte.tr;
 			TParseEvent peBuffer[5000], *pe=peBuffer; // capacity should suffice for any Track of any platform
 			BYTE dummy[16384]; // big enough to contain data of Sector of any floppy type
@@ -672,7 +696,8 @@
 				tr.ReadData( idEnds[s], idProfiles[s], CImage::GetOfficialSectorLength(ids[s].lengthCode), dummy, pe );
 			}
 			rte.timeEditor.SetParseEvents(peBuffer);
-			return pAction->TerminateWithError(ERROR_SUCCESS);
+			pAction->UpdateProgressFinished();
+			return ERROR_SUCCESS;
 		}
 
 		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){
@@ -698,7 +723,7 @@
 							pCmdUi->SetCheck( timeEditor.IsFeatureShown(TCursorFeatures::SPACING) );
 							return TRUE;
 						case ID_RECOGNIZE:
-							pCmdUi->SetCheck( timeEditor.GetInspectionWindowEndTimes()!=nullptr );
+							pCmdUi->SetCheck( timeEditor.IsFeatureShown(TCursorFeatures::INSPECT) );
 							return TRUE;
 						case ID_SYSTEM:
 							pCmdUi->SetCheck( timeEditor.IsFeatureShown(TCursorFeatures::STRUCT) );
@@ -749,22 +774,20 @@
 							timeEditor.ToggleFeature(TCursorFeatures::SPACING);
 							return TRUE;
 						case ID_RECOGNIZE:
-							if (timeEditor.GetInspectionWindowEndTimes()!=nullptr)
-								timeEditor.SetInspectionWindowEndTimes(nullptr);
-							else{
-								if (iwEndTimes==nullptr)
-									CBackgroundActionCancelable( CreateInspectionWindowList_thread, this, THREAD_PRIORITY_LOWEST ).Perform();
-								timeEditor.SetInspectionWindowEndTimes(iwEndTimes);
-							}
+							if (!timeEditor.IsFeatureShown(TCursorFeatures::INSPECT)) // currently hidden, so want now show the Feature
+								if (timeEditor.GetInspectionWindowEndTimes()==nullptr) // data to display not yet received
+									if (CBackgroundActionCancelable( CreateInspectionWindowList_thread, this, THREAD_PRIORITY_LOWEST ).Perform()!=ERROR_SUCCESS)
+										return TRUE;
+							timeEditor.ToggleFeature(TCursorFeatures::INSPECT);
+							timeEditor.Invalidate();
 							return TRUE;
 						case ID_SYSTEM:
-							timeEditor.ToggleFeature(TCursorFeatures::STRUCT);
-							if (timeEditor.IsFeatureShown(TCursorFeatures::STRUCT))
-								if (timeEditor.GetParseEvents()==nullptr)
+							if (!timeEditor.IsFeatureShown(TCursorFeatures::STRUCT)) // currently hidden, so want now show the Feature
+								if (timeEditor.GetParseEvents()==nullptr) // data to display not yet received
 									if (CBackgroundActionCancelable( CreateParseEventsList_thread, this, THREAD_PRIORITY_LOWEST ).Perform()!=ERROR_SUCCESS)
-										timeEditor.ToggleFeature(TCursorFeatures::STRUCT);
-									else
-										timeEditor.Invalidate();
+										return TRUE;
+							timeEditor.ToggleFeature(TCursorFeatures::STRUCT);
+							timeEditor.Invalidate();
 							return TRUE;
 						case ID_PREV:{
 							BYTE i=0;
@@ -814,14 +837,7 @@
 			, tr(tr)
 			, caption(caption) , menu( IDR_TRACK_EDITOR )
 			, timeEditor(tr)
-			, iwEndTimes(nullptr)
 			, hAutoscrollTimer(INVALID_HANDLE_VALUE) {
-		}
-
-		~CTrackEditor(){
-			// dtor
-			if (iwEndTimes)
-				::free(iwEndTimes);
 		}
 	};
 

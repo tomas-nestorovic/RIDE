@@ -113,7 +113,8 @@ namespace Utils{
 		// determines and returns the Size of the specified Text using using this font face
 		const CClientDC screen(nullptr);
 		const HGDIOBJ hFont0=::SelectObject( screen, m_hObject );
-			const SIZE result=screen.GetTextExtent( text, textLength );
+			SIZE result=screen.GetTextExtent( text, textLength );
+				result.cx*=LogicalUnitScaleFactor, result.cy*=LogicalUnitScaleFactor;
 		::SelectObject( screen, hFont0 );
 		return result;
 	}
@@ -479,7 +480,7 @@ namespace Utils{
 				::MoveToEx( dc, x,0, nullptr );
 				::LineTo( dc, x,-7 );
 				::TextOut(	dc,
-							x, -7-font.charHeight/Utils::LogicalUnitScaleFactor,
+							x, -7-font.charHeight,
 							label,  ::wsprintf( label, _T("%d %cs"), t/k, TimePrefixes[unitPrefix] )
 						);
 			}
