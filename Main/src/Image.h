@@ -288,6 +288,7 @@
 				TParseEvent(TType type,TLogTime tStart,TLogTime tEnd,DWORD data);
 
 				inline bool IsEmpty() const{ return type==EMPTY; }
+				inline BYTE GetSize() const{ return std::max<BYTE>( type, sizeof(TParseEvent) ); }
 				const TParseEvent *GetNext() const;
 				const TParseEvent *GetLast() const;
 			} *PCParseEvent;

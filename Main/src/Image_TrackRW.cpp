@@ -302,7 +302,7 @@
 
 
 
-	const CImage::CTrackReader::TParseEvent CImage::CTrackReader::TParseEvent::Empty(EMPTY,0,0,0);
+	const CImage::CTrackReader::TParseEvent CImage::CTrackReader::TParseEvent::Empty(EMPTY,INT_MAX,INT_MAX,0);
 
 	const COLORREF CImage::CTrackReader::TParseEvent::TypeColors[LAST]={
 		0,			// None
@@ -330,7 +330,7 @@
 	}
 
 	const CImage::CTrackReader::TParseEvent *CImage::CTrackReader::TParseEvent::GetNext() const{
-		return	(PCParseEvent)(  (PCBYTE)this+std::max<BYTE>( type, sizeof(TParseEvent) )  );
+		return	(PCParseEvent)(  (PCBYTE)this+GetSize()  );
 	}
 
 	const CImage::CTrackReader::TParseEvent *CImage::CTrackReader::TParseEvent::GetLast() const{
