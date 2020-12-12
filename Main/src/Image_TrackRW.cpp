@@ -415,16 +415,17 @@
 			tEventStart=currentTime;
 			if (!ReadBits16(w)) // Track end encountered
 				break;
-			if (MFM::DecodeByte(w)!=0xfe){ // not the expected ID Field mark
+			const BYTE idam=MFM::DecodeByte(w);
+			if ((idam&0xfe)!=0xfe){ // not the expected ID Field mark; the least significant bit is always ignored by the FDC [http://info-coach.fr/atari/documents/_mydoc/Atari-Copy-Protection.pdf]
 				if (pOutParseEvents)
 					pOutParseEvents--; // dismiss the synchronization ParseEvent
 				continue;
 			}
 			struct{
 				BYTE sync[3], idFieldAm, cyl, side, sector, length;
-			} data={ 0xa1, 0xa1, 0xa1, 0xfe };
+			} data={ 0xa1, 0xa1, 0xa1, idam };
 			if (pOutParseEvents)
-				*pOutParseEvents++=TParseEvent( TParseEvent::MARK_1BYTE, tEventStart, currentTime, data.idFieldAm );
+				*pOutParseEvents++=TParseEvent( TParseEvent::MARK_1BYTE, tEventStart, currentTime, idam );
 			// . reading SectorId
 			tEventStart=currentTime;
 			TSectorId &rid=*pOutFoundSectors++;
@@ -485,11 +486,11 @@
 			return TFdcStatus::NoDataField;
 		const BYTE preamble[]={ 0xa1, 0xa1, 0xa1, MFM::DecodeByte(w) };
 		TFdcStatus result;
-		switch (preamble[3]){ // branching on observed data address mark
-			case 0xfb: case 0xfa: // normal data (+alt)
+		switch (preamble[3]&0xfe){ // branching on observed data address mark; the least significant bit is always ignored by the FDC [http://info-coach.fr/atari/documents/_mydoc/Atari-Copy-Protection.pdf]
+			case 0xfa:
 				result=TFdcStatus::WithoutError;
 				break;
-			case 0xf8: case 0xf9: // deleted data (+alt)
+			case 0xf8:
 				result=TFdcStatus::DeletedDam;
 				break;
 			default:
