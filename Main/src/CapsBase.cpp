@@ -515,22 +515,25 @@
 					continue;
 				}
 				// . if Data already read WithoutError, returning them
+				const WORD usableSectorLength=GetUsableSectorLength(sectorId.lengthCode);
 				auto *currRev=pis->revolutions+pis->currentRevolution;
 				if (currRev->data || currRev->fdcStatus.DescribesMissingDam()) // A|B, A = some data exist, B = reattempting to read the DAM-less Sector only if automatic recovery desired
 					if (currRev->fdcStatus.IsWithoutError() || !silentlyRecoverFromErrors){ // A|B, A = returning error-free data, B = settling with any data if automatic recovery not desired
 returnData:				*outFdcStatuses++=currRev->fdcStatus;
 						*outBufferData++=currRev->data;
-						*outBufferLengths++=GetUsableSectorLength(pis->id.lengthCode);
+						*outBufferLengths++=usableSectorLength;
 						continue;
 					}
 				// . attempting next disk Revolution to retrieve healthy Data
-				do{
-					if (++pis->currentRevolution>=pis->nRevolutions)
-						pis->currentRevolution=0;
-					currRev=pis->revolutions+pis->currentRevolution;
-				}while (currRev->idEndTime<=0);
-				::free(currRev->data), currRev->data=nullptr;
-				pit->ReadSector( *pis );
+				if (usableSectorLength!=0){ // e.g. Sector with LengthCode 167 has no data
+					do{
+						if (++pis->currentRevolution>=pis->nRevolutions)
+							pis->currentRevolution=0;
+						currRev=pis->revolutions+pis->currentRevolution;
+					}while (currRev->idEndTime<=0);
+					::free(currRev->data), currRev->data=nullptr;
+					pit->ReadSector( *pis );
+				}
 				// . returning (any) Data
 				goto returnData;
 			}
