@@ -5,8 +5,7 @@
 		: logTimes(_logTimes+1) , nLogTimes(nLogTimes) // "+1" = hidden item represents reference counter
 		, iNextIndexPulse(0) , nIndexPulses(  std::min<BYTE>( DEVICE_REVOLUTIONS_MAX, _nIndexPulses )  )
 		, iNextTime(0) , currentTime(0)
-		, method(method)
-		, nConsecutiveZeros(0) {
+		, method(method) {
 		::memcpy( this->indexPulses, indexPulses, nIndexPulses*sizeof(TLogTime) );
 		this->indexPulses[nIndexPulses]=INT_MAX; // a virtual IndexPulse in infinity
 		logTimes[-1]=1; // initializing the reference counter
@@ -174,11 +173,11 @@
 				currentTime+=profile.iwTime;
 				const TLogTime diff=logTimes[iNextTime]-currentTime;
 				while (diff>=iwTimeHalf){
-					nConsecutiveZeros++;
+					profile.method.frasier.nConsecutiveZeros++;
 					return 0;
 				}
 				// - adjust data frequency according to phase mismatch
-				if (nConsecutiveZeros<=nConsecutiveZerosMax)
+				if (profile.method.frasier.nConsecutiveZeros<=nConsecutiveZerosMax)
 					// in sync - adjust inspection window by percentage of phase mismatch
 					profile.iwTime+= diff * profile.adjustmentPercentMax/100;
 				else
@@ -190,7 +189,7 @@
 				else if (profile.iwTime>profile.iwTimeMax)
 					profile.iwTime=profile.iwTimeMax;
 				// - a "1" recognized
-				nConsecutiveZeros=0;
+				profile.method.frasier.nConsecutiveZeros=0;
 				return 1;
 			}
 			case TDecoderMethod::FDD_KEIR_FRASIER_MODIFIED:{
@@ -200,7 +199,7 @@
 				const TLogTime diff=logTimes[iNextTime]-currentTime;
 				currentTime+=profile.iwTime;
 				if (diff>=profile.iwTime){
-					nConsecutiveZeros++;
+					profile.method.frasier.nConsecutiveZeros++;
 					return 0;
 				}
 				// - reading some more from the Track for the next time
@@ -210,7 +209,7 @@
 					else
 						return 0;
 				// - adjust data frequency according to phase mismatch
-				if (nConsecutiveZeros<=nConsecutiveZerosMax)
+				if (profile.method.frasier.nConsecutiveZeros<=nConsecutiveZerosMax)
 					// in sync - adjust inspection window by percentage of phase mismatch
 					profile.iwTime+= (diff-iwTimeHalf) * profile.adjustmentPercentMax/100;
 				else
@@ -222,7 +221,7 @@
 				else if (profile.iwTime>profile.iwTimeMax)
 					profile.iwTime=profile.iwTimeMax;
 				// - a "1" recognized
-				nConsecutiveZeros=0;
+				profile.method.frasier.nConsecutiveZeros=0;
 				return 1;
 			}
 			default:
@@ -538,6 +537,7 @@
 
 	void CImage::CTrackReader::TProfile::Reset(){
 		iwTime=iwTimeDefault;
+		::ZeroMemory( &method, sizeof(method) );
 	}
 
 

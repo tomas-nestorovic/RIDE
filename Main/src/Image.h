@@ -256,6 +256,11 @@
 				TLogTime iwTime; // inspection window size; a "1" is expected in its centre
 				TLogTime iwTimeMin,iwTimeMax; // inspection window possible time range
 				BYTE adjustmentPercentMax; // percentual "speed" in inspection window adjustment
+				union{
+					struct{
+						DWORD nConsecutiveZeros;
+					} frasier;
+				} method;
 
 				void Reset();
 			} profile;
@@ -302,7 +307,6 @@
 			TCodec codec;
 			TMedium::TType mediumType;
 			BYTE nConsecutiveZerosMax; // # of consecutive zeroes to lose synchronization; e.g. 3 for MFM code
-			DWORD nConsecutiveZeros;
 
 			CTrackReader(PLogTime logTimes,DWORD nLogTimes,PCLogTime indexPulses,BYTE nIndexPulses,TMedium::TType mediumType,TCodec codec,TDecoderMethod method);
 
