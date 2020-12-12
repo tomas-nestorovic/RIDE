@@ -61,12 +61,17 @@
 			::SetLastError(ERROR_INVALID_NAME);
 			return FALSE;
 		}
+		::lstrcpyn( nameBase, lpszPathName, trackIdentifier-lpszPathName+1 );
 		// - setting a classical 3.5" floppy geometry
 		if (!capsImageInfo.maxcylinder) // # of Cylinders not yet set (e.g. via confirmed EditSettings dialog)
 			capsImageInfo.maxcylinder=FDD_CYLINDERS_MAX-1; // inclusive!
 		capsImageInfo.maxhead=2-1; // inclusive!
+		// - confirming initial settings
+		if (!EditSettings(true)){ // dialog cancelled?
+			::SetLastError( ERROR_CANCELLED );
+			return FALSE;
+		}
 		// - successfully mounted
-		::lstrcpyn( nameBase, lpszPathName, trackIdentifier-lpszPathName+1 );
 		return TRUE;
 	}
 
@@ -110,9 +115,11 @@
 				if (!kfStream.GetError()){
 					// it's a KryoFlux Stream whose data make sense
 					CTrackReaderWriter trw=kfStream.ToTrack(*this);
-						trw.SetMediumType(floppyType);
-						if (params.normalizeReadTracks)
-							trw.Normalize();
+						if (floppyType!=TMedium::UNKNOWN){ // may be unknown if Medium is still being recognized
+							trw.SetMediumType(floppyType);
+							if (params.normalizeReadTracks)
+								trw.Normalize();
+						}
 					internalTracks[cyl][head]=CInternalTrack::CreateFrom( *this, trw );
 					nSectors=__super::ScanTrack( cyl, head, bufferId, bufferLength, startTimesNanoseconds, pAvgGap3 );
 				}

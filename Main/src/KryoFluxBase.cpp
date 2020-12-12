@@ -122,6 +122,9 @@
 				if (rkfb.params.userForcedDoubleTrackStep)
 					WindowProc( WM_COMMAND, ID_40D80, 0 );
 				CheckDlgButton( ID_40D80, rkfb.params.doubleTrackStep );
+				// . some settings are changeable only during InitialEditing
+				static const WORD InitialSettingIds[]={ ID_ACCURACY, ID_TRACK, 0 };
+				EnableDlgItems( InitialSettingIds, initialEditing );
 				// . displaying inserted Medium information
 				RefreshMediumInformation();
 			}
