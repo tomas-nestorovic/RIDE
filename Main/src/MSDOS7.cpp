@@ -1103,7 +1103,7 @@
 				}
 				pAction->UpdateProgress( state=std::max<>(state,dt.chs.cylinder) );
 			}
-		return pAction->TerminateWithError(ERROR_SUCCESS);
+		return pAction->TerminateWithSuccess();
 	}
 
 	CDos::TCmdResult CMSDOS7::ProcessCommand(WORD cmd){

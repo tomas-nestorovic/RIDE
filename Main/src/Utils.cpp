@@ -1400,7 +1400,7 @@ quitWithErr:const DWORD err=::GetLastError();
 			return pAction->TerminateWithError(err);
 		}
 		// - downloaded successfully
-		return pAction->TerminateWithError(ERROR_SUCCESS);
+		return pAction->TerminateWithSuccess();
 	}
 
 	TStdWinError DownloadSingleFile(LPCTSTR onlineFileUrl,PBYTE fileDataBuffer,DWORD fileDataBufferLength,PDWORD pDownloadedFileSize,LPCTSTR fatalErrorConsequence){

@@ -657,10 +657,8 @@
 			// thread to create list of inspection windows used to recognize data in the Track
 			const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
 			CTrackEditor &rte=*(CTrackEditor *)pAction->GetParams();
-			if (rte.timeEditor.GetInspectionWindowEndTimes()!=nullptr){ // already set?
-				pAction->UpdateProgressFinished();
-				return ERROR_SUCCESS;
-			}
+			if (rte.timeEditor.GetInspectionWindowEndTimes()!=nullptr) // already set?
+				return pAction->TerminateWithSuccess();
 			CImage::CTrackReader tr=rte.tr;
 			tr.SetCurrentTime(0);
 			tr.profile.Reset();
@@ -677,8 +675,7 @@
 				for( const PLogTime last=iwEndTimes+nIwsMax; t<last; )
 					*t++=INT_MAX; // flooding unused part of the buffer with sensible Times
 				rte.timeEditor.SetInspectionWindowEndTimes(iwEndTimes);
-				pAction->UpdateProgressFinished();
-				return ERROR_SUCCESS;
+				return pAction->TerminateWithSuccess();
 			}else
 				return pAction->TerminateWithError(ERROR_NOT_ENOUGH_MEMORY);
 		}
@@ -687,10 +684,8 @@
 			// thread to create list of inspection windows used to recognize data in the Track
 			const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
 			CTrackEditor &rte=*(CTrackEditor *)pAction->GetParams();
-			if (rte.timeEditor.GetParseEvents()!=nullptr){ // already set?
-				pAction->UpdateProgressFinished();
-				return ERROR_SUCCESS;
-			}
+			if (rte.timeEditor.GetParseEvents()!=nullptr) // already set?
+				return pAction->TerminateWithSuccess();
 			CImage::CTrackReader tr=rte.tr;
 			TParseEvent peBuffer[5000], *pe=peBuffer; // capacity should suffice for any Track of any platform
 			BYTE dummy[16384]; // big enough to contain data of Sector of any floppy type
@@ -704,8 +699,7 @@
 				tr.ReadData( idEnds[s], idProfiles[s], CImage::GetOfficialSectorLength(ids[s].lengthCode), dummy, pe );
 			}
 			rte.timeEditor.SetParseEvents(peBuffer);
-			pAction->UpdateProgressFinished();
-			return ERROR_SUCCESS;
+			return pAction->TerminateWithSuccess();
 		}
 
 		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){

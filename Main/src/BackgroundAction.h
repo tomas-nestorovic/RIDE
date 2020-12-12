@@ -42,6 +42,7 @@
 		void SetProgressTargetInfinity();
 		void UpdateProgress(int state) const;
 		void UpdateProgressFinished() const;
+		TStdWinError TerminateWithSuccess();
 		TStdWinError TerminateWithError(TStdWinError error);
 	} *PBackgroundActionCancelable;
 

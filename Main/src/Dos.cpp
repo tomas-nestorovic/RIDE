@@ -466,8 +466,7 @@ reportError:Utils::Information(buf);
 				}
 				pAction->UpdateProgress(cyl);
 			}
-		pAction->UpdateProgressFinished();
-		return ERROR_SUCCESS;
+		return pAction->TerminateWithSuccess();
 	}
 	UINT AFX_CDECL CDos::__fillEmptyLastSectors_thread__(PVOID _pCancelableAction){
 		// thread to flood empty space in each File's last Sector
@@ -525,8 +524,7 @@ reportError:Utils::Information(buf);
 			//else
 				//TODO: warning
 		}
-		pAction->UpdateProgressFinished();
-		return ERROR_SUCCESS;
+		return pAction->TerminateWithSuccess();
 	}
 	UINT AFX_CDECL CDos::__fillEmptyDirEntries_thread__(PVOID _pCancelableAction){
 		// thread to flood Empty Directory entries
@@ -568,8 +566,7 @@ reportError:Utils::Information(buf);
 			//else
 				//TODO: warning
 		}
-		pAction->UpdateProgressFinished();
-		return ERROR_SUCCESS;
+		return pAction->TerminateWithSuccess();
 	}
 	bool CDos::__fillEmptySpace__(CFillEmptySpaceDialog &rd){
 		// True <=> filling of empty space on disk with specified FillerBytes was successfull, otherwise False

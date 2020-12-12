@@ -278,8 +278,7 @@
 				vp.fReport.CloseProblem(true);
 			}
 		}
-		pAction->UpdateProgressFinished();
-		return ERROR_SUCCESS;
+		return pAction->TerminateWithSuccess();
 	}
 
 	bool CMDOS2::GetFileNameOrExt(PCFile file,PPathString pOutName,PPathString pOutExt) const{
@@ -740,8 +739,7 @@
 					vp.fReport.LogWarning( _T("%s: First sector with %s out of disk"), strItemId, (LPCTSTR)mdos->__logfyz__(de->firstLogicalSector).sectorId.ToString() );
 			}
 		// - successfully verified
-		pAction->UpdateProgressFinished();
-		return ERROR_SUCCESS;
+		return pAction->TerminateWithSuccess();
 	}
 
 

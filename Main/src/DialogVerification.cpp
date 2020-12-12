@@ -14,8 +14,7 @@
 	TStdWinError CVerifyVolumeDialog::TParams::TerminateAndGoToNextAction(T error) const{
 		// terminates with specified Error the action which called this method
 		fReport.CloseSection( Utils::ComposeErrorMessage(_T("Can't finish this step"),error,_T("Some additional errors may remain, verification should be run once more!")) );
-		action.UpdateProgressFinished(); // proceed with the next planned action
-		return ERROR_SUCCESS;
+		return action.TerminateWithSuccess(); // proceed with the next planned action
 	}
 
 	template TStdWinError CVerifyVolumeDialog::TParams::TerminateAndGoToNextAction<TStdWinError>(TStdWinError err) const;
@@ -343,8 +342,7 @@
 			if (!fatPath.error)
 				pAction->UpdateProgress( pItem->chs.cylinder ); // File's first Cylinder
 		}
-		pAction->UpdateProgressFinished();
-		return ERROR_SUCCESS;
+		return pAction->TerminateWithSuccess();
 	}
 
 	UINT AFX_CDECL TVerificationFunctions::FloppyCrossLinkedFilesVerification_thread(PVOID pCancelableAction){
@@ -492,8 +490,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 			// . informing on progress
 			pAction->UpdateProgress( firstFileCylinder );
 		}
-		pAction->UpdateProgressFinished();
-		return ERROR_SUCCESS;
+		return pAction->TerminateWithSuccess();
 	}
 
 	UINT AFX_CDECL TVerificationFunctions::FloppyLostSectorsVerification_thread(PVOID pCancelableAction){
@@ -682,8 +679,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 					}
 			}
 		// - successfully verified
-		pAction->UpdateProgressFinished();
-		return ERROR_SUCCESS;
+		return pAction->TerminateWithSuccess();
 	}
 
 	UINT AFX_CDECL TVerificationFunctions::WholeDiskSurfaceVerification_thread(PVOID pCancelableAction){
@@ -731,6 +727,5 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 					}
 				pAction->UpdateProgress(chs.cylinder);
 			}
-		pAction->UpdateProgressFinished();
-		return ERROR_SUCCESS;
+		return pAction->TerminateWithSuccess();
 	}

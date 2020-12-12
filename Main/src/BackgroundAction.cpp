@@ -167,6 +167,12 @@
 		UpdateProgress(INT_MAX);
 	}
 
+	TStdWinError CBackgroundActionCancelable::TerminateWithSuccess(){
+		// initiates successfull termination of the Worker
+		UpdateProgressFinished();
+		return ERROR_SUCCESS;
+	}
+
 	TStdWinError CBackgroundActionCancelable::TerminateWithError(TStdWinError error){
 		// initiates the termination of the Worker with specified Error
 		bCancelled=true;

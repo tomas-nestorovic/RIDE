@@ -161,8 +161,7 @@
 				}
 			}
 		// - successfully verified
-		pAction->UpdateProgressFinished();
-		return ERROR_SUCCESS;
+		return pAction->TerminateWithSuccess();
 	}
 
 
@@ -871,8 +870,7 @@
 			pAction->UpdateProgress( dp.boot->firstFree.track );
 		}
 		*(PBYTE)*pDeFree=TDirectoryEntry::END_OF_DIR; // terminating the Directory
-		pAction->UpdateProgressFinished();
-		return ERROR_SUCCESS;
+		return pAction->TerminateWithSuccess();
 	}
 	CDos::TCmdResult CTRDOS503::ProcessCommand(WORD cmd){
 		// returns the Result of processing a DOS-related command
@@ -1062,6 +1060,5 @@
 				vp.fReport.CloseProblem(true);
 			}
 		// - successfully verified
-		pAction->UpdateProgressFinished();
-		return ERROR_SUCCESS;
+		return pAction->TerminateWithSuccess();
 	}

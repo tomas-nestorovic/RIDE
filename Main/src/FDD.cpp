@@ -1523,7 +1523,7 @@ Utils::Information(buf);}
 			if (c==lp.nRepeats){
 				// both Sectors were successfully read in a single disk revolution in all N repeats
 				lp.outGap3Latency=gap3*lp.out1ByteLatency+lp.outControllerLatency; // "+N" = just to be sure the correct minimum Gap3 has been found
-				return pAction->TerminateWithError(ERROR_SUCCESS);
+				return pAction->TerminateWithSuccess();
 			}
 		}
 		lp.outGap3Latency=targetGap3*lp.out1ByteLatency;

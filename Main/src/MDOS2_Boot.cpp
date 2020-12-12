@@ -394,8 +394,7 @@
 		if (const TStdWinError err=vp.VerifyAllCharactersPrintable( CHS, BOOT_SECTOR_LOCATION_STRING, VERIF_VOLUME_NAME, boot->label, sizeof(boot->label), '\0' ))
 			return vp.TerminateAll(err);
 		// - Boot Sector verified
-		pAction->UpdateProgressFinished();
-		return ERROR_SUCCESS;
+		return pAction->TerminateWithSuccess();
 	}
 
 
