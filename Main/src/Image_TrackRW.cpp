@@ -276,7 +276,8 @@
 		0xa398c2,	// sync 3 Bytes
 		0x82c5e7,	// mark 1 Byte
 		0xccd4f2,	// preamble
-		0xc4886c,	// data (variable length)
+		0xc4886c,	// data ok (variable length)
+		0x8057c0,	// data bad (variable length)
 		0x91d04d,	// CRC ok
 		0x6857ff,	// CRC bad
 		0xa79b8a	// custom (variable string)
@@ -478,16 +479,21 @@
 		if (!*this)
 			return result;
 		if (pOutParseEvents)
-			*pOutParseEvents++=TParseEvent( TParseEvent::DATA, tEventStart, currentTime, p-buffer );
+			*pOutParseEvents++=TParseEvent( TParseEvent::DATA_OK, tEventStart, currentTime, p-buffer );
 		// - reading and comparing Data Field's CRC
 		tEventStart=currentTime;
 		DWORD dw;
 		CFloppyImage::TCrc16 crc=0;
 		const bool crcBad=!ReadBits32(dw) || MFM::DecodeBigEndianWord(dw)!=( crc=CFloppyImage::GetCrc16Ccitt(CFloppyImage::GetCrc16Ccitt(&preamble,sizeof(preamble)),buffer,p-buffer) ); // no or wrong Data Field CRC
-		if (crcBad)
+		if (crcBad){
 			result.ExtendWith( TFdcStatus::DataFieldCrcError );
-		if (pOutParseEvents)
-			*pOutParseEvents++=TParseEvent( crcBad?TParseEvent::CRC_BAD:TParseEvent::CRC_OK, tEventStart, currentTime, crc );
+			if (pOutParseEvents){
+				(pOutParseEvents-1)->type=TParseEvent::DATA_BAD;
+				*pOutParseEvents++=TParseEvent( TParseEvent::CRC_BAD, tEventStart, currentTime, crc );
+			}
+		}else
+			if (pOutParseEvents)
+				*pOutParseEvents++=TParseEvent( TParseEvent::CRC_OK, tEventStart, currentTime, crc );
 		return result;
 	}
 

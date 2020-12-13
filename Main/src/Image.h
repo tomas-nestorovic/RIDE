@@ -270,7 +270,8 @@
 					SYNC_3BYTES,	// dw
 					MARK_1BYTE,		// b
 					PREAMBLE,		// dw (length)
-					DATA,			// dw (length)
+					DATA_OK,		// dw (length)
+					DATA_BAD,		// dw (length)
 					CRC_OK,			// dw
 					CRC_BAD,		// dw
 					CUSTOM,			// lpsz; {Custom..255} Types determine length of this structure in Bytes

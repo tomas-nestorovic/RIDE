@@ -62,7 +62,8 @@
 						TParseEvent::TypeColors[4],
 						TParseEvent::TypeColors[5],
 						TParseEvent::TypeColors[6],
-						TParseEvent::TypeColors[7]
+						TParseEvent::TypeColors[7],
+						TParseEvent::TypeColors[8]
 					};
 					for( CImage::CTrackReader tr=te.tr; true; ){
 						// . waiting for next request to paint the Track
@@ -129,8 +130,11 @@
 											case TParseEvent::PREAMBLE:
 												::wsprintfA( label, _T("Preamble (%d Bytes)"), pe->dw );
 												break;
-											case TParseEvent::DATA:
-												::wsprintfA( label, _T("Data (%d Bytes)"), pe->dw);
+											case TParseEvent::DATA_OK:
+												::wsprintfA( label, _T("Data ok (%d Bytes)"), pe->dw);
+												break;
+											case TParseEvent::DATA_BAD:
+												::wsprintfA( label, _T("Data bad (%d Bytes)"), pe->dw);
 												break;
 											case TParseEvent::CRC_OK:
 												::wsprintfA( label, _T("0x%X ok CRC"), pe->dw);
