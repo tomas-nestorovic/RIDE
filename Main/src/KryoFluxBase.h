@@ -29,9 +29,8 @@
 		struct TParams{
 			// persistent (saved and loaded)
 			CString firmwareFileName;
-			enum TFluxDecoder{
-				KEIR_FRASIER,
-				KEIR_FRASIER_MODIFIED
+			enum TFluxDecoder{ // in order of appearance in corresponding combo-box in IDR_KRYOFLUX_ACCESS dialog
+				KEIR_FRASIER
 			} fluxDecoder;
 			enum TCalibrationAfterError{
 				NONE				=0,

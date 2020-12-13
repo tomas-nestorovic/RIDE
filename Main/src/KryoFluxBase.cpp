@@ -33,7 +33,7 @@
 		// ctor
 		// - persistent (saved and loaded)
 		: firmwareFileName( app.GetProfileString(INI_KRYOFLUX,INI_FIRMWARE_FILE) )
-		, fluxDecoder( (TFluxDecoder)app.GetProfileInt(INI_KRYOFLUX,INI_FLUX_DECODER,TFluxDecoder::KEIR_FRASIER_MODIFIED) )
+		, fluxDecoder( (TFluxDecoder)app.GetProfileInt(INI_KRYOFLUX,INI_FLUX_DECODER,TFluxDecoder::KEIR_FRASIER) )
 		, calibrationAfterError( (TCalibrationAfterError)app.GetProfileInt(INI_KRYOFLUX,INI_CALIBRATE_SECTOR_ERROR,TCalibrationAfterError::ONCE_PER_CYLINDER) )
 		, calibrationStepDuringFormatting( app.GetProfileInt(INI_KRYOFLUX,INI_CALIBRATE_FORMATTING,0) )
 		, normalizeReadTracks( app.GetProfileInt(INI_KRYOFLUX,INI_NORMALIZE_READ_TRACKS,true)!=0 )
@@ -408,8 +408,6 @@ badFormat:		errorState=ERROR_BAD_FORMAT;
 		switch (kfb.params.fluxDecoder){
 			case TParams::TFluxDecoder::KEIR_FRASIER:
 				decoderMethod=CTrackReader::TDecoderMethod::FDD_KEIR_FRASIER; break;
-			case TParams::TFluxDecoder::KEIR_FRASIER_MODIFIED:
-				decoderMethod=CTrackReader::TDecoderMethod::FDD_KEIR_FRASIER_MODIFIED; break;
 			default:
 				ASSERT(FALSE); break;
 		}

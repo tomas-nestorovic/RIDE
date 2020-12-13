@@ -190,7 +190,7 @@
 		UDWORD nBitsPerTrack[CAPS_MTRS], nBitsTotally=0;
 		for( UDWORD rev=0; rev<cti.trackcnt; rev++ )
 			nBitsTotally += nBitsPerTrack[rev] = CBitReader(cti,rev,lockFlags).Count;
-		CTrackReaderWriter trw( nBitsTotally, CTrackReader::FDD_KEIR_FRASIER_MODIFIED ); // pessimistic estimation of # of fluxes
+		CTrackReaderWriter trw( nBitsTotally, CTrackReader::FDD_KEIR_FRASIER ); // pessimistic estimation of # of fluxes
 			if (*nBitsPerTrack>TIME_MILLI(200)/(2*CTrackReader::TProfile::HD.iwTimeDefault)*110/100) // "2*" = MFM encoding
 				// likely a 3.5" HD medium (10% tollerance)
 				trw.SetMediumType( TMedium::FLOPPY_HD_350 );

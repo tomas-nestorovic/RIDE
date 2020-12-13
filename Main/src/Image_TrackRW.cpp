@@ -192,38 +192,6 @@
 				profile.method.frasier.nConsecutiveZeros=0;
 				return 1;
 			}
-			case TDecoderMethod::FDD_KEIR_FRASIER_MODIFIED:{
-				// modified FDC-like flux reversal decoding from Keir Frasier's Disk-Utilities/libdisk
-				// - detecting zero
-				const TLogTime iwTimeHalf=profile.iwTime/2;
-				const TLogTime diff=logTimes[iNextTime]-currentTime;
-				currentTime+=profile.iwTime;
-				if (diff>=profile.iwTime){
-					profile.method.frasier.nConsecutiveZeros++;
-					return 0;
-				}
-				// - reading some more from the Track for the next time
-				while (logTimes[iNextTime]-currentTime<iwTimeHalf)
-					if (*this)
-						iNextTime++;
-					else
-						return 0;
-				// - adjust data frequency according to phase mismatch
-				if (profile.method.frasier.nConsecutiveZeros<=nConsecutiveZerosMax)
-					// in sync - adjust inspection window by percentage of phase mismatch
-					profile.iwTime+= (diff-iwTimeHalf) * profile.adjustmentPercentMax/100;
-				else
-					// out of sync - adjust inspection window towards its Default size
-					profile.iwTime+= (profile.iwTimeDefault-profile.iwTime) * profile.adjustmentPercentMax/100;
-				// - keep the inspection window size within limits
-				if (profile.iwTime<profile.iwTimeMin)
-					profile.iwTime=profile.iwTimeMin;
-				else if (profile.iwTime>profile.iwTimeMax)
-					profile.iwTime=profile.iwTimeMax;
-				// - a "1" recognized
-				profile.method.frasier.nConsecutiveZeros=0;
-				return 1;
-			}
 			default:
 				ASSERT(FALSE);
 				return 0;

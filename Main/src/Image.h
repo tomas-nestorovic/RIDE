@@ -243,8 +243,7 @@
 
 			enum TDecoderMethod:BYTE{
 				FDD_KEIR_FRASIER	=1,
-				FDD_KEIR_FRASIER_MODIFIED =2,
-				FDD_METHODS			=FDD_KEIR_FRASIER|FDD_KEIR_FRASIER_MODIFIED
+				FDD_METHODS			=FDD_KEIR_FRASIER
 			};
 
 			struct TProfile sealed{

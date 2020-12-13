@@ -90,7 +90,7 @@
 							POINT org;
 							::GetViewportOrgEx( dc, &org );
 							const int nUnitsA=te.timeline.GetUnitCount(tA);
-							::SetViewportOrgEx( dc, nUnitsA*Utils::LogicalUnitScaleFactor+org.x, org.y, nullptr );
+							::SetViewportOrgEx( dc, te.timeline.GetUnitCount(tA-tr.profile.iwTimeDefault/2)*Utils::LogicalUnitScaleFactor+org.x, org.y, nullptr );
 								while (continuePainting && tA<timeZ){
 									rc.right=te.timeline.GetUnitCount( tZ=te.iwEndTimes[++L] )-nUnitsA;
 									p.params.locker.Lock();
@@ -272,8 +272,8 @@
 							}
 							// . painting inspection window size at current position
 							if (IsFeatureShown(TCursorFeatures::INSPECT) && cursorTime<timeline.logTimeLength){
-								const int i=GetInspectionWindow(cursorTime);
-								const TLogTime a=iwEndTimes[i], z=iwEndTimes[i+1];
+								const int i=GetInspectionWindow(cursorTime+tr.profile.iwTimeDefault/2);
+								const TLogTime a=iwEndTimes[i]-tr.profile.iwTimeDefault/2, z=iwEndTimes[i+1]-tr.profile.iwTimeDefault/2;
 								const int xa=timeline.GetUnitCount(a), xz=timeline.GetUnitCount(z);
 								const int nLabelChars=timeline.TimeToReadableString(z-a,label);
 								const SIZE sz=font.GetTextSize( label, nLabelChars );
