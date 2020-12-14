@@ -91,7 +91,7 @@
 							POINT org;
 							::GetViewportOrgEx( dc, &org );
 							const int nUnitsA=te.timeline.GetUnitCount(tA);
-							::SetViewportOrgEx( dc, te.timeline.GetUnitCount(tA-tr.profile.iwTimeDefault/2)*Utils::LogicalUnitScaleFactor+org.x, org.y, nullptr );
+							::SetViewportOrgEx( dc, te.timeline.GetUnitCount(tA)*Utils::LogicalUnitScaleFactor+org.x, org.y, nullptr );
 								while (continuePainting && tA<timeZ){
 									rc.right=te.timeline.GetUnitCount( tZ=te.iwEndTimes[++L] )-nUnitsA;
 									p.params.locker.Lock();
@@ -171,7 +171,7 @@
 							::SelectObject( dc, penIndex );
 							::SetTextColor( dc, 0xff0000 );
 							::SelectObject( dc, Utils::CRideFont::Std );
-							for( TCHAR buf[16]; continuePainting && i<tr.GetIndexCount() && tr.GetIndexTime(i)<timeZ; i++ ){ // visible indices
+							for( TCHAR buf[16]; continuePainting && i<tr.GetIndexCount() && tr.GetIndexTime(i)<=timeZ; i++ ){ // visible indices
 								const int x=te.timeline.GetUnitCount( tr.GetIndexTime(i) );
 								p.params.locker.Lock();
 									if ( continuePainting=p.params.id==id ){
@@ -276,8 +276,8 @@
 							}
 							// . painting inspection window size at current position
 							if (IsFeatureShown(TCursorFeatures::INSPECT) && cursorTime<timeline.logTimeLength){
-								const int i=GetInspectionWindow(cursorTime+tr.profile.iwTimeDefault/2);
-								const TLogTime a=iwEndTimes[i]-tr.profile.iwTimeDefault/2, z=iwEndTimes[i+1]-tr.profile.iwTimeDefault/2;
+								const int i=GetInspectionWindow(cursorTime);
+								const TLogTime a=iwEndTimes[i], z=iwEndTimes[i+1];
 								const int xa=timeline.GetUnitCount(a), xz=timeline.GetUnitCount(z);
 								const int nLabelChars=timeline.TimeToReadableString(z-a,label);
 								const SIZE sz=font.GetTextSize( label, nLabelChars );
@@ -670,7 +670,7 @@
 			if (const PLogTime iwEndTimes=(PLogTime)::calloc( sizeof(TLogTime), nIwsMax )){
 				PLogTime t=iwEndTimes;
 				*t++=0; // beginning of the very first inspection window
-				for( pAction->SetProgressTarget(tr.GetTotalTime()); tr; pAction->UpdateProgress(*t++=tr.GetCurrentTime()) )
+				for( pAction->SetProgressTarget(tr.GetTotalTime()); tr; pAction->UpdateProgress(*t++=tr.GetCurrentTime()-tr.profile.iwTimeDefault/2) )
 					if (pAction->IsCancelled()){
 						::free(iwEndTimes);
 						return ERROR_CANCELLED;
