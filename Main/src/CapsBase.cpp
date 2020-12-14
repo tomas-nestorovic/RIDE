@@ -187,20 +187,20 @@
 		if (!cti.timelen)
 			return nullptr;
 		// - reconstructing flux information over all revolutions of the disk
-		UDWORD nBitsPerTrack[CAPS_MTRS], nBitsTotally=0;
+		UDWORD nBitsPerTrack[CAPS_MTRS], nBitsPerTrackOfficial, nBitsTotally=0;
 		for( UDWORD rev=0; rev<cti.trackcnt; rev++ )
 			nBitsTotally += nBitsPerTrack[rev] = CBitReader(cti,rev,lockFlags).Count;
 		CTrackReaderWriter trw( nBitsTotally, CTrackReader::FDD_KEIR_FRASIER ); // pessimistic estimation of # of fluxes
-			if (*nBitsPerTrack>TIME_MILLI(200)/CTrackReader::TProfile::HD.iwTimeDefault*95/100) // 5% tolerance
+			if (*nBitsPerTrack>( nBitsPerTrackOfficial=TIME_MILLI(200)/CTrackReader::TProfile::HD.iwTimeDefault )*95/100) // 5% tolerance
 				// likely a 3.5" HD medium (10% tollerance)
 				trw.SetMediumType( TMedium::FLOPPY_HD_350 );
-			else if (*nBitsPerTrack>TIME_SECOND(1)/(6*CTrackReader::TProfile::HD.iwTimeDefault)*95/100) // 5% tolerance
+			else if (*nBitsPerTrack>( nBitsPerTrackOfficial=TIME_SECOND(1)/(6*CTrackReader::TProfile::HD.iwTimeDefault) )*95/100) // 5% tolerance
 				// likely a 5.25" HD medium (10% tollerance)
 				trw.SetMediumType( TMedium::FLOPPY_HD_350 );
-			else if (*nBitsPerTrack>TIME_MILLI(200)/CTrackReader::TProfile::DD.iwTimeDefault*95/100) // 5% tolerance
+			else if (*nBitsPerTrack>( nBitsPerTrackOfficial=TIME_MILLI(200)/CTrackReader::TProfile::DD.iwTimeDefault )*95/100) // 5% tolerance
 				// likely a 3.5" DD or 5.25" medium in 300 RPM drive (10% tollerance)
 				trw.SetMediumType( TMedium::FLOPPY_DD );
-			else if (*nBitsPerTrack>TIME_SECOND(1)/(6*CTrackReader::TProfile::DD_525.iwTimeDefault)*95/100) // 5% tolerance
+			else if (*nBitsPerTrack>( nBitsPerTrackOfficial=TIME_SECOND(1)/(6*CTrackReader::TProfile::DD_525.iwTimeDefault) )*95/100) // 5% tolerance
 				// likely a 5.25" DD medium in 360 RPM drive (10% tollerance)
 				trw.SetMediumType( TMedium::FLOPPY_DD_525 );
 			else{
@@ -212,6 +212,11 @@
 		UDWORD nextIndexBits=*nBitsPerTrack;
 		BYTE rev=0;
 		for( CBitReader br(cti,lockFlags); br; ){
+			// . adding new index
+			if (br.GetPosition()==nextIndexBits){
+				trw.AddIndexTime( currentTime );
+				nextIndexBits+=nBitsPerTrack[++rev];
+			}
 			// . adding new flux
 			const UDWORD i=br.GetPosition()>>3;
 			if (i<cti.timelen)
@@ -220,14 +225,13 @@
 				currentTime+= trw.profile.iwTimeDefault;
 			if (br.ReadBit())
 				*pFluxTime++=currentTime;
-			// . adding new index
-			if (br.GetPosition()>=nextIndexBits){
-				trw.AddIndexTime( currentTime );
-				nextIndexBits+=nBitsPerTrack[++rev];
-			}
 		}
-		if (trw.GetIndexCount()<=cti.trackcnt) // this shouldn't happen but just to be sure; we at this time should have N+1 index pulses recorded
-			trw.AddIndexTime( currentTime );
+		if (trw.GetIndexCount()<=cti.trackcnt){ // an IPF image may end up here
+			const TLogTime tIndex=trw.GetIndexTime(cti.trackcnt-1)+nBitsPerTrackOfficial*trw.profile.iwTimeDefault;
+			trw.AddIndexTime(tIndex);
+			if (trw.GetTotalTime()<tIndex) // adding an auxiliary flux at the Index position to prolong flux information
+				*pFluxTime++=tIndex;
+		}
 		trw.AddTimes( pFluxTimeBuffer, pFluxTime-pFluxTimeBuffer );
 		// - creating a Track from above reconstructed flux information
 		return CreateFrom( cb, trw );
