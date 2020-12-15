@@ -237,6 +237,7 @@
 #define ID_ZOOM_FIT                     40266
 #define ID_ZOOM_OUT                     40267
 #define ID_ZOOM_IN                      40268
+#define ID_ZOOM_PART                    40269
 #define ID_ADDRESS                      40271
 #define ID_ZX_PREVIEWASASSEMBLER        40277
 #define ID_VARIABLE                     40280

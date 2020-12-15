@@ -737,6 +737,9 @@
 						case ID_ZOOM_FIT:
 						case IDCANCEL:
 							return TRUE;
+						case ID_ZOOM_PART:
+							pCmdUi->Enable( tr.GetIndexCount()>=2 );
+							return TRUE;
 						case ID_TIME:
 							pCmdUi->SetCheck( timeEditor.IsFeatureShown(TCursorFeatures::TIME) );
 							return TRUE;
@@ -781,6 +784,22 @@
 						case ID_ZOOM_OUT:
 							timeEditor.SetZoomFactorCenter( timeEditor.GetTimeline().zoomFactor+1 );
 							return TRUE;
+						case ID_ZOOM_PART:{
+							BYTE rev=0;
+							for( const TLogTime t=timeEditor.GetCenterTime(); rev<tr.GetIndexCount()&&t>tr.GetIndexTime(rev); rev++ );
+							rev+=rev==0; // if before the first Revolution, pointing at the end of the first Revolution
+							rev-=rev==tr.GetIndexCount(); // if after after the last Revolution, pointing at the end of the last Revolution
+							CRect rc;
+							timeEditor.GetClientRect(&rc);
+							const int nUnitsWidth=rc.Width()/Utils::LogicalUnitScaleFactor;
+							const TLogTime tRevolution=tr.GetIndexTime(rev)-tr.GetIndexTime(rev-1);
+							BYTE zf=0;
+							while (timeEditor.GetTimeline().GetUnitCount(tRevolution,zf)>nUnitsWidth && zf<ZOOM_FACTOR_MAX)
+								zf++;
+							timeEditor.SetZoomFactorCenter(zf);
+							timeEditor.SetCenterTime( (tr.GetIndexTime(rev)+tr.GetIndexTime(rev-1))/2 );
+							return TRUE;
+						}
 						case ID_ZOOM_FIT:{
 							CRect rc;
 							timeEditor.GetClientRect(&rc);

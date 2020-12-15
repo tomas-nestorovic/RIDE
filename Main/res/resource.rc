@@ -161,6 +161,7 @@ BEGIN
     "+",            ID_ZOOM_IN,             ASCII,  NOINVERT
     "-",            ID_ZOOM_OUT,            ASCII,  NOINVERT
     "0",            ID_ZOOM_FIT,            VIRTKEY, CONTROL, NOINVERT
+    "R",            ID_ZOOM_PART,           VIRTKEY, CONTROL, NOINVERT
     VK_ESCAPE,      IDCANCEL,               VIRTKEY, NOINVERT
     VK_LEFT,        ID_FILE_SHIFT_DOWN,     VIRTKEY, CONTROL, NOINVERT
     VK_NEXT,        ID_NEXT,                VIRTKEY, CONTROL, NOINVERT
@@ -672,7 +673,8 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Zoom in\t+",                  ID_ZOOM_IN
         MENUITEM "Zoom out\t–",                 ID_ZOOM_OUT
-        MENUITEM "Zoom to fit\tCtrl+0",         ID_ZOOM_FIT
+        MENUITEM "Zoom to revolution\tCtrl+R",  ID_ZOOM_PART
+        MENUITEM "Zoom to track\tCtrl+0",       ID_ZOOM_FIT
         MENUITEM SEPARATOR
         MENUITEM "Show cursor time",            ID_TIME
         MENUITEM "Show time spacing",           ID_GAP
