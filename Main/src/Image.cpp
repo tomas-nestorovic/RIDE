@@ -664,14 +664,14 @@
 		return ERROR_NOT_SUPPORTED; // each Track by default must be explicitly formatted to be sure about its structure (but Images abstracting physical drives can override this setting)
 	}
 
-	std::unique_ptr<CImage::CTrackReader> CImage::GetTrackDescription(TCylinder cyl,THead head) const{
-		// returns specified Track general description, represented using neutral LogicalTimes; returns Null if such description not available
-		return nullptr;
-	}
-
 	TStdWinError CImage::SaveTrack(TCylinder cyl,THead head){
 		// saves the specified Track to the inserted Medium; returns Windows standard i/o error
 		return ERROR_NOT_SUPPORTED; // individual Track saving is not supported for this kind of Image (OnSaveDocument must be called instead)
+	}
+
+	CImage::CTrackReader CImage::ReadTrack(TCylinder cyl,THead head) const{
+		// creates and returns a general description of the specified Track, represented using neutral LogicalTimes
+		return	CTrackReaderWriter( 0, CTrackReader::TDecoderMethod::NONE ); // not supported (TrackReader invalid right from its creation)
 	}
 
 	void CImage::SetPathName(LPCTSTR lpszPathName,BOOL bAddToMRU){

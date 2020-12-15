@@ -692,10 +692,14 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 		return ERROR_SUCCESS;
 	}
 
-	std::unique_ptr<CImage::CTrackReader> CCapsBase::GetTrackDescription(TCylinder cyl,THead head) const{
-		// returns specified Track general description, represented using neutral LogicalTimes; returns Null if such description not available
-		if (const PCInternalTrack pit=internalTracks[cyl][head])
-			return std::unique_ptr<CTrackReader>(  new CTrackReader(*pit)  );
-		else
-			return __super::GetTrackDescription(cyl,head);
+	CImage::CTrackReader CCapsBase::ReadTrack(TCylinder cyl,THead head) const{
+		// creates and returns a general description of the specified Track, represented using neutral LogicalTimes
+		// - making sure the Track is buffered
+		ScanTrack( cyl, head );
+		// - returning the description
+		if (const PInternalTrack pit=internalTracks[cyl][head]){
+			pit->SetCurrentTime(0); // just to be sure the internal TrackReader is returned in valid state (as invalid state indicates this functionality is not supported)
+			return *pit;
+		}else
+			return __super::ReadTrack(cyl,head);
 	}

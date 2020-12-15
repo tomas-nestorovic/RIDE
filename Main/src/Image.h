@@ -242,6 +242,7 @@
 			};
 
 			enum TDecoderMethod:BYTE{
+				NONE				=0,
 				FDD_KEIR_FRASIER	=1,
 				FDD_METHODS			=FDD_KEIR_FRASIER
 			};
@@ -470,8 +471,8 @@
 		virtual TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber);
 		virtual bool EditSettings(bool initialEditing)=0;
 		virtual TStdWinError Reset()=0;
-		virtual std::unique_ptr<CTrackReader> GetTrackDescription(TCylinder cyl,THead head) const;
 		virtual TStdWinError SaveTrack(TCylinder cyl,THead head);
+		virtual CTrackReader ReadTrack(TCylinder cyl,THead head) const;
 		virtual TStdWinError FormatTrack(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte)=0;
 		virtual bool RequiresFormattedTracksVerification() const;
 		virtual TStdWinError PresumeHealthyTrackStructure(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,BYTE gap3,BYTE fillerByte);

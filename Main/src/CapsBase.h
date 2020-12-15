@@ -98,7 +98,7 @@
 		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
 		bool EditSettings(bool initialEditing) override;
 		TStdWinError Reset() override;
-		std::unique_ptr<CTrackReader> GetTrackDescription(TCylinder cyl,THead head) const override;
+		CTrackReader ReadTrack(TCylinder cyl,THead head) const override;
 	};
 
 

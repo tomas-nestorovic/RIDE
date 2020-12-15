@@ -549,10 +549,10 @@
 		switch (GetPhysicalAddressAndNanosecondsFromPoint(point,chs,nSectorsToSkip,nanoseconds)){
 			case TCursorPos::TRACK:
 				// clicked on a Track
-				if (const auto tr=IMAGE->GetTrackDescription( chs.cylinder, chs.head )){
+				if (const auto tr=IMAGE->ReadTrack( chs.cylinder, chs.head )){
 					TCHAR caption[80];
 					::wsprintf( caption, _T("Track %d  (Cyl=%d, Head=%d)"), chs.GetTrackNumber(__getNumberOfFormattedSidesInImage__(IMAGE)), chs.cylinder, chs.head );
-					tr->ShowModal(caption);
+					tr.ShowModal(caption);
 				}
 				break;
 			case TCursorPos::SECTOR:
