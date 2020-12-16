@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-	CImage::CTrackReader::CTrackReader(PLogTime _logTimes,DWORD nLogTimes,PCLogTime indexPulses,BYTE _nIndexPulses,TMedium::TType mediumType,TCodec codec,TDecoderMethod method)
+	CImage::CTrackReader::CTrackReader(PLogTime _logTimes,DWORD nLogTimes,PCLogTime indexPulses,BYTE _nIndexPulses,TMedium::TType mediumType,Codec::TType codec,TDecoderMethod method)
 		// ctor
 		: logTimes(_logTimes+1) , nLogTimes(nLogTimes) // "+1" = hidden item represents reference counter
 		, iNextIndexPulse(0) , nIndexPulses(  std::min<BYTE>( DEVICE_REVOLUTIONS_MAX, _nIndexPulses )  )
@@ -92,16 +92,16 @@
 		return	*this ? logTimes[iNextTime++] : 0;
 	}
 
-	void CImage::CTrackReader::SetCodec(TCodec codec){
+	void CImage::CTrackReader::SetCodec(Codec::TType codec){
 		// changes the interpretation of recorded LogicalTimes according to the new Codec
 		switch ( this->codec=codec ){
 			default:
 				ASSERT(FALSE); // we shouldn't end up here, this value must be set for all implemented Codecs!
 				//fallthrough
-			case TCodec::FM:
+			case Codec::FM:
 				nConsecutiveZerosMax=1;
 				break;
-			case TCodec::MFM:
+			case Codec::MFM:
 				nConsecutiveZerosMax=3;
 				break;
 		}
@@ -223,10 +223,10 @@
 		profile.Reset();
 		WORD nSectorsFound;
 		switch (codec){
-			case TCodec::FM:
+			case Codec::FM:
 				nSectorsFound=ScanFm( pOutFoundSectors, pOutIdEnds, pOutIdProfiles, pOutIdStatuses, pOutParseEvents );
 				break;
-			case TCodec::MFM:
+			case Codec::MFM:
 				nSectorsFound=ScanMfm( pOutFoundSectors, pOutIdEnds, pOutIdProfiles, pOutIdStatuses, pOutParseEvents );
 				break;
 			default:
@@ -244,10 +244,10 @@
 		profile=idEndProfile;
 		TFdcStatus st;
 		switch (codec){
-			case TCodec::FM:
+			case Codec::FM:
 				st=ReadDataFm( nBytesToRead, buffer, pOutParseEvents );
 				break;
-			case TCodec::MFM:
+			case Codec::MFM:
 				st=ReadDataMfm( nBytesToRead, buffer, pOutParseEvents );
 				break;
 			default:
@@ -331,7 +331,7 @@
 
 	TFdcStatus CImage::CTrackReader::ReadDataFm(WORD nBytesToRead,LPBYTE buffer,TParseEvent *&pOutParseEvents){
 		// attempts to read specified amount of Bytes into the Buffer, starting at current position; returns the amount of Bytes actually read
-		ASSERT( codec==TCodec::FM );
+		ASSERT( codec==Codec::FM );
 		//TODO
 		return TFdcStatus::SectorNotFound;
 	}
@@ -432,7 +432,7 @@
 
 	TFdcStatus CImage::CTrackReader::ReadDataMfm(WORD nBytesToRead,LPBYTE buffer,TParseEvent *&pOutParseEvents){
 		// attempts to read specified amount of Bytes into the Buffer, starting at position pointed to by the BitReader; returns the amount of Bytes actually read
-		ASSERT( codec==TCodec::MFM );
+		ASSERT( codec==Codec::MFM );
 		// - searching for the nearest three consecutive 0xA1 distorted synchronization Bytes
 		TLogTime tEventStart;
 		TLogTime tSyncStarts[64]; BYTE iSyncStart=0;
@@ -527,7 +527,7 @@
 
 	CImage::CTrackReaderWriter::CTrackReaderWriter(DWORD nLogTimesMax,TDecoderMethod method)
 		// ctor
-		: CTrackReader( (PLogTime)::calloc(nLogTimesMax+1,sizeof(TLogTime)), 0, nullptr, 0, TMedium::FLOPPY_DD, TCodec::MFM, method ) // "+1" = hidden item represents reference counter
+		: CTrackReader( (PLogTime)::calloc(nLogTimesMax+1,sizeof(TLogTime)), 0, nullptr, 0, TMedium::FLOPPY_DD, Codec::MFM, method ) // "+1" = hidden item represents reference counter
 		, nLogTimesMax(nLogTimesMax) {
 	}
 

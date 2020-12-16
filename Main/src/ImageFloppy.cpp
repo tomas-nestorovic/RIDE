@@ -158,7 +158,7 @@
 
 			TSector __scanTrack__(TTrack track,PSectorId ids,PWORD lengths) const{
 				// a wrapper around CImage::ScanTrack
-				const TSector nSectors=image->ScanTrack( track>>1, track&1, ids, lengths );
+				const TSector nSectors=image->ScanTrack( track>>1, track&1, nullptr, ids, lengths );
 				if (lengths)
 					for( TSector s=0; s<nSectors; s++ )
 						lengths[s]+=lengths[s]==0; // length>0 ? length : 1

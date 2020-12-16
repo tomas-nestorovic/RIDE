@@ -20,7 +20,7 @@
 		// True <=> Boot Sector has been recognized on the disk, otherwise False
 		TPhysicalAddress chs={ 0, 0, {0,0,1,-1} };
 		// - in case the Image is a physical floppy disk, determining the Type of Medium (type of floppy)
-		TFormat fmt={ TMedium::FLOPPY_DD_525, 1,1,MSDOS7_SECTOR_BKBOOT, MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD, 1 };
+		TFormat fmt={ TMedium::FLOPPY_DD_525, Codec::MFM, 1,1,MSDOS7_SECTOR_BKBOOT, MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD, 1 };
 		if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
 			fmt.mediumType=TMedium::FLOPPY_DD;
 			if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
@@ -236,7 +236,7 @@
 	TStdWinError CMSDOS7::__recognizeDisk__(PImage image,PFormat pFormatBoot){
 		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
 		// - in case the Image is a physical floppy disk, determining the Type of Medium (type of floppy)
-		TFormat fmt={ TMedium::FLOPPY_DD_525, 1,1,MSDOS7_SECTOR_BKBOOT, MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD, 1 };
+		TFormat fmt={ TMedium::FLOPPY_DD_525, Codec::MFM, 1,1,MSDOS7_SECTOR_BKBOOT, MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD, 1 };
 		if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
 			fmt.mediumType=TMedium::FLOPPY_DD;
 			if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
@@ -276,13 +276,13 @@
 	#define ARCHIVE_CAPACITY	_T("Single archive (beware under WinNT!)")
 
 	static const CFormatDialog::TStdFormat StdFormats[]={
-		{ _T("Standard 3.5\", 1440 kB"), 0, {TMedium::FLOPPY_HD_350,79,2,18,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,1}, 1, 0, FDD_350_SECTOR_GAP3, 2, 224 },
-		{ BOOSTED_CAPACITY, 0, {TMedium::FLOPPY_HD_350,FDD_CYLINDERS_MAX-1,2,21,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,2}, 2, 20, 5, 2, 128 },
-		{ ARCHIVE_CAPACITY, 0, {TMedium::FLOPPY_HD_350,FDD_CYLINDERS_MAX-1,2,21,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,16}, 2, 20, 5, 1, 16 },
-		{ _T("Standard 3.5\", 720 kB"), 0, {TMedium::FLOPPY_DD,79,2,9,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,1}, 1, 0, FDD_350_SECTOR_GAP3, 2, 224 },
-		{ BOOSTED_CAPACITY, 0, {TMedium::FLOPPY_DD,FDD_CYLINDERS_MAX-1,2,10,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,2}, 2, 9, 5, 2, 128 },
-		{ ARCHIVE_CAPACITY, 0, {TMedium::FLOPPY_DD,FDD_CYLINDERS_MAX-1,2,10,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,16}, 2, 9, 5, 1, 16 },
-		{ _T("Hard disk 50 MB"), 0, {TMedium::HDD_RAW,99,16,63,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,4}, 1, 0, FDD_350_SECTOR_GAP3, 2, 224 }
+		{ _T("Standard 3.5\", 1440 kB"), 0, {TMedium::FLOPPY_HD_350,Codec::MFM,79,2,18,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,1}, 1, 0, FDD_350_SECTOR_GAP3, 2, 224 },
+		{ BOOSTED_CAPACITY, 0, {TMedium::FLOPPY_HD_350,Codec::MFM,FDD_CYLINDERS_MAX-1,2,21,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,2}, 2, 20, 5, 2, 128 },
+		{ ARCHIVE_CAPACITY, 0, {TMedium::FLOPPY_HD_350,Codec::MFM,FDD_CYLINDERS_MAX-1,2,21,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,16}, 2, 20, 5, 1, 16 },
+		{ _T("Standard 3.5\", 720 kB"), 0, {TMedium::FLOPPY_DD,Codec::MFM,79,2,9,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,1}, 1, 0, FDD_350_SECTOR_GAP3, 2, 224 },
+		{ BOOSTED_CAPACITY, 0, {TMedium::FLOPPY_DD,Codec::MFM,FDD_CYLINDERS_MAX-1,2,10,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,2}, 2, 9, 5, 2, 128 },
+		{ ARCHIVE_CAPACITY, 0, {TMedium::FLOPPY_DD,Codec::MFM,FDD_CYLINDERS_MAX-1,2,10,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,16}, 2, 9, 5, 1, 16 },
+		{ _T("Hard disk 50 MB"), 0, {TMedium::HDD_RAW,Codec::MFM,99,16,63,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,4}, 1, 0, FDD_350_SECTOR_GAP3, 2, 224 }
 	};
 	const CDos::TProperties CMSDOS7::Properties={
 		_T("MS-DOS 7.1 (experimental)"), // name
@@ -294,6 +294,7 @@
 		&CImageRaw::Properties, // the most common Image to contain data for this DOS (e.g. *.D80 Image for MDOS)
 		7,	// number of std Formats
 		StdFormats, // std Formats
+		Codec::FLOPPY_IBM, // a set of Codecs this DOS supports
 		1,127, // range of supported number of Sectors
 		1+9+14, // minimal total number of Sectors required
 		// ^ boot + 1xFAT + dir

@@ -1,10 +1,12 @@
 #include "stdafx.h"
 
-	const TFormat TFormat::Unknown={ TMedium::UNKNOWN, -1,-1,-1, TFormat::LENGTHCODE_128,-1, 1 };
+	const TFormat TFormat::Unknown={ TMedium::UNKNOWN, Codec::ANY, -1,-1,-1, TFormat::LENGTHCODE_128,-1, 1 };
 
 	bool TFormat::operator==(const TFormat &fmt2) const{
 		// True <=> Formats{1,2} are equal, otherwise False
 		return	supportedMedia&fmt2.supportedMedia
+				&&
+				supportedCodecs&fmt2.supportedCodecs
 				&&
 				nCylinders==fmt2.nCylinders
 				&&
@@ -230,6 +232,29 @@
 
 
 
+
+	namespace Codec{
+		LPCTSTR GetDescription(TType codec){
+			// returns the string description of a given Codec
+			switch (codec){
+				case FM			: return _T("FM (Digital Frequency Modulation)");
+				case MFM		: return _T("MFM (Modified FM)");
+				default:
+					ASSERT(FALSE);
+					return nullptr;
+			}
+		}
+	}
+
+
+
+
+
+
+
+
+
+
 	bool CImage::TProperties::IsRealDevice() const{
 		return filter==nullptr;
 	}
@@ -337,7 +362,27 @@
 					result++;
 				}
 			if (!result)
-				cb.AddString(_T("No compatible medium"));
+				cb.AddString(_T("No compatible"));
+			cb.EnableWindow(result);
+			cb.SetCurSel(0);
+		cb.Detach();
+		return result;
+	}
+
+	BYTE CImage::PopulateComboBoxWithCompatibleCodecs(HWND hComboBox,WORD dosSupportedCodecs,PCProperties imageProperties){
+		// populates ComboBox with Codecs supported both by DOS and Image, and returns their number (or zero if there is no intersection)
+		CComboBox cb;
+		cb.Attach(hComboBox);
+			cb.ResetContent();
+			const WORD codecsSupportedByImage= imageProperties ? imageProperties->supportedCodecs : 0;
+			BYTE result=0;
+			for( WORD commonCodecs=dosSupportedCodecs&codecsSupportedByImage,type=1,n=8*sizeof(commonCodecs); n--; type<<=1 )
+				if (commonCodecs&type){
+					cb.SetItemDataPtr( cb.AddString(Codec::GetDescription((Codec::TType)type)), (PVOID)type );
+					result++;
+				}
+			if (!result)
+				cb.AddString(_T("No compatible"));
 			cb.EnableWindow(result);
 			cb.SetCurSel(0);
 		cb.Detach();
@@ -540,7 +585,7 @@
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - if Track is empty, assuming the Track surface is damaged, so the Track is NOT healthy
 		TSectorId bufferId[(BYTE)-1]; WORD bufferLength[(BYTE)-1];
-		const TSector nSectors=ScanTrack(cyl,head,bufferId,bufferLength);
+		const TSector nSectors=ScanTrack(cyl,head,nullptr,bufferId,bufferLength);
 		if (!nSectors)
 			return 0;
 		// - counting the number of healthy Sectors
@@ -560,8 +605,7 @@
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		LOG_ACTION(_T("bool CImage::IsTrackHealthy"));
 		// - if Track is empty, assuming the Track surface is damaged, so the Track is NOT healthy
-		TSectorId bufferId[(BYTE)-1]; WORD bufferLength[(BYTE)-1];
-		const TSector nSectors=ScanTrack(cyl,head,bufferId,bufferLength);
+		const TSector nSectors=ScanTrack(cyl,head);
 		if (!nSectors)
 			return LOG_BOOL(false);
 		// - if any of the Sectors cannot be read without error, the Track is NOT healthy
@@ -622,7 +666,7 @@
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - scanning given Track to find out Sectors a their Lengths
 		TSectorId bufferId[(TSector)-1];	WORD bufferLength[(TSector)-1];
-		TSector nSectorsOnTrack=ScanTrack(rChs.cylinder,rChs.head,bufferId,bufferLength);
+		TSector nSectorsOnTrack=ScanTrack(rChs.cylinder,rChs.head,nullptr,bufferId,bufferLength);
 		// - searching for first matching ID among found Sectors (LengthCode ignored)
 		for( PCSectorId pId=bufferId; nSectorsOnTrack; nSectorsOnTrack-- ){
 			rChs.sectorId.lengthCode=pId->lengthCode; // accepting whatever LengthCode

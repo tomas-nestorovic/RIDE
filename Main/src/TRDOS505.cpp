@@ -25,6 +25,7 @@
 		&TRD::Properties, // the most common Image to contain data for this DOS (e.g. *.D80 Image for MDOS)
 		4,	// number of std Formats
 		StdFormats, // std Formats
+		Codec::MFM, // a set of Codecs this DOS supports
 		TRDOS503_TRACK_SECTORS_COUNT,TRDOS503_TRACK_SECTORS_COUNT, // range of supported number of Sectors
 		TRDOS503_SECTOR_RESERVED_COUNT, // minimal total number of Sectors required
 		1, // maximum number of Sector in one Cluster (must be power of 2)

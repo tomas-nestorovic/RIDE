@@ -30,7 +30,8 @@
 				if (pAction->IsCancelled()) return ERROR_CANCELLED;
 				// . scanning Source Track
 				TSectorId bufferId[(TSector)-1];	WORD bufferLength[(TSector)-1];
-				const TSector nSectors=pp.source->ScanTrack(chs.cylinder,chs.head,bufferId,bufferLength);
+				Codec::TType codec;
+				const TSector nSectors=pp.source->ScanTrack(chs.cylinder,chs.head,&codec,bufferId,bufferLength);
 				// . if Source Track empty, skipping it if commanded so
 				if (!nSectors && pp.skipEmptySourceTracks==BST_CHECKED)
 					continue; // skipping empty Source Track
@@ -43,7 +44,7 @@
 					bufferSectorData[s]=pp.source->GetSectorData( chs, s, false, bufferLength+s, bufferFdcStatus+s );
 				}
 				// . formatting Target Track
-				TStdWinError err=pp.target->FormatTrack(chs.cylinder,chs.head,nSectors,bufferId,bufferLength,bufferFdcStatus,pp.gap3,0x00);
+				TStdWinError err=pp.target->FormatTrack(chs.cylinder,chs.head,codec!=Codec::UNKNOWN?codec:pp.dos->formatBoot.codecType,nSectors,bufferId,bufferLength,bufferFdcStatus,pp.gap3,0x00);
 				if (err!=ERROR_SUCCESS)
 terminateWithError:	return pAction->TerminateWithError(err);
 				// . writing to Target Track

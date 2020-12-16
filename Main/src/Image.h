@@ -65,12 +65,33 @@
 		static PCProperties GetProperties(TType mediumType);
 	} *PCMedium;
 
+	namespace Codec{
+		typedef BYTE TTypeSet;
+
+		typedef enum TType:TTypeSet{
+			UNKNOWN		=0,
+			MFM			=1,
+			FM			=2,
+			//AMIGA		=4,
+			//GCR		=8,
+			FLOPPY_IBM	=/*FM|*/MFM,
+			FLOPPY_ANY	=FLOPPY_IBM,//|AMIGA|GCR
+			ANY			=FLOPPY_ANY
+		} *PType;
+
+		static LPCTSTR GetDescription(TType codec);
+	}
+
 	typedef struct TFormat sealed{
 		static const TFormat Unknown;
 
 		union{
 			TMedium::TType supportedMedia;
 			TMedium::TType mediumType;
+		};
+		union{
+			Codec::TType supportedCodecs;
+			Codec::TType codecType;
 		};
 		TCylinder nCylinders;
 		THead nHeads;
@@ -224,6 +245,7 @@
 			TFnInstantiate fnInstantiate;
 			LPCTSTR filter; // filter for the "Open/Save file" dialogs (e.g. "*.d80;*.d40"); ATTENTION - must be all in lowercase (normalization) and the extension must always have right three characters (otherwise changes in DoSave needed)
 			TMedium::TType supportedMedia;
+			Codec::TType supportedCodecs;
 			WORD sectorLengthMin,sectorLengthMax;
 
 			bool IsRealDevice() const;
@@ -231,16 +253,6 @@
 
 		class CTrackReader{
 		public:
-			typedef BYTE TCodecSet;
-
-			enum TCodec:TCodecSet{
-				FM			=1,
-				MFM			=2,
-				//AMIGA		=4,
-				//GCR		=8,
-				UNDETERMINED=FM|MFM//|AMIGA|GCR
-			};
-
 			enum TDecoderMethod:BYTE{
 				NONE				=0,
 				FDD_KEIR_FRASIER	=1,
@@ -305,11 +317,11 @@
 			TLogTime indexPulses[DEVICE_REVOLUTIONS_MAX+1];
 			BYTE iNextIndexPulse,nIndexPulses;
 			TLogTime currentTime;
-			TCodec codec;
+			Codec::TType codec;
 			TMedium::TType mediumType;
 			BYTE nConsecutiveZerosMax; // # of consecutive zeroes to lose synchronization; e.g. 3 for MFM code
 
-			CTrackReader(PLogTime logTimes,DWORD nLogTimes,PCLogTime indexPulses,BYTE nIndexPulses,TMedium::TType mediumType,TCodec codec,TDecoderMethod method);
+			CTrackReader(PLogTime logTimes,DWORD nLogTimes,PCLogTime indexPulses,BYTE nIndexPulses,TMedium::TType mediumType,Codec::TType codec,TDecoderMethod method);
 
 			WORD ScanFm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *&pOutParseEvents);
 			WORD ScanMfm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *&pOutParseEvents);
@@ -344,13 +356,19 @@
 				SetCurrentTime( GetIndexTime(index) );
 			}
 
+			inline
+			Codec::TType GetCodec() const{
+				// returns currently used/recognized Codec
+				return codec;
+			}
+
 
 			void SetCurrentTime(TLogTime logTime);
 			void TruncateCurrentTime();
 			TLogTime GetIndexTime(BYTE index) const;
 			TLogTime GetTotalTime() const;
 			TLogTime ReadTime();
-			void SetCodec(TCodec codec);
+			void SetCodec(Codec::TType codec);
 			void SetMediumType(TMedium::TType mediumType);
 			bool ReadBit();
 			bool ReadBits16(WORD &rOut);
@@ -438,6 +456,7 @@
 		static CImage *GetActive();
 		static PCProperties DetermineType(LPCTSTR fileName);
 		static BYTE PopulateComboBoxWithCompatibleMedia(HWND hComboBox,WORD dosSupportedMedia,PCProperties imageProperties);
+		static BYTE PopulateComboBoxWithCompatibleCodecs(HWND hComboBox,WORD dosSupportedCodecs,PCProperties imageProperties);
 		static TFormat::TLengthCode GetSectorLengthCode(WORD sectorLength);
 		static WORD GetOfficialSectorLength(BYTE sectorLengthCode);
 
@@ -453,7 +472,7 @@
 		virtual TCylinder GetCylinderCount() const=0;
 		virtual THead GetNumberOfFormattedSides(TCylinder cyl) const=0;
 		TTrack GetTrackCount() const;
-		virtual TSector ScanTrack(TCylinder cyl,THead head,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const=0;
+		virtual TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const=0;
 		virtual TLogTime EstimateNanosecondsPerOneByte() const;
 		TSector GetCountOfHealthySectors(TCylinder cyl,THead head) const;
 		bool IsTrackHealthy(TCylinder cyl,THead head) const;
@@ -473,7 +492,7 @@
 		virtual TStdWinError Reset()=0;
 		virtual TStdWinError SaveTrack(TCylinder cyl,THead head);
 		virtual CTrackReader ReadTrack(TCylinder cyl,THead head) const;
-		virtual TStdWinError FormatTrack(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte)=0;
+		virtual TStdWinError FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte)=0;
 		virtual bool RequiresFormattedTracksVerification() const;
 		virtual TStdWinError PresumeHealthyTrackStructure(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,BYTE gap3,BYTE fillerByte);
 		virtual TStdWinError UnformatTrack(TCylinder cyl,THead head)=0;

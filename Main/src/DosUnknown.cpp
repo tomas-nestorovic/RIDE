@@ -19,6 +19,7 @@
 		nullptr, // the most common Image to contain data for this DOS (e.g. *.D80 Image for MDOS)
 		1,	// number of std Formats
 		CMDOS2::Properties.stdFormats, // std Formats ("some" Format in case of UnknownDos)
+		Codec::ANY, // a set of Codecs this DOS supports
 		0,0, // range of supported number of Sectors
 		0, // minimal total number of Sectors required
 		0, // maximum number of Sector in one Cluster (must be power of 2)

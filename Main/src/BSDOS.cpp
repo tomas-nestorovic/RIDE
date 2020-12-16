@@ -1155,6 +1155,7 @@
 			Instantiate, // instantiation function
 			_T("*.mbd"), // filter
 			TMedium::FLOPPY_ANY, // supported media
+			Codec::MFM, // supported Codecs
 			BSDOS_SECTOR_LENGTH_STD,BSDOS_SECTOR_LENGTH_STD	// min and max sector length
 		};
 	}

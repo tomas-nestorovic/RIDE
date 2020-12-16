@@ -92,6 +92,7 @@
 			// formatting
 			BYTE nStdFormats;
 			CFormatDialog::PCStdFormat stdFormats;
+			Codec::TType supportedCodecs; // a set of Codecs this DOS supports
 			TSector nSectorsOnTrackMin,nSectorsOnTrackMax; // range of supported number of Sectors
 			TSector nSectorsInTotalMin; // minimal total number of Sectors required
 			BYTE nSectorsInClusterMax; // maximum number of Sector in one Cluster (must be power of 2)

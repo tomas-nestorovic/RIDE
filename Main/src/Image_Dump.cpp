@@ -139,9 +139,8 @@
 		TDumpParams &dp=*(TDumpParams *)pAction->GetParams();
 		pAction->SetProgressTarget( dp.cylinderZ+1-dp.cylinderA );
 		// - setting geometry to the TargetImage
-		TSectorId bufferId[(TSector)-1];	WORD bufferLength[(TSector)-1];
-		TSector nSectors=dp.source->ScanTrack(0,0,bufferId,bufferLength);
-		const TFormat targetGeometry={ dp.mediumType, dp.cylinderZ+1, dp.nHeads, nSectors, dp.dos->formatBoot.sectorLengthCode, *bufferLength, 1 };
+		TSector nSectors=dp.source->ScanTrack(0,0);
+		const TFormat targetGeometry={ dp.mediumType, dp.dos->formatBoot.codecType, dp.cylinderZ+1, dp.nHeads, nSectors, dp.dos->formatBoot.sectorLengthCode, dp.dos->formatBoot.sectorLength, 1 };
 		TStdWinError err=dp.target->SetMediumTypeAndGeometry( &targetGeometry, dp.dos->sideMap, dp.dos->properties->firstSectorNumber );
 		if (err!=ERROR_SUCCESS)
 terminateWithError:
@@ -165,8 +164,10 @@ terminateWithError:
 				LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("processing"));
 				p.track=p.chs.GetTrackNumber(dp.nHeads);
 				// . scanning Source Track
+				TSectorId bufferId[(TSector)-1];	WORD bufferLength[(TSector)-1];
+				Codec::TType codec;
 {LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("scanning source"));
-				nSectors=dp.source->ScanTrack(p.chs.cylinder,p.chs.head,bufferId,bufferLength);
+				nSectors=dp.source->ScanTrack(p.chs.cylinder,p.chs.head,&codec,bufferId,bufferLength);
 }
 				// . reading Source Track
 				#pragma pack(1)
@@ -386,7 +387,7 @@ terminateWithError:
 {LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("formatting target"));
 				if (dp.formatJustBadTracks && dp.source->IsTrackHealthy(p.chs.cylinder,p.chs.head)){
 					if (!dp.gap3.valueValid){ // "real" Gap3 Value (i.e. the one that was used when previously formatting the disk) not yet determined
-						if (dp.target->ScanTrack( p.chs.cylinder, p.chs.head, nullptr, nullptr, nullptr, &dp.gap3.value )) // if there are some Sectors on the Target Track ...
+						if (dp.target->ScanTrack( p.chs.cylinder, p.chs.head, nullptr, nullptr, nullptr, nullptr, &dp.gap3.value )) // if there are some Sectors on the Target Track ...
 							if (dp.target->IsTrackHealthy(p.chs.cylinder,p.chs.head)){ // ... and all of them are well readable ...
 								#ifdef LOGGING_ENABLED
 									LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("Avg target image Gap3"));
@@ -400,7 +401,7 @@ terminateWithError:
 					if (dp.target->PresumeHealthyTrackStructure(p.chs.cylinder,p.chs.head,nSectors,bufferId,dp.gap3.value,dp.fillerByte)!=ERROR_SUCCESS)
 						goto reformatTrack;
 				}else
-reformatTrack:		if ( err=dp.target->FormatTrack(p.chs.cylinder,p.chs.head,nSectors,bufferId,bufferLength,bufferFdcStatus,dp.gap3.value,dp.fillerByte) )
+reformatTrack:		if ( err=dp.target->FormatTrack(p.chs.cylinder,p.chs.head,codec!=Codec::UNKNOWN?codec:dp.dos->formatBoot.codecType,nSectors,bufferId,bufferLength,bufferFdcStatus,dp.gap3.value,dp.fillerByte) )
 						goto terminateWithError;
 }
 				// . writing to Target Track
@@ -478,10 +479,6 @@ errorDuringWriting:			TCHAR buf[80];
 						Utils::Information( _T("Target must not be the same as source.") );
 						pDX->Fail();
 					}
-					// : Medium must be supported by both DOS and Image
-					pDX->PrepareEditCtrl(ID_MEDIUM);
-					const HWND hComboBox=GetDlgItemHwnd(ID_MEDIUM);
-					TMedium::TType mt=(TMedium::TType)ComboBox_GetItemData( hComboBox, ComboBox_GetCurSel(hComboBox) );
 				}else{
 					SetDlgItemText( ID_FILE, ELLIPSIS );
 					PopulateComboBoxWithCompatibleMedia( hMedium, 0, nullptr ); // if FileName not set, Medium cannot be determined
@@ -608,9 +605,13 @@ errorDuringWriting:			TCHAR buf[80];
 											);
 										// > enabling/disabling controls
 										static const WORD Controls[]={ ID_CYLINDER, ID_CYLINDER_N, ID_HEAD, ID_GAP, ID_NUMBER, ID_DEFAULT1, IDOK, 0 };
-										EnableDlgItems( Controls, nCompatibleMedia>0 );
-										EnableDlgItem( ID_FORMAT, nCompatibleMedia && targetImageProperties->IsRealDevice() );
-											CheckDlgButton( ID_FORMAT, targetImageProperties->IsRealDevice() );
+										CheckDlgButton(
+											ID_FORMAT,
+											EnableDlgItem(
+												ID_FORMAT,
+												EnableDlgItems( Controls, nCompatibleMedia>0 )  &&  targetImageProperties->IsRealDevice()
+											)
+										);
 										FocusDlgItem(IDOK);
 										// > automatically ticking the "Real-time thread priority" check-box if either the source or the target is a real drive
 										if (dos->image->properties->IsRealDevice() || targetImageProperties->IsRealDevice())

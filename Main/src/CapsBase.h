@@ -80,7 +80,7 @@
 		CapsImageInfo capsImageInfo;
 		PInternalTrack mutable internalTracks[FDD_CYLINDERS_MAX][2]; // "2" = a floppy can have two Sides
 
-		mutable CTrackReader::TCodec lastSuccessfullCodec;
+		mutable Codec::TType lastSuccessfullCodec;
 
 		CCapsBase(PCProperties properties,bool hasEditableSettings);
 
@@ -92,7 +92,7 @@
 		//BOOL OnSaveDocument(LPCTSTR lpszPathName) override;
 		TCylinder GetCylinderCount() const override;
 		THead GetNumberOfFormattedSides(TCylinder cyl) const override;
-		TSector ScanTrack(TCylinder cyl,THead head,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const override;
+		TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const override;
 		void GetTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses) override;
 		TStdWinError GetInsertedMediumType(TCylinder cyl,TMedium::TType &rOutMediumType) const override;
 		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;

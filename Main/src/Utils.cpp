@@ -889,6 +889,21 @@ namespace Utils{
 		SetDlgItemPos( id, 0,0, cx,cy );
 	}
 
+	bool CRideDialog::SelectDlgComboBoxValue(WORD id,LONG_PTR value) const{
+		// True <=> specified Value found in ComboBox's value list, otherwise False
+		CComboBox cb;
+		cb.Attach( GetDlgItemHwnd(id) );
+			cb.SetCurSel(-1); // cancelling previous selection
+			bool valueFound=false; // assumption
+			for( BYTE n=cb.GetCount(); n--; )
+				if ( valueFound=cb.GetItemData(n)==value ){
+					cb.SetCurSel(n);
+					break;
+				}
+		cb.Detach();
+		return valueFound;
+	}
+
 	class CTempDlg sealed:public CDialog{
 		const HRSRC hRes;
 		const HGLOBAL gRes;

@@ -17,6 +17,7 @@
 		Instantiate,	// instantiation function
 		_T("*.0.raw") IMAGE_FORMAT_SEPARATOR _T("*.1.raw"), // filter
 		TMedium::FLOPPY_ANY, // supported Media
+		Codec::FLOPPY_ANY, // supported Codecs
 		1,2*6144	// Sector supported min and max length
 	};
 
@@ -86,7 +87,7 @@
 		return ERROR_SUCCESS; // Stream files don't require firmware
 	}
 
-	TSector CKryoFluxStreams::ScanTrack(TCylinder cyl,THead head,PSectorId bufferId,PWORD bufferLength,PLogTime startTimesNanoseconds,PBYTE pAvgGap3) const{
+	TSector CKryoFluxStreams::ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec,PSectorId bufferId,PWORD bufferLength,PLogTime startTimesNanoseconds,PBYTE pAvgGap3) const{
 		// returns the number of Sectors found in given Track, and eventually populates the Buffer with their IDs (if Buffer!=Null); returns 0 if Track not formatted or not found
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - checking that specified Track actually CAN exist
@@ -94,7 +95,7 @@
 			return 0;
 		// - if Track already scanned before, returning the result from before
 		if (internalTracks[cyl][head]!=nullptr)
-			return __super::ScanTrack( cyl, head, bufferId, bufferLength, startTimesNanoseconds, pAvgGap3 );
+			return __super::ScanTrack( cyl, head, pCodec, bufferId, bufferLength, startTimesNanoseconds, pAvgGap3 );
 		// - loading the underlying file that contains the specified Track
 		if (!*nameBase) // NameBase not set, e.g. when creating a new Image
 			return 0;
@@ -121,7 +122,7 @@
 								trw.Normalize();
 						}
 					internalTracks[cyl][head]=CInternalTrack::CreateFrom( *this, trw );
-					nSectors=__super::ScanTrack( cyl, head, bufferId, bufferLength, startTimesNanoseconds, pAvgGap3 );
+					nSectors=__super::ScanTrack( cyl, head, pCodec, bufferId, bufferLength, startTimesNanoseconds, pAvgGap3 );
 				}
 			}
 			::free(data);

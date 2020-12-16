@@ -26,12 +26,11 @@
 		const PCStdFormat additionalFormats;
 		const BYTE nAdditionalFormats;
 
-		void __selectClusterSize__(CComboBox &rcb,WORD nSectorsPerCluster) const;
 		void PreInitDialog() override;
 		void DoDataExchange(CDataExchange *pDX) override;
 		BOOL OnNotify(WPARAM wParam,LPARAM lParam,LRESULT *pResult) override;
 		afx_msg void OnPaint();
-		afx_msg void __onMediumChanged__();
+		afx_msg void __onMediumOrEncodingChanged__();
 		afx_msg void __onFormatChanged__();
 		afx_msg void __recognizeStandardFormat__();
 		afx_msg void __recognizeStandardFormatAndRepaint__();

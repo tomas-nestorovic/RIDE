@@ -12,6 +12,7 @@
 													Instantiate,	// instantiation function
 													_T("*.dsk"), // filter
 													TMedium::FLOPPY_ANY, // supported Media
+													Codec::FLOPPY_ANY, // supported Codecs
 													1,2*6144	// Sector supported min and max length
 												};
 
@@ -255,7 +256,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		return diskInfo.nHeads;
 	}
 
-	TSector CDsk5::ScanTrack(TCylinder cyl,THead head,PSectorId bufferId,PWORD bufferLength,PLogTime startTimesNanoseconds,PBYTE pAvgGap3) const{
+	TSector CDsk5::ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec,PSectorId bufferId,PWORD bufferLength,PLogTime startTimesNanoseconds,PBYTE pAvgGap3) const{
 		// returns the number of Sectors found in given Track, and eventually populates the Buffer with their IDs (if Buffer!=Null); returns 0 if Track not formatted or not found
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (const PTrackInfo ti=__findTrack__(cyl,head)){
@@ -275,6 +276,8 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				else
 					// timing is not applicable for this kind of Image
 					for( TSector s=ti->nSectors; s>0; startTimesNanoseconds[--s]=INT_MIN );
+			if (pCodec)
+				*pCodec=Codec::UNKNOWN;
 			if (pAvgGap3)
 				*pAvgGap3=ti->gap3;
 			return ti->nSectors;
@@ -474,9 +477,11 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		return ERROR_SUCCESS;
 	}
 
-	TStdWinError CDsk5::FormatTrack(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte){
+	TStdWinError CDsk5::FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte){
 		// formats given Track {Cylinder,Head} to the requested NumberOfSectors, each with corresponding Length and FillerByte as initial content; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		if ((codec&Properties.supportedCodecs)==0)
+			return ERROR_NOT_SUPPORTED;
 		if (nSectors>DSK_TRACKINFO_SECTORS_MAX)
 			return Utils::ErrorByOs( ERROR_VHD_INVALID_TYPE, ERROR_NOT_SUPPORTED );
 		WORD w=cyl*diskInfo.nHeads+head;

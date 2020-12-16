@@ -15,6 +15,7 @@
 		Instantiate, // instantiation function
 		_T("*.ima") IMAGE_FORMAT_SEPARATOR _T("*.img") IMAGE_FORMAT_SEPARATOR _T("*.dat") IMAGE_FORMAT_SEPARATOR _T("*.bin"),	// filter
 		(TMedium::TType)(TMedium::FLOPPY_ANY | TMedium::HDD_RAW), // supported Media
+		Codec::ANY, // supported Codecs
 		1,16384	// Sector supported min and max length
 	};
 
@@ -173,7 +174,7 @@
 		return cyl<nCylinders ? nHeads : 0;
 	}
 
-	TSector CImageRaw::ScanTrack(TCylinder cyl,THead head,PSectorId bufferId,PWORD bufferLength,PLogTime startTimesNanoseconds,PBYTE pAvgGap3) const{
+	TSector CImageRaw::ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec,PSectorId bufferId,PWORD bufferLength,PLogTime startTimesNanoseconds,PBYTE pAvgGap3) const{
 		// returns the number of Sectors found in given Track, and eventually populates the Buffer with their IDs (if Buffer!=Null); returns 0 if Track not formatted or not found
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (cyl<nCylinders && head<nHeads){
@@ -187,6 +188,8 @@
 				if (startTimesNanoseconds)
 					*startTimesNanoseconds++=INT_MIN; // timing is not applicable for this kind of Image
 			}
+			if (pCodec)
+				*pCodec=Codec::UNKNOWN;
 			if (pAvgGap3)
 				*pAvgGap3=FDD_350_SECTOR_GAP3;
 			return nSectors;
@@ -348,7 +351,7 @@ trackNotFound:
 
 
 
-	TStdWinError CImageRaw::FormatTrack(TCylinder cyl,THead head,TSector _nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte){
+	TStdWinError CImageRaw::FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector _nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte){
 		// formats given Track {Cylinder,Head} to the requested NumberOfSectors, each with corresponding Length and FillerByte as initial content; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - formatting to "no Sectors" is translated as unformatting the Track

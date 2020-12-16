@@ -95,7 +95,7 @@
 
 	TStdWinError CTRDOS503::__recognizeDisk__(PImage image,PFormat pFormatBoot){
 		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
-		TFormat fmt={ TMedium::FLOPPY_DD, 1,2,TRDOS503_TRACK_SECTORS_COUNT, TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD, 1 };
+		TFormat fmt={ TMedium::FLOPPY_DD, Codec::MFM, 1,2,TRDOS503_TRACK_SECTORS_COUNT, TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD, 1 };
 		if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
 			fmt.mediumType=TMedium::FLOPPY_DD_525;
 			if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0))
@@ -142,10 +142,10 @@
 
 	// 5.25" drives are likely 360 rpm ones in PC
 	const CFormatDialog::TStdFormat CTRDOS503::StdFormats[]={ // zeroth position must always be occupied by the biggest capacity
-		{ DS80_CAPTION, 0, {TMedium::FLOPPY_DD,    79,2,TRDOS503_TRACK_SECTORS_COUNT,TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD,1}, 1, 0, TRDOS_SECTOR_GAP3, 0, 128 },
-		{ DS40_CAPTION, 0, {TMedium::FLOPPY_DD_525,39,2,TRDOS503_TRACK_SECTORS_COUNT,TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD,1}, 1, 0, TRDOS_SECTOR_GAP3, 0, 128 },
-		{ SS80_CAPTION, 0, {TMedium::FLOPPY_DD,	   79,1,TRDOS503_TRACK_SECTORS_COUNT,TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD,1}, 1, 0, TRDOS_SECTOR_GAP3, 0, 128 },
-		{ SS40_CAPTION, 0, {TMedium::FLOPPY_DD_525,39,1,TRDOS503_TRACK_SECTORS_COUNT,TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD,1}, 1, 0, TRDOS_SECTOR_GAP3, 0, 128 }
+		{ DS80_CAPTION, 0, {TMedium::FLOPPY_DD,    Codec::MFM,79,2,TRDOS503_TRACK_SECTORS_COUNT,TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD,1}, 1, 0, TRDOS_SECTOR_GAP3, 0, 128 },
+		{ DS40_CAPTION, 0, {TMedium::FLOPPY_DD_525,Codec::MFM,39,2,TRDOS503_TRACK_SECTORS_COUNT,TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD,1}, 1, 0, TRDOS_SECTOR_GAP3, 0, 128 },
+		{ SS80_CAPTION, 0, {TMedium::FLOPPY_DD,	   Codec::MFM,79,1,TRDOS503_TRACK_SECTORS_COUNT,TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD,1}, 1, 0, TRDOS_SECTOR_GAP3, 0, 128 },
+		{ SS40_CAPTION, 0, {TMedium::FLOPPY_DD_525,Codec::MFM,39,1,TRDOS503_TRACK_SECTORS_COUNT,TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD,1}, 1, 0, TRDOS_SECTOR_GAP3, 0, 128 }
 	};
 	const CDos::TProperties CTRDOS503::Properties={
 		TRDOS_NAME_BASE _T(" 5.03"), // name
@@ -157,6 +157,7 @@
 		&TRD::Properties, // the most common Image to contain data for this DOS (e.g. *.D80 Image for MDOS)
 		4,	// number of std Formats
 		StdFormats, // std Formats
+		Codec::MFM, // a set of Codecs this DOS supports
 		TRDOS503_TRACK_SECTORS_COUNT,TRDOS503_TRACK_SECTORS_COUNT, // range of supported number of Sectors
 		TRDOS503_SECTOR_RESERVED_COUNT, // minimal total number of Sectors required
 		1, // maximum number of Sector in one Cluster (must be power of 2)
@@ -375,6 +376,7 @@
 												Instantiate,// instantiation function
 												_T("*.trd"),	// filter
 												TMedium::FLOPPY_DD_ANY,
+												Codec::MFM, // supported Codecs
 												TRDOS503_SECTOR_LENGTH_STD,TRDOS503_SECTOR_LENGTH_STD	// min and max length of storable Sectors
 											};
 	}

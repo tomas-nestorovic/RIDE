@@ -24,7 +24,7 @@
 		// - creating a CAPS device
 		, capsDeviceHandle(  capsLibLoadingError ? -1 : ::CAPSAddImage()  )
 		// - initialization
-		, lastSuccessfullCodec(CTrackReader::TCodec::MFM) {
+		, lastSuccessfullCodec(Codec::MFM) {
 		::ZeroMemory( &capsImageInfo, sizeof(capsImageInfo) );
 		::ZeroMemory( internalTracks, sizeof(internalTracks) );
 	}
@@ -240,10 +240,10 @@
 	CCapsBase::CInternalTrack *CCapsBase::CInternalTrack::CreateFrom(const CCapsBase &cb,const CTrackReaderWriter &trw){
 		// creates and returns a Track decoded from underlying flux representation
 		CTrackReader tr=trw;
-		TCodec c=cb.lastSuccessfullCodec; // turning first to the Codec that successfully decoded the previous Track
-		for( TCodecSet codecs=TCodec::UNDETERMINED,next=1; codecs!=0; c=(TCodec)next ){
+		Codec::TType c=cb.lastSuccessfullCodec; // turning first to the Codec that successfully decoded the previous Track
+		for( Codec::TTypeSet codecs=Codec::ANY,next=1; codecs!=0; c=(Codec::TType)next ){
 			// . determining the Codec to be used in the NEXT iteration for decoding
-			for( codecs&=~c; (codecs&next)==0&&(next&TCodec::UNDETERMINED)!=0; next<<=1 );
+			for( codecs&=~c; (codecs&next)==0&&(next&Codec::ANY)!=0; next<<=1 );
 			// . scanning the Track and if no Sector recognized, continuing with Next Codec
 			TSectorId ids[DEVICE_REVOLUTIONS_MAX*(TSector)-1]; TLogTime idEnds[DEVICE_REVOLUTIONS_MAX*(TSector)-1]; TProfile idProfiles[DEVICE_REVOLUTIONS_MAX*(TSector)-1]; TFdcStatus statuses[DEVICE_REVOLUTIONS_MAX*(TSector)-1];
 			tr.SetCodec(c);
@@ -448,7 +448,7 @@
 		return capsImageInfo.maxhead+1; // the last INCLUSIVE Head plus one
 	}
 
-	TSector CCapsBase::ScanTrack(TCylinder cyl,THead head,PSectorId bufferId,PWORD bufferLength,PLogTime startTimesNanoseconds,PBYTE pAvgGap3) const{
+	TSector CCapsBase::ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec,PSectorId bufferId,PWORD bufferLength,PLogTime startTimesNanoseconds,PBYTE pAvgGap3) const{
 		// returns the number of Sectors found in given Track, and eventually populates the Buffer with their IDs (if Buffer!=Null); returns 0 if Track not formatted or not found
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - checking that specified Track actually CAN exist
@@ -488,6 +488,8 @@
 						break;
 					}
 			}
+			if (pCodec)
+				*pCodec=pit->GetCodec();
 			if (pAvgGap3)
 				*pAvgGap3=FDD_525_SECTOR_GAP3; // TODO
 			return pit->nSectors;

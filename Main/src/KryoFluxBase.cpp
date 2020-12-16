@@ -246,7 +246,7 @@
 		return __super::SetMediumTypeAndGeometry( pFormat, sideMap, firstSectorNumber );
 	}
 
-	TStdWinError CKryoFluxBase::FormatTrack(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte){
+	TStdWinError CKryoFluxBase::FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte){
 		// formats given Track {Cylinder,Head} to the requested NumberOfSectors, each with corresponding Length and FillerByte as initial content; returns Windows standard i/o error
 		return ERROR_NOT_SUPPORTED;
 	}

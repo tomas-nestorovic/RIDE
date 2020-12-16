@@ -206,7 +206,7 @@
 												lb.ResetContent();
 												if (chs.head<image->GetNumberOfFormattedSides(chs.cylinder)){ // Head number valid
 													TSectorId ids[(TSector)-1];
-													TSector s=0,const nSectors=image->ScanTrack( chs.cylinder, chs.head, ids );
+													TSector s=0,const nSectors=image->ScanTrack( chs.cylinder, chs.head, nullptr, ids );
 													while (s<nSectors) lb.AddString(ids[s++].ToString());
 													lb.SetCurSel(0);
 												}
@@ -220,7 +220,7 @@
 												const int iSel=lb.GetCurSel();
 												if (EnableDlgItem(IDOK,iSel>=0)){
 													TSectorId ids[(TSector)-1];
-													image->ScanTrack( chs.cylinder, chs.head, ids );
+													image->ScanTrack( chs.cylinder, chs.head, nullptr, ids );
 													chs.sectorId=ids[ sectorIndexOnTrack=iSel ];
 												}
 											lb.Detach();

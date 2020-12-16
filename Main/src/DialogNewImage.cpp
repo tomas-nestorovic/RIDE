@@ -39,8 +39,9 @@
 		// determines if Properties of given DOS and Image are compatible, and in case that yes, adds given Image to options
 		const WORD dosStdSectorLength=dosProps->stdFormats->params.format.sectorLength;
 		if (imageProps->supportedMedia&dosProps->supportedMedia) // DOS and Image support common Media
-			if (imageProps->sectorLengthMin<=dosStdSectorLength && dosStdSectorLength<=imageProps->sectorLengthMax)
-				rLBImage.SetItemDataPtr( rLBImage.AddString(imageProps->fnRecognize(nullptr)), (PVOID)imageProps ); // Null as buffer = one Image represents only one "device" whose name is known at compile-time
+			if (imageProps->supportedCodecs&dosProps->supportedCodecs) // DOS and Image support common Codecs
+				if (imageProps->sectorLengthMin<=dosStdSectorLength && dosStdSectorLength<=imageProps->sectorLengthMax)
+					rLBImage.SetItemDataPtr( rLBImage.AddString(imageProps->fnRecognize(nullptr)), (PVOID)imageProps ); // Null as buffer = one Image represents only one "device" whose name is known at compile-time
 	}
 
 	#define REAL_DEVICE_OPTION_STRING	_T("[ Compatible physical device ]")

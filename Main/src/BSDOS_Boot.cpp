@@ -4,7 +4,7 @@
 	TStdWinError CBSDOS308::__recognizeDisk__(PImage image,PFormat pFormatBoot){
 		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
 		// - determining the Type of Medium (type of floppy)
-		TFormat fmt={ TMedium::FLOPPY_DD_525, 1,1,BSDOS_SECTOR_NUMBER_TEMP, BSDOS_SECTOR_LENGTH_STD_CODE,BSDOS_SECTOR_LENGTH_STD, 1 };
+		TFormat fmt={ TMedium::FLOPPY_DD_525, Codec::MFM, 1,1,BSDOS_SECTOR_NUMBER_TEMP, BSDOS_SECTOR_LENGTH_STD_CODE,BSDOS_SECTOR_LENGTH_STD, 1 };
 		if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,BSDOS_SECTOR_NUMBER_FIRST)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
 			fmt.mediumType=TMedium::FLOPPY_DD;
 			if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,BSDOS_SECTOR_NUMBER_FIRST)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
@@ -59,9 +59,9 @@
 	#define BSDOS_SECTOR_GAP3	32 /* smaller than regular IBM norm-compliant Gap to make sure all Sectors fit in a Track */
 
 	static const CFormatDialog::TStdFormat StdFormats[]={
-		{ _T("5.25\" DS DD, 360 RPM"), 0, {TMedium::FLOPPY_DD_525,39,2,5,TFormat::TLengthCode::LENGTHCODE_1024,BSDOS_SECTOR_LENGTH_STD,1}, 1, 0, BSDOS_SECTOR_GAP3, 2, 32 },
-		{ _T("3.5\" DS DD"), 0, {TMedium::FLOPPY_DD,79,2,5,TFormat::TLengthCode::LENGTHCODE_1024,BSDOS_SECTOR_LENGTH_STD,1}, 1, 0, BSDOS_SECTOR_GAP3, 2, 32 },
-		{ _T("3.5\" DS HD"), 0, {TMedium::FLOPPY_HD_350,79,2,11,TFormat::TLengthCode::LENGTHCODE_1024,BSDOS_SECTOR_LENGTH_STD,1}, 1, 0, BSDOS_SECTOR_GAP3, 2, 32 }
+		{ _T("5.25\" DS DD, 360 RPM"), 0, {TMedium::FLOPPY_DD_525,Codec::MFM,39,2,5,TFormat::TLengthCode::LENGTHCODE_1024,BSDOS_SECTOR_LENGTH_STD,1}, 1, 0, BSDOS_SECTOR_GAP3, 2, 32 },
+		{ _T("3.5\" DS DD"), 0, {TMedium::FLOPPY_DD,Codec::MFM,79,2,5,TFormat::TLengthCode::LENGTHCODE_1024,BSDOS_SECTOR_LENGTH_STD,1}, 1, 0, BSDOS_SECTOR_GAP3, 2, 32 },
+		{ _T("3.5\" DS HD"), 0, {TMedium::FLOPPY_HD_350,Codec::MFM,79,2,11,TFormat::TLengthCode::LENGTHCODE_1024,BSDOS_SECTOR_LENGTH_STD,1}, 1, 0, BSDOS_SECTOR_GAP3, 2, 32 }
 	};
 
 	const CDos::TProperties CBSDOS308::Properties={
@@ -74,6 +74,7 @@
 		&MBD::Properties, // the most common Image to contain data for this DOS (e.g. *.D80 Image for MDOS)
 		3,	// number of std Formats
 		StdFormats,//CMDOS2::Properties.stdFormats, // std Formats ("some" Format in case of UnknownDos)
+		Codec::MFM, // a set of Codecs this DOS supports
 		1,11, // range of supported number of Sectors
 		5, // minimal total number of Sectors required
 		1, // maximum number of Sector in one Cluster (must be power of 2)

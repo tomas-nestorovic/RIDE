@@ -129,7 +129,7 @@
 						for( TSector n=0; n<pit->nSectors; n++ )
 							bufferId[n]=pit->sectors[n].id, bufferLength[n]=pit->sectors[n].length, bufferStatus[n]=TFdcStatus::WithoutError;
 						__REFER_TO_TRACK(fdd,cyl,head)=nullptr; // detaching the Track internal representation for it to be not destroyed during reformatting of the Track
-						err=fdd->FormatTrack(	cyl, head, pit->nSectors, bufferId, bufferLength, bufferStatus,
+						err=fdd->FormatTrack(	cyl, head, pit->codec, pit->nSectors, bufferId, bufferLength, bufferStatus,
 												fdd->floppyType==TMedium::FLOPPY_DD_525 ? FDD_525_SECTOR_GAP3 : FDD_350_SECTOR_GAP3, // if gap too small (e.g. 10) it's highly likely that sectors would be missed in a single disk revolution (so for instance, reading 9 sectors would require 9 disk revolutions)
 												fdd->dos->properties->sectorFillerByte
 											);
@@ -200,10 +200,10 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 
 	static const TFdcStatus TrackRawContentIoError(FDC_ST1_DATA_ERROR,FDC_ST2_CRC_ERROR_IN_DATA);
 
-	CFDD::TInternalTrack::TInternalTrack(const CFDD *fdd,TCylinder cyl,THead head,TSector _nSectors,PCSectorId bufferId,PCLogTime sectorStartsNanoseconds)
+	CFDD::TInternalTrack::TInternalTrack(const CFDD *fdd,TCylinder cyl,THead head,Codec::TType codec,TSector _nSectors,PCSectorId bufferId,PCLogTime sectorStartsNanoseconds)
 		// ctor
 		// - initialization
-		: cylinder(cyl) , head(head)
+		: cylinder(cyl) , head(head) , codec(codec)
 		, nSectors(_nSectors) , sectors((TSectorInfo *)::ZeroMemory(::calloc(_nSectors,sizeof(TSectorInfo)),_nSectors*sizeof(TSectorInfo))) {
 		TInternalTrack::TSectorInfo *psi=sectors;
 		for( BYTE s=0; s<nSectors; psi++->seqNum=s++ ){
@@ -591,6 +591,7 @@ Utils::Information("--- EVERYTHING OK ---");
 		Instantiate,	// instantiation function
 		nullptr, // filter
 		TMedium::FLOPPY_ANY, // supported Media
+		Codec::FLOPPY_IBM, // supported Codecs
 		128,SECTOR_LENGTH_MAX	// Sector supported min and max length
 	};
 
@@ -880,7 +881,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 							TSectorId bufferId[(TSector)-1]; TLogTime sectorTimes[(TSector)-1];
 							for( BYTE n=0; n<sectors.n; n++ )
 								bufferId[n]=sectors.header[n], sectorTimes[n]=TIME_MICRO( sectors.header[n].reltime );
-							return REFER_TO_TRACK(cyl,head) = new TInternalTrack( this, cyl, head, sectors.n, bufferId, sectorTimes );
+							return REFER_TO_TRACK(cyl,head) = new TInternalTrack( this, cyl, head, Codec::MFM, sectors.n, bufferId, sectorTimes );
 						}
 						default:
 							ASSERT(FALSE);
@@ -891,7 +892,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		return nullptr;
 	}
 
-	TSector CFDD::ScanTrack(TCylinder cyl,THead head,PSectorId bufferId,PWORD bufferLength,PLogTime startTimesNanoseconds,PBYTE pAvgGap3) const{
+	TSector CFDD::ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec,PSectorId bufferId,PWORD bufferLength,PLogTime startTimesNanoseconds,PBYTE pAvgGap3) const{
 		// returns the number of Sectors found in given Track, and eventually populates the Buffer with their IDs (if Buffer!=Null); returns 0 if Track not formatted or not found
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (const PInternalTrack pit=((CFDD *)this)->__scanTrack__(cyl,head)){
@@ -913,6 +914,8 @@ error:				switch (const TStdWinError err=::GetLastError()){
 				if (startTimesNanoseconds)
 					*startTimesNanoseconds++=psi->startNanoseconds;
 			}
+			if (pCodec)
+				*pCodec=Codec::MFM; // TODO: currently only MFM support implemented
 			if (pAvgGap3)
 				if (pit->nSectors>1){
 					TLogTime nsSum=0; // sum of Gap3 nanoseconds
@@ -1395,7 +1398,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 			WORD __getNumberOfWrittenBytes__() const{
 				// counts and returns the number of TestBytes actually written in the most recent call to __writeSectorData__
 				PCBYTE p=(PCBYTE)fdd->dataBuffer;
-				for( fdd->__bufferSectorData__(rCyl,rHead,&sectorId,sectorLength,&TInternalTrack(fdd,rCyl,rHead,1,&sectorId,(PCLogTime)FDD_350_SECTOR_GAP3),0,&TFdcStatus()); *p==TEST_BYTE; p++ );
+				for( fdd->__bufferSectorData__(rCyl,rHead,&sectorId,sectorLength,&TInternalTrack(fdd,rCyl,rHead,Codec::MFM,1,&sectorId,(PCLogTime)FDD_350_SECTOR_GAP3),0,&TFdcStatus()); *p==TEST_BYTE; p++ );
 				return p-(PCBYTE)fdd->dataBuffer;
 			}
 			TStdWinError __setInterruptionToWriteSpecifiedNumberOfBytes__(WORD nBytes){
@@ -1434,13 +1437,13 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 				// : formatting Track to a single Sector
 				const bool vft0=lp.fdd->params.verifyFormattedTracks;
 				lp.fdd->params.verifyFormattedTracks=false;
-					const TStdWinError err=lp.fdd->FormatTrack( lp.cyl, lp.head, 1,&interruption.sectorId,&interruption.sectorLength,&TFdcStatus::WithoutError, FDD_350_SECTOR_GAP3, 0 );
+					const TStdWinError err=lp.fdd->FormatTrack( lp.cyl, lp.head, Codec::MFM, 1,&interruption.sectorId,&interruption.sectorLength,&TFdcStatus::WithoutError, FDD_350_SECTOR_GAP3, 0 );
 				lp.fdd->params.verifyFormattedTracks=vft0;
 				if (err!=ERROR_SUCCESS)
 					return LOG_ERROR(pAction->TerminateWithError(err));
 				// : verifying the single formatted Sector
 				TFdcStatus sr;
-				lp.fdd->__bufferSectorData__( lp.cyl, lp.head, &interruption.sectorId, interruption.sectorLength, &TInternalTrack(lp.fdd,lp.cyl,lp.head,1,&interruption.sectorId,(PCLogTime)FDD_350_SECTOR_GAP3), 0, &sr );
+				lp.fdd->__bufferSectorData__( lp.cyl, lp.head, &interruption.sectorId, interruption.sectorLength, &TInternalTrack(lp.fdd,lp.cyl,lp.head,Codec::MFM,1,&interruption.sectorId,(PCLogTime)FDD_350_SECTOR_GAP3), 0, &sr );
 				if (sr.IsWithoutError())
 					break; // yes, a healthy Track has been found - using it for computation of all latencies
 				// : attempting to create a Sector WithoutErrors on another Track
@@ -1496,7 +1499,7 @@ Utils::Information(buf);}
 			static const TFdcStatus SectorStatuses[]={ TFdcStatus::WithoutError, TFdcStatus::WithoutError };
 			const bool vft0=lp.fdd->params.verifyFormattedTracks;
 			lp.fdd->params.verifyFormattedTracks=false;
-				const TStdWinError err=lp.fdd->FormatTrack( lp.cyl, lp.head, 2, SectorIds, SectorLengths, SectorStatuses, gap3, TEST_BYTE );
+				const TStdWinError err=lp.fdd->FormatTrack( lp.cyl, lp.head, Codec::MFM, 2, SectorIds, SectorLengths, SectorStatuses, gap3, TEST_BYTE );
 			lp.fdd->params.verifyFormattedTracks=vft0;
 			if (err!=ERROR_SUCCESS)
 				return pAction->TerminateWithError(err);
@@ -1887,7 +1890,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 						}
 			}else
 				// if verification turned off, assuming well formatted Track structure, hence avoiding the need of its scanning
-				REFER_TO_TRACK(chs.cylinder,chs.head) = new TInternalTrack( this, chs.cylinder, chs.head, 1, &chs.sectorId, (PCLogTime)FDD_350_SECTOR_GAP3 ); // Gap3 = calculate Sector start times from information of this Gap3 and individual Sector lengths
+				REFER_TO_TRACK(chs.cylinder,chs.head) = new TInternalTrack( this, chs.cylinder, chs.head, Codec::MFM, 1, &chs.sectorId, (PCLogTime)FDD_350_SECTOR_GAP3 ); // Gap3 = calculate Sector start times from information of this Gap3 and individual Sector lengths
 			// . Track formatted successfully
 			break;
 		}while (true);
@@ -1911,14 +1914,16 @@ autodetermineLatencies:		// automatic determination of write latency values
 	#define NUMBER_OF_OCCUPIED_BYTES(nSectors,sectorLength,gap3,withoutLastGap3)\
 		( nSectors*( NUMBER_OF_BYTES_OCCUPIED_BY_ID + GAP2_BYTES_COUNT + SYNCHRONIZATION_BYTES_COUNT + sizeof(TDataAddressMark) + sectorLength + sizeof(TCrc16) + gap3 )  -  withoutLastGap3*gap3 )
 
-	TStdWinError CFDD::FormatTrack(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte){
+	TStdWinError CFDD::FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte){
 		// formats given Track {Cylinder,Head} to the requested NumberOfSectors, each with corresponding Length and FillerByte as initial content; returns Windows standard i/o error
 		LOG_TRACK_ACTION(cyl,head,_T("TStdWinError CFDD::FormatTrack"));
 		#ifdef LOGGING_ENABLED
 			TCHAR formatTrackParams[200];
-			::wsprintf(formatTrackParams,_T("Cyl=%d, Head=%d, nSectors=%d, gap3=%d, fillerByte=%d"),cyl,head,nSectors,gap3,fillerByte);
+			::wsprintf(formatTrackParams,_T("Cyl=%d, Head=%d, codec=%d, nSectors=%d, gap3=%d, fillerByte=%d"),cyl,head,codec,nSectors,gap3,fillerByte);
 			LOG_MESSAGE(formatTrackParams);
 		#endif
+		if (codec!=Codec::MFM)
+			return LOG_ERROR(ERROR_NOT_SUPPORTED);
 		if (nSectors>FDD_SECTORS_MAX)
 			return LOG_ERROR(ERROR_BAD_COMMAND);
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
@@ -2156,7 +2161,7 @@ formatCustomWay:
 				// . verifying the Track (if requested to)
 				if (params.verifyFormattedTracks){
 					LOG_ACTION(_T("track verification"));
-					const TInternalTrack it( this, cyl, head, nSectors, bufferId, nullptr ); // nullptr = calculate Sector start times from information on default Gap3 and individual Sector lengths
+					const TInternalTrack it( this, cyl, head, Codec::MFM, nSectors, bufferId, nullptr ); // nullptr = calculate Sector start times from information on default Gap3 and individual Sector lengths
 					for( TSector n=0; n<nSectors; n++ ){
 						const TPhysicalAddress chs={ cyl, head, bufferId[n] };
 						TFdcStatus sr;
@@ -2170,7 +2175,7 @@ formatCustomWay:
 					}
 				}else
 					// if verification turned off, assuming well formatted Track structure, hence avoiding the need of its scanning
-					REFER_TO_TRACK(cyl,head) = new TInternalTrack( this, cyl, head, nSectors, bufferId, (PCLogTime)gap3 ); // Gap3 = calculate Sector start times from information of this Gap3 and individual Sector lengths
+					REFER_TO_TRACK(cyl,head) = new TInternalTrack( this, cyl, head, Codec::MFM, nSectors, bufferId, (PCLogTime)gap3 ); // Gap3 = calculate Sector start times from information of this Gap3 and individual Sector lengths
 				// . Track formatted successfully
 //Utils::Information("formatted OK - ready to break");
 				break;
@@ -2194,7 +2199,7 @@ formatCustomWay:
 		// - disposing internal information on actual Track format
 		__unformatInternalTrack__(cyl,head);
 		// - explicitly setting Track structure
-		TInternalTrack::TSectorInfo *psi=( REFER_TO_TRACK(cyl,head) = new TInternalTrack( this, cyl, head, nSectors, bufferId, (PCLogTime)gap3 ) )->sectors; // Gap3 = calculate Sector start times from information of this Gap3 and individual Sector lengths
+		TInternalTrack::TSectorInfo *psi=( REFER_TO_TRACK(cyl,head) = new TInternalTrack( this, cyl, head, Codec::MFM, nSectors, bufferId, (PCLogTime)gap3 ) )->sectors; // Gap3 = calculate Sector start times from information of this Gap3 and individual Sector lengths
 		for( TSector n=nSectors; n--; psi++ )
 			psi->data=(PSectorData)::memset( ALLOCATE_SECTOR_DATA(psi->length), fillerByte, psi->length );
 		// - presumption done

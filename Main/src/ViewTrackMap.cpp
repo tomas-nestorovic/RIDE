@@ -221,7 +221,7 @@
 			// . scanning the Track to draw its Sector Statuses
 			ti.cylinder=d.quot, ti.head=d.rem;
 			//if (pvtm->displayType==TDisplayType::STATUS) // commented out because this scanning always needed
-			ti.nSectors=image->ScanTrack( ti.cylinder, ti.head, ti.bufferId, ti.bufferLength, ti.bufferStartNanoseconds );
+			ti.nSectors=image->ScanTrack( ti.cylinder, ti.head, nullptr, ti.bufferId, ti.bufferLength, ti.bufferStartNanoseconds );
 			// . scanning the Track to draw its Sector data
 			if (pvtm->displayType>=TDisplayType::DATA_OK_ONLY){
 				TFdcStatus statuses[(TSector)-1];
@@ -494,7 +494,7 @@
 			TSectorId bufferId[(TSector)-1];
 			WORD bufferLength[(TSector)-1];
 			TLogTime bufferStarts[(TSector)-1];
-			const TSector nSectors=IMAGE->ScanTrack( rOutChs.cylinder=d.quot, rOutChs.head=d.rem, bufferId, bufferLength, bufferStarts );
+			const TSector nSectors=IMAGE->ScanTrack( rOutChs.cylinder=d.quot, rOutChs.head=d.rem, nullptr, bufferId, bufferLength, bufferStarts );
 			TimesToPixels( nSectors, bufferStarts, bufferLength );
 			for( TSector s=0; s<nSectors; s++ )
 				if (bufferStarts[s]<=point.x && point.x<=bufferStarts[s]+(bufferLength[s]>>zoomLengthFactor)){
@@ -724,7 +724,7 @@
 				if (pAction->IsCancelled()) return ERROR_CANCELLED;
 				TSectorId bufferId[(TSector)-1];
 				WORD bufferLength[(TSector)-1];
-				TSector nSectors=image->ScanTrack(cyl,head,bufferId,bufferLength);
+				TSector nSectors=image->ScanTrack(cyl,head,nullptr,bufferId,bufferLength);
 				rsp.sectors.nTotally+=nSectors;
 				CDos::TSectorStatus statuses[(TSector)-1];
 				for( rsp.dos->GetSectorStatuses(cyl,head,nSectors,bufferId,statuses); nSectors--; )

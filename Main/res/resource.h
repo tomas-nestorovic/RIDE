@@ -81,6 +81,7 @@
 #define ID_SIZE                         1044
 #define ID_FORMAT                       1045
 #define ID_CYLINDER_N                   1046
+#define ID_CODEC                        1047
 #define ID_GAP                          1048
 #define ID_MEDIUM                       1049
 #define ID_CLUSTER                      1050

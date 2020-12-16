@@ -120,6 +120,7 @@
 		Instantiate,	// instantiation function
 		nullptr, // filter
 		TMedium::FLOPPY_ANY, // supported Media
+		Codec::FLOPPY_ANY, // supported Codecs
 		1,2*6144	// Sector supported min and max length
 	};
 
@@ -521,7 +522,7 @@
 		return FALSE;
 	}
 
-	TSector CKryoFluxDevice::ScanTrack(TCylinder cyl,THead head,PSectorId bufferId,PWORD bufferLength,PLogTime startTimesNanoseconds,PBYTE pAvgGap3) const{
+	TSector CKryoFluxDevice::ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec,PSectorId bufferId,PWORD bufferLength,PLogTime startTimesNanoseconds,PBYTE pAvgGap3) const{
 		// returns the number of Sectors found in given Track, and eventually populates the Buffer with their IDs (if Buffer!=Null); returns 0 if Track not formatted or not found
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - checking that specified Track actually CAN exist
@@ -529,7 +530,7 @@
 			return 0;
 		// - if Track already scanned before, returning the result from before
 		if (internalTracks[cyl][head]!=nullptr)
-			return __super::ScanTrack( cyl, head, bufferId, bufferLength, startTimesNanoseconds, pAvgGap3 );
+			return __super::ScanTrack( cyl, head, pCodec, bufferId, bufferLength, startTimesNanoseconds, pAvgGap3 );
 		// - scanning (forced recovery from errors right during scanning)
 		for( char nRecoveryTrials=3; true; nRecoveryTrials-- ){
 			// . issuing a Request to the KryoFlux device to read fluxes in the specified Track
@@ -563,7 +564,7 @@
 						trw.Normalize();
 				}
 				internalTracks[cyl][head]=CInternalTrack::CreateFrom( *this, trw );
-				__super::ScanTrack( cyl, head, bufferId, bufferLength, startTimesNanoseconds, pAvgGap3 );
+				__super::ScanTrack( cyl, head, pCodec, bufferId, bufferLength, startTimesNanoseconds, pAvgGap3 );
 			}
 			// . if no more trials left, we are done
 			if (nRecoveryTrials<=0)

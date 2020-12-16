@@ -15,6 +15,7 @@
 		Instantiate,	// instantiation function
 		_T("*.raw"), // filter
 		TMedium::FLOPPY_ANY, // supported Media
+		Codec::FLOPPY_ANY, // supported Codecs
 		1,2*6144	// Sector supported min and max length
 	};
 
@@ -49,7 +50,7 @@
 		return ERROR_NOT_SUPPORTED;
 	}
 
-	TStdWinError CCtRaw::FormatTrack(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte){
+	TStdWinError CCtRaw::FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte){
 		// formats given Track {Cylinder,Head} to the requested NumberOfSectors, each with corresponding Length and FillerByte as initial content; returns Windows standard i/o error
 		return ERROR_NOT_SUPPORTED;
 	}

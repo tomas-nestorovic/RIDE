@@ -43,6 +43,8 @@
 					||
 					devProps->supportedMedia&dosProps->supportedMedia // DOS and Image support common Media
 					&&
+					devProps->supportedCodecs&dosProps->supportedCodecs // DOS and Image support common Codecs
+					&&
 					devProps->sectorLengthMin<=dosStdSectorLength && dosStdSectorLength<=devProps->sectorLengthMax
 				){
 					TCHAR deviceNames[4*DEVICE_NAME_CHARS_MAX+1]; // up to 4 Devices, "+1" = terminating null-character

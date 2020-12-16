@@ -78,6 +78,7 @@ namespace Utils{
 		void SetDlgItemPos(WORD id,int x,int y,int cx=0,int cy=0) const;
 		void SetDlgItemPos(WORD id,const RECT &rc) const;
 		void SetDlgItemSize(WORD id,int cx,int cy) const;
+		bool SelectDlgComboBoxValue(WORD id,LONG_PTR value) const;
 		void WrapDlgItemsByClosingCurlyBracketWithText(WORD idA,WORD idZ,LPCTSTR text,DWORD textColor) const;
 		void SetDlgItemFormattedText(WORD id,LPCTSTR format,...) const;
 		void SetDlgItemSingleCharUsingFont(WORD id,WCHAR singleChar,HFONT hFont) const;

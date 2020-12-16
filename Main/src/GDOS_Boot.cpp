@@ -5,7 +5,7 @@
 		return new CGDOS(image,pFormatBoot);
 	}
 	static const CFormatDialog::TStdFormat StdFormats[]={
-		{ _T("DS 80x10"), 0, {TMedium::FLOPPY_DD,GDOS_CYLINDERS_COUNT-1,2,GDOS_TRACK_SECTORS_COUNT,GDOS_SECTOR_LENGTH_STD_CODE,GDOS_SECTOR_LENGTH_STD,1}, 1, 0, FDD_350_SECTOR_GAP3, 1, GDOS_DIR_FILES_COUNT_MAX }
+		{ _T("DS 80x10"), 0, {TMedium::FLOPPY_DD,Codec::MFM,GDOS_CYLINDERS_COUNT-1,2,GDOS_TRACK_SECTORS_COUNT,GDOS_SECTOR_LENGTH_STD_CODE,GDOS_SECTOR_LENGTH_STD,1}, 1, 0, FDD_350_SECTOR_GAP3, 1, GDOS_DIR_FILES_COUNT_MAX }
 	};
 
 	TStdWinError CGDOS::__recognizeDisk__(PImage image,PFormat pFormatBoot){
@@ -61,6 +61,7 @@
 		&CMGT::Properties, // the most common Image to contain data for this DOS (e.g. *.D80 Image for MDOS)
 		1,	// number of std Formats
 		StdFormats, // std Formats
+		Codec::MFM, // a set of Codecs this DOS supports
 		GDOS_TRACK_SECTORS_COUNT,GDOS_TRACK_SECTORS_COUNT, // range of supported number of Sectors
 		GDOS_DIR_FILES_COUNT_MAX/2, // minimal total number of Sectors required
 		1, // maximum number of Sector in one Cluster (must be power of 2)
