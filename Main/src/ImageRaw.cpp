@@ -354,6 +354,8 @@ trackNotFound:
 	TStdWinError CImageRaw::FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector _nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte){
 		// formats given Track {Cylinder,Head} to the requested NumberOfSectors, each with corresponding Length and FillerByte as initial content; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		if ((codec&properties->supportedCodecs)==0)
+			return ERROR_NOT_SUPPORTED;
 		// - formatting to "no Sectors" is translated as unformatting the Track
 		if (!_nSectors)
 			return UnformatTrack(cyl,head);
