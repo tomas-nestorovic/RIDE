@@ -191,17 +191,17 @@
 		for( UDWORD rev=0; rev<cti.trackcnt; rev++ )
 			nBitsTotally += nBitsPerTrack[rev] = CBitReader(cti,rev,lockFlags).Count;
 		CTrackReaderWriter trw( nBitsTotally, CTrackReader::FDD_KEIR_FRASIER ); // pessimistic estimation of # of fluxes
-			if (*nBitsPerTrack>( nBitsPerTrackOfficial=TIME_MILLI(200)/CTrackReader::TProfile::HD.iwTimeDefault )*95/100) // 5% tolerance
-				// likely a 3.5" HD medium (10% tollerance)
+			if (*nBitsPerTrack>( nBitsPerTrackOfficial=TMedium::TProperties::FLOPPY_HD_350.nCells )*95/100) // 5% tolerance
+				// likely a 3.5" HD medium
 				trw.SetMediumType( TMedium::FLOPPY_HD_350 );
-			else if (*nBitsPerTrack>( nBitsPerTrackOfficial=TIME_SECOND(1)/(6*CTrackReader::TProfile::HD.iwTimeDefault) )*95/100) // 5% tolerance
-				// likely a 5.25" HD medium (10% tollerance)
-				trw.SetMediumType( TMedium::FLOPPY_HD_350 );
-			else if (*nBitsPerTrack>( nBitsPerTrackOfficial=TIME_MILLI(200)/CTrackReader::TProfile::DD.iwTimeDefault )*95/100) // 5% tolerance
-				// likely a 3.5" DD or 5.25" medium in 300 RPM drive (10% tollerance)
+			else if (*nBitsPerTrack>( nBitsPerTrackOfficial=TMedium::TProperties::FLOPPY_HD_525.nCells )*95/100) // 5% tolerance
+				// likely a 5.25" HD medium
+				trw.SetMediumType( TMedium::FLOPPY_HD_525 );
+			else if (*nBitsPerTrack>( nBitsPerTrackOfficial=TMedium::TProperties::FLOPPY_DD.nCells )*95/100) // 5% tolerance
+				// likely a 3.5" DD or 5.25" medium in 300 RPM drive
 				trw.SetMediumType( TMedium::FLOPPY_DD );
-			else if (*nBitsPerTrack>( nBitsPerTrackOfficial=TIME_SECOND(1)/(6*CTrackReader::TProfile::DD_525.iwTimeDefault) )*95/100) // 5% tolerance
-				// likely a 5.25" DD medium in 360 RPM drive (10% tollerance)
+			else if (*nBitsPerTrack>( nBitsPerTrackOfficial=TMedium::TProperties::FLOPPY_DD_525.nCells )*95/100) // 5% tolerance
+				// likely a 5.25" DD medium in 360 RPM drive
 				trw.SetMediumType( TMedium::FLOPPY_DD_525 );
 			else{
 				ASSERT(FALSE); //TODO: 8" SD medium

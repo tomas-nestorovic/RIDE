@@ -107,27 +107,6 @@
 		}
 	}
 
-	const CImage::CTrackReader::TProfile CImage::CTrackReader::TProfile::HD={
-		TIME_MICRO(1), // iwTimeDefault = 1 second / 500kb = 2 us -> 1 us for MFM encoding
-		TIME_MICRO(1), // iwTime
-		TIME_NANO(930), TIME_NANO(1070), // iwTimeMin, iwTimeMax
-		30 // adjustmentPercentMax
-	};
-
-	const CImage::CTrackReader::TProfile CImage::CTrackReader::TProfile::DD={
-		TIME_MICRO(2), // iwTimeDefault = 1 second / 250kb = 4 us -> 2 us for MFM encoding
-		TIME_MICRO(2), // iwTime
-		TIME_NANO(1830), TIME_NANO(2170), // iwTimeMin, iwTimeMax
-		30 // adjustmentPercentMax
-	};
-
-	const CImage::CTrackReader::TProfile CImage::CTrackReader::TProfile::DD_525={
-		TIME_NANO(1666), // iwTimeDefault = 1 second / 300kb = 3.333 us -> 1.666 us for MFM encoding
-		TIME_NANO(1666), // iwTime
-		TIME_NANO(1506), TIME_NANO(1826), // iwTimeMin, iwTimeMax
-		30 // adjustmentPercentMax
-	};
-
 	void CImage::CTrackReader::SetMediumType(TMedium::TType mediumType){
 		// changes the interpretation of recorded LogicalTimes according to the new MediumType
 		switch ( this->mediumType=mediumType ){
@@ -145,6 +124,7 @@
 				profile=TProfile::HD;
 				break;
 		}
+		profile.Reset();
 	}
 
 	bool CImage::CTrackReader::ReadBit(){
@@ -509,6 +489,30 @@
 
 
 
+	const CImage::CTrackReader::TProfile CImage::CTrackReader::TProfile::HD(
+		TMedium::TProperties::FLOPPY_HD_350, // same for both 3.5" and 5.25" HD floppies
+		7 // inspection window size tolerance
+	);
+
+	const CImage::CTrackReader::TProfile CImage::CTrackReader::TProfile::DD(
+		TMedium::TProperties::FLOPPY_DD,
+		8 // inspection window size tolerance
+	);
+
+	const CImage::CTrackReader::TProfile CImage::CTrackReader::TProfile::DD_525(
+		TMedium::TProperties::FLOPPY_DD_525,
+		9 // inspection window size tolerance
+	);
+
+	CImage::CTrackReader::TProfile::TProfile(const TMedium::TProperties &floppyProps,BYTE iwTimeTolerancePercent)
+		// ctor
+		: iwTimeDefault(floppyProps.cellTime)
+		, iwTime(iwTimeDefault)
+		, iwTimeMin( iwTimeDefault*(100-iwTimeTolerancePercent)/100 )
+		, iwTimeMax( iwTimeDefault*(100+iwTimeTolerancePercent)/100 )
+		, adjustmentPercentMax(30) {
+	}
+
 	void CImage::CTrackReader::TProfile::Reset(){
 		iwTime=iwTimeDefault;
 		::ZeroMemory( &method, sizeof(method) );
@@ -562,10 +566,10 @@
 			case TMedium::FLOPPY_HD_350:
 			case TMedium::FLOPPY_DD:
 			case TMedium::FLOPPY_DD_525: // 5.25" DD floppy should be used with 300 RPM drive!
-				Normalize( TIME_MILLI(200) );
+				Normalize( TMedium::TProperties::FLOPPY_HD_350.revolutionTime );
 				return true;
 			case TMedium::FLOPPY_HD_525:
-				Normalize( TIME_SECOND(1)/6 );
+				Normalize( TMedium::TProperties::FLOPPY_HD_525.revolutionTime );
 				return true;
 			default:
 				ASSERT(FALSE);

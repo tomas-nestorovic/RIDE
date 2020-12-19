@@ -58,7 +58,16 @@
 		};
 		#pragma pack(1)
 		typedef const struct TProperties sealed{
-			PropGrid::Integer::TUpDownLimits cylinderRange, headRange, sectorRange;
+			static const TProperties FLOPPY_HD_350;
+			static const TProperties FLOPPY_HD_525;
+			static const TProperties FLOPPY_DD;
+			static const TProperties FLOPPY_DD_525;
+
+			LPCTSTR description;
+			PropGrid::Integer::TUpDownLimits cylinderRange, headRange, sectorRange; // supported range of Cylinders/Heads/Sectors (min and max)
+			TLogTime revolutionTime; // single revolution time [nanoseconds]
+			TLogTime cellTime; // single recorded data cell time [nanoseconds]
+			DWORD nCells; // RevolutionTime/CellTime
 		} *PCProperties;
 
 		static LPCTSTR GetDescription(TType mediumType);
@@ -273,6 +282,9 @@
 						DWORD nConsecutiveZeros;
 					} frasier;
 				} method;
+
+				inline TProfile(){}
+				TProfile(const TMedium::TProperties &floppyProps,BYTE iwTimeTolerancePercent);
 
 				void Reset();
 			} profile;

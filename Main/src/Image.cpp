@@ -187,35 +187,75 @@
 
 	LPCTSTR TMedium::GetDescription(TType mediumType){
 		// returns the string description of a given MediumType
-		switch (mediumType){
-			case FLOPPY_DD_525	: return _T("5.25\" 2DD floppy, 360 RPM drive");
-			case FLOPPY_DD		: return _T("3.5\"/5.25\" 2DD floppy, 300 RPM drive");
-			case FLOPPY_HD_525	: return _T("5.25\" HD floppy, 360 RPM drive");
-			case FLOPPY_HD_350	: return _T("3.5\" HD floppy");
-			case HDD_RAW	: return _T("Hard disk (without MBR support)");
-			default:
-				ASSERT(FALSE);
-				return nullptr;
+		if (const PCProperties p=GetProperties(mediumType))
+			return p->description;
+		else{
+			ASSERT(FALSE);
+			return nullptr;
 		}
 	}
+
+	const TMedium::TProperties TMedium::TProperties::FLOPPY_HD_350={
+		_T("3.5\" HD floppy"), // description
+		{ 1, FDD_CYLINDERS_MAX }, // supported range of Cylinders (min and max)
+		{ 1, 2 },	// supported range of Heads (min and max)
+		{ 1, FDD_SECTORS_MAX }, // supported range of Sectors (min and max)
+		TIME_SECOND(1)/5, // single revolution time [nanoseconds]
+		TIME_MICRO(1), // single recorded data cell time [nanoseconds] = 1 second / 500kb = 2 탎 -> 1 탎 for MFM encoding
+		200000 // RevolutionTime/CellTime
+	};
+
+	const TMedium::TProperties TMedium::TProperties::FLOPPY_HD_525={
+		_T("5.25\" HD floppy, 360 RPM drive"), // description
+		{ 1, FDD_CYLINDERS_MAX }, // supported range of Cylinders (min and max)
+		{ 1, 2 },	// supported range of Heads (min and max)
+		{ 1, FDD_SECTORS_MAX }, // supported range of Sectors (min and max)
+		TIME_SECOND(1)/6, // single revolution time [nanoseconds]
+		TProperties::FLOPPY_HD_350.cellTime, // single recorded data cell time [nanoseconds] = same as 3.5" HD floppies
+		166666 // RevolutionTime/CellTime
+	};
+
+	const TMedium::TProperties TMedium::TProperties::FLOPPY_DD={
+		_T("3.5\"/5.25\" 2DD floppy, 300 RPM drive"), // description
+		{ 1, FDD_CYLINDERS_MAX }, // supported range of Cylinders (min and max)
+		{ 1, 2 },	// supported range of Heads (min and max)
+		{ 1, FDD_SECTORS_MAX }, // supported range of Sectors (min and max)
+		TIME_SECOND(1)/5, // single revolution time [nanoseconds]
+		TIME_MICRO(2), // single recorded data cell time [nanoseconds] = 1 second / 250kb = 4 탎 -> 2 탎 for MFM encoding
+		100000 // RevolutionTime/CellTime
+	};
+
+	const TMedium::TProperties TMedium::TProperties::FLOPPY_DD_525={
+		_T("5.25\" 2DD floppy, 360 RPM drive"), // description
+		{ 1, FDD_CYLINDERS_MAX }, // supported range of Cylinders (min and max)
+		{ 1, 2 },	// supported range of Heads (min and max)
+		{ 1, FDD_SECTORS_MAX }, // supported range of Sectors (min and max)
+		TIME_SECOND(1)/6, // single revolution time [nanoseconds]
+		TProperties::FLOPPY_DD.cellTime*5/6, // single recorded data cell time [nanoseconds] = 1 second / 300kb = 3.333 탎 -> 1.666 탎 for MFM encoding
+		100000 // RevolutionTime/CellTime
+	};
+
 	TMedium::PCProperties TMedium::GetProperties(TType mediumType){
 		// returns properties of a given MediumType
 		switch (mediumType){
 			case FLOPPY_DD_525:
+				return &TProperties::FLOPPY_DD_525;
 			case FLOPPY_DD:
+				return &TProperties::FLOPPY_DD;
 			case FLOPPY_HD_525:
-			case FLOPPY_HD_350:{
-				static const TProperties P={{ 1, FDD_CYLINDERS_MAX }, // supported range of Cylinders (min and max)
-											{ 1, 2 },	// supported range of Heads (min and max)
-											{ 1, FDD_SECTORS_MAX } // supported range of Sectors (min and max)
-										};
-				return &P;
-			}
+				return &TProperties::FLOPPY_HD_525;
+			case FLOPPY_HD_350:
+				return &TProperties::FLOPPY_HD_350;
 			case HDD_RAW:{
-				static const TProperties P={{ 1, HDD_CYLINDERS_MAX },// supported range of Cylinders (min and max)
-											{ 1, HDD_HEADS_MAX },	// supported range of Heads (min and max)
-											{ 1, (TSector)-1 }	// supported range of Sectors (min and max)
-										};
+				static const TProperties P={
+					_T("Hard disk (without MBR support)"), // description
+					{ 1, HDD_CYLINDERS_MAX },// supported range of Cylinders (min and max)
+					{ 1, HDD_HEADS_MAX },	// supported range of Heads (min and max)
+					{ 1, (TSector)-1 },	// supported range of Sectors (min and max)
+					0, // N/A - single revolution time [nanoseconds]
+					0, // N/A - single recorded data cell time [nanoseconds]
+					0 // N/A - RevolutionTime/CellTime
+				};
 				return &P;
 			}
 			default:
