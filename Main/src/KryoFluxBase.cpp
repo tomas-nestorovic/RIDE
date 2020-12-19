@@ -73,30 +73,30 @@
 			void RefreshMediumInformation(){
 				// detects a floppy in the Drive and attempts to recognize its Type
 				// . making sure that a floppy is in the Drive
-				TMedium::TType mt;
+				Medium::TType mt;
 				static const WORD Interactivity[]={ ID_LATENCY, ID_NUMBER2, ID_GAP };
 				if (!EnableDlgItems( Interactivity, rkfb.GetInsertedMediumType(0,mt)==ERROR_SUCCESS ))
 					SetDlgItemText( ID_MEDIUM, _T("Not inserted") );
 				// . attempting to recognize any previous format on the floppy
 				else
 					switch (mt){
-						case TMedium::FLOPPY_DD_525:
+						case Medium::FLOPPY_DD_525:
 							SetDlgItemText( ID_MEDIUM, _T("5.25\" DD formatted, 360 RPM drive") );
 							if (EnableDlgItem( ID_40D80, initialEditing )){
 								const bool doubleTrackStep0=rkfb.params.doubleTrackStep;
 									rkfb.params.doubleTrackStep=false;
 									if (rkfb.GetInsertedMediumType(0,mt)==ERROR_SUCCESS)
-										CheckDlgButton( ID_40D80, mt==TMedium::UNKNOWN ); // first Track is empty, so likely each odd Track is empty
+										CheckDlgButton( ID_40D80, mt==Medium::UNKNOWN ); // first Track is empty, so likely each odd Track is empty
 								rkfb.params.doubleTrackStep=doubleTrackStep0;
 								rkfb.GetInsertedMediumType(0,mt); // a workaround to make floppy Drive head seek home
 							}
 							break;
-						case TMedium::FLOPPY_DD:
+						case Medium::FLOPPY_DD:
 							SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" DD formatted, 300 RPM drive") );
 							CheckDlgButton( ID_40D80,  EnableDlgItem( ID_40D80, false )  );
 							break;
-						case TMedium::FLOPPY_HD_525:
-						case TMedium::FLOPPY_HD_350:
+						case Medium::FLOPPY_HD_525:
+						case Medium::FLOPPY_HD_350:
 							SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" HD formatted") );
 							CheckDlgButton( ID_40D80, false );
 							EnableDlgItem( ID_40D80, initialEditing );
@@ -234,7 +234,7 @@
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - "re-normalizing" already read Tracks according to the new Medium
 		if (params.normalizeReadTracks)
-			if (pFormat->mediumType!=TMedium::UNKNOWN) // a particular Medium specified ...
+			if (pFormat->mediumType!=Medium::UNKNOWN) // a particular Medium specified ...
 				if (floppyType!=pFormat->mediumType) // ... and it's different
 					for( TCylinder cyl=0; cyl<FDD_CYLINDERS_MAX; cyl++ )
 						for( THead head=0; head<2; head++ )

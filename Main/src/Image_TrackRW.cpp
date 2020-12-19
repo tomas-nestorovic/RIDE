@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-	CImage::CTrackReader::CTrackReader(PLogTime _logTimes,DWORD nLogTimes,PCLogTime indexPulses,BYTE _nIndexPulses,TMedium::TType mediumType,Codec::TType codec,TDecoderMethod method)
+	CImage::CTrackReader::CTrackReader(PLogTime _logTimes,DWORD nLogTimes,PCLogTime indexPulses,BYTE _nIndexPulses,Medium::TType mediumType,Codec::TType codec,TDecoderMethod method)
 		// ctor
 		: logTimes(_logTimes+1) , nLogTimes(nLogTimes) // "+1" = hidden item represents reference counter
 		, iNextIndexPulse(0) , nIndexPulses(  std::min<BYTE>( DEVICE_REVOLUTIONS_MAX, _nIndexPulses )  )
@@ -107,20 +107,20 @@
 		}
 	}
 
-	void CImage::CTrackReader::SetMediumType(TMedium::TType mediumType){
+	void CImage::CTrackReader::SetMediumType(Medium::TType mediumType){
 		// changes the interpretation of recorded LogicalTimes according to the new MediumType
 		switch ( this->mediumType=mediumType ){
 			default:
 				ASSERT(FALSE); // we shouldn't end-up here, all Media Types applicable for general Track description should be covered
 				//fallthrough
-			case TMedium::FLOPPY_DD:
+			case Medium::FLOPPY_DD:
 				profile=TProfile::DD;
 				break;
-			case TMedium::FLOPPY_DD_525:
+			case Medium::FLOPPY_DD_525:
 				profile=TProfile::DD_525;
 				break;
-			case TMedium::FLOPPY_HD_350:
-			case TMedium::FLOPPY_HD_525:
+			case Medium::FLOPPY_HD_350:
+			case Medium::FLOPPY_HD_525:
 				profile=TProfile::HD;
 				break;
 		}
@@ -490,21 +490,21 @@
 
 
 	const CImage::CTrackReader::TProfile CImage::CTrackReader::TProfile::HD(
-		TMedium::TProperties::FLOPPY_HD_350, // same for both 3.5" and 5.25" HD floppies
+		Medium::TProperties::FLOPPY_HD_350, // same for both 3.5" and 5.25" HD floppies
 		7 // inspection window size tolerance
 	);
 
 	const CImage::CTrackReader::TProfile CImage::CTrackReader::TProfile::DD(
-		TMedium::TProperties::FLOPPY_DD,
+		Medium::TProperties::FLOPPY_DD,
 		8 // inspection window size tolerance
 	);
 
 	const CImage::CTrackReader::TProfile CImage::CTrackReader::TProfile::DD_525(
-		TMedium::TProperties::FLOPPY_DD_525,
+		Medium::TProperties::FLOPPY_DD_525,
 		9 // inspection window size tolerance
 	);
 
-	CImage::CTrackReader::TProfile::TProfile(const TMedium::TProperties &floppyProps,BYTE iwTimeTolerancePercent)
+	CImage::CTrackReader::TProfile::TProfile(const Medium::TProperties &floppyProps,BYTE iwTimeTolerancePercent)
 		// ctor
 		: iwTimeDefault(floppyProps.cellTime)
 		, iwTime(iwTimeDefault)
@@ -531,7 +531,7 @@
 
 	CImage::CTrackReaderWriter::CTrackReaderWriter(DWORD nLogTimesMax,TDecoderMethod method)
 		// ctor
-		: CTrackReader( (PLogTime)::calloc(nLogTimesMax+1,sizeof(TLogTime)), 0, nullptr, 0, TMedium::FLOPPY_DD, Codec::MFM, method ) // "+1" = hidden item represents reference counter
+		: CTrackReader( (PLogTime)::calloc(nLogTimesMax+1,sizeof(TLogTime)), 0, nullptr, 0, Medium::FLOPPY_DD, Codec::MFM, method ) // "+1" = hidden item represents reference counter
 		, nLogTimesMax(nLogTimesMax) {
 	}
 
@@ -563,13 +563,13 @@
 	bool CImage::CTrackReaderWriter::Normalize(){
 		// True <=> asked and successfully normalized for a known MediumType, otherwise False
 		switch (mediumType){
-			case TMedium::FLOPPY_HD_350:
-			case TMedium::FLOPPY_DD:
-			case TMedium::FLOPPY_DD_525: // 5.25" DD floppy should be used with 300 RPM drive!
-				Normalize( TMedium::TProperties::FLOPPY_HD_350.revolutionTime );
+			case Medium::FLOPPY_HD_350:
+			case Medium::FLOPPY_DD:
+			case Medium::FLOPPY_DD_525: // 5.25" DD floppy should be used with 300 RPM drive!
+				Normalize( Medium::TProperties::FLOPPY_HD_350.revolutionTime );
 				return true;
-			case TMedium::FLOPPY_HD_525:
-				Normalize( TMedium::TProperties::FLOPPY_HD_525.revolutionTime );
+			case Medium::FLOPPY_HD_525:
+				Normalize( Medium::TProperties::FLOPPY_HD_525.revolutionTime );
 				return true;
 			default:
 				ASSERT(FALSE);

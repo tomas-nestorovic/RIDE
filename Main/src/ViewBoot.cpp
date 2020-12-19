@@ -169,7 +169,7 @@
 			TCommonBootParameters cbp;
 			::ZeroMemory(&cbp,sizeof(cbp));
 			GetCommonBootParameters(cbp,boot);
-			const TMedium::PCProperties props=TMedium::GetProperties(DOS->formatBoot.mediumType);
+			const Medium::PCProperties props=Medium::GetProperties(DOS->formatBoot.mediumType);
 			const HANDLE hGeometry= cbp.geometryCategory ? PropGrid::AddCategory(propGrid.m_hWnd,nullptr,_T("Geometry")) : 0;
 			if (hGeometry){
 				if (cbp.chs){

@@ -119,7 +119,7 @@
 		Recognize,	// list of recognized device names
 		Instantiate,	// instantiation function
 		nullptr, // filter
-		TMedium::FLOPPY_ANY, // supported Media
+		Medium::FLOPPY_ANY, // supported Media
 		Codec::FLOPPY_ANY, // supported Codecs
 		1,2*6144	// Sector supported min and max length
 	};
@@ -558,7 +558,7 @@
 			if (!kfStream.GetError()){
 				// it's a KryoFlux Stream whose data make sense
 				CTrackReaderWriter trw=kfStream.ToTrack(*this);
-				if (floppyType!=TMedium::UNKNOWN){ // may be unknown if Medium is still being recognized
+				if (floppyType!=Medium::UNKNOWN){ // may be unknown if Medium is still being recognized
 					trw.SetMediumType(floppyType);
 					if (params.normalizeReadTracks)
 						trw.Normalize();

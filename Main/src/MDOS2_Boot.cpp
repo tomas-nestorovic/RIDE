@@ -8,9 +8,9 @@
 
 	TStdWinError CMDOS2::__recognizeDisk__(PImage image,PFormat pFormatBoot){
 		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
-		TFormat fmt={ TMedium::FLOPPY_DD_525, Codec::MFM, 1,1,10, MDOS2_SECTOR_LENGTH_STD_CODE,MDOS2_SECTOR_LENGTH_STD, 1 };
+		TFormat fmt={ Medium::FLOPPY_DD_525, Codec::MFM, 1,1,10, MDOS2_SECTOR_LENGTH_STD_CODE,MDOS2_SECTOR_LENGTH_STD, 1 };
 		if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
-			fmt.mediumType=TMedium::FLOPPY_DD;
+			fmt.mediumType=Medium::FLOPPY_DD;
 			if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0))
 				return ERROR_UNRECOGNIZED_VOLUME; // unknown Medium Type
 		}
@@ -39,9 +39,9 @@
 		return new CMDOS2(image,pFormatBoot);
 	}
 	static const CFormatDialog::TStdFormat StdFormats[]={
-		{ _T("3.5\" DS 80x9"), 0, {TMedium::FLOPPY_DD,Codec::MFM,79,2,9,MDOS2_SECTOR_LENGTH_STD_CODE,MDOS2_SECTOR_LENGTH_STD,1}, 1, 0, FDD_350_SECTOR_GAP3, 1, 128 },
-		{ _T("3.5\" DS 40x9 (beware under MDOS1!)"), 0, {TMedium::FLOPPY_DD,Codec::MFM,39,2,9,MDOS2_SECTOR_LENGTH_STD_CODE,MDOS2_SECTOR_LENGTH_STD,1}, 1, 0, FDD_350_SECTOR_GAP3, 1, 128 },
-		{ _T("5.25\" DS 40x9, 360 RPM"), 0, {TMedium::FLOPPY_DD_525,Codec::MFM,39,2,9,MDOS2_SECTOR_LENGTH_STD_CODE,MDOS2_SECTOR_LENGTH_STD,1}, 1, 0, FDD_525_SECTOR_GAP3, 1, 128 }
+		{ _T("3.5\" DS 80x9"), 0, {Medium::FLOPPY_DD,Codec::MFM,79,2,9,MDOS2_SECTOR_LENGTH_STD_CODE,MDOS2_SECTOR_LENGTH_STD,1}, 1, 0, FDD_350_SECTOR_GAP3, 1, 128 },
+		{ _T("3.5\" DS 40x9 (beware under MDOS1!)"), 0, {Medium::FLOPPY_DD,Codec::MFM,39,2,9,MDOS2_SECTOR_LENGTH_STD_CODE,MDOS2_SECTOR_LENGTH_STD,1}, 1, 0, FDD_350_SECTOR_GAP3, 1, 128 },
+		{ _T("5.25\" DS 40x9, 360 RPM"), 0, {Medium::FLOPPY_DD_525,Codec::MFM,39,2,9,MDOS2_SECTOR_LENGTH_STD_CODE,MDOS2_SECTOR_LENGTH_STD,1}, 1, 0, FDD_525_SECTOR_GAP3, 1, 128 }
 	};
 	const CDos::TProperties CMDOS2::Properties={
 		_T("MDOS 2.0"), // name
@@ -49,7 +49,7 @@
 		80, // recognition priority (the bigger the number the earlier the DOS gets crack on the image)
 		__recognizeDisk__, // recognition function
 		__instantiate__, // instantiation function
-		TMedium::FLOPPY_DD_ANY,
+		Medium::FLOPPY_DD_ANY,
 		&D80::Properties, // the most common Image to contain data for this DOS (e.g. *.D80 Image for MDOS)
 		3,	// number of std Formats
 		StdFormats, // std Formats
@@ -131,8 +131,8 @@
 			p->driveLastSeekedCylinder=d.lastCylinder;
 			p->driveFlags.driveB=d.letter!=0;
 			CDos::GetFocused()->formatBoot.mediumType =	(p->driveFlags.driveD40=d.d40!=0)
-														? TMedium::FLOPPY_DD_525 // likely 360 rpm in PC
-														: TMedium::FLOPPY_DD;
+														? Medium::FLOPPY_DD_525 // likely 360 rpm in PC
+														: Medium::FLOPPY_DD;
 			p->driveFlags.doubleSided=d.doubleSided==BST_CHECKED;
 			p->driveFlags.fortyCylDiskInD80=d.dsk40cyl==BST_CHECKED;
 			p->driveFlags.stepSpeed=d.stepping;
@@ -258,11 +258,11 @@
 			// . Current drive
 			boot->current.driveConnected=true;
 			boot->current.driveError=false;
-			boot->current.driveFlags.driveB=formatBoot.mediumType==TMedium::FLOPPY_DD_525; // 5.25" drives are typically mapped as B's; this flag is not important
-			boot->current.driveFlags.driveD40=formatBoot.mediumType==TMedium::FLOPPY_DD_525;
+			boot->current.driveFlags.driveB=formatBoot.mediumType==Medium::FLOPPY_DD_525; // 5.25" drives are typically mapped as B's; this flag is not important
+			boot->current.driveFlags.driveD40=formatBoot.mediumType==Medium::FLOPPY_DD_525;
 			boot->current.driveFlags.doubleSided=true; // all modern PC drives are
 			boot->current.driveFlags.fortyCylDiskInD80=formatBoot.nCylinders==40; // 40-track disks were best avoided!
-			boot->current.driveCylinders= formatBoot.mediumType==TMedium::FLOPPY_DD_525 ? 40 : 80;
+			boot->current.driveCylinders= formatBoot.mediumType==Medium::FLOPPY_DD_525 ? 40 : 80;
 			boot->current.driveSectorsPerTrack=9;
 			// . Current disk
 			boot->current.diskFlags=boot->current.driveFlags;
@@ -334,7 +334,7 @@
 					break;
 				case IDYES:
 					boot->current.diskFlags.driveD40=false;
-					MDOS2->formatBoot.mediumType=TMedium::FLOPPY_DD;
+					MDOS2->formatBoot.mediumType=Medium::FLOPPY_DD;
 					IMAGE->MarkSectorAsDirty(CHS);
 					vp.fReport.CloseProblem(true);
 					break;
@@ -351,9 +351,9 @@
 		if (const TStdWinError err=vp.WarnIfUnsignedValueOutOfRange( CHS, BOOT_SECTOR_LOCATION_STRING, _T("Last seeked cylinder"), boot->current.driveLastSeekedCylinder, (BYTE)0, (BYTE)(boot->current.nCylinders-1) ))
 			if (err!=ERROR_INVALID_PARAMETER)
 				return vp.TerminateAll(err);
-		if (boot->current.driveFlags.driveD40 ^ MDOS2->formatBoot.mediumType==TMedium::FLOPPY_DD_525){
+		if (boot->current.driveFlags.driveD40 ^ MDOS2->formatBoot.mediumType==Medium::FLOPPY_DD_525){
 			TCHAR msg[80], sug[80];
-			_stprintf( msg, _T("The actual %.2f\" disk claims to be inserted in a D%c0 drive"), MDOS2->formatBoot.mediumType==TMedium::FLOPPY_DD_525?5.25f:3.5, '8'-4*boot->current.driveFlags.driveD40 );
+			_stprintf( msg, _T("The actual %.2f\" disk claims to be inserted in a D%c0 drive"), MDOS2->formatBoot.mediumType==Medium::FLOPPY_DD_525?5.25f:3.5, '8'-4*boot->current.driveFlags.driveD40 );
 			::wsprintf( sug, _T("It should be a D%c0 drive."), '4'+4*boot->current.driveFlags.driveD40 );
 			switch (vp.ConfirmFix( msg, sug )){
 				case IDCANCEL:
@@ -362,8 +362,8 @@
 					break;
 				case IDYES:
 					MDOS2->formatBoot.mediumType =	(boot->current.driveFlags.driveD40=!boot->current.driveFlags.driveD40)
-													? TMedium::FLOPPY_DD_525 // likely 360 rpm in PC
-													: TMedium::FLOPPY_DD;
+													? Medium::FLOPPY_DD_525 // likely 360 rpm in PC
+													: Medium::FLOPPY_DD;
 					IMAGE->MarkSectorAsDirty(CHS);
 					vp.fReport.CloseProblem(true);
 					break;
@@ -418,7 +418,7 @@
 												Recognize,// name
 												Instantiate,// instantiation function
 												_T("*.d80") IMAGE_FORMAT_SEPARATOR _T("*.d40"),	// filter
-												TMedium::FLOPPY_DD_ANY,
+												Medium::FLOPPY_DD_ANY,
 												Codec::MFM, // supported Codecs
 												MDOS2_SECTOR_LENGTH_STD, MDOS2_SECTOR_LENGTH_STD	// min and max length of storable Sectors
 											};

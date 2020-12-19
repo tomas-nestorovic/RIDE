@@ -10,7 +10,7 @@
 		} *PCSourceSectorError;
 
 		const CDos *const dos;
-		TMedium::TType mediumType;
+		Medium::TType mediumType;
 		const PImage source;
 		std::unique_ptr<CImage> target;
 		bool formatJustBadTracks;
@@ -485,8 +485,8 @@ errorDuringWriting:			TCHAR buf[80];
 				}
 				CComboBox cbMedium;
 				cbMedium.Attach(hMedium);
-					const TMedium::PCProperties mp=	targetImageProperties // ComboBox populated with compatible Media and one of them selected
-													? TMedium::GetProperties( dumpParams.mediumType=(TMedium::TType)cbMedium.GetItemData(cbMedium.GetCurSel()) )
+					const Medium::PCProperties mp=	targetImageProperties // ComboBox populated with compatible Media and one of them selected
+													? Medium::GetProperties( dumpParams.mediumType=(Medium::TType)cbMedium.GetItemData(cbMedium.GetCurSel()) )
 													: nullptr;
 				cbMedium.Detach();
 				int i=dumpParams.formatJustBadTracks;
@@ -589,11 +589,11 @@ errorDuringWriting:			TCHAR buf[80];
 									// : adjusting interactivity
 										// > populating ComboBox with Media supported by both DOS and Image
 										BYTE nCompatibleMedia;
-										if (dos->formatBoot.mediumType&TMedium::FLOPPY_ANY)
+										if (dos->formatBoot.mediumType&Medium::FLOPPY_ANY)
 											// source Image is a floppy - enabling dumping to any kind of a floppy (motivation: some copy-protection schemes feature misleading information on the kind of floppy; e.g., "Teen Agent" [or "Agent mlicnak"] installation disk #2 and #3 are introduced as 2DD floppies while they really are HD!)
 											nCompatibleMedia=PopulateComboBoxWithCompatibleMedia(
 												GetDlgItemHwnd(ID_MEDIUM),
-												dos->properties->supportedMedia&TMedium::FLOPPY_ANY,
+												dos->properties->supportedMedia&Medium::FLOPPY_ANY,
 												targetImageProperties
 											);
 										else

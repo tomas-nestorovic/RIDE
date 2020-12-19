@@ -184,7 +184,7 @@
 		, fileManager(this)
 		, zeroLengthFilesEnabled( __getProfileBool__(INI_ALLOW_ZERO_LENGTH_FILES,false) )
 		, importToSysTrack(false) {
-		if (formatBoot.mediumType!=TMedium::UNKNOWN // may be unknown if creating a new Image
+		if (formatBoot.mediumType!=Medium::UNKNOWN // may be unknown if creating a new Image
 			&&
 			image->GetCylinderCount() // Image is initialized (e.g. isn't when reconstructing a temporary TRD Image from an input SCL Image)
 		){

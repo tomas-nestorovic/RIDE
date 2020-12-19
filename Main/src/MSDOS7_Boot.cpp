@@ -20,11 +20,11 @@
 		// True <=> Boot Sector has been recognized on the disk, otherwise False
 		TPhysicalAddress chs={ 0, 0, {0,0,1,-1} };
 		// - in case the Image is a physical floppy disk, determining the Type of Medium (type of floppy)
-		TFormat fmt={ TMedium::FLOPPY_DD_525, Codec::MFM, 1,1,MSDOS7_SECTOR_BKBOOT, MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD, 1 };
+		TFormat fmt={ Medium::FLOPPY_DD_525, Codec::MFM, 1,1,MSDOS7_SECTOR_BKBOOT, MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD, 1 };
 		if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
-			fmt.mediumType=TMedium::FLOPPY_DD;
+			fmt.mediumType=Medium::FLOPPY_DD;
 			if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
-				fmt.mediumType=TMedium::FLOPPY_HD_350;
+				fmt.mediumType=Medium::FLOPPY_HD_350;
 				if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0))
 					return chs; // unknown Medium Type, any address will sooner or later cause a failure in access
 			}
@@ -98,23 +98,23 @@
 		pFormat->clusterSize=nSectorsInCluster;
 	}
 
-	TMedium::TType CMSDOS7::TBootSector::GetMediumType() const{
+	Medium::TType CMSDOS7::TBootSector::GetMediumType() const{
 		// extracts information on MediumType from this Boot Sector
 		switch (medium){
 			case DISK_35_1440_DS_18:
-				return TMedium::FLOPPY_HD_350;
+				return Medium::FLOPPY_HD_350;
 			case DISK_35_720_DS_9:
-				return TMedium::FLOPPY_DD;
+				return Medium::FLOPPY_DD;
 			case DISK_525_180_SS_9:
 			case DISK_525_360_DS_9:
 			case DISK_525_160_SS_8:
 			case DISK_525_320_DS_8:
-				return TMedium::FLOPPY_DD_525; // likely 360 rpm in PC
+				return Medium::FLOPPY_DD_525; // likely 360 rpm in PC
 			case DISK_HARD:
-				return TMedium::HDD_RAW;
+				return Medium::HDD_RAW;
 			default:
 				ASSERT(FALSE);
-				return TMedium::UNKNOWN;
+				return Medium::UNKNOWN;
 		}
 	}
 
@@ -130,14 +130,14 @@
 		nSectorsInCluster=pFormatBoot->clusterSize;
 		nFatCopies=params->nAllocationTables;
 		switch (pFormatBoot->mediumType){
-			case TMedium::FLOPPY_HD_350:
-			case TMedium::FLOPPY_HD_525: //TODO: is it correct?
+			case Medium::FLOPPY_HD_350:
+			case Medium::FLOPPY_HD_525: //TODO: is it correct?
 				medium=DISK_35_1440_DS_18;	break;
-			case TMedium::FLOPPY_DD:
+			case Medium::FLOPPY_DD:
 				medium=DISK_35_720_DS_9;	break;
-			case TMedium::FLOPPY_DD_525:
+			case Medium::FLOPPY_DD_525:
 				medium=DISK_525_360_DS_9;	break;
-			case TMedium::HDD_RAW:
+			case Medium::HDD_RAW:
 				medium=DISK_HARD;			break;
 			default:
 				ASSERT(FALSE);
@@ -169,7 +169,7 @@
 				else
 					nSectorsInTotal16=nSectorsInTotal32=nSectorsInTotal;
 				nSectorsFat16=nSectorsFat;
-				fat1216.mediumType= pFormatBoot->mediumType&TMedium::FLOPPY_ANY
+				fat1216.mediumType= pFormatBoot->mediumType&Medium::FLOPPY_ANY
 									? TMsdosMediumType::FLOPPY
 									: TMsdosMediumType::HDD;
 				fat1216.volume.__init__(rOutFat);
@@ -180,7 +180,7 @@
 				//fat32.rootDirectoryFirstCluster=... // initialized by caller when creating root Directory
 				fat32.fsInfo=MSDOS7_SECTOR_FSINFO;
 				fat32.bootCopy=MSDOS7_SECTOR_BKBOOT;
-				fat32.mediumType=	pFormatBoot->mediumType&TMedium::FLOPPY_ANY
+				fat32.mediumType=	pFormatBoot->mediumType&Medium::FLOPPY_ANY
 									? TMsdosMediumType::FLOPPY
 									: TMsdosMediumType::HDD;
 				fat32.volume.__init__(rOutFat);
@@ -236,11 +236,11 @@
 	TStdWinError CMSDOS7::__recognizeDisk__(PImage image,PFormat pFormatBoot){
 		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
 		// - in case the Image is a physical floppy disk, determining the Type of Medium (type of floppy)
-		TFormat fmt={ TMedium::FLOPPY_DD_525, Codec::MFM, 1,1,MSDOS7_SECTOR_BKBOOT, MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD, 1 };
+		TFormat fmt={ Medium::FLOPPY_DD_525, Codec::MFM, 1,1,MSDOS7_SECTOR_BKBOOT, MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD, 1 };
 		if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
-			fmt.mediumType=TMedium::FLOPPY_DD;
+			fmt.mediumType=Medium::FLOPPY_DD;
 			if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
-				fmt.mediumType=TMedium::FLOPPY_HD_350;
+				fmt.mediumType=Medium::FLOPPY_HD_350;
 				if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0))
 					return ERROR_UNRECOGNIZED_VOLUME; // unknown Medium Type
 			}
@@ -259,8 +259,8 @@
 			__cluster2logSector__( MSDOS7_DATA_CLUSTER_FIRST, bootSector )
 		){
 			if (!image->properties->IsRealDevice()){ // if this is NOT a real Device ...
-				const TMedium::TType officialMediumType=bootSector->GetMediumType();
-				if (officialMediumType!=TMedium::UNKNOWN)
+				const Medium::TType officialMediumType=bootSector->GetMediumType();
+				if (officialMediumType!=Medium::UNKNOWN)
 					pFormatBoot->mediumType=officialMediumType; // ... adopting the OfficialMediumType from BootSector
 			}
 			return ERROR_SUCCESS;
@@ -276,13 +276,13 @@
 	#define ARCHIVE_CAPACITY	_T("Single archive (beware under WinNT!)")
 
 	static const CFormatDialog::TStdFormat StdFormats[]={
-		{ _T("Standard 3.5\", 1440 kB"), 0, {TMedium::FLOPPY_HD_350,Codec::MFM,79,2,18,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,1}, 1, 0, FDD_350_SECTOR_GAP3, 2, 224 },
-		{ BOOSTED_CAPACITY, 0, {TMedium::FLOPPY_HD_350,Codec::MFM,FDD_CYLINDERS_MAX-1,2,21,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,2}, 2, 20, 5, 2, 128 },
-		{ ARCHIVE_CAPACITY, 0, {TMedium::FLOPPY_HD_350,Codec::MFM,FDD_CYLINDERS_MAX-1,2,21,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,16}, 2, 20, 5, 1, 16 },
-		{ _T("Standard 3.5\", 720 kB"), 0, {TMedium::FLOPPY_DD,Codec::MFM,79,2,9,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,1}, 1, 0, FDD_350_SECTOR_GAP3, 2, 224 },
-		{ BOOSTED_CAPACITY, 0, {TMedium::FLOPPY_DD,Codec::MFM,FDD_CYLINDERS_MAX-1,2,10,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,2}, 2, 9, 5, 2, 128 },
-		{ ARCHIVE_CAPACITY, 0, {TMedium::FLOPPY_DD,Codec::MFM,FDD_CYLINDERS_MAX-1,2,10,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,16}, 2, 9, 5, 1, 16 },
-		{ _T("Hard disk 50 MB"), 0, {TMedium::HDD_RAW,Codec::MFM,99,16,63,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,4}, 1, 0, FDD_350_SECTOR_GAP3, 2, 224 }
+		{ _T("Standard 3.5\", 1440 kB"), 0, {Medium::FLOPPY_HD_350,Codec::MFM,79,2,18,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,1}, 1, 0, FDD_350_SECTOR_GAP3, 2, 224 },
+		{ BOOSTED_CAPACITY, 0, {Medium::FLOPPY_HD_350,Codec::MFM,FDD_CYLINDERS_MAX-1,2,21,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,2}, 2, 20, 5, 2, 128 },
+		{ ARCHIVE_CAPACITY, 0, {Medium::FLOPPY_HD_350,Codec::MFM,FDD_CYLINDERS_MAX-1,2,21,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,16}, 2, 20, 5, 1, 16 },
+		{ _T("Standard 3.5\", 720 kB"), 0, {Medium::FLOPPY_DD,Codec::MFM,79,2,9,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,1}, 1, 0, FDD_350_SECTOR_GAP3, 2, 224 },
+		{ BOOSTED_CAPACITY, 0, {Medium::FLOPPY_DD,Codec::MFM,FDD_CYLINDERS_MAX-1,2,10,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,2}, 2, 9, 5, 2, 128 },
+		{ ARCHIVE_CAPACITY, 0, {Medium::FLOPPY_DD,Codec::MFM,FDD_CYLINDERS_MAX-1,2,10,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,16}, 2, 9, 5, 1, 16 },
+		{ _T("Hard disk 50 MB"), 0, {Medium::HDD_RAW,Codec::MFM,99,16,63,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,4}, 1, 0, FDD_350_SECTOR_GAP3, 2, 224 }
 	};
 	const CDos::TProperties CMSDOS7::Properties={
 		_T("MS-DOS 7.1 (experimental)"), // name
@@ -290,7 +290,7 @@
 		90, // recognition priority (the bigger the number the earlier the DOS gets crack on the image)
 		__recognizeDisk__, // recognition function
 		__instantiate__, // instantiation function
-		TMedium::ANY,
+		Medium::ANY,
 		&CImageRaw::Properties, // the most common Image to contain data for this DOS (e.g. *.D80 Image for MDOS)
 		7,	// number of std Formats
 		StdFormats, // std Formats

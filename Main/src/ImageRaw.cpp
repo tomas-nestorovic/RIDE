@@ -14,7 +14,7 @@
 		Recognize,	// list of recognized device names
 		Instantiate, // instantiation function
 		_T("*.ima") IMAGE_FORMAT_SEPARATOR _T("*.img") IMAGE_FORMAT_SEPARATOR _T("*.dat") IMAGE_FORMAT_SEPARATOR _T("*.bin"),	// filter
-		(TMedium::TType)(TMedium::FLOPPY_ANY | TMedium::HDD_RAW), // supported Media
+		(Medium::TType)(Medium::FLOPPY_ANY | Medium::HDD_RAW), // supported Media
 		Codec::ANY, // supported Codecs
 		1,16384	// Sector supported min and max length
 	};
@@ -270,7 +270,7 @@ trackNotFound:
 								: 0;
 		// - setting up geometry
 		sideMap=_sideMap, firstSectorNumber=_firstSectorNumber;
-		if (pFormat->mediumType!=TMedium::UNKNOWN){
+		if (pFormat->mediumType!=Medium::UNKNOWN){
 			// MediumType and its Format are already known
 			nHeads=pFormat->nHeads, nSectors=pFormat->nSectors, sectorLengthCode=GetSectorLengthCode( sectorLength=pFormat->sectorLength );
 			if (fileSize){ // some Cylinders exist only if Image contains some data (may not exist if Image not yet formatted)

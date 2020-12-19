@@ -43,7 +43,7 @@
 					additionalFormats[0].params.format.nCylinders=39;
 					additionalFormats[1].params.format.nCylinders=79;
 				CFormatDialog d(this, additionalFormats,
-								cylMin&&formatBoot.mediumType!=TMedium::UNKNOWN ? FORMAT_ADDITIONAL_COUNT : 0 // AdditionalFormats available only if Image already formatted before
+								cylMin&&formatBoot.mediumType!=Medium::UNKNOWN ? FORMAT_ADDITIONAL_COUNT : 0 // AdditionalFormats available only if Image already formatted before
 							);
 				return	__showDialogAndFormatStdCylinders__(d)==ERROR_SUCCESS
 						? TCmdResult::DONE_REDRAW

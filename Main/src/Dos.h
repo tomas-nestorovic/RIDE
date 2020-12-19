@@ -87,7 +87,7 @@
 			BYTE recognitionPriority; // the order in which the DOS gets crack at the disk content (the bigger the number the earlier it sniffes the disk)
 			TFnRecognize fnRecognize;
 			TFnInstantiate fnInstantiate;
-			TMedium::TType supportedMedia; // a set of MediumTypes this DOS supports
+			Medium::TType supportedMedia; // a set of MediumTypes this DOS supports
 			CImage::PCProperties typicalImage; // the most common Image to contain data for this DOS (e.g. *.D80 Image for MDOS)
 			// formatting
 			BYTE nStdFormats;
@@ -103,7 +103,7 @@
 			BYTE sectorFillerByte,directoryFillerByte; // regular Sector and Directory Sector filler Byte
 			BYTE dataBeginOffsetInSector,dataEndOffsetInSector; // number of reserved Bytes at the beginning and end of each Sector
 
-			BYTE GetValidGap3ForMedium(TMedium::TType medium) const;
+			BYTE GetValidGap3ForMedium(Medium::TType medium) const;
 		} *PCProperties;
 
 		struct TFileDateTime:public FILETIME{

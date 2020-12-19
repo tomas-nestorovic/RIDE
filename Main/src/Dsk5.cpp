@@ -11,7 +11,7 @@
 													Recognize,	// list of recognized device names
 													Instantiate,	// instantiation function
 													_T("*.dsk"), // filter
-													TMedium::FLOPPY_ANY, // supported Media
+													Medium::FLOPPY_ANY, // supported Media
 													Codec::FLOPPY_ANY, // supported Codecs
 													1,2*6144	// Sector supported min and max length
 												};
@@ -270,7 +270,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 					*bufferLength++=__getSectorLength__(si);
 			}
 			if (startTimesNanoseconds)
-				if (floppyType!=TMedium::UNKNOWN || app.IsInGodMode())
+				if (floppyType!=Medium::UNKNOWN || app.IsInGodMode())
 					// unsupported DOSes don't set up FloppyType but "some" timing may still be shown in God Mode
 					EstimateTrackTiming( cyl, head, ti->nSectors, bufferId-ti->nSectors, bufferLength-ti->nSectors, ti->gap3, startTimesNanoseconds );
 				else

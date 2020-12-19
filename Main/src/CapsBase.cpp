@@ -191,18 +191,18 @@
 		for( UDWORD rev=0; rev<cti.trackcnt; rev++ )
 			nBitsTotally += nBitsPerTrack[rev] = CBitReader(cti,rev,lockFlags).Count;
 		CTrackReaderWriter trw( nBitsTotally, CTrackReader::FDD_KEIR_FRASIER ); // pessimistic estimation of # of fluxes
-			if (*nBitsPerTrack>( nBitsPerTrackOfficial=TMedium::TProperties::FLOPPY_HD_350.nCells )*95/100) // 5% tolerance
+			if (*nBitsPerTrack>( nBitsPerTrackOfficial=Medium::TProperties::FLOPPY_HD_350.nCells )*95/100) // 5% tolerance
 				// likely a 3.5" HD medium
-				trw.SetMediumType( TMedium::FLOPPY_HD_350 );
-			else if (*nBitsPerTrack>( nBitsPerTrackOfficial=TMedium::TProperties::FLOPPY_HD_525.nCells )*95/100) // 5% tolerance
+				trw.SetMediumType( Medium::FLOPPY_HD_350 );
+			else if (*nBitsPerTrack>( nBitsPerTrackOfficial=Medium::TProperties::FLOPPY_HD_525.nCells )*95/100) // 5% tolerance
 				// likely a 5.25" HD medium
-				trw.SetMediumType( TMedium::FLOPPY_HD_525 );
-			else if (*nBitsPerTrack>( nBitsPerTrackOfficial=TMedium::TProperties::FLOPPY_DD.nCells )*95/100) // 5% tolerance
+				trw.SetMediumType( Medium::FLOPPY_HD_525 );
+			else if (*nBitsPerTrack>( nBitsPerTrackOfficial=Medium::TProperties::FLOPPY_DD.nCells )*95/100) // 5% tolerance
 				// likely a 3.5" DD or 5.25" medium in 300 RPM drive
-				trw.SetMediumType( TMedium::FLOPPY_DD );
-			else if (*nBitsPerTrack>( nBitsPerTrackOfficial=TMedium::TProperties::FLOPPY_DD_525.nCells )*95/100) // 5% tolerance
+				trw.SetMediumType( Medium::FLOPPY_DD );
+			else if (*nBitsPerTrack>( nBitsPerTrackOfficial=Medium::TProperties::FLOPPY_DD_525.nCells )*95/100) // 5% tolerance
 				// likely a 5.25" DD medium in 360 RPM drive
-				trw.SetMediumType( TMedium::FLOPPY_DD_525 );
+				trw.SetMediumType( Medium::FLOPPY_DD_525 );
 			else{
 				ASSERT(FALSE); //TODO: 8" SD medium
 				return nullptr;
@@ -480,7 +480,7 @@
 				if (bufferLength)
 					*bufferLength++=GetUsableSectorLength( ris.id.lengthCode );
 				if (startTimesNanoseconds)
-					if (floppyType&TMedium::FLOPPY_ANY)
+					if (floppyType&Medium::FLOPPY_ANY)
 						*startTimesNanoseconds++=ris.GetAverageIdEndTime(*pit);
 					else{
 						ASSERT(FALSE); // we shouldn't end up here - all floppy Types should be covered!
@@ -549,7 +549,7 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 		::SetLastError( *--outBufferData ? ERROR_SUCCESS : ERROR_SECTOR_NOT_FOUND );
 	}
 
-	TStdWinError CCapsBase::GetInsertedMediumType(TCylinder cyl,TMedium::TType &rOutMediumType) const{
+	TStdWinError CCapsBase::GetInsertedMediumType(TCylinder cyl,Medium::TType &rOutMediumType) const{
 		// True <=> Medium inserted in the Drive and recognized, otherwise False
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - retrieving currently inserted Medium zeroth Track
@@ -563,10 +563,10 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 		CTrackReaderWriter trw=*pit;
 		delete pit;
 		WORD nHealthySectorsMax=0; // arbitering the MediumType by the # of healthy Sectors
-		TMedium::TType bestMediumType=TMedium::UNKNOWN;
+		Medium::TType bestMediumType=Medium::UNKNOWN;
 		for( DWORD type=1; type!=0; type<<=1 )
-			if (type&TMedium::FLOPPY_ANY){
-				trw.SetMediumType( rOutMediumType=(TMedium::TType)type );
+			if (type&Medium::FLOPPY_ANY){
+				trw.SetMediumType( rOutMediumType=(Medium::TType)type );
 				if ( pit=CInternalTrack::CreateFrom( *this, trw ) ){
 					std::swap( internalTracks[cyl][0], pit );
 						const TSector nHealthySectors=GetCountOfHealthySectors(cyl,0);
@@ -577,7 +577,7 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 				}
 			}
 		// - Medium (possibly) recognized
-		rOutMediumType=bestMediumType; // may be TMedium::UNKNOWN
+		rOutMediumType=bestMediumType; // may be Medium::UNKNOWN
 		return ERROR_SUCCESS;
 	}
 
@@ -590,15 +590,15 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 			return capsLibLoadingError;
 		// - Medium set correctly if some Sectors can be extracted from one of Tracks
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		if (pFormat->mediumType==TMedium::UNKNOWN){
+		if (pFormat->mediumType==Medium::UNKNOWN){
 			// no particular Medium specified - enumerating all supported floppy Types
 			WORD nHealthySectorsMax=0; // arbitering the MediumType by the # of healthy Sectors
-			TMedium::TType bestMediumType=TMedium::UNKNOWN;
+			Medium::TType bestMediumType=Medium::UNKNOWN;
 			TFormat tmp=*pFormat;
 			for( DWORD type=1; type!=0; type<<=1 )
-				if (type&TMedium::FLOPPY_ANY){
+				if (type&Medium::FLOPPY_ANY){
 					WORD nHealthySectorsCurr=0;
-					tmp.mediumType=(TMedium::TType)type;
+					tmp.mediumType=(Medium::TType)type;
 					SetMediumTypeAndGeometry( &tmp, sideMap, firstSectorNumber );
 					for( TCylinder cyl=0; cyl<SCANNED_CYLINDERS; cyl++ ) // counting the # of healthy Sectors
 						for( THead head=2; head>0; nHealthySectorsCurr+=GetCountOfHealthySectors(cyl,--head) );
@@ -616,7 +616,7 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 			if (const TStdWinError err=__super::SetMediumTypeAndGeometry( pFormat, sideMap, firstSectorNumber ))
 				return err;
 			// . reinterpreting the fluxes
-			if (newMediumTypeDifferent && pFormat->mediumType!=TMedium::UNKNOWN)
+			if (newMediumTypeDifferent && pFormat->mediumType!=Medium::UNKNOWN)
 				for( TCylinder cyl=0; cyl<FDD_CYLINDERS_MAX; cyl++ )
 					for( THead head=0; head<2; head++ )
 						if (auto &rit=internalTracks[cyl][head]){
@@ -652,7 +652,7 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 			void PreInitDialog() override{
 				__super::PreInitDialog();
 				SetDlgItemFormattedText( ID_SYSTEM, _T("Version %d.%d"), cb.capsVersionInfo.release, cb.capsVersionInfo.revision );
-				SetDlgItemText( ID_MEDIUM, TMedium::GetDescription(cb.floppyType) );
+				SetDlgItemText( ID_MEDIUM, Medium::GetDescription(cb.floppyType) );
 				SetDlgItemFormattedText( ID_ARCHIVE, _T("%u (0x%08X)"), cb.capsImageInfo.release, cb.capsImageInfo.release );
 				SetDlgItemInt( ID_ACCURACY, cb.capsImageInfo.revision, FALSE );
 				SYSTEMTIME st={ cb.capsImageInfo.crdt.year, cb.capsImageInfo.crdt.month, 0, cb.capsImageInfo.crdt.day, cb.capsImageInfo.crdt.hour, cb.capsImageInfo.crdt.min, cb.capsImageInfo.crdt.sec };

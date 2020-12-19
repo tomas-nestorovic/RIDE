@@ -124,8 +124,8 @@ reportError:Utils::Information(buf);
 	TCylinder CDos::__getLastOccupiedStdCylinder__() const{
 		// finds and returns number of the last (at least partially) occupied Cylinder (0..N-1)
 		TSectorId bufferId[(TSector)-1];
-		if (formatBoot.mediumType!=TMedium::UNKNOWN) // Unknown Medium if creating a new Image
-			for( TCylinder cylMin=TMedium::GetProperties(formatBoot.mediumType)->cylinderRange.iMax; cylMin--; )
+		if (formatBoot.mediumType!=Medium::UNKNOWN) // Unknown Medium if creating a new Image
+			for( TCylinder cylMin=Medium::GetProperties(formatBoot.mediumType)->cylinderRange.iMax; cylMin--; )
 				for( THead head=formatBoot.nHeads; head--; )
 					if (ERROR_EMPTY!=__isTrackEmpty__( cylMin, head, GetListOfStdSectors(cylMin,head,bufferId), bufferId ))
 						return cylMin;
@@ -1143,7 +1143,7 @@ reportError:Utils::Information(buf);
 
 
 
-	BYTE CDos::TProperties::GetValidGap3ForMedium(TMedium::TType medium) const{
+	BYTE CDos::TProperties::GetValidGap3ForMedium(Medium::TType medium) const{
 		// infers and returns the minimum Gap3 value applicable for all available StandardFormats that regard the specified Medium
 		BYTE result=FDD_350_SECTOR_GAP3;
 		CFormatDialog::PCStdFormat pStdFmt=stdFormats;

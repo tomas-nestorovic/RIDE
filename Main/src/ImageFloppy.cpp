@@ -34,7 +34,7 @@
 	CFloppyImage::CFloppyImage(PCProperties properties,bool hasEditableSettings)
 		// ctor
 		: CImage(properties,hasEditableSettings)
-		, floppyType(TMedium::UNKNOWN) {
+		, floppyType(Medium::UNKNOWN) {
 	}
 
 
@@ -49,7 +49,7 @@
 		if (!IsValidSectorLengthCode(sectorLengthCode))
 			return 0; // e.g. only copy-protection marks
 		const WORD officialLength=GetOfficialSectorLength(sectorLengthCode);
-		if ((floppyType&TMedium::FLOPPY_DD_ANY)!=0 || floppyType==TMedium::UNKNOWN) // Unknown = if FloppyType not set (e.g. if DOS Unknown), the floppy is by default considered as a one with the lowest capacity
+		if ((floppyType&Medium::FLOPPY_DD_ANY)!=0 || floppyType==Medium::UNKNOWN) // Unknown = if FloppyType not set (e.g. if DOS Unknown), the floppy is by default considered as a one with the lowest capacity
 			return std::min( (WORD)6144, officialLength );
 		else
 			return officialLength;
@@ -58,11 +58,11 @@
 	TFormat::TLengthCode CFloppyImage::GetMaximumSectorLengthCode() const{
 		// returns the maximum LengthCode given the actual FloppyType
 		switch (floppyType){
-			case TMedium::FLOPPY_DD:
-			case TMedium::FLOPPY_DD_525:
+			case Medium::FLOPPY_DD:
+			case Medium::FLOPPY_DD_525:
 				return TFormat::LENGTHCODE_4096;
-			case TMedium::FLOPPY_HD_525:
-			case TMedium::FLOPPY_HD_350:
+			case Medium::FLOPPY_HD_525:
+			case Medium::FLOPPY_HD_350:
 				return TFormat::LENGTHCODE_8192;
 			default:
 				ASSERT(FALSE);
@@ -359,12 +359,12 @@
 	TLogTime CFloppyImage::EstimateNanosecondsPerOneByte() const{
 		// estimates and returns the number of Nanoseconds that represent a single Byte on the Medium
 		switch (floppyType){
-			case TMedium::FLOPPY_HD_350:
-			case TMedium::FLOPPY_HD_525:
+			case Medium::FLOPPY_HD_350:
+			case Medium::FLOPPY_HD_525:
 				return FDD_NANOSECONDS_PER_DD_BYTE/2;
-			case TMedium::FLOPPY_DD:
+			case Medium::FLOPPY_DD:
 				return FDD_NANOSECONDS_PER_DD_BYTE;
-			case TMedium::FLOPPY_DD_525:
+			case Medium::FLOPPY_DD_525:
 				return FDD_NANOSECONDS_PER_DD_BYTE*5/6;
 			default:
 				return __super::EstimateNanosecondsPerOneByte();
@@ -373,7 +373,7 @@
 
 	void CFloppyImage::EstimateTrackTiming(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,BYTE gap3,PLogTime startTimesNanoseconds) const{
 		// given specified Track and Sectors that it contains, estimates the positions of these Sectors
-		//const BYTE gap3= floppyType==TMedium::FLOPPY_DD_525 ? FDD_525_SECTOR_GAP3 : FDD_350_SECTOR_GAP3;
+		//const BYTE gap3= floppyType==Medium::FLOPPY_DD_525 ? FDD_525_SECTOR_GAP3 : FDD_350_SECTOR_GAP3;
 		const TLogTime nNanosecondsPerByte=EstimateNanosecondsPerOneByte();
 		for( TSector s=0; s<nSectors; s++ )
 			if (s>0){

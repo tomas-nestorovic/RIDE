@@ -59,17 +59,17 @@
 		// - populating dedicated ComboBox with Codecs supported by both DOS and Image
 		CImage::PopulateComboBoxWithCompatibleCodecs(
 			GetDlgItemHwnd(ID_CODEC),
-			params.format.mediumType==TMedium::UNKNOWN
+			params.format.mediumType==Medium::UNKNOWN
 				? propDos->supportedCodecs
 				: params.format.supportedCodecs,
 			dos->image->properties
 		);
 		// - populating dedicated ComboBox with Media supported by both DOS and Image
-		if (params.format.mediumType==TMedium::UNKNOWN)
+		if (params.format.mediumType==Medium::UNKNOWN)
 			CImage::PopulateComboBoxWithCompatibleMedia( GetDlgItemHwnd(ID_MEDIUM), propDos->supportedMedia, dos->image->properties );
 		else
 			CImage::PopulateComboBoxWithCompatibleMedia( GetDlgItemHwnd(ID_MEDIUM), params.format.mediumType, dos->image->properties );
-		params=propDos->stdFormats->params, params.format.mediumType=TMedium::UNKNOWN, params.format.codecType=Codec::ANY; // initialization using the first StandardFormat (eventually a Custom one)
+		params=propDos->stdFormats->params, params.format.mediumType=Medium::UNKNOWN, params.format.codecType=Codec::ANY; // initialization using the first StandardFormat (eventually a Custom one)
 		__onMediumOrEncodingChanged__();
 		// - adjusting interactivity
 		const bool bootSectorAlreadyExists=((CMainWindow *)app.m_pMainWnd)->pTdi->__getCurrentTab__()!=nullptr;
@@ -88,7 +88,7 @@
 		const CDos::PCProperties propDos=dos->properties;
 		const CImage::PCProperties propImage=dos->image->properties;
 		const HWND hMedium=GetDlgItemHwnd(ID_MEDIUM);
-		const TMedium::PCProperties propMedium=TMedium::GetProperties((TMedium::TType)ComboBox_GetItemData( hMedium, ComboBox_GetCurSel(hMedium) ));
+		const Medium::PCProperties propMedium=Medium::GetProperties((Medium::TType)ComboBox_GetItemData( hMedium, ComboBox_GetCurSel(hMedium) ));
 		DDX_Text( pDX,	ID_CYLINDER_N,(RCylinder)params.format.nCylinders );
 			DDV_MinMaxUInt( pDX, params.format.nCylinders, propMedium->cylinderRange.iMin, propMedium->cylinderRange.iMax );
 		DDX_Text( pDX,	ID_CYLINDER	,(RCylinder)params.cylinder0 );
@@ -169,7 +169,7 @@
 						ShowDlgItem( ID_DRIVE, false );
 						const CRect rc=GetDlgItemClientRect(ID_FORMAT);
 						const HWND hMedium=GetDlgItemHwnd(ID_MEDIUM);
-						const LPCTSTR currMediumDesc=TMedium::GetDescription((TMedium::TType)ComboBox_GetItemData( hMedium, ComboBox_GetCurSel(hMedium) ));
+						const LPCTSTR currMediumDesc=Medium::GetDescription((Medium::TType)ComboBox_GetItemData( hMedium, ComboBox_GetCurSel(hMedium) ));
 						CImage::PopulateComboBoxWithCompatibleMedia( hMedium, dos->properties->supportedMedia, dos->image->properties );
 						ComboBox_SelectString( hMedium, 0, currMediumDesc );
 						::SetWindowPos( hMedium, nullptr, 0,0, rc.Width(),rc.Height(), SWP_NOZORDER|SWP_NOMOVE );
@@ -191,10 +191,10 @@
 		WrapDlgItemsByClosingCurlyBracketWithText( ID_CYLINDER, ID_CYLINDER_N, buf, ::GetSysColor(COLOR_3DSHADOW) );
 		// - drawing curly brackets with Track length
 		switch (params.format.mediumType){
-			case TMedium::FLOPPY_DD_525:
-			case TMedium::FLOPPY_DD:
-			case TMedium::FLOPPY_HD_525:
-			case TMedium::FLOPPY_HD_350:{
+			case Medium::FLOPPY_DD_525:
+			case Medium::FLOPPY_DD:
+			case Medium::FLOPPY_HD_525:
+			case Medium::FLOPPY_HD_350:{
 				WrapDlgItemsByClosingCurlyBracketWithText( ID_SECTOR, ID_GAP, _T(""), ::GetSysColor(COLOR_3DSHADOW) );
 				const WORD nBytesOnTrack=65 // Gap 1
 										+
@@ -213,7 +213,7 @@
 				ShowDlgItem(ID_TRACK);
 				break;
 			}
-			case TMedium::HDD_RAW:
+			case Medium::HDD_RAW:
 			default:
 				WrapDlgItemsByClosingCurlyBracketWithText( ID_SECTOR, ID_GAP, _T("N/A Bytes per track"), ::GetSysColor(COLOR_3DSHADOW) );
 				ShowDlgItem( ID_TRACK, false );
@@ -232,7 +232,7 @@
 		// - getting the currently SelectedMediumType
 		CComboBox cb;
 		cb.Attach(GetDlgItemHwnd(ID_MEDIUM));
-			const TMedium::TType selectedMediumType=(TMedium::TType)cb.GetItemData( cb.GetCurSel() );
+			const Medium::TType selectedMediumType=(Medium::TType)cb.GetItemData( cb.GetCurSel() );
 		cb.Detach();
 		cb.Attach(GetDlgItemHwnd(ID_CODEC));
 			const Codec::TType selectedCodecType=(Codec::TType)cb.GetItemData( cb.GetCurSel() );
@@ -249,7 +249,7 @@
 					psf->params.format.supportedCodecs & selectedCodecType
 				){
 					cb.SetItemDataPtr( cb.AddString(psf->name), (PVOID)psf );
-					if (params.format.mediumType==TMedium::UNKNOWN) params=psf->params; // initializing Parameters using the first Format that's suitable for selected {Medium,Codec} combination
+					if (params.format.mediumType==Medium::UNKNOWN) params=psf->params; // initializing Parameters using the first Format that's suitable for selected {Medium,Codec} combination
 				}
 			// . AdditionalFormats
 			PCStdFormat paf=additionalFormats;
@@ -259,7 +259,7 @@
 					psf->params.format.supportedCodecs & selectedCodecType
 				){
 					cb.SetItemDataPtr( cb.AddString(paf->name), (PVOID)paf );
-					if (params.format.mediumType==TMedium::UNKNOWN) params=paf->params; // initializing Parameters using the first Format that's suitable for selected {Medium,Codec} combination
+					if (params.format.mediumType==Medium::UNKNOWN) params=paf->params; // initializing Parameters using the first Format that's suitable for selected {Medium,Codec} combination
 				}
 			// . custom
 			cb.SetItemDataPtr( cb.AddString(_T("Custom")), FORMAT_CUSTOM );
@@ -309,7 +309,7 @@
 		const HWND hCluster=GetDlgItemHwnd(ID_CLUSTER);
 		const BYTE interleaving=GetDlgItemInt(ID_INTERLEAVE), skew=GetDlgItemInt(ID_SKEW), gap3=GetDlgItemInt(ID_GAP), nAllocationTables=GetDlgItemInt(ID_FAT);
 		const WORD nRootDirectoryEntries=GetDlgItemInt(ID_DIRECTORY);
-		const TFormat f={ TMedium::UNKNOWN, Codec::ANY, GetDlgItemInt(ID_CYLINDER_N), GetDlgItemInt(ID_HEAD), GetDlgItemInt(ID_SECTOR), dos->formatBoot.sectorLengthCode, GetDlgItemInt(ID_SIZE), ComboBox_GetItemData(hCluster,ComboBox_GetCurSel(hCluster)) };
+		const TFormat f={ Medium::UNKNOWN, Codec::ANY, GetDlgItemInt(ID_CYLINDER_N), GetDlgItemInt(ID_HEAD), GetDlgItemInt(ID_SECTOR), dos->formatBoot.sectorLengthCode, GetDlgItemInt(ID_SIZE), ComboBox_GetItemData(hCluster,ComboBox_GetCurSel(hCluster)) };
 		for( BYTE n=nFormatsInTotal-1; n--; ){ // "-1" = custom format
 			const PCStdFormat psf=(PCStdFormat)ComboBox_GetItemData(hFormat,n);
 			if (psf->params.cylinder0==params.cylinder0 && psf->params.format==f && psf->params.interleaving==interleaving && psf->params.skew==skew && psf->params.gap3==gap3 && psf->params.nAllocationTables==nAllocationTables && psf->params.nRootDirectoryEntries==nRootDirectoryEntries){

@@ -16,7 +16,7 @@
 		deDefault.attributes=__getProfileInt__(	INI_DEFAULT_ATTRIBUTES,
 												TDirectoryEntry::TAttribute::READABLE | TDirectoryEntry::TAttribute::WRITEABLE | TDirectoryEntry::TAttribute::EXECUTABLE | TDirectoryEntry::TAttribute::DELETABLE
 											);
-		if (formatBoot.mediumType!=TMedium::UNKNOWN)
+		if (formatBoot.mediumType!=Medium::UNKNOWN)
 			__recognizeVersion__(); // recognition of MDOS on inserted disk
 		else
 			sideMap[1]=TVersion::VERSION_2; // disk not inserted, assuming Version 2

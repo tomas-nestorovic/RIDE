@@ -4,11 +4,11 @@
 	TStdWinError CBSDOS308::__recognizeDisk__(PImage image,PFormat pFormatBoot){
 		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
 		// - determining the Type of Medium (type of floppy)
-		TFormat fmt={ TMedium::FLOPPY_DD_525, Codec::MFM, 1,1,BSDOS_SECTOR_NUMBER_TEMP, BSDOS_SECTOR_LENGTH_STD_CODE,BSDOS_SECTOR_LENGTH_STD, 1 };
+		TFormat fmt={ Medium::FLOPPY_DD_525, Codec::MFM, 1,1,BSDOS_SECTOR_NUMBER_TEMP, BSDOS_SECTOR_LENGTH_STD_CODE,BSDOS_SECTOR_LENGTH_STD, 1 };
 		if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,BSDOS_SECTOR_NUMBER_FIRST)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
-			fmt.mediumType=TMedium::FLOPPY_DD;
+			fmt.mediumType=Medium::FLOPPY_DD;
 			if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,BSDOS_SECTOR_NUMBER_FIRST)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
-				fmt.mediumType=TMedium::FLOPPY_HD_350;
+				fmt.mediumType=Medium::FLOPPY_HD_350;
 				if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,BSDOS_SECTOR_NUMBER_FIRST)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0))
 					return ERROR_UNRECOGNIZED_VOLUME; // unknown Medium Type
 			}
@@ -18,7 +18,7 @@
 			if (boot->IsValid()){
 				if (!image->properties->IsRealDevice()) // if this is NOT a real Device ...
 					if (boot->nSectorsPerTrack>BSDOS_SECTOR_NUMBER_LAST/2)
-						fmt.mediumType=TMedium::FLOPPY_HD_350; // ... estimating the MediumType from BootSector
+						fmt.mediumType=Medium::FLOPPY_HD_350; // ... estimating the MediumType from BootSector
 				fmt.nCylinders=boot->nCylinders;
 				fmt.nHeads=boot->nHeads;
 				fmt.nSectors=boot->nSectorsPerTrack;
@@ -59,9 +59,9 @@
 	#define BSDOS_SECTOR_GAP3	32 /* smaller than regular IBM norm-compliant Gap to make sure all Sectors fit in a Track */
 
 	static const CFormatDialog::TStdFormat StdFormats[]={
-		{ _T("5.25\" DS DD, 360 RPM"), 0, {TMedium::FLOPPY_DD_525,Codec::MFM,39,2,5,TFormat::TLengthCode::LENGTHCODE_1024,BSDOS_SECTOR_LENGTH_STD,1}, 1, 0, BSDOS_SECTOR_GAP3, 2, 32 },
-		{ _T("3.5\" DS DD"), 0, {TMedium::FLOPPY_DD,Codec::MFM,79,2,5,TFormat::TLengthCode::LENGTHCODE_1024,BSDOS_SECTOR_LENGTH_STD,1}, 1, 0, BSDOS_SECTOR_GAP3, 2, 32 },
-		{ _T("3.5\" DS HD"), 0, {TMedium::FLOPPY_HD_350,Codec::MFM,79,2,11,TFormat::TLengthCode::LENGTHCODE_1024,BSDOS_SECTOR_LENGTH_STD,1}, 1, 0, BSDOS_SECTOR_GAP3, 2, 32 }
+		{ _T("5.25\" DS DD, 360 RPM"), 0, {Medium::FLOPPY_DD_525,Codec::MFM,39,2,5,TFormat::TLengthCode::LENGTHCODE_1024,BSDOS_SECTOR_LENGTH_STD,1}, 1, 0, BSDOS_SECTOR_GAP3, 2, 32 },
+		{ _T("3.5\" DS DD"), 0, {Medium::FLOPPY_DD,Codec::MFM,79,2,5,TFormat::TLengthCode::LENGTHCODE_1024,BSDOS_SECTOR_LENGTH_STD,1}, 1, 0, BSDOS_SECTOR_GAP3, 2, 32 },
+		{ _T("3.5\" DS HD"), 0, {Medium::FLOPPY_HD_350,Codec::MFM,79,2,11,TFormat::TLengthCode::LENGTHCODE_1024,BSDOS_SECTOR_LENGTH_STD,1}, 1, 0, BSDOS_SECTOR_GAP3, 2, 32 }
 	};
 
 	const CDos::TProperties CBSDOS308::Properties={
@@ -70,7 +70,7 @@
 		60, // recognition priority
 		__recognizeDisk__, // recognition function
 		__instantiate__, // instantiation function
-		TMedium::FLOPPY_ANY, // Unknown Medium
+		Medium::FLOPPY_ANY, // Unknown Medium
 		&MBD::Properties, // the most common Image to contain data for this DOS (e.g. *.D80 Image for MDOS)
 		3,	// number of std Formats
 		StdFormats,//CMDOS2::Properties.stdFormats, // std Formats ("some" Format in case of UnknownDos)

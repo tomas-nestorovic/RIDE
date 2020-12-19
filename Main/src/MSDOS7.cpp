@@ -105,13 +105,13 @@
 		// propagates the Medium stored in the Boot Sector to the inner FormatBoot structure by translating it to one of RIDE Medium Types
 		if (const PCBootSector bootSector=boot.GetSectorData()) // should always exist, but just to be sure
 			switch (bootSector->medium){ // translating only Medium information, geometry not taken into account (it's assumed the disk is MS-DOS 2.x or higher where geometry is given explicitly by information from Boot Sector)
-				case TBootSector::DISK_35_1440_DS_18:formatBoot.mediumType=TMedium::FLOPPY_HD_350; break;
-				case TBootSector::DISK_35_720_DS_9	:formatBoot.mediumType=TMedium::FLOPPY_DD; break;
+				case TBootSector::DISK_35_1440_DS_18:formatBoot.mediumType=Medium::FLOPPY_HD_350; break;
+				case TBootSector::DISK_35_720_DS_9	:formatBoot.mediumType=Medium::FLOPPY_DD; break;
 				case TBootSector::DISK_525_180_SS_9	:
 				case TBootSector::DISK_525_360_DS_9	:
 				case TBootSector::DISK_525_160_SS_8	:
-				case TBootSector::DISK_525_320_DS_8	:formatBoot.mediumType=TMedium::FLOPPY_DD_525; break; // likely 360 rpm in PC
-				case TBootSector::DISK_HARD			:formatBoot.mediumType=TMedium::HDD_RAW; break;
+				case TBootSector::DISK_525_320_DS_8	:formatBoot.mediumType=Medium::FLOPPY_DD_525; break; // likely 360 rpm in PC
+				case TBootSector::DISK_HARD			:formatBoot.mediumType=Medium::HDD_RAW; break;
 				default: ASSERT(FALSE);
 			}
 		else

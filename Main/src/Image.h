@@ -42,8 +42,7 @@
 	#define DEVICE_NAME_CHARS_MAX 48
 	#define DEVICE_REVOLUTIONS_MAX 8
 
-	#pragma pack(1)
-	typedef const struct TMedium sealed{
+	namespace Medium{
 		enum TType:BYTE{
 			UNKNOWN			=(BYTE)-1,
 			FLOPPY_HD_350	=1, // 3.5" HD
@@ -56,6 +55,7 @@
 			HDD_RAW			=16,
 			ANY				=HDD_RAW|FLOPPY_ANY
 		};
+
 		#pragma pack(1)
 		typedef const struct TProperties sealed{
 			static const TProperties FLOPPY_HD_350;
@@ -70,9 +70,9 @@
 			DWORD nCells; // RevolutionTime/CellTime
 		} *PCProperties;
 
-		static LPCTSTR GetDescription(TType mediumType);
-		static PCProperties GetProperties(TType mediumType);
-	} *PCMedium;
+		LPCTSTR GetDescription(TType mediumType);
+		PCProperties GetProperties(TType mediumType);
+	}
 
 	namespace Codec{
 		typedef BYTE TTypeSet;
@@ -88,15 +88,15 @@
 			ANY			=FLOPPY_ANY
 		} *PType;
 
-		static LPCTSTR GetDescription(TType codec);
+		LPCTSTR GetDescription(TType codec);
 	}
 
 	typedef struct TFormat sealed{
 		static const TFormat Unknown;
 
 		union{
-			TMedium::TType supportedMedia;
-			TMedium::TType mediumType;
+			Medium::TType supportedMedia;
+			Medium::TType mediumType;
 		};
 		union{
 			Codec::TType supportedCodecs;
@@ -253,7 +253,7 @@
 			TFnRecognize fnRecognize;
 			TFnInstantiate fnInstantiate;
 			LPCTSTR filter; // filter for the "Open/Save file" dialogs (e.g. "*.d80;*.d40"); ATTENTION - must be all in lowercase (normalization) and the extension must always have right three characters (otherwise changes in DoSave needed)
-			TMedium::TType supportedMedia;
+			Medium::TType supportedMedia;
 			Codec::TType supportedCodecs;
 			WORD sectorLengthMin,sectorLengthMax;
 
@@ -284,7 +284,7 @@
 				} method;
 
 				inline TProfile(){}
-				TProfile(const TMedium::TProperties &floppyProps,BYTE iwTimeTolerancePercent);
+				TProfile(const Medium::TProperties &floppyProps,BYTE iwTimeTolerancePercent);
 
 				void Reset();
 			} profile;
@@ -330,10 +330,10 @@
 			BYTE iNextIndexPulse,nIndexPulses;
 			TLogTime currentTime;
 			Codec::TType codec;
-			TMedium::TType mediumType;
+			Medium::TType mediumType;
 			BYTE nConsecutiveZerosMax; // # of consecutive zeroes to lose synchronization; e.g. 3 for MFM code
 
-			CTrackReader(PLogTime logTimes,DWORD nLogTimes,PCLogTime indexPulses,BYTE nIndexPulses,TMedium::TType mediumType,Codec::TType codec,TDecoderMethod method);
+			CTrackReader(PLogTime logTimes,DWORD nLogTimes,PCLogTime indexPulses,BYTE nIndexPulses,Medium::TType mediumType,Codec::TType codec,TDecoderMethod method);
 
 			WORD ScanFm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *&pOutParseEvents);
 			WORD ScanMfm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *&pOutParseEvents);
@@ -381,7 +381,7 @@
 			TLogTime GetTotalTime() const;
 			TLogTime ReadTime();
 			void SetCodec(Codec::TType codec);
-			void SetMediumType(TMedium::TType mediumType);
+			void SetMediumType(Medium::TType mediumType);
 			bool ReadBit();
 			bool ReadBits16(WORD &rOut);
 			bool ReadBits32(DWORD &rOut);
@@ -498,7 +498,7 @@
 		PSectorData GetHealthySectorDataOfUnknownLength(TPhysicalAddress &rChs,PWORD sectorLength);
 		virtual TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus)=0;
 		void MarkSectorAsDirty(RCPhysicalAddress chs);
-		virtual TStdWinError GetInsertedMediumType(TCylinder cyl,TMedium::TType &rOutMediumType) const;
+		virtual TStdWinError GetInsertedMediumType(TCylinder cyl,Medium::TType &rOutMediumType) const;
 		virtual TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber);
 		virtual bool EditSettings(bool initialEditing)=0;
 		virtual TStdWinError Reset()=0;

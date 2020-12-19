@@ -9,7 +9,7 @@
 		static TCrc16 GetCrc16Ccitt(LPCVOID bytes,WORD nBytes);
 		static bool IsValidSectorLengthCode(BYTE lengthCode);
 	protected:
-		TMedium::TType floppyType; // DD/HD
+		Medium::TType floppyType; // DD/HD
 
 		CFloppyImage(PCProperties properties,bool hasEditableSettings);
 

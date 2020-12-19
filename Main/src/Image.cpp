@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-	const TFormat TFormat::Unknown={ TMedium::UNKNOWN, Codec::ANY, -1,-1,-1, TFormat::LENGTHCODE_128,-1, 1 };
+	const TFormat TFormat::Unknown={ Medium::UNKNOWN, Codec::ANY, -1,-1,-1, TFormat::LENGTHCODE_128,-1, 1 };
 
 	bool TFormat::operator==(const TFormat &fmt2) const{
 		// True <=> Formats{1,2} are equal, otherwise False
@@ -185,7 +185,8 @@
 
 
 
-	LPCTSTR TMedium::GetDescription(TType mediumType){
+namespace Medium{
+	LPCTSTR GetDescription(TType mediumType){
 		// returns the string description of a given MediumType
 		if (const PCProperties p=GetProperties(mediumType))
 			return p->description;
@@ -195,7 +196,7 @@
 		}
 	}
 
-	const TMedium::TProperties TMedium::TProperties::FLOPPY_HD_350={
+	const TProperties TProperties::FLOPPY_HD_350={
 		_T("3.5\" HD floppy"), // description
 		{ 1, FDD_CYLINDERS_MAX }, // supported range of Cylinders (min and max)
 		{ 1, 2 },	// supported range of Heads (min and max)
@@ -205,7 +206,7 @@
 		200000 // RevolutionTime/CellTime
 	};
 
-	const TMedium::TProperties TMedium::TProperties::FLOPPY_HD_525={
+	const TProperties TProperties::FLOPPY_HD_525={
 		_T("5.25\" HD floppy, 360 RPM drive"), // description
 		{ 1, FDD_CYLINDERS_MAX }, // supported range of Cylinders (min and max)
 		{ 1, 2 },	// supported range of Heads (min and max)
@@ -215,7 +216,7 @@
 		166666 // RevolutionTime/CellTime
 	};
 
-	const TMedium::TProperties TMedium::TProperties::FLOPPY_DD={
+	const TProperties TProperties::FLOPPY_DD={
 		_T("3.5\"/5.25\" 2DD floppy, 300 RPM drive"), // description
 		{ 1, FDD_CYLINDERS_MAX }, // supported range of Cylinders (min and max)
 		{ 1, 2 },	// supported range of Heads (min and max)
@@ -225,7 +226,7 @@
 		100000 // RevolutionTime/CellTime
 	};
 
-	const TMedium::TProperties TMedium::TProperties::FLOPPY_DD_525={
+	const TProperties TProperties::FLOPPY_DD_525={
 		_T("5.25\" 2DD floppy, 360 RPM drive"), // description
 		{ 1, FDD_CYLINDERS_MAX }, // supported range of Cylinders (min and max)
 		{ 1, 2 },	// supported range of Heads (min and max)
@@ -235,7 +236,7 @@
 		100000 // RevolutionTime/CellTime
 	};
 
-	TMedium::PCProperties TMedium::GetProperties(TType mediumType){
+	PCProperties GetProperties(TType mediumType){
 		// returns properties of a given MediumType
 		switch (mediumType){
 			case FLOPPY_DD_525:
@@ -263,7 +264,7 @@
 				return nullptr;
 		}
 	}
-
+}
 
 
 
@@ -398,7 +399,7 @@
 			BYTE result=0;
 			for( WORD commonMedia=dosSupportedMedia&mediaSupportedByImage,type=1,n=8*sizeof(commonMedia); n--; type<<=1 )
 				if (commonMedia&type){
-					cb.SetItemDataPtr( cb.AddString(TMedium::GetDescription((TMedium::TType)type)), (PVOID)type );
+					cb.SetItemDataPtr( cb.AddString(Medium::GetDescription((Medium::TType)type)), (PVOID)type );
 					result++;
 				}
 			if (!result)
@@ -520,7 +521,7 @@
 						((CCmdUI *)pExtra)->Enable(TRUE);
 						return TRUE;
 					case ID_IMAGE_PATCH:
-						((CCmdUI *)pExtra)->Enable( dos->formatBoot.mediumType&TMedium::FLOPPY_ANY );
+						((CCmdUI *)pExtra)->Enable( dos->formatBoot.mediumType&Medium::FLOPPY_ANY );
 						return TRUE;
 				}
 				break;
@@ -724,7 +725,7 @@
 		MarkSectorAsDirty(chs,0,&TFdcStatus::WithoutError);
 	}
 
-	TStdWinError CImage::GetInsertedMediumType(TCylinder,TMedium::TType &rOutMediumType) const{
+	TStdWinError CImage::GetInsertedMediumType(TCylinder,Medium::TType &rOutMediumType) const{
 		// recognizes a Medium inserted in the Drive; returns Windows standard i/o error
 		if (dos!=nullptr){
 			rOutMediumType=dos->formatBoot.mediumType; // returning officially recognized Medium

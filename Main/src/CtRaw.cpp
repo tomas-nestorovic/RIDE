@@ -14,7 +14,7 @@
 		Recognize,	// list of recognized device names
 		Instantiate,	// instantiation function
 		_T("*.raw"), // filter
-		TMedium::FLOPPY_ANY, // supported Media
+		Medium::FLOPPY_ANY, // supported Media
 		Codec::FLOPPY_ANY, // supported Codecs
 		1,2*6144	// Sector supported min and max length
 	};
