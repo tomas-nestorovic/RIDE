@@ -1117,6 +1117,10 @@ namespace Utils{
 			: pAction(_pAction) , nActions(_nActions) , wndProc0(_wndProc0) {
 			::GetClientRect(hBtn,&rcClientArea);
 		}
+
+		inline bool ExistsDefaultAction() const{
+			return pAction->commandId!=0;
+		}
 	} *PCSplitButtonInfo;
 
 	#define SPLITBUTTON_ARROW_WIDTH	18*LogicalUnitScaleFactor
@@ -1131,14 +1135,14 @@ namespace Utils{
 			case WM_LBUTTONDBLCLK:
 			case WM_LBUTTONDOWN:
 				// left mouse button pressed
-				if (GET_X_LPARAM(lParam)<psbi->rcClientArea.right-SPLITBUTTON_ARROW_WIDTH)
-					// in default Action area
+				if (psbi->ExistsDefaultAction() && GET_X_LPARAM(lParam)<psbi->rcClientArea.right-SPLITBUTTON_ARROW_WIDTH)
+					// A|B, A = default Action exists, B = in default Action area
 					break; // base
 				else{
 					// in area of selecting additional Actions
 					CMenu mnu;
 					mnu.CreatePopupMenu();
-					for( BYTE id=0; id<psbi->nActions; id++ )
+					for( BYTE id=!psbi->ExistsDefaultAction(); id<psbi->nActions; id++ )
 						mnu.AppendMenu( MF_STRING, psbi->pAction[id].commandId, psbi->pAction[id].commandCaption );
 					POINT pt={ psbi->rcClientArea.right-SPLITBUTTON_ARROW_WIDTH, psbi->rcClientArea.bottom };
 					::ClientToScreen( hSplitBtn, &pt );

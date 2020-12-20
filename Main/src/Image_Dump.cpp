@@ -132,6 +132,9 @@
 	#define ACCEPT_OPTIONS_COUNT	4
 	#define ACCEPT_ERROR_ID			IDOK
 
+	#define RESOLVE_OPTIONS_COUNT	3
+	#define RESOLVE_EXCLUDE_ID		IDIGNORE
+
 	#define NO_STATUS_ERROR	_T("- no error\r\n")
 
 	static UINT AFX_CDECL __dump_thread__(PVOID _pCancelableAction){
@@ -229,8 +232,14 @@ terminateWithError:
 								};
 								ConvertDlgButtonToSplitButton( IDOK, Actions, ACCEPT_OPTIONS_COUNT );
 								EnableDlgItem( IDOK, dynamic_cast<CImageRaw *>(dp.target.get())==nullptr ); // accepting errors is allowed only if the Target Image can accept them
-								// > enabling/disabling the "Recover" button
-								EnableDlgItem( ID_RECOVER, rFdcStatus.DescribesIdFieldCrcError() || rFdcStatus.DescribesDataFieldCrcError() );
+								// > converting the "Resolve" button to a SplitButton
+								static const Utils::TSplitButtonAction ResolveActions[RESOLVE_OPTIONS_COUNT]={
+									{ 0, _T("Resolve") }, // 0 = no default action
+									{ RESOLVE_EXCLUDE_ID, _T("Exclude from track") },
+									{ ID_RECOVER, _T("Recover ID or Data...") },
+								};
+								ConvertDlgButtonToSplitButton( IDNO, ResolveActions, RESOLVE_OPTIONS_COUNT-1+(rFdcStatus.DescribesIdFieldCrcError()||rFdcStatus.DescribesDataFieldCrcError()) );
+								EnableDlgItem( IDNO, dynamic_cast<CImageRaw *>(dp.target.get())==nullptr ); // recovering errors is allowed only if the Target Image can accept them
 							}
 							LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 								// window procedure
@@ -355,6 +364,11 @@ terminateWithError:
 												}
 												break;
 											}
+											case RESOLVE_EXCLUDE_ID:{
+												// Sector exclusion
+												EndDialog(RESOLVE_EXCLUDE_ID);
+												break;
+											}
 										}
 										break;
 								}
@@ -373,6 +387,11 @@ terminateWithError:
 							case IDCANCEL:
 								err=ERROR_CANCELLED;
 								goto terminateWithError;
+							case RESOLVE_EXCLUDE_ID:
+								nSectors--;
+								::memmove( bufferId+s, bufferId+s+1, sizeof(*bufferId)*(nSectors-s) );
+								::memmove( bufferLength+s, bufferLength+s+1, sizeof(*bufferLength)*(nSectors-s) );
+								//fallthrough
 							case IDRETRY:
 								continue;
 						}
