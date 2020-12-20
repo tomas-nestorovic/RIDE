@@ -648,6 +648,20 @@ reportError:Utils::Information(buf);
 		return result;
 	}
 
+	LPCTSTR CDos::GetSectorStatusText(RCPhysicalAddress chs) const{
+		// determines and returns the Status of the Sector on the specified PhysicalAddress
+		switch (GetSectorStatus(chs)){
+			case CDos::TSectorStatus::SYSTEM:	return _T("System");
+			case CDos::TSectorStatus::UNAVAILABLE: return _T("Unavailable");
+			case CDos::TSectorStatus::SKIPPED:	return _T("Skipped");
+			case CDos::TSectorStatus::BAD:		return _T("Bad");
+			case CDos::TSectorStatus::OCCUPIED:	return _T("Occupied");
+			case CDos::TSectorStatus::RESERVED:	return _T("Reserved");
+			case CDos::TSectorStatus::EMPTY:	return _T("Empty");
+			default:							return _T("Unknown");
+		}
+	}
+
 	DWORD CDos::GetFreeSpaceInBytes(TStdWinError &rError) const{
 		// computes and returns the empty space on Image in Bytes
 		DWORD result=0; rError=ERROR_SUCCESS; // assumption (no empty space, no error)

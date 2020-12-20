@@ -524,22 +524,9 @@
 				unit=nanoseconds, unitPrefix='n';
 			p+=_stprintf( buf, _T("T = approx. %.2f %cs%c  "), unit, unitPrefix, cursorOverSector?',':'\0' );
 		}
-		if (cursorOverSector){
+		if (cursorOverSector)
 			// cursor over a Sector
-			::wsprintf( p, _T("Tr%d, %s: "), chs.GetTrackNumber(__getNumberOfFormattedSidesInImage__(IMAGE)), (LPCTSTR)chs.sectorId.ToString() );
-			CDos::TSectorStatus status;
-			DOS->GetSectorStatuses( chs.cylinder, chs.head, 1, &chs.sectorId, &status );
-			switch (status){
-				case CDos::TSectorStatus::SYSTEM	: ::lstrcat(p,_T("System")); break;
-				case CDos::TSectorStatus::UNAVAILABLE: ::lstrcat(p,_T("Unavailable")); break;
-				case CDos::TSectorStatus::SKIPPED	: ::lstrcat(p,_T("Skipped")); break;
-				case CDos::TSectorStatus::BAD		: ::lstrcat(p,_T("Bad")); break;
-				case CDos::TSectorStatus::OCCUPIED	: ::lstrcat(p,_T("Occupied")); break;
-				case CDos::TSectorStatus::RESERVED	: ::lstrcat(p,_T("Reserved")); break;
-				case CDos::TSectorStatus::EMPTY		: ::lstrcat(p,_T("Empty")); break;
-				default								: ::lstrcat(p,_T("Unknown")); break;
-			}
-		}	
+			::wsprintf( p, _T("Tr%d, %s: %s"), chs.GetTrackNumber(__getNumberOfFormattedSidesInImage__(IMAGE)), (LPCTSTR)chs.sectorId.ToString(), DOS->GetSectorStatusText(chs) );
 		CMainWindow::__setStatusBarText__(buf);
 	}
 

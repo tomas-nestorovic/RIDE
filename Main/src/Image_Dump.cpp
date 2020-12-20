@@ -94,6 +94,8 @@
 										Utils::WriteToFile(fHtml,_T("<li>"));
 											Utils::WriteToFileFormatted( fHtml, _T("<b>%s</b>. "), (LPCTSTR)psse->id.ToString() );
 											LPCTSTR bitDescriptions[10],*pDesc=bitDescriptions;
+											const TPhysicalAddress chs={ pErroneousTrack->cyl, pErroneousTrack->head, psse->id };
+											Utils::WriteToFileFormatted( fHtml, _T("<i>FAT</i>: %s, "), dos->GetSectorStatusText(chs) );
 											psse->fdcStatus.GetDescriptionsOfSetBits(bitDescriptions);
 											Utils::WriteToFileFormatted( fHtml, _T("<i>SR1</i> (0x%02X): "), psse->fdcStatus.reg1 );
 											if (*pDesc){
@@ -130,7 +132,7 @@
 	#define ACCEPT_OPTIONS_COUNT	4
 	#define ACCEPT_ERROR_ID			IDOK
 
-	#define NO_STATUS_ERROR	_T("- no error\n")
+	#define NO_STATUS_ERROR	_T("- no error\r\n")
 
 	static UINT AFX_CDECL __dump_thread__(PVOID _pCancelableAction){
 		// threat to copy Tracks
@@ -202,18 +204,19 @@ terminateWithError:
 								// > creating message on Errors
 								LPCTSTR bitDescriptions[20],*pDesc=bitDescriptions; // 20 = surely big enough buffer
 								rFdcStatus.GetDescriptionsOfSetBits(bitDescriptions);
-								TCHAR buf[512],*p=buf+::wsprintf(buf,_T("Cannot read sector with %s on source Track %d.\n\n"),(LPCTSTR)rp.chs.sectorId.ToString(),rp.track);
-								p+=::wsprintf( p, _T("\"Status register 1\" reports (0x%02X)\n"), rFdcStatus.reg1 );
+								TCHAR buf[512],*p=buf+::wsprintf(buf,_T("Cannot read sector with %s on source Track %d.\r\n"),(LPCTSTR)rp.chs.sectorId.ToString(),rp.track);
+								p+=::wsprintf( p, _T("\r\nFAT reports this sector \"%s\".\r\n"), dp.dos->GetSectorStatusText(rp.chs) );
+								p+=::wsprintf( p, _T("\r\n\"Status register 1\" reports (0x%02X)\r\n"), rFdcStatus.reg1 );
 								if (*pDesc)
 									while (*pDesc)
-										p+=::wsprintf( p, _T("- %s\n"), *pDesc++ );
+										p+=::wsprintf( p, _T("- %s\r\n"), *pDesc++ );
 								else
 									p+=::lstrlen(::lstrcpy(p,NO_STATUS_ERROR));
 								pDesc++; // skipping Null that terminates list of bits set in Register 1
-								p+=::wsprintf( p, _T("\n\"Status register 2\" reports (0x%02X)\n"), rFdcStatus.reg2 );
+								p+=::wsprintf( p, _T("\r\n\"Status register 2\" reports (0x%02X)\r\n"), rFdcStatus.reg2 );
 								if (*pDesc)
 									while (*pDesc)
-										p+=::wsprintf( p, _T("- %s\n"), *pDesc++ );
+										p+=::wsprintf( p, _T("- %s\r\n"), *pDesc++ );
 								else
 									p+=::lstrlen(::lstrcpy(p,NO_STATUS_ERROR));
 								SetDlgItemText( ID_ERROR, buf );
