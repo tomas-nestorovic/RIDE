@@ -111,12 +111,11 @@
 		DDX_Text( pDX,	ID_GAP		,params.gap3 );
 		if (pDX->m_bSaveAndValidate){
 			CComboBox cb;
-			cb.Attach(GetDlgItemHwnd(ID_CLUSTER));
+			cb.Attach( pDX->PrepareEditCtrl(ID_CLUSTER) );
 				const int sel=cb.GetCurSel();
-				if (sel<0){
-					pDX->PrepareEditCtrl(ID_CLUSTER);
+				if (sel<0)
 					pDX->Fail();
-				}else
+				else
 					params.format.clusterSize=cb.GetItemData(sel);
 			cb.Detach();
 		}else

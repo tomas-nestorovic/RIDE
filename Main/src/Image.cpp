@@ -212,7 +212,7 @@ namespace Medium{
 		{ 1, 2 },	// supported range of Heads (min and max)
 		{ 1, FDD_SECTORS_MAX }, // supported range of Sectors (min and max)
 		TIME_SECOND(1)/6, // single revolution time [nanoseconds]
-		TProperties::FLOPPY_HD_350.cellTime, // single recorded data cell time [nanoseconds] = same as 3.5" HD floppies
+		TIME_MICRO(1), // single recorded data cell time [nanoseconds] = same as 3.5" HD floppies
 		166666 // RevolutionTime/CellTime
 	};
 
@@ -232,7 +232,7 @@ namespace Medium{
 		{ 1, 2 },	// supported range of Heads (min and max)
 		{ 1, FDD_SECTORS_MAX }, // supported range of Sectors (min and max)
 		TIME_SECOND(1)/6, // single revolution time [nanoseconds]
-		TProperties::FLOPPY_DD.cellTime*5/6, // single recorded data cell time [nanoseconds] = 1 second / 300kb = 3.333 탎 -> 1.666 탎 for MFM encoding
+		TIME_MICRO(2)*5/6, // single recorded data cell time [nanoseconds] = 1 second / 300kb = 3.333 탎 -> 1.666 탎 for MFM encoding
 		100000 // RevolutionTime/CellTime
 	};
 
