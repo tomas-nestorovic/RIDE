@@ -230,14 +230,10 @@
 	afx_msg void CFormatDialog::__onMediumOrEncodingChanged__(){
 		// Medium changed in corresponding ComboBox
 		// - getting the currently SelectedMediumType
-		CComboBox cb;
-		cb.Attach(GetDlgItemHwnd(ID_MEDIUM));
-			const Medium::TType selectedMediumType=(Medium::TType)cb.GetItemData( cb.GetCurSel() );
-		cb.Detach();
-		cb.Attach(GetDlgItemHwnd(ID_CODEC));
-			const Codec::TType selectedCodecType=(Codec::TType)cb.GetItemData( cb.GetCurSel() );
-		cb.Detach();
+		const Medium::TType selectedMediumType=(Medium::TType)GetDlgComboBoxSelectedValue(ID_MEDIUM);
+		const Codec::TType selectedCodecType=(Codec::TType)GetDlgComboBoxSelectedValue(ID_CODEC);
 		// - populating dedicated ComboBox with StandardFormats available for currently SelectedMediumType
+		CComboBox cb;
 		cb.Attach(GetDlgItemHwnd(ID_FORMAT));
 			cb.ResetContent();
 			// . StandardFormats

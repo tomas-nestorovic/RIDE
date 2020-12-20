@@ -67,6 +67,7 @@
 
 			const PInternalSector sectors;
 			const TSector nSectors;
+			bool modified;
 			
 			~CInternalTrack();
 

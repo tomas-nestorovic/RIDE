@@ -233,7 +233,7 @@
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - "re-normalizing" already read Tracks according to the new Medium
-		if (params.normalizeReadTracks)
+		if (params.normalizeReadTracks && !m_strPathName.IsEmpty()) // normalization makes sense only for existing Images - it's useless for Images just created
 			if (pFormat->mediumType!=Medium::UNKNOWN) // a particular Medium specified ...
 				if (floppyType!=pFormat->mediumType) // ... and it's different
 					for( TCylinder cyl=0; cyl<FDD_CYLINDERS_MAX; cyl++ )
@@ -248,7 +248,69 @@
 
 	TStdWinError CKryoFluxBase::FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte){
 		// formats given Track {Cylinder,Head} to the requested NumberOfSectors, each with corresponding Length and FillerByte as initial content; returns Windows standard i/o error
-		return ERROR_NOT_SUPPORTED;
+		// - must support the Codec specified
+		if ((codec&properties->supportedCodecs)==0)
+			return ERROR_NOT_SUPPORTED;
+		// - disposing previous Track, if any
+		PInternalTrack &rit=internalTracks[cyl][head];
+		if (rit!=nullptr)
+			delete rit, rit=nullptr;
+		// - defining the new Track layout
+		UBYTE bitBuffer[32768];
+		CapsFormatTrack cft;
+			CapsFormatBlock cfb[(TSector)-1];
+				::ZeroMemory( cfb, sizeof(*cfb)*nSectors );
+				const CapsFormatBlock cfbDefault={
+					12,	0x00,	// gap length/value before first am
+					22,	0x4e,	// gap length/value after first am count
+					12,	0x00,	// gap length/value before second am count
+					gap3, 0x4e,	// gap length/value after second am count
+					cfrmbtData,	// type of block
+					0,0,0,0,	// sector ID
+					nullptr,	// source data buffer
+					fillerByte	// source data value if buffer is NULL
+				};
+				for( TSector s=0; s<nSectors; s++ ){
+					const TSectorId &rid=bufferId[s];
+					CapsFormatBlock &r = cfb[s] = cfbDefault;
+					r.track=rid.cylinder;
+					r.side=rid.side;
+					r.sector=rid.sector;
+					r.sectorlen=GetOfficialSectorLength(rid.lengthCode);
+				}
+			::ZeroMemory( &cft, sizeof(cft) );
+			cft.gapacnt= nSectors<11 ? 60 : 2;
+			cft.gapavalue=0x4e;
+			cft.gapbvalue=0x4e;
+			cft.trackbuf=bitBuffer;
+			if (const Medium::PCProperties p=Medium::GetProperties(floppyType))
+				cft.tracklen=(p->nCells+7)/8; // # of bits to # of whole Bytes
+			else
+				return ERROR_INVALID_MEDIA;
+			cft.buflen=sizeof(bitBuffer);
+			cft.blockcnt=nSectors;
+			cft.block=cfb;
+		// - formatting the Track
+		switch (codec){
+			case Codec::MFM:{
+				if (::CAPSFormatDataToMFM( &cft, DI_LOCK_TYPE ))
+					return ERROR_FUNCTION_FAILED;
+				::memset( bitBuffer+cft.bufreq, 170, cft.tracklen-cft.bufreq); // 170 = zero in MFM
+				break;
+			}
+			default:
+				ASSERT(FALSE); // we shouldn't end up here - all Codecs claimed to be supported must be covered!
+				return ERROR_NOT_SUPPORTED;
+		}
+		// - instantiating the new Track
+		CapsTrackInfo cti={ 0, cyl, head, nSectors, 0, 1, bitBuffer, cft.tracklen };
+			cti.trackdata[0]=bitBuffer;
+			cti.tracksize[0]=cft.tracklen;
+		if ( rit=CInternalTrack::CreateFrom( *this, cti, 0 ) ){
+			rit->modified=true;
+			return ERROR_SUCCESS;
+		}else
+			return ERROR_GEN_FAILURE;
 	}
 
 	TStdWinError CKryoFluxBase::UnformatTrack(TCylinder cyl,THead head){

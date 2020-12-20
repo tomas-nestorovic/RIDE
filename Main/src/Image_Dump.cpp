@@ -505,12 +505,9 @@ errorDuringWriting:			TCHAR buf[80];
 					SetDlgItemText( ID_FILE, ELLIPSIS );
 					PopulateComboBoxWithCompatibleMedia( hMedium, 0, nullptr ); // if FileName not set, Medium cannot be determined
 				}
-				CComboBox cbMedium;
-				cbMedium.Attach(hMedium);
-					const Medium::PCProperties mp=	targetImageProperties // ComboBox populated with compatible Media and one of them selected
-													? Medium::GetProperties( dumpParams.mediumType=(Medium::TType)cbMedium.GetItemData(cbMedium.GetCurSel()) )
-													: nullptr;
-				cbMedium.Detach();
+				const Medium::PCProperties mp=	targetImageProperties // ComboBox populated with compatible Media and one of them selected
+												? Medium::GetProperties( dumpParams.mediumType=(Medium::TType)GetDlgComboBoxSelectedValue(ID_MEDIUM) )
+												: nullptr;
 				int i=dumpParams.formatJustBadTracks;
 				DDX_Check( pDX, ID_FORMAT, i );
 				dumpParams.formatJustBadTracks=i!=0;

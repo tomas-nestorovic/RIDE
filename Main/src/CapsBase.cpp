@@ -165,6 +165,7 @@
 		// - base
 		: CTrackReaderWriter(trw)
 		// - initialization
+		, modified(false)
 		, sectors(  (TInternalSector *)::memcpy( ::calloc(nSectors,sizeof(TInternalSector)), sectors, nSectors*sizeof(TInternalSector) )  )
 		, nSectors(nSectors) {
 	}
@@ -182,9 +183,6 @@
 		// creates and returns a Track decoded from underlying CAPS Track representation
 		// - at least one full revolution must be available
 		if (!cti.trackcnt)
-			return nullptr;
-		// - only flux timing is supported at the moment (the CBitReader class is deprecated and should not be used in new code)
-		if (!cti.timelen)
 			return nullptr;
 		// - reconstructing flux information over all revolutions of the disk
 		UDWORD nBitsPerTrack[CAPS_MTRS], nBitsPerTrackOfficial, nBitsTotally=0;
@@ -611,10 +609,20 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 			}
 		}else{
 			// a particular Medium specified
-			// . base
+			// . determining if this is yet a non-formatted disk
+			bool blankMedium=true;
+			for( TCylinder cyl=0; cyl<FDD_CYLINDERS_MAX; cyl++ )
+				blankMedium&=internalTracks[cyl][0]==internalTracks[cyl][1]; // equal only if both Null
+			// . if a fresh formatted new disk, we are done - as the rest is VERY time-consuming when applied for the whole disk, it's forbidden to change MediumType at this state
 			const bool newMediumTypeDifferent=floppyType!=pFormat->mediumType;
+			if (m_strPathName.IsEmpty() && !blankMedium)
+				return	newMediumTypeDifferent ? ERROR_NOT_SUPPORTED : ERROR_SUCCESS;
+			// . base
 			if (const TStdWinError err=__super::SetMediumTypeAndGeometry( pFormat, sideMap, firstSectorNumber ))
 				return err;
+			// . if blank (not yet formatted) new disk, we are done
+			if (blankMedium)
+				return ERROR_SUCCESS;
 			// . reinterpreting the fluxes
 			if (newMediumTypeDifferent && pFormat->mediumType!=Medium::UNKNOWN)
 				for( TCylinder cyl=0; cyl<FDD_CYLINDERS_MAX; cyl++ )

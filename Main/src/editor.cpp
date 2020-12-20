@@ -387,6 +387,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		}else
 			// failed to open Image
 			return nullptr;
+		image->SetPathName( lpszFileName, FALSE ); // at this moment, Image became application's active document and the name of its underlying file is shown in MainWindow's caption
 		// - adding file Image into list of Most Recently Used (MRU) documents
 		//nop (added by calling CDocument::SetPathName below)
 		// - determining the DOS

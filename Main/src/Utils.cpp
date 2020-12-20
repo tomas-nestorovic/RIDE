@@ -889,6 +889,15 @@ namespace Utils{
 		SetDlgItemPos( id, 0,0, cx,cy );
 	}
 
+	LONG_PTR CRideDialog::GetDlgComboBoxSelectedValue(WORD id) const{
+		// returns the Value selected in specified ComboBox
+		CComboBox cb;
+		cb.Attach( GetDlgItemHwnd(id) );
+			const auto value=cb.GetItemData( cb.GetCurSel() );
+		cb.Detach();
+		return value;
+	}
+
 	bool CRideDialog::SelectDlgComboBoxValue(WORD id,LONG_PTR value) const{
 		// True <=> specified Value found in ComboBox's value list, otherwise False
 		CComboBox cb;
