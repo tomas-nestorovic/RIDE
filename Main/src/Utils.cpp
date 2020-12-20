@@ -430,7 +430,11 @@ namespace Utils{
 		div_t d={ logTime, 0 };
 		while (d.quot>=1000)
 			d=div(d.quot,1000), unitPrefix+=3;
-		return	::wsprintf( buffer, _T("%d.%03d %cs"), d.quot, d.rem, TimePrefixes[unitPrefix] );
+		int nChars=::wsprintf( buffer, _T("%d.%03d"), d.quot, d.rem );
+		while (buffer[nChars-1]=='0') // removing trail zeroes
+			nChars--;
+		nChars-=buffer[nChars-1]=='.'; // removing trail floating point
+		return	nChars+::wsprintf( buffer+nChars, _T(" %cs"), TimePrefixes[unitPrefix] );
 	}
 
 	void CTimeline::Draw(HDC dc,const CRideFont &font,PLogTime pOutVisibleStart,PLogTime pOutVisibleEnd) const{
