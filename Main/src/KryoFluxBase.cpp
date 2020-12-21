@@ -22,6 +22,7 @@
 
 	#define INI_FIRMWARE_FILE			_T("fw")
 	#define INI_FLUX_DECODER			_T("decod")
+	#define INI_PRECISION				_T("prec")
 	#define INI_CALIBRATE_SECTOR_ERROR	_T("clberr")
 	#define INI_CALIBRATE_FORMATTING	_T("clbfmt")
 	#define INI_NORMALIZE_READ_TRACKS	_T("nrt")
@@ -33,6 +34,7 @@
 		// ctor
 		// - persistent (saved and loaded)
 		: firmwareFileName( app.GetProfileString(INI_KRYOFLUX,INI_FIRMWARE_FILE) )
+		, precision( app.GetProfileInt(INI_KRYOFLUX,INI_PRECISION,0) )
 		, fluxDecoder( (TFluxDecoder)app.GetProfileInt(INI_KRYOFLUX,INI_FLUX_DECODER,TFluxDecoder::KEIR_FRASIER) )
 		, calibrationAfterError( (TCalibrationAfterError)app.GetProfileInt(INI_KRYOFLUX,INI_CALIBRATE_SECTOR_ERROR,TCalibrationAfterError::ONCE_PER_CYLINDER) )
 		, calibrationStepDuringFormatting( app.GetProfileInt(INI_KRYOFLUX,INI_CALIBRATE_FORMATTING,0) )
@@ -48,6 +50,7 @@
 	CKryoFluxBase::TParams::~TParams(){
 		// dtor
 		app.WriteProfileString( INI_KRYOFLUX, INI_FIRMWARE_FILE, firmwareFileName );
+		app.WriteProfileInt( INI_KRYOFLUX, INI_PRECISION, precision );
 		app.WriteProfileInt( INI_KRYOFLUX, INI_FLUX_DECODER, fluxDecoder );
 		app.WriteProfileInt( INI_KRYOFLUX, INI_CALIBRATE_SECTOR_ERROR, calibrationAfterError );
 		app.WriteProfileInt( INI_KRYOFLUX, INI_CALIBRATE_FORMATTING, calibrationStepDuringFormatting );
@@ -123,7 +126,7 @@
 					WindowProc( WM_COMMAND, ID_40D80, 0 );
 				CheckDlgButton( ID_40D80, rkfb.params.doubleTrackStep );
 				// . some settings are changeable only during InitialEditing
-				static const WORD InitialSettingIds[]={ ID_ACCURACY, ID_TRACK, 0 };
+				static const WORD InitialSettingIds[]={ ID_ROTATION, ID_ACCURACY, ID_TRACK, 0 };
 				EnableDlgItems( InitialSettingIds, initialEditing );
 				// . displaying inserted Medium information
 				RefreshMediumInformation();
@@ -131,6 +134,8 @@
 
 			void DoDataExchange(CDataExchange* pDX) override{
 				// exchange of data from and to controls
+				// . Precision
+				DDX_CBIndex( pDX, ID_ROTATION,	params.precision );
 				// . FluxDecoder
 				int tmp=params.fluxDecoder;
 				DDX_CBIndex( pDX, ID_ACCURACY,	tmp );

@@ -536,8 +536,8 @@
 			// . issuing a Request to the KryoFlux device to read fluxes in the specified Track
 			if (!SeekTo(cyl) || !SelectHead(head) || !SetMotorOn())
 				return 0;
-			const BYTE nIndexesRequested=std::min( 4, DEVICE_REVOLUTIONS_MAX );
-			SendRequest( TRequest::STREAM, MAKEWORD(1,nIndexesRequested) ); // start streaming
+			const BYTE nIndicesRequested=std::min( 2+params.precision*2+1, DEVICE_REVOLUTIONS_MAX ); // N+1 indices = N full revolutions
+			SendRequest( TRequest::STREAM, MAKEWORD(1,nIndicesRequested) ); // start streaming
 				PBYTE p=dataBuffer;
 				while (const DWORD nBytesFree=KF_BUFFER_CAPACITY+dataBuffer-p)
 					if (const auto n=Read( p, nBytesFree )){

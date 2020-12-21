@@ -29,6 +29,7 @@
 		struct TParams{
 			// persistent (saved and loaded)
 			CString firmwareFileName;
+			int precision; // 0 = two full revolutions, 1 = four full revolutions
 			enum TFluxDecoder{ // in order of appearance in corresponding combo-box in IDR_KRYOFLUX_ACCESS dialog
 				KEIR_FRASIER
 			} fluxDecoder;
