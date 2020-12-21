@@ -265,7 +265,8 @@
 			enum TDecoderMethod:BYTE{
 				NONE				=0,
 				FDD_KEIR_FRASIER	=1,
-				FDD_METHODS			=FDD_KEIR_FRASIER
+				FDD_MARK_OGDEN		=2,
+				FDD_METHODS			=FDD_KEIR_FRASIER|FDD_MARK_OGDEN
 			};
 
 			struct TProfile sealed{
@@ -281,6 +282,11 @@
 					struct{
 						DWORD nConsecutiveZeros;
 					} frasier;
+					struct{
+						TLogTime dTime;
+						bool up;
+						BYTE fCnt, aifCnt, adfCnt, pcCnt;
+					} anonym;
 				} method;
 
 				inline TProfile(){}

@@ -475,6 +475,8 @@ badFormat:		errorState=ERROR_BAD_FORMAT;
 		switch (kfb.params.fluxDecoder){
 			case TParams::TFluxDecoder::KEIR_FRASIER:
 				decoderMethod=CTrackReader::TDecoderMethod::FDD_KEIR_FRASIER; break;
+			case TParams::TFluxDecoder::MARK_OGDEN:
+				decoderMethod=CTrackReader::TDecoderMethod::FDD_MARK_OGDEN; break;
 			default:
 				ASSERT(FALSE); break;
 		}

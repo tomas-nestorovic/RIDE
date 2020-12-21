@@ -172,6 +172,48 @@
 				profile.method.frasier.nConsecutiveZeros=0;
 				return 1;
 			}
+			case TDecoderMethod::FDD_MARK_OGDEN:{
+				// FDC-like flux reversal decoding from Mark Ogdens's DiskTools/flux2track
+				// - reading some more from the Track for the next time
+				auto &r=profile.method.anonym;
+				const TLogTime eTime=currentTime+profile.iwTime+r.dTime;
+				while (logTimes[iNextTime]<eTime)
+					if (*this)
+						iNextTime++;
+					else
+						return 0;
+				// - detecting zero
+				currentTime+=profile.iwTime;
+				const TLogTime overhang=logTimes[iNextTime]-eTime;
+				if (overhang>=profile.iwTime)
+					return 0;
+				// - adjust data frequency according to phase mismatch
+				const BYTE iSlot=(overhang<<4)/profile.iwTime;
+				BYTE cState=1; // default is IPC
+				if (iSlot<7 || iSlot>8){
+					if (iSlot<7&&!r.up || iSlot>8&&r.up)
+						r.up=!r.up, r.pcCnt = r.fCnt = 0;
+					if (++r.fCnt>=3 || iSlot<3&&++r.aifCnt>=3 || iSlot>12&&++r.adfCnt>=3){
+						static const TLogTime iwDelta=profile.iwTimeDefault/100;
+						if (r.up){
+							if (( profile.iwTime-=iwDelta )<profile.iwTimeMin)
+								profile.iwTime=profile.iwTimeMin;
+						}else
+							if (( profile.iwTime+=iwDelta )>profile.iwTimeMax)
+								profile.iwTime=profile.iwTimeMax;
+						cState = r.fCnt = r.aifCnt = r.adfCnt = r.pcCnt = 0;
+					}else if (++r.pcCnt>=2)
+						cState = r.pcCnt = 0;
+				}
+				static const BYTE PhaseAdjustments[2][16]={ // C1/C2, C3
+					//	8	9	A	B	C	D	E	F	0	1	2	3	4	5	6	7
+					 { 12, 13, 13, 14, 14, 15, 15, 16, 16, 17, 17, 18, 18, 19, 19, 20 },
+					 { 13, 14, 14, 15, 15, 16, 16, 16, 16, 16, 16, 17, 17, 18, 18, 19 }
+				};
+				r.dTime+= (PhaseAdjustments[cState][iSlot]*profile.iwTime>>4) - profile.iwTime;
+				// - a "1" recognized
+				return 1;
+			}
 			default:
 				ASSERT(FALSE);
 				return 0;
