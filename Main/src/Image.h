@@ -331,6 +331,7 @@
 		protected:
 			const PLogTime logTimes; // absolute logical times since the start of recording
 			const TDecoderMethod method;
+			const bool resetDecoderOnIndex;
 			DWORD iNextTime,nLogTimes;
 			TLogTime indexPulses[DEVICE_REVOLUTIONS_MAX+1];
 			BYTE iNextIndexPulse,nIndexPulses;
@@ -339,7 +340,7 @@
 			Medium::TType mediumType;
 			BYTE nConsecutiveZerosMax; // # of consecutive zeroes to lose synchronization; e.g. 3 for MFM code
 
-			CTrackReader(PLogTime logTimes,DWORD nLogTimes,PCLogTime indexPulses,BYTE nIndexPulses,Medium::TType mediumType,Codec::TType codec,TDecoderMethod method);
+			CTrackReader(PLogTime logTimes,DWORD nLogTimes,PCLogTime indexPulses,BYTE nIndexPulses,Medium::TType mediumType,Codec::TType codec,TDecoderMethod method,bool resetDecoderOnIndex);
 
 			WORD ScanFm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *&pOutParseEvents);
 			WORD ScanMfm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *&pOutParseEvents);
@@ -399,7 +400,7 @@
 		class CTrackReaderWriter:public CTrackReader{
 			const DWORD nLogTimesMax;
 		public:
-			CTrackReaderWriter(DWORD nLogTimesMax,TDecoderMethod method);
+			CTrackReaderWriter(DWORD nLogTimesMax,TDecoderMethod method,bool resetDecoderOnIndex);
 			CTrackReaderWriter(const CTrackReaderWriter &rTrackReaderWriter);
 			CTrackReaderWriter(CTrackReaderWriter &&rTrackReaderWriter);
 

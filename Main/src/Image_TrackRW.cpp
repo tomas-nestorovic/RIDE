@@ -1,11 +1,11 @@
 #include "stdafx.h"
 
-	CImage::CTrackReader::CTrackReader(PLogTime _logTimes,DWORD nLogTimes,PCLogTime indexPulses,BYTE _nIndexPulses,Medium::TType mediumType,Codec::TType codec,TDecoderMethod method)
+	CImage::CTrackReader::CTrackReader(PLogTime _logTimes,DWORD nLogTimes,PCLogTime indexPulses,BYTE _nIndexPulses,Medium::TType mediumType,Codec::TType codec,TDecoderMethod method,bool resetDecoderOnIndex)
 		// ctor
 		: logTimes(_logTimes+1) , nLogTimes(nLogTimes) // "+1" = hidden item represents reference counter
 		, iNextIndexPulse(0) , nIndexPulses(  std::min<BYTE>( DEVICE_REVOLUTIONS_MAX, _nIndexPulses )  )
 		, iNextTime(0) , currentTime(0)
-		, method(method) {
+		, method(method) , resetDecoderOnIndex(resetDecoderOnIndex) {
 		::memcpy( this->indexPulses, indexPulses, nIndexPulses*sizeof(TLogTime) );
 		this->indexPulses[nIndexPulses]=INT_MAX; // a virtual IndexPulse in infinity
 		logTimes[-1]=1; // initializing the reference counter
@@ -15,14 +15,14 @@
 
 	CImage::CTrackReader::CTrackReader(const CTrackReader &tr)
 		// copy ctor
-		: logTimes(tr.logTimes) , method(tr.method) {
+		: logTimes(tr.logTimes) , method(tr.method) , resetDecoderOnIndex(tr.resetDecoderOnIndex) {
 		::memcpy( this, &tr, sizeof(*this) );
 		::InterlockedIncrement( (PUINT)logTimes-1 ); // increasing the reference counter
 	}
 
 	CImage::CTrackReader::CTrackReader(CTrackReader &&rTrackReader)
 		// move ctor
-		: logTimes(rTrackReader.logTimes) , method(rTrackReader.method) {
+		: logTimes(rTrackReader.logTimes) , method(rTrackReader.method) , resetDecoderOnIndex(rTrackReader.resetDecoderOnIndex) {
 		::memcpy( this, &rTrackReader, sizeof(*this) );
 		::InterlockedIncrement( (PUINT)logTimes-1 ); // increasing the reference counter
 	}
@@ -131,7 +131,8 @@
 		// returns first bit not yet read
 		// - if we just crossed an IndexPulse, resetting the Profile
 		if (currentTime>=indexPulses[iNextIndexPulse]){
-			profile.Reset();
+			if (resetDecoderOnIndex)
+				profile.Reset();
 			iNextIndexPulse++;
 		}
 		// - reading next bit
@@ -571,9 +572,9 @@
 
 
 
-	CImage::CTrackReaderWriter::CTrackReaderWriter(DWORD nLogTimesMax,TDecoderMethod method)
+	CImage::CTrackReaderWriter::CTrackReaderWriter(DWORD nLogTimesMax,TDecoderMethod method,bool resetDecoderOnIndex)
 		// ctor
-		: CTrackReader( (PLogTime)::calloc(nLogTimesMax+1,sizeof(TLogTime)), 0, nullptr, 0, Medium::FLOPPY_DD, Codec::MFM, method ) // "+1" = hidden item represents reference counter
+		: CTrackReader( (PLogTime)::calloc(nLogTimesMax+1,sizeof(TLogTime)), 0, nullptr, 0, Medium::FLOPPY_DD, Codec::MFM, method, resetDecoderOnIndex ) // "+1" = hidden item represents reference counter
 		, nLogTimesMax(nLogTimesMax) {
 	}
 

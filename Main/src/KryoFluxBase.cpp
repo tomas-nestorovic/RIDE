@@ -22,6 +22,7 @@
 
 	#define INI_FIRMWARE_FILE			_T("fw")
 	#define INI_FLUX_DECODER			_T("decod")
+	#define INI_FLUX_DECODER_RESET		_T("drst")
 	#define INI_PRECISION				_T("prec")
 	#define INI_CALIBRATE_SECTOR_ERROR	_T("clberr")
 	#define INI_CALIBRATE_FORMATTING	_T("clbfmt")
@@ -36,6 +37,7 @@
 		: firmwareFileName( app.GetProfileString(INI_KRYOFLUX,INI_FIRMWARE_FILE) )
 		, precision( app.GetProfileInt(INI_KRYOFLUX,INI_PRECISION,0) )
 		, fluxDecoder( (TFluxDecoder)app.GetProfileInt(INI_KRYOFLUX,INI_FLUX_DECODER,TFluxDecoder::KEIR_FRASIER) )
+		, resetFluxDecoderOnIndex( (TFluxDecoder)app.GetProfileInt(INI_KRYOFLUX,INI_FLUX_DECODER_RESET,true)!=0 )
 		, calibrationAfterError( (TCalibrationAfterError)app.GetProfileInt(INI_KRYOFLUX,INI_CALIBRATE_SECTOR_ERROR,TCalibrationAfterError::ONCE_PER_CYLINDER) )
 		, calibrationStepDuringFormatting( app.GetProfileInt(INI_KRYOFLUX,INI_CALIBRATE_FORMATTING,0) )
 		, normalizeReadTracks( app.GetProfileInt(INI_KRYOFLUX,INI_NORMALIZE_READ_TRACKS,true)!=0 )
@@ -52,6 +54,7 @@
 		app.WriteProfileString( INI_KRYOFLUX, INI_FIRMWARE_FILE, firmwareFileName );
 		app.WriteProfileInt( INI_KRYOFLUX, INI_PRECISION, precision );
 		app.WriteProfileInt( INI_KRYOFLUX, INI_FLUX_DECODER, fluxDecoder );
+		app.WriteProfileInt( INI_KRYOFLUX, INI_FLUX_DECODER_RESET, resetFluxDecoderOnIndex );
 		app.WriteProfileInt( INI_KRYOFLUX, INI_CALIBRATE_SECTOR_ERROR, calibrationAfterError );
 		app.WriteProfileInt( INI_KRYOFLUX, INI_CALIBRATE_FORMATTING, calibrationStepDuringFormatting );
 		app.WriteProfileInt( INI_KRYOFLUX, INI_NORMALIZE_READ_TRACKS, normalizeReadTracks );
@@ -126,7 +129,7 @@
 					WindowProc( WM_COMMAND, ID_40D80, 0 );
 				CheckDlgButton( ID_40D80, rkfb.params.doubleTrackStep );
 				// . some settings are changeable only during InitialEditing
-				static const WORD InitialSettingIds[]={ ID_ROTATION, ID_ACCURACY, ID_TRACK, 0 };
+				static const WORD InitialSettingIds[]={ ID_ROTATION, ID_ACCURACY, ID_DEFAULT1, ID_TRACK, 0 };
 				EnableDlgItems( InitialSettingIds, initialEditing );
 				// . displaying inserted Medium information
 				RefreshMediumInformation();
@@ -140,6 +143,9 @@
 				int tmp=params.fluxDecoder;
 				DDX_CBIndex( pDX, ID_ACCURACY,	tmp );
 				params.fluxDecoder=(TParams::TFluxDecoder)tmp;
+				tmp=params.resetFluxDecoderOnIndex;
+				DDX_Check( pDX, ID_DEFAULT1,	tmp );
+				params.resetFluxDecoderOnIndex=tmp!=0;
 				// . CalibrationAfterError
 				tmp=params.calibrationAfterError;
 				DDX_Radio( pDX,	ID_NONE,		tmp );
@@ -480,7 +486,7 @@ badFormat:		errorState=ERROR_BAD_FORMAT;
 			default:
 				ASSERT(FALSE); break;
 		}
-		CTrackReaderWriter result( nFluxes, decoderMethod );
+		CTrackReaderWriter result( nFluxes, decoderMethod, kfb.params.resetFluxDecoderOnIndex );
 		DWORD sampleCounter=0;
 		TLogTime prevTime=0,*buffer=result.GetBuffer(),*pLogTime=buffer;
 		BYTE nearestIndexPulse=0;

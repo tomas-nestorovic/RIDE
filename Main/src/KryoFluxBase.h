@@ -34,6 +34,7 @@
 				KEIR_FRASIER,
 				MARK_OGDEN
 			} fluxDecoder;
+			bool resetFluxDecoderOnIndex;
 			enum TCalibrationAfterError{
 				NONE				=0,
 				ONCE_PER_CYLINDER	=1,
