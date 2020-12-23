@@ -147,10 +147,10 @@ namespace Utils{
 	extern const struct TRationalNumber:public div_t{
 		TRationalNumber();
 
-		inline int operator*(int i) const{
+		inline int operator*(long long i) const{
 			return quot*i/rem;
 		}
-		inline bool operator!=(int i) const{
+		inline bool operator!=(long long i) const{
 			return i*rem!=quot;
 		}
 	} LogicalUnitScaleFactor;
@@ -164,7 +164,7 @@ namespace Utils{
 	inline long &operator*=(long &lhs,const TRationalNumber &rhs){
 		return lhs=rhs*lhs;
 	}
-	inline int operator/(int lhs,const TRationalNumber &rhs){
+	inline int operator/(long long lhs,const TRationalNumber &rhs){
 		return lhs*rhs.rem/rhs.quot;
 	}
 	inline int &operator/=(int &lhs,const TRationalNumber &rhs){
