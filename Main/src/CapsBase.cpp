@@ -91,7 +91,7 @@
 		// True <=> at least 16 bits have not yet been read, otherwise False
 		if (nRemainingBits<16)
 			return false;
-		for( BYTE n=16; n-->0; rOut=(rOut<<1)|ReadBit() );
+		for( BYTE n=16; n-->0; rOut=(rOut<<1)|(BYTE)ReadBit() );
 		return true;
 	}
 
@@ -99,7 +99,7 @@
 		// True <=> at least 32 bits have not yet been read, otherwise False
 		if (nRemainingBits<32)
 			return false;
-		for( BYTE n=32; n-->0; rOut=(rOut<<1)|ReadBit() );
+		for( BYTE n=32; n-->0; rOut=(rOut<<1)|(BYTE)ReadBit() );
 		return true;
 	}
 

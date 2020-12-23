@@ -20,7 +20,7 @@
 				CRect(defaultRect), nullptr, (LPCTSTR)resourceId, WS_EX_TOPMOST
 			);
 		// - restoring previous position of Preview on the screen
-		const float scaleFactor=Utils::LogicalUnitScaleFactor;
+		const auto &scaleFactor=Utils::LogicalUnitScaleFactor;
 		const CString s=app.GetProfileString(iniSection,INI_POSITION,_T(""));
 		if (!s.IsEmpty()){
 			RECT r; int windowState=SW_NORMAL;

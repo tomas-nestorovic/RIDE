@@ -224,7 +224,7 @@
 	bool CImage::CTrackReader::ReadBits16(WORD &rOut){
 		// True <=> at least 16 bits have not yet been read, otherwise False
 		//if (method&TMethod::FDD_METHODS){
-			for( BYTE n=16; n-->0; rOut=(rOut<<1)|ReadBit() )
+			for( BYTE n=16; n-->0; rOut=(rOut<<1)|(BYTE)ReadBit() )
 				if (!*this)
 					return false;
 			return true;
@@ -234,7 +234,7 @@
 	bool CImage::CTrackReader::ReadBits32(DWORD &rOut){
 		// True <=> at least 32 bits have not yet been read, otherwise False
 		//if (method&TMethod::FDD_METHODS){
-			for( BYTE n=32; n-->0; rOut=(rOut<<1)|ReadBit() )
+			for( BYTE n=32; n-->0; rOut=(rOut<<1)|(BYTE)ReadBit() )
 				if (!*this)
 					return false;
 			return true;
@@ -397,7 +397,7 @@
 			// . searching for three consecutive 0xA1 distorted synchronization Bytes
 			tSyncStarts[iSyncStart++&63]=currentTime;
 			sync23=	(sync23<<1) | ((sync1&0x8000)!=0);
-			sync1 =	(sync1<<1) | ReadBit();
+			sync1 =	(sync1<<1) | (BYTE)ReadBit();
 			if ((sync1&0xffdf)!=0x4489 || (sync23&0xffdfffdf)!=0x44894489)
 				continue;
 			if (pOutParseEvents)
@@ -463,7 +463,7 @@
 		while (*this){
 			tSyncStarts[iSyncStart++&63]=currentTime;
 			sync23=	(sync23<<1) | ((sync1&0x8000)!=0);
-			sync1 =	(sync1<<1) | ReadBit();
+			sync1 =	(sync1<<1) | (BYTE)ReadBit();
 			if ((sync1&0xffdf)==0x4489 && (sync23&0xffdfffdf)==0x44894489)
 				break;
 		}

@@ -153,7 +153,7 @@
 		switch (pFileInfo-InformationList){
 			case INFORMATION_NAME_A_EXT:{
 				// icon, Name a Extension
-				const float dpiScaleFactor=Utils::LogicalUnitScaleFactor;
+				const auto &dpiScaleFactor=Utils::LogicalUnitScaleFactor;
 				::DrawIconEx( dc, r.left,r.top, __getIcon__(de), 16*dpiScaleFactor,16*dpiScaleFactor, 0, nullptr, DI_NORMAL|DI_COMPAT );
 				r.left+=20*dpiScaleFactor;
 				::DrawText( dc, DOS->GetFilePresentationNameAndExt(de),-1, &r, DT_SINGLELINE|DT_VCENTER );

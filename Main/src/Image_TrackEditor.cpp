@@ -489,7 +489,7 @@
 				Invalidate();
 				CRect rc;
 				GetClientRect(&rc);
-				m_lineDev.cx=std::max( timeline.GetUnitCount(tr.profile.iwTimeDefault)*Utils::LogicalUnitScaleFactor, 1.f ); // in device units
+				m_lineDev.cx=std::max( timeline.GetUnitCount(tr.profile.iwTimeDefault)*Utils::LogicalUnitScaleFactor, 1 ); // in device units
 				m_pageDev.cx=rc.Width()*.9f; // in device units
 			}
 

@@ -4,15 +4,14 @@ namespace Utils{
 
 	#define SCREEN_DPI_DEFAULT	96
 
-	static float __getLogicalUnitScaleFactor__(){
-		// computes and returns the factor (from (0;oo)) to multiply the size of one logical unit with; returns 1 if the logical unit size doesn't have to be changed
+	TRationalNumber::TRationalNumber(){
+		// ctor; computes the factor (from (0;oo)) to multiply the size of one logical unit with; returns 1 if the logical unit size doesn't have to be changed
 		const CClientDC screen(nullptr);
-		return	std::min(	::GetDeviceCaps(screen,LOGPIXELSX)/(float)SCREEN_DPI_DEFAULT,
-							::GetDeviceCaps(screen,LOGPIXELSY)/(float)SCREEN_DPI_DEFAULT
-						);
+		quot=std::min( ::GetDeviceCaps(screen,LOGPIXELSX), ::GetDeviceCaps(screen,LOGPIXELSY) );
+		rem=SCREEN_DPI_DEFAULT;
 	}
 
-	const float LogicalUnitScaleFactor=__getLogicalUnitScaleFactor__();
+	const TRationalNumber LogicalUnitScaleFactor;
 
 
 
@@ -63,9 +62,10 @@ namespace Utils{
 		// ctor
 		// - creating the Font
 		//CreatePointFont(pointHeight,face);
-		float fontHeight=10.f*-pointHeight/72.f, fontWidth=10.f*-pointWidth/72.f;
-		if (dpiScaled)
-			fontHeight*=LogicalUnitScaleFactor, fontWidth*=LogicalUnitScaleFactor;
+		Utils::TRationalNumber scaleFactor=Utils::LogicalUnitScaleFactor;
+		if (!dpiScaled)
+			scaleFactor.quot = scaleFactor.rem = 1;
+		const int fontHeight=scaleFactor*(10*-pointHeight)/72, fontWidth=scaleFactor*(10*-pointWidth)/72;
 		CreateFont( fontHeight, fontWidth, 0, 0,
 					bold*FW_BOLD,
 					FALSE, FALSE, FALSE,
@@ -1246,14 +1246,13 @@ namespace Utils{
 		::InvalidateRect(hStdBtn,nullptr,FALSE);
 	}
 
-	float ScaleLogicalUnit(HDC dc){
-		// changes given DeviceContext's size of one logical unit; returns the Factor using which the logical unit size has been multiplied with
+	void ScaleLogicalUnit(HDC dc){
+		// changes given DeviceContext's size of one logical unit
 		if (LogicalUnitScaleFactor!=1){
 			::SetMapMode(dc,MM_ISOTROPIC);
 			::SetWindowExtEx( dc, SCREEN_DPI_DEFAULT, SCREEN_DPI_DEFAULT, nullptr );
 			::SetViewportExtEx( dc, ::GetDeviceCaps(dc,LOGPIXELSX), ::GetDeviceCaps(dc,LOGPIXELSY), nullptr );
 		}
-		return LogicalUnitScaleFactor;
 	}
 
 	void UnscaleLogicalUnit(PINT values,BYTE nValues){

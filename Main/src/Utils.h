@@ -144,7 +144,36 @@ namespace Utils{
 		BYTE GetZoomFactorToFitWidth(int nUnits,BYTE zoomFactorMax) const;
 	};
 
-	extern const float LogicalUnitScaleFactor;
+	extern const struct TRationalNumber:public div_t{
+		TRationalNumber();
+
+		inline int operator*(int i) const{
+			return quot*i/rem;
+		}
+		inline bool operator!=(int i) const{
+			return i*rem!=quot;
+		}
+	} LogicalUnitScaleFactor;
+
+	inline int operator*(int lhs,const TRationalNumber &rhs){
+		return rhs*lhs;
+	}
+	inline int &operator*=(int &lhs,const TRationalNumber &rhs){
+		return lhs=rhs*lhs;
+	}
+	inline long &operator*=(long &lhs,const TRationalNumber &rhs){
+		return lhs=rhs*lhs;
+	}
+	inline int operator/(int lhs,const TRationalNumber &rhs){
+		return lhs*rhs.rem/rhs.quot;
+	}
+	inline int &operator/=(int &lhs,const TRationalNumber &rhs){
+		return lhs=operator/(lhs,rhs);
+	}
+	inline long &operator/=(long &lhs,const TRationalNumber &rhs){
+		return lhs=operator/(lhs,rhs);
+	}
+
 
 	TStdWinError ErrorByOs(TStdWinError vistaOrNewer,TStdWinError xpOrOlder);
 	CString ComposeErrorMessage(LPCTSTR text,LPCTSTR causeOfError,LPCTSTR consequence=nullptr);
@@ -174,7 +203,7 @@ namespace Utils{
 	CString BytesToHexaText(PCBYTE bytes,BYTE nBytes,bool lastDelimitedWithAnd);
 	CString BytesToHexaText(const char *chars,BYTE nChars,bool lastDelimitedWithAnd);
 	void NavigateToUrlInDefaultBrowser(LPCTSTR url);
-	float ScaleLogicalUnit(HDC dc);
+	void ScaleLogicalUnit(HDC dc);
 	void UnscaleLogicalUnit(PINT values,BYTE nValues);
 	COLORREF GetSaturatedColor(COLORREF color,float saturationFactor);
 	COLORREF GetBlendedColor(COLORREF color1,COLORREF color2,float blendFactor=.5f);
