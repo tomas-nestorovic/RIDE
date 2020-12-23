@@ -11,7 +11,7 @@
 	CSpectrumBase::CAssemblerPreview::CAssemblerPreview(const CFileManagerView &rFileManager,DWORD resourceId,LPCTSTR iniSection)
 		// ctor
 		// - base
-		: CFilePreview(	&contentView, iniSection, rFileManager, PREVIEW_WIDTH_DEFAULT, PREVIEW_HEIGHT_DEFAULT, resourceId )
+		: CFilePreview(	&contentView, iniSection, rFileManager, PREVIEW_WIDTH_DEFAULT, PREVIEW_HEIGHT_DEFAULT, false, resourceId )
 		, contentView(_T(""))
 		, numberFormat( (TNumberFormat)app.GetProfileInt(iniSection,INI_NUMBER_FORMAT,TNumberFormat::HexaHashtag) ) {
 		// - initialization

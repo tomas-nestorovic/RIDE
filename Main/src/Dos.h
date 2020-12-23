@@ -283,9 +283,10 @@
 			const PFile directory;
 		protected:
 			const LPCTSTR iniSection;
+			const short initialClientWidth,initialClientHeight;
 			std::unique_ptr<CDos::TDirectoryTraversal> pdt;
 
-			CFilePreview(const CWnd *pView,LPCTSTR iniSection,const CFileManagerView &rFileManager,WORD initialWindowWidth,WORD initialWindowHeight,DWORD resourceId);
+			CFilePreview(const CWnd *pView,LPCTSTR iniSection,const CFileManagerView &rFileManager,short initialClientWidth,short initialClientHeight,bool keepAspectRatio,DWORD resourceId);
 
 			void __showNextFile__();
 			void __showPreviousFile__();

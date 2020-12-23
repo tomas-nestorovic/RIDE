@@ -13,34 +13,6 @@
 	LRESULT CSpectrumBase::CScreenPreview::WindowProc(UINT uMsg,WPARAM wParam,LPARAM lParam){
 		// window procedure
 		switch (uMsg){
-			case WM_SIZING:{
-				// window size changing
-				RECT &r=*(LPRECT)lParam;
-				switch (wParam){
-					case WMSZ_TOPLEFT:
-					case WMSZ_TOPRIGHT:
-						r.top = (r.left-r.right)*SCREEN_HEIGHT/SCREEN_WIDTH + r.bottom-::GetSystemMetrics(SM_CYCAPTION);
-						return TRUE;
-					case WMSZ_TOP:
-					case WMSZ_BOTTOM:
-						r.right = (r.bottom-r.top-::GetSystemMetrics(SM_CYCAPTION))*SCREEN_WIDTH/SCREEN_HEIGHT + r.left;
-						return TRUE;
-					default:
-						r.bottom = (r.right-r.left)*SCREEN_HEIGHT/SCREEN_WIDTH + r.top+::GetSystemMetrics(SM_CYCAPTION);
-						return TRUE;
-				}
-			}
-			/*case WM_WINDOWPOSCHANGING:{
-				// window size changing
-				LPWINDOWPOS wp=(LPWINDOWPOS)lParam;
-				wp->cx=300;
-				return TRUE;
-				break;
-			}*/
-			case WM_SIZE:
-				// window size changed
-				InvalidateRect(nullptr,TRUE);
-				break;
 			case WM_MOUSEWHEEL:
 				// mouse wheel was rotated
 				if (::GetKeyState(VK_CONTROL)<0){
@@ -120,7 +92,7 @@
 	CSpectrumBase::CScreenPreview::CScreenPreview(const CFileManagerView &rFileManager)
 		// ctor
 		// - base
-		: CFilePreview( nullptr, INI_PREVIEW, rFileManager, SCREEN_WIDTH, SCREEN_HEIGHT, 0 )
+		: CFilePreview( nullptr, INI_PREVIEW, rFileManager, SCREEN_WIDTH, SCREEN_HEIGHT, true, 0 )
 		// - initialization
 		, paperFlash(false) {
 		pSingleInstance=this;

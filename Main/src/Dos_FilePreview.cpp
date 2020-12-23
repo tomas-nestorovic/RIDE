@@ -7,11 +7,13 @@
 
 	static const RECT defaultRect={ 0, 0, 0, 0 };
 
-	CDos::CFilePreview::CFilePreview(const CWnd *pView,LPCTSTR iniSection,const CFileManagerView &rFileManager,WORD initialWindowWidth,WORD initialWindowHeight,DWORD resourceId)
+	CDos::CFilePreview::CFilePreview(const CWnd *pView,LPCTSTR iniSection,const CFileManagerView &rFileManager,short initialClientWidth,short initialClientHeight,bool keepAspectRatio,DWORD resourceId)
 		// ctor
 		// - initialization
 		: pView(pView)
 		, iniSection(iniSection) , rFileManager(rFileManager)
+		, initialClientWidth( keepAspectRatio?initialClientWidth:-initialClientWidth )
+		, initialClientHeight( keepAspectRatio?initialClientHeight:-initialClientHeight )
 		, directory(DOS->currentDir)
 		, pdt( DOS->BeginDirectoryTraversal(DOS->currentDir) ) {
 		// - creating the Preview FrameWindow
@@ -32,9 +34,8 @@
 						);
 			ShowWindow(windowState); // minimized/maximized/normal
 		}else{
-			RECT r={ 0, 0, initialWindowWidth*scaleFactor, initialWindowHeight*scaleFactor };
-			::AdjustWindowRect( &r, ::GetWindowLong(m_hWnd,GWL_STYLE), FALSE );
-			r.bottom+=::GetSystemMetrics(SM_CYCAPTION);
+			RECT r={ 0, 0, initialClientWidth*scaleFactor, initialClientHeight*scaleFactor };
+			::AdjustWindowRect( &r, ::GetWindowLong(m_hWnd,GWL_STYLE), ::GetMenu(m_hWnd)!=nullptr );
 			SetWindowPos( nullptr, 0,0, r.right-r.left,r.bottom-r.top, SWP_NOZORDER );
 		}
 		// - if some menu exists, extending it with default items
@@ -171,6 +172,43 @@
 					return 0;
 				}else
 					break;
+			case WM_SIZING:
+				// window size changing
+				if (initialClientWidth>0 && initialClientHeight>0){
+					// wanted to keep initial client size ratio
+					RECT &r=*(LPRECT)lParam;
+					CRect rw, rc;
+					GetWindowRect(&rw), GetClientRect(&rc);
+					switch (wParam){
+						case WMSZ_TOP:
+						case WMSZ_BOTTOM:
+							rc.right=( rc.bottom=r.bottom-r.top+rc.Height()-rw.Height() )*initialClientWidth/initialClientHeight;
+							break;
+						case WMSZ_LEFT:
+						case WMSZ_RIGHT:
+							rc.bottom=( rc.right=r.right-r.left+rc.Width()-rw.Width() )*initialClientHeight/initialClientWidth;
+							break;
+						default:
+							r=rw;
+							return TRUE;
+					}
+					::AdjustWindowRect( &rc, ::GetWindowLong(m_hWnd,GWL_STYLE), ::GetMenu(m_hWnd)!=nullptr );
+					rc.OffsetRect( r.left-rc.left, r.top-rc.top );
+					r=rc;
+					return TRUE;
+				}
+				break;
+			/*case WM_WINDOWPOSCHANGING:{
+				// window size changing
+				LPWINDOWPOS wp=(LPWINDOWPOS)lParam;
+				wp->cx=300;
+				return TRUE;
+				break;
+			}*/
+			case WM_SIZE:
+				// window size changed
+				InvalidateRect(nullptr,TRUE);
+				break;
 			case WM_MOUSEWHEEL:
 				// mouse wheel was rotated
 				wParam = (short)HIWORD(wParam)>0 ? VK_LEFT : VK_RIGHT; // navigating to the next/previous File

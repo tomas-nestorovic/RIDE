@@ -15,7 +15,7 @@
 	CDos::CHexaPreview::CHexaPreview(const CFileManagerView &rFileManager)
 		// ctor
 		// - base
-		: CFilePreview( &hexaEditor, INI_PREVIEW, rFileManager, HEXA_WIDTH, HEXA_HEIGHT, 0 )
+		: CFilePreview( &hexaEditor, INI_PREVIEW, rFileManager, HEXA_WIDTH, HEXA_HEIGHT, false, 0 )
 		// - initialization
 		, fEmpty((PBYTE)&fEmpty,0)
 		, hexaEditor(DOS,this) {
