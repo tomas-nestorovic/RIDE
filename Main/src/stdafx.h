@@ -47,7 +47,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #include "..\res\resource.h"
 #include "..\..\Externals\fdrawcmd\fdrawcmd.h"
 
-#include "CapsLibAll.h"
+#include "OptionalLibAPIs.h"
 
 #undef _MP
 #include "winusb.h"

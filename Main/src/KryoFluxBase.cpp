@@ -304,7 +304,7 @@
 		// - formatting the Track
 		switch (codec){
 			case Codec::MFM:{
-				if (::CAPSFormatDataToMFM( &cft, DI_LOCK_TYPE ))
+				if (CAPS::FormatDataToMFM( &cft, DI_LOCK_TYPE ))
 					return ERROR_FUNCTION_FAILED;
 				::memset( bitBuffer+cft.bufreq, 170, cft.tracklen-cft.bufreq); // 170 = zero in MFM
 				break;

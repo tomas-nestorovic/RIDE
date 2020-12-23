@@ -4,12 +4,12 @@
 
 	static TStdWinError InitCapsLibrary(CapsVersionInfo &cvi){
 		// - checking version
-		if (::CAPSGetVersionInfo(&cvi,0) || cvi.release<5 || cvi.release==5&&cvi.revision<1){
+		if (CAPS::GetVersionInfo(&cvi,0) || cvi.release<5 || cvi.release==5&&cvi.revision<1){
 			Utils::FatalError(_T("CAPS library outdated, 5.1 or newer required!"));
 			return ERROR_EVT_VERSION_TOO_OLD;
 		}
 		// - initializing the library
-		if (::CAPSInit())
+		if (CAPS::Init())
 			return ERROR_DLL_INIT_FAILED;
 		// - initialized successfully, can now use the library
 		return ERROR_SUCCESS;
@@ -22,7 +22,7 @@
 		// - loading the CAPS library
 		, capsLibLoadingError( ::InitCapsLibrary(capsVersionInfo) )
 		// - creating a CAPS device
-		, capsDeviceHandle(  capsLibLoadingError ? -1 : ::CAPSAddImage()  )
+		, capsDeviceHandle(  capsLibLoadingError ? -1 : CAPS::AddImage()  )
 		// - initialization
 		, lastSuccessfullCodec(Codec::MFM) {
 		::ZeroMemory( &capsImageInfo, sizeof(capsImageInfo) );
@@ -35,7 +35,7 @@
 		Reset();
 		// - unloading the CAPS library (and thus destroying all data created during this session)
 		if (!capsLibLoadingError)
-			::CAPSExit();
+			CAPS::Exit();
 	}
 
 
@@ -409,17 +409,17 @@
 		#else
 			::lstrcpy( fileName, lpszPathName );
 		#endif
-		if (::CAPSLockImage( capsDeviceHandle, fileName )){
+		if (CAPS::LockImage( capsDeviceHandle, fileName )){
 			::SetLastError(ERROR_READ_FAULT);
 			return FALSE;
 		}
-		if (::CAPSGetImageInfo( &capsImageInfo, capsDeviceHandle )
+		if (CAPS::GetImageInfo( &capsImageInfo, capsDeviceHandle )
 			||
 			capsImageInfo.type!=ciitFDD
 			||
 			capsImageInfo.maxhead>=2 // inclusive!
 		){
-			::CAPSUnlockImage(capsDeviceHandle);
+			CAPS::UnlockImage(capsDeviceHandle);
 			::SetLastError(ERROR_NOT_SUPPORTED);
 			return FALSE;
 		}
@@ -456,7 +456,7 @@
 		if (internalTracks[cyl][head]==nullptr){
 			CapsTrackInfo cti={};
 			const UDWORD lockFlags= capsVersionInfo.flag&( DI_LOCK_INDEX | DI_LOCK_DENVAR | DI_LOCK_DENAUTO | DI_LOCK_DENNOISE | DI_LOCK_NOISE | DI_LOCK_UPDATEFD | DI_LOCK_TYPE | DI_LOCK_OVLBIT | DI_LOCK_TRKBIT );
-			if (::CAPSLockTrack( &cti, capsDeviceHandle, cyl, head, lockFlags )
+			if (CAPS::LockTrack( &cti, capsDeviceHandle, cyl, head, lockFlags )
 				||
 				(cti.type&CTIT_MASK_TYPE)==ctitNA // error during Track retrieval
 			)
@@ -467,7 +467,7 @@
 				delete tmp;
 				internalTracks[cyl][head] = CInternalTrack::CreateFrom( *this, trw ); // ... and rescanning the Track using current FloppyType Profile
 			}
-			::CAPSUnlockTrack( capsDeviceHandle, cyl, head );
+			CAPS::UnlockTrack( capsDeviceHandle, cyl, head );
 		}
 		// - scanning the Track
 		if (const PCInternalTrack pit=internalTracks[cyl][head]){
@@ -671,7 +671,7 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 				*buf='\0';
 				for( BYTE i=0; i<CAPS_MAXPLATFORM; i++ )
 					if (cb.capsImageInfo.platform[i]!=ciipNA)
-						::lstrcat(  ::lstrcat(buf, _T(", ") ),  ::CAPSGetPlatformName(cb.capsImageInfo.platform[i])  );
+						::lstrcat(  ::lstrcat(buf, _T(", ") ),  CAPS::GetPlatformName(cb.capsImageInfo.platform[i])  );
 				if (*buf!='\0') // some Platforms specified in the file
 					SetDlgItemText( ID_DOS, buf+2 );
 			}
@@ -692,7 +692,7 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 			for( THead head=0; head<2; head++ )
 				if (auto &rit=internalTracks[cyl][head])
 					delete rit, rit=nullptr;
-		::CAPSUnlockAllTracks( capsDeviceHandle );
+		CAPS::UnlockAllTracks( capsDeviceHandle );
 	}
 
 	TStdWinError CCapsBase::Reset(){
