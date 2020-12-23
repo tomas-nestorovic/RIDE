@@ -1576,14 +1576,9 @@ Utils::Information(buf);}
 						fdd->floppyType=Medium::FLOPPY_DD;
 						SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" DD formatted, 300 RPM drive") );
 						CheckDlgButton( ID_40D80,  EnableDlgItem( ID_40D80, false )  );
-					}else if (fdd->__setAndEvaluateDataTransferSpeed__(Medium::FLOPPY_HD_525)==ERROR_SUCCESS){
-						fdd->floppyType=Medium::FLOPPY_HD_525;
-						SetDlgItemText( ID_MEDIUM, _T("5.25\" HD formatted, 360 RPM drive") );
-						CheckDlgButton( ID_40D80, false );
-						EnableDlgItem( ID_40D80, initialEditing );
 					}else if (fdd->__setAndEvaluateDataTransferSpeed__(Medium::FLOPPY_HD_350)==ERROR_SUCCESS){
 						fdd->floppyType=Medium::FLOPPY_HD_350;
-						SetDlgItemText( ID_MEDIUM, _T("3.5\" HD formatted") );
+						SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" HD formatted") );
 						CheckDlgButton( ID_40D80, false );
 						EnableDlgItem( ID_40D80, initialEditing );
 					}else{
