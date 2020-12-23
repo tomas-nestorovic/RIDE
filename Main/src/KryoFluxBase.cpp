@@ -251,7 +251,8 @@
 						for( THead head=0; head<2; head++ )
 							if (auto pit=internalTracks[cyl][head]){
 								pit->SetMediumType(pFormat->mediumType);
-								pit->Normalize();
+								if (!pit->Normalize())
+									return ERROR_UNRECOGNIZED_MEDIA;
 							}
 		// - base
 		return __super::SetMediumTypeAndGeometry( pFormat, sideMap, firstSectorNumber );

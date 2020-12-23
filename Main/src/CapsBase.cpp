@@ -621,7 +621,7 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 			if (const TStdWinError err=__super::SetMediumTypeAndGeometry( pFormat, sideMap, firstSectorNumber ))
 				return err;
 			// . if blank (not yet formatted) new disk, we are done
-			if (blankMedium)
+			if (m_strPathName.IsEmpty() && blankMedium)
 				return ERROR_SUCCESS;
 			// . reinterpreting the fluxes
 			if (newMediumTypeDifferent && pFormat->mediumType!=Medium::UNKNOWN)
