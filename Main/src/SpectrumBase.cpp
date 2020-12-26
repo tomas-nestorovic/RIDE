@@ -1,7 +1,5 @@
 #include "stdafx.h"
 
-	#define INI_SPECTRUM	_T("ZXSpectrum")
-
 	const RGBQUAD CSpectrumBase::Colors[16]={
 		0,0,0,0,	// colors for Bright=0
 		192,0,0,0,

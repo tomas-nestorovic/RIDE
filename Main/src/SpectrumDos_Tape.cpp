@@ -22,6 +22,9 @@
 		dos=this; // linking the DOS and Image
 		(HACCEL)menu.hAccel=diskDos->menu.hAccel; // for DiskDos accelerators to work even if switched to Tape
 		SetPathName(fileName,FALSE);
+		// - adding this Tape to most recently used ones
+		TCHAR fileNameCopy[MAX_PATH];
+		diskDos->mruTapes.Add( ::lstrcpy(fileNameCopy,fileName) ); // creating a copy as MFC may (for some reason) corrupt the original string
 	}
 
 	CSpectrumDos::CTape::~CTape(){

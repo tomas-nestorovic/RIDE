@@ -234,6 +234,9 @@ BEGIN
             MENUITEM "Append tape...",              ID_TAPE_APPEND
             MENUITEM SEPARATOR
             MENUITEM "Eject\tCtrl+F4",              ID_TAPE_CLOSE
+            MENUITEM SEPARATOR
+            MENUITEM "No recent tapes yet",         ID_FILE_MRU_FILE10
+            , GRAYED
         END
         MENUITEM SEPARATOR
         POPUP "Floppy recognition"

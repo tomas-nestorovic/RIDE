@@ -2,14 +2,20 @@
 
 	CSpectrumDos::CSpectrumDos(PImage image,PCFormat pFormatBoot,TTrackScheme trackAccessScheme,PCProperties properties,UINT nResId,CSpectrumBaseFileManagerView *pFileManager,TGetFileSizeOptions getFileSizeDefaultOption,TSectorStatus unformatFatStatus)
 		// ctor
+		// - base
 		: CSpectrumBase(image,pFormatBoot,trackAccessScheme,properties,nResId,pFileManager,getFileSizeDefaultOption,unformatFatStatus)
-		, trackMap(this) {
+		// - initialization
+		, trackMap(this)
+		// - loading MRU Tapes
+		, mruTapes( 0, INI_SPECTRUM, _T("MruTape%d"), 4 ) {
+		mruTapes.ReadList();
 	}
 
 	CSpectrumDos::~CSpectrumDos(){
 		// dtor
 		if (CTape::pSingleInstance)
 			delete CTape::pSingleInstance;
+		mruTapes.WriteList();
 	}
 
 
@@ -163,6 +169,18 @@
 				}else
 					return TCmdResult::DONE_REDRAW;
 			}
+			case ID_FILE_MRU_FILE10:
+			case ID_FILE_MRU_FILE11:
+			case ID_FILE_MRU_FILE12:
+			case ID_FILE_MRU_FILE13:
+				// opening one of most recently used Tapes
+				// . ejecting current Tape (if any)
+				if (CTape::pSingleInstance)
+					if (ProcessCommand(ID_TAPE_CLOSE)==TCmdResult::REFUSED) // if Tape not ejected ...
+						return TCmdResult::DONE; // ... we are done (successfully)
+				// . inserting a recorded Tape (by opening its underlying physical file)
+				CTape::pSingleInstance=new CTape(mruTapes[cmd-ID_FILE_MRU_FILE10],this,true); // inserted Tape is WriteProtected by default
+				return TCmdResult::DONE;
 			default:
 				// passing a non-recognized Command to an open Tape first
 				if (__isTapeFileManagerShown__() && CTape::pSingleInstance->OnCmdMsg(cmd,CN_COMMAND,nullptr,nullptr))
@@ -179,6 +197,9 @@
 				return true;
 			case ID_TAPE_CLOSE:
 				pCmdUI->Enable(CTape::pSingleInstance!=nullptr);
+				return true;
+			case ID_FILE_MRU_FILE10:
+				mruTapes.UpdateMenu(pCmdUI);
 				return true;
 			default:
 				if (__isTapeFileManagerShown__() && CTape::pSingleInstance->OnCmdMsg(cmd,CN_UPDATE_COMMAND_UI,pCmdUI,nullptr))

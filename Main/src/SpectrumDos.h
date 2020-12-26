@@ -1,6 +1,8 @@
 #ifndef ZXSPECTRUMDOS_H
 #define ZXSPECTRUMDOS_H
 
+	#define INI_SPECTRUM	_T("ZXSpectrum")
+
 	#define ZX_PARAMETER_1	_T("Std param 1")
 	#define ZX_PARAMETER_2	_T("Std param 2")
 
@@ -430,6 +432,8 @@
 		CSpectrumDos(PImage image,PCFormat pFormatBoot,TTrackScheme trackAccessScheme,PCProperties properties,UINT nResId,CSpectrumBaseFileManagerView *pFileManager,TGetFileSizeOptions getFileSizeDefaultOption,TSectorStatus unformatFatStatus);
 		~CSpectrumDos();
 	public:
+		mutable CRecentFileList mruTapes;
+
 		TCmdResult ProcessCommand(WORD cmd) override;
 		bool UpdateCommandUi(WORD cmd,CCmdUI *pCmdUI) const override;
 		bool CanBeShutDown(CFrameWnd* pFrame) const override sealed; // sealed as no need to ever change the functionality
