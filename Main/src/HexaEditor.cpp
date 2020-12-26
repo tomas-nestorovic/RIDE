@@ -818,13 +818,13 @@ resetSelectionWithValue:BYTE buf[65535];
 							int iRadioSel;
 							BYTE value;
 
-							CResetDialog()
-								: Utils::CRideDialog( IDR_HEXAEDITOR_RESETSELECTION )
+							CResetDialog(CWnd *pParentWnd)
+								: Utils::CRideDialog( IDR_HEXAEDITOR_RESETSELECTION, pParentWnd )
 								, directoryDefaultByte( CDos::GetFocused()->properties->directoryFillerByte )
 								, dataDefaultByte( CDos::GetFocused()->properties->sectorFillerByte )
 								, iRadioSel(3) , value(0) {
 							}
-						} d;
+						} d(this);
 						// . showing the Dialog and processing its result
 						const TCaret caret0=caret;
 							const bool dlgConfirmed=d.DoModal()==IDOK;
@@ -904,11 +904,11 @@ resetSelectionWithValue:BYTE buf[65535];
 						public:
 							const int fileLength;
 							int address;
-							CAddressDialog(int fileLength)
-								: CDialog(IDR_HEXAEDITOR_GOTOADDRESS)
+							CAddressDialog(int fileLength,CWnd *pParentWnd)
+								: CDialog( IDR_HEXAEDITOR_GOTOADDRESS, pParentWnd )
 								, fileLength(fileLength) , address(0) {
 							}
-						} d(f->GetLength());
+						} d( f->GetLength(), this );
 						// . showing the Dialog and processing its result
 						if (d.DoModal()==IDOK){
 							SetFocus();
