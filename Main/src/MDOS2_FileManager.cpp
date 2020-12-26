@@ -135,10 +135,12 @@
 				// File Name
 				varLengthCommandLineEditor.DrawReportModeCell( de->name, MDOS2_FILE_NAME_LENGTH_MAX, '\0', pdis );
 				break;
-			case INFORMATION_SIZE:
+			case INFORMATION_SIZE:{
 				// File Size
-				integerEditor.DrawReportModeCell( de->GetLength(), pdis );
+				const CDos::CFatPath fatPath(DOS,de);
+				integerEditor.DrawReportModeCell( de->GetLength(), pdis, !fatPath||fatPath.GetNumberOfItems()!=(de->GetLength()+MDOS2_SECTOR_LENGTH_STD-1)/MDOS2_SECTOR_LENGTH_STD );
 				break;
+			}
 			case INFORMATION_ATTRIBUTES:{
 				// File Attributes
 				TCHAR buf[16];
