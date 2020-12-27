@@ -985,6 +985,9 @@ leftMouseDragged:
 				goto caretRefresh;
 			case WM_KILLFOCUS:
 				// window has lost focus
+				locker.Lock();
+					mouseInNcArea=false;
+				locker.Unlock();
 				::DestroyCaret();
 				if (CWnd *const pParentWnd=GetParent()) pParentWnd->Invalidate(FALSE);
 				hPreviouslyFocusedWnd=0;
@@ -1032,21 +1035,14 @@ leftMouseDragged:
 				::TrackMouseEvent(&tme);
 				break;
 			}
-			case WM_NCMOUSELEAVE:{
+			case WM_NCMOUSELEAVE:
 				// mouse left non-client area
-				POINT pt;
-				::GetCursorPos(&pt);
-				const POINTS pts={ pt.x, pt.y };
-				if (SendMessage( WM_NCHITTEST, 0, *(PINT)&pts )!=HTVSCROLL){
-					// mouse left vertical scrollbar
-					locker.Lock();
-						*static_cast<TState *>(this)=update;
-						mouseInNcArea=false;
-					locker.Unlock();
-					RepaintData(true);
-				}
+				locker.Lock();
+					*static_cast<TState *>(this)=update;
+					mouseInNcArea=false;
+				locker.Unlock();
+				RepaintData(true);
 				break;
-			}
 			case EM_GETSEL:
 				// gets current Selection
 				if (wParam!=0)
