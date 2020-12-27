@@ -178,7 +178,7 @@ END
 
 IDR_MAINFRAME MENU DISCARDABLE 
 BEGIN
-    POPUP "&Image"
+    POPUP "&Disk"
     BEGIN
         MENUITEM "&New\tCtrl+N",                ID_FILE_NEW
         MENUITEM SEPARATOR
