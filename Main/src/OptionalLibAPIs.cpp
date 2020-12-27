@@ -1,5 +1,13 @@
 #include "stdafx.h"
 
+static PVOID GetProcedure(HMODULE &rhLib,LPCTSTR libName,LPCTSTR procName){
+	if (!rhLib)
+		if (!( rhLib=::LoadLibrary(libName) ))
+			return nullptr;
+	return ::GetProcAddress( rhLib, procName );
+}
+
+
 namespace CAPS
 {
 	static HMODULE hLib;
@@ -7,92 +15,85 @@ namespace CAPS
 	typedef SDWORD (__cdecl *CAPSHOOKN)(...);
 	typedef PCHAR  (__cdecl *CAPSHOOKS)(...);
 
-	static CAPSHOOKN fnAddImage,fnRemImage,fnLockImage,fnUnlockImage,fnGetImageInfo;
-	static CAPSHOOKN fnLockTrack,fnUnlockTrack,fnUnlockAllTracks;
-
-	SDWORD __cdecl GetVersionInfo(PVOID pversioninfo, UDWORD flag){
-		// - loading the library
-		if (!hLib)
-			if (!( hLib=::LoadLibrary(_T("CAPSimg.dll")) ))
-				return imgeUnsupported;
-		// - binding to its often used functions (less often functions are bound when they are called)
-		fnAddImage=(CAPSHOOKN)::GetProcAddress(hLib,_T("CAPSAddImage"));
-		fnRemImage=(CAPSHOOKN)::GetProcAddress(hLib,_T("CAPSRemImage"));
-		fnLockImage=(CAPSHOOKN)::GetProcAddress(hLib,_T("CAPSLockImage"));
-		fnUnlockImage=(CAPSHOOKN)::GetProcAddress(hLib,_T("CAPSUnlockImage"));
-		fnGetImageInfo=(CAPSHOOKN)::GetProcAddress(hLib,_T("CAPSGetImageInfo"));
-		fnLockTrack=(CAPSHOOKN)::GetProcAddress(hLib,_T("CAPSLockTrack"));
-		fnUnlockTrack=(CAPSHOOKN)::GetProcAddress(hLib,_T("CAPSUnlockTrack"));
-		fnUnlockAllTracks=(CAPSHOOKN)::GetProcAddress(hLib,_T("CAPSUnlockAllTracks"));
-		// - performing this function
-		if (const CAPSHOOKN fnGetVersionInfo=(CAPSHOOKN)::GetProcAddress(hLib,_T("CAPSGetVersionInfo")))
-			return fnGetVersionInfo( pversioninfo, flag );
-		else
-			return imgeUnsupported;
+	inline PVOID GetProcedure(LPCTSTR procName){
+		return	GetProcedure( hLib, _T("CAPSimg.dll"), procName );
 	}
 
-	SDWORD __cdecl Init(){
-		if (hLib)
-			if (const CAPSHOOKN fnInit=(CAPSHOOKN)::GetProcAddress(hLib,_T("CAPSInit")))
-				return fnInit();
+	SDWORD GetVersionInfo(PVOID pversioninfo, UDWORD flag){
+		if (const auto f=(CAPSHOOKN)GetProcedure(_T("CAPSGetVersionInfo")))
+			return f( pversioninfo, flag );
 		return imgeUnsupported;
 	}
 
-	SDWORD __cdecl Exit(){
-		SDWORD result=imgeUnsupported;
-		if (hLib){
-			if (const CAPSHOOKN fnExit=(CAPSHOOKN)::GetProcAddress(hLib,_T("CAPSExit")))
-				result=fnExit();
-			::FreeLibrary(hLib);
-		}
-		return result;
+	SDWORD Init(){
+		if (const auto fnInit=(CAPSHOOKN)GetProcedure(_T("CAPSInit")))
+			return fnInit();
+		return imgeUnsupported;
 	}
 
-	SDWORD __cdecl AddImage(){
-		return	fnAddImage ? fnAddImage() : imgeUnsupported;
+	SDWORD Exit(){
+		if (const auto fnExit=(CAPSHOOKN)GetProcedure(_T("CAPSExit")))
+			return fnExit();
+		return imgeUnsupported;
 	}
 
-	SDWORD __cdecl RemImage(SDWORD id){
-		return	fnRemImage ? fnRemImage(id) : imgeUnsupported;
+	SDWORD AddImage(){
+		if (const auto f=(CAPSHOOKN)GetProcedure(_T("CAPSAddImage")))
+			return f();
+		return imgeUnsupported;
 	}
 
-	SDWORD __cdecl LockImage(SDWORD id, PCHAR name){
-		return	fnLockImage ? fnLockImage(id,name) : imgeUnsupported;
+	SDWORD RemImage(SDWORD id){
+		if (const auto f=(CAPSHOOKN)GetProcedure(_T("CAPSRemImage")))
+			return f(id);
+		return imgeUnsupported;
 	}
 
-	SDWORD __cdecl UnlockImage(SDWORD id){
-		return	fnUnlockImage ? fnUnlockImage(id) : imgeUnsupported;
+	SDWORD LockImage(SDWORD id, PCHAR name){
+		if (const auto f=(CAPSHOOKN)GetProcedure(_T("CAPSLockImage")))
+			return f( id, name );
+		return imgeUnsupported;
 	}
 
-	SDWORD __cdecl GetImageInfo(PCAPSIMAGEINFO pi, SDWORD id){
-		return	fnGetImageInfo ? fnGetImageInfo(pi,id) : imgeUnsupported;
+	SDWORD UnlockImage(SDWORD id){
+		if (const auto f=(CAPSHOOKN)GetProcedure(_T("CAPSUnlockImage")))
+			return f(id);
+		return imgeUnsupported;
 	}
 
-	SDWORD __cdecl LockTrack(PVOID ptrackinfo, SDWORD id, UDWORD cylinder, UDWORD head, UDWORD flag){
-		return	fnLockTrack
-				? fnLockTrack( ptrackinfo, id, cylinder, head, flag )
-				: imgeUnsupported;
+	SDWORD GetImageInfo(PCAPSIMAGEINFO pi, SDWORD id){
+		if (const auto f=(CAPSHOOKN)GetProcedure(_T("CAPSGetImageInfo")))
+			return f( pi, id );
+		return imgeUnsupported;
 	}
 
-	SDWORD __cdecl UnlockTrack(SDWORD id, UDWORD cylinder, UDWORD head){
-		return	fnUnlockTrack ? fnUnlockTrack(id,cylinder,head) : imgeUnsupported;
+	SDWORD LockTrack(PVOID ptrackinfo, SDWORD id, UDWORD cylinder, UDWORD head, UDWORD flag){
+		if (const auto f=(CAPSHOOKN)GetProcedure(_T("CAPSLockTrack")))
+			return f( ptrackinfo, id, cylinder, head, flag );
+		return imgeUnsupported;
 	}
 
-	SDWORD __cdecl UnlockAllTracks(SDWORD id){
-		return	fnUnlockAllTracks ? fnUnlockAllTracks(id) : imgeUnsupported;
+	SDWORD UnlockTrack(SDWORD id, UDWORD cylinder, UDWORD head){
+		if (const auto f=(CAPSHOOKN)GetProcedure(_T("CAPSUnlockTrack")))
+			return f( id, cylinder, head );
+		return imgeUnsupported;
 	}
 
-	PCHAR  __cdecl GetPlatformName(UDWORD pid){
-		if (hLib)
-			if (const CAPSHOOKS fnGetPlatformName=(CAPSHOOKS)::GetProcAddress(hLib,_T("CAPSGetPlatformName")))
-				return fnGetPlatformName(pid);
+	SDWORD UnlockAllTracks(SDWORD id){
+		if (const auto f=(CAPSHOOKN)GetProcedure(_T("CAPSUnlockAllTracks")))
+			return f(id);
+		return imgeUnsupported;
+	}
+
+	PCHAR GetPlatformName(UDWORD pid){
+		if (const auto f=(CAPSHOOKS)GetProcedure(_T("CAPSGetPlatformName")))
+			return f(pid);
 		return nullptr;
 	}
 
-	SDWORD __cdecl FormatDataToMFM(PVOID pformattrack, UDWORD flag){
-		if (hLib)
-			if (const CAPSHOOKN fnFormatDataToMFM=(CAPSHOOKN)::GetProcAddress(hLib,_T("CAPSFormatDataToMFM")))
-				return fnFormatDataToMFM(pformattrack,flag);
+	SDWORD FormatDataToMFM(PVOID pformattrack, UDWORD flag){
+		if (const auto f=(CAPSHOOKN)GetProcedure(_T("CAPSFormatDataToMFM")))
+			return f( pformattrack, flag );
 		return imgeUnsupported;
 	}
 
