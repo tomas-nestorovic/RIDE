@@ -38,8 +38,6 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #include <Vsstyle.h>
 #include <MsHTML.h>
 #include <WinInet.h>
-#include <setupapi.h>
-#include <guiddef.h>
 
 #include "..\..\Tdi\src\api.h"
 #include "..\..\PropGrid\src\api.h"
@@ -48,9 +46,6 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #include "..\..\Externals\fdrawcmd\fdrawcmd.h"
 
 #include "OptionalLibAPIs.h"
-
-#undef _MP
-#include "winusb.h"
 
 #if _MFC_VER>=0x0A00
 #else
@@ -111,7 +106,6 @@ typedef const int *PCLogTime;
 #include "DialogEmptySpaceFilling.h"
 #include "Editor.h"
 
-#define DLL_UXTHEME		_T("UxTheme.dll")
 #define DLL_SHELL32		_T("shell32.dll")
 #define DLL_WININET		_T("wininet.dll")
 

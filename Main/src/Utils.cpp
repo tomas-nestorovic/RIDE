@@ -243,14 +243,9 @@ namespace Utils{
 					if (cmdInfo->cursorHovering){
 						bool buttonBackgroundPainted=false; // initialization
 						// . drawing under Windows Vista and higher
-						if (const HMODULE hUxTheme=::LoadLibrary(DLL_UXTHEME)){
-							typedef HANDLE (WINAPI *TOpenThemeData)(HWND hWnd,LPCWSTR className);
-							const HANDLE hTheme=((TOpenThemeData)::GetProcAddress(hUxTheme,_T("OpenThemeData")))(hCmdBtn,WC_BUTTONW);
-								typedef HRESULT (WINAPI *TDrawThemeBackground)(HTHEME hTheme,HDC dc,int iPartId,int iStateId,LPRECT lpRect,LPRECT lpClipRect);
-								buttonBackgroundPainted=((TDrawThemeBackground)::GetProcAddress(hUxTheme,_T("DrawThemeBackground")))( hTheme, dc, BP_PUSHBUTTON, cmdInfo->pressed?PBS_PRESSED:PBS_HOT, &r, nullptr )==S_OK;
-							typedef BOOL (WINAPI *TCloseThemeData)(HANDLE);
-							((TCloseThemeData)::GetProcAddress(hUxTheme,_T("CloseThemeData")))(hTheme);
-							::FreeLibrary(hUxTheme);
+						if (const HTHEME hTheme=UxTheme::OpenThemeData(hCmdBtn,WC_BUTTONW)){
+							buttonBackgroundPainted=UxTheme::DrawThemeBackground( hTheme, dc, BP_PUSHBUTTON, cmdInfo->pressed?PBS_PRESSED:PBS_HOT, &r, nullptr )==S_OK;
+							UxTheme::CloseThemeData(hTheme);
 						}
 						// . drawing under Windows XP and lower (or if the above drawing failed)
 						if (!buttonBackgroundPainted)

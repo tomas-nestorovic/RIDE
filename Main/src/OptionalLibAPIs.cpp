@@ -8,6 +8,38 @@ static PVOID GetProcedure(HMODULE &rhLib,LPCTSTR libName,LPCTSTR procName){
 }
 
 
+namespace UxTheme
+{
+	static HMODULE hLib;
+
+	inline PVOID GetProcedure(LPCTSTR procName){
+		return	GetProcedure( hLib, _T("UxTheme.dll"), procName );
+	}
+
+	HTHEME OpenThemeData(HWND hwnd,LPCWSTR pszClassList){
+		typedef HTHEME (WINAPI *F)(HWND,LPCWSTR);
+		if (const F f=(F)GetProcedure(_T("OpenThemeData")))
+			return f( hwnd, pszClassList );
+		return nullptr;
+	}
+
+	HRESULT DrawThemeBackground(HTHEME hTheme,HDC hdc,int iPartId,int iStateId,LPCRECT pRect,LPCRECT pClipRect){
+		typedef HRESULT (WINAPI *F)(HTHEME,HDC,int,int,LPCRECT,LPCRECT);
+		if (const F f=(F)GetProcedure(_T("DrawThemeBackground")))
+			return f( hTheme, hdc, iPartId, iStateId, pRect, pClipRect );
+		return S_FALSE;
+	}
+
+	HRESULT CloseThemeData(HTHEME hTheme){
+		typedef HRESULT (WINAPI *F)(HTHEME);
+		if (const F f=(F)GetProcedure(_T("CloseThemeData")))
+			return f(hTheme);
+		return S_FALSE;
+	}
+
+}
+
+
 namespace SetupDi
 {
 	static HMODULE hLib;

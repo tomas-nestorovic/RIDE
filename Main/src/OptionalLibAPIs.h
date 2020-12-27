@@ -1,6 +1,14 @@
 #ifndef OPTLIBAPIS_H
 #define OPTLIBAPIS_H
 
+namespace UxTheme
+{
+	HTHEME OpenThemeData(HWND hwnd,LPCWSTR pszClassList);
+	HRESULT DrawThemeBackground(HTHEME hTheme,HDC hdc,int iPartId,int iStateId,LPCRECT pRect,LPCRECT pClipRect);
+	HRESULT CloseThemeData(HTHEME hTheme);
+}
+
+
 #include <setupapi.h>
 #include <guiddef.h>
 
