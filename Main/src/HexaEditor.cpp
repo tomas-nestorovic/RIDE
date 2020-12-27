@@ -1041,7 +1041,7 @@ leftMouseDragged:
 					*static_cast<TState *>(this)=update;
 					mouseInNcArea=false;
 				locker.Unlock();
-				RepaintData(true);
+				RepaintData();
 				break;
 			case EM_GETSEL:
 				// gets current Selection
