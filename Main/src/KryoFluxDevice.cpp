@@ -35,12 +35,12 @@
 		*devicePathBuf='\0'; // initialization
 		switch (driver){
 			case TDriver::WINUSB:{
-				const HDEVINFO hDevInfo=::SetupDiGetClassDevs( &GUID_KRYOFLUX, nullptr, nullptr, DIGCF_PRESENT|DIGCF_DEVICEINTERFACE );
+				const HDEVINFO hDevInfo=SetupDi::GetClassDevs( &GUID_KRYOFLUX, nullptr, nullptr, DIGCF_PRESENT|DIGCF_DEVICEINTERFACE );
 				if (hDevInfo==INVALID_HANDLE_VALUE) // never connected to this computer
 					return nullptr;
 				SP_DEVINFO_DATA devInfoData={ sizeof(devInfoData) };
 				SP_DEVICE_INTERFACE_DATA devIntfData={ sizeof(devIntfData) };
-				if (::SetupDiEnumDeviceInterfaces( hDevInfo, nullptr, &GUID_KRYOFLUX, 0, &devIntfData )!=0){
+				if (SetupDi::EnumDeviceInterfaces( hDevInfo, nullptr, &GUID_KRYOFLUX, 0, &devIntfData )!=0){
 					// yes, currently connected to this computer
 					struct{
 						SP_DEVICE_INTERFACE_DETAIL_DATA detail;
@@ -48,10 +48,10 @@
 					} str;
 					DWORD dwSize=0;
 					str.detail.cbSize=sizeof(str.detail);
-					if (::SetupDiGetDeviceInterfaceDetail( hDevInfo, &devIntfData, &str.detail, sizeof(str), &dwSize, nullptr )!=0)
+					if (SetupDi::GetDeviceInterfaceDetail( hDevInfo, &devIntfData, &str.detail, sizeof(str), &dwSize, nullptr )!=0)
 						::lstrcpy( devicePathBuf, str.detail.DevicePath );
 				}
-				::SetupDiDestroyDeviceInfoList(hDevInfo);
+				SetupDi::DestroyDeviceInfoList(hDevInfo);
 				break;
 			}
 			default:
@@ -183,17 +183,17 @@
 			switch (driver){
 				case TDriver::WINUSB:
 					ASSERT( winusb.hLibrary==INVALID_HANDLE_VALUE && winusb.hDeviceInterface==INVALID_HANDLE_VALUE );
-					if (::WinUsb_Initialize( hDevice, &winusb.hLibrary )!=0
+					if (WinUsb::Initialize( hDevice, &winusb.hLibrary )!=0
 						&&
-						::WinUsb_GetAssociatedInterface( winusb.hLibrary, KF_INTERFACE-1, &winusb.hDeviceInterface )!=0
+						WinUsb::GetAssociatedInterface( winusb.hLibrary, KF_INTERFACE-1, &winusb.hDeviceInterface )!=0
 					){
-						::WinUsb_SetPipePolicy( winusb.hDeviceInterface, KF_EP_BULK_IN, SHORT_PACKET_TERMINATE, sizeof(enable), &enable );
-						::WinUsb_SetPipePolicy( winusb.hDeviceInterface, KF_EP_BULK_IN, AUTO_CLEAR_STALL, sizeof(enable), &enable );
-						::WinUsb_SetPipePolicy( winusb.hDeviceInterface, KF_EP_BULK_IN, PIPE_TRANSFER_TIMEOUT, sizeof(timeout), &timeout );
+						WinUsb::SetPipePolicy( winusb.hDeviceInterface, KF_EP_BULK_IN, SHORT_PACKET_TERMINATE, sizeof(enable), &enable );
+						WinUsb::SetPipePolicy( winusb.hDeviceInterface, KF_EP_BULK_IN, AUTO_CLEAR_STALL, sizeof(enable), &enable );
+						WinUsb::SetPipePolicy( winusb.hDeviceInterface, KF_EP_BULK_IN, PIPE_TRANSFER_TIMEOUT, sizeof(timeout), &timeout );
 
-						::WinUsb_SetPipePolicy( winusb.hDeviceInterface, KF_EP_BULK_OUT, SHORT_PACKET_TERMINATE, sizeof(enable), &enable );
-						::WinUsb_SetPipePolicy( winusb.hDeviceInterface, KF_EP_BULK_OUT, AUTO_CLEAR_STALL, sizeof(enable), &enable );
-						::WinUsb_SetPipePolicy( winusb.hDeviceInterface, KF_EP_BULK_OUT, PIPE_TRANSFER_TIMEOUT, sizeof(timeout), &timeout );
+						WinUsb::SetPipePolicy( winusb.hDeviceInterface, KF_EP_BULK_OUT, SHORT_PACKET_TERMINATE, sizeof(enable), &enable );
+						WinUsb::SetPipePolicy( winusb.hDeviceInterface, KF_EP_BULK_OUT, AUTO_CLEAR_STALL, sizeof(enable), &enable );
+						WinUsb::SetPipePolicy( winusb.hDeviceInterface, KF_EP_BULK_OUT, PIPE_TRANSFER_TIMEOUT, sizeof(timeout), &timeout );
 					}
 					break;
 				default:
@@ -217,9 +217,9 @@
 		switch (driver){
 			case TDriver::WINUSB:
 				if (winusb.hDeviceInterface!=INVALID_HANDLE_VALUE)
-					::WinUsb_Free( winusb.hDeviceInterface );
+					WinUsb::Free( winusb.hDeviceInterface );
 				if (winusb.hLibrary!=INVALID_HANDLE_VALUE)
-					::WinUsb_Free( winusb.hLibrary );
+					WinUsb::Free( winusb.hLibrary );
 				winusb.hLibrary = winusb.hDeviceInterface = INVALID_HANDLE_VALUE;
 				break;
 			default:
@@ -275,7 +275,7 @@
 		switch (driver){
 			case TDriver::WINUSB:{
 				USB_DEVICE_DESCRIPTOR desc={ sizeof(desc), USB_DEVICE_DESCRIPTOR_TYPE };
-				if (::WinUsb_GetDescriptor(
+				if (WinUsb::GetDescriptor(
 						winusb.hLibrary,
 						USB_DEVICE_DESCRIPTOR_TYPE, 0, 0, (PUCHAR)&desc, sizeof(desc),
 						&nBytesTransferred
@@ -287,7 +287,7 @@
 						USB_STRING_DESCRIPTOR desc;
 						WCHAR buf[MAX_PATH];
 					} strW;
-					if (::WinUsb_GetDescriptor(
+					if (WinUsb::GetDescriptor(
 							winusb.hLibrary,
 							USB_STRING_DESCRIPTOR_TYPE, desc.iProduct, 0, (PUCHAR)&strW, sizeof(strW),
 							&nBytesTransferred
@@ -385,7 +385,7 @@
 					index,
 					sizeof(lastRequestResultMsg)
 				};
-				return	::WinUsb_ControlTransfer(
+				return	WinUsb::ControlTransfer(
 							winusb.hLibrary,
 							sp, (PUCHAR)lastRequestResultMsg, sizeof(lastRequestResultMsg),
 							&nBytesTransferred, nullptr
@@ -406,7 +406,7 @@
 		DWORD nBytesTransferred=0;
 		switch (driver){
 			case TDriver::WINUSB:
-				return	::WinUsb_ReadPipe(
+				return	WinUsb::ReadPipe(
 							winusb.hDeviceInterface,
 							KF_EP_BULK_IN, (PUCHAR)buffer, nBytesFree,
 							&nBytesTransferred, nullptr
@@ -444,7 +444,7 @@
 		DWORD nBytesTransferred=0;
 		switch (driver){
 			case TDriver::WINUSB:
-				return	::WinUsb_WritePipe(
+				return	WinUsb::WritePipe(
 							winusb.hDeviceInterface,
 							KF_EP_BULK_OUT, (PUCHAR)buffer, nBytes,
 							&nBytesTransferred, nullptr

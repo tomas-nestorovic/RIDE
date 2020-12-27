@@ -8,6 +8,184 @@ static PVOID GetProcedure(HMODULE &rhLib,LPCTSTR libName,LPCTSTR procName){
 }
 
 
+namespace SetupDi
+{
+	static HMODULE hLib;
+
+	inline PVOID GetProcedure(LPCTSTR procName){
+		return	GetProcedure( hLib, _T("SetupAPI.dll"), procName );
+	}
+
+	HDEVINFO GetClassDevs(
+		__in_opt CONST GUID *ClassGuid,
+		__in_opt PCTSTR Enumerator,
+		__in_opt HWND hwndParent,
+		__in DWORD Flags
+	){
+		typedef HDEVINFO (__stdcall *F)(CONST GUID *,PCTSTR,HWND,DWORD);
+		#ifdef UNICODE
+			if (const F f=(F)GetProcedure(_T("SetupDiGetClassDevsW")))
+		#else
+			if (const F f=(F)GetProcedure(_T("SetupDiGetClassDevsA")))
+		#endif
+				return f( ClassGuid, Enumerator, hwndParent, Flags );
+		return nullptr;
+	}
+
+	BOOL EnumDeviceInterfaces(
+		__in HDEVINFO DeviceInfoSet,
+		__in_opt PSP_DEVINFO_DATA DeviceInfoData,
+		__in CONST GUID *InterfaceClassGuid,
+		__in DWORD MemberIndex,
+		__out PSP_DEVICE_INTERFACE_DATA DeviceInterfaceData
+    ){
+		typedef BOOL (__stdcall *F)(HDEVINFO,PSP_DEVINFO_DATA,CONST GUID *,DWORD,PSP_DEVICE_INTERFACE_DATA);
+		if (const F f=(F)GetProcedure(_T("SetupDiEnumDeviceInterfaces")))
+			return f( DeviceInfoSet, DeviceInfoData, InterfaceClassGuid, MemberIndex, DeviceInterfaceData );
+		return FALSE;
+	}
+
+	BOOL GetDeviceInterfaceDetail(
+		__in HDEVINFO DeviceInfoSet,
+		__in PSP_DEVICE_INTERFACE_DATA DeviceInterfaceData,
+		__out_bcount_opt(DeviceInterfaceDetailDataSize) PSP_DEVICE_INTERFACE_DETAIL_DATA DeviceInterfaceDetailData,
+		__in DWORD DeviceInterfaceDetailDataSize,
+		__out_opt PDWORD RequiredSize, 
+		__out_opt PSP_DEVINFO_DATA DeviceInfoData
+    ){
+		typedef BOOL (__stdcall *F)(HDEVINFO,PSP_DEVICE_INTERFACE_DATA,PSP_DEVICE_INTERFACE_DETAIL_DATA,DWORD,PDWORD,PSP_DEVINFO_DATA);
+		#ifdef UNICODE
+			if (const F f=(F)GetProcedure(_T("SetupDiGetDeviceInterfaceDetailW")))
+		#else
+			if (const F f=(F)GetProcedure(_T("SetupDiGetDeviceInterfaceDetailA")))
+		#endif
+				return f( DeviceInfoSet, DeviceInterfaceData, DeviceInterfaceDetailData, DeviceInterfaceDetailDataSize, RequiredSize, DeviceInfoData );
+		return FALSE;
+	}
+
+	BOOL DestroyDeviceInfoList(
+		__in HDEVINFO DeviceInfoSet
+	){
+		typedef BOOL (__stdcall *F)(HDEVINFO);
+		if (const F f=(F)GetProcedure(_T("SetupDiDestroyDeviceInfoList")))
+			return f(DeviceInfoSet);
+		return FALSE;
+	}
+
+}
+
+
+namespace WinUsb
+{
+	static HMODULE hLib;
+
+	inline PVOID GetProcedure(LPCTSTR procName){
+		return	GetProcedure( hLib, _T("WinUsb.dll"), procName );
+	}
+
+	BOOL Initialize(
+		__in  HANDLE DeviceHandle,
+		__out PWINUSB_INTERFACE_HANDLE InterfaceHandle
+	){
+		typedef BOOL (__stdcall *F)(HANDLE,PWINUSB_INTERFACE_HANDLE);
+		if (const F f=(F)GetProcedure(_T("WinUsb_Initialize")))
+			return f( DeviceHandle, InterfaceHandle );
+		return FALSE;
+	}
+
+	BOOL GetAssociatedInterface(
+		__in  WINUSB_INTERFACE_HANDLE InterfaceHandle,
+		__in  UCHAR AssociatedInterfaceIndex,
+		__out PWINUSB_INTERFACE_HANDLE AssociatedInterfaceHandle
+	){
+		typedef BOOL (__stdcall *F)(WINUSB_INTERFACE_HANDLE,UCHAR,PWINUSB_INTERFACE_HANDLE);
+		if (const F f=(F)GetProcedure(_T("WinUsb_GetAssociatedInterface")))
+			return f( InterfaceHandle, AssociatedInterfaceIndex, AssociatedInterfaceHandle );
+		return FALSE;
+	}
+
+	BOOL SetPipePolicy(
+		__in  WINUSB_INTERFACE_HANDLE InterfaceHandle,
+		__in  UCHAR PipeID,
+		__in  ULONG PolicyType,
+		__in  ULONG ValueLength,
+		__in_bcount(ValueLength) PVOID Value
+	){
+		typedef BOOL (__stdcall *F)(WINUSB_INTERFACE_HANDLE,UCHAR,ULONG,ULONG,PVOID);
+		if (const F f=(F)GetProcedure(_T("WinUsb_SetPipePolicy")))
+			return f( InterfaceHandle, PipeID, PolicyType, ValueLength, Value );
+		return FALSE;
+	}
+
+	BOOL Free(
+		__in  WINUSB_INTERFACE_HANDLE InterfaceHandle
+    ){
+		typedef BOOL (__stdcall *F)(WINUSB_INTERFACE_HANDLE);
+		if (const F f=(F)GetProcedure(_T("WinUsb_Free")))
+			return f(InterfaceHandle);
+		return FALSE;
+	}
+
+	BOOL GetDescriptor(
+		__in  WINUSB_INTERFACE_HANDLE InterfaceHandle,
+		__in  UCHAR DescriptorType,
+		__in  UCHAR Index,
+		__in  USHORT LanguageID,
+		__out_bcount_part_opt(BufferLength, *LengthTransferred) PUCHAR Buffer,
+		__in  ULONG BufferLength,
+		__out PULONG LengthTransferred
+    ){
+		typedef BOOL (__stdcall *F)(WINUSB_INTERFACE_HANDLE,UCHAR,UCHAR,USHORT,PUCHAR,ULONG,PULONG);
+		if (const F f=(F)GetProcedure(_T("WinUsb_GetDescriptor")))
+			return f( InterfaceHandle, DescriptorType, Index, LanguageID, Buffer, BufferLength, LengthTransferred );
+		return FALSE;
+	}
+
+	BOOL ReadPipe(
+		__in  WINUSB_INTERFACE_HANDLE InterfaceHandle,
+		__in  UCHAR PipeID,
+		__out_bcount_part_opt(BufferLength,*LengthTransferred) PUCHAR Buffer,
+		__in  ULONG BufferLength,
+		__out_opt PULONG LengthTransferred,
+		__in_opt LPOVERLAPPED Overlapped
+    ){
+		typedef BOOL (__stdcall *F)(WINUSB_INTERFACE_HANDLE,UCHAR,PUCHAR,ULONG,PULONG,LPOVERLAPPED);
+		if (const F f=(F)GetProcedure(_T("WinUsb_ReadPipe")))
+			return f( InterfaceHandle, PipeID, Buffer, BufferLength, LengthTransferred, Overlapped );
+		return FALSE;
+	}
+
+	BOOL WritePipe(
+		__in  WINUSB_INTERFACE_HANDLE InterfaceHandle,
+		__in  UCHAR PipeID,
+		__in_bcount(BufferLength) PUCHAR Buffer,
+		__in  ULONG BufferLength,
+		__out_opt PULONG LengthTransferred,
+		__in_opt LPOVERLAPPED Overlapped    
+    ){
+		typedef BOOL (__stdcall *F)(WINUSB_INTERFACE_HANDLE,UCHAR,PUCHAR,ULONG,PULONG,LPOVERLAPPED);
+		if (const F f=(F)GetProcedure(_T("WinUsb_WritePipe")))
+			return f( InterfaceHandle, PipeID, Buffer, BufferLength, LengthTransferred, Overlapped );
+		return FALSE;
+	}
+
+	BOOL ControlTransfer(
+		__in  WINUSB_INTERFACE_HANDLE InterfaceHandle,
+		__in  WINUSB_SETUP_PACKET SetupPacket,
+		__out_bcount_part_opt(BufferLength, *LengthTransferred) PUCHAR Buffer,
+		__in  ULONG BufferLength,
+		__out_opt PULONG LengthTransferred,
+		__in_opt  LPOVERLAPPED Overlapped    
+    ){
+		typedef BOOL (__stdcall *F)(WINUSB_INTERFACE_HANDLE,WINUSB_SETUP_PACKET,PUCHAR,ULONG,PULONG,LPOVERLAPPED);
+		if (const F f=(F)GetProcedure(_T("WinUsb_ControlTransfer")))
+			return f( InterfaceHandle, SetupPacket, Buffer, BufferLength, LengthTransferred, Overlapped );
+		return FALSE;
+	}
+
+}
+
+
 namespace CAPS
 {
 	static HMODULE hLib;

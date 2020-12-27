@@ -1,6 +1,100 @@
 #ifndef OPTLIBAPIS_H
 #define OPTLIBAPIS_H
 
+#include <setupapi.h>
+#include <guiddef.h>
+
+namespace SetupDi
+{
+	HDEVINFO GetClassDevs(
+		__in_opt CONST GUID *ClassGuid,
+		__in_opt PCTSTR Enumerator,
+		__in_opt HWND hwndParent,
+		__in DWORD Flags
+    );
+	BOOL EnumDeviceInterfaces(
+		__in HDEVINFO DeviceInfoSet,
+		__in_opt PSP_DEVINFO_DATA DeviceInfoData,
+		__in CONST GUID *InterfaceClassGuid,
+		__in DWORD MemberIndex,
+		__out PSP_DEVICE_INTERFACE_DATA DeviceInterfaceData
+    );
+	BOOL GetDeviceInterfaceDetail(
+		__in HDEVINFO DeviceInfoSet,
+		__in PSP_DEVICE_INTERFACE_DATA DeviceInterfaceData,
+		__out_bcount_opt(DeviceInterfaceDetailDataSize) PSP_DEVICE_INTERFACE_DETAIL_DATA DeviceInterfaceDetailData,
+		__in DWORD DeviceInterfaceDetailDataSize,
+		__out_opt PDWORD RequiredSize, 
+		__out_opt PSP_DEVINFO_DATA DeviceInfoData
+    );
+	BOOL DestroyDeviceInfoList(
+		__in HDEVINFO DeviceInfoSet
+    );
+
+}
+
+
+#undef _MP
+#include "winusb.h"
+
+namespace WinUsb
+{
+	BOOL Initialize(
+		__in  HANDLE DeviceHandle,
+		__out PWINUSB_INTERFACE_HANDLE InterfaceHandle
+	);
+	BOOL GetAssociatedInterface(
+		__in  WINUSB_INTERFACE_HANDLE InterfaceHandle,
+		__in  UCHAR AssociatedInterfaceIndex,
+		__out PWINUSB_INTERFACE_HANDLE AssociatedInterfaceHandle
+	);
+	BOOL SetPipePolicy(
+		__in  WINUSB_INTERFACE_HANDLE InterfaceHandle,
+		__in  UCHAR PipeID,
+		__in  ULONG PolicyType,
+		__in  ULONG ValueLength,
+		__in_bcount(ValueLength) PVOID Value
+	);
+	BOOL Free(
+		__in  WINUSB_INTERFACE_HANDLE InterfaceHandle
+    );
+	BOOL GetDescriptor(
+		__in  WINUSB_INTERFACE_HANDLE InterfaceHandle,
+		__in  UCHAR DescriptorType,
+		__in  UCHAR Index,
+		__in  USHORT LanguageID,
+		__out_bcount_part_opt(BufferLength, *LengthTransferred) PUCHAR Buffer,
+		__in  ULONG BufferLength,
+		__out PULONG LengthTransferred
+    );
+	BOOL ReadPipe(
+		__in  WINUSB_INTERFACE_HANDLE InterfaceHandle,
+		__in  UCHAR PipeID,
+		__out_bcount_part_opt(BufferLength,*LengthTransferred) PUCHAR Buffer,
+		__in  ULONG BufferLength,
+		__out_opt PULONG LengthTransferred,
+		__in_opt LPOVERLAPPED Overlapped
+    );
+	BOOL WritePipe(
+		__in  WINUSB_INTERFACE_HANDLE InterfaceHandle,
+		__in  UCHAR PipeID,
+		__in_bcount(BufferLength) PUCHAR Buffer,
+		__in  ULONG BufferLength,
+		__out_opt PULONG LengthTransferred,
+		__in_opt LPOVERLAPPED Overlapped    
+    );
+	BOOL ControlTransfer(
+		__in  WINUSB_INTERFACE_HANDLE InterfaceHandle,
+		__in  WINUSB_SETUP_PACKET SetupPacket,
+		__out_bcount_part_opt(BufferLength, *LengthTransferred) PUCHAR Buffer,
+		__in  ULONG BufferLength,
+		__out_opt PULONG LengthTransferred,
+		__in_opt  LPOVERLAPPED Overlapped    
+    );
+
+}
+
+
 #include "CapsLibAll.h"
 
 namespace CAPS
