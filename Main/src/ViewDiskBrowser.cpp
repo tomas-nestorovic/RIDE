@@ -65,7 +65,7 @@
 						pCmdUi->SetRadio( revolution==Revolution::ANY_GOOD );
 						return TRUE;
 					case ID_INTERLEAVE:
-						pCmdUi->SetRadio( revolution==Revolution::ALL_MERGED );
+						pCmdUi->SetRadio( revolution==Revolution::ALL_INTERSECTED );
 						return TRUE;
 					case ID_DEFAULT1:
 					case ID_DEFAULT2:
@@ -101,7 +101,7 @@
 						f->SetCurrentRevolution( revolution=Revolution::ANY_GOOD );
 						return TRUE;
 					case ID_INTERLEAVE:
-						f->SetCurrentRevolution( revolution=Revolution::ALL_MERGED );
+						f->SetCurrentRevolution( revolution=Revolution::ALL_INTERSECTED );
 						return TRUE;
 					case ID_DEFAULT1:
 					case ID_DEFAULT2:

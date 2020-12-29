@@ -1195,7 +1195,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 										::memset( byteStates+nBytesRead, err!=ERROR_SUCCESS, nNewBytesRead );
 										nBytesRead+=nNewBytesRead;
 									}else{ // no data read - probably because none could have been determined (e.g. fuzzy bits)
-										byteStates[nBytesRead++]=FuzzyData;
+										byteStates[nBytesRead++]=Fuzzy;
 										f->Seek( 1, CFile::current );
 									}
 								}
@@ -1203,7 +1203,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 									// entire Row available
 									for( const BYTE *p=bytes; nBytesRead--; address++ ){
 										// | choosing colors
-										BYTE printFlags= byteStates[p-bytes]==OkData ? CHexaPaintDC::Normal : CHexaPaintDC::Erroneous;
+										BYTE printFlags= byteStates[p-bytes]==Good ? CHexaPaintDC::Normal : CHexaPaintDC::Erroneous;
 										if (_selectionA<=address && address<_selectionZ)
 											printFlags|=CHexaPaintDC::Selected;
 										else
@@ -1217,7 +1217,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 										}
 										dc.SetContentPrintState( printFlags, emphasisColor );
 										// | Hexa
-										const bool isFuzzy=byteStates[p-bytes]==FuzzyData;
+										const bool isFuzzy=byteStates[p-bytes]==Fuzzy;
 										const int iByte=*p++;
 										if (!isFuzzy)
 											dc.DrawText( buf, ::wsprintf(buf,HEXA_FORMAT,iByte), &rcHexa, DT_LEFT|DT_TOP );
