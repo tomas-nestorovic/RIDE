@@ -1183,21 +1183,32 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 							pContentAdviser->GetRecordInfo( address, nullptr, nullptr, &dataReady );
 							if (dataReady){
 								// Record's data are known (there are some, some with error, or none)
-								BYTE bytes[BYTES_MAX];
-								::SetLastError(ERROR_SUCCESS); // clearing any previous error
-								BYTE nBytesRead=f->Read(bytes,nBytesExpected);
-								BYTE printFlags=::GetLastError()==ERROR_SUCCESS // File content readable without error
-												? CHexaPaintDC::Normal
-												: CHexaPaintDC::Erroneous;
-								if (nBytesRead)
-									// entire Row available (guaranteed thanks to checks in the ctor)
+								BYTE bytes[BYTES_MAX], nBytesRead=0;
+								enum:BYTE{ Good, Bad, Fuzzy } byteStates[BYTES_MAX];
+								while (const BYTE nMissing=nBytesExpected-nBytesRead){
+									::SetLastError(ERROR_SUCCESS); // clearing any previous error
+									const BYTE nNewBytesRead=f->Read( bytes+nBytesRead, nMissing );
+									const TStdWinError err=::GetLastError();
+									if (err==ERROR_READ_FAULT) // no Bytes are available
+										break;
+									if (nNewBytesRead>0){ // some more data read - Good or Bad
+										::memset( byteStates+nBytesRead, err!=ERROR_SUCCESS, nNewBytesRead );
+										nBytesRead+=nNewBytesRead;
+									}else{ // no data read - probably because none could have been determined (e.g. fuzzy bits)
+										byteStates[nBytesRead++]=FuzzyData;
+										f->Seek( 1, CFile::current );
+									}
+								}
+								if (nBytesRead==nBytesExpected)
+									// entire Row available
 									for( const BYTE *p=bytes; nBytesRead--; address++ ){
 										// | choosing colors
-										COLORREF emphasisColor;
+										BYTE printFlags= byteStates[p-bytes]==OkData ? CHexaPaintDC::Normal : CHexaPaintDC::Erroneous;
 										if (_selectionA<=address && address<_selectionZ)
 											printFlags|=CHexaPaintDC::Selected;
 										else
 											printFlags&=~CHexaPaintDC::Selected;
+										COLORREF emphasisColor;
 										if (pEmp->a<=address && address<pEmp->z)
 											emphasisColor=COLOR_YELLOW;
 										else{
@@ -1206,18 +1217,25 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 										}
 										dc.SetContentPrintState( printFlags, emphasisColor );
 										// | Hexa
+										const bool isFuzzy=byteStates[p-bytes]==FuzzyData;
 										const int iByte=*p++;
-										dc.DrawText( buf, ::wsprintf(buf,HEXA_FORMAT,iByte), &rcHexa, DT_LEFT|DT_TOP );
+										if (!isFuzzy)
+											dc.DrawText( buf, ::wsprintf(buf,HEXA_FORMAT,iByte), &rcHexa, DT_LEFT|DT_TOP );
+										else
+											::DrawTextW( dc, L"\x2592\x2592", 2, &rcHexa, DT_LEFT|DT_TOP );
 										if (address==nearestNextBookmarkPos){
 											const RECT rcBookmark={ rcHexa.left, rcHexa.top, rcHexa.left+2*font.charAvgWidth, rcHexa.top+font.charHeight };
 											::FrameRect( dc, &rcBookmark, Utils::CRideBrush::Black );
 										}
 										rcHexa.left+=HEXA_FORMAT_LENGTH*font.charAvgWidth;
 										// | Ascii
-										::DrawTextW(dc,
-													::isprint(iByte) ? (LPCWSTR)&iByte : L"\x2219", 1, // if original character not printable, displaying a substitute one
-													&rcAscii, DT_LEFT|DT_TOP|DT_NOPREFIX
-												);
+										if (!isFuzzy)
+											::DrawTextW(dc,
+														::isprint(iByte) ? (LPCWSTR)&iByte : L"\x2219", 1, // if original character not printable, displaying a substitute one
+														&rcAscii, DT_LEFT|DT_TOP|DT_NOPREFIX
+													);
+										else
+											::DrawTextW( dc, L"\x2592", 1, &rcAscii, DT_LEFT|DT_TOP|DT_NOPREFIX );
 										if (address==nearestNextBookmarkPos){
 											const RECT rcBookmark={ rcAscii.left, rcAscii.top, rcAscii.left+font.charAvgWidth, rcAscii.top+font.charHeight };
 											::FrameRect( dc, &rcBookmark, Utils::CRideBrush::Black );
@@ -1229,7 +1247,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 									// content not available (e.g. irrecoverable Sector read error)
 									f->Seek( address+=nBytesExpected, CFile::begin );
 									#define ERR_MSG	_T("» No data «")
-									dc.SetContentPrintState( printFlags, COLOR_WHITE );
+									dc.SetContentPrintState( CHexaPaintDC::Erroneous, COLOR_WHITE );
 									dc.DrawText( ERR_MSG, -1, &rcHexa, DT_LEFT|DT_TOP );
 									rcHexa.left+=(sizeof(ERR_MSG)-sizeof(TCHAR))*font.charAvgWidth;
 								}

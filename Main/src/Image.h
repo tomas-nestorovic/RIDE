@@ -445,6 +445,7 @@
 		protected:
 			CHexaEditor *const pParentHexaEditor;
 			const PImage image;
+			const BYTE nAvailableRevolutions;
 			#if _MFC_VER>=0x0A00
 			LONGLONG dataTotalLength;
 			LONGLONG position;
@@ -453,6 +454,7 @@
 			LONG position;
 			#endif
 			TTrack currTrack; // Track (inferred from Position) to currently read from or write to
+			Revolution::TType revolution;
 			struct{ // Sector (inferred from Position) to currently read from or write to
 				BYTE indexOnTrack; // zero-based index of the Sector on the Track (to distinguish among duplicate-ID Sectors)
 				WORD offset;
@@ -474,6 +476,7 @@
 			UINT Read(LPVOID lpBuf,UINT nCount) override sealed;
 			void Write(LPCVOID lpBuf,UINT nCount) override sealed;
 			BYTE GetCurrentSectorIndexOnTrack() const;
+			virtual void SetCurrentRevolution(Revolution::TType rev)=0;
 			virtual TPhysicalAddress GetCurrentPhysicalAddress() const=0;
 			virtual DWORD GetSectorStartPosition(RCPhysicalAddress chs,BYTE nSectorsToSkip) const=0;
 		};
@@ -500,6 +503,7 @@
 		virtual TCylinder GetCylinderCount() const=0;
 		virtual THead GetNumberOfFormattedSides(TCylinder cyl) const=0;
 		TTrack GetTrackCount() const;
+		virtual BYTE GetAvailableRevolutionCount() const;
 		virtual TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const=0;
 		virtual TLogTime EstimateNanosecondsPerOneByte() const;
 		TSector GetCountOfHealthySectors(TCylinder cyl,THead head) const;

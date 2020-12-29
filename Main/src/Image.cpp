@@ -621,6 +621,11 @@ namespace Medium{
 		return GetCylinderCount()*GetNumberOfFormattedSides(0);
 	}
 
+	BYTE CImage::GetAvailableRevolutionCount() const{
+		// returns the number of data variations of one Sector that are guaranteed to be distinct
+		return 1;
+	}
+
 	TSector CImage::GetCountOfHealthySectors(TCylinder cyl,THead head) const{
 		// returns the number of Sectors whose data are healthy
 		EXCLUSIVELY_LOCK_THIS_IMAGE();

@@ -93,14 +93,28 @@
 					ps->scannedTracks.locker.Unlock();
 					// . first, processing a request to buffer a Track (if any)
 					if (ps->request.bufferEvent.Lock( allTracksScanned ? INFINITE : 2 )){
-						const TTrack requestTrack=ps->request.track;
+						const auto &req=ps->request;
 						TSectorId ids[FDD_SECTORS_MAX];
-						image->BufferTrackData(	requestTrack>>1, requestTrack&1,
-												ids, Utils::CByteIdentity(),
-												ps->__scanTrack__( requestTrack, ids, nullptr ),
-												false
-											);
-						ps->scannedTracks.infos[requestTrack].buffered=true;
+						if (req.revolution<Revolution::MAX){
+							// only particular Revolution wanted
+							image->BufferTrackData(
+								req.track>>1, req.track&1, req.revolution,
+								ids, Utils::CByteIdentity(),
+								ps->__scanTrack__( req.track, ids, nullptr ),
+								false
+							);
+							ps->scannedTracks.infos[req.track].bufferedRevs|=1<<req.revolution;
+						}else{
+							// all Revolutions wanted
+							for( BYTE rev=image->GetAvailableRevolutionCount(); rev-->0; )
+								image->BufferTrackData(
+									req.track>>1, req.track&1, (Revolution::TType)rev,
+									ids, Utils::CByteIdentity(),
+									ps->__scanTrack__( req.track, ids, nullptr ),
+									false
+								);
+							ps->scannedTracks.infos[req.track].bufferedRevs=-1;
+						}
 						if (ps->bContinue)
 							ps->pParentHexaEditor->RepaintData(true); // True = immediate repainting
 					// . then, scanning the remaining Tracks (if not all yet scanned)
@@ -126,13 +140,14 @@
 			bool bContinue, bChsValid;
 			struct{
 				TTrack track;
+				Revolution::TType revolution;
 				CEvent bufferEvent;
 			} request;
 			struct{
 				struct{
 					int logicalPosition;
 					int nRowsAtLogicalPosition;
-					bool buffered;
+					BYTE bufferedRevs; // bits mapped to individual Revolutions, e.g. bit 0 = Revolution::R0, etc.
 
 					int __update__(const CSerializer &rds){
 						// updates the Track info and returns the LogicalPosition at which this Track ends
@@ -226,6 +241,13 @@
 				const LONG result=__super::Seek(lOff,nFrom);
 				bChsValid=__getPhysicalAddress__( result, &currTrack, &sector.indexOnTrack, &sector.offset );
 				return result;
+			}
+			void SetCurrentRevolution(Revolution::TType rev) override{
+				// selects Revolution from which to retrieve Sector data
+				const bool revDifferent=rev!=revolution;
+				revolution=rev;
+				if (revDifferent)
+					pParentHexaEditor->RepaintData();
 			}
 			TPhysicalAddress GetCurrentPhysicalAddress() const override{
 				// returns the current Sector's PhysicalAddress
@@ -330,13 +352,18 @@
 					if (pOutRecordLength)
 						*pOutRecordLength = lengths[nSectors];
 				}
-				if (pOutDataReady)
-					if (!( *pOutDataReady=scannedTracks.infos[track].buffered ))
+				if (pOutDataReady){
+					const BYTE mask=revolution<Revolution::MAX
+									? 1<<revolution // only particular Revolution wanted
+									: -1; // all Revolutions wanted
+					if (!( *pOutDataReady=(scannedTracks.infos[track].bufferedRevs&mask)==mask ))
 						// Sector not yet buffered and its data probably wanted - buffering them now
-						if (request.track!=track){ // Request not yet issued
+						if (request.track!=track || request.revolution!=revolution){ // Request not yet issued
 							request.track=track;
+							request.revolution=revolution;
 							request.bufferEvent.SetEvent();
 						}
+				}
 			}
 			LPCTSTR GetRecordLabel(int logPos,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override{
 				// populates the Buffer with label for the Record that STARTS at specified LogicalPosition, and returns the Buffer; returns Null if no Record starts at specified LogicalPosition

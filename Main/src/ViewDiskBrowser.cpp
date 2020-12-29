@@ -12,6 +12,7 @@
 		: CHexaEditor( this, Utils::CreateSubmenuByContainedCommand(IDR_DISKBROWSER,ID_EDIT_SELECT_ALL), nullptr, Utils::CreateSubmenuByContainedCommand(IDR_DISKBROWSER,ID_NAVIGATE_ADDRESS) )
 		// - initialization
 		, tab( IDR_DISKBROWSER, IDR_HEXAEDITOR, ID_CYLINDER, dos, this )
+		, revolution(Revolution::ANY_GOOD)
 		, iScrollY(0) {
 	}
 
@@ -56,9 +57,29 @@
 	BOOL CDiskBrowserView::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){
 		// command processing
 		switch (nCode){
-			case CN_UPDATE_COMMAND_UI:
+			case CN_UPDATE_COMMAND_UI:{
 				// update
+				CCmdUI *const pCmdUi=(CCmdUI *)pExtra;
 				switch (nID){
+					case ID_AUTO:
+						pCmdUi->SetRadio( revolution==Revolution::ANY_GOOD );
+						return TRUE;
+					case ID_INTERLEAVE:
+						pCmdUi->SetRadio( revolution==Revolution::ALL_MERGED );
+						return TRUE;
+					case ID_DEFAULT1:
+					case ID_DEFAULT2:
+					case ID_DEFAULT3:
+					case ID_DEFAULT4:
+					case ID_DEFAULT5:
+					case ID_DEFAULT6:
+					case ID_DEFAULT7:
+					case ID_DEFAULT8:
+						if (nID-ID_DEFAULT1<IMAGE->GetAvailableRevolutionCount()){
+							pCmdUi->SetRadio( revolution==nID-ID_DEFAULT1 );
+						}else
+							pCmdUi->m_pMenu->RemoveMenu( nID, MF_BYCOMMAND );
+						return TRUE;
 					case ID_SELECT_CURRENT_TRACK:
 					case ID_SELECT_CURRENT_CYLINDER:
 					case ID_NAVIGATE_PREVIOUSTRACK:
@@ -66,14 +87,33 @@
 					case ID_NAVIGATE_NEXTTRACK:
 					case ID_NAVIGATE_NEXTCYLINDER:
 					case ID_NAVIGATE_SECTOR:
-						((CCmdUI *)pExtra)->Enable( TRUE );
+						pCmdUi->Enable( TRUE );
 						return TRUE;
 				}
 				break;
+			}
 			case CN_COMMAND:{
 				// command
 				BYTE nBytesToCompare=sizeof(TCylinder);
 				switch (nID){
+					case ID_AUTO:
+						// selecting any Revolution with healthy data
+						f->SetCurrentRevolution( revolution=Revolution::ANY_GOOD );
+						return TRUE;
+					case ID_INTERLEAVE:
+						f->SetCurrentRevolution( revolution=Revolution::ALL_MERGED );
+						return TRUE;
+					case ID_DEFAULT1:
+					case ID_DEFAULT2:
+					case ID_DEFAULT3:
+					case ID_DEFAULT4:
+					case ID_DEFAULT5:
+					case ID_DEFAULT6:
+					case ID_DEFAULT7:
+					case ID_DEFAULT8:
+						// selecting particular disk Revolution
+						f->SetCurrentRevolution( revolution=(Revolution::TType)(nID-ID_DEFAULT1) );
+						return TRUE;
 					case ID_SELECT_CURRENT_TRACK:
 						// selecting current Track and placing Cursor at the end of the selection
 						nBytesToCompare+=sizeof(THead);

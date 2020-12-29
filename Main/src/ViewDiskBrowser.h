@@ -6,6 +6,7 @@
 	private:
 		int iScrollY; // ScrollBar position
 		std::unique_ptr<CImage::CSectorDataSerializer> f;
+		Revolution::TType revolution;
 
 		afx_msg int OnCreate(LPCREATESTRUCT lpcs);
 		afx_msg void OnDestroy();

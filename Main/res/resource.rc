@@ -519,6 +519,20 @@ BEGIN
         MENUITEM "Paste from file...",          ID_EDIT_PASTE_SPECIAL
         MENUITEM "Delete\tDel",                 ID_EDIT_DELETE
         MENUITEM SEPARATOR
+        POPUP "Revolution"
+        BEGIN
+            MENUITEM "Any with good data\tCtrl+0",  ID_AUTO
+            MENUITEM "Merge all",                   ID_INTERLEAVE
+            MENUITEM SEPARATOR
+            MENUITEM "1\tCtrl+1",                   ID_DEFAULT1
+            MENUITEM "2\tCtrl+2",                   ID_DEFAULT2
+            MENUITEM "3\tCtrl+3",                   ID_DEFAULT3
+            MENUITEM "4\tCtrl+4",                   ID_DEFAULT4
+            MENUITEM "5\tCtrl+5",                   ID_DEFAULT5
+            MENUITEM "6\tCtrl+6",                   ID_DEFAULT6
+            MENUITEM "7\tCtrl+7",                   ID_DEFAULT7
+            MENUITEM "8\tCtrl+8",                   ID_DEFAULT8
+        END
         POPUP "Select"
         BEGIN
             MENUITEM "All\tCtrl+A",                 ID_EDIT_SELECT_ALL

@@ -451,6 +451,11 @@
 		return capsImageInfo.maxhead+1; // the last INCLUSIVE Head plus one
 	}
 
+	BYTE CCapsBase::GetAvailableRevolutionCount() const{
+		// returns the number of data variations of one Sector that are guaranteed to be distinct
+		return 4;
+	}
+
 	TSector CCapsBase::ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec,PSectorId bufferId,PWORD bufferLength,PLogTime startTimesNanoseconds,PBYTE pAvgGap3) const{
 		// returns the number of Sectors found in given Track, and eventually populates the Buffer with their IDs (if Buffer!=Null); returns 0 if Track not formatted or not found
 		EXCLUSIVELY_LOCK_THIS_IMAGE();

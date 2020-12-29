@@ -476,6 +476,10 @@ trackNotFound:
 				__getPhysicalAddress__( result, currTrack, sector.indexOnTrack, &sector.offset );
 				return result;
 			}
+			void SetCurrentRevolution(Revolution::TType rev) override{
+				// selects Revolution from which to retrieve Sector data
+				//nop
+			}
 			TPhysicalAddress GetCurrentPhysicalAddress() const override{
 				// returns the current Sector's PhysicalAddress
 				const div_t h=div( currTrack, image->nHeads ); // Quotient = # of Cylinders to skip, Remainder = Head in a Cylinder

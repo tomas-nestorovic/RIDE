@@ -235,6 +235,11 @@
 
 
 
+	BYTE CKryoFluxBase::GetAvailableRevolutionCount() const{
+		// returns the number of data variations of one Sector that are guaranteed to be distinct
+		return 2+params.precision*2;
+	}
+
 	TStdWinError CKryoFluxBase::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus){
 		// marks Sector on a given PhysicalAddress as "dirty", plus sets it the given FdcStatus; returns Windows standard i/o error
 		return ERROR_NOT_SUPPORTED;
