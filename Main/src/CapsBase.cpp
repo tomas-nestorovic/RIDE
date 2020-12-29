@@ -173,7 +173,7 @@
 	CCapsBase::CInternalTrack::~CInternalTrack(){
 		// dtor
 		for( TSector i=0; i<nSectors; i++ )
-			for( BYTE r=0; r<DEVICE_REVOLUTIONS_MAX; r++ )
+			for( BYTE r=0; r<Revolution::MAX; r++ )
 				if (const PVOID data=sectors[i].revolutions[r].data)
 					::free(data);
 		::free(sectors);
@@ -243,7 +243,7 @@
 			// . determining the Codec to be used in the NEXT iteration for decoding
 			for( codecs&=~c; (codecs&next)==0&&(next&Codec::ANY)!=0; next<<=1 );
 			// . scanning the Track and if no Sector recognized, continuing with Next Codec
-			TSectorId ids[DEVICE_REVOLUTIONS_MAX*(TSector)-1]; TLogTime idEnds[DEVICE_REVOLUTIONS_MAX*(TSector)-1]; TProfile idProfiles[DEVICE_REVOLUTIONS_MAX*(TSector)-1]; TFdcStatus statuses[DEVICE_REVOLUTIONS_MAX*(TSector)-1];
+			TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; TProfile idProfiles[Revolution::MAX*(TSector)-1]; TFdcStatus statuses[Revolution::MAX*(TSector)-1];
 			tr.SetCodec(c);
 			const WORD nSectorsFound=tr.Scan( ids, idEnds, idProfiles, statuses );
 			if (!nSectorsFound)
@@ -367,19 +367,24 @@
 		return new CInternalTrack( trw, nullptr, 0 );
 	}
 
-	void CCapsBase::CInternalTrack::ReadSector(TInternalSector &ris){
+	void CCapsBase::CInternalTrack::ReadSector(TInternalSector &ris,BYTE rev){
 		// buffers specified Revolution of the Sector (assumed part of this Track)
-		auto &currRev=ris.revolutions[ris.currentRevolution];
-		const WORD sectorOfficialLength=GetOfficialSectorLength( ris.id.lengthCode );
-		BYTE buffer[16384]; // big enough to contain the longest possible Sector
-		currRev.fdcStatus.ExtendWith(
-			ReadData(
-				currRev.idEndTime, currRev.idEndProfile,
-				sectorOfficialLength, buffer
-			)
-		);
-		if (!currRev.fdcStatus.DescribesMissingDam()) // "some" data found
-			currRev.data=(PSectorData)::memcpy( ::malloc(sectorOfficialLength), buffer, sectorOfficialLength );
+		auto &currRev=ris.revolutions[rev];
+		if (currRev.idEndTime>0){
+			// at least Sector's ID Field found in specified Revolution
+			const WORD sectorOfficialLength=GetOfficialSectorLength( ris.id.lengthCode );
+			BYTE buffer[16384]; // big enough to contain the longest possible Sector
+			currRev.fdcStatus.ExtendWith(
+				ReadData(
+					currRev.idEndTime, currRev.idEndProfile,
+					sectorOfficialLength, buffer
+				)
+			);
+			if (!currRev.fdcStatus.DescribesMissingDam()) // "some" data found
+				currRev.data=(PSectorData)::memcpy( ::malloc(sectorOfficialLength), buffer, sectorOfficialLength );
+		}else
+			// Sector's ID Field not found in specified Revolution
+			currRev.fdcStatus.ExtendWith( TFdcStatus::SectorNotFound );
 	}
 
 
@@ -495,9 +500,10 @@
 			return 0;
 	}
 
-	void CCapsBase::GetTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses){
+	void CCapsBase::GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses){
 		// populates output buffers with specified Sectors' data, usable lengths, and FDC statuses; ALWAYS attempts to buffer all Sectors - caller is then to sort out eventual read errors (by observing the FDC statuses); caller can call ::GetLastError to discover the error for the last Sector in the input list
 		ASSERT( outBufferData!=nullptr && outBufferLengths!=nullptr && outFdcStatuses!=nullptr );
+		silentlyRecoverFromErrors&=rev>=Revolution::MAX; // can't recover if wanted particular Revolution
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (internalTracks[cyl][head]==nullptr)
 			ScanTrack(cyl,head); // reading the Track (if not yet read)
@@ -520,7 +526,7 @@
 				}
 				// . if Data already read WithoutError, returning them
 				const WORD usableSectorLength=GetUsableSectorLength(sectorId.lengthCode);
-				auto *currRev=pis->revolutions+pis->currentRevolution;
+				auto *currRev=pis->revolutions+( rev<Revolution::MAX ? rev : pis->currentRevolution );
 				if (currRev->data || currRev->fdcStatus.DescribesMissingDam()) // A|B, A = some data exist, B = reattempting to read the DAM-less Sector only if automatic recovery desired
 					if (currRev->fdcStatus.IsWithoutError() || !silentlyRecoverFromErrors){ // A|B, A = returning error-free data, B = settling with any data if automatic recovery not desired
 returnData:				*outFdcStatuses++=currRev->fdcStatus;
@@ -530,13 +536,17 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 					}
 				// . attempting next disk Revolution to retrieve healthy Data
 				if (usableSectorLength!=0){ // e.g. Sector with LengthCode 167 has no data
-					do{
-						if (++pis->currentRevolution>=pis->nRevolutions)
-							pis->currentRevolution=0;
-						currRev=pis->revolutions+pis->currentRevolution;
-					}while (currRev->idEndTime<=0);
 					::free(currRev->data), currRev->data=nullptr;
-					pit->ReadSector( *pis );
+					if (rev<pis->nRevolutions) // wanted particular EXISTING Revolution
+						pit->ReadSector( *pis, rev );
+					else if (rev>=Revolution::MAX){ // wanted any Revolution
+						do{
+							if (++pis->currentRevolution>=pis->nRevolutions)
+								pis->currentRevolution=0;
+							currRev=pis->revolutions+pis->currentRevolution;
+						}while (currRev->idEndTime<=0);
+						pit->ReadSector( *pis, pis->currentRevolution );
+					}
 				}
 				// . returning (any) Data
 				goto returnData;

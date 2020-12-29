@@ -3,7 +3,7 @@
 	CImage::CTrackReader::CTrackReader(PLogTime _logTimes,DWORD nLogTimes,PCLogTime indexPulses,BYTE _nIndexPulses,Medium::TType mediumType,Codec::TType codec,TDecoderMethod method,bool resetDecoderOnIndex)
 		// ctor
 		: logTimes(_logTimes+1) , nLogTimes(nLogTimes) // "+1" = hidden item represents reference counter
-		, iNextIndexPulse(0) , nIndexPulses(  std::min<BYTE>( DEVICE_REVOLUTIONS_MAX, _nIndexPulses )  )
+		, iNextIndexPulse(0) , nIndexPulses(  std::min<BYTE>( Revolution::MAX, _nIndexPulses )  )
 		, iNextTime(0) , currentTime(0)
 		, method(method) , resetDecoderOnIndex(resetDecoderOnIndex) {
 		::memcpy( this->indexPulses, indexPulses, nIndexPulses*sizeof(TLogTime) );

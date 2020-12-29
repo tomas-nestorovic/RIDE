@@ -184,7 +184,7 @@ terminateWithError:
 				PSectorData bufferSectorData[(TSector)-1];
 				TFdcStatus bufferFdcStatus[(TSector)-1];
 {LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("reading source"));
-				dp.source->GetTrackData( p.chs.cylinder, p.chs.head, bufferId, sectorIdAndPositionIdentity, nSectors, true, bufferSectorData, bufferLength, bufferFdcStatus ); // reading healthy Sectors (unhealthy ones read individually below)
+				dp.source->GetTrackData( p.chs.cylinder, p.chs.head, Revolution::ANY_GOOD, bufferId, sectorIdAndPositionIdentity, nSectors, true, bufferSectorData, bufferLength, bufferFdcStatus ); // reading healthy Sectors (unhealthy ones read individually below)
 				for( TSector s=0; s<nSectors; ){
 					// : reading SourceSector
 					p.chs.sectorId=bufferId[s];

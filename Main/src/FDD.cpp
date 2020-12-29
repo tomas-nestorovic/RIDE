@@ -1027,7 +1027,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		return __bufferSectorData__( chs.cylinder, chs.head, &chs.sectorId, sectorLength, pit, nSectorsToSkip, pFdcStatus );
 	}
 
-	void CFDD::GetTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses){
+	void CFDD::GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses){
 		// populates output buffers with specified Sectors' data, usable lengths, and FDC statuses; ALWAYS attempts to buffer all Sectors - caller is then to sort out eventual read errors (by observing the FDC statuses); caller can call ::GetLastError to discover the error for the last Sector in the input list
 		ASSERT( outBufferData!=nullptr && outBufferLengths!=nullptr && outFdcStatuses!=nullptr );
 		// - initializing the output buffers with data retrieval failure (assumption)
@@ -1985,7 +1985,7 @@ formatStandardWay:
 					LOG_ACTION(_T("track verification"));
 					PVOID dummyBuffer[(TSector)-1];
 					TFdcStatus statuses[(TSector)-1];
-					GetTrackData( cyl, head, bufferId, Utils::CByteIdentity(), nSectors, false, (PSectorData *)dummyBuffer, (PWORD)dummyBuffer, statuses ); // "DummyBuffer" = throw away any outputs
+					GetTrackData( cyl, head, Revolution::ANY_GOOD, bufferId, Utils::CByteIdentity(), nSectors, false, (PSectorData *)dummyBuffer, (PWORD)dummyBuffer, statuses ); // "DummyBuffer" = throw away any outputs
 					for( TSector n=0; n<nSectors; n++ ){
 						const TPhysicalAddress chs={ cyl, head, bufferId[n] };
 						if (!statuses[n].IsWithoutError())

@@ -40,7 +40,16 @@
 	#define HDD_HEADS_MAX		63
 
 	#define DEVICE_NAME_CHARS_MAX 48
-	#define DEVICE_REVOLUTIONS_MAX 8
+
+	namespace Revolution{
+		enum TType:BYTE{
+			R0			=0,
+			R1, R2, R3, R4, R5, R6, R7,
+			MAX, // constants beyond this value should be ignored by all containers
+			ANY_GOOD,
+			ALL_INTERSECTED
+		};
+	}
 
 	namespace Medium{
 		enum TType:BYTE{
@@ -333,7 +342,7 @@
 			const TDecoderMethod method;
 			const bool resetDecoderOnIndex;
 			DWORD iNextTime,nLogTimes;
-			TLogTime indexPulses[DEVICE_REVOLUTIONS_MAX+1];
+			TLogTime indexPulses[Revolution::MAX+1];
 			BYTE iNextIndexPulse,nIndexPulses;
 			TLogTime currentTime;
 			Codec::TType codec;
@@ -421,7 +430,7 @@
 			inline
 			void AddIndexTime(TLogTime logTime){
 				// appends LogicalTime representing the position of the index pulse on the disk
-				ASSERT( nIndexPulses<DEVICE_REVOLUTIONS_MAX );
+				ASSERT( nIndexPulses<Revolution::MAX );
 				ASSERT( logTime>=0 );
 				indexPulses[nIndexPulses++]=logTime;
 			}
@@ -495,9 +504,12 @@
 		virtual TLogTime EstimateNanosecondsPerOneByte() const;
 		TSector GetCountOfHealthySectors(TCylinder cyl,THead head) const;
 		bool IsTrackHealthy(TCylinder cyl,THead head) const;
-		virtual void GetTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses)=0;
+		virtual void GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses)=0;
+		void BufferTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors);
 		void BufferTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors);
+		PSectorData GetSectorData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId pid,BYTE nSectorsToSkip,bool silentlyRecoverFromError,PWORD sectorLength,TFdcStatus *pFdcStatus);
 		PSectorData GetSectorData(TCylinder cyl,THead head,PCSectorId pid,BYTE nSectorsToSkip,bool silentlyRecoverFromError,PWORD sectorLength,TFdcStatus *pFdcStatus);
+		PSectorData GetSectorData(RCPhysicalAddress chs,Revolution::TType rev,BYTE nSectorsToSkip,bool silentlyRecoverFromError,PWORD sectorLength,TFdcStatus *pFdcStatus);
 		PSectorData GetSectorData(RCPhysicalAddress chs,BYTE nSectorsToSkip,bool silentlyRecoverFromError,PWORD sectorLength,TFdcStatus *pFdcStatus);
 		PSectorData GetHealthySectorData(TCylinder cyl,THead head,PCSectorId pid,PWORD sectorLength);
 		PSectorData GetHealthySectorData(RCPhysicalAddress chs,PWORD sectorLength);

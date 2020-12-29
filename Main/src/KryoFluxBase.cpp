@@ -417,7 +417,7 @@ badFormat:		errorState=ERROR_BAD_FORMAT;
 									// index
 									if (size!=12)
 										goto badFormat;
-									if (nIndexPulses==DEVICE_REVOLUTIONS_MAX){
+									if (nIndexPulses==Revolution::MAX){
 										errorState=ERROR_INVALID_INDEX;
 										return;
 									}

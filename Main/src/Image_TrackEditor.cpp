@@ -694,7 +694,7 @@
 			TParseEvent peBuffer[5000]; // capacity should suffice for any Track of any platform
 			const auto iii=sizeof(peBuffer);
 			BYTE dummy[16384]; // big enough to contain data of Sector of any floppy type
-			TSectorId ids[DEVICE_REVOLUTIONS_MAX*(TSector)-1]; TLogTime idEnds[DEVICE_REVOLUTIONS_MAX*(TSector)-1]; CImage::CTrackReader::TProfile idProfiles[DEVICE_REVOLUTIONS_MAX*(TSector)-1];
+			TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; CImage::CTrackReader::TProfile idProfiles[Revolution::MAX*(TSector)-1];
 			const WORD nSectorsFound=tr.Scan( ids, idEnds, idProfiles, (TFdcStatus *)dummy, peBuffer );
 			pAction->SetProgressTarget(tr.GetTotalTime());
 			for( WORD s=0; s<nSectorsFound; s++,pAction->UpdateProgress(tr.GetCurrentTime()) ){

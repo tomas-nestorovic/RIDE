@@ -38,7 +38,7 @@
 				// . reading Source Track
 				PSectorData bufferSectorData[(TSector)-1];
 				TFdcStatus bufferFdcStatus[(TSector)-1];
-				pp.source->GetTrackData( chs.cylinder, chs.head, bufferId, sectorIdAndPositionIdentity, nSectors, true, bufferSectorData, bufferLength, bufferFdcStatus );
+				pp.source->GetTrackData( chs.cylinder, chs.head, Revolution::ANY_GOOD, bufferId, sectorIdAndPositionIdentity, nSectors, true, bufferSectorData, bufferLength, bufferFdcStatus );
 				for( TSector s=0; s<nSectors; s++ ){
 					chs.sectorId=bufferId[s];
 					bufferSectorData[s]=pp.source->GetSectorData( chs, s, false, bufferLength+s, bufferFdcStatus+s );
@@ -49,7 +49,7 @@
 terminateWithError:	return pAction->TerminateWithError(err);
 				// . writing to Target Track
 				PVOID dummyBuffer[(TSector)-1];
-				pp.target->GetTrackData( chs.cylinder, chs.head, bufferId, sectorIdAndPositionIdentity, nSectors, true, (PSectorData *)dummyBuffer, (PWORD)dummyBuffer, (TFdcStatus *)dummyBuffer ); // "DummyBuffer" = throw away any outputs
+				pp.target->GetTrackData( chs.cylinder, chs.head, Revolution::ANY_GOOD, bufferId, sectorIdAndPositionIdentity, nSectors, true, (PSectorData *)dummyBuffer, (PWORD)dummyBuffer, (TFdcStatus *)dummyBuffer ); // "DummyBuffer" = throw away any outputs
 				for( BYTE s=0; s<nSectors; ){
 					if (!bufferFdcStatus[s].DescribesMissingDam()){
 						chs.sectorId=bufferId[s]; WORD w;

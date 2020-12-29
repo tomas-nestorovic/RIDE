@@ -225,7 +225,7 @@
 			// . scanning the Track to draw its Sector data
 			if (pvtm->displayType>=TDisplayType::DATA_OK_ONLY){
 				TFdcStatus statuses[(TSector)-1];
-				image->GetTrackData( ti.cylinder, ti.head, ti.bufferId, sectorIdAndPositionIdentity, ti.nSectors, false, ti.bufferSectorData, ti.bufferLength, statuses );
+				image->GetTrackData( ti.cylinder, ti.head, Revolution::ANY_GOOD, ti.bufferId, sectorIdAndPositionIdentity, ti.nSectors, false, ti.bufferSectorData, ti.bufferLength, statuses );
 				for( TSector n=0; n<ti.nSectors; n++ )
 					if (pvtm->displayType!=TDisplayType::DATA_ALL && !statuses[n].IsWithoutError())
 						ti.bufferSectorData[n]=nullptr;

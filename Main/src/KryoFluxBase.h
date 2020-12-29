@@ -11,7 +11,7 @@
 				DWORD posInStreamData;
 				DWORD sampleCounter;
 				DWORD indexCounter;
-			} indexPulses[DEVICE_REVOLUTIONS_MAX];
+			} indexPulses[Revolution::MAX];
 			BYTE nIndexPulses;
 			TStdWinError errorState;
 			double mck,sck,ick;

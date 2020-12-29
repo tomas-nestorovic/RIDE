@@ -51,7 +51,7 @@
 				CTrackReader::TProfile idEndProfile;
 				PSectorData data;
 				TFdcStatus fdcStatus;
-			} revolutions[DEVICE_REVOLUTIONS_MAX];
+			} revolutions[Revolution::MAX];
 			BYTE nRevolutions;
 			BYTE currentRevolution;
 
@@ -71,7 +71,7 @@
 			
 			~CInternalTrack();
 
-			void ReadSector(TInternalSector &ris);
+			void ReadSector(TInternalSector &ris,BYTE rev);
 		} *PInternalTrack;
 		typedef const CInternalTrack *PCInternalTrack;
 
@@ -94,7 +94,7 @@
 		TCylinder GetCylinderCount() const override;
 		THead GetNumberOfFormattedSides(TCylinder cyl) const override;
 		TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const override;
-		void GetTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses) override;
+		void GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses) override;
 		TStdWinError GetInsertedMediumType(TCylinder cyl,Medium::TType &rOutMediumType) const override;
 		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
 		bool EditSettings(bool initialEditing) override;
