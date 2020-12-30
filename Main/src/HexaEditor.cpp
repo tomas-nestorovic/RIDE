@@ -1222,7 +1222,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 										if (!isFuzzy)
 											dc.DrawText( buf, ::wsprintf(buf,HEXA_FORMAT,iByte), &rcHexa, DT_LEFT|DT_TOP );
 										else
-											::DrawTextW( dc, L"\x2592\x2592", 2, &rcHexa, DT_LEFT|DT_TOP );
+											::DrawTextW( dc, L"\x2592\x2592 ", 3, &rcHexa, DT_LEFT|DT_TOP );
 										if (address==nearestNextBookmarkPos){
 											const RECT rcBookmark={ rcHexa.left, rcHexa.top, rcHexa.left+2*font.charAvgWidth, rcHexa.top+font.charHeight };
 											::FrameRect( dc, &rcBookmark, Utils::CRideBrush::Black );
