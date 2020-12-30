@@ -72,33 +72,34 @@
 		// tries to read given NumberOfBytes into the Buffer, starting with current Position; returns the number of Bytes actually read (increments the Position by this actually read number of Bytes)
 		nCount=std::min<UINT>( nCount, dataTotalLength-position );
 		const UINT nBytesToRead=nCount;
-		bool readWithoutCrcError=true; // assumption
 		WORD w; TFdcStatus sr;
 		while (true)
 			if (revolution==Revolution::ALL_INTERSECTED){
 				const TPhysicalAddress chs=GetCurrentPhysicalAddress();
 				PCSectorData data[Revolution::MAX];
+				bool allRevolutionsIdentical=true; // assumption
 				for( BYTE rev=0; rev<nAvailableRevolutions; rev++ ){
 					data[rev]=image->GetSectorData( chs, (Revolution::TType)rev, sector.indexOnTrack, false, &w, &sr );
-					readWithoutCrcError&=data[rev]!=nullptr;
+					allRevolutionsIdentical&=data[rev]!=nullptr;
 				}
 				if (!w) // e.g. reading Sector with LengthCode 231 - such Sector has by default no data (a pointer to zero-length data has been returned by GetSectorData)
 					break;
-				if (!readWithoutCrcError) // at least one Revolution didn't return any data for the Sector
-					if (nCount<nBytesToRead) // some Bytes already read?
-						return nBytesToRead-nCount; // keeping the error of already read data
+				if (!allRevolutionsIdentical) // at least one Revolution didn't return any data for the Sector
+					if (nCount<nBytesToRead) // already read something?
+						return nBytesToRead-nCount; // returning only the ok part to not mix readable and unreadable data
 					else
 						break;
 				w-=sector.offset;
-				for( UINT n=0,N=std::min<UINT>(w,nCount); n<N; n++ ){
-					const BYTE reference=data[0][sector.offset];
-					for( BYTE rev=1; rev<nAvailableRevolutions; readWithoutCrcError&=data[rev++][sector.offset]==reference );
-					if (readWithoutCrcError)
-						*(PBYTE)lpBuf=reference, lpBuf=(PBYTE)lpBuf+sizeof(reference), sector.offset++;
+				for( WORD i=sector.offset,const iEnd=i+std::min<UINT>(w,nCount); i<iEnd; i++ ){
+					const BYTE reference=data[0][i];
+					for( BYTE rev=1; rev<nAvailableRevolutions; allRevolutionsIdentical&=data[rev++][i]==reference );
+					if (allRevolutionsIdentical)
+						*(PBYTE)lpBuf=reference, lpBuf=(PBYTE)lpBuf+sizeof(reference);
 					else{
-						Seek(n,SeekPosition::current);
-						::SetLastError(ERROR_SUCCESS); // first n Bytes are ok
-						return n+nBytesToRead-nCount;
+						const WORD nIdentical=i-sector.offset;
+						Seek( nIdentical, SeekPosition::current );
+						::SetLastError(ERROR_SUCCESS);
+						return nIdentical+nBytesToRead-nCount; // returning only the ok part to not mix readable and unreadable data
 					}
 				}
 				if (w<nCount){
@@ -112,18 +113,29 @@
 			}else if (const PCSectorData sectorData=image->GetSectorData(GetCurrentPhysicalAddress(),revolution,sector.indexOnTrack,true,&w,&sr)){ // True = attempting to recover from errors despite many small read requests are made, potentially leading to a floppy calibration overhead
 				if (!w) // e.g. reading Sector with LengthCode 231 - such Sector has by default no data (a pointer to zero-length data has been returned by GetSectorData)
 					break;
-				readWithoutCrcError&=sr.IsWithoutError();
 				w-=sector.offset;
-				if (w<nCount){
-					lpBuf=(PBYTE)::memcpy(lpBuf,sectorData+sector.offset,w)+w;
-					nCount-=w;
-					Seek(w,SeekPosition::current);
-				}else{
-					::memcpy(lpBuf,sectorData+sector.offset,nCount);
-					Seek(nCount,SeekPosition::current);
-					::SetLastError( readWithoutCrcError ? ERROR_SUCCESS : ERROR_CRC );
-					return nBytesToRead;
-				}
+				if (sr.IsWithoutError()){
+					if (w<nCount){
+						lpBuf=(PBYTE)::memcpy(lpBuf,sectorData+sector.offset,w)+w;
+						nCount-=w;
+						Seek(w,SeekPosition::current);
+					}else{
+						::memcpy(lpBuf,sectorData+sector.offset,nCount);
+						Seek(nCount,SeekPosition::current);
+						::SetLastError( ERROR_SUCCESS );
+						return nBytesToRead;
+					}
+				}else
+					if (nCount<nBytesToRead){ // already read something?
+						::SetLastError( ERROR_SUCCESS );
+						return nBytesToRead-nCount; // returning only the ok part to not mix readable and unreadable data
+					}else{
+						const UINT len=std::min<UINT>( nCount, w );
+						::memcpy( lpBuf, sectorData+sector.offset, len );
+						Seek( len, SeekPosition::current );
+						::SetLastError( ERROR_CRC );
+						return len; // bad data are to be retrieved in individual chunks
+					}					
 			}else
 				break;
 		::SetLastError(ERROR_READ_FAULT);
