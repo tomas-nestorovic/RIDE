@@ -24,6 +24,7 @@
 		// - creating a CAPS device
 		, capsDeviceHandle(  capsLibLoadingError ? -1 : CAPS::AddImage()  )
 		// - initialization
+		, forcedMediumType( Medium::FLOPPY_ANY )
 		, lastSuccessfullCodec(Codec::MFM) {
 		::ZeroMemory( &capsImageInfo, sizeof(capsImageInfo) );
 		::ZeroMemory( internalTracks, sizeof(internalTracks) );
@@ -428,6 +429,11 @@
 			::SetLastError(ERROR_NOT_SUPPORTED);
 			return FALSE;
 		}
+		// - confirming initial settings
+		if (!EditSettings(true)){ // dialog cancelled?
+			::SetLastError( ERROR_CANCELLED );
+			return FALSE;
+		}
 		// - warning
 		if (capsImageInfo.maxcylinder>=FDD_CYLINDERS_MAX){ // inclusive!
 			TCHAR msg[200];
@@ -609,7 +615,7 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 			Medium::TType bestMediumType=Medium::UNKNOWN;
 			TFormat tmp=*pFormat;
 			for( DWORD type=1; type!=0; type<<=1 )
-				if (type&Medium::FLOPPY_ANY){
+				if (type&forcedMediumType){
 					WORD nHealthySectorsCurr=0;
 					tmp.mediumType=(Medium::TType)type;
 					SetMediumTypeAndGeometry( &tmp, sideMap, firstSectorNumber );
@@ -665,17 +671,24 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 
 	bool CCapsBase::EditSettings(bool initialEditing){
 		// True <=> new settings have been accepted (and adopted by this Image), otherwise False
-		// - there are no settings that must be reviewed when first opening an Image
-		if (initialEditing)
-			return true;
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - defining the Dialog
 		class CCapsInformation sealed:public Utils::CRideDialog{
 			const CCapsBase &cb;
+			const bool initialEditing;
 
 			void PreInitDialog() override{
 				__super::PreInitDialog();
+				const HWND hMedium=GetDlgItemHwnd(ID_MEDIUM);
+				CImage::PopulateComboBoxWithCompatibleMedia( hMedium, forcedMediumType, cb.properties );
+				ComboBox_SetItemData(
+					hMedium,
+					ComboBox_AddString( hMedium, _T("Automatically recognized") ),
+					forcedMediumType
+				);
+				const WORD Controls[]={ ID_MEDIUM, IDOK, 0 };
+				EnableDlgItems( Controls, initialEditing );
 				SetDlgItemFormattedText( ID_SYSTEM, _T("Version %d.%d"), cb.capsVersionInfo.release, cb.capsVersionInfo.revision );
-				SetDlgItemText( ID_MEDIUM, Medium::GetDescription(cb.floppyType) );
 				SetDlgItemFormattedText( ID_ARCHIVE, _T("%u (0x%08X)"), cb.capsImageInfo.release, cb.capsImageInfo.release );
 				SetDlgItemInt( ID_ACCURACY, cb.capsImageInfo.revision, FALSE );
 				SYSTEMTIME st={ cb.capsImageInfo.crdt.year, cb.capsImageInfo.crdt.month, 0, cb.capsImageInfo.crdt.day, cb.capsImageInfo.crdt.hour, cb.capsImageInfo.crdt.min, cb.capsImageInfo.crdt.sec };
@@ -690,15 +703,36 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 				if (*buf!='\0') // some Platforms specified in the file
 					SetDlgItemText( ID_DOS, buf+2 );
 			}
-		public:
-			CCapsInformation(const CCapsBase &cb)
-				: Utils::CRideDialog(IDR_CAPS)
-				, cb(cb) {
+
+			void DoDataExchange(CDataExchange *pDX) override{
+				CComboBox cb;
+				cb.Attach( GetDlgItemHwnd(ID_MEDIUM) );
+					if (pDX->m_bSaveAndValidate)
+						forcedMediumType=(Medium::TType)cb.GetItemData( cb.GetCurSel() );
+					else{
+						int iSel=0;
+						for( const int nMedia=cb.GetCount()-1; iSel<nMedia; iSel++ ) // "-1" = to later select the "Automatic" option
+							if (cb.GetItemData(iSel)==this->cb.floppyType)
+								break;
+						cb.SetCurSel(iSel);
+					}
+				cb.Detach();
 			}
-		} d(*this);
+		public:
+			Medium::TType forcedMediumType;
+
+			CCapsInformation(const CCapsBase &cb,bool initialEditing)
+				: Utils::CRideDialog(IDR_CAPS)
+				, forcedMediumType(cb.forcedMediumType)
+				, cb(cb) , initialEditing(initialEditing) {
+			}
+		} d( *this, initialEditing );
 		// - showing the Dialog and processing its result
-		d.DoModal();
-		return true;
+		if (d.DoModal()==IDOK){
+			forcedMediumType=d.forcedMediumType;
+			return true;
+		}else
+			return false;
 	}
 
 	void CCapsBase::DestroyAllTracks(){

@@ -21,6 +21,8 @@
 
 	class CCapsBase abstract:public CFloppyImage{
 		friend struct TInternalTrack;
+
+		Medium::TType forcedMediumType;
 	protected:
 		class CBitReader sealed{
 		// this class is deprecated and should not be used in new code - use CTrackReaderWriter instead!
