@@ -224,13 +224,13 @@
 			if (br.ReadBit())
 				*pFluxTime++=currentTime;
 		}
+		trw.AddTimes( pFluxTimeBuffer, pFluxTime-pFluxTimeBuffer );
 		if (trw.GetIndexCount()<=cti.trackcnt){ // an IPF image may end up here
 			const TLogTime tIndex=trw.GetIndexTime(cti.trackcnt-1)+nBitsPerTrackOfficial*trw.profile.iwTimeDefault;
 			trw.AddIndexTime(tIndex);
 			if (trw.GetTotalTime()<tIndex) // adding an auxiliary flux at the Index position to prolong flux information
 				*pFluxTime++=tIndex;
 		}
-		trw.AddTimes( pFluxTimeBuffer, pFluxTime-pFluxTimeBuffer );
 		// - creating a Track from above reconstructed flux information
 		return CreateFrom( cb, trw );
 	}
