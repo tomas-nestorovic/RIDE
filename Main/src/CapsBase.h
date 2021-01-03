@@ -32,8 +32,7 @@
 		public:
 			const UDWORD Count;
 
-			CBitReader(const CapsTrackInfo &cti,UDWORD lockFlags);
-			CBitReader(const CapsTrackInfo &cti,UDWORD revolution,UDWORD lockFlags);
+			CBitReader(const CapsTrackInfoT2 &cti,UDWORD lockFlags);
 			CBitReader(const CBitReader &rBitReader,UDWORD position);
 
 			inline operator bool() const;
@@ -64,7 +63,7 @@
 		typedef class CInternalTrack sealed:public CTrackReaderWriter{
 			CInternalTrack(const CTrackReaderWriter &trw,PInternalSector sectors,TSector nSectors);
 		public:
-			static CInternalTrack *CreateFrom(const CCapsBase &cb,const CapsTrackInfo &cti,UDWORD lockFlags);
+			static CInternalTrack *CreateFrom(const CCapsBase &cb,const CapsTrackInfoT2 *ctiRevs,BYTE nRevs,UDWORD lockFlags);
 			static CInternalTrack *CreateFrom(const CCapsBase &cb,const CTrackReaderWriter &trw);
 
 			const PInternalSector sectors;

@@ -48,17 +48,10 @@
 
 
 
-	CCapsBase::CBitReader::CBitReader(const CapsTrackInfo &cti,UDWORD lockFlags)
+	CCapsBase::CBitReader::CBitReader(const CapsTrackInfoT2 &cti,UDWORD lockFlags)
 		// ctor to iterate over bits on all available disk revolutions
 		: pCurrByte(cti.trackbuf-1) , currBitMask(0) // pointing "before" the first valid bit
 		, nRemainingBits( lockFlags&DI_LOCK_TRKBIT ? cti.tracklen : cti.tracklen*8 )
-		, Count(nRemainingBits) {
-	}
-
-	CCapsBase::CBitReader::CBitReader(const CapsTrackInfo &cti,UDWORD revolution,UDWORD lockFlags)
-		// ctor to iterate over bits on particular disk revolution only
-		: pCurrByte(cti.trackdata[revolution]-1) , currBitMask(0) // pointing "before" the first valid bit
-		, nRemainingBits(cti.tracksize[revolution]*8)
 		, Count(nRemainingBits) {
 	}
 
@@ -180,15 +173,16 @@
 		::free(sectors);
 	}
 
-	CCapsBase::CInternalTrack *CCapsBase::CInternalTrack::CreateFrom(const CCapsBase &cb,const CapsTrackInfo &cti,UDWORD lockFlags){
+	CCapsBase::CInternalTrack *CCapsBase::CInternalTrack::CreateFrom(const CCapsBase &cb,const CapsTrackInfoT2 *ctiRevs,BYTE nRevs,UDWORD lockFlags){
 		// creates and returns a Track decoded from underlying CAPS Track representation
-		// - at least one full revolution must be available
-		if (!cti.trackcnt)
+		// - at least one full Revolution must be available
+		if (!nRevs)
 			return nullptr;
-		// - reconstructing flux information over all revolutions of the disk
+		// - reconstructing flux information over all Revolutions of the disk
+		nRevs=std::min( nRevs, (BYTE)CAPS_MTRS ); // just to be sure we don't overrun the buffers
 		UDWORD nBitsPerTrack[CAPS_MTRS], nBitsPerTrackOfficial, nBitsTotally=0;
-		for( UDWORD rev=0; rev<cti.trackcnt; rev++ )
-			nBitsTotally += nBitsPerTrack[rev] = CBitReader(cti,rev,lockFlags).Count;
+		for( BYTE rev=0; rev<nRevs; rev++ )
+			nBitsTotally += nBitsPerTrack[rev] = CBitReader(ctiRevs[rev],lockFlags).Count;
 		CTrackReaderWriter trw( nBitsTotally, CTrackReader::FDD_KEIR_FRASIER, true ); // pessimistic estimation of # of fluxes
 			if (*nBitsPerTrack>( nBitsPerTrackOfficial=Medium::TProperties::FLOPPY_HD_350.nCells )*95/100) // 5% tolerance
 				// likely a 3.5" HD medium
@@ -207,27 +201,32 @@
 				return nullptr;
 			}
 		trw.AddIndexTime(0);
+		const TLogTime fullRevolutionTime=nBitsPerTrackOfficial*trw.profile.iwTimeDefault;
 		TLogTime currentTime=0, *pFluxTimeBuffer=trw.GetBuffer(), *pFluxTime=pFluxTimeBuffer;
-		UDWORD nextIndexBits=*nBitsPerTrack;
-		BYTE rev=0;
-		for( CBitReader br(cti,lockFlags); br; ){
-			// . adding new index
-			if (br.GetPosition()==nextIndexBits){
-				trw.AddIndexTime( currentTime );
-				nextIndexBits+=nBitsPerTrack[++rev];
+		TLogTime nextIndexTime=fullRevolutionTime;
+		for( BYTE rev=0; rev<nRevs; ){
+			const CapsTrackInfoT2 &cti=ctiRevs[rev++];
+			for( CBitReader br(cti,lockFlags); br; ){
+				// . adding new index
+				if (currentTime>=nextIndexTime){
+					trw.AddIndexTime( nextIndexTime );
+					nextIndexTime+=fullRevolutionTime;
+					if (rev<nRevs) // only last Revolution is added fully, the others only "from index to index"
+						break;
+				}
+				// . adding new flux
+				const UDWORD i=br.GetPosition()>>3;
+				if (i<cti.timelen)
+					currentTime+= trw.profile.iwTimeDefault * cti.timebuf[i]/1000;
+				else
+					currentTime+= trw.profile.iwTimeDefault;
+				if (br.ReadBit())
+					*pFluxTime++=currentTime;
 			}
-			// . adding new flux
-			const UDWORD i=br.GetPosition()>>3;
-			if (i<cti.timelen)
-				currentTime+= trw.profile.iwTimeDefault * cti.timebuf[i]/1000;
-			else
-				currentTime+= trw.profile.iwTimeDefault;
-			if (br.ReadBit())
-				*pFluxTime++=currentTime;
 		}
 		trw.AddTimes( pFluxTimeBuffer, pFluxTime-pFluxTimeBuffer );
-		if (trw.GetIndexCount()<=cti.trackcnt){ // an IPF image may end up here
-			const TLogTime tIndex=trw.GetIndexTime(cti.trackcnt-1)+nBitsPerTrackOfficial*trw.profile.iwTimeDefault;
+		if (trw.GetIndexCount()<=nRevs){ // an IPF image may end up here
+			const TLogTime tIndex=trw.GetIndexTime(nRevs-1)+fullRevolutionTime;
 			trw.AddIndexTime(tIndex);
 			if (trw.GetTotalTime()<tIndex) // adding an auxiliary flux at the Index position to prolong flux information
 				*pFluxTime++=tIndex;
@@ -470,18 +469,38 @@
 			return 0;
 		// - if Track doesn't exists yet (e.g. not created by a derived class), reading it by the CAPS library
 		if (internalTracks[cyl][head]==nullptr){
-			CapsTrackInfo cti={};
-			const UDWORD lockFlags= capsVersionInfo.flag&( DI_LOCK_INDEX | DI_LOCK_DENVAR | DI_LOCK_DENAUTO | DI_LOCK_DENNOISE | DI_LOCK_NOISE | DI_LOCK_UPDATEFD | DI_LOCK_TYPE | DI_LOCK_OVLBIT | DI_LOCK_TRKBIT );
-			if (CAPS::LockTrack( &cti, capsDeviceHandle, cyl, head, lockFlags )
+			static const CapsTrackInfoT2 CtiEmpty={2};
+			const UDWORD lockFlags= capsVersionInfo.flag&( DI_LOCK_INDEX | DI_LOCK_DENVAR | DI_LOCK_DENAUTO | DI_LOCK_DENNOISE | DI_LOCK_NOISE | DI_LOCK_TYPE | DI_LOCK_OVLBIT | DI_LOCK_TRKBIT | DI_LOCK_UPDATEFD );
+			CapsTrackInfoT2 cti[CAPS_MTRS];
+			*cti=CtiEmpty;
+			if (CAPS::LockTrack( cti, capsDeviceHandle, cyl, head, lockFlags )!=imgeOk
 				||
-				(cti.type&CTIT_MASK_TYPE)==ctitNA // error during Track retrieval
+				(cti->type&CTIT_MASK_TYPE)==ctitNA // error during Track retrieval
 			)
 				return 0;
-			if (const PInternalTrack tmp = CInternalTrack::CreateFrom( *this, cti, lockFlags )){
+			BYTE nRevs=1;
+			if (cti->weakcnt!=0) // Track contains some areas with fuzzy bits
+				while (nRevs<CAPS_MTRS){
+					CapsTrackInfoT2 &r = cti[nRevs] = *cti;
+					r.trackbuf=(PUBYTE)::memcpy( ::malloc(r.timelen), r.trackbuf, r.timelen ); // timelen = # of Time information and also # of Bytes that individual bits are stored in
+					r.timebuf=(PUDWORD)::memcpy( ::malloc(r.timelen*sizeof(UDWORD)), r.timebuf, r.timelen*sizeof(UDWORD) );
+					*cti=CtiEmpty;
+					if (CAPS::LockTrack( cti, capsDeviceHandle, cyl, head, capsVersionInfo.flag&(lockFlags|DI_LOCK_SETWSEED) )!=imgeOk
+						||
+						(r.type&CTIT_MASK_TYPE)==ctitNA // error during Track retrieval
+					)
+						break;
+					nRevs++;
+				}
+			if (const PInternalTrack tmp = CInternalTrack::CreateFrom( *this, cti, nRevs, lockFlags )){
 				CTrackReaderWriter trw=*tmp; // extracting raw flux data ...
 					trw.SetMediumType(floppyType);
 				delete tmp;
 				internalTracks[cyl][head] = CInternalTrack::CreateFrom( *this, trw ); // ... and rescanning the Track using current FloppyType Profile
+			}
+			while (--nRevs>0){
+				const CapsTrackInfoT2 &r=cti[nRevs];
+				::free(r.trackbuf), ::free(r.timebuf);
 			}
 			CAPS::UnlockTrack( capsDeviceHandle, cyl, head );
 		}
@@ -549,7 +568,7 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 				if (usableSectorLength!=0){ // e.g. Sector with LengthCode 167 has no data
 					::free(currRev->data), currRev->data=nullptr;
 					if (rev<pis->nRevolutions) // wanted particular EXISTING Revolution
-						pit->ReadSector( *pis, rev );
+						pit->ReadSector( *pis, pis->nRevolutions>1?rev:0 );
 					else if (rev>=Revolution::MAX){ // wanted any Revolution
 						do{
 							if (++pis->currentRevolution>=pis->nRevolutions)

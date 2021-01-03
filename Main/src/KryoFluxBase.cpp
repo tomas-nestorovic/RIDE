@@ -320,10 +320,8 @@
 				return ERROR_NOT_SUPPORTED;
 		}
 		// - instantiating the new Track
-		CapsTrackInfo cti={ 0, cyl, head, nSectors, 0, 1, bitBuffer, cft.tracklen };
-			cti.trackdata[0]=bitBuffer;
-			cti.tracksize[0]=cft.tracklen;
-		if ( rit=CInternalTrack::CreateFrom( *this, cti, 0 ) ){
+		const CapsTrackInfoT2 cti={ 0, cyl, head, nSectors, 0, bitBuffer, cft.tracklen };
+		if ( rit=CInternalTrack::CreateFrom( *this, &cti, 1, 0 ) ){
 			rit->modified=true;
 			return ERROR_SUCCESS;
 		}else
