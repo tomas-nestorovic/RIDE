@@ -7,7 +7,7 @@
 		, addTracksToFat(BST_CHECKED)
 		, showReportOnFormatting(_dos->image->properties->IsRealDevice()?BST_CHECKED:BST_UNCHECKED)
 		, additionalFormats(_additionalFormats) , nAdditionalFormats(_nAdditionalFormats) {
-		params.format.mediumType=dos->formatBoot.mediumType; // to initialize Parameters using the first suitable Format; it holds: MediumType==Unknown <=> this is initial formatting of an Image, MediumType!=Unknown <=> any subsequent formatting of the same Image
+		params.format=dos->formatBoot; // to initialize Parameters using the first suitable Format; it holds: MediumType==Unknown <=> this is initial formatting of an Image, MediumType!=Unknown <=> any subsequent formatting of the same Image
 	}
 
 	BEGIN_MESSAGE_MAP(CFormatDialog,CDialog)
