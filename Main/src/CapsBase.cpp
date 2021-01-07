@@ -702,7 +702,7 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 				CImage::PopulateComboBoxWithCompatibleMedia( hMedium, forcedMediumType, cb.properties );
 				ComboBox_SetItemData(
 					hMedium,
-					ComboBox_AddString( hMedium, _T("Automatically recognized") ),
+					ComboBox_AddString( hMedium, _T("Automatically") ),
 					forcedMediumType
 				);
 				const WORD Controls[]={ ID_MEDIUM, IDOK, 0 };
@@ -719,8 +719,9 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 				for( BYTE i=0; i<CAPS_MAXPLATFORM; i++ )
 					if (cb.capsImageInfo.platform[i]!=ciipNA)
 						::lstrcat(  ::lstrcat(buf, _T(", ") ),  CAPS::GetPlatformName(cb.capsImageInfo.platform[i])  );
-				if (*buf!='\0') // some Platforms specified in the file
-					SetDlgItemText( ID_DOS, buf+2 );
+					else if (!i) // no Platforms specified for the file
+						::lstrcpy( buf+2, _T("N/A") );
+				SetDlgItemText( ID_DOS, buf+2 );
 			}
 
 			void DoDataExchange(CDataExchange *pDX) override{
