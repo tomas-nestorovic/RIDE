@@ -9,7 +9,9 @@
 		: CCapsBase( properties, true )
 		// - initialization
 		, firmware(firmware) {
-		canBeModified=false; // modifications not possible at the moment
+		// - setting a classical 5.25" floppy geometry
+		capsImageInfo.maxcylinder=FDD_CYLINDERS_MAX/2-1; // inclusive!
+		capsImageInfo.maxhead=2-1; // inclusive!
 	}
 
 
@@ -320,7 +322,7 @@
 				return ERROR_NOT_SUPPORTED;
 		}
 		// - instantiating the new Track
-		const CapsTrackInfoT2 cti={ 0, cyl, head, nSectors, 0, bitBuffer, cft.tracklen };
+		const CapsTrackInfoT2 cti={ 2, cyl, head, nSectors, 0, bitBuffer, cft.tracklen };
 		if ( rit=CInternalTrack::CreateFrom( *this, &cti, 1, 0 ) ){
 			rit->modified=true;
 			return ERROR_SUCCESS;

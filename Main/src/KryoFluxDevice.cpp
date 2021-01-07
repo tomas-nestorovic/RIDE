@@ -146,9 +146,6 @@
 		, hDevice(INVALID_HANDLE_VALUE) {
 		winusb.hLibrary = winusb.hDeviceInterface = INVALID_HANDLE_VALUE;
 		Connect();
-		// - setting a classical 5.25" floppy geometry
-		capsImageInfo.maxcylinder=FDD_CYLINDERS_MAX/2-1; // inclusive!
-		capsImageInfo.maxhead=2-1; // inclusive!
 	}
 
 	CKryoFluxDevice::~CKryoFluxDevice(){
