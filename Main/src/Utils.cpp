@@ -279,7 +279,7 @@ namespace Utils{
 							r.left+=10;
 							::SetTextColor( dc, cmdInfo->glyphColor );
 							::DrawTextW( dc, &glyph,1, &r, DT_SINGLELINE|DT_LEFT|DT_VCENTER );
-						::SelectObject( dc, (HGDIOBJ)::SendMessage(::GetParent(hCmdBtn),WM_GETFONT,0,0) );
+						::SelectObject( dc, (HGDIOBJ)::SendMessage(hCmdBtn,WM_GETFONT,0,0) );
 							r.left+=35;
 							::SetTextColor( dc, cmdInfo->textColor );
 							::DrawText( dc, text,-1, &r, DT_SINGLELINE|DT_LEFT|DT_VCENTER );
@@ -1253,6 +1253,7 @@ namespace Utils{
 							textColor
 						)
 					);
+		::SendMessage( hStdBtn, WM_SETFONT, ::SendMessage(::GetParent(hStdBtn),WM_GETFONT,0,0), 0 );
 		::InvalidateRect(hStdBtn,nullptr,FALSE);
 	}
 
