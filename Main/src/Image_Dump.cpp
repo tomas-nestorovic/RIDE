@@ -7,6 +7,7 @@
 		typedef const struct TSourceSectorError sealed{
 			TSectorId id;
 			TFdcStatus fdcStatus;
+			bool excluded;
 		} *PCSourceSectorError;
 
 		const CDos *const dos;
@@ -92,7 +93,7 @@
 									PCSourceSectorError psse=pErroneousTrack->erroneousSectors;
 									for( BYTE n=pErroneousTrack->nErroneousSectors; n; n--,psse++ ){
 										Utils::WriteToFile(fHtml,_T("<li>"));
-											Utils::WriteToFileFormatted( fHtml, _T("<b>%s</b>. "), (LPCTSTR)psse->id.ToString() );
+											Utils::WriteToFileFormatted( fHtml, _T("%s<b>%s</b>. "), psse->excluded?_T("Excluded "):_T(""), (LPCTSTR)psse->id.ToString() );
 											LPCTSTR bitDescriptions[10],*pDesc=bitDescriptions;
 											const TPhysicalAddress chs={ pErroneousTrack->cyl, pErroneousTrack->head, psse->id };
 											Utils::WriteToFileFormatted( fHtml, _T("<i>FAT</i>: %s, "), dos->GetSectorStatusText(chs) );
@@ -132,8 +133,9 @@
 	#define ACCEPT_OPTIONS_COUNT	4
 	#define ACCEPT_ERROR_ID			IDOK
 
-	#define RESOLVE_OPTIONS_COUNT	3
+	#define RESOLVE_OPTIONS_COUNT	4
 	#define RESOLVE_EXCLUDE_ID		IDIGNORE
+	#define RESOLVE_EXCLUDE_UNKNOWN	IDCONTINUE
 
 	#define NO_STATUS_ERROR	_T("- no error\r\n")
 
@@ -160,6 +162,10 @@ terminateWithError:
 				WORD automaticallyAcceptedErrors;
 				bool remainingErrorsOnTrack;
 			} acceptance;
+			struct{
+				bool current;
+				bool allUnknown;
+			} exclusion;
 		} p;
 		::ZeroMemory(&p,sizeof(p));
 		const Utils::CByteIdentity sectorIdAndPositionIdentity;
@@ -190,8 +196,15 @@ terminateWithError:
 					p.chs.sectorId=bufferId[s];
 					LOG_SECTOR_ACTION(&p.chs.sectorId,_T("reading"));
 					bufferSectorData[s]=dp.source->GetSectorData( p.chs, s, true, bufferLength+s, bufferFdcStatus+s );
+					// : reporting SourceSector Exclusion
+					p.exclusion.current|= p.exclusion.allUnknown && dp.dos->GetSectorStatus(p.chs)==CDos::TSectorStatus::UNKNOWN;
+					if (p.exclusion.current){
+						nSectors--;
+						::memmove( bufferId+s, bufferId+s+1, sizeof(*bufferId)*(nSectors-s) );
+						::memmove( bufferLength+s, bufferLength+s+1, sizeof(*bufferLength)*(nSectors-s) );
+						s--; // as below incremented
 					// : reporting SourceSector Errors if A&B, A = automatically not accepted Errors exist, B = Error reporting for current Track is enabled
-					if (bufferFdcStatus[s].ToWord()&~p.acceptance.automaticallyAcceptedErrors && !p.acceptance.remainingErrorsOnTrack){
+					}else if (bufferFdcStatus[s].ToWord()&~p.acceptance.automaticallyAcceptedErrors && !p.acceptance.remainingErrorsOnTrack){
 						// | Dialog definition
 						class CErroneousSectorDialog sealed:public Utils::CRideDialog{
 							const TDumpParams &dp;
@@ -236,6 +249,7 @@ terminateWithError:
 								static const Utils::TSplitButtonAction ResolveActions[RESOLVE_OPTIONS_COUNT]={
 									{ 0, _T("Resolve") }, // 0 = no default action
 									{ RESOLVE_EXCLUDE_ID, _T("Exclude from track") },
+									{ RESOLVE_EXCLUDE_UNKNOWN, _T("Exclude all unknown from disk") },
 									{ ID_RECOVER, _T("Recover ID or Data...") },
 								};
 								ConvertDlgButtonToSplitButton( IDNO, ResolveActions, RESOLVE_OPTIONS_COUNT-1+(rFdcStatus.DescribesIdFieldCrcError()||rFdcStatus.DescribesDataFieldCrcError()) );
@@ -364,11 +378,14 @@ terminateWithError:
 												}
 												break;
 											}
-											case RESOLVE_EXCLUDE_ID:{
-												// Sector exclusion
+											case RESOLVE_EXCLUDE_UNKNOWN:
+												// exclusion of this and all future Unknown Sectors from the disk
+												rp.exclusion.allUnknown=true;
+												//fallthrough
+											case RESOLVE_EXCLUDE_ID:
+												// exclusion of this Sector
 												EndDialog(RESOLVE_EXCLUDE_ID);
 												break;
-											}
 										}
 										break;
 								}
@@ -388,9 +405,7 @@ terminateWithError:
 								err=ERROR_CANCELLED;
 								goto terminateWithError;
 							case RESOLVE_EXCLUDE_ID:
-								nSectors--;
-								::memmove( bufferId+s, bufferId+s+1, sizeof(*bufferId)*(nSectors-s) );
-								::memmove( bufferLength+s, bufferLength+s+1, sizeof(*bufferLength)*(nSectors-s) );
+								p.exclusion.current=true;
 								//fallthrough
 							case IDRETRY:
 								continue;
@@ -399,8 +414,10 @@ terminateWithError:
 					if (!bufferFdcStatus[s].IsWithoutError()){
 						TDumpParams::TSourceSectorError *const psse=&erroneousSectors.buffer[erroneousSectors.n++];
 						psse->id=p.chs.sectorId, psse->fdcStatus=bufferFdcStatus[s];
+						psse->excluded=p.exclusion.current;
 					}
 					// : next SourceSector
+					p.exclusion.current=false;
 					s++;
 				}
 }
