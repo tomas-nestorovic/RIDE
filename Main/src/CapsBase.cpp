@@ -209,10 +209,10 @@
 			for( CBitReader br(cti,lockFlags); br; ){
 				// . adding new index
 				if (currentTime>=nextIndexTime){
-					trw.AddIndexTime( nextIndexTime );
-					nextIndexTime+=fullRevolutionTime;
 					if (rev<nRevs) // only last Revolution is added fully, the others only "from index to index"
 						break;
+					trw.AddIndexTime( nextIndexTime );
+					nextIndexTime+=fullRevolutionTime;
 				}
 				// . adding new flux
 				const UDWORD i=br.GetPosition()>>3;
@@ -222,6 +222,10 @@
 					currentTime+= trw.profile.iwTimeDefault;
 				if (br.ReadBit())
 					*pFluxTime++=currentTime;
+			}
+			if (currentTime<nextIndexTime){
+				trw.AddIndexTime( currentTime=nextIndexTime );
+				nextIndexTime+=fullRevolutionTime;
 			}
 		}
 		trw.AddTimes( pFluxTimeBuffer, pFluxTime-pFluxTimeBuffer );
