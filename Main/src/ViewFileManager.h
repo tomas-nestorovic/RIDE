@@ -78,7 +78,7 @@
 			const LPCTSTR conflictedName, conflictedNameType, captionForReplaceButton, captionForSkipButton;
 			TCHAR information[MAX_PATH+100];
 
-			void PreInitDialog() override;
+			BOOL OnInitDialog() override;
 			void DoDataExchange(CDataExchange *pDX) override;
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam);
 		public:

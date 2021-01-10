@@ -546,14 +546,15 @@ errorDuringWriting:			TCHAR buf[80];
 							if (dumpParams.cylinderA || dumpParams.cylinderZ>=dos->formatBoot.nCylinders){ // ">=" = Cylinders are numbered from 0
 								// : defining the Dialog
 								class CSuggestionDialog sealed:public Utils::CCommandDialog{
-									void PreInitDialog() override{
+									BOOL OnInitDialog() override{
 										// dialog initialization
 										// : base
-										__super::PreInitDialog();
+										const BOOL result=__super::OnInitDialog();
 										// : supplying available actions
 										__addCommandButton__( IDYES, _T("Continue with format adopted from boot sector (recommended)") );
 										__addCommandButton__( IDNO, _T("Continue with current settings (cylinders beyond official format may fail!)") );
 										__addCommandButton__( IDCANCEL, _T("Return to dump dialog") );
+										return result;
 									}
 								public:
 									CSuggestionDialog()
@@ -652,16 +653,17 @@ errorDuringWriting:			TCHAR buf[80];
 						if (((LPNMHDR)lParam)->code==NM_CLICK){
 							// . defining the Dialog
 							class CHelpDialog sealed:public Utils::CCommandDialog{
-								void PreInitDialog() override{
+								BOOL OnInitDialog() override{
 									// dialog initialization
 									// : base
-									__super::PreInitDialog();
+									const BOOL result=__super::OnInitDialog();
 									// : supplying available actions
 									__addCommandButton__( ID_IMAGE, _T("How do I create an image of a real floppy disk?") );
 									__addCommandButton__( ID_DRIVE, _T("How do I save an image back to a real floppy disk?") );
 									__addCommandButton__( ID_FILE, _T("How do I convert between two images? (E.g. *.IMA to *.DSK)") );
 									__addCommandButton__( ID_ACCURACY, _T("How do I create an exact copy of a real floppy disk?") );
 									__addCommandButton__( IDCANCEL, MSG_HELP_CANCEL );
+									return result;
 								}
 							public:
 								CHelpDialog()

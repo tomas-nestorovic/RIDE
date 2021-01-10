@@ -97,7 +97,7 @@ namespace Utils{
 		CCommandDialog(LPCTSTR _information);
 		CCommandDialog(WORD dialogId,LPCTSTR _information);
 
-		void PreInitDialog() override;
+		BOOL OnInitDialog() override;
 		void DoDataExchange(CDataExchange *pDX) override;
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 	public:

@@ -409,14 +409,15 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 						if (((LPNMHDR)lParam)->code==NM_CLICK){
 							// . defining the Dialog
 							class CHelpDialog sealed:public Utils::CCommandDialog{
-								void PreInitDialog() override{
+								BOOL OnInitDialog() override{
 									// dialog initialization
 									// : base
-									__super::PreInitDialog();
+									const BOOL result=__super::OnInitDialog();
 									// : supplying available actions
 									__addCommandButton__( ID_SIZE, _T("Which version of DSK image should I prefer?") );
 									__addCommandButton__( ID_FORMAT, _T("How do I merge two images? What is a \"patch\"?") );
 									__addCommandButton__( IDCANCEL, MSG_HELP_CANCEL );
+									return result;
 								}
 							public:
 								CHelpDialog()

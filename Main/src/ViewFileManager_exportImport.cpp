@@ -587,14 +587,15 @@ importQuit2:		::GlobalUnlock(hg);
 					TCHAR buf[MAX_PATH+80];
 					::wsprintf( buf, _T("\"%s\" looks like an image."), _tcsrchr(pathAndName,'\\')+1 );
 					class CPossiblyAnImageDialog sealed:public Utils::CCommandDialog{
-						void PreInitDialog() override{
+						BOOL OnInitDialog() override{
 							// dialog initialization
 							// | base
-							__super::PreInitDialog();
+							const BOOL result=__super::OnInitDialog();
 							// | supplying available actions
 							__addCommandButton__( IDYES, _T("Open it in new instance of ") APP_ABBREVIATION _T(" (recommended)") );
 							__addCommandButton__( IDNO, _T("Import it to this image anyway") );
 							__addCommandButton__( IDCANCEL, _T("Cancel") );
+							return result;
 						}
 					public:
 						CPossiblyAnImageDialog(LPCTSTR msg)
@@ -760,10 +761,10 @@ importQuit2:		::GlobalUnlock(hg);
 		::wsprintf( information, _T("This folder already contains the %s \"%s\"."), conflictedNameType, conflictedName );
 	}
 
-	void CFileManagerView::CNameConflictResolutionDialog::PreInitDialog(){
+	BOOL CFileManagerView::CNameConflictResolutionDialog::OnInitDialog(){
 		// dialog initialization
 		// - base
-		__super::PreInitDialog();
+		const BOOL result=__super::OnInitDialog();
 		// - initializing the "Replace" button
 		SetDlgItemText( IDYES, captionForReplaceButton );
 		ConvertToCommandLikeButton( GetDlgItemHwnd(IDYES) );
@@ -773,6 +774,7 @@ importQuit2:		::GlobalUnlock(hg);
 		// - initializing the "Cancel" button
 		SetDlgItemText( IDCANCEL, _T("Quit importing") );
 		ConvertToCommandLikeButton( GetDlgItemHwnd(IDCANCEL) );
+		return result;
 	}
 
 	void CFileManagerView::CNameConflictResolutionDialog::DoDataExchange(CDataExchange *pDX){

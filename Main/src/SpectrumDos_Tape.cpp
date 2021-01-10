@@ -325,10 +325,10 @@
 				const bool offerFileSplit;
 				const TUniFileType uts;
 
-				void PreInitDialog() override{
+				BOOL OnInitDialog() override{
 					// dialog initialization
 					// > base
-					__super::PreInitDialog();
+					const BOOL result=__super::OnInitDialog();
 					// > supplying available actions
 					__addCommandButton__( IDYES, _T("Import as-is (recommended)") );
 					__addCommandButton__( IDNO, _T("Set reported size as real size (no Tape loading error)") );
@@ -345,6 +345,7 @@
 						__addCommandButton__( IDRETRY, buf );
 					}
 					__addCommandButton__( IDCANCEL, _T("Cancel import") );
+					return result;
 				}
 			public:
 				CSuggestionDialog(LPCTSTR msg,bool offerFileSplit,TUniFileType uts)

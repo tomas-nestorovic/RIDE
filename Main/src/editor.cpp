@@ -354,14 +354,15 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 						if (!dynamic_cast<CImageRaw *>(image.get())){
 							// . defining the Dialog
 							class CWrongInnerFormatDialog sealed:public Utils::CCommandDialog{
-								void PreInitDialog() override{
+								BOOL OnInitDialog() override{
 									// dialog initialization
 									// : base
-									__super::PreInitDialog();
+									const BOOL result=__super::OnInitDialog();
 									// : supplying available actions
 									__addCommandButton__( IDYES, _T("Open at least valid part of it") );
 									__addCommandButton__( IDNO, _T("Try to open it as a raw sector image") );
 									__addCommandButton__( IDCANCEL, _T("Don't open it") );
+									return result;
 								}
 							public:
 								CWrongInnerFormatDialog()

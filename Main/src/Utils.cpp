@@ -180,12 +180,27 @@ namespace Utils{
 		: CRideDialog(dialogId) , information(_information) , checkBoxStatus(BST_UNCHECKED) {
 	}
 
-	void CCommandDialog::PreInitDialog(){
+	BOOL CCommandDialog::OnInitDialog(){
 		// dialog initialization
 		// - base
-		__super::PreInitDialog();
+		__super::OnInitDialog();
 		// - initializing the main message
+		SetFocus();
 		SetDlgItemText( ID_INFORMATION, information );
+		const HWND hInfo=GetDlgItemHwnd(ID_INFORMATION);
+		int infoHeight=Edit_GetLineCount(hInfo)*CRideFont(*this).charHeight;
+		RECT r;
+		::GetClientRect( hInfo, &r );
+		SetDlgItemSize( ID_INFORMATION, r.right, infoHeight );
+		infoHeight-=r.bottom; // now the difference
+		// - increasing the window size for the Information to fit in
+		GetWindowRect(&r);
+		SetWindowPos(
+			nullptr,
+			0,0, r.right-r.left, r.bottom-r.top+infoHeight,
+			SWP_NOZORDER|SWP_NOMOVE
+		);
+		return FALSE; // False = focus already set manually
 	}
 
 	void CCommandDialog::DoDataExchange(CDataExchange *pDX){

@@ -66,14 +66,15 @@
 				TCHAR buf[MAX_PATH+80];
 				::wsprintf( buf, _T("\"%s\" looks like a tape."), _tcsrchr(pathAndName,'\\')+1 );
 				class CPossiblyATapeDialog sealed:public Utils::CCommandDialog{
-					void PreInitDialog() override{
+					BOOL OnInitDialog() override{
 						// dialog initialization
 						// : base
-						__super::PreInitDialog();
+						const BOOL result=__super::OnInitDialog();
 						// : supplying available actions
 						__addCommandButton__( IDYES, _T("Open it in a new tab (recommended)") );
 						__addCommandButton__( IDNO, _T("Import it to this image anyway") );
 						__addCommandButton__( IDCANCEL, _T("Cancel") );
+						return result;
 					}
 				public:
 					CPossiblyATapeDialog(LPCTSTR msg)

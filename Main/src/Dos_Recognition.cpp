@@ -288,13 +288,14 @@
 								case NM_RETURN:{
 									// . defining the Dialog
 									class CHelpDialog sealed:public Utils::CCommandDialog{
-										void PreInitDialog() override{
+										BOOL OnInitDialog() override{
 											// dialog initialization
 											// : base
-											__super::PreInitDialog();
+											const BOOL result=__super::OnInitDialog();
 											// : supplying available actions
 											__addCommandButton__( ID_DRIVE, _T("What is a recognition sequence good for?") );
 											__addCommandButton__( IDCANCEL, MSG_HELP_CANCEL );
+											return result;
 										}
 									public:
 										CHelpDialog()
