@@ -21,7 +21,7 @@
 
 	CImageRaw::CImageRaw(PCProperties properties,bool hasEditableSettings)
 		// ctor
-		: CImage(properties,hasEditableSettings)
+		: CImage(properties,false) // TODO: hasEditableSettings
 		, trackAccessScheme(TTrackScheme::BY_CYLINDERS)
 		, nCylinders(0) , nSectors(0) // = not initialized - see SetMediumTypeAndGeometry
 		, bufferOfCylinders(nullptr) , sizeWithoutGeometry(0) {
