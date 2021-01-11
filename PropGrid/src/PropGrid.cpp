@@ -77,26 +77,31 @@
 
 	#define SCREEN_DPI_DEFAULT	96
 
-	static float __getLogicalUnitScaleFactor__(){
-		// computes and returns the factor (from (0;oo)) to multiply the size of one logical unit with; returns 1 if the logical unit size doesn't have to be changed
+	TRationalNumber::TRationalNumber(){
+		// ctor; computes the factor (from (0;oo)) to multiply the size of one logical unit with; returns 1 if the logical unit size doesn't have to be changed
 		const HDC screen=::GetDC(nullptr);
-			const float result=std::min<>(	::GetDeviceCaps(screen,LOGPIXELSX)/(float)SCREEN_DPI_DEFAULT,
-											::GetDeviceCaps(screen,LOGPIXELSY)/(float)SCREEN_DPI_DEFAULT
-										);
+			quot=std::min( ::GetDeviceCaps(screen,LOGPIXELSX), ::GetDeviceCaps(screen,LOGPIXELSY) );
+			rem=SCREEN_DPI_DEFAULT;
 		::ReleaseDC(nullptr,screen);
-		return result;
 	}
 
-	const float TPropGridInfo::LogicalUnitScaleFactor=__getLogicalUnitScaleFactor__();
+	int TRationalNumber::operator*(short i) const{
+		return quot*i/rem;
+	}
 
-	float TPropGridInfo::__scaleLogicalUnit__(HDC dc){
+	bool TRationalNumber::operator!=(int i) const{
+		return i*rem!=quot;
+	}
+
+	const TRationalNumber LogicalUnitScaleFactor;
+
+	void TPropGridInfo::__scaleLogicalUnit__(HDC dc){
 		// changes given DeviceContext's size of one logical unit; returns the Factor using which the logical unit size has been multiplied with
 		if (LogicalUnitScaleFactor!=1){
 			::SetMapMode(dc,MM_ISOTROPIC);
 			::SetWindowExtEx( dc, SCREEN_DPI_DEFAULT, SCREEN_DPI_DEFAULT, nullptr );
 			::SetViewportExtEx( dc, ::GetDeviceCaps(dc,LOGPIXELSX), ::GetDeviceCaps(dc,LOGPIXELSY), nullptr );
 		}
-		return LogicalUnitScaleFactor;
 	}
 
 
@@ -156,7 +161,7 @@
 				}else
 					// measuring invoked by the Editor before painting a Value (e.g. owner-drawn combo-box of the TEnum Editor)
 					pmis->itemHeight = TEditor::pSingleShown->value.editor->height;
-				pmis->itemHeight*=LogicalUnitScaleFactor;
+				pmis->itemHeight=LogicalUnitScaleFactor*pmis->itemHeight;
 				return 0;
 			}
 			case WM_DRAWITEM:{
@@ -185,7 +190,7 @@
 						}else{
 							// drawing a non-top-level Category or a Property
 							// | drawing left-most vertical ???band (where the main Categories have their "[+/-]" symbols)
-							r.right=CATEGORY_HEIGHT*LogicalUnitScaleFactor;
+							r.right=LogicalUnitScaleFactor*CATEGORY_HEIGHT;
 							::FillRect( dc, &r, BRUSH_GRAY );
 							// | drawing left part (where the Property Name is shown)
 							const int textColorId=	pItem->disabled>0
@@ -197,7 +202,7 @@
 								r.left=r.right, r.right=GET_PROPGRID_INFO(hPropGrid)->listBox.splitter.position;
 								::FillRect( dc, &r, pdis->itemState&ODS_SELECTED ? BRUSH_SELECTION : BRUSH_GRAY_LIGHT );
 								const LONG i=r.bottom;
-								const LONG b =	r.top+EDITOR_DEFAULT_HEIGHT*LogicalUnitScaleFactor
+								const LONG b =	r.top+LogicalUnitScaleFactor*EDITOR_DEFAULT_HEIGHT
 												+
 												1; // width of the horizontal line separating individial ListBox Items
 								r.bottom=std::min<>(r.bottom,b);
@@ -205,8 +210,8 @@
 								r.bottom=i;
 							// | drawing decorations
 							::SelectObject(dc,PEN_GRAY);
-								::MoveToEx(dc,CATEGORY_HEIGHT*LogicalUnitScaleFactor,r.bottom,nullptr);
-								::LineTo(dc,CATEGORY_HEIGHT*LogicalUnitScaleFactor,r.top); // vertical band (where the main Categories have their "[+/-]" symbols)
+								::MoveToEx(dc,LogicalUnitScaleFactor*CATEGORY_HEIGHT,r.bottom,nullptr);
+								::LineTo(dc,LogicalUnitScaleFactor*CATEGORY_HEIGHT,r.top); // vertical band (where the main Categories have their "[+/-]" symbols)
 								::LineTo(dc,10000,r.top); // horizontal delimiter of Properties
 							::SelectObject(dc,PEN_GRAY_LIGHT); // vertical splitter
 								::MoveToEx(dc,r.right-1,r.top,nullptr);
@@ -220,8 +225,8 @@
 						}
 						// : preparing for drawing Property's Value
 						::SetViewportOrgEx(	dc, // origin [0,0] goes to the upper left corner of "value part" of the Item
-											(1*LogicalUnitScaleFactor+r.right),
-											(1*LogicalUnitScaleFactor+r.top),
+											(LogicalUnitScaleFactor*1+r.right),
+											(LogicalUnitScaleFactor*1+r.top),
 											nullptr
 										);
 						::OffsetRect( &pdis->rcItem, 0, -r.top );
