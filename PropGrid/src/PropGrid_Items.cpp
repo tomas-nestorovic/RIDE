@@ -48,9 +48,9 @@
 	void TPropGridInfo::TItem::__drawIndentedName__(HDC dc,RECT rc,HFONT hFont) const{
 		// draws indented Item's Name into the Rectangle using specified Font
 		const HGDIOBJ hFont0=::SelectObject(dc,hFont);
-			rc.left=( CATEGORY_HEIGHT + (__getLevel__()-ITEM_LEVEL_TOP)*EDITOR_DEFAULT_HEIGHT + PROPGRID_CELL_MARGIN_LEFT )
+			rc.left=LogicalUnitScaleFactor
 					*
-					LogicalUnitScaleFactor;
+					( CATEGORY_HEIGHT + (__getLevel__()-ITEM_LEVEL_TOP)*EDITOR_DEFAULT_HEIGHT + PROPGRID_CELL_MARGIN_LEFT );
 			::DrawTextW(dc,
 						name, -1, &rc,
 						DT_SINGLELINE | DT_LEFT | DT_VCENTER
@@ -122,7 +122,7 @@
 		// - icon on Expansion ("[+/-]")
 		const int iDc0=::SaveDC(dc);
 			::SetViewportOrgEx(	dc,
-								(CATEGORY_HEIGHT+(__getLevel__()-2*ITEM_LEVEL_TOP)*EDITOR_DEFAULT_HEIGHT)*LogicalUnitScaleFactor,
+								LogicalUnitScaleFactor*(CATEGORY_HEIGHT+(__getLevel__()-2*ITEM_LEVEL_TOP)*EDITOR_DEFAULT_HEIGHT),
 								rc.top,
 								nullptr
 							);

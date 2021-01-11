@@ -62,11 +62,10 @@
 		static HFONT FONT_DEFAULT_BOLD;
 		static HBITMAP CHECKBOX_STATES;
 		static HBITMAP CHECKBOX_CHECKED;
-		static const float LogicalUnitScaleFactor;
 
 		static void __init__();
 		static void __uninit__();
-		static float __scaleLogicalUnit__(HDC dc);
+		static void __scaleLogicalUnit__(HDC dc);
 		static LRESULT CALLBACK __wndProc__(HWND hPropGrid,UINT msg,WPARAM wParam,LPARAM lParam);
 
 		const HWND handle;
@@ -101,5 +100,14 @@
 	} *PPropGridInfo;
 
 	typedef const TPropGridInfo *PCPropGridInfo;
+
+
+
+	extern const struct TRationalNumber:public div_t{
+		TRationalNumber();
+
+		int operator*(short i) const;
+		bool operator!=(int i) const;
+	} LogicalUnitScaleFactor;
 
 #endif // PROPGRID_H

@@ -189,10 +189,10 @@
 		// - stretching the MainControl (and EllipsisButton) across whole dedicated rectangle
 		const int height=rcEditorRect.bottom-rcEditorRect.top;
 		if (TEditor::pSingleShown->hEllipsisBtn){
-			rcEditorRect.right-=ELLIPSIS_BUTTON_WIDTH*TPropGridInfo::LogicalUnitScaleFactor;
+			rcEditorRect.right-=LogicalUnitScaleFactor*ELLIPSIS_BUTTON_WIDTH;
 			::SetWindowPos(	TEditor::pSingleShown->hEllipsisBtn, 0,
 							rcEditorRect.right, rcEditorRect.top,
-							ELLIPSIS_BUTTON_WIDTH*TPropGridInfo::LogicalUnitScaleFactor, height,
+							LogicalUnitScaleFactor*ELLIPSIS_BUTTON_WIDTH, height,
 							SWP_NOZORDER|SWP_SHOWWINDOW
 						);
 		}

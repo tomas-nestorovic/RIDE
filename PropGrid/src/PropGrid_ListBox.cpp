@@ -22,7 +22,7 @@
 		// - constraining the cursor to the ListBox area
 		RECT r;
 		::GetWindowRect( hListBoxWithCurrentlyDraggedSplitter, &r );
-			r.left+=CATEGORY_HEIGHT*LogicalUnitScaleFactor;
+			r.left+=LogicalUnitScaleFactor*CATEGORY_HEIGHT;
 		::ClipCursor(&r);
 		// - wanting to know when the mouse button is released
 		::SetCapture(hListBoxWithCurrentlyDraggedSplitter);
@@ -32,7 +32,7 @@
 
 	bool TPropGridInfo::TListBox::TSplitter::__isCloseEnough__(int x) const{
 		// True <=> X is close enough to the Splitter's Position, otherwise False
-		return ::abs(x-position)<=SPLITTER_TOLERANCE*LogicalUnitScaleFactor;
+		return ::abs(x-position)<=LogicalUnitScaleFactor*SPLITTER_TOLERANCE;
 	}
 
 	void TPropGridInfo::TListBox::TSplitter::__drawInvertedLine__() const{
@@ -80,7 +80,7 @@
 									nullptr
 								)
 				)
-		, splitter((propGridWidth-CATEGORY_HEIGHT*LogicalUnitScaleFactor)/2*LogicalUnitScaleFactor) {
+		, splitter( LogicalUnitScaleFactor*(propGridWidth-LogicalUnitScaleFactor*CATEGORY_HEIGHT)/2 ) {
 		wndProc0=(WNDPROC)SubclassWindow(handle,__wndProc__);
 		SetWindowFont(handle,FONT_DEFAULT,0);
 		::SetWindowLong( handle, GWL_USERDATA, (LONG)pPropGridInfo );
