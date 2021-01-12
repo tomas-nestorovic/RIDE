@@ -235,6 +235,7 @@
 				if ((show^cursorFeaturesShown)!=0 && cursorFeatures!=0){
 					CClientDC dc(this);
 					PrepareDC(&dc);
+					dc.SetViewportOrg( 0, dc.GetViewportOrg().y );
 					::SetROP2( dc, R2_NOT );
 					const auto &font=Utils::CRideFont::Std;
 					const HDC dcMem=::CreateCompatibleDC(dc);
@@ -243,7 +244,7 @@
 						Utils::ScaleLogicalUnit(dcMem);
 						const HGDIOBJ hFont0=::SelectObject( dcMem, font );
 							TCHAR label[32];
-							const int x=timeline.GetUnitCount(cursorTime);
+							const int x=timeline.GetUnitCount(cursorTime-scrollTime);
 							// . painting vertical line to indicate current position on the Timeline
 							if (IsFeatureShown(TCursorFeatures::TIME)){
 								::MoveToEx( dc, x, -500, nullptr );
@@ -260,7 +261,7 @@
 								tr.SetCurrentTime(cursorTime);
 								tr.TruncateCurrentTime();
 								const TLogTime a=tr.GetCurrentTime(), z=tr.ReadTime();
-								const int xa=timeline.GetUnitCount(a), xz=timeline.GetUnitCount(z);
+								const int xa=timeline.GetUnitCount(a-scrollTime), xz=timeline.GetUnitCount(z-scrollTime);
 								const int nLabelChars=timeline.TimeToReadableString(z-a,label);
 								const SIZE sz=font.GetTextSize( label, nLabelChars );
 								const HGDIOBJ hBmp0=::SelectObject( dcMem, ::CreateCompatibleBitmap(dc,sz.cx,sz.cy) );
@@ -278,7 +279,7 @@
 							if (IsFeatureShown(TCursorFeatures::INSPECT) && cursorTime<timeline.logTimeLength){
 								const int i=GetInspectionWindow(cursorTime);
 								const TLogTime a=iwEndTimes[i], z=iwEndTimes[i+1];
-								const int xa=timeline.GetUnitCount(a), xz=timeline.GetUnitCount(z);
+								const int xa=timeline.GetUnitCount(a-scrollTime), xz=timeline.GetUnitCount(z-scrollTime);
 								const int nLabelChars=timeline.TimeToReadableString(z-a,label);
 								const SIZE sz=font.GetTextSize( label, nLabelChars );
 								const HGDIOBJ hBmp0=::SelectObject( dcMem, ::CreateCompatibleBitmap(dc,sz.cx,sz.cy) );
