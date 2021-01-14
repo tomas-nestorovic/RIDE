@@ -10,7 +10,7 @@
 	const CImage::TProperties CDsk5::Properties={	MAKE_IMAGE_ID('D','s','k','_','R','e','v','5'), // a unique identifier
 													Recognize,	// list of recognized device names
 													Instantiate,	// instantiation function
-													_T("*.dsk"), // filter
+													_T("*.dsk") IMAGE_FORMAT_SEPARATOR _T("*.edsk"), // filter
 													Medium::FLOPPY_ANY, // supported Media
 													Codec::FLOPPY_ANY, // supported Codecs
 													1,2*6144	// Sector supported min and max length
