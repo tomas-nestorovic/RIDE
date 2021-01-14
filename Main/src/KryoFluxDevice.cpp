@@ -551,10 +551,8 @@
 			if (err==ERROR_SEM_TIMEOUT) // currently, the only known way how to detect a non-existing FDD is to observe a timeout during reading
 				return 0;
 			// . making sure the read content is a KryoFlux Stream whose data actually make sense
-			const CKfStream kfStream( dataBuffer, p-dataBuffer );
-			if (!kfStream.GetError()){
+			if (CTrackReaderWriter trw=StreamToTrack( dataBuffer, p-dataBuffer )){
 				// it's a KryoFlux Stream whose data make sense
-				CTrackReaderWriter trw=kfStream.ToTrack(*this);
 				if (floppyType!=Medium::UNKNOWN){ // may be unknown if Medium is still being recognized
 					trw.SetMediumType(floppyType);
 					if (params.normalizeReadTracks)

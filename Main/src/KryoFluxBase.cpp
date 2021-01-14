@@ -347,22 +347,25 @@
 	#define SAMPLE_CLOCK_DEFAULT	(MASTER_CLOCK_DEFAULT/2)
 	#define INDEX_CLOCK_DEFAULT		(MASTER_CLOCK_DEFAULT/16)
 
-	CKryoFluxBase::CKfStream::CKfStream(LPBYTE rawBytes,DWORD nBytes)
-		// ctor
-		// - initialization
-		: nIndexPulses(0)
-		, errorState(ERROR_SUCCESS)
-		, mck(0) , sck(0) , ick(0) // all defaults, allowing flux computation with minimal precision loss
+	CImage::CTrackReaderWriter CKryoFluxBase::StreamToTrack(LPBYTE rawBytes,DWORD nBytes) const{
+		// creates and returns a Track representation of the Stream data
+		const PCBYTE inStreamData=rawBytes; // "in-stream-data" only
 		// - parsing the input raw Bytes obtained from the KryoFlux device (eventually producing an error)
-		, inStreamData(rawBytes) , inStreamDataLength(0)
-		, nFluxes(0) {
-		bool isKryofluxStream=false; // assumption (despite its extension, this file is actually NOT a KryoFlux Stream)
+		bool isKryofluxStream=false; // assumption (actually NOT a KryoFlux Stream)
 		LPBYTE pis=rawBytes; // "in-stream-data" only
+		DWORD nFluxes=0;
+		struct TIndexPulse sealed{
+			DWORD posInStreamData;
+			DWORD sampleCounter;
+			DWORD indexCounter;
+		} indexPulses[Revolution::MAX];
+		BYTE nIndexPulses=0;
+		double mck=0,sck=0,ick=0; // all defaults, allowing flux computation with minimal precision loss
 		for( const PCBYTE pLastRawByte=rawBytes+nBytes; rawBytes<pLastRawByte; ){
 			const BYTE header=*rawBytes++;
 			if (rawBytes+3>pLastRawByte){ // "+3" = we should finish with an Out-of-Stream mark whose Header has just been read, leaving 3 unread Bytes
-badFormat:		errorState=ERROR_BAD_FORMAT;
-				return;
+badFormat:		::SetLastError(ERROR_BAD_FORMAT);
+				return CTrackReaderWriter::Invalid;
 			}
 			if (header<=0x07){
 				// Flux2 (see KryoFlux Stream specification for explanation)
@@ -423,8 +426,8 @@ badFormat:		errorState=ERROR_BAD_FORMAT;
 									if (size!=12)
 										goto badFormat;
 									if (nIndexPulses==Revolution::MAX){
-										errorState=ERROR_INVALID_INDEX;
-										return;
+										::SetLastError(ERROR_INVALID_INDEX);
+										return CTrackReaderWriter::Invalid;
 									}
 									indexPulses[nIndexPulses++]=*(TIndexPulse *)rawBytes;
 									break;
@@ -438,8 +441,8 @@ badFormat:		errorState=ERROR_BAD_FORMAT;
 											break;
 										case 0x01:
 											// buffering problem
-											errorState=ERROR_BUFFER_OVERFLOW;
-											return;
+											::SetLastError(ERROR_BUFFER_OVERFLOW);
+											return CTrackReaderWriter::Invalid;
 										case 0x02:
 											// no index signal detected
 											break;
@@ -476,15 +479,14 @@ badFormat:		errorState=ERROR_BAD_FORMAT;
 					}
 				}
 		}
-		inStreamDataLength=pis-inStreamData;
-		if (!isKryofluxStream) // not explicitly confirmed that this is a KryoFlux Stream
-			errorState=ERROR_BAD_FILE_TYPE;
-	}
-
-	CImage::CTrackReaderWriter CKryoFluxBase::CKfStream::ToTrack(const CKryoFluxBase &kfb) const{
-		// creates and returns a Track representation of the Stream data
+		const DWORD inStreamDataLength=pis-inStreamData;
+		if (!isKryofluxStream){ // not explicitly confirmed that this is a KryoFlux Stream
+			::SetLastError(ERROR_BAD_FILE_TYPE);
+			return CTrackReaderWriter::Invalid;
+		}
+		// - creating and returning a Track representation of the Stream
 		CTrackReader::TDecoderMethod decoderMethod;
-		switch (kfb.params.fluxDecoder){
+		switch (params.fluxDecoder){
 			case TParams::TFluxDecoder::KEIR_FRASIER:
 				decoderMethod=CTrackReader::TDecoderMethod::FDD_KEIR_FRASIER; break;
 			case TParams::TFluxDecoder::MARK_OGDEN:
@@ -492,7 +494,7 @@ badFormat:		errorState=ERROR_BAD_FORMAT;
 			default:
 				ASSERT(FALSE); break;
 		}
-		CTrackReaderWriter result( nFluxes, decoderMethod, kfb.params.resetFluxDecoderOnIndex );
+		CTrackReaderWriter result( nFluxes, decoderMethod, params.resetFluxDecoderOnIndex );
 		DWORD sampleCounter=0;
 		TLogTime prevTime=0,*buffer=result.GetBuffer(),*pLogTime=buffer;
 		BYTE nearestIndexPulse=0;

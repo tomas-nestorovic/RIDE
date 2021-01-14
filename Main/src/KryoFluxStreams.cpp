@@ -111,20 +111,17 @@
 		TSector nSectors=0;
 		const auto fLength=f.GetLength();
 		if (const PBYTE data=(PBYTE)::malloc(fLength)){
-			if (f.Read( data, fLength )==fLength){
-				const CKfStream kfStream( data, f.GetLength() );
-				if (!kfStream.GetError()){
+			if (f.Read( data, fLength )==fLength)
+				if (CTrackReaderWriter trw=StreamToTrack( data, f.GetLength() )){
 					// it's a KryoFlux Stream whose data make sense
-					CTrackReaderWriter trw=kfStream.ToTrack(*this);
-						if (floppyType!=Medium::UNKNOWN){ // may be unknown if Medium is still being recognized
-							trw.SetMediumType(floppyType);
-							if (params.normalizeReadTracks)
-								trw.Normalize();
-						}
+					if (floppyType!=Medium::UNKNOWN){ // may be unknown if Medium is still being recognized
+						trw.SetMediumType(floppyType);
+						if (params.normalizeReadTracks)
+							trw.Normalize();
+					}
 					internalTracks[cyl][head]=CInternalTrack::CreateFrom( *this, trw );
 					nSectors=__super::ScanTrack( cyl, head, pCodec, bufferId, bufferLength, startTimesNanoseconds, pAvgGap3 );
 				}
-			}
 			::free(data);
 		}
 		return nSectors;

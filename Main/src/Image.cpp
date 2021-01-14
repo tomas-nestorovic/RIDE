@@ -780,7 +780,7 @@ namespace Medium{
 
 	CImage::CTrackReader CImage::ReadTrack(TCylinder cyl,THead head) const{
 		// creates and returns a general description of the specified Track, represented using neutral LogicalTimes
-		return	CTrackReaderWriter( 0, CTrackReader::TDecoderMethod::NONE, false ); // not supported (TrackReader invalid right from its creation)
+		return CTrackReaderWriter::Invalid; // not supported (TrackReader invalid right from its creation)
 	}
 
 	void CImage::SetPathName(LPCTSTR lpszPathName,BOOL bAddToMRU){

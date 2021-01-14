@@ -3,29 +3,6 @@
 
 	class CKryoFluxBase abstract:public CCapsBase{
 	protected:
-		class CKfStream{
-			const LPBYTE inStreamData;
-			DWORD inStreamDataLength;
-			DWORD nFluxes;
-			struct TIndexPulse sealed{
-				DWORD posInStreamData;
-				DWORD sampleCounter;
-				DWORD indexCounter;
-			} indexPulses[Revolution::MAX];
-			BYTE nIndexPulses;
-			TStdWinError errorState;
-			double mck,sck,ick;
-		public:
-			CKfStream(LPBYTE rawBytes,DWORD nBytes);
-
-			FORCEINLINE
-			TStdWinError GetError() const{
-				return errorState;
-			}
-
-			CTrackReaderWriter ToTrack(const CKryoFluxBase &kfb) const;
-		};
-
 		struct TParams{
 			// persistent (saved and loaded)
 			CString firmwareFileName;
@@ -55,6 +32,7 @@
 		CKryoFluxBase(PCProperties properties,LPCTSTR firmware);
 
 		virtual TStdWinError UploadFirmware()=0;
+		CTrackReaderWriter StreamToTrack(LPBYTE inStreamBytes,DWORD nStreamBytes) const;
 	public:
 		//BOOL OnOpenDocument(LPCTSTR lpszPathName) override;
 		//BOOL OnSaveDocument(LPCTSTR lpszPathName) override;
