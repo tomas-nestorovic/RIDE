@@ -35,6 +35,7 @@
 
 		virtual TStdWinError UploadFirmware()=0;
 		CTrackReaderWriter StreamToTrack(LPBYTE inStreamBytes,DWORD nStreamBytes) const;
+		DWORD TrackToStream(CTrackReader tr,LPBYTE outBuffer) const;
 	public:
 		//BOOL OnOpenDocument(LPCTSTR lpszPathName) override;
 		//BOOL OnSaveDocument(LPCTSTR lpszPathName) override;

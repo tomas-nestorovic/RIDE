@@ -596,3 +596,82 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 		result.AddTimes( buffer, pLogTime-buffer );
 		return result;
 	}
+
+	static BYTE WriteIndexBlock(PVOID outBuffer,TLogTime firstIndexTime,DWORD totalSampleCounter,DWORD inStreamDataLength,TLogTime indexTime){
+		const struct{
+			BYTE header,type;
+			WORD size;
+			TIndexPulse data;
+		} indexBlock={
+			0x0d, 0x02, sizeof(TIndexPulse),
+			inStreamDataLength,
+			(LONGLONG)indexTime*SAMPLE_CLOCK_DEFAULT/TIME_SECOND(1)-totalSampleCounter, // temporary 64-bit precision even on 32-bit machines
+			(LONGLONG)(indexTime-firstIndexTime)*INDEX_CLOCK_DEFAULT/TIME_SECOND(1) // temporary 64-bit precision even on 32-bit machines
+		};
+		::memcpy( outBuffer, &indexBlock, sizeof(indexBlock) );
+		return sizeof(indexBlock);
+	}
+
+	DWORD CKryoFluxBase::TrackToStream(CTrackReader tr,LPBYTE outBuffer) const{
+		// converts specified Track representation into Stream data and returns the length of the Stream
+		PCHAR p=(PCHAR)outBuffer;
+		// - writing hardware information
+		#define HW_INFO	"name=KryoFlux DiskSystem, version=3.00s, date=Mar 27 2018, time=18:25:55, hwid=1, hwrv=1, hs=1, sck=24027428.5714285, ick=3003428.5714285625"
+		p+=::wsprintfA( p, "\xd\x4%c%c" HW_INFO, sizeof(HW_INFO), 0 )+1; // "+1" = terminal zero character
+		// - writing each Revolution on the Track
+		DWORD totalSampleCounter=0;
+		struct{
+			BYTE header,type;
+			WORD size;
+			DWORD dataLength, zero;
+		} streamInfoBlock={ 0x0d, 0x01, 2*sizeof(DWORD) }; // 8 Bytes long "out-of-Stream" data, containing StreamInfo
+		BYTE index=0;
+		TLogTime nextIndexPulseTime= tr.GetIndexCount()>0 ? tr.GetIndexTime(0) : INT_MAX;
+		for( tr.SetCurrentTime(0); tr; ){
+			// . writing an index pulse if its time has already been reached
+			const TLogTime currTime=tr.ReadTime();
+			if (currTime>nextIndexPulseTime){
+				p+=WriteIndexBlock(
+					p, tr.GetIndexTime(0), totalSampleCounter,
+					streamInfoBlock.dataLength,
+					tr.GetIndexTime(index)
+				);
+				nextIndexPulseTime= ++index<tr.GetIndexCount() ? tr.GetIndexTime(index) : INT_MAX;
+			}
+			// . writing the flux
+			int sampleCounter= (LONGLONG)currTime*SAMPLE_CLOCK_DEFAULT/TIME_SECOND(1)-totalSampleCounter; // temporary 64-bit precision even on 32-bit machines
+			if (sampleCounter<=0){ // just to be sure
+				ASSERT(FALSE); // we shouldn't end up here!
+				continue;
+			}
+			totalSampleCounter+=sampleCounter;
+			const WORD nOverflows=HIWORD(sampleCounter);
+			::memset( p, '\x9', nOverflows ); // Ovl16
+			p+=nOverflows, streamInfoBlock.dataLength+=nOverflows;
+			sampleCounter=LOWORD(sampleCounter);
+			BYTE nInStreamBytes;
+			if (sampleCounter<=0x0d) // Flux2
+				nInStreamBytes=::wsprintfA( p, "%c%c", 0, sampleCounter );
+			else if (sampleCounter<=0xff) // Flux1
+				nInStreamBytes=1, *p=sampleCounter;
+			else if (sampleCounter<=0x7ff) // Flux2
+				nInStreamBytes=::wsprintfA( p, "%c%c", sampleCounter>>8, sampleCounter&0xff );
+			else // Flux3
+				nInStreamBytes=::wsprintfA( p, "\xc%c%c", sampleCounter>>8, sampleCounter&0xff );
+			streamInfoBlock.dataLength+=nInStreamBytes, p+=nInStreamBytes;
+		}
+		// - writing last index pulse, if not already written
+		if (index<tr.GetIndexCount())
+			p+=WriteIndexBlock(
+				p, tr.GetIndexTime(0), totalSampleCounter,
+				streamInfoBlock.dataLength,
+				tr.GetIndexTime(index)
+			);
+		// - there are no more flux-related data in the Stream
+		streamInfoBlock.type=0x03; // StreamEnd
+		::memcpy( p, &streamInfoBlock, sizeof(streamInfoBlock) );
+		p+=sizeof(streamInfoBlock);
+		// - end of Stream
+		*(LPDWORD)p=0x0d0d0d0d;
+		return (PBYTE)p+sizeof(DWORD)-outBuffer;
+	}
