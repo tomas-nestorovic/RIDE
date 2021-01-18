@@ -63,7 +63,6 @@
 
 	#define KF_FIRMWARE_LOAD_ADDR	0x202000
     #define KF_FIRMWARE_EXEC_ADDR	KF_FIRMWARE_LOAD_ADDR
-	#define KF_BUFFER_CAPACITY		1000000
 
 	LPCTSTR CKryoFluxDevice::Recognize(PTCHAR deviceNameList){
 		// returns a null-separated list of floppy drives connected via a local KryoFlux device

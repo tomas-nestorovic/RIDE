@@ -373,6 +373,12 @@
 			}
 
 			inline
+			DWORD GetTimesCount() const{
+				// returns the number of recorded LogicalTimes
+				return nLogTimes;
+			}
+
+			inline
 			TLogTime GetCurrentTime() const{
 				// returns the LogicalTime ellapsed from the beginning of recording
 				return currentTime;
@@ -414,6 +420,7 @@
 			CTrackReaderWriter(DWORD nLogTimesMax,TDecoderMethod method,bool resetDecoderOnIndex);
 			CTrackReaderWriter(const CTrackReaderWriter &rTrackReaderWriter);
 			CTrackReaderWriter(CTrackReaderWriter &&rTrackReaderWriter);
+			CTrackReaderWriter(const CTrackReader &tr);
 
 			inline
 			PLogTime GetBuffer() const{
@@ -529,6 +536,7 @@
 		virtual TStdWinError Reset()=0;
 		virtual TStdWinError SaveTrack(TCylinder cyl,THead head);
 		virtual CTrackReader ReadTrack(TCylinder cyl,THead head) const;
+		virtual TStdWinError WriteTrack(TCylinder cyl,THead head,CTrackReader tr);
 		virtual TStdWinError FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte)=0;
 		virtual bool RequiresFormattedTracksVerification() const;
 		virtual TStdWinError PresumeHealthyTrackStructure(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,BYTE gap3,BYTE fillerByte);

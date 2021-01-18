@@ -592,6 +592,12 @@
 		, nLogTimesMax( rTrackReaderWriter.nLogTimesMax ) {
 	}
 	
+	CImage::CTrackReaderWriter::CTrackReaderWriter(const CTrackReader &tr)
+		// copy ctor
+		: CTrackReader(tr)
+		, nLogTimesMax( tr.GetTimesCount() ) {
+	}
+	
 	void CImage::CTrackReaderWriter::AddTimes(PCLogTime logTimes,DWORD nLogTimes){
 		// appends given amount of LogicalTimes at the end of the Track
 		ASSERT( this->nLogTimes+nLogTimes<=nLogTimesMax );

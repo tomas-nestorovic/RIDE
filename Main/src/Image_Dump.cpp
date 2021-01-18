@@ -158,6 +158,7 @@ terminateWithError:
 		struct TParams sealed{
 			TPhysicalAddress chs;
 			TTrack track;
+			bool trackWriteable; // Track can be written at once using CImage::WriteTrack
 			struct{
 				WORD automaticallyAcceptedErrors;
 				bool remainingErrorsOnTrack;
@@ -168,6 +169,7 @@ terminateWithError:
 			} exclusion;
 		} p;
 		::ZeroMemory(&p,sizeof(p));
+		const bool targetSupportsTrackWriting=dp.target->WriteTrack(0,0,CImage::CTrackReaderWriter::Invalid)!=ERROR_NOT_SUPPORTED;
 		const Utils::CByteIdentity sectorIdAndPositionIdentity;
 		for( p.chs.cylinder=dp.cylinderA; p.chs.cylinder<=dp.cylinderZ; pAction->UpdateProgress(++p.chs.cylinder-dp.cylinderA) )
 			for( p.chs.head=0; p.chs.head<dp.nHeads; p.chs.head++ ){
@@ -181,6 +183,10 @@ terminateWithError:
 				nSectors=dp.source->ScanTrack(p.chs.cylinder,p.chs.head,&codec,bufferId,bufferLength);
 }
 				// . reading Source Track
+				const CImage::CTrackReader tr=	targetSupportsTrackWriting
+												? dp.source->ReadTrack( p.chs.cylinder, p.chs.head )
+												: CImage::CTrackReaderWriter::Invalid;
+				p.trackWriteable=tr;
 				#pragma pack(1)
 				struct{
 					TSector n;
@@ -202,6 +208,7 @@ terminateWithError:
 						nSectors--;
 						::memmove( bufferId+s, bufferId+s+1, sizeof(*bufferId)*(nSectors-s) );
 						::memmove( bufferLength+s, bufferLength+s+1, sizeof(*bufferLength)*(nSectors-s) );
+						p.trackWriteable=false; // once modified, can't write the Track as a whole anymore
 						s--; // as below incremented
 					// : reporting SourceSector Errors if A&B, A = automatically not accepted Errors exist, B = Error reporting for current Track is enabled
 					}else if (bufferFdcStatus[s].ToWord()&~p.acceptance.automaticallyAcceptedErrors && !p.acceptance.remainingErrorsOnTrack){
@@ -362,6 +369,7 @@ terminateWithError:
 														case 1:
 															// recovering CRC
 															rFdcStatus.CancelIdFieldCrcError();
+															rp.trackWriteable=false; // once modified, can't write the Track as a whole anymore
 															break;
 													}
 													switch (d.dataFieldRecoveryType){
@@ -372,6 +380,7 @@ terminateWithError:
 														case 1:
 															// recovering CRC
 															rFdcStatus.CancelDataFieldCrcError();
+															rp.trackWriteable=false; // once modified, can't write the Track as a whole anymore
 															break;
 													}
 													EndDialog(ACCEPT_ERROR_ID);
@@ -440,32 +449,48 @@ terminateWithError:
 					if (dp.target->PresumeHealthyTrackStructure(p.chs.cylinder,p.chs.head,nSectors,bufferId,dp.gap3.value,dp.fillerByte)!=ERROR_SUCCESS)
 						goto reformatTrack;
 				}else
-reformatTrack:		if ( err=dp.target->FormatTrack(p.chs.cylinder,p.chs.head,codec!=Codec::UNKNOWN?codec:dp.dos->formatBoot.codecType,nSectors,bufferId,bufferLength,bufferFdcStatus,dp.gap3.value,dp.fillerByte) )
-						goto terminateWithError;
+reformatTrack:		if (!p.trackWriteable) // formatting the Track only if can't write the Track using CImage::WriteTrack
+						if ( err=dp.target->FormatTrack(p.chs.cylinder,p.chs.head,codec!=Codec::UNKNOWN?codec:dp.dos->formatBoot.codecType,nSectors,bufferId,bufferLength,bufferFdcStatus,dp.gap3.value,dp.fillerByte) )
+							goto terminateWithError;
 }
 				// . writing to Target Track
 {LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("writing to Target Track"));
-				dp.target->BufferTrackData( p.chs.cylinder, p.chs.head, bufferId, sectorIdAndPositionIdentity, nSectors, true ); // make Sectors data ready for IMMEDIATE usage
-				for( BYTE s=0; s<nSectors; ){
-					if (!bufferFdcStatus[s].DescribesMissingDam()){
-						p.chs.sectorId=bufferId[s]; WORD w;
-						LOG_SECTOR_ACTION(&p.chs.sectorId,_T("writing"));
-						if (const PSectorData targetData=dp.target->GetSectorData(p.chs,s,true,&w,&TFdcStatus())){
-							::memcpy( targetData, bufferSectorData[s], bufferLength[s] );
-							if (( err=dp.target->MarkSectorAsDirty(p.chs,s,bufferFdcStatus+s) )!=ERROR_SUCCESS)
-								goto errorDuringWriting;
-						}else{
-							err=::GetLastError();
-errorDuringWriting:			TCHAR buf[80];
-							::wsprintf(buf,_T("Cannot write to sector with %s on target Track %d"),(LPCTSTR)p.chs.sectorId.ToString(),p.track);
-							switch (Utils::AbortRetryIgnore(buf,err,MB_DEFBUTTON2)){
-								case IDABORT:	goto terminateWithError;
-								case IDRETRY:	continue;
-								case IDIGNORE:	break;
+				if (p.trackWriteable)
+					// can use the CImage::WriteTrack to write the whole Track at once
+					while (err=dp.target->WriteTrack( p.chs.cylinder, p.chs.head, tr )){
+						TCHAR buf[80];
+						::wsprintf( buf, _T("Can't write target Track %d"), p.track );
+						switch (Utils::AbortRetryIgnore(buf,err,MB_DEFBUTTON2)){
+							default:		goto terminateWithError;
+							case IDRETRY:	continue;
+							case IDIGNORE:	break;
+						}
+						break;
+					}
+				else{
+					// must write to each Sector individually
+					dp.target->BufferTrackData( p.chs.cylinder, p.chs.head, bufferId, sectorIdAndPositionIdentity, nSectors, true ); // make Sectors data ready for IMMEDIATE usage
+					for( BYTE s=0; s<nSectors; ){
+						if (!bufferFdcStatus[s].DescribesMissingDam()){
+							p.chs.sectorId=bufferId[s]; WORD w;
+							LOG_SECTOR_ACTION(&p.chs.sectorId,_T("writing"));
+							if (const PSectorData targetData=dp.target->GetSectorData(p.chs,s,true,&w,&TFdcStatus())){
+								::memcpy( targetData, bufferSectorData[s], bufferLength[s] );
+								if (( err=dp.target->MarkSectorAsDirty(p.chs,s,bufferFdcStatus+s) )!=ERROR_SUCCESS)
+									goto errorDuringWriting;
+							}else{
+								err=::GetLastError();
+errorDuringWriting:				TCHAR buf[80];
+								::wsprintf(buf,_T("Cannot write to sector with %s on target Track %d"),(LPCTSTR)p.chs.sectorId.ToString(),p.track);
+								switch (Utils::AbortRetryIgnore(buf,err,MB_DEFBUTTON2)){
+									default:		goto terminateWithError;
+									case IDRETRY:	continue;
+									case IDIGNORE:	break;
+								}
 							}
 						}
+						s++; // cannot include in the FOR clause - see Continue statement in the cycle
 					}
-					s++; // cannot include in the FOR clause - see Continue statement in the cycle
 				}
 				// . saving the writing to the Target Track (if the Target Image supports it)
 				switch ( err=dp.target->SaveTrack(p.chs.cylinder,p.chs.head) ){

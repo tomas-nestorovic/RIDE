@@ -265,6 +265,26 @@
 		return __super::SetMediumTypeAndGeometry( pFormat, sideMap, firstSectorNumber );
 	}
 
+	TStdWinError CKryoFluxBase::WriteTrack(TCylinder cyl,THead head,CTrackReader tr){
+		// converts general description of the specified Track into Image-specific representation; caller may provide Invalid TrackReader to check support of this feature; returns Windows standard i/o error
+		// - TrackReader must be valid
+		if (!tr) // caller is likely checking the support of this feature
+			return ERROR_INVALID_DATA; // yes, it's supported but the TrackReader is invalid
+		// - checking that specified Track actually CAN exist
+		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
+			return ERROR_INVALID_PARAMETER;
+		// - disposing previous Track, if any
+		PInternalTrack &rit=internalTracks[cyl][head];
+		if (rit!=nullptr)
+			delete rit, rit=nullptr;
+		// - creation of new content
+		if ( rit = CInternalTrack::CreateFrom(*this,CTrackReaderWriter(tr)) ){
+			rit->modified=true;
+			return ERROR_SUCCESS;
+		}else
+			return ERROR_NOT_ENOUGH_MEMORY;
+	}
+
 	TStdWinError CKryoFluxBase::FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte){
 		// formats given Track {Cylinder,Head} to the requested NumberOfSectors, each with corresponding Length and FillerByte as initial content; returns Windows standard i/o error
 		// - must support the Codec specified

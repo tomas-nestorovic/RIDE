@@ -783,6 +783,11 @@ namespace Medium{
 		return CTrackReaderWriter::Invalid; // not supported (TrackReader invalid right from its creation)
 	}
 
+	TStdWinError CImage::WriteTrack(TCylinder cyl,THead head,CTrackReader tr){
+		// converts general description of the specified Track into Image-specific representation; caller may provide Invalid TrackReader to check support of this feature; returns Windows standard i/o error
+		return ERROR_NOT_SUPPORTED;
+	}
+
 	void CImage::SetPathName(LPCTSTR lpszPathName,BOOL bAddToMRU){
 		//
 		__super::SetPathName( lpszPathName, FALSE );

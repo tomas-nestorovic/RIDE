@@ -1,6 +1,8 @@
 #ifndef KRYOFLUXBASE_H
 #define KRYOFLUXBASE_H
 
+	#define KF_BUFFER_CAPACITY		1000000
+
 	class CKryoFluxBase abstract:public CCapsBase{
 	protected:
 		struct TParams{
@@ -45,6 +47,7 @@
 		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
 		bool EditSettings(bool initialEditing) override;
 		//TStdWinError Reset() override;
+		TStdWinError WriteTrack(TCylinder cyl,THead head,CTrackReader tr) override;
 		TStdWinError FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte) override;
 		TStdWinError UnformatTrack(TCylinder cyl,THead head) override;
 	};
