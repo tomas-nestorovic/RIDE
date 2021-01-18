@@ -343,6 +343,12 @@
 
 
 
+	struct TIndexPulse sealed{
+		DWORD posInStreamData;
+		DWORD sampleCounter;
+		DWORD indexCounter;
+	};
+
 	#define MASTER_CLOCK_DEFAULT	(18432000*73/14/2)
 	#define SAMPLE_CLOCK_DEFAULT	(MASTER_CLOCK_DEFAULT/2)
 	#define INDEX_CLOCK_DEFAULT		(MASTER_CLOCK_DEFAULT/16)
@@ -354,11 +360,7 @@
 		bool isKryofluxStream=false; // assumption (actually NOT a KryoFlux Stream)
 		LPBYTE pis=rawBytes; // "in-stream-data" only
 		DWORD nFluxes=0;
-		struct TIndexPulse sealed{
-			DWORD posInStreamData;
-			DWORD sampleCounter;
-			DWORD indexCounter;
-		} indexPulses[Revolution::MAX];
+		TIndexPulse indexPulses[Revolution::MAX];
 		BYTE nIndexPulses=0;
 		double mck=0,sck=0,ick=0; // all defaults, allowing flux computation with minimal precision loss
 		for( const PCBYTE pLastRawByte=rawBytes+nBytes; rawBytes<pLastRawByte; ){
@@ -411,6 +413,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 							if (rawBytes+size>pLastRawByte)
 								goto badFormat;
 							switch (type){
+								default:
 								case 0x00:
 									// Invalid
 									goto badFormat;
@@ -479,26 +482,27 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 					}
 				}
 		}
-		const DWORD inStreamDataLength=pis-inStreamData;
 		if (!isKryofluxStream){ // not explicitly confirmed that this is a KryoFlux Stream
 			::SetLastError(ERROR_BAD_FILE_TYPE);
 			return CTrackReaderWriter::Invalid;
 		}
+		const DWORD inStreamDataLength=pis-inStreamData;
 		// - creating and returning a Track representation of the Stream
 		CTrackReader::TDecoderMethod decoderMethod;
 		switch (params.fluxDecoder){
+			default:
+				ASSERT(FALSE);
+				//fallthrough
 			case TParams::TFluxDecoder::KEIR_FRASIER:
 				decoderMethod=CTrackReader::TDecoderMethod::FDD_KEIR_FRASIER; break;
 			case TParams::TFluxDecoder::MARK_OGDEN:
 				decoderMethod=CTrackReader::TDecoderMethod::FDD_MARK_OGDEN; break;
-			default:
-				ASSERT(FALSE); break;
 		}
 		CTrackReaderWriter result( nFluxes, decoderMethod, params.resetFluxDecoderOnIndex );
-		DWORD sampleCounter=0;
-		TLogTime prevTime=0,*buffer=result.GetBuffer(),*pLogTime=buffer;
+		DWORD sampleCounter=0, totalSampleCounter=0; // delta and absolute sample counters
+		PLogTime buffer=result.GetBuffer(),pLogTime=buffer;
 		BYTE nearestIndexPulse=0;
-		DWORD nearestIndexPulsePos= nIndexPulses>0 ? indexPulses[0].posInStreamData : -1;
+		DWORD nearestIndexPulsePos= nIndexPulses>0 ? indexPulses[0].posInStreamData : INT_MAX;
 		for( PCBYTE pis=inStreamData,pLastInStreamData=pis+inStreamDataLength; pis<pLastInStreamData; ){
 			const BYTE header=*pis++;
 			// . extracting flux from the KryoFlux "in-Stream" data (pre-processed in ctor)
@@ -527,23 +531,19 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 				}
 			// . adding an index pulse if its time has already been reached
 			if (pis-inStreamData>=nearestIndexPulsePos){
-				if (sck==0){ // default Sample-Clock, allowing for relatively precise computation of absolute timing
-					const LONGLONG tmp=(LONGLONG)TIME_SECOND(1)*indexPulses[nearestIndexPulse].sampleCounter; // temporary 64-bit precision even on 32-bit machines
-					result.AddIndexTime( prevTime + tmp/SAMPLE_CLOCK_DEFAULT );
-				}else{ // custom Sample-Clock, involving floating-point number computation
-					const double tmp=(double)TIME_SECOND(1)*sampleCounter; // temporary 64-bit precision even on 32-bit machines
-					result.AddIndexTime( prevTime + (TLogTime)(tmp/sck) );
-				}
+				const DWORD indexSampleCounter=totalSampleCounter+indexPulses[nearestIndexPulse].sampleCounter;
+				if (sck==0) // default Sample-Clock, allowing for relatively precise computation of absolute timing
+					result.AddIndexTime( (LONGLONG)TIME_SECOND(1)*indexSampleCounter/SAMPLE_CLOCK_DEFAULT ); // temporary 64-bit precision even on 32-bit machines
+				else // custom Sample-Clock, involving floating-point number computation
+					result.AddIndexTime( (LONGLONG)TIME_SECOND(1)*indexSampleCounter/sck ); // temporary 64-bit precision even on 32-bit machines
 				nearestIndexPulsePos= ++nearestIndexPulse<nIndexPulses ? indexPulses[nearestIndexPulse].posInStreamData : -1;
 			}
 			// . adding the flux into the Buffer
-			if (sck==0){ // default Sample-Clock, allowing for relatively precise computation of absolute timing
-				const LONGLONG tmp=(LONGLONG)TIME_SECOND(1)*sampleCounter; // temporary 64-bit precision even on 32-bit machines
-				*pLogTime++= prevTime += tmp/SAMPLE_CLOCK_DEFAULT;
-			}else{ // custom Sample-Clock, involving floating-point number computation
-				const double tmp=(double)TIME_SECOND(1)*sampleCounter; // temporary 64-bit precision even on 32-bit machines
-				*pLogTime++= prevTime += (TLogTime)(tmp/sck);
-			}
+			totalSampleCounter+=sampleCounter;
+			if (sck==0) // default Sample-Clock, allowing for relatively precise computation of absolute timing
+				*pLogTime++= (LONGLONG)TIME_SECOND(1)*totalSampleCounter/SAMPLE_CLOCK_DEFAULT; // temporary 64-bit precision even on 32-bit machines
+			else // custom Sample-Clock, involving floating-point number computation
+				*pLogTime++= (LONGLONG)TIME_SECOND(1)*totalSampleCounter/sck; // temporary 64-bit precision even on 32-bit machines
 			sampleCounter=0;
 		}
 		result.AddTimes( buffer, pLogTime-buffer );
