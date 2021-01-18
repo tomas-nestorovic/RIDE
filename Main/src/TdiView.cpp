@@ -226,6 +226,7 @@
 				pIgp->Create( IDR_GUIDEPOST, TDI_INSTANCE );
 				pIgp->ShowWindow(SW_SHOW);
 				app.m_pMainWnd->SetFocus();
+				CentreInParent();
 			}
 		}
 
