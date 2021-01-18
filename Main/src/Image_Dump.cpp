@@ -620,8 +620,10 @@ errorDuringWriting:			TCHAR buf[80];
 									CWnd *const pBtnFile=GetDlgItem(ID_FILE);
 									RECT r;
 									pBtnFile->GetClientRect(&r);
-									TCHAR buf[MAX_PATH];
+									TCHAR buf[MAX_PATH+100];
 									::PathCompactPath( CClientDC(pBtnFile), ::lstrcpy(buf,fileName), r.right-r.left );
+									if (!targetImageProperties->IsRealDevice())
+										::wsprintf( buf+::lstrlen(buf), _T("\n(%s)"), targetImageProperties->fnRecognize(nullptr) );
 									pBtnFile->SetWindowText(buf);
 									// : adjusting interactivity
 										// > populating ComboBox with Media supported by both DOS and Image
