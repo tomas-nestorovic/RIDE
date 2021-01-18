@@ -270,6 +270,9 @@
 		// - must support the Codec specified
 		if ((codec&properties->supportedCodecs)==0)
 			return ERROR_NOT_SUPPORTED;
+		// - checking that specified Track actually CAN exist
+		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
+			return ERROR_INVALID_PARAMETER;
 		// - disposing previous Track, if any
 		PInternalTrack &rit=internalTracks[cyl][head];
 		if (rit!=nullptr)
@@ -325,6 +328,7 @@
 		const CapsTrackInfoT2 cti={ 2, cyl, head, nSectors, 0, bitBuffer, cft.tracklen };
 		if ( rit=CInternalTrack::CreateFrom( *this, &cti, 1, 0 ) ){
 			rit->modified=true;
+			SetModifiedFlag();
 			return ERROR_SUCCESS;
 		}else
 			return ERROR_GEN_FAILURE;
@@ -332,7 +336,30 @@
 
 	TStdWinError CKryoFluxBase::UnformatTrack(TCylinder cyl,THead head){
 		// unformats given Track {Cylinder,Head}; returns Windows standard i/o error
-		return ERROR_NOT_SUPPORTED;
+		if (const Medium::PCProperties mp=Medium::GetProperties(floppyType)){
+			// . checking that specified Track actually CAN exist
+			if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
+				return ERROR_INVALID_PARAMETER;
+			// . preparing Track content
+			const DWORD nLogTimes=mp->nCells*2;
+			CTrackReaderWriter trw( nLogTimes, CTrackReader::TDecoderMethod::FDD_KEIR_FRASIER, true );
+				trw.AddIndexTime(0);
+					for( TLogTime t=0; t<nLogTimes; trw.AddTime(++t) );
+				trw.AddIndexTime( nLogTimes );
+				trw.SetMediumType(floppyType);
+				if (!trw.Normalize())
+					return ERROR_MEDIA_INCOMPATIBLE;
+			// . disposal of previous content
+			if (const PInternalTrack pit=internalTracks[cyl][head])
+				delete pit;
+			// . creation of new content
+			if ( const PInternalTrack pit = internalTracks[cyl][head] = CInternalTrack::CreateFrom(*this,trw) ){
+				pit->modified=true;
+				return ERROR_SUCCESS;
+			}else
+				return ERROR_NOT_ENOUGH_MEMORY;
+		}else
+			return ERROR_MEDIA_INCOMPATIBLE;
 	}
 
 
