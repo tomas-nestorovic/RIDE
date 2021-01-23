@@ -237,6 +237,20 @@
 
 
 
+	BOOL CKryoFluxBase::OnSaveDocument(LPCTSTR lpszPathName){
+		// True <=> this Image has been successfully saved, otherwise False
+		// - saving
+		for( TCylinder cyl=0; cyl<FDD_CYLINDERS_MAX; cyl++ )
+			for( THead head=0; head<2; head++ )
+				if (const TStdWinError err=SaveTrack(cyl,head)){
+					::SetLastError(err);
+					return FALSE;
+				}
+		// - successfully saved
+		SetModifiedFlag(FALSE);
+		return TRUE;
+	}
+
 	BYTE CKryoFluxBase::GetAvailableRevolutionCount() const{
 		// returns the number of data variations of one Sector that are guaranteed to be distinct
 		return 2+params.precision*2;

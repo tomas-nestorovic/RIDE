@@ -14,6 +14,7 @@
 		Medium::TType mediumType;
 		const PImage source;
 		std::unique_ptr<CImage> target;
+		TCHAR targetFileName[MAX_PATH];
 		bool formatJustBadTracks;
 		TCylinder cylinderA,cylinderZ;
 		THead nHeads;
@@ -152,6 +153,7 @@
 		if (err!=ERROR_SUCCESS)
 terminateWithError:
 			return LOG_ERROR(pAction->TerminateWithError(err));
+		dp.target->SetPathName( dp.targetFileName, FALSE );
 		// - dumping
 		const TDumpParams::TSourceTrackErrors **ppSrcTrackErrors=&dp.pOutErroneousTracks;
 		#pragma pack(1)
@@ -536,10 +538,10 @@ errorDuringWriting:				TCHAR buf[80];
 				if (pDX->m_bSaveAndValidate){
 					// : FileName must be known
 					pDX->PrepareEditCtrl(ID_FILE);
-					if (!::lstrcmp(fileName,ELLIPSIS)){
+					if (!::lstrcmp(dumpParams.targetFileName,ELLIPSIS)){
 						Utils::Information( _T("Target not specified.") );
 						pDX->Fail();
-					}else if (!dos->image->GetPathName().Compare(fileName)){
+					}else if (!dos->image->GetPathName().Compare(dumpParams.targetFileName)){
 						Utils::Information( _T("Target must not be the same as source.") );
 						pDX->Fail();
 					}
@@ -570,7 +572,7 @@ errorDuringWriting:				TCHAR buf[80];
 					// : instantiating Target Image
 					if (targetImageProperties){
 						LOG_ACTION(_T("Creating target image"));
-						dumpParams.target=std::unique_ptr<CImage>( targetImageProperties->fnInstantiate(fileName) );
+						dumpParams.target=std::unique_ptr<CImage>( targetImageProperties->fnInstantiate(dumpParams.targetFileName) );
 					}else{
 						Utils::FatalError(_T("Unknown destination to dump to."));
 						return pDX->Fail();
@@ -638,15 +640,15 @@ errorDuringWriting:				TCHAR buf[80];
 					case WM_COMMAND:
 						switch (wParam){
 							case ID_FILE:{
-								const TCHAR c=*fileName;
-								*fileName='\0';
-								if (targetImageProperties=app.DoPromptFileName( fileName, true, AFX_IDS_SAVEFILE, 0, nullptr )){
+								const TCHAR c=*dumpParams.targetFileName;
+								*dumpParams.targetFileName='\0';
+								if (targetImageProperties=app.DoPromptFileName( dumpParams.targetFileName, true, AFX_IDS_SAVEFILE, 0, nullptr )){
 									// : compacting FileName in order to be better displayable on the button
 									CWnd *const pBtnFile=GetDlgItem(ID_FILE);
 									RECT r;
 									pBtnFile->GetClientRect(&r);
 									TCHAR buf[MAX_PATH+100];
-									::PathCompactPath( CClientDC(pBtnFile), ::lstrcpy(buf,fileName), r.right-r.left );
+									::PathCompactPath( CClientDC(pBtnFile), ::lstrcpy(buf,dumpParams.targetFileName), r.right-r.left );
 									if (!targetImageProperties->IsRealDevice())
 										::wsprintf( buf+::lstrlen(buf), _T("\n(%s)"), targetImageProperties->fnRecognize(nullptr) );
 									pBtnFile->SetWindowText(buf);
@@ -681,7 +683,7 @@ errorDuringWriting:				TCHAR buf[80];
 										if (dos->image->properties->IsRealDevice() || targetImageProperties->IsRealDevice())
 											SendDlgItemMessage( ID_PRIORITY, BM_SETCHECK, BST_CHECKED );
 								}else
-									*fileName=c;
+									*dumpParams.targetFileName=c;
 								break;
 							}
 							case ID_DEFAULT1:
@@ -737,7 +739,6 @@ errorDuringWriting:				TCHAR buf[80];
 				return __super::WindowProc(msg,wParam,lParam);
 			}
 		public:
-			TCHAR fileName[MAX_PATH];
 			CImage::PCProperties targetImageProperties;
 			TDumpParams dumpParams;
 			int realtimeThreadPriority,showReport;
@@ -748,7 +749,7 @@ errorDuringWriting:				TCHAR buf[80];
 				, dos(_dos) , targetImageProperties(nullptr) , dumpParams(_dos)
 				, realtimeThreadPriority(BST_UNCHECKED)
 				, showReport(BST_CHECKED) {
-				::lstrcpy( fileName, ELLIPSIS );
+				::lstrcpy( dumpParams.targetFileName, ELLIPSIS );
 			}
 		} d(dos);
 		// - showing Dialog and processing its result
@@ -775,7 +776,7 @@ errorDuringWriting:				TCHAR buf[80];
 					d.realtimeThreadPriority ? THREAD_PRIORITY_TIME_CRITICAL : THREAD_PRIORITY_NORMAL
 				).Perform();
 			if (err==ERROR_SUCCESS){
-				if (d.dumpParams.target->OnSaveDocument(d.fileName)){
+				if (d.dumpParams.target->OnSaveDocument(d.dumpParams.targetFileName)){
 					// : displaying statistics on SourceTrackErrors
 					if (d.showReport==BST_CHECKED){
 						// | saving to temporary file

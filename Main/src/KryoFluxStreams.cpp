@@ -42,6 +42,23 @@
 
 	#define TRACK_NAME_PATTERN	_T("%02d.%c.raw")
 
+	bool CKryoFluxStreams::SetNameBase(LPCTSTR fullName){
+		// True <=> a valid naming pattern has been recognized, otherwise False
+		const LPCTSTR trackIdentifier=fullName+::lstrlen(fullName)-2-1-1-1-3; // see the TrackNamingPattern
+		int cyl; char head;
+		if (_stscanf( trackIdentifier, TRACK_NAME_PATTERN, &cyl, &head )!=2
+			||
+			cyl>=FDD_CYLINDERS_MAX
+			||
+			head<'0' || '1'<head
+		){
+			::SetLastError(ERROR_INVALID_NAME);
+			return false;
+		}
+		::lstrcpyn( nameBase, fullName, trackIdentifier-fullName+1 );
+		return true;
+	}
+
 	BOOL CKryoFluxStreams::OnOpenDocument(LPCTSTR lpszPathName){
 		// True <=> Image opened successfully, otherwise False
 		// - base
@@ -50,19 +67,9 @@
 			::GetLastError()!=ERROR_NOT_SUPPORTED // the CAPS library currently doesn't support reading Stream files
 		)
 			return FALSE;
-		// - recognizing the naming pattern
-		const LPCTSTR trackIdentifier=lpszPathName+::lstrlen(lpszPathName)-2-1-1-1-3; // see the TrackNamingPattern
-		int cyl; char head;
-		if (::sscanf( trackIdentifier, TRACK_NAME_PATTERN, &cyl, &head )!=2
-			||
-			cyl>=FDD_CYLINDERS_MAX
-			||
-			head<'0' || '1'<head
-		){
-			::SetLastError(ERROR_INVALID_NAME);
+		// - recognizing the name pattern
+		if (!SetNameBase(lpszPathName))
 			return FALSE;
-		}
-		::lstrcpyn( nameBase, lpszPathName, trackIdentifier-lpszPathName+1 );
 		// - setting a classical 3.5" floppy geometry
 		if (!capsImageInfo.maxcylinder) // # of Cylinders not yet set (e.g. via confirmed EditSettings dialog)
 			capsImageInfo.maxcylinder=FDD_CYLINDERS_MAX-1; // inclusive!
@@ -78,8 +85,30 @@
 
 	BOOL CKryoFluxStreams::OnSaveDocument(LPCTSTR lpszPathName){
 		// True <=> this Image has been successfully saved, otherwise False
-		::SetLastError(ERROR_NOT_SUPPORTED);
-		return FALSE;
+		// - recognizing the name pattern
+		if (!SetNameBase(lpszPathName))
+			return FALSE;
+		// - saving
+		return __super::OnSaveDocument(lpszPathName);
+	}
+
+	TStdWinError CKryoFluxStreams::SaveTrack(TCylinder cyl,THead head){
+		// saves the specified Track to the inserted Medium; returns Windows standard i/o error
+		if (const auto pit=internalTracks[cyl][head])
+			if (pit->modified){
+				TCHAR fileName[MAX_PATH];
+				::wsprintf( fileName, _T("%s") TRACK_NAME_PATTERN, nameBase, cyl, '0'+head );
+				CFile f; CFileException e;
+				if (!f.Open( fileName, CFile::modeCreate|CFile::modeWrite|CFile::typeBinary|CFile::shareExclusive, &e ))
+					return e.m_cause;
+				if (const PBYTE data=(PBYTE)::malloc(KF_BUFFER_CAPACITY)){
+					f.Write( data, TrackToStream(*pit,data) );
+					::free(data);
+					pit->modified=false;
+				}else
+					return ERROR_NOT_ENOUGH_MEMORY;
+			}
+		return ERROR_SUCCESS;
 	}
 
 	TStdWinError CKryoFluxStreams::UploadFirmware(){
@@ -125,4 +154,9 @@
 			::free(data);
 		}
 		return nSectors;
+	}
+
+	void CKryoFluxStreams::SetPathName(LPCTSTR lpszPathName,BOOL bAddToMRU){
+		__super::SetPathName( lpszPathName, bAddToMRU );
+		SetNameBase(lpszPathName);
 	}
