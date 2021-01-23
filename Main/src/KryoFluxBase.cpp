@@ -578,7 +578,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 					case 0x0c:
 						// Flux3
 						sampleCounter+= (*pis++<<8) + *pis++;
-						ASSERT( 0x800<=sampleCounter && sampleCounter<=0xffff );
+						ASSERT( 0x800<=sampleCounter );
 						break;
 					case 0x0b:
 						// Ovl16
@@ -660,7 +660,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 			}
 			totalSampleCounter+=sampleCounter;
 			const WORD nOverflows=HIWORD(sampleCounter);
-			::memset( p, '\x9', nOverflows ); // Ovl16
+			::memset( p, '\xb', nOverflows ); // Ovl16
 			p+=nOverflows, streamInfoBlock.dataLength+=nOverflows;
 			sampleCounter=LOWORD(sampleCounter);
 			BYTE nInStreamBytes;
