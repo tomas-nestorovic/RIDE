@@ -38,7 +38,7 @@
 		// - persistent (saved and loaded)
 		: firmwareFileName( app.GetProfileString(INI_KRYOFLUX,INI_FIRMWARE_FILE) )
 		, precision( app.GetProfileInt(INI_KRYOFLUX,INI_PRECISION,0) )
-		, fluxDecoder( (TFluxDecoder)app.GetProfileInt(INI_KRYOFLUX,INI_FLUX_DECODER,TFluxDecoder::KEIR_FRASIER) )
+		, fluxDecoder( (TFluxDecoder)app.GetProfileInt(INI_KRYOFLUX,INI_FLUX_DECODER,TFluxDecoder::KEIR_FRASER) )
 		, resetFluxDecoderOnIndex( (TFluxDecoder)app.GetProfileInt(INI_KRYOFLUX,INI_FLUX_DECODER_RESET,true)!=0 )
 		, calibrationAfterError( (TCalibrationAfterError)app.GetProfileInt(INI_KRYOFLUX,INI_CALIBRATE_SECTOR_ERROR,TCalibrationAfterError::ONCE_PER_CYLINDER) )
 		, calibrationStepDuringFormatting( app.GetProfileInt(INI_KRYOFLUX,INI_CALIBRATE_FORMATTING,0) )
@@ -376,7 +376,7 @@
 				return ERROR_INVALID_PARAMETER;
 			// . preparing Track content
 			const DWORD nLogTimes=mp->nCells*2;
-			CTrackReaderWriter trw( nLogTimes, CTrackReader::TDecoderMethod::FDD_KEIR_FRASIER, true );
+			CTrackReaderWriter trw( nLogTimes, CTrackReader::TDecoderMethod::FDD_KEIR_FRASER, true );
 				trw.AddIndexTime(0);
 					for( TLogTime t=0; t<nLogTimes; trw.AddTime(++t) );
 				trw.AddIndexTime( nLogTimes );
@@ -554,8 +554,8 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 			default:
 				ASSERT(FALSE);
 				//fallthrough
-			case TParams::TFluxDecoder::KEIR_FRASIER:
-				decoderMethod=CTrackReader::TDecoderMethod::FDD_KEIR_FRASIER; break;
+			case TParams::TFluxDecoder::KEIR_FRASER:
+				decoderMethod=CTrackReader::TDecoderMethod::FDD_KEIR_FRASER; break;
 			case TParams::TFluxDecoder::MARK_OGDEN:
 				decoderMethod=CTrackReader::TDecoderMethod::FDD_MARK_OGDEN; break;
 		}

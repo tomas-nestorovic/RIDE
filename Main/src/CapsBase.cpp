@@ -183,7 +183,7 @@
 		UDWORD nBitsPerTrack[CAPS_MTRS], nBitsPerTrackOfficial, nBitsTotally=0;
 		for( BYTE rev=0; rev<nRevs; rev++ )
 			nBitsTotally += nBitsPerTrack[rev] = CBitReader(ctiRevs[rev],lockFlags).Count;
-		CTrackReaderWriter trw( nBitsTotally, CTrackReader::FDD_KEIR_FRASIER, true ); // pessimistic estimation of # of fluxes
+		CTrackReaderWriter trw( nBitsTotally, CTrackReader::FDD_KEIR_FRASER, true ); // pessimistic estimation of # of fluxes
 			if (*nBitsPerTrack>( nBitsPerTrackOfficial=Medium::TProperties::FLOPPY_HD_350.nCells )*95/100) // 5% tolerance
 				// likely a 3.5" HD medium
 				trw.SetMediumType( Medium::FLOPPY_HD_350 );

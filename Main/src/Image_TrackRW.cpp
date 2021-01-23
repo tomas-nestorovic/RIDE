@@ -141,8 +141,8 @@
 				ASSERT(FALSE); // this method mustn't be called when there's nothing actually to be read!
 		#endif
 		switch (method){
-			case TDecoderMethod::FDD_KEIR_FRASIER:{
-				// FDC-like flux reversal decoding from Keir Frasier's Disk-Utilities/libdisk
+			case TDecoderMethod::FDD_KEIR_FRASER:{
+				// FDC-like flux reversal decoding from Keir Fraser's Disk-Utilities/libdisk
 				// - reading some more from the Track
 				const TLogTime iwTimeHalf=profile.iwTime/2;
 				while (logTimes[iNextTime]-currentTime<iwTimeHalf)
