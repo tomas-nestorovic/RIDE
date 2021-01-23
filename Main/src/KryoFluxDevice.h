@@ -100,7 +100,7 @@
 		~CKryoFluxDevice();
 
 		BOOL OnOpenDocument(LPCTSTR lpszPathName) override;
-		BOOL OnSaveDocument(LPCTSTR lpszPathName) override;
+		//BOOL OnSaveDocument(LPCTSTR lpszPathName) override;
 		//TCylinder GetCylinderCount() const override;
 		//THead GetNumberOfFormattedSides(TCylinder cyl) const override;
 		TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const override;
@@ -109,6 +109,7 @@
 		//TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
 		bool EditSettings(bool initialEditing) override;
 		TStdWinError Reset() override;
+		TStdWinError SaveTrack(TCylinder cyl,THead head) override;
 		//TStdWinError FormatTrack(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte) override;
 		//TStdWinError UnformatTrack(TCylinder cyl,THead head) override;
 	};

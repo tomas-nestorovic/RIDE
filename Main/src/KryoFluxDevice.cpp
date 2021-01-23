@@ -145,6 +145,7 @@
 		, hDevice(INVALID_HANDLE_VALUE) {
 		winusb.hLibrary = winusb.hDeviceInterface = INVALID_HANDLE_VALUE;
 		Connect();
+		DestroyAllTracks(); // because Connect scans zeroth Track
 	}
 
 	CKryoFluxDevice::~CKryoFluxDevice(){
@@ -512,10 +513,9 @@
 		return TRUE; // failure may arise later on when attempting to access the Drive
 	}
 
-	BOOL CKryoFluxDevice::OnSaveDocument(LPCTSTR lpszPathName){
-		// True <=> this Image has been successfully saved, otherwise False
-		::SetLastError(ERROR_NOT_SUPPORTED);
-		return FALSE;
+	TStdWinError CKryoFluxDevice::SaveTrack(TCylinder cyl,THead head){
+		// saves the specified Track to the inserted Medium; returns Windows standard i/o error
+		return ERROR_NOT_SUPPORTED;
 	}
 
 	TSector CKryoFluxDevice::ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec,PSectorId bufferId,PWORD bufferLength,PLogTime startTimesNanoseconds,PBYTE pAvgGap3) const{
@@ -597,7 +597,11 @@
 		Disconnect(), Connect();
 		UploadFirmware();
 		// - base
-		return __super::EditSettings(initialEditing);
+		const bool result=__super::EditSettings(initialEditing);
+		// - if this the InitialEditing, making sure the internal representation is empty
+		if (initialEditing)
+			DestroyAllTracks();
+		return result;
 	}
 
 	TStdWinError CKryoFluxDevice::Reset(){
