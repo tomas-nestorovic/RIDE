@@ -136,7 +136,7 @@
 	CKryoFluxDevice::CKryoFluxDevice(TDriver driver,BYTE fddId)
 		// ctor
 		// - base
-		: CKryoFluxBase( &Properties, firmwareVersion )
+		: CKryoFluxBase( &Properties, fddId+'0', firmwareVersion )
 		// - initialization
 		, driver(driver) , fddId(fddId)
 		, dataBuffer( (PBYTE)::malloc(KF_BUFFER_CAPACITY) )
@@ -351,7 +351,7 @@
 			if (const TStdWinError err=SamBaCommand( cmd, nullptr ))
 				return err;
 			// . waiting for KryoFlux to finish initialization by firmware
-			while (!CKryoFluxDevice(driver,fddId))
+			while (!CKryoFluxDevice(driver,precompensation.driveLetter))
 				::Sleep(1000);
 			// . reconnecting to the device may be needed
 			Disconnect();
@@ -513,7 +513,7 @@
 		return TRUE; // failure may arise later on when attempting to access the Drive
 	}
 
-	TStdWinError CKryoFluxDevice::SaveTrack(TCylinder cyl,THead head){
+	TStdWinError CKryoFluxDevice::SaveTrack(TCylinder cyl,THead head) const{
 		// saves the specified Track to the inserted Medium; returns Windows standard i/o error
 		return ERROR_NOT_SUPPORTED;
 	}
@@ -592,7 +592,7 @@
 
 	bool CKryoFluxDevice::EditSettings(bool initialEditing){
 		// True <=> new settings have been accepted (and adopted by this Image), otherwise False
-		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		//EXCLUSIVELY_LOCK_THIS_IMAGE(); // commented out as the following Dialog creates a parallel thread that in turn would attempt to lock this Image, yielding a deadlock
 		// - making sure the firmware is uploaded
 		Disconnect(), Connect();
 		UploadFirmware();

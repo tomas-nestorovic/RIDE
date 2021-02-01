@@ -76,6 +76,32 @@
 		} *PInternalTrack;
 		typedef const CInternalTrack *PCInternalTrack;
 
+		class CPrecompensation sealed{
+			Medium::TType floppyType;
+
+			static UINT AFX_CDECL PrecompensationDetermination_thread(PVOID pCancelableAction);
+		public:
+			const char driveLetter;
+			enum TMethodVersion:BYTE{
+				None,
+				MethodVersion1,
+				MethodLatest	= MethodVersion1
+			} methodVersion;
+			union{
+				struct{
+					double coeffs[2][5]; // coefficients for even (0) and odd (1) fluxes
+				} v1;
+			};
+
+			CPrecompensation(char driveLetter);
+
+			void Load(Medium::TType floppyType);
+			void Save() const;
+			TStdWinError DetermineUsingLatestMethod(const CCapsBase &cb,BYTE nTrials=4);
+			void ShowOrDetermineModal(const CCapsBase &cb);
+			bool ApplyTo(CTrackReaderWriter trw) const;
+		} precompensation;
+
 		const TStdWinError capsLibLoadingError;
 		const SDWORD capsDeviceHandle;
 		CapsVersionInfo capsVersionInfo;
@@ -84,7 +110,7 @@
 
 		mutable Codec::TType lastSuccessfullCodec;
 
-		CCapsBase(PCProperties properties,bool hasEditableSettings);
+		CCapsBase(PCProperties properties,char realDriveLetter,bool hasEditableSettings);
 
 		void DestroyAllTracks();
 	public:

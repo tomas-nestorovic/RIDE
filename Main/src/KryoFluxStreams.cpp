@@ -30,7 +30,7 @@
 	CKryoFluxStreams::CKryoFluxStreams()
 		// ctor
 		// - base
-		: CKryoFluxBase( &Properties, Recognize(nullptr) ) {
+		: CKryoFluxBase( &Properties, '\0', Recognize(nullptr) ) { // '\0' = not a real drive
 		// - initialization
 		*nameBase='\0';
 	}
@@ -92,7 +92,7 @@
 		return __super::OnSaveDocument(lpszPathName);
 	}
 
-	TStdWinError CKryoFluxStreams::SaveTrack(TCylinder cyl,THead head){
+	TStdWinError CKryoFluxStreams::SaveTrack(TCylinder cyl,THead head) const{
 		// saves the specified Track to the inserted Medium; returns Windows standard i/o error
 		if (const auto pit=internalTracks[cyl][head])
 			if (pit->modified){

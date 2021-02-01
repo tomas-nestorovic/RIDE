@@ -30,7 +30,7 @@
 	CCtRaw::CCtRaw()
 		// ctor
 		// - base
-		: CCapsBase(&Properties,true) {
+		: CCapsBase(&Properties,'\0',true) { // '\0' = not a real drive
 		canBeModified=false; // modifications not possible at the moment
 	}
 

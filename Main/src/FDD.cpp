@@ -739,7 +739,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 
 
 
-	TStdWinError CFDD::SaveTrack(TCylinder cyl,THead head){
+	TStdWinError CFDD::SaveTrack(TCylinder cyl,THead head) const{
 		// saves the specified Track to the inserted Medium; returns Windows standard i/o error
 		LOG_TRACK_ACTION(cyl,head,_T("UINT CFDD::SaveTrack"));
 		if (TInternalTrack *const pit=__getScannedTrack__(cyl,head)){
@@ -764,7 +764,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 						TInternalTrack::TSectorInfo &si=pit->sectors[n];
 						if (si.modified && !justSavedSectors[n]){
 							if (si.startNanoseconds-lastSectorEndNanoseconds>=fddHead.profile.gap3Latency) // sufficient distance between this and previously saved Sectors, so both of them can be processed in a single disk revolution
-								if (const TStdWinError err=si.__saveToDisk__( this, pit, n, false )) // False = verification carried out below
+								if (const TStdWinError err=si.__saveToDisk__( const_cast<CFDD *>(this), pit, n, false )) // False = verification carried out below
 									return err;
 								else{
 									si.modified=params.verifyWrittenData; // no longer Modified if Verification turned off

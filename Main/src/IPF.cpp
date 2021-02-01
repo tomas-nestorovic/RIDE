@@ -28,7 +28,7 @@
 	CIpf::CIpf()
 		// ctor
 		// - base
-		: CCapsBase(&Properties,true) {
+		: CCapsBase(&Properties,'\0',true) { // '\0' = not a real drive
 		// - initialization
 		canBeModified=false; // by design, the IPF serves for PRESERVATION and modifications thus should be NOT allowed
 	}

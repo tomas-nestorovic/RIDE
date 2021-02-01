@@ -3,10 +3,10 @@
 #include "KryoFluxBase.h"
 
 
-	CKryoFluxBase::CKryoFluxBase(PCProperties properties,LPCTSTR firmware)
+	CKryoFluxBase::CKryoFluxBase(PCProperties properties,char realDriveLetter,LPCTSTR firmware)
 		// ctor
 		// - base
-		: CCapsBase( properties, true )
+		: CCapsBase( properties, realDriveLetter, true )
 		// - initialization
 		, firmware(firmware) {
 		// - setting a classical 5.25" floppy geometry
@@ -66,11 +66,12 @@
 
 	bool CKryoFluxBase::EditSettings(bool initialEditing){
 		// True <=> new settings have been accepted (and adopted by this Image), otherwise False
-		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		//EXCLUSIVELY_LOCK_THIS_IMAGE(); // commented out as the following Dialog creates a parallel thread that in turn would attempt to lock this Image, yielding a deadlock
 		// - defining the Dialog
 		class CParamsDialog sealed:public Utils::CRideDialog{
 			const bool initialEditing;
 			CKryoFluxBase &rkfb;
+			CPrecompensation tmpPrecomp;
 			TCHAR doubleTrackDistanceTextOrg[80];
 
 			bool IsDoubleTrackDistanceForcedByUser() const{
@@ -117,6 +118,36 @@
 					}
 				// . forcing redrawing (as the new text may be shorter than the original text, leaving the original partly visible)
 				GetDlgItem(ID_MEDIUM)->Invalidate();
+				// . refreshing the status of Precompensation
+				tmpPrecomp.Load(mt);
+				RefreshPrecompensationStatus();
+			}
+
+			void RefreshPrecompensationStatus(){
+				// retrieves and displays current write pre-compensation status
+				TCHAR msg[235];
+				switch (const TStdWinError err=tmpPrecomp.DetermineUsingLatestMethod(rkfb,0)){
+					case ERROR_SUCCESS:
+						::wsprintf( msg, _T("Determined for drive %c using latest <a id=\"details\">Method %d</a>."), tmpPrecomp.driveLetter, tmpPrecomp.methodVersion );
+						break;
+					case ERROR_INVALID_DATA:
+						::wsprintf( msg, _T("Not yet determined for drive %c!\n<a id=\"compute\">Determine now using latest Method %d</a>"), tmpPrecomp.driveLetter );
+						break;
+					case ERROR_EVT_VERSION_TOO_OLD:
+						::wsprintf( msg, _T("Determined for drive %c using <a id=\"details\">Method %d</a>. <a id=\"compute\">Redetermine using latest Method %d</a>"), tmpPrecomp.driveLetter, tmpPrecomp.methodVersion, CPrecompensation::MethodLatest );
+						break;
+					case ERROR_MEDIA_NOT_AVAILABLE:
+						::wsprintf( msg, _T("No status for drive %c available.\n<a id=\"details\">Determine even so using latest Method %d</a>"), tmpPrecomp.driveLetter, CPrecompensation::MethodLatest );
+						break;
+					default:
+						::FormatMessage(
+							FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, err, 0,
+							msg+::lstrlen(::lstrcpy(msg,_T("Couldn't determine status because\n"))), sizeof(msg)-35,
+							nullptr
+						);
+						break;
+				}
+				SetDlgItemText( ID_ALIGN, msg );
 			}
 
 			void PreInitDialog() override{
@@ -135,6 +166,8 @@
 				EnableDlgItems( InitialSettingIds, initialEditing );
 				// . displaying inserted Medium information
 				RefreshMediumInformation();
+				// . updating write pre-compensation status
+				RefreshPrecompensationStatus();
 			}
 
 			void DoDataExchange(CDataExchange* pDX) override{
@@ -209,6 +242,21 @@
 								break;
 						}
 						break;
+					case WM_NOTIFY:
+						switch (((LPNMHDR)lParam)->code){
+							case NM_CLICK:
+							case NM_RETURN:{
+								PNMLINK pLink=(PNMLINK)lParam;
+								const LITEM &item=pLink->item;
+								if (pLink->hdr.idFrom==ID_ALIGN)
+									if (!::lstrcmpW(item.szID,L"details"))
+										tmpPrecomp.ShowOrDetermineModal(rkfb);
+									else if (!::lstrcmpW(item.szID,L"compute"))
+										tmpPrecomp.DetermineUsingLatestMethod(rkfb);
+								break;
+							}
+						}
+						break;
 				}
 				return __super::WindowProc(msg,wParam,lParam);
 			}
@@ -218,7 +266,7 @@
 			CParamsDialog(CKryoFluxBase &rkfb,bool initialEditing)
 				// ctor
 				: Utils::CRideDialog(IDR_KRYOFLUX_ACCESS)
-				, rkfb(rkfb) , params(rkfb.params) , initialEditing(initialEditing) {
+				, rkfb(rkfb) , params(rkfb.params) , initialEditing(initialEditing) , tmpPrecomp(rkfb.precompensation) {
 			}
 		} d( *this, initialEditing );
 		// - showing the Dialog and processing its result

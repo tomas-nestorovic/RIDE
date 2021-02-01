@@ -247,6 +247,7 @@
     <ClCompile Include="src\BSDOS_FAT.cpp" />
     <ClCompile Include="src\BSDOS_FileManager.cpp" />
     <ClCompile Include="src\CapsBase.cpp" />
+    <ClCompile Include="src\CapsBase_Precomp.cpp" />
     <ClCompile Include="src\CtRaw.cpp" />
     <ClCompile Include="src\Debug.cpp" />
     <ClCompile Include="src\DialogRealDeviceSelection.cpp" />

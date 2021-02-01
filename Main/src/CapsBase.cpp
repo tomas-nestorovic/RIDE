@@ -15,7 +15,7 @@
 		return ERROR_SUCCESS;
 	}
 
-	CCapsBase::CCapsBase(PCProperties properties,bool hasEditableSettings)
+	CCapsBase::CCapsBase(PCProperties properties,char realDriveLetter,bool hasEditableSettings)
 		// ctor
 		// - base
 		: CFloppyImage(properties,hasEditableSettings)
@@ -24,6 +24,7 @@
 		// - creating a CAPS device
 		, capsDeviceHandle(  capsLibLoadingError ? -1 : CAPS::AddImage()  )
 		// - initialization
+		, precompensation(realDriveLetter)
 		, forcedMediumType( Medium::FLOPPY_ANY )
 		, lastSuccessfullCodec(Codec::MFM) {
 		::ZeroMemory( &capsImageInfo, sizeof(capsImageInfo) );
@@ -685,6 +686,7 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 							auto &rit=internalTracks[cyl][head];
 							delete rit, rit=nullptr; // ... disposing it and letting DOS later read it once again
 						}
+						precompensation.Load( pFormat->mediumType );
 						return ERROR_SUCCESS;
 					}
 		}

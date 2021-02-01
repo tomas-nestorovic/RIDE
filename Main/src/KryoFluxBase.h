@@ -31,7 +31,7 @@
 
 		const LPCTSTR firmware;
 
-		CKryoFluxBase(PCProperties properties,LPCTSTR firmware);
+		CKryoFluxBase(PCProperties properties,char realDriveLetter,LPCTSTR firmware);
 
 		virtual TStdWinError UploadFirmware()=0;
 		CTrackReaderWriter StreamToTrack(LPBYTE inStreamBytes,DWORD nStreamBytes) const;
