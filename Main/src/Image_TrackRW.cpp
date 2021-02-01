@@ -89,7 +89,7 @@
 
 	TLogTime CImage::CTrackReader::ReadTime(){
 		// returns the next LogicalTime (or zero if all time information already read)
-		return	*this ? logTimes[iNextTime++] : 0;
+		return	*this ? (currentTime=logTimes[iNextTime++]) : 0;
 	}
 
 	void CImage::CTrackReader::SetCodec(Codec::TType codec){
