@@ -80,24 +80,20 @@
 			CTrackReaderWriter trw( mediumProps.nCells, CTrackReader::FDD_KEIR_FRASER, false );
 				trw.SetMediumType(rPrecomp.floppyType);
 				trw.AddIndexTime(0);
-				trw.AddIndexTime(mediumProps.nCells);
-			DWORD i=0;
-			for( WORD n=200; n>0; n-- ) // MFM-like inspection window stabilisation
-				trw.AddTime( i+=2 );
+				trw.AddIndexTime(mediumProps.revolutionTime);
+			TLogTime t=0, const doubleCellTime=2*mediumProps.cellTime;
+			for( BYTE n=200; n>0; n-- ) // MFM-like inspection window stabilisation
+				trw.AddTime( t+=doubleCellTime );
 			for( BYTE n=10; n>0; n-- ) // indication of beginning of test data
-				trw.AddTime( i+=5 );
-			TLogTime t;
+				trw.AddTime( t+=5*mediumProps.cellTime );
 			BYTE distances[9000];
 			for( WORD n=0; n<sizeof(distances); n++ ){ // generating test data
-				do{
-					t = distances[n] = 1+(::rand()&3);
-				}while (t==1); // between two 1's must always be at least one 0
-				trw.AddTime( i+=t );
+				while (( distances[n]=::rand()&3 )==0); // between two 1's must always be at least one 0
+				trw.AddTime( t+=++distances[n]*mediumProps.cellTime );
 			}
-			while (i<mediumProps.nCells) // filling the remainder of the Track
-				trw.AddTime( i+=2 );
-			trw.AddTime( mediumProps.revolutionTime + mediumProps.cellTime ); // one extra flux
-			trw.Normalize();
+			while (t<mediumProps.revolutionTime) // filling the remainder of the Track
+				trw.AddTime( t+=doubleCellTime );
+			trw.AddTime( t+=doubleCellTime ); // one extra flux
 			// . saving the test Track as zeroth Track
 			PInternalTrack pit=CInternalTrack::CreateFrom( ptp.cb, trw );
 			std::swap( pit, ptp.cb.internalTracks[ptp.cyl][0] );
