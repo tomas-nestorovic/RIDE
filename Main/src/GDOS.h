@@ -82,7 +82,7 @@
 				EMPTY_ENTRY		=0
 			} fileType;
 			char name[GDOS_FILE_NAME_LENGTH_MAX];
-			TBigEndianWord nSectors; // count of Sectors occupied by this File
+			Utils::CBigEndianWord nSectors; // count of Sectors occupied by this File
 			TSectorInfo firstSector;
 			struct TSectorAllocationBitmap sealed{
 			private:

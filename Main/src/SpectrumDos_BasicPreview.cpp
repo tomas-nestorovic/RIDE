@@ -371,7 +371,7 @@ defaultPrinting:				if (b<' ')
 				listing << _T("None");
 			else
 				do{
-					TBigEndianWord lineNumber;
+					Utils::CBigEndianWord lineNumber;
 					if (error=frw.Read(&lineNumber,sizeof(WORD))!=sizeof(WORD)) // error
 						break;
 					if (lineNumber>0x39ff){ // invalid LineNumber ...

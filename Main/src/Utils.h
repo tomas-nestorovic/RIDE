@@ -174,6 +174,23 @@ namespace Utils{
 		return lhs=operator/(lhs,rhs);
 	}
 
+	class CBigEndianWord sealed{
+		BYTE highByte,lowByte;
+	public:
+		inline CBigEndianWord(){}
+		CBigEndianWord(WORD initLittleEndianValue);
+
+		WORD operator=(WORD newValue);
+		operator WORD() const;
+	};
+
+	class CBigEndianDWord sealed{
+		CBigEndianWord highWord,lowWord;
+	public:
+		DWORD operator=(DWORD newValue);
+		operator DWORD() const;
+	};
+
 
 	TStdWinError ErrorByOs(TStdWinError vistaOrNewer,TStdWinError xpOrOlder);
 	CString ComposeErrorMessage(LPCTSTR text,LPCTSTR causeOfError,LPCTSTR consequence=nullptr);

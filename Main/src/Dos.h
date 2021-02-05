@@ -246,22 +246,6 @@
 			LPCTSTR GetRecordLabel(int logPos,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override;
 		};
 
-		struct TBigEndianWord sealed{
-		private:
-			BYTE highByte,lowByte;
-		public:
-			WORD operator=(WORD newValue);
-			operator WORD() const;
-		};
-
-		struct TBigEndianDWord sealed{
-		private:
-			TBigEndianWord highWord,lowWord;
-		public:
-			DWORD operator=(DWORD newValue);
-			operator DWORD() const;
-		};
-
 		enum TGetFileSizeOptions:BYTE{
 			OfficialDataLength,
 			SizeOnDisk

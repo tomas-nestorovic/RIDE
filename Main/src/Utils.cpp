@@ -537,6 +537,48 @@ namespace Utils{
 
 
 
+	CBigEndianWord::CBigEndianWord(WORD initLittleEndianValue)
+		// ctor
+		: highByte(HIBYTE(initLittleEndianValue)) , lowByte(LOBYTE(initLittleEndianValue)) {
+	}
+
+	WORD CBigEndianWord::operator=(WORD newValue){
+		// "setter"
+		highByte=HIBYTE(newValue), lowByte=LOBYTE(newValue);
+		return newValue;
+	}
+
+	CBigEndianWord::operator WORD() const{
+		// "getter"
+		return MAKEWORD(lowByte,highByte);
+	}
+
+
+
+
+
+
+
+
+	DWORD CBigEndianDWord::operator=(DWORD newValue){
+		// "setter"
+		highWord=HIWORD(newValue), lowWord=LOWORD(newValue);
+		return newValue;
+	}
+
+	CBigEndianDWord::operator DWORD() const{
+		// "getter"
+		return MAKELONG(lowWord,highWord);
+	}
+
+
+
+
+
+
+
+
+
 
 	TStdWinError ErrorByOs(TStdWinError vistaOrNewer,TStdWinError xpOrOlder){
 		// returns the error code by observing the current operating system version; it's up to the caller to know whether specified error is supported by the OS

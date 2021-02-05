@@ -141,7 +141,7 @@
 				union{
 					struct{
 						BYTE exponent;
-						TBigEndianDWord mantissa;
+						Utils::CBigEndianDWord mantissa;
 					};
 					BYTE bytes[5];
 				};
