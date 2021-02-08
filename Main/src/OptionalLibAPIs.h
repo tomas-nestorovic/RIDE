@@ -99,6 +99,14 @@ namespace WinUsb
 		__out_opt PULONG LengthTransferred,
 		__in_opt  LPOVERLAPPED Overlapped    
     );
+	BOOL ResetPipe(
+		__in  WINUSB_INTERFACE_HANDLE InterfaceHandle,
+		__in  UCHAR PipeID
+	);
+	BOOL AbortPipe(
+		__in  WINUSB_INTERFACE_HANDLE InterfaceHandle,
+		__in  UCHAR PipeID
+	);
 
 }
 

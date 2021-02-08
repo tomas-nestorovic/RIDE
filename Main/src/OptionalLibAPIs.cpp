@@ -215,6 +215,26 @@ namespace WinUsb
 		return FALSE;
 	}
 
+	BOOL ResetPipe(
+		__in  WINUSB_INTERFACE_HANDLE InterfaceHandle,
+		__in  UCHAR PipeID
+	){
+		typedef BOOL (__stdcall *F)(WINUSB_INTERFACE_HANDLE,UCHAR);
+		if (const F f=(F)GetProcedure(_T("WinUsb_ResetPipe")))
+			return f( InterfaceHandle, PipeID );
+		return FALSE;
+	}
+
+	BOOL AbortPipe(
+		__in  WINUSB_INTERFACE_HANDLE InterfaceHandle,
+		__in  UCHAR PipeID
+	){
+		typedef BOOL (__stdcall *F)(WINUSB_INTERFACE_HANDLE,UCHAR);
+		if (const F f=(F)GetProcedure(_T("WinUsb_AbortPipe")))
+			return f( InterfaceHandle, PipeID );
+		return FALSE;
+	}
+
 }
 
 

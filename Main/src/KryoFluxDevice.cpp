@@ -513,6 +513,160 @@
 		return TRUE; // failure may arise later on when attempting to access the Drive
 	}
 
+	DWORD CKryoFluxDevice::TrackToKfw1(CTrackReader tr) const{
+		// converts specified Track representation into "KFW" format and returns the length of the representation
+		union{
+			PBYTE pb;
+			PWORD pw;
+			PDWORD pdw;
+		};
+		pb=dataBuffer;
+		// - composing the Histogram of unique flux lengths
+		static const WORD UNIQUE_FLUXES_COUNT_MAX=10000;
+		class CHistogram sealed{
+			WORD nUniqueFluxes;
+			struct TUniqueFluxInfo sealed{
+				WORD sampleCounter;
+				WORD orderIndex;
+				DWORD nOccurences;
+			} uniqueFluxes[UNIQUE_FLUXES_COUNT_MAX];
+			WORD descendingByOccurence[UNIQUE_FLUXES_COUNT_MAX]; // keys (SampleCounters) into UniqueFluxes
+			CMapWordToPtr sampleCounterToFluxInfo;
+		public:
+			inline CHistogram()
+				// ctor
+				: nUniqueFluxes(0) {
+			}
+
+			void Add(WORD sampleCounter){
+				// registers a new SampleCounter in this Histogram, eventually moving it "up" in the rank of most occurring SampleCounters
+				PVOID value;
+				if (sampleCounterToFluxInfo.Lookup(sampleCounter,value)){
+					TUniqueFluxInfo &r=*(TUniqueFluxInfo *)value;
+					for( r.nOccurences++; r.orderIndex>0; r.orderIndex-- ){
+						const WORD moreOccuringSampleCounter=descendingByOccurence[r.orderIndex-1];
+						sampleCounterToFluxInfo.Lookup( moreOccuringSampleCounter, value );
+						TUniqueFluxInfo &rTmp=*(TUniqueFluxInfo *)value;
+						if (rTmp.nOccurences>=r.nOccurences)
+							break;
+						descendingByOccurence[ rTmp.orderIndex=r.orderIndex ]=moreOccuringSampleCounter;
+					}
+					descendingByOccurence[r.orderIndex]=sampleCounter;
+				}else if (nUniqueFluxes<UNIQUE_FLUXES_COUNT_MAX){
+					TUniqueFluxInfo &r=uniqueFluxes[nUniqueFluxes];
+						r.sampleCounter = descendingByOccurence[r.orderIndex=nUniqueFluxes] = sampleCounter;
+						r.nOccurences=1;
+					sampleCounterToFluxInfo.SetAt( sampleCounter, &r );
+					nUniqueFluxes++;
+				}else
+					ASSERT(FALSE); // UNIQUE_FLUXES_COUNT_MAX should be enough, however the value can anytime be increased
+			}
+
+			inline WORD GetUniqueFluxesCount() const{
+				return nUniqueFluxes;
+			}
+
+			inline WORD GetIndex(WORD sampleCounter) const{
+				PVOID value;
+				sampleCounterToFluxInfo.Lookup( sampleCounter, value );
+				return ((TUniqueFluxInfo *)value)->orderIndex;
+			}
+
+			inline WORD operator[](int i) const{
+				return descendingByOccurence[i];
+			}
+		} histogram;
+		DWORD totalSampleCounter=0;
+		for( tr.SetCurrentTime(0); tr; ){
+			const TLogTime currTime=tr.ReadTime();
+			int sampleCounter= TimeToStdSampleCounter(currTime)-totalSampleCounter; // temporary 64-bit precision even on 32-bit machines
+			if (sampleCounter<=0){ // just to be sure
+				ASSERT(FALSE); // we shouldn't end up here!
+				continue;
+			}
+			totalSampleCounter+=sampleCounter;
+			if (sampleCounter>0xffff)
+				continue; // long fluxes below replaced with sequence of quick fluxes to indicate non-formatted area
+			histogram.Add(sampleCounter);
+		}
+		// - writing Signature
+		static const BYTE Signature[]={ 'K', 'F', 'W', '\x1' };
+		pb=(PBYTE)::memcpy( pb, Signature, sizeof(Signature) )+sizeof(Signature);
+		// - writing header
+		struct TUniqueFlux sealed{
+			BYTE three;
+			BYTE index;
+			Utils::CBigEndianWord sampleCounter;
+		};
+		ASSERT( sizeof(TUniqueFlux)==sizeof(DWORD) );
+		static const BYTE Data1[]={ 0xF4, 0x01, 0x00, 0x00, 0x88, 0x13, 0x00, 0x00 }; // TODO: find out the meaning
+		pb=(PBYTE)::memcpy( pb, Data1, sizeof(Data1) )+sizeof(Data1);
+		const BYTE nUniqueFluxesUsed=std::min( (WORD)255, histogram.GetUniqueFluxesCount() );
+		const DWORD nUsedFluxesTableBytes = *pdw++ = nUniqueFluxesUsed*sizeof(TUniqueFlux)+0x0E; // TODO: find out why 0x0E
+		DWORD &rnFluxDataBytes=*pdw++; // set below
+		DWORD &rnTrackDataBytes=*pdw++; // set below
+		pb=(PBYTE)::ZeroMemory(pb,40)+40; // TODO: are these 40 Bytes reserved and thus always zero?
+		*pb++=4; // TODO: find out why 4
+		*pb++=2; // TODO: find out why 2
+		*pb++=0; // TODO: find out why 0
+		for( BYTE i=0; i<nUniqueFluxesUsed; i++ ){
+			const TUniqueFlux uf={ 3, i+1, histogram[i] }; // TODO: find out why 3
+			*pdw++=*(PDWORD)&uf;
+		}
+		static const BYTE FluxTablePostamble[]={ 0x0B, 0x05, 0x09, 0x00, 0x01, 0x05, 0x07, 0x0A, 0x05, 0x06, 0x01 }; // TODO: find out the meaning
+		pb=(PBYTE)::memcpy( pb, FluxTablePostamble, sizeof(FluxTablePostamble) )+sizeof(FluxTablePostamble);
+		const WORD nHeaderBytes=(pb-dataBuffer+63)/64*64; // rounding header to whole multiples of 64 Bytes
+		pb=(PBYTE)::ZeroMemory(pb,64)+nHeaderBytes-pb+dataBuffer;
+		// - converting UniqueFluxesUsed to an auxiliary Track (with LogicalTime set to SampleCounter) so that nearest neighbors can be used to approximate fluxes excluded from the Histogram
+		CTrackReaderWriter trwFluxes( nUniqueFluxesUsed, CTrackReader::TDecoderMethod::NONE, false );
+		for( BYTE i=0; i<nUniqueFluxesUsed; i++ )
+			trwFluxes.AddTime( histogram[i] );
+		std::sort( trwFluxes.GetBuffer(), trwFluxes.GetBuffer()+nUniqueFluxesUsed );
+		// - writing fluxes
+		const PBYTE fluxesStart=pb;
+		static const BYTE FluxesPreamble[]={ 0x00, 0x12, 0x00, 0x00 };
+		pb=(PBYTE)::memcpy( pb, FluxesPreamble, sizeof(FluxesPreamble) )+sizeof(FluxesPreamble);
+		totalSampleCounter=0;
+		for( tr.SetCurrentTime(0); tr; ){
+			const TLogTime currTime=tr.ReadTime();
+			int sampleCounter= TimeToStdSampleCounter(currTime)-totalSampleCounter; // temporary 64-bit precision even on 32-bit machines
+			if (sampleCounter<=0){ // just to be sure
+				ASSERT(FALSE); // we shouldn't end up here!
+				continue;
+			}
+			totalSampleCounter+=sampleCounter;
+			if (sampleCounter>0xffff){
+				ASSERT(FALSE); // TODO: replacing long fluxes with quick sequence of short fluxes to indicate non-formatted area
+				continue;
+			}
+			if (((pb-fluxesStart)&0x7fff)!=0x7ffc){
+				// normal representation of flux as the index into the table of fluxes
+				trwFluxes.SetCurrentTime( sampleCounter );
+				trwFluxes.TruncateCurrentTime();
+				const TLogTime smallerSampleCounter=trwFluxes.GetCurrentTime();
+				const TLogTime biggerSampleCounter=trwFluxes.ReadTime();
+				if (sampleCounter-smallerSampleCounter<biggerSampleCounter-sampleCounter || biggerSampleCounter<=0)
+					*pb++=1+histogram.GetIndex( smallerSampleCounter ); // closer to SmallerSampleCounter or no BiggerSampleCounter
+				else
+					*pb++=1+histogram.GetIndex( biggerSampleCounter ); // closer to BiggerSampleCounter
+				ASSERT( 1<=pb[-1] && pb[-1]<=nUniqueFluxesUsed );
+			}else{
+				// each 32768 Bytes of flux data is a "check?" mark 0xb00 followed by a big endian sample counter of the next flux instead of an index
+				*pw++=0xb00;
+				::memcpy( pw++, &Utils::CBigEndianWord(sampleCounter), sizeof(WORD) );
+			}
+		}
+		rnFluxDataBytes=pb-fluxesStart+8; // TODO: find out why 8
+		rnTrackDataBytes=nUsedFluxesTableBytes+rnFluxDataBytes+0x18; // TODO: find out why 0x18
+		// - padding the content to a whole multiple of 64 Bytes
+		*pw++=0x2000; // TODO: find out the meaning
+		const DWORD nContentBytes=(pb-dataBuffer+63)/64*64;
+		pb=(PBYTE)::ZeroMemory( pb, 64 )+nContentBytes-pb+dataBuffer;
+		// - successfully processed
+		::SetLastError(ERROR_SUCCESS);
+		return pb-dataBuffer;
+	}
+
 	TStdWinError CKryoFluxDevice::SaveTrack(TCylinder cyl,THead head) const{
 		// saves the specified Track to the inserted Medium; returns Windows standard i/o error
 		return ERROR_NOT_SUPPORTED;

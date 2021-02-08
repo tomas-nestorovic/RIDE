@@ -83,6 +83,7 @@
 		LPCSTR GetProductName() const;
 		TStdWinError SamBaCommand(LPCSTR cmd,LPCSTR end) const;
 		TStdWinError UploadFirmware() override;
+		DWORD TrackToKfw1(CTrackReader tr) const;
 		TStdWinError SendRequest(TRequest req,WORD index=0,WORD value=0) const;
 	    int GetLastRequestResult() const;
 		DWORD Read(PVOID buffer,DWORD nBytesFree) const;
