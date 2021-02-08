@@ -37,6 +37,8 @@
 		CTrackReaderWriter StreamToTrack(LPBYTE inStreamBytes,DWORD nStreamBytes) const;
 		DWORD TrackToStream(CTrackReader tr,LPBYTE outBuffer) const;
 	public:
+		static DWORD TimeToStdSampleCounter(TLogTime t);
+
 		//BOOL OnOpenDocument(LPCTSTR lpszPathName) override;
 		BOOL OnSaveDocument(LPCTSTR lpszPathName) override;
 		//TCylinder GetCylinderCount() const override;

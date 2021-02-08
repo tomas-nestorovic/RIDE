@@ -131,7 +131,7 @@
 						::wsprintf( msg, _T("Determined for drive %c using latest <a id=\"details\">Method %d</a>."), tmpPrecomp.driveLetter, tmpPrecomp.methodVersion );
 						break;
 					case ERROR_INVALID_DATA:
-						::wsprintf( msg, _T("Not yet determined for drive %c!\n<a id=\"compute\">Determine now using latest Method %d</a>"), tmpPrecomp.driveLetter );
+						::wsprintf( msg, _T("Not yet determined for drive %c!\n<a id=\"compute\">Determine now using latest Method %d</a>"), tmpPrecomp.driveLetter, CPrecompensation::MethodLatest );
 						break;
 					case ERROR_EVT_VERSION_TOO_OLD:
 						::wsprintf( msg, _T("Determined for drive %c using <a id=\"details\">Method %d</a>. <a id=\"compute\">Redetermine using latest Method %d</a>"), tmpPrecomp.driveLetter, tmpPrecomp.methodVersion, CPrecompensation::MethodLatest );
@@ -462,6 +462,10 @@
 	#define SAMPLE_CLOCK_DEFAULT	(MASTER_CLOCK_DEFAULT/2)
 	#define INDEX_CLOCK_DEFAULT		(MASTER_CLOCK_DEFAULT/16)
 
+	DWORD CKryoFluxBase::TimeToStdSampleCounter(TLogTime t){
+		return (LONGLONG)t*SAMPLE_CLOCK_DEFAULT/TIME_SECOND(1);
+	}
+
 	CImage::CTrackReaderWriter CKryoFluxBase::StreamToTrack(LPBYTE rawBytes,DWORD nBytes) const{
 		// creates and returns a Track representation of the Stream data
 		const PCBYTE inStreamData=rawBytes; // "in-stream-data" only
@@ -667,7 +671,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 		} indexBlock={
 			0x0d, 0x02, sizeof(TIndexPulse),
 			inStreamDataLength,
-			(LONGLONG)indexTime*SAMPLE_CLOCK_DEFAULT/TIME_SECOND(1)-totalSampleCounter, // temporary 64-bit precision even on 32-bit machines
+			CKryoFluxBase::TimeToStdSampleCounter(indexTime)-totalSampleCounter, // temporary 64-bit precision even on 32-bit machines
 			(LONGLONG)(indexTime-firstIndexTime)*INDEX_CLOCK_DEFAULT/TIME_SECOND(1) // temporary 64-bit precision even on 32-bit machines
 		};
 		::memcpy( outBuffer, &indexBlock, sizeof(indexBlock) );
@@ -701,7 +705,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 				nextIndexPulseTime= ++index<tr.GetIndexCount() ? tr.GetIndexTime(index) : INT_MAX;
 			}
 			// . writing the flux
-			int sampleCounter= (LONGLONG)currTime*SAMPLE_CLOCK_DEFAULT/TIME_SECOND(1)-totalSampleCounter; // temporary 64-bit precision even on 32-bit machines
+			int sampleCounter= TimeToStdSampleCounter(currTime)-totalSampleCounter; // temporary 64-bit precision even on 32-bit machines
 			if (sampleCounter<=0){ // just to be sure
 				ASSERT(FALSE); // we shouldn't end up here!
 				continue;
