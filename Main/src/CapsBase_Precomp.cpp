@@ -73,6 +73,10 @@
 		const BYTE nEvaluationFluxes=2+1+2; // "N+1+N", N = fluxes considered before/after the current flux
 		decltype(rPrecomp.v1) trialResults[9];
 		const BYTE nTrials=std::min<BYTE>( ptp.nTrials, sizeof(trialResults)/sizeof(*trialResults) );
+		const Medium::PCProperties pMediumProps=Medium::GetProperties(rPrecomp.floppyType);
+		if (!pMediumProps)
+			return pAction->TerminateWithError(ERROR_UNRECOGNIZED_MEDIA);
+		const auto &mediumProps=*pMediumProps;
 		pAction->SetProgressTarget( nTrials+1 );
 		for( BYTE nFailures=0,trial=0; trial<nTrials; ){
 			// . composition of test Track
