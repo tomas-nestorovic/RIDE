@@ -95,7 +95,7 @@
 			// converts Row begin (i.e. its first Byte) to corresponding logical position in underlying File and returns the result
 			return row*nBytesInRow;
 		}
-		LPCTSTR GetRecordLabel(int logPos,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override{
+		LPCWSTR GetRecordLabelW(int logPos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override{
 			// populates the Buffer with label for the Record that STARTS at specified LogicalPosition, and returns the Buffer; returns Null if no Record starts at specified LogicalPosition
 			return nullptr;
 		}
@@ -1266,11 +1266,11 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 								::FillRect( dc, &rcAscii, Utils::CRideBrush::White );
 							// : drawing the Record label if the just drawn Row is the Record's first Row
 							if (!isEof){ // yes, a new Record can potentially start at the Row
-								TCHAR buf[80];
-								if (LPCTSTR recordLabel=pContentAdviser->GetRecordLabel( __firstByteInRowToLogicalPosition__(iRowA), buf, sizeof(buf)/sizeof(TCHAR), param )){
+								WCHAR buf[80];
+								if (const LPCWSTR recordLabel=pContentAdviser->GetRecordLabelW( __firstByteInRowToLogicalPosition__(iRowA), buf, sizeof(buf)/sizeof(WCHAR), param )){
 									RECT rc={ rcAscii.right+2*font.charAvgWidth, y, rcClip.right, rcClip.bottom };
 									const COLORREF textColor0=dc.SetTextColor(labelColor), bgColor0=dc.SetBkColor(COLOR_WHITE);
-										dc.DrawText( recordLabel, -1, &rc, DT_LEFT|DT_TOP );
+										::DrawTextW( dc, recordLabel, -1, &rc, DT_LEFT|DT_TOP );
 										dc.MoveTo( addrLength*font.charAvgWidth, y );
 										dc.LineTo( rcClip.right, y );
 									dc.SetTextColor(textColor0), dc.SetBkColor(bgColor0);

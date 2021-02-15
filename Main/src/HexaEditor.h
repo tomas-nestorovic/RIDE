@@ -26,7 +26,7 @@
 			virtual void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength,bool *pOutDataReady)=0;
 			virtual int LogicalPositionToRow(int logPos,BYTE nBytesInRow)=0;
 			virtual int RowToLogicalPosition(int row,BYTE nBytesInRow)=0;
-			virtual LPCTSTR GetRecordLabel(int logPos,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const=0;
+			virtual LPCWSTR GetRecordLabelW(int logPos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const=0;
 		} *PContentAdviser;
 	private:
 		class COleBinaryDataSource sealed:public COleDataSource{

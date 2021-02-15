@@ -243,7 +243,7 @@
 			void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength,bool *pOutDataReady) override;
 			int LogicalPositionToRow(int logPos,BYTE nBytesInRow) override;
 			int RowToLogicalPosition(int row,BYTE nBytesInRow) override;
-			LPCTSTR GetRecordLabel(int logPos,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override;
+			LPCWSTR GetRecordLabelW(int logPos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override;
 		};
 
 		enum TGetFileSizeOptions:BYTE{

@@ -365,7 +365,7 @@
 						}
 				}
 			}
-			LPCTSTR GetRecordLabel(int logPos,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override{
+			LPCWSTR GetRecordLabelW(int logPos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override{
 				// populates the Buffer with label for the Record that STARTS at specified LogicalPosition, and returns the Buffer; returns Null if no Record starts at specified LogicalPosition
 				TTrack track;
 				if (!__getPhysicalAddress__(logPos,&track,nullptr,nullptr))
@@ -380,9 +380,20 @@
 				switch (const Revolution::TType dirtyRev=image->GetDirtyRevolution(chs,nSectors)){
 					case Revolution::UNKNOWN:
 					case Revolution::NONE:
-						return ::lstrcpyn( labelBuffer, ids[nSectors].ToString(), labelBufferCharsMax );
+						#ifdef UNICODE
+							return ::lstrcpyn( labelBuffer, ids[nSectors].ToString(), labelBufferCharsMax );
+						#else
+							::MultiByteToWideChar( CP_ACP, 0, ids[nSectors].ToString(),-1, labelBuffer,labelBufferCharsMax );
+							return labelBuffer;
+						#endif
 					default:
-						::wnsprintf( labelBuffer, labelBufferCharsMax, _T("!%d %s"), dirtyRev+1, (LPCTSTR)ids[nSectors].ToString() );
+						#ifdef UNICODE
+							::wnsprintf( labelBuffer, labelBufferCharsMax, L"\x25d9Rev%d %s", dirtyRev+1, (LPCTSTR)ids[nSectors].ToString() );
+						#else
+							WCHAR idStrW[80];
+							::MultiByteToWideChar( CP_ACP, 0, ids[nSectors].ToString(),-1, idStrW,sizeof(idStrW)/sizeof(WCHAR) );
+							::wnsprintfW( labelBuffer, labelBufferCharsMax, L"\x25d9Rev%d %s", dirtyRev+1, idStrW );
+						#endif
 						return labelBuffer;
 				}
 			}

@@ -203,15 +203,23 @@
 		return d.quot*recordLength + d.rem*nBytesInRow;
 	}
 
-	LPCTSTR CDos::CFileReaderWriter::GetRecordLabel(int logPos,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const{
+	LPCWSTR CDos::CFileReaderWriter::GetRecordLabelW(int logPos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const{
 		// populates the Buffer with label for the Record that STARTS at specified LogicalPosition, and returns the Buffer; returns Null if no Record starts at specified LogicalPosition
 		const div_t d=div( logPos, recordLength );
 		if (!d.rem){
 			CDos::CFatPath::PCItem pItem; DWORD nItems;
-			if (const LPCTSTR err=fatPath.GetItems(pItem,nItems))
-				return err;
-			else
-				return ::lstrcpyn( labelBuffer, (pItem+d.quot)->chs.sectorId.ToString(), labelBufferCharsMax );
+			#ifdef UNICODE
+				if (const LPCTSTR err=fatPath.GetItems(pItem,nItems))
+					return err;
+				else
+					return ::lstrcpyn( labelBuffer, (pItem+d.quot)->chs.sectorId.ToString(), labelBufferCharsMax );
+			#else
+				if (const LPCTSTR err=fatPath.GetItems(pItem,nItems))
+					::MultiByteToWideChar( CP_ACP, 0, err,-1, labelBuffer,labelBufferCharsMax );
+				else
+					::MultiByteToWideChar( CP_ACP, 0, (pItem+d.quot)->chs.sectorId.ToString(),-1, labelBuffer,labelBufferCharsMax );
+				return labelBuffer;
+			#endif
 		}else
 			return nullptr;
 	}

@@ -18,11 +18,10 @@
 				recordLength=HEXAEDITOR_RECORD_SIZE_INFINITE;
 		}
 
-		LPCTSTR GetRecordLabel(int logPos,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override{
+		LPCWSTR GetRecordLabelW(int logPos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override{
 			// populates the Buffer with label for the Record that STARTS at specified LogicalPosition, and returns the Buffer; returns Null if no Record starts at specified LogicalPosition
 			div_t d=div( logPos, recordLength );
 			if (!d.rem){
-				LPCTSTR result=nullptr; // assumption (no description exists for the DirectoryEntry)
 				const CDirEntriesView *const pdev=(CDirEntriesView *)param;
 				if (const auto pdt=pdev->DOS->BeginDirectoryTraversal(pdev->directory)){
 					while (pdt->AdvanceToNextEntry() && d.quot>0)
@@ -31,16 +30,18 @@
 						switch (pdt->entryType){
 							case CDos::TDirectoryTraversal::SUBDIR:
 							case CDos::TDirectoryTraversal::FILE:
-								result=::lstrcpyn( labelBuffer, pdev->DOS->GetFilePresentationNameAndExt(pdt->entry), labelBufferCharsMax );
-								break;
+								#ifdef UNICODE
+									return ::lstrcpyn( labelBuffer, pdev->DOS->GetFilePresentationNameAndExt(pdt->entry), labelBufferCharsMax );
+								#else
+									::MultiByteToWideChar( CP_ACP, 0, pdev->DOS->GetFilePresentationNameAndExt(pdt->entry),-1, labelBuffer,labelBufferCharsMax );
+									return labelBuffer;
+								#endif
 							case CDos::TDirectoryTraversal::EMPTY:
-								result=_T("[ empty ]");
-								break;
+								return L"[ empty ]";
 						}
 				}
-				return result;
-			}else
-				return nullptr;
+			}
+			return nullptr; // no description exists for the DirectoryEntry
 		}
 	};
 

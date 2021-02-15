@@ -515,14 +515,19 @@ trackNotFound:
 				if (pOutDataReady)
 					*pOutDataReady=true;
 			}
-			LPCTSTR GetRecordLabel(int logPos,PTCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override{
+			LPCWSTR GetRecordLabelW(int logPos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override{
 				// populates the Buffer with label for the Record that STARTS at specified LogicalPosition, and returns the Buffer; returns Null if no Record starts at specified LogicalPosition
 				if (logPos%image->sectorLength==0){
 					TTrack track; BYTE sectorIndex;
 					__getPhysicalAddress__( logPos, track, sectorIndex, nullptr );
 					const div_t h=div( track, image->nHeads ); // Quotient = # of Cylinders to skip, Remainder = Head in a Cylinder
 					const TSectorId tmp={ h.quot, image->sideMap[h.rem], image->firstSectorNumber+sectorIndex, image->sectorLengthCode };
-					return ::lstrcpyn( labelBuffer, tmp.ToString(), labelBufferCharsMax );
+					#ifdef UNICODE
+						return ::lstrcpyn( labelBuffer, tmp.ToString(), labelBufferCharsMax );
+					#else
+						::MultiByteToWideChar( CP_ACP, 0, tmp.ToString(),-1, labelBuffer,labelBufferCharsMax );
+						return labelBuffer;
+					#endif
 				}else
 					return nullptr;
 			}
