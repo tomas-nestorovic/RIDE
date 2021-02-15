@@ -374,9 +374,17 @@
 				TSector nSectors=__scanTrack__( track, ids, lengths );
 				int lp=scannedTracks.infos[track+1].logicalPosition;
 				while (( lp-=lengths[--nSectors] )>logPos);
-				return	logPos==lp
-						? ::lstrcpyn( labelBuffer, ids[nSectors].ToString(), labelBufferCharsMax )
-						: nullptr;
+				if (logPos!=lp)
+					return nullptr;
+				const TPhysicalAddress chs={ track>>1, track&1, ids[nSectors] };
+				switch (const Revolution::TType dirtyRev=image->GetDirtyRevolution(chs,nSectors)){
+					case Revolution::UNKNOWN:
+					case Revolution::NONE:
+						return ::lstrcpyn( labelBuffer, ids[nSectors].ToString(), labelBufferCharsMax );
+					default:
+						::wnsprintf( labelBuffer, labelBufferCharsMax, _T("!%d %s"), dirtyRev+1, (LPCTSTR)ids[nSectors].ToString() );
+						return labelBuffer;
+				}
 			}
 		};
 		// - returning a Serializer class instance

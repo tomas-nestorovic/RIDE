@@ -366,7 +366,11 @@
 				for( start=end; idEnds[end]<revEndTime; end++ );
 				lcs.Merge( rev, end-start, ids+start, idEnds+start, idProfiles+start, statuses+start );
 			}
-			for( TSector s=0; s<lcs.nUniqueSectors; lcs.uniqueSectors[s++].nRevolutions=std::max(1,tr.GetIndexCount()-1) );
+			for( TSector s=0; s<lcs.nUniqueSectors; s++ ){
+				auto &rsi=lcs.uniqueSectors[s];
+				rsi.nRevolutions=std::max( 1, tr.GetIndexCount()-1 );
+				rsi.dirtyRevolution=Revolution::NONE;
+			}
 			return new CInternalTrack( trw, lcs.uniqueSectors, lcs.nUniqueSectors );
 		}
 		return new CInternalTrack( trw, nullptr, 0 );
@@ -560,8 +564,12 @@
 					continue;
 				}
 				// . if Data already read WithoutError, returning them
+				if (pis->dirtyRevolution<Revolution::MAX){
+					rev = pis->dirtyRevolution; // modified Revolution is obligatory for any subsequent data requests
+					silentlyRecoverFromErrors=false; // can't recover if one particular Revolution already modified
+				}
 				const WORD usableSectorLength=GetUsableSectorLength(sectorId.lengthCode);
-				auto *currRev=pis->revolutions+( rev<Revolution::MAX ? rev : pis->currentRevolution );
+				auto *currRev=pis->revolutions+( rev<Revolution::MAX ? pis->currentRevolution=rev : pis->currentRevolution );
 				if (currRev->data || currRev->fdcStatus.DescribesMissingDam()) // A|B, A = some data exist, B = reattempting to read the DAM-less Sector only if automatic recovery desired
 					if (currRev->fdcStatus.IsWithoutError() || !silentlyRecoverFromErrors){ // A|B, A = returning error-free data, B = settling with any data if automatic recovery not desired
 returnData:				*outFdcStatuses++=currRev->fdcStatus;
@@ -590,6 +598,19 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 			while (nSectors-->0)
 				*outBufferData++=nullptr, *outFdcStatuses++=TFdcStatus::SectorNotFound;
 		::SetLastError( *--outBufferData ? ERROR_SUCCESS : ERROR_SECTOR_NOT_FOUND );
+	}
+
+	Revolution::TType CCapsBase::GetDirtyRevolution(RCPhysicalAddress chs,BYTE nSectorsToSkip) const{
+		// returns the Revolution that has been marked as "dirty"
+		if (const PCInternalTrack pit=internalTracks[chs.cylinder][chs.head]){
+			while (nSectorsToSkip<pit->nSectors){
+				const auto &ris=pit->sectors[nSectorsToSkip++];
+				if (ris.id==chs.sectorId)
+					return ris.dirtyRevolution;
+			}
+			return Revolution::UNKNOWN; // unknown Sector queried
+		}else
+			return Revolution::NONE; // not modified yet
 	}
 
 	TStdWinError CCapsBase::GetInsertedMediumType(TCylinder cyl,Medium::TType &rOutMediumType) const{

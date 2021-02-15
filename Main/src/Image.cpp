@@ -749,6 +749,11 @@ namespace Medium{
 		MarkSectorAsDirty(chs,0,&TFdcStatus::WithoutError);
 	}
 
+	Revolution::TType CImage::GetDirtyRevolution(RCPhysicalAddress chs,BYTE nSectorsToSkip) const{
+		// returns the Revolution that has been marked as "dirty"
+		return Revolution::UNKNOWN; // not applicable by default
+	}
+
 	TStdWinError CImage::GetInsertedMediumType(TCylinder,Medium::TType &rOutMediumType) const{
 		// recognizes a Medium inserted in the Drive; returns Windows standard i/o error
 		if (dos!=nullptr){

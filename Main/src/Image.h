@@ -45,7 +45,10 @@
 		enum TType:BYTE{
 			R0			=0,
 			R1, R2, R3, R4, R5, R6, R7,
-			MAX, // constants beyond this value should be ignored by all containers
+			MAX,
+			NONE,
+			UNKNOWN,
+			// the following constants should be ignored by all containers
 			ANY_GOOD,
 			ALL_INTERSECTED
 		};
@@ -530,6 +533,7 @@
 		PSectorData GetHealthySectorDataOfUnknownLength(TPhysicalAddress &rChs,PWORD sectorLength);
 		virtual TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus)=0;
 		void MarkSectorAsDirty(RCPhysicalAddress chs);
+		virtual Revolution::TType GetDirtyRevolution(RCPhysicalAddress chs,BYTE nSectorsToSkip) const;
 		virtual TStdWinError GetInsertedMediumType(TCylinder cyl,Medium::TType &rOutMediumType) const;
 		virtual TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber);
 		virtual bool EditSettings(bool initialEditing)=0;

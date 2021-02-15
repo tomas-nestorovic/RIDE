@@ -306,7 +306,21 @@
 
 	TStdWinError CKryoFluxBase::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus){
 		// marks Sector on a given PhysicalAddress as "dirty", plus sets it the given FdcStatus; returns Windows standard i/o error
-		return ERROR_NOT_SUPPORTED;
+		if (const PInternalTrack pit=internalTracks[chs.cylinder][chs.head]){
+			while (nSectorsToSkip<pit->nSectors){
+				auto &ris=pit->sectors[nSectorsToSkip++];
+				if (ris.id==chs.sectorId){
+					ASSERT( ris.dirtyRevolution>=Revolution::MAX||ris.dirtyRevolution==ris.currentRevolution ); // no Revolution yet marked as "dirty" or marking "dirty" the same Revolution
+					ris.dirtyRevolution=(Revolution::TType)ris.currentRevolution;
+					if (pFdcStatus)
+						ris.revolutions[ris.dirtyRevolution].fdcStatus=*pFdcStatus;
+					SetModifiedFlag(TRUE);
+					return ERROR_SUCCESS;
+				}
+			}
+			return ERROR_SECTOR_NOT_FOUND; // unknown Sector queried
+		}else
+			return ERROR_BAD_ARGUMENTS; // Track must be scanned first!
 	}
 
 	TStdWinError CKryoFluxBase::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){
