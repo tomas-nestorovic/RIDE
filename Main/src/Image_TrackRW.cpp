@@ -176,7 +176,7 @@
 			case TDecoderMethod::FDD_MARK_OGDEN:{
 				// FDC-like flux reversal decoding from Mark Ogdens's DiskTools/flux2track
 				// - reading some more from the Track for the next time
-				auto &r=profile.method.anonym;
+				auto &r=profile.method.ogden;
 				const TLogTime eTime=currentTime+profile.iwTime+r.dTime;
 				while (logTimes[iNextTime]<eTime)
 					if (*this)

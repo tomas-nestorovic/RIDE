@@ -298,7 +298,7 @@
 						TLogTime dTime;
 						bool up;
 						BYTE fCnt, aifCnt, adfCnt, pcCnt;
-					} anonym;
+					} ogden;
 				} method;
 
 				inline TProfile(){}
