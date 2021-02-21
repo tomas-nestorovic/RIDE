@@ -31,6 +31,9 @@
 					*pd++=(int)app.GetProfileInt( iniSection, iniValue, 0 )/1e8;
 				break;
 			}
+			default:
+				ASSERT(FALSE);
+				break;
 		}
 	}
 
@@ -48,6 +51,9 @@
 					app.WriteProfileInt( iniSection, iniValue, *pd++*1e8 );
 				break;
 			}
+			default:
+				ASSERT(FALSE);
+				break;
 		}
 	}
 
@@ -71,7 +77,7 @@
 		// - determination of new write pre-compensation parameters
 		const BYTE nNeighboringFluxes=2;
 		const BYTE nEvaluationFluxes=2+1+2; // "N+1+N", N = fluxes considered before/after the current flux
-		decltype(rPrecomp.v1) trialResults[9];
+		decltype(rPrecomp.latest) trialResults[9];
 		const BYTE nTrials=std::min<BYTE>( ptp.nTrials, sizeof(trialResults)/sizeof(*trialResults) );
 		const Medium::PCProperties pMediumProps=Medium::GetProperties(rPrecomp.floppyType);
 		if (!pMediumProps)
@@ -101,7 +107,10 @@
 			// . saving the test Track as zeroth Track
 			PInternalTrack pit=CInternalTrack::CreateFrom( ptp.cb, trw );
 			std::swap( pit, ptp.cb.internalTracks[ptp.cyl][0] );
-				const TStdWinError err=ptp.cb.SaveTrack( ptp.cyl, 0 );
+				const auto precompMethod0=ptp.cb.precompensation.methodVersion;
+				ptp.cb.precompensation.methodVersion=CPrecompensation::Identity;
+					const TStdWinError err=ptp.cb.SaveTrack( ptp.cyl, 0 );
+				ptp.cb.precompensation.methodVersion=precompMethod0;
 			std::swap( pit, ptp.cb.internalTracks[ptp.cyl][0] );
 			delete pit;
 			if (err!=ERROR_SUCCESS)
@@ -190,12 +199,12 @@
 nextTrial:	;
 		}
 		// - putting partial results into final one
-		::ZeroMemory( rPrecomp.v1.coeffs, sizeof(rPrecomp.v1.coeffs) );
+		::ZeroMemory( rPrecomp.latest.coeffs, sizeof(rPrecomp.latest.coeffs) );
 		for( BYTE p=0; p<2; p++ ) // even (0) and odd (1) fluxes
 			for( BYTE r=0; r<nEvaluationFluxes; r++ ){
 				for( BYTE trial=0; trial<nTrials; trial++ )
-					rPrecomp.v1.coeffs[p][r]+=trialResults[trial].coeffs[p][r];
-				rPrecomp.v1.coeffs[p][r]/=nTrials;
+					rPrecomp.latest.coeffs[p][r]+=trialResults[trial].coeffs[p][r];
+				rPrecomp.latest.coeffs[p][r]/=nTrials;
 			}
 		// - write pre-compensation parameters successfully determined using the latest Method
 		rPrecomp.methodVersion=MethodLatest;
@@ -208,7 +217,7 @@ nextTrial:	;
 		if (!driveLetter)
 			return ERROR_NOT_SUPPORTED; // flux precompensation is needed only for physical floppy drives
 		if (floppyType==Medium::UNKNOWN)
-			return ERROR_MEDIA_NOT_AVAILABLE; // unknown FloppyType to determine precompensation for
+			return ERROR_UNRECOGNIZED_MEDIA; // unknown FloppyType to determine precompensation for
 		if (!nTrials)
 			if (methodVersion==None)
 				return ERROR_INVALID_DATA; // precompensation not yet determined for this Drive and FloppyType

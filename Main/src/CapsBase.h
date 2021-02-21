@@ -83,15 +83,16 @@
 			static UINT AFX_CDECL PrecompensationDetermination_thread(PVOID pCancelableAction);
 		public:
 			const char driveLetter;
-			enum TMethodVersion:BYTE{
+			mutable enum TMethodVersion:BYTE{
 				None,
 				MethodVersion1,
-				MethodLatest	= MethodVersion1
+				MethodLatest	= MethodVersion1,
+				Identity
 			} methodVersion;
 			union{
 				struct{
 					double coeffs[2][5]; // coefficients for even (0) and odd (1) fluxes
-				} v1;
+				} v1, latest;
 			};
 
 			CPrecompensation(char driveLetter);

@@ -136,7 +136,7 @@
 					case ERROR_EVT_VERSION_TOO_OLD:
 						::wsprintf( msg, _T("Determined for drive %c using <a id=\"details\">Method %d</a>. <a id=\"compute\">Redetermine using latest Method %d</a>"), tmpPrecomp.driveLetter, tmpPrecomp.methodVersion, CPrecompensation::MethodLatest );
 						break;
-					case ERROR_MEDIA_NOT_AVAILABLE:
+					case ERROR_UNRECOGNIZED_MEDIA:
 						::wsprintf( msg, _T("No status for drive %c available.\n<a id=\"details\">Determine even so using latest Method %d</a>"), tmpPrecomp.driveLetter, CPrecompensation::MethodLatest );
 						break;
 					default:
