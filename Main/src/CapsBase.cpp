@@ -679,6 +679,8 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 			bool blankMedium=true;
 			for( TCylinder cyl=0; cyl<FDD_CYLINDERS_MAX; cyl++ )
 				blankMedium&=internalTracks[cyl][0]==internalTracks[cyl][1]; // equal only if both Null
+			// . loading pre-compensation parameters for the specified FloppyType
+			precompensation.Load( pFormat->mediumType );
 			// . if a fresh formatted new disk, we are done - as the rest is VERY time-consuming when applied for the whole disk, it's forbidden to change MediumType at this state
 			const bool newMediumTypeDifferent=floppyType!=pFormat->mediumType;
 			if (m_strPathName.IsEmpty() && !blankMedium)
@@ -707,7 +709,6 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 							auto &rit=internalTracks[cyl][head];
 							delete rit, rit=nullptr; // ... disposing it and letting DOS later read it once again
 						}
-						precompensation.Load( pFormat->mediumType );
 						return ERROR_SUCCESS;
 					}
 		}

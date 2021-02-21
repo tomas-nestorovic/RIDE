@@ -31,9 +31,6 @@
 					*pd++=(int)app.GetProfileInt( iniSection, iniValue, 0 )/1e8;
 				break;
 			}
-			default:
-				ASSERT(FALSE);
-				break;
 		}
 	}
 
@@ -51,9 +48,6 @@
 					app.WriteProfileInt( iniSection, iniValue, *pd++*1e8 );
 				break;
 			}
-			default:
-				ASSERT(FALSE);
-				break;
 		}
 	}
 
@@ -204,7 +198,7 @@ nextTrial:	;
 			for( BYTE r=0; r<nEvaluationFluxes; r++ ){
 				for( BYTE trial=0; trial<nTrials; trial++ )
 					rPrecomp.latest.coeffs[p][r]+=trialResults[trial].coeffs[p][r];
-				rPrecomp.latest.coeffs[p][r]/=nTrials;
+				rPrecomp.latest.coeffs[p][r]/=(nTrials*2); // 2 = a flux has two ends (start and end), both of which are compensated independently, hence each must contribute just a half to the final flux length
 			}
 		// - write pre-compensation parameters successfully determined using the latest Method
 		rPrecomp.methodVersion=MethodLatest;
@@ -346,8 +340,16 @@ nextTrial:	;
 		trw.RewindToIndex(0);
 		if (trw.GetCurrentTime())
 			return ERROR_INVALID_DATA;
-		// - application
+		// - extracting first N non-compensated fluxes from the Track
+		const BYTE nOrigTimes=8;
+		if (trw.GetTimesCount()<nOrigTimes) // a Track must consist of at least N fluxes
+			return ERROR_INVALID_DATA;
+		TLogTime origFluxes[nOrigTimes]; // non-compensated flux timing
 		PLogTime pt=trw.GetBuffer();
+		*origFluxes=*pt;
+		for( BYTE i=1; i<nOrigTimes; i++ )
+			origFluxes[i]=pt[i]-pt[i-1];
+		// - application
 		for( DWORD i=0; i<trw.GetTimesCount(); i++,pt++ )
 			switch (methodVersion){
 				case Identity:
@@ -357,11 +359,14 @@ nextTrial:	;
 					const BYTE COEFFS_COUNT=sizeof(coeffs)/sizeof(*coeffs);
 					const BYTE PIVOT_INDEX=COEFFS_COUNT/2;
 					if (i<trw.GetTimesCount()-COEFFS_COUNT){ // applicable range
-						double precompensatedFluxTime=0;
+						double compensation=0;
 						for( BYTE c=0; c<COEFFS_COUNT; c++ )
-							precompensatedFluxTime+=coeffs[c]*pt[c];
-						pt[PIVOT_INDEX]=precompensatedFluxTime;
+							compensation+=coeffs[c]*origFluxes[c];
+						pt[PIVOT_INDEX]+=compensation;
 					}
+					::memmove( origFluxes, origFluxes+1, (COEFFS_COUNT-1)*sizeof(TLogTime) );
+					origFluxes[COEFFS_COUNT-1]=pt[COEFFS_COUNT]-pt[COEFFS_COUNT-1];
+					break;
 				}
 				default:
 					ASSERT(FALSE);
