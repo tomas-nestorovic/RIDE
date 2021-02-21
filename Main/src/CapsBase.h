@@ -101,7 +101,7 @@
 			void Save() const;
 			TStdWinError DetermineUsingLatestMethod(const CCapsBase &cb,BYTE nTrials=4);
 			void ShowOrDetermineModal(const CCapsBase &cb);
-			bool ApplyTo(CTrackReaderWriter trw) const;
+			TStdWinError ApplyTo(const CCapsBase &cb,CTrackReaderWriter trw) const;
 		} precompensation;
 
 		const TStdWinError capsLibLoadingError;

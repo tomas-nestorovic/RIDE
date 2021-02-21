@@ -687,7 +687,8 @@
 			trw.Normalize();
 		}
 		// - pre-compensation of the temporary Track
-		//TODO
+		if (const TStdWinError err=precompensation.ApplyTo(*this,trw))
+			return err;
 		// - converting the temporary Track to "KFW" data, below streamed directly to KryoFlux
 		DWORD nBytesToWrite=TrackToKfw1( *pit );
 		#ifdef _DEBUG

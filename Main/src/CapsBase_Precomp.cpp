@@ -331,3 +331,42 @@ nextTrial:	;
 		// - showing the Dialog and processing its result
 		d.DoModal();
 	}
+
+	TStdWinError CCapsBase::CPrecompensation::ApplyTo(const CCapsBase &cb,CTrackReaderWriter trw) const{
+		// applies current Precompensation parameters (if any) to the Track - it's up to the caller to Load them!; returns Windows standard i/o error
+		// - precompensation must be determined (it's up to the caller to Load the parameters!)
+		switch (const TStdWinError err=const_cast<CPrecompensation *>(this)->DetermineUsingLatestMethod(cb,0)){
+			case ERROR_SUCCESS:
+			case ERROR_UNRECOGNIZED_MEDIA: // unformatted Medium is fine to be unrecognized
+				break;
+			default:
+				return err;
+		}
+		// - zeroth index must be at zero Time
+		trw.RewindToIndex(0);
+		if (trw.GetCurrentTime())
+			return ERROR_INVALID_DATA;
+		// - application
+		PLogTime pt=trw.GetBuffer();
+		for( DWORD i=0; i<trw.GetTimesCount(); i++,pt++ )
+			switch (methodVersion){
+				case Identity:
+					return ERROR_SUCCESS;
+				case MethodVersion1:{
+					const auto &coeffs=v1.coeffs[i&1];
+					const BYTE COEFFS_COUNT=sizeof(coeffs)/sizeof(*coeffs);
+					const BYTE PIVOT_INDEX=COEFFS_COUNT/2;
+					if (i<trw.GetTimesCount()-COEFFS_COUNT){ // applicable range
+						double precompensatedFluxTime=0;
+						for( BYTE c=0; c<COEFFS_COUNT; c++ )
+							precompensatedFluxTime+=coeffs[c]*pt[c];
+						pt[PIVOT_INDEX]=precompensatedFluxTime;
+					}
+				}
+				default:
+					ASSERT(FALSE);
+					return ERROR_UNKNOWN_COMPONENT;
+			}
+		// - precompensated successfully
+		return ERROR_SUCCESS;
+	}
