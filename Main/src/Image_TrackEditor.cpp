@@ -115,8 +115,9 @@
 								::SetViewportOrgEx( dc, 0, org.y, nullptr );
 								::SelectObject( dc, font );
 								::SetBkMode( dc, OPAQUE );
+								const TLogTime iwTimeDefaultHalf=tr.profile.iwTimeDefault/2;
 								while (continuePainting && !pe->IsEmpty()){
-									const TLogTime a=std::max(timeA,pe->tStart), z=std::min(timeZ,pe->tEnd);
+									const TLogTime a=std::max(timeA,pe->tStart+iwTimeDefaultHalf), z=std::min(timeZ,pe->tEnd+iwTimeDefaultHalf);
 									if (a<z){ // ParseEvent visible
 										const int xa=te.timeline.GetUnitCount(a)-nUnitsA, xz=te.timeline.GetUnitCount(z)-nUnitsA;
 										char label[80];
