@@ -35,6 +35,9 @@
 			STREAM = 0x0b,				// stream on/off, MSB=revs
 			MIN_TRACK = 0x0c,			// set min track (default=0)
 			MAX_TRACK = 0x0d,			// set max track (default=81)
+			RESULT_WRITE = 0x82,
+			INDEX_WRITE = 0x84,
+
 			T_SET_LINE = 0x0e,			// (default=4)
 			T_DENSITY_SELECT = 0x0f,	// (default=500000)
 			T_DRIVE_SELECT = 0x10,		// (default=60000)

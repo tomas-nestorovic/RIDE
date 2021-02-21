@@ -669,7 +669,61 @@
 
 	TStdWinError CKryoFluxDevice::SaveTrack(TCylinder cyl,THead head) const{
 		// saves the specified Track to the inserted Medium; returns Windows standard i/o error
-		return ERROR_NOT_SUPPORTED;
+		// - Track must already exist from before
+		const PInternalTrack pit=internalTracks[cyl][head];
+		if (!pit)
+			return ERROR_GEN_FAILURE;
+		// - extracting the "best" Revolution into a temporary Track
+		//TODO better
+		CTrackReaderWriter trw( pit->GetTimesCount(), CTrackReader::TDecoderMethod::FDD_KEIR_FRASER, false );
+		trw.AddIndexTime(0);
+			const TLogTime tIndex0=pit->GetIndexTime(0), tIndex1=pit->GetIndexTime(1);
+			pit->RewindToIndex(0);
+			while (pit->GetCurrentTime()<tIndex1)
+				trw.AddTime( pit->ReadTime()-tIndex0 );
+		trw.AddIndexTime( tIndex1-tIndex0 );
+		if (floppyType!=Medium::UNKNOWN){
+			trw.SetMediumType( floppyType );
+			trw.Normalize();
+		}
+		// - pre-compensation of the temporary Track
+		//TODO
+		// - converting the temporary Track to "KFW" data, below streamed directly to KryoFlux
+		DWORD nBytesToWrite=TrackToKfw1( *pit );
+		#ifdef _DEBUG
+			if (false){
+				CFile f;
+				f.Open( _T("r:\\kfw.bin"), CFile::modeCreate|CFile::modeWrite|CFile::typeBinary|CFile::shareExclusive );
+					f.Write( dataBuffer, nBytesToWrite );
+				f.Close();
+			}
+		#endif
+		// - streaming the "KFW" data to KryoFlux
+		while (!WinUsb::AbortPipe( winusb.hDeviceInterface, KF_EP_BULK_OUT ));
+		WinUsb::ResetPipe( winusb.hDeviceInterface, KF_EP_BULK_OUT );
+		while (!WinUsb::AbortPipe( winusb.hDeviceInterface, KF_EP_BULK_IN ));
+		WinUsb::ResetPipe( winusb.hDeviceInterface, KF_EP_BULK_IN );
+		do{
+			SetMotorOn();
+			SendRequest( TRequest::INDEX_WRITE, 8 );
+		}while (::strrchr(lastRequestResultMsg,'=')[1]!='8');
+		SendRequest( TRequest::INDEX_WRITE, 2 ); // waiting for an index?
+		if (!SeekTo(cyl) || !SelectHead(head) || !SetMotorOn())
+			return ERROR_NOT_READY;
+		SendRequest( TRequest::STREAM, 2 ); // start streaming
+			TStdWinError err=WriteFull( dataBuffer, nBytesToWrite );
+			if (err==ERROR_SUCCESS){
+				while (!WinUsb::AbortPipe( winusb.hDeviceInterface, KF_EP_BULK_OUT ));
+				WinUsb::ResetPipe( winusb.hDeviceInterface, KF_EP_BULK_OUT );
+				while (!WinUsb::AbortPipe( winusb.hDeviceInterface, KF_EP_BULK_IN ));
+				WinUsb::ResetPipe( winusb.hDeviceInterface, KF_EP_BULK_IN );
+				do{
+					if (err=SendRequest( TRequest::RESULT_WRITE ))
+						break;
+				}while (::strrchr(lastRequestResultMsg,'=')[1]!='0');
+			}
+		SendRequest( TRequest::STREAM, 0 ); // stop streaming
+		return err;
 	}
 
 	TSector CKryoFluxDevice::ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec,PSectorId bufferId,PWORD bufferLength,PLogTime startTimesNanoseconds,PBYTE pAvgGap3) const{
