@@ -629,7 +629,7 @@
 		totalSampleCounter=0;
 		for( tr.SetCurrentTime(0); tr; ){
 			const TLogTime currTime=tr.ReadTime();
-			int sampleCounter= TimeToStdSampleCounter(currTime)-totalSampleCounter; // temporary 64-bit precision even on 32-bit machines
+			const int sampleCounter= TimeToStdSampleCounter(currTime)-totalSampleCounter; // temporary 64-bit precision even on 32-bit machines
 			if (sampleCounter<=0){ // just to be sure
 				ASSERT(FALSE); // we shouldn't end up here!
 				continue;
@@ -679,7 +679,7 @@
 		trw.AddIndexTime(0);
 			const TLogTime tIndex0=pit->GetIndexTime(0), tIndex1=pit->GetIndexTime(1);
 			pit->RewindToIndex(0);
-			while (pit->GetCurrentTime()<tIndex1)
+			while (*pit && pit->GetCurrentTime()<tIndex1)
 				trw.AddTime( pit->ReadTime()-tIndex0 );
 		trw.AddIndexTime( tIndex1-tIndex0 );
 		if (floppyType!=Medium::UNKNOWN){
@@ -690,39 +690,34 @@
 		if (const TStdWinError err=precompensation.ApplyTo(*this,trw))
 			return err;
 		// - converting the temporary Track to "KFW" data, below streamed directly to KryoFlux
-		DWORD nBytesToWrite=TrackToKfw1( *pit );
+		DWORD nBytesToWrite=TrackToKfw1( trw );
 		#ifdef _DEBUG
 			if (false){
 				CFile f;
-				f.Open( _T("r:\\kfw.bin"), CFile::modeCreate|CFile::modeWrite|CFile::typeBinary|CFile::shareExclusive );
+				::CreateDirectory( _T("r:\\kfw"), nullptr );
+				TCHAR kfwName[80];
+				::wsprintf( kfwName, _T("r:\\kfw\\track%02d-%c.bin"), cyl, '0'+head );
+				f.Open( kfwName, CFile::modeCreate|CFile::modeWrite|CFile::typeBinary|CFile::shareExclusive );
 					f.Write( dataBuffer, nBytesToWrite );
 				f.Close();
 			}
 		#endif
-		// - streaming the "KFW" data to KryoFlux
+		// - clearing i/o pipes
 		while (!WinUsb::AbortPipe( winusb.hDeviceInterface, KF_EP_BULK_OUT ));
 		WinUsb::ResetPipe( winusb.hDeviceInterface, KF_EP_BULK_OUT );
 		while (!WinUsb::AbortPipe( winusb.hDeviceInterface, KF_EP_BULK_IN ));
 		WinUsb::ResetPipe( winusb.hDeviceInterface, KF_EP_BULK_IN );
-		do{
-			SetMotorOn();
-			SendRequest( TRequest::INDEX_WRITE, 8 );
-		}while (::strrchr(lastRequestResultMsg,'=')[1]!='8');
+		// - streaming the "KFW" data to KryoFlux
 		SendRequest( TRequest::INDEX_WRITE, 2 ); // waiting for an index?
-		if (!SeekTo(cyl) || !SelectHead(head) || !SetMotorOn())
+		if (!SetMotorOn() || !SelectHead(head) || !SeekTo(cyl))
 			return ERROR_NOT_READY;
 		SendRequest( TRequest::STREAM, 2 ); // start streaming
 			TStdWinError err=WriteFull( dataBuffer, nBytesToWrite );
-			if (err==ERROR_SUCCESS){
-				while (!WinUsb::AbortPipe( winusb.hDeviceInterface, KF_EP_BULK_OUT ));
-				WinUsb::ResetPipe( winusb.hDeviceInterface, KF_EP_BULK_OUT );
-				while (!WinUsb::AbortPipe( winusb.hDeviceInterface, KF_EP_BULK_IN ));
-				WinUsb::ResetPipe( winusb.hDeviceInterface, KF_EP_BULK_IN );
+			if (err==ERROR_SUCCESS)
 				do{
 					if (err=SendRequest( TRequest::RESULT_WRITE ))
 						break;
-				}while (::strrchr(lastRequestResultMsg,'=')[1]!='0');
-			}
+				}while (::strrchr(lastRequestResultMsg,'=')[1]=='9'); // TODO: explain why sometimes instead of '0' a return code is '3' but the Track has been written; is it a timeout? if yes, how to solve it?
 		SendRequest( TRequest::STREAM, 0 ); // stop streaming
 		return err;
 	}
@@ -824,6 +819,11 @@
 		::memcpy( internalTracks, tmp, sizeof(internalTracks) );
 		if (err!=ERROR_SUCCESS)
 			return err;
+		// - TODO: the following regard writing to disk and needs to be explained
+		do{
+			SetMotorOn();
+			SendRequest( TRequest::INDEX_WRITE, 8 );
+		}while (::strrchr(lastRequestResultMsg,'=')[1]!='8');
 		// - resetting the KryoFlux device
 		return ERROR_SUCCESS;
 	}
