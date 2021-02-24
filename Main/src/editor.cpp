@@ -190,6 +190,9 @@
 		CImage::known.AddTail( (PVOID)&TRD::Properties );
 		CImage::devices.AddTail( (PVOID)&CFDD::Properties );
 		CImage::devices.AddTail( (PVOID)&CKryoFluxDevice::Properties );
+		#ifdef _DEBUG
+			CImage::devices.AddTail( (PVOID)&CDsk5::CDummyDevice::Properties );
+		#endif
 		CDos::known.AddTail( (PVOID)&CBSDOS308::Properties );
 		CDos::known.AddTail( (PVOID)&CGDOS::Properties );
 		CDos::known.AddTail( (PVOID)&CMDOS2::Properties );
