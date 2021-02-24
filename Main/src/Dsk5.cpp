@@ -4,8 +4,8 @@
 		static const char SingleDeviceName[]=_T("DSK (Rev.5)\0");
 		return SingleDeviceName;
 	}
-	static PImage Instantiate(LPCTSTR){
-		return new CDsk5;
+	PImage CDsk5::Instantiate(LPCTSTR){
+		return new CDsk5(&Properties);
 	}
 	const CImage::TProperties CDsk5::Properties={	MAKE_IMAGE_ID('D','s','k','_','R','e','v','5'), // a unique identifier
 													Recognize,	// list of recognized device names
@@ -47,9 +47,9 @@
 
 
 
-	CDsk5::CDsk5()
+	CDsk5::CDsk5(PCProperties properties)
 		// ctor
-		: CFloppyImage(&Properties,true)
+		: CFloppyImage(properties,true)
 		, diskInfo(params) {
 		::ZeroMemory(tracks,sizeof(tracks));
 		#ifdef _DEBUG
@@ -567,3 +567,49 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		}else
 			return ERROR_BAD_COMMAND;
 	}
+
+
+
+
+
+
+
+
+
+
+
+
+	#define DEVICE_COUNT		2
+	#define DEVICE_NAME_PATTERN	_T("Dummy DSK drive %c")
+
+	LPCTSTR CDsk5::CDummyDevice::Recognize(PTCHAR deviceNameList){
+		// returns a null-separated list of dummy floppy drives
+		// - composing a list of dummy floppy drives
+		PTCHAR p=deviceNameList;
+		for( BYTE fddId=0; fddId<DEVICE_COUNT; fddId++ )
+			p+=::wsprintf( p, DEVICE_NAME_PATTERN, fddId+'0' )+1; // "+1" = null-terminated items
+		// - no further access possibilities
+		*p='\0'; // null-terminated list
+		return deviceNameList;
+	}
+
+	PImage CDsk5::CDummyDevice::Instantiate(LPCTSTR deviceName){
+		// creates and returns a KryoFluxDevice instance for a specified floppy drive
+		TCHAR fddId;
+		::sscanf( deviceName, DEVICE_NAME_PATTERN, &fddId );
+		if (fddId<'0'+DEVICE_COUNT)
+			return new CDsk5(&Properties);
+		ASSERT(FALSE);
+		::SetLastError( ERROR_BAD_DEVICE );
+		return nullptr;
+	}
+
+	const CImage::TProperties CDsk5::CDummyDevice::Properties={
+		MAKE_IMAGE_ID('D','s','k','D','u','m','m','y'), // a unique identifier
+		Recognize,	// list of recognized device names
+		Instantiate,	// instantiation function
+		nullptr, // filter
+		Medium::FLOPPY_ANY, // supported Media
+		Codec::FLOPPY_ANY, // supported Codecs
+		1,2*6144	// Sector supported min and max length
+	};

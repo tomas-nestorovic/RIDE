@@ -59,14 +59,24 @@
 		} *tracksDebug[DSK_REV5_TRACKS_MAX]; // debug information on Sectors as they appear on the Track
 		#endif
 
+		static PImage Instantiate(LPCTSTR);
+
+		CDsk5(PCProperties properties);
+
 		PTrackInfo __findTrack__(TCylinder cyl,THead head) const;
 		WORD __getSectorLength__(const TSectorInfo *si) const;
 		WORD __getTrackLength256__(const TTrackInfo *ti) const;
 		void __freeAllTracks__();
 	public:
+		class CDummyDevice sealed{
+			static LPCTSTR Recognize(PTCHAR deviceNameList);
+			static PImage Instantiate(LPCTSTR deviceName);
+		public:
+			static const TProperties Properties;
+		};
+
 		static const TProperties Properties;
 
-		CDsk5();
 		~CDsk5();
 
 		BOOL OnOpenDocument(LPCTSTR lpszPathName) override;
