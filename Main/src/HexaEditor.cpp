@@ -1178,7 +1178,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 							rcHexa.left=xHexaStart;
 							// : File content
 							const bool isEof=f->GetPosition()==f->GetLength();
-							const BYTE nBytesExpected=__firstByteInRowToLogicalPosition__(iRowA+1)-address;
+							BYTE nBytesExpected=__firstByteInRowToLogicalPosition__(iRowA+1)-address;
 							bool dataReady=false; // assumption
 							pContentAdviser->GetRecordInfo( address, nullptr, nullptr, &dataReady );
 							if (dataReady){
@@ -1194,9 +1194,12 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 									if (nNewBytesRead>0){ // some more data read - Good or Bad
 										::memset( byteStates+nBytesRead, err!=ERROR_SUCCESS, nNewBytesRead );
 										nBytesRead+=nNewBytesRead;
-									}else{ // no data read - probably because none could have been determined (e.g. fuzzy bits)
+									}else if (f->GetPosition()<f->GetLength()){ // no data read - probably because none could have been determined (e.g. fuzzy bits)
 										byteStates[nBytesRead++]=Fuzzy;
 										f->Seek( 1, CFile::current );
+									}else{
+										nBytesExpected=nBytesRead;
+										break;
 									}
 								}
 								if (nBytesRead==nBytesExpected)
