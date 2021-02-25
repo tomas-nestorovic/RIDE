@@ -669,6 +669,11 @@ errorDuringWriting:				TCHAR buf[80];
 												dos->formatBoot.mediumType,
 												targetImageProperties
 											);
+										// > preselection of current MediumType (if any recognized)
+										Medium::TType mt=Medium::UNKNOWN; // assumption (Medium not recognized)
+										dos->image->GetInsertedMediumType( 0, mt );
+										if (mt!=Medium::UNKNOWN)
+											SelectDlgComboBoxValue( ID_MEDIUM, mt );
 										// > enabling/disabling controls
 										static const WORD Controls[]={ ID_CYLINDER, ID_CYLINDER_N, ID_HEAD, ID_GAP, ID_NUMBER, ID_DEFAULT1, IDOK, 0 };
 										CheckDlgButton(
