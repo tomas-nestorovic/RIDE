@@ -1171,6 +1171,8 @@ namespace Utils{
 
 
 
+	const TSplitButtonAction TSplitButtonAction::HorizontalLine={ 0, 0, MF_SEPARATOR };
+
 	typedef const struct TSplitButtonInfo sealed{
 		const PCSplitButtonAction pAction;
 		const BYTE nActions;
@@ -1194,21 +1196,24 @@ namespace Utils{
 		const PCSplitButtonInfo psbi=(PCSplitButtonInfo)::GetWindowLong(hSplitBtn,GWL_USERDATA);
 		const WNDPROC wndProc0=psbi->wndProc0;
 		switch (msg){
-			case WM_GETDLGCODE:
-				// the SplitButton must receive all keyboard input (it may not receive a Tab keystroke if part of a dialog or CControlBar)
-				return DLGC_WANTALLKEYS;
+			case WM_CAPTURECHANGED:
+				// clicked on (either by left mouse button or using space-bar)
+				lParam=0; // treated as if clicked onto the default Action area
+				//fallthrough
 			case WM_LBUTTONDBLCLK:
 			case WM_LBUTTONDOWN:
 				// left mouse button pressed
 				if (psbi->ExistsDefaultAction() && GET_X_LPARAM(lParam)<psbi->rcClientArea.right-SPLITBUTTON_ARROW_WIDTH)
-					// A|B, A = default Action exists, B = in default Action area
+					// A&B, A = default Action exists, B = in default Action area
 					break; // base
 				else{
 					// in area of selecting additional Actions
 					CMenu mnu;
 					mnu.CreatePopupMenu();
-					for( BYTE id=!psbi->ExistsDefaultAction(); id<psbi->nActions; id++ )
-						mnu.AppendMenu( MF_STRING, psbi->pAction[id].commandId, psbi->pAction[id].commandCaption );
+					for( BYTE id=!psbi->ExistsDefaultAction(); id<psbi->nActions; id++ ){
+						const auto a=psbi->pAction[id];
+						mnu.AppendMenu( a.menuItemFlags, a.commandId, a.commandCaption );
+					}
 					POINT pt={ psbi->rcClientArea.right-SPLITBUTTON_ARROW_WIDTH, psbi->rcClientArea.bottom };
 					::ClientToScreen( hSplitBtn, &pt );
 					::TrackPopupMenu( mnu.m_hMenu, TPM_LEFTALIGN|TPM_LEFTBUTTON|TPM_RIGHTBUTTON, pt.x, pt.y, 0, ::GetParent(hSplitBtn), nullptr );
@@ -1247,7 +1252,7 @@ namespace Utils{
 						static const WCHAR Arrow=0xf036;
 						::DrawTextW( dc, &Arrow,1, &r, DT_SINGLELINE|DT_CENTER|DT_VCENTER );
 					::SelectObject(dc,hFont0);
-					// : splitting using certical line
+					// : splitting using vertical line
 					LOGPEN logPen={ PS_SOLID, {1,1}, ::GetSysColor(COLOR_BTNSHADOW) };
 					const HGDIOBJ hPen0=::SelectObject( dc, ::CreatePenIndirect(&logPen) );
 						::MoveToEx( dc, r.left, 1, nullptr );

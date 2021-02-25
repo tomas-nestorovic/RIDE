@@ -48,8 +48,11 @@ namespace Utils{
 	};
 
 	typedef const struct TSplitButtonAction sealed{
+		static const TSplitButtonAction HorizontalLine;
+
 		WORD commandId;
 		LPCTSTR commandCaption;
+		BYTE menuItemFlags;
 	} *PCSplitButtonAction;
 
 	class CRideDialog:public CDialog{

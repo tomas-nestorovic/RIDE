@@ -259,9 +259,9 @@ terminateWithError:
 									{ 0, _T("Resolve") }, // 0 = no default action
 									{ RESOLVE_EXCLUDE_ID, _T("Exclude from track") },
 									{ RESOLVE_EXCLUDE_UNKNOWN, _T("Exclude all unknown from disk") },
-									{ ID_RECOVER, _T("Recover ID or Data...") },
+									{ ID_RECOVER, _T("Recover ID or Data..."), MF_GRAYED*(!rFdcStatus.DescribesIdFieldCrcError()&&!rFdcStatus.DescribesDataFieldCrcError()) } // enabled only if either ID or Data field with error
 								};
-								ConvertDlgButtonToSplitButton( IDNO, ResolveActions, RESOLVE_OPTIONS_COUNT-1+(rFdcStatus.DescribesIdFieldCrcError()||rFdcStatus.DescribesDataFieldCrcError()) );
+								ConvertDlgButtonToSplitButton( IDNO, ResolveActions, RESOLVE_OPTIONS_COUNT );
 								EnableDlgItem( IDNO, dynamic_cast<CImageRaw *>(dp.target.get())==nullptr ); // recovering errors is allowed only if the Target Image can accept them
 							}
 							LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
