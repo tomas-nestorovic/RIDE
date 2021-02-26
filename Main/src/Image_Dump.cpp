@@ -523,6 +523,8 @@ errorDuringWriting:				TCHAR buf[80];
 		// - defining the Dialog
 		class CDumpDialog sealed:public Utils::CRideDialog{
 			const PDos dos;
+			CRideApp::CRecentFileListEx mruDevices;
+			Utils::TSplitButtonAction actions[10];
 
 			void PreInitDialog() override{
 				// dialog initialization
@@ -531,6 +533,21 @@ errorDuringWriting:				TCHAR buf[80];
 				// . adjusting text in button next to FillerByte edit box
 				if (dos->properties==&CUnknownDos::Properties)
 					SetDlgItemText( ID_DEFAULT1, _T("Random value") );
+				// . showing devices recently dumped to in hidden menu
+				static const Utils::TSplitButtonAction OpenDialogAction={ ID_FILE, _T("Select...") };
+				Utils::TSplitButtonAction *pAction=actions;
+				*pAction++=OpenDialogAction;
+				*pAction++=Utils::TSplitButtonAction::HorizontalLine;
+				if (!mruDevices[0].IsEmpty())
+					for( int i=0; !mruDevices[i].IsEmpty(); i++ ){
+						const Utils::TSplitButtonAction item={ ID_FILE_MRU_FIRST+i, mruDevices[i] };
+						*pAction++=item;
+					}
+				else{
+					static const Utils::TSplitButtonAction NoMruDevices={ ID_FILE, _T("No recent target devices"), MF_GRAYED };
+					*pAction++=NoMruDevices;
+				}
+				ConvertDlgButtonToSplitButton( ID_FILE, actions, pAction-actions );
 			}
 			void DoDataExchange(CDataExchange *pDX) override{
 				// transferring data to and from controls
@@ -643,7 +660,7 @@ errorDuringWriting:				TCHAR buf[80];
 								const TCHAR c=*dumpParams.targetFileName;
 								*dumpParams.targetFileName='\0';
 								if (targetImageProperties=app.DoPromptFileName( dumpParams.targetFileName, true, AFX_IDS_SAVEFILE, 0, nullptr )){
-									// : compacting FileName in order to be better displayable on the button
+setDestination:						// : compacting FileName in order to be better displayable on the button
 									CWnd *const pBtnFile=GetDlgItem(ID_FILE);
 									RECT r;
 									pBtnFile->GetClientRect(&r);
@@ -698,6 +715,19 @@ errorDuringWriting:				TCHAR buf[80];
 							case MAKELONG(ID_CYLINDER_N,EN_CHANGE):
 								Invalidate();
 								break;
+							case IDOK:
+								if (targetImageProperties && targetImageProperties->IsRealDevice())
+									mruDevices.Add( dumpParams.targetFileName, &CUnknownDos::Properties, targetImageProperties );
+								break;
+							default:
+								if (ID_FILE_MRU_FIRST<=wParam && wParam<=ID_FILE_MRU_LAST){
+									wParam-=ID_FILE_MRU_FIRST;
+									targetImageProperties=mruDevices.GetMruDevice(wParam);
+									::lstrcpy( dumpParams.targetFileName, mruDevices[wParam] );
+									wParam=ID_FILE;
+									goto setDestination;
+								}else
+									break;
 						}
 						break;
 					case WM_NOTIFY:
@@ -752,9 +782,16 @@ errorDuringWriting:				TCHAR buf[80];
 				// ctor
 				: Utils::CRideDialog(IDR_IMAGE_DUMP)
 				, dos(_dos) , targetImageProperties(nullptr) , dumpParams(_dos)
+				, mruDevices( CRecentFileList(0,INI_DUMP,_T("MruDev%d"),4) )
 				, realtimeThreadPriority(BST_UNCHECKED)
 				, showReport(BST_CHECKED) {
 				::lstrcpy( dumpParams.targetFileName, ELLIPSIS );
+				mruDevices.ReadList();
+			}
+
+			~CDumpDialog(){
+				// dtor
+				mruDevices.WriteList();
 			}
 		} d(dos);
 		// - showing Dialog and processing its result

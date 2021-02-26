@@ -111,11 +111,23 @@ namespace Utils{
 
 	SIZE CRideFont::GetTextSize(LPCTSTR text,int textLength) const{
 		// determines and returns the Size of the specified Text using using this font face
+		SIZE result={ 0, 0 };
 		const CClientDC screen(nullptr);
 		const HGDIOBJ hFont0=::SelectObject( screen, m_hObject );
-			SIZE result=screen.GetTextExtent( text, textLength );
-				result.cx*=LogicalUnitScaleFactor, result.cy*=LogicalUnitScaleFactor;
+			for( LPCTSTR subA=text,subZ=subA; *subA; subZ++ )
+				switch (*subZ){
+					case '\0':
+					case '\n':{
+						const SIZE tmp=screen.GetTextExtent( subA, subZ-subA );
+						if (tmp.cx>result.cx)
+							result.cx=tmp.cx;
+						result.cy+=charHeight;
+						subA=subZ+(*subZ!='\0');
+						break;
+					}
+				}
 		::SelectObject( screen, hFont0 );
+		result.cx*=LogicalUnitScaleFactor, result.cy*=LogicalUnitScaleFactor;
 		return result;
 	}
 
@@ -1173,27 +1185,29 @@ namespace Utils{
 
 	const TSplitButtonAction TSplitButtonAction::HorizontalLine={ 0, 0, MF_SEPARATOR };
 
-	typedef const struct TSplitButtonInfo sealed{
+	typedef struct TSplitButtonInfo sealed{
 		const PCSplitButtonAction pAction;
 		const BYTE nActions;
 		const WNDPROC wndProc0;
 		RECT rcClientArea;
+		TCHAR text[512];
 
 		TSplitButtonInfo(HWND hBtn,PCSplitButtonAction _pAction,BYTE _nActions,WNDPROC _wndProc0)
 			// ctor
 			: pAction(_pAction) , nActions(_nActions) , wndProc0(_wndProc0) {
 			::GetClientRect(hBtn,&rcClientArea);
+			*text='\0';
 		}
 
 		inline bool ExistsDefaultAction() const{
 			return pAction->commandId!=0;
 		}
-	} *PCSplitButtonInfo;
+	} *PSplitButtonInfo;
 
 	#define SPLITBUTTON_ARROW_WIDTH	18*LogicalUnitScaleFactor
 
 	static LRESULT WINAPI __splitButton_wndProc__(HWND hSplitBtn,UINT msg,WPARAM wParam,LPARAM lParam){
-		const PCSplitButtonInfo psbi=(PCSplitButtonInfo)::GetWindowLong(hSplitBtn,GWL_USERDATA);
+		const PSplitButtonInfo psbi=(PSplitButtonInfo)::GetWindowLong(hSplitBtn,GWL_USERDATA);
 		const WNDPROC wndProc0=psbi->wndProc0;
 		switch (msg){
 			case WM_CAPTURECHANGED:
@@ -1229,6 +1243,11 @@ namespace Utils{
 					::ReleaseCapture();
 					return 0;
 				}
+			case WM_SETTEXT:
+				// text about to change
+				::strncpy( psbi->text, (LPCTSTR)lParam, sizeof(psbi->text)/sizeof(TCHAR) );
+				::InvalidateRect( hSplitBtn, nullptr, TRUE );
+				return 0;
 			case WM_PAINT:{
 				// drawing
 				// . base
@@ -1241,8 +1260,11 @@ namespace Utils{
 					r.right-=SPLITBUTTON_ARROW_WIDTH;
 					if (!::IsWindowEnabled(hSplitBtn))
 						::SetTextColor( dc, ::GetSysColor(COLOR_GRAYTEXT) );
-					const HGDIOBJ hFont0=::SelectObject( dc, (HGDIOBJ)::SendMessage(::GetParent(hSplitBtn),WM_GETFONT,0,0) );
-						::DrawText( dc, psbi->pAction->commandCaption,-1, &r, DT_SINGLELINE|DT_CENTER|DT_VCENTER );
+					const CRideFont fontParent( ::GetParent(hSplitBtn) );
+					const HGDIOBJ hFont0=::SelectObject( dc, fontParent );
+						const SIZE textSize=fontParent.GetTextSize( psbi->text );
+						r.left=std::max( (r.right-textSize.cx)/2, 0L ), r.top=std::max( (r.bottom-textSize.cy)/2, 0L );
+						::DrawText( dc, psbi->text,-1, &r, DT_LEFT|DT_TOP );
 					//::SelectObject(dc,hFont0);
 					// : arrow
 					r=psbi->rcClientArea;
@@ -1276,7 +1298,7 @@ namespace Utils{
 	void CRideDialog::ConvertDlgButtonToSplitButton(WORD id,PCSplitButtonAction pAction,BYTE nActions) const{
 		// converts an existing standard button to a SplitButton featuring specified additional Actions
 		const HWND hStdBtn=GetDlgItemHwnd(id);
-		::SetWindowText(hStdBtn,nullptr);
+		::SetWindowText(hStdBtn,nullptr); // before window procedure changed
 		::SetWindowLong(hStdBtn,GWL_ID,pAction->commandId); // 0.Action is the default
 		::SetWindowLong(hStdBtn, GWL_USERDATA,
 						(long)new TSplitButtonInfo(
@@ -1286,6 +1308,7 @@ namespace Utils{
 							(WNDPROC)::SetWindowLong( hStdBtn, GWL_WNDPROC, (long)__splitButton_wndProc__ )
 						)
 					);
+		::SetWindowText(hStdBtn,pAction->commandCaption); // after window procedure changed
 		::InvalidateRect(hStdBtn,nullptr,TRUE);
 	}
 
