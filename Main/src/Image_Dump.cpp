@@ -354,13 +354,13 @@ terminateWithError:
 														return __super::WindowProc(msg,wParam,lParam);
 													}
 												public:
-													CSectorRecoveryDialog(const CDos *dos,const TParams &rParams,const TFdcStatus &rFdcStatus)
-														: Utils::CRideDialog(IDR_IMAGE_DUMP_ERROR_RESOLUTION)
+													CSectorRecoveryDialog(CWnd *pParentWnd,const CDos *dos,const TParams &rParams,const TFdcStatus &rFdcStatus)
+														: Utils::CRideDialog( IDR_IMAGE_DUMP_ERROR_RESOLUTION, pParentWnd )
 														, dosProps(dos->properties) , rParams(rParams) , rFdcStatus(rFdcStatus)
 														, idFieldRecoveryType(0) , idFieldSubstituteSectorId(rParams.chs.sectorId)
 														, dataFieldRecoveryType(0) , dataFieldSubstituteFillerByte(dos->properties->sectorFillerByte) {
 													}
-												} d(dp.dos,rp,rFdcStatus);
+												} d(this,dp.dos,rp,rFdcStatus);
 												// : showing the Dialog and processing its result
 												if (d.DoModal()==IDOK){
 													switch (d.idFieldRecoveryType){
@@ -403,12 +403,12 @@ terminateWithError:
 								return __super::WindowProc(msg,wParam,lParam);
 							}
 						public:
-							CErroneousSectorDialog(const TDumpParams &dp,TParams &_rParams,PSectorData sectorData,WORD sectorLength,TFdcStatus &rFdcStatus)
+							CErroneousSectorDialog(CWnd *pParentWnd,const TDumpParams &dp,TParams &_rParams,PSectorData sectorData,WORD sectorLength,TFdcStatus &rFdcStatus)
 								// ctor
-								: Utils::CRideDialog(IDR_IMAGE_DUMP_ERROR)
+								: Utils::CRideDialog( IDR_IMAGE_DUMP_ERROR, pParentWnd )
 								, dp(dp) , rp(_rParams) , sectorData(sectorData) , sectorLength(sectorLength) , rFdcStatus(rFdcStatus) {
 							}
-						} d(dp,p,bufferSectorData[s],bufferLength[s],bufferFdcStatus[s]);
+						} d(pAction,dp,p,bufferSectorData[s],bufferLength[s],bufferFdcStatus[s]);
 						// | showing the Dialog and processing its result
 						LOG_DIALOG_DISPLAY(_T("CErroneousSectorDialog"));
 						switch (LOG_DIALOG_RESULT(d.DoModal())){
