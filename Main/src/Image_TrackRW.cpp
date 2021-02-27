@@ -136,24 +136,24 @@
 			iNextIndexPulse++;
 		}
 		// - reading next bit
-		#ifdef _DEBUG
-			if (!*this)
-				ASSERT(FALSE); // this method mustn't be called when there's nothing actually to be read!
-		#endif
 		switch (method){
 			case TDecoderMethod::FDD_KEIR_FRASER:{
 				// FDC-like flux reversal decoding from Keir Fraser's Disk-Utilities/libdisk
 				// - reading some more from the Track
 				const TLogTime iwTimeHalf=profile.iwTime/2;
-				while (logTimes[iNextTime]-currentTime<iwTimeHalf)
-					if (*this)
+				do{
+					if (!*this)
+						return 0;
+					if (logTimes[iNextTime]-currentTime<iwTimeHalf)
 						iNextTime++;
 					else
-						return 0;
+						break;
+				}while (true);
 				// - detecting zero (longer than 3/2 of an inspection window)
 				currentTime+=profile.iwTime;
 				const TLogTime diff=logTimes[iNextTime]-currentTime;
-				while (diff>=iwTimeHalf){
+				iNextTime+=logTimes[iNextTime]<=currentTime; // eventual correction of the pointer to the next time
+				if (diff>=iwTimeHalf){
 					profile.method.frasier.nConsecutiveZeros++;
 					return 0;
 				}
@@ -178,14 +178,18 @@
 				// - reading some more from the Track for the next time
 				auto &r=profile.method.ogden;
 				const TLogTime eTime=currentTime+profile.iwTime+r.dTime;
-				while (logTimes[iNextTime]<eTime)
-					if (*this)
+				do{
+					if (!*this)
+						return 0;
+					if (logTimes[iNextTime]<eTime)
 						iNextTime++;
 					else
-						return 0;
+						break;
+				}while (true);
 				// - detecting zero
 				currentTime+=profile.iwTime;
 				const TLogTime overhang=logTimes[iNextTime]-eTime;
+				iNextTime+=logTimes[iNextTime]<=currentTime; // eventual correction of the pointer to the next time
 				if (overhang>=profile.iwTime)
 					return 0;
 				// - adjust data frequency according to phase mismatch
@@ -369,17 +373,19 @@
 
 
 	namespace MFM{
+		static const CFloppyImage::TCrc16 CRC_A1A1A1=0xb4cd; // CRC of 0xa1, 0xa1, 0xa1
+
 		static BYTE DecodeByte(WORD w){
 			BYTE result=0;
 			for( BYTE n=8; n-->0; w<<=1,w<<=1 )
 				result=(result<<1)|((w&0x4000)!=0);
 			return result;
 		}
-		static WORD DecodeBigEndianWord(DWORD dw){
+		static WORD DecodeWord(DWORD dw){
 			WORD result=0;
 			for( BYTE n=16; n-->0; dw<<=1,dw<<=1 )
 				result=(result<<1)|((dw&0x40000000)!=0);
-			return (LOBYTE(result)<<8) + HIBYTE(result);
+			return result;
 		}
 	}
 
@@ -413,8 +419,8 @@
 				continue;
 			}
 			struct{
-				BYTE sync[3], idFieldAm, cyl, side, sector, length;
-			} data={ 0xa1, 0xa1, 0xa1, idam };
+				BYTE idFieldAm, cyl, side, sector, length;
+			} data={ idam };
 			if (pOutParseEvents)
 				*pOutParseEvents++=TParseEvent( TParseEvent::MARK_1BYTE, tEventStart, currentTime, idam );
 			// . reading SectorId
@@ -437,14 +443,15 @@
 			// . reading and comparing ID Field's CRC
 			tEventStart=currentTime;
 			DWORD dw;
-			const bool crcBad=!ReadBits32(dw) || MFM::DecodeBigEndianWord(dw)!=CFloppyImage::GetCrc16Ccitt(&data,sizeof(data)); // no or wrong IdField CRC
+			CFloppyImage::TCrc16 crc=0;
+			const bool crcBad=!ReadBits32(dw) || Utils::CBigEndianWord(MFM::DecodeWord(dw)).GetBigEndian()!=( crc=CFloppyImage::GetCrc16Ccitt(MFM::CRC_A1A1A1,&data,sizeof(data)) ); // no or wrong IdField CRC
 			*pOutIdStatuses++ =	crcBad 
 								? TFdcStatus::IdFieldCrcError
 								: TFdcStatus::WithoutError;
 			*pOutIdEnds++=currentTime;
 			*pOutIdProfiles++=profile;
 			if (pOutParseEvents)
-				*pOutParseEvents++=TParseEvent( crcBad?TParseEvent::CRC_BAD:TParseEvent::CRC_OK, tEventStart, currentTime, MFM::DecodeBigEndianWord(dw) );
+				*pOutParseEvents++=TParseEvent( crcBad?TParseEvent::CRC_BAD:TParseEvent::CRC_OK, tEventStart, currentTime, crc );
 			// . sector found
 			nSectors++;
 			sync1=0; // invalidating "buffered" synchronization
@@ -475,9 +482,9 @@
 		tEventStart=currentTime;
 		if (!ReadBits16(w)) // Track end encountered
 			return TFdcStatus::NoDataField;
-		const BYTE preamble[]={ 0xa1, 0xa1, 0xa1, MFM::DecodeByte(w) };
+		const BYTE dam=MFM::DecodeByte(w);
 		TFdcStatus result;
-		switch (preamble[3]&0xfe){ // branching on observed data address mark; the least significant bit is always ignored by the FDC [http://info-coach.fr/atari/documents/_mydoc/Atari-Copy-Protection.pdf]
+		switch (dam&0xfe){ // branching on observed data address mark; the least significant bit is always ignored by the FDC [http://info-coach.fr/atari/documents/_mydoc/Atari-Copy-Protection.pdf]
 			case 0xfa:
 				result=TFdcStatus::WithoutError;
 				break;
@@ -488,7 +495,7 @@
 				return TFdcStatus::NoDataField; // not the expected Data mark
 		}
 		if (pOutParseEvents)
-			*pOutParseEvents++=TParseEvent( TParseEvent::MARK_1BYTE, tEventStart, currentTime, preamble[3] );
+			*pOutParseEvents++=TParseEvent( TParseEvent::MARK_1BYTE, tEventStart, currentTime, dam );
 		// - reading specified amount of Bytes into the Buffer
 		tEventStart=currentTime;
 		PBYTE p=buffer;
@@ -507,7 +514,7 @@
 		tEventStart=currentTime;
 		DWORD dw;
 		CFloppyImage::TCrc16 crc=0;
-		const bool crcBad=!ReadBits32(dw) || MFM::DecodeBigEndianWord(dw)!=( crc=CFloppyImage::GetCrc16Ccitt(CFloppyImage::GetCrc16Ccitt(&preamble,sizeof(preamble)),buffer,p-buffer) ); // no or wrong Data Field CRC
+		const bool crcBad=!ReadBits32(dw) || Utils::CBigEndianWord(MFM::DecodeWord(dw)).GetBigEndian()!=( crc=CFloppyImage::GetCrc16Ccitt(CFloppyImage::GetCrc16Ccitt(MFM::CRC_A1A1A1,&dam,sizeof(dam)),buffer,p-buffer) ); // no or wrong Data Field CRC
 		if (crcBad){
 			result.ExtendWith( TFdcStatus::DataFieldCrcError );
 			if (pOutParseEvents){
