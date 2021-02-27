@@ -311,6 +311,7 @@
 				auto &ris=pit->sectors[nSectorsToSkip++];
 				if (ris.id==chs.sectorId){
 					ASSERT( ris.dirtyRevolution>=Revolution::MAX||ris.dirtyRevolution==ris.currentRevolution ); // no Revolution yet marked as "dirty" or marking "dirty" the same Revolution
+					for( BYTE r=0; r<ris.nRevolutions; pit->ReadSector(ris,r++) ); // making sure all Revolutions of the Sector are buffered
 					ris.dirtyRevolution=(Revolution::TType)ris.currentRevolution;
 					if (pFdcStatus)
 						ris.revolutions[ris.dirtyRevolution].fdcStatus=*pFdcStatus;

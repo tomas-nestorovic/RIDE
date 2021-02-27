@@ -379,9 +379,12 @@
 	void CCapsBase::CInternalTrack::ReadSector(TInternalSector &ris,BYTE rev){
 		// buffers specified Revolution of the Sector (assumed part of this Track)
 		auto &currRev=ris.revolutions[rev];
-		if (currRev.idEndTime>0){
+		if (currRev.idEndTime<=0)
+			// Sector's ID Field not found in specified Revolution
+			currRev.fdcStatus.ExtendWith( TFdcStatus::SectorNotFound );
+		else if (!currRev.data){ // data not yet buffered
 			// at least Sector's ID Field found in specified Revolution
-			const WORD sectorOfficialLength=GetOfficialSectorLength( ris.id.lengthCode );
+			const WORD sectorOfficialLength=ris.GetOfficialSectorLength();
 			BYTE buffer[16384]; // big enough to contain the longest possible Sector
 			currRev.fdcStatus.ExtendWith(
 				ReadData(
@@ -391,9 +394,31 @@
 			);
 			if (!currRev.fdcStatus.DescribesMissingDam()) // "some" data found
 				currRev.data=(PSectorData)::memcpy( ::malloc(sectorOfficialLength), buffer, sectorOfficialLength );
-		}else
-			// Sector's ID Field not found in specified Revolution
-			currRev.fdcStatus.ExtendWith( TFdcStatus::SectorNotFound );
+		}
+	}
+
+	void CCapsBase::CInternalTrack::FlushSectorBuffers(){
+		// spreads referential "dirty" data (if Sector modified) across each Revolution
+		for( TSector s=0; s<nSectors; s++ ){
+			const TInternalSector &ris=sectors[s];
+			if (ris.dirtyRevolution<Revolution::MAX){
+				// Sector has been modified
+				const WORD sectorOfficialDataLength=ris.GetOfficialSectorLength();
+				const auto &refRev=ris.revolutions[ris.dirtyRevolution];
+				for( BYTE r=0; r<ris.nRevolutions; r++ ){
+					const auto &rev=ris.revolutions[r];
+					if (const PSectorData data=rev.data)
+						WriteData( // spreading referential data across each Revolution
+							rev.idEndTime, rev.idEndProfile,
+							sectorOfficialDataLength,
+							(PCBYTE)::memcpy( data, refRev.data, sectorOfficialDataLength ),
+							refRev.fdcStatus
+						);
+				}
+				//ris.dirtyRevolution=Revolution::NONE; // commented out - particular Revolution remains "selected" until the end of this session
+			}
+		}
+		//modified=false; // commented out as the Track hasn't yet been saved!
 	}
 
 
@@ -805,6 +830,7 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 		ScanTrack( cyl, head );
 		// - returning the description
 		if (const PInternalTrack pit=internalTracks[cyl][head]){
+			pit->FlushSectorBuffers(); // convert all modifications into flux transitions
 			pit->SetCurrentTime(0); // just to be sure the internal TrackReader is returned in valid state (as invalid state indicates this functionality is not supported)
 			return *pit;
 		}else

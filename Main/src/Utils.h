@@ -185,6 +185,10 @@ namespace Utils{
 
 		WORD operator=(WORD newValue);
 		operator WORD() const;
+
+		inline WORD GetBigEndian() const{
+			return *(PCWORD)this;
+		}
 	};
 
 	class CBigEndianDWord sealed{

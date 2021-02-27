@@ -417,6 +417,10 @@
 
 		class CTrackReaderWriter:public CTrackReader{
 			const DWORD nLogTimesMax;
+
+			bool WriteBits(const bool *bits,DWORD nBits);
+			WORD WriteDataFm(WORD nBytesToWrite,PCBYTE buffer,TFdcStatus sr);
+			WORD WriteDataMfm(WORD nBytesToWrite,PCBYTE buffer,TFdcStatus sr);
 		public:
 			static const CTrackReaderWriter Invalid;
 
@@ -448,7 +452,7 @@
 			}
 
 			void AddTimes(PCLogTime logTimes,DWORD nLogTimes);
-			//bool WriteBits(PLogTime fluxes,DWORD nFluxes);
+			WORD WriteData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToWrite,PCBYTE buffer,TFdcStatus sr);
 			bool Normalize();
 			void Normalize(TLogTime correctIndexDistance);
 		};

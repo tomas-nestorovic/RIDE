@@ -363,6 +363,13 @@
 		return TFdcStatus::SectorNotFound;
 	}
 
+	WORD CImage::CTrackReaderWriter::WriteDataFm(WORD nBytesToWrite,PCBYTE buffer,TFdcStatus sr){
+		// attempts to write specified amount of Bytes in the Buffer, starting at current position; returns the amount of Bytes actually written
+		ASSERT( codec==Codec::FM );
+		//TODO
+		return 0;
+	}
+
 
 
 
@@ -374,6 +381,25 @@
 
 	namespace MFM{
 		static const CFloppyImage::TCrc16 CRC_A1A1A1=0xb4cd; // CRC of 0xa1, 0xa1, 0xa1
+
+		static bool *EncodeByte(BYTE byte,bool *bitBuffer){
+			bool prevDataBit=bitBuffer[-1];
+			for( BYTE mask=0x80; mask!=0; mask>>=1 )
+				if (byte&mask){ // current bit is a "1"
+					*bitBuffer++=false; // clock is a "0"
+					*bitBuffer++ = prevDataBit = true; // data is a "1"
+				}else{ // current bit is a "0"
+					*bitBuffer++=!prevDataBit; // insert "1" clock if previous data bit was a "0"
+					*bitBuffer++ = prevDataBit = false; // data is a "0"
+				}
+			return bitBuffer;
+		}
+		static bool *EncodeWord(WORD w,bool *bitBuffer){
+			return	EncodeByte(
+						LOBYTE(w),
+						EncodeByte( HIBYTE(w), bitBuffer ) // high Byte comes first
+					);
+		}
 
 		static BYTE DecodeByte(WORD w){
 			BYTE result=0;
@@ -527,6 +553,63 @@
 		return result;
 	}
 
+	WORD CImage::CTrackReaderWriter::WriteDataMfm(WORD nBytesToWrite,PCBYTE buffer,TFdcStatus sr){
+		// attempts to write specified amount of Bytes in the Buffer, starting at current position; returns the amount of Bytes actually written
+		ASSERT( codec==Codec::MFM );
+		// - searching for the nearest three consecutive 0xA1 distorted synchronization Bytes
+		WORD w, sync1=0; DWORD sync23=0;
+		while (*this){
+			sync23=	(sync23<<1) | ((sync1&0x8000)!=0);
+			sync1 =	(sync1<<1) | (BYTE)ReadBit();
+			if ((sync1&0xffdf)==0x4489 && (sync23&0xffdfffdf)==0x44894489)
+				break;
+		}
+		if (!*this) // Track end encountered
+			return 0;
+		const TLogTime tDataFieldMarkStart=currentTime;
+		SetCurrentTime( tDataFieldMarkStart );
+		const TProfile dataFieldMarkProfile=profile;
+		// - a Data Field mark should follow the synchronization
+		if (!ReadBits16(w)) // Track end encountered
+			return 0;
+		switch (MFM::DecodeByte(w)&0xfe){ // branching on observed data address mark; the least significant bit is always ignored by the FDC [http://info-coach.fr/atari/documents/_mydoc/Atari-Copy-Protection.pdf]
+			case 0xfa: // normal data
+			case 0xf8: // deleted data
+				break;
+			default:
+				return 0; // not the expected Data mark
+		}
+		// - the NumberOfBytesToWrite should be the same as already written!
+		for( WORD i=nBytesToWrite; i>0; i-- )
+			if (!ReadBits16(w)) // Track end encountered
+				return 0;
+		// - data should be followed by a 16-bit CRC
+		DWORD dw;
+		if (!ReadBits32(dw)) // Track end encountered
+			return 0;
+		// - rewinding back to the end of distorted 0xA1A1A1 synchronization mark
+		profile=dataFieldMarkProfile;
+		SetCurrentTime(tDataFieldMarkStart);
+		bool bits[(WORD)-1],*pBit=bits;
+		*pBit++=true; // the previous data bit in a distorted 0xA1 sync mark was a "1"
+		// - encoding the Data Field mark
+		const BYTE dam= sr.DescribesDeletedDam() ? 0xf8 : 0xfb;
+		pBit=MFM::EncodeByte( dam, pBit );
+		CFloppyImage::TCrc16 crc=CFloppyImage::GetCrc16Ccitt( MFM::CRC_A1A1A1, &dam, sizeof(dam) ); // computing the CRC along the way
+		// - encoding all Buffer data
+		crc=CFloppyImage::GetCrc16Ccitt( crc, buffer, nBytesToWrite ); // computing the CRC along the way
+		for( WORD n=nBytesToWrite; n>0; n-- )
+			pBit=MFM::EncodeByte( *buffer++, pBit );
+		// - encoding computed 16-bit CRC
+		if (sr.DescribesDataFieldCrcError())
+			crc=~crc;
+		pBit=MFM::EncodeWord( Utils::CBigEndianWord(crc).GetBigEndian(), pBit ); // CRC already big-endian, converting it to little-endian
+		// - writing the Bits
+		return	WriteBits( bits+1, pBit-bits-1 ) // "1" = the auxiliary "previous" bit of distorted 0xA1 sync mark
+				? nBytesToWrite
+				: 0;
+	}
+
 
 
 
@@ -615,6 +698,55 @@
 			// caller used its own buffer to store new LogicalTimes
 			::memcpy( this->logTimes, logTimes, nLogTimes*sizeof(TLogTime) );
 			this->nLogTimes+=nLogTimes;
+		}
+	}
+
+	bool CImage::CTrackReaderWriter::WriteBits(const bool *bits,DWORD nBits){
+		// True <=> specified amount of Bits in the buffer has successfully overwritten "nBits" immediatelly following the CurrentTime, otherwise False
+		// - determining the number of current "ones" in the immediatelly next "nBits" cells
+		const TLogTime tOverwritingStart=currentTime;
+		const TProfile overwritingStartProfile=profile;
+		DWORD nOnesPreviously=0;
+		for( DWORD n=nBits; n-->0; nOnesPreviously+=ReadBit() );
+		const TLogTime tOverwritingEnd=currentTime;
+		// - determining the number of new "ones" in the current Bits
+		DWORD nOnesCurrently=0;
+		for( DWORD n=nBits; n-->0; nOnesCurrently+=bits[n] );
+		// - overwriting the "nBits" cells with new Bits
+		SetCurrentTime(tOverwritingStart);
+		profile=overwritingStartProfile;
+		const DWORD nNewLogTimes=nLogTimes+nOnesCurrently-nOnesPreviously;
+		if (nNewLogTimes>nLogTimesMax)
+			return false;
+		const PLogTime pOverwritingStart=logTimes+iNextTime;
+		::memmove(
+			pOverwritingStart+nOnesCurrently,
+			pOverwritingStart+nOnesPreviously,
+			(nLogTimes-iNextTime-nOnesPreviously)*sizeof(TLogTime)
+		);
+		nLogTimes=nNewLogTimes;
+		const PLogTime newLogTimesTemp=(PLogTime)::calloc( nOnesCurrently, sizeof(TLogTime) );
+			PLogTime pt=newLogTimesTemp;
+			for( DWORD i=0; i++<nBits; )
+				if (*bits++)
+					*pt++=tOverwritingStart+(LONGLONG)(tOverwritingEnd-tOverwritingStart)*i/nBits;
+			::memcpy( pOverwritingStart, newLogTimesTemp, nOnesCurrently*sizeof(TLogTime) );
+		::free(newLogTimesTemp);
+		return true;
+	}
+
+	WORD CImage::CTrackReaderWriter::WriteData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToWrite,PCBYTE buffer,TFdcStatus sr){
+		// attempts to write specified amount of Bytes in the Buffer, starting after specified IdEndTime; returns the number of Bytes actually written
+		SetCurrentTime( idEndTime );
+		profile=idEndProfile;
+		switch (codec){
+			case Codec::FM:
+				return WriteDataFm( nBytesToWrite, buffer, sr );
+			case Codec::MFM:
+				return WriteDataMfm( nBytesToWrite, buffer, sr );
+			default:
+				ASSERT(FALSE); // we shouldn't end up here - all Codecs should be included in the Switch statement!
+				return 0;
 		}
 	}
 
