@@ -269,21 +269,10 @@
 	#define HEADER_HEIGHT		HEADER_LINES_COUNT*font.charHeight
 
 	int CHexaEditor::__scrollToRow__(int row){
-		// scrolls the HexaEditor so that the specified Row is shown as the first one from top; returns the Row number to which it has been really scrolled to
-		// - Row must be in expected limits
-		locker.Lock();
-			const int scrollMax=nLogicalRows-nRowsOnPage;
-		locker.Unlock();
-		if (row<0) row=0;
-		else if (row>scrollMax) row=scrollMax;
-		// - redrawing HexaEditor's client and non-client areas
-		RECT rcScroll;
-			GetClientRect(&rcScroll);
-			rcScroll.bottom=( rcScroll.top=HEADER_HEIGHT )+nRowsDisplayed*font.charHeight;
-		ScrollWindow( 0, (GetScrollPos(SB_VERT)-row)*font.charHeight, &rcScroll, &rcScroll );
-		// - displaying where it's been scrolled to
-		SetScrollPos(SB_VERT,row,TRUE); // True = redrawing the scroll-bar, not HexaEditor's canvas!
-		return row;
+		// scrolls the HexaEditor so that the specified Row is shown as the first one from top; returns the Row number which it has been really scrolled to
+		SetScrollPos( SB_VERT, row, FALSE );
+		SendMessage( WM_VSCROLL, SB_THUMBPOSITION );
+		return GetScrollPos(SB_VERT);
 	}
 
 	void CHexaEditor::__refreshVertically__(){
@@ -1008,21 +997,27 @@ leftMouseDragged:
 				// . determining the Row to scroll to
 				SCROLLINFO si;
 				GetScrollInfo( SB_VERT, &si, SIF_POS|SIF_TRACKPOS ); // getting 32-bit position
+				int row=si.nPos;
 				switch (LOWORD(wParam)){
 					case SB_PAGEUP:		// clicked into the gap above "thumb"
-						si.nPos-=nRowsOnPage;	break;
+						row-=nRowsOnPage;	break;
 					case SB_PAGEDOWN:	// clicked into the gap below "thumb"
-						si.nPos+=nRowsOnPage; break;
+						row+=nRowsOnPage; break;
 					case SB_LINEUP:		// clicked on arrow up
-						si.nPos--; break;
+						row--; break;
 					case SB_LINEDOWN:	// clicked on arrow down
-						si.nPos++; break;
+						row++; break;
 					case SB_THUMBPOSITION:	// "thumb" released
 					case SB_THUMBTRACK:		// "thumb" dragged
-						si.nPos=si.nTrackPos;	break;
+						row=si.nTrackPos;	break;
 				}
-				// . scrolling
-				__scrollToRow__(si.nPos);
+				// . redrawing HexaEditor's client and non-client areas
+				RECT rcScroll;
+					GetClientRect(&rcScroll);
+					rcScroll.bottom=( rcScroll.top=HEADER_HEIGHT )+nRowsDisplayed*font.charHeight;
+				ScrollWindow( 0, (GetScrollPos(SB_VERT)-row)*font.charHeight, &rcScroll, &rcScroll );
+				// . displaying where it's been scrolled to
+				SetScrollPos(SB_VERT,row,TRUE); // True = redrawing the scroll-bar, not HexaEditor's canvas!
 				::DestroyCaret();
 				//fallthrough (the "thumb" might have been released outside the scrollbar area)
 			}
