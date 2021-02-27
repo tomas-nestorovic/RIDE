@@ -407,7 +407,7 @@
 			if (showTimed){
 				const Utils::CRideFont &rFont=Utils::CRideFont::StdBold;
 				CPoint newOrg=pDC->GetViewportOrg();
-				newOrg.Offset( SECTOR1_X*Utils::LogicalUnitScaleFactor, VIEW_PADDING+rFont.charHeight );
+				newOrg.Offset( Utils::LogicalUnitScaleFactor*SECTOR1_X, VIEW_PADDING+rFont.charHeight );
 				const POINT oldOrg=pDC->SetViewportOrg(newOrg);
 					Utils::CTimeline( longestTrackNanoseconds, IMAGE->EstimateNanosecondsPerOneByte(), zoomLengthFactor ).Draw( *pDC, rFont );
 				pDC->SetViewportOrg(oldOrg);
@@ -421,7 +421,7 @@
 		const TTrack nTracks=IMAGE->GetTrackCount();
 		scanner.params.criticalSection.Lock();
 			scanner.params.a=std::max( 0, (iScrollY-TRACK0_Y)/TRACK_HEIGHT );
-			scanner.params.z=std::min<LONG>( nTracks, std::max( 0L, (iScrollY+(LONG)(r.Height()/Utils::LogicalUnitScaleFactor)-TRACK0_Y+TRACK_HEIGHT-1)/TRACK_HEIGHT ) );
+			scanner.params.z=std::min<LONG>( nTracks, std::max( 0L, (LONG)((iScrollY+r.Height()/Utils::LogicalUnitScaleFactor-TRACK0_Y+TRACK_HEIGHT-1)/TRACK_HEIGHT) ) );
 			scanner.params.x=scanner.params.a;
 		scanner.params.criticalSection.Unlock();
 		// - launching the Scanner of Tracks

@@ -130,7 +130,7 @@
 			for( int i=0; i<nInformation; i++,info++ )
 				if ((reportModeDisplayedInfos&1<<i)!=0){
 					::lstrcpy(buf+1,info->informationName);
-					lv.InsertColumn( i, buf, info->flags&(TFileInfo::AlignLeft|TFileInfo::AlignRight), info->columnWidthDefault*Utils::LogicalUnitScaleFactor );
+					lv.InsertColumn( i, buf, info->flags&(TFileInfo::AlignLeft|TFileInfo::AlignRight), Utils::LogicalUnitScaleFactor*info->columnWidthDefault );
 				}
 			reportModeDisplayedInfosPrev=reportModeDisplayedInfos;
 		}
@@ -302,7 +302,7 @@
 		rFont.GetObject(sizeof(lf),&lf);
 		pmis->itemHeight=	( lf.lfHeight<0 ? -lf.lfHeight : lf.lfHeight )
 							+
-							reportModeRowHeightAdjustment*Utils::LogicalUnitScaleFactor; // e.g., for the underscore "_" to be visible as well
+							Utils::LogicalUnitScaleFactor*reportModeRowHeightAdjustment; // e.g., for the underscore "_" to be visible as well
 	}
 
 	afx_msg void CFileManagerView::__changeDisplayMode__(UINT id){

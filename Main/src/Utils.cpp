@@ -4,14 +4,15 @@ namespace Utils{
 
 	#define SCREEN_DPI_DEFAULT	96
 
-	TRationalNumber::TRationalNumber(){
+	TLogicalUnitScaleFactor::TLogicalUnitScaleFactor()
+		: TRationalNumber(0,1) {
 		// ctor; computes the factor (from (0;oo)) to multiply the size of one logical unit with; returns 1 if the logical unit size doesn't have to be changed
 		const CClientDC screen(nullptr);
 		quot=std::min( ::GetDeviceCaps(screen,LOGPIXELSX), ::GetDeviceCaps(screen,LOGPIXELSY) );
 		rem=SCREEN_DPI_DEFAULT;
 	}
 
-	const TRationalNumber LogicalUnitScaleFactor;
+	const TLogicalUnitScaleFactor LogicalUnitScaleFactor;
 
 
 
@@ -486,7 +487,7 @@ namespace Utils{
 		// - drawing using a workaround to overcome the coordinate space limits
 		const int nUnitsA=GetUnitCount(timeA);
 		const auto dcSettings0=::SaveDC(dc);
-			::SetViewportOrgEx( dc, nUnitsA*LogicalUnitScaleFactor+org.x, org.y, nullptr );
+			::SetViewportOrgEx( dc, LogicalUnitScaleFactor*nUnitsA+org.x, org.y, nullptr );
 			::SelectObject( dc, font );
 			// . horizontal line representing the timeline
 			::MoveToEx( dc, 0,0, nullptr );
@@ -1066,7 +1067,7 @@ namespace Utils{
 		dc.SetTextColor( textColor );
 		DrawClosingCurlyBracket( dc, r.left, r.top, r.bottom );
 		// . text
-		r.left+=14*LogicalUnitScaleFactor;
+		r.left+=LogicalUnitScaleFactor*14;
 		const HGDIOBJ hFont0=::SelectObject( dc, GetFont()->m_hObject );
 			dc.DrawText( text,-1, &r, DT_VCENTER|DT_SINGLELINE );
 		::SelectObject(dc,hFont0);
@@ -1204,7 +1205,7 @@ namespace Utils{
 		}
 	} *PSplitButtonInfo;
 
-	#define SPLITBUTTON_ARROW_WIDTH	18*LogicalUnitScaleFactor
+	#define SPLITBUTTON_ARROW_WIDTH	(LogicalUnitScaleFactor*18)
 
 	static LRESULT WINAPI __splitButton_wndProc__(HWND hSplitBtn,UINT msg,WPARAM wParam,LPARAM lParam){
 		const PSplitButtonInfo psbi=(PSplitButtonInfo)::GetWindowLong(hSplitBtn,GWL_USERDATA);

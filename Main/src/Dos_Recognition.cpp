@@ -171,7 +171,7 @@
 				switch (msg){
 					case WM_MEASUREITEM:
 						// determining the height of a ListBox item (presumed that there are no other owner-drawn controls!)
-						((PMEASUREITEMSTRUCT)lParam)->itemHeight=38*Utils::LogicalUnitScaleFactor;
+						((PMEASUREITEMSTRUCT)lParam)->itemHeight=Utils::LogicalUnitScaleFactor*38;
 						return 0;
 					case WM_DRAWITEM:{
 						// drawing the ListBox item (presumed that there are no other owner-drawn controls!)

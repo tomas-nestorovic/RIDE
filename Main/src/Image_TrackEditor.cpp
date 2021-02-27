@@ -91,7 +91,7 @@
 							POINT org;
 							::GetViewportOrgEx( dc, &org );
 							const int nUnitsA=te.timeline.GetUnitCount(tA);
-							::SetViewportOrgEx( dc, te.timeline.GetUnitCount(tA)*Utils::LogicalUnitScaleFactor+org.x, org.y, nullptr );
+							::SetViewportOrgEx( dc, Utils::LogicalUnitScaleFactor*te.timeline.GetUnitCount(tA)+org.x, org.y, nullptr );
 								while (continuePainting && tA<timeZ){
 									rc.right=te.timeline.GetUnitCount( tZ=te.iwEndTimes[++L] )-nUnitsA;
 									p.params.locker.Lock();
@@ -424,7 +424,7 @@
 				// . changing the viewport
 				CRect rc;
 				GetClientRect(&rc);
-				pDC->SetViewportOrg( -timeline.GetUnitCount(scrollTime)*Utils::LogicalUnitScaleFactor, rc.Height()/2 );
+				pDC->SetViewportOrg( Utils::LogicalUnitScaleFactor*-timeline.GetUnitCount(scrollTime), rc.Height()/2 );
 			}
 
 			void OnPrepareDC(CDC *pDC,CPrintInfo *pInfo=nullptr) override{
@@ -491,7 +491,7 @@
 				Invalidate();
 				CRect rc;
 				GetClientRect(&rc);
-				m_lineDev.cx=std::max( timeline.GetUnitCount(tr.profile.iwTimeDefault)*Utils::LogicalUnitScaleFactor, 1 ); // in device units
+				m_lineDev.cx=std::max( (int)(Utils::LogicalUnitScaleFactor*timeline.GetUnitCount(tr.profile.iwTimeDefault)), 1 ); // in device units
 				m_pageDev.cx=rc.Width()*.9f; // in device units
 			}
 
@@ -517,7 +517,7 @@
 				painter.params.locker.Unlock();
 				PaintCursorFeaturesInverted(false);
 				ScrollWindow(	// "base"
-								(int)(timeline.GetUnitCount(scrollTime)*Utils::LogicalUnitScaleFactor) - (int)(si.nPos*Utils::LogicalUnitScaleFactor),
+								(int)(Utils::LogicalUnitScaleFactor*timeline.GetUnitCount(scrollTime)) - (int)(Utils::LogicalUnitScaleFactor*si.nPos),
 								0
 							);
 				scrollTime=t;
@@ -527,7 +527,7 @@
 			TLogTime GetCenterTime() const{
 				CRect rc;
 				GetClientRect(&rc);
-				return scrollTime+timeline.GetTime( rc.Width()/(Utils::LogicalUnitScaleFactor*2.f) );
+				return scrollTime+timeline.GetTime( rc.Width()/(Utils::LogicalUnitScaleFactor*2) );
 			}
 
 			void SetCenterTime(TLogTime t){

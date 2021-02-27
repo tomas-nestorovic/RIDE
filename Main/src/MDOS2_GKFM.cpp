@@ -204,7 +204,7 @@
 		const TGKFileManager &rGkfm=boot->reserved1.gkfm;
 		POINT org;
 		::GetViewportOrgEx(dc,&org);
-		org.x+=GKFM_ICON_PG_ZOOM_FACTOR*GKFM_WINDOW_MARGIN*Utils::LogicalUnitScaleFactor, org.y+=GKFM_ICON_PG_ZOOM_FACTOR*GKFM_WINDOW_MARGIN*Utils::LogicalUnitScaleFactor;
+		org.x+=Utils::LogicalUnitScaleFactor*GKFM_ICON_PG_ZOOM_FACTOR*GKFM_WINDOW_MARGIN, org.y+=Utils::LogicalUnitScaleFactor*GKFM_ICON_PG_ZOOM_FACTOR*GKFM_WINDOW_MARGIN;
 		::SetViewportOrgEx( dc, org.x, org.y, nullptr );
 		// - drawing the background
 		const BYTE color=rGkfm.color;
@@ -221,8 +221,8 @@
 		} vram;
 		vram.w=rGkfm.aVRam;
 		::SetViewportOrgEx(	dc,
-							org.x+GKFM_ICON_PG_ZOOM_FACTOR*( (BYTE)(vram.L<<3) - rGkfm.x )*Utils::LogicalUnitScaleFactor, // A-B, A = converted ZX->PC pixel, B = PC pixel
-							org.y+GKFM_ICON_PG_ZOOM_FACTOR*( (BYTE)(vram.H<<3&192 | vram.L>>2&56 | vram.H&7) - rGkfm.y )*Utils::LogicalUnitScaleFactor, // A|B|C, A = third, B = row, C = microrow
+							org.x+Utils::LogicalUnitScaleFactor*GKFM_ICON_PG_ZOOM_FACTOR*( (BYTE)(vram.L<<3) - rGkfm.x ), // A-B, A = converted ZX->PC pixel, B = PC pixel
+							org.y+Utils::LogicalUnitScaleFactor*GKFM_ICON_PG_ZOOM_FACTOR*( (BYTE)(vram.H<<3&192 | vram.L>>2&56 | vram.H&7) - rGkfm.y ), // A|B|C, A = third, B = row, C = microrow
 							nullptr
 						);
 		__drawIcon__( __getIconDataFromBoot__(boot), dc, GKFM_ICON_PG_ZOOM_FACTOR );
@@ -231,7 +231,7 @@
 		const HGDIOBJ hFont0=::SelectObject(dc,font.m_hObject);
 			TCHAR buf[GKFM_TEXT_MAX];
 			__getTextFromBoot__(boot,buf);
-			::SetViewportOrgEx( dc, org.x+GKFM_ICON_PG_ZOOM_FACTOR*Utils::LogicalUnitScaleFactor*rGkfm.dx, org.y+GKFM_ICON_PG_ZOOM_FACTOR*Utils::LogicalUnitScaleFactor*rGkfm.dy, nullptr );
+			::SetViewportOrgEx( dc, org.x+Utils::LogicalUnitScaleFactor*GKFM_ICON_PG_ZOOM_FACTOR*rGkfm.dx, org.y+Utils::LogicalUnitScaleFactor*GKFM_ICON_PG_ZOOM_FACTOR*rGkfm.dy, nullptr );
 			::SetTextColor(dc,RGB(ink.rgbRed,ink.rgbGreen,ink.rgbBlue));
 			::DrawText(	dc, buf,-1, &pdis->rcItem, DT_LEFT|DT_TOP );
 		::SelectObject(dc,hFont0);

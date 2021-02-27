@@ -28,7 +28,7 @@
 			};
 
 			LPCTSTR informationName;
-			WORD columnWidthDefault;
+			short columnWidthDefault;
 			BYTE flags;
 		} *PCFileInfo;
 		typedef CPtrList TFileList;

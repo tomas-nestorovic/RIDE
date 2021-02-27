@@ -98,7 +98,7 @@
 			__super::PreInitDialog();
 			// - composing the "Recently accessed locations" section
 			GetClientRect(&rcCurrContent);
-			rcCurrContent.top=55*Utils::LogicalUnitScaleFactor, rcCurrContent.left=70*Utils::LogicalUnitScaleFactor, rcCurrContent.right-=16*Utils::LogicalUnitScaleFactor;
+			rcCurrContent.top=Utils::LogicalUnitScaleFactor*55, rcCurrContent.left=Utils::LogicalUnitScaleFactor*70, rcCurrContent.right-=Utils::LogicalUnitScaleFactor*16;
 			__addCategory__( _T("Recently accessed locations"), 0xf0cd );
 				BYTE i=0;
 				for( CRideApp::CRecentFileListEx *const pMru=app.GetRecentFileList(); i<4 && i<pMru->GetSize(); i++ ){ // 4 = max # of MRU files displayed in the GuidePost
@@ -157,7 +157,7 @@
 					::FillRect( dc, &rc, Utils::CRideBrush::White );
 					// . application title
 					::SetBkMode(dc,TRANSPARENT);
-					rc.left=55*Utils::LogicalUnitScaleFactor;
+					rc.left=Utils::LogicalUnitScaleFactor*55;
 					const Utils::CRideFont fontTitle( FONT_MS_SANS_SERIF, 195, false, true );
 					const HGDIOBJ hFont0=::SelectObject( dc, fontTitle );
 						::SetTextColor( dc, 0xffecd9 );

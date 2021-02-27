@@ -28,8 +28,8 @@
 			RECT r; int windowState=SW_NORMAL;
 			_stscanf(s,_T("%d,%d,%d,%d,%d"),&r.left,&r.top,&r.right,&r.bottom,&windowState);
 			SetWindowPos(	nullptr,
-							r.left*scaleFactor, r.top*scaleFactor,
-							(r.right-r.left)*scaleFactor, (r.bottom-r.top)*scaleFactor,
+							scaleFactor*r.left, scaleFactor*r.top,
+							scaleFactor*(r.right-r.left), scaleFactor*(r.bottom-r.top),
 							SWP_NOZORDER
 						);
 			ShowWindow(windowState); // minimized/maximized/normal

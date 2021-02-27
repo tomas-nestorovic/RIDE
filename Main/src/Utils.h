@@ -147,28 +147,47 @@ namespace Utils{
 		BYTE GetZoomFactorToFitWidth(int nUnits,BYTE zoomFactorMax) const;
 	};
 
-	extern const struct TRationalNumber:public div_t{
-		TRationalNumber();
+	struct TRationalNumber{
+		long long quot,rem;
 
-		inline int operator*(long long i) const{
-			return quot*i/rem;
+		inline TRationalNumber(long long quot,long long rem)
+			: quot(quot) , rem(rem) {
 		}
-		inline bool operator!=(long long i) const{
+
+		inline operator int() const{
+			return quot/rem;
+		}
+		inline TRationalNumber operator*(BYTE i) const{
+			return TRationalNumber( quot*i, rem );
+		}
+		inline TRationalNumber operator*(short i) const{
+			return TRationalNumber( quot*i, rem );
+		}
+		inline TRationalNumber operator*(int i) const{
+			return TRationalNumber( quot*i, rem );
+		}
+		inline TRationalNumber operator*(long i) const{
+			return TRationalNumber( quot*i, rem );
+		}
+		inline TRationalNumber operator/(int i) const{
+			return TRationalNumber( quot, rem*i );
+		}
+		inline bool operator!=(int i) const{
 			return i*rem!=quot;
 		}
-	} LogicalUnitScaleFactor;
+	};
 
-	inline int operator*(int lhs,const TRationalNumber &rhs){
-		return rhs*lhs;
-	}
 	inline int &operator*=(int &lhs,const TRationalNumber &rhs){
 		return lhs=rhs*lhs;
 	}
 	inline long &operator*=(long &lhs,const TRationalNumber &rhs){
 		return lhs=rhs*lhs;
 	}
-	inline int operator/(long long lhs,const TRationalNumber &rhs){
-		return lhs*rhs.rem/rhs.quot;
+	inline TRationalNumber operator/(int lhs,const TRationalNumber &rhs){
+		return	TRationalNumber( rhs.rem*lhs, rhs.quot );
+	}
+	inline TRationalNumber operator/(long lhs,const TRationalNumber &rhs){
+		return	TRationalNumber( rhs.rem*lhs, rhs.quot );
 	}
 	inline int &operator/=(int &lhs,const TRationalNumber &rhs){
 		return lhs=operator/(lhs,rhs);
@@ -176,6 +195,10 @@ namespace Utils{
 	inline long &operator/=(long &lhs,const TRationalNumber &rhs){
 		return lhs=operator/(lhs,rhs);
 	}
+
+	extern const struct TLogicalUnitScaleFactor sealed:public TRationalNumber{
+		TLogicalUnitScaleFactor();
+	} LogicalUnitScaleFactor;
 
 	class CBigEndianWord sealed{
 		BYTE highByte,lowByte;

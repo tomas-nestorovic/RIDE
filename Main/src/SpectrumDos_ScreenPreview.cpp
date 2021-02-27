@@ -20,7 +20,7 @@
 					RECT rc;
 					GetWindowRect(&rc);
 					const short zDelta=(short)HIWORD(wParam)/WHEEL_DELTA;
-					rc.right+=zDelta*Utils::LogicalUnitScaleFactor*24, rc.bottom+=zDelta*Utils::LogicalUnitScaleFactor*24;
+					rc.right+=Utils::LogicalUnitScaleFactor*zDelta*24, rc.bottom+=Utils::LogicalUnitScaleFactor*zDelta*24;
 					SendMessage( WM_SIZING, WMSZ_TOPLEFT, (LPARAM)&rc ); // for the window to keep its aspect ratio
 					SetWindowPos( nullptr, 0,0, rc.right-rc.left, rc.bottom-rc.top, SWP_NOMOVE|SWP_NOZORDER );
 					return TRUE;
