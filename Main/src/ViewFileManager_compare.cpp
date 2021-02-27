@@ -66,9 +66,12 @@
 		if (length1||length2){
 			file1.hexaComparison.ScrollTo( file1.size-length1, true );
 			file2.hexaComparison.ScrollTo( file2.size-length1, true );
-			Utils::Information(_T("No, the files differ in content! (File names are ignored.)"));
-		}else
+			//Utils::Information(_T("No, the files differ in content! (File names are ignored.)")); // commented out as unnecessary - feedback already given by scrolling to first difference
+		}else{
+			file1.hexaComparison.ScrollTo( 0, true );
+			file2.hexaComparison.ScrollTo( 0, true );
 			Utils::Information(_T("Yes, the file contents are identical! (File names are ignored.)"));
+		}
 		file1.f->SeekToBegin(), file2.f->SeekToBegin();
 	}
 	
