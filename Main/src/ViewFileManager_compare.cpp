@@ -299,8 +299,9 @@
 													: rDialog.file1.hexaComparison;
 				rOtherHexaEditor.GetScrollInfo( SB_VERT, &si2, SIF_POS ); // getting 32-bit scroll position
 				if (si2.nPos!=si1.nPos){ // preventing from infinite loop
+					RepaintData(true);
 					rOtherHexaEditor.SetScrollInfo( SB_VERT, &si1, TRUE );
-					rOtherHexaEditor.Invalidate(FALSE);
+					rOtherHexaEditor.RepaintData(true);
 				}
 				return 0;
 			}
