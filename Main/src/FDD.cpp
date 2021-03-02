@@ -1681,9 +1681,10 @@ autodetermineLatencies:		// automatic determination of write latency values
 								CLatencyAutoDeterminationDialog(const CFDD *fdd,CWnd *parent)
 									: Utils::CRideDialog(IDR_FDD_LATENCY,parent) , floppyType(0) , usAccuracy(2) , nRepeats(3) {
 									switch (fdd->floppyType){
-										case Medium::FLOPPY_DD_525: floppyType=0; break;
-										case Medium::FLOPPY_DD: floppyType=1; break;
-										case Medium::FLOPPY_HD_350: floppyType=2; break;
+										case Medium::FLOPPY_DD: floppyType=0; break;
+										case Medium::FLOPPY_DD_525: floppyType=1; break;
+										case Medium::FLOPPY_HD_525: floppyType=2; break;
+										case Medium::FLOPPY_HD_350: floppyType=3; break;
 									}
 								}
 								void PreInitDialog() override{
@@ -1705,9 +1706,10 @@ autodetermineLatencies:		// automatic determination of write latency values
 									CBackgroundMultiActionCancelable bmac( THREAD_PRIORITY_TIME_CRITICAL );
 										Medium::TType floppyType=Medium::UNKNOWN;
 										switch (d.floppyType){
-											case 0: floppyType=Medium::FLOPPY_DD_525; break;
-											case 1: floppyType=Medium::FLOPPY_DD; break;
-											case 2: floppyType=Medium::FLOPPY_HD_350; break;
+											case 0: floppyType=Medium::FLOPPY_DD; break;
+											case 1: floppyType=Medium::FLOPPY_DD_525; break;
+											case 2: floppyType=Medium::FLOPPY_HD_525; break;
+											case 3: floppyType=Medium::FLOPPY_HD_350; break;
 										}
 										TLatencyParams lp( fdd, TIME_MICRO(1+d.usAccuracy), 1+d.nRepeats );
 										bmac.AddAction( __determineControllerAndOneByteLatency_thread__, &lp, _T("Determining controller latencies") );
