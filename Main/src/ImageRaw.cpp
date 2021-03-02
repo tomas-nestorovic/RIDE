@@ -125,7 +125,7 @@
 		// True <=> this Image has been successfully saved, otherwise False
 		// - saving
 		CFile fTmp;
-		const bool savingToCurrentFile=lpszPathName==m_strPathName;
+		const bool savingToCurrentFile= lpszPathName==m_strPathName && ::GetFileAttributes(lpszPathName)!=INVALID_FILE_ATTRIBUTES; // saving to the same file and that file exists
 		if (!savingToCurrentFile && !OpenImageForWriting(lpszPathName,&fTmp))
 			return FALSE;
 		if (f.m_hFile!=CFile::hFileNull) // handle doesn't exist when creating new Image
