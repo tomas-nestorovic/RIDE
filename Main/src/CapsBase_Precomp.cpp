@@ -77,6 +77,7 @@
 		if (!pMediumProps)
 			return pAction->TerminateWithError(ERROR_UNRECOGNIZED_MEDIA);
 		const auto &mediumProps=*pMediumProps;
+		const TExclusiveLocker locker(&ptp.cb); // locking the access so that no one can disturb during the testing
 		pAction->SetProgressTarget( nTrials+1 );
 		for( BYTE nFailures=0,trial=0; trial<nTrials; ){
 			// . composition of test Track
@@ -238,6 +239,7 @@ nextTrial:	;
 
 	void CCapsBase::CPrecompensation::ShowOrDetermineModal(const CCapsBase &cb){
 		// displays summary of precompensation Method and its parameters
+		const TExclusiveLocker locker(&cb); // no one must disturb us
 		// - defining the Dialog
 		class CPrecompDialog sealed:public Utils::CRideDialog{
 			const CCapsBase &cb;
@@ -301,12 +303,14 @@ nextTrial:	;
 								ShowReportForLoadedFloppyType();
 								break;
 							case IDRETRY:
-								if (const TStdWinError err=precomp.DetermineUsingLatestMethod(cb))
-									Utils::FatalError( _T("Couldn't determine precompensation"), err );
-								else{
-									precomp.Save();
-									ShowReportForLoadedFloppyType();
-								}
+								cb.locker.Unlock(); // giving way to parallel thread
+									if (const TStdWinError err=precomp.DetermineUsingLatestMethod(cb))
+										Utils::FatalError( _T("Couldn't determine precompensation"), err );
+									else{
+										precomp.Save();
+										ShowReportForLoadedFloppyType();
+									}
+								cb.locker.Lock();
 								break;
 						}
 						break;

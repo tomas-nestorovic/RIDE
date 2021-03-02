@@ -66,7 +66,7 @@
 
 	bool CKryoFluxBase::EditSettings(bool initialEditing){
 		// True <=> new settings have been accepted (and adopted by this Image), otherwise False
-		//EXCLUSIVELY_LOCK_THIS_IMAGE(); // commented out as the following Dialog creates a parallel thread that in turn would attempt to lock this Image, yielding a deadlock
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - defining the Dialog
 		class CParamsDialog sealed:public Utils::CRideDialog{
 			const bool initialEditing;
@@ -248,11 +248,14 @@
 							case NM_RETURN:{
 								PNMLINK pLink=(PNMLINK)lParam;
 								const LITEM &item=pLink->item;
-								if (pLink->hdr.idFrom==ID_ALIGN)
-									if (!::lstrcmpW(item.szID,L"details"))
-										tmpPrecomp.ShowOrDetermineModal(rkfb);
-									else if (!::lstrcmpW(item.szID,L"compute"))
-										tmpPrecomp.DetermineUsingLatestMethod(rkfb);
+								if (pLink->hdr.idFrom==ID_ALIGN){
+									rkfb.locker.Unlock(); // giving way to parallel thread
+										if (!::lstrcmpW(item.szID,L"details"))
+											tmpPrecomp.ShowOrDetermineModal(rkfb);
+										else if (!::lstrcmpW(item.szID,L"compute"))
+											tmpPrecomp.DetermineUsingLatestMethod(rkfb);
+									rkfb.locker.Lock();
+								}
 								break;
 							}
 						}
