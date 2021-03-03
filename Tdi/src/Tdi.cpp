@@ -113,6 +113,8 @@
 				break;
 			}
 			case WM_RBUTTONDOWN:
+				::SendMessage( hTdi, WM_LBUTTONUP, wParam, lParam ); // the left and right buttons are in exclusive relationship!
+				//fallthrough
 			case WM_LBUTTONDBLCLK:
 			case WM_LBUTTONDOWN:{
 				// left mouse button pressed
@@ -141,9 +143,8 @@
 					TabCtrl_GetItem(hTdi,tabId,&ti);
 					const PCTabInfo pti=(PCTabInfo)ti.lParam;
 					const HMENU hMenu=::CreatePopupMenu();
+						::AppendMenu( hMenu, MF_STRING|MF_GRAYED*(pti->fnCanBeClosed==TDI_TAB_CANCLOSE_NEVER), IDCLOSE, _T("Close tab") );
 						::AppendMenu( hMenu, MF_STRING, IDIGNORE, _T("Move tab") );
-						if (pti->fnCanBeClosed!=TDI_TAB_CANCLOSE_NEVER)
-							::AppendMenu( hMenu, MF_STRING, IDCLOSE, _T("Close tab") );
 						POINT cursorPos;
 						::GetCursorPos(&cursorPos);
 						switch (::TrackPopupMenu( hMenu, TPM_RETURNCMD, cursorPos.x, cursorPos.y, 0, hTdi, nullptr )){
