@@ -137,7 +137,7 @@
 						::wsprintf( msg, _T("Determined for drive %c using <a id=\"details\">Method %d</a>. <a id=\"compute\">Redetermine using latest Method %d</a>"), tmpPrecomp.driveLetter, tmpPrecomp.methodVersion, CPrecompensation::MethodLatest );
 						break;
 					case ERROR_UNRECOGNIZED_MEDIA:
-						::wsprintf( msg, _T("No status for drive %c available.\n<a id=\"details\">Determine even so using latest Method %d</a>"), tmpPrecomp.driveLetter, CPrecompensation::MethodLatest );
+						::wsprintf( msg, _T("Unknown medium in drive %c.\n<a id=\"details\">Determine even so using latest Method %d</a>"), tmpPrecomp.driveLetter, CPrecompensation::MethodLatest );
 						break;
 					default:
 						::FormatMessage(
@@ -253,7 +253,10 @@
 										if (!::lstrcmpW(item.szID,L"details"))
 											tmpPrecomp.ShowOrDetermineModal(rkfb);
 										else if (!::lstrcmpW(item.szID,L"compute"))
-											tmpPrecomp.DetermineUsingLatestMethod(rkfb);
+											if (const TStdWinError err=tmpPrecomp.DetermineUsingLatestMethod(rkfb))
+												Utils::FatalError( _T("Can't determine precompensation"), err );
+											else
+												tmpPrecomp.Save();
 									rkfb.locker.Lock();
 								}
 								break;

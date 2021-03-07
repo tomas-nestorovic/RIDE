@@ -69,7 +69,7 @@
 		const TPrecompThreadParams ptp=*(TPrecompThreadParams *)pAction->GetParams();
 		CCapsBase::CPrecompensation &rPrecomp=*(CCapsBase::CPrecompensation *)ptp.pPrecomp;
 		// - determination of new write pre-compensation parameters
-		const BYTE nNeighboringFluxes=2;
+		const BYTE nNeighboringFluxes=2; // must be an EVEN number!
 		const BYTE nEvaluationFluxes=2+1+2; // "N+1+N", N = fluxes considered before/after the current flux
 		decltype(rPrecomp.latest) trialResults[9];
 		const BYTE nTrials=std::min<BYTE>( ptp.nTrials, sizeof(trialResults)/sizeof(*trialResults) );
@@ -99,7 +99,7 @@
 			while (t<mediumProps.revolutionTime) // filling the remainder of the Track
 				trw.AddTime( t+=doubleCellTime );
 			trw.AddTime( t+=doubleCellTime ); // one extra flux
-			// . saving the test Track as zeroth Track
+			// . saving the test Track on first Side of specified Cylinder
 			PInternalTrack pit=CInternalTrack::CreateFrom( ptp.cb, trw );
 			std::swap( pit, ptp.cb.internalTracks[ptp.cyl][0] );
 				const auto precompMethod0=ptp.cb.precompensation.methodVersion;
@@ -110,7 +110,7 @@
 			delete pit;
 			if (err!=ERROR_SUCCESS)
 				return err;
-			// . reading the zeroth Track back
+			// . reading the test Track back
 			pit=ptp.cb.internalTracks[ptp.cyl][0];
 				ptp.cb.internalTracks[ptp.cyl][0]=nullptr; // forcing a new scan
 				ptp.cb.ScanTrack(ptp.cyl,0);
@@ -145,15 +145,16 @@
 			} *const A=(TMatrixRow *)::calloc( nRows, sizeof(TMatrixRow) );
 				for( BYTE p=0; p<2; p++ ){ // even (0) and odd (1) fluxes
 					// : composing matrix "A" whose rows consist of one pivot flux and its left/right neighbors, and a vector "dt" of pivot flux differences introduced during writing
-					tr.SetCurrentTime(testBeginTime);
-					for( BYTE n=nNeighboringFluxes+p; n--; t0=tr.ReadTime() ); // skipping fluxes before the current one
+					tr.SetCurrentTime( t0=testBeginTime );
+					if (p)
+						t0=tr.ReadTime();
 					TLogTime dt[nRows]; // time misrecognition of fluxes
 					for( WORD i=0; i<nRows; i++ ){
 						PBYTE row=A[i].correctDistances;
 						::memcpy( row, distances+p+i*2, nEvaluationFluxes );
 						//t0=tr.ReadTime();
 						t=tr.ReadTime();
-						dt[i]= row[nNeighboringFluxes]*mediumProps.cellTime - (t-t0);
+						dt[i]= row[0]*mediumProps.cellTime - (t-t0);
 						t0=tr.ReadTime();
 					}
 					// : using the Ordinary Least Squares method to transform an overdetermined system of equations to a normal system with matrix M and vector B
