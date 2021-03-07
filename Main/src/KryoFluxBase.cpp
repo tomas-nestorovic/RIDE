@@ -296,10 +296,11 @@
 		// - saving
 		for( TCylinder cyl=0; cyl<FDD_CYLINDERS_MAX; cyl++ )
 			for( THead head=0; head<2; head++ )
-				if (const TStdWinError err=SaveTrack(cyl,head)){
-					::SetLastError(err);
-					return FALSE;
-				}
+				if (internalTracks[cyl][head]) // Track exists
+					if (const TStdWinError err=SaveTrack(cyl,head)){
+						::SetLastError(err);
+						return FALSE;
+					}
 		// - successfully saved
 		SetModifiedFlag(FALSE);
 		return TRUE;

@@ -673,6 +673,8 @@
 		const PInternalTrack pit=internalTracks[cyl][head];
 		if (!pit)
 			return ERROR_GEN_FAILURE;
+		if (!pit->modified)
+			return ERROR_SUCCESS;
 		// - extracting the "best" Revolution into a temporary Track
 		//TODO better
 		CTrackReaderWriter trw( pit->GetTimesCount(), CTrackReader::TDecoderMethod::FDD_KEIR_FRASER, false );
@@ -719,6 +721,8 @@
 						break;
 				}while (::strrchr(lastRequestResultMsg,'=')[1]=='9'); // TODO: explain why sometimes instead of '0' a return code is '3' but the Track has been written; is it a timeout? if yes, how to solve it?
 		SendRequest( TRequest::STREAM, 0 ); // stop streaming
+		// - (successfully) saved - see TODOs
+		pit->modified=false;
 		return err;
 	}
 
