@@ -202,7 +202,7 @@
 				return nullptr;
 			}
 		trw.AddIndexTime(0);
-		const TLogTime fullRevolutionTime=nBitsPerTrackOfficial*trw.profile.iwTimeDefault;
+		const TLogTime fullRevolutionTime=nBitsPerTrackOfficial*trw.GetCurrentProfile().iwTimeDefault;
 		TLogTime currentTime=0, *pFluxTimeBuffer=trw.GetBuffer(), *pFluxTime=pFluxTimeBuffer;
 		TLogTime nextIndexTime=fullRevolutionTime;
 		for( BYTE rev=0; rev<nRevs; ){
@@ -218,9 +218,9 @@
 				// . adding new flux
 				const UDWORD i=br.GetPosition()>>3;
 				if (i<cti.timelen)
-					currentTime+= trw.profile.iwTimeDefault * cti.timebuf[i]/1000;
+					currentTime+= trw.GetCurrentProfile().iwTimeDefault * cti.timebuf[i]/1000;
 				else
-					currentTime+= trw.profile.iwTimeDefault;
+					currentTime+= trw.GetCurrentProfile().iwTimeDefault;
 				if (br.ReadBit())
 					*pFluxTime++=currentTime;
 			}

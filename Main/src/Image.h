@@ -305,7 +305,7 @@
 				TProfile(const Medium::TProperties &floppyProps,BYTE iwTimeTolerancePercent);
 
 				void Reset();
-			} profile;
+			};
 
 			typedef const struct TParseEvent sealed{
 				enum TType:BYTE{
@@ -347,6 +347,7 @@
 			DWORD iNextTime,nLogTimes;
 			TLogTime indexPulses[Revolution::MAX+1];
 			BYTE iNextIndexPulse,nIndexPulses;
+			TProfile profile;
 			TLogTime currentTime;
 			Codec::TType codec;
 			Medium::TType mediumType;
@@ -388,6 +389,12 @@
 			}
 
 			inline
+			const TProfile &GetCurrentProfile() const{
+				// returns current read Profile
+				return profile;
+			}
+
+			inline
 			void RewindToIndex(BYTE index){
 				// navigates back to the first Flux found just after the index pulse
 				SetCurrentTime( GetIndexTime(index) );
@@ -401,6 +408,7 @@
 
 
 			void SetCurrentTime(TLogTime logTime);
+			void SetCurrentTimeAndProfile(TLogTime logTime,const TProfile &profile);
 			void TruncateCurrentTime();
 			TLogTime GetIndexTime(BYTE index) const;
 			TLogTime GetTotalTime() const;

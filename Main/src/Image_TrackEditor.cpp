@@ -115,7 +115,7 @@
 								::SetViewportOrgEx( dc, 0, org.y, nullptr );
 								::SelectObject( dc, font );
 								::SetBkMode( dc, OPAQUE );
-								const TLogTime iwTimeDefaultHalf=tr.profile.iwTimeDefault/2;
+								const TLogTime iwTimeDefaultHalf=tr.GetCurrentProfile().iwTimeDefault/2;
 								while (continuePainting && !pe->IsEmpty()){
 									const TLogTime a=std::max(timeA,pe->tStart+iwTimeDefaultHalf), z=std::min(timeZ,pe->tEnd+iwTimeDefaultHalf);
 									if (a<z){ // ParseEvent visible
@@ -220,7 +220,7 @@
 			int GetInspectionWindow(TLogTime logTime) const{
 				// returns the index of inspection window at specified LogicalTime
 				ASSERT( iwEndTimes!=nullptr );
-				int L=0, R=timeline.logTimeLength/tr.profile.iwTimeMin;
+				int L=0, R=timeline.logTimeLength/tr.GetCurrentProfile().iwTimeMin;
 				do{
 					const DWORD M=(L+R)/2;
 					if (iwEndTimes[L]<=logTime && logTime<iwEndTimes[M])
@@ -491,7 +491,7 @@
 				Invalidate();
 				CRect rc;
 				GetClientRect(&rc);
-				m_lineDev.cx=std::max( (int)(Utils::LogicalUnitScaleFactor*timeline.GetUnitCount(tr.profile.iwTimeDefault)), 1 ); // in device units
+				m_lineDev.cx=std::max( (int)(Utils::LogicalUnitScaleFactor*timeline.GetUnitCount(tr.GetCurrentProfile().iwTimeDefault)), 1 ); // in device units
 				m_pageDev.cx=rc.Width()*.9f; // in device units
 			}
 
@@ -666,13 +666,14 @@
 			if (rte.timeEditor.GetInspectionWindowEndTimes()!=nullptr) // already set?
 				return pAction->TerminateWithSuccess();
 			CImage::CTrackReader tr=rte.tr;
-			tr.SetCurrentTime(0);
-			tr.profile.Reset();
-			const auto nIwsMax=tr.GetTotalTime()/tr.profile.iwTimeMin+2;
+			auto resetProfile=tr.GetCurrentProfile();
+			resetProfile.Reset();
+			tr.SetCurrentTimeAndProfile( 0, resetProfile );
+			const auto nIwsMax=tr.GetTotalTime()/resetProfile.iwTimeMin+2;
 			if (const PLogTime iwEndTimes=(PLogTime)::calloc( sizeof(TLogTime), nIwsMax )){
 				PLogTime t=iwEndTimes;
 				*t++=0; // beginning of the very first inspection window
-				for( pAction->SetProgressTarget(tr.GetTotalTime()); tr; pAction->UpdateProgress(*t++=tr.GetCurrentTime()-tr.profile.iwTimeDefault/2) )
+				for( pAction->SetProgressTarget(tr.GetTotalTime()); tr; pAction->UpdateProgress(*t++=tr.GetCurrentTime()-tr.GetCurrentProfile().iwTimeDefault/2) )
 					if (pAction->IsCancelled()){
 						::free(iwEndTimes);
 						return ERROR_CANCELLED;

@@ -62,6 +62,12 @@
 		currentTime= R<nLogTimes ? logTime : logTimes[L];
 	}
 
+	void CImage::CTrackReader::SetCurrentTimeAndProfile(TLogTime logTime,const TProfile &profile){
+		// seeks to the specified LogicalTime, setting also the specified Profile at that LogicalTime
+		SetCurrentTime(logTime);
+		this->profile=profile;
+	}
+
 	void CImage::CTrackReader::TruncateCurrentTime(){
 		// truncates CurrentTime to the nearest lower LogicalTime
 		if (!iNextTime)
@@ -267,8 +273,7 @@
 
 	TFdcStatus CImage::CTrackReader::ReadData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,LPBYTE buffer,TParseEvent *pOutParseEvents){
 		// attempts to read specified amount of Bytes into the Buffer, starting at position pointed to by the BitReader; returns the amount of Bytes actually read
-		SetCurrentTime( idEndTime );
-		profile=idEndProfile;
+		SetCurrentTimeAndProfile( idEndTime, idEndProfile );
 		TFdcStatus st;
 		switch (codec){
 			case Codec::FM:
@@ -588,8 +593,7 @@
 		if (!ReadBits32(dw)) // Track end encountered
 			return 0;
 		// - rewinding back to the end of distorted 0xA1A1A1 synchronization mark
-		profile=dataFieldMarkProfile;
-		SetCurrentTime(tDataFieldMarkStart);
+		SetCurrentTimeAndProfile( tDataFieldMarkStart, dataFieldMarkProfile );
 		bool bits[(WORD)-1],*pBit=bits;
 		*pBit++=true; // the previous data bit in a distorted 0xA1 sync mark was a "1"
 		// - encoding the Data Field mark
@@ -713,8 +717,7 @@
 		DWORD nOnesCurrently=0;
 		for( DWORD n=nBits; n-->0; nOnesCurrently+=bits[n] );
 		// - overwriting the "nBits" cells with new Bits
-		SetCurrentTime(tOverwritingStart);
-		profile=overwritingStartProfile;
+		SetCurrentTimeAndProfile( tOverwritingStart, overwritingStartProfile );
 		const DWORD nNewLogTimes=nLogTimes+nOnesCurrently-nOnesPreviously;
 		if (nNewLogTimes>nLogTimesMax)
 			return false;
@@ -737,8 +740,7 @@
 
 	WORD CImage::CTrackReaderWriter::WriteData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToWrite,PCBYTE buffer,TFdcStatus sr){
 		// attempts to write specified amount of Bytes in the Buffer, starting after specified IdEndTime; returns the number of Bytes actually written
-		SetCurrentTime( idEndTime );
-		profile=idEndProfile;
+		SetCurrentTimeAndProfile( idEndTime, idEndProfile );
 		switch (codec){
 			case Codec::FM:
 				return WriteDataFm( nBytesToWrite, buffer, sr );
