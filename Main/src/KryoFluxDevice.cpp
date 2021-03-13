@@ -677,6 +677,7 @@
 			return ERROR_SUCCESS;
 		// - extracting the "best" Revolution into a temporary Track
 		//TODO better
+		pit->FlushSectorBuffers(); // convert all modifications into flux transitions
 		CTrackReaderWriter trw( pit->GetTimesCount(), CTrackReader::TDecoderMethod::FDD_KEIR_FRASER, false );
 		trw.AddIndexTime(0);
 			const TLogTime tIndex0=pit->GetIndexTime(0), tIndex1=pit->GetIndexTime(1);
@@ -773,7 +774,7 @@
 				break;
 			// . attempting to return good data
 			if (const PCInternalTrack pit=internalTracks[cyl][head]){ // may be Null if, e.g., device manually reset, disconnected, etc.
-				if (const_cast<CKryoFluxDevice *>(this)->IsTrackHealthy(cyl,head) || !pit->nSectors) // Track explicitly healthy or without Sectors
+				if (IsTrackHealthy(cyl,head) || !pit->nSectors) // Track explicitly healthy or without Sectors
 					return pit->nSectors;
 				switch (params.calibrationAfterError){
 					case TParams::TCalibrationAfterError::NONE:

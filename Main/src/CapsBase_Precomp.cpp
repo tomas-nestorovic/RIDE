@@ -101,6 +101,7 @@
 			trw.AddTime( t+=doubleCellTime ); // one extra flux
 			// . saving the test Track on first Side of specified Cylinder
 			PInternalTrack pit=CInternalTrack::CreateFrom( ptp.cb, trw );
+			pit->modified=true; // to pass the save conditions
 			std::swap( pit, ptp.cb.internalTracks[ptp.cyl][0] );
 				const auto precompMethod0=ptp.cb.precompensation.methodVersion;
 				ptp.cb.precompensation.methodVersion=CPrecompensation::Identity;
