@@ -437,15 +437,42 @@ terminateWithError:
 {LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("formatting target"));
 				if (dp.formatJustBadTracks && dp.source->IsTrackHealthy(p.chs.cylinder,p.chs.head)){
 					if (!dp.gap3.valueValid){ // "real" Gap3 Value (i.e. the one that was used when previously formatting the disk) not yet determined
-						if (dp.target->ScanTrack( p.chs.cylinder, p.chs.head, nullptr, nullptr, nullptr, nullptr, &dp.gap3.value )) // if there are some Sectors on the Target Track ...
-							if (dp.target->IsTrackHealthy(p.chs.cylinder,p.chs.head)){ // ... and all of them are well readable ...
-								#ifdef LOGGING_ENABLED
-									LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("Avg target image Gap3"));
-									TCHAR buf[80];
-									::wsprintf(buf,_T("dp.gap3.value=%d"),dp.gap3.value);
-									LOG_MESSAGE(buf);
-								#endif
-								dp.gap3.valueValid=true; // ... then the Gap3 Value found valid and can be used as a reference value for working with the Target Image
+						BYTE tmpGap3;
+						TSectorId targetSectorIds[(TSector)-1];
+						if (TSector nTargetSectors=dp.target->ScanTrack( p.chs.cylinder, p.chs.head, nullptr, targetSectorIds, nullptr, nullptr, &tmpGap3 )) // if there are some Sectors on the Target Track ...
+							if (nSectors==nTargetSectors && dp.target->IsTrackHealthy(p.chs.cylinder,p.chs.head)){ // ... and all of them are well readable ...
+								// : composing a record of Source Track structure
+								CMapStringToPtr sectorIdCounts; // key = Sector ID, value = count
+								for( TSector i=0; i<nSectors; i++ ){
+									const CString strId=bufferId[i].ToString();
+									PVOID count=nullptr;
+									sectorIdCounts.Lookup( strId, count );
+									sectorIdCounts.SetAt( strId, (PVOID)((LONG_PTR)count+1) );
+								}
+								// : comparing the record with already formatted Target Track structure
+								while (nTargetSectors>0){
+									const CString strId=targetSectorIds[--nTargetSectors].ToString();
+									PVOID count=nullptr;
+									sectorIdCounts.Lookup( strId, count );
+									sectorIdCounts.SetAt( strId, (PVOID)((LONG_PTR)count-1) );
+								}
+								bool structuresIdentical=true; // assumption (both Source and Target Track structures are identical)
+								for( POSITION pos=sectorIdCounts.GetStartPosition(); pos; ){
+									PVOID count;
+									sectorIdCounts.GetNextAssoc( pos, CString(), count );
+									structuresIdentical=count==nullptr;
+								}
+								// : adopting recognized Gap3
+								if (structuresIdentical){
+									#ifdef LOGGING_ENABLED
+										LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("Avg target image Gap3"));
+										TCHAR buf[80];
+										::wsprintf(buf,_T("dp.gap3.value=%d"),dp.gap3.value);
+										LOG_MESSAGE(buf);
+									#endif
+									dp.gap3.value=tmpGap3;
+									dp.gap3.valueValid=true; // ... then the Gap3 Value found valid and can be used as a reference value for working with the Target Image
+								}
 							}
 					}
 					if (dp.target->PresumeHealthyTrackStructure(p.chs.cylinder,p.chs.head,nSectors,bufferId,dp.gap3.value,dp.fillerByte)!=ERROR_SUCCESS)
