@@ -207,7 +207,7 @@
 						// drawing
 						__super::OnPaint();
 						WrapDlgItemsByClosingCurlyBracketWithText( ID_NONE, ID_SECTOR, _T("if error encountered"), 0 );
-						WrapDlgItemsByClosingCurlyBracketWithText( ID_ZERO, ID_CYLINDER_N, _T("when formatting"), 0 );
+						WrapDlgItemsByClosingCurlyBracketWithText( ID_ZERO, ID_CYLINDER_N, _T("when writing"), 0 );
 						return 0;
 					case WM_COMMAND:
 						switch (wParam){

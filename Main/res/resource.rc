@@ -1614,10 +1614,10 @@ BEGIN
                     BS_AUTORADIOBUTTON,71,135,71,10
     CONTROL         "For each &sector",ID_SECTOR,"Button",BS_AUTORADIOBUTTON,
                     71,146,65,10
-    CONTROL         "Never",ID_ZERO,"Button",BS_AUTORADIOBUTTON | 
-                    WS_DISABLED | WS_GROUP,71,162,74,10
-    CONTROL         "&Each",ID_CYLINDER_N,"Button",BS_AUTORADIOBUTTON | 
-                    WS_DISABLED,71,173,31,10
+    CONTROL         "Never",ID_ZERO,"Button",BS_AUTORADIOBUTTON | WS_GROUP,
+                    71,162,74,10
+    CONTROL         "&Each",ID_CYLINDER_N,"Button",BS_AUTORADIOBUTTON,71,173,
+                    31,10
     EDITTEXT        ID_NUMBER,103,174,16,12,ES_RIGHT | ES_AUTOHSCROLL | 
                     ES_NUMBER | WS_DISABLED | NOT WS_BORDER
     LTEXT           "-th cyl.",IDC_STATIC,119,174,22,8,NOT WS_GROUP

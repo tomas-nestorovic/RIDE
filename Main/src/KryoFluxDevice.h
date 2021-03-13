@@ -70,6 +70,7 @@
 			} winusb;
 		};
 		bool fddFound;
+		mutable TCylinder lastCalibratedCylinder;
 		mutable char lastRequestResultMsg[240];
 		TCHAR firmwareVersion[100];
 		

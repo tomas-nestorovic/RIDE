@@ -141,6 +141,7 @@
 		, driver(driver) , fddId(fddId)
 		, dataBuffer( (PBYTE)::malloc(KF_BUFFER_CAPACITY) )
 		, fddFound(false)
+		, lastCalibratedCylinder(0)
 		// - connecting to a local KryoFlux device
 		, hDevice(INVALID_HANDLE_VALUE) {
 		winusb.hLibrary = winusb.hDeviceInterface = INVALID_HANDLE_VALUE;
@@ -695,6 +696,12 @@
 		TStdWinError err;
 		if ( err=precompensation.ApplyTo(*this,trw) )
 			return err;
+		// - Drive's head calibration
+		if (params.calibrationStepDuringFormatting)
+			if (std::abs(cyl-lastCalibratedCylinder)>=params.calibrationStepDuringFormatting){
+				lastCalibratedCylinder=cyl;
+				SeekHome();
+			}
 		// - writing (and optional verification)
 		char nSilentRetrials=3;
 		do{
@@ -849,6 +856,7 @@
 						nRecoveryTrials=0;
 						//fallthrough
 					case TParams::TCalibrationAfterError::FOR_EACH_SECTOR:
+						lastCalibratedCylinder=cyl;
 						SeekHome();
 						break;
 				}				
