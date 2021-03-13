@@ -29,8 +29,7 @@
 	#define INI_CALIBRATE_SECTOR_ERROR	_T("clberr")
 	#define INI_CALIBRATE_FORMATTING	_T("clbfmt")
 	#define INI_NORMALIZE_READ_TRACKS	_T("nrt")
-	#define INI_VERIFY_FORMATTING		_T("vrftr")
-	#define INI_VERIFY_WRITTEN_DATA		_T("vrfdt")
+	#define INI_VERIFY_WRITTEN_TRACKS	_T("vwt")
 
 
 	CKryoFluxBase::TParams::TParams()
@@ -43,8 +42,7 @@
 		, calibrationAfterError( (TCalibrationAfterError)app.GetProfileInt(INI_KRYOFLUX,INI_CALIBRATE_SECTOR_ERROR,TCalibrationAfterError::ONCE_PER_CYLINDER) )
 		, calibrationStepDuringFormatting( app.GetProfileInt(INI_KRYOFLUX,INI_CALIBRATE_FORMATTING,0) )
 		, normalizeReadTracks( app.GetProfileInt(INI_KRYOFLUX,INI_NORMALIZE_READ_TRACKS,true)!=0 )
-		, verifyFormattedTracks( app.GetProfileInt(INI_KRYOFLUX,INI_VERIFY_FORMATTING,true)!=0 )
-		, verifyWrittenData( app.GetProfileInt(INI_KRYOFLUX,INI_VERIFY_WRITTEN_DATA,false)!=0 )
+		, verifyWrittenTracks( app.GetProfileInt(INI_KRYOFLUX,INI_VERIFY_WRITTEN_TRACKS,true)!=0 )
 		// - volatile (current session only)
 		, doubleTrackStep(false)
 		, userForcedDoubleTrackStep(false) { // True once the ID_40D80 button in Settings dialog is pressed
@@ -60,8 +58,7 @@
 		app.WriteProfileInt( INI_KRYOFLUX, INI_CALIBRATE_SECTOR_ERROR, calibrationAfterError );
 		app.WriteProfileInt( INI_KRYOFLUX, INI_CALIBRATE_FORMATTING, calibrationStepDuringFormatting );
 		app.WriteProfileInt( INI_KRYOFLUX, INI_NORMALIZE_READ_TRACKS, normalizeReadTracks );
-		app.WriteProfileInt( INI_KRYOFLUX, INI_VERIFY_FORMATTING, verifyFormattedTracks );
-		app.WriteProfileInt( INI_KRYOFLUX, INI_VERIFY_WRITTEN_DATA, verifyWrittenData );
+		app.WriteProfileInt( INI_KRYOFLUX, INI_VERIFY_WRITTEN_TRACKS, verifyWrittenTracks );
 	}
 
 	bool CKryoFluxBase::EditSettings(bool initialEditing){
@@ -197,14 +194,10 @@
 				tmp=params.normalizeReadTracks;
 				DDX_Check( pDX,	ID_TRACK,		tmp );
 				params.normalizeReadTracks=tmp!=0;
-				// . FormattedTracksVerification
-				tmp=params.verifyFormattedTracks;
+				// . WrittenTracksVerification
+				tmp=params.verifyWrittenTracks;
 				DDX_Check( pDX,	ID_VERIFY_TRACK,	tmp );
-				params.verifyFormattedTracks=tmp!=0;
-				// . WrittenDataVerification
-				tmp=params.verifyWrittenData;
-				DDX_Check( pDX,	ID_VERIFY_SECTOR,	tmp );
-				params.verifyWrittenData=tmp!=0;
+				params.verifyWrittenTracks=tmp!=0;
 			}
 
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
@@ -250,13 +243,16 @@
 								const LITEM &item=pLink->item;
 								if (pLink->hdr.idFrom==ID_ALIGN){
 									rkfb.locker.Unlock(); // giving way to parallel thread
-										if (!::lstrcmpW(item.szID,L"details"))
-											tmpPrecomp.ShowOrDetermineModal(rkfb);
-										else if (!::lstrcmpW(item.szID,L"compute"))
-											if (const TStdWinError err=tmpPrecomp.DetermineUsingLatestMethod(rkfb))
-												Utils::FatalError( _T("Can't determine precompensation"), err );
-											else
-												tmpPrecomp.Save();
+										const bool vwt0=params.verifyWrittenTracks;
+										params.verifyWrittenTracks=false;
+											if (!::lstrcmpW(item.szID,L"details"))
+												tmpPrecomp.ShowOrDetermineModal(rkfb);
+											else if (!::lstrcmpW(item.szID,L"compute"))
+												if (const TStdWinError err=tmpPrecomp.DetermineUsingLatestMethod(rkfb))
+													Utils::FatalError( _T("Can't determine precompensation"), err );
+												else
+													tmpPrecomp.Save();
+										params.verifyWrittenTracks=vwt0;
 									rkfb.locker.Lock();
 								}
 								break;

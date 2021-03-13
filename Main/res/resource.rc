@@ -1582,13 +1582,13 @@ BEGIN
     LTEXT           "Error",ID_ERROR,15,73,47,15,WS_BORDER | NOT WS_GROUP
 END
 
-IDR_KRYOFLUX_ACCESS DIALOG DISCARDABLE  0, 0, 225, 258
+IDR_KRYOFLUX_ACCESS DIALOG DISCARDABLE  0, 0, 225, 247
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
 CAPTION "KryoFlux access options"
 FONT 8, "MS Sans Serif"
 BEGIN
-    DEFPUSHBUTTON   "OK",IDOK,115,237,50,14
-    PUSHBUTTON      "Cancel",IDCANCEL,168,237,50,14
+    DEFPUSHBUTTON   "OK",IDOK,115,226,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,168,226,50,14
     LTEXT           "Firmware:",IDC_STATIC,7,8,31,8,NOT WS_GROUP
     LTEXT           "Static",ID_SYSTEM,71,8,147,8,NOT WS_GROUP
     LTEXT           "&Precision:",IDC_STATIC,7,24,32,8
@@ -1621,12 +1621,9 @@ BEGIN
     EDITTEXT        ID_NUMBER,103,174,16,12,ES_RIGHT | ES_AUTOHSCROLL | 
                     ES_NUMBER | WS_DISABLED | NOT WS_BORDER
     LTEXT           "-th cyl.",IDC_STATIC,119,174,22,8,NOT WS_GROUP
-    CONTROL         "&Verify formatted tracks before writing any data (recommended)",
-                    ID_VERIFY_TRACK,"Button",BS_AUTOCHECKBOX | WS_DISABLED | 
-                    WS_TABSTOP,7,201,211,10
-    CONTROL         "Verify &written data (including requested data errors, if any)",
-                    ID_VERIFY_SECTOR,"Button",BS_AUTOCHECKBOX | WS_DISABLED | 
-                    WS_TABSTOP,7,212,195,10
+    CONTROL         "&Verify formatted/written tracks (recommended)",
+                    ID_VERIFY_TRACK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
+                    201,211,10
     CONTROL         "Normalize read tracks (timing correction)",ID_TRACK,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,190,141,10
 END
@@ -1953,7 +1950,7 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 218
         TOPMARGIN, 7
-        BOTTOMMARGIN, 251
+        BOTTOMMARGIN, 240
     END
 
     IDR_CAPS, DIALOG

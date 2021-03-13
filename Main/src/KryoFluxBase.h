@@ -21,7 +21,7 @@
 			} calibrationAfterError;
 			BYTE calibrationStepDuringFormatting;
 			bool normalizeReadTracks;
-			bool verifyFormattedTracks, verifyWrittenData;
+			bool verifyWrittenTracks;
 			// volatile (current session only)
 			bool doubleTrackStep, userForcedDoubleTrackStep;
 

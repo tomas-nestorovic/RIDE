@@ -667,6 +667,8 @@
 		return pb-dataBuffer;
 	}
 
+	#define ERROR_SAVE_MESSAGE_TEMPLATE	_T("Track %02d.%c saving%s failed")
+
 	TStdWinError CKryoFluxDevice::SaveTrack(TCylinder cyl,THead head) const{
 		// saves the specified Track to the inserted Medium; returns Windows standard i/o error
 		// - Track must already exist from before
@@ -690,41 +692,103 @@
 			trw.Normalize();
 		}
 		// - pre-compensation of the temporary Track
-		if (const TStdWinError err=precompensation.ApplyTo(*this,trw))
+		TStdWinError err;
+		if ( err=precompensation.ApplyTo(*this,trw) )
 			return err;
-		// - converting the temporary Track to "KFW" data, below streamed directly to KryoFlux
-		DWORD nBytesToWrite=TrackToKfw1( trw );
-		#ifdef _DEBUG
-			if (false){
-				CFile f;
-				::CreateDirectory( _T("r:\\kfw"), nullptr );
-				TCHAR kfwName[80];
-				::wsprintf( kfwName, _T("r:\\kfw\\track%02d-%c.bin"), cyl, '0'+head );
-				f.Open( kfwName, CFile::modeCreate|CFile::modeWrite|CFile::typeBinary|CFile::shareExclusive );
-					f.Write( dataBuffer, nBytesToWrite );
-				f.Close();
-			}
-		#endif
-		// - clearing i/o pipes
-		while (!WinUsb::AbortPipe( winusb.hDeviceInterface, KF_EP_BULK_OUT ));
-		WinUsb::ResetPipe( winusb.hDeviceInterface, KF_EP_BULK_OUT );
-		while (!WinUsb::AbortPipe( winusb.hDeviceInterface, KF_EP_BULK_IN ));
-		WinUsb::ResetPipe( winusb.hDeviceInterface, KF_EP_BULK_IN );
-		// - streaming the "KFW" data to KryoFlux
-		SendRequest( TRequest::INDEX_WRITE, 2 ); // waiting for an index?
-		if (!SetMotorOn() || !SelectHead(head) || !SeekTo(cyl))
-			return ERROR_NOT_READY;
-		SendRequest( TRequest::STREAM, 2 ); // start streaming
-			TStdWinError err=WriteFull( dataBuffer, nBytesToWrite );
-			if (err==ERROR_SUCCESS)
-				do{
-					if (err=SendRequest( TRequest::RESULT_WRITE ))
+		// - writing (and optional verification)
+		char nSilentRetrials=3;
+		do{
+			// . converting the temporary Track to "KFW" data, below streamed directly to KryoFlux
+			const DWORD nBytesToWrite=TrackToKfw1( trw );
+			#ifdef _DEBUG
+				if (false){
+					CFile f;
+					::CreateDirectory( _T("r:\\kfw"), nullptr );
+					TCHAR kfwName[80];
+					::wsprintf( kfwName, _T("r:\\kfw\\track%02d-%c.bin"), cyl, '0'+head );
+					f.Open( kfwName, CFile::modeCreate|CFile::modeWrite|CFile::typeBinary|CFile::shareExclusive );
+						f.Write( dataBuffer, nBytesToWrite );
+					f.Close();
+				}
+			#endif
+			// . clearing i/o pipes
+			while (!WinUsb::AbortPipe( winusb.hDeviceInterface, KF_EP_BULK_OUT ));
+			WinUsb::ResetPipe( winusb.hDeviceInterface, KF_EP_BULK_OUT );
+			while (!WinUsb::AbortPipe( winusb.hDeviceInterface, KF_EP_BULK_IN ));
+			WinUsb::ResetPipe( winusb.hDeviceInterface, KF_EP_BULK_IN );
+			// . streaming the "KFW" data to KryoFlux
+			SendRequest( TRequest::INDEX_WRITE, 2 ); // waiting for an index?
+			if (!SetMotorOn() || !SelectHead(head) || !SeekTo(cyl))
+				return ERROR_NOT_READY;
+			SendRequest( TRequest::STREAM, 2 ); // start streaming
+				err=WriteFull( dataBuffer, nBytesToWrite );
+				if (err==ERROR_SUCCESS)
+					do{
+						if (err=SendRequest( TRequest::RESULT_WRITE ))
+							break;
+					}while (::strrchr(lastRequestResultMsg,'=')[1]=='9'); // TODO: explain why sometimes instead of '0' a return code is '3' but the Track has been written; is it a timeout? if yes, how to solve it?
+			SendRequest( TRequest::STREAM, 0 ); // stop streaming
+			TCHAR msgSavingFailed[80];
+			::wsprintf( msgSavingFailed, ERROR_SAVE_MESSAGE_TEMPLATE, cyl, '0'+head, params.verifyWrittenTracks?_T(" and verification"):_T("") );
+			if (err) // writing to the device failed
+				switch (
+					nSilentRetrials-->0
+					? IDRETRY
+					: Utils::AbortRetryIgnore(msgSavingFailed,err,MB_DEFBUTTON2)
+				){
+					case IDIGNORE:	// ignoring the Error
 						break;
-				}while (::strrchr(lastRequestResultMsg,'=')[1]=='9'); // TODO: explain why sometimes instead of '0' a return code is '3' but the Track has been written; is it a timeout? if yes, how to solve it?
-		SendRequest( TRequest::STREAM, 0 ); // stop streaming
+					case IDABORT:	// aborting the saving
+						return err;
+					default:		// attempting to save the Track once more
+						continue;
+				}
+			// . write verification
+			if (!err && params.verifyWrittenTracks && pit->nSectors>0){ // can verify the Track only if A&B&C, A = writing successfull, B&C = at least one Sector is recognized in it
+				internalTracks[cyl][head]=nullptr; // forcing rescan
+					ScanTrack( cyl, head );
+					if (const PInternalTrack pitVerif=internalTracks[cyl][head]){
+						if (pitVerif->nSectors>0){
+							const PInternalTrack pitWritten=CInternalTrack::CreateFrom( *this, trw );
+								const auto &revWrittenFirstSector=pitWritten->sectors[0].revolutions[0];
+								pitWritten->SetCurrentTimeAndProfile( revWrittenFirstSector.idEndTime, revWrittenFirstSector.idEndProfile );
+								const auto &revVerifFirstSector=pitVerif->sectors[0].revolutions[0];
+								pitVerif->SetCurrentTimeAndProfile( revVerifFirstSector.idEndTime, revVerifFirstSector.idEndProfile );
+								while ( // comparing common cells until the next Index pulse is reached
+									*pitWritten && pitWritten->GetCurrentTime()<pitWritten->GetIndexTime(1)
+									&&
+									*pitVerif && pitVerif->GetCurrentTime()<pitVerif->GetIndexTime(1)
+								)
+									if (pitWritten->ReadBit()!=pitVerif->ReadBit()){
+										err=ERROR_DS_COMPARE_FALSE;
+										break;
+									}
+							delete pitWritten;
+						}else
+							err=ERROR_SECTOR_NOT_FOUND;
+						delete pitVerif;
+					}else
+						err=ERROR_GEN_FAILURE;
+				internalTracks[cyl][head]=pit;
+				if (err) // verification failed
+					switch (
+						nSilentRetrials-->0
+						? IDRETRY
+						: Utils::AbortRetryIgnore(msgSavingFailed,err,MB_DEFBUTTON2)
+					){
+						case IDIGNORE:	// ignoring the Error
+							break;
+						case IDABORT:	// aborting the saving
+							return err;
+						default:		// attempting to save the Track once more
+							continue;
+					}
+			}
+			err=ERROR_SUCCESS;
+		}while (err!=ERROR_SUCCESS);
 		// - (successfully) saved - see TODOs
 		pit->modified=false;
-		return err;
+		return ERROR_SUCCESS;
 	}
 
 	TSector CKryoFluxDevice::ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec,PSectorId bufferId,PWORD bufferLength,PLogTime startTimesNanoseconds,PBYTE pAvgGap3) const{
