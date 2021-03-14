@@ -254,6 +254,7 @@
 													tmpPrecomp.Save();
 										params.verifyWrittenTracks=vwt0;
 									rkfb.locker.Lock();
+									RefreshMediumInformation();
 								}
 								break;
 							}

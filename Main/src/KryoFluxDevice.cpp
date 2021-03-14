@@ -694,8 +694,9 @@
 		}
 		// - pre-compensation of the temporary Track
 		TStdWinError err;
-		if ( err=precompensation.ApplyTo(*this,trw) )
-			return err;
+		if (precompensation.methodVersion!=CPrecompensation::None)
+			if ( err=precompensation.ApplyTo(*this,trw) )
+				return err;
 		// - Drive's head calibration
 		if (params.calibrationStepDuringFormatting)
 			if (std::abs(cyl-lastCalibratedCylinder)>=params.calibrationStepDuringFormatting){

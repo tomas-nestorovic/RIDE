@@ -558,7 +558,7 @@
 			if (pCodec)
 				*pCodec=pit->GetCodec();
 			if (pAvgGap3)
-				*pAvgGap3=FDD_525_SECTOR_GAP3; // TODO
+				*pAvgGap3=FDD_350_SECTOR_GAP3*2/3; // TODO
 			return pit->nSectors;
 		}else
 			return 0;
