@@ -125,6 +125,7 @@
 	#define INI_MSG_READONLY	_T("msgro")
 	#define INI_MSG_FAQ			_T("1stfaq")
 	#define INI_MSG_DEVICE_SHORT _T("devshrt")
+	#define INI_MSG_REAL_DEVICES _T("devhint")
 
 	#define INI_CRASHED			_T("crash")
 
@@ -532,15 +533,22 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 	static HHOOK ofn_hHook;
 	static PTCHAR ofn_fileName;
 
-	static LRESULT CALLBACK __dlgOpen_hook__(int kod,WPARAM wParam,LPARAM lParam){
+	static LRESULT CALLBACK __dlgOpen_hook__(int code,WPARAM wParam,LPARAM lParam){
 		// hooking the "Open/Save File" dialogs
 		const LPCWPSTRUCT pcws=(LPCWPSTRUCT)lParam;
-		if (pcws->message==WM_INITDIALOG)
-			Utils::CRideDialog::SetDlgItemSingleCharUsingFont(
-				pcws->hwnd, ID_COMMENT,
-				L'\xf0e8', (HFONT)Utils::CRideFont(FONT_WINGDINGS,190,false,true).Detach() // a thick arrow right
-			);
-		else if (pcws->message==WM_NOTIFY && pcws->wParam==ID_DRIVEA) // notification regarding Drive A:
+		if (pcws->message==WM_PAINT){
+			if (::GetDlgItem( pcws->hwnd, ID_COMMENT )){
+				// initializing the customized part of the dialog
+				Utils::CRideDialog::SetDlgItemSingleCharUsingFont(
+					pcws->hwnd, ID_COMMENT,
+					L'\xf0e8', (HFONT)Utils::CRideFont(FONT_WINGDINGS,190,false,true).Detach() // a thick arrow right
+				);
+				Utils::InformationWithCheckableShowNoMore(
+					_T("Always see the bottom of this dialog for access to real devices."),
+					INI_GENERAL, INI_MSG_REAL_DEVICES
+				);
+			}
+		}else if (pcws->message==WM_NOTIFY && pcws->wParam==ID_DRIVEA) // notification regarding Drive A:
 			switch ( ((LPNMHDR)pcws->lParam)->code ){
 				case NM_CLICK:
 				case NM_RETURN:
@@ -548,7 +556,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 					ofn_fileName=REAL_DRIVE_ACCESS;
 					return 0;
 			}
-		return ::CallNextHookEx(ofn_hHook,kod,wParam,lParam);
+		return ::CallNextHookEx(ofn_hHook,code,wParam,lParam);
 	}
 
 	CImage::PCProperties CRideApp::DoPromptFileName(PTCHAR fileName,bool deviceAccessAllowed,UINT stdStringId,DWORD flags,CImage::PCProperties singleAllowedImage){
