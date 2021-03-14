@@ -1,8 +1,11 @@
 #include "stdafx.h"
 
+	#define INI_SECTION		_T("RealDevsDlg")
+
 	CRealDeviceSelectionDialog::CRealDeviceSelectionDialog(CDos::PCProperties dosProps)
 		// ctor
 		: Utils::CRideDialog(IDR_DRIVE_ACCESS)
+		, mru( CRecentFileList(1,INI_SECTION,_T("MruDev%d"),1) )
 		, deviceProps(nullptr) , dosProps(dosProps) {
 	}
 
@@ -21,8 +24,37 @@
 		SetDlgItemPos( ID_ERROR, MapDlgItemClientRect(ID_IMAGE) );
 		// - populating the list with devices compatible with specified DOS
 		refreshListOfDevices();
+		mru.ReadList();
+		if (const CImage::PCProperties mruDevProps=mru.GetMruDevice(0)){
+			// preselection of most recently used Device
+			CListBox lb;
+			lb.Attach( GetDlgItemHwnd(ID_IMAGE) );
+				for( TCHAR i=1,buf[DEVICE_NAME_CHARS_MAX]; i<lb.GetCount(); i++ ){
+					lb.GetText( i, buf );
+					if (lb.GetItemDataPtr(i)==mruDevProps && !::lstrcmp(buf,mru[0])){
+						lb.SetCurSel(i);
+						EnableDlgItem( IDOK, true );
+						break;
+					}
+				}
+			lb.Detach();
+		}
 		// - done
 		return FALSE; // False = focus already set manually in RefreshListOfDevices
+	}
+
+	void CRealDeviceSelectionDialog::OnOK(){
+		// Dialog confirmed
+		// - saving most recently used Device
+		CListBox lb;
+		lb.Attach( GetDlgItemHwnd(ID_IMAGE) );
+			CString devName;
+			lb.GetText( lb.GetCurSel(), devName );
+			mru.Add( devName, &CUnknownDos::Properties, (CImage::PCProperties)lb.GetItemDataPtr(lb.GetCurSel()) );
+			mru.WriteList();
+		lb.Detach();
+		// - base
+		__super::OnOK();
 	}
 
 	void CRealDeviceSelectionDialog::refreshListOfDevices(){
@@ -70,6 +102,11 @@
 	BOOL CRealDeviceSelectionDialog::OnCommand(WPARAM wParam,LPARAM lParam){
 		// command processing
 		switch (wParam){
+			case MAKELONG(ID_IMAGE,LBN_DBLCLK):
+				// Device selected by double-clicking on it
+				if (IsDlgItemEnabled(IDOK))
+					SendMessage( WM_COMMAND, IDOK );
+				break;
 			case MAKELONG(ID_IMAGE,LBN_SELCHANGE):{
 				// Device selection changed
 				CListBox lb;
