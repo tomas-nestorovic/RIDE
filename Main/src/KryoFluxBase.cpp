@@ -88,10 +88,11 @@
 					switch (mt){
 						case Medium::FLOPPY_DD_525:
 							SetDlgItemText( ID_MEDIUM, _T("5.25\" DD formatted, 360 RPM drive") );
+test40trackDiskIn80trackDrive:
 							if (EnableDlgItem( ID_40D80, initialEditing )){
 								const bool doubleTrackStep0=rkfb.params.doubleTrackStep;
 									rkfb.params.doubleTrackStep=false;
-									if (rkfb.GetInsertedMediumType(0,mt)==ERROR_SUCCESS)
+									if (rkfb.GetInsertedMediumType(1,mt)==ERROR_SUCCESS)
 										CheckDlgButton( ID_40D80, mt==Medium::UNKNOWN ); // first Track is empty, so likely each odd Track is empty
 								rkfb.params.doubleTrackStep=doubleTrackStep0;
 								rkfb.GetInsertedMediumType(0,mt); // a workaround to make floppy Drive head seek home
@@ -99,8 +100,7 @@
 							break;
 						case Medium::FLOPPY_DD:
 							SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" DD formatted, 300 RPM drive") );
-							CheckDlgButton( ID_40D80,  EnableDlgItem( ID_40D80, false )  );
-							break;
+							goto test40trackDiskIn80trackDrive;
 						case Medium::FLOPPY_HD_525:
 						case Medium::FLOPPY_HD_350:
 							SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" HD formatted") );

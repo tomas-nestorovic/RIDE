@@ -1559,6 +1559,7 @@ Utils::Information(buf);}
 					if (fdd->__setAndEvaluateDataTransferSpeed__(Medium::FLOPPY_DD_525)==ERROR_SUCCESS){
 						fdd->floppyType=Medium::FLOPPY_DD_525;
 						SetDlgItemText( ID_MEDIUM, _T("5.25\" DD formatted, 360 RPM drive") );
+test40trackDiskIn80trackDrive:
 						if (EnableDlgItem( ID_40D80, initialEditing )){
 							fdd->fddHead.SeekHome();
 							const bool doubleTrackStep0=fdd->fddHead.doubleTrackStep;
@@ -1575,7 +1576,7 @@ Utils::Information(buf);}
 					}else if (fdd->__setAndEvaluateDataTransferSpeed__(Medium::FLOPPY_DD)==ERROR_SUCCESS){
 						fdd->floppyType=Medium::FLOPPY_DD;
 						SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" DD formatted, 300 RPM drive") );
-						CheckDlgButton( ID_40D80,  EnableDlgItem( ID_40D80, false )  );
+						goto test40trackDiskIn80trackDrive;
 					}else if (fdd->__setAndEvaluateDataTransferSpeed__(Medium::FLOPPY_HD_350)==ERROR_SUCCESS){
 						fdd->floppyType=Medium::FLOPPY_HD_350;
 						SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" HD formatted") );
