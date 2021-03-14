@@ -110,14 +110,14 @@
 			std::swap( pit, ptp.cb.internalTracks[ptp.cyl][0] );
 			delete pit;
 			if (err!=ERROR_SUCCESS)
-				return err;
+				return pAction->TerminateWithError(err);
 			// . reading the test Track back
 			pit=ptp.cb.internalTracks[ptp.cyl][0];
 				ptp.cb.internalTracks[ptp.cyl][0]=nullptr; // forcing a new scan
 				ptp.cb.ScanTrack(ptp.cyl,0);
 			std::swap( ptp.cb.internalTracks[ptp.cyl][0], pit );
 			if (pit==nullptr)
-				return ERROR_FUNCTION_FAILED;
+				return pAction->TerminateWithError(ERROR_FUNCTION_FAILED);
 			// . evaluating what we read
 			CTrackReader tr=*pit;
 			delete pit;
@@ -131,7 +131,7 @@
 				const TLogTime dt=t-t0;
 				if (dt<mediumProps.cellTime*distances[n]*7/10 || mediumProps.cellTime*distances[n]*13/10<dt) // allowing 30% tolerance
 					if (nFailures++==3) // found unexpected flux - TestBeginTime determined wronly or the Drive writes too badly for precompensation to be computed reliably
-						return ERROR_FUNCTION_FAILED;
+						return pAction->TerminateWithError(ERROR_FUNCTION_FAILED);
 					else{
 						#ifdef _DEBUG
 							tr.ShowModal(_T("Sanity check failed!"));

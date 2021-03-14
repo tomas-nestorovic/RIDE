@@ -100,11 +100,11 @@ typedef const int *PCLogTime;
 #include "ViewDiskBrowser.h"
 #include "SpectrumDos.h"
 #include "DosUnknown.h"
-#include "DialogRealDeviceSelection.h"
+#include "Editor.h"
 #include "DialogNewImage.h"
 #include "DialogUnformatting.h"
 #include "DialogEmptySpaceFilling.h"
-#include "Editor.h"
+#include "DialogRealDeviceSelection.h"
 
 #define DLL_SHELL32		_T("shell32.dll")
 #define DLL_WININET		_T("wininet.dll")

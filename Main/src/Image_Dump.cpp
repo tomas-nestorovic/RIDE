@@ -561,7 +561,7 @@ errorDuringWriting:				TCHAR buf[80];
 				if (dos->properties==&CUnknownDos::Properties)
 					SetDlgItemText( ID_DEFAULT1, _T("Random value") );
 				// . showing devices recently dumped to in hidden menu
-				static const Utils::TSplitButtonAction OpenDialogAction={ ID_FILE, _T("Select...") };
+				static const Utils::TSplitButtonAction OpenDialogAction={ ID_FILE, _T("Select image or device...") };
 				Utils::TSplitButtonAction *pAction=actions;
 				*pAction++=OpenDialogAction;
 				*pAction++=Utils::TSplitButtonAction::HorizontalLine;

@@ -1133,7 +1133,7 @@ namespace Utils{
 		else if (bytes>=0x100000)
 			rHigherUnit=(float)bytes/0x100000, rHigherUnitName=_T("MiB");
 		else if (bytes>=0x400)
-			rHigherUnit=(float)bytes/0x400, rHigherUnitName=_T("kiB");
+			rHigherUnit=(float)bytes/0x400, rHigherUnitName=_T("KiB");
 		else
 			rHigherUnit=bytes, rHigherUnitName=_T("Bytes");
 	}
