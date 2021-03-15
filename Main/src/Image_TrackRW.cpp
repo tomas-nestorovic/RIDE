@@ -757,8 +757,10 @@
 		switch (mediumType){
 			case Medium::FLOPPY_HD_350:
 			case Medium::FLOPPY_DD:
-			case Medium::FLOPPY_DD_525: // 5.25" DD floppy should be used with 300 RPM drive!
 				Normalize( Medium::TProperties::FLOPPY_HD_350.revolutionTime );
+				return true;
+			case Medium::FLOPPY_DD_525:
+				Normalize( Medium::TProperties::FLOPPY_DD_525.revolutionTime );
 				return true;
 			case Medium::FLOPPY_HD_525:
 				Normalize( Medium::TProperties::FLOPPY_HD_525.revolutionTime );

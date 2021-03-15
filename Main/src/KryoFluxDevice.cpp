@@ -699,7 +699,7 @@
 				return err;
 		// - Drive's head calibration
 		if (params.calibrationStepDuringFormatting)
-			if (std::abs(cyl-lastCalibratedCylinder)>=params.calibrationStepDuringFormatting){
+			if (std::abs(cyl-lastCalibratedCylinder)>>(BYTE)params.doubleTrackStep>=params.calibrationStepDuringFormatting){
 				lastCalibratedCylinder=cyl;
 				SeekHome();
 			}
