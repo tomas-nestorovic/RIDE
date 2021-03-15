@@ -1550,6 +1550,7 @@ Utils::Information(buf);}
 			void __refreshMediumInformation__(){
 				// detects a floppy in the Drive and attempts to recognize its Type
 				// . making sure that a floppy is in the Drive
+				ShowDlgItem( ID_INFORMATION, false );
 				fdd->floppyType=Medium::UNKNOWN; // assumption (floppy not inserted or not recognized)
 				static const WORD Interactivity[]={ ID_LATENCY, ID_NUMBER2, ID_GAP };
 				if (!EnableDlgItems( Interactivity, fdd->__isFloppyInserted__() ))
@@ -1559,7 +1560,6 @@ Utils::Information(buf);}
 					if (fdd->__setAndEvaluateDataTransferSpeed__(Medium::FLOPPY_DD_525)==ERROR_SUCCESS){
 						fdd->floppyType=Medium::FLOPPY_DD_525;
 						SetDlgItemText( ID_MEDIUM, _T("5.25\" DD formatted, 360 RPM drive") );
-test40trackDiskIn80trackDrive:
 						if (EnableDlgItem( ID_40D80, initialEditing )){
 							fdd->fddHead.SeekHome();
 							const bool doubleTrackStep0=fdd->fddHead.doubleTrackStep;
@@ -1567,7 +1567,7 @@ test40trackDiskIn80trackDrive:
 								const PInternalTrack pit0=__REFER_TO_TRACK(fdd,1,0); // backing up original Track, if any
 									__REFER_TO_TRACK(fdd,1,0)=nullptr; // the Track hasn't been scanned yet
 									const PInternalTrack pit=fdd->__scanTrack__(1,0);
-										CheckDlgButton( ID_40D80, pit->nSectors==0 );
+										CheckDlgButton( ID_40D80, !ShowDlgItem(ID_INFORMATION,pit->nSectors>0) );
 									fdd->__unformatInternalTrack__(1,0);
 								__REFER_TO_TRACK(fdd,1,0)=pit0; // restoring original Track
 							fdd->fddHead.doubleTrackStep=doubleTrackStep0;
@@ -1576,7 +1576,8 @@ test40trackDiskIn80trackDrive:
 					}else if (fdd->__setAndEvaluateDataTransferSpeed__(Medium::FLOPPY_DD)==ERROR_SUCCESS){
 						fdd->floppyType=Medium::FLOPPY_DD;
 						SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" DD formatted, 300 RPM drive") );
-						goto test40trackDiskIn80trackDrive;
+						CheckDlgButton( ID_40D80, false );
+						EnableDlgItem( ID_40D80, initialEditing );
 					}else if (fdd->__setAndEvaluateDataTransferSpeed__(Medium::FLOPPY_HD_350)==ERROR_SUCCESS){
 						fdd->floppyType=Medium::FLOPPY_HD_350;
 						SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" HD formatted") );
@@ -1605,6 +1606,10 @@ test40trackDiskIn80trackDrive:
 					WindowProc( WM_COMMAND, ID_40D80, 0 );
 				CheckDlgButton( ID_40D80, fdd->fddHead.doubleTrackStep );
 				// . displaying inserted Medium information
+				SetDlgItemSingleCharUsingFont( // a warning that a 40-track disk might have been misrecognized
+					ID_INFORMATION,
+					L'\xf0ea', (HFONT)Utils::CRideFont(FONT_WEBDINGS,200,false,true).Detach()
+				);
 				__refreshMediumInformation__();
 			}
 			void __exchangeLatency__(CDataExchange* pDX){
@@ -1763,6 +1768,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 								// track distance changed manually
 								TCHAR buf[sizeof(doubleTrackDistanceTextOrg)/sizeof(TCHAR)+20];
 								SetDlgItemText( ID_40D80, ::lstrcat(::lstrcpy(buf,doubleTrackDistanceTextOrg),_T(" (user forced)")) );
+								ShowDlgItem( ID_INFORMATION, false ); // user manually revised the Track distance, so no need to continue display the warning
 								break;
 							}
 							case ID_ZERO:

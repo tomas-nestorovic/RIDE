@@ -79,6 +79,7 @@
 			void RefreshMediumInformation(){
 				// detects a floppy in the Drive and attempts to recognize its Type
 				// . making sure that a floppy is in the Drive
+				ShowDlgItem( ID_INFORMATION, false );
 				Medium::TType mt;
 				static const WORD Interactivity[]={ ID_LATENCY, ID_NUMBER2, ID_GAP };
 				if (!EnableDlgItems( Interactivity, rkfb.GetInsertedMediumType(0,mt)==ERROR_SUCCESS ))
@@ -88,19 +89,20 @@
 					switch (mt){
 						case Medium::FLOPPY_DD_525:
 							SetDlgItemText( ID_MEDIUM, _T("5.25\" DD formatted, 360 RPM drive") );
-test40trackDiskIn80trackDrive:
 							if (EnableDlgItem( ID_40D80, initialEditing )){
 								const bool doubleTrackStep0=rkfb.params.doubleTrackStep;
 									rkfb.params.doubleTrackStep=false;
 									if (rkfb.GetInsertedMediumType(1,mt)==ERROR_SUCCESS)
-										CheckDlgButton( ID_40D80, mt==Medium::UNKNOWN ); // first Track is empty, so likely each odd Track is empty
+										CheckDlgButton( ID_40D80, !ShowDlgItem(ID_INFORMATION,mt!=Medium::UNKNOWN) ); // first Track is empty, so likely each odd Track is empty
 								rkfb.params.doubleTrackStep=doubleTrackStep0;
 								rkfb.GetInsertedMediumType(0,mt); // a workaround to make floppy Drive head seek home
 							}
 							break;
 						case Medium::FLOPPY_DD:
 							SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" DD formatted, 300 RPM drive") );
-							goto test40trackDiskIn80trackDrive;
+							CheckDlgButton( ID_40D80, false );
+							EnableDlgItem( ID_40D80, initialEditing );
+							break;
 						case Medium::FLOPPY_HD_525:
 						case Medium::FLOPPY_HD_350:
 							SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" HD formatted") );
@@ -162,6 +164,10 @@ test40trackDiskIn80trackDrive:
 				static const WORD InitialSettingIds[]={ ID_ROTATION, ID_ACCURACY, ID_DEFAULT1, ID_TRACK, 0 };
 				EnableDlgItems( InitialSettingIds, initialEditing );
 				// . displaying inserted Medium information
+				SetDlgItemSingleCharUsingFont( // a warning that a 40-track disk might have been misrecognized
+					ID_INFORMATION,
+					L'\xf0ea', (HFONT)Utils::CRideFont(FONT_WEBDINGS,200,false,true).Detach()
+				);
 				RefreshMediumInformation();
 				// . updating write pre-compensation status
 				RefreshPrecompensationStatus();
@@ -221,6 +227,7 @@ test40trackDiskIn80trackDrive:
 								// track distance changed manually
 								TCHAR buf[sizeof(doubleTrackDistanceTextOrg)/sizeof(TCHAR)+20];
 								SetDlgItemText( ID_40D80, ::lstrcat(::lstrcpy(buf,doubleTrackDistanceTextOrg),_T(" (user forced)")) );
+								ShowDlgItem( ID_INFORMATION, false ); // user manually revised the Track distance, so no need to continue display the warning
 								break;
 							}
 							case ID_ZERO:
