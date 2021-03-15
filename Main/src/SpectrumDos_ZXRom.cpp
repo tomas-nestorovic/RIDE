@@ -448,6 +448,12 @@ caretMoved:					rEditor.hexaLow=true; // specifically for hexa-mode X
 						if (wParam==' '){
 							rEditor.caret.mode=TCaret::LC; // switching to Mode "L" if Space is pressed (or alternatively C, if CapsLock on)
 							goto addCharInWParam;
+						}else if (VK_NUMPAD0<=wParam && wParam<=VK_NUMPAD9){
+							wParam+='0'-VK_NUMPAD0; // conversion of numeric pad '0'...'9' keys to ZX charset
+							goto addCharInWParam;
+						}else if (VK_MULTIPLY<=wParam && wParam<=VK_DIVIDE){
+							wParam+='*'-VK_MULTIPLY; // conversion of remaining numeric pad keys to ZX charset
+							goto addCharInWParam;
 						}
 						switch (rEditor.caret.mode){
 							case TCaret::K:
