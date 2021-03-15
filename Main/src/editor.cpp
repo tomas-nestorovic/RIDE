@@ -531,22 +531,22 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 	#define REAL_DRIVE_ACCESS	nullptr
 
 	static HHOOK ofn_hHook;
+	static HHOOK ofn_hMsgHook;
 	static PTCHAR ofn_fileName;
+
+	#define WM_SHOW_HINT	WM_USER+1
 
 	static LRESULT CALLBACK __dlgOpen_hook__(int code,WPARAM wParam,LPARAM lParam){
 		// hooking the "Open/Save File" dialogs
 		const LPCWPSTRUCT pcws=(LPCWPSTRUCT)lParam;
-		if (pcws->message==WM_PAINT){
-			if (::GetDlgItem( pcws->hwnd, ID_COMMENT )){
+		if (pcws->message==WM_INITDIALOG){
+			if (const HWND hComment=::GetDlgItem( pcws->hwnd, ID_COMMENT )){
 				// initializing the customized part of the dialog
 				Utils::CRideDialog::SetDlgItemSingleCharUsingFont(
 					pcws->hwnd, ID_COMMENT,
 					L'\xf0e8', (HFONT)Utils::CRideFont(FONT_WINGDINGS,190,false,true).Detach() // a thick arrow right
 				);
-				Utils::InformationWithCheckableShowNoMore(
-					_T("Always see the bottom of this dialog for access to real devices."),
-					INI_GENERAL, INI_MSG_REAL_DEVICES
-				);
+				::PostMessage( hComment, WM_SHOW_HINT, 0, (LPARAM)INI_MSG_REAL_DEVICES );
 			}
 		}else if (pcws->message==WM_NOTIFY && pcws->wParam==ID_DRIVEA) // notification regarding Drive A:
 			switch ( ((LPNMHDR)pcws->lParam)->code ){
@@ -557,6 +557,21 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 					return 0;
 			}
 		return ::CallNextHookEx(ofn_hHook,code,wParam,lParam);
+	}
+
+	static LRESULT CALLBACK __dlgOpen_msgHook__(int code,WPARAM wParam,LPARAM lParam){
+		// hooking the "Open/Save File" dialogs
+		PMSG pMsg=(PMSG)lParam;
+		if (pMsg->message==WM_SHOW_HINT)
+			if (pMsg->lParam==(LPARAM)INI_MSG_REAL_DEVICES)
+				if (::IsWindowVisible(pMsg->hwnd)) // if the hyperlink already shown ...
+					Utils::InformationWithCheckableShowNoMore( // ... displaying the message ...
+						_T("Always see the bottom of this dialog for access to real devices."),
+						INI_GENERAL, INI_MSG_REAL_DEVICES
+					);
+				else
+					::PostMessage( pMsg->hwnd, WM_SHOW_HINT, 0, (LPARAM)INI_MSG_REAL_DEVICES ); // ... otherwise waiting until the hyperlink is shown
+		return ::CallNextHookEx(ofn_hMsgHook,code,wParam,lParam);
 	}
 
 	CImage::PCProperties CRideApp::DoPromptFileName(PTCHAR fileName,bool deviceAccessAllowed,UINT stdStringId,DWORD flags,CImage::PCProperties singleAllowedImage){
@@ -597,7 +612,9 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			// . hooking, showing the Dialog, processing its Result, unhooking, and returning the Result
 			ofn_fileName=fileName;
 			ofn_hHook=::SetWindowsHookEx( WH_CALLWNDPROC, __dlgOpen_hook__, 0, ::GetCurrentThreadId() );
-				dialogConfirmed=d.DoModal()==IDOK;
+				ofn_hMsgHook=::SetWindowsHookEx( WH_GETMESSAGE, __dlgOpen_msgHook__, 0, ::GetCurrentThreadId() );
+					dialogConfirmed=d.DoModal()==IDOK;
+				::UnhookWindowsHookEx(ofn_hMsgHook);
 			::UnhookWindowsHookEx(ofn_hHook);
 			if (ofn_fileName==REAL_DRIVE_ACCESS)
 				// selection of real device to access
