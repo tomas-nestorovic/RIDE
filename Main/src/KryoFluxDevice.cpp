@@ -142,6 +142,7 @@
 		, dataBuffer( (PBYTE)::malloc(KF_BUFFER_CAPACITY) )
 		, fddFound(false)
 		, lastCalibratedCylinder(0)
+		, informedOnPoorPrecompensation(false)
 		// - connecting to a local KryoFlux device
 		, hDevice(INVALID_HANDLE_VALUE) {
 		winusb.hLibrary = winusb.hDeviceInterface = INVALID_HANDLE_VALUE;
@@ -910,6 +911,34 @@
 		}while (::strrchr(lastRequestResultMsg,'=')[1]!='8');
 		// - resetting the KryoFlux device
 		return ERROR_SUCCESS;
+	}
+
+	BOOL CKryoFluxDevice::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){
+		// command processing
+		if (nCode==CN_COMMAND) // a command
+			if (nID==ID_IMAGE_PROTECT){ // toggling WriteProtection
+				__super::OnCmdMsg( nID, nCode, pExtra, pHandlerInfo ); // base
+				if (!IsWriteProtected())
+					// write-protection turned off - informing on poorly determined (or none) pre-compensation
+					if (!informedOnPoorPrecompensation)
+						if (const TStdWinError err=precompensation.DetermineUsingLatestMethod(*this,0)){
+							static const TCHAR Msg[]=_T("WARNING: Writing likely erroneous");
+							switch (err){
+								case ERROR_INVALID_DATA:
+									Utils::Information( Msg, _T("Precompensation not yet determined for this drive/disk") );
+									break;
+								case ERROR_EVT_VERSION_TOO_OLD:
+									Utils::Information( Msg, _T("Precompensation outdated for this drive/disk") );
+									break;
+								default:
+									Utils::Information( Msg, err );
+									break;
+							}
+							informedOnPoorPrecompensation=true;
+						}
+				return TRUE;
+			}
+		return __super::OnCmdMsg( nID, nCode, pExtra, pHandlerInfo ); // base
 	}
 
 	void CKryoFluxDevice::SetPathName(LPCTSTR lpszPathName,BOOL bAddToMRU){

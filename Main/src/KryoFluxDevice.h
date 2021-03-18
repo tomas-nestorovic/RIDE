@@ -73,6 +73,7 @@
 		mutable TCylinder lastCalibratedCylinder;
 		mutable char lastRequestResultMsg[240];
 		TCHAR firmwareVersion[100];
+		bool informedOnPoorPrecompensation;
 		
 		static LPCTSTR GetDevicePath(TDriver driver,PTCHAR devicePathBuf);
 		static LPCTSTR Recognize(PTCHAR deviceNameList);
@@ -99,6 +100,8 @@
 		bool SeekTo(TCylinder cyl) const;
 		bool SeekHome() const;
 		bool SelectHead(THead head) const;
+	protected:
+		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
 	public:
 		static const TProperties Properties;
 
