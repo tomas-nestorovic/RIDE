@@ -48,9 +48,10 @@
 		// - saving most recently used Device
 		CListBox lb;
 		lb.Attach( GetDlgItemHwnd(ID_IMAGE) );
-			CString devName;
-			lb.GetText( lb.GetCurSel(), devName );
-			mru.Add( devName, &CUnknownDos::Properties, (CImage::PCProperties)lb.GetItemDataPtr(lb.GetCurSel()) );
+			const int iSelected=lb.GetCurSel();
+			deviceProps=(CImage::PCProperties)lb.GetItemData(iSelected);
+			lb.GetText( iSelected, deviceName );
+			mru.Add( deviceName, &CUnknownDos::Properties, deviceProps );
 			mru.WriteList();
 		lb.Detach();
 		// - base
@@ -109,14 +110,7 @@
 				break;
 			case MAKELONG(ID_IMAGE,LBN_SELCHANGE):{
 				// Device selection changed
-				CListBox lb;
-				lb.Attach((HWND)lParam);
-					const int iSelected=lb.GetCurSel();
-					if (EnableDlgItem( IDOK, iSelected>0 )){
-						deviceProps=(CImage::PCProperties)lb.GetItemData(iSelected);
-						lb.GetText( iSelected, deviceName );
-					}
-				lb.Detach();
+				EnableDlgItem( IDOK, ListBox_GetCurSel((HWND)lParam)>0 );
 				return TRUE;
 			}
 		}
