@@ -569,10 +569,10 @@
 			if ((sync1&0xffdf)==0x4489 && (sync23&0xffdfffdf)==0x44894489)
 				break;
 		}
+		ReadBit(); // leaving synchronization mark behind
 		if (!*this) // Track end encountered
 			return 0;
-		const TLogTime tDataFieldMarkStart=currentTime;
-		SetCurrentTime( tDataFieldMarkStart );
+		const TLogTime tDataFieldMarkStart=logTimes[iNextTime-1]; // aligning to the synchronization mark terminal "1"
 		const TProfile dataFieldMarkProfile=profile;
 		// - a Data Field mark should follow the synchronization
 		if (!ReadBits16(w)) // Track end encountered

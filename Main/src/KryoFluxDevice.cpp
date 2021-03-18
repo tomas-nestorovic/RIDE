@@ -583,6 +583,12 @@
 			int sampleCounter= TimeToStdSampleCounter(currTime)-totalSampleCounter; // temporary 64-bit precision even on 32-bit machines
 			if (sampleCounter<=0){ // just to be sure
 				ASSERT(FALSE); // we shouldn't end up here!
+				#ifdef _DEBUG
+					TCHAR caption[80];
+					::wsprintf( caption, _T("Tachyon flux at %d"), currTime );
+					tr.ShowModal(caption);
+					return 0;
+				#endif
 				continue;
 			}
 			totalSampleCounter+=sampleCounter;
