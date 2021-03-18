@@ -576,7 +576,9 @@ namespace Medium{
 		// True <=> Image successfully saved, otherwise False
 		app.m_pMainWnd->SetFocus(); // to immediately carry out actions that depend on focus
 		TCHAR bufFileName[MAX_PATH];
-		if (!lpszPathName){
+		if (properties->IsRealDevice())
+			::lstrcpy(bufFileName,m_strTitle);
+		else if (!lpszPathName){
 			// FileName not determined yet or the file is read-only - determining FileName now
 			if (/*bReplace &&*/ m_strPathName.IsEmpty()){ // A&B; A = the "Save as" command, B = fully qualified FileName not determined yet; commented out as "Save file copy" command not used (when it holds bReplace==False)
 				// . validating that there are no Forbidden characters

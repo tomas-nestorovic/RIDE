@@ -326,7 +326,7 @@
 					ris.dirtyRevolution=(Revolution::TType)ris.currentRevolution;
 					if (pFdcStatus)
 						ris.revolutions[ris.dirtyRevolution].fdcStatus=*pFdcStatus;
-					SetModifiedFlag(TRUE);
+					SetModifiedFlag( pit->modified=true );
 					return ERROR_SUCCESS;
 				}
 			}

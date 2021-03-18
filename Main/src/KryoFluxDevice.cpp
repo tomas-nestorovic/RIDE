@@ -676,11 +676,11 @@
 		const PInternalTrack pit=internalTracks[cyl][head];
 		if (!pit)
 			return ERROR_GEN_FAILURE;
+		pit->FlushSectorBuffers(); // convert all modifications into flux transitions
 		if (!pit->modified)
 			return ERROR_SUCCESS;
 		// - extracting the "best" Revolution into a temporary Track
 		//TODO better
-		pit->FlushSectorBuffers(); // convert all modifications into flux transitions
 		CTrackReaderWriter trw( pit->GetTimesCount(), CTrackReader::TDecoderMethod::FDD_KEIR_FRASER, false );
 		trw.AddIndexTime(0);
 			const TLogTime tIndex0=pit->GetIndexTime(0), tIndex1=pit->GetIndexTime(1);
@@ -904,4 +904,9 @@
 		}while (::strrchr(lastRequestResultMsg,'=')[1]!='8');
 		// - resetting the KryoFlux device
 		return ERROR_SUCCESS;
+	}
+
+	void CKryoFluxDevice::SetPathName(LPCTSTR lpszPathName,BOOL bAddToMRU){
+		__super::SetPathName( lpszPathName, bAddToMRU );
+		m_strPathName=lpszPathName;
 	}

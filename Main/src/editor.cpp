@@ -313,7 +313,10 @@
 				delete image; // ... as it may change here!
 				return Utils::FatalError( _T("Cannot access the image"), err );
 			}
-			image->SetPathName(VOLUME_LABEL_DEFAULT_ANSI_8CHARS,FALSE);
+			image->SetPathName(
+				image->properties->IsRealDevice() ? d.deviceName : VOLUME_LABEL_DEFAULT_ANSI_8CHARS,
+				FALSE
+			);
 		}
 	}
 
