@@ -68,6 +68,13 @@
 		this->profile=profile;
 	}
 
+	CImage::CTrackReader::TProfile CImage::CTrackReader::CreateResetProfile() const{
+		// creates and returns current Profile that is reset
+		TProfile result=profile;
+		result.Reset();
+		return result;
+	}
+
 	void CImage::CTrackReader::TruncateCurrentTime(){
 		// truncates CurrentTime to the nearest lower LogicalTime
 		if (!iNextTime)
@@ -670,7 +677,7 @@
 
 	CImage::CTrackReaderWriter::CTrackReaderWriter(DWORD nLogTimesMax,TDecoderMethod method,bool resetDecoderOnIndex)
 		// ctor
-		: CTrackReader( (PLogTime)::calloc(nLogTimesMax+1,sizeof(TLogTime)), 0, nullptr, 0, Medium::FLOPPY_DD, Codec::MFM, method, resetDecoderOnIndex ) // "+1" = hidden item represents reference counter
+		: CTrackReader( (PLogTime)::calloc(1+nLogTimesMax+1,sizeof(TLogTime)), 0, nullptr, 0, Medium::FLOPPY_DD, Codec::MFM, method, resetDecoderOnIndex ) // "1+" = hidden item represents reference counter, "+1" = for stop-conditions and other purposes
 		, nLogTimesMax(nLogTimesMax) {
 	}
 
@@ -754,43 +761,47 @@
 
 	bool CImage::CTrackReaderWriter::Normalize(){
 		// True <=> asked and successfully normalized for a known MediumType, otherwise False
+		// - if the Track contains less than two Indices, we are successfully done
+		if (nIndexPulses<2)
+			return true;
+		// - determining the RevolutionTime to the next Index
+		TLogTime revolutionTime;
 		switch (mediumType){
 			case Medium::FLOPPY_HD_350:
 			case Medium::FLOPPY_DD:
-				Normalize( Medium::TProperties::FLOPPY_HD_350.revolutionTime );
-				return true;
+				revolutionTime=Medium::TProperties::FLOPPY_HD_350.revolutionTime;
+				break;
 			case Medium::FLOPPY_DD_525:
-				Normalize( Medium::TProperties::FLOPPY_DD_525.revolutionTime );
-				return true;
+				revolutionTime=Medium::TProperties::FLOPPY_DD_525.revolutionTime;
+				break;
 			case Medium::FLOPPY_HD_525:
-				Normalize( Medium::TProperties::FLOPPY_HD_525.revolutionTime );
-				return true;
+				revolutionTime=Medium::TProperties::FLOPPY_HD_525.revolutionTime;
+				break;
 			default:
 				ASSERT(FALSE);
 				return false;
 		}
+		// - adjusting consecutive index-to-index distances
+		RewindToIndex(0);
+		for( BYTE i=0; i+1<nIndexPulses; i++ )
+			iNextTime=InterpolateTimes(
+				GetIndexTime(i), iNextTime, GetIndexTime(i+1),
+				GetIndexTime(0)+i*revolutionTime, GetIndexTime(0)+(i+1)*revolutionTime
+			);
+		const TLogTime dt=GetIndexTime(0)+(nIndexPulses-1)*revolutionTime-GetIndexTime(nIndexPulses-1);
+		while (iNextTime<nLogTimes)
+			logTimes[iNextTime++]+=dt; // offsetting the remainder of the Track
+		for( BYTE i=1; i<nIndexPulses; i++ )
+			indexPulses[i]=indexPulses[i-1]+revolutionTime;
+		// - correctly re-initializing this object
+		SetCurrentTime(0);
 	}
 
-	void CImage::CTrackReaderWriter::Normalize(TLogTime correctIndexDistance){
-		// places neighboring Indices exactly specified Distance away, interpolating the Track timing in between
-		// - in-place interpolation
-		const PCLogTime pLast=logTimes+nLogTimes;
-		if (correctIndexDistance>0){
-			RewindToIndex(0);
-			PLogTime pTime=logTimes+iNextTime;
-			TLogTime orgRevStart=currentTime; // revolution start before modification
-			for( BYTE i=1; i<nIndexPulses; i++ ){
-				const TLogTime orgRevEnd=GetIndexTime(i); // revolution end before modification
-					const TLogTime orgIndexDistance=orgRevEnd-orgRevStart;
-					while (pTime<pLast && *pTime<=orgRevEnd){
-						*pTime = currentTime+(LONGLONG)(*pTime-orgRevStart)*correctIndexDistance/orgIndexDistance;
-						pTime++;
-					}
-				orgRevStart=orgRevEnd;
-				currentTime = indexPulses[i] = indexPulses[i-1]+correctIndexDistance;
-			}
-			for( const TLogTime dt=currentTime-orgRevStart; pTime<pLast; *pTime+++=dt ); // offsetting the remainder of the Track
-		}
-		// - correctly re-initializing this object's state
-		SetCurrentTime(0);
+	DWORD CImage::CTrackReaderWriter::InterpolateTimes(TLogTime tSrcA,DWORD iSrcA,TLogTime tSrcZ,TLogTime tDstA,TLogTime tDstZ) const{
+		// in-place interpolation of LogicalTimes in specified range; returns an "index-pointer" to the first unprocessed LogicalTime (outside the range)
+		logTimes[nLogTimes]=INT_MAX; // stop-condition
+		PLogTime pTime=logTimes+iSrcA;
+		for( const TLogTime tSrcInterval=tSrcZ-tSrcA,tDstInterval=tDstZ-tDstA; *pTime<tSrcZ; pTime++ )
+			*pTime = tDstA+(LONGLONG)(*pTime-tSrcA)*tDstInterval/tSrcInterval;
+		return pTime-logTimes;
 	}

@@ -234,7 +234,7 @@
 			const TLogTime tIndex=trw.GetIndexTime(nRevs-1)+fullRevolutionTime;
 			trw.AddIndexTime(tIndex);
 			if (trw.GetTotalTime()<tIndex) // adding an auxiliary flux at the Index position to prolong flux information
-				*pFluxTime++=tIndex;
+				trw.AddTime( tIndex );
 		}
 		// - creating a Track from above reconstructed flux information
 		return CreateFrom( cb, trw );

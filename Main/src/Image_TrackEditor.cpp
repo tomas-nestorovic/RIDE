@@ -666,8 +666,7 @@
 			if (rte.timeEditor.GetInspectionWindowEndTimes()!=nullptr) // already set?
 				return pAction->TerminateWithSuccess();
 			CImage::CTrackReader tr=rte.tr;
-			auto resetProfile=tr.GetCurrentProfile();
-			resetProfile.Reset();
+			const auto resetProfile=tr.CreateResetProfile();
 			tr.SetCurrentTimeAndProfile( 0, resetProfile );
 			const auto nIwsMax=tr.GetTotalTime()/resetProfile.iwTimeMin+2;
 			if (const PLogTime iwEndTimes=(PLogTime)::calloc( sizeof(TLogTime), nIwsMax )){

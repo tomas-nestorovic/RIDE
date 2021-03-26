@@ -401,14 +401,34 @@
 			}
 
 			inline
+			void RewindToIndexAndProfile(BYTE index,const TProfile &profile){
+				// navigates back to the first Flux found just after the index pulse
+				SetCurrentTimeAndProfile( GetIndexTime(index), profile );
+			}
+
+			inline
+			void RewindToIndexAndResetProfile(BYTE index){
+				// navigates back to the first Flux found just after the index pulse
+				RewindToIndex( index );
+				profile.Reset();
+			}
+
+			inline
 			Codec::TType GetCodec() const{
 				// returns currently used/recognized Codec
 				return codec;
 			}
 
+			inline
+			Medium::TType GetMediumType() const{
+				// returns currently used/recognized MediumType
+				return mediumType;
+			}
+
 
 			void SetCurrentTime(TLogTime logTime);
 			void SetCurrentTimeAndProfile(TLogTime logTime,const TProfile &profile);
+			TProfile CreateResetProfile() const;
 			void TruncateCurrentTime();
 			TLogTime GetIndexTime(BYTE index) const;
 			TLogTime GetTotalTime() const;
@@ -426,6 +446,7 @@
 		class CTrackReaderWriter:public CTrackReader{
 			const DWORD nLogTimesMax;
 
+			DWORD InterpolateTimes(TLogTime tSrcA,DWORD iSrcA,TLogTime tSrcZ,TLogTime tDstA,TLogTime tDstZ) const;
 			bool WriteBits(const bool *bits,DWORD nBits);
 			WORD WriteDataFm(WORD nBytesToWrite,PCBYTE buffer,TFdcStatus sr);
 			WORD WriteDataMfm(WORD nBytesToWrite,PCBYTE buffer,TFdcStatus sr);
