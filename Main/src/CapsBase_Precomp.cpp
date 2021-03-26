@@ -347,8 +347,9 @@ nextTrial:	;
 		if (trw.GetCurrentTime())
 			return ERROR_INVALID_DATA;
 		// - extracting first N non-compensated fluxes from the Track
+		DWORD nTimes=trw.GetTimesCount();
 		const BYTE nOrigTimes=8;
-		if (trw.GetTimesCount()<nOrigTimes) // a Track must consist of at least N fluxes
+		if (nTimes<nOrigTimes) // a Track must consist of at least N fluxes
 			return ERROR_INVALID_DATA;
 		TLogTime origFluxes[nOrigTimes]; // non-compensated flux timing
 		PLogTime pt=trw.GetBuffer();
@@ -356,7 +357,7 @@ nextTrial:	;
 		for( BYTE i=1; i<nOrigTimes; i++ )
 			origFluxes[i]=pt[i]-pt[i-1];
 		// - application
-		for( DWORD i=0; i<trw.GetTimesCount(); i++,pt++ )
+		for( DWORD i=0; i<nTimes; i++,pt++ )
 			switch (methodVersion){
 				case Identity:
 					return ERROR_SUCCESS;
@@ -364,7 +365,7 @@ nextTrial:	;
 					const auto &coeffs=v1.coeffs[i&1];
 					const BYTE COEFFS_COUNT=sizeof(coeffs)/sizeof(*coeffs);
 					const BYTE PIVOT_INDEX=COEFFS_COUNT/2;
-					if (i<trw.GetTimesCount()-COEFFS_COUNT){ // applicable range
+					if (i<nTimes-COEFFS_COUNT){ // applicable range
 						double compensation=0;
 						for( BYTE c=0; c<COEFFS_COUNT; c++ )
 							compensation+=coeffs[c]*origFluxes[c];
@@ -378,6 +379,16 @@ nextTrial:	;
 					ASSERT(FALSE);
 					return ERROR_UNKNOWN_COMPONENT;
 			}
+		// - assuring that all fluxes are after pre-compensation still chronologically ordered
+		for( DWORD tPrev=*pt,i=1,j=1; i<nTimes; j++ ) // i = "target" position, j = "source" position
+			if (pt[j]<tPrev){
+				// no - the J-th flux should already been processed, meaning the Previous flux was a "tachyon" one!
+				ASSERT(FALSE);
+				nTimes--; // keeping the Previous "tachyon" flux, discarding current flux
+			}else
+				// yes, the two consecutive fluxes are chronologically ordered
+				tPrev = pt[i++] = pt[j];
+		trw.TrimToTimesCount( nTimes );
 		// - precompensated successfully
 		return ERROR_SUCCESS;
 	}
