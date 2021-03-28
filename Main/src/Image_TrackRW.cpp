@@ -798,11 +798,99 @@
 		SetCurrentTime(0);
 	}
 
-	DWORD CImage::CTrackReaderWriter::InterpolateTimes(TLogTime tSrcA,DWORD iSrcA,TLogTime tSrcZ,TLogTime tDstA,TLogTime tDstZ) const{
-		// in-place interpolation of LogicalTimes in specified range; returns an "index-pointer" to the first unprocessed LogicalTime (outside the range)
-		logTimes[nLogTimes]=INT_MAX; // stop-condition
-		PLogTime pTime=logTimes+iSrcA;
-		for( const TLogTime tSrcInterval=tSrcZ-tSrcA,tDstInterval=tDstZ-tDstA; *pTime<tSrcZ; pTime++ )
-			*pTime = tDstA+(LONGLONG)(*pTime-tSrcA)*tDstInterval/tSrcInterval;
-		return pTime-logTimes;
+	TStdWinError CImage::CTrackReaderWriter::NormalizeEx(TLogTime timeOffset,bool fitTimesIntoIwMiddles,bool correctCellCountPerRevolution,bool correctRevolutionTime){
+		// True <=> all Revolutions of this Track successfully normalized using specified parameters, otherwise False
+		// - if the Track contains less than two Indices, we are successfully done
+		if (nIndexPulses<2)
+			return ERROR_SUCCESS;
+		// - MediumType must be supported
+		const Medium::PCProperties mp=Medium::GetProperties(mediumType);
+		if (!mp)
+			return ERROR_UNRECOGNIZED_MEDIA;
+		// - ignoring what's before the first Index
+		RewindToIndex(0);
+		TLogTime tCurrIndexOrg=GetIndexTime(0);
+		// - normalization
+		const TLogTime tLastIndex=GetIndexTime(nIndexPulses-1);
+		const DWORD iModifStart=iNextTime;
+		DWORD iTime=iModifStart;
+		const std::unique_ptr<TLogTime,void (__cdecl *)(PVOID)> buffer(  (PLogTime)::calloc( nLogTimesMax, sizeof(TLogTime) ), ::free  );
+		const PLogTime ptModified=buffer.get();
+		for( BYTE nextIndex=1; nextIndex<nIndexPulses; nextIndex++ ){
+			// . resetting inspection conditions
+			profile.Reset();
+			const TLogTime tNextIndexOrg=GetIndexTime(nextIndex);
+			const DWORD iModifRevStart=iTime;
+			// . alignment of LogicalTimes to inspection window centers
+			DWORD nAlignedCells=0;
+			if (fitTimesIntoIwMiddles){
+				// alignment wanted
+				for( ; *this&&logTimes[iNextTime]<tNextIndexOrg; nAlignedCells++ )
+					if (ReadBit())
+						if (iTime<nLogTimesMax)
+							ptModified[iTime++] = tCurrIndexOrg + nAlignedCells*profile.iwTimeDefault;
+						else
+							return ERROR_INSUFFICIENT_BUFFER; // mustn't overrun the Buffer
+			}else
+				// alignment not wanted - just copying the Times in current Revolution
+				while (*this && logTimes[iNextTime]<tNextIndexOrg)
+					ptModified[iTime++]=ReadTime();
+			DWORD iModifRevEnd=iTime;
+			// . offsetting all LogicalTimes in this Revolution
+			if (timeOffset){
+				timeOffset=	nAlignedCells>0 // do we have time-corrected cells from above?
+							? timeOffset/profile.iwTimeDefault*profile.iwTimeDefault // rounding down to whole multiples of correctly-sized cells
+							: (LONGLONG)timeOffset*(tNextIndexOrg-tCurrIndexOrg)/mp->revolutionTime;
+				ptModified[iModifRevEnd]=INT_MAX-timeOffset; // stop-condition
+				for( iTime=iModifRevStart; ptModified[iTime]+timeOffset<=tCurrIndexOrg; iTime++ ); // ignoring Times that would end up before this Revolution has begun
+				iModifRevEnd=iModifRevStart;
+				if (nAlignedCells>0){ // are we working with time-corrected cells?
+					const TLogTime tLastAlignedCell= tCurrIndexOrg + nAlignedCells*profile.iwTimeDefault;
+					while (( ptModified[iModifRevEnd]=ptModified[iTime++]+timeOffset )<tLastAlignedCell) // adjusting Times that remain within this Revolution
+						iModifRevEnd++;
+					if (iModifRevEnd>iModifRevStart) // at least one Time
+						nAlignedCells=(ptModified[iModifRevEnd-1]-tCurrIndexOrg)/profile.iwTimeDefault;
+				}else
+					while (( ptModified[iModifRevEnd]=ptModified[iTime++]+timeOffset )<tNextIndexOrg) // adjusting Times that remain within this Revolution
+						iModifRevEnd++;
+			}
+			// . shortening/prolonging this revolution to correct number of cells
+			if (correctCellCountPerRevolution){
+				ptModified[iModifRevEnd]=INT_MAX; // stop-condition
+				if (nAlignedCells>0){ // are we working with time-corrected cells?
+					iModifRevEnd=iModifRevStart;
+					const TLogTime tRevEnd=tCurrIndexOrg+mp->revolutionTime;
+					while (ptModified[iModifRevEnd]<tRevEnd)
+						iModifRevEnd++;
+					nAlignedCells=mp->nCells;
+				}//else
+					//nop (not applicable)
+			}
+			// . correction of index-to-index time distance
+			if (correctRevolutionTime) // index-to-index time correction enabled?
+				indexPulses[nextIndex]=indexPulses[nextIndex-1]+mp->revolutionTime;
+			const TLogTime tNextIndexWork =	nAlignedCells>0 // are we working with time-corrected cells?
+											? tCurrIndexOrg+nAlignedCells*profile.iwTimeDefault
+											: tNextIndexOrg;
+			if (tCurrIndexOrg!=indexPulses[nextIndex-1] || tNextIndexWork!=indexPulses[nextIndex])
+				InterpolateTimes(
+					ptModified, iModifRevEnd,
+					tCurrIndexOrg, iModifRevStart, tNextIndexWork,
+					indexPulses[nextIndex-1], indexPulses[nextIndex]
+				);
+			// . next Revolution
+			tCurrIndexOrg=tNextIndexOrg;
+			iTime=iModifRevEnd;
+		}
+		// - copying Modified LogicalTimes to the Track
+		if (nLogTimes+iTime-iNextTime>=nLogTimesMax)
+			return ERROR_INSUFFICIENT_BUFFER; // mustn't overrun the Buffer
+		::memmove( logTimes+iTime, logTimes+iNextTime, (nLogTimes-iNextTime)*sizeof(TLogTime) );
+		nLogTimes+=iTime-iNextTime;
+		if (const TLogTime dt=indexPulses[nIndexPulses-1]-tLastIndex)
+			for( DWORD i=iTime; i<nLogTimes; logTimes[i++]+=dt );
+		::memcpy( logTimes+iModifStart, ptModified+iModifStart, (iTime-iModifStart)*sizeof(TLogTime) );
+		SetCurrentTime(0); // setting valid state
+		// - successfully aligned
+		return ERROR_SUCCESS;
 	}
