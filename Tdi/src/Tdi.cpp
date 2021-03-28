@@ -215,6 +215,9 @@
 				const PCTabInfo pti=(PCTabInfo)ti.lParam; // extracting TabInfo; TCITEM may be reinitialized below
 				UINT iCurrentTab=TabCtrl_GetCurSel(hTdi);
 				const bool closingCurrentTab=iCurrentTab==wParam;
+				// . aborting movement of Tab that is about to be closed
+				if (pDraggedTabInfo!=nullptr && pDraggedTabInfo->tabId==wParam)
+					::SendMessage( hTdi, WM_LBUTTONUP, 0, 0 );
 				// . base (closing the Tab)
 				::CallWindowProc(wndProc0,hTdi,msg,wParam,lParam);
 				// . switching to some of remaining Tabs
