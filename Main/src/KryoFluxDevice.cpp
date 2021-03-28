@@ -854,8 +854,11 @@
 				// it's a KryoFlux Stream whose data make sense
 				if (floppyType!=Medium::UNKNOWN){ // may be unknown if Medium is still being recognized
 					trw.SetMediumType(floppyType);
-					if (params.normalizeReadTracks)
-						trw.Normalize();
+					if (dos!=nullptr) // DOS already known
+						params.corrections.ApplyTo(trw);
+					//the following commented out as it brings little to no readability improvement and leaves Tracks influenced by the MediumType
+					//else if (params.corrections.indexTiming) // DOS still being recognized ...
+						//trw.Normalize(); // ... hence can only improve readability by adjusting index-to-index timing
 				}
 				internalTracks[cyl][head]=CInternalTrack::CreateFrom( *this, trw );
 				__super::ScanTrack( cyl, head, pCodec, bufferId, bufferLength, startTimesNanoseconds, pAvgGap3 );

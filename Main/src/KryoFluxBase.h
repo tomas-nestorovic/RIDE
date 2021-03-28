@@ -20,7 +20,7 @@
 				FOR_EACH_SECTOR		=2
 			} calibrationAfterError;
 			BYTE calibrationStepDuringFormatting;
-			bool normalizeReadTracks;
+			TCorrections corrections;
 			bool verifyWrittenTracks;
 			// volatile (current session only)
 			bool doubleTrackStep, userForcedDoubleTrackStep;

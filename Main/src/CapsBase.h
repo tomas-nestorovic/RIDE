@@ -109,6 +109,22 @@
 			TStdWinError ApplyTo(const CCapsBase &cb,CTrackReaderWriter trw) const;
 		} precompensation;
 
+		struct TCorrections sealed{
+			WORD valid:1;
+			WORD use:1;
+			WORD indexTiming:1;
+			WORD cellCountPerTrack:1;
+			WORD fitFluxesIntoIwMiddles:1;
+			WORD firstSectorTime:1;
+			short firstSectorMicroseconds;
+
+			TCorrections(LPCTSTR iniSection,LPCTSTR iniName=_T("crt"));
+
+			void Save(LPCTSTR iniSection,LPCTSTR iniName=_T("crt")) const;
+			bool ShowModal(CWnd *pParentWnd);
+			TStdWinError ApplyTo(CTrackReaderWriter &trw) const;
+		};
+
 		const TStdWinError capsLibLoadingError;
 		const SDWORD capsDeviceHandle;
 		CapsVersionInfo capsVersionInfo;

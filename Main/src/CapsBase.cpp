@@ -184,7 +184,7 @@
 		UDWORD nBitsPerTrack[CAPS_MTRS], nBitsPerTrackOfficial, nBitsTotally=0;
 		for( BYTE rev=0; rev<nRevs; rev++ )
 			nBitsTotally += nBitsPerTrack[rev] = CBitReader(ctiRevs[rev],lockFlags).Count;
-		CTrackReaderWriter trw( nBitsTotally, CTrackReader::FDD_KEIR_FRASER, true ); // pessimistic estimation of # of fluxes
+		CTrackReaderWriter trw( nBitsTotally*125/100, CTrackReader::FDD_KEIR_FRASER, true ); // pessimistic estimation of # of fluxes; allowing for 25% of false "ones" introduced by "FDC-like" decoders
 			if (*nBitsPerTrack>( nBitsPerTrackOfficial=Medium::TProperties::FLOPPY_HD_350.nCells )*95/100) // 5% tolerance
 				// likely a 3.5" HD medium
 				trw.SetMediumType( Medium::FLOPPY_HD_350 );
@@ -835,4 +835,88 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 			return *pit;
 		}else
 			return __super::ReadTrack(cyl,head);
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+	CCapsBase::TCorrections::TCorrections(LPCTSTR iniSection,LPCTSTR iniName)
+		// ctor
+		// - the defaults
+		: valid(true)
+		, use(true)
+		, indexTiming(true)
+		, cellCountPerTrack(true)
+		, fitFluxesIntoIwMiddles(true)
+		, firstSectorTime(false)
+		, firstSectorMicroseconds(1500) {
+		// - attempting to load existing values from last session
+		if (const DWORD settings=app.GetProfileInt(iniSection,iniName,0)) // do Valid settings exist?
+			*(PDWORD)this=settings;
+	}
+
+	void CCapsBase::TCorrections::Save(LPCTSTR iniSection,LPCTSTR iniName) const{
+		// dtor
+		app.WriteProfileInt( iniSection, iniName, *(PDWORD)this );
+	}
+
+	bool CCapsBase::TCorrections::ShowModal(CWnd *pParentWnd){
+		// shows a dialog with exposed settings
+		// - defining the Dialog
+		class CCorrectionsDialog sealed:public Utils::CRideDialog{
+			void DoDataExchange(CDataExchange *pDX) override{
+				__super::DoDataExchange(pDX);
+				int tmp=corr.indexTiming;
+					DDX_Check( pDX, ID_ALIGN,	tmp );
+				corr.indexTiming=tmp!=BST_UNCHECKED;
+				tmp=corr.cellCountPerTrack;
+					DDX_Check( pDX, ID_NUMBER, tmp );
+				corr.cellCountPerTrack=tmp!=BST_UNCHECKED;
+				tmp=corr.fitFluxesIntoIwMiddles;
+					DDX_Check( pDX, ID_ACCURACY, tmp );
+				corr.fitFluxesIntoIwMiddles=tmp!=BST_UNCHECKED;
+				tmp=corr.firstSectorTime;
+					DDX_Check( pDX, ID_ADDRESS, tmp );
+				corr.firstSectorTime=tmp!=BST_UNCHECKED;
+				tmp=corr.firstSectorMicroseconds;
+					DDX_Text( pDX, ID_TIME, tmp );
+						DDV_MinMaxInt( pDX, tmp, 0, SHRT_MAX );
+				corr.firstSectorMicroseconds=tmp;
+			}
+		public:
+			TCorrections corr;
+
+			CCorrectionsDialog(const TCorrections &c,CWnd *pParentWnd)
+				: Utils::CRideDialog( IDR_CAPS_CORRECTIONS, pParentWnd )
+				, corr(c) {
+			}
+		} d( *this, pParentWnd );
+		// - showing the Dialog and processing its result
+		if (d.DoModal()==IDOK){
+			*this=d.corr;
+			return true;
+		}else
+			return false;
+	}
+
+	TStdWinError CCapsBase::TCorrections::ApplyTo(CTrackReaderWriter &trw) const{
+		// attempts to apply current Correction settings to the specified Track; returns Windows standard i/o error
+		ASSERT( valid );
+		if (use)
+			return	trw.NormalizeEx(
+						firstSectorTime ? firstSectorMicroseconds : 0,
+						fitFluxesIntoIwMiddles,
+						cellCountPerTrack,
+						indexTiming
+					);
+		else
+			return ERROR_SUCCESS;
 	}

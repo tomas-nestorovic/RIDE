@@ -28,7 +28,6 @@
 	#define INI_PRECISION				_T("prec")
 	#define INI_CALIBRATE_SECTOR_ERROR	_T("clberr")
 	#define INI_CALIBRATE_FORMATTING	_T("clbfmt")
-	#define INI_NORMALIZE_READ_TRACKS	_T("nrt")
 	#define INI_VERIFY_WRITTEN_TRACKS	_T("vwt")
 
 
@@ -41,7 +40,7 @@
 		, resetFluxDecoderOnIndex( (TFluxDecoder)app.GetProfileInt(INI_KRYOFLUX,INI_FLUX_DECODER_RESET,true)!=0 )
 		, calibrationAfterError( (TCalibrationAfterError)app.GetProfileInt(INI_KRYOFLUX,INI_CALIBRATE_SECTOR_ERROR,TCalibrationAfterError::ONCE_PER_CYLINDER) )
 		, calibrationStepDuringFormatting( app.GetProfileInt(INI_KRYOFLUX,INI_CALIBRATE_FORMATTING,0) )
-		, normalizeReadTracks( app.GetProfileInt(INI_KRYOFLUX,INI_NORMALIZE_READ_TRACKS,true)!=0 )
+		, corrections( INI_KRYOFLUX )
 		, verifyWrittenTracks( app.GetProfileInt(INI_KRYOFLUX,INI_VERIFY_WRITTEN_TRACKS,true)!=0 )
 		// - volatile (current session only)
 		, doubleTrackStep(false)
@@ -57,7 +56,7 @@
 		app.WriteProfileInt( INI_KRYOFLUX, INI_FLUX_DECODER_RESET, resetFluxDecoderOnIndex );
 		app.WriteProfileInt( INI_KRYOFLUX, INI_CALIBRATE_SECTOR_ERROR, calibrationAfterError );
 		app.WriteProfileInt( INI_KRYOFLUX, INI_CALIBRATE_FORMATTING, calibrationStepDuringFormatting );
-		app.WriteProfileInt( INI_KRYOFLUX, INI_NORMALIZE_READ_TRACKS, normalizeReadTracks );
+		corrections.Save( INI_KRYOFLUX );
 		app.WriteProfileInt( INI_KRYOFLUX, INI_VERIFY_WRITTEN_TRACKS, verifyWrittenTracks );
 	}
 
@@ -161,7 +160,7 @@
 					WindowProc( WM_COMMAND, ID_40D80, 0 );
 				CheckDlgButton( ID_40D80, rkfb.params.doubleTrackStep );
 				// . some settings are changeable only during InitialEditing
-				static const WORD InitialSettingIds[]={ ID_ROTATION, ID_ACCURACY, ID_DEFAULT1, ID_TRACK, 0 };
+				static const WORD InitialSettingIds[]={ ID_ROTATION, ID_ACCURACY, ID_DEFAULT1, ID_TRACK, ID_TIME, 0 };
 				EnableDlgItems( InitialSettingIds, initialEditing );
 				// . displaying inserted Medium information
 				SetDlgItemSingleCharUsingFont( // a warning that a 40-track disk might have been misrecognized
@@ -197,9 +196,9 @@
 					SetDlgItemInt(ID_NUMBER,4,FALSE);
 				params.calibrationStepDuringFormatting=tmp;
 				// . NormalizeReadTracks
-				tmp=params.normalizeReadTracks;
+				tmp=params.corrections.use;
 				DDX_Check( pDX,	ID_TRACK,		tmp );
-				params.normalizeReadTracks=tmp!=0;
+				params.corrections.use=tmp!=0;
 				// . WrittenTracksVerification
 				tmp=params.verifyWrittenTracks;
 				DDX_Check( pDX,	ID_VERIFY_TRACK,	tmp );
@@ -262,7 +261,8 @@
 										params.verifyWrittenTracks=vwt0;
 									rkfb.locker.Lock();
 									RefreshMediumInformation();
-								}
+								}else if (pLink->hdr.idFrom==ID_TIME)
+									params.corrections.ShowModal(this);
 								break;
 							}
 						}
@@ -339,15 +339,21 @@
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - "re-normalizing" already read Tracks according to the new Medium
-		if (params.normalizeReadTracks && !m_strPathName.IsEmpty()) // normalization makes sense only for existing Images - it's useless for Images just created
+		if (params.corrections.use && !m_strPathName.IsEmpty()) // normalization makes sense only for existing Images - it's useless for Images just created
 			if (pFormat->mediumType!=Medium::UNKNOWN) // a particular Medium specified ...
 				if (floppyType!=pFormat->mediumType) // ... and it's different
 					for( TCylinder cyl=0; cyl<FDD_CYLINDERS_MAX; cyl++ )
 						for( THead head=0; head<2; head++ )
 							if (auto pit=internalTracks[cyl][head]){
 								pit->SetMediumType(pFormat->mediumType);
-								if (!pit->Normalize())
-									return ERROR_UNRECOGNIZED_MEDIA;
+								if (dos!=nullptr){ // DOS already known
+									if (const TStdWinError err=params.corrections.ApplyTo(*pit))
+										return err;
+								}//the following commented out as it brings little to no readability improvement and leaves Tracks influenced by the MediumType
+								//else if (params.corrections.indexTiming) // DOS still being recognized ...
+									//if (!pit->Normalize()) // ... hence can only improve readability by adjusting index-to-index timing
+										//return ERROR_INVALID_MEDIA;
+
 							}
 		// - base
 		return __super::SetMediumTypeAndGeometry( pFormat, sideMap, firstSectorNumber );
@@ -637,7 +643,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 			case TParams::TFluxDecoder::MARK_OGDEN:
 				decoderMethod=CTrackReader::TDecoderMethod::FDD_MARK_OGDEN; break;
 		}
-		CTrackReaderWriter result( nFluxes, decoderMethod, params.resetFluxDecoderOnIndex );
+		CTrackReaderWriter result( nFluxes*125/100, decoderMethod, params.resetFluxDecoderOnIndex ); // allowing for 25% of false "ones" introduced by "FDC-like" decoders
 		DWORD sampleCounter=0, totalSampleCounter=0; // delta and absolute sample counters
 		PLogTime buffer=result.GetBuffer(),pLogTime=buffer;
 		BYTE nearestIndexPulse=0;

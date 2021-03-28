@@ -1626,8 +1626,10 @@ BEGIN
     CONTROL         "&Verify formatted/written tracks (recommended)",
                     ID_VERIFY_TRACK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
                     201,211,10
-    CONTROL         "Normalize read tracks (timing correction)",ID_TRACK,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,190,141,10
+    CONTROL         "Use jitter and other &corrections",ID_TRACK,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,190,112,10
+    CONTROL         "(<a id=""correction"">Settings</a>)",ID_TIME,"SysLink",
+                    WS_TABSTOP,119,191,49,10
 END
 
 IDR_CAPS DIALOGEX 0, 0, 186, 127
@@ -1679,6 +1681,28 @@ BEGIN
     COMBOBOX        ID_MEDIUM,58,7,121,65,CBS_DROPDOWNLIST | WS_VSCROLL | 
                     WS_TABSTOP
     PUSHBUTTON      "",IDRETRY,29,138,95,14
+END
+
+IDR_CAPS_CORRECTIONS DIALOG DISCARDABLE  0, 0, 186, 113
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
+CAPTION "Flux corrections (all media)"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,75,92,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,129,92,50,14
+    CONTROL         "Correct index timing (e.g. one revolution time)",
+                    ID_ALIGN,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,8,172,
+                    10
+    CONTROL         "Trim track to official number of fluxes\n (e.g. 100.000 for 2DD floppy)",
+                    ID_NUMBER,"Button",BS_AUTOCHECKBOX | BS_TOP | 
+                    BS_MULTILINE | WS_TABSTOP,7,24,172,20
+    CONTROL         "Fit fluxes into middle of inspection windows",
+                    ID_ACCURACY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,49,
+                    172,10
+    CONTROL         "First sector starts earliest at [µs]:",ID_ADDRESS,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,66,116,10
+    EDITTEXT        ID_TIME,125,65,26,12,ES_AUTOHSCROLL | ES_NUMBER | NOT 
+                    WS_BORDER
 END
 
 
@@ -1974,6 +1998,14 @@ BEGIN
         RIGHTMARGIN, 179
         TOPMARGIN, 7
         BOTTOMMARGIN, 152
+    END
+
+    IDR_CAPS_CORRECTIONS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 106
     END
 END
 #endif    // APSTUDIO_INVOKED

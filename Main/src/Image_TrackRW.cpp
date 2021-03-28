@@ -759,6 +759,17 @@
 		}
 	}
 
+	static DWORD InterpolateTimes(PLogTime logTimes,DWORD nLogTimes,TLogTime tSrcA,DWORD iSrcA,TLogTime tSrcZ,TLogTime tDstA,TLogTime tDstZ){
+		// in-place interpolation of LogicalTimes in specified range; returns an "index-pointer" to the first unprocessed LogicalTime (outside the range)
+		TLogTime &rtStop=logTimes[nLogTimes],const tStopOrg=rtStop;
+		rtStop=INT_MAX; // stop-condition
+			PLogTime pTime=logTimes+iSrcA;
+			for( const TLogTime tSrcInterval=tSrcZ-tSrcA,tDstInterval=tDstZ-tDstA; *pTime<tSrcZ; pTime++ )
+				*pTime = tDstA+(LONGLONG)(*pTime-tSrcA)*tDstInterval/tSrcInterval;
+		rtStop=tStopOrg;
+		return pTime-logTimes;
+	}
+
 	bool CImage::CTrackReaderWriter::Normalize(){
 		// True <=> asked and successfully normalized for a known MediumType, otherwise False
 		// - if the Track contains less than two Indices, we are successfully done
@@ -766,25 +777,15 @@
 			return true;
 		// - determining the RevolutionTime to the next Index
 		TLogTime revolutionTime;
-		switch (mediumType){
-			case Medium::FLOPPY_HD_350:
-			case Medium::FLOPPY_DD:
-				revolutionTime=Medium::TProperties::FLOPPY_HD_350.revolutionTime;
-				break;
-			case Medium::FLOPPY_DD_525:
-				revolutionTime=Medium::TProperties::FLOPPY_DD_525.revolutionTime;
-				break;
-			case Medium::FLOPPY_HD_525:
-				revolutionTime=Medium::TProperties::FLOPPY_HD_525.revolutionTime;
-				break;
-			default:
-				ASSERT(FALSE);
-				return false;
-		}
+		if (const Medium::PCProperties mp=Medium::GetProperties(mediumType))
+			revolutionTime=mp->revolutionTime;
+		else
+			return false;
 		// - adjusting consecutive index-to-index distances
 		RewindToIndex(0);
 		for( BYTE i=0; i+1<nIndexPulses; i++ )
 			iNextTime=InterpolateTimes(
+				logTimes, nLogTimes,
 				GetIndexTime(i), iNextTime, GetIndexTime(i+1),
 				GetIndexTime(0)+i*revolutionTime, GetIndexTime(0)+(i+1)*revolutionTime
 			);

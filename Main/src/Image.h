@@ -446,7 +446,6 @@
 		class CTrackReaderWriter:public CTrackReader{
 			const DWORD nLogTimesMax;
 
-			DWORD InterpolateTimes(TLogTime tSrcA,DWORD iSrcA,TLogTime tSrcZ,TLogTime tDstA,TLogTime tDstZ) const;
 			bool WriteBits(const bool *bits,DWORD nBits);
 			WORD WriteDataFm(WORD nBytesToWrite,PCBYTE buffer,TFdcStatus sr);
 			WORD WriteDataMfm(WORD nBytesToWrite,PCBYTE buffer,TFdcStatus sr);
@@ -483,7 +482,7 @@
 			void AddTimes(PCLogTime logTimes,DWORD nLogTimes);
 			WORD WriteData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToWrite,PCBYTE buffer,TFdcStatus sr);
 			bool Normalize();
-			void Normalize(TLogTime correctIndexDistance);
+			TStdWinError NormalizeEx(TLogTime timeOffset,bool fitTimesIntoIwMiddles,bool correctCellCountPerRevolution,bool correctRevolutionTime);
 		};
 
 		class CSectorDataSerializer abstract:public CFile,public CHexaEditor::IContentAdviser{
