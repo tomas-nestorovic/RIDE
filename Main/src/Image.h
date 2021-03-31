@@ -436,6 +436,7 @@
 			void SetCodec(Codec::TType codec);
 			void SetMediumType(Medium::TType mediumType);
 			bool ReadBit();
+			bool ReadBits15(WORD &rOut);
 			bool ReadBits16(WORD &rOut);
 			bool ReadBits32(DWORD &rOut);
 			WORD Scan(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *pOutParseEvents=nullptr);

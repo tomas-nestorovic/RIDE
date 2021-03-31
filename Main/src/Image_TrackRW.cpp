@@ -241,6 +241,14 @@
 		}
 	}
 
+	bool CImage::CTrackReader::ReadBits15(WORD &rOut){
+		// True <=> at least 16 bits have not yet been read, otherwise False
+		for( BYTE n=15; n-->0; rOut=(rOut<<1)|(BYTE)ReadBit() )
+			if (!*this)
+				return false;
+		return true;
+	}
+
 	bool CImage::CTrackReader::ReadBits16(WORD &rOut){
 		// True <=> at least 16 bits have not yet been read, otherwise False
 		//if (method&TMethod::FDD_METHODS){
@@ -579,17 +587,23 @@
 			if ((sync1&0xffdf)==0x4489 && (sync23&0xffdfffdf)==0x44894489)
 				break;
 		}
-		ReadBit(); // leaving synchronization mark behind
+		w=ReadBit(); // leaving synchronization mark behind
 		if (!*this) // Track end encountered
 			return 0;
 		const TLogTime tDataFieldMarkStart=logTimes[iNextTime-1]; // aligning to the synchronization mark terminal "1"
 		const TProfile dataFieldMarkProfile=profile;
 		// - a Data Field mark should follow the synchronization
-		if (!ReadBits16(w)) // Track end encountered
+		if (!ReadBits15(w)) // Track end encountered; 15 plus 1 bit from above
 			return 0;
-		switch (MFM::DecodeByte(w)&0xfe){ // branching on observed data address mark; the least significant bit is always ignored by the FDC [http://info-coach.fr/atari/documents/_mydoc/Atari-Copy-Protection.pdf]
+		BYTE dam=MFM::DecodeByte(w);
+		switch (dam&0xfe){ // branching on observed data address mark; the least significant bit is always ignored by the FDC [http://info-coach.fr/atari/documents/_mydoc/Atari-Copy-Protection.pdf]
 			case 0xfa: // normal data
+				if (sr.DescribesDeletedDam()) // want a deleted data DAM instead?
+					dam=0xf8;
+				break;
 			case 0xf8: // deleted data
+				if (!sr.DescribesDeletedDam()) // want a normal data DAM instead?
+					dam=0xfa;
 				break;
 			default:
 				return 0; // not the expected Data mark
@@ -607,7 +621,6 @@
 		bool bits[(WORD)-1],*pBit=bits;
 		*pBit++=true; // the previous data bit in a distorted 0xA1 sync mark was a "1"
 		// - encoding the Data Field mark
-		const BYTE dam= sr.DescribesDeletedDam() ? 0xf8 : 0xfb;
 		pBit=MFM::EncodeByte( dam, pBit );
 		CFloppyImage::TCrc16 crc=CFloppyImage::GetCrc16Ccitt( MFM::CRC_A1A1A1, &dam, sizeof(dam) ); // computing the CRC along the way
 		// - encoding all Buffer data
