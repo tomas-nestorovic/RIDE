@@ -147,6 +147,7 @@
 				for( BYTE p=0; p<2; p++ ){ // even (0) and odd (1) fluxes
 					// : composing matrix "A" whose rows consist of one pivot flux and its left/right neighbors, and a vector "dt" of pivot flux differences introduced during writing
 					tr.SetCurrentTime( t0=testBeginTime );
+					for( BYTE n=nNeighboringFluxes; n-->0; t0=tr.ReadTime() );
 					if (p)
 						t0=tr.ReadTime();
 					TLogTime dt[nRows]; // time misrecognition of fluxes
@@ -155,7 +156,7 @@
 						::memcpy( row, distances+p+i*2, nEvaluationFluxes );
 						//t0=tr.ReadTime();
 						t=tr.ReadTime();
-						dt[i]= row[0]*mediumProps.cellTime - (t-t0);
+						dt[i]= row[nNeighboringFluxes]*mediumProps.cellTime - (t-t0); // the pivot flux in the middle
 						t0=tr.ReadTime();
 					}
 					// : using the Ordinary Least Squares method to transform an overdetermined system of equations to a normal system with matrix M and vector B
@@ -177,12 +178,12 @@
 					// . solving the normal system of equations using Gaussian method
 					for( BYTE c=0; c<nEvaluationFluxes-1; c++ )
 						for( BYTE r=c; ++r<nEvaluationFluxes; ){
-							const double k=-M[c][c]/M[r][c];
+							const double k1=M[r][c], k2=M[c][c];
+							for( BYTE i=c-1; ++i<nEvaluationFluxes; M[r][i]=k1*M[c][i]-k2*M[r][i] );
 							#ifdef _DEBUG
 								M[r][c]=0;
 							#endif
-							for( BYTE i=c; ++i<nEvaluationFluxes; M[r][i]*=k );
-							b[r]*=k;
+							b[r]=k1*b[c]-k2*b[r];
 						}
 					for( BYTE r=nEvaluationFluxes; r-->0; ){
 						double sum=b[r];
@@ -380,6 +381,7 @@ nextTrial:	;
 					return ERROR_UNKNOWN_COMPONENT;
 			}
 		// - assuring that all fluxes are after pre-compensation still chronologically ordered
+		pt=trw.GetBuffer();
 		for( DWORD tPrev=*pt,i=1,j=1; i<nTimes; j++ ) // i = "target" position, j = "source" position
 			if (pt[j]<tPrev){
 				// no - the J-th flux should already been processed, meaning the Previous flux was a "tachyon" one!

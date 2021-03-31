@@ -912,7 +912,7 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 		ASSERT( valid );
 		if (use)
 			return	trw.NormalizeEx(
-						firstSectorTime ? firstSectorMicroseconds : 0,
+						firstSectorTime ? firstSectorMicroseconds*1000 : 0, // micro- to nanoseconds
 						fitFluxesIntoIwMiddles,
 						cellCountPerTrack,
 						indexTiming
