@@ -675,7 +675,7 @@
 		return pb-dataBuffer;
 	}
 
-	#define ERROR_SAVE_MESSAGE_TEMPLATE	_T("Track %02d.%c saving%s failed")
+	#define ERROR_SAVE_MESSAGE_TEMPLATE	_T("Track %02d.%c %s failed")
 
 	TStdWinError CKryoFluxDevice::SaveAndVerifyTrack(TCylinder cyl,THead head) const{
 		// saves the specified Track to the inserted Medium; returns Windows standard i/o error
@@ -744,7 +744,7 @@
 					}while (::strrchr(lastRequestResultMsg,'=')[1]=='9'); // TODO: explain why sometimes instead of '0' a return code is '3' but the Track has been written; is it a timeout? if yes, how to solve it?
 			SendRequest( TRequest::STREAM, 0 ); // stop streaming
 			TCHAR msgSavingFailed[80];
-			::wsprintf( msgSavingFailed, ERROR_SAVE_MESSAGE_TEMPLATE, cyl, '0'+head, params.verifyWrittenTracks?_T(" and verification"):_T("") );
+			::wsprintf( msgSavingFailed, ERROR_SAVE_MESSAGE_TEMPLATE, cyl, '0'+head, _T("saving") );
 			if (err) // writing to the device failed
 				switch (
 					nSilentRetrials-->0
@@ -761,36 +761,41 @@
 				}
 			// . write verification
 			if (!err && params.verifyWrittenTracks && pit->nSectors>0){ // can verify the Track only if A&B&C, A = writing successfull, B&C = at least one Sector is recognized in it
-				internalTracks[cyl][head]=nullptr; // forcing rescan
-					ScanTrack( cyl, head );
-					if (const PInternalTrack pitVerif=internalTracks[cyl][head]){
-						if (pitVerif->nSectors>0){
-							const PInternalTrack pitWritten=CInternalTrack::CreateFrom( *this, trw );
-								const auto &revWrittenFirstSector=pitWritten->sectors[0].revolutions[0];
-								pitWritten->SetCurrentTimeAndProfile( revWrittenFirstSector.idEndTime, revWrittenFirstSector.idEndProfile );
-								const auto &revVerifFirstSector=pitVerif->sectors[0].revolutions[0];
-								pitVerif->SetCurrentTimeAndProfile( revVerifFirstSector.idEndTime, revVerifFirstSector.idEndProfile );
-								while ( // comparing common cells until the next Index pulse is reached
-									*pitWritten && pitWritten->GetCurrentTime()<pitWritten->GetIndexTime(1)
-									&&
-									*pitVerif && pitVerif->GetCurrentTime()<pitVerif->GetIndexTime(1)
-								)
-									if (pitWritten->ReadBit()!=pitVerif->ReadBit()){
-										err=ERROR_DS_COMPARE_FALSE;
-										break;
-									}
-							delete pitWritten;
+				::wsprintf( msgSavingFailed, ERROR_SAVE_MESSAGE_TEMPLATE, cyl, '0'+head, _T("verification") );
+				if (const Medium::PCProperties mp=Medium::GetProperties(pit->GetMediumType())){
+					internalTracks[cyl][head]=nullptr; // forcing rescan
+						ScanTrack( cyl, head );
+						if (const PInternalTrack pitVerif=internalTracks[cyl][head]){
+							if (pitVerif->nSectors>0){
+								const PInternalTrack pitWritten=CInternalTrack::CreateFrom( *this, trw );
+									const auto &revWrittenFirstSector=pitWritten->sectors[0].revolutions[0];
+									pitWritten->SetCurrentTimeAndProfile( revWrittenFirstSector.idEndTime, revWrittenFirstSector.idEndProfile );
+									const auto &revVerifFirstSector=pitVerif->sectors[0].revolutions[0];
+									pitVerif->SetCurrentTimeAndProfile( revVerifFirstSector.idEndTime, revVerifFirstSector.idEndProfile );
+									while ( // comparing common cells until the next Index pulse is reached
+										*pitWritten && pitWritten->GetCurrentTime()<pitWritten->GetIndexTime(1)
+										&&
+										*pitVerif && pitVerif->GetCurrentTime()<pitVerif->GetIndexTime(1)
+									)
+										if (pitWritten->ReadBit()!=pitVerif->ReadBit()){
+											if (pitWritten->GetCurrentTime()<mp->revolutionTime/100*95) // TODO: better way than ignoring the last 5% of Track
+												err=ERROR_DS_COMPARE_FALSE;
+											break;
+										}
+								delete pitWritten;
+							}else
+								err=ERROR_SECTOR_NOT_FOUND;
+							delete pitVerif;
 						}else
-							err=ERROR_SECTOR_NOT_FOUND;
-						delete pitVerif;
-					}else
-						err=ERROR_GEN_FAILURE;
-				internalTracks[cyl][head]=pit;
+							err=ERROR_GEN_FAILURE;
+					internalTracks[cyl][head]=pit;
+				}else
+					err=ERROR_UNRECOGNIZED_MEDIA;
 				if (err) // verification failed
 					switch (
 						nSilentRetrials-->0
 						? IDRETRY
-						: Utils::AbortRetryIgnore(msgSavingFailed,err,MB_DEFBUTTON2)
+						: Utils::AbortRetryIgnore( msgSavingFailed, err, MB_DEFBUTTON2, _T("Ignore this error for fuzzy tracks.") )
 					){
 						case IDIGNORE:	// ignoring the Error
 							err=ERROR_REQUEST_ABORTED;

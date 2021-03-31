@@ -1685,7 +1685,7 @@ END
 
 IDR_CAPS_CORRECTIONS DIALOG DISCARDABLE  0, 0, 186, 113
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
-CAPTION "Flux corrections (all media)"
+CAPTION "Flux corrections (all floppy types)"
 FONT 8, "MS Sans Serif"
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,75,92,50,14
@@ -1693,16 +1693,15 @@ BEGIN
     CONTROL         "Correct index timing (e.g. one revolution time)",
                     ID_ALIGN,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,8,172,
                     10
-    CONTROL         "Trim track to official number of fluxes\n (e.g. 100.000 for 2DD floppy)",
+    CONTROL         "Trim track to official number of cells\n (e.g. 100.000 for 2DD floppy)",
                     ID_NUMBER,"Button",BS_AUTOCHECKBOX | BS_TOP | 
                     BS_MULTILINE | WS_TABSTOP,7,24,172,20
-    CONTROL         "Fit fluxes into middle of inspection windows",
+    CONTROL         "Fit fluxes into middle of inspection windows (jitter)",
                     ID_ACCURACY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,49,
                     172,10
     CONTROL         "First sector starts earliest at [µs]:",ID_ADDRESS,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,66,116,10
-    EDITTEXT        ID_TIME,125,65,26,12,ES_AUTOHSCROLL | ES_NUMBER | NOT 
-                    WS_BORDER
+    EDITTEXT        ID_TIME,125,65,26,12,ES_AUTOHSCROLL | NOT WS_BORDER
 END
 
 

@@ -17,6 +17,7 @@
 		// copy ctor
 		: logTimes(tr.logTimes) , method(tr.method) , resetDecoderOnIndex(tr.resetDecoderOnIndex) {
 		::memcpy( this, &tr, sizeof(*this) );
+		static_assert( sizeof(TLogTime)==sizeof(UINT), "InterlockedIncrement" );
 		::InterlockedIncrement( (PUINT)logTimes-1 ); // increasing the reference counter
 	}
 
@@ -24,11 +25,13 @@
 		// move ctor
 		: logTimes(rTrackReader.logTimes) , method(rTrackReader.method) , resetDecoderOnIndex(rTrackReader.resetDecoderOnIndex) {
 		::memcpy( this, &rTrackReader, sizeof(*this) );
+		static_assert( sizeof(TLogTime)==sizeof(UINT), "InterlockedIncrement" );
 		::InterlockedIncrement( (PUINT)logTimes-1 ); // increasing the reference counter
 	}
 
 	CImage::CTrackReader::~CTrackReader(){
 		// dtor
+		static_assert( sizeof(TLogTime)==sizeof(UINT), "InterlockedDecrement" );
 		if (!::InterlockedDecrement( (PUINT)logTimes-1 )) // decreasing the reference counter
 			::free(logTimes-1);
 	}
