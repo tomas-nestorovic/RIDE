@@ -475,7 +475,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			return nullptr;
 		}
 		// - informing on what to do in case of DOS misrecognition
-		Utils::InformationWithCheckableShowNoMore( _T("If the DOS has been misrecognized, adjust the recognition sequence under \"Image -> Recognition\"."), INI_GENERAL, INI_MISRECOGNITION );
+		Utils::InformationWithCheckableShowNoMore( _T("If the DOS has been misrecognized, adjust the recognition sequence under \"Disk -> Recognition\"."), INI_GENERAL, INI_MISRECOGNITION );
 		// - returning the just open Image
 		return image.release();
 	}

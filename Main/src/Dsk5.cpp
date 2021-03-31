@@ -238,7 +238,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 					}
 				}
 			if (mayLeadToIncompatibilityIssues)
-				Utils::Information(_T("ATTENTION: Some tracks violate the common length or contain various sized sectors - such image may not work in all emulators. You are recommended to save it as \"Revision 5\" DSK (use the Image -> Dump command)."));
+				Utils::Information(_T("ATTENTION: Some tracks violate the common length or contain various sized sectors - such image may not work in all emulators. You are recommended to save it as \"Revision 5\" DSK (use the Disk -> Dump command)."));
 		}
 		m_bModified=FALSE;
 		return ::GetLastError()==ERROR_SUCCESS;

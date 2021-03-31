@@ -901,6 +901,11 @@
 
 
 
-	void CImage::CTrackReader::ShowModal(LPCTSTR caption) const{
+	void __cdecl CImage::CTrackReader::ShowModal(LPCTSTR format,...) const{
+		va_list argList;
+		va_start( argList, format );
+			TCHAR caption[200];
+			::wvsprintf( caption, format, argList );
+		va_end(argList);
 		CTrackEditor( *this, caption ).DoModal();
 	}

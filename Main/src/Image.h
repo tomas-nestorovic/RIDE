@@ -441,7 +441,7 @@
 			bool ReadBits32(DWORD &rOut);
 			WORD Scan(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *pOutParseEvents=nullptr);
 			TFdcStatus ReadData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,LPBYTE buffer,TParseEvent *pOutParseEvents=nullptr);
-			void ShowModal(LPCTSTR caption) const;
+			void __cdecl ShowModal(LPCTSTR format,...) const;
 		};
 
 		class CTrackReaderWriter:public CTrackReader{
@@ -478,6 +478,13 @@
 				ASSERT( nIndexPulses<Revolution::MAX );
 				ASSERT( logTime>=0 );
 				indexPulses[nIndexPulses++]=logTime;
+			}
+
+			inline
+			void TrimToTimesCount(DWORD nKeptLogTimes){
+				// discards some tail LogicalTimes, keeping only specified amount of them
+				ASSERT( nKeptLogTimes<=nLogTimes ); // can only shrink
+				nLogTimes=nKeptLogTimes;
 			}
 
 			void AddTimes(PCLogTime logTimes,DWORD nLogTimes);
