@@ -149,7 +149,8 @@
 		if (currentTime>=indexPulses[iNextIndexPulse]){
 			if (resetDecoderOnIndex)
 				profile.Reset();
-			iNextIndexPulse++;
+			const TLogTime indexTime=indexPulses[ iNextIndexPulse++ ];
+			currentTime=indexTime + (currentTime-indexTime+profile.iwTimeDefault-1)/profile.iwTimeDefault*profile.iwTimeDefault;
 		}
 		// - reading next bit
 		switch (method){
@@ -697,10 +698,15 @@
 		, nLogTimesMax(nLogTimesMax) {
 	}
 
-	CImage::CTrackReaderWriter::CTrackReaderWriter(const CTrackReaderWriter &rTrackReaderWriter)
+	CImage::CTrackReaderWriter::CTrackReaderWriter(const CTrackReaderWriter &rTrackReaderWriter,bool shareTimes)
 		// copy ctor
 		: CTrackReader( rTrackReaderWriter )
 		, nLogTimesMax( rTrackReaderWriter.nLogTimesMax ) {
+		if (!shareTimes){
+			CTrackReaderWriter tmp( rTrackReaderWriter.nLogTimesMax, rTrackReaderWriter.method, rTrackReaderWriter.resetDecoderOnIndex );
+			std::swap( *const_cast<PLogTime *>(&tmp.logTimes), *const_cast<PLogTime *>(&logTimes) );
+			::memcpy( logTimes, rTrackReaderWriter.logTimes, nLogTimes*sizeof(TLogTime) );
+		}
 	}
 	
 	CImage::CTrackReaderWriter::CTrackReaderWriter(CTrackReaderWriter &&rTrackReaderWriter)

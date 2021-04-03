@@ -698,9 +698,10 @@
 			trw.Normalize();
 		}
 		// - pre-compensation of the temporary Track
+		const CTrackReaderWriter trwCompensated( trw, false );
 		TStdWinError err;
 		if (precompensation.methodVersion!=CPrecompensation::None)
-			if ( err=precompensation.ApplyTo(*this,trw) )
+			if ( err=precompensation.ApplyTo(*this,trwCompensated) )
 				return err;
 		// - Drive's head calibration
 		if (params.calibrationStepDuringFormatting)
@@ -712,7 +713,7 @@
 		char nSilentRetrials=3;
 		do{
 			// . converting the temporary Track to "KFW" data, below streamed directly to KryoFlux
-			const DWORD nBytesToWrite=TrackToKfw1( trw );
+			const DWORD nBytesToWrite=TrackToKfw1( trwCompensated );
 			#ifdef _DEBUG
 				if (false){
 					CFile f;

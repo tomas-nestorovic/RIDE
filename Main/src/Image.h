@@ -454,7 +454,7 @@
 			static const CTrackReaderWriter Invalid;
 
 			CTrackReaderWriter(DWORD nLogTimesMax,TDecoderMethod method,bool resetDecoderOnIndex);
-			CTrackReaderWriter(const CTrackReaderWriter &rTrackReaderWriter);
+			CTrackReaderWriter(const CTrackReaderWriter &rTrackReaderWriter,bool shareTimes=true);
 			CTrackReaderWriter(CTrackReaderWriter &&rTrackReaderWriter);
 			CTrackReaderWriter(const CTrackReader &tr);
 

@@ -341,14 +341,17 @@
 		// - "re-normalizing" already read Tracks according to the new Medium
 		if (params.corrections.use && !m_strPathName.IsEmpty()) // normalization makes sense only for existing Images - it's useless for Images just created
 			if (pFormat->mediumType!=Medium::UNKNOWN) // a particular Medium specified ...
-				if (floppyType!=pFormat->mediumType) // ... and it's different
+				if (floppyType!=pFormat->mediumType || dos!=nullptr) // ... and A|B, A = it's different, B = setting final MediumType
 					for( TCylinder cyl=0; cyl<FDD_CYLINDERS_MAX; cyl++ )
 						for( THead head=0; head<2; head++ )
 							if (auto pit=internalTracks[cyl][head]){
 								pit->SetMediumType(pFormat->mediumType);
 								if (dos!=nullptr){ // DOS already known
-									if (const TStdWinError err=params.corrections.ApplyTo(*pit))
+									CTrackReaderWriter trw=*pit;
+									if (const TStdWinError err=params.corrections.ApplyTo(trw))
 										return err;
+									delete pit;
+									internalTracks[cyl][head]=CInternalTrack::CreateFrom( *this, trw );
 								}//the following commented out as it brings little to no readability improvement and leaves Tracks influenced by the MediumType
 								//else if (params.corrections.indexTiming) // DOS still being recognized ...
 									//if (!pit->Normalize()) // ... hence can only improve readability by adjusting index-to-index timing
