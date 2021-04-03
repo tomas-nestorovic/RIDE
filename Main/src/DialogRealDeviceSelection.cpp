@@ -95,7 +95,7 @@
 			ShowDlgItem(ID_ERROR), pDeviceListBox->ShowWindow(SW_HIDE);
 			TCHAR errMsg[200], quotedDosName[50];
 			::wsprintf( quotedDosName, _T("\"%s\""), dosProps->name );
-			::wsprintf( errMsg, _T("No local physical device compatible with %s found."), dosProps!=&CUnknownDos::Properties?quotedDosName:_T("any DOS") );
+			::wsprintf( errMsg, _T("No local physical device compatible with %s found. Maybe they are all being already used?"), dosProps!=&CUnknownDos::Properties?quotedDosName:_T("any DOS") );
 			SetDlgItemText( ID_ERROR, errMsg );
 		}
 	}

@@ -165,7 +165,7 @@
 				// . displaying inserted Medium information
 				SetDlgItemSingleCharUsingFont( // a warning that a 40-track disk might have been misrecognized
 					ID_INFORMATION,
-					L'\xf0ea', (HFONT)Utils::CRideFont(FONT_WEBDINGS,200,false,true).Detach()
+					L'\xf0ea', (HFONT)Utils::CRideFont(FONT_WEBDINGS,175,false,true).Detach()
 				);
 				RefreshMediumInformation();
 				// . updating write pre-compensation status

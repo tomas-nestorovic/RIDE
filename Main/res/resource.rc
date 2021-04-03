@@ -1288,7 +1288,7 @@ BEGIN
     CONTROL         "Static",ID_MEDIUM,"Static",SS_SIMPLE | WS_BORDER,71,23,
                     96,13
     PUSHBUTTON      "Refresh",ID_RECOVER,170,23,48,13
-    RTEXT           "Warn",ID_INFORMATION,42,40,24,14,NOT WS_GROUP
+    RTEXT           "Warn",ID_INFORMATION,42,38,24,14,NOT WS_GROUP
     CONTROL         "Double track distance",ID_40D80,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,71,40,147,10
     LTEXT           "Motor &off after [s]:",IDC_STATIC,7,57,56,8,NOT 
@@ -1605,7 +1605,7 @@ BEGIN
     CONTROL         "Static",ID_MEDIUM,"Static",SS_SIMPLE | WS_BORDER,71,70,
                     96,13
     PUSHBUTTON      "Refresh",ID_RECOVER,170,70,48,13
-    RTEXT           "Warn",ID_INFORMATION,42,86,24,16,NOT WS_GROUP
+    RTEXT           "Warn",ID_INFORMATION,42,84,24,16,NOT WS_GROUP
     CONTROL         "Double track distance",ID_40D80,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,71,87,147,10
     LTEXT           "Pre-compensation:",IDC_STATIC,7,102,60,8

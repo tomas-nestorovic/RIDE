@@ -1608,7 +1608,7 @@ Utils::Information(buf);}
 				// . displaying inserted Medium information
 				SetDlgItemSingleCharUsingFont( // a warning that a 40-track disk might have been misrecognized
 					ID_INFORMATION,
-					L'\xf0ea', (HFONT)Utils::CRideFont(FONT_WEBDINGS,200,false,true).Detach()
+					L'\xf0ea', (HFONT)Utils::CRideFont(FONT_WEBDINGS,175,false,true).Detach()
 				);
 				__refreshMediumInformation__();
 			}
@@ -1840,13 +1840,16 @@ autodetermineLatencies:		// automatic determination of write latency values
 	}
 
 	static BYTE ReportSectorVerificationError(RCPhysicalAddress chs){
+		TStdWinError err=::GetLastError();
+		if (err==ERROR_SUCCESS) // if hardware itself reports no error ...
+			err=ERROR_DS_COMPARE_FALSE; // ... then the data are simply wrongly written
 		TCHAR buf[100],sug[480];
 		::wsprintf(
 			sug, _T("- Has the correct medium been set in the \"%s\" dialog?\n- For copy-protected schemes, simply retrying often helps."),
 			Utils::CRideDialog::GetDialogTemplateCaptionText( IDR_DOS_FORMAT, buf, sizeof(buf)/sizeof(TCHAR) )
 		);
 		::wsprintf( buf, _T("Track %d verification failed for sector with %s"), chs.GetTrackNumber(2), (LPCTSTR)chs.sectorId.ToString() );
-		return Utils::AbortRetryIgnore( buf, ::GetLastError(), MB_DEFBUTTON2, sug );
+		return Utils::AbortRetryIgnore( buf, err, MB_DEFBUTTON2, sug );
 	}
 
 	TStdWinError CFDD::__formatToOneLongVerifiedSector__(RCPhysicalAddress chs,BYTE fillerByte){

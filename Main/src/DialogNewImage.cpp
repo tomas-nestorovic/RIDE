@@ -106,6 +106,11 @@
 				lb.Detach();
 				return TRUE;
 			}
+			case MAKELONG(ID_IMAGE,LBN_DBLCLK):
+				// Image selected by double-clicking on it
+				if (IsDlgItemEnabled(IDOK))
+					SendMessage( WM_COMMAND, IDOK );
+				break;
 		}
 		return __super::OnCommand(wParam,lParam);
 	}
