@@ -91,10 +91,10 @@
 				trw.AddTime( t+=doubleCellTime );
 			for( BYTE n=10; n>0; n-- ) // indication of beginning of test data
 				trw.AddTime( t+=5*mediumProps.cellTime );
-			BYTE distances[9000];
+			BYTE distances[24576];
 			for( WORD n=0; n<sizeof(distances); n++ ){ // generating test data
-				while (( distances[n]=::rand()&3 )==0); // between two 1's must always be at least one 0
-				trw.AddTime( t+=++distances[n]*mediumProps.cellTime );
+				distances[n]=std::min<BYTE>( 4, 2+(::rand()&3) ); // "2+" = between two 1's must always be at least one 0 (otherwise pre-compensation is useless, e.g. FM encoding)
+				trw.AddTime( t+=distances[n]*mediumProps.cellTime );
 			}
 			while (t<mediumProps.revolutionTime) // filling the remainder of the Track
 				trw.AddTime( t+=doubleCellTime );
