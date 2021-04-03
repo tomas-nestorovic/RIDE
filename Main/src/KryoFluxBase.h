@@ -40,7 +40,7 @@
 		static DWORD TimeToStdSampleCounter(TLogTime t);
 
 		//BOOL OnOpenDocument(LPCTSTR lpszPathName) override;
-		BOOL OnSaveDocument(LPCTSTR lpszPathName) override;
+		//BOOL OnSaveDocument(LPCTSTR lpszPathName) override;
 		//TCylinder GetCylinderCount() const override;
 		//THead GetNumberOfFormattedSides(TCylinder cyl) const override;
 		BYTE GetAvailableRevolutionCount() const override;

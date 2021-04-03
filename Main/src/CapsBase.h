@@ -22,6 +22,8 @@
 	class CCapsBase abstract:public CFloppyImage{
 		friend struct TInternalTrack;
 
+		static UINT AFX_CDECL SaveTracks_thread(PVOID _pCancelableAction);
+
 		Medium::TType forcedMediumType;
 	protected:
 		class CBitReader sealed{
@@ -140,7 +142,7 @@
 		~CCapsBase();
 
 		BOOL OnOpenDocument(LPCTSTR lpszPathName) override;
-		//BOOL OnSaveDocument(LPCTSTR lpszPathName) override;
+		BOOL OnSaveDocument(LPCTSTR lpszPathName) override;
 		TCylinder GetCylinderCount() const override;
 		THead GetNumberOfFormattedSides(TCylinder cyl) const override;
 		BYTE GetAvailableRevolutionCount() const override;

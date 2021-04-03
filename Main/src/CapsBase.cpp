@@ -478,6 +478,45 @@
 		return TRUE;
 	}
 
+	struct TSaveParams sealed{
+		const CCapsBase &cb;
+
+		TSaveParams(const CCapsBase &cb)
+			: cb(cb) {
+		}
+	};
+
+	UINT AFX_CDECL CCapsBase::SaveTracks_thread(PVOID _pCancelableAction){
+		// thread to save InternalTracks (particularly their Modified Sectors) on inserted floppy
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
+		const TSaveParams sp=*(TSaveParams *)pAction->GetParams();
+		const CCapsBase &cb=sp.cb;
+		pAction->SetProgressTarget(FDD_CYLINDERS_MAX);
+		for( TCylinder cyl=0; cyl<FDD_CYLINDERS_MAX; pAction->UpdateProgress(++cyl) )
+			for( THead head=0; head<2; head++ ) // 2 = max number of Sides on a floppy
+				if (pAction->IsCancelled())
+					return ERROR_CANCELLED;
+				else if (cb.internalTracks[cyl][head]) // Track exists
+					if (const TStdWinError err=cb.SaveTrack(cyl,head))
+						return pAction->TerminateWithError(err);
+		return pAction->TerminateWithSuccess();
+	}
+
+	BOOL CCapsBase::OnSaveDocument(LPCTSTR lpszPathName){
+		// True <=> this Image has been successfully saved, otherwise False
+		const TStdWinError err=	CBackgroundActionCancelable(
+									SaveTracks_thread,
+									&TSaveParams( *this ),
+									THREAD_PRIORITY_ABOVE_NORMAL
+								).Perform();
+		::SetLastError(err);
+		if (err==ERROR_SUCCESS){
+			m_bModified=FALSE;
+			return true;
+		}else
+			return false;
+	}
+
 	TCylinder CCapsBase::GetCylinderCount() const{
 		// determines and returns the actual number of Cylinders in the Image
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
