@@ -81,6 +81,11 @@
 							break;
 						::SetBkMode( dc, TRANSPARENT );
 						// . drawing inspection windows (if any)
+						const struct TOrigin sealed:public POINT{
+							TOrigin(const CDC &dc){
+								::GetViewportOrgEx( dc, this );
+							}
+						} org(dc);
 						bool continuePainting=true;
 						if (te.IsFeatureShown(TCursorFeatures::INSPECT)){
 							// : determining the first visible inspection window
@@ -88,10 +93,8 @@
 							// : drawing visible inspection windows (avoiding the GDI coordinate limitations by moving the viewport origin)
 							TLogTime tA=te.iwEndTimes[L], tZ;
 							RECT rc={ 0, 1, 0, IW_HEIGHT };
-							POINT org;
-							::GetViewportOrgEx( dc, &org );
 							const int nUnitsA=te.timeline.GetUnitCount(tA);
-							::SetViewportOrgEx( dc, Utils::LogicalUnitScaleFactor*te.timeline.GetUnitCount(tA)+org.x, org.y, nullptr );
+							::SetViewportOrgEx( dc, Utils::LogicalUnitScaleFactor*nUnitsA+org.x, org.y, nullptr );
 								while (continuePainting && tA<timeZ){
 									rc.right=te.timeline.GetUnitCount( tZ=te.iwEndTimes[++L] )-nUnitsA;
 									p.params.locker.Lock();
@@ -109,8 +112,6 @@
 							PCParseEvent pe=te.GetParseEvents();
 							const Utils::CRideFont &font=Utils::CRideFont::Std;
 							const auto dcSettings0=::SaveDC(dc);
-								POINT org;
-								::GetViewportOrgEx( dc, &org );
 								const int nUnitsA=te.timeline.GetUnitCount(te.GetScrollTime());
 								::SetViewportOrgEx( dc, 0, org.y, nullptr );
 								::SelectObject( dc, font );
@@ -211,10 +212,16 @@
 
 			void OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint) override{
 				// request to refresh the display of content
+				CRect rc;
+				GetClientRect(&rc);
+				SCROLLINFO si={ sizeof(si), SIF_PAGE };
 				SetScrollSizes(
 					MM_TEXT,
-					CSize( timeline.GetUnitCount(), 0 )
+					CSize( timeline.GetUnitCount(), 0 ), // total
+					CSize( si.nPage=rc.Width()/Utils::LogicalUnitScaleFactor, 0 ), // page
+					CSize( std::max(timeline.GetUnitCount(tr.GetCurrentProfile().iwTimeDefault),1), 0 ) // line
 				);
+				SetScrollInfo( SB_HORZ, &si, SIF_ALL );
 			}
 
 			int GetInspectionWindow(TLogTime logTime) const{
@@ -489,10 +496,6 @@
 				OnUpdate( nullptr, 0, nullptr );
 				SetScrollTime(  timeline.GetTime( timeline.GetUnitCount(t)-focusUnitX )  );
 				Invalidate();
-				CRect rc;
-				GetClientRect(&rc);
-				m_lineDev.cx=std::max( (int)(Utils::LogicalUnitScaleFactor*timeline.GetUnitCount(tr.GetCurrentProfile().iwTimeDefault)), 1 ); // in device units
-				m_pageDev.cx=rc.Width()*.9f; // in device units
 			}
 
 			void SetZoomFactorCenter(BYTE newZoomFactor){
