@@ -702,8 +702,10 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 		// converts specified Track representation into Stream data and returns the length of the Stream
 		PCHAR p=(PCHAR)outBuffer;
 		// - writing hardware information
-		#define HW_INFO	"name=KryoFlux DiskSystem, version=3.00s, date=Mar 27 2018, time=18:25:55, hwid=1, hwrv=1, hs=1, sck=24027428.5714285, ick=3003428.5714285625"
-		p+=::wsprintfA( p, "\xd\x4%c%c" HW_INFO, sizeof(HW_INFO), 0 )+1; // "+1" = terminal zero character
+		#define HW_INFO_1 "host_date=2019.09.24, host_time=20:57:32, hc=0"
+		p+=::wsprintfA( p, "\xd\x4%c%c" HW_INFO_1, sizeof(HW_INFO_1), 0 )+1; // "+1" = terminal zero character
+		#define HW_INFO_2 "name=KryoFlux DiskSystem, version=3.00s, date=Mar 27 2018, time=18:25:55, hwid=1, hwrv=1, hs=1, sck=24027428.5714285, ick=3003428.5714285625"
+		p+=::wsprintfA( p, "\xd\x4%c%c" HW_INFO_2, sizeof(HW_INFO_2), 0 )+1; // "+1" = terminal zero character
 		// - writing each Revolution on the Track
 		DWORD totalSampleCounter=0;
 		struct{
@@ -758,6 +760,6 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 		::memcpy( p, &streamInfoBlock, sizeof(streamInfoBlock) );
 		p+=sizeof(streamInfoBlock);
 		// - end of Stream
-		*(LPDWORD)p=0x0d0d0d0d;
-		return (PBYTE)p+sizeof(DWORD)-outBuffer;
+		static const char STREAM_END[]="\xd\xd\xd\xd\xd\xd\xd";
+		return (PBYTE)::lstrcpyA(p,STREAM_END) + sizeof(STREAM_END)-1 - outBuffer;
 	}
