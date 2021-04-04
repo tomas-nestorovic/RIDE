@@ -69,18 +69,18 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\WINDDK\inc\mfc42;C:\WINDDK\inc\ddk\wxp;..\Externals\capsimg;..\Externals\winusb;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\WINDDK\lib\mfc\i386;..\Externals\capsimg;..\Externals\winusb;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\WINDDK\inc\mfc42;..\Externals\capsimg;..\Externals\winusb;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\WINDDK\lib\mfc\i386;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug in RAMdisk|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\WINDDK\inc\mfc42;$(IncludePath)</IncludePath>
+    <IncludePath>C:\WINDDK\inc\mfc42;..\Externals\capsimg;..\Externals\winusb;$(IncludePath)</IncludePath>
     <LibraryPath>C:\WINDDK\lib\mfc\i386;$(LibraryPath)</LibraryPath>
     <IntDir>R:\Ride\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\WINDDK\inc\mfc42;$(IncludePath)</IncludePath>
+    <IncludePath>C:\WINDDK\inc\mfc42;..\Externals\capsimg;..\Externals\winusb;$(IncludePath)</IncludePath>
     <LibraryPath>C:\WINDDK\lib\mfc\i386;C:\WINDDK\lib\atl\i386;$(LibraryPath)</LibraryPath>
     <GenerateManifest>true</GenerateManifest>
     <EmbedManifest>true</EmbedManifest>

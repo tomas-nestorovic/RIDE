@@ -17,7 +17,7 @@ typedef UBYTE *PUBYTE;
 typedef UWORD *PUWORD;
 typedef UDWORD *PUDWORD;
 typedef UQUAD *PUQUAD;
-typedef SBYTE *PSBYTE;
+typedef CHAR *PSBYTE;
 typedef SWORD *PSWORD;
 typedef SDWORD *PSDWORD;
 typedef SQUAD *PSQUAD;
