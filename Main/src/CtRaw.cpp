@@ -16,7 +16,8 @@
 		_T("*.raw"), // filter
 		Medium::FLOPPY_ANY, // supported Media
 		Codec::FLOPPY_ANY, // supported Codecs
-		1,2*6144	// Sector supported min and max length
+		1,2*6144,	// Sector supported min and max length
+		true		// is read-only; modifications not possible at the moment
 	};
 
 
@@ -31,7 +32,6 @@
 		// ctor
 		// - base
 		: CCapsBase(&Properties,'\0',true) { // '\0' = not a real drive
-		canBeModified=false; // modifications not possible at the moment
 	}
 
 

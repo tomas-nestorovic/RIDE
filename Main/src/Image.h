@@ -268,6 +268,7 @@
 			Medium::TType supportedMedia;
 			Codec::TType supportedCodecs;
 			WORD sectorLengthMin,sectorLengthMax;
+			bool isReadOnly;
 
 			bool IsRealDevice() const;
 		} *PCProperties;

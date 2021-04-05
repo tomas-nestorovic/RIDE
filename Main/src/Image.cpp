@@ -442,7 +442,7 @@ namespace Medium{
 		// ctor
 		// - initialization
 		: properties(_properties) , dos(nullptr)
-		, hasEditableSettings(hasEditableSettings) , writeProtected(true) , canBeModified(true)
+		, hasEditableSettings(hasEditableSettings) , writeProtected(true) , canBeModified(!_properties->isReadOnly)
 		// - creating Toolbar (its displaying in CTdiView::ShowContent)
 		, toolbar(IDR_IMAGE,ID_IMAGE) { // ID_IMAGE = "some" unique ID
 		// - when destroying all Views, the document must exist further (e.g. when switching Tabs in TDI)

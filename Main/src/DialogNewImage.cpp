@@ -40,9 +40,8 @@
 		const WORD dosStdSectorLength=dosProps->stdFormats->params.format.sectorLength;
 		if (imageProps->supportedMedia&dosProps->supportedMedia) // DOS and Image support common Media
 			if (imageProps->supportedCodecs&dosProps->supportedCodecs) // DOS and Image support common Codecs
-				if (imageProps->sectorLengthMin<=dosStdSectorLength && dosStdSectorLength<=imageProps->sectorLengthMax)
-					if (std::unique_ptr<CImage>( imageProps->fnInstantiate(nullptr) )->CanBeModified()) // Null as buffer = one Image represents only one "device" whose name is known at compile-time
-						rLBImage.SetItemDataPtr( rLBImage.AddString(imageProps->fnRecognize(nullptr)), (PVOID)imageProps ); // Null as buffer = one Image represents only one "device" whose name is known at compile-time
+				if (imageProps->sectorLengthMin<=dosStdSectorLength && dosStdSectorLength<=imageProps->sectorLengthMax && !imageProps->isReadOnly)
+					rLBImage.SetItemDataPtr( rLBImage.AddString(imageProps->fnRecognize(nullptr)), (PVOID)imageProps ); // Null as buffer = one Image represents only one "device" whose name is known at compile-time
 	}
 
 	#define REAL_DEVICE_OPTION_STRING	_T("[ Compatible physical device ]")

@@ -16,7 +16,8 @@
 		_T("*.") CAPS_FILEEXT, // filter
 		Medium::FLOPPY_ANY, // supported Media
 		Codec::FLOPPY_ANY, // supported Codecs
-		1,2*6144	// Sector supported min and max length
+		1,2*6144,	// Sector supported min and max length
+		true		// is read-only; by design, the IPF serves for PRESERVATION and modifications thus should be NOT allowed
 	};
 
 
@@ -29,8 +30,6 @@
 		// ctor
 		// - base
 		: CCapsBase(&Properties,'\0',true) { // '\0' = not a real drive
-		// - initialization
-		canBeModified=false; // by design, the IPF serves for PRESERVATION and modifications thus should be NOT allowed
 	}
 
 

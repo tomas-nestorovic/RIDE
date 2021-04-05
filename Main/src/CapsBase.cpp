@@ -930,7 +930,7 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 				corr.firstSectorTime=tmp!=BST_UNCHECKED;
 				tmp=corr.firstSectorMicroseconds;
 					DDX_Text( pDX, ID_TIME, tmp );
-						DDV_MinMaxInt( pDX, tmp, 0, SHRT_MAX );
+						DDV_MinMaxInt( pDX, tmp, SHRT_MIN, SHRT_MAX );
 				corr.firstSectorMicroseconds=tmp;
 			}
 		public:
