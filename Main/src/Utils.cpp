@@ -137,9 +137,9 @@ namespace Utils{
 		return GetTextSize( text, ::lstrlen(text) );
 	}
 
-	const CRideFont CRideFont::Small(FONT_MS_SANS_SERIF,70,false,true);
-	const CRideFont CRideFont::Std(FONT_MS_SANS_SERIF,90,false,true);
-	const CRideFont CRideFont::StdBold(FONT_MS_SANS_SERIF,90,true,true);
+	const CRideFont CRideFont::Small(FONT_MS_SANS_SERIF,70,false,false);
+	const CRideFont CRideFont::Std(FONT_MS_SANS_SERIF,90,false,false);
+	const CRideFont CRideFont::StdBold(FONT_MS_SANS_SERIF,90,true,false);
 
 
 
