@@ -96,9 +96,14 @@
 			// dialog initialization
 			// - base
 			__super::PreInitDialog();
-			// - composing the "Recently accessed locations" section
 			GetClientRect(&rcCurrContent);
 			rcCurrContent.top=Utils::LogicalUnitScaleFactor*55, rcCurrContent.left=Utils::LogicalUnitScaleFactor*70, rcCurrContent.right-=Utils::LogicalUnitScaleFactor*16;
+			// - informing on outdated version
+			if (!app.isUpToDate){
+				__addCategory__( _T("Outdated!"), 0xf069 );
+				__addHyperlinkText__( L"A newer version available - get it <a id=\"UPDATE\">here</a>!" );
+			}
+			// - composing the "Recently accessed locations" section
 			__addCategory__( _T("Recently accessed locations"), 0xf0cd );
 				BYTE i=0;
 				for( CRideApp::CRecentFileListEx *const pMru=app.GetRecentFileList(); i<4 && i<pMru->GetSize(); i++ ){ // 4 = max # of MRU files displayed in the GuidePost
@@ -203,6 +208,8 @@
 							app.__openImage__();
 						else if (!::lstrcmpW(pNmLink->item.szID,L"ACCSDRV"))
 							app.__openDevice__();
+						else if (!::lstrcmpW(pNmLink->item.szID,L"UPDATE"))
+							((CMainWindow *)app.m_pMainWnd)->OpenRepositoryWebPage( nullptr, _T("/releases") );
 						return 0;
 					}
 					break;
@@ -303,8 +310,13 @@
 
 	CMainWindow::CTdiView::CTdiView()
 		// ctor
+		// - base
 		: CCtrlView(WC_TABCONTROL,AFX_WS_DEFAULT_VIEW & ~WS_BORDER)
-		, pCurrentTab(nullptr) {
+		// - initialization
+		, pCurrentTab(nullptr)
+		// - initiating determination of recency of this app
+		, recencyStatusThread( RecencyDetermination_thread, this, 0 ) {
+		recencyStatusThread.Resume();
 	}
 
 
@@ -410,6 +422,12 @@
 		return pCurrentTab;
 	}
 
+	#define WM_GUIDEPOST_REPOPULATE	WM_USER+1
+
+	void CMainWindow::CTdiView::RepopulateGuidePost() const{
+		::PostMessage( m_hWnd, WM_GUIDEPOST_REPOPULATE, 0, 0 );
+	}
+
 	LRESULT CMainWindow::CTdiView::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
 		// window procedure
 		switch (msg){
@@ -419,6 +437,13 @@
 					return err;
 				SetFocus();
 				return 0;
+			case WM_GUIDEPOST_REPOPULATE:
+				// repopulating the GuidePost with new items by hiding and showing it
+				if (CIntroductoryGuidePost::pSingleInstance)
+					CIntroductoryGuidePost::Hide();
+				else
+					return 0;
+				//fallthrough
 			case WM_SETFOCUS:
 				// window has received focus
 				if (!CIntroductoryGuidePost::pSingleInstance && !CTdiCtrl::GetCurrentTabContentRect(m_hWnd,nullptr))

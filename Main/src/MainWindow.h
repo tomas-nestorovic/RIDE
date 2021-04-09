@@ -80,14 +80,18 @@
 			static void WINAPI __fnRepaintContent__(LPCVOID pTab);
 			static HWND WINAPI __fnGetHwnd__(LPCVOID pTab);
 
+			const CBackgroundAction recencyStatusThread;
 			PTab pCurrentTab;
 
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 		public:
+			static UINT AFX_CDECL RecencyDetermination_thread(PVOID pCancelableAction);
+
 			CTdiView();
 
 			void __closeAllTabsOfFocusedDos__();
 			PTab __getCurrentTab__() const;
+			void RepopulateGuidePost() const;
 		} *pTdi;
 
 		static void __resetStatusBar__();
@@ -97,6 +101,7 @@
 		CStatusBar statusBar;
 
 		void OpenWebPage(LPCTSTR tabCaption,LPCTSTR url);
+		void OpenRepositoryWebPage(LPCTSTR tabCaption,LPCTSTR documentName);
 		void OpenApplicationPresentationWebPage(LPCTSTR tabCaption,LPCTSTR documentName);
 		afx_msg void __changeAutomaticDiskRecognitionOrder__();
 	};

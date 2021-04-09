@@ -26,6 +26,8 @@
 
 		static CLIPFORMAT cfDescriptor,cfRideFileList,cfContent,cfPreferredDropEffect,cfPerformedDropEffect,cfPasteSucceeded;
 
+		bool isUpToDate;
+
 		BOOL InitInstance() override;
 		int ExitInstance() override;
 		CDocument *OpenDocumentFile(LPCTSTR lpszFileName) override;

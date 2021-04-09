@@ -218,6 +218,7 @@
 			delete pStdMru;
 		}
 		// - registering the only document template available in this application
+		isUpToDate=true; // assumption
 		AddDocTemplate(
 			new CMainWindow::CTdiTemplate()
 		);

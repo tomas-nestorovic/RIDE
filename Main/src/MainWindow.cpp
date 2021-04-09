@@ -267,6 +267,14 @@
 		CWebPageView *const webView=new CWebPageView(url);
 		CTdiCtrl::AddTabLast( TDI_HWND, tabCaption, &webView->tab, true, TDI_TAB_CANCLOSE_ALWAYS, __onWebPageClosing__ );
 	}
+	void CMainWindow::OpenRepositoryWebPage(LPCTSTR tabCaption,LPCTSTR documentName){
+		// in new Tab opens the specified Document from application's on-line presentation
+		TCHAR url[MAX_PATH];
+		OpenWebPage(
+			tabCaption ? tabCaption : _T("GitHub"),
+			::lstrcat(  ::lstrcpy( url, GITHUB_HTTPS_NAME _T("/tomas-nestorovic/RIDE") ),  documentName  )
+		);
+	}
 	void CMainWindow::OpenApplicationPresentationWebPage(LPCTSTR tabCaption,LPCTSTR documentName){
 		// in new Tab opens the specified Document from application's on-line presentation
 		TCHAR url[MAX_PATH];
@@ -275,10 +283,12 @@
 
 	#define VERSION_LATEST_WEB	_T("usingLatest.html")
 
-	static UINT AFX_CDECL __checkApplicationRecency_thread__(PVOID _pCancelableAction){
+	UINT AFX_CDECL CMainWindow::CTdiView::RecencyDetermination_thread(PVOID pCancelableAction){
 		// checks if this instance of application is the latest by comparing it against the on-line information; returns ERROR_SUCCESS (on-line information was downloaded and this instance is up-to-date), ERROR_EVT_VERSION_TOO_OLD (on-line information was downloaded but this instance is out-of-date), or other error
-		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
-		pAction->SetProgressTarget(5); // 5 = see number of steps below
+		CBackgroundAction *const pAction=(CBackgroundAction *)pCancelableAction;
+		const PBackgroundActionCancelable pBac=dynamic_cast<PBackgroundActionCancelable>(pAction);
+		if (pBac)
+			pBac->SetProgressTarget(5); // 5 = see number of steps below
 		HINTERNET hSession=nullptr, hConnection=nullptr, hRequest=nullptr;
 		// - Step 1: opening a new Session
 		hSession=::InternetOpen( APP_IDENTIFIER, INTERNET_OPEN_TYPE_PRECONFIG, nullptr, nullptr, 0 );
@@ -290,16 +300,20 @@ quitWithErr:const DWORD err=::GetLastError();
 				::InternetCloseHandle(hConnection);
 			if (hSession!=nullptr)
 				::InternetCloseHandle(hSession);
-			return pAction->TerminateWithError(err);
+			return pBac ? pBac->TerminateWithError(err) : err;
 		}
-		if (pAction->IsCancelled()) return ERROR_CANCELLED;
-		pAction->UpdateProgress(1);
+		if (pBac){
+			if (pBac->IsCancelled()) return ERROR_CANCELLED;
+			pBac->UpdateProgress(1);
+		}
 		// - Step 2: connecting to the repository server
 		hConnection=::InternetConnect( hSession, GITHUB_API_SERVER_NAME, INTERNET_DEFAULT_HTTPS_PORT, nullptr, nullptr, INTERNET_SERVICE_HTTP, 0, 0 );
 		if (hConnection==nullptr)
 			goto quitWithErr;
-		if (pAction->IsCancelled()) return ERROR_CANCELLED;
-		pAction->UpdateProgress(2);
+		if (pBac){
+			if (pBac->IsCancelled()) return ERROR_CANCELLED;
+			pBac->UpdateProgress(2);
+		}
 		// - Step 3: creating a new Request to the server
 		hRequest=::HttpOpenRequest(	hConnection, _T("GET"), _T("/repos/tomas-nestorovic/RIDE/releases/latest"),
 									nullptr, nullptr, nullptr,
@@ -308,21 +322,27 @@ quitWithErr:const DWORD err=::GetLastError();
 								);
 		if (hRequest==nullptr)
 			goto quitWithErr;
-		if (pAction->IsCancelled()) return ERROR_CANCELLED;
-		pAction->UpdateProgress(3);
+		if (pBac){
+			if (pBac->IsCancelled()) return ERROR_CANCELLED;
+			pBac->UpdateProgress(3);
+		}
 		// - Step 4: sending the Request
 		if (!::HttpSendRequest( hRequest, "User-Agent:RIDE", -1, nullptr, 0 ))
 			goto quitWithErr;
-		if (pAction->IsCancelled()) return ERROR_CANCELLED;
-		pAction->UpdateProgress(4);
+		if (pBac){
+			if (pBac->IsCancelled()) return ERROR_CANCELLED;
+			pBac->UpdateProgress(4);
+		}
 		// - Step 5: receiving the response
 		char buffer[16384];
 		DWORD nBytesRead;
 		if (!::InternetReadFile( hRequest, buffer, sizeof(buffer), &nBytesRead ))
 			goto quitWithErr;
 		buffer[nBytesRead]='\0';
-		if (pAction->IsCancelled()) return ERROR_CANCELLED;
-		pAction->UpdateProgress(5);
+		if (pBac){
+			if (pBac->IsCancelled()) return ERROR_CANCELLED;
+			pBac->UpdateProgress(5);
+		}
 		// - analysing the obtained information (comparing it against this instance version)
 		if (const PCHAR githubTagName=::strstr(buffer,GITHUB_VERSION_TAG_NAME))
 			if (PCHAR r=::strchr(githubTagName+sizeof(GITHUB_VERSION_TAG_NAME),'\"')){ // "R"emote tag
@@ -332,17 +352,22 @@ quitWithErr:const DWORD err=::GetLastError();
 				do{
 					if (::isspace(*t))
 						t++; // ignoring any whitespaces in "T"his tag
-					else if (*r++!=*t++)
+					else if (*r++!=*t++){
+						app.isUpToDate=false;
+						if (pAction->GetParams())
+							TDI_INSTANCE->RepopulateGuidePost();
 						return ERROR_EVT_VERSION_TOO_OLD; // the app is outdated
+					}
 				} while (*r/*&&*t*/); // commented out as redundant (any differences already caught above)
 				return ERROR_SUCCESS; // the app is up-to-date
 			}
 		return ERROR_DS_SERVER_DOWN;
 	}
+
 	afx_msg void CMainWindow::__openUrl_checkForUpdates__(){
 		// checks if this instance of application is the latest by comparing it against the on-line information; opens either "You are using the latest version" web page, or the "You are using out-of-date version" web page
 		switch (const TStdWinError err=	CBackgroundActionCancelable(
-											__checkApplicationRecency_thread__,
+											CMainWindow::CTdiView::RecencyDetermination_thread,
 											nullptr,
 											THREAD_PRIORITY_LOWEST
 										).Perform()
@@ -368,7 +393,7 @@ quitWithErr:const DWORD err=::GetLastError();
 
 	afx_msg void CMainWindow::__openUrl_repository__(){
 		// opens the repository webpage in a new Tab
-		OpenWebPage( _T("Repository"), GITHUB_HTTPS_NAME _T("/tomas-nestorovic/RIDE") );
+		OpenRepositoryWebPage( _T("Repository"), _T("") );
 	}
 
 	afx_msg void CMainWindow::__openUrl_tutorials__(){
