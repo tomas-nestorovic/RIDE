@@ -681,9 +681,9 @@
 		const PInternalTrack pit=internalTracks[cyl][head];
 		if (!pit)
 			return ERROR_GEN_FAILURE;
-		pit->FlushSectorBuffers(); // convert all modifications into flux transitions
 		if (!pit->modified)
 			return ERROR_SUCCESS;
+		pit->FlushSectorBuffers(); // convert all modifications into flux transitions
 		// - extracting the "best" Revolution into a temporary Track
 		//TODO better
 		CTrackReaderWriter trw( pit->GetTimesCount(), CTrackReader::TDecoderMethod::FDD_KEIR_FRASER, false );
@@ -761,9 +761,12 @@
 			// . write verification
 			if (!err && params.verifyWrittenTracks && pit->nSectors>0){ // can verify the Track only if A&B&C, A = writing successfull, B&C = at least one Sector is recognized in it
 				::wsprintf( msgSavingFailed, ERROR_SAVE_MESSAGE_TEMPLATE, cyl, '0'+head, _T("verification") );
-				if (const Medium::PCProperties mp=Medium::GetProperties(pit->GetMediumType())){
+				if (const Medium::PCProperties mp=Medium::GetProperties(floppyType)){
 					internalTracks[cyl][head]=nullptr; // forcing rescan
-						ScanTrack( cyl, head );
+						const auto cae0=params.calibrationAfterError;
+						params.calibrationAfterError=TParams::TCalibrationAfterError::NONE; // already calibrated before writing
+							ScanTrack( cyl, head );
+						params.calibrationAfterError=cae0;
 						if (const PInternalTrack pitVerif=internalTracks[cyl][head]){
 							if (pitVerif->nSectors>0){
 								const PInternalTrack pitWritten=CInternalTrack::CreateFrom( *this, trw );

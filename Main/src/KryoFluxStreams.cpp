@@ -96,6 +96,7 @@
 		// saves the specified Track to the inserted Medium; returns Windows standard i/o error
 		if (const auto pit=internalTracks[cyl][head])
 			if (pit->modified){
+				pit->FlushSectorBuffers(); // convert all modifications into flux transitions
 				TCHAR fileName[MAX_PATH];
 				::wsprintf( fileName, _T("%s") TRACK_NAME_PATTERN, nameBase, cyl, '0'+head );
 				CFile f; CFileException e;

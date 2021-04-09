@@ -185,7 +185,11 @@
 		for( BYTE rev=0; rev<nRevs; rev++ )
 			nBitsTotally += nBitsPerTrack[rev] = CBitReader(ctiRevs[rev],lockFlags).Count;
 		CTrackReaderWriter trw( nBitsTotally*125/100, CTrackReader::FDD_KEIR_FRASER, true ); // pessimistic estimation of # of fluxes; allowing for 25% of false "ones" introduced by "FDC-like" decoders
-			if (*nBitsPerTrack>( nBitsPerTrackOfficial=Medium::TProperties::FLOPPY_HD_350.nCells )*95/100) // 5% tolerance
+			if (cb.floppyType!=Medium::UNKNOWN && !ctiRevs[0].timelen){
+				// Medium already known and the CAPS Track does NOT contain explicit timing information
+				nBitsPerTrackOfficial=Medium::GetProperties(cb.floppyType)->nCells;
+				trw.SetMediumType(cb.floppyType); // adopting the Medium
+			}else if (*nBitsPerTrack>( nBitsPerTrackOfficial=Medium::TProperties::FLOPPY_HD_350.nCells )*95/100) // 5% tolerance
 				// likely a 3.5" HD medium
 				trw.SetMediumType( Medium::FLOPPY_HD_350 );
 			else if (*nBitsPerTrack>( nBitsPerTrackOfficial=Medium::TProperties::FLOPPY_HD_525.nCells )*95/100) // 5% tolerance

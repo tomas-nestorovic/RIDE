@@ -231,7 +231,7 @@ namespace Medium{
 		{ 1, FDD_CYLINDERS_MAX }, // supported range of Cylinders (min and max)
 		{ 1, 2 },	// supported range of Heads (min and max)
 		{ 1, FDD_SECTORS_MAX }, // supported range of Sectors (min and max)
-		TIME_SECOND(1)/6, // single revolution time [nanoseconds]
+		TIME_MICRO(166600), // single revolution time [nanoseconds], rounded TIME_SECOND(1)/6
 		TIME_MICRO(2)*5/6, // single recorded data cell time [nanoseconds] = 1 second / 300kb = 3.333 µs -> 1.666 µs for MFM encoding
 		100000 // RevolutionTime/CellTime
 	};

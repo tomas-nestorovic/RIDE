@@ -18,7 +18,7 @@
 				NONE				=0,
 				ONCE_PER_CYLINDER	=1,
 				FOR_EACH_SECTOR		=2
-			} calibrationAfterError;
+			} mutable calibrationAfterError;
 			BYTE calibrationStepDuringFormatting;
 			TCorrections corrections;
 			bool verifyWrittenTracks;
