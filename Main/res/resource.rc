@@ -165,7 +165,9 @@ BEGIN
     VK_ESCAPE,      IDCANCEL,               VIRTKEY, NOINVERT
     VK_LEFT,        ID_FILE_SHIFT_DOWN,     VIRTKEY, CONTROL, NOINVERT
     VK_NEXT,        ID_NEXT,                VIRTKEY, CONTROL, NOINVERT
+    VK_NEXT,        ID_RECORD_NEXT,         VIRTKEY, SHIFT, NOINVERT
     VK_PRIOR,       ID_PREV,                VIRTKEY, CONTROL, NOINVERT
+    VK_PRIOR,       ID_RECORD_PREV,         VIRTKEY, SHIFT, NOINVERT
     VK_RIGHT,       ID_FILE_SHIFT_UP,       VIRTKEY, CONTROL, NOINVERT
     "W",            ID_TRACK,               VIRTKEY, CONTROL, NOINVERT
 END
@@ -676,18 +678,6 @@ IDR_TRACK_EDITOR MENU DISCARDABLE
 BEGIN
     POPUP "Preview"
     BEGIN
-        POPUP "Go to"
-        BEGIN
-            MENUITEM "Previous window\tLeft",       ID_DOWN
-            MENUITEM "Next window\tRight",          ID_UP
-            MENUITEM SEPARATOR
-            MENUITEM "Previous event\tCtrl+Left",   ID_FILE_SHIFT_DOWN
-            MENUITEM "Next event\tCtrl+Right",      ID_FILE_SHIFT_UP
-            MENUITEM SEPARATOR
-            MENUITEM "Previous index\tCtrl+PgUp",   ID_PREV
-            MENUITEM "Next index\tCtrl+PgDown",     ID_NEXT
-        END
-        MENUITEM SEPARATOR
         MENUITEM "Zoom in\t+",                  ID_ZOOM_IN
         MENUITEM "Zoom out\t–",                 ID_ZOOM_OUT
         MENUITEM "Zoom to revolution\tCtrl+R",  ID_ZOOM_PART
@@ -696,10 +686,25 @@ BEGIN
         MENUITEM "Show cursor time",            ID_TIME
         MENUITEM "Show time spacing",           ID_GAP
         MENUITEM "Show inspection",             ID_RECOGNIZE
+        MENUITEM "Show intervals",              ID_INTERLEAVE
         MENUITEM "Show structure",              ID_SYSTEM
         MENUITEM "(Show all)\tCtrl+W",          ID_TRACK
         MENUITEM SEPARATOR
         MENUITEM "Close\tEsc",                  IDCANCEL
+    END
+    POPUP "Go to"
+    BEGIN
+        MENUITEM "Previous window\tLeft",       ID_DOWN
+        MENUITEM "Next window\tRight",          ID_UP
+        MENUITEM SEPARATOR
+        MENUITEM "Previous event\tCtrl+Left",   ID_FILE_SHIFT_DOWN
+        MENUITEM "Next event\tCtrl+Right",      ID_FILE_SHIFT_UP
+        MENUITEM SEPARATOR
+        MENUITEM "Previous interval\tShift+Left", ID_RECORD_PREV
+        MENUITEM "Next interval\tShift+Right",  ID_RECORD_NEXT
+        MENUITEM SEPARATOR
+        MENUITEM "Previous index\tCtrl+PgUp",   ID_PREV
+        MENUITEM "Next index\tCtrl+PgDown",     ID_NEXT
     END
 END
 

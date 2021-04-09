@@ -361,6 +361,12 @@
 			TFdcStatus ReadDataFm(WORD nBytesToRead,LPBYTE buffer,TParseEvent *&pOutParseEvents);
 			TFdcStatus ReadDataMfm(WORD nBytesToRead,LPBYTE buffer,TParseEvent *&pOutParseEvents);
 		public:
+			typedef const struct TTimeInterval{
+				TLogTime tStart; // inclusive
+				TLogTime tEnd; // exclusive
+				COLORREF color;
+			} *PCTimeInterval;
+
 			CTrackReader(const CTrackReader &tr);
 			CTrackReader(CTrackReader &&rTrackReader);
 			~CTrackReader();
@@ -442,6 +448,7 @@
 			bool ReadBits32(DWORD &rOut);
 			WORD Scan(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *pOutParseEvents=nullptr);
 			TFdcStatus ReadData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,LPBYTE buffer,TParseEvent *pOutParseEvents=nullptr);
+			void __cdecl ShowModal(PCTimeInterval pIntervals,WORD nIntervals,LPCTSTR format,...) const;
 			void __cdecl ShowModal(LPCTSTR format,...) const;
 		};
 

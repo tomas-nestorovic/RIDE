@@ -13,6 +13,9 @@
 	typedef CImage::CTrackReader::TParseEvent TParseEvent,*PParseEvent;
 	typedef const TParseEvent *PCParseEvent;
 
+	typedef CImage::CTrackReader::TTimeInterval TTimeInterval,*PTimeInterval;
+	typedef CImage::CTrackReader::PCTimeInterval PCTimeInterval;
+
 	class CTrackEditor sealed:public Utils::CRideDialog{
 		const CImage::CTrackReader &tr;
 		const LPCTSTR caption;
@@ -24,6 +27,7 @@
 			SPACING	=2,
 			INSPECT	=4,
 			STRUCT	=8,
+			INTERVALS=16,
 			DEFAULT	= TIME//|SPACING
 		};
 		
@@ -160,6 +164,30 @@
 										p.params.locker.Unlock();
 									}
 									pe=pe->GetNext();
+								}
+							::RestoreDC( dc, dcSettings0 );
+							if (!continuePainting) // new paint request?
+								continue;
+						}
+						// . drawing TimeIntervals
+						if (te.IsFeatureShown(TCursorFeatures::INTERVALS) && te.pIntervals){
+							const auto dcSettings0=::SaveDC(dc);
+								const int nUnitsA=te.timeline.GetUnitCount(te.GetScrollTime());
+								::SetViewportOrgEx( dc, 0, org.y, nullptr );
+								//RECT rc={ 0, te.IsFeatureShown(TCursorFeatures::INSPECT)?IW_HEIGHT:TIME_HEIGHT, 0, INDEX_HEIGHT };
+								RECT rc={ 0, TIME_HEIGHT, 0, TIME_HEIGHT+6 };
+								for( WORD iInterval=0; continuePainting&&iInterval<te.nIntervals; iInterval++ ){
+									const TTimeInterval &ti=te.pIntervals[iInterval];
+									const TLogTime a=std::max(timeA,ti.tStart), z=std::min(timeZ,ti.tEnd);
+									if (a<z){ // TimeInterval visible
+										rc.left=te.timeline.GetUnitCount(a)-nUnitsA;
+										rc.right=te.timeline.GetUnitCount(z)-nUnitsA;
+										const Utils::CRideBrush brush(ti.color);
+										p.params.locker.Lock();
+											if ( continuePainting=p.params.id==id )
+												::FillRect( dc, &rc, brush );
+										p.params.locker.Unlock();
+									}
 								}
 							::RestoreDC( dc, dcSettings0 );
 							if (!continuePainting) // new paint request?
@@ -461,10 +489,14 @@
 				//nop (View destroyed by its owner)
 			}
 		public:
-			CTimeEditor(const CImage::CTrackReader &tr)
+			const PCTimeInterval pIntervals;
+			const WORD nIntervals;
+
+			CTimeEditor(const CImage::CTrackReader &tr,CImage::CTrackReader::PCTimeInterval pIntervals,WORD nIntervals)
 				// ctor
 				: timeline( tr.GetTotalTime(), 1, 10 )
 				, tr(tr)
+				, pIntervals(pIntervals) , nIntervals(nIntervals) // up to the caller to dispose allocated TimeIntervals!
 				, painter(*this)
 				, draggedTime(-1)
 				, cursorTime(-1) , cursorFeaturesShown(false) , cursorFeatures(TCursorFeatures::DEFAULT)
@@ -473,6 +505,8 @@
 			
 			~CTimeEditor(){
 				// dtor
+				//if (pIntervals)
+					//::free((PVOID)pIntervals); // commented out as it's up to the caller to dispose allocated TimeIntervals
 				if (parseEvents)
 					::free((PVOID)parseEvents);
 				if (iwEndTimes)
@@ -753,6 +787,10 @@
 						case ID_RECOGNIZE:
 							pCmdUi->SetCheck( timeEditor.IsFeatureShown(TCursorFeatures::INSPECT) );
 							return TRUE;
+						case ID_INTERLEAVE:
+							pCmdUi->Enable( timeEditor.pIntervals!=nullptr );
+							pCmdUi->SetCheck( timeEditor.IsFeatureShown(TCursorFeatures::INTERVALS) );
+							return TRUE;
 						case ID_SYSTEM:
 							pCmdUi->SetCheck( timeEditor.IsFeatureShown(TCursorFeatures::STRUCT) );
 							//fallthrough
@@ -769,6 +807,12 @@
 							return TRUE;
 						case ID_FILE_SHIFT_UP:
 							pCmdUi->Enable( timeEditor.GetParseEvents() && timeEditor.GetCenterTime()<timeEditor.GetParseEvents()->GetLast()->tStart );
+							return TRUE;
+						case ID_RECORD_PREV:
+							pCmdUi->Enable( timeEditor.pIntervals && timeEditor.GetCenterTime()>timeEditor.pIntervals->tStart );
+							return TRUE;
+						case ID_RECORD_NEXT:
+							pCmdUi->Enable( timeEditor.pIntervals && timeEditor.GetCenterTime()<timeEditor.pIntervals[timeEditor.nIntervals-1].tStart );
 							return TRUE;
 						case ID_DOWN:
 							pCmdUi->Enable( timeEditor.GetScrollTime()>0 );
@@ -827,6 +871,10 @@
 							timeEditor.ToggleFeature(TCursorFeatures::INSPECT);
 							timeEditor.Invalidate();
 							return TRUE;
+						case ID_INTERLEAVE:
+							timeEditor.ToggleFeature(TCursorFeatures::INTERVALS);
+							timeEditor.Invalidate();
+							return TRUE;
 						case ID_SYSTEM:
 							if (!timeEditor.IsFeatureShown(TCursorFeatures::STRUCT)) // currently hidden, so want now show the Feature
 								if (timeEditor.GetParseEvents()==nullptr) // data to display not yet received
@@ -872,6 +920,20 @@
 								timeEditor.SetCenterTime( pe->tStart );
 							return TRUE;
 						}
+						case ID_RECORD_PREV:{
+							WORD i=0;
+							for( const TLogTime tCenter=timeEditor.GetCenterTime(); i<timeEditor.nIntervals&&tCenter>timeEditor.pIntervals[i].tStart; i++ );
+							if (i>0)
+								timeEditor.SetCenterTime( timeEditor.pIntervals[i-1].tStart );
+							return TRUE;
+						}
+						case ID_RECORD_NEXT:{
+							WORD i=0;
+							for( const TLogTime tCenter=timeEditor.GetCenterTime(); i<timeEditor.nIntervals&&tCenter>=timeEditor.pIntervals[i].tStart; i++ );
+							if (i<timeEditor.nIntervals)
+								timeEditor.SetCenterTime( timeEditor.pIntervals[i].tStart );
+							return TRUE;
+						}
 						//case ID_DOWN:	// commented out as coped with already in WM_KEYDOWN handler
 							//return TRUE;
 						//case ID_UP:	// commented out as coped with already in WM_KEYDOWN handler
@@ -883,14 +945,14 @@
 		}
 
 	public:
-		CTrackEditor(const CImage::CTrackReader &tr,LPCTSTR caption)
+		CTrackEditor(const CImage::CTrackReader &tr,LPCTSTR caption,CImage::CTrackReader::PCTimeInterval pIntervals=nullptr,WORD nIntervals=0)
 			// ctor
 			// - base
 			: Utils::CRideDialog(IDR_TRACK_EDITOR)
 			// - initialization
 			, tr(tr)
 			, caption(caption) , menu( IDR_TRACK_EDITOR )
-			, timeEditor(tr)
+			, timeEditor( tr, pIntervals, nIntervals )
 			, hAutoscrollTimer(INVALID_HANDLE_VALUE) {
 		}
 	};
@@ -902,6 +964,15 @@
 
 
 
+
+	void __cdecl CImage::CTrackReader::ShowModal(PCTimeInterval pIntervals,WORD nIntervals,LPCTSTR format,...) const{
+		va_list argList;
+		va_start( argList, format );
+			TCHAR caption[200];
+			::wvsprintf( caption, format, argList );
+		va_end(argList);
+		CTrackEditor( *this, caption, pIntervals, nIntervals ).DoModal();
+	}
 
 	void __cdecl CImage::CTrackReader::ShowModal(LPCTSTR format,...) const{
 		va_list argList;
