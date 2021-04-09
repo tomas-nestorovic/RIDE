@@ -153,7 +153,7 @@
 											if ( continuePainting=p.params.id==id ){
 												const BYTE i=std::min<BYTE>(TParseEvent::LAST-1,pe->type);
 												::SelectObject( dc, parseEventBrushes[i] );
-												::BitBlt( dc, xa,-EVENT_HEIGHT, xz-xa,EVENT_HEIGHT, CClientDC(nullptr), 0,0, 0xa000c9 ); // ternary raster operation "dest AND pattern" (excluding "src", hence the use of screen DC)
+												::PatBlt( dc, xa,-EVENT_HEIGHT, xz-xa,EVENT_HEIGHT, 0xa000c9 ); // ternary raster operation "dest AND pattern"
 												::SetTextColor( dc, TParseEvent::TypeColors[i] );
 												::DrawTextA( dc, label,-1, &rcLabel, DT_LEFT|DT_BOTTOM|DT_SINGLELINE );
 											}
@@ -534,8 +534,7 @@
 			}
 
 			void SetCenterTime(TLogTime t){
-				scrollTime=0; // base time for GetCenterTime
-				SetScrollTime( t-GetCenterTime() );
+				SetScrollTime( t-(GetCenterTime()-scrollTime) );
 			}
 
 			inline PCLogTime GetInspectionWindowEndTimes() const{
