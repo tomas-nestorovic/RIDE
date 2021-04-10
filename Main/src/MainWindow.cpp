@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "MSDOS7.h"
 
 	CMainWindow::CDynMenu::CDynMenu(UINT nResId)
 		// ctor
@@ -116,6 +117,7 @@
 			ON_UPDATE_COMMAND_UI(ID_FILE_CLOSE,__closeCurrentTab_updateUI__)
 		ON_COMMAND(ID_RECOGNIZE,__changeAutomaticDiskRecognitionOrder__)
 		ON_COMMAND(ID_APP_UPDATE,__openUrl_checkForUpdates__)
+			ON_UPDATE_COMMAND_UI(ID_APP_UPDATE,__openUrl_checkForUpdates_updateUI__)
 		ON_COMMAND(ID_HELP_FAQ,__openUrl_faq__)
 		ON_COMMAND(ID_HELP_REPORT_BUG,__openUrl_reportBug__)
 		ON_COMMAND(ID_HELP_REPOSITORY,__openUrl_repository__)
@@ -344,6 +346,11 @@ quitWithErr:const DWORD err=::GetLastError();
 			pBac->UpdateProgress(5);
 		}
 		// - analysing the obtained information (comparing it against this instance version)
+		DWORD now;
+		if (CMSDOS7::TDateTime( CMSDOS7::TDateTime::GetCurrent() ).ToDWord(&now)){ // recording that recency last checked today
+			app.dateRecencyLastChecked=HIWORD(now); // today
+			app.WriteProfileInt( INI_GENERAL, INI_IS_UP_TO_DATE, app.dateRecencyLastChecked );
+		}
 		if (const PCHAR githubTagName=::strstr(buffer,GITHUB_VERSION_TAG_NAME))
 			if (PCHAR r=::strchr(githubTagName+sizeof(GITHUB_VERSION_TAG_NAME),'\"')){ // "R"emote tag
 				buffer[nBytesRead]='\"'; // guaranteeing that closing quote is always found
@@ -353,7 +360,8 @@ quitWithErr:const DWORD err=::GetLastError();
 					if (::isspace(*t))
 						t++; // ignoring any whitespaces in "T"his tag
 					else if (*r++!=*t++){
-						app.isUpToDate=false;
+						app.dateRecencyLastChecked=0; // now known that this app is outdated - no need to automatically check it next time
+						app.WriteProfileInt( INI_GENERAL, INI_IS_UP_TO_DATE, app.dateRecencyLastChecked );
 						if (pAction->GetParams())
 							TDI_INSTANCE->RepopulateGuidePost();
 						return ERROR_EVT_VERSION_TOO_OLD; // the app is outdated
@@ -379,6 +387,13 @@ quitWithErr:const DWORD err=::GetLastError();
 			default:
 				return Utils::Information(_T("Cannot retrieve the information"),err);
 		}
+	}
+	afx_msg void CMainWindow::__openUrl_checkForUpdates_updateUI__(CCmdUI *pCmdUI){
+		#ifdef APP_SPECIAL_VER
+			pCmdUI->Enable(FALSE);
+		#else
+			pCmdUI->Enable(TRUE);
+		#endif
 	}
 
 	afx_msg void CMainWindow::__openUrl_faq__(){

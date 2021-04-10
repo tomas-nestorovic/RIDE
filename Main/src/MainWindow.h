@@ -20,6 +20,7 @@
 		afx_msg void __closeCurrentTab__();
 			afx_msg void __closeCurrentTab_updateUI__(CCmdUI *pCmdUI);
 		afx_msg void __openUrl_checkForUpdates__();
+			afx_msg void __openUrl_checkForUpdates_updateUI__(CCmdUI *pCmdUI);
 		afx_msg void __openUrl_faq__();
 		afx_msg void __openUrl_reportBug__();
 		afx_msg void __openUrl_repository__();

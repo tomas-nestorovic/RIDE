@@ -218,7 +218,7 @@
 			delete pStdMru;
 		}
 		// - registering the only document template available in this application
-		isUpToDate=true; // assumption
+		dateRecencyLastChecked=app.GetProfileInt( INI_GENERAL, INI_IS_UP_TO_DATE, 1 ); // 1 = first date in MS-DOS Epoch
 		AddDocTemplate(
 			new CMainWindow::CTdiTemplate()
 		);

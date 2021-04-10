@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "MSDOS7.h"
 
 	CMainWindow::CTdiView::TTab::TTab(UINT nMenuResId,UINT nToolbarResId,UINT nToolBarId,PDos _dos,PView _view)
 		// ctor
@@ -99,7 +100,7 @@
 			GetClientRect(&rcCurrContent);
 			rcCurrContent.top=Utils::LogicalUnitScaleFactor*55, rcCurrContent.left=Utils::LogicalUnitScaleFactor*70, rcCurrContent.right-=Utils::LogicalUnitScaleFactor*16;
 			// - informing on outdated version
-			if (!app.isUpToDate){
+			if (!app.dateRecencyLastChecked){ // 0 = known for sure that this app is outdated
 				__addCategory__( _T("Outdated!"), 0xf069 );
 				__addHyperlinkText__( L"A newer version available - get it <a id=\"UPDATE\">here</a>!" );
 			}
@@ -315,8 +316,18 @@
 		// - initialization
 		, pCurrentTab(nullptr)
 		// - initiating determination of recency of this app
-		, recencyStatusThread( RecencyDetermination_thread, this, 0 ) {
-		recencyStatusThread.Resume();
+		, recencyStatusThread( RecencyDetermination_thread, nullptr, 0 ) {
+		#ifndef _DEBUG
+			#ifndef APP_SPECIAL_VER
+				// this application is a standard release - can check if it's up-to-date or already outdated
+				if (app.dateRecencyLastChecked>0){ // not yet known to be outdated
+					DWORD now;
+					if (CMSDOS7::TDateTime( CMSDOS7::TDateTime::GetCurrent() ).ToDWord(&now))
+						if (app.dateRecencyLastChecked!=HIWORD(now)) // recency suffices to be checked once a day
+							recencyStatusThread.Resume();
+				}				
+			#endif
+		#endif
 	}
 
 

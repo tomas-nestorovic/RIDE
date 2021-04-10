@@ -3,6 +3,8 @@
 
 	#define INI_GENERAL			_T("General")
 
+	#define INI_IS_UP_TO_DATE	_T("iu2d")
+
 	class CRideApp sealed:public CWinApp{
 		DECLARE_MESSAGE_MAP()
 	private:
@@ -26,7 +28,7 @@
 
 		static CLIPFORMAT cfDescriptor,cfRideFileList,cfContent,cfPreferredDropEffect,cfPerformedDropEffect,cfPasteSucceeded;
 
-		bool isUpToDate;
+		WORD dateRecencyLastChecked; // 0 = already known from earlier that this app is outdated
 
 		BOOL InitInstance() override;
 		int ExitInstance() override;
