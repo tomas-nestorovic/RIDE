@@ -363,14 +363,14 @@ nextTrial:	;
 				case Identity:
 					return ERROR_SUCCESS;
 				case MethodVersion1:{
-					const auto &coeffs=v1.coeffs[i&1];
-					const BYTE COEFFS_COUNT=sizeof(coeffs)/sizeof(*coeffs);
+					const BYTE COEFFS_COUNT=sizeof(v1.coeffs[0])/sizeof(*v1.coeffs[0]);
 					const BYTE PIVOT_INDEX=COEFFS_COUNT/2;
+					const auto &coeffs=v1.coeffs[(i+PIVOT_INDEX)&1];
 					if (i<nTimes-COEFFS_COUNT){ // applicable range
 						double compensation=0;
 						for( BYTE c=0; c<COEFFS_COUNT; c++ )
-							compensation+=coeffs[c]*origFluxes[c];
-						pt[PIVOT_INDEX]+=compensation;
+							compensation+=coeffs[c] * 2*trw.GetCurrentProfile().iwTimeDefault;//origFluxes[c];
+						pt[PIVOT_INDEX]+=compensation+.5;
 					}
 					::memmove( origFluxes, origFluxes+1, (COEFFS_COUNT-1)*sizeof(TLogTime) );
 					origFluxes[COEFFS_COUNT-1]=pt[COEFFS_COUNT]-pt[COEFFS_COUNT-1];
