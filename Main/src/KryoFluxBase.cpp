@@ -216,6 +216,14 @@
 						return 0;
 					case WM_COMMAND:
 						switch (wParam){
+							case MAKELONG(ID_ACCURACY,CBN_SELCHANGE):{
+								// FluxDecoder changed
+								const TParams::TFluxDecoder fd0=rkfb.params.fluxDecoder;
+									rkfb.params.fluxDecoder=(TParams::TFluxDecoder)ComboBox_GetCurSel( GetDlgItemHwnd(ID_ACCURACY) );
+									SendMessage( WM_COMMAND, ID_RECOVER ); // refresh information on inserted Medium
+								rkfb.params.fluxDecoder=fd0;
+								break;
+							}
 							case ID_RECOVER:
 								// refreshing information on (inserted) floppy
 								if (initialEditing) // if no Tracks are yet formatted ...
@@ -626,6 +634,8 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 			default:
 				ASSERT(FALSE);
 				//fallthrough
+			case TParams::TFluxDecoder::NO_FLUX_DECODER:
+				decoderMethod=CTrackReader::TDecoderMethod::NONE; break;
 			case TParams::TFluxDecoder::KEIR_FRASER:
 				decoderMethod=CTrackReader::TDecoderMethod::FDD_KEIR_FRASER; break;
 			case TParams::TFluxDecoder::MARK_OGDEN:

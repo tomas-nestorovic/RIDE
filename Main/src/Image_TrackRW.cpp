@@ -154,6 +154,14 @@
 		}
 		// - reading next bit
 		switch (method){
+			case TDecoderMethod::NONE:
+				// no decoder - aka. "don't extract bits from the record"
+				if (*this){
+					currentTime+=profile.iwTimeDefault;
+					while (*this && logTimes[iNextTime]<=currentTime)
+						iNextTime++;
+				}
+				return 0;
 			case TDecoderMethod::FDD_KEIR_FRASER:{
 				// FDC-like flux reversal decoding from Keir Fraser's Disk-Utilities/libdisk
 				// - reading some more from the Track
