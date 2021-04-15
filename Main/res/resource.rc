@@ -162,6 +162,7 @@ BEGIN
     "-",            ID_ZOOM_OUT,            ASCII,  NOINVERT
     "0",            ID_ZOOM_FIT,            VIRTKEY, CONTROL, NOINVERT
     "R",            ID_ZOOM_PART,           VIRTKEY, CONTROL, NOINVERT
+    "T",            ID_NAVIGATE_ADDRESS,    VIRTKEY, CONTROL, NOINVERT
     VK_ESCAPE,      IDCANCEL,               VIRTKEY, NOINVERT
     VK_LEFT,        ID_FILE_SHIFT_DOWN,     VIRTKEY, CONTROL, NOINVERT
     VK_NEXT,        ID_NEXT,                VIRTKEY, CONTROL, NOINVERT
@@ -694,6 +695,8 @@ BEGIN
     END
     POPUP "Go to"
     BEGIN
+        MENUITEM "Time...\tCtrl+T",             ID_NAVIGATE_ADDRESS
+        MENUITEM SEPARATOR
         MENUITEM "Previous window\tLeft",       ID_DOWN
         MENUITEM "Next window\tRight",          ID_UP
         MENUITEM SEPARATOR
@@ -1710,6 +1713,18 @@ BEGIN
     EDITTEXT        ID_TIME,97,65,26,12,ES_AUTOHSCROLL | NOT WS_BORDER
 END
 
+IDR_TRACK_EDITOR_GOTO_TIME DIALOG DISCARDABLE  0, 0, 160, 104
+STYLE WS_POPUP | WS_CAPTION
+CAPTION "Go to"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "&Time:",IDC_STATIC,7,7,18,8,NOT WS_GROUP
+    EDITTEXT        ID_TIME,7,17,146,12,ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "OK",IDOK,50,83,50,14,WS_DISABLED
+    PUSHBUTTON      "Cancel",IDCANCEL,103,83,50,14
+    LTEXT           "Use suffixes {s,m,u,n} to identify units, e.g.\n- 230u for 230 µs,\n- 2s25m for 2025 ms,\n- 2s 25m 230u 500n for 2025230500 ns.",
+                    IDC_STATIC,7,33,146,36
+END
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -2011,6 +2026,14 @@ BEGIN
         RIGHTMARGIN, 179
         TOPMARGIN, 7
         BOTTOMMARGIN, 106
+    END
+
+    IDR_TRACK_EDITOR_GOTO_TIME, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 153
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 97
     END
 END
 #endif    // APSTUDIO_INVOKED

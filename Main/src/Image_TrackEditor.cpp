@@ -891,6 +891,93 @@
 								timeEditor.ShowAllFeatures();
 							return TRUE;
 						}
+						case ID_NAVIGATE_ADDRESS:{
+							static const TCHAR Units[]=_T("nums"); // in order of scale ascending
+							class CGotoTimeDialog sealed:public Utils::CRideDialog{
+								const TLogTime tMax;
+
+								TLogTime ParseTime() const{
+									TCHAR buf[80];
+									GetDlgItemText( ID_TIME, buf, sizeof(buf)/sizeof(TCHAR) );
+									LPCTSTR p=::CharLower(buf);
+									TLogTime tResult=-1; // assumption (no or invalid time entered)
+									char iLastUnitUsed=100; // no unit yet used
+									for( int t,i,u=0; *p; p+=i ){
+										const int nItems=_stscanf(p,_T("%d%n%c%n"),&t,&i,&u,&i);
+										if (nItems<0)
+											break; // no (further) input
+										if (!nItems)
+											return -1; // invalid character in input
+										if (nItems==1 || ::isspace(u)) // no unit specifier ...
+											u='n'; // ... defaults to Nanoseconds
+										if (const LPCTSTR pUnit=::strchr( Units, u )){
+											const char iUnit=pUnit-Units;
+											if (iUnit>=iLastUnitUsed)
+												return -1; // mustn't use bigger (or the same) units after smaller have been used
+											iLastUnitUsed=iUnit;
+										}else
+											return-1; // unknown unit used
+										if (tResult<0)
+											tResult=0; // the user input is at least partially valid
+										LONGLONG t64=t; // temporarily a 64-bit precision
+										switch (u){
+											case 's': t64=TIME_SECOND(t64);	break;
+											case 'm': t64=TIME_MILLI(t64);	break;
+											case 'u': t64=TIME_MICRO(t64);	break;
+											default: t64=TIME_NANO(t64);	break;
+										}
+										if (tResult+t64>INT_MAX)
+											return -1; // specified time is out of range
+										tResult+=t64;
+									}
+									return tResult;
+								}
+
+								void DoDataExchange(CDataExchange *pDX) override{
+									__super::DoDataExchange(pDX);
+									if (pDX->m_bSaveAndValidate){
+										tCenter=ParseTime();
+										if (tCenter<0)
+											pDX->Fail();
+									}else{
+										char iLargestUnit=-1;
+										short nUnits[sizeof(Units)]; // 0 = nanoseconds, 1 = microseconds, etc.
+										::ZeroMemory( nUnits, sizeof(nUnits) );
+										do{
+											const div_t d=div( tCenter, 1000 );
+											nUnits[++iLargestUnit]=d.rem;
+											tCenter=d.quot;
+										}while (tCenter>0);
+										TCHAR buf[80], *p=buf;
+										do{
+											p+=::wsprintf( p, _T("%d%c "), nUnits[iLargestUnit], Units[iLargestUnit] );
+										}while (iLargestUnit-->0);
+										SetDlgItemText( ID_TIME, buf );
+									}
+								}
+
+								LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
+									switch (msg){
+										case WM_COMMAND:
+											if (wParam==MAKELONG(ID_TIME,EN_CHANGE))
+												EnableDlgItem( IDOK, ParseTime()>=0 );
+											break;
+									}
+									return __super::WindowProc( msg, wParam, lParam );
+								}
+							public:
+								TLogTime tCenter;
+
+								CGotoTimeDialog(TLogTime timeCenter,TLogTime timeMax)
+									: Utils::CRideDialog( IDR_TRACK_EDITOR_GOTO_TIME, this )
+									, tMax(timeMax)
+									, tCenter( std::min(timeCenter,timeMax) ) {
+								}
+							} d( timeEditor.GetCenterTime(), tr.GetTotalTime() );
+							if (d.DoModal()==IDOK)
+								timeEditor.SetCenterTime( d.tCenter );
+							return TRUE;
+						}
 						case ID_PREV:{
 							BYTE i=0;
 							for( const TLogTime tCenter=timeEditor.GetCenterTime(); i<tr.GetIndexCount()&&tCenter>tr.GetIndexTime(i); i++ );
