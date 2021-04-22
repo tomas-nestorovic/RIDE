@@ -72,6 +72,7 @@ namespace Utils{
 		bool EnableDlgItem(WORD id,bool enabled=true) const;
 		bool EnableDlgItems(PCWORD pIds,bool enabled) const;
 		bool ShowDlgItem(WORD id,bool show=true) const;
+		bool ShowDlgItems(PCWORD pIds,bool show=true) const;
 		void FocusDlgItem(WORD id) const;
 		bool IsDlgItemEnabled(WORD id) const;
 		RECT GetDlgItemClientRect(WORD id) const;

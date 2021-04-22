@@ -896,6 +896,13 @@ namespace Utils{
 		return show;
 	}
 
+	bool CRideDialog::ShowDlgItems(PCWORD pIds,bool show) const{
+		// shows/hides all specified Dialog controls and returns this new state
+		while (const WORD id=*pIds++)
+			::ShowWindow( ::GetDlgItem(m_hWnd,id), show?SW_SHOW:SW_HIDE );
+		return show;
+	}
+
 	void CRideDialog::FocusDlgItem(WORD id) const{
 		// sets keyboard focus on item specified by its Id
 		::SetFocus( ::GetDlgItem(m_hWnd,id) );
