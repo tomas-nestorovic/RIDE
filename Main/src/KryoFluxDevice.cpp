@@ -761,38 +761,10 @@
 			// . write verification
 			if (!err && params.verifyWrittenTracks && pit->nSectors>0){ // can verify the Track only if A&B&C, A = writing successfull, B&C = at least one Sector is recognized in it
 				::wsprintf( msgSavingFailed, ERROR_SAVE_MESSAGE_TEMPLATE, cyl, '0'+head, _T("verification") );
-				if (const Medium::PCProperties mp=Medium::GetProperties(floppyType)){
-					internalTracks[cyl][head]=nullptr; // forcing rescan
-						const auto cae0=params.calibrationAfterError;
-						params.calibrationAfterError=TParams::TCalibrationAfterError::NONE; // already calibrated before writing
-							ScanTrack( cyl, head );
-						params.calibrationAfterError=cae0;
-						if (const PInternalTrack pitVerif=internalTracks[cyl][head]){
-							if (pitVerif->nSectors>0){
-								const PInternalTrack pitWritten=CInternalTrack::CreateFrom( *this, trw );
-									const auto &revWrittenFirstSector=pitWritten->sectors[0].revolutions[0];
-									pitWritten->SetCurrentTimeAndProfile( revWrittenFirstSector.idEndTime, revWrittenFirstSector.idEndProfile );
-									const auto &revVerifFirstSector=pitVerif->sectors[0].revolutions[0];
-									pitVerif->SetCurrentTimeAndProfile( revVerifFirstSector.idEndTime, revVerifFirstSector.idEndProfile );
-									while ( // comparing common cells until the next Index pulse is reached
-										*pitWritten && pitWritten->GetCurrentTime()<pitWritten->GetIndexTime(1)
-										&&
-										*pitVerif && pitVerif->GetCurrentTime()<pitVerif->GetIndexTime(1)
-									)
-										if (pitWritten->ReadBit()!=pitVerif->ReadBit()){
-											if (pitWritten->GetCurrentTime()<mp->revolutionTime/100*95) // TODO: better way than ignoring the last 5% of Track
-												err=ERROR_DS_COMPARE_FALSE;
-											break;
-										}
-								delete pitWritten;
-							}else
-								err=ERROR_SECTOR_NOT_FOUND;
-							delete pitVerif;
-						}else
-							err=ERROR_GEN_FAILURE;
-					internalTracks[cyl][head]=pit;
-				}else
-					err=ERROR_UNRECOGNIZED_MEDIA;
+				const auto cae0=params.calibrationAfterError;
+				params.calibrationAfterError=TParams::TCalibrationAfterError::NONE; // already calibrated before writing
+					err=VerifyTrack( cyl, head, trw, true );
+				params.calibrationAfterError=cae0;
 				if (err) // verification failed
 					switch (
 						nSilentRetrials-->0

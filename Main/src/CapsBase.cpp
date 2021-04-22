@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "CapsBase.h"
 #include "MSDOS7.h"
+#include "Diff.h"
 
 	static TStdWinError InitCapsLibrary(CapsVersionInfo &cvi){
 		// - checking version
@@ -868,6 +869,48 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		DestroyAllTracks();
 		return ERROR_SUCCESS;
+	}
+
+	TStdWinError CCapsBase::VerifyTrack(TCylinder cyl,THead head,const CTrackReaderWriter &trwWritten,bool showDiff) const{
+		// verifies specified Track that is assumed to be just written; returns Windows standard i/o error
+		// - Medium must be known
+		const Medium::PCProperties mp=Medium::GetProperties(floppyType);
+		if (!mp)
+			return ERROR_UNRECOGNIZED_MEDIA;
+		// - verification
+		TStdWinError err=ERROR_SUCCESS; // assumption (verification was successful)
+		const PInternalTrack pit0=internalTracks[cyl][head];
+		internalTracks[cyl][head]=nullptr; // forcing rescan
+			ScanTrack( cyl, head );
+			if (const PInternalTrack pitVerif=internalTracks[cyl][head]){
+				if (pitVerif->nSectors>0){
+					const PInternalTrack pitWritten=CInternalTrack::CreateFrom( *this, trwWritten );
+						// . comparing common cells between first two Indices
+						const auto &revWrittenFirstSector=pitWritten->sectors[0].revolutions[0];
+						pitWritten->SetCurrentTimeAndProfile( revWrittenFirstSector.idEndTime, revWrittenFirstSector.idEndProfile );
+						const auto &revVerifFirstSector=pitVerif->sectors[0].revolutions[0];
+						pitVerif->SetCurrentTimeAndProfile( revVerifFirstSector.idEndTime, revVerifFirstSector.idEndProfile );
+						while (
+							*pitWritten && pitWritten->GetCurrentTime()<pitWritten->GetIndexTime(1)
+							&&
+							*pitVerif && pitVerif->GetCurrentTime()<pitVerif->GetIndexTime(1)
+						)
+							if (pitWritten->ReadBit()!=pitVerif->ReadBit()){ // the bits differ
+								if (pitWritten->GetCurrentTime()<mp->revolutionTime/100*95) // TODO: better way than ignoring the last 5% of Track
+									// a significant difference
+									err=ERROR_DS_COMPARE_FALSE;
+								break;
+							}
+						// . if written and read Tracks differ significantly, showing problematic parts
+						//TODO
+					delete pitWritten;
+				}else
+					err=ERROR_SECTOR_NOT_FOUND;
+				delete pitVerif;
+			}else
+				err=ERROR_GEN_FAILURE;
+		internalTracks[cyl][head]=pit0;
+		return err;
 	}
 
 	CImage::CTrackReader CCapsBase::ReadTrack(TCylinder cyl,THead head) const{

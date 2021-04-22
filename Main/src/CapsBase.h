@@ -138,6 +138,7 @@
 		CCapsBase(PCProperties properties,char realDriveLetter,bool hasEditableSettings);
 
 		void DestroyAllTracks();
+		TStdWinError VerifyTrack(TCylinder cyl,THead head,const CTrackReaderWriter &trwWritten,bool showDiff) const;
 	public:
 		~CCapsBase();
 
