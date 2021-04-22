@@ -294,7 +294,7 @@
 				union{
 					struct{
 						DWORD nConsecutiveZeros;
-					} frasier;
+					} fraser;
 					struct{
 						TLogTime dTime;
 						bool up;

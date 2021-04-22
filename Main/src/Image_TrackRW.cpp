@@ -165,6 +165,7 @@
 			case TDecoderMethod::FDD_KEIR_FRASER:{
 				// FDC-like flux reversal decoding from Keir Fraser's Disk-Utilities/libdisk
 				// - reading some more from the Track
+				auto &r=profile.method.fraser;
 				const TLogTime iwTimeHalf=profile.iwTime/2;
 				do{
 					if (!*this)
@@ -179,11 +180,11 @@
 				const TLogTime diff=logTimes[iNextTime]-currentTime;
 				iNextTime+=logTimes[iNextTime]<=currentTime; // eventual correction of the pointer to the next time
 				if (diff>=iwTimeHalf){
-					profile.method.frasier.nConsecutiveZeros++;
+					r.nConsecutiveZeros++;
 					return 0;
 				}
 				// - adjust data frequency according to phase mismatch
-				if (profile.method.frasier.nConsecutiveZeros<=nConsecutiveZerosMax)
+				if (r.nConsecutiveZeros<=nConsecutiveZerosMax)
 					// in sync - adjust inspection window by percentage of phase mismatch
 					profile.iwTime+= diff * profile.adjustmentPercentMax/100;
 				else
@@ -195,7 +196,7 @@
 				else if (profile.iwTime>profile.iwTimeMax)
 					profile.iwTime=profile.iwTimeMax;
 				// - a "1" recognized
-				profile.method.frasier.nConsecutiveZeros=0;
+				r.nConsecutiveZeros=0;
 				return 1;
 			}
 			case TDecoderMethod::FDD_MARK_OGDEN:{
@@ -665,12 +666,12 @@
 
 	const CImage::CTrackReader::TProfile CImage::CTrackReader::TProfile::DD(
 		Medium::TProperties::FLOPPY_DD,
-		8 // inspection window size tolerance
+		4 // inspection window size tolerance
 	);
 
 	const CImage::CTrackReader::TProfile CImage::CTrackReader::TProfile::DD_525(
 		Medium::TProperties::FLOPPY_DD_525,
-		9 // inspection window size tolerance
+		4 // inspection window size tolerance
 	);
 
 	CImage::CTrackReader::TProfile::TProfile(const Medium::TProperties &floppyProps,BYTE iwTimeTolerancePercent)
