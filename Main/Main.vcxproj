@@ -208,6 +208,7 @@
     <ClInclude Include="src\DialogRealDeviceSelection.h" />
     <ClInclude Include="src\DialogUnformatting.h" />
     <ClInclude Include="src\DialogVerification.h" />
+    <ClInclude Include="src\Diff.h" />
     <ClInclude Include="src\Dos.h" />
     <ClInclude Include="src\DosUnknown.h" />
     <ClInclude Include="src\Dsk5.h" />
@@ -252,6 +253,7 @@
     <ClCompile Include="src\Debug.cpp" />
     <ClCompile Include="src\DialogRealDeviceSelection.cpp" />
     <ClCompile Include="src\DialogVerification.cpp" />
+    <ClCompile Include="src\Diff.cpp" />
     <ClCompile Include="src\Dos_HexaPreview.cpp" />
     <ClCompile Include="src\Dos_PathString.cpp" />
     <ClCompile Include="src\Dos_Recognition.cpp" />
