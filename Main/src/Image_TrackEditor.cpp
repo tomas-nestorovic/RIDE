@@ -19,6 +19,7 @@
 	class CTrackEditor sealed:public Utils::CRideDialog{
 		const CImage::CTrackReader &tr;
 		const UINT messageBoxButtons;
+		const bool initAllFeaturesOn;
 		TCHAR caption[500];
 		CMainWindow::CDynMenu menu;
 		HANDLE hAutoscrollTimer;
@@ -651,6 +652,12 @@
 				default:
 					ASSERT(FALSE); break; // we shouldn't end up here - all used options must be covered!
 			}
+			// - if Intervals are specified, navigating to the first of them
+			if (timeEditor.pIntervals)
+				timeEditor.SetCenterTime( timeEditor.pIntervals->tStart );
+			// - if requested, displaying all Features
+			if (initAllFeaturesOn)
+				SendMessage( WM_COMMAND, ID_TRACK );
 			return FALSE; // False = focus already set manually
 		}
 
@@ -1049,13 +1056,13 @@
 		}
 
 	public:
-		CTrackEditor(const CImage::CTrackReader &tr,PCTimeInterval pIntervals,WORD nIntervals,UINT messageBoxButtons,LPCTSTR captionFormat,va_list argList)
+		CTrackEditor(const CImage::CTrackReader &tr,PCTimeInterval pIntervals,WORD nIntervals,UINT messageBoxButtons,bool initAllFeaturesOn,LPCTSTR captionFormat,va_list argList)
 			// ctor
 			// - base
 			: Utils::CRideDialog(IDR_TRACK_EDITOR)
 			// - initialization
 			, tr(tr)
-			, menu( IDR_TRACK_EDITOR ) , messageBoxButtons(messageBoxButtons)
+			, menu( IDR_TRACK_EDITOR ) , messageBoxButtons(messageBoxButtons) , initAllFeaturesOn(initAllFeaturesOn)
 			, timeEditor( tr, pIntervals, nIntervals )
 			, hAutoscrollTimer(INVALID_HANDLE_VALUE) {			
 			::wvsprintf( caption, captionFormat, argList );
@@ -1070,10 +1077,10 @@
 
 
 
-	BYTE __cdecl CImage::CTrackReader::ShowModal(PCTimeInterval pIntervals,WORD nIntervals,UINT messageBoxButtons,LPCTSTR format,...) const{
+	BYTE __cdecl CImage::CTrackReader::ShowModal(PCTimeInterval pIntervals,WORD nIntervals,UINT messageBoxButtons,bool initAllFeaturesOn,LPCTSTR format,...) const{
 		va_list argList;
 		va_start( argList, format );
-			const BYTE result=CTrackEditor( *this, pIntervals, nIntervals, messageBoxButtons, format, argList ).DoModal();
+			const BYTE result=CTrackEditor( *this, pIntervals, nIntervals, messageBoxButtons, initAllFeaturesOn, format, argList ).DoModal();
 		va_end(argList);
 		return result;
 	}
@@ -1081,6 +1088,6 @@
 	void __cdecl CImage::CTrackReader::ShowModal(LPCTSTR format,...) const{
 		va_list argList;
 		va_start( argList, format );
-			CTrackEditor( *this, nullptr, 0, MB_OK, format, argList ).DoModal();
+			CTrackEditor( *this, nullptr, 0, MB_OK, false, format, argList ).DoModal();
 		va_end(argList);
 	}

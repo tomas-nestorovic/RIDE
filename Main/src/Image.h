@@ -448,7 +448,7 @@
 			bool ReadBits32(DWORD &rOut);
 			WORD Scan(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *pOutParseEvents=nullptr);
 			TFdcStatus ReadData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,LPBYTE buffer,TParseEvent *pOutParseEvents=nullptr);
-			BYTE __cdecl ShowModal(PCTimeInterval pIntervals,WORD nIntervals,UINT messageBoxButtons,LPCTSTR format,...) const;
+			BYTE __cdecl ShowModal(PCTimeInterval pIntervals,WORD nIntervals,UINT messageBoxButtons,bool initAllFeaturesOn,LPCTSTR format,...) const;
 			void __cdecl ShowModal(LPCTSTR format,...) const;
 		};
 
