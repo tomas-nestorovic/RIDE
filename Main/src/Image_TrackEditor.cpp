@@ -645,6 +645,7 @@
 				case MB_ABORTRETRYIGNORE:{
 					static const WORD RetryIgnoreIds[]={ IDRETRY, IDOK, 0 };
 					ShowDlgItems( RetryIgnoreIds, EnableDlgItems(RetryIgnoreIds,true) );
+					SetDlgItemText( IDOK, "Ignore" );
 					break;
 				}
 				default:

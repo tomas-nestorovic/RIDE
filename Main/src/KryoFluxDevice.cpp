@@ -751,7 +751,7 @@
 					: Utils::AbortRetryIgnore(msgSavingFailed,err,MB_DEFBUTTON2)
 				){
 					case IDIGNORE:	// ignoring the Error
-						err=ERROR_REQUEST_ABORTED;
+						err=ERROR_CONTINUE;
 						break;
 					case IDABORT:	// aborting the saving
 						return err;
@@ -760,27 +760,21 @@
 				}
 			// . write verification
 			if (!err && params.verifyWrittenTracks && pit->nSectors>0){ // can verify the Track only if A&B&C, A = writing successfull, B&C = at least one Sector is recognized in it
-				::wsprintf( msgSavingFailed, ERROR_SAVE_MESSAGE_TEMPLATE, cyl, '0'+head, _T("verification") );
 				const auto cae0=params.calibrationAfterError;
 				params.calibrationAfterError=TParams::TCalibrationAfterError::NONE; // already calibrated before writing
-					err=VerifyTrack( cyl, head, trw, true );
+					err=VerifyTrack( cyl, head, trw, nSilentRetrials<0 );
 				params.calibrationAfterError=cae0;
-				if (err) // verification failed
-					switch (
-						nSilentRetrials-->0
-						? IDRETRY
-						: Utils::AbortRetryIgnore( msgSavingFailed, err, MB_DEFBUTTON2, _T("Ignore this error for fuzzy tracks.") )
-					){
-						case IDIGNORE:	// ignoring the Error
-							err=ERROR_REQUEST_ABORTED;
-							break;
-						case IDABORT:	// aborting the saving
-							return err;
-						default:		// attempting to save the Track once more
-							continue;
-					}
+				switch (err){
+					case ERROR_SUCCESS:	// validation was successfull
+					case ERROR_CONTINUE:// validation failed but ignore the failure and continue
+						break;
+					case ERROR_RETRY:	// attempting to save the Track once more
+						continue;
+					default:	// another error during verification, including Cancellation of saving
+						return err;
+				}
 			}
-		}while (err!=ERROR_SUCCESS && err!=ERROR_REQUEST_ABORTED);
+		}while (err!=ERROR_SUCCESS && err!=ERROR_CONTINUE);
 		// - (successfully) saved - see TODOs
 		pit->modified=false;
 		return err;
@@ -790,7 +784,7 @@
 		// saves the specified Track to the inserted Medium; returns Windows standard i/o error
 		switch (const TStdWinError err=SaveAndVerifyTrack(cyl,head)){
 			case ERROR_SUCCESS:
-			case ERROR_REQUEST_ABORTED: // writing errors ignored
+			case ERROR_CONTINUE: // writing errors ignored
 				return ERROR_SUCCESS;
 			default:
 				return err;
@@ -915,7 +909,7 @@
 		// - writing the Track straigt away to catch disk surface problems before using the disk later
 		if (params.verifyWrittenTracks)
 			switch (const TStdWinError err=SaveAndVerifyTrack( cyl, head )){
-				case ERROR_REQUEST_ABORTED:
+				case ERROR_CONTINUE:
 					// errors during writing or verification ignored by user
 					delete internalTracks[cyl][head]; // disposing unsuccessfully save Track ...
 					internalTracks[cyl][head]=nullptr; // ... and forcing caller to read its actually saved state

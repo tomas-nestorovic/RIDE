@@ -923,8 +923,9 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 									: pBits(nullptr) , nBits(0) {
 									tr.SetCurrentTimeAndProfile( firstSectorIdEndTime, firstSectorIdEndProfile );
 									while (tr.GetCurrentTime()<tLastBit)
-										nBits++;
+										tr.ReadBit(), nBits++;
 									pBits=(TBit *)::calloc( nBits, sizeof(TBit) );
+									tr.SetCurrentTimeAndProfile( firstSectorIdEndTime, firstSectorIdEndProfile );
 									for( DWORD i=0; i<nBits; ){
 										TBit &r=pBits[i++];
 											r.value=tr.ReadBit();
@@ -974,7 +975,7 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 												break;
 											case CDiffBase::TScriptItem::DELETION:
 												// some bits were not written
-												tDiffEnd= si.ins.nItemsB * pitWritten->GetCurrentProfile().iwTimeDefault;
+												tDiffEnd= tDiffStart + si.del.nItemsA * pitWritten->GetCurrentProfile().iwTimeDefault;
 												break;
 											default:
 												ASSERT(FALSE); break; // we shouldn't end up here!
@@ -991,7 +992,19 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 											// overlapping BadRegions (Diff: something has been Deleted, something else has been Inserted)
 											tLastBadRegionEnd = pBadRegions[nBadRegions-1].tEnd = std::max(tLastBadRegionEnd,tBadRegionEnd);
 									}
-									switch (pitWritten->ShowModal( pBadRegions, nBadRegions, MB_ABORTRETRYIGNORE, _T("Track %02d.%c is bad :-("), cyl, '0'+head )){
+									switch (pitWritten->ShowModal( pBadRegions, nBadRegions, MB_ABORTRETRYIGNORE, true, _T("Track %02d.%c verification failed: Review RED-MARKED errors and decide how to proceed!"), cyl, '0'+head )){
+										case IDOK: // ignore
+											err=ERROR_CONTINUE;
+											break;
+										case IDCANCEL:
+											err=ERROR_CANCELLED;
+											break;
+										case IDRETRY:
+											err=ERROR_RETRY;
+											break;
+										default:
+											err=ERROR_FUNCTION_FAILED;
+											break;
 									}
 								}else
 									err=ERROR_NOT_ENOUGH_MEMORY;

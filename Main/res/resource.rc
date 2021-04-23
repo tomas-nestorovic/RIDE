@@ -703,8 +703,8 @@ BEGIN
         MENUITEM "Previous event\tCtrl+Left",   ID_FILE_SHIFT_DOWN
         MENUITEM "Next event\tCtrl+Right",      ID_FILE_SHIFT_UP
         MENUITEM SEPARATOR
-        MENUITEM "Previous interval\tShift+Left", ID_RECORD_PREV
-        MENUITEM "Next interval\tShift+Right",  ID_RECORD_NEXT
+        MENUITEM "Previous interval\tShift+PgUp", ID_RECORD_PREV
+        MENUITEM "Next interval\tShift+PgDown", ID_RECORD_NEXT
         MENUITEM SEPARATOR
         MENUITEM "Previous index\tCtrl+PgUp",   ID_PREV
         MENUITEM "Next index\tCtrl+PgDown",     ID_NEXT
