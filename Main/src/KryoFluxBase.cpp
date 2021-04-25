@@ -408,7 +408,7 @@
 					r.track=rid.cylinder;
 					r.side=rid.side;
 					r.sector=rid.sector;
-					r.sectorlen=GetOfficialSectorLength(rid.lengthCode);
+					r.sectorlen=bufferLength[s]; //GetOfficialSectorLength(rid.lengthCode);
 				}
 			::ZeroMemory( &cft, sizeof(cft) );
 			cft.gapacnt= nSectors<11 ? 60 : 2;
