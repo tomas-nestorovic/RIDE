@@ -947,6 +947,7 @@
 										switch (u){
 											case 's': t64=TIME_SECOND(t64);	break;
 											case 'm': t64=TIME_MILLI(t64);	break;
+											case 'µ':
 											case 'u': t64=TIME_MICRO(t64);	break;
 											default: t64=TIME_NANO(t64);	break;
 										}
