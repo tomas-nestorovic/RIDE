@@ -315,6 +315,8 @@
 			// . assuming failure
 			::lstrcpyA( firmwareVersion, "Not loaded" );
 			// . opening the firmware file for reading
+			if (params.firmwareFileName.IsEmpty()) // catching an empty string as it may succeed as filename on Win10!
+				return ERROR_FILE_NOT_FOUND;
 			CFileException e;
 			CFile f;
 			if (!f.Open( params.firmwareFileName, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary, &e ))
