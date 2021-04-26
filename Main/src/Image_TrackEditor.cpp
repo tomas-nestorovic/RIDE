@@ -553,13 +553,13 @@
 				SetScrollInfo( SB_HORZ, &si, TRUE );
 				painter.params.locker.Lock();
 					painter.params.id++; // stopping current painting
+					PaintCursorFeaturesInverted(false);
+					ScrollWindow(	// "base"
+						(int)(Utils::LogicalUnitScaleFactor*timeline.GetUnitCount(scrollTime)) - (int)(Utils::LogicalUnitScaleFactor*si.nPos),
+						0
+					);
+					scrollTime=t;
 				painter.params.locker.Unlock();
-				PaintCursorFeaturesInverted(false);
-				ScrollWindow(	// "base"
-								(int)(Utils::LogicalUnitScaleFactor*timeline.GetUnitCount(scrollTime)) - (int)(Utils::LogicalUnitScaleFactor*si.nPos),
-								0
-							);
-				scrollTime=t;
 				painter.repaintEvent.SetEvent();
 			}
 
