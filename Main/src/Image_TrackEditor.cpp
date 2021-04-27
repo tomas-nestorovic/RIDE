@@ -1053,7 +1053,7 @@
 					}
 					break;
 			}
-			return __super::OnCmdMsg(nID,nCode,pExtra,pHandlerInfo);
+			return FALSE;
 		}
 
 	public:
