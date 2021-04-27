@@ -712,8 +712,10 @@
 				SeekHome();
 			}
 		// - writing (and optional verification)
-		char nSilentRetrials=3;
+		char nSilentRetrials=4;
 		do{
+			// . consuming one SilentRetrial
+			nSilentRetrials--;
 			// . converting the temporary Track to "KFW" data, below streamed directly to KryoFlux
 			const DWORD nBytesToWrite=TrackToKfw1( trwCompensated );
 			#ifdef _DEBUG
@@ -748,7 +750,7 @@
 			::wsprintf( msgSavingFailed, ERROR_SAVE_MESSAGE_TEMPLATE, cyl, '0'+head, _T("saving") );
 			if (err) // writing to the device failed
 				switch (
-					nSilentRetrials-->0
+					nSilentRetrials>0
 					? IDRETRY
 					: Utils::AbortRetryIgnore(msgSavingFailed,err,MB_DEFBUTTON2)
 				){
@@ -771,6 +773,7 @@
 					case ERROR_CONTINUE:// validation failed but ignore the failure and continue
 						break;
 					case ERROR_RETRY:	// attempting to save the Track once more
+					case ERROR_DS_COMPARE_FALSE: // silent automatic retrial
 						continue;
 					default:	// another error during verification, including Cancellation of saving
 						return err;
