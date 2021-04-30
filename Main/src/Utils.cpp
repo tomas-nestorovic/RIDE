@@ -461,9 +461,9 @@ namespace Utils{
 		}else
 			ASSERT( unitPrefixes!=nullptr );
 		TLogValue intervalBig=1, iUnitPrefix=0;
-		for( TLogValue v=logLength; true; intervalBig*=10 ){
+		for( TLogValue v=logLength; intervalBig<logLength; intervalBig*=10 ){
 			::wsprintf( label, _T("%d %c%c"), v, unitPrefixes[iUnitPrefix], unit );
-			if (font.GetTextSize(label).cx<GetUnitCount(intervalBig))
+			if (font.GetTextSize(label).cx<LogicalUnitScaleFactor*GetUnitCount(intervalBig))
 				// the consecutive Labels won't overlap - adopting it
 				break;
 			else if (++iUnitPrefix%3==0)
