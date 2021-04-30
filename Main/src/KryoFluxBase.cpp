@@ -678,7 +678,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 				if (sck==0) // default Sample-Clock, allowing for relatively precise computation of absolute timing
 					result.AddIndexTime( (LONGLONG)TIME_SECOND(1)*indexSampleCounter/SAMPLE_CLOCK_DEFAULT ); // temporary 64-bit precision even on 32-bit machines
 				else // custom Sample-Clock, involving floating-point number computation
-					result.AddIndexTime( (LONGLONG)TIME_SECOND(1)*indexSampleCounter/sck ); // temporary 64-bit precision even on 32-bit machines
+					result.AddIndexTime( (double)TIME_SECOND(1)*indexSampleCounter/sck ); // temporary 64-bit precision even on 32-bit machines
 				nearestIndexPulsePos= ++nearestIndexPulse<nIndexPulses ? indexPulses[nearestIndexPulse].posInStreamData : -1;
 			}
 			// . adding the flux into the Buffer
@@ -686,7 +686,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 			if (sck==0) // default Sample-Clock, allowing for relatively precise computation of absolute timing
 				*pLogTime++= (LONGLONG)TIME_SECOND(1)*totalSampleCounter/SAMPLE_CLOCK_DEFAULT; // temporary 64-bit precision even on 32-bit machines
 			else // custom Sample-Clock, involving floating-point number computation
-				*pLogTime++= (LONGLONG)TIME_SECOND(1)*totalSampleCounter/sck; // temporary 64-bit precision even on 32-bit machines
+				*pLogTime++= (double)TIME_SECOND(1)*totalSampleCounter/sck; // temporary 64-bit precision even on 32-bit machines
 			sampleCounter=0;
 		}
 		result.AddTimes( buffer, pLogTime-buffer );

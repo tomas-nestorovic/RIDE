@@ -827,6 +827,7 @@
 			indexPulses[i]=indexPulses[i-1]+revolutionTime;
 		// - correctly re-initializing this object
 		SetCurrentTime(0);
+		return true;
 	}
 
 	TStdWinError CImage::CTrackReaderWriter::NormalizeEx(TLogTime timeOffset,bool fitTimesIntoIwMiddles,bool correctCellCountPerRevolution,bool correctRevolutionTime){

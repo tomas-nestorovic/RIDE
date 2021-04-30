@@ -52,7 +52,7 @@ namespace Utils{
 
 		WORD commandId;
 		LPCTSTR commandCaption;
-		BYTE menuItemFlags;
+		WORD menuItemFlags;
 	} *PCSplitButtonAction;
 
 	class CRideDialog:public CDialog{

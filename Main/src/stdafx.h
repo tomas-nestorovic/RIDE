@@ -78,6 +78,7 @@ typedef TLogValue TLogTime,*PLogTime; // time in nanoseconds
 typedef const TLogTime *PCLogTime;
 
 #pragma warning( disable : 4228 ) // non-standard language extension
+#pragma warning( disable : 4341 ) // pre-C++14 enums shouldn't be signed
 
 #include "Utils.h"
 #include "BackgroundAction.h"

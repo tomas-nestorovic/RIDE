@@ -178,7 +178,7 @@
 								::SetViewportOrgEx( dc, 0, org.y, nullptr );
 								//RECT rc={ 0, te.IsFeatureShown(TCursorFeatures::INSPECT)?IW_HEIGHT:TIME_HEIGHT, 0, INDEX_HEIGHT };
 								RECT rc={ 0, TIME_HEIGHT, 0, TIME_HEIGHT+6 };
-								for( WORD iInterval=0; continuePainting&&iInterval<te.nIntervals; iInterval++ ){
+								for( DWORD iInterval=0; continuePainting&&iInterval<te.nIntervals; iInterval++ ){
 									const TTimeInterval &ti=te.pIntervals[iInterval];
 									const TLogTime a=std::max(timeA,ti.tStart), z=std::min(timeZ,ti.tEnd);
 									if (a<z){ // TimeInterval visible
@@ -492,9 +492,9 @@
 			}
 		public:
 			const PCTimeInterval pIntervals;
-			const WORD nIntervals;
+			const DWORD nIntervals;
 
-			CTimeEditor(const CImage::CTrackReader &tr,CImage::CTrackReader::PCTimeInterval pIntervals,WORD nIntervals)
+			CTimeEditor(const CImage::CTrackReader &tr,CImage::CTrackReader::PCTimeInterval pIntervals,DWORD nIntervals)
 				// ctor
 				: timeline( tr.GetTotalTime(), 1, 10 )
 				, tr(tr)
@@ -1057,7 +1057,7 @@
 		}
 
 	public:
-		CTrackEditor(const CImage::CTrackReader &tr,PCTimeInterval pIntervals,WORD nIntervals,UINT messageBoxButtons,bool initAllFeaturesOn,LPCTSTR captionFormat,va_list argList)
+		CTrackEditor(const CImage::CTrackReader &tr,PCTimeInterval pIntervals,DWORD nIntervals,UINT messageBoxButtons,bool initAllFeaturesOn,LPCTSTR captionFormat,va_list argList)
 			// ctor
 			// - base
 			: Utils::CRideDialog(IDR_TRACK_EDITOR)
@@ -1078,7 +1078,7 @@
 
 
 
-	BYTE __cdecl CImage::CTrackReader::ShowModal(PCTimeInterval pIntervals,WORD nIntervals,UINT messageBoxButtons,bool initAllFeaturesOn,LPCTSTR format,...) const{
+	BYTE __cdecl CImage::CTrackReader::ShowModal(PCTimeInterval pIntervals,DWORD nIntervals,UINT messageBoxButtons,bool initAllFeaturesOn,LPCTSTR format,...) const{
 		va_list argList;
 		va_start( argList, format );
 			const BYTE result=CTrackEditor( *this, pIntervals, nIntervals, messageBoxButtons, initAllFeaturesOn, format, argList ).DoModal();

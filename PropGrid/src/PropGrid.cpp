@@ -85,7 +85,7 @@
 		::ReleaseDC(nullptr,screen);
 	}
 
-	int TRationalNumber::operator*(short i) const{
+	int TRationalNumber::operator*(int i) const{
 		return quot*i/rem;
 	}
 
