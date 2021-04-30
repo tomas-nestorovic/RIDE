@@ -257,7 +257,7 @@
 			int GetInspectionWindow(TLogTime logTime) const{
 				// returns the index of inspection window at specified LogicalTime
 				ASSERT( iwEndTimes!=nullptr );
-				int L=0, R=timeline.logTimeLength/tr.GetCurrentProfile().iwTimeMin;
+				int L=0, R=timeline.logLength/tr.GetCurrentProfile().iwTimeMin;
 				do{
 					const DWORD M=(L+R)/2;
 					if (iwEndTimes[L]<=logTime && logTime<iwEndTimes[M])
@@ -295,7 +295,7 @@
 								::DeleteObject( ::SelectObject(dcMem,hBmp0) );
 							}
 							// . painting space between neighboring Times at current position
-							if (IsFeatureShown(TCursorFeatures::SPACING) && cursorTime<timeline.logTimeLength){
+							if (IsFeatureShown(TCursorFeatures::SPACING) && cursorTime<timeline.logLength){
 								tr.SetCurrentTime(cursorTime);
 								tr.TruncateCurrentTime();
 								const TLogTime a=tr.GetCurrentTime(), z=tr.ReadTime();
@@ -314,7 +314,7 @@
 								::LineTo( dc, xz+LINE_EXTENSION, SPACING_HEIGHT );
 							}
 							// . painting inspection window size at current position
-							if (IsFeatureShown(TCursorFeatures::INSPECT) && cursorTime<timeline.logTimeLength){
+							if (IsFeatureShown(TCursorFeatures::INSPECT) && cursorTime<timeline.logLength){
 								const int i=GetInspectionWindow(cursorTime);
 								const TLogTime a=iwEndTimes[i], z=iwEndTimes[i+1];
 								const int xa=timeline.GetUnitCount(a-scrollTime), xz=timeline.GetUnitCount(z-scrollTime);
@@ -340,7 +340,7 @@
 			inline TLogTime ClientPixelToTime(int pixel) const{
 				return	std::min(
 							scrollTime + timeline.GetTime( pixel/Utils::LogicalUnitScaleFactor ),
-							timeline.logTimeLength
+							timeline.logLength
 						);
 			}
 
@@ -404,7 +404,7 @@
 								SetScrollTime(0);
 								break;
 							case VK_END:
-								SetScrollTime(timeline.logTimeLength);
+								SetScrollTime(timeline.logLength);
 								break;
 							case VK_PRIOR:	// page up
 								OnScroll( SB_PAGELEFT, 0 );
@@ -546,7 +546,7 @@
 
 			void SetScrollTime(TLogTime t){
 				if (t<0) t=0;
-				else if (t>timeline.logTimeLength) t=timeline.logTimeLength;
+				else if (t>timeline.logLength) t=timeline.logLength;
 				SCROLLINFO si={ sizeof(si) };
 					si.fMask=SIF_POS;
 					si.nPos=timeline.GetUnitCount(t);

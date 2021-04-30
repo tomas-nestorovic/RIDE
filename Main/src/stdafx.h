@@ -71,8 +71,11 @@ typedef const BYTE *PCBYTE;
 typedef const WORD *PCWORD;
 typedef const int *PCINT;
 
-typedef int TLogTime,*PLogTime; // time in nanoseconds
-typedef const int *PCLogTime;
+typedef int TLogValue,*PLogValue;
+typedef const TLogValue *PCLogValue;
+
+typedef TLogValue TLogTime,*PLogTime; // time in nanoseconds
+typedef const TLogTime *PCLogTime;
 
 #pragma warning( disable : 4228 ) // non-standard language extension
 

@@ -127,25 +127,44 @@ namespace Utils{
 		DWORD ToMilliseconds() const;
 	};
 
-	class CTimeline{
+	class CAxis{
 	protected:
-		const TLogTime logTimePerUnit;
+		const TLogValue logValuePerUnit;
 
-		TLogTime PixelToTime(int pixelX) const;
+		TLogValue PixelToValue(int pixel) const;
 	public:
-		const TLogTime logTimeLength;
+		enum TVerticalAlign{
+			NONE,
+			TOP,
+			BOTTOM
+		};
+
+		const TLogValue logLength;
 		BYTE zoomFactor;
+
+		CAxis(TLogValue logLength,TLogTime logValuePerUnit,BYTE initZoomFactor);
+		CAxis(TLogValue logLength,TLogTime logValuePerUnit,int nUnitsToFitIn,BYTE zoomFactorMax);
+
+		void Draw(HDC dc,long nVisiblePixels,TCHAR unit,LPCTSTR unitPrefixes,const CRideFont &font,TVerticalAlign ticksAndLabelsAlign=TVerticalAlign::TOP,PLogTime pOutVisibleStart=nullptr,PLogTime pOutVisibleEnd=nullptr) const;
+		int GetUnitCount(TLogValue logValue,BYTE zoomFactor) const;
+		int GetUnitCount(TLogValue logValue) const;
+		int GetUnitCount() const;
+		TLogValue GetValue(int nUnits) const;
+		BYTE GetZoomFactorToFitWidth(int nUnits,BYTE zoomFactorMax) const;
+	};
+
+	class CTimeline:public CAxis{
+	public:
+		static const TCHAR TimePrefixes[];
 
 		CTimeline(TLogTime logTimeLength,TLogTime logTimePerUnit,BYTE initZoomFactor);
 
-		void SetLength(TLogTime logTime);
 		int TimeToReadableString(TLogTime logTime,PTCHAR buffer) const;
 		void Draw(HDC dc,const CRideFont &font,PLogTime pOutVisibleStart=nullptr,PLogTime pOutVisibleEnd=nullptr) const;
-		int GetUnitCount(TLogTime logTime,BYTE zoomFactor) const;
-		int GetUnitCount(TLogTime logTime) const;
-		int GetUnitCount() const;
-		TLogTime GetTime(int nUnits) const;
-		BYTE GetZoomFactorToFitWidth(int nUnits,BYTE zoomFactorMax) const;
+
+		inline TLogTime GetTime(int nUnits) const{
+			return GetValue(nUnits);
+		}
 	};
 
 	struct TRationalNumber{

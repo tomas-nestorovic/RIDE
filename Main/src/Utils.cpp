@@ -439,13 +439,131 @@ namespace Utils{
 
 
 
-	CTimeline::CTimeline(TLogTime logTimeLength,TLogTime logTimePerUnit,BYTE initZoomFactor)
+	CAxis::CAxis(TLogValue logLength,TLogTime logValuePerUnit,BYTE initZoomFactor)
 		// ctor
-		: logTimeLength(logTimeLength) , logTimePerUnit(logTimePerUnit)
+		: logLength(logLength) , logValuePerUnit(logValuePerUnit)
 		, zoomFactor(initZoomFactor) {
 	}
 
-	static const TCHAR TimePrefixes[]=_T("nnnµµµmmm   "); // nano, micro, milli, no-prefix
+	CAxis::CAxis(TLogValue logLength,TLogTime logValuePerUnit,int nUnitsToFitIn,BYTE zoomFactorMax)
+		// ctor
+		: logLength(logLength) , logValuePerUnit(logValuePerUnit)
+		, zoomFactor( GetZoomFactorToFitWidth(nUnitsToFitIn,zoomFactorMax) ) {
+	}
+
+	void CAxis::Draw(HDC dc,long nVisiblePixels,TCHAR unit,LPCTSTR unitPrefixes,const CRideFont &font,TVerticalAlign ticksAndLabelsAlign,PLogTime pOutVisibleStart,PLogTime pOutVisibleEnd) const{
+		// draws an Axis starting at current origin
+		// - determinining the primary granuality of the Axis
+		TCHAR label[32];
+		if (unit=='\0'){ // no Unit?
+			static const TCHAR NoPrefixes[12];
+			unitPrefixes=NoPrefixes;
+		}else
+			ASSERT( unitPrefixes!=nullptr );
+		TLogValue intervalBig=1, iUnitPrefix=0;
+		for( TLogValue v=logLength; true; intervalBig*=10 ){
+			::wsprintf( label, _T("%d %c%c"), v, unitPrefixes[iUnitPrefix], unit );
+			if (font.GetTextSize(label).cx<GetUnitCount(intervalBig))
+				// the consecutive Labels won't overlap - adopting it
+				break;
+			else if (++iUnitPrefix%3==0)
+				v/=1000;
+		}
+		// - determining the visible range to draw
+		POINT org;
+		::GetViewportOrgEx( dc, &org );
+		const TLogValue valueA=std::max( PixelToValue(-org.x), 0 )/intervalBig*intervalBig;
+		if (pOutVisibleStart!=nullptr)
+			*pOutVisibleStart=valueA;
+		const TLogValue valueZ=std::min<LONGLONG>( logLength, ((LONGLONG)PixelToValue(std::max(-org.x,0L)+nVisiblePixels)+intervalBig-1)/intervalBig*intervalBig ); // rounding to whole multiples of IntervalBig
+		if (pOutVisibleEnd!=nullptr)
+			*pOutVisibleEnd=valueZ;
+		// - drawing using a workaround to overcome the coordinate space limits
+		const int nUnitsA=GetUnitCount(valueA);
+		const auto dcSettings0=::SaveDC(dc);
+			::SetViewportOrgEx( dc, LogicalUnitScaleFactor*nUnitsA+org.x, org.y, nullptr );
+			::SelectObject( dc, font );
+			short smallMarkLength=0, bigMarkLength=0, labelY=0;
+			switch (ticksAndLabelsAlign){
+				case TVerticalAlign::TOP:
+					smallMarkLength=-4, bigMarkLength=-7, labelY=bigMarkLength-font.charHeight;
+					break;
+				case TVerticalAlign::BOTTOM:
+					smallMarkLength=4, bigMarkLength = labelY = 7;
+					break;
+			}
+			// . horizontal line representing the timeline
+			::MoveToEx( dc, 0,0, nullptr );
+			::LineTo( dc, GetUnitCount(valueZ)-nUnitsA, 0 );
+			// . drawing secondary time marks on the timeline
+			if (smallMarkLength)
+				if (const TLogValue intervalSmall=intervalBig/10)
+					for( TLogValue v=valueA; v<valueZ; v+=intervalSmall ){
+						const auto x=GetUnitCount(v)-nUnitsA;
+						::MoveToEx( dc, x,0, nullptr );
+						::LineTo( dc, x,smallMarkLength );
+					}
+			// . drawing primary time marks on the timeline along with respective times
+			if (bigMarkLength){
+				int k=1;
+				for( int i=iUnitPrefix/3; i--; k*=1000 );
+				for( TLogValue v=valueA; v<valueZ; v+=intervalBig ){
+					const auto x=GetUnitCount(v)-nUnitsA;
+					::MoveToEx( dc, x,0, nullptr );
+					::LineTo( dc, x,bigMarkLength );
+					::TextOut(
+						dc,
+						x, labelY,
+						label,  ::wsprintf( label, _T("%d %c%c"), v/k, unitPrefixes[iUnitPrefix], unit )
+					);
+				}
+			}
+		::RestoreDC(dc,dcSettings0);
+	}
+
+	TLogValue CAxis::PixelToValue(int pixel) const{
+		return	GetValue( pixel/LogicalUnitScaleFactor );
+	}
+
+	int CAxis::GetUnitCount(TLogValue logValue,BYTE zoomFactor) const{
+		return	logValue/logValuePerUnit>>zoomFactor;
+	}
+
+	int CAxis::GetUnitCount(TLogValue logValue) const{
+		return	GetUnitCount( logValue, zoomFactor );
+	}
+
+	int CAxis::GetUnitCount() const{
+		return	GetUnitCount( logLength );
+	}
+
+	TLogValue CAxis::GetValue(int nUnits) const{
+		const auto tmp=((LONGLONG)nUnits<<zoomFactor)*logValuePerUnit;
+		return	tmp<INT_MAX ? tmp : INT_MAX;
+	}
+
+	BYTE CAxis::GetZoomFactorToFitWidth(int nUnits,BYTE zoomFactorMax) const{
+		BYTE zf=0;
+		while (GetUnitCount(logLength,zf)>nUnits && zf<zoomFactorMax)
+			zf++;
+		return zf;
+	}
+
+
+
+
+
+
+
+
+
+
+	CTimeline::CTimeline(TLogTime logTimeLength,TLogTime logTimePerUnit,BYTE initZoomFactor)
+		// ctor
+		: CAxis( logTimeLength, logTimePerUnit, initZoomFactor ) {
+	}
+
+	const TCHAR CTimeline::TimePrefixes[]=_T("nnnµµµmmm   "); // nano, micro, milli, no-prefix
 
 	int CTimeline::TimeToReadableString(TLogTime logTime,PTCHAR buffer) const{
 		// converts specified Time to string with same level of detail as Drawn on the timeline
@@ -461,86 +579,12 @@ namespace Utils{
 	}
 
 	void CTimeline::Draw(HDC dc,const CRideFont &font,PLogTime pOutVisibleStart,PLogTime pOutVisibleEnd) const{
-		// draws a timeline starting at current origin
-		// - determinining the primary granuality of the timeline
-		TCHAR label[32];
-		TLogTime intervalBig=1, unitPrefix=0;
-		for( TLogTime t=logTimeLength; true; intervalBig*=10 ){
-			::wsprintf( label, _T("%d %cs"), t, TimePrefixes[unitPrefix] );
-			if (font.GetTextSize(label).cx<GetUnitCount(intervalBig))
-				// the consecutive Labels won't overlap - adopting it
-				break;
-			else if (++unitPrefix%3==0)
-				t/=1000;
-		}
-		// - determining the visible range to draw
-		POINT org;
-		::GetViewportOrgEx( dc, &org );
-		const TLogTime timeA=std::max( PixelToTime(-org.x), 0 )/intervalBig*intervalBig;
-		if (pOutVisibleStart!=nullptr)
-			*pOutVisibleStart=timeA;
+		// draws a HORIZONTAL Timeline starting at current origin
 		CRect rcClient;
 		::GetClientRect( ::WindowFromDC(dc), &rcClient );
-		const TLogTime timeZ=std::min<LONGLONG>( logTimeLength, ((LONGLONG)PixelToTime(std::max(-org.x,0L)+rcClient.Width())+intervalBig-1)/intervalBig*intervalBig ); // rounding to whole multiples of IntervalBig
-		if (pOutVisibleEnd!=nullptr)
-			*pOutVisibleEnd=timeZ;
-		// - drawing using a workaround to overcome the coordinate space limits
-		const int nUnitsA=GetUnitCount(timeA);
-		const auto dcSettings0=::SaveDC(dc);
-			::SetViewportOrgEx( dc, LogicalUnitScaleFactor*nUnitsA+org.x, org.y, nullptr );
-			::SelectObject( dc, font );
-			// . horizontal line representing the timeline
-			::MoveToEx( dc, 0,0, nullptr );
-			::LineTo( dc, GetUnitCount(timeZ)-nUnitsA, 0 );
-			// . drawing secondary time marks on the timeline
-			if (const TLogTime intervalSmall=intervalBig/10)
-				for( TLogTime t=timeA; t<timeZ; t+=intervalSmall ){
-					const auto x=GetUnitCount(t)-nUnitsA;
-					::MoveToEx( dc, x,0, nullptr );
-					::LineTo( dc, x,-4 );
-				}
-			// . drawing primary time marks on the timeline along with respective times
-			int k=1;
-			for( int i=unitPrefix/3; i--; k*=1000 );
-			for( TLogTime t=timeA; t<timeZ; t+=intervalBig ){
-				const auto x=GetUnitCount(t)-nUnitsA;
-				::MoveToEx( dc, x,0, nullptr );
-				::LineTo( dc, x,-7 );
-				::TextOut(	dc,
-							x, -7-font.charHeight,
-							label,  ::wsprintf( label, _T("%d %cs"), t/k, TimePrefixes[unitPrefix] )
-						);
-			}
-		::RestoreDC(dc,dcSettings0);
+		__super::Draw( dc, rcClient.Width(), 's', TimePrefixes, font, TVerticalAlign::TOP, pOutVisibleStart, pOutVisibleEnd );
 	}
 
-	TLogTime CTimeline::PixelToTime(int pixelX) const{
-		return	GetTime( pixelX/LogicalUnitScaleFactor );
-	}
-
-	int CTimeline::GetUnitCount(TLogTime logTime,BYTE zoomFactor) const{
-		return	logTime/logTimePerUnit>>zoomFactor;
-	}
-
-	int CTimeline::GetUnitCount(TLogTime logTime) const{
-		return	GetUnitCount( logTime, zoomFactor );
-	}
-
-	int CTimeline::GetUnitCount() const{
-		return	GetUnitCount( logTimeLength );
-	}
-
-	TLogTime CTimeline::GetTime(int nUnits) const{
-		const auto tmp=((LONGLONG)nUnits<<zoomFactor)*logTimePerUnit;
-		return	tmp<INT_MAX ? tmp : INT_MAX;
-	}
-
-	BYTE CTimeline::GetZoomFactorToFitWidth(int nUnits,BYTE zoomFactorMax) const{
-		BYTE zf=0;
-		while (GetUnitCount(logTimeLength,zf)>nUnits && zf<zoomFactorMax)
-			zf++;
-		return zf;
-	}
 
 
 
