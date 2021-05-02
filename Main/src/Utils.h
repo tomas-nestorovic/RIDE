@@ -139,13 +139,15 @@ namespace Utils{
 			BOTTOM
 		};
 
+		static const TCHAR CountPrefixes[];
+
 		const TLogValue logLength;
 		BYTE zoomFactor;
 
 		CAxis(TLogValue logLength,TLogTime logValuePerUnit,BYTE initZoomFactor);
 		CAxis(TLogValue logLength,TLogTime logValuePerUnit,int nUnitsToFitIn,BYTE zoomFactorMax);
 
-		void Draw(HDC dc,long nVisiblePixels,TCHAR unit,LPCTSTR unitPrefixes,const CRideFont &font,TVerticalAlign ticksAndLabelsAlign=TVerticalAlign::TOP,PLogTime pOutVisibleStart=nullptr,PLogTime pOutVisibleEnd=nullptr) const;
+		BYTE Draw(HDC dc,long nVisiblePixels,TCHAR unit,LPCTSTR unitPrefixes,const CRideFont &font,TVerticalAlign ticksAndLabelsAlign=TVerticalAlign::TOP,int primaryGridLength=0,HPEN hPrimaryGridPen=nullptr,PLogTime pOutVisibleStart=nullptr,PLogTime pOutVisibleEnd=nullptr) const;
 		int GetUnitCount(TLogValue logValue,BYTE zoomFactor) const;
 		int GetUnitCount(TLogValue logValue) const;
 		int GetUnitCount() const;

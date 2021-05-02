@@ -439,6 +439,8 @@ namespace Utils{
 
 
 
+	const TCHAR CAxis::CountPrefixes[]=_T("   kkkMMMBBB"); // no-prefix, thousand, million, billion
+
 	CAxis::CAxis(TLogValue logLength,TLogTime logValuePerUnit,BYTE initZoomFactor)
 		// ctor
 		: logLength(logLength) , logValuePerUnit(logValuePerUnit)
@@ -451,13 +453,14 @@ namespace Utils{
 		, zoomFactor( GetZoomFactorToFitWidth(nUnitsToFitIn,zoomFactorMax) ) {
 	}
 
-	void CAxis::Draw(HDC dc,long nVisiblePixels,TCHAR unit,LPCTSTR unitPrefixes,const CRideFont &font,TVerticalAlign ticksAndLabelsAlign,PLogTime pOutVisibleStart,PLogTime pOutVisibleEnd) const{
-		// draws an Axis starting at current origin
+	BYTE CAxis::Draw(HDC dc,long nVisiblePixels,TCHAR unit,LPCTSTR unitPrefixes,const CRideFont &font,TVerticalAlign ticksAndLabelsAlign,int primaryGridLength,HPEN hPrimaryGridPen,PLogTime pOutVisibleStart,PLogTime pOutVisibleEnd) const{
+		// draws an Axis starting at current origin; returns index into the UnitPrefixes indicating which prefix was used to draw the Axis
 		// - determinining the primary granuality of the Axis
 		TCHAR label[32];
 		if (unit=='\0'){ // no Unit?
 			static const TCHAR NoPrefixes[12];
-			unitPrefixes=NoPrefixes;
+			if (!unitPrefixes)
+				unitPrefixes=NoPrefixes;
 		}else
 			ASSERT( unitPrefixes!=nullptr );
 		TLogValue intervalBig=1, iUnitPrefix=0;
@@ -509,16 +512,24 @@ namespace Utils{
 				for( int i=iUnitPrefix/3; i--; k*=1000 );
 				for( TLogValue v=valueA; v<valueZ; v+=intervalBig ){
 					const auto x=GetUnitCount(v)-nUnitsA;
-					::MoveToEx( dc, x,0, nullptr );
+					if (primaryGridLength && v>valueA){ // it's undesired to draw a grid at ValueA, e.g. when drawing two orthogonal Axes to divide a plane (one overdraws the other)
+						const HGDIOBJ hPen0=::SelectObject( dc, hPrimaryGridPen );
+							::MoveToEx( dc, x,primaryGridLength, nullptr );
+							::LineTo( dc, x,0 );
+						::SelectObject(dc,hPen0);
+					}else
+						::MoveToEx( dc, x,0, nullptr );
 					::LineTo( dc, x,bigMarkLength );
+					::wsprintf( label, _T("%d %c%c"), v/k, unitPrefixes[iUnitPrefix], unit );
 					::TextOut(
 						dc,
 						x, labelY,
-						label,  ::wsprintf( label, _T("%d %c%c"), v/k, unitPrefixes[iUnitPrefix], unit )
+						label, ::lstrlen(label)
 					);
 				}
 			}
 		::RestoreDC(dc,dcSettings0);
+		return iUnitPrefix;
 	}
 
 	TLogValue CAxis::PixelToValue(int pixel) const{
@@ -582,7 +593,7 @@ namespace Utils{
 		// draws a HORIZONTAL Timeline starting at current origin
 		CRect rcClient;
 		::GetClientRect( ::WindowFromDC(dc), &rcClient );
-		__super::Draw( dc, rcClient.Width(), 's', TimePrefixes, font, TVerticalAlign::TOP, pOutVisibleStart, pOutVisibleEnd );
+		__super::Draw( dc, rcClient.Width(), 's', TimePrefixes, font, TVerticalAlign::TOP, 0, nullptr, pOutVisibleStart, pOutVisibleEnd );
 	}
 
 
