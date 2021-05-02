@@ -210,13 +210,11 @@
 		const TLogTime fullRevolutionTime=nBitsPerTrackOfficial*trw.GetCurrentProfile().iwTimeDefault;
 		TLogTime currentTime=0, *pFluxTimeBuffer=trw.GetBuffer(), *pFluxTime=pFluxTimeBuffer;
 		TLogTime nextIndexTime=fullRevolutionTime;
-		for( BYTE rev=0; rev<nRevs; ){
+		for( BYTE rev=0; rev<nRevs; nextIndexTime=currentTime ){
 			const CapsTrackInfoT2 &cti=ctiRevs[rev++];
 			for( CBitReader br(cti,lockFlags); br; ){
 				// . adding new index
 				if (currentTime>=nextIndexTime){
-					if (rev<nRevs) // only last Revolution is added fully, the others only "from index to index"
-						break;
 					trw.AddIndexTime( nextIndexTime );
 					nextIndexTime+=fullRevolutionTime;
 				}
@@ -229,18 +227,10 @@
 				if (br.ReadBit())
 					*pFluxTime++=currentTime;
 			}
-			if (currentTime<nextIndexTime){
-				trw.AddIndexTime( currentTime=nextIndexTime );
-				nextIndexTime+=fullRevolutionTime;
-			}
 		}
 		trw.AddTimes( pFluxTimeBuffer, pFluxTime-pFluxTimeBuffer );
-		if (trw.GetIndexCount()<=nRevs){ // an IPF image may end up here
-			const TLogTime tIndex=trw.GetIndexTime(nRevs-1)+fullRevolutionTime;
-			trw.AddIndexTime(tIndex);
-			if (trw.GetTotalTime()<tIndex) // adding an auxiliary flux at the Index position to prolong flux information
-				trw.AddTime( tIndex );
-		}
+		if (trw.GetIndexCount()<=nRevs) // an IPF image may end up here
+			trw.AddIndexTime(currentTime);
 		// - creating a Track from above reconstructed flux information
 		return CreateFrom( cb, trw );
 	}
