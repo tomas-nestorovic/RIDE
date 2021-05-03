@@ -12,6 +12,7 @@ namespace Utils{
 		static const CRidePen BlackHairline, WhiteHairline, RedHairline;
 
 		CRidePen(BYTE thickness,COLORREF color);
+		CRidePen(BYTE thickness,COLORREF color,UINT style);
 	};
 
 	class CRideBrush sealed:public ::CBrush{

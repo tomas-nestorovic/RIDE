@@ -22,6 +22,11 @@ namespace Utils{
 		: CPen(PS_SOLID,thickness,color) {
 	}
 
+	CRidePen::CRidePen(BYTE thickness,COLORREF color,UINT style)
+		// ctor
+		: CPen(style,thickness,color) {
+	}
+
 	const CRidePen CRidePen::BlackHairline(0,0);
 	const CRidePen CRidePen::WhiteHairline(0,0xffffff);
 	const CRidePen CRidePen::RedHairline(0,0xff);
