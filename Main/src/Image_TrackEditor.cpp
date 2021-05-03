@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Charting.h"
 
 	#define ZOOM_FACTOR_MAX	24
 
@@ -1050,6 +1051,62 @@
 							//return TRUE;
 						//case ID_UP:	// commented out as coped with already in WM_KEYDOWN handler
 							//return TRUE;
+						case ID_HISTOGRAM:{
+							CMapPtrToPtr histogram; // key = Time, value = count of Times
+							CImage::CTrackReader tr=this->tr;
+							TCHAR caption[80];
+							TLogTime tBegin,tEnd;
+							if (tr.GetIndexCount()>=2){ // will populate the Histogram with Times between first and last Index
+								tBegin=tr.GetIndexTime(0), tEnd=tr.GetIndexTime(tr.GetIndexCount()-1);
+								::wsprintf( caption, _T("Timing histogram for region between Indices 0 and %d"), tr.GetIndexCount()-1 );
+							}else{ // will populate the Histogram with all Times the TrackReader provides
+								tBegin=0, tEnd=tr.GetTotalTime();
+								::wsprintf( caption, _T("Timing histogram for whole track"), tr.GetIndexCount()-1 );
+							}
+							tr.SetCurrentTimeAndProfile( tBegin, tr.CreateResetProfile() );
+							while (tr && tr.GetCurrentTime()<tEnd){
+								const TLogTime t=tr.ReadTime();
+								PVOID pKey=(PVOID)(t-tBegin), pValue=(PVOID)1;
+								if (histogram.Lookup( pKey, pValue ))
+									pValue=(PBYTE)pValue+1;
+								histogram.SetAt( pKey, pValue );
+								tBegin=t;
+							}
+							typedef struct TPoint sealed:public POINT{
+								bool operator<(const POINT &p) const{
+									return x<p.x;
+								}
+							} *PPoint;
+							static_assert( sizeof(TPoint)==sizeof(POINT), "" );
+							TLogValue xMax=INT_MIN, yMax=INT_MIN;
+							const PPoint data=(PPoint)::calloc( histogram.GetCount(), sizeof(TPoint) );
+								PPoint pLastItem=data;
+								for( POSITION pos=histogram.GetStartPosition(); pos; pLastItem++ ){
+									PVOID pKey, pValue;
+									histogram.GetNextAssoc( pos, pKey, pValue );
+									xMax=std::max<TLogValue>( xMax, pLastItem->x=(TLogValue)pKey );
+									yMax=std::max<TLogValue>( yMax, pLastItem->y=(TLogValue)pValue );
+								}
+								std::sort( data, pLastItem );
+								const Utils::CRidePen barPen( 2, 0x2020ff );
+								const auto xySeries=CChartView::CSeries::CreateXy(
+									pLastItem-data, data,
+									barPen, nullptr
+								);
+								CChartDialog(
+									CChartView::CDisplayInfo::CreateXy(
+										CChartView::XY_BARS,
+										CChartView::TMargin::Default,
+										&xySeries, 1,
+										's', xMax, Utils::CTimeline::TimePrefixes,
+										'\0', yMax, Utils::CAxis::CountPrefixes
+									)
+								).ShowModal(
+									caption, this, CRect(0,0,800,600)
+								);
+							::free(data);
+							return TRUE;
+						}
 					}
 					break;
 			}
