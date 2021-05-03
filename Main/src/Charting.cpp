@@ -99,29 +99,31 @@
 							continue;
 						const HGDIOBJ hPen0=::SelectObject( dc, data.hLinePen );
 							const POINT firstPt=Transform( p.params.valuesTransf, *data.pValues );
-							dc.MoveTo(firstPt);
-							if (data.hVertexPen){
-								::SelectObject( dc, data.hVertexPen );
-								::LineTo( dc, firstPt.x+1, firstPt.y );
+							p.params.locker.Lock();
 								dc.MoveTo(firstPt);
-							}
-							for( DWORD j=1; j<series.nValues; ){
+								if (data.hVertexPen)
+									if (continuePainting=p.params.id==id){
+										::SelectObject( dc, data.hVertexPen );
+										::LineTo( dc, firstPt.x+1, firstPt.y );
+										dc.MoveTo(firstPt);
+									}
+							p.params.locker.Unlock();
+							for( DWORD j=1; continuePainting&&j<series.nValues; ){
 								const POINT pt=Transform( p.params.valuesTransf, data.pValues[j++] );
 								p.params.locker.Lock();
-									if (data.hLinePen){
-										::SelectObject( dc, data.hLinePen );
-										dc.LineTo(pt);
-									}else
-										dc.MoveTo(pt);
-									if (data.hVertexPen){
-										::SelectObject( dc, data.hVertexPen );
-										::LineTo( dc, pt.x+1, pt.y );
-										dc.MoveTo(pt);
+									if (continuePainting=p.params.id==id){
+										if (data.hLinePen){
+											::SelectObject( dc, data.hLinePen );
+											dc.LineTo(pt);
+										}else
+											dc.MoveTo(pt);
+										if (data.hVertexPen){
+											::SelectObject( dc, data.hVertexPen );
+											::LineTo( dc, pt.x+1, pt.y );
+											dc.MoveTo(pt);
+										}
 									}
-									continuePainting=p.params.id==id;
 								p.params.locker.Unlock();
-								if (!continuePainting) // new paint request?
-									break;
 							}
 						::SelectObject( dc, hPen0 );
 						if (!continuePainting) // new paint request?
@@ -138,14 +140,15 @@
 							continue;
 						const HGDIOBJ hPen0=::SelectObject( dc, data.hLinePen );
 							for( DWORD j=0; j<series.nValues; ){
-								const POINT pt=data.pValues[j++];
+								const POINT &pt=data.pValues[j++];
 								PVOID pKey=(PVOID)pt.x, pValue=nullptr;
 								barSizes.Lookup( pKey, pValue );
 								p.params.locker.Lock();
-									dc.MoveTo(  Transform( p.params.valuesTransf, pt.x, (long)pValue )  );
-									pValue=(PBYTE)pValue+pt.y;
-									dc.LineTo(  Transform( p.params.valuesTransf, pt.x, (long)pValue )  );
-									continuePainting=p.params.id==id;
+									if (continuePainting=p.params.id==id){
+										dc.MoveTo(  Transform( p.params.valuesTransf, pt.x, (long)pValue )  );
+										pValue=(PBYTE)pValue+pt.y;
+										dc.LineTo(  Transform( p.params.valuesTransf, pt.x, (long)pValue )  );
+									}
 								p.params.locker.Unlock();
 								barSizes.SetAt( pKey, pValue );
 								if (!continuePainting) // new paint request?
@@ -162,6 +165,19 @@
 			}
 		}while (true);
 		return ERROR_SUCCESS;
+	}
+
+	LRESULT CChartView::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
+		// window procedure
+		switch (msg){
+			case WM_PAINT:
+				// window's size is being changed
+				painter.params.locker.Lock();
+					painter.params.id++;
+				painter.params.locker.Unlock();
+				break;
+		}
+		return __super::WindowProc( msg, wParam, lParam );
 	}
 
 
@@ -182,7 +198,6 @@
 		// - letting the Painter finish normally
 		painter.params.locker.Lock();
 			painter.params.id++;
-			painter.params.valuesTransf.eDy=INT_MIN;
 		painter.params.locker.Unlock();
 		painter.repaintEvent.SetEvent();
 		::WaitForSingleObject( painter.action, INFINITE );

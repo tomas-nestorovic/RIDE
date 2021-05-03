@@ -70,6 +70,7 @@
 		XFORM DrawXyAxes(HDC dc) const;
 		void OnDraw(CDC *pDC) override;
 		void PostNcDestroy() override;
+		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 	public:
 		CChartView(const CDisplayInfo &di);
 	};
