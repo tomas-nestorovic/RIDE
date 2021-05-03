@@ -711,6 +711,7 @@ BEGIN
     END
     POPUP "Helpers"
     BEGIN
+        MENUITEM "Scatter plot",                ID_CHART
         MENUITEM "Timing histogram",            ID_HISTOGRAM
     END
 END

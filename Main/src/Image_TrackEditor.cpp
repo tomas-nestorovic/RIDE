@@ -1051,6 +1051,37 @@
 							//return TRUE;
 						//case ID_UP:	// commented out as coped with already in WM_KEYDOWN handler
 							//return TRUE;
+						case ID_CHART:{
+							// modal display of scatter plot of time differences
+							CImage::CTrackReader tr=this->tr;
+							tr.SetCurrentTimeAndProfile( 0, tr.CreateResetProfile() );
+							TLogValue yMax=INT_MIN;
+							const LPPOINT data=(LPPOINT)::calloc( tr.GetTimesCount(), sizeof(POINT) );
+								LPPOINT pLastItem=data;
+								for( TLogTime t0=0; tr; pLastItem++ ){
+									const TLogTime t = pLastItem->x = tr.ReadTime();
+									yMax=std::max<TLogValue>( yMax, pLastItem->y=t-t0 );
+									t0=t;
+								}
+								const Utils::CRidePen dotPen( 2, 0x2020ff );
+								const auto xySeries=CChartView::CSeries::CreateXy(
+									pLastItem-data, data,
+									nullptr, dotPen
+								);
+								CChartDialog(
+									CChartView::CDisplayInfo::CreateXy(
+										CChartView::XY_LINE_BROKEN,
+										CChartView::TMargin::Default,
+										&xySeries, 1,
+										's', tr.GetTotalTime(), Utils::CTimeline::TimePrefixes,
+										's', yMax, Utils::CTimeline::TimePrefixes
+									)
+								).ShowModal(
+									caption, this, CRect(0,0,800,600)
+								);
+							::free(data);
+							return TRUE;
+						}
 						case ID_HISTOGRAM:{
 							CMapPtrToPtr histogram; // key = Time, value = count of Times
 							CImage::CTrackReader tr=this->tr;
