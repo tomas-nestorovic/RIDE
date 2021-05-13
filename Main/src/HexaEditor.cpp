@@ -77,6 +77,103 @@
 
 
 
+	CHexaEditor::CSearch::CSearch()
+		// ctor
+		: f(nullptr)
+		, type(ASCII_ANY_CASE) , patternLength(0) {
+	}
+
+	static bool EqualBytes(BYTE b1,BYTE b2){
+		return b1==b2;
+	}
+
+	static bool EqualChars(BYTE b1,BYTE b2){
+		return ::strnicmp( (LPCSTR)&b1, (LPCSTR)&b2, 1 )==0;
+	}
+
+	static bool InequalBytes(BYTE b1,BYTE b2){
+		return b1!=b2;
+	}
+
+	#define F	search.f
+
+	UINT AFX_CDECL CHexaEditor::CSearch::SearchForward_thread(PVOID pCancelableAction){
+		// thread to perform forward search of specified Pattern
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
+		CSearch &search=*(CSearch *)pAction->GetParams();
+		// - determining Comparer function
+		typedef bool (* FnComparer)(BYTE b1,BYTE b2);
+		FnComparer cmp;
+		switch (search.type){
+			case CSearch::HEXA:
+			case CSearch::ASCII_MATCH_CASE:
+				cmp=EqualBytes;
+				break;
+			case CSearch::ASCII_ANY_CASE:
+				cmp=EqualChars;
+				break;
+			case CSearch::NOT_BYTE:
+				cmp=InequalBytes;
+				break;
+			default:
+				ASSERT(FALSE);
+				return pAction->TerminateWithError( ERROR_NOT_SUPPORTED );
+		}
+		// - preparation for KMP search (Knuth-Morris-Pratt)
+		BYTE pie[sizeof(search.pattern.bytes)];
+		*pie=0;
+		for( BYTE i=1,k=0; i<search.patternLength; i++ ){
+			while (k>0 && search.pattern.bytes[k]!=search.pattern.bytes[i])
+				k=pie[k-1];
+			k+=search.pattern.bytes[k]==search.pattern.bytes[i];
+			pie[i]=k;
+		}
+		// - search for next match of the Pattern
+		pAction->SetProgressTarget( F->GetLength()+1 ); // "+1" = to not preliminary end the search thread
+		int fEnd=F->GetLength();
+		do{
+			F->Seek( search.logPosFound, CFile::begin );
+			for( BYTE posMatched=0,b; F->GetPosition()<fEnd; pAction->UpdateProgress(F->GetPosition()) )
+				if (pAction->IsCancelled())
+					return ERROR_CANCELLED;
+				else if (!F->Read( &b, 1 )){
+					F->Seek( 1, CFile::current ); // skipping irrecoverable portion of data ...
+					posMatched=0; // ... and beginning with Pattern comparison from scratch
+				}else{
+					while (posMatched>0 && !cmp(b,search.pattern.bytes[posMatched]) )
+						posMatched=pie[posMatched-1];
+					posMatched+=cmp( b, search.pattern.bytes[posMatched] );
+					if (posMatched==search.patternLength){
+						search.logPosFound=F->GetPosition()-search.patternLength;
+						return pAction->TerminateWithSuccess();
+					}
+				}
+			if (!search.logPosFound) // searched through the whole content?
+				break;
+			if (!Utils::QuestionYesNo( _T("No match found yet.\nContinue from the beginning?"), MB_DEFBUTTON1 ))
+				break;
+			fEnd=search.logPosFound;
+			search.logPosFound=0;
+		}while (true);
+		// - no match found
+		return pAction->TerminateWithError( ERROR_NOT_FOUND );
+	}
+
+	TStdWinError CHexaEditor::CSearch::FindNextPositionModal(){
+		// finds and returns Position of the next occurence of Pattern, starting From specified Position
+		return	CBackgroundActionCancelable(
+					SearchForward_thread,
+					this,
+					THREAD_PRIORITY_BELOW_NORMAL
+				).Perform();
+	}
+
+
+
+
+
+
+
 	static struct TDefaultContentAdviser sealed:public CHexaEditor::IContentAdviser{
 		void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength,bool *pOutDataReady) override{
 			// retrieves the start logical position and length of the Record pointed to by the input LogicalPosition
@@ -116,7 +213,7 @@
 		, customSelectSubmenu(customSelectSubmenu) , customResetSubmenu(customResetSubmenu) , customGotoSubmenu(customGotoSubmenu)
 		, hDefaultAccelerators(::LoadAccelerators(app.m_hInstance,MAKEINTRESOURCE(IDR_HEXAEDITOR)))
 		, caret(0) , param(param) , hPreviouslyFocusedWnd(0)
-		, f(nullptr) , pContentAdviser(&DefaultContentAdviser)
+		, pContentAdviser(&DefaultContentAdviser)
 		, nBytesInRow(16) , editable(true) , addrLength(ADDRESS_FORMAT_LENGTH)
 		, emphases((PEmphasis)&TEmphasis::Terminator) {
 		// - comparing requested configuration with HexaEditor's skills
@@ -169,11 +266,11 @@
 	void CHexaEditor::Reset(CFile *_f,int _minFileSize,int _maxFileSize){
 		// resets the HexaEditor and supplies it new File content
 		locker.Lock();
-			if (!( pContentAdviser=dynamic_cast<PContentAdviser>(  f=_f  ) ))
+			if (!( pContentAdviser=dynamic_cast<PContentAdviser>(  F=_f  ) ))
 				pContentAdviser=&DefaultContentAdviser;
 			caret=TCaret(0); // resetting the Caret and Selection
 			SetLogicalBounds( _minFileSize, _maxFileSize );
-			SetLogicalSize(f->GetLength());
+			SetLogicalSize(F->GetLength());
 			if (::IsWindow(m_hWnd)){ // may be window-less if the owner is window-less
 				__refreshVertically__();
 				Invalidate(FALSE);
@@ -279,7 +376,7 @@
 		// refreshes all parameters that relate to vertical axis
 		// - determining the total number of Rows
 		locker.Lock();
-			nLogicalRows=__logicalPositionToRow__( std::max<int>(f->GetLength(),logicalSize) );
+			nLogicalRows=__logicalPositionToRow__( std::max<int>(F->GetLength(),logicalSize) );
 		locker.Unlock();
 		// - setting the scrolling dimensions
 		RECT r;
@@ -363,6 +460,10 @@
 		::PostMessage( m_hWnd, WM_LBUTTONDOWN, 0, -1 ); // recovering the focus; "-1" = [x,y] = nonsense value; can't use mere SetFocus because this alone doesn't work
 	}
 
+	void CHexaEditor::SendEditNotification(WORD en) const{
+		::SendMessage( ::GetParent(m_hWnd), WM_COMMAND, MAKELONG(GetWindowLong(m_hWnd,GWL_ID),en), 0 );
+	}
+
 	#define MESSAGE_LIMIT_UPPER	_T("The content has reached its upper limit.")
 
 	static bool mouseDragged;
@@ -399,7 +500,7 @@
 caretCorrectlyMoveTo:	// . adjusting the Caret's Position
 						caret.hexaLow=true; // the next keystroke will modify the lower four bits of current hexa-value
 						if (caret.position<0) caret.position=0;
-						else if (caret.position>maxFileSize) caret.position=maxFileSize;
+						else if (caret.position>F->GetLength()) caret.position=F->GetLength();
 						// . adjusting an existing Selection if Shift pressed
 						if (!mouseDragged){ // if mouse is being -Dragged, the beginning of a Selection has already been detected
 							if (caret.selectionA!=caretPos0) // if there has been a Selection before ...
@@ -480,7 +581,7 @@ moveCaretDown:			const int iRow=__logicalPositionToRow__(caret.position);
 						caret.position=( ctrl ? 0 : __firstByteInRowToLogicalPosition__(__logicalPositionToRow__(caret.position)) );
 						goto caretCorrectlyMoveTo;
 					case VK_END:
-						caret.position=( ctrl ? f->GetLength() : __firstByteInRowToLogicalPosition__(__logicalPositionToRow__(caret.position)+1)-1 );
+						caret.position=( ctrl ? F->GetLength() : __firstByteInRowToLogicalPosition__(__logicalPositionToRow__(caret.position)+1)-1 );
 						goto caretCorrectlyMoveTo;
 					case VK_TAB:{
 						const HWND hDlg=::GetTopWindow(m_hWnd);
@@ -500,7 +601,7 @@ editDelete:				// deleting the Byte after Caret, or deleting the Selection
 						if (!editable) return 0; // can't edit content of a disabled window
 						// . if Selection not set, setting it as the Byte immediately after Caret
 						if (caret.selectionA==caret.position)
-							if (caret.position<f->GetLength()) caret.selectionA=caret.position++;
+							if (caret.position<F->GetLength()) caret.selectionA=caret.position++;
 							else return 0;
 deleteSelection:		int posSrc=std::max<>(caret.selectionA,caret.position), posDst=std::min<>(caret.selectionA,caret.position);
 						// . checking if there are any Bookmarks selected
@@ -514,14 +615,15 @@ deleteSelection:		int posSrc=std::max<>(caret.selectionA,caret.position), posDst
 							return 0;
 						}
 						// . moving the content "after" Selection "to" the position of the Selection
+						const int newLogicalSize=std::max( logicalSize+posDst-posSrc, minFileSize );
 						caret.selectionA = caret.position = posDst; // moving the Caret and cancelling any Selection
-						for( int nBytesToMove=f->GetLength()-posSrc; nBytesToMove; ){
+						for( int nBytesToMove=F->GetLength()-posSrc; nBytesToMove; ){
 							BYTE buf[65536];
-							f->Seek(posSrc,CFile::begin);
-							const int nBytesBuffered=f->Read(buf, std::min<UINT>(nBytesToMove,sizeof(buf)) );
+							F->Seek(posSrc,CFile::begin);
+							const int nBytesBuffered=F->Read(buf, std::min<UINT>(nBytesToMove,sizeof(buf)) );
 							if (!nBytesBuffered) break; // no Bytes buffered if, for instance, Sector not found
-							f->Seek(posDst,CFile::begin);
-							f->Write(buf,nBytesBuffered);
+							F->Seek(posDst,CFile::begin);
+							F->Write(buf,nBytesBuffered);
 							for( int pos=posSrc; (pos=bookmarks.__getNearestNextBookmarkPosition__(pos))<posSrc+nBytesBuffered; ){
 								bookmarks.__removeBookmark__(pos);
 								bookmarks.__addBookmark__(posDst+pos-posSrc);
@@ -531,11 +633,14 @@ deleteSelection:		int posSrc=std::max<>(caret.selectionA,caret.position), posDst
 						// . the "source-destination" difference filled up with zeros
 						if (posDst<minFileSize){
 							static const BYTE Zero=0;
-							for( f->Seek(posDst,CFile::begin); posDst++<minFileSize; f->Write(&Zero,1) );
+							for( F->Seek(posDst,CFile::begin); posDst++<minFileSize; F->Write(&Zero,1) );
 							__informationWithCheckableShowNoMore__( _T("To preserve the minimum size of the content, it has been padded with zeros."), INI_MSG_PADDING );
 						}
 						// . refreshing the scrollbar
+						SetLogicalSize( newLogicalSize );
+						F->SetLength( newLogicalSize );
 						__refreshVertically__();
+						SendEditNotification( EN_CHANGE );
 						RepaintData();
 						goto caretRefresh;
 					}
@@ -569,14 +674,16 @@ deleteSelection:		int posSrc=std::max<>(caret.selectionA,caret.position), posDst
 								break;
 							if (caret.position<maxFileSize){
 								BYTE b=0;
-								f->Seek(caret.position,CFile::begin);
-								f->Read(&b,1);
+								F->Seek(caret.position,CFile::begin);
+								F->Read(&b,1);
 								b= b<<4 | wParam;
-								if (caret.position<f->GetLength()) f->Seek(-1,CFile::current);
-								f->Write(&b,1);
+								if (caret.position<F->GetLength()) F->Seek(-1,CFile::current);
+								F->Write(&b,1);
 								if ( caret.hexaLow=!caret.hexaLow )
 									caret.position++;
 								caret.selectionA=caret.position; // cancelling any Selection
+								SetLogicalSize(  std::max<int>( logicalSize, F->GetLength() )  );
+								SendEditNotification( EN_CHANGE );
 								RepaintData();
 								goto caretRefresh;
 							}else
@@ -593,9 +700,11 @@ deleteSelection:		int posSrc=std::max<>(caret.selectionA,caret.position), posDst
 					// Ascii modification
 					if (::GetAsyncKeyState(VK_CONTROL)>=0 && ::isprint(wParam)) // Ctrl not pressed, thus character printable
 						if (caret.position<maxFileSize){
-							f->Seek( caret.position, CFile::begin );
-							f->Write(&wParam,1);
+							F->Seek( caret.position, CFile::begin );
+							F->Write(&wParam,1);
 							caret.selectionA = ++caret.position; // moving the Caret and cancelling any Selection
+							SetLogicalSize(  std::max( logicalSize, caret.position )  );
+							SendEditNotification( EN_CHANGE );
 							RepaintData();
 							goto caretRefresh;
 						}else
@@ -688,7 +797,7 @@ deleteSelection:		int posSrc=std::max<>(caret.selectionA,caret.position), posDst
 							break;
 					case ID_EDIT_SELECT_ALL:
 						// Selecting everything
-						caret.selectionA=0, caret.position=f->GetLength();
+						caret.selectionA=0, caret.position=F->GetLength();
 						RepaintData();
 						goto caretRefresh;
 					case ID_EDIT_SELECT_NONE:
@@ -717,9 +826,9 @@ deleteSelection:		int posSrc=std::max<>(caret.selectionA,caret.position), posDst
 							CFileException e;
 							CFile fDest;
 							if (fDest.Open( fileName, CFile::modeWrite|CFile::modeCreate|CFile::shareDenyWrite|CFile::typeBinary, &e ))
-								for( DWORD nBytesToSave=std::max(caret.selectionA,caret.position)-f->Seek(std::min(caret.selectionA,caret.position),CFile::begin),n; nBytesToSave; nBytesToSave-=n ){
+								for( DWORD nBytesToSave=std::max(caret.selectionA,caret.position)-F->Seek(std::min(caret.selectionA,caret.position),CFile::begin),n; nBytesToSave; nBytesToSave-=n ){
 									BYTE buf[65536];
-									n=f->Read(  buf,  std::min<UINT>( nBytesToSave, sizeof(buf) )  );
+									n=F->Read(  buf,  std::min<UINT>( nBytesToSave, sizeof(buf) )  );
 									fDest.Write( buf, n );
 									if (::GetLastError()==ERROR_READ_FAULT){
 										Utils::Information( _T("Selection saved only partially"), ERROR_READ_FAULT );
@@ -744,17 +853,18 @@ deleteSelection:		int posSrc=std::max<>(caret.selectionA,caret.position), posDst
 						if (d.DoModal()==IDOK){
 							CFileException e;
 							CFile fSrc;
-							if (fSrc.Open( fileName, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary, &e ))
-								for( DWORD nBytesToRead=std::min<DWORD>( fSrc.GetLength(), maxFileSize-f->Seek(caret.position,CFile::begin) ),n; nBytesToRead>0; nBytesToRead-=n ){
+							if (fSrc.Open( fileName, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary, &e )){
+								for( DWORD nBytesToRead=std::min<DWORD>( fSrc.GetLength(), maxFileSize-F->Seek(caret.position,CFile::begin) ),n; nBytesToRead>0; nBytesToRead-=n ){
 									BYTE buf[65536];
 									n=fSrc.Read(  buf,  std::min<UINT>( nBytesToRead, sizeof(buf) )  );
-									f->Write( buf, n );
+									F->Write( buf, n );
 									if (::GetLastError()==ERROR_WRITE_FAULT){
 										Utils::Information( _T("Pasted only partially"), ERROR_WRITE_FAULT );
 										break;
 									}
 								}
-							else
+								SendEditNotification( EN_CHANGE );
+							}else
 								Utils::FatalError( _T("Can't paste file content"), e.m_cause );
 						}
 						SetFocus(); // restoring focus lost by displaying the "Open" dialog
@@ -767,16 +877,17 @@ deleteSelection:		int posSrc=std::max<>(caret.selectionA,caret.position), posDst
 resetSelectionWithValue:BYTE buf[65535];
 						if (i>=0) // some constant value
 							::memset( buf, i, sizeof(buf) );
-						for( DWORD nBytesToReset=std::max(caret.selectionA,caret.position)-f->Seek(std::min(caret.selectionA,caret.position),CFile::begin),n; nBytesToReset; nBytesToReset-=n ){
+						for( DWORD nBytesToReset=std::max(caret.selectionA,caret.position)-F->Seek(std::min(caret.selectionA,caret.position),CFile::begin),n; nBytesToReset; nBytesToReset-=n ){
 							n=std::min<UINT>( nBytesToReset, sizeof(buf) );
 							if (i<0) // Gaussian noise
 								Utils::RandomizeData( buf, sizeof(buf) );
-							f->Write( buf, n );
+							F->Write( buf, n );
 							if (::GetLastError()==ERROR_WRITE_FAULT){
 								Utils::Information( _T("Selection only partially reset"), ERROR_WRITE_FAULT );
 								break;
 							}
 						}
+						SendEditNotification( EN_CHANGE );
 						RepaintData();
 						goto caretCorrectlyMoveTo;
 					case ID_NUMBER:{
@@ -834,7 +945,7 @@ resetSelectionWithValue:BYTE buf[65535];
 					case ID_EDIT_COPY:
 						// copying the Selection into clipboard
 						if (caret.selectionA!=caret.position)
-							( new COleBinaryDataSource(	f,
+							( new COleBinaryDataSource(	F,
 														std::min<>(caret.selectionA,caret.position),
 														std::max<>(caret.position,caret.selectionA)
 							) )->SetClipboard();
@@ -846,25 +957,162 @@ resetSelectionWithValue:BYTE buf[65535];
 						odo.AttachClipboard();
 						if (const HGLOBAL hg=odo.GetGlobalData(cfBinary)){
 							const DWORD *p=(PDWORD)::GlobalLock(hg), length=*p; // binary data are prefixed by their length
-								f->Seek(caret.position,CFile::begin);
+								F->Seek(caret.position,CFile::begin);
 								const DWORD lengthLimit=maxFileSize-caret.position;
 								if (length<=lengthLimit){
-									f->Write( ++p, length );
+									F->Write( ++p, length );
 									caret.selectionA = caret.position+=length; // moving the Caret and cancelling any Selection
 								}else{
-									f->Write( ++p, lengthLimit );
+									F->Write( ++p, lengthLimit );
 									caret.position+=lengthLimit;
 									__showMessage__(MESSAGE_LIMIT_UPPER);
 								}
 							::GlobalUnlock(hg);
 							::GlobalFree(hg);
 						}
+						SendEditNotification( EN_CHANGE );
 						RepaintData();
 						goto caretRefresh;
 					}
 					case ID_EDIT_DELETE:
 						// deleting content of the current selection
 						goto editDelete;
+					case ID_EDIT_FIND_NEXT:
+						// find next occurence of Pattern in the Content
+						if (search.patternLength==0) // no Pattern specified yet
+							wParam=ID_EDIT_FIND;
+						//fallthrough
+					case ID_EDIT_FIND:{
+						// find a Pattern in the Content
+						// . defining the Dialog
+						class CSearchDialog sealed:public Utils::CRideDialog{
+							CMemFile f;
+							CHexaEditor hexaEditor;
+							bool acceptNotification;
+
+							BOOL OnInitDialog() override{
+								const BOOL r=__super::OnInitDialog();
+								hexaEditor.Create( nullptr, nullptr, WS_CHILD|WS_VISIBLE|WS_CLIPSIBLINGS, MapDlgItemClientRect(ID_FILE), this, ID_FILE2 );
+								return r;
+							}
+
+							void DoDataExchange(CDataExchange *pDX) override{
+								DDX_Radio( pDX, ID_DEFAULT1, (int &)search.type );
+								if (pDX->m_bSaveAndValidate)
+									switch (search.type){
+										case CSearch::ASCII_ANY_CASE:
+											search.patternLength=::GetDlgItemTextA( m_hWnd, ID_TEXT, search.pattern.chars, sizeof(search.pattern.chars) );
+											if (IsDlgButtonChecked(ID_ACCURACY))
+												search.type=CSearch::ASCII_MATCH_CASE;
+											break;
+										case CSearch::HEXA:
+											search.patternLength=f.GetLength();
+											break;
+										case CSearch::NOT_BYTE:
+											DDX_Text( pDX, ID_NUMBER, search.pattern.bytes[0] );
+											search.patternLength=1;
+											break;
+										default:
+											ASSERT(FALSE);
+											break;
+									}
+							}
+
+							LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
+								static const WORD SearchButtons[]={ ID_EDIT_FIND_PREV, ID_EDIT_FIND_NEXT, 0 };
+								switch (msg){
+									case WM_COMMAND:
+										switch (wParam){
+											case ID_EDIT_FIND_PREV:
+											case ID_EDIT_FIND_NEXT:
+												if (UpdateData(TRUE))
+													EndDialog(wParam);
+												return 0;
+										// ASCII search events
+											case MAKELONG(ID_DEFAULT1,BN_CLICKED):
+											case MAKELONG(ID_TEXT,EN_SETFOCUS):
+											case MAKELONG(ID_ACCURACY,BN_CLICKED):
+												CheckRadioButton( ID_DEFAULT1, ID_DEFAULT4, ID_DEFAULT1 );
+												//fallthrough
+											case MAKELONG(ID_TEXT,EN_CHANGE):
+												if (acceptNotification){
+													acceptNotification=false; // preventing from recurrent processing
+														hexaEditor.SetLogicalSize(
+															search.patternLength=GetDlgItemTextA( ID_TEXT, search.pattern.chars, sizeof(search.pattern.chars) )
+														);
+														f.SetLength( search.patternLength );
+														hexaEditor.Invalidate();
+													acceptNotification=true;
+													EnableDlgItems( SearchButtons, search.patternLength>0 );
+												}
+												break;
+										// Hexa search events
+											case MAKELONG(ID_DEFAULT2,BN_CLICKED):
+											case MAKELONG(ID_FILE2,EN_SETFOCUS):
+												CheckRadioButton( ID_DEFAULT1, ID_DEFAULT4, ID_DEFAULT2 );
+												//fallthrough
+											case MAKELONG(ID_FILE2,EN_CHANGE):
+												if (acceptNotification){
+													acceptNotification=false; // preventing from recurrent processing
+														search.pattern.chars[ search.patternLength=f.GetLength() ]='\0';
+														SetDlgItemText( ID_TEXT, search.pattern.chars );
+													acceptNotification=true;
+													EnableDlgItems( SearchButtons, search.patternLength>0 );
+												}
+												break;
+										// "Not-Byte" search events
+											case MAKELONG(ID_DEFAULT3,BN_CLICKED):
+											case MAKELONG(ID_NUMBER,EN_SETFOCUS):
+												CheckRadioButton( ID_DEFAULT1, ID_DEFAULT4, ID_DEFAULT3 );
+												//fallthrough
+											case MAKELONG(ID_NUMBER,EN_CHANGE):
+												if (acceptNotification)
+													EnableDlgItems( SearchButtons, GetDlgItemTextA(ID_NUMBER,search.pattern.chars,sizeof(search.pattern.chars))>0 );
+												break;
+										}
+										break;
+								}
+								return __super::WindowProc( msg, wParam, lParam );
+							}
+						public:
+							CSearch search;
+
+							CSearchDialog(CWnd *pParentWnd,const CSearch &rSearch)
+								: Utils::CRideDialog( IDR_HEXAEDITOR_FIND, pParentWnd )
+								, search(rSearch)
+								, acceptNotification(true)
+								, f( search.pattern.bytes, sizeof(search.pattern.bytes) )
+								, hexaEditor(nullptr) {
+								f.SetLength(0);
+								f.SeekToBegin();
+								hexaEditor.ShowAddressBand(false);
+								hexaEditor.Reset( &f, 0, sizeof(search.pattern.bytes) );
+							}
+						} d( this, search );
+						// . showing the Dialog and processing its result
+						d.search.logPosFound=caret.position;
+						TStdWinError err=ERROR_NOT_FOUND; // assumption (Pattern not found)
+						wParam=LOWORD(wParam);
+						switch ( wParam==ID_EDIT_FIND ? d.DoModal() : wParam ){
+							case ID_EDIT_FIND_PREV:
+								ASSERT(FALSE); //TODO
+								break;
+							case ID_EDIT_FIND_NEXT:
+								err=( search=d.search ).FindNextPositionModal();
+								break;
+							case IDCANCEL:
+								return 0;
+						}
+						if (err){
+							__showMessage__(  Utils::ComposeErrorMessage( _T("Search failed"), err )  );
+							return 0;
+						}else{
+							SetFocus();
+							caret.position=( caret.selectionA=search.logPosFound )+search.patternLength;
+							RepaintData();
+							goto caretRefresh;
+						}
+					}
 					case ID_NEXT:{
 						// navigating to the next Record
 						int currRecordLength=0;
@@ -897,7 +1145,7 @@ resetSelectionWithValue:BYTE buf[65535];
 								: CDialog( IDR_HEXAEDITOR_GOTOADDRESS, pParentWnd )
 								, fileLength(fileLength) , address(0) {
 							}
-						} d( f->GetLength(), this );
+						} d( F->GetLength(), this );
 						// . showing the Dialog and processing its result
 						if (d.DoModal()==IDOK){
 							SetFocus();
@@ -970,6 +1218,7 @@ leftMouseDragged:
 			case WM_SETFOCUS:
 				// window has received focus
 				hPreviouslyFocusedWnd=(HWND)wParam; // the window that is losing the focus (may be refocused later when Enter is pressed)
+				SendEditNotification( EN_SETFOCUS );
 				ShowCaret();
 				goto caretRefresh;
 			case WM_KILLFOCUS:
@@ -1140,7 +1389,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 					// . determining the visible part of the File content
 					const int iRowFirstToPaint=std::max<>( (rcClip.top-HEADER_HEIGHT)/font.charHeight, 0L );
 					int iRowA= GetScrollPos(SB_VERT) + iRowFirstToPaint;
-					const int nPhysicalRows=__logicalPositionToRow__( std::min<int>(f->GetLength(),logicalSize) );
+					const int nPhysicalRows=__logicalPositionToRow__( std::min<int>(F->GetLength(),logicalSize) );
 					const int iRowLastToPaint= GetScrollPos(SB_VERT) + (rcClip.bottom-HEADER_HEIGHT)/font.charHeight + 1;
 					const int iRowZ=std::min<>( std::min<>(nPhysicalRows,iRowLastToPaint), iRowA+nRowsOnPage );
 					// . filling the gaps between Addresses/Hexa/Ascii, and Label space to erase any previous Label
@@ -1161,7 +1410,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 						PEmphasis pEmp=emphases;
 						while (pEmp->z<address) pEmp=pEmp->pNext; // choosing the first visible Emphasis
 						int nearestNextBookmarkPos=bookmarks.__getNearestNextBookmarkPosition__(address);
-						f->Seek( address, CFile::begin );
+						F->Seek( address, CFile::begin );
 						for( TCHAR buf[16]; iRowA<=iRowZ; iRowA++,y+=font.charHeight ){
 							RECT rcHexa={ /*xHexaStart*/0, y, std::min<LONG>(xHexaEnd,rcClip.right), std::min<LONG>(y+font.charHeight,rcClip.bottom) }; // commented out as this rectangle also used to paint the Address
 							RECT rcAscii={ std::min<LONG>(xAsciiStart,rcClip.right), y, std::min<LONG>(xAsciiEnd,rcClip.right), rcHexa.bottom };
@@ -1172,7 +1421,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 							}
 							rcHexa.left=xHexaStart;
 							// : File content
-							const bool isEof=f->GetPosition()==f->GetLength();
+							const bool isEof=F->GetPosition()==F->GetLength();
 							BYTE nBytesExpected=__firstByteInRowToLogicalPosition__(iRowA+1)-address;
 							bool dataReady=false; // assumption
 							pContentAdviser->GetRecordInfo( address, nullptr, nullptr, &dataReady );
@@ -1182,16 +1431,16 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 								enum:BYTE{ Good, Bad, Fuzzy } byteStates[BYTES_MAX];
 								while (const BYTE nMissing=nBytesExpected-nBytesRead){
 									::SetLastError(ERROR_SUCCESS); // clearing any previous error
-									const BYTE nNewBytesRead=f->Read( bytes+nBytesRead, nMissing );
+									const BYTE nNewBytesRead=F->Read( bytes+nBytesRead, nMissing );
 									const TStdWinError err=::GetLastError();
 									if (err==ERROR_READ_FAULT) // no Bytes are available
 										break;
 									if (nNewBytesRead>0){ // some more data read - Good or Bad
 										::memset( byteStates+nBytesRead, err!=ERROR_SUCCESS, nNewBytesRead );
 										nBytesRead+=nNewBytesRead;
-									}else if (f->GetPosition()<f->GetLength()){ // no data read - probably because none could have been determined (e.g. fuzzy bits)
+									}else if (F->GetPosition()<F->GetLength()){ // no data read - probably because none could have been determined (e.g. fuzzy bits)
 										byteStates[nBytesRead++]=Fuzzy;
-										f->Seek( 1, CFile::current );
+										F->Seek( 1, CFile::current );
 									}else{
 										nBytesExpected=nBytesRead;
 										break;
@@ -1243,7 +1492,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 									}
 								else if (!isEof){
 									// content not available (e.g. irrecoverable Sector read error)
-									f->Seek( address+=nBytesExpected, CFile::begin );
+									F->Seek( address+=nBytesExpected, CFile::begin );
 									#define ERR_MSG	_T("» No data «")
 									dc.SetContentPrintState( CHexaPaintDC::Erroneous, COLOR_WHITE );
 									dc.DrawText( ERR_MSG, -1, &rcHexa, DT_LEFT|DT_TOP );
@@ -1251,7 +1500,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 								}
 							}else if (!isEof){
 								// Record's data are not yet known - caller will refresh the HexaEditor when data for this Record are known
-								f->Seek( address+=nBytesExpected, CFile::begin );
+								F->Seek( address+=nBytesExpected, CFile::begin );
 								#define STATUS_MSG	_T("» Fetching data ... «")
 								dc.SetContentPrintState( CHexaPaintDC::Unknown, COLOR_WHITE );
 								dc.DrawText( STATUS_MSG, -1, &rcHexa, DT_LEFT|DT_TOP );
@@ -1321,6 +1570,8 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 					case ID_EDIT_SELECT_ALL:
 					case ID_EDIT_SELECT_NONE:
 					case ID_EDIT_SELECT_CURRENT:
+					case ID_EDIT_FIND:
+					case ID_EDIT_FIND_NEXT:
 					case ID_NEXT:
 					case ID_PREV:
 					case ID_NAVIGATE_ADDRESS:
@@ -1353,6 +1604,8 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 					case ID_EDIT_PASTE:
 					case ID_EDIT_PASTE_SPECIAL:
 					case ID_EDIT_DELETE:
+					case ID_EDIT_FIND:
+					case ID_EDIT_FIND_NEXT:
 					case ID_BOOKMARK_TOGGLE:
 					case ID_BOOKMARK_PREV:
 					case ID_BOOKMARK_NEXT:

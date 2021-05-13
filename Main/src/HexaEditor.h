@@ -77,7 +77,6 @@
 		PEmphasis emphases; // must be ordered ascending by A (and thus automatically also by Z)
 
 		mutable CCriticalSection locker;
-		CFile *f;
 		PContentAdviser pContentAdviser;
 		BYTE addrLength; // Address format length (see ADDRESS_FORMAT); modified in ShowAddresses
 		bool editable;
@@ -90,7 +89,30 @@
 		void __refreshVertically__();
 		void __refreshCaretDisplay__() const;
 		void __showMessage__(LPCTSTR msg) const;
+		void SendEditNotification(WORD en) const;
 	protected:
+		class CSearch sealed{
+			static UINT AFX_CDECL SearchForward_thread(PVOID pCancelableAction);
+		public:
+			CFile *f;
+			int logPosFound;
+			enum:int{ // in order of radio buttons in the "Find" dialog
+				ASCII_ANY_CASE,
+				HEXA,
+				NOT_BYTE,
+				ASCII_MATCH_CASE
+			} type;
+			union{
+				BYTE bytes[SCHAR_MAX];
+				char chars[SCHAR_MAX];
+			} pattern; // pattern to find
+			BYTE patternLength;
+
+			CSearch();
+
+			TStdWinError FindNextPositionModal();
+		} search;
+
 		const HMENU customSelectSubmenu, customResetSubmenu, customGotoSubmenu;
 
 		void PostNcDestroy() override sealed;

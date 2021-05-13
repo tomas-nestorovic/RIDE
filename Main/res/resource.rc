@@ -109,12 +109,14 @@ BEGIN
     "A",            ID_EDIT_SELECT_NONE,    VIRTKEY, SHIFT, CONTROL, 
                                                     NOINVERT
     "C",            ID_EDIT_COPY,           VIRTKEY, CONTROL, NOINVERT
+    "F",            ID_EDIT_FIND,           VIRTKEY, CONTROL, NOINVERT
     "G",            ID_NAVIGATE_ADDRESS,    VIRTKEY, CONTROL, NOINVERT
     "K",            ID_BOOKMARK_TOGGLE,     VIRTKEY, CONTROL, NOINVERT
     "R",            ID_EDIT_SELECT_CURRENT, VIRTKEY, CONTROL, NOINVERT
     "V",            ID_EDIT_PASTE,          VIRTKEY, CONTROL, NOINVERT
     VK_F11,         ID_BOOKMARK_PREV,       VIRTKEY, CONTROL, NOINVERT
     VK_F12,         ID_BOOKMARK_NEXT,       VIRTKEY, CONTROL, NOINVERT
+    VK_F3,          ID_EDIT_FIND_NEXT,      VIRTKEY, NOINVERT
     VK_NEXT,        ID_NEXT,                VIRTKEY, CONTROL, NOINVERT
     VK_PRIOR,       ID_PREV,                VIRTKEY, CONTROL, NOINVERT
 END
@@ -401,6 +403,9 @@ BEGIN
         MENUITEM "Paste\tCtrl+V",               ID_EDIT_PASTE
         MENUITEM "Paste from file...",          ID_EDIT_PASTE_SPECIAL
         MENUITEM "Delete\tDel",                 ID_EDIT_DELETE
+        MENUITEM SEPARATOR
+        MENUITEM "Find...\tCtrl+F",             ID_EDIT_FIND
+        MENUITEM "Find next\tF3",               ID_EDIT_FIND_NEXT
         MENUITEM SEPARATOR
         POPUP "Select"
         BEGIN
@@ -1733,6 +1738,30 @@ BEGIN
                     IDC_STATIC,7,33,146,36
 END
 
+IDR_HEXAEDITOR_FIND DIALOG DISCARDABLE  0, 0, 303, 186
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
+CAPTION "Find"
+FONT 8, "MS Sans Serif"
+BEGIN
+    EDITTEXT        ID_TEXT,20,18,276,14,ES_AUTOHSCROLL
+    CONTROL         "Match case",ID_ACCURACY,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,20,35,53,10
+    CONTROL         "Static",ID_FILE,"Static",SS_LEFTNOWORDWRAP | NOT 
+                    WS_VISIBLE | WS_BORDER,20,64,276,68
+    EDITTEXT        ID_NUMBER,74,140,40,14,ES_AUTOHSCROLL | ES_NUMBER
+    DEFPUSHBUTTON   "Find next",ID_EDIT_FIND_NEXT,192,165,50,14,WS_DISABLED
+    PUSHBUTTON      "Find prev",ID_EDIT_FIND_PREV,138,165,50,14,NOT 
+                    WS_VISIBLE | WS_DISABLED
+    CONTROL         "Search for ASCII pattern:",ID_DEFAULT1,"Button",
+                    BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,7,7,289,10
+    CONTROL         "Search for Byte pattern:",ID_DEFAULT2,"Button",
+                    BS_AUTORADIOBUTTON | WS_TABSTOP,7,52,289,10
+    CONTROL         "Byte other than:",ID_DEFAULT3,"Button",
+                    BS_AUTORADIOBUTTON,7,142,66,10
+    PUSHBUTTON      "Cancel",IDCANCEL,246,165,50,14
+END
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // DESIGNINFO
@@ -2041,6 +2070,14 @@ BEGIN
         RIGHTMARGIN, 153
         TOPMARGIN, 7
         BOTTOMMARGIN, 97
+    END
+
+    IDR_HEXAEDITOR_FIND, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 296
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 179
     END
 END
 #endif    // APSTUDIO_INVOKED
