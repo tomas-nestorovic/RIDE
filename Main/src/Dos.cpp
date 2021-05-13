@@ -1395,7 +1395,7 @@ reportError:Utils::Information(buf);
 		// - base
 		__super::PreInitDialog();
 		// - creating and showing the HexaEditor at the position of the placeholder (see Dialog's resource)
-		hexaEditor.Create( nullptr, nullptr, WS_CHILD|WS_VISIBLE, MapDlgItemClientRect(ID_FILE), this, 0 );
+		hexaEditor.Create( nullptr, nullptr, WS_CHILD|WS_VISIBLE|WS_CLIPSIBLINGS, MapDlgItemClientRect(ID_FILE), this, 0 );
 	}
 
 	void WINAPI CDos::CHexaValuePropGridEditor::DrawValue(PropGrid::PCustomParam,PropGrid::PCValue value,PropGrid::TSize valueSize,PDRAWITEMSTRUCT pdis){

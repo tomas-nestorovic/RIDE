@@ -328,6 +328,7 @@ namespace Utils{
 				if (::GetWindowLong((HWND)lParam,GWL_WNDPROC)==(LONG)__commandLikeButton_wndProc__){
 					UpdateData(TRUE);
 					EndDialog(wParam);
+					return 0;
 				}
 				break;
 		}

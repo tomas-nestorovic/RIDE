@@ -272,12 +272,12 @@ terminateWithError:
 											case IDRETRY:
 												UpdateData(TRUE);
 												EndDialog(wParam);
-												break;
+												return 0;
 											case ID_ERROR:
 												rp.acceptance.automaticallyAcceptedErrors|=rFdcStatus.ToWord();
 												UpdateData(TRUE);
 												EndDialog(ACCEPT_ERROR_ID);
-												break;
+												return 0;
 											case ID_IMAGE:
 												rp.acceptance.automaticallyAcceptedErrors=-1;
 												//fallthrough
@@ -285,7 +285,7 @@ terminateWithError:
 												rp.acceptance.remainingErrorsOnTrack=true;
 												UpdateData(TRUE);
 												EndDialog(ACCEPT_ERROR_ID);
-												break;
+												return 0;
 											case ID_RECOVER:{
 												// Sector recovery
 												// : Dialog definition
@@ -386,6 +386,7 @@ terminateWithError:
 															break;
 													}
 													EndDialog(ACCEPT_ERROR_ID);
+													return 0;
 												}
 												break;
 											}
@@ -396,7 +397,7 @@ terminateWithError:
 											case RESOLVE_EXCLUDE_ID:
 												// exclusion of this Sector
 												EndDialog(RESOLVE_EXCLUDE_ID);
-												break;
+												return 0;
 										}
 										break;
 								}
