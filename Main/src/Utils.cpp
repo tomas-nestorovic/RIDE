@@ -695,7 +695,7 @@ namespace Utils{
 	void FatalError(LPCTSTR text){
 		// shows fatal error
 		//if (!hParent) hParent=::GetActiveWindow();
-		::MessageBox(::GetActiveWindow(),text,nullptr,MB_ICONERROR|MB_TASKMODAL);
+		::MessageBox( app.GetFocusedWindow(), text, nullptr, MB_ICONERROR|MB_TASKMODAL );
 	}
 
 	#define ERROR_BECAUSE		_T("%s because:\n\n%s")
@@ -731,7 +731,7 @@ namespace Utils{
 	void Information(LPCTSTR text){
 		// shows Textual information
 		//if (!hParent) hParent=::GetActiveWindow();
-		::MessageBox(::GetActiveWindow(),text,_T("Information"),MB_ICONINFORMATION|MB_TASKMODAL);
+		::MessageBox( app.GetFocusedWindow(), text, _T("Information"), MB_ICONINFORMATION|MB_TASKMODAL );
 	}
 	void Information(LPCTSTR text,LPCTSTR causeOfError,LPCTSTR consequence){
 		// shows Textual information along with its Cause and immediate Consequence
@@ -825,7 +825,7 @@ namespace Utils{
 	bool InformationOkCancel(LPCTSTR text){
 		// True <=> user confirmed the shown Textual information, otherwise False
 		LOG_DIALOG_DISPLAY(text);
-		return LOG_DIALOG_RESULT( ::MessageBox(::GetActiveWindow(),text,_T("Information"),MB_ICONINFORMATION|MB_OKCANCEL|MB_TASKMODAL)==IDOK );
+		return LOG_DIALOG_RESULT(  ::MessageBox( app.GetFocusedWindow(), text, _T("Information"), MB_ICONINFORMATION|MB_OKCANCEL|MB_TASKMODAL )==IDOK  );
 	}
 
 
@@ -836,7 +836,7 @@ namespace Utils{
 		// shows a yes-no question
 		//if (!hParent) hParent=::GetActiveWindow();
 		LOG_DIALOG_DISPLAY(text);
-		return LOG_DIALOG_RESULT( ::MessageBox(::GetActiveWindow(),text,_T("Question"),MB_ICONQUESTION|MB_TASKMODAL|MB_YESNO|defaultButton)==IDYES );
+		return LOG_DIALOG_RESULT(  ::MessageBox( app.GetFocusedWindow(), text, _T("Question"), MB_ICONQUESTION|MB_TASKMODAL|MB_YESNO|defaultButton )==IDYES  );
 	}
 
 
@@ -846,7 +846,7 @@ namespace Utils{
 		// shows a yes-no question
 		//if (!hParent) hParent=::GetActiveWindow();
 		LOG_DIALOG_DISPLAY(text);
-		return LOG_DIALOG_RESULT( ::MessageBox(::GetActiveWindow(),text,_T("Question"),MB_ICONQUESTION|MB_TASKMODAL|MB_YESNOCANCEL|defaultButton) );
+		return LOG_DIALOG_RESULT(  ::MessageBox( app.GetFocusedWindow(), text, _T("Question"), MB_ICONQUESTION|MB_TASKMODAL|MB_YESNOCANCEL|defaultButton )  );
 	}
 	BYTE QuestionYesNoCancel(LPCTSTR text,UINT defaultButton,LPCTSTR causeOfError,LPCTSTR consequence){
 		// shows a yes-no question along with its Cause and immediate Consequence
@@ -864,7 +864,7 @@ namespace Utils{
 		// shows an abort-retry-ignore question
 		//if (!hParent) hParent=::GetActiveWindow();
 		LOG_DIALOG_DISPLAY(text);
-		return LOG_DIALOG_RESULT( ::MessageBox(::GetActiveWindow(),text,_T("Question"),MB_ICONQUESTION|MB_TASKMODAL|MB_ABORTRETRYIGNORE|defaultButton) );
+		return LOG_DIALOG_RESULT(  ::MessageBox( app.GetFocusedWindow(), text, _T("Question"), MB_ICONQUESTION|MB_TASKMODAL|MB_ABORTRETRYIGNORE|defaultButton )  );
 	}
 
 	BYTE AbortRetryIgnore(LPCTSTR text,TStdWinError causeOfError,UINT defaultButton,LPCTSTR consequence){
@@ -882,7 +882,7 @@ namespace Utils{
 		// shows an retry-cancel question
 		//if (!hParent) hParent=::GetActiveWindow();
 		LOG_DIALOG_DISPLAY(text);
-		return LOG_DIALOG_RESULT( ::MessageBox(::GetActiveWindow(),text,_T("Question"),MB_ICONEXCLAMATION|MB_TASKMODAL|MB_RETRYCANCEL|MB_DEFBUTTON1)==IDRETRY );
+		return LOG_DIALOG_RESULT(  ::MessageBox( app.GetFocusedWindow(), text, _T("Question"), MB_ICONEXCLAMATION|MB_TASKMODAL|MB_RETRYCANCEL|MB_DEFBUTTON1 )==IDRETRY  );
 	}
 	bool RetryCancel(TStdWinError causeOfError){
 		// shows an retry-cancel question
@@ -894,7 +894,7 @@ namespace Utils{
 		// shows an cancel-retry-continue question
 		//if (!hParent) hParent=::GetActiveWindow();
 		LOG_DIALOG_DISPLAY(text);
-		return LOG_DIALOG_RESULT( ::MessageBox(::GetActiveWindow(),text,_T("Question"),MB_ICONEXCLAMATION|MB_TASKMODAL|MB_CANCELTRYCONTINUE|defaultButton) );
+		return LOG_DIALOG_RESULT(  ::MessageBox( app.GetFocusedWindow(), text, _T("Question"), MB_ICONEXCLAMATION|MB_TASKMODAL|MB_CANCELTRYCONTINUE|defaultButton )  );
 	}
 	BYTE CancelRetryContinue(LPCTSTR text,TStdWinError causeOfError,UINT defaultButton,LPCTSTR consequence){
 		// shows an cancel-retry-continue question along with its Cause
@@ -906,7 +906,7 @@ namespace Utils{
 	void Warning(LPCTSTR text){
 		// shows Textual warning
 		//if (!hParent) hParent=::GetActiveWindow();
-		::MessageBox(::GetActiveWindow(),text,_T("Warning"),MB_ICONINFORMATION|MB_TASKMODAL);
+		::MessageBox( app.GetFocusedWindow(), text, _T("Warning"), MB_ICONINFORMATION|MB_TASKMODAL );
 	}
 
 

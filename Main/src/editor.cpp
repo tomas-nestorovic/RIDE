@@ -658,6 +658,20 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		return (CRecentFileListEx *)m_pRecentFileList;
 	}
 
+	HWND CRideApp::GetFocusedWindow() const{
+		// returns currently focused window, regardless of which thread created it
+		GUITHREADINFO gti={ sizeof(gti) };
+		if (::GetGUIThreadInfo(::GetCurrentThreadId(),&gti) && gti.hwndFocus)
+			// current thread has created a GUI
+			return gti.hwndFocus;
+		else if (m_pMainWnd!=nullptr && ::GetGUIThreadInfo(::GetWindowThreadProcessId(*m_pMainWnd,nullptr),&gti) && gti.hwndFocus)
+			// the main thread has (still/already) some GUI
+			return gti.hwndFocus;
+		else
+			// no known GUI exists
+			return ::GetActiveWindow();
+	}
+
 	void WINAPI AfxThrowInvalidArgException(){
 		// without this function, we wouldn't be able to build the "MFC 4.2" version!
 	}
