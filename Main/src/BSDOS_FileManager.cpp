@@ -189,7 +189,7 @@
 					break;
 				case INFORMATION_FLAG:
 					// File data block Flag
-					integerEditor.DrawReportModeCell( de->file.dataFlag, pdis );
+					integerEditor.DrawReportModeCell( de->file.dataFlag, pdis, de->file.dataFlag!=TZxRom::TStdBlockFlag::DATA );
 					break;
 			}
 		}

@@ -791,7 +791,7 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 						break;
 					case INFORMATION_FLAG:
 						// block Flag
-						integerEditor.DrawReportModeCell( tf->dataBlockFlag, pdis );
+						integerEditor.DrawReportModeCell( tf->dataBlockFlag, pdis, tf->dataBlockFlag!=TZxRom::TStdBlockFlag::DATA );
 						break;
 					case INFORMATION_CHECKSUM:{
 drawChecksum:			// checksum
@@ -821,7 +821,7 @@ drawChecksum:			// checksum
 						break;
 					case INFORMATION_FLAG:
 						// block Flag
-						integerEditor.DrawReportModeCell( tf->dataBlockFlag, pdis );
+						integerEditor.DrawReportModeCell( tf->dataBlockFlag, pdis, tf->dataBlockFlag!=TZxRom::TStdBlockFlag::DATA );
 						break;
 					case INFORMATION_CHECKSUM:
 						// checksum
