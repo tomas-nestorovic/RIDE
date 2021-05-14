@@ -39,9 +39,10 @@
 #define IDR_DOS_PROPGRID_HEXAEDITOR     188
 #define IDR_DOS_RECOGNITION             189
 #define IDR_SPECTRUM_PREVIEW_BASIC      193
-#define IDR_HEXAEDITOR_GOTOADDRESS      205
-#define IDR_DISKBROWSER                 206
-#define IDR_DISKBROWSER_GOTOSECTOR      207
+#define IDR_HEXAEDITOR_FIND             203
+#define IDR_HEXAEDITOR_GOTOADDRESS      204
+#define IDR_DISKBROWSER                 205
+#define IDR_DISKBROWSER_GOTOSECTOR      206
 #define IDR_DIRECTORYBROWSER            207
 #define IDR_DOS_DATETIME_EDIT           208
 #define IDR_HEXAEDITOR_RESETSELECTION   209
@@ -161,7 +162,7 @@
 #define ID_SECTOR                       40082
 #define ID_DIRECTORY                    40084
 #define ID_DELETE                       40085
-#define ID_SUBDIRECTORY                 40085
+#define ID_SUBDIRECTORY                 40086
 #define ID_TRACKMAP_LEGEND              40087
 #define ID_CREDITS                      40091
 #define ID_DOS_UNFORMAT                 40095
