@@ -190,12 +190,14 @@ namespace Utils{
 
 	CCommandDialog::CCommandDialog(LPCTSTR _information)
 		// ctor
-		: CRideDialog(IDR_ACTION_DIALOG) , information(_information) , checkBoxStatus(BST_UNCHECKED) {
+		: CRideDialog( IDR_ACTION_DIALOG, CWnd::FromHandle(app.GetFocusedWindow()) )
+		, information(_information) , checkBoxStatus(BST_UNCHECKED) {
 	}
 
 	CCommandDialog::CCommandDialog(WORD dialogId,LPCTSTR _information)
 		// ctor
-		: CRideDialog(dialogId) , information(_information) , checkBoxStatus(BST_UNCHECKED) {
+		: CRideDialog( dialogId, CWnd::FromHandle(app.GetFocusedWindow()) )
+		, information(_information) , checkBoxStatus(BST_UNCHECKED) {
 	}
 
 	BOOL CCommandDialog::OnInitDialog(){

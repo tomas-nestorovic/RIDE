@@ -994,12 +994,12 @@
 							public:
 								TLogTime tCenter;
 
-								CGotoTimeDialog(TLogTime timeCenter,TLogTime timeMax)
-									: Utils::CRideDialog( IDR_TRACK_EDITOR_GOTO_TIME, this )
+								CGotoTimeDialog(CWnd *pParent,TLogTime timeCenter,TLogTime timeMax)
+									: Utils::CRideDialog( IDR_TRACK_EDITOR_GOTO_TIME, pParent )
 									, tMax(timeMax)
 									, tCenter( std::min(timeCenter,timeMax) ) {
 								}
-							} d( timeEditor.GetCenterTime(), tr.GetTotalTime() );
+							} d( this, timeEditor.GetCenterTime(), tr.GetTotalTime() );
 							if (d.DoModal()==IDOK)
 								timeEditor.SetCenterTime( d.tCenter );
 							return TRUE;
@@ -1148,7 +1148,7 @@
 		CTrackEditor(const CImage::CTrackReader &tr,PCTimeInterval pIntervals,DWORD nIntervals,UINT messageBoxButtons,bool initAllFeaturesOn,LPCTSTR captionFormat,va_list argList)
 			// ctor
 			// - base
-			: Utils::CRideDialog(IDR_TRACK_EDITOR)
+			: Utils::CRideDialog( IDR_TRACK_EDITOR, CWnd::FromHandle(app.GetFocusedWindow()) )
 			// - initialization
 			, tr(tr)
 			, menu( IDR_TRACK_EDITOR ) , messageBoxButtons(messageBoxButtons) , initAllFeaturesOn(initAllFeaturesOn)
