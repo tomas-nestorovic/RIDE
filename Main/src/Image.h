@@ -249,11 +249,17 @@
 			~TExclusiveLocker();
 		};
 
+		typedef const struct TSaveThreadParams sealed{
+			PImage image;
+			LPCTSTR lpszPathName;
+		} &RCSaveThreadParams;
+
 		mutable CCriticalSection locker;
 		bool canBeModified;
 
 		BOOL DoSave(LPCTSTR lpszPathName,BOOL bReplace) override;
 		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override; // enabling/disabling ToolBar buttons
+		virtual TStdWinError SaveAllModifiedTracks(LPCTSTR lpszPathName,PBackgroundActionCancelable pAction);
 	public:
 		typedef DWORD TId;
 		typedef LPCTSTR (*TFnRecognize)(PTCHAR deviceNameList);
@@ -550,6 +556,7 @@
 		static BYTE PopulateComboBoxWithCompatibleCodecs(HWND hComboBox,WORD dosSupportedCodecs,PCProperties imageProperties);
 		static TFormat::TLengthCode GetSectorLengthCode(WORD sectorLength);
 		static WORD GetOfficialSectorLength(BYTE sectorLengthCode);
+		static UINT AFX_CDECL SaveAllModifiedTracks_thread(PVOID _pCancelableAction);
 
 		const PCProperties properties;
 		CMainWindow::CDockableToolBar toolbar;
@@ -558,6 +565,7 @@
 		CImage(PCProperties _properties,bool hasEditableSettings);
 		~CImage();
 
+		BOOL OnSaveDocument(LPCTSTR lpszPathName) override sealed; // sealed = override CImage::SaveAllModifiedTracks instead
 		bool IsWriteProtected() const;
 		bool CanBeModified() const;
 		virtual TCylinder GetCylinderCount() const=0;

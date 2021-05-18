@@ -796,43 +796,6 @@ error:				switch (const TStdWinError err=::GetLastError()){
 	}
 
 
-	struct TSaveParams sealed{
-		CFDD *const fdd;
-
-		TSaveParams(CFDD *fdd)
-			: fdd(fdd) {
-		}
-	};
-	UINT AFX_CDECL CFDD::__save_thread__(PVOID _pCancelableAction){
-		// thread to save InternalTracks (particularly their Modified Sectors) on inserted floppy
-		LOG_ACTION(_T("UINT CFDD::__save_thread__"));
-		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
-		const TSaveParams sp=*(TSaveParams *)pAction->GetParams();
-		pAction->SetProgressTarget(FDD_CYLINDERS_MAX);
-		for( TCylinder cyl=0; cyl<FDD_CYLINDERS_MAX; pAction->UpdateProgress(++cyl) )
-			for( THead head=0; head<2; head++ ){ // 2 = max number of Sides on a floppy
-				if (pAction->IsCancelled()) return LOG_ERROR(ERROR_CANCELLED);
-				if (const TStdWinError err=sp.fdd->SaveTrack(cyl,head))
-					return pAction->TerminateWithError(err);
-			}
-		return ERROR_SUCCESS;
-	}
-	BOOL CFDD::OnSaveDocument(LPCTSTR){
-		// True <=> this Image has been successfully saved, otherwise False
-		const TStdWinError err=	CBackgroundActionCancelable(
-									__save_thread__,
-									&TSaveParams( this ),
-									FDD_THREAD_PRIORITY_DEFAULT
-								).Perform();
-		::SetLastError(err);
-		if (err==ERROR_SUCCESS){
-			m_bModified=FALSE;
-			return true;
-		}else
-			return false;
-	}
-
-
 	TCylinder CFDD::GetCylinderCount() const{
 		// determines and returns the actual number of Cylinders in the Image
 		EXCLUSIVELY_LOCK_THIS_IMAGE();

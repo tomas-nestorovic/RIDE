@@ -39,12 +39,6 @@
 
 
 
-	BOOL CCtRaw::OnSaveDocument(LPCTSTR lpszPathName){
-		// True <=> this Image has been successfully saved, otherwise False
-		::SetLastError(ERROR_NOT_SUPPORTED);
-		return FALSE;
-	}
-
 	TStdWinError CCtRaw::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus){
 		// marks Sector on a given PhysicalAddress as "dirty", plus sets it the given FdcStatus; returns Windows standard i/o error
 		return ERROR_NOT_SUPPORTED;

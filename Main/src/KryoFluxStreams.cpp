@@ -83,13 +83,13 @@
 		return TRUE;
 	}
 
-	BOOL CKryoFluxStreams::OnSaveDocument(LPCTSTR lpszPathName){
-		// True <=> this Image has been successfully saved, otherwise False
+	TStdWinError CKryoFluxStreams::SaveAllModifiedTracks(LPCTSTR lpszPathName,PBackgroundActionCancelable pAction){
+		// saves all Modified Tracks; returns Windows standard i/o error
 		// - recognizing the name pattern
 		if (!SetNameBase(lpszPathName))
-			return FALSE;
+			return ERROR_FUNCTION_FAILED;
 		// - saving
-		return __super::OnSaveDocument(lpszPathName);
+		return __super::SaveAllModifiedTracks( lpszPathName, pAction );
 	}
 
 	TStdWinError CKryoFluxStreams::SaveTrack(TCylinder cyl,THead head) const{

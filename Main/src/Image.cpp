@@ -606,6 +606,31 @@ namespace Medium{
 
 
 
+	UINT AFX_CDECL CImage::SaveAllModifiedTracks_thread(PVOID _pCancelableAction){
+		// thread to save all Modified Tracks
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
+		const TSaveThreadParams &stp=*(TSaveThreadParams *)pAction->GetParams();
+		pAction->SetProgressTarget( stp.image->GetCylinderCount()+1 ); // "+1" = action dialog closed once the SaveAllModifiedTracks method has finished
+		if (const TStdWinError err=stp.image->SaveAllModifiedTracks( stp.lpszPathName, pAction ))
+			return pAction->TerminateWithError(err);
+		else{
+			stp.image->m_bModified=FALSE;
+			return pAction->TerminateWithSuccess();
+		}
+	}
+
+	BOOL CImage::OnSaveDocument(LPCTSTR lpszPathName){
+		// True <=> this Image has been successfully saved, otherwise False
+		const TSaveThreadParams stp={ this, lpszPathName };
+		const TStdWinError err=	CBackgroundActionCancelable(
+									SaveAllModifiedTracks_thread,
+									&stp,
+									THREAD_PRIORITY_ABOVE_NORMAL
+								).Perform();
+		::SetLastError(err);
+		return err==ERROR_SUCCESS;
+	}
+
 	bool CImage::IsWriteProtected() const{
 		// True <=> Image is WriteProtected, otherwise False
 		return writeProtected;
@@ -786,6 +811,17 @@ namespace Medium{
 	TStdWinError CImage::PresumeHealthyTrackStructure(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,BYTE gap3,BYTE fillerByte){
 		// without formatting it, presumes that given Track contains Sectors with specified parameters; returns Windows standard i/o error
 		return ERROR_NOT_SUPPORTED; // each Track by default must be explicitly formatted to be sure about its structure (but Images abstracting physical drives can override this setting)
+	}
+
+	TStdWinError CImage::SaveAllModifiedTracks(LPCTSTR lpszPathName,PBackgroundActionCancelable pAction){
+		// saves all Modified Tracks by calling the SaveTrack method for each of them; returns Windows standard i/o error
+		for( TCylinder cyl=0; cyl<GetCylinderCount(); pAction->UpdateProgress(++cyl) )
+			for( THead head=0; head<GetHeadCount(); head++ )
+				if (pAction->IsCancelled())
+					return ERROR_CANCELLED;
+				else if (const TStdWinError err=SaveTrack( cyl, head ))
+					return err;
+		return ERROR_SUCCESS;
 	}
 
 	TStdWinError CImage::SaveTrack(TCylinder cyl,THead head) const{

@@ -682,7 +682,7 @@
 		// - Track must already exist from before
 		const PInternalTrack pit=internalTracks[cyl][head];
 		if (!pit)
-			return ERROR_GEN_FAILURE;
+			return ERROR_SUCCESS;
 		if (!pit->modified)
 			return ERROR_SUCCESS;
 		pit->FlushSectorBuffers(); // convert all modifications into flux transitions

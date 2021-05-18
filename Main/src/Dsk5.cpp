@@ -189,8 +189,8 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		return TRUE;
 	}
 
-	BOOL CDsk5::OnSaveDocument(LPCTSTR lpszPathName){
-		// True <=> this Image has been successfully saved, otherwise False
+	TStdWinError CDsk5::SaveAllModifiedTracks(LPCTSTR lpszPathName,PBackgroundActionCancelable pAction){
+		// saves all Modified Tracks; returns Windows standard i/o error
 		#ifdef _DEBUG
 			for( BYTE t=DSK_REV5_TRACKS_MAX; t--; )
 				if (tracks[t] && tracksDebug[t]){ // Track exists and read
@@ -208,26 +208,29 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 							const TSectorId id={ si->cylinderNumber, si->sideNumber, si->sectorNumber, si->sectorLengthCode };
 							::wsprintf( buf, _T("Track %d: Sector with %s not marked as modified!"), t, (LPCTSTR)id.ToString() );
 							Utils::FatalError(buf);
-							return false;
+							return ERROR_GEN_FAILURE;
 						}
 					::free(td), td=nullptr;
 				}
 			if (!Utils::QuestionYesNo( _T("All modified sectors successfully marked as \"dirty\".\n\nSave the disk now?"), MB_DEFBUTTON2 ))
-				return false;
+				return ERROR_CANCELLED;
 		#endif
 		CFile f;
-		if (!OpenImageForWriting(lpszPathName,&f)) return FALSE;
+		if (!OpenImageForWriting(lpszPathName,&f)) return ERROR_GEN_FAILURE;
 		f.Write(&diskInfo,sizeof(TDiskInfo));
 		const PTrackInfo *ppti=tracks;
 		if (params.rev5){
 			// DSK Revision 5
-			for( BYTE nTracks=DSK_REV5_TRACKS_MAX,*pOffset256=diskInfo.rev5_trackOffsets256; nTracks--; pOffset256++,ppti++ )
-				if (const BYTE tmp=*pOffset256)
+			pAction->SetProgressTarget( DSK_REV5_TRACKS_MAX );
+			for( BYTE track=0,*pOffset256=diskInfo.rev5_trackOffsets256; track<DSK_REV5_TRACKS_MAX; pOffset256++,ppti++,pAction->UpdateProgress(++track) )
+				if (pAction->IsCancelled())
+					return ERROR_CANCELLED;
+				else if (const BYTE tmp=*pOffset256)
 					f.Write(*ppti,tmp<<8);
 		}else{
 			// standard DSK
 			bool mayLeadToIncompatibilityIssues=false; // assumption (none Track contains assets that could potentially lead to unreadability in randomly selected emulator)
-			for( TCylinder cyl=diskInfo.nCylinders; cyl--; )
+			for( TCylinder cyl=0; cyl<diskInfo.nCylinders; pAction->UpdateProgress(++cyl) )
 				for( THead head=diskInfo.nHeads; head--; ){
 					const TTrackInfo *const ti=*ppti++;
 					WORD trackLength=sizeof(TTrackInfo)+__getTrackLength256__(ti);
@@ -240,8 +243,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			if (mayLeadToIncompatibilityIssues)
 				Utils::Information(_T("ATTENTION: Some tracks violate the common length or contain various sized sectors - such image may not work in all emulators. You are recommended to save it as \"Revision 5\" DSK (use the Disk -> Dump command)."));
 		}
-		m_bModified=FALSE;
-		return ::GetLastError()==ERROR_SUCCESS;
+		return ERROR_SUCCESS;
 	}
 
 	TCylinder CDsk5::GetCylinderCount() const{

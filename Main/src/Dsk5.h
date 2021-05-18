@@ -67,6 +67,7 @@
 		WORD __getSectorLength__(const TSectorInfo *si) const;
 		WORD __getTrackLength256__(const TTrackInfo *ti) const;
 		void __freeAllTracks__();
+		TStdWinError SaveAllModifiedTracks(LPCTSTR lpszPathName,PBackgroundActionCancelable pAction) override;
 	public:
 		class CDummyDevice sealed{
 			static LPCTSTR Recognize(PTCHAR deviceNameList);
@@ -80,7 +81,6 @@
 		~CDsk5();
 
 		BOOL OnOpenDocument(LPCTSTR lpszPathName) override;
-		BOOL OnSaveDocument(LPCTSTR lpszPathName) override;
 		TCylinder GetCylinderCount() const override;
 		THead GetHeadCount() const override;
 		TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const override;

@@ -132,7 +132,6 @@
 		~CFDD();
 
 		BOOL OnOpenDocument(LPCTSTR) override;
-		BOOL OnSaveDocument(LPCTSTR) override;
 		TCylinder GetCylinderCount() const override;
 		THead GetHeadCount() const override;
 		TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const override;

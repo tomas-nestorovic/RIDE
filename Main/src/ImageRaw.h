@@ -21,6 +21,7 @@
 		TStdWinError __extendToNumberOfCylinders__(TCylinder nCyl,BYTE fillerByte);
 		void __freeCylinder__(TCylinder cyl);
 		void __freeBufferOfCylinders__();
+		TStdWinError SaveAllModifiedTracks(LPCTSTR lpszPathName,PBackgroundActionCancelable pAction) override;
 	public:
 		static const TProperties Properties;
 
@@ -28,7 +29,6 @@
 		~CImageRaw();
 
 		BOOL OnOpenDocument(LPCTSTR lpszPathName) override;
-		BOOL OnSaveDocument(LPCTSTR lpszPathName) override;
 		TCylinder GetCylinderCount() const override;
 		THead GetHeadCount() const override;
 		TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const override;

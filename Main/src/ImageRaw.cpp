@@ -121,20 +121,20 @@
 		}
 	}
 
-	BOOL CImageRaw::OnSaveDocument(LPCTSTR lpszPathName){
-		// True <=> this Image has been successfully saved, otherwise False
+	TStdWinError CImageRaw::SaveAllModifiedTracks(LPCTSTR lpszPathName,PBackgroundActionCancelable pAction){
+		// saves all Modified Tracks; returns Windows standard i/o error
 		// - saving
 		CFile fTmp;
 		const bool savingToCurrentFile= lpszPathName==f.GetFileName() && ::GetFileAttributes(lpszPathName)!=INVALID_FILE_ATTRIBUTES; // saving to the same file and that file exists
 		if (!savingToCurrentFile && !OpenImageForWriting(lpszPathName,&fTmp))
-			return FALSE;
+			return ERROR_GEN_FAILURE;
 		if (f.m_hFile!=CFile::hFileNull) // handle doesn't exist when creating new Image
 			f.Seek(0,CFile::begin);
 		TPhysicalAddress chs;
 			chs.sectorId.lengthCode=sectorLengthCode;
 		switch (trackAccessScheme){
 			case TTrackScheme::BY_CYLINDERS:
-				for( chs.cylinder=0; chs.cylinder<nCylinders; chs.cylinder++ )
+				for( chs.cylinder=0; chs.cylinder<nCylinders; pAction->UpdateProgress(++chs.cylinder) )
 					for( chs.sectorId.cylinder=chs.cylinder,chs.head=0; chs.head<nHeads; chs.head++ ){
 						chs.sectorId.side=sideMap[chs.head];
 						__saveTrackToCurrentPositionInFile__( savingToCurrentFile?nullptr:&fTmp, chs );
@@ -159,7 +159,7 @@
 		}
 		if (fTmp.m_hFile!=CFile::hFileNull)
 			fTmp.Close();
-		return __openImageForReadingAndWriting__(lpszPathName);
+		return __openImageForReadingAndWriting__(lpszPathName) ? ERROR_SUCCESS : ERROR_GEN_FAILURE;
 	}
 
 	TCylinder CImageRaw::GetCylinderCount() const{

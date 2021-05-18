@@ -49,12 +49,6 @@
 		return TRUE;
 	}
 
-	BOOL CIpf::OnSaveDocument(LPCTSTR lpszPathName){
-		// True <=> this Image has been successfully saved, otherwise False
-		::SetLastError(ERROR_NOT_SUPPORTED);
-		return FALSE;
-	}
-
 	BYTE CIpf::GetAvailableRevolutionCount() const{
 		// returns the number of data variations of one Sector that are guaranteed to be distinct
 		return CAPS_MTRS;

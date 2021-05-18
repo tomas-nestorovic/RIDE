@@ -54,13 +54,13 @@
 		BYTE nFiles;
 	};
 
-	BOOL CSCL::OnSaveDocument(LPCTSTR lpszPathName){
-		// True <=> this Image has been successfully saved, otherwise False
+	TStdWinError CSCL::SaveAllModifiedTracks(LPCTSTR lpszPathName,PBackgroundActionCancelable pAction){
+		// saves all Modified Tracks; returns Windows standard i/o error
 		if (const CTRDOS503::PCBootSector boot=CTRDOS503::__getBootSector__(this)){
 			if (f.m_hFile!=CFile::hFileNull) // Image's underlying file doesn't exist if saving a fresh formatted Image
 				f.Close();
 			if (!OpenImageForWriting(lpszPathName,&f))
-				return FALSE;
+				return ERROR_GEN_FAILURE;
 			// - saving Header
 			TSclHeader header;
 			::lstrcpyA( header.id, HEADER_SINCLAIR );
@@ -82,9 +82,9 @@
 			trdos->getFileSizeDefaultOption=gfso0;
 			// - reopening the Image's underlying file
 			f.Close();
-			return __openImageForReadingAndWriting__(lpszPathName);
+			return __openImageForReadingAndWriting__(lpszPathName) ? ERROR_SUCCESS : ERROR_GEN_FAILURE;
 		}else
-			return FALSE;
+			return ERROR_SECTOR_NOT_FOUND;
 	}
 
 	TStdWinError CSCL::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){

@@ -8,7 +8,6 @@
 		CCtRaw();
 
 		//BOOL OnOpenDocument(LPCTSTR lpszPathName) override;
-		BOOL OnSaveDocument(LPCTSTR lpszPathName) override;
 		//TCylinder GetCylinderCount() const override;
 		//THead GetNumberOfFormattedSides(TCylinder cyl) const override;
 		//TSector ScanTrack(TCylinder cyl,THead head,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PINT startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const override;

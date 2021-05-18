@@ -4,6 +4,7 @@
 	class CKryoFluxStreams sealed:public CKryoFluxBase{
 		TCHAR nameBase[MAX_PATH];
 
+		TStdWinError SaveAllModifiedTracks(LPCTSTR lpszPathName,PBackgroundActionCancelable pAction) override;
 		TStdWinError UploadFirmware() override;
 		bool SetNameBase(LPCTSTR fullName);
 	public:
@@ -12,7 +13,6 @@
 		CKryoFluxStreams();
 
 		BOOL OnOpenDocument(LPCTSTR lpszPathName) override;
-		BOOL OnSaveDocument(LPCTSTR lpszPathName) override;
 		//TCylinder GetCylinderCount() const override;
 		//THead GetNumberOfFormattedSides(TCylinder cyl) const override;
 		TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const override;
