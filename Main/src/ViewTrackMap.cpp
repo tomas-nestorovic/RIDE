@@ -190,11 +190,6 @@
 	}
 
 
-	static THead __getNumberOfFormattedSidesInImage__(PCImage image){
-		// estimates and returns the number of formatted Sides in the Image by observing the count of formatted Sides in zeroth Cylinder
-		return image->GetNumberOfFormattedSides(0);
-	}
-
 	struct TTrackInfo sealed{
 		TCylinder cylinder;	THead head;
 		TSector nSectors;
@@ -210,14 +205,14 @@
 		TTrackScanner &rts=pvtm->scanner;
 		const PImage image=pvtm->IMAGE;
 		const Utils::CByteIdentity sectorIdAndPositionIdentity;
-		for( TTrackInfo ti; const THead nSides=__getNumberOfFormattedSidesInImage__(image); ){ // "nSides==0" if disk without any Track (e.g. when opening RawImage of zero length, or if opening a corrupted DSK Image)
+		for( TTrackInfo ti; const THead nHeads=image->GetHeadCount(); ){ // "nHeads==0" if disk without any Track (e.g. when opening RawImage of zero length, or if opening a corrupted DSK Image)
 			// . waiting for request to scan the next Track
 			rts.scanNextTrack.Lock();
 			// . getting the TrackNumber to scan
 			rts.params.criticalSection.Lock();
 				const TTrack trackNumber=rts.params.x;
 			rts.params.criticalSection.Unlock();
-			const div_t d=div(trackNumber,nSides);
+			const div_t d=div(trackNumber,nHeads);
 			// . scanning the Track to draw its Sector Statuses
 			ti.cylinder=d.quot, ti.head=d.rem;
 			//if (pvtm->displayType==TDisplayType::STATUS) // commented out because this scanning always needed
@@ -372,8 +367,8 @@
 							const CDos::CFatPath fatPath( DOS, pFileManager->GetNextSelectedFile(pos) );
 							CDos::CFatPath::PCItem item; DWORD n;
 							if (!fatPath.GetItems(item,n)) // FatPath valid
-								for( const THead nSides=__getNumberOfFormattedSidesInImage__(IMAGE); n--; item++ )
-									if (trackNumber==item->chs.GetTrackNumber(nSides)){
+								for( const THead nHeads=IMAGE->GetHeadCount(); n--; item++ )
+									if (trackNumber==item->chs.GetTrackNumber(nHeads)){
 										// this Sector (in currently drawn Track) belongs to one of selected Files
 										TSector s=0;
 										for( PCSectorId pRefId=&item->chs.sectorId; s<rti.nSectors; s++ )
@@ -489,8 +484,7 @@
 			}
 			// . determining the Sector on which the cursor hovers
 			const TTrack track=point.y/TRACK_HEIGHT;
-			const THead nSides=__getNumberOfFormattedSidesInImage__(IMAGE);
-			const div_t d=div(track,nSides);
+			const div_t d=div( track, IMAGE->GetHeadCount() );
 			TSectorId bufferId[(TSector)-1];
 			WORD bufferLength[(TSector)-1];
 			TLogTime bufferStarts[(TSector)-1];
@@ -526,7 +520,7 @@
 		}
 		if (cursorOverSector)
 			// cursor over a Sector
-			::wsprintf( p, _T("Tr%d, %s: %s"), chs.GetTrackNumber(__getNumberOfFormattedSidesInImage__(IMAGE)), (LPCTSTR)chs.sectorId.ToString(), DOS->GetSectorStatusText(chs) );
+			::wsprintf( p, _T("Tr%d, %s: %s"), chs.GetTrackNumber(IMAGE->GetHeadCount()), (LPCTSTR)chs.sectorId.ToString(), DOS->GetSectorStatusText(chs) );
 		CMainWindow::__setStatusBarText__(buf);
 	}
 
@@ -537,7 +531,7 @@
 			case TCursorPos::TRACK:
 				// clicked on a Track
 				if (const auto tr=IMAGE->ReadTrack( chs.cylinder, chs.head ))
-					tr.ShowModal( _T("Track %d  (Cyl=%d, Head=%d)"), chs.GetTrackNumber(__getNumberOfFormattedSidesInImage__(IMAGE)), chs.cylinder, chs.head );
+					tr.ShowModal( _T("Track %d  (Cyl=%d, Head=%d)"), chs.GetTrackNumber(IMAGE->GetHeadCount()), chs.cylinder, chs.head );
 				break;
 			case TCursorPos::SECTOR:
 				// clicked on a Sector

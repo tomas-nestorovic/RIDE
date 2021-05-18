@@ -561,7 +561,8 @@
 		bool IsWriteProtected() const;
 		bool CanBeModified() const;
 		virtual TCylinder GetCylinderCount() const=0;
-		virtual THead GetNumberOfFormattedSides(TCylinder cyl) const=0;
+		virtual THead GetHeadCount() const=0;
+		THead GetNumberOfFormattedSides(TCylinder cyl) const;
 		TTrack GetTrackCount() const;
 		virtual BYTE GetAvailableRevolutionCount() const;
 		virtual TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const=0;

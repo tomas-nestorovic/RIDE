@@ -60,7 +60,7 @@ terminateWithError:	return pAction->TerminateWithError(err);
 						}else{
 							err=::GetLastError();
 errorDuringWriting:			TCHAR buf[80];
-							::wsprintf(buf,_T("Cannot write to sector with %s on target Track %d"),(LPCTSTR)chs.sectorId.ToString(),chs.GetTrackNumber(pp.target->GetNumberOfFormattedSides(0)));
+							::wsprintf(buf,_T("Cannot write to sector with %s on target Track %d"),(LPCTSTR)chs.sectorId.ToString(),chs.GetTrackNumber(pp.target->GetHeadCount()));
 							switch (Utils::AbortRetryIgnore(buf,err,MB_DEFBUTTON2)){
 								case IDABORT:	goto terminateWithError;
 								case IDRETRY:	continue;
@@ -100,7 +100,7 @@ errorDuringWriting:			TCHAR buf[80];
 						DDV_MinMaxUInt( pDX,patchParams.cylinderZ, patchParams.cylinderA, patchParams.source->GetCylinderCount()-1 );
 				DDX_Text( pDX,	ID_HEAD,		patchParams.nHeads );
 					if (patchParams.source)
-						DDV_MinMaxUInt( pDX,patchParams.nHeads, 1, patchParams.source->GetNumberOfFormattedSides(patchParams.cylinderA) );
+						DDV_MinMaxUInt( pDX,patchParams.nHeads, 1, patchParams.source->GetHeadCount() );
 				DDX_Text( pDX,	ID_GAP,			patchParams.gap3 );
 				DDX_Check(pDX,	ID_TRACK,		patchParams.skipEmptySourceTracks );
 				DDX_Check(pDX,	ID_PRIORITY,	realtimeThreadPriority );
@@ -134,7 +134,7 @@ errorDuringWriting:			TCHAR buf[80];
 										patchParams.source.reset( sourceImageProperties->fnInstantiate(nullptr) ); // Null as buffer = one Image represents only one "device" whose name is known at compile-time
 										patchParams.source->OnOpenDocument(fileName);
 										patchParams.cylinderA=0, patchParams.cylinderZ=patchParams.source->GetCylinderCount()-1;
-										patchParams.nHeads=std::min<>( patchParams.source->GetNumberOfFormattedSides(0), patchParams.target->GetNumberOfFormattedSides(0) );
+										patchParams.nHeads=std::min( patchParams.source->GetHeadCount(), patchParams.target->GetHeadCount() );
 										DoDataExchange( &CDataExchange(this,FALSE) );
 										// : compacting FileName in order to be displayable on the button
 										RECT r;

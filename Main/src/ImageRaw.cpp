@@ -168,10 +168,10 @@
 		return nCylinders;
 	}
 
-	THead CImageRaw::GetNumberOfFormattedSides(TCylinder cyl) const{
+	THead CImageRaw::GetHeadCount() const{
 		// determines and returns the number of Sides formatted on given Cylinder; returns 0 iff Cylinder not formatted
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		return cyl<nCylinders ? nHeads : 0;
+		return nCylinders>0 ? nHeads : 0;
 	}
 
 	TSector CImageRaw::ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec,PSectorId bufferId,PWORD bufferLength,PLogTime startTimesNanoseconds,PBYTE pAvgGap3) const{

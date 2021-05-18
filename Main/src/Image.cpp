@@ -616,11 +616,19 @@ namespace Medium{
 		return canBeModified;
 	}
 
+	THead CImage::GetNumberOfFormattedSides(TCylinder cyl) const{
+		// determines and returns the number of Sides formatted on given Cylinder; returns 0 iff Cylinder not formatted
+		for( THead head=GetHeadCount(); head-->0; )
+			if (ScanTrack(cyl,head)>0)
+				return head+1;
+		return 0;
+	}
+
 	TTrack CImage::GetTrackCount() const{
 		// returns the number of all Tracks in the Image
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		LOG_ACTION(_T("TTrack CImage::GetTrackCount"));
-		return GetCylinderCount()*GetNumberOfFormattedSides(0);
+		return GetCylinderCount()*GetHeadCount();
 	}
 
 	BYTE CImage::GetAvailableRevolutionCount() const{

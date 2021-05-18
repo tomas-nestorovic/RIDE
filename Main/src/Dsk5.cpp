@@ -250,8 +250,8 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		return diskInfo.nCylinders;
 	}
 
-	THead CDsk5::GetNumberOfFormattedSides(TCylinder cyl) const{
-		// determines and returns the number of Sides formatted on given Cylinder; returns 0 iff Cylinder not formatted
+	THead CDsk5::GetHeadCount() const{
+		// determines and returns the actual number of Heads in the Image
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		return diskInfo.nHeads;
 	}

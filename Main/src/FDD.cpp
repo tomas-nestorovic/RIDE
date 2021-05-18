@@ -842,14 +842,11 @@ error:				switch (const TStdWinError err=::GetLastError()){
 				: 0; // ... otherwise the floppy is considered not formatted
 	}
 
-	THead CFDD::GetNumberOfFormattedSides(TCylinder cyl) const{
-		// determines and returns the number of Sides formatted on given Cylinder; returns 0 iff Cylinder not formatted
-		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		LOG_CYLINDER_ACTION(cyl,_T("THead CFDD::GetNumberOfFormattedSides"));
-		if (ScanTrack(cyl,1)!=0)
-			return 2;
-		else
-			return ScanTrack(cyl,0)!=0;
+	THead CFDD::GetHeadCount() const{
+		// determines and returns the actual number of Heads in the Image
+		//EXCLUSIVELY_LOCK_THIS_IMAGE();
+		LOG_CYLINDER_ACTION(cyl,_T("THead CFDD::GetHeadCount"));
+		return 2; // latest PC floppy drives had two Heads
 	}
 
 	CFDD::PInternalTrack CFDD::__scanTrack__(TCylinder cyl,THead head){

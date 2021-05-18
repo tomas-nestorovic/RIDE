@@ -518,8 +518,8 @@
 		return capsImageInfo.maxcylinder+1; // the last INCLUSIVE Cylinder plus one
 	}
 
-	THead CCapsBase::GetNumberOfFormattedSides(TCylinder cyl) const{
-		// determines and returns the number of Sides formatted on given Cylinder; returns 0 iff Cylinder not formatted
+	THead CCapsBase::GetHeadCount() const{
+		// determines and returns the actual number of Heads in the Image
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		return capsImageInfo.maxhead+1; // the last INCLUSIVE Head plus one
 	}
