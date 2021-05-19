@@ -49,7 +49,7 @@
 
 	class CBackgroundMultiActionCancelable sealed:public CBackgroundActionCancelable{
 		int actionThreadPriority;
-		BYTE nActions,iCurrAction;
+		char nActions,iCurrAction;
 		struct{
 			AFX_THREADPROC fnAction;
 			LPCVOID fnParams;

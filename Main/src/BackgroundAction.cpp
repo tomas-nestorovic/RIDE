@@ -88,15 +88,23 @@
 
 	BOOL CBackgroundActionCancelable::OnInitDialog(){
 		// dialog initialization
-		// - launching the Worker
-		Resume();
+		::PostMessage( m_hWnd, WM_COMMAND, IDCONTINUE, 0 ); // launching the Worker
 		return __super::OnInitDialog();
 	}
 
 	LRESULT CBackgroundActionCancelable::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
 		// window procedure
-		if (msg==WM_COMMAND && wParam==IDCANCEL)
-			bCancelled=true; // cancelling the Worker and whole dialog
+		if (msg==WM_COMMAND)
+			switch (LOWORD(wParam)){
+				case IDCANCEL:
+					// cancelling the Worker and whole dialog
+					bCancelled=true;
+					break;
+				case IDCONTINUE:
+					// resuming the Worker
+					Resume();
+					return 0;
+			}
 		return __super::WindowProc(msg,wParam,lParam);
 	}
 
@@ -231,11 +239,10 @@
 		OffsetDlgItem( ID_STANDARD, 0, rcActionsHeight );
 		OffsetDlgItem( ID_PRIORITY, 0, rcActionsHeight );
 		OffsetDlgItem( IDCANCEL, 0, rcActionsHeight );
-		// - launching the first Action in combo-box
+		// - base (launching the first Action)
 		iCurrAction=-1;
-		SendMessage( WM_COMMAND, IDOK );
-		// - base
-		const BOOL result=__super::OnInitDialog();
+		::PostMessage( m_hWnd, WM_COMMAND, IDOK, 0 ); // next Action ...
+		const BOOL result=__super::OnInitDialog(); // ... and its launch
 		// - displaying thread Priority
 		if (actionThreadPriority<=THREAD_BASE_PRIORITY_MAX)
 			// time-non-critical Actions - user is free to change Worker's priority
@@ -273,13 +280,13 @@
 						return 0;
 					case IDOK:
 						// current Action has finished - proceeding with the next one
-						if (++iCurrAction<nActions){
+						if (iCurrAction+1<nActions){
 							// . launching the next Action
 							lastState=0;
-							auto &r=actions[iCurrAction];
+							auto &r=actions[++iCurrAction];
 							BeginAnother( r.fnAction, r.fnParams, actionThreadPriority );
 							bTargetStateReached=false;
-							Resume();
+							::PostMessage( m_hWnd, WM_COMMAND, IDCONTINUE, 0 ); // launching the Worker
 							// . repositioning the progress-bar
 							const int y=painting.rcActions.top
 										+
