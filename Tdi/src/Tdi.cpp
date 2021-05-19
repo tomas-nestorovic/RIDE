@@ -271,10 +271,11 @@
 		TCITEM ti;
 			ti.mask=TCIF_PARAM;
 		TabCtrl_GetItem(handle,i,&ti);
-		const PCTabInfo pti=(PCTabInfo)ti.lParam;
-		::ShowWindow( hBtnCloseCurrentTab, (pti->fnCanBeClosed!=TDI_TAB_CANCLOSE_NEVER)*SW_SHOW );
-		params.fnShowContent( params.customParam, currentTabContent=pti->content );
-		__fitContentToTdiCanvas__();
+		if (const PCTabInfo pti=(PCTabInfo)ti.lParam){
+			::ShowWindow( hBtnCloseCurrentTab, (pti->fnCanBeClosed!=TDI_TAB_CANCLOSE_NEVER)*SW_SHOW );
+			params.fnShowContent( params.customParam, currentTabContent=pti->content );
+			__fitContentToTdiCanvas__();
+		}
 	}
 
 	void TTdiInfo::__fitContentToTdiCanvas__() const{
