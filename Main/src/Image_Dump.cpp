@@ -840,27 +840,24 @@ setDestination:						// : compacting FileName in order to be better displayable 
 			if (err!=ERROR_SUCCESS)
 				goto error;
 			// . dumping
-			err=CBackgroundActionCancelable(
-					__dump_thread__,
-					&d.dumpParams,
-					d.realtimeThreadPriority ? THREAD_PRIORITY_TIME_CRITICAL : THREAD_PRIORITY_NORMAL
-				).Perform();
+			{CBackgroundMultiActionCancelable bmac( d.realtimeThreadPriority ? THREAD_PRIORITY_TIME_CRITICAL : THREAD_PRIORITY_NORMAL );
+				bmac.AddAction( __dump_thread__, &d.dumpParams, _T("Dumping") );
+				const TSaveThreadParams stp={ d.dumpParams.target.get(), d.dumpParams.targetFileName };
+				bmac.AddAction( SaveAllModifiedTracks_thread, &stp, _T("Saving") );
+			err=bmac.Perform();}
 			if (err==ERROR_SUCCESS){
-				if (d.dumpParams.target->OnSaveDocument(d.dumpParams.targetFileName)){
-					// : displaying statistics on SourceTrackErrors
-					if (d.showReport==BST_CHECKED){
-						// | saving to temporary file
-						TCHAR tmpFileName[MAX_PATH];
-						::GetTempPath(MAX_PATH,tmpFileName);
-						::GetTempFileName( tmpFileName, nullptr, FALSE, tmpFileName );
-						d.dumpParams.__exportErroneousTracksToHtml__( CFile(::lstrcat(tmpFileName,_T(".html")),CFile::modeCreate|CFile::modeWrite) );
-						// | displaying
-						((CMainWindow *)app.m_pMainWnd)->OpenWebPage( _T("Dump results"), tmpFileName );
-					}
-					// : reporting success
-					Utils::Information(_T("Dumped successfully."));
-				}else
-					Utils::FatalError(_T("Cannot save to the target"),::GetLastError());
+				// : displaying statistics on SourceTrackErrors
+				if (d.showReport==BST_CHECKED){
+					// | saving to temporary file
+					TCHAR tmpFileName[MAX_PATH];
+					::GetTempPath(MAX_PATH,tmpFileName);
+					::GetTempFileName( tmpFileName, nullptr, FALSE, tmpFileName );
+					d.dumpParams.__exportErroneousTracksToHtml__( CFile(::lstrcat(tmpFileName,_T(".html")),CFile::modeCreate|CFile::modeWrite) );
+					// | displaying
+					((CMainWindow *)app.m_pMainWnd)->OpenWebPage( _T("Dump results"), tmpFileName );
+				}
+				// : reporting success
+				Utils::Information(_T("Dumped successfully."));
 			}else
 error:			Utils::FatalError(_T("Cannot dump"),err);
 			// . destroying the list of SourceTrackErrors
