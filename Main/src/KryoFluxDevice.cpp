@@ -480,10 +480,6 @@
 		return	SendRequest( TRequest::MOTOR, on )==ERROR_SUCCESS;
 	}
 
-	bool CKryoFluxDevice::SetDensity(bool high) const{
-		return	SendRequest( TRequest::DENSITY, high )==ERROR_SUCCESS;
-	}
-
 	bool CKryoFluxDevice::SeekTo(TCylinder cyl) const{
 		return	SendRequest( TRequest::TRACK, cyl<<(BYTE)params.doubleTrackStep )==ERROR_SUCCESS;
 	}
@@ -870,6 +866,14 @@
 			return pit->nSectors;
 		else
 			return 0;
+	}
+
+	TStdWinError CKryoFluxDevice::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){
+		// sets the given MediumType and its geometry; returns Windows standard i/o error
+		if (pFormat->mediumType!=Medium::UNKNOWN)
+			if (const TStdWinError err=SendRequest( TRequest::DENSITY, (pFormat->mediumType&Medium::FLOPPY_HD_ANY)!=0 ))
+				return err;
+		return __super::SetMediumTypeAndGeometry( pFormat, sideMap, firstSectorNumber );
 	}
 
 	bool CKryoFluxDevice::EditSettings(bool initialEditing){

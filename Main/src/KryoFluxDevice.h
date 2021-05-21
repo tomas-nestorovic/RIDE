@@ -96,7 +96,6 @@
 		DWORD Write(LPCVOID buffer,DWORD nBytes) const;
 		TStdWinError WriteFull(LPCVOID buffer,DWORD nBytes) const;
 		bool SetMotorOn(bool on=true) const;
-		bool SetDensity(bool high) const;
 		bool SeekTo(TCylinder cyl) const;
 		bool SeekHome() const;
 		bool SelectHead(THead head) const;
@@ -115,7 +114,7 @@
 		TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const override;
 		//void GetTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses) override;
 		//TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus) override;
-		//TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
+		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
 		bool EditSettings(bool initialEditing) override;
 		TStdWinError Reset() override;
 		TStdWinError SaveTrack(TCylinder cyl,THead head) const override;
