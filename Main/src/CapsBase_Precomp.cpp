@@ -224,7 +224,7 @@ nextTrial:	;
 			else
 				return ERROR_SUCCESS; // precompensation determined using the latest Method available
 		// - requesting insertion of a blank floppy
-		if (!Utils::InformationOkCancel(_T("Insert an empty disk and hit OK.")))
+		if (!Utils::InformationOkCancel(_T("Insert an empty disk that you don't mind writing to, and hit OK.")))
 			return ERROR_CANCELLED;
 		// - determination of new write pre-compensation parameters
 		if (const TStdWinError err=	CBackgroundActionCancelable(

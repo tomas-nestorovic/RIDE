@@ -123,10 +123,20 @@
 
 			void RefreshPrecompensationStatus(){
 				// retrieves and displays current write pre-compensation status
+				// . assuming pre-compensation determination error
+				const RECT rcWarning=MapDlgItemClientRect(ID_INSTRUCTION);
+				ShowDlgItem( ID_INSTRUCTION, true );
+				RECT rcMessage=MapDlgItemClientRect(ID_ALIGN);
+				rcMessage.left=rcWarning.right;
+				SetDlgItemPos( ID_ALIGN, rcMessage );
+				// . displaying current pre-compensation status
 				TCHAR msg[235];
 				switch (const TStdWinError err=tmpPrecomp.DetermineUsingLatestMethod(rkfb,0)){
 					case ERROR_SUCCESS:
-						::wsprintf( msg, _T("Determined for drive %c using latest <a id=\"details\">Method %d</a>."), tmpPrecomp.driveLetter, tmpPrecomp.methodVersion );
+						ShowDlgItem( ID_INSTRUCTION, false );
+						rcMessage.left=rcWarning.left;
+						SetDlgItemPos( ID_ALIGN, rcMessage );
+						::wsprintf( msg, _T("Determined for drive %c using latest <a id=\"details\">Method %d</a>. No action needed for this drive/medium."), tmpPrecomp.driveLetter, tmpPrecomp.methodVersion );
 						break;
 					case ERROR_INVALID_DATA:
 						::wsprintf( msg, _T("Not yet determined for drive %c!\n<a id=\"compute\">Determine now using latest Method %d</a>"), tmpPrecomp.driveLetter, CPrecompensation::MethodLatest );
@@ -169,6 +179,10 @@
 				);
 				RefreshMediumInformation();
 				// . updating write pre-compensation status
+				SetDlgItemSingleCharUsingFont( // a warning that pre-compensation not up-to-date
+					ID_INSTRUCTION,
+					L'\xf0ea', (HFONT)Utils::CRideFont(FONT_WEBDINGS,175,false,true).Detach()
+				);
 				RefreshPrecompensationStatus();
 			}
 
@@ -220,6 +234,8 @@
 								// FluxDecoder changed
 								const TParams::TFluxDecoder fd0=rkfb.params.fluxDecoder;
 									rkfb.params.fluxDecoder=(TParams::TFluxDecoder)ComboBox_GetCurSel( GetDlgItemHwnd(ID_ACCURACY) );
+									if (!EnableDlgItem( ID_TRACK, rkfb.params.fluxDecoder!=TParams::TFluxDecoder::NO_FLUX_DECODER ))
+										CheckDlgButton( ID_TRACK, BST_UNCHECKED ); // when archiving, any corrections must be turned off
 									SendMessage( WM_COMMAND, ID_RECOVER ); // refresh information on inserted Medium
 								rkfb.params.fluxDecoder=fd0;
 								break;
