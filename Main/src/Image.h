@@ -48,6 +48,7 @@
 			MAX,
 			NONE,
 			UNKNOWN,
+			INFINITY,
 			// the following constants should be ignored by all containers
 			ANY_GOOD,
 			ALL_INTERSECTED

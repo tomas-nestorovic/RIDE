@@ -3,7 +3,7 @@
 	CImage::CSectorDataSerializer::CSectorDataSerializer(CHexaEditor *pParentHexaEditor,PImage image,LONG dataTotalLength)
 		// ctor
 		: pParentHexaEditor(pParentHexaEditor) , image(image) , dataTotalLength(dataTotalLength) , position(0) , currTrack(0)
-		, nAvailableRevolutions( image->GetAvailableRevolutionCount() )
+		, nAvailableRevolutions( std::min<BYTE>(Revolution::MAX,image->GetAvailableRevolutionCount()) )
 		, revolution(Revolution::ANY_GOOD) {
 		sector.indexOnTrack=0, sector.offset=0;
 	}

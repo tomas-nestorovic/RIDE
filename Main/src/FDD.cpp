@@ -812,6 +812,11 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		return 2; // latest PC floppy drives had two Heads
 	}
 
+	BYTE CFDD::GetAvailableRevolutionCount() const{
+		// returns the number of data variations of one Sector that are guaranteed to be distinct
+		return Revolution::INFINITY;
+	}
+
 	CFDD::PInternalTrack CFDD::__scanTrack__(TCylinder cyl,THead head){
 		// scans given Track and returns the number of discovered Sectors; returns Null if Track cannot be scanned (e.g. due to an hardware error or "out-of-range" error)
 		// - attempting to scan the specified Track

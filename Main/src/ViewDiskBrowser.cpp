@@ -75,7 +75,7 @@
 					case ID_DEFAULT6:
 					case ID_DEFAULT7:
 					case ID_DEFAULT8:
-						if (nID-ID_DEFAULT1<IMAGE->GetAvailableRevolutionCount()){
+						if (nID-ID_DEFAULT1<std::min<BYTE>(Revolution::MAX,IMAGE->GetAvailableRevolutionCount())){
 							pCmdUi->SetRadio( revolution==nID-ID_DEFAULT1 );
 						}else
 							pCmdUi->m_pMenu->RemoveMenu( nID, MF_BYCOMMAND );

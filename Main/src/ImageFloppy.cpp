@@ -106,7 +106,7 @@
 							ps->scannedTracks.infos[req.track].bufferedRevs|=1<<req.revolution;
 						}else{
 							// all Revolutions wanted
-							for( BYTE rev=image->GetAvailableRevolutionCount(); rev-->0; )
+							for( BYTE rev=std::min<BYTE>(Revolution::MAX,image->GetAvailableRevolutionCount()); rev-->0; )
 								image->BufferTrackData(
 									req.track>>1, req.track&1, (Revolution::TType)rev,
 									ids, Utils::CByteIdentity(),
