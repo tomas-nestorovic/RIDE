@@ -161,6 +161,7 @@ terminateWithError:
 			TPhysicalAddress chs;
 			TTrack track;
 			bool trackWriteable; // Track can be written at once using CImage::WriteTrack
+			BYTE nTrials;
 			struct{
 				WORD automaticallyAcceptedErrors;
 				bool remainingErrorsOnTrack;
@@ -173,6 +174,7 @@ terminateWithError:
 		::ZeroMemory(&p,sizeof(p));
 		const bool targetSupportsTrackWriting=dp.target->WriteTrack(0,0,CImage::CTrackReaderWriter::Invalid)!=ERROR_NOT_SUPPORTED;
 		const Utils::CByteIdentity sectorIdAndPositionIdentity;
+		TPhysicalAddress chsPrev=TPhysicalAddress::Invalid;
 		for( p.chs.cylinder=dp.cylinderA; p.chs.cylinder<=dp.cylinderZ; pAction->UpdateProgress(++p.chs.cylinder-dp.cylinderA) )
 			for( p.chs.head=0; p.chs.head<dp.nHeads; p.chs.head++ ){
 				if (pAction->IsCancelled()) return LOG_ERROR(ERROR_CANCELLED);
@@ -202,6 +204,11 @@ terminateWithError:
 				for( TSector s=0; s<nSectors; ){
 					// : reading SourceSector
 					p.chs.sectorId=bufferId[s];
+					if (p.chs==chsPrev && dp.source->GetAvailableRevolutionCount()<=Revolution::MAX)
+						p.nTrials++;
+					else
+						p.nTrials=1;
+					chsPrev=p.chs;
 					LOG_SECTOR_ACTION(&p.chs.sectorId,_T("reading"));
 					bufferSectorData[s]=dp.source->GetSectorData( p.chs, s, true, bufferLength+s, bufferFdcStatus+s );
 					// : reporting SourceSector Exclusion
@@ -263,6 +270,8 @@ terminateWithError:
 								};
 								ConvertDlgButtonToSplitButton( IDNO, ResolveActions, RESOLVE_OPTIONS_COUNT );
 								EnableDlgItem( IDNO, dynamic_cast<CImageRaw *>(dp.target.get())==nullptr ); // recovering errors is allowed only if the Target Image can accept them
+								// > the "Retry" button enabled only if not all Revolutions yet exhausted
+								EnableDlgItem( IDRETRY, rp.nTrials<dp.source->GetAvailableRevolutionCount() );
 							}
 							LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 								// window procedure
