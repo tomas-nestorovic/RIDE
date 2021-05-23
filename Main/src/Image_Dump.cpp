@@ -228,6 +228,7 @@ terminateWithError:
 							const PSectorData sectorData;
 							const WORD sectorLength;
 							TFdcStatus &rFdcStatus;
+							Utils::TSplitButtonAction resolveActions[RESOLVE_OPTIONS_COUNT];
 
 							void PreInitDialog() override{
 								// dialog initialization
@@ -266,9 +267,11 @@ terminateWithError:
 									{ 0, _T("Resolve") }, // 0 = no default action
 									{ RESOLVE_EXCLUDE_ID, _T("Exclude from track") },
 									{ RESOLVE_EXCLUDE_UNKNOWN, _T("Exclude all unknown from disk") },
-									{ ID_RECOVER, _T("Recover ID or Data..."), MF_GRAYED*(!rFdcStatus.DescribesIdFieldCrcError()&&!rFdcStatus.DescribesDataFieldCrcError()) } // enabled only if either ID or Data field with error
+									{ ID_RECOVER, _T("Recover ID or Data...") }
 								};
-								ConvertDlgButtonToSplitButton( IDNO, ResolveActions, RESOLVE_OPTIONS_COUNT );
+								::memcpy( resolveActions, ResolveActions, sizeof(ResolveActions) );
+									resolveActions[3].menuItemFlags=MF_GRAYED*( rFdcStatus.DescribesMissingDam() || !rFdcStatus.DescribesIdFieldCrcError()&&!rFdcStatus.DescribesDataFieldCrcError() ); // enabled only if either ID or Data field with error
+								ConvertDlgButtonToSplitButton( IDNO, resolveActions, RESOLVE_OPTIONS_COUNT );
 								EnableDlgItem( IDNO, dynamic_cast<CImageRaw *>(dp.target.get())==nullptr ); // recovering errors is allowed only if the Target Image can accept them
 								// > the "Retry" button enabled only if not all Revolutions yet exhausted
 								EnableDlgItem( IDRETRY, rp.nTrials<dp.source->GetAvailableRevolutionCount() );

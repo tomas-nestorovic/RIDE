@@ -1306,7 +1306,7 @@ namespace Utils{
 				}
 			case WM_LBUTTONUP:
 				// left mouse button released
-				if (GET_X_LPARAM(lParam)<psbi->rcClientArea.right-SPLITBUTTON_ARROW_WIDTH)
+				if (psbi->ExistsDefaultAction() && GET_X_LPARAM(lParam)<psbi->rcClientArea.right-SPLITBUTTON_ARROW_WIDTH)
 					// in default Action area
 					break; // base
 				else{
