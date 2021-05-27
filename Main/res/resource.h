@@ -40,7 +40,7 @@
 #define IDR_DOS_RECOGNITION             189
 #define IDR_SPECTRUM_PREVIEW_BASIC      193
 #define IDR_HEXAEDITOR_FIND             203
-#define IDR_HEXAEDITOR_GOTOADDRESS      204
+#define IDR_SINGLE_NUMBER               204
 #define IDR_DISKBROWSER                 205
 #define IDR_DISKBROWSER_GOTOSECTOR      206
 #define IDR_DIRECTORYBROWSER            207

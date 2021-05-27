@@ -1132,30 +1132,9 @@ resetSelectionWithValue:BYTE buf[65535];
 						goto caretCorrectlyMoveTo;
 					case ID_NAVIGATE_ADDRESS:{
 						// navigating to an address input by the user
-						// . defining the Dialog
-						class CAddressDialog sealed:public CDialog{
-							void DoDataExchange(CDataExchange *pDX) override{
-								if (pDX->m_bSaveAndValidate){
-									DDX_Text( pDX, ID_NUMBER, address );
-									DDV_MinMaxInt( pDX, address, 0, fileLength );
-								}else{
-									TCHAR buf[80];
-									::wsprintf( buf, _T("&Address (0 - %d):"), fileLength );
-									SetDlgItemText( ID_INFORMATION, buf );
-								}
-							}
-						public:
-							const int fileLength;
-							int address;
-							CAddressDialog(int fileLength,CWnd *pParentWnd)
-								: CDialog( IDR_HEXAEDITOR_GOTOADDRESS, pParentWnd )
-								, fileLength(fileLength) , address(0) {
-							}
-						} d( F->GetLength(), this );
-						// . showing the Dialog and processing its result
-						if (d.DoModal()==IDOK){
-							SetFocus();
-							caret.position=d.address;
+						const PropGrid::Integer::TUpDownLimits addrRange={ 0, F->GetLength() };
+						if (const Utils::CSingleNumberDialog d=Utils::CSingleNumberDialog( _T("Go to"), _T("Address"), addrRange, caret.position, this )){
+							caret.position=d.Value;
 							goto caretCorrectlyMoveTo;
 						}else
 							return 0;

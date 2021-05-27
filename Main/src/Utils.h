@@ -93,6 +93,20 @@ namespace Utils{
 		void ConvertDlgButtonToSplitButton(WORD id,PCSplitButtonAction pAction,BYTE nActions) const;
 	};
 
+	class CSingleNumberDialog sealed:public CRideDialog{
+		const LPCTSTR caption,label;
+		const PropGrid::Integer::TUpDownLimits &range;
+	protected:
+		void PreInitDialog() override;
+		void DoDataExchange(CDataExchange *pDX) override;
+	public:
+		int Value;
+
+		CSingleNumberDialog(LPCTSTR caption,LPCTSTR label,const PropGrid::Integer::TUpDownLimits &range,int initValue,CWnd *pParent);
+
+		operator bool() const;
+	};
+
 	class CCommandDialog:public CRideDialog{
 		const LPCTSTR information;
 	protected:

@@ -1194,6 +1194,47 @@ namespace Utils{
 
 
 
+	CSingleNumberDialog::CSingleNumberDialog(LPCTSTR caption,LPCTSTR label,const PropGrid::Integer::TUpDownLimits &range,int initValue,CWnd *pParent)
+		// ctor
+		: CRideDialog( IDR_SINGLE_NUMBER, pParent )
+		, caption(caption) , label(label) , range(range)
+		, Value(initValue) {
+	}
+
+	void CSingleNumberDialog::PreInitDialog(){
+		// dialog initialization
+		__super::PreInitDialog();
+		SetWindowText(caption);
+		TCHAR buf[200];
+		::wsprintf( buf, _T("%s (%d - %d):"), label, range.iMin, range.iMax );
+		SetDlgItemText( ID_INFORMATION, buf );
+	}
+
+	void CSingleNumberDialog::DoDataExchange(CDataExchange *pDX){
+		// exchange of data from and to controls
+		__super::DoDataExchange(pDX);
+		DDX_Text( pDX, ID_NUMBER, Value );
+			DDV_MinMaxInt( pDX, Value, range.iMin, range.iMax );
+	}
+
+	CSingleNumberDialog::operator bool() const{
+		// True <=> showed dialog confirmed, otherwise False
+		const auto result=const_cast<CSingleNumberDialog *>(this)->DoModal();
+		if (m_pParentWnd)
+			::SetFocus( *m_pParentWnd );
+		return result==IDOK;
+	}
+
+
+
+
+
+
+
+
+
+
+
 
 
 	void BytesToHigherUnits(DWORD bytes,float &rHigherUnit,LPCTSTR &rHigherUnitName){
