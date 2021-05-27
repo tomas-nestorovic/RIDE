@@ -472,6 +472,9 @@
 
 	static UINT cfBinary;
 
+	#define SEARCH_PARAMS	(&mouseDragged)
+	#define SEARCH_ENABLED	(param!=&mouseDragged)
+
 	LRESULT CHexaEditor::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
 		// window procedure
 		static DWORD cursorPos0;
@@ -984,6 +987,9 @@ resetSelectionWithValue:BYTE buf[65535];
 						//fallthrough
 					case ID_EDIT_FIND:{
 						// find a Pattern in the Content
+						// . ignoring disabled command
+						if (!SEARCH_ENABLED)
+							return 0;
 						// . defining the Dialog
 						class CSearchDialog sealed:public Utils::CRideDialog{
 							CMemFile f;
@@ -1082,7 +1088,7 @@ resetSelectionWithValue:BYTE buf[65535];
 								, search(rSearch)
 								, acceptNotification(true)
 								, f( search.pattern.bytes, sizeof(search.pattern.bytes) )
-								, hexaEditor(nullptr) {
+								, hexaEditor(SEARCH_PARAMS) {
 								f.SetLength(0);
 								f.SeekToBegin();
 								hexaEditor.ShowAddressBand(false);
@@ -1570,12 +1576,14 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 					case ID_EDIT_SELECT_ALL:
 					case ID_EDIT_SELECT_NONE:
 					case ID_EDIT_SELECT_CURRENT:
-					case ID_EDIT_FIND:
-					case ID_EDIT_FIND_NEXT:
 					case ID_NEXT:
 					case ID_PREV:
 					case ID_NAVIGATE_ADDRESS:
 						((CCmdUI *)pExtra)->Enable(true);
+						return TRUE;
+					case ID_EDIT_FIND:
+					case ID_EDIT_FIND_NEXT:
+						((CCmdUI *)pExtra)->Enable(SEARCH_ENABLED);
 						return TRUE;
 					case ID_EDIT_PASTE_SPECIAL:
 					case ID_EDIT_DELETE:
