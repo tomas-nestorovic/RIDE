@@ -31,6 +31,14 @@
 			short L,R,T,B;
 		} &RCMargin;
 
+		class CHistogram:public std::map<int,int>{
+		public:
+			operator bool() const;
+			void AddValue(int value);
+			int GetCount(int value) const;
+			CHistogram &Append(const CHistogram &r);
+		};
+
 		typedef const class CSeries sealed{
 			CSeries(DWORD nValues);
 		public:
@@ -43,9 +51,17 @@
 			};
 
 			static CSeries CreateXy(DWORD nValues,const POINT *pXyValues,HPEN hLinePen,HPEN hVertexPen);
+
+			inline operator bool() const{
+				return nValues>0;
+			}
+
+			CHistogram CreateYxHistogram() const;
 		} *PCSeries;
 
-		const class CDisplayInfo sealed{
+		class CDisplayInfo sealed{
+			BYTE percentile;
+
 			CDisplayInfo(TType chartType,RCMargin margin,PCSeries series,BYTE nSeries);
 		public:
 			const TType chartType;
@@ -65,6 +81,11 @@
 				TCHAR xAxisUnit, TLogValue xMax, LPCTSTR xAxisUnitPrefixes,
 				TCHAR yAxisUnit, TLogValue yMax, LPCTSTR yAxisUnitPrefixes
 			);
+
+			inline BYTE GetPercentile() const{
+				return percentile;
+			}
+			void SetPercentile(BYTE newPercentile);
 		} di;
 	protected:
 		XFORM DrawXyAxes(HDC dc) const;
@@ -73,6 +94,11 @@
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 	public:
 		CChartView(const CDisplayInfo &di);
+
+		inline BYTE GetPercentile() const{
+			return di.GetPercentile();
+		}
+		void SetPercentile(BYTE newPercentile);
 	};
 
 
@@ -82,9 +108,12 @@
 
 	class CChartFrame:public CFrameWnd{
 		CChartView chartView;
+		CMainWindow::CDynMenu menu;
 	protected:
 		BOOL PreCreateWindow(CREATESTRUCT &cs) override;
+		BOOL PreTranslateMessage(PMSG pMsg) override;
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
+		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
 	public:
 		CChartFrame(const CChartView::CDisplayInfo &di);
 	};

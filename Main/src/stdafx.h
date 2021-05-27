@@ -1,11 +1,31 @@
 #ifndef STDAFX_H
 #define STDAFX_H
 
+// preventing from usage of C++ exceptions in releases compiled against legacy MFC 4.2
+#ifdef RELEASE_MFC42
+	#define _HAS_EXCEPTIONS 0
+	#include <xstddef>
+	#define _RAISE(x)
+	#define _RERAISE
+	#define _THROW(x,y)
+	#define _THROW_NCEE(x,y)
+	#define _HAS_EXCEPTIONS 1
+	#include <exception>
+	#define _HAS_EXCEPTIONS 0
+	#include <typeinfo>
+	#define bad_cast(x)
+	#define bad_typeid(x)
+	#include <xutility>
+	#define _Xout_of_range(x)
+	#define _Xlength_error(x)
+#endif
+
 #include <cstdint>
 #define _USE_MATH_DEFINES // for M_PI to be defined
 #include <cmath>
 #include <algorithm>
 #include <memory>
+#include <map>
 
 // use Common-Controls library version 6
 #pragma comment(linker,"\"/manifestdependency:type='win32' \
@@ -115,7 +135,7 @@ typedef const TLogTime *PCLogTime;
 
 #define APP_FULLNAME	_T("Real and Imaginary Disk Editor")
 #define APP_ABBREVIATION _T("RIDE")
-#define APP_VERSION		_T("1.5.6")
+#define APP_VERSION		_T("1.6")
 //#define APP_SPECIAL_VER
 #define APP_IDENTIFIER	APP_ABBREVIATION APP_VERSION
 #define APP_CLASSNAME	_T("Afx:tomascz.") APP_ABBREVIATION

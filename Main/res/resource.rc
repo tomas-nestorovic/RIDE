@@ -175,6 +175,14 @@ BEGIN
     "W",            ID_TRACK,               VIRTKEY, CONTROL, NOINVERT
 END
 
+IDR_CHARTFRAME ACCELERATORS DISCARDABLE 
+BEGIN
+    "1",            ID_DATA,                VIRTKEY, CONTROL, NOINVERT
+    "2",            ID_ACCURACY,            VIRTKEY, CONTROL, NOINVERT
+    "3",            ID_STANDARD,            VIRTKEY, CONTROL, NOINVERT
+    "4",            ID_NUMBER,              VIRTKEY, CONTROL, NOINVERT
+    VK_ESCAPE,      IDCANCEL,               VIRTKEY, NOINVERT
+END
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -721,6 +729,18 @@ BEGIN
     END
 END
 
+IDR_CHARTFRAME MENU DISCARDABLE 
+BEGIN
+    POPUP "Chart"
+    BEGIN
+        MENUITEM "Show all data\tCtrl+1",       ID_DATA
+        MENUITEM "Show 99 percentile\tCtrl+2",  ID_ACCURACY
+        MENUITEM "Show 97 percentile\tCtrl+3",  ID_STANDARD
+        MENUITEM "Show percentile...\tCtrl+4",  ID_NUMBER
+        MENUITEM SEPARATOR
+        MENUITEM "Close\tEsc",                  IDCANCEL
+    END
+END
 
 /////////////////////////////////////////////////////////////////////////////
 //

@@ -1055,12 +1055,11 @@
 							// modal display of scatter plot of time differences
 							CImage::CTrackReader tr=this->tr;
 							tr.SetCurrentTimeAndProfile( 0, tr.CreateResetProfile() );
-							TLogValue yMax=INT_MIN;
 							const LPPOINT data=(LPPOINT)::calloc( tr.GetTimesCount(), sizeof(POINT) );
 								LPPOINT pLastItem=data;
 								for( TLogTime t0=0; tr; pLastItem++ ){
 									const TLogTime t = pLastItem->x = tr.ReadTime();
-									yMax=std::max<TLogValue>( yMax, pLastItem->y=t-t0 );
+									pLastItem->y=t-t0;
 									t0=t;
 								}
 								const Utils::CRidePen dotPen( 2, 0x2020ff );
@@ -1074,7 +1073,7 @@
 										CChartView::TMargin::Default,
 										&xySeries, 1,
 										's', tr.GetTotalTime(), Utils::CTimeline::TimePrefixes,
-										's', yMax, Utils::CTimeline::TimePrefixes
+										's', INT_MIN, Utils::CTimeline::TimePrefixes
 									)
 								).ShowModal(
 									caption, this, CRect(0,0,800,600)
@@ -1083,7 +1082,6 @@
 							return TRUE;
 						}
 						case ID_HISTOGRAM:{
-							CMapPtrToPtr histogram; // key = Time, value = count of Times
 							CImage::CTrackReader tr=this->tr;
 							TCHAR caption[80];
 							TLogTime tBegin,tEnd;
@@ -1095,30 +1093,15 @@
 								::wsprintf( caption, _T("Timing histogram for whole track"), tr.GetIndexCount()-1 );
 							}
 							tr.SetCurrentTimeAndProfile( tBegin, tr.CreateResetProfile() );
-							while (tr && tr.GetCurrentTime()<tEnd){
-								const TLogTime t=tr.ReadTime();
-								PVOID pKey=(PVOID)(t-tBegin), pValue=(PVOID)1;
-								if (histogram.Lookup( pKey, pValue ))
-									pValue=(PBYTE)pValue+1;
-								histogram.SetAt( pKey, pValue );
-								tBegin=t;
-							}
-							typedef struct TPoint sealed:public POINT{
-								bool operator<(const POINT &p) const{
-									return x<p.x;
+							const LPPOINT data=(LPPOINT)::calloc( tr.GetTimesCount(), sizeof(POINT) );
+								LPPOINT pLastItem=data;
+								for( TLogTime t0=tBegin; tr; pLastItem++ ){
+									const TLogTime t = pLastItem->x = tr.ReadTime();
+									if (tr.GetCurrentTime()>tEnd)
+										break;
+									pLastItem->y=t-t0;
+									t0=t;
 								}
-							} *PPoint;
-							static_assert( sizeof(TPoint)==sizeof(POINT), "" );
-							TLogValue xMax=INT_MIN, yMax=INT_MIN;
-							const PPoint data=(PPoint)::calloc( histogram.GetCount(), sizeof(TPoint) );
-								PPoint pLastItem=data;
-								for( POSITION pos=histogram.GetStartPosition(); pos; pLastItem++ ){
-									PVOID pKey, pValue;
-									histogram.GetNextAssoc( pos, pKey, pValue );
-									xMax=std::max<TLogValue>( xMax, pLastItem->x=(TLogValue)pKey );
-									yMax=std::max<TLogValue>( yMax, pLastItem->y=(TLogValue)pValue );
-								}
-								std::sort( data, pLastItem );
 								const Utils::CRidePen barPen( 2, 0x2020ff );
 								const auto xySeries=CChartView::CSeries::CreateXy(
 									pLastItem-data, data,
@@ -1129,8 +1112,8 @@
 										CChartView::XY_BARS,
 										CChartView::TMargin::Default,
 										&xySeries, 1,
-										's', xMax, Utils::CTimeline::TimePrefixes,
-										'\0', yMax, Utils::CAxis::CountPrefixes
+										's', INT_MIN, Utils::CTimeline::TimePrefixes,
+										'\0', INT_MIN, Utils::CAxis::CountPrefixes
 									)
 								).ShowModal(
 									caption, this, CRect(0,0,800,600)

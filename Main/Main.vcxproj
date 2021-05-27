@@ -108,7 +108,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>comctl32.lib;shlwapi.lib;msimg32.lib;wininet.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <StackReserveSize>2000000</StackReserveSize>
+      <StackReserveSize>2500000</StackReserveSize>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug in RAMdisk|Win32'">
@@ -124,7 +124,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>comctl32.lib;shlwapi.lib;msimg32.lib;wininet.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <StackReserveSize>2000000</StackReserveSize>
+      <StackReserveSize>2500000</StackReserveSize>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

@@ -8,6 +8,33 @@
 
 
 
+	CChartView::CHistogram::operator bool() const{
+		// True <=> the Histogram isn't empty, otherwise False
+		return size()>0;
+	}
+
+	void CChartView::CHistogram::AddValue(int value){
+		// increases by one the number of occurences of Value
+		auto it=find(value);
+		if (it!=std::map<int,int>::cend())
+			it->second++;
+		else
+			insert( std::make_pair(value,1) );
+	}
+
+	int CChartView::CHistogram::GetCount(int value) const{
+		// returns the number of occurences of Value (or zero)
+		const auto it=find(value);
+		if (it!=std::map<int,int>::cend())
+			return it->second;
+		else
+			return 0;
+	}
+
+
+
+
+
 	CChartView::CSeries::CSeries(DWORD nValues)
 		// ctor
 		: nValues(nValues) {
@@ -22,6 +49,14 @@
 		return tmp;
 	}
 
+	CChartView::CHistogram CChartView::CSeries::CreateYxHistogram() const{
+		// creates histogram of Y values
+		CHistogram tmp;
+		for( DWORD n=nValues; n>0; tmp.AddValue(xy.pValues[--n].y) );
+		return tmp;
+	}
+
+
 
 
 
@@ -29,6 +64,7 @@
 	CChartView::CDisplayInfo::CDisplayInfo(TType chartType,RCMargin margin,PCSeries series,BYTE nSeries)
 		// ctor
 		: chartType(chartType) , margin(margin)
+		, percentile(101) // invalid, must call SetPercentile !
 		, series(series) , nSeries(nSeries) {
 	}
 
@@ -42,7 +78,52 @@
 			auto &r=tmp.xy;
 			r.xAxisUnit=xAxisUnit, r.xMax=xMax, r.xAxisUnitPrefixes=xAxisUnitPrefixes;
 			r.yAxisUnit=yAxisUnit, r.yMax=yMax, r.yAxisUnitPrefixes=yAxisUnitPrefixes;
+			tmp.SetPercentile(100); // all data shown by default
 		return tmp;
+	}
+
+	void CChartView::CDisplayInfo::SetPercentile(BYTE newPercentile){
+		//
+		if (newPercentile==percentile)
+			return;
+		percentile=newPercentile;
+		switch (chartType){
+			case TType::XY_LINE_BROKEN:
+				// planar broken line chart
+				xy.yMax=1;
+				for( BYTE i=0; i<nSeries; )
+					if (const CSeries &s=series[i++]){
+						const CHistogram h=s.CreateYxHistogram();
+						int counts[4096], n=0;
+						for( auto it=h.cbegin(); it!=h.cend(); it++ )
+							counts[n++]=it->second;
+						std::sort( counts, counts+n ); // ordering ascending
+						for( DWORD sum=0,const sumMax=(ULONGLONG)s.nValues*percentile/100; sum<sumMax; sum+=counts[--n] );
+						const int countThreshold= n>0 ? counts[n] : 0;
+						for( auto it=h.cbegin(); it!=h.cend(); it++ )
+							if (it->second>countThreshold)
+								if (it->first>xy.yMax)
+									xy.yMax=it->first;
+					}
+				break;
+			case TType::XY_BARS:
+				// planar bar chart
+				xy.xMax = xy.yMax = 1;
+				for( BYTE i=0; i<nSeries; )
+					if (const CSeries &s=series[i++]){
+						const CHistogram h=s.CreateYxHistogram();
+						auto it=h.cbegin();
+						for( DWORD sum=0,const sumMax=(ULONGLONG)s.nValues*percentile/100; sum<sumMax; sum+=it++->second ){
+							if (it->first>xy.xMax)
+								xy.xMax=it->first;
+							if (it->second>xy.yMax)
+								xy.yMax=it->second;
+						}
+					}
+				break;
+			default:
+				ASSERT(FALSE); break;
+		}
 	}
 
 
@@ -93,12 +174,15 @@
 				case TType::XY_LINE_BROKEN:
 					// planar broken line chart
 					for( BYTE i=0; i<cv.di.nSeries; ){
-						const CSeries &series=cv.di.series[i++];
-						const auto data=series.xy;
-						if (!series.nValues)
+						const CSeries &s=cv.di.series[i++];
+						const auto &data=s.xy;
+						if (!s.nValues)
 							continue;
 						const HGDIOBJ hPen0=::SelectObject( dc, data.hLinePen );
-							const POINT firstPt=Transform( p.params.valuesTransf, *data.pValues );
+							DWORD j=0;
+							while (data.pValues[j].y>cv.di.xy.yMax)
+								j++;
+							const POINT firstPt=Transform( p.params.valuesTransf, data.pValues[j] );
 							p.params.locker.Lock();
 								dc.MoveTo(firstPt);
 								if (data.hVertexPen)
@@ -108,8 +192,11 @@
 										dc.MoveTo(firstPt);
 									}
 							p.params.locker.Unlock();
-							for( DWORD j=1; continuePainting&&j<series.nValues; ){
-								const POINT pt=Transform( p.params.valuesTransf, data.pValues[j++] );
+							while (continuePainting && j<s.nValues){
+								const POINT &ptData=data.pValues[j++];
+								if (ptData.y>cv.di.xy.yMax)
+									continue;
+								const POINT pt=Transform( p.params.valuesTransf, ptData );
 								p.params.locker.Lock();
 									if (continuePainting=p.params.id==id){
 										if (data.hLinePen){
@@ -130,36 +217,28 @@
 							break;
 					}
 					break;
-				case TType::XY_BARS:{
+				case TType::XY_BARS:
 					// planar bar chart
-					CMapPtrToPtr barSizes; // key = X, value = size accumulated over all Series processed thus far
-					for( BYTE i=0; i<cv.di.nSeries; ){
-						const CSeries &series=cv.di.series[i++];
-						const auto data=series.xy;
-						if (!series.nValues)
-							continue;
-						const HGDIOBJ hPen0=::SelectObject( dc, data.hLinePen );
-							for( DWORD j=0; j<series.nValues; ){
-								const POINT &pt=data.pValues[j++];
-								PVOID pKey=(PVOID)pt.x, pValue=nullptr;
-								barSizes.Lookup( pKey, pValue );
-								p.params.locker.Lock();
-									if (continuePainting=p.params.id==id){
-										dc.MoveTo(  Transform( p.params.valuesTransf, pt.x, (long)pValue )  );
-										pValue=(PBYTE)pValue+pt.y;
-										dc.LineTo(  Transform( p.params.valuesTransf, pt.x, (long)pValue )  );
-									}
-								p.params.locker.Unlock();
-								barSizes.SetAt( pKey, pValue );
-								if (!continuePainting) // new paint request?
-									break;
-							}
-						::SelectObject( dc, hPen0 );
-						if (!continuePainting) // new paint request?
-							break;
-					}
+					for( BYTE i=0; i<cv.di.nSeries; )
+						if (const CSeries &s=cv.di.series[i++]){
+							const auto &data=s.xy;
+							const HGDIOBJ hPen0=::SelectObject( dc, data.hLinePen );
+								const CHistogram h=s.CreateYxHistogram();
+								for( auto it=h.cbegin(); continuePainting&&it!=h.cend(); it++ ){
+									if (it->first>=cv.di.xy.xMax)
+										break;
+									p.params.locker.Lock();
+										if (continuePainting=p.params.id==id){
+											dc.MoveTo(  Transform( p.params.valuesTransf, it->first, 0 )  );
+											dc.LineTo(  Transform( p.params.valuesTransf, it->first, it->second )  );
+										}
+									p.params.locker.Unlock();
+								}
+							::SelectObject( dc, hPen0 );
+							if (!continuePainting) // new paint request?
+								break;
+						}
 					break;
-				}
 				default:
 					ASSERT(FALSE); break;
 			}
@@ -258,6 +337,11 @@
 		painter.repaintEvent.SetEvent();
 	}
 
+	void CChartView::SetPercentile(BYTE newPercentile){
+		di.SetPercentile(newPercentile);
+		Invalidate();
+	}
+
 
 
 
@@ -268,7 +352,8 @@
 
 	CChartFrame::CChartFrame(const CChartView::CDisplayInfo &di)
 		// ctor
-		: chartView(di) {
+		: chartView(di)
+		, menu(IDR_CHARTFRAME) {
 	}
 
 	BOOL CChartFrame::PreCreateWindow(CREATESTRUCT &cs){
@@ -278,11 +363,17 @@
 		return TRUE;
 	}
 
+	BOOL CChartFrame::PreTranslateMessage(PMSG pMsg){
+		// pre-processing the Message
+		return	::TranslateAccelerator( m_hWnd, menu.hAccel, pMsg );
+	}
+
 	LRESULT CChartFrame::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
 		// window procedure
 		switch (msg){
 			case WM_CREATE:{
 				const LRESULT result=__super::WindowProc(msg,wParam,lParam);
+				SetMenu(&menu);
 				chartView.Create( nullptr, nullptr, AFX_WS_DEFAULT_VIEW&~WS_BORDER|WS_CLIPSIBLINGS, rectDefault, this, AFX_IDW_PANE_FIRST );
 				return result;
 			}
@@ -294,6 +385,48 @@
 				return 0;
 		}
 		return __super::WindowProc(msg,wParam,lParam);
+	}
+
+	BOOL CChartFrame::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){
+		// command processing
+		switch (nCode){
+			case CN_UPDATE_COMMAND_UI:{
+				// update
+				CCmdUI *const pCmdUi=(CCmdUI *)pExtra;
+				switch (nID){
+					case ID_DATA:
+					case ID_ACCURACY:
+					case ID_STANDARD:
+					case ID_NUMBER:
+					case IDCANCEL:
+						pCmdUi->Enable();
+						return TRUE;
+				}
+				break;
+			}
+			case CN_COMMAND:
+				// command
+				switch (nID){
+					case ID_DATA:
+						chartView.SetPercentile(100);
+						return TRUE;
+					case ID_ACCURACY:
+						chartView.SetPercentile(99);
+						return TRUE;
+					case ID_STANDARD:
+						chartView.SetPercentile(97);
+						return TRUE;
+					case ID_NUMBER:
+						if (const Utils::CSingleNumberDialog d=Utils::CSingleNumberDialog( _T("Set"), _T("Percentile"), PropGrid::Integer::TUpDownLimits::Percent, chartView.GetPercentile(), this ))
+							chartView.SetPercentile(d.Value);
+						return TRUE;
+					case IDCANCEL:
+						::PostMessage( m_hWnd, WM_DESTROY, 0, 0 );
+						return TRUE;
+				}
+				break;
+		}
+		return __super::OnCmdMsg( nID, nCode, pExtra, pHandlerInfo ); // base
 	}
 
 

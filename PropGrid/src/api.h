@@ -85,6 +85,7 @@
 				static const TUpDownLimits PositiveInteger; // 1..INT_MAX
 				static const TUpDownLimits NonNegativeInteger; // 0..INT_MAX
 				static const TUpDownLimits NegativeInteger; // INT_MIN..-1
+				static const TUpDownLimits Percent; // 0..100
 
 				int iMin,iMax;
 			} &RCUpDownLimits;
