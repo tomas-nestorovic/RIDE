@@ -488,14 +488,6 @@
 			}
 
 			inline
-			void AddIndexTime(TLogTime logTime){
-				// appends LogicalTime representing the position of the index pulse on the disk
-				ASSERT( nIndexPulses<Revolution::MAX );
-				ASSERT( logTime>=0 );
-				indexPulses[nIndexPulses++]=logTime;
-			}
-
-			inline
 			void TrimToTimesCount(DWORD nKeptLogTimes){
 				// discards some tail LogicalTimes, keeping only specified amount of them
 				ASSERT( nKeptLogTimes<=nLogTimes ); // can only shrink
@@ -503,6 +495,7 @@
 			}
 
 			void AddTimes(PCLogTime logTimes,DWORD nLogTimes);
+			void AddIndexTime(TLogTime logTime);
 			WORD WriteData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToWrite,PCBYTE buffer,TFdcStatus sr);
 			bool Normalize();
 			TStdWinError NormalizeEx(TLogTime timeOffset,bool fitTimesIntoIwMiddles,bool correctCellCountPerRevolution,bool correctRevolutionTime);

@@ -219,7 +219,7 @@
 				if (overhang>=profile.iwTime)
 					return 0;
 				// - adjust data frequency according to phase mismatch
-				const BYTE iSlot=(overhang<<4)/profile.iwTime;
+				const BYTE iSlot=((overhang+profile.iwTime/2)<<4)/profile.iwTime;
 				BYTE cState=1; // default is IPC
 				if (iSlot<7 || iSlot>8){
 					if (iSlot<7&&!r.up || iSlot>8&&r.up)
@@ -741,6 +741,14 @@
 			::memcpy( this->logTimes, logTimes, nLogTimes*sizeof(TLogTime) );
 			this->nLogTimes+=nLogTimes;
 		}
+	}
+
+	void CImage::CTrackReaderWriter::AddIndexTime(TLogTime logTime){
+		// appends LogicalTime representing the position of the index pulse on the disk
+		ASSERT( nIndexPulses<Revolution::MAX );
+		ASSERT( logTime>=0 );
+		indexPulses[nIndexPulses++]=logTime;
+		indexPulses[nIndexPulses]=INT_MAX;
 	}
 
 	bool CImage::CTrackReaderWriter::WriteBits(const bool *bits,DWORD nBits){
