@@ -134,7 +134,7 @@
 	#define ACCEPT_OPTIONS_COUNT	4
 	#define ACCEPT_ERROR_ID			IDOK
 
-	#define RESOLVE_OPTIONS_COUNT	4
+	#define RESOLVE_OPTIONS_COUNT	5
 	#define RESOLVE_EXCLUDE_ID		IDIGNORE
 	#define RESOLVE_EXCLUDE_UNKNOWN	IDCONTINUE
 
@@ -267,10 +267,12 @@ terminateWithError:
 									{ 0, _T("Resolve") }, // 0 = no default action
 									{ RESOLVE_EXCLUDE_ID, _T("Exclude from track") },
 									{ RESOLVE_EXCLUDE_UNKNOWN, _T("Exclude all unknown from disk") },
+									{ ID_DATAFIELD_CRC, _T("Fix Data CRC only") },
 									{ ID_RECOVER, _T("Recover ID or Data...") }
 								};
 								::memcpy( resolveActions, ResolveActions, sizeof(ResolveActions) );
-									resolveActions[3].menuItemFlags=MF_GRAYED*( rFdcStatus.DescribesMissingDam() || !rFdcStatus.DescribesIdFieldCrcError()&&!rFdcStatus.DescribesDataFieldCrcError() ); // enabled only if either ID or Data field with error
+									resolveActions[3].menuItemFlags=MF_GRAYED*( !rFdcStatus.DescribesDataFieldCrcError() || (rFdcStatus.ToWord()&~TFdcStatus::DataFieldCrcError.ToWord())!=0 ); // enabled only if NO OTHER BUT Data dield CRC error
+									resolveActions[4].menuItemFlags=MF_GRAYED*( rFdcStatus.DescribesMissingDam() || !rFdcStatus.DescribesIdFieldCrcError()&&!rFdcStatus.DescribesDataFieldCrcError() ); // enabled only if either ID or Data field with error
 								ConvertDlgButtonToSplitButton( IDNO, resolveActions, RESOLVE_OPTIONS_COUNT );
 								EnableDlgItem( IDNO, dynamic_cast<CImageRaw *>(dp.target.get())==nullptr ); // recovering errors is allowed only if the Target Image can accept them
 								// > the "Retry" button enabled only if not all Revolutions yet exhausted
@@ -295,6 +297,13 @@ terminateWithError:
 												//fallthrough
 											case ID_TRACK:
 												rp.acceptance.remainingErrorsOnTrack=true;
+												UpdateData(TRUE);
+												EndDialog(ACCEPT_ERROR_ID);
+												return 0;
+											case ID_DATAFIELD_CRC:
+												// recovering CRC
+												rFdcStatus.CancelDataFieldCrcError();
+												rp.trackWriteable=false; // once modified, can't write the Track as a whole anymore
 												UpdateData(TRUE);
 												EndDialog(ACCEPT_ERROR_ID);
 												return 0;
@@ -393,8 +402,7 @@ terminateWithError:
 															//fallthrough
 														case 1:
 															// recovering CRC
-															rFdcStatus.CancelDataFieldCrcError();
-															rp.trackWriteable=false; // once modified, can't write the Track as a whole anymore
+															SendMessage( WM_COMMAND, ID_DATAFIELD_CRC );
 															break;
 													}
 													EndDialog(ACCEPT_ERROR_ID);
