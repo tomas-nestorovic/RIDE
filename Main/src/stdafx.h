@@ -1,8 +1,10 @@
 #ifndef STDAFX_H
 #define STDAFX_H
 
-// preventing from usage of C++ exceptions in releases compiled against legacy MFC 4.2
-#ifdef RELEASE_MFC42
+#include <cstdint>
+#define _USE_MATH_DEFINES // for M_PI to be defined
+#include <cmath>
+#ifdef RELEASE_MFC42	// preventing from usage of C++ exceptions in releases compiled against legacy MFC 4.2
 	#define _HAS_EXCEPTIONS 0
 	#include <xstddef>
 	#define _RAISE(x)
@@ -19,10 +21,6 @@
 	#define _Xout_of_range(x)
 	#define _Xlength_error(x)
 #endif
-
-#include <cstdint>
-#define _USE_MATH_DEFINES // for M_PI to be defined
-#include <cmath>
 #include <algorithm>
 #include <memory>
 #include <map>
