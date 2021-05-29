@@ -31,6 +31,12 @@
 					*pd++=(int)app.GetProfileInt( iniSection, iniValue, 0 )/1e8;
 				break;
 			}
+			case MethodVersion2:{
+				double *pd=&v2.coeffs[0][0][0];
+				for( TCHAR i=0,iniValue[]=_T("coefA"); i<sizeof(v2.coeffs)/sizeof(v2.coeffs[0][0][0]); i++,iniValue[4]++ )
+					*pd++=(int)app.GetProfileInt( iniSection, iniValue, 0 )/1e8;
+				break;
+			}
 		}
 	}
 
@@ -48,18 +54,25 @@
 					app.WriteProfileInt( iniSection, iniValue, *pd++*1e8 );
 				break;
 			}
+			case MethodVersion2:{
+				const double *pd=&v2.coeffs[0][0][0];
+				for( TCHAR i=0,iniValue[]=_T("coefA"); i<sizeof(v2.coeffs)/sizeof(v2.coeffs[0][0][0]); i++,iniValue[4]++ )
+					app.WriteProfileInt( iniSection, iniValue, *pd++*1e8 );
+				break;
+			}
 		}
 	}
 
 	struct TPrecompThreadParams sealed{
 		const CCapsBase &cb;
 		const TCylinder cyl;
+		const THead head;
 		const BYTE nTrials;
-		const PVOID pPrecomp;
+		const PVOID pPrecomp; // (CCapsBase::CPrecompensation *)
 
-		TPrecompThreadParams(const CCapsBase &cb,TCylinder cyl,BYTE nTrials,PVOID pPrecomp)
+		TPrecompThreadParams(const CCapsBase &cb,TCylinder cyl,THead head,BYTE nTrials,PVOID pPrecomp)
 			: cb(cb)
-			, cyl(cyl) , nTrials(nTrials) , pPrecomp(pPrecomp) {
+			, cyl(cyl) , head(head) , nTrials(nTrials) , pPrecomp(pPrecomp) {
 		}
 	};
 
@@ -102,20 +115,20 @@
 			// . saving the test Track on first Side of specified Cylinder
 			PInternalTrack pit=CInternalTrack::CreateFrom( ptp.cb, trw );
 			pit->modified=true; // to pass the save conditions
-			std::swap( pit, ptp.cb.internalTracks[ptp.cyl][0] );
+			std::swap( pit, ptp.cb.internalTracks[ptp.cyl][ptp.head] );
 				const auto precompMethod0=ptp.cb.precompensation.methodVersion;
 				ptp.cb.precompensation.methodVersion=CPrecompensation::Identity;
-					const TStdWinError err=ptp.cb.SaveTrack( ptp.cyl, 0 );
+					const TStdWinError err=ptp.cb.SaveTrack( ptp.cyl, ptp.head );
 				ptp.cb.precompensation.methodVersion=precompMethod0;
-			std::swap( pit, ptp.cb.internalTracks[ptp.cyl][0] );
+			std::swap( pit, ptp.cb.internalTracks[ptp.cyl][ptp.head] );
 			delete pit;
 			if (err!=ERROR_SUCCESS)
 				return pAction->TerminateWithError(err);
 			// . reading the test Track back
-			pit=ptp.cb.internalTracks[ptp.cyl][0];
-				ptp.cb.internalTracks[ptp.cyl][0]=nullptr; // forcing a new scan
-				ptp.cb.ScanTrack(ptp.cyl,0);
-			std::swap( ptp.cb.internalTracks[ptp.cyl][0], pit );
+			pit=ptp.cb.internalTracks[ptp.cyl][ptp.head];
+				ptp.cb.internalTracks[ptp.cyl][ptp.head]=nullptr; // forcing a new scan
+				ptp.cb.ScanTrack(ptp.cyl,ptp.head);
+			std::swap( ptp.cb.internalTracks[ptp.cyl][ptp.head], pit );
 			if (pit==nullptr)
 				return pAction->TerminateWithError(ERROR_FUNCTION_FAILED);
 			// . evaluating what we read
@@ -188,7 +201,7 @@
 					for( BYTE r=nEvaluationFluxes; r-->0; ){
 						double sum=b[r];
 						for( BYTE i=r; ++i<nEvaluationFluxes; sum-=M[r][i]*b[i] );
-						trialResults[trial].coeffs[p][r] = b[r] = sum/M[r][r];
+						trialResults[trial].coeffs[ptp.head][p][r] = b[r] = sum/M[r][r];
 					}
 				}
 			::free(A);
@@ -197,12 +210,12 @@
 nextTrial:	;
 		}
 		// - putting partial results into final one
-		::ZeroMemory( rPrecomp.latest.coeffs, sizeof(rPrecomp.latest.coeffs) );
+		::ZeroMemory( rPrecomp.latest.coeffs[ptp.head], sizeof(rPrecomp.latest.coeffs[ptp.head]) );
 		for( BYTE p=0; p<2; p++ ) // even (0) and odd (1) fluxes
 			for( BYTE r=0; r<nEvaluationFluxes; r++ ){
 				for( BYTE trial=0; trial<nTrials; trial++ )
-					rPrecomp.latest.coeffs[p][r]+=trialResults[trial].coeffs[p][r];
-				rPrecomp.latest.coeffs[p][r]/=(nTrials*2); // 2 = a flux has two ends (start and end), both of which are compensated independently, hence each must contribute just a half to the final flux length
+					rPrecomp.latest.coeffs[ptp.head][p][r]+=trialResults[trial].coeffs[ptp.head][p][r];
+				rPrecomp.latest.coeffs[ptp.head][p][r]/=(nTrials*2); // 2 = a flux has two ends (start and end), both of which are compensated independently, hence each must contribute just a half to the final flux length
 			}
 		// - write pre-compensation parameters successfully determined using the latest Method
 		rPrecomp.methodVersion=MethodLatest;
@@ -227,12 +240,12 @@ nextTrial:	;
 		if (!Utils::InformationOkCancel(_T("Insert an empty disk that you don't mind writing to, and hit OK.")))
 			return ERROR_CANCELLED;
 		// - determination of new write pre-compensation parameters
-		if (const TStdWinError err=	CBackgroundActionCancelable(
-										PrecompensationDetermination_thread,
-										&TPrecompThreadParams( cb, 0, nTrials, this ),
-										THREAD_PRIORITY_TIME_CRITICAL
-									).Perform()
-		)
+		CBackgroundMultiActionCancelable bmac(THREAD_PRIORITY_TIME_CRITICAL);
+			const TPrecompThreadParams paramsHead0( cb, 40, 0, nTrials, this );
+			bmac.AddAction( PrecompensationDetermination_thread, &paramsHead0, _T("Head 0") );
+			const TPrecompThreadParams paramsHead1( cb, 40, 1, nTrials, this );
+			bmac.AddAction( PrecompensationDetermination_thread, &paramsHead1, _T("Head 1") );
+		if (const TStdWinError err=bmac.Perform())
 			return err;
 		// - write pre-compensation parameters successfully determined using the latest Method
 		return ERROR_SUCCESS;
@@ -262,15 +275,27 @@ nextTrial:	;
 							SetDlgItemText( ID_INFORMATION, _T("No report available.") );
 							return;
 					}
-					p+=::wsprintf( p, _T("Drive letter: %c (0x%02X)\r\nFloppy type: %s\r\nMethod version: %d\r\n\r\n\r\n"), precomp.driveLetter, precomp.driveLetter, Medium::GetDescription(precomp.floppyType), precomp.methodVersion );
+					p+=::wsprintf( p, _T("Drive letter: %c (0x%02X)\r\nFloppy type: %s\r\nMethod version: %d\r\n\r\n"), precomp.driveLetter, precomp.driveLetter, Medium::GetDescription(precomp.floppyType), precomp.methodVersion );
 					switch (precomp.methodVersion){
 						case MethodVersion1:
-							p+=::lstrlen( ::lstrcpy(p,_T("Even flux coefficients:\r\n")) );
+							p+=::lstrlen( ::lstrcpy(p,_T("\r\nEven flux coefficients:\r\n")) );
 							for( BYTE i=0; i<sizeof(precomp.v1.coeffs[0])/sizeof(precomp.v1.coeffs[0][0]); i++ )
 								p+=_stprintf( p, _T("- %d: %f\r\n"), i, precomp.v1.coeffs[0][i] );
 							p+=::lstrlen( ::lstrcpy(p,_T("\r\nOdd flux coefficients:\r\n")) );
 							for( BYTE i=0; i<sizeof(precomp.v1.coeffs[1])/sizeof(precomp.v1.coeffs[1][0]); i++ )
 								p+=_stprintf( p, _T("- %d: %f\r\n"), i, precomp.v1.coeffs[1][i] );
+							break;
+						case MethodVersion2:
+							for( TCHAR heading[]=_T("\r\nHEAD 0\r\n"); heading[7]<'2'; heading[7]++ ){
+								auto &coeffs=precomp.v2.coeffs[heading[7]-'0'];
+								p+=::lstrlen( ::lstrcpy(p,heading) );
+								p+=::lstrlen( ::lstrcpy(p,_T("\r\nEven flux coefficients:\r\n")) );
+								for( BYTE i=0; i<sizeof(coeffs[0])/sizeof(coeffs[0][0]); i++ )
+									p+=_stprintf( p, _T("- %d: %f\r\n"), i, coeffs[0][i] );
+								p+=::lstrlen( ::lstrcpy(p,_T("\r\nOdd flux coefficients:\r\n")) );
+								for( BYTE i=0; i<sizeof(coeffs[1])/sizeof(coeffs[1][0]); i++ )
+									p+=_stprintf( p, _T("- %d: %f\r\n"), i, coeffs[1][i] );
+							}
 							break;
 						default:
 							ASSERT(FALSE);
@@ -333,7 +358,7 @@ nextTrial:	;
 		d.DoModal();
 	}
 
-	TStdWinError CCapsBase::CPrecompensation::ApplyTo(const CCapsBase &cb,CTrackReaderWriter trw) const{
+	TStdWinError CCapsBase::CPrecompensation::ApplyTo(const CCapsBase &cb,TCylinder cyl,THead head,CTrackReaderWriter trw) const{
 		// applies current Precompensation parameters (if any) to the Track - it's up to the caller to Load them!; returns Windows standard i/o error
 		// - precompensation must be determined (it's up to the caller to Load the parameters!)
 		switch (const TStdWinError err=const_cast<CPrecompensation *>(this)->DetermineUsingLatestMethod(cb,0)){
@@ -366,6 +391,21 @@ nextTrial:	;
 					const BYTE COEFFS_COUNT=sizeof(v1.coeffs[0])/sizeof(*v1.coeffs[0]);
 					const BYTE PIVOT_INDEX=COEFFS_COUNT/2;
 					const auto &coeffs=v1.coeffs[(i+PIVOT_INDEX)&1];
+					if (i<nTimes-COEFFS_COUNT){ // applicable range
+						double compensation=0;
+						for( BYTE c=0; c<COEFFS_COUNT; c++ )
+							compensation+=coeffs[c] * 2*trw.GetCurrentProfile().iwTimeDefault;//origFluxes[c];
+						pt[PIVOT_INDEX]+=compensation+.5;
+					}
+					::memmove( origFluxes, origFluxes+1, (COEFFS_COUNT-1)*sizeof(TLogTime) );
+					origFluxes[COEFFS_COUNT-1]=pt[COEFFS_COUNT]-pt[COEFFS_COUNT-1];
+					break;
+				}
+				case MethodVersion2:{
+					const auto &headCoeffs=v2.coeffs[head];
+					const BYTE COEFFS_COUNT=sizeof(headCoeffs[0])/sizeof(*headCoeffs[0]);
+					const BYTE PIVOT_INDEX=COEFFS_COUNT/2;
+					const auto &coeffs=headCoeffs[(i+PIVOT_INDEX)&1];
 					if (i<nTimes-COEFFS_COUNT){ // applicable range
 						double compensation=0;
 						for( BYTE c=0; c<COEFFS_COUNT; c++ )

@@ -699,7 +699,7 @@
 		const CTrackReaderWriter trwCompensated( trw, false );
 		TStdWinError err;
 		if (precompensation.methodVersion!=CPrecompensation::None)
-			if ( err=precompensation.ApplyTo(*this,trwCompensated) )
+			if ( err=precompensation.ApplyTo(*this,cyl,head,trwCompensated) )
 				return err;
 		// - Drive's head calibration
 		if (params.calibrationStepDuringFormatting)

@@ -91,13 +91,17 @@
 			mutable enum TMethodVersion:BYTE{
 				None,
 				MethodVersion1,
-				MethodLatest	= MethodVersion1,
+				MethodVersion2,
+				MethodLatest	= MethodVersion2,
 				Identity
 			} methodVersion;
 			union{
 				struct{
 					double coeffs[2][5]; // coefficients for even (0) and odd (1) fluxes
-				} v1, latest;
+				} v1;
+				struct{
+					double coeffs[2][2][5]; // coefficients for both Heads (0/1), and even (0) and odd (1) fluxes
+				} v2, latest;
 			};
 
 			CPrecompensation(char driveLetter);
@@ -106,7 +110,7 @@
 			void Save() const;
 			TStdWinError DetermineUsingLatestMethod(const CCapsBase &cb,BYTE nTrials=4);
 			void ShowOrDetermineModal(const CCapsBase &cb);
-			TStdWinError ApplyTo(const CCapsBase &cb,CTrackReaderWriter trw) const;
+			TStdWinError ApplyTo(const CCapsBase &cb,TCylinder cyl,THead head,CTrackReaderWriter trw) const;
 		} precompensation;
 
 		struct TCorrections sealed{
