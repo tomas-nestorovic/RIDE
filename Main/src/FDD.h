@@ -92,7 +92,7 @@
 				
 				TProfile();
 
-				void Load(TCHAR driveLetter,Medium::TType floppyType,TLogTime defaultNanosecondsPerByte);
+				bool Load(TCHAR driveLetter,Medium::TType floppyType,TLogTime defaultNanosecondsPerByte);
 				void Save(TCHAR driveLetter,Medium::TType floppyType) const;
 			} profile;
 

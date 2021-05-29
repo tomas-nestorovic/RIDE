@@ -465,8 +465,8 @@ Utils::Information("--- EVERYTHING OK ---");
 		::wsprintf( buf, INI_FDD _T("_%c_%d"), driveLetter, floppyType );
 	}
 
-	void CFDD::TFddHead::TProfile::Load(TCHAR driveLetter,Medium::TType floppyType,TLogTime defaultNanosecondsPerByte){
-		// loads the Profile for specified Drive and FloppyType
+	bool CFDD::TFddHead::TProfile::Load(TCHAR driveLetter,Medium::TType floppyType,TLogTime defaultNanosecondsPerByte){
+		// True <=> explicit Profile for specified Drive/FloppyType exists and loaded, otherwise False
 		TCHAR iniSection[16];
 		GetFddProfileName( iniSection, driveLetter, floppyType );
 		switch (floppyType){
@@ -486,6 +486,7 @@ Utils::Information("--- EVERYTHING OK ---");
 		}
 		oneByteLatency=app.GetProfileInt( iniSection, INI_LATENCY_1BYTE, defaultNanosecondsPerByte );
 		gap3Latency=app.GetProfileInt( iniSection, INI_LATENCY_GAP3, oneByteLatency*FDD_350_SECTOR_GAP3*4/5 ); // "4/5" = giving the FDC 20% tolerance for Gap3
+		return app.GetProfileInt( iniSection, INI_LATENCY_CONTROLLER, -1 )>0; // True <=> previously determined values used, otherwise False
 	}
 
 	void CFDD::TFddHead::TProfile::Save(TCHAR driveLetter,Medium::TType floppyType) const{
@@ -1554,7 +1555,13 @@ Utils::Information(buf);}
 						EnableDlgItem( ID_40D80, initialEditing );
 					}
 				// . loading the Profile associated with the current drive and FloppyType
-				profile.Load( fdd->GetDriveLetter(), fdd->floppyType, fdd->EstimateNanosecondsPerOneByte() );
+				const RECT rcWarning=MapDlgItemClientRect(ID_INSTRUCTION);
+				RECT rcMessage=MapDlgItemClientRect(ID_AUTO);
+				if (ShowDlgItem(  ID_INSTRUCTION,  !profile.Load( fdd->GetDriveLetter(), fdd->floppyType, fdd->EstimateNanosecondsPerOneByte() )  ))
+					rcMessage.left=rcWarning.right;
+				else
+					rcMessage.left=rcWarning.left;
+				SetDlgItemPos( ID_AUTO, rcMessage );
 				__exchangeLatency__( &CDataExchange(this,FALSE) );
 				// . forcing redrawing (as the new text may be shorter than the original text, leaving the original partly visible)
 				GetDlgItem(ID_MEDIUM)->Invalidate();
@@ -1573,6 +1580,10 @@ Utils::Information(buf);}
 				// . displaying inserted Medium information
 				SetDlgItemSingleCharUsingFont( // a warning that a 40-track disk might have been misrecognized
 					ID_INFORMATION,
+					L'\xf0ea', (HFONT)Utils::CRideFont(FONT_WEBDINGS,175,false,true).Detach()
+				);
+				SetDlgItemSingleCharUsingFont( // a warning that pre-compensation not up-to-date
+					ID_INSTRUCTION,
 					L'\xf0ea', (HFONT)Utils::CRideFont(FONT_WEBDINGS,175,false,true).Detach()
 				);
 				__refreshMediumInformation__();
@@ -1672,7 +1683,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 							// . showing the Dialog and processing its result
 							if (d.DoModal()==IDOK){
 								__informationWithCheckableShowNoMore__( _T("Windows is NOT a real-time system! Computed latency will be valid only if using the floppy drive in very similar conditions as when they were computed (current conditions)!"), INI_MSG_LATENCY );
-								if (Utils::InformationOkCancel(_T("Insert an empty disk and hit OK."))){
+								if (Utils::InformationOkCancel(_T("Insert an empty disk that you don't mind writing to, and hit OK."))){
 									// : composing a parallel multi-action
 									CBackgroundMultiActionCancelable bmac( THREAD_PRIORITY_TIME_CRITICAL );
 										Medium::TType floppyType=Medium::UNKNOWN;
