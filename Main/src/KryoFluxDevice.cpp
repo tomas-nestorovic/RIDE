@@ -868,14 +868,6 @@
 			return 0;
 	}
 
-	TStdWinError CKryoFluxDevice::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){
-		// sets the given MediumType and its geometry; returns Windows standard i/o error
-		if (pFormat->mediumType!=Medium::UNKNOWN)
-			if (const TStdWinError err=SendRequest( TRequest::DENSITY, (pFormat->mediumType&Medium::FLOPPY_HD_ANY)!=0 ))
-				return err;
-		return __super::SetMediumTypeAndGeometry( pFormat, sideMap, firstSectorNumber );
-	}
-
 	bool CKryoFluxDevice::EditSettings(bool initialEditing){
 		// True <=> new settings have been accepted (and adopted by this Image), otherwise False
 		//EXCLUSIVELY_LOCK_THIS_IMAGE(); // commented out as the following Dialog creates a parallel thread that in turn would attempt to lock this Image, yielding a deadlock

@@ -29,7 +29,7 @@
 			RESET = 0x05,				// soft reset
 			DEVICE = 0x06,				// select device
 			MOTOR = 0x07,				// motor state
-			DENSITY = 0x08,				// select density
+			DENSITY = 0x08,				// select density; indication that 5.25" DD floppy inserted in 360 RPM HD drive; don't set - the app handles this case its way!
 			SIDE = 0x09,				// select side
 			TRACK = 0x0a,				// seek
 			STREAM = 0x0b,				// stream on/off, MSB=revs
@@ -114,7 +114,7 @@
 		TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const override;
 		//void GetTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses) override;
 		//TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus) override;
-		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
+		//TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
 		bool EditSettings(bool initialEditing) override;
 		TStdWinError Reset() override;
 		TStdWinError SaveTrack(TCylinder cyl,THead head) const override;
