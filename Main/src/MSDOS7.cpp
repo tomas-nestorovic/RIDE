@@ -1170,7 +1170,7 @@
 					return TCmdResult::DONE_REDRAW;
 			case ID_DOS_UNFORMAT:{
 				// unformatting Cylinders
-				const TCylinder cylMin=1+__getLastOccupiedStdCylinder__(), cylMax=image->GetCylinderCount()-1;
+				const TCylinder cylMin=1+GetLastOccupiedStdCylinder(), cylMax=image->GetCylinderCount()-1;
 				const CUnformatDialog::TStdUnformat stdUnformats[]={
 					{ STR_TRIM_TO_MIN_NUMBER_OF_CYLINDERS,	cylMin, cylMax }
 				};

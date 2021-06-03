@@ -301,7 +301,6 @@
 		void __writeProfileInt__(LPCTSTR entryName,int value) const;
 		bool __getProfileBool__(LPCTSTR entryName,bool defaultValue) const;
 		void __writeProfileBool__(LPCTSTR entryName,bool value) const;
-		TCylinder __getLastOccupiedStdCylinder__() const;
 		TStdWinError __showDialogAndFormatStdCylinders__(CFormatDialog &rd);
 		TStdWinError __formatStdCylinders__(const CFormatDialog &rd);
 		TStdWinError __formatTracks__(const CFormatDialog::TParameters &rParams,PCHead head,TSector nSectors,PSectorId bufferId,PCWORD bufferLength,bool showReport) const;
@@ -370,6 +369,7 @@
 		virtual bool ModifyFileFatPath(PFile file,const CFatPath &rFatPath) const=0;
 		virtual DWORD GetFreeSpaceInBytes(TStdWinError &rError) const;
 		virtual TCylinder GetFirstCylinderWithEmptySector() const;
+		TCylinder GetLastOccupiedStdCylinder() const;
 		TStdWinError GetFirstEmptyHealthySector(bool skipBadSectors,TPhysicalAddress &rOutChs) const;
 		TStdWinError AreStdCylindersEmpty(TCylinder cylA,TCylinder cylZInclusive) const;
 		bool RemoveStdCylindersFromFat(TCylinder cylA,TCylinder cylZInclusive) const;

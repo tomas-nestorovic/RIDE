@@ -121,7 +121,7 @@ reportError:Utils::Information(buf);
 			return true;
 	}
 
-	TCylinder CDos::__getLastOccupiedStdCylinder__() const{
+	TCylinder CDos::GetLastOccupiedStdCylinder() const{
 		// finds and returns number of the last (at least partially) occupied Cylinder (0..N-1)
 		TSectorId bufferId[(TSector)-1];
 		if (formatBoot.mediumType!=Medium::UNKNOWN) // Unknown Medium if creating a new Image

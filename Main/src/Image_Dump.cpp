@@ -652,7 +652,7 @@ errorDuringWriting:				TCHAR buf[80];
 					)
 						// suggestion is helpfull only if dumping a floppy to an image with invariant structure (as Cylinders outside the official Format may have different layout, causing an "Device doesn't recognize this command" error during formatting the raw Image)
 						if (dos->properties!=&CUnknownDos::Properties) // Unknown DOS doesn't have valid Format information
-							if (dumpParams.cylinderA || dumpParams.cylinderZ>=dos->formatBoot.nCylinders){ // ">=" = Cylinders are numbered from 0
+							if (dumpParams.cylinderA || dumpParams.cylinderZ+1!=dos->formatBoot.nCylinders){ // "+1" = Cylinders are numbered from 0
 								// : defining the Dialog
 								class CSuggestionDialog sealed:public Utils::CCommandDialog{
 									BOOL OnInitDialog() override{
@@ -661,14 +661,20 @@ errorDuringWriting:				TCHAR buf[80];
 										const BOOL result=__super::OnInitDialog();
 										// : supplying available actions
 										__addCommandButton__( IDYES, _T("Continue with format adopted from boot sector (recommended)") );
+										TCHAR buf[80];
+										::wsprintf( buf, _T("Continue to last occupied Cylinder %d (incl.)"), lastOccupiedCyl );
+										__addCommandButton__( IDRETRY, buf );
 										__addCommandButton__( IDNO, _T("Continue with current settings (cylinders beyond official format may fail!)") );
 										__addCommandButton__( IDCANCEL, _T("Return to dump dialog") );
 										return result;
 									}
 								public:
+									const TCylinder lastOccupiedCyl;
+
 									CSuggestionDialog()
 										// ctor
-										: Utils::CCommandDialog(_T("Dumping cylinders outside official format to a raw image may fail!")) {
+										: Utils::CCommandDialog(_T("Dumping cylinders outside official format to a raw image may fail!"))
+										, lastOccupiedCyl( CImage::GetActive()->dos->GetLastOccupiedStdCylinder() ) {
 									}
 								} d;
 								// : showing the Dialog and processing its result
@@ -677,6 +683,9 @@ errorDuringWriting:				TCHAR buf[80];
 										dumpParams.cylinderA=0, dumpParams.cylinderZ=dos->formatBoot.nCylinders-1;
 										//fallthrough
 									case IDNO:
+										break;
+									case IDRETRY:
+										dumpParams.cylinderA=0, dumpParams.cylinderZ=d.lastOccupiedCyl;
 										break;
 									default:
 										pDX->Fail();
@@ -861,9 +870,9 @@ setDestination:						// : compacting FileName in order to be better displayable 
 				goto error;
 			// . dumping
 			{CBackgroundMultiActionCancelable bmac( d.realtimeThreadPriority ? THREAD_PRIORITY_TIME_CRITICAL : THREAD_PRIORITY_NORMAL );
-				bmac.AddAction( __dump_thread__, &d.dumpParams, _T("Dumping") );
+				bmac.AddAction( __dump_thread__, &d.dumpParams, _T("Dumping to target") );
 				const TSaveThreadParams stp={ d.dumpParams.target.get(), d.dumpParams.targetFileName };
-				bmac.AddAction( SaveAllModifiedTracks_thread, &stp, _T("Saving") );
+				bmac.AddAction( SaveAllModifiedTracks_thread, &stp, _T("Saving target") );
 			err=bmac.Perform();}
 			if (err==ERROR_SUCCESS){
 				// : displaying statistics on SourceTrackErrors

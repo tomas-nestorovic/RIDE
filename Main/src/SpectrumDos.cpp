@@ -41,7 +41,7 @@
 				return TCmdResult::DONE_REDRAW;
 			case ID_DOS_FORMAT:{
 				// formatting standard Cylinders (i.e. with standard "official" Sectors)
-				const TCylinder cylMin=std::min<int>( 1+__getLastOccupiedStdCylinder__(), formatBoot.nCylinders );
+				const TCylinder cylMin=std::min<int>( 1+GetLastOccupiedStdCylinder(), formatBoot.nCylinders );
 				CFormatDialog::TStdFormat additionalFormats[]={
 					{ _T("Expand to 40 cylinders"),	cylMin, formatBoot, 1, 0, FDD_525_SECTOR_GAP3, properties->stdFormats->params.nAllocationTables, properties->nRootDirectoryEntriesMax },
 					{ _T("Expand to 80 cylinders"),	cylMin, formatBoot, 1, 0, FDD_350_SECTOR_GAP3, properties->stdFormats->params.nAllocationTables, properties->nRootDirectoryEntriesMax }
@@ -57,7 +57,7 @@
 			}
 			case ID_DOS_UNFORMAT:{
 				// unformatting Cylinders
-				const TCylinder cylMin=1+__getLastOccupiedStdCylinder__(), cylMax=image->GetCylinderCount()-1;
+				const TCylinder cylMin=1+GetLastOccupiedStdCylinder(), cylMax=image->GetCylinderCount()-1;
 				const CUnformatDialog::TStdUnformat stdUnformats[]={
 					{ _T("Trim to 40 cylinders"),	40, cylMax },
 					{ _T("Trim to 80 cylinders"),	80, cylMax },
