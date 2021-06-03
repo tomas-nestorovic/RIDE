@@ -213,6 +213,7 @@
 				tmp=params.corrections.use;
 				DDX_Check( pDX,	ID_TRACK,		tmp );
 				params.corrections.use=tmp!=0;
+				EnableDlgItem( ID_TRACK, params.fluxDecoder!=TParams::TFluxDecoder::NO_FLUX_DECODER&&initialEditing );
 				// . WrittenTracksVerification
 				tmp=params.verifyWrittenTracks;
 				DDX_Check( pDX,	ID_VERIFY_TRACK,	tmp );
