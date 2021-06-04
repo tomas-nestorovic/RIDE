@@ -303,7 +303,6 @@
 						DWORD nConsecutiveZeros;
 					} fraser;
 					struct{
-						TLogTime dTime;
 						bool up;
 						BYTE fCnt, aifCnt, adfCnt, pcCnt;
 					} ogden;

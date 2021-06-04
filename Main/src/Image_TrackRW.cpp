@@ -201,25 +201,24 @@
 			}
 			case TDecoderMethod::FDD_MARK_OGDEN:{
 				// FDC-like flux reversal decoding from Mark Ogdens's DiskTools/flux2track
-				// - reading some more from the Track for the next time
+				// . reading some more from the Track for the next time
 				auto &r=profile.method.ogden;
-				const TLogTime eTime=currentTime+profile.iwTime+r.dTime;
+				const TLogTime iwTimeHalf=profile.iwTime/2;
 				do{
 					if (!*this)
 						return 0;
-					if (logTimes[iNextTime]<eTime)
+					if (logTimes[iNextTime]-currentTime<iwTimeHalf)
 						iNextTime++;
 					else
 						break;
 				}while (true);
-				// - detecting zero
+				// . detecting zero
 				currentTime+=profile.iwTime;
-				const TLogTime overhang=logTimes[iNextTime]-eTime;
-				iNextTime+=logTimes[iNextTime]<=currentTime; // eventual correction of the pointer to the next time
-				if (overhang>=profile.iwTime)
+				const TLogTime diff=logTimes[iNextTime]-currentTime;
+				if (diff>=iwTimeHalf)
 					return 0;
-				// - adjust data frequency according to phase mismatch
-				const BYTE iSlot=((overhang+profile.iwTime/2)<<4)/profile.iwTime;
+				// . estimating data frequency
+				const BYTE iSlot=((diff+iwTimeHalf)<<4)/profile.iwTime;
 				BYTE cState=1; // default is IPC
 				if (iSlot<7 || iSlot>8){
 					if (iSlot<7&&!r.up || iSlot>8&&r.up)
@@ -241,8 +240,17 @@
 					 { 12, 13, 13, 14, 14, 15, 15, 16, 16, 17, 17, 18, 18, 19, 19, 20 },
 					 { 13, 14, 14, 15, 15, 16, 16, 16, 16, 16, 16, 17, 17, 18, 18, 19 }
 				};
-				r.dTime+= (PhaseAdjustments[cState][iSlot]*profile.iwTime>>4) - profile.iwTime;
-				// - a "1" recognized
+				// . estimating data phase
+				if (const TLogTime dt= (PhaseAdjustments[cState][iSlot]*profile.iwTime>>4) - profile.iwTime){
+					currentTime+=dt;
+					if (dt>0)
+						while (iNextTime<nLogTimes && logTimes[iNextTime]<=currentTime)
+							iNextTime++;
+					else
+						while (iNextTime>0 && currentTime<logTimes[iNextTime-1])
+							iNextTime--;
+				}
+				// . a "1" recognized
 				return 1;
 			}
 			default:
