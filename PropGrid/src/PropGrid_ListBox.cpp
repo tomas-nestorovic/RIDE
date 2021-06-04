@@ -193,6 +193,11 @@ editItem:			// Tab key pressed - beginning to edit the Value using the correspon
 					}
 				}
 				break;
+			case WM_VSCROLL:
+				// scrolling vertically
+				if (PropGrid::IsValueBeingEdited())
+					return 0; // can't scroll if editing a Value
+				break;
 			case LB_RESETCONTENT:
 				// destroying the PropertyGrid
 				// . removing all Items
