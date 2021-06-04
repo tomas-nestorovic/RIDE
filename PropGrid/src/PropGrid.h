@@ -106,7 +106,7 @@
 	extern const struct TRationalNumber:public div_t{
 		TRationalNumber();
 
-		int operator*(int i) const;
+		int operator*(short i) const;
 		bool operator!=(int i) const;
 	} LogicalUnitScaleFactor;
 

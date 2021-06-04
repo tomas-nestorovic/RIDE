@@ -85,7 +85,7 @@
 		::ReleaseDC(nullptr,screen);
 	}
 
-	int TRationalNumber::operator*(int i) const{
+	int TRationalNumber::operator*(short i) const{
 		return quot*i/rem;
 	}
 
@@ -223,17 +223,21 @@
 							if (pItem->__isCategory__())
 								goto paintingDone;
 						}
-						// : preparing for drawing Property's Value
-						::SetViewportOrgEx(	dc, // origin [0,0] goes to the upper left corner of "value part" of the Item
-											(LogicalUnitScaleFactor*1+r.right),
-											(LogicalUnitScaleFactor*1+r.top),
-											nullptr
-										);
-						::OffsetRect( &pdis->rcItem, 0, -r.top );
-						pdis->rcItem.bottom--; // width of the horizontal line separating individial ListBox Items
+						// : drawing the Property's Value
+						::SetViewportOrgEx(	// origin [0,0] goes to the upper left corner of "value part" of the Item
+							dc,
+							(LogicalUnitScaleFactor*1+r.right),
+							(LogicalUnitScaleFactor*1+r.top),
+							nullptr
+						);
 						::SetTextColor( dc, ::GetSysColor( pItem->disabled ? COLOR_GRAYTEXT : COLOR_BTNTEXT ) );
-						// . drawing the Property's Value
-						pItem->value.editor->__drawValue__( pItem->value, pdis );
+						const HRGN hRgn=::CreateRectRgnIndirect( &pdis->rcItem );
+							::SelectClipRgn( pdis->hDC, hRgn ); // preventing from painting outside the Value rectangle
+								::OffsetRect( &pdis->rcItem, 0, -r.top );
+								pdis->rcItem.bottom--; // width of the horizontal line separating individial ListBox Items
+								pItem->value.editor->__drawValue__( pItem->value, pdis );
+							::SelectClipRgn( pdis->hDC, nullptr );
+						::DeleteObject(hRgn);
 					}else{
 						// drawing invoked by the Editor during its operation (e.g. owner-drawn combo-box of the TEnum Editor)
 						if (pdis->itemState&ODS_SELECTED){
