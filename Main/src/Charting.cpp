@@ -64,7 +64,7 @@
 	CChartView::CDisplayInfo::CDisplayInfo(TType chartType,RCMargin margin,PCSeries series,BYTE nSeries)
 		// ctor
 		: chartType(chartType) , margin(margin)
-		, percentile(101) // invalid, must call SetPercentile !
+		, percentile(10100) // invalid, must call SetPercentile !
 		, series(series) , nSeries(nSeries) {
 	}
 
@@ -78,11 +78,11 @@
 			auto &r=tmp.xy;
 			r.xAxisUnit=xAxisUnit, r.xMax=xMax, r.xAxisUnitPrefixes=xAxisUnitPrefixes;
 			r.yAxisUnit=yAxisUnit, r.yMax=yMax, r.yAxisUnitPrefixes=yAxisUnitPrefixes;
-			tmp.SetPercentile(100); // all data shown by default
+			tmp.SetPercentile(10000); // all data shown by default
 		return tmp;
 	}
 
-	void CChartView::CDisplayInfo::SetPercentile(BYTE newPercentile){
+	void CChartView::CDisplayInfo::SetPercentile(WORD newPercentile){
 		//
 		if (newPercentile==percentile)
 			return;
@@ -98,7 +98,7 @@
 						for( auto it=h.cbegin(); it!=h.cend(); it++ )
 							counts[n++]=it->second;
 						std::sort( counts, counts+n ); // ordering ascending
-						for( DWORD sum=0,const sumMax=(ULONGLONG)s.nValues*percentile/100; sum<sumMax; sum+=counts[--n] );
+						for( DWORD sum=0,const sumMax=(ULONGLONG)s.nValues*percentile/10000; sum<sumMax; sum+=counts[--n] );
 						const int countThreshold= n>0 ? counts[n] : 0;
 						for( auto it=h.cbegin(); it!=h.cend(); it++ )
 							if (it->second>countThreshold)
@@ -113,7 +113,7 @@
 					if (const CSeries &s=series[i++]){
 						const CHistogram h=s.CreateYxHistogram();
 						auto it=h.cbegin();
-						for( DWORD sum=0,const sumMax=(ULONGLONG)s.nValues*percentile/100; sum<sumMax; sum+=it++->second ){
+						for( DWORD sum=0,const sumMax=(ULONGLONG)s.nValues*percentile/10000; sum<sumMax; sum+=it++->second ){
 							if (it->first>xy.xMax)
 								xy.xMax=it->first;
 							if (it->second>xy.yMax)
@@ -337,7 +337,7 @@
 		painter.repaintEvent.SetEvent();
 	}
 
-	void CChartView::SetPercentile(BYTE newPercentile){
+	void CChartView::SetPercentile(WORD newPercentile){
 		di.SetPercentile(newPercentile);
 		Invalidate();
 	}
@@ -408,17 +408,17 @@
 				// command
 				switch (nID){
 					case ID_DATA:
-						chartView.SetPercentile(100);
+						chartView.SetPercentile(10000);
 						return TRUE;
 					case ID_ACCURACY:
-						chartView.SetPercentile(99);
+						chartView.SetPercentile(9995);
 						return TRUE;
 					case ID_STANDARD:
-						chartView.SetPercentile(97);
+						chartView.SetPercentile(9985);
 						return TRUE;
 					case ID_NUMBER:
-						if (const Utils::CSingleNumberDialog d=Utils::CSingleNumberDialog( _T("Set"), _T("Percentile"), PropGrid::Integer::TUpDownLimits::Percent, chartView.GetPercentile(), this ))
-							chartView.SetPercentile(d.Value);
+						if (const Utils::CSingleNumberDialog d=Utils::CSingleNumberDialog( _T("Set"), _T("Percentile"), PropGrid::Integer::TUpDownLimits::Percent, chartView.GetPercentile()/100, this ))
+							chartView.SetPercentile(d.Value*100);
 						return TRUE;
 					case IDCANCEL:
 						::PostMessage( m_hWnd, WM_DESTROY, 0, 0 );

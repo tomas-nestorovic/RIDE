@@ -60,7 +60,7 @@
 		} *PCSeries;
 
 		class CDisplayInfo sealed{
-			BYTE percentile;
+			WORD percentile; // in hundredths (e.g. "2345" means 23.45)
 
 			CDisplayInfo(TType chartType,RCMargin margin,PCSeries series,BYTE nSeries);
 		public:
@@ -82,10 +82,10 @@
 				TCHAR yAxisUnit, TLogValue yMax, LPCTSTR yAxisUnitPrefixes
 			);
 
-			inline BYTE GetPercentile() const{
+			inline WORD GetPercentile() const{
 				return percentile;
 			}
-			void SetPercentile(BYTE newPercentile);
+			void SetPercentile(WORD newPercentile);
 		} di;
 	protected:
 		XFORM DrawXyAxes(HDC dc) const;
@@ -95,10 +95,10 @@
 	public:
 		CChartView(const CDisplayInfo &di);
 
-		inline BYTE GetPercentile() const{
+		inline WORD GetPercentile() const{
 			return di.GetPercentile();
 		}
-		void SetPercentile(BYTE newPercentile);
+		void SetPercentile(WORD newPercentile);
 	};
 
 
