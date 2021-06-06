@@ -981,6 +981,55 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 		return err;
 	}
 
+	TStdWinError CCapsBase::DetermineMagneticReliabilityByWriting(Medium::TType floppyType,TCylinder cyl,THead head) const{
+		// determines if specified Track on real floppy can be trusted (ERROR_SUCCESS) or not (ERROR_DISK_CORRUPT); returns Windows standard i/o error
+		// - determining Medium
+		const Medium::PCProperties mp=Medium::GetProperties(floppyType);
+		if (!mp)
+			return ERROR_UNRECOGNIZED_MEDIA;
+		// - composition of test Track
+		CTrackReaderWriter trw( mp->nCells, CTrackReader::FDD_KEIR_FRASER, false );
+			trw.SetMediumType(floppyType);
+			trw.AddIndexTime(0);
+			trw.AddIndexTime(mp->revolutionTime);
+		const TLogTime doubleCellTime=2*mp->cellTime;
+		for( TLogTime t=0; t<mp->revolutionTime; trw.AddTime(t+=doubleCellTime) );
+		// - evaluating Track magnetic reliability
+		for( BYTE nTrials=3; nTrials>0; nTrials-- ){
+			// . saving the test Track
+			PInternalTrack pit=CInternalTrack::CreateFrom( *this, trw );
+				pit->modified=true; // to pass the save conditions
+			std::swap( pit, internalTracks[cyl][head] );
+				const TStdWinError err=SaveTrack( cyl, head );
+			std::swap( pit, internalTracks[cyl][head] );
+			delete pit;
+			if (err!=ERROR_SUCCESS)
+				return err;
+			// . reading the test Track back
+			pit=internalTracks[cyl][head];
+				internalTracks[cyl][head]=nullptr; // forcing a new scan
+				ScanTrack( cyl, head );
+			std::swap( pit, internalTracks[cyl][head] );
+			if (pit==nullptr)
+				return ERROR_FUNCTION_FAILED;
+			//pit->SetMediumType( floppyType ); // commented out as unnecessary (no decoder used here)
+			// . evaluating what we read
+			CTrackReader tr=*pit;
+			delete pit;
+			TLogTime t=tr.GetIndexTime(0)+60*doubleCellTime; // "+N" = ignoring the region immediatelly after index - may be invalid due to Write Gate signal still on
+			tr.SetCurrentTime(t);
+			for( const TLogTime tOkA=doubleCellTime*80/100,tOkZ=doubleCellTime*120/100; t<mp->revolutionTime; ){ // allowing for 20% deviation from nominal Flux transition
+				const TLogTime t0=t;
+				const TLogTime flux=( t=tr.ReadTime() )-t0;
+				if (flux<tOkA || tOkZ<flux)
+					break;
+			}
+			if (t>=mp->revolutionTime)
+				return ERROR_SUCCESS; // yes, the Track can be magnetically trusted
+		}
+		return ERROR_DISK_CORRUPT;
+	}
+
 	CImage::CTrackReader CCapsBase::ReadTrack(TCylinder cyl,THead head) const{
 		// creates and returns a general description of the specified Track, represented using neutral LogicalTimes
 		// - making sure the Track is buffered

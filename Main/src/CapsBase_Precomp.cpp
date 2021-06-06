@@ -5,7 +5,8 @@
 
 	CCapsBase::CPrecompensation::CPrecompensation(char driveLetter)
 		// ctor
-		: driveLetter(driveLetter) , floppyType(Medium::UNKNOWN) {
+		: driveLetter(driveLetter) , floppyType(Medium::UNKNOWN)
+		, methodVersion(TMethodVersion::Identity) {
 	}
 
 
@@ -92,9 +93,19 @@
 		const auto &mediumProps=*pMediumProps;
 		const TExclusiveLocker locker(&ptp.cb); // locking the access so that no one can disturb during the testing
 		pAction->SetProgressTarget( nTrials+1 );
+		TCylinder cyl=ptp.cyl;
+		while (--cyl>0) // finding a Cylinder with magnetically reliable Track
+			if (pAction->IsCancelled())
+				return ERROR_CANCELLED;
+			else if (const TStdWinError err=ptp.cb.DetermineMagneticReliabilityByWriting( rPrecomp.floppyType, cyl, ptp.head )){
+				if (err!=ERROR_DISK_CORRUPT)
+					return pAction->TerminateWithError(err);
+			}else
+				break;
 		for( BYTE nFailures=0,trial=0; trial<nTrials; ){
+			if (pAction->IsCancelled())
+				return ERROR_CANCELLED;
 			// . composition of test Track
-			const auto &mediumProps=*Medium::GetProperties(rPrecomp.floppyType);
 			CTrackReaderWriter trw( mediumProps.nCells, CTrackReader::FDD_KEIR_FRASER, false );
 				trw.SetMediumType(rPrecomp.floppyType);
 				trw.AddIndexTime(0);
@@ -112,23 +123,27 @@
 			while (t<mediumProps.revolutionTime) // filling the remainder of the Track
 				trw.AddTime( t+=doubleCellTime );
 			trw.AddTime( t+=doubleCellTime ); // one extra flux
-			// . saving the test Track on first Side of specified Cylinder
+			// . saving the test Track
 			PInternalTrack pit=CInternalTrack::CreateFrom( ptp.cb, trw );
 			pit->modified=true; // to pass the save conditions
-			std::swap( pit, ptp.cb.internalTracks[ptp.cyl][ptp.head] );
+			std::swap( pit, ptp.cb.internalTracks[cyl][ptp.head] );
 				const auto precompMethod0=ptp.cb.precompensation.methodVersion;
 				ptp.cb.precompensation.methodVersion=CPrecompensation::Identity;
-					const TStdWinError err=ptp.cb.SaveTrack( ptp.cyl, ptp.head );
+					const Medium::TType mt0=ptp.cb.floppyType;
+					Medium::TType &mt=*const_cast<Medium::TType *>(&ptp.cb.floppyType);
+					mt=rPrecomp.floppyType;
+						const TStdWinError err=ptp.cb.SaveTrack( cyl, ptp.head );
+					mt=mt0;
 				ptp.cb.precompensation.methodVersion=precompMethod0;
-			std::swap( pit, ptp.cb.internalTracks[ptp.cyl][ptp.head] );
+			std::swap( pit, ptp.cb.internalTracks[cyl][ptp.head] );
 			delete pit;
 			if (err!=ERROR_SUCCESS)
 				return pAction->TerminateWithError(err);
 			// . reading the test Track back
-			pit=ptp.cb.internalTracks[ptp.cyl][ptp.head];
-				ptp.cb.internalTracks[ptp.cyl][ptp.head]=nullptr; // forcing a new scan
-				ptp.cb.ScanTrack(ptp.cyl,ptp.head);
-			std::swap( ptp.cb.internalTracks[ptp.cyl][ptp.head], pit );
+			pit=ptp.cb.internalTracks[cyl][ptp.head];
+				ptp.cb.internalTracks[cyl][ptp.head]=nullptr; // forcing a new scan
+				ptp.cb.ScanTrack(cyl,ptp.head);
+			std::swap( ptp.cb.internalTracks[cyl][ptp.head], pit );
 			if (pit==nullptr)
 				return pAction->TerminateWithError(ERROR_FUNCTION_FAILED);
 			// . evaluating what we read

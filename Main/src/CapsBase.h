@@ -141,6 +141,7 @@
 
 		void DestroyAllTracks();
 		TStdWinError VerifyTrack(TCylinder cyl,THead head,const CTrackReaderWriter &trwWritten,bool showDiff) const;
+		TStdWinError DetermineMagneticReliabilityByWriting(Medium::TType floppyType,TCylinder cyl,THead head) const;
 	public:
 		~CCapsBase();
 
