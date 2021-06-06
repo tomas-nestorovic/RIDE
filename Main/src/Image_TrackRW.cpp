@@ -669,7 +669,7 @@
 
 	const CImage::CTrackReader::TProfile CImage::CTrackReader::TProfile::HD(
 		Medium::TProperties::FLOPPY_HD_350, // same for both 3.5" and 5.25" HD floppies
-		7 // inspection window size tolerance
+		4 // inspection window size tolerance
 	);
 
 	const CImage::CTrackReader::TProfile CImage::CTrackReader::TProfile::DD(
