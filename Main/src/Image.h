@@ -521,6 +521,12 @@
 
 			CSectorDataSerializer(CHexaEditor *pParentHexaEditor,PImage image,LONG dataTotalLength);
 		public:
+			enum TScannerStatus:BYTE{
+				RUNNING, // Track scanner exists and is running (e.g. parallel thread that scans Tracks on real FDD)
+				PAUSED, // Track scanner exists but is suspended (same example as above)
+				UNAVAILABLE // Track scanner doesn't exist (e.g. a CImageRaw descendant)
+			};
+
 			#if _MFC_VER>=0x0A00
 			ULONGLONG GetLength() const override sealed;
 			void SetLength(ULONGLONG dwNewLen) override sealed;
@@ -538,6 +544,8 @@
 			virtual void SetCurrentRevolution(Revolution::TType rev)=0;
 			virtual TPhysicalAddress GetCurrentPhysicalAddress() const=0;
 			virtual DWORD GetSectorStartPosition(RCPhysicalAddress chs,BYTE nSectorsToSkip) const=0;
+			virtual TScannerStatus GetTrackScannerStatus() const=0;
+			virtual void SetTrackScannerStatus(TScannerStatus status)=0;
 		};
 
 		static CPtrList known; // list of known Images (registered in CRideApp::InitInstance)

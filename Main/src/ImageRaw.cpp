@@ -492,6 +492,14 @@ trackNotFound:
 				// computes and returns the position of the first Byte of the Sector at the PhysicalAddress
 				return (  (chs.cylinder*image->nHeads+chs.head)*image->nSectors + chs.sectorId.sector-image->firstSectorNumber  ) * image->sectorLength;
 			}
+			TScannerStatus GetTrackScannerStatus() const{
+				// returns Track scanner Status, if any
+				return TScannerStatus::UNAVAILABLE; // no scanner needed, the Image has implicit structure
+			}
+			void SetTrackScannerStatus(TScannerStatus status){
+				// suspends/resumes Track scanner, if any (if none, simply ignores the request)
+				//nop
+			}
 
 			// CHexaEditor::IContentAdviser methods
 			int LogicalPositionToRow(int logPos,BYTE nBytesInRow) override{

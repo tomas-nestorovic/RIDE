@@ -5,6 +5,8 @@
 	#define DOS		tab.dos
 	#define IMAGE	DOS->image
 
+	typedef CImage::CSectorDataSerializer::TScannerStatus TScannerStatus;
+
 
 	CDiskBrowserView::CDiskBrowserView(PDos dos)
 		// ctor
@@ -80,6 +82,10 @@
 						}else
 							pCmdUi->m_pMenu->RemoveMenu( nID, MF_BYCOMMAND );
 						return TRUE;
+					case ID_BUFFER:
+						pCmdUi->SetCheck( f->GetTrackScannerStatus()==TScannerStatus::PAUSED );
+						pCmdUi->Enable( f->GetTrackScannerStatus()!=TScannerStatus::UNAVAILABLE );
+						return TRUE;						
 					case ID_SELECT_CURRENT_TRACK:
 					case ID_SELECT_CURRENT_CYLINDER:
 					case ID_NAVIGATE_PREVIOUSTRACK:
@@ -113,6 +119,14 @@
 					case ID_DEFAULT8:
 						// selecting particular disk Revolution
 						f->SetCurrentRevolution( revolution=(Revolution::TType)(nID-ID_DEFAULT1) );
+						return TRUE;
+					case ID_BUFFER:
+						// pause/resume scanning
+						f->SetTrackScannerStatus( 
+							f->GetTrackScannerStatus()==TScannerStatus::PAUSED
+							? TScannerStatus::RUNNING
+							: TScannerStatus::PAUSED
+						);
 						return TRUE;
 					case ID_SELECT_CURRENT_TRACK:
 						// selecting current Track and placing Cursor at the end of the selection

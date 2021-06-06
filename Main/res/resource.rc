@@ -127,6 +127,7 @@ BEGIN
     "T",            ID_SELECT_CURRENT_TRACK, VIRTKEY, CONTROL, NOINVERT
     VK_NEXT,        ID_NAVIGATE_NEXTTRACK,  VIRTKEY, SHIFT, CONTROL, 
                                                     NOINVERT
+    VK_PAUSE,       ID_BUFFER,              VIRTKEY, NOINVERT
     VK_PRIOR,       ID_NAVIGATE_PREVIOUSTRACK, VIRTKEY, SHIFT, CONTROL, 
                                                     NOINVERT
 END
@@ -581,6 +582,8 @@ BEGIN
             MENUITEM SEPARATOR
             MENUITEM "Address...\tCtrl+G",          ID_NAVIGATE_ADDRESS
         END
+        MENUITEM SEPARATOR
+        MENUITEM "Pause scanning\tPause",       ID_BUFFER
     END
 END
 

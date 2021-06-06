@@ -87,10 +87,11 @@
 				CSerializer *const ps=(CSerializer *)pAction->GetParams();
 				const PImage image=ps->image;
 				do{
+					// . suspending the Worker if commanded so
+					if (ps->workerStatus==TScannerStatus::PAUSED)
+						ps->trackWorker.Suspend(); // again resumed via SetTrackScannerStatus method
 					// . checking if all Tracks on the disk have already been scanned
-					ps->scannedTracks.locker.Lock();
-						const bool allTracksScanned=ps->scannedTracks.n==2*image->GetCylinderCount();
-					ps->scannedTracks.locker.Unlock();
+					const bool allTracksScanned=ps->AllTracksScanned();
 					// . first, processing a request to buffer a Track (if any)
 					if (ps->request.bufferEvent.Lock( allTracksScanned ? INFINITE : 2 )){
 						const auto &req=ps->request;
@@ -115,7 +116,7 @@
 								);
 							ps->scannedTracks.infos[req.track].bufferedRevs=-1;
 						}
-						if (ps->bContinue)
+						if (ps->workerStatus!=TScannerStatus::UNAVAILABLE) // should we terminate?
 							ps->pParentHexaEditor->RepaintData(true); // True = immediate repainting
 					// . then, scanning the remaining Tracks (if not all yet scanned)
 					}else{
@@ -132,12 +133,13 @@
 						ps->pParentHexaEditor->SetLogicalSize(ps->dataTotalLength);
 						ps->pParentHexaEditor->SetLogicalBounds( 0, ps->dataTotalLength );
 					}
-				} while (ps->bContinue);
+				} while (ps->workerStatus!=TScannerStatus::UNAVAILABLE); // should we terminate?
 				return ERROR_SUCCESS;
 			}
 
 			const CBackgroundAction trackWorker;
-			bool bContinue, bChsValid;
+			TScannerStatus workerStatus;
+			bool bChsValid;
 			struct{
 				TTrack track;
 				Revolution::TType revolution;
@@ -167,7 +169,7 @@
 					}
 				} infos[FDD_CYLINDERS_MAX*2+1];
 				BYTE n;
-				CCriticalSection locker;
+				mutable CCriticalSection locker;
 			} scannedTracks;
 			BYTE lastKnownHexaRowLength;
 
@@ -179,6 +181,14 @@
 						lengths[s]+=lengths[s]==0; // length>0 ? length : 1
 				return nSectors;
 			}
+
+			bool AllTracksScanned() const{
+				// True <=> all Tracks have been scanned for Sectors, otherwise False
+				scannedTracks.locker.Lock();
+					const bool result=scannedTracks.n==2*image->GetCylinderCount();
+				scannedTracks.locker.Unlock();
+				return result;
+			}
 		public:
 			CSerializer(CHexaEditor *pParentHexaEditor,CFloppyImage *image)
 				// ctor
@@ -186,21 +196,21 @@
 				: CSectorDataSerializer( pParentHexaEditor, image, 0 )
 				// . initialization
 				, trackWorker( __trackWorker_thread__, this, THREAD_PRIORITY_IDLE )
-				, bContinue(true) // set to False when wanting the Worker to terminate its labor
+				, workerStatus(TScannerStatus::PAUSED) // set to Unavailable to terminate Worker's labor
 				, bChsValid(false)
 				, lastKnownHexaRowLength(1) {
 				scannedTracks.n=0;
 				::ZeroMemory( scannedTracks.infos, sizeof(scannedTracks.infos) );
 				// . launching the TrackWorker
 				request.track=-1;
-				trackWorker.Resume();
+				SetTrackScannerStatus( TScannerStatus::RUNNING );
 				// . initializing state of current Sector to read from or write to
 				//nop (in Worker)
 			}
 			~CSerializer(){
 				// dtor
 				// . terminating the Worker
-				bContinue=false;
+				workerStatus=TScannerStatus::UNAVAILABLE;
 				request.track=0; // zeroth Track highly likely already scanned, so there will be no waiting time
 				request.bufferEvent.SetEvent(); // releasing the eventually blocked Worker
 				::WaitForSingleObject( trackWorker, INFINITE );
@@ -269,6 +279,23 @@
 					else if (ids[s]==chs.sectorId) // Sector IDs are equal
 						break;
 				return result;
+			}
+			TScannerStatus GetTrackScannerStatus() const{
+				// returns Track scanner Status, if any
+				return AllTracksScanned() ? TScannerStatus::UNAVAILABLE : workerStatus;
+			}
+			void SetTrackScannerStatus(TScannerStatus status){
+				// suspends/resumes Track scanner, if any (if none, simply ignores the request)
+				if (workerStatus!=status)
+					switch ( workerStatus=status ){
+						case TScannerStatus::RUNNING:
+							trackWorker.Resume();
+							break;
+						case TScannerStatus::PAUSED:
+							break; // Worker suspends itself upon receiving this Status
+						default:
+							ASSERT(FALSE); break;
+					}
 			}
 
 			// CHexaEditor::IContentAdviser methods
