@@ -269,7 +269,7 @@
 				DDX_Text(	pDX, ID_H		,rGkfm.h);
 					__validateDivisibilityByEight__(pDX,rGkfm.h);
 					DDV_MinMaxByte( pDX, rGkfm.h, 0, 192-rGkfm.y );
-				DDX_Radio(	pDX, ID_COLOR	,colorSelection);
+				DDX_Radio(	pDX, ID_DEFAULT1	,colorSelection);
 				DDX_Text(	pDX, ID_INK		,ink);
 					if (colorSelection==0) DDV_MinMaxInt( pDX, ink, 0, 7 );
 				DDX_Text(	pDX, ID_PAPER	,paper);
@@ -346,7 +346,14 @@ errorText:				TCHAR buf[400];
 						Utils::ScaleLogicalUnit(dc);
 						__drawIcon__( __getIconDataFromBoot__(&boot), dc, 2 );
 					::RestoreDC(dc,iDc0);
-				}
+				}else if (message==WM_COMMAND)
+					switch (wParam){
+						case MAKELONG(ID_INK,EN_SETFOCUS):
+						case MAKELONG(ID_PAPER,EN_SETFOCUS):
+						case MAKELONG(ID_BRIGHT,BN_CLICKED):
+							CheckRadioButton( ID_DEFAULT1, ID_DEFAULT2, ID_DEFAULT1 );
+							break;
+					}
 				return __super::WindowProc(message,wParam,lParam);
 			}
 		public:
