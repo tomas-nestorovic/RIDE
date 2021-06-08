@@ -205,6 +205,7 @@
 						class CGoToSectorDialog sealed:public Utils::CRideDialog{
 							const Utils::CRideFont symbolFont;
 							const PCImage image;
+							bool sectorDoubleClicked;
 
 							BOOL OnInitDialog() override{
 								// dialog initialization
@@ -280,7 +281,15 @@
 											lb.Detach();
 											break;
 										}
+										case MAKELONG(ID_SECTOR,LBN_DBLCLK):
+											// Image selected by double-clicking on it
+											sectorDoubleClicked=IsDlgItemEnabled(IDOK); // setting flag ...
+											SetCapture(); // ... waiting until mouse button released ...
+											break;
 									}
+								else if (msg==WM_LBUTTONUP)
+									if (sectorDoubleClicked)
+										return SendMessage( WM_COMMAND, IDOK ); // ... and only after that confirming the dialog
 								return __super::WindowProc(msg,wParam,lParam);
 							}
 						public:
@@ -291,6 +300,7 @@
 								: Utils::CRideDialog(IDR_DISKBROWSER_GOTOSECTOR)
 								, symbolFont( FONT_WINGDINGS, 125, false, true )
 								, image(image)
+								, sectorDoubleClicked(false)
 								, sectorIndexOnTrack(rSectorIndexOnTrack) , chs(rChs) {
 							}
 						} d( IMAGE, f->GetCurrentSectorIndexOnTrack(), f->GetCurrentPhysicalAddress() );
