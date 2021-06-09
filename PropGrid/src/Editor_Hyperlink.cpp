@@ -22,34 +22,20 @@
 
 	void THyperlinkEditor::__drawValue__(const TPropGridInfo::TItem::TValue &value,PDRAWITEMSTRUCT pdis) const{
 		// draws the Value into the specified rectangle
-		// - creating the temporary SysLink control to adopt the appearance of
 		const LONG w=pdis->rcItem.right-pdis->rcItem.left, h=pdis->rcItem.bottom-pdis->rcItem.top;
-		const HWND hSysLink=__createMainControl__( value, pdis->hwndItem );
-		::SendMessage( hSysLink, WM_SETFONT, (WPARAM)TPropGridInfo::FONT_DEFAULT, 0 ); // explicitly setting DPI-scaled font
-		::SetWindowPos(	hSysLink, nullptr,
-						pdis->rcItem.left, pdis->rcItem.top,
-						w, h,
-						SWP_NOZORDER | SWP_SHOWWINDOW
-					);
-		// - adopting the SysLink visuals
-		::SendMessage( hSysLink, WM_PAINT, 0, 0 ); // forcing the painting onto the screen
 		const HDC dcTmpBmp=::CreateCompatibleDC(pdis->hDC);
 			const HBITMAP hTmpBmp=::CreateCompatibleBitmap( pdis->hDC, w, h ); // TemporaryBitmap
 			const HGDIOBJ hBmp0=::SelectObject(dcTmpBmp,hTmpBmp);
-				// . capturing the SysLink visuals to the TemporaryBitmap
-				const HDC dc=::GetDC(hSysLink);
-					RECT r;
-					::GetClientRect(hSysLink,&r);
-					::BitBlt( dcTmpBmp, 0,0, w,h, dc, 0,0, SRCCOPY );
-				::ReleaseDC(hSysLink,dc);
-				// . destroying the temporary SysLink control
+				const HWND hSysLink=__createMainControl__( value, pdis->hwndItem ); // creating the temporary SysLink control to adopt the appearance of
+					::SendMessage( hSysLink, WM_SETFONT, (WPARAM)TPropGridInfo::FONT_DEFAULT, 0 ); // explicitly setting DPI-scaled font
+					::SetWindowPos(	hSysLink, nullptr, 0,0, w,h, SWP_NOZORDER|SWP_SHOWWINDOW );
+					// . capturing the SysLink visuals to the TemporaryBitmap
+					::SendMessage( hSysLink, WM_PRINTCLIENT, (WPARAM)dcTmpBmp, PRF_CHILDREN|PRF_CLIENT );
+					// . drawing the captured visuals at place of the SysLink control
+					::TransparentBlt( pdis->hDC, 0,0, w,h, dcTmpBmp, 0,0, w,h, ::GetSysColor(COLOR_BTNFACE) );
 				::DestroyWindow(hSysLink);
-				// . drawing the captured visuals at place of the SysLink control
-				::TransparentBlt( pdis->hDC, 0,0, w,h, dcTmpBmp, 0,0, w,h, ::GetSysColor(COLOR_BTNFACE) );
 			::DeleteObject( ::SelectObject(dcTmpBmp,hBmp0) );
 		::DeleteDC(dcTmpBmp);
-		// - destroying the temporary SysLink control
-		//nop (already destroyed when adopting the visuals above)
 	}
 
 	HWND THyperlinkEditor::__createMainControl__(const TPropGridInfo::TItem::TValue &value,HWND hParent) const{
