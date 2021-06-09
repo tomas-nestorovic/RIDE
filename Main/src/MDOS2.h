@@ -52,6 +52,8 @@
 					static void WINAPI __pg_drawProperty__(PropGrid::PCustomParam,LPCVOID bootSector,short,PDRAWITEMSTRUCT pdis);
 					static bool WINAPI __pg_editProperty__(PropGrid::PCustomParam,PVOID bootSector,short);
 					static bool WINAPI __pg_createNew__(PropGrid::PCustomParam param,int hyperlinkId,LPCTSTR hyperlinkName);
+					static void WINAPI DrawIconBytes(PropGrid::PCustomParam,PropGrid::PCValue value,PropGrid::TSize valueSize,PDRAWITEMSTRUCT pdis);
+					static bool WINAPI EditIconBytes(PropGrid::PCustomParam,PropGrid::PValue value,PropGrid::TSize valueSize);
 					
 					WORD id;	// "FM" identification text
 					BYTE y,x;	// [Y,X] = [row,column] = upper left corner (in Pixels)

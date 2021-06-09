@@ -21,7 +21,7 @@
 	void WINAPI CBootView::__bootSectorModified__(PropGrid::PCustomParam){
 		// marking the Boot Sector as dirty
 		const PDos dos=CDos::GetFocused();
-		dos->FlushToBootSector(); // marking the Boot Sector as dirty
+		dos->FlushToBootSector(); // forcing internal (=correct) values
 		dos->image->UpdateAllViews(nullptr);
 	}
 

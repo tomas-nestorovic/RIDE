@@ -79,17 +79,22 @@
 
 	#define GKFM_BASE	34000
 
+	static const BYTE DefaultIcon[]={ // default floppy icon
+		255,255,255,0,255,255,255,0,192,248,3,0,192,255,255,0,192,248,3,0,192,255,255,0,255,248,3,0,255,255,254,0,88,48,48,56,255,255,254,0,255,255,255,0,255,231,255,0,255,195,255,0,255,194,255,0,255,231,255,0,255,255,255,0,255,255,255,0,56,56,56,56,255,231,255,0,255,231,255,0,255,231,255,0,255,231,255,0,255,231,255,0,255,231,255,0,255,255,255,0,255,255,255,0,56,40,56,56
+	};
+
+	static bool IsValidIconAddress(WORD w){
+		return GKFM_BASE<w && w<GKFM_BASE+MDOS2_SECTOR_LENGTH_STD-sizeof(DefaultIcon);
+	}
+
 	PCBYTE CMDOS2::TBootSector::UReserved1::TGKFileManager::__getIconDataFromBoot__(const TBootSector *boot){
 		// returns the beginning of GKFM's icon in the Boot Sector
 		const WORD w=boot->reserved1.gkfm.aIcon;
-		if (w>GKFM_BASE && w<GKFM_BASE+MDOS2_SECTOR_LENGTH_STD)
+		if (IsValidIconAddress(w))
 			return (PCBYTE)boot+w-GKFM_BASE;
-		else if (w==0x7926){
-			static const BYTE defaultIcon[]={ // default floppy icon
-				255,255,255,0,255,255,255,0,192,248,3,0,192,255,255,0,192,248,3,0,192,255,255,0,255,248,3,0,255,255,254,0,88,48,48,56,255,255,254,0,255,255,255,0,255,231,255,0,255,195,255,0,255,194,255,0,255,231,255,0,255,255,255,0,255,255,255,0,56,56,56,56,255,231,255,0,255,231,255,0,255,231,255,0,255,231,255,0,255,231,255,0,255,231,255,0,255,255,255,0,255,255,255,0,56,40,56,56
-			};
-			return defaultIcon;
-		}else
+		else if (w==0x7926)
+			return DefaultIcon;
+		else
 			return nullptr;
 	}
 
@@ -154,6 +159,24 @@
 		return true; // True = destroy PropertyGrid's Editor
 	}
 
+	void WINAPI CMDOS2::TBootSector::UReserved1::TGKFileManager::DrawIconBytes(PropGrid::PCustomParam,PropGrid::PCValue value,PropGrid::TSize valueSize,PDRAWITEMSTRUCT pdis){
+		PCBootSector boot=(PCBootSector)value;
+		if (IsValidIconAddress(boot->reserved1.gkfm.aIcon))
+			CDos::CHexaValuePropGridEditor::DrawValue( nullptr, __getIconDataFromBoot__(boot), sizeof(DefaultIcon), pdis );
+		else{
+			::SetTextColor( pdis->hDC, COLOR_RED );
+			::DrawText( pdis->hDC, _T(" Invalid icon address"),-1, &pdis->rcItem, DT_SINGLELINE|DT_VCENTER|DT_LEFT );
+		}
+	}
+
+	bool WINAPI CMDOS2::TBootSector::UReserved1::TGKFileManager::EditIconBytes(PropGrid::PCustomParam,PropGrid::PValue value,PropGrid::TSize valueSize){
+		PCBootSector boot=(PCBootSector)value;
+		if (IsValidIconAddress(boot->reserved1.gkfm.aIcon))
+			return CDos::CHexaValuePropGridEditor::EditValue( nullptr, (PBYTE)__getIconDataFromBoot__(boot), sizeof(DefaultIcon) );
+		else
+			return false;
+	}
+
 	void CMDOS2::TBootSector::UReserved1::TGKFileManager::__addToPropertyGrid__(HWND hPropGrid,PBootSector boot){
 		// adds a property showing the presence of GK's File Manager on the disk into PropertyGrid
 		const HANDLE hGkfm=PropGrid::AddCategory(hPropGrid,nullptr,GKFM_NAME);
@@ -180,6 +203,17 @@
 									);
 				PropGrid::AddProperty(	hPropGrid, hAdvanced, _T("Icon address"),
 										&rGkfm.aIcon, advEditor
+									);
+				PropGrid::AddProperty(	hPropGrid, hAdvanced, _T("Icon data"), boot,
+										PropGrid::Custom::DefineEditor(
+											0, // default height
+											sizeof(DefaultIcon),
+											DrawIconBytes,
+											nullptr, EditIconBytes, // no main control, just ellipsis button
+											nullptr,
+											CBootView::__bootSectorModified__
+										),
+										boot
 									);
 				PropGrid::AddProperty(	hPropGrid, hAdvanced, _T("VideoRAM address"),
 										&rGkfm.aVRam, advEditor
