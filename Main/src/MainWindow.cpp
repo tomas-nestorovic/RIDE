@@ -119,6 +119,7 @@
 		ON_COMMAND(ID_APP_UPDATE,__openUrl_checkForUpdates__)
 			ON_UPDATE_COMMAND_UI(ID_APP_UPDATE,__openUrl_checkForUpdates_updateUI__)
 		ON_COMMAND(ID_HELP_FAQ,__openUrl_faq__)
+		ON_COMMAND(ID_HELP_DONATE,OpenUrl_Donate)
 		ON_COMMAND(ID_HELP_REPORT_BUG,__openUrl_reportBug__)
 		ON_COMMAND(ID_HELP_REPOSITORY,__openUrl_repository__)
 		ON_COMMAND(ID_HELP_TUTORIALS,__openUrl_tutorials__)
@@ -398,6 +399,11 @@ quitWithErr:const DWORD err=::GetLastError();
 	afx_msg void CMainWindow::__openUrl_faq__(){
 		// opens the "Frequently Asked Questions" page in a new Tab
 		OpenApplicationPresentationWebPage(_T("FAQ"),_T("faq.html"));
+	}
+
+	afx_msg void CMainWindow::OpenUrl_Donate(){
+		// opens the "Report a bug" page in a new Tab
+		OpenApplicationPresentationWebPage( _T("Donate"), _T("donate.html") );
 	}
 
 	afx_msg void CMainWindow::__openUrl_reportBug__(){

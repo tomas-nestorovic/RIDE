@@ -143,6 +143,7 @@
 #define ID_CREATOR                      1151
 #define ID_PRIORITY                     1155
 #define ID_BUFFER                       1156
+#define ID_HELP_DONATE                  1157
 #define ID_DATE                         1171
 #define ID_TIME                         1173
 #define ID_BOOT                         1175

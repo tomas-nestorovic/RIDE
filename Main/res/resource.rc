@@ -220,6 +220,7 @@ BEGIN
     BEGIN
         MENUITEM "FAQ (online)\tF1",            ID_HELP_FAQ
         MENUITEM "Check for updates (online)",  ID_APP_UPDATE
+        MENUITEM "Donate (online)",             ID_HELP_DONATE
         MENUITEM "Report a bug (online)",       ID_HELP_REPORT_BUG
         MENUITEM SEPARATOR
         POPUP "For developers"
@@ -2359,6 +2360,7 @@ BEGIN
     ID_BOOKMARK_DELETEALL   "Irreversively delete all set bookmarks"
     ID_ZX_PREVIEWASASSEMBLER "Show file as assembler listing"
     ID_TRACKMAP_TIMING      "Show sectors on timeline from index pulse\nTrack timeline (approx.)"
+    ID_HELP_DONATE          "Don't worry, anything BUT money!"
 END
 
 #endif    // Neutral resources
