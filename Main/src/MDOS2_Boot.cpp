@@ -73,7 +73,7 @@
 
 
 
-	void WINAPI CMDOS2::TBootSector::TDiskAndDriveInfo::__pg_drawProperty__(PVOID,LPCVOID diskAndDriveInfo,short,PDRAWITEMSTRUCT pdis){
+	void WINAPI CMDOS2::TBootSector::TDiskAndDriveInfo::DrawPropGridItem(PropGrid::PCustomParam,PropGrid::PCValue diskAndDriveInfo,short,PDRAWITEMSTRUCT pdis){
 		// drawing the summary on MDOS drive
 		const PCDiskAndDriveInfo pddi=(PCDiskAndDriveInfo)diskAndDriveInfo; // drive information
 		TCHAR buf[30];
@@ -83,7 +83,7 @@
 			::lstrcpy(buf,_T(" Disconnected"));
 		::DrawText(	pdis->hDC, buf,-1, &pdis->rcItem, DT_SINGLELINE|DT_LEFT|DT_VCENTER );
 	}
-	bool WINAPI CMDOS2::TBootSector::TDiskAndDriveInfo::__pg_editProperty__(PVOID,PVOID diskAndDriveInfo,short){
+	bool WINAPI CMDOS2::TBootSector::TDiskAndDriveInfo::EditPropGridItem(PropGrid::PCustomParam,PropGrid::PValue diskAndDriveInfo,short){
 		// True <=> editing of MDOS drive confirmed, otherwise False
 		// - defining the Dialog
 		class CEditDialog sealed:public CDialog{
@@ -210,7 +210,7 @@
 							);
 		// . drives
 		const HANDLE hDrives=PropGrid::AddCategory(hPropGrid,nullptr,_T("Drives"));
-			const PropGrid::PCEditor driveEditor=PropGrid::Custom::DefineEditor( 0, sizeof(TBootSector::TDiskAndDriveInfo), TBootSector::TDiskAndDriveInfo::__pg_drawProperty__, nullptr, TBootSector::TDiskAndDriveInfo::__pg_editProperty__ );
+			const PropGrid::PCEditor driveEditor=PropGrid::Custom::DefineEditor( 0, sizeof(TBootSector::TDiskAndDriveInfo), TBootSector::TDiskAndDriveInfo::DrawPropGridItem, nullptr, TBootSector::TDiskAndDriveInfo::EditPropGridItem );
 			PropGrid::AddProperty(	hPropGrid, hDrives, _T("Used"),
 									&boot->current,
 									driveEditor
@@ -222,7 +222,7 @@
 										driveEditor
 									);
 		// . GK's File Manager
-		TBootSector::UReserved1::TGKFileManager::__addToPropertyGrid__(hPropGrid,boot);
+		boot->gkfm.AddToPropertyGrid(hPropGrid);
 		// . UniRUN by Proxima
 		const HANDLE hUniRun=PropGrid::AddCategory(hPropGrid,nullptr,UNIRUN_NAME);
 			PropGrid::AddProperty(	hPropGrid, hUniRun, MDOS2_RUNP,

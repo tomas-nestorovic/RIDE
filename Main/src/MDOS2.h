@@ -31,43 +31,45 @@
 	class CMDOS2 sealed:public CSpectrumDos{
 		#pragma pack(1)
 		typedef struct TBootSector sealed{
+			#pragma pack(1)
+			struct TGKFileManager sealed{
+				static HIMAGELIST GetListOfDefaultIcons();
+				static BYTE AddIconToList(HIMAGELIST icons,PCBYTE iconZxData);
+				static void DrawIcon(HDC dc,PCBYTE iconZxData,BYTE zoomFactor);
+				static bool WINAPI WarnOnEditingAdvancedValue(PropGrid::PCustomParam,int);
+
+				static void WINAPI DrawPropGridItem(PropGrid::PCustomParam,PropGrid::PCValue bootSector,short,PDRAWITEMSTRUCT pdis);
+				static bool WINAPI EditPropGridItem(PropGrid::PCustomParam,PropGrid::PValue bootSector,short);
+				static bool WINAPI CreateNew(PropGrid::PCustomParam param,int hyperlinkId,LPCTSTR hyperlinkName);
+				static void WINAPI DrawIconBytes(PropGrid::PCustomParam,PropGrid::PCValue bootSector,PropGrid::TSize valueSize,PDRAWITEMSTRUCT pdis);
+				static bool WINAPI EditIconBytes(PropGrid::PCustomParam,PropGrid::PValue bootSector,PropGrid::TSize valueSize);
+					
+				WORD id;	// "FM" identification text
+				BYTE y,x;	// [Y,X] = [row,column] = upper left corner (in Pixels)
+				BYTE w,h;	// [W,H] = dimensions (in Pixels)
+				BYTE color;	// bits correspond to Spectrum's standard attributes (255 = transparent window)
+				BYTE dy,dx;	// [DY,DX] = [row,column] = text offset from window's upper left corner
+				WORD aText;	// address of text in memory
+				WORD aWnd;	// address of window
+				WORD zero;
+				WORD aIcon;	// address of icon in memory
+				WORD aVRam;	// address of window in Spectrum's VideoRAM
+
+				void AddToPropertyGrid(HWND hPropGrid);
+				PCBYTE GetAboutIconData() const;
+				void GetAboutText(PTCHAR bufT) const;
+				BYTE GetPropGridItemHeight() const;
+			};
+
 			static const TPhysicalAddress CHS;
 
 			static UINT AFX_CDECL Verification_thread(PVOID pCancelableAction);
 
 			#pragma pack(1)
-			union UReserved1{
-				#pragma pack(1)
-				struct TGKFileManager sealed{
-					static HIMAGELIST __getListOfDefaultIcons__(HDC dc);
-					static BYTE __addIconToList__(HIMAGELIST icons,PCBYTE iconZxData,HDC dc);
-					static void __drawIcon__(PCBYTE iconZxData,HDC dcdst,BYTE zoomFactor);
-					static void __addToPropertyGrid__(HWND hPropGrid,TBootSector *boot);
-					static bool WINAPI __warnOnEditingAdvancedValue__(PVOID,int);
-					static PCBYTE __getIconDataFromBoot__(const TBootSector *boot);
-					static void __getTextFromBoot__(const TBootSector *boot,PTCHAR bufT);
-
-					inline
-					static BYTE __pg_getPropertyHeight__();
-					static void WINAPI __pg_drawProperty__(PropGrid::PCustomParam,LPCVOID bootSector,short,PDRAWITEMSTRUCT pdis);
-					static bool WINAPI __pg_editProperty__(PropGrid::PCustomParam,PVOID bootSector,short);
-					static bool WINAPI __pg_createNew__(PropGrid::PCustomParam param,int hyperlinkId,LPCTSTR hyperlinkName);
-					static void WINAPI DrawIconBytes(PropGrid::PCustomParam,PropGrid::PCValue value,PropGrid::TSize valueSize,PDRAWITEMSTRUCT pdis);
-					static bool WINAPI EditIconBytes(PropGrid::PCustomParam,PropGrid::PValue value,PropGrid::TSize valueSize);
-					
-					WORD id;	// "FM" identification text
-					BYTE y,x;	// [Y,X] = [row,column] = upper left corner (in Pixels)
-					BYTE w,h;	// [W,H] = dimensions (in Pixels)
-					BYTE color;	// bits correspond to Spectrum's standard attributes (255 = transparent window)
-					BYTE dy,dx;	// [DY,DX] = [row,column] = text offset from window's upper left corner
-					WORD aText;	// address of text in memory
-					WORD aWnd;	// address of window
-					WORD zero;
-					WORD aIcon;	// address of icon in memory
-					WORD aVRam;	// address of window in Spectrum's VideoRAM
-				} gkfm;
-				BYTE undefined[128];
-			} reserved1;
+			union{
+				TGKFileManager gkfm;
+				BYTE reserved1[128];
+			};
 			#pragma pack(1)
 			typedef const struct TDiskAndDriveInfo sealed{
 				struct TFlags sealed{
@@ -79,8 +81,8 @@
 					BYTE stepSpeed:2;
 				};
 
-				static void WINAPI __pg_drawProperty__(PVOID,LPCVOID diskAndDriveInfo,short,PDRAWITEMSTRUCT pdis);
-				static bool WINAPI __pg_editProperty__(PVOID,PVOID diskAndDriveInfo,short);
+				static void WINAPI DrawPropGridItem(PropGrid::PCustomParam,PropGrid::PCValue diskAndDriveInfo,short,PDRAWITEMSTRUCT pdis);
+				static bool WINAPI EditPropGridItem(PropGrid::PCustomParam,PropGrid::PValue diskAndDriveInfo,short);
 
 				// drive info
 				BYTE driveConnected:1;

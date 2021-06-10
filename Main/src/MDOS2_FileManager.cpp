@@ -49,8 +49,7 @@
 		if (displayMode==LVS_ICON){
 			// GK's File Manager
 			// . base (populating the FileManager with Files)
-			const CClientDC dc(this);
-			const HIMAGELIST icons=TBootSector::UReserved1::TGKFileManager::__getListOfDefaultIcons__(dc);
+			const HIMAGELIST icons=TBootSector::TGKFileManager::GetListOfDefaultIcons();
 			__super::OnUpdate( pSender, LVSIL_NORMAL, (CObject *)icons );
 			// . assigning Icons to individual Files
 			CListCtrl &lv=GetListCtrl();
@@ -78,7 +77,7 @@
 									DOS->GetFileOfficialSize(de)==GKFM_ICON_BYTES_COUNT // correct size
 								){
 									// found a File with icon intended for particular Program
-									lvi.iImage=TBootSector::UReserved1::TGKFileManager::__addIconToList__( icons, ((PMDOS2)DOS)->__getHealthyLogicalSectorData__(de->firstLogicalSector), dc );
+									lvi.iImage=TBootSector::TGKFileManager::AddIconToList( icons, ((PMDOS2)DOS)->__getHealthyLogicalSectorData__(de->firstLogicalSector) );
 									lv.SetItem(&lvi);
 									break;
 								}

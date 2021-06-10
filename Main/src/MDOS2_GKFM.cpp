@@ -11,7 +11,7 @@
 	#define GKFM_ICON_PG_ZOOM_FACTOR	1
 
 
-	HIMAGELIST CMDOS2::TBootSector::UReserved1::TGKFileManager::__getListOfDefaultIcons__(HDC dc){
+	HIMAGELIST CMDOS2::TBootSector::TGKFileManager::GetListOfDefaultIcons(){
 		// creates and returns the list of GKFM's standard icons
 		const HIMAGELIST result=ImageList_Create( GKFM_ICON_WIDTH*GKFM_ICON_FM_ZOOM_FACTOR, GKFM_ICON_HEIGHT*GKFM_ICON_FM_ZOOM_FACTOR, ILC_COLOR24, 0, 1 );
 			static const BYTE DefaultIcon[]={ // smiling face in glases
@@ -20,27 +20,28 @@
 			static const BYTE SnapshotIcon[]={ // skull with crossbones
 				0,0,0,0,0,7,224,0,0,26,176,0,0,53,8,0,0,96,12,0,0,76,100,0,0,158,246,0,0,158,242,0,112,112,112,112,12,158,242,112,18,205,102,136,18,67,4,136,33,99,140,132,33,51,153,196,35,216,55,204,28,250,191,120,0,58,188,0,112,112,112,112,7,31,240,224,9,250,189,16,8,234,175,16,8,64,3,16,4,64,2,32,4,64,2,32,3,128,1,192,0,0,0,0,112,112,112,112
 			};
-			__addIconToList__(result,DefaultIcon,dc);	// = available under index GKFM_ICON_DEFAULT
-			__addIconToList__(result,SnapshotIcon,dc);	// = available under index GKFM_ICON_SNAPSHOT
+			AddIconToList(result,DefaultIcon);	// = available under index GKFM_ICON_DEFAULT
+			AddIconToList(result,SnapshotIcon);	// = available under index GKFM_ICON_SNAPSHOT
 		return result;
 	}
 
-	BYTE CMDOS2::TBootSector::UReserved1::TGKFileManager::__addIconToList__(HIMAGELIST icons,PCBYTE iconZxData,HDC dc){
+	BYTE CMDOS2::TBootSector::TGKFileManager::AddIconToList(HIMAGELIST icons,PCBYTE iconZxData){
 		// adds a new icon from IconZxData to the list, and returns the index of the added icon
-		const HDC dcdst=::CreateCompatibleDC(dc);
-			const HBITMAP hBmp=::CreateCompatibleBitmap( dc, GKFM_ICON_WIDTH*GKFM_ICON_FM_ZOOM_FACTOR, GKFM_ICON_HEIGHT*GKFM_ICON_FM_ZOOM_FACTOR );
-				const HGDIOBJ hBmp0=::SelectObject(dcdst,hBmp);
-					__drawIcon__(iconZxData,dcdst,GKFM_ICON_FM_ZOOM_FACTOR);
-				::SelectObject(dcdst,hBmp0);
+		const CClientDC screen(nullptr);
+		const HDC dc=::CreateCompatibleDC(screen);
+			const HBITMAP hBmp=::CreateCompatibleBitmap( screen, GKFM_ICON_WIDTH*GKFM_ICON_FM_ZOOM_FACTOR, GKFM_ICON_HEIGHT*GKFM_ICON_FM_ZOOM_FACTOR );
+				const HGDIOBJ hBmp0=::SelectObject(dc,hBmp);
+					DrawIcon( dc, iconZxData, GKFM_ICON_FM_ZOOM_FACTOR );
+				::SelectObject(dc,hBmp0);
 				const int i=ImageList_Add( icons, hBmp, nullptr );
 			::DeleteObject(hBmp);
-		::DeleteDC(dcdst);
+		::DeleteDC(dc);
 		return i;
 	}
 
-	void CMDOS2::TBootSector::UReserved1::TGKFileManager::__drawIcon__(PCBYTE iconZxData,HDC dcdst,BYTE zoomFactor){
+	void CMDOS2::TBootSector::TGKFileManager::DrawIcon(HDC dc,PCBYTE iconZxData,BYTE zoomFactor){
 		// draws icon described by its ZxData scaled using the ZoomFactor into the DC
-		// - if there are no ZxData, no icon can be drawn (may happen if corresponding Advanced value is wrongly set (see __getIconDataFromBoot__ )
+		// - if there are no ZxData, no icon can be drawn (may happen if corresponding Advanced value is wrongly set (see GetAboutIconData)
 		if (!iconZxData)
 			return;
 		// - translating ZxData into a Bitmap
@@ -50,7 +51,7 @@
 		} info={ sizeof(info.bmi), GKFM_ICON_WIDTH, GKFM_ICON_HEIGHT, 1, 8, BI_RGB, 0,0,0, 16, 16 };
 		::memcpy( &info.colors, &Colors, sizeof(Colors) ); // color table immediately follows the BmiHeader
 		PBYTE dibPixel;
-		const HBITMAP hBmp=::CreateDIBSection( dcdst, &info.bmi, DIB_RGB_COLORS, (PVOID *)&dibPixel, 0,0 );
+		const HBITMAP hBmp=::CreateDIBSection( dc, &info.bmi, DIB_RGB_COLORS, (PVOID *)&dibPixel, 0,0 );
 		for( BYTE nThirds=3; nThirds--; ){
 			for( BYTE nMicroRows=8,*iconZxAttribs=(PBYTE)iconZxData+32; nMicroRows--; )
 				for( BYTE z=4,*pZxAttr=iconZxAttribs; z--; iconZxData++,pZxAttr++ ){
@@ -62,9 +63,9 @@
 			iconZxData+=4; // each Third followed by four already preprocessed attribute Bytes
 		}
 		// - factoring in the Zoom and turning the Bitmap upside down (as the Y axis points up in DIBs)
-		const HDC dcsrc=::CreateCompatibleDC(dcdst);
+		const HDC dcsrc=::CreateCompatibleDC(dc);
 			const HGDIOBJ hBmpSrc0=::SelectObject(dcsrc,hBmp);
-				::StretchBlt(	dcdst, 0,0, GKFM_ICON_WIDTH*zoomFactor, GKFM_ICON_HEIGHT*zoomFactor,
+				::StretchBlt(	dc, 0,0, GKFM_ICON_WIDTH*zoomFactor, GKFM_ICON_HEIGHT*zoomFactor,
 								dcsrc, 0,GKFM_ICON_HEIGHT-1, GKFM_ICON_WIDTH, -GKFM_ICON_HEIGHT,
 								SRCCOPY
 							);
@@ -83,16 +84,19 @@
 		255,255,255,0,255,255,255,0,192,248,3,0,192,255,255,0,192,248,3,0,192,255,255,0,255,248,3,0,255,255,254,0,88,48,48,56,255,255,254,0,255,255,255,0,255,231,255,0,255,195,255,0,255,194,255,0,255,231,255,0,255,255,255,0,255,255,255,0,56,56,56,56,255,231,255,0,255,231,255,0,255,231,255,0,255,231,255,0,255,231,255,0,255,231,255,0,255,255,255,0,255,255,255,0,56,40,56,56
 	};
 
-	static bool IsValidIconAddress(WORD w){
+	static bool IsValidBootAddress(WORD w){
+		return GKFM_BASE<w && w<GKFM_BASE+MDOS2_SECTOR_LENGTH_STD;
+	}
+
+	static bool IsValidCustomIconAddress(WORD w){
 		return GKFM_BASE<w && w<GKFM_BASE+MDOS2_SECTOR_LENGTH_STD-sizeof(DefaultIcon);
 	}
 
-	PCBYTE CMDOS2::TBootSector::UReserved1::TGKFileManager::__getIconDataFromBoot__(const TBootSector *boot){
+	PCBYTE CMDOS2::TBootSector::TGKFileManager::GetAboutIconData() const{
 		// returns the beginning of GKFM's icon in the Boot Sector
-		const WORD w=boot->reserved1.gkfm.aIcon;
-		if (IsValidIconAddress(w))
-			return (PCBYTE)boot+w-GKFM_BASE;
-		else if (w==0x7926)
+		if (IsValidCustomIconAddress(aIcon))
+			return (PCBYTE)this+aIcon-GKFM_BASE;
+		else if (aIcon==0x7926)
 			return DefaultIcon;
 		else
 			return nullptr;
@@ -103,13 +107,12 @@
 
 	#define GKFM_TEXT_MAX	255 /* max length of text description stored in the Boot Sector */
 
-	void CMDOS2::TBootSector::UReserved1::TGKFileManager::__getTextFromBoot__(const TBootSector *boot,PTCHAR bufT){
+	void CMDOS2::TBootSector::TGKFileManager::GetAboutText(PTCHAR bufT) const{
 		// populates Buffer with Text retrieved from the Boot Sector and converted to ASCII char-set; caller guarantees that the Buffer can contain at least GKFM_TEXT_MAX characters
-		const WORD w=boot->reserved1.gkfm.aText;
-		if (w>GKFM_BASE && w<GKFM_BASE+MDOS2_SECTOR_LENGTH_STD){
+		if (IsValidBootAddress(aText)){
 			// . getting Text from Boot Sector
 			BYTE bufD[GKFM_TEXT_MAX]; // D = Desktop
-			::memcpy( bufD, (PCBYTE)boot+w-GKFM_BASE, std::min<>(GKFM_TEXT_MAX,MDOS2_SECTOR_LENGTH_STD-(w-GKFM_BASE)) );
+			::memcpy( bufD, (PCBYTE)this+aText-GKFM_BASE, std::min(GKFM_TEXT_MAX,MDOS2_SECTOR_LENGTH_STD-(aText-GKFM_BASE)) );
 			bufD[GKFM_TEXT_MAX-1]=DESKTOP_NL;
 			// . Desktop->ASCII char-set conversion
 			for( BYTE n=GKFM_TEXT_MAX,*a=bufD; n--; a++ )
@@ -122,14 +125,14 @@
 			*bufT='\0';
 	}
 
-	BYTE CMDOS2::TBootSector::UReserved1::TGKFileManager::__pg_getPropertyHeight__(){
+	BYTE CMDOS2::TBootSector::TGKFileManager::GetPropGridItemHeight() const{
 		// returns the height of GKFM property in PropertyGrid
 		return GKFM_ICON_PG_ZOOM_FACTOR*(2*(GKFM_WINDOW_MARGIN+8)+GKFM_ICON_HEIGHT); // 8 = window standard padding (8 ZX pixels)
 	}
 
-	bool WINAPI CMDOS2::TBootSector::UReserved1::TGKFileManager::__warnOnEditingAdvancedValue__(PVOID,int){
+	bool WINAPI CMDOS2::TBootSector::TGKFileManager::WarnOnEditingAdvancedValue(PropGrid::PCustomParam,int){
 		// shows a warning on about to change an "advanced" parameter of GK's File Manager
-		if (Utils::QuestionYesNo(_T("The advanced properties are best left alone if you don't know their purpose (consult George K's \"Boot Maker\" to find out).\n\nContinue anyway?!"),MB_DEFBUTTON2))
+		if (Utils::QuestionYesNo(_T("Advanced properties are best left alone if you don't know their purpose (consult George K's \"Boot Maker\" to find out).\n\nContinue anyway?!"),MB_DEFBUTTON2))
 			return CBootView::__bootSectorModified__( nullptr, 0 );
 		else
 			return false;
@@ -139,7 +142,7 @@
 	#define GKFM_IMPORT_NAME	_T("run.P ZXP500001L2200T8")
 	#define GKFM_ONLINE_NAME	_T("MDOS2/GKFM/") GKFM_IMPORT_NAME
 
-	static bool WINAPI __pg_updateOnline__(PropGrid::PCustomParam,int hyperlinkId,LPCTSTR hyperlinkName){
+	static bool WINAPI UpdateOnline(PropGrid::PCustomParam,int hyperlinkId,LPCTSTR hyperlinkName){
 		// True <=> PropertyGrid's Editor can be destroyed after this function has terminated, otherwise False
 		BYTE gkfmDataBuffer[16384]; // sufficiently big buffer
 		DWORD gkfmDataLength;
@@ -159,29 +162,28 @@
 		return true; // True = destroy PropertyGrid's Editor
 	}
 
-	void WINAPI CMDOS2::TBootSector::UReserved1::TGKFileManager::DrawIconBytes(PropGrid::PCustomParam,PropGrid::PCValue value,PropGrid::TSize valueSize,PDRAWITEMSTRUCT pdis){
+	void WINAPI CMDOS2::TBootSector::TGKFileManager::DrawIconBytes(PropGrid::PCustomParam,PropGrid::PCValue value,PropGrid::TSize valueSize,PDRAWITEMSTRUCT pdis){
 		PCBootSector boot=(PCBootSector)value;
-		if (IsValidIconAddress(boot->reserved1.gkfm.aIcon))
-			CDos::CHexaValuePropGridEditor::DrawValue( nullptr, __getIconDataFromBoot__(boot), sizeof(DefaultIcon), pdis );
+		if (IsValidCustomIconAddress(boot->gkfm.aIcon))
+			CDos::CHexaValuePropGridEditor::DrawValue( nullptr, boot->gkfm.GetAboutIconData(), sizeof(DefaultIcon), pdis );
 		else{
 			::SetTextColor( pdis->hDC, COLOR_RED );
 			::DrawText( pdis->hDC, _T(" Invalid icon address"),-1, &pdis->rcItem, DT_SINGLELINE|DT_VCENTER|DT_LEFT );
 		}
 	}
 
-	bool WINAPI CMDOS2::TBootSector::UReserved1::TGKFileManager::EditIconBytes(PropGrid::PCustomParam,PropGrid::PValue value,PropGrid::TSize valueSize){
+	bool WINAPI CMDOS2::TBootSector::TGKFileManager::EditIconBytes(PropGrid::PCustomParam,PropGrid::PValue value,PropGrid::TSize valueSize){
 		PCBootSector boot=(PCBootSector)value;
-		if (IsValidIconAddress(boot->reserved1.gkfm.aIcon))
-			return CDos::CHexaValuePropGridEditor::EditValue( nullptr, (PBYTE)__getIconDataFromBoot__(boot), sizeof(DefaultIcon) );
+		if (IsValidCustomIconAddress(boot->gkfm.aIcon))
+			return CDos::CHexaValuePropGridEditor::EditValue( nullptr, (PBYTE)boot->gkfm.GetAboutIconData(), sizeof(DefaultIcon) );
 		else
 			return false;
 	}
 
-	void CMDOS2::TBootSector::UReserved1::TGKFileManager::__addToPropertyGrid__(HWND hPropGrid,PBootSector boot){
+	void CMDOS2::TBootSector::TGKFileManager::AddToPropertyGrid(HWND hPropGrid){
 		// adds a property showing the presence of GK's File Manager on the disk into PropertyGrid
 		const HANDLE hGkfm=PropGrid::AddCategory(hPropGrid,nullptr,GKFM_NAME);
-		TGKFileManager &rGkfm=boot->reserved1.gkfm;
-		const bool recognized=rGkfm.id==0x4d46; // textual representation of "FM" string
+		const bool recognized=id==0x4d46; // textual representation of "FM" string
 		PropGrid::AddDisabledProperty(	hPropGrid, hGkfm, _T("Status"),
 										recognized?"Recognized":"Not recognized",
 										PropGrid::String::DefineFixedLengthEditorA(0)
@@ -189,22 +191,22 @@
 		if (recognized){
 			// . basic preview
 			PropGrid::AddProperty(	hPropGrid, hGkfm, _T("Basic"),
-									boot,
-									PropGrid::Custom::DefineEditor( __pg_getPropertyHeight__(), sizeof(TBootSector), __pg_drawProperty__, nullptr, __pg_editProperty__ )
+									this,
+									PropGrid::Custom::DefineEditor( GetPropGridItemHeight(), sizeof(TBootSector), DrawPropGridItem, nullptr, EditPropGridItem )
 								);
 			// . advanced properties
 			const HANDLE hAdvanced=PropGrid::AddCategory( hPropGrid, hGkfm, BOOT_SECTOR_ADVANCED, false );
-				const PropGrid::PCEditor advEditor=PropGrid::Integer::DefineWordEditor(__warnOnEditingAdvancedValue__);
+				const PropGrid::PCEditor advEditor=PropGrid::Integer::DefineWordEditor(WarnOnEditingAdvancedValue);
 				PropGrid::AddProperty(	hPropGrid, hAdvanced, _T("Text address"),
-										&rGkfm.aText, advEditor
+										&aText, advEditor
 									);
 				PropGrid::AddProperty(	hPropGrid, hAdvanced, _T("Window address"),
-										&rGkfm.aWnd, advEditor
+										&aWnd, advEditor
 									);
 				PropGrid::AddProperty(	hPropGrid, hAdvanced, _T("Icon address"),
-										&rGkfm.aIcon, advEditor
+										&aIcon, advEditor
 									);
-				PropGrid::AddProperty(	hPropGrid, hAdvanced, _T("Icon data"), boot,
+				PropGrid::AddProperty(	hPropGrid, hAdvanced, _T("Icon data"), this,
 										PropGrid::Custom::DefineEditor(
 											0, // default height
 											sizeof(DefaultIcon),
@@ -213,39 +215,38 @@
 											nullptr,
 											CBootView::__bootSectorModified__
 										),
-										boot
+										this
 									);
 				PropGrid::AddProperty(	hPropGrid, hAdvanced, _T("VideoRAM address"),
-										&rGkfm.aVRam, advEditor
+										&aVRam, advEditor
 									);
 			// . offering to update the GKFM on the disk from an on-line resource
 			PropGrid::AddProperty(	hPropGrid, hGkfm, MDOS2_RUNP,
 									BOOT_SECTOR_UPDATE_ONLINE_HYPERLINK,
-									PropGrid::Hyperlink::DefineEditorA(__pg_updateOnline__)
+									PropGrid::Hyperlink::DefineEditorA(UpdateOnline)
 								);
 		}else
 			PropGrid::AddProperty(	hPropGrid, hGkfm, _T(""),
 									"<a>Create</a>",
-									PropGrid::Hyperlink::DefineEditorA( __pg_createNew__, CBootView::__updateCriticalSectorView__ )
+									PropGrid::Hyperlink::DefineEditorA( CreateNew, CBootView::__updateCriticalSectorView__ )
 								);
 	}
 
-	void WINAPI CMDOS2::TBootSector::UReserved1::TGKFileManager::__pg_drawProperty__(PVOID,LPCVOID bootSector,short,PDRAWITEMSTRUCT pdis){
+	void WINAPI CMDOS2::TBootSector::TGKFileManager::DrawPropGridItem(PropGrid::PCustomParam,LPCVOID bootSector,short,PDRAWITEMSTRUCT pdis){
 		// draws a summary on GK's File Manager status into PropertyGrid
 		const HDC dc=pdis->hDC;
 		Utils::ScaleLogicalUnit(dc);
-		const PCBootSector boot=(PCBootSector)bootSector;
-		const TGKFileManager &rGkfm=boot->reserved1.gkfm;
+		const TGKFileManager &gkfm=*(TGKFileManager *)bootSector;
 		POINT org;
 		::GetViewportOrgEx(dc,&org);
 		org.x+=Utils::LogicalUnitScaleFactor*GKFM_ICON_PG_ZOOM_FACTOR*GKFM_WINDOW_MARGIN, org.y+=Utils::LogicalUnitScaleFactor*GKFM_ICON_PG_ZOOM_FACTOR*GKFM_WINDOW_MARGIN;
 		::SetViewportOrgEx( dc, org.x, org.y, nullptr );
 		// - drawing the background
-		const BYTE color=rGkfm.color;
+		const BYTE color=gkfm.color;
 		const RGBQUAD paper=Colors[(color&120)>>3], ink=Colors[(color&7)|((color&64)>>3)]; // RGBQUAD inversed order of R-G-B components than COLORREF
 		const CBrush paperBrush(RGB(paper.rgbRed,paper.rgbGreen,paper.rgbBlue)), inkBrush(RGB(ink.rgbRed,ink.rgbGreen,ink.rgbBlue));
 		RECT r=pdis->rcItem;
-		r.right=r.left+GKFM_ICON_PG_ZOOM_FACTOR*rGkfm.w, r.bottom=r.top+GKFM_ICON_PG_ZOOM_FACTOR*rGkfm.h;
+		r.right=r.left+GKFM_ICON_PG_ZOOM_FACTOR*gkfm.w, r.bottom=r.top+GKFM_ICON_PG_ZOOM_FACTOR*gkfm.h;
 		::FillRect(dc,&r,paperBrush);
 		::FrameRect(dc,&r,inkBrush);
 		// - drawing icons
@@ -253,19 +254,19 @@
 			struct{ BYTE L,H; };
 			WORD w;
 		} vram;
-		vram.w=rGkfm.aVRam;
+		vram.w=gkfm.aVRam;
 		::SetViewportOrgEx(	dc,
-							org.x+Utils::LogicalUnitScaleFactor*GKFM_ICON_PG_ZOOM_FACTOR*( (BYTE)(vram.L<<3) - rGkfm.x ), // A-B, A = converted ZX->PC pixel, B = PC pixel
-							org.y+Utils::LogicalUnitScaleFactor*GKFM_ICON_PG_ZOOM_FACTOR*( (BYTE)(vram.H<<3&192 | vram.L>>2&56 | vram.H&7) - rGkfm.y ), // A|B|C, A = third, B = row, C = microrow
+							org.x+Utils::LogicalUnitScaleFactor*GKFM_ICON_PG_ZOOM_FACTOR*( (BYTE)(vram.L<<3) - gkfm.x ), // A-B, A = converted ZX->PC pixel, B = PC pixel
+							org.y+Utils::LogicalUnitScaleFactor*GKFM_ICON_PG_ZOOM_FACTOR*( (BYTE)(vram.H<<3&192 | vram.L>>2&56 | vram.H&7) - gkfm.y ), // A|B|C, A = third, B = row, C = microrow
 							nullptr
 						);
-		__drawIcon__( __getIconDataFromBoot__(boot), dc, GKFM_ICON_PG_ZOOM_FACTOR );
+		DrawIcon( dc, gkfm.GetAboutIconData(), GKFM_ICON_PG_ZOOM_FACTOR );
 		// - drawing text
 		const Utils::CRideFont font(FONT_VERDANA,60);
-		const HGDIOBJ hFont0=::SelectObject(dc,font.m_hObject);
+		const HGDIOBJ hFont0=::SelectObject(dc,font);
 			TCHAR buf[GKFM_TEXT_MAX];
-			__getTextFromBoot__(boot,buf);
-			::SetViewportOrgEx( dc, org.x+Utils::LogicalUnitScaleFactor*GKFM_ICON_PG_ZOOM_FACTOR*rGkfm.dx, org.y+Utils::LogicalUnitScaleFactor*GKFM_ICON_PG_ZOOM_FACTOR*rGkfm.dy, nullptr );
+			gkfm.GetAboutText(buf);
+			::SetViewportOrgEx( dc, org.x+Utils::LogicalUnitScaleFactor*GKFM_ICON_PG_ZOOM_FACTOR*gkfm.dx, org.y+Utils::LogicalUnitScaleFactor*GKFM_ICON_PG_ZOOM_FACTOR*gkfm.dy, nullptr );
 			::SetTextColor(dc,RGB(ink.rgbRed,ink.rgbGreen,ink.rgbBlue));
 			::DrawText(	dc, buf,-1, &pdis->rcItem, DT_LEFT|DT_TOP );
 		::SelectObject(dc,hFont0);
@@ -273,7 +274,7 @@
 
 	#define COLOR_TRANSPARENT	255
 
-	bool WINAPI CMDOS2::TBootSector::UReserved1::TGKFileManager::__pg_editProperty__(PVOID,PVOID bootSector,short){
+	bool WINAPI CMDOS2::TBootSector::TGKFileManager::EditPropGridItem(PropGrid::PCustomParam,PVOID bootSector,short){
 		// True <=> edited values of GK's File Manager in PropertyGrid confirmed, otherwise False
 		// - defining the Dialog
 		class CEditDialog sealed:public Utils::CRideDialog{
@@ -282,7 +283,7 @@
 			TGKFileManager &rGkfm;
 			int colorSelection,ink,paper,bright,aligning;
 		private:
-			static void __validateDivisibilityByEight__(CDataExchange *pDX,BYTE value){
+			static void DDV_DivisibleBy8(CDataExchange *pDX,BYTE value){
 				// validates divisibility of Value by eight, reports a problem
 				if (pDX->m_bSaveAndValidate && value&7){
 					Utils::Information(_T("All window dimensions must be multiples of eight!"));
@@ -293,15 +294,15 @@
 				// exchange of data from and to controls
 				// - window parameters
 				DDX_Text(	pDX, ID_X		,rGkfm.x);
-					__validateDivisibilityByEight__(pDX,rGkfm.x);
+					DDV_DivisibleBy8(pDX,rGkfm.x);
 				DDX_Text(	pDX, ID_Y		,rGkfm.y);
-					__validateDivisibilityByEight__(pDX,rGkfm.y);
+					DDV_DivisibleBy8(pDX,rGkfm.y);
 					DDV_MinMaxByte( pDX, rGkfm.h, 0, 192 );
 				DDX_Text(	pDX, ID_W		,rGkfm.w);
-					__validateDivisibilityByEight__(pDX,rGkfm.w);
+					DDV_DivisibleBy8(pDX,rGkfm.w);
 					DDV_MinMaxByte( pDX, rGkfm.w, 0, 256-rGkfm.x );
 				DDX_Text(	pDX, ID_H		,rGkfm.h);
-					__validateDivisibilityByEight__(pDX,rGkfm.h);
+					DDV_DivisibleBy8(pDX,rGkfm.h);
 					DDV_MinMaxByte( pDX, rGkfm.h, 0, 192-rGkfm.y );
 				DDX_Radio(	pDX, ID_DEFAULT1	,colorSelection);
 				DDX_Text(	pDX, ID_INK		,ink);
@@ -336,13 +337,13 @@
 					// . determining the max length of Text (mustn't collide with important regions in MDOS Boot Sector)
 					const WORD w=rGkfm.aText-GKFM_BASE;
 					BYTE nCharsMaxD,*d=(PBYTE)&boot+w,nCharsD=1; // D = Desktop, 1 = terminating DESKTOP_NL character
-					if (w>=sizeof(TGKFileManager) && w<sizeof(TBootSector::UReserved1)) // GKFM_VRAM+2 = GK's File Manager data length in Boot Sector
-						nCharsMaxD=sizeof(TBootSector::UReserved1)-w;
+					if (sizeof(TGKFileManager)<=w && w<sizeof(boot.reserved1)) // GKFM_VRAM+2 = GK's File Manager data length in Boot Sector
+						nCharsMaxD=sizeof(boot.reserved1)-w;
 					else if (w>=MDOS2_SECTOR_LENGTH_STD-sizeof(UReserved3) && w<MDOS2_SECTOR_LENGTH_STD)
 						nCharsMaxD=std::min<>( GKFM_TEXT_MAX, MDOS2_SECTOR_LENGTH_STD-w );
 					else{
 errorText:				TCHAR buf[400];
-						::wsprintf( buf, _T("Text location in collision with critical section in the boot.\n\nTo resolve this issue, try to\n(a) shorten the text to max.%d characters (incl. all Desktop formatting characters), or\n(b) change its beginning in the ") BOOT_SECTOR_ADVANCED _T(" setting subcategory."), GKFM_TEXT_MAX );
+						::wsprintf( buf, _T("Text location collides with critical section in the boot.\n\nTo resolve, try to\n(a) shorten the text to max.%d characters (incl. all Desktop formatting characters), or\n(b) change its beginning in the ") BOOT_SECTOR_ADVANCED _T(" setting subcategory."), GKFM_TEXT_MAX );
 						Utils::Information(buf);
 						pDX->PrepareEditCtrl(ID_DATA);
 						pDX->Fail();
@@ -365,7 +366,7 @@ errorText:				TCHAR buf[400];
 					*d=DESKTOP_NL;
 				}else{
 					// reading text into dedicated control
-					__getTextFromBoot__(&boot,bufT);
+					boot.gkfm.GetAboutText(bufT);
 					SetDlgItemText( ID_DATA, bufT );
 				}
 			}
@@ -378,7 +379,7 @@ errorText:				TCHAR buf[400];
 					const int iDc0=::SaveDC(dc);
 						::SetViewportOrgEx(dc,iconPosition.x,iconPosition.y,nullptr);
 						Utils::ScaleLogicalUnit(dc);
-						__drawIcon__( __getIconDataFromBoot__(&boot), dc, 2 );
+						DrawIcon( dc, rGkfm.GetAboutIconData(), 2 );
 					::RestoreDC(dc,iDc0);
 				}else if (message==WM_COMMAND)
 					switch (wParam){
@@ -394,7 +395,7 @@ errorText:				TCHAR buf[400];
 			CEditDialog(PBootSector _boot)
 				// ctor
 				: Utils::CRideDialog(IDR_MDOS_GKFM_EDITOR)
-				, boot(*_boot) , rGkfm(boot.reserved1.gkfm) {
+				, boot(*_boot) , rGkfm(boot.gkfm) {
 				// - window parameters
 				const BYTE color=rGkfm.color;
 				colorSelection= color==COLOR_TRANSPARENT;
@@ -428,7 +429,7 @@ errorText:				TCHAR buf[400];
 			return false;
 	}
 
-	bool WINAPI CMDOS2::TBootSector::UReserved1::TGKFileManager::__pg_createNew__(PropGrid::PCustomParam param,int hyperlinkId,LPCTSTR hyperlinkName){
+	bool WINAPI CMDOS2::TBootSector::TGKFileManager::CreateNew(PropGrid::PCustomParam param,int hyperlinkId,LPCTSTR hyperlinkName){
 		// True <=> PropertyGrid's Editor can be destroyed after this function has terminated, otherwise False
 		const PMDOS2 mdos=(PMDOS2)CDos::GetFocused();
 		const PImage image=mdos->image;
@@ -444,20 +445,20 @@ errorText:				TCHAR buf[400];
 													31014,	// address of icon in memory
 													16463	// address of window in Spectrum's VideoRAM
 												};
-			tmpBootSector.reserved1.gkfm=DefGkfm;
+			tmpBootSector.gkfm=DefGkfm;
 			static const BYTE DefGkfmText[]={	0,255,
 												'P','R','O','X','I','M','A',',',' ','v','.','o','.','s','.',15,
 												'S','o','f','t','w','a','r','e',15,
 												'n','o','v',128,' ','d','i','m','e','n','z','e',13
 											};
-			::memcpy( &tmpBootSector.reserved1.undefined[208], DefGkfmText, sizeof(DefGkfmText) );
-		if (__pg_editProperty__(nullptr,&tmpBootSector,0)){
+			::memcpy( tmpBootSector.reserved1+208, DefGkfmText, sizeof(DefGkfmText) );
+		if (EditPropGridItem(nullptr,&tmpBootSector,0)){
 			// creation of GKFM confirmed
 			// . accepting the GKFM record in the Boot Sector
 			*pBootSector=tmpBootSector; // adopting confimed values
 			image->UpdateAllViews(nullptr);
 			// . downloading the GKFM binary from the Internet and importing it to the disk
-			__pg_updateOnline__(param,0,nullptr);
+			UpdateOnline(param,0,nullptr);
 		}
 		return true; // True = destroy PropertyGrid's Editor
 	}
