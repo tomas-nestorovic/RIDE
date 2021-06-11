@@ -238,6 +238,9 @@ terminateWithError:
 								LPCTSTR bitDescriptions[20],*pDesc=bitDescriptions; // 20 = surely big enough buffer
 								rFdcStatus.GetDescriptionsOfSetBits(bitDescriptions);
 								TCHAR buf[512],*p=buf+::wsprintf(buf,_T("Cannot read sector with %s on source Track %d.\r\n"),(LPCTSTR)rp.chs.sectorId.ToString(),rp.track);
+								const bool onlyPartlyRecoverable=( rFdcStatus.ToWord() & ~(TFdcStatus::DataFieldCrcError.ToWord()|TFdcStatus::IdFieldCrcError.ToWord()) )!=0;
+								if (onlyPartlyRecoverable)
+									p+=::lstrlen( ::lstrcpy(p,_T("SOME ERRORS CAN'T BE FIXED!\r\n")) );
 								p+=::wsprintf( p, _T("\r\nFAT reports this sector \"%s\".\r\n"), dp.dos->GetSectorStatusText(rp.chs) );
 								p+=::wsprintf( p, _T("\r\n\"Status register 1\" reports (0x%02X)\r\n"), rFdcStatus.reg1 );
 								if (*pDesc)
@@ -268,10 +271,12 @@ terminateWithError:
 									{ RESOLVE_EXCLUDE_ID, _T("Exclude from track") },
 									{ RESOLVE_EXCLUDE_UNKNOWN, _T("Exclude all unknown from disk") },
 									{ ID_DATAFIELD_CRC, _T("Fix Data CRC only") },
-									{ ID_RECOVER, _T("Recover ID or Data...") }
+									{ ID_RECOVER, _T("Fix ID or Data...") }
 								};
 								::memcpy( resolveActions, ResolveActions, sizeof(ResolveActions) );
-									resolveActions[3].menuItemFlags=MF_GRAYED*( !rFdcStatus.DescribesDataFieldCrcError() || (rFdcStatus.ToWord()&~TFdcStatus::DataFieldCrcError.ToWord())!=0 ); // enabled only if NO OTHER BUT Data dield CRC error
+									if (onlyPartlyRecoverable)
+										resolveActions->commandCaption=_T("Resolve partly");
+									resolveActions[3].menuItemFlags=MF_GRAYED*( rFdcStatus.DescribesMissingDam() || !rFdcStatus.DescribesDataFieldCrcError() ); // disabled if the Data CRC ok
 									resolveActions[4].menuItemFlags=MF_GRAYED*( rFdcStatus.DescribesMissingDam() || !rFdcStatus.DescribesIdFieldCrcError()&&!rFdcStatus.DescribesDataFieldCrcError() ); // enabled only if either ID or Data field with error
 								ConvertDlgButtonToSplitButton( IDNO, resolveActions, RESOLVE_OPTIONS_COUNT );
 								EnableDlgItem( IDNO, dynamic_cast<CImageRaw *>(dp.target.get())==nullptr ); // recovering errors is allowed only if the Target Image can accept them
