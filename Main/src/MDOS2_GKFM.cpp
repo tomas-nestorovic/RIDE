@@ -83,6 +83,7 @@
 	static const BYTE DefaultIcon[]={ // default floppy icon
 		255,255,255,0,255,255,255,0,192,248,3,0,192,255,255,0,192,248,3,0,192,255,255,0,255,248,3,0,255,255,254,0,88,48,48,56,255,255,254,0,255,255,255,0,255,231,255,0,255,195,255,0,255,194,255,0,255,231,255,0,255,255,255,0,255,255,255,0,56,56,56,56,255,231,255,0,255,231,255,0,255,231,255,0,255,231,255,0,255,231,255,0,255,231,255,0,255,255,255,0,255,255,255,0,56,40,56,56
 	};
+	const WORD DefaultIconAddress=0x7926;
 
 	static bool IsValidBootAddress(WORD w){
 		return GKFM_BASE<w && w<GKFM_BASE+MDOS2_SECTOR_LENGTH_STD;
@@ -96,7 +97,7 @@
 		// returns the beginning of GKFM's icon in the Boot Sector
 		if (IsValidCustomIconAddress(aIcon))
 			return (PCBYTE)this+aIcon-GKFM_BASE;
-		else if (aIcon==0x7926)
+		else if (aIcon==DefaultIconAddress)
 			return DefaultIcon;
 		else
 			return nullptr;
@@ -132,7 +133,7 @@
 
 	bool WINAPI CMDOS2::TBootSector::TGKFileManager::WarnOnEditingAdvancedValue(PropGrid::PCustomParam,int){
 		// shows a warning on about to change an "advanced" parameter of GK's File Manager
-		if (Utils::QuestionYesNo(_T("Advanced properties are best left alone if you don't know their purpose (consult George K's \"Boot Maker\" to find out).\n\nContinue anyway?!"),MB_DEFBUTTON2))
+		if (Utils::QuestionYesNo(_T("Advanced properties are best left alone if not knowing their purpose (consult George K's \"Boot Maker\").\n\nContinue anyway?!"),MB_DEFBUTTON2))
 			return CBootView::__bootSectorModified__( nullptr, 0 );
 		else
 			return false;
@@ -166,6 +167,8 @@
 		PCBootSector boot=(PCBootSector)value;
 		if (IsValidCustomIconAddress(boot->gkfm.aIcon))
 			CDos::CHexaValuePropGridEditor::DrawValue( nullptr, boot->gkfm.GetAboutIconData(), sizeof(DefaultIcon), pdis );
+		else if (boot->gkfm.aIcon==DefaultIconAddress)
+			::DrawText( pdis->hDC, _T(" (Default)"),-1, &pdis->rcItem, DT_SINGLELINE|DT_VCENTER|DT_LEFT );
 		else{
 			::SetTextColor( pdis->hDC, COLOR_RED );
 			::DrawText( pdis->hDC, _T(" Invalid icon address"),-1, &pdis->rcItem, DT_SINGLELINE|DT_VCENTER|DT_LEFT );
@@ -173,17 +176,27 @@
 	}
 
 	bool WINAPI CMDOS2::TBootSector::TGKFileManager::EditIconBytes(PropGrid::PCustomParam,PropGrid::PValue value,PropGrid::TSize valueSize){
-		PCBootSector boot=(PCBootSector)value;
+		PBootSector boot=(PBootSector)value;
 		if (IsValidCustomIconAddress(boot->gkfm.aIcon))
 			return CDos::CHexaValuePropGridEditor::EditValue( nullptr, (PBYTE)boot->gkfm.GetAboutIconData(), sizeof(DefaultIcon) );
-		else
-			return false;
+		if (boot->gkfm.aIcon==DefaultIconAddress){
+			if (Utils::QuestionYesNo( _T("Copy icon to boot sector at default address?"), MB_DEFBUTTON2 )){
+				boot->gkfm.aIcon=34300;
+				::memcpy( (PBYTE)boot->gkfm.GetAboutIconData(), DefaultIcon, sizeof(DefaultIcon) );
+				return true;
+			}
+		}else
+			if (Utils::QuestionYesNo( _T("Set default icon?"), MB_DEFBUTTON2 )){
+				boot->gkfm.aIcon=Default.aIcon;
+				return true;
+			}
+		return false;
 	}
 
 	void CMDOS2::TBootSector::TGKFileManager::AddToPropertyGrid(HWND hPropGrid){
 		// adds a property showing the presence of GK's File Manager on the disk into PropertyGrid
 		const HANDLE hGkfm=PropGrid::AddCategory(hPropGrid,nullptr,GKFM_NAME);
-		const bool recognized=id==0x4d46; // textual representation of "FM" string
+		const bool recognized=id==Default.id; // textual representation of "FM" string
 		PropGrid::AddDisabledProperty(	hPropGrid, hGkfm, _T("Status"),
 										recognized?"Recognized":"Not recognized",
 										PropGrid::String::DefineFixedLengthEditorA(0)
@@ -429,23 +442,25 @@ errorText:				TCHAR buf[400];
 			return false;
 	}
 
+	const CMDOS2::TBootSector::TGKFileManager CMDOS2::TBootSector::TGKFileManager::Default={
+		0x4d46, // textual representation of "FM" string
+		8, 112, 120, 40, // y, x, w, h [in pixels]
+		56, // color (black text on white background)
+		5, 40,	// [dy,dx] offset of the text from window's upper left corner
+		34210,	// address of the text in memory
+		34209,	// address of the window
+		0,		// always zero
+		31014,	// address of icon in memory
+		16463	// address of window in Spectrum's VideoRAM
+	};
+	
 	bool WINAPI CMDOS2::TBootSector::TGKFileManager::CreateNew(PropGrid::PCustomParam param,int hyperlinkId,LPCTSTR hyperlinkName){
 		// True <=> PropertyGrid's Editor can be destroyed after this function has terminated, otherwise False
 		const PMDOS2 mdos=(PMDOS2)CDos::GetFocused();
 		const PImage image=mdos->image;
 		const PBootSector pBootSector=(PBootSector)image->GetHealthySectorData(CHS);
 		TBootSector tmpBootSector=*pBootSector;
-			static const TGKFileManager DefGkfm={	0x4d46, // textual representation of "FM" string
-													8, 112, 120, 40, // y, x, w, h [in pixels]
-													56, // color (black text on white background)
-													5, 40,	// [dy,dx] offset of the text from window's upper left corner
-													34210,	// address of the text in memory
-													34209,	// address of the window
-													0,		// always zero
-													31014,	// address of icon in memory
-													16463	// address of window in Spectrum's VideoRAM
-												};
-			tmpBootSector.gkfm=DefGkfm;
+			tmpBootSector.gkfm=TGKFileManager::Default;
 			static const BYTE DefGkfmText[]={	0,255,
 												'P','R','O','X','I','M','A',',',' ','v','.','o','.','s','.',15,
 												'S','o','f','t','w','a','r','e',15,

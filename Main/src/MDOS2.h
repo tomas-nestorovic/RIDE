@@ -33,6 +33,8 @@
 		typedef struct TBootSector sealed{
 			#pragma pack(1)
 			struct TGKFileManager sealed{
+				static const TGKFileManager Default;
+
 				static HIMAGELIST GetListOfDefaultIcons();
 				static BYTE AddIconToList(HIMAGELIST icons,PCBYTE iconZxData);
 				static void DrawIcon(HDC dc,PCBYTE iconZxData,BYTE zoomFactor);
