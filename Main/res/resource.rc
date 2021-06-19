@@ -974,10 +974,10 @@ BEGIN
     LTEXT           "entries",IDC_STATIC,97,235,22,8,NOT WS_GROUP
     CONTROL         "Update &boot sector",ID_BOOT,"Button",BS_AUTOCHECKBOX | 
                     WS_DISABLED | WS_TABSTOP,7,253,78,10
-    CONTROL         "&Add newly formatted tracks to FAT",ID_VERIFY_TRACK,
+    CONTROL         "Add ne&wly formatted tracks to FAT",ID_VERIFY_TRACK,
                     "Button",BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,7,
                     265,124,10
-    CONTROL         "R&eport on low-level formatting",ID_REPORT,"Button",
+    CONTROL         "Report &on low-level formatting",ID_REPORT,"Button",
                     BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,7,276,109,10
 END
 
@@ -1150,7 +1150,7 @@ STYLE WS_CHILD | WS_CLIPSIBLINGS
 FONT 8, "MS Sans Serif"
 BEGIN
     LTEXT           "Static",ID_COMMENT,7,0,24,15
-    CONTROL         "<a id=""DRV_A"">Access real hardware on this computer</a> (additional drivers may be required).",
+    CONTROL         "<a id=""DRV_A"">Access real devices on this computer</a> (additional drivers may be required).",
                     ID_DRIVEA,"SysLink",0x0,32,4,288,10
 END
 
@@ -1196,7 +1196,7 @@ BEGIN
     EDITTEXT        ID_NUMBER,91,114,40,12,ES_AUTOHSCROLL | ES_NUMBER | 
                     WS_DISABLED | NOT WS_BORDER,WS_EX_STATICEDGE
     PUSHBUTTON      "System default",ID_DEFAULT1,134,114,56,13,WS_DISABLED
-    CONTROL         "Medium already for&matted, so reformat just bad tracks",
+    CONTROL         "Medium &already formatted, so reformat just bad tracks",
                     ID_FORMAT,"Button",BS_AUTOCHECKBOX | WS_DISABLED | 
                     WS_TABSTOP,7,138,187,10
     CONTROL         "Real-time thread &priority (normal priority if unchecked)",
@@ -1331,7 +1331,7 @@ BEGIN
                     96,13
     PUSHBUTTON      "Refresh",ID_RECOVER,170,23,48,13
     RTEXT           "Warn",ID_INFORMATION,42,38,24,14,NOT WS_GROUP
-    CONTROL         "Double track distance",ID_40D80,"Button",
+    CONTROL         "&Double track distance",ID_40D80,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,71,40,147,10
     LTEXT           "Motor &off after [s]:",IDC_STATIC,7,57,56,8,NOT 
                     WS_GROUP
@@ -1452,9 +1452,9 @@ BEGIN
     LTEXT           "&Gap3:",IDC_STATIC,43,76,20,8,NOT WS_GROUP
     EDITTEXT        ID_GAP,84,75,40,12,ES_AUTOHSCROLL | ES_NUMBER | 
                     WS_DISABLED | NOT WS_BORDER,WS_EX_STATICEDGE
-    CONTROL         "Skip empty tracks in patch file",ID_TRACK,"Button",
+    CONTROL         "Skip &empty tracks in patch file",ID_TRACK,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,7,96,110,10
-    CONTROL         "Real-time thread priority (normal priority if unchecked)",
+    CONTROL         "Real-time thread &priority (normal priority if unchecked)",
                     ID_PRIORITY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,107,
                     187,10
 END
@@ -1475,14 +1475,12 @@ CAPTION "Automatic disk recognition"
 FONT 8, "MS Sans Serif", 0, 0, 0x1
 BEGIN
     PUSHBUTTON      "Cancel",IDCANCEL,224,117,50,14
-    LTEXT           "&Not participating in recognition:",-1,153,7,98,8,NOT 
-                    WS_GROUP
+    LTEXT           "&Excluded from recognition:",-1,153,7,84,8,NOT WS_GROUP
     LISTBOX         ID_HIDDEN,153,18,121,77,LBS_SORT | LBS_OWNERDRAWFIXED | 
                     LBS_HASSTRINGS | LBS_NOINTEGRALHEIGHT | NOT WS_BORDER | 
                     WS_VSCROLL | WS_TABSTOP,WS_EX_STATICEDGE
     PUSHBUTTON      "<",ID_ADD,133,40,15,12
-    LTEXT           "&Participating in recognition:",-1,7,7,86,8,NOT 
-                    WS_GROUP
+    LTEXT           "&Included in recognition:",-1,7,7,74,8,NOT WS_GROUP
     LISTBOX         ID_DOS,7,18,121,77,LBS_OWNERDRAWFIXED | LBS_HASSTRINGS | 
                     LBS_NOINTEGRALHEIGHT | NOT WS_BORDER | WS_VSCROLL | 
                     WS_TABSTOP,WS_EX_STATICEDGE
@@ -1639,17 +1637,17 @@ BEGIN
     LTEXT           "&Precision:",IDC_STATIC,7,24,32,8
     COMBOBOX        ID_ROTATION,71,22,147,46,CBS_DROPDOWNLIST | WS_VSCROLL | 
                     WS_TABSTOP
-    LTEXT           "Flux decoder:",IDC_STATIC,7,41,44,8,NOT WS_GROUP
+    LTEXT           "&Flux decoder:",IDC_STATIC,7,41,44,8,NOT WS_GROUP
     COMBOBOX        ID_ACCURACY,71,39,147,46,CBS_DROPDOWNLIST | WS_VSCROLL | 
                     WS_TABSTOP
-    CONTROL         "Reset on index",ID_DEFAULT1,"Button",BS_AUTOCHECKBOX | 
+    CONTROL         "&Reset on index",ID_DEFAULT1,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,71,55,147,10
     LTEXT           "&Medium:",IDC_STATIC,7,72,28,8,NOT WS_GROUP
     CONTROL         "Static",ID_MEDIUM,"Static",SS_SIMPLE | WS_BORDER,71,70,
                     96,13
     PUSHBUTTON      "Refresh",ID_RECOVER,170,70,48,13
     RTEXT           "Warn",ID_INFORMATION,42,84,24,16,NOT WS_GROUP
-    CONTROL         "Double track distance",ID_40D80,"Button",
+    CONTROL         "&Double track distance",ID_40D80,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,71,87,147,10
     LTEXT           "Pre-compensation:",IDC_STATIC,7,102,60,8
     LTEXT           "W",ID_INSTRUCTION,71,103,18,16,NOT WS_VISIBLE | NOT 
