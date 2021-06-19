@@ -658,15 +658,15 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		return (CRecentFileListEx *)m_pRecentFileList;
 	}
 
-	HWND CRideApp::GetFocusedWindow() const{
+	HWND CRideApp::GetEnabledActiveWindow() const{
 		// returns currently focused window, regardless of which thread created it
 		GUITHREADINFO gti={ sizeof(gti) };
-		if (::GetGUIThreadInfo(::GetCurrentThreadId(),&gti) && gti.hwndFocus)
-			// current thread has created a GUI
-			return gti.hwndFocus;
-		else if (m_pMainWnd!=nullptr && ::GetGUIThreadInfo(::GetWindowThreadProcessId(*m_pMainWnd,nullptr),&gti) && gti.hwndFocus)
-			// the main thread has (still/already) some GUI
-			return gti.hwndFocus;
+		if (::GetGUIThreadInfo(::GetCurrentThreadId(),&gti) && gti.hwndActive && ::IsWindowEnabled(gti.hwndActive))
+			// current thread has created a GUI; disabled windows ignored (as mustn't parent any pop-up windows)
+			return gti.hwndActive;
+		else if (m_pMainWnd!=nullptr && ::GetGUIThreadInfo(::GetWindowThreadProcessId(*m_pMainWnd,nullptr),&gti) && gti.hwndActive && ::IsWindowEnabled(gti.hwndActive))
+			// the main thread has (still/already) some GUI; disabled windows ignored (as mustn't parent any pop-up windows)
+			return gti.hwndActive;
 		else
 			// no known GUI exists
 			return ::GetActiveWindow();

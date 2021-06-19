@@ -35,7 +35,7 @@
 		CDocument *OpenDocumentFile(LPCTSTR lpszFileName) override;
 		void OnFileOpen(); // public wrapper
 		CRecentFileListEx *GetRecentFileList() const;
-		HWND GetFocusedWindow() const;
+		HWND GetEnabledActiveWindow() const;
 		bool IsInGodMode() const;
 		#if _MFC_VER>=0x0A00
 		afx_msg void OnOpenRecentFile(UINT nID);

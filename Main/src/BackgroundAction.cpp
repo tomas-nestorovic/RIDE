@@ -98,10 +98,12 @@
 			switch (LOWORD(wParam)){
 				case IDCANCEL:
 					// cancelling the Worker and whole dialog
+					EnableWindow(FALSE); // as about to be destroyed soon, mustn't parent any pop-up windows!
 					bCancelled=true;
 					break;
 				case IDCONTINUE:
 					// resuming the Worker
+					EnableWindow(); // may parent pop-up windows
 					Resume();
 					return 0;
 			}
@@ -166,6 +168,7 @@
 				// Worker finished - closing the window
 				if (!bTargetStateReached){ // not sending the dialog-closure request twice
 					bTargetStateReached=true;
+					::EnableWindow( m_hWnd, FALSE ); // as about to be destroyed soon, mustn't parent any pop-up windows!
 					::PostMessage( m_hWnd, WM_COMMAND, IDOK, 0 );
 				}
 	}
@@ -283,7 +286,7 @@
 						if (iCurrAction+1<nActions){
 							// . launching the next Action
 							lastState=0;
-							auto &r=actions[++iCurrAction];
+							const auto &r=actions[++iCurrAction];
 							BeginAnother( r.fnAction, r.fnParams, actionThreadPriority );
 							bTargetStateReached=false;
 							::PostMessage( m_hWnd, WM_COMMAND, IDCONTINUE, 0 ); // launching the Worker

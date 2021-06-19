@@ -1131,7 +1131,7 @@
 		CTrackEditor(const CImage::CTrackReader &tr,PCTimeInterval pIntervals,DWORD nIntervals,UINT messageBoxButtons,bool initAllFeaturesOn,LPCTSTR captionFormat,va_list argList)
 			// ctor
 			// - base
-			: Utils::CRideDialog( IDR_TRACK_EDITOR, CWnd::FromHandle(app.GetFocusedWindow()) )
+			: Utils::CRideDialog( IDR_TRACK_EDITOR, CWnd::FromHandle(app.GetEnabledActiveWindow()) )
 			// - initialization
 			, tr(tr)
 			, menu( IDR_TRACK_EDITOR ) , messageBoxButtons(messageBoxButtons) , initAllFeaturesOn(initAllFeaturesOn)
