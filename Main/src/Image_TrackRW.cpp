@@ -475,6 +475,7 @@
 				continue;
 			if (pOutParseEvents)
 				*pOutParseEvents++=TParseEvent( TParseEvent::SYNC_3BYTES, tSyncStarts[(iSyncStart+256-48)&63], currentTime, 0xa1a1a1 );
+			sync1=0; // invalidating "buffered" synchronization, so that it isn't reused
 			// . an ID Field mark should follow the synchronization
 			tEventStart=currentTime;
 			if (!ReadBits16(w)) // Track end encountered
@@ -521,7 +522,6 @@
 				*pOutParseEvents++=TParseEvent( crcBad?TParseEvent::CRC_BAD:TParseEvent::CRC_OK, tEventStart, currentTime, crc );
 			// . sector found
 			nSectors++;
-			sync1=0; // invalidating "buffered" synchronization
 		}
 		// - returning the result
 		return nSectors;
