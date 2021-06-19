@@ -649,16 +649,11 @@ errorDuringWriting:				TCHAR buf[80];
 					}
 					// : suggesting to dump only Cylinders within the officially reported Format (where suitable to)
 					if (
-						#ifndef _DEBUG // checking if the Source is a floppy only in Release mode
-							dumpParams.source->properties->IsRealDevice()
-							&&
-						#endif
-						dynamic_cast<CImageRaw *>(dumpParams.target.get())!=nullptr
+						dos->properties!=&CUnknownDos::Properties // Unknown DOS doesn't have valid Format information
 					)
-						// suggestion is helpfull only if dumping a floppy to an image with invariant structure (as Cylinders outside the official Format may have different layout, causing an "Device doesn't recognize this command" error during formatting the raw Image)
-						if (dos->properties!=&CUnknownDos::Properties) // Unknown DOS doesn't have valid Format information
 							if (dumpParams.cylinderA || dumpParams.cylinderZ+1!=dos->formatBoot.nCylinders){ // "+1" = Cylinders are numbered from 0
 								// : defining the Dialog
+								TCHAR caption[200];
 								class CSuggestionDialog sealed:public Utils::CCommandDialog{
 									BOOL OnInitDialog() override{
 										// dialog initialization
@@ -675,13 +670,20 @@ errorDuringWriting:				TCHAR buf[80];
 									}
 								public:
 									const TCylinder lastOccupiedCyl;
-
-									CSuggestionDialog()
+						
+									CSuggestionDialog(LPCTSTR caption)
 										// ctor
-										: Utils::CCommandDialog(_T("Dumping cylinders outside official format to a raw image may fail!"))
+										: Utils::CCommandDialog(caption)
 										, lastOccupiedCyl( CImage::GetActive()->dos->GetLastOccupiedStdCylinder() ) {
 									}
-								} d;
+								} d(
+									::lstrcat(
+										::lstrcpy( caption, _T("Dumped and reported cylinder ranges don't match.") ),
+										dumpParams.cylinderZ>=dos->formatBoot.nCylinders && dynamic_cast<CImageRaw *>(dumpParams.target.get())!=nullptr
+											? _T(" Dumping cylinders outside official format to a raw image may fail!")
+											: _T("")
+									)
+								);
 								// : showing the Dialog and processing its result
 								switch (d.DoModal()){
 									case IDYES:
