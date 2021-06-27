@@ -103,7 +103,7 @@
 			bool __seekTo__(TCylinder cyl);
 			bool __calibrate__();
 		} fddHead;
-		PInternalTrack internalTracks[FDD_CYLINDERS_MAX*2]; // "*2" = a floppy can have two Sides
+		PInternalTrack internalTracks[FDD_CYLINDERS_MAX][2]; // 2 = a floppy can have two Sides
 
 		TStdWinError __connectToFloppyDrive__(TSupportedDriver _driver);
 		void __disconnectFromFloppyDrive__();

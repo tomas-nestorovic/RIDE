@@ -57,9 +57,6 @@
 	#define _HANDLE		fddHead.handle
 	#define DRIVER		fddHead.driver
 
-	#define __REFER_TO_TRACK(fdd,cyl,head)\
-				fdd->internalTracks[cyl*2+head] /* 2 = max number of Sides on a floppy */
-
 	TStdWinError CFDD::TInternalTrack::TSectorInfo::__saveToDisk__(CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip,bool verify){
 		// saves this Sector to inserted floppy; returns Windows standard i/o error
 		LOG_SECTOR_ACTION(&id,_T("TStdWinError CFDD::TInternalTrack::TSectorInfo::__saveToDisk__"));
@@ -128,14 +125,14 @@
 						TSectorId bufferId[(BYTE)-1]; WORD bufferLength[(BYTE)-1]; TFdcStatus bufferStatus[(BYTE)-1];
 						for( TSector n=0; n<pit->nSectors; n++ )
 							bufferId[n]=pit->sectors[n].id, bufferLength[n]=pit->sectors[n].length, bufferStatus[n]=TFdcStatus::WithoutError;
-						__REFER_TO_TRACK(fdd,cyl,head)=nullptr; // detaching the Track internal representation for it to be not destroyed during reformatting of the Track
+						fdd->internalTracks[cyl][head]=nullptr; // detaching the Track internal representation for it to be not destroyed during reformatting of the Track
 						err=fdd->FormatTrack(	cyl, head, pit->codec, pit->nSectors, bufferId, bufferLength, bufferStatus,
 												fdd->floppyType==Medium::FLOPPY_DD_525 ? FDD_525_SECTOR_GAP3 : FDD_350_SECTOR_GAP3, // if gap too small (e.g. 10) it's highly likely that sectors would be missed in a single disk revolution (so for instance, reading 9 sectors would require 9 disk revolutions)
 												fdd->dos->properties->sectorFillerByte
 											);
 						if (err!=ERROR_SUCCESS){ // if formatting failed ...
 terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any new InternalTrack representation
-							__REFER_TO_TRACK(fdd,cyl,head)=(PInternalTrack)pit; // re-attaching the original InternalTrack representation
+							fdd->internalTracks[cyl][head]=(PInternalTrack)pit; // re-attaching the original InternalTrack representation
 							return LOG_ERROR(err); // ... there's nothing else to do but terminating with Error
 						}
 						// . if this is the K-th Sector, making sure that the 0..(K-1)-th Sectors have been formatted well
@@ -148,7 +145,7 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 						}
 						// . disposing the new InternalTrack representations (as it's been worked only with the original one), restoring the original
 						fdd->__unformatInternalTrack__(cyl,head); // disposing any new InternalTrack representation
-						__REFER_TO_TRACK(fdd,cyl,head)=(PInternalTrack)pit; // re-attaching the original InternalTrack representation
+						fdd->internalTracks[cyl][head]=(PInternalTrack)pit; // re-attaching the original InternalTrack representation
 						// . writing the 0..(K-1)-th Sectors back to the above reformatted Track, leaving K+1..N-th Sectors unwritten (caller's duty); we re-attempt to write this K-th Sector in the next iteration
 						for( TSector s=0; s<nSectorsToSkip; s++ ){
 							const TPhysicalAddress chs={ cyl, head, pit->sectors[s].id };
@@ -708,19 +705,18 @@ error:				switch (const TStdWinError err=::GetLastError()){
 
 
 
-	#define REFER_TO_TRACK(cyl,head)	__REFER_TO_TRACK(this,cyl,head)
 
 	CFDD::PInternalTrack CFDD::__getScannedTrack__(TCylinder cyl,THead head) const{
 		// returns Internal representation of the Track
-		return	cyl<FDD_CYLINDERS_MAX
-				? REFER_TO_TRACK(cyl,head)
+		return	cyl<FDD_CYLINDERS_MAX && head<2
+				? internalTracks[cyl][head]
 				: nullptr;
 	}
 
 	void CFDD::__unformatInternalTrack__(TCylinder cyl,THead head){
 		// disposes buffered InternalTrack
 		if (const PInternalTrack tmp=__getScannedTrack__(cyl,head))
-			delete tmp, REFER_TO_TRACK(cyl,head)=nullptr;
+			delete tmp, internalTracks[cyl][head]=nullptr;
 	}
 
 	void CFDD::__freeInternalTracks__(){
@@ -821,7 +817,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 	CFDD::PInternalTrack CFDD::__scanTrack__(TCylinder cyl,THead head){
 		// scans given Track and returns the number of discovered Sectors; returns Null if Track cannot be scanned (e.g. due to an hardware error or "out-of-range" error)
 		// - attempting to scan the specified Track
-		if (cyl<FDD_CYLINDERS_MAX)
+		if (cyl<FDD_CYLINDERS_MAX && head<2)
 			// Track can be scanned
 			if (const PInternalTrack pit=__getScannedTrack__(cyl,head))
 				// Track has been already scanned before - returning it
@@ -847,7 +843,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 							TSectorId bufferId[(TSector)-1]; TLogTime sectorTimes[(TSector)-1];
 							for( BYTE n=0; n<sectors.n; n++ )
 								bufferId[n]=sectors.header[n], sectorTimes[n]=TIME_MICRO( sectors.header[n].reltime );
-							return REFER_TO_TRACK(cyl,head) = new TInternalTrack( this, cyl, head, Codec::MFM, sectors.n, bufferId, sectorTimes );
+							return internalTracks[cyl][head] = new TInternalTrack( this, cyl, head, Codec::MFM, sectors.n, bufferId, sectorTimes );
 						}
 						default:
 							ASSERT(FALSE);
@@ -1202,14 +1198,14 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 		if (const TStdWinError err=__setDataTransferSpeed__(_floppyType))
 			return LOG_ERROR(err);
 		// - scanning zeroth Track - if it can be read, we have set the correct transfer speed
-		const PInternalTrack pit0=REFER_TO_TRACK(0,0); // backing up original Track, if any
-			REFER_TO_TRACK(0,0)=nullptr; // the Track hasn't been scanned yet
+		const PInternalTrack pit0=internalTracks[0][0]; // backing up original Track, if any
+			internalTracks[0][0]=nullptr; // the Track hasn't been scanned yet
 			const TInternalTrack *const pit=__scanTrack__(0,0);
 			const TStdWinError result =	pit && pit->nSectors // if Track can be scanned and its Sectors recognized ...
 										? ERROR_SUCCESS	// ... then the TransferSpeed has been set correctly
 										: LOG_ERROR(ERROR_INVALID_DATA);
 			__unformatInternalTrack__(0,0);
-		REFER_TO_TRACK(0,0)=pit0; // restoring original Track
+		internalTracks[0][0]=pit0; // restoring original Track
 		return result;
 	}
 
@@ -1530,12 +1526,12 @@ Utils::Information(buf);}
 							fdd->fddHead.SeekHome();
 							const bool doubleTrackStep0=fdd->fddHead.doubleTrackStep;
 								fdd->fddHead.doubleTrackStep=false;
-								const PInternalTrack pit0=__REFER_TO_TRACK(fdd,1,0); // backing up original Track, if any
-									__REFER_TO_TRACK(fdd,1,0)=nullptr; // the Track hasn't been scanned yet
+								const PInternalTrack pit0=fdd->internalTracks[1][0]; // backing up original Track, if any
+									fdd->internalTracks[1][0]=nullptr; // the Track hasn't been scanned yet
 									const PInternalTrack pit=fdd->__scanTrack__(1,0);
 										CheckDlgButton( ID_40D80, !ShowDlgItem(ID_INFORMATION,pit->nSectors>0) );
 									fdd->__unformatInternalTrack__(1,0);
-								__REFER_TO_TRACK(fdd,1,0)=pit0; // restoring original Track
+								fdd->internalTracks[1][0]=pit0; // restoring original Track
 							fdd->fddHead.doubleTrackStep=doubleTrackStep0;
 							fdd->fddHead.SeekHome();
 						}
@@ -1875,7 +1871,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 						}
 			}else
 				// if verification turned off, assuming well formatted Track structure, hence avoiding the need of its scanning
-				REFER_TO_TRACK(chs.cylinder,chs.head) = new TInternalTrack( this, chs.cylinder, chs.head, Codec::MFM, 1, &chs.sectorId, (PCLogTime)FDD_350_SECTOR_GAP3 ); // Gap3 = calculate Sector start times from information of this Gap3 and individual Sector lengths
+				internalTracks[chs.cylinder][chs.head] = new TInternalTrack( this, chs.cylinder, chs.head, Codec::MFM, 1, &chs.sectorId, (PCLogTime)FDD_350_SECTOR_GAP3 ); // Gap3 = calculate Sector start times from information of this Gap3 and individual Sector lengths
 			// . Track formatted successfully
 			break;
 		}while (true);
@@ -2160,7 +2156,7 @@ formatCustomWay:
 					}
 				}else
 					// if verification turned off, assuming well formatted Track structure, hence avoiding the need of its scanning
-					REFER_TO_TRACK(cyl,head) = new TInternalTrack( this, cyl, head, Codec::MFM, nSectors, bufferId, (PCLogTime)gap3 ); // Gap3 = calculate Sector start times from information of this Gap3 and individual Sector lengths
+					internalTracks[cyl][head] = new TInternalTrack( this, cyl, head, Codec::MFM, nSectors, bufferId, (PCLogTime)gap3 ); // Gap3 = calculate Sector start times from information of this Gap3 and individual Sector lengths
 				// . Track formatted successfully
 //Utils::Information("formatted OK - ready to break");
 				break;
@@ -2184,7 +2180,7 @@ formatCustomWay:
 		// - disposing internal information on actual Track format
 		__unformatInternalTrack__(cyl,head);
 		// - explicitly setting Track structure
-		TInternalTrack::TSectorInfo *psi=( REFER_TO_TRACK(cyl,head) = new TInternalTrack( this, cyl, head, Codec::MFM, nSectors, bufferId, (PCLogTime)gap3 ) )->sectors; // Gap3 = calculate Sector start times from information of this Gap3 and individual Sector lengths
+		TInternalTrack::TSectorInfo *psi=( internalTracks[cyl][head] = new TInternalTrack( this, cyl, head, Codec::MFM, nSectors, bufferId, (PCLogTime)gap3 ) )->sectors; // Gap3 = calculate Sector start times from information of this Gap3 and individual Sector lengths
 		for( TSector n=nSectors; n--; psi++ )
 			psi->data=(PSectorData)::memset( ALLOCATE_SECTOR_DATA(psi->length), fillerByte, psi->length );
 		// - presumption done
