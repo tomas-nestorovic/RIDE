@@ -324,6 +324,7 @@
 					DATA_BAD,		// dw (length)
 					CRC_OK,			// dw
 					CRC_BAD,		// dw
+					NONFORMATTED,	// - (no params)
 					CUSTOM,			// lpsz; {Custom..255} Types determine length of this structure in Bytes
 					LAST
 				} type;
@@ -449,6 +450,7 @@
 			bool ReadBits16(WORD &rOut);
 			bool ReadBits32(DWORD &rOut);
 			WORD Scan(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *pOutParseEvents=nullptr);
+			WORD ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *pOutParseEvents=nullptr);
 			TFdcStatus ReadData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,LPBYTE buffer,TParseEvent *pOutParseEvents=nullptr);
 			BYTE __cdecl ShowModal(PCTimeInterval pIntervals,DWORD nIntervals,UINT messageBoxButtons,bool initAllFeaturesOn,LPCTSTR format,...) const;
 			void __cdecl ShowModal(LPCTSTR format,...) const;

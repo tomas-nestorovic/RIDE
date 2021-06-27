@@ -70,7 +70,8 @@
 						TParseEvent::TypeColors[5],
 						TParseEvent::TypeColors[6],
 						TParseEvent::TypeColors[7],
-						TParseEvent::TypeColors[8]
+						TParseEvent::TypeColors[8],
+						TParseEvent::TypeColors[9]
 					};
 					for( CImage::CTrackReader tr=te.tr; true; ){
 						// . waiting for next request to paint the Track
@@ -150,6 +151,9 @@
 												break;
 											case TParseEvent::CRC_BAD:
 												::wsprintfA( label, _T("0x%X bad CRC"), pe->dw );
+												break;
+											case TParseEvent::NONFORMATTED:
+												::wsprintfA( label, _T("Nonformatted %d.%d µs"), div((int)(pe->tEnd-pe->tStart),(int)1000) );
 												break;
 											default:
 												::lstrcpyA( label, pe->lpszCustom );

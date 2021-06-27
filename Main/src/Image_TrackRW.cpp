@@ -307,6 +307,38 @@
 		return nSectorsFound;
 	}
 
+	WORD CImage::CTrackReader::ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *pOutParseEvents){
+		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
+		// - standard scanning using current Codec
+		ASSERT( pOutParseEvents!=nullptr );
+		const WORD nSectorsFound=Scan( pOutFoundSectors, pOutIdEnds, pOutIdProfiles, pOutIdStatuses, pOutParseEvents );
+		// - getting ParseEvents in Sector data
+		for( WORD s=0; s<nSectorsFound; s++ ){
+			TParseEvent peData[32]; // should suffice for Events in data part of Sectors of any platform
+			BYTE dummy[16384]; // big enough to contain data of Sector of any floppy type
+			ReadData( pOutIdEnds[s], pOutIdProfiles[s], CImage::GetOfficialSectorLength(pOutFoundSectors[s].lengthCode), dummy, peData );
+			pOutParseEvents->AddAscendingByStart( peData );
+		}
+		// - search for non-formatted areas
+		if (nSectorsFound>0){ // makes sense only if some Sectors found
+			const BYTE nCellsMin=64;
+			const TLogTime tAreaLengthMin=nCellsMin*profile.iwTimeDefault; // ignore all non-formatted areas that are shorter
+			TParseEvent peAreas[80]; BYTE nAreas=0; // non-formatted area ParseEvents
+			for( TLogTime t0=RewindToIndexAndResetProfile(0),t; *this; t0=t )
+				if (( t=ReadTime() )-t0>=tAreaLengthMin)
+					for( PCParseEvent pe=pOutParseEvents; !pe->IsEmpty(); pe=pe->GetNext() )
+						if (pe->type==TParseEvent::DATA_OK || pe->type==TParseEvent::DATA_BAD)
+							if (  pe->tStart<=t0 && t0<pe->tEnd  ||  pe->tStart<=t && t<pe->tEnd  ){
+								peAreas[nAreas++]=TParseEvent( TParseEvent::NONFORMATTED, t0, t-profile.iwTimeDefault, 0 );
+								break;
+							}
+			peAreas[nAreas]=TParseEvent::Empty; // termination
+			pOutParseEvents->AddAscendingByStart( peAreas );
+		}
+		// - successfully analyzed
+		return nSectorsFound;
+	}
+
 	TFdcStatus CImage::CTrackReader::ReadData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,LPBYTE buffer,TParseEvent *pOutParseEvents){
 		// attempts to read specified amount of Bytes into the Buffer, starting at position pointed to by the BitReader; returns the amount of Bytes actually read
 		SetCurrentTimeAndProfile( idEndTime, idEndProfile );
@@ -348,6 +380,7 @@
 		0x8057c0,	// data bad (variable length)
 		0x91d04d,	// CRC ok
 		0x6857ff,	// CRC bad
+		0xabbaba,	// non-formatted area
 		0xa79b8a	// custom (variable string)
 	};
 
