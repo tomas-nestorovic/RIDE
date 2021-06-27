@@ -377,6 +377,21 @@
 		return pe;
 	}
 
+	void CImage::CTrackReader::TParseEvent::AddAscendingByStart(const TParseEvent *peList){
+		// adds all ParseEvents to this list, ordered by their Start times ascending (MergeSort)
+		int nThisEventBytes=(PCBYTE)GetLast()->GetNext()-(PCBYTE)this+sizeof(TParseEvent); // "+sizeof" = including the terminal Empty ParseEvent
+		int nListEventBytes=(PCBYTE)peList->GetLast()->GetNext()-(PCBYTE)peList;
+		for( PCParseEvent pe1=this,pe2=peList; nThisEventBytes&&nListEventBytes; pe1=pe1->GetNext() )
+			if (pe1->tStart<=pe2->tStart) // should never be equal, but just in case
+				nThisEventBytes-=pe1->GetSize();
+			else{
+				const BYTE pe2Size=pe2->GetSize();
+				::memmove( (PBYTE)pe1+pe2Size, pe1, nThisEventBytes );
+				::memcpy( (PBYTE)pe1, pe2, pe2Size );
+				nListEventBytes-=pe2Size, pe2=pe2->GetNext();
+			}
+	}
+
 
 
 
@@ -569,6 +584,8 @@
 		while (*this && nBytesToRead-->0){
 			if (!ReadBits16(w)){ // Track end encountered
 				result.ExtendWith( TFdcStatus::DataFieldCrcError );
+				if (pOutParseEvents)
+					*pOutParseEvents++=TParseEvent( TParseEvent::DATA_BAD, tEventStart, currentTime, p-buffer );
 				break;
 			}
 			*p++=MFM::DecodeByte(w);
@@ -856,8 +873,7 @@
 		if (!mp)
 			return ERROR_UNRECOGNIZED_MEDIA;
 		// - ignoring what's before the first Index
-		RewindToIndex(0);
-		TLogTime tCurrIndexOrg=GetIndexTime(0);
+		TLogTime tCurrIndexOrg=RewindToIndex(0);
 		// - normalization
 		const TLogTime tLastIndex=GetIndexTime(nIndexPulses-1);
 		const DWORD iModifStart=iNextTime;

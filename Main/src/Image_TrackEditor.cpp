@@ -752,31 +752,9 @@
 				return pAction->TerminateWithSuccess();
 			CImage::CTrackReader tr=rte.tr;
 			TParseEvent peBuffer[5000]; // capacity should suffice for any Track of any platform
-			const auto iii=sizeof(peBuffer);
 			BYTE dummy[16384]; // big enough to contain data of Sector of any floppy type
 			TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; CImage::CTrackReader::TProfile idProfiles[Revolution::MAX*(TSector)-1];
-			const WORD nSectorsFound=tr.Scan( ids, idEnds, idProfiles, (TFdcStatus *)dummy, peBuffer );
-			pAction->SetProgressTarget(tr.GetTotalTime());
-			for( WORD s=0; s<nSectorsFound; s++,pAction->UpdateProgress(tr.GetCurrentTime()) ){
-				// . if cancelled, we are done
-				if (pAction->IsCancelled())
-					return ERROR_CANCELLED;
-				// . getting ParseEvents in Sector data
-				TParseEvent peData[32]; // should suffice for Events in data part of Sectors of any platform
-				tr.ReadData( idEnds[s], idProfiles[s], CImage::GetOfficialSectorLength(ids[s].lengthCode), dummy, peData );
-				// . merging the two lists of ParseEvents (MergeSort)
-				int nBufferEventBytes=(PCBYTE)peBuffer->GetLast()->GetNext()-(PCBYTE)peBuffer+sizeof(TParseEvent); // including the terminating Null ParseEvent
-				int nDataEventBytes=(PCBYTE)peData->GetLast()->GetNext()-(PCBYTE)peData;
-				for( PCParseEvent pe1=peBuffer,pe2=peData; nBufferEventBytes&&nDataEventBytes; pe1=pe1->GetNext() )
-					if (pe1->tStart<=pe2->tStart) // should never be equal, but just in case
-						nBufferEventBytes-=pe1->GetSize();
-					else{
-						const BYTE pe2Size=pe2->GetSize();
-						::memmove( (PBYTE)pe1+pe2Size, pe1, nBufferEventBytes );
-						::memcpy( (PBYTE)pe1, pe2, pe2Size );
-						nDataEventBytes-=pe2Size, pe2=pe2->GetNext();
-					}
-			}
+			const WORD nSectorsFound=tr.ScanAndAnalyze( ids, idEnds, idProfiles, (TFdcStatus *)dummy, peBuffer );
 			rte.timeEditor.SetParseEvents(peBuffer);
 			return pAction->TerminateWithSuccess();
 		}

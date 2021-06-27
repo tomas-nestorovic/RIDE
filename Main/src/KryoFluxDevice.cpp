@@ -686,8 +686,7 @@
 		//TODO better
 		CTrackReaderWriter trw( pit->GetTimesCount(), CTrackReader::TDecoderMethod::FDD_KEIR_FRASER, false );
 		trw.AddIndexTime(0);
-			const TLogTime tIndex0=pit->GetIndexTime(0), tIndex1=pit->GetIndexTime(1);
-			pit->RewindToIndex(0);
+			const TLogTime tIndex0=pit->RewindToIndex(0), tIndex1=pit->GetIndexTime(1);
 			while (*pit && pit->GetCurrentTime()<tIndex1)
 				trw.AddTime( pit->ReadTime()-tIndex0 );
 		trw.AddIndexTime( tIndex1-tIndex0 );

@@ -346,6 +346,7 @@
 				inline BYTE GetSize() const{ return std::max<BYTE>( type, sizeof(TParseEvent) ); }
 				const TParseEvent *GetNext() const;
 				const TParseEvent *GetLast() const;
+				void AddAscendingByStart(const TParseEvent *peList);
 			} *PCParseEvent;
 		protected:
 			const PLogTime logTimes; // absolute logical times since the start of recording
@@ -408,22 +409,17 @@
 			}
 
 			inline
-			void RewindToIndex(BYTE index){
+			TLogTime RewindToIndex(BYTE index){
 				// navigates back to the first Flux found just after the index pulse
 				SetCurrentTime( GetIndexTime(index) );
+				return GetCurrentTime();
 			}
 
 			inline
-			void RewindToIndexAndProfile(BYTE index,const TProfile &profile){
+			TLogTime RewindToIndexAndResetProfile(BYTE index){
 				// navigates back to the first Flux found just after the index pulse
-				SetCurrentTimeAndProfile( GetIndexTime(index), profile );
-			}
-
-			inline
-			void RewindToIndexAndResetProfile(BYTE index){
-				// navigates back to the first Flux found just after the index pulse
-				RewindToIndex( index );
 				profile.Reset();
+				return RewindToIndex( index );
 			}
 
 			inline

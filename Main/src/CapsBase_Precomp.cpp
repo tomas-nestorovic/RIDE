@@ -384,8 +384,7 @@ nextTrial:	;
 				return err;
 		}
 		// - zeroth index must be at zero Time
-		trw.RewindToIndex(0);
-		if (trw.GetCurrentTime())
+		if (trw.RewindToIndex(0))
 			return ERROR_INVALID_DATA;
 		// - extracting first N non-compensated fluxes from the Track
 		DWORD nTimes=trw.GetTimesCount();
