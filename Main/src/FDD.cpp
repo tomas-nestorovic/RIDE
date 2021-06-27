@@ -798,7 +798,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		LOG_ACTION(_T("TCylinder CFDD::GetCylinderCount"));
 		return	GetNumberOfFormattedSides(0) // if zeroth Cylinder exists ...
-				? FDD_CYLINDERS_MAX>>(BYTE)fddHead.doubleTrackStep // ... then it's assumed that there is the maximum number of Cylinders available (the actual number may be adjusted by systematically scanning the Tracks)
+				? (FDD_CYLINDERS_HD>>(BYTE)fddHead.doubleTrackStep)+FDD_CYLINDERS_EXTRA // ... then it's assumed that there is the maximum number of Cylinders available (the actual number may be adjusted by systematically scanning the Tracks)
 				: 0; // ... otherwise the floppy is considered not formatted
 	}
 

@@ -10,7 +10,7 @@
 		// - initialization
 		, firmware(firmware) {
 		// - setting a classical 5.25" floppy geometry
-		capsImageInfo.maxcylinder=FDD_CYLINDERS_MAX/2-1; // inclusive!
+		capsImageInfo.maxcylinder=FDD_CYLINDERS_HD/2+FDD_CYLINDERS_EXTRA - 1; // "-1" = inclusive!
 		capsImageInfo.maxhead=2-1; // inclusive!
 	}
 
@@ -307,7 +307,7 @@
 		// - showing the Dialog and processing its result
 		if (d.DoModal()==IDOK){
 			params=d.params;
-			capsImageInfo.maxcylinder=( FDD_CYLINDERS_MAX>>(BYTE)params.doubleTrackStep )-1; // inclusive!
+			capsImageInfo.maxcylinder=( FDD_CYLINDERS_HD>>(BYTE)params.doubleTrackStep )+FDD_CYLINDERS_EXTRA - 1; // "-1" = inclusive!
 			return true;
 		}else
 			return false;

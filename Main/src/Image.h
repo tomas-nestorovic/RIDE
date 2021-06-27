@@ -30,7 +30,9 @@
 	typedef const TSector *PCSector;
 	typedef int TTrack,*PTrack;
 
-	#define FDD_CYLINDERS_MAX	82
+	#define FDD_CYLINDERS_HD	80
+	#define FDD_CYLINDERS_EXTRA	2
+	#define FDD_CYLINDERS_MAX	(FDD_CYLINDERS_HD+FDD_CYLINDERS_EXTRA)
 	#define FDD_SECTORS_MAX		64
 	#define FDD_350_SECTOR_GAP3	54
 	#define FDD_525_SECTOR_GAP3	80
