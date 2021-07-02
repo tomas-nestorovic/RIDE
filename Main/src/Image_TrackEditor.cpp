@@ -123,13 +123,19 @@
 								const int nUnitsA=te.timeline.GetUnitCount(te.GetScrollTime());
 								::SetViewportOrgEx( dc, 0, org.y, nullptr );
 								::SelectObject( dc, font );
+								::SelectObject( dc, Utils::CRidePen::BlackHairline );
 								::SetBkMode( dc, OPAQUE );
+								static const char ByteInfoFormat[]="%c\n0x%02X";
+								char label[80];
+								const SIZE byteInfoSizeMin=font.GetTextSize(  label,  ::wsprintfA( label, ByteInfoFormat, 'M', 255 )  );
+								const bool showByteInfo=Utils::LogicalUnitScaleFactor*te.timeline.GetUnitCount( CImage::GetActive()->EstimateNanosecondsPerOneByte() )
+														>=
+														byteInfoSizeMin.cx;
 								const TLogTime iwTimeDefaultHalf=tr.GetCurrentProfile().iwTimeDefault/2;
 								while (continuePainting && !pe->IsEmpty()){
 									const TLogTime a=std::max(timeA,pe->tStart+iwTimeDefaultHalf), z=std::min(timeZ,pe->tEnd+iwTimeDefaultHalf);
 									if (a<z){ // ParseEvent visible
 										const int xa=te.timeline.GetUnitCount(a)-nUnitsA, xz=te.timeline.GetUnitCount(z)-nUnitsA;
-										char label[80];
 										switch (pe->type){
 											case TParseEvent::SYNC_3BYTES:
 												::wsprintfA( label, _T("0x%06X sync"), pe->dw);
@@ -156,7 +162,7 @@
 												::wsprintfA( label, _T("Nonformatted %d.%d µs"), div((int)(pe->tEnd-pe->tStart),(int)1000) );
 												break;
 											default:
-												::lstrcpyA( label, pe->lpszCustom );
+												::lstrcpyA( label, pe->lpszMetaString );
 												break;
 										}
 										RECT rcLabel={ te.timeline.GetUnitCount(pe->tStart)-nUnitsA, -1000, xz, -EVENT_HEIGHT-3 };
@@ -169,6 +175,28 @@
 												::DrawTextA( dc, label,-1, &rcLabel, DT_LEFT|DT_BOTTOM|DT_SINGLELINE );
 											}
 										p.params.locker.Unlock();
+										if (!continuePainting) // new paint request?
+											break;
+										if (showByteInfo && pe->HasByteInfo()){
+											auto pbi=(TParseEvent::PCByteInfo)(pe+1);
+											while (pbi->tStart+iwTimeDefaultHalf<a) pbi++; // skip invisible part
+											rcLabel.right=10000, rcLabel.bottom-=font.charHeight, rcLabel.top=rcLabel.bottom-byteInfoSizeMin.cy;
+											while (continuePainting && pbi->tStart<z && (PCBYTE)pbi-(PCBYTE)pe<pe->size){ // draw visible part
+												rcLabel.left=te.timeline.GetUnitCount(pbi->tStart+iwTimeDefaultHalf)-nUnitsA;
+												p.params.locker.Lock();
+													if ( continuePainting=p.params.id==id ){
+														::MoveToEx( dc, rcLabel.left,0, nullptr );
+														::LineTo( dc, rcLabel.left,rcLabel.bottom );
+														::DrawTextA(
+															dc,
+															label,	::wsprintfA( label, ByteInfoFormat, ::isprint(pbi->value)?pbi->value:'?', pbi->value ),
+															&rcLabel, DT_LEFT|DT_BOTTOM
+														);
+													}
+												p.params.locker.Unlock();
+												pbi++;
+											}
+										}
 									}
 									pe=pe->GetNext();
 								}
@@ -755,7 +783,7 @@
 			if (rte.timeEditor.GetParseEvents()!=nullptr) // already set?
 				return pAction->TerminateWithSuccess();
 			CImage::CTrackReader tr=rte.tr;
-			TParseEvent peBuffer[5000]; // capacity should suffice for any Track of any platform
+			CImage::CTrackReader::TWholeTrackParseEventBuffer peBuffer;
 			BYTE dummy[16384]; // big enough to contain data of Sector of any floppy type
 			TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; CImage::CTrackReader::TProfile idProfiles[Revolution::MAX*(TSector)-1];
 			const WORD nSectorsFound=tr.ScanAndAnalyze( ids, idEnds, idProfiles, (TFdcStatus *)dummy, peBuffer );

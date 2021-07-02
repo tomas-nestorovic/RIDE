@@ -317,6 +317,11 @@
 			};
 
 			typedef const struct TParseEvent sealed{
+				typedef const struct TByteInfo sealed{
+					BYTE value;
+					TLogTime tStart;
+				} *PCByteInfo;
+
 				enum TType:BYTE{
 					EMPTY,			// used as terminator in a list of Events
 					SYNC_3BYTES,	// dw
@@ -327,30 +332,36 @@
 					CRC_OK,			// dw
 					CRC_BAD,		// dw
 					NONFORMATTED,	// - (no params)
-					CUSTOM,			// lpsz; {Custom..255} Types determine length of this structure in Bytes
+					META_STRING,	// lpsz; textual description of a ParseEvent not covered above
 					LAST
 				} type;
+				WORD size; // length of this ParseEvent in Bytes
 				TLogTime tStart, tEnd;
 				union{
 					BYTE b;
 					DWORD dw;
-					char lpszCustom[sizeof(DWORD)]; // description of Custom ParseEvent
+					char lpszMetaString[sizeof(DWORD)]; // textual description of a ParseEvent event
 				};
 
 				static const TParseEvent Empty;
 				static const COLORREF TypeColors[LAST];
 
-				static void WriteCustom(TParseEvent *&buffer,TLogTime tStart,TLogTime tEnd,LPCSTR lpszCustom);
+				static void WriteMetaString(TParseEvent *&buffer,TLogTime tStart,TLogTime tEnd,LPCSTR lpszMetaString);
+				static void WriteData(TParseEvent *&buffer,bool dataOk,TLogTime tStart,TLogTime tEnd,DWORD nBytes,PCByteInfo pByteInfos);
 
 				inline TParseEvent(){}
 				TParseEvent(TType type,TLogTime tStart,TLogTime tEnd,DWORD data);
 
 				inline bool IsEmpty() const{ return type==EMPTY; }
-				inline BYTE GetSize() const{ return std::max<BYTE>( type, sizeof(TParseEvent) ); }
+				inline bool IsData() const{ return type==DATA_OK || type==DATA_BAD; }
+				inline bool HasByteInfo() const{ return IsData() && size>sizeof(TParseEvent); }
 				const TParseEvent *GetNext() const;
 				const TParseEvent *GetLast() const;
 				void AddAscendingByStart(const TParseEvent *peList);
 			} *PCParseEvent;
+
+			typedef TParseEvent TSingleSectorParseEventBuffer[100000/sizeof(TParseEvent)]; // 100k should suffice for Events (and ByteInfos) in data part of a single Sectors of any platform
+			typedef TParseEvent TWholeTrackParseEventBuffer[1500000/sizeof(TParseEvent)]; // "1.5 MB" capacity should suffice for any Track of any platform to comfortably accommodate all ParseEvents and ByteInfos
 		protected:
 			const PLogTime logTimes; // absolute logical times since the start of recording
 			const TDecoderMethod method;
@@ -368,8 +379,8 @@
 
 			WORD ScanFm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *&pOutParseEvents);
 			WORD ScanMfm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *&pOutParseEvents);
-			TFdcStatus ReadDataFm(WORD nBytesToRead,LPBYTE buffer,TParseEvent *&pOutParseEvents);
-			TFdcStatus ReadDataMfm(WORD nBytesToRead,LPBYTE buffer,TParseEvent *&pOutParseEvents);
+			TFdcStatus ReadDataFm(WORD nBytesToRead,TParseEvent *&pOutParseEvents);
+			TFdcStatus ReadDataMfm(WORD nBytesToRead,TParseEvent *&pOutParseEvents);
 		public:
 			typedef const struct TTimeInterval{
 				TLogTime tStart; // inclusive
@@ -452,8 +463,9 @@
 			bool ReadBits16(WORD &rOut);
 			bool ReadBits32(DWORD &rOut);
 			WORD Scan(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *pOutParseEvents=nullptr);
-			WORD ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *pOutParseEvents=nullptr);
-			TFdcStatus ReadData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,LPBYTE buffer,TParseEvent *pOutParseEvents=nullptr);
+			WORD ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *pOutParseEvents);
+			TFdcStatus ReadData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,TParseEvent *pOutParseEvents);
+			TFdcStatus ReadData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,LPBYTE buffer);
 			BYTE __cdecl ShowModal(PCTimeInterval pIntervals,DWORD nIntervals,UINT messageBoxButtons,bool initAllFeaturesOn,LPCTSTR format,...) const;
 			void __cdecl ShowModal(LPCTSTR format,...) const;
 		};
