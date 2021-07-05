@@ -14,6 +14,8 @@
 	typedef CImage::CTrackReader::TParseEvent TParseEvent,*PParseEvent;
 	typedef const TParseEvent *PCParseEvent;
 
+	typedef CImage::CTrackReader::TParseEventPtr TParseEventPtr;
+
 	typedef CImage::CTrackReader::TTimeInterval TTimeInterval,*PTimeInterval;
 	typedef CImage::CTrackReader::PCTimeInterval PCTimeInterval;
 
@@ -117,7 +119,7 @@
 						}
 						// . drawing ParseEvents
 						if (te.IsFeatureShown(TCursorFeatures::STRUCT)){
-							PCParseEvent pe=te.GetParseEvents();
+							TParseEventPtr pe=te.GetParseEvents();
 							const Utils::CRideFont &font=Utils::CRideFont::Std;
 							const auto dcSettings0=::SaveDC(dc);
 								const int nUnitsA=te.timeline.GetUnitCount(te.GetScrollTime());
@@ -177,11 +179,11 @@
 										p.params.locker.Unlock();
 										if (!continuePainting) // new paint request?
 											break;
-										if (showByteInfo && pe->HasByteInfo()){
-											auto pbi=(TParseEvent::PCByteInfo)(pe+1);
+										if (showByteInfo && pe->IsData()){
+											auto pbi=pe.data->byteInfos;
 											while (pbi->tStart+iwTimeDefaultHalf<a) pbi++; // skip invisible part
 											rcLabel.right=10000, rcLabel.bottom-=font.charHeight, rcLabel.top=rcLabel.bottom-byteInfoSizeMin.cy;
-											while (continuePainting && pbi->tStart<z && (PCBYTE)pbi-(PCBYTE)pe<pe->size){ // draw visible part
+											while (continuePainting && pbi->tStart<z && (PCBYTE)pbi-(PCBYTE)pe.data<pe->size){ // draw visible part
 												rcLabel.left=te.timeline.GetUnitCount(pbi->tStart+iwTimeDefaultHalf)-nUnitsA;
 												p.params.locker.Lock();
 													if ( continuePainting=p.params.id==id ){

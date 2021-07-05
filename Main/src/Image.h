@@ -316,12 +316,7 @@
 				void Reset();
 			};
 
-			typedef const struct TParseEvent sealed{
-				typedef const struct TByteInfo sealed{
-					BYTE value;
-					TLogTime tStart;
-				} *PCByteInfo;
-
+			typedef const struct TParseEvent{
 				enum TType:BYTE{
 					EMPTY,			// used as terminator in a list of Events
 					SYNC_3BYTES,	// dw
@@ -346,19 +341,45 @@
 				static const TParseEvent Empty;
 				static const COLORREF TypeColors[LAST];
 
-				static void WriteMetaString(TParseEvent *&buffer,TLogTime tStart,TLogTime tEnd,LPCSTR lpszMetaString);
-				static void WriteData(TParseEvent *&buffer,bool dataOk,TLogTime tStart,TLogTime tEnd,DWORD nBytes,PCByteInfo pByteInfos);
-
 				inline TParseEvent(){}
 				TParseEvent(TType type,TLogTime tStart,TLogTime tEnd,DWORD data);
 
 				inline bool IsEmpty() const{ return type==EMPTY; }
 				inline bool IsData() const{ return type==DATA_OK || type==DATA_BAD; }
-				inline bool HasByteInfo() const{ return IsData() && size>sizeof(TParseEvent); }
 				const TParseEvent *GetNext() const;
+				const TParseEvent *GetNext(TLogTime tMin) const;
 				const TParseEvent *GetLast() const;
+				void AddAscendingByStart(const TParseEvent &pe);
 				void AddAscendingByStart(const TParseEvent *peList);
 			} *PCParseEvent;
+
+			typedef const struct TMetaStringParseEvent:public TParseEvent{
+				static void Create(TParseEvent *&buffer,TLogTime tStart,TLogTime tEnd,LPCSTR lpszMetaString);
+			} *PCMetaStringParseEvent;
+
+			typedef const struct TDataParseEvent:public TParseEvent{
+				typedef const struct TByteInfo sealed{
+					BYTE value;
+					TLogTime tStart;
+				} *PCByteInfo;
+
+				TByteInfo byteInfos[1];
+
+				static void Create(TParseEvent *&buffer,bool dataOk,TLogTime tStart,TLogTime tEnd,DWORD nBytes,PCByteInfo pByteInfos);
+				static void Create(TParseEvent *&buffer,TParseEvent::TType type,TLogTime tStart,TLogTime tEnd,DWORD nBytes,PCByteInfo pByteInfos);
+
+				inline bool HasByteInfo() const{ return size>sizeof(TParseEvent); }
+			} *PCDataParseEvent;
+
+			struct TParseEventPtr sealed{
+				union{
+					PCDataParseEvent data;
+					PCParseEvent gen; // any other non-customized ParseEvent
+				};
+
+				inline TParseEventPtr(PCParseEvent pe){ gen=pe; }
+				inline PCParseEvent operator->() const{ return gen; }
+			};
 
 			typedef TParseEvent TSingleSectorParseEventBuffer[100000/sizeof(TParseEvent)]; // 100k should suffice for Events (and ByteInfos) in data part of a single Sectors of any platform
 			typedef TParseEvent TWholeTrackParseEventBuffer[1500000/sizeof(TParseEvent)]; // "1.5 MB" capacity should suffice for any Track of any platform to comfortably accommodate all ParseEvents and ByteInfos

@@ -313,26 +313,37 @@
 		ASSERT( pOutParseEvents!=nullptr );
 		const WORD nSectorsFound=Scan( pOutFoundSectors, pOutIdEnds, pOutIdProfiles, pOutIdStatuses, pOutParseEvents );
 		// - getting ParseEvents in Sector data
+		struct{
+			TLogTime time;
+			TProfile profile;
+		} dataEnds[1536];
+		WORD nDataEnds=0;
 		for( WORD s=0; s<nSectorsFound; s++ ){
 			TSingleSectorParseEventBuffer peData;
-			ReadData( pOutIdEnds[s], pOutIdProfiles[s], CImage::GetOfficialSectorLength(pOutFoundSectors[s].lengthCode), peData );
+			if (!ReadData( pOutIdEnds[s], pOutIdProfiles[s], CImage::GetOfficialSectorLength(pOutFoundSectors[s].lengthCode), peData ).DescribesMissingDam()
+				&&
+				*this // not end of Track (aka. data complete)
+			){
+				auto &r=dataEnds[nDataEnds++];
+					r.time=currentTime;
+					r.profile=profile;
+			}
 			pOutParseEvents->AddAscendingByStart( peData );
 		}
 		// - search for non-formatted areas
 		if (nSectorsFound>0){ // makes sense only if some Sectors found
 			const BYTE nCellsMin=64;
 			const TLogTime tAreaLengthMin=nCellsMin*profile.iwTimeDefault; // ignore all non-formatted areas that are shorter
-			TParseEvent peAreas[180]; BYTE nAreas=0; // non-formatted area ParseEvents (usually just one per Track, but let's have spare for misrecognitions)
 			for( TLogTime t0=RewindToIndexAndResetProfile(0),t; *this; t0=t )
 				if (( t=ReadTime() )-t0>=tAreaLengthMin)
 					for( PCParseEvent pe=pOutParseEvents; !pe->IsEmpty(); pe=pe->GetNext() )
 						if (pe->IsData())
 							if (  pe->tStart<=t0 && t0<pe->tEnd  ||  pe->tStart<=t && t<pe->tEnd  ){
-								peAreas[nAreas++]=TParseEvent( TParseEvent::NONFORMATTED, t0, t-profile.iwTimeDefault, 0 );
+								pOutParseEvents->AddAscendingByStart(
+									TParseEvent( TParseEvent::NONFORMATTED, t0, t-profile.iwTimeDefault, 0 )
+								);
 								break;
 							}
-			peAreas[nAreas]=TParseEvent::Empty; // termination
-			pOutParseEvents->AddAscendingByStart( peAreas );
 		}
 		// - successfully analyzed
 		return nSectorsFound;
@@ -364,11 +375,10 @@
 		for( PCParseEvent pe=peBuffer; !pe->IsEmpty(); pe=pe->GetNext() )
 			if (pe->IsData()){
 				auto nBytes=pe->size-sizeof(TParseEvent);
-				for( TParseEvent::PCByteInfo pbi=(TParseEvent::PCByteInfo)++pe; nBytes; nBytes-=sizeof(TParseEvent::TByteInfo) )
+				for( auto *pbi=((PCDataParseEvent)pe)->byteInfos; nBytes; nBytes-=sizeof(*pbi) )
 					*buffer++=pbi++->value;
 				break;
 			}
-
 		return st;
 	}
 
@@ -405,23 +415,31 @@
 		dw=data;
 	}
 
-	void CImage::CTrackReader::TParseEvent::WriteMetaString(TParseEvent *&buffer,TLogTime tStart,TLogTime tEnd,LPCSTR lpszMetaString){
+	void CImage::CTrackReader::TMetaStringParseEvent::Create(TParseEvent *&buffer,TLogTime tStart,TLogTime tEnd,LPCSTR lpszMetaString){
 		ASSERT( lpszMetaString!=nullptr );
 		*buffer=TParseEvent( TType::META_STRING, tStart, tEnd, 0 );
-		buffer->size +=	::lstrlenA(  ::lstrcpynA( buffer->lpszMetaString, lpszMetaString, (decltype(buffer->size))-1-sizeof(TParseEvent) )  )
+		buffer->size =	sizeof(TMetaStringParseEvent)
+						+
+						::lstrlenA(  ::lstrcpynA( buffer->lpszMetaString, lpszMetaString, (decltype(buffer->size))-1-sizeof(TParseEvent) )  )
 						+
 						1 // "+1" = including terminal Null character
 						-
-						sizeof(buffer->lpszMetaString); // already counted into "Size"
+						sizeof(buffer->lpszMetaString); // already counted into Size
 		buffer=const_cast<TParseEvent *>(buffer->GetNext());
 	}
 
-	void CImage::CTrackReader::TParseEvent::WriteData(TParseEvent *&buffer,bool dataOk,TLogTime tStart,TLogTime tEnd,DWORD nBytes,PCByteInfo pByteInfos){
+	void CImage::CTrackReader::TDataParseEvent::Create(TParseEvent *&buffer,bool dataOk,TLogTime tStart,TLogTime tEnd,DWORD nBytes,PCByteInfo pByteInfos){
+		Create( buffer, dataOk?DATA_OK:DATA_BAD, tStart, tEnd, nBytes, pByteInfos );
+	}
+
+	void CImage::CTrackReader::TDataParseEvent::Create(TParseEvent *&buffer,TParseEvent::TType type,TLogTime tStart,TLogTime tEnd,DWORD nBytes,PCByteInfo pByteInfos){
 		ASSERT( nBytes>0 && pByteInfos!=nullptr );
-		*buffer=TParseEvent( dataOk?DATA_OK:DATA_BAD, tStart, tEnd, nBytes );
-		if (sizeof(TParseEvent)+nBytes*sizeof(TByteInfo)<=(decltype(buffer->size))-1){
-			::memcpy( buffer+1, pByteInfos, nBytes*sizeof(TByteInfo) );
-			buffer->size+=nBytes*sizeof(TByteInfo);
+		*buffer=TParseEvent( type, tStart, tEnd, nBytes );
+		if (sizeof(TDataParseEvent)+nBytes*sizeof(TByteInfo)<=(decltype(buffer->size))-1){
+			::memcpy( ((TDataParseEvent *)buffer)->byteInfos, pByteInfos, nBytes*sizeof(TByteInfo) );
+			buffer->size =	sizeof(TDataParseEvent)
+							+
+							(nBytes-1)*sizeof(TByteInfo); // "-1" = already counted into Size
 		}else // if ParseEvent Size would exceed the range, can't store information on ByteEnds
 			ASSERT(FALSE); // need to increase the Size capacity
 		buffer=const_cast<TParseEvent *>(buffer->GetNext());
@@ -431,12 +449,27 @@
 		return	(PCParseEvent)(  (PCBYTE)this+size  );
 	}
 
+	const CImage::CTrackReader::TParseEvent *CImage::CTrackReader::TParseEvent::GetNext(TLogTime tMin) const{
+		PCParseEvent pe=this;
+		while (!pe->IsEmpty() && pe->tStart<tMin)
+			pe=(PCParseEvent)( (PCBYTE)pe+pe->size );
+		return pe;
+	}
+
 	const CImage::CTrackReader::TParseEvent *CImage::CTrackReader::TParseEvent::GetLast() const{
 		if (IsEmpty()) // this is already the last Event
 			return this;
 		PCParseEvent pe=this;
 		for( PCParseEvent next; !(next=pe->GetNext())->IsEmpty(); pe=next );
 		return pe;
+	}
+
+	void CImage::CTrackReader::TParseEvent::AddAscendingByStart(const TParseEvent &pe){
+		// adds specified ParseEvents to this list so that the result is ordered by Start times
+		TParseEvent *const peInsertAt=const_cast<TParseEvent *>(GetNext(pe.tStart));
+		int nBytes=(PCBYTE)peInsertAt->GetLast()->GetNext()-(PCBYTE)peInsertAt+sizeof(TParseEvent); // "+sizeof" = including the terminal Empty ParseEvent
+		::memmove( (PBYTE)peInsertAt+pe.size, peInsertAt, nBytes );
+		::memcpy( peInsertAt, &pe, pe.size );
 	}
 
 	void CImage::CTrackReader::TParseEvent::AddAscendingByStart(const TParseEvent *peList){
@@ -584,7 +617,7 @@
 				break;
 			rid.lengthCode = data.length = MFM::DecodeByte(w);
 			if (pOutParseEvents)
-				TParseEvent::WriteMetaString( pOutParseEvents, tEventStart, currentTime, rid.ToString() );
+				TMetaStringParseEvent::Create( pOutParseEvents, tEventStart, currentTime, rid.ToString() );
 			// . reading and comparing ID Field's CRC
 			tEventStart=currentTime;
 			DWORD dw;
@@ -641,7 +674,7 @@
 		if (pOutParseEvents)
 			*pOutParseEvents++=TParseEvent( TParseEvent::MARK_1BYTE, tEventStart, currentTime, dam );
 		// - reading specified amount of Bytes into the Buffer
-		TParseEvent::TByteInfo byteInfos[16384], *p=byteInfos;
+		TDataParseEvent::TByteInfo byteInfos[16384], *p=byteInfos;
 		CFloppyImage::TCrc16 crc=CFloppyImage::GetCrc16Ccitt( MFM::CRC_A1A1A1, &dam, sizeof(dam) ); // computing actual CRC along the way
 		for( tEventStart=currentTime; *this&&nBytesToRead>0; nBytesToRead-- ){
 			p->tStart=currentTime;
@@ -654,7 +687,7 @@
 		}
 		TParseEvent *const peData=pOutParseEvents;
 		if (pOutParseEvents)
-			TParseEvent::WriteData( pOutParseEvents, !nBytesToRead, tEventStart, currentTime, p-byteInfos, byteInfos );
+			TDataParseEvent::Create( pOutParseEvents, !nBytesToRead, tEventStart, currentTime, p-byteInfos, byteInfos );
 		if (!*this)
 			return result;
 		// - comparing Data Field's CRC
