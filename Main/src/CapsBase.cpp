@@ -210,13 +210,18 @@
 		const TLogTime fullRevolutionTime=nBitsPerTrackOfficial*trw.GetCurrentProfile().iwTimeDefault;
 		TLogTime currentTime=0, *pFluxTimeBuffer=trw.GetBuffer(), *pFluxTime=pFluxTimeBuffer;
 		TLogTime nextIndexTime=fullRevolutionTime;
-		for( BYTE rev=0; rev<nRevs; nextIndexTime=currentTime ){
+		for( BYTE rev=0; rev<nRevs; ){
 			const CapsTrackInfoT2 &cti=ctiRevs[rev++];
 			for( CBitReader br(cti,lockFlags); br; ){
 				// . adding new index
 				if (currentTime>=nextIndexTime){
 					trw.AddIndexTime( nextIndexTime );
-					nextIndexTime+=fullRevolutionTime;
+					if (rev<nRevs){ // if more Revolutions to follow ...
+						currentTime=nextIndexTime;
+						nextIndexTime+=fullRevolutionTime;
+						break; // ... mustn't overlap into them
+					}else
+						nextIndexTime+=fullRevolutionTime;
 				}
 				// . adding new flux
 				const UDWORD i=br.GetPosition()>>3;
