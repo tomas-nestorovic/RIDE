@@ -73,7 +73,8 @@
 						TParseEvent::TypeColors[6],
 						TParseEvent::TypeColors[7],
 						TParseEvent::TypeColors[8],
-						TParseEvent::TypeColors[9]
+						TParseEvent::TypeColors[9],
+						TParseEvent::TypeColors[10]
 					};
 					for( CImage::CTrackReader tr=te.tr; true; ){
 						// . waiting for next request to paint the Track

@@ -345,6 +345,84 @@
 								break;
 							}
 		}
+		// - search for data in gaps
+		if (nSectorsFound>0){ // makes sense only if some Sectors found
+			// . composition of all ends of ID and Data fields
+			for( WORD s=0; s<nSectorsFound; s++ ){
+				auto &r=dataEnds[nDataEnds+s];
+					r.time=pOutIdEnds[s];
+					r.profile=pOutIdProfiles[s];
+			}
+			const WORD nGaps=nDataEnds+nSectorsFound;
+			// . analyzing gap between two consecutive ParseEvents
+			const BYTE nBytesInspectedMax=20; // or maximum number of Bytes inspected before deciding that there are data in the gap
+			std::map<ULONGLONG,WORD> tmpHist; // Key = bit pattern (data+clock), Value = number of occurences
+			char bitPatternLength=-1; // number of valid bits in the BitPattern
+			for( WORD i=nGaps; i>0; ){
+				const auto &r=dataEnds[--i];
+				const PCParseEvent peNext=pOutParseEvents->GetNext(r.time);
+				if (!peNext->IsEmpty()){
+					SetCurrentTimeAndProfile( r.time, r.profile );
+					BYTE nBytesInspected=0;
+					for( TLogTime t=r.time; t<peNext->tStart && nBytesInspected<nBytesInspectedMax; nBytesInspected++ ){
+						BYTE byte;	ULONGLONG bitPattern;
+						bitPatternLength=ReadByte( bitPattern, &byte );
+						auto it=tmpHist.find(bitPattern);
+						if (it!=tmpHist.cend())
+							it->second++;
+						else
+							tmpHist.insert( std::make_pair(bitPattern,1) );
+					}
+				}
+			}
+			struct TItem sealed{
+				ULONGLONG bitPattern; // data and clock corresponding to a Byte
+				WORD count;
+				inline bool operator<(const TItem &r) const{
+					return count>r.count; // ">" = order descending
+				}
+			} histogram[2500];
+			WORD nUniqueBitPatterns=0;
+			for( auto it=tmpHist.cbegin(); it!=tmpHist.cend(); it++ ){
+				TItem &r=histogram[nUniqueBitPatterns++];
+					r.bitPattern=it->first;
+					r.count=it->second;
+			}
+			std::sort( histogram, histogram+nUniqueBitPatterns );
+			// . production of new ParseEvents
+			const ULONGLONG bitMask=(1<<bitPatternLength)-1; // to mask out only lower N bits
+			if (histogram->count>0) // a gap should always consits of some Bytes, but just to be sure
+				for( WORD i=nGaps; i>0; ){
+					const auto &r=dataEnds[--i];
+					const PCParseEvent peNext=pOutParseEvents->GetNext(r.time);
+					if (!peNext->IsEmpty()){
+						SetCurrentTimeAndProfile( r.time, r.profile );
+						const ULONGLONG typicalPattern=histogram->bitPattern; // "typically" the filler Byte of post-ID Gap2, created during formatting, and thus always well aligned
+						BYTE nBytesInspected=0, nBytesTypical=0;
+						TDataParseEvent::TByteInfo byteInfos[nBytesInspectedMax];
+						for( TLogTime t=r.time; t<peNext->tStart && nBytesInspected<nBytesInspectedMax; nBytesInspected++ ){
+							ULONGLONG bitPattern;
+							TDataParseEvent::TByteInfo &rbi=byteInfos[nBytesInspected];
+								rbi.tStart=currentTime;
+								ReadByte( bitPattern, &rbi.value );
+							bool isTypicalPattern=false; // assumption
+							for( char nRotations=bitPatternLength; nRotations>0; nRotations-- ){
+								isTypicalPattern|=bitPattern==typicalPattern;
+								bitPattern=	( (bitPattern<<1)|(bitPattern>>(bitPatternLength-1)) ) // circular rotation left
+											&
+											bitMask; // masking out only lower N bits
+							}
+							nBytesTypical+=isTypicalPattern;
+						}
+						if (nBytesInspected-nBytesTypical>=3){
+							// significant amount of other than TypicalBytes
+							TParseEvent peData[1000/sizeof(TParseEvent)], *pe=peData;
+							TDataParseEvent::Create( pe, TParseEvent::DATA_IN_GAP, r.time, peNext->tStart, nBytesInspected, byteInfos );
+							pOutParseEvents->AddAscendingByStart( peData );
+						}
+					}
+				}
+		}
 		// - successfully analyzed
 		return nSectorsFound;
 	}
@@ -401,6 +479,7 @@
 		0xccd4f2,	// preamble
 		0xc4886c,	// data ok (variable length)
 		0x8057c0,	// data bad (variable length)
+		0x00becc,	// data in gap
 		0x91d04d,	// CRC ok
 		0x6857ff,	// CRC bad
 		0xabbaba,	// non-formatted area
@@ -765,6 +844,28 @@
 		return	WriteBits( bits+1, pBit-bits-1 ) // "1" = the auxiliary "previous" bit of distorted 0xA1 sync mark
 				? nBytesToWrite
 				: 0;
+	}
+
+	char CImage::CTrackReader::ReadByte(ULONGLONG &rOutBits,PBYTE pOutValue){
+		// reads number of bits corresponding to one Byte; if all such bits successfully read, returns their count, or -1 otherwise
+		switch (codec){
+			case Codec::FM:
+				ASSERT(FALSE); //TODO
+				return -1;
+			case Codec::MFM:{
+				WORD w;
+				if (ReadBits16(w)){ // all bits read?
+					rOutBits=w;
+					if (pOutValue)
+						*pOutValue=MFM::DecodeByte(w);
+					return 16;
+				}else
+					return -1;
+			}
+			default:
+				ASSERT(FALSE); // we shouldn't end up here - check if all Codecs are included in the Switch statement!
+				return -1;
+		}
 	}
 
 

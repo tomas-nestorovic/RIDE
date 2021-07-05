@@ -324,6 +324,7 @@
 					PREAMBLE,		// dw (length)
 					DATA_OK,		// dw (length)
 					DATA_BAD,		// dw (length)
+					DATA_IN_GAP,	// dw (length)
 					CRC_OK,			// dw
 					CRC_BAD,		// dw
 					NONFORMATTED,	// - (no params)
@@ -483,6 +484,7 @@
 			bool ReadBits15(WORD &rOut);
 			bool ReadBits16(WORD &rOut);
 			bool ReadBits32(DWORD &rOut);
+			char ReadByte(ULONGLONG &rOutBits,PBYTE pOutValue=nullptr);
 			WORD Scan(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *pOutParseEvents=nullptr);
 			WORD ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *pOutParseEvents);
 			TFdcStatus ReadData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,TParseEvent *pOutParseEvents);
