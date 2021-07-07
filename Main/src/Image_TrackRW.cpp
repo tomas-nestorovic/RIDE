@@ -549,9 +549,9 @@
 		return	(PCParseEvent)(  (PCBYTE)this+size  );
 	}
 
-	const CImage::CTrackReader::TParseEvent *CImage::CTrackReader::TParseEvent::GetNext(TLogTime tMin) const{
+	const CImage::CTrackReader::TParseEvent *CImage::CTrackReader::TParseEvent::GetNext(TLogTime tMin,TType type) const{
 		PCParseEvent pe=this;
-		while (!pe->IsEmpty() && pe->tStart<tMin)
+		while (!pe->IsEmpty() && (pe->tStart<tMin || type!=TType::EMPTY&&pe->type!=type))
 			pe=(PCParseEvent)( (PCBYTE)pe+pe->size );
 		return pe;
 	}
@@ -562,6 +562,10 @@
 		PCParseEvent pe=this;
 		for( PCParseEvent next; !(next=pe->GetNext())->IsEmpty(); pe=next );
 		return pe;
+	}
+
+	bool CImage::CTrackReader::TParseEvent::Contains(TType type) const{
+		return !GetNext( tStart, CImage::CTrackReader::TParseEvent::DATA_IN_GAP )->IsEmpty();
 	}
 
 	void CImage::CTrackReader::TParseEvent::AddAscendingByStart(const TParseEvent &pe){

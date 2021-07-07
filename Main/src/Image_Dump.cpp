@@ -27,6 +27,7 @@
 		const struct TSourceTrackErrors sealed{
 			TCylinder cyl;
 			THead head;
+			bool hasDataInGaps;
 			const TSourceTrackErrors *pNextErroneousTrack;
 			TSector nErroneousSectors;
 			TSourceSectorError erroneousSectors[1];
@@ -56,7 +57,7 @@
 			Utils::WriteToFile(fHtml,_T("<html><head><style>body,td{font-size:13pt;margin:24pt}table{border:1pt solid black;spacing:10pt}td{vertical-align:top}td.caption{font-size:14pt;background:silver}</style></head><body>"));
 				Utils::WriteToFile(fHtml,_T("<h3>Overview</h3>"));
 					if (pOutErroneousTracks){
-						Utils::WriteToFile(fHtml,_T("<table><tr><td class=caption>Error</td><td class=caption>Count</td></tr>"));
+						Utils::WriteToFile(fHtml,_T("<table><tr><td class=caption>Status</td><td class=caption>Count</td></tr>"));
 							union{
 								BYTE bRegisters[2];
 								WORD wRegisters;
@@ -81,47 +82,57 @@
 									Utils::WriteToFile(fHtml,_T("</td></tr>"));
 								}
 							}
+							int nWarnings=0;
+							for( const TSourceTrackErrors *pErroneousTrack=pOutErroneousTracks; pErroneousTrack; pErroneousTrack=pErroneousTrack->pNextErroneousTrack )
+								nWarnings+=pErroneousTrack->hasDataInGaps;
+							Utils::WriteToFile(fHtml,_T("<tr><td>Warning</td><td align=right>"));
+								Utils::WriteToFile(fHtml,nWarnings);
+							Utils::WriteToFile(fHtml,_T("</td></tr>"));							
 						Utils::WriteToFile(fHtml,_T("</table>"));
 					}else
 						Utils::WriteToFile(fHtml,_T("No errors occurred."));
 				Utils::WriteToFile(fHtml,_T("<h3>Details</h3>"));
 					if (pOutErroneousTracks){
-						Utils::WriteToFile(fHtml,_T("<table><tr><td class=caption width=120>Track</td><td class=caption>Erroneous Sectors</td></tr>"));
+						Utils::WriteToFile(fHtml,_T("<table><tr><td class=caption width=120>Track</td><td class=caption>Errors</td></tr>"));
 							for( const TSourceTrackErrors *pErroneousTrack=pOutErroneousTracks; pErroneousTrack; pErroneousTrack=pErroneousTrack->pNextErroneousTrack ){
 								Utils::WriteToFile(fHtml,_T("<tr><td>"));
 									Utils::WriteToFileFormatted( fHtml, _T("Cyl %d, Head %d"), pErroneousTrack->cyl, pErroneousTrack->head );
 								Utils::WriteToFile(fHtml,_T("</td><td><ul>"));
-									PCSourceSectorError psse=pErroneousTrack->erroneousSectors;
-									for( BYTE n=pErroneousTrack->nErroneousSectors; n; n--,psse++ ){
-										Utils::WriteToFile(fHtml,_T("<li>"));
-											Utils::WriteToFileFormatted( fHtml, _T("%s<b>%s</b>. "), psse->excluded?_T("Excluded "):_T(""), (LPCTSTR)psse->id.ToString() );
-											LPCTSTR bitDescriptions[10],*pDesc=bitDescriptions;
-											const TPhysicalAddress chs={ pErroneousTrack->cyl, pErroneousTrack->head, psse->id };
-											Utils::WriteToFileFormatted( fHtml, _T("<i>FAT</i>: %s, "), dos->GetSectorStatusText(chs) );
-											psse->fdcStatus.GetDescriptionsOfSetBits(bitDescriptions);
-											Utils::WriteToFileFormatted( fHtml, _T("<i>SR1</i> (0x%02X): "), psse->fdcStatus.reg1 );
-											if (*pDesc){
-												Utils::WriteToFile(fHtml,*pDesc++);
-												while (*pDesc){
-													Utils::WriteToFile(fHtml,_T(", "));
+									if (BYTE n=pErroneousTrack->nErroneousSectors)
+										for( PCSourceSectorError psse=pErroneousTrack->erroneousSectors; n; n--,psse++ ){
+											Utils::WriteToFile(fHtml,_T("<li>"));
+												Utils::WriteToFileFormatted( fHtml, _T("%s<b>%s</b>. "), psse->excluded?_T("Excluded "):_T(""), (LPCTSTR)psse->id.ToString() );
+												LPCTSTR bitDescriptions[10],*pDesc=bitDescriptions;
+												const TPhysicalAddress chs={ pErroneousTrack->cyl, pErroneousTrack->head, psse->id };
+												Utils::WriteToFileFormatted( fHtml, _T("<i>FAT</i>: %s, "), dos->GetSectorStatusText(chs) );
+												psse->fdcStatus.GetDescriptionsOfSetBits(bitDescriptions);
+												Utils::WriteToFileFormatted( fHtml, _T("<i>SR1</i> (0x%02X): "), psse->fdcStatus.reg1 );
+												if (*pDesc){
 													Utils::WriteToFile(fHtml,*pDesc++);
-												}
-											}else
-												Utils::WriteToFile(fHtml,_T("No error"));
-											Utils::WriteToFile(fHtml,_T("."));
-											pDesc++; // skipping Null that terminates the list of bits set in Register 1
-											Utils::WriteToFileFormatted( fHtml, _T(" <i>SR2</i> (0x%02X): "), psse->fdcStatus.reg2 );
-											if (*pDesc){
-												Utils::WriteToFile(fHtml,*pDesc++);
-												while (*pDesc){
-													Utils::WriteToFile(fHtml,_T(", "));
+													while (*pDesc){
+														Utils::WriteToFile(fHtml,_T(", "));
+														Utils::WriteToFile(fHtml,*pDesc++);
+													}
+												}else
+													Utils::WriteToFile(fHtml,_T("No error"));
+												Utils::WriteToFile(fHtml,_T("."));
+												pDesc++; // skipping Null that terminates the list of bits set in Register 1
+												Utils::WriteToFileFormatted( fHtml, _T(" <i>SR2</i> (0x%02X): "), psse->fdcStatus.reg2 );
+												if (*pDesc){
 													Utils::WriteToFile(fHtml,*pDesc++);
-												}
-											}else
-												Utils::WriteToFile(fHtml,_T("No error"));
-											Utils::WriteToFile(fHtml,_T("."));
-										Utils::WriteToFile(fHtml,_T("</li>"));
-									}
+													while (*pDesc){
+														Utils::WriteToFile(fHtml,_T(", "));
+														Utils::WriteToFile(fHtml,*pDesc++);
+													}
+												}else
+													Utils::WriteToFile(fHtml,_T("No error"));
+												Utils::WriteToFile(fHtml,_T("."));
+											Utils::WriteToFile(fHtml,_T("</li>"));
+										}
+									else
+										Utils::WriteToFile(fHtml,_T("<li>All sectors ok.</li>"));
+									if (pErroneousTrack->hasDataInGaps)
+										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: Suspected data in gap.</li>"));
 								Utils::WriteToFile(fHtml,_T("</ul></td></tr>"));
 							}
 						Utils::WriteToFile(fHtml,_T("</table>"));
@@ -187,10 +198,18 @@ terminateWithError:
 				nSectors=dp.source->ScanTrack(p.chs.cylinder,p.chs.head,&codec,bufferId,bufferLength);
 }
 				// . reading Source Track
-				const CImage::CTrackReader tr=	targetSupportsTrackWriting
-												? dp.source->ReadTrack( p.chs.cylinder, p.chs.head )
-												: CImage::CTrackReaderWriter::Invalid;
+				CImage::CTrackReader trSrc=dp.source->ReadTrack( p.chs.cylinder, p.chs.head );
+				const CImage::CTrackReader &tr= targetSupportsTrackWriting ? trSrc : CImage::CTrackReaderWriter::Invalid;
 				p.trackWriteable=tr;
+				// . if possible, analyzing the read Source Track
+				bool hasDataInGaps=false;
+				if (trSrc){
+					TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; CImage::CTrackReader::TProfile idProfiles[Revolution::MAX*(TSector)-1]; TFdcStatus idStatuses[Revolution::MAX*(TSector)-1];
+					CImage::CTrackReader::TWholeTrackParseEventBuffer peBuffer;
+					trSrc.ScanAndAnalyze( ids, idEnds, idProfiles, idStatuses, peBuffer );
+					hasDataInGaps=peBuffer->Contains( CImage::CTrackReader::TParseEvent::DATA_IN_GAP );
+				}
+				// . reading individual Sectors
 				#pragma pack(1)
 				struct{
 					TSector n;
@@ -558,9 +577,10 @@ errorDuringWriting:				TCHAR buf[80];
 				}
 				// . registering Track with ErroneousSectors
 //Utils::Information("registering Track with ErroneousSectors");
-				if (erroneousSectors.n){
-					TDumpParams::TSourceTrackErrors *psse=(TDumpParams::TSourceTrackErrors *)::malloc(sizeof(TDumpParams::TSourceTrackErrors)+(erroneousSectors.n-1)*sizeof(TDumpParams::TSourceSectorError));
+				if (hasDataInGaps || erroneousSectors.n){
+					TDumpParams::TSourceTrackErrors *psse=(TDumpParams::TSourceTrackErrors *)::malloc(sizeof(TDumpParams::TSourceTrackErrors)+std::max(0,erroneousSectors.n-1)*sizeof(TDumpParams::TSourceSectorError));
 						psse->cyl=p.chs.cylinder, psse->head=p.chs.head;
+						psse->hasDataInGaps=hasDataInGaps;
 						psse->pNextErroneousTrack=nullptr;
 						::memcpy( psse->erroneousSectors, erroneousSectors.buffer, ( psse->nErroneousSectors=erroneousSectors.n )*sizeof(TDumpParams::TSourceSectorError) );
 					*ppSrcTrackErrors=psse, ppSrcTrackErrors=&psse->pNextErroneousTrack;
