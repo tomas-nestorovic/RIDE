@@ -346,7 +346,8 @@
 				TParseEvent(TType type,TLogTime tStart,TLogTime tEnd,DWORD data);
 
 				inline bool IsEmpty() const{ return type==EMPTY; }
-				inline bool IsData() const{ return type==DATA_OK || type==DATA_BAD; }
+				inline bool IsDataStd() const{ return type==DATA_OK || type==DATA_BAD; }
+				inline bool IsDataAny() const{ return IsDataStd() || type==DATA_IN_GAP; }
 				const TParseEvent *GetNext() const;
 				const TParseEvent *GetNext(TLogTime tMin) const;
 				const TParseEvent *GetLast() const;

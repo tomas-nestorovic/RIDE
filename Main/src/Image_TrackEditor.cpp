@@ -155,6 +155,9 @@
 											case TParseEvent::DATA_BAD:
 												::wsprintfA( label, _T("Data bad (%d Bytes)"), pe->dw);
 												break;
+											case TParseEvent::DATA_IN_GAP:
+												::wsprintfA( label, _T("Gap data (circa %d Bytes)"), pe->dw);
+												break;
 											case TParseEvent::CRC_OK:
 												::wsprintfA( label, _T("0x%X ok CRC"), pe->dw);
 												break;
@@ -180,7 +183,7 @@
 										p.params.locker.Unlock();
 										if (!continuePainting) // new paint request?
 											break;
-										if (showByteInfo && pe->IsData()){
+										if (showByteInfo && pe->IsDataAny()){
 											auto pbi=pe.data->byteInfos;
 											while (pbi->tStart+iwTimeDefaultHalf<a) pbi++; // skip invisible part
 											rcLabel.right=10000, rcLabel.bottom-=font.charHeight, rcLabel.top=rcLabel.bottom-byteInfoSizeMin.cy;

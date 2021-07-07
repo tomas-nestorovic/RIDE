@@ -337,7 +337,7 @@
 			for( TLogTime t0=RewindToIndexAndResetProfile(0),t; *this; t0=t )
 				if (( t=ReadTime() )-t0>=tAreaLengthMin)
 					for( PCParseEvent pe=pOutParseEvents; !pe->IsEmpty(); pe=pe->GetNext() )
-						if (pe->IsData())
+						if (pe->IsDataStd())
 							if (  pe->tStart<=t0 && t0<pe->tEnd  ||  pe->tStart<=t && t<pe->tEnd  ){
 								pOutParseEvents->AddAscendingByStart(
 									TParseEvent( TParseEvent::NONFORMATTED, t0, t-profile.iwTimeDefault, 0 )
@@ -356,6 +356,7 @@
 			const WORD nGaps=nDataEnds+nSectorsFound;
 			// . analyzing gap between two consecutive ParseEvents
 			const BYTE nBytesInspectedMax=20; // or maximum number of Bytes inspected before deciding that there are data in the gap
+			ULONGLONG bitPattern;
 			std::map<ULONGLONG,WORD> tmpHist; // Key = bit pattern (data+clock), Value = number of occurences
 			char bitPatternLength=-1; // number of valid bits in the BitPattern
 			for( WORD i=nGaps; i>0; ){
@@ -365,7 +366,7 @@
 					SetCurrentTimeAndProfile( r.time, r.profile );
 					BYTE nBytesInspected=0;
 					for( TLogTime t=r.time; t<peNext->tStart && nBytesInspected<nBytesInspectedMax; nBytesInspected++ ){
-						BYTE byte;	ULONGLONG bitPattern;
+						BYTE byte;
 						bitPatternLength=ReadByte( bitPattern, &byte );
 						auto it=tmpHist.find(bitPattern);
 						if (it!=tmpHist.cend())
@@ -378,8 +379,20 @@
 			struct TItem sealed{
 				ULONGLONG bitPattern; // data and clock corresponding to a Byte
 				WORD count;
+
 				inline bool operator<(const TItem &r) const{
 					return count>r.count; // ">" = order descending
+				}
+				bool HasSameBitPatternRotated(ULONGLONG bitPattern,char bitPatternLength) const{
+					const ULONGLONG bitMask=(1<<bitPatternLength)-1; // to mask out only lower N bits
+					bool result=false; // assumption (BitPatterns are unequal no matter how rotated against each other)
+					for( char nRotations=bitPatternLength; nRotations>0; nRotations-- ){
+						result|=bitPattern==this->bitPattern;
+						bitPattern=	( (bitPattern<<1)|(bitPattern>>(bitPatternLength-1)) ) // circular rotation left
+									&
+									bitMask; // masking out only lower N bits
+					}
+					return result;
 				}
 			} histogram[2500];
 			WORD nUniqueBitPatterns=0;
@@ -390,36 +403,44 @@
 			}
 			std::sort( histogram, histogram+nUniqueBitPatterns );
 			// . production of new ParseEvents
-			const ULONGLONG bitMask=(1<<bitPatternLength)-1; // to mask out only lower N bits
 			if (histogram->count>0) // a gap should always consits of some Bytes, but just to be sure
 				for( WORD i=nGaps; i>0; ){
 					const auto &r=dataEnds[--i];
 					const PCParseEvent peNext=pOutParseEvents->GetNext(r.time);
-					if (!peNext->IsEmpty()){
-						SetCurrentTimeAndProfile( r.time, r.profile );
-						const ULONGLONG typicalPattern=histogram->bitPattern; // "typically" the filler Byte of post-ID Gap2, created during formatting, and thus always well aligned
-						BYTE nBytesInspected=0, nBytesTypical=0;
-						TDataParseEvent::TByteInfo byteInfos[nBytesInspectedMax];
-						for( TLogTime t=r.time; t<peNext->tStart && nBytesInspected<nBytesInspectedMax; nBytesInspected++ ){
-							ULONGLONG bitPattern;
+					const TLogTime tNextStart= peNext->IsEmpty() ? INT_MAX : peNext->tStart;
+					SetCurrentTimeAndProfile( r.time, r.profile );
+					const TItem &typicalItem=*histogram; // "typically" the filler Byte of post-ID Gap2, created during formatting, and thus always well aligned
+					BYTE nBytesInspected=0, nBytesTypical=0;
+					const BYTE nGapBytesMax=250;
+					TDataParseEvent::TByteInfo byteInfos[nGapBytesMax];
+					while (*this && nBytesInspected<nBytesInspectedMax){
+						TDataParseEvent::TByteInfo &rbi=byteInfos[nBytesInspected++];
+							rbi.tStart=currentTime;
+							ReadByte( bitPattern, &rbi.value );
+						if (currentTime>=tNextStart){
+							currentTime=rbi.tStart; // putting unsuitable Byte back
+							break;
+						}
+						nBytesTypical+=typicalItem.HasSameBitPatternRotated( bitPattern, bitPatternLength );
+					}
+					if (nBytesInspected-nBytesTypical>4){
+						// significant amount of other than TypicalBytes, beyond a random noise on Track
+						while (*this && nBytesInspected<nGapBytesMax){
 							TDataParseEvent::TByteInfo &rbi=byteInfos[nBytesInspected];
 								rbi.tStart=currentTime;
 								ReadByte( bitPattern, &rbi.value );
-							bool isTypicalPattern=false; // assumption
-							for( char nRotations=bitPatternLength; nRotations>0; nRotations-- ){
-								isTypicalPattern|=bitPattern==typicalPattern;
-								bitPattern=	( (bitPattern<<1)|(bitPattern>>(bitPatternLength-1)) ) // circular rotation left
-											&
-											bitMask; // masking out only lower N bits
-							}
-							nBytesTypical+=isTypicalPattern;
+							if (currentTime>=tNextStart
+								||
+								typicalItem.HasSameBitPatternRotated( bitPattern, bitPatternLength )
+							){
+								currentTime=rbi.tStart; // putting unsuitable Byte back
+								break; // again Typical, so probably all gap data discovered
+							}else
+								nBytesInspected++;
 						}
-						if (nBytesInspected-nBytesTypical>=3){
-							// significant amount of other than TypicalBytes
-							TParseEvent peData[1000/sizeof(TParseEvent)], *pe=peData;
-							TDataParseEvent::Create( pe, TParseEvent::DATA_IN_GAP, r.time, peNext->tStart, nBytesInspected, byteInfos );
-							pOutParseEvents->AddAscendingByStart( peData );
-						}
+						TParseEvent peData[2000/sizeof(TParseEvent)], *pe=peData;
+						TDataParseEvent::Create( pe, TParseEvent::DATA_IN_GAP, r.time, currentTime, nBytesInspected, byteInfos );
+						pOutParseEvents->AddAscendingByStart( *peData );
 					}
 				}
 		}
@@ -451,7 +472,7 @@
 		TSingleSectorParseEventBuffer peBuffer;
 		const TFdcStatus st=ReadData( idEndTime, idEndProfile, nBytesToRead, peBuffer );
 		for( PCParseEvent pe=peBuffer; !pe->IsEmpty(); pe=pe->GetNext() )
-			if (pe->IsData()){
+			if (pe->IsDataStd()){
 				auto nBytes=pe->size-sizeof(TParseEvent);
 				for( auto *pbi=((PCDataParseEvent)pe)->byteInfos; nBytes; nBytes-=sizeof(*pbi) )
 					*buffer++=pbi++->value;
@@ -479,7 +500,7 @@
 		0xccd4f2,	// preamble
 		0xc4886c,	// data ok (variable length)
 		0x8057c0,	// data bad (variable length)
-		0x00becc,	// data in gap
+		0x00becc,	// data in gap (variable length)
 		0x91d04d,	// CRC ok
 		0x6857ff,	// CRC bad
 		0xabbaba,	// non-formatted area
