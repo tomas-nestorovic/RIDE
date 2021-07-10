@@ -27,7 +27,7 @@
 		const struct TSourceTrackErrors sealed{
 			TCylinder cyl;
 			THead head;
-			bool hasDataInGaps;
+			bool hasNonformattedArea, hasDataInGaps;
 			const TSourceTrackErrors *pNextErroneousTrack;
 			TSector nErroneousSectors;
 			TSourceSectorError erroneousSectors[1];
@@ -83,8 +83,10 @@
 								}
 							}
 							int nWarnings=0;
-							for( const TSourceTrackErrors *pErroneousTrack=pOutErroneousTracks; pErroneousTrack; pErroneousTrack=pErroneousTrack->pNextErroneousTrack )
+							for( const TSourceTrackErrors *pErroneousTrack=pOutErroneousTracks; pErroneousTrack; pErroneousTrack=pErroneousTrack->pNextErroneousTrack ){
+								nWarnings+=pErroneousTrack->hasNonformattedArea;
 								nWarnings+=pErroneousTrack->hasDataInGaps;
+							}
 							Utils::WriteToFile(fHtml,_T("<tr><td>Warning</td><td align=right>"));
 								Utils::WriteToFile(fHtml,nWarnings);
 							Utils::WriteToFile(fHtml,_T("</td></tr>"));							
@@ -131,6 +133,8 @@
 										}
 									else
 										Utils::WriteToFile(fHtml,_T("<li>All sectors ok.</li>"));
+									if (pErroneousTrack->hasNonformattedArea)
+										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: Significant non-formatted area.</li>"));
 									if (pErroneousTrack->hasDataInGaps)
 										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: Suspected data in gap.</li>"));
 								Utils::WriteToFile(fHtml,_T("</ul></td></tr>"));
@@ -202,11 +206,12 @@ terminateWithError:
 				const CImage::CTrackReader &tr= targetSupportsTrackWriting ? trSrc : CImage::CTrackReaderWriter::Invalid;
 				p.trackWriteable=tr;
 				// . if possible, analyzing the read Source Track
-				bool hasDataInGaps=false;
+				bool hasNonformattedArea=false, hasDataInGaps=false;
 				if (trSrc){
 					TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; CImage::CTrackReader::TProfile idProfiles[Revolution::MAX*(TSector)-1]; TFdcStatus idStatuses[Revolution::MAX*(TSector)-1];
 					CImage::CTrackReader::TWholeTrackParseEventBuffer peBuffer;
 					trSrc.ScanAndAnalyze( ids, idEnds, idProfiles, idStatuses, peBuffer );
+					hasNonformattedArea=peBuffer->Contains( CImage::CTrackReader::TParseEvent::NONFORMATTED );
 					hasDataInGaps=peBuffer->Contains( CImage::CTrackReader::TParseEvent::DATA_IN_GAP );
 				}
 				// . reading individual Sectors
@@ -577,9 +582,10 @@ errorDuringWriting:				TCHAR buf[80];
 				}
 				// . registering Track with ErroneousSectors
 //Utils::Information("registering Track with ErroneousSectors");
-				if (hasDataInGaps || erroneousSectors.n){
+				if (hasNonformattedArea || hasDataInGaps || erroneousSectors.n){
 					TDumpParams::TSourceTrackErrors *psse=(TDumpParams::TSourceTrackErrors *)::malloc(sizeof(TDumpParams::TSourceTrackErrors)+std::max(0,erroneousSectors.n-1)*sizeof(TDumpParams::TSourceSectorError));
 						psse->cyl=p.chs.cylinder, psse->head=p.chs.head;
+						psse->hasNonformattedArea=hasNonformattedArea;
 						psse->hasDataInGaps=hasDataInGaps;
 						psse->pNextErroneousTrack=nullptr;
 						::memcpy( psse->erroneousSectors, erroneousSectors.buffer, ( psse->nErroneousSectors=erroneousSectors.n )*sizeof(TDumpParams::TSourceSectorError) );
