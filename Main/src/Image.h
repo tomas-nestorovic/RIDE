@@ -349,7 +349,8 @@
 				inline bool IsDataStd() const{ return type==DATA_OK || type==DATA_BAD; }
 				inline bool IsDataAny() const{ return IsDataStd() || type==DATA_IN_GAP; }
 				const TParseEvent *GetNext() const;
-				const TParseEvent *GetNext(TLogTime tMin,TType type=TType::EMPTY) const;
+				const TParseEvent *GetNextStart(TLogTime tMin,TType type=TType::EMPTY) const;
+				const TParseEvent *GetNextEnd(TLogTime tMin,TType type=TType::EMPTY) const;
 				const TParseEvent *GetLast() const;
 				bool Contains(TType type) const;
 				void AddAscendingByStart(const TParseEvent &pe);

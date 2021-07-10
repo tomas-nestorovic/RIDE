@@ -361,19 +361,22 @@
 			char bitPatternLength=-1; // number of valid bits in the BitPattern
 			for( WORD i=nGaps; i>0; ){
 				const auto &r=dataEnds[--i];
-				const PCParseEvent peNext=pOutParseEvents->GetNext(r.time);
-				if (!peNext->IsEmpty()){
-					SetCurrentTimeAndProfile( r.time, r.profile );
-					BYTE nBytesInspected=0;
-					for( TLogTime t=r.time; t<peNext->tStart && nBytesInspected<nBytesInspectedMax; nBytesInspected++ ){
-						BYTE byte;
-						bitPatternLength=ReadByte( bitPattern, &byte );
-						auto it=tmpHist.find(bitPattern);
-						if (it!=tmpHist.cend())
-							it->second++;
-						else
-							tmpHist.insert( std::make_pair(bitPattern,1) );
-					}
+				const PCParseEvent peNextEnd=pOutParseEvents->GetNextEnd(r.time+1);
+				if (!peNextEnd->IsEmpty() && peNextEnd->tStart<r.time)
+					continue; // gap that overlaps a ParseEvent is not a gap (e.g. Sector within Sector copy protection)
+				const PCParseEvent peNext=pOutParseEvents->GetNextStart(r.time);
+				if (peNext->IsEmpty())
+					continue; // don't collect data in Gap4 after the last Sector (but yes, search the Gap4 after the Histogram is complete)
+				SetCurrentTimeAndProfile( r.time, r.profile );
+				BYTE nBytesInspected=0;
+				for( TLogTime t=r.time; t<peNext->tStart && nBytesInspected<nBytesInspectedMax; nBytesInspected++ ){
+					BYTE byte;
+					bitPatternLength=ReadByte( bitPattern, &byte );
+					auto it=tmpHist.find(bitPattern);
+					if (it!=tmpHist.cend())
+						it->second++;
+					else
+						tmpHist.insert( std::make_pair(bitPattern,1) );
 				}
 			}
 			struct TItem sealed{
@@ -406,7 +409,10 @@
 			if (histogram->count>0) // a gap should always consits of some Bytes, but just to be sure
 				for( WORD i=nGaps; i>0; ){
 					const auto &r=dataEnds[--i];
-					const PCParseEvent peNext=pOutParseEvents->GetNext(r.time);
+					const PCParseEvent peNextEnd=pOutParseEvents->GetNextEnd(r.time+1);
+					if (!peNextEnd->IsEmpty() && peNextEnd->tStart<r.time)
+						continue; // gap that overlaps a ParseEvent is not a gap (e.g. Sector within Sector copy protection)
+					const PCParseEvent peNext=pOutParseEvents->GetNextStart(r.time);
 					const TLogTime tNextStart= peNext->IsEmpty() ? INT_MAX : peNext->tStart;
 					SetCurrentTimeAndProfile( r.time, r.profile );
 					const TItem &typicalItem=*histogram; // "typically" the filler Byte of post-ID Gap2, created during formatting, and thus always well aligned
@@ -549,10 +555,17 @@
 		return	(PCParseEvent)(  (PCBYTE)this+size  );
 	}
 
-	const CImage::CTrackReader::TParseEvent *CImage::CTrackReader::TParseEvent::GetNext(TLogTime tMin,TType type) const{
+	const CImage::CTrackReader::TParseEvent *CImage::CTrackReader::TParseEvent::GetNextStart(TLogTime tMin,TType type) const{
 		PCParseEvent pe=this;
 		while (!pe->IsEmpty() && (pe->tStart<tMin || type!=TType::EMPTY&&pe->type!=type))
-			pe=(PCParseEvent)( (PCBYTE)pe+pe->size );
+			pe=pe->GetNext();
+		return pe;
+	}
+
+	const CImage::CTrackReader::TParseEvent *CImage::CTrackReader::TParseEvent::GetNextEnd(TLogTime tMin,TType type) const{
+		PCParseEvent pe=this;
+		while (!pe->IsEmpty() && (pe->tEnd<tMin || type!=TType::EMPTY&&pe->type!=type))
+			pe=pe->GetNext();
 		return pe;
 	}
 
@@ -565,12 +578,12 @@
 	}
 
 	bool CImage::CTrackReader::TParseEvent::Contains(TType type) const{
-		return !GetNext( tStart, CImage::CTrackReader::TParseEvent::DATA_IN_GAP )->IsEmpty();
+		return !GetNextStart( tStart, CImage::CTrackReader::TParseEvent::DATA_IN_GAP )->IsEmpty();
 	}
 
 	void CImage::CTrackReader::TParseEvent::AddAscendingByStart(const TParseEvent &pe){
 		// adds specified ParseEvents to this list so that the result is ordered by Start times
-		TParseEvent *const peInsertAt=const_cast<TParseEvent *>(GetNext(pe.tStart));
+		TParseEvent *const peInsertAt=const_cast<TParseEvent *>(GetNextStart(pe.tStart));
 		int nBytes=(PCBYTE)peInsertAt->GetLast()->GetNext()-(PCBYTE)peInsertAt+sizeof(TParseEvent); // "+sizeof" = including the terminal Empty ParseEvent
 		::memmove( (PBYTE)peInsertAt+pe.size, peInsertAt, nBytes );
 		::memcpy( peInsertAt, &pe, pe.size );
