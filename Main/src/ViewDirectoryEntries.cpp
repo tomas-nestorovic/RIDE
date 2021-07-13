@@ -68,10 +68,10 @@
 	CDirEntriesView::~CDirEntriesView(){
 		// dtor
 		// - discarding this View from the FileManager owner
-		CPtrList &rList=DOS->pFileManager->ownedDirEntryViews;
+		auto &rList=DOS->pFileManager->ownedDirEntryViews;
 		for( POSITION pos=rList.GetHeadPosition(); pos; ){
 			const POSITION pos0=pos;
-			const CDirEntriesView *const pdev=(CDirEntriesView *)rList.GetNext(pos);
+			const CDirEntriesView *const pdev=rList.GetNext(pos);
 			if (pdev==this){
 				rList.RemoveAt(pos0);
 				break;

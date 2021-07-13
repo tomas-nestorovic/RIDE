@@ -890,7 +890,7 @@
 					pdt->AdvanceToNextEntry();
 				pdt->AdvanceToNextEntry();
 				PFile prev=nullptr; // initialization to prevent from shifting "before" the Directory
-				CFileManagerView::TFileList selectedFiles;
+				CFileManagerView::CFileList selectedFiles;
 				for( POSITION pos=fileManager.GetFirstSelectedFilePosition(); pos; ){
 					const PFile selected=fileManager.GetNextSelectedFile(pos);
 					while (pdt->entry!=selected){
@@ -919,7 +919,7 @@
 				// shifting selected Files "down" (i.e. towards the end of the Directory)
 				if (!fileManager.m_hWnd) break; // giving up this command if FileManager not switched to
 				if (image->ReportWriteProtection()) return TCmdResult::DONE;
-				CFileManagerView::TFileList selectedFiles;
+				CFileManagerView::CFileList selectedFiles;
 				PFile nextSelected=nullptr;
 				for( POSITION pos=fileManager.GetLastSelectedFilePosition(); pos; ){
 					const PFile selected=fileManager.GetPreviousSelectedFile(pos);

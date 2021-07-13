@@ -586,8 +586,8 @@
 			virtual void SetTrackScannerStatus(TScannerStatus status)=0;
 		};
 
-		static CPtrList known; // list of known Images (registered in CRideApp::InitInstance)
-		static CPtrList devices; // list of known Devices (registered in CRideApp::InitInstance)
+		static Utils::CPtrList<PCProperties> Known; // list of known Images (registered in CRideApp::InitInstance)
+		static Utils::CPtrList<PCProperties> Devices; // list of known Devices (registered in CRideApp::InitInstance)
 
 		static CImage *GetActive();
 		static PCProperties DetermineType(LPCTSTR fileName);

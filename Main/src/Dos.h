@@ -346,7 +346,7 @@
 			PCProperties __perform__(PImage image,PFormat pOutFormatBoot) const;
 		};
 
-		static CPtrList known; // list of known DOSes (registered in CRideApp::InitInstance)
+		static Utils::CPtrList<PCProperties> Known; // list of known DOSes (registered in CRideApp::InitInstance)
 
 		static PDos GetFocused();
 		static void __errorCannotDoCommand__(TStdWinError cause);

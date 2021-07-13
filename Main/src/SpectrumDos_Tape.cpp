@@ -543,8 +543,8 @@
 				if (ReportWriteProtection()) return TCmdResult::DONE;
 				// . reversing the list of Selected Files
 				const CListCtrl &lv=fileManager.GetListCtrl();
-				CFileManagerView::TFileList selectedIndices;
-				for( POSITION pos=lv.GetFirstSelectedItemPosition(); pos; selectedIndices.AddHead((PVOID)lv.GetNextSelectedItem(pos)) );
+				CFileManagerView::CFileList selectedIndices;
+				for( POSITION pos=lv.GetFirstSelectedItemPosition(); pos; selectedIndices.AddHead((PFile)lv.GetNextSelectedItem(pos)) );
 				// . shifting
 				for( short iNextSelected=fileManager.nFiles; selectedIndices.GetCount(); ){
 					const short iSelected=(short)selectedIndices.RemoveHead();

@@ -31,7 +31,7 @@
 			short columnWidthDefault;
 			BYTE flags;
 		} *PCFileInfo;
-		typedef CPtrList TFileList;
+		typedef Utils::CPtrList<::CDos::PFile> CFileList;
 
 		enum TDisplayMode:BYTE{ // options must be in same order as LVS_{ICON,REPORT,SMALLICON,LIST}
 			BIG_ICONS	=1,
@@ -56,7 +56,7 @@
 		class COleVirtualFileDataSource sealed:public COleDataSource{
 			const PFileManagerView fileManager;
 			const DROPEFFECT preferredDropEffect;
-			TFileList listOfFiles;
+			CFileList listOfFiles;
 
 			DWORD __addFileToExport__(PTCHAR relativeDir,CDos::PFile file,LPFILEDESCRIPTOR lpfd,TStdWinError &rOutError);
 			BOOL OnRenderData(LPFORMATETC lpFormatEtc,LPSTGMEDIUM lpStgMedium) override;
@@ -104,14 +104,14 @@
 		COleDropTarget dropTarget;
 		WORD nativelyLastFile; // index of a file that is natively the last one in current Directory
 		CMapPtrToWord nativeOrderOfFiles; // map of native order of Files as they are discovered in current Directory (i.e. without Ordering)
-		CPtrList ownedDirEntryViews; // PDirEntriesView
-		TFileList previousDirectories;
+		Utils::CPtrList<CDirEntriesView *> ownedDirEntryViews; // PDirEntriesView
+		CFileList previousDirectories;
 
 		void __updateSummaryInStatusBar__() const;
 		WORD __getNativeOrderOfFile__(CDos::PCFile file) const;
 		void __order__() const;
 		void __addFileToTheEndOfList__(CDos::PCFile file);
-		void __deleteFiles__(TFileList &rFileList);
+		void __deleteFiles__(CFileList &rFileList);
 		void __restoreFileSelection__();
 		void __switchToDirectory__(CDos::PFile directory) const;
 		int __getVerticalScrollPos__() const;
@@ -236,7 +236,7 @@
 		BYTE displayMode; // see the TDisplayMode enumeration
 		BYTE ordering;
 		DWORD reportModeDisplayedInfos;
-		TFileList selectedFiles; // used only for restoring selection when the FileManager is switched back - otherwise the content is empty!
+		CFileList selectedFiles; // used only for restoring selection when the FileManager is switched back - otherwise the content is empty!
 		CDos::PFile focusedFile;
 
 		CFileManagerView(PDos _dos,BYTE _supportedDisplayModes,BYTE _initialDisplayMode,const CFont &rFont,BYTE reportModeRowHeightAdjustment,BYTE _nInformation,PCFileInfo _informationList,PCDirectoryStructureManagement pDirectoryStructureManagement);
@@ -271,7 +271,7 @@
 		CDos::PFile GetNextSelectedFile(POSITION &pos) const;
 		POSITION GetLastSelectedFilePosition() const;
 		CDos::PFile GetPreviousSelectedFile(POSITION &pos) const;
-		void SelectFiles(const TFileList &selection);
+		void SelectFiles(const CFileList &selection);
 		DWORD GetCountOfSelectedFiles() const;
 		TStdWinError ImportFileAndResolveConflicts(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,const FILETIME &rCreated,const FILETIME &rLastRead,const FILETIME &rLastModified,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution);
 		void SwitchToDirectory(CDos::PFile directory);

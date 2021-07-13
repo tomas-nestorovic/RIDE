@@ -14,8 +14,8 @@
 		LPCTSTR ps=s;
 		for( TId dosId=0,nCharsRead=0; _stscanf(ps,INI_RECOGNITION_DOS_ID _T("%n"),&dosId,&nCharsRead)>0; ps+=nCharsRead )
 			if (dosId!=CUnknownDos::Properties.id)
-				for( POSITION pos=known.GetHeadPosition(); pos; ){
-					PCProperties props=(PCProperties)known.GetNext(pos);
+				for( POSITION pos=Known.GetHeadPosition(); pos; ){
+					PCProperties props=Known.GetNext(pos);
 					if (props->id==dosId){
 						order[++nDoses]=props; // indexing starts from 1
 						break;
@@ -144,8 +144,8 @@
 				__super::PreInitDialog();
 				// - searching for newly detected DOSes
 				CDos::PCProperties *pNewlyDetectedDos=newlyDetectedDoses;
-				for( POSITION pos=CDos::known.GetHeadPosition(); pos; ){
-					const CDos::PCProperties props=(CDos::PCProperties)CDos::known.GetNext(pos);
+				for( POSITION pos=CDos::Known.GetHeadPosition(); pos; ){
+					const CDos::PCProperties props=CDos::Known.GetNext(pos);
 					if (!recognition.__getOrderIndex__(props))
 						recognition.__addDosByPriorityDescending__( *pNewlyDetectedDos++=props );
 				}

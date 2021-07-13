@@ -7,6 +7,19 @@ typedef long TStdWinError; // Windows standard i/o error
 
 namespace Utils{
 
+	template<typename Ptr>
+	class CPtrList:public ::CPtrList{
+	public:
+		inline POSITION AddHead(Ptr newElement){ return __super::AddHead((PVOID)newElement); }
+		inline POSITION AddTail(Ptr newElement){ return __super::AddTail((PVOID)newElement); }
+		inline Ptr &GetNext(POSITION &rPosition){ return (Ptr &)__super::GetNext(rPosition); }
+		inline Ptr GetNext(POSITION &rPosition) const{ return (Ptr)__super::GetNext(rPosition); }
+		inline Ptr &GetPrev(POSITION &rPosition){ return (Ptr &)__super::GetPrev(rPosition); }
+		inline Ptr GetPrev(POSITION &rPosition) const{ return (Ptr)__super::GetPrev(rPosition); }
+		inline Ptr RemoveHead(){ return (Ptr)__super::RemoveHead(); }
+		inline Ptr RemoveTail(){ return (Ptr)__super::RemoveTail(); }
+	};
+
 	class CRidePen sealed:public ::CPen{
 	public:
 		static const CRidePen BlackHairline, WhiteHairline, RedHairline;

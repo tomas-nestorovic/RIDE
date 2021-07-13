@@ -1,11 +1,11 @@
 #include "stdafx.h"
 
 	const TSide CDos::StdSidesMap[]={ 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 };
-	CPtrList CDos::known;
+	Utils::CPtrList<CDos::PCProperties> CDos::Known;
 
 
 	PDos CDos::GetFocused(){
-		return ((CMainWindow *)app.m_pMainWnd)->pTdi->__getCurrentTab__()->dos;
+		return TDI_INSTANCE->__getCurrentTab__()->dos;
 	}
 
 	void CDos::__errorCannotDoCommand__(TStdWinError cause){
@@ -482,7 +482,7 @@ reportError:Utils::Information(buf);
 		pAction->SetProgressTarget( 1+image->GetCylinderCount() ); // "1+" = to not preliminary terminating the action
 		const WORD nDataBytesInSector=fesp.dos->formatBoot.sectorLength-fesp.dos->properties->dataBeginOffsetInSector-fesp.dos->properties->dataEndOffsetInSector;
 		// . adding current Directory into DiscoverdDirectories, and backing-up current Directory (may be changed during processing)
-		CFileManagerView::TFileList discoveredDirs;
+		CFileManagerView::CFileList discoveredDirs;
 		discoveredDirs.AddHead(fesp.dos->currentDir);
 		// . filling empty space in last Sectors
 		while (discoveredDirs.GetCount()){
@@ -539,7 +539,7 @@ reportError:Utils::Information(buf);
 		const PImage image=fesp.dos->image;
 		pAction->SetProgressTarget( image->GetCylinderCount() ); // "1+" = to not preliminary terminating the action
 		// . adding current Directory into DiscoverdDirectories, and backing-up current Directory (may be changed during processing)
-		CFileManagerView::TFileList discoveredDirs;
+		CFileManagerView::CFileList discoveredDirs;
 		discoveredDirs.AddHead(fesp.dos->currentDir);
 		// . filling Empty Directory entries
 		while (discoveredDirs.GetCount()){

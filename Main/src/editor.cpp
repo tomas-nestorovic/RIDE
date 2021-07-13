@@ -75,8 +75,8 @@
 			openWith[iMru]=&CUnknownDos::Properties; // assumption (automatic recognition should be used)
 			::wsprintf( ::lstrcpy(entryName,PREFIX_MRU_DOS)+(sizeof(PREFIX_MRU_DOS)/sizeof(TCHAR)-1), m_strEntryFormat, iMru+1 );
 			const CDos::TId dosId=app.GetProfileInt( m_strSectionName, entryName, 0 );
-			for( POSITION pos=CDos::known.GetHeadPosition(); pos; ){
-				const CDos::PCProperties props=(CDos::PCProperties)CDos::known.GetNext(pos);
+			for( POSITION pos=CDos::Known.GetHeadPosition(); pos; ){
+				const CDos::PCProperties props=CDos::Known.GetNext(pos);
 				if (props->id==dosId){
 					openWith[iMru]=props;
 					break;
@@ -86,8 +86,8 @@
 			m_deviceProps[iMru]=nullptr; // assumption (actually an Image, not a real Device)
 			::wsprintf( ::lstrcpy(entryName,PREFIX_MRU_DEVICE)+(sizeof(PREFIX_MRU_DEVICE)/sizeof(TCHAR)-1), m_strEntryFormat, iMru+1 );
 			const CDos::TId devId=app.GetProfileInt( m_strSectionName, entryName, 0 );
-			for( POSITION pos=CImage::devices.GetHeadPosition(); pos; ){
-				const CImage::PCProperties props=(CImage::PCProperties)CImage::devices.GetNext(pos);
+			for( POSITION pos=CImage::Devices.GetHeadPosition(); pos; ){
+				const CImage::PCProperties props=CImage::Devices.GetNext(pos);
 				if (props->id==devId){
 					m_deviceProps[iMru]=props;
 					break;
@@ -179,28 +179,28 @@
 		cfPerformedDropEffect=::RegisterClipboardFormat(CFSTR_PERFORMEDDROPEFFECT);
 		cfPasteSucceeded=::RegisterClipboardFormat(CFSTR_PASTESUCCEEDED);
 		// - registering recognizable Image types and known DOSes (in alphabetical order)
-		CImage::known.AddTail( (PVOID)&CCtRaw::Properties );
-		CImage::known.AddTail( (PVOID)&D80::Properties );
-		CImage::known.AddTail( (PVOID)&CDsk5::Properties );
-		CImage::known.AddTail( (PVOID)&CIpf::Properties );
-		CImage::known.AddTail( (PVOID)&CKryoFluxStreams::Properties );
-		CImage::known.AddTail( (PVOID)&MBD::Properties );
-		CImage::known.AddTail( (PVOID)&CMGT::Properties );
-		CImage::known.AddTail( (PVOID)&CImageRaw::Properties );
-		CImage::known.AddTail( (PVOID)&CSCL::Properties );
-		CImage::known.AddTail( (PVOID)&TRD::Properties );
-		CImage::devices.AddTail( (PVOID)&CFDD::Properties );
-		CImage::devices.AddTail( (PVOID)&CKryoFluxDevice::Properties );
+		CImage::Known.AddTail( &CCtRaw::Properties );
+		CImage::Known.AddTail( &D80::Properties );
+		CImage::Known.AddTail( &CDsk5::Properties );
+		CImage::Known.AddTail( &CIpf::Properties );
+		CImage::Known.AddTail( &CKryoFluxStreams::Properties );
+		CImage::Known.AddTail( &MBD::Properties );
+		CImage::Known.AddTail( &CMGT::Properties );
+		CImage::Known.AddTail( &CImageRaw::Properties );
+		CImage::Known.AddTail( &CSCL::Properties );
+		CImage::Known.AddTail( &TRD::Properties );
+		CImage::Devices.AddTail( &CFDD::Properties );
+		CImage::Devices.AddTail( &CKryoFluxDevice::Properties );
 		#ifdef _DEBUG
-			CImage::devices.AddTail( (PVOID)&CDsk5::CDummyDevice::Properties );
+			CImage::Devices.AddTail( &CDsk5::CDummyDevice::Properties );
 		#endif
-		CDos::known.AddTail( (PVOID)&CBSDOS308::Properties );
-		CDos::known.AddTail( (PVOID)&CGDOS::Properties );
-		CDos::known.AddTail( (PVOID)&CMDOS2::Properties );
-		CDos::known.AddTail( (PVOID)&CMSDOS7::Properties );
-		CDos::known.AddTail( (PVOID)&CTRDOS503::Properties );
-		CDos::known.AddTail( (PVOID)&CTRDOS504::Properties );
-		CDos::known.AddTail( (PVOID)&CTRDOS505::Properties );
+		CDos::Known.AddTail( &CBSDOS308::Properties );
+		CDos::Known.AddTail( &CGDOS::Properties );
+		CDos::Known.AddTail( &CMDOS2::Properties );
+		CDos::Known.AddTail( &CMSDOS7::Properties );
+		CDos::Known.AddTail( &CTRDOS503::Properties );
+		CDos::Known.AddTail( &CTRDOS504::Properties );
+		CDos::Known.AddTail( &CTRDOS505::Properties );
 		// - restoring Most Recently Used (MRU) file Images
 		if ((::GetVersion()&0xff)<=5){ // for Windows XP and older ...
 			delete m_pszProfileName; // ... list is stored to and read from the INI file in application's folder
@@ -229,8 +229,8 @@
 		m_pMainWnd->UpdateWindow();
 		TDI_INSTANCE->SetFocus(); // explicitly focusing on the TDI View to activate the IntroductoryGuidePost
 		// - searching for newly added DOSes
-		for( POSITION pos=CDos::known.GetHeadPosition(); pos; )
-			if (!CDos::CRecognition().__getOrderIndex__((CDos::PCProperties)CDos::known.GetNext(pos))){
+		for( POSITION pos=CDos::Known.GetHeadPosition(); pos; )
+			if (!CDos::CRecognition().__getOrderIndex__(CDos::Known.GetNext(pos))){
 				// found a DOS that's not recorded in the profile - displaying the dialog to confirm its recognition
 				((CMainWindow *)m_pMainWnd)->__changeAutomaticDiskRecognitionOrder__();
 				break;
@@ -419,8 +419,8 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 					// - populating the list of known DOSes
 					CListBox lb;
 					lb.Attach(GetDlgItemHwnd(ID_DOS));
-						for( POSITION pos=CDos::known.GetHeadPosition(); pos; ){
-							const CDos::PCProperties p=(CDos::PCProperties)CDos::known.GetNext(pos);
+						for( POSITION pos=CDos::Known.GetHeadPosition(); pos; ){
+							const CDos::PCProperties p=CDos::Known.GetNext(pos);
 							lb.SetItemDataPtr( lb.AddString(p->name), (PVOID)p );
 						}
 					lb.Detach();
@@ -590,12 +590,12 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			// list of Filters consists of all recognizable Images
 			// . all known Images
 			a+=_stprintf( a, _T("All known images|") );
-			for( POSITION pos=CImage::known.GetHeadPosition(); pos; )
-				a+=_stprintf( a, _T("%s;"), ((CImage::PCProperties)CImage::known.GetNext(pos))->filter );
+			for( POSITION pos=CImage::Known.GetHeadPosition(); pos; )
+				a+=_stprintf( a, _T("%s;"), CImage::Known.GetNext(pos)->filter );
 			*(a-1)='|'; // replacing semicolon with pipe '|'
 			// . individual Images by extension
-			for( POSITION pos=CImage::known.GetHeadPosition(); pos; nFilters++ ){
-				const CImage::PCProperties p=(CImage::PCProperties)CImage::known.GetNext(pos);
+			for( POSITION pos=CImage::Known.GetHeadPosition(); pos; nFilters++ ){
+				const CImage::PCProperties p=CImage::Known.GetNext(pos);
 				a+=_stprintf( a, _T("%s (%s)|%s|"), p->fnRecognize(nullptr), p->filter, p->filter ); // Null as buffer = one Image represents only one "device" whose name is known at compile-time
 			}
 		}

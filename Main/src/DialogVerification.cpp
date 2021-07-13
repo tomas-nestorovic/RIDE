@@ -301,8 +301,8 @@
 		vp.fReport.OpenSection(_T("File sector linkage in FAT"));
 		const PImage image=vp.dos->image;
 		pAction->SetProgressTarget( vp.dos->formatBoot.nCylinders );
-		CFileManagerView::TFileList bfsFiles; // breadth first search, searching through Directories in breadth
-		CPtrList visitedDirectories;
+		CFileManagerView::CFileList bfsFiles; // breadth first search, searching through Directories in breadth
+		CFileManagerView::CFileList visitedDirectories;
 		DWORD nItemsVisited=0; // Files and Directories
 		for( bfsFiles.AddTail((CDos::PFile)DOS_DIR_ROOT); bfsFiles.GetCount()>0; ){
 			if (pAction->IsCancelled()) return vp.CancelAll();
@@ -320,7 +320,7 @@
 					while (const CDos::PFile subfile=pdt->GetNextFileOrSubdir())
 						switch (pdt->entryType){
 							case CDos::TDirectoryTraversal::SUBDIR:
-								if (visitedDirectories.Find( (PVOID)vp.dos->GetDirectoryUid(subfile) )!=nullptr) // the Subdirectory has already been processed
+								if (visitedDirectories.Find( (CDos::PFile)vp.dos->GetDirectoryUid(subfile) )!=nullptr) // the Subdirectory has already been processed
 									continue; // not processing it again
 								//fallthrough
 							case CDos::TDirectoryTraversal::FILE:
@@ -362,8 +362,8 @@
 		const PImage image=vp.dos->image;
 		pAction->SetProgressTarget( vp.dos->formatBoot.nCylinders );
 		CMapWordToPtr sectorOccupation[FDD_CYLINDERS_MAX*2];
-		CFileManagerView::TFileList bfsFiles; // breadth first search, searching through Directories in breadth
-		CPtrList visitedDirectories;
+		CFileManagerView::CFileList bfsFiles; // breadth first search, searching through Directories in breadth
+		CFileManagerView::CFileList visitedDirectories;
 		DWORD nItemsVisited=0; // Files and Directories
 		for( bfsFiles.AddTail((CDos::PFile)DOS_DIR_ROOT); bfsFiles.GetCount()>0; ){
 			if (pAction->IsCancelled()) return vp.CancelAll();
@@ -473,7 +473,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 					while (const CDos::PFile subfile=pdt->GetNextFileOrSubdir())
 						switch (pdt->entryType){
 							case CDos::TDirectoryTraversal::SUBDIR:
-								if (visitedDirectories.Find( (PVOID)vp.dos->GetDirectoryUid(subfile) )!=nullptr) // the Subdirectory has already been processed
+								if (visitedDirectories.Find( (CDos::PFile)vp.dos->GetDirectoryUid(subfile) )!=nullptr) // the Subdirectory has already been processed
 									continue; // not processing it again
 								//fallthrough
 							case CDos::TDirectoryTraversal::FILE:
@@ -509,8 +509,8 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 		vp.fReport.OpenSection(FAT_VERIFICATION_LOSTSECTORS _T(" (floppy)"));
 		const PImage image=vp.dos->image;
 		CMapWordToPtr sectorAffiliation[FDD_CYLINDERS_MAX*2];
-		CFileManagerView::TFileList bfsFiles; // in-breath search of Files
-		CPtrList visitedDirectories;
+		CFileManagerView::CFileList bfsFiles; // in-breath search of Files
+		CFileManagerView::CFileList visitedDirectories;
 		DWORD nItemsVisited=0; // Files and Directories
 		for( bfsFiles.AddTail((CDos::PFile)DOS_DIR_ROOT); bfsFiles.GetCount()>0; ){
 			if (pAction->IsCancelled()) return vp.CancelAll();
@@ -544,7 +544,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 					while (const CDos::PFile subfile=pdt->GetNextFileOrSubdir())
 						switch (pdt->entryType){
 							case CDos::TDirectoryTraversal::SUBDIR:
-								if (visitedDirectories.Find( (PVOID)vp.dos->GetDirectoryUid(subfile) )!=nullptr) // the Subdirectory has already been processed
+								if (visitedDirectories.Find( (CDos::PFile)vp.dos->GetDirectoryUid(subfile) )!=nullptr) // the Subdirectory has already been processed
 									continue; // not processing it again
 								//fallthrough
 							case CDos::TDirectoryTraversal::FILE:

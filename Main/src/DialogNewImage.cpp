@@ -23,8 +23,8 @@
 		CListBox lb;
 		lb.Attach(GetDlgItemHwnd(ID_DOS));
 			lb.SetItemDataPtr( lb.AddString(_T("-- Select --")), (PVOID)&CUnknownDos::Properties );
-			for( POSITION pos=CDos::known.GetHeadPosition(); pos; ){
-				const CDos::PCProperties p=(CDos::PCProperties)CDos::known.GetNext(pos);
+			for( POSITION pos=CDos::Known.GetHeadPosition(); pos; ){
+				const CDos::PCProperties p=CDos::Known.GetNext(pos);
 				lb.SetItemDataPtr( lb.AddString(p->name), (PVOID)p );
 			}
 			lb.SetCurSel(0);
@@ -61,8 +61,8 @@
 					lb.Attach(pImageListBox->m_hWnd);
 						lb.ShowWindow(SW_SHOW), ShowDlgItem(ID_ERROR,false);
 						lb.ResetContent();
-						for( POSITION pos=CImage::known.GetHeadPosition(); pos; )
-							__checkCompatibilityAndAddToOptions__( dosProps, lb, (CImage::PCProperties)CImage::known.GetNext(pos) );
+						for( POSITION pos=CImage::Known.GetHeadPosition(); pos; )
+							__checkCompatibilityAndAddToOptions__( dosProps, lb, CImage::Known.GetNext(pos) );
 						lb.SetItemDataPtr( lb.AddString(REAL_DEVICE_OPTION_STRING), (PVOID)&CFDD::Properties ); // "some" real device
 						lb.SetCurSel( lb.FindString(0,dosProps->typicalImage->fnRecognize(nullptr)) ); // Null as buffer = one Image represents only one "device" whose name is known at compile-time
 					lb.Detach();

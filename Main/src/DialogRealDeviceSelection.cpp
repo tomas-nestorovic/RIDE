@@ -70,8 +70,8 @@
 			lb.SetItemDataPtr( lb.AddString(_T("-- Select --")), (PVOID)&CUnknownDos::Properties );
 			lb.SetCurSel(0);
 			const WORD dosStdSectorLength=dosProps->stdFormats->params.format.sectorLength;
-			for( POSITION pos=CImage::devices.GetHeadPosition(); pos; ){
-				const CImage::PCProperties devProps=(CImage::PCProperties)CImage::devices.GetNext(pos);
+			for( POSITION pos=CImage::Devices.GetHeadPosition(); pos; ){
+				const CImage::PCProperties devProps=CImage::Devices.GetNext(pos);
 				if (dosProps==&CUnknownDos::Properties // no preconditions on a Device
 					||
 					devProps->supportedMedia&dosProps->supportedMedia // DOS and Image support common Media

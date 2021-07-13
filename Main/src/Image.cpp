@@ -369,16 +369,16 @@ namespace Medium{
 		return LENGTH_CODE_BASE<<sectorLengthCode;
 	}
 
-	CPtrList CImage::known;
-	CPtrList CImage::devices;
+	Utils::CPtrList<CImage::PCProperties> CImage::Known;
+	Utils::CPtrList<CImage::PCProperties> CImage::Devices;
 
 	CImage::PCProperties CImage::DetermineType(LPCTSTR fileName){
 		// determines and returns Properties for an Image with a given FileName; returns Null if the file represents an unknown Image
 		CImage::PCProperties result=nullptr; // assumption (unknown Image type)
 		int nLongestExtChars=-1;
 		const LPCTSTR fileNameEnd=fileName+::lstrlen(fileName);
-		for( POSITION pos=known.GetHeadPosition(); pos; ){
-			const CImage::PCProperties p=(CImage::PCProperties)CImage::known.GetNext(pos);
+		for( POSITION pos=Known.GetHeadPosition(); pos; ){
+			const CImage::PCProperties p=CImage::Known.GetNext(pos);
 			TCHAR tmp[40], *pFilter=_tcstok( ::lstrcpy(tmp,p->filter), IMAGE_FORMAT_SEPARATOR );
 			do{
 				const int nExtChars=::lstrlen(pFilter);

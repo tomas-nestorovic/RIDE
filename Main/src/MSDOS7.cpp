@@ -1081,7 +1081,7 @@
 		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
 		const TRemoveLongNameParams rlnp=*(TRemoveLongNameParams *)pAction->GetParams();
 		pAction->SetProgressTarget( rlnp.msdos->formatBoot.nCylinders );
-			CFileManagerView::TFileList bfsDirectories; // breadth first search, searching through Directories in breadth
+			CFileManagerView::CFileList bfsDirectories; // breadth first search, searching through Directories in breadth
 			TCylinder state=0;
 			for( bfsDirectories.AddTail(rlnp.msdos->currentDir); bfsDirectories.GetCount(); ){
 				if (pAction->IsCancelled()) return ERROR_CANCELLED;

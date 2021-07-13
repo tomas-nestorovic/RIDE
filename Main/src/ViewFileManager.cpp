@@ -367,7 +367,7 @@
 		// - deleting upon confirmation
 		if (Utils::QuestionYesNo( _T("Selected item(s) will be deleted.\n\nContinue?"), MB_DEFBUTTON2 )){
 			// . deleting
-			TFileList filesToDelete;
+			CFileList filesToDelete;
 			for( POSITION pos=GetFirstSelectedFilePosition(); pos; filesToDelete.AddTail(GetNextSelectedFile(pos)) );
 			__deleteFiles__(filesToDelete);
 			if (::IsWindow(m_hWnd)) RefreshDisplay();
@@ -376,7 +376,7 @@
 		}
 	}
 
-	void CFileManagerView::__deleteFiles__(TFileList &rFileList){
+	void CFileManagerView::__deleteFiles__(CFileList &rFileList){
 		// deletes Files in the List
 		while (rFileList.GetCount()){ // Files deleted in reversed order ("from rear")
 			const CDos::PFile fileToDelete=rFileList.RemoveTail();
@@ -617,10 +617,10 @@
 		}else
 			return (CDos::PFile)selectedFiles.GetPrev(pos);
 	}
-	void CFileManagerView::SelectFiles(const TFileList &selection){
+	void CFileManagerView::SelectFiles(const CFileList &selection){
 		// changes SelectedFile
 		selectedFiles.RemoveAll();
-		for( POSITION pos=selection.GetHeadPosition(); pos; selectedFiles.AddTail((PVOID)selection.GetNext(pos)) );
+		for( POSITION pos=selection.GetHeadPosition(); pos; selectedFiles.AddTail(selection.GetNext(pos)) );
 		RefreshDisplay();
 	}
 	DWORD CFileManagerView::GetCountOfSelectedFiles() const{
