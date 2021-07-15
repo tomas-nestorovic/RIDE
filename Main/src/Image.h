@@ -318,7 +318,7 @@
 
 			typedef const struct TParseEvent{
 				enum TType:BYTE{
-					EMPTY,			// used as terminator in a list of Events
+					NONE,			// invalid ParseEvent
 					SYNC_3BYTES,	// dw
 					MARK_1BYTE,		// b
 					PREAMBLE,		// dw (length)
@@ -339,26 +339,17 @@
 					char lpszMetaString[sizeof(DWORD)]; // textual description of a ParseEvent event
 				};
 
-				static const TParseEvent Empty;
 				static const COLORREF TypeColors[LAST];
 
 				inline TParseEvent(){}
 				TParseEvent(TType type,TLogTime tStart,TLogTime tEnd,DWORD data);
 
-				inline bool IsEmpty() const{ return type==EMPTY; }
 				inline bool IsDataStd() const{ return type==DATA_OK || type==DATA_BAD; }
 				inline bool IsDataAny() const{ return IsDataStd() || type==DATA_IN_GAP; }
-				const TParseEvent *GetNext() const;
-				const TParseEvent *GetNextStart(TLogTime tMin,TType type=TType::EMPTY) const;
-				const TParseEvent *GetNextEnd(TLogTime tMin,TType type=TType::EMPTY) const;
-				const TParseEvent *GetLast() const;
-				bool Contains(TType type) const;
-				void AddAscendingByStart(const TParseEvent &pe);
-				void AddAscendingByStart(const TParseEvent *peList);
 			} *PCParseEvent;
 
 			typedef const struct TMetaStringParseEvent:public TParseEvent{
-				static void Create(TParseEvent *&buffer,TLogTime tStart,TLogTime tEnd,LPCSTR lpszMetaString);
+				static void Create(TParseEvent &buffer,TLogTime tStart,TLogTime tEnd,LPCSTR lpszMetaString);
 			} *PCMetaStringParseEvent;
 
 			typedef const struct TDataParseEvent:public TParseEvent{
@@ -369,8 +360,8 @@
 
 				TByteInfo byteInfos[1];
 
-				static void Create(TParseEvent *&buffer,bool dataOk,TLogTime tStart,TLogTime tEnd,DWORD nBytes,PCByteInfo pByteInfos);
-				static void Create(TParseEvent *&buffer,TParseEvent::TType type,TLogTime tStart,TLogTime tEnd,DWORD nBytes,PCByteInfo pByteInfos);
+				static void Create(TParseEvent &buffer,bool dataOk,TLogTime tStart,TLogTime tEnd,DWORD nBytes,PCByteInfo pByteInfos);
+				static void Create(TParseEvent &buffer,TParseEvent::TType type,TLogTime tStart,TLogTime tEnd,DWORD nBytes,PCByteInfo pByteInfos);
 
 				inline bool HasByteInfo() const{ return size>sizeof(TParseEvent); }
 			} *PCDataParseEvent;
@@ -385,8 +376,24 @@
 				inline PCParseEvent operator->() const{ return gen; }
 			};
 
-			typedef TParseEvent TSingleSectorParseEventBuffer[100000/sizeof(TParseEvent)]; // 100k should suffice for Events (and ByteInfos) in data part of a single Sectors of any platform
-			typedef TParseEvent TWholeTrackParseEventBuffer[1500000/sizeof(TParseEvent)]; // "1.5 MB" capacity should suffice for any Track of any platform to comfortably accommodate all ParseEvents and ByteInfos
+			class CParseEventList:public Utils::CPtrList<PCParseEvent>{
+				static PCParseEvent CreateCopy(const TParseEvent &pe);
+
+				CParseEventList(const CParseEventList &r);
+				CParseEventList(CParseEventList &&r);
+			public:
+				inline CParseEventList(){}
+				~CParseEventList();
+
+				POSITION AddCopyTail(const TParseEvent &pe);
+				POSITION GetPositionByStart(TLogTime tStartMin,TParseEvent::TType type=TParseEvent::NONE,POSITION posFrom=nullptr) const;
+				POSITION GetPositionByEnd(TLogTime tEndMin,TParseEvent::TType type=TParseEvent::NONE,POSITION posFrom=nullptr) const;
+				bool Contains(TParseEvent::TType type,POSITION posFrom=nullptr) const;
+				void AddCopyAscendingByStart(const TParseEvent &pe);
+				void AddCopiesAscendingByStart(const CParseEventList &list);
+				void RemoveHead();
+				void RemoveTail();
+			};
 		protected:
 			const PLogTime logTimes; // absolute logical times since the start of recording
 			const TDecoderMethod method;
@@ -402,10 +409,10 @@
 
 			CTrackReader(PLogTime logTimes,DWORD nLogTimes,PCLogTime indexPulses,BYTE nIndexPulses,Medium::TType mediumType,Codec::TType codec,TDecoderMethod method,bool resetDecoderOnIndex);
 
-			WORD ScanFm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *&pOutParseEvents);
-			WORD ScanMfm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *&pOutParseEvents);
-			TFdcStatus ReadDataFm(WORD nBytesToRead,TParseEvent *&pOutParseEvents);
-			TFdcStatus ReadDataMfm(WORD nBytesToRead,TParseEvent *&pOutParseEvents);
+			WORD ScanFm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents);
+			WORD ScanMfm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents);
+			TFdcStatus ReadDataFm(WORD nBytesToRead,CParseEventList *pOutParseEvents);
+			TFdcStatus ReadDataMfm(WORD nBytesToRead,CParseEventList *pOutParseEvents);
 		public:
 			typedef const struct TTimeInterval{
 				TLogTime tStart; // inclusive
@@ -488,9 +495,9 @@
 			bool ReadBits16(WORD &rOut);
 			bool ReadBits32(DWORD &rOut);
 			char ReadByte(ULONGLONG &rOutBits,PBYTE pOutValue=nullptr);
-			WORD Scan(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *pOutParseEvents=nullptr);
-			WORD ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *pOutParseEvents);
-			TFdcStatus ReadData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,TParseEvent *pOutParseEvents);
+			WORD Scan(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents=nullptr);
+			WORD ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList &rOutParseEvents);
+			TFdcStatus ReadData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,CParseEventList *pOutParseEvents);
 			TFdcStatus ReadData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,LPBYTE buffer);
 			BYTE __cdecl ShowModal(PCTimeInterval pIntervals,DWORD nIntervals,UINT messageBoxButtons,bool initAllFeaturesOn,LPCTSTR format,...) const;
 			void __cdecl ShowModal(LPCTSTR format,...) const;

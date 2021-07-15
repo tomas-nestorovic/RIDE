@@ -16,8 +16,17 @@ namespace Utils{
 		inline Ptr GetNext(POSITION &rPosition) const{ return (Ptr)__super::GetNext(rPosition); }
 		inline Ptr &GetPrev(POSITION &rPosition){ return (Ptr &)__super::GetPrev(rPosition); }
 		inline Ptr GetPrev(POSITION &rPosition) const{ return (Ptr)__super::GetPrev(rPosition); }
+		inline Ptr &GetHead(){ return (Ptr &)__super::GetHead(); }
+		inline Ptr GetHead() const{ return (Ptr)__super::GetHead(); }
+		inline Ptr &GetTail(){ return (Ptr &)__super::GetTail(); }
+		inline Ptr GetTail() const{ return (Ptr)__super::GetTail(); }
 		inline Ptr RemoveHead(){ return (Ptr)__super::RemoveHead(); }
 		inline Ptr RemoveTail(){ return (Ptr)__super::RemoveTail(); }
+		inline Ptr &GetAt(POSITION position){ return (Ptr &)__super::GetAt(position); }
+		inline Ptr GetAt(POSITION position) const{ return (Ptr)__super::GetAt(position); }
+		inline void SetAt(POSITION pos,Ptr newElement){ return __super::SetAt(pos,(PVOID)newElement); }
+		inline POSITION InsertBefore(POSITION position,Ptr newElement){ return __super::InsertBefore(position,(PVOID)newElement); }
+		inline POSITION InsertAfter(POSITION position,Ptr newElement){ return __super::InsertAfter(position,(PVOID)newElement); }
 	};
 
 	class CRidePen sealed:public ::CPen{

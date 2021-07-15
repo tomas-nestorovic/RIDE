@@ -15,7 +15,7 @@
 		for( TId dosId=0,nCharsRead=0; _stscanf(ps,INI_RECOGNITION_DOS_ID _T("%n"),&dosId,&nCharsRead)>0; ps+=nCharsRead )
 			if (dosId!=CUnknownDos::Properties.id)
 				for( POSITION pos=Known.GetHeadPosition(); pos; ){
-					PCProperties props=Known.GetNext(pos);
+					const PCProperties props=Known.GetNext(pos);
 					if (props->id==dosId){
 						order[++nDoses]=props; // indexing starts from 1
 						break;

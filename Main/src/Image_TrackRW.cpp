@@ -287,7 +287,7 @@
 		//}
 	}
 
-	WORD CImage::CTrackReader::Scan(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *pOutParseEvents){
+	WORD CImage::CTrackReader::Scan(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents){
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
 		profile.Reset();
 		WORD nSectorsFound;
@@ -302,16 +302,13 @@
 				ASSERT(FALSE); // we shouldn't end up here - check if all Codecs are included in the Switch statement!
 				return 0;
 		}
-		if (pOutParseEvents)
-			*pOutParseEvents=TParseEvent::Empty; // termination
 		return nSectorsFound;
 	}
 
-	WORD CImage::CTrackReader::ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *pOutParseEvents){
+	WORD CImage::CTrackReader::ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList &rOutParseEvents){
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
 		// - standard scanning using current Codec
-		ASSERT( pOutParseEvents!=nullptr );
-		const WORD nSectorsFound=Scan( pOutFoundSectors, pOutIdEnds, pOutIdProfiles, pOutIdStatuses, pOutParseEvents );
+		const WORD nSectorsFound=Scan( pOutFoundSectors, pOutIdEnds, pOutIdProfiles, pOutIdStatuses, &rOutParseEvents );
 		// - getting ParseEvents in Sector data
 		struct{
 			TLogTime time;
@@ -319,8 +316,8 @@
 		} dataEnds[1536];
 		WORD nDataEnds=0;
 		for( WORD s=0; s<nSectorsFound; s++ ){
-			TSingleSectorParseEventBuffer peData;
-			if (!ReadData( pOutIdEnds[s], pOutIdProfiles[s], CImage::GetOfficialSectorLength(pOutFoundSectors[s].lengthCode), peData ).DescribesMissingDam()
+			CParseEventList peSector;
+			if (!ReadData( pOutIdEnds[s], pOutIdProfiles[s], CImage::GetOfficialSectorLength(pOutFoundSectors[s].lengthCode), &peSector ).DescribesMissingDam()
 				&&
 				*this // not end of Track (aka. data complete)
 			){
@@ -328,7 +325,7 @@
 					r.time=currentTime;
 					r.profile=profile;
 			}
-			pOutParseEvents->AddAscendingByStart( peData );
+			rOutParseEvents.AddCopiesAscendingByStart( peSector );
 		}
 		// - search for non-formatted areas
 		if (nSectorsFound>0){ // makes sense only if some Sectors found
@@ -336,14 +333,16 @@
 			const TLogTime tAreaLengthMin=nCellsMin*profile.iwTimeDefault; // ignore all non-formatted areas that are shorter
 			for( TLogTime t0=RewindToIndexAndResetProfile(0),t; *this; t0=t )
 				if (( t=ReadTime() )-t0>=tAreaLengthMin)
-					for( PCParseEvent pe=pOutParseEvents; !pe->IsEmpty(); pe=pe->GetNext() )
-						if (pe->IsDataStd())
-							if (  pe->tStart<=t0 && t0<pe->tEnd  ||  pe->tStart<=t && t<pe->tEnd  ){
-								pOutParseEvents->AddAscendingByStart(
+					for( POSITION pos=rOutParseEvents.GetHeadPosition(); pos; ){
+						const TParseEvent &pe=*rOutParseEvents.GetNext(pos);
+						if (pe.IsDataStd())
+							if (  pe.tStart<=t0 && t0<pe.tEnd  ||  pe.tStart<=t && t<pe.tEnd  ){
+								rOutParseEvents.AddCopyAscendingByStart(
 									TParseEvent( TParseEvent::NONFORMATTED, t0, t-profile.iwTimeDefault, 0 )
 								);
 								break;
 							}
+					}
 		}
 		// - search for data in gaps
 		if (nSectorsFound>0){ // makes sense only if some Sectors found
@@ -361,15 +360,16 @@
 			char bitPatternLength=-1; // number of valid bits in the BitPattern
 			for( WORD i=nGaps; i>0; ){
 				const auto &r=dataEnds[--i];
-				const PCParseEvent peNextEnd=pOutParseEvents->GetNextEnd(r.time+1);
-				if (!peNextEnd->IsEmpty() && peNextEnd->tStart<r.time)
-					continue; // gap that overlaps a ParseEvent is not a gap (e.g. Sector within Sector copy protection)
-				const PCParseEvent peNext=pOutParseEvents->GetNextStart(r.time);
-				if (peNext->IsEmpty())
+				if (const POSITION pos=rOutParseEvents.GetPositionByEnd(r.time+1))
+					if (rOutParseEvents.GetAt(pos)->tStart<r.time) // gap that overlaps a ParseEvent (e.g. Sector within Sector copy protection) ...
+						continue; // ... is not a gap
+				const POSITION posNext=rOutParseEvents.GetPositionByStart(r.time);
+				if (!posNext)
 					continue; // don't collect data in Gap4 after the last Sector (but yes, search the Gap4 after the Histogram is complete)
+				const TParseEvent &peNext=*rOutParseEvents.GetAt(posNext);
 				SetCurrentTimeAndProfile( r.time, r.profile );
 				BYTE nBytesInspected=0;
-				for( TLogTime t=r.time; t<peNext->tStart && nBytesInspected<nBytesInspectedMax; nBytesInspected++ ){
+				for( TLogTime t=r.time; t<peNext.tStart && nBytesInspected<nBytesInspectedMax; nBytesInspected++ ){
 					BYTE byte;
 					bitPatternLength=ReadByte( bitPattern, &byte );
 					auto it=tmpHist.find(bitPattern);
@@ -409,11 +409,11 @@
 			if (histogram->count>0) // a gap should always consits of some Bytes, but just to be sure
 				for( WORD i=nGaps; i>0; ){
 					const auto &r=dataEnds[--i];
-					const PCParseEvent peNextEnd=pOutParseEvents->GetNextEnd(r.time+1);
-					if (!peNextEnd->IsEmpty() && peNextEnd->tStart<r.time)
-						continue; // gap that overlaps a ParseEvent is not a gap (e.g. Sector within Sector copy protection)
-					const PCParseEvent peNext=pOutParseEvents->GetNextStart(r.time);
-					const TLogTime tNextStart= peNext->IsEmpty() ? INT_MAX : peNext->tStart;
+					if (const POSITION pos=rOutParseEvents.GetPositionByEnd(r.time+1))
+						if (rOutParseEvents.GetAt(pos)->tStart<r.time) // gap that overlaps a ParseEvent (e.g. Sector within Sector copy protection) ...
+							continue; // ... is not a gap
+					const POSITION posNext=rOutParseEvents.GetPositionByStart(r.time);
+					const TLogTime tNextStart= posNext ? rOutParseEvents.GetAt(posNext)->tStart : INT_MAX;
 					SetCurrentTimeAndProfile( r.time, r.profile );
 					const TItem &typicalItem=*histogram; // "typically" the filler Byte of post-ID Gap2, created during formatting, and thus always well aligned
 					BYTE nBytesInspected=0, nBytesTypical=0;
@@ -444,9 +444,12 @@
 							}else
 								nBytesInspected++;
 						}
-						TParseEvent peData[2000/sizeof(TParseEvent)], *pe=peData;
-						TDataParseEvent::Create( pe, TParseEvent::DATA_IN_GAP, r.time, currentTime, nBytesInspected, byteInfos );
-						pOutParseEvents->AddAscendingByStart( *peData );
+						struct{
+							TDataParseEvent base;
+							BYTE buffer[2000];
+						} peData;
+						TDataParseEvent::Create( peData.base, TParseEvent::DATA_IN_GAP, r.time, currentTime, nBytesInspected, byteInfos );
+						rOutParseEvents.AddCopyAscendingByStart( peData.base );
 					}
 				}
 		}
@@ -454,7 +457,7 @@
 		return nSectorsFound;
 	}
 
-	TFdcStatus CImage::CTrackReader::ReadData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,TParseEvent *pOutParseEvents){
+	TFdcStatus CImage::CTrackReader::ReadData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,CParseEventList *pOutParseEvents){
 		// attempts to read specified amount of Bytes into the Buffer, starting at position pointed to by the BitReader
 		SetCurrentTimeAndProfile( idEndTime, idEndProfile );
 		TFdcStatus st=TFdcStatus::NoDataField; // assumption
@@ -469,21 +472,21 @@
 				ASSERT(FALSE); // we shouldn't end up here - all Codecs should be included in the Switch statement!
 				break;
 		}
-		*pOutParseEvents=TParseEvent::Empty; // termination
 		return st;
 	}
 
 	TFdcStatus CImage::CTrackReader::ReadData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,LPBYTE buffer){
 		// attempts to read specified amount of Bytes into the Buffer, starting at position pointed to by the BitReader
-		TSingleSectorParseEventBuffer peBuffer;
-		const TFdcStatus st=ReadData( idEndTime, idEndProfile, nBytesToRead, peBuffer );
-		for( PCParseEvent pe=peBuffer; !pe->IsEmpty(); pe=pe->GetNext() )
+		CParseEventList peSector;
+		const TFdcStatus st=ReadData( idEndTime, idEndProfile, nBytesToRead, &peSector );
+		for( POSITION pos=peSector.GetHeadPosition(); pos; ){
+			const TParseEventPtr pe=peSector.GetNext(pos);
 			if (pe->IsDataStd()){
-				auto nBytes=pe->size-sizeof(TParseEvent);
-				for( auto *pbi=((PCDataParseEvent)pe)->byteInfos; nBytes; nBytes-=sizeof(*pbi) )
-					*buffer++=pbi++->value;
+				DWORD nBytes=pe.data->dw;
+				for( auto *pbi=pe.data->byteInfos; nBytes--; *buffer++=pbi++->value );
 				break;
 			}
+		}
 		return st;
 	}
 
@@ -521,87 +524,115 @@
 		dw=data;
 	}
 
-	void CImage::CTrackReader::TMetaStringParseEvent::Create(TParseEvent *&buffer,TLogTime tStart,TLogTime tEnd,LPCSTR lpszMetaString){
+	void CImage::CTrackReader::TMetaStringParseEvent::Create(TParseEvent &buffer,TLogTime tStart,TLogTime tEnd,LPCSTR lpszMetaString){
 		ASSERT( lpszMetaString!=nullptr );
-		*buffer=TParseEvent( TType::META_STRING, tStart, tEnd, 0 );
-		buffer->size =	sizeof(TMetaStringParseEvent)
+		buffer=TParseEvent( TType::META_STRING, tStart, tEnd, 0 );
+		buffer.size =	sizeof(TMetaStringParseEvent)
 						+
-						::lstrlenA(  ::lstrcpynA( buffer->lpszMetaString, lpszMetaString, (decltype(buffer->size))-1-sizeof(TParseEvent) )  )
+						::lstrlenA(  ::lstrcpynA( buffer.lpszMetaString, lpszMetaString, (decltype(buffer.size))-1-sizeof(TParseEvent) )  )
 						+
 						1 // "+1" = including terminal Null character
 						-
-						sizeof(buffer->lpszMetaString); // already counted into Size
-		buffer=const_cast<TParseEvent *>(buffer->GetNext());
+						sizeof(buffer.lpszMetaString); // already counted into Size
 	}
 
-	void CImage::CTrackReader::TDataParseEvent::Create(TParseEvent *&buffer,bool dataOk,TLogTime tStart,TLogTime tEnd,DWORD nBytes,PCByteInfo pByteInfos){
+	void CImage::CTrackReader::TDataParseEvent::Create(TParseEvent &buffer,bool dataOk,TLogTime tStart,TLogTime tEnd,DWORD nBytes,PCByteInfo pByteInfos){
 		Create( buffer, dataOk?DATA_OK:DATA_BAD, tStart, tEnd, nBytes, pByteInfos );
 	}
 
-	void CImage::CTrackReader::TDataParseEvent::Create(TParseEvent *&buffer,TParseEvent::TType type,TLogTime tStart,TLogTime tEnd,DWORD nBytes,PCByteInfo pByteInfos){
+	void CImage::CTrackReader::TDataParseEvent::Create(TParseEvent &buffer,TParseEvent::TType type,TLogTime tStart,TLogTime tEnd,DWORD nBytes,PCByteInfo pByteInfos){
 		ASSERT( nBytes>0 && pByteInfos!=nullptr );
-		*buffer=TParseEvent( type, tStart, tEnd, nBytes );
-		if (sizeof(TDataParseEvent)+nBytes*sizeof(TByteInfo)<=(decltype(buffer->size))-1){
-			::memcpy( ((TDataParseEvent *)buffer)->byteInfos, pByteInfos, nBytes*sizeof(TByteInfo) );
-			buffer->size =	sizeof(TDataParseEvent)
+		buffer=TParseEvent( type, tStart, tEnd, nBytes );
+		if (sizeof(TDataParseEvent)+nBytes*sizeof(TByteInfo)<=(decltype(buffer.size))-1){
+			::memcpy( ((TDataParseEvent *)&buffer)->byteInfos, pByteInfos, nBytes*sizeof(TByteInfo) );
+			buffer.size =	sizeof(TDataParseEvent)
 							+
 							(nBytes-1)*sizeof(TByteInfo); // "-1" = already counted into Size
 		}else // if ParseEvent Size would exceed the range, can't store information on ByteEnds
 			ASSERT(FALSE); // need to increase the Size capacity
-		buffer=const_cast<TParseEvent *>(buffer->GetNext());
 	}
 
-	const CImage::CTrackReader::TParseEvent *CImage::CTrackReader::TParseEvent::GetNext() const{
-		return	(PCParseEvent)(  (PCBYTE)this+size  );
+
+
+
+	CImage::CTrackReader::CParseEventList::CParseEventList(const CParseEventList &r){
+		// copy ctor
+		ASSERT(FALSE); // copying not implemented!
 	}
 
-	const CImage::CTrackReader::TParseEvent *CImage::CTrackReader::TParseEvent::GetNextStart(TLogTime tMin,TType type) const{
-		PCParseEvent pe=this;
-		while (!pe->IsEmpty() && (pe->tStart<tMin || type!=TType::EMPTY&&pe->type!=type))
-			pe=pe->GetNext();
-		return pe;
+	CImage::CTrackReader::CParseEventList::CParseEventList(CParseEventList &&r){
+		// move ctor
+		ASSERT(FALSE); // moving not implemented!
 	}
 
-	const CImage::CTrackReader::TParseEvent *CImage::CTrackReader::TParseEvent::GetNextEnd(TLogTime tMin,TType type) const{
-		PCParseEvent pe=this;
-		while (!pe->IsEmpty() && (pe->tEnd<tMin || type!=TType::EMPTY&&pe->type!=type))
-			pe=pe->GetNext();
-		return pe;
+	CImage::CTrackReader::CParseEventList::~CParseEventList(){
+		// dtor
+		for( POSITION pos=GetHeadPosition(); pos; )
+			::free( (PVOID)GetNext(pos) );
 	}
 
-	const CImage::CTrackReader::TParseEvent *CImage::CTrackReader::TParseEvent::GetLast() const{
-		if (IsEmpty()) // this is already the last Event
-			return this;
-		PCParseEvent pe=this;
-		for( PCParseEvent next; !(next=pe->GetNext())->IsEmpty(); pe=next );
-		return pe;
+	CImage::CTrackReader::PCParseEvent CImage::CTrackReader::CParseEventList::CreateCopy(const TParseEvent &pe){
+		return (PCParseEvent)::memcpy( ::malloc(pe.size), &pe, pe.size );
 	}
 
-	bool CImage::CTrackReader::TParseEvent::Contains(TType type) const{
-		return !GetNextStart( tStart, CImage::CTrackReader::TParseEvent::DATA_IN_GAP )->IsEmpty();
+	POSITION CImage::CTrackReader::CParseEventList::AddCopyTail(const TParseEvent &pe){
+		ASSERT( pe.type!=TParseEvent::NONE );
+		ASSERT( GetCount()==0 || GetTail()->tStart<=pe.tStart );
+		return AddTail( CreateCopy(pe) );
 	}
 
-	void CImage::CTrackReader::TParseEvent::AddAscendingByStart(const TParseEvent &pe){
+	POSITION CImage::CTrackReader::CParseEventList::GetPositionByStart(TLogTime tStartMin,TParseEvent::TType type,POSITION posFrom) const{
+		if (!posFrom)
+			posFrom=GetHeadPosition();
+		while (posFrom){
+			const POSITION result=posFrom;
+			const TParseEvent &pe=*GetNext(posFrom);
+			if (tStartMin<=pe.tStart && (type==TParseEvent::NONE||pe.type==type))
+				return result;
+		}
+		return nullptr;
+	}
+
+	POSITION CImage::CTrackReader::CParseEventList::GetPositionByEnd(TLogTime tEndMin,TParseEvent::TType type,POSITION posFrom) const{
+		if (!posFrom)
+			posFrom=GetHeadPosition();
+		while (posFrom){
+			const POSITION result=posFrom;
+			const TParseEvent &pe=*GetNext(posFrom);
+			if (tEndMin<=pe.tEnd && (type==TParseEvent::NONE||pe.type==type))
+				return result;
+		}
+		return nullptr;
+	}
+
+	bool CImage::CTrackReader::CParseEventList::Contains(TParseEvent::TType type,POSITION posFrom) const{
+		return GetPositionByStart( 0, type, posFrom )!=nullptr;
+	}
+
+	void CImage::CTrackReader::CParseEventList::AddCopyAscendingByStart(const TParseEvent &pe){
 		// adds specified ParseEvents to this list so that the result is ordered by Start times
-		TParseEvent *const peInsertAt=const_cast<TParseEvent *>(GetNextStart(pe.tStart));
-		int nBytes=(PCBYTE)peInsertAt->GetLast()->GetNext()-(PCBYTE)peInsertAt+sizeof(TParseEvent); // "+sizeof" = including the terminal Empty ParseEvent
-		::memmove( (PBYTE)peInsertAt+pe.size, peInsertAt, nBytes );
-		::memcpy( peInsertAt, &pe, pe.size );
+		if (const POSITION pos=GetPositionByStart( pe.tStart ))
+			InsertBefore( pos, CreateCopy(pe) );
+		else
+			AddCopyTail(pe);
 	}
 
-	void CImage::CTrackReader::TParseEvent::AddAscendingByStart(const TParseEvent *peList){
+	void CImage::CTrackReader::CParseEventList::AddCopiesAscendingByStart(const CParseEventList &list){
 		// adds all ParseEvents to this list, ordered by their Start times ascending (MergeSort)
-		int nThisEventBytes=(PCBYTE)GetLast()->GetNext()-(PCBYTE)this+sizeof(TParseEvent); // "+sizeof" = including the terminal Empty ParseEvent
-		int nListEventBytes=(PCBYTE)peList->GetLast()->GetNext()-(PCBYTE)peList;
-		for( PCParseEvent pe1=this,pe2=peList; nThisEventBytes&&nListEventBytes; pe1=pe1->GetNext() )
-			if (pe1->tStart<=pe2->tStart) // should never be equal, but just in case
-				nThisEventBytes-=pe1->size;
-			else{
-				const auto pe2Size=pe2->size;
-				::memmove( (PBYTE)pe1+pe2Size, pe1, nThisEventBytes );
-				::memcpy( (PBYTE)pe1, pe2, pe2Size );
-				nListEventBytes-=pe2Size, pe2=pe2->GetNext();
-			}
+		POSITION listPos=list.GetHeadPosition();
+		for( POSITION pos=GetHeadPosition(); pos&&listPos; )
+			if ( pos=GetPositionByStart( list.GetAt(listPos)->tStart, TParseEvent::NONE, pos ) )
+				InsertBefore( pos, CreateCopy(*list.GetNext(listPos)) );
+		while (listPos)
+			AddCopyTail( *list.GetNext(listPos) );
+	}
+
+	void CImage::CTrackReader::CParseEventList::RemoveHead(){
+		::free( (PVOID)__super::RemoveHead() );
+	}
+
+	void CImage::CTrackReader::CParseEventList::RemoveTail(){
+		::free( (PVOID)__super::RemoveTail() );
 	}
 
 
@@ -616,7 +647,7 @@
 
 
 
-	WORD CImage::CTrackReader::ScanFm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *&pOutParseEvents){
+	WORD CImage::CTrackReader::ScanFm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents){
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
 		ASSERT( pOutFoundSectors!=nullptr && pOutIdEnds!=nullptr );
 		RewindToIndex(0);
@@ -624,7 +655,7 @@
 		return 0;
 	}
 
-	TFdcStatus CImage::CTrackReader::ReadDataFm(WORD nBytesToRead,TParseEvent *&pOutParseEvents){
+	TFdcStatus CImage::CTrackReader::ReadDataFm(WORD nBytesToRead,CParseEventList *pOutParseEvents){
 		// attempts to read specified amount of Bytes into the Buffer, starting at current position; returns the amount of Bytes actually read
 		ASSERT( codec==Codec::FM );
 		//TODO
@@ -683,7 +714,7 @@
 		}
 	}
 
-	WORD CImage::CTrackReader::ScanMfm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,TParseEvent *&pOutParseEvents){
+	WORD CImage::CTrackReader::ScanMfm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents){
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
 		ASSERT( pOutFoundSectors!=nullptr && pOutIdEnds!=nullptr );
 		// - some Sectors may start just after the IndexPulse (e.g. MDOS 1.0); preparing the scanner for this eventuality by adjusting the frequency and phase shortly BEFORE the IndexPulse
@@ -701,7 +732,7 @@
 			if ((sync1&0xffdf)!=0x4489 || (sync23&0xffdfffdf)!=0x44894489)
 				continue;
 			if (pOutParseEvents)
-				*pOutParseEvents++=TParseEvent( TParseEvent::SYNC_3BYTES, tSyncStarts[(iSyncStart+256-48)&63], currentTime, 0xa1a1a1 );
+				pOutParseEvents->AddCopyTail( TParseEvent( TParseEvent::SYNC_3BYTES, tSyncStarts[(iSyncStart+256-48)&63], currentTime, 0xa1a1a1 ) );
 			sync1=0; // invalidating "buffered" synchronization, so that it isn't reused
 			// . an ID Field mark should follow the synchronization
 			tEventStart=currentTime;
@@ -710,14 +741,14 @@
 			const BYTE idam=MFM::DecodeByte(w);
 			if ((idam&0xfe)!=0xfe){ // not the expected ID Field mark; the least significant bit is always ignored by the FDC [http://info-coach.fr/atari/documents/_mydoc/Atari-Copy-Protection.pdf]
 				if (pOutParseEvents)
-					pOutParseEvents--; // dismiss the synchronization ParseEvent
+					pOutParseEvents->RemoveTail(); // dismiss the synchronization ParseEvent
 				continue;
 			}
 			struct{
 				BYTE idFieldAm, cyl, side, sector, length;
 			} data={ idam };
 			if (pOutParseEvents)
-				*pOutParseEvents++=TParseEvent( TParseEvent::MARK_1BYTE, tEventStart, currentTime, idam );
+				pOutParseEvents->AddCopyTail( TParseEvent( TParseEvent::MARK_1BYTE, tEventStart, currentTime, idam ) );
 			// . reading SectorId
 			tEventStart=currentTime;
 			TSectorId &rid=*pOutFoundSectors++;
@@ -733,8 +764,14 @@
 			if (!ReadBits16(w)) // Track end encountered
 				break;
 			rid.lengthCode = data.length = MFM::DecodeByte(w);
-			if (pOutParseEvents)
-				TMetaStringParseEvent::Create( pOutParseEvents, tEventStart, currentTime, rid.ToString() );
+			if (pOutParseEvents){
+				struct{
+					TParseEvent base;
+					BYTE etc[80];
+				} peId;
+				TMetaStringParseEvent::Create( peId.base, tEventStart, currentTime, rid.ToString() );
+				pOutParseEvents->AddCopyTail( peId.base );
+			}
 			// . reading and comparing ID Field's CRC
 			tEventStart=currentTime;
 			DWORD dw;
@@ -746,7 +783,7 @@
 			*pOutIdEnds++=currentTime;
 			*pOutIdProfiles++=profile;
 			if (pOutParseEvents)
-				*pOutParseEvents++=TParseEvent( crcBad?TParseEvent::CRC_BAD:TParseEvent::CRC_OK, tEventStart, currentTime, crc );
+				pOutParseEvents->AddCopyTail( TParseEvent( crcBad?TParseEvent::CRC_BAD:TParseEvent::CRC_OK, tEventStart, currentTime, crc ) );
 			// . sector found
 			nSectors++;
 		}
@@ -754,7 +791,7 @@
 		return nSectors;
 	}
 
-	TFdcStatus CImage::CTrackReader::ReadDataMfm(WORD nBytesToRead,TParseEvent *&pOutParseEvents){
+	TFdcStatus CImage::CTrackReader::ReadDataMfm(WORD nBytesToRead,CParseEventList *pOutParseEvents){
 		// attempts to read specified amount of Bytes into the Buffer, starting at position pointed to by the BitReader; returns the amount of Bytes actually read
 		ASSERT( codec==Codec::MFM );
 		// - searching for the nearest three consecutive 0xA1 distorted synchronization Bytes
@@ -771,7 +808,7 @@
 		if (!*this) // Track end encountered
 			return TFdcStatus::NoDataField;
 		if (pOutParseEvents)
-			*pOutParseEvents++=TParseEvent( TParseEvent::SYNC_3BYTES, tSyncStarts[(iSyncStart+256-48)&63], currentTime, 0xa1a1a1 );
+			pOutParseEvents->AddCopyTail( TParseEvent( TParseEvent::SYNC_3BYTES, tSyncStarts[(iSyncStart+256-48)&63], currentTime, 0xa1a1a1 ) );
 		// - a Data Field mark should follow the synchronization
 		tEventStart=currentTime;
 		if (!ReadBits16(w)) // Track end encountered
@@ -789,7 +826,7 @@
 				return TFdcStatus::NoDataField; // not the expected Data mark
 		}
 		if (pOutParseEvents)
-			*pOutParseEvents++=TParseEvent( TParseEvent::MARK_1BYTE, tEventStart, currentTime, dam );
+			pOutParseEvents->AddCopyTail( TParseEvent( TParseEvent::MARK_1BYTE, tEventStart, currentTime, dam ) );
 		// - reading specified amount of Bytes into the Buffer
 		TDataParseEvent::TByteInfo byteInfos[16384], *p=byteInfos;
 		CFloppyImage::TCrc16 crc=CFloppyImage::GetCrc16Ccitt( MFM::CRC_A1A1A1, &dam, sizeof(dam) ); // computing actual CRC along the way
@@ -802,9 +839,14 @@
 			p->value=MFM::DecodeByte(w);
 			crc=CFloppyImage::GetCrc16Ccitt( crc, &p++->value, 1 );
 		}
-		TParseEvent *const peData=pOutParseEvents;
-		if (pOutParseEvents)
-			TDataParseEvent::Create( pOutParseEvents, !nBytesToRead, tEventStart, currentTime, p-byteInfos, byteInfos );
+		if (pOutParseEvents){
+			struct{
+				TParseEvent base;
+				BYTE etc[(WORD)-1*sizeof(TDataParseEvent::TByteInfo)];
+			} peData;
+			TDataParseEvent::Create( peData.base, !nBytesToRead, tEventStart, currentTime, p-byteInfos, byteInfos );
+			pOutParseEvents->AddCopyTail( peData.base );
+		}
 		if (!*this)
 			return result;
 		// - comparing Data Field's CRC
@@ -813,13 +855,13 @@
 		const bool crcBad=!ReadBits32(dw) || Utils::CBigEndianWord(MFM::DecodeWord(dw)).GetBigEndian()!=crc; // no or wrong Data Field CRC
 		if (crcBad){
 			result.ExtendWith( TFdcStatus::DataFieldCrcError );
-			if (peData){
-				peData->type=TParseEvent::DATA_BAD;
-				*pOutParseEvents++=TParseEvent( TParseEvent::CRC_BAD, tEventStart, currentTime, crc );
+			if (pOutParseEvents){
+				const_cast<TParseEvent *>(pOutParseEvents->GetTail())->type=TParseEvent::DATA_BAD;
+				pOutParseEvents->AddCopyTail( TParseEvent( TParseEvent::CRC_BAD, tEventStart, currentTime, crc ) );
 			}
 		}else
 			if (pOutParseEvents)
-				*pOutParseEvents++=TParseEvent( TParseEvent::CRC_OK, tEventStart, currentTime, crc );
+				pOutParseEvents->AddCopyTail( TParseEvent( TParseEvent::CRC_OK, tEventStart, currentTime, crc ) );
 		return result;
 	}
 

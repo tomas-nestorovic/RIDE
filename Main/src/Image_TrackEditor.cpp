@@ -41,7 +41,7 @@
 			CImage::CTrackReader tr;
 			TLogTime scrollTime;
 			PCLogTime iwEndTimes; // inspection window end Times (aka. at which Time they end; the end determines the beginning of the immediately next inspection window)
-			CImage::CTrackReader::PCParseEvent parseEvents;
+			CImage::CTrackReader::CParseEventList parseEvents;
 			TLogTime draggedTime; // Time at which left mouse button has been pressed
 			TLogTime cursorTime; // Time over which the cursor hovers
 			BYTE cursorFeatures; // OR-ed TCursorFeatures values
@@ -120,7 +120,7 @@
 						}
 						// . drawing ParseEvents
 						if (te.IsFeatureShown(TCursorFeatures::STRUCT)){
-							TParseEventPtr pe=te.GetParseEvents();
+							const auto &peList=te.GetParseEvents();
 							const Utils::CRideFont &font=Utils::CRideFont::Std;
 							const auto dcSettings0=::SaveDC(dc);
 								const int nUnitsA=te.timeline.GetUnitCount(te.GetScrollTime());
@@ -135,7 +135,8 @@
 														>=
 														byteInfoSizeMin.cx;
 								const TLogTime iwTimeDefaultHalf=tr.GetCurrentProfile().iwTimeDefault/2;
-								while (continuePainting && !pe->IsEmpty()){
+								for( POSITION pos=peList.GetHeadPosition(); continuePainting&&pos; ){
+									const TParseEventPtr pe=peList.GetNext(pos);
 									const TLogTime a=std::max(timeA,pe->tStart+iwTimeDefaultHalf), z=std::min(timeZ,pe->tEnd+iwTimeDefaultHalf);
 									if (a<z){ // ParseEvent visible
 										const int xa=te.timeline.GetUnitCount(a)-nUnitsA, xz=te.timeline.GetUnitCount(z)-nUnitsA;
@@ -204,7 +205,6 @@
 											}
 										}
 									}
-									pe=pe->GetNext();
 								}
 							::RestoreDC( dc, dcSettings0 );
 							if (!continuePainting) // new paint request?
@@ -541,15 +541,13 @@
 				, painter(*this)
 				, draggedTime(-1)
 				, cursorTime(-1) , cursorFeaturesShown(false) , cursorFeatures(TCursorFeatures::DEFAULT)
-				, scrollTime(0) , iwEndTimes(nullptr) , parseEvents(nullptr) {
+				, scrollTime(0) , iwEndTimes(nullptr) {
 			}
 			
 			~CTimeEditor(){
 				// dtor
 				//if (pIntervals)
 					//::free((PVOID)pIntervals); // commented out as it's up to the caller to dispose allocated TimeIntervals
-				if (parseEvents)
-					::free((PVOID)parseEvents);
 				if (iwEndTimes)
 					::free((PVOID)iwEndTimes);
 			}
@@ -621,14 +619,13 @@
 				this->iwEndTimes=iwEndTimes; // now responsible for disposing!
 			}
 
-			inline CImage::CTrackReader::PCParseEvent GetParseEvents() const{
+			inline const CImage::CTrackReader::CParseEventList &GetParseEvents() const{
 				return parseEvents;
 			}
 
-			void SetParseEvents(CImage::CTrackReader::PCParseEvent buffer){
-				ASSERT( parseEvents==nullptr ); // can set only once
-				const auto nBytes=(PCBYTE)buffer->GetLast()->GetNext()-(PCBYTE)buffer+sizeof(CImage::CTrackReader::TParseEvent); // "+sizeof" = including the terminal None ParseEvent
-				parseEvents=(CImage::CTrackReader::PCParseEvent)::memcpy( ::malloc(nBytes), buffer, nBytes );
+			void SetParseEvents(const CImage::CTrackReader::CParseEventList &list){
+				ASSERT( parseEvents.GetCount()==0 ); // can set only once
+				parseEvents.AddCopiesAscendingByStart( list );
 			}
 
 			inline bool IsFeatureShown(TCursorFeatures cf) const{
@@ -786,14 +783,14 @@
 			// thread to create list of inspection windows used to recognize data in the Track
 			const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
 			CTrackEditor &rte=*(CTrackEditor *)pAction->GetParams();
-			if (rte.timeEditor.GetParseEvents()!=nullptr) // already set?
+			if (rte.timeEditor.GetParseEvents().GetCount()>0) // already set?
 				return pAction->TerminateWithSuccess();
 			CImage::CTrackReader tr=rte.tr;
-			CImage::CTrackReader::TWholeTrackParseEventBuffer peBuffer;
-			BYTE dummy[16384]; // big enough to contain data of Sector of any floppy type
+			CImage::CTrackReader::CParseEventList peTrack;
+			BYTE dummy[16384]; // big enough to contain data of Sector of any type
 			TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; CImage::CTrackReader::TProfile idProfiles[Revolution::MAX*(TSector)-1];
-			const WORD nSectorsFound=tr.ScanAndAnalyze( ids, idEnds, idProfiles, (TFdcStatus *)dummy, peBuffer );
-			rte.timeEditor.SetParseEvents(peBuffer);
+			const WORD nSectorsFound=tr.ScanAndAnalyze( ids, idEnds, idProfiles, (TFdcStatus *)dummy, peTrack );
+			rte.timeEditor.SetParseEvents(peTrack);
 			return pAction->TerminateWithSuccess();
 		}
 
@@ -841,10 +838,10 @@
 							pCmdUi->Enable( tr.GetIndexCount()>0 && timeEditor.GetCenterTime()<tr.GetIndexTime(tr.GetIndexCount()-1) );
 							return TRUE;
 						case ID_FILE_SHIFT_DOWN:
-							pCmdUi->Enable( timeEditor.GetParseEvents() && timeEditor.GetCenterTime()>timeEditor.GetParseEvents()->tStart );
+							pCmdUi->Enable( timeEditor.GetParseEvents().GetCount()>0 && timeEditor.GetCenterTime()>timeEditor.GetParseEvents().GetHead()->tStart );
 							return TRUE;
 						case ID_FILE_SHIFT_UP:
-							pCmdUi->Enable( timeEditor.GetParseEvents() && timeEditor.GetCenterTime()<timeEditor.GetParseEvents()->GetLast()->tStart );
+							pCmdUi->Enable( timeEditor.GetParseEvents().GetCount()>0 && timeEditor.GetCenterTime()<timeEditor.GetParseEvents().GetTail()->tStart );
 							return TRUE;
 						case ID_RECORD_PREV:
 							pCmdUi->Enable( timeEditor.pIntervals && timeEditor.GetCenterTime()>timeEditor.pIntervals->tStart );
@@ -918,7 +915,7 @@
 							return TRUE;
 						case ID_SYSTEM:
 							if (!timeEditor.IsFeatureShown(TCursorFeatures::STRUCT)) // currently hidden, so want now show the Feature
-								if (timeEditor.GetParseEvents()==nullptr) // data to display not yet received
+								if (timeEditor.GetParseEvents().GetCount()==0) // data to display not yet received
 									if (CBackgroundActionCancelable( CreateParseEventsList_thread, this, THREAD_PRIORITY_LOWEST ).Perform()!=ERROR_SUCCESS)
 										return TRUE;
 							timeEditor.ToggleFeature(TCursorFeatures::STRUCT);
@@ -1035,18 +1032,26 @@
 							return TRUE;
 						}
 						case ID_FILE_SHIFT_DOWN:{
-							PCParseEvent pe=timeEditor.GetParseEvents(), prev=nullptr;
-							for( const TLogTime tCenter=timeEditor.GetCenterTime(); !pe->IsEmpty()&&tCenter>pe->tStart; pe=pe->GetNext() )
-								prev=pe;
-							if (prev!=nullptr)
-								timeEditor.SetCenterTime( prev->tStart );
+							const auto &peList=timeEditor.GetParseEvents();
+							const TLogTime tCenter=timeEditor.GetCenterTime();
+							PCParseEvent pe;
+							for( POSITION pos=peList.GetHeadPosition(); pos; pe=peList.GetNext(pos) )
+								if (tCenter<=peList.GetAt(pos)->tStart)
+									break;
+							if (pe)
+								timeEditor.SetCenterTime( pe->tStart );
 							return TRUE;
 						}
 						case ID_FILE_SHIFT_UP:{
-							PCParseEvent pe=timeEditor.GetParseEvents();
-							for( const TLogTime tCenter=timeEditor.GetCenterTime(); !pe->IsEmpty()&&tCenter>=pe->tStart; pe=pe->GetNext() );
-							if (!pe->IsEmpty())
-								timeEditor.SetCenterTime( pe->tStart );
+							const auto &peList=timeEditor.GetParseEvents();
+							const TLogTime tCenter=timeEditor.GetCenterTime();
+							for( POSITION pos=peList.GetHeadPosition(); pos; ){
+								const TParseEvent &pe=*peList.GetNext(pos);
+								if (tCenter<pe.tStart){
+									timeEditor.SetCenterTime( pe.tStart );
+									break;
+								}
+							}
 							return TRUE;
 						}
 						case ID_RECORD_PREV:{

@@ -209,10 +209,10 @@ terminateWithError:
 				bool hasNonformattedArea=false, hasDataInGaps=false;
 				if (trSrc){
 					TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; CImage::CTrackReader::TProfile idProfiles[Revolution::MAX*(TSector)-1]; TFdcStatus idStatuses[Revolution::MAX*(TSector)-1];
-					CImage::CTrackReader::TWholeTrackParseEventBuffer peBuffer;
-					trSrc.ScanAndAnalyze( ids, idEnds, idProfiles, idStatuses, peBuffer );
-					hasNonformattedArea=peBuffer->Contains( CImage::CTrackReader::TParseEvent::NONFORMATTED );
-					hasDataInGaps=peBuffer->Contains( CImage::CTrackReader::TParseEvent::DATA_IN_GAP );
+					CImage::CTrackReader::CParseEventList peTrack;
+					trSrc.ScanAndAnalyze( ids, idEnds, idProfiles, idStatuses, peTrack );
+					hasNonformattedArea=peTrack.Contains( CImage::CTrackReader::TParseEvent::NONFORMATTED );
+					hasDataInGaps=peTrack.Contains( CImage::CTrackReader::TParseEvent::DATA_IN_GAP );
 				}
 				// . reading individual Sectors
 				#pragma pack(1)
