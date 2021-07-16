@@ -16,8 +16,8 @@
 
 	typedef CImage::CTrackReader::TParseEventPtr TParseEventPtr;
 
-	typedef CImage::CTrackReader::TTimeInterval TTimeInterval,*PTimeInterval;
-	typedef CImage::CTrackReader::PCTimeInterval PCTimeInterval;
+	typedef CImage::CTrackReader::TRegion TRegion,*PRegion;
+	typedef CImage::CTrackReader::PCRegion PCRegion;
 
 	class CTrackEditor sealed:public Utils::CRideDialog{
 		const CImage::CTrackReader &tr;
@@ -32,7 +32,7 @@
 			SPACING	=2,
 			INSPECT	=4,
 			STRUCT	=8,
-			INTERVALS=16,
+			REGIONS	=16,
 			DEFAULT	= TIME//|SPACING
 		};
 		
@@ -210,17 +210,17 @@
 							if (!continuePainting) // new paint request?
 								continue;
 						}
-						// . drawing TimeIntervals
-						if (te.IsFeatureShown(TCursorFeatures::INTERVALS) && te.pIntervals){
+						// . drawing Regions
+						if (te.IsFeatureShown(TCursorFeatures::REGIONS) && te.pRegions){
 							const auto dcSettings0=::SaveDC(dc);
 								const int nUnitsA=te.timeline.GetUnitCount(te.GetScrollTime());
 								::SetViewportOrgEx( dc, 0, org.y, nullptr );
 								//RECT rc={ 0, te.IsFeatureShown(TCursorFeatures::INSPECT)?IW_HEIGHT:TIME_HEIGHT, 0, INDEX_HEIGHT };
 								RECT rc={ 0, TIME_HEIGHT, 0, TIME_HEIGHT+6 };
-								for( DWORD iInterval=0; continuePainting&&iInterval<te.nIntervals; iInterval++ ){
-									const TTimeInterval &ti=te.pIntervals[iInterval];
+								for( DWORD iRegion=0; continuePainting&&iRegion<te.nRegions; iRegion++ ){
+									const TRegion &ti=te.pRegions[iRegion];
 									const TLogTime a=std::max(timeA,ti.tStart), z=std::min(timeZ,ti.tEnd);
-									if (a<z){ // TimeInterval visible
+									if (a<z){ // Region visible
 										rc.left=te.timeline.GetUnitCount(a)-nUnitsA;
 										rc.right=te.timeline.GetUnitCount(z)-nUnitsA;
 										const Utils::CRideBrush brush(ti.color);
@@ -530,14 +530,14 @@
 				//nop (View destroyed by its owner)
 			}
 		public:
-			const PCTimeInterval pIntervals;
-			const DWORD nIntervals;
+			const PCRegion pRegions;
+			const DWORD nRegions;
 
-			CTimeEditor(const CImage::CTrackReader &tr,CImage::CTrackReader::PCTimeInterval pIntervals,DWORD nIntervals)
+			CTimeEditor(const CImage::CTrackReader &tr,CImage::CTrackReader::PCRegion pRegions,DWORD nRegions)
 				// ctor
 				: timeline( tr.GetTotalTime(), 1, 10 )
 				, tr(tr)
-				, pIntervals(pIntervals) , nIntervals(nIntervals) // up to the caller to dispose allocated TimeIntervals!
+				, pRegions(pRegions) , nRegions(nRegions) // up to the caller to dispose allocated Regions!
 				, painter(*this)
 				, draggedTime(-1)
 				, cursorTime(-1) , cursorFeaturesShown(false) , cursorFeatures(TCursorFeatures::DEFAULT)
@@ -546,8 +546,8 @@
 			
 			~CTimeEditor(){
 				// dtor
-				//if (pIntervals)
-					//::free((PVOID)pIntervals); // commented out as it's up to the caller to dispose allocated TimeIntervals
+				//if (pRegions)
+					//::free((PVOID)pRegions); // commented out as it's up to the caller to dispose allocated Regions
 				if (iwEndTimes)
 					::free((PVOID)iwEndTimes);
 			}
@@ -688,9 +688,9 @@
 				default:
 					ASSERT(FALSE); break; // we shouldn't end up here - all used options must be covered!
 			}
-			// - if Intervals are specified, navigating to the first of them
-			if (timeEditor.pIntervals)
-				timeEditor.SetCenterTime( timeEditor.pIntervals->tStart );
+			// - if Regions are specified, navigating to the first of them
+			if (timeEditor.pRegions)
+				timeEditor.SetCenterTime( timeEditor.pRegions->tStart );
 			// - if requested, displaying all Features
 			if (initAllFeaturesOn)
 				SendMessage( WM_COMMAND, ID_TRACK );
@@ -823,8 +823,8 @@
 							pCmdUi->SetCheck( timeEditor.IsFeatureShown(TCursorFeatures::INSPECT) );
 							return TRUE;
 						case ID_INTERLEAVE:
-							pCmdUi->Enable( timeEditor.pIntervals!=nullptr );
-							pCmdUi->SetCheck( timeEditor.IsFeatureShown(TCursorFeatures::INTERVALS) );
+							pCmdUi->Enable( timeEditor.pRegions!=nullptr );
+							pCmdUi->SetCheck( timeEditor.IsFeatureShown(TCursorFeatures::REGIONS) );
 							return TRUE;
 						case ID_SYSTEM:
 							pCmdUi->SetCheck( timeEditor.IsFeatureShown(TCursorFeatures::STRUCT) );
@@ -844,10 +844,10 @@
 							pCmdUi->Enable( timeEditor.GetParseEvents().GetCount()>0 && timeEditor.GetCenterTime()<timeEditor.GetParseEvents().GetTail()->tStart );
 							return TRUE;
 						case ID_RECORD_PREV:
-							pCmdUi->Enable( timeEditor.pIntervals && timeEditor.GetCenterTime()>timeEditor.pIntervals->tStart );
+							pCmdUi->Enable( timeEditor.pRegions && timeEditor.GetCenterTime()>timeEditor.pRegions->tStart );
 							return TRUE;
 						case ID_RECORD_NEXT:
-							pCmdUi->Enable( timeEditor.pIntervals && timeEditor.GetCenterTime()<timeEditor.pIntervals[timeEditor.nIntervals-1].tStart );
+							pCmdUi->Enable( timeEditor.pRegions && timeEditor.GetCenterTime()<timeEditor.pRegions[timeEditor.nRegions-1].tStart );
 							return TRUE;
 						case ID_DOWN:
 							pCmdUi->Enable( timeEditor.GetScrollTime()>0 );
@@ -910,7 +910,7 @@
 							timeEditor.Invalidate();
 							return TRUE;
 						case ID_INTERLEAVE:
-							timeEditor.ToggleFeature(TCursorFeatures::INTERVALS);
+							timeEditor.ToggleFeature(TCursorFeatures::REGIONS);
 							timeEditor.Invalidate();
 							return TRUE;
 						case ID_SYSTEM:
@@ -1056,16 +1056,16 @@
 						}
 						case ID_RECORD_PREV:{
 							WORD i=0;
-							for( const TLogTime tCenter=timeEditor.GetCenterTime(); i<timeEditor.nIntervals&&tCenter>timeEditor.pIntervals[i].tStart; i++ );
+							for( const TLogTime tCenter=timeEditor.GetCenterTime(); i<timeEditor.nRegions&&tCenter>timeEditor.pRegions[i].tStart; i++ );
 							if (i>0)
-								timeEditor.SetCenterTime( timeEditor.pIntervals[i-1].tStart );
+								timeEditor.SetCenterTime( timeEditor.pRegions[i-1].tStart );
 							return TRUE;
 						}
 						case ID_RECORD_NEXT:{
 							WORD i=0;
-							for( const TLogTime tCenter=timeEditor.GetCenterTime(); i<timeEditor.nIntervals&&tCenter>=timeEditor.pIntervals[i].tStart; i++ );
-							if (i<timeEditor.nIntervals)
-								timeEditor.SetCenterTime( timeEditor.pIntervals[i].tStart );
+							for( const TLogTime tCenter=timeEditor.GetCenterTime(); i<timeEditor.nRegions&&tCenter>=timeEditor.pRegions[i].tStart; i++ );
+							if (i<timeEditor.nRegions)
+								timeEditor.SetCenterTime( timeEditor.pRegions[i].tStart );
 							return TRUE;
 						}
 						//case ID_DOWN:	// commented out as coped with already in WM_KEYDOWN handler
@@ -1149,14 +1149,14 @@
 		}
 
 	public:
-		CTrackEditor(const CImage::CTrackReader &tr,PCTimeInterval pIntervals,DWORD nIntervals,UINT messageBoxButtons,bool initAllFeaturesOn,LPCTSTR captionFormat,va_list argList)
+		CTrackEditor(const CImage::CTrackReader &tr,PCRegion pRegions,DWORD nRegions,UINT messageBoxButtons,bool initAllFeaturesOn,LPCTSTR captionFormat,va_list argList)
 			// ctor
 			// - base
 			: Utils::CRideDialog( IDR_TRACK_EDITOR, CWnd::FromHandle(app.GetEnabledActiveWindow()) )
 			// - initialization
 			, tr(tr)
 			, menu( IDR_TRACK_EDITOR ) , messageBoxButtons(messageBoxButtons) , initAllFeaturesOn(initAllFeaturesOn)
-			, timeEditor( tr, pIntervals, nIntervals )
+			, timeEditor( tr, pRegions, nRegions )
 			, hAutoscrollTimer(INVALID_HANDLE_VALUE) {			
 			::wvsprintf( caption, captionFormat, argList );
 		}
@@ -1170,10 +1170,10 @@
 
 
 
-	BYTE __cdecl CImage::CTrackReader::ShowModal(PCTimeInterval pIntervals,DWORD nIntervals,UINT messageBoxButtons,bool initAllFeaturesOn,LPCTSTR format,...) const{
+	BYTE __cdecl CImage::CTrackReader::ShowModal(PCRegion pRegions,DWORD nRegions,UINT messageBoxButtons,bool initAllFeaturesOn,LPCTSTR format,...) const{
 		va_list argList;
 		va_start( argList, format );
-			const BYTE result=CTrackEditor( *this, pIntervals, nIntervals, messageBoxButtons, initAllFeaturesOn, format, argList ).DoModal();
+			const BYTE result=CTrackEditor( *this, pRegions, nRegions, messageBoxButtons, initAllFeaturesOn, format, argList ).DoModal();
 		va_end(argList);
 		return result;
 	}

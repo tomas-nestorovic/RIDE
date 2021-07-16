@@ -414,11 +414,11 @@
 			TFdcStatus ReadDataFm(WORD nBytesToRead,CParseEventList *pOutParseEvents);
 			TFdcStatus ReadDataMfm(WORD nBytesToRead,CParseEventList *pOutParseEvents);
 		public:
-			typedef const struct TTimeInterval{
+			typedef const struct TRegion{
 				TLogTime tStart; // inclusive
 				TLogTime tEnd; // exclusive
 				COLORREF color;
-			} *PCTimeInterval;
+			} *PCRegion;
 
 			class CBitSequence sealed{
 			public:
@@ -443,7 +443,7 @@
 				inline PCBit GetBits() const{ return pBits; }
 				inline DWORD GetBitCount() const{ return nBits; }
 				int GetShortestEditScript(const CBitSequence &theirs,CDiffBase::TScriptItem *pOutScript,DWORD nScriptItemsMax) const;
-				DWORD EditScriptToMatchingRegions(const CDiffBase::TScriptItem *pScript,int nScriptItems,TTimeInterval *pOutRegions,int nRegionsMax,COLORREF regionColor) const;
+				DWORD EditScriptToMatchingRegions(const CDiffBase::TScriptItem *pScript,int nScriptItems,TRegion *pOutRegions,int nRegionsMax,COLORREF regionColor) const;
 			};
 
 			CTrackReader(const CTrackReader &tr);
@@ -525,7 +525,7 @@
 			WORD ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList &rOutParseEvents);
 			TFdcStatus ReadData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,CParseEventList *pOutParseEvents);
 			TFdcStatus ReadData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,LPBYTE buffer);
-			BYTE __cdecl ShowModal(PCTimeInterval pIntervals,DWORD nIntervals,UINT messageBoxButtons,bool initAllFeaturesOn,LPCTSTR format,...) const;
+			BYTE __cdecl ShowModal(PCRegion pRegions,DWORD nRegions,UINT messageBoxButtons,bool initAllFeaturesOn,LPCTSTR format,...) const;
 			void __cdecl ShowModal(LPCTSTR format,...) const;
 		};
 

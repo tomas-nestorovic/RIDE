@@ -543,7 +543,7 @@
 				);
 	}
 
-	DWORD CImage::CTrackReader::CBitSequence::EditScriptToMatchingRegions(const CDiffBase::TScriptItem *pScript,int nScriptItems,TTimeInterval *pOutRegions,int nRegionsMax,COLORREF regionColor) const{
+	DWORD CImage::CTrackReader::CBitSequence::EditScriptToMatchingRegions(const CDiffBase::TScriptItem *pScript,int nScriptItems,TRegion *pOutRegions,int nRegionsMax,COLORREF regionColor) const{
 		// composes Regions of differences that timely match with bits observed in this BitSequence (e.g. for visual display by the caller); returns the number of unique Regions
 		ASSERT( nScriptItems>0 );
 		ASSERT( nScriptItems<=nRegionsMax );
