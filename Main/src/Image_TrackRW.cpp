@@ -500,7 +500,95 @@
 
 
 
-	const CImage::CTrackReader::TParseEvent CImage::CTrackReader::TParseEvent::Empty(EMPTY,INT_MAX,INT_MAX,0);
+	CImage::CTrackReader::CBitSequence::CBitSequence(CTrackReader tr,TLogTime tFrom,const CTrackReader::TProfile &profileFrom, TLogTime tTo)
+		// ctor
+		: pBits(nullptr) , nBits(0) , bitTimeDefault(tr.GetCurrentProfile().iwTimeDefault) {
+		tr.SetCurrentTimeAndProfile( tFrom, profileFrom );
+		while (tr.GetCurrentTime()<tTo)
+			tr.ReadBit(), nBits++;
+		pBits=(TBit *)::calloc( nBits, sizeof(TBit) );
+		tr.SetCurrentTimeAndProfile( tFrom, profileFrom );
+		for( DWORD i=0; i<nBits; ){
+			TBit &r=pBits[i++];
+				r.value=tr.ReadBit();
+				r.time=tr.GetCurrentTime();
+		}
+	}
+
+	CImage::CTrackReader::CBitSequence::CBitSequence(const CBitSequence &r)
+		// copy ctor
+		: pBits(r.pBits) , nBits(r.nBits) , bitTimeDefault(r.bitTimeDefault) {
+		ASSERT(FALSE); // copying prohibited!
+	}
+
+	CImage::CTrackReader::CBitSequence::CBitSequence(CBitSequence &&r)
+		// move ctor
+		: pBits(r.pBits) , nBits(r.nBits) , bitTimeDefault(r.bitTimeDefault) {
+		ASSERT(FALSE); // moving prohibited!
+	}
+
+	CImage::CTrackReader::CBitSequence::~CBitSequence(){
+		// dtor
+		::free(pBits);
+	}
+
+	int CImage::CTrackReader::CBitSequence::GetShortestEditScript(const CBitSequence &theirs,CDiffBase::TScriptItem *pOutScript,DWORD nScriptItemsMax) const{
+		// creates the shortest edit script (SES) and returns the number of its Items (or -1 if SES couldn't have been composed, e.g. insufficient output Buffer)
+		ASSERT( pOutScript!=nullptr );
+		return	CDiff<TBit>(
+					GetBits(), GetBitCount()
+				).GetShortestEditScript(
+					theirs.GetBits(), theirs.GetBitCount(),
+					pOutScript, nScriptItemsMax
+				);
+	}
+
+	DWORD CImage::CTrackReader::CBitSequence::EditScriptToMatchingRegions(const CDiffBase::TScriptItem *pScript,int nScriptItems,TTimeInterval *pOutRegions,int nRegionsMax,COLORREF regionColor) const{
+		// composes Regions of differences that timely match with bits observed in this BitSequence (e.g. for visual display by the caller); returns the number of unique Regions
+		ASSERT( nScriptItems>0 );
+		ASSERT( nScriptItems<=nRegionsMax );
+		TLogTime tLastRegionEnd=INT_MIN;
+		DWORD nRegions=0;
+		for( int i=0; i<nScriptItems; i++ ){
+			const auto &si=pScript[i];
+			const TLogTime tDiffStart=GetBits()[si.iPosA].time;
+			TLogTime tDiffEnd;
+			switch (si.operation){
+				case CDiffBase::TScriptItem::INSERTION:
+					// "theirs" contains some extra bits that "this" misses
+					tDiffEnd=tDiffStart;
+					break;
+				case CDiffBase::TScriptItem::DELETION:
+					// "theirs" misses some bits that "this" contains
+					tDiffEnd= tDiffStart + si.del.nItemsA * bitTimeDefault;
+					break;
+				default:
+					ASSERT(FALSE); break; // we shouldn't end up here!
+			}
+			const TLogTime tRegionStart= tDiffStart - bitTimeDefault/2;
+			const TLogTime tRegionEnd= tDiffEnd + bitTimeDefault/2;
+			if (tRegionStart>tLastRegionEnd){
+				// disjunct Regions - creating a new one
+				auto &rRgn=pOutRegions[nRegions++];
+					rRgn.color=regionColor;
+					rRgn.tStart=tRegionStart;
+				tLastRegionEnd = rRgn.tEnd = tRegionEnd;
+			}else
+				// overlapping BadRegions (Diff: something has been Deleted, something else has been Inserted)
+				tLastRegionEnd = pOutRegions[nRegions-1].tEnd = std::max(tLastRegionEnd,tRegionEnd);
+		}
+		return nRegions;
+	}
+
+
+
+
+
+
+
+
+
+
 
 	const COLORREF CImage::CTrackReader::TParseEvent::TypeColors[LAST]={
 		0,			// None

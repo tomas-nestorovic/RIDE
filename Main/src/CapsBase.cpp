@@ -1,7 +1,6 @@
 #include "stdafx.h"
 #include "CapsBase.h"
 #include "MSDOS7.h"
-#include "Diff.h"
 
 	static TStdWinError InitCapsLibrary(CapsVersionInfo &cvi){
 		// - checking version
@@ -867,95 +866,18 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 							}
 						// . if written and read Tracks differ significantly, showing problematic parts
 						if (err==ERROR_DS_COMPARE_FALSE && showDiff){
-							// : definition of common CTrackInfo
-							class CTrackInfo sealed{
-							public:
-								typedef const struct TBit sealed{
-									bool value;
-									TLogTime time;
-
-									inline bool operator==(const TBit &r) const{
-										return value==r.value;
-									}
-								} *PCBit;
-							private:
-								TBit *pBits;
-								DWORD nBits;
-							public:
-								CTrackInfo(CTrackReader tr,TLogTime firstSectorIdEndTime,const CTrackReader::TProfile &firstSectorIdEndProfile,TLogTime tLastBit)
-									// ctor
-									: pBits(nullptr) , nBits(0) {
-									tr.SetCurrentTimeAndProfile( firstSectorIdEndTime, firstSectorIdEndProfile );
-									while (tr.GetCurrentTime()<tLastBit)
-										tr.ReadBit(), nBits++;
-									pBits=(TBit *)::calloc( nBits, sizeof(TBit) );
-									tr.SetCurrentTimeAndProfile( firstSectorIdEndTime, firstSectorIdEndProfile );
-									for( DWORD i=0; i<nBits; ){
-										TBit &r=pBits[i++];
-											r.value=tr.ReadBit();
-											r.time=tr.GetCurrentTime();
-									}
-								}
-								~CTrackInfo(){
-									// dtor
-									if (pBits)
-										::free(pBits);
-								}
-
-								inline PCBit GetBits() const{
-									return pBits;
-								}
-								inline DWORD GetBitCount() const{
-									return nBits;
-								}
-							};
-							// : composition of written bits
-							const CTrackInfo writtenInfo( *pitWritten, revWrittenFirstSector.idEndTime, revWrittenFirstSector.idEndProfile, pitWritten->GetIndexTime(1) );
-							// : composition of read bits
-							const CTrackInfo readInfo( *pitVerif, revVerifFirstSector.idEndTime, revVerifFirstSector.idEndProfile, pitVerif->GetIndexTime(1) );
-							// : composition and display of shortest edit script (SMS)
-							const DWORD nSmsItemsMax=writtenInfo.GetBitCount()+readInfo.GetBitCount();
-							if (auto *const pSms=(CDiffBase::TScriptItem *)::calloc( nSmsItemsMax, sizeof(CDiffBase::TScriptItem) )){
-								const int nSmsItems=CDiff<CTrackInfo::TBit>(
-														writtenInfo.GetBits(), writtenInfo.GetBitCount()
-													).GetShortestEditScript(
-														readInfo.GetBits(), readInfo.GetBitCount(),
-														pSms, nSmsItemsMax
-													);
-								if (nSmsItems<=0)
+							// : composition of Written- and ReadBits
+							const CTrackReader::CBitSequence writtenBits( *pitWritten, revWrittenFirstSector.idEndTime, revWrittenFirstSector.idEndProfile, pitWritten->GetIndexTime(1) );
+							const CTrackReader::CBitSequence readBits( *pitVerif, revVerifFirstSector.idEndTime, revVerifFirstSector.idEndProfile, pitVerif->GetIndexTime(1) );
+							// : composition and display of shortest edit script (SES)
+							const DWORD nSesItemsMax=writtenBits.GetBitCount()+readBits.GetBitCount();
+							if (auto *const pSes=(CDiffBase::TScriptItem *)::calloc( nSesItemsMax, sizeof(CDiffBase::TScriptItem) )){
+								const int nSesItems=writtenBits.GetShortestEditScript( readBits, pSes, nSesItemsMax );
+								if (nSesItems<=0)
 									err=ERROR_FUNCTION_FAILED;
-								else if (auto *const pBadRegions=(CTrackReader::TTimeInterval *)::calloc( nSmsItems, sizeof(CTrackReader::TTimeInterval) )){
+								else if (auto *const pBadRegions=(CTrackReader::TTimeInterval *)::calloc( nSesItems, sizeof(CTrackReader::TTimeInterval) )){
 									// composition and display of non-overlapping erroneously written regions of the Track
-									TLogTime tLastBadRegionEnd=INT_MIN;
-									DWORD nBadRegions=0;
-									for( int i=0; i<nSmsItems; i++ ){
-										const auto &si=pSms[i];
-										const TLogTime tDiffStart=writtenInfo.GetBits()[si.iPosA].time;
-										TLogTime tDiffEnd;
-										switch (si.operation){
-											case CDiffBase::TScriptItem::INSERTION:
-												// some extra bits were produced during writing
-												tDiffEnd=tDiffStart;
-												break;
-											case CDiffBase::TScriptItem::DELETION:
-												// some bits were not written
-												tDiffEnd= tDiffStart + si.del.nItemsA * pitWritten->GetCurrentProfile().iwTimeDefault;
-												break;
-											default:
-												ASSERT(FALSE); break; // we shouldn't end up here!
-										}
-										const TLogTime tBadRegionStart= tDiffStart - pitWritten->GetCurrentProfile().iwTimeDefault/2;
-										const TLogTime tBadRegionEnd= tDiffEnd + pitWritten->GetCurrentProfile().iwTimeDefault/2;
-										if (tBadRegionStart>tLastBadRegionEnd){
-											// disjunct BadRegions - creating a new one
-											auto &rBadRgn=pBadRegions[nBadRegions++];
-												rBadRgn.color=COLOR_RED;
-												rBadRgn.tStart=tBadRegionStart;
-											tLastBadRegionEnd = rBadRgn.tEnd = tBadRegionEnd;
-										}else
-											// overlapping BadRegions (Diff: something has been Deleted, something else has been Inserted)
-											tLastBadRegionEnd = pBadRegions[nBadRegions-1].tEnd = std::max(tLastBadRegionEnd,tBadRegionEnd);
-									}
+									const DWORD nBadRegions=writtenBits.EditScriptToMatchingRegions( pSes, nSesItems, pBadRegions, nSesItems, COLOR_RED );
 									switch (pitWritten->ShowModal( pBadRegions, nBadRegions, MB_ABORTRETRYIGNORE, true, _T("Track %02d.%c verification failed: Review RED-MARKED errors and decide how to proceed!"), cyl, '0'+head )){
 										case IDOK: // ignore
 											err=ERROR_CONTINUE;
@@ -970,9 +892,10 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 											err=ERROR_FUNCTION_FAILED;
 											break;
 									}
+									::free(pBadRegions);
 								}else
 									err=ERROR_NOT_ENOUGH_MEMORY;
-								::free(pSms);
+								::free(pSes);
 							}else
 								err=ERROR_NOT_ENOUGH_MEMORY;
 						}

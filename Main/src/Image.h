@@ -420,6 +420,32 @@
 				COLORREF color;
 			} *PCTimeInterval;
 
+			class CBitSequence sealed{
+			public:
+				typedef const struct TBit sealed{
+					bool value;
+					TLogTime time;
+
+					inline bool operator==(const TBit &r) const{ return value==r.value; }
+				} *PCBit;
+			private:
+				TBit *pBits;
+				DWORD nBits;
+
+				CBitSequence(const CBitSequence &r);
+				CBitSequence(CBitSequence &&r);
+			public:
+				const TLogTime bitTimeDefault; // Time per one bit
+
+				CBitSequence(CTrackReader tr,TLogTime tFrom,const CTrackReader::TProfile &profileFrom, TLogTime tTo);
+				~CBitSequence();
+
+				inline PCBit GetBits() const{ return pBits; }
+				inline DWORD GetBitCount() const{ return nBits; }
+				int GetShortestEditScript(const CBitSequence &theirs,CDiffBase::TScriptItem *pOutScript,DWORD nScriptItemsMax) const;
+				DWORD EditScriptToMatchingRegions(const CDiffBase::TScriptItem *pScript,int nScriptItems,TTimeInterval *pOutRegions,int nRegionsMax,COLORREF regionColor) const;
+			};
+
 			CTrackReader(const CTrackReader &tr);
 			CTrackReader(CTrackReader &&rTrackReader);
 			~CTrackReader();

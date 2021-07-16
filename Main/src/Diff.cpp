@@ -1,5 +1,4 @@
 #include "stdafx.h"
-#include "Diff.h"
 
 	int CDiffBase::MergeScriptItems(TScriptItem *buffer) const{
 		// merges script Operations which the descendant has split into multiple consecutive ScriptItems; returns the number of merged ScriptItems
