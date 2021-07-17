@@ -375,23 +375,17 @@
 				inline PCParseEvent operator->() const{ return gen; }
 			};
 
-			class CParseEventList:public Utils::CPtrList<PCParseEvent>{
-				static PCParseEvent CreateCopy(const TParseEvent &pe);
-
-				CParseEventList(const CParseEventList &r);
-				CParseEventList(CParseEventList &&r);
+			class CParseEventList:public Utils::CCopyList<TParseEvent>{
 			public:
-				inline CParseEventList(){}
-				~CParseEventList();
-
-				POSITION AddCopyTail(const TParseEvent &pe);
+				inline POSITION AddHead(const TParseEvent &pe){ return __super::AddHead( pe, pe.size ); }
+				inline POSITION AddTail(const TParseEvent &pe){ return __super::AddTail( pe, pe.size ); }
+				inline POSITION InsertBefore(POSITION pos,const TParseEvent &pe){ return __super::InsertBefore( pos, pe, pe.size ); }
+				inline POSITION InsertAfter(POSITION pos,const TParseEvent &pe){ return __super::InsertAfter( pos, pe, pe.size ); }
 				POSITION GetPositionByStart(TLogTime tStartMin,TParseEvent::TType type=TParseEvent::NONE,POSITION posFrom=nullptr) const;
 				POSITION GetPositionByEnd(TLogTime tEndMin,TParseEvent::TType type=TParseEvent::NONE,POSITION posFrom=nullptr) const;
 				bool Contains(TParseEvent::TType type,POSITION posFrom=nullptr) const;
 				void AddCopyAscendingByStart(const TParseEvent &pe);
 				void AddCopiesAscendingByStart(const CParseEventList &list);
-				void RemoveHead();
-				void RemoveTail();
 			};
 		protected:
 			const PLogTime logTimes; // absolute logical times since the start of recording

@@ -136,7 +136,7 @@
 														byteInfoSizeMin.cx;
 								const TLogTime iwTimeDefaultHalf=tr.GetCurrentProfile().iwTimeDefault/2;
 								for( POSITION pos=peList.GetHeadPosition(); continuePainting&&pos; ){
-									const TParseEventPtr pe=peList.GetNext(pos);
+									const TParseEventPtr pe=&peList.GetNext(pos);
 									if (const auto ti=pe->Add(iwTimeDefaultHalf).Intersect(visible)){ // offset ParseEvent visible?
 										const int xa=te.timeline.GetUnitCount(ti.tStart)-nUnitsA, xz=te.timeline.GetUnitCount(ti.tEnd)-nUnitsA;
 										switch (pe->type){
@@ -836,10 +836,10 @@
 							pCmdUi->Enable( tr.GetIndexCount()>0 && timeEditor.GetCenterTime()<tr.GetIndexTime(tr.GetIndexCount()-1) );
 							return TRUE;
 						case ID_FILE_SHIFT_DOWN:
-							pCmdUi->Enable( timeEditor.GetParseEvents().GetCount()>0 && timeEditor.GetCenterTime()>timeEditor.GetParseEvents().GetHead()->tStart );
+							pCmdUi->Enable( timeEditor.GetParseEvents().GetCount()>0 && timeEditor.GetCenterTime()>timeEditor.GetParseEvents().GetHead().tStart );
 							return TRUE;
 						case ID_FILE_SHIFT_UP:
-							pCmdUi->Enable( timeEditor.GetParseEvents().GetCount()>0 && timeEditor.GetCenterTime()<timeEditor.GetParseEvents().GetTail()->tStart );
+							pCmdUi->Enable( timeEditor.GetParseEvents().GetCount()>0 && timeEditor.GetCenterTime()<timeEditor.GetParseEvents().GetTail().tStart );
 							return TRUE;
 						case ID_RECORD_PREV:
 							pCmdUi->Enable( timeEditor.pRegions && timeEditor.GetCenterTime()>timeEditor.pRegions->tStart );
@@ -1032,9 +1032,9 @@
 						case ID_FILE_SHIFT_DOWN:{
 							const auto &peList=timeEditor.GetParseEvents();
 							const TLogTime tCenter=timeEditor.GetCenterTime();
-							PCParseEvent pe;
-							for( POSITION pos=peList.GetHeadPosition(); pos; pe=peList.GetNext(pos) )
-								if (tCenter<=peList.GetAt(pos)->tStart)
+							PCParseEvent pe=nullptr;
+							for( POSITION pos=peList.GetHeadPosition(); pos; pe=&peList.GetNext(pos) )
+								if (tCenter<=peList.GetAt(pos).tStart)
 									break;
 							if (pe)
 								timeEditor.SetCenterTime( pe->tStart );
@@ -1044,7 +1044,7 @@
 							const auto &peList=timeEditor.GetParseEvents();
 							const TLogTime tCenter=timeEditor.GetCenterTime();
 							for( POSITION pos=peList.GetHeadPosition(); pos; ){
-								const TParseEvent &pe=*peList.GetNext(pos);
+								const TParseEvent &pe=peList.GetNext(pos);
 								if (tCenter<pe.tStart){
 									timeEditor.SetCenterTime( pe.tStart );
 									break;

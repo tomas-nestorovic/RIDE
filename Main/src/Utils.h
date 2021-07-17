@@ -29,6 +29,49 @@ namespace Utils{
 		inline POSITION InsertAfter(POSITION position,Ptr newElement){ return __super::InsertAfter(position,(PVOID)newElement); }
 	};
 
+	template<typename T>
+	class CCopyList:public CStringList{
+	public:
+		POSITION AddHead(const T &element,int elementSize=sizeof(T)){
+			const POSITION pos=__super::AddHead(_T(""));
+			::memcpy( __super::GetAt(pos).GetBuffer(elementSize), &element, elementSize );
+			return pos;
+		}
+		POSITION AddTail(const T &element,int elementSize=sizeof(T)){
+			const POSITION pos=__super::AddTail(_T(""));
+			SetAt( pos, element, elementSize );
+			return pos;
+		}
+		T &GetNext(POSITION &rPosition) const{
+			return *(T *)__super::GetNext(rPosition).operator LPCTSTR();
+		}
+		T &GetPrev(POSITION &rPosition) const{
+			return *(T *)__super::GetPrev(rPosition).operator LPCTSTR();
+		}
+		T &GetHead() const{
+			return *(T *)__super::GetHead().operator LPCTSTR();
+		}
+		T &GetTail() const{
+			return *(T *)__super::GetTail().operator LPCTSTR();
+		}
+		T &GetAt(POSITION position) const{
+			return *(T *)__super::GetAt(position).operator LPCTSTR();
+		}
+		void SetAt(POSITION pos,const T &element,int elementSize=sizeof(T)){
+			::memcpy( __super::GetAt(pos).GetBuffer(elementSize), &element, elementSize );
+		}
+		POSITION InsertBefore(POSITION pos,const T &element,int elementSize=sizeof(T)){
+			pos=__super::InsertBefore(pos,_T(""));
+			SetAt( pos, element, elementSize );
+			return pos;
+		}
+		POSITION InsertAfter(POSITION pos,const T &element,int elementSize=sizeof(T)){
+			pos=__super::InsertAfter(pos,_T(""));
+			SetAt( pos, element, elementSize );
+			return pos;
+		}
+	};
+
 	class CRidePen sealed:public ::CPen{
 	public:
 		static const CRidePen BlackHairline, WhiteHairline, RedHairline;
