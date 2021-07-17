@@ -336,7 +336,7 @@
 					for( POSITION pos=rOutParseEvents.GetHeadPosition(); pos; ){
 						const TParseEvent &pe=*rOutParseEvents.GetNext(pos);
 						if (pe.IsDataStd())
-							if (  pe.tStart<=t0 && t0<pe.tEnd  ||  pe.tStart<=t && t<pe.tEnd  ){
+							if (pe.Contains(t0) || pe.Contains(t)){
 								rOutParseEvents.AddCopyAscendingByStart(
 									TParseEvent( TParseEvent::NONFORMATTED, t0, t-profile.iwTimeDefault, 0 )
 								);
@@ -607,8 +607,8 @@
 	inline
 	CImage::CTrackReader::TParseEvent::TParseEvent(TType type,TLogTime tStart,TLogTime tEnd,DWORD data)
 		// ctor
-		: type(type) , size(sizeof(TParseEvent))
-		, tStart(tStart) , tEnd(tEnd) {
+		: TLogTimeInterval( tStart, tEnd )
+		, type(type) , size(sizeof(TParseEvent)) {
 		dw=data;
 	}
 

@@ -316,7 +316,7 @@
 				void Reset();
 			};
 
-			typedef const struct TParseEvent{
+			typedef const struct TParseEvent:public TLogTimeInterval{
 				enum TType:BYTE{
 					NONE,			// invalid ParseEvent
 					SYNC_3BYTES,	// dw
@@ -332,7 +332,6 @@
 					LAST
 				} type;
 				WORD size; // length of this ParseEvent in Bytes
-				TLogTime tStart, tEnd;
 				union{
 					BYTE b;
 					DWORD dw;
@@ -414,9 +413,7 @@
 			TFdcStatus ReadDataFm(WORD nBytesToRead,CParseEventList *pOutParseEvents);
 			TFdcStatus ReadDataMfm(WORD nBytesToRead,CParseEventList *pOutParseEvents);
 		public:
-			typedef const struct TRegion{
-				TLogTime tStart; // inclusive
-				TLogTime tEnd; // exclusive
+			typedef const struct TRegion:public TLogTimeInterval{
 				COLORREF color;
 			} *PCRegion;
 

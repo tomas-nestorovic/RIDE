@@ -71,6 +71,9 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 	#define ERROR_UNRECOGNIZED_VOLUME        1005L
 #endif
 
+#undef min
+#undef max
+
 class CImage; // forward
 typedef CImage *PImage;
 typedef const CImage *PCImage;
@@ -95,10 +98,37 @@ typedef const TLogValue *PCLogValue;
 typedef TLogValue TLogTime,*PLogTime; // time in nanoseconds
 typedef const TLogTime *PCLogTime;
 
+struct TLogTimeInterval{
+	TLogTime tStart; // inclusive
+	TLogTime tEnd; // exclusive
+
+	inline TLogTimeInterval(){}
+	inline TLogTimeInterval(TLogTime tStart,TLogTime tEnd)
+		: tStart(tStart) , tEnd(tEnd) {
+	}
+
+	inline operator bool() const{
+		return tStart<tEnd; // non-empty?
+	}
+	inline TLogTime GetLength() const{
+		return tEnd-tStart;
+	}
+	inline bool Contains(TLogTime t) const{
+		return tStart<=t && t<tEnd;
+	}
+	inline TLogTimeInterval Add(TLogTime dt) const{
+		return TLogTimeInterval( tStart+dt, tEnd+dt );
+	}
+	inline TLogTimeInterval Intersect(const TLogTimeInterval &ti) const{
+		return TLogTimeInterval( std::max(tStart,ti.tStart), std::min(tEnd,ti.tEnd) );
+	}
+};
+
 #pragma warning( disable : 4228 ) // non-standard language extension
 #pragma warning( disable : 4341 ) // pre-C++14 enums shouldn't be signed
 
 #include "Utils.h"
+#include "Diff.h"
 #include "BackgroundAction.h"
 #include "MainWindow.h"
 #include "HexaEditor.h"
@@ -133,7 +163,7 @@ typedef const TLogTime *PCLogTime;
 
 #define APP_FULLNAME	_T("Real and Imaginary Disk Editor")
 #define APP_ABBREVIATION _T("RIDE")
-#define APP_VERSION		_T("1.6")
+#define APP_VERSION		_T("1.6.1")
 //#define APP_SPECIAL_VER
 #define APP_IDENTIFIER	APP_ABBREVIATION APP_VERSION
 #define APP_CLASSNAME	_T("Afx:tomascz.") APP_ABBREVIATION
@@ -161,9 +191,6 @@ typedef const TLogTime *PCLogTime;
 #define TIME_MICRO(u)	((u)*1000)
 #define TIME_MILLI(m)	((m)*1000000)
 #define TIME_SECOND(s)	((s)*1000000000)
-
-#undef min
-#undef max
 
 extern CRideApp app;
 

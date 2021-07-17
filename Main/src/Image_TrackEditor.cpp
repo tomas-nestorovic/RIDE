@@ -51,7 +51,7 @@
 				struct{
 					mutable CCriticalSection locker;
 					WORD id;
-					TLogTime timeA,timeZ; // visible region
+					TLogTimeInterval visible; // visible region
 					BYTE zoomFactor;
 				} params;
 				mutable CEvent repaintEvent;
@@ -85,10 +85,10 @@
 						CClientDC dc( const_cast<CTimeEditor *>(&te) );
 						p.params.locker.Lock();
 							const WORD id=p.params.id;
-							TLogTime timeA=p.params.timeA, timeZ=p.params.timeZ;
+							const TLogTimeInterval visible=p.params.visible;
 							te.PrepareDC(&dc);
 						p.params.locker.Unlock();
-						if (timeA<0 && timeZ<0) // window closing?
+						if (visible.tStart<0 && visible.tEnd<0) // window closing?
 							break;
 						::SetBkMode( dc, TRANSPARENT );
 						// . drawing inspection windows (if any)
@@ -100,13 +100,13 @@
 						bool continuePainting=true;
 						if (te.IsFeatureShown(TCursorFeatures::INSPECT)){
 							// : determining the first visible inspection window
-							int L=te.GetInspectionWindow(timeA);
+							int L=te.GetInspectionWindow(visible.tStart);
 							// : drawing visible inspection windows (avoiding the GDI coordinate limitations by moving the viewport origin)
 							TLogTime tA=te.iwEndTimes[L], tZ;
 							RECT rc={ 0, 1, 0, IW_HEIGHT };
 							const int nUnitsA=te.timeline.GetUnitCount(tA);
 							::SetViewportOrgEx( dc, Utils::LogicalUnitScaleFactor*nUnitsA+org.x, org.y, nullptr );
-								while (continuePainting && tA<timeZ){
+								while (continuePainting && tA<visible.tEnd){
 									rc.right=te.timeline.GetUnitCount( tZ=te.iwEndTimes[++L] )-nUnitsA;
 									p.params.locker.Lock();
 										if ( continuePainting=p.params.id==id )
@@ -137,9 +137,8 @@
 								const TLogTime iwTimeDefaultHalf=tr.GetCurrentProfile().iwTimeDefault/2;
 								for( POSITION pos=peList.GetHeadPosition(); continuePainting&&pos; ){
 									const TParseEventPtr pe=peList.GetNext(pos);
-									const TLogTime a=std::max(timeA,pe->tStart+iwTimeDefaultHalf), z=std::min(timeZ,pe->tEnd+iwTimeDefaultHalf);
-									if (a<z){ // ParseEvent visible
-										const int xa=te.timeline.GetUnitCount(a)-nUnitsA, xz=te.timeline.GetUnitCount(z)-nUnitsA;
+									if (const auto ti=pe->Add(iwTimeDefaultHalf).Intersect(visible)){ // offset ParseEvent visible?
+										const int xa=te.timeline.GetUnitCount(ti.tStart)-nUnitsA, xz=te.timeline.GetUnitCount(ti.tEnd)-nUnitsA;
 										switch (pe->type){
 											case TParseEvent::SYNC_3BYTES:
 												::wsprintfA( label, _T("0x%06X sync"), pe->dw);
@@ -166,7 +165,7 @@
 												::wsprintfA( label, _T("0x%X bad CRC"), pe->dw );
 												break;
 											case TParseEvent::NONFORMATTED:
-												::wsprintfA( label, _T("Nonformatted %d.%d µs"), div((int)(pe->tEnd-pe->tStart),(int)1000) );
+												::wsprintfA( label, _T("Nonformatted %d.%d µs"), div((int)pe->GetLength(),1000) );
 												break;
 											default:
 												::lstrcpyA( label, pe->lpszMetaString );
@@ -186,9 +185,9 @@
 											break;
 										if (showByteInfo && pe->IsDataAny()){
 											auto pbi=pe.data->byteInfos;
-											while (pbi->tStart+iwTimeDefaultHalf<a) pbi++; // skip invisible part
+											while (pbi->tStart+iwTimeDefaultHalf<ti.tStart) pbi++; // skip invisible part
 											rcLabel.right=10000, rcLabel.bottom-=font.charHeight, rcLabel.top=rcLabel.bottom-byteInfoSizeMin.cy;
-											while (continuePainting && pbi->tStart<z && (PCBYTE)pbi-(PCBYTE)pe.data<pe->size){ // draw visible part
+											while (continuePainting && pbi->tStart<ti.tEnd && (PCBYTE)pbi-(PCBYTE)pe.data<pe->size){ // draw visible part
 												rcLabel.left=te.timeline.GetUnitCount(pbi->tStart+iwTimeDefaultHalf)-nUnitsA;
 												p.params.locker.Lock();
 													if ( continuePainting=p.params.id==id ){
@@ -218,12 +217,11 @@
 								//RECT rc={ 0, te.IsFeatureShown(TCursorFeatures::INSPECT)?IW_HEIGHT:TIME_HEIGHT, 0, INDEX_HEIGHT };
 								RECT rc={ 0, TIME_HEIGHT, 0, TIME_HEIGHT+6 };
 								for( DWORD iRegion=0; continuePainting&&iRegion<te.nRegions; iRegion++ ){
-									const TRegion &ti=te.pRegions[iRegion];
-									const TLogTime a=std::max(timeA,ti.tStart), z=std::min(timeZ,ti.tEnd);
-									if (a<z){ // Region visible
-										rc.left=te.timeline.GetUnitCount(a)-nUnitsA;
-										rc.right=te.timeline.GetUnitCount(z)-nUnitsA;
-										const Utils::CRideBrush brush(ti.color);
+									const TRegion &rgn=te.pRegions[iRegion];
+									if (const auto ti=rgn.Intersect(visible)){ // Region visible?
+										rc.left=te.timeline.GetUnitCount(ti.tStart)-nUnitsA;
+										rc.right=te.timeline.GetUnitCount(ti.tEnd)-nUnitsA;
+										const Utils::CRideBrush brush(rgn.color);
 										p.params.locker.Lock();
 											if ( continuePainting=p.params.id==id )
 												::FillRect( dc, &rc, brush );
@@ -236,13 +234,13 @@
 						}
 						// . drawing Index pulses
 						BYTE i=0;
-						while (i<tr.GetIndexCount() && tr.GetIndexTime(i)<timeA) // skipping invisible indices before visible region
+						while (i<tr.GetIndexCount() && tr.GetIndexTime(i)<visible.tStart) // skipping invisible indices before visible region
 							i++;
 						const auto dcSettings0=::SaveDC(dc);
 							::SelectObject( dc, penIndex );
 							::SetTextColor( dc, 0xff0000 );
 							::SelectObject( dc, Utils::CRideFont::Std );
-							for( TCHAR buf[16]; continuePainting && i<tr.GetIndexCount() && tr.GetIndexTime(i)<=timeZ; i++ ){ // visible indices
+							for( TCHAR buf[16]; continuePainting && i<tr.GetIndexCount() && tr.GetIndexTime(i)<=visible.tEnd; i++ ){ // visible indices
 								const int x=te.timeline.GetUnitCount( tr.GetIndexTime(i) );
 								p.params.locker.Lock();
 									if ( continuePainting=p.params.id==id ){
@@ -256,8 +254,8 @@
 						if (!continuePainting) // new paint request?
 							continue;
 						// . drawing Times
-						tr.SetCurrentTime(timeA);
-						for( TLogTime t=timeA; continuePainting && t<=timeZ; t=tr.ReadTime() ){
+						tr.SetCurrentTime(visible.tStart);
+						for( TLogTime t=visible.tStart; continuePainting && t<=visible.tEnd; t=tr.ReadTime() ){
 							const int x=te.timeline.GetUnitCount(t);
 							p.params.locker.Lock();
 								if ( continuePainting=p.params.id==id ){
@@ -275,7 +273,7 @@
 				TTrackPainter(const CTimeEditor &te)
 					// ctor
 					: action( Thread, &te, THREAD_PRIORITY_IDLE ) {
-					params.timeA = params.timeZ = 0;
+					params.visible.tStart = params.visible.tEnd = 0;
 				}
 			} painter;
 
@@ -464,7 +462,7 @@
 						// . letting the Painter finish normally
 						painter.params.locker.Lock();
 							painter.params.id++;
-							painter.params.timeA = painter.params.timeZ = INT_MIN;
+							painter.params.visible.tStart = painter.params.visible.tEnd = INT_MIN;
 						painter.params.locker.Unlock();
 						painter.repaintEvent.SetEvent();
 						::WaitForSingleObject( painter.action, INFINITE );
@@ -518,7 +516,7 @@
 				::SetBkMode( dc, TRANSPARENT );
 				painter.params.locker.Lock();
 					painter.params.id++;
-					timeline.Draw( dc, Utils::CRideFont::Std, &painter.params.timeA, &painter.params.timeZ );
+					timeline.Draw( dc, Utils::CRideFont::Std, &painter.params.visible.tStart, &painter.params.visible.tEnd );
 					painter.params.zoomFactor=timeline.zoomFactor;
 				painter.params.locker.Unlock();
 				// . drawing the rest in parallel thread due to computational complexity if painting the whole Track
