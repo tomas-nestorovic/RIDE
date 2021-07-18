@@ -254,9 +254,9 @@
 						if (!continuePainting) // new paint request?
 							continue;
 						// . drawing Times
-						tr.SetCurrentTime(visible.tStart);
-						for( TLogTime t=visible.tStart; continuePainting && t<=visible.tEnd; t=tr.ReadTime() ){
-							const int x=te.timeline.GetUnitCount(t);
+						tr.SetCurrentTime(visible.tStart-1);
+						while (continuePainting && tr.GetCurrentTime()<=visible.tEnd){
+							const int x=te.timeline.GetUnitCount( tr.ReadTime() );
 							p.params.locker.Lock();
 								if ( continuePainting=p.params.id==id ){
 									::MoveToEx( dc, x,0, nullptr );
