@@ -91,21 +91,23 @@
 						if (visible.tStart<0 && visible.tEnd<0) // window closing?
 							break;
 						::SetBkMode( dc, TRANSPARENT );
-						// . drawing inspection windows (if any)
 						const struct TOrigin sealed:public POINT{
 							TOrigin(const CDC &dc){
 								::GetViewportOrgEx( dc, this );
 							}
 						} org(dc);
+						const int d=Utils::LogicalUnitScaleFactor.quot*Utils::LogicalUnitScaleFactor.rem;
+						const int nUnitsA=te.timeline.GetUnitCount(te.GetScrollTime())/d*d;
+						::SetViewportOrgEx( dc, org.x+Utils::LogicalUnitScaleFactor*nUnitsA, org.y, nullptr );
 						bool continuePainting=true;
+						// . drawing inspection windows (if any)
 						if (te.IsFeatureShown(TCursorFeatures::INSPECT)){
 							// : determining the first visible inspection window
 							int L=te.GetInspectionWindow(visible.tStart);
 							// : drawing visible inspection windows (avoiding the GDI coordinate limitations by moving the viewport origin)
 							TLogTime tA=te.iwEndTimes[L], tZ;
 							RECT rc={ 0, 1, 0, IW_HEIGHT };
-							const int nUnitsA=te.timeline.GetUnitCount(tA);
-							::SetViewportOrgEx( dc, Utils::LogicalUnitScaleFactor*nUnitsA+org.x, org.y, nullptr );
+							const auto dcSettings0=::SaveDC(dc);
 								while (continuePainting && tA<visible.tEnd){
 									rc.right=te.timeline.GetUnitCount( tZ=te.iwEndTimes[++L] )-nUnitsA;
 									p.params.locker.Lock();
@@ -114,7 +116,7 @@
 									p.params.locker.Unlock();
 									tA=tZ, rc.left=rc.right;
 								}
-							::SetViewportOrgEx( dc, org.x, org.y, nullptr );
+							::RestoreDC( dc, dcSettings0 );
 							if (!continuePainting) // new paint request?
 								continue;
 						}
@@ -123,8 +125,6 @@
 							const auto &peList=te.GetParseEvents();
 							const Utils::CRideFont &font=Utils::CRideFont::Std;
 							const auto dcSettings0=::SaveDC(dc);
-								const int nUnitsA=te.timeline.GetUnitCount(te.GetScrollTime());
-								::SetViewportOrgEx( dc, 0, org.y, nullptr );
 								::SelectObject( dc, font );
 								::SelectObject( dc, Utils::CRidePen::BlackHairline );
 								::SetBkMode( dc, OPAQUE );
@@ -212,9 +212,6 @@
 						// . drawing Regions
 						if (te.IsFeatureShown(TCursorFeatures::REGIONS) && te.pRegions){
 							const auto dcSettings0=::SaveDC(dc);
-								const int nUnitsA=te.timeline.GetUnitCount(te.GetScrollTime());
-								::SetViewportOrgEx( dc, 0, org.y, nullptr );
-								//RECT rc={ 0, te.IsFeatureShown(TCursorFeatures::INSPECT)?IW_HEIGHT:TIME_HEIGHT, 0, INDEX_HEIGHT };
 								RECT rc={ 0, TIME_HEIGHT, 0, TIME_HEIGHT+6 };
 								for( DWORD iRegion=0; continuePainting&&iRegion<te.nRegions; iRegion++ ){
 									const TRegion &rgn=te.pRegions[iRegion];
@@ -241,7 +238,7 @@
 							::SetTextColor( dc, 0xff0000 );
 							::SelectObject( dc, Utils::CRideFont::Std );
 							for( TCHAR buf[16]; continuePainting && i<tr.GetIndexCount() && tr.GetIndexTime(i)<=visible.tEnd; i++ ){ // visible indices
-								const int x=te.timeline.GetUnitCount( tr.GetIndexTime(i) );
+								const int x=te.timeline.GetUnitCount( tr.GetIndexTime(i) )-nUnitsA;
 								p.params.locker.Lock();
 									if ( continuePainting=p.params.id==id ){
 										::MoveToEx( dc, x,-INDEX_HEIGHT, nullptr );
@@ -256,7 +253,7 @@
 						// . drawing Times
 						tr.SetCurrentTime(visible.tStart-1);
 						while (continuePainting && tr.GetCurrentTime()<=visible.tEnd){
-							const int x=te.timeline.GetUnitCount( tr.ReadTime() );
+							const int x=te.timeline.GetUnitCount( tr.ReadTime() )-nUnitsA;
 							p.params.locker.Lock();
 								if ( continuePainting=p.params.id==id ){
 									::MoveToEx( dc, x,0, nullptr );
@@ -284,9 +281,9 @@
 				SCROLLINFO si={ sizeof(si), SIF_PAGE };
 				SetScrollSizes(
 					MM_TEXT,
-					CSize( timeline.GetUnitCount(), 0 ), // total
-					CSize( si.nPage=rc.Width()/Utils::LogicalUnitScaleFactor, 0 ), // page
-					CSize( std::max(timeline.GetUnitCount(tr.GetCurrentProfile().iwTimeDefault),1), 0 ) // line
+					CSize( Utils::LogicalUnitScaleFactor*timeline.GetUnitCount(), 0 ), // total
+					CSize( si.nPage=rc.Width(), 0 ), // page
+					CSize( std::max<int>(Utils::LogicalUnitScaleFactor*timeline.GetUnitCount(tr.GetCurrentProfile().iwTimeDefault),2), 0 ) // line
 				);
 				SetScrollInfo( SB_HORZ, &si, SIF_ALL );
 			}
@@ -487,7 +484,7 @@
 					case SB_THUMBPOSITION:	// "thumb" released
 					case SB_THUMBTRACK	: si.nPos=si.nTrackPos;	break;
 				}
-				SetScrollTime( timeline.GetTime(si.nPos) );
+				SetScrollTime( timeline.GetTime(si.nPos/Utils::LogicalUnitScaleFactor) );
 				return TRUE;
 			}
 
@@ -584,13 +581,13 @@
 				else if (t>timeline.logLength) t=timeline.logLength;
 				SCROLLINFO si={ sizeof(si) };
 					si.fMask=SIF_POS;
-					si.nPos=timeline.GetUnitCount(t);
+					si.nPos=Utils::LogicalUnitScaleFactor*timeline.GetUnitCount(t);
 				SetScrollInfo( SB_HORZ, &si, TRUE );
 				painter.params.locker.Lock();
 					painter.params.id++; // stopping current painting
 					PaintCursorFeaturesInverted(false);
 					ScrollWindow(	// "base"
-						(int)(Utils::LogicalUnitScaleFactor*timeline.GetUnitCount(scrollTime)) - (int)(Utils::LogicalUnitScaleFactor*si.nPos),
+						Utils::LogicalUnitScaleFactor*timeline.GetUnitCount(scrollTime) - si.nPos,
 						0
 					);
 					scrollTime=t;

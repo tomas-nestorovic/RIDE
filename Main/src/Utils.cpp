@@ -518,7 +518,7 @@ namespace Utils{
 			if (bigMarkLength){
 				int k=1;
 				for( int i=iUnitPrefix/3; i--; k*=1000 );
-				for( TLogValue v=valueA; v<valueZ; v+=intervalBig ){
+				for( TLogValue v=valueA; v<=valueZ; v+=intervalBig ){
 					const auto x=GetUnitCount(v)-nUnitsA;
 					if (primaryGridLength && v>valueA){ // it's undesired to draw a grid at ValueA, e.g. when drawing two orthogonal Axes to divide a plane (one overdraws the other)
 						const HGDIOBJ hPen0=::SelectObject( dc, hPrimaryGridPen );
