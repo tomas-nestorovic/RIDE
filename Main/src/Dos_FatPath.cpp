@@ -25,7 +25,7 @@
 
 	CDos::CFatPath::CFatPath(DWORD nItemsMax)
 		// ctor for Dummy object which has no Buffer and just counts the Items (allocation units)
-		: nItemsMax(nItemsMax) , buffer(nullptr)
+		: nItemsMax(nItemsMax) , buffer(0)
 		, nItems(0) , pLastItem(nullptr) , error(TError::OK) {
 	}
 
@@ -36,7 +36,7 @@
 					dos->GetFileSizeOnDisk(file)/dos->formatBoot.sectorLength
 					+
 					1 ) // "1" = for the case that caller wanted to extend the File content (e.g. before calling CDos::ShiftFileContent)
-		, buffer((TItem *)::calloc( nItemsMax, sizeof(TItem) ))
+		, buffer(nItemsMax)
 		, nItems(0) , pLastItem(buffer) , error(TError::OK) {
 		if (!dos->GetFileFatPath(file,*this))
 			error=TError::FILE;
@@ -46,23 +46,18 @@
 		: nItemsMax(dos->formatBoot.clusterSize // "clusterSize+" = to round up to whole multiples of ClusterSize
 					+
 					fileSize/(dos->formatBoot.sectorLength-dos->properties->dataBeginOffsetInSector-dos->properties->dataEndOffsetInSector) )
-		, buffer((TItem *)::calloc( nItemsMax, sizeof(TItem) ))
+		, buffer(nItemsMax)
 		, nItems(0) , pLastItem(buffer) , error(TError::OK) {
 	}
 	CDos::CFatPath::CFatPath(const CDos *dos,RCPhysicalAddress chs)
 		// ctor for editing a Sector (e.g. Boot Sector)
 		: nItemsMax(1)
-		, buffer((TItem *)::malloc(sizeof(TItem)))
+		, buffer(nItemsMax)
 		, nItems(0) , pLastItem(buffer) , error(TError::OK) {
 		const TItem p={ 0, chs };
 		AddItem(&p);
 	}
 
-	CDos::CFatPath::~CFatPath(){
-		// dtor
-		if (buffer!=nullptr)
-			::free(buffer);
-	}
 
 
 

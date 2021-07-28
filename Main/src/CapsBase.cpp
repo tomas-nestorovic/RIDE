@@ -161,8 +161,7 @@
 		: CTrackReaderWriter(trw)
 		// - initialization
 		, modified(false)
-		, sectors(  (TInternalSector *)::memcpy( ::calloc(nSectors,sizeof(TInternalSector)), sectors, nSectors*sizeof(TInternalSector) )  )
-		, nSectors(nSectors) {
+		, nSectors(nSectors) , sectors( nSectors, sectors ) {
 	}
 
 	CCapsBase::CInternalTrack::~CInternalTrack(){
@@ -171,7 +170,6 @@
 			for( BYTE r=0; r<Revolution::MAX; r++ )
 				if (const PVOID data=sectors[i].revolutions[r].data)
 					::free(data);
-		::free(sectors);
 	}
 
 	CCapsBase::CInternalTrack *CCapsBase::CInternalTrack::CreateFrom(const CCapsBase &cb,const CapsTrackInfoT2 *ctiRevs,BYTE nRevs,UDWORD lockFlags){
@@ -871,11 +869,11 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 							const CTrackReader::CBitSequence readBits( *pitVerif, revVerifFirstSector.idEndTime, revVerifFirstSector.idEndProfile, pitVerif->GetIndexTime(1) );
 							// : composition and display of shortest edit script (SES)
 							const DWORD nSesItemsMax=writtenBits.GetBitCount()+readBits.GetBitCount();
-							if (auto *const pSes=(CDiffBase::TScriptItem *)::calloc( nSesItemsMax, sizeof(CDiffBase::TScriptItem) )){
+							if (const auto pSes=Utils::MakeCallocPtr<CDiffBase::TScriptItem>(nSesItemsMax)){
 								const int nSesItems=writtenBits.GetShortestEditScript( readBits, pSes, nSesItemsMax );
 								if (nSesItems<=0)
 									err=ERROR_FUNCTION_FAILED;
-								else if (auto *const pBadRegions=(CTrackReader::TRegion *)::calloc( nSesItems, sizeof(CTrackReader::TRegion) )){
+								else if (const auto pBadRegions=Utils::MakeCallocPtr<CTrackReader::TRegion>(nSesItems)){
 									// composition and display of non-overlapping erroneously written regions of the Track
 									const DWORD nBadRegions=writtenBits.EditScriptToMatchingRegions( pSes, nSesItems, pBadRegions, nSesItems, COLOR_RED );
 									switch (pitWritten->ShowModal( pBadRegions, nBadRegions, MB_ABORTRETRYIGNORE, true, _T("Track %02d.%c verification failed: Review RED-MARKED errors and decide how to proceed!"), cyl, '0'+head )){
@@ -892,10 +890,8 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 											err=ERROR_FUNCTION_FAILED;
 											break;
 									}
-									::free(pBadRegions);
 								}else
 									err=ERROR_NOT_ENOUGH_MEMORY;
-								::free(pSes);
 							}else
 								err=ERROR_NOT_ENOUGH_MEMORY;
 						}

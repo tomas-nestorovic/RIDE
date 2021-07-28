@@ -7,6 +7,39 @@ typedef long TStdWinError; // Windows standard i/o error
 
 namespace Utils{
 
+	template<typename T,typename TCount=int>
+	class CCallocPtr:public std::unique_ptr<T,void (__cdecl *)(PVOID)>{
+	public:
+		CCallocPtr(TCount count)
+			: std::unique_ptr<T,void (__cdecl *)(PVOID)>( (T *)::calloc(count,sizeof(T)), ::free ) {
+		}		
+		CCallocPtr(TCount count,int initByte)
+			: std::unique_ptr<T,void (__cdecl *)(PVOID)>(  (T *)::memset( ::calloc(count,sizeof(T)), initByte, count*sizeof(T) ),  ::free  ) {
+		}
+		CCallocPtr(TCount count,const T *pCopyInitData)
+			: std::unique_ptr<T,void (__cdecl *)(PVOID)>(  (T *)::memcpy( ::calloc(count,sizeof(T)), pCopyInitData, count*sizeof(T) ),  ::free  ) {
+		}
+
+		inline operator bool() const{ return _Myptr!=nullptr; }
+		inline operator T *() const{ return _Myptr; }
+		inline T *operator+(TCount i) const{ return _Myptr+i; }
+		inline T &operator[](TCount i) const{ return _Myptr[i]; }
+	};
+
+	// a workaround to template argument deduction on pre-2017 compilers
+	template<typename T,typename TCount>
+	inline static CCallocPtr<T,typename std::tr1::decay<TCount>::type> MakeCallocPtr(TCount count){
+		return CCallocPtr<T,typename std::tr1::decay<TCount>::type>( count );
+	}
+	template<typename T,typename TCount>
+	inline static CCallocPtr<T,typename std::tr1::decay<TCount>::type> MakeCallocPtr(TCount count,int initByte){
+		return CCallocPtr<T,typename std::tr1::decay<TCount>::type>( count, initByte );
+	}
+	template<typename T,typename TCount>
+	inline static CCallocPtr<T,typename std::tr1::decay<TCount>::type> MakeCallocPtr(TCount count,const T *pCopyInitData){
+		return CCallocPtr<T,typename std::tr1::decay<TCount>::type>( count, pCopyInitData );
+	}
+
 	template<typename Ptr>
 	class CPtrList:public ::CPtrList{
 	public:

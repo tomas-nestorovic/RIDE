@@ -102,9 +102,8 @@
 				CFile f; CFileException e;
 				if (!f.Open( fileName, CFile::modeCreate|CFile::modeWrite|CFile::typeBinary|CFile::shareExclusive, &e ))
 					return e.m_cause;
-				if (const PBYTE data=(PBYTE)::malloc(KF_BUFFER_CAPACITY)){
+				if (const auto data=Utils::MakeCallocPtr<BYTE>(KF_BUFFER_CAPACITY)){
 					f.Write( data, TrackToStream(*pit,data) );
-					::free(data);
 					pit->modified=false;
 				}else
 					return ERROR_NOT_ENOUGH_MEMORY;
@@ -140,7 +139,7 @@
 		// - making sure the loaded content is a KryoFlux Stream whose data actually make sense
 		TSector nSectors=0;
 		const auto fLength=f.GetLength();
-		if (const PBYTE data=(PBYTE)::malloc(fLength)){
+		if (const auto data=Utils::MakeCallocPtr<BYTE>(fLength))
 			if (f.Read( data, fLength )==fLength)
 				if (CTrackReaderWriter trw=StreamToTrack( data, f.GetLength() )){
 					// it's a KryoFlux Stream whose data make sense
@@ -155,8 +154,6 @@
 					internalTracks[cyl][head]=CInternalTrack::CreateFrom( *this, trw );
 					nSectors=__super::ScanTrack( cyl, head, pCodec, bufferId, bufferLength, startTimesNanoseconds, pAvgGap3 );
 				}
-			::free(data);
-		}
 		return nSectors;
 	}
 

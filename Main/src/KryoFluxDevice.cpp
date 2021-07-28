@@ -343,12 +343,8 @@
 			*cmd='R';
 			if (const TStdWinError err=SamBaCommand( cmd, nullptr ))
 				return err;
-			const PBYTE p=(PBYTE)::malloc(fLength);
-				const bool uploadedWrongly=	ReadFull( p, fLength )==ERROR_SUCCESS
-											? ::memcmp( dataBuffer, p, fLength )!=0
-											: false;
-			::free(p);
-			if (uploadedWrongly)
+			const auto p=Utils::MakeCallocPtr<BYTE>(fLength);
+			if (ReadFull(p,fLength)!=ERROR_SUCCESS || ::memcmp(dataBuffer,p,fLength)!=0) // uloaded wrongly?
 				return ERROR_NOT_READY;
 			// . executing the firmware
 			::wsprintfA( cmd, "G%08lx#\r", KF_FIRMWARE_EXEC_ADDR );

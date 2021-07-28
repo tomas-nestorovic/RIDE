@@ -1071,7 +1071,7 @@
 							// modal display of scatter plot of time differences
 							CImage::CTrackReader tr=this->tr;
 							tr.SetCurrentTimeAndProfile( 0, tr.CreateResetProfile() );
-							const LPPOINT data=(LPPOINT)::calloc( tr.GetTimesCount(), sizeof(POINT) );
+							const auto data=Utils::MakeCallocPtr<POINT>( tr.GetTimesCount() );
 								LPPOINT pLastItem=data;
 								for( TLogTime t0=0; tr; pLastItem++ ){
 									const TLogTime t = pLastItem->x = tr.ReadTime();
@@ -1094,7 +1094,6 @@
 								).ShowModal(
 									caption, this, CRect(0,0,800,600)
 								);
-							::free(data);
 							return TRUE;
 						}
 						case ID_HISTOGRAM:{
@@ -1109,7 +1108,7 @@
 								::wsprintf( caption, _T("Timing histogram for whole track"), tr.GetIndexCount()-1 );
 							}
 							tr.SetCurrentTimeAndProfile( tBegin, tr.CreateResetProfile() );
-							const LPPOINT data=(LPPOINT)::calloc( tr.GetTimesCount(), sizeof(POINT) );
+							const auto data=Utils::MakeCallocPtr<POINT>( tr.GetTimesCount() );
 								LPPOINT pLastItem=data;
 								for( TLogTime t0=tBegin; tr; pLastItem++ ){
 									const TLogTime t = pLastItem->x = tr.ReadTime();
@@ -1134,7 +1133,6 @@
 								).ShowModal(
 									caption, this, CRect(0,0,800,600)
 								);
-							::free(data);
 							return TRUE;
 						}
 					}

@@ -48,7 +48,8 @@
 
 				TStdWinError __saveToDisk__(CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip,bool verify);
 				BYTE __verifySaving__(const CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip);
-			} *const sectors;
+			};
+			const Utils::CCallocPtr<TSectorInfo> sectors;
 			#pragma pack(1)
 			struct TRawContent sealed{
 				static void __generateGap__(PSectorData &buffer,BYTE nBytes_0x4E);

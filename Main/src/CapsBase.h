@@ -71,8 +71,8 @@
 			static CInternalTrack *CreateFrom(const CCapsBase &cb,const CapsTrackInfoT2 *ctiRevs,BYTE nRevs,UDWORD lockFlags);
 			static CInternalTrack *CreateFrom(const CCapsBase &cb,const CTrackReaderWriter &trw);
 
-			const PInternalSector sectors;
 			const TSector nSectors;
+			const Utils::CCallocPtr<TInternalSector> sectors;
 			bool modified;
 			
 			~CInternalTrack();

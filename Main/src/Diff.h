@@ -153,11 +153,11 @@
 			this->max=N+M+1;
 			pEmptyScriptItem=pOutScriptItemBuffer;
 			nEmptyScriptItems=nScriptItemsBufferCapacity;
-			const PINT fv=(PINT)::calloc(2*max+2,sizeof(int)), rv=(PINT)::calloc(2*max+2,sizeof(int));
-				this->fv=fv+max, this->rv=rv+max;
-				const bool scriptComposed=GetShortestEditScript( A, N, B, M );
-			::free(fv), ::free(rv);
-			return	scriptComposed ? MergeScriptItems(pOutScriptItemBuffer) : -1;
+			const auto fv=Utils::MakeCallocPtr<int>(2*max+2), rv=Utils::MakeCallocPtr<int>(2*max+2);
+			this->fv=fv+max, this->rv=rv+max;
+			return	GetShortestEditScript( A, N, B, M ) // Script composed?
+					? MergeScriptItems(pOutScriptItemBuffer)
+					: -1;
 		}
 	};
 

@@ -201,9 +201,9 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 		// ctor
 		// - initialization
 		: cylinder(cyl) , head(head) , codec(codec)
-		, nSectors(_nSectors) , sectors((TSectorInfo *)::ZeroMemory(::calloc(_nSectors,sizeof(TSectorInfo)),_nSectors*sizeof(TSectorInfo))) {
+		, nSectors(_nSectors) , sectors( nSectors, 0 ) {
 		TInternalTrack::TSectorInfo *psi=sectors;
-		for( BYTE s=0; s<nSectors; psi++->seqNum=s++ ){
+		for( TSector s=0; s<nSectors; psi++->seqNum=s++ ){
 			psi->length=fdd->GetUsableSectorLength(( psi->id=*bufferId++ ).lengthCode );
 			if (sectorStartsNanoseconds>(PCLogTime)0x100) // if start times provided (that is, if no Gap3 information from <0;255> Bytes provided) ...
 				psi->startNanoseconds=*sectorStartsNanoseconds++; // ... they are used

@@ -1129,13 +1129,12 @@
 			(nLogTimes-iNextTime-nOnesPreviously)*sizeof(TLogTime)
 		);
 		nLogTimes=nNewLogTimes;
-		const PLogTime newLogTimesTemp=(PLogTime)::calloc( nOnesCurrently, sizeof(TLogTime) );
+		const auto newLogTimesTemp=Utils::MakeCallocPtr<TLogTime>(nOnesCurrently);
 			PLogTime pt=newLogTimesTemp;
 			for( DWORD i=0; i++<nBits; )
 				if (*bits++)
 					*pt++=tOverwritingStart+(LONGLONG)(tOverwritingEnd-tOverwritingStart)*i/nBits;
 			::memcpy( pOverwritingStart, newLogTimesTemp, nOnesCurrently*sizeof(TLogTime) );
-		::free(newLogTimesTemp);
 		return true;
 	}
 
@@ -1208,7 +1207,7 @@
 		const TLogTime tLastIndex=GetIndexTime(nIndexPulses-1);
 		const DWORD iModifStart=iNextTime;
 		DWORD iTime=iModifStart;
-		const std::unique_ptr<TLogTime,void (__cdecl *)(PVOID)> buffer(  (PLogTime)::calloc( nLogTimesMax, sizeof(TLogTime) ), ::free  );
+		const Utils::CCallocPtr<TLogTime> buffer(nLogTimesMax);
 		const PLogTime ptModified=buffer.get();
 		for( BYTE nextIndex=1; nextIndex<nIndexPulses; nextIndex++ ){
 			// . resetting inspection conditions
