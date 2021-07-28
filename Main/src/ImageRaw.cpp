@@ -359,6 +359,11 @@ trackNotFound:
 		// - formatting to "no Sectors" is translated as unformatting the Track
 		if (!_nSectors)
 			return UnformatTrack(cyl,head);
+		// - typically if no DOS has been recognized, the geometry may not be trusted
+		if (!nCylinders){
+			nSectors=_nSectors; // adopting current parameters as the geometry for the remainder of this Image
+			sectorLength=*bufferLength, sectorLengthCode=bufferId->lengthCode;
+		}
 		// - validating the Number and Lengths of Sectors
 		#ifdef _DEBUG
 			if (!nSectors) // Image is empty - it's necessary to set its geometry first!
