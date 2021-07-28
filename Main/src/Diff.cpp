@@ -21,5 +21,5 @@
 				}
 			*++psiLast=*psiNext; // can't be merged
 		}
-		return psiLast+1-buffer;
+		return psiLast-buffer;
 	}

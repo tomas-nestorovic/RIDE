@@ -105,6 +105,9 @@
 			// - skip equal ends
 			while (n>0 && m>0 && a[n-1]==b[m-1])
 				n--, m--;
+			// - detect complete equality
+			if ((m|n)==0)
+				return true;
 			// - detect Insertion
 			if (n==0)
 				if (nEmptyScriptItems>0){
@@ -112,13 +115,14 @@
 						r.operation=TScriptItem::INSERTION;
 						r.iPosA=a-A;
 						r.ins.iPosB=b-B;
+						ASSERT(m>0);
 						r.ins.nItemsB=m;
 					nEmptyScriptItems--;
 					return true;
 				}else
 					return false; // insufficient buffer
 			// - detect Deletion
-			if (m==0)
+			else
 				if (nEmptyScriptItems>0){
 					TScriptItem &r=*pEmptyScriptItem++;
 						r.operation=TScriptItem::DELETION;
