@@ -328,6 +328,7 @@
 					CRC_OK,			// dw
 					CRC_BAD,		// dw
 					NONFORMATTED,	// - (no params)
+					FUZZY,			// - (no params)
 					META_STRING,	// lpsz; textual description of a ParseEvent not covered above
 					LAST
 				} type;
@@ -434,7 +435,7 @@
 				inline PCBit GetBits() const{ return pBits; }
 				inline DWORD GetBitCount() const{ return nBits; }
 				int GetShortestEditScript(const CBitSequence &theirs,CDiffBase::TScriptItem *pOutScript,DWORD nScriptItemsMax) const;
-				DWORD EditScriptToMatchingRegions(const CDiffBase::TScriptItem *pScript,int nScriptItems,TRegion *pOutRegions,int nRegionsMax,COLORREF regionColor) const;
+				DWORD ScriptToLocalRegions(const CDiffBase::TScriptItem *pScript,int nScriptItems,TRegion *pOutRegions,int nRegionsMax,COLORREF regionColor) const;
 			};
 
 			CTrackReader(const CTrackReader &tr);

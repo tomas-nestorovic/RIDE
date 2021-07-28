@@ -122,6 +122,9 @@ struct TLogTimeInterval{
 	inline TLogTimeInterval Intersect(const TLogTimeInterval &ti) const{
 		return TLogTimeInterval( std::max(tStart,ti.tStart), std::min(tEnd,ti.tEnd) );
 	}
+	inline TLogTimeInterval Unite(const TLogTimeInterval &ti) const{
+		return TLogTimeInterval( std::min(tStart,ti.tStart), std::max(tEnd,ti.tEnd) );
+	}
 };
 
 #pragma warning( disable : 4228 ) // non-standard language extension

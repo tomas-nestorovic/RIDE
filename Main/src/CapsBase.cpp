@@ -875,7 +875,7 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 									err=ERROR_FUNCTION_FAILED;
 								else if (const auto pBadRegions=Utils::MakeCallocPtr<CTrackReader::TRegion>(nSesItems)){
 									// composition and display of non-overlapping erroneously written regions of the Track
-									const DWORD nBadRegions=writtenBits.EditScriptToMatchingRegions( pSes, nSesItems, pBadRegions, nSesItems, COLOR_RED );
+									const DWORD nBadRegions=writtenBits.ScriptToLocalRegions( pSes, nSesItems, pBadRegions, nSesItems, COLOR_RED );
 									switch (pitWritten->ShowModal( pBadRegions, nBadRegions, MB_ABORTRETRYIGNORE, true, _T("Track %02d.%c verification failed: Review RED-MARKED errors and decide how to proceed!"), cyl, '0'+head )){
 										case IDOK: // ignore
 											err=ERROR_CONTINUE;
