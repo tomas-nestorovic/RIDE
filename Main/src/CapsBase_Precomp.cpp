@@ -102,6 +102,12 @@
 					return pAction->TerminateWithError(err);
 			}else
 				break;
+		BYTE distances[24576];
+		const WORD nRows=sizeof(distances)/2-nEvaluationFluxes;
+		struct TMatrixRow sealed{
+			BYTE correctDistances[nEvaluationFluxes];
+		};
+		const auto A=Utils::MakeCallocPtr<TMatrixRow>(nRows);
 		for( BYTE nFailures=0,trial=0; trial<nTrials; ){
 			if (pAction->IsCancelled())
 				return ERROR_CANCELLED;
@@ -115,7 +121,6 @@
 				trw.AddTime( t+=doubleCellTime );
 			for( BYTE n=10; n>0; n-- ) // indication of beginning of test data
 				trw.AddTime( t+=5*mediumProps.cellTime );
-			BYTE distances[24576];
 			for( WORD n=0; n<sizeof(distances); n++ ){ // generating test data
 				distances[n]=std::min<BYTE>( 4, 2+(::rand()&3) ); // "2+" = between two 1's must always be at least one 0 (otherwise pre-compensation is useless, e.g. FM encoding)
 				trw.AddTime( t+=distances[n]*mediumProps.cellTime );
@@ -168,10 +173,6 @@
 					}
 			}
 			// . computation of precompensation parameters using the latest Method
-			const WORD nRows=sizeof(distances)/2-nEvaluationFluxes;
-			struct TMatrixRow sealed{
-				BYTE correctDistances[nEvaluationFluxes];
-			} *const A=(TMatrixRow *)::calloc( nRows, sizeof(TMatrixRow) );
 				for( BYTE p=0; p<2; p++ ){ // even (0) and odd (1) fluxes
 					// : composing matrix "A" whose rows consist of one pivot flux and its left/right neighbors, and a vector "dt" of pivot flux differences introduced during writing
 					tr.SetCurrentTime( t0=testBeginTime );
@@ -219,7 +220,6 @@
 						trialResults[trial].coeffs[ptp.head][p][r] = b[r] = sum/M[r][r];
 					}
 				}
-			::free(A);
 			// . next trial
 			pAction->UpdateProgress( ++trial );
 nextTrial:	;

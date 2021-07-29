@@ -61,7 +61,7 @@
 			WINUSB
 		} driver;
 		const BYTE fddId;
-		const PBYTE dataBuffer;
+		const Utils::CCallocPtr<BYTE> dataBuffer;
 		HANDLE hDevice;
 		union{
 			struct{

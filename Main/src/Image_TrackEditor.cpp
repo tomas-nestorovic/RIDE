@@ -761,18 +761,17 @@
 			const auto resetProfile=tr.CreateResetProfile();
 			tr.SetCurrentTimeAndProfile( 0, resetProfile );
 			const auto nIwsMax=tr.GetTotalTime()/resetProfile.iwTimeMin+2;
-			if (const PLogTime iwEndTimes=(PLogTime)::calloc( sizeof(TLogTime), nIwsMax )){
+			if (auto iwEndTimes=Utils::MakeCallocPtr<TLogTime>(nIwsMax)){
 				PLogTime t=iwEndTimes;
 				*t++=0; // beginning of the very first inspection window
 				for( pAction->SetProgressTarget(tr.GetTotalTime()); tr; pAction->UpdateProgress(*t++=tr.GetCurrentTime()-tr.GetCurrentProfile().iwTimeDefault/2) )
-					if (pAction->IsCancelled()){
-						::free(iwEndTimes);
+					if (pAction->IsCancelled())
 						return ERROR_CANCELLED;
-					}else
+					else
 						tr.ReadBit();
 				for( const PLogTime last=iwEndTimes+nIwsMax; t<last; )
 					*t++=INT_MAX; // flooding unused part of the buffer with sensible Times
-				rte.timeEditor.SetInspectionWindowEndTimes(iwEndTimes);
+				rte.timeEditor.SetInspectionWindowEndTimes(iwEndTimes.release()); // disposal left upon the callee
 				return pAction->TerminateWithSuccess();
 			}else
 				return pAction->TerminateWithError(ERROR_NOT_ENOUGH_MEMORY);

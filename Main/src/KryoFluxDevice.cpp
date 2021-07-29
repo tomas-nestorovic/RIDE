@@ -139,7 +139,7 @@
 		: CKryoFluxBase( &Properties, fddId+'0', firmwareVersion )
 		// - initialization
 		, driver(driver) , fddId(fddId)
-		, dataBuffer( (PBYTE)::malloc(KF_BUFFER_CAPACITY) )
+		, dataBuffer( KF_BUFFER_CAPACITY )
 		, fddFound(false)
 		, lastCalibratedCylinder(0)
 		, informedOnPoorPrecompensation(false)
@@ -155,7 +155,6 @@
 		EXCLUSIVELY_LOCK_THIS_IMAGE(); // mustn't destroy this instance while it's being used!
 		Disconnect();
 		DestroyAllTracks(); // see Reset()
-		::free( dataBuffer );
 	}
 
 
@@ -170,7 +169,7 @@
 		// - connecting to the device
 		ASSERT( hDevice==INVALID_HANDLE_VALUE );
 		hDevice=::CreateFile(
-					GetDevicePath(driver,(PTCHAR)dataBuffer),
+					GetDevicePath( driver, (PTCHAR)dataBuffer.get() ),
 					GENERIC_READ | GENERIC_WRITE,
 					FILE_SHARE_WRITE | FILE_SHARE_READ,
 					nullptr, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, nullptr
@@ -248,7 +247,7 @@
 		if (const TStdWinError err=WriteFull( cmd, ::lstrlenA(cmd) ))
 			return err;
 		if (const int endLength=::lstrlenA(end)){
-			for( PBYTE p=dataBuffer; const int nBytesFree=KF_BUFFER_CAPACITY+dataBuffer-p; )
+			for( PBYTE p=dataBuffer; const int nBytesFree=dataBuffer+KF_BUFFER_CAPACITY-p; )
 				if (const auto n=Read( p, nBytesFree )){
 					p+=n;
 					if (p-dataBuffer>=endLength)
@@ -615,8 +614,9 @@
 		}
 		static const BYTE FluxTablePostamble[]={ 0x0B, 0x05, 0x09, 0x00, 0x01, 0x05, 0x07, 0x0A, 0x05, 0x06, 0x01 }; // TODO: find out the meaning
 		pb=(PBYTE)::memcpy( pb, FluxTablePostamble, sizeof(FluxTablePostamble) )+sizeof(FluxTablePostamble);
-		const WORD nHeaderBytes=(pb-dataBuffer+63)/64*64; // rounding header to whole multiples of 64 Bytes
-		pb=(PBYTE)::ZeroMemory(pb,64)+nHeaderBytes-pb+dataBuffer;
+		const int nHeaderBytes=(pb-dataBuffer+63)/64*64; // rounding header to whole multiples of 64 Bytes
+		::ZeroMemory(pb,64);
+		pb=dataBuffer+nHeaderBytes;
 		// - converting UniqueFluxesUsed to an auxiliary Track (with LogicalTime set to SampleCounter) so that nearest neighbors can be used to approximate fluxes excluded from the Histogram
 		CTrackReaderWriter trwFluxes( nUniqueFluxesUsed, CTrackReader::TDecoderMethod::NONE, false );
 		for( BYTE i=0; i<nUniqueFluxesUsed; i++ )
@@ -660,8 +660,9 @@
 		rnTrackDataBytes=nUsedFluxesTableBytes+rnFluxDataBytes+0x18; // TODO: find out why 0x18
 		// - padding the content to a whole multiple of 64 Bytes
 		*pw++=0x2000; // TODO: find out the meaning
-		const DWORD nContentBytes=(pb-dataBuffer+63)/64*64;
-		pb=(PBYTE)::ZeroMemory( pb, 64 )+nContentBytes-pb+dataBuffer;
+		const int nContentBytes=(pb-dataBuffer+63)/64*64; // rounding to whole multiples of 64 Bytes
+		::ZeroMemory( pb, 64 );
+		pb=dataBuffer+nContentBytes;
 		// - successfully processed
 		::SetLastError(ERROR_SUCCESS);
 		return pb-dataBuffer;
@@ -804,7 +805,7 @@
 			const BYTE nIndicesRequested=std::min<BYTE>( GetAvailableRevolutionCount()+1, Revolution::MAX ); // N+1 indices = N full revolutions
 			SendRequest( TRequest::STREAM, MAKEWORD(1,nIndicesRequested) ); // start streaming
 				PBYTE p=dataBuffer;
-				while (const DWORD nBytesFree=KF_BUFFER_CAPACITY+dataBuffer-p)
+				while (const DWORD nBytesFree=dataBuffer+KF_BUFFER_CAPACITY-p)
 					if (const auto n=Read( p, nBytesFree )){
 						p+=n;
 						if (p-dataBuffer>7
