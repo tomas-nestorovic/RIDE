@@ -2,6 +2,8 @@
 
 	int CDiffBase::MergeScriptItems(TScriptItem *buffer) const{
 		// merges script Operations which the descendant has split into multiple consecutive ScriptItems; returns the number of merged ScriptItems
+		if (buffer==pEmptyScriptItem)
+			return 0;
 		TScriptItem *psiLast=buffer;
 		for( PCScriptItem psiNext=buffer+1; psiNext<pEmptyScriptItem; psiNext++ ){
 			if (psiNext->operation==psiLast->operation)
@@ -21,5 +23,5 @@
 				}
 			*++psiLast=*psiNext; // can't be merged
 		}
-		return psiLast-buffer;
+		return psiLast+1-buffer;
 	}

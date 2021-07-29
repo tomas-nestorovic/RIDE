@@ -122,7 +122,7 @@
 				}else
 					return false; // insufficient buffer
 			// - detect Deletion
-			else
+			if (m==0)
 				if (nEmptyScriptItems>0){
 					TScriptItem &r=*pEmptyScriptItem++;
 						r.operation=TScriptItem::DELETION;
