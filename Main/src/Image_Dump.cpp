@@ -15,7 +15,7 @@
 		const PImage source;
 		std::unique_ptr<CImage> target;
 		TCHAR targetFileName[MAX_PATH];
-		bool formatJustBadTracks;
+		bool formatJustBadTracks, fullTrackAnalysis;
 		TCylinder cylinderA,cylinderZ;
 		THead nHeads;
 		struct{
@@ -38,6 +38,7 @@
 			: dos(_dos)
 			, source(dos->image)
 			, formatJustBadTracks(false)
+			, fullTrackAnalysis( source->ReadTrack(0,0) ) // if the Source provides access to low-level recording, let's also do the FullTrackAnalysis
 			, fillerByte(dos->properties->sectorFillerByte)
 			, cylinderA(0) , cylinderZ(source->GetCylinderCount()-1)
 			, nHeads(source->GetNumberOfFormattedSides(0))
@@ -210,7 +211,7 @@ terminateWithError:
 				p.trackWriteable=tr;
 				// . if possible, analyzing the read Source Track
 				bool hasNonformattedArea=false, hasDataInGaps=false, hasFuzzyData=false;
-				if (trSrc){
+				if (trSrc && dp.fullTrackAnalysis){
 					TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; CImage::CTrackReader::TProfile idProfiles[Revolution::MAX*(TSector)-1]; TFdcStatus idStatuses[Revolution::MAX*(TSector)-1];
 					CImage::CTrackReader::CParseEventList peTrack;
 					trSrc.ScanAndAnalyze( ids, idEnds, idProfiles, idStatuses, peTrack );
@@ -654,8 +655,12 @@ errorDuringWriting:				TCHAR buf[80];
 												? Medium::GetProperties( dumpParams.mediumType=(Medium::TType)GetDlgComboBoxSelectedValue(ID_MEDIUM) )
 												: nullptr;
 				int i=dumpParams.formatJustBadTracks;
-				DDX_Check( pDX, ID_FORMAT, i );
+					DDX_Check( pDX, ID_FORMAT, i );
 				dumpParams.formatJustBadTracks=i!=0;
+				i=dumpParams.fullTrackAnalysis;
+					DDX_Check( pDX, ID_ACCURACY, i );
+					EnableDlgItem( ID_ACCURACY, dumpParams.fullTrackAnalysis );
+				dumpParams.fullTrackAnalysis=i!=0;
 				DDX_Text( pDX,	ID_CYLINDER,	(RCylinder)dumpParams.cylinderA );
 					if (mp)
 						DDV_MinMaxUInt( pDX,dumpParams.cylinderA, 0, mp->cylinderRange.iMax-1 );

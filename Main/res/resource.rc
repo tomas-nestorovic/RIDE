@@ -1164,15 +1164,15 @@ BEGIN
                     172,14
 END
 
-IDR_IMAGE_DUMP DIALOGEX 0, 0, 201, 210
+IDR_IMAGE_DUMP DIALOGEX 0, 0, 201, 221
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
 CAPTION "Dump to destination"
 FONT 8, "MS Sans Serif"
 BEGIN
-    DEFPUSHBUTTON   "Dump",IDOK,90,189,50,14,WS_DISABLED
-    PUSHBUTTON      "Cancel",IDCANCEL,144,189,50,14
+    DEFPUSHBUTTON   "Dump",IDOK,90,200,50,14,WS_DISABLED
+    PUSHBUTTON      "Cancel",IDCANCEL,144,200,50,14
     CONTROL         "<a id=""ID_HELP"">Need help?</a>",ID_HELP_INDEX,"SysLink",
-                    WS_TABSTOP,7,192,66,11
+                    WS_TABSTOP,7,203,66,11
     LTEXT           "&Destination:",IDC_STATIC,7,9,38,8,NOT WS_GROUP
     PUSHBUTTON      "",ID_FILE,54,7,140,23,BS_MULTILINE | BS_FLAT
     LTEXT           "&Medium:",IDC_STATIC,7,35,28,8,NOT WS_GROUP
@@ -1200,10 +1200,13 @@ BEGIN
                     ID_FORMAT,"Button",BS_AUTOCHECKBOX | WS_DISABLED | 
                     WS_TABSTOP,7,138,187,10
     CONTROL         "Real-time thread &priority (normal priority if unchecked)",
-                    ID_PRIORITY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,149,
+                    ID_PRIORITY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,162,
                     187,10
     CONTROL         "Show &report when done",ID_REPORT,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,161,174,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,174,174,10
+    CONTROL         "Do full track &analysis (data in gaps, fuzzy bits, etc.)",
+                    ID_ACCURACY,"Button",BS_AUTOCHECKBOX | WS_DISABLED | 
+                    WS_TABSTOP,7,150,174,10
 END
 
 IDR_MSDOS_FILE_ATTRIBUTES_EDITOR DIALOG DISCARDABLE  0, 0, 118, 111
@@ -1887,7 +1890,7 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 194
         TOPMARGIN, 7
-        BOTTOMMARGIN, 203
+        BOTTOMMARGIN, 214
     END
 
     IDR_MSDOS_FILE_ATTRIBUTES_EDITOR, DIALOG
