@@ -119,6 +119,9 @@ struct TLogTimeInterval{
 	inline TLogTimeInterval Add(TLogTime dt) const{
 		return TLogTimeInterval( tStart+dt, tEnd+dt );
 	}
+	inline TLogTimeInterval Inflate(TLogTime dt) const{
+		return TLogTimeInterval( tStart-dt, tEnd+dt );
+	}
 	inline TLogTimeInterval Intersect(const TLogTimeInterval &ti) const{
 		return TLogTimeInterval( std::max(tStart,ti.tStart), std::min(tEnd,ti.tEnd) );
 	}

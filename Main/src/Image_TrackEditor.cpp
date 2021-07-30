@@ -576,6 +576,10 @@
 				SetZoomFactor( newZoomFactor, rc.Width()/(Utils::LogicalUnitScaleFactor*2) );
 			}
 
+			inline TLogTime GetCursorTime() const{
+				return cursorTime;
+			}
+
 			inline TLogTime GetScrollTime() const{
 				return scrollTime;
 			}
@@ -863,10 +867,16 @@
 							EndDialog(nID);
 							return TRUE;
 						case ID_ZOOM_IN:
-							timeEditor.SetZoomFactorCenter( timeEditor.GetTimeline().zoomFactor-1 );
+							timeEditor.SetZoomFactor(
+								timeEditor.GetTimeline().zoomFactor-1,
+								timeEditor.GetTimeline().GetUnitCount(timeEditor.GetCursorTime()-timeEditor.GetScrollTime())
+							);
 							return TRUE;
 						case ID_ZOOM_OUT:
-							timeEditor.SetZoomFactorCenter( timeEditor.GetTimeline().zoomFactor+1 );
+							timeEditor.SetZoomFactor(
+								timeEditor.GetTimeline().zoomFactor+1,
+								timeEditor.GetTimeline().GetUnitCount(timeEditor.GetCursorTime()-timeEditor.GetScrollTime())
+							);
 							return TRUE;
 						case ID_ZOOM_PART:{
 							BYTE rev=0;
