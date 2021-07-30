@@ -27,7 +27,7 @@
 		const struct TSourceTrackErrors sealed{
 			TCylinder cyl;
 			THead head;
-			bool hasNonformattedArea, hasDataInGaps;
+			bool hasNonformattedArea, hasDataInGaps, hasFuzzyData;
 			const TSourceTrackErrors *pNextErroneousTrack;
 			TSector nErroneousSectors;
 			TSourceSectorError erroneousSectors[1];
@@ -86,6 +86,7 @@
 							for( const TSourceTrackErrors *pErroneousTrack=pOutErroneousTracks; pErroneousTrack; pErroneousTrack=pErroneousTrack->pNextErroneousTrack ){
 								nWarnings+=pErroneousTrack->hasNonformattedArea;
 								nWarnings+=pErroneousTrack->hasDataInGaps;
+								nWarnings+=pErroneousTrack->hasFuzzyData;
 							}
 							Utils::WriteToFile(fHtml,_T("<tr><td>Warning</td><td align=right>"));
 								Utils::WriteToFile(fHtml,nWarnings);
@@ -137,6 +138,8 @@
 										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: Significant non-formatted area.</li>"));
 									if (pErroneousTrack->hasDataInGaps)
 										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: Suspected data in gap.</li>"));
+									if (pErroneousTrack->hasFuzzyData)
+										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: Always bad fuzzy data.</li>"));
 								Utils::WriteToFile(fHtml,_T("</ul></td></tr>"));
 							}
 						Utils::WriteToFile(fHtml,_T("</table>"));
@@ -206,13 +209,14 @@ terminateWithError:
 				const CImage::CTrackReader &tr= targetSupportsTrackWriting ? trSrc : CImage::CTrackReaderWriter::Invalid;
 				p.trackWriteable=tr;
 				// . if possible, analyzing the read Source Track
-				bool hasNonformattedArea=false, hasDataInGaps=false;
+				bool hasNonformattedArea=false, hasDataInGaps=false, hasFuzzyData=false;
 				if (trSrc){
 					TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; CImage::CTrackReader::TProfile idProfiles[Revolution::MAX*(TSector)-1]; TFdcStatus idStatuses[Revolution::MAX*(TSector)-1];
 					CImage::CTrackReader::CParseEventList peTrack;
 					trSrc.ScanAndAnalyze( ids, idEnds, idProfiles, idStatuses, peTrack );
 					hasNonformattedArea=peTrack.Contains( CImage::CTrackReader::TParseEvent::NONFORMATTED );
 					hasDataInGaps=peTrack.Contains( CImage::CTrackReader::TParseEvent::DATA_IN_GAP );
+					hasFuzzyData=peTrack.Contains( CImage::CTrackReader::TParseEvent::FUZZY );
 				}
 				// . reading individual Sectors
 				#pragma pack(1)
@@ -582,11 +586,12 @@ errorDuringWriting:				TCHAR buf[80];
 				}
 				// . registering Track with ErroneousSectors
 //Utils::Information("registering Track with ErroneousSectors");
-				if (hasNonformattedArea || hasDataInGaps || erroneousSectors.n){
+				if (hasNonformattedArea || hasDataInGaps || hasFuzzyData || erroneousSectors.n){
 					TDumpParams::TSourceTrackErrors *psse=(TDumpParams::TSourceTrackErrors *)::malloc(sizeof(TDumpParams::TSourceTrackErrors)+std::max(0,erroneousSectors.n-1)*sizeof(TDumpParams::TSourceSectorError));
 						psse->cyl=p.chs.cylinder, psse->head=p.chs.head;
 						psse->hasNonformattedArea=hasNonformattedArea;
 						psse->hasDataInGaps=hasDataInGaps;
+						psse->hasFuzzyData=hasFuzzyData;
 						psse->pNextErroneousTrack=nullptr;
 						::memcpy( psse->erroneousSectors, erroneousSectors.buffer, ( psse->nErroneousSectors=erroneousSectors.n )*sizeof(TDumpParams::TSourceSectorError) );
 					*ppSrcTrackErrors=psse, ppSrcTrackErrors=&psse->pNextErroneousTrack;

@@ -175,7 +175,7 @@
 												::lstrcpyA( label, pe->lpszMetaString );
 												break;
 										}
-										RECT rcLabel={ te.timeline.GetUnitCount(pe->tStart)-nUnitsA, -1000, xz, -EVENT_HEIGHT-3 };
+										RECT rcLabel={ te.timeline.GetUnitCount(pe->tStart+iwTimeDefaultHalf)-nUnitsA, -1000, xz, -EVENT_HEIGHT-3 };
 										p.params.locker.Lock();
 											if ( continuePainting=p.params.id==id ){
 												const BYTE i=std::min<BYTE>(TParseEvent::LAST-1,pe->type);

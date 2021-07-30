@@ -495,7 +495,7 @@
 				TParseEvent &rpe=fuzzyStdDataEvents.GetNext( tmp=pos );
 				if (tmp){
 					const TParseEvent &peNext=fuzzyStdDataEvents.GetAt(tmp);
-					if (rpe.Intersect(peNext)){ // do two consecutive ParseEvents overlap?
+					if (rpe.Inflate(profile.iwTimeMin).Intersect(peNext)){ // do two consecutive ParseEvents overlap?
 						*static_cast<TLogTimeInterval *>(&rpe)=rpe.Unite(peNext);
 						fuzzyStdDataEvents.RemoveAt(tmp);
 					}else
