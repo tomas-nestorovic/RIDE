@@ -1229,8 +1229,8 @@ leftMouseDragged:
 			case WM_VSCROLL:{
 				// scrolling vertically
 				// . determining the Row to scroll to
-				SCROLLINFO si;
-				GetScrollInfo( SB_VERT, &si, SIF_POS|SIF_TRACKPOS ); // getting 32-bit position
+				SCROLLINFO si={ sizeof(si) };
+				GetScrollInfo( SB_VERT, &si, SIF_POS|SIF_RANGE|SIF_TRACKPOS ); // getting 32-bit position
 				int row=si.nPos;
 				switch (LOWORD(wParam)){
 					case SB_PAGEUP:		// clicked into the gap above "thumb"
@@ -1245,11 +1245,15 @@ leftMouseDragged:
 					case SB_THUMBTRACK:		// "thumb" dragged
 						row=si.nTrackPos;	break;
 				}
+				// . if no change in scroll position, we are done
+				row=std::min( std::max(row,0), nLogicalRows-nRowsOnPage );
+				if (row==si.nPos)
+					break;
 				// . redrawing HexaEditor's client and non-client areas
 				RECT rcScroll;
 					GetClientRect(&rcScroll);
 					rcScroll.bottom=( rcScroll.top=HEADER_HEIGHT )+nRowsDisplayed*font.charHeight;
-				ScrollWindow( 0, (GetScrollPos(SB_VERT)-row)*font.charHeight, &rcScroll, &rcScroll );
+				ScrollWindow( 0, (si.nPos-row)*font.charHeight, &rcScroll, &rcScroll );
 				// . displaying where it's been scrolled to
 				SetScrollPos(SB_VERT,row,TRUE); // True = redrawing the scroll-bar, not HexaEditor's canvas!
 				::DestroyCaret();
