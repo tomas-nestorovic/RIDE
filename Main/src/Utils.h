@@ -10,6 +10,9 @@ namespace Utils{
 	template<typename T,typename TCount=int>
 	class CCallocPtr:public std::unique_ptr<T,void (__cdecl *)(PVOID)>{
 	public:
+		CCallocPtr()
+			: std::unique_ptr<T,void (__cdecl *)(PVOID)>( nullptr, ::free ) {
+		}		
 		CCallocPtr(TCount count)
 			: std::unique_ptr<T,void (__cdecl *)(PVOID)>( (T *)::calloc(count,sizeof(T)), ::free ) {
 		}		

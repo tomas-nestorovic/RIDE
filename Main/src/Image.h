@@ -508,6 +508,7 @@
 			TLogTime ReadTime();
 			void SetCodec(Codec::TType codec);
 			void SetMediumType(Medium::TType mediumType);
+			bool ReadBit(TLogTime &rtOutOne);
 			bool ReadBit();
 			bool ReadBits15(WORD &rOut);
 			bool ReadBits16(WORD &rOut);

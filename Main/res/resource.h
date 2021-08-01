@@ -255,6 +255,8 @@
 #define ID_ZOOM_PART                    40269
 #define ID_ADDRESS                      40271
 #define ID_ZX_PREVIEWASASSEMBLER        40277
+#define ID_PREV_BAD                     40278
+#define ID_NEXT_BAD                     40279
 #define ID_VARIABLE                     40280
 #define ID_INSTRUCTION                  40281
 #define ID_COMMENT                      40283

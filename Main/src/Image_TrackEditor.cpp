@@ -26,6 +26,10 @@
 		TCHAR caption[500];
 		CMainWindow::CDynMenu menu;
 		HANDLE hAutoscrollTimer;
+		struct{
+			BYTE oneOkPercent; // a window with logical "1" appearing less than this value is considered OK, otherwise Bad
+			Utils::CCopyList<TLogTimeInterval> badBlocks; // blocks of consecutive InspectionWindows evaluated as Bad
+		} iwInfo;
 
 		enum TCursorFeatures:BYTE{
 			TIME	=1,
@@ -35,12 +39,17 @@
 			REGIONS	=16,
 			DEFAULT	= TIME//|SPACING
 		};
+
+		typedef const struct TInspectionWindow sealed{
+			bool isBad;
+			TLogTime tEnd; // the end determines the beginning of the immediately next inspection window
+		} *PCInspectionWindow;
 		
 		class CTimeEditor sealed:public CScrollView{
 			Utils::CTimeline timeline;
 			CImage::CTrackReader tr;
 			TLogTime scrollTime;
-			PCLogTime iwEndTimes; // inspection window end Times (aka. at which Time they end; the end determines the beginning of the immediately next inspection window)
+			Utils::CCallocPtr<TInspectionWindow> inspectionWindows;
 			CImage::CTrackReader::CParseEventList parseEvents;
 			TLogTime draggedTime; // Time at which left mouse button has been pressed
 			TLogTime cursorTime; // Time over which the cursor hovers
@@ -61,7 +70,10 @@
 					const PCBackgroundAction pAction=(PCBackgroundAction)_pBackgroundAction;
 					const CTimeEditor &te=*(CTimeEditor *)pAction->GetParams();
 					const TTrackPainter &p=te.painter;
-					const CBrush iwBrushDarker(0xE4E4B3), iwBrushLighter(0xECECCE);
+					const CBrush iwBrushes[2][2]={
+						{ CBrush(0xE4E4B3), CBrush(0xECECCE) },	//  "OK" even and odd InspectionWindows
+						{ CBrush(0x7E7EEA), CBrush(0xB6B6EA) }	// "BAD" even and odd InspectionWindows
+					};
 					const Utils::CRidePen penIndex( 2, 0xff0000 );
 					const Utils::CRideBrush parseEventBrushes[TParseEvent::LAST]={
 						TParseEvent::TypeColors[0],
@@ -106,14 +118,15 @@
 							// : determining the first visible inspection window
 							int L=te.GetInspectionWindow(visible.tStart);
 							// : drawing visible inspection windows (avoiding the GDI coordinate limitations by moving the viewport origin)
-							TLogTime tA=te.iwEndTimes[L], tZ;
+							TLogTime tA=te.inspectionWindows[L].tEnd, tZ;
 							RECT rc={ 0, 1, 0, IW_HEIGHT };
 							const auto dcSettings0=::SaveDC(dc);
 								while (continuePainting && tA<visible.tEnd){
-									rc.right=te.timeline.GetUnitCount( tZ=te.iwEndTimes[++L] )-nUnitsA;
+									const TInspectionWindow &iw=te.inspectionWindows[++L];
+									rc.right=te.timeline.GetUnitCount( tZ=iw.tEnd )-nUnitsA;
 									p.params.locker.Lock();
 										if ( continuePainting=p.params.id==id )
-											::FillRect( dc, &rc, L&1?iwBrushLighter:iwBrushDarker );
+											::FillRect( dc, &rc, iwBrushes[iw.isBad][L&1] );
 									p.params.locker.Unlock();
 									tA=tZ, rc.left=rc.right;
 								}
@@ -294,11 +307,11 @@
 
 			int GetInspectionWindow(TLogTime logTime) const{
 				// returns the index of inspection window at specified LogicalTime
-				ASSERT( iwEndTimes!=nullptr );
+				ASSERT( inspectionWindows );
 				int L=0, R=timeline.logLength/tr.GetCurrentProfile().iwTimeMin;
 				do{
-					const DWORD M=(L+R)/2;
-					if (iwEndTimes[L]<=logTime && logTime<iwEndTimes[M])
+					const int M=(L+R)/2;
+					if (inspectionWindows[L].tEnd<=logTime && logTime<inspectionWindows[M].tEnd)
 						R=M;
 					else
 						L=M;
@@ -354,7 +367,7 @@
 							// . painting inspection window size at current position
 							if (IsFeatureShown(TCursorFeatures::INSPECT) && cursorTime<timeline.logLength){
 								const int i=GetInspectionWindow(cursorTime);
-								const TLogTime a=iwEndTimes[i], z=iwEndTimes[i+1];
+								const TLogTime a=inspectionWindows[i].tEnd, z=inspectionWindows[i+1].tEnd;
 								const int xa=timeline.GetUnitCount(a-scrollTime), xz=timeline.GetUnitCount(z-scrollTime);
 								const int nLabelChars=timeline.TimeToReadableString(z-a,label);
 								const SIZE sz=font.GetTextSize( label, nLabelChars );
@@ -540,15 +553,13 @@
 				, painter(*this)
 				, draggedTime(-1)
 				, cursorTime(-1) , cursorFeaturesShown(false) , cursorFeatures(TCursorFeatures::DEFAULT)
-				, scrollTime(0) , iwEndTimes(nullptr) {
+				, scrollTime(0) {
 			}
 			
 			~CTimeEditor(){
 				// dtor
 				//if (pRegions)
 					//::free((PVOID)pRegions); // commented out as it's up to the caller to dispose allocated Regions
-				if (iwEndTimes)
-					::free((PVOID)iwEndTimes);
 			}
 
 			void OnInitialUpdate() override{
@@ -613,13 +624,12 @@
 				SetScrollTime( t-(GetCenterTime()-scrollTime) );
 			}
 
-			inline PCLogTime GetInspectionWindowEndTimes() const{
-				return iwEndTimes;
+			inline PCInspectionWindow GetInspectionWindows() const{
+				return inspectionWindows;
 			}
 
-			inline void SetInspectionWindowEndTimes(PCLogTime iwEndTimes){
-				ASSERT( this->iwEndTimes==nullptr ); // can set only once
-				this->iwEndTimes=iwEndTimes; // now responsible for disposing!
+			inline void SetInspectionWindows(TInspectionWindow *list){
+				inspectionWindows.reset( list );
 			}
 
 			inline const CImage::CTrackReader::CParseEventList &GetParseEvents() const{
@@ -759,23 +769,41 @@
 			// thread to create list of inspection windows used to recognize data in the Track
 			const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
 			CTrackEditor &rte=*(CTrackEditor *)pAction->GetParams();
-			if (rte.timeEditor.GetInspectionWindowEndTimes()!=nullptr) // already set?
+			if (rte.timeEditor.GetInspectionWindows()!=nullptr) // already set?
 				return pAction->TerminateWithSuccess();
+			auto &badBlocks=rte.iwInfo.badBlocks;
 			CImage::CTrackReader tr=rte.tr;
 			const auto resetProfile=tr.CreateResetProfile();
 			tr.SetCurrentTimeAndProfile( 0, resetProfile );
 			const auto nIwsMax=tr.GetTotalTime()/resetProfile.iwTimeMin+2;
-			if (auto iwEndTimes=Utils::MakeCallocPtr<TLogTime>(nIwsMax)){
-				PLogTime t=iwEndTimes;
-				*t++=0; // beginning of the very first inspection window
-				for( pAction->SetProgressTarget(tr.GetTotalTime()); tr; pAction->UpdateProgress(*t++=tr.GetCurrentTime()-tr.GetCurrentProfile().iwTimeDefault/2) )
+			if (auto iwList=Utils::MakeCallocPtr<TInspectionWindow>(nIwsMax)){
+				TInspectionWindow *p=iwList;
+				p++->tEnd=0; // beginning of the very first inspection window
+				TLogTime tOne; // LogicalTime of recording that resulted in recognition of logical "1"
+				BYTE iwStatuses=0; // last 8 InspectionWindows statuses (0 = ok, 1 = bad)
+				const TLogTime iwTimeDefaultHalf=tr.GetCurrentProfile().iwTimeDefault/2;
+				for( pAction->SetProgressTarget(tr.GetTotalTime()); tr; pAction->UpdateProgress(p++->tEnd=tr.GetCurrentTime()+iwTimeDefaultHalf) )
 					if (pAction->IsCancelled())
 						return ERROR_CANCELLED;
-					else
-						tr.ReadBit();
-				for( const PLogTime last=iwEndTimes+nIwsMax; t<last; )
-					*t++=INT_MAX; // flooding unused part of the buffer with sensible Times
-				rte.timeEditor.SetInspectionWindowEndTimes(iwEndTimes.release()); // disposal left upon the callee
+					else{
+						const TLogTime iwTime=tr.GetCurrentProfile().iwTime;
+						if (tr.ReadBit(tOne)){ // evaluated are only windows containing "1"
+							const TLogTime iwTimeHalf=iwTime/2;
+							const TLogTime absDiff=std::abs(tOne-tr.GetCurrentTime());
+							ASSERT( absDiff <= iwTimeHalf );
+							if ( p->isBad=absDiff*100>iwTimeHalf*rte.iwInfo.oneOkPercent )
+								if (iwStatuses&3){ // between this and the previous bad InspectionWindow is at most one ok InspectionWindow
+									badBlocks.GetTail().tEnd=tr.GetCurrentTime()+iwTimeDefaultHalf; // extending an existing BadBlock
+									p[-1].isBad=true; // involving the previous InspectionWindow into the BadBlock
+								}else
+									badBlocks.AddTail(  TLogTimeInterval( tr.GetCurrentTime()-iwTimeDefaultHalf, tr.GetCurrentTime()+iwTimeDefaultHalf )  );
+						}else // whereas all windows containing "0" are always OK
+							p->isBad=false;
+						iwStatuses = (iwStatuses<<1) | (BYTE)p->isBad;
+					}
+				for( const PCInspectionWindow last=iwList+nIwsMax; p<last; )
+					p++->tEnd=INT_MAX; // flooding unused part of the buffer with sensible Times
+				rte.timeEditor.SetInspectionWindows(iwList.release()); // disposal left upon the callee
 				return pAction->TerminateWithSuccess();
 			}else
 				return pAction->TerminateWithError(ERROR_NOT_ENOUGH_MEMORY);
@@ -857,6 +885,12 @@
 						case ID_UP:
 							pCmdUi->Enable( timeEditor.GetScrollTime()<tr.GetTotalTime() );
 							return TRUE;
+						case ID_PREV_BAD:
+							pCmdUi->Enable( timeEditor.GetScrollTime()>0 && timeEditor.GetInspectionWindows()!=nullptr && iwInfo.badBlocks.GetCount()>0 && iwInfo.badBlocks.GetHead().tStart<timeEditor.GetCenterTime() );
+							return TRUE;
+						case ID_NEXT_BAD:
+							pCmdUi->Enable( timeEditor.GetScrollTime()<tr.GetTotalTime() && timeEditor.GetInspectionWindows()!=nullptr && iwInfo.badBlocks.GetCount()>0 && timeEditor.GetCenterTime()<iwInfo.badBlocks.GetTail().tStart );
+							return TRUE;
 					}
 					break;
 				}
@@ -911,7 +945,7 @@
 							return TRUE;
 						case ID_RECOGNIZE:
 							if (!timeEditor.IsFeatureShown(TCursorFeatures::INSPECT)) // currently hidden, so want now show the Feature
-								if (timeEditor.GetInspectionWindowEndTimes()==nullptr) // data to display not yet received
+								if (timeEditor.GetInspectionWindows()==nullptr) // data to display not yet received
 									if (CBackgroundActionCancelable( CreateInspectionWindowList_thread, this, THREAD_PRIORITY_LOWEST ).Perform()!=ERROR_SUCCESS)
 										return TRUE;
 							timeEditor.ToggleFeature(TCursorFeatures::INSPECT);
@@ -1080,6 +1114,41 @@
 							//return TRUE;
 						//case ID_UP:	// commented out as coped with already in WM_KEYDOWN handler
 							//return TRUE;
+						case ID_PREV_BAD:{
+							const auto &badBlocks=iwInfo.badBlocks;
+							POSITION pos=badBlocks.GetTailPosition();
+							for( const TLogTime tCenter=timeEditor.GetCenterTime(); pos&&tCenter<=badBlocks.GetAt(pos).tStart; badBlocks.GetPrev(pos) );
+							if (pos)
+								timeEditor.SetCenterTime( badBlocks.GetAt(pos).tStart );
+							return TRUE;
+						}
+						case ID_NEXT_BAD:{
+							const auto &badBlocks=iwInfo.badBlocks;
+							POSITION pos=badBlocks.GetHeadPosition();
+							for( const TLogTime tCenter=timeEditor.GetCenterTime(); pos&&badBlocks.GetAt(pos).tStart<=tCenter; badBlocks.GetNext(pos) );
+							if (pos)
+								timeEditor.SetCenterTime( badBlocks.GetAt(pos).tStart );
+							return TRUE;
+						}
+						case ID_INDICATOR_REC:
+							if (const Utils::CSingleNumberDialog d=Utils::CSingleNumberDialog(
+									_T("Inspection evaluation"),
+									_T("Window bad if '1' off center more than [%]:"),
+									PropGrid::Integer::TUpDownLimits::Percent, iwInfo.oneOkPercent, this
+								)
+							)
+								if (iwInfo.oneOkPercent!=d.Value || !timeEditor.GetInspectionWindows()){
+									iwInfo.oneOkPercent=d.Value;
+									if (timeEditor.IsFeatureShown(TCursorFeatures::INSPECT))
+										timeEditor.ToggleFeature(TCursorFeatures::INSPECT); // declaring the feature hidden ...
+									timeEditor.SetInspectionWindows(nullptr); // ... and disposing previous
+									iwInfo.badBlocks.RemoveAll();
+									if (CBackgroundActionCancelable( CreateInspectionWindowList_thread, this, THREAD_PRIORITY_LOWEST ).Perform()!=ERROR_SUCCESS)
+										return TRUE;
+									timeEditor.ToggleFeature(TCursorFeatures::INSPECT);
+									timeEditor.Invalidate();
+								}
+							return TRUE;
 						case ID_CHART:{
 							// modal display of scatter plot of time differences
 							CImage::CTrackReader tr=this->tr;
@@ -1163,7 +1232,8 @@
 			, tr(tr)
 			, menu( IDR_TRACK_EDITOR ) , messageBoxButtons(messageBoxButtons) , initAllFeaturesOn(initAllFeaturesOn)
 			, timeEditor( tr, pRegions, nRegions )
-			, hAutoscrollTimer(INVALID_HANDLE_VALUE) {			
+			, hAutoscrollTimer(INVALID_HANDLE_VALUE) {
+			iwInfo.oneOkPercent=50;
 			::wvsprintf( caption, captionFormat, argList );
 		}
 	};

@@ -143,7 +143,7 @@
 		profile.Reset();
 	}
 
-	bool CImage::CTrackReader::ReadBit(){
+	bool CImage::CTrackReader::ReadBit(TLogTime &rtOutOne){
 		// returns first bit not yet read
 		// - if we just crossed an IndexPulse, resetting the Profile
 		if (currentTime>=indexPulses[iNextIndexPulse]){
@@ -177,7 +177,7 @@
 				}while (true);
 				// - detecting zero (longer than 3/2 of an inspection window)
 				currentTime+=profile.iwTime;
-				const TLogTime diff=logTimes[iNextTime]-currentTime;
+				const TLogTime diff=( rtOutOne=logTimes[iNextTime] )-currentTime;
 				iNextTime+=logTimes[iNextTime]<=currentTime; // eventual correction of the pointer to the next time
 				if (diff>=iwTimeHalf){
 					r.nConsecutiveZeros++;
@@ -214,7 +214,7 @@
 				}while (true);
 				// . detecting zero
 				currentTime+=profile.iwTime;
-				const TLogTime diff=logTimes[iNextTime]-currentTime;
+				const TLogTime diff=( rtOutOne=logTimes[iNextTime] )-currentTime;
 				if (diff>=iwTimeHalf)
 					return 0;
 				// . estimating data frequency
@@ -257,6 +257,12 @@
 				ASSERT(FALSE);
 				return 0;
 		}
+	}
+
+	bool CImage::CTrackReader::ReadBit(){
+		// returns first bit not yet read
+		static TLogTime tDummy;
+		return ReadBit(tDummy);
 	}
 
 	bool CImage::CTrackReader::ReadBits15(WORD &rOut){
