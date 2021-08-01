@@ -1243,20 +1243,20 @@ leftMouseDragged:
 						row++; break;
 					case SB_THUMBPOSITION:	// "thumb" released
 					case SB_THUMBTRACK:		// "thumb" dragged
-						row=si.nTrackPos;	break;
+						row = si.nPos = si.nTrackPos;	break;
 				}
-				// . if no change in scroll position, we are done
-				row=std::min( std::max(row,0), nLogicalRows-nRowsOnPage );
-				if (row==si.nPos)
-					break;
+				locker.Lock();
+					row=std::min( std::max(row,0), nLogicalRows-nRowsOnPage );
+				locker.Unlock();
 				// . redrawing HexaEditor's client and non-client areas
-				RECT rcScroll;
-					GetClientRect(&rcScroll);
-					rcScroll.bottom=( rcScroll.top=HEADER_HEIGHT )+nRowsDisplayed*font.charHeight;
-				ScrollWindow( 0, (si.nPos-row)*font.charHeight, &rcScroll, &rcScroll );
-				// . displaying where it's been scrolled to
-				SetScrollPos(SB_VERT,row,TRUE); // True = redrawing the scroll-bar, not HexaEditor's canvas!
-				::DestroyCaret();
+				if (const int dr=si.nPos-row){
+					RECT rcScroll;
+						GetClientRect(&rcScroll);
+						rcScroll.bottom=( rcScroll.top=HEADER_HEIGHT )+nRowsDisplayed*font.charHeight;
+					ScrollWindow( 0, dr*font.charHeight, &rcScroll, &rcScroll );
+					SetScrollPos(SB_VERT,row,TRUE); // True = redrawing the scroll-bar, not HexaEditor's canvas!
+					::DestroyCaret();
+				}
 				//fallthrough (the "thumb" might have been released outside the scrollbar area)
 			}
 			case WM_NCMOUSEMOVE:{
