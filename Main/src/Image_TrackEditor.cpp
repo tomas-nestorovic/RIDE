@@ -587,8 +587,13 @@
 				SetZoomFactor( newZoomFactor, rc.Width()/(Utils::LogicalUnitScaleFactor*2) );
 			}
 
-			inline TLogTime GetCursorTime() const{
-				return cursorTime;
+			TLogTime GetClientCursorTime() const{
+				POINT cursor;
+				::GetCursorPos(&cursor);
+				ScreenToClient(&cursor);
+				return	cursor.x>=0 // over client? (simplified)
+						? cursorTime
+						: GetCenterTime();
 			}
 
 			inline TLogTime GetScrollTime() const{
@@ -903,13 +908,13 @@
 						case ID_ZOOM_IN:
 							timeEditor.SetZoomFactor(
 								timeEditor.GetTimeline().zoomFactor-1,
-								timeEditor.GetTimeline().GetUnitCount(timeEditor.GetCursorTime()-timeEditor.GetScrollTime())
+								timeEditor.GetTimeline().GetUnitCount(timeEditor.GetClientCursorTime()-timeEditor.GetScrollTime())
 							);
 							return TRUE;
 						case ID_ZOOM_OUT:
 							timeEditor.SetZoomFactor(
 								timeEditor.GetTimeline().zoomFactor+1,
-								timeEditor.GetTimeline().GetUnitCount(timeEditor.GetCursorTime()-timeEditor.GetScrollTime())
+								timeEditor.GetTimeline().GetUnitCount(timeEditor.GetClientCursorTime()-timeEditor.GetScrollTime())
 							);
 							return TRUE;
 						case ID_ZOOM_PART:{
