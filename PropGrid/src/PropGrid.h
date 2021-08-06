@@ -7,7 +7,7 @@
 	#define CATEGORY_HEIGHT			21
 
 	typedef struct TPropGridInfo sealed{
-		typedef struct TCategoryItem; // forward
+		struct TCategoryItem; // forward
 		typedef TCategoryItem *PCategoryItem;
 
 		typedef const struct TItem{

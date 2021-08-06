@@ -23,10 +23,10 @@ namespace Utils{
 			: std::unique_ptr<T,void (__cdecl *)(PVOID)>(  (T *)::memcpy( ::calloc(count,sizeof(T)), pCopyInitData, count*sizeof(T) ),  ::free  ) {
 		}
 
-		inline operator bool() const{ return _Myptr!=nullptr; }
-		inline operator T *() const{ return _Myptr; }
-		inline T *operator+(TCount i) const{ return _Myptr+i; }
-		inline T &operator[](TCount i) const{ return _Myptr[i]; }
+		inline operator bool() const{ return get()!=nullptr; }
+		inline operator T *() const{ return get(); }
+		inline T *operator+(TCount i) const{ return get()+i; }
+		inline T &operator[](TCount i) const{ return get()[i]; }
 	};
 
 	// a workaround to template argument deduction on pre-2017 compilers
@@ -123,6 +123,7 @@ namespace Utils{
 		CRideBrush(int stockObjectId);
 		CRideBrush(COLORREF solidColor);
 		CRideBrush(bool sysColor,int sysColorId);
+		CRideBrush(CRideBrush &&r);
 
 		operator COLORREF() const;
 	};

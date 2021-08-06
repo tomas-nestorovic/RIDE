@@ -179,7 +179,7 @@
 			} error;
 		private:
 			const DWORD nItemsMax;
-			const Utils::CCallocPtr<TItem,DWORD> buffer;
+			Utils::CCallocPtr<TItem,DWORD> buffer;
 			DWORD nItems;
 			TItem *pLastItem;
 		public:
@@ -189,6 +189,7 @@
 			CFatPath(const CDos *dos,PCFile file); // ctor for exporting a File on Image
 			CFatPath(const CDos *dos,DWORD fileSize); // ctor for importing a File to Image
 			CFatPath(const CDos *dos,RCPhysicalAddress chs); // ctor for editing a Sector (e.g. Boot Sector)
+			CFatPath(CFatPath &&r);
 
 			operator bool() const;
 			bool AddItem(PCItem pItem);

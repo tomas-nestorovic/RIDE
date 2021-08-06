@@ -70,9 +70,9 @@
 					const PCBackgroundAction pAction=(PCBackgroundAction)_pBackgroundAction;
 					const CTimeEditor &te=*(CTimeEditor *)pAction->GetParams();
 					const TTrackPainter &p=te.painter;
-					const CBrush iwBrushes[2][2]={
-						{ CBrush(0xE4E4B3), CBrush(0xECECCE) },	//  "OK" even and odd InspectionWindows
-						{ CBrush(0x7E7EEA), CBrush(0xB6B6EA) }	// "BAD" even and odd InspectionWindows
+					const Utils::CRideBrush iwBrushes[2][2]={
+						{ std::move(Utils::CRideBrush(0xE4E4B3)), std::move(Utils::CRideBrush(0xECECCE)) },	//  "OK" even and odd InspectionWindows
+						{ std::move(Utils::CRideBrush(0x7E7EEA)), std::move(Utils::CRideBrush(0xB6B6EA)) }	// "BAD" even and odd InspectionWindows
 					};
 					const Utils::CRidePen penIndex( 2, 0xff0000 );
 					const Utils::CRideBrush parseEventBrushes[TParseEvent::LAST]={
@@ -1136,7 +1136,7 @@
 							return TRUE;
 						}
 						case ID_INDICATOR_REC:
-							if (const Utils::CSingleNumberDialog d=Utils::CSingleNumberDialog(
+							if (const Utils::CSingleNumberDialog &&d=Utils::CSingleNumberDialog(
 									_T("Inspection evaluation"),
 									_T("Window bad if '1' off center more than [%]:"),
 									PropGrid::Integer::TUpDownLimits::Percent, iwInfo.oneOkPercent, this

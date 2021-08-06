@@ -244,7 +244,7 @@
 								vp.fReport.LogWarning( _T("%s: Has neither header nor data"), strItemId ); // just a warning - maybe the Directory is tweaked to write certain message during its listing
 							// : checking recorded DataLength corresponds with FAT information
 							if (de->fileHasData)
-								if (const CFatPath fatPath=CFatPath(BSDOS,de)){
+								if (const CFatPath &&fatPath=CFatPath(BSDOS,de)){
 									DWORD lengthFromFat=0;
 									if (const DWORD nItems=fatPath.GetNumberOfItems())
 										lengthFromFat= (nItems-1)*BSDOS_SECTOR_LENGTH_STD + BSDOS->__getLogicalSectorFatItem__(BSDOS->__fyzlog__(fatPath.GetHealthyItem(nItems-1)->chs)).info;
@@ -1067,7 +1067,7 @@
 			#define MSG_MAIN		_T("Can't change disk format")
 			#define MSG_SUGGESTION	_T("Run disk verification and try again.")
 			TDirectoryEntry deFats[]={ TDirectoryEntry(this,bootSector->fatStarts[0]), TDirectoryEntry(this,bootSector->fatStarts[1]) };
-			CFatPath fats[]={ CFatPath(this,&deFats[0]), CFatPath(this,&deFats[1]) };
+			CFatPath fats[]={ std::move(CFatPath(this,&deFats[0])), std::move(CFatPath(this,&deFats[1])) };
 			if (fats[0].GetNumberOfItems()!=fats[1].GetNumberOfItems()
 				||
 				bootSector->fatStarts[0]>=BSDOS_FAT_LOGSECTOR_MAX || bootSector->fatStarts[1]>=BSDOS_FAT_LOGSECTOR_MAX

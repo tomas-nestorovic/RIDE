@@ -57,6 +57,12 @@
 		const TItem p={ 0, chs };
 		AddItem(&p);
 	}
+	CDos::CFatPath::CFatPath(CFatPath &&r)
+		// move ctor
+		: nItemsMax(r.nItemsMax)
+		, nItems(r.nItems) , pLastItem(r.pLastItem) , error(r.error) {
+		buffer.reset( r.buffer.release() );
+	}
 
 
 

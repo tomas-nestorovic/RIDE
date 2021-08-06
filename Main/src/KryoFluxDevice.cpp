@@ -74,7 +74,7 @@
 		else
 			return nullptr; // KryoFlux inaccessible
 		// - checking if firmware loaded
-		if (CKryoFluxDevice tmp=CKryoFluxDevice( driver, 0 )) // connected ...
+		if (CKryoFluxDevice &&tmp=CKryoFluxDevice( driver, 0 )) // connected ...
 			while (const TStdWinError err=tmp.UploadFirmware()){ // ... but firmware failed to load
 				if (Utils::QuestionYesNo( _T("KryoFlux found but without firmware loaded. Load it manually?\n\nUnless you move the firmware file, this step is needed only once."), MB_DEFBUTTON1 )){
 					TCHAR fileName[MAX_PATH];

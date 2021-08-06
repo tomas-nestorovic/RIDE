@@ -49,6 +49,11 @@ namespace Utils{
 		CreateSysColorBrush(sysColorId);
 	}
 
+	CRideBrush::CRideBrush(CRideBrush &&r){
+		// move ctor
+		Attach( r.Detach() );
+	}
+
 	const CRideBrush CRideBrush::None=NULL_BRUSH;
 	const CRideBrush CRideBrush::Black=BLACK_BRUSH;
 	const CRideBrush CRideBrush::White=WHITE_BRUSH;

@@ -17,6 +17,7 @@
 	#include <typeinfo>
 	#define bad_cast(x)
 	#define bad_typeid(x)
+	#define _CRTIMP2_PURE
 	#include <xutility>
 	#define _Xout_of_range(x)
 	#define _Xlength_error(x)
@@ -73,6 +74,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 #undef min
 #undef max
+#undef INFINITY
 
 class CImage; // forward
 typedef CImage *PImage;

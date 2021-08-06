@@ -247,7 +247,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 	BYTE CBSDOS308::__getFatChecksum__(BYTE fatCopy) const{
 		// computes and returns the checksum of specified FAT copy
 		if (const PBootSector bootSector=boot.GetSectorData())
-			if (const CFatPath tmp=CFatPath( this, &TFatCopyRetrievalEntry(this,bootSector,fatCopy) )){
+			if (const CFatPath &&tmp=CFatPath( this, &TFatCopyRetrievalEntry(this,bootSector,fatCopy) )){
 				PCSectorData sectorData[BSDOS_FAT_LOGSECTOR_MAX];
 				for( BYTE s=0; s<bootSector->nSectorsPerFat; s++ )
 					if (const auto pItem=tmp.GetHealthyItem(s))

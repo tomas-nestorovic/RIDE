@@ -80,7 +80,7 @@
 									nullptr
 								)
 				)
-		, splitter( LogicalUnitScaleFactor*(propGridWidth-LogicalUnitScaleFactor*CATEGORY_HEIGHT)/2 ) {
+		, splitter( LogicalUnitScaleFactor*short(propGridWidth-LogicalUnitScaleFactor*CATEGORY_HEIGHT)/2 ) {
 		wndProc0=(WNDPROC)SubclassWindow(handle,__wndProc__);
 		SetWindowFont(handle,FONT_DEFAULT,0);
 		::SetWindowLong( handle, GWL_USERDATA, (LONG)pPropGridInfo );

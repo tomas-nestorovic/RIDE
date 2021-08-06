@@ -691,7 +691,7 @@
 						break;
 				}
 				// . verifying Length
-				if (const CFatPath fatPath=CFatPath(mdos,de)){
+				if (const CFatPath &&fatPath=CFatPath(mdos,de)){
 					DWORD lengthFromFat=0;
 					if (const DWORD nItems=fatPath.GetNumberOfItems()){
 						// a valid File (even a zero-length one) has always at least one Sector affiliated

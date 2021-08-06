@@ -146,6 +146,8 @@
 					BYTE bytes[5];
 				};
 
+				inline TNumberInternalForm(){}
+
 				double ToDouble() const;
 			} *PCNumberInternalForm;
 
