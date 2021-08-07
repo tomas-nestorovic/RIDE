@@ -21,6 +21,7 @@
 	#include <xutility>
 	#define _Xout_of_range(x)
 	#define _Xlength_error(x)
+	#define _Xbad_alloc()
 #endif
 #include <algorithm>
 #include <memory>
@@ -203,5 +204,13 @@ struct TLogTimeInterval{
 extern CRideApp app;
 
 extern void WINAPI AfxThrowInvalidArgException();
+
+#ifdef RELEASE_MFC42
+	#if _MSC_VER<=1600
+		#define noexcept
+	#endif
+
+	void __cdecl operator delete(PVOID ptr, UINT sz) noexcept;
+#endif
 
 #endif STDAFX_H

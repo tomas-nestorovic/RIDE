@@ -1,5 +1,11 @@
 #include "stdafx.h"
 
+#ifdef RELEASE_MFC42
+	void __cdecl operator delete(PVOID ptr, UINT sz) noexcept{
+		operator delete(ptr);
+	}
+#endif
+
 	HCURSOR TPropGridInfo::CURSOR_SPLITTER;
 	HBRUSH TPropGridInfo::BRUSH_BLACK;
 	HBRUSH TPropGridInfo::BRUSH_GRAY_DARK;

@@ -26,4 +26,12 @@ typedef const struct TEditor *PCEditor; // forward
 #undef min
 #undef max
 
+#ifdef RELEASE_MFC42
+	#if _MSC_VER<=1600
+		#define noexcept
+	#endif
+
+	void __cdecl operator delete(PVOID ptr, UINT sz) noexcept;
+#endif
+
 #endif

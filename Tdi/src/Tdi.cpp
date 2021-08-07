@@ -1,5 +1,11 @@
 #include "stdafx.h"
 
+#ifdef RELEASE_MFC42
+	void __cdecl operator delete(PVOID ptr, UINT sz) noexcept{
+		operator delete(ptr);
+	}
+#endif
+
 	static bool WINAPI __canCloseTabAlways__(CTdiCtrl::TTab::PContent){
 		return true;
 	}

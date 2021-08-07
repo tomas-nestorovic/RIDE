@@ -675,3 +675,13 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 	void WINAPI AfxThrowInvalidArgException(){
 		// without this function, we wouldn't be able to build the "MFC 4.2" version!
 	}
+
+
+#ifdef RELEASE_MFC42
+	void __cdecl operator delete(PVOID ptr, UINT sz) noexcept {
+		operator delete(ptr);
+	}
+
+	void __cdecl _invalid_parameter_noinfo_noreturn(void) {
+	}
+#endif
