@@ -217,7 +217,7 @@ terminateWithError:
 					trSrc.ScanAndAnalyze( ids, idEnds, idProfiles, idStatuses, peTrack );
 					hasNonformattedArea=peTrack.Contains( CImage::CTrackReader::TParseEvent::NONFORMATTED );
 					hasDataInGaps=peTrack.Contains( CImage::CTrackReader::TParseEvent::DATA_IN_GAP );
-					hasFuzzyData=peTrack.Contains( CImage::CTrackReader::TParseEvent::FUZZY );
+					hasFuzzyData=peTrack.Contains( CImage::CTrackReader::TParseEvent::FUZZY_BAD );
 				}
 				// . reading individual Sectors
 				#pragma pack(1)

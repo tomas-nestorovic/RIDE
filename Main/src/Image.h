@@ -328,7 +328,8 @@
 					CRC_OK,			// dw
 					CRC_BAD,		// dw
 					NONFORMATTED,	// - (no params)
-					FUZZY,			// - (no params)
+					FUZZY_OK,		// - (no params); at least one Revolution yields OK data
+					FUZZY_BAD,		// - (no params); all Revolutions yield only bad data
 					META_STRING,	// lpsz; textual description of a ParseEvent not covered above
 					LAST
 				} type;
@@ -346,6 +347,7 @@
 
 				inline bool IsDataStd() const{ return type==DATA_OK || type==DATA_BAD; }
 				inline bool IsDataAny() const{ return IsDataStd() || type==DATA_IN_GAP; }
+				inline bool IsCrc() const{ return type==CRC_OK || type==CRC_BAD; }
 			} *PCParseEvent;
 
 			typedef const struct TMetaStringParseEvent:public TParseEvent{
@@ -427,14 +429,13 @@
 				CBitSequence(const CBitSequence &r);
 				CBitSequence(CBitSequence &&r);
 			public:
-				const TLogTime bitTimeDefault; // Time per one bit
-
 				CBitSequence(CTrackReader tr,TLogTime tFrom,const CTrackReader::TProfile &profileFrom, TLogTime tTo);
 				~CBitSequence();
 
 				inline PCBit GetBits() const{ return pBits; }
 				inline DWORD GetBitCount() const{ return nBits; }
 				int GetShortestEditScript(const CBitSequence &theirs,CDiffBase::TScriptItem *pOutScript,DWORD nScriptItemsMax) const;
+				DWORD ScriptToLocalDiffs(const CDiffBase::TScriptItem *pScript,int nScriptItems,TRegion *pOutDiffs,int nDiffsMax) const;
 				DWORD ScriptToLocalRegions(const CDiffBase::TScriptItem *pScript,int nScriptItems,TRegion *pOutRegions,int nRegionsMax,COLORREF regionColor) const;
 			};
 

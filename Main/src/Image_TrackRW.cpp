@@ -470,32 +470,70 @@
 			// . comparing all Revolutions
 			CParseEventList fuzzyStdDataEvents;
 			const DWORD nSesItemsMax=pRevolutionBits[0]->GetBitCount()*3; // over-dimensioning the capacity to guarantee the Shortest Edit Script always fits in
-			if (const auto pSes=Utils::MakeCallocPtr<CDiffBase::TScriptItem>(nSesItemsMax))
-				if (const auto pLocalRegions=Utils::MakeCallocPtr<TRegion>(nSesItemsMax))
-					for( BYTE i=0; i<GetIndexCount()-2; i++ ){
-						const CBitSequence &iBits=*pRevolutionBits[i];
-						for( BYTE j=i+1; j<GetIndexCount()-1; j++ ){
-							const CBitSequence &jBits=*pRevolutionBits[j];
-							const int nSesItems=iBits.GetShortestEditScript( jBits, pSes, nSesItemsMax );
-							if (nSesItems>0){ // Revolutions bitwise different?
-								const CBitSequence *twoRevs[2]={ &iBits, &jBits };
-								for( BYTE r=0; r<2; r++ ){ // projecting the Script to both of the TwoRevolutions
-									const DWORD nLocalRegions=twoRevs[r]->ScriptToLocalRegions( pSes, nSesItems, pLocalRegions, nSesItems, COLOR_RED );
-									for( DWORD g=0; g<nLocalRegions; ){
-										const TRegion &rgn=pLocalRegions[g++];
-										for( POSITION pos=rOutParseEvents.GetHeadPosition(); pos; ){
-											const TParseEvent &pe=rOutParseEvents.GetNext(pos);
-											if (pe.IsDataStd())
-												if (const auto ti=pe.Intersect(rgn).Add(profile.iwTimeDefault/2))
-													fuzzyStdDataEvents.AddCopyAscendingByStart(
-														TParseEvent( TParseEvent::FUZZY, ti.tStart, ti.tEnd, 0 )
-													);
-										}
-									}
+			const auto pSes=Utils::MakeCallocPtr<CDiffBase::TScriptItem>(nSesItemsMax);
+			const auto pLocalRegionsI=Utils::MakeCallocPtr<TRegion>(nSesItemsMax);
+			const auto pLocalRegionsJ=Utils::MakeCallocPtr<TRegion>(nSesItemsMax);
+			if (pSes && pLocalRegionsI && pLocalRegionsJ)
+				for( BYTE i=0; i<GetIndexCount()-2; i++ ){
+					const CBitSequence &iBits=*pRevolutionBits[i];
+					for( BYTE j=i+1; j<GetIndexCount()-1; j++ ){
+						const CBitSequence &jBits=*pRevolutionBits[j];
+						const int nSesItemsI=iBits.GetShortestEditScript( jBits, pSes, nSesItemsMax );
+						if (nSesItemsI>0){ // Revolutions bitwise different?
+							const DWORD nLocalDiffsI=iBits.ScriptToLocalDiffs( pSes, nSesItemsI, pLocalRegionsI, nSesItemsI );
+							const int nSesItemsJ=jBits.GetShortestEditScript( iBits, pSes, nSesItemsMax );
+							const DWORD nLocalDiffsJ=jBits.ScriptToLocalDiffs( pSes, nSesItemsJ, pLocalRegionsJ, nSesItemsJ );
+							ASSERT( nLocalDiffsI==nLocalDiffsJ ); // differences must be marked symmetrically in both Revolutions
+							// : symmetrically merging adjanced differences
+							DWORD nFuzzyRegions=0;
+							TLogTime tLastRegionEndI=INT_MIN, tLastRegionEndJ=INT_MIN;
+							for( DWORD d=0; d<nLocalDiffsI; d++ ){
+								const auto &diffI=pLocalRegionsI[d], &diffJ=pLocalRegionsJ[d];
+								if (diffI.tStart>tLastRegionEndI && diffJ.tStart>tLastRegionEndJ){
+									// disjunct differences in both Revolutions
+									pLocalRegionsI[nFuzzyRegions]=diffI;
+									pLocalRegionsJ[nFuzzyRegions]=diffJ;
+									nFuzzyRegions++;
+									tLastRegionEndI=diffI.tEnd, tLastRegionEndJ=diffJ.tEnd;
+								}else{
+									// adjanced differences in either Revolution (something has been Deleted, something else has been immediatelly Inserted)
+									const TLogTime mergedRegionLength=std::max(
+										std::max(tLastRegionEndI,diffI.tEnd) - pLocalRegionsI[nFuzzyRegions-1].tStart,
+										std::max(tLastRegionEndJ,diffJ.tEnd) - pLocalRegionsJ[nFuzzyRegions-1].tStart
+									);
+									tLastRegionEndI = pLocalRegionsI[nFuzzyRegions-1].tEnd = pLocalRegionsI[nFuzzyRegions-1].tStart+mergedRegionLength;
+									tLastRegionEndJ = pLocalRegionsJ[nFuzzyRegions-1].tEnd = pLocalRegionsJ[nFuzzyRegions-1].tStart+mergedRegionLength;
 								}
+							}
+							// : filtering out only those fuzzy regions that overlap with Sectors
+							for( DWORD g=0; g<nFuzzyRegions; g++ ){
+								const TRegion *pTwoRegions[2]={ &pLocalRegionsI[g], &pLocalRegionsJ[g] };
+								char fuzzyInOkSector=-1; // "-1" = in no Sector in either Revolution, "0" = only in bad Sector in all Revolutions, "1" = in OK Sector in at least one Revolution
+								for( BYTE r=0; r<2; r++ ){ // projecting the Script to both of the Revolutions
+									const TRegion &rgn=*pTwoRegions[r];
+									char fuzzyInBadSector=-1; // "-1" = in no Sector, "0" = only in OK Sector, "1" = in bad Sector
+									for( POSITION pos=rOutParseEvents.GetHeadPosition(); pos; ){
+										const TParseEvent &pe=rOutParseEvents.GetNext(pos);
+										if (pe.IsDataStd() || pe.IsCrc())
+											if (pe.Intersect(rgn))
+												if ( fuzzyInBadSector=pe.type==TParseEvent::DATA_BAD||pe.type==TParseEvent::CRC_BAD )
+													break;
+									}
+									if (fuzzyInBadSector>=0) // fuzzy in a Sector? (i.e. not in gaps or elsewhere)
+										if ( fuzzyInOkSector=fuzzyInBadSector==0 ) // only in OK Sector?
+											break;
+								}
+								if (fuzzyInOkSector>=0) // fuzzy in a Sector? (i.e. not in gaps or elsewhere)
+									for( BYTE r=0; r<2; r++ ){
+										const TRegion &rgn=*pTwoRegions[r];
+										fuzzyStdDataEvents.AddCopyAscendingByStart(
+											TParseEvent( fuzzyInOkSector>0?TParseEvent::FUZZY_OK:TParseEvent::FUZZY_BAD, rgn.tStart, rgn.tEnd, 0 )
+										);
+									}
 							}
 						}
 					}
+				}
 			// . merging consecutive overlapping ParseEvents
 			for( POSITION pos=fuzzyStdDataEvents.GetHeadPosition(),tmp; pos; ){
 				TParseEvent &rpe=fuzzyStdDataEvents.GetNext( tmp=pos );
@@ -503,6 +541,8 @@
 					const TParseEvent &peNext=fuzzyStdDataEvents.GetAt(tmp);
 					if (rpe.Inflate(profile.iwTimeMin).Intersect(peNext)){ // do two consecutive ParseEvents overlap?
 						*static_cast<TLogTimeInterval *>(&rpe)=rpe.Unite(peNext);
+						if (rpe.type==TParseEvent::FUZZY_BAD) // if so far fuzzy only in bad Data ...
+							rpe.type=peNext.type; // ... trying to confirm that the Data are in at least one Revolution OK
 						fuzzyStdDataEvents.RemoveAt(tmp);
 					}else
 						pos=tmp;
@@ -560,7 +600,7 @@
 
 	CImage::CTrackReader::CBitSequence::CBitSequence(CTrackReader tr,TLogTime tFrom,const CTrackReader::TProfile &profileFrom, TLogTime tTo)
 		// ctor
-		: pBits(nullptr) , nBits(0) , bitTimeDefault(tr.GetCurrentProfile().iwTimeDefault) {
+		: pBits(nullptr) , nBits(0) {
 		tr.SetCurrentTimeAndProfile( tFrom, profileFrom );
 		while (tr.GetCurrentTime()<tTo)
 			tr.ReadBit(), nBits++;
@@ -575,13 +615,13 @@
 
 	CImage::CTrackReader::CBitSequence::CBitSequence(const CBitSequence &r)
 		// copy ctor
-		: pBits(r.pBits) , nBits(r.nBits) , bitTimeDefault(r.bitTimeDefault) {
+		: pBits(r.pBits) , nBits(r.nBits) {
 		ASSERT(FALSE); // copying prohibited!
 	}
 
 	CImage::CTrackReader::CBitSequence::CBitSequence(CBitSequence &&r)
 		// move ctor
-		: pBits(r.pBits) , nBits(r.nBits) , bitTimeDefault(r.bitTimeDefault) {
+		: pBits(r.pBits) , nBits(r.nBits) {
 		ASSERT(FALSE); // moving prohibited!
 	}
 
@@ -601,39 +641,50 @@
 				);
 	}
 
-	DWORD CImage::CTrackReader::CBitSequence::ScriptToLocalRegions(const CDiffBase::TScriptItem *pScript,int nScriptItems,TRegion *pOutRegions,int nRegionsMax,COLORREF regionColor) const{
+	DWORD CImage::CTrackReader::CBitSequence::ScriptToLocalDiffs(const CDiffBase::TScriptItem *pScript,int nScriptItems,TRegion *pOutDiffs,int nDiffsMax) const{
 		// composes Regions of differences that timely match with bits observed in this BitSequence (e.g. for visual display by the caller); returns the number of unique Regions
 		ASSERT( nScriptItems>0 );
-		ASSERT( nScriptItems<=nRegionsMax );
-		TLogTime tLastRegionEnd=INT_MIN;
-		DWORD nRegions=0;
-		for( int i=0; i<nScriptItems; i++ ){
-			const auto &si=pScript[i];
-			const TLogTime tDiffStart=GetBits()[si.iPosA].time;
-			TLogTime tDiffEnd;
+		ASSERT( nScriptItems<=nDiffsMax );
+		DWORD nDiffs=0;
+		while (nDiffs<nScriptItems){
+			const auto &si=pScript[nDiffs];
+			auto &rDiff=pOutDiffs[nDiffs];
+			rDiff.tStart=pBits[si.iPosA].time;
 			switch (si.operation){
 				case CDiffBase::TScriptItem::INSERTION:
 					// "theirs" contains some extra bits that "this" misses
-					tDiffEnd=tDiffStart;
+					rDiff.color=0xb4; // tinted red
+					rDiff.tEnd=pBits[si.iPosA+1].time; // even Deletions must be represented locally!
 					break;
 				case CDiffBase::TScriptItem::DELETION:
 					// "theirs" misses some bits that "this" contains
-					tDiffEnd= tDiffStart + si.del.nItemsA * bitTimeDefault;
+					rDiff.color=0x5555ff; // another tinted red
+					rDiff.tEnd=pBits[si.iPosA+si.del.nItemsA].time;
 					break;
 				default:
-					ASSERT(FALSE); break; // we shouldn't end up here!
+					ASSERT(FALSE); return nDiffs; // we shouldn't end up here!
 			}
-			const TLogTime tRegionStart= tDiffStart - bitTimeDefault/2;
-			const TLogTime tRegionEnd= tDiffEnd + bitTimeDefault/2;
-			if (tRegionStart>tLastRegionEnd){
-				// disjunct Regions - creating a new one
+			nDiffs++;
+		}
+		return nDiffs;
+	}
+
+	DWORD CImage::CTrackReader::CBitSequence::ScriptToLocalRegions(const CDiffBase::TScriptItem *pScript,int nScriptItems,TRegion *pOutRegions,int nRegionsMax,COLORREF regionColor) const{
+		// composes Regions of differences that timely match with bits observed in this BitSequence (e.g. for visual display by the caller); returns the number of unique Regions
+		const DWORD nDiffs=ScriptToLocalDiffs( pScript, nScriptItems, pOutRegions, nRegionsMax );
+		TLogTime tLastRegionEnd=INT_MIN;
+		DWORD nRegions=0;
+		for( DWORD i=0; i<nDiffs; i++ ){
+			const auto &diff=pOutRegions[i];
+			if (diff.tStart>tLastRegionEnd){
+				// disjunct Diffs - creating a new Region
 				auto &rRgn=pOutRegions[nRegions++];
 					rRgn.color=regionColor;
-					rRgn.tStart=tRegionStart;
-				tLastRegionEnd = rRgn.tEnd = tRegionEnd;
+					rRgn.tStart=diff.tStart;
+				tLastRegionEnd = rRgn.tEnd = diff.tEnd;
 			}else
 				// overlapping BadRegions (Diff: something has been Deleted, something else has been Inserted)
-				tLastRegionEnd = pOutRegions[nRegions-1].tEnd = std::max(tLastRegionEnd,tRegionEnd);
+				tLastRegionEnd = pOutRegions[nRegions-1].tEnd = std::max(tLastRegionEnd,diff.tEnd);
 		}
 		return nRegions;
 	}
@@ -659,7 +710,8 @@
 		0x91d04d,	// CRC ok
 		0x6857ff,	// CRC bad
 		0xabbaba,	// non-formatted area
-		0xabbaba,	// fuzzy area
+		0xabbaba,	// ok fuzzy area
+		0xabbaba,	// bad fuzzy area
 		0xa79b8a	// custom (variable string)
 	};
 

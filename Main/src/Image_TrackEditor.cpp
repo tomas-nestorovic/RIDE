@@ -87,7 +87,8 @@
 						TParseEvent::TypeColors[8],
 						TParseEvent::TypeColors[9],
 						TParseEvent::TypeColors[10],
-						TParseEvent::TypeColors[11]
+						TParseEvent::TypeColors[11],
+						TParseEvent::TypeColors[12]
 					};
 					for( CImage::CTrackReader tr=te.tr; true; ){
 						// . waiting for next request to paint the Track
@@ -181,7 +182,8 @@
 											case TParseEvent::NONFORMATTED:
 												::wsprintfA( label, _T("Nonformatted %d.%d µs"), div((int)pe->GetLength(),1000) );
 												break;
-											case TParseEvent::FUZZY:
+											case TParseEvent::FUZZY_OK:
+											case TParseEvent::FUZZY_BAD:
 												::wsprintfA( label, _T("Fuzzy %d.%d µs"), div((int)pe->GetLength(),1000) );
 												break;
 											default:
