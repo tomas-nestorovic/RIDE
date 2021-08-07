@@ -71,8 +71,8 @@
 					const CTimeEditor &te=*(CTimeEditor *)pAction->GetParams();
 					const TTrackPainter &p=te.painter;
 					const Utils::CRideBrush iwBrushes[2][2]={
-						{ std::move(Utils::CRideBrush(0xE4E4B3)), std::move(Utils::CRideBrush(0xECECCE)) },	//  "OK" even and odd InspectionWindows
-						{ std::move(Utils::CRideBrush(0x7E7EEA)), std::move(Utils::CRideBrush(0xB6B6EA)) }	// "BAD" even and odd InspectionWindows
+						{ std::move(Utils::CRideBrush((COLORREF)0xE4E4B3)), std::move(Utils::CRideBrush((COLORREF)0xECECCE)) },	//  "OK" even and odd InspectionWindows
+						{ std::move(Utils::CRideBrush((COLORREF)0x7E7EEA)), std::move(Utils::CRideBrush((COLORREF)0xB6B6EA)) }	// "BAD" even and odd InspectionWindows
 					};
 					const Utils::CRidePen penIndex( 2, 0xff0000 );
 					const Utils::CRideBrush parseEventBrushes[TParseEvent::LAST]={
