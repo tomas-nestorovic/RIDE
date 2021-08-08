@@ -880,6 +880,13 @@
 						case ID_FILE_SHIFT_UP:
 							pCmdUi->Enable( timeEditor.GetParseEvents().GetCount()>0 && timeEditor.GetCenterTime()<timeEditor.GetParseEvents().GetTail().tStart );
 							return TRUE;
+						case ID_PREV_PANE:
+							if (const POSITION pos=timeEditor.GetParseEvents().GetPositionByStart(0,TParseEvent::FUZZY_OK,TParseEvent::FUZZY_BAD))
+								pCmdUi->Enable( timeEditor.GetParseEvents().GetAt(pos).tStart<timeEditor.GetCenterTime() );
+							return TRUE;						
+						case ID_NEXT_PANE:
+							pCmdUi->Enable( timeEditor.GetParseEvents().GetPositionByStart(timeEditor.GetCenterTime()+1,TParseEvent::FUZZY_OK,TParseEvent::FUZZY_BAD)!=nullptr );
+							return TRUE;
 						case ID_RECORD_PREV:
 							pCmdUi->Enable( timeEditor.pRegions && timeEditor.GetCenterTime()>timeEditor.pRegions->tStart );
 							return TRUE;
@@ -1103,6 +1110,23 @@
 							}
 							return TRUE;
 						}
+						case ID_PREV_PANE:{
+							const TLogTime tCurrent=timeEditor.GetCenterTime();
+							const auto &peList=timeEditor.GetParseEvents();
+							TLogTime tPrev=-1;
+							for( POSITION pos=peList.GetHeadPosition(); pos=peList.GetPositionByStart(tPrev+1,TParseEvent::FUZZY_OK,TParseEvent::FUZZY_BAD,pos); )
+								if (peList.GetAt(pos).tStart<tCurrent)
+									tPrev=peList.GetAt(pos).tStart;
+								else{
+									timeEditor.SetCenterTime( tPrev );
+									break;
+								}
+							return TRUE;
+						}
+						case ID_NEXT_PANE:
+							if (const POSITION pos=timeEditor.GetParseEvents().GetPositionByStart(timeEditor.GetCenterTime()+1,TParseEvent::FUZZY_OK,TParseEvent::FUZZY_BAD))
+								timeEditor.SetCenterTime( timeEditor.GetParseEvents().GetAt(pos).tStart );
+							return TRUE;
 						case ID_RECORD_PREV:{
 							WORD i=0;
 							for( const TLogTime tCenter=timeEditor.GetCenterTime(); i<timeEditor.nRegions&&tCenter>timeEditor.pRegions[i].tStart; i++ );

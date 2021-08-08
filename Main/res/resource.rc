@@ -164,6 +164,8 @@ BEGIN
     "+",            ID_ZOOM_IN,             ASCII,  NOINVERT
     "-",            ID_ZOOM_OUT,            ASCII,  NOINVERT
     "0",            ID_ZOOM_FIT,            VIRTKEY, CONTROL, NOINVERT
+    "D",            ID_PREV_PANE,           VIRTKEY, CONTROL, NOINVERT
+    "G",            ID_NEXT_PANE,           VIRTKEY, CONTROL, NOINVERT
     "R",            ID_ZOOM_PART,           VIRTKEY, CONTROL, NOINVERT
     "T",            ID_NAVIGATE_ADDRESS,    VIRTKEY, CONTROL, NOINVERT
     VK_ESCAPE,      IDCANCEL,               VIRTKEY, NOINVERT
@@ -722,6 +724,8 @@ BEGIN
         MENUITEM "Next window\tRight",          ID_UP
         MENUITEM SEPARATOR
         MENUITEM "Previous event\tCtrl+Left",   ID_FILE_SHIFT_DOWN
+        MENUITEM "Previous fuzzy event\tCtrl+D", ID_PREV_PANE
+        MENUITEM "Next fuzzy event\tCtrl+G",    ID_NEXT_PANE
         MENUITEM "Next event\tCtrl+Right",      ID_FILE_SHIFT_UP
         MENUITEM SEPARATOR
         MENUITEM "Previous mark\tShift+PgUp",   ID_RECORD_PREV

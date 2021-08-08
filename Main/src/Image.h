@@ -384,7 +384,8 @@
 				inline POSITION AddTail(const TParseEvent &pe){ return __super::AddTail( pe, pe.size ); }
 				inline POSITION InsertBefore(POSITION pos,const TParseEvent &pe){ return __super::InsertBefore( pos, pe, pe.size ); }
 				inline POSITION InsertAfter(POSITION pos,const TParseEvent &pe){ return __super::InsertAfter( pos, pe, pe.size ); }
-				POSITION GetPositionByStart(TLogTime tStartMin,TParseEvent::TType type=TParseEvent::NONE,POSITION posFrom=nullptr) const;
+				POSITION GetPositionByStart(TLogTime tStartMin,TParseEvent::TType typeFrom=TParseEvent::NONE,TParseEvent::TType typeTo=TParseEvent::NONE,POSITION posFrom=nullptr) const;
+				POSITION GetPositionByStart(TLogTime tStartMin,TParseEvent::TType type,POSITION posFrom=nullptr) const;
 				POSITION GetPositionByEnd(TLogTime tEndMin,TParseEvent::TType type=TParseEvent::NONE,POSITION posFrom=nullptr) const;
 				bool Contains(TParseEvent::TType type,POSITION posFrom=nullptr) const;
 				void AddCopyAscendingByStart(const TParseEvent &pe);

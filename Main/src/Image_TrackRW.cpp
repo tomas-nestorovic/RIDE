@@ -754,16 +754,23 @@
 
 
 
-	POSITION CImage::CTrackReader::CParseEventList::GetPositionByStart(TLogTime tStartMin,TParseEvent::TType type,POSITION posFrom) const{
+	POSITION CImage::CTrackReader::CParseEventList::GetPositionByStart(TLogTime tStartMin,TParseEvent::TType typeFrom,TParseEvent::TType typeTo,POSITION posFrom) const{
 		if (!posFrom)
 			posFrom=GetHeadPosition();
 		while (posFrom){
 			const POSITION result=posFrom;
 			const TParseEvent &pe=GetNext(posFrom);
-			if (tStartMin<=pe.tStart && (type==TParseEvent::NONE||pe.type==type))
+			if (tStartMin<=pe.tStart
+				&&
+				( (typeFrom|typeTo)==TParseEvent::NONE || typeFrom<=pe.type&&pe.type<=typeTo )
+			)
 				return result;
 		}
 		return nullptr;
+	}
+
+	POSITION CImage::CTrackReader::CParseEventList::GetPositionByStart(TLogTime tStartMin,TParseEvent::TType type,POSITION posFrom) const{
+		return	GetPositionByStart( tStartMin, type, type, posFrom);
 	}
 
 	POSITION CImage::CTrackReader::CParseEventList::GetPositionByEnd(TLogTime tEndMin,TParseEvent::TType type,POSITION posFrom) const{
