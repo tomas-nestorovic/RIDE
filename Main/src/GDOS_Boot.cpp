@@ -4,7 +4,7 @@
 	static PDos __instantiate__(PImage image,PCFormat pFormatBoot){
 		return new CGDOS(image,pFormatBoot);
 	}
-	static const CFormatDialog::TStdFormat StdFormats[]={
+	static constexpr CFormatDialog::TStdFormat StdFormats[]={
 		{ _T("DS 80x10"), 0, {Medium::FLOPPY_DD,Codec::MFM,GDOS_CYLINDERS_COUNT-1,2,GDOS_TRACK_SECTORS_COUNT,GDOS_SECTOR_LENGTH_STD_CODE,GDOS_SECTOR_LENGTH_STD,1}, 1, 0, FDD_350_SECTOR_GAP3, 1, GDOS_DIR_FILES_COUNT_MAX }
 	};
 
@@ -47,7 +47,7 @@
 	}
 
 	
-	const CDos::TProperties CGDOS::Properties={
+	constexpr CDos::TProperties CGDOS::Properties={
 		_T("GDOS (experimental)"), // name
 		MAKE_DOS_ID('G','D','O','S','_','_','_','_'), // unique identifier
 		20, // recognition priority (the bigger the number the earlier the DOS gets crack on the image)

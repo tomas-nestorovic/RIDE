@@ -21,7 +21,7 @@
 
 
 
-	const char CTRDOS503::TDirectoryEntry::KnownExtensions[]={ TDirectoryEntry::BASIC_PRG, TDirectoryEntry::DATA_FIELD, TDirectoryEntry::BLOCK, TDirectoryEntry::PRINT };
+	constexpr char CTRDOS503::TDirectoryEntry::KnownExtensions[]={ TDirectoryEntry::BASIC_PRG, TDirectoryEntry::DATA_FIELD, TDirectoryEntry::BLOCK, TDirectoryEntry::PRINT };
 
 	WORD CTRDOS503::TDirectoryEntry::__getOfficialFileSize__(PBYTE pnBytesReservedAfterData) const{
 		// determines and returns the official File size based on the Extension
@@ -877,7 +877,7 @@
 		switch (cmd){
 			case ID_DOS_VERIFY:{
 				// volume verification
-				static const TVerificationFunctions vf={
+				static constexpr TVerificationFunctions vf={
 					TBootSector::Verification_thread, // Boot Sector
 					nullptr, // FAT readability (doesn't have FAT)
 					nullptr, // FAT Files OK (doesn't have FAT)

@@ -14,7 +14,7 @@
 	#define INFORMATION_CHECKSUM	9 /* column to sort by */
 	#define INFORMATION_COMMENT		10 /* column to sort by */
 
-	const CFileManagerView::TFileInfo CBSDOS308::CBsdos308FileManagerView::InformationList[INFORMATION_COUNT]={
+	constexpr CFileManagerView::TFileInfo CBSDOS308::CBsdos308FileManagerView::InformationList[INFORMATION_COUNT]={
 		{ _T("Dir #"),		48,		TFileInfo::AlignRight },
 		{ _T("Type"),		90,		TFileInfo::AlignRight },
 		{ _T("Name"),		180,	TFileInfo::AlignLeft|TFileInfo::FileName },
@@ -29,7 +29,7 @@
 		{ _T("Comment"),	320,	TFileInfo::AlignLeft }
 	};
 
-	const CFileManagerView::TDirectoryStructureManagement CBSDOS308::CBsdos308FileManagerView::DirManagement={
+	constexpr CFileManagerView::TDirectoryStructureManagement CBSDOS308::CBsdos308FileManagerView::DirManagement={
 		(CDos::TFnCreateSubdirectory)&CBSDOS308::CreateSubdirectory,
 		(CDos::TFnChangeCurrentDirectory)&CBSDOS308::SwitchToDirectory,
 		(CDos::TFnMoveFileToCurrDir)&CBSDOS308::MoveFileToCurrentDir

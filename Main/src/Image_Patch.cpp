@@ -128,7 +128,7 @@ errorDuringWriting:			TCHAR buf[80];
 								if (sourceImageProperties=app.DoPromptFileName( fileName, false, AFX_IDS_OPENFILE, 0, &CDsk5::Properties )){
 									// . adjusting interactivity and updating values
 									CWnd *const pBtnFile=GetDlgItem(ID_FILE);
-									static const WORD Controls[]={ ID_CYLINDER, ID_CYLINDER_N, ID_HEAD, ID_GAP, IDOK, 0 };
+									static constexpr WORD Controls[]={ ID_CYLINDER, ID_CYLINDER_N, ID_HEAD, ID_GAP, IDOK, 0 };
 									if (EnableDlgItems( Controls, sourceImageProperties==&CDsk5::Properties )){
 										// : interactivity
 										patchParams.source.reset( sourceImageProperties->fnInstantiate(nullptr) ); // Null as buffer = one Image represents only one "device" whose name is known at compile-time

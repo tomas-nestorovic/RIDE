@@ -74,7 +74,7 @@
 		// - adjusting interactivity
 		const bool bootSectorAlreadyExists=((CMainWindow *)app.m_pMainWnd)->pTdi->__getCurrentTab__()!=nullptr;
 		EnableDlgItem( ID_CYLINDER, bootSectorAlreadyExists );
-		static const WORD Controls[]={ ID_MEDIUM, ID_CLUSTER, ID_FAT, ID_DIRECTORY, 0 };
+		static constexpr WORD Controls[]={ ID_MEDIUM, ID_CLUSTER, ID_FAT, ID_DIRECTORY, 0 };
 		EnableDlgItems( Controls, !bootSectorAlreadyExists );
 		ShowDlgItem( ID_DRIVE, bootSectorAlreadyExists );
 		if (!bootSectorAlreadyExists){
@@ -290,7 +290,7 @@
 	afx_msg void CFormatDialog::__recognizeStandardFormat__(){
 		// determines if current settings represent one of DOS StandardFormats (settings include # of Sides, Cylinders, Sectors, RootDirectoryItems, etc.); if StandardFormat detected, it's selected in dedicated ComboBox
 		// - enabling/disabling Boot and FAT modification
-		static const WORD Controls[]={ ID_BOOT, ID_VERIFY_TRACK, 0 }; // Boot and FAT modification allowed only if NOT formatting from zeroth Track (e.g. when NOT creating a new Image)
+		static constexpr WORD Controls[]={ ID_BOOT, ID_VERIFY_TRACK, 0 }; // Boot and FAT modification allowed only if NOT formatting from zeroth Track (e.g. when NOT creating a new Image)
 		if (!EnableDlgItems( Controls, GetDlgItemInt(ID_CYLINDER)>0 )){
 			// if formatting from zeroth Track, Boot and FAT modification always necessary (e.g. when creating a new Image)
 			CheckDlgButton(ID_BOOT,BST_CHECKED);

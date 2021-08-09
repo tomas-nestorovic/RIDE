@@ -15,7 +15,7 @@
 			return ERROR_UNRECOGNIZED_VOLUME;
 	}
 
-	const CDos::TProperties CTRDOS505::Properties={
+	constexpr CDos::TProperties CTRDOS505::Properties={
 		TRDOS_NAME_BASE _T(" 5.05"), // name
 		MAKE_DOS_ID('T','R','D','O','S','5','0','5'), // unique identifier
 		44, // recognition priority (the bigger the number the earlier the DOS gets crack on the image)

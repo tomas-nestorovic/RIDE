@@ -84,7 +84,7 @@
 		// resets the MainWindow's StatusBar
 		CStatusBar &rsb=( (CMainWindow *)app.m_pMainWnd )->statusBar;
 		if (rsb.m_hWnd){
-			static const UINT Indicator=ID_SEPARATOR;
+			static constexpr UINT Indicator=ID_SEPARATOR;
 			rsb.SetIndicators(&Indicator,1);
 		}
 	}

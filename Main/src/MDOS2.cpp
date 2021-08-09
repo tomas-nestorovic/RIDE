@@ -463,7 +463,7 @@
 		switch (cmd){
 			case ID_DOS_VERIFY:{
 				// volume verification
-				static const TVerificationFunctions vf={
+				static constexpr TVerificationFunctions vf={
 					TBootSector::Verification_thread, // Boot Sector
 					FatVerification_thread, // FAT readability
 					TVerificationFunctions::ReportOnFilesWithBadFatPath_thread, // FAT Files OK
@@ -538,7 +538,7 @@
 
 
 
-	const char CMDOS2::TDirectoryEntry::KnownExtensions[]={ TDirectoryEntry::PROGRAM, TDirectoryEntry::CHAR_ARRAY, TDirectoryEntry::NUMBER_ARRAY, TDirectoryEntry::BLOCK, TDirectoryEntry::SNAPSHOT, TDirectoryEntry::SEQUENTIAL };
+	constexpr char CMDOS2::TDirectoryEntry::KnownExtensions[]={ TDirectoryEntry::PROGRAM, TDirectoryEntry::CHAR_ARRAY, TDirectoryEntry::NUMBER_ARRAY, TDirectoryEntry::BLOCK, TDirectoryEntry::SNAPSHOT, TDirectoryEntry::SEQUENTIAL };
 
 	DWORD CMDOS2::TDirectoryEntry::GetLength() const{
 		// determines and returns the File length
@@ -558,7 +558,7 @@
 	bool CMDOS2::TDirectoryEntry::__editAttributesViaDialog__(){
 		// True <=> modified File Attributes confirmed, otherwise False
 		// - defining the Dialog
-		static const WORD Controls[]={ ID_HIDDEN, ID_SYSTEM, ID_PROTECTED, ID_ARCHIVE, ID_READABLE, ID_WRITABLE, ID_EXECUTABLE, ID_DELETABLE };
+		static constexpr WORD Controls[]={ ID_HIDDEN, ID_SYSTEM, ID_PROTECTED, ID_ARCHIVE, ID_READABLE, ID_WRITABLE, ID_EXECUTABLE, ID_DELETABLE };
 		class CAttributesDialog sealed:public Utils::CRideDialog{
 			void DoDataExchange(CDataExchange *pDX) override{
 				// exchange of data from and to controls

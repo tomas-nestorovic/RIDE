@@ -1,20 +1,21 @@
 #include "stdafx.h"
 
 	static LPCTSTR Recognize(PTCHAR){
-		static const char SingleDeviceName[]=_T("DSK (Rev.5)\0");
+		static constexpr TCHAR SingleDeviceName[]=_T("DSK (Rev.5)\0");
 		return SingleDeviceName;
 	}
 	PImage CDsk5::Instantiate(LPCTSTR){
 		return new CDsk5(&Properties);
 	}
-	const CImage::TProperties CDsk5::Properties={	MAKE_IMAGE_ID('D','s','k','_','R','e','v','5'), // a unique identifier
-													Recognize,	// list of recognized device names
-													Instantiate,	// instantiation function
-													_T("*.dsk") IMAGE_FORMAT_SEPARATOR _T("*.edsk"), // filter
-													Medium::FLOPPY_ANY, // supported Media
-													Codec::FLOPPY_ANY, // supported Codecs
-													1,2*6144	// Sector supported min and max length
-												};
+	constexpr CImage::TProperties CDsk5::Properties={
+		MAKE_IMAGE_ID('D','s','k','_','R','e','v','5'), // a unique identifier
+		Recognize,	// list of recognized device names
+		Instantiate,	// instantiation function
+		_T("*.dsk") IMAGE_FORMAT_SEPARATOR _T("*.edsk"), // filter
+		Medium::FLOPPY_ANY, // supported Media
+		Codec::FLOPPY_ANY, // supported Codecs
+		1,2*6144	// Sector supported min and max length
+	};
 
 	#define INI_DSK	_T("DSK")
 
@@ -236,7 +237,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 					WORD trackLength=sizeof(TTrackInfo)+__getTrackLength256__(ti);
 					f.Write( ti, trackLength );
 					if (trackLength<diskInfo.std_trackLength){
-						for( static const BYTE Zero; trackLength++<diskInfo.std_trackLength; f.Write(&Zero,1) );
+						for( static constexpr BYTE Zero=0; trackLength++<diskInfo.std_trackLength; f.Write(&Zero,1) );
 						mayLeadToIncompatibilityIssues=true;
 					}
 				}
@@ -376,7 +377,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				int i=rParams.rev5;
 				DDX_Radio( pDX, ID_STANDARD, i );
 				rParams.rev5=i>0;
-				static const WORD Controls[]={ ID_STANDARD, ID_DRIVE, ID_PROTECTED, 0 } ;
+				static constexpr WORD Controls[]={ ID_STANDARD, ID_DRIVE, ID_PROTECTED, 0 } ;
 				EnableDlgItems( Controls, !readOnly&&allowTypeBeChanged );
 				// . Creator
 				const BYTE nCyls=rDiskInfo.nCylinders;
@@ -606,7 +607,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		return nullptr;
 	}
 
-	const CImage::TProperties CDsk5::CDummyDevice::Properties={
+	constexpr CImage::TProperties CDsk5::CDummyDevice::Properties={
 		MAKE_IMAGE_ID('D','s','k','D','u','m','m','y'), // a unique identifier
 		Recognize,	// list of recognized device names
 		Instantiate,	// instantiation function

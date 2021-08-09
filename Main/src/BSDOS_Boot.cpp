@@ -58,13 +58,13 @@
 
 	#define BSDOS_SECTOR_GAP3	32 /* smaller than regular IBM norm-compliant Gap to make sure all Sectors fit in a Track */
 
-	static const CFormatDialog::TStdFormat StdFormats[]={
+	static constexpr CFormatDialog::TStdFormat StdFormats[]={
 		{ _T("5.25\" DS DD, 360 RPM"), 0, {Medium::FLOPPY_DD_525,Codec::MFM,39,2,5,TFormat::TLengthCode::LENGTHCODE_1024,BSDOS_SECTOR_LENGTH_STD,1}, 1, 0, BSDOS_SECTOR_GAP3, 2, 32 },
 		{ _T("3.5\" DS DD"), 0, {Medium::FLOPPY_DD,Codec::MFM,79,2,5,TFormat::TLengthCode::LENGTHCODE_1024,BSDOS_SECTOR_LENGTH_STD,1}, 1, 0, BSDOS_SECTOR_GAP3, 2, 32 },
 		{ _T("3.5\" DS HD"), 0, {Medium::FLOPPY_HD_350,Codec::MFM,79,2,11,TFormat::TLengthCode::LENGTHCODE_1024,BSDOS_SECTOR_LENGTH_STD,1}, 1, 0, BSDOS_SECTOR_GAP3, 2, 32 }
 	};
 
-	const CDos::TProperties CBSDOS308::Properties={
+	constexpr CDos::TProperties CBSDOS308::Properties={
 		_T("BS-DOS 308 (MB-02)"), // name
 		MAKE_DOS_ID('B','S','D','O','S','-','0','2'), // unique identifier
 		60, // recognition priority
@@ -94,7 +94,7 @@
 
 
 
-	const TPhysicalAddress CBSDOS308::TBootSector::CHS={ 0, 0, {0,0,1,BSDOS_SECTOR_LENGTH_STD_CODE} };
+	constexpr TPhysicalAddress CBSDOS308::TBootSector::CHS={ 0, 0, {0,0,1,BSDOS_SECTOR_LENGTH_STD_CODE} };
 
 	CBSDOS308::PBootSector CBSDOS308::TBootSector::GetData(PImage image){
 		// attempts to get and eventually returns BS-DOS BootSector data, eventually returning Null in case of error

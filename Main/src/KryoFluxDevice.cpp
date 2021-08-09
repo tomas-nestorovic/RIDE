@@ -113,7 +113,7 @@
 		return nullptr;
 	}
 
-	const CImage::TProperties CKryoFluxDevice::Properties={
+	constexpr CImage::TProperties CKryoFluxDevice::Properties={
 		MAKE_IMAGE_ID('C','A','P','S','_','K','F','D'), // a unique identifier
 		Recognize,	// list of recognized device names
 		Instantiate,	// instantiation function
@@ -517,7 +517,7 @@
 		};
 		pb=dataBuffer;
 		// - composing the Histogram of unique flux lengths
-		static const WORD UNIQUE_FLUXES_COUNT_MAX=10000;
+		static constexpr WORD UNIQUE_FLUXES_COUNT_MAX=10000;
 		class CHistogram sealed{
 			WORD nUniqueFluxes;
 			struct TUniqueFluxInfo sealed{
@@ -589,7 +589,7 @@
 			histogram.Add(sampleCounter);
 		}
 		// - writing Signature
-		static const BYTE Signature[]={ 'K', 'F', 'W', '\x1' };
+		static constexpr BYTE Signature[]={ 'K', 'F', 'W', '\x1' };
 		pb=(PBYTE)::memcpy( pb, Signature, sizeof(Signature) )+sizeof(Signature);
 		// - writing header
 		struct TUniqueFlux sealed{
@@ -598,7 +598,7 @@
 			Utils::CBigEndianWord sampleCounter;
 		};
 		ASSERT( sizeof(TUniqueFlux)==sizeof(DWORD) );
-		static const BYTE Data1[]={ 0xF4, 0x01, 0x00, 0x00, 0x88, 0x13, 0x00, 0x00 }; // TODO: find out the meaning
+		static constexpr BYTE Data1[]={ 0xF4, 0x01, 0x00, 0x00, 0x88, 0x13, 0x00, 0x00 }; // TODO: find out the meaning
 		pb=(PBYTE)::memcpy( pb, Data1, sizeof(Data1) )+sizeof(Data1);
 		const BYTE nUniqueFluxesUsed=std::min( (WORD)255, histogram.GetUniqueFluxesCount() );
 		const DWORD nUsedFluxesTableBytes = *pdw++ = nUniqueFluxesUsed*sizeof(TUniqueFlux)+0x0E; // TODO: find out why 0x0E
@@ -612,7 +612,7 @@
 			const TUniqueFlux uf={ 3, i+1, histogram[i] }; // TODO: find out why 3
 			*pdw++=*(PDWORD)&uf;
 		}
-		static const BYTE FluxTablePostamble[]={ 0x0B, 0x05, 0x09, 0x00, 0x01, 0x05, 0x07, 0x0A, 0x05, 0x06, 0x01 }; // TODO: find out the meaning
+		static constexpr BYTE FluxTablePostamble[]={ 0x0B, 0x05, 0x09, 0x00, 0x01, 0x05, 0x07, 0x0A, 0x05, 0x06, 0x01 }; // TODO: find out the meaning
 		pb=(PBYTE)::memcpy( pb, FluxTablePostamble, sizeof(FluxTablePostamble) )+sizeof(FluxTablePostamble);
 		const int nHeaderBytes=(pb-dataBuffer+63)/64*64; // rounding header to whole multiples of 64 Bytes
 		::ZeroMemory(pb,64);
@@ -624,7 +624,7 @@
 		std::sort( trwFluxes.GetBuffer(), trwFluxes.GetBuffer()+nUniqueFluxesUsed );
 		// - writing fluxes
 		const PBYTE fluxesStart=pb;
-		static const BYTE FluxesPreamble[]={ 0x00, 0x12, 0x00, 0x00 };
+		static constexpr BYTE FluxesPreamble[]={ 0x00, 0x12, 0x00, 0x00 };
 		pb=(PBYTE)::memcpy( pb, FluxesPreamble, sizeof(FluxesPreamble) )+sizeof(FluxesPreamble);
 		totalSampleCounter=0;
 		for( tr.SetCurrentTime(0); tr; ){
@@ -930,7 +930,7 @@
 					// write-protection turned off - informing on poorly determined (or none) pre-compensation
 					if (!informedOnPoorPrecompensation)
 						if (const TStdWinError err=precompensation.DetermineUsingLatestMethod(*this,0)){
-							static const TCHAR Msg[]=_T("WARNING: Writing likely erroneous");
+							static constexpr TCHAR Msg[]=_T("WARNING: Writing likely erroneous");
 							switch (err){
 								case ERROR_INVALID_DATA:
 									Utils::Information( Msg, _T("Precompensation not yet determined for this drive/disk") );

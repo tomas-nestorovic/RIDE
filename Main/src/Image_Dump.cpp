@@ -286,7 +286,7 @@ terminateWithError:
 									p+=::lstrlen(::lstrcpy(p,NO_STATUS_ERROR));
 								SetDlgItemText( ID_ERROR, buf );
 								// > converting the "Accept" button to a SplitButton
-								static const Utils::TSplitButtonAction Actions[ACCEPT_OPTIONS_COUNT]={
+								static constexpr Utils::TSplitButtonAction Actions[ACCEPT_OPTIONS_COUNT]={
 									{ ACCEPT_ERROR_ID, _T("Accept error") },
 									{ ID_ERROR, _T("Accept all errors of this kind") },
 									{ ID_TRACK, _T("Accept all errors in this track") },
@@ -295,7 +295,7 @@ terminateWithError:
 								ConvertDlgButtonToSplitButton( IDOK, Actions, ACCEPT_OPTIONS_COUNT );
 								EnableDlgItem( IDOK, dynamic_cast<CImageRaw *>(dp.target.get())==nullptr ); // accepting errors is allowed only if the Target Image can accept them
 								// > converting the "Resolve" button to a SplitButton
-								static const Utils::TSplitButtonAction ResolveActions[RESOLVE_OPTIONS_COUNT]={
+								static constexpr Utils::TSplitButtonAction ResolveActions[RESOLVE_OPTIONS_COUNT]={
 									{ 0, _T("Resolve") }, // 0 = no default action
 									{ RESOLVE_EXCLUDE_ID, _T("Exclude from track") },
 									{ RESOLVE_EXCLUDE_UNKNOWN, _T("Exclude all unknown from disk") },
@@ -367,18 +367,18 @@ terminateWithError:
 															}else
 																::wsprintf( bufSectorId, _T("%d.%d.%d.%d"), idFieldSubstituteSectorId.cylinder, idFieldSubstituteSectorId.side, idFieldSubstituteSectorId.sector, idFieldSubstituteSectorId.lengthCode );
 															DDX_Text( pDX, ID_IDFIELD_VALUE, bufSectorId, sizeof(bufSectorId)/sizeof(TCHAR) );
-															static const WORD IdFieldRecoveryOptions[]={ ID_IDFIELD, ID_IDFIELD_CRC, ID_IDFIELD_REPLACE, 0 };
+															static constexpr WORD IdFieldRecoveryOptions[]={ ID_IDFIELD, ID_IDFIELD_CRC, ID_IDFIELD_REPLACE, 0 };
 															EnableDlgItems( IdFieldRecoveryOptions, rFdcStatus.DescribesIdFieldCrcError() );
-															static const WORD IdFieldReplaceOption[]={ ID_IDFIELD_VALUE, ID_DEFAULT1, 0 };
+															static constexpr WORD IdFieldReplaceOption[]={ ID_IDFIELD_VALUE, ID_DEFAULT1, 0 };
 															EnableDlgItems( IdFieldReplaceOption, idFieldRecoveryType==2 );
 														// | "Data Field" region
 														DDX_Radio( pDX, ID_DATAFIELD, dataFieldRecoveryType );
 															DDX_Text( pDX, ID_DATAFIELD_FILLERBYTE, dataFieldSubstituteFillerByte );
 															if (dosProps==&CUnknownDos::Properties)
 																SetDlgItemText( ID_DEFAULT2, _T("Random value") );
-															static const WORD DataFieldRecoveryOptions[]={ ID_DATAFIELD, ID_DATAFIELD_CRC, ID_DATAFIELD_REPLACE, 0 };
+															static constexpr WORD DataFieldRecoveryOptions[]={ ID_DATAFIELD, ID_DATAFIELD_CRC, ID_DATAFIELD_REPLACE, 0 };
 															EnableDlgItems( DataFieldRecoveryOptions, rFdcStatus.DescribesDataFieldCrcError() );
-															static const WORD DataFieldReplaceOption[]={ ID_DATAFIELD_FILLERBYTE, ID_DEFAULT2, 0 };
+															static constexpr WORD DataFieldReplaceOption[]={ ID_DATAFIELD_FILLERBYTE, ID_DEFAULT2, 0 };
 															EnableDlgItems( DataFieldReplaceOption, dataFieldRecoveryType==2 );
 														// | interactivity
 														EnableDlgItem( IDOK, (idFieldRecoveryType|dataFieldRecoveryType)!=0 );
@@ -619,7 +619,7 @@ errorDuringWriting:				TCHAR buf[80];
 				if (dos->properties==&CUnknownDos::Properties)
 					SetDlgItemText( ID_DEFAULT1, _T("Random value") );
 				// . showing devices recently dumped to in hidden menu
-				static const Utils::TSplitButtonAction OpenDialogAction={ ID_FILE, _T("Select image or device...") };
+				static constexpr Utils::TSplitButtonAction OpenDialogAction={ ID_FILE, _T("Select image or device...") };
 				Utils::TSplitButtonAction *pAction=actions;
 				*pAction++=OpenDialogAction;
 				*pAction++=Utils::TSplitButtonAction::HorizontalLine;
@@ -629,7 +629,7 @@ errorDuringWriting:				TCHAR buf[80];
 						*pAction++=item;
 					}
 				else{
-					static const Utils::TSplitButtonAction NoMruDevices={ ID_FILE, _T("No recent target devices"), MF_GRAYED };
+					static constexpr Utils::TSplitButtonAction NoMruDevices={ ID_FILE, _T("No recent target devices"), MF_GRAYED };
 					*pAction++=NoMruDevices;
 				}
 				ConvertDlgButtonToSplitButton( ID_FILE, actions, pAction-actions );
@@ -792,7 +792,7 @@ setDestination:						// : compacting FileName in order to be better displayable 
 										if (mt!=Medium::UNKNOWN)
 											SelectDlgComboBoxValue( ID_MEDIUM, mt );
 										// > enabling/disabling controls
-										static const WORD Controls[]={ ID_CYLINDER, ID_CYLINDER_N, ID_HEAD, ID_GAP, ID_NUMBER, ID_DEFAULT1, IDOK, 0 };
+										static constexpr WORD Controls[]={ ID_CYLINDER, ID_CYLINDER_N, ID_HEAD, ID_GAP, ID_NUMBER, ID_DEFAULT1, IDOK, 0 };
 										CheckDlgButton(
 											ID_FORMAT,
 											EnableDlgItem(

@@ -196,7 +196,7 @@
 							r.left+=4, r.bottom-=15;
 							for( CDos::PCProperties *p=newlyDetectedDoses; *p; )
 								if (*p++==props){
-									static const WCHAR NewDosSymbol=0xf025;
+									static constexpr WCHAR NewDosSymbol=0xf025;
 									::DrawTextW( dc, &NewDosSymbol,1, &r, DT_SINGLELINE|DT_VCENTER );
 									r.left+=25;
 									break;

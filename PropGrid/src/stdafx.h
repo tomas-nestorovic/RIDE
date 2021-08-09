@@ -17,6 +17,10 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #include <algorithm>
 //#include <cmath>
 
+#if _MSC_VER<=1600
+	#define constexpr const
+#endif
+
 typedef const struct TEditor *PCEditor; // forward
 
 #include "api.h"

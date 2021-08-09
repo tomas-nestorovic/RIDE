@@ -4,7 +4,7 @@
 
 	#define SDOS_TEXT	0x534F4453 /* DWORD containing the "SDOS" string */
 
-	const TPhysicalAddress CMDOS2::TBootSector::CHS={ 0, 0, {0,0,1,MDOS2_SECTOR_LENGTH_STD_CODE} };
+	constexpr TPhysicalAddress CMDOS2::TBootSector::CHS={ 0, 0, {0,0,1,MDOS2_SECTOR_LENGTH_STD_CODE} };
 
 	TStdWinError CMDOS2::__recognizeDisk__(PImage image,PFormat pFormatBoot){
 		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
@@ -38,12 +38,12 @@
 	static PDos __instantiate__(PImage image,PCFormat pFormatBoot){
 		return new CMDOS2(image,pFormatBoot);
 	}
-	static const CFormatDialog::TStdFormat StdFormats[]={
+	static constexpr CFormatDialog::TStdFormat StdFormats[]={
 		{ _T("3.5\" DS 80x9"), 0, {Medium::FLOPPY_DD,Codec::MFM,79,2,9,MDOS2_SECTOR_LENGTH_STD_CODE,MDOS2_SECTOR_LENGTH_STD,1}, 1, 0, FDD_350_SECTOR_GAP3, 1, 128 },
 		{ _T("3.5\" DS 40x9 (beware under MDOS1!)"), 0, {Medium::FLOPPY_DD,Codec::MFM,39,2,9,MDOS2_SECTOR_LENGTH_STD_CODE,MDOS2_SECTOR_LENGTH_STD,1}, 1, 0, FDD_350_SECTOR_GAP3, 1, 128 },
 		{ _T("5.25\" DS 40x9, 360 RPM"), 0, {Medium::FLOPPY_DD_525,Codec::MFM,39,2,9,MDOS2_SECTOR_LENGTH_STD_CODE,MDOS2_SECTOR_LENGTH_STD,1}, 1, 0, FDD_525_SECTOR_GAP3, 1, 128 }
 	};
-	const CDos::TProperties CMDOS2::Properties={
+	constexpr CDos::TProperties CMDOS2::Properties={
 		_T("MDOS 2.0"), // name
 		MAKE_DOS_ID('M','D','O','S','2','0','_','_'), // unique identifier
 		80, // recognition priority (the bigger the number the earlier the DOS gets crack on the image)
@@ -407,19 +407,11 @@
 
 
 	namespace D80{
-		static LPCTSTR Recognize(PTCHAR){
-			static const char SingleDeviceName[]=_T("Didaktik D40/D80\0");
+		LPCTSTR Recognize(PTCHAR){
+			static constexpr TCHAR SingleDeviceName[]=_T("Didaktik D40/D80\0");
 			return SingleDeviceName;
 		}
-		static PImage Instantiate(LPCTSTR){
+		PImage Instantiate(LPCTSTR){
 			return new CImageRaw( &Properties, true );
 		}
-		const CImage::TProperties Properties={	MAKE_IMAGE_ID('M','D','O','S','_','D','x','0'), // a unique identifier
-												Recognize,// name
-												Instantiate,// instantiation function
-												_T("*.d80") IMAGE_FORMAT_SEPARATOR _T("*.d40"),	// filter
-												Medium::FLOPPY_DD_ANY,
-												Codec::MFM, // supported Codecs
-												MDOS2_SECTOR_LENGTH_STD, MDOS2_SECTOR_LENGTH_STD	// min and max length of storable Sectors
-											};
 	}

@@ -146,7 +146,7 @@
 
 	bool CDos::CPathString::IsValidFat32LongNameChar(WCHAR c){
 		// True <=> specified Character is valid in FAT32 long file names, otherwise False
-		static const WCHAR ForbiddenChars[]=L"%#&<>|/";
+		static constexpr WCHAR ForbiddenChars[]=L"%#&<>|/";
 		return (WORD)c>=32 && !::wcschr(ForbiddenChars,c);
 	}
 

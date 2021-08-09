@@ -143,7 +143,7 @@
 
 	HWND WINAPI PropGrid::CreateUpDownControl(HWND hEdit,UINT style,bool bHexadecimal,Integer::RCUpDownLimits rLimits,int iCurrent){
 		// creates and returns an UpDown control attached to the specified Edit-box
-		static const INITCOMMONCONTROLSEX icc={ sizeof(INITCOMMONCONTROLSEX), ICC_UPDOWN_CLASS };
+		static constexpr INITCOMMONCONTROLSEX icc={ sizeof(INITCOMMONCONTROLSEX), ICC_UPDOWN_CLASS };
 		if (::InitCommonControlsEx(&icc)){
 			const HWND hUpDown=::CreateWindow(	UPDOWN_CLASS, nullptr,
 												style | UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_HOTTRACK | UDS_NOTHOUSANDS,

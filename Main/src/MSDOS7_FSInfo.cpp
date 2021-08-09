@@ -86,7 +86,7 @@
 		if (fsInfo){
 			// FS-Info Sector found
 			const HANDLE hClusters=PropGrid::AddCategory(propGrid.m_hWnd,nullptr,_T("Clusters"));
-				const PropGrid::Integer::TUpDownLimits limits={ 2, INT_MAX };
+				constexpr PropGrid::Integer::TUpDownLimits limits={ 2, INT_MAX };
 				PropGrid::AddProperty(	propGrid.m_hWnd, hClusters, _T("First free"),
 										&fsInfo->firstFreeCluster,
 										PropGrid::Integer::DefineEditor( sizeof(TCluster32), limits, __sectorModified__ )

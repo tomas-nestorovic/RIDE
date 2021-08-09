@@ -1,9 +1,9 @@
 #include "stdafx.h"
 #include "TRDOS.h"
 
-	#define BOOT_ID	16
+	constexpr BYTE BOOT_ID=16;
 
-	const TPhysicalAddress CTRDOS503::TBootSector::CHS={ 0, 0, {0,0,TRDOS503_BOOT_SECTOR_NUMBER,TRDOS503_SECTOR_LENGTH_STD_CODE} };
+	constexpr TPhysicalAddress CTRDOS503::TBootSector::CHS={ 0, 0, {0,0,TRDOS503_BOOT_SECTOR_NUMBER,TRDOS503_SECTOR_LENGTH_STD_CODE} };
 
 	UINT AFX_CDECL CTRDOS503::TBootSector::Verification_thread(PVOID pCancelableAction){
 		// thread to verify the Boot Sector
@@ -141,13 +141,13 @@
 	#define TRDOS_SECTOR_GAP3	32 /* smaller than regular IBM norm-compliant Gap to make sure all 16 Sectors fit in a Track */
 
 	// 5.25" drives are likely 360 rpm ones in PC
-	const CFormatDialog::TStdFormat CTRDOS503::StdFormats[]={ // zeroth position must always be occupied by the biggest capacity
+	constexpr CFormatDialog::TStdFormat CTRDOS503::StdFormats[]={ // zeroth position must always be occupied by the biggest capacity
 		{ DS80_CAPTION, 0, {Medium::FLOPPY_DD,    Codec::MFM,79,2,TRDOS503_TRACK_SECTORS_COUNT,TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD,1}, 1, 0, TRDOS_SECTOR_GAP3, 0, 128 },
 		{ DS40_CAPTION, 0, {Medium::FLOPPY_DD_525,Codec::MFM,39,2,TRDOS503_TRACK_SECTORS_COUNT,TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD,1}, 1, 0, TRDOS_SECTOR_GAP3, 0, 128 },
 		{ SS80_CAPTION, 0, {Medium::FLOPPY_DD,	   Codec::MFM,79,1,TRDOS503_TRACK_SECTORS_COUNT,TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD,1}, 1, 0, TRDOS_SECTOR_GAP3, 0, 128 },
 		{ SS40_CAPTION, 0, {Medium::FLOPPY_DD_525,Codec::MFM,39,1,TRDOS503_TRACK_SECTORS_COUNT,TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD,1}, 1, 0, TRDOS_SECTOR_GAP3, 0, 128 }
 	};
-	const CDos::TProperties CTRDOS503::Properties={
+	constexpr CDos::TProperties CTRDOS503::Properties={
 		TRDOS_NAME_BASE _T(" 5.03"), // name
 		MAKE_DOS_ID('T','R','D','O','S','5','0','3'), // unique identifier
 		40, // recognition priority (the bigger the number the earlier the DOS gets crack on the image)
@@ -205,7 +205,7 @@
 
 	PropGrid::Enum::PCValueList WINAPI CTRDOS503::CTrdosBootView::__getListOfKnownFormats__(PVOID,WORD &rnFormats){
 		// returns the list of known Formats
-		static const TDiskFormat List[]={ DS80, DS40, SS80, SS40 };
+		static constexpr TDiskFormat List[]={ DS80, DS40, SS80, SS40 };
 		rnFormats=4;
 		return (PropGrid::Enum::PCValueList)List;
 	}
@@ -364,19 +364,11 @@
 
 
 	namespace TRD{
-		static LPCTSTR Recognize(PTCHAR){
-			static const char SingleDeviceName[]=_T("TR-DOS image\0");
+		LPCTSTR Recognize(PTCHAR){
+			static constexpr TCHAR SingleDeviceName[]=_T("TR-DOS image\0");
 			return SingleDeviceName;
 		}
-		static PImage Instantiate(LPCTSTR){
+		PImage Instantiate(LPCTSTR){
 			return new CImageRaw( &Properties, true );
 		}
-		const CImage::TProperties Properties={	MAKE_IMAGE_ID('T','R','D','O','S','T','R','D'), // a unique identifier
-												Recognize,// name
-												Instantiate,// instantiation function
-												_T("*.trd"),	// filter
-												Medium::FLOPPY_DD_ANY,
-												Codec::MFM, // supported Codecs
-												TRDOS503_SECTOR_LENGTH_STD,TRDOS503_SECTOR_LENGTH_STD	// min and max length of storable Sectors
-											};
 	}

@@ -3,13 +3,13 @@
 #include "IPF.h"
 
 	static LPCTSTR Recognize(PTCHAR){
-		static const char SingleDeviceName[]=_T("Interchangeable Preservation Format\0");
+		static constexpr TCHAR SingleDeviceName[]=_T("Interchangeable Preservation Format\0");
 		return SingleDeviceName;
 	}
 	static PImage Instantiate(LPCTSTR){
 		return new CIpf;
 	}
-	const CImage::TProperties CIpf::Properties={
+	constexpr CImage::TProperties CIpf::Properties={
 		MAKE_IMAGE_ID('C','A','P','S','_','I','P','F'), // a unique identifier
 		Recognize,	// list of recognized device names
 		Instantiate,	// instantiation function

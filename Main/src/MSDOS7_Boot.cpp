@@ -148,7 +148,7 @@
 		AA55mark=0xaa55;
 		// - determining the Type of FAT
 		DWORD nSectorsFat;
-		static const BYTE ReservedSectorCounts[]={1,1,32}; // for FAT12/16/32, respectively
+		static constexpr BYTE ReservedSectorCounts[]={1,1,32}; // for FAT12/16/32, respectively
 		for( BYTE f=0; f<3; f++ ){
 			// . computing the NumberOfSectors that will be occupied by all FatCopies
 			rOutFat.type=CFat::Types[f];
@@ -275,7 +275,7 @@
 	#define BOOSTED_CAPACITY	_T("Boosted capacity (beware under WinNT!)")
 	#define ARCHIVE_CAPACITY	_T("Single archive (beware under WinNT!)")
 
-	static const CFormatDialog::TStdFormat StdFormats[]={
+	static constexpr CFormatDialog::TStdFormat StdFormats[]={
 		{ _T("Standard 3.5\", 1440 kB"), 0, {Medium::FLOPPY_HD_350,Codec::MFM,79,2,18,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,1}, 1, 0, FDD_350_SECTOR_GAP3, 2, 224 },
 		{ BOOSTED_CAPACITY, 0, {Medium::FLOPPY_HD_350,Codec::MFM,FDD_CYLINDERS_MAX-1,2,21,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,2}, 2, 20, 5, 2, 128 },
 		{ ARCHIVE_CAPACITY, 0, {Medium::FLOPPY_HD_350,Codec::MFM,FDD_CYLINDERS_MAX-1,2,21,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,16}, 2, 20, 5, 1, 16 },
@@ -284,7 +284,7 @@
 		{ ARCHIVE_CAPACITY, 0, {Medium::FLOPPY_DD,Codec::MFM,FDD_CYLINDERS_MAX-1,2,10,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,16}, 2, 9, 5, 1, 16 },
 		{ _T("Hard disk 50 MB"), 0, {Medium::HDD_RAW,Codec::MFM,99,16,63,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,4}, 1, 0, FDD_350_SECTOR_GAP3, 2, 224 }
 	};
-	const CDos::TProperties CMSDOS7::Properties={
+	constexpr CDos::TProperties CMSDOS7::Properties={
 		_T("MS-DOS 7.1 (experimental)"), // name
 		MAKE_DOS_ID('M','S','-','D','O','S','7','1'), // unique identifier
 		90, // recognition priority (the bigger the number the earlier the DOS gets crack on the image)
@@ -416,7 +416,7 @@
 	}
 	PropGrid::Enum::PCValueList WINAPI CMSDOS7::CMsdos7BootView::__getListOfMedia__(PVOID,WORD &rnMedia){
 		// returns the List of known Media
-		static const TBootSector::TMsdosMedium List[]={
+		static constexpr TBootSector::TMsdosMedium List[]={
 			TBootSector::DISK_35_1440_DS_18,
 			TBootSector::DISK_35_720_DS_9,
 			TBootSector::DISK_525_180_SS_9,
@@ -445,7 +445,7 @@
 
 	PropGrid::Enum::PCValueList WINAPI CMSDOS7::CMsdos7BootView::__getListOfMediaTypes__(PVOID,WORD &rnMediumTypes){
 		// returns the List of known Media
-		static const TBootSector::TMsdosMediumType List[]={
+		static constexpr TBootSector::TMsdosMediumType List[]={
 			TBootSector::FLOPPY,
 			TBootSector::HDD
 		};
@@ -535,7 +535,7 @@
 									PropGrid::String::DefineFixedLengthEditorA( sizeof(pvi->fatId), __bootSectorModifiedA__, ' ' )
 								);
 			// . number of FAT copies
-			static const PropGrid::Integer::TUpDownLimits ByteOneToSevenLimits={ 1, 7 };
+			static constexpr PropGrid::Integer::TUpDownLimits ByteOneToSevenLimits={ 1, 7 };
 			PropGrid::AddProperty(	hPropGrid, hVolumeAdvanced, _T("FAT copies"),
 									&boot->nFatCopies,
 									PropGrid::Integer::DefineEditor( sizeof(BYTE), ByteOneToSevenLimits, __bootSectorModified__ )

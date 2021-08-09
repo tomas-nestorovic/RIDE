@@ -90,7 +90,7 @@
 		}
 	}
 
-	const LPCSTR CSpectrumBase::TZxRom::Keywords[]={
+	constexpr LPCSTR CSpectrumBase::TZxRom::Keywords[]={
 		_T("RND"), _T("INKEY$"), _T("PI"), _T("FN "), _T("POINT "), _T("SCREEN$ "), _T("ATTR "), _T("AT "), _T("TAB "), _T("VAL$ "), _T("CODE "), _T("VAL "), _T("LEN "), _T("SIN "), _T("COS "), _T("TAN "), _T("ASN "), _T("ACS "), _T("ATN "), _T("LN "), _T("EXP "), _T("INT "), _T("SQR "), _T("SGN "), _T("ABS "), _T("PEEK "), _T("IN "), _T("USR "), _T("STR$ "), _T("CHR$ "), _T("NOT "), _T("BIN "),
 		_T(" OR "), _T(" AND "), _T("<="), _T(">="), _T("<>"), _T(" LINE "), _T(" THEN "), _T(" TO "), _T(" STEP "), _T(" DEF FN "), _T(" CAT "), _T(" FORMAT "), _T(" MOVE "), _T(" ERASE "), _T(" OPEN #"), _T(" CLOSE #"), _T(" MERGE "), _T(" VERIFY "), _T(" BEEP "), _T(" CIRCLE "), _T(" INK "), _T(" PAPER "), _T(" FLASH "), _T(" BRIGHT "), _T(" INVERSE "), _T(" OVER "), _T(" OUT "), _T(" LPRINT "), _T(" LLIST "), _T(" STOP "), _T(" READ "), _T(" DATA "), _T(" RESTORE "),
 		_T(" NEW "), _T(" BORDER "), _T(" CONTINUE "), _T(" DIM "), _T(" REM "), _T(" FOR "), _T(" GO TO "), _T(" GO SUB "), _T(" INPUT "), _T(" LOAD "), _T(" LIST "), _T(" LET "), _T(" PAUSE "), _T(" NEXT "), _T(" POKE "), _T(" PRINT "), _T(" PLOT "), _T(" RUN "), _T(" SAVE "), _T(" RANDOMIZE "), _T(" IF "), _T(" CLS "), _T(" DRAW "), _T(" CLEAR "), _T(" RETURN "), _T(" COPY ")
@@ -201,7 +201,7 @@
 					::SetWindowExtEx(dc,200,200,nullptr);
 					::SetViewportExtEx(dc,100,100,nullptr);
 					// . printing UDG
-					static const WCHAR w=0x2588;
+					static constexpr WCHAR w=0x2588;
 					c-=128; // lower four bits encode which "quadrants" of UDG character are shown (e.g. the UDG character of "L" shape = 2+4+8 = 14)
 					const int L=r.left*2, T=r.top*2, L2=L+font.charAvgWidth, T2=T+font.charHeight-2;
 					if (c&1) // upper right quadrant
@@ -332,7 +332,7 @@
 							r.left-=rZxRom.font.charAvgWidth;
 							if (rEditor.caret.mode==TCaret::LC && IS_CAPSLOCK_ON()){
 								// displaying the "C" Mode (Capitals) at place of the "L" mode
-								static const char ModeC='C';
+								static constexpr char ModeC='C';
 								::DrawTextA( dc, &ModeC,1, &r, DT_SINGLELINE|DT_LEFT|DT_VCENTER );
 							}else
 								// displaying current Mode
@@ -427,7 +427,7 @@ caretMoved:					rEditor.hexaLow=true; // specifically for hexa-mode X
 					case VK_SHIFT:
 						// changing Caret Mode after pressing Ctrl+Shift
 						if (::GetKeyState(VK_CONTROL)<0 && ::GetKeyState(VK_SHIFT)<0){
-							static const TCaret::TMode Modes[]={ TCaret::K, TCaret::LC, TCaret::E, TCaret::G, TCaret::X };
+							static constexpr TCaret::TMode Modes[]={ TCaret::K, TCaret::LC, TCaret::E, TCaret::G, TCaret::X };
 							TCaret::TMode &rMode=rEditor.caret.mode;
 							BYTE m=0;
 							while (Modes[m++]!=rMode);
@@ -443,8 +443,8 @@ caretMoved:					rEditor.hexaLow=true; // specifically for hexa-mode X
 						break;
 					default:
 						// adding a character to Buffer
-						static const BYTE ConversionAbcModeKL[]={ 226,'*','?',205,200,204,203,'^',172,'-','+','=','.',',',';','"',199,'<',195,'>',197,'/',201,96,198,':' };
-						static const BYTE Conversion012ModeKL[]={ '_','!','@','#','$','%','&','\'','(',')' };
+						static constexpr BYTE ConversionAbcModeKL[]={ 226,'*','?',205,200,204,203,'^',172,'-','+','=','.',',',';','"',199,'<',195,'>',197,'/',201,96,198,':' };
+						static constexpr BYTE Conversion012ModeKL[]={ '_','!','@','#','$','%','&','\'','(',')' };
 						if (wParam==' '){
 							rEditor.caret.mode=TCaret::LC; // switching to Mode "L" if Space is pressed (or alternatively C, if CapsLock on)
 							goto addCharInWParam;
@@ -488,15 +488,15 @@ addCharInWParam:						rEditor.__addChar__(wParam);
 								// Caret in Mode E
 								if (::GetKeyState(VK_CONTROL)<0){
 									if (wParam>='A' && wParam<='Z'){
-										static const BYTE Conversion[]={ '~',220,218,'\\',183,'{','}',216,191,174,170,171,221,222,223,127,181,214,'|',213,']',219,182,217,'[',215 };
+										static constexpr BYTE Conversion[]={ '~',220,218,'\\',183,'{','}',216,191,174,170,171,221,222,223,127,181,214,'|',213,']',219,182,217,'[',215 };
 										rEditor.__addChar__( Conversion[wParam-'A'] );
 									}else if (wParam>='0' && wParam<='9'){
-										static const BYTE Conversion[]={ 208,206,168,202,211,212,209,210,169,207 };
+										static constexpr BYTE Conversion[]={ 208,206,168,202,211,212,209,210,169,207 };
 										rEditor.__addChar__( Conversion[wParam-'0'] );
 									}
 								}else
 									if (wParam>='A' && wParam<='Z'){
-										static const BYTE Conversion[]={ 227,196,224,228,180,188,189,187,175,176,177,192,167,166,190,173,178,186,229,165,194,225,179,185,193,184 };
+										static constexpr BYTE Conversion[]={ 227,196,224,228,180,188,189,187,175,176,177,192,167,166,190,173,178,186,229,165,194,225,179,185,193,184 };
 										rEditor.__addChar__( Conversion[wParam-'A'] );
 									}
 								return 0;
@@ -506,10 +506,10 @@ addCharInWParam:						rEditor.__addChar__(wParam);
 									rEditor.__addChar__( 144+wParam-'A' );
 								else if (wParam>='1' && wParam<='8') // 0 and 9 ignored
 									if (::GetKeyState(VK_SHIFT)<0){
-										static const BYTE Conversion[]={ 142,141,140,139,138,137,136,143 };
+										static constexpr BYTE Conversion[]={ 142,141,140,139,138,137,136,143 };
 										rEditor.__addChar__( Conversion[wParam-'1'] );
 									}else{
-										static const BYTE Conversion[]={ 129,130,131,132,133,134,135,128 };
+										static constexpr BYTE Conversion[]={ 129,130,131,132,133,134,135,128 };
 										rEditor.__addChar__( Conversion[wParam-'1'] );
 									}
 								return 0;

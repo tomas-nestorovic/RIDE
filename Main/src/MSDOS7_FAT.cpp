@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "MSDOS7.h"
 
-	const CMSDOS7::CFat::TType CMSDOS7::CFat::Types[]={ FAT12, FAT16, FAT32, UNDETERMINED };
+	constexpr CMSDOS7::CFat::TType CMSDOS7::CFat::Types[]={ FAT12, FAT16, FAT32, UNDETERMINED };
 
 	CMSDOS7::CFat::CFat(const CMSDOS7 &msdos)
 		// ctor

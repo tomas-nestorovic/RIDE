@@ -195,8 +195,6 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 
 	#define SECTOR_LENGTH_MAX	16384
 
-	static const TFdcStatus TrackRawContentIoError(FDC_ST1_DATA_ERROR,FDC_ST2_CRC_ERROR_IN_DATA);
-
 	CFDD::TInternalTrack::TInternalTrack(const CFDD *fdd,TCylinder cyl,THead head,Codec::TType codec,TSector _nSectors,PCSectorId bufferId,PCLogTime sectorStartsNanoseconds)
 		// ctor
 		// - initialization
@@ -583,7 +581,7 @@ Utils::Information("--- EVERYTHING OK ---");
 	static PImage Instantiate(LPCTSTR deviceName){
 		return new CFDD(deviceName);
 	}
-	const CImage::TProperties CFDD::Properties={
+	constexpr CImage::TProperties CFDD::Properties={
 		MAKE_IMAGE_ID('I','n','t','P','c','F','d','d'), // a unique identifier
 		Recognize,	// list of recognized device names
 		Instantiate,	// instantiation function
@@ -672,7 +670,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 				// . synchronizing with index pulse
 				__setWaitingForIndex__();
 				// . turning off the automatic recognition of floppy inserted into Drive (having turned it on creates problems when used on older Drives [Simon Owen])
-				static const BYTE RecognizeInsertedFloppy=FALSE;
+				static constexpr BYTE RecognizeInsertedFloppy=FALSE;
 				if (!::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DISK_CHECK, (PVOID)&RecognizeInsertedFloppy,1, nullptr,0, &nBytesTransferred, nullptr)){
 					__disconnectFromFloppyDrive__();
 					goto error;
@@ -1456,8 +1454,8 @@ Utils::Information(buf);}
 		for( BYTE gap3=1; gap3<targetGap3; pAction->UpdateProgress(gap3+=3) ){
 			if (pAction->IsCancelled()) return LOG_ERROR(ERROR_CANCELLED);
 			// . STEP 1: writing two test Sectors
-			static const TSectorId SectorIds[]={ {1,0,1,2}, {1,0,2,2} };
-			static const WORD SectorLengths[]={ 512, 512 };
+			static constexpr TSectorId SectorIds[]={ {1,0,1,2}, {1,0,2,2} };
+			static constexpr WORD SectorLengths[]={ 512, 512 };
 			static const TFdcStatus SectorStatuses[]={ TFdcStatus::WithoutError, TFdcStatus::WithoutError };
 			const bool vft0=lp.fdd->params.verifyFormattedTracks;
 			lp.fdd->params.verifyFormattedTracks=false;
@@ -1514,7 +1512,7 @@ Utils::Information(buf);}
 				// . making sure that a floppy is in the Drive
 				ShowDlgItem( ID_INFORMATION, false );
 				fdd->floppyType=Medium::UNKNOWN; // assumption (floppy not inserted or not recognized)
-				static const WORD Interactivity[]={ ID_LATENCY, ID_NUMBER2, ID_GAP };
+				static constexpr WORD Interactivity[]={ ID_LATENCY, ID_NUMBER2, ID_GAP };
 				if (!EnableDlgItems( Interactivity, fdd->__isFloppyInserted__() ))
 					SetDlgItemText( ID_MEDIUM, _T("Not inserted") );
 				// . attempting to recognize any previous format on the floppy
@@ -2198,9 +2196,9 @@ error:		return LOG_ERROR(::GetLastError());
 		DWORD nBytesTransferred;
 		switch (DRIVER){
 			case DRV_FDRAWCMD:{
-				const BYTE lengthCode=GetSectorLengthCode(16384); // 16kB long Sector that rewrites its own header
-				FD_FORMAT_PARAMS fmt={	FD_OPTION_MFM, head, lengthCode, 1, 50, 0,
-										{cyl,head,0,lengthCode}
+				const BYTE LengthCode=GetSectorLengthCode(16384); // 16kB long Sector that rewrites its own header
+				FD_FORMAT_PARAMS fmt={	FD_OPTION_MFM, head, LengthCode, 1, 50, 0,
+										{cyl,head,0,LengthCode}
 									};
 				LOG_ACTION(_T("DeviceIoControl IOCTL_FDCMD_FORMAT_TRACK"));
 				if (::DeviceIoControl( _HANDLE, IOCTL_FDCMD_FORMAT_TRACK, &fmt,sizeof(fmt), nullptr,0, &nBytesTransferred, nullptr )!=0){

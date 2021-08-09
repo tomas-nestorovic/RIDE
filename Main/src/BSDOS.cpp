@@ -867,7 +867,7 @@
 		switch (cmd){
 			case ID_DOS_VERIFY:{
 				// volume verification
-				static const TVerificationFunctions vf={
+				static constexpr TVerificationFunctions vf={
 					TBootSector::Verification_thread, // Boot Sector
 					FatReadabilityVerification_thread, // FAT readability
 					TVerificationFunctions::ReportOnFilesWithBadFatPath_thread, // FAT Files OK
@@ -1142,20 +1142,11 @@
 
 
 	namespace MBD{
-		static LPCTSTR Recognize(PTCHAR){
-			static const char SingleDeviceName[]=_T("MB-02 image\0");
+		LPCTSTR Recognize(PTCHAR){
+			static constexpr TCHAR SingleDeviceName[]=_T("MB-02 image\0");
 			return SingleDeviceName;
 		}
-		static PImage Instantiate(LPCTSTR){
+		PImage Instantiate(LPCTSTR){
 			return new CImageRaw( &Properties, true );
 		}
-		const CImage::TProperties Properties={
-			MAKE_IMAGE_ID('B','S','D','O','S','M','B','D'), // a unique identifier
-			Recognize, // name
-			Instantiate, // instantiation function
-			_T("*.mbd"), // filter
-			Medium::FLOPPY_ANY, // supported media
-			Codec::MFM, // supported Codecs
-			BSDOS_SECTOR_LENGTH_STD,BSDOS_SECTOR_LENGTH_STD	// min and max sector length
-		};
 	}

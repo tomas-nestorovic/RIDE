@@ -10,7 +10,7 @@
 	#define INFORMATION_STD_PARAM_1	6 /* column to sort by */
 	#define INFORMATION_STD_PARAM_2	7 /* column to sort by */
 
-	const CFileManagerView::TFileInfo CTRDOS503::CTrdosFileManagerView::InformationList[INFORMATION_COUNT]={
+	constexpr CFileManagerView::TFileInfo CTRDOS503::CTrdosFileManagerView::InformationList[INFORMATION_COUNT]={
 		{ nullptr,			8,		TFileInfo::AlignLeft }, // auxiliary column to indent the first information from left edge of window
 		{ _T("Name"),		180,	TFileInfo::AlignLeft|TFileInfo::FileName },
 		{ _T("Extension"),	70,		TFileInfo::AlignRight },
@@ -40,7 +40,7 @@
 		// window procedure
 		switch (msg){
 			case WM_CREATE:{
-				static const UINT Indicators[]={ ID_SEPARATOR, ID_SEPARATOR };
+				static constexpr UINT Indicators[]={ ID_SEPARATOR, ID_SEPARATOR };
 				CStatusBar &rStatusBar=( (CMainWindow *)app.m_pMainWnd )->statusBar;
 				if (rStatusBar.m_hWnd){ // may not exist if the app is closing
 					rStatusBar.SetIndicators(Indicators,2);

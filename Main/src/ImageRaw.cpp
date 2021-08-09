@@ -2,14 +2,14 @@
 #include "GDOS.h"
 
 	static LPCTSTR Recognize(PTCHAR){
-		static const char SingleDeviceName[]=_T("Raw data image\0");
+		static constexpr TCHAR SingleDeviceName[]=_T("Raw data image\0");
 		return SingleDeviceName;
 	}
 	static PImage Instantiate(LPCTSTR){
 		return new CImageRaw( &CImageRaw::Properties, true );
 	}
 
-	const CImage::TProperties CImageRaw::Properties={
+	constexpr CImage::TProperties CImageRaw::Properties={
 		MAKE_IMAGE_ID('I','m','a','g','e','R','a','w'), // a unique identifier
 		Recognize,	// list of recognized device names
 		Instantiate, // instantiation function

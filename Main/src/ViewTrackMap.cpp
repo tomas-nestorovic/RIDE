@@ -253,7 +253,7 @@
 									: SECTOR1_X;
 	}
 
-	static const int Tabs[]={ VIEW_PADDING, VIEW_PADDING+60, SECTOR1_X };
+	static constexpr int Tabs[]={ VIEW_PADDING, VIEW_PADDING+60, SECTOR1_X };
 
 	afx_msg LRESULT CTrackMapView::__drawTrack__(WPARAM trackNumber,LPARAM pTrackInfo){
 		// draws scanned Track

@@ -4,7 +4,7 @@
 
 	#define FILE_LENGTH_MAX	0xff80 /* value that's a multiple of 128 - HexaEditor's requirement */
 
-	static const TFormat TapeFormat={
+	static constexpr TFormat TapeFormat={
 		Medium::FLOPPY_DD_525, // no need to create a new Medium Type for a Tape
 		Codec::ANY, // no need to create a new Codec Type for a Tape
 		1, 1, 1, TFormat::LENGTHCODE_128,FILE_LENGTH_MAX, 1 // to correctly compute free space in GetSectorStatuses a GetFileFatPath
@@ -120,7 +120,7 @@
 	#define HEADERLESS_EXTENSION	'H'
 	#define HEADERLESS_N_A			_T("N/A")
 
-	const TCHAR CSpectrumDos::CTape::Extensions[ZX_TAPE_EXTENSION_STD_COUNT]={
+	constexpr TCHAR CSpectrumDos::CTape::Extensions[ZX_TAPE_EXTENSION_STD_COUNT]={
 		ZX_TAPE_EXTENSION_PROGRAM,
 		ZX_TAPE_EXTENSION_NUMBERS,
 		ZX_TAPE_EXTENSION_CHARS,
@@ -480,9 +480,9 @@
 			const PCTapeFile tf=fileManager.files[n++];
 			if (const PCHeader h=tf->GetHeader()){
 				// File features a standard Header
-				static const WORD BlockLength=2+sizeof(THeader); // "+2" = Flag and Checksum
+				static constexpr WORD BlockLength=2+sizeof(THeader); // "+2" = Flag and Checksum
 				fileManager.f.Write( &BlockLength, sizeof(BlockLength) );
-				static const BYTE Flag=TZxRom::TStdBlockFlag::HEADER;
+				static constexpr BYTE Flag=TZxRom::TStdBlockFlag::HEADER;
 				fileManager.f.Write( &Flag, sizeof(Flag) );
 				fileManager.f.Write( h, sizeof(THeader) );
 				const BYTE checksum=__getChecksum__(TZxRom::TStdBlockFlag::HEADER,(PCBYTE)h,sizeof(THeader));
@@ -625,7 +625,7 @@
 	#define INFORMATION_FLAG		6 /* column to sort by */
 	#define INFORMATION_CHECKSUM	7 /* column to sort by */
 
-	const CFileManagerView::TFileInfo CSpectrumDos::CTape::CTapeFileManagerView::InformationList[INFORMATION_COUNT]={
+	constexpr CFileManagerView::TFileInfo CSpectrumDos::CTape::CTapeFileManagerView::InformationList[INFORMATION_COUNT]={
 		{ _T("Type"),		100,	TFileInfo::AlignRight },
 		{ _T("Name"),		180,	TFileInfo::AlignLeft|TFileInfo::FileName },
 		{ _T("Size"),		60,		TFileInfo::AlignRight },
@@ -1000,7 +1000,7 @@ drawChecksum:			// checksum
 
 	PropGrid::Enum::PCValueList WINAPI CSpectrumBase::CSpectrumBaseFileManagerView::CStdTapeHeaderBlockTypeEditor::__createValues__(PVOID file,WORD &rnValues){
 		// returns the list of standard File Types
-		static const TZxRom::TFileType List[]={
+		static constexpr TZxRom::TFileType List[]={
 			TZxRom::PROGRAM,
 			TZxRom::NUMBER_ARRAY,
 			TZxRom::CHAR_ARRAY,

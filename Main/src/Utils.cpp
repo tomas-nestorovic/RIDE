@@ -452,7 +452,7 @@ namespace Utils{
 
 
 
-	const TCHAR CAxis::CountPrefixes[]=_T("   kkkMMMBBB"); // no-prefix, thousand, million, billion
+	constexpr TCHAR CAxis::CountPrefixes[]=_T("   kkkMMMBBB"); // no-prefix, thousand, million, billion
 
 	CAxis::CAxis(TLogValue logLength,TLogTime logValuePerUnit,BYTE initZoomFactor)
 		// ctor
@@ -471,7 +471,7 @@ namespace Utils{
 		// - determinining the primary granuality of the Axis
 		TCHAR label[32];
 		if (unit=='\0'){ // no Unit?
-			static const TCHAR NoPrefixes[12];
+			static constexpr TCHAR NoPrefixes[12]={};
 			if (!unitPrefixes)
 				unitPrefixes=NoPrefixes;
 		}else
@@ -587,7 +587,7 @@ namespace Utils{
 		: CAxis( logTimeLength, logTimePerUnit, initZoomFactor ) {
 	}
 
-	const TCHAR CTimeline::TimePrefixes[]=_T("nnnµµµmmm   "); // nano, micro, milli, no-prefix
+	constexpr TCHAR CTimeline::TimePrefixes[]=_T("nnnµµµmmm   "); // nano, micro, milli, no-prefix
 
 	int CTimeline::TimeToReadableString(TLogTime logTime,PTCHAR buffer) const{
 		// converts specified Time to string with same level of detail as Drawn on the timeline
@@ -1115,17 +1115,17 @@ namespace Utils{
 		::SetBkMode(dc,TRANSPARENT);
 		const HGDIOBJ hFont0=::SelectObject(dc,font);
 			RECT r={ x, yMin, x+100, yMax };
-			static const WCHAR CurveUpper=0xf0fc;
+			static constexpr WCHAR CurveUpper=0xf0fc;
 			::DrawTextW( dc, &CurveUpper,1, &r, DT_LEFT|DT_TOP|DT_SINGLELINE );
-			static const WCHAR CurveLower=0xf0fe;
+			static constexpr WCHAR CurveLower=0xf0fe;
 			::DrawTextW( dc, &CurveLower,1, &r, DT_LEFT|DT_BOTTOM|DT_SINGLELINE );
-			static const WCHAR CurveMiddle=0xf0fd;
+			static constexpr WCHAR CurveMiddle=0xf0fd;
 			::DrawTextW( dc, &CurveMiddle,1, &r, DT_LEFT|DT_VCENTER|DT_SINGLELINE );
 			SIZE fontSize;
 			::GetTextExtentPoint32W(dc,&CurveMiddle,1,&fontSize);
 			r.top+=fontSize.cy/5, r.bottom-=fontSize.cy/5;
 			while (r.bottom-r.top>2.2*fontSize.cy){
-				static const WCHAR CurveStraight=0xf0ef;
+				static constexpr WCHAR CurveStraight=0xf0ef;
 				::DrawTextW( dc, &CurveStraight,1, &r, DT_LEFT|DT_TOP|DT_SINGLELINE );
 				::DrawTextW( dc, &CurveStraight,1, &r, DT_LEFT|DT_BOTTOM|DT_SINGLELINE );
 				r.top++, r.bottom--;
@@ -1300,7 +1300,7 @@ namespace Utils{
 
 
 
-	const TSplitButtonAction TSplitButtonAction::HorizontalLine={ 0, 0, MF_SEPARATOR };
+	constexpr TSplitButtonAction TSplitButtonAction::HorizontalLine={ 0, 0, MF_SEPARATOR };
 
 	typedef struct TSplitButtonInfo sealed{
 		const PCSplitButtonAction pAction;
@@ -1342,7 +1342,7 @@ namespace Utils{
 					CMenu mnu;
 					mnu.CreatePopupMenu();
 					for( BYTE id=!psbi->ExistsDefaultAction(); id<psbi->nActions; id++ ){
-						const auto a=psbi->pAction[id];
+						const auto &a=psbi->pAction[id];
 						mnu.AppendMenu( a.menuItemFlags, a.commandId, a.commandCaption );
 					}
 					POINT pt={ psbi->rcClientArea.right-SPLITBUTTON_ARROW_WIDTH, psbi->rcClientArea.bottom };
@@ -1388,7 +1388,7 @@ namespace Utils{
 					r.left=r.right-SPLITBUTTON_ARROW_WIDTH;
 					const CRideFont font( FONT_WEBDINGS, 110, false, true );
 					::SelectObject( dc, font );
-						static const WCHAR Arrow=0xf036;
+						static constexpr WCHAR Arrow=0xf036;
 						::DrawTextW( dc, &Arrow,1, &r, DT_SINGLELINE|DT_CENTER|DT_VCENTER );
 					::SelectObject(dc,hFont0);
 					// : splitting using vertical line

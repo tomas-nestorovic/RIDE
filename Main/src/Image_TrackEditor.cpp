@@ -143,7 +143,7 @@
 								::SelectObject( dc, font );
 								::SelectObject( dc, Utils::CRidePen::BlackHairline );
 								::SetBkMode( dc, OPAQUE );
-								static const char ByteInfoFormat[]="%c\n0x%02X";
+								static constexpr char ByteInfoFormat[]="%c\n0x%02X";
 								char label[80];
 								const SIZE byteInfoSizeMin=font.GetTextSize(  label,  ::wsprintfA( label, ByteInfoFormat, 'M', 255 )  );
 								const bool showByteInfo=Utils::LogicalUnitScaleFactor*te.timeline.GetUnitCount( CImage::GetActive()->EstimateNanosecondsPerOneByte() )
@@ -193,10 +193,9 @@
 										RECT rcLabel={ te.timeline.GetUnitCount(pe->tStart+iwTimeDefaultHalf)-nUnitsA, -1000, xz, -EVENT_HEIGHT-3 };
 										p.params.locker.Lock();
 											if ( continuePainting=p.params.id==id ){
-												const BYTE i=std::min<BYTE>(TParseEvent::LAST-1,pe->type);
-												::SelectObject( dc, parseEventBrushes[i] );
+												::SelectObject( dc, parseEventBrushes[pe->type] );
 												::PatBlt( dc, xa,-EVENT_HEIGHT, xz-xa,EVENT_HEIGHT, 0xa000c9 ); // ternary raster operation "dest AND pattern"
-												::SetTextColor( dc, TParseEvent::TypeColors[i] );
+												::SetTextColor( dc, TParseEvent::TypeColors[pe->type] );
 												::DrawTextA( dc, label,-1, &rcLabel, DT_LEFT|DT_BOTTOM|DT_SINGLELINE );
 											}
 										p.params.locker.Unlock();
@@ -700,7 +699,7 @@
 				case MB_OK:
 					break;
 				case MB_ABORTRETRYIGNORE:{
-					static const WORD RetryIgnoreIds[]={ IDRETRY, IDOK, 0 };
+					static constexpr WORD RetryIgnoreIds[]={ IDRETRY, IDOK, 0 };
 					ShowDlgItems( RetryIgnoreIds, EnableDlgItems(RetryIgnoreIds,true) );
 					SetDlgItemText( IDOK, "Ignore" );
 					break;
@@ -986,7 +985,7 @@
 							return TRUE;
 						}
 						case ID_NAVIGATE_ADDRESS:{
-							static const TCHAR Units[]=_T("nums"); // in order of scale ascending
+							static constexpr TCHAR Units[]=_T("nums"); // in order of scale ascending
 							class CGotoTimeDialog sealed:public Utils::CRideDialog{
 								const TLogTime tMax;
 

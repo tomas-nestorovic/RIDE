@@ -508,7 +508,7 @@
 			return 0;
 		// - if Track doesn't exists yet (e.g. not created by a derived class), reading it by the CAPS library
 		if (internalTracks[cyl][head]==nullptr){
-			static const CapsTrackInfoT2 CtiEmpty={2};
+			static constexpr CapsTrackInfoT2 CtiEmpty={2};
 			const UDWORD lockFlags= capsVersionInfo.flag&( DI_LOCK_INDEX | DI_LOCK_DENVAR | DI_LOCK_DENAUTO | DI_LOCK_DENNOISE | DI_LOCK_NOISE | DI_LOCK_TYPE | DI_LOCK_OVLBIT | DI_LOCK_TRKBIT | DI_LOCK_UPDATEFD );
 			CapsTrackInfoT2 cti[CAPS_MTRS];
 			*cti=CtiEmpty;
@@ -766,7 +766,7 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 					ComboBox_AddString( hMedium, _T("Automatically") ),
 					forcedMediumType
 				);
-				const WORD Controls[]={ ID_MEDIUM, IDOK, 0 };
+				constexpr WORD Controls[]={ ID_MEDIUM, IDOK, 0 };
 				EnableDlgItems( Controls, initialEditing );
 				SetDlgItemFormattedText( ID_SYSTEM, _T("Version %d.%d"), cb.capsVersionInfo.release, cb.capsVersionInfo.revision );
 				SetDlgItemFormattedText( ID_ARCHIVE, _T("%u (0x%08X)"), cb.capsImageInfo.release, cb.capsImageInfo.release );

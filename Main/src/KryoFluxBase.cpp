@@ -80,7 +80,7 @@
 				// . making sure that a floppy is in the Drive
 				ShowDlgItem( ID_INFORMATION, false );
 				Medium::TType mt;
-				static const WORD Interactivity[]={ ID_LATENCY, ID_NUMBER2, ID_GAP };
+				static constexpr WORD Interactivity[]={ ID_LATENCY, ID_NUMBER2, ID_GAP };
 				if (!EnableDlgItems( Interactivity, rkfb.GetInsertedMediumType(0,mt)==ERROR_SUCCESS ))
 					SetDlgItemText( ID_MEDIUM, _T("Not inserted") );
 				// . attempting to recognize any previous format on the floppy
@@ -170,7 +170,7 @@
 					WindowProc( WM_COMMAND, ID_40D80, 0 );
 				CheckDlgButton( ID_40D80, rkfb.params.doubleTrackStep );
 				// . some settings are changeable only during InitialEditing
-				static const WORD InitialSettingIds[]={ ID_ROTATION, ID_ACCURACY, ID_DEFAULT1, ID_TRACK, ID_TIME, 0 };
+				static constexpr WORD InitialSettingIds[]={ ID_ROTATION, ID_ACCURACY, ID_DEFAULT1, ID_TRACK, ID_TIME, 0 };
 				EnableDlgItems( InitialSettingIds, initialEditing );
 				// . displaying inserted Medium information
 				SetDlgItemSingleCharUsingFont( // a warning that a 40-track disk might have been misrecognized
@@ -787,6 +787,6 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 		::memcpy( p, &streamInfoBlock, sizeof(streamInfoBlock) );
 		p+=sizeof(streamInfoBlock);
 		// - end of Stream
-		static const char STREAM_END[]="\xd\xd\xd\xd\xd\xd\xd";
+		static constexpr char STREAM_END[]="\xd\xd\xd\xd\xd\xd\xd";
 		return (PBYTE)::lstrcpyA(p,STREAM_END) + sizeof(STREAM_END)-1 - outBuffer;
 	}

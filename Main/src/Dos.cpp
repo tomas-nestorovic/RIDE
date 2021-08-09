@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-	const TSide CDos::StdSidesMap[]={ 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 };
+	constexpr TSide CDos::StdSidesMap[]={ 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 };
 	Utils::CPtrList<CDos::PCProperties> CDos::Known;
 
 
@@ -1249,7 +1249,7 @@ reportError:Utils::Information(buf);
 
 
 
-	static const FILETIME None;
+	static constexpr FILETIME None={};
 
 	const CDos::TFileDateTime CDos::TFileDateTime::None(::None);
 
@@ -1280,7 +1280,7 @@ reportError:Utils::Information(buf);
 
 	PTCHAR CDos::TFileDateTime::DateToString(PTCHAR buf) const{
 		// populates the Buffer with this Date value and returns the buffer
-		static const LPCTSTR MonthAbbreviations[]={ _T("Jan"), _T("Feb"), _T("Mar"), _T("Apr"), _T("May"), _T("Jun"), _T("Jul"), _T("Aug"), _T("Sep"), _T("Oct"), _T("Nov"), _T("Dec") };
+		static constexpr LPCTSTR MonthAbbreviations[]={ _T("Jan"), _T("Feb"), _T("Mar"), _T("Apr"), _T("May"), _T("Jun"), _T("Jul"), _T("Aug"), _T("Sep"), _T("Oct"), _T("Nov"), _T("Dec") };
 		SYSTEMTIME st;
 		::FileTimeToSystemTime( this, &st );
 		::SystemTimeToTzSpecificLocalTime( nullptr, &st, &st );

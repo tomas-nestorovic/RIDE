@@ -16,7 +16,7 @@
 		, onHyperlinkClicked( onHyperlinkClicked ? onHyperlinkClicked : __doNothingAfterClick__ ) {
 		// - initializing OLE and Common Controls
 		::OleInitialize(nullptr);
-		static const INITCOMMONCONTROLSEX Icc={ sizeof(Icc), ICC_LINK_CLASS };
+		static constexpr INITCOMMONCONTROLSEX Icc={ sizeof(Icc), ICC_LINK_CLASS };
 		::InitCommonControlsEx(&Icc); // silently assuming that running on Windows 2000 and newer (see handling failures to create a SysLink window below)
 	}
 

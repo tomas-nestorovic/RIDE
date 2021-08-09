@@ -1,8 +1,8 @@
 #include "stdafx.h"
 #include "Charting.h"
 
-	const CChartView::TMargin CChartView::TMargin::None;
-	const CChartView::TMargin CChartView::TMargin::Default={ 20, 20, 20, 20 };
+	constexpr CChartView::TMargin CChartView::TMargin::None={};
+	constexpr CChartView::TMargin CChartView::TMargin::Default={ 20, 20, 20, 20 };
 
 
 
@@ -130,7 +130,7 @@
 
 
 
-	static const XFORM IdentityTransf={ 1, 0, 0, 1, 0, 0 };
+	static constexpr XFORM IdentityTransf={ 1, 0, 0, 1, 0, 0 };
 
 	CChartView::TPainter::TPainter(CChartView &cv)
 		// ctor

@@ -5,13 +5,13 @@
 
 
 	static LPCTSTR Recognize(PTCHAR){
-		static const char SingleDeviceName[]=_T("KryoFlux Stream files\0");
+		static constexpr TCHAR SingleDeviceName[]=_T("KryoFlux Stream files\0");
 		return SingleDeviceName;
 	}
 	static PImage Instantiate(LPCTSTR){
 		return new CKryoFluxStreams;
 	}
-	const CImage::TProperties CKryoFluxStreams::Properties={
+	constexpr CImage::TProperties CKryoFluxStreams::Properties={
 		MAKE_IMAGE_ID('C','A','P','S','_','K','F','S'), // a unique identifier
 		Recognize,	// list of recognized device names
 		Instantiate,	// instantiation function

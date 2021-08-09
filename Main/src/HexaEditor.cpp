@@ -204,7 +204,7 @@
 	#define ADDRESS_FORMAT_LENGTH	10
 	#define ADDRESS_SPACE_LENGTH	1
 
-	const CHexaEditor::TEmphasis CHexaEditor::TEmphasis::Terminator={ INT_MAX, INT_MAX };
+	constexpr CHexaEditor::TEmphasis CHexaEditor::TEmphasis::Terminator={ INT_MAX, INT_MAX };
 
 	CHexaEditor::CHexaEditor(PVOID param,HMENU customSelectSubmenu,HMENU customResetSubmenu,HMENU customGotoSubmenu)
 		// ctor
@@ -429,7 +429,7 @@
 			SetCaretPos(pos);
 		/*}else{ // commented out as it never occurs
 			// Caret "above" the header
-			static const POINT Pos={ -100, -100 };
+			static constexpr POINT Pos={ -100, -100 };
 			SetCaretPos(Pos);
 		}*/
 	}
@@ -635,7 +635,7 @@ deleteSelection:		int posSrc=std::max<>(caret.selectionA,caret.position), posDst
 						}
 						// . the "source-destination" difference filled up with zeros
 						if (posDst<minFileSize){
-							static const BYTE Zero=0;
+							static constexpr BYTE Zero=0;
 							for( F->Seek(posDst,CFile::begin); posDst++<minFileSize; F->Write(&Zero,1) );
 							__informationWithCheckableShowNoMore__( _T("To preserve the minimum size of the content, it has been padded with zeros."), INI_MSG_PADDING );
 						}
@@ -1025,7 +1025,7 @@ resetSelectionWithValue:BYTE buf[65535];
 							}
 
 							LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
-								static const WORD SearchButtons[]={ ID_EDIT_FIND_PREV, ID_EDIT_FIND_NEXT, 0 };
+								static constexpr WORD SearchButtons[]={ ID_EDIT_FIND_PREV, ID_EDIT_FIND_NEXT, 0 };
 								switch (msg){
 									case WM_COMMAND:
 										switch (wParam){

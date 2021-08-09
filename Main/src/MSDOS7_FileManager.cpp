@@ -9,7 +9,7 @@
 	#define INFORMATION_READ		4 /* column to sort by */
 	#define INFORMATION_MODIFIED	5 /* column to sort by */
 
-	const CFileManagerView::TFileInfo CMSDOS7::CMsdos7FileManagerView::InformationList[INFORMATION_COUNT]={
+	constexpr CFileManagerView::TFileInfo CMSDOS7::CMsdos7FileManagerView::InformationList[INFORMATION_COUNT]={
 		{ _T("Name"),		250,	TFileInfo::AlignLeft|TFileInfo::FileName },
 		{ _T("Size"),		70,		TFileInfo::AlignRight },
 		{ _T("Attributes"), 80,		TFileInfo::AlignRight },
@@ -18,7 +18,7 @@
 		{ _T("Last modified"),190,	TFileInfo::AlignRight }
 	};
 
-	const CFileManagerView::TDirectoryStructureManagement CMSDOS7::CMsdos7FileManagerView::dirManagement={
+	constexpr CFileManagerView::TDirectoryStructureManagement CMSDOS7::CMsdos7FileManagerView::dirManagement={
 		(CDos::TFnCreateSubdirectory)&CMSDOS7::CreateSubdirectory,
 		(CDos::TFnChangeCurrentDirectory)&CMSDOS7::SwitchToDirectory,
 		(CDos::TFnMoveFileToCurrDir)&CMSDOS7::MoveFileToCurrDir
@@ -56,7 +56,7 @@
 	#define ICON_FILE_GENERAL	2
 
 	#pragma pack(1)
-	static const struct{
+	static constexpr struct{
 		WORD iconId;
 		LPCTSTR extensions; // deliminated by comma
 	} ICON_INFOS[MSDOS7_FILE_ICONS_COUNT]={
@@ -91,7 +91,7 @@
 			case WM_CREATE:{
 				// window created
 				// . reinitializing the StatusBar
-				static const UINT Indicators[]={ ID_SEPARATOR, ID_SEPARATOR };
+				static constexpr UINT Indicators[]={ ID_SEPARATOR, ID_SEPARATOR };
 				CStatusBar &rStatusBar=( (CMainWindow *)app.m_pMainWnd )->statusBar;
 				if (rStatusBar.m_hWnd){ // may not exist if the app is closing
 					rStatusBar.SetIndicators(Indicators,2);
@@ -238,7 +238,7 @@
 		// - defining the Dialog
 		class CAttributesDialog sealed:public CDialog{
 			void DoDataExchange(CDataExchange *pDX) override{
-				static const WORD Controls[]={ ID_ARCHIVE, ID_DIRECTORY, ID_VOLUME, ID_SYSTEM, ID_HIDDEN, ID_READONLY };
+				static constexpr WORD Controls[]={ ID_ARCHIVE, ID_DIRECTORY, ID_VOLUME, ID_SYSTEM, ID_HIDDEN, ID_READONLY };
 				if (pDX->m_bSaveAndValidate)
 					for( BYTE i=0; i<ATTRIBUTES_COUNT; attributes=(attributes<<1)|(BYTE)IsDlgButtonChecked(Controls[i++]) );
 				else
@@ -318,7 +318,7 @@
 
 
 
-	const SYSTEMTIME CMSDOS7::TDateTime::Epoch[]={ {1980,1,2,1}, {2107,12,4,31} };
+	constexpr SYSTEMTIME CMSDOS7::TDateTime::Epoch[]={ {1980,1,2,1}, {2107,12,4,31} };
 
 	static void WINAPI __pg_dateTime_draw__(PropGrid::PCustomParam,PropGrid::PCValue value,PropGrid::TSize size,PDRAWITEMSTRUCT pdis){
 		if (size==sizeof(DWORD)) // both date and time

@@ -14,10 +14,10 @@
 	HIMAGELIST CMDOS2::TBootSector::TGKFileManager::GetListOfDefaultIcons(){
 		// creates and returns the list of GKFM's standard icons
 		const HIMAGELIST result=ImageList_Create( GKFM_ICON_WIDTH*GKFM_ICON_FM_ZOOM_FACTOR, GKFM_ICON_HEIGHT*GKFM_ICON_FM_ZOOM_FACTOR, ILC_COLOR24, 0, 1 );
-			static const BYTE DefaultIcon[]={ // smiling face in glases
+			static constexpr BYTE DefaultIcon[]={ // smiling face in glases
 				0,0,0,0,0,0,0,0,0,15,224,0,0,48,24,0,0,64,4,0,0,184,58,0,1,0,1,0,2,124,124,128,48,48,48,48,3,255,255,128,4,254,254,64,4,254,254,64,4,254,254,64,4,125,124,64,4,1,0,64,4,3,128,64,4,0,0,64,48,48,48,48,2,0,0,128,2,7,192,128,1,12,97,0,0,144,18,0,0,64,4,0,0,48,24,0,0,15,224,0,0,0,0,0,48,48,48,48
 			};
-			static const BYTE SnapshotIcon[]={ // skull with crossbones
+			static constexpr BYTE SnapshotIcon[]={ // skull with crossbones
 				0,0,0,0,0,7,224,0,0,26,176,0,0,53,8,0,0,96,12,0,0,76,100,0,0,158,246,0,0,158,242,0,112,112,112,112,12,158,242,112,18,205,102,136,18,67,4,136,33,99,140,132,33,51,153,196,35,216,55,204,28,250,191,120,0,58,188,0,112,112,112,112,7,31,240,224,9,250,189,16,8,234,175,16,8,64,3,16,4,64,2,32,4,64,2,32,3,128,1,192,0,0,0,0,112,112,112,112
 			};
 			AddIconToList(result,DefaultIcon);	// = available under index GKFM_ICON_DEFAULT
@@ -80,10 +80,10 @@
 
 	#define GKFM_BASE	34000
 
-	static const BYTE DefaultIcon[]={ // default floppy icon
+	static constexpr BYTE DefaultIcon[]={ // default floppy icon
 		255,255,255,0,255,255,255,0,192,248,3,0,192,255,255,0,192,248,3,0,192,255,255,0,255,248,3,0,255,255,254,0,88,48,48,56,255,255,254,0,255,255,255,0,255,231,255,0,255,195,255,0,255,194,255,0,255,231,255,0,255,255,255,0,255,255,255,0,56,56,56,56,255,231,255,0,255,231,255,0,255,231,255,0,255,231,255,0,255,231,255,0,255,231,255,0,255,255,255,0,255,255,255,0,56,40,56,56
 	};
-	const WORD DefaultIconAddress=0x7926;
+	constexpr WORD DefaultIconAddress=0x7926;
 
 	static bool IsValidBootAddress(WORD w){
 		return GKFM_BASE<w && w<GKFM_BASE+MDOS2_SECTOR_LENGTH_STD;
@@ -442,7 +442,7 @@ errorText:				TCHAR buf[400];
 			return false;
 	}
 
-	const CMDOS2::TBootSector::TGKFileManager CMDOS2::TBootSector::TGKFileManager::Default={
+	constexpr CMDOS2::TBootSector::TGKFileManager CMDOS2::TBootSector::TGKFileManager::Default={
 		0x4d46, // textual representation of "FM" string
 		8, 112, 120, 40, // y, x, w, h [in pixels]
 		56, // color (black text on white background)
@@ -461,7 +461,7 @@ errorText:				TCHAR buf[400];
 		const PBootSector pBootSector=(PBootSector)image->GetHealthySectorData(CHS);
 		TBootSector tmpBootSector=*pBootSector;
 			tmpBootSector.gkfm=TGKFileManager::Default;
-			static const BYTE DefGkfmText[]={	0,255,
+			static constexpr BYTE DefGkfmText[]={	0,255,
 												'P','R','O','X','I','M','A',',',' ','v','.','o','.','s','.',15,
 												'S','o','f','t','w','a','r','e',15,
 												'n','o','v',128,' ','d','i','m','e','n','z','e',13

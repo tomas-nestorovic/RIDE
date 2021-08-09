@@ -2,21 +2,22 @@
 #include "TRDOS.h"
 
 	static LPCTSTR Recognize(PTCHAR){
-		static const char SingleDeviceName[]=_T("SCL image\0");
+		static constexpr TCHAR SingleDeviceName[]=_T("SCL image\0");
 		return SingleDeviceName;
 	}
 	static PImage Instantiate(LPCTSTR){
 		return new CSCL;
 	}
 
-	const CImage::TProperties CSCL::Properties={MAKE_IMAGE_ID('T','R','D','O','S','S','C','L'), // a unique identifier
-												Recognize,	// list of recognized device names
-												Instantiate,// instantiation function
-												_T("*.scl"),	// filter
-												Medium::FLOPPY_DD_ANY, // supported Media
-												Codec::MFM, // supported Codecs
-												TRDOS503_SECTOR_LENGTH_STD,TRDOS503_SECTOR_LENGTH_STD	// Sector supported min and max length
-											};
+	constexpr CImage::TProperties CSCL::Properties={
+		MAKE_IMAGE_ID('T','R','D','O','S','S','C','L'), // a unique identifier
+		Recognize,	// list of recognized device names
+		Instantiate,// instantiation function
+		_T("*.scl"),	// filter
+		Medium::FLOPPY_DD_ANY, // supported Media
+		Codec::MFM, // supported Codecs
+		TRDOS503_SECTOR_LENGTH_STD,TRDOS503_SECTOR_LENGTH_STD	// Sector supported min and max length
+	};
 
 
 
@@ -113,7 +114,7 @@
 				for( POSITION pos=recognition.__getFirstRecognizedDosPosition__(); pos; ){
 					const CDos::PCProperties p=recognition.__getNextRecognizedDos__(pos);
 					if (!::memcmp(p->name,TRDOS_NAME_BASE,sizeof(TRDOS_NAME_BASE)-1)){
-						static const TFormat Fmt={ Medium::FLOPPY_DD, Codec::MFM, 80,2,TRDOS503_TRACK_SECTORS_COUNT, TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD, 1 };
+						static constexpr TFormat Fmt={ Medium::FLOPPY_DD, Codec::MFM, 80,2,TRDOS503_TRACK_SECTORS_COUNT, TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD, 1 };
 						pTrdos.reset( (CTRDOS503 *)p->fnInstantiate(this,&Fmt) );
 						break;
 					}

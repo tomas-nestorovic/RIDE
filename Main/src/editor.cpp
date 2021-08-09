@@ -169,7 +169,7 @@
 		//nop
 		// - initializing OLE and Common Controls
 		::OleInitialize(nullptr);
-		static const INITCOMMONCONTROLSEX Icc={ sizeof(Icc), ICC_LINK_CLASS };
+		static constexpr INITCOMMONCONTROLSEX Icc={ sizeof(Icc), ICC_LINK_CLASS };
 		if (!::InitCommonControlsEx(&Icc))
 			return FALSE; // will end-up here if running on Windows 2000 or older!
 		cfDescriptor=::RegisterClipboardFormat(CFSTR_FILEDESCRIPTOR);

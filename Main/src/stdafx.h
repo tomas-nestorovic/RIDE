@@ -77,6 +77,10 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #undef max
 #undef INFINITY
 
+#if _MSC_VER<=1600
+	#define constexpr const
+#endif
+
 class CImage; // forward
 typedef CImage *PImage;
 typedef const CImage *PCImage;

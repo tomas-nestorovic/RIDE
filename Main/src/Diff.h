@@ -93,7 +93,7 @@
 			}
 			// - we shouldn't end up here
 			ASSERT(FALSE);
-			static const TMidSnake TooManyDiffs={ 0, 0, 0, 0, -1 };
+			static constexpr TMidSnake TooManyDiffs={ 0, 0, 0, 0, -1 };
 			return TooManyDiffs;
 		}
 

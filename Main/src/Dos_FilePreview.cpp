@@ -5,7 +5,7 @@
 	#define DOS		rFileManager.tab.dos
 	#define IMAGE	DOS->image
 
-	static const RECT defaultRect={ 0, 0, 0, 0 };
+	static constexpr RECT defaultRect={ 0, 0, 0, 0 };
 
 	CDos::CFilePreview::CFilePreview(const CWnd *pView,LPCTSTR iniSection,const CFileManagerView &rFileManager,short initialClientWidth,short initialClientHeight,bool keepAspectRatio,DWORD resourceId)
 		// ctor

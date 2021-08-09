@@ -203,11 +203,11 @@
 					length=0;
 				}
 			} op( numberFormat, fIn, orgAddress ); // Z80 instruction with parameters
-			static const TCHAR Registers[]=_T("bcdehlfa");
-			static const TCHAR RegisterPairsStd[]=_T("bcdehlsp");
-			static const TCHAR OperandsStd[]=_T("   b   c   d   e   h   l %sj   a");
-			static const TCHAR OperandsIxIy[]=_T("   b   c   d   e %sh %sl %si   a");
-			static const TCHAR Conditions[]=_T("nz znc cpope p m");
+			static constexpr TCHAR Registers[]=_T("bcdehlfa");
+			static constexpr TCHAR RegisterPairsStd[]=_T("bcdehlsp");
+			static constexpr TCHAR OperandsStd[]=_T("   b   c   d   e   h   l %sj   a");
+			static constexpr TCHAR OperandsIxIy[]=_T("   b   c   d   e %sh %sl %si   a");
+			static constexpr TCHAR Conditions[]=_T("nz znc cpope p m");
 			LPCTSTR registerPairs=RegisterPairsStd, operands=OperandsStd;
 			do{
 				if (error=!op.Read(op.code)) // error
@@ -443,7 +443,7 @@
 					case 0xDE:{// sbc a,N
 						if (error=!op.ParseNextByte()) // error
 							break;
-						static const LPCTSTR Instructions[]={ Z80_INST_ADD, Z80_INST_ADC, nullptr, Z80_INST_SBC };
+						static constexpr LPCTSTR Instructions[]={ Z80_INST_ADD, Z80_INST_ADC, nullptr, Z80_INST_SBC };
 						inst=Instructions[(op.code-0xC6)>>3];
 						::wsprintf( argSyntaxBuf, _T("a,%s"), op.strB );
 						break;
@@ -466,7 +466,7 @@
 						if (error=!op.Read( op.code ))
 							break;
 						if (op.code<0x40){
-							static const LPCTSTR Instructions[]={ Z80_INST_RLC, Z80_INST_RRC, Z80_INST_RL, Z80_INST_RR, Z80_INST_SLA, Z80_INST_SRA, Z80_INST_SLL, Z80_INST_SRL };
+							static constexpr LPCTSTR Instructions[]={ Z80_INST_RLC, Z80_INST_RRC, Z80_INST_RL, Z80_INST_RR, Z80_INST_SLA, Z80_INST_SRA, Z80_INST_SLL, Z80_INST_SRL };
 							inst=Instructions[op.code>>3];
 							::wsprintf( argSyntaxBuf, _T("%.4s"), operands+((op.code&7)<<2) );
 						}else if (op.code<0x80){
@@ -493,7 +493,7 @@
 					case 0xFE:{// cp N
 						if (error=!op.ParseNextByte()) // error
 							break;
-						static const LPCTSTR Instructions[]={ Z80_INST_SUB, nullptr, Z80_INST_AND, Z80_INST_XOR, Z80_INST_OR, Z80_INST_CP };
+						static constexpr LPCTSTR Instructions[]={ Z80_INST_SUB, nullptr, Z80_INST_AND, Z80_INST_XOR, Z80_INST_OR, Z80_INST_CP };
 						inst=Instructions[(op.code-0xD6)>>3];
 						argSyntax=op.strB;
 						break;
@@ -728,7 +728,7 @@
 							inst=Z80_INST_LD;
 							::wsprintf( argSyntaxBuf, _T("%.4s,%.4s"), operands+(((op.code-0x40)&~7)>>1), operands+((op.code&7)<<2) );
 						}else if (op.code<0x90){
-							static const LPCTSTR Instructions[]={ Z80_INST_ADD, Z80_INST_ADC };
+							static constexpr LPCTSTR Instructions[]={ Z80_INST_ADD, Z80_INST_ADC };
 							inst=Instructions[(op.code-0x80)>>3];
 							::wsprintf( argSyntaxBuf, _T("a,%.4s"), operands+((op.code&7)<<2) );
 						}else if (op.code<0x98){
@@ -738,7 +738,7 @@
 							inst=Z80_INST_SBC;
 							::wsprintf( argSyntaxBuf, _T("a,%.4s"), operands+((op.code&7)<<2) );
 						}else if (op.code<0xC0){
-							static const LPCTSTR Instructions[]={ Z80_INST_AND, Z80_INST_XOR, Z80_INST_OR, Z80_INST_CP };
+							static constexpr LPCTSTR Instructions[]={ Z80_INST_AND, Z80_INST_XOR, Z80_INST_OR, Z80_INST_CP };
 							inst=Instructions[(op.code-0xA0)>>3];
 							::wsprintf( argSyntaxBuf, _T("%.4s"), operands+((op.code&7)<<2) );
 						}

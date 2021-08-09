@@ -235,7 +235,7 @@
 					}else if (++r.pcCnt>=2)
 						cState = r.pcCnt = 0;
 				}
-				static const BYTE PhaseAdjustments[2][16]={ // C1/C2, C3
+				static constexpr BYTE PhaseAdjustments[2][16]={ // C1/C2, C3
 					//	8	9	A	B	C	D	E	F	0	1	2	3	4	5	6	7
 					 { 12, 13, 13, 14, 14, 15, 15, 16, 16, 17, 17, 18, 18, 19, 19, 20 },
 					 { 13, 14, 14, 15, 15, 16, 16, 16, 16, 16, 16, 17, 17, 18, 18, 19 }
@@ -335,7 +335,7 @@
 		}
 		// - search for non-formatted areas
 		if (nSectorsFound>0){ // makes sense only if some Sectors found
-			const BYTE nCellsMin=64;
+			constexpr BYTE nCellsMin=64;
 			const TLogTime tAreaLengthMin=nCellsMin*profile.iwTimeDefault; // ignore all non-formatted areas that are shorter
 			for( TLogTime t0=RewindToIndexAndResetProfile(0),t; *this; t0=t )
 				if (( t=ReadTime() )-t0>=tAreaLengthMin)
@@ -360,7 +360,7 @@
 			}
 			const WORD nGaps=nDataEnds+nSectorsFound;
 			// . analyzing gap between two consecutive ParseEvents
-			const BYTE nBytesInspectedMax=20; // or maximum number of Bytes inspected before deciding that there are data in the gap
+			constexpr BYTE nBytesInspectedMax=20; // or maximum number of Bytes inspected before deciding that there are data in the gap
 			ULONGLONG bitPattern;
 			std::map<ULONGLONG,WORD> tmpHist; // Key = bit pattern (data+clock), Value = number of occurences
 			char bitPatternLength=-1; // number of valid bits in the BitPattern
@@ -423,7 +423,7 @@
 					SetCurrentTimeAndProfile( r.time, r.profile );
 					const TItem &typicalItem=*histogram; // "typically" the filler Byte of post-ID Gap2, created during formatting, and thus always well aligned
 					BYTE nBytesInspected=0, nBytesTypical=0;
-					const BYTE nGapBytesMax=250;
+					constexpr BYTE nGapBytesMax=250;
 					TDataParseEvent::TByteInfo byteInfos[nGapBytesMax];
 					while (*this && nBytesInspected<nBytesInspectedMax){
 						TDataParseEvent::TByteInfo &rbi=byteInfos[nBytesInspected++];
@@ -699,7 +699,7 @@
 
 
 
-	const COLORREF CImage::CTrackReader::TParseEvent::TypeColors[LAST]={
+	constexpr COLORREF CImage::CTrackReader::TParseEvent::TypeColors[LAST]={
 		0,			// None
 		0xa398c2,	// sync 3 Bytes
 		0x82c5e7,	// mark 1 Byte
@@ -851,7 +851,7 @@
 
 
 	namespace MFM{
-		static const CFloppyImage::TCrc16 CRC_A1A1A1=0xb4cd; // CRC of 0xa1, 0xa1, 0xa1
+		static constexpr CFloppyImage::TCrc16 CRC_A1A1A1=0xb4cd; // CRC of 0xa1, 0xa1, 0xa1
 
 		static bool *EncodeByte(BYTE byte,bool *bitBuffer){
 			bool prevDataBit=bitBuffer[-1];

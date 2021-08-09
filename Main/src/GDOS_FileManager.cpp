@@ -11,7 +11,7 @@
 	#define INFORMATION_PARAM_2		7 /* column to sort by */
 	#define INFORMATION_ETC			8 /* column to sort by */
 
-	const CFileManagerView::TFileInfo CGDOS::CGdosFileManagerView::InformationList[INFORMATION_COUNT]={
+	constexpr CFileManagerView::TFileInfo CGDOS::CGdosFileManagerView::InformationList[INFORMATION_COUNT]={
 		{ nullptr,			8,		TFileInfo::AlignLeft }, // auxiliary column to indent the first information from left edge of window
 		{ _T("Name"),		180,	TFileInfo::AlignLeft|TFileInfo::FileName },
 		{ _T("Type"),		110,	TFileInfo::AlignRight },

@@ -11,7 +11,7 @@
 	#define INFORMATION_PARAM_1		4 /* column to sort by */
 	#define INFORMATION_PARAM_2		5 /* column to sort by */
 
-	const CFileManagerView::TFileInfo CMDOS2::CMdos2FileManagerView::InformationList[INFORMATION_COUNT]={
+	constexpr CFileManagerView::TFileInfo CMDOS2::CMdos2FileManagerView::InformationList[INFORMATION_COUNT]={
 		{ _T("Extension"),	70,		TFileInfo::AlignRight },
 		{ _T("Name"),		180,	TFileInfo::AlignLeft|TFileInfo::FileName },
 		{ _T("Size"),		60,		TFileInfo::AlignRight },
@@ -96,7 +96,7 @@
 		// window procedure
 		switch (msg){
 			case WM_CREATE:{
-				static const UINT Indicators[]={ ID_SEPARATOR, ID_SEPARATOR };
+				static constexpr UINT Indicators[]={ ID_SEPARATOR, ID_SEPARATOR };
 				CStatusBar &rStatusBar=( (CMainWindow *)app.m_pMainWnd )->statusBar;
 				if (rStatusBar.m_hWnd){ // may not exist if the app is closing
 					rStatusBar.SetIndicators(Indicators,2);

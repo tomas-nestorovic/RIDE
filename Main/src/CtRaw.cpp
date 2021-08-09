@@ -3,13 +3,13 @@
 #include "CtRaw.h"
 
 	static LPCTSTR Recognize(PTCHAR){
-		static const char SingleDeviceName[]=_T("CT Raw\0");
+		static constexpr TCHAR SingleDeviceName[]=_T("CT Raw\0");
 		return SingleDeviceName;
 	}
 	static PImage Instantiate(LPCTSTR){
 		return new CCtRaw;
 	}
-	const CImage::TProperties CCtRaw::Properties={
+	constexpr CImage::TProperties CCtRaw::Properties={
 		MAKE_IMAGE_ID('C','A','P','S','_','R','A','W'), // a unique identifier
 		Recognize,	// list of recognized device names
 		Instantiate,	// instantiation function

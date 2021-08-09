@@ -2,20 +2,21 @@
 #include "GDOS.h"
 
 	static LPCTSTR Recognize(PTCHAR){
-		static const char SingleDeviceName[]=_T("MGT image\0");
+		static constexpr TCHAR SingleDeviceName[]=_T("MGT image\0");
 		return SingleDeviceName;
 	}
 	static PImage Instantiate(LPCTSTR){
 		return new CMGT;
 	}
-	const CImage::TProperties CMGT::Properties={MAKE_IMAGE_ID('G','D','O','S','_','M','G','T'), // a unique identifier
-												Recognize,	// list of recognized device names
-												Instantiate,// instantiation function
-												_T("*.mgt"),	// filter
-												Medium::FLOPPY_DD_ANY, // supported Media
-												Codec::MFM, // supported Codecs
-												GDOS_SECTOR_LENGTH_STD, GDOS_SECTOR_LENGTH_STD	// Sector supported min and max length
-											};
+	constexpr CImage::TProperties CMGT::Properties={
+		MAKE_IMAGE_ID('G','D','O','S','_','M','G','T'), // a unique identifier
+		Recognize,	// list of recognized device names
+		Instantiate,// instantiation function
+		_T("*.mgt"),	// filter
+		Medium::FLOPPY_DD_ANY, // supported Media
+		Codec::MFM, // supported Codecs
+		GDOS_SECTOR_LENGTH_STD, GDOS_SECTOR_LENGTH_STD	// Sector supported min and max length
+	};
 
 
 
