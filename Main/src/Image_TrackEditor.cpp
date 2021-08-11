@@ -143,12 +143,11 @@
 								::SelectObject( dc, font );
 								::SelectObject( dc, Utils::CRidePen::BlackHairline );
 								::SetBkMode( dc, OPAQUE );
-								static constexpr char ByteInfoFormat[]="%c\n0x%02X";
+								static constexpr char ByteInfoFormat[]="%c\n$%02X";
 								char label[80];
 								const SIZE byteInfoSizeMin=font.GetTextSize(  label,  ::wsprintfA( label, ByteInfoFormat, 'M', 255 )  );
-								const bool showByteInfo=Utils::LogicalUnitScaleFactor*te.timeline.GetUnitCount( CImage::GetActive()->EstimateNanosecondsPerOneByte() )
-														>=
-														byteInfoSizeMin.cx;
+								const int nUnitsPerByte=Utils::LogicalUnitScaleFactor*te.timeline.GetUnitCount( CImage::GetActive()->EstimateNanosecondsPerOneByte() );
+								const enum{ BI_NONE, BI_MINIMAL, BI_FULL } showByteInfo = nUnitsPerByte>byteInfoSizeMin.cx ? BI_FULL : nUnitsPerByte>1 ? BI_MINIMAL : BI_NONE;
 								const TLogTime iwTimeDefaultHalf=tr.GetCurrentProfile().iwTimeDefault/2;
 								for( POSITION pos=peList.GetHeadPosition(); continuePainting&&pos; ){
 									const TParseEventPtr pe=&peList.GetNext(pos);
@@ -202,21 +201,31 @@
 										if (!continuePainting) // new paint request?
 											break;
 										if (showByteInfo && pe->IsDataAny()){
+											::SelectObject( dc, showByteInfo==BI_FULL?Utils::CRidePen::BlackHairline:Utils::CRidePen::BlackHairlineDotted );
 											auto pbi=pe.data->byteInfos;
 											while (pbi->tStart+iwTimeDefaultHalf<ti.tStart) pbi++; // skip invisible part
 											rcLabel.right=10000, rcLabel.bottom-=font.charHeight, rcLabel.top=rcLabel.bottom-byteInfoSizeMin.cy;
 											while (continuePainting && pbi->tStart<ti.tEnd && (PCBYTE)pbi-(PCBYTE)pe.data<pe->size){ // draw visible part
 												rcLabel.left=te.timeline.GetUnitCount(pbi->tStart+iwTimeDefaultHalf)-nUnitsA;
 												p.params.locker.Lock();
-													if ( continuePainting=p.params.id==id ){
-														::MoveToEx( dc, rcLabel.left,0, nullptr );
-														::LineTo( dc, rcLabel.left,rcLabel.bottom );
-														::DrawTextA(
-															dc,
-															label,	::wsprintfA( label, ByteInfoFormat, ::isprint(pbi->value)?pbi->value:'?', pbi->value ),
-															&rcLabel, DT_LEFT|DT_BOTTOM
-														);
-													}
+													if ( continuePainting=p.params.id==id )
+														switch (showByteInfo){
+															case BI_MINIMAL:
+																::MoveToEx( dc, rcLabel.left,-EVENT_HEIGHT-2, nullptr );
+																::LineTo( dc, rcLabel.left,-EVENT_HEIGHT+2 );
+																break;
+															case BI_FULL:
+																::MoveToEx( dc, rcLabel.left,0, nullptr );
+																::LineTo( dc, rcLabel.left,rcLabel.bottom );
+																::DrawTextA(
+																	dc,
+																	label,	::wsprintfA( label, ByteInfoFormat, ::isprint(pbi->value)?pbi->value:'?', pbi->value ),
+																	&rcLabel, DT_LEFT|DT_BOTTOM
+																);
+																break;
+															default:
+																ASSERT(FALSE); break;
+														}
 												p.params.locker.Unlock();
 												pbi++;
 											}
