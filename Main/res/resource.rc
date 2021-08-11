@@ -169,6 +169,7 @@ BEGIN
     "R",            ID_ZOOM_PART,           VIRTKEY, CONTROL, NOINVERT
     "T",            ID_NAVIGATE_ADDRESS,    VIRTKEY, CONTROL, NOINVERT
     VK_ESCAPE,      IDCANCEL,               VIRTKEY, NOINVERT
+    VK_F5,          ID_REFRESH,             VIRTKEY, NOINVERT
     VK_LEFT,        ID_FILE_SHIFT_DOWN,     VIRTKEY, CONTROL, NOINVERT
     VK_LEFT,        ID_PREV_BAD,            VIRTKEY, SHIFT, NOINVERT
     VK_NEXT,        ID_NEXT,                VIRTKEY, CONTROL, NOINVERT
@@ -711,6 +712,7 @@ BEGIN
         MENUITEM "Show intervals",              ID_INTERLEAVE
         MENUITEM "Show structure",              ID_SYSTEM
         MENUITEM "(Show all)\tCtrl+W",          ID_TRACK
+        MENUITEM "Refresh\tF5",                 ID_REFRESH
         MENUITEM SEPARATOR
         MENUITEM "Close\tEsc",                  IDCANCEL
     END

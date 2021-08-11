@@ -844,6 +844,7 @@
 							pCmdUi->Enable( timeEditor.GetTimeline().zoomFactor<ZOOM_FACTOR_MAX );
 							//fallthrough
 						case ID_ZOOM_FIT:
+						case ID_REFRESH:
 						case IDCANCEL:
 							return TRUE;
 						case ID_ZOOM_PART:
@@ -947,6 +948,9 @@
 							timeEditor.SetZoomFactorCenter( timeEditor.GetTimeline().GetZoomFactorToFitWidth(rc.Width()/Utils::LogicalUnitScaleFactor,ZOOM_FACTOR_MAX) );
 							return TRUE;
 						}
+						case ID_REFRESH:
+							timeEditor.Invalidate();
+							return TRUE;
 						case IDCANCEL:
 							EndDialog(nID);
 							return TRUE;
