@@ -7,7 +7,7 @@
 	PImage CDsk5::Instantiate(LPCTSTR){
 		return new CDsk5(&Properties);
 	}
-	constexpr CImage::TProperties CDsk5::Properties={
+	const CImage::TProperties CDsk5::Properties={
 		MAKE_IMAGE_ID('D','s','k','_','R','e','v','5'), // a unique identifier
 		Recognize,	// list of recognized device names
 		Instantiate,	// instantiation function
@@ -607,7 +607,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		return nullptr;
 	}
 
-	constexpr CImage::TProperties CDsk5::CDummyDevice::Properties={
+	const CImage::TProperties CDsk5::CDummyDevice::Properties={
 		MAKE_IMAGE_ID('D','s','k','D','u','m','m','y'), // a unique identifier
 		Recognize,	// list of recognized device names
 		Instantiate,	// instantiation function

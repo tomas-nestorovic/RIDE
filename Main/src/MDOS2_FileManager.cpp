@@ -11,7 +11,7 @@
 	#define INFORMATION_PARAM_1		4 /* column to sort by */
 	#define INFORMATION_PARAM_2		5 /* column to sort by */
 
-	constexpr CFileManagerView::TFileInfo CMDOS2::CMdos2FileManagerView::InformationList[INFORMATION_COUNT]={
+	const CFileManagerView::TFileInfo CMDOS2::CMdos2FileManagerView::InformationList[INFORMATION_COUNT]={
 		{ _T("Extension"),	70,		TFileInfo::AlignRight },
 		{ _T("Name"),		180,	TFileInfo::AlignLeft|TFileInfo::FileName },
 		{ _T("Size"),		60,		TFileInfo::AlignRight },

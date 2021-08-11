@@ -11,7 +11,7 @@
 	static PImage Instantiate(LPCTSTR){
 		return new CKryoFluxStreams;
 	}
-	constexpr CImage::TProperties CKryoFluxStreams::Properties={
+	const CImage::TProperties CKryoFluxStreams::Properties={
 		MAKE_IMAGE_ID('C','A','P','S','_','K','F','S'), // a unique identifier
 		Recognize,	// list of recognized device names
 		Instantiate,	// instantiation function

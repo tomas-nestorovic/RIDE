@@ -9,7 +9,7 @@
 		return new CImageRaw( &CImageRaw::Properties, true );
 	}
 
-	constexpr CImage::TProperties CImageRaw::Properties={
+	const CImage::TProperties CImageRaw::Properties={
 		MAKE_IMAGE_ID('I','m','a','g','e','R','a','w'), // a unique identifier
 		Recognize,	// list of recognized device names
 		Instantiate, // instantiation function

@@ -21,7 +21,7 @@
 
 
 
-	constexpr char CTRDOS503::TDirectoryEntry::KnownExtensions[]={ TDirectoryEntry::BASIC_PRG, TDirectoryEntry::DATA_FIELD, TDirectoryEntry::BLOCK, TDirectoryEntry::PRINT };
+	const char CTRDOS503::TDirectoryEntry::KnownExtensions[]={ TDirectoryEntry::BASIC_PRG, TDirectoryEntry::DATA_FIELD, TDirectoryEntry::BLOCK, TDirectoryEntry::PRINT };
 
 	WORD CTRDOS503::TDirectoryEntry::__getOfficialFileSize__(PBYTE pnBytesReservedAfterData) const{
 		// determines and returns the official File size based on the Extension

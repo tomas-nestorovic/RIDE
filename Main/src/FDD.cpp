@@ -581,7 +581,7 @@ Utils::Information("--- EVERYTHING OK ---");
 	static PImage Instantiate(LPCTSTR deviceName){
 		return new CFDD(deviceName);
 	}
-	constexpr CImage::TProperties CFDD::Properties={
+	const CImage::TProperties CFDD::Properties={
 		MAKE_IMAGE_ID('I','n','t','P','c','F','d','d'), // a unique identifier
 		Recognize,	// list of recognized device names
 		Instantiate,	// instantiation function

@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-	constexpr TFormat TFormat::Unknown={ Medium::UNKNOWN, Codec::ANY, -1,-1,-1, TFormat::LENGTHCODE_128,-1, 1 };
+	const TFormat TFormat::Unknown={ Medium::UNKNOWN, Codec::ANY, -1,-1,-1, TFormat::LENGTHCODE_128,-1, 1 };
 
 	bool TFormat::operator==(const TFormat &fmt2) const{
 		// True <=> Formats{1,2} are equal, otherwise False
@@ -69,7 +69,7 @@
 		return result;
 	}
 
-	constexpr TPhysicalAddress TPhysicalAddress::Invalid={ -1, -1, {-1,-1,-1,-1} };
+	const TPhysicalAddress TPhysicalAddress::Invalid={ -1, -1, {-1,-1,-1,-1} };
 
 	bool TPhysicalAddress::operator==(const TPhysicalAddress &chs2) const{
 		// True <=> PhysicalAddresses are equal, otherwise False
@@ -196,7 +196,7 @@ namespace Medium{
 		}
 	}
 
-	constexpr TProperties TProperties::FLOPPY_HD_350={
+	const TProperties TProperties::FLOPPY_HD_350={
 		_T("3.5\" HD floppy"), // description
 		{ 1, FDD_CYLINDERS_MAX }, // supported range of Cylinders (min and max)
 		{ 1, 2 },	// supported range of Heads (min and max)
@@ -206,7 +206,7 @@ namespace Medium{
 		200000 // RevolutionTime/CellTime
 	};
 
-	constexpr TProperties TProperties::FLOPPY_HD_525={
+	const TProperties TProperties::FLOPPY_HD_525={
 		_T("5.25\" HD floppy, 360 RPM drive"), // description
 		{ 1, FDD_CYLINDERS_MAX }, // supported range of Cylinders (min and max)
 		{ 1, 2 },	// supported range of Heads (min and max)
@@ -216,7 +216,7 @@ namespace Medium{
 		166666 // RevolutionTime/CellTime
 	};
 
-	constexpr TProperties TProperties::FLOPPY_DD={
+	const TProperties TProperties::FLOPPY_DD={
 		_T("3.5\"/5.25\" 2DD floppy, 300 RPM drive"), // description
 		{ 1, FDD_CYLINDERS_MAX }, // supported range of Cylinders (min and max)
 		{ 1, 2 },	// supported range of Heads (min and max)
@@ -226,7 +226,7 @@ namespace Medium{
 		100000 // RevolutionTime/CellTime
 	};
 
-	constexpr TProperties TProperties::FLOPPY_DD_525={
+	const TProperties TProperties::FLOPPY_DD_525={
 		_T("5.25\" 2DD floppy, 360 RPM drive"), // description
 		{ 1, FDD_CYLINDERS_MAX }, // supported range of Cylinders (min and max)
 		{ 1, 2 },	// supported range of Heads (min and max)

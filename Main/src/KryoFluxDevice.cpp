@@ -113,7 +113,7 @@
 		return nullptr;
 	}
 
-	constexpr CImage::TProperties CKryoFluxDevice::Properties={
+	const CImage::TProperties CKryoFluxDevice::Properties={
 		MAKE_IMAGE_ID('C','A','P','S','_','K','F','D'), // a unique identifier
 		Recognize,	// list of recognized device names
 		Instantiate,	// instantiation function

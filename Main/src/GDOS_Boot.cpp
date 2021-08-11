@@ -47,7 +47,7 @@
 	}
 
 	
-	constexpr CDos::TProperties CGDOS::Properties={
+	const CDos::TProperties CGDOS::Properties={
 		_T("GDOS (experimental)"), // name
 		MAKE_DOS_ID('G','D','O','S','_','_','_','_'), // unique identifier
 		20, // recognition priority (the bigger the number the earlier the DOS gets crack on the image)

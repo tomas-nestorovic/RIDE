@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-	constexpr RGBQUAD CSpectrumBase::Colors[16]={
+	const RGBQUAD CSpectrumBase::Colors[16]={
 		0,0,0,0,	// colors for Bright=0
 		192,0,0,0,
 		0,0,192,0,
@@ -30,7 +30,7 @@
 
 
 
-	constexpr CSpectrumBase::TStdParameters CSpectrumBase::TStdParameters::Default={ 0, 0x8000 };
+	const CSpectrumBase::TStdParameters CSpectrumBase::TStdParameters::Default={ 0, 0x8000 };
 
 
 

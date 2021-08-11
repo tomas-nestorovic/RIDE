@@ -442,7 +442,7 @@ errorText:				TCHAR buf[400];
 			return false;
 	}
 
-	constexpr CMDOS2::TBootSector::TGKFileManager CMDOS2::TBootSector::TGKFileManager::Default={
+	const CMDOS2::TBootSector::TGKFileManager CMDOS2::TBootSector::TGKFileManager::Default={
 		0x4d46, // textual representation of "FM" string
 		8, 112, 120, 40, // y, x, w, h [in pixels]
 		56, // color (black text on white background)

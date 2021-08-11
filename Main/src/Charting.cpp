@@ -1,8 +1,8 @@
 #include "stdafx.h"
 #include "Charting.h"
 
-	constexpr CChartView::TMargin CChartView::TMargin::None={};
-	constexpr CChartView::TMargin CChartView::TMargin::Default={ 20, 20, 20, 20 };
+	const CChartView::TMargin CChartView::TMargin::None;
+	const CChartView::TMargin CChartView::TMargin::Default={ 20, 20, 20, 20 };
 
 
 

@@ -284,7 +284,7 @@
 		{ ARCHIVE_CAPACITY, 0, {Medium::FLOPPY_DD,Codec::MFM,FDD_CYLINDERS_MAX-1,2,10,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,16}, 2, 9, 5, 1, 16 },
 		{ _T("Hard disk 50 MB"), 0, {Medium::HDD_RAW,Codec::MFM,99,16,63,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,4}, 1, 0, FDD_350_SECTOR_GAP3, 2, 224 }
 	};
-	constexpr CDos::TProperties CMSDOS7::Properties={
+	const CDos::TProperties CMSDOS7::Properties={
 		_T("MS-DOS 7.1 (experimental)"), // name
 		MAKE_DOS_ID('M','S','-','D','O','S','7','1'), // unique identifier
 		90, // recognition priority (the bigger the number the earlier the DOS gets crack on the image)

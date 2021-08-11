@@ -8,7 +8,7 @@
 	static PImage Instantiate(LPCTSTR){
 		return new CMGT;
 	}
-	constexpr CImage::TProperties CMGT::Properties={
+	const CImage::TProperties CMGT::Properties={
 		MAKE_IMAGE_ID('G','D','O','S','_','M','G','T'), // a unique identifier
 		Recognize,	// list of recognized device names
 		Instantiate,// instantiation function

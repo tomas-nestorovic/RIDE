@@ -10,7 +10,7 @@
 	#define INFORMATION_STD_PARAM_1	6 /* column to sort by */
 	#define INFORMATION_STD_PARAM_2	7 /* column to sort by */
 
-	constexpr CFileManagerView::TFileInfo CTRDOS503::CTrdosFileManagerView::InformationList[INFORMATION_COUNT]={
+	const CFileManagerView::TFileInfo CTRDOS503::CTrdosFileManagerView::InformationList[INFORMATION_COUNT]={
 		{ nullptr,			8,		TFileInfo::AlignLeft }, // auxiliary column to indent the first information from left edge of window
 		{ _T("Name"),		180,	TFileInfo::AlignLeft|TFileInfo::FileName },
 		{ _T("Extension"),	70,		TFileInfo::AlignRight },

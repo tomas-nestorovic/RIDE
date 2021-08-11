@@ -107,12 +107,12 @@
 
 
 
-	constexpr PropGrid::Integer::TUpDownLimits PropGrid::Integer::TUpDownLimits::PositiveByte={ 1, (BYTE)-1 };
-	constexpr PropGrid::Integer::TUpDownLimits PropGrid::Integer::TUpDownLimits::PositiveWord={ 1, (WORD)-1 };
-	constexpr PropGrid::Integer::TUpDownLimits PropGrid::Integer::TUpDownLimits::PositiveInteger={ 1, INT_MAX };
-	constexpr PropGrid::Integer::TUpDownLimits PropGrid::Integer::TUpDownLimits::NonNegativeInteger={ 0, INT_MAX };
-	constexpr PropGrid::Integer::TUpDownLimits PropGrid::Integer::TUpDownLimits::NegativeInteger={ INT_MIN, -1 };
-	constexpr PropGrid::Integer::TUpDownLimits PropGrid::Integer::TUpDownLimits::Percent={ 0, 100 };
+	const PropGrid::Integer::TUpDownLimits PropGrid::Integer::TUpDownLimits::PositiveByte={ 1, (BYTE)-1 };
+	const PropGrid::Integer::TUpDownLimits PropGrid::Integer::TUpDownLimits::PositiveWord={ 1, (WORD)-1 };
+	const PropGrid::Integer::TUpDownLimits PropGrid::Integer::TUpDownLimits::PositiveInteger={ 1, INT_MAX };
+	const PropGrid::Integer::TUpDownLimits PropGrid::Integer::TUpDownLimits::NonNegativeInteger={ 0, INT_MAX };
+	const PropGrid::Integer::TUpDownLimits PropGrid::Integer::TUpDownLimits::NegativeInteger={ INT_MIN, -1 };
+	const PropGrid::Integer::TUpDownLimits PropGrid::Integer::TUpDownLimits::Percent={ 0, 100 };
 
 	PropGrid::PCEditor PropGrid::Integer::DefineEditor(TSize nValueBytes,RCUpDownLimits rLimits,TOnValueConfirmed onValueConfirmed,BYTE features,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters

@@ -120,7 +120,7 @@
 	#define HEADERLESS_EXTENSION	'H'
 	#define HEADERLESS_N_A			_T("N/A")
 
-	constexpr TCHAR CSpectrumDos::CTape::Extensions[ZX_TAPE_EXTENSION_STD_COUNT]={
+	const TCHAR CSpectrumDos::CTape::Extensions[ZX_TAPE_EXTENSION_STD_COUNT]={
 		ZX_TAPE_EXTENSION_PROGRAM,
 		ZX_TAPE_EXTENSION_NUMBERS,
 		ZX_TAPE_EXTENSION_CHARS,
@@ -625,7 +625,7 @@
 	#define INFORMATION_FLAG		6 /* column to sort by */
 	#define INFORMATION_CHECKSUM	7 /* column to sort by */
 
-	constexpr CFileManagerView::TFileInfo CSpectrumDos::CTape::CTapeFileManagerView::InformationList[INFORMATION_COUNT]={
+	const CFileManagerView::TFileInfo CSpectrumDos::CTape::CTapeFileManagerView::InformationList[INFORMATION_COUNT]={
 		{ _T("Type"),		100,	TFileInfo::AlignRight },
 		{ _T("Name"),		180,	TFileInfo::AlignLeft|TFileInfo::FileName },
 		{ _T("Size"),		60,		TFileInfo::AlignRight },

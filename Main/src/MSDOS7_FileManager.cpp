@@ -9,7 +9,7 @@
 	#define INFORMATION_READ		4 /* column to sort by */
 	#define INFORMATION_MODIFIED	5 /* column to sort by */
 
-	constexpr CFileManagerView::TFileInfo CMSDOS7::CMsdos7FileManagerView::InformationList[INFORMATION_COUNT]={
+	const CFileManagerView::TFileInfo CMSDOS7::CMsdos7FileManagerView::InformationList[INFORMATION_COUNT]={
 		{ _T("Name"),		250,	TFileInfo::AlignLeft|TFileInfo::FileName },
 		{ _T("Size"),		70,		TFileInfo::AlignRight },
 		{ _T("Attributes"), 80,		TFileInfo::AlignRight },
@@ -18,7 +18,7 @@
 		{ _T("Last modified"),190,	TFileInfo::AlignRight }
 	};
 
-	constexpr CFileManagerView::TDirectoryStructureManagement CMSDOS7::CMsdos7FileManagerView::dirManagement={
+	const CFileManagerView::TDirectoryStructureManagement CMSDOS7::CMsdos7FileManagerView::dirManagement={
 		(CDos::TFnCreateSubdirectory)&CMSDOS7::CreateSubdirectory,
 		(CDos::TFnChangeCurrentDirectory)&CMSDOS7::SwitchToDirectory,
 		(CDos::TFnMoveFileToCurrDir)&CMSDOS7::MoveFileToCurrDir
@@ -318,7 +318,7 @@
 
 
 
-	constexpr SYSTEMTIME CMSDOS7::TDateTime::Epoch[]={ {1980,1,2,1}, {2107,12,4,31} };
+	const SYSTEMTIME CMSDOS7::TDateTime::Epoch[]={ {1980,1,2,1}, {2107,12,4,31} };
 
 	static void WINAPI __pg_dateTime_draw__(PropGrid::PCustomParam,PropGrid::PCValue value,PropGrid::TSize size,PDRAWITEMSTRUCT pdis){
 		if (size==sizeof(DWORD)) // both date and time

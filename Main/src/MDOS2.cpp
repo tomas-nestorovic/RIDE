@@ -538,7 +538,7 @@
 
 
 
-	constexpr char CMDOS2::TDirectoryEntry::KnownExtensions[]={ TDirectoryEntry::PROGRAM, TDirectoryEntry::CHAR_ARRAY, TDirectoryEntry::NUMBER_ARRAY, TDirectoryEntry::BLOCK, TDirectoryEntry::SNAPSHOT, TDirectoryEntry::SEQUENTIAL };
+	const char CMDOS2::TDirectoryEntry::KnownExtensions[]={ TDirectoryEntry::PROGRAM, TDirectoryEntry::CHAR_ARRAY, TDirectoryEntry::NUMBER_ARRAY, TDirectoryEntry::BLOCK, TDirectoryEntry::SNAPSHOT, TDirectoryEntry::SEQUENTIAL };
 
 	DWORD CMDOS2::TDirectoryEntry::GetLength() const{
 		// determines and returns the File length

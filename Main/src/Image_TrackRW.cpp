@@ -699,7 +699,7 @@
 
 
 
-	constexpr COLORREF CImage::CTrackReader::TParseEvent::TypeColors[LAST]={
+	const COLORREF CImage::CTrackReader::TParseEvent::TypeColors[LAST]={
 		0,			// None
 		0xa398c2,	// sync 3 Bytes
 		0x82c5e7,	// mark 1 Byte

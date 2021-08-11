@@ -9,7 +9,7 @@
 		return new CSCL;
 	}
 
-	constexpr CImage::TProperties CSCL::Properties={
+	const CImage::TProperties CSCL::Properties={
 		MAKE_IMAGE_ID('T','R','D','O','S','S','C','L'), // a unique identifier
 		Recognize,	// list of recognized device names
 		Instantiate,// instantiation function

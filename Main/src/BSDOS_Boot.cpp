@@ -64,7 +64,7 @@
 		{ _T("3.5\" DS HD"), 0, {Medium::FLOPPY_HD_350,Codec::MFM,79,2,11,TFormat::TLengthCode::LENGTHCODE_1024,BSDOS_SECTOR_LENGTH_STD,1}, 1, 0, BSDOS_SECTOR_GAP3, 2, 32 }
 	};
 
-	constexpr CDos::TProperties CBSDOS308::Properties={
+	const CDos::TProperties CBSDOS308::Properties={
 		_T("BS-DOS 308 (MB-02)"), // name
 		MAKE_DOS_ID('B','S','D','O','S','-','0','2'), // unique identifier
 		60, // recognition priority
@@ -94,7 +94,7 @@
 
 
 
-	constexpr TPhysicalAddress CBSDOS308::TBootSector::CHS={ 0, 0, {0,0,1,BSDOS_SECTOR_LENGTH_STD_CODE} };
+	const TPhysicalAddress CBSDOS308::TBootSector::CHS={ 0, 0, {0,0,1,BSDOS_SECTOR_LENGTH_STD_CODE} };
 
 	CBSDOS308::PBootSector CBSDOS308::TBootSector::GetData(PImage image){
 		// attempts to get and eventually returns BS-DOS BootSector data, eventually returning Null in case of error

@@ -9,7 +9,7 @@
 		*pFormatBoot=TFormat::Unknown;
 		return ERROR_SUCCESS;
 	}
-	constexpr CDos::TProperties CUnknownDos::Properties={
+	const CDos::TProperties CUnknownDos::Properties={
 		nullptr, // name
 		0, // unique identifier
 		0, // recognition priority

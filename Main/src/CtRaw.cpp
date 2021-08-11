@@ -9,7 +9,7 @@
 	static PImage Instantiate(LPCTSTR){
 		return new CCtRaw;
 	}
-	constexpr CImage::TProperties CCtRaw::Properties={
+	const CImage::TProperties CCtRaw::Properties={
 		MAKE_IMAGE_ID('C','A','P','S','_','R','A','W'), // a unique identifier
 		Recognize,	// list of recognized device names
 		Instantiate,	// instantiation function

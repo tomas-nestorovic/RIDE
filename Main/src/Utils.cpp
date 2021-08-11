@@ -452,7 +452,7 @@ namespace Utils{
 
 
 
-	constexpr TCHAR CAxis::CountPrefixes[]=_T("   kkkMMMBBB"); // no-prefix, thousand, million, billion
+	const TCHAR CAxis::CountPrefixes[]=_T("   kkkMMMBBB"); // no-prefix, thousand, million, billion
 
 	CAxis::CAxis(TLogValue logLength,TLogTime logValuePerUnit,BYTE initZoomFactor)
 		// ctor
@@ -587,7 +587,7 @@ namespace Utils{
 		: CAxis( logTimeLength, logTimePerUnit, initZoomFactor ) {
 	}
 
-	constexpr TCHAR CTimeline::TimePrefixes[]=_T("nnnµµµmmm   "); // nano, micro, milli, no-prefix
+	const TCHAR CTimeline::TimePrefixes[]=_T("nnnµµµmmm   "); // nano, micro, milli, no-prefix
 
 	int CTimeline::TimeToReadableString(TLogTime logTime,PTCHAR buffer) const{
 		// converts specified Time to string with same level of detail as Drawn on the timeline
@@ -1300,7 +1300,7 @@ namespace Utils{
 
 
 
-	constexpr TSplitButtonAction TSplitButtonAction::HorizontalLine={ 0, 0, MF_SEPARATOR };
+	const TSplitButtonAction TSplitButtonAction::HorizontalLine={ 0, 0, MF_SEPARATOR };
 
 	typedef struct TSplitButtonInfo sealed{
 		const PCSplitButtonAction pAction;
