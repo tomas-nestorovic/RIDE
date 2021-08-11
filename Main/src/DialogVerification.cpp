@@ -570,7 +570,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 		} dir; // Directory to store Files addressing lost Sectors
 		WORD fileId=0;
 		pAction->SetProgressTarget( vp.dos->formatBoot.nCylinders );
-		const auto sectorIdAndPositionIdentity=Utils::CByteIdentity();
+		const Utils::CByteIdentity sectorIdAndPositionIdentity;
 		TPhysicalAddress chs;
 		for( chs.cylinder=0; chs.cylinder<vp.dos->formatBoot.nCylinders; chs.cylinder++ )
 			for( chs.head=0; chs.head<vp.dos->formatBoot.nHeads; chs.head++ ){
@@ -689,7 +689,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 		const PImage image=vp.dos->image;
 		vp.fReport.OpenSection(SURFACE_VERIFICATION _T(" (whole disk)"));
 		pAction->SetProgressTarget( vp.dos->formatBoot.nCylinders );
-		const auto sectorIdAndPositionIdentity=Utils::CByteIdentity();
+		const Utils::CByteIdentity sectorIdAndPositionIdentity;
 		TPhysicalAddress chs;
 		for( chs.cylinder=vp.dos->GetFirstCylinderWithEmptySector(); chs.cylinder<vp.dos->formatBoot.nCylinders; chs.cylinder++ )
 			for( chs.head=0; chs.head<vp.dos->formatBoot.nHeads; chs.head++ ){

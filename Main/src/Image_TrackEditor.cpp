@@ -201,7 +201,6 @@
 										if (!continuePainting) // new paint request?
 											break;
 										if (showByteInfo && pe->IsDataAny()){
-											::SelectObject( dc, showByteInfo==BI_FULL?Utils::CRidePen::BlackHairline:Utils::CRidePen::BlackHairlineDotted );
 											auto pbi=pe.data->byteInfos;
 											while (pbi->tStart+iwTimeDefaultHalf<ti.tStart) pbi++; // skip invisible part
 											rcLabel.right=10000, rcLabel.bottom-=font.charHeight, rcLabel.top=rcLabel.bottom-byteInfoSizeMin.cy;

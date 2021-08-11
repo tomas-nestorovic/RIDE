@@ -204,7 +204,7 @@
 	#define ADDRESS_FORMAT_LENGTH	10
 	#define ADDRESS_SPACE_LENGTH	1
 
-	constexpr CHexaEditor::TEmphasis CHexaEditor::TEmphasis::Terminator={ INT_MAX, INT_MAX };
+	const CHexaEditor::TEmphasis CHexaEditor::TEmphasis::Terminator={ INT_MAX, INT_MAX };
 
 	CHexaEditor::CHexaEditor(PVOID param,HMENU customSelectSubmenu,HMENU customResetSubmenu,HMENU customGotoSubmenu)
 		// ctor
