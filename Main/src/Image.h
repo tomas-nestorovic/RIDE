@@ -128,7 +128,8 @@
 			LENGTHCODE_2048	=4,
 			LENGTHCODE_4096	=5,
 			LENGTHCODE_8192	=6,
-			LENGTHCODE_16384=7
+			LENGTHCODE_16384=7,
+			LAST
 		} sectorLengthCode;
 		WORD sectorLength;
 		WORD clusterSize; // in Sectors
@@ -259,6 +260,7 @@
 
 		mutable CCriticalSection locker;
 		bool canBeModified;
+		PCSide sideMap; // explicit mapping of Heads to Side numbers (index = Head id, [index] = Side number); may be Null if the container doesn't have such feature (e.g. DSK images)
 
 		BOOL DoSave(LPCTSTR lpszPathName,BOOL bReplace) override;
 		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override; // enabling/disabling ToolBar buttons
@@ -621,6 +623,7 @@
 		static PCProperties DetermineType(LPCTSTR fileName);
 		static BYTE PopulateComboBoxWithCompatibleMedia(HWND hComboBox,WORD dosSupportedMedia,PCProperties imageProperties);
 		static BYTE PopulateComboBoxWithCompatibleCodecs(HWND hComboBox,WORD dosSupportedCodecs,PCProperties imageProperties);
+		static void PopulateComboBoxWithSectorLengths(HWND hComboBox);
 		static TFormat::TLengthCode GetSectorLengthCode(WORD sectorLength);
 		static WORD GetOfficialSectorLength(BYTE sectorLengthCode);
 		static UINT AFX_CDECL SaveAllModifiedTracks_thread(PVOID _pCancelableAction);
@@ -635,6 +638,7 @@
 		BOOL OnSaveDocument(LPCTSTR lpszPathName) override sealed; // sealed = override CImage::SaveAllModifiedTracks instead
 		bool IsWriteProtected() const;
 		bool CanBeModified() const;
+		inline PCSide GetSideMap() const{ return sideMap; }
 		virtual TCylinder GetCylinderCount() const=0;
 		virtual THead GetHeadCount() const=0;
 		THead GetNumberOfFormattedSides(TCylinder cyl) const;

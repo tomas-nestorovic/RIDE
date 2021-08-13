@@ -65,6 +65,8 @@ namespace Utils{
 		inline POSITION InsertAfter(POSITION position,Ptr newElement){ return __super::InsertAfter(position,(PVOID)newElement); }
 	};
 
+	typedef CPtrList<int> CIntList;
+
 	template<typename T>
 	class CCopyList:public CStringList{
 	public:
@@ -187,12 +189,15 @@ namespace Utils{
 		void SetDlgItemSize(WORD id,int cx,int cy) const;
 		LONG_PTR GetDlgComboBoxSelectedValue(WORD id) const;
 		bool SelectDlgComboBoxValue(WORD id,LONG_PTR value) const;
+		int GetDlgComboBoxSelectedIndex(WORD id) const;
 		void WrapDlgItemsByClosingCurlyBracketWithText(WORD idA,WORD idZ,LPCTSTR text,DWORD textColor) const;
 		void SetDlgItemFormattedText(WORD id,LPCTSTR format,...) const;
 		void SetDlgItemSingleCharUsingFont(WORD id,WCHAR singleChar,HFONT hFont) const;
 		void SetDlgItemSingleCharUsingFont(WORD id,WCHAR singleChar,LPCTSTR fontFace,int fontPointSize) const;
 		void PopulateDlgComboBoxWithSequenceOfNumbers(WORD cbId,BYTE iStartValue,LPCTSTR strStartValueDesc,BYTE iEndValue,LPCTSTR strEndValueDesc) const;
 		void ConvertDlgButtonToSplitButton(WORD id,PCSplitButtonAction pAction,BYTE nActions) const;
+		bool GetDlgItemIntList(WORD id,CIntList &rOutList,UINT nIntsMin=0,UINT nIntsMax=INT_MAX) const;
+		void SetDlgItemIntList(WORD id,const CIntList &list) const;
 	};
 
 	class CSingleNumberDialog sealed:public CRideDialog{

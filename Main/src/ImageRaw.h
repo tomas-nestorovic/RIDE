@@ -12,7 +12,7 @@
 		void __saveTrackToCurrentPositionInFile__(CFile *pfOtherThanCurrentFile,TPhysicalAddress chs);
 	protected:
 		TTrackScheme trackAccessScheme;
-		PCSide sideMap;
+		Utils::CCallocPtr<TSide,THead> explicitSides; // non-Null = Side numbers explicitly provided by user
 		DWORD sizeWithoutGeometry;
 		CFile f;
 

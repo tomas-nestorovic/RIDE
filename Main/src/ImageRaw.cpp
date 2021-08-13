@@ -21,7 +21,7 @@
 
 	CImageRaw::CImageRaw(PCProperties properties,bool hasEditableSettings)
 		// ctor
-		: CImage(properties,false) // TODO: hasEditableSettings
+		: CImage(properties,hasEditableSettings)
 		, trackAccessScheme(TTrackScheme::BY_CYLINDERS)
 		, nCylinders(0) , nSectors(0) // = not initialized - see SetMediumTypeAndGeometry
 		, bufferOfCylinders(nullptr) , sizeWithoutGeometry(0) {
@@ -94,6 +94,11 @@
 		// - currently without geometry (DOS must call SetMediumTypeAndGeometry)
 		if ( sizeWithoutGeometry=f.GetLength() )
 			nCylinders=1, nHeads=1, nSectors=1, sectorLengthCode=GetSectorLengthCode( sectorLength=std::min<DWORD>(sizeWithoutGeometry,(WORD)-1) );
+		// - confirming initial settings
+		if (!EditSettings(true)){ // dialog cancelled?
+			::SetLastError( ERROR_CANCELLED );
+			return FALSE;
+		}
 		return TRUE;
 	}
 
@@ -264,6 +269,9 @@ trackNotFound:
 
 	TStdWinError CImageRaw::__setMediumTypeAndGeometry__(PCFormat pFormat,PCSide _sideMap,TSector _firstSectorNumber){
 		// sets Medium's Type and geometry; returns Windows standard i/o error
+		// - if geometry already set manually by the user, we are successfully done
+		if (explicitSides)
+			return ERROR_SUCCESS;
 		// - determining the Image Size based on the size of Image's underlying file
 		const DWORD fileSize=	f.m_hFile!=CFile::hFileNull // InvalidHandle if creating a new Image, for instance
 								? sizeWithoutGeometry
@@ -330,8 +338,181 @@ trackNotFound:
 	bool CImageRaw::EditSettings(bool initialEditing){
 		// True <=> new settings have been accepted (and adopted by this Image), otherwise False
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		//TODO
-		return true;
+		// - defining the Dialog
+		class CSettingsDialog sealed:public Utils::CRideDialog{
+			const bool initialEditing;
+			const CImageRaw &rawImage;
+			bool processUiNotifications;
+
+			void DoDataExchange(CDataExchange *pDX) override{
+				// exchange of data from and to controls
+				CComboBox cb;
+				if (pDX->m_bSaveAndValidate){
+					// . Geometry
+					DDX_CBIndex( pDX, ID_FORMAT, manualRecognition );
+					// . Cylinders
+					if (IsDlgItemEnabled(ID_CYLINDER)){ // manual geometry?
+						DDX_Text( pDX, ID_CYLINDER, (RCylinder)nCylinders );
+							DDV_MinMaxInt( pDX, nCylinders, 1, (TCylinder)-1 );
+					}
+					// . list of Side numbers
+					constexpr TCHAR Incorrect[]=_T("Incorrect!");
+					if (IsDlgItemEnabled(ID_SIDE)){ // manual geometry?
+						Utils::CIntList list;
+						if (GetDlgItemIntList( ID_SIDE, list, 1, (THead)-1 )){
+							TCHAR buf[16];
+							nHeads=list.GetCount();
+							::wsprintf( buf, _T("%d head%c"), nHeads, nHeads>1?'s':'\0' );
+							SetDlgItemText( ID_HEAD, buf );
+							for( THead h=0; h<nHeads; sideNumbers[h++]=list.RemoveHead() );
+						}else{
+							SetDlgItemText( ID_HEAD, Incorrect );
+							pDX->PrepareCtrl(ID_SIDE);
+							pDX->Fail();
+						}
+					}
+					// . list of Sector numbers
+					if (IsDlgItemEnabled(ID_SECTOR)){ // manual geometry?
+						DDX_Text( pDX, ID_NUMBER, firstSectorNumber );
+							DDV_MinMaxInt( pDX, firstSectorNumber, 0, (TSector)-1 );
+						DDX_Text( pDX, ID_SECTOR, nSectors );
+							DDV_MinMaxInt( pDX, nSectors, 1, (TSector)-1+1-firstSectorNumber );
+					}
+					// . Sector length
+					if (IsDlgItemEnabled(ID_SIZE)) // manual geometry?
+						sectorLengthCode=GetDlgComboBoxSelectedValue( ID_SIZE );
+				}else{
+					// . can confirm the dialog only during InitialEditing
+					EnableDlgItem( IDOK, initialEditing );
+					// . ReadBufferSize
+					TCHAR buf[512];
+					int i=0;
+					DDX_CBIndex( pDX, ID_BUFFER, i );
+					/*cb.Attach( GetDlgItem(ID_BUFFER)->m_hWnd );
+						BYTE selectedReadBufferSize=0; // by default, the smallest Size is selected in the ComboBox
+						for( PCBYTE pSize=ReadBufferSizes; const TCylinder size=*pSize; pSize++ ){
+							::wsprintf( buf, _T("%d cylinders"), size );
+							cb.SetItemData( cb.AddString(buf), size );
+							if (size==params.readBufferSize)
+								selectedReadBufferSize=pSize-ReadBufferSizes;
+						}
+						cb.SetCurSel(selectedReadBufferSize);
+					cb.Detach();*/
+					// . information on how many Cylinders are currently buffered
+					if (initialEditing)
+						SetDlgItemText( ID_INFORMATION, _T("N/A") );
+					else{
+						TCylinder nCylindersBuffered=0;
+						for( PVOID *pCyl=rawImage.bufferOfCylinders+nCylinders; pCyl>rawImage.bufferOfCylinders; nCylindersBuffered+=*--pCyl!=nullptr );
+						float nUnits; LPCTSTR unitName;
+						Utils::BytesToHigherUnits( nCylindersBuffered*nHeads*nSectors*rawImage.sectorLength, nUnits, unitName );
+						_stprintf( buf, _T("%d cylinders (%.2f %s)"), nCylindersBuffered, nUnits, unitName );
+						SetDlgItemText( ID_INFORMATION, buf );
+					}
+					// . Geometry and associated inputs
+					DDX_CBIndex( pDX, ID_FORMAT, manualRecognition );
+					EnableDlgItem( ID_FORMAT, initialEditing );
+					SendMessage( WM_COMMAND, MAKELONG(ID_FORMAT,CBN_SELCHANGE) );
+				}
+			}
+
+			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
+				// window procedure
+				if (msg==WM_COMMAND)
+					switch (wParam){
+						case MAKELONG(ID_FORMAT,CBN_SELCHANGE):{
+							// Geometry combo-box value changed
+							constexpr WORD Controls[]={ ID_CYLINDER, ID_SIDE, ID_NUMBER, ID_SECTOR, ID_SIZE, 0 };
+							if (EnableDlgItems( Controls, GetDlgComboBoxSelectedIndex(ID_FORMAT)>0 )){
+								// manually set geometry
+								processUiNotifications=false;
+									// . Cylinders
+									SetDlgItemInt( ID_CYLINDER, nCylinders );
+									// . Sides
+									Utils::CIntList list;
+									for( THead h=0; h<nHeads; list.AddTail(sideNumbers[h++]) );
+									SetDlgItemIntList( ID_SIDE, list );
+									// . Sectors
+									SetDlgItemInt( ID_NUMBER, firstSectorNumber );
+									SetDlgItemInt( ID_SECTOR, nSectors );
+									// . SectorLength
+									CImage::PopulateComboBoxWithSectorLengths( GetDlgItemHwnd(ID_SIZE) );
+									SelectDlgComboBoxValue( ID_SIZE, sectorLengthCode );
+									// . Controls enabled only if this is the InitialEditing
+									EnableDlgItems( Controls, initialEditing );
+									// . indicating bad inputs by attempting to accept the values
+									DoDataExchange( &CDataExchange(this,TRUE) );
+								processUiNotifications=true;
+							}else{
+								// automatically recognized geometry
+								constexpr TCHAR Auto[]=_T("Auto");
+								SetDlgItemText( ID_CYLINDER, Auto );
+								SetDlgItemText( ID_SIDE, Auto );
+									SetDlgItemText( ID_HEAD, _T("") );
+								SetDlgItemText( ID_SECTOR, Auto );
+									SetDlgItemText( ID_NUMBER, Auto );
+								CComboBox cb;
+								cb.Attach( GetDlgItemHwnd(ID_SIZE) );
+									cb.SetCurSel( cb.AddString(Auto) );
+								cb.Detach();
+							}
+							break;
+						}
+						case MAKELONG(ID_SIDE,EN_CHANGE):
+							// input controls manually changed
+							if (processUiNotifications)
+								DoDataExchange( &CDataExchange(this,TRUE) ); // indicating bad inputs by attempting to accept the values
+							break;
+						
+					}
+				return __super::WindowProc( msg, wParam, lParam );
+			}
+		public:
+			int manualRecognition;
+			TCylinder nCylinders;
+			THead nHeads;
+			TSide sideNumbers[(THead)-1];
+			TSector nSectors,firstSectorNumber;
+			BYTE sectorLengthCode;
+
+			CSettingsDialog(const CImageRaw &rawImage,bool initialEditing)
+				// ctor
+				: Utils::CRideDialog(IDR_RAW_SETTINGS)
+				, processUiNotifications(true)
+				, initialEditing(initialEditing)
+				, rawImage(rawImage)
+				, manualRecognition( rawImage.explicitSides )
+				, nCylinders( rawImage.nCylinders )
+				, nHeads( rawImage.nHeads )
+				, nSectors( rawImage.nSectors ) , firstSectorNumber( rawImage.firstSectorNumber )
+				, sectorLengthCode( rawImage.sectorLengthCode ) {
+				if (rawImage.explicitSides)
+					::memcpy( sideNumbers, rawImage.explicitSides, nHeads*sizeof(TSide) );
+				else{ // automatic geometry - need to initialize the defaults
+					nCylinders=1;
+					nHeads=1, *sideNumbers=0;
+					firstSectorNumber=1, nSectors=1, sectorLengthCode=TFormat::LENGTHCODE_512;
+				}
+			}
+		} d( *this, initialEditing );
+		// - showing the Dialog and processing its result
+		if (d.DoModal()==IDOK){
+			if (d.manualRecognition){
+				TFormat fmt=TFormat::Unknown; // the Image format ...
+					fmt.mediumType=Medium::ANY; // ... is no longer Unknown, but the Medium can be Any of supported
+					fmt.nCylinders=d.nCylinders;
+					fmt.nHeads=d.nHeads;
+					fmt.nSectors=d.nSectors;
+					fmt.sectorLengthCode=(TFormat::TLengthCode)d.sectorLengthCode;
+					fmt.sectorLength=GetOfficialSectorLength(d.sectorLengthCode);
+				auto tmpSides=Utils::MakeCallocPtr<TSide,THead>(d.nHeads,d.sideNumbers);
+				if (SetMediumTypeAndGeometry( &fmt, tmpSides, d.firstSectorNumber )!=ERROR_SUCCESS)
+					return false; // we should always succeed, but just to be sure
+				explicitSides.reset( tmpSides.release() );
+			}
+			return true;
+		}else
+			return false;
 	}
 
 	TStdWinError CImageRaw::Reset(){

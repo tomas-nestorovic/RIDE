@@ -1057,6 +1057,11 @@ namespace Utils{
 		return valueFound;
 	}
 
+	int CRideDialog::GetDlgComboBoxSelectedIndex(WORD id) const{
+		// returns the index of the item selected in specified ComboBox
+		return ::SendDlgItemMessage( *this, id, CB_GETCURSEL, 0, 0 );
+	}
+
 	class CTempDlg sealed:public CDialog{
 		const HRSRC hRes;
 		const HGLOBAL gRes;
@@ -1186,6 +1191,79 @@ namespace Utils{
 			ComboBox_AddString( hComboBox, _itot(iStartValue,buf,10) );
 		::wsprintf( buf, _T("%d %s"), iEndValue, strEndValueDesc );
 		ComboBox_AddString( hComboBox, buf );
+	}
+
+	constexpr TCHAR RangeSign='-'; // "minus"
+	constexpr TCHAR Delimiters[]={ ',', ';', RangeSign, '\0' }; // valid integer delimiters, INCLUDING RangeSign
+
+	bool CRideDialog::GetDlgItemIntList(WORD id,CIntList &rOutList,UINT nIntsMin,UINT nIntsMax) const{
+		// True <=> item with the specified ID contains list of integer values (grammar bellow), otherwise False
+		// - elimination of white spaces from the content
+		TCHAR buf[16384], *pEnd=buf;
+		for( int i=0,n=GetDlgItemText(id,buf,sizeof(buf)/sizeof(TCHAR)); i<n; i++ )
+			if (!::isspace(buf[i]))
+				*pEnd++=buf[i];
+		// - empty content is incorrect
+		if (pEnd==buf)
+			return false;
+		// - not beginning with a digit is incorrect
+		if (!::isdigit(*buf))
+			return false;
+		// - parsing the content and populating the List with recognized integers
+		*pEnd=*Delimiters;
+		struct{
+			bool open;
+			int begin;
+		} range={};
+		for( const TCHAR *p=buf; p<pEnd; p++ ){
+			int i,n;
+			if (!_stscanf( p, _T("%d%n"), &i, &n ))
+				return false; // invalid or no number
+			p+=n;
+			if (!::strchr(Delimiters,*p))
+				return false; // each integer must be terminated with one of Delimiters
+			if (range.open){
+				if (*p==RangeSign)
+					return false; // a "range within a range" is invalid
+				if (range.begin<=i) // range specified in ascending order (e.g. "2-5")
+					while (++range.begin<=i)
+						rOutList.AddTail(range.begin);
+				else // range specified in descending order (e.g. "5-2")
+					while (i<=--range.begin)
+						rOutList.AddTail(range.begin);
+			}else
+				rOutList.AddTail(i);
+			if ( range.open=*p==RangeSign )
+				range.begin=i;
+		}
+		// - must stay within count limits
+		if (rOutList.GetCount()<nIntsMin || nIntsMax<rOutList.GetCount())
+			return false;
+		// - the content is valid and the output List has been populated
+		return true;
+	}
+
+	void CRideDialog::SetDlgItemIntList(WORD id,const CIntList &list) const{
+		// populates item with the specified ID with textual representation of the integer values
+		TCHAR buf[16384], *p=buf;
+		for( POSITION pos=list.GetHeadPosition(); pos; ){
+			int rangeBegin=list.GetNext(pos), rangeEnd=rangeBegin;
+			if (pos)
+				if (rangeBegin<list.GetAt(pos)) // ascending range?
+					while (pos && list.GetAt(pos)==rangeEnd+1)
+						rangeEnd=list.GetNext(pos);
+				else if (list.GetAt(pos)<rangeBegin) // descending range?
+					while (pos && list.GetAt(pos)==rangeEnd-1)
+						rangeEnd=list.GetNext(pos);
+			if (rangeEnd==rangeBegin) // only one isolated number
+				p+=::wsprintf( p, _T("%d%c "), rangeBegin, *Delimiters );
+			else if (std::abs(rangeEnd-rangeBegin)==1) // range of two numbers is better to be listed as two isolated numbers
+				p+=::wsprintf( p, _T("%d%c %d%c "), rangeBegin, *Delimiters, rangeEnd, *Delimiters );
+			else // a range of at least three consecutive numbers
+				p+=::wsprintf( p, _T("%d%c%d%c "), rangeBegin, RangeSign, rangeEnd, *Delimiters );
+		}
+		p[-2]='\0';
+		::SetDlgItemText( *this, id, buf );
 	}
 
 

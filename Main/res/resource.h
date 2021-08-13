@@ -39,6 +39,7 @@
 #define IDR_DOS_PROPGRID_HEXAEDITOR     188
 #define IDR_DOS_RECOGNITION             189
 #define IDR_SPECTRUM_PREVIEW_BASIC      193
+#define IDR_RAW_SETTINGS                196
 #define IDR_HEXAEDITOR_FIND             203
 #define IDR_SINGLE_NUMBER               204
 #define IDR_DISKBROWSER                 205
@@ -47,7 +48,7 @@
 #define IDR_DOS_DATETIME_EDIT           208
 #define IDR_HEXAEDITOR_RESETSELECTION   209
 #define IDR_GUIDEPOST                   211
-#define IDR_BSDOS                       214
+#define IDR_BSDOS                       213
 #define IDR_DOS_VERIFY                  214
 #define IDR_ACTION_SEQUENCE             216
 #define IDR_DRIVE_ACCESS                217
@@ -144,6 +145,7 @@
 #define ID_PRIORITY                     1155
 #define ID_BUFFER                       1156
 #define ID_HELP_DONATE                  1157
+#define ID_SIDE                         1165
 #define ID_DATE                         1171
 #define ID_TIME                         1173
 #define ID_BOOT                         1175

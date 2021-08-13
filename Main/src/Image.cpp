@@ -430,6 +430,19 @@ namespace Medium{
 		return result;
 	}
 
+	void CImage::PopulateComboBoxWithSectorLengths(HWND hComboBox){
+		// populates ComboBox with all available SectorLengths
+		CComboBox cb;
+		cb.Attach(hComboBox);
+			cb.ResetContent();
+			TCHAR desc[8];
+			for( BYTE lengthCode=0; lengthCode<TFormat::TLengthCode::LAST; lengthCode++ )
+				cb.SetItemData( cb.AddString(_itot(GetOfficialSectorLength(lengthCode),desc,10)), lengthCode );
+			cb.EnableWindow();
+			cb.SetCurSel(0);
+		cb.Detach();
+	}
+
 
 
 
@@ -443,6 +456,7 @@ namespace Medium{
 		// - initialization
 		: properties(_properties) , dos(nullptr)
 		, hasEditableSettings(hasEditableSettings) , writeProtected(true) , canBeModified(!_properties->isReadOnly)
+		, sideMap(nullptr) // no explicit mapping of Heads to Side numbers
 		// - creating Toolbar (its displaying in CTdiView::ShowContent)
 		, toolbar(IDR_IMAGE,ID_IMAGE) { // ID_IMAGE = "some" unique ID
 		// - when destroying all Views, the document must exist further (e.g. when switching Tabs in TDI)

@@ -34,7 +34,7 @@
 	CUnknownDos::CUnknownDos(PImage image,PCFormat pFormatBoot)
 		// ctor
 		// - base
-		: CDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS, &Properties, nullptr, StdSidesMap, IDR_DOS_UNKNOWN, nullptr, TGetFileSizeOptions::OfficialDataLength, TSectorStatus::UNKNOWN )
+		: CDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS, &Properties, nullptr, image->GetSideMap()?image->GetSideMap():StdSidesMap, IDR_DOS_UNKNOWN, nullptr, TGetFileSizeOptions::OfficialDataLength, TSectorStatus::UNKNOWN )
 		// - initialization
 		, trackMap(this) {
 	}
