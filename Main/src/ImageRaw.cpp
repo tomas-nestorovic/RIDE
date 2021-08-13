@@ -125,7 +125,7 @@
 		// saves all Modified Tracks; returns Windows standard i/o error
 		// - saving
 		CFile fTmp;
-		const bool savingToCurrentFile= lpszPathName==f.GetFileName() && ::GetFileAttributes(lpszPathName)!=INVALID_FILE_ATTRIBUTES; // saving to the same file and that file exists
+		const bool savingToCurrentFile= lpszPathName==f.GetFilePath() && ::GetFileAttributes(lpszPathName)!=INVALID_FILE_ATTRIBUTES; // saving to the same file and that file exists
 		if (!savingToCurrentFile && !OpenImageForWriting(lpszPathName,&fTmp))
 			return ERROR_GEN_FAILURE;
 		if (f.m_hFile!=CFile::hFileNull) // handle doesn't exist when creating new Image
