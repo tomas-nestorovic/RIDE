@@ -1243,7 +1243,7 @@ leftMouseDragged:
 						row++; break;
 					case SB_THUMBPOSITION:	// "thumb" released
 					case SB_THUMBTRACK:		// "thumb" dragged
-						row = si.nPos = si.nTrackPos;	break;
+						row = si.nTrackPos;	break;
 				}
 				locker.Lock();
 					row=std::min( std::max(row,0), nLogicalRows-nRowsOnPage );
