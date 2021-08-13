@@ -24,7 +24,7 @@
 		: CImage(properties,hasEditableSettings)
 		, trackAccessScheme(TTrackScheme::BY_CYLINDERS)
 		, nCylinders(0) , nSectors(0) // = not initialized - see SetMediumTypeAndGeometry
-		, bufferOfCylinders(nullptr) , sizeWithoutGeometry(0) {
+		, sizeWithoutGeometry(0) {
 		Reset(); // to be correctly initialized
 	}
 
@@ -47,7 +47,7 @@
 		// formats new Cylinders to meet the minimum number requested; returns Windows standard i/o error
 		// - redimensioning the Image
 		if (const PVOID tmp=::realloc(bufferOfCylinders,sizeof(PVOID)*nCyl))
-			bufferOfCylinders=(PVOID *)tmp;
+			bufferOfCylinders.reset( (PVOID *)tmp );
 		else
 			return ERROR_NOT_ENOUGH_MEMORY;
 		// - initializing added Cylinders with the FillerByte
@@ -72,7 +72,7 @@
 		if (bufferOfCylinders){
 			while (nCylinders)
 				__freeCylinder__( --nCylinders );
-			::free(bufferOfCylinders), bufferOfCylinders=nullptr;
+			bufferOfCylinders.reset(nullptr);
 		}
 	}
 
@@ -304,9 +304,8 @@ trackNotFound:
 					default:
 						ASSERT(FALSE);
 				}
-				const DWORD dw=sizeof(PVOID)*nCylinders;
-				if (bufferOfCylinders=(PVOID *)::malloc(dw))
-					::ZeroMemory(bufferOfCylinders,dw);
+				if (auto tmp=Utils::MakeCallocPtr<PVOID,TCylinder>(nCylinders,0))
+					bufferOfCylinders.reset( tmp.release() );
 				else
 					return ERROR_NOT_ENOUGH_MEMORY;
 			}
@@ -315,7 +314,7 @@ trackNotFound:
 			__freeBufferOfCylinders__();
 			if (fileSize){
 				nCylinders=1, nHeads=1, nSectors=1, sectorLengthCode=GetSectorLengthCode( sectorLength=std::min<DWORD>(fileSize,(WORD)-1) );
-				::ZeroMemory( bufferOfCylinders=(PVOID *)::malloc(sizeof(PVOID)), sizeof(PVOID) );
+				bufferOfCylinders.reset( Utils::MakeCallocPtr<PVOID,TCylinder>(nCylinders,0).release() );
 			}//else
 				//nop (see ctor, or specifically OnOpenDocument)
 		}

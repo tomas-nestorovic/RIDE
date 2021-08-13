@@ -3,7 +3,7 @@
 	
 	class CImageRaw:public CImage{
 		TCylinder nCylinders;
-		PVOID *bufferOfCylinders;
+		Utils::CCallocPtr<PVOID,TCylinder> bufferOfCylinders;
 		THead nHeads;
 		TSector nSectors,firstSectorNumber;
 		BYTE sectorLengthCode;	WORD sectorLength;
