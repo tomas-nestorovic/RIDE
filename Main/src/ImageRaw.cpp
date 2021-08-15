@@ -324,6 +324,9 @@ trackNotFound:
 	TStdWinError CImageRaw::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		// - if geometry already set manually by the user, we are successfully done
+		if (explicitSides)
+			return ERROR_SUCCESS;
 		// - choosing a proper TrackAccessScheme based on commonly known restrictions on emulation
 		if (dos) // may not exist if creating a new Image
 			if (dos->properties==&CGDOS::Properties)
@@ -341,7 +344,7 @@ trackNotFound:
 		class CSettingsDialog sealed:public Utils::CRideDialog{
 			const bool initialEditing;
 			const CImageRaw &rawImage;
-			bool processUiNotifications;
+			BYTE ignoreUiNotifications;
 
 			void DoDataExchange(CDataExchange *pDX) override{
 				// exchange of data from and to controls
@@ -373,7 +376,7 @@ trackNotFound:
 					// . list of Sector numbers
 					if (IsDlgItemEnabled(ID_SECTOR)){ // manual geometry?
 						DDX_Text( pDX, ID_NUMBER, firstSectorNumber );
-							DDV_MinMaxInt( pDX, firstSectorNumber, 0, (TSector)-1 );
+							DDV_MinMaxInt( pDX, firstSectorNumber, 0, (TSector)-1-1 );
 						DDX_Text( pDX, ID_SECTOR, nSectors );
 							DDV_MinMaxInt( pDX, nSectors, 1, (TSector)-1+1-firstSectorNumber );
 					}
@@ -417,43 +420,46 @@ trackNotFound:
 
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 				// window procedure
+				static constexpr TCHAR Auto[]=_T("Auto");
 				if (msg==WM_COMMAND)
 					switch (wParam){
-						case MAKELONG(ID_FORMAT,CBN_SELCHANGE):{
+						case MAKELONG(ID_FORMAT,CBN_SELCHANGE):
 							// Geometry combo-box value changed
-							constexpr WORD Controls[]={ ID_CYLINDER, ID_SIDE, ID_NUMBER, ID_SECTOR, ID_SIZE, 0 };
-							if (EnableDlgItems( Controls, GetDlgComboBoxSelectedIndex(ID_FORMAT)>0 )){
-								// manually set geometry
-								processUiNotifications=false;
-									// . Cylinders
-									SetDlgItemInt( ID_CYLINDER, nCylinders );
-									// . Sides
-									Utils::CIntList list;
-									for( THead h=0; h<nHeads; list.AddTail(sideNumbers[h++]) );
-									SetDlgItemIntList( ID_SIDE, list );
-									// . Sectors
-									SetDlgItemInt( ID_NUMBER, firstSectorNumber );
-									SetDlgItemInt( ID_SECTOR, nSectors );
-									// . SectorLength
-									CImage::PopulateComboBoxWithSectorLengths( GetDlgItemHwnd(ID_SIZE) );
-									SelectDlgComboBoxValue( ID_SIZE, sectorLengthCode );
-									// . Controls enabled only if this is the InitialEditing
-									EnableDlgItems( Controls, initialEditing );
-									// . indicating bad inputs by attempting to accept the values
-									DoDataExchange( &CDataExchange(this,TRUE) );
-								processUiNotifications=true;
-							}else{
-								// automatically recognized geometry
-								constexpr TCHAR Auto[]=_T("Auto");
-								SetDlgItemText( ID_CYLINDER, Auto );
-								SetDlgItemText( ID_SIDE, Auto );
-									SetDlgItemText( ID_HEAD, _T("") );
-								SetDlgItemText( ID_SECTOR, Auto );
-									SetDlgItemText( ID_NUMBER, Auto );
-								CComboBox cb;
-								cb.Attach( GetDlgItemHwnd(ID_SIZE) );
-									cb.SetCurSel( cb.AddString(Auto) );
-								cb.Detach();
+							if (!ignoreUiNotifications){
+								static constexpr WORD Controls[]={ ID_CYLINDER, ID_AUTO, ID_SIDE, ID_NUMBER, ID_SECTOR, ID_SIZE, 0 };
+								ignoreUiNotifications++;
+									if (EnableDlgItems( Controls, GetDlgComboBoxSelectedIndex(ID_FORMAT)>0 )){
+										// manually set geometry
+										// . Cylinders
+										SetDlgItemInt( ID_CYLINDER, nCylinders );
+										// . Sides
+										Utils::CIntList list;
+										for( THead h=0; h<nHeads; list.AddTail(sideNumbers[h++]) );
+										SetDlgItemIntList( ID_SIDE, list );
+										// . Sectors
+										SetDlgItemInt( ID_NUMBER, firstSectorNumber );
+										SetDlgItemInt( ID_SECTOR, nSectors );
+										// . SectorLength
+										CImage::PopulateComboBoxWithSectorLengths( GetDlgItemHwnd(ID_SIZE) );
+										SelectDlgComboBoxValue( ID_SIZE, sectorLengthCode );
+										// . Controls enabled only if this is the InitialEditing
+										if (!initialEditing) // disable all Controls only if this geometry already set
+											EnableDlgItems( Controls, initialEditing );
+										// . indicating bad inputs by attempting to accept the values
+										DoDataExchange( &CDataExchange(this,TRUE) );
+									}else{
+										// automatically recognized geometry
+										SetDlgItemText( ID_CYLINDER, Auto );
+										SetDlgItemText( ID_SIDE, Auto );
+											SetDlgItemText( ID_HEAD, _T("") );
+										SetDlgItemText( ID_SECTOR, Auto );
+											SetDlgItemText( ID_NUMBER, Auto );
+										CComboBox cb;
+										cb.Attach( GetDlgItemHwnd(ID_SIZE) );
+											cb.SetCurSel( cb.AddString(Auto) );
+										cb.Detach();
+									}
+								ignoreUiNotifications--;
 							}
 							break;
 						}
@@ -477,7 +483,7 @@ trackNotFound:
 			CSettingsDialog(const CImageRaw &rawImage,bool initialEditing)
 				// ctor
 				: Utils::CRideDialog(IDR_RAW_SETTINGS)
-				, processUiNotifications(true)
+				, ignoreUiNotifications(0)
 				, initialEditing(initialEditing)
 				, rawImage(rawImage)
 				, manualRecognition( rawImage.explicitSides )
@@ -490,7 +496,7 @@ trackNotFound:
 				else{ // automatic geometry - need to initialize the defaults
 					nCylinders=1;
 					nHeads=1, *sideNumbers=0;
-					firstSectorNumber=1, nSectors=1, sectorLengthCode=TFormat::LENGTHCODE_512;
+					firstSectorNumber=1, nSectors=9, sectorLengthCode=TFormat::LENGTHCODE_512;
 				}
 			}
 		} d( *this, initialEditing );
