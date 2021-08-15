@@ -337,6 +337,9 @@ trackNotFound:
 		return __setMediumTypeAndGeometry__(pFormat,sideMap,firstSectorNumber);
 	}
 
+	static constexpr TCHAR Custom[]=_T("Custom");
+	static constexpr TCHAR Incorrect[]=_T("Incorrect!");
+
 	bool CImageRaw::EditSettings(bool initialEditing){
 		// True <=> new settings have been accepted (and adopted by this Image), otherwise False
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
@@ -359,7 +362,6 @@ trackNotFound:
 							DDV_MinMaxInt( pDX, nCylinders, 1, (TCylinder)-1 );
 					}
 					// . list of Side numbers
-					static constexpr TCHAR Incorrect[]=_T("Incorrect!");
 					if (IsDlgItemEnabled(ID_SIDE)) // manual list of Sides?
 						if (nHeads<1 || (THead)-1<nHeads){
 							SetDlgItemText( ID_HEAD, Incorrect );
@@ -414,6 +416,25 @@ trackNotFound:
 						_stprintf( buf, _T("%d cylinders (%.2f %s)"), nCylindersBuffered, nUnits, unitName );
 						SetDlgItemText( ID_INFORMATION, buf );
 					}
+					// . populating dedicated combo-box with unique geometries
+					cb.Attach( *GetDlgItem(ID_FORMAT) );
+						cb.SetItemDataPtr( cb.AddString(_T("Automatically")), nullptr );
+						for( POSITION pos=CDos::Known.GetHeadPosition(); pos; ){
+							const CDos::TProperties &p=*CDos::Known.GetNext(pos);
+							for( TCHAR i=0,desc[80]; i<p.nStdFormats; i++ ){
+								const TFormat &f=p.stdFormats[i].params.format;
+								if (f.nHeads>1)
+									::wsprintf( desc, _T("Cyls %d, Sides 0-%d, Sectors 1-%d (%d Bytes)"), f.nCylinders+1, f.nHeads-1, f.nSectors, f.sectorLength );
+								else
+									::wsprintf( desc, _T("Cyls %d, Side 0, Sectors 1-%d (%d Bytes)"), f.nCylinders+1, f.nSectors, f.sectorLength );
+								if (cb.FindString( -1, desc )<0) // avoid duplicities in the combo-box
+									cb.SetItemDataPtr( cb.AddString(desc), (PVOID)&f );
+							}
+						}
+						cb.SetItemDataPtr( cb.AddString(Custom), nullptr );
+						if (initialEditing)
+							cb.SetCurSel(0);
+					cb.Detach();
 					// . Geometry and associated inputs
 					DDX_CBIndex( pDX, ID_FORMAT, manualRecognition );
 					EnableDlgItem( ID_FORMAT, initialEditing );
@@ -430,13 +451,21 @@ trackNotFound:
 							// Geometry combo-box value changed
 							if (!ignoreUiNotifications){
 								static constexpr WORD Controls[]={ ID_CYLINDER, ID_AUTO, ID_SIDE, ID_NUMBER, ID_SECTOR, ID_SIZE, 0 };
-								ignoreUiNotifications++;
-									if (EnableDlgItems( Controls, GetDlgComboBoxSelectedIndex(ID_FORMAT)>0 )){
-										// manually set geometry
-										// . Cylinders
-										ignoreUiNotifications--; // give way to UI updates
-											SendMessage( WM_COMMAND, MAKELONG(ID_AUTO,BN_CLICKED) );
-										ignoreUiNotifications++;
+								CComboBox cb;
+								if (EnableDlgItems( Controls, GetDlgComboBoxSelectedIndex(ID_FORMAT)>0 )){
+									// manually set geometry
+									ignoreUiNotifications++;
+										// . adopting selected geometry (if any)
+										cb.Attach( GetDlgItemHwnd(ID_FORMAT) );
+											if (const PCFormat pf=(PCFormat)cb.GetItemDataPtr( cb.GetCurSel() )){
+												nCylinders=pf->nCylinders+1;
+												for( nHeads=0; nHeads<pf->nHeads; nHeads++ )
+													sideNumbers[nHeads]=nHeads;
+												firstSectorNumber=1;
+												nSectors=pf->nSectors;
+												sectorLengthCode=pf->sectorLengthCode;
+											}
+										cb.Detach();
 										// . Sides
 										Utils::CIntList list;
 										for( THead h=0; h<nHeads; list.AddTail(sideNumbers[h++]) );
@@ -453,23 +482,27 @@ trackNotFound:
 										// . Controls enabled only if this is the InitialEditing
 										if (!initialEditing) // disable all Controls only if this geometry already set
 											EnableDlgItems( Controls, initialEditing );
-										// . indicating bad inputs by attempting to accept the values
-										DoDataExchange( &CDataExchange(this,TRUE) );
-									}else{
-										// automatically recognized geometry
+										// . Cylinders
+										//fallthrough
+									ignoreUiNotifications--;
+									//fallthrough
+								}else{
+									// automatically recognized geometry
+									ignoreUiNotifications++;
 										SetDlgItemText( ID_CYLINDER, Auto );
 										SetDlgItemText( ID_SIDE, Auto );
 											SetDlgItemText( ID_HEAD, _T("") );
 										SetDlgItemText( ID_SECTOR, Auto );
 											SetDlgItemText( ID_NUMBER, Auto );
-										CComboBox cb;
 										cb.Attach( GetDlgItemHwnd(ID_SIZE) );
 											cb.SetCurSel( cb.AddString(Auto) );
 										cb.Detach();
-									}
-								ignoreUiNotifications--;
-							}
-							break;
+									ignoreUiNotifications--;
+									break;
+								}
+								//fallthrough
+							}else
+								break;
 						case MAKELONG(ID_AUTO,BN_CLICKED):
 							// changed the access scheme (by Cylinders/Sides)
 							if (!ignoreUiNotifications){
@@ -480,17 +513,65 @@ trackNotFound:
 										SetDlgItemText( ID_CYLINDER, Auto );
 								ignoreUiNotifications--;
 							}
-							break;
+							//fallthrough
 						case MAKELONG(ID_SIDE,EN_CHANGE):
 							// input controls manually changed
 							if (!ignoreUiNotifications){
-								Utils::CIntList list;
-								GetDlgItemIntList( ID_SIDE, list, 1, (THead)-1 );
-								TCHAR buf[16];
-								nHeads=list.GetCount();
-								::wsprintf( buf, _T("%d head%c"), nHeads, nHeads>1?'s':'\0' );
-								SetDlgItemText( ID_HEAD, buf );
-								for( THead h=0; h<nHeads; sideNumbers[h++]=list.RemoveHead() );
+								ignoreUiNotifications++;
+									Utils::CIntList list;
+									if (GetDlgItemIntList( ID_SIDE, list, 1, (THead)-1 )){
+										TCHAR buf[16];
+										nHeads=list.GetCount();
+										::wsprintf( buf, _T("%d head%c"), nHeads, nHeads>1?'s':'\0' );
+										SetDlgItemText( ID_HEAD, buf );
+										for( THead h=0; h<nHeads; sideNumbers[h++]=list.RemoveHead() );
+									}else{
+										SetDlgItemText( ID_HEAD, Incorrect );
+										nHeads=0;
+									}
+								ignoreUiNotifications--;
+							}
+							//fallthrough
+						case MAKELONG(ID_CYLINDER,EN_CHANGE):
+						case MAKELONG(ID_NUMBER,EN_CHANGE):
+						case MAKELONG(ID_SECTOR,EN_CHANGE):
+						case MAKELONG(ID_SIZE,CBN_SELCHANGE):
+							// input controls manually changed - selecting one of pre-defined geometries (if any corresponding)
+							if (!ignoreUiNotifications){
+								ignoreUiNotifications++;
+									// . collecting actual values
+									const bool cylindersSignificant=IsDlgItemEnabled(ID_CYLINDER);
+									const TCylinder nTmpCyls= cylindersSignificant ? GetDlgItemInt(ID_CYLINDER) : 0;
+									const TSector tmpFirstSectorNumber=GetDlgItemInt(ID_NUMBER);
+									const TSector nTmpSectors=GetDlgItemInt(ID_SECTOR);
+									const BYTE tmpSectorLengthCode=GetDlgComboBoxSelectedIndex(ID_SIZE);
+									// . selecting pre-defined geometry (or "Custom")
+									CComboBox cb;
+									cb.Attach( GetDlgItemHwnd(ID_FORMAT) );
+										TSide sideMin=-1, sideMax=0;
+										for( THead h=0; h<nHeads; ){
+											const TSide s=sideNumbers[h++];
+											if (s<sideMin)
+												sideMin=s;
+											if (sideMax<s)
+												sideMax=s;
+										}
+										cb.SetCurSel( cb.FindString(-1,Custom) ); // assumption (no pre-defined geometry corresponds with current settings)
+										for( int i=0; i<cb.GetCount(); i++ )
+											if (const PCFormat pf=(PCFormat)cb.GetItemDataPtr(i))
+												if (( nTmpCyls==pf->nCylinders+1 || !cylindersSignificant )
+													&&
+													nHeads==pf->nHeads && sideMin==0 && sideMax==nHeads-1
+													&&
+													tmpFirstSectorNumber==1 && nTmpSectors==pf->nSectors
+													&&
+													tmpSectorLengthCode==pf->sectorLengthCode
+												){
+													cb.SetCurSel(i);
+													break;
+												}
+									cb.Detach();
+								ignoreUiNotifications--;
 							}
 							break;
 						
