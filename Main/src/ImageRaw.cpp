@@ -343,46 +343,49 @@ trackNotFound:
 		// - defining the Dialog
 		class CSettingsDialog sealed:public Utils::CRideDialog{
 			const bool initialEditing;
-			const CImageRaw &rawImage;
+			CImageRaw &rawImage;
 			BYTE ignoreUiNotifications;
 
 			void DoDataExchange(CDataExchange *pDX) override{
 				// exchange of data from and to controls
 				CComboBox cb;
+				DDX_Check( pDX, ID_AUTO, autoCylinders );
 				if (pDX->m_bSaveAndValidate){
 					// . Geometry
 					DDX_CBIndex( pDX, ID_FORMAT, manualRecognition );
 					// . Cylinders
-					if (IsDlgItemEnabled(ID_CYLINDER)){ // manual geometry?
+					if (IsDlgItemEnabled(ID_CYLINDER)){ // manual # of Cylinders
 						DDX_Text( pDX, ID_CYLINDER, (RCylinder)nCylinders );
 							DDV_MinMaxInt( pDX, nCylinders, 1, (TCylinder)-1 );
 					}
 					// . list of Side numbers
-					constexpr TCHAR Incorrect[]=_T("Incorrect!");
-					if (IsDlgItemEnabled(ID_SIDE)){ // manual geometry?
-						Utils::CIntList list;
-						if (GetDlgItemIntList( ID_SIDE, list, 1, (THead)-1 )){
-							TCHAR buf[16];
-							nHeads=list.GetCount();
-							::wsprintf( buf, _T("%d head%c"), nHeads, nHeads>1?'s':'\0' );
-							SetDlgItemText( ID_HEAD, buf );
-							for( THead h=0; h<nHeads; sideNumbers[h++]=list.RemoveHead() );
-						}else{
+					static constexpr TCHAR Incorrect[]=_T("Incorrect!");
+					if (IsDlgItemEnabled(ID_SIDE)) // manual list of Sides?
+						if (nHeads<1 || (THead)-1<nHeads){
 							SetDlgItemText( ID_HEAD, Incorrect );
 							pDX->PrepareCtrl(ID_SIDE);
 							pDX->Fail();
 						}
-					}
 					// . list of Sector numbers
-					if (IsDlgItemEnabled(ID_SECTOR)){ // manual geometry?
+					if (IsDlgItemEnabled(ID_SECTOR)){ // manual list of Sectors?
 						DDX_Text( pDX, ID_NUMBER, firstSectorNumber );
 							DDV_MinMaxInt( pDX, firstSectorNumber, 0, (TSector)-1-1 );
 						DDX_Text( pDX, ID_SECTOR, nSectors );
 							DDV_MinMaxInt( pDX, nSectors, 1, (TSector)-1+1-firstSectorNumber );
 					}
 					// . Sector length
-					if (IsDlgItemEnabled(ID_SIZE)) // manual geometry?
+					if (IsDlgItemEnabled(ID_SIZE)) // manual Sector length?
 						sectorLengthCode=GetDlgComboBoxSelectedValue( ID_SIZE );
+					// . trying to apply the Geometry to the Image
+					if (!TryApplyGeometry()) // we should always succeed here, but just to be sure
+						pDX->Fail();
+					if (nHeads!=rawImage.nHeads){ // Side numbers under- or over-specified?
+						TCHAR buf[80];
+						::wsprintf( buf, _T("< Given other settings, the number of heads must be %d."), rawImage.nHeads );
+						SetDlgItemText( ID_HEAD, buf );
+						pDX->PrepareCtrl(ID_SIDE);
+						pDX->Fail();
+					}						
 				}else{
 					// . can confirm the dialog only during InitialEditing
 					EnableDlgItem( IDOK, initialEditing );
@@ -431,11 +434,16 @@ trackNotFound:
 									if (EnableDlgItems( Controls, GetDlgComboBoxSelectedIndex(ID_FORMAT)>0 )){
 										// manually set geometry
 										// . Cylinders
-										SetDlgItemInt( ID_CYLINDER, nCylinders );
+										ignoreUiNotifications--; // give way to UI updates
+											SendMessage( WM_COMMAND, MAKELONG(ID_AUTO,BN_CLICKED) );
+										ignoreUiNotifications++;
 										// . Sides
 										Utils::CIntList list;
 										for( THead h=0; h<nHeads; list.AddTail(sideNumbers[h++]) );
 										SetDlgItemIntList( ID_SIDE, list );
+										ignoreUiNotifications--; // give way to UI updates
+											SendMessage( WM_COMMAND, MAKELONG(ID_SIDE,EN_CHANGE) );
+										ignoreUiNotifications++;
 										// . Sectors
 										SetDlgItemInt( ID_NUMBER, firstSectorNumber );
 										SetDlgItemInt( ID_SECTOR, nSectors );
@@ -462,31 +470,49 @@ trackNotFound:
 								ignoreUiNotifications--;
 							}
 							break;
-						}
+						case MAKELONG(ID_AUTO,BN_CLICKED):
+							// changed the access scheme (by Cylinders/Sides)
+							if (!ignoreUiNotifications){
+								ignoreUiNotifications++;
+									if (EnableDlgItem( ID_CYLINDER, IsDlgButtonChecked(ID_AUTO)==BST_UNCHECKED ))
+										SetDlgItemInt( ID_CYLINDER, nCylinders );
+									else
+										SetDlgItemText( ID_CYLINDER, Auto );
+								ignoreUiNotifications--;
+							}
+							break;
 						case MAKELONG(ID_SIDE,EN_CHANGE):
 							// input controls manually changed
-							if (processUiNotifications)
-								DoDataExchange( &CDataExchange(this,TRUE) ); // indicating bad inputs by attempting to accept the values
+							if (!ignoreUiNotifications){
+								Utils::CIntList list;
+								GetDlgItemIntList( ID_SIDE, list, 1, (THead)-1 );
+								TCHAR buf[16];
+								nHeads=list.GetCount();
+								::wsprintf( buf, _T("%d head%c"), nHeads, nHeads>1?'s':'\0' );
+								SetDlgItemText( ID_HEAD, buf );
+								for( THead h=0; h<nHeads; sideNumbers[h++]=list.RemoveHead() );
+							}
 							break;
 						
 					}
 				return __super::WindowProc( msg, wParam, lParam );
 			}
 		public:
-			int manualRecognition;
+			int manualRecognition, autoCylinders;
 			TCylinder nCylinders;
 			THead nHeads;
 			TSide sideNumbers[(THead)-1];
 			TSector nSectors,firstSectorNumber;
 			BYTE sectorLengthCode;
 
-			CSettingsDialog(const CImageRaw &rawImage,bool initialEditing)
+			CSettingsDialog(CImageRaw &rawImage,bool initialEditing)
 				// ctor
 				: Utils::CRideDialog(IDR_RAW_SETTINGS)
 				, ignoreUiNotifications(0)
 				, initialEditing(initialEditing)
 				, rawImage(rawImage)
 				, manualRecognition( rawImage.explicitSides )
+				, autoCylinders( rawImage.trackAccessScheme==TTrackScheme::BY_CYLINDERS )
 				, nCylinders( rawImage.nCylinders )
 				, nHeads( rawImage.nHeads )
 				, nSectors( rawImage.nSectors ) , firstSectorNumber( rawImage.firstSectorNumber )
@@ -499,21 +525,27 @@ trackNotFound:
 					firstSectorNumber=1, nSectors=9, sectorLengthCode=TFormat::LENGTHCODE_512;
 				}
 			}
+
+			bool TryApplyGeometry() const{
+				// True <=> geometry successfully set via SetMediumTypeAndGeometry with values set in this Dialog, otherwise False
+				rawImage.trackAccessScheme = autoCylinders==BST_UNCHECKED ? TTrackScheme::BY_SIDES : TTrackScheme::BY_CYLINDERS;
+				TFormat fmt=TFormat::Unknown; // the Image format ...
+					fmt.mediumType=Medium::ANY; // ... is no longer Unknown, but the Medium can be Any of supported
+					fmt.nCylinders=nCylinders;
+					fmt.nHeads=nHeads;
+					fmt.nSectors=nSectors;
+					fmt.sectorLengthCode=(TFormat::TLengthCode)sectorLengthCode;
+					fmt.sectorLength=GetOfficialSectorLength(sectorLengthCode);
+				return ERROR_SUCCESS==rawImage.SetMediumTypeAndGeometry( &fmt, sideNumbers, firstSectorNumber );
+			}
 		} d( *this, initialEditing );
 		// - showing the Dialog and processing its result
 		if (d.DoModal()==IDOK){
 			if (d.manualRecognition){
-				TFormat fmt=TFormat::Unknown; // the Image format ...
-					fmt.mediumType=Medium::ANY; // ... is no longer Unknown, but the Medium can be Any of supported
-					fmt.nCylinders=d.nCylinders;
-					fmt.nHeads=d.nHeads;
-					fmt.nSectors=d.nSectors;
-					fmt.sectorLengthCode=(TFormat::TLengthCode)d.sectorLengthCode;
-					fmt.sectorLength=GetOfficialSectorLength(d.sectorLengthCode);
-				auto tmpSides=Utils::MakeCallocPtr<TSide,THead>(d.nHeads,d.sideNumbers);
-				if (SetMediumTypeAndGeometry( &fmt, tmpSides, d.firstSectorNumber )!=ERROR_SUCCESS)
+				if (!d.TryApplyGeometry())
 					return false; // we should always succeed, but just to be sure
-				explicitSides.reset( tmpSides.release() );
+				explicitSides.reset( Utils::MakeCallocPtr<TSide,THead>(d.nHeads,d.sideNumbers).release() );
+				sideMap=explicitSides;
 			}
 			return true;
 		}else
