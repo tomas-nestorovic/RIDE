@@ -581,7 +581,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 	CImage::PCProperties CRideApp::DoPromptFileName(PTCHAR fileName,bool deviceAccessAllowed,UINT stdStringId,DWORD flags,CImage::PCProperties singleAllowedImage){
 		// reimplementation of CDocManager::DoPromptFileName
 		// - creating the list of Filters
-		TCHAR buf[500],*a=buf; // an "always big enough" buffer
+		TCHAR buf[2048],*a=buf; // an "always big enough" buffer
 		DWORD nFilters=0;
 		if (singleAllowedImage)
 			// list of Filters consists of only one item

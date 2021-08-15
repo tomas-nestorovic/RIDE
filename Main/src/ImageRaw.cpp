@@ -13,7 +13,7 @@
 		MAKE_IMAGE_ID('I','m','a','g','e','R','a','w'), // a unique identifier
 		Recognize,	// list of recognized device names
 		Instantiate, // instantiation function
-		_T("*.ima") IMAGE_FORMAT_SEPARATOR _T("*.img") IMAGE_FORMAT_SEPARATOR _T("*.dat") IMAGE_FORMAT_SEPARATOR _T("*.bin"),	// filter
+		_T("*.ima") IMAGE_FORMAT_SEPARATOR _T("*.img") IMAGE_FORMAT_SEPARATOR _T("*.dat") IMAGE_FORMAT_SEPARATOR _T("*.bin") IMAGE_FORMAT_SEPARATOR _T("*.adf"),	// filter
 		(Medium::TType)(Medium::FLOPPY_ANY | Medium::HDD_RAW), // supported Media
 		Codec::ANY, // supported Codecs
 		1,16384	// Sector supported min and max length
