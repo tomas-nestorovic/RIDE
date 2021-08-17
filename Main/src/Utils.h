@@ -11,11 +11,11 @@ namespace Utils{
 	class CCallocPtr:public std::unique_ptr<T,void (__cdecl *)(PVOID)>{
 	public:
 		CCallocPtr()
-			: std::unique_ptr<T,void (__cdecl *)(PVOID)>( nullptr, ::free ) {
-		}		
+			: std::unique_ptr<T,void (__cdecl *)(PVOID)>( pointer(), ::free ) {
+		}
 		CCallocPtr(TCount count)
 			: std::unique_ptr<T,void (__cdecl *)(PVOID)>( (T *)::calloc(count,sizeof(T)), ::free ) {
-		}		
+		}
 		CCallocPtr(TCount count,int initByte)
 			: std::unique_ptr<T,void (__cdecl *)(PVOID)>(  (T *)::memset( ::calloc(count,sizeof(T)), initByte, count*sizeof(T) ),  ::free  ) {
 		}
@@ -23,10 +23,21 @@ namespace Utils{
 			: std::unique_ptr<T,void (__cdecl *)(PVOID)>(  (T *)::memcpy( ::calloc(count,sizeof(T)), pCopyInitData, count*sizeof(T) ),  ::free  ) {
 		}
 
-		inline operator bool() const{ return get()!=nullptr; }
+		inline operator bool() const{ return get()!=pointer(); }
 		inline operator T *() const{ return get(); }
 		inline T *operator+(TCount i) const{ return get()+i; }
 		inline T &operator[](TCount i) const{ return get()[i]; }
+
+		T *Realloc(TCount newCount){
+			if (const PVOID tmp=::realloc( get(), sizeof(T)*newCount )){ // enough memory for reallocation?
+				if (tmp!=get()){ // had to move the memory block?
+					release(); // already ::Freed, so don't call ::Free again
+					reset( (T *)tmp );
+				}
+				return get();
+			}else
+				return nullptr; // currently allocated memory has not been affected
+		}
 	};
 
 	// a workaround to template argument deduction on pre-2017 compilers

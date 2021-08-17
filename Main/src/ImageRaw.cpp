@@ -46,9 +46,7 @@
 	TStdWinError CImageRaw::__extendToNumberOfCylinders__(TCylinder nCyl,BYTE fillerByte){
 		// formats new Cylinders to meet the minimum number requested; returns Windows standard i/o error
 		// - redimensioning the Image
-		if (const PVOID tmp=::realloc(bufferOfCylinders,sizeof(PVOID)*nCyl))
-			bufferOfCylinders.reset( (PVOID *)tmp );
-		else
+		if (!bufferOfCylinders.Realloc(nCyl))
 			return ERROR_NOT_ENOUGH_MEMORY;
 		// - initializing added Cylinders with the FillerByte
 		for( const DWORD nBytesOfCylinder=nHeads*nSectors*sectorLength; nCylinders<nCyl; )
@@ -72,7 +70,7 @@
 		if (bufferOfCylinders){
 			while (nCylinders)
 				__freeCylinder__( --nCylinders );
-			bufferOfCylinders.reset(nullptr);
+			bufferOfCylinders.reset();
 		}
 	}
 
@@ -379,15 +377,17 @@ trackNotFound:
 					if (IsDlgItemEnabled(ID_SIZE)) // manual Sector length?
 						sectorLengthCode=GetDlgComboBoxSelectedValue( ID_SIZE );
 					// . trying to apply the Geometry to the Image
-					if (!TryApplyGeometry()) // we should always succeed here, but just to be sure
-						pDX->Fail();
-					if (nHeads!=rawImage.nHeads){ // Side numbers under- or over-specified?
-						TCHAR buf[80];
-						::wsprintf( buf, _T("< Given other settings, the number of heads must be %d."), rawImage.nHeads );
-						SetDlgItemText( ID_HEAD, buf );
-						pDX->PrepareCtrl(ID_SIDE);
-						pDX->Fail();
-					}						
+					if (manualRecognition){
+						if (!TryApplyGeometry()) // we should always succeed here, but just to be sure
+							pDX->Fail();
+						if (nHeads!=rawImage.nHeads){ // Side numbers under- or over-specified?
+							TCHAR buf[80];
+							::wsprintf( buf, _T("< Given other settings, the number of heads must be %d."), rawImage.nHeads );
+							SetDlgItemText( ID_HEAD, buf );
+							pDX->PrepareCtrl(ID_SIDE);
+							pDX->Fail();
+						}
+					}
 				}else{
 					// . can confirm the dialog only during InitialEditing
 					EnableDlgItem( IDOK, initialEditing );
