@@ -12,6 +12,7 @@
 
 		const CDos *const dos;
 		Medium::TType mediumType;
+		Codec::TTypeSet targetCodecs;
 		const PImage source;
 		std::unique_ptr<CImage> target;
 		TCHAR targetFileName[MAX_PATH];
@@ -201,14 +202,14 @@ terminateWithError:
 				p.track=p.chs.GetTrackNumber(dp.nHeads);
 				// . scanning Source Track
 				TSectorId bufferId[(TSector)-1];	WORD bufferLength[(TSector)-1];
-				Codec::TType codec;
+				Codec::TType sourceCodec;
 {LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("scanning source"));
-				nSectors=dp.source->ScanTrack(p.chs.cylinder,p.chs.head,&codec,bufferId,bufferLength);
+				nSectors=dp.source->ScanTrack(p.chs.cylinder,p.chs.head,&sourceCodec,bufferId,bufferLength);
 }
 				// . reading Source Track
 				CImage::CTrackReader trSrc=dp.source->ReadTrack( p.chs.cylinder, p.chs.head );
 				const CImage::CTrackReader &tr= targetSupportsTrackWriting ? trSrc : CImage::CTrackReaderWriter::Invalid;
-				p.trackWriteable=tr;
+				p.trackWriteable= tr && (sourceCodec&dp.targetCodecs)!=0; // A&B, A = Source and Target must support whole Track access, B = Source and Target must support at least one common Codec
 				// . if possible, analyzing the read Source Track
 				bool hasNonformattedArea=false, hasDataInGaps=false, hasFuzzyData=false;
 				if (trSrc && dp.fullTrackAnalysis){
@@ -533,9 +534,11 @@ terminateWithError:
 					if (dp.target->PresumeHealthyTrackStructure(p.chs.cylinder,p.chs.head,nSectors,bufferId,dp.gap3.value,dp.fillerByte)!=ERROR_SUCCESS)
 						goto reformatTrack;
 				}else
-reformatTrack:		if (!p.trackWriteable) // formatting the Track only if can't write the Track using CImage::WriteTrack
-						if ( err=dp.target->FormatTrack(p.chs.cylinder,p.chs.head,codec!=Codec::UNKNOWN?codec:dp.dos->formatBoot.codecType,nSectors,bufferId,bufferLength,bufferFdcStatus,dp.gap3.value,dp.fillerByte) )
+reformatTrack:		if (!p.trackWriteable){ // formatting the Track only if can't write the Track using CImage::WriteTrack
+						const Codec::TType targetCodec=Codec::FirstFromMany( dp.targetCodecs ); // the first of selected Codecs (available for the DOS/Medium combination)
+						if ( err=dp.target->FormatTrack(p.chs.cylinder,p.chs.head,targetCodec,nSectors,bufferId,bufferLength,bufferFdcStatus,dp.gap3.value,dp.fillerByte) )
 							goto terminateWithError;
+					}
 }
 				// . writing to Target Track
 {LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("writing to Target Track"));
@@ -647,9 +650,15 @@ errorDuringWriting:				TCHAR buf[80];
 						Utils::Information( _T("Target must not be the same as source.") );
 						pDX->Fail();
 					}
+					// : Codec must be known
+					if (( dumpParams.targetCodecs=GetDlgComboBoxSelectedValue(ID_CODEC) )==Codec::UNKNOWN){
+						Utils::Information( _T("Encoding not specified.") );
+						pDX->Fail();
+					}
 				}else{
 					SetDlgItemText( ID_FILE, ELLIPSIS );
 					PopulateComboBoxWithCompatibleMedia( hMedium, 0, nullptr ); // if FileName not set, Medium cannot be determined
+					PopulateComboBoxWithCompatibleCodecs( GetDlgItemHwnd(ID_CODEC), 0, nullptr ); // if FileName not set, Codec cannot be determined
 				}
 				const Medium::PCProperties mp=	targetImageProperties // ComboBox populated with compatible Media and one of them selected
 												? Medium::GetProperties( dumpParams.mediumType=(Medium::TType)GetDlgComboBoxSelectedValue(ID_MEDIUM) )
@@ -769,43 +778,55 @@ setDestination:						// : compacting FileName in order to be better displayable 
 									if (!targetImageProperties->IsRealDevice())
 										::wsprintf( buf+::lstrlen(buf), _T("\n(%s)"), targetImageProperties->fnRecognize(nullptr) );
 									pBtnFile->SetWindowText(buf);
-									// : adjusting interactivity
-										// > populating ComboBox with Media supported by both DOS and Image
-										BYTE nCompatibleMedia;
-										if (dos->formatBoot.mediumType&Medium::FLOPPY_ANY)
-											// source Image is a floppy - enabling dumping to any kind of a floppy (motivation: some copy-protection schemes feature misleading information on the kind of floppy; e.g., "Teen Agent" [or "Agent mlicnak"] installation disk #2 and #3 are introduced as 2DD floppies while they really are HD!)
-											nCompatibleMedia=PopulateComboBoxWithCompatibleMedia(
-												GetDlgItemHwnd(ID_MEDIUM),
-												dos->properties->supportedMedia&Medium::FLOPPY_ANY,
-												targetImageProperties
-											);
-										else
-											// source Image is a hard-disk
-											nCompatibleMedia=PopulateComboBoxWithCompatibleMedia(
-												GetDlgItemHwnd(ID_MEDIUM),
-												dos->formatBoot.mediumType,
-												targetImageProperties
-											);
-										// > preselection of current MediumType (if any recognized)
-										Medium::TType mt=Medium::UNKNOWN; // assumption (Medium not recognized)
-										dos->image->GetInsertedMediumType( 0, mt );
-										if (mt!=Medium::UNKNOWN)
-											SelectDlgComboBoxValue( ID_MEDIUM, mt );
-										// > enabling/disabling controls
-										static constexpr WORD Controls[]={ ID_CYLINDER, ID_CYLINDER_N, ID_HEAD, ID_GAP, ID_NUMBER, ID_DEFAULT1, IDOK, 0 };
-										CheckDlgButton(
-											ID_FORMAT,
-											EnableDlgItem(
-												ID_FORMAT,
-												EnableDlgItems( Controls, nCompatibleMedia>0 )  &&  targetImageProperties->IsRealDevice()
-											)
+									// : populating ComboBox with Media supported by both DOS and Image
+									BYTE nCompatibleMedia;
+									if (dos->formatBoot.mediumType&Medium::FLOPPY_ANY)
+										// source Image is a floppy - enabling dumping to any kind of a floppy (motivation: some copy-protection schemes feature misleading information on the kind of floppy; e.g., "Teen Agent" [or "Agent mlicnak"] installation disk #2 and #3 are introduced as 2DD floppies while they really are HD!)
+										nCompatibleMedia=PopulateComboBoxWithCompatibleMedia(
+											GetDlgItemHwnd(ID_MEDIUM),
+											dos->properties->supportedMedia&Medium::FLOPPY_ANY,
+											targetImageProperties
 										);
-										FocusDlgItem(IDOK);
-										// > automatically ticking the "Real-time thread priority" check-box if either the source or the target is a real drive
-										if (dos->image->properties->IsRealDevice() || targetImageProperties->IsRealDevice())
-											SendDlgItemMessage( ID_PRIORITY, BM_SETCHECK, BST_CHECKED );
-								}else
+									else
+										// source Image is a hard-disk
+										nCompatibleMedia=PopulateComboBoxWithCompatibleMedia(
+											GetDlgItemHwnd(ID_MEDIUM),
+											dos->formatBoot.mediumType,
+											targetImageProperties
+										);
+									// : preselection of current MediumType (if any recognized)
+									Medium::TType mt=Medium::UNKNOWN; // assumption (Medium not recognized)
+									dos->image->GetInsertedMediumType( 0, mt );
+									if (mt!=Medium::UNKNOWN)
+										SelectDlgComboBoxValue( ID_MEDIUM, mt );
+									// : automatically ticking the "Real-time thread priority" check-box if either the source or the target is a real drive
+									if (dos->image->properties->IsRealDevice() || targetImageProperties->IsRealDevice())
+										SendDlgItemMessage( ID_PRIORITY, BM_SETCHECK, BST_CHECKED );
+									//fallthrough
+								}else{
 									*dumpParams.targetFileName=c;
+									break;
+								}
+								//fallthrough
+							}
+							case MAKELONG(ID_MEDIUM,CBN_SELCHANGE):{
+								// : populating ComboBox with Codecs supported by both DOS and Image
+								const Medium::TType mt=(Medium::TType)GetDlgComboBoxSelectedValue(ID_MEDIUM);
+								const BYTE nCompatibleCodecs=PopulateComboBoxWithCompatibleCodecs(
+									GetDlgItemHwnd(ID_CODEC),
+									dos->properties->supportedCodecs,
+									mt!=Medium::UNKNOWN ? targetImageProperties : nullptr
+								);
+								// : enabling/disabling controls
+								static constexpr WORD Controls[]={ ID_CYLINDER, ID_CYLINDER_N, ID_HEAD, ID_GAP, ID_NUMBER, ID_DEFAULT1, IDOK, 0 };
+								CheckDlgButton(
+									ID_FORMAT,
+									EnableDlgItem(
+										ID_FORMAT,
+										EnableDlgItems( Controls, mt!=Medium::UNKNOWN&&nCompatibleCodecs>0 )  &&  targetImageProperties->IsRealDevice()
+									)
+								);
+								FocusDlgItem(IDOK);
 								break;
 							}
 							case ID_DEFAULT1:

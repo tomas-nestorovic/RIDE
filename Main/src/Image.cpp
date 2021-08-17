@@ -285,6 +285,14 @@ namespace Medium{
 					return nullptr;
 			}
 		}
+
+		TType FirstFromMany(TTypeSet set){
+			// returns a Codec with the lowest Id in the input Set (or Unknown if Set empty)
+			for( TTypeSet mask=1; mask!=0; mask<<=1 )
+				if (set&mask)
+					return (TType)mask;
+			return UNKNOWN;
+		}
 	}
 
 
@@ -403,7 +411,7 @@ namespace Medium{
 					result++;
 				}
 			if (!result)
-				cb.AddString(_T("No compatible"));
+				cb.SetItemData( cb.AddString(_T("No compatible")), Medium::UNKNOWN );
 			cb.EnableWindow(result);
 			cb.SetCurSel(0);
 		cb.Detach();
@@ -415,15 +423,17 @@ namespace Medium{
 		CComboBox cb;
 		cb.Attach(hComboBox);
 			cb.ResetContent();
-			const WORD codecsSupportedByImage= imageProperties ? imageProperties->supportedCodecs : 0;
+			const Codec::TTypeSet codecsSupportedByImage= imageProperties ? imageProperties->supportedCodecs : 0;
 			BYTE result=0;
 			for( WORD commonCodecs=dosSupportedCodecs&codecsSupportedByImage,type=1,n=8*sizeof(commonCodecs); n--; type<<=1 )
 				if (commonCodecs&type){
-					cb.SetItemDataPtr( cb.AddString(Codec::GetDescription((Codec::TType)type)), (PVOID)type );
+					cb.SetItemData( cb.AddString(Codec::GetDescription((Codec::TType)type)), type );
 					result++;
 				}
 			if (!result)
-				cb.AddString(_T("No compatible"));
+				cb.SetItemData( cb.AddString(_T("No compatible")), Codec::UNKNOWN );
+			else if (result>1)
+				cb.SetItemData( cb.InsertString(0,_T("Automatically")), dosSupportedCodecs&codecsSupportedByImage );
 			cb.EnableWindow(result);
 			cb.SetCurSel(0);
 		cb.Detach();

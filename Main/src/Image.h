@@ -104,6 +104,7 @@
 		} *PType;
 
 		LPCTSTR GetDescription(TType codec);
+		TType FirstFromMany(TTypeSet set);
 	}
 
 	typedef struct TFormat sealed{

@@ -1176,49 +1176,52 @@ BEGIN
                     172,14
 END
 
-IDR_IMAGE_DUMP DIALOGEX 0, 0, 201, 221
+IDR_IMAGE_DUMP DIALOGEX 0, 0, 201, 236
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
 CAPTION "Dump to destination"
 FONT 8, "MS Sans Serif"
 BEGIN
-    DEFPUSHBUTTON   "Dump",IDOK,90,200,50,14,WS_DISABLED
-    PUSHBUTTON      "Cancel",IDCANCEL,144,200,50,14
+    DEFPUSHBUTTON   "Dump",IDOK,90,215,50,14,WS_DISABLED
+    PUSHBUTTON      "Cancel",IDCANCEL,144,215,50,14
     CONTROL         "<a id=""ID_HELP"">Need help?</a>",ID_HELP_INDEX,"SysLink",
-                    WS_TABSTOP,7,203,66,11
+                    WS_TABSTOP,7,218,66,11
     LTEXT           "&Destination:",IDC_STATIC,7,9,38,8,NOT WS_GROUP
     PUSHBUTTON      "",ID_FILE,54,7,140,23,BS_MULTILINE | BS_FLAT
     LTEXT           "&Medium:",IDC_STATIC,7,35,28,8,NOT WS_GROUP
     COMBOBOX        ID_MEDIUM,54,33,140,76,CBS_DROPDOWNLIST | WS_DISABLED | 
                     WS_VSCROLL | WS_TABSTOP
-    LTEXT           "Cylinders:",IDC_STATIC,7,52,31,8,NOT WS_GROUP
-    LTEXT           "&From:",IDC_STATIC,54,52,18,8,NOT WS_GROUP
-    EDITTEXT        ID_CYLINDER,91,51,40,12,ES_AUTOHSCROLL | ES_NUMBER | 
+    LTEXT           "&Encoding:",IDC_STATIC,7,51,33,8,NOT WS_GROUP
+    COMBOBOX        ID_CODEC,54,49,140,30,CBS_DROPDOWNLIST | CBS_SORT | 
+                    WS_DISABLED | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Cylinders:",IDC_STATIC,7,67,31,8,NOT WS_GROUP
+    LTEXT           "&From:",IDC_STATIC,54,67,18,8,NOT WS_GROUP
+    EDITTEXT        ID_CYLINDER,91,67,40,12,ES_AUTOHSCROLL | ES_NUMBER | 
                     WS_DISABLED | NOT WS_BORDER,WS_EX_STATICEDGE
-    LTEXT           "&To:",IDC_STATIC,54,66,12,8,NOT WS_GROUP
-    EDITTEXT        ID_CYLINDER_N,91,65,40,12,ES_AUTOHSCROLL | WS_DISABLED | 
+    LTEXT           "&To:",IDC_STATIC,54,82,12,8,NOT WS_GROUP
+    EDITTEXT        ID_CYLINDER_N,91,81,40,12,ES_AUTOHSCROLL | WS_DISABLED | 
                     NOT WS_BORDER,WS_EX_STATICEDGE
-    LTEXT           "&Heads:",IDC_STATIC,7,84,24,8,NOT WS_GROUP
-    EDITTEXT        ID_HEAD,91,82,40,12,ES_AUTOHSCROLL | ES_NUMBER | 
+    LTEXT           "&Heads:",IDC_STATIC,7,100,24,8,NOT WS_GROUP
+    EDITTEXT        ID_HEAD,91,98,40,12,ES_AUTOHSCROLL | ES_NUMBER | 
                     WS_DISABLED | NOT WS_BORDER,WS_EX_STATICEDGE
-    LTEXT           "Sectors:",IDC_STATIC,7,101,27,8,NOT WS_GROUP
-    LTEXT           "&Gap3:",IDC_STATIC,54,101,20,8,NOT WS_GROUP
-    EDITTEXT        ID_GAP,91,100,40,12,ES_AUTOHSCROLL | ES_NUMBER | 
+    LTEXT           "Sectors:",IDC_STATIC,7,117,27,8,NOT WS_GROUP
+    LTEXT           "&Gap3:",IDC_STATIC,54,117,20,8,NOT WS_GROUP
+    EDITTEXT        ID_GAP,91,116,40,12,ES_AUTOHSCROLL | ES_NUMBER | 
                     WS_DISABLED | NOT WS_BORDER,WS_EX_STATICEDGE
-    LTEXT           "Filler &Byte:",IDC_STATIC,54,116,33,8,NOT WS_GROUP
-    EDITTEXT        ID_NUMBER,91,114,40,12,ES_AUTOHSCROLL | ES_NUMBER | 
+    LTEXT           "Filler &Byte:",IDC_STATIC,54,132,33,8,NOT WS_GROUP
+    EDITTEXT        ID_NUMBER,91,130,40,12,ES_AUTOHSCROLL | ES_NUMBER | 
                     WS_DISABLED | NOT WS_BORDER,WS_EX_STATICEDGE
-    PUSHBUTTON      "System default",ID_DEFAULT1,134,114,56,13,WS_DISABLED
+    PUSHBUTTON      "System default",ID_DEFAULT1,134,130,56,13,WS_DISABLED
     CONTROL         "Medium &already formatted, so reformat just bad tracks",
                     ID_FORMAT,"Button",BS_AUTOCHECKBOX | WS_DISABLED | 
-                    WS_TABSTOP,7,138,187,10
+                    WS_TABSTOP,7,154,187,10
     CONTROL         "Real-time thread &priority (normal priority if unchecked)",
-                    ID_PRIORITY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,162,
+                    ID_PRIORITY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,178,
                     187,10
     CONTROL         "Show &report when done",ID_REPORT,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,174,174,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,190,174,10
     CONTROL         "Do full track &analysis (data in gaps, fuzzy bits, etc.)",
                     ID_ACCURACY,"Button",BS_AUTOCHECKBOX | WS_DISABLED | 
-                    WS_TABSTOP,7,150,174,10
+                    WS_TABSTOP,7,166,174,10
 END
 
 IDR_MSDOS_FILE_ATTRIBUTES_EDITOR DIALOG DISCARDABLE  0, 0, 118, 111
@@ -1939,7 +1942,7 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 194
         TOPMARGIN, 7
-        BOTTOMMARGIN, 214
+        BOTTOMMARGIN, 229
     END
 
     IDR_MSDOS_FILE_ATTRIBUTES_EDITOR, DIALOG

@@ -280,7 +280,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 					// timing is not applicable for this kind of Image
 					for( TSector s=ti->nSectors; s>0; startTimesNanoseconds[--s]=INT_MIN );
 			if (pCodec)
-				*pCodec=Codec::UNKNOWN;
+				*pCodec=Codec::ANY;
 			if (pAvgGap3)
 				*pAvgGap3=ti->gap3;
 			return ti->nSectors;
