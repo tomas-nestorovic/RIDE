@@ -1193,8 +1193,8 @@ namespace Utils{
 		ComboBox_AddString( hComboBox, buf );
 	}
 
-	constexpr TCHAR RangeSign='-'; // "minus"
-	constexpr TCHAR Delimiters[]={ ',', ';', RangeSign, '\0' }; // valid integer delimiters, INCLUDING RangeSign
+	static constexpr TCHAR RangeSign='-'; // "minus"
+	static constexpr TCHAR Delimiters[]={ ',', ';', RangeSign, '\0' }; // valid integer delimiters, INCLUDING RangeSign
 
 	bool CRideDialog::GetDlgItemIntList(WORD id,CIntList &rOutList,UINT nIntsMin,UINT nIntsMax) const{
 		// True <=> item with the specified ID contains list of integer values (grammar bellow), otherwise False

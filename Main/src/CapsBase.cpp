@@ -766,7 +766,7 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 					ComboBox_AddString( hMedium, _T("Automatically") ),
 					forcedMediumType
 				);
-				constexpr WORD Controls[]={ ID_MEDIUM, IDOK, 0 };
+				static constexpr WORD Controls[]={ ID_MEDIUM, IDOK, 0 };
 				EnableDlgItems( Controls, initialEditing );
 				SetDlgItemFormattedText( ID_SYSTEM, _T("Version %d.%d"), cb.capsVersionInfo.release, cb.capsVersionInfo.revision );
 				SetDlgItemFormattedText( ID_ARCHIVE, _T("%u (0x%08X)"), cb.capsImageInfo.release, cb.capsImageInfo.release );

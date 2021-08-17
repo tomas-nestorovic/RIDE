@@ -221,7 +221,7 @@
 		LPCTSTR Recognize(PTCHAR);
 		PImage Instantiate(LPCTSTR);
 
-		constexpr CImage::TProperties Properties={
+		static constexpr CImage::TProperties Properties={
 			MAKE_IMAGE_ID('T','R','D','O','S','T','R','D'), // a unique identifier
 			Recognize,// name
 			Instantiate,// instantiation function
