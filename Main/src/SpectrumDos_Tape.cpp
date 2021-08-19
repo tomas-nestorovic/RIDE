@@ -330,8 +330,8 @@
 					// > base
 					const BOOL result=__super::OnInitDialog();
 					// > supplying available actions
-					__addCommandButton__( IDYES, _T("Import as-is (recommended)"), true );
-					__addCommandButton__( IDNO, _T("Set reported size as real size (no Tape loading error)") );
+					AddCommandButton( IDYES, _T("Import as-is (recommended)"), true );
+					AddCommandButton( IDNO, _T("Set reported size as real size (no Tape loading error)") );
 					if (offerFileSplit){
 						TZxRom::TFileType t=TZxRom::TFileType::HEADERLESS; // assumption
 						for( BYTE type=ZX_TAPE_EXTENSION_STD_COUNT; type--; )
@@ -342,9 +342,9 @@
 							}
 						TCHAR buf[200];
 						::wsprintf( buf, _T("Import as two separate blocks (%s and ") ZX_TAPE_HEADERLESS_STR _T(")"), TZxRom::GetFileTypeName(t) );
-						__addCommandButton__( IDRETRY, buf );
+						AddCommandButton( IDRETRY, buf );
 					}
-					__addCommandButton__( IDCANCEL, _T("Cancel import") );
+					AddCancelButton( _T("Cancel import") );
 					return result;
 				}
 			public:

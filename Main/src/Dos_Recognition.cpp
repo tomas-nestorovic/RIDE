@@ -293,8 +293,8 @@
 											// : base
 											const BOOL result=__super::OnInitDialog();
 											// : supplying available actions
-											__addCommandButton__( ID_DRIVE, _T("What is a recognition sequence good for?") );
-											__addCommandButton__( IDCANCEL, MSG_HELP_CANCEL );
+											AddHelpButton( ID_DRIVE, _T("What is a recognition sequence good for?") );
+											AddCancelButton( MSG_HELP_CANCEL );
 											return result;
 										}
 									public:

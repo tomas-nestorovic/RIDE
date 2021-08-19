@@ -705,12 +705,12 @@ errorDuringWriting:				TCHAR buf[80];
 										// : base
 										const BOOL result=__super::OnInitDialog();
 										// : supplying available actions
-										__addCommandButton__( IDYES, _T("Continue with format adopted from boot sector (recommended)"), true );
+										AddCommandButton( IDYES, _T("Continue with format adopted from boot sector (recommended)"), true );
 										TCHAR buf[80];
 										::wsprintf( buf, _T("Continue to last occupied Cylinder %d (incl.)"), lastOccupiedCyl );
-										__addCommandButton__( IDRETRY, buf );
-										__addCommandButton__( IDNO, _T("Continue with current settings (cylinders beyond official format may fail!)") );
-										__addCommandButton__( IDCANCEL, _T("Return to dump dialog") );
+										AddCommandButton( IDRETRY, buf );
+										AddCommandButton( IDNO, _T("Continue with current settings (cylinders beyond official format may fail!)") );
+										AddCancelButton( _T("Return to dump dialog") );
 										return result;
 									}
 								public:
@@ -860,11 +860,11 @@ setDestination:						// : compacting FileName in order to be better displayable 
 									// : base
 									const BOOL result=__super::OnInitDialog();
 									// : supplying available actions
-									__addCommandButton__( ID_IMAGE, _T("How do I create an image of a real floppy disk?") );
-									__addCommandButton__( ID_DRIVE, _T("How do I save an image back to a real floppy disk?") );
-									__addCommandButton__( ID_FILE, _T("How do I convert between two images? (E.g. *.IMA to *.DSK)") );
-									__addCommandButton__( ID_ACCURACY, _T("How do I create an exact copy of a real floppy disk?") );
-									__addCommandButton__( IDCANCEL, MSG_HELP_CANCEL );
+									AddHelpButton( ID_IMAGE, _T("How do I create an image of a real floppy disk?") );
+									AddHelpButton( ID_DRIVE, _T("How do I save an image back to a real floppy disk?") );
+									AddHelpButton( ID_FILE, _T("How do I convert between two images? (E.g. *.IMA to *.DSK)") );
+									AddHelpButton( ID_ACCURACY, _T("How do I create an exact copy of a real floppy disk?") );
+									AddCancelButton( MSG_HELP_CANCEL );
 									return result;
 								}
 							public:

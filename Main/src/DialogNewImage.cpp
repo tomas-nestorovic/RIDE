@@ -128,10 +128,10 @@
 							// : base
 							const BOOL result=__super::OnInitDialog();
 							// : supplying available actions
-							__addCommandButton__( ID_DRIVE, _T("Does the application co-work with real floppy drives?") );
-							__addCommandButton__( ID_FORMAT, _T("How do I format a real floppy using this application?") );
-							__addCommandButton__( ID_SYSTEM, _T("How do I open a real floppy using this application?") );
-							__addCommandButton__( IDCANCEL, MSG_HELP_CANCEL );
+							AddHelpButton( ID_DRIVE, _T("Does the application co-work with real floppy drives?") );
+							AddHelpButton( ID_FORMAT, _T("How do I format a real floppy using this application?") );
+							AddHelpButton( ID_SYSTEM, _T("How do I open a real floppy using this application?") );
+							AddCancelButton( MSG_HELP_CANCEL );
 							return result;
 						}
 					public:

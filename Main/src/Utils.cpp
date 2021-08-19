@@ -350,13 +350,8 @@ namespace Utils{
 	#define CMDBUTTON_HEIGHT	32
 	#define CMDBUTTON_MARGIN	1
 
-	void CCommandDialog::__addCommandButton__(WORD id,LPCTSTR caption,bool defaultCommand){
+	void CCommandDialog::AddButton(WORD id,LPCTSTR caption,WCHAR wingdingsGlyphBeforeText){
 		// adds a new "command-like" Button with given Id and Caption
-		// - the Dialog can contain at most one DefaultCommand
-		if (defaultCommand){
-			ASSERT( defaultCommandId==0 );
-			defaultCommandId=id;
-		}
 		// - increasing the parent window size for the new Button to fit in
 		RECT r;
 		GetWindowRect(&r);
@@ -373,14 +368,37 @@ namespace Utils{
 				WS_CHILD|WS_VISIBLE,
 				t.left, r.bottom-t.top-CMDBUTTON_HEIGHT, t.right-t.left, CMDBUTTON_HEIGHT,
 				m_hWnd,
-				(HMENU)( defaultCommand ? IDOK : id ),
+				(HMENU)id,
 				app.m_hInstance, nullptr
 			),
-			defaultCommand ? 0xf0e8 : 0xf0e0
+			wingdingsGlyphBeforeText
 		);
 	}
 
-	void CCommandDialog::__addCheckBox__(LPCTSTR caption){
+	void CCommandDialog::AddCommandButton(WORD id,LPCTSTR caption,bool defaultCommand){
+		// adds a new "command-like" Button with given Id and Caption
+		if (defaultCommand){
+			ASSERT( defaultCommandId==0 ); // the Dialog can contain at most one DefaultCommand
+			defaultCommandId=id;
+		}
+		AddButton(
+			defaultCommand ? IDOK : id,
+			caption,
+			defaultCommand ? 0xf0e8 : 0xf0e0 // a thick or thin arrow right
+		);
+	}
+
+	void CCommandDialog::AddHelpButton(WORD id,LPCTSTR caption){
+		// adds a new "command-like" Button with given Id and Caption
+		AddButton( id, caption, 0xf026 ); // a symbol with open book
+	}
+
+	void CCommandDialog::AddCancelButton(LPCTSTR caption){
+		// adds a new "command-like" Button with given Id and Caption
+		AddButton( IDCANCEL, caption, 0xf0e5 ); // a symbol with open book
+	}
+
+	void CCommandDialog::AddCheckBox(LPCTSTR caption){
 		// adds a check-box with given Caption
 		// - increasing the parent window size for the new check-box to fit in
 		CWnd *const pCheckBox=GetDlgItem(ID_APPLY);

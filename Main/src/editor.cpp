@@ -367,9 +367,9 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 									// : base
 									const BOOL result=__super::OnInitDialog();
 									// : supplying available actions
-									__addCommandButton__( IDYES, _T("Open at least valid part of it"), true );
-									__addCommandButton__( IDNO, _T("Try to open it as a raw sector image") );
-									__addCommandButton__( IDCANCEL, _T("Don't open it") );
+									AddCommandButton( IDYES, _T("Open at least valid part of it"), true );
+									AddCommandButton( IDNO, _T("Try to open it as a raw sector image") );
+									AddCancelButton( _T("Don't open it") );
 									return result;
 								}
 							public:

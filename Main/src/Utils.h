@@ -229,8 +229,11 @@ namespace Utils{
 		const LPCTSTR information;
 		WORD defaultCommandId;
 	protected:
-		void __addCommandButton__(WORD id,LPCTSTR caption,bool defaultCommand=false);
-		void __addCheckBox__(LPCTSTR caption);
+		void AddButton(WORD id,LPCTSTR caption,WCHAR wingdingsGlyphBeforeText);
+		void AddCommandButton(WORD id,LPCTSTR caption,bool defaultCommand=false);
+		void AddHelpButton(WORD id,LPCTSTR caption);
+		void AddCancelButton(LPCTSTR caption=_T("Cancel"));
+		void AddCheckBox(LPCTSTR caption);
 
 		CCommandDialog(LPCTSTR _information);
 		CCommandDialog(WORD dialogId,LPCTSTR _information);

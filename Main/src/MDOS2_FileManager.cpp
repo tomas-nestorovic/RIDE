@@ -230,10 +230,10 @@
 								// : base
 								const BOOL result=__super::OnInitDialog();
 								// : supplying available actions
-								__addCommandButton__( IDYES, _T("Extract archived file (recommended)"), true );
-								__addCommandButton__( IDNO, _T("Import it as-is anyway") );
-								__addCommandButton__( IDCANCEL, _T("Cancel") );
-								__addCheckBox__( _T("Apply to all archives") );
+								AddCommandButton( IDYES, _T("Extract archived file (recommended)"), true );
+								AddCommandButton( IDNO, _T("Import it as-is anyway") );
+								AddCancelButton();
+								AddCheckBox( _T("Apply to all archives") );
 								return result;
 							}
 						public:
@@ -267,10 +267,10 @@
 										BOOL OnInitDialog() override{
 											// dialog initialization
 											const BOOL result=__super::OnInitDialog();
-											__addCommandButton__( IDYES, _T("Import achived boot sector, respecting current disk geometry (recommended)"), true );
-											__addCommandButton__( IDNO, _T("Ignore archived boot sector") );
-											__addCommandButton__( IDCANCEL, _T("Cancel") );
-											__addCheckBox__( _T("Apply to all archives") );
+											AddCommandButton( IDYES, _T("Import achived boot sector, respecting current disk geometry (recommended)"), true );
+											AddCommandButton( IDNO, _T("Ignore archived boot sector") );
+											AddCancelButton();
+											AddCheckBox( _T("Apply to all archives") );
 											return result;
 										}
 									public:
