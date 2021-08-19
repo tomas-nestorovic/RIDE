@@ -91,11 +91,11 @@
 	TStdWinError CSCL::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		// - base (allowed are only TRDOS-compliant formats)
-		if (pFormat->nSectors==TRDOS503_TRACK_SECTORS_COUNT && pFormat->sectorLength==TRDOS503_SECTOR_LENGTH_STD && pFormat->sectorLengthCode==TRDOS503_SECTOR_LENGTH_STD_CODE){
-			if (const TStdWinError err=__super::SetMediumTypeAndGeometry(pFormat,sideMap,firstSectorNumber))
-				return err;
-		}else
+		// - base
+		if (const TStdWinError err=__super::SetMediumTypeAndGeometry(pFormat,sideMap,firstSectorNumber))
+			return err; // we should always succeeed, but just to be sure
+		// - allowed are only TRDOS-compliant formats
+		if (pFormat->nSectors!=TRDOS503_TRACK_SECTORS_COUNT || pFormat->sectorLength!=TRDOS503_SECTOR_LENGTH_STD || pFormat->sectorLengthCode!=TRDOS503_SECTOR_LENGTH_STD_CODE)
 			return Utils::ErrorByOs( ERROR_VHD_FORMAT_UNKNOWN, ERROR_UNRECOGNIZED_MEDIA ); // not a TRDOS format
 		// - attempting to read as TRDOS 5.0x Image
 		if (f.m_hFile!=CFile::hFileNull){ // handle doesn't exist if creating a new Image
