@@ -1337,11 +1337,11 @@ namespace Utils{
 	void BytesToHigherUnits(DWORD bytes,float &rHigherUnit,LPCTSTR &rHigherUnitName){
 		// converts Bytes to suitable HigherUnits (e.g. "12345 Bytes" to "12.345 kiB")
 		if (bytes>=0x40000000)
-			rHigherUnit=(float)bytes/0x40000000, rHigherUnitName=_T("GiB");
+			rHigherUnit=bytes/0x40000000, rHigherUnitName=_T("GiB");
 		else if (bytes>=0x100000)
-			rHigherUnit=(float)bytes/0x100000, rHigherUnitName=_T("MiB");
+			rHigherUnit=bytes/0x100000, rHigherUnitName=_T("MiB");
 		else if (bytes>=0x400)
-			rHigherUnit=(float)bytes/0x400, rHigherUnitName=_T("KiB");
+			rHigherUnit=bytes/0x400, rHigherUnitName=_T("KiB");
 		else
 			rHigherUnit=bytes, rHigherUnitName=_T("Bytes");
 	}
