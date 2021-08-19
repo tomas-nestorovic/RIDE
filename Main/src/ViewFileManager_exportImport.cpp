@@ -592,7 +592,7 @@ importQuit2:		::GlobalUnlock(hg);
 							// | base
 							const BOOL result=__super::OnInitDialog();
 							// | supplying available actions
-							__addCommandButton__( IDYES, _T("Open it in new instance of ") APP_ABBREVIATION _T(" (recommended)") );
+							__addCommandButton__( IDYES, _T("Open it in new instance of ") APP_ABBREVIATION _T(" (recommended)"), true );
 							__addCommandButton__( IDNO, _T("Import it to this image anyway") );
 							__addCommandButton__( IDCANCEL, _T("Cancel") );
 							return result;

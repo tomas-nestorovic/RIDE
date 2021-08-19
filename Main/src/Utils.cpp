@@ -196,13 +196,13 @@ namespace Utils{
 	CCommandDialog::CCommandDialog(LPCTSTR _information)
 		// ctor
 		: CRideDialog( IDR_ACTION_DIALOG, CWnd::FromHandle(app.GetEnabledActiveWindow()) )
-		, information(_information) , checkBoxStatus(BST_UNCHECKED) {
+		, information(_information) , defaultCommandId(0) , checkBoxStatus(BST_UNCHECKED) {
 	}
 
 	CCommandDialog::CCommandDialog(WORD dialogId,LPCTSTR _information)
 		// ctor
 		: CRideDialog( dialogId, CWnd::FromHandle(app.GetEnabledActiveWindow()) )
-		, information(_information) , checkBoxStatus(BST_UNCHECKED) {
+		, information(_information) , defaultCommandId(0) , checkBoxStatus(BST_UNCHECKED) {
 	}
 
 	BOOL CCommandDialog::OnInitDialog(){
@@ -332,6 +332,11 @@ namespace Utils{
 		// window procedure
 		switch (msg){
 			case WM_COMMAND:
+				if (wParam==IDOK)
+					if (defaultCommandId)
+						wParam=defaultCommandId;
+					else
+						return 0;
 				if (::GetWindowLong((HWND)lParam,GWL_WNDPROC)==(LONG)__commandLikeButton_wndProc__){
 					UpdateData(TRUE);
 					EndDialog(wParam);
@@ -345,8 +350,13 @@ namespace Utils{
 	#define CMDBUTTON_HEIGHT	32
 	#define CMDBUTTON_MARGIN	1
 
-	void CCommandDialog::__addCommandButton__(WORD id,LPCTSTR caption){
+	void CCommandDialog::__addCommandButton__(WORD id,LPCTSTR caption,bool defaultCommand){
 		// adds a new "command-like" Button with given Id and Caption
+		// - the Dialog can contain at most one DefaultCommand
+		if (defaultCommand){
+			ASSERT( defaultCommandId==0 );
+			defaultCommandId=id;
+		}
 		// - increasing the parent window size for the new Button to fit in
 		RECT r;
 		GetWindowRect(&r);
@@ -358,11 +368,15 @@ namespace Utils{
 		// - creating a new "command-like" Button
 		const RECT t=MapDlgItemClientRect(ID_INFORMATION);
 		ConvertToCommandLikeButton(
-			::CreateWindow( WC_BUTTON,caption,
-							WS_CHILD|WS_VISIBLE,
-							t.left, r.bottom-t.top-CMDBUTTON_HEIGHT, t.right-t.left, CMDBUTTON_HEIGHT,
-							m_hWnd, (HMENU)id, app.m_hInstance, nullptr
-						)
+			::CreateWindow(
+				WC_BUTTON,caption,
+				WS_CHILD|WS_VISIBLE,
+				t.left, r.bottom-t.top-CMDBUTTON_HEIGHT, t.right-t.left, CMDBUTTON_HEIGHT,
+				m_hWnd,
+				(HMENU)( defaultCommand ? IDOK : id ),
+				app.m_hInstance, nullptr
+			),
+			defaultCommand ? 0xf0e8 : 0xf0e0
 		);
 	}
 

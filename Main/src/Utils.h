@@ -227,8 +227,9 @@ namespace Utils{
 
 	class CCommandDialog:public CRideDialog{
 		const LPCTSTR information;
+		WORD defaultCommandId;
 	protected:
-		void __addCommandButton__(WORD id,LPCTSTR caption);
+		void __addCommandButton__(WORD id,LPCTSTR caption,bool defaultCommand=false);
 		void __addCheckBox__(LPCTSTR caption);
 
 		CCommandDialog(LPCTSTR _information);

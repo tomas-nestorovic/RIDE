@@ -705,7 +705,7 @@ errorDuringWriting:				TCHAR buf[80];
 										// : base
 										const BOOL result=__super::OnInitDialog();
 										// : supplying available actions
-										__addCommandButton__( IDYES, _T("Continue with format adopted from boot sector (recommended)") );
+										__addCommandButton__( IDYES, _T("Continue with format adopted from boot sector (recommended)"), true );
 										TCHAR buf[80];
 										::wsprintf( buf, _T("Continue to last occupied Cylinder %d (incl.)"), lastOccupiedCyl );
 										__addCommandButton__( IDRETRY, buf );

@@ -71,7 +71,7 @@
 						// : base
 						const BOOL result=__super::OnInitDialog();
 						// : supplying available actions
-						__addCommandButton__( IDYES, _T("Open it in a new tab (recommended)") );
+						__addCommandButton__( IDYES, _T("Open it in a new tab (recommended)"), true );
 						__addCommandButton__( IDNO, _T("Import it to this image anyway") );
 						__addCommandButton__( IDCANCEL, _T("Cancel") );
 						return result;

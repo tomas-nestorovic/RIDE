@@ -330,7 +330,7 @@
 					// > base
 					const BOOL result=__super::OnInitDialog();
 					// > supplying available actions
-					__addCommandButton__( IDYES, _T("Import as-is (recommended)") );
+					__addCommandButton__( IDYES, _T("Import as-is (recommended)"), true );
 					__addCommandButton__( IDNO, _T("Set reported size as real size (no Tape loading error)") );
 					if (offerFileSplit){
 						TZxRom::TFileType t=TZxRom::TFileType::HEADERLESS; // assumption
