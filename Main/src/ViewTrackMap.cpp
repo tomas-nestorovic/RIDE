@@ -42,6 +42,7 @@
 		ON_WM_VSCROLL()
 		ON_WM_MOUSEMOVE()
 		ON_WM_LBUTTONUP()
+		ON_WM_RBUTTONUP()
 		ON_WM_MOUSEWHEEL()
 		ON_WM_DESTROY()
 		ON_MESSAGE(WM_TRACK_SCANNED,__drawTrack__)
@@ -530,8 +531,9 @@
 		switch (GetPhysicalAddressAndNanosecondsFromPoint(point,chs,nSectorsToSkip,nanoseconds)){
 			case TCursorPos::TRACK:
 				// clicked on a Track
-				if (const auto tr=IMAGE->ReadTrack( chs.cylinder, chs.head ))
-					tr.ShowModal( _T("Track %d  (Cyl=%d, Head=%d)"), chs.GetTrackNumber(IMAGE->GetHeadCount()), chs.cylinder, chs.head );
+				if (app.IsInGodMode())
+					if (const auto tr=IMAGE->ReadTrack( chs.cylinder, chs.head ))
+						tr.ShowModal( _T("Track %d  (Cyl=%d, Head=%d)"), chs.GetTrackNumber(IMAGE->GetHeadCount()), chs.cylinder, chs.head );
 				break;
 			case TCursorPos::SECTOR:
 				// clicked on a Sector
@@ -547,6 +549,28 @@
 							return Utils::FatalError( _T("Can't make unreadable"), err );
 					Invalidate();
 				}
+				break;
+		}
+	}
+
+	afx_msg void CTrackMapView::OnRButtonUp(UINT nFlags,CPoint point){
+		// left mouse button released
+		CWnd dummy;
+		Utils::CRideContextMenu mnu( IDR_TRACKMAP_CONTEXT, &dummy ); // Dummy = initially disable all items
+		TPhysicalAddress chs; BYTE nSectorsToSkip; int nanoseconds;
+		switch (GetPhysicalAddressAndNanosecondsFromPoint(point,chs,nSectorsToSkip,nanoseconds)){
+			case TCursorPos::TRACK:
+				// clicked on a Track
+				mnu.EnableMenuItem( ID_HEAD, MF_BYCOMMAND|MF_ENABLED );
+				break;
+			default:
+				return;
+		}
+		switch (mnu.TrackPopupMenu( TPM_RETURNCMD, point.x, point.y, this )){
+			case ID_HEAD:
+				// display low-level Track timing
+				if (const auto tr=IMAGE->ReadTrack( chs.cylinder, chs.head ))
+					tr.ShowModal( _T("Track %d  (Cyl=%d, Head=%d)"), chs.GetTrackNumber(IMAGE->GetHeadCount()), chs.cylinder, chs.head );
 				break;
 		}
 	}

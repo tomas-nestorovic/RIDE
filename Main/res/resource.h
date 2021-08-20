@@ -48,6 +48,7 @@
 #define IDR_DOS_DATETIME_EDIT           208
 #define IDR_HEXAEDITOR_RESETSELECTION   209
 #define IDR_GUIDEPOST                   211
+#define IDR_TRACKMAP_CONTEXT            212
 #define IDR_BSDOS                       213
 #define IDR_DOS_VERIFY                  214
 #define IDR_ACTION_SEQUENCE             216
