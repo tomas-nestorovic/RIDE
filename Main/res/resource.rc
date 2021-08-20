@@ -323,7 +323,7 @@ IDR_TRACKMAP_CONTEXT MENU DISCARDABLE
 BEGIN
     POPUP "x"
     BEGIN
-        MENUITEM "Show track low-level",        ID_HEAD
+        MENUITEM "Show track low-level",        ID_HEAD, GRAYED
     END
 END
 

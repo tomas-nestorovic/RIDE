@@ -174,7 +174,7 @@ namespace Utils{
 					// normal menu item
 					state.m_pSubMenu=nullptr;
 					if (pUiUpdater)
-						state.DoUpdate( pUiUpdater, TRUE ); // False = Auto disable unroutable items
+						state.DoUpdate( pUiUpdater, FALSE ); // False = don't auto-disable unroutable items
 					break;
 			}
 	}
