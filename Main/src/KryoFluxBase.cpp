@@ -696,7 +696,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 					result.AddIndexTime( (LONGLONG)TIME_SECOND(1)*indexSampleCounter/SAMPLE_CLOCK_DEFAULT ); // temporary 64-bit precision even on 32-bit machines
 				else // custom Sample-Clock, involving floating-point number computation
 					result.AddIndexTime( (double)TIME_SECOND(1)*indexSampleCounter/sck ); // temporary 64-bit precision even on 32-bit machines
-				nearestIndexPulsePos= ++nearestIndexPulse<nIndexPulses ? indexPulses[nearestIndexPulse].posInStreamData : -1;
+				nearestIndexPulsePos= ++nearestIndexPulse<nIndexPulses ? indexPulses[nearestIndexPulse].posInStreamData : INT_MAX;
 			}
 			// . adding the flux into the Buffer
 			totalSampleCounter+=sampleCounter;
