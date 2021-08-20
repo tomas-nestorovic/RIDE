@@ -561,11 +561,13 @@
 		switch (GetPhysicalAddressAndNanosecondsFromPoint(point,chs,nSectorsToSkip,nanoseconds)){
 			case TCursorPos::TRACK:
 				// clicked on a Track
-				mnu.EnableMenuItem( ID_HEAD, MF_BYCOMMAND|MF_ENABLED );
+				if (IMAGE->ReadTrack( chs.cylinder, chs.head ))
+					mnu.EnableMenuItem( ID_HEAD, MF_BYCOMMAND|MF_ENABLED );
 				break;
 			default:
 				return;
 		}
+		ClientToScreen(&point);
 		switch (mnu.TrackPopupMenu( TPM_RETURNCMD, point.x, point.y, this )){
 			case ID_HEAD:
 				// display low-level Track timing
