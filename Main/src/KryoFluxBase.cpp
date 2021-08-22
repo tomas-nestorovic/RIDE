@@ -498,16 +498,16 @@
 
 
 	struct TIndexPulse sealed{
-		int posInStreamData;
-		int sampleCounter;
-		int indexCounter;
+		DWORD posInStreamData;
+		DWORD sampleCounter;
+		DWORD indexCounter;
 	};
 
 	#define MASTER_CLOCK_DEFAULT	(18432000*73/14/2)
 	#define SAMPLE_CLOCK_DEFAULT	(MASTER_CLOCK_DEFAULT/2)
 	#define INDEX_CLOCK_DEFAULT		(MASTER_CLOCK_DEFAULT/16)
 
-	int CKryoFluxBase::TimeToStdSampleCounter(TLogTime t){
+	DWORD CKryoFluxBase::TimeToStdSampleCounter(TLogTime t){
 		return (LONGLONG)t*SAMPLE_CLOCK_DEFAULT/TIME_SECOND(1);
 	}
 
@@ -659,10 +659,10 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 				decoderMethod=CTrackReader::TDecoderMethod::FDD_MARK_OGDEN; break;
 		}
 		CTrackReaderWriter result( nFluxes*125/100, decoderMethod, params.resetFluxDecoderOnIndex ); // allowing for 25% of false "ones" introduced by "FDC-like" decoders
-		int sampleCounter=0, totalSampleCounter=0; // delta and absolute sample counters
+		DWORD sampleCounter=0, totalSampleCounter=0; // delta and absolute sample counters
 		PLogTime buffer=result.GetBuffer(),pLogTime=buffer;
 		BYTE nearestIndexPulse=0;
-		int nearestIndexPulsePos= nIndexPulses>0 ? indexPulses[0].posInStreamData : INT_MAX;
+		DWORD nearestIndexPulsePos= nIndexPulses>0 ? indexPulses[0].posInStreamData : INT_MAX;
 		for( PCBYTE pis=inStreamData,pLastInStreamData=pis+inStreamDataLength; pis<pLastInStreamData; ){
 			const BYTE header=*pis++;
 			// . extracting flux from the KryoFlux "in-Stream" data (pre-processed in ctor)
@@ -691,12 +691,12 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 				}
 			// . adding an index pulse if its time has already been reached
 			if (pis-inStreamData>=nearestIndexPulsePos){
-				const int indexSampleCounter=totalSampleCounter+indexPulses[nearestIndexPulse].sampleCounter;
+				const DWORD indexSampleCounter=totalSampleCounter+indexPulses[nearestIndexPulse].sampleCounter;
 				if (sck==0) // default Sample-Clock, allowing for relatively precise computation of absolute timing
 					result.AddIndexTime( (LONGLONG)TIME_SECOND(1)*indexSampleCounter/SAMPLE_CLOCK_DEFAULT ); // temporary 64-bit precision even on 32-bit machines
 				else // custom Sample-Clock, involving floating-point number computation
 					result.AddIndexTime( (double)TIME_SECOND(1)*indexSampleCounter/sck ); // temporary 64-bit precision even on 32-bit machines
-				nearestIndexPulsePos= ++nearestIndexPulse<nIndexPulses ? indexPulses[nearestIndexPulse].posInStreamData : INT_MAX;
+				nearestIndexPulsePos= ++nearestIndexPulse<nIndexPulses ? indexPulses[nearestIndexPulse].posInStreamData : -1;
 			}
 			// . adding the flux into the Buffer
 			totalSampleCounter+=sampleCounter;
@@ -710,7 +710,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 		return result;
 	}
 
-	static BYTE WriteIndexBlock(PVOID outBuffer,TLogTime firstIndexTime,int totalSampleCounter,DWORD inStreamDataLength,TLogTime indexTime){
+	static BYTE WriteIndexBlock(PVOID outBuffer,TLogTime firstIndexTime,DWORD totalSampleCounter,DWORD inStreamDataLength,TLogTime indexTime){
 		const struct{
 			BYTE header,type;
 			WORD size;
@@ -734,12 +734,12 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 		#define HW_INFO_2 "name=KryoFlux DiskSystem, version=3.00s, date=Mar 27 2018, time=18:25:55, hwid=1, hwrv=1, hs=1, sck=24027428.5714285, ick=3003428.5714285625"
 		p+=::wsprintfA( p, "\xd\x4%c%c" HW_INFO_2, sizeof(HW_INFO_2), 0 )+1; // "+1" = terminal zero character
 		// - writing each Revolution on the Track
-		int totalSampleCounter=0;
+		DWORD totalSampleCounter=0;
 		struct{
 			BYTE header,type;
 			WORD size;
-			int dataLength, zero;
-		} streamInfoBlock={ 0x0d, 0x01, 2*sizeof(int) }; // 8 Bytes long "out-of-Stream" data, containing StreamInfo
+			DWORD dataLength, zero;
+		} streamInfoBlock={ 0x0d, 0x01, 2*sizeof(DWORD) }; // 8 Bytes long "out-of-Stream" data, containing StreamInfo
 		BYTE index=0;
 		TLogTime nextIndexPulseTime= tr.GetIndexCount()>0 ? tr.GetIndexTime(0) : INT_MAX;
 		for( tr.SetCurrentTime(0); tr; ){

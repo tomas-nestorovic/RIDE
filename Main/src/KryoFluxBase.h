@@ -38,7 +38,7 @@
 		CTrackReaderWriter StreamToTrack(LPBYTE inStreamBytes,DWORD nStreamBytes) const;
 		DWORD TrackToStream(CTrackReader tr,LPBYTE outBuffer) const;
 	public:
-		static int TimeToStdSampleCounter(TLogTime t);
+		static DWORD TimeToStdSampleCounter(TLogTime t);
 
 		//BOOL OnOpenDocument(LPCTSTR lpszPathName) override;
 		//BOOL OnSaveDocument(LPCTSTR lpszPathName) override;
