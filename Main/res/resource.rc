@@ -323,7 +323,10 @@ IDR_TRACKMAP_CONTEXT MENU DISCARDABLE
 BEGIN
     POPUP "x"
     BEGIN
+        MENUITEM "Show track hexa",             ID_TRACK, GRAYED
         MENUITEM "Show track low-level",        ID_HEAD, GRAYED
+        MENUITEM SEPARATOR
+        MENUITEM "Show sector hexa",            ID_SECTOR, GRAYED
     END
 END
 

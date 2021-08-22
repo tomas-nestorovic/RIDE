@@ -1,5 +1,9 @@
 #include "stdafx.h"
 
+	void WINAPI CDiskBrowserView::OnDiskBrowserViewClosing(CTdiCtrl::TTab::PContent tab){
+		delete ((CMainWindow::CTdiView::PTab)tab)->view;
+	}
+
 	#define INI_DISKBROWSER	_T("DiskBrowser")
 
 	#define DOS		tab.dos
@@ -8,7 +12,7 @@
 	typedef CImage::CSectorDataSerializer::TScannerStatus TScannerStatus;
 
 
-	CDiskBrowserView::CDiskBrowserView(PDos dos)
+	CDiskBrowserView::CDiskBrowserView(PDos dos,RCPhysicalAddress chsToSeekTo,BYTE nSectorsToSkip)
 		// ctor
 		// - base
 		: CHexaEditor( this, Utils::CreateSubmenuByContainedCommand(IDR_DISKBROWSER,ID_EDIT_SELECT_ALL), nullptr, Utils::CreateSubmenuByContainedCommand(IDR_DISKBROWSER,ID_NAVIGATE_ADDRESS) )
@@ -16,6 +20,7 @@
 		, tab( IDR_DISKBROWSER, IDR_HEXAEDITOR, ID_CYLINDER, dos, this )
 		, revolution(Revolution::ANY_GOOD)
 		, iScrollY(0) {
+		seekTo.chs=chsToSeekTo, seekTo.nSectorsToSkip=nSectorsToSkip;
 	}
 
 	BEGIN_MESSAGE_MAP(CDiskBrowserView,CHexaEditor)
@@ -316,6 +321,23 @@
 			}
 		}
 		return __super::OnCmdMsg(nID,nCode,pExtra,pHandlerInfo);
+	}
+
+	void CDiskBrowserView::SetLogicalSize(int newLogicalSize){
+		// changes the LogicalSize of File content (originally set when Resetting the HexaEditor)
+		// - base
+		__super::SetLogicalSize(newLogicalSize);
+		// - seeking to particular PhysicalAddress
+		if (seekTo.chs!=TPhysicalAddress::Invalid){
+			const int posSector=f->GetSectorStartPosition( seekTo.chs, seekTo.nSectorsToSkip );
+			if (posSector<newLogicalSize){
+				// Sector already discovered on the disk
+				HexaEditor_SetSelection( m_hWnd, posSector, posSector );
+				seekTo.chs=TPhysicalAddress::Invalid; // seeking finished
+			}else
+				// disk still scanned for the Sector
+				HexaEditor_SetSelection( m_hWnd, newLogicalSize, newLogicalSize );
+		}
 	}
 
 	afx_msg void CDiskBrowserView::OnDestroy(){

@@ -130,8 +130,8 @@
 						if (!ps->bChsValid)
 							ps->Seek(0,SeekPosition::current); // initializing state of current Sector to read from or write to
 						// : the Serializer has changed its state - letting the related HexaEditor know of the change
-						ps->pParentHexaEditor->SetLogicalSize(ps->dataTotalLength);
 						ps->pParentHexaEditor->SetLogicalBounds( 0, ps->dataTotalLength );
+						ps->pParentHexaEditor->SetLogicalSize(ps->dataTotalLength);
 					}
 				} while (ps->workerStatus!=TScannerStatus::UNAVAILABLE); // should we terminate?
 				return ERROR_SUCCESS;

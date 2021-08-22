@@ -516,10 +516,6 @@ namespace Medium{
 			return false;
 	}
 
-	static void WINAPI __onDiskBrowserViewClosing__(LPCVOID tab){
-		delete ((CMainWindow::CTdiView::PTab)tab)->view;
-	}
-
 	#define INI_MSG_SAVE_AS		_T("msgsaveas")
 
 	BOOL CImage::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){
@@ -584,8 +580,8 @@ namespace Medium{
 						}
 						return TRUE;
 					case ID_IMAGE_BROWSE:{
-						CDiskBrowserView *const dbView=new CDiskBrowserView(CImage::GetActive()->dos); // can only browse main disk Images (e.g. never a ZX Spectrum Tape)
-						CTdiCtrl::AddTabLast( TDI_HWND, _T("Sectors hexa-browser"), &dbView->tab, true, TDI_TAB_CANCLOSE_ALWAYS, __onDiskBrowserViewClosing__ );
+						CDiskBrowserView *const dbView=new CDiskBrowserView( CImage::GetActive()->dos, TPhysicalAddress::Invalid, 0 ); // can only browse main disk Images (e.g. never a ZX Spectrum Tape)
+						CTdiCtrl::AddTabLast( TDI_HWND, _T("Sectors hexa-browser"), &dbView->tab, true, TDI_TAB_CANCLOSE_ALWAYS, CDiskBrowserView::OnDiskBrowserViewClosing );
 						return TRUE;
 					}
 					case ID_FILE_CLOSE:

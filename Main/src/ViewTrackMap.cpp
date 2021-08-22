@@ -558,8 +558,13 @@
 		Utils::CRideContextMenu mnu( IDR_TRACKMAP_CONTEXT );
 		TPhysicalAddress chs; BYTE nSectorsToSkip; int nanoseconds;
 		switch (GetPhysicalAddressAndNanosecondsFromPoint(point,chs,nSectorsToSkip,nanoseconds)){
+			case TCursorPos::SECTOR:
+				// clicked on a Sector
+				mnu.EnableMenuItem( ID_SECTOR, MF_BYCOMMAND|MF_ENABLED );
+				//fallthrough
 			case TCursorPos::TRACK:
 				// clicked on a Track
+				mnu.EnableMenuItem( ID_TRACK, MF_BYCOMMAND|MF_ENABLED );
 				if (IMAGE->ReadTrack( chs.cylinder, chs.head ))
 					mnu.EnableMenuItem( ID_HEAD, MF_BYCOMMAND|MF_ENABLED );
 				break;
@@ -568,6 +573,31 @@
 		}
 		ClientToScreen(&point);
 		switch (mnu.TrackPopupMenu( TPM_RETURNCMD, point.x, point.y, this )){
+			case ID_SECTOR:{
+				// display hexa-data of Sector
+				TCHAR caption[80];
+				::wsprintf( caption, _T("Sector %s (%d)"), (LPCTSTR)chs.sectorId.ToString(), nSectorsToSkip );
+				CTdiCtrl::AddTabLast(
+					TDI_HWND, caption,
+					&(new CDiskBrowserView( DOS, chs, nSectorsToSkip ))->tab,
+					true, TDI_TAB_CANCLOSE_ALWAYS, CDiskBrowserView::OnDiskBrowserViewClosing
+				);
+				break;
+			}
+			case ID_TRACK:{
+				// display hexa-data of Track
+				TCHAR caption[80];
+				::wsprintf( caption, _T("Track %d (Cyl %d, Head %d)"), chs.GetTrackNumber(), chs.cylinder, chs.head );
+				TSectorId ids[(TSector)-1];
+				IMAGE->ScanTrack( chs.cylinder, chs.head, nullptr, ids );
+				chs.sectorId=*ids;
+				CTdiCtrl::AddTabLast(
+					TDI_HWND, caption,
+					&(new CDiskBrowserView( DOS, chs, 0 ))->tab,
+					true, TDI_TAB_CANCLOSE_ALWAYS, CDiskBrowserView::OnDiskBrowserViewClosing
+				);
+				break;
+			}
 			case ID_HEAD:
 				// display low-level Track timing
 				if (const auto tr=IMAGE->ReadTrack( chs.cylinder, chs.head ))
