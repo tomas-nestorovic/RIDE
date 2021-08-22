@@ -203,9 +203,10 @@
 										if (showByteInfo && pe->IsDataAny()){
 											auto pbi=pe.data->byteInfos;
 											while (pbi->tStart+iwTimeDefaultHalf<ti.tStart) pbi++; // skip invisible part
-											rcLabel.right=10000, rcLabel.bottom-=font.charHeight, rcLabel.top=rcLabel.bottom-byteInfoSizeMin.cy;
+											rcLabel.bottom-=font.charHeight, rcLabel.top=rcLabel.bottom-byteInfoSizeMin.cy;
 											while (continuePainting && pbi->tStart<ti.tEnd && (PCBYTE)pbi-(PCBYTE)pe.data<pe->size){ // draw visible part
 												rcLabel.left=te.timeline.GetUnitCount(pbi->tStart+iwTimeDefaultHalf)-nUnitsA;
+												rcLabel.right=rcLabel.left+1000;
 												p.params.locker.Lock();
 													if ( continuePainting=p.params.id==id )
 														switch (showByteInfo){
