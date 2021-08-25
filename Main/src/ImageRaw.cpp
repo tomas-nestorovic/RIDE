@@ -174,7 +174,7 @@
 	THead CImageRaw::GetHeadCount() const{
 		// determines and returns the number of Sides formatted on given Cylinder; returns 0 iff Cylinder not formatted
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		return nCylinders>0 ? nHeads : 0;
+		return nCylinders>0 || explicitSides ? nHeads : 0;
 	}
 
 	TSector CImageRaw::ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec,PSectorId bufferId,PWORD bufferLength,PLogTime startTimesNanoseconds,PBYTE pAvgGap3) const{
@@ -600,7 +600,7 @@ trackNotFound:
 				, sectorLengthCode( rawImage.sectorLengthCode ) {
 				if (rawImage.explicitSides)
 					::memcpy( sideNumbers, rawImage.explicitSides, nHeads*sizeof(TSide) );
-				else{ // automatic geometry - need to initialize the defaults
+				else if (initialEditing){ // automatic geometry - need to initialize the defaults
 					nCylinders=1;
 					nHeads=1, *sideNumbers=0;
 					firstSectorNumber=1, nSectors=9, sectorLengthCode=TFormat::LENGTHCODE_512;

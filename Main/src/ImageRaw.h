@@ -29,8 +29,8 @@
 		~CImageRaw();
 
 		BOOL OnOpenDocument(LPCTSTR lpszPathName) override;
-		TCylinder GetCylinderCount() const override;
-		THead GetHeadCount() const override;
+		TCylinder GetCylinderCount() const override sealed;
+		THead GetHeadCount() const override sealed;
 		TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const override;
 		void GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses) override;
 		TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE,PCFdcStatus pFdcStatus) override;
