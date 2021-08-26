@@ -7,7 +7,7 @@
 		// - initialization
 		, trackMap(this)
 		// - loading MRU Tapes
-		, mruTapes( 0, INI_SPECTRUM, _T("MruTape%d"), 4 ) {
+		, mruTapes( 0, INI_SPECTRUM _T("MruTapes"), _T("T%d"), 4 ) {
 		mruTapes.ReadList();
 	}
 
