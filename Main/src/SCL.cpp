@@ -28,7 +28,7 @@
 
 	CSCL::CSCL()
 		// ctor
-		: CImageRaw(&Properties,false) {
+		: CImageRaw(&Properties,true) {
 	}
 
 
@@ -57,7 +57,7 @@
 
 	TStdWinError CSCL::SaveAllModifiedTracks(LPCTSTR lpszPathName,PBackgroundActionCancelable pAction){
 		// saves all Modified Tracks; returns Windows standard i/o error
-		if (const CTRDOS503::PCBootSector boot=CTRDOS503::__getBootSector__(this)){
+		if (const CTRDOS503::PCBootSector boot=CTRDOS503::TBootSector::Get(this)){
 			if (f.m_hFile!=CFile::hFileNull) // Image's underlying file doesn't exist if saving a fresh formatted Image
 				f.Close();
 			if (!OpenImageForWriting(lpszPathName,&f))
@@ -114,8 +114,12 @@
 				for( POSITION pos=recognition.__getFirstRecognizedDosPosition__(); pos; ){
 					const CDos::PCProperties p=recognition.__getNextRecognizedDos__(pos);
 					if (!::memcmp(p->name,TRDOS_NAME_BASE,sizeof(TRDOS_NAME_BASE)-1)){
-						static constexpr TFormat Fmt={ Medium::FLOPPY_DD, Codec::MFM, 80,2,TRDOS503_TRACK_SECTORS_COUNT, TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD, 1 };
-						pTrdos.reset( (CTRDOS503 *)p->fnInstantiate(this,&Fmt) );
+						const TFormat fmt={
+							Medium::FLOPPY_DD, Codec::MFM, 80,
+							explicitSides ? GetHeadCount() : pFormat->nHeads,
+							TRDOS503_TRACK_SECTORS_COUNT, TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD, 1
+						};
+						pTrdos.reset( (CTRDOS503 *)p->fnInstantiate(this,&fmt) );
 						break;
 					}
 				}

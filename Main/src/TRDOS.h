@@ -44,8 +44,8 @@
 
 		#pragma pack(1)
 		typedef struct TBootSector sealed{
-			static const TPhysicalAddress CHS;
-
+			static TPhysicalAddress GetPhysicalAddress(TSide side);
+			static TBootSector *Get(PImage image);
 			static UINT AFX_CDECL Verification_thread(PVOID pCancelableAction);
 
 			BYTE zero1; // end of Directory
@@ -143,14 +143,13 @@
 		static const CFormatDialog::TStdFormat StdFormats[];
 
 		static TStdWinError __recognizeDisk__(PImage image,PFormat pFormatBoot);
-		static PBootSector __getBootSector__(PImage image);
 		static UINT AFX_CDECL __defragmentation_thread__(PVOID _pCancelableAction);
 		static void __informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId);
 		static UINT AFX_CDECL CrossLinkedFilesVerification_thread(PVOID pCancelableAction);
 
 		bool zeroLengthFilesEnabled,importToSysTrack;
 
-		PBootSector __getBootSector__() const;
+		PBootSector GetBootSector() const;
 		void InitializeEmptyMedium(CFormatDialog::PCParameters) override;
 		BYTE __getDirectory__(PDirectoryEntry *directory) const;
 		bool __parameterAfterData__(PCDirectoryEntry de,bool modify,WORD &rw,bool *pAA80=nullptr) const;

@@ -9,7 +9,7 @@
 		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
 		if (const TStdWinError err=__super::__recognizeDisk__(image,pFormatBoot))
 			return err;
-		else if (((PCBootSector)image->GetHealthySectorData(TBootSector::CHS))->__getLabelLengthEstimation__()==TRDOS504_BOOT_LABEL_LENGTH_MAX)
+		else if (TBootSector::Get(image)->__getLabelLengthEstimation__()==TRDOS504_BOOT_LABEL_LENGTH_MAX)
 			return ERROR_SUCCESS;
 		else
 			return ERROR_UNRECOGNIZED_VOLUME;

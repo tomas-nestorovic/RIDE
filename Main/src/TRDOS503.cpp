@@ -66,7 +66,7 @@
 		// - verifying basic Directory information
 		const PTRDOS503 trdos=static_cast<PTRDOS503>(vp.dos);
 		const PImage image=trdos->image;
-		const PCBootSector boot=(PBootSector)image->GetHealthySectorData(TBootSector::CHS);
+		const PCBootSector boot=TBootSector::Get(image);
 		if (!boot)
 			return vp.TerminateAll( Utils::ErrorByOs(ERROR_VOLMGR_DISK_INVALID,ERROR_UNRECOGNIZED_VOLUME) );
 		pAction->SetProgressTarget(	TRDOS503_BOOT_SECTOR_NUMBER-TRDOS503_SECTOR_FIRST_NUMBER
@@ -192,7 +192,7 @@
 			if (__getDirectory__(directory))
 				importToSysTrack=!directory[0]->first.track; // turned on if the first File starts in system Track
 		}
-		::ZeroMemory( sideMap, sizeof(sideMap) ); // both Sides of floppy are numbered as zero
+		::memcpy( sideMap, image->GetSideMap(), sizeof(sideMap) ); // as Side numbers are ignored by TR-DOS, adopting whatever is set by the Image
 	}
 
 
@@ -219,7 +219,7 @@
 
 	bool CTRDOS503::GetSectorStatuses(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PSectorStatus buffer) const{
 		// True <=> Statuses of all Sectors in the Track successfully retrieved and populated the Buffer, otherwise False
-		const PCBootSector bootSector=__getBootSector__();
+		const PCBootSector bootSector=GetBootSector();
 		if (!bootSector){
 			while (nSectors--) *buffer++=TSectorStatus::UNKNOWN;
 			return false;
@@ -285,7 +285,7 @@
 	}
 	DWORD CTRDOS503::GetFreeSpaceInBytes(TStdWinError &rError) const{
 		// computes and returns the empty space on disk
-		if (const PCBootSector boot=__getBootSector__()){
+		if (const PCBootSector boot=GetBootSector()){
 			rError=ERROR_SUCCESS;
 			return boot->nFreeSectors*TRDOS503_SECTOR_LENGTH_STD;
 		}else{
@@ -429,10 +429,10 @@
 		if (file==ZX_DIR_ROOT)
 			return ERROR_ACCESS_DENIED; // can't delete the root Directory
 		if (*(PCBYTE)file!=TDirectoryEntry::DELETED && *(PCBYTE)file!=TDirectoryEntry::END_OF_DIR) // File mustn't be already Deleted (may happen during moving it in FileManager)
-			if (const PBootSector boot=__getBootSector__()){
+			if (const PBootSector boot=GetBootSector()){
 				PDirectoryEntry directory[TRDOS503_FILE_COUNT_MAX];
 				MarkDirectorySectorAsDirty(file);
-				image->MarkSectorAsDirty(TBootSector::CHS);
+				this->boot.MarkSectorAsDirty();
 				if (file!=directory[__getDirectory__(directory)-1]){
 					// File is not at the end of Directory
 					*(PBYTE)file=TDirectoryEntry::DELETED;
@@ -524,7 +524,7 @@
 				break;
 		}
 		// - initializing the description of File to import
-		const PBootSector boot=__getBootSector__();
+		const PBootSector boot=GetBootSector();
 		if (!boot)
 			return Utils::ErrorByOs( ERROR_VOLMGR_DISK_INVALID, ERROR_UNRECOGNIZED_VOLUME );
 		TDirectoryEntry tmp;
@@ -563,7 +563,7 @@
 		// - modifying the Boot Sector
 		boot->firstFree = de->first+de->nSectors;
 		boot->nFreeSectors-=de->nSectors, boot->nFiles++;
-		image->MarkSectorAsDirty(TBootSector::CHS);
+		this->boot.MarkSectorAsDirty();
 		// - terminating the Directory
 		PDirectoryEntry directory[TRDOS503_FILE_COUNT_MAX+1],*p=directory; // "+1" = terminator
 		for( directory[__getDirectory__(directory)]=(PDirectoryEntry)boot; *p!=de; p++ ); // Boot Sector as terminator
@@ -897,7 +897,7 @@
 				return TCmdResult::DONE;
 			case ID_SYSTEM:{
 				// allowing/disabling importing to zero-th system Track (this command is only available if the disk contains no Files)
-				const PBootSector boot=__getBootSector__();
+				const PBootSector boot=GetBootSector();
 				if (importToSysTrack){
 					// now on, so turning the switch off (and updating the Boot Sector)
 					TSectorId ids[(BYTE)-1];
@@ -916,7 +916,7 @@
 					boot->firstFree.track=0, boot->firstFree.sector=TRDOS503_BOOT_SECTOR_NUMBER;
 					boot->nFreeSectors+=TRDOS503_TRACK_SECTORS_COUNT-TRDOS503_BOOT_SECTOR_NUMBER;
 				}
-				image->MarkSectorAsDirty(TBootSector::CHS);
+				this->boot.MarkSectorAsDirty();
 				return TCmdResult::DONE_REDRAW;
 			}
 			case ID_DOS_DEFRAGMENT:{
@@ -924,7 +924,7 @@
 				if (image->ReportWriteProtection()) return TCmdResult::DONE;
 				const TGetFileSizeOptions gfs0=getFileSizeDefaultOption;
 					getFileSizeDefaultOption=TGetFileSizeOptions::SizeOnDisk; // during the defragmentation, File size is given by the number of Sectors in FatPath (as some Files lie about its size in their DirectoryEntries as part of copy-protection scheme)
-					if (const PBootSector boot=__getBootSector__())
+					if (const PBootSector boot=GetBootSector())
 						CBackgroundActionCancelable(
 							__defragmentation_thread__,
 							&TDefragParams( this, boot ),
@@ -976,7 +976,7 @@
 		vp.fReport.OpenSection(FAT_VERIFICATION_CROSSLINKED);
 		const auto trdos=static_cast<CTRDOS503 *>(vp.dos);
 		const PImage image=trdos->image;
-		const PBootSector boot=__getBootSector__(image);
+		const PBootSector boot=TBootSector::Get(image);
 		if (!boot)
 			return vp.TerminateAll( Utils::ErrorByOs(ERROR_VOLMGR_DISK_INVALID,ERROR_UNRECOGNIZED_VOLUME) );
 		// - getting list of Files (present and deleted)
@@ -1055,7 +1055,7 @@
 					de->first=boot->firstFree;
 					trdos->MarkDirectorySectorAsDirty(de);
 					boot->firstFree=deLast->first+deLast->nSectors;
-					image->MarkSectorAsDirty(TBootSector::CHS);
+					trdos->boot.MarkSectorAsDirty();
 				}
 				vp.fReport.CloseProblem(true);
 			}

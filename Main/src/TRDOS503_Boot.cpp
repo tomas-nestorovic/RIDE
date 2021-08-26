@@ -3,7 +3,10 @@
 
 	constexpr BYTE BOOT_ID=16;
 
-	const TPhysicalAddress CTRDOS503::TBootSector::CHS={ 0, 0, {0,0,TRDOS503_BOOT_SECTOR_NUMBER,TRDOS503_SECTOR_LENGTH_STD_CODE} };
+	TPhysicalAddress CTRDOS503::TBootSector::GetPhysicalAddress(TSide side){
+		const TPhysicalAddress chs={ 0, 0, {0,side,TRDOS503_BOOT_SECTOR_NUMBER,TRDOS503_SECTOR_LENGTH_STD_CODE} };
+		return chs;
+	}
 
 	UINT AFX_CDECL CTRDOS503::TBootSector::Verification_thread(PVOID pCancelableAction){
 		// thread to verify the Boot Sector
@@ -12,9 +15,10 @@
 		vp.fReport.OpenSection(BOOT_SECTOR_TAB_LABEL);
 		const auto trdos=static_cast<CTRDOS503 *>(vp.dos);
 		const PImage image=trdos->image;
-		const PBootSector boot=__getBootSector__(image);
+		const PBootSector boot=Get(image);
 		if (!boot)
 			return vp.TerminateAll( Utils::ErrorByOs(ERROR_VOLMGR_DISK_INVALID,ERROR_UNRECOGNIZED_VOLUME) );
+		const TPhysicalAddress CHS=GetPhysicalAddress(*image->GetSideMap());
 		// - verifying this is actually a TR-DOS disk
 		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, nullptr, boot->id, (BYTE)BOOT_ID ))
 			return vp.TerminateAll(err);
@@ -84,24 +88,26 @@
 			format= pFormatBoot->nHeads==1 ? SS80 : DS80 ;
 	}
 
-	CTRDOS503::PBootSector CTRDOS503::__getBootSector__(PImage image){
+	CTRDOS503::PBootSector CTRDOS503::TBootSector::Get(PImage image){
 		// returns the data of Boot Sector (or Null if Boot unreadable)
-		return (CTRDOS503::PBootSector)image->GetHealthySectorData(TBootSector::CHS);
+		return	(PBootSector)image->GetHealthySectorData(
+					GetPhysicalAddress( *image->GetSideMap() )
+				);
 	}
-	CTRDOS503::PBootSector CTRDOS503::__getBootSector__() const{
+	CTRDOS503::PBootSector CTRDOS503::GetBootSector() const{
 		// returns the data of Boot Sector (or Null if Boot unreadable)
-		return __getBootSector__(image);
+		return TBootSector::Get(image);
 	}
 
 	TStdWinError CTRDOS503::__recognizeDisk__(PImage image,PFormat pFormatBoot){
 		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
 		TFormat fmt={ Medium::FLOPPY_DD, Codec::MFM, 1,2,TRDOS503_TRACK_SECTORS_COUNT, TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD, 1 };
-		if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
+		if (image->SetMediumTypeAndGeometry(&fmt,image->GetSideMap(),1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
 			fmt.mediumType=Medium::FLOPPY_DD_525;
-			if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0))
+			if (image->SetMediumTypeAndGeometry(&fmt,image->GetSideMap(),1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0))
 				return ERROR_UNRECOGNIZED_VOLUME; // unknown Medium Type
 		}
-		const PCBootSector boot=(PCBootSector)image->GetHealthySectorData(TBootSector::CHS);
+		const PCBootSector boot=TBootSector::Get(image);
 		if (boot && boot->id==BOOT_ID){
 			*pFormatBoot=fmt;
 			switch ( const BYTE f=boot->format ){
@@ -180,7 +186,7 @@
 
 	CTRDOS503::CTrdosBootView::CTrdosBootView(PTRDOS503 trdos,BYTE nCharsInLabel)
 		// ctor
-		: CBootView(trdos,TBootSector::CHS)
+		: CBootView( trdos, TBootSector::GetPhysicalAddress(*trdos->image->GetSideMap()) )
 		, nCharsInLabel(nCharsInLabel) {
 	}
 
@@ -223,7 +229,7 @@
 	bool WINAPI CTRDOS503::CTrdosBootView::__onFormatChanged__(PVOID,PropGrid::Enum::UValue newValue){
 		// disk Format changed through PropertyGrid
 		CTRDOS503 *const trdos=(CTRDOS503 *)CDos::GetFocused();
-		const PBootSector boot=trdos->__getBootSector__();
+		const PBootSector boot=trdos->GetBootSector();
 		if (!boot) return false;
 		// - validating new Format
 		const PFormat pf=&trdos->formatBoot;
@@ -337,16 +343,16 @@
 
 	void CTRDOS503::FlushToBootSector() const{
 		// flushes internal Format information to the actual Boot Sector's data
-		if (const PBootSector boot=__getBootSector__()){
+		if (const PBootSector boot=GetBootSector()){
 			boot->__setDiskType__(&formatBoot);
-			image->MarkSectorAsDirty(TBootSector::CHS);
+			this->boot.MarkSectorAsDirty();
 		}
 	}
 
 	void CTRDOS503::InitializeEmptyMedium(CFormatDialog::PCParameters){
 		// initializes a fresh formatted Medium (Boot, FAT, root dir, etc.)
 		// . initializing the Boot Sector
-		if (const PBootSector bootSector=__getBootSector__()){
+		if (const PBootSector bootSector=GetBootSector()){
 			bootSector->__init__( &formatBoot, boot.nCharsInLabel, importToSysTrack );
 			FlushToBootSector(); // already carried out in CDos::__formatStdCylinders__ but overwritten by ZeroMemory above
 		}
