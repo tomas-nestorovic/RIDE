@@ -54,7 +54,7 @@
 		__recognizeDisk__, // recognition function
 		__instantiate__, // instantiation function
 		Medium::FLOPPY_DD_ANY,
-		&CMGT::Properties, // the most common Image to contain data for this DOS (e.g. *.D80 Image for MDOS)
+		&MGT::Properties, // the most common Image to contain data for this DOS (e.g. *.D80 Image for MDOS)
 		1,	// number of std Formats
 		StdFormats, // std Formats
 		Codec::MFM, // a set of Codecs this DOS supports
@@ -91,4 +91,22 @@
 		//nop (doesn't have a FAT)
 		// - empty Directory
 		//nop (DirectoryEntry set as Empty during formatting - FillerByte happens to have the same value)
+	}
+
+
+
+
+
+
+
+
+
+	namespace MGT{
+		LPCTSTR Recognize(PTCHAR){
+			static constexpr TCHAR SingleDeviceName[]=_T("MGT image\0");
+			return SingleDeviceName;
+		}
+		PImage Instantiate(LPCTSTR){
+			return new CImageRaw( &Properties, false );
+		}
 	}

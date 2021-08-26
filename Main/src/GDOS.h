@@ -197,4 +197,22 @@
 		bool UpdateCommandUi(WORD cmd,CCmdUI *pCmdUI) const override;
 	};
 
+
+
+
+	namespace MGT{
+		LPCTSTR Recognize(PTCHAR);
+		PImage Instantiate(LPCTSTR);
+
+		static constexpr CImage::TProperties Properties={
+			MAKE_IMAGE_ID('G','D','O','S','_','M','G','T'), // a unique identifier
+			Recognize,	// list of recognized device names
+			Instantiate,// instantiation function
+			_T("*.mgt"),	// filter
+			Medium::FLOPPY_DD_ANY, // supported Media
+			Codec::MFM, // supported Codecs
+			GDOS_SECTOR_LENGTH_STD, GDOS_SECTOR_LENGTH_STD	// Sector supported min and max length
+		};
+	}
+
 #endif // GDOS

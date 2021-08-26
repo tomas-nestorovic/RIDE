@@ -150,7 +150,6 @@ struct TLogTimeInterval{
 #include "DialogVerification.h"
 #include "ImageFloppy.h"
 #include "ImageRaw.h"
-#include "MGT.h"
 #include "Dsk5.h"
 #include "FDD.h"
 #include "Dos.h"

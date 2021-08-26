@@ -226,7 +226,6 @@
     <ClInclude Include="src\ImageFloppy.h" />
     <ClInclude Include="src\ImageRaw.h" />
     <ClInclude Include="src\MDOS2.h" />
-    <ClInclude Include="src\MGT.h" />
     <ClInclude Include="src\MSDOS7.h" />
     <ClInclude Include="src\OptionalLibAPIs.h" />
     <ClInclude Include="src\SCL.h" />
@@ -297,7 +296,6 @@
     <ClCompile Include="src\MDOS2_Boot.cpp" />
     <ClCompile Include="src\MDOS2_GKFM.cpp" />
     <ClCompile Include="src\MDOS2_FileManager.cpp" />
-    <ClCompile Include="src\MGT.cpp" />
     <ClCompile Include="src\MSDOS7.cpp" />
     <ClCompile Include="src\MSDOS7_Boot.cpp" />
     <ClCompile Include="src\MSDOS7_FAT.cpp" />

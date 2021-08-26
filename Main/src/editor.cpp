@@ -185,7 +185,7 @@
 		CImage::Known.AddTail( &CIpf::Properties );
 		CImage::Known.AddTail( &CKryoFluxStreams::Properties );
 		CImage::Known.AddTail( &MBD::Properties );
-		CImage::Known.AddTail( &CMGT::Properties );
+		CImage::Known.AddTail( &MGT::Properties );
 		CImage::Known.AddTail( &CImageRaw::Properties );
 		CImage::Known.AddTail( &CSCL::Properties );
 		CImage::Known.AddTail( &TRD::Properties );

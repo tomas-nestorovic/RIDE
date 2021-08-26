@@ -238,7 +238,6 @@
 		friend class CTrackMapView;
 		friend class CFileManagerView;
 
-		const bool hasEditableSettings;
 		bool writeProtected;
 
 		void Dump() const;
@@ -630,6 +629,7 @@
 		static UINT AFX_CDECL SaveAllModifiedTracks_thread(PVOID _pCancelableAction);
 
 		const PCProperties properties;
+		const bool hasEditableSettings;
 		CMainWindow::CDockableToolBar toolbar;
 		PDos dos;
 

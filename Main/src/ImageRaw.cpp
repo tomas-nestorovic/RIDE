@@ -1,5 +1,4 @@
 #include "stdafx.h"
-#include "GDOS.h"
 
 	static LPCTSTR Recognize(PTCHAR){
 		static constexpr TCHAR SingleDeviceName[]=_T("Raw data image\0");
@@ -326,11 +325,13 @@ trackNotFound:
 		if (explicitSides)
 			return ERROR_SUCCESS;
 		// - choosing a proper TrackAccessScheme based on commonly known restrictions on emulation
+		/*
 		if (dos) // may not exist if creating a new Image
 			if (dos->properties==&CGDOS::Properties)
 				trackAccessScheme=TTrackScheme::BY_SIDES;
 			else
 				trackAccessScheme=TTrackScheme::BY_CYLINDERS;
+		*/
 		// - setting up Medium's Type and geometry
 		return __setMediumTypeAndGeometry__(pFormat,sideMap,firstSectorNumber);
 	}
@@ -341,6 +342,9 @@ trackNotFound:
 	bool CImageRaw::EditSettings(bool initialEditing){
 		// True <=> new settings have been accepted (and adopted by this Image), otherwise False
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		// - if no editable settings, we are done
+		if (!hasEditableSettings)
+			return true;
 		// - defining the Dialog
 		class CSettingsDialog sealed:public Utils::CRideDialog{
 			const bool initialEditing;
