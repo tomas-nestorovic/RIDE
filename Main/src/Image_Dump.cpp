@@ -57,6 +57,7 @@
 		void __exportErroneousTracksToHtml__(CFile &fHtml) const{
 			// exports SourceTrackErrors to given HTML file
 			Utils::WriteToFile(fHtml,_T("<html><head><style>body,td{font-size:13pt;margin:24pt}table{border:1pt solid black;spacing:10pt}td{vertical-align:top}td.caption{font-size:14pt;background:silver}</style></head><body>"));
+				Utils::WriteToFileFormatted( fHtml, _T("<h3>Configuration</h3><table><tr><td class=caption>System:</td><td><b>%s</b></td></tr><tr></tr><tr><td class=caption>Source:</td><td><b>%s</b><br>via<br><b>%s</b></td></tr><tr><td class=caption>Target:</td><td><b>%s</b><br>via<br><b>%s</b></td></tr><tr><td class=caption>Full track analysis:</td><td><b>%s</b></td></tr></table><br>"), dos->properties->name, Medium::GetDescription(dos->formatBoot.mediumType), source->GetPathName().GetLength()?source->GetPathName():_T("N/A"), Medium::GetDescription(mediumType), target->GetPathName().GetLength()?target->GetPathName():_T("N/A"), fullTrackAnalysis?_T("On"):_T("Off") );
 				Utils::WriteToFile(fHtml,_T("<h3>Overview</h3>"));
 					if (pOutErroneousTracks){
 						Utils::WriteToFile(fHtml,_T("<table><tr><td class=caption>Status</td><td class=caption>Count</td></tr>"));
