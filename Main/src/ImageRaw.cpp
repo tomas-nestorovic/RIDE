@@ -384,13 +384,14 @@ trackNotFound:
 					if (manualRecognition){
 						if (!TryApplyGeometry()) // we should always succeed here, but just to be sure
 							pDX->Fail();
-						if (nHeads!=rawImage.nHeads){ // Side numbers under- or over-specified?
-							TCHAR buf[80];
-							::wsprintf( buf, _T("< Given other settings, the number of heads must be %d."), rawImage.nHeads );
-							SetDlgItemText( ID_HEAD, buf );
-							pDX->PrepareCtrl(ID_SIDE);
-							pDX->Fail();
-						}
+						if (rawImage.trackAccessScheme==TTrackScheme::BY_SIDES)
+							if (nHeads!=rawImage.nHeads){ // Side numbers under- or over-specified?
+								TCHAR buf[80];
+								::wsprintf( buf, _T("< Given other settings, the number of heads must be %d."), rawImage.nHeads );
+								SetDlgItemText( ID_HEAD, buf );
+								pDX->PrepareCtrl(ID_SIDE);
+								pDX->Fail();
+							}
 					}
 				}else{
 					// . can confirm the dialog only during InitialEditing
@@ -630,8 +631,10 @@ trackNotFound:
 				if (!d.TryApplyGeometry())
 					return false; // we should always succeed, but just to be sure
 				explicitSides.reset( Utils::MakeCallocPtr<TSide,THead>(d.nHeads,d.sideNumbers).release() );
-				sideMap=explicitSides;
-			}
+				nHeads=d.nHeads;
+			}else
+				explicitSides.reset();
+			sideMap=explicitSides;
 			return true;
 		}else
 			return false;

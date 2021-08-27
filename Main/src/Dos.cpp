@@ -134,8 +134,9 @@ reportError:Utils::Information(buf);
 
 	TSector CDos::GetListOfStdSectors(TCylinder cyl,THead head,PSectorId bufferId) const{
 		// populates Buffer with standard ("official") Sector IDs for given Track and returns their count (Zone Bit Recording currently NOT supported!)
+		const PCSide sides= image->GetSideMap() ? image->GetSideMap() : sideMap; // prefer Sides defined by Image, e.g. defined by user
 		for( TSector s=properties->firstSectorNumber,nSectors=formatBoot.nSectors; nSectors--; bufferId++ )
-			bufferId->cylinder=cyl, bufferId->side=sideMap[head], bufferId->sector=s++, bufferId->lengthCode=formatBoot.sectorLengthCode;
+			bufferId->cylinder=cyl, bufferId->side=sides[head], bufferId->sector=s++, bufferId->lengthCode=formatBoot.sectorLengthCode;
 		return formatBoot.nSectors;
 	}
 
@@ -225,10 +226,12 @@ reportError:Utils::Information(buf);
 			// request to format from the beginning of disk - warning that all data will be destroyed
 			if (!Utils::QuestionYesNo(_T("About to format the whole image and destroy all data.\n\nContinue?!"),MB_DEFBUTTON2))
 				return ERROR_CANCELLED;
-			if (!image->EditSettings(true))
-				return ERROR_CANCELLED;
+			if (pFileManager && pFileManager->m_hWnd)
+				pFileManager->GetListCtrl().DeleteAllItems();
 			if (const TStdWinError err=image->Reset())
 				return err;
+			if (!image->EditSettings(true))
+				return ERROR_CANCELLED;
 			if (const TStdWinError err=image->SetMediumTypeAndGeometry( &rd.params.format, sideMap, properties->firstSectorNumber ))
 				return err;
 		}
