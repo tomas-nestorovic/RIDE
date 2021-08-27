@@ -44,7 +44,7 @@
 
 		#pragma pack(1)
 		typedef struct TBootSector sealed{
-			static TPhysicalAddress GetPhysicalAddress(TSide side);
+			static TPhysicalAddress GetPhysicalAddress(PCImage image);
 			static TBootSector *Get(PImage image);
 			static UINT AFX_CDECL Verification_thread(PVOID pCancelableAction);
 
@@ -150,6 +150,7 @@
 		bool zeroLengthFilesEnabled,importToSysTrack;
 
 		PBootSector GetBootSector() const;
+		TSide GetSideNumber(THead head) const;
 		void InitializeEmptyMedium(CFormatDialog::PCParameters) override;
 		BYTE __getDirectory__(PDirectoryEntry *directory) const;
 		bool __parameterAfterData__(PCDirectoryEntry de,bool modify,WORD &rw,bool *pAA80=nullptr) const;

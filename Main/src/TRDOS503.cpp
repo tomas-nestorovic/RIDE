@@ -74,7 +74,7 @@
 									1 // checking that all DirectoryEntries are valid
 								);
 		// - Steps 1-N: verifying Directory Sectors readability
-		TPhysicalAddress chs={ 0, 0, {0,trdos->sideMap[0],TRDOS503_SECTOR_FIRST_NUMBER,TRDOS503_SECTOR_LENGTH_STD_CODE} };
+		TPhysicalAddress chs={ 0, 0, {0,trdos->GetSideNumber(0),TRDOS503_SECTOR_FIRST_NUMBER,TRDOS503_SECTOR_LENGTH_STD_CODE} };
 		while (chs.sectorId.sector<=TRDOS503_BOOT_SECTOR_NUMBER){
 			if (!image->GetHealthySectorData(chs))
 				vp.fReport.LogWarning( VERIF_MSG_DIR_SECTOR_BAD, (LPCTSTR)chs.sectorId.ToString() );
@@ -192,7 +192,6 @@
 			if (__getDirectory__(directory))
 				importToSysTrack=!directory[0]->first.track; // turned on if the first File starts in system Track
 		}
-		::memcpy( sideMap, image->GetSideMap(), sizeof(sideMap) ); // as Side numbers are ignored by TR-DOS, adopting whatever is set by the Image
 	}
 
 
@@ -216,6 +215,12 @@
 
 
 
+
+	TSide CTRDOS503::GetSideNumber(THead head) const{
+		return	image->GetSideMap() // Side numbers are ignored by TR-DOS ...
+				? image->GetSideMap()[head] // ... so formally prefer numbering by Image, if available ...
+				: StdSidesMap[head]; // ... turning to default numbering otherwise (e.g. when creating a new Image)
+	}
 
 	bool CTRDOS503::GetSectorStatuses(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PSectorStatus buffer) const{
 		// True <=> Statuses of all Sectors in the Track successfully retrieved and populated the Buffer, otherwise False
@@ -308,7 +313,7 @@
 		item.chs.sectorId.lengthCode=TRDOS503_SECTOR_LENGTH_STD_CODE;
 		if (file==ZX_DIR_ROOT){
 			item.chs.cylinder = item.chs.sectorId.cylinder = 0;
-			item.chs.sectorId.side=sideMap[ item.chs.head=0 ];
+			item.chs.sectorId.side=GetSideNumber( item.chs.head=0 );
 			for( item.chs.sectorId.sector=TRDOS503_SECTOR_FIRST_NUMBER; item.chs.sectorId.sector<TRDOS503_BOOT_SECTOR_NUMBER; item.chs.sectorId.sector++,item.value++ ) // incrementing Value just to guarantee it's unique for each Sector
 				if (!rFatPath.AddItem(&item)) break; // also sets an error in FatPath
 			return true;
@@ -320,7 +325,7 @@
 		const PCDirectoryEntry de=(PCDirectoryEntry)file;
 		const div_t B=div( de->first.track, formatBoot.nHeads );
 			item.chs.cylinder = item.chs.sectorId.cylinder = B.quot,
-			item.chs.sectorId.side=sideMap[ item.chs.head=B.rem ],
+			item.chs.sectorId.side=GetSideNumber( item.chs.head=B.rem ),
 			item.chs.sectorId.sector=TRDOS503_SECTOR_FIRST_NUMBER+de->first.sector;
 			BYTE nBytesAfterData;
 			item.value=reinterpret_cast<PCDos>(this)->GetFileSize(de,nullptr,&nBytesAfterData) + TRDOS503_SECTOR_LENGTH_STD-1; // "+N" = rounding up
@@ -337,10 +342,10 @@
 			if (++item.chs.sectorId.sector>formatBoot.nSectors){
 				item.chs.sectorId.sector=TRDOS503_SECTOR_FIRST_NUMBER;
 				if (++item.chs.head==formatBoot.nHeads){
-					item.chs.sectorId.side=sideMap[ item.chs.head=0 ];
+					item.chs.sectorId.side=GetSideNumber( item.chs.head=0 );
 					item.chs.sectorId.cylinder=++item.chs.cylinder;
 				}else
-					item.chs.sectorId.side=sideMap[item.chs.head];
+					item.chs.sectorId.side=GetSideNumber( item.chs.head );
 			}
 		}
 		return true;
@@ -582,7 +587,7 @@
 			if (sector>=de->nSectors) return false;
 			const TSectorTrackPair A = de->first+sector;
 			const div_t B=div(A.track,formatBoot.nHeads);
-			const TPhysicalAddress chs={ B.quot, B.rem, { B.quot, sideMap[B.rem], A.sector+TRDOS503_SECTOR_FIRST_NUMBER, TRDOS503_SECTOR_LENGTH_STD_CODE } };
+			const TPhysicalAddress chs={ B.quot, B.rem, { B.quot, GetSideNumber(B.rem), A.sector+TRDOS503_SECTOR_FIRST_NUMBER, TRDOS503_SECTOR_LENGTH_STD_CODE } };
 			if (const PSectorData data=image->GetHealthySectorData(chs)){
 				if (modify){
 					((PBYTE)data)[officialFileSize&(TRDOS503_SECTOR_LENGTH_STD-1)]=*p++;
@@ -723,7 +728,7 @@
 		// - getting ready to read the first Directory Sector
 		, nRemainingEntriesInSector(0) {
 		chs.cylinder = chs.sectorId.cylinder = 0,
-		chs.sectorId.side=_trdos->sideMap[ chs.head=0 ],
+		chs.sectorId.side=_trdos->GetSideNumber( chs.head=0 ),
 		chs.sectorId.sector=TRDOS503_SECTOR_FIRST_NUMBER-1;
 		chs.sectorId.lengthCode=TRDOS503_SECTOR_LENGTH_STD_CODE;
 		// - buffering the whole Directory (to eventually speed-up reading from a real floppy)

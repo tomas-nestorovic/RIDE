@@ -3,7 +3,8 @@
 
 	constexpr BYTE BOOT_ID=16;
 
-	TPhysicalAddress CTRDOS503::TBootSector::GetPhysicalAddress(TSide side){
+	TPhysicalAddress CTRDOS503::TBootSector::GetPhysicalAddress(PCImage image){
+		const TSide side= image->GetSideMap() ? *image->GetSideMap() : *StdSidesMap;
 		const TPhysicalAddress chs={ 0, 0, {0,side,TRDOS503_BOOT_SECTOR_NUMBER,TRDOS503_SECTOR_LENGTH_STD_CODE} };
 		return chs;
 	}
@@ -18,7 +19,7 @@
 		const PBootSector boot=Get(image);
 		if (!boot)
 			return vp.TerminateAll( Utils::ErrorByOs(ERROR_VOLMGR_DISK_INVALID,ERROR_UNRECOGNIZED_VOLUME) );
-		const TPhysicalAddress CHS=GetPhysicalAddress(*image->GetSideMap());
+		const TPhysicalAddress CHS=GetPhysicalAddress(image);
 		// - verifying this is actually a TR-DOS disk
 		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, nullptr, boot->id, (BYTE)BOOT_ID ))
 			return vp.TerminateAll(err);
@@ -91,7 +92,7 @@
 	CTRDOS503::PBootSector CTRDOS503::TBootSector::Get(PImage image){
 		// returns the data of Boot Sector (or Null if Boot unreadable)
 		return	(PBootSector)image->GetHealthySectorData(
-					GetPhysicalAddress( *image->GetSideMap() )
+					GetPhysicalAddress( image )
 				);
 	}
 	CTRDOS503::PBootSector CTRDOS503::GetBootSector() const{
@@ -186,7 +187,7 @@
 
 	CTRDOS503::CTrdosBootView::CTrdosBootView(PTRDOS503 trdos,BYTE nCharsInLabel)
 		// ctor
-		: CBootView( trdos, TBootSector::GetPhysicalAddress(*trdos->image->GetSideMap()) )
+		: CBootView( trdos, TBootSector::GetPhysicalAddress(trdos->image) )
 		, nCharsInLabel(nCharsInLabel) {
 	}
 
@@ -358,6 +359,8 @@
 		}
 		// . empty Directory
 		//nop (set automatically by formatting to default FillerByte)
+		// . notify respective view about new BootSector
+		boot.ChangeToSector( TBootSector::GetPhysicalAddress(image) );
 	}
 
 
