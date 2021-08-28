@@ -335,7 +335,7 @@
 					META_STRING,	// lpsz; textual description of a ParseEvent not covered above
 					LAST
 				} type;
-				WORD size; // length of this ParseEvent in Bytes
+				DWORD size; // length of this ParseEvent in Bytes
 				union{
 					BYTE b;
 					DWORD dw;

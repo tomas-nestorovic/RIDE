@@ -147,11 +147,9 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 						fdd->__unformatInternalTrack__(cyl,head); // disposing any new InternalTrack representation
 						fdd->internalTracks[cyl][head]=(PInternalTrack)pit; // re-attaching the original InternalTrack representation
 						// . writing the 0..(K-1)-th Sectors back to the above reformatted Track, leaving K+1..N-th Sectors unwritten (caller's duty); we re-attempt to write this K-th Sector in the next iteration
-						for( TSector s=0; s<nSectorsToSkip; s++ ){
-							const TPhysicalAddress chs={ cyl, head, pit->sectors[s].id };
+						for( TSector s=0; s<nSectorsToSkip; s++ )
 							if ( err=pit->sectors[s].__saveToDisk__(fdd,pit,s,verify) ) // if Sector not writeable even after reformatting the Track ...
 								return LOG_ERROR(err); // ... there's nothing else to do but terminating with Error
-						}
 						// . trying to write this K-th Sector once more, leaving K+1..N-th Sectors unwritten (caller's duty)
 						continue;
 					}
@@ -384,14 +382,14 @@ Utils::Information("--- EVERYTHING OK ---");
 	#define SECTOR_ID_ADDRESS_MARK		0xfe
 	#define SECTOR_SYNC_ID_ADDRESS_MARK	( SECTOR_SYNCHRONIZATION | SECTOR_ID_ADDRESS_MARK<<24 )
 
-	void CFDD::TInternalTrack::TRawContent::__generateSectorId__(PBYTE &buffer,PCSectorId id,PCFdcStatus pFdcStatus){
+/*	void CFDD::TInternalTrack::TRawContent::__generateSectorId__(PBYTE &buffer,PCSectorId id,PCFdcStatus pFdcStatus){
 		// generates Sector ID into the Buffer
 		*(PDWORD)buffer=SECTOR_SYNC_ID_ADDRESS_MARK, buffer+=sizeof(DWORD);
 		*buffer++=id->cylinder, *buffer++=id->side, *buffer++=id->sector, *buffer++=id->lengthCode;
 		TCrc16 crc=GetCrc16Ccitt(buffer-8,8);
 		if (pFdcStatus->DescribesDataFieldCrcError()) crc=~crc;
 		*(TCrc16 *)buffer=crc, buffer+=sizeof(TCrc16); // CRC
-	}
+	}*/
 	BYTE CFDD::TInternalTrack::TRawContent::__containsBufferSectorId__(PCSectorData buffer,TSectorId *outId,bool *outCrcOk){
 		// returns the number of Bytes of a Sector ID recognized at the front of the Buffer; returns 0 if no Sector ID recognized
 		if (*(PDWORD)buffer==SECTOR_SYNC_ID_ADDRESS_MARK){
