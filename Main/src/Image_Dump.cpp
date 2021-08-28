@@ -57,7 +57,7 @@
 		void __exportErroneousTracksToHtml__(CFile &fHtml) const{
 			// exports SourceTrackErrors to given HTML file
 			Utils::WriteToFile(fHtml,_T("<html><head><style>body,td{font-size:13pt;margin:24pt}table{border:1pt solid black;spacing:10pt}td{vertical-align:top}td.caption{font-size:14pt;background:silver}</style></head><body>"));
-				Utils::WriteToFileFormatted( fHtml, _T("<h3>Configuration</h3><table><tr><td class=caption>System:</td><td><b>%s</b></td></tr><tr></tr><tr><td class=caption>Source:</td><td><b>%s</b><br>via<br><b>%s</b></td></tr><tr><td class=caption>Target:</td><td><b>%s</b><br>via<br><b>%s</b></td></tr><tr><td class=caption>Full track analysis:</td><td><b>%s</b></td></tr></table><br>"), dos->properties->name, Medium::GetDescription(dos->formatBoot.mediumType), source->GetPathName().GetLength()?source->GetPathName():_T("N/A"), Medium::GetDescription(mediumType), target->GetPathName().GetLength()?target->GetPathName():_T("N/A"), fullTrackAnalysis?_T("On"):_T("Off") );
+				Utils::WriteToFileFormatted( fHtml, _T("<h3>Configuration</h3><table><tr><td class=caption>System:</td><td>%s</td></tr><tr></tr><tr><td class=caption>Source:</td><td>%s<br>via<br>%s</td></tr><tr><td class=caption>Target:</td><td>%s<br>via<br>%s</td></tr><tr><td class=caption>Full track analysis:</td><td>%s</td></tr></table><br>"), dos->properties->name, Medium::GetDescription(dos->formatBoot.mediumType), source->GetPathName().GetLength()?source->GetPathName():_T("N/A"), Medium::GetDescription(mediumType), target->GetPathName().GetLength()?target->GetPathName():_T("N/A"), fullTrackAnalysis?_T("On"):_T("Off") );
 				Utils::WriteToFile(fHtml,_T("<h3>Overview</h3>"));
 					if (pOutErroneousTracks){
 						Utils::WriteToFile(fHtml,_T("<table><tr><td class=caption>Status</td><td class=caption>Count</td></tr>"));
@@ -170,7 +170,8 @@
 		// - setting geometry to the TargetImage
 		TSector nSectors=dp.source->ScanTrack(0,0);
 		const TFormat targetGeometry={ dp.mediumType, dp.dos->formatBoot.codecType, dp.cylinderZ+1, dp.nHeads, nSectors, dp.dos->formatBoot.sectorLengthCode, dp.dos->formatBoot.sectorLength, 1 };
-		TStdWinError err=dp.target->SetMediumTypeAndGeometry( &targetGeometry, dp.dos->sideMap, dp.dos->properties->firstSectorNumber );
+		const PCSide sideMap= dp.source->GetSideMap() ? dp.source->GetSideMap() : dp.dos->sideMap; // prefer Sides defined by the Source, if any
+		TStdWinError err=dp.target->SetMediumTypeAndGeometry( &targetGeometry, sideMap, dp.dos->properties->firstSectorNumber );
 		if (err!=ERROR_SUCCESS)
 terminateWithError:
 			return LOG_ERROR(pAction->TerminateWithError(err));
@@ -920,19 +921,18 @@ setDestination:						// : compacting FileName in order to be better displayable 
 		if (d.DoModal()==IDOK){
 			// . resetting Target Image
 			d.dumpParams.target->dos=dos;
-			TStdWinError err=ERROR_CANCELLED;
+			TStdWinError err=ERROR_WRITE_PROTECT; // assumption
 			if (d.dumpParams.target->IsWriteProtected()){
 				d.dumpParams.target->ToggleWriteProtection();
-				if (d.dumpParams.target->IsWriteProtected()){
-					err=ERROR_WRITE_PROTECT;
+				if (d.dumpParams.target->IsWriteProtected())
 					goto error;
-				}
 			}
-			if (!d.dumpParams.target->EditSettings(true))
+			if ( err=d.dumpParams.target->Reset() )
 				goto error;
-			err=d.dumpParams.target->Reset();
-			if (err!=ERROR_SUCCESS)
+			if (!d.dumpParams.target->EditSettings(true)){
+				err=ERROR_CANCELLED;
 				goto error;
+			}
 			// . dumping
 			{CBackgroundMultiActionCancelable bmac( d.realtimeThreadPriority ? THREAD_PRIORITY_TIME_CRITICAL : THREAD_PRIORITY_NORMAL );
 				bmac.AddAction( __dump_thread__, &d.dumpParams, _T("Dumping to target") );
