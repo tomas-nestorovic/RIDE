@@ -292,17 +292,10 @@
 				// . base (doing the scrolling)
 				__super::WindowProc(msg,wParam,lParam);
 				// . synchronously scrolling the OtherHexaEditor
-				SCROLLINFO si1,si2;
-				GetScrollInfo( SB_VERT, &si1, SIF_POS|SIF_TRACKPOS ); // getting 32-bit scroll position
 				CHexaComparison &rOtherHexaEditor=	this==&rDialog.file1.hexaComparison
 													? rDialog.file2.hexaComparison
 													: rDialog.file1.hexaComparison;
-				rOtherHexaEditor.GetScrollInfo( SB_VERT, &si2, SIF_POS ); // getting 32-bit scroll position
-				if (si2.nPos!=si1.nPos){ // preventing from infinite loop
-					RepaintData(true);
-					rOtherHexaEditor.SetScrollInfo( SB_VERT, &si1, TRUE );
-					rOtherHexaEditor.RepaintData(true);
-				}
+				rOtherHexaEditor.ScrollToRow( GetScrollPos(SB_VERT) );
 				return 0;
 			}
 			case WM_PAINT:{
