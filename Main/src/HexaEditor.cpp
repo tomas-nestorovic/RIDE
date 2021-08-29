@@ -367,8 +367,18 @@
 
 	int CHexaEditor::__scrollToRow__(int row){
 		// scrolls the HexaEditor so that the specified Row is shown as the first one from top; returns the Row number which it has been really scrolled to
-		SetScrollPos( SB_VERT, row, FALSE );
-		SendMessage( WM_VSCROLL, SB_THUMBPOSITION );
+		locker.Lock();
+			row=std::min( std::max(row,0), nLogicalRows-nRowsOnPage );
+		locker.Unlock();
+		if (const int dr=GetScrollPos(SB_VERT)-row){
+			RECT rcScroll;
+				GetClientRect(&rcScroll);
+				rcScroll.bottom=( rcScroll.top=HEADER_HEIGHT )+nRowsDisplayed*font.charHeight;
+			ScrollWindow( 0, dr*font.charHeight, nullptr, &rcScroll );
+			SetScrollPos(SB_VERT,row,TRUE); // True = redrawing the scroll-bar, not HexaEditor's canvas!
+			SendMessage( WM_VSCROLL, SB_THUMBPOSITION ); // letting descendants of HexaEditor know that a scrolling occured
+			::DestroyCaret();
+		}
 		return GetScrollPos(SB_VERT);
 	}
 
@@ -738,11 +748,7 @@ deleteSelection:		int posSrc=std::max<>(caret.selectionA,caret.position), posDst
 					mnu.GetMenuString( iGotoSubmenu, buf, sizeof(buf)/sizeof(TCHAR), MF_BYPOSITION );
 					mnu.ModifyMenu( iGotoSubmenu, MF_BYPOSITION|MF_POPUP, (UINT_PTR)customGotoSubmenu, buf );
 				}
-				register union{
-					struct{ short x,y; };
-					int i;
-				};
-				i=lParam;
+				int x=GET_X_LPARAM(lParam), y=GET_Y_LPARAM(lParam);
 				if (x==-1){ // occurs if the context menu invoked using Shift+F10
 					POINT caretPos=GetCaretPos();
 					ClientToScreen(&caretPos);
@@ -1217,13 +1223,13 @@ leftMouseDragged:
 				break;
 			case WM_MOUSEWHEEL:{
 				// mouse wheel was rotated
-				UINT nLinesToScroll;
+				int nLinesToScroll=1;
 				::SystemParametersInfo( SPI_GETWHEELSCROLLLINES, 0, &nLinesToScroll, 0 );
 				const short zDelta=(short)HIWORD(wParam);
 				if (nLinesToScroll==WHEEL_PAGESCROLL)
 					SendMessage( WM_VSCROLL, zDelta>0?SB_PAGEUP:SB_PAGEDOWN, 0 );
 				else
-					for( WORD nLines=abs(zDelta)*nLinesToScroll/WHEEL_DELTA; nLines--; SendMessage(WM_VSCROLL,zDelta>0?SB_LINEUP:SB_LINEDOWN) );
+					__scrollToRow__( GetScrollPos(SB_VERT)-zDelta*nLinesToScroll/WHEEL_DELTA );
 				return TRUE;
 			}
 			case WM_VSCROLL:{
@@ -1242,21 +1248,12 @@ leftMouseDragged:
 					case SB_LINEDOWN:	// clicked on arrow down
 						row++; break;
 					case SB_THUMBPOSITION:	// "thumb" released
+						break;
 					case SB_THUMBTRACK:		// "thumb" dragged
 						row = si.nTrackPos;	break;
 				}
-				locker.Lock();
-					row=std::min( std::max(row,0), nLogicalRows-nRowsOnPage );
-				locker.Unlock();
 				// . redrawing HexaEditor's client and non-client areas
-				if (const int dr=si.nPos-row){
-					RECT rcScroll;
-						GetClientRect(&rcScroll);
-						rcScroll.bottom=( rcScroll.top=HEADER_HEIGHT )+nRowsDisplayed*font.charHeight;
-					ScrollWindow( 0, dr*font.charHeight, &rcScroll, &rcScroll );
-					SetScrollPos(SB_VERT,row,TRUE); // True = redrawing the scroll-bar, not HexaEditor's canvas!
-					::DestroyCaret();
-				}
+				__scrollToRow__(row);
 				//fallthrough (the "thumb" might have been released outside the scrollbar area)
 			}
 			case WM_NCMOUSEMOVE:{
@@ -1271,10 +1268,12 @@ leftMouseDragged:
 			case WM_NCMOUSELEAVE:
 				// mouse left non-client area
 				locker.Lock();
-					*static_cast<TState *>(this)=update;
+					if (*static_cast<TState *>(this)!=update){
+						*static_cast<TState *>(this)=update;
+						RepaintData();
+					}
 					mouseInNcArea=false;
 				locker.Unlock();
-				RepaintData();
 				break;
 			case EM_GETSEL:
 				// gets current Selection
@@ -1376,10 +1375,10 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 							dc.DrawText( buf, ::wsprintf(buf,HEXA_FORMAT,n++), &rcHeader, DT_LEFT|DT_TOP );
 					}
 					// . determining the visible part of the File content
-					const int iRowFirstToPaint=std::max<>( (rcClip.top-HEADER_HEIGHT)/font.charHeight, 0L );
+					const int iRowFirstToPaint=std::max( (std::max(rcClip.top,dc.m_ps.rcPaint.top)-HEADER_HEIGHT)/font.charHeight, 0L );
 					int iRowA= GetScrollPos(SB_VERT) + iRowFirstToPaint;
 					const int nPhysicalRows=__logicalPositionToRow__( std::min<int>(F->GetLength(),logicalSize) );
-					const int iRowLastToPaint= GetScrollPos(SB_VERT) + (rcClip.bottom-HEADER_HEIGHT)/font.charHeight + 1;
+					const int iRowLastToPaint= GetScrollPos(SB_VERT) + std::min(rcClip.bottom,dc.m_ps.rcPaint.bottom)/font.charHeight + 1;
 					const int iRowZ=std::min<>( std::min<>(nPhysicalRows,iRowLastToPaint), iRowA+nRowsOnPage );
 					// . filling the gaps between Addresses/Hexa/Ascii, and Label space to erase any previous Label
 					const int xHexaStart=(addrLength+ADDRESS_SPACE_LENGTH)*font.charAvgWidth, xHexaEnd=xHexaStart+HEXA_FORMAT_LENGTH*nBytesInRow*font.charAvgWidth;

@@ -18,6 +18,10 @@
 		TState(){
 			::ZeroMemory( this, sizeof(*this) );
 		}
+
+		inline bool operator!=(const TState &r) const{
+			return ::memcmp( this, &r, sizeof(*this) );
+		}
 	};
 
 	class CHexaEditor:public CEditView, TState{
