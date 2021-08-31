@@ -191,8 +191,8 @@ namespace Medium{
 		if (const PCProperties p=GetProperties(mediumType))
 			return p->description;
 		else{
-			ASSERT(FALSE);
-			return nullptr;
+			ASSERT(FALSE); // ending up here isn't a problem but always requires attention!
+			return _T("Unknown medium");
 		}
 	}
 
