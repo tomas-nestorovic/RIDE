@@ -416,6 +416,8 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			class CDosSelectionDialog sealed:public Utils::CRideDialog{
 				BOOL OnInitDialog() override{
 					// initialization
+					// - base
+					const BOOL result=__super::OnInitDialog();
 					// - populating the list of known DOSes
 					CListBox lb;
 					lb.Attach(GetDlgItemHwnd(ID_DOS));
@@ -424,8 +426,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 							lb.SetItemDataPtr( lb.AddString(p->name), (PVOID)p );
 						}
 					lb.Detach();
-					// - base
-					return __super::OnInitDialog();
+					return result;
 				}
 				void CDosSelectionDialog::DoDataExchange(CDataExchange *pDX){
 					// exchange of data from and to controls
@@ -436,6 +437,17 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 							dosProps=(CDos::PCProperties)lb.GetItemDataPtr((int)dosProps);
 						lb.Detach();
 					}
+				}
+				BOOL OnCommand(WPARAM wParam,LPARAM lParam){
+					// command processing
+					switch (wParam){
+						case MAKELONG(ID_DOS,LBN_DBLCLK):
+							// DOS selected by double-clicking on it
+							if (IsDlgItemEnabled(IDOK))
+								SendMessage( WM_COMMAND, IDOK );
+							break;
+					}
+					return __super::OnCommand(wParam,lParam);
 				}
 			public:
 				CDos::PCProperties dosProps;

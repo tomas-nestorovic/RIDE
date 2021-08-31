@@ -1091,17 +1091,17 @@ BEGIN
     PUSHBUTTON      "System default",ID_DEFAULT2,90,96,56,13
 END
 
-IDR_DOS_UNKNOWN DIALOGEX 0, 0, 260, 102
+IDR_DOS_UNKNOWN DIALOGEX 0, 0, 207, 102
 STYLE WS_POPUP | WS_VISIBLE | WS_CAPTION
-CAPTION "Select the DOS"
-FONT 8, "MS Sans Serif", 0, 0, 0x1
+CAPTION "Select DOS"
+FONT 8, "MS Sans Serif"
 BEGIN
-    LTEXT           "Please select the DOS to use to operate on the image. Information in the boot sector (if any) will be ignored and the system's default format will be assumed.",
-                    IDC_STATIC,7,7,246,23,NOT WS_GROUP
-    LISTBOX         ID_DOS,7,29,246,41,NOT LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | 
-                    NOT WS_BORDER | WS_VSCROLL | WS_TABSTOP,WS_EX_STATICEDGE
-    DEFPUSHBUTTON   "OK",IDOK,150,81,50,14
-    PUSHBUTTON      "Cancel",IDCANCEL,203,81,50,14
+    LTEXT           "Select &DOS to manage the disk:",IDC_STATIC,7,7,193,10,
+                    NOT WS_GROUP
+    LISTBOX         ID_DOS,7,17,193,50,LBS_NOINTEGRALHEIGHT | NOT WS_BORDER | 
+                    WS_VSCROLL | WS_TABSTOP,WS_EX_STATICEDGE
+    DEFPUSHBUTTON   "OK",IDOK,97,81,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,150,81,50,14
 END
 
 IDR_MDOS_GKFM_EDITOR DIALOGEX 0, 0, 212, 246
@@ -1921,7 +1921,7 @@ BEGIN
     IDR_DOS_UNKNOWN, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 253
+        RIGHTMARGIN, 200
         TOPMARGIN, 7
         BOTTOMMARGIN, 95
     END
