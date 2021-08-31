@@ -203,6 +203,6 @@
 			// Boot Sector not found - informing through PropertyGrid
 			PropGrid::AddDisabledProperty(	propGrid.m_hWnd, nullptr,
 											_T("Boot sector"), "Not found!",
-											PropGrid::String::DefineFixedLengthEditorA(0)
+											PropGrid::String::DefineFixedLengthEditorA(-1)
 										);
 	}
