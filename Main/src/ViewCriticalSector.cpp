@@ -74,8 +74,9 @@
 		if (__super::OnCreate(lpcs)==-1)
 			return -1;
 		// - getting Boot Sector data
-		WORD sectorDataRealLength=0; // initializing just in case the Sector is not found
-		IMAGE->GetHealthySectorData( GetPhysicalAddress(), &sectorDataRealLength );
+		const TPhysicalAddress &chs=GetPhysicalAddress();
+		WORD sectorDataRealLength=CImage::GetOfficialSectorLength( chs.sectorId.lengthCode ); // initializing just in case the Sector is not found
+		IMAGE->GetHealthySectorData( chs, &sectorDataRealLength );
 		// - creating the Content
 		//CCreateContext cc;
 		//cc.m_pCurrentDoc=dos->image;
