@@ -58,7 +58,8 @@
 	void CDiskBrowserView::OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint){
 		// request to refresh the display of content
 		f=IMAGE->CreateSectorDataSerializer(this);
-		Reset( f.get(), f->GetLength(), f->GetLength() );
+		const auto fLength=f->GetLength();
+		Reset( f.get(), fLength, fLength );
 	}
 
 	BOOL CDiskBrowserView::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){
@@ -338,6 +339,8 @@
 				// disk still scanned for the Sector
 				HexaEditor_SetSelection( m_hWnd, newLogicalSize, newLogicalSize );
 		}
+		// - content cannot be shorter or longer than the actual number of Bytes in all Sectors discovered thus far
+		SetLogicalBounds( newLogicalSize, newLogicalSize );
 	}
 
 	afx_msg void CDiskBrowserView::OnDestroy(){
