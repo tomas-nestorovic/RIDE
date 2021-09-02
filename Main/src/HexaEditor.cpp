@@ -616,7 +616,7 @@ editDelete:				// deleting the Byte after Caret, or deleting the Selection
 						if (caret.selectionA==caret.position)
 							if (caret.position<F->GetLength()) caret.selectionA=caret.position++;
 							else return 0;
-deleteSelection:		int posSrc=std::max<>(caret.selectionA,caret.position), posDst=std::min<>(caret.selectionA,caret.position);
+deleteSelection:		int posSrc=std::max(caret.selectionA,caret.position), posDst=std::min(caret.selectionA,caret.position);
 						// . checking if there are any Bookmarks selected
 						if (bookmarks.__getNearestNextBookmarkPosition__(posDst)<posSrc){
 							if (Utils::QuestionYesNo(_T("Sure to delete selected bookmarks?"),MB_DEFBUTTON2)){
@@ -628,31 +628,36 @@ deleteSelection:		int posSrc=std::max<>(caret.selectionA,caret.position), posDst
 							return 0;
 						}
 						// . moving the content "after" Selection "to" the position of the Selection
-						const int newLogicalSize=std::max( logicalSize+posDst-posSrc, minFileSize );
 						caret.selectionA = caret.position = posDst; // moving the Caret and cancelling any Selection
-						for( int nBytesToMove=F->GetLength()-posSrc; nBytesToMove; ){
-							BYTE buf[65536];
+						int nBytesToMove=F->GetLength()-posSrc;
+						for( BYTE buf[65536]; const int nBytesRequested=std::min<int>(nBytesToMove,sizeof(buf)); ){
 							F->Seek(posSrc,CFile::begin);
-							const int nBytesBuffered=F->Read(buf, std::min<UINT>(nBytesToMove,sizeof(buf)) );
-							if (!nBytesBuffered) break; // no Bytes buffered if, for instance, Sector not found
+							int nBytesBuffered=0;
+							while (const int nBytesRead=F->Read( buf+nBytesBuffered, nBytesRequested-nBytesBuffered ))
+								nBytesBuffered+=nBytesRead;
 							F->Seek(posDst,CFile::begin);
 							F->Write(buf,nBytesBuffered);
-							for( int pos=posSrc; (pos=bookmarks.__getNearestNextBookmarkPosition__(pos))<posSrc+nBytesBuffered; ){
+							const int nBytesWritten=F->GetPosition()-posDst;
+							const int nBytesSuccessfullyMoved=std::min( std::min(nBytesRequested,nBytesBuffered), nBytesWritten );
+							for( int pos=posSrc; (pos=bookmarks.__getNearestNextBookmarkPosition__(pos))<posSrc+nBytesSuccessfullyMoved; ){
 								bookmarks.__removeBookmark__(pos);
 								bookmarks.__addBookmark__(posDst+pos-posSrc);
 							}
-							nBytesToMove-=nBytesBuffered, posSrc+=nBytesBuffered, posDst+=nBytesBuffered;
+							nBytesToMove-=nBytesSuccessfullyMoved, posSrc+=nBytesSuccessfullyMoved, posDst+=nBytesSuccessfullyMoved;
+							if (nBytesSuccessfullyMoved!=nBytesRequested)
+								break;
 						}
 						// . the "source-destination" difference filled up with zeros
-						if (posDst<minFileSize){
-							static constexpr BYTE Zero=0;
-							for( F->Seek(posDst,CFile::begin); posDst++<minFileSize; F->Write(&Zero,1) );
-							__informationWithCheckableShowNoMore__( _T("To preserve the minimum size of the content, it has been padded with zeros."), INI_MSG_PADDING );
+						if (!nBytesToMove) // successfully moved all Bytes?
+							posSrc = logicalSize = std::max( logicalSize+posDst-posSrc, minFileSize );
+						if (posDst<posSrc){
+							for( static constexpr BYTE Zero=0; posDst++<posSrc; F->Write(&Zero,1) );
+							if (!nBytesToMove) // successfully moved all Bytes?
+								__informationWithCheckableShowNoMore__( _T("To preserve the minimum size, the content has been padded with zeros."), INI_MSG_PADDING );
 						}
 						// . refreshing the scrollbar
-						SetLogicalSize( newLogicalSize );
-						F->SetLength( newLogicalSize );
-						__refreshVertically__();
+						F->SetLength( logicalSize );
+						SetLogicalSize( logicalSize );
 						SendEditNotification( EN_CHANGE );
 						RepaintData();
 						goto caretRefresh;
