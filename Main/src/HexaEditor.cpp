@@ -289,6 +289,8 @@
 				// otherwise, updating the values normally
 				minFileSize = update.minFileSize = _minFileSize; // setting also Update just in case the cursor is in non-client area
 				maxFileSize = update.maxFileSize = _maxFileSize;
+				if (::IsWindow(m_hWnd)) // may be window-less if the owner is window-less
+					__refreshVertically__();
 			}
 		locker.Unlock();
 	}
@@ -391,9 +393,12 @@
 		// - setting the scrolling dimensions
 		RECT r;
 		GetClientRect(&r);
-		nRowsDisplayed=std::max<>( 0L, (r.bottom-r.top)/font.charHeight-HEADER_LINES_COUNT );
-		nRowsOnPage=std::max<>( 0, nRowsDisplayed-1 );
-		PostMessage( WM_HEXA_PAINTSCROLLBARS );
+		nRowsDisplayed=std::max( 0L, (r.bottom-r.top)/font.charHeight-HEADER_LINES_COUNT );
+		nRowsOnPage=std::max( 0, nRowsDisplayed-1 );
+		if (::GetCurrentThreadId()==::GetWindowThreadProcessId(*this,nullptr)) // do I owe the HexaEditor control?
+			SendMessage( WM_HEXA_PAINTSCROLLBARS );
+		else
+			PostMessage( WM_HEXA_PAINTSCROLLBARS );
 	}
 
 	void CHexaEditor::RepaintData(bool immediately) const{
@@ -1154,7 +1159,6 @@ resetSelectionWithValue:BYTE buf[65535];
 				return 0; // to suppress CEdit's standard context menu
 			case WM_LBUTTONDOWN:
 				// left mouse button pressed
-				cursorPos0=lParam;
 				mouseDragged=false;
 				goto leftMouseDragged; // "as if it's already been Dragged"
 			case WM_RBUTTONDOWN:{
@@ -1181,8 +1185,8 @@ resetSelectionWithValue:BYTE buf[65535];
 				// mouse moved
 				if (!( mouseDragged=::GetKeyState(VK_LBUTTON)<0 )) return 0; // if mouse button not pressed, current Selection cannot be modified
 				if (cursorPos0==lParam) return 0; // actually no Cursor movement occured
-				cursorPos0=lParam;
 leftMouseDragged:
+				cursorPos0=lParam;
 				const int logPos=__logicalPositionFromPoint__(CPoint(lParam),&caret.ascii);
 				if (logPos>=0)
 					// in either Hexa or Ascii areas

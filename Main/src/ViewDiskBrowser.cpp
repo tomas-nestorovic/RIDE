@@ -50,7 +50,7 @@
 		// - displaying the content
 		OnUpdate(nullptr,0,nullptr);
 		// - recovering the Scroll position and repainting the view (by setting its editability)
-		SetScrollPos( SB_VERT, iScrollY );
+		//SetScrollPos( SB_VERT, iScrollY ); //TODO: Uncomment when scroll position is represented as absolute position in content, not as a row
 		SetEditable( !IMAGE->IsWriteProtected() );
 		return 0;
 	}
