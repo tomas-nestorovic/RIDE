@@ -70,6 +70,18 @@
     <Filter Include="Source Files\Dos\Spectrum\BSDOS">
       <UniqueIdentifier>{5860f9a0-971c-41cd-bd6d-a24ae12ef431}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Image\Tabs">
+      <UniqueIdentifier>{9a068833-cc36-4147-90a7-714ec6472e37}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Dos\Tabs">
+      <UniqueIdentifier>{f2cd9379-3cc2-466e-b1a9-1387c472e891}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Dos\Tabs">
+      <UniqueIdentifier>{3612f4c9-6b89-4300-900c-da98170a3d7a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Image\Tabs">
+      <UniqueIdentifier>{dae2664b-d191-4f69-9a58-0646eb67ecdf}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\stdafx.h">
@@ -90,9 +102,6 @@
     <ClInclude Include="src\Dos.h">
       <Filter>Header Files\Dos</Filter>
     </ClInclude>
-    <ClInclude Include="src\ViewBoot.h">
-      <Filter>Header Files\MainWindow\Tabs</Filter>
-    </ClInclude>
     <ClInclude Include="src\HexaEditor.h">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
@@ -106,9 +115,6 @@
       <Filter>Header Files\Image</Filter>
     </ClInclude>
     <ClInclude Include="src\ImageRaw.h">
-      <Filter>Header Files\Image</Filter>
-    </ClInclude>
-    <ClInclude Include="src\MGT.h">
       <Filter>Header Files\Image</Filter>
     </ClInclude>
     <ClInclude Include="src\ImageFloppy.h">
@@ -135,12 +141,6 @@
     <ClInclude Include="src\ViewWebPage.h">
       <Filter>Header Files\MainWindow\Tabs</Filter>
     </ClInclude>
-    <ClInclude Include="src\ViewTrackMap.h">
-      <Filter>Header Files\MainWindow\Tabs</Filter>
-    </ClInclude>
-    <ClInclude Include="src\ViewFileManager.h">
-      <Filter>Header Files\MainWindow\Tabs</Filter>
-    </ClInclude>
     <ClInclude Include="src\MainWindow.h">
       <Filter>Header Files\MainWindow</Filter>
     </ClInclude>
@@ -165,17 +165,8 @@
     <ClInclude Include="src\Debug.h">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="src\ViewDirectoryEntries.h">
-      <Filter>Header Files\MainWindow\Tabs</Filter>
-    </ClInclude>
-    <ClInclude Include="src\ViewDiskBrowser.h">
-      <Filter>Header Files\MainWindow\Tabs</Filter>
-    </ClInclude>
     <ClInclude Include="src\BSDOS.h">
       <Filter>Header Files\Dos\Spectrum</Filter>
-    </ClInclude>
-    <ClInclude Include="src\ViewCriticalSector.h">
-      <Filter>Header Files\MainWindow\Tabs</Filter>
     </ClInclude>
     <ClInclude Include="src\DialogVerification.h">
       <Filter>Header Files\Utils</Filter>
@@ -210,6 +201,24 @@
     <ClInclude Include="src\Charting.h">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
+    <ClInclude Include="src\ViewBoot.h">
+      <Filter>Header Files\Dos\Tabs</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ViewFileManager.h">
+      <Filter>Header Files\Dos\Tabs</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ViewCriticalSector.h">
+      <Filter>Header Files\Dos\Tabs</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ViewDirectoryEntries.h">
+      <Filter>Header Files\Dos\Tabs</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ViewDiskBrowser.h">
+      <Filter>Header Files\Image\Tabs</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ViewTrackMap.h">
+      <Filter>Header Files\Image\Tabs</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\editor.cpp">
@@ -223,9 +232,6 @@
     </ClCompile>
     <ClCompile Include="src\Dos.cpp">
       <Filter>Source Files\Dos</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ViewBoot.cpp">
-      <Filter>Source Files\MainWindow\Tabs</Filter>
     </ClCompile>
     <ClCompile Include="src\HexaEditor.cpp">
       <Filter>Source Files\Utils</Filter>
@@ -246,9 +252,6 @@
       <Filter>Source Files\Image</Filter>
     </ClCompile>
     <ClCompile Include="src\Image_Dump.cpp">
-      <Filter>Source Files\Image</Filter>
-    </ClCompile>
-    <ClCompile Include="src\MGT.cpp">
       <Filter>Source Files\Image</Filter>
     </ClCompile>
     <ClCompile Include="src\ImageFloppy.cpp">
@@ -273,18 +276,6 @@
       <Filter>Source Files\Utils</Filter>
     </ClCompile>
     <ClCompile Include="src\ViewWebPage.cpp">
-      <Filter>Source Files\MainWindow\Tabs</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ViewTrackMap.cpp">
-      <Filter>Source Files\MainWindow\Tabs</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ViewFileManager.cpp">
-      <Filter>Source Files\MainWindow\Tabs</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ViewFileManager_editor.cpp">
-      <Filter>Source Files\MainWindow\Tabs</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ViewFileManager_exportImport.cpp">
       <Filter>Source Files\MainWindow\Tabs</Filter>
     </ClCompile>
     <ClCompile Include="src\MainWindow.cpp">
@@ -353,9 +344,6 @@
     <ClCompile Include="src\GDOS_FileManager.cpp">
       <Filter>Source Files\Dos\Spectrum\GDOS</Filter>
     </ClCompile>
-    <ClCompile Include="src\ViewFileManager_compare.cpp">
-      <Filter>Source Files\MainWindow\Tabs</Filter>
-    </ClCompile>
     <ClCompile Include="src\Dos_Recognition.cpp">
       <Filter>Source Files\Dos</Filter>
     </ClCompile>
@@ -386,23 +374,14 @@
     <ClCompile Include="src\TRDOS505.cpp">
       <Filter>Source Files\Dos\Spectrum\TRDOS</Filter>
     </ClCompile>
-    <ClCompile Include="src\ViewDirectoryEntries.cpp">
-      <Filter>Source Files\MainWindow\Tabs</Filter>
-    </ClCompile>
     <ClCompile Include="src\Image_SectorDataSerializer.cpp">
       <Filter>Source Files\Image</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ViewDiskBrowser.cpp">
-      <Filter>Source Files\MainWindow\Tabs</Filter>
     </ClCompile>
     <ClCompile Include="src\BSDOS.cpp">
       <Filter>Source Files\Dos\Spectrum\BSDOS</Filter>
     </ClCompile>
     <ClCompile Include="src\BSDOS_Boot.cpp">
       <Filter>Source Files\Dos\Spectrum\BSDOS</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ViewCriticalSector.cpp">
-      <Filter>Source Files\MainWindow\Tabs</Filter>
     </ClCompile>
     <ClCompile Include="src\BSDOS_FileManager.cpp">
       <Filter>Source Files\Dos\Spectrum\BSDOS</Filter>
@@ -460,6 +439,33 @@
     </ClCompile>
     <ClCompile Include="src\Charting.cpp">
       <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ViewTrackMap.cpp">
+      <Filter>Source Files\Image\Tabs</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ViewBoot.cpp">
+      <Filter>Source Files\Dos\Tabs</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ViewFileManager_exportImport.cpp">
+      <Filter>Source Files\Dos\Tabs</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ViewCriticalSector.cpp">
+      <Filter>Source Files\Dos\Tabs</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ViewDirectoryEntries.cpp">
+      <Filter>Source Files\Dos\Tabs</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ViewFileManager.cpp">
+      <Filter>Source Files\Dos\Tabs</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ViewFileManager_compare.cpp">
+      <Filter>Source Files\Dos\Tabs</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ViewFileManager_editor.cpp">
+      <Filter>Source Files\Dos\Tabs</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ViewDiskBrowser.cpp">
+      <Filter>Source Files\Image\Tabs</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
