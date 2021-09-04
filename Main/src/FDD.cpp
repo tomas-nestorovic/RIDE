@@ -251,7 +251,6 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 		const TSectorInfo *psi=sectors;
 		for( TSector n=nSectors; n--; psi++ )
 			if (psi->data) FREE_SECTOR_DATA(psi->data);
-		::free(sectors);
 	}
 
 	bool CFDD::TInternalTrack::__isIdDuplicated__(PCSectorId pid) const{
