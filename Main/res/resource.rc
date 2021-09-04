@@ -1548,7 +1548,8 @@ BEGIN
                     137,26,31,10
     CONTROL         "&Side nums:",IDC_STATIC,"Static",SS_LEFTNOWORDWRAP,7,42,
                     36,8
-    EDITTEXT        ID_SIDE,52,40,80,14,ES_AUTOHSCROLL | WS_DISABLED
+    EDITTEXT        ID_SIDE,52,40,64,14,ES_AUTOHSCROLL | WS_DISABLED
+    PUSHBUTTON      "?",ID_CONTEXT_HELP,117,40,15,14,WS_DISABLED
     LTEXT           "2 head(s)",ID_HEAD,137,42,42,59,NOT WS_GROUP
     CONTROL         "Sectors:",IDC_STATIC,"Static",SS_LEFTNOWORDWRAP,7,59,27,
                     8

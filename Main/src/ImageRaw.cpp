@@ -455,7 +455,7 @@ trackNotFound:
 						case MAKELONG(ID_FORMAT,CBN_SELCHANGE):
 							// Geometry combo-box value changed
 							if (!ignoreUiNotifications){
-								static constexpr WORD Controls[]={ ID_CYLINDER, ID_AUTO, ID_SIDE, ID_NUMBER, ID_SECTOR, ID_SIZE, 0 };
+								static constexpr WORD Controls[]={ ID_CYLINDER, ID_AUTO, ID_SIDE, ID_CONTEXT_HELP, ID_NUMBER, ID_SECTOR, ID_SIZE, 0 };
 								CComboBox cb;
 								if (EnableDlgItems( Controls, GetDlgComboBoxSelectedIndex(ID_FORMAT)>0 )){
 									// manually set geometry
@@ -579,7 +579,9 @@ trackNotFound:
 								ignoreUiNotifications--;
 							}
 							break;
-						
+						case MAKELONG(ID_CONTEXT_HELP,BN_CLICKED):
+							Utils::Information( _T("Type in sides as would pages to print in a PDF reader.\n\nExample:\n- 0, 1 (2 heads)\n- 0-5, 6, 9-11 (10 heads)\n- 0-3, 7-4, 123 (9 heads)") );
+							break;
 					}
 				return __super::WindowProc( msg, wParam, lParam );
 			}
