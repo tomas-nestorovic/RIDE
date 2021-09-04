@@ -382,8 +382,10 @@ trackNotFound:
 						sectorLengthCode=GetDlgComboBoxSelectedValue( ID_SIZE );
 					// . trying to apply the Geometry to the Image
 					if (manualRecognition){
-						if (!TryApplyGeometry()) // we should always succeed here, but just to be sure
+						if (const TStdWinError err=TrySetMediumTypeAndGeometry()){
+							Utils::Information( _T("Invalid geometry"), err );
 							pDX->Fail();
+						}
 						if (rawImage.trackAccessScheme==TTrackScheme::BY_SIDES)
 							if (nHeads!=rawImage.nHeads){ // Side numbers under- or over-specified?
 								TCHAR buf[80];
@@ -523,8 +525,9 @@ trackNotFound:
 							// input controls manually changed
 							if (!ignoreUiNotifications){
 								ignoreUiNotifications++;
+									static const PropGrid::Integer::TUpDownLimits SideLimits={ 0, (TSide)-1 };
 									Utils::CIntList list;
-									if (GetDlgItemIntList( ID_SIDE, list, 1, (THead)-1 )){
+									if (GetDlgItemIntList( ID_SIDE, list, SideLimits, 1, (THead)-1 )){
 										TCHAR buf[16];
 										nHeads=list.GetCount();
 										::wsprintf( buf, _T("%d head%c"), nHeads, nHeads>1?'s':'\0' );
@@ -614,8 +617,8 @@ trackNotFound:
 				}
 			}
 
-			bool TryApplyGeometry() const{
-				// True <=> geometry successfully set via SetMediumTypeAndGeometry with values set in this Dialog, otherwise False
+			TStdWinError TrySetMediumTypeAndGeometry() const{
+				// tries to apply current geometry; returns Windows standard i/o error
 				rawImage.trackAccessScheme = autoCylinders==BST_UNCHECKED ? TTrackScheme::BY_SIDES : TTrackScheme::BY_CYLINDERS;
 				TFormat fmt=TFormat::Unknown; // the Image format ...
 					fmt.mediumType=Medium::ANY; // ... is no longer Unknown, but the Medium can be Any of supported
@@ -624,13 +627,13 @@ trackNotFound:
 					fmt.nSectors=nSectors;
 					fmt.sectorLengthCode=(TFormat::TLengthCode)sectorLengthCode;
 					fmt.sectorLength=GetOfficialSectorLength(sectorLengthCode);
-				return ERROR_SUCCESS==rawImage.SetMediumTypeAndGeometry( &fmt, sideNumbers, firstSectorNumber );
+				return rawImage.SetMediumTypeAndGeometry( &fmt, sideNumbers, firstSectorNumber );
 			}
 		} d( *this, initialEditing );
 		// - showing the Dialog and processing its result
 		if (d.DoModal()==IDOK){
 			if (d.manualRecognition){
-				if (!d.TryApplyGeometry())
+				if (d.TrySetMediumTypeAndGeometry())
 					return false; // we should always succeed, but just to be sure
 				explicitSides.reset( Utils::MakeCallocPtr<TSide,THead>(d.nHeads,d.sideNumbers).release() );
 				nHeads=d.nHeads;
