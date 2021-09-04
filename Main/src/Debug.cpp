@@ -129,14 +129,13 @@ namespace Debug{
 
 	CLogFile &CLogFile::operator<<(const TSectorId &rsi){
 		// writes given SectorId to the LogFile
-		TCHAR buf[32];
-		return operator<<( rsi.ToString(buf) );
+		return operator<<( rsi.ToString() );
 	}
 
 	CLogFile &CLogFile::operator<<(const TPhysicalAddress &rchs){
 		// writes given PhysicalAddress to the LogFile
-		TCHAR buf[64],si[32];
-		::wsprintf( buf, _T("[%d,%d,%s]"), rchs.cylinder, rchs.head, rchs.sectorId.ToString(si) );
+		TCHAR buf[64];
+		::wsprintf( buf, _T("[%d,%d,%s]"), rchs.cylinder, rchs.head, (LPCTSTR)rchs.sectorId.ToString() );
 		return operator<<(buf);
 	}
 

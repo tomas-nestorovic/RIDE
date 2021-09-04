@@ -69,7 +69,7 @@ namespace Debug{
 
 	#define LOG_SECTOR_ACTION(pSectorId,name)\
 		TCHAR __sectorActionName[200];\
-		::wsprintf(__sectorActionName,_T("Sector %s %s"),(pSectorId)->ToString(__sectorActionName+160),name);\
+		::wsprintf(__sectorActionName,_T("Sector %s %s"),(LPCTSTR)(pSectorId)->ToString(),name);\
 		LOG_ACTION(__sectorActionName)
 
 	#define LOG_DIALOG_DISPLAY(name)\

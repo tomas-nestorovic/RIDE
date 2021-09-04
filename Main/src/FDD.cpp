@@ -801,7 +801,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 	THead CFDD::GetHeadCount() const{
 		// determines and returns the actual number of Heads in the Image
 		//EXCLUSIVELY_LOCK_THIS_IMAGE();
-		LOG_CYLINDER_ACTION(cyl,_T("THead CFDD::GetHeadCount"));
+		LOG_ACTION(_T("THead CFDD::GetHeadCount"));
 		return 2; // latest PC floppy drives had two Heads
 	}
 
