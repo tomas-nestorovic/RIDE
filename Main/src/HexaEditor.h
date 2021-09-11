@@ -20,7 +20,7 @@
 		}
 
 		inline bool operator!=(const TState &r) const{
-			return ::memcmp( this, &r, sizeof(*this) );
+			return ::memcmp( this, &r, sizeof(*this) )!=0;
 		}
 	};
 

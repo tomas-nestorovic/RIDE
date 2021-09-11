@@ -370,7 +370,7 @@
 	int CHexaEditor::__scrollToRow__(int row){
 		// scrolls the HexaEditor so that the specified Row is shown as the first one from top; returns the Row number which it has been really scrolled to
 		locker.Lock();
-			row=std::min( std::max(row,0), nLogicalRows-nRowsOnPage );
+			row=std::min( std::max(row,0), std::max(nLogicalRows-nRowsOnPage,0) );
 		locker.Unlock();
 		if (const int dr=GetScrollPos(SB_VERT)-row){
 			RECT rcScroll;
