@@ -1045,7 +1045,8 @@ error:				switch (const TStdWinError err=::GetLastError()){
 				for( TSector n=0; n<pit->nSectors; n++ ){
 					TInternalTrack::TSectorInfo &si=pit->sectors[n];
 					for( TSector s=0; s<nSectors; s++ )
-						if (!alreadyPlannedSectors[s] && bufferId[s]==si.id) // one of the Sectors requested to read
+						if (!alreadyPlannedSectors[s] && bufferId[s]==si.id && bufferNumbersOfSectorsToSkip[s]==n )
+							// one of the Sectors requested to read
 							if (si.startNanoseconds-lastSectorEndNanoseconds>=fddHead.profile.gap3Latency){ // sufficient distance between this and previously read Sectors, so both of them can be read in a single disk revolution
 								planEnd->psi=&si, planEnd->indexIntoOutputBuffers=s;
 								planEnd++;
