@@ -316,7 +316,7 @@
 		// - initialization
 		, pCurrentTab(nullptr)
 		// - initiating determination of recency of this app
-		, recencyStatusThread( RecencyDetermination_thread, nullptr, 0 ) {
+		, recencyStatusThread( RecencyDetermination_thread, INVALID_HANDLE_VALUE, 0 ) {
 		#ifndef _DEBUG
 			#ifndef APP_SPECIAL_VER
 				// this application is a standard release - can check if it's up-to-date or already outdated
