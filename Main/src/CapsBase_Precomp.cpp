@@ -91,7 +91,7 @@
 		if (!pMediumProps)
 			return pAction->TerminateWithError(ERROR_UNRECOGNIZED_MEDIA);
 		const auto &mediumProps=*pMediumProps;
-		const TExclusiveLocker locker(&ptp.cb); // locking the access so that no one can disturb during the testing
+		EXCLUSIVELY_LOCK_IMAGE(ptp.cb); // locking the access so that no one can disturb during the testing
 		pAction->SetProgressTarget( nTrials+1 );
 		TCylinder cyl=ptp.cyl;
 		while (--cyl>0) // finding a Cylinder with magnetically reliable Track
@@ -270,7 +270,7 @@ nextTrial:	;
 
 	void CCapsBase::CPrecompensation::ShowOrDetermineModal(const CCapsBase &cb){
 		// displays summary of precompensation Method and its parameters
-		const TExclusiveLocker locker(&cb); // no one must disturb us
+		EXCLUSIVELY_LOCK_IMAGE(cb); // no one must disturb us
 		// - defining the Dialog
 		class CPrecompDialog sealed:public Utils::CRideDialog{
 			const CCapsBase &cb;

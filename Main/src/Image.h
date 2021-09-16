@@ -247,18 +247,11 @@
 		static bool OpenImageForReading(LPCTSTR fileName,CFile *f);
 		static bool OpenImageForWriting(LPCTSTR fileName,CFile *f);
 
-		struct TExclusiveLocker sealed{
-			const PCImage image;
-			TExclusiveLocker(PCImage image);
-			~TExclusiveLocker();
-		};
-
 		typedef const struct TSaveThreadParams sealed{
 			PImage image;
 			LPCTSTR lpszPathName;
 		} &RCSaveThreadParams;
 
-		mutable CCriticalSection locker;
 		bool canBeModified;
 		PCSide sideMap; // explicit mapping of Heads to Side numbers (index = Head id, [index] = Side number); may be Null if the container doesn't have such feature (e.g. DSK images)
 
@@ -630,6 +623,7 @@
 
 		const PCProperties properties;
 		const bool hasEditableSettings;
+		mutable CCriticalSection locker;
 		CMainWindow::CDockableToolBar toolbar;
 		PDos dos;
 
@@ -681,6 +675,7 @@
 		BOOL CanCloseFrame(CFrameWnd* pFrame) override;
 	};
 
-	#define EXCLUSIVELY_LOCK_THIS_IMAGE()	const TExclusiveLocker locker(this)
+	#define EXCLUSIVELY_LOCK_IMAGE(rImg)	const Utils::CExclusivelyLocked<const CImage> locker(rImg)
+	#define EXCLUSIVELY_LOCK_THIS_IMAGE()	EXCLUSIVELY_LOCK_IMAGE(*this)
 
 #endif // IMAGE_H

@@ -316,25 +316,6 @@ namespace Medium{
 
 
 
-	CImage::TExclusiveLocker::TExclusiveLocker(PCImage image)
-		// ctor
-		: image(image) {
-		image->locker.Lock();
-	}
-
-	CImage::TExclusiveLocker::~TExclusiveLocker(){
-		// ctor
-		image->locker.Unlock();
-	}
-
-
-
-
-
-
-
-
-
 
 
 

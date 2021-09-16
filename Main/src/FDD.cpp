@@ -1384,7 +1384,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 			}
 		} interruption( pAction, lp );
 		// - testing
-		const TExclusiveLocker locker(lp.fdd); // locking the access so that no one can disturb during the testing
+		EXCLUSIVELY_LOCK_IMAGE(*lp.fdd); // locking the access so that no one can disturb during the testing
 		for( BYTE c=lp.nRepeats,state=0; c--; ){
 			// . STEP 1: writing the test Sector (DD = 4kB, HD = 8kB)
 			do{
@@ -1448,7 +1448,7 @@ Utils::Information(buf);}
 		TLatencyParams &lp=*(TLatencyParams *)pAction->GetParams();
 		const BYTE targetGap3= lp.fdd->floppyType==Medium::FLOPPY_DD_525 ? FDD_525_SECTOR_GAP3 : FDD_350_SECTOR_GAP3;
 		pAction->SetProgressTarget( targetGap3 );
-		const TExclusiveLocker locker(lp.fdd); // locking the access so that no one can disturb during the testing
+		EXCLUSIVELY_LOCK_IMAGE(*lp.fdd); // locking the access so that no one can disturb during the testing
 		for( BYTE gap3=1; gap3<targetGap3; pAction->UpdateProgress(gap3+=3) ){
 			if (pAction->IsCancelled()) return LOG_ERROR(ERROR_CANCELLED);
 			// . STEP 1: writing two test Sectors
