@@ -31,6 +31,22 @@
 
 
 
+	CFloppyImage::TScannedTracks::TScannedTracks()
+		// ctor
+		: n(0)
+		, dataTotalLength(0) {
+		::ZeroMemory( infos, sizeof(infos) );
+	}
+
+
+
+
+
+
+
+
+
+
 	CFloppyImage::CFloppyImage(PCProperties properties,bool hasEditableSettings)
 		// ctor
 		: CImage(properties,hasEditableSettings)
@@ -80,12 +96,19 @@
 	std::unique_ptr<CImage::CSectorDataSerializer> CFloppyImage::CreateSectorDataSerializer(CHexaEditor *pParentHexaEditor){
 		// abstracts all Sector data (good and bad) into a single file and returns the result
 		// - defining the Serializer class
+		#define EXCLUSIVELY_LOCK_SCANNED_TRACKS()	const Utils::CExclusivelyLocked<TScannedTracks> locker(GetFloppyImage().scannedTracks)
 		class CSerializer sealed:public CSectorDataSerializer{
+			inline CFloppyImage &GetFloppyImage() const{
+				return *(CFloppyImage *)image;
+			}
+
 			static UINT AFX_CDECL __trackWorker_thread__(PVOID _pBackgroundAction){
 				// thread to scan and buffer Tracks
 				const PCBackgroundAction pAction=(PCBackgroundAction)_pBackgroundAction;
 				CSerializer *const ps=(CSerializer *)pAction->GetParams();
-				const PImage image=ps->image;
+				CFloppyImage *const image=&ps->GetFloppyImage();
+				auto &scannedTracks=image->scannedTracks;
+				const Utils::CByteIdentity sectorIdAndPositionIdentity;
 				do{
 					// . suspending the Worker if commanded so
 					if (ps->workerStatus==TScannerStatus::PAUSED)
@@ -100,38 +123,38 @@
 							// only particular Revolution wanted
 							image->BufferTrackData(
 								req.track>>1, req.track&1, req.revolution,
-								ids, Utils::CByteIdentity(),
+								ids, sectorIdAndPositionIdentity,
 								ps->__scanTrack__( req.track, ids, nullptr ),
 								false
 							);
-							ps->scannedTracks.infos[req.track].bufferedRevs|=1<<req.revolution;
+							const Utils::CExclusivelyLocked<TScannedTracks> locker(scannedTracks);
+							scannedTracks.infos[req.track].bufferedRevs|=1<<req.revolution;
 						}else{
 							// all Revolutions wanted
 							for( BYTE rev=std::min<BYTE>(Revolution::MAX,image->GetAvailableRevolutionCount()); rev-->0; )
 								image->BufferTrackData(
 									req.track>>1, req.track&1, (Revolution::TType)rev,
-									ids, Utils::CByteIdentity(),
+									ids, sectorIdAndPositionIdentity,
 									ps->__scanTrack__( req.track, ids, nullptr ),
 									false
 								);
-							ps->scannedTracks.infos[req.track].bufferedRevs=-1;
+							const Utils::CExclusivelyLocked<TScannedTracks> locker(scannedTracks);
+							scannedTracks.infos[req.track].bufferedRevs=-1;
 						}
 						if (ps->workerStatus!=TScannerStatus::UNAVAILABLE) // should we terminate?
 							ps->pParentHexaEditor->RepaintData(true); // True = immediate repainting
 					// . then, scanning the remaining Tracks (if not all yet scanned)
 					}else{
-						// : scanning the next remaining Track in parallel with the main thread ...
-						ps->__scanTrack__( ps->scannedTracks.n, nullptr, nullptr );
-						// : ... but updating the ScannedTracks structure synchronously with the main thread
-						ps->scannedTracks.locker.Lock();
-							const int tmp = ps->scannedTracks.infos[ ps->scannedTracks.n++ ].__update__(*ps);
-							ps->dataTotalLength=tmp; // making sure the DataTotalLength is the last thing modified in the Locked section
-						ps->scannedTracks.locker.Unlock();
+						// : scanning the next remaining Track
+						const Utils::CExclusivelyLocked<TScannedTracks> locker(scannedTracks);
+						ps->__scanTrack__( scannedTracks.n, nullptr, nullptr );
+						const int tmp = ps->trackHexaInfos[ scannedTracks.n++ ].Update(*ps);
+						ps->dataTotalLength = scannedTracks.dataTotalLength = tmp; // making sure the DataTotalLength is the last thing modified in the Locked section
 						if (!ps->bChsValid)
 							ps->Seek(0,SeekPosition::current); // initializing state of current Sector to read from or write to
 						// : the Serializer has changed its state - letting the related HexaEditor know of the change
-						ps->pParentHexaEditor->SetLogicalBounds( 0, ps->dataTotalLength );
-						ps->pParentHexaEditor->SetLogicalSize(ps->dataTotalLength);
+						ps->pParentHexaEditor->SetLogicalBounds( 0, scannedTracks.dataTotalLength );
+						ps->pParentHexaEditor->SetLogicalSize(scannedTracks.dataTotalLength);
 					}
 				} while (ps->workerStatus!=TScannerStatus::UNAVAILABLE); // should we terminate?
 				return ERROR_SUCCESS;
@@ -146,31 +169,26 @@
 				CEvent bufferEvent;
 			} request;
 			struct{
-				struct{
-					int logicalPosition;
-					int nRowsAtLogicalPosition;
-					BYTE bufferedRevs; // bits mapped to individual Revolutions, e.g. bit 0 = Revolution::R0, etc.
+				int logicalPosition;
+				int nRowsAtLogicalPosition; // how many rows from the beginning of the disk are at the end of this Track
 
-					int __update__(const CSerializer &rds){
-						// updates the Track info and returns the LogicalPosition at which this Track ends
-						// . retrieving the Sectors lengths via ScanTrack (though Track already scanned by the TrackWorker)
-						const BYTE track=this-rds.scannedTracks.infos;
-						WORD lengths[FDD_SECTORS_MAX];
-						TSector nSectors=rds.__scanTrack__( track, nullptr, lengths );
-						// . updating the state - the results are stored in the NEXT structure
-						auto &rNext=*(this+1);
-						rNext.logicalPosition=logicalPosition, rNext.nRowsAtLogicalPosition=nRowsAtLogicalPosition;
-						while (nSectors>0){
-							const WORD length=lengths[--nSectors];
-							rNext.logicalPosition+=length;
-							rNext.nRowsAtLogicalPosition+=(length+rds.lastKnownHexaRowLength-1)/rds.lastKnownHexaRowLength;
-						}
-						return rNext.logicalPosition;
+				int Update(const CSerializer &s){
+					// updates the Track info and returns the LogicalPosition at which this Track ends
+					// . retrieving the Sectors lengths via ScanTrack (though Track already scanned by the TrackWorker)
+					const BYTE track=this-s.trackHexaInfos;
+					WORD lengths[FDD_SECTORS_MAX];
+					TSector nSectors=s.__scanTrack__( track, nullptr, lengths );
+					// . updating the state - the results are stored in the NEXT structure
+					auto &rNext=*(this+1);
+					rNext.logicalPosition=logicalPosition, rNext.nRowsAtLogicalPosition=nRowsAtLogicalPosition;
+					while (nSectors>0){
+						const WORD length=lengths[--nSectors];
+						rNext.logicalPosition+=length;
+						rNext.nRowsAtLogicalPosition+=(length+s.lastKnownHexaRowLength-1)/s.lastKnownHexaRowLength;
 					}
-				} infos[FDD_CYLINDERS_MAX*2+1];
-				BYTE n;
-				mutable CCriticalSection locker;
-			} scannedTracks;
+					return rNext.logicalPosition;
+				}
+			} trackHexaInfos[FDD_CYLINDERS_MAX*2+1];
 			BYTE lastKnownHexaRowLength;
 
 			TSector __scanTrack__(TTrack track,PSectorId ids,PWORD lengths) const{
@@ -184,23 +202,26 @@
 
 			bool AllTracksScanned() const{
 				// True <=> all Tracks have been scanned for Sectors, otherwise False
-				scannedTracks.locker.Lock();
-					const bool result=scannedTracks.n==2*image->GetCylinderCount();
-				scannedTracks.locker.Unlock();
-				return result;
+				EXCLUSIVELY_LOCK_SCANNED_TRACKS();
+				return GetFloppyImage().scannedTracks.n==2*image->GetCylinderCount();
 			}
 		public:
 			CSerializer(CHexaEditor *pParentHexaEditor,CFloppyImage *image)
 				// ctor
 				// . base
-				: CSectorDataSerializer( pParentHexaEditor, image, 0 )
+				: CSectorDataSerializer( pParentHexaEditor, image, image->scannedTracks.dataTotalLength )
 				// . initialization
 				, trackWorker( __trackWorker_thread__, this, THREAD_PRIORITY_IDLE )
 				, workerStatus(TScannerStatus::PAUSED) // set to Unavailable to terminate Worker's labor
 				, bChsValid(false)
 				, lastKnownHexaRowLength(1) {
-				scannedTracks.n=0;
-				::ZeroMemory( scannedTracks.infos, sizeof(scannedTracks.infos) );
+				::ZeroMemory( trackHexaInfos, sizeof(trackHexaInfos) );
+				// . repopulating ScannedTracks
+				EXCLUSIVELY_LOCK_SCANNED_TRACKS();
+				for( BYTE t=0; t<image->scannedTracks.n; t++ ){
+					__scanTrack__( t, nullptr, nullptr );
+					trackHexaInfos[t].Update(*this);
+				}
 				// . launching the TrackWorker
 				request.track=-1;
 				SetTrackScannerStatus( TScannerStatus::RUNNING );
@@ -218,15 +239,17 @@
 
 			bool __getPhysicalAddress__(int logPos,PTrack pOutTrack,PBYTE pOutSectorIndexOnTrack,PWORD pOutSectorOffset) const{
 				// returns the ScannedTrack that contains the specified LogicalPosition
-				if (logPos<0 || logPos>=dataTotalLength)
+				const auto &scannedTracks=GetFloppyImage().scannedTracks;
+				EXCLUSIVELY_LOCK_SCANNED_TRACKS();
+				if (logPos<0 || logPos>=scannedTracks.dataTotalLength)
 					return false;
 				if (BYTE track=scannedTracks.n)
 					do{
-						while (scannedTracks.infos[--track].logicalPosition>logPos);
+						while (trackHexaInfos[--track].logicalPosition>logPos);
 						TSectorId ids[FDD_SECTORS_MAX]; WORD lengths[FDD_SECTORS_MAX];
 						if (TSector nSectors=__scanTrack__( track, ids, lengths )){
 							// found an non-empty Track - guaranteed to contain the requested Position
-							int pos=scannedTracks.infos[track+1].logicalPosition;
+							int pos=trackHexaInfos[track+1].logicalPosition;
 							while (( pos-=lengths[--nSectors] )>logPos);
 							if (pOutSectorOffset)
 								*pOutSectorOffset=logPos-pos;
@@ -248,7 +271,7 @@
 			LONG Seek(LONG lOff,UINT nFrom) override{
 			#endif
 				// sets the actual Position in the Serializer
-				const LONG result=__super::Seek(lOff,nFrom);
+				const auto result=__super::Seek(lOff,nFrom);
 				bChsValid=__getPhysicalAddress__( result, &currTrack, &sector.indexOnTrack, &sector.offset );
 				return result;
 			}
@@ -269,9 +292,11 @@
 			DWORD GetSectorStartPosition(RCPhysicalAddress chs,BYTE nSectorsToSkip) const override{
 				// computes and returns the position of the first Byte of the Sector at the PhysicalAddress
 				const BYTE track=chs.cylinder*2+chs.head;
+				const auto &scannedTracks=GetFloppyImage().scannedTracks;
+				EXCLUSIVELY_LOCK_SCANNED_TRACKS();
 				if (track>=scannedTracks.n)
-					return dataTotalLength;
-				DWORD result=scannedTracks.infos[track].logicalPosition;
+					return scannedTracks.dataTotalLength;
+				DWORD result=trackHexaInfos[track].logicalPosition;
 				TSectorId ids[FDD_SECTORS_MAX]; WORD lengths[FDD_SECTORS_MAX];
 				for( TSector s=0,const nSectors=__scanTrack__(track,ids,lengths); s<nSectors; result+=lengths[s++] )
 					if (nSectorsToSkip)
@@ -303,21 +328,21 @@
 				// computes and returns the row containing the specified LogicalPosition
 				if (logPos<0)
 					return 0;
-				if (logPos>=dataTotalLength)
-					return scannedTracks.infos[scannedTracks.n].nRowsAtLogicalPosition;
+				const auto &scannedTracks=GetFloppyImage().scannedTracks;
+				EXCLUSIVELY_LOCK_SCANNED_TRACKS();
+				if (logPos>=scannedTracks.dataTotalLength)
+					return trackHexaInfos[scannedTracks.n].nRowsAtLogicalPosition;
 				if (dataTotalLength){
 					// . updating the ScannedTrack structure if necessary
 					if (nBytesInRow!=lastKnownHexaRowLength){
-						scannedTracks.locker.Lock();
-							lastKnownHexaRowLength=nBytesInRow;
-							for( BYTE t=0; t<scannedTracks.n; scannedTracks.infos[t++].__update__(*this) );
-						scannedTracks.locker.Unlock();
+						lastKnownHexaRowLength=nBytesInRow;
+						for( BYTE t=0; t<scannedTracks.n; trackHexaInfos[t++].Update(*this) );
 					}
 					// . returning the result
 					TTrack track;
 					__getPhysicalAddress__(logPos,&track,nullptr,nullptr); // guaranteed to always succeed
-					int pos=scannedTracks.infos[track+1].logicalPosition;
-					int nRows=scannedTracks.infos[track+1].nRowsAtLogicalPosition;
+					int pos=trackHexaInfos[track+1].logicalPosition;
+					int nRows=trackHexaInfos[track+1].nRowsAtLogicalPosition;
 					WORD lengths[FDD_SECTORS_MAX];
 					TSector nSectors=__scanTrack__( track, nullptr, lengths );
 					do{
@@ -333,25 +358,25 @@
 				// converts Row begin (i.e. its first Byte) to corresponding logical position in underlying File and returns the result
 				if (row<0)
 					return 0;
-				if (row>=scannedTracks.infos[scannedTracks.n].nRowsAtLogicalPosition)
-					return scannedTracks.infos[scannedTracks.n].logicalPosition;
+				const auto &scannedTracks=GetFloppyImage().scannedTracks;
+				EXCLUSIVELY_LOCK_SCANNED_TRACKS();
+				if (row>=trackHexaInfos[scannedTracks.n].nRowsAtLogicalPosition)
+					return trackHexaInfos[scannedTracks.n].logicalPosition;
 				if (dataTotalLength){
 					// . updating the ScannedTrack structure if necessary
 					if (nBytesInRow!=lastKnownHexaRowLength){
-						scannedTracks.locker.Lock();
-							lastKnownHexaRowLength=nBytesInRow;
-							for( BYTE t=0; t<scannedTracks.n; scannedTracks.infos[t++].__update__(*this) );
-						scannedTracks.locker.Unlock();
+						lastKnownHexaRowLength=nBytesInRow;
+						for( BYTE t=0; t<scannedTracks.n; trackHexaInfos[t++].Update(*this) );
 					}
 					// . returning the result
 					BYTE track=scannedTracks.n;
 					do{
-						while (scannedTracks.infos[--track].nRowsAtLogicalPosition>row);
+						while (trackHexaInfos[--track].nRowsAtLogicalPosition>row);
 						WORD lengths[FDD_SECTORS_MAX];
 						if (TSector nSectors=__scanTrack__( track, nullptr, lengths )){
 							// found an non-empty Track - guaranteed to contain the requested Row
-							int logPos=scannedTracks.infos[track+1].logicalPosition;
-							int nRows=scannedTracks.infos[track+1].nRowsAtLogicalPosition;
+							int logPos=trackHexaInfos[track+1].logicalPosition;
+							int nRows=trackHexaInfos[track+1].nRowsAtLogicalPosition;
 							do{
 								const WORD length=lengths[--nSectors];
 								logPos-=length;
@@ -372,7 +397,7 @@
 				if (pOutRecordStartLogPos || pOutRecordLength){
 					WORD lengths[FDD_SECTORS_MAX];
 					TSector nSectors=__scanTrack__( track, nullptr, lengths );
-					int result=scannedTracks.infos[track+1].logicalPosition;
+					int result=trackHexaInfos[track+1].logicalPosition;
 					while (( result-=lengths[--nSectors] )>logPos);
 					if (pOutRecordStartLogPos)
 						*pOutRecordStartLogPos = result;
@@ -383,6 +408,8 @@
 					const BYTE mask=revolution<Revolution::MAX
 									? 1<<revolution // only particular Revolution wanted
 									: -1; // all Revolutions wanted
+					const auto &scannedTracks=GetFloppyImage().scannedTracks;
+					EXCLUSIVELY_LOCK_SCANNED_TRACKS();
 					if (!( *pOutDataReady=(scannedTracks.infos[track].bufferedRevs&mask)==mask ))
 						// Sector not yet buffered and its data probably wanted - buffering them now
 						if (request.track!=track || request.revolution!=revolution){ // Request not yet issued
@@ -399,7 +426,7 @@
 					return nullptr;
 				TSectorId ids[FDD_SECTORS_MAX]; WORD lengths[FDD_SECTORS_MAX];
 				TSector nSectors=__scanTrack__( track, ids, lengths );
-				int lp=scannedTracks.infos[track+1].logicalPosition;
+				int lp=trackHexaInfos[track+1].logicalPosition;
 				while (( lp-=lengths[--nSectors] )>logPos);
 				if (logPos!=lp)
 					return nullptr;
