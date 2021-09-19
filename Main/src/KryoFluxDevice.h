@@ -62,17 +62,20 @@
 		} driver;
 		const BYTE fddId;
 		const Utils::CCallocPtr<BYTE> dataBuffer;
-		HANDLE hDevice;
-		union{
-			struct{
-				WINUSB_INTERFACE_HANDLE hLibrary;
-				WINUSB_INTERFACE_HANDLE hDeviceInterface;
-			} winusb;
-		};
+		struct{
+			mutable CMutex locker;
+			HANDLE handle;
+			union{
+				struct{
+					WINUSB_INTERFACE_HANDLE hLibrary;
+					WINUSB_INTERFACE_HANDLE hDeviceInterface;
+				} winusb;
+			};
+			mutable char lastRequestResultMsg[240];
+			TCHAR firmwareVersion[100];
+		} device;
 		bool fddFound;
 		mutable TCylinder lastCalibratedCylinder;
-		mutable char lastRequestResultMsg[240];
-		TCHAR firmwareVersion[100];
 		bool informedOnPoorPrecompensation;
 		
 		static LPCTSTR GetDevicePath(TDriver driver,PTCHAR devicePathBuf);

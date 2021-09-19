@@ -133,18 +133,24 @@
 	#define KF_EP_BULK_OUT		0x01
 	#define KF_EP_BULK_IN		0x82
 
+	#define EXCLUSIVELY_LOCK_DEVICE()	const Utils::CExclusivelyLocked<const decltype(device)> deviceLocker(device)
+	// always lock first Device (if needed) and THEN Image!
+
+	#define hDevice	device.handle
+	#define winusb	device.winusb
+
 	CKryoFluxDevice::CKryoFluxDevice(TDriver driver,BYTE fddId)
 		// ctor
 		// - base
-		: CKryoFluxBase( &Properties, fddId+'0', firmwareVersion )
+		: CKryoFluxBase( &Properties, fddId+'0', device.firmwareVersion )
 		// - initialization
 		, driver(driver) , fddId(fddId)
 		, dataBuffer( KF_BUFFER_CAPACITY )
 		, fddFound(false)
 		, lastCalibratedCylinder(0)
-		, informedOnPoorPrecompensation(false)
+		, informedOnPoorPrecompensation(false) {
 		// - connecting to a local KryoFlux device
-		, hDevice(INVALID_HANDLE_VALUE) {
+		hDevice=INVALID_HANDLE_VALUE;
 		winusb.hLibrary = winusb.hDeviceInterface = INVALID_HANDLE_VALUE;
 		Connect();
 		DestroyAllTracks(); // because Connect scans zeroth Track
@@ -152,6 +158,7 @@
 
 	CKryoFluxDevice::~CKryoFluxDevice(){
 		// dtor
+		EXCLUSIVELY_LOCK_DEVICE();
 		EXCLUSIVELY_LOCK_THIS_IMAGE(); // mustn't destroy this instance while it's being used!
 		Disconnect();
 		DestroyAllTracks(); // see Reset()
@@ -166,6 +173,8 @@
 
 	bool CKryoFluxDevice::Connect(){
 		// True <=> successfully connected to a local KryoFlux device, otherwise False
+		EXCLUSIVELY_LOCK_DEVICE();
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - connecting to the device
 		ASSERT( hDevice==INVALID_HANDLE_VALUE );
 		hDevice=::CreateFile(
@@ -210,6 +219,7 @@
 
 	void CKryoFluxDevice::Disconnect(){
 		// disconnects from local KryoFlux device
+		EXCLUSIVELY_LOCK_DEVICE();
 		EXCLUSIVELY_LOCK_THIS_IMAGE(); // mustn't disconnect while device in use!
 		fddFound=false;
 		switch (driver){
@@ -293,10 +303,10 @@
 						&&
 						strW.desc.bLength>2
 					){
-						lastRequestResultMsg[
-							::WideCharToMultiByte( CP_ACP, 0, strW.desc.bString,(strW.desc.bLength-2)/sizeof(WCHAR), lastRequestResultMsg,sizeof(lastRequestResultMsg), nullptr,nullptr )
+						device.lastRequestResultMsg[
+							::WideCharToMultiByte( CP_ACP, 0, strW.desc.bString,(strW.desc.bLength-2)/sizeof(WCHAR), device.lastRequestResultMsg,sizeof(device.lastRequestResultMsg), nullptr,nullptr )
 						]='\0';
-						return lastRequestResultMsg;
+						return device.lastRequestResultMsg;
 					}
 				}
 				return nullptr;
@@ -312,7 +322,7 @@
 		// - uploading and launching a firmware
 		if (::lstrcmpA( GetProductName(), KF_DEVICE_NAME_ANSI )){
 			// . assuming failure
-			::lstrcpyA( firmwareVersion, "Not loaded" );
+			::lstrcpyA( device.firmwareVersion, "Not loaded" );
 			// . opening the firmware file for reading
 			if (params.firmwareFileName.IsEmpty()) // catching an empty string as it may succeed as filename on Win10!
 				return ERROR_FILE_NOT_FOUND;
@@ -362,7 +372,7 @@
 				return err;
 		}
 		// - retrieving firmware information
-		::lstrcpyA( firmwareVersion, KF_DEVICE_NAME_ANSI );
+		::lstrcpyA( device.firmwareVersion, KF_DEVICE_NAME_ANSI );
 		// - firmware successfully uploaded
 		return ERROR_SUCCESS;
 	}
@@ -379,11 +389,11 @@
 					req, // Request
 					value,
 					index,
-					sizeof(lastRequestResultMsg)
+					sizeof(device.lastRequestResultMsg)
 				};
 				return	WinUsb::ControlTransfer(
 							winusb.hLibrary,
-							sp, (PUCHAR)lastRequestResultMsg, sizeof(lastRequestResultMsg),
+							sp, (PUCHAR)device.lastRequestResultMsg, sizeof(device.lastRequestResultMsg),
 							&nBytesTransferred, nullptr
 						)!=0
 						? ERROR_SUCCESS
@@ -672,6 +682,8 @@
 
 	TStdWinError CKryoFluxDevice::SaveAndVerifyTrack(TCylinder cyl,THead head) const{
 		// saves the specified Track to the inserted Medium; returns Windows standard i/o error
+		EXCLUSIVELY_LOCK_DEVICE();
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - Track must already exist from before
 		const PInternalTrack pit=internalTracks[cyl][head];
 		if (!pit)
@@ -736,7 +748,7 @@
 					do{
 						if (err=SendRequest( TRequest::RESULT_WRITE ))
 							break;
-					}while (::strrchr(lastRequestResultMsg,'=')[1]=='9'); // TODO: explain why sometimes instead of '0' a return code is '3' but the Track has been written; is it a timeout? if yes, how to solve it?
+					}while (::strrchr(device.lastRequestResultMsg,'=')[1]=='9'); // TODO: explain why sometimes instead of '0' a return code is '3' but the Track has been written; is it a timeout? if yes, how to solve it?
 			SendRequest( TRequest::STREAM, 0 ); // stop streaming
 			TCHAR msgSavingFailed[80];
 			::wsprintf( msgSavingFailed, ERROR_SAVE_MESSAGE_TEMPLATE, cyl, '0'+head, _T("saving") );
@@ -790,14 +802,24 @@
 
 	TSector CKryoFluxDevice::ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec,PSectorId bufferId,PWORD bufferLength,PLogTime startTimesNanoseconds,PBYTE pAvgGap3) const{
 		// returns the number of Sectors found in given Track, and eventually populates the Buffer with their IDs (if Buffer!=Null); returns 0 if Track not formatted or not found
-		EXCLUSIVELY_LOCK_THIS_IMAGE();
+	{	EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - checking that specified Track actually CAN exist
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
 			return 0;
 		// - if Track already scanned before, returning the result from before
 		if (internalTracks[cyl][head]!=nullptr)
 			return __super::ScanTrack( cyl, head, pCodec, bufferId, bufferLength, startTimesNanoseconds, pAvgGap3 );
+	}
+		// - doing the same test as above, this time with Device locked - if Track already scanned before, returning the result from before
+		device.locker.Lock();
+			if (internalTracks[cyl][head]!=nullptr){
+				device.locker.Unlock(); // don't unnecessarily block the device
+				return __super::ScanTrack( cyl, head, pCodec, bufferId, bufferLength, startTimesNanoseconds, pAvgGap3 );
+			}
+			EXCLUSIVELY_LOCK_DEVICE();
+		device.locker.Unlock();
 		// - scanning (forced recovery from errors right during scanning)
+		//EXCLUSIVELY_LOCK_DEVICE(); // commented out as already locked above
 		for( char nRecoveryTrials=3; true; nRecoveryTrials-- ){
 			// . issuing a Request to the KryoFlux device to read fluxes in the specified Track
 			if (!SeekTo(cyl) || !SelectHead(head) || !SetMotorOn())
@@ -830,6 +852,7 @@
 					//else if (params.corrections.indexTiming) // DOS still being recognized ...
 						//trw.Normalize(); // ... hence can only improve readability by adjusting index-to-index timing
 				}
+				EXCLUSIVELY_LOCK_THIS_IMAGE();
 				internalTracks[cyl][head]=CInternalTrack::CreateFrom( *this, trw );
 				__super::ScanTrack( cyl, head, pCodec, bufferId, bufferLength, startTimesNanoseconds, pAvgGap3 );
 			}
@@ -837,6 +860,7 @@
 			if (nRecoveryTrials<=0)
 				break;
 			// . attempting to return good data
+			EXCLUSIVELY_LOCK_THIS_IMAGE();
 			if (const PCInternalTrack pit=internalTracks[cyl][head]){ // may be Null if, e.g., device manually reset, disconnected, etc.
 				if (IsTrackHealthy(cyl,head) || !pit->nSectors) // Track explicitly healthy or without Sectors
 					return pit->nSectors;
@@ -858,6 +882,7 @@
 			}
 		}
 		// - returning whatever has been read
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (const PCInternalTrack pit=internalTracks[cyl][head]) // may be Null if, e.g., device manually reset, disconnected, etc.
 			return pit->nSectors;
 		else
@@ -880,6 +905,7 @@
 
 	TStdWinError CKryoFluxDevice::Reset(){
 		// resets internal representation of the disk (e.g. by disposing all content without warning)
+		EXCLUSIVELY_LOCK_DEVICE();
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - base (already sampled Tracks are unnecessary to be destroyed)
 		BYTE tmp[sizeof(internalTracks)];
@@ -889,11 +915,11 @@
 		::memcpy( internalTracks, tmp, sizeof(internalTracks) );
 		if (err!=ERROR_SUCCESS)
 			return err;
-		// - TODO: the following regard writing to disk and needs to be explained
+		// - TODO: the following regards writing to disk and needs to be explained
 		do{
 			SetMotorOn();
 			SendRequest( TRequest::INDEX_WRITE, 8 );
-		}while (::strrchr(lastRequestResultMsg,'=')[1]!='8');
+		}while (::strrchr(device.lastRequestResultMsg,'=')[1]!='8');
 		// - resetting the KryoFlux device
 		return ERROR_SUCCESS;
 	}

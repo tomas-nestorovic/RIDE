@@ -818,6 +818,7 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 
 	void CCapsBase::DestroyAllTracks(){
 		// disposes all InternalTracks created thus far
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		for( TCylinder cyl=0; cyl<FDD_CYLINDERS_MAX; cyl++ )
 			for( THead head=0; head<2; head++ )
 				if (auto &rit=internalTracks[cyl][head])
