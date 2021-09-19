@@ -60,6 +60,7 @@
 		f=IMAGE->CreateSectorDataSerializer(this);
 		const auto fLength=f->GetLength();
 		Reset( f.get(), fLength, fLength );
+		f->SetTrackScannerStatus( TScannerStatus::RUNNING );
 	}
 
 	BOOL CDiskBrowserView::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){

@@ -222,7 +222,7 @@
 				}
 				// . launching the TrackWorker
 				request.track=-1;
-				SetTrackScannerStatus( TScannerStatus::RUNNING );
+				//SetTrackScannerStatus( TScannerStatus::RUNNING ); // commented out as up to caller to launch the scanner
 				// . initializing state of current Sector to read from or write to
 				//nop (in Worker)
 			}
