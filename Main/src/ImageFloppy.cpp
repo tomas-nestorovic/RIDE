@@ -33,7 +33,7 @@
 
 	CFloppyImage::TScannedTracks::TScannedTracks()
 		// ctor
-		: n(0)
+		: n(0) , allScanned(false)
 		, dataTotalLength(0) {
 		::ZeroMemory( infos, sizeof(infos) );
 	}
@@ -113,10 +113,8 @@
 					// . suspending the Worker if commanded so
 					if (ps->workerStatus==TScannerStatus::PAUSED)
 						ps->trackWorker.Suspend(); // again resumed via SetTrackScannerStatus method
-					// . checking if all Tracks on the disk have already been scanned
-					const bool allTracksScanned=ps->AllTracksScanned();
 					// . first, processing a request to buffer a Track (if any)
-					if (ps->request.bufferEvent.Lock( allTracksScanned ? INFINITE : 2 )){
+					if (ps->request.bufferEvent.Lock( scannedTracks.allScanned ? INFINITE : 2 )){
 						const auto &req=ps->request;
 						TSectorId ids[FDD_SECTORS_MAX];
 						if (req.revolution<Revolution::MAX){
@@ -146,10 +144,16 @@
 					// . then, scanning the remaining Tracks (if not all yet scanned)
 					}else{
 						// : scanning the next remaining Track
-						const Utils::CExclusivelyLocked<TScannedTracks> locker(scannedTracks);
+						scannedTracks.locker.Lock();
+							const BYTE nScannedTracks=scannedTracks.n;
+						scannedTracks.locker.Unlock(); 
 						ps->__scanTrack__( scannedTracks.n, nullptr, nullptr );
+						const Utils::CExclusivelyLocked<TScannedTracks> locker(scannedTracks); // don't block ScannedTracks for other threads while scanning
+						if (scannedTracks.n!=nScannedTracks) // ScannedTracks have changed while we didn't have them locked?
+							continue;
 						const int tmp = ps->trackHexaInfos[ scannedTracks.n++ ].Update(*ps);
 						ps->dataTotalLength = scannedTracks.dataTotalLength = tmp; // making sure the DataTotalLength is the last thing modified in the Locked section
+						scannedTracks.allScanned=scannedTracks.n==2*image->GetCylinderCount();
 						if (!ps->bChsValid)
 							ps->Seek(0,SeekPosition::current); // initializing state of current Sector to read from or write to
 						// : the Serializer has changed its state - letting the related HexaEditor know of the change
@@ -199,12 +203,6 @@
 						lengths[s]+=lengths[s]==0; // length>0 ? length : 1
 				return nSectors;
 			}
-
-			bool AllTracksScanned() const{
-				// True <=> all Tracks have been scanned for Sectors, otherwise False
-				EXCLUSIVELY_LOCK_SCANNED_TRACKS();
-				return GetFloppyImage().scannedTracks.n==2*image->GetCylinderCount();
-			}
 		public:
 			CSerializer(CHexaEditor *pParentHexaEditor,CFloppyImage *image)
 				// ctor
@@ -240,7 +238,7 @@
 			bool __getPhysicalAddress__(int logPos,PTrack pOutTrack,PBYTE pOutSectorIndexOnTrack,PWORD pOutSectorOffset) const{
 				// returns the ScannedTrack that contains the specified LogicalPosition
 				const auto &scannedTracks=GetFloppyImage().scannedTracks;
-				EXCLUSIVELY_LOCK_SCANNED_TRACKS();
+				EXCLUSIVELY_LOCK_SCANNED_TRACKS(); // commented out for smoother operation; may thus work with outdated values in ScannedTracks but that's ok!
 				if (logPos<0 || logPos>=scannedTracks.dataTotalLength)
 					return false;
 				if (BYTE track=scannedTracks.n)
@@ -293,7 +291,7 @@
 				// computes and returns the position of the first Byte of the Sector at the PhysicalAddress
 				const BYTE track=chs.cylinder*2+chs.head;
 				const auto &scannedTracks=GetFloppyImage().scannedTracks;
-				EXCLUSIVELY_LOCK_SCANNED_TRACKS();
+				EXCLUSIVELY_LOCK_SCANNED_TRACKS(); // commented out for smoother operation; may thus work with outdated values in ScannedTracks but that's ok!
 				if (track>=scannedTracks.n)
 					return scannedTracks.dataTotalLength;
 				DWORD result=trackHexaInfos[track].logicalPosition;
@@ -307,7 +305,8 @@
 			}
 			TScannerStatus GetTrackScannerStatus() const{
 				// returns Track scanner Status, if any
-				return AllTracksScanned() ? TScannerStatus::UNAVAILABLE : workerStatus;
+				EXCLUSIVELY_LOCK_SCANNED_TRACKS();
+				return GetFloppyImage().scannedTracks.allScanned ? TScannerStatus::UNAVAILABLE : workerStatus;
 			}
 			void SetTrackScannerStatus(TScannerStatus status){
 				// suspends/resumes Track scanner, if any (if none, simply ignores the request)
@@ -329,7 +328,7 @@
 				if (logPos<0)
 					return 0;
 				const auto &scannedTracks=GetFloppyImage().scannedTracks;
-				EXCLUSIVELY_LOCK_SCANNED_TRACKS();
+				EXCLUSIVELY_LOCK_SCANNED_TRACKS(); // commented out for smoother operation; may thus work with outdated values in ScannedTracks but that's ok!
 				if (logPos>=scannedTracks.dataTotalLength)
 					return trackHexaInfos[scannedTracks.n].nRowsAtLogicalPosition;
 				if (dataTotalLength){
@@ -359,7 +358,7 @@
 				if (row<0)
 					return 0;
 				const auto &scannedTracks=GetFloppyImage().scannedTracks;
-				EXCLUSIVELY_LOCK_SCANNED_TRACKS();
+				EXCLUSIVELY_LOCK_SCANNED_TRACKS(); // commented out for smoother operation; may thus work with outdated values in ScannedTracks but that's ok!
 				if (row>=trackHexaInfos[scannedTracks.n].nRowsAtLogicalPosition)
 					return trackHexaInfos[scannedTracks.n].logicalPosition;
 				if (dataTotalLength){
@@ -409,7 +408,7 @@
 									? 1<<revolution // only particular Revolution wanted
 									: -1; // all Revolutions wanted
 					const auto &scannedTracks=GetFloppyImage().scannedTracks;
-					EXCLUSIVELY_LOCK_SCANNED_TRACKS();
+					EXCLUSIVELY_LOCK_SCANNED_TRACKS(); // commented out for smoother operation; may thus work with outdated values in ScannedTracks but that's ok!
 					if (!( *pOutDataReady=(scannedTracks.infos[track].bufferedRevs&mask)==mask ))
 						// Sector not yet buffered and its data probably wanted - buffering them now
 						if (request.track!=track || request.revolution!=revolution){ // Request not yet issued

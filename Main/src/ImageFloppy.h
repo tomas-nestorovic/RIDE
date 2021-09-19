@@ -8,6 +8,7 @@
 				BYTE bufferedRevs; // bits mapped to individual Revolutions, e.g. bit 0 = Revolution::R0, etc.
 			} infos[FDD_CYLINDERS_MAX*2];
 			BYTE n;
+			bool allScanned;
 			#if _MFC_VER>=0x0A00
 			LONGLONG dataTotalLength;
 			#else
