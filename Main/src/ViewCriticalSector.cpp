@@ -49,8 +49,14 @@
 
 	CCriticalSectorView::CCriticalSectorView(PDos dos,RCPhysicalAddress rChs)
 		// ctor
+		// - initialization
 		: tab(0,0,0,dos,this) , splitX(PROPGRID_WIDTH_DEFAULT)
 		, fSectorData(dos,rChs) , hexaEditor(this) {
+		// - reset of HexaEditor's content
+		const TPhysicalAddress &chs=GetPhysicalAddress();
+		WORD sectorDataRealLength=CImage::GetOfficialSectorLength( chs.sectorId.lengthCode ); // initializing just in case the Sector is not found
+		IMAGE->GetHealthySectorData( chs, &sectorDataRealLength );
+		hexaEditor.Reset( &fSectorData, sectorDataRealLength, sectorDataRealLength );
 	}
 
 	BEGIN_MESSAGE_MAP(CCriticalSectorView,CView)
@@ -73,10 +79,6 @@
 		// - base
 		if (__super::OnCreate(lpcs)==-1)
 			return -1;
-		// - getting Boot Sector data
-		const TPhysicalAddress &chs=GetPhysicalAddress();
-		WORD sectorDataRealLength=CImage::GetOfficialSectorLength( chs.sectorId.lengthCode ); // initializing just in case the Sector is not found
-		IMAGE->GetHealthySectorData( chs, &sectorDataRealLength );
 		// - creating the Content
 		//CCreateContext cc;
 		//cc.m_pCurrentDoc=dos->image;
@@ -87,7 +89,7 @@
 				propGrid.CreateEx( 0, PropGrid::GetWindowClass(app.m_hInstance), nullptr, AFX_WS_DEFAULT_VIEW&~WS_BORDER, 0,0,PROPGRID_WIDTH_DEFAULT,300, content->m_hWnd, (HMENU)content->IdFromRowCol(0,0) );
 				content->SetColumnInfo(0,Utils::LogicalUnitScaleFactor*PROPGRID_WIDTH_DEFAULT,0);
 			//content->CreateView(0,1,RUNTIME_CLASS(CHexaEditor),CSize(),&cc); // commented out as created manually below
-				hexaEditor.Reset( &fSectorData, sectorDataRealLength, sectorDataRealLength );
+				hexaEditor.Update( &fSectorData );
 				hexaEditor.Create( nullptr, nullptr, AFX_WS_DEFAULT_VIEW&~WS_BORDER|WS_CLIPSIBLINGS, CFrameWnd::rectDefault, content.get(), content->IdFromRowCol(0,1) );
 				//hexaEditor.CreateEx( 0, HEXAEDITOR_BASE_CLASS, nullptr, AFX_WS_DEFAULT_VIEW&~WS_BORDER, RECT(), nullptr, content->IdFromRowCol(0,1), nullptr );
 		OnSize( SIZE_RESTORED, lpcs->cx, lpcs->cy );
