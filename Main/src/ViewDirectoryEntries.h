@@ -5,7 +5,6 @@
 		DECLARE_MESSAGE_MAP()
 	private:
 		bool navigatedToFirstSelectedFile;
-		int iScrollY; // ScrollBar position
 		std::unique_ptr<CDos::CFileReaderWriter> f;
 
 		afx_msg int OnCreate(LPCREATESTRUCT lpcs);

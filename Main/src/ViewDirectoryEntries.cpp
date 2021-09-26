@@ -54,7 +54,6 @@
 		// - initialization
 		, tab( IDR_DIRECTORYBROWSER, IDR_HEXAEDITOR, ID_CYLINDER, dos, this )
 		, navigatedToFirstSelectedFile(false)
-		, iScrollY(0)
 		, directory(directory) {
 	}
 
@@ -92,7 +91,6 @@
 		// - displaying the content
 		OnUpdate(nullptr,0,nullptr);
 		// - recovering the Scroll position and repainting the view (by setting its editability)
-		ScrollToRow( iScrollY, true );
 		SetEditable( !IMAGE->IsWriteProtected() );
 		// - navigating to the first selected Item
 		if (!navigatedToFirstSelectedFile)
@@ -111,13 +109,12 @@
 	void CDirEntriesView::OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint){
 		// request to refresh the display of content
 		f.reset( new CDirectoryEntriesReaderWriter(DOS,directory) );
-		Reset( f.get(), f->GetLength(), f->GetLength() );
+		const auto dirLength=f->GetLength();
+		Update( f.get(), dirLength, dirLength );
 	}
 
 	afx_msg void CDirEntriesView::OnDestroy(){
 		// window destroyed
-		// - saving Scroll position for later
-		iScrollY=GetScrollPos(SB_VERT);
 		// - disposing the underlying File
 		f.reset();
 		// - base
