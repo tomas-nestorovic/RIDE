@@ -213,6 +213,7 @@
 		, customSelectSubmenu(customSelectSubmenu) , customResetSubmenu(customResetSubmenu) , customGotoSubmenu(customGotoSubmenu)
 		, hDefaultAccelerators(::LoadAccelerators(app.m_hInstance,MAKEINTRESOURCE(IDR_HEXAEDITOR)))
 		, caret(0) , param(param) , hPreviouslyFocusedWnd(0)
+		, logPosScrolledTo(0)
 		, pContentAdviser(&DefaultContentAdviser)
 		, nBytesInRow(16) , editable(true) , addrLength(ADDRESS_FORMAT_LENGTH)
 		, emphases((PEmphasis)&TEmphasis::Terminator) {
@@ -263,18 +264,33 @@
 		return ADDRESS_FORMAT_LENGTH*font.charAvgWidth;
 	}
 
-	void CHexaEditor::Reset(CFile *_f,int _minFileSize,int _maxFileSize){
-		// resets the HexaEditor and supplies it new File content
+	void CHexaEditor::Update(CFile *f){
+		// updates the underlying File content
 		locker.Lock();
-			if (!( pContentAdviser=dynamic_cast<PContentAdviser>(  F=_f  ) ))
+			if (!( pContentAdviser=dynamic_cast<PContentAdviser>(  F=f  ) ))
 				pContentAdviser=&DefaultContentAdviser;
-			caret=TCaret(0); // resetting the Caret and Selection
-			SetLogicalBounds( _minFileSize, _maxFileSize );
 			SetLogicalSize(F->GetLength());
+		locker.Unlock();
+	}
+
+	void CHexaEditor::Update(CFile *f,int minFileSize,int maxFileSize){
+		// updates the underlying File content
+		locker.Lock();
+			Update( f );
+			SetLogicalBounds( minFileSize, maxFileSize );
 			if (::IsWindow(m_hWnd)){ // may be window-less if the owner is window-less
 				__refreshVertically__();
 				Invalidate(FALSE);
 			}
+		locker.Unlock();
+	}
+
+	void CHexaEditor::Reset(CFile *f,int minFileSize,int maxFileSize){
+		// resets the HexaEditor and supplies it new File content
+		locker.Lock();
+			caret=TCaret(0); // resetting the Caret and Selection
+			logPosScrolledTo=0;
+			Update( f, minFileSize, maxFileSize );
 		locker.Unlock();
 	}
 
@@ -506,8 +522,7 @@
 				// . creating the ClipFormat
 				cfBinary=::RegisterClipboardFormat(CLIPFORMAT_BINARY);
 				// . recovering the scroll position
-				//SetScrollPos( SB_VERT, iScrollY, FALSE );
-				__refreshVertically__();
+				ScrollTo( logPosScrolledTo );
 				return 0;
 			case WM_KEYDOWN:{
 				// key pressed
@@ -1539,6 +1554,12 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 					}
 				locker.Unlock();
 				return 0;
+			}
+			case WM_DESTROY:{
+				// window destroyed
+				int i;
+				GetVisiblePart( logPosScrolledTo, i );
+				break;
 			}
 		}
 		return __super::WindowProc(msg,wParam,lParam);

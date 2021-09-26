@@ -116,6 +116,7 @@
 
 			TStdWinError FindNextPositionModal();
 		} search;
+		int logPosScrolledTo; // LogicalPosition in the upper left corner of the hexa-editor
 
 		const HMENU customSelectSubmenu, customResetSubmenu, customGotoSubmenu;
 
@@ -129,7 +130,10 @@
 		void SetEditable(bool _editable);
 		bool IsEditable() const;
 		int ShowAddressBand(bool _show);
-		void Reset(CFile *_f,int _minFileSize,int _maxFileSize);
+		inline BYTE GetBytesPerRow() const{ return nBytesInRow; }
+		void Update(CFile *f);
+		void Update(CFile *f,int minFileSize,int maxFileSize);
+		void Reset(CFile *f,int minFileSize,int maxFileSize);
 		void SetLogicalBounds(int _minFileSize,int _maxFileSize);
 		virtual void SetLogicalSize(int _logicalSize);
 		void ScrollTo(int logicalPos,bool moveAlsoCaret=false);
