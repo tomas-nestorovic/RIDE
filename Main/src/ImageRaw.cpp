@@ -788,7 +788,7 @@ trackNotFound:
 			LONG Seek(LONG lOff,UINT nFrom) override{
 			#endif
 				// sets the actual Position in the Serializer
-				const LONG result=__super::Seek(lOff,nFrom);
+				const auto result=__super::Seek(lOff,nFrom);
 				__getPhysicalAddress__( result, currTrack, sector.indexOnTrack, &sector.offset );
 				return result;
 			}

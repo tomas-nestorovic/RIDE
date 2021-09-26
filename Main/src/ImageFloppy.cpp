@@ -212,7 +212,7 @@
 				, trackWorker( __trackWorker_thread__, this, THREAD_PRIORITY_IDLE )
 				, workerStatus(TScannerStatus::PAUSED) // set to Unavailable to terminate Worker's labor
 				, bChsValid(false)
-				, lastKnownHexaRowLength(1) {
+				, lastKnownHexaRowLength(pParentHexaEditor->GetBytesPerRow()) {
 				::ZeroMemory( trackHexaInfos, sizeof(trackHexaInfos) );
 				// . repopulating ScannedTracks
 				EXCLUSIVELY_LOCK_SCANNED_TRACKS();

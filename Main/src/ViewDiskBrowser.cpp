@@ -59,7 +59,7 @@
 		// request to refresh the display of content
 		f=IMAGE->CreateSectorDataSerializer(this);
 		const auto fLength=f->GetLength();
-		Reset( f.get(), fLength, fLength );
+		Update( f.get(), fLength, fLength );
 		f->SetTrackScannerStatus( TScannerStatus::RUNNING );
 	}
 
