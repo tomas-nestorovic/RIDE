@@ -20,17 +20,21 @@
 
 	CTrackMapView::CTrackMapView(PDos _dos)
 		// ctor
+		// - initialization
 		: tab( IDR_TRACKMAP, IDR_TRACKMAP, ID_CYLINDER, _dos, this )
 		, displayType(TDisplayType::STATUS) , showSectorNumbers(false) , showTimed(false) , fitLongestTrackInWindow(false) , showSelectedFiles(_dos->pFileManager!=nullptr) , iScrollX(0) , iScrollY(0) , scanner(this)
 		, fileSelectionColor( app.GetProfileInt(INI_TRACKMAP,INI_FILE_SELECTION_COLOR,::GetSysColor(COLOR_ACTIVECAPTION)) )
 		, longestTrack(0,0) , longestTrackNanoseconds(0)
 		, zoomLengthFactor(3) {
 		::ZeroMemory( rainbowBrushes, sizeof(rainbowBrushes) );
+		// - launching the Scanner of Tracks
+		scanner.action.Resume();
 	}
 
 	CTrackMapView::TTrackScanner::TTrackScanner(const CTrackMapView *pvtm)
 		// ctor
-		: action( __thread__, pvtm, THREAD_PRIORITY_IDLE ) {
+		: action( __thread__, pvtm, THREAD_PRIORITY_IDLE )
+		, wantTerminate(false) {
 	}
 
 	#define WM_TRACK_SCANNED	WM_USER+1
@@ -67,7 +71,14 @@
 
 	CTrackMapView::~CTrackMapView(){
 		// dtor
+		// - saving settings
 		app.WriteProfileInt( INI_TRACKMAP, INI_FILE_SELECTION_COLOR, fileSelectionColor );
+		// - waiting for the Scanner to finish properly
+		scanner.params.criticalSection.Lock();
+			scanner.wantTerminate=true;
+			scanner.scanNextTrack.SetEvent();
+		scanner.params.criticalSection.Unlock();
+		::WaitForSingleObject( scanner.action, INFINITE );
 	}
 
 
@@ -211,8 +222,11 @@
 			rts.scanNextTrack.Lock();
 			// . getting the TrackNumber to scan
 			rts.params.criticalSection.Lock();
+				const bool wantTerminate=rts.wantTerminate;
 				const TTrack trackNumber=rts.params.x;
 			rts.params.criticalSection.Unlock();
+			if (wantTerminate)
+				break;
 			const div_t d=div(trackNumber,nHeads);
 			// . scanning the Track to draw its Sector Statuses
 			ti.cylinder=d.quot, ti.head=d.rem;
@@ -456,8 +470,6 @@
 		const BYTE fillerByte=DOS->properties->sectorFillerByte;
 		::DeleteObject(rainbowBrushes[fillerByte]);
 		rainbowBrushes[fillerByte]=(HBRUSH)::GetStockObject(WHITE_BRUSH);
-		// - launching the Scanner of Tracks (if not yet launched)
-		scanner.action.Resume();
 		return 0;
 	}
 
