@@ -134,7 +134,7 @@
 	#define KF_EP_BULK_IN		0x82
 
 	#define EXCLUSIVELY_LOCK_DEVICE()	const Utils::CExclusivelyLocked<const decltype(device)> deviceLocker(device)
-	// always lock first Device (if needed) and THEN Image!
+	// always lock first the Image and THEN the Device, so that the locking is compatible with base classes!
 
 	#define hDevice	device.handle
 	#define winusb	device.winusb
@@ -158,7 +158,6 @@
 
 	CKryoFluxDevice::~CKryoFluxDevice(){
 		// dtor
-		EXCLUSIVELY_LOCK_DEVICE();
 		EXCLUSIVELY_LOCK_THIS_IMAGE(); // mustn't destroy this instance while it's being used!
 		Disconnect();
 		DestroyAllTracks(); // see Reset()
@@ -173,8 +172,8 @@
 
 	bool CKryoFluxDevice::Connect(){
 		// True <=> successfully connected to a local KryoFlux device, otherwise False
-		EXCLUSIVELY_LOCK_DEVICE();
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		EXCLUSIVELY_LOCK_DEVICE();
 		// - connecting to the device
 		ASSERT( hDevice==INVALID_HANDLE_VALUE );
 		hDevice=::CreateFile(
@@ -219,8 +218,8 @@
 
 	void CKryoFluxDevice::Disconnect(){
 		// disconnects from local KryoFlux device
-		EXCLUSIVELY_LOCK_DEVICE();
 		EXCLUSIVELY_LOCK_THIS_IMAGE(); // mustn't disconnect while device in use!
+		EXCLUSIVELY_LOCK_DEVICE();
 		fddFound=false;
 		switch (driver){
 			case TDriver::WINUSB:
@@ -682,7 +681,6 @@
 
 	TStdWinError CKryoFluxDevice::SaveAndVerifyTrack(TCylinder cyl,THead head) const{
 		// saves the specified Track to the inserted Medium; returns Windows standard i/o error
-		EXCLUSIVELY_LOCK_DEVICE();
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - Track must already exist from before
 		const PInternalTrack pit=internalTracks[cyl][head];
@@ -710,6 +708,7 @@
 			if ( err=precompensation.ApplyTo(*this,cyl,head,trwCompensated) )
 				return err;
 		// - Drive's head calibration
+		EXCLUSIVELY_LOCK_DEVICE();
 		if (params.calibrationStepDuringFormatting)
 			if (std::abs(cyl-lastCalibratedCylinder)>>(BYTE)params.doubleTrackStep>=params.calibrationStepDuringFormatting){
 				lastCalibratedCylinder=cyl;
@@ -810,27 +809,20 @@
 		if (internalTracks[cyl][head]!=nullptr)
 			return __super::ScanTrack( cyl, head, pCodec, bufferId, bufferLength, startTimesNanoseconds, pAvgGap3 );
 	}
-		// - doing the same test as above, this time with Device locked - if Track already scanned before, returning the result from before
-		device.locker.Lock();
-			if (internalTracks[cyl][head]!=nullptr){
-				device.locker.Unlock(); // don't unnecessarily block the device
-				return __super::ScanTrack( cyl, head, pCodec, bufferId, bufferLength, startTimesNanoseconds, pAvgGap3 );
-			}
-			EXCLUSIVELY_LOCK_DEVICE();
-		device.locker.Unlock();
 		// - scanning (forced recovery from errors right during scanning)
-		//EXCLUSIVELY_LOCK_DEVICE(); // commented out as already locked above
+		const Utils::CCallocPtr<BYTE> tmpDataBuffer(KF_BUFFER_CAPACITY);
 		for( char nRecoveryTrials=3; true; nRecoveryTrials-- ){
 			// . issuing a Request to the KryoFlux device to read fluxes in the specified Track
+			PBYTE p=tmpDataBuffer;
+	{		EXCLUSIVELY_LOCK_DEVICE();
 			if (!SeekTo(cyl) || !SelectHead(head) || !SetMotorOn())
 				return 0;
 			const BYTE nIndicesRequested=std::min<BYTE>( GetAvailableRevolutionCount()+1, Revolution::MAX ); // N+1 indices = N full revolutions
 			SendRequest( TRequest::STREAM, MAKEWORD(1,nIndicesRequested) ); // start streaming
-				PBYTE p=dataBuffer;
-				while (const DWORD nBytesFree=dataBuffer+KF_BUFFER_CAPACITY-p)
+				while (const DWORD nBytesFree=tmpDataBuffer+KF_BUFFER_CAPACITY-p)
 					if (const auto n=Read( p, nBytesFree )){
 						p+=n;
-						if (p-dataBuffer>7
+						if (p-tmpDataBuffer>7
 							&&
 							!::memcmp( p-7, "\xd\xd\xd\xd\xd\xd\xd", 7 ) // the final Out-of-Stream block (see KryoFlux Stream specification for explanation)
 						)
@@ -841,8 +833,11 @@
 			SendRequest( TRequest::STREAM, 0 ); // stop streaming
 			if (err==ERROR_SEM_TIMEOUT) // currently, the only known way how to detect a non-existing FDD is to observe a timeout during reading
 				return 0;
+	}
 			// . making sure the read content is a KryoFlux Stream whose data actually make sense
-			if (CTrackReaderWriter trw=StreamToTrack( dataBuffer, p-dataBuffer )){
+			EXCLUSIVELY_LOCK_THIS_IMAGE();
+			PInternalTrack &rit=internalTracks[cyl][head];
+			if (CTrackReaderWriter trw=StreamToTrack( tmpDataBuffer, p-tmpDataBuffer )){
 				// it's a KryoFlux Stream whose data make sense
 				if (floppyType!=Medium::UNKNOWN){ // may be unknown if Medium is still being recognized
 					trw.SetMediumType(floppyType);
@@ -852,22 +847,22 @@
 					//else if (params.corrections.indexTiming) // DOS still being recognized ...
 						//trw.Normalize(); // ... hence can only improve readability by adjusting index-to-index timing
 				}
-				EXCLUSIVELY_LOCK_THIS_IMAGE();
-				internalTracks[cyl][head]=CInternalTrack::CreateFrom( *this, trw );
+				if (rit) // deleting whatever Track that emerged between the Image and Device locks
+					delete rit;
+				rit=CInternalTrack::CreateFrom( *this, trw );
 				__super::ScanTrack( cyl, head, pCodec, bufferId, bufferLength, startTimesNanoseconds, pAvgGap3 );
 			}
 			// . if no more trials left, we are done
 			if (nRecoveryTrials<=0)
 				break;
 			// . attempting to return good data
-			EXCLUSIVELY_LOCK_THIS_IMAGE();
-			if (const PCInternalTrack pit=internalTracks[cyl][head]){ // may be Null if, e.g., device manually reset, disconnected, etc.
-				if (IsTrackHealthy(cyl,head) || !pit->nSectors) // Track explicitly healthy or without Sectors
-					return pit->nSectors;
+			if (rit){ // may be Null if, e.g., device manually reset, disconnected, etc.
+				if (IsTrackHealthy(cyl,head) || !rit->nSectors) // Track explicitly healthy or without Sectors
+					return rit->nSectors;
 				switch (params.calibrationAfterError){
 					case TParams::TCalibrationAfterError::NONE:
 						// calibration disabled
-						return pit->nSectors;
+						return rit->nSectors;
 					case TParams::TCalibrationAfterError::ONCE_PER_CYLINDER:
 						// calibrating only once for the whole Cylinder
 						nRecoveryTrials=0;
@@ -877,8 +872,8 @@
 						SeekHome();
 						break;
 				}				
-				delete pit; // disposing the erroneous Track ...
-				internalTracks[cyl][head]=nullptr; // ... and attempting to obtain its data after head has been calibrated
+				delete rit; // disposing the erroneous Track ...
+				rit=nullptr; // ... and attempting to obtain its data after head has been calibrated
 			}
 		}
 		// - returning whatever has been read
@@ -905,7 +900,6 @@
 
 	TStdWinError CKryoFluxDevice::Reset(){
 		// resets internal representation of the disk (e.g. by disposing all content without warning)
-		EXCLUSIVELY_LOCK_DEVICE();
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - base (already sampled Tracks are unnecessary to be destroyed)
 		BYTE tmp[sizeof(internalTracks)];
@@ -916,6 +910,7 @@
 		if (err!=ERROR_SUCCESS)
 			return err;
 		// - TODO: the following regards writing to disk and needs to be explained
+		EXCLUSIVELY_LOCK_DEVICE();
 		do{
 			SetMotorOn();
 			SendRequest( TRequest::INDEX_WRITE, 8 );
