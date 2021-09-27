@@ -574,6 +574,8 @@
 		ASSERT( outBufferData!=nullptr && outBufferLengths!=nullptr && outFdcStatuses!=nullptr );
 		silentlyRecoverFromErrors&=rev>=Revolution::MAX; // can't recover if wanted particular Revolution
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead) // can Track actually exist?
+			goto invalidTrack;
 		if (internalTracks[cyl][head]==nullptr)
 			ScanTrack(cyl,head); // reading the Track (if not yet read)
 		if (const PInternalTrack pit=internalTracks[cyl][head])
@@ -625,6 +627,7 @@ returnData:				*outFdcStatuses++=currRev->fdcStatus;
 				goto returnData;
 			}
 		else
+invalidTrack:
 			while (nSectors-->0)
 				*outBufferData++=nullptr, *outFdcStatuses++=TFdcStatus::SectorNotFound;
 		::SetLastError( *--outBufferData ? ERROR_SUCCESS : ERROR_SECTOR_NOT_FOUND );
