@@ -602,7 +602,7 @@
 		// ctor
 		: pBits(nullptr) , nBits(0) {
 		tr.SetCurrentTimeAndProfile( tFrom, profileFrom );
-		while (tr.GetCurrentTime()<tTo)
+		while (tr && tr.GetCurrentTime()<tTo)
 			tr.ReadBit(), nBits++;
 		pBits=(TBit *)::calloc( nBits, sizeof(TBit) );
 		tr.SetCurrentTimeAndProfile( tFrom, profileFrom );
