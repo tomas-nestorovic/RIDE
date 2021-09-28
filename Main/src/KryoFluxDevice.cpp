@@ -912,8 +912,10 @@
 		// - TODO: the following regards writing to disk and needs to be explained
 		EXCLUSIVELY_LOCK_DEVICE();
 		do{
-			SetMotorOn();
-			SendRequest( TRequest::INDEX_WRITE, 8 );
+			if (!SetMotorOn())
+				return ERROR_DRIVE_NOT_INSTALLED;
+			if (const TStdWinError err=SendRequest( TRequest::INDEX_WRITE, 8 ))
+				return err;
 		}while (::strrchr(device.lastRequestResultMsg,'=')[1]!='8');
 		// - resetting the KryoFlux device
 		return ERROR_SUCCESS;
