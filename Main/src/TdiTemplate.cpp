@@ -42,6 +42,7 @@
 				TDI_INSTANCE->__closeAllTabsOfFocusedDos__();
 				( (CFrameWnd *)app.m_pMainWnd )->OnUpdateFrameTitle(FALSE); // updating the MainWindow's title (now without document)
 			}
+			m_pOnlyDoc->OnCloseDocument();
 			delete m_pOnlyDoc, m_pOnlyDoc=nullptr;
 		}
 		return true;

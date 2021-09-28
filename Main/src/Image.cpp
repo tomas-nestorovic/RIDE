@@ -456,9 +456,6 @@ namespace Medium{
 
 	CImage::~CImage(){
 		// dtor
-		// - disposing DOS
-		if (dos)
-			delete dos;
 	}
 
 
@@ -469,6 +466,10 @@ namespace Medium{
 
 	void CImage::OnCloseDocument(){
 		// document is being closed
+		// - disposing DOS
+		if (dos)
+			delete dos, dos=nullptr;
+		// - base
 		//nop (CDocument::OnCloseDocument destroys parent FrameWnd (MainWindow) - this must exist even after the document was closed)
 	}
 
