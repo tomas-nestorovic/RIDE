@@ -148,15 +148,16 @@
 							const BYTE nScannedTracks=scannedTracks.n;
 						scannedTracks.locker.Unlock(); 
 						ps->__scanTrack__( scannedTracks.n, nullptr, nullptr );
-						const Utils::CExclusivelyLocked<TScannedTracks> locker(scannedTracks); // don't block ScannedTracks for other threads while scanning
+				{		const Utils::CExclusivelyLocked<TScannedTracks> locker(scannedTracks); // don't block ScannedTracks for other threads while scanning
 						if (scannedTracks.n!=nScannedTracks) // ScannedTracks have changed while we didn't have them locked?
 							continue;
 						const int tmp = ps->trackHexaInfos[ scannedTracks.n++ ].Update(*ps);
 						ps->dataTotalLength = scannedTracks.dataTotalLength = tmp; // making sure the DataTotalLength is the last thing modified in the Locked section
 						scannedTracks.allScanned=scannedTracks.n==2*image->GetCylinderCount();
-						if (!ps->bChsValid)
+				}		if (!ps->bChsValid)
 							ps->Seek(0,SeekPosition::current); // initializing state of current Sector to read from or write to
 						// : the Serializer has changed its state - letting the related HexaEditor know of the change
+						//DEADLOCK: No need to have the ScannedTracks locked - the only place where the values can change is above, so what we read below IS in sync!
 						ps->pParentHexaEditor->SetLogicalBounds( 0, scannedTracks.dataTotalLength );
 						ps->pParentHexaEditor->SetLogicalSize(scannedTracks.dataTotalLength);
 					}
