@@ -707,8 +707,9 @@ errorDuringWriting:				TCHAR buf[80];
 										// : base
 										const BOOL result=__super::OnInitDialog();
 										// : supplying available actions
-										AddCommandButton( IDYES, _T("Continue with format adopted from boot sector (recommended)"), true );
 										TCHAR buf[80];
+										::wsprintf( buf, _T("Continue to Cylinder %d (incl.) reported in boot sector (recommended)"), CImage::GetActive()->dos->formatBoot.nCylinders-1 );
+										AddCommandButton( IDYES, buf, true );
 										::wsprintf( buf, _T("Continue to last occupied Cylinder %d (incl.)"), lastOccupiedCyl );
 										AddCommandButton( IDRETRY, buf );
 										AddCommandButton( IDNO, _T("Continue with current settings (cylinders beyond official format may fail!)") );

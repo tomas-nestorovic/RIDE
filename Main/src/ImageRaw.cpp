@@ -583,7 +583,7 @@ trackNotFound:
 							}
 							break;
 						case MAKELONG(ID_CONTEXT_HELP,BN_CLICKED):
-							Utils::Information( _T("Type in sides as would pages to print in a PDF reader.\n\nExample:\n- 0, 1 (2 heads)\n- 0-5, 6, 9-11 (10 heads)\n- 0-3, 7-4, 123 (9 heads)") );
+							Utils::Information( _T("Type in sides as you would pages to print in a PDF reader.\n\nExample:\n- 0, 1 (2 heads)\n- 0-5, 6, 9-11 (10 heads)\n- 0-3, 7-4, 123 (9 heads)") );
 							break;
 					}
 				return __super::WindowProc( msg, wParam, lParam );
