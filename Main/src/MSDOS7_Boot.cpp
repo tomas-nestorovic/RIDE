@@ -260,7 +260,10 @@
 			>= // testing minimal number of Sectors
 			__cluster2logSector__( MSDOS7_DATA_CLUSTER_FIRST, bootSector )
 		){
-			if (!image->properties->IsRealDevice()){ // if this is NOT a real Device ...
+			if (!image->properties->IsRealDevice() // if this is NOT a real Device ...
+				&&
+				!image->ReadTrack(bootChs.cylinder,bootChs.head) // ... and NOT an Image that maintains Track timing ...
+			){ 
 				const Medium::TType officialMediumType=bootSector->GetMediumType();
 				if (officialMediumType!=Medium::UNKNOWN)
 					pFormatBoot->mediumType=officialMediumType; // ... adopting the OfficialMediumType from BootSector
