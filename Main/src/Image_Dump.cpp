@@ -168,9 +168,29 @@
 		TDumpParams &dp=*(TDumpParams *)pAction->GetParams();
 		pAction->SetProgressTarget( dp.cylinderZ+1-dp.cylinderA );
 		// - setting geometry to the TargetImage
+		const struct TDeducedSides sealed{
+			bool ambigous; // multiple Side numbers on a single Track?
+			TSide map[(THead)-1];
+			TDeducedSides(PCImage source)
+				: ambigous(false) {
+				for( THead head=0; head<source->GetHeadCount(); head++ ){
+					TSectorId ids[(TSector)-1];
+					if (TSector nSectors=source->ScanTrack( 0, head, nullptr, ids )){
+						for( map[head]=ids->side; nSectors>0; )
+							if ( ambigous|=ids[--nSectors].side!=map[head] )
+								break;
+					}else
+						ambigous=true;
+				}
+			}
+		} deducedSides(dp.source);
 		TSector nSectors=dp.source->ScanTrack(0,0);
 		const TFormat targetGeometry={ dp.mediumType, dp.dos->formatBoot.codecType, dp.cylinderZ+1, dp.nHeads, nSectors, dp.dos->formatBoot.sectorLengthCode, dp.dos->formatBoot.sectorLength, 1 };
-		const PCSide sideMap= dp.source->GetSideMap() ? dp.source->GetSideMap() : dp.dos->sideMap; // prefer Sides defined by the Source, if any
+		const PCSide sideMap =	dp.source->GetSideMap() // if Source explicitly defines Sides ...
+								? dp.source->GetSideMap() // ... adopt them
+								: !deducedSides.ambigous // if unique Sides can be deduced from the first Cylinder ...
+								? deducedSides.map // ... adopt them
+								: dp.dos->sideMap; // otherwise adopt Sides defined by the DOS
 		TStdWinError err=dp.target->SetMediumTypeAndGeometry( &targetGeometry, sideMap, dp.dos->properties->firstSectorNumber );
 		if (err!=ERROR_SUCCESS)
 terminateWithError:
