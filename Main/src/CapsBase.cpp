@@ -595,36 +595,42 @@
 					outBufferLengths++;
 					continue;
 				}
-				// . if Data already read WithoutError, returning them
+				// . attempting for Sector data
 				if (pis->dirtyRevolution<Revolution::MAX){
 					rev = pis->dirtyRevolution; // modified Revolution is obligatory for any subsequent data requests
 					silentlyRecoverFromErrors=false; // can't recover if one particular Revolution already modified
 				}
 				const WORD usableSectorLength=GetUsableSectorLength(sectorId.lengthCode);
 				auto *currRev=pis->revolutions+( rev<Revolution::MAX ? pis->currentRevolution=rev : pis->currentRevolution );
-				if (currRev->data || currRev->fdcStatus.DescribesMissingDam()) // A|B, A = some data exist, B = reattempting to read the DAM-less Sector only if automatic recovery desired
-					if (currRev->fdcStatus.IsWithoutError() || !silentlyRecoverFromErrors){ // A|B, A = returning error-free data, B = settling with any data if automatic recovery not desired
-returnData:				*outFdcStatuses++=currRev->fdcStatus;
-						*outBufferData++=currRev->data;
-						*outBufferLengths++=usableSectorLength;
-						continue;
-					}
-				// . attempting next disk Revolution to retrieve healthy Data
-				if (usableSectorLength!=0){ // e.g. Sector with LengthCode 167 has no data
-					::free(currRev->data), currRev->data=nullptr;
-					if (rev<pis->nRevolutions) // wanted particular EXISTING Revolution
-						pit->ReadSector( *pis, pis->nRevolutions>1?rev:0 );
-					else if (rev>=Revolution::MAX){ // wanted any Revolution
-						do{
+				for( BYTE nAttempts=rev==Revolution::ANY_GOOD?pis->nRevolutions:1; nAttempts>0; nAttempts-- ){
+					// : if Data already read WithoutError, returning them
+					if (currRev->data || currRev->fdcStatus.DescribesMissingDam()) // A|B, A = some data exist, B = reattempting to read the DAM-less Sector only if automatic recovery desired
+						if (currRev->fdcStatus.IsWithoutError() || !silentlyRecoverFromErrors) // A|B, A = returning error-free data, B = settling with any data if automatic recovery not desired
+							break;
+					// : attempting next disk Revolution to retrieve healthy Data
+					if (usableSectorLength!=0){ // e.g. Sector with LengthCode 167 has no data
+						::free(currRev->data), currRev->data=nullptr;
+						if (rev<pis->nRevolutions){
+							// wanted particular EXISTING Revolution
+							pit->ReadSector( *pis, pis->nRevolutions>1?rev:0 );
+							break;
+						}else if (rev<Revolution::MAX)
+							// wanted particular NONEXISTING Revolution
+							ASSERT(FALSE); // we shouldn't end up here!
+						else{
+							// wanted any Revolution
 							if (++pis->currentRevolution>=pis->nRevolutions)
 								pis->currentRevolution=0;
 							currRev=pis->revolutions+pis->currentRevolution;
-						}while (currRev->idEndTime<=0);
-						pit->ReadSector( *pis, pis->currentRevolution );
+							if (currRev->idEndTime>0) // Sector found in CurrentRevolution?
+								pit->ReadSector( *pis, pis->currentRevolution );
+						}
 					}
 				}
 				// . returning (any) Data
-				goto returnData;
+				*outFdcStatuses++=currRev->fdcStatus;
+				*outBufferData++=currRev->data;
+				*outBufferLengths++=usableSectorLength;
 			}
 		else
 invalidTrack:

@@ -262,7 +262,7 @@ terminateWithError:
 						p.nTrials=1;
 					chsPrev=p.chs;
 					LOG_SECTOR_ACTION(&p.chs.sectorId,_T("reading"));
-					bufferSectorData[s]=dp.source->GetSectorData( p.chs, s, true, bufferLength+s, bufferFdcStatus+s );
+					bufferSectorData[s]=dp.source->GetSectorData( p.chs, Revolution::NEXT, s, true, bufferLength+s, bufferFdcStatus+s );
 					// : reporting SourceSector Exclusion
 					p.exclusion.current|= p.exclusion.allUnknown && dp.dos->GetSectorStatus(p.chs)==CDos::TSectorStatus::UNKNOWN;
 					if (p.exclusion.current){
