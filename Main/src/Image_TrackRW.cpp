@@ -147,10 +147,12 @@
 		// returns first bit not yet read
 		// - if we just crossed an IndexPulse, resetting the Profile
 		if (currentTime>=indexPulses[iNextIndexPulse]){
-			if (resetDecoderOnIndex)
+			if (resetDecoderOnIndex){
 				profile.Reset();
-			const TLogTime indexTime=indexPulses[ iNextIndexPulse++ ];
-			currentTime=indexTime + (currentTime-indexTime+profile.iwTimeDefault-1)/profile.iwTimeDefault*profile.iwTimeDefault;
+				const TLogTime indexTime=indexPulses[ iNextIndexPulse++ ];
+				currentTime=indexTime + (currentTime-indexTime+profile.iwTimeDefault-1)/profile.iwTimeDefault*profile.iwTimeDefault;
+			}else
+				iNextIndexPulse++;
 		}
 		// - reading next bit
 		switch (method){
