@@ -15,8 +15,7 @@
 
 	CMainWindow::CTdiTemplate::~CTdiTemplate(){
 		// dtor
-		if (m_pOnlyDoc)
-			delete m_pOnlyDoc;
+		__closeDocument__();
 	}
 
 
@@ -42,7 +41,9 @@
 				TDI_INSTANCE->__closeAllTabsOfFocusedDos__();
 				( (CFrameWnd *)app.m_pMainWnd )->OnUpdateFrameTitle(FALSE); // updating the MainWindow's title (now without document)
 			}
-			m_pOnlyDoc->OnCloseDocument();
+			if (const PImage image=CImage::GetActive())
+				if (image->dos)
+					delete image->dos, image->dos=nullptr;
 			delete m_pOnlyDoc, m_pOnlyDoc=nullptr;
 		}
 		return true;
