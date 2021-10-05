@@ -16,7 +16,10 @@
 		// - recognition attempt
 		if (const PCBootSector boot=TBootSector::GetData(image))
 			if (boot->IsValid()){
-				if (!image->properties->IsRealDevice()) // if this is NOT a real Device ...
+				if (!image->properties->IsRealDevice() // if this is NOT a real Device ...
+					&&
+					!image->ReadTrack(TBootSector::CHS.cylinder,TBootSector::CHS.head) // ... and NOT an Image that maintains Track timing ...
+				)
 					if (boot->nSectorsPerTrack>BSDOS_SECTOR_NUMBER_LAST/2)
 						fmt.mediumType=Medium::FLOPPY_HD_350; // ... estimating the MediumType from BootSector
 				fmt.nCylinders=boot->nCylinders;
