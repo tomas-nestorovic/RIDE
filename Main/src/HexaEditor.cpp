@@ -267,6 +267,7 @@
 	void CHexaEditor::Update(CFile *f){
 		// updates the underlying File content
 		locker.Lock();
+			F=nullptr; // anything previously set is now invalid
 			if (!( pContentAdviser=dynamic_cast<PContentAdviser>(  F=f  ) ))
 				pContentAdviser=&DefaultContentAdviser;
 			SetLogicalSize(F->GetLength());
@@ -276,8 +277,9 @@
 	void CHexaEditor::Update(CFile *f,int minFileSize,int maxFileSize){
 		// updates the underlying File content
 		locker.Lock();
-			Update( f );
+			F=nullptr; // anything previously set is now invalid
 			SetLogicalBounds( minFileSize, maxFileSize );
+			Update( f );
 			if (::IsWindow(m_hWnd)){ // may be window-less if the owner is window-less
 				__refreshVertically__();
 				Invalidate(FALSE);
@@ -306,7 +308,8 @@
 				minFileSize = update.minFileSize = _minFileSize; // setting also Update just in case the cursor is in non-client area
 				maxFileSize = update.maxFileSize = _maxFileSize;
 				if (::IsWindow(m_hWnd)) // may be window-less if the owner is window-less
-					__refreshVertically__();
+					if (F)
+						__refreshVertically__();
 			}
 		locker.Unlock();
 	}
