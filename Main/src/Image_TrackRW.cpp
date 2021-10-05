@@ -561,17 +561,20 @@
 		// attempts to read specified amount of Bytes into the Buffer, starting at position pointed to by the BitReader
 		SetCurrentTimeAndProfile( idEndTime, idEndProfile );
 		TFdcStatus st=TFdcStatus::NoDataField; // assumption
-		switch (codec){
-			case Codec::FM:
-				st=ReadDataFm( nBytesToRead, pOutParseEvents );
-				break;
-			case Codec::MFM:
-				st=ReadDataMfm( nBytesToRead, pOutParseEvents );
-				break;
-			default:
-				ASSERT(FALSE); // we shouldn't end up here - all Codecs should be included in the Switch statement!
-				break;
-		}
+		const bool rdoi0=resetDecoderOnIndex;
+		resetDecoderOnIndex=false; // never reset when reading data
+			switch (codec){
+				case Codec::FM:
+					st=ReadDataFm( nBytesToRead, pOutParseEvents );
+					break;
+				case Codec::MFM:
+					st=ReadDataMfm( nBytesToRead, pOutParseEvents );
+					break;
+				default:
+					ASSERT(FALSE); // we shouldn't end up here - all Codecs should be included in the Switch statement!
+					break;
+			}
+		resetDecoderOnIndex=rdoi0; // recover the original setting
 		return st;
 	}
 
@@ -1261,15 +1264,22 @@
 	WORD CImage::CTrackReaderWriter::WriteData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToWrite,PCBYTE buffer,TFdcStatus sr){
 		// attempts to write specified amount of Bytes in the Buffer, starting after specified IdEndTime; returns the number of Bytes actually written
 		SetCurrentTimeAndProfile( idEndTime, idEndProfile );
-		switch (codec){
-			case Codec::FM:
-				return WriteDataFm( nBytesToWrite, buffer, sr );
-			case Codec::MFM:
-				return WriteDataMfm( nBytesToWrite, buffer, sr );
-			default:
-				ASSERT(FALSE); // we shouldn't end up here - all Codecs should be included in the Switch statement!
-				return 0;
-		}
+		WORD nBytesWritten=0; // assumption (writing failed)
+		const bool rdoi0=resetDecoderOnIndex;
+		resetDecoderOnIndex=false; // never reset when reading data
+			switch (codec){
+				case Codec::FM:
+					nBytesWritten=WriteDataFm( nBytesToWrite, buffer, sr );
+					break;
+				case Codec::MFM:
+					nBytesWritten=WriteDataMfm( nBytesToWrite, buffer, sr );
+					break;
+				default:
+					ASSERT(FALSE); // we shouldn't end up here - all Codecs should be included in the Switch statement!
+					break;
+			}
+		resetDecoderOnIndex=rdoi0; // recover the original setting
+		return nBytesWritten;
 	}
 
 	static DWORD InterpolateTimes(PLogTime logTimes,DWORD nLogTimes,TLogTime tSrcA,DWORD iSrcA,TLogTime tSrcZ,TLogTime tDstA,TLogTime tDstZ){

@@ -393,7 +393,7 @@
 		protected:
 			const PLogTime logTimes; // absolute logical times since the start of recording
 			const TDecoderMethod method;
-			const bool resetDecoderOnIndex;
+			bool resetDecoderOnIndex;
 			DWORD iNextTime,nLogTimes;
 			TLogTime indexPulses[Revolution::MAX+1];
 			BYTE iNextIndexPulse,nIndexPulses;
