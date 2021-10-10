@@ -167,34 +167,6 @@
 		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
 		TDumpParams &dp=*(TDumpParams *)pAction->GetParams();
 		pAction->SetProgressTarget( dp.cylinderZ+1-dp.cylinderA );
-		// - setting geometry to the TargetImage
-		const struct TDeducedSides sealed{
-			bool ambigous; // multiple Side numbers on a single Track?
-			TSide map[(THead)-1];
-			TDeducedSides(PCImage source)
-				: ambigous(false) {
-				for( THead head=0; head<source->GetHeadCount(); head++ ){
-					TSectorId ids[(TSector)-1];
-					if (TSector nSectors=source->ScanTrack( 0, head, nullptr, ids )){
-						for( map[head]=ids->side; nSectors>0; )
-							if ( ambigous|=ids[--nSectors].side!=map[head] )
-								break;
-					}else
-						ambigous=true;
-				}
-			}
-		} deducedSides(dp.source);
-		TSector nSectors=dp.source->ScanTrack(0,0);
-		const TFormat targetGeometry={ dp.mediumType, dp.dos->formatBoot.codecType, dp.cylinderZ+1, dp.nHeads, nSectors, dp.dos->formatBoot.sectorLengthCode, dp.dos->formatBoot.sectorLength, 1 };
-		const PCSide sideMap =	dp.source->GetSideMap() // if Source explicitly defines Sides ...
-								? dp.source->GetSideMap() // ... adopt them
-								: !deducedSides.ambigous // if unique Sides can be deduced from the first Cylinder ...
-								? deducedSides.map // ... adopt them
-								: dp.dos->sideMap; // otherwise adopt Sides defined by the DOS
-		TStdWinError err=dp.target->SetMediumTypeAndGeometry( &targetGeometry, sideMap, dp.dos->properties->firstSectorNumber );
-		if (err!=ERROR_SUCCESS)
-terminateWithError:
-			return LOG_ERROR(pAction->TerminateWithError(err));
 		dp.target->SetPathName( dp.targetFileName, FALSE );
 		// - dumping
 		const TDumpParams::TSourceTrackErrors **ppSrcTrackErrors=&dp.pOutErroneousTracks;
@@ -224,7 +196,7 @@ terminateWithError:
 				p.track=p.chs.GetTrackNumber(dp.nHeads);
 				// . scanning Source Track
 				TSectorId bufferId[(TSector)-1];	WORD bufferLength[(TSector)-1];
-				Codec::TType sourceCodec;
+				Codec::TType sourceCodec; TSector nSectors; TStdWinError err;
 {LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("scanning source"));
 				nSectors=dp.source->ScanTrack(p.chs.cylinder,p.chs.head,&sourceCodec,bufferId,bufferLength);
 }
@@ -608,7 +580,7 @@ errorDuringWriting:				TCHAR buf[80];
 					case ERROR_NOT_SUPPORTED:
 						break; // writings to the Target Image will be saved later via CImage::OnSaveDocument
 					default:
-						goto terminateWithError;
+terminateWithError:		return LOG_ERROR(pAction->TerminateWithError(err));
 				}
 				// . registering Track with ErroneousSectors
 //Utils::Information("registering Track with ErroneousSectors");
@@ -957,6 +929,32 @@ setDestination:						// : compacting FileName in order to be better displayable 
 				err=ERROR_CANCELLED;
 				goto error;
 			}
+			// . setting geometry to the Target Image
+			const struct TDeducedSides sealed{
+				bool ambigous; // multiple Side numbers on a single Track?
+				TSide map[(THead)-1];
+				TDeducedSides(PCImage source)
+					: ambigous(false) {
+					for( THead head=0; head<source->GetHeadCount(); head++ ){
+						TSectorId ids[(TSector)-1];
+						if (TSector nSectors=source->ScanTrack( 0, head, nullptr, ids )){
+							for( map[head]=ids->side; nSectors>0; )
+								if ( ambigous|=ids[--nSectors].side!=map[head] )
+									break;
+						}else
+							ambigous=true;
+					}
+				}
+			} deducedSides(dos->image);
+			TSector nSectors=dos->image->ScanTrack(0,0);
+			const TFormat targetGeometry={ d.dumpParams.mediumType, dos->formatBoot.codecType, d.dumpParams.cylinderZ+1, d.dumpParams.nHeads, nSectors, dos->formatBoot.sectorLengthCode, dos->formatBoot.sectorLength, 1 };
+			const PCSide sideMap =	dos->image->GetSideMap() // if Source explicitly defines Sides ...
+									? dos->image->GetSideMap() // ... adopt them
+									: !deducedSides.ambigous // if unique Sides can be deduced from the first Cylinder ...
+									? deducedSides.map // ... adopt them
+									: dos->sideMap; // otherwise adopt Sides defined by the DOS
+			if ( err=d.dumpParams.target->SetMediumTypeAndGeometry( &targetGeometry, sideMap, dos->properties->firstSectorNumber ) )
+				goto error;
 			// . dumping
 			{CBackgroundMultiActionCancelable bmac( d.realtimeThreadPriority ? THREAD_PRIORITY_TIME_CRITICAL : THREAD_PRIORITY_NORMAL );
 				bmac.AddAction( __dump_thread__, &d.dumpParams, _T("Dumping to target") );
