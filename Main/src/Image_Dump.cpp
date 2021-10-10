@@ -803,7 +803,10 @@ setDestination:						// : compacting FileName in order to be better displayable 
 									pBtnFile->SetWindowText(buf);
 									// : populating ComboBox with Media supported by both DOS and Image
 									BYTE nCompatibleMedia;
-									if (dos->formatBoot.mediumType&Medium::FLOPPY_ANY)
+									if (dos->formatBoot.mediumType!=Medium::UNKNOWN
+										&&
+										(dos->formatBoot.mediumType&Medium::FLOPPY_ANY)!=0
+									)
 										// source Image is a floppy - enabling dumping to any kind of a floppy (motivation: some copy-protection schemes feature misleading information on the kind of floppy; e.g., "Teen Agent" [or "Agent mlicnak"] installation disk #2 and #3 are introduced as 2DD floppies while they really are HD!)
 										nCompatibleMedia=PopulateComboBoxWithCompatibleMedia(
 											GetDlgItemHwnd(ID_MEDIUM),
@@ -811,7 +814,7 @@ setDestination:						// : compacting FileName in order to be better displayable 
 											targetImageProperties
 										);
 									else
-										// source Image is a hard-disk
+										// source Image is anything else
 										nCompatibleMedia=PopulateComboBoxWithCompatibleMedia(
 											GetDlgItemHwnd(ID_MEDIUM),
 											dos->formatBoot.mediumType,

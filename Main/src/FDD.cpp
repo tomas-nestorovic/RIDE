@@ -1214,7 +1214,10 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 			return LOG_ERROR(err);
 		// - setting the transfer speed according to current FloppyType (DD/HD)
 		__freeInternalTracks__();
-		if (floppyType&Medium::FLOPPY_ANY) // set in base method to "pFormat->mediumType"
+		if (floppyType!=Medium::UNKNOWN
+			&&
+			(floppyType&Medium::FLOPPY_ANY)!=0 // set in base method to "pFormat->mediumType"
+		)
 			// determining if corresponding FloppyType is inserted
 			return __setDataTransferSpeed__(floppyType);
 		else{
