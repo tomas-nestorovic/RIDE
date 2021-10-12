@@ -15,6 +15,7 @@
 
 	CMainWindow::CTdiTemplate::~CTdiTemplate(){
 		// dtor
+		m_pOnlyDoc->SetModifiedFlag(FALSE); // don't ask about saving modified Image
 		__closeDocument__();
 	}
 
