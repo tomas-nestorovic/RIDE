@@ -199,6 +199,7 @@ namespace Utils{
 		CRideDialog(LPCTSTR lpszTemplateName,CWnd *pParentWnd=nullptr);
 		CRideDialog(UINT nIDTemplate,CWnd *pParentWnd=nullptr);
 
+		INT_PTR DoModal() override;
 		HWND GetDlgItemHwnd(WORD id) const;
 		bool EnableDlgItem(WORD id,bool enabled=true) const;
 		bool EnableDlgItems(PCWORD pIds,bool enabled) const;
