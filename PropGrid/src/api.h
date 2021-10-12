@@ -80,6 +80,8 @@
 
 		namespace Integer{
 			typedef const struct PROPGRID_DECLSPEC TUpDownLimits sealed{
+				static const TUpDownLimits Byte; // 0..255
+				static const TUpDownLimits Word; // 0..65535
 				static const TUpDownLimits PositiveByte; // 1..255
 				static const TUpDownLimits PositiveWord; // 1..65535
 				static const TUpDownLimits PositiveInteger; // 1..INT_MAX

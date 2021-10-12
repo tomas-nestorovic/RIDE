@@ -107,6 +107,8 @@
 
 
 
+	const PropGrid::Integer::TUpDownLimits PropGrid::Integer::TUpDownLimits::Byte={ 0, (BYTE)-1 };
+	const PropGrid::Integer::TUpDownLimits PropGrid::Integer::TUpDownLimits::Word={ 0, (WORD)-1 };
 	const PropGrid::Integer::TUpDownLimits PropGrid::Integer::TUpDownLimits::PositiveByte={ 1, (BYTE)-1 };
 	const PropGrid::Integer::TUpDownLimits PropGrid::Integer::TUpDownLimits::PositiveWord={ 1, (WORD)-1 };
 	const PropGrid::Integer::TUpDownLimits PropGrid::Integer::TUpDownLimits::PositiveInteger={ 1, INT_MAX };
@@ -124,8 +126,7 @@
 
 	PropGrid::PCEditor PropGrid::Integer::DefineByteEditor(TOnValueConfirmed onValueConfirmed,BYTE features,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
-		static constexpr TUpDownLimits limits={ 0, (BYTE)-1 };
-		return DefineEditor( sizeof(BYTE), limits, onValueConfirmed, features, onValueChanged );
+		return DefineEditor( sizeof(BYTE), TUpDownLimits::Byte, onValueConfirmed, features, onValueChanged );
 	}
 
 	PropGrid::PCEditor PropGrid::Integer::DefinePositiveByteEditor(TOnValueConfirmed onValueConfirmed,BYTE features,TOnValueChanged onValueChanged){
@@ -135,8 +136,7 @@
 
 	PropGrid::PCEditor PropGrid::Integer::DefineWordEditor(TOnValueConfirmed onValueConfirmed,BYTE features,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters
-		static constexpr TUpDownLimits limits={ 0, (WORD)-1 };
-		return DefineEditor( sizeof(WORD), limits, onValueConfirmed, features, onValueChanged );
+		return DefineEditor( sizeof(WORD), TUpDownLimits::Word, onValueConfirmed, features, onValueChanged );
 	}
 
 	PropGrid::PCEditor PropGrid::Integer::DefinePositiveWordEditor(TOnValueConfirmed onValueConfirmed,BYTE features,TOnValueChanged onValueChanged){

@@ -8,10 +8,11 @@
 	#define INI_FEATURES		_T("feats")
 	#define INI_NUMBER_FORMAT	_T("numfmt")
 
-	CSpectrumBase::CAssemblerPreview::CAssemblerPreview(const CFileManagerView &rFileManager,DWORD resourceId,LPCTSTR iniSection)
+	CSpectrumBase::CAssemblerPreview::CAssemblerPreview(const CFileManagerView &rFileManager,WORD orgAddress,bool canRebase,DWORD resourceId,LPCTSTR iniSection)
 		// ctor
 		// - base
 		: CFilePreview(	&contentView, iniSection, rFileManager, PREVIEW_WIDTH_DEFAULT, PREVIEW_HEIGHT_DEFAULT, false, resourceId )
+		, orgAddress(orgAddress) , canRebase(canRebase)
 		, contentView(_T(""))
 		, numberFormat( (TNumberFormat)app.GetProfileInt(iniSection,INI_NUMBER_FORMAT,TNumberFormat::HexaHashtag) ) {
 		// - initialization
@@ -30,7 +31,7 @@
 	CSpectrumBase::CAssemblerPreview *CSpectrumBase::CAssemblerPreview::CreateInstance(const CFileManagerView &rFileManager){
 		// creates and returns a new instance
 		ASSERT( pSingleInstance==nullptr );
-		pSingleInstance=new CAssemblerPreview( rFileManager );
+		pSingleInstance=new CAssemblerPreview( rFileManager, 0, true );
 		pSingleInstance->__showNextFile__();
 		return pSingleInstance;
 	}
@@ -806,13 +807,12 @@
 		}
 	}
 
-	void CSpectrumBase::CAssemblerPreview::ParseZ80BinaryFileAndShowContent(CFile &fIn,WORD orgAddress){
+	void CSpectrumBase::CAssemblerPreview::ParseZ80BinaryFileAndShowContent(CFile &fIn){
 		// generates HTML-formatted Z80 instruction listing of the input File into a temporary file, and then shows it
 		// - generating the HTML-formatted content
 		CFile f( tmpFileName, CFile::modeWrite|CFile::modeCreate );
 			Utils::WriteToFileFormatted( f, _T("<html><body style=\"background-color:#%06x\">"), *(PCINT)&Colors[7] );
 				constantInput.pfIn=&fIn; // remembering the input file for Content refresh
-				constantInput.orgAddress=orgAddress;
 				const auto fInPos=fIn.GetPosition();
 					ParseZ80BinaryFileAndGenerateHtmlFormattedContent( fIn, orgAddress, f );
 				fIn.Seek( fInPos, CFile::begin );
@@ -825,7 +825,7 @@
 	void CSpectrumBase::CAssemblerPreview::RefreshPreview(){
 		// refreshes the Preview (e.g. when switched to another File)
 		if (constantInput.pfIn!=nullptr)
-			ParseZ80BinaryFileAndShowContent( *constantInput.pfIn, constantInput.orgAddress );
+			ParseZ80BinaryFileAndShowContent( *constantInput.pfIn );
 		else if (const PCFile file=pdt->entry){
 			// . creating the File reader
 			CFileReaderWriter frw(DOS,pdt->entry);
@@ -839,20 +839,17 @@
 				_tcsrchr( DOS->GetFileExportNameAndExt(file,false), ' ' ),
 				uft, params, tmp
 			);
-			WORD orgAddress;
-			switch (uft){
-				case TUniFileType::PROGRAM:
-					orgAddress=ZX_BASIC_START_ADDR;
-					break;
-				case TUniFileType::BLOCK:
-				case TUniFileType::SCREEN:
-					orgAddress=params.param1;
-					break;
-				default:
-					orgAddress=0;
-					break;
-			}
-			ParseZ80BinaryFileAndShowContent( frw, orgAddress );
+			if (!orgAddress)
+				switch (uft){
+					case TUniFileType::PROGRAM:
+						orgAddress=ZX_BASIC_START_ADDR;
+						break;
+					case TUniFileType::BLOCK:
+					case TUniFileType::SCREEN:
+						orgAddress=params.param1;
+						break;
+				}
+			ParseZ80BinaryFileAndShowContent( frw );
 			constantInput.pfIn=nullptr; // the FileReaderWriter is a local object not to be remembered
 			// . updating the window caption
 			CString caption;
@@ -900,6 +897,9 @@
 						((CCmdUI *)pExtra)->Enable(TRUE);
 						((CCmdUI *)pExtra)->SetCheck( nID-ID_DEFAULT1 == numberFormat );
 						return TRUE;
+					case ID_BOOT:
+						((CCmdUI *)pExtra)->Enable(canRebase);
+						return TRUE;
 					case ID_NEXT:
 					case ID_PREV:
 						if (constantInput.pfIn!=nullptr){
@@ -943,6 +943,18 @@
 						numberFormat=(TNumberFormat)(nID-ID_DEFAULT1);
 						RefreshPreview();
 						return TRUE;
+					case ID_BOOT:{
+						if (const Utils::CSingleNumberDialog &&d=Utils::CSingleNumberDialog(
+								_T("Rebase"),
+								_T("New base (0=default):"),
+								PropGrid::Integer::TUpDownLimits::Word, orgAddress, this
+							)
+						){
+							orgAddress=d.Value;
+							RefreshPreview();
+						}
+						return TRUE;
+					}
 				}
 				break;
 		}

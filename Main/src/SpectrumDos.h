@@ -68,13 +68,14 @@
 			} numberFormat;
 			struct{
 				CFile *pfIn;
-				WORD orgAddress;
 			} constantInput;
+			WORD orgAddress;
 		protected:
+			const bool canRebase;
 			TCHAR tmpFileName[MAX_PATH];
 			CWebPageView contentView;
 
-			CAssemblerPreview(const CFileManagerView &rFileManager,DWORD resourceId=IDR_SPECTRUM_PREVIEW_ASSEMBLER,LPCTSTR iniSection=_T("ZxZ80"));
+			CAssemblerPreview(const CFileManagerView &rFileManager,WORD orgAddress=0,bool canRebase=false,DWORD resourceId=IDR_SPECTRUM_PREVIEW_ASSEMBLER,LPCTSTR iniSection=_T("ZxZ80"));
 
 			void ParseZ80BinaryFileAndGenerateHtmlFormattedContent(CFile &fIn,WORD orgAddress,CFile &f,bool smallerHeading=false) const;
 			void RefreshPreview() override;
@@ -86,7 +87,7 @@
 
 			~CAssemblerPreview();
 
-			void ParseZ80BinaryFileAndShowContent(CFile &fIn,WORD orgAddress);
+			void ParseZ80BinaryFileAndShowContent(CFile &fIn);
 		};
 
 		class CBasicPreview sealed:public CAssemblerPreview{

@@ -14,7 +14,7 @@
 	CSpectrumBase::CBasicPreview::CBasicPreview(const CFileManagerView &rFileManager)
 		// ctor
 		// - base
-		: CAssemblerPreview( rFileManager, IDR_SPECTRUM_PREVIEW_BASIC, INI_PREVIEW )
+		: CAssemblerPreview( rFileManager, 0, false, IDR_SPECTRUM_PREVIEW_BASIC, INI_PREVIEW )
 		, machineCodeMenu(IDR_SPECTRUM_PREVIEW_ASSEMBLER)
 		, dataAfterBasic( (TDataAfterBasic)app.GetProfileInt(INI_PREVIEW,INI_INTERPRET_PAST_BASIC,TDataAfterBasic::SHOW_AS_VARIABLES) )
 		, binaryAfter0x14( (TBinaryAfter0x14)app.GetProfileInt(INI_PREVIEW,INI_SHOW_INTERNAL_BINARY,TBinaryAfter0x14::DONT_SHOW) ) {
