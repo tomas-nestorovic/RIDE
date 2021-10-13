@@ -7,6 +7,8 @@
 
 	class CTrackMapView sealed:public CScrollView{
 		DECLARE_MESSAGE_MAP()
+	public:
+		const CMainWindow::CTdiView::TTab tab;
 	private:
 		int iScrollX, iScrollY; // ScrollBar position
 		struct TTrackLength sealed{
@@ -31,6 +33,7 @@
 		struct TTrackScanner sealed{
 			static UINT AFX_CDECL __thread__(PVOID _pBackgroundAction);
 			const CBackgroundAction action;
+			const THead nHeads;
 			bool wantTerminate;
 			struct TParams sealed{
 				CCriticalSection criticalSection;
@@ -77,8 +80,6 @@
 		afx_msg void __changeFileSelectionColor__();
 		afx_msg void __showDiskStatistics__();
 	public:
-		const CMainWindow::CTdiView::TTab tab;
-
 		CTrackMapView(PDos _dos);
 		~CTrackMapView();
 

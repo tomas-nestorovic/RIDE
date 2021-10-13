@@ -34,6 +34,7 @@
 	CTrackMapView::TTrackScanner::TTrackScanner(const CTrackMapView *pvtm)
 		// ctor
 		: action( __thread__, pvtm, THREAD_PRIORITY_IDLE )
+		, nHeads( pvtm->tab.dos->image->GetHeadCount() )
 		, wantTerminate(false) {
 	}
 
@@ -217,7 +218,7 @@
 		TTrackScanner &rts=pvtm->scanner;
 		const PImage image=pvtm->IMAGE;
 		const Utils::CByteIdentity sectorIdAndPositionIdentity;
-		for( TTrackInfo ti; const THead nHeads=image->GetHeadCount(); ){ // "nHeads==0" if disk without any Track (e.g. when opening RawImage of zero length, or if opening a corrupted DSK Image)
+		for( TTrackInfo ti; rts.nHeads>0; ){ // "nHeads==0" if disk without any Track (e.g. when opening RawImage of zero length, or if opening a corrupted DSK Image)
 			// . waiting for request to scan the next Track
 			rts.scanNextTrack.Lock();
 			// . getting the TrackNumber to scan
@@ -227,7 +228,7 @@
 			rts.params.criticalSection.Unlock();
 			if (wantTerminate)
 				break;
-			const div_t d=div(trackNumber,nHeads);
+			const div_t d=div(trackNumber,rts.nHeads);
 			// . scanning the Track to draw its Sector Statuses
 			ti.cylinder=d.quot, ti.head=d.rem;
 			//if (pvtm->displayType==TDisplayType::STATUS) // commented out because this scanning always needed
