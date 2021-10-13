@@ -152,6 +152,11 @@ error:				f.Close();
 						goto error;
 					*(TSclDirectoryItem *)file=*pdi;
 				}
+				// : making sure the proper disposal of the DOS isn't blocked by this method
+				//TODO: This can be removed once all Views that work only with the Image (e.g. TrackMap) are members of the Image, not of the DOS
+				this->locker.Unlock();
+					pTrdos.reset();
+				this->locker.Lock();
 			}else
 				// not recognized as TRDOS 5.0x Image
 				return Utils::ErrorByOs( ERROR_VHD_FORMAT_UNKNOWN, ERROR_UNRECOGNIZED_MEDIA );
