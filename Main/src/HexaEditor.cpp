@@ -1223,7 +1223,6 @@ leftMouseDragged:
 			}
 			case WM_LBUTTONDBLCLK:{
 				// left mouse button double-clicked
-				if (!editable) break; // if window NotEditable, ignoring any mouse events and just focusing the window to receive MouseWheel messages
 				const int logPos=__logicalPositionFromPoint__(CPoint(lParam),&caret.ascii);
 				if (logPos>=0){
 					// in either Hexa or Ascii areas
