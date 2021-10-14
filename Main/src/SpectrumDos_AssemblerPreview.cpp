@@ -946,7 +946,7 @@
 					case ID_BOOT:{
 						if (const Utils::CSingleNumberDialog &&d=Utils::CSingleNumberDialog(
 								_T("Rebase"),
-								_T("New base (0=default):"),
+								_T("New base (0=default)"),
 								PropGrid::Integer::TUpDownLimits::Word, orgAddress, this
 							)
 						){

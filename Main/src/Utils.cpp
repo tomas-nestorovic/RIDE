@@ -1336,8 +1336,12 @@ namespace Utils{
 		// dialog initialization
 		__super::PreInitDialog();
 		SetWindowText(caption);
+		const int nLabelChars=::lstrlen(label);
 		TCHAR buf[200];
-		::wsprintf( buf, _T("%s (%d - %d):"), label, range.iMin, range.iMax );
+		if (label[nLabelChars-1]==')'){ // Label finishes with text enclosed in brackets
+			::wsprintf( ::lstrcpy(buf,label)+nLabelChars-1, _T("; %d - %d):"), range.iMin, range.iMax );
+		}else
+			::wsprintf( buf, _T("%s (%d - %d):"), label, range.iMin, range.iMax );
 		SetDlgItemText( ID_INFORMATION, buf );
 	}
 
