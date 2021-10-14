@@ -383,8 +383,8 @@
 							const CDos::CFatPath fatPath( DOS, pFileManager->GetNextSelectedFile(pos) );
 							CDos::CFatPath::PCItem item; DWORD n;
 							if (!fatPath.GetItems(item,n)) // FatPath valid
-								for( const THead nHeads=IMAGE->GetHeadCount(); n--; item++ )
-									if (trackNumber==item->chs.GetTrackNumber(nHeads)){
+								for( ; n--; item++ )
+									if (trackNumber==item->chs.GetTrackNumber(scanner.nHeads)){
 										// this Sector (in currently drawn Track) belongs to one of selected Files
 										TSector s=0;
 										for( PCSectorId pRefId=&item->chs.sectorId; s<rti.nSectors; s++ )
@@ -498,7 +498,7 @@
 			}
 			// . determining the Sector on which the cursor hovers
 			const TTrack track=point.y/TRACK_HEIGHT;
-			const div_t d=div( track, IMAGE->GetHeadCount() );
+			const div_t d=div( track, scanner.nHeads );
 			TSectorId bufferId[(TSector)-1];
 			WORD bufferLength[(TSector)-1];
 			TLogTime bufferStarts[(TSector)-1];
@@ -534,7 +534,7 @@
 		}
 		if (cursorOverSector)
 			// cursor over a Sector
-			::wsprintf( p, _T("Tr%d, %s: %s"), chs.GetTrackNumber(IMAGE->GetHeadCount()), (LPCTSTR)chs.sectorId.ToString(), DOS->GetSectorStatusText(chs) );
+			::wsprintf( p, _T("Tr%d, %s: %s"), chs.GetTrackNumber(scanner.nHeads), (LPCTSTR)chs.sectorId.ToString(), DOS->GetSectorStatusText(chs) );
 		CMainWindow::__setStatusBarText__(buf);
 	}
 
@@ -546,7 +546,7 @@
 				// clicked on a Track
 				if (app.IsInGodMode())
 					if (const auto tr=IMAGE->ReadTrack( chs.cylinder, chs.head ))
-						tr.ShowModal( _T("Track %d  (Cyl=%d, Head=%d)"), chs.GetTrackNumber(IMAGE->GetHeadCount()), chs.cylinder, chs.head );
+						tr.ShowModal( _T("Track %d  (Cyl=%d, Head=%d)"), chs.GetTrackNumber(scanner.nHeads), chs.cylinder, chs.head );
 				break;
 			case TCursorPos::SECTOR:
 				// clicked on a Sector
@@ -614,7 +614,7 @@
 			case ID_HEAD:
 				// display low-level Track timing
 				if (const auto tr=IMAGE->ReadTrack( chs.cylinder, chs.head ))
-					tr.ShowModal( _T("Track %d  (Cyl=%d, Head=%d)"), chs.GetTrackNumber(IMAGE->GetHeadCount()), chs.cylinder, chs.head );
+					tr.ShowModal( _T("Track %d  (Cyl=%d, Head=%d)"), chs.GetTrackNumber(scanner.nHeads), chs.cylinder, chs.head );
 				break;
 		}
 	}
