@@ -72,7 +72,7 @@
 		params=propDos->stdFormats->params, params.format.mediumType=Medium::UNKNOWN, params.format.codecType=Codec::ANY; // initialization using the first StandardFormat (eventually a Custom one)
 		__onMediumOrEncodingChanged__();
 		// - adjusting interactivity
-		const bool bootSectorAlreadyExists=((CMainWindow *)app.m_pMainWnd)->pTdi->__getCurrentTab__()!=nullptr;
+		const bool bootSectorAlreadyExists=((CMainWindow *)app.m_pMainWnd)->pTdi->GetCurrentTab()!=nullptr;
 		EnableDlgItem( ID_CYLINDER, bootSectorAlreadyExists );
 		static constexpr WORD Controls[]={ ID_MEDIUM, ID_CLUSTER, ID_FAT, ID_DIRECTORY, 0 };
 		EnableDlgItems( Controls, !bootSectorAlreadyExists );

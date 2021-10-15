@@ -36,7 +36,7 @@
 		// - base
 		: CDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS, &Properties, nullptr, image->GetSideMap()?image->GetSideMap():StdSidesMap, IDR_DOS_UNKNOWN, nullptr, TGetFileSizeOptions::OfficialDataLength, TSectorStatus::UNKNOWN )
 		// - initialization
-		, trackMap(this) {
+		, trackMap(image) {
 	}
 
 

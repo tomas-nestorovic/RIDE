@@ -70,11 +70,14 @@
 			typedef CView *PView;
 
 			typedef struct TTab sealed{
-				const PDos dos; // DOS that gets into focus when switched to this Tab (e.g. CSpectrumDos::CTape)
+				const PImage image; // the Image that gets into focus when switched to this Tab (e.g. CSpectrumDos::CTape)
 				const CDynMenu menu;
 				const PView view;
 				CDockableToolBar toolbar;
-				TTab(UINT nMenuResId,UINT nToolbarResId,UINT nToolBarId,PDos _dos,PView _view); // ctor
+
+				TTab(UINT nMenuResId,UINT nToolbarResId,UINT nToolBarId,PImage image,PView _view);
+
+				inline bool IsPartOfImage() const{ return image!=nullptr; } // True <=> the Tab is part of an Image (e.g. a WebPage usually isn't), otherwise False
 			} *PTab;
 		private:
 			static void WINAPI __fnShowContent__(PVOID pTdi,LPCVOID pTab);
@@ -92,7 +95,7 @@
 			CTdiView();
 
 			void __closeAllTabsOfFocusedDos__();
-			PTab __getCurrentTab__() const;
+			inline PTab GetCurrentTab() const{ return pCurrentTab; }
 			void RepopulateGuidePost() const;
 		} *pTdi;
 

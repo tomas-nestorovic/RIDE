@@ -22,8 +22,8 @@
 
 
 
-	#define DOS tab.dos
-	#define IMAGE	DOS->image
+	#define IMAGE	tab.image
+	#define DOS		IMAGE->dos
 
 	PTCHAR CSpectrumBase::CSpectrumBaseFileManagerView::GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant,PTCHAR pOutBuffer) const{
 		// returns the Buffer populated with the export name and extension of the next File's copy in current Directory; returns Null if no further name and extension can be generated

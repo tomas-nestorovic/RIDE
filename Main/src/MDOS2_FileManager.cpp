@@ -32,7 +32,8 @@
 
 
 
-	#define DOS	tab.dos
+	#define IMAGE	tab.image
+	#define DOS		IMAGE->dos
 
 	#define GKFM_ICON_BYTES_COUNT	108
 
@@ -251,9 +252,9 @@
 						switch (resolution){
 							case IDYES:{
 								// : extracting and importing the archived data contained in the *.D_0 File
-								if (tab.dos->image->IsWriteProtected())
+								if (IMAGE->IsWriteProtected())
 									return ERROR_WRITE_PROTECT;
-								if (const TStdWinError err=ImportFileAndResolveConflicts( &f, f.GetLength()-f.GetPosition(), tab.dos->GetFileExportNameAndExt(&d_0.de,false), 0, TFileDateTime::None, TFileDateTime::None, TFileDateTime::None, rImportedFile, rConflictedSiblingResolution ))
+								if (const TStdWinError err=ImportFileAndResolveConflicts( &f, f.GetLength()-f.GetPosition(), DOS->GetFileExportNameAndExt(&d_0.de,false), 0, TFileDateTime::None, TFileDateTime::None, TFileDateTime::None, rImportedFile, rConflictedSiblingResolution ))
 									return err;
 								TDirectoryEntry &rde=*((PDirectoryEntry)rImportedFile);
 								const TLogSector ls=rde.firstLogicalSector;
@@ -288,9 +289,9 @@
 									switch (resolution>>8){
 										case IDYES:
 											// importing archived Boot Sector and injecting to it actual geometry
-											if (const PBootSector boot=(PBootSector)tab.dos->image->GetHealthySectorData(TBootSector::CHS)){
+											if (const PBootSector boot=(PBootSector)IMAGE->GetHealthySectorData(TBootSector::CHS)){
 												*boot=d_0.boot;
-												tab.dos->FlushToBootSector();
+												DOS->FlushToBootSector();
 												break;
 											}else
 												return ERROR_UNRECOGNIZED_VOLUME;

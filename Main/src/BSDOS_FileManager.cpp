@@ -49,8 +49,8 @@
 
 
 
-	#define DOS		tab.dos
-	#define BSDOS	((CBSDOS308 *)DOS)
+	#define IMAGE	tab.image
+	#define BSDOS	((CBSDOS308 *)IMAGE->dos)
 
 	void CBSDOS308::CBsdos308FileManagerView::OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint){
 		// request to refresh the display of content
@@ -95,7 +95,7 @@
 		// draws Information on File
 		RECT &r=pdis->rcItem;
 		const HDC dc=pdis->hDC;
-		if (DOS->IsDirectory((PCFile)pdis->itemData)){
+		if (BSDOS->IsDirectory((PCFile)pdis->itemData)){
 			// root Directory
 			const CDirsSector::PCSlot slot=(CDirsSector::PCSlot)pdis->itemData;
 			const PCDirectoryEntry de=BSDOS->dirsSector.TryGetDirectoryEntry(slot);

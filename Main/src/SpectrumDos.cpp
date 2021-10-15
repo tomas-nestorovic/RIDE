@@ -5,7 +5,7 @@
 		// - base
 		: CSpectrumBase(image,pFormatBoot,trackAccessScheme,properties,nResId,pFileManager,getFileSizeDefaultOption,unformatFatStatus)
 		// - initialization
-		, trackMap(this)
+		, trackMap(image)
 		// - loading MRU Tapes
 		, mruTapes( 0, INI_SPECTRUM _T("MruTapes"), _T("T%d"), 4 ) {
 		mruTapes.ReadList();
@@ -26,7 +26,8 @@
 
 
 
-	#define DOS tab.dos
+	#define IMAGE	tab.image
+	#define DOS		IMAGE->dos
 
 	#define FORMAT_ADDITIONAL_COUNT	2
 

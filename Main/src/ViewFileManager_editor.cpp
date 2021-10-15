@@ -106,8 +106,8 @@
 
 
 
-	#define DOS		tab.dos
-	#define IMAGE	DOS->image
+	#define IMAGE	tab.image
+	#define DOS		IMAGE->dos
 
 	void CFileManagerView::CValueEditorBase::DrawRedHighlight(LPDRAWITEMSTRUCT pdis){
 		// 

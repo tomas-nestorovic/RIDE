@@ -35,7 +35,8 @@
 
 
 
-	#define DOS	tab.dos
+	#define IMAGE	tab.image
+	#define DOS		IMAGE->dos
 
 	void CGDOS::CGdosFileManagerView::DrawReportModeCell(PCFileInfo pFileInfo,LPDRAWITEMSTRUCT pdis) const{
 		// draws Information on File

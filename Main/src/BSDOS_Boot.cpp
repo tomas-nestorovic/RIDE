@@ -106,7 +106,7 @@
 
 	CBSDOS308::PBootSector CBSDOS308::CBsdosBootView::GetSectorData() const{
 		// attempts to get and eventually returns BS-DOS BootSector data; returns Null if BootSector not found
-		return TBootSector::GetData(tab.dos->image);
+		return TBootSector::GetData(tab.image);
 	}
 
 

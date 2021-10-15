@@ -6,7 +6,7 @@
 		// - base
 		: CSpectrumDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS, &Properties, IDR_BSDOS, &fileManager, TGetFileSizeOptions::OfficialDataLength, TSectorStatus::UNKNOWN )
 		// - initialization
-		, trackMap(this)
+		, trackMap(image)
 		, boot(this)
 		, dirsSector(this)
 		, fileManager(this) {

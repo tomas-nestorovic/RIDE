@@ -83,7 +83,8 @@
 
 
 
-	#define DOS		rFileManager.tab.dos
+	#define IMAGE	rFileManager.tab.image
+	#define DOS		IMAGE->dos
 
 	#define LABEL	_T("Screen$")
 

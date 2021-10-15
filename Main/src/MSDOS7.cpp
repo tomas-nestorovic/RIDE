@@ -13,7 +13,7 @@
 		: CDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS, &Properties, ::lstrcmpi, CDos::StdSidesMap, IDR_MSDOS, &fileManager, TGetFileSizeOptions::OfficialDataLength, TSectorStatus::UNAVAILABLE )
 		// - initialization
 		, fat(*this) , fsInfo(this)
-		, trackMap(this) , boot(this) , fileManager(this)
+		, trackMap(image) , boot(this) , fileManager(this)
 		, dontShowLongFileNames( __getProfileBool__(INI_DONT_SHOW_LONG_NAMES,false) )
 		, dontShowDotEntries( __getProfileBool__(INI_DONT_SHOW_DOT,false) )
 		, dontShowDotdotEntries( __getProfileBool__(INI_DONT_SHOW_DOTDOT,false) ) {

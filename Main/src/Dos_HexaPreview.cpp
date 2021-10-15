@@ -7,8 +7,8 @@
 	#define HEXA_WIDTH	650
 	#define HEXA_HEIGHT	250
 
-	#define DOS		rFileManager.tab.dos
-	#define IMAGE	DOS->image
+	#define IMAGE	rFileManager.tab.image
+	#define DOS		IMAGE->dos
 
 	CDos::CHexaPreview *CDos::CHexaPreview::pSingleInstance;
 

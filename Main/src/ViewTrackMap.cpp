@@ -18,11 +18,14 @@
 
 
 
-	CTrackMapView::CTrackMapView(PDos _dos)
+	#define IMAGE	tab.image
+	#define DOS		IMAGE->dos
+
+	CTrackMapView::CTrackMapView(PImage image)
 		// ctor
 		// - initialization
-		: tab( IDR_TRACKMAP, IDR_TRACKMAP, ID_CYLINDER, _dos, this )
-		, displayType(TDisplayType::STATUS) , showSectorNumbers(false) , showTimed(false) , fitLongestTrackInWindow(false) , showSelectedFiles(_dos->pFileManager!=nullptr) , iScrollX(0) , iScrollY(0) , scanner(this)
+		: tab( IDR_TRACKMAP, IDR_TRACKMAP, ID_CYLINDER, image, this )
+		, displayType(TDisplayType::STATUS) , showSectorNumbers(false) , showTimed(false) , fitLongestTrackInWindow(false) , showSelectedFiles(DOS && DOS->pFileManager!=nullptr) , iScrollX(0) , iScrollY(0) , scanner(this)
 		, fileSelectionColor( app.GetProfileInt(INI_TRACKMAP,INI_FILE_SELECTION_COLOR,::GetSysColor(COLOR_ACTIVECAPTION)) )
 		, longestTrack(0,0) , longestTrackNanoseconds(0)
 		, zoomLengthFactor(3) {
@@ -34,7 +37,7 @@
 	CTrackMapView::TTrackScanner::TTrackScanner(const CTrackMapView *pvtm)
 		// ctor
 		: action( __thread__, pvtm, THREAD_PRIORITY_IDLE )
-		, nHeads( pvtm->tab.dos->image->GetHeadCount() )
+		, nHeads( pvtm->IMAGE->GetHeadCount() )
 		, wantTerminate(false) {
 	}
 
@@ -129,9 +132,6 @@
 
 
 
-
-	#define DOS		tab.dos
-	#define IMAGE	DOS->image
 
 	void CTrackMapView::OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint){
 		// request to refresh the display of content
@@ -592,7 +592,7 @@
 				::wsprintf( caption, _T("Sector %s (%d)"), (LPCTSTR)chs.sectorId.ToString(), nSectorsToSkip );
 				CTdiCtrl::AddTabLast(
 					TDI_HWND, caption,
-					&(new CDiskBrowserView( DOS, chs, nSectorsToSkip ))->tab,
+					&(new CDiskBrowserView( IMAGE, chs, nSectorsToSkip ))->tab,
 					true, TDI_TAB_CANCLOSE_ALWAYS, CDiskBrowserView::OnDiskBrowserViewClosing
 				);
 				break;
@@ -606,7 +606,7 @@
 				chs.sectorId=*ids;
 				CTdiCtrl::AddTabLast(
 					TDI_HWND, caption,
-					&(new CDiskBrowserView( DOS, chs, 0 ))->tab,
+					&(new CDiskBrowserView( IMAGE, chs, 0 ))->tab,
 					true, TDI_TAB_CANCLOSE_ALWAYS, CDiskBrowserView::OnDiskBrowserViewClosing
 				);
 				break;

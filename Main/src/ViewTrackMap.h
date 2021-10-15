@@ -80,7 +80,7 @@
 		afx_msg void __changeFileSelectionColor__();
 		afx_msg void __showDiskStatistics__();
 	public:
-		CTrackMapView(PDos _dos);
+		CTrackMapView(PImage image);
 		~CTrackMapView();
 
 		afx_msg void RefreshDisplay();

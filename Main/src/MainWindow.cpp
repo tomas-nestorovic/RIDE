@@ -168,9 +168,9 @@
 			if (::TranslateAccelerator(m_hWnd,t->menu.hAccel,pMsg))
 				return TRUE;
 			// . pretranslating the Message by accelerators of currently focused DOS (if any; e.g. WebPageView usually isn't associated with any DOS)
-			if (const PCDos dos=t->dos){
+			if (const PCImage image=t->image){
 				// focused DOS (e.g. a ZX Tape)
-				if (::TranslateAccelerator(m_hWnd,dos->menu.hAccel,pMsg)) return TRUE;
+				if (::TranslateAccelerator(m_hWnd,image->dos->menu.hAccel,pMsg)) return TRUE;
 			}else if (const PCImage image=CImage::GetActive())
 				// active DOS (e.g. MDOS when a WebPage is focused)
 				if (::TranslateAccelerator(m_hWnd,image->dos->menu.hAccel,pMsg)) return TRUE;
@@ -222,7 +222,7 @@
 
 	afx_msg void CMainWindow::OnLButtonDblClk(UINT,CPoint){
 		// mouse double-clicked on the client area
-		if (!pTdi->__getCurrentTab__())
+		if (!pTdi->GetCurrentTab())
 			app.__openImage__(); // double-clicking on the client area is interpreted as wanting to open an Image
 	}
 
@@ -249,15 +249,15 @@
 
 	afx_msg void CMainWindow::__closeCurrentTab__(){
 		// closes currently visible TDI Tab
-		if (pTdi->__getCurrentTab__()->dos) // if current Tab relates to a DOS ...
-			CTdiTemplate::pSingleInstance->__closeDocument__(); // ... closing the corresponding Image (and thus the DOS and all its Tabs and Views)
+		if (pTdi->GetCurrentTab()->image) // if current Tab relates to an Image ...
+			CTdiTemplate::pSingleInstance->__closeDocument__(); // ... closing it (and thus the DOS and all its Tabs and Views)
 		else
 			CTdiCtrl::RemoveCurrentTab( pTdi->m_hWnd ); // ... otherwise closing just the Tab (e.g. a WebPageView that usually isn't associated with any DOS)
 	}
 
 	afx_msg void CMainWindow::__closeCurrentTab_updateUI__(CCmdUI *pCmdUI){
 		// projecting possibility to close current Tab into UI
-		pCmdUI->Enable( pTdi->__getCurrentTab__()!=nullptr );
+		pCmdUI->Enable( pTdi->GetCurrentTab()!=nullptr );
 	}
 
 

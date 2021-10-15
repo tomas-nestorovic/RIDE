@@ -1,7 +1,7 @@
 #include "stdafx.h"
 
-	#define DOS		tab.dos
-	#define IMAGE	DOS->image
+	#define IMAGE	tab.image
+	#define DOS		IMAGE->dos
 
 	/*UINT AFX_CDECL CFileManagerView::COleVirtualFileDataSource::__fileTransfer_thread__(PVOID _pCancelableAction){
 		// transfer of Files

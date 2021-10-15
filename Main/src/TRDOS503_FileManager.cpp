@@ -34,7 +34,8 @@
 
 
 
-	#define DOS	tab.dos
+	#define IMAGE	tab.image
+	#define DOS		IMAGE->dos
 
 	LRESULT CTRDOS503::CTrdosFileManagerView::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
 		// window procedure

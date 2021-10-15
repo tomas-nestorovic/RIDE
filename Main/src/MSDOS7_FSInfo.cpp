@@ -35,8 +35,8 @@
 		: CCriticalSectorView( msdos, TPhysicalAddress::Invalid ) {
 	}
 
-	#define MSDOS	((CMSDOS7 *)tab.dos)
-	#define IMAGE	tab.dos->image
+	#define IMAGE	tab.image
+	#define MSDOS	((CMSDOS7 *)IMAGE->dos)
 
 	CMSDOS7::PFsInfoSector CMSDOS7::CFsInfoView::GetSectorData() const{
 		// returns the data of FS Info Sector; returns Null if Sector doesn't exist or isn't readable

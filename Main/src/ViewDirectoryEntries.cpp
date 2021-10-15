@@ -2,8 +2,8 @@
 
 	#define INI_DIRENTRIES	_T("DirEnt")
 
-	#define DOS		tab.dos
-	#define IMAGE	DOS->image
+	#define IMAGE	tab.image
+	#define DOS		IMAGE->dos
 
 	class CDirectoryEntriesReaderWriter sealed:public CDos::CFileReaderWriter{
 	public:
@@ -52,7 +52,7 @@
 		// - base
 		: CHexaEditor( this, nullptr, Utils::CreateSubmenuByContainedCommand(IDR_DIRECTORYBROWSER,ID_DEFAULT1) )
 		// - initialization
-		, tab( IDR_DIRECTORYBROWSER, IDR_HEXAEDITOR, ID_CYLINDER, dos, this )
+		, tab( IDR_DIRECTORYBROWSER, IDR_HEXAEDITOR, ID_CYLINDER, dos->image, this )
 		, navigatedToFirstSelectedFile(false)
 		, directory(directory) {
 	}

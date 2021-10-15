@@ -6,18 +6,18 @@
 
 	#define INI_DISKBROWSER	_T("DiskBrowser")
 
-	#define DOS		tab.dos
-	#define IMAGE	DOS->image
+	#define IMAGE	tab.image
+	#define DOS		IMAGE->dos
 
 	typedef CImage::CSectorDataSerializer::TScannerStatus TScannerStatus;
 
 
-	CDiskBrowserView::CDiskBrowserView(PDos dos,RCPhysicalAddress chsToSeekTo,BYTE nSectorsToSkip)
+	CDiskBrowserView::CDiskBrowserView(PImage image,RCPhysicalAddress chsToSeekTo,BYTE nSectorsToSkip)
 		// ctor
 		// - base
 		: CHexaEditor( this, Utils::CreateSubmenuByContainedCommand(IDR_DISKBROWSER,ID_EDIT_SELECT_ALL), nullptr, Utils::CreateSubmenuByContainedCommand(IDR_DISKBROWSER,ID_NAVIGATE_ADDRESS) )
 		// - initialization
-		, tab( IDR_DISKBROWSER, IDR_HEXAEDITOR, ID_CYLINDER, dos, this )
+		, tab( IDR_DISKBROWSER, IDR_HEXAEDITOR, ID_CYLINDER, image, this )
 		, revolution(Revolution::ANY_GOOD)
 		, iScrollY(0) {
 		seekTo.chs=chsToSeekTo, seekTo.nSectorsToSkip=nSectorsToSkip;

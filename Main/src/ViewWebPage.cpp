@@ -33,8 +33,6 @@
 
 
 
-	#define DOS tab.dos
-
 	CWebPageView::CWebPageView(LPCTSTR url)
 		// ctor
 		: tab( IDR_WEBPAGE, IDR_WEBPAGE, ID_CYLINDER, nullptr, this )

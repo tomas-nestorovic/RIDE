@@ -5,7 +5,7 @@
 
 
 	PDos CDos::GetFocused(){
-		return TDI_INSTANCE->__getCurrentTab__()->dos;
+		return TDI_INSTANCE->GetCurrentTab()->image->dos;
 	}
 
 	void CDos::__errorCannotDoCommand__(TStdWinError cause){

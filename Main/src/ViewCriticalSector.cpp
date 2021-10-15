@@ -2,8 +2,8 @@
 
 	const CCriticalSectorView *CCriticalSectorView::pCurrentlyShown;
 
-	#define DOS		tab.dos
-	#define IMAGE	DOS->image
+	#define IMAGE	tab.image
+	#define DOS		IMAGE->dos
 
 	void WINAPI CCriticalSectorView::__updateCriticalSectorView__(PropGrid::PCustomParam){
 		// refreshes any current View
@@ -50,7 +50,7 @@
 	CCriticalSectorView::CCriticalSectorView(PDos dos,RCPhysicalAddress rChs)
 		// ctor
 		// - initialization
-		: tab(0,0,0,dos,this) , splitX(PROPGRID_WIDTH_DEFAULT)
+		: tab(0,0,0,dos->image,this) , splitX(PROPGRID_WIDTH_DEFAULT)
 		, fSectorData(dos,rChs) , hexaEditor(this) {
 		// - reset of HexaEditor's content
 		const TPhysicalAddress &chs=GetPhysicalAddress();

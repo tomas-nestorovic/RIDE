@@ -10,8 +10,8 @@
 	#define CYLINDERS_REMOVED_FROM_FAT		_T("msgpg4")
 	#define IMAGE_STRUCTURE_UNAFFECTED		_T("Changing this value does NOT affect the image structure.\n\nTo modify its structure, switch to the \"") TRACK_MAP_TAB_LABEL _T("\" tab.")
 
-	#define DOS		tab.dos
-	#define IMAGE	DOS->image
+	#define IMAGE	tab.image
+	#define DOS		IMAGE->dos
 
 	void CBootView::__informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId){
 		// shows a MessageBox with added "Don't show anymore" check-box

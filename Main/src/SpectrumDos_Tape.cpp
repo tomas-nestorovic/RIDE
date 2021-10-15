@@ -12,6 +12,17 @@
 
 	CSpectrumDos::CTape *CSpectrumDos::CTape::pSingleInstance;
 
+	#define TAB_LABEL	_T("Tape")
+
+	static bool WINAPI CanTapeBeClosed(CTdiCtrl::TTab::PContent tab){
+		const PImage tape=CDos::GetFocused()->image;
+		return tape->SaveModified()!=FALSE;
+	}
+
+	static void WINAPI OnTapeClosing(CTdiCtrl::TTab::PContent tab){
+		delete ((CMainWindow::CTdiView::PTab)tab)->image->dos;
+	}
+
 	CSpectrumDos::CTape::CTape(LPCTSTR fileName,const CSpectrumDos *diskDos,bool makeCurrentTab)
 		// ctor
 		// - base
@@ -22,6 +33,11 @@
 		dos=this; // linking the DOS and Image
 		(HACCEL)menu.hAccel=diskDos->menu.hAccel; // for DiskDos accelerators to work even if switched to Tape
 		SetPathName(fileName,FALSE);
+		// - showing the TapeFileManager
+		TCHAR buf[MAX_PATH];
+		::wsprintf( buf, TAB_LABEL _T(" \"%s\""), (LPCTSTR)fileManager.f.GetFileName() );
+		CTdiCtrl::AddTabLast( TDI_HWND, buf, &fileManager.tab, makeCurrentTab, CanTapeBeClosed, OnTapeClosing );
+		CSpectrumDos::__informationWithCheckableShowNoMore__( _T("Use the \"") TAB_LABEL _T("\" tab to transfer files from/to the open disk image or between two tapes (open in two instances of ") APP_ABBREVIATION _T(").\n\nHeaderless files:\n- are transferred to disk with dummy names,\n- are used on tape to store \"tape-unfriendly\" data from a disk (sequential files, etc.)."), INI_MSG );
 		// - adding this Tape to most recently used ones
 		TCHAR fileNameCopy[MAX_PATH];
 		diskDos->mruTapes.Add( ::lstrcpy(fileNameCopy,fileName) ); // creating a copy as MFC may (for some reason) corrupt the original string
@@ -29,6 +45,8 @@
 
 	CSpectrumDos::CTape::~CTape(){
 		// dtor
+		if (app.m_pMainWnd) // MainWindow still exists
+			CTdiCtrl::RemoveTab( TDI_HWND, &fileManager.tab );
 		if (pSingleInstance==this)
 			pSingleInstance=nullptr; // no longer accepting any requests
 		dos=nullptr; // to not destroy the Image (as DOS and Image are one structure in memory that is disposed at once)
@@ -505,14 +523,6 @@
 		return TRUE;
 	}
 
-	static bool WINAPI __canTapeBeClosed__(CTdiCtrl::TTab::PContent tab){
-		const PImage tape=CDos::GetFocused()->image;
-		if (tape->SaveModified()){
-			return true;
-		}else
-			return false;
-	}
-
 	CDos::TCmdResult CSpectrumDos::CTape::ProcessCommand(WORD cmd){
 		// returns the Result of processing a DOS-related command
 		switch (cmd){
@@ -611,9 +621,8 @@
 
 
 
-	#define DOS	tab.dos
-
-	#define TAB_LABEL	_T("Tape")
+	#define IMAGE	tab.image
+	#define DOS		IMAGE->dos
 
 	#define INFORMATION_COUNT		8
 	#define INFORMATION_TYPE		0 /* column to sort by */
@@ -635,10 +644,6 @@
 		{ _T("Block flag"),	75,		TFileInfo::AlignRight },
 		{ _T("Checksum"),	75,		TFileInfo::AlignRight }
 	};
-
-	static void WINAPI __onTapeClosing__(CTdiCtrl::TTab::PContent tab){
-		delete ((CMainWindow::CTdiView::PTab)tab)->dos;
-	}
 
 	CSpectrumDos::CTape::CTapeFileManagerView::CTapeFileManagerView(CTape *tape,const TZxRom &rZxRom,LPCTSTR fileName,bool makeCurrentTab)
 		// ctor
@@ -707,16 +712,9 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 					tf->dataLength=blockLength;
 					::memcpy( tf->data, dataBuffer, blockLength );
 			}
-		// - showing the TapeFileManager
-		TCHAR buf[MAX_PATH];
-		::wsprintf( buf, TAB_LABEL _T(" \"%s\""), (LPCTSTR)f.GetFileName() );
-		CTdiCtrl::AddTabLast( TDI_HWND, buf, &tab, makeCurrentTab, __canTapeBeClosed__, __onTapeClosing__ );
-		CSpectrumDos::__informationWithCheckableShowNoMore__( _T("Use the \"") TAB_LABEL _T("\" tab to transfer files from/to the open floppy image or between two tapes (open in two instances of the application).\n\nHeaderless files:\n- are transferred to a floppy with a dummy name,\n- are used on tape to store \"tape-unfriendly\" data from a floppy (sequential files, etc.)."), INI_MSG );
 	}
 	CSpectrumDos::CTape::CTapeFileManagerView::~CTapeFileManagerView(){
 		// dtor
-		if (app.m_pMainWnd) // MainWindow still exists
-			CTdiCtrl::RemoveTab( TDI_HWND, &tab );
 		for( PPTapeFile s=files; nFiles--; ::free(*s++) );
 	}
 

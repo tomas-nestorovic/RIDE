@@ -49,7 +49,8 @@
 
 
 
-	#define DOS	tab.dos
+	#define IMAGE	tab.image
+	#define DOS		IMAGE->dos
 
 	#define ICON_FOLDER_OPEN	0
 	#define ICON_FOLDER_CLOSED	1

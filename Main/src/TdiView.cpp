@@ -1,10 +1,10 @@
 #include "stdafx.h"
 #include "MSDOS7.h"
 
-	CMainWindow::CTdiView::TTab::TTab(UINT nMenuResId,UINT nToolbarResId,UINT nToolBarId,PDos _dos,PView _view)
+	CMainWindow::CTdiView::TTab::TTab(UINT nMenuResId,UINT nToolbarResId,UINT nToolBarId,PImage image,PView _view)
 		// ctor
 		// - initialization
-		: dos(_dos) , view(_view)
+		: image(image) , view(_view)
 		// - creating the Menu
 		, menu(nMenuResId)
 		// - creating the ToolBar (its displaying in CTdiView::ShowContent)
@@ -337,9 +337,6 @@
 
 
 
-	// True <=> the Tab is part of a DOS (e.g. a WebPage is usually not part of any DOS), otherwise False
-	#define IS_TAB_PART_OF_DOS(pTab)	((pTab)->dos!=nullptr)
-
 	#define MENU_POSITION_DOS		1
 	#define MENU_POSITION_VIEW		2
 
@@ -348,19 +345,19 @@
 		const PTab tab= ((CTdiView *)pTdi)->pCurrentTab = (PTab)pTab;
 		const PView view=tab->view;
 		// - showing the Menus associated with the DOS and View 
-		if (IS_TAB_PART_OF_DOS(tab)){ // the Tab is part of a DOS (e.g. a WebPage is usually not part of any DOS)
+		if (tab->IsPartOfImage()){ // the Tab is part of an Image (e.g. a WebPage usually isn't)
 			CImage::GetActive()->dos->menu.Show(MENU_POSITION_DOS);
 			tab->menu.Show(MENU_POSITION_VIEW);
 		}else
 			tab->menu.Show(MENU_POSITION_DOS); // showing the View's Menu at the DOS's position
 		// - showing Image's ToolBar (guaranteed that the Toolbar always exists)
 		CMainWindow *const pMainWindow=(CMainWindow *)app.m_pMainWnd;
-		if (IS_TAB_PART_OF_DOS(tab)){ // the Tab is part of a DOS (e.g. a WebPage is usually not part of any DOS)
-			tab->dos->image->toolbar.Show(pMainWindow->toolbar);
+		if (tab->IsPartOfImage()){ // the Tab is part of an Image (e.g. a WebPage usually isn't)
+			tab->image->toolbar.Show(pMainWindow->toolbar);
 		}
 		// - showing the Tab's ToolBar (e.g. the FileManager's ToolBar)
-		if (IS_TAB_PART_OF_DOS(tab)) // the Tab is part of a DOS (e.g. a WebPage is usually not part of any DOS)
-			tab->toolbar.Show( tab->dos->image->toolbar );
+		if (tab->IsPartOfImage()) // the Tab is part of an Image (e.g. a WebPage usually isn't)
+			tab->toolbar.Show( tab->image->toolbar );
 		else
 			tab->toolbar.Show( pMainWindow->toolbar );
 		// - showing the associated View
@@ -391,18 +388,18 @@
 		const PView view=tab->view;
 		( (CMainWindow *)app.m_pMainWnd )->SetActiveView((CTdiView *)pTdi); // neccessary to call manually as otherwise no view will be active after closing the CurrentTab (and with no active documents, no command will be propagated to the document, etc.)
 		((CTdiView *)pTdi)->pCurrentTab=nullptr;
-		if (IS_TAB_PART_OF_DOS(tab)) // the Tab is part of a DOS (e.g. a WebPage is usually not part of any DOS)
+		if (tab->IsPartOfImage()) // the Tab is part of an Image (e.g. a WebPage usually isn't)
 			if (CImage *const image=CImage::GetActive())
 				image->RemoveView(view); // View added into the list when shown, see CCreateContext
 		::DestroyWindow( view->m_hWnd );
 		// - hiding the Tab's ToolBar (e.g. the FileManager's ToolBar)
 		tab->toolbar.Hide();
 		// - hiding the Image's ToolBar (guaranteed that the Toolbar always exists)
-		if (IS_TAB_PART_OF_DOS(tab))
-			tab->dos->image->toolbar.Hide();
+		if (tab->IsPartOfImage())
+			tab->image->toolbar.Hide();
 		// - hiding the Menus associated with the DOS and View 
 		tab->menu.Hide();
-		if (IS_TAB_PART_OF_DOS(tab))
+		if (tab->IsPartOfImage())
 			CImage::GetActive()->dos->menu.Hide();
 		// - resetting the StatusBar
 		__resetStatusBar__();
@@ -422,13 +419,8 @@
 	void CMainWindow::CTdiView::__closeAllTabsOfFocusedDos__(){
 		// closes all Tabs associated with the DOS in focus
 		for( int i=TabCtrl_GetItemCount(m_hWnd); i--; )
-			if (IS_TAB_PART_OF_DOS( (PTab)CTdiCtrl::GetTabContent(m_hWnd,i) ))
+			if (( (PTab)CTdiCtrl::GetTabContent(m_hWnd,i) )->IsPartOfImage())
 				CTdiCtrl::RemoveTab(m_hWnd,i);
-	}
-
-	CMainWindow::CTdiView::PTab CMainWindow::CTdiView::__getCurrentTab__() const{
-		// wrapper
-		return pCurrentTab;
 	}
 
 	#define WM_GUIDEPOST_REPOPULATE	WM_USER+1

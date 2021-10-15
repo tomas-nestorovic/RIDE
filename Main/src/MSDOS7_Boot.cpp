@@ -344,8 +344,8 @@
 
 
 
-	#define DOS		tab.dos
-	#define IMAGE	DOS->image
+	#define IMAGE	tab.image
+	#define DOS		IMAGE->dos
 
 	CMSDOS7::PBootSector CMSDOS7::CMsdos7BootView::GetSectorData() const{
 		// returns data of Boot Sector (or Null if Boot Sector unreadable)

@@ -25,7 +25,7 @@
 	CFileManagerView::CFileManagerView(PDos _dos,BYTE _supportedDisplayModes,BYTE _initialDisplayMode,const CFont &rFont,BYTE reportModeRowHeightAdjustment,BYTE _nInformation,PCFileInfo _informationList,PCDirectoryStructureManagement pDirectoryStructureManagement)
 		// ctor
 		// - initialization
-		: tab( IDR_FILEMANAGER, IDR_FILEMANAGER, ID_FILE, _dos, this )
+		: tab( IDR_FILEMANAGER, IDR_FILEMANAGER, ID_FILE, _dos->image, this )
 		, rFont(rFont)
 		, reportModeRowHeightAdjustment(reportModeRowHeightAdjustment)
 		, nInformation(_nInformation) , informationList(_informationList)
@@ -105,8 +105,8 @@
 		return TRUE;
 	}*/
 
-	#define DOS		tab.dos
-	#define IMAGE	DOS->image
+	#define IMAGE	tab.image
+	#define DOS		IMAGE->dos
 
 	#define ORDER_NONE_SYMBOL		' '
 
