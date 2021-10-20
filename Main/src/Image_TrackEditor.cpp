@@ -1129,10 +1129,10 @@
 							for( POSITION pos=peList.GetHeadPosition(); pos=peList.GetPositionByStart(tPrev+1,TParseEvent::FUZZY_OK,TParseEvent::FUZZY_BAD,pos); )
 								if (peList.GetAt(pos).tStart<tCurrent)
 									tPrev=peList.GetAt(pos).tStart;
-								else{
-									timeEditor.SetCenterTime( tPrev );
+								else
 									break;
-								}
+							if (tPrev>=0)
+								timeEditor.SetCenterTime( tPrev );
 							return TRUE;
 						}
 						case ID_NEXT_PANE:
