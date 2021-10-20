@@ -1094,9 +1094,7 @@ reportError:Utils::Information(buf);
 
 	TStdWinError CDos::CreateUserInterface(HWND hTdi){
 		// creates DOS-specific Tabs in TDI; returns Windows standard i/o error
-		// - adding the Document (Image) to TdiTemplate
-		CMainWindow::CTdiTemplate::pSingleInstance->AddDocument(image);
-		return ERROR_SUCCESS; // always succeeds (but may fail in CDos-derivate)
+		return image->CreateUserInterface(hTdi); // creating disk-specific Tabs in TDI
 	}
 
 	CDos::TCmdResult CDos::ProcessCommand(WORD cmd){

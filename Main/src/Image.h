@@ -19,17 +19,6 @@
 
 	#define IMAGE_FORMAT_SEPARATOR	_T(";")	/* e.g. "*.d40;*.d80" */
 
-
-	typedef BYTE *PSectorData;
-	typedef const BYTE *PCSectorData;
-	typedef WORD TCylinder,*PCylinder; typedef short &RCylinder;
-	typedef const TCylinder *PCCylinder;
-	typedef BYTE THead,*PHead,TSide,*PSide,TSector,*PSector;
-	typedef const THead *PCHead;
-	typedef const TSide *PCSide;
-	typedef const TSector *PCSector;
-	typedef int TTrack,*PTrack;
-
 	#define FDD_CYLINDERS_HD	80
 	#define FDD_CYLINDERS_EXTRA	2
 	#define FDD_CYLINDERS_MAX	(FDD_CYLINDERS_HD+FDD_CYLINDERS_EXTRA)
@@ -627,6 +616,7 @@
 
 		const PCProperties properties;
 		const bool hasEditableSettings;
+		const CTrackMapView trackMap;
 		mutable CCriticalSection locker;
 		CMainWindow::CDockableToolBar toolbar;
 		PDos dos;
@@ -673,6 +663,7 @@
 		virtual TStdWinError PresumeHealthyTrackStructure(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,BYTE gap3,BYTE fillerByte);
 		virtual TStdWinError UnformatTrack(TCylinder cyl,THead head)=0;
 		virtual std::unique_ptr<CSectorDataSerializer> CreateSectorDataSerializer(CHexaEditor *pParentHexaEditor)=0;
+		virtual TStdWinError CreateUserInterface(HWND hTdi);
 		bool ReportWriteProtection() const;
 		void ToggleWriteProtection();
 		void SetPathName(LPCTSTR lpszPathName,BOOL bAddToMRU=TRUE) override;

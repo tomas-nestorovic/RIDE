@@ -81,6 +81,18 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 	#define constexpr const
 #endif
 
+typedef BYTE *PSectorData;
+typedef const BYTE *PCSectorData;
+typedef WORD TCylinder,*PCylinder; typedef short &RCylinder;
+typedef const TCylinder *PCCylinder;
+typedef BYTE THead,*PHead,TSide,*PSide,TSector,*PSector;
+typedef const THead *PCHead;
+typedef const TSide *PCSide;
+typedef const TSector *PCSector;
+typedef int TTrack,*PTrack;
+
+struct TPhysicalAddress; // forward
+
 class CImage; // forward
 typedef CImage *PImage;
 typedef const CImage *PCImage;
@@ -145,6 +157,7 @@ struct TLogTimeInterval{
 #include "BackgroundAction.h"
 #include "MainWindow.h"
 #include "HexaEditor.h"
+#include "ViewTrackMap.h"
 #include "Image.h"
 #include "DialogFormatting.h"
 #include "DialogVerification.h"
@@ -158,7 +171,6 @@ struct TLogTimeInterval{
 #include "ViewCriticalSector.h"
 #include "ViewBoot.h"
 #include "ViewFileManager.h"
-#include "ViewTrackMap.h"
 #include "ViewWebPage.h"
 #include "ViewDirectoryEntries.h"
 #include "ViewDiskBrowser.h"
@@ -175,7 +187,7 @@ struct TLogTimeInterval{
 
 #define APP_FULLNAME	_T("Real and Imaginary Disk Editor")
 #define APP_ABBREVIATION _T("RIDE")
-#define APP_VERSION		_T("1.6.2 debug special")
+#define APP_VERSION		_T("1.6.3 debug special")
 //#define APP_SPECIAL_VER
 #define APP_IDENTIFIER	APP_ABBREVIATION APP_VERSION
 #define APP_CLASSNAME	_T("Afx:tomascz.") APP_ABBREVIATION

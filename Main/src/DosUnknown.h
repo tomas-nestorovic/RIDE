@@ -2,7 +2,6 @@
 #define DOS_UNKNOWN_H
 
 	class CUnknownDos sealed:public CDos{
-		const CTrackMapView trackMap;
 	public:
 		static const TProperties Properties;
 

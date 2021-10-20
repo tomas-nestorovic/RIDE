@@ -19,7 +19,6 @@
 	#define BSDOS_DIR_CORRUPTED			_T("« Corrupted »")
 
 	class CBSDOS308 sealed:public CSpectrumDos{
-		const CTrackMapView trackMap;
 	public:
 		typedef WORD TLogSector;
 		typedef PCWORD PCLogSector;

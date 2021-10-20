@@ -34,9 +34,7 @@
 	CUnknownDos::CUnknownDos(PImage image,PCFormat pFormatBoot)
 		// ctor
 		// - base
-		: CDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS, &Properties, nullptr, image->GetSideMap()?image->GetSideMap():StdSidesMap, IDR_DOS_UNKNOWN, nullptr, TGetFileSizeOptions::OfficialDataLength, TSectorStatus::UNKNOWN )
-		// - initialization
-		, trackMap(image) {
+		: CDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS, &Properties, nullptr, image->GetSideMap()?image->GetSideMap():StdSidesMap, IDR_DOS_UNKNOWN, nullptr, TGetFileSizeOptions::OfficialDataLength, TSectorStatus::UNKNOWN ) {
 	}
 
 
@@ -125,8 +123,9 @@
 
 	TStdWinError CUnknownDos::CreateUserInterface(HWND hTdi){
 		// creates DOS-specific Tabs in TDI; returns Windows standard i/o error
-		__super::CreateUserInterface(hTdi); // guaranteed to always return ERROR_SUCCESS
-		CTdiCtrl::InsertTab( hTdi, 0, TRACK_MAP_TAB_LABEL, &trackMap.tab, true, nullptr, nullptr );
+		if (const TStdWinError err=__super::CreateUserInterface(hTdi))
+			return err;
+		CTdiCtrl::SwitchToTab( hTdi, &image->trackMap.tab );
 		return ERROR_SUCCESS;
 	}
 	CDos::TCmdResult CUnknownDos::ProcessCommand(WORD cmd){

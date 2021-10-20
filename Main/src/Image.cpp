@@ -448,6 +448,8 @@ namespace Medium{
 		: properties(_properties) , dos(nullptr)
 		, hasEditableSettings(hasEditableSettings) , writeProtected(true) , canBeModified(!_properties->isReadOnly)
 		, sideMap(nullptr) // no explicit mapping of Heads to Side numbers
+		// - creating the TrackMap
+		, trackMap(this)
 		// - creating Toolbar (its displaying in CTdiView::ShowContent)
 		, toolbar(IDR_IMAGE,ID_IMAGE) { // ID_IMAGE = "some" unique ID
 		// - when destroying all Views, the document must exist further (e.g. when switching Tabs in TDI)
@@ -467,6 +469,15 @@ namespace Medium{
 	void CImage::OnCloseDocument(){
 		// document is being closed
 		//nop (CDocument::OnCloseDocument destroys parent FrameWnd (MainWindow) - this must exist even after the document was closed)
+	}
+
+	TStdWinError CImage::CreateUserInterface(HWND hTdi){
+		// creates disk-specific Tabs in TDI; returns Windows standard i/o error
+		// - adding the Document (Image) to TdiTemplate
+		CMainWindow::CTdiTemplate::pSingleInstance->AddDocument(this);
+		// - adding the TrackMap to TDI
+		CTdiCtrl::AddTabLast( hTdi, TRACK_MAP_TAB_LABEL, &trackMap.tab, false, TDI_TAB_CANCLOSE_NEVER, nullptr );
+		return ERROR_SUCCESS; // always succeeds (but may fail in CDos-derivates)
 	}
 
 	void CImage::ToggleWriteProtection(){

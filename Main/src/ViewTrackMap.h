@@ -33,10 +33,9 @@
 		struct TTrackScanner sealed{
 			static UINT AFX_CDECL __thread__(PVOID _pBackgroundAction);
 			const CBackgroundAction action;
-			const THead nHeads;
-			bool wantTerminate;
 			struct TParams sealed{
 				CCriticalSection criticalSection;
+				THead nHeads; // 0 = terminate the Scanner
 				TTrack a,z,x; // first, last, and currect Track to scan; it holds: A <= X < Z
 			} params;
 			CEvent scanNextTrack;

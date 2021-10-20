@@ -13,7 +13,7 @@
 		: CDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS, &Properties, ::lstrcmpi, CDos::StdSidesMap, IDR_MSDOS, &fileManager, TGetFileSizeOptions::OfficialDataLength, TSectorStatus::UNAVAILABLE )
 		// - initialization
 		, fat(*this) , fsInfo(this)
-		, trackMap(image) , boot(this) , fileManager(this)
+		, boot(this) , fileManager(this)
 		, dontShowLongFileNames( __getProfileBool__(INI_DONT_SHOW_LONG_NAMES,false) )
 		, dontShowDotEntries( __getProfileBool__(INI_DONT_SHOW_DOT,false) )
 		, dontShowDotdotEntries( __getProfileBool__(INI_DONT_SHOW_DOTDOT,false) ) {
@@ -1053,7 +1053,6 @@
 							//TODO: running ScanDisk to restore FS-Info Sector
 						*/
 					}
-				CTdiCtrl::AddTabLast( hTdi, TRACK_MAP_TAB_LABEL, &trackMap.tab, false, TDI_TAB_CANCLOSE_NEVER, nullptr );
 				CTdiCtrl::AddTabLast( hTdi, BOOT_SECTOR_TAB_LABEL, &boot.tab, false, TDI_TAB_CANCLOSE_NEVER, nullptr );
 				if (fat.type==CFat::FAT32)
 					CTdiCtrl::AddTabLast( hTdi, _T("FS-Info sector"), &fsInfo.tab, false, TDI_TAB_CANCLOSE_NEVER, nullptr );

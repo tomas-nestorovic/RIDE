@@ -25,7 +25,7 @@
 		// ctor
 		// - initialization
 		: tab( IDR_TRACKMAP, IDR_TRACKMAP, ID_CYLINDER, image, this )
-		, displayType(TDisplayType::STATUS) , showSectorNumbers(false) , showTimed(false) , fitLongestTrackInWindow(false) , showSelectedFiles(DOS && DOS->pFileManager!=nullptr) , iScrollX(0) , iScrollY(0) , scanner(this)
+		, displayType(TDisplayType::STATUS) , showSectorNumbers(false) , showTimed(false) , fitLongestTrackInWindow(false) , showSelectedFiles(true) , iScrollX(0) , iScrollY(0) , scanner(this)
 		, fileSelectionColor( app.GetProfileInt(INI_TRACKMAP,INI_FILE_SELECTION_COLOR,::GetSysColor(COLOR_ACTIVECAPTION)) )
 		, longestTrack(0,0) , longestTrackNanoseconds(0)
 		, zoomLengthFactor(3) {
@@ -36,9 +36,8 @@
 
 	CTrackMapView::TTrackScanner::TTrackScanner(const CTrackMapView *pvtm)
 		// ctor
-		: action( __thread__, pvtm, THREAD_PRIORITY_IDLE )
-		, nHeads( pvtm->IMAGE->GetHeadCount() )
-		, wantTerminate(false) {
+		: action( __thread__, pvtm, THREAD_PRIORITY_IDLE ) {
+		params.nHeads=-1; // Head count undetermined yet
 	}
 
 	#define WM_TRACK_SCANNED	WM_USER+1
@@ -79,7 +78,7 @@
 		app.WriteProfileInt( INI_TRACKMAP, INI_FILE_SELECTION_COLOR, fileSelectionColor );
 		// - waiting for the Scanner to finish properly
 		scanner.params.criticalSection.Lock();
-			scanner.wantTerminate=true;
+			scanner.params.nHeads=0; // 0 = terminate the Scanner
 			scanner.scanNextTrack.SetEvent();
 		scanner.params.criticalSection.Unlock();
 		::WaitForSingleObject( scanner.action, INFINITE );
@@ -218,17 +217,17 @@
 		TTrackScanner &rts=pvtm->scanner;
 		const PImage image=pvtm->IMAGE;
 		const Utils::CByteIdentity sectorIdAndPositionIdentity;
-		for( TTrackInfo ti; rts.nHeads>0; ){ // "nHeads==0" if disk without any Track (e.g. when opening RawImage of zero length, or if opening a corrupted DSK Image)
+		for( TTrackInfo ti; true; ){
 			// . waiting for request to scan the next Track
 			rts.scanNextTrack.Lock();
 			// . getting the TrackNumber to scan
 			rts.params.criticalSection.Lock();
-				const bool wantTerminate=rts.wantTerminate;
+				const THead nHeads=rts.params.nHeads;
 				const TTrack trackNumber=rts.params.x;
 			rts.params.criticalSection.Unlock();
-			if (wantTerminate)
+			if (nHeads==0) // "nHeads==0" if disk without any Track (e.g. when opening RawImage of zero length, or if opening a corrupted DSK Image)
 				break;
-			const div_t d=div(trackNumber,rts.nHeads);
+			const div_t d=div(trackNumber,nHeads);
 			// . scanning the Track to draw its Sector Statuses
 			ti.cylinder=d.quot, ti.head=d.rem;
 			//if (pvtm->displayType==TDisplayType::STATUS) // commented out because this scanning always needed
@@ -384,7 +383,7 @@
 							CDos::CFatPath::PCItem item; DWORD n;
 							if (!fatPath.GetItems(item,n)) // FatPath valid
 								for( ; n--; item++ )
-									if (trackNumber==item->chs.GetTrackNumber(scanner.nHeads)){
+									if (trackNumber==item->chs.GetTrackNumber(scanner.params.nHeads)){
 										// this Sector (in currently drawn Track) belongs to one of selected Files
 										TSector s=0;
 										for( PCSectorId pRefId=&item->chs.sectorId; s<rti.nSectors; s++ )
@@ -455,6 +454,11 @@
 		// - base
 		if (__super::OnCreate(lpcs)==-1) return -1;
 		OnInitialUpdate(); // because isn't called automatically by OnCreate; calls SetScrollSizes via OnUpdate
+		// - setting number of Heads
+		scanner.params.criticalSection.Lock();
+			if (scanner.params.nHeads) // no Heads if wanting to terminate the Scanner
+				scanner.params.nHeads=IMAGE->GetHeadCount();
+		scanner.params.criticalSection.Unlock();
 		// - recovering the scroll position
 		SetScrollPos( SB_HORZ, iScrollX, FALSE );
 		SetScrollPos( SB_VERT, iScrollY, FALSE );
@@ -498,7 +502,7 @@
 			}
 			// . determining the Sector on which the cursor hovers
 			const TTrack track=point.y/TRACK_HEIGHT;
-			const div_t d=div( track, scanner.nHeads );
+			const div_t d=div( track, scanner.params.nHeads );
 			TSectorId bufferId[(TSector)-1];
 			WORD bufferLength[(TSector)-1];
 			TLogTime bufferStarts[(TSector)-1];
@@ -534,7 +538,7 @@
 		}
 		if (cursorOverSector)
 			// cursor over a Sector
-			::wsprintf( p, _T("Tr%d, %s: %s"), chs.GetTrackNumber(scanner.nHeads), (LPCTSTR)chs.sectorId.ToString(), DOS->GetSectorStatusText(chs) );
+			::wsprintf( p, _T("Tr%d, %s: %s"), chs.GetTrackNumber(scanner.params.nHeads), (LPCTSTR)chs.sectorId.ToString(), DOS->GetSectorStatusText(chs) );
 		CMainWindow::__setStatusBarText__(buf);
 	}
 
@@ -546,7 +550,7 @@
 				// clicked on a Track
 				if (app.IsInGodMode())
 					if (const auto tr=IMAGE->ReadTrack( chs.cylinder, chs.head ))
-						tr.ShowModal( _T("Track %d  (Cyl=%d, Head=%d)"), chs.GetTrackNumber(scanner.nHeads), chs.cylinder, chs.head );
+						tr.ShowModal( _T("Track %d  (Cyl=%d, Head=%d)"), chs.GetTrackNumber(scanner.params.nHeads), chs.cylinder, chs.head );
 				break;
 			case TCursorPos::SECTOR:
 				// clicked on a Sector
@@ -614,7 +618,7 @@
 			case ID_HEAD:
 				// display low-level Track timing
 				if (const auto tr=IMAGE->ReadTrack( chs.cylinder, chs.head ))
-					tr.ShowModal( _T("Track %d  (Cyl=%d, Head=%d)"), chs.GetTrackNumber(scanner.nHeads), chs.cylinder, chs.head );
+					tr.ShowModal( _T("Track %d  (Cyl=%d, Head=%d)"), chs.GetTrackNumber(scanner.params.nHeads), chs.cylinder, chs.head );
 				break;
 		}
 	}
@@ -723,7 +727,8 @@
 
 	afx_msg void CTrackMapView::__showSelectedFiles__(){
 		// toggles display of Sectors occupied by one of Files selected in the FileManager
-		showSelectedFiles=!showSelectedFiles;
+		if (DOS->pFileManager!=nullptr)
+			showSelectedFiles=!showSelectedFiles;
 		Invalidate(TRUE);
 	}
 	afx_msg void CTrackMapView::__showSelectedFiles_updateUI__(CCmdUI *pCmdUI){

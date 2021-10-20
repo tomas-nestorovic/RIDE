@@ -218,8 +218,6 @@
 			bool __existsNextEntry__();
 		};
 
-		CTrackMapView trackMap;
-
 		class CMsdos7BootView sealed:public CBootView{
 			static bool WINAPI __pg_createLabel__(PropGrid::PCustomParam,int hyperlinkId,LPCTSTR hyperlinkName);
 			static bool WINAPI __labelModified__(PropGrid::PCustomParam,LPCSTR,short);

@@ -6,7 +6,6 @@
 		// - base
 		: CSpectrumDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS, &Properties, IDR_BSDOS, &fileManager, TGetFileSizeOptions::OfficialDataLength, TSectorStatus::UNKNOWN )
 		// - initialization
-		, trackMap(image)
 		, boot(this)
 		, dirsSector(this)
 		, fileManager(this) {
@@ -857,7 +856,6 @@
 		// creates DOS-specific Tabs in TDI; returns Windows standard i/o error
 		if (const TStdWinError err=__super::CreateUserInterface(hTdi))
 			return err;
-		CTdiCtrl::AddTabLast( hTdi, TRACK_MAP_TAB_LABEL, &trackMap.tab, false, TDI_TAB_CANCLOSE_NEVER, nullptr );
 		CTdiCtrl::AddTabLast( hTdi, BOOT_SECTOR_TAB_LABEL, &boot.tab, false, TDI_TAB_CANCLOSE_NEVER, nullptr );
 		CTdiCtrl::AddTabLast( hTdi, FILE_MANAGER_TAB_LABEL, &fileManager.tab, true, TDI_TAB_CANCLOSE_NEVER, nullptr );
 		return ERROR_SUCCESS;
