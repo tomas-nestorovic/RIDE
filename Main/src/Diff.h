@@ -13,11 +13,18 @@
 				struct{
 					int iPosB;
 					int nItemsB;
+				} op;
+				struct{
+					int iPosB;
+					int nItemsB;
 				} ins;
 				struct{
+					int iPosB;
 					int nItemsA;
 				} del;
 			};
+
+			void ConvertToDual();
 		} *PCScriptItem;
 	protected:
 		mutable TScriptItem *pEmptyScriptItem;
@@ -115,7 +122,6 @@
 						r.operation=TScriptItem::INSERTION;
 						r.iPosA=a-A;
 						r.ins.iPosB=b-B;
-						ASSERT(m>0);
 						r.ins.nItemsB=m;
 					nEmptyScriptItems--;
 					return true;
@@ -127,6 +133,7 @@
 					TScriptItem &r=*pEmptyScriptItem++;
 						r.operation=TScriptItem::DELETION;
 						r.iPosA=a-A;
+						r.del.iPosB=b-B;
 						r.del.nItemsA=n;
 					nEmptyScriptItems--;
 					return true;

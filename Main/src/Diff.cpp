@@ -1,5 +1,24 @@
 #include "stdafx.h"
 
+	void CDiffBase::TScriptItem::ConvertToDual(){
+		// transforms in-place the Item to its dual counterpart
+		std::swap( iPosA, op.iPosB );
+		switch (operation){
+			case INSERTION:
+				operation=DELETION;
+				break;
+			default:
+				ASSERT(FALSE);
+				//fallthrough
+			case DELETION:
+				operation=INSERTION;
+				break;
+		}
+	}
+
+
+
+
 	int CDiffBase::MergeScriptItems(TScriptItem *buffer) const{
 		// merges script Operations which the descendant has split into multiple consecutive ScriptItems; returns the number of merged ScriptItems
 		if (buffer==pEmptyScriptItem)

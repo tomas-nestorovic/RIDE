@@ -480,16 +480,16 @@
 					const CBitSequence &iBits=*pRevolutionBits[i];
 					for( BYTE j=i+1; j<GetIndexCount()-1; j++ ){
 						const CBitSequence &jBits=*pRevolutionBits[j];
-						const int nSesItemsI=iBits.GetShortestEditScript( jBits, pSes, nSesItemsMax );
-						if (nSesItemsI>0){ // Revolutions bitwise different?
-							const DWORD nLocalDiffsI=iBits.ScriptToLocalDiffs( pSes, nSesItemsI, pLocalRegionsI, nSesItemsI );
-							const int nSesItemsJ=jBits.GetShortestEditScript( iBits, pSes, nSesItemsMax );
-							const DWORD nLocalDiffsJ=jBits.ScriptToLocalDiffs( pSes, nSesItemsJ, pLocalRegionsJ, nSesItemsJ );
-							ASSERT( nLocalDiffsI==nLocalDiffsJ ); // differences must be marked symmetrically in both Revolutions
+						const int nSesItems=iBits.GetShortestEditScript( jBits, pSes, nSesItemsMax );
+						if (nSesItems>0){ // Revolutions bitwise different?
+							// : projecting differences into both Revolutions
+							iBits.ScriptToLocalDiffs( pSes, nSesItems, pLocalRegionsI, nSesItems );
+							for( DWORD k=nSesItems; k>0; pSes[--k].ConvertToDual() );
+							jBits.ScriptToLocalDiffs( pSes, nSesItems, pLocalRegionsJ, nSesItems );
 							// : symmetrically merging adjanced differences
 							DWORD nFuzzyRegions=0;
 							TLogTime tLastRegionEndI=INT_MIN, tLastRegionEndJ=INT_MIN;
-							for( DWORD d=0; d<nLocalDiffsI; d++ ){
+							for( DWORD d=0; d<nSesItems; d++ ){
 								const auto &diffI=pLocalRegionsI[d], &diffJ=pLocalRegionsJ[d];
 								if (diffI.tStart>tLastRegionEndI && diffJ.tStart>tLastRegionEndJ){
 									// disjunct differences in both Revolutions
@@ -499,12 +499,8 @@
 									tLastRegionEndI=diffI.tEnd, tLastRegionEndJ=diffJ.tEnd;
 								}else{
 									// adjanced differences in either Revolution (something has been Deleted, something else has been immediatelly Inserted)
-									const TLogTime mergedRegionLength=std::max(
-										std::max(tLastRegionEndI,diffI.tEnd) - pLocalRegionsI[nFuzzyRegions-1].tStart,
-										std::max(tLastRegionEndJ,diffJ.tEnd) - pLocalRegionsJ[nFuzzyRegions-1].tStart
-									);
-									tLastRegionEndI = pLocalRegionsI[nFuzzyRegions-1].tEnd = pLocalRegionsI[nFuzzyRegions-1].tStart+mergedRegionLength;
-									tLastRegionEndJ = pLocalRegionsJ[nFuzzyRegions-1].tEnd = pLocalRegionsJ[nFuzzyRegions-1].tStart+mergedRegionLength;
+									tLastRegionEndI = pLocalRegionsI[nFuzzyRegions-1].tEnd = diffI.tEnd;
+									tLastRegionEndJ = pLocalRegionsJ[nFuzzyRegions-1].tEnd = diffJ.tEnd;
 								}
 							}
 							// : filtering out only those fuzzy regions that overlap with Sectors
@@ -613,8 +609,8 @@
 		tr.SetCurrentTimeAndProfile( tFrom, profileFrom );
 		for( DWORD i=0; i<nBits; ){
 			TBit &r=pBits[i++];
-				r.value=tr.ReadBit();
 				r.time=tr.GetCurrentTime();
+				r.value=tr.ReadBit();
 		}
 	}
 
