@@ -33,6 +33,9 @@
 							continue;
 						}else
 							break;
+					default:
+						ASSERT(FALSE);
+						//fallthrough
 					case TScriptItem::DELETION:
 						if (psiNext->iPosA==psiLast->iPosA+psiLast->del.nItemsA){
 							psiLast->del.nItemsA+=psiNext->del.nItemsA; // merge

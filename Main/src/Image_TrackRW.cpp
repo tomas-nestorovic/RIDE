@@ -483,9 +483,9 @@
 						const int nSesItems=iBits.GetShortestEditScript( jBits, pSes, nSesItemsMax );
 						if (nSesItems>0){ // Revolutions bitwise different?
 							// : projecting differences into both Revolutions
-							iBits.ScriptToLocalDiffs( pSes, nSesItems, pLocalRegionsI, nSesItems );
+							iBits.ScriptToLocalDiffs( pSes, nSesItems, pLocalRegionsI );
 							for( DWORD k=nSesItems; k>0; pSes[--k].ConvertToDual() );
-							jBits.ScriptToLocalDiffs( pSes, nSesItems, pLocalRegionsJ, nSesItems );
+							jBits.ScriptToLocalDiffs( pSes, nSesItems, pLocalRegionsJ );
 							// : symmetrically merging adjanced differences
 							DWORD nFuzzyRegions=0;
 							TLogTime tLastRegionEndI=INT_MIN, tLastRegionEndJ=INT_MIN;
@@ -642,14 +642,12 @@
 				);
 	}
 
-	DWORD CImage::CTrackReader::CBitSequence::ScriptToLocalDiffs(const CDiffBase::TScriptItem *pScript,int nScriptItems,TRegion *pOutDiffs,int nDiffsMax) const{
-		// composes Regions of differences that timely match with bits observed in this BitSequence (e.g. for visual display by the caller); returns the number of unique Regions
+	void CImage::CTrackReader::CBitSequence::ScriptToLocalDiffs(const CDiffBase::TScriptItem *pScript,int nScriptItems,TRegion *pOutDiffs) const{
+		// composes Regions of differences that timely match with bits observed in this BitSequence (e.g. for visual display by the caller)
 		ASSERT( nScriptItems>0 );
-		ASSERT( nScriptItems<=nDiffsMax );
-		DWORD nDiffs=0;
-		while (nDiffs<nScriptItems){
-			const auto &si=pScript[nDiffs];
-			auto &rDiff=pOutDiffs[nDiffs];
+		while (nScriptItems-->0){
+			const auto &si=pScript[nScriptItems];
+			auto &rDiff=pOutDiffs[nScriptItems];
 			rDiff.tStart=pBits[si.iPosA].time;
 			switch (si.operation){
 				case CDiffBase::TScriptItem::INSERTION:
@@ -657,25 +655,24 @@
 					rDiff.color=0xb4; // tinted red
 					rDiff.tEnd=pBits[si.iPosA+1].time; // even Deletions must be represented locally!
 					break;
+				default:
+					ASSERT(FALSE); // we shouldn't end up here!
+					//fallthrough
 				case CDiffBase::TScriptItem::DELETION:
 					// "theirs" misses some bits that "this" contains
 					rDiff.color=0x5555ff; // another tinted red
 					rDiff.tEnd=pBits[si.iPosA+si.del.nItemsA].time;
 					break;
-				default:
-					ASSERT(FALSE); return nDiffs; // we shouldn't end up here!
 			}
-			nDiffs++;
 		}
-		return nDiffs;
 	}
 
-	DWORD CImage::CTrackReader::CBitSequence::ScriptToLocalRegions(const CDiffBase::TScriptItem *pScript,int nScriptItems,TRegion *pOutRegions,int nRegionsMax,COLORREF regionColor) const{
+	DWORD CImage::CTrackReader::CBitSequence::ScriptToLocalRegions(const CDiffBase::TScriptItem *pScript,int nScriptItems,TRegion *pOutRegions,COLORREF regionColor) const{
 		// composes Regions of differences that timely match with bits observed in this BitSequence (e.g. for visual display by the caller); returns the number of unique Regions
-		const DWORD nDiffs=ScriptToLocalDiffs( pScript, nScriptItems, pOutRegions, nRegionsMax );
+		ScriptToLocalDiffs( pScript, nScriptItems, pOutRegions );
 		TLogTime tLastRegionEnd=INT_MIN;
 		DWORD nRegions=0;
-		for( DWORD i=0; i<nDiffs; i++ ){
+		for( int i=0; i<nScriptItems; i++ ){
 			const auto &diff=pOutRegions[i];
 			if (diff.tStart>tLastRegionEnd){
 				// disjunct Diffs - creating a new Region
