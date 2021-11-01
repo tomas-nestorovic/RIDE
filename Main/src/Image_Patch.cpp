@@ -38,10 +38,10 @@
 				// . reading Source Track
 				PSectorData bufferSectorData[(TSector)-1];
 				TFdcStatus bufferFdcStatus[(TSector)-1];
-				pp.source->GetTrackData( chs.cylinder, chs.head, Revolution::ANY_GOOD, bufferId, sectorIdAndPositionIdentity, nSectors, true, bufferSectorData, bufferLength, bufferFdcStatus );
+				pp.source->GetTrackData( chs.cylinder, chs.head, Revolution::ANY_GOOD, bufferId, sectorIdAndPositionIdentity, nSectors, bufferSectorData, bufferLength, bufferFdcStatus );
 				for( TSector s=0; s<nSectors; s++ ){
 					chs.sectorId=bufferId[s];
-					bufferSectorData[s]=pp.source->GetSectorData( chs, s, false, bufferLength+s, bufferFdcStatus+s );
+					bufferSectorData[s]=pp.source->GetSectorData( chs, s, Revolution::CURRENT, bufferLength+s, bufferFdcStatus+s );
 				}
 				// . formatting Target Track
 				TStdWinError err=pp.target->FormatTrack(chs.cylinder,chs.head,codec!=Codec::UNKNOWN?codec:pp.dos->formatBoot.codecType,nSectors,bufferId,bufferLength,bufferFdcStatus,pp.gap3,0x00);
@@ -49,11 +49,11 @@
 terminateWithError:	return pAction->TerminateWithError(err);
 				// . writing to Target Track
 				PVOID dummyBuffer[(TSector)-1];
-				pp.target->GetTrackData( chs.cylinder, chs.head, Revolution::ANY_GOOD, bufferId, sectorIdAndPositionIdentity, nSectors, true, (PSectorData *)dummyBuffer, (PWORD)dummyBuffer, (TFdcStatus *)dummyBuffer ); // "DummyBuffer" = throw away any outputs
+				pp.target->GetTrackData( chs.cylinder, chs.head, Revolution::ANY_GOOD, bufferId, sectorIdAndPositionIdentity, nSectors, (PSectorData *)dummyBuffer, (PWORD)dummyBuffer, (TFdcStatus *)dummyBuffer ); // "DummyBuffer" = throw away any outputs
 				for( BYTE s=0; s<nSectors; ){
 					if (!bufferFdcStatus[s].DescribesMissingDam()){
 						chs.sectorId=bufferId[s]; WORD w;
-						if (const PSectorData targetData=pp.target->GetSectorData(chs,s,true,&w,&TFdcStatus())){
+						if (const PSectorData targetData=pp.target->GetSectorData(chs,s,Revolution::ANY_GOOD,&w,&TFdcStatus())){
 							::memcpy( targetData, bufferSectorData[s], bufferLength[s] );
 							if (( err=pp.target->MarkSectorAsDirty(chs,s,bufferFdcStatus+s) )!=ERROR_SUCCESS)
 								goto errorDuringWriting;

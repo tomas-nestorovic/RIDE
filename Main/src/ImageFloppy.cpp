@@ -122,8 +122,7 @@
 							image->BufferTrackData(
 								req.track>>1, req.track&1, req.revolution,
 								ids, sectorIdAndPositionIdentity,
-								ps->__scanTrack__( req.track, ids, nullptr ),
-								false
+								ps->__scanTrack__( req.track, ids, nullptr )
 							);
 							const Utils::CExclusivelyLocked<TScannedTracks> locker(scannedTracks);
 							scannedTracks.infos[req.track].bufferedRevs|=1<<req.revolution;
@@ -133,8 +132,7 @@
 								image->BufferTrackData(
 									req.track>>1, req.track&1, (Revolution::TType)rev,
 									ids, sectorIdAndPositionIdentity,
-									ps->__scanTrack__( req.track, ids, nullptr ),
-									false
+									ps->__scanTrack__( req.track, ids, nullptr )
 								);
 							const Utils::CExclusivelyLocked<TScannedTracks> locker(scannedTracks);
 							scannedTracks.infos[req.track].bufferedRevs=-1;

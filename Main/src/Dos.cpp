@@ -354,7 +354,7 @@ reportError:Utils::Information(buf);
 			// . verifying Tracks by trying to read their formatted Sectors
 			if (fp.dos->image->RequiresFormattedTracksVerification()){
 				// : buffering Sectors from the same Track by the underlying Image, making them ready for IMMEDIATE usage
-				fp.dos->image->BufferTrackData( cyl, head, fp.bufferId, Utils::CByteIdentity(), nSectors, false );
+				fp.dos->image->BufferTrackData( cyl, head, Revolution::CURRENT, fp.bufferId, Utils::CByteIdentity(), nSectors );
 				// : verifying formatted Sectors
 				WORD w;
 				for( PCSectorId pId=fp.bufferId; nSectors--; )
@@ -458,7 +458,7 @@ reportError:Utils::Information(buf);
 				if (pEmptyId==bufferId) // Track contains no Empty Sectors
 					continue;
 				// : buffering Sectors from the same Track by the underlying Image, making them ready for IMMEDIATE usage
-				fesp.dos->image->BufferTrackData( cyl, head, bufferId, Utils::CByteIdentity(), pEmptyId-bufferId, true );
+				fesp.dos->image->BufferTrackData( cyl, head, Revolution::ANY_GOOD, bufferId, Utils::CByteIdentity(), pEmptyId-bufferId );
 				// : filling all Empty Sectors
 				TPhysicalAddress chs={ cyl, head };
 				for( WORD w; pEmptyId>bufferId; ){
@@ -789,7 +789,7 @@ reportError:Utils::Information(buf);
 				while (n && item->chs.cylinder==currCyl && item->chs.head==currHead)
 					bufferId[nSectors++]=item->chs.sectorId, item++, n--;
 				// . buffering Sectors from the same Track by the underlying Image, making them ready for IMMEDIATE usage
-				image->BufferTrackData( currCyl, currHead, bufferId, sectorIdAndPositionIdentity, nSectors, true ); // make Sectors data ready for IMMEDIATE usage
+				image->BufferTrackData( currCyl, currHead, Revolution::ANY_GOOD, bufferId, sectorIdAndPositionIdentity, nSectors ); // make Sectors data ready for IMMEDIATE usage
 				// . reading Sectors from the same Track in the underlying Image
 				WORD w;
 				for( TSector s=0; s<nSectors; s++ )
@@ -947,7 +947,7 @@ reportError:Utils::Information(buf);
 					if (!nEmptySectors)
 						continue;
 					// . buffering Sectors from the same Track by the underlying Image, making them ready for IMMEDIATE usage
-					image->BufferTrackData( item.chs.cylinder, item.chs.head, bufferId, sectorIdAndPositionIdentity, nEmptySectors, true );
+					image->BufferTrackData( item.chs.cylinder, item.chs.head, Revolution::ANY_GOOD, bufferId, sectorIdAndPositionIdentity, nEmptySectors );
 					// . importing the File to Empty Sectors on the current Track
 					for( WORD w; nEmptySectors--; ){
 						item.chs.sectorId=*pId++;

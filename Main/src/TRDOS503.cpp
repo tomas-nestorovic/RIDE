@@ -733,7 +733,7 @@
 		// - buffering the whole Directory (to eventually speed-up reading from a real floppy)
 		TSectorId buffer[TRDOS503_TRACK_SECTORS_COUNT];
 		trdos->GetListOfStdSectors(0,0,buffer);
-		trdos->image->BufferTrackData( 0, 0, buffer, Utils::CByteIdentity(), TRDOS503_BOOT_SECTOR_NUMBER, true ); // including the Boot Sector (to not have to include another named constant)
+		trdos->image->BufferTrackData( 0, 0, Revolution::ANY_GOOD, buffer, Utils::CByteIdentity(), TRDOS503_BOOT_SECTOR_NUMBER ); // including the Boot Sector (to not have to include another named constant)
 	}
 	bool CTRDOS503::TTrdosDirectoryTraversal::__existsNextEntry__(){
 		// True <=> another Entry in current Directory exists (Empty or not), otherwise False

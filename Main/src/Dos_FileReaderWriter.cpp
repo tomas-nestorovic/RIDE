@@ -92,7 +92,7 @@
 			bool readWithoutCrcError=true;
 			TFdcStatus sr;
 			for( WORD w; n--; item++ )
-				if (const PCSectorData sectorData=dos->image->GetSectorData(item->chs,0,true,&w,&sr)){
+				if (const PCSectorData sectorData=dos->image->GetSectorData(item->chs,0,Revolution::ANY_GOOD,&w,&sr)){
 					readWithoutCrcError&=sr.IsWithoutError();
 					w-=d.rem+dataBeginOffsetInSector+dataEndOffsetInSector;
 					if (w<nCount){
@@ -121,7 +121,7 @@
 			bool writtenWithoutCrcError=true;
 			TFdcStatus sr;
 			for( WORD w; n--; item++ )
-				if (const PSectorData sectorData=dos->image->GetSectorData(item->chs,0,false,&w,&sr)){ // False = freezing the state of data (eventually erroneous)
+				if (const PSectorData sectorData=dos->image->GetSectorData(item->chs,0,Revolution::CURRENT,&w,&sr)){ // Revolution.Current = freezing the state of data (eventually erroneous)
 					writtenWithoutCrcError&=sr.IsWithoutError();
 					w-=d.rem+dataBeginOffsetInSector+dataEndOffsetInSector;
 					dos->image->MarkSectorAsDirty(item->chs,0,&sr);

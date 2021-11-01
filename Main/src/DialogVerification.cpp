@@ -707,7 +707,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 				if (!trackContainsEmptySectors)
 					continue;
 				// . buffering Sectors from the same Track by the underlying Image, making them ready for IMMEDIATE usage
-				image->BufferTrackData( chs.cylinder, chs.head, bufferId, sectorIdAndPositionIdentity, nSectors, true );
+				image->BufferTrackData( chs.cylinder, chs.head, Revolution::ANY_GOOD, bufferId, sectorIdAndPositionIdentity, nSectors );
 				// . determining healthiness of Empty Sectors
 				for( TSector s=0; s<nSectors; s++ )
 					if (statuses[s]==CDos::TSectorStatus::EMPTY){

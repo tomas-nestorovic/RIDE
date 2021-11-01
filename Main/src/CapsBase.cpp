@@ -569,10 +569,9 @@
 			return 0;
 	}
 
-	void CCapsBase::GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses){
+	void CCapsBase::GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses){
 		// populates output buffers with specified Sectors' data, usable lengths, and FDC statuses; ALWAYS attempts to buffer all Sectors - caller is then to sort out eventual read errors (by observing the FDC statuses); caller can call ::GetLastError to discover the error for the last Sector in the input list
 		ASSERT( outBufferData!=nullptr && outBufferLengths!=nullptr && outFdcStatuses!=nullptr );
-		silentlyRecoverFromErrors&=rev>=Revolution::MAX; // can't recover if wanted particular Revolution
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead) // can Track actually exist?
 			goto invalidTrack;
@@ -595,42 +594,46 @@
 					outBufferLengths++;
 					continue;
 				}
-				// . attempting for Sector data
-				if (pis->dirtyRevolution<Revolution::MAX){
-					rev = pis->dirtyRevolution; // modified Revolution is obligatory for any subsequent data requests
-					silentlyRecoverFromErrors=false; // can't recover if one particular Revolution already modified
-				}
-				const WORD usableSectorLength=GetUsableSectorLength(sectorId.lengthCode);
-				auto *currRev=pis->revolutions+( rev<Revolution::MAX ? pis->currentRevolution=rev : pis->currentRevolution );
-				for( BYTE nAttempts=rev==Revolution::ANY_GOOD?pis->nRevolutions:1; nAttempts>0; nAttempts-- ){
-					// : if Data already read WithoutError, returning them
-					if (currRev->data || currRev->fdcStatus.DescribesMissingDam()) // A|B, A = some data exist, B = reattempting to read the DAM-less Sector only if automatic recovery desired
-						if (currRev->fdcStatus.IsWithoutError() || !silentlyRecoverFromErrors) // A|B, A = returning error-free data, B = settling with any data if automatic recovery not desired
-							break;
-					// : attempting next disk Revolution to retrieve healthy Data
-					if (usableSectorLength!=0){ // e.g. Sector with LengthCode 167 has no data
-						::free(currRev->data), currRev->data=nullptr;
-						if (rev<pis->nRevolutions){
-							// wanted particular EXISTING Revolution
-							pit->ReadSector( *pis, pis->nRevolutions>1?rev:0 );
-							break;
-						}else if (rev<Revolution::MAX)
-							// wanted particular NONEXISTING Revolution
+				// . setting initial Revolution
+				BYTE nDataAttempts=1; // assumption
+				if (pis->dirtyRevolution<Revolution::MAX)
+					pis->currentRevolution=pis->dirtyRevolution; // modified Revolution is obligatory for any subsequent data requests
+				else if (rev>=pis->nRevolutions)
+					switch (rev){
+						default:
 							ASSERT(FALSE); // we shouldn't end up here!
-						else{
-							// wanted any Revolution
-							if (++pis->currentRevolution>=pis->nRevolutions)
-								pis->currentRevolution=0;
-							currRev=pis->revolutions+pis->currentRevolution;
-							if (currRev->idEndTime>0) // Sector found in CurrentRevolution?
-								pit->ReadSector( *pis, pis->currentRevolution );
-						}
+						case Revolution::CURRENT:
+							break;
+						case Revolution::NEXT:
+							pis->currentRevolution=(pis->currentRevolution+1)%pis->nRevolutions;
+							break;
+						case Revolution::ANY_GOOD:
+							nDataAttempts=pis->nRevolutions;
+							break;
 					}
-				}
+				// . attempting for Sector data
+				auto *currRev=pis->revolutions+pis->currentRevolution;
+				if (IsValidSectorLengthCode(sectorId.lengthCode)) // e.g. invalid for copy-protection marks (Sector with LengthCode 167 has no data)
+					do{
+						// : attempting for Sector data in CurrentRevolution
+						pit->ReadSector( *pis, pis->currentRevolution );
+						// : if Data read WithoutError, returning them
+						if (currRev->data && currRev->fdcStatus.IsWithoutError() // healthy data exist
+							||
+							currRev->fdcStatus.DescribesMissingDam() // the Sector doesn't have the Data Field
+						)
+							break;
+						// : attempting next disk Revolution to retrieve healthy Data
+						if (!--nDataAttempts) // was this the last attempt?
+							break;
+						if (++pis->currentRevolution>=pis->nRevolutions)
+							pis->currentRevolution=0;
+						currRev=pis->revolutions+pis->currentRevolution;
+					}while (true);
 				// . returning (any) Data
 				*outFdcStatuses++=currRev->fdcStatus;
 				*outBufferData++=currRev->data;
-				*outBufferLengths++=usableSectorLength;
+				*outBufferLengths++=GetUsableSectorLength(sectorId.lengthCode); // e.g. Sector with LengthCode 167 has no data
 			}
 		else
 invalidTrack:

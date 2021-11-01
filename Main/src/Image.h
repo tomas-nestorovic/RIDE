@@ -38,14 +38,16 @@
 			R0			=0,
 			R1, R2, R3, R4, R5, R6, R7,
 			MAX,
-			// constants to iterate over Revolutions
-			NEXT,
-			// constants to describe quantities
+			// constants to select Revolution
+			CURRENT		=MAX,	// don't calibrate the head, settle with any (already buffered) Data, even erroneous
+			NEXT,				// don't calibrate the head, settle with any (newly buffered) Data, even erroneous
+			ANY_GOOD,			// do anything that doesn't involve the user to get flawless data
 			NONE,
-			UNKNOWN,
+			// constants to describe quantities
+			QUANTITY_FIRST,
+			UNKNOWN		=QUANTITY_FIRST,
 			INFINITY,
 			// the following constants should be ignored by all containers
-			ANY_GOOD,
 			ALL_INTERSECTED
 		};
 	}
@@ -637,13 +639,10 @@
 		virtual TLogTime EstimateNanosecondsPerOneByte() const;
 		TSector GetCountOfHealthySectors(TCylinder cyl,THead head) const;
 		bool IsTrackHealthy(TCylinder cyl,THead head) const;
-		virtual void GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses)=0;
-		void BufferTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors);
-		void BufferTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors);
-		PSectorData GetSectorData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId pid,BYTE nSectorsToSkip,bool silentlyRecoverFromError,PWORD sectorLength,TFdcStatus *pFdcStatus);
-		PSectorData GetSectorData(TCylinder cyl,THead head,PCSectorId pid,BYTE nSectorsToSkip,bool silentlyRecoverFromError,PWORD sectorLength,TFdcStatus *pFdcStatus);
-		PSectorData GetSectorData(RCPhysicalAddress chs,Revolution::TType rev,BYTE nSectorsToSkip,bool silentlyRecoverFromError,PWORD sectorLength,TFdcStatus *pFdcStatus);
-		PSectorData GetSectorData(RCPhysicalAddress chs,BYTE nSectorsToSkip,bool silentlyRecoverFromError,PWORD sectorLength,TFdcStatus *pFdcStatus);
+		virtual void GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses)=0;
+		void BufferTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors);
+		PSectorData GetSectorData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId pid,BYTE nSectorsToSkip,PWORD sectorLength,TFdcStatus *pFdcStatus);
+		PSectorData GetSectorData(RCPhysicalAddress chs,BYTE nSectorsToSkip,Revolution::TType rev,PWORD sectorLength,TFdcStatus *pFdcStatus);
 		PSectorData GetHealthySectorData(TCylinder cyl,THead head,PCSectorId pid,PWORD sectorLength);
 		PSectorData GetHealthySectorData(RCPhysicalAddress chs,PWORD sectorLength);
 		PSectorData GetHealthySectorData(RCPhysicalAddress chs);

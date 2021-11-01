@@ -108,7 +108,7 @@
 			TStdWinError VerifyUnsignedValue(RCPhysicalAddress chs,LPCTSTR chsName,LPCTSTR valueName,T &rValue,T rangeA,T rangeZ) const{
 				// confirms an unsigned numeric value at specified Offset has a Value from Range={A,...,Z}; if not, presents the problem using standard formulation and returns user's reaction
 				WORD w; TFdcStatus sr;
-				if (const PCSectorData data=dos->image->GetSectorData(chs,0,false,&w,&sr))
+				if (const PCSectorData data=dos->image->GetSectorData(chs,0,Revolution::CURRENT,&w,&sr))
 					if (sr.IsWithoutError())
 						switch (ConfirmUnsignedValueFix(
 									chsName, valueName,
@@ -143,7 +143,7 @@
 			TStdWinError WarnIfUnsignedValueOutOfRange(RCPhysicalAddress chs,LPCTSTR chsName,LPCTSTR valueName,const T &rValue,T rangeA,T rangeZ) const{
 				// issues a warning if unsigned numeric value at specified Offset has a Value out of Range={A,...,Z}; returns Windows standard i/o error
 				WORD w; TFdcStatus sr;
-				if (const PCSectorData data=dos->image->GetSectorData(chs,0,false,&w,&sr))
+				if (const PCSectorData data=dos->image->GetSectorData(chs,0,Revolution::CURRENT,&w,&sr))
 					if (sr.IsWithoutError())
 						return	WarnIfUnsignedValueOutOfRange(
 									chsName, valueName,

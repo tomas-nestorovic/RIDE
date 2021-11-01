@@ -235,7 +235,7 @@
 			// . scanning the Track to draw its Sector data
 			if (pvtm->displayType>=TDisplayType::DATA_OK_ONLY){
 				TFdcStatus statuses[(TSector)-1];
-				image->GetTrackData( ti.cylinder, ti.head, Revolution::ANY_GOOD, ti.bufferId, sectorIdAndPositionIdentity, ti.nSectors, false, ti.bufferSectorData, ti.bufferLength, statuses );
+				image->GetTrackData( ti.cylinder, ti.head, Revolution::CURRENT, ti.bufferId, sectorIdAndPositionIdentity, ti.nSectors, ti.bufferSectorData, ti.bufferLength, statuses );
 				for( TSector n=0; n<ti.nSectors; n++ )
 					if (pvtm->displayType!=TDisplayType::DATA_ALL && !statuses[n].IsWithoutError())
 						ti.bufferSectorData[n]=nullptr;
@@ -556,7 +556,7 @@
 				// clicked on a Sector
 				if (app.IsInGodMode() && !IMAGE->IsWriteProtected()){
 					WORD w; TFdcStatus sr;
-					IMAGE->GetSectorData( chs, nSectorsToSkip, false, &w, &sr );
+					IMAGE->GetSectorData( chs, nSectorsToSkip, Revolution::CURRENT, &w, &sr );
 					if (!sr.IsWithoutError()){
 						if (Utils::QuestionYesNo(_T("Unformat this track?"),MB_DEFBUTTON1))
 							if (const TStdWinError err=IMAGE->UnformatTrack( chs.cylinder, chs.head ))

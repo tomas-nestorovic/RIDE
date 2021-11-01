@@ -79,7 +79,7 @@
 				PCSectorData data[Revolution::MAX];
 				bool allRevolutionsIdentical=true; // assumption
 				for( BYTE rev=0; rev<nAvailableRevolutions; rev++ ){
-					data[rev]=image->GetSectorData( chs, (Revolution::TType)rev, sector.indexOnTrack, false, &w, &sr );
+					data[rev]=image->GetSectorData( chs, sector.indexOnTrack, (Revolution::TType)rev, &w, &sr );
 					allRevolutionsIdentical&=data[rev]!=nullptr;
 				}
 				if (!w) // e.g. reading Sector with LengthCode 231 - such Sector has by default no data (a pointer to zero-length data has been returned by GetSectorData)
@@ -110,7 +110,7 @@
 					::SetLastError( ERROR_SUCCESS );
 					return nBytesToRead;
 				}
-			}else if (const PCSectorData sectorData=image->GetSectorData(GetCurrentPhysicalAddress(),revolution,sector.indexOnTrack,true,&w,&sr)){ // True = attempting to recover from errors despite many small read requests are made, potentially leading to a floppy calibration overhead
+			}else if (const PCSectorData sectorData=image->GetSectorData(GetCurrentPhysicalAddress(),sector.indexOnTrack,revolution,&w,&sr)){
 				if (!w) // e.g. reading Sector with LengthCode 231 - such Sector has by default no data (a pointer to zero-length data has been returned by GetSectorData)
 					break;
 				w-=sector.offset;
@@ -149,7 +149,7 @@
 		WORD w; TFdcStatus sr;
 		while (true){
 			const TPhysicalAddress chs=GetCurrentPhysicalAddress();
-			if (const PSectorData sectorData=image->GetSectorData(chs,sector.indexOnTrack,false,&w,&sr)){ // False = freezing the state of data (eventually erroneous)
+			if (const PSectorData sectorData=image->GetSectorData(chs,sector.indexOnTrack,Revolution::CURRENT,&w,&sr)){ // Revolution.Current = freezing the state of data (eventually erroneous)
 				if (!w) // e.g. reading Sector with LengthCode 231 - such Sector has by default no data (a pointer to zero-length data has been returned by GetSectorData)
 					break;
 				writtenWithoutCrcError&=sr.IsWithoutError();

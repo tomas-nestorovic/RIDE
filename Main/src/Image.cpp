@@ -683,7 +683,7 @@ namespace Medium{
 		for( TSector s=0; s<nSectors; s++ ){
 			const TPhysicalAddress chs={ cyl, head, bufferId[s] };
 			WORD w; TFdcStatus st;
-			nHealthySectors+=	const_cast<PImage>(this)->GetSectorData(chs,s,false,&w,&st)!=nullptr
+			nHealthySectors+=	const_cast<PImage>(this)->GetSectorData(chs,s,Revolution::CURRENT,&w,&st)!=nullptr
 								&&
 								st.IsWithoutError();
 		}
@@ -707,43 +707,24 @@ namespace Medium{
 		return 1;
 	}
 
-	void CImage::BufferTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors){
+	void CImage::BufferTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors){
 		// buffers Sectors in the same Track by the underlying Image, making them ready for IMMEDIATE usage - later than immediate calls to GetSectorData may be slower
 		LOG_TRACK_ACTION(cyl,head,_T("void CImage::BufferTrackData"));
 		PVOID dummyBuffer[(TSector)-1];
-		GetTrackData( cyl, head, rev, bufferId, bufferNumbersOfSectorsToSkip, nSectors, true, (PSectorData *)dummyBuffer, (PWORD)dummyBuffer, (TFdcStatus *)dummyBuffer ); // "DummyBuffer" = throw away any outputs
+		GetTrackData( cyl, head, rev, bufferId, bufferNumbersOfSectorsToSkip, nSectors, (PSectorData *)dummyBuffer, (PWORD)dummyBuffer, (TFdcStatus *)dummyBuffer ); // "DummyBuffer" = throw away any outputs
 	}
 
-	void CImage::BufferTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,bool silentlyRecoverFromErrors){
-		// buffers Sectors in the same Track by the underlying Image, making them ready for IMMEDIATE usage - later than immediate calls to GetSectorData may be slower
-		BufferTrackData( cyl, head, Revolution::ANY_GOOD, bufferId, bufferNumbersOfSectorsToSkip, nSectors, true );
-	}
-
-	PSectorData CImage::GetSectorData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId pid,BYTE nSectorsToSkip,bool silentlyRecoverFromError,PWORD sectorLength,TFdcStatus *pFdcStatus){
+	PSectorData CImage::GetSectorData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId pid,BYTE nSectorsToSkip,PWORD sectorLength,TFdcStatus *pFdcStatus){
 		// returns Data of a Sector on a given PhysicalAddress; returns Null if Sector not found or Track not formatted
 		PSectorData data;
-		GetTrackData( cyl, head, rev, pid, &nSectorsToSkip, 1, silentlyRecoverFromError, &data, sectorLength, pFdcStatus );
+		GetTrackData( cyl, head, rev, pid, &nSectorsToSkip, 1, &data, sectorLength, pFdcStatus );
 		return data;
 	}
 
-	PSectorData CImage::GetSectorData(TCylinder cyl,THead head,PCSectorId pid,BYTE nSectorsToSkip,bool silentlyRecoverFromError,PWORD sectorLength,TFdcStatus *pFdcStatus){
+	PSectorData CImage::GetSectorData(RCPhysicalAddress chs,BYTE nSectorsToSkip,Revolution::TType rev,PWORD sectorLength,TFdcStatus *pFdcStatus){
 		// returns Data of a Sector on a given PhysicalAddress; returns Null if Sector not found or Track not formatted
 		PSectorData data;
-		GetTrackData( cyl, head, Revolution::ANY_GOOD, pid, &nSectorsToSkip, 1, silentlyRecoverFromError, &data, sectorLength, pFdcStatus );
-		return data;
-	}
-
-	PSectorData CImage::GetSectorData(RCPhysicalAddress chs,Revolution::TType rev,BYTE nSectorsToSkip,bool silentlyRecoverFromError,PWORD sectorLength,TFdcStatus *pFdcStatus){
-		// returns Data of a Sector on a given PhysicalAddress; returns Null if Sector not found or Track not formatted
-		PSectorData data;
-		GetTrackData( chs.cylinder, chs.head, rev, &chs.sectorId, &nSectorsToSkip, 1, silentlyRecoverFromError, &data, sectorLength, pFdcStatus );
-		return data;
-	}
-
-	PSectorData CImage::GetSectorData(RCPhysicalAddress chs,BYTE nSectorsToSkip,bool silentlyRecoverFromError,PWORD sectorLength,TFdcStatus *pFdcStatus){
-		// returns Data of a Sector on a given PhysicalAddress; returns Null if Sector not found or Track not formatted
-		PSectorData data;
-		GetTrackData( chs.cylinder, chs.head, Revolution::ANY_GOOD, &chs.sectorId, &nSectorsToSkip, 1, silentlyRecoverFromError, &data, sectorLength, pFdcStatus );
+		GetTrackData( chs.cylinder, chs.head, rev, &chs.sectorId, &nSectorsToSkip, 1, &data, sectorLength, pFdcStatus );
 		return data;
 	}
 
@@ -751,7 +732,7 @@ namespace Medium{
 		// returns Data of a Sector on a given PhysicalAddress; returns Null if Sector not found or Track not formatted
 		TFdcStatus st;
 		::SetLastError(ERROR_SUCCESS); // assumption
-		if (const PSectorData data=GetSectorData(cyl,head,pid,0,true,sectorLength,&st))
+		if (const PSectorData data=GetSectorData(cyl,head,Revolution::ANY_GOOD,pid,0,sectorLength,&st))
 			if (st.IsWithoutError()) // Data must be either without error ...
 				return data;
 		if (!::GetLastError())
