@@ -196,8 +196,8 @@ namespace Utils{
 		static void SetDlgItemSingleCharUsingFont(HWND hDlg,WORD id,WCHAR singleChar,HFONT hFont);
 		static void ConvertToCommandLikeButton(HWND hStdBtn,WCHAR wingdingsGlyphBeforeText=0xf0e8,COLORREF textColor=0,int glyphPointSizeIncrement=0,COLORREF glyphColor=0); // 0xf0e8 = arrow right
 
-		CRideDialog(LPCTSTR lpszTemplateName,CWnd *pParentWnd=nullptr);
-		CRideDialog(UINT nIDTemplate,CWnd *pParentWnd=nullptr);
+		CRideDialog(LPCTSTR lpszTemplateName,const CWnd *pParentWnd=nullptr);
+		CRideDialog(UINT nIDTemplate,const CWnd *pParentWnd=nullptr);
 
 		INT_PTR DoModal() override;
 		HWND GetDlgItemHwnd(WORD id) const;

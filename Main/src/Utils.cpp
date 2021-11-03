@@ -963,14 +963,14 @@ namespace Utils{
 		// ctor
 	}
 
-	CRideDialog::CRideDialog(LPCTSTR lpszTemplateName,CWnd *pParentWnd)
+	CRideDialog::CRideDialog(LPCTSTR lpszTemplateName,const CWnd *pParentWnd)
 		// ctor
-		: CDialog(lpszTemplateName,pParentWnd) {
+		: CDialog( lpszTemplateName, pParentWnd?CWnd::FromHandle(pParentWnd->m_hWnd):nullptr ) {
 	}
 
-	CRideDialog::CRideDialog(UINT nIDTemplate,CWnd *pParentWnd)
+	CRideDialog::CRideDialog(UINT nIDTemplate,const CWnd *pParentWnd)
 		// ctor
-		: CDialog(nIDTemplate,pParentWnd) {
+		: CDialog( nIDTemplate, pParentWnd?CWnd::FromHandle(pParentWnd->m_hWnd):nullptr ) {
 	}
 
 	INT_PTR CRideDialog::DoModal(){
@@ -978,7 +978,7 @@ namespace Utils{
 		app.m_pMainWnd->BeginModalState(); // block any interaction with the MainWindow
 			CWnd *const pActiveWindowOrg=app.m_pActiveWnd;
 			if (app.m_pActiveWnd) app.m_pActiveWnd->BeginModalState(); // block any interaction with previously active window
-				app.m_pActiveWnd=this; // let any default message boxes be parented by the Parent
+				app.m_pActiveWnd=CWnd::FromHandle(m_hWnd); // let any default message boxes be parented by the Parent
 					const INT_PTR result=__super::DoModal();
 				app.m_pActiveWnd=pActiveWindowOrg; 
 			if (app.m_pActiveWnd) app.m_pActiveWnd->EndModalState();
