@@ -46,6 +46,7 @@
 			ON_UPDATE_COMMAND_UI(ID_WEB_NAVIGATE_BACK,__navigateBack_updateUI__)
 		ON_COMMAND(ID_WEB_NAVIGATE_FORTH,__navigateForward__)
 			ON_UPDATE_COMMAND_UI(ID_WEB_NAVIGATE_FORTH,__navigateForward_updateUI__)
+		ON_COMMAND(ID_FILE_PRINT,OnFilePrint)
 		ON_COMMAND(ID_WEB_DEFAULT_BROWSER,__openCurrentPageInDefaultBrowser__)
 	END_MESSAGE_MAP()
 
