@@ -57,7 +57,7 @@
 		void __exportErroneousTracksToHtml__(CFile &fHtml) const{
 			// exports SourceTrackErrors to given HTML file
 			Utils::WriteToFile(fHtml,_T("<html><head><style>body,td{font-size:13pt;margin:24pt}table{border:1pt solid black;spacing:10pt}td{vertical-align:top}td.caption{font-size:14pt;background:silver}</style></head><body>"));
-				Utils::WriteToFileFormatted( fHtml, _T("<h3>Configuration</h3><table><tr><td class=caption>System:</td><td>%s</td></tr><tr></tr><tr><td class=caption>Source:</td><td>%s<br>via<br>%s</td></tr><tr><td class=caption>Target:</td><td>%s<br>via<br>%s</td></tr><tr><td class=caption>Full track analysis:</td><td>%s</td></tr></table><br>"), dos->properties->name, Medium::GetDescription(dos->formatBoot.mediumType), source->GetPathName().GetLength()?source->GetPathName():_T("N/A"), Medium::GetDescription(mediumType), target->GetPathName().GetLength()?target->GetPathName():_T("N/A"), fullTrackAnalysis?_T("On"):_T("Off") );
+				Utils::WriteToFileFormatted( fHtml, _T("<h3>Configuration</h3><table><tr><td class=caption>") APP_ABBREVIATION _T(" version:</td><td>") APP_VERSION _T("</td></tr><tr><td class=caption>System:</td><td>%s</td></tr><tr></tr><tr><td class=caption>Source:</td><td>%s<br>via<br>%s</td></tr><tr><td class=caption>Target:</td><td>%s<br>via<br>%s</td></tr><tr><td class=caption>Full track analysis:</td><td>%s</td></tr></table><br>"), dos->properties->name, Medium::GetDescription(dos->formatBoot.mediumType), source->GetPathName().GetLength()?source->GetPathName():_T("N/A"), Medium::GetDescription(mediumType), target->GetPathName().GetLength()?target->GetPathName():_T("N/A"), fullTrackAnalysis?_T("On"):_T("Off") );
 				Utils::WriteToFile(fHtml,_T("<h3>Overview</h3>"));
 					if (pOutErroneousTracks){
 						Utils::WriteToFile(fHtml,_T("<table><tr><td class=caption>Status</td><td class=caption>Count</td></tr>"));
@@ -167,7 +167,6 @@
 		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
 		TDumpParams &dp=*(TDumpParams *)pAction->GetParams();
 		pAction->SetProgressTarget( dp.cylinderZ+1-dp.cylinderA );
-		dp.target->SetPathName( dp.targetFileName, FALSE );
 		// - dumping
 		const TDumpParams::TSourceTrackErrors **ppSrcTrackErrors=&dp.pOutErroneousTracks;
 		#pragma pack(1)
@@ -955,6 +954,7 @@ setDestination:						// : compacting FileName in order to be better displayable 
 									: dos->sideMap; // otherwise adopt Sides defined by the DOS
 			if ( err=d.dumpParams.target->SetMediumTypeAndGeometry( &targetGeometry, sideMap, dos->properties->firstSectorNumber ) )
 				goto error;
+			d.dumpParams.target->SetPathName( d.dumpParams.targetFileName, FALSE );
 			// . dumping
 			{CBackgroundMultiActionCancelable bmac( d.realtimeThreadPriority ? THREAD_PRIORITY_TIME_CRITICAL : THREAD_PRIORITY_NORMAL );
 				bmac.AddAction( __dump_thread__, &d.dumpParams, _T("Dumping to target") );
