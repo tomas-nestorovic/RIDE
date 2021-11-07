@@ -159,6 +159,8 @@
 	#define RESOLVE_EXCLUDE_ID		IDIGNORE
 	#define RESOLVE_EXCLUDE_UNKNOWN	IDCONTINUE
 
+	#define RETRY_OPTIONS_COUNT		2
+
 	#define NO_STATUS_ERROR	_T("- no error\r\n")
 
 	static UINT AFX_CDECL __dump_thread__(PVOID _pCancelableAction){
@@ -174,6 +176,7 @@
 			TPhysicalAddress chs;
 			TTrack track;
 			bool trackWriteable; // Track can be written at once using CImage::WriteTrack
+			bool canCalibrateHeads;
 			BYTE nTrials;
 			struct{
 				WORD automaticallyAcceptedErrors;
@@ -185,6 +188,7 @@
 			} exclusion;
 		} p;
 		::ZeroMemory(&p,sizeof(p));
+		p.canCalibrateHeads=dp.source->SeekHeadsHome()!=ERROR_NOT_SUPPORTED;
 		const bool targetSupportsTrackWriting=dp.target->WriteTrack(0,0,CImage::CTrackReaderWriter::Invalid)!=ERROR_NOT_SUPPORTED;
 		const Utils::CByteIdentity sectorIdAndPositionIdentity;
 		TPhysicalAddress chsPrev=TPhysicalAddress::Invalid;
@@ -303,17 +307,28 @@
 									resolveActions[4].menuItemFlags=MF_GRAYED*( rFdcStatus.DescribesMissingDam() || !rFdcStatus.DescribesIdFieldCrcError()&&!rFdcStatus.DescribesDataFieldCrcError() ); // enabled only if either ID or Data field with error
 								ConvertDlgButtonToSplitButton( IDNO, resolveActions, RESOLVE_OPTIONS_COUNT );
 								EnableDlgItem( IDNO, dynamic_cast<CImageRaw *>(dp.target.get())==nullptr ); // recovering errors is allowed only if the Target Image can accept them
+								// > converting the "Retry" button to a SplitButton
+								static constexpr Utils::TSplitButtonAction RetryActions[RETRY_OPTIONS_COUNT]={
+									{ IDRETRY, _T("Retry") },
+									{ ID_HEAD, _T("Calibrate head and retry"), MF_GRAYED*!rp.canCalibrateHeads },
+								};
+								ConvertDlgButtonToSplitButton( IDRETRY, RetryActions, RETRY_OPTIONS_COUNT );
 								// > the "Retry" button enabled only if not all Revolutions yet exhausted
-								EnableDlgItem( IDRETRY, rp.nTrials<dp.source->GetAvailableRevolutionCount() );
+								const BYTE nRevsAvailable=dp.source->GetAvailableRevolutionCount();
+								EnableDlgItem( IDRETRY, nRevsAvailable>=Revolution::MAX||rp.nTrials<nRevsAvailable );
 							}
 							LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 								// window procedure
 								switch (msg){
 									case WM_COMMAND:
 										switch (wParam){
+											case ID_HEAD:
+												if (const TStdWinError err=dp.source->SeekHeadsHome())
+													Utils::Information( _T("Can't calibrate"), err, _T("Retrying without calibration.") );
+												//fallthrough
 											case IDRETRY:
 												UpdateData(TRUE);
-												EndDialog(wParam);
+												EndDialog(IDRETRY);
 												return 0;
 											case ID_ERROR:
 												rp.acceptance.automaticallyAcceptedErrors|=rFdcStatus.ToWord();

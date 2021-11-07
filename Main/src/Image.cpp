@@ -670,6 +670,11 @@ namespace Medium{
 		return 1;
 	}
 
+	TStdWinError CImage::SeekHeadsHome(){
+		// attempts to send Heads "home"; returns Windows standard i/o error
+		return ERROR_NOT_SUPPORTED;
+	}
+
 	TSector CImage::GetCountOfHealthySectors(TCylinder cyl,THead head) const{
 		// returns the number of Sectors whose data are healthy
 		EXCLUSIVELY_LOCK_THIS_IMAGE();

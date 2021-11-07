@@ -809,6 +809,11 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		return Revolution::INFINITY;
 	}
 
+	TStdWinError CFDD::SeekHeadsHome(){
+		// attempts to send Heads "home"; returns Windows standard i/o error
+		return	fddHead.SeekHome() ? ERROR_SUCCESS : ::GetLastError();
+	}
+
 	CFDD::PInternalTrack CFDD::__scanTrack__(TCylinder cyl,THead head){
 		// scans given Track and returns the number of discovered Sectors; returns Null if Track cannot be scanned (e.g. due to an hardware error or "out-of-range" error)
 		// - attempting to scan the specified Track
