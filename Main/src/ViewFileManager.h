@@ -96,6 +96,7 @@
 		const BYTE nInformation;
 		const PCFileInfo informationList;
 		const COleVirtualFileDataSource *ownedDataSource;
+		bool informOnCapabilities; // True <=> user will be informed on what the FileManager tab can do, otherwise False
 		DWORD reportModeDisplayedInfosPrev;
 		union{
 			int scrollY;
@@ -127,6 +128,7 @@
 		afx_msg int OnMouseActivate(CWnd *topParent,UINT nHitTest,UINT message);
 		afx_msg void OnChar(UINT nChar,UINT nRepCnt,UINT nFlags);
 		afx_msg void MeasureItem(LPMEASUREITEMSTRUCT pmis);
+		afx_msg void OnPaint();
 		afx_msg void __changeDisplayMode__(UINT id);
 			afx_msg void __changeDisplayMode_updateUI__(CCmdUI *pCmdUI);
 		afx_msg void __imageWritableAndFileSelected_updateUI__(CCmdUI *pCmdUI);

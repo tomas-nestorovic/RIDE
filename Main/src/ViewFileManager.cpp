@@ -4,6 +4,7 @@
 
 	#define INI_FILEMANAGER	_T("FileManager")
 
+	#define INI_MSG_CAPABILITIES _T("fmcaps")
 	#define INI_MSG_DIR_GO_BACK	_T("fmparent")
 
 	#define ORDER_NONE		255
@@ -33,6 +34,7 @@
 		, reportModeDisplayedInfosPrev(0) // no columns have been shown previously ...
 		, reportModeDisplayedInfos(-1) // ... and now wanting to show them all
 		, ordering(ORDER_NONE) , focusedFile(nullptr) , scrollY(0) , ownedDataSource(nullptr)
+		, informOnCapabilities(true)
 		, pDirectoryStructureManagement(pDirectoryStructureManagement) {
 		// - switching to default DisplayMode
 /*		const WORD id=displayMode+ID_FILEMANAGER_BIG_ICONS;
@@ -45,6 +47,7 @@
 		ON_WM_MOUSEACTIVATE()
 		ON_WM_CHAR()
 		ON_WM_MEASUREITEM_REFLECT()
+		ON_WM_PAINT()
 		ON_COMMAND_RANGE(ID_FILEMANAGER_BIG_ICONS,ID_FILEMANAGER_LIST,__changeDisplayMode__)
 			ON_UPDATE_COMMAND_UI_RANGE(ID_FILEMANAGER_BIG_ICONS,ID_FILEMANAGER_LIST,__changeDisplayMode_updateUI__)
 		ON_COMMAND(ID_FILEMANAGER_FILE_EDIT,__editNameOfSelectedFile__)
@@ -112,6 +115,8 @@
 
 	void CFileManagerView::OnUpdate(CView *pSender,LPARAM iconType,CObject *icons){
 		// request to refresh the display of content
+		// - base
+		__super::OnUpdate( pSender, iconType, icons );
 		// - emptying the FileManager
 		CListCtrl &lv=GetListCtrl();
 		lv.DeleteAllItems();
@@ -303,6 +308,17 @@
 		pmis->itemHeight=	( lf.lfHeight<0 ? -lf.lfHeight : lf.lfHeight )
 							+
 							Utils::LogicalUnitScaleFactor*reportModeRowHeightAdjustment; // e.g., for the underscore "_" to be visible as well
+	}
+
+	afx_msg void CFileManagerView::OnPaint(){
+		// painting
+		// - base
+		__super::OnPaint();
+		// - informing on FileManager's capabilities
+		if (informOnCapabilities){
+			__informationWithCheckableShowNoMore__( _T("After unlocking the image for writing, work with the \"") FILE_MANAGER_TAB_LABEL _T("\" tab as you would with your favorite file explorer, renaming, copying, pasting, moving, and deleting files."), INI_MSG_CAPABILITIES );
+			informOnCapabilities=false;
+		}
 	}
 
 	afx_msg void CFileManagerView::__changeDisplayMode__(UINT id){
