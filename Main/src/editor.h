@@ -45,6 +45,7 @@
 		afx_msg void __createNewImage__();
 		afx_msg void __openImage__();
 		afx_msg void __openImageAs__();
+		afx_msg void OpenImageWithoutDos();
 		afx_msg void __openDevice__();
 		afx_msg void __showAbout__();
 	};

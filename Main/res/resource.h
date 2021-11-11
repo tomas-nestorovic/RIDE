@@ -176,6 +176,7 @@
 #define ID_DOS_FORMAT                   40097
 #define ID_NUMBER2                      40098
 #define ID_OPEN_AS                      40101
+#define ID_OPEN_UNKNOWN                 40103
 #define ID_TAPE_NEW                     40108
 #define ID_TAPE_APPEND                  40109
 #define ID_TAPE_OPEN                    40110

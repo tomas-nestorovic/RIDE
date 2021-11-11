@@ -32,7 +32,6 @@
 	void CRideApp::CRecentFileListEx::Add(LPCTSTR lpszPathName,CDos::PCProperties dosProps,CImage::PCProperties deviceProps){
 		// add the file to the list
 		ASSERT( lpszPathName );
-		ASSERT( dosProps!=nullptr ); // use Properties of the Unknown DOS if automatic recognition should be used
 		// - check whether MRU entry already exists
 		int i=0;
 		while (i<m_nSize-1)
@@ -58,7 +57,7 @@
 		ASSERT( 0<=nIndex && nIndex<m_nSize );
 		__super::Remove(nIndex);
 		::memmove( openWith+nIndex, openWith+nIndex+1, (m_nSize-nIndex-1)*sizeof(openWith[0]) );
-		openWith[m_nSize-1]=&CUnknownDos::Properties;
+		openWith[m_nSize-1]=nullptr;
 		::memmove( m_deviceProps+nIndex, m_deviceProps+nIndex+1, (m_nSize-nIndex-1)*sizeof(m_deviceProps[0]) );
 		m_deviceProps[m_nSize-1]=nullptr;
 	}
@@ -72,16 +71,19 @@
 		TCHAR entryName[200];
 		for( int iMru=0; iMru<m_nSize; iMru++ ){
 			// . explicitly forced DOS
-			openWith[iMru]=&CUnknownDos::Properties; // assumption (automatic recognition should be used)
+			openWith[iMru]=nullptr; // assumption (automatic recognition should be used)
 			::wsprintf( ::lstrcpy(entryName,PREFIX_MRU_DOS)+(sizeof(PREFIX_MRU_DOS)/sizeof(TCHAR)-1), m_strEntryFormat, iMru+1 );
 			const CDos::TId dosId=app.GetProfileInt( m_strSectionName, entryName, 0 );
-			for( POSITION pos=CDos::Known.GetHeadPosition(); pos; ){
-				const CDos::PCProperties props=CDos::Known.GetNext(pos);
-				if (props->id==dosId){
-					openWith[iMru]=props;
-					break;
+			if (dosId==CUnknownDos::Properties.id)
+				openWith[iMru]=&CUnknownDos::Properties;
+			else
+				for( POSITION pos=CDos::Known.GetHeadPosition(); pos; ){
+					const CDos::PCProperties props=CDos::Known.GetNext(pos);
+					if (props->id==dosId){
+						openWith[iMru]=props;
+						break;
+					}
 				}
-			}
 			// . real Device
 			m_deviceProps[iMru]=nullptr; // assumption (actually an Image, not a real Device)
 			::wsprintf( ::lstrcpy(entryName,PREFIX_MRU_DEVICE)+(sizeof(PREFIX_MRU_DEVICE)/sizeof(TCHAR)-1), m_strEntryFormat, iMru+1 );
@@ -104,7 +106,10 @@
 			if (!m_arrNames[iMru].IsEmpty()){
 				// . explicitly forced DOS
 				::wsprintf( ::lstrcpy(entryName,PREFIX_MRU_DOS)+(sizeof(PREFIX_MRU_DOS)/sizeof(TCHAR)-1), m_strEntryFormat, iMru+1 );
-				app.WriteProfileInt( m_strSectionName, entryName, openWith[iMru]->id );
+				if (const auto *const forcedDosProps=openWith[iMru])
+					app.WriteProfileInt( m_strSectionName, entryName, forcedDosProps->id );
+				else
+					app.WriteProfileInt( m_strSectionName, entryName, 0 );
 				// . real Device
 				::wsprintf( ::lstrcpy(entryName,PREFIX_MRU_DEVICE)+(sizeof(PREFIX_MRU_DEVICE)/sizeof(TCHAR)-1), m_strEntryFormat, iMru+1 );
 				if (m_deviceProps[iMru])
@@ -143,6 +148,7 @@
 		ON_COMMAND(ID_FILE_OPEN,__openImage__)
 		ON_COMMAND_RANGE(ID_FILE_MRU_FIRST,ID_FILE_MRU_LAST,OnOpenRecentFile)
 		ON_COMMAND(ID_OPEN_AS,__openImageAs__)
+		ON_COMMAND(ID_OPEN_UNKNOWN,OpenImageWithoutDos)
 		ON_COMMAND(ID_OPEN_DEVICE,__openDevice__)
 		ON_COMMAND(ID_APP_ABOUT,__showAbout__ )
 	END_MESSAGE_MAP()
@@ -458,11 +464,11 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 				}
 			} d;
 			// . showing the Dialog and processing its result
-			if (manuallyForceDos!=&CUnknownDos::Properties)
+			if (manuallyForceDos!=(CDos::PCProperties)INVALID_HANDLE_VALUE) // DOS already pre-selected? (e.g. recent file)
 				d.dosProps=manuallyForceDos;
 			else if (d.DoModal()!=IDOK)
 				return nullptr;
-			formatBoot=( dosProps=d.dosProps )->stdFormats->params.format;
+			formatBoot=( dosProps=manuallyForceDos=d.dosProps )->stdFormats->params.format;
 			formatBoot.nCylinders++;
 			if (const TStdWinError err=image->SetMediumTypeAndGeometry( &formatBoot, CDos::StdSidesMap, d.dosProps->firstSectorNumber )){
 				Utils::FatalError( _T("Can't change the medium geometry"), err, _T("The container can't be open.") );
@@ -525,7 +531,14 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 
 	afx_msg void CRideApp::__openImageAs__(){
 		// opens Image and lets user to determine suitable DOS
-		manuallyForceDos=&CUnknownDos::Properties; // show dialog to manually pick a DOS
+		manuallyForceDos=(CDos::PCProperties)INVALID_HANDLE_VALUE; // show dialog to manually pick a DOS
+		if (CMainWindow::CTdiTemplate::pSingleInstance->__closeDocument__()) // to close any previous Image
+			OnFileOpen();
+	}
+
+	afx_msg void CRideApp::OpenImageWithoutDos(){
+		// opens Image using Unknown ("no") DOS
+		manuallyForceDos=&CUnknownDos::Properties; // use this DOS for opening
 		if (CMainWindow::CTdiTemplate::pSingleInstance->__closeDocument__()) // to close any previous Image
 			OnFileOpen();
 	}

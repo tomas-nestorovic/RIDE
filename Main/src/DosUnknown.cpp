@@ -10,8 +10,8 @@
 		return ERROR_SUCCESS;
 	}
 	const CDos::TProperties CUnknownDos::Properties={
-		nullptr, // name
-		0, // unique identifier
+		_T("Unknown"), // name
+		MAKE_DOS_ID('U','n','k','n','o','w','n','!'), // unique identifier
 		0, // recognition priority
 		__recognize__, // recognition function
 		__instantiate__, // instantiation function

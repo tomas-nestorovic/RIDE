@@ -113,7 +113,7 @@
 						break;
 					TCHAR dosName[80];
 					const CDos::PCProperties dosProps=pMru->GetDosMruFileOpenWith(i);
-					if (dosProps==&CUnknownDos::Properties)
+					if (!dosProps)
 						::lstrcpy( dosName, _T("Auto") );
 					else if (const LPCTSTR space=::strchr(dosProps->name,' '))
 						::strncpy( dosName, dosProps->name, space-dosProps->name )[space-dosProps->name]='\0';
@@ -269,8 +269,7 @@
 		extern CImage::PCProperties imageProps;
 		imageProps=app.GetRecentFileList()->GetMruDevice(nID-ID_FILE_MRU_FIRST);
 		extern CDos::PCProperties manuallyForceDos;
-		const CDos::PCProperties dosProps=app.GetRecentFileList()->GetDosMruFileOpenWith(nID-ID_FILE_MRU_FIRST);
-		manuallyForceDos= dosProps==&CUnknownDos::Properties ? nullptr : dosProps;
+		manuallyForceDos=app.GetRecentFileList()->GetDosMruFileOpenWith(nID-ID_FILE_MRU_FIRST);
 		__super::OnOpenRecentFile(nID);
 		// - if no Image opened, it wasn't found in which case it was removed from the MRU files list - projecting the updated MRU files list to the just shown introductory GuidePost
 		if (!CImage::GetActive()){
@@ -285,8 +284,7 @@
 		extern CImage::PCProperties imageProps;
 		imageProps=app.GetRecentFileList()->GetMruDevice(nID-ID_FILE_MRU_FIRST);
 		extern CDos::PCProperties manuallyForceDos;
-		const CDos::PCProperties dosProps=app.GetRecentFileList()->GetDosMruFileOpenWith(nID-ID_FILE_MRU_FIRST);
-		manuallyForceDos= dosProps==&CUnknownDos::Properties ? nullptr : dosProps;
+		manuallyForceDos=app.GetRecentFileList()->GetDosMruFileOpenWith(nID-ID_FILE_MRU_FIRST);
 		if (!__super::OnOpenRecentFile(nID))
 			return FALSE;
 		// - if no Image opened, it wasn't found in which case it was removed from the MRU files list - projecting the updated MRU files list to the just shown introductory GuidePost

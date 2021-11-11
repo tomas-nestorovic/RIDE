@@ -840,10 +840,11 @@ namespace Medium{
 		if (bAddToMRU)
 			if (CRideApp::CRecentFileListEx *const pMru=app.GetRecentFileList()){
 				extern CDos::PCProperties manuallyForceDos;
-				pMru->Add(	lpszPathName,
-							!manuallyForceDos ? &CUnknownDos::Properties : dos->properties,
-							properties->IsRealDevice() ? properties : nullptr
-						);
+				pMru->Add(
+					lpszPathName,
+					manuallyForceDos,
+					properties->IsRealDevice() ? properties : nullptr
+				);
 			}
 	}
 
