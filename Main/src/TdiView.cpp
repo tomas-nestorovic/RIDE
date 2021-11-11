@@ -344,6 +344,9 @@
 		// shows the content of the Tab
 		const PTab tab= ((CTdiView *)pTdi)->pCurrentTab = (PTab)pTab;
 		const PView view=tab->view;
+		// - hiding the introductory GuidePost if this is the first Tab in the TDI
+		if (CTdiCtrl::GetCurrentTabContentRect(TDI_HWND,nullptr)) // some Tabs exist
+			CIntroductoryGuidePost::Hide();
 		// - showing the Menus associated with the DOS and View 
 		if (tab->IsPartOfImage()){ // the Tab is part of an Image (e.g. a WebPage usually isn't)
 			CImage::GetActive()->dos->menu.Show(MENU_POSITION_DOS);
@@ -364,7 +367,6 @@
 		__setStatusBarText__(nullptr); // StatusBar without text
 		RECT r;
 		CTdiCtrl::GetCurrentTabContentRect( ( (CTdiView *)pTdi )->m_hWnd, &r );
-		::OffsetRect( &r, r.left, r.top );
 		CCreateContext cc;
 			cc.m_pCurrentDoc=CImage::GetActive();
 		view->Create(	nullptr, nullptr,
@@ -376,9 +378,6 @@
 		pMainWindow->SetActiveView(view);
 		pMainWindow->OnUpdateFrameTitle(TRUE); // just to be sure, forcing the document's name to the MainWindow's title
 		view->SetFocus();
-		// - hiding the introductory GuidePost if this is the first Tab in the TDI
-		if (CTdiCtrl::GetCurrentTabContentRect(TDI_HWND,nullptr)) // some Tabs exist
-			CIntroductoryGuidePost::Hide();
 	}
 
 	void WINAPI CMainWindow::CTdiView::__fnHideContent__(PVOID pTdi,LPCVOID pTab){

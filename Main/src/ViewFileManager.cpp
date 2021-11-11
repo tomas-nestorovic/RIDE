@@ -47,7 +47,6 @@
 		ON_WM_MOUSEACTIVATE()
 		ON_WM_CHAR()
 		ON_WM_MEASUREITEM_REFLECT()
-		ON_WM_PAINT()
 		ON_COMMAND_RANGE(ID_FILEMANAGER_BIG_ICONS,ID_FILEMANAGER_LIST,__changeDisplayMode__)
 			ON_UPDATE_COMMAND_UI_RANGE(ID_FILEMANAGER_BIG_ICONS,ID_FILEMANAGER_LIST,__changeDisplayMode_updateUI__)
 		ON_COMMAND(ID_FILEMANAGER_FILE_EDIT,__editNameOfSelectedFile__)
@@ -209,6 +208,19 @@
 		CMainWindow::__setStatusBarText__(buf);
 	}
 
+	BOOL CFileManagerView::Create(LPCTSTR lpszClassName,LPCTSTR lpszWindowName,DWORD dwStyle,const RECT &rect,CWnd *pParentWnd,UINT nID,CCreateContext *pContext){
+		// window creation
+		// - base
+		const BOOL result=__super::Create( lpszClassName, lpszWindowName, dwStyle, rect, pParentWnd, nID, pContext );
+		// - informing on FileManager's capabilities
+		if (informOnCapabilities){
+			informOnCapabilities=false;
+			TDI_INSTANCE->RedrawWindow(); // make sure TDI's whole client area is up-to-date before showing the following message
+			__informationWithCheckableShowNoMore__( _T("After unlocking the image for writing, work with the \"") FILE_MANAGER_TAB_LABEL _T("\" tab as you would with your favorite file explorer, renaming, copying, pasting, moving, and deleting files."), INI_MSG_CAPABILITIES );
+		}
+		return result;
+	}
+
 	afx_msg int CFileManagerView::OnCreate(LPCREATESTRUCT lpcs){
 		// window created
 		// - base
@@ -308,17 +320,6 @@
 		pmis->itemHeight=	( lf.lfHeight<0 ? -lf.lfHeight : lf.lfHeight )
 							+
 							Utils::LogicalUnitScaleFactor*reportModeRowHeightAdjustment; // e.g., for the underscore "_" to be visible as well
-	}
-
-	afx_msg void CFileManagerView::OnPaint(){
-		// painting
-		// - base
-		__super::OnPaint();
-		// - informing on FileManager's capabilities
-		if (informOnCapabilities){
-			__informationWithCheckableShowNoMore__( _T("After unlocking the image for writing, work with the \"") FILE_MANAGER_TAB_LABEL _T("\" tab as you would with your favorite file explorer, renaming, copying, pasting, moving, and deleting files."), INI_MSG_CAPABILITIES );
-			informOnCapabilities=false;
-		}
 	}
 
 	afx_msg void CFileManagerView::__changeDisplayMode__(UINT id){

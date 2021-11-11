@@ -96,7 +96,6 @@
 		const BYTE nInformation;
 		const PCFileInfo informationList;
 		const COleVirtualFileDataSource *ownedDataSource;
-		bool informOnCapabilities; // True <=> user will be informed on what the FileManager tab can do, otherwise False
 		DWORD reportModeDisplayedInfosPrev;
 		union{
 			int scrollY;
@@ -128,7 +127,6 @@
 		afx_msg int OnMouseActivate(CWnd *topParent,UINT nHitTest,UINT message);
 		afx_msg void OnChar(UINT nChar,UINT nRepCnt,UINT nFlags);
 		afx_msg void MeasureItem(LPMEASUREITEMSTRUCT pmis);
-		afx_msg void OnPaint();
 		afx_msg void __changeDisplayMode__(UINT id);
 			afx_msg void __changeDisplayMode_updateUI__(CCmdUI *pCmdUI);
 		afx_msg void __imageWritableAndFileSelected_updateUI__(CCmdUI *pCmdUI);
@@ -235,6 +233,7 @@
 		static void WINAPI __markDirectorySectorAsDirty__(PVOID dirEntry);
 		static bool WINAPI __markDirectorySectorAsDirty__(PVOID dirEntry,int);
 
+		bool informOnCapabilities; // True <=> user will be informed on what the FileManager tab can do, otherwise False
 		BYTE displayMode; // see the TDisplayMode enumeration
 		BYTE ordering;
 		DWORD reportModeDisplayedInfos;
@@ -278,6 +277,7 @@
 		TStdWinError ImportFileAndResolveConflicts(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,const FILETIME &rCreated,const FILETIME &rLastRead,const FILETIME &rLastModified,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution);
 		void SwitchToDirectory(CDos::PFile directory);
 		afx_msg void RefreshDisplay();
+		BOOL Create(LPCTSTR lpszClassName,LPCTSTR lpszWindowName,DWORD dwStyle,const RECT &rect,CWnd *pParentWnd,UINT nID,CCreateContext *pContext=nullptr) override;
 	};
 
 #endif // FILEMANAGERVIEW_H

@@ -649,11 +649,12 @@
 		// ctor
 		// - base
 		: CSpectrumBaseFileManagerView( tape, rZxRom, REPORT, LVS_REPORT, INFORMATION_COUNT,InformationList, ZX_TAPE_FILE_NAME_LENGTH_MAX )
+		// - creating Tape's ToolBar (its positioning in WM_CREATE to be shown "after" the TapeFileManager's ToolBar)
+		, toolbar( IDR_ZX_TAPE, ID_TAPE_OPEN ) // "some" unique ID
 		// - initialization
 		, nFiles(0)
-		, f( fileName, CFile::modeReadWrite|CFile::shareExclusive|CFile::typeBinary )
-		// - creating Tape's ToolBar (its positioning in WM_CREATE to be shown "after" the TapeFileManager's ToolBar)
-		, toolbar( IDR_ZX_TAPE, ID_TAPE_OPEN ) { // "some" unique ID
+		, f( fileName, CFile::modeReadWrite|CFile::shareExclusive|CFile::typeBinary ) {
+		informOnCapabilities=false; // don't show default message on what the FileManager can do (showed customized later)
 		// - loading the Tape's content
 		for( WORD blockLength; f.Read(&blockLength,sizeof(blockLength))==sizeof(blockLength); )
 			if (nFiles==ZX_TAPE_FILE_COUNT_MAX){
