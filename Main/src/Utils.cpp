@@ -1108,6 +1108,11 @@ namespace Utils{
 		return ::SendDlgItemMessage( *this, id, CB_GETCURSEL, 0, 0 );
 	}
 
+	int CRideDialog::GetDlgListBoxSelectedIndex(WORD id) const{
+		// returns the index of the item selected in specified ListBox
+		return ::SendDlgItemMessage( *this, id, LB_GETCURSEL, 0, 0 );
+	}
+
 	class CTempDlg sealed:public CDialog{
 		const HRSRC hRes;
 		const HGLOBAL gRes;

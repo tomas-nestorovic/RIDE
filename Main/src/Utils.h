@@ -217,6 +217,7 @@ namespace Utils{
 		LONG_PTR GetDlgComboBoxSelectedValue(WORD id) const;
 		bool SelectDlgComboBoxValue(WORD id,LONG_PTR value) const;
 		int GetDlgComboBoxSelectedIndex(WORD id) const;
+		int GetDlgListBoxSelectedIndex(WORD id) const;
 		void WrapDlgItemsByClosingCurlyBracketWithText(WORD idA,WORD idZ,LPCTSTR text,DWORD textColor) const;
 		void SetDlgItemFormattedText(WORD id,LPCTSTR format,...) const;
 		void SetDlgItemSingleCharUsingFont(WORD id,WCHAR singleChar,HFONT hFont) const;

@@ -447,6 +447,9 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 				BOOL OnCommand(WPARAM wParam,LPARAM lParam){
 					// command processing
 					switch (wParam){
+						case MAKELONG(ID_DOS,LBN_SELCHANGE):
+							EnableDlgItem( IDOK, GetDlgListBoxSelectedIndex(ID_DOS)>=0 );
+							break;
 						case MAKELONG(ID_DOS,LBN_DBLCLK):
 							// DOS selected by double-clicking on it
 							if (IsDlgItemEnabled(IDOK))
