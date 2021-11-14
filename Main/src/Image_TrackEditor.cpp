@@ -423,7 +423,7 @@
 					case WM_MOUSEWHEEL:{
 						// mouse wheel was rotated
 						POINT cursor;
-						GetCursorPos(&cursor);
+						::GetCursorPos(&cursor);
 						ScreenToClient(&cursor);
 						const int nUnitsX=cursor.x/Utils::LogicalUnitScaleFactor;
 						if ((short)HIWORD(wParam)<0 && timeline.zoomFactor<ZOOM_FACTOR_MAX)
@@ -601,7 +601,9 @@
 				POINT cursor;
 				::GetCursorPos(&cursor);
 				ScreenToClient(&cursor);
-				return	cursor.x>=0 // over client? (simplified)
+				CRect rc;
+				GetClientRect(&rc);
+				return	0<=cursor.x && cursor.x<rc.Width() // over client? (simplified)
 						? cursorTime
 						: GetCenterTime();
 			}
@@ -625,6 +627,10 @@
 						0
 					);
 					scrollTime=t;
+					POINT cursor;
+					::GetCursorPos(&cursor);
+					ScreenToClient(&cursor);
+					cursorTime=ClientPixelToTime( cursor.x );
 				painter.params.locker.Unlock();
 				painter.repaintEvent.SetEvent();
 			}
