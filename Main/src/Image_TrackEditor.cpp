@@ -119,17 +119,18 @@
 							// : determining the first visible inspection window
 							int L=te.GetInspectionWindow(visible.tStart);
 							// : drawing visible inspection windows (avoiding the GDI coordinate limitations by moving the viewport origin)
-							TLogTime tA=te.inspectionWindows[L].tEnd, tZ;
 							RECT rc={ 0, 1, 0, IW_HEIGHT };
 							const auto dcSettings0=::SaveDC(dc);
-								while (continuePainting && tA<visible.tEnd){
-									const TInspectionWindow &iw=te.inspectionWindows[++L];
-									rc.right=te.timeline.GetUnitCount( tZ=iw.tEnd )-nUnitsA;
+								while (continuePainting){
+									const TInspectionWindow &iw=te.inspectionWindows[L++];
+									if (iw.tEnd>visible.tEnd)
+										break;
+									rc.right=te.timeline.GetUnitCount(iw.tEnd)-nUnitsA;
 									p.params.locker.Lock();
 										if ( continuePainting=p.params.id==id )
 											::FillRect( dc, &rc, iwBrushes[iw.isBad][L&1] );
 									p.params.locker.Unlock();
-									tA=tZ, rc.left=rc.right;
+									rc.left=rc.right;
 								}
 							::RestoreDC( dc, dcSettings0 );
 							if (!continuePainting) // new paint request?
@@ -326,7 +327,7 @@
 					else
 						L=M;
 				}while (R-L>1);
-				return L;
+				return L+1; // "+1" = the End (against which the input LogicalTime has been compared) is the beginning of the NEXT InspectionWindow
 			}
 
 			void PaintCursorFeaturesInverted(bool show){
