@@ -13,7 +13,7 @@
 
 	HIMAGELIST CMDOS2::TBootSector::TGKFileManager::GetListOfDefaultIcons(){
 		// creates and returns the list of GKFM's standard icons
-		const HIMAGELIST result=ImageList_Create( GKFM_ICON_WIDTH*GKFM_ICON_FM_ZOOM_FACTOR, GKFM_ICON_HEIGHT*GKFM_ICON_FM_ZOOM_FACTOR, ILC_COLOR24, 0, 1 );
+		const HIMAGELIST result=ImageList_Create( Utils::LogicalUnitScaleFactor*GKFM_ICON_WIDTH*GKFM_ICON_FM_ZOOM_FACTOR, Utils::LogicalUnitScaleFactor*GKFM_ICON_HEIGHT*GKFM_ICON_FM_ZOOM_FACTOR, ILC_COLOR24, 0, 1 );
 			static constexpr BYTE DefaultIcon[]={ // smiling face in glases
 				0,0,0,0,0,0,0,0,0,15,224,0,0,48,24,0,0,64,4,0,0,184,58,0,1,0,1,0,2,124,124,128,48,48,48,48,3,255,255,128,4,254,254,64,4,254,254,64,4,254,254,64,4,125,124,64,4,1,0,64,4,3,128,64,4,0,0,64,48,48,48,48,2,0,0,128,2,7,192,128,1,12,97,0,0,144,18,0,0,64,4,0,0,48,24,0,0,15,224,0,0,0,0,0,48,48,48,48
 			};
@@ -29,7 +29,8 @@
 		// adds a new icon from IconZxData to the list, and returns the index of the added icon
 		const CClientDC screen(nullptr);
 		const HDC dc=::CreateCompatibleDC(screen);
-			const HBITMAP hBmp=::CreateCompatibleBitmap( screen, GKFM_ICON_WIDTH*GKFM_ICON_FM_ZOOM_FACTOR, GKFM_ICON_HEIGHT*GKFM_ICON_FM_ZOOM_FACTOR );
+			Utils::ScaleLogicalUnit(dc);
+			const HBITMAP hBmp=::CreateCompatibleBitmap( screen, Utils::LogicalUnitScaleFactor*GKFM_ICON_WIDTH*GKFM_ICON_FM_ZOOM_FACTOR, Utils::LogicalUnitScaleFactor*GKFM_ICON_HEIGHT*GKFM_ICON_FM_ZOOM_FACTOR );
 				const HGDIOBJ hBmp0=::SelectObject(dc,hBmp);
 					DrawIcon( dc, iconZxData, GKFM_ICON_FM_ZOOM_FACTOR );
 				::SelectObject(dc,hBmp0);
