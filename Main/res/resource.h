@@ -184,6 +184,8 @@
 #define ID_MDOS_AUTODETECT              40134
 #define ID_MDOS_VERSION1                40135
 #define ID_MDOS_VERSION2                40136
+#define ID_REVOLUTION_PREV              40137
+#define ID_REVOLUTION_NEXT              40138
 #define ID_HELP_FAQ                     40139
 #define ID_TAPE_CLOSE                   40147
 #define ID_IMAGE_DUMP                   40148

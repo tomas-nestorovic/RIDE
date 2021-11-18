@@ -11,6 +11,8 @@
 	#define IW_TIME_HEIGHT	(SPACING_HEIGHT+20)
 	#define EVENT_HEIGHT	30
 
+	const TLogTimeInterval TLogTimeInterval::Invalid( INT_MAX, INT_MIN );
+
 	typedef CImage::CTrackReader::TParseEvent TParseEvent,*PParseEvent;
 	typedef const TParseEvent *PCParseEvent;
 
@@ -18,6 +20,8 @@
 
 	typedef CImage::CTrackReader::TRegion TRegion,*PRegion;
 	typedef CImage::CTrackReader::PCRegion PCRegion;
+
+	#define MSG_FUZZY_NAVIGATION	_T("This fuzzy bit has no counterpart in any revolution")
 
 	class CTrackEditor sealed:public Utils::CRideDialog{
 		const CImage::CTrackReader &tr;
@@ -43,6 +47,7 @@
 		typedef const struct TInspectionWindow sealed{
 			bool isBad;
 			TLogTime tEnd; // the end determines the beginning of the immediately next inspection window
+			int uid; // Revolution-wide unique identifier; corresponding bits across Revolutions have the same unique identifier
 		} *PCInspectionWindow;
 		
 		class CTimeEditor sealed:public CScrollView{
@@ -127,8 +132,13 @@
 										break;
 									rc.right=te.timeline.GetUnitCount(iw.tEnd)-nUnitsA;
 									p.params.locker.Lock();
-										if ( continuePainting=p.params.id==id )
+										if ( continuePainting=p.params.id==id ){
 											::FillRect( dc, &rc, iwBrushes[iw.isBad][L&1] );
+											#ifdef _DEBUG
+												TCHAR uid[8];
+												::DrawText( dc, _itot(iw.uid%100,uid,10), -1, &rc, DT_SINGLELINE|DT_CENTER );
+											#endif
+										}
 									p.params.locker.Unlock();
 									rc.left=rc.right;
 								}
@@ -301,7 +311,7 @@
 					params.visible.tStart = params.visible.tEnd = 0;
 				}
 			} painter;
-
+		public:
 			void OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint) override{
 				// request to refresh the display of content
 				CRect rc;
@@ -330,6 +340,20 @@
 				return L+1; // "+1" = the End (against which the input LogicalTime has been compared) is the beginning of the NEXT InspectionWindow
 			}
 
+			int GetInspectionWindow(int uid,TLogTime tRevStart,TLogTime tRevEnd) const{
+				// searching specified time interval, returns the index of inspection window with specified UniqueIdentifier
+				ASSERT( inspectionWindows );
+				int L=GetInspectionWindow(tRevStart), R=GetInspectionWindow(tRevEnd);
+				do{
+					const int M=(L+R)/2;
+					if (std::abs(inspectionWindows[L].uid)<=uid && uid<std::abs(inspectionWindows[M].uid))
+						R=M;
+					else
+						L=M;
+				}while (R-L>1);
+				return L;
+			}
+		private:
 			void PaintCursorFeaturesInverted(bool show){
 				// paints CursorTime by inverting pixels; painting twice the same CursorTime shows nothing
 				if ((show^cursorFeaturesShown)!=0 && cursorFeatures!=0){
@@ -821,6 +845,7 @@
 									badBlocks.AddTail(  TLogTimeInterval( tr.GetCurrentTime()-iwTimeDefaultHalf, tr.GetCurrentTime()+iwTimeDefaultHalf )  );
 						}else // whereas all windows containing "0" are always OK
 							p->isBad=false;
+						p->uid=INT_MIN;
 						iwStatuses = (iwStatuses<<1) | (BYTE)p->isBad;
 					}
 				for( const PCInspectionWindow last=iwList+nIwsMax; p<last; )
@@ -843,6 +868,36 @@
 			TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; CImage::CTrackReader::TProfile idProfiles[Revolution::MAX*(TSector)-1];
 			const WORD nSectorsFound=tr.ScanAndAnalyze( ids, idEnds, idProfiles, (TFdcStatus *)dummy, peTrack );
 			rte.timeEditor.SetParseEvents(peTrack);
+			return pAction->TerminateWithSuccess();
+		}
+
+		static UINT AFX_CDECL CreateMatchingBitsInfo_thread(PVOID _pCancelableAction){
+			// thread to create list of inspection windows used to recognize data in the Track
+			const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
+			const CTrackEditor &te=*(const CTrackEditor *)pAction->GetParams();
+			TInspectionWindow *const iwList=(TInspectionWindow *)te.timeEditor.GetInspectionWindows();
+			ASSERT( iwList!=nullptr ); // must be set!
+			const CImage::CTrackReader &tr=te.tr;
+			if (tr.GetIndexCount()<3) // at least two full Revolution must exist ...
+				return pAction->TerminateWithSuccess(); // ... otherwise matching bits can't be linked together
+			pAction->SetProgressTarget(tr.GetTotalTime());
+			const auto &peList=te.timeEditor.GetParseEvents();
+			const TLogTime iwTimeDefaultHalf=tr.GetCurrentProfile().iwTimeDefault/2;
+			for( BYTE i=1; i<tr.GetIndexCount(); i++ ){
+				TInspectionWindow *iw=iwList+te.timeEditor.GetInspectionWindow( tr.GetIndexTime(i-1) );
+				const PCInspectionWindow iwRevEnd=iwList+te.timeEditor.GetInspectionWindow( tr.GetIndexTime(i) );
+				int uid=1;
+				do{
+					const POSITION posFuzzy=peList.GetPositionByEnd( iw->tEnd, CImage::CTrackReader::TParseEvent::FUZZY_OK, CImage::CTrackReader::TParseEvent::FUZZY_BAD );
+					const TLogTimeInterval tiFuzzy= posFuzzy ? peList.GetAt(posFuzzy).Add(iwTimeDefaultHalf) : TLogTimeInterval::Invalid;
+					while (iw<iwRevEnd && iw->tEnd<=tiFuzzy.tStart) // assigning InspectionWindows BEFORE the next Fuzzy event their UniqueIdentifiers
+						iw++->uid=uid++;
+					while (iw<iwRevEnd && iw->tEnd<=tiFuzzy.tEnd) // assigning InspectionWindows BEFORE the next Fuzzy event negative UniqueIdentifiers of the last non-Fuzzy InspectionWindow
+						iw++->uid=-uid;
+					uid++;
+					pAction->UpdateProgress(iw->tEnd);
+				}while (iw<iwRevEnd);
+			}
 			return pAction->TerminateWithSuccess();
 		}
 
@@ -921,6 +976,16 @@
 						case ID_NEXT_BAD:
 							pCmdUi->Enable( timeEditor.GetScrollTime()<tr.GetTotalTime() && timeEditor.GetInspectionWindows()!=nullptr && iwInfo.badBlocks.GetCount()>0 && timeEditor.GetCenterTime()<iwInfo.badBlocks.GetTail().tStart );
 							return TRUE;
+						case ID_REVOLUTION_PREV:{
+							const TLogTime tCursor=timeEditor.GetClientCursorTime();
+							pCmdUi->Enable( tr.GetIndexCount()>=3 && tr.GetIndexTime(1)<=tCursor && tCursor<tr.GetIndexTime(tr.GetIndexCount()-1) );
+							return TRUE;
+						}
+						case ID_REVOLUTION_NEXT:{
+							const TLogTime tCursor=timeEditor.GetClientCursorTime();
+							pCmdUi->Enable( tr.GetIndexCount()>=3 && tr.GetIndexTime(0)<=tCursor && tCursor<tr.GetIndexTime(tr.GetIndexCount()-2) );
+							return TRUE;
+						}
 					}
 					break;
 				}
@@ -1000,6 +1065,7 @@
 							CBackgroundMultiActionCancelable bmac(THREAD_PRIORITY_LOWEST);
 								bmac.AddAction( CreateInspectionWindowList_thread, this, _T("Inspection") );
 								bmac.AddAction( CreateParseEventsList_thread, this, _T("Structure") );
+								bmac.AddAction( CreateMatchingBitsInfo_thread, this, _T("Navigation") );
 							if (bmac.Perform()==ERROR_SUCCESS)
 								timeEditor.ShowAllFeatures();
 							return TRUE;
@@ -1178,6 +1244,69 @@
 							for( const TLogTime tCenter=timeEditor.GetCenterTime(); pos&&badBlocks.GetAt(pos).tStart<=tCenter; badBlocks.GetNext(pos) );
 							if (pos)
 								timeEditor.SetCenterTime( badBlocks.GetAt(pos).tStart );
+							return TRUE;
+						}
+						case ID_REVOLUTION_PREV:{
+							const TLogTime tCursor=timeEditor.GetClientCursorTime();
+							BYTE r=1;
+							while (tr.GetIndexTime(r)<tCursor)
+								r++;
+							// . try to navigate to corresponding InspectionWindow in the previous Revolution
+							if (const PCInspectionWindow iws=timeEditor.GetInspectionWindows()){ // has interpretation of the Times been made?
+								const TInspectionWindow &iwCursor=iws[ timeEditor.GetInspectionWindow(tCursor) ];
+								if (iwCursor.uid!=INT_MIN){ // the same bits across various Revolutions already linked together via their UniqueIdentifiers?
+									if (iwCursor.uid<0){ // cursor pointing at a Fuzzy region?
+										Utils::Information(MSG_FUZZY_NAVIGATION);
+										return TRUE;
+									}
+									const TInspectionWindow &iw=iws[  timeEditor.GetInspectionWindow( iwCursor.uid, tr.GetIndexTime(r-2), tr.GetIndexTime(r-1) )  ];
+									if (iw.uid!=iwCursor.uid){
+										Utils::Information( _T("This bit has no counterpart in previous revolution.") );
+										return TRUE;
+									}
+									const TLogTime tIwCursorStart=(&iwCursor)[-1].tEnd, tIwCursorLength=iwCursor.tEnd-tIwCursorStart;
+									const TLogTime tIwStart=(&iw)[-1].tEnd, tIwLength=iw.tEnd-tIwStart;
+									const TLogTime t= tIwStart + (LONGLONG)(tCursor-tIwCursorStart)*tIwLength/tIwCursorLength;
+									timeEditor.SetScrollTime( t - (tCursor-timeEditor.GetScrollTime()) );
+									return TRUE;
+								}
+							}
+							// . navigate to proportionally corresponding Time in the previous Revolution
+							const TLogTime tCurrRevLength=tr.GetIndexTime(r)-tr.GetIndexTime(r-1);
+							const TLogTime tPrevRevLength=tr.GetIndexTime(r-1)-tr.GetIndexTime(r-2);
+							const TLogTime t= tr.GetIndexTime(r-2) + (LONGLONG)(tCursor-tr.GetIndexTime(r-1))*tPrevRevLength/tCurrRevLength;
+							timeEditor.SetScrollTime( t - (tCursor-timeEditor.GetScrollTime()) );
+							return TRUE;
+						}
+						case ID_REVOLUTION_NEXT:{
+							const TLogTime tCursor=timeEditor.GetClientCursorTime();
+							BYTE r=tr.GetIndexCount();
+							while (tCursor<tr.GetIndexTime(--r));
+							// . try to navigate to corresponding InspectionWindow in the next Revolution
+							if (const PCInspectionWindow iws=timeEditor.GetInspectionWindows()){ // has interpretation of the Times been made?
+								const TInspectionWindow &iwCursor=iws[ timeEditor.GetInspectionWindow(tCursor) ];
+								if (iwCursor.uid!=INT_MIN){ // the same bits across various Revolutions already linked together via their UniqueIdentifiers?
+									if (iwCursor.uid<0){ // cursor pointing at a Fuzzy region?
+										Utils::Information(MSG_FUZZY_NAVIGATION);
+										return TRUE;
+									}
+									const TInspectionWindow &iw=iws[  timeEditor.GetInspectionWindow( iwCursor.uid, tr.GetIndexTime(r+1), tr.GetIndexTime(r+2) )  ];
+									if (iw.uid!=iwCursor.uid){
+										Utils::Information( _T("This bit has no counterpart in next revolution.") );
+										return TRUE;
+									}
+									const TLogTime tIwCursorStart=(&iwCursor)[-1].tEnd, tIwCursorLength=iwCursor.tEnd-tIwCursorStart;
+									const TLogTime tIwStart=(&iw)[-1].tEnd, tIwLength=iw.tEnd-tIwStart;
+									const TLogTime t= tIwStart + (LONGLONG)(tCursor-tIwCursorStart)*tIwLength/tIwCursorLength;
+									timeEditor.SetScrollTime( t - (tCursor-timeEditor.GetScrollTime()) );
+									return TRUE;
+								}
+							}
+							// . navigate to proportionally corresponding Time in the next Revolution
+							const TLogTime tCurrRevLength=tr.GetIndexTime(r+1)-tr.GetIndexTime(r);
+							const TLogTime tNextRevLength=tr.GetIndexTime(r+2)-tr.GetIndexTime(r+1);
+							const TLogTime t= tr.GetIndexTime(r+1) + (LONGLONG)(tCursor-tr.GetIndexTime(r))*tNextRevLength/tCurrRevLength;
+							timeEditor.SetScrollTime( t - (tCursor-timeEditor.GetScrollTime()) );
 							return TRUE;
 						}
 						case ID_INDICATOR_REC:

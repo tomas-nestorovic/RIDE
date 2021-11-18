@@ -661,7 +661,7 @@
 				case CDiffBase::TScriptItem::DELETION:
 					// "theirs" misses some bits that "this" contains
 					rDiff.color=0x5555ff; // another tinted red
-					rDiff.tEnd=pBits[si.iPosA+si.del.nItemsA].time;
+					rDiff.tEnd=pBits[si.iPosA+si.del.nItemsA+1].time; // "+1" = see above Insertion (only for cosmetical reasons)
 					break;
 			}
 		}
@@ -771,16 +771,23 @@
 		return	GetPositionByStart( tStartMin, type, type, posFrom);
 	}
 
-	POSITION CImage::CTrackReader::CParseEventList::GetPositionByEnd(TLogTime tEndMin,TParseEvent::TType type,POSITION posFrom) const{
+	POSITION CImage::CTrackReader::CParseEventList::GetPositionByEnd(TLogTime tEndMin,TParseEvent::TType typeFrom,TParseEvent::TType typeTo,POSITION posFrom) const{
 		if (!posFrom)
 			posFrom=GetHeadPosition();
 		while (posFrom){
 			const POSITION result=posFrom;
 			const TParseEvent &pe=GetNext(posFrom);
-			if (tEndMin<=pe.tEnd && (type==TParseEvent::NONE||pe.type==type))
+			if (tEndMin<=pe.tEnd
+				&&
+				( (typeFrom|typeTo)==TParseEvent::NONE || typeFrom<=pe.type&&pe.type<=typeTo )
+			)
 				return result;
 		}
 		return nullptr;
+	}
+
+	POSITION CImage::CTrackReader::CParseEventList::GetPositionByEnd(TLogTime tEndMin,TParseEvent::TType type,POSITION posFrom) const{
+		return	GetPositionByEnd( tEndMin, type, type, posFrom);
 	}
 
 	bool CImage::CTrackReader::CParseEventList::Contains(TParseEvent::TType type,POSITION posFrom) const{

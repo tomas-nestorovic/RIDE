@@ -121,6 +121,8 @@ struct TLogTimeInterval{
 	TLogTime tStart; // inclusive
 	TLogTime tEnd; // exclusive
 
+	static const TLogTimeInterval Invalid;
+
 	inline TLogTimeInterval(){}
 	inline TLogTimeInterval(TLogTime tStart,TLogTime tEnd)
 		: tStart(tStart) , tEnd(tEnd) {
