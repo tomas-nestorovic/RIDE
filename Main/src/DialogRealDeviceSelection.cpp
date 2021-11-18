@@ -108,11 +108,10 @@
 				if (IsDlgItemEnabled(IDOK))
 					SendMessage( WM_COMMAND, IDOK );
 				break;
-			case MAKELONG(ID_IMAGE,LBN_SELCHANGE):{
+			case MAKELONG(ID_IMAGE,LBN_SELCHANGE):
 				// Device selection changed
-				EnableDlgItem( IDOK, ListBox_GetCurSel((HWND)lParam)>0 );
+				EnableDlgItem( IDOK, GetDlgListBoxSelectedIndex(ID_IMAGE)>0 );
 				return TRUE;
-			}
 		}
 		return __super::OnCommand(wParam,lParam);
 	}

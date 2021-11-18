@@ -244,10 +244,8 @@
 									switch (wParam){
 										case MAKELONG(ID_CYLINDER,LBN_SELCHANGE):{
 											// Cylinder selection has changed
+											chs.cylinder=GetDlgListBoxSelectedIndex(ID_CYLINDER);
 											CListBox lb;
-											lb.Attach( GetDlgItemHwnd(ID_CYLINDER) );
-												chs.cylinder=lb.GetCurSel();
-											lb.Detach();
 											lb.Attach( GetDlgItemHwnd(ID_HEAD) );
 												lb.ResetContent();
 												if (chs.cylinder<image->GetCylinderCount()){ // Cylinder number valid
@@ -260,10 +258,8 @@
 										}
 										case MAKELONG(ID_HEAD,LBN_SELCHANGE):{
 											// Head selection has changed
+											chs.head=GetDlgListBoxSelectedIndex(ID_HEAD);
 											CListBox lb;
-											lb.Attach( GetDlgItemHwnd(ID_HEAD) );
-												chs.head=lb.GetCurSel();
-											lb.Detach();
 											lb.Attach( GetDlgItemHwnd(ID_SECTOR) );
 												lb.ResetContent();
 												if (chs.head<image->GetNumberOfFormattedSides(chs.cylinder)){ // Head number valid
@@ -277,15 +273,12 @@
 										}
 										case MAKELONG(ID_SECTOR,LBN_SELCHANGE):{
 											// Sector selection has changed
-											CListBox lb;
-											lb.Attach( GetDlgItemHwnd(ID_SECTOR) );
-												const int iSel=lb.GetCurSel();
-												if (EnableDlgItem(IDOK,iSel>=0)){
-													TSectorId ids[(TSector)-1];
-													image->ScanTrack( chs.cylinder, chs.head, nullptr, ids );
-													chs.sectorId=ids[ sectorIndexOnTrack=iSel ];
-												}
-											lb.Detach();
+											const int iSel=GetDlgListBoxSelectedIndex(ID_SECTOR);
+											if (EnableDlgItem(IDOK,iSel>=0)){
+												TSectorId ids[(TSector)-1];
+												image->ScanTrack( chs.cylinder, chs.head, nullptr, ids );
+												chs.sectorId=ids[ sectorIndexOnTrack=iSel ];
+											}
 											break;
 										}
 										case MAKELONG(ID_SECTOR,LBN_DBLCLK):

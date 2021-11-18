@@ -342,7 +342,7 @@ nextTrial:	;
 					case WM_COMMAND:
 						switch (wParam){
 							case MAKELONG(ID_MEDIUM,CBN_SELCHANGE):
-								precomp.Load( (Medium::TType)ComboBox_GetItemData( (HWND)lParam, ComboBox_GetCurSel((HWND)lParam) ) );
+								precomp.Load( (Medium::TType)GetDlgComboBoxSelectedValue(ID_MEDIUM) );
 								ShowReportForLoadedFloppyType();
 								break;
 							case IDRETRY:

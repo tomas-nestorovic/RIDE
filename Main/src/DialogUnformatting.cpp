@@ -145,9 +145,7 @@
 
 	afx_msg void CUnformatDialog::__onUnformatChanged__(){
 		// selected another Unformat in ComboBox
-		const HWND hComboBox=GetDlgItemHwnd(ID_FORMAT);
-		const int idUnformat=ComboBox_GetCurSel(hComboBox);
-		if (const PCStdUnformat psuf=(PCStdUnformat)ComboBox_GetItemData(hComboBox,idUnformat)){
+		if (const PCStdUnformat psuf=(PCStdUnformat)GetDlgComboBoxSelectedValue(ID_FORMAT)){
 			// StandardUnformatting
 			SetDlgItemInt( ID_CYLINDER	,psuf->cylA );
 			SetDlgItemInt( ID_CYLINDER_N	,psuf->cylZ );

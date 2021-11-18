@@ -463,16 +463,14 @@ trackNotFound:
 									// manually set geometry
 									ignoreUiNotifications++;
 										// . adopting selected geometry (if any)
-										cb.Attach( GetDlgItemHwnd(ID_FORMAT) );
-											if (const PCFormat pf=(PCFormat)cb.GetItemDataPtr( cb.GetCurSel() )){
-												nCylinders=pf->nCylinders+1;
-												for( nHeads=0; nHeads<pf->nHeads; nHeads++ )
-													sideNumbers[nHeads]=nHeads;
-												firstSectorNumber=1;
-												nSectors=pf->nSectors;
-												sectorLengthCode=pf->sectorLengthCode;
-											}
-										cb.Detach();
+										if (const PCFormat pf=(PCFormat)GetDlgComboBoxSelectedValue(ID_FORMAT)){
+											nCylinders=pf->nCylinders+1;
+											for( nHeads=0; nHeads<pf->nHeads; nHeads++ )
+												sideNumbers[nHeads]=nHeads;
+											firstSectorNumber=1;
+											nSectors=pf->nSectors;
+											sectorLengthCode=pf->sectorLengthCode;
+										}
 										// . Sides
 										Utils::CIntList list;
 										for( THead h=0; h<nHeads; list.AddTail(sideNumbers[h++]) );

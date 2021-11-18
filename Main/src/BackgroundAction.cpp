@@ -278,7 +278,7 @@
 				switch (wParam){
 					case MAKELONG(ID_PRIORITY,CBN_SELCHANGE):
 						// Action Priority has been changed
-						actionThreadPriority=SendDlgItemMessage(ID_PRIORITY,CB_GETCURSEL)+THREAD_BASE_PRIORITY_MIN;
+						actionThreadPriority=GetDlgComboBoxSelectedIndex(ID_PRIORITY)+THREAD_BASE_PRIORITY_MIN;
 						ChangeWorkerPriority( actionThreadPriority );
 						return 0;
 					case IDOK:

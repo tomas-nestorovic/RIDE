@@ -87,8 +87,7 @@
 		// exchange of data from and to controls
 		const CDos::PCProperties propDos=dos->properties;
 		const CImage::PCProperties propImage=dos->image->properties;
-		const HWND hMedium=GetDlgItemHwnd(ID_MEDIUM);
-		const Medium::PCProperties propMedium=Medium::GetProperties((Medium::TType)ComboBox_GetItemData( hMedium, ComboBox_GetCurSel(hMedium) ));
+		const Medium::PCProperties propMedium=Medium::GetProperties( (Medium::TType)GetDlgComboBoxSelectedValue(ID_MEDIUM) );
 		DDX_Text( pDX,	ID_CYLINDER_N,(RCylinder)params.format.nCylinders );
 			DDV_MinMaxUInt( pDX, params.format.nCylinders, propMedium->cylinderRange.iMin, propMedium->cylinderRange.iMax );
 		DDX_Text( pDX,	ID_CYLINDER	,(RCylinder)params.cylinder0 );
@@ -268,8 +267,7 @@
 
 	afx_msg void CFormatDialog::__onFormatChanged__(){
 		// Format changed in dedicated ComboBox
-		const HWND hComboBox=GetDlgItemHwnd(ID_FORMAT);
-		if (const PCStdFormat f=(PCStdFormat)ComboBox_GetItemData(hComboBox, ComboBox_GetCurSel(hComboBox) )){
+		if (const PCStdFormat f=(PCStdFormat)GetDlgComboBoxSelectedValue(ID_FORMAT)){
 			// selected a StandardFormat
 			SetDlgItemInt( ID_HEAD		,f->params.format.nHeads );
 			SetDlgItemInt( ID_CYLINDER	,f->params.cylinder0 );
@@ -301,10 +299,9 @@
 		const HWND hFormat=GetDlgItemHwnd(ID_FORMAT);
 		const BYTE nFormatsInTotal=ComboBox_GetCount(hFormat);
 		params.cylinder0=GetDlgItemInt(ID_CYLINDER);
-		const HWND hCluster=GetDlgItemHwnd(ID_CLUSTER);
 		const BYTE interleaving=GetDlgItemInt(ID_INTERLEAVE), skew=GetDlgItemInt(ID_SKEW), gap3=GetDlgItemInt(ID_GAP), nAllocationTables=GetDlgItemInt(ID_FAT);
 		const WORD nRootDirectoryEntries=GetDlgItemInt(ID_DIRECTORY);
-		const TFormat f={ Medium::UNKNOWN, Codec::ANY, GetDlgItemInt(ID_CYLINDER_N), GetDlgItemInt(ID_HEAD), GetDlgItemInt(ID_SECTOR), dos->formatBoot.sectorLengthCode, GetDlgItemInt(ID_SIZE), ComboBox_GetItemData(hCluster,ComboBox_GetCurSel(hCluster)) };
+		const TFormat f={ Medium::UNKNOWN, Codec::ANY, GetDlgItemInt(ID_CYLINDER_N), GetDlgItemInt(ID_HEAD), GetDlgItemInt(ID_SECTOR), dos->formatBoot.sectorLengthCode, GetDlgItemInt(ID_SIZE), GetDlgComboBoxSelectedValue(ID_CLUSTER) };
 		for( BYTE n=nFormatsInTotal-1; n--; ){ // "-1" = custom format
 			const PCStdFormat psf=(PCStdFormat)ComboBox_GetItemData(hFormat,n);
 			if (psf->params.cylinder0==params.cylinder0 && psf->params.format==f && psf->params.interleaving==interleaving && psf->params.skew==skew && psf->params.gap3==gap3 && psf->params.nAllocationTables==nAllocationTables && psf->params.nRootDirectoryEntries==nRootDirectoryEntries){

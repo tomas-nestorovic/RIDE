@@ -234,7 +234,7 @@
 							case MAKELONG(ID_ACCURACY,CBN_SELCHANGE):{
 								// FluxDecoder changed
 								const TParams::TFluxDecoder fd0=rkfb.params.fluxDecoder;
-									rkfb.params.fluxDecoder=(TParams::TFluxDecoder)ComboBox_GetCurSel( GetDlgItemHwnd(ID_ACCURACY) );
+									rkfb.params.fluxDecoder=(TParams::TFluxDecoder)GetDlgComboBoxSelectedIndex(ID_ACCURACY);
 									if (!EnableDlgItem( ID_TRACK, rkfb.params.fluxDecoder!=TParams::TFluxDecoder::NO_FLUX_DECODER ))
 										CheckDlgButton( ID_TRACK, BST_UNCHECKED ); // when archiving, any corrections must be turned off
 									SendMessage( WM_COMMAND, ID_RECOVER ); // refresh information on inserted Medium
