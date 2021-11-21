@@ -827,16 +827,21 @@
 				p++->tEnd=0; // beginning of the very first inspection window
 				TLogTime tOne; // LogicalTime of recording that resulted in recognition of logical "1"
 				BYTE iwStatuses=0; // last 8 InspectionWindows statuses (0 = ok, 1 = bad)
+				BYTE nextIndexPulse=0;
 				const TLogTime iwTimeDefaultHalf=tr.GetCurrentProfile().iwTimeDefault/2;
 				for( pAction->SetProgressTarget(tr.GetTotalTime()); tr; pAction->UpdateProgress(p++->tEnd=tr.GetCurrentTime()+iwTimeDefaultHalf) )
 					if (pAction->IsCancelled())
 						return ERROR_CANCELLED;
 					else{
+						if (nextIndexPulse<tr.GetIndexCount() && tr.GetIndexTime(nextIndexPulse)<p[-1].tEnd){
+							tr.RewindToIndexAndResetProfile(nextIndexPulse);
+							p--, nextIndexPulse++;
+						}
 						const TLogTime iwTime=tr.GetCurrentProfile().iwTime;
 						if (tr.ReadBit(tOne)){ // evaluated are only windows containing "1"
 							const TLogTime iwTimeHalf=iwTime/2;
 							const TLogTime absDiff=std::abs(tOne-tr.GetCurrentTime());
-							ASSERT( absDiff <= iwTimeHalf );
+							ASSERT( absDiff <= iwTimeHalf+1 ); // "+1" = when IwTime is odd, e.g. 1665, half of which is 833, not 832
 							if ( p->isBad=absDiff*100>iwTimeHalf*rte.iwInfo.oneOkPercent )
 								if (iwStatuses&3){ // between this and the previous bad InspectionWindow is at most one ok InspectionWindow
 									badBlocks.GetTail().tEnd=tr.GetCurrentTime()+iwTimeDefaultHalf; // extending an existing BadBlock
