@@ -487,7 +487,7 @@
 							for( DWORD k=nSesItems; k>0; pSes[--k].ConvertToDual() );
 							jBits.ScriptToLocalDiffs( pSes, nSesItems, pLocalRegionsJ );
 							// : filtering out only those fuzzy regions that overlap with Sectors
-							for( DWORD g=0; g<nFuzzyRegions; g++ ){
+							for( DWORD g=0; g<nSesItems; g++ ){
 								const TRegion *pTwoRegions[2]={ &pLocalRegionsI[g], &pLocalRegionsJ[g] };
 								char fuzzyInOkSector=-1; // "-1" = in no Sector in either Revolution, "0" = only in bad Sector in all Revolutions, "1" = in OK Sector in at least one Revolution
 								for( BYTE r=0; r<2; r++ ){ // projecting the Script to both of the Revolutions
@@ -504,7 +504,7 @@
 										if ( fuzzyInOkSector=fuzzyInBadSector==0 ) // only in OK Sector?
 											break;
 								}
-								if (fuzzyInOkSector>=0) // fuzzy in a Sector? (i.e. not in gaps or elsewhere)
+								//if (fuzzyInOkSector>=0) // fuzzy in a Sector? (i.e. not in gaps or elsewhere)
 									for( BYTE r=0; r<2; r++ ){
 										const TRegion &rgn=*pTwoRegions[r];
 										fuzzyStdDataEvents.AddCopyAscendingByStart(
@@ -636,7 +636,7 @@
 				case CDiffBase::TScriptItem::INSERTION:
 					// "theirs" contains some extra bits that "this" misses
 					rDiff.color=0xb4; // tinted red
-					rDiff.tEnd=pBits[si.iPosA+1].time; // even Deletions must be represented locally!
+					rDiff.tEnd=pBits[si.iPosA+1].time; // even Insertions must be represented locally!
 					break;
 				default:
 					ASSERT(FALSE); // we shouldn't end up here!
