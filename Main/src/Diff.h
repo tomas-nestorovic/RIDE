@@ -115,7 +115,7 @@
 			// - detect complete equality
 			if ((m|n)==0)
 				return true;
-			// - detect Insertion
+			// - detect Insertion ("theirs" contains some extra bits that "this" misses; must "insert" into "this")
 			if (n==0)
 				if (nEmptyScriptItems>0){
 					TScriptItem &r=*pEmptyScriptItem++;
@@ -127,7 +127,7 @@
 					return true;
 				}else
 					return false; // insufficient buffer
-			// - detect Deletion
+			// - detect Deletion ("theirs" misses some bits that "this" contains; must "delete" from "this")
 			if (m==0)
 				if (nEmptyScriptItems>0){
 					TScriptItem &r=*pEmptyScriptItem++;

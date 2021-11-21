@@ -28,6 +28,7 @@
 			if (psiNext->operation==psiLast->operation)
 				switch (psiNext->operation){
 					case TScriptItem::INSERTION:
+						// "theirs" contains some extra bits that "this" misses - must "insert" into "this"
 						if (psiNext->iPosA==psiLast->iPosA && psiNext->ins.iPosB==psiLast->ins.iPosB+psiLast->ins.nItemsB){
 							psiLast->ins.nItemsB+=psiNext->ins.nItemsB; // merge
 							continue;
@@ -37,6 +38,7 @@
 						ASSERT(FALSE);
 						//fallthrough
 					case TScriptItem::DELETION:
+						// "theirs" misses some bits that "this" contains - must "delete" from "this"
 						if (psiNext->iPosA==psiLast->iPosA+psiLast->del.nItemsA){
 							psiLast->del.nItemsA+=psiNext->del.nItemsA; // merge
 							continue;
