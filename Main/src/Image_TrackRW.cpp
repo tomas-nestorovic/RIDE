@@ -486,23 +486,6 @@
 							iBits.ScriptToLocalDiffs( pSes, nSesItems, pLocalRegionsI );
 							for( DWORD k=nSesItems; k>0; pSes[--k].ConvertToDual() );
 							jBits.ScriptToLocalDiffs( pSes, nSesItems, pLocalRegionsJ );
-							// : symmetrically merging adjanced differences
-							DWORD nFuzzyRegions=0;
-							TLogTime tLastRegionEndI=INT_MIN, tLastRegionEndJ=INT_MIN;
-							for( DWORD d=0; d<nSesItems; d++ ){
-								const auto &diffI=pLocalRegionsI[d], &diffJ=pLocalRegionsJ[d];
-								if (diffI.tStart>tLastRegionEndI && diffJ.tStart>tLastRegionEndJ){
-									// disjunct differences in both Revolutions
-									pLocalRegionsI[nFuzzyRegions]=diffI;
-									pLocalRegionsJ[nFuzzyRegions]=diffJ;
-									nFuzzyRegions++;
-									tLastRegionEndI=diffI.tEnd, tLastRegionEndJ=diffJ.tEnd;
-								}else{
-									// adjanced differences in either Revolution (something has been Deleted, something else has been immediatelly Inserted)
-									tLastRegionEndI = pLocalRegionsI[nFuzzyRegions-1].tEnd = diffI.tEnd;
-									tLastRegionEndJ = pLocalRegionsJ[nFuzzyRegions-1].tEnd = diffJ.tEnd;
-								}
-							}
 							// : filtering out only those fuzzy regions that overlap with Sectors
 							for( DWORD g=0; g<nFuzzyRegions; g++ ){
 								const TRegion *pTwoRegions[2]={ &pLocalRegionsI[g], &pLocalRegionsJ[g] };
