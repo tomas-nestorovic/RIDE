@@ -1047,10 +1047,19 @@
 							timeEditor.ToggleFeature(TCursorFeatures::SPACING);
 							return TRUE;
 						case ID_RECOGNIZE:
+							#define ACTION_INSPECTION_DESC _T("Inspection")
+							#define ACTION_NAVIGATION_DESC _T("Navigation")
 							if (!timeEditor.IsFeatureShown(TCursorFeatures::INSPECT)) // currently hidden, so want now show the Feature
 								if (timeEditor.GetInspectionWindows()==nullptr) // data to display not yet received
-									if (CBackgroundActionCancelable( CreateInspectionWindowList_thread, this, THREAD_PRIORITY_LOWEST ).Perform()!=ERROR_SUCCESS)
-										return TRUE;
+									if (timeEditor.GetParseEvents().GetCount()>0){ // has parsing been already made?
+										CBackgroundMultiActionCancelable bmac(THREAD_PRIORITY_LOWEST);
+											bmac.AddAction( CreateInspectionWindowList_thread, this, ACTION_INSPECTION_DESC );
+											bmac.AddAction( CreateMatchingBitsInfo_thread, this, ACTION_NAVIGATION_DESC );
+										if (bmac.Perform()!=ERROR_SUCCESS)
+											return TRUE;
+									}else
+										if (CBackgroundActionCancelable( CreateInspectionWindowList_thread, this, THREAD_PRIORITY_LOWEST ).Perform()!=ERROR_SUCCESS)
+											return TRUE;
 							timeEditor.ToggleFeature(TCursorFeatures::INSPECT);
 							timeEditor.Invalidate();
 							return TRUE;
@@ -1059,18 +1068,26 @@
 							timeEditor.Invalidate();
 							return TRUE;
 						case ID_SYSTEM:
+							#define ACTION_PARSING_DESC _T("Structure")
 							if (!timeEditor.IsFeatureShown(TCursorFeatures::STRUCT)) // currently hidden, so want now show the Feature
 								if (timeEditor.GetParseEvents().GetCount()==0) // data to display not yet received
-									if (CBackgroundActionCancelable( CreateParseEventsList_thread, this, THREAD_PRIORITY_LOWEST ).Perform()!=ERROR_SUCCESS)
-										return TRUE;
+									if (timeEditor.GetInspectionWindows()){ // is inspection already known?
+										CBackgroundMultiActionCancelable bmac(THREAD_PRIORITY_LOWEST);
+											bmac.AddAction( CreateParseEventsList_thread, this, ACTION_PARSING_DESC );
+											bmac.AddAction( CreateMatchingBitsInfo_thread, this, ACTION_NAVIGATION_DESC );
+										if (bmac.Perform()!=ERROR_SUCCESS)
+											return TRUE;
+									}else
+										if (CBackgroundActionCancelable( CreateParseEventsList_thread, this, THREAD_PRIORITY_LOWEST ).Perform()!=ERROR_SUCCESS)
+											return TRUE;
 							timeEditor.ToggleFeature(TCursorFeatures::STRUCT);
 							timeEditor.Invalidate();
 							return TRUE;
 						case ID_TRACK:{
 							CBackgroundMultiActionCancelable bmac(THREAD_PRIORITY_LOWEST);
-								bmac.AddAction( CreateInspectionWindowList_thread, this, _T("Inspection") );
-								bmac.AddAction( CreateParseEventsList_thread, this, _T("Structure") );
-								bmac.AddAction( CreateMatchingBitsInfo_thread, this, _T("Navigation") );
+								bmac.AddAction( CreateInspectionWindowList_thread, this, ACTION_INSPECTION_DESC );
+								bmac.AddAction( CreateParseEventsList_thread, this, ACTION_PARSING_DESC );
+								bmac.AddAction( CreateMatchingBitsInfo_thread, this, ACTION_NAVIGATION_DESC );
 							if (bmac.Perform()==ERROR_SUCCESS)
 								timeEditor.ShowAllFeatures();
 							return TRUE;
