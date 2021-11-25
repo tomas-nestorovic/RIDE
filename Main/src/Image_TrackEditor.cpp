@@ -626,7 +626,7 @@
 				ScreenToClient(&cursor);
 				CRect rc;
 				GetClientRect(&rc);
-				return	0<=cursor.x && cursor.x<rc.Width() // over client? (simplified)
+				return	rc.PtInRect(cursor) // over client?
 						? cursorTime
 						: GetCenterTime();
 			}
