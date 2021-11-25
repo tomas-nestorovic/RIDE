@@ -1178,6 +1178,9 @@
 								timeEditor.SetCenterTime( d.tCenter );
 							return TRUE;
 						}
+						case ID_INFORMATION:
+							Utils::Information( _T("Each track item has a reference key, usually the first letter in its name. Keys to the left and right of the reference serve for navigation to previous and next item, respectively:\n\n- reference key I = Index, U/O = previous/next index\n- R = Revolution, E/T\n- B = Bad window, V/N\n- V = eVent, C/B\n- F = Fuzzy event, D/G\n- K = marK, J/L") );
+							return TRUE;
 						case ID_PREV:{
 							BYTE i=0;
 							for( const TLogTime tCenter=timeEditor.GetCenterTime(); i<tr.GetIndexCount()&&tCenter>tr.GetIndexTime(i); i++ );

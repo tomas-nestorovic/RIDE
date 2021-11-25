@@ -166,22 +166,22 @@ BEGIN
     "+",            ID_ZOOM_IN,             ASCII,  NOINVERT
     "-",            ID_ZOOM_OUT,            ASCII,  NOINVERT
     "0",            ID_ZOOM_FIT,            VIRTKEY, CONTROL, NOINVERT
-    "D",            ID_PREV_PANE,           VIRTKEY, CONTROL, NOINVERT
-    "G",            ID_NEXT_PANE,           VIRTKEY, CONTROL, NOINVERT
-    "M",            ID_REVOLUTION_NEXT,     VIRTKEY, NOINVERT
-    "N",            ID_REVOLUTION_PREV,     VIRTKEY, NOINVERT
+    "B",            ID_FILE_SHIFT_UP,       VIRTKEY, NOINVERT
+    "C",            ID_FILE_SHIFT_DOWN,     VIRTKEY, NOINVERT
+    "D",            ID_PREV_PANE,           VIRTKEY, NOINVERT
+    "E",            ID_REVOLUTION_PREV,     VIRTKEY, NOINVERT
+    "G",            ID_NEXT_PANE,           VIRTKEY, NOINVERT
+    "J",            ID_RECORD_PREV,         VIRTKEY, NOINVERT
+    "L",            ID_RECORD_NEXT,         VIRTKEY, NOINVERT
+    "N",            ID_NEXT_BAD,            VIRTKEY, NOINVERT
+    "O",            ID_NEXT,                VIRTKEY, NOINVERT
     "R",            ID_ZOOM_PART,           VIRTKEY, CONTROL, NOINVERT
+    "T",            ID_REVOLUTION_NEXT,     VIRTKEY, NOINVERT
     "T",            ID_NAVIGATE_ADDRESS,    VIRTKEY, CONTROL, NOINVERT
+    "U",            ID_PREV,                VIRTKEY, NOINVERT
+    "V",            ID_PREV_BAD,            VIRTKEY, NOINVERT
     VK_ESCAPE,      IDCANCEL,               VIRTKEY, NOINVERT
     VK_F5,          ID_REFRESH,             VIRTKEY, NOINVERT
-    VK_LEFT,        ID_FILE_SHIFT_DOWN,     VIRTKEY, CONTROL, NOINVERT
-    VK_LEFT,        ID_PREV_BAD,            VIRTKEY, SHIFT, NOINVERT
-    VK_NEXT,        ID_NEXT,                VIRTKEY, CONTROL, NOINVERT
-    VK_NEXT,        ID_RECORD_NEXT,         VIRTKEY, SHIFT, NOINVERT
-    VK_PRIOR,       ID_PREV,                VIRTKEY, CONTROL, NOINVERT
-    VK_PRIOR,       ID_RECORD_PREV,         VIRTKEY, SHIFT, NOINVERT
-    VK_RIGHT,       ID_FILE_SHIFT_UP,       VIRTKEY, CONTROL, NOINVERT
-    VK_RIGHT,       ID_NEXT_BAD,            VIRTKEY, SHIFT, NOINVERT
     "W",            ID_TRACK,               VIRTKEY, CONTROL, NOINVERT
 END
 
@@ -747,23 +747,25 @@ BEGIN
     BEGIN
         MENUITEM "Time...\tCtrl+T",             ID_NAVIGATE_ADDRESS
         MENUITEM SEPARATOR
-        MENUITEM "Previous revolution\tN",      ID_REVOLUTION_PREV
+        MENUITEM "About shortcuts...",          ID_INFORMATION
+        MENUITEM SEPARATOR
+        MENUITEM "Previous revolution\tE",      ID_REVOLUTION_PREV
         MENUITEM "Previous window\tLeft",       ID_DOWN
-        MENUITEM "Previous bad windows\tShift+Left", ID_PREV_BAD
-        MENUITEM "Next bad windows\tShift+Right", ID_NEXT_BAD
+        MENUITEM "Previous bad windows\tV",     ID_PREV_BAD
+        MENUITEM "Next bad windows\tN",         ID_NEXT_BAD
         MENUITEM "Next window\tRight",          ID_UP
-        MENUITEM "Next revolution\tM",          ID_REVOLUTION_NEXT
+        MENUITEM "Next revolution\tT",          ID_REVOLUTION_NEXT
         MENUITEM SEPARATOR
-        MENUITEM "Previous event\tCtrl+Left",   ID_FILE_SHIFT_DOWN
-        MENUITEM "Previous fuzzy event\tCtrl+D", ID_PREV_PANE
-        MENUITEM "Next fuzzy event\tCtrl+G",    ID_NEXT_PANE
-        MENUITEM "Next event\tCtrl+Right",      ID_FILE_SHIFT_UP
+        MENUITEM "Previous event\tC",           ID_FILE_SHIFT_DOWN
+        MENUITEM "Previous fuzzy event\tD",     ID_PREV_PANE
+        MENUITEM "Next fuzzy event\tG",         ID_NEXT_PANE
+        MENUITEM "Next event\tB",               ID_FILE_SHIFT_UP
         MENUITEM SEPARATOR
-        MENUITEM "Previous mark\tShift+PgUp",   ID_RECORD_PREV
-        MENUITEM "Next mark\tShift+PgDown",     ID_RECORD_NEXT
+        MENUITEM "Previous mark\tJ",            ID_RECORD_PREV
+        MENUITEM "Next mark\tL",                ID_RECORD_NEXT
         MENUITEM SEPARATOR
-        MENUITEM "Previous index\tCtrl+PgUp",   ID_PREV
-        MENUITEM "Next index\tCtrl+PgDown",     ID_NEXT
+        MENUITEM "Previous index\tU",           ID_PREV
+        MENUITEM "Next index\tO",               ID_NEXT
     END
     POPUP "Helpers"
     BEGIN
