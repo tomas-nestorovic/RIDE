@@ -64,23 +64,35 @@
 		// ctor
 		: Utils::CRideDialog( dlgResId, CWnd::GetActiveWindow() )
 		, callerThreadPriorityOrg( ::GetThreadPriority(::GetCurrentThread()) )
+		, pActionTaskbarList(nullptr)
 		, bCancelled(false) , bTargetStateReached(false) , lastState(0)
 		, progressTarget(INT_MAX) {
+		if (SUCCEEDED(::CoCreateInstance( CLSID_TaskbarList, nullptr, CLSCTX_INPROC_SERVER, IID_ITaskbarList3, (LPVOID *)&pActionTaskbarList )))
+			pActionTaskbarList->HrInit();
 	}
 
 	CBackgroundActionCancelable::CBackgroundActionCancelable(AFX_THREADPROC fnAction,LPCVOID actionParams,int actionThreadPriority)
 		// ctor
 		: Utils::CRideDialog( IDR_ACTION_PROGRESS, CWnd::GetActiveWindow() )
 		, callerThreadPriorityOrg( ::GetThreadPriority(::GetCurrentThread()) )
+		, pActionTaskbarList(nullptr)
 		, bCancelled(false) , bTargetStateReached(false) , lastState(0)
 		, progressTarget(INT_MAX) {
+		if (SUCCEEDED(::CoCreateInstance( CLSID_TaskbarList, nullptr, CLSCTX_INPROC_SERVER, IID_ITaskbarList3, (LPVOID *)&pActionTaskbarList )))
+			pActionTaskbarList->HrInit();
 		BeginAnother( fnAction, actionParams, actionThreadPriority );
 		ChangeWorkerPriority( actionThreadPriority ); // making sure the caller is always responsive by temporarily elevating its priority
 	}
 
 	CBackgroundActionCancelable::~CBackgroundActionCancelable(){
 		// dtor
-		::SetThreadPriority( ::GetCurrentThread(), callerThreadPriorityOrg ); // recovering caller's original priority
+		// - clearing taskbar progress overlay
+		if (pActionTaskbarList){
+			pActionTaskbarList->SetProgressState( *app.m_pMainWnd, TBPF_NOPROGRESS );
+			pActionTaskbarList->Release();
+		}
+		// - recovering caller's original priority
+		::SetThreadPriority( ::GetCurrentThread(), callerThreadPriorityOrg );
 	}
 
 
@@ -154,16 +166,21 @@
 
 	#define PB_RESOLUTION	100
 
-	void CBackgroundActionCancelable::UpdateProgress(int state) const{
+	void CBackgroundActionCancelable::UpdateProgress(int state,TBPFLAG status) const{
 		// refreshes the displaying of actual progress
 		if (m_hWnd) // the window doesn't exist if Worker already cancelled but the Worker hasn't yet found out that it can no longer Continue
 			if (state<progressTarget){
 				// Worker not yet finished - refreshing
 				if (state>lastState){ // always progressing towards the Target, never back
-					if (state*PB_RESOLUTION/progressTarget > lastState*PB_RESOLUTION/progressTarget) // preventing from overwhelming the with messages - target of 60k shouldn't mean 60.000 messages
+					if (state*PB_RESOLUTION/progressTarget > lastState*PB_RESOLUTION/progressTarget){ // preventing from overwhelming the app with messages - target of 60k shouldn't mean 60.000 messages
 						GetDlgItem(ID_STATE)->PostMessage( PBM_SETPOS, state );
+						if (pActionTaskbarList)
+							pActionTaskbarList->SetProgressValue( *app.m_pMainWnd, state, progressTarget );
+					}
 					lastState=state;
 				}
+				if (pActionTaskbarList)
+					pActionTaskbarList->SetProgressState( *app.m_pMainWnd, status );
 			}else
 				// Worker finished - closing the window
 				if (!bTargetStateReached){ // not sending the dialog-closure request twice
@@ -171,6 +188,11 @@
 					::EnableWindow( m_hWnd, FALSE ); // as about to be destroyed soon, mustn't parent any pop-up windows!
 					::PostMessage( m_hWnd, WM_COMMAND, IDOK, 0 );
 				}
+	}
+
+	void CBackgroundActionCancelable::UpdateProgress(int state) const{
+		// refreshes the displaying of actual progress
+		UpdateProgress( state, TBPFLAG::TBPF_NORMAL );
 	}
 
 	void CBackgroundActionCancelable::UpdateProgressFinished() const{
@@ -202,10 +224,23 @@
 
 	CBackgroundMultiActionCancelable::CBackgroundMultiActionCancelable(int actionThreadPriority)
 		// ctor
+		// - base
 		: CBackgroundActionCancelable( IDR_ACTION_SEQUENCE )
+		// - initialization
 		, actionThreadPriority(  std::max( std::min(actionThreadPriority,THREAD_PRIORITY_TIME_CRITICAL), THREAD_BASE_PRIORITY_MIN )  )
-		, nActions(0) {
-		ChangeWorkerPriority( actionThreadPriority ); // making sure the caller is always responsive by temporarily elevating its priority
+		, nActions(0)
+		// - take control over taskbar button progress overlay
+		, pMultiActionTaskbarList(pActionTaskbarList) {
+		pActionTaskbarList=nullptr;
+		// - making sure the caller is always responsive by temporarily elevating its priority
+		ChangeWorkerPriority( actionThreadPriority );
+	}
+
+	CBackgroundMultiActionCancelable::~CBackgroundMultiActionCancelable(){
+		// dtor
+		// - clearing taskbar progress overlay
+		if (pMultiActionTaskbarList)
+			pActionTaskbarList=pMultiActionTaskbarList; // up to the base (see also ctor)
 	}
 
 	void CBackgroundMultiActionCancelable::AddAction(AFX_THREADPROC fnAction,LPCVOID actionParams,LPCTSTR name){
@@ -216,6 +251,17 @@
 		r.fnAction=fnAction;
 		r.fnParams=actionParams;
 		r.fnName=name;
+	}
+
+	void CBackgroundMultiActionCancelable::UpdateProgress(int state,TBPFLAG status) const{
+		// refreshes the displaying of actual progress
+		// - base
+		__super::UpdateProgress( state, status );
+		// - updating taskbar button progress indication
+		if (pMultiActionTaskbarList){
+			pMultiActionTaskbarList->SetProgressValue( *app.m_pMainWnd, (ULONGLONG)iCurrAction*progressTarget+state, (ULONGLONG)nActions*progressTarget );
+			pMultiActionTaskbarList->SetProgressState( *app.m_pMainWnd, status );
+		}
 	}
 
 	#define PADDING_ACTION		8

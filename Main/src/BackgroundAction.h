@@ -20,12 +20,13 @@
 
 
 	typedef class CBackgroundActionCancelable:public CBackgroundAction,public Utils::CRideDialog{
-		int progressTarget;
 	protected:
+		int progressTarget;
 		const int callerThreadPriorityOrg;
 		volatile bool bCancelled;
 		mutable volatile bool bTargetStateReached;
 		mutable int lastState;
+		ITaskbarList3 *pActionTaskbarList;
 
 		CBackgroundActionCancelable(UINT dlgResId);
 
@@ -40,6 +41,7 @@
 		bool IsCancelled() const volatile;
 		void SetProgressTarget(int targetState);
 		void SetProgressTargetInfinity();
+		virtual void UpdateProgress(int state,TBPFLAG status) const;
 		void UpdateProgress(int state) const;
 		void UpdateProgressFinished() const;
 		TStdWinError TerminateWithSuccess();
@@ -55,6 +57,7 @@
 			LPCVOID fnParams;
 			LPCTSTR fnName;
 		} actions[16];
+		ITaskbarList3 *pMultiActionTaskbarList;
 		struct{
 			int glyphX;
 			int charHeight;
@@ -67,8 +70,10 @@
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 	public:
 		CBackgroundMultiActionCancelable(int actionThreadPriority);
+		~CBackgroundMultiActionCancelable();
 
 		void AddAction(AFX_THREADPROC fnAction,LPCVOID actionParams,LPCTSTR name);
+		void UpdateProgress(int state,TBPFLAG status) const override;
 	};
 
 #endif // BACKGROUNDACTION_H
