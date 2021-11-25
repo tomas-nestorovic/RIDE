@@ -124,24 +124,22 @@
 							// : determining the first visible inspection window
 							int L=te.GetInspectionWindow(visible.tStart);
 							// : drawing visible inspection windows (avoiding the GDI coordinate limitations by moving the viewport origin)
-							RECT rc={ 0, 1, 0, IW_HEIGHT };
+							PCInspectionWindow piw=te.inspectionWindows+L-1; // "-1" = the End of the previous is the start for the next
+							RECT rc={ te.timeline.GetUnitCount(piw++->tEnd)-nUnitsA, 1, 0, IW_HEIGHT };
 							const auto dcSettings0=::SaveDC(dc);
-								while (continuePainting){
-									const TInspectionWindow &iw=te.inspectionWindows[L++];
-									if (iw.tEnd>visible.tEnd)
-										break;
-									rc.right=te.timeline.GetUnitCount(iw.tEnd)-nUnitsA;
+								do{
+									rc.right=te.timeline.GetUnitCount(piw->tEnd)-nUnitsA;
 									p.params.locker.Lock();
 										if ( continuePainting=p.params.id==id ){
-											::FillRect( dc, &rc, iwBrushes[iw.isBad][L&1] );
+											::FillRect( dc, &rc, iwBrushes[piw->isBad][L++&1] );
 											#ifdef _DEBUG
 												TCHAR uid[8];
-												::DrawText( dc, _itot(iw.uid%100,uid,10), -1, &rc, DT_SINGLELINE|DT_CENTER );
+												::DrawText( dc, _itot(piw->uid%100,uid,10), -1, &rc, DT_SINGLELINE|DT_CENTER );
 											#endif
 										}
 									p.params.locker.Unlock();
 									rc.left=rc.right;
-								}
+								}while (continuePainting && piw++->tEnd<visible.tEnd);
 							::RestoreDC( dc, dcSettings0 );
 							if (!continuePainting) // new paint request?
 								continue;
@@ -402,7 +400,7 @@
 							// . painting inspection window size at current position
 							if (IsFeatureShown(TCursorFeatures::INSPECT) && cursorTime<timeline.logLength){
 								const int i=GetInspectionWindow(cursorTime);
-								const TLogTime a=inspectionWindows[i].tEnd, z=inspectionWindows[i+1].tEnd;
+								const TLogTime a=inspectionWindows[i-1].tEnd, z=inspectionWindows[i].tEnd;
 								const int xa=timeline.GetUnitCount(a-scrollTime), xz=timeline.GetUnitCount(z-scrollTime);
 								const int nLabelChars=timeline.TimeToReadableString(z-a,label);
 								const SIZE sz=font.GetTextSize( label, nLabelChars );
