@@ -69,8 +69,6 @@
 		, pActionTaskbarList(nullptr)
 		, bCancelled(false) , bTargetStateReached(false) , lastState(0)
 		, progressTarget(INT_MAX) {
-		if (SUCCEEDED(::CoCreateInstance( CLSID_TaskbarList, nullptr, CLSCTX_INPROC_SERVER, IID_ITaskbarList3, (LPVOID *)&pActionTaskbarList )))
-			pActionTaskbarList->HrInit();
 	}
 
 	CBackgroundActionCancelable::CBackgroundActionCancelable(AFX_THREADPROC fnAction,LPCVOID actionParams,int actionThreadPriority)
@@ -80,8 +78,6 @@
 		, pActionTaskbarList(nullptr)
 		, bCancelled(false) , bTargetStateReached(false) , lastState(0)
 		, progressTarget(INT_MAX) {
-		if (SUCCEEDED(::CoCreateInstance( CLSID_TaskbarList, nullptr, CLSCTX_INPROC_SERVER, IID_ITaskbarList3, (LPVOID *)&pActionTaskbarList )))
-			pActionTaskbarList->HrInit();
 		BeginAnother( fnAction, actionParams, actionThreadPriority );
 		ChangeWorkerPriority( actionThreadPriority ); // making sure the caller is always responsive by temporarily elevating its priority
 	}
@@ -103,6 +99,8 @@
 
 	BOOL CBackgroundActionCancelable::OnInitDialog(){
 		// dialog initialization
+		if (SUCCEEDED(::CoCreateInstance( CLSID_TaskbarList, nullptr, CLSCTX_INPROC_SERVER, IID_ITaskbarList3, (LPVOID *)&pActionTaskbarList )))
+			pActionTaskbarList->HrInit();
 		::PostMessage( m_hWnd, WM_COMMAND, IDCONTINUE, 0 ); // launching the Worker
 		pSingleInstance=this;
 		return __super::OnInitDialog();
@@ -243,9 +241,7 @@
 		// - initialization
 		, actionThreadPriority(  std::max( std::min(actionThreadPriority,THREAD_PRIORITY_TIME_CRITICAL), THREAD_BASE_PRIORITY_MIN )  )
 		, nActions(0)
-		// - take control over taskbar button progress overlay
-		, pMultiActionTaskbarList(pActionTaskbarList) {
-		pActionTaskbarList=nullptr;
+		, pMultiActionTaskbarList(nullptr) {
 		// - making sure the caller is always responsive by temporarily elevating its priority
 		ChangeWorkerPriority( actionThreadPriority );
 	}
@@ -269,8 +265,6 @@
 
 	void CBackgroundMultiActionCancelable::UpdateProgress(int state,TBPFLAG status) const{
 		// refreshes the displaying of actual progress
-		// - base
-		__super::UpdateProgress( state, status );
 		// - updating taskbar button progress indication
 		if (m_hWnd) // the window doesn't exist if Worker already cancelled but the Worker hasn't yet found out that it can no longer Continue
 			if (pMultiActionTaskbarList)
@@ -279,6 +273,8 @@
 						pMultiActionTaskbarList->SetProgressValue( *app.m_pMainWnd, (ULONGLONG)iCurrAction*progressTarget+state, (ULONGLONG)nActions*progressTarget );
 					pMultiActionTaskbarList->SetProgressState( *app.m_pMainWnd, status );
 				}
+		// - base
+		__super::UpdateProgress( state, status );
 	}
 
 	#define PADDING_ACTION		8
@@ -309,6 +305,9 @@
 		iCurrAction=-1;
 		::PostMessage( m_hWnd, WM_COMMAND, IDOK, 0 ); // next Action ...
 		const BOOL result=__super::OnInitDialog(); // ... and its launch
+		// - take control over taskbar button progress overlay
+		pMultiActionTaskbarList=pActionTaskbarList;
+		pActionTaskbarList=nullptr;
 		// - displaying thread Priority
 		if (actionThreadPriority<=THREAD_BASE_PRIORITY_MAX)
 			// time-non-critical Actions - user is free to change Worker's priority
