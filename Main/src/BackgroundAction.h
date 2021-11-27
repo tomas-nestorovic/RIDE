@@ -34,6 +34,10 @@
 		BOOL OnInitDialog() override;
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 	public:
+		static const CBackgroundActionCancelable *pSingleInstance;
+
+		static void SignalPausedProgress(HWND hFromChild);
+
 		CBackgroundActionCancelable(AFX_THREADPROC fnAction,LPCVOID actionParams,int actionThreadPriority);
 		~CBackgroundActionCancelable();
 

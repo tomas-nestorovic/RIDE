@@ -770,8 +770,9 @@ namespace Utils{
 
 	void Information(LPCTSTR text){
 		// shows Textual information
-		//if (!hParent) hParent=::GetActiveWindow();
-		::MessageBox( app.GetEnabledActiveWindow(), text, _T("Information"), MB_ICONINFORMATION|MB_TASKMODAL );
+		const HWND hParent=app.GetEnabledActiveWindow();
+		CBackgroundActionCancelable::SignalPausedProgress( hParent );
+		::MessageBox( hParent, text, _T("Information"), MB_ICONINFORMATION|MB_TASKMODAL );
 	}
 	void Information(LPCTSTR text,LPCTSTR causeOfError,LPCTSTR consequence){
 		// shows Textual information along with its Cause and immediate Consequence
@@ -864,8 +865,10 @@ namespace Utils{
 
 	bool InformationOkCancel(LPCTSTR text){
 		// True <=> user confirmed the shown Textual information, otherwise False
+		const HWND hParent=app.GetEnabledActiveWindow();
+		CBackgroundActionCancelable::SignalPausedProgress( hParent );
 		LOG_DIALOG_DISPLAY(text);
-		return LOG_DIALOG_RESULT(  ::MessageBox( app.GetEnabledActiveWindow(), text, _T("Information"), MB_ICONINFORMATION|MB_OKCANCEL|MB_TASKMODAL )==IDOK  );
+		return LOG_DIALOG_RESULT(  ::MessageBox( hParent, text, _T("Information"), MB_ICONINFORMATION|MB_OKCANCEL|MB_TASKMODAL )==IDOK  );
 	}
 
 
@@ -874,9 +877,10 @@ namespace Utils{
 
 	bool QuestionYesNo(LPCTSTR text,UINT defaultButton){
 		// shows a yes-no question
-		//if (!hParent) hParent=::GetActiveWindow();
+		const HWND hParent=app.GetEnabledActiveWindow();
+		CBackgroundActionCancelable::SignalPausedProgress( hParent );
 		LOG_DIALOG_DISPLAY(text);
-		return LOG_DIALOG_RESULT(  ::MessageBox( app.GetEnabledActiveWindow(), text, _T("Question"), MB_ICONQUESTION|MB_TASKMODAL|MB_YESNO|defaultButton )==IDYES  );
+		return LOG_DIALOG_RESULT(  ::MessageBox( hParent, text, _T("Question"), MB_ICONQUESTION|MB_TASKMODAL|MB_YESNO|defaultButton )==IDYES  );
 	}
 
 
@@ -884,9 +888,10 @@ namespace Utils{
 
 	BYTE QuestionYesNoCancel(LPCTSTR text,UINT defaultButton){
 		// shows a yes-no question
-		//if (!hParent) hParent=::GetActiveWindow();
+		const HWND hParent=app.GetEnabledActiveWindow();
+		CBackgroundActionCancelable::SignalPausedProgress( hParent );
 		LOG_DIALOG_DISPLAY(text);
-		return LOG_DIALOG_RESULT(  ::MessageBox( app.GetEnabledActiveWindow(), text, _T("Question"), MB_ICONQUESTION|MB_TASKMODAL|MB_YESNOCANCEL|defaultButton )  );
+		return LOG_DIALOG_RESULT(  ::MessageBox( hParent, text, _T("Question"), MB_ICONQUESTION|MB_TASKMODAL|MB_YESNOCANCEL|defaultButton )  );
 	}
 	BYTE QuestionYesNoCancel(LPCTSTR text,UINT defaultButton,LPCTSTR causeOfError,LPCTSTR consequence){
 		// shows a yes-no question along with its Cause and immediate Consequence
@@ -902,9 +907,10 @@ namespace Utils{
 
 	BYTE AbortRetryIgnore(LPCTSTR text,UINT defaultButton){
 		// shows an abort-retry-ignore question
-		//if (!hParent) hParent=::GetActiveWindow();
+		const HWND hParent=app.GetEnabledActiveWindow();
+		CBackgroundActionCancelable::SignalPausedProgress( hParent );
 		LOG_DIALOG_DISPLAY(text);
-		return LOG_DIALOG_RESULT(  ::MessageBox( app.GetEnabledActiveWindow(), text, _T("Question"), MB_ICONQUESTION|MB_TASKMODAL|MB_ABORTRETRYIGNORE|defaultButton )  );
+		return LOG_DIALOG_RESULT(  ::MessageBox( hParent, text, _T("Question"), MB_ICONQUESTION|MB_TASKMODAL|MB_ABORTRETRYIGNORE|defaultButton )  );
 	}
 
 	BYTE AbortRetryIgnore(LPCTSTR text,TStdWinError causeOfError,UINT defaultButton,LPCTSTR consequence){
@@ -920,9 +926,10 @@ namespace Utils{
 
 	bool RetryCancel(LPCTSTR text){
 		// shows an retry-cancel question
-		//if (!hParent) hParent=::GetActiveWindow();
+		const HWND hParent=app.GetEnabledActiveWindow();
+		CBackgroundActionCancelable::SignalPausedProgress( hParent );
 		LOG_DIALOG_DISPLAY(text);
-		return LOG_DIALOG_RESULT(  ::MessageBox( app.GetEnabledActiveWindow(), text, _T("Question"), MB_ICONEXCLAMATION|MB_TASKMODAL|MB_RETRYCANCEL|MB_DEFBUTTON1 )==IDRETRY  );
+		return LOG_DIALOG_RESULT(  ::MessageBox( hParent, text, _T("Question"), MB_ICONEXCLAMATION|MB_TASKMODAL|MB_RETRYCANCEL|MB_DEFBUTTON1 )==IDRETRY  );
 	}
 	bool RetryCancel(TStdWinError causeOfError){
 		// shows an retry-cancel question
@@ -932,9 +939,10 @@ namespace Utils{
 
 	BYTE CancelRetryContinue(LPCTSTR text,UINT defaultButton){
 		// shows an cancel-retry-continue question
-		//if (!hParent) hParent=::GetActiveWindow();
+		const HWND hParent=app.GetEnabledActiveWindow();
+		CBackgroundActionCancelable::SignalPausedProgress( hParent );
 		LOG_DIALOG_DISPLAY(text);
-		return LOG_DIALOG_RESULT(  ::MessageBox( app.GetEnabledActiveWindow(), text, _T("Question"), MB_ICONEXCLAMATION|MB_TASKMODAL|MB_CANCELTRYCONTINUE|defaultButton )  );
+		return LOG_DIALOG_RESULT(  ::MessageBox( hParent, text, _T("Question"), MB_ICONEXCLAMATION|MB_TASKMODAL|MB_CANCELTRYCONTINUE|defaultButton )  );
 	}
 	BYTE CancelRetryContinue(LPCTSTR text,TStdWinError causeOfError,UINT defaultButton,LPCTSTR consequence){
 		// shows an cancel-retry-continue question along with its Cause
@@ -945,8 +953,9 @@ namespace Utils{
 
 	void Warning(LPCTSTR text){
 		// shows Textual warning
-		//if (!hParent) hParent=::GetActiveWindow();
-		::MessageBox( app.GetEnabledActiveWindow(), text, _T("Warning"), MB_ICONINFORMATION|MB_TASKMODAL );
+		const HWND hParent=app.GetEnabledActiveWindow();
+		CBackgroundActionCancelable::SignalPausedProgress( hParent );
+		::MessageBox( hParent, text, _T("Warning"), MB_ICONINFORMATION|MB_TASKMODAL );
 	}
 
 
@@ -979,6 +988,7 @@ namespace Utils{
 			CWnd *const pActiveWindowOrg=app.m_pActiveWnd;
 			if (app.m_pActiveWnd) app.m_pActiveWnd->BeginModalState(); // block any interaction with previously active window
 				app.m_pActiveWnd=CWnd::FromHandle(m_hWnd); // let any default message boxes be parented by the Parent
+					CBackgroundActionCancelable::SignalPausedProgress( *this );
 					const INT_PTR result=__super::DoModal();
 				app.m_pActiveWnd=pActiveWindowOrg; 
 			if (app.m_pActiveWnd) app.m_pActiveWnd->EndModalState();
