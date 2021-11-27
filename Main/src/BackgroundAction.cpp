@@ -176,13 +176,13 @@
 				if (state>lastState){ // always progressing towards the Target, never back
 					if (state*PB_RESOLUTION/progressTarget > lastState*PB_RESOLUTION/progressTarget){ // preventing from overwhelming the app with messages - target of 60k shouldn't mean 60.000 messages
 						GetDlgItem(ID_STATE)->PostMessage( PBM_SETPOS, state );
-						if (pActionTaskbarList)
+						if (pActionTaskbarList){
 							pActionTaskbarList->SetProgressValue( *app.m_pMainWnd, state, progressTarget );
+							pActionTaskbarList->SetProgressState( *app.m_pMainWnd, status );
+						}
 					}
 					lastState=state;
 				}
-				if (pActionTaskbarList)
-					pActionTaskbarList->SetProgressState( *app.m_pMainWnd, status );
 			}else
 				// Worker finished - closing the window
 				if (!bTargetStateReached){ // not sending the dialog-closure request twice
@@ -208,8 +208,10 @@
 			while (hFromChild!=nullptr && hFromChild!=INVALID_HANDLE_VALUE)
 				if (hFromChild!=pSingleInstance->m_hWnd)
 					hFromChild=::GetParent(hFromChild);
-				else
+				else{
+					pSingleInstance->lastState=-1;
 					return pSingleInstance->UpdateProgress( 0, TBPFLAG::TBPF_PAUSED );
+				}
 	}
 
 	TStdWinError CBackgroundActionCancelable::TerminateWithSuccess(){
@@ -265,16 +267,16 @@
 
 	void CBackgroundMultiActionCancelable::UpdateProgress(int state,TBPFLAG status) const{
 		// refreshes the displaying of actual progress
+		// - base
+		const auto lastStateOrg=lastState;
+		__super::UpdateProgress( state, status );
 		// - updating taskbar button progress indication
 		if (m_hWnd) // the window doesn't exist if Worker already cancelled but the Worker hasn't yet found out that it can no longer Continue
 			if (pMultiActionTaskbarList)
-				if (state*PB_RESOLUTION/progressTarget > lastState*PB_RESOLUTION/progressTarget){ // preventing from overwhelming the app with messages - target of 60k shouldn't mean 60.000 messages
-					if (state>=lastState) // always progressing towards the Target, never back
-						pMultiActionTaskbarList->SetProgressValue( *app.m_pMainWnd, (ULONGLONG)iCurrAction*progressTarget+state, (ULONGLONG)nActions*progressTarget );
+				if (state*PB_RESOLUTION/progressTarget > lastStateOrg*PB_RESOLUTION/progressTarget){ // preventing from overwhelming the app with messages - target of 60k shouldn't mean 60.000 messages
+					pMultiActionTaskbarList->SetProgressValue( *app.m_pMainWnd, (ULONGLONG)iCurrAction*progressTarget+state, (ULONGLONG)nActions*progressTarget );
 					pMultiActionTaskbarList->SetProgressState( *app.m_pMainWnd, status );
 				}
-		// - base
-		__super::UpdateProgress( state, status );
 	}
 
 	#define PADDING_ACTION		8
