@@ -869,7 +869,7 @@
 			CImage::CTrackReader::CParseEventList peTrack;
 			BYTE dummy[16384]; // big enough to contain data of Sector of any type
 			TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; CImage::CTrackReader::TProfile idProfiles[Revolution::MAX*(TSector)-1];
-			const WORD nSectorsFound=tr.ScanAndAnalyze( ids, idEnds, idProfiles, (TFdcStatus *)dummy, peTrack );
+			const WORD nSectorsFound=tr.ScanAndAnalyze( ids, idEnds, idProfiles, (TFdcStatus *)dummy, peTrack, *pAction );
 			rte.timeEditor.SetParseEvents(peTrack);
 			return pAction->TerminateWithSuccess();
 		}

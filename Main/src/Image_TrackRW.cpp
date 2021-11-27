@@ -313,11 +313,13 @@
 		return nSectorsFound;
 	}
 
-	WORD CImage::CTrackReader::ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList &rOutParseEvents){
+	WORD CImage::CTrackReader::ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList &rOutParseEvents,CBackgroundActionCancelable &bac){
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
-		// - standard scanning using current Codec
+		bac.SetProgressTarget( 5 ); // N analysis steps
+		// - Step 1: standard scanning using current Codec
 		const WORD nSectorsFound=Scan( pOutFoundSectors, pOutIdEnds, pOutIdProfiles, pOutIdStatuses, &rOutParseEvents );
-		// - getting ParseEvents in Sector data
+		bac.UpdateProgress(1);
+		// - Step 2: getting ParseEvents in Sector data
 		struct{
 			TLogTime time;
 			TProfile profile;
@@ -335,7 +337,8 @@
 			}
 			rOutParseEvents.AddCopiesAscendingByStart( peSector );
 		}
-		// - search for non-formatted areas
+		bac.UpdateProgress(2);
+		// - Step 3: search for non-formatted areas
 		if (nSectorsFound>0){ // makes sense only if some Sectors found
 			constexpr BYTE nCellsMin=64;
 			const TLogTime tAreaLengthMin=nCellsMin*profile.iwTimeDefault; // ignore all non-formatted areas that are shorter
@@ -352,7 +355,8 @@
 							}
 					}
 		}
-		// - search for data in gaps
+		bac.UpdateProgress(3);
+		// - Step 4: search for data in gaps
 		if (nSectorsFound>0){ // makes sense only if some Sectors found
 			// . composition of all ends of ID and Data fields
 			for( WORD s=0; s<nSectorsFound; s++ ){
@@ -461,7 +465,8 @@
 					}
 				}
 		}
-		// - search for fuzzy regions in Sectors
+		bac.UpdateProgress(4);
+		// - Step 5: search for fuzzy regions in Sectors
 		if (nSectorsFound>0 && GetIndexCount()>2){ // makes sense only if some Sectors found over several Revolutions
 			// . extraction of bits from each full Revolution
 			std::unique_ptr<CBitSequence> pRevolutionBits[Revolution::MAX];
@@ -532,8 +537,14 @@
 			}
 			rOutParseEvents.AddCopiesAscendingByStart( fuzzyStdDataEvents );
 		}
+		bac.UpdateProgress(5);
 		// - successfully analyzed
 		return nSectorsFound;
+	}
+
+	WORD CImage::CTrackReader::ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList &rOutParseEvents){
+		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
+		return	ScanAndAnalyze( pOutFoundSectors, pOutIdEnds, pOutIdProfiles, pOutIdStatuses, rOutParseEvents, CBackgroundMultiActionCancelable(0) );
 	}
 
 	TFdcStatus CImage::CTrackReader::ReadData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,CParseEventList *pOutParseEvents){
