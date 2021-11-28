@@ -209,8 +209,9 @@
 				if (hFromChild!=pSingleInstance->m_hWnd)
 					hFromChild=::GetParent(hFromChild);
 				else{
-					pSingleInstance->lastState=-1;
-					return pSingleInstance->UpdateProgress( 0, TBPFLAG::TBPF_PAUSED );
+					const auto lastStateOrg=pSingleInstance->lastState;
+					pSingleInstance->lastState=-PB_RESOLUTION;
+					return pSingleInstance->UpdateProgress( lastStateOrg, TBPFLAG::TBPF_PAUSED );
 				}
 	}
 
