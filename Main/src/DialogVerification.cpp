@@ -687,7 +687,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
 		const CVerifyVolumeDialog::TParams &vp=*(CVerifyVolumeDialog::TParams *)pAction->GetParams();
 		const PImage image=vp.dos->image;
-		vp.fReport.OpenSection(SURFACE_VERIFICATION _T(" (whole disk)"));
+		vp.fReport.OpenSection(SURFACE_VERIFICATION _T(" (empty parts of whole disk)"));
 		pAction->SetProgressTarget( vp.dos->formatBoot.nCylinders );
 		const Utils::CByteIdentity sectorIdAndPositionIdentity;
 		TPhysicalAddress chs;
