@@ -60,24 +60,80 @@
 
 
 
+	CActionProgress::CActionProgress(const CActionProgress *parent,int parentProgressBegin,int parentProgressInc)
+		// ctor
+		: parent(parent)
+		, parentProgressBegin(parentProgressBegin) , parentProgressInc(parentProgressInc)
+		, targetProgress(INT_MAX)
+		, currProgress(0) {
+	}
+
+	CActionProgress::CActionProgress(CActionProgress &&r)
+		// move ctor
+		: parent(r.parent)
+		, parentProgressBegin(r.parentProgressBegin) , parentProgressInc(r.parentProgressInc)
+		, targetProgress(r.targetProgress)
+		, currProgress(r.currProgress) {
+		r.parent=nullptr;
+	}
+
+	CActionProgress::~CActionProgress(){
+		// dtor
+		UpdateProgress( parentProgressBegin+parentProgressInc, TBPFLAG::TBPF_NORMAL );
+	}
+
+	void CActionProgress::SetProgressTarget(int targetProgress){
+		// sets Worker's target progress state, "100% completed"
+		this->targetProgress=targetProgress;
+	}
+
+	void CActionProgress::UpdateProgress(int newProgress,TBPFLAG status) const{
+		// refreshes the displaying of actual progress
+		if (newProgress<=currProgress) // always proceed towards the Target, never back
+			return;
+		currProgress=newProgress;
+		if (!parent) // did we reach the top-level ActionProgress?
+			return;
+		parent->UpdateProgress( // reflect progress of this Action in its Parent
+			parentProgressBegin+std::min( (LONGLONG)parentProgressInc*newProgress/targetProgress, (LONGLONG)parentProgressInc ),
+			status
+		);
+	}
+
+	CActionProgress CActionProgress::CreateSubactionProgress(int thisProgressIncrement,int subactionProgressTarget){
+		// creates and returns a SubactionProgress; for it, call again UpdateProgress with values from <0,TargetProgress>
+		CActionProgress tmp( this, currProgress, thisProgressIncrement );
+			tmp.SetProgressTarget( subactionProgressTarget );
+		return tmp;
+	}
+
+
+
+
+
+
+
+
+
+
 	const CBackgroundActionCancelable *CBackgroundActionCancelable::pSingleInstance;
 
 	CBackgroundActionCancelable::CBackgroundActionCancelable(UINT dlgResId)
 		// ctor
 		: Utils::CRideDialog( dlgResId, CWnd::GetActiveWindow() )
+		, CActionProgress( nullptr, 0, INT_MAX )
 		, callerThreadPriorityOrg( ::GetThreadPriority(::GetCurrentThread()) )
 		, pActionTaskbarList(nullptr)
-		, bCancelled(false) , bTargetStateReached(false) , lastState(0)
-		, progressTarget(INT_MAX) {
+		, bCancelled(false) , bTargetStateReached(false) {
 	}
 
 	CBackgroundActionCancelable::CBackgroundActionCancelable(AFX_THREADPROC fnAction,LPCVOID actionParams,int actionThreadPriority)
 		// ctor
 		: Utils::CRideDialog( IDR_ACTION_PROGRESS, CWnd::GetActiveWindow() )
+		, CActionProgress( nullptr, 0, INT_MAX )
 		, callerThreadPriorityOrg( ::GetThreadPriority(::GetCurrentThread()) )
 		, pActionTaskbarList(nullptr)
-		, bCancelled(false) , bTargetStateReached(false) , lastState(0)
-		, progressTarget(INT_MAX) {
+		, bCancelled(false) , bTargetStateReached(false) {
 		BeginAnother( fnAction, actionParams, actionThreadPriority );
 		ChangeWorkerPriority( actionThreadPriority ); // making sure the caller is always responsive by temporarily elevating its priority
 	}
@@ -153,12 +209,14 @@
 		return bCancelled;
 	}
 
-	void CBackgroundActionCancelable::SetProgressTarget(int targetState){
+	void CBackgroundActionCancelable::SetProgressTarget(int targetProgress){
 		// sets Worker's target progress state, "100% completed"
-		::PostMessage(	GetDlgItemHwnd(ID_STATE),
-						PBM_SETRANGE32,
-						0,	progressTarget=targetState
-					);
+		__super::SetProgressTarget(targetProgress);
+		::PostMessage(
+			GetDlgItemHwnd(ID_STATE),
+			PBM_SETRANGE32,
+			0, targetProgress
+		);
 	}
 
 	void CBackgroundActionCancelable::SetProgressTargetInfinity(){
@@ -168,21 +226,20 @@
 
 	#define PB_RESOLUTION	100
 
-	void CBackgroundActionCancelable::UpdateProgress(int state,TBPFLAG status) const{
+	void CBackgroundActionCancelable::UpdateProgress(int newProgress,TBPFLAG status) const{
 		// refreshes the displaying of actual progress
 		if (m_hWnd) // the window doesn't exist if Worker already cancelled but the Worker hasn't yet found out that it can no longer Continue
-			if (state<progressTarget){
+			if (newProgress<targetProgress){
 				// Worker not yet finished - refreshing
-				if (state>lastState){ // always progressing towards the Target, never back
-					if (state*PB_RESOLUTION/progressTarget > lastState*PB_RESOLUTION/progressTarget){ // preventing from overwhelming the app with messages - target of 60k shouldn't mean 60.000 messages
-						GetDlgItem(ID_STATE)->PostMessage( PBM_SETPOS, state );
+				if (newProgress>currProgress) // always progressing towards the Target, never back
+					if (newProgress*PB_RESOLUTION/targetProgress > currProgress*PB_RESOLUTION/targetProgress){ // preventing from overwhelming the app with messages - target of 60k shouldn't mean 60.000 messages
+						GetDlgItem(ID_STATE)->PostMessage( PBM_SETPOS, newProgress );
 						if (pActionTaskbarList){
-							pActionTaskbarList->SetProgressValue( *app.m_pMainWnd, state, progressTarget );
+							pActionTaskbarList->SetProgressValue( *app.m_pMainWnd, newProgress, targetProgress );
 							pActionTaskbarList->SetProgressState( *app.m_pMainWnd, status );
 						}
 					}
-					lastState=state;
-				}
+				__super::UpdateProgress( newProgress, status );	
 			}else
 				// Worker finished - closing the window
 				if (!bTargetStateReached){ // not sending the dialog-closure request twice
@@ -209,9 +266,9 @@
 				if (hFromChild!=pSingleInstance->m_hWnd)
 					hFromChild=::GetParent(hFromChild);
 				else{
-					const auto lastStateOrg=pSingleInstance->lastState;
-					pSingleInstance->lastState=-PB_RESOLUTION;
-					return pSingleInstance->UpdateProgress( lastStateOrg, TBPFLAG::TBPF_PAUSED );
+					const auto currProgressOrg=pSingleInstance->currProgress;
+					pSingleInstance->currProgress=-PB_RESOLUTION;
+					return pSingleInstance->UpdateProgress( currProgressOrg, TBPFLAG::TBPF_PAUSED );
 				}
 	}
 
@@ -266,16 +323,16 @@
 		r.fnName=name;
 	}
 
-	void CBackgroundMultiActionCancelable::UpdateProgress(int state,TBPFLAG status) const{
+	void CBackgroundMultiActionCancelable::UpdateProgress(int newProgress,TBPFLAG status) const{
 		// refreshes the displaying of actual progress
 		// - base
-		const auto lastStateOrg=lastState;
-		__super::UpdateProgress( state, status );
+		const auto currProgressOrg=currProgress;
+		__super::UpdateProgress( newProgress, status );
 		// - updating taskbar button progress indication
 		if (m_hWnd) // the window doesn't exist if Worker already cancelled but the Worker hasn't yet found out that it can no longer Continue
 			if (pMultiActionTaskbarList)
-				if (state*PB_RESOLUTION/progressTarget > lastStateOrg*PB_RESOLUTION/progressTarget){ // preventing from overwhelming the app with messages - target of 60k shouldn't mean 60.000 messages
-					pMultiActionTaskbarList->SetProgressValue( *app.m_pMainWnd, (ULONGLONG)iCurrAction*progressTarget+state, (ULONGLONG)nActions*progressTarget );
+				if (newProgress*PB_RESOLUTION/targetProgress > currProgressOrg*PB_RESOLUTION/targetProgress){ // preventing from overwhelming the app with messages - target of 60k shouldn't mean 60.000 messages
+					pMultiActionTaskbarList->SetProgressValue( *app.m_pMainWnd, (ULONGLONG)iCurrAction*targetProgress+newProgress, (ULONGLONG)nActions*targetProgress );
 					pMultiActionTaskbarList->SetProgressState( *app.m_pMainWnd, status );
 				}
 	}
@@ -350,7 +407,7 @@
 						// current Action has finished - proceeding with the next one
 						if (iCurrAction+1<nActions){
 							// . launching the next Action
-							lastState=0;
+							currProgress=0;
 							const auto &r=actions[++iCurrAction];
 							BeginAnother( r.fnAction, r.fnParams, actionThreadPriority );
 							bTargetStateReached=false;

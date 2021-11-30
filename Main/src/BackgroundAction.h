@@ -19,13 +19,32 @@
 	} *PCBackgroundAction;
 
 
-	typedef class CBackgroundActionCancelable:public CBackgroundAction,public Utils::CRideDialog{
+
+	typedef class CActionProgress{
 	protected:
-		int progressTarget;
+		const CActionProgress *parent;
+		const int parentProgressBegin, parentProgressInc; // the beginning and increment in total progress (see BeginSubtask method)
+		int targetProgress; // call SetProgressTarget or ctor
+		mutable int currProgress;
+
+		CActionProgress(const CActionProgress *parent,int parentProgressBegin,int parentProgressInc);
+		CActionProgress(const CActionProgress &r); // can't copy!
+	public:
+		CActionProgress(CActionProgress &&r);
+		~CActionProgress();
+
+		virtual void SetProgressTarget(int targetProgress);
+		virtual void UpdateProgress(int newProgress,TBPFLAG status) const;
+		CActionProgress CreateSubactionProgress(int thisProgressIncrement,int subactionProgressTarget=INT_MAX);
+	} *PActionProgress; // call UpdateProgress method with progress from <0;ProgressTarget)
+
+
+
+	typedef class CBackgroundActionCancelable:public CBackgroundAction,public CActionProgress,public Utils::CRideDialog{
+	protected:
 		const int callerThreadPriorityOrg;
 		volatile bool bCancelled;
 		mutable volatile bool bTargetStateReached;
-		mutable int lastState;
 		ITaskbarList3 *pActionTaskbarList;
 
 		CBackgroundActionCancelable(UINT dlgResId);
@@ -43,10 +62,10 @@
 
 		TStdWinError Perform();
 		bool IsCancelled() const volatile;
-		void SetProgressTarget(int targetState);
+		void SetProgressTarget(int targetProgress) override;
 		void SetProgressTargetInfinity();
-		virtual void UpdateProgress(int state,TBPFLAG status) const;
-		void UpdateProgress(int state) const;
+		void UpdateProgress(int newProgress) const;
+		void UpdateProgress(int newProgress,TBPFLAG status) const override;
 		void UpdateProgressFinished() const;
 		TStdWinError TerminateWithSuccess();
 		TStdWinError TerminateWithError(TStdWinError error);
@@ -77,7 +96,7 @@
 		~CBackgroundMultiActionCancelable();
 
 		void AddAction(AFX_THREADPROC fnAction,LPCVOID actionParams,LPCTSTR name);
-		void UpdateProgress(int state,TBPFLAG status) const override;
+		void UpdateProgress(int newProgress,TBPFLAG status) const override;
 	};
 
 #endif // BACKGROUNDACTION_H
