@@ -315,10 +315,12 @@
 
 	WORD CImage::CTrackReader::ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList &rOutParseEvents,CBackgroundActionCancelable &bac){
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
-		bac.SetProgressTarget( 5 ); // N analysis steps
+		const int StepGranularity=1000;
+		const BYTE nFullRevolutions=std::max( 0, GetIndexCount()-1 );
+		bac.SetProgressTarget( (4+std::max(0,nFullRevolutions*(nFullRevolutions-1)/2))*StepGranularity ); // (N)*X, N = analysis steps
 		// - Step 1: standard scanning using current Codec
 		const WORD nSectorsFound=Scan( pOutFoundSectors, pOutIdEnds, pOutIdProfiles, pOutIdStatuses, &rOutParseEvents );
-		bac.UpdateProgress(1);
+		bac.UpdateProgress( 1*StepGranularity );
 		// - Step 2: getting ParseEvents in Sector data
 		struct{
 			TLogTime time;
@@ -337,7 +339,7 @@
 			}
 			rOutParseEvents.AddCopiesAscendingByStart( peSector );
 		}
-		bac.UpdateProgress(2);
+		bac.UpdateProgress( 2*StepGranularity );
 		// - Step 3: search for non-formatted areas
 		if (nSectorsFound>0){ // makes sense only if some Sectors found
 			constexpr BYTE nCellsMin=64;
@@ -355,7 +357,7 @@
 							}
 					}
 		}
-		bac.UpdateProgress(3);
+		bac.UpdateProgress( 3*StepGranularity );
 		// - Step 4: search for data in gaps
 		if (nSectorsFound>0){ // makes sense only if some Sectors found
 			// . composition of all ends of ID and Data fields
@@ -465,12 +467,12 @@
 					}
 				}
 		}
-		bac.UpdateProgress(4);
-		// - Step 5: search for fuzzy regions in Sectors
-		if (nSectorsFound>0 && GetIndexCount()>2){ // makes sense only if some Sectors found over several Revolutions
+		bac.UpdateProgress( 4*StepGranularity );
+		// - Step 5,6,...: search for fuzzy regions in Sectors
+		if (nSectorsFound>0 && nFullRevolutions>=2){ // makes sense only if some Sectors found over several Revolutions
 			// . extraction of bits from each full Revolution
 			std::unique_ptr<CBitSequence> pRevolutionBits[Revolution::MAX];
-			for( BYTE i=0; i<GetIndexCount()-1; i++ )
+			for( BYTE i=0; i<nFullRevolutions; i++ )
 				pRevolutionBits[i].reset(
 					new CBitSequence( *this, GetIndexTime(i), CreateResetProfile(), GetIndexTime(i+1) )
 				);
@@ -481,11 +483,11 @@
 			const auto pLocalRegionsI=Utils::MakeCallocPtr<TRegion>(nSesItemsMax);
 			const auto pLocalRegionsJ=Utils::MakeCallocPtr<TRegion>(nSesItemsMax);
 			if (pSes && pLocalRegionsI && pLocalRegionsJ)
-				for( BYTE i=0; i<GetIndexCount()-2; i++ ){
+				for( BYTE i=0; i<nFullRevolutions-1; i++ ){
 					const CBitSequence &iBits=*pRevolutionBits[i];
-					for( BYTE j=i+1; j<GetIndexCount()-1; j++ ){
+					for( BYTE j=i+1; j<nFullRevolutions; j++ ){
 						const CBitSequence &jBits=*pRevolutionBits[j];
-						const int nSesItems=iBits.GetShortestEditScript( jBits, pSes, nSesItemsMax );
+						const int nSesItems=iBits.GetShortestEditScript( jBits, pSes, nSesItemsMax, &bac.CreateSubactionProgress(StepGranularity) );
 						if (nSesItems>0){ // Revolutions bitwise different?
 							// : projecting differences into both Revolutions
 							iBits.ScriptToLocalDiffs( pSes, nSesItems, pLocalRegionsI );
@@ -537,7 +539,6 @@
 			}
 			rOutParseEvents.AddCopiesAscendingByStart( fuzzyStdDataEvents );
 		}
-		bac.UpdateProgress(5);
 		// - successfully analyzed
 		return nSectorsFound;
 	}
@@ -625,14 +626,15 @@
 		::free(pBits);
 	}
 
-	int CImage::CTrackReader::CBitSequence::GetShortestEditScript(const CBitSequence &theirs,CDiffBase::TScriptItem *pOutScript,DWORD nScriptItemsMax) const{
+	int CImage::CTrackReader::CBitSequence::GetShortestEditScript(const CBitSequence &theirs,CDiffBase::TScriptItem *pOutScript,DWORD nScriptItemsMax,PActionProgress pap) const{
 		// creates the shortest edit script (SES) and returns the number of its Items (or -1 if SES couldn't have been composed, e.g. insufficient output Buffer)
 		ASSERT( pOutScript!=nullptr );
 		return	CDiff<TBit>(
 					GetBits(), GetBitCount()
 				).GetShortestEditScript(
 					theirs.GetBits(), theirs.GetBitCount(),
-					pOutScript, nScriptItemsMax
+					pOutScript, nScriptItemsMax,
+					pap ? *pap : *&CBackgroundMultiActionCancelable(0)
 				);
 	}
 

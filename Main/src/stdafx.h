@@ -155,8 +155,8 @@ struct TLogTimeInterval{
 #pragma warning( disable : 4341 ) // pre-C++14 enums shouldn't be signed
 
 #include "Utils.h"
-#include "Diff.h"
 #include "BackgroundAction.h"
+#include "Diff.h"
 #include "MainWindow.h"
 #include "HexaEditor.h"
 #include "ViewTrackMap.h"

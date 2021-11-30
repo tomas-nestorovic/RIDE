@@ -51,6 +51,7 @@
 		const T *B;
 		int max;
 		PINT fv,rv; // pointers to [0], allowing for negative indices!
+		PActionProgress pap;
 
 		struct TMidSnake sealed{
 			int x,y,u,v,D;
@@ -140,6 +141,7 @@
 				}else
 					return false; // insufficient buffer
 			// - find the shortest middle snake (SMS) and length of optimal path for A and B
+			pap->UpdateProgress( a-A, TBPFLAG::TBPF_NORMAL );
 			const TMidSnake sms=GetShortestMiddleSnake( a, n, b, m );
 			// - the path is from StartX to (x,y) and (x,y) to EndX
 			return	sms.D>=0
@@ -154,7 +156,7 @@
 			: A(A) , N(N) {
 		}
 
-		int GetShortestEditScript(const T *B,int M,TScriptItem *pOutScriptItemBuffer,DWORD nScriptItemsBufferCapacity){
+		int GetShortestEditScript(const T *B,int M,TScriptItem *pOutScriptItemBuffer,DWORD nScriptItemsBufferCapacity,CActionProgress &rap){
 			// composes the shortest edit Script and returns the number of its Items (or -1 if Script couldn't have been composed, e.g. insufficient output Buffer)
 			this->B=B;
 			this->max=N+M+1;
@@ -162,6 +164,7 @@
 			nEmptyScriptItems=nScriptItemsBufferCapacity;
 			const auto fv=Utils::MakeCallocPtr<int>(2*max+2), rv=Utils::MakeCallocPtr<int>(2*max+2);
 			this->fv=fv+max, this->rv=rv+max;
+			( pap=&rap )->SetProgressTarget(N);
 			return	GetShortestEditScript( A, N, B, M ) // Script composed?
 					? MergeScriptItems(pOutScriptItemBuffer)
 					: -1;
