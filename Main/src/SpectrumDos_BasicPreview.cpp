@@ -407,14 +407,14 @@ defaultPrinting:				if (b<' ')
 								if (features.showRemAsMachineCode)
 									for( PBYTE p=lineBytes,pEndOfLine=p+nBytesOfLine; p<pEndOfLine; p++ )
 										if (*p==0xea){ // begin of REM command
-											const PBYTE remStart=++p;
+											const PBYTE remContentStart=++p;
 											for( ; p<pEndOfLine; p++ )
 												if (*p==':') // end of REM command
 													break;
 											listing.__endApplicationOfColors__();
 												listing << _T("<small>");
 													ParseZ80BinaryFileAndGenerateHtmlFormattedContent(
-														CMemFile( remStart, p-1-remStart ),
+														CMemFile( remContentStart, p-remContentStart ),
 														0,
 														listing,
 														true
