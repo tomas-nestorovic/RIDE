@@ -91,17 +91,21 @@
 		// refreshes the displaying of actual progress
 		if (newProgress<=currProgress) // always proceed towards the Target, never back
 			return;
-		currProgress=newProgress;
+		if (currProgress==targetProgress) // don't propagate finished Action twice to its Parent
+			return;
+		currProgress=std::min( newProgress, targetProgress );
 		if (!parent) // did we reach the top-level ActionProgress?
 			return;
 		parent->UpdateProgress( // reflect progress of this Action in its Parent
-			parentProgressBegin+std::min( (LONGLONG)parentProgressInc*newProgress/targetProgress, (LONGLONG)parentProgressInc ),
+			parentProgressBegin + (LONGLONG)parentProgressInc*currProgress/targetProgress,
 			status
 		);
 	}
 
 	CActionProgress CActionProgress::CreateSubactionProgress(int thisProgressIncrement,int subactionProgressTarget){
 		// creates and returns a SubactionProgress; for it, call again UpdateProgress with values from <0,TargetProgress>
+		ASSERT( thisProgressIncrement>0 );
+		ASSERT( currProgress+thisProgressIncrement<=targetProgress );
 		CActionProgress tmp( this, currProgress, thisProgressIncrement );
 			tmp.SetProgressTarget( subactionProgressTarget );
 		return tmp;
