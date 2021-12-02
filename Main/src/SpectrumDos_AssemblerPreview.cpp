@@ -831,7 +831,12 @@
 			CFileReaderWriter frw(DOS,pdt->entry);
 			BYTE a,z;
 			const DWORD fileOfficialSize=DOS->GetFileSize( pdt->entry, &a, &z, CDos::TGetFileSizeOptions::OfficialDataLength );
-			frw.SetLength( a+fileOfficialSize ); // ignoring appended custom data (e.g. as in TR-DOS)
+			#if _MFC_VER>=0x0A00
+				#define MinLength(a,b) std::min<ULONGLONG>(a,b)
+			#else
+				#define MinLength(a,b) std::min<ULONG>(a,b)
+			#endif
+			frw.SetLength( MinLength(frw.GetLength(),a+fileOfficialSize) ); // ignoring appended custom data (e.g. as in TR-DOS)
 			frw.Seek( a, CFile::begin ); // ignoring prepended custom data (e.g. as in GDOS)
 			// . generating the HTML-formatted content
 			TUniFileType uft; TStdParameters params; DWORD tmp;
