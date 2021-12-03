@@ -25,8 +25,8 @@
 			ShowWindow(windowState); // minimized/maximized/normal
 		}
 		// - initialization
-		file1.__init__(GetDlgItem(ID_FILE_MRU_FILE1),GetDlgItem(ID_FILE1)),
-		file2.__init__(GetDlgItem(ID_FILE_MRU_FILE2),GetDlgItem(ID_FILE2));
+		file1.Init(GetDlgItem(ID_FILE_MRU_FILE1),GetDlgItem(ID_FILE1)),
+		file2.Init(GetDlgItem(ID_FILE_MRU_FILE2),GetDlgItem(ID_FILE2));
 		padding.x=padding.y=0;
 		::MapWindowPoints(file1.hLabel,m_hWnd,&padding,1);
 		RECT r;
@@ -61,7 +61,8 @@
 		//nop (see more general test of equality of File contents)
 		// - testing equality of File contents
 		file1.f->SeekToBegin(), file2.f->SeekToBegin(); // because HexaEditor showed their contents and thus influenced the File Positions
-		DWORD length1=file1.size, length2=file2.size;
+		const auto fileSize1=file1.f->GetLength(), fileSize2=file2.f->GetLength();
+		auto length1=fileSize1, length2=fileSize2;
 		for( DWORD nBytesRead; length1&&length2; length1-=nBytesRead,length2-=nBytesRead ){
 			BYTE buf1[65536],buf2[65536];
 			nBytesRead=std::min( file1.f->Read(buf1,sizeof(buf1)), file2.f->Read(buf2,sizeof(buf2)) );
@@ -75,8 +76,8 @@
 			}
 		}
 		if (length1||length2){
-			file1.ScrollTo( file1.size-length1, true );
-			file2.ScrollTo( file2.size-length1, true );
+			file1.ScrollTo( fileSize1-length1, true );
+			file2.ScrollTo( fileSize2-length1, true );
 			//Utils::Information(_T("No, the files differ in content! (File names are ignored.)")); // commented out as unnecessary - feedback already given by scrolling to first difference
 		}else{
 			file1.ScrollTo( 0, true );
@@ -130,9 +131,9 @@
 			case WM_COMMAND:
 				// command processing
 				if (wParam==MAKELONG(ID_FILE1,BN_CLICKED))
-					file1.__chooseAndOpenPhysicalFile__();
+					file1.ChooseAndOpenPhysicalFile();
 				else if (wParam==MAKELONG(ID_FILE2,BN_CLICKED))
-					file2.__chooseAndOpenPhysicalFile__();
+					file2.ChooseAndOpenPhysicalFile();
 				break;
 			case WM_NCDESTROY:
 				// destroying the window's non-client area
@@ -162,7 +163,7 @@
 
 
 
-	void CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::__init__(CWnd *pLabel,CWnd *pButton){
+	void CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::Init(CWnd *pLabel,CWnd *pButton){
 		// initialization
 		hLabel=pLabel->m_hWnd, hEllipsisButton=pButton->m_hWnd;
 		Create( nullptr, nullptr, WS_CHILD /*|WS_VISIBLE*/, CFrameWnd::rectDefault, pLabel->GetParent(), 0 ); // commented out because see WM_SIZE
@@ -170,7 +171,7 @@
 		DragAcceptFiles(); // to not pass the WM_DROPFILES message to the MainWindow (which would attempt to open the dropped File as an Image)
 	}
 
-	void CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::__chooseAndOpenPhysicalFile__(){
+	void CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::ChooseAndOpenPhysicalFile(){
 		// shows the "Open File" dialog, opens chosen physical File upon confirmation and shows its content in HexaEditor
 		TCHAR buf[MAX_PATH];
 		CFileDialog d(TRUE);
@@ -178,15 +179,15 @@
 			d.m_ofn.lpstrFile=buf;
 		*buf='\0';
 		if (d.DoModal()==IDOK)
-			__openPhysicalFile__(buf);
+			OpenPhysicalFile(buf);
 	}
 
-	void CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::__openPhysicalFile__(LPCTSTR fileName){
+	void CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::OpenPhysicalFile(LPCTSTR fileName){
 		// opens chosen physical File upon confirmation and shows its content in HexaEditor
 		std::unique_ptr<CFile> fTmp( new CFile );
 		CFileException e;
 		if (fTmp->Open( fileName, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary, &e ))
-			__openFile__(fTmp,fileName);
+			Open(fTmp,fileName);
 		else{
 			TCHAR errMsg[200];
 			e.GetErrorMessage(errMsg,200);
@@ -197,13 +198,13 @@
 	void CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::Open(CDos::PCFile f){
 		// opens specified File stored in currently open Image, and shows its content in HexaEditor
 		const PCDos dos=rDialog.fm.tab.image->dos;
-		__openFile__(
+		Open(
 			std::unique_ptr<CFile>(new CDos::CFileReaderWriter(dos,f)),
 			dos->GetFilePresentationNameAndExt(f)
 		);
 	}
 
-	void CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::__openFile__(std::unique_ptr<CFile> &fTmp,LPCTSTR fileName){
+	void CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::Open(std::unique_ptr<CFile> &fTmp,LPCTSTR fileName){
 		// opens specified File and shows its content in HexaEditor
 		// - freeing any previous File
 		if (f){
@@ -215,13 +216,13 @@
 		GetScrollInfo( SB_VERT, &si, SIF_POS|SIF_TRACKPOS );
 		// - showing the File in HexaEditor
 		f=std::move(fTmp);
-		size=f->GetLength();
+		const auto size=f->GetLength();
 		Reset( f.get(), size, size );
 		::SetWindowText(hLabel,fileName);
 		// - updating the LogicalSizes of both HexaEditors to BiggerSize of the two Files
 		const DWORD L1= rDialog.file1.f ? rDialog.file1.f->GetLength() : 0;
 		const DWORD L2= rDialog.file2.f ? rDialog.file2.f->GetLength() : 0;
-		const DWORD biggerSize=std::max<>(L1,L2);
+		const DWORD biggerSize=std::max(L1,L2);
 			rDialog.file1.SetLogicalSize(biggerSize);
 			rDialog.file1.Invalidate();
 			rDialog.file2.SetLogicalSize(biggerSize);
@@ -253,7 +254,7 @@
 			if (const HDROP hDrop=(HDROP)::GlobalLock(hg)){
 				TCHAR buf[MAX_PATH];
 				::DragQueryFile(hDrop,0,buf,MAX_PATH); // 0 = only first File, others ignored
-				__openPhysicalFile__(buf);
+				OpenPhysicalFile(buf);
 				::DragFinish(hDrop);
 				::GlobalUnlock(hg);
 			}
@@ -265,7 +266,7 @@
 					// File is readable (e.g. doesn't contain no "Sector no found" errors)
 					const FILEDESCRIPTOR *const pfd=pfgd->fgd;
 					fTmp->SetLength(pfd->nFileSizeLow);
-					__openFile__(fTmp,pfd->cFileName);
+					Open(fTmp,pfd->cFileName);
 				}
 				::GlobalUnlock(hg);
 			}

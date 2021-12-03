@@ -191,19 +191,18 @@
 			HWND hCompareButton;
 			
 			class COleComparisonDropTarget sealed:public COleDropTarget,public CHexaEditor{
-			public:
 				CFileComparisonDialog &rDialog;
+			public:
 				HWND hLabel,hEllipsisButton;
 				std::unique_ptr<CFile> f;
-				DWORD size;
 
 				COleComparisonDropTarget(CFileComparisonDialog &rDialog); // ctor
 
-				void __init__(CWnd *pLabel,CWnd *pButton);
-				void __chooseAndOpenPhysicalFile__();
-				void __openPhysicalFile__(LPCTSTR fileName);
+				void Init(CWnd *pLabel,CWnd *pButton);
+				void ChooseAndOpenPhysicalFile();
+				void OpenPhysicalFile(LPCTSTR fileName);
 				void Open(CDos::PCFile f);
-				void __openFile__(std::unique_ptr<CFile> &fTmp,LPCTSTR fileName);
+				void Open(std::unique_ptr<CFile> &fTmp,LPCTSTR fileName);
 				DROPEFFECT OnDragEnter(CWnd *,COleDataObject *pDataObject,DWORD dwKeyState,CPoint point) override;
 				DROPEFFECT OnDragOver(CWnd *pWnd,COleDataObject *pDataObject,DWORD dwKeyState,CPoint point) override;
 				BOOL OnDrop(CWnd *,COleDataObject *pDataObject,DROPEFFECT dropEffect,CPoint point) override;
