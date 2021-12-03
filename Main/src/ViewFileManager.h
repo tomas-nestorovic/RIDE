@@ -207,6 +207,7 @@
 				void __init__(CWnd *pLabel,CWnd *pButton);
 				void __chooseAndOpenPhysicalFile__();
 				void __openPhysicalFile__(LPCTSTR fileName);
+				void Open(CDos::PCFile f);
 				void __openFile__(std::unique_ptr<CFile> &fTmp,LPCTSTR fileName);
 				DROPEFFECT OnDragEnter(CWnd *,COleDataObject *pDataObject,DWORD dwKeyState,CPoint point) override;
 				DROPEFFECT OnDragOver(CWnd *pWnd,COleDataObject *pDataObject,DWORD dwKeyState,CPoint point) override;
@@ -219,7 +220,12 @@
 		public:
 			static CFileComparisonDialog *pSingleInstance;
 
-			CFileComparisonDialog();
+			const CFileManagerView &fm;
+
+			CFileComparisonDialog(const CFileManagerView &fm);
+
+			void SetComparison(CDos::PCFile f1);
+			void SetComparison(CDos::PCFile f1,CDos::PCFile f2);
 		};
 
 		class CIntegerEditor sealed:public CValueEditorBase{

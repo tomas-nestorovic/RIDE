@@ -12,9 +12,9 @@
 
 
 
-	CFileManagerView::CFileComparisonDialog::CFileComparisonDialog()
+	CFileManagerView::CFileComparisonDialog::CFileComparisonDialog(const CFileManagerView &fm)
 		// ctor
-		: fEmpty((PBYTE)&fEmpty,0) , file1(*this) , file2(*this) {
+		: fEmpty((PBYTE)&fEmpty,0) , file1(*this) , file2(*this) , fm(fm) {
 		// - creating and positioning the window (restoring position saved earlier in OnCancel)
 		Create(IDR_FILEMANAGER_COMPARE_FILES);
 		const CString s=app.GetProfileString(INI_COMPARISON,INI_POSITION,_T(""));
@@ -41,6 +41,17 @@
 
 
 
+
+	void CFileManagerView::CFileComparisonDialog::SetComparison(CDos::PCFile f1){
+		// opens specified File stored in currently open Image, and shows its content in HexaEditor
+		file1.Open(f1);
+	}
+
+	void CFileManagerView::CFileComparisonDialog::SetComparison(CDos::PCFile f1,CDos::PCFile f2){
+		// opens specified Files stored in currently open Image, and shows their contents in HexaEditors
+		file1.Open(f1);
+		file2.Open(f2);
+	}
 
 	void CFileManagerView::CFileComparisonDialog::OnOK(){
 		// compares Files
@@ -182,6 +193,15 @@
 		}
 	}
 
+	void CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::Open(CDos::PCFile f){
+		// opens specified File stored in currently open Image, and shows its content in HexaEditor
+		const PCDos dos=hexaComparison.rDialog.fm.tab.image->dos;
+		__openFile__(
+			std::unique_ptr<CFile>(new CDos::CFileReaderWriter(dos,f)),
+			dos->GetFilePresentationNameAndExt(f)
+		);
+	}
+
 	void CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::__openFile__(std::unique_ptr<CFile> &fTmp,LPCTSTR fileName){
 		// opens specified File and shows its content in HexaEditor
 		// - freeing any previous File
@@ -264,10 +284,28 @@
 
 	afx_msg void CFileManagerView::__compareFiles__(){
 		// shows the FileComparison window
+		// - making sure the Dialog is shown
 		if (CFileManagerView::CFileComparisonDialog::pSingleInstance)
 			CFileManagerView::CFileComparisonDialog::pSingleInstance->BringWindowToTop();
 		else
-			CFileManagerView::CFileComparisonDialog::pSingleInstance=new CFileComparisonDialog;
+			CFileManagerView::CFileComparisonDialog::pSingleInstance=new CFileComparisonDialog(*this);
+		// - loading Files selected in currently open disk
+		POSITION pos=GetFirstSelectedFilePosition();
+		switch (GetCountOfSelectedFiles()){
+			case 0: // no File selected
+				break;
+			case 1: // single File selected - openingit in the left pane of the Dialog
+				CFileManagerView::CFileComparisonDialog::pSingleInstance->SetComparison(
+					GetNextSelectedFile(pos)
+				);
+				break;
+			default: // two or more Files selected - opening the first two in both panes, respectively
+				CFileManagerView::CFileComparisonDialog::pSingleInstance->SetComparison(
+					GetNextSelectedFile(pos),
+					GetNextSelectedFile(pos)
+				);
+				break;
+		}
 	}
 
 

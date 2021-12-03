@@ -799,6 +799,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Rename\tF2",                  ID_FILEMANAGER_FILE_EDIT
         MENUITEM "Delete\tDel",                 ID_FILEMANAGER_FILE_DELETE
+        MENUITEM "Compare...\tCtrl+Shift+C",    ID_FILEMANAGER_FILE_COMPARE
         MENUITEM "Show hexa\tCtrl+B",           ID_DOS_PREVIEWASBINARY
     END
 END
