@@ -46,6 +46,7 @@
 		ON_WM_CREATE()
 		ON_WM_MOUSEACTIVATE()
 		ON_WM_CHAR()
+		ON_WM_CONTEXTMENU()
 		ON_WM_MEASUREITEM_REFLECT()
 		ON_COMMAND_RANGE(ID_FILEMANAGER_BIG_ICONS,ID_FILEMANAGER_LIST,__changeDisplayMode__)
 			ON_UPDATE_COMMAND_UI_RANGE(ID_FILEMANAGER_BIG_ICONS,ID_FILEMANAGER_LIST,__changeDisplayMode_updateUI__)
@@ -311,6 +312,15 @@
 			default:
 				__super::OnChar(nChar,nRepCnt,nFlags);
 		}
+	}
+
+	afx_msg void CFileManagerView::OnContextMenu(CWnd *pWndRightClicked,CPoint point){
+		// right mouse button released
+		Utils::CRideContextMenu mnu( IDR_FILEMANAGER_CONTEXT, this );
+		SendMessage(
+			WM_COMMAND,
+			mnu.TrackPopupMenu( TPM_RETURNCMD, point.x, point.y, this )
+		);
 	}
 
 	afx_msg void CFileManagerView::MeasureItem(LPMEASUREITEMSTRUCT pmis){

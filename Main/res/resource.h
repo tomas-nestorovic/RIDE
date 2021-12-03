@@ -51,6 +51,7 @@
 #define IDR_TRACKMAP_CONTEXT            212
 #define IDR_BSDOS                       213
 #define IDR_DOS_VERIFY                  214
+#define IDR_FILEMANAGER_CONTEXT         215
 #define IDR_ACTION_SEQUENCE             216
 #define IDR_DRIVE_ACCESS                217
 #define IDR_SPECTRUM_PREVIEW_ASSEMBLER  218

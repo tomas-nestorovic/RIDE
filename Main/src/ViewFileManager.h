@@ -126,6 +126,7 @@
 		afx_msg int OnCreate(LPCREATESTRUCT lpcs);
 		afx_msg int OnMouseActivate(CWnd *topParent,UINT nHitTest,UINT message);
 		afx_msg void OnChar(UINT nChar,UINT nRepCnt,UINT nFlags);
+		afx_msg void OnContextMenu(CWnd *pWndRightClicked,CPoint point);
 		afx_msg void MeasureItem(LPMEASUREITEMSTRUCT pmis);
 		afx_msg void __changeDisplayMode__(UINT id);
 			afx_msg void __changeDisplayMode_updateUI__(CCmdUI *pCmdUI);

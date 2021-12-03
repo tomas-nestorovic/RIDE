@@ -789,6 +789,21 @@ BEGIN
     END
 END
 
+IDR_FILEMANAGER_CONTEXT MENU DISCARDABLE 
+BEGIN
+    POPUP "x"
+    BEGIN
+        MENUITEM "Cut\tCtrl+X",                 ID_EDIT_CUT
+        MENUITEM "Copy\tCtrl+C",                ID_EDIT_COPY
+        MENUITEM "Paste\tCtrl+V",               ID_EDIT_PASTE
+        MENUITEM SEPARATOR
+        MENUITEM "Rename\tF2",                  ID_FILEMANAGER_FILE_EDIT
+        MENUITEM "Delete\tDel",                 ID_FILEMANAGER_FILE_DELETE
+        MENUITEM "Show hexa\tCtrl+B",           ID_DOS_PREVIEWASBINARY
+    END
+END
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Bitmap
