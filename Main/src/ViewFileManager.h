@@ -190,17 +190,12 @@
 			int buttonWidth,buttonHeight,addressColumnWidth;
 			HWND hCompareButton;
 			
-			class COleComparisonDropTarget sealed:public COleDropTarget{
+			class COleComparisonDropTarget sealed:public COleDropTarget,public CHexaEditor{
 			public:
+				CFileComparisonDialog &rDialog;
 				HWND hLabel,hEllipsisButton;
 				std::unique_ptr<CFile> f;
 				DWORD size;
-				class CHexaComparison sealed:public CHexaEditor{
-					LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
-				public:
-					CFileComparisonDialog &rDialog;
-					CHexaComparison(CFileComparisonDialog &_rDialog); // ctor
-				} hexaComparison;
 
 				COleComparisonDropTarget(CFileComparisonDialog &rDialog); // ctor
 
@@ -212,6 +207,7 @@
 				DROPEFFECT OnDragEnter(CWnd *,COleDataObject *pDataObject,DWORD dwKeyState,CPoint point) override;
 				DROPEFFECT OnDragOver(CWnd *pWnd,COleDataObject *pDataObject,DWORD dwKeyState,CPoint point) override;
 				BOOL OnDrop(CWnd *,COleDataObject *pDataObject,DROPEFFECT dropEffect,CPoint point) override;
+				LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 			} file1,file2;
 
 			void OnOK() override;

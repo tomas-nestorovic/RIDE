@@ -31,7 +31,7 @@
 		::MapWindowPoints(file1.hLabel,m_hWnd,&padding,1);
 		RECT r;
 		::GetClientRect( hCompareButton=GetDlgItemHwnd(IDOK) ,&r);
-		buttonWidth=r.right, buttonHeight=r.bottom, addressColumnWidth=file2.hexaComparison.ShowAddressBand(false);
+		buttonWidth=r.right, buttonHeight=r.bottom, addressColumnWidth=file2.ShowAddressBand(false);
 		GetClientRect(&r);
 		// - updating control layout
 		SendMessage(WM_SIZE,0,MAKELONG(r.right,r.bottom));
@@ -75,12 +75,12 @@
 			}
 		}
 		if (length1||length2){
-			file1.hexaComparison.ScrollTo( file1.size-length1, true );
-			file2.hexaComparison.ScrollTo( file2.size-length1, true );
+			file1.ScrollTo( file1.size-length1, true );
+			file2.ScrollTo( file2.size-length1, true );
 			//Utils::Information(_T("No, the files differ in content! (File names are ignored.)")); // commented out as unnecessary - feedback already given by scrolling to first difference
 		}else{
-			file1.hexaComparison.ScrollTo( 0, true );
-			file2.hexaComparison.ScrollTo( 0, true );
+			file1.ScrollTo( 0, true );
+			file2.ScrollTo( 0, true );
 			Utils::Information(_T("Yes, the file contents are identical! (File names are ignored.)"));
 		}
 		file1.f->SeekToBegin(), file2.f->SeekToBegin();
@@ -119,8 +119,8 @@
 				::SetWindowPos( file2.hLabel, 0, hexa2X,padding.y, hexa2W-BUTTON_ELLIPSIS_WIDTH,LABEL_HEIGHT, SWP_NOZORDER );
 				::SetWindowPos( file2.hEllipsisButton, 0, hexa2X+hexa2W-BUTTON_ELLIPSIS_WIDTH,padding.y, BUTTON_ELLIPSIS_WIDTH,LABEL_HEIGHT, SWP_NOZORDER );
 				// . laying out HexaEditors
-				::SetWindowPos( file1.hexaComparison.m_hWnd, 0, hexa1X-addressColumnWidth,hexaY, addressColumnWidth+hexa2W,hexaH, SWP_NOZORDER|SWP_SHOWWINDOW );
-				::SetWindowPos( file2.hexaComparison.m_hWnd, 0, hexa2X,hexaY, hexa2W,hexaH, SWP_NOZORDER|SWP_SHOWWINDOW );
+				::SetWindowPos( file1, 0, hexa1X-addressColumnWidth,hexaY, addressColumnWidth+hexa2W,hexaH, SWP_NOZORDER|SWP_SHOWWINDOW );
+				::SetWindowPos( file2, 0, hexa2X,hexaY, hexa2W,hexaH, SWP_NOZORDER|SWP_SHOWWINDOW );
 				// . laying out buttons (can't use "GetDlgItem(.)->..." because buttons don't exist immediately after the Dialog has been created)
 				const int buttonX=wndW-padding.x-buttonWidth+1, buttonY=wndH-padding.y-buttonHeight;
 				SetDlgItemPos( IDCANCEL, buttonX, buttonY );
@@ -153,8 +153,9 @@
 
 	CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::COleComparisonDropTarget(CFileComparisonDialog &rDialog)
 		// ctor
-		: hexaComparison(rDialog) {
-		hexaComparison.Reset(&rDialog.fEmpty,0,0), hexaComparison.SetEditable(false);
+		: CHexaEditor(nullptr)
+		, rDialog(rDialog) {
+		Reset(&rDialog.fEmpty,0,0), SetEditable(false);
 	}
 
 
@@ -164,9 +165,9 @@
 	void CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::__init__(CWnd *pLabel,CWnd *pButton){
 		// initialization
 		hLabel=pLabel->m_hWnd, hEllipsisButton=pButton->m_hWnd;
-		hexaComparison.Create( nullptr, nullptr, WS_CHILD /*|WS_VISIBLE*/, CFrameWnd::rectDefault, pLabel->GetParent(), 0 ); // commented out because see WM_SIZE
-		Register(&hexaComparison); // making HexaEditor a target of drag&drop
-		hexaComparison.DragAcceptFiles(); // to not pass the WM_DROPFILES message to the MainWindow (which would attempt to open the dropped File as an Image)
+		Create( nullptr, nullptr, WS_CHILD /*|WS_VISIBLE*/, CFrameWnd::rectDefault, pLabel->GetParent(), 0 ); // commented out because see WM_SIZE
+		Register(this); // making HexaEditor a target of drag&drop
+		DragAcceptFiles(); // to not pass the WM_DROPFILES message to the MainWindow (which would attempt to open the dropped File as an Image)
 	}
 
 	void CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::__chooseAndOpenPhysicalFile__(){
@@ -195,7 +196,7 @@
 
 	void CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::Open(CDos::PCFile f){
 		// opens specified File stored in currently open Image, and shows its content in HexaEditor
-		const PCDos dos=hexaComparison.rDialog.fm.tab.image->dos;
+		const PCDos dos=rDialog.fm.tab.image->dos;
 		__openFile__(
 			std::unique_ptr<CFile>(new CDos::CFileReaderWriter(dos,f)),
 			dos->GetFilePresentationNameAndExt(f)
@@ -211,23 +212,22 @@
 		}
 		// - storing 32-bit scroll position (its recovery below)
 		SCROLLINFO si;
-		hexaComparison.GetScrollInfo( SB_VERT, &si, SIF_POS|SIF_TRACKPOS );
+		GetScrollInfo( SB_VERT, &si, SIF_POS|SIF_TRACKPOS );
 		// - showing the File in HexaEditor
 		f=std::move(fTmp);
 		size=f->GetLength();
-		hexaComparison.Reset( f.get(), size, size );
+		Reset( f.get(), size, size );
 		::SetWindowText(hLabel,fileName);
 		// - updating the LogicalSizes of both HexaEditors to BiggerSize of the two Files
-		CFileComparisonDialog &rDialog=hexaComparison.rDialog;
 		const DWORD L1= rDialog.file1.f ? rDialog.file1.f->GetLength() : 0;
 		const DWORD L2= rDialog.file2.f ? rDialog.file2.f->GetLength() : 0;
 		const DWORD biggerSize=std::max<>(L1,L2);
-			rDialog.file1.hexaComparison.SetLogicalSize(biggerSize);
-			rDialog.file1.hexaComparison.Invalidate();
-			rDialog.file2.hexaComparison.SetLogicalSize(biggerSize);
-			rDialog.file2.hexaComparison.Invalidate();
+			rDialog.file1.SetLogicalSize(biggerSize);
+			rDialog.file1.Invalidate();
+			rDialog.file2.SetLogicalSize(biggerSize);
+			rDialog.file2.Invalidate();
 		// - recovering the scroll position (its reset in Reset)
-		hexaComparison.SetScrollInfo( SB_VERT, &si, TRUE );
+		SetScrollInfo( SB_VERT, &si, TRUE );
 		// - Drop always succeeds
 		if (rDialog.EnableDlgItem( IDOK, rDialog.file1.f&&rDialog.file2.f ))
 			rDialog.OnOK(); // if both Files specified, automatically triggering the comparison
@@ -285,22 +285,22 @@
 	afx_msg void CFileManagerView::__compareFiles__(){
 		// shows the FileComparison window
 		// - making sure the Dialog is shown
-		if (CFileManagerView::CFileComparisonDialog::pSingleInstance)
-			CFileManagerView::CFileComparisonDialog::pSingleInstance->BringWindowToTop();
+		if (CFileComparisonDialog::pSingleInstance)
+			CFileComparisonDialog::pSingleInstance->BringWindowToTop();
 		else
-			CFileManagerView::CFileComparisonDialog::pSingleInstance=new CFileComparisonDialog(*this);
+			CFileComparisonDialog::pSingleInstance=new CFileComparisonDialog(*this);
 		// - loading Files selected in currently open disk
 		POSITION pos=GetFirstSelectedFilePosition();
 		switch (GetCountOfSelectedFiles()){
 			case 0: // no File selected
 				break;
 			case 1: // single File selected - openingit in the left pane of the Dialog
-				CFileManagerView::CFileComparisonDialog::pSingleInstance->SetComparison(
+				CFileComparisonDialog::pSingleInstance->SetComparison(
 					GetNextSelectedFile(pos)
 				);
 				break;
 			default: // two or more Files selected - opening the first two in both panes, respectively
-				CFileManagerView::CFileComparisonDialog::pSingleInstance->SetComparison(
+				CFileComparisonDialog::pSingleInstance->SetComparison(
 					GetNextSelectedFile(pos),
 					GetNextSelectedFile(pos)
 				);
@@ -317,12 +317,7 @@
 
 	
 
-	CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::CHexaComparison::CHexaComparison(CFileComparisonDialog &_rDialog)
-		// ctor
-		: CHexaEditor(nullptr) , rDialog(_rDialog) {
-	}
-
-	LRESULT CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::CHexaComparison::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
+	LRESULT CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
 		// window procedure
 		switch (msg){
 			case WM_VSCROLL:{
@@ -330,9 +325,9 @@
 				// . base (doing the scrolling)
 				__super::WindowProc(msg,wParam,lParam);
 				// . synchronously scrolling the OtherHexaEditor
-				CHexaComparison &rOtherHexaEditor=	this==&rDialog.file1.hexaComparison
-													? rDialog.file2.hexaComparison
-													: rDialog.file1.hexaComparison;
+				auto &rOtherHexaEditor=	this==&rDialog.file1
+										? rDialog.file2
+										: rDialog.file1;
 				rOtherHexaEditor.ScrollToRow( GetScrollPos(SB_VERT) );
 				return 0;
 			}
@@ -340,7 +335,7 @@
 				// drawing
 				CancelAllEmphases();
 				CFile *thisFile,*otherFile;
-				if (this==&rDialog.file1.hexaComparison)
+				if (this==&rDialog.file1)
 					thisFile=rDialog.file1.f.get(), otherFile=rDialog.file2.f.get();
 				else
 					thisFile=rDialog.file2.f.get(), otherFile=rDialog.file1.f.get();
