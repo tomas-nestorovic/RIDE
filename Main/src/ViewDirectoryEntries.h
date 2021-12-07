@@ -19,7 +19,6 @@
 		const WORD sectorLength; // e.g. for Spectrum Tape, the SectorLength may temporarily be faked to correctly segment a display Headers, and then reset to normal to correctly display Tape data; this is the backup of the eventually faked value
 
 		CDirEntriesView(PDos dos,CDos::PFile directory,CDos::PCFile fileToSeekTo=nullptr);
-		~CDirEntriesView();
 	};
 
 #endif // DIRHEXAVIEW_H

@@ -87,8 +87,9 @@
 			::OleSetClipboard(nullptr);
 			delete ownedDataSource;
 		}
-		while (ownedDirEntryViews.GetCount())
-			CTdiCtrl::RemoveTab( TDI_HWND, &((CDirEntriesView *)ownedDirEntryViews.GetHead())->tab );
+		if (*app.m_pMainWnd) // app NOT closing
+			while (ownedDirEntryViews.GetCount())
+				CTdiCtrl::RemoveTab( TDI_HWND, &ownedDirEntryViews.RemoveHead()->tab );
 	}
 
 

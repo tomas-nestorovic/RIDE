@@ -65,19 +65,6 @@
 		ON_WM_DESTROY()
 	END_MESSAGE_MAP()
 
-	CDirEntriesView::~CDirEntriesView(){
-		// dtor
-		// - discarding this View from the FileManager owner
-		auto &rList=DOS->pFileManager->ownedDirEntryViews;
-		for( POSITION pos=rList.GetHeadPosition(); pos; ){
-			const POSITION pos0=pos;
-			const CDirEntriesView *const pdev=rList.GetNext(pos);
-			if (pdev==this){
-				rList.RemoveAt(pos0);
-				break;
-			}
-		}
-	}
 
 
 
