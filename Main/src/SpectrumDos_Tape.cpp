@@ -753,6 +753,9 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 			case CN_COMMAND:
 				// command
 				switch (nID){
+					case ID_DIRECTORY:
+						// navigation to focused Tape block
+						//fallthrough
 					case ID_FILEMANAGER_DIR_HEXAMODE:{
 						// browsing of Tape Headers in hexa mode
 						const auto sl0=DOS->formatBoot.sectorLength;

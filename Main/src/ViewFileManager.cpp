@@ -74,6 +74,7 @@
 		ON_COMMAND(ID_FILEMANAGER_REFRESH,RefreshDisplay)
 		ON_COMMAND(ID_FILEMANAGER_SUBDIR_CREATE,__createSubdirectory__)
 			ON_UPDATE_COMMAND_UI(ID_FILEMANAGER_SUBDIR_CREATE,__createSubdirectory_updateUI__)
+		ON_COMMAND(ID_DIRECTORY,GoToFocusedFileDirectoryEntry)
 		ON_COMMAND(ID_FILEMANAGER_DIR_HEXAMODE,__browseCurrentDirInHexaMode__)
 		ON_COMMAND(ID_FILEMANAGER_FILE_INFORMATION,__showSelectionProperties__)
 			ON_UPDATE_COMMAND_UI(ID_FILEMANAGER_FILE_INFORMATION,__fileSelected_updateUI__)
@@ -711,6 +712,19 @@
 		label.Format( _T("Dir \"%s\""), (LPCTSTR)DOS->GetFilePresentationNameAndExt(DOS->currentDir) );
 		CTdiCtrl::AddTabLast( TDI_HWND, label, &deView->tab, true, TDI_TAB_CANCLOSE_ALWAYS, __onDirEntriesViewClosing__ );
 		ownedDirEntryViews.AddTail(deView);
+	}
+
+	afx_msg void CFileManagerView::GoToFocusedFileDirectoryEntry(){
+		// 
+		const CListCtrl &lv=GetListCtrl();
+		const int iFocused=lv.GetNextItem(-1,LVNI_FOCUSED);
+		if (iFocused>=0){ // is there one File focused?
+			CDirEntriesView *const deView=new CDirEntriesView( DOS, DOS->currentDir, (CDos::PCFile)lv.GetItemData(iFocused) );
+			CString label;
+			label.Format( _T("Dir \"%s\""), (LPCTSTR)DOS->GetFilePresentationNameAndExt(DOS->currentDir) );
+			CTdiCtrl::AddTabLast( TDI_HWND, label, &deView->tab, true, TDI_TAB_CANCLOSE_ALWAYS, __onDirEntriesViewClosing__ );
+			ownedDirEntryViews.AddTail(deView);
+		}
 	}
 
 

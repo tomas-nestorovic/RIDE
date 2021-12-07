@@ -801,6 +801,8 @@ BEGIN
         MENUITEM "Delete\tDel",                 ID_FILEMANAGER_FILE_DELETE
         MENUITEM "Compare...\tCtrl+Shift+C",    ID_FILEMANAGER_FILE_COMPARE
         MENUITEM "Show hexa\tCtrl+B",           ID_DOS_PREVIEWASBINARY
+        MENUITEM SEPARATOR
+        MENUITEM "Go to directory entry",       ID_DIRECTORY
     END
 END
 

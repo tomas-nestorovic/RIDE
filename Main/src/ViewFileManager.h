@@ -151,6 +151,7 @@
 		afx_msg void __onColumnClick__(NMHDR *pNMHDR,LRESULT *pResult);
 		afx_msg void __createSubdirectory__();
 			afx_msg void __createSubdirectory_updateUI__(CCmdUI *pCmdUI);
+		afx_msg void GoToFocusedFileDirectoryEntry();
 		afx_msg void __browseCurrentDirInHexaMode__();
 		afx_msg void __showSelectionProperties__();
 		afx_msg void OnDestroy();
