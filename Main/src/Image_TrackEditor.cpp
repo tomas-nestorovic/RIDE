@@ -886,12 +886,13 @@
 			pAction->SetProgressTarget(tr.GetTotalTime());
 			const auto &peList=te.timeEditor.GetParseEvents();
 			const TLogTime iwTimeDefaultHalf=tr.GetCurrentProfile().iwTimeDefault/2;
+			POSITION posFuzzy=nullptr;
 			for( BYTE i=1; i<tr.GetIndexCount(); i++ ){
 				TInspectionWindow *iw=iwList+te.timeEditor.GetInspectionWindow( tr.GetIndexTime(i-1) );
 				const PCInspectionWindow iwRevEnd=iwList+te.timeEditor.GetInspectionWindow( tr.GetIndexTime(i) );
 				int uid=1;
 				do{
-					const POSITION posFuzzy=peList.GetPositionByEnd( iw->tEnd, CImage::CTrackReader::TParseEvent::FUZZY_OK, CImage::CTrackReader::TParseEvent::FUZZY_BAD );
+					posFuzzy=peList.GetPositionByEnd( iw->tEnd, CImage::CTrackReader::TParseEvent::FUZZY_OK, CImage::CTrackReader::TParseEvent::FUZZY_BAD, posFuzzy );
 					const TLogTimeInterval tiFuzzy= posFuzzy ? peList.GetAt(posFuzzy).Add(iwTimeDefaultHalf) : TLogTimeInterval::Invalid;
 					while (iw<iwRevEnd && iw->tEnd<=tiFuzzy.tStart) // assigning InspectionWindows BEFORE the next Fuzzy event their UniqueIdentifiers
 						iw++->uid=uid++;
