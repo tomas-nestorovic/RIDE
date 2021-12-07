@@ -2,12 +2,12 @@
 
 	#define INI_MSG	_T("tapeinit")
 
-	#define FILE_LENGTH_MAX	0xff80 /* value that's a multiple of 128 - HexaEditor's requirement */
+	#define FILE_LENGTH_MAX	0xff80
 
 	static constexpr TFormat TapeFormat={
 		Medium::FLOPPY_DD_525, // no need to create a new Medium Type for a Tape
 		Codec::ANY, // no need to create a new Codec Type for a Tape
-		1, 1, 1, TFormat::LENGTHCODE_128,FILE_LENGTH_MAX, 1 // to correctly compute free space in GetSectorStatuses a GetFileFatPath
+		1, 1, 1, TFormat::LENGTHCODE_128,FILE_LENGTH_MAX, 1 // Tape Blocks are not divided into Sectors (thus here set a single "Sector" with maximum length)
 	};
 
 	CSpectrumDos::CTape *CSpectrumDos::CTape::pSingleInstance;
@@ -61,12 +61,28 @@
 
 
 
-	void CSpectrumDos::CTape::GetTrackData(TCylinder cyl,THead,Revolution::TType,PCSectorId,PCBYTE,TSector,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses){
+	void CSpectrumDos::CTape::GetTrackData(TCylinder cyl,THead head,Revolution::TType,PCSectorId,PCBYTE,TSector,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses){
 		// populates output buffers with specified Sectors' data, usable lengths, and FDC statuses; ALWAYS attempts to buffer all Sectors - caller is then to sort out eventual read errors (by observing the FDC statuses); caller can call ::GetLastError to discover the error for the last Sector in the input list
 		ASSERT( outBufferData!=nullptr && outBufferLengths!=nullptr && outFdcStatuses!=nullptr );
-		*outBufferData= cyl<fileManager.nFiles ? fileManager.files[cyl]->data : nullptr;
-		*outBufferLengths=formatBoot.sectorLength;
-		*outFdcStatuses=TFdcStatus::WithoutError;
+		*outFdcStatuses=TFdcStatus::WithoutError; // assumption
+		switch (head){
+			case 0: // want Data
+				if (cyl<fileManager.nFiles)
+					*outBufferData=fileManager.files[cyl]->data, *outBufferLengths=fileManager.files[cyl]->dataLength;
+				else
+					*outBufferData=nullptr, *outBufferLengths=0;
+				break;
+			default:
+				ASSERT(FALSE);
+				//fallthrough
+			case 1: // want Header
+				if (cyl<fileManager.nFiles)
+					*outBufferData=(PSectorData)fileManager.files[cyl]->GetHeader();
+				else
+					*outBufferData=nullptr, *outFdcStatuses=TFdcStatus::IdFieldCrcError;
+				*outBufferLengths=sizeof(THeader);
+				break;
+		}
 	}
 
 	TStdWinError CSpectrumDos::CTape::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus){
@@ -108,8 +124,13 @@
 	bool CSpectrumDos::CTape::GetFileFatPath(PCFile file,CFatPath &rFatPath) const{
 		// True <=> FatPath of given File (even an erroneous FatPath) successfully retrieved, otherwise False
 		// - if queried about the root Directory, populating the FatPath with root Directory Sectors
-		if (file==ZX_DIR_ROOT)
-			return true; // the root Directory occupies no space
+		if (file==ZX_DIR_ROOT){
+			CFatPath::TItem item;
+				item.chs.head=1; // want Header
+			for( item.chs.cylinder=0; item.chs.cylinder<fileManager.nFiles; item.chs.cylinder++ )
+				rFatPath.AddItem(&item);
+			return true;
+		}
 		// - extracting the FatPath
 		for( TTapeTraversal tt(fileManager); tt.AdvanceToNextEntry(); )
 			if (tt.entry==file){
@@ -247,8 +268,8 @@
 		if (pnBytesReservedAfterData) *pnBytesReservedAfterData=0;
 		const PCTapeFile tf=(PCTapeFile)file;
 		if (tf==ZX_DIR_ROOT)
-			// the root Directory occupies no space
-			return 0;
+			// to allow for browsing Headers as "Directory entries", pretend there is a root Directory that occupies a whole multiple of Header sizes
+			return fileManager.nFiles*sizeof(THeader);
 		else
 			// File with or without a Header, or a Fragment
 			return tf->dataLength;
@@ -442,10 +463,10 @@
 
 	CSpectrumDos::CTape::TTapeTraversal::TTapeTraversal(const CTapeFileManagerView &rFileManager)
 		// ctor
-		: TDirectoryTraversal( ZX_DIR_ROOT, sizeof(TTapeFile) )
+		: TDirectoryTraversal( ZX_DIR_ROOT, sizeof(THeader) )
 		, rFileManager(rFileManager)
 		, fileId(-1) {
-		ASSERT(FILE_LENGTH_MAX%sizeof(TTapeFile)==0); // HexaEditor's requirement
+		chs.head=0; // want File Data; won't change throughout the traversal
 		entryType=TDirectoryTraversal::FILE; // won't change throughout the traversal
 	}
 	
@@ -465,7 +486,8 @@
 
 	void CSpectrumDos::CTape::TTapeTraversal::ResetCurrentEntry(BYTE directoryFillerByte) const{
 		// gets current entry to the state in which it would be just after formatting
-		//nop (doesn't have a Directory)
+		if (entryType==TDirectoryTraversal::FILE)
+			::memset( entry, directoryFillerByte, entrySize );
 	}
 
 
@@ -724,6 +746,26 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 
 
 
+
+	BOOL CSpectrumDos::CTape::CTapeFileManagerView::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){
+		// command processing
+		switch (nCode){
+			case CN_COMMAND:
+				// command
+				switch (nID){
+					case ID_FILEMANAGER_DIR_HEXAMODE:{
+						// browsing of Tape Headers in hexa mode
+						const auto sl0=DOS->formatBoot.sectorLength;
+						DOS->formatBoot.sectorLength=sizeof(THeader);
+							const BOOL result=__super::OnCmdMsg(nID,nCode,pExtra,pHandlerInfo);
+						DOS->formatBoot.sectorLength=sl0;
+						return result;
+					}
+				}
+				break;
+		}
+		return __super::OnCmdMsg(nID,nCode,pExtra,pHandlerInfo);
+	}
 
 	LRESULT CSpectrumDos::CTape::CTapeFileManagerView::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
 		// window procedure

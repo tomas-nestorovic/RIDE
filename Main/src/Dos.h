@@ -207,6 +207,7 @@
 
 		class CFileReaderWriter:public CFile,public CHexaEditor::IContentAdviser{
 			const CDos *const dos;
+			const WORD sectorLength; // e.g. for Spectrum Tape, the SectorLength may temporarily be faked to correctly segment a display Headers, and then reset to normal to correctly display Tape data; this is the backup of the eventually faked value
 			const BYTE dataBeginOffsetInSector,dataEndOffsetInSector;
 			#if _MFC_VER>=0x0A00
 			LONGLONG fileSize;

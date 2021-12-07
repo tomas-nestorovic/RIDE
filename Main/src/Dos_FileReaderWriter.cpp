@@ -2,20 +2,21 @@
 
 	CDos::CFileReaderWriter::CFileReaderWriter(const CDos *dos,PCFile file,bool wholeSectors)
 		// ctor to read/edit an existing File in Image
-		: dos(dos) , fatPath(dos,file)
+		: dos(dos) , sectorLength(dos->formatBoot.sectorLength) , fatPath(dos,file)
 		, fileSize( wholeSectors ? dos->GetFileSizeOnDisk(file) : dos->GetFileOccupiedSize(file) )
 		, dataBeginOffsetInSector( wholeSectors ? 0 : dos->properties->dataBeginOffsetInSector)
 		, dataEndOffsetInSector( wholeSectors ? 0 : dos->properties->dataEndOffsetInSector )
 		, position(0)
-		, recordLength(dos->formatBoot.sectorLength) {
+		, recordLength(sectorLength) {
 	}
 
 	CDos::CFileReaderWriter::CFileReaderWriter(const CDos *dos,RCPhysicalAddress chs)
 		// ctor to read/edit particular Sector in Image (e.g. Boot Sector)
-		: dos(dos) , fileSize(dos->formatBoot.sectorLength) , fatPath(dos,chs)
+		: dos(dos) , sectorLength(dos->formatBoot.sectorLength) , fatPath(dos,chs)
+		, fileSize(sectorLength)
 		, dataBeginOffsetInSector(0) , dataEndOffsetInSector(0)
 		, position(0)
-		, recordLength(dos->formatBoot.sectorLength) {
+		, recordLength(sectorLength) {
 	}
 
 	CDos::CFileReaderWriter::~CFileReaderWriter(){
@@ -87,7 +88,7 @@
 		const UINT nBytesToRead=nCount;
 		CFatPath::PCItem item; DWORD n;
 		if (!fatPath.GetItems(item,n)){
-			div_t d=div((int)position,(int)dos->formatBoot.sectorLength-dataBeginOffsetInSector-dataEndOffsetInSector);
+			div_t d=div((int)position,(int)sectorLength-dataBeginOffsetInSector-dataEndOffsetInSector);
 			item+=d.quot, n-=d.quot; // skipping Sectors from which not read
 			bool readWithoutCrcError=true;
 			TFdcStatus sr;
@@ -116,7 +117,7 @@
 		nCount=std::min<UINT>(nCount,fileSize-position);
 		CFatPath::PCItem item; DWORD n;
 		if (!fatPath.GetItems(item,n)){
-			div_t d=div((int)position,(int)dos->formatBoot.sectorLength-dataBeginOffsetInSector-dataEndOffsetInSector);
+			div_t d=div((int)position,(int)sectorLength-dataBeginOffsetInSector-dataEndOffsetInSector);
 			item+=d.quot, n-=d.quot; // skipping Sectors into which not written
 			bool writtenWithoutCrcError=true;
 			TFdcStatus sr;

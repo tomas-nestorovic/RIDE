@@ -16,6 +16,7 @@
 	public:
 		const CMainWindow::CTdiView::TTab tab;
 		const CDos::PFile directory;
+		const WORD sectorLength; // e.g. for Spectrum Tape, the SectorLength may temporarily be faked to correctly segment a display Headers, and then reset to normal to correctly display Tape data; this is the backup of the eventually faked value
 
 		CDirEntriesView(PDos dos,CDos::PFile directory);
 		~CDirEntriesView();

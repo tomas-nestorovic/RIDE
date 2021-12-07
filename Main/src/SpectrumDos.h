@@ -337,12 +337,12 @@
 		private:
 			#pragma pack(1)
 			typedef struct TTapeFile sealed{
+				THeader stdHeader; // must be first to allow for editing of Headers in HexaEditor
 				enum TType{
 					STD_HEADER,	// both Header and Data* fields are valid
 					HEADERLESS,	// only Data* fields are valid
 					FRAGMENT	// only DataLength and Data (without asterisk) fields are valid
 				} type;
-				THeader stdHeader;
 				BYTE dataBlockFlag; // 255 = block saved using the standard ROM routine, otherwise any other value
 				BYTE dataChecksum;
 				enum TDataChecksumStatus:BYTE{
@@ -351,7 +351,7 @@
 					INCORRECT
 				} dataChecksumStatus;
 				WORD dataLength;
-				BYTE data[6]; // to make the structure 32 Bytes long (so that FILE_LENGTH_MAX is a round multiple of it - HexaEditor's requirement)
+				BYTE data[1];
 
 				PHeader GetHeader();
 				PCHeader GetHeader() const;
@@ -371,6 +371,7 @@
 				void DrawReportModeCell(PCFileInfo pFileInfo,LPDRAWITEMSTRUCT pdis) const override;
 				int CompareFiles(PCFile file1,PCFile file2,BYTE information) const override;
 				PEditorBase CreateFileInformationEditor(PFile,BYTE infoId) const override;
+				BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
 				LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 			public:
 				CFile f; // physical Tape file (e.g. "C:\myTape.tap")

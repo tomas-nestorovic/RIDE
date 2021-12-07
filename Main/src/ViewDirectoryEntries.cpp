@@ -54,6 +54,7 @@
 		// - initialization
 		, tab( IDR_DIRECTORYBROWSER, IDR_HEXAEDITOR, ID_CYLINDER, dos->image, this )
 		, navigatedToFirstSelectedFile(false)
+		, sectorLength(dos->formatBoot.sectorLength)
 		, directory(directory) {
 	}
 
@@ -89,7 +90,10 @@
 		if (__super::OnCreate(lpcs)==-1)
 			return -1;
 		// - displaying the content
-		OnUpdate(nullptr,0,nullptr);
+		const auto sl0=DOS->formatBoot.sectorLength;
+		DOS->formatBoot.sectorLength=sectorLength;
+			OnUpdate(nullptr,0,nullptr);
+		DOS->formatBoot.sectorLength=sl0;
 		// - recovering the Scroll position and repainting the view (by setting its editability)
 		SetEditable( !IMAGE->IsWriteProtected() );
 		// - navigating to the first selected Item
