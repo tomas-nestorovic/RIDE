@@ -317,6 +317,8 @@
 	void CHexaEditor::SetLogicalSize(int _logicalSize){
 		// changes the LogicalSize of File content (originally set when Resetting the HexaEditor)
 		locker.Lock();
+			caret.selectionA=std::min( caret.selectionA, _logicalSize );
+			caret.position=std::min( caret.position, _logicalSize );
 			if (mouseInNcArea)
 				// when in the non-client area (e.g. over a scrollbar), putting updated values aside
 				update.logicalSize=_logicalSize;
