@@ -75,7 +75,7 @@
 		ON_COMMAND(ID_FILEMANAGER_SUBDIR_CREATE,__createSubdirectory__)
 			ON_UPDATE_COMMAND_UI(ID_FILEMANAGER_SUBDIR_CREATE,__createSubdirectory_updateUI__)
 		ON_COMMAND(ID_DIRECTORY,GoToFocusedFileDirectoryEntry)
-		ON_COMMAND(ID_FILEMANAGER_DIR_HEXAMODE,__browseCurrentDirInHexaMode__)
+		ON_COMMAND(ID_FILEMANAGER_DIR_HEXAMODE,BrowseCurrentDirInHexaMode)
 		ON_COMMAND(ID_FILEMANAGER_FILE_INFORMATION,__showSelectionProperties__)
 			ON_UPDATE_COMMAND_UI(ID_FILEMANAGER_FILE_INFORMATION,__fileSelected_updateUI__)
 		ON_WM_DESTROY()
@@ -703,29 +703,31 @@
 		pCmdUI->Enable(pDirectoryStructureManagement!=nullptr);
 	}
 
-	static void WINAPI __onDirEntriesViewClosing__(LPCVOID tab){
+	static void WINAPI OnDirEntriesViewClosing(LPCVOID tab){
 		delete ((CMainWindow::CTdiView::PTab)tab)->view;
 	}
-	afx_msg void CFileManagerView::__browseCurrentDirInHexaMode__(){
-		// opens a new Tab with DirectoryEntries listed in an HexaEditor instance
-		CDirEntriesView *const deView=new CDirEntriesView( DOS, DOS->currentDir );
+	void CFileManagerView::BrowseCurrentDirInHexaMode(CDos::PCFile fileToSeekTo){
+		CDirEntriesView *const deView=new CDirEntriesView( DOS, DOS->currentDir, fileToSeekTo );
 		CString label;
 		label.Format( _T("Dir \"%s\""), (LPCTSTR)DOS->GetFilePresentationNameAndExt(DOS->currentDir) );
-		CTdiCtrl::AddTabLast( TDI_HWND, label, &deView->tab, true, TDI_TAB_CANCLOSE_ALWAYS, __onDirEntriesViewClosing__ );
+		CTdiCtrl::AddTabLast( TDI_HWND, label, &deView->tab, true, TDI_TAB_CANCLOSE_ALWAYS, OnDirEntriesViewClosing );
 		ownedDirEntryViews.AddTail(deView);
 	}
 
+	afx_msg void CFileManagerView::BrowseCurrentDirInHexaMode(){
+		// opens a new Tab with DirectoryEntries listed in an HexaEditor instance
+		BrowseCurrentDirInHexaMode(nullptr);
+	}
+
 	afx_msg void CFileManagerView::GoToFocusedFileDirectoryEntry(){
-		// 
+		// opens a new Tab with DirectoryEntries listed in an HexaEditor instance
 		const CListCtrl &lv=GetListCtrl();
 		const int iFocused=lv.GetNextItem(-1,LVNI_FOCUSED);
-		if (iFocused>=0){ // is there one File focused?
-			CDirEntriesView *const deView=new CDirEntriesView( DOS, DOS->currentDir, (CDos::PCFile)lv.GetItemData(iFocused) );
-			CString label;
-			label.Format( _T("Dir \"%s\""), (LPCTSTR)DOS->GetFilePresentationNameAndExt(DOS->currentDir) );
-			CTdiCtrl::AddTabLast( TDI_HWND, label, &deView->tab, true, TDI_TAB_CANCLOSE_ALWAYS, __onDirEntriesViewClosing__ );
-			ownedDirEntryViews.AddTail(deView);
-		}
+		BrowseCurrentDirInHexaMode(
+			iFocused>=0 // is there one File focused?
+			? (CDos::PCFile)lv.GetItemData(iFocused)
+			: nullptr
+		);
 	}
 
 

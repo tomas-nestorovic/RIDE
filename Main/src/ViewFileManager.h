@@ -123,6 +123,7 @@
 		TStdWinError __moveFile__(int &i,LPFILEDESCRIPTOR files,int nFiles,CDos::PFile &rMovedFile,DWORD &rConflictedSiblingResolution);
 		TStdWinError __importVirtualFile__(int &i,LPCTSTR pathAndName,LPFILEDESCRIPTOR files,int nFiles,COleDataObject *pDataObject,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution);
 		CDos::PFile __getDirectoryUnderCursor__(CPoint &rPt) const;
+		void BrowseCurrentDirInHexaMode(CDos::PCFile fileToSeekTo);
 		afx_msg int OnCreate(LPCREATESTRUCT lpcs);
 		afx_msg int OnMouseActivate(CWnd *topParent,UINT nHitTest,UINT message);
 		afx_msg void OnChar(UINT nChar,UINT nRepCnt,UINT nFlags);
@@ -152,7 +153,7 @@
 		afx_msg void __createSubdirectory__();
 			afx_msg void __createSubdirectory_updateUI__(CCmdUI *pCmdUI);
 		afx_msg void GoToFocusedFileDirectoryEntry();
-		afx_msg void __browseCurrentDirInHexaMode__();
+		afx_msg void BrowseCurrentDirInHexaMode();
 		afx_msg void __showSelectionProperties__();
 		afx_msg void OnDestroy();
 	public:
