@@ -778,6 +778,7 @@ deleteSelection:		int posSrc=std::max(caret.selectionA,caret.position), posDst=s
 					mnu.GetMenuString( iGotoSubmenu, buf, sizeof(buf)/sizeof(TCHAR), MF_BYPOSITION );
 					mnu.ModifyMenu( iGotoSubmenu, MF_BYPOSITION|MF_POPUP, (UINT_PTR)customGotoSubmenu, buf );
 				}
+				mnu.UpdateUi( this );
 				int x=GET_X_LPARAM(lParam), y=GET_Y_LPARAM(lParam);
 				if (x==-1){ // occurs if the context menu invoked using Shift+F10
 					POINT caretPos=GetCaretPos();

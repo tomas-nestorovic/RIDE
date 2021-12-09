@@ -176,6 +176,8 @@ namespace Utils{
 
 		CRideContextMenu(UINT idMenuRes,CWnd *pUiUpdater=nullptr);
 		~CRideContextMenu();
+
+		inline void UpdateUi(CWnd *pUiUpdater){ UpdateUI(pUiUpdater,this); }
 	};
 
 	typedef const struct TSplitButtonAction sealed{

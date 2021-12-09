@@ -152,6 +152,7 @@
 							if (selA==dirEntryStart && dirEntryStart+pdt->entrySize<=selZ){
 								// whole DirectoryEntry requested to reset
 								pdt->ResetCurrentEntry(DOS->properties->directoryFillerByte);
+								IMAGE->MarkSectorAsDirty(pdt->chs);
 								f->Seek( selA+=pdt->entrySize, CFile::begin );
 							}else{
 								// just a part of the DirectoryEntry requested to reset
