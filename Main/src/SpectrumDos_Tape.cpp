@@ -37,7 +37,7 @@
 		TCHAR buf[MAX_PATH];
 		::wsprintf( buf, TAB_LABEL _T(" \"%s\""), (LPCTSTR)fileManager.f.GetFileName() );
 		CTdiCtrl::AddTabLast( TDI_HWND, buf, &fileManager.tab, makeCurrentTab, CanTapeBeClosed, OnTapeClosing );
-		CSpectrumDos::__informationWithCheckableShowNoMore__( _T("Use the \"") TAB_LABEL _T("\" tab to transfer files from/to the open disk image or between two tapes (open in two instances of ") APP_ABBREVIATION _T(").\n\nHeaderless files:\n- are transferred to disk with dummy names,\n- are used on tape to store \"tape-unfriendly\" data from a disk (sequential files, etc.)."), INI_MSG );
+		CSpectrumDos::__informationWithCheckableShowNoMore__( _T("Use the \"") TAB_LABEL _T("\" tab to transfer files (via clipboard) from/to the open disk image or between two tapes (open in two instances of ") APP_ABBREVIATION _T(").\n\nHeaderless files:\n- are transferred to disk with dummy names,\n- are used on tape to store \"tape-unfriendly\" data from a disk (sequential files, etc.)."), INI_MSG );
 		// - adding this Tape to most recently used ones
 		TCHAR fileNameCopy[MAX_PATH];
 		diskDos->mruTapes.Add( ::lstrcpy(fileNameCopy,fileName) ); // creating a copy as MFC may (for some reason) corrupt the original string

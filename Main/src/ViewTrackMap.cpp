@@ -571,7 +571,7 @@
 	}
 
 	afx_msg void CTrackMapView::OnRButtonUp(UINT nFlags,CPoint point){
-		// left mouse button released
+		// right mouse button released
 		Utils::CRideContextMenu mnu( IDR_TRACKMAP_CONTEXT );
 		TPhysicalAddress chs; BYTE nSectorsToSkip; int nanoseconds;
 		switch (GetPhysicalAddressAndNanosecondsFromPoint(point,chs,nSectorsToSkip,nanoseconds)){
