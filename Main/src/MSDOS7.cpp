@@ -1325,7 +1325,7 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 		: TDirectoryTraversal( directory, sizeof(UDirectoryEntry) )
 		// - initialization
 		, msdos7(_msdos7)
-		, foundEndOfDirectory(false) , fatError(false)
+		, foundEndOfDirectory(false)
 		, next( directory!=MSDOS7_DIR_ROOT ? ((PCDirectoryEntry)directory)->shortNameEntry.__getFirstCluster__() : 0 )
 		, nRemainingSectorsInCluster(0) , nRemainingEntriesInSector(0) {
 		// - "pointer" set to the first DirectoryEntry
@@ -1351,38 +1351,33 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 		if (const PCBootSector bootSector=msdos7->boot.GetSectorData()){
 			// . getting next LogicalSector of CurrentDirectory
 			if (!nRemainingEntriesInSector){
-				const TDirEntryType entryType0=entryType;
-					entryType=TDirectoryTraversal::WARNING, warning=ERROR_SECTOR_NOT_FOUND; // assumption (LogicalSector not found)
-					if (!nRemainingSectorsInCluster) // next LogicalSector must be retrieved from next Cluster
-						if (MARKS_CLUSTER_EOF(next)){
-							foundEndOfDirectory=true;
-							return false; // EntryType must be anything but Empty - above set to Warning
-						}else if (next==MSDOS7_FAT_ERROR)
-							return fatError=true; // EntryType already set to Warning above
-						else if (next==MSDOS7_FAT_CLUSTER_EMPTY){
-							fatError=true; // if the Cluster is reported as Empty in the FAT, this is probably an error
-							foundEndOfDirectory=true; // with Empty Cluster, the traversal through the Directory cannot continue
-							return false;
-						}else if (!fatError){
-							dirSector=msdos7->__cluster2logSector__( cluster=next, (BYTE &)nRemainingSectorsInCluster ); // also sets the NumberOfRemainingSectorsInCluster
-							next=msdos7->fat.GetClusterValue(cluster);
-						}else
-							return false; // EntryType already set to Warning above
-					nRemainingSectorsInCluster--;
-					chs=msdos7->__logfyz__(dirSector);
-					entry=msdos7->__getHealthyLogicalSectorData__(dirSector++);
-					if (!entry){ // LogicalSector not found
-						warning=ERROR_SECTOR_NOT_FOUND;
-						return true; // EntryType already set to Warning above
-					}else
-						entry=(PDirectoryEntry)entry-1; // pointer "before" the first DirectoryEntry
-				entryType=entryType0;
+				if (!nRemainingSectorsInCluster){ // next LogicalSector must be retrieved from next Cluster
+					if (MARKS_CLUSTER_EOF(next)){
+						foundEndOfDirectory=true;
+						return false; // EntryType must be anything but Empty - above set to Warning
+					}
+					entryType=TDirectoryTraversal::WARNING, warning=ERROR_SECTOR_NOT_FOUND;
+					if (next==MSDOS7_FAT_ERROR)
+						return false; // EntryType already set to Warning above
+					else if (next==MSDOS7_FAT_CLUSTER_EMPTY){
+						foundEndOfDirectory=true; // with Empty Cluster, the traversal through the Directory cannot continue
+						return false; // if the Cluster is reported as Empty in the FAT, this is probably an error
+					}
+					dirSector=msdos7->__cluster2logSector__( cluster=next, (BYTE &)nRemainingSectorsInCluster ); // also sets the NumberOfRemainingSectorsInCluster
+					next=msdos7->fat.GetClusterValue(cluster);
+				}
+				nRemainingSectorsInCluster--;
+				chs=msdos7->__logfyz__(dirSector);
+				if ( entry=msdos7->__getHealthyLogicalSectorData__(dirSector++) )
+					entryType=TDirectoryTraversal::UNKNOWN, entry=(PDirectoryEntry)entry-1; // pointer "before" the first DirectoryEntry
+				else // LogicalSector not found
+					entryType=TDirectoryTraversal::WARNING, warning=ERROR_SECTOR_NOT_FOUND;
 				nRemainingEntriesInSector=bootSector->sectorSize/sizeof(UDirectoryEntry);
 			}
 			// . getting the next DirectoryEntry
 			entry=(PDirectoryEntry)entry+1, nRemainingEntriesInSector--;
 			const PCDirectoryEntry de=(PCDirectoryEntry)entry;
-			if (!foundEndOfDirectory)
+			if (entryType!=TDirectoryTraversal::WARNING)
 				switch (de->shortNameEntry.name[0]){
 					case UDirectoryEntry::DIRECTORY_END:
 						foundEndOfDirectory=true;
@@ -1457,10 +1452,20 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 		return __allocateNewEntry__();
 	}
 
-	void CMSDOS7::TMsdos7DirectoryTraversal::ResetCurrentEntry(BYTE directoryFillerByte) const{
+	void CMSDOS7::TMsdos7DirectoryTraversal::ResetCurrentEntry(BYTE directoryFillerByte){
 		// gets current entry to the state in which it would be just after formatting
-		::memset( entry, directoryFillerByte, entrySize );
-		*(PBYTE)entry=	foundEndOfDirectory
-						? UDirectoryEntry::DIRECTORY_END
-						: UDirectoryEntry::EMPTY_ENTRY;
+		switch (entryType){
+			case TDirectoryTraversal::FILE:
+			case TDirectoryTraversal::EMPTY:
+			case TDirectoryTraversal::SUBDIR:
+			case TDirectoryTraversal::CUSTOM: // long filename Entry or volume label
+				if (foundEndOfDirectory){
+					*(PBYTE)::memset( entry, directoryFillerByte, entrySize )=UDirectoryEntry::DIRECTORY_END;
+					entryType=TDirectoryTraversal::END;
+				}else{
+					*(PBYTE)::memset( entry, directoryFillerByte, entrySize )=UDirectoryEntry::EMPTY_ENTRY;
+					entryType=TDirectoryTraversal::EMPTY;
+				}
+				break;
+		}
 	}

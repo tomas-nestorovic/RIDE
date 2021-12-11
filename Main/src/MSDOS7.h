@@ -204,7 +204,7 @@
 		struct TMsdos7DirectoryTraversal sealed:public TDirectoryTraversal{
 		private:
 			const CMSDOS7 *const msdos7;
-			bool foundEndOfDirectory,fatError;
+			bool foundEndOfDirectory;
 			TCluster32 cluster,next;
 			TLogSector16 nRemainingSectorsInCluster; // TLogSector16 as there can be up to 4095 Root Directory Sectors in FAT16
 			TLogSector32 dirSector;
@@ -214,7 +214,7 @@
 			PFile AllocateNewEntry() override;
 			PDirectoryEntry __allocateNewEntry__();
 			bool AdvanceToNextEntry() override;
-			void ResetCurrentEntry(BYTE directoryFillerByte) const override;
+			void ResetCurrentEntry(BYTE directoryFillerByte) override;
 			bool __existsNextEntry__();
 		};
 
