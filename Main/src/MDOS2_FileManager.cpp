@@ -66,7 +66,7 @@
 					case TDirectoryEntry::PROGRAM:{
 						// program
 						const LPCSTR name=((PDirectoryEntry)lvi.lParam)->name;
-						for( TMdos2DirectoryTraversal dt((PMDOS2)DOS); dt.__existsNextEntry__(); )
+						for( TMdos2DirectoryTraversal dt((PMDOS2)DOS); dt.AdvanceToNextEntry(); )
 							if (dt.entryType==TDirectoryTraversal::FILE){
 								const PCDirectoryEntry de=(PCDirectoryEntry)dt.entry;
 								if (de->extension==TDirectoryEntry::BLOCK // "Bytes" File

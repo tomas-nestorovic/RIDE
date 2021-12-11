@@ -22,7 +22,7 @@
 		const CGDOS gdos(image,pFormatBoot);
 		TDirectoryEntry::TSectorAllocationBitmap allocatedSectorsOnDisk;
 		BYTE nDirectorySectorsBad=0;
-		for( TGdosDirectoryTraversal dt(&gdos); dt.__existsNextEntry__(); )
+		for( TGdosDirectoryTraversal dt(&gdos); dt.AdvanceToNextEntry(); )
 			if (dt.entryType!=TDirectoryTraversal::WARNING){
 				// root Directory Sector found - evaluating obtained DirectoryItem
 				const TDirectoryEntry *const de=(PDirectoryEntry)dt.entry;

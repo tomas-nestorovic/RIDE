@@ -173,9 +173,8 @@
 		public:
 			TMdos2DirectoryTraversal(const CMDOS2 *_mdos2); // ctor
 			bool AdvanceToNextEntry() override;
-			void ResetCurrentEntry(BYTE directoryFillerByte) const override;
+			void ResetCurrentEntry(BYTE directoryFillerByte) override;
 			void __reinitToFirstEntry__();
-			bool __existsNextEntry__();
 		};
 
 		class CMdos2BootView sealed:public CBootView{

@@ -387,7 +387,7 @@
 				short fileId;
 				TTapeTraversal(const CTapeFileManagerView &rFileManager); // ctor
 				bool AdvanceToNextEntry() override;
-				void ResetCurrentEntry(BYTE directoryFillerByte) const override;
+				void ResetCurrentEntry(BYTE directoryFillerByte) override;
 			};
 		
 			BOOL DoSave(LPCTSTR,BOOL) override;

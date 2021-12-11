@@ -484,7 +484,7 @@
 			return false;
 	}
 
-	void CSpectrumDos::CTape::TTapeTraversal::ResetCurrentEntry(BYTE directoryFillerByte) const{
+	void CSpectrumDos::CTape::TTapeTraversal::ResetCurrentEntry(BYTE directoryFillerByte){
 		// gets current entry to the state in which it would be just after formatting
 		if (entryType==TDirectoryTraversal::FILE)
 			::memset( entry, directoryFillerByte, entrySize );

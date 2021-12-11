@@ -33,7 +33,7 @@
 			return vp.TerminateAll(err);
 		// - verifying information on Directory
 		BYTE nFiles=0, nDeletedFiles=0;
-		for( TTrdosDirectoryTraversal dt(trdos); dt.__existsNextEntry__(); ){
+		for( TTrdosDirectoryTraversal dt(trdos); dt.AdvanceToNextEntry(); ){
 			nFiles+=dt.entryType==TDirectoryTraversal::FILE;
 			nDeletedFiles+=dt.entryType==TDirectoryTraversal::CUSTOM;
 		}

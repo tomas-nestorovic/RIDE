@@ -113,7 +113,7 @@
 				CTraversal(const CBSDOS308 *bsdos,PCFile slot);
 
 				bool AdvanceToNextEntry() override;
-				void ResetCurrentEntry(BYTE directoryFillerByte) const override;
+				void ResetCurrentEntry(BYTE directoryFillerByte) override;
 				PFile AllocateNewEntry() override;
 			};
 
@@ -177,7 +177,7 @@
 				CTraversal(const CBSDOS308 *bsdos);
 
 				bool AdvanceToNextEntry() override;
-				void ResetCurrentEntry(BYTE directoryFillerByte) const override;
+				void ResetCurrentEntry(BYTE directoryFillerByte) override;
 			};
 
 			static UINT AFX_CDECL Verification_thread(PVOID pCancelableAction);

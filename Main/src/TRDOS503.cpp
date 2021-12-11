@@ -238,7 +238,7 @@
 		pRgn->start.sector=TRDOS503_BOOT_SECTOR_NUMBER-TRDOS503_SECTOR_FIRST_NUMBER, pRgn->start.track=0; // just in case the first DirectoryEntry isn't found (as Sector not found)
 		// - composing a map of Regions on the disk
 		TSectorTrackPair lastRegionStart={0,0};
-		for( TTrdosDirectoryTraversal dt(this); dt.__existsNextEntry__(); )
+		for( TTrdosDirectoryTraversal dt(this); dt.AdvanceToNextEntry(); )
 			if (dt.entryType!=TDirectoryTraversal::WARNING){
 				const PCDirectoryEntry de=(PCDirectoryEntry)dt.entry;
 				if ((dt.entryType==TDirectoryTraversal::FILE||dt.entryType==TDirectoryTraversal::CUSTOM) && !de->__isTemporary__()){
@@ -735,25 +735,28 @@
 		trdos->GetListOfStdSectors(0,0,buffer);
 		trdos->image->BufferTrackData( 0, 0, Revolution::ANY_GOOD, buffer, Utils::CByteIdentity(), TRDOS503_BOOT_SECTOR_NUMBER ); // including the Boot Sector (to not have to include another named constant)
 	}
-	bool CTRDOS503::TTrdosDirectoryTraversal::__existsNextEntry__(){
+	bool CTRDOS503::TTrdosDirectoryTraversal::AdvanceToNextEntry(){
 		// True <=> another Entry in current Directory exists (Empty or not), otherwise False
+		// - if end of Directory reached, we are done
+		if (foundEndOfDirectory)
+			return false;
 		// - getting the next Sector with Directory
 		if (!nRemainingEntriesInSector){
 			if (++chs.sectorId.sector>=TRDOS503_BOOT_SECTOR_NUMBER){ // end of Directory
+				entryType=TDirectoryTraversal::END;
 				foundEndOfDirectory=true;
 				return false;
 			}
 			entry=trdos->image->GetHealthySectorData(chs);
-			if (!entry){ // Directory Sector not found
+			if (!entry) // Directory Sector not found
 				entryType=TDirectoryTraversal::WARNING, warning=ERROR_SECTOR_NOT_FOUND;
-				return true;
-			}else
-				entry=(PDirectoryEntry)entry-1; // pointer set "before" the first DirectoryEntry
+			else
+				entryType=TDirectoryTraversal::UNKNOWN, entry=(PDirectoryEntry)entry-1; // pointer set "before" the first DirectoryEntry
 			nRemainingEntriesInSector=TRDOS503_DIR_SECTOR_ENTRIES_COUNT;
 		}
 		// - getting the next DirectoryEntry
 		entry=(PDirectoryEntry)entry+1, nRemainingEntriesInSector--;
-		if (!foundEndOfDirectory)
+		if (!foundEndOfDirectory && entryType!=TDirectoryTraversal::WARNING)
 			if (*(PCBYTE)entry!=TDirectoryEntry::END_OF_DIR)
 				entryType =	*(PCBYTE)entry!=TDirectoryEntry::DELETED
 							? TDirectoryTraversal::FILE
@@ -768,7 +771,7 @@
 	BYTE CTRDOS503::__getDirectory__(PDirectoryEntry *directory) const{
 		// returns the length of available Directory including Deleted Files; assumed that the buffer is big enough to contain maximally occupied Directory
 		BYTE nFilesFound=0;
-		for( TTrdosDirectoryTraversal dt(this); dt.__existsNextEntry__(); )
+		for( TTrdosDirectoryTraversal dt(this); dt.AdvanceToNextEntry(); )
 			if (dt.entryType==TDirectoryTraversal::FILE || dt.entryType==TDirectoryTraversal::CUSTOM)
 				// existing or Deleted File
 				*directory++=(PDirectoryEntry)dt.entry, nFilesFound++;
@@ -780,15 +783,13 @@
 		ASSERT(directory==ZX_DIR_ROOT);
 		return std::unique_ptr<TDirectoryTraversal>( new TTrdosDirectoryTraversal(this) );
 	}
-	bool CTRDOS503::TTrdosDirectoryTraversal::AdvanceToNextEntry(){
-		// True <=> found another Entry in current Directory (Empty or not), otherwise False
-		return __existsNextEntry__();
-	}
 
-	void CTRDOS503::TTrdosDirectoryTraversal::ResetCurrentEntry(BYTE directoryFillerByte) const{
+	void CTRDOS503::TTrdosDirectoryTraversal::ResetCurrentEntry(BYTE directoryFillerByte){
 		// gets current entry to the state in which it would be just after formatting
-		::memset( entry, directoryFillerByte, entrySize );
-		*(PBYTE)entry=TDirectoryEntry::END_OF_DIR;
+		if (entryType==TDirectoryTraversal::FILE || entryType==TDirectoryTraversal::EMPTY){
+			*(PBYTE)::memset( entry, directoryFillerByte, entrySize )=TDirectoryEntry::DELETED;
+			entryType=TDirectoryTraversal::EMPTY;
+		}
 	}
 
 

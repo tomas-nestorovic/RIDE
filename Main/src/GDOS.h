@@ -131,8 +131,7 @@
 		public:
 			TGdosDirectoryTraversal(const CGDOS *gdos); // ctor
 			bool AdvanceToNextEntry() override;
-			void ResetCurrentEntry(BYTE directoryFillerByte) const override;
-			bool __existsNextEntry__();
+			void ResetCurrentEntry(BYTE directoryFillerByte) override;
 		};
 
 		class CGdosFileManagerView sealed:public CSpectrumFileManagerView{

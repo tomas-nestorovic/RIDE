@@ -137,7 +137,7 @@
 				*buffer++=TSectorStatus::SYSTEM;
 			else{
 				*buffer=TSectorStatus::EMPTY; // assumption
-				for( TGdosDirectoryTraversal dt(this); dt.__existsNextEntry__(); )
+				for( TGdosDirectoryTraversal dt(this); dt.AdvanceToNextEntry(); )
 					if (dt.entryType==TDirectoryTraversal::FILE){
 						if (((PDirectoryEntry)dt.entry)->sectorAllocationBitmap.IsSectorAllocated(chs)){
 							*buffer=TSectorStatus::OCCUPIED;
@@ -171,7 +171,7 @@
 	bool CGDOS::ModifyStdSectorStatus(RCPhysicalAddress chs,TSectorStatus status) const{
 		// True <=> the Status of the specified DOS-standard Sector successfully changed, otherwise False
 		bool result=true; // assumption (Statuses of all Sectors successfully modified)
-		for( TGdosDirectoryTraversal dt(this); dt.__existsNextEntry__(); )
+		for( TGdosDirectoryTraversal dt(this); dt.AdvanceToNextEntry(); )
 			if (dt.entryType==TDirectoryTraversal::FILE)
 				((PDirectoryEntry)dt.entry)->sectorAllocationBitmap.SetSectorAllocation( chs, status!=TSectorStatus::EMPTY );
 			else if (dt.entryType==TDirectoryTraversal::WARNING)
@@ -693,38 +693,38 @@
 		chs.sectorId.lengthCode=GDOS_SECTOR_LENGTH_STD_CODE;
 	}
 
-	bool CGDOS::TGdosDirectoryTraversal::__existsNextEntry__(){
+	bool CGDOS::TGdosDirectoryTraversal::AdvanceToNextEntry(){
 		// True <=> another Entry in current Directory exists (Empty or not), otherwise False
 		// - getting the next Sector with Directory
 		if (!nRemainingEntriesInSector){
 			if (++chs.sectorId.sector>GDOS_TRACK_SECTORS_COUNT){
 				chs.sectorId.sector=Properties.firstSectorNumber;
-				if (( chs.sectorId.cylinder=++chs.cylinder )==GDOS_DIR_FILES_COUNT_MAX*sizeof(TDirectoryEntry)/GDOS_SECTOR_LENGTH_STD/GDOS_TRACK_SECTORS_COUNT) // end of Directory
+				if (( chs.sectorId.cylinder=++chs.cylinder )==GDOS_DIR_FILES_COUNT_MAX*sizeof(TDirectoryEntry)/GDOS_SECTOR_LENGTH_STD/GDOS_TRACK_SECTORS_COUNT){ // end of Directory
+					entryType=TDirectoryTraversal::END;
 					return false; // end of Directory
+				}
 			}
 			entry=gdos->image->GetHealthySectorData(chs);
-			if (!entry){ // Directory Sector not found
+			if (!entry) // Directory Sector not found
 				entryType=TDirectoryTraversal::WARNING, warning=ERROR_SECTOR_NOT_FOUND;
-				return true;
-			}else
-				entry=(PDirectoryEntry)entry-1; // pointer set "before" the first DirectoryEntry
+			else
+				entryType=TDirectoryTraversal::UNKNOWN, entry=(PDirectoryEntry)entry-1; // pointer set "before" the first DirectoryEntry
 			nRemainingEntriesInSector=GDOS_SECTOR_LENGTH_STD/sizeof(TDirectoryEntry);
 		}
 		// - getting the next DirectoryEntry
-		entryType=	((PDirectoryEntry)( entry=(PDirectoryEntry)entry+1 ))->fileType!=TDirectoryEntry::EMPTY_ENTRY
-					? TDirectoryTraversal::FILE
-					: TDirectoryTraversal::EMPTY;
+		if (entryType!=TDirectoryTraversal::WARNING)
+			entryType=	((PDirectoryEntry)( entry=(PDirectoryEntry)entry+1 ))->fileType!=TDirectoryEntry::EMPTY_ENTRY
+						? TDirectoryTraversal::FILE
+						: TDirectoryTraversal::EMPTY;
 		nRemainingEntriesInSector--;
 		return true;
 	}
 
-	bool CGDOS::TGdosDirectoryTraversal::AdvanceToNextEntry(){
-		// True <=> found another entry in current Directory (Empty or not), otherwise False
-		return __existsNextEntry__();
-	}
-
-	void CGDOS::TGdosDirectoryTraversal::ResetCurrentEntry(BYTE directoryFillerByte) const{
+	void CGDOS::TGdosDirectoryTraversal::ResetCurrentEntry(BYTE directoryFillerByte){
 		// gets current entry to the state in which it would be just after formatting
-		*(PBYTE)::memset( entry, directoryFillerByte, entrySize )=TDirectoryEntry::EMPTY_ENTRY;
+		if (entryType==TDirectoryTraversal::FILE || entryType==TDirectoryTraversal::EMPTY){
+			*(PBYTE)::memset( entry, directoryFillerByte, entrySize )=TDirectoryEntry::EMPTY_ENTRY;
+			entryType=TDirectoryTraversal::EMPTY;
+		}
 	}
 

@@ -107,8 +107,7 @@
 		public:
 			TTrdosDirectoryTraversal(const CTRDOS503 *_trdos); // ctor
 			bool AdvanceToNextEntry() override;
-			void ResetCurrentEntry(BYTE directoryFillerByte) const override;
-			bool __existsNextEntry__();
+			void ResetCurrentEntry(BYTE directoryFillerByte) override;
 		};
 
 		class CTrdosBootView sealed:public CBootView{

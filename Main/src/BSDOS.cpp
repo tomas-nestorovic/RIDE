@@ -330,7 +330,7 @@
 		return true;
 	}
 
-	void CBSDOS308::CDirsSector::CTraversal::ResetCurrentEntry(BYTE directoryFillerByte) const{
+	void CBSDOS308::CDirsSector::CTraversal::ResetCurrentEntry(BYTE directoryFillerByte){
 		// gets current entry to the state in which it would be just after formatting
 		//nop (can't reset a root Directory Slot)
 	}
@@ -480,31 +480,34 @@
 				return false;
 			}
 			entry=bsdos->image->GetHealthySectorData( chs=items[nDirSectorsTraversed++].chs );
-			if (!entry){ // Sector not found
+			if (!entry) // Sector not found
 				entryType=TDirectoryTraversal::WARNING, warning=ERROR_SECTOR_NOT_FOUND;
-				return true;
-			}else
-				entry=(PDirectoryEntry)entry-1; // pointer set "before" the first DirectoryEntry
+			else
+				entryType=TDirectoryTraversal::UNKNOWN, entry=(PDirectoryEntry)entry-1; // pointer set "before" the first DirectoryEntry
 			nRemainingEntriesInSector=BSDOS_DIR_ENTRIES_PER_SECTOR;
 		}
 		// - getting the next DirectoryEntry
-		entry=(PDirectoryEntry)entry+1;
-		if (isDirNameEntry)
-			entryType=TDirectoryTraversal::CUSTOM;
-		else if (!((PDirectoryEntry)entry)->occupied)
-			entryType=TDirectoryTraversal::EMPTY;
-		else if (directory==ZX_DIR_ROOT)
-			entryType=TDirectoryTraversal::SUBDIR;
-		else
-			entryType=TDirectoryTraversal::FILE;
+		if (entryType!=TDirectoryTraversal::WARNING){
+			entry=(PDirectoryEntry)entry+1;
+			if (isDirNameEntry)
+				entryType=TDirectoryTraversal::CUSTOM;
+			else if (!((PDirectoryEntry)entry)->occupied)
+				entryType=TDirectoryTraversal::EMPTY;
+			else if (directory==ZX_DIR_ROOT)
+				entryType=TDirectoryTraversal::SUBDIR;
+			else
+				entryType=TDirectoryTraversal::FILE;
+		}
 		nRemainingEntriesInSector--;
 		return true;
 	}
 
-	void CBSDOS308::TDirectoryEntry::CTraversal::ResetCurrentEntry(BYTE directoryFillerByte) const{
+	void CBSDOS308::TDirectoryEntry::CTraversal::ResetCurrentEntry(BYTE directoryFillerByte){
 		// gets current entry to the state in which it would be just after formatting
-		if (entry)
+		if (entryType==TDirectoryTraversal::FILE || entryType==TDirectoryTraversal::EMPTY){
 			reinterpret_cast<PDirectoryEntry>( ::memset(entry,directoryFillerByte,entrySize) )->occupied=false;
+			entryType=TDirectoryTraversal::EMPTY;
+		}
 	}
 
 	CDos::PFile CBSDOS308::TDirectoryEntry::CTraversal::AllocateNewEntry(){

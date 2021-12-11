@@ -760,26 +760,31 @@
 	}
 	void CMDOS2::TMdos2DirectoryTraversal::__reinitToFirstEntry__(){
 		// (re)initializes to the beginning of the Directory
+		entryType=TDirectoryTraversal::UNKNOWN;
 		dirSector=MDOS2_DIR_LOGSECTOR_FIRST, nRemainingEntriesInSector=0;
 	}
-	bool CMDOS2::TMdos2DirectoryTraversal::__existsNextEntry__(){
+
+	bool CMDOS2::TMdos2DirectoryTraversal::AdvanceToNextEntry(){
 		// True <=> another Entry in current Directory exists (Empty or not), otherwise False
 		// - getting the next LogicalSector with Directory
 		if (!nRemainingEntriesInSector){
-			if (dirSector==MDOS2_DATA_LOGSECTOR_FIRST) return false; // end of Directory
+			if (dirSector==MDOS2_DATA_LOGSECTOR_FIRST){ // end of Directory
+				entryType=TDirectoryTraversal::END;
+				return false;
+			}
 			chs=mdos2->__logfyz__(dirSector);
 			entry=mdos2->__getHealthyLogicalSectorData__(dirSector++);
-			if (!entry){ // LogicalSector not found
+			if (!entry) // LogicalSector not found
 				entryType=TDirectoryTraversal::WARNING, warning=ERROR_SECTOR_NOT_FOUND;
-				return true;
-			}else
-				entry=(PDirectoryEntry)entry-1; // pointer set "before" the first DirectoryEntry
+			else
+				entryType=TDirectoryTraversal::UNKNOWN, entry=(PDirectoryEntry)entry-1; // pointer set "before" the first DirectoryEntry
 			nRemainingEntriesInSector=DIR_SECTOR_ENTRIES_COUNT;
 		}
 		// - getting the next DirectoryEntry
-		entryType=	((PDirectoryEntry)( entry=(PDirectoryEntry)entry+1 ))->extension!=TDirectoryEntry::EMPTY_ENTRY
-					? TDirectoryTraversal::FILE
-					: TDirectoryTraversal::EMPTY;
+		if (entryType!=TDirectoryTraversal::WARNING)
+			entryType=	((PDirectoryEntry)( entry=(PDirectoryEntry)entry+1 ))->extension!=TDirectoryEntry::EMPTY_ENTRY
+						? TDirectoryTraversal::FILE
+						: TDirectoryTraversal::EMPTY;
 		nRemainingEntriesInSector--;
 		return true;
 	}
@@ -789,14 +794,13 @@
 		ASSERT(directory==ZX_DIR_ROOT);
 		return std::unique_ptr<TDirectoryTraversal>( new TMdos2DirectoryTraversal(this) );
 	}
-	bool CMDOS2::TMdos2DirectoryTraversal::AdvanceToNextEntry(){
-		// True <=> found another entry in current Directory (Empty or not), otherwise False
-		return __existsNextEntry__();
-	}
 
-	void CMDOS2::TMdos2DirectoryTraversal::ResetCurrentEntry(BYTE directoryFillerByte) const{
+	void CMDOS2::TMdos2DirectoryTraversal::ResetCurrentEntry(BYTE directoryFillerByte){
 		// gets current entry to the state in which it would be just after formatting
-		*(PBYTE)::memset( entry, directoryFillerByte, entrySize )=TDirectoryEntry::EMPTY_ENTRY;
+		if (entryType==TDirectoryTraversal::FILE || entryType==TDirectoryTraversal::EMPTY){
+			*(PBYTE)::memset( entry, directoryFillerByte, entrySize )=TDirectoryEntry::EMPTY_ENTRY;
+			entryType=TDirectoryTraversal::EMPTY;
+		}
 	}
 
 
