@@ -511,13 +511,17 @@
 										if ( fuzzyInOkSector=fuzzyInBadSector==0 ) // only in OK Sector?
 											break;
 								}
-								//if (fuzzyInOkSector>=0) // fuzzy in a Sector? (i.e. not in gaps or elsewhere)
-									for( BYTE r=0; r<2; r++ ){
-										const TRegion &rgn=*pTwoRegions[r];
-										fuzzyStdDataEvents.AddCopyAscendingByStart(
-											TParseEvent( fuzzyInOkSector>0?TParseEvent::FUZZY_OK:TParseEvent::FUZZY_BAD, rgn.tStart, rgn.tEnd, 0 )
-										);
-									}
+								for( BYTE r=0; r<2; r++ ){
+									const TRegion &rgn=*pTwoRegions[r];
+									fuzzyStdDataEvents.AddCopyAscendingByStart(
+										TParseEvent(
+											fuzzyInOkSector!=0 // "<0" (=negative) = fuzzy region out of Sector data (e.g. in gaps or elsewhere; such region is OK), ">0" (=positive) = fuzzy region in OK Sector data
+												? TParseEvent::FUZZY_OK
+												: TParseEvent::FUZZY_BAD,
+											rgn.tStart, rgn.tEnd, 0
+										)
+									);
+								}
 							}
 						}
 					}
