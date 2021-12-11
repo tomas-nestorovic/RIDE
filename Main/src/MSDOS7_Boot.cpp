@@ -396,7 +396,7 @@
 			for( TMsdos7DirectoryTraversal dt(msdos,MSDOS7_DIR_ROOT); dt.__existsNextEntry__(); )
 				if (dt.entryType==TDirectoryTraversal::CUSTOM
 					&&
-					((PCDirectoryEntry)dt.entry)->shortNameEntry.attributes==FILE_ATTRIBUTE_VOLUME
+					(((PCDirectoryEntry)dt.entry)->shortNameEntry.attributes&FILE_ATTRIBUTE_VOLUME)!=0
 				){
 					// Label found
 					rParam.label.length=MSDOS7_LABEL_LENGTH_MAX;
