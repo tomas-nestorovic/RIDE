@@ -568,11 +568,9 @@ namespace Medium{
 							UpdateAllViews(nullptr,0,nullptr);
 						}
 						return TRUE;
-					case ID_IMAGE_BROWSE:{
-						CDiskBrowserView *const dbView=new CDiskBrowserView( CImage::GetActive(), TPhysicalAddress::Invalid, 0 ); // can only browse main disk Images (e.g. never a ZX Spectrum Tape)
-						CTdiCtrl::AddTabLast( TDI_HWND, _T("Sectors hexa-browser"), &dbView->tab, true, TDI_TAB_CANCLOSE_ALWAYS, CDiskBrowserView::OnDiskBrowserViewClosing );
+					case ID_IMAGE_BROWSE:
+						CDiskBrowserView::CreateAndSwitchToTab( CImage::GetActive(), TPhysicalAddress::Invalid, 0 );
 						return TRUE;
-					}
 					case ID_FILE_CLOSE:
 						return FALSE; // for CDocument to be excluded from processing, and processing was forwarded right to MainWindow
 				}

@@ -1,6 +1,12 @@
 #include "stdafx.h"
 #include "MSDOS7.h"
 
+	void WINAPI CMainWindow::CTdiView::TTab::OnOptionalTabClosing(CTdiCtrl::TTab::PContent tab){
+		delete ((PTab)tab)->view;
+	}
+
+
+
 	CMainWindow::CTdiView::TTab::TTab(UINT nMenuResId,UINT nToolbarResId,UINT nToolBarId,PImage image,PView _view)
 		// ctor
 		// - initialization

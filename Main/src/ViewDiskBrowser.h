@@ -19,7 +19,7 @@
 		void OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint) override;
 		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
 	public:
-		static void WINAPI OnDiskBrowserViewClosing(LPCVOID tab);
+		static CDiskBrowserView &CreateAndSwitchToTab(PImage image,RCPhysicalAddress chsToSeekTo,BYTE nSectorsToSkip);
 
 		const CMainWindow::CTdiView::TTab tab;
 

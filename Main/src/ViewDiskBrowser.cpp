@@ -1,9 +1,5 @@
 #include "stdafx.h"
 
-	void WINAPI CDiskBrowserView::OnDiskBrowserViewClosing(CTdiCtrl::TTab::PContent tab){
-		delete ((CMainWindow::CTdiView::PTab)tab)->view;
-	}
-
 	#define INI_DISKBROWSER	_T("DiskBrowser")
 
 	#define IMAGE	tab.image
@@ -41,6 +37,19 @@
 
 
 
+
+	CDiskBrowserView &CDiskBrowserView::CreateAndSwitchToTab(PImage image,RCPhysicalAddress chsToSeekTo,BYTE nSectorsToSkip){
+		// creates new instance of CDiskBrowserView, adds its Tab to the TDI, and returns the instance
+		CDiskBrowserView *const dbView=new CDiskBrowserView( image, chsToSeekTo, nSectorsToSkip );
+		if (chsToSeekTo==TPhysicalAddress::Invalid)
+			CTdiCtrl::AddTabLast( TDI_HWND, _T("Sectors hexa-browser"), &dbView->tab, true, TDI_TAB_CANCLOSE_ALWAYS, CMainWindow::CTdiView::TTab::OnOptionalTabClosing );
+		else{
+			TCHAR caption[80];
+			::wsprintf( caption, _T("Sector %s (%d)"), (LPCTSTR)chsToSeekTo.sectorId.ToString(), nSectorsToSkip );
+			CTdiCtrl::AddTabLast( TDI_HWND, caption, &dbView->tab, true, TDI_TAB_CANCLOSE_ALWAYS, CMainWindow::CTdiView::TTab::OnOptionalTabClosing );
+		}
+		return *dbView;
+	}
 
 	afx_msg int CDiskBrowserView::OnCreate(LPCREATESTRUCT lpcs){
 		// window created

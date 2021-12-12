@@ -262,13 +262,10 @@
 
 
 
-	static void WINAPI __onWebPageClosing__(CTdiCtrl::TTab::PContent tab){
-		delete ((CMainWindow::CTdiView::PTab)tab)->view;
-	}
 	void CMainWindow::OpenWebPage(LPCTSTR tabCaption,LPCTSTR url){
 		// opens specified URL in a new Tab
 		CWebPageView *const webView=new CWebPageView(url);
-		CTdiCtrl::AddTabLast( TDI_HWND, tabCaption, &webView->tab, true, TDI_TAB_CANCLOSE_ALWAYS, __onWebPageClosing__ );
+		CTdiCtrl::AddTabLast( TDI_HWND, tabCaption, &webView->tab, true, TDI_TAB_CANCLOSE_ALWAYS, CTdiView::TTab::OnOptionalTabClosing );
 	}
 	void CMainWindow::OpenRepositoryWebPage(LPCTSTR tabCaption,LPCTSTR documentName){
 		// in new Tab opens the specified Document from application's on-line presentation

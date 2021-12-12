@@ -86,6 +86,8 @@
 
 	void CUnformatDialog::PreInitDialog(){
 		// dialog initialization
+		// - base
+		__super::PreInitDialog();
 		// - displaying DOS name
 		SetDlgItemText( ID_SYSTEM, DOS->properties->name );
 		// - populating dedicated ComboBox with available StandardUnformattings

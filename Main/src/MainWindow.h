@@ -70,6 +70,8 @@
 			typedef CView *PView;
 
 			typedef struct TTab sealed{
+				static void WINAPI OnOptionalTabClosing(CTdiCtrl::TTab::PContent tab);
+
 				const PImage image; // the Image that gets into focus when switched to this Tab (e.g. CSpectrumDos::CTape)
 				const CDynMenu menu;
 				const PView view;

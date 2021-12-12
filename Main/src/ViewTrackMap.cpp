@@ -590,17 +590,10 @@
 		}
 		ClientToScreen(&point);
 		switch (mnu.TrackPopupMenu( TPM_RETURNCMD, point.x, point.y, this )){
-			case ID_SECTOR:{
+			case ID_SECTOR:
 				// display hexa-data of Sector
-				TCHAR caption[80];
-				::wsprintf( caption, _T("Sector %s (%d)"), (LPCTSTR)chs.sectorId.ToString(), nSectorsToSkip );
-				CTdiCtrl::AddTabLast(
-					TDI_HWND, caption,
-					&(new CDiskBrowserView( IMAGE, chs, nSectorsToSkip ))->tab,
-					true, TDI_TAB_CANCLOSE_ALWAYS, CDiskBrowserView::OnDiskBrowserViewClosing
-				);
+				CDiskBrowserView::CreateAndSwitchToTab( IMAGE, chs, nSectorsToSkip );
 				break;
-			}
 			case ID_TRACK:{
 				// display hexa-data of Track
 				TCHAR caption[80];
@@ -611,7 +604,7 @@
 				CTdiCtrl::AddTabLast(
 					TDI_HWND, caption,
 					&(new CDiskBrowserView( IMAGE, chs, 0 ))->tab,
-					true, TDI_TAB_CANCLOSE_ALWAYS, CDiskBrowserView::OnDiskBrowserViewClosing
+					true, TDI_TAB_CANCLOSE_ALWAYS, CMainWindow::CTdiView::TTab::OnOptionalTabClosing
 				);
 				break;
 			}

@@ -43,6 +43,8 @@
 
 	void CFormatDialog::PreInitDialog(){
 		// dialog initialization
+		// - base
+		__super::PreInitDialog();
 		// - showing the name of the DOS
 		const CDos::PCProperties propDos=dos->properties;
 		SetDlgItemText( ID_SYSTEM, propDos->name );

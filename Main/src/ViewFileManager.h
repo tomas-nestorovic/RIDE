@@ -104,7 +104,7 @@
 		COleDropTarget dropTarget;
 		WORD nativelyLastFile; // index of a file that is natively the last one in current Directory
 		CMapPtrToWord nativeOrderOfFiles; // map of native order of Files as they are discovered in current Directory (i.e. without Ordering)
-		Utils::CPtrList<CDirEntriesView *> ownedDirEntryViews; // PDirEntriesView
+		Utils::CPtrList<const CMainWindow::CTdiView::TTab *> ownedTabs;
 		CFileList previousDirectories;
 
 		void __updateSummaryInStatusBar__() const;

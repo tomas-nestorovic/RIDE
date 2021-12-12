@@ -88,8 +88,8 @@
 			delete ownedDataSource;
 		}
 		if (*app.m_pMainWnd) // app NOT closing
-			while (ownedDirEntryViews.GetCount())
-				CTdiCtrl::RemoveTab( TDI_HWND, &ownedDirEntryViews.RemoveHead()->tab );
+			while (ownedTabs.GetCount())
+				CTdiCtrl::RemoveTab( TDI_HWND, ownedTabs.RemoveHead() );
 	}
 
 
@@ -703,15 +703,12 @@
 		pCmdUI->Enable(pDirectoryStructureManagement!=nullptr);
 	}
 
-	static void WINAPI OnDirEntriesViewClosing(LPCVOID tab){
-		delete ((CMainWindow::CTdiView::PTab)tab)->view;
-	}
 	void CFileManagerView::BrowseCurrentDirInHexaMode(CDos::PCFile fileToSeekTo){
 		CDirEntriesView *const deView=new CDirEntriesView( DOS, DOS->currentDir, fileToSeekTo );
 		CString label;
 		label.Format( _T("Dir \"%s\""), (LPCTSTR)DOS->GetFilePresentationNameAndExt(DOS->currentDir) );
-		CTdiCtrl::AddTabLast( TDI_HWND, label, &deView->tab, true, TDI_TAB_CANCLOSE_ALWAYS, OnDirEntriesViewClosing );
-		ownedDirEntryViews.AddTail(deView);
+		CTdiCtrl::AddTabLast( TDI_HWND, label, &deView->tab, true, TDI_TAB_CANCLOSE_ALWAYS, CMainWindow::CTdiView::TTab::OnOptionalTabClosing );
+		ownedTabs.AddTail( &deView->tab );
 	}
 
 	afx_msg void CFileManagerView::BrowseCurrentDirInHexaMode(){
