@@ -803,6 +803,7 @@ BEGIN
         MENUITEM "Show hexa\tCtrl+B",           ID_DOS_PREVIEWASBINARY
         MENUITEM SEPARATOR
         MENUITEM "Go to directory entry",       ID_DIRECTORY
+        MENUITEM "Go to first sector",          ID_SECTOR
     END
 END
 

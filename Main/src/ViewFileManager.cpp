@@ -76,6 +76,7 @@
 			ON_UPDATE_COMMAND_UI(ID_FILEMANAGER_SUBDIR_CREATE,__createSubdirectory_updateUI__)
 		ON_COMMAND(ID_DIRECTORY,GoToFocusedFileDirectoryEntry)
 		ON_COMMAND(ID_FILEMANAGER_DIR_HEXAMODE,BrowseCurrentDirInHexaMode)
+		ON_COMMAND(ID_SECTOR,GoToFocusedFileFirstSector)
 		ON_COMMAND(ID_FILEMANAGER_FILE_INFORMATION,__showSelectionProperties__)
 			ON_UPDATE_COMMAND_UI(ID_FILEMANAGER_FILE_INFORMATION,__fileSelected_updateUI__)
 		ON_WM_DESTROY()
@@ -726,6 +727,31 @@
 			: nullptr
 		);
 	}
+
+	afx_msg void CFileManagerView::GoToFocusedFileFirstSector(){
+		// opens a new Tab with Sectors listed in an HexaEditor instance
+		const CListCtrl &lv=GetListCtrl();
+		const int iFocused=lv.GetNextItem(-1,LVNI_FOCUSED);
+		if (iFocused>=0){ // is there one File focused?
+			const CDos::PCFile f=(CDos::PCFile)lv.GetItemData(iFocused);
+			const CDos::CFatPath fatPath=CDos::CFatPath( DOS, f );
+			CDos::CFatPath::PCItem p; DWORD n;
+			if (const LPCTSTR err=fatPath.GetItems( p, n )){
+				CString msg;
+				msg.Format( _T("Error in FAT for \"%s\":%s\n\nGo to its first sector anyway?"), (LPCTSTR)DOS->GetFilePresentationNameAndExt(f), err );
+				if (!Utils::QuestionYesNo(msg,MB_DEFBUTTON1))
+					return;
+			}else if (!n){
+				CString msg;
+				msg.Format( _T("Item \"%s\" occupies no sectors."), (LPCTSTR)DOS->GetFilePresentationNameAndExt(f) );
+				return Utils::Information( msg );
+			}
+			ownedTabs.AddTail(
+				&CDiskBrowserView::CreateAndSwitchToTab( IMAGE, p->chs, 0 ).tab
+			);
+		}
+	}
+
 
 
 

@@ -764,6 +764,10 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 						DOS->formatBoot.sectorLength=sl0;
 						return result;
 					}
+					case ID_SECTOR:
+						// navigation to focused File's first Sector
+						DOS->ProcessCommand( ID_DOS_PREVIEWASBINARY );
+						return TRUE;
 				}
 				break;
 		}

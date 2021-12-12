@@ -154,6 +154,7 @@
 			afx_msg void __createSubdirectory_updateUI__(CCmdUI *pCmdUI);
 		afx_msg void GoToFocusedFileDirectoryEntry();
 		afx_msg void BrowseCurrentDirInHexaMode();
+		afx_msg void GoToFocusedFileFirstSector();
 		afx_msg void __showSelectionProperties__();
 		afx_msg void OnDestroy();
 	public:
