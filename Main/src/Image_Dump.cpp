@@ -775,9 +775,11 @@ terminateWithError:		return LOG_ERROR(pAction->TerminateWithError(err));
 					case WM_COMMAND:
 						switch (wParam){
 							case ID_FILE:{
-								const TCHAR c=*dumpParams.targetFileName;
+								TCHAR targetFileNameOrg[MAX_PATH];
+								::lstrcpy( targetFileNameOrg, dumpParams.targetFileName );
 								*dumpParams.targetFileName='\0';
-								if (targetImageProperties=app.DoPromptFileName( dumpParams.targetFileName, true, AFX_IDS_SAVEFILE, 0, nullptr )){
+								if (const CImage::PCProperties imgProps=app.DoPromptFileName( dumpParams.targetFileName, true, AFX_IDS_SAVEFILE, 0, nullptr )){
+									targetImageProperties=imgProps;
 setDestination:						// : compacting FileName in order to be better displayable on the button
 									CWnd *const pBtnFile=GetDlgItem(ID_FILE);
 									RECT r;
@@ -816,7 +818,7 @@ setDestination:						// : compacting FileName in order to be better displayable 
 										SendDlgItemMessage( ID_PRIORITY, BM_SETCHECK, BST_CHECKED );
 									//fallthrough
 								}else{
-									*dumpParams.targetFileName=c;
+									::lstrcpy( dumpParams.targetFileName, targetFileNameOrg );
 									break;
 								}
 								//fallthrough
