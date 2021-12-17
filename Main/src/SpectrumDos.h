@@ -29,6 +29,7 @@
 
 			static void CALLBACK __flash__(HWND hPreview,UINT nMsg,UINT nTimerID,DWORD dwTime);
 
+			bool showPixels, showAttributes;
 			HANDLE hFlashTimer;
 			bool paperFlash;
 			struct{
@@ -41,6 +42,7 @@
 
 			void RefreshPreview() override;
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
+			BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
 		public:
 			static CScreenPreview *pSingleInstance;
 

@@ -47,6 +47,7 @@
 #define IDR_DIRECTORYBROWSER            207
 #define IDR_DOS_DATETIME_EDIT           208
 #define IDR_HEXAEDITOR_RESETSELECTION   209
+#define IDR_SPECTRUM_PREVIEW_SCREEN     210
 #define IDR_GUIDEPOST                   211
 #define IDR_TRACKMAP_CONTEXT            212
 #define IDR_BSDOS                       213

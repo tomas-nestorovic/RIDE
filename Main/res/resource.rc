@@ -807,6 +807,14 @@ BEGIN
     END
 END
 
+IDR_SPECTRUM_PREVIEW_SCREEN MENU DISCARDABLE 
+BEGIN
+    POPUP "Preview"
+    BEGIN
+        MENUITEM "Show pixels\tP",              ID_DATA, CHECKED
+        MENUITEM "Show attributes\tA",          ID_ATTRIBUTE, CHECKED
+    END
+END
 
 /////////////////////////////////////////////////////////////////////////////
 //

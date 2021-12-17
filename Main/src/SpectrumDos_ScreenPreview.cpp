@@ -27,6 +27,15 @@
 				}else
 					// if Ctrl key NOT pressed, simply handing the message over to the parent class
 					break;
+			case WM_KEYDOWN:
+				// character
+				switch (wParam){
+					case 'P':
+						return SendMessage( WM_COMMAND, ID_DATA );
+					case 'A':
+						return SendMessage( WM_COMMAND, ID_ATTRIBUTE );
+				}
+				break;
 			case WM_PAINT:{
 				// drawing
 				RECT r;
@@ -93,10 +102,12 @@
 	CSpectrumBase::CScreenPreview::CScreenPreview(const CFileManagerView &rFileManager)
 		// ctor
 		// - base
-		: CFilePreview( nullptr, INI_PREVIEW, rFileManager, SCREEN_WIDTH, SCREEN_HEIGHT, true, 0 )
+		: CFilePreview( nullptr, INI_PREVIEW, rFileManager, SCREEN_WIDTH, SCREEN_HEIGHT, true, IDR_SPECTRUM_PREVIEW_SCREEN )
 		// - initialization
+		, showPixels(true) , showAttributes(true)
 		, paperFlash(false) {
 		pSingleInstance=this;
+		m_bAutoMenuEnable=FALSE; // we are not set up for that
 		// - creating the Device Independent Bitmap (DIB)
 		dib.bmi.bmiHeader.biSize=sizeof(dib.bmi);
 		dib.bmi.bmiHeader.biWidth=SCREEN_WIDTH, dib.bmi.bmiHeader.biHeight=SCREEN_HEIGHT;
@@ -145,6 +156,11 @@
 		DOS->ExportFile( file, &CMemFile(buf,sizeof(buf)), sizeof(buf), &errMsg );
 		if (errMsg)
 			return DOS->ShowFileProcessingError(file,errMsg);
+		// - resetting the parts not desired for display
+		if (!showPixels) // don't want pixels
+			::memset(buf,0,6144);
+		if (!showAttributes) // don't want attributes
+			::memset(buf+6144,56,768);
 		// - converting Spectrum data in Buffer to DIB pixel data
 		union{
 			struct{ BYTE L,H; };
@@ -175,4 +191,35 @@
 		CString caption;
 		caption.Format( LABEL " (%s)", (LPCTSTR)DOS->GetFilePresentationNameAndExt(file) );
 		SetWindowText(caption);
+	}
+
+	BOOL CSpectrumBase::CScreenPreview::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){
+		// command processing
+		switch (nCode){
+			case CN_UPDATE_COMMAND_UI:
+				// update
+				switch (nID){
+					case ID_DATA:
+						((CCmdUI *)pExtra)->SetCheck(showPixels);
+						return TRUE;
+					case ID_ATTRIBUTE:
+						((CCmdUI *)pExtra)->SetCheck(showAttributes);
+						return TRUE;
+				}
+				break;
+			case CN_COMMAND:
+				// command
+				switch (nID){
+					case ID_DATA:
+						showPixels=!showPixels;
+						RefreshPreview();
+						return TRUE;
+					case ID_ATTRIBUTE:
+						showAttributes=!showAttributes;
+						RefreshPreview();
+						return TRUE;
+				}
+				break;
+		}
+		return __super::OnCmdMsg(nID,nCode,pExtra,pHandlerInfo);
 	}
