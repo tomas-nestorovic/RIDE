@@ -225,6 +225,8 @@
 			CScreenPreview::pSingleInstance->DestroyWindow();
 		if (CBasicPreview::pSingleInstance && &CBasicPreview::pSingleInstance->rFileManager==pFileManager)
 			CBasicPreview::pSingleInstance->DestroyWindow();
+		if (CAssemblerPreview::pSingleInstance && &CAssemblerPreview::pSingleInstance->rFileManager==pFileManager)
+			CAssemblerPreview::pSingleInstance->DestroyWindow();
 	}
 
 
