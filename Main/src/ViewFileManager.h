@@ -244,6 +244,7 @@
 		DWORD reportModeDisplayedInfos;
 		CFileList selectedFiles; // used only for restoring selection when the FileManager is switched back - otherwise the content is empty!
 		CDos::PFile focusedFile;
+		Utils::CRideContextMenu mnuContext;
 
 		CFileManagerView(PDos _dos,BYTE _supportedDisplayModes,BYTE _initialDisplayMode,const CFont &rFont,BYTE reportModeRowHeightAdjustment,BYTE _nInformation,PCFileInfo _informationList,PCDirectoryStructureManagement pDirectoryStructureManagement);
 		~CFileManagerView();

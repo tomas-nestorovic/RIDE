@@ -4,10 +4,17 @@
 
 	CSpectrumBase::CSpectrumBaseFileManagerView::CSpectrumBaseFileManagerView(PDos dos,const TZxRom &rZxRom,BYTE supportedDisplayModes,BYTE initialDisplayMode,BYTE nInformation,PCFileInfo informationList,BYTE nameCharsMax,PCDirectoryStructureManagement pDirManagement)
 		// ctor
+		// - base
 		: CFileManagerView( dos, supportedDisplayModes, initialDisplayMode, rZxRom.font, 3, nInformation, informationList, pDirManagement )
+		// - initialization
 		, zxRom(rZxRom) , nameCharsMax(nameCharsMax)
 		, singleCharExtEditor(*this)
 		, varLengthCommandLineEditor(*this) {
+		// - adjusting context menu
+		const Utils::CRideContextMenu mnuTmp( IDR_MDOS );
+		mnuContext.AppendMenu( MF_STRING, ID_ZX_PREVIEWASSCREEN, mnuTmp.GetMenuStringByCmd(ID_ZX_PREVIEWASSCREEN) );
+		mnuContext.AppendMenu( MF_STRING, ID_ZX_PREVIEWASBASIC, mnuTmp.GetMenuStringByCmd(ID_ZX_PREVIEWASBASIC) );
+		mnuContext.AppendMenu( MF_STRING, ID_ZX_PREVIEWASASSEMBLER, mnuTmp.GetMenuStringByCmd(ID_ZX_PREVIEWASASSEMBLER) );
 	}
 
 	CSpectrumDos::CSpectrumFileManagerView::CSpectrumFileManagerView(PDos dos,const TZxRom &rZxRom,BYTE supportedDisplayModes,BYTE initialDisplayMode,BYTE nInformation,PCFileInfo informationList,BYTE nameCharsMax,PCDirectoryStructureManagement pDirManagement)

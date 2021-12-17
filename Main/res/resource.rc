@@ -804,6 +804,8 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Go to directory entry",       ID_DIRECTORY
         MENUITEM "Go to first sector",          ID_SECTOR
+        MENUITEM SEPARATOR
+        MENUITEM "Show as binary\tCtrl+B",      ID_DOS_PREVIEWASBINARY
     END
 END
 

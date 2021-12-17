@@ -34,6 +34,7 @@
 		, reportModeDisplayedInfosPrev(0) // no columns have been shown previously ...
 		, reportModeDisplayedInfos(-1) // ... and now wanting to show them all
 		, ordering(ORDER_NONE) , focusedFile(nullptr) , scrollY(0) , ownedDataSource(nullptr)
+		, mnuContext(IDR_FILEMANAGER_CONTEXT)
 		, informOnCapabilities(true)
 		, pDirectoryStructureManagement(pDirectoryStructureManagement) {
 		// - switching to default DisplayMode
@@ -319,10 +320,10 @@
 
 	afx_msg void CFileManagerView::OnContextMenu(CWnd *pWndRightClicked,CPoint point){
 		// right mouse button released
-		Utils::CRideContextMenu mnu( IDR_FILEMANAGER_CONTEXT, this );
+		mnuContext.UpdateUi(this);
 		SendMessage(
 			WM_COMMAND,
-			mnu.TrackPopupMenu( TPM_RETURNCMD, point.x, point.y, this )
+			mnuContext.TrackPopupMenu( TPM_RETURNCMD, point.x, point.y, this )
 		);
 	}
 
