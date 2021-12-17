@@ -191,6 +191,14 @@ namespace Utils{
 		m_hMenu=(HMENU)INVALID_HANDLE_VALUE; // whole menu will be disposed by disposing the Parent
 	}
 
+	CString CRideContextMenu::GetMenuString(UINT uIDItem,UINT flags) const{
+		//
+		TCHAR buf[80];
+		if (::GetMenuString( m_hMenu, uIDItem, buf, sizeof(buf)/sizeof(TCHAR), flags )<=0)
+			*buf='\0';
+		return buf;
+	}
+
 
 
 

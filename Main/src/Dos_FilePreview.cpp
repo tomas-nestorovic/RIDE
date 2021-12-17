@@ -43,11 +43,9 @@
 			if (CMenu *const pSubmenu=pMenu->GetSubMenu(0)){
 				const Utils::CRideContextMenu defaultMenu( IDR_DOS_PREVIEW_BASE, this );
 				for( BYTE i=0; i<defaultMenu.GetMenuItemCount(); i++ )
-					if (const auto id=defaultMenu.GetMenuItemID(i)){
-						TCHAR buf[80];
-						defaultMenu.GetMenuString( i, buf, sizeof(buf)/sizeof(TCHAR), MF_BYPOSITION );
-						pSubmenu->AppendMenu( MF_BYCOMMAND|MF_STRING, id, buf );
-					}else
+					if (const auto id=defaultMenu.GetMenuItemID(i))
+						pSubmenu->AppendMenu( MF_BYCOMMAND|MF_STRING, id, defaultMenu.GetMenuStringByPos(i) );
+					else
 						pSubmenu->AppendMenu( MF_SEPARATOR );
 			}
 	}

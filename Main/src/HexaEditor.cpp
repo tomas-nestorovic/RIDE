@@ -762,21 +762,24 @@ deleteSelection:		int posSrc=std::max(caret.selectionA,caret.position), posDst=s
 				BYTE iSelectSubmenu, iResetSubmenu, iGotoSubmenu;
 				if (customSelectSubmenu){ // custom "Select" submenu
 					const HMENU hSubmenu=Utils::GetSubmenuByContainedCommand( mnu, ID_EDIT_SELECT_ALL, &iSelectSubmenu );
-					TCHAR buf[80];
-					mnu.GetMenuString( iSelectSubmenu, buf, sizeof(buf)/sizeof(TCHAR), MF_BYPOSITION );
-					mnu.ModifyMenu( iSelectSubmenu, MF_BYPOSITION|MF_POPUP, (UINT_PTR)customSelectSubmenu, buf );
+					mnu.ModifyMenu(
+						iSelectSubmenu, MF_BYPOSITION|MF_POPUP, (UINT_PTR)customSelectSubmenu,
+						mnu.GetMenuStringByPos( iSelectSubmenu )
+					);
 				}
 				if (customResetSubmenu){ // custom "Fill" submenu
 					const HMENU hSubmenu=Utils::GetSubmenuByContainedCommand( mnu, ID_ZERO, &iResetSubmenu );
-					TCHAR buf[80];
-					mnu.GetMenuString( iResetSubmenu, buf, sizeof(buf)/sizeof(TCHAR), MF_BYPOSITION );
-					mnu.ModifyMenu( iResetSubmenu, MF_BYPOSITION|MF_POPUP, (UINT_PTR)customResetSubmenu, buf );
+					mnu.ModifyMenu(
+						iResetSubmenu, MF_BYPOSITION|MF_POPUP, (UINT_PTR)customResetSubmenu,
+						mnu.GetMenuStringByPos( iResetSubmenu )
+					);
 				}
 				if (customGotoSubmenu){ // custom "Go to" submenu
 					const HMENU hSubmenu=Utils::GetSubmenuByContainedCommand( mnu, ID_NAVIGATE_ADDRESS, &iGotoSubmenu );
-					TCHAR buf[80];
-					mnu.GetMenuString( iGotoSubmenu, buf, sizeof(buf)/sizeof(TCHAR), MF_BYPOSITION );
-					mnu.ModifyMenu( iGotoSubmenu, MF_BYPOSITION|MF_POPUP, (UINT_PTR)customGotoSubmenu, buf );
+					mnu.ModifyMenu(
+						iGotoSubmenu, MF_BYPOSITION|MF_POPUP, (UINT_PTR)customGotoSubmenu,
+						mnu.GetMenuStringByPos( iGotoSubmenu )
+					);
 				}
 				mnu.UpdateUi( this );
 				int x=GET_X_LPARAM(lParam), y=GET_Y_LPARAM(lParam);

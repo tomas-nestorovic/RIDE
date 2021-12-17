@@ -177,7 +177,10 @@ namespace Utils{
 		CRideContextMenu(UINT idMenuRes,CWnd *pUiUpdater=nullptr);
 		~CRideContextMenu();
 
+		CString GetMenuString(UINT uIDItem,UINT flags) const;
 		inline void UpdateUi(CWnd *pUiUpdater){ UpdateUI(pUiUpdater,this); }
+		inline CString GetMenuStringByCmd(WORD cmd) const{ return GetMenuString(cmd,MF_BYCOMMAND); }
+		inline CString GetMenuStringByPos(WORD pos) const{ return GetMenuString(pos,MF_BYPOSITION); }
 	};
 
 	typedef const struct TSplitButtonAction sealed{
