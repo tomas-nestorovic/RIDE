@@ -489,7 +489,7 @@
 		zxName.TrimToLength(GDOS_FILE_NAME_LENGTH_MAX);
 		zxExt.TrimToLength(10); // 10 = Extension may be represented as text, e.g. "$-ARRAY", not just a single char, e.g. '0x03' (both representations are equal!)
 		// - getting import information
-		TStdParameters params=TStdParameters::Default;	TUniFileType uts; DWORD dw;
+		TStdParameters params; TUniFileType uts; DWORD dw;
 		if (const int n=__importFileInformation__(zxInfo,uts,params,dw))
 			if (dw) fileSize=dw;
 		// - initializing the description of File to import

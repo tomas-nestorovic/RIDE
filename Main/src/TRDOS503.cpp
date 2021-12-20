@@ -500,7 +500,7 @@
 		zxName.TrimToLength(TRDOS503_FILE_NAME_LENGTH_MAX);
 		zxExt.TrimToLength(1);
 		// - getting import information
-		TStdParameters params=TStdParameters::Default;	TUniFileType uts;	DWORD dw;
+		TStdParameters params;	TUniFileType uts;	DWORD dw;
 		const LPCTSTR pTrdosSpecificInfo=zxInfo+__importFileInformation__(zxInfo,uts,params,dw);
 		const DWORD fileSizeFormal=	pTrdosSpecificInfo>zxInfo // if record on official File size exists in ZxInformation ...
 									? dw // ... use that record

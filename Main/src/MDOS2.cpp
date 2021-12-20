@@ -404,7 +404,7 @@
 			::ZeroMemory(&tmp,sizeof(tmp));
 			// . import information
 			int attr=deDefault.attributes;
-			tmp.params=TStdParameters::Default; TUniFileType uts; DWORD dw; // initialization
+			TUniFileType uts; DWORD dw;
 			if (const int n=__importFileInformation__(zxInfo,uts,tmp.params,dw)){
 				if (dw) fileSize=dw;
 				_stscanf( zxInfo+n, INFO_ATTRIBUTES, &attr );

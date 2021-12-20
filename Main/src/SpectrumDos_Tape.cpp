@@ -343,14 +343,14 @@
 		zxName.TrimToLength(ZX_TAPE_FILE_NAME_LENGTH_MAX);
 		zxExt.TrimToLength(1);
 		// - processing import information
-		TStdParameters u=TStdParameters::Default;
-		TUniFileType uts=TUniFileType::HEADERLESS;
-		int blockChecksum=-1; DWORD officialFileSize=fileSize; BYTE blockFlag;
+		int blockChecksum=-1;
+		TUniFileType uts; TStdParameters u; DWORD officialFileSize; BYTE blockFlag;
 		if (const int n=__importFileInformation__(zxInfo,uts,u,officialFileSize,blockFlag)){
 			if (uts==TUniFileType::SCREEN)
 				uts=TUniFileType::BLOCK;
 			_stscanf( zxInfo+n, EXPORT_INFO_TAPE, &blockChecksum );
-		}
+		}else
+			officialFileSize=fileSize;
 		// - with user's intervention resolving the case that reported size is different from real size
 		if (officialFileSize!=fileSize){
 			// : defining the Dialog
