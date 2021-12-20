@@ -1288,7 +1288,7 @@ namespace Utils{
 			int i,n;
 			if (!_stscanf( p, _T("%d%n"), &i, &n ))
 				return false; // invalid or no number
-			if (i<limits.iMin || limits.iMax<i)
+			if (!limits.Contains(i))
 				return false; // out of Limits
 			p+=n;
 			if (!::strchr(Delimiters,*p))

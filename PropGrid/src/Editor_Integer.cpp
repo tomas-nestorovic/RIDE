@@ -49,14 +49,18 @@
 		// True <=> Editor's current Value is acceptable, otherwise False
 		const HWND hEdit=TEditor::pSingleShown->hMainCtrl;
 		TCHAR buf[16];
-		::GetWindowText( hEdit, buf, sizeof(buf)/sizeof(TCHAR) );
-		const int i=_tcstol( buf, nullptr, features&PropGrid::Integer::HEXADECIMAL?16:10 );
+		const int nChars=::GetWindowText( hEdit, buf, sizeof(buf)/sizeof(TCHAR) );
+		static_assert( PropGrid::Integer::HEXADECIMAL==1, "PropGrid::Integer::HEXADECIMAL==1" );
+		const int i=_tcstol( buf, nullptr, 10+6*(features&PropGrid::Integer::HEXADECIMAL) );
 		const bool outOfRange=	features&PropGrid::Integer::HEXADECIMAL
-								? (UINT)i<(UINT)limits.iMin || (UINT)i>(UINT)limits.iMax
-								: i<limits.iMin || i>limits.iMax;
+								? nChars>sizeof(int)*2 || !limits.ContainsUnsigned(i)
+								: nChars>11 || !limits.Contains(i); // "11" as in "-1234567890"
 		if (outOfRange){
-			TCHAR buf[80];
-			::wsprintf( buf, _T("Number must be between %d and %d."), limits );
+			TCHAR buf[80], strHexaMin[16], strHexaMax[16];
+			::wsprintf( buf, _T("0x%%0%dX"), ::lstrlen(_itot(limits.iMin|limits.iMax,strHexaMax,16)) );
+			::wsprintf( strHexaMin, buf, limits.iMin );
+			::wsprintf( strHexaMax, buf, limits.iMax );
+			::wsprintf( buf, _T("Number must be between %d (%s) and %d (%s)."), limits.iMin, strHexaMin, limits.iMax, strHexaMax );
 			::MessageBox( hEdit, buf, nullptr, MB_OK|MB_ICONEXCLAMATION );
 			return false;
 		}
@@ -83,15 +87,15 @@
 						const TCHAR nondigit=*t;
 						::GlobalUnlock(h);
 						::CloseClipboard();
-						// . preventing to paste non-number content
+						// . preventing from pasting non-number content
 						if (nondigit)
 							return 0;
-						// . preventing to paste an out-of-range number
+						// . preventing from pasting an out-of-range number
 						if (features&PropGrid::Integer::HEXADECIMAL){
-							if ((UINT)i<(UINT)limits.iMin || (UINT)i>(UINT)limits.iMax)
+							if (!limits.ContainsUnsigned(i))
 								return 0;
 						}else
-							if (i<limits.iMin || i>limits.iMax)
+							if (!limits.Contains(i))
 								return 0;
 					}
 				break;
@@ -115,6 +119,16 @@
 	const PropGrid::Integer::TUpDownLimits PropGrid::Integer::TUpDownLimits::NonNegativeInteger={ 0, INT_MAX };
 	const PropGrid::Integer::TUpDownLimits PropGrid::Integer::TUpDownLimits::NegativeInteger={ INT_MIN, -1 };
 	const PropGrid::Integer::TUpDownLimits PropGrid::Integer::TUpDownLimits::Percent={ 0, 100 };
+
+	bool PropGrid::Integer::TUpDownLimits::Contains(int value) const{
+		// True <=> this range contains the Value (inclusive), otherwise False
+		return	iMin<=value && value<=iMax;
+	}
+
+	bool PropGrid::Integer::TUpDownLimits::ContainsUnsigned(UINT value) const{
+		// True <=> this range contains the Value (inclusive), otherwise False
+		return	(UINT)iMin<=value && value<=(UINT)iMax;
+	}
 
 	PropGrid::PCEditor PropGrid::Integer::DefineEditor(TSize nValueBytes,RCUpDownLimits rLimits,TOnValueConfirmed onValueConfirmed,BYTE features,TOnValueChanged onValueChanged){
 		// creates and returns an Editor with specified parameters

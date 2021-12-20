@@ -90,6 +90,9 @@
 				static const TUpDownLimits Percent; // 0..100
 
 				int iMin,iMax;
+
+				bool Contains(int value) const;
+				bool ContainsUnsigned(UINT value) const;
 			} &RCUpDownLimits;
 			enum TFeatures:BYTE{
 				NONE		=0,
