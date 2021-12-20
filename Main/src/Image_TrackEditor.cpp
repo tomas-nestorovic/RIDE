@@ -1337,7 +1337,7 @@
 							if (const Utils::CSingleNumberDialog &&d=Utils::CSingleNumberDialog(
 									_T("Inspection evaluation"),
 									_T("Window bad if '1' off center more than [%]:"),
-									PropGrid::Integer::TUpDownLimits::Percent, iwInfo.oneOkPercent, this
+									PropGrid::Integer::TUpDownLimits::Percent, iwInfo.oneOkPercent, false, this
 								)
 							)
 								if (iwInfo.oneOkPercent!=d.Value || !timeEditor.GetInspectionWindows()){

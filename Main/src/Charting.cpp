@@ -417,7 +417,7 @@
 						chartView.SetPercentile(9985);
 						return TRUE;
 					case ID_NUMBER:
-						if (const Utils::CSingleNumberDialog &&d=Utils::CSingleNumberDialog( _T("Set"), _T("Percentile"), PropGrid::Integer::TUpDownLimits::Percent, chartView.GetPercentile()/100, this ))
+						if (const Utils::CSingleNumberDialog &&d=Utils::CSingleNumberDialog( _T("Set"), _T("Percentile"), PropGrid::Integer::TUpDownLimits::Percent, chartView.GetPercentile()/100, false, this ))
 							chartView.SetPercentile(d.Value*100);
 						return TRUE;
 					case IDCANCEL:

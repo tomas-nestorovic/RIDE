@@ -952,7 +952,7 @@
 						if (const Utils::CSingleNumberDialog &&d=Utils::CSingleNumberDialog(
 								_T("Rebase"),
 								_T("New base (0=default)"),
-								PropGrid::Integer::TUpDownLimits::Word, orgAddress, this
+								PropGrid::Integer::TUpDownLimits::Word, orgAddress, numberFormat!=TNumberFormat::Decadic, this
 							)
 						){
 							orgAddress=d.Value;

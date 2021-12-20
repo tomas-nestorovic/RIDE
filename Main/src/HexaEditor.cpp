@@ -1173,7 +1173,7 @@ resetSelectionWithValue:BYTE buf[65535];
 					case ID_NAVIGATE_ADDRESS:{
 						// navigating to an address input by the user
 						const PropGrid::Integer::TUpDownLimits addrRange={ 0, F->GetLength() };
-						if (const Utils::CSingleNumberDialog &&d=Utils::CSingleNumberDialog( _T("Go to"), _T("Address"), addrRange, caret.position, this )){
+						if (const Utils::CSingleNumberDialog &&d=Utils::CSingleNumberDialog( _T("Go to"), _T("Address"), addrRange, caret.position, true, this )){
 							caret.position=d.Value;
 							goto caretCorrectlyMoveTo;
 						}else

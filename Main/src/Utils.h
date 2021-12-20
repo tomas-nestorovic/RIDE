@@ -236,13 +236,16 @@ namespace Utils{
 	class CSingleNumberDialog sealed:public CRideDialog{
 		const LPCTSTR caption,label;
 		const PropGrid::Integer::TUpDownLimits &range;
+		int hexa;
 	protected:
+		bool GetCurrentValue(int &outValue) const;
 		void PreInitDialog() override;
 		void DoDataExchange(CDataExchange *pDX) override;
+		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 	public:
 		int Value;
 
-		CSingleNumberDialog(LPCTSTR caption,LPCTSTR label,const PropGrid::Integer::TUpDownLimits &range,int initValue,CWnd *pParent);
+		CSingleNumberDialog(LPCTSTR caption,LPCTSTR label,const PropGrid::Integer::TUpDownLimits &range,int initValue,bool hexa,CWnd *pParent);
 
 		operator bool() const;
 	};

@@ -1348,10 +1348,10 @@ namespace Utils{
 
 
 
-	CSingleNumberDialog::CSingleNumberDialog(LPCTSTR caption,LPCTSTR label,const PropGrid::Integer::TUpDownLimits &range,int initValue,CWnd *pParent)
+	CSingleNumberDialog::CSingleNumberDialog(LPCTSTR caption,LPCTSTR label,const PropGrid::Integer::TUpDownLimits &range,int initValue,bool hexa,CWnd *pParent)
 		// ctor
 		: CRideDialog( IDR_SINGLE_NUMBER, pParent )
-		, caption(caption) , label(label) , range(range)
+		, caption(caption) , label(label) , range(range) , hexa(hexa*BST_CHECKED)
 		, Value(initValue) {
 	}
 
@@ -1359,20 +1359,80 @@ namespace Utils{
 		// dialog initialization
 		__super::PreInitDialog();
 		SetWindowText(caption);
+		if (!EnableDlgItem( ID_FORMAT, (range.iMin|range.iMax)>=0 ))
+			CheckDlgButton( ID_FORMAT, BST_UNCHECKED );
+		TCHAR buf[200], strMin[16], strMax[16];
+		if (hexa!=BST_UNCHECKED){
+			TCHAR format[16];
+			::wsprintf( format, _T("0x%%0%dX"), ::lstrlen(_itot(range.iMin|range.iMax,strMax,16)) );
+			::wsprintf( strMin, format, range.iMin );
+			::wsprintf( strMax, format, range.iMax );
+		}else{
+			_itot( range.iMin, strMin, 10 );
+			_itot( range.iMax, strMax, 10 );
+		}
 		const int nLabelChars=::lstrlen(label);
-		TCHAR buf[200];
 		if (label[nLabelChars-1]==')'){ // Label finishes with text enclosed in brackets
-			::wsprintf( ::lstrcpy(buf,label)+nLabelChars-1, _T("; %d - %d):"), range.iMin, range.iMax );
+			::wsprintf( ::lstrcpy(buf,label)+nLabelChars-1, _T("; %s - %s):"), strMin, strMax );
 		}else
-			::wsprintf( buf, _T("%s (%d - %d):"), label, range.iMin, range.iMax );
+			::wsprintf( buf, _T("%s (%s - %s):"), label, strMin, strMax );
 		SetDlgItemText( ID_INFORMATION, buf );
+	}
+
+	bool CSingleNumberDialog::GetCurrentValue(int &outValue) const{
+		// True <=> input value successfully parsed, otherwise False
+		TCHAR buf[16], *p=buf;
+		auto nChars=GetDlgItemText( ID_NUMBER, buf, sizeof(buf)/sizeof(TCHAR) );
+		if (hexa!=BST_UNCHECKED){
+			if (nChars>2 && *buf=='0' && buf[1]=='x')
+				p+=2, nChars-=2;
+			else if (nChars>1 && (*buf=='$'||*buf=='#'||*buf=='%'))
+				p++, nChars--;
+			if (nChars>sizeof(Value)*2)
+				return false;
+			return	_stscanf( ::CharLower(p), _T("%x"), &outValue )>0;
+		}else{
+			if (nChars>11) // e.g. "-1234567890"
+				return false;
+			return	_stscanf( p, _T("%d"), &outValue )>0;
+		}
 	}
 
 	void CSingleNumberDialog::DoDataExchange(CDataExchange *pDX){
 		// exchange of data from and to controls
 		__super::DoDataExchange(pDX);
-		DDX_Text( pDX, ID_NUMBER, Value );
-			DDV_MinMaxInt( pDX, Value, range.iMin, range.iMax );
+		const HWND hValue=GetDlgItemHwnd(ID_NUMBER);
+		if (pDX->m_bSaveAndValidate){
+			pDX->m_hWndLastControl=hValue;
+			int v;
+			if (!GetCurrentValue(v))
+				pDX->Fail();
+			DDV_MinMaxInt( pDX, v, range.iMin, range.iMax );
+			Value=v;
+		}else
+			if (hexa!=BST_UNCHECKED){
+				::SetWindowLong( hValue, GWL_STYLE, ::GetWindowLong(hValue,GWL_STYLE)&~ES_NUMBER );
+				TCHAR buf[16];
+				::wsprintf( buf, _T("0x%X"), Value );
+				SetDlgItemText( ID_NUMBER, buf );
+			}else{
+				::SetWindowLong( hValue, GWL_STYLE, ::GetWindowLong(hValue,GWL_STYLE)|ES_NUMBER );
+				DDX_Text( pDX, ID_NUMBER, Value );
+			}
+		DDX_Check( pDX, ID_FORMAT, hexa );
+	}
+
+	LRESULT CSingleNumberDialog::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
+		// window procedure
+		if (msg==WM_COMMAND && wParam==MAKELONG(ID_FORMAT,BN_CLICKED)){
+			int v;
+			if (GetCurrentValue(v) && range.Contains(v))
+				Value=v;
+			hexa=IsDlgButtonChecked(ID_FORMAT);
+			PreInitDialog();
+			DoDataExchange( &CDataExchange(this,FALSE) );
+		}
+		return __super::WindowProc(msg,wParam,lParam);
 	}
 
 	CSingleNumberDialog::operator bool() const{
