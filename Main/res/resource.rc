@@ -815,6 +815,8 @@ BEGIN
     BEGIN
         MENUITEM "Show pixels\tP",              ID_DATA, CHECKED
         MENUITEM "Show attributes\tA",          ID_ATTRIBUTE, CHECKED
+        MENUITEM SEPARATOR
+        MENUITEM "Zoom 100%",                   ID_ZOOM_FIT
     END
 END
 

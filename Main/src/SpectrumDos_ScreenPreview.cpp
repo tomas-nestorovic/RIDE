@@ -107,7 +107,6 @@
 		, showPixels(true) , showAttributes(true)
 		, paperFlash(false) {
 		pSingleInstance=this;
-		m_bAutoMenuEnable=FALSE; // we are not set up for that
 		// - creating the Device Independent Bitmap (DIB)
 		dib.bmi.bmiHeader.biSize=sizeof(dib.bmi);
 		dib.bmi.bmiHeader.biWidth=SCREEN_WIDTH, dib.bmi.bmiHeader.biHeight=SCREEN_HEIGHT;

@@ -277,8 +277,8 @@
 			void __showNextFile__();
 			void __showPreviousFile__();
 			virtual void RefreshPreview()=0;
+			void SetInitialClientSize(BYTE scale);
 			BOOL PreCreateWindow(CREATESTRUCT &cs) override;
-			BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 		public:
 			const CFileManagerView &rFileManager;

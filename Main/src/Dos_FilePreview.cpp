@@ -16,6 +16,7 @@
 		, initialClientHeight( keepAspectRatio?initialClientHeight:-initialClientHeight )
 		, directory(DOS->currentDir)
 		, pdt( DOS->BeginDirectoryTraversal(DOS->currentDir) ) {
+		m_bAutoMenuEnable=FALSE; // we are not set up for that
 		// - creating the Preview FrameWindow
 		Create(	nullptr, nullptr,
 				WS_CAPTION|WS_SYSMENU|WS_THICKFRAME|WS_VISIBLE,
@@ -33,11 +34,8 @@
 							SWP_NOZORDER
 						);
 			ShowWindow(windowState); // minimized/maximized/normal
-		}else{
-			RECT r={ 0, 0, initialClientWidth*scaleFactor, initialClientHeight*scaleFactor };
-			::AdjustWindowRect( &r, ::GetWindowLong(m_hWnd,GWL_STYLE), ::GetMenu(m_hWnd)!=nullptr );
-			SetWindowPos( nullptr, 0,0, r.right-r.left,r.bottom-r.top, SWP_NOZORDER );
-		}
+		}else
+			SetInitialClientSize(1);
 		// - if some menu exists, extending it with default items
 		if (const CMenu *const pMenu=GetMenu())
 			if (CMenu *const pSubmenu=pMenu->GetSubMenu(0)){
@@ -120,42 +118,18 @@
 		RefreshPreview();
 	}
 
+	void CDos::CFilePreview::SetInitialClientSize(BYTE scale){
+		// sets client size to initial width and height, applying specified Scale
+		CRect r( 0, 0, std::abs(initialClientWidth)*scale*Utils::LogicalUnitScaleFactor, std::abs(initialClientHeight)*scale*Utils::LogicalUnitScaleFactor );
+		::AdjustWindowRect( &r, ::GetWindowLong(m_hWnd,GWL_STYLE), ::GetMenu(m_hWnd)!=nullptr );
+		SetWindowPos( nullptr, 0,0, r.Width(),r.Height(), SWP_NOZORDER|SWP_NOMOVE );
+	}
+
 	BOOL CDos::CFilePreview::PreCreateWindow(CREATESTRUCT &cs){
 		// adjusting the instantiation
 		if (!__super::PreCreateWindow(cs)) return FALSE;
 		cs.dwExStyle&=~WS_EX_CLIENTEDGE;
 		return TRUE;
-	}
-
-	BOOL CDos::CFilePreview::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){
-		// command processing
-		switch (nCode){
-			case CN_UPDATE_COMMAND_UI:
-				// update
-				switch (nID){
-					case ID_NEXT:
-					case ID_PREV:
-					case IDCLOSE:
-						((CCmdUI *)pExtra)->Enable(TRUE);
-						return TRUE;
-				}
-				break;
-			case CN_COMMAND:
-				// command
-				switch (nID){
-					case ID_NEXT:
-						__showNextFile__();
-						return TRUE;
-					case ID_PREV:
-						__showPreviousFile__();
-						return TRUE;
-					case IDCLOSE:
-						DestroyWindow();
-						return TRUE;
-				}
-				break;
-		}
-		return __super::OnCmdMsg(nID,nCode,pExtra,pHandlerInfo);
 	}
 
 	LRESULT CDos::CFilePreview::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
@@ -211,24 +185,39 @@
 				// mouse wheel was rotated
 				wParam = (short)HIWORD(wParam)>0 ? VK_LEFT : VK_RIGHT; // navigating to the next/previous File
 				//fallthrough
+			case WM_COMMAND:
+				// command processing
+				switch (LOWORD(wParam)){
+					case ID_ZOOM_FIT:
+						// resetting zoom
+						SetInitialClientSize(1);
+						return 0;
+					case ID_NEXT:
+						__showNextFile__();
+						return 0;
+					case ID_PREV:
+						__showPreviousFile__();
+						return 0;
+					case IDCLOSE:
+						DestroyWindow();
+						return 0;
+				}
+				break;
 			case WM_KEYDOWN:
 				// character
 				switch (wParam){
 					case VK_ESCAPE:
 						// closing the Preview
-						DestroyWindow();
-						return 0;
+						return SendMessage( WM_COMMAND, IDCLOSE );
 					case VK_SPACE:
 					case VK_RIGHT:
 					case VK_NEXT: // page down
 						// next File
-						__showNextFile__();
-						break;
+						return SendMessage( WM_COMMAND, ID_NEXT );
 					case VK_LEFT:
 					case VK_PRIOR: // page up
 						// previous File
-						__showPreviousFile__();
-						break;
+						return SendMessage( WM_COMMAND, ID_PREV );
 				}
 				break;
 			case WM_NCDESTROY:{
