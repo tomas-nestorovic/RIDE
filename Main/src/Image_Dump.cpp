@@ -28,7 +28,7 @@
 		const struct TSourceTrackErrors sealed{
 			TCylinder cyl;
 			THead head;
-			bool hasNonformattedArea, hasDataInGaps, hasFuzzyData;
+			bool hasNonformattedArea, hasDataInGaps, hasFuzzyData, hasDuplicatedIdFields, isEmpty;
 			const TSourceTrackErrors *pNextErroneousTrack;
 			TSector nErroneousSectors;
 			TSourceSectorError erroneousSectors[1];
@@ -90,6 +90,8 @@
 								nWarnings+=pErroneousTrack->hasNonformattedArea;
 								nWarnings+=pErroneousTrack->hasDataInGaps;
 								nWarnings+=pErroneousTrack->hasFuzzyData;
+								nWarnings+=pErroneousTrack->hasDuplicatedIdFields;
+								nWarnings+=pErroneousTrack->isEmpty;
 							}
 							Utils::WriteToFile(fHtml,_T("<tr><td>Warning</td><td align=right>"));
 								Utils::WriteToFile(fHtml,nWarnings);
@@ -135,14 +137,18 @@
 												Utils::WriteToFile(fHtml,_T("."));
 											Utils::WriteToFile(fHtml,_T("</li>"));
 										}
-									else
+									else if (!pErroneousTrack->isEmpty)
 										Utils::WriteToFile(fHtml,_T("<li>All sectors ok.</li>"));
+									else
+										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: No recognized sectors.</li>"));
 									if (pErroneousTrack->hasNonformattedArea)
 										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: Significant non-formatted area.</li>"));
 									if (pErroneousTrack->hasDataInGaps)
 										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: Suspected data in gap.</li>"));
 									if (pErroneousTrack->hasFuzzyData)
 										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: Always bad fuzzy data.</li>"));
+									if (pErroneousTrack->hasDuplicatedIdFields)
+										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: Duplicated ID fields.</li>"));
 								Utils::WriteToFile(fHtml,_T("</ul></td></tr>"));
 							}
 						Utils::WriteToFile(fHtml,_T("</table>"));
@@ -208,7 +214,7 @@
 				const CImage::CTrackReader &tr= targetSupportsTrackWriting ? trSrc : CImage::CTrackReaderWriter::Invalid;
 				p.trackWriteable= tr && (sourceCodec&dp.targetCodecs)!=0; // A&B, A = Source and Target must support whole Track access, B = Source and Target must support at least one common Codec
 				// . if possible, analyzing the read Source Track
-				bool hasNonformattedArea=false, hasDataInGaps=false, hasFuzzyData=false;
+				bool hasNonformattedArea=false, hasDataInGaps=false, hasFuzzyData=false, hasDuplicatedIdFields=false;
 				if (trSrc && dp.fullTrackAnalysis){
 					TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; CImage::CTrackReader::TProfile idProfiles[Revolution::MAX*(TSector)-1]; TFdcStatus idStatuses[Revolution::MAX*(TSector)-1];
 					CImage::CTrackReader::CParseEventList peTrack;
@@ -217,6 +223,14 @@
 					hasDataInGaps=peTrack.Contains( CImage::CTrackReader::TParseEvent::DATA_IN_GAP );
 					hasFuzzyData=peTrack.Contains( CImage::CTrackReader::TParseEvent::FUZZY_BAD );
 				}
+				for( TSector i=0; i<nSectors; i++ ){
+					BYTE nReappearances=0;
+					const TSectorId &id=bufferId[i];
+					for( BYTE j=i; ++j<nSectors; nReappearances+=bufferId[j]==id );
+					if ( hasDuplicatedIdFields=nReappearances>0 )
+						break;
+				}
+				const bool isEmpty=!nSectors;
 				// . reading individual Sectors
 				#pragma pack(1)
 				struct{
@@ -598,12 +612,14 @@ terminateWithError:		return LOG_ERROR(pAction->TerminateWithError(err));
 				}
 				// . registering Track with ErroneousSectors
 //Utils::Information("registering Track with ErroneousSectors");
-				if (hasNonformattedArea || hasDataInGaps || hasFuzzyData || erroneousSectors.n){
+				if (hasNonformattedArea || hasDataInGaps || hasFuzzyData || hasDuplicatedIdFields || isEmpty || erroneousSectors.n){
 					TDumpParams::TSourceTrackErrors *psse=(TDumpParams::TSourceTrackErrors *)::malloc(sizeof(TDumpParams::TSourceTrackErrors)+std::max(0,erroneousSectors.n-1)*sizeof(TDumpParams::TSourceSectorError));
 						psse->cyl=p.chs.cylinder, psse->head=p.chs.head;
 						psse->hasNonformattedArea=hasNonformattedArea;
 						psse->hasDataInGaps=hasDataInGaps;
 						psse->hasFuzzyData=hasFuzzyData;
+						psse->hasDuplicatedIdFields=hasDuplicatedIdFields;
+						psse->isEmpty=isEmpty;
 						psse->pNextErroneousTrack=nullptr;
 						::memcpy( psse->erroneousSectors, erroneousSectors.buffer, ( psse->nErroneousSectors=erroneousSectors.n )*sizeof(TDumpParams::TSourceSectorError) );
 					*ppSrcTrackErrors=psse, ppSrcTrackErrors=&psse->pNextErroneousTrack;
