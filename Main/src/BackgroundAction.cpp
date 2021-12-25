@@ -159,7 +159,7 @@
 
 	BOOL CBackgroundActionCancelable::OnInitDialog(){
 		// dialog initialization
-		if (SUCCEEDED(::CoCreateInstance( CLSID_TaskbarList, nullptr, CLSCTX_INPROC_SERVER, IID_ITaskbarList3, (LPVOID *)&pActionTaskbarList )))
+		if (SUCCEEDED(::CoCreateInstance( CLSID_TaskbarList, nullptr, CLSCTX_INPROC_SERVER, __uuidof(pActionTaskbarList), (LPVOID *)&pActionTaskbarList )))
 			pActionTaskbarList->HrInit();
 		::PostMessage( m_hWnd, WM_COMMAND, IDCONTINUE, 0 ); // launching the Worker
 		pSingleInstance=this;
