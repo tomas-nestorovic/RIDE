@@ -604,13 +604,14 @@
 		tr.SetCurrentTimeAndProfile( tFrom, profileFrom );
 		while (tr && tr.GetCurrentTime()<tTo)
 			tr.ReadBit(), nBits++;
-		pBits=(TBit *)::calloc( nBits, sizeof(TBit) );
+		pBits=(TBit *)::calloc( nBits+1, sizeof(TBit) ); // "+1" = auxiliary terminal Bit
 		tr.SetCurrentTimeAndProfile( tFrom, profileFrom );
 		for( DWORD i=0; i<nBits; ){
 			TBit &r=pBits[i++];
 				r.time=tr.GetCurrentTime();
 				r.value=tr.ReadBit();
 		}
+		pBits[nBits].time=tr.GetCurrentTime(); // auxiliary terminal Bit
 	}
 
 	CImage::CTrackReader::CBitSequence::CBitSequence(const CBitSequence &r)
