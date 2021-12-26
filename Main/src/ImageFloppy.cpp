@@ -367,23 +367,23 @@
 						for( BYTE t=0; t<scannedTracks.n; trackHexaInfos[t++].Update(*this) );
 					}
 					// . returning the result
-					BYTE track=scannedTracks.n;
-					do{
-						while (trackHexaInfos[--track].nRowsAtLogicalPosition>row);
-						WORD lengths[FDD_SECTORS_MAX];
-						if (TSector nSectors=__scanTrack__( track, nullptr, lengths )){
-							// found an non-empty Track - guaranteed to contain the requested Row
-							int logPos=trackHexaInfos[track+1].logicalPosition;
-							int nRows=trackHexaInfos[track+1].nRowsAtLogicalPosition;
-							do{
-								const WORD length=lengths[--nSectors];
-								logPos-=length;
-								nRows-=(length+nBytesInRow-1)/nBytesInRow;
-							}while (nRows>row);
-							return logPos + (row-nRows)*nBytesInRow;
-						}//else
-							// empty Track - skipping it
-					}while (true);
+					if (BYTE track=scannedTracks.n)
+						do{
+							while (trackHexaInfos[--track].nRowsAtLogicalPosition>row);
+							WORD lengths[FDD_SECTORS_MAX];
+							if (TSector nSectors=__scanTrack__( track, nullptr, lengths )){
+								// found an non-empty Track - guaranteed to contain the requested Row
+								int logPos=trackHexaInfos[track+1].logicalPosition;
+								int nRows=trackHexaInfos[track+1].nRowsAtLogicalPosition;
+								do{
+									const WORD length=lengths[--nSectors];
+									logPos-=length;
+									nRows-=(length+nBytesInRow-1)/nBytesInRow;
+								}while (nRows>row);
+								return logPos + (row-nRows)*nBytesInRow;
+							}//else
+								// empty Track - skipping it
+						}while (true);
 				}
 				return 0;
 			}

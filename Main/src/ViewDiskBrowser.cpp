@@ -350,10 +350,10 @@
 		// window destroyed
 		// - saving Scroll position for later
 		iScrollY=GetScrollPos(SB_VERT);
-		// - disposing the underlying File
-		f.reset();
 		// - base
 		__super::OnDestroy();
+		// - disposing the underlying File
+		//f.reset();
 	}
 
 	afx_msg void CDiskBrowserView::ToggleWriteProtection(){
