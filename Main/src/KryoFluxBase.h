@@ -20,6 +20,7 @@
 				ONCE_PER_CYLINDER	=1,
 				FOR_EACH_SECTOR		=2
 			} mutable calibrationAfterError;
+			bool calibrationAfterErrorOnlyForKnownSectors;
 			BYTE calibrationStepDuringFormatting;
 			TCorrections corrections;
 			bool verifyWrittenTracks;

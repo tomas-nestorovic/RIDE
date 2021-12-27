@@ -1747,13 +1747,13 @@ BEGIN
     LTEXT           "Error",ID_ERROR,15,73,47,15,WS_BORDER | NOT WS_GROUP
 END
 
-IDR_KRYOFLUX_ACCESS DIALOG DISCARDABLE  0, 0, 225, 247
+IDR_KRYOFLUX_ACCESS DIALOG DISCARDABLE  0, 0, 225, 256
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
 CAPTION "KryoFlux access options"
 FONT 8, "MS Sans Serif"
 BEGIN
-    DEFPUSHBUTTON   "OK",IDOK,115,226,50,14
-    PUSHBUTTON      "Cancel",IDCANCEL,168,226,50,14
+    DEFPUSHBUTTON   "OK",IDOK,115,235,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,168,235,50,14
     LTEXT           "Firmware:",IDC_STATIC,7,8,31,8,NOT WS_GROUP
     LTEXT           "Static",ID_SYSTEM,71,8,147,8,NOT WS_GROUP
     LTEXT           "&Precision:",IDC_STATIC,7,24,32,8
@@ -1782,20 +1782,22 @@ BEGIN
                     BS_AUTORADIOBUTTON,71,135,71,10
     CONTROL         "For each &sector",ID_SECTOR,"Button",BS_AUTORADIOBUTTON,
                     71,146,65,10
+    CONTROL         "Only known sectors",ID_READABLE,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,71,157,78,10
     CONTROL         "Never",ID_ZERO,"Button",BS_AUTORADIOBUTTON | WS_GROUP,
-                    71,162,74,10
-    CONTROL         "&Each",ID_CYLINDER_N,"Button",BS_AUTORADIOBUTTON,71,173,
+                    71,172,78,10
+    CONTROL         "&Each",ID_CYLINDER_N,"Button",BS_AUTORADIOBUTTON,71,183,
                     31,10
-    EDITTEXT        ID_NUMBER,103,174,16,12,ES_RIGHT | ES_AUTOHSCROLL | 
+    EDITTEXT        ID_NUMBER,103,184,16,12,ES_RIGHT | ES_AUTOHSCROLL | 
                     ES_NUMBER | WS_DISABLED | NOT WS_BORDER
-    LTEXT           "-th cyl.",IDC_STATIC,119,174,22,8,NOT WS_GROUP
+    LTEXT           "-th cyl.",IDC_STATIC,119,184,22,8,NOT WS_GROUP
     CONTROL         "&Verify formatted/written tracks (recommended)",
                     ID_VERIFY_TRACK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
-                    201,211,10
+                    211,211,10
     CONTROL         "Use jitter and other &corrections",ID_TRACK,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,190,112,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,200,112,10
     CONTROL         "(<a id=""correction"">Settings</a>)",ID_TIME,"SysLink",
-                    WS_TABSTOP,119,191,49,10
+                    WS_TABSTOP,119,201,49,10
 END
 
 IDR_CAPS DIALOGEX 0, 0, 186, 127
@@ -2187,7 +2189,7 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 218
         TOPMARGIN, 7
-        BOTTOMMARGIN, 240
+        BOTTOMMARGIN, 249
     END
 
     IDR_CAPS, DIALOG

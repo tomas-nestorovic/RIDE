@@ -27,6 +27,7 @@
 	#define INI_FLUX_DECODER_RESET		_T("drst")
 	#define INI_PRECISION				_T("prec")
 	#define INI_CALIBRATE_SECTOR_ERROR	_T("clberr")
+	#define INI_CALIBRATE_SECTOR_ERROR_KNOWN _T("clbknw")
 	#define INI_CALIBRATE_FORMATTING	_T("clbfmt")
 	#define INI_VERIFY_WRITTEN_TRACKS	_T("vwt")
 
@@ -39,6 +40,7 @@
 		, fluxDecoder( (TFluxDecoder)app.GetProfileInt(INI_KRYOFLUX,INI_FLUX_DECODER,TFluxDecoder::KEIR_FRASER) )
 		, resetFluxDecoderOnIndex( (TFluxDecoder)app.GetProfileInt(INI_KRYOFLUX,INI_FLUX_DECODER_RESET,true)!=0 )
 		, calibrationAfterError( (TCalibrationAfterError)app.GetProfileInt(INI_KRYOFLUX,INI_CALIBRATE_SECTOR_ERROR,TCalibrationAfterError::ONCE_PER_CYLINDER) )
+		, calibrationAfterErrorOnlyForKnownSectors( app.GetProfileInt(INI_KRYOFLUX,INI_CALIBRATE_SECTOR_ERROR_KNOWN,0)!=0 )
 		, calibrationStepDuringFormatting( app.GetProfileInt(INI_KRYOFLUX,INI_CALIBRATE_FORMATTING,0) )
 		, corrections( INI_KRYOFLUX )
 		, verifyWrittenTracks( app.GetProfileInt(INI_KRYOFLUX,INI_VERIFY_WRITTEN_TRACKS,true)!=0 )
@@ -55,6 +57,7 @@
 		app.WriteProfileInt( INI_KRYOFLUX, INI_FLUX_DECODER, fluxDecoder );
 		app.WriteProfileInt( INI_KRYOFLUX, INI_FLUX_DECODER_RESET, resetFluxDecoderOnIndex );
 		app.WriteProfileInt( INI_KRYOFLUX, INI_CALIBRATE_SECTOR_ERROR, calibrationAfterError );
+		app.WriteProfileInt( INI_KRYOFLUX, INI_CALIBRATE_SECTOR_ERROR_KNOWN, calibrationAfterErrorOnlyForKnownSectors );
 		app.WriteProfileInt( INI_KRYOFLUX, INI_CALIBRATE_FORMATTING, calibrationStepDuringFormatting );
 		corrections.Save( INI_KRYOFLUX );
 		app.WriteProfileInt( INI_KRYOFLUX, INI_VERIFY_WRITTEN_TRACKS, verifyWrittenTracks );
@@ -172,6 +175,7 @@
 				// . some settings are changeable only during InitialEditing
 				static constexpr WORD InitialSettingIds[]={ ID_ROTATION, ID_ACCURACY, ID_DEFAULT1, ID_TRACK, ID_TIME, 0 };
 				EnableDlgItems( InitialSettingIds, initialEditing );
+				EnableDlgItem( ID_READABLE, params.calibrationAfterError!=TParams::TCalibrationAfterError::NONE );
 				// . displaying inserted Medium information
 				SetDlgItemSingleCharUsingFont( // a warning that a 40-track disk might have been misrecognized
 					ID_INFORMATION,
@@ -201,6 +205,9 @@
 				tmp=params.calibrationAfterError;
 				DDX_Radio( pDX,	ID_NONE,		tmp );
 				params.calibrationAfterError=(TParams::TCalibrationAfterError)tmp;
+				tmp=params.calibrationAfterErrorOnlyForKnownSectors;
+				DDX_Check( pDX, ID_READABLE,	tmp );
+				params.calibrationAfterErrorOnlyForKnownSectors=tmp!=0;
 				// . CalibrationStepDuringFormatting
 				EnableDlgItem( ID_NUMBER, tmp=params.calibrationStepDuringFormatting!=0 );
 				DDX_Radio( pDX,	ID_ZERO,		tmp );
@@ -226,7 +233,7 @@
 					case WM_PAINT:
 						// drawing
 						__super::OnPaint();
-						WrapDlgItemsByClosingCurlyBracketWithText( ID_NONE, ID_SECTOR, _T("if error encountered"), 0 );
+						WrapDlgItemsByClosingCurlyBracketWithText( ID_NONE, ID_READABLE, _T("on read error"), 0 );
 						WrapDlgItemsByClosingCurlyBracketWithText( ID_ZERO, ID_CYLINDER_N, _T("when writing"), 0 );
 						return 0;
 					case WM_COMMAND:
@@ -254,6 +261,12 @@
 								ShowDlgItem( ID_INFORMATION, false ); // user manually revised the Track distance, so no need to continue display the warning
 								break;
 							}
+							case ID_NONE:
+							case ID_CYLINDER:
+							case ID_SECTOR:
+								// adjusting possibility to edit controls that depend on CalibrationAfterError
+								EnableDlgItem( ID_READABLE, wParam!=ID_NONE );
+								break;
 							case ID_ZERO:
 							case ID_CYLINDER_N:
 								// adjusting possibility to edit the CalibrationStep according to selected option

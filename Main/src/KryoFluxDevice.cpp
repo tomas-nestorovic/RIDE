@@ -857,12 +857,27 @@
 				break;
 			// . attempting to return good data
 			if (rit){ // may be Null if, e.g., device manually reset, disconnected, etc.
-				if (IsTrackHealthy(cyl,head) || !rit->nSectors) // Track explicitly healthy or without Sectors
+				if (IsTrackHealthy(cyl,head) || !rit->nSectors // Track explicitly healthy or without Sectors
+					||
+					params.calibrationAfterError==TParams::TCalibrationAfterError::NONE // calibration disabled
+				)
 					return rit->nSectors;
-				switch (params.calibrationAfterError){
-					case TParams::TCalibrationAfterError::NONE:
-						// calibration disabled
+				if (params.calibrationAfterErrorOnlyForKnownSectors && dos && dos->properties!=&CUnknownDos::Properties){
+					bool knownSectorBad=false; // the Track is unhealthy due to an irrelevant Unknown Sector (e.g. out of geometry)
+					for( TSector s=0; s<rit->nSectors; s++ ){
+						const TInternalSector &is=rit->sectors[s];
+						const TPhysicalAddress chs={ cyl, head, is.id };
+						if (dos->GetSectorStatus(chs)==CDos::TSectorStatus::UNKNOWN)
+							continue; // ignore Unknown Sector
+						WORD w; TFdcStatus st=TFdcStatus::WithoutError;
+						const_cast<CKryoFluxDevice *>(this)->GetSectorData( chs, s, Revolution::ANY_GOOD, &w, &st );
+						if ( knownSectorBad=!st.IsWithoutError() )
+							break;
+					}
+					if (!knownSectorBad)
 						return rit->nSectors;
+				}
+				switch (params.calibrationAfterError){
 					case TParams::TCalibrationAfterError::ONCE_PER_CYLINDER:
 						// calibrating only once for the whole Cylinder
 						nRecoveryTrials=0;
