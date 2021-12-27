@@ -639,6 +639,7 @@
 		virtual BYTE GetAvailableRevolutionCount() const;
 		virtual TStdWinError SeekHeadsHome();
 		virtual TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const=0;
+		virtual bool IsTrackScanned(TCylinder cyl,THead head) const=0;
 		virtual TLogTime EstimateNanosecondsPerOneByte() const;
 		TSector GetCountOfHealthySectors(TCylinder cyl,THead head) const;
 		bool IsTrackHealthy(TCylinder cyl,THead head) const;

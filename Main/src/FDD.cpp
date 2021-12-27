@@ -892,6 +892,12 @@ error:				switch (const TStdWinError err=::GetLastError()){
 			return 0;
 	}
 
+	bool CFDD::IsTrackScanned(TCylinder cyl,THead head) const{
+		// True <=> Track exists and has already been scanned, otherwise False
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		return	__getScannedTrack__(cyl,head)!=nullptr;
+	}
+
 	void CFDD::__setWaitingForIndex__() const{
 		// sets waiting for the index pulse before executing the next command
 		LOG_ACTION(_T("void CFDD::__setWaitingForIndex__"));

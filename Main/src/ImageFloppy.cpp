@@ -142,17 +142,17 @@
 					// . then, scanning the remaining Tracks (if not all yet scanned)
 					}else{
 						// : scanning the next remaining Track
-						scannedTracks.locker.Lock();
-							const BYTE nScannedTracks=scannedTracks.n;
-						scannedTracks.locker.Unlock(); 
-						ps->__scanTrack__( scannedTracks.n, nullptr, nullptr );
-				{		const Utils::CExclusivelyLocked<TScannedTracks> locker(scannedTracks); // don't block ScannedTracks for other threads while scanning
-						if (scannedTracks.n!=nScannedTracks) // ScannedTracks have changed while we didn't have them locked?
-							continue;
-						const int tmp = ps->trackHexaInfos[ scannedTracks.n++ ].Update(*ps);
-						ps->dataTotalLength = scannedTracks.dataTotalLength = tmp; // making sure the DataTotalLength is the last thing modified in the Locked section
-						scannedTracks.allScanned=scannedTracks.n==2*image->GetCylinderCount();
-				}		if (!ps->bChsValid)
+						do{
+							//const Utils::CExclusivelyLocked<TScannedTracks> locker(scannedTracks); // postponed until below for smoother operation; may thus work with outdated values in ScannedTracks but that's ok!
+							const bool hasTrackBeenScannedBefore=image->IsTrackScanned( scannedTracks.n>>1, scannedTracks.n&1 );
+							const int tmp = ps->trackHexaInfos[scannedTracks.n].Update(*ps); // calls CImage::ScanTrack
+							ps->dataTotalLength = scannedTracks.dataTotalLength = tmp; // making sure the DataTotalLength is the last thing modified in the Locked section
+							const Utils::CExclusivelyLocked<TScannedTracks> locker(scannedTracks);
+							scannedTracks.allScanned=++scannedTracks.n>=2*image->GetCylinderCount();
+							if (!hasTrackBeenScannedBefore)
+								break; // a single time-expensive access to real Device is enough, let other parts of the app have a crack on the Device
+						}while (!scannedTracks.allScanned);
+						if (!ps->bChsValid)
 							ps->Seek(0,SeekPosition::current); // initializing state of current Sector to read from or write to
 						// : the Serializer has changed its state - letting the related HexaEditor know of the change
 						//DEADLOCK: No need to have the ScannedTracks locked - the only place where the values can change is above, so what we read below IS in sync!
@@ -217,8 +217,9 @@
 				EXCLUSIVELY_LOCK_SCANNED_TRACKS();
 				for( BYTE t=0; t<image->scannedTracks.n; t++ ){
 					__scanTrack__( t, nullptr, nullptr );
-					trackHexaInfos[t].Update(*this);
+					dataTotalLength=trackHexaInfos[t].Update(*this);
 				}
+				image->scannedTracks.dataTotalLength=dataTotalLength;
 				// . launching the TrackWorker
 				request.track=-1;
 				//SetTrackScannerStatus( TScannerStatus::RUNNING ); // commented out as up to caller to launch the scanner
@@ -237,10 +238,12 @@
 			bool __getPhysicalAddress__(int logPos,PTrack pOutTrack,PBYTE pOutSectorIndexOnTrack,PWORD pOutSectorOffset) const{
 				// returns the ScannedTrack that contains the specified LogicalPosition
 				const auto &scannedTracks=GetFloppyImage().scannedTracks;
-				EXCLUSIVELY_LOCK_SCANNED_TRACKS(); // commented out for smoother operation; may thus work with outdated values in ScannedTracks but that's ok!
+				BYTE track;
+		{		EXCLUSIVELY_LOCK_SCANNED_TRACKS();
 				if (logPos<0 || logPos>=scannedTracks.dataTotalLength)
 					return false;
-				if (BYTE track=scannedTracks.n)
+				track=scannedTracks.n;
+		}		if (track)
 					do{
 						while (trackHexaInfos[--track].logicalPosition>logPos);
 						TSectorId ids[FDD_SECTORS_MAX]; WORD lengths[FDD_SECTORS_MAX];
@@ -290,10 +293,10 @@
 				// computes and returns the position of the first Byte of the Sector at the PhysicalAddress
 				const BYTE track=chs.cylinder*2+chs.head;
 				const auto &scannedTracks=GetFloppyImage().scannedTracks;
-				EXCLUSIVELY_LOCK_SCANNED_TRACKS(); // commented out for smoother operation; may thus work with outdated values in ScannedTracks but that's ok!
+		{		EXCLUSIVELY_LOCK_SCANNED_TRACKS();
 				if (track>=scannedTracks.n)
 					return scannedTracks.dataTotalLength;
-				DWORD result=trackHexaInfos[track].logicalPosition;
+		}		DWORD result=trackHexaInfos[track].logicalPosition;
 				TSectorId ids[FDD_SECTORS_MAX]; WORD lengths[FDD_SECTORS_MAX];
 				for( TSector s=0,const nSectors=__scanTrack__(track,ids,lengths); s<nSectors; result+=lengths[s++] )
 					if (nSectorsToSkip)
@@ -327,64 +330,65 @@
 				if (logPos<0)
 					return 0;
 				const auto &scannedTracks=GetFloppyImage().scannedTracks;
-				EXCLUSIVELY_LOCK_SCANNED_TRACKS(); // commented out for smoother operation; may thus work with outdated values in ScannedTracks but that's ok!
+		{		EXCLUSIVELY_LOCK_SCANNED_TRACKS();
 				if (logPos>=scannedTracks.dataTotalLength)
 					return trackHexaInfos[scannedTracks.n].nRowsAtLogicalPosition;
-				if (dataTotalLength){
-					// . updating the ScannedTrack structure if necessary
-					if (nBytesInRow!=lastKnownHexaRowLength){
-						lastKnownHexaRowLength=nBytesInRow;
-						for( BYTE t=0; t<scannedTracks.n; trackHexaInfos[t++].Update(*this) );
-					}
-					// . returning the result
-					TTrack track;
-					__getPhysicalAddress__(logPos,&track,nullptr,nullptr); // guaranteed to always succeed
-					int pos=trackHexaInfos[track+1].logicalPosition;
-					int nRows=trackHexaInfos[track+1].nRowsAtLogicalPosition;
-					WORD lengths[FDD_SECTORS_MAX];
-					TSector nSectors=__scanTrack__( track, nullptr, lengths );
-					do{
-						const WORD length=lengths[--nSectors];
-						pos-=length;
-						nRows-=(length+nBytesInRow-1)/nBytesInRow;
-					}while (pos>logPos);
-					return nRows + (logPos-pos)/nBytesInRow;
+				if (!dataTotalLength)
+					return 0;
+				// . updating the ScannedTrack structure if necessary
+				if (nBytesInRow!=lastKnownHexaRowLength){
+					lastKnownHexaRowLength=nBytesInRow;
+					for( BYTE t=0; t<scannedTracks.n; trackHexaInfos[t++].Update(*this) );
 				}
-				return 0;
+		}		// . returning the result
+				TTrack track;
+				__getPhysicalAddress__(logPos,&track,nullptr,nullptr); // guaranteed to always succeed
+				int pos=trackHexaInfos[track+1].logicalPosition;
+				int nRows=trackHexaInfos[track+1].nRowsAtLogicalPosition;
+				WORD lengths[FDD_SECTORS_MAX];
+				TSector nSectors=__scanTrack__( track, nullptr, lengths );
+				do{
+					const WORD length=lengths[--nSectors];
+					pos-=length;
+					nRows-=(length+nBytesInRow-1)/nBytesInRow;
+				}while (pos>logPos);
+				return nRows + (logPos-pos)/nBytesInRow;
 			}
 			int RowToLogicalPosition(int row,BYTE nBytesInRow) override{
 				// converts Row begin (i.e. its first Byte) to corresponding logical position in underlying File and returns the result
 				if (row<0)
 					return 0;
 				const auto &scannedTracks=GetFloppyImage().scannedTracks;
-				EXCLUSIVELY_LOCK_SCANNED_TRACKS(); // commented out for smoother operation; may thus work with outdated values in ScannedTracks but that's ok!
+				BYTE track;
+		{		EXCLUSIVELY_LOCK_SCANNED_TRACKS();
 				if (row>=trackHexaInfos[scannedTracks.n].nRowsAtLogicalPosition)
 					return trackHexaInfos[scannedTracks.n].logicalPosition;
-				if (dataTotalLength){
-					// . updating the ScannedTrack structure if necessary
-					if (nBytesInRow!=lastKnownHexaRowLength){
-						lastKnownHexaRowLength=nBytesInRow;
-						for( BYTE t=0; t<scannedTracks.n; trackHexaInfos[t++].Update(*this) );
-					}
-					// . returning the result
-					if (BYTE track=scannedTracks.n)
-						do{
-							while (trackHexaInfos[--track].nRowsAtLogicalPosition>row);
-							WORD lengths[FDD_SECTORS_MAX];
-							if (TSector nSectors=__scanTrack__( track, nullptr, lengths )){
-								// found an non-empty Track - guaranteed to contain the requested Row
-								int logPos=trackHexaInfos[track+1].logicalPosition;
-								int nRows=trackHexaInfos[track+1].nRowsAtLogicalPosition;
-								do{
-									const WORD length=lengths[--nSectors];
-									logPos-=length;
-									nRows-=(length+nBytesInRow-1)/nBytesInRow;
-								}while (nRows>row);
-								return logPos + (row-nRows)*nBytesInRow;
-							}//else
-								// empty Track - skipping it
-						}while (true);
+				if (!dataTotalLength)
+					return 0;
+				// . updating the ScannedTrack structure if necessary
+				if (nBytesInRow!=lastKnownHexaRowLength){
+					lastKnownHexaRowLength=nBytesInRow;
+					for( BYTE t=0; t<scannedTracks.n; trackHexaInfos[t++].Update(*this) );
 				}
+				// . returning the result
+				track=scannedTracks.n;
+		}		if (track)
+					do{
+						while (trackHexaInfos[--track].nRowsAtLogicalPosition>row);
+						WORD lengths[FDD_SECTORS_MAX];
+						if (TSector nSectors=__scanTrack__( track, nullptr, lengths )){
+							// found an non-empty Track - guaranteed to contain the requested Row
+							int logPos=trackHexaInfos[track+1].logicalPosition;
+							int nRows=trackHexaInfos[track+1].nRowsAtLogicalPosition;
+							do{
+								const WORD length=lengths[--nSectors];
+								logPos-=length;
+								nRows-=(length+nBytesInRow-1)/nBytesInRow;
+							}while (nRows>row);
+							return logPos + (row-nRows)*nBytesInRow;
+						}//else
+							// empty Track - skipping it
+					}while (true);
 				return 0;
 			}
 			void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength,bool *pOutDataReady) override{

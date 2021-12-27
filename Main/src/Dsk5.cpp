@@ -288,6 +288,12 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			return 0;
 	}
 
+	bool CDsk5::IsTrackScanned(TCylinder cyl,THead head) const{
+		// True <=> Track exists and has already been scanned, otherwise False
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		return	__findTrack__(cyl,head)!=nullptr;
+	}
+
 	void CDsk5::GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses){
 		// populates output buffers with specified Sectors' data, usable lengths, and FDC statuses; ALWAYS attempts to buffer all Sectors - caller is then to sort out eventual read errors (by observing the FDC statuses); caller can call ::GetLastError to discover the error for the last Sector in the input list
 		ASSERT( outBufferData!=nullptr && outBufferLengths!=nullptr && outFdcStatuses!=nullptr );
