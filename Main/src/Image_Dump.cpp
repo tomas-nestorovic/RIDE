@@ -326,7 +326,7 @@
 								ConvertDlgButtonToSplitButton( IDNO, resolveActions, RESOLVE_OPTIONS_COUNT );
 								EnableDlgItem( IDNO, dynamic_cast<CImageRaw *>(dp.target.get())==nullptr ); // recovering errors is allowed only if the Target Image can accept them
 								// > converting the "Retry" button to a SplitButton
-								static constexpr Utils::TSplitButtonAction RetryActions[RETRY_OPTIONS_COUNT]={
+								static const Utils::TSplitButtonAction RetryActions[RETRY_OPTIONS_COUNT]={
 									{ IDRETRY, _T("Retry") },
 									{ ID_HEAD, _T("Calibrate head and retry"), MF_GRAYED*!rp.canCalibrateHeads },
 								};
