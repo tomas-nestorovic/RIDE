@@ -28,7 +28,7 @@
 		const struct TSourceTrackErrors sealed{
 			TCylinder cyl;
 			THead head;
-			bool hasNonformattedArea, hasDataInGaps, hasFuzzyData, hasDuplicatedIdFields, isEmpty;
+			bool hasNonformattedArea, hasDataInGaps, hasFuzzyData, hasDuplicatedIdFields, isEmpty, missesSomeSectors;
 			const TSourceTrackErrors *pNextErroneousTrack;
 			TSector nErroneousSectors;
 			TSourceSectorError erroneousSectors[1];
@@ -96,6 +96,7 @@
 								nWarnings+=pErroneousTrack->hasFuzzyData;
 								nWarnings+=pErroneousTrack->hasDuplicatedIdFields;
 								nWarnings+=pErroneousTrack->isEmpty;
+								nWarnings+=pErroneousTrack->missesSomeSectors;
 							}
 							Utils::WriteToFile(fHtml,_T("<tr><td>Warning</td><td align=right>"));
 								Utils::WriteToFile(fHtml,nWarnings);
@@ -153,6 +154,8 @@
 										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: Always bad fuzzy data.</li>"));
 									if (pErroneousTrack->hasDuplicatedIdFields)
 										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: Duplicated ID fields.</li>"));
+									if (pErroneousTrack->missesSomeSectors)
+										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: Some sectors missing.</li>"));
 								Utils::WriteToFile(fHtml,_T("</ul></td></tr>"));
 							}
 						Utils::WriteToFile(fHtml,_T("</table>"));
@@ -218,7 +221,7 @@
 				const CImage::CTrackReader &tr= targetSupportsTrackWriting ? trSrc : CImage::CTrackReaderWriter::Invalid;
 				p.trackWriteable= tr && (sourceCodec&dp.targetCodecs)!=0; // A&B, A = Source and Target must support whole Track access, B = Source and Target must support at least one common Codec
 				// . if possible, analyzing the read Source Track
-				bool hasNonformattedArea=false, hasDataInGaps=false, hasFuzzyData=false, hasDuplicatedIdFields=false;
+				bool hasNonformattedArea=false, hasDataInGaps=false, hasFuzzyData=false, hasDuplicatedIdFields=false, missesSomeSectors=false;
 				if (trSrc && dp.fullTrackAnalysis){
 					TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; CImage::CTrackReader::TProfile idProfiles[Revolution::MAX*(TSector)-1]; TFdcStatus idStatuses[Revolution::MAX*(TSector)-1];
 					CImage::CTrackReader::CParseEventList peTrack;
@@ -232,6 +235,16 @@
 					const TSectorId &id=bufferId[i];
 					for( BYTE j=i; ++j<nSectors; nReappearances+=bufferId[j]==id );
 					if ( hasDuplicatedIdFields=nReappearances>0 )
+						break;
+				}
+				TSectorId stdIds[(TSector)-1];
+				const TSector nStdIds=dp.dos->GetListOfStdSectors( p.chs.cylinder, p.chs.head, stdIds );
+				for( TSector i=0; i<nStdIds; i++ ){
+					p.chs.sectorId=stdIds[i];
+					TSector j=0;
+					while (j<nSectors && bufferId[j]!=p.chs.sectorId)
+						j++;
+					if ( missesSomeSectors=j==nSectors ) // missing a Sector in official geometry?
 						break;
 				}
 				const bool isEmpty=!nSectors;
@@ -616,7 +629,7 @@ terminateWithError:		return LOG_ERROR(pAction->TerminateWithError(err));
 				}
 				// . registering Track with ErroneousSectors
 //Utils::Information("registering Track with ErroneousSectors");
-				if (hasNonformattedArea || hasDataInGaps || hasFuzzyData || hasDuplicatedIdFields || isEmpty || erroneousSectors.n){
+				if (hasNonformattedArea || hasDataInGaps || hasFuzzyData || hasDuplicatedIdFields || isEmpty || missesSomeSectors || erroneousSectors.n){
 					TDumpParams::TSourceTrackErrors *psse=(TDumpParams::TSourceTrackErrors *)::malloc(sizeof(TDumpParams::TSourceTrackErrors)+std::max(0,erroneousSectors.n-1)*sizeof(TDumpParams::TSourceSectorError));
 						psse->cyl=p.chs.cylinder, psse->head=p.chs.head;
 						psse->hasNonformattedArea=hasNonformattedArea;
@@ -624,6 +637,7 @@ terminateWithError:		return LOG_ERROR(pAction->TerminateWithError(err));
 						psse->hasFuzzyData=hasFuzzyData;
 						psse->hasDuplicatedIdFields=hasDuplicatedIdFields;
 						psse->isEmpty=isEmpty;
+						psse->missesSomeSectors=missesSomeSectors;
 						psse->pNextErroneousTrack=nullptr;
 						::memcpy( psse->erroneousSectors, erroneousSectors.buffer, ( psse->nErroneousSectors=erroneousSectors.n )*sizeof(TDumpParams::TSourceSectorError) );
 					*ppSrcTrackErrors=psse, ppSrcTrackErrors=&psse->pNextErroneousTrack;
