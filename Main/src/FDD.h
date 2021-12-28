@@ -18,7 +18,6 @@
 			} calibrationAfterError;
 			BYTE calibrationStepDuringFormatting, nSecondsToTurnMotorOff;
 			bool verifyFormattedTracks, verifyWrittenData;
-			bool readWholeTrackAsFirstSector; // for experimental purposes only - set never to True in Release mode!
 
 			TParams(); //ctor
 			~TParams(); //dtor
@@ -50,29 +49,11 @@
 				BYTE __verifySaving__(const CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip);
 			};
 			const Utils::CCallocPtr<TSectorInfo> sectors;
-			#pragma pack(1)
-			struct TRawContent sealed{
-				static void __generateGap__(PSectorData &buffer,BYTE nBytes_0x4E);
-				static BYTE __containsBufferGap__(PCSectorData buffer);
-				static void __generateSectorId__(PSectorData &buffer,PCSectorId id,PCFdcStatus pFdcStatus);
-				static BYTE __containsBufferSectorId__(PCSectorData buffer,TSectorId *id,bool *crcOk);
-				static void __generateSectorDefaultData__(PSectorData &buffer,TDataAddressMark dam,WORD sectorLength,BYTE fillerByte,PCFdcStatus pFdcStatus);
-
-				TSectorId id;
-				WORD length128; // multiple of 128
-				PSectorData data;
-				bool modified;
-
-				TRawContent();
-				~TRawContent();
-			} rawContent;
 
 			TInternalTrack(const CFDD *fdd,TCylinder cyl,THead head,Codec::TType codec,TSector _nSectors,PCSectorId bufferId,PCLogTime sectorStartsNanoseconds); //ctor
 			~TInternalTrack(); //dtor
 
 			bool __isIdDuplicated__(PCSectorId id) const;
-			bool __canRawDumpBeCreated__() const;
-			TStdWinError __saveRawContentToDisk__(CFDD *fdd,TCylinder cyl,THead head) const;
 		} *PInternalTrack;
 
 		static UINT AFX_CDECL __save_thread__(PVOID _pCancelableAction);

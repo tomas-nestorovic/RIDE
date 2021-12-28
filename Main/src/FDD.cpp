@@ -35,8 +35,7 @@
 		, calibrationStepDuringFormatting( app.GetProfileInt(INI_FDD,INI_CALIBRATE_FORMATTING,0) )
 		, verifyFormattedTracks( app.GetProfileInt(INI_FDD,INI_VERIFY_FORMATTING,true)!=0 )
 		, verifyWrittenData( app.GetProfileInt(INI_FDD,INI_VERIFY_WRITTEN_DATA,false)!=0 )
-		, nSecondsToTurnMotorOff( app.GetProfileInt(INI_FDD,INI_MOTOR_OFF_SECONDS,2) ) // 0 = 1 second, 1 = 2 seconds, 2 = 3 seconds
-		, readWholeTrackAsFirstSector(false) {
+		, nSecondsToTurnMotorOff( app.GetProfileInt(INI_FDD,INI_MOTOR_OFF_SECONDS,2) ) { // 0 = 1 second, 1 = 2 seconds, 2 = 3 seconds
 	}
 
 	CFDD::TParams::~TParams(){
@@ -236,14 +235,6 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 									) *
 									fdd->fddHead.profile.oneByteLatency; // usually 32 microseconds
 		}
-		// - determining which Sector numbers are already taken on the Track
-		bool numbersTaken[(TSector)-1+1];
-		::ZeroMemory(numbersTaken,sizeof(numbersTaken));
-		for( BYTE n=nSectors; n--; numbersTaken[(--bufferId)->sector]=true );
-		// - choosing the Sector ID under which the whole Track RawContent will appear
-		rawContent.id.cylinder=cyl, rawContent.id.side=head;
-		for( rawContent.id.sector=0; numbersTaken[rawContent.id.sector]; rawContent.id.sector++ );
-		rawContent.length128=GetOfficialSectorLength( rawContent.id.lengthCode=1+fdd->GetMaximumSectorLengthCode() ); // "1+" = for the Sector to cover the whole Track
 	}
 
 	CFDD::TInternalTrack::~TInternalTrack(){
@@ -259,167 +250,6 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 		const TSectorInfo *psi=sectors;
 		for( BYTE n=nSectors; n--; nAppearances+=*pid==psi++->id );
 		return nAppearances>1;
-	}
-
-	bool CFDD::TInternalTrack::__canRawDumpBeCreated__() const{
-		// True <=> RawContent can be created (if not already created), otherwise False
-		return nSectors!=0;
-	}
-
-	#define SECTOR_SYNCHRONIZATION		0xa1a1a1
-	#define SECTOR_SYNCHRONIZATION_MASK	0xffffff
-
-	#define SAVING_END	_T("Quitting saving.")
-
-	TStdWinError CFDD::TInternalTrack::__saveRawContentToDisk__(CFDD *fdd,TCylinder cyl,THead head) const{
-		// writes this RawContent to the Track given by current {Cylinder,Head} pair; returns Windows standard i/o error
-		LOG_ACTION(_T("TStdWinError CFDD::TInternalTrack::__saveRawContentToDisk__"));
-		if (!rawContent.data)
-			return LOG_ERROR(ERROR_INVALID_DATA);
-		// - preparing error message (should any error occur)
-		TPhysicalAddress chs={ cyl, head }; // ID will be below set to the first Sector on the Track
-		TCHAR error[80];
-		::wsprintf( error, _T("Cannot save raw content of Track %d"), chs.GetTrackNumber(2) ); // 2 = max number of Sides on a floppy
-		// - extracting first Sector ID
-		PCSectorData pIdField=nullptr; // assumption (ID Field not found and RawContent is not valid)
-		bool idFieldOk=false;
-		PCSectorData p=rawContent.data;
-		for( const PCSectorData pMax=p+500; p<pMax; p++ )
-			if (const BYTE nBytesOfGap=TInternalTrack::TRawContent::__containsBufferGap__(p))
-				if (const BYTE nBytesOfSectorId=TInternalTrack::TRawContent::__containsBufferSectorId__( p+=nBytesOfGap ,&chs.sectorId,&idFieldOk)){
-					pIdField = p+=nBytesOfSectorId; break;
-				}
-		if (!pIdField){ // ID Field not found
-			Utils::Information(error,_T("Cannot find first sector ID in raw content."),SAVING_END);
-			return LOG_ERROR(ERROR_REQUEST_REFUSED);
-		}/*else if (chs.sectorId!=sectors[0].id){ // ID Field found but doesn't match the first Sector on the Track
-			TCHAR cause[150],id1[30],id1raw[30];
-			::wsprintf( cause, _T("Earlier scanned first sector %s does not match the current first sector %s in the raw content."), sectors[0].id.ToString(id1), chs.__vratCisloStopy__(2), chs.sectorId.ToString(id1raw) );
-			Utils::Information(error,cause,SAVING_END);
-			return LOG_ERROR(ERROR_CANCELLED);
-		}*/
-		// - extracting Data Address Mark (DAM) of the first Sector
-		PCSectorData pDam=nullptr; // assumption (DAM not found and RawContent not valid)
-		for( const PCSectorData pMax=p+100; p<pMax; p++ )
-			if (const BYTE nBytesOfGap=TInternalTrack::TRawContent::__containsBufferGap__(p))
-				if ((*(PDWORD)(p+=nBytesOfGap)&SECTOR_SYNCHRONIZATION_MASK)==SECTOR_SYNCHRONIZATION){
-					pDam = p+3; break;
-				}
-		if (!pDam || *pDam!=TDataAddressMark::DATA_RECORD && *pDam!=TDataAddressMark::DELETED_DATA_RECORD && *pDam!=TDataAddressMark::DEFECTIVE_DATA_RECORD){ // DAM not found
-			Utils::Information(error,_T("Cannot find first sector DAM in raw content (first sector in the track must have a DAM, others don't)."),SAVING_END);
-			return LOG_ERROR(ERROR_REQUEST_REFUSED);
-		}
-		// - saving
-/*		const PCSectorData pData=1+pDam;
-		DWORD nBytesTransferred;
-		do{
-			// . formatting to one long Sector
-			chs.sectorId=rawContent.id;
-			TStdWinError err=fdd->__formatToOneLongVerifiedSector__( chs, 0xe5 );
-			if (err!=ERROR_SUCCESS) return err;
-			// . saving RawContent
-			const TSectorInfo si={	// if uncommented, revise the correspondence to actual structure members
-									rawContent.id,
-									fdd->GetUsableSectorLength(rawContent.id.lengthCode),
-									(PSectorData)pData,
-									TFdcStatus(
-										FDC_ST1_DATA_ERROR,
-										FDC_ST2_CRC_ERROR_IN_DATA | (*pDam==TDataAddressMark::DATA_RECORD?0:FDC_ST2_DELETED_DAM)
-									)
-								};
-			if (( err=si.__saveToDisk__(fdd,cyl,head) )!=ERROR_SUCCESS) return err;
-			// . replacing the first ID
-			switch (fdd->DRIVER){
-				case DRV_FDRAWCMD:{
-					FD_FORMAT_PARAMS fp={	FD_OPTION_MFM, chs.head,
-											1, // Sector length doesn't matter, important is to create the ID Field
-											3, 60, 0xe5,
-											TFdIdHeader(sectors[0].id)
-										};
-					FD_SHORT_WRITE_PARAMS swp={ sizeof(FD_ID_HEADER), fdd->params.controllerLatency+(sizeof(TCrc16)+1)*fdd->params.oneByteLatency }; // "+1" = just to be sure
-					::DeviceIoControl( fdd->_HANDLE, IOCTL_FD_SET_SHORT_WRITE, &swp,sizeof(swp), nullptr,0, &nBytesTransferred, nullptr );
-					::DeviceIoControl( fdd->_HANDLE, IOCTL_FDCMD_FORMAT_TRACK, &fp,sizeof(fp)+8, nullptr,0, &nBytesTransferred, nullptr ); // cannot use IF because DeviceIoControl returns an error when formatting with bad CRC
-					break;
-				}
-				default:
-					ASSERT(FALSE);
-					return LOG_ERROR(ERROR_DEVICE_NOT_AVAILABLE);
-			}
-Utils::Information("--- EVERYTHING OK ---");
-			// . verifying that the first Sector on Track is reachable (i.e. hasn't been rewritten by the ID, see above)
-			if (const TFdcStatus fdcStatus=fdd->__bufferSectorData__(chs,fdd->GetUsableSectorLength(chs.sectorId.lengthCode)))
-				if (fdcStatus.reg1 & FDC_ST1_NO_DATA) // if first Sector on Track not reachable ...
-					continue; // ... it suffices to repeat the saving cycle
-					
-			// . saved ok
-			break;
-		}while (true);*/
-		return ERROR_SUCCESS;
-	}
-
-
-
-
-
-
-
-
-	void CFDD::TInternalTrack::TRawContent::__generateGap__(PBYTE &buffer,BYTE nBytes_0x4E){
-		// generates into the Buffer data that represent a gap on the Track
-		::memset(buffer,0x4e,nBytes_0x4E), buffer+=nBytes_0x4E;
-		::memset(buffer,0x00,12), buffer+=12;
-	}
-	BYTE CFDD::TInternalTrack::TRawContent::__containsBufferGap__(PCSectorData buffer){
-		// returns the number of Bytes of the gap recognized at the front of the Buffer; returns 0 if no gap recognized
-		BYTE n=0; while (*buffer==0x4e) n++,buffer++;
-		//if (n<22) return 0; // commented out as (theoretically) there may be no 0x4e Bytes
-		BYTE m=0; while (*buffer==0x00) m++,buffer++;
-		if (m!=12) return 0;
-		return m+n;
-	}
-
-	#define SECTOR_ID_ADDRESS_MARK		0xfe
-	#define SECTOR_SYNC_ID_ADDRESS_MARK	( SECTOR_SYNCHRONIZATION | SECTOR_ID_ADDRESS_MARK<<24 )
-
-/*	void CFDD::TInternalTrack::TRawContent::__generateSectorId__(PBYTE &buffer,PCSectorId id,PCFdcStatus pFdcStatus){
-		// generates Sector ID into the Buffer
-		*(PDWORD)buffer=SECTOR_SYNC_ID_ADDRESS_MARK, buffer+=sizeof(DWORD);
-		*buffer++=id->cylinder, *buffer++=id->side, *buffer++=id->sector, *buffer++=id->lengthCode;
-		TCrc16 crc=GetCrc16Ccitt(buffer-8,8);
-		if (pFdcStatus->DescribesDataFieldCrcError()) crc=~crc;
-		*(TCrc16 *)buffer=crc, buffer+=sizeof(TCrc16); // CRC
-	}*/
-	BYTE CFDD::TInternalTrack::TRawContent::__containsBufferSectorId__(PCSectorData buffer,TSectorId *outId,bool *outCrcOk){
-		// returns the number of Bytes of a Sector ID recognized at the front of the Buffer; returns 0 if no Sector ID recognized
-		if (*(PDWORD)buffer==SECTOR_SYNC_ID_ADDRESS_MARK){
-			buffer+=sizeof(DWORD);
-			outId->cylinder=*buffer++, outId->side=*buffer++, outId->sector=*buffer++, outId->lengthCode=*buffer++;
-			*outCrcOk=GetCrc16Ccitt(buffer-8,8)==*(TCrc16 *)buffer;
-			return 3+1+4+2; // 0xA1A1A1 synchronization + ID Address Mark + ID itself + CRC
-		}else
-			return 0;
-	}
-
-	void CFDD::TInternalTrack::TRawContent::__generateSectorDefaultData__(PSectorData &buffer,TDataAddressMark dam,WORD sectorLength,BYTE fillerByte,PCFdcStatus pFdcStatus){
-		// generates into the Buffer a Sector with a given Length and with the FillerByte as the default content
-		*(PDWORD)buffer= SECTOR_SYNCHRONIZATION | dam<<24, buffer+=sizeof(DWORD);
-		buffer=(PSectorData)::memset( buffer, fillerByte, sectorLength )+sectorLength;
-		sectorLength+=3+1; // 0xA1A1A1 synchronization + DAM
-		TCrc16 crc=GetCrc16Ccitt(buffer-sectorLength,sectorLength);
-		if (pFdcStatus->DescribesDataFieldCrcError()) crc=~crc;
-		*(TCrc16 *)buffer=crc, buffer+=sizeof(TCrc16); // CRC
-	}
-
-	CFDD::TInternalTrack::TRawContent::TRawContent()
-		// ctor
-		: data(nullptr) // Null <=> RawContent not available
-		, modified(false) {
-	}
-
-	CFDD::TInternalTrack::TRawContent::~TRawContent(){
-		// dtor
-		if (data)
-			FREE_SECTOR_DATA(data);
 	}
 
 
@@ -735,14 +565,6 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		// saves the specified Track to the inserted Medium; returns Windows standard i/o error
 		LOG_TRACK_ACTION(cyl,head,_T("UINT CFDD::SaveTrack"));
 		if (TInternalTrack *const pit=__getScannedTrack__(cyl,head)){
-			// . saving RawContent of the Track
-			/*if (pid->rawContent.bModified){
-				const TStdWinError err=pid->__saveRawContentToDisk__( up.fdd, cyl, head );
-				if (err==ERROR_SUCCESS){
-					pid->rawContent.modified=false;
-				}else
-					return pAction->TerminateWithError(err);
-			}*/
 			// . saving (and verifying) data of Track's all Modified Sectors
 			bool allSectorsProcessed;
 			do{
@@ -859,14 +681,6 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (const PInternalTrack pit=((CFDD *)this)->__scanTrack__(cyl,head)){
 			// Track managed to be scanned
-			if (const bool rawDumpExists= params.readWholeTrackAsFirstSector && pit->__canRawDumpBeCreated__()){
-				if (bufferId)
-					*bufferId++=pit->rawContent.id;
-				if (bufferLength)
-					*bufferLength++=GetUsableSectorLength(pit->rawContent.id.lengthCode);
-				if (startTimesNanoseconds)
-					*startTimesNanoseconds++=0; // not applicable, so "some" sensible value
-			}
 			const TInternalTrack::TSectorInfo *psi=pit->sectors;
 			for( TSector s=0; s<pit->nSectors; s++,psi++ ){
 				if (bufferId)
@@ -1005,37 +819,6 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		LOG_TRACK_ACTION(cyl,head,_T("void CFDD::GetTrackData"));
 		if (const PInternalTrack pit=__scanTrack__(cyl,head)){
-			// . getting Track's RawContent
-			/* // TODO: separate into a new method, e.g. virtual CImage::GetTrackRawContent, when implementing support for Kryoflux
-			if (params.readWholeTrackAsFirstSector && pit->__canRawDumpBeCreated__())
-				if (*bufferId==pit->rawContent.id){
-					if (!pit->rawContent.data){ // Track RawContent not yet read
-						// : buffering each Sector in the Track (should the RawContent be Modified and subsequently saved - in such case, the RawContent must be saved first before saving any of its Sectors)
-						for( BYTE i=0; i<pit->nSectors; ){
-							const TPhysicalAddress tmp={ chs.cylinder, chs.head, pit->sectors[i].id };
-							GetSectorData( tmp, ++i, true, sectorLength, pFdcStatus ); // "1+i" = the first Sector represents the RawContent
-						}
-						// : reading the Track
-						DWORD nBytesTransferred;
-						const PCSectorId pid=&pit->sectors[0].id;
-						FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM|FD_OPTION_SK, head, pid->cylinder,pid->side,pid->sector,7, pid->sector+1, 1, 0xff }; // 7 = reads 16384 Bytes beginning with the first Data Field
-						if (::DeviceIoControl( _HANDLE, IOCTL_FDCMD_READ_TRACK, &rwp,sizeof(rwp), dataBuffer,SECTOR_LENGTH_MAX, &nBytesTransferred, nullptr )!=0){
-							// Track read - reconstructing the gaps and ID that preceed the first physical Sector (because reading of the Track begun from its data but the ID Field itself wasn't read)
-							PSectorData pData = pit->rawContent.data = ALLOCATE_SECTOR_DATA(pit->rawContent.length128);
-							TInternalTrack::TRawContent::__generateGap__(pData,40);
-							TInternalTrack::TRawContent::__generateSectorId__(pData,pid,&TFdcStatus::WithoutError);
-							TInternalTrack::TRawContent::__generateGap__(pData,22);
-							TInternalTrack::TRawContent::__generateSectorDefaultData__( pData, TDataAddressMark::DATA_RECORD, 0, 0, &TFdcStatus::WithoutError );
-							::memcpy( pData-sizeof(TCrc16), dataBuffer, GetUsableSectorLength(pit->rawContent.id.lengthCode) ); // assumed that UsableSectorLength < OfficialSectorLength (and thus not written outside allocated memory)
-						}//else
-							//return nullptr; // commented out as it holds that "pid->rawContent.data==Null"
-					}
-					bufferId++, nSectors--;
-					*outBufferData++=pit->rawContent.data;
-					*outBufferLengths++=GetUsableSectorLength(pit->rawContent.id.lengthCode);
-					*outFdcStatuses++=TFdcStatus::WithoutError;
-				}
-			//*/
 			// . Planning the requested Sectors retrieval
 			#ifdef LOGGING_ENABLED			
 				TCHAR buf[4000];
@@ -1111,20 +894,6 @@ returnData:				outFdcStatuses[index]=psi->fdcStatus;
 		LOG_SECTOR_ACTION(&chs.sectorId,_T("TStdWinError CFDD::MarkSectorAsDirty"));
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (const PInternalTrack pit=__getScannedTrack__(chs.cylinder,chs.head)){ // Track has already been scanned
-			// . Modifying Track's RawContent
-			if (params.readWholeTrackAsFirstSector && pit->__canRawDumpBeCreated__())
-				if (chs.sectorId==pit->rawContent.id){
-					// : marking each Sector in the Track as Modified (each of them has been already buffered in GetSectorData)
-					const TInternalTrack::TSectorInfo *psi=pit->sectors;
-					for( BYTE i=0; i<pit->nSectors; psi++ ){
-						const TPhysicalAddress tmp={ chs.cylinder, chs.head, psi->id };
-						MarkSectorAsDirty( tmp, ++i, &psi->fdcStatus ); // "1+i" = the first Sector represents the RawContent
-					}
-					// : marking the RawContent as Modified
-					pit->rawContent.modified=true;
-					return ERROR_SUCCESS;
-				}else if (nSectorsToSkip)
-					nSectorsToSkip--;
 			// . Modifying data of Sector requested in current Track
 			TInternalTrack::TSectorInfo *psi=pit->sectors;
 			for( TSector n=pit->nSectors; n--; psi++ )
@@ -1641,10 +1410,6 @@ Utils::Information(buf);}
 				tmp=fdd->fddHead.preferRelativeSeeking;
 				DDX_Check( pDX,	ID_SEEK,	tmp );
 				fdd->fddHead.preferRelativeSeeking=tmp!=0;
-				// . ReadingOfWholeTracksAsFirstSectors
-				tmp=params.readWholeTrackAsFirstSector;
-				DDX_Check( pDX,	ID_TRACK,		tmp );
-				params.readWholeTrackAsFirstSector=tmp!=0;
 			}
 			afx_msg void OnPaint(){
 				// drawing

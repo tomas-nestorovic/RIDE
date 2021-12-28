@@ -1455,9 +1455,6 @@ BEGIN
                     201,195,10
     CONTROL         "&Prefer relative over absolute seeking",ID_SEEK,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,7,212,131,10
-    CONTROL         "Read whole &track as first sector (will also be dumped!)",
-                    ID_TRACK,"Button",BS_AUTOCHECKBOX | WS_DISABLED | 
-                    WS_TABSTOP,7,223,197,10
 END
 
 IDR_FDD_LATENCY DIALOG DISCARDABLE  0, 0, 154, 85
