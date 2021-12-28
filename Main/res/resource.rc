@@ -1440,21 +1440,23 @@ BEGIN
                     BS_AUTORADIOBUTTON,70,135,71,10
     CONTROL         "For each &sector",ID_SECTOR,"Button",BS_AUTORADIOBUTTON,
                     70,146,65,10
+    CONTROL         "Only &known sectors",ID_READABLE,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,70,157,78,10
     CONTROL         "Never",ID_ZERO,"Button",BS_AUTORADIOBUTTON | WS_GROUP,
-                    70,162,74,10
-    CONTROL         "&Each",ID_CYLINDER_N,"Button",BS_AUTORADIOBUTTON,70,173,
+                    70,172,78,10
+    CONTROL         "&Each",ID_CYLINDER_N,"Button",BS_AUTORADIOBUTTON,70,183,
                     31,10
-    EDITTEXT        ID_NUMBER,102,174,16,12,ES_RIGHT | ES_AUTOHSCROLL | 
+    EDITTEXT        ID_NUMBER,102,184,16,12,ES_RIGHT | ES_AUTOHSCROLL | 
                     ES_NUMBER | WS_DISABLED | NOT WS_BORDER
-    LTEXT           "-th cyl.",IDC_STATIC,118,174,22,8,NOT WS_GROUP
+    LTEXT           "-th cyl.",IDC_STATIC,118,184,22,8,NOT WS_GROUP
     CONTROL         "&Verify formatted tracks before writing any data (recommended)",
                     ID_VERIFY_TRACK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
-                    190,211,10
+                    200,211,10
     CONTROL         "Verify &written data (including requested data errors, if any)",
                     ID_VERIFY_SECTOR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
-                    201,195,10
+                    211,195,10
     CONTROL         "&Prefer relative over absolute seeking",ID_SEEK,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,212,131,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,222,131,10
 END
 
 IDR_FDD_LATENCY DIALOG DISCARDABLE  0, 0, 154, 85

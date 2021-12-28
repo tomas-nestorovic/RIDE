@@ -14,6 +14,7 @@
 	#define INI_LATENCY_1BYTE			_T("lat1b")
 	#define INI_LATENCY_GAP3			_T("latg3")
 	#define INI_CALIBRATE_SECTOR_ERROR	_T("clberr")
+	#define INI_CALIBRATE_SECTOR_ERROR_KNOWN _T("clbknw")
 	#define INI_CALIBRATE_FORMATTING	_T("clbfmt")
 	#define INI_MOTOR_OFF_SECONDS		_T("mtroff")
 	#define INI_TRACK_DOUBLE_STEP		_T("dbltrk")
@@ -32,6 +33,7 @@
 	CFDD::TParams::TParams()
 		// ctor
 		: calibrationAfterError( (TCalibrationAfterError)app.GetProfileInt(INI_FDD,INI_CALIBRATE_SECTOR_ERROR,TCalibrationAfterError::ONCE_PER_CYLINDER) )
+		, calibrationAfterErrorOnlyForKnownSectors( app.GetProfileInt(INI_FDD,INI_CALIBRATE_SECTOR_ERROR_KNOWN,0)!=0 )
 		, calibrationStepDuringFormatting( app.GetProfileInt(INI_FDD,INI_CALIBRATE_FORMATTING,0) )
 		, verifyFormattedTracks( app.GetProfileInt(INI_FDD,INI_VERIFY_FORMATTING,true)!=0 )
 		, verifyWrittenData( app.GetProfileInt(INI_FDD,INI_VERIFY_WRITTEN_DATA,false)!=0 )
@@ -41,6 +43,7 @@
 	CFDD::TParams::~TParams(){
 		// dtor
 		app.WriteProfileInt( INI_FDD, INI_CALIBRATE_SECTOR_ERROR,calibrationAfterError );
+		app.WriteProfileInt( INI_FDD, INI_CALIBRATE_SECTOR_ERROR_KNOWN, calibrationAfterErrorOnlyForKnownSectors );
 		app.WriteProfileInt( INI_FDD, INI_CALIBRATE_FORMATTING,calibrationStepDuringFormatting );
 		app.WriteProfileInt( INI_FDD, INI_MOTOR_OFF_SECONDS,nSecondsToTurnMotorOff );
 		app.WriteProfileInt( INI_FDD, INI_VERIFY_FORMATTING,verifyFormattedTracks );
@@ -874,11 +877,16 @@ returnData:				outFdcStatuses[index]=psi->fdcStatus;
 					continue; // if a Sector with given ID physically not found in the Track, proceed with the next Planned Sector
 				// : recovering from errors
 				if (!psi->fdcStatus.IsWithoutError() && !psi->modified) // no Data, or Data with errors for a not-yet-Modified Sector
-					if (silentlyRecoverFromErrors && !fddHead.calibrated)
-						if (fddHead.__calibrate__() && fddHead.__seekTo__(cyl)){
-							fddHead.calibrated=params.calibrationAfterError!=TParams::TCalibrationAfterError::FOR_EACH_SECTOR;
-							__bufferSectorData__(cyl,head,&psi->id,length,pit,bufferNumbersOfSectorsToSkip[index],&psi->fdcStatus);
-						}
+					if (silentlyRecoverFromErrors && !fddHead.calibrated){
+						const TPhysicalAddress chs={ cyl, head, psi->id };
+						const bool knownSectorBad =	params.calibrationAfterErrorOnlyForKnownSectors && dos && dos->properties!=&CUnknownDos::Properties
+													? dos->GetSectorStatus(chs)!=CDos::TSectorStatus::UNKNOWN
+													: true;
+						if (knownSectorBad && params.calibrationAfterError!=TParams::TCalibrationAfterError::NONE)
+							if (fddHead.__calibrate__() && fddHead.__seekTo__(cyl))
+								fddHead.calibrated=params.calibrationAfterError!=TParams::TCalibrationAfterError::FOR_EACH_SECTOR;
+						__bufferSectorData__(cyl,head,&psi->id,length,pit,bufferNumbersOfSectorsToSkip[index],&psi->fdcStatus);
+					}
 				if (!psi->fdcStatus.DescribesMissingDam())
 					psi->data=(PSectorData)::memcpy( ALLOCATE_SECTOR_DATA(length), dataBuffer, length );
 				goto returnData; // returning (any) Data
@@ -1355,6 +1363,8 @@ Utils::Information(buf);}
 				if (fdd->fddHead.userForcedDoubleTrackStep)
 					WindowProc( WM_COMMAND, ID_40D80, 0 );
 				CheckDlgButton( ID_40D80, fdd->fddHead.doubleTrackStep );
+				// . some settings are changeable only during InitialEditing
+				EnableDlgItem( ID_READABLE, params.calibrationAfterError!=TParams::TCalibrationAfterError::NONE );
 				// . displaying inserted Medium information
 				SetDlgItemSingleCharUsingFont( // a warning that a 40-track disk might have been misrecognized
 					ID_INFORMATION,
@@ -1386,6 +1396,9 @@ Utils::Information(buf);}
 				int tmp=params.calibrationAfterError;
 				DDX_Radio( pDX,	ID_NONE,		tmp );
 				params.calibrationAfterError=(TParams::TCalibrationAfterError)tmp;
+				tmp=params.calibrationAfterErrorOnlyForKnownSectors;
+				DDX_Check( pDX, ID_READABLE,	tmp );
+				params.calibrationAfterErrorOnlyForKnownSectors=tmp!=0;
 				// . CalibrationStepDuringFormatting
 				EnableDlgItem( ID_NUMBER, tmp=params.calibrationStepDuringFormatting!=0 );
 				DDX_Radio( pDX,	ID_ZERO,		tmp );
@@ -1417,7 +1430,7 @@ Utils::Information(buf);}
 				__super::OnPaint();
 				// - drawing of curly brackets
 				WrapDlgItemsByClosingCurlyBracketWithText( ID_LATENCY, ID_GAP, nullptr, 0 );
-				WrapDlgItemsByClosingCurlyBracketWithText( ID_NONE, ID_SECTOR, _T("if error encountered"), 0 );
+				WrapDlgItemsByClosingCurlyBracketWithText( ID_NONE, ID_READABLE, _T("on read error"), 0 );
 				WrapDlgItemsByClosingCurlyBracketWithText( ID_ZERO, ID_CYLINDER_N, _T("when formatting"), 0 );
 			}
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
@@ -1521,6 +1534,12 @@ autodetermineLatencies:		// automatic determination of write latency values
 								ShowDlgItem( ID_INFORMATION, false ); // user manually revised the Track distance, so no need to continue display the warning
 								break;
 							}
+							case ID_NONE:
+							case ID_CYLINDER:
+							case ID_SECTOR:
+								// adjusting possibility to edit controls that depend on CalibrationAfterError
+								EnableDlgItem( ID_READABLE, wParam!=ID_NONE );
+								break;
 							case ID_ZERO:
 							case ID_CYLINDER_N:
 								// adjusting possibility to edit the CalibrationStep according to selected option

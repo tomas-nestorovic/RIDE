@@ -16,6 +16,7 @@
 				ONCE_PER_CYLINDER	=1,
 				FOR_EACH_SECTOR		=2
 			} calibrationAfterError;
+			bool calibrationAfterErrorOnlyForKnownSectors;
 			BYTE calibrationStepDuringFormatting, nSecondsToTurnMotorOff;
 			bool verifyFormattedTracks, verifyWrittenData;
 
