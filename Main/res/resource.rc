@@ -1781,7 +1781,7 @@ BEGIN
                     BS_AUTORADIOBUTTON,71,135,71,10
     CONTROL         "For each &sector",ID_SECTOR,"Button",BS_AUTORADIOBUTTON,
                     71,146,65,10
-    CONTROL         "Only known sectors",ID_READABLE,"Button",
+    CONTROL         "Only &known sectors",ID_READABLE,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,71,157,78,10
     CONTROL         "Never",ID_ZERO,"Button",BS_AUTORADIOBUTTON | WS_GROUP,
                     71,172,78,10

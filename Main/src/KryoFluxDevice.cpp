@@ -863,7 +863,7 @@
 				)
 					return rit->nSectors;
 				if (params.calibrationAfterErrorOnlyForKnownSectors && dos && dos->properties!=&CUnknownDos::Properties){
-					bool knownSectorBad=false; // the Track is unhealthy due to an irrelevant Unknown Sector (e.g. out of geometry)
+					bool knownSectorBad=false; // assumption (the Track is unhealthy due to an irrelevant Unknown Sector, e.g. out of geometry)
 					for( TSector s=0; s<rit->nSectors; s++ ){
 						const TInternalSector &is=rit->sectors[s];
 						const TPhysicalAddress chs={ cyl, head, is.id };
