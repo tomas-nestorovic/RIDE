@@ -128,39 +128,42 @@
 
 
 
-	CChartView::CXyBarSeries::CXyBarSeries(DWORD nPoints,const POINT *points,HPEN hLinePen)
+	CChartView::CXyOrderedBarSeries::CXyOrderedBarSeries(DWORD nPoints,const POINT *points,HPEN hLinePen)
 		// ctor
 		: CXyPointSeries( nPoints, points, hLinePen ) {
 	}
 
-	void CChartView::CXyBarSeries::GetDrawingLimits(WORD percentile,TLogValue &rOutMaxX,TLogValue &rOutMaxY) const{
+	void CChartView::CXyOrderedBarSeries::GetDrawingLimits(WORD percentile,TLogValue &rOutMaxX,TLogValue &rOutMaxY) const{
 		// sets corresponding outputs to the last item still to be drawn with specified Percentile
+		LONGLONG ySum=0;
+		for( DWORD i=0; i<nPoints; ySum+=points[i++].y );
+		ySum=ySum*percentile/10000; // estimation of percentile
 		rOutMaxX = rOutMaxY = 1;
-		const CHistogram h=CreateYxHistogram();
-		auto it=h.cbegin();
-		for( DWORD sum=0,const sumMax=(ULONGLONG)nPoints*percentile/10000; sum<sumMax; sum+=it++->second ){
-			if (it->first>rOutMaxX)
-				rOutMaxX=it->first;
-			if (it->second>rOutMaxY)
-				rOutMaxY=it->second;
+		for( DWORD i=0; i<nPoints&&ySum>0; i++ ){
+			const POINT &pt=points[i];
+			ySum-=pt.y;
+			if (pt.x>rOutMaxX)
+				rOutMaxX=pt.x;
+			if (pt.y>rOutMaxY)
+				rOutMaxY=pt.y;
 		}
 	}
 
-	void CChartView::CXyBarSeries::DrawAsync(const CPainter &p) const{
+	void CChartView::CXyOrderedBarSeries::DrawAsync(const CPainter &p) const{
 		// asynchronous drawing; always compare actual drawing ID with the one on start
 		const WORD id=p.GetCurrentDrawingIdSync();
 		const CXyDisplayInfo &di=*(const CXyDisplayInfo *)&p.di;
 		const HGDIOBJ hPen0=::SelectObject( p.dc, hPen );
-			const CHistogram h=CreateYxHistogram();
-			for( auto it=h.cbegin(); it!=h.cend(); it++ ){
-				if (it->first>di.xMax)
+			for( DWORD i=0; i<nPoints; i++ ){
+				const POINT &pt=points[i];
+				if (pt.x>di.xMax)
 					break;
 				const Utils::CExclusivelyLocked<const CPainter> locker(p);
 				if (p.drawingId!=id)
 					break;
-				const POINT ptT=di.Transform( it->first, it->second );
+				const POINT ptT=di.Transform( pt );
 				::MoveToEx( p.dc, ptT.x, ptT.y, nullptr );
-				const POINT ptB=di.Transform( it->first, 0 );
+				const POINT ptB=di.Transform( pt.x, 0 );
 				::LineTo( p.dc, ptB.x, ptB.y );
 			}
 		::SelectObject( p.dc, hPen0 );

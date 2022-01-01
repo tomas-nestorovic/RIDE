@@ -1403,21 +1403,29 @@
 									t0=t;
 								}
 								const Utils::CRidePen barPen( 2, 0x2020ff );
-								const auto xySeries=CChartView::CXyBarSeries(
+								const auto h=CChartView::CXyPointSeries(
+									pLastItem-data, data, barPen
+								).CreateYxHistogram();
+								pLastItem=data;
+								for( auto it=h.cbegin(); it!=h.cend(); it++ ){
+									pLastItem->x=it->first;
+									pLastItem++->y=it->second;
+								}
+								const auto xySeries=CChartView::CXyOrderedBarSeries(
 									pLastItem-data, data, barPen
 								);
-								const CChartView::PCGraphics graphics[]={ &xySeries };
-								CChartDialog(
-									CChartView::CXyDisplayInfo(
-										CChartView::TMargin::Default,
-										graphics, 1,
-										Utils::CRideFont::StdBold,
-										's', INT_MIN, Utils::CTimeline::TimePrefixes,
-										'\0', INT_MIN, Utils::CAxis::CountPrefixes
-									)
-								).ShowModal(
-									caption, this, CRect(0,0,800,600)
-								);
+							const CChartView::PCGraphics graphics[]={ &xySeries };
+							CChartDialog(
+								CChartView::CXyDisplayInfo(
+									CChartView::TMargin::Default,
+									graphics, sizeof(graphics)/sizeof(CChartView::PCGraphics),
+									Utils::CRideFont::StdBold,
+									's', INT_MIN, Utils::CTimeline::TimePrefixes,
+									'\0', INT_MIN, Utils::CAxis::CountPrefixes
+								)
+							).ShowModal(
+								caption, this, CRect(0,0,800,600)
+							);
 							return TRUE;
 						}
 					}

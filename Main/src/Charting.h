@@ -51,9 +51,9 @@
 			void DrawAsync(const CPainter &p) const override;
 		};
 
-		class CXyBarSeries:public CXyPointSeries{
+		class CXyOrderedBarSeries:public CXyPointSeries{
 		public:
-			CXyBarSeries(DWORD nPoints,const POINT *points,HPEN hLinePen);
+			CXyOrderedBarSeries(DWORD nPoints,const POINT *points,HPEN hLinePen);
 
 			void GetDrawingLimits(WORD percentile,TLogValue &rOutMaxX,TLogValue &rOutMaxY) const override; // in hundredths (e.g. "2345" means 23.45)
 			void DrawAsync(const CPainter &p) const override;
