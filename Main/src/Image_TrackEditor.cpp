@@ -79,7 +79,6 @@
 						{ std::move(Utils::CRideBrush((COLORREF)0xE4E4B3)), std::move(Utils::CRideBrush((COLORREF)0xECECCE)) },	//  "OK" even and odd InspectionWindows
 						{ std::move(Utils::CRideBrush((COLORREF)0x7E7EEA)), std::move(Utils::CRideBrush((COLORREF)0xB6B6EA)) }	// "BAD" even and odd InspectionWindows
 					};
-					const Utils::CRidePen penIndex( 2, 0xff0000 );
 					const Utils::CRideBrush parseEventBrushes[TParseEvent::LAST]={
 						TParseEvent::TypeColors[0],
 						TParseEvent::TypeColors[1],
@@ -270,7 +269,7 @@
 						while (i<tr.GetIndexCount() && tr.GetIndexTime(i)<visible.tStart) // skipping invisible indices before visible region
 							i++;
 						const auto dcSettings0=::SaveDC(dc);
-							::SelectObject( dc, penIndex );
+							::SelectObject( dc, te.penIndex );
 							::SetTextColor( dc, 0xff0000 );
 							::SelectObject( dc, Utils::CRideFont::Std );
 							for( TCHAR buf[16]; continuePainting && i<tr.GetIndexCount() && tr.GetIndexTime(i)<=visible.tEnd; i++ ){ // visible indices
@@ -577,12 +576,14 @@
 		public:
 			const PCRegion pRegions;
 			const DWORD nRegions;
+			const Utils::CRidePen penIndex;
 
 			CTimeEditor(const CImage::CTrackReader &tr,CImage::CTrackReader::PCRegion pRegions,DWORD nRegions)
 				// ctor
 				: timeline( tr.GetTotalTime(), 1, 10 )
 				, tr(tr)
 				, pRegions(pRegions) , nRegions(nRegions) // up to the caller to dispose allocated Regions!
+				, penIndex( 2, 0xff0000 )
 				, painter(*this)
 				, draggedTime(-1)
 				, cursorTime(-1) , cursorFeaturesShown(false) , cursorFeatures(TCursorFeatures::DEFAULT)
@@ -1356,29 +1357,40 @@
 							// modal display of scatter plot of time differences
 							CImage::CTrackReader tr=this->tr;
 							tr.SetCurrentTimeAndProfile( 0, tr.CreateResetProfile() );
-							const auto data=Utils::MakeCallocPtr<POINT>( tr.GetTimesCount() );
-								LPPOINT pLastItem=data;
+							const auto deltaTimes=Utils::MakeCallocPtr<POINT>( tr.GetTimesCount() );
+								LPPOINT pLastItem=deltaTimes;
 								for( TLogTime t0=0; tr; pLastItem++ ){
 									const TLogTime t = pLastItem->x = tr.ReadTime();
-									pLastItem->y=t-t0;
+									pLastItem->y=t-t0; // delta Time
 									t0=t;
 								}
 								const Utils::CRidePen dotPen( 2, 0x2020ff );
-								const auto xySeries=CChartView::CXyPointSeries(
-									pLastItem-data, data, dotPen
+								const auto deltaTimeSeries=CChartView::CXyPointSeries(
+									pLastItem-deltaTimes, deltaTimes, dotPen
 								);
-								const CChartView::PCGraphics graphics[]={ &xySeries };
-								CChartDialog(
-									CChartView::CXyDisplayInfo(
-										CChartView::TMargin::Default,
-										graphics, 1,
-										Utils::CRideFont::StdBold,
-										's', tr.GetTotalTime(), Utils::CTimeline::TimePrefixes,
-										's', INT_MIN, Utils::CTimeline::TimePrefixes
-									)
-								).ShowModal(
-									caption, this, CRect(0,0,800,600)
+							const auto indexTimes=Utils::MakeCallocPtr<POINT>( tr.GetIndexCount() );
+								for( BYTE i=0; i<tr.GetIndexCount(); i++ ){
+									POINT &r=indexTimes[i];
+										r.x=tr.GetIndexTime(i);
+										r.y=TIME_MICRO(200); // should suffice for any Medium
+								}
+								std::swap( *indexTimes.get(), indexTimes.get()[tr.GetIndexCount()-1] ); // swapping first and last index pulse ...
+								indexTimes->y*=100; // ... to disable application of percentiles, unapplicable to Index pulses
+								const auto indexTimeSeries=CChartView::CXyOrderedBarSeries(
+									tr.GetIndexCount(), indexTimes, timeEditor.penIndex
 								);
+							const CChartView::PCGraphics graphics[]={ &indexTimeSeries, &deltaTimeSeries };
+							CChartDialog(
+								CChartView::CXyDisplayInfo(
+									CChartView::TMargin::Default,
+									graphics, sizeof(graphics)/sizeof(CChartView::PCGraphics),
+									Utils::CRideFont::StdBold,
+									's', tr.GetTotalTime(), Utils::CTimeline::TimePrefixes,
+									's', INT_MIN, Utils::CTimeline::TimePrefixes
+								)
+							).ShowModal(
+								caption, this, CRect(0,0,800,600)
+							);
 							return TRUE;
 						}
 						case ID_HISTOGRAM:{
