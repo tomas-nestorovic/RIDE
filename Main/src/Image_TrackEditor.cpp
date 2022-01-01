@@ -1370,8 +1370,8 @@
 								const CChartView::PCGraphics graphics[]={ &xySeries };
 								CChartDialog(
 									CChartView::CXyDisplayInfo(
-										graphics, 1,
 										CChartView::TMargin::Default,
+										graphics, 1,
 										Utils::CRideFont::StdBold,
 										's', tr.GetTotalTime(), Utils::CTimeline::TimePrefixes,
 										's', INT_MIN, Utils::CTimeline::TimePrefixes
@@ -1409,8 +1409,8 @@
 								const CChartView::PCGraphics graphics[]={ &xySeries };
 								CChartDialog(
 									CChartView::CXyDisplayInfo(
-										graphics, 1,
 										CChartView::TMargin::Default,
+										graphics, 1,
 										Utils::CRideFont::StdBold,
 										's', INT_MIN, Utils::CTimeline::TimePrefixes,
 										'\0', INT_MIN, Utils::CAxis::CountPrefixes

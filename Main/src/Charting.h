@@ -62,17 +62,17 @@
 		class CDisplayInfo abstract{
 		public:
 			const UINT menuResourceId;
+			const TMargin margin;
 			const PCGraphics *const graphics;
 			const BYTE nGraphics;
 
-			CDisplayInfo(UINT menuResourceId,const PCGraphics graphics[],BYTE nGraphics);
+			CDisplayInfo(UINT menuResourceId,RCMargin margin,const PCGraphics graphics[],BYTE nGraphics);
 
 			virtual void DrawBackground(HDC dc,const CRect &rcClient) const=0;
 			virtual bool OnCmdMsg(CChartView &cv,UINT nID,int nCode,PVOID pExtra);
 		};
 
 		class CXyDisplayInfo:public CDisplayInfo{
-			const TMargin margin;
 			const Utils::CRidePen gridPen;
 			const Utils::CRideFont &fontAxes;
 			const TCHAR xAxisUnit,yAxisUnit;
@@ -84,8 +84,8 @@
 			XFORM M; // matrix to transform data coordinates (TLogValue) to display coordinates (pixels)
 
 			CXyDisplayInfo(
-				const PCGraphics graphics[], BYTE nGraphics,
 				RCMargin margin,
+				const PCGraphics graphics[], BYTE nGraphics,
 				const Utils::CRideFont &fontAxes,
 				TCHAR xAxisUnit, TLogValue xMax, LPCTSTR xAxisUnitPrefixes,
 				TCHAR yAxisUnit, TLogValue yMax, LPCTSTR yAxisUnitPrefixes
@@ -116,7 +116,7 @@
 	protected:
 		void OnDraw(CDC *pDC) override;
 		void PostNcDestroy() override;
-		//LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
+		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 	public:
 		CChartView(CDisplayInfo &di);
 	};

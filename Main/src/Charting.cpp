@@ -171,9 +171,9 @@
 
 
 
-	CChartView::CDisplayInfo::CDisplayInfo(UINT menuResourceId,const PCGraphics *graphics,BYTE nGraphics)
+	CChartView::CDisplayInfo::CDisplayInfo(UINT menuResourceId,RCMargin margin,const PCGraphics *graphics,BYTE nGraphics)
 		// ctor
-		: menuResourceId(menuResourceId) , graphics(graphics) , nGraphics(nGraphics) {
+		: menuResourceId(menuResourceId) , margin(margin) , graphics(graphics) , nGraphics(nGraphics) {
 	}
 
 	bool CChartView::CDisplayInfo::OnCmdMsg(CChartView &cv,UINT nID,int nCode,PVOID pExtra){
@@ -189,17 +189,16 @@
 	static constexpr XFORM IdentityTransf={ 1, 0, 0, 1, 0, 0 };
 
 	CChartView::CXyDisplayInfo::CXyDisplayInfo(
-		const PCGraphics graphics[], BYTE nGraphics,
 		RCMargin margin,
+		const PCGraphics graphics[], BYTE nGraphics,
 		const Utils::CRideFont &fontAxes,
 		TCHAR xAxisUnit, TLogValue xMax, LPCTSTR xAxisUnitPrefixes,
 		TCHAR yAxisUnit, TLogValue yMax, LPCTSTR yAxisUnitPrefixes
 	)
 		// ctor
 		// - base
-		: CDisplayInfo( IDR_CHARTFRAME_XY, graphics, nGraphics )
+		: CDisplayInfo( IDR_CHARTFRAME_XY, margin, graphics, nGraphics )
 		// - initialization
-		, margin(margin)
 		, gridPen( 0, 0xcacaca, PS_DOT ) // light gray
 		, fontAxes(fontAxes)
 		, xMaxOrg(xMax), yMaxOrg(yMax)
@@ -248,14 +247,10 @@
 		if (newPercentile==percentile)
 			return;
 		percentile=newPercentile;
-		xMax = yMax = 1;
+		xMax=xMaxOrg, yMax=yMaxOrg;
 		for( BYTE i=0; i<nGraphics; i++ )
-			if (const PCXyGraphics g=dynamic_cast<PCXyGraphics>(graphics[i])){
-				TLogValue xLocalMax=xMaxOrg, yLocalMax=yMaxOrg;
-				g->GetDrawingLimits( newPercentile, xLocalMax, yLocalMax );
-				xMax=std::max( xMax, xLocalMax );
-				yMax=std::max( yMax, yLocalMax );
-			}
+			if (const PCXyGraphics g=dynamic_cast<PCXyGraphics>(graphics[i]))
+				g->GetDrawingLimits( newPercentile, xMax, yMax );
 	}
 
 	bool CChartView::CXyDisplayInfo::OnCmdMsg(CChartView &cv,UINT nID,int nCode,PVOID pExtra){
@@ -333,6 +328,10 @@
 			::SetBkMode( dc, TRANSPARENT );
 			Utils::ScaleLogicalUnit(dc);
 			p.dc=dc;
+			// . preventing from drawing inside the Margin
+			RECT rcClient;
+			cv.GetClientRect(&rcClient);
+			::IntersectClipRect( dc, p.di.margin.L, p.di.margin.T-1, rcClient.right/Utils::LogicalUnitScaleFactor-p.di.margin.R+1, rcClient.bottom/Utils::LogicalUnitScaleFactor-p.di.margin.B );
 			// . drawing all Graphic assets as they appear in the list
 			for( BYTE i=0; i<p.di.nGraphics; i++ ){
 				p.di.graphics[i]->DrawAsync( p );
@@ -343,18 +342,18 @@
 		return ERROR_SUCCESS;
 	}
 
-	/*LRESULT CChartView::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
+	LRESULT CChartView::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
 		// window procedure
 		switch (msg){
-			case WM_PAINT:
+			case WM_PAINT:{
 				// window's size is being changed
-				painter.params.locker.Lock();
-					painter.params.id++;
-				painter.params.locker.Unlock();
+				const Utils::CExclusivelyLocked<CPainter> locker(painter);
+				painter.drawingId++;
 				break;
+			}
 		}
 		return __super::WindowProc( msg, wParam, lParam );
-	}*/
+	}
 
 
 
