@@ -2,28 +2,7 @@
 #define CHARTING_H
 
 	class CChartView:public CView{
-		const Utils::CRidePen gridPen;
-		const Utils::CRideFont &fontAxes;
-
-		struct TPainter sealed{
-			const CBackgroundAction action;
-			struct{
-				CCriticalSection locker;
-				WORD id;
-				XFORM valuesTransf;
-			} params;
-			CEvent repaintEvent;
-
-			static UINT AFX_CDECL Thread(PVOID _pBackgroundAction);
-
-			TPainter(CChartView &cv);
-		} painter;
 	public:
-		enum TType:BYTE{
-			XY_LINE_BROKEN,
-			XY_BARS
-		};
-
 		typedef const struct TMargin sealed{
 			static const TMargin None;
 			static const TMargin Default;
@@ -39,66 +18,107 @@
 			CHistogram &Append(const CHistogram &r);
 		};
 
-		typedef const class CSeries sealed{
-			CSeries(DWORD nValues);
+		class CPainter; // forward
+
+		typedef const class CGraphics abstract{
 		public:
-			const DWORD nValues;
-			union{
-				struct{
-					const POINT *pValues;
-					HPEN hLinePen, hVertexPen;
-				} xy;
-			};
+			virtual void DrawAsync(const CPainter &p) const=0;
+		} *PCGraphics;
 
-			static CSeries CreateXy(DWORD nValues,const POINT *pXyValues,HPEN hLinePen,HPEN hVertexPen);
+		typedef const class CXyGraphics abstract:public CGraphics{
+		public:
+			virtual void GetDrawingLimits(WORD percentile,TLogValue &rOutMaxX,TLogValue &rOutMaxY) const; // in hundredths (e.g. "2345" means 23.45)
+		} *PCXyGraphics;
 
-			inline operator bool() const{
-				return nValues>0;
-			}
+		class CXyPointSeries:public CXyGraphics{
+		protected:
+			const DWORD nPoints;
+			const POINT *const points;
+			const HPEN hPen;
+		public:
+			CXyPointSeries(DWORD nPoints,const POINT *points,HPEN hVertexPen);
 
+			void GetDrawingLimits(WORD percentile,TLogValue &rOutMaxX,TLogValue &rOutMaxY) const override; // in hundredths (e.g. "2345" means 23.45)
+			void DrawAsync(const CPainter &p) const override;
+			CHistogram CreateXyHistogram() const;
 			CHistogram CreateYxHistogram() const;
-		} *PCSeries;
+		};
 
-		class CDisplayInfo sealed{
-			WORD percentile; // in hundredths (e.g. "2345" means 23.45)
-
-			CDisplayInfo(TType chartType,RCMargin margin,PCSeries series,BYTE nSeries);
+		class CXyBrokenLineSeries:public CXyPointSeries{
 		public:
-			const TType chartType;
-			const TMargin margin;
-			const PCSeries series;
-			const BYTE nSeries;
-			union{
-				struct{
-					TLogValue xMax,yMax;
-					TCHAR xAxisUnit,yAxisUnit;
-					LPCTSTR xAxisUnitPrefixes,yAxisUnitPrefixes;
-				} xy;
-			};
+			CXyBrokenLineSeries(DWORD nPoints,const POINT *points,HPEN hLinePen);
 
-			static CDisplayInfo CreateXy(
-				TType chartType, RCMargin margin, PCSeries series, BYTE nSeries,
+			void DrawAsync(const CPainter &p) const override;
+		};
+
+		class CXyBarSeries:public CXyPointSeries{
+		public:
+			CXyBarSeries(DWORD nPoints,const POINT *points,HPEN hLinePen);
+
+			void GetDrawingLimits(WORD percentile,TLogValue &rOutMaxX,TLogValue &rOutMaxY) const override; // in hundredths (e.g. "2345" means 23.45)
+			void DrawAsync(const CPainter &p) const override;
+		};
+
+		class CDisplayInfo abstract{
+		public:
+			const UINT menuResourceId;
+			const PCGraphics *const graphics;
+			const BYTE nGraphics;
+
+			CDisplayInfo(UINT menuResourceId,const PCGraphics graphics[],BYTE nGraphics);
+
+			virtual void DrawBackground(HDC dc,const CRect &rcClient) const=0;
+			virtual bool OnCmdMsg(CChartView &cv,UINT nID,int nCode,PVOID pExtra);
+		};
+
+		class CXyDisplayInfo:public CDisplayInfo{
+			const TMargin margin;
+			const Utils::CRidePen gridPen;
+			const Utils::CRideFont &fontAxes;
+			const TCHAR xAxisUnit,yAxisUnit;
+			const LPCTSTR xAxisUnitPrefixes,yAxisUnitPrefixes;
+			const TLogValue xMaxOrg, yMaxOrg;
+			WORD percentile; // in hundredths (e.g. "2345" means 23.45)
+		public:
+			TLogValue xMax,yMax;
+			XFORM M; // matrix to transform data coordinates (TLogValue) to display coordinates (pixels)
+
+			CXyDisplayInfo(
+				const PCGraphics graphics[], BYTE nGraphics,
+				RCMargin margin,
+				const Utils::CRideFont &fontAxes,
 				TCHAR xAxisUnit, TLogValue xMax, LPCTSTR xAxisUnitPrefixes,
 				TCHAR yAxisUnit, TLogValue yMax, LPCTSTR yAxisUnitPrefixes
 			);
 
-			inline WORD GetPercentile() const{
-				return percentile;
-			}
+			XFORM DrawXyAxes(HDC dc,const CRect &rcClient) const;
+			void DrawBackground(HDC dc,const CRect &rcClient) const override;
+			POINT Transform(long x,long y) const;
+			inline POINT Transform(const POINT &pt) const{ return Transform( pt.x, pt.y ); }
+			inline WORD GetPercentile() const{ return percentile; }
 			void SetPercentile(WORD newPercentile);
-		} di;
+			bool OnCmdMsg(CChartView &cv,UINT nID,int nCode,PVOID pExtra) override;
+		};
+
+		class CPainter sealed:public CBackgroundAction{
+			static UINT AFX_CDECL Thread(PVOID _pBackgroundAction);
+		public:
+			CDisplayInfo &di;
+			mutable CCriticalSection locker;
+			WORD drawingId;
+			HDC dc;
+			CEvent redrawEvent;
+
+			CPainter(const CChartView &cv,CDisplayInfo &di);
+
+			WORD GetCurrentDrawingIdSync() const;
+		} painter;
 	protected:
-		XFORM DrawXyAxes(HDC dc) const;
 		void OnDraw(CDC *pDC) override;
 		void PostNcDestroy() override;
-		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
+		//LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 	public:
-		CChartView(const CDisplayInfo &di);
-
-		inline WORD GetPercentile() const{
-			return di.GetPercentile();
-		}
-		void SetPercentile(WORD newPercentile);
+		CChartView(CDisplayInfo &di);
 	};
 
 
@@ -115,7 +135,7 @@
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
 	public:
-		CChartFrame(const CChartView::CDisplayInfo &di);
+		CChartFrame(CChartView::CDisplayInfo &di);
 	};
 
 
@@ -128,7 +148,7 @@
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 		void PostNcDestroy() override;
 	public:
-		CChartDialog(const CChartView::CDisplayInfo &di);
+		CChartDialog(CChartView::CDisplayInfo &di);
 
 		void ShowModal(
             LPCTSTR caption,

@@ -60,7 +60,7 @@
 #define IDR_KRYOFLUX_ACCESS             220
 #define IDR_CAPS                        221
 #define IDR_TRACK_EDITOR                222
-#define IDR_CHARTFRAME                  223
+#define IDR_CHARTFRAME_XY               223
 #define IDR_CAPS_PRECOMPENSATION        224
 #define IDR_CAPS_CORRECTIONS            225
 #define IDR_TRACK_EDITOR_GOTO_TIME      226

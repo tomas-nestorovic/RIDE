@@ -1364,15 +1364,15 @@
 									t0=t;
 								}
 								const Utils::CRidePen dotPen( 2, 0x2020ff );
-								const auto xySeries=CChartView::CSeries::CreateXy(
-									pLastItem-data, data,
-									nullptr, dotPen
+								const auto xySeries=CChartView::CXyPointSeries(
+									pLastItem-data, data, dotPen
 								);
+								const CChartView::PCGraphics graphics[]={ &xySeries };
 								CChartDialog(
-									CChartView::CDisplayInfo::CreateXy(
-										CChartView::XY_LINE_BROKEN,
+									CChartView::CXyDisplayInfo(
+										graphics, 1,
 										CChartView::TMargin::Default,
-										&xySeries, 1,
+										Utils::CRideFont::StdBold,
 										's', tr.GetTotalTime(), Utils::CTimeline::TimePrefixes,
 										's', INT_MIN, Utils::CTimeline::TimePrefixes
 									)
@@ -1403,15 +1403,15 @@
 									t0=t;
 								}
 								const Utils::CRidePen barPen( 2, 0x2020ff );
-								const auto xySeries=CChartView::CSeries::CreateXy(
-									pLastItem-data, data,
-									barPen, nullptr
+								const auto xySeries=CChartView::CXyBarSeries(
+									pLastItem-data, data, barPen
 								);
+								const CChartView::PCGraphics graphics[]={ &xySeries };
 								CChartDialog(
-									CChartView::CDisplayInfo::CreateXy(
-										CChartView::XY_BARS,
+									CChartView::CXyDisplayInfo(
+										graphics, 1,
 										CChartView::TMargin::Default,
-										&xySeries, 1,
+										Utils::CRideFont::StdBold,
 										's', INT_MIN, Utils::CTimeline::TimePrefixes,
 										'\0', INT_MIN, Utils::CAxis::CountPrefixes
 									)
