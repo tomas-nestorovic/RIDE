@@ -353,7 +353,7 @@
 		// - base
 		__super::OnDestroy();
 		// - disposing the underlying File
-		//f.reset();
+		f.reset();
 	}
 
 	afx_msg void CDiskBrowserView::ToggleWriteProtection(){
