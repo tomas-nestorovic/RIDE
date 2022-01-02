@@ -119,6 +119,7 @@
 	const PropGrid::Integer::TUpDownLimits PropGrid::Integer::TUpDownLimits::NonNegativeInteger={ 0, INT_MAX };
 	const PropGrid::Integer::TUpDownLimits PropGrid::Integer::TUpDownLimits::NegativeInteger={ INT_MIN, -1 };
 	const PropGrid::Integer::TUpDownLimits PropGrid::Integer::TUpDownLimits::Percent={ 0, 100 };
+	const PropGrid::Integer::TUpDownLimits PropGrid::Integer::TUpDownLimits::PositivePercent={ 1, 100 };
 
 	bool PropGrid::Integer::TUpDownLimits::Contains(int value) const{
 		// True <=> this range contains the Value (inclusive), otherwise False

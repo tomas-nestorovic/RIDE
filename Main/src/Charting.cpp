@@ -281,7 +281,7 @@
 						cv.Invalidate();
 						return true;
 					case ID_NUMBER:
-						if (const Utils::CSingleNumberDialog &&d=Utils::CSingleNumberDialog( _T("Set"), _T("Percentile"), PropGrid::Integer::TUpDownLimits::Percent, GetPercentile()/100, false, CWnd::FromHandle(app.GetEnabledActiveWindow()) ))
+						if (const Utils::CSingleNumberDialog &&d=Utils::CSingleNumberDialog( _T("Set"), _T("Percentile"), PropGrid::Integer::TUpDownLimits::PositivePercent, GetPercentile()/100, false, CWnd::FromHandle(app.GetEnabledActiveWindow()) ))
 							SetPercentile(d.Value*100), cv.Invalidate();
 						return true;
 				}
@@ -327,7 +327,7 @@
 			// . preventing from drawing inside the Margin
 			RECT rcClient;
 			cv.GetClientRect(&rcClient);
-			::IntersectClipRect( dc, p.di.margin.L, p.di.margin.T-1, rcClient.right/Utils::LogicalUnitScaleFactor-p.di.margin.R+1, rcClient.bottom/Utils::LogicalUnitScaleFactor-p.di.margin.B );
+			::IntersectClipRect( dc, p.di.margin.L, p.di.margin.T/2, rcClient.right/Utils::LogicalUnitScaleFactor-p.di.margin.R/2, rcClient.bottom/Utils::LogicalUnitScaleFactor-p.di.margin.B );
 			// . drawing all Graphic assets as they appear in the list
 			for( BYTE i=0; i<p.di.nGraphics; i++ ){
 				p.di.graphics[i]->DrawAsync( p );
