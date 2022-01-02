@@ -55,18 +55,11 @@
 	void CChartView::CXyPointSeries::GetDrawingLimits(WORD percentile,TLogValue &rOutMaxX,TLogValue &rOutMaxY) const{
 		// sets corresponding outputs to the last item still to be drawn with specified Percentile
 		const CHistogram h=CreateYxHistogram();
-		int counts[4096], n=0;
-		for( auto it=h.cbegin(); it!=h.cend(); it++ )
-			counts[n++]=it->second;
-		std::sort( counts, counts+n ); // ordering ascending
-		for( DWORD sum=0,const sumMax=(ULONGLONG)nPoints*percentile/10000; sum<sumMax; sum+=counts[--n] );
-		//rOutMaxX=...; // commented out to always draw all items
+		DWORD sum=0,const sumMax=(ULONGLONG)nPoints*percentile/10000;
+		//rOutMaxX=...; // working out percentile along Y-axis only
 		rOutMaxY=1;
-		const auto countThreshold= n>0 ? counts[n] : 0;
-		for( auto it=h.cbegin(); it!=h.cend(); it++ )
-			if (it->second>countThreshold)
-				if (it->first>rOutMaxY)
-					rOutMaxY=it->first;
+		for( auto it=h.cbegin(); it!=h.cend()&&sum<sumMax; sum+=it++->second )
+			rOutMaxY=it->first;
 	}
 
 	void CChartView::CXyPointSeries::DrawAsync(const CPainter &p) const{
