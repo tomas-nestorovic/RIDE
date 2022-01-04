@@ -338,6 +338,7 @@
 				inline bool IsDataStd() const{ return type==DATA_OK || type==DATA_BAD; }
 				inline bool IsDataAny() const{ return IsDataStd() || type==DATA_IN_GAP; }
 				inline bool IsCrc() const{ return type==CRC_OK || type==CRC_BAD; }
+				CString GetDescription() const;
 			} *PCParseEvent;
 
 			typedef const struct TMetaStringParseEvent:public TParseEvent{

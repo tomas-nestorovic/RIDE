@@ -128,7 +128,7 @@
 							const auto dcSettings0=::SaveDC(dc);
 								do{
 									rc.right=te.timeline.GetUnitCount(piw->tEnd)-nUnitsA;
-									p.params.locker.Lock();
+									const Utils::CExclusivelyLocked<const decltype(p.params)> locker(p.params);
 										if ( continuePainting=p.params.id==id ){
 											::FillRect( dc, &rc, iwBrushes[piw->isBad][L++&1] );
 											#ifdef _DEBUG
@@ -136,7 +136,6 @@
 												::DrawText( dc, _itot(piw->uid%100,uid,10), -1, &rc, DT_SINGLELINE|DT_CENTER );
 											#endif
 										}
-									p.params.locker.Unlock();
 									rc.left=rc.right;
 								}while (continuePainting && piw++->tEnd<visible.tEnd);
 							::RestoreDC( dc, dcSettings0 );
@@ -161,49 +160,13 @@
 									const TParseEventPtr pe=&peList.GetNext(pos);
 									if (const auto ti=pe->Add(iwTimeDefaultHalf).Intersect(visible)){ // offset ParseEvent visible?
 										const int xa=te.timeline.GetUnitCount(ti.tStart)-nUnitsA, xz=te.timeline.GetUnitCount(ti.tEnd)-nUnitsA;
-										switch (pe->type){
-											case TParseEvent::SYNC_3BYTES:
-												::wsprintfA( label, _T("0x%06X sync"), pe->dw);
-												break;
-											case TParseEvent::MARK_1BYTE:
-												::wsprintfA( label, _T("0x%02X mark"), pe->dw );
-												break;
-											case TParseEvent::PREAMBLE:
-												::wsprintfA( label, _T("Preamble (%d Bytes)"), pe->dw );
-												break;
-											case TParseEvent::DATA_OK:
-												::wsprintfA( label, _T("Data ok (%d Bytes)"), pe->dw);
-												break;
-											case TParseEvent::DATA_BAD:
-												::wsprintfA( label, _T("Data bad (%d Bytes)"), pe->dw);
-												break;
-											case TParseEvent::DATA_IN_GAP:
-												::wsprintfA( label, _T("Gap data (circa %d Bytes)"), pe->dw);
-												break;
-											case TParseEvent::CRC_OK:
-												::wsprintfA( label, _T("0x%X ok CRC"), pe->dw);
-												break;
-											case TParseEvent::CRC_BAD:
-												::wsprintfA( label, _T("0x%X bad CRC"), pe->dw );
-												break;
-											case TParseEvent::NONFORMATTED:
-												::wsprintfA( label, _T("Nonformatted %d.%d µs"), div((int)pe->GetLength(),1000) );
-												break;
-											case TParseEvent::FUZZY_OK:
-											case TParseEvent::FUZZY_BAD:
-												::wsprintfA( label, _T("Fuzzy %d.%d µs"), div((int)pe->GetLength(),1000) );
-												break;
-											default:
-												::lstrcpyA( label, pe->lpszMetaString );
-												break;
-										}
 										RECT rcLabel={ te.timeline.GetUnitCount(pe->tStart+iwTimeDefaultHalf)-nUnitsA, -1000, xz, -EVENT_HEIGHT-3 };
 										p.params.locker.Lock();
 											if ( continuePainting=p.params.id==id ){
 												::SelectObject( dc, parseEventBrushes[pe->type] );
 												::PatBlt( dc, xa,-EVENT_HEIGHT, xz-xa,EVENT_HEIGHT, 0xa000c9 ); // ternary raster operation "dest AND pattern"
 												::SetTextColor( dc, TParseEvent::TypeColors[pe->type] );
-												::DrawTextA( dc, label,-1, &rcLabel, DT_LEFT|DT_BOTTOM|DT_SINGLELINE );
+												::DrawText( dc, pe->GetDescription(),-1, &rcLabel, DT_LEFT|DT_BOTTOM|DT_SINGLELINE );
 											}
 										p.params.locker.Unlock();
 										if (!continuePainting) // new paint request?
@@ -215,7 +178,7 @@
 											while (continuePainting && pbi->tStart<ti.tEnd && (PCBYTE)pbi-(PCBYTE)pe.data<pe->size){ // draw visible part
 												rcLabel.left=te.timeline.GetUnitCount(pbi->tStart+iwTimeDefaultHalf)-nUnitsA;
 												rcLabel.right=rcLabel.left+1000;
-												p.params.locker.Lock();
+												const Utils::CExclusivelyLocked<const decltype(p.params)> locker(p.params);
 													if ( continuePainting=p.params.id==id )
 														switch (showByteInfo){
 															case BI_MINIMAL:
@@ -234,7 +197,6 @@
 															default:
 																ASSERT(FALSE); break;
 														}
-												p.params.locker.Unlock();
 												pbi++;
 											}
 										}
@@ -254,10 +216,9 @@
 										rc.left=te.timeline.GetUnitCount(ti.tStart)-nUnitsA;
 										rc.right=te.timeline.GetUnitCount(ti.tEnd)-nUnitsA;
 										const Utils::CRideBrush brush(rgn.color);
-										p.params.locker.Lock();
+										const Utils::CExclusivelyLocked<const decltype(p.params)> locker(p.params);
 											if ( continuePainting=p.params.id==id )
 												::FillRect( dc, &rc, brush );
-										p.params.locker.Unlock();
 									}
 								}
 							::RestoreDC( dc, dcSettings0 );
@@ -274,13 +235,12 @@
 							::SelectObject( dc, Utils::CRideFont::Std );
 							for( TCHAR buf[16]; continuePainting && i<tr.GetIndexCount() && tr.GetIndexTime(i)<=visible.tEnd; i++ ){ // visible indices
 								const int x=te.timeline.GetUnitCount( tr.GetIndexTime(i) )-nUnitsA;
-								p.params.locker.Lock();
+								const Utils::CExclusivelyLocked<const decltype(p.params)> locker(p.params);
 									if ( continuePainting=p.params.id==id ){
 										::MoveToEx( dc, x,-INDEX_HEIGHT, nullptr );
 										::LineTo( dc, x,INDEX_HEIGHT );
 										::TextOut( dc, x+4,-INDEX_HEIGHT, buf, ::wsprintf(buf,_T("Index %d"),i) );
 									}
-								p.params.locker.Unlock();
 							}
 						::RestoreDC(dc,dcSettings0);
 						if (!continuePainting) // new paint request?
@@ -289,12 +249,11 @@
 						tr.SetCurrentTime(visible.tStart-1);
 						while (continuePainting && tr.GetCurrentTime()<=visible.tEnd){
 							const int x=te.timeline.GetUnitCount( tr.ReadTime() )-nUnitsA;
-							p.params.locker.Lock();
+							const Utils::CExclusivelyLocked<const decltype(p.params)> locker(p.params);
 								if ( continuePainting=p.params.id==id ){
 									::MoveToEx( dc, x,0, nullptr );
 									::LineTo( dc, x,TIME_HEIGHT );
 								}
-							p.params.locker.Unlock();
 						}
 						if (!continuePainting) // new paint request?
 							continue;
@@ -560,11 +519,10 @@
 				// . drawing the Timeline
 				const HDC dc=*pDC;
 				::SetBkMode( dc, TRANSPARENT );
-				painter.params.locker.Lock();
+				const Utils::CExclusivelyLocked<decltype(painter.params)> locker(painter.params);
 					painter.params.id++;
 					timeline.Draw( dc, Utils::CRideFont::Std, &painter.params.visible.tStart, &painter.params.visible.tEnd );
 					painter.params.zoomFactor=timeline.zoomFactor;
-				painter.params.locker.Unlock();
 				// . drawing the rest in parallel thread due to computational complexity if painting the whole Track
 				painter.repaintEvent.SetEvent();
 			}
@@ -643,7 +601,7 @@
 					si.fMask=SIF_POS;
 					si.nPos=Utils::LogicalUnitScaleFactor*timeline.GetUnitCount(t);
 				SetScrollInfo( SB_HORZ, &si, TRUE );
-				painter.params.locker.Lock();
+				const Utils::CExclusivelyLocked<decltype(painter.params)> locker(painter.params);
 					painter.params.id++; // stopping current painting
 					PaintCursorFeaturesInverted(false);
 					ScrollWindow(	// "base"
@@ -655,7 +613,6 @@
 					::GetCursorPos(&cursor);
 					ScreenToClient(&cursor);
 					cursorTime=ClientPixelToTime( cursor.x );
-				painter.params.locker.Unlock();
 				painter.repaintEvent.SetEvent();
 			}
 
@@ -691,7 +648,7 @@
 			}
 
 			void ToggleFeature(TCursorFeatures cf){
-				painter.params.locker.Lock();
+				const Utils::CExclusivelyLocked<decltype(painter.params)> locker(painter.params);
 					const bool cfs0=cursorFeaturesShown;
 					PaintCursorFeaturesInverted(false);
 						if (IsFeatureShown(cf))
@@ -699,15 +656,13 @@
 						else
 							cursorFeatures|=cf;
 					PaintCursorFeaturesInverted(cfs0);
-				painter.params.locker.Unlock();
 			}
 
 			void ShowAllFeatures(){
-				painter.params.locker.Lock();
+				const Utils::CExclusivelyLocked<decltype(painter.params)> locker(painter.params);
 					PaintCursorFeaturesInverted(false);
 						cursorFeatures=-1;
 					Invalidate();
-				painter.params.locker.Unlock();
 			}
 		} timeEditor;
 

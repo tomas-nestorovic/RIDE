@@ -722,6 +722,46 @@
 		dw=data;
 	}
 
+	CString CImage::CTrackReader::TParseEvent::GetDescription() const{
+		CString desc;
+		switch (type){
+			case TParseEvent::SYNC_3BYTES:
+				desc.Format( _T("0x%06X sync"), dw);
+				break;
+			case TParseEvent::MARK_1BYTE:
+				desc.Format( _T("0x%02X mark"), dw );
+				break;
+			case TParseEvent::PREAMBLE:
+				desc.Format( _T("Preamble (%d Bytes)"), dw );
+				break;
+			case TParseEvent::DATA_OK:
+				desc.Format( _T("Data ok (%d Bytes)"), dw);
+				break;
+			case TParseEvent::DATA_BAD:
+				desc.Format( _T("Data bad (%d Bytes)"), dw);
+				break;
+			case TParseEvent::DATA_IN_GAP:
+				desc.Format( _T("Gap data (circa %d Bytes)"), dw);
+				break;
+			case TParseEvent::CRC_OK:
+				desc.Format( _T("0x%X ok CRC"), dw);
+				break;
+			case TParseEvent::CRC_BAD:
+				desc.Format( _T("0x%X bad CRC"), dw );
+				break;
+			case TParseEvent::NONFORMATTED:
+				desc.Format( _T("Nonformatted %d.%d µs"), div((int)GetLength(),1000) );
+				break;
+			case TParseEvent::FUZZY_OK:
+			case TParseEvent::FUZZY_BAD:
+				desc.Format( _T("Fuzzy %d.%d µs"), div((int)GetLength(),1000) );
+				break;
+			default:
+				return lpszMetaString;
+		}
+		return desc;
+	}
+
 	void CImage::CTrackReader::TMetaStringParseEvent::Create(TParseEvent &buffer,TLogTime tStart,TLogTime tEnd,LPCSTR lpszMetaString){
 		ASSERT( lpszMetaString!=nullptr );
 		buffer=TParseEvent( TType::META_STRING, tStart, tEnd, 0 );
