@@ -238,6 +238,10 @@
 		return tmp;
 	}
 
+	RECT CChartView::CXyDisplayInfo::Transform(const RECT &rc) const{
+		return CRect( Transform(*(const POINT *)&rc), Transform(((const POINT *)&rc)[1]) );
+	}
+
 	void CChartView::CXyDisplayInfo::SetPercentile(WORD newPercentile){
 		//
 		if (newPercentile==percentile)

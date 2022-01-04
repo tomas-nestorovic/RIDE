@@ -95,6 +95,7 @@
 			void DrawBackground(HDC dc,const CRect &rcClient) const override;
 			POINT Transform(long x,long y) const;
 			inline POINT Transform(const POINT &pt) const{ return Transform( pt.x, pt.y ); }
+			RECT Transform(const RECT &rc) const;
 			inline WORD GetPercentile() const{ return percentile; }
 			void SetPercentile(WORD newPercentile);
 			bool OnCmdMsg(CChartView &cv,UINT nID,int nCode,PVOID pExtra) override;

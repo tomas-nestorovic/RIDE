@@ -1333,7 +1333,46 @@
 								const auto indexTimeSeries=CChartView::CXyOrderedBarSeries(
 									tr.GetIndexCount(), indexTimes, timeEditor.penIndex
 								);
-							const CChartView::PCGraphics graphics[]={ &indexTimeSeries, &deltaTimeSeries };
+							const auto &peList=timeEditor.GetParseEvents();
+								const class CXyParseEventSeries:public CChartView::CXyGraphics{
+									const CImage::CTrackReader::CParseEventList &peList;
+									const CFont &font;
+									CBrush peBrushes[TParseEvent::LAST];
+								public:
+									CXyParseEventSeries(const CImage::CTrackReader::CParseEventList &peList)
+										// ctor
+										: peList(peList) , font(Utils::CRideFont::Std) {
+										for( BYTE i=0; i<TParseEvent::LAST; i++ )
+											peBrushes[i].CreateSolidBrush(
+												Utils::GetBlendedColor( TParseEvent::TypeColors[i], COLOR_WHITE, 0.075f )
+											);
+									}
+									void DrawAsync(const CChartView::CPainter &p) const override{
+										// asynchronous drawing; always compare actual drawing ID with the one on start
+										const WORD id=p.GetCurrentDrawingIdSync();
+										const auto &di=*(const CChartView::CXyDisplayInfo *)&p.di;
+										LOGFONT logFont;
+										::GetObject( Utils::CRideFont::Std, sizeof(logFont), &logFont );
+										logFont.lfOrientation = logFont.lfEscapement=900; // in tenths of degrees (a tweak to draw vertically oriented text without world transformation)
+										const HGDIOBJ hFont0=::SelectObject( p.dc, ::CreateFontIndirect(&logFont) );
+											const HGDIOBJ hBrush0=::SelectObject( p.dc, ::GetStockObject(NULL_BRUSH) );
+												for( POSITION pos=peList.GetHeadPosition(); pos; ){
+													const TParseEvent &pe=peList.GetNext(pos);
+													const Utils::CExclusivelyLocked<const CChartView::CPainter> locker(p);
+													if (p.drawingId!=id)
+														break;
+													CRect rc( pe.tStart, TIME_MICRO(200), pe.tEnd, 1 ); // "Top" value should suffice for any Medium
+														rc=di.Transform(rc);
+													::SelectObject( p.dc, peBrushes[pe.type] );
+													::PatBlt( p.dc, rc.left,rc.top, rc.Width(),rc.Height(), 0xa000c9 ); // ternary raster operation "dest AND pattern"
+													::SetTextColor( p.dc, TParseEvent::TypeColors[pe.type] );
+													::DrawText( p.dc, pe.GetDescription(),-1, &rc, DT_LEFT|DT_BOTTOM|DT_SINGLELINE );
+												}
+											::SelectObject( p.dc, hBrush0 );
+										::SelectObject( p.dc, hFont0 );
+									}
+								} peSeries(peList);
+							const CChartView::PCGraphics graphics[]={ &peSeries, &indexTimeSeries, &deltaTimeSeries };
 							CChartDialog(
 								CChartView::CXyDisplayInfo(
 									CChartView::TMargin::Default,
