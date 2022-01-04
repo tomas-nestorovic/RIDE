@@ -654,7 +654,7 @@
 				case CDiffBase::TScriptItem::INSERTION:
 					// "theirs" contains some extra bits that "this" misses
 					rDiff.color=0xb4; // tinted red
-					rDiff.tEnd=pBits[si.iPosA+1].time; // even Insertions must be represented locally!
+					rDiff.tEnd=pBits[std::min<DWORD>( si.iPosA+1, nBits )].time; // even Insertions must be represented locally!
 					break;
 				default:
 					ASSERT(FALSE); // we shouldn't end up here!
@@ -662,7 +662,7 @@
 				case CDiffBase::TScriptItem::DELETION:
 					// "theirs" misses some bits that "this" contains
 					rDiff.color=0x5555ff; // another tinted red
-					rDiff.tEnd=pBits[si.iPosA+si.del.nItemsA+1].time; // "+1" = see above Insertion (only for cosmetical reasons)
+					rDiff.tEnd=pBits[std::min<DWORD>( si.iPosA+si.del.nItemsA+1, nBits )].time; // "+1" = see above Insertion (only for cosmetical reasons)
 					break;
 			}
 		}
