@@ -40,6 +40,7 @@
 #define IDR_DOS_RECOGNITION             189
 #define IDR_SPECTRUM_PREVIEW_BASIC      193
 #define IDR_RAW_SETTINGS                196
+#define IDR_SCATTERPLOT                 202
 #define IDR_HEXAEDITOR_FIND             203
 #define IDR_SINGLE_NUMBER               204
 #define IDR_DISKBROWSER                 205

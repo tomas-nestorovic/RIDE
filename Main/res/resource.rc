@@ -194,6 +194,12 @@ BEGIN
     VK_ESCAPE,      IDCANCEL,               VIRTKEY, NOINVERT
 END
 
+IDR_SCATTERPLOT ACCELERATORS DISCARDABLE 
+BEGIN
+    "I",            ID_ROTATION,            VIRTKEY, NOINVERT
+    "V",            ID_SYSTEM,              VIRTKEY, NOINVERT
+END
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Menu
@@ -819,6 +825,17 @@ BEGIN
         MENUITEM "Zoom 100%",                   ID_ZOOM_FIT
     END
 END
+
+IDR_SCATTERPLOT MENU DISCARDABLE 
+BEGIN
+    POPUP "X"
+    BEGIN
+        MENUITEM "Show indices\tI",             ID_ROTATION
+        MENUITEM "Show structure\tV",           ID_SYSTEM
+        MENUITEM SEPARATOR
+    END
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //

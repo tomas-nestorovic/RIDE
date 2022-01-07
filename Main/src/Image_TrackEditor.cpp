@@ -1330,15 +1330,16 @@
 										r.y=TIME_MICRO(200); // should suffice for any Medium
 								}
 								std::swap( *indexTimes.get(), indexTimes.get()[tr.GetIndexCount()-1] ); // swapping first and last index pulse to disable application of percentiles, unapplicable to Index pulses
-								const auto indexTimeSeries=CChartView::CXyOrderedBarSeries(
+								auto indexTimeSeries=CChartView::CXyOrderedBarSeries(
 									tr.GetIndexCount(), indexTimes, timeEditor.penIndex
 								);
 							const auto &peList=timeEditor.GetParseEvents();
-								const class CXyParseEventSeries:public CChartView::CXyGraphics{
-									const CImage::CTrackReader::CParseEventList &peList;
+								class CXyParseEventSeries:public CChartView::CXyGraphics{
 									const CFont &font;
 									CBrush peBrushes[TParseEvent::LAST];
 								public:
+									const CImage::CTrackReader::CParseEventList &peList;
+
 									CXyParseEventSeries(const CImage::CTrackReader::CParseEventList &peList)
 										// ctor
 										: peList(peList) , font(Utils::CRideFont::Std) {
@@ -1346,6 +1347,7 @@
 											peBrushes[i].CreateSolidBrush(
 												Utils::GetBlendedColor( TParseEvent::TypeColors[i], COLOR_WHITE, 0.075f )
 											);
+										visible=peList.GetCount()>0;
 									}
 									void DrawAsync(const CChartView::CPainter &p) const override{
 										// asynchronous drawing; always compare actual drawing ID with the one on start
@@ -1373,17 +1375,77 @@
 									}
 								} peSeries(peList);
 							const CChartView::PCGraphics graphics[]={ &peSeries, &indexTimeSeries, &deltaTimeSeries };
-							CChartDialog(
-								CChartView::CXyDisplayInfo(
-									CChartView::TMargin::Default,
-									graphics, sizeof(graphics)/sizeof(CChartView::PCGraphics),
-									Utils::CRideFont::StdBold,
-									's', tr.GetTotalTime(), Utils::CTimeline::TimePrefixes,
-									's', INT_MIN, Utils::CTimeline::TimePrefixes
-								)
-							).ShowModal(
-								caption, this, CRect(0,0,800,600)
+							CChartView::CXyDisplayInfo di(
+								CChartView::TMargin::Default,
+								graphics, sizeof(graphics)/sizeof(CChartView::PCGraphics),
+								Utils::CRideFont::StdBold,
+								's', tr.GetTotalTime(), Utils::CTimeline::TimePrefixes,
+								's', INT_MIN, Utils::CTimeline::TimePrefixes
 							);
+							class CScatterPlotDialog sealed:public CChartDialog{
+								const CMainWindow::CDynMenu menu;
+								CXyParseEventSeries &peSeries;
+								CChartView::CXyOrderedBarSeries &indexSeries;
+							public:
+								CScatterPlotDialog(CChartView::CXyDisplayInfo &di,CXyParseEventSeries &peSeries,CChartView::CXyOrderedBarSeries &indexSeries)
+									: CChartDialog(di)
+									, menu(IDR_SCATTERPLOT)
+									, peSeries(peSeries) , indexSeries(indexSeries) {
+									m_bAutoMenuEnable=FALSE; // we are not set up for that
+								}
+
+								BOOL Create(LPCTSTR lpszClassName,LPCTSTR lpszWindowName,DWORD dwStyle=WS_OVERLAPPEDWINDOW,const RECT &rect=rectDefault,CWnd *pParentWnd=nullptr,LPCTSTR lpszMenuName=nullptr,DWORD dwExStyle=0,CCreateContext *pContext=nullptr) override{
+									const BOOL result=__super::Create( lpszClassName, lpszWindowName, dwStyle, rect, pParentWnd, lpszMenuName, dwExStyle, pContext );
+									if (CMenu *const pFrameMenu=GetMenu())
+										if (CMenu *const pSubmenu=pFrameMenu->GetSubMenu(0)){
+											const Utils::CRideContextMenu tmp(IDR_SCATTERPLOT);
+											for( int i=0; i<tmp.GetMenuItemCount(); i++ )
+												if (const auto id=tmp.GetMenuItemID(i))
+													pSubmenu->InsertMenu( i, MF_BYPOSITION|MF_STRING, id, tmp.GetMenuStringByPos(i) );
+												else
+													pSubmenu->InsertMenu( i, MF_BYPOSITION|MF_SEPARATOR );
+										}
+									return result;
+								}
+
+								BOOL PreTranslateMessage(PMSG pMsg) override{
+									if (::TranslateAccelerator( m_hWnd, menu.hAccel, pMsg ))
+										return TRUE;
+									return __super::PreTranslateMessage(pMsg); // base
+								}
+
+								BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override{
+									switch (nCode){
+										case CN_UPDATE_COMMAND_UI:
+											// update
+											switch (nID){
+												case ID_ROTATION:
+													((CCmdUI *)pExtra)->SetCheck( indexSeries.visible );
+													return TRUE;
+												case ID_SYSTEM:
+													((CCmdUI *)pExtra)->Enable( peSeries.peList.GetCount()>0 );
+													((CCmdUI *)pExtra)->SetCheck( peSeries.visible );
+													return TRUE;
+											}
+											break;
+										case CN_COMMAND:
+											// command
+											switch (nID){
+												case ID_ROTATION:
+													indexSeries.visible=!indexSeries.visible;
+													Invalidate();
+													return TRUE;
+												case ID_SYSTEM:
+													peSeries.visible=!peSeries.visible;
+													Invalidate();
+													return TRUE;
+											}
+											break;
+									}
+									return __super::OnCmdMsg( nID, nCode, pExtra, pHandlerInfo );
+								}
+							} d( di, peSeries, indexTimeSeries );
+							d.ShowModal( caption, this, CRect(0,0,800,600) );
 							return TRUE;
 						}
 						case ID_HISTOGRAM:{
