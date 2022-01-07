@@ -171,7 +171,7 @@
 							f->Seek(selectionZ,CFile::begin);
 						}while (!::memcmp( &currChs, &f->GetCurrentPhysicalAddress(), nBytesToCompare ));					
 						HexaEditor_SetSelection( m_hWnd, selectionA, selectionZ );
-						return 0;
+						return TRUE;
 					}
 					case ID_NAVIGATE_PREVIOUSTRACK:
 						// moving Cursor at the beginning of previous Track
@@ -191,7 +191,7 @@
 							f->Seek(pos,CFile::begin);
 						}while (!::memcmp( &currChs, &f->GetCurrentPhysicalAddress(), nBytesToCompare ));
 						HexaEditor_SetSelection( m_hWnd, targetPos, targetPos );
-						return 0;
+						return TRUE;
 					}
 					case ID_NAVIGATE_NEXTTRACK:
 						// moving Cursor at the beginning of next Track
@@ -211,7 +211,7 @@
 							f->Seek(pos,CFile::begin);
 						}while (!::memcmp( &currChs, &f->GetCurrentPhysicalAddress(), nBytesToCompare ));
 						HexaEditor_SetSelection( m_hWnd, pos, pos );
-						return 0;
+						return TRUE;
 					}
 					case ID_NAVIGATE_SECTOR:{
 						// moving Cursor at the beginning of user-selected Sector
@@ -318,7 +318,7 @@
 							const int pos=f->GetSectorStartPosition(d.chs,d.sectorIndexOnTrack);
 							HexaEditor_SetSelection( m_hWnd, pos, pos );
 						}
-						return 0;
+						return TRUE;
 					}
 				}
 				break;

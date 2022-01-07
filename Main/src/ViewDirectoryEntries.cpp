@@ -170,7 +170,7 @@
 							}
 						}
 						RepaintData();
-						return 0;
+						return TRUE;
 					}
 				}
 				break;

@@ -1403,7 +1403,11 @@ namespace Utils{
 		__super::DoDataExchange(pDX);
 		const HWND hValue=GetDlgItemHwnd(ID_NUMBER);
 		if (pDX->m_bSaveAndValidate){
-			pDX->m_hWndLastControl=hValue;
+			#if _MFC_VER>=0x0A00
+				pDX->m_idLastControl=ID_NUMBER;
+			#else
+				pDX->m_hWndLastControl=hValue;
+			#endif
 			int v;
 			if (!GetCurrentValue(v))
 				pDX->Fail();
