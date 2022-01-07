@@ -139,6 +139,8 @@
 
 	#pragma pack(1)
 	typedef struct TSectorId sealed{
+		static const TSectorId Invalid;
+
 		TCylinder cylinder;
 		TSide side;
 		TSector sector;
@@ -351,10 +353,11 @@
 					TLogTime tStart;
 				} *PCByteInfo;
 
+				TSectorId sectorId; // or TSectorId::Invalid
 				TByteInfo byteInfos[1];
 
-				static void Create(TParseEvent &buffer,bool dataOk,TLogTime tStart,TLogTime tEnd,DWORD nBytes,PCByteInfo pByteInfos);
-				static void Create(TParseEvent &buffer,TParseEvent::TType type,TLogTime tStart,TLogTime tEnd,DWORD nBytes,PCByteInfo pByteInfos);
+				static void Create(TParseEvent &buffer,const TSectorId &sectorId,bool dataOk,TLogTime tStart,TLogTime tEnd,DWORD nBytes,PCByteInfo pByteInfos);
+				static void Create(TParseEvent &buffer,const TSectorId &sectorId,TParseEvent::TType type,TLogTime tStart,TLogTime tEnd,DWORD nBytes,PCByteInfo pByteInfos);
 
 				inline bool HasByteInfo() const{ return size>sizeof(TParseEvent); }
 			} *PCDataParseEvent;
@@ -400,8 +403,8 @@
 
 			WORD ScanFm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents);
 			WORD ScanMfm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents);
-			TFdcStatus ReadDataFm(WORD nBytesToRead,CParseEventList *pOutParseEvents);
-			TFdcStatus ReadDataMfm(WORD nBytesToRead,CParseEventList *pOutParseEvents);
+			TFdcStatus ReadDataFm(const TSectorId &sectorId,WORD nBytesToRead,CParseEventList *pOutParseEvents);
+			TFdcStatus ReadDataMfm(const TSectorId &sectorId,WORD nBytesToRead,CParseEventList *pOutParseEvents);
 		public:
 			typedef const struct TRegion:public TLogTimeInterval{
 				COLORREF color;
@@ -511,8 +514,8 @@
 			WORD Scan(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents=nullptr);
 			WORD ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList &rOutParseEvents,CBackgroundActionCancelable &bac);
 			WORD ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList &rOutParseEvents);
-			TFdcStatus ReadData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,CParseEventList *pOutParseEvents);
-			TFdcStatus ReadData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,LPBYTE buffer);
+			TFdcStatus ReadData(const TSectorId &id,TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,CParseEventList *pOutParseEvents);
+			TFdcStatus ReadData(const TSectorId &id,TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,LPBYTE buffer);
 			BYTE __cdecl ShowModal(PCRegion pRegions,DWORD nRegions,UINT messageBoxButtons,bool initAllFeaturesOn,LPCTSTR format,...) const;
 			void __cdecl ShowModal(LPCTSTR format,...) const;
 		};

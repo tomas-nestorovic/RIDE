@@ -1365,7 +1365,7 @@
 														rc=di.Transform(rc);
 													::SelectObject( p.dc, peBrushes[pe.type] );
 													::PatBlt( p.dc, rc.left,rc.top, rc.Width(),rc.Height(), 0xa000c9 ); // ternary raster operation "dest AND pattern"
-													::SetTextColor( p.dc, TParseEvent::TypeColors[pe.type] );
+													::SetTextColor( p.dc, Utils::GetBlendedColor(TParseEvent::TypeColors[pe.type],COLOR_WHITE,0.5f) );
 													::DrawText( p.dc, pe.GetDescription(),-1, &rc, DT_LEFT|DT_BOTTOM|DT_SINGLELINE );
 												}
 											::SelectObject( p.dc, hBrush0 );

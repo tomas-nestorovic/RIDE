@@ -35,6 +35,8 @@
 
 
 
+	const TSectorId TSectorId::Invalid={ -1, -1, -1, -1 };
+	
 	bool TSectorId::operator==(const TSectorId &id2) const{
 		// True <=> Sector IDs are equal, otherwise False
 		return	cylinder==id2.cylinder
@@ -69,7 +71,7 @@
 		return result;
 	}
 
-	const TPhysicalAddress TPhysicalAddress::Invalid={ -1, -1, {-1,-1,-1,-1} };
+	const TPhysicalAddress TPhysicalAddress::Invalid={ -1, -1, TSectorId::Invalid };
 
 	bool TPhysicalAddress::operator==(const TPhysicalAddress &chs2) const{
 		// True <=> PhysicalAddresses are equal, otherwise False

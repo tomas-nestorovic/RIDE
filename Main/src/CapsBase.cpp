@@ -385,6 +385,7 @@
 			BYTE buffer[16384]; // big enough to contain the longest possible Sector
 			currRev.fdcStatus.ExtendWith(
 				ReadData(
+					ris.id,
 					currRev.idEndTime, currRev.idEndProfile,
 					sectorOfficialLength, buffer
 				)
