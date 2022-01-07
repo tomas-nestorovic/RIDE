@@ -21,7 +21,11 @@
 		class CPainter; // forward
 
 		typedef const class CGraphics abstract{
+		protected:
+			CGraphics();
 		public:
+			bool visible;
+
 			virtual void DrawAsync(const CPainter &p) const=0;
 		} *PCGraphics;
 

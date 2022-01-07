@@ -36,6 +36,16 @@
 
 
 
+	CChartView::CGraphics::CGraphics()
+		// ctor
+		: visible(true) {
+	}
+
+
+
+
+
+
 	void CChartView::CXyGraphics::GetDrawingLimits(WORD percentile,TLogValue &rOutMaxX,TLogValue &rOutMaxY) const{
 		// returns the XY position of the last item still to be drawn with specified Percentile
 		//nop (not applicable)
@@ -250,7 +260,8 @@
 		xMax=xMaxOrg, yMax=yMaxOrg;
 		for( BYTE i=0; i<nGraphics; i++ )
 			if (const PCXyGraphics g=dynamic_cast<PCXyGraphics>(graphics[i]))
-				g->GetDrawingLimits( newPercentile, xMax, yMax );
+				if (g->visible)
+					g->GetDrawingLimits( newPercentile, xMax, yMax );
 	}
 
 	bool CChartView::CXyDisplayInfo::OnCmdMsg(CChartView &cv,UINT nID,int nCode,PVOID pExtra){
@@ -334,7 +345,9 @@
 			::IntersectClipRect( dc, p.di.margin.L, p.di.margin.T/2, rcClient.right/Utils::LogicalUnitScaleFactor-p.di.margin.R/2, rcClient.bottom/Utils::LogicalUnitScaleFactor-p.di.margin.B );
 			// . drawing all Graphic assets as they appear in the list
 			for( BYTE i=0; i<p.di.nGraphics; i++ ){
-				p.di.graphics[i]->DrawAsync( p );
+				const PCGraphics g=p.di.graphics[i];
+				if (g->visible)
+					g->DrawAsync( p );
 				if (id!=p.GetCurrentDrawingIdSync()) // new paint request?
 					break;
 			}
