@@ -124,6 +124,8 @@
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 	public:
 		CChartView(CDisplayInfo &di);
+
+		inline const CDisplayInfo &GetDisplayInfo() const{ return painter.di; }
 	};
 
 
@@ -132,11 +134,10 @@
 
 
 	class CChartFrame:public CFrameWnd{
-		CChartView chartView;
-		CMainWindow::CDynMenu menu;
 	protected:
+		CChartView chartView;
+
 		BOOL PreCreateWindow(CREATESTRUCT &cs) override;
-		BOOL PreTranslateMessage(PMSG pMsg) override;
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
 	public:
@@ -158,7 +159,7 @@
 		void ShowModal(
             LPCTSTR caption,
             CWnd *pParentWnd = nullptr,
-            const RECT &rect = rectDefault,
+            WORD width=800, WORD height=600,
             DWORD dwStyle = WS_MAXIMIZEBOX|WS_POPUP|WS_CAPTION|WS_SYSMENU|WS_THICKFRAME|WS_VISIBLE
 		);
 	};

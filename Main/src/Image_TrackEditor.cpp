@@ -1394,8 +1394,8 @@
 									m_bAutoMenuEnable=FALSE; // we are not set up for that
 								}
 
-								BOOL Create(LPCTSTR lpszClassName,LPCTSTR lpszWindowName,DWORD dwStyle=WS_OVERLAPPEDWINDOW,const RECT &rect=rectDefault,CWnd *pParentWnd=nullptr,LPCTSTR lpszMenuName=nullptr,DWORD dwExStyle=0,CCreateContext *pContext=nullptr) override{
-									const BOOL result=__super::Create( lpszClassName, lpszWindowName, dwStyle, rect, pParentWnd, lpszMenuName, dwExStyle, pContext );
+								BOOL OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext) override{
+									const BOOL result=__super::OnCreateClient( lpcs, pContext );
 									if (CMenu *const pFrameMenu=GetMenu())
 										if (CMenu *const pSubmenu=pFrameMenu->GetSubMenu(0)){
 											const Utils::CRideContextMenu tmp(IDR_SCATTERPLOT);
@@ -1445,7 +1445,7 @@
 									return __super::OnCmdMsg( nID, nCode, pExtra, pHandlerInfo );
 								}
 							} d( di, peSeries, indexTimeSeries );
-							d.ShowModal( caption, this, CRect(0,0,800,600) );
+							d.ShowModal( caption, this, 800,600 );
 							return TRUE;
 						}
 						case ID_HISTOGRAM:{
@@ -1491,7 +1491,7 @@
 									'\0', INT_MIN, Utils::CAxis::CountPrefixes
 								)
 							).ShowModal(
-								caption, this, CRect(0,0,800,600)
+								caption, this, 800,600
 							);
 							return TRUE;
 						}

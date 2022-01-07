@@ -427,8 +427,7 @@
 
 	CChartFrame::CChartFrame(CChartView::CDisplayInfo &di)
 		// ctor
-		: chartView(di)
-		, menu(di.menuResourceId) {
+		: chartView(di) {
 	}
 
 	BOOL CChartFrame::PreCreateWindow(CREATESTRUCT &cs){
@@ -438,17 +437,11 @@
 		return TRUE;
 	}
 
-	BOOL CChartFrame::PreTranslateMessage(PMSG pMsg){
-		// pre-processing the Message
-		return	::TranslateAccelerator( m_hWnd, menu.hAccel, pMsg );
-	}
-
 	LRESULT CChartFrame::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
 		// window procedure
 		switch (msg){
 			case WM_CREATE:{
 				const LRESULT result=__super::WindowProc(msg,wParam,lParam);
-				SetMenu(&menu);
 				chartView.Create( nullptr, nullptr, AFX_WS_DEFAULT_VIEW&~WS_BORDER|WS_CLIPSIBLINGS, rectDefault, this, AFX_IDW_PANE_FIRST );
 				return result;
 			}
@@ -514,11 +507,13 @@
 		//nop (assumed Dialog allocated on stack)
 	}
 	
-	void CChartDialog::ShowModal(LPCTSTR caption,CWnd *pParentWnd,const RECT &rect,DWORD dwStyle){
+	void CChartDialog::ShowModal(LPCTSTR caption,CWnd *pParentWnd,WORD width,WORD height,DWORD dwStyle){
 		// modal display of the Dialog
 		CWnd *const pBlockedWnd= pParentWnd ? pParentWnd : app.m_pMainWnd;
 		pBlockedWnd->BeginModalState();
-			Create( nullptr, caption, dwStyle, rect, pParentWnd );
+			LoadFrame( chartView.GetDisplayInfo().menuResourceId, dwStyle, pParentWnd );
+			SetWindowText(caption);
+			SetWindowPos( nullptr, 0,0, width*Utils::LogicalUnitScaleFactor, height*Utils::LogicalUnitScaleFactor, SWP_NOZORDER|SWP_NOMOVE );
 			RunModalLoop( MLF_SHOWONIDLE|MLF_NOIDLEMSG );
 		pBlockedWnd->EndModalState();
 		pBlockedWnd->BringWindowToTop();
