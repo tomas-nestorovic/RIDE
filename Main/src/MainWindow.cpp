@@ -281,6 +281,10 @@
 		OpenWebPage( tabCaption, Utils::GetApplicationOnlineHtmlDocumentUrl(documentName,url) );
 	}
 
+	void CMainWindow::OpenApplicationFaqWebPage(LPCTSTR documentName){
+		OpenApplicationPresentationWebPage( _T("Answer"), documentName );
+	}
+
 	#define VERSION_LATEST_WEB	_T("usingLatest.html")
 
 	UINT AFX_CDECL CMainWindow::CTdiView::RecencyDetermination_thread(PVOID pCancelableAction){

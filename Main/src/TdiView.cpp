@@ -186,25 +186,24 @@
 				}
 				case WM_COMMAND:
 					// processing a command
-					#define TAB_TITLE	_T("Answer")
 					switch (wParam){
 						case ID_FORMAT:
-							((CMainWindow *)app.m_pMainWnd)->OpenApplicationPresentationWebPage(TAB_TITLE,_T("faq_formatFloppy.html"));
+							((CMainWindow *)app.m_pMainWnd)->OpenApplicationFaqWebPage(_T("faq_formatFloppy.html"));
 							return 0;
 						case ID_IMAGE:
-							((CMainWindow *)app.m_pMainWnd)->OpenApplicationPresentationWebPage(TAB_TITLE,_T("faq_floppy2image.html"));
+							((CMainWindow *)app.m_pMainWnd)->OpenApplicationFaqWebPage(_T("faq_floppy2image.html"));
 							return 0;
 						case ID_MEDIUM:
-							((CMainWindow *)app.m_pMainWnd)->OpenApplicationPresentationWebPage(TAB_TITLE,_T("faq_image2floppy.html"));
+							((CMainWindow *)app.m_pMainWnd)->OpenApplicationFaqWebPage(_T("faq_image2floppy.html"));
 							return 0;
 						case ID_CREATOR:
-							((CMainWindow *)app.m_pMainWnd)->OpenApplicationPresentationWebPage(TAB_TITLE,_T("faq_copyFloppy.html"));
+							((CMainWindow *)app.m_pMainWnd)->OpenApplicationFaqWebPage(_T("faq_copyFloppy.html"));
 							return 0;
 						case ID_DATA:
-							((CMainWindow *)app.m_pMainWnd)->OpenApplicationPresentationWebPage(TAB_TITLE,_T("faq_convertImage.html"));
+							((CMainWindow *)app.m_pMainWnd)->OpenApplicationFaqWebPage(_T("faq_convertImage.html"));
 							return 0;
 						case ID_TAPE_OPEN:
-							((CMainWindow *)app.m_pMainWnd)->OpenApplicationPresentationWebPage(TAB_TITLE,_T("faq_supportedTapes.html"));
+							((CMainWindow *)app.m_pMainWnd)->OpenApplicationFaqWebPage(_T("faq_supportedTapes.html"));
 							return 0;
 					}
 					break;

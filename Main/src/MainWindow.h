@@ -110,6 +110,7 @@
 		void OpenWebPage(LPCTSTR tabCaption,LPCTSTR url);
 		void OpenRepositoryWebPage(LPCTSTR tabCaption,LPCTSTR documentName);
 		void OpenApplicationPresentationWebPage(LPCTSTR tabCaption,LPCTSTR documentName);
+		void OpenApplicationFaqWebPage(LPCTSTR documentName);
 		afx_msg void __changeAutomaticDiskRecognitionOrder__();
 	};
 

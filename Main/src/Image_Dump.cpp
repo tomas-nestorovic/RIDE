@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "CapsBase.h"
 
 	#define INI_DUMP	_T("Dump")
 
@@ -669,6 +670,10 @@ terminateWithError:		return LOG_ERROR(pAction->TerminateWithError(err));
 				static constexpr Utils::TSplitButtonAction OpenDialogAction={ ID_FILE, _T("Select image or device...") };
 				Utils::TSplitButtonAction *pAction=actions;
 				*pAction++=OpenDialogAction;
+				if (dynamic_cast<CCapsBase *>(dumpParams.source)!=nullptr){
+					static constexpr Utils::TSplitButtonAction HelpCreateStream={ ID_HELP_USING, _T("How do I create stream files? (online)") };
+					*pAction++=HelpCreateStream;
+				}
 				*pAction++=Utils::TSplitButtonAction::HorizontalLine;
 				if (!mruDevices[0].IsEmpty())
 					for( int i=0; !mruDevices[i].IsEmpty(); i++ ){
@@ -890,6 +895,11 @@ setDestination:						// : compacting FileName in order to be better displayable 
 								if (targetImageProperties && targetImageProperties->IsRealDevice())
 									mruDevices.Add( dumpParams.targetFileName, &CUnknownDos::Properties, targetImageProperties );
 								break;
+							case ID_HELP_USING:{
+								TCHAR url[200];
+								Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_createStreams.html"),url) );
+								return 0;
+							}
 							default:
 								if (ID_FILE_MRU_FIRST<=wParam && wParam<=ID_FILE_MRU_LAST){
 									wParam-=ID_FILE_MRU_FIRST;
@@ -911,6 +921,7 @@ setDestination:						// : compacting FileName in order to be better displayable 
 									const BOOL result=__super::OnInitDialog();
 									// : supplying available actions
 									AddHelpButton( ID_IMAGE, _T("How do I create an image of a real floppy disk?") );
+									AddHelpButton( ID_HELP_USING, _T("How do I create stream files?") );
 									AddHelpButton( ID_DRIVE, _T("How do I save an image back to a real floppy disk?") );
 									AddHelpButton( ID_FILE, _T("How do I convert between two images? (E.g. *.IMA to *.DSK)") );
 									AddHelpButton( ID_ACCURACY, _T("How do I create an exact copy of a real floppy disk?") );
@@ -928,6 +939,9 @@ setDestination:						// : compacting FileName in order to be better displayable 
 							switch (d.DoModal()){
 								case ID_IMAGE:
 									Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_floppy2image.html"),url) );
+									break;
+								case ID_HELP_USING:
+									Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_createStreams.html"),url) );
 									break;
 								case ID_DRIVE:
 									Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_image2floppy.html"),url) );
