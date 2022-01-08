@@ -133,7 +133,7 @@
 												fdd->dos->properties->sectorFillerByte
 											);
 						if (err!=ERROR_SUCCESS){ // if formatting failed ...
-terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any new InternalTrack representation
+terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new InternalTrack representation
 							fdd->internalTracks[cyl][head]=(PInternalTrack)pit; // re-attaching the original InternalTrack representation
 							return LOG_ERROR(err); // ... there's nothing else to do but terminating with Error
 						}
@@ -146,7 +146,7 @@ terminateWithError:			fdd->__unformatInternalTrack__(cyl,head); // disposing any
 							}
 						}
 						// . disposing the new InternalTrack representations (as it's been worked only with the original one), restoring the original
-						fdd->__unformatInternalTrack__(cyl,head); // disposing any new InternalTrack representation
+						fdd->UnformatInternalTrack(cyl,head); // disposing any new InternalTrack representation
 						fdd->internalTracks[cyl][head]=(PInternalTrack)pit; // re-attaching the original InternalTrack representation
 						// . writing the 0..(K-1)-th Sectors back to the above reformatted Track, leaving K+1..N-th Sectors unwritten (caller's duty); we re-attempt to write this K-th Sector in the next iteration
 						for( TSector s=0; s<nSectorsToSkip; s++ )
@@ -541,7 +541,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 				: nullptr;
 	}
 
-	void CFDD::__unformatInternalTrack__(TCylinder cyl,THead head){
+	void CFDD::UnformatInternalTrack(TCylinder cyl,THead head) const{
 		// disposes buffered InternalTrack
 		if (const PInternalTrack tmp=__getScannedTrack__(cyl,head))
 			delete tmp, internalTracks[cyl][head]=nullptr;
@@ -551,7 +551,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		// disposes all InternalTracks
 		LOG_ACTION(_T("void CFDD::__freeInternalTracks__"));
 		for( TCylinder cyl=0; cyl<FDD_CYLINDERS_MAX; cyl++ )
-			__unformatInternalTrack__(cyl,0), __unformatInternalTrack__(cyl,1);
+			UnformatInternalTrack(cyl,0), UnformatInternalTrack(cyl,1);
 	}
 
 
@@ -726,6 +726,23 @@ error:				switch (const TStdWinError err=::GetLastError()){
 			}
 			default:
 				ASSERT(FALSE);
+		}
+	}
+
+	TLogTime CFDD::GetAvgIndexDistance() const{
+		// given at least two indices, computes and returns the average distance between them, otherwise 0
+		LOG_ACTION(_T("LPCTSTR CFDD::GetAvgIndexDistance"));
+		DWORD nBytesTransferred;
+		switch (DRIVER){
+			case DRV_FDRAWCMD:{
+				// "setup and measurement process for each request takes 4 disk rotations" (Simon Owen)
+				DWORD usRevolution; // Revolution time in microseconds
+				::DeviceIoControl( _HANDLE, IOCTL_FD_GET_TRACK_TIME, nullptr,0, &usRevolution,sizeof(usRevolution), &nBytesTransferred, nullptr );
+				return TIME_MICRO(usRevolution);
+			}
+			default:
+				ASSERT(FALSE);
+				return 0;
 		}
 	}
 
@@ -928,12 +945,12 @@ returnData:				outFdcStatuses[index]=psi->fdcStatus;
 		return ERROR_SUCCESS;
 	}
 
-	TStdWinError CFDD::__setDataTransferSpeed__(Medium::TType _floppyType){
+	TStdWinError CFDD::SetDataTransferSpeed(Medium::TType _floppyType) const{
 		// sets TransferSpeed for given FloppyType; returns Windows standard i/o error
 		DWORD nBytesTransferred;
 		BYTE transferSpeed;
 		#ifdef LOGGING_ENABLED
-			LOG_ACTION(_T("TStdWinError CFDD::__setDataTransferSpeed__"));
+			LOG_ACTION(_T("TStdWinError CFDD::SetDataTransferSpeed"));
 			LOG_MESSAGE(Medium::GetDescription(_floppyType));
 		#endif
 		switch (_floppyType){
@@ -978,22 +995,38 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 		return LOG_ERROR(ERROR_DEVICE_NOT_AVAILABLE);
 	}
 
-	TStdWinError CFDD::__setAndEvaluateDataTransferSpeed__(Medium::TType _floppyType){
-		// sets TransferSpeed for given FloppyType and checks suitability by scanning zeroth Track; returns Windows standard i/o error
-		LOG_ACTION(_T("TStdWinError CFDD::__setAndEvaluateDataTransferSpeed__"));
-		// - setting
-		if (const TStdWinError err=__setDataTransferSpeed__(_floppyType))
-			return LOG_ERROR(err);
-		// - scanning zeroth Track - if it can be read, we have set the correct transfer speed
-		const PInternalTrack pit0=internalTracks[0][0]; // backing up original Track, if any
-			internalTracks[0][0]=nullptr; // the Track hasn't been scanned yet
-			const TInternalTrack *const pit=__scanTrack__(0,0);
-			const TStdWinError result =	pit && pit->nSectors // if Track can be scanned and its Sectors recognized ...
-										? ERROR_SUCCESS	// ... then the TransferSpeed has been set correctly
-										: LOG_ERROR(ERROR_INVALID_DATA);
-			__unformatInternalTrack__(0,0);
-		internalTracks[0][0]=pit0; // restoring original Track
-		return result;
+	TStdWinError CFDD::GetInsertedMediumType(TCylinder cyl,Medium::TType &rOutMediumType) const{
+		// True <=> Medium inserted in the Drive and recognized, otherwise False
+		LOG_ACTION(_T("TStdWinError CFDD::GetInsertedMediumType"));
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		// - disk must be inserted
+		if (!IsFloppyInserted())
+			return LOG_ERROR(ERROR_NO_MEDIA_IN_DRIVE);
+		// - enumerating possible floppy Types and attempting to recognize some Sectors
+		WORD nHealthySectorsMax=0; // arbitering the MediumType by the # of healthy Sectors and indices distance
+		Medium::TType bestMediumType=Medium::UNKNOWN;
+		const TLogTime avgIndexDistance=GetAvgIndexDistance(); // this is time-consuming, so doing it just once and re-using the result
+		for( DWORD type=1; type!=0; type<<=1 )
+			if (type&Medium::FLOPPY_ANY){
+				if (SetDataTransferSpeed( (Medium::TType)type )) // error?
+					continue;
+				const PInternalTrack pit=internalTracks[cyl][0];
+				internalTracks[cyl][0]=nullptr; // forcing a new scan
+					if (WORD nHealthySectors=GetCountOfHealthySectors(cyl,0)){
+						if (avgIndexDistance){ // measurement supported/succeeded?
+							const Medium::PCProperties mp=Medium::GetProperties((Medium::TType)type);
+							if (avgIndexDistance/10*9<mp->revolutionTime && mp->revolutionTime<avgIndexDistance/10*11) // 10% tolerance (don't set more for indices on 300 RPM drive appear only 16% slower than on 360 RPM drive!)
+								nHealthySectors|=0x8000;
+						}
+						if (nHealthySectors>nHealthySectorsMax)
+							nHealthySectorsMax=nHealthySectors, bestMediumType=(Medium::TType)type;
+					}
+					UnformatInternalTrack(cyl,0);
+				internalTracks[cyl][0]=pit;
+			}
+		// - Medium (possibly) recognized
+		rOutMediumType=bestMediumType; // may be Medium::UNKNOWN
+		return ERROR_SUCCESS;
 	}
 
 	TStdWinError CFDD::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){
@@ -1009,16 +1042,14 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 			&&
 			(floppyType&Medium::FLOPPY_ANY)!=0 // set in base method to "pFormat->mediumType"
 		)
-			// determining if corresponding FloppyType is inserted
-			return __setDataTransferSpeed__(floppyType);
-		else{
-			// automatically recognizing the Type of inserted floppy
-			if (__setAndEvaluateDataTransferSpeed__( floppyType=Medium::FLOPPY_DD_525 )==ERROR_SUCCESS) return ERROR_SUCCESS;
-			if (__setAndEvaluateDataTransferSpeed__( floppyType=Medium::FLOPPY_DD	   )==ERROR_SUCCESS) return ERROR_SUCCESS;
-			if (__setAndEvaluateDataTransferSpeed__( floppyType=Medium::FLOPPY_HD_525 )==ERROR_SUCCESS) return ERROR_SUCCESS;
-			if (__setAndEvaluateDataTransferSpeed__( floppyType=Medium::FLOPPY_HD_350 )==ERROR_SUCCESS) return ERROR_SUCCESS;
+			return SetDataTransferSpeed(floppyType);
+		// - automatically recognizing the Type of inserted floppy
+		floppyType=Medium::UNKNOWN;
+		if (const TStdWinError err=GetInsertedMediumType( 0, floppyType ))
+			return LOG_ERROR(err);
+		if (floppyType==Medium::UNKNOWN)
 			return LOG_ERROR(ERROR_BAD_COMMAND);
-		}
+		return SetDataTransferSpeed(floppyType);
 	}
 
 	void CFDD::__setSecondsBeforeTurningMotorOff__(BYTE nSeconds) const{
@@ -1034,9 +1065,9 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 		}
 	}
 
-	bool CFDD::__isFloppyInserted__() const{
+	bool CFDD::IsFloppyInserted() const{
 		// True <=> (some) floppy is inserted in the Drive, otherwise False
-		LOG_ACTION(_T("bool CFDD::__isFloppyInserted__"));
+		LOG_ACTION(_T("bool CFDD::IsFloppyInserted"));
 		DWORD nBytesTransferred;
 		switch (DRIVER){
 			case DRV_FDRAWCMD:
@@ -1260,7 +1291,7 @@ Utils::Information(buf);}
 			while (c<lp.nRepeats){
 				if (pAction->IsCancelled()) return LOG_ERROR(ERROR_CANCELLED);
 				// . STEP 2.1: scanning the Track and seeing how distant the two test Sectors are on it
-				lp.fdd->__unformatInternalTrack__(lp.cyl,lp.head); // disposing internal information on actual Track format
+				lp.fdd->UnformatInternalTrack(lp.cyl,lp.head); // disposing internal information on actual Track format
 				const TInternalTrack *const pit=lp.fdd->__scanTrack__(lp.cyl,lp.head);
 				// : STEP 2.2: reading the first formatted Sector
 				WORD w;
@@ -1305,40 +1336,47 @@ Utils::Information(buf);}
 				ShowDlgItem( ID_INFORMATION, false );
 				fdd->floppyType=Medium::UNKNOWN; // assumption (floppy not inserted or not recognized)
 				static constexpr WORD Interactivity[]={ ID_LATENCY, ID_NUMBER2, ID_GAP };
-				if (!EnableDlgItems( Interactivity, fdd->__isFloppyInserted__() ))
+				if (!EnableDlgItems( Interactivity, fdd->GetInsertedMediumType(0,fdd->floppyType)==ERROR_SUCCESS ))
 					SetDlgItemText( ID_MEDIUM, _T("Not inserted") );
 				// . attempting to recognize any previous format on the floppy
 				else
-					if (fdd->__setAndEvaluateDataTransferSpeed__(Medium::FLOPPY_DD_525)==ERROR_SUCCESS){
-						fdd->floppyType=Medium::FLOPPY_DD_525;
-						SetDlgItemText( ID_MEDIUM, _T("5.25\" DD formatted, 360 RPM drive") );
-						if (EnableDlgItem( ID_40D80, initialEditing )){
-							fdd->fddHead.SeekHome();
-							const bool doubleTrackStep0=fdd->fddHead.doubleTrackStep;
-								fdd->fddHead.doubleTrackStep=false;
-								const PInternalTrack pit0=fdd->internalTracks[1][0]; // backing up original Track, if any
-									fdd->internalTracks[1][0]=nullptr; // the Track hasn't been scanned yet
-									const PInternalTrack pit=fdd->__scanTrack__(1,0);
-										CheckDlgButton( ID_40D80, !ShowDlgItem(ID_INFORMATION,pit->nSectors>0) );
-									fdd->__unformatInternalTrack__(1,0);
-								fdd->internalTracks[1][0]=pit0; // restoring original Track
-							fdd->fddHead.doubleTrackStep=doubleTrackStep0;
-							fdd->fddHead.SeekHome();
-						}
-					}else if (fdd->__setAndEvaluateDataTransferSpeed__(Medium::FLOPPY_DD)==ERROR_SUCCESS){
-						fdd->floppyType=Medium::FLOPPY_DD;
-						SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" DD formatted, 300 RPM drive") );
-						CheckDlgButton( ID_40D80, false );
-						EnableDlgItem( ID_40D80, initialEditing );
-					}else if (fdd->__setAndEvaluateDataTransferSpeed__(Medium::FLOPPY_HD_350)==ERROR_SUCCESS){
-						fdd->floppyType=Medium::FLOPPY_HD_350;
-						SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" HD formatted") );
-						CheckDlgButton( ID_40D80, false );
-						EnableDlgItem( ID_40D80, initialEditing );
-					}else{
-						SetDlgItemText( ID_MEDIUM, _T("Not formatted or faulty") );
-						CheckDlgButton( ID_40D80, false );
-						EnableDlgItem( ID_40D80, initialEditing );
+					switch (fdd->floppyType){
+						case Medium::FLOPPY_DD_525:
+							SetDlgItemText( ID_MEDIUM, _T("5.25\" DD formatted, 360 RPM drive") );
+							if (EnableDlgItem( ID_40D80, initialEditing )){
+								fdd->fddHead.SeekHome();
+								const bool doubleTrackStep0=fdd->fddHead.doubleTrackStep;
+									fdd->fddHead.doubleTrackStep=false;
+									const PInternalTrack pit0=fdd->internalTracks[1][0]; // backing up original Track, if any
+										fdd->internalTracks[1][0]=nullptr; // the Track hasn't been scanned yet
+										const PInternalTrack pit=fdd->__scanTrack__(1,0);
+											CheckDlgButton( ID_40D80, !ShowDlgItem(ID_INFORMATION,pit->nSectors>0) );
+										fdd->UnformatInternalTrack(1,0);
+									fdd->internalTracks[1][0]=pit0; // restoring original Track
+								fdd->fddHead.doubleTrackStep=doubleTrackStep0;
+								fdd->fddHead.SeekHome();
+							}
+							break;
+						case Medium::FLOPPY_DD:
+							SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" DD formatted, 300 RPM drive") );
+							CheckDlgButton( ID_40D80, false );
+							EnableDlgItem( ID_40D80, initialEditing );
+							break;
+						case Medium::FLOPPY_HD_350:
+							SetDlgItemText( ID_MEDIUM, _T("3.5\" HD formatted") );
+							CheckDlgButton( ID_40D80, false );
+							EnableDlgItem( ID_40D80, initialEditing );
+							break;
+						case Medium::FLOPPY_HD_525:
+							SetDlgItemText( ID_MEDIUM, _T("5.25\" HD formatted") );
+							CheckDlgButton( ID_40D80, false );
+							EnableDlgItem( ID_40D80, initialEditing );
+							break;
+						default:
+							SetDlgItemText( ID_MEDIUM, _T("Not formatted or faulty") );
+							CheckDlgButton( ID_40D80, false );
+							EnableDlgItem( ID_40D80, initialEditing );
+							break;
 					}
 				// . loading the Profile associated with the current drive and FloppyType
 				const RECT rcWarning=MapDlgItemClientRect(ID_INSTRUCTION);
@@ -1488,12 +1526,12 @@ autodetermineLatencies:		// automatic determination of write latency values
 									::memcpy( internalTracksOrg, fdd->internalTracks, sizeof(internalTracksOrg) );
 									::ZeroMemory( fdd->internalTracks, sizeof(internalTracksOrg) );
 										const auto floppyTypeOrg=fdd->floppyType;
-										fdd->__setDataTransferSpeed__( fdd->floppyType=floppyType ); // setting transfer speed according to selected FloppyType
+										fdd->SetDataTransferSpeed( fdd->floppyType=floppyType ); // setting transfer speed according to selected FloppyType
 											fdd->locker.Unlock(); // giving way to parallel thread
 												const TStdWinError err=bmac.Perform();
 											fdd->locker.Lock();
 											fdd->__freeInternalTracks__();
-										fdd->__setDataTransferSpeed__( fdd->floppyType=floppyTypeOrg ); // reverting to original FloppyType
+										fdd->SetDataTransferSpeed( fdd->floppyType=floppyTypeOrg ); // reverting to original FloppyType
 									::memcpy( fdd->internalTracks, internalTracksOrg, sizeof(internalTracksOrg) );
 									// : reporting on problems and quitting
 									if (err){
@@ -1580,7 +1618,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 		LOG_DIALOG_DISPLAY(_T("CSettingDialog"));
 		const auto floppyTypeOrg=floppyType;
 			const bool dialogConfirmed=d.DoModal()==IDOK;
-		__setDataTransferSpeed__( floppyType=floppyTypeOrg ); // reverting to original FloppyType, should it be changed in the Dialog
+		SetDataTransferSpeed( floppyType=floppyTypeOrg ); // reverting to original FloppyType, should it be changed in the Dialog
 		if (dialogConfirmed){
 			params=d.params;
 			__setSecondsBeforeTurningMotorOff__(params.nSecondsToTurnMotorOff);
@@ -1757,7 +1795,7 @@ error:				return LOG_ERROR(::GetLastError());
 				for( TSector n=nSectors; n--; *pih++=TFdIdHeader(*pId++) );
 formatStandardWay:
 				// . disposing internal information on actual Track format
-				__unformatInternalTrack__(cyl,head);
+				UnformatInternalTrack(cyl,head);
 				// . formatting the Track
 				{	LOG_ACTION(_T("DeviceIoControl IOCTL_FDCMD_FORMAT_TRACK"));
 					if (!::DeviceIoControl( _HANDLE, IOCTL_FDCMD_FORMAT_TRACK, &fmt,sizeof(fmt), nullptr,0, &nBytesTransferred, nullptr ))
@@ -1786,7 +1824,7 @@ formatStandardWay:
 			case TFormatStyle::ONE_LONG_SECTOR:{
 				// . disposing internal information on actual Track format
 				LOG_MESSAGE(_T("TFormatStyle::ONE_LONG_SECTOR"));
-				__unformatInternalTrack__(cyl,head);
+				UnformatInternalTrack(cyl,head);
 				// . formatting the Track
 				const TPhysicalAddress chs={ cyl, head, *bufferId };
 				if (__formatToOneLongVerifiedSector__( chs, fillerByte )!=ERROR_SUCCESS)
@@ -1797,7 +1835,7 @@ formatStandardWay:
 			case TFormatStyle::CUSTOM:{
 				// . disposing internal information on actual Track format
 				LOG_MESSAGE(_T("TFormatStyle::CUSTOM"));
-				__unformatInternalTrack__(cyl,head);
+				UnformatInternalTrack(cyl,head);
 				// . verifying Track surface (if requested to) by writing maximum number of known Bytes to it and trying to read them back
 				if (params.verifyFormattedTracks){
 					const TPhysicalAddress chs={ cyl, head, {0,0,0,GetMaximumSectorLengthCode()+1} };
@@ -1975,7 +2013,7 @@ formatCustomWay:
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		LOG_TRACK_ACTION(cyl,head,_T("TStdWinError CFDD::PresumeHealthyTrackStructure"));
 		// - disposing internal information on actual Track format
-		__unformatInternalTrack__(cyl,head);
+		UnformatInternalTrack(cyl,head);
 		// - explicitly setting Track structure
 		TInternalTrack::TSectorInfo *psi=( internalTracks[cyl][head] = new TInternalTrack( this, cyl, head, Codec::MFM, nSectors, bufferId, (PCLogTime)gap3 ) )->sectors; // Gap3 = calculate Sector start times from information of this Gap3 and individual Sector lengths
 		for( TSector n=nSectors; n--; psi++ )
@@ -2001,7 +2039,7 @@ error:		return LOG_ERROR(::GetLastError());
 									};
 				LOG_ACTION(_T("DeviceIoControl IOCTL_FDCMD_FORMAT_TRACK"));
 				if (::DeviceIoControl( _HANDLE, IOCTL_FDCMD_FORMAT_TRACK, &fmt,sizeof(fmt), nullptr,0, &nBytesTransferred, nullptr )!=0){
-					__unformatInternalTrack__(cyl,head); // disposing internal information on actual Track format
+					UnformatInternalTrack(cyl,head); // disposing internal information on actual Track format
 					return ERROR_SUCCESS;
 				}else
 					goto error;

@@ -86,27 +86,27 @@
 			bool __seekTo__(TCylinder cyl);
 			bool __calibrate__();
 		} fddHead;
-		PInternalTrack internalTracks[FDD_CYLINDERS_MAX][2]; // 2 = a floppy can have two Sides
+		mutable PInternalTrack internalTracks[FDD_CYLINDERS_MAX][2]; // 2 = a floppy can have two Sides
 
 		TStdWinError __connectToFloppyDrive__(TSupportedDriver _driver);
 		void __disconnectFromFloppyDrive__();
 		TCHAR GetDriveLetter() const;
 		TStdWinError __reset__();
-		bool __isFloppyInserted__() const;
-		TStdWinError __setDataTransferSpeed__(Medium::TType _floppyType);
-		TStdWinError __setAndEvaluateDataTransferSpeed__(Medium::TType _floppyType);
+		bool IsFloppyInserted() const;
+		TStdWinError SetDataTransferSpeed(Medium::TType floppyType) const;
 		void __setSecondsBeforeTurningMotorOff__(BYTE nSeconds) const;
 		LPCTSTR __getControllerType__() const;
 		PInternalTrack __getScannedTrack__(TCylinder cyl,THead head) const;
 		PInternalTrack __scanTrack__(TCylinder cyl,THead head);
 		void __setWaitingForIndex__() const;
+		TLogTime GetAvgIndexDistance() const;
 		void __setNumberOfSectorsToSkipOnCurrentTrack__(BYTE _nSectorsToSkip) const;
 		TStdWinError __setTimeBeforeInterruptingTheFdc__(WORD nDataBytesBeforeInterruption,TLogTime nNanosecondsAfterLastDataByteWritten) const;
 		TStdWinError __setTimeBeforeInterruptingTheFdc__(WORD nDataBytesBeforeInterruption) const;
 		bool __bufferSectorData__(TCylinder cyl,THead head,PCSectorId psi,WORD sectorLength,const TInternalTrack *pit,BYTE nSectorsToSkip,TFdcStatus *pFdcStatus) const;
 		bool __bufferSectorData__(RCPhysicalAddress chs,WORD sectorLength,const TInternalTrack *pit,BYTE nSectorsToSkip,TFdcStatus *pFdcStatus) const;
 		TStdWinError __formatToOneLongVerifiedSector__(RCPhysicalAddress chs,BYTE fillerByte);
-		void __unformatInternalTrack__(TCylinder cyl,THead head);
+		void UnformatInternalTrack(TCylinder cyl,THead head) const;
 		void __freeInternalTracks__();
 	public:
 		static const TProperties Properties;
@@ -123,6 +123,7 @@
 		bool IsTrackScanned(TCylinder cyl,THead head) const override;
 		void GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses) override;
 		TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus) override;
+		TStdWinError GetInsertedMediumType(TCylinder cyl,Medium::TType &rOutMediumType) const override;
 		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
 		bool EditSettings(bool initialEditing) override;
 		TStdWinError Reset() override;
