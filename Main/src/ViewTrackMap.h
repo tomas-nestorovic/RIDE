@@ -10,6 +10,7 @@
 	public:
 		const CMainWindow::CTdiView::TTab tab;
 	private:
+		bool informOnCapabilities; // True <=> user will be informed on what the TrackMap tab can do, otherwise False
 		int iScrollX, iScrollY; // ScrollBar position
 		struct TTrackLength sealed{
 			static TTrackLength FromTime(TLogTime nNanosecondsTotal,TLogTime nNanosecondsPerByte);
@@ -82,6 +83,7 @@
 		CTrackMapView(PImage image);
 		~CTrackMapView();
 
+		BOOL Create(LPCTSTR lpszClassName,LPCTSTR lpszWindowName,DWORD dwStyle,const RECT &rect,CWnd *pParentWnd,UINT nID,CCreateContext *pContext=nullptr) override;
 		afx_msg void RefreshDisplay();
 	};
 

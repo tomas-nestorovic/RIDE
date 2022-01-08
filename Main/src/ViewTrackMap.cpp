@@ -3,6 +3,7 @@
 	#define INI_TRACKMAP		_T("TrackMap")
 
 	#define INI_FILE_SELECTION_COLOR	_T("fscol")
+	#define INI_MSG_CAPABILITIES _T("caps")
 
 	#define VIEW_PADDING		25
 	#define VIEW_HEADER_HEIGHT	(TRACK_HEIGHT+VIEW_PADDING/2)
@@ -28,6 +29,7 @@
 		, displayType(TDisplayType::STATUS) , showSectorNumbers(false) , showTimed(false) , fitLongestTrackInWindow(false) , showSelectedFiles(true) , iScrollX(0) , iScrollY(0) , scanner(this)
 		, fileSelectionColor( app.GetProfileInt(INI_TRACKMAP,INI_FILE_SELECTION_COLOR,::GetSysColor(COLOR_ACTIVECAPTION)) )
 		, longestTrack(0,0) , longestTrackNanoseconds(0)
+		, informOnCapabilities(true)
 		, zoomLengthFactor(3) {
 		::ZeroMemory( rainbowBrushes, sizeof(rainbowBrushes) );
 		// - launching the Scanner of Tracks
@@ -455,6 +457,18 @@
 		CMainWindow::__setStatusBarText__(nullptr);
 	}
 
+	BOOL CTrackMapView::Create(LPCTSTR lpszClassName,LPCTSTR lpszWindowName,DWORD dwStyle,const RECT &rect,CWnd *pParentWnd,UINT nID,CCreateContext *pContext){
+		// window creation
+		// - base
+		const BOOL result=__super::Create( lpszClassName, lpszWindowName, dwStyle, rect, pParentWnd, nID, pContext );
+		// - informing on TrackMap's capabilities
+		if (informOnCapabilities){
+			informOnCapabilities=false;
+			TDI_INSTANCE->RedrawWindow(); // make sure TDI's whole client area is up-to-date before showing the following message
+			Utils::InformationWithCheckableShowNoMore( _T("Use the \"") TRACK_MAP_TAB_LABEL _T("\" tab to explore the structure of the disk, incl. hidden sectors. Right-click a track or a sector for more operations."), INI_TRACKMAP, INI_MSG_CAPABILITIES );
+		}
+		return result;
+	}
 
 	afx_msg int CTrackMapView::OnCreate(LPCREATESTRUCT lpcs){
 		// window created
