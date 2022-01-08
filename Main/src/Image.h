@@ -501,6 +501,7 @@
 			TProfile CreateResetProfile() const;
 			void TruncateCurrentTime();
 			TLogTime GetIndexTime(BYTE index) const;
+			TLogTime GetAvgIndexDistance() const;
 			TLogTime GetTotalTime() const;
 			TLogTime ReadTime();
 			void SetCodec(Codec::TType codec);

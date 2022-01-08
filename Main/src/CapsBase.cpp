@@ -677,18 +677,24 @@ invalidTrack:
 		// - enumerating possible floppy Types and attempting to recognize some Sectors
 		CTrackReaderWriter trw=*pit;
 		delete pit;
-		WORD nHealthySectorsMax=0; // arbitering the MediumType by the # of healthy Sectors
+		WORD nHealthySectorsMax=0; // arbitering the MediumType by the # of healthy Sectors and indices distance
 		Medium::TType bestMediumType=Medium::UNKNOWN;
 		for( DWORD type=1; type!=0; type<<=1 )
 			if (type&Medium::FLOPPY_ANY){
 				trw.SetMediumType( rOutMediumType=(Medium::TType)type );
 				if ( pit=CInternalTrack::CreateFrom( *this, trw ) ){
 					std::swap( internalTracks[cyl][0], pit );
-						const TSector nHealthySectors=GetCountOfHealthySectors(cyl,0);
+						if (WORD nHealthySectors=GetCountOfHealthySectors(cyl,0)){
+							if (const TLogTime avgIndexDistance=trw.GetAvgIndexDistance()){ // at least two Indices on the Track?
+								const Medium::PCProperties mp=Medium::GetProperties((Medium::TType)type);
+								if (avgIndexDistance/10*9<mp->revolutionTime && mp->revolutionTime<avgIndexDistance/10*11) // 10% tolerance (don't set more for indices on 300 RPM drive appear only 16% slower than on 360 RPM drive!)
+									nHealthySectors|=0x8000;
+							}
+							if (nHealthySectors>nHealthySectorsMax)
+								nHealthySectorsMax=nHealthySectors, bestMediumType=rOutMediumType;
+						}
 					std::swap( internalTracks[cyl][0], pit );
 					delete pit;
-					if (nHealthySectors>nHealthySectorsMax)
-						nHealthySectorsMax=nHealthySectors, bestMediumType=rOutMediumType;
 				}
 			}
 		// - Medium (possibly) recognized

@@ -98,6 +98,16 @@
 					: logTimes[nLogTimes-1];
 	}
 
+	TLogTime CImage::CTrackReader::GetAvgIndexDistance() const{
+		// given at least two indices, computes and returns the average distance between them, otherwise 0
+		if (nIndexPulses<2)
+			return 0;
+		LONGLONG distSum=0;
+		for( BYTE i=1; i<nIndexPulses; i++ )
+			distSum+= indexPulses[i]-indexPulses[i-1];
+		return distSum/(nIndexPulses-1);
+	}
+
 	TLogTime CImage::CTrackReader::GetTotalTime() const{
 		// returns the last recorded Time
 		return	nLogTimes>0 ? logTimes[nLogTimes-1] : 0;
