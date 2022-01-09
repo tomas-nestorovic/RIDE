@@ -79,7 +79,7 @@
 		// - updating the FAT indication in StatusBar
 		TCHAR buf[8];
 		::wsprintf( buf, _T("FAT%d"), ((PMSDOS7)DOS)->fat.type*4 );
-		CStatusBar &rStatusBar=( (CMainWindow *)app.m_pMainWnd )->statusBar;
+		CStatusBar &rStatusBar=app.GetMainWindow()->statusBar;
 		if (rStatusBar.m_hWnd) // may not exist if the app is closing
 			rStatusBar.SetPaneText( 1, buf );
 		// - base
@@ -93,7 +93,7 @@
 				// window created
 				// . reinitializing the StatusBar
 				static constexpr UINT Indicators[]={ ID_SEPARATOR, ID_SEPARATOR };
-				CStatusBar &rStatusBar=( (CMainWindow *)app.m_pMainWnd )->statusBar;
+				CStatusBar &rStatusBar=app.GetMainWindow()->statusBar;
 				if (rStatusBar.m_hWnd){ // may not exist if the app is closing
 					rStatusBar.SetIndicators(Indicators,2);
 					rStatusBar.SetPaneInfo(1,ID_SEPARATOR,SBPS_NORMAL,40);

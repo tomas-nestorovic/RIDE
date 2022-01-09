@@ -161,7 +161,7 @@
 			switch (pcws->message){
 				case NM_CLICK:
 				case NM_RETURN:{
-					((CMainWindow *)app.m_pMainWnd)->__changeAutomaticDiskRecognitionOrder__();
+					app.GetMainWindow()->__changeAutomaticDiskRecognitionOrder__();
 					__refreshListOfContainers__();
 					*pResult=0;
 					return TRUE;

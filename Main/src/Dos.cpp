@@ -634,7 +634,7 @@ reportError:Utils::Information(buf);
 		// - closing the HTML Report
 		rd.params.fReport.Close();
 		// - displaying the HTML Report
-		((CMainWindow *)app.m_pMainWnd)->OpenWebPage( _T("Verification results"), tmpFileName );
+		app.GetMainWindow()->OpenWebPage( _T("Verification results"), tmpFileName );
 		// - updating Views
 		image->UpdateAllViews(nullptr);
 		return true;

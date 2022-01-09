@@ -238,7 +238,7 @@
 		for( POSITION pos=CDos::Known.GetHeadPosition(); pos; )
 			if (!CDos::CRecognition().__getOrderIndex__(CDos::Known.GetNext(pos))){
 				// found a DOS that's not recorded in the profile - displaying the dialog to confirm its recognition
-				((CMainWindow *)m_pMainWnd)->__changeAutomaticDiskRecognitionOrder__();
+				GetMainWindow()->__changeAutomaticDiskRecognitionOrder__();
 				break;
 			}
 		// - suggesting to visit the FAQ page to learn more about the application

@@ -55,7 +55,7 @@
 			RECT r;
 			rDockNextTo.GetWindowRect(&r);
 			::OffsetRect(&r,1,0);
-			CMainWindow *const pMainWindow=(CMainWindow *)app.m_pMainWnd;
+			CMainWindow *const pMainWindow=app.GetMainWindow();
 			pMainWindow->DockControlBar(this,AFX_IDW_DOCKBAR_TOP,&r);
 			pMainWindow->ShowControlBar(this,TRUE,FALSE);
 		}
@@ -64,7 +64,7 @@
 	void CMainWindow::CDockableToolBar::Hide(){
 		// hides this Toolbar
 		if (m_hWnd) // this ToolBar is destroyed automatically when the MainWindow is being closed
-			( (CMainWindow *)app.m_pMainWnd )->ShowControlBar(this,FALSE,FALSE);
+			app.GetMainWindow()->ShowControlBar(this,FALSE,FALSE);
 	}
 
 	void CMainWindow::CDockableToolBar::OnUpdateCmdUI(CFrameWnd* pTarget,BOOL bDisableIfNoHndler){
@@ -82,7 +82,7 @@
 
 	void CMainWindow::__resetStatusBar__(){
 		// resets the MainWindow's StatusBar
-		CStatusBar &rsb=( (CMainWindow *)app.m_pMainWnd )->statusBar;
+		CStatusBar &rsb=app.GetMainWindow()->statusBar;
 		if (rsb.m_hWnd){
 			static constexpr UINT Indicator=ID_SEPARATOR;
 			rsb.SetIndicators(&Indicator,1);
@@ -90,7 +90,7 @@
 	}
 	void CMainWindow::__setStatusBarText__(LPCTSTR text){
 		// sets the MainWindow's StatusBar main part to the specified Text
-		CStatusBar &rsb=( (CMainWindow *)app.m_pMainWnd )->statusBar;
+		CStatusBar &rsb=app.GetMainWindow()->statusBar;
 		if (rsb.m_hWnd)
 			rsb.SetPaneText(0,text);
 	}

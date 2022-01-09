@@ -9,7 +9,7 @@
 		m_bAutoDelete=FALSE; // for the Template to be not destroyed when it contains no open documents (no open Images)
 		// - creating the MainWindow
 		app.m_pMainWnd=new CMainWindow;
-		((CMainWindow *)app.m_pMainWnd)->LoadFrame( m_nIDResource, WS_OVERLAPPEDWINDOW|FWS_ADDTOTITLE, nullptr, nullptr );
+		app.GetMainWindow()->LoadFrame( m_nIDResource, WS_OVERLAPPEDWINDOW|FWS_ADDTOTITLE, nullptr, nullptr );
 		pSingleInstance=this;
 	}
 

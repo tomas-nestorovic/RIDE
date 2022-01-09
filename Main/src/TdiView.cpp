@@ -188,22 +188,22 @@
 					// processing a command
 					switch (wParam){
 						case ID_FORMAT:
-							((CMainWindow *)app.m_pMainWnd)->OpenApplicationFaqWebPage(_T("faq_formatFloppy.html"));
+							app.GetMainWindow()->OpenApplicationFaqWebPage(_T("faq_formatFloppy.html"));
 							return 0;
 						case ID_IMAGE:
-							((CMainWindow *)app.m_pMainWnd)->OpenApplicationFaqWebPage(_T("faq_floppy2image.html"));
+							app.GetMainWindow()->OpenApplicationFaqWebPage(_T("faq_floppy2image.html"));
 							return 0;
 						case ID_MEDIUM:
-							((CMainWindow *)app.m_pMainWnd)->OpenApplicationFaqWebPage(_T("faq_image2floppy.html"));
+							app.GetMainWindow()->OpenApplicationFaqWebPage(_T("faq_image2floppy.html"));
 							return 0;
 						case ID_CREATOR:
-							((CMainWindow *)app.m_pMainWnd)->OpenApplicationFaqWebPage(_T("faq_copyFloppy.html"));
+							app.GetMainWindow()->OpenApplicationFaqWebPage(_T("faq_copyFloppy.html"));
 							return 0;
 						case ID_DATA:
-							((CMainWindow *)app.m_pMainWnd)->OpenApplicationFaqWebPage(_T("faq_convertImage.html"));
+							app.GetMainWindow()->OpenApplicationFaqWebPage(_T("faq_convertImage.html"));
 							return 0;
 						case ID_TAPE_OPEN:
-							((CMainWindow *)app.m_pMainWnd)->OpenApplicationFaqWebPage(_T("faq_supportedTapes.html"));
+							app.GetMainWindow()->OpenApplicationFaqWebPage(_T("faq_supportedTapes.html"));
 							return 0;
 					}
 					break;
@@ -215,7 +215,7 @@
 						else if (!::lstrcmpW(pNmLink->item.szID,L"ACCSDRV"))
 							app.__openDevice__();
 						else if (!::lstrcmpW(pNmLink->item.szID,L"UPDATE"))
-							((CMainWindow *)app.m_pMainWnd)->OpenRepositoryWebPage( nullptr, _T("/releases") );
+							app.GetMainWindow()->OpenRepositoryWebPage( nullptr, _T("/releases") );
 						return 0;
 					}
 					break;
@@ -357,7 +357,7 @@
 		}else
 			tab->menu.Show(MENU_POSITION_DOS); // showing the View's Menu at the DOS's position
 		// - showing Image's ToolBar (guaranteed that the Toolbar always exists)
-		CMainWindow *const pMainWindow=(CMainWindow *)app.m_pMainWnd;
+		CMainWindow *const pMainWindow=app.GetMainWindow();
 		if (tab->IsPartOfImage()){ // the Tab is part of an Image (e.g. a WebPage usually isn't)
 			tab->image->toolbar.Show(pMainWindow->toolbar);
 		}
@@ -388,7 +388,7 @@
 		const PTab tab=(PTab)pTab;
 		// - hiding the associated View
 		const PView view=tab->view;
-		( (CMainWindow *)app.m_pMainWnd )->SetActiveView((CTdiView *)pTdi); // neccessary to call manually as otherwise no view will be active after closing the CurrentTab (and with no active documents, no command will be propagated to the document, etc.)
+		app.GetMainWindow()->SetActiveView((CTdiView *)pTdi); // neccessary to call manually as otherwise no view will be active after closing the CurrentTab (and with no active documents, no command will be propagated to the document, etc.)
 		((CTdiView *)pTdi)->pCurrentTab=nullptr;
 		if (tab->IsPartOfImage()) // the Tab is part of an Image (e.g. a WebPage usually isn't)
 			if (CImage *const image=CImage::GetActive())
@@ -474,7 +474,7 @@
 						if (hFocusedWnd==CIntroductoryGuidePost::pSingleInstance->m_hWnd)
 							return 0;
 					}while ( hFocusedWnd=::GetParent(hFocusedWnd) );
-					( (CMainWindow *)app.m_pMainWnd )->SetActiveView(	pCurrentTab
+					app.GetMainWindow()->SetActiveView(	pCurrentTab
 																		? pCurrentTab->view
 																		: this
 																	);

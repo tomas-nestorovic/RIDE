@@ -1037,7 +1037,7 @@ setDestination:						// : compacting FileName in order to be better displayable 
 					::GetTempFileName( tmpFileName, nullptr, FALSE, tmpFileName );
 					d.dumpParams.__exportErroneousTracksToHtml__( CFile(::lstrcat(tmpFileName,_T(".html")),CFile::modeCreate|CFile::modeWrite) );
 					// | displaying
-					((CMainWindow *)app.m_pMainWnd)->OpenWebPage( _T("Dump results"), tmpFileName );
+					app.GetMainWindow()->OpenWebPage( _T("Dump results"), tmpFileName );
 				}
 				// : reporting success
 				Utils::Information(_T("Dumped successfully."));

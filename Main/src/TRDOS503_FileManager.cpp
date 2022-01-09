@@ -42,7 +42,7 @@
 		switch (msg){
 			case WM_CREATE:{
 				static constexpr UINT Indicators[]={ ID_SEPARATOR, ID_SEPARATOR };
-				CStatusBar &rStatusBar=( (CMainWindow *)app.m_pMainWnd )->statusBar;
+				CStatusBar &rStatusBar=app.GetMainWindow()->statusBar;
 				if (rStatusBar.m_hWnd){ // may not exist if the app is closing
 					rStatusBar.SetIndicators(Indicators,2);
 					rStatusBar.SetPaneInfo(1,ID_SEPARATOR,SBPS_NORMAL,72);

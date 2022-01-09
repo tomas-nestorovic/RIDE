@@ -1,7 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-	#define TDI_INSTANCE	((CMainWindow *)app.m_pMainWnd)->pTdi
+	#define TDI_INSTANCE	app.GetMainWindow()->pTdi
 	#define TDI_HWND		TDI_INSTANCE->m_hWnd
 
 

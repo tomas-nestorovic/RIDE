@@ -43,7 +43,7 @@
 	void CMDOS2::CMdos2FileManagerView::OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint){
 		// request to refresh the display of content
 		// - refreshing the indication of MDOS Version
-		CStatusBar &rStatusBar=( (CMainWindow *)app.m_pMainWnd )->statusBar;
+		CStatusBar &rStatusBar=app.GetMainWindow()->statusBar;
 		if (rStatusBar.m_hWnd) // may not exist if the app is closing
 			rStatusBar.SetPaneText( 1, DOS->sideMap[1]==TVersion::VERSION_2?_T("MDOS 2.0"):_T("MDOS 1.0") );
 		// - refreshing the appearance
@@ -98,7 +98,7 @@
 		switch (msg){
 			case WM_CREATE:{
 				static constexpr UINT Indicators[]={ ID_SEPARATOR, ID_SEPARATOR };
-				CStatusBar &rStatusBar=( (CMainWindow *)app.m_pMainWnd )->statusBar;
+				CStatusBar &rStatusBar=app.GetMainWindow()->statusBar;
 				if (rStatusBar.m_hWnd){ // may not exist if the app is closing
 					rStatusBar.SetIndicators(Indicators,2);
 					rStatusBar.SetPaneInfo(1,ID_SEPARATOR,SBPS_NORMAL,60);

@@ -37,6 +37,7 @@
 		CRecentFileListEx *GetRecentFileList() const;
 		HWND GetEnabledActiveWindow() const;
 		bool IsInGodMode() const;
+		inline CMainWindow *GetMainWindow() const{ return (CMainWindow *)m_pMainWnd; }
 		#if _MFC_VER>=0x0A00
 		afx_msg void OnOpenRecentFile(UINT nID);
 		#else

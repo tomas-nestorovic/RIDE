@@ -496,7 +496,7 @@
 				return TCmdResult::DONE;
 			case ID_DOS_TAKEATOUR:
 				// navigating to the online tour on this DOS
-				((CMainWindow *)app.m_pMainWnd)->OpenApplicationPresentationWebPage(_T("Tour"),_T("MDOS2/tour.html"));
+				app.GetMainWindow()->OpenApplicationPresentationWebPage(_T("Tour"),_T("MDOS2/tour.html"));
 				return TCmdResult::DONE;
 		}
 		return __super::ProcessCommand(cmd);
