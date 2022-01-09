@@ -41,7 +41,7 @@
 			if (!m_pOnlyDoc->SaveModified()) // if refused to close the document ...
 				return false; // ... keeping it open
 			if (app.m_pMainWnd){ // may not exist if the application is starting or closing
-				TDI_INSTANCE->__closeAllTabsOfFocusedDos__();
+				TDI_INSTANCE->CloseAllTabsOfFocusedImage();
 				( (CFrameWnd *)app.m_pMainWnd )->OnUpdateFrameTitle(FALSE); // updating the MainWindow's title (now without document)
 			}
 			if (const PImage image=CImage::GetActive())

@@ -139,6 +139,11 @@
 				RemoveTab(hTdi,i);
 	}
 
+	void WINAPI CTdiCtrl::SwitchToTab(HWND hTdi,int tabId){
+		// switches to the Tab identified by the Content
+		GET_TDI_INFO(hTdi)->__switchToTab__( tabId );
+	}
+
 	void WINAPI CTdiCtrl::SwitchToTab(HWND hTdi,TTab::PContent tabContent){
 		// switches to the Tab identified by the Content
 		TCITEM ti;

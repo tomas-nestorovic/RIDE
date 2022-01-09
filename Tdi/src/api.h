@@ -50,6 +50,7 @@
 		static void WINAPI RemoveTab(HWND hTdi,int tabId);
 		static void WINAPI RemoveTab(HWND hTdi,TTab::PContent tabContent);
 		static void WINAPI RemoveCurrentTab(HWND hTdi);
+		static void WINAPI SwitchToTab(HWND hTdi,int tabId);
 		static void WINAPI SwitchToTab(HWND hTdi,TTab::PContent tabContent);
 		static void WINAPI SwitchToNextTab(HWND hTdi);
 		static void WINAPI SwitchToPrevTab(HWND hTdi);

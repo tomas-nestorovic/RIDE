@@ -96,7 +96,7 @@
 
 			CTdiView();
 
-			void __closeAllTabsOfFocusedDos__();
+			void CloseAllTabsOfFocusedImage();
 			inline PTab GetCurrentTab() const{ return pCurrentTab; }
 			void RepopulateGuidePost() const;
 		} *pTdi;

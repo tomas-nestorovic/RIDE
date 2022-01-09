@@ -245,9 +245,23 @@
 				return 0;
 			}
 			case TCM_DELETEALLITEMS:
-				// closing and disposing the Tab
-				for( int i=TabCtrl_GetItemCount(hTdi); i; CTdiCtrl::RemoveTab(hTdi,--i) );
-				return 0;
+				// closing and disposing all Tabs
+				pTdiInfo->__hideCurrentContent__();
+				// . aborting movement of any Tab
+				if (pDraggedTabInfo!=nullptr)
+					::SendMessage( hTdi, WM_LBUTTONUP, 0, 0 );
+				// . letting the caller know that each Tab is being closed
+				for( int i=TabCtrl_GetItemCount(hTdi); i; ){
+					TCITEM ti;
+						ti.mask=TCIF_PARAM;
+					TabCtrl_GetItem( hTdi, --i, &ti );
+					const PCTabInfo pti=(PCTabInfo)ti.lParam; // extracting TabInfo; TCITEM may be reinitialized below
+					if (pti->fnOnTabClosing)
+						pti->fnOnTabClosing(pti->content);
+					delete pti;
+				}
+				// . base, closing all Tabs
+				break;
 			case WM_DESTROY:
 				// destroying the TDI
 				TabCtrl_DeleteAllItems(hTdi);

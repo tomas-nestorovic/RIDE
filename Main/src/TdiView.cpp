@@ -418,11 +418,21 @@
 		return ((PTab)pTab)->view->m_hWnd;
 	}
 
-	void CMainWindow::CTdiView::__closeAllTabsOfFocusedDos__(){
-		// closes all Tabs associated with the DOS in focus
+	void CMainWindow::CTdiView::CloseAllTabsOfFocusedImage(){
+		// closes all Tabs associated with the Image in focus
+		// - if there is a Tab that isn't part of the Image in focus, switching to it, thus giving none of the Image Tabs a chance to be visible again (e.g. doing things in OnCreate)
 		for( int i=TabCtrl_GetItemCount(m_hWnd); i--; )
-			if (( (PTab)CTdiCtrl::GetTabContent(m_hWnd,i) )->IsPartOfImage())
-				CTdiCtrl::RemoveTab(m_hWnd,i);
+			if (!( (PTab)CTdiCtrl::GetTabContent(m_hWnd,i) )->IsPartOfImage()){ // isn't part of the DOS in focus
+				CTdiCtrl::SwitchToTab( m_hWnd, i );
+				for( int j=TabCtrl_GetItemCount(m_hWnd); j--; )
+					if (( (PTab)CTdiCtrl::GetTabContent(m_hWnd,j) )->IsPartOfImage())
+						CTdiCtrl::RemoveTab(m_hWnd,j);
+				return;
+			}
+		// - all Tabs are part of the Image
+		TabCtrl_DeleteAllItems(m_hWnd);
+		// - no Tabs exist now; show the GuidePost
+		CIntroductoryGuidePost::Show();
 	}
 
 	#define WM_GUIDEPOST_REPOPULATE	WM_USER+1
