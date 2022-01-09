@@ -1438,18 +1438,18 @@ BEGIN
                     WS_TABSTOP
     LTEXT           "Latencies [µs]:",IDC_STATIC,7,75,47,8,NOT WS_GROUP
     LTEXT           "&Controller:",IDC_STATIC,71,75,32,8
-    EDITTEXT        ID_LATENCY,110,73,35,12,ES_AUTOHSCROLL | NOT WS_BORDER,
+    EDITTEXT        ID_LATENCY,110,73,38,12,ES_AUTOHSCROLL | NOT WS_BORDER,
                     WS_EX_STATICEDGE
     LTEXT           "1 &Byte:",IDC_STATIC,71,90,23,8
-    EDITTEXT        ID_NUMBER2,110,88,35,12,ES_AUTOHSCROLL | NOT WS_BORDER,
+    EDITTEXT        ID_NUMBER2,110,88,38,12,ES_AUTOHSCROLL | NOT WS_BORDER,
                     WS_EX_STATICEDGE
     LTEXT           "&Gap 3:",IDC_STATIC,71,105,22,8
-    EDITTEXT        ID_GAP,110,103,35,12,ES_AUTOHSCROLL | NOT WS_BORDER,
+    EDITTEXT        ID_GAP,110,103,38,12,ES_AUTOHSCROLL | NOT WS_BORDER,
                     WS_EX_STATICEDGE
-    LTEXT           "W",ID_INSTRUCTION,156,89,17,16,NOT WS_VISIBLE | NOT 
+    LTEXT           "W",ID_INSTRUCTION,159,89,17,16,NOT WS_VISIBLE | NOT 
                     WS_GROUP
     CONTROL         "<a id=""ID_AUTO"">Autodetermine</a>",ID_AUTO,"SysLink",
-                    0x0,156,89,62,11
+                    0x0,159,89,59,11
     LTEXT           "Calibrate head:",IDC_STATIC,7,124,48,8,NOT WS_GROUP
     CONTROL         "Never",ID_NONE,"Button",BS_AUTORADIOBUTTON | WS_GROUP,
                     70,124,74,10
