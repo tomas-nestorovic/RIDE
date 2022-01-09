@@ -16,6 +16,13 @@
 		, fnOnTabClosing(fnOnTabClosing) , content(content) {
 	}
 
+	PCTabInfo GetTabInfo(HWND hTdi,int tabId){
+		TCITEM ti;
+			ti.mask=TCIF_PARAM;
+		TabCtrl_GetItem(hTdi,tabId,&ti);
+		return (PCTabInfo)ti.lParam;
+	}
+
 
 
 
@@ -144,10 +151,7 @@
 				const int tabId=TabCtrl_HitTest(hTdi,&hti);
 				if (tabId>=0){
 					// released over a Tab - displaying context menu with corresponding actions
-					TCITEM ti;
-						ti.mask=TCIF_PARAM;
-					TabCtrl_GetItem(hTdi,tabId,&ti);
-					const PCTabInfo pti=(PCTabInfo)ti.lParam;
+					const PCTabInfo pti=GetTabInfo(hTdi,tabId);
 					const HMENU hMenu=::CreatePopupMenu();
 						::AppendMenu( hMenu, MF_STRING|MF_GRAYED*(pti->fnCanBeClosed==TDI_TAB_CANCLOSE_NEVER), IDCLOSE, _T("Close tab") );
 						::AppendMenu( hMenu, MF_STRING, IDIGNORE, _T("Move tab") );
@@ -215,10 +219,7 @@
 			case TCM_DELETEITEM:{
 				// closing and disposing the Tab
 				// . getting information on the current situation
-				TCITEM ti;
-					ti.mask=TCIF_PARAM;
-				TabCtrl_GetItem( hTdi, wParam, &ti );
-				const PCTabInfo pti=(PCTabInfo)ti.lParam; // extracting TabInfo; TCITEM may be reinitialized below
+				const PCTabInfo pti=GetTabInfo(hTdi,wParam);
 				UINT iCurrentTab=TabCtrl_GetCurSel(hTdi);
 				const bool closingCurrentTab=iCurrentTab==wParam;
 				// . aborting movement of Tab that is about to be closed
@@ -230,8 +231,7 @@
 				if (!closingCurrentTab){
 					// closing another but current Tab - just repainting it
 					iCurrentTab -= wParam<iCurrentTab; // indices of Tabs right from the just closed Tab must be decreased (e.g. if just closed Tab3 while currently switched to Tab4, then Tab4 shifts to place of Tab3)
-					TabCtrl_GetItem( hTdi, iCurrentTab, &ti );
-					pTdiInfo->params.fnRepaintContent( ((PCTabInfo)ti.lParam)->content );
+					pTdiInfo->params.fnRepaintContent( CTdiCtrl::GetTabContent(hTdi,iCurrentTab) );
 				}else if (const UINT n=TabCtrl_GetItemCount(hTdi))
 					// some Tabs have remained - switching to one of them
 					pTdiInfo->__switchToTab__( wParam<n ? wParam : n-1 );
@@ -252,10 +252,7 @@
 					::SendMessage( hTdi, WM_LBUTTONUP, 0, 0 );
 				// . letting the caller know that each Tab is being closed
 				for( int i=TabCtrl_GetItemCount(hTdi); i; ){
-					TCITEM ti;
-						ti.mask=TCIF_PARAM;
-					TabCtrl_GetItem( hTdi, --i, &ti );
-					const PCTabInfo pti=(PCTabInfo)ti.lParam; // extracting TabInfo; TCITEM may be reinitialized below
+					const PCTabInfo pti=GetTabInfo(hTdi,--i);
 					if (pti->fnOnTabClosing)
 						pti->fnOnTabClosing(pti->content);
 					delete pti;
@@ -288,10 +285,7 @@
 		__hideCurrentContent__();
 		// - switching to I-th Tab
 		TabCtrl_SetCurSel(handle,i);
-		TCITEM ti;
-			ti.mask=TCIF_PARAM;
-		TabCtrl_GetItem(handle,i,&ti);
-		if (const PCTabInfo pti=(PCTabInfo)ti.lParam){
+		if (const PCTabInfo pti=GetTabInfo(handle,i)){
 			::ShowWindow( hBtnCloseCurrentTab, (pti->fnCanBeClosed!=TDI_TAB_CANCLOSE_NEVER)*SW_SHOW );
 			params.fnShowContent( params.customParam, currentTabContent=pti->content );
 			__fitContentToTdiCanvas__();

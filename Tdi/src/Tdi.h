@@ -46,4 +46,8 @@
 	} *PTdiInfo;
 
 
+
+	PCTabInfo GetTabInfo(HWND hTdi,int tabId);
+
+
 #endif // TDI_H
