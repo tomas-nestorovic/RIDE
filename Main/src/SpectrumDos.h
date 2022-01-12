@@ -32,6 +32,7 @@
 			bool showPixels, showAttributes;
 			HANDLE hFlashTimer;
 			bool paperFlash;
+			WORD offset;
 			struct{
 				BITMAPINFO bmi;
 				RGBQUAD colors[16];

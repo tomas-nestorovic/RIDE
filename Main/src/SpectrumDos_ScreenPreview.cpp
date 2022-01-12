@@ -34,6 +34,12 @@
 						return SendMessage( WM_COMMAND, ID_DATA );
 					case 'A':
 						return SendMessage( WM_COMMAND, ID_ATTRIBUTE );
+					case 'D':
+						return SendMessage( WM_COMMAND, ID_ALIGN );
+					case 'F':
+						return SendMessage( WM_COMMAND, ID_FILE_SHIFT_UP );
+					case 'S':
+						return SendMessage( WM_COMMAND, ID_FILE_SHIFT_DOWN );
 				}
 				break;
 			case WM_PAINT:{
@@ -104,6 +110,7 @@
 		// - base
 		: CFilePreview( nullptr, INI_PREVIEW, rFileManager, SCREEN_WIDTH, SCREEN_HEIGHT, true, IDR_SPECTRUM_PREVIEW_SCREEN )
 		// - initialization
+		, offset(0)
 		, showPixels(true) , showAttributes(true)
 		, paperFlash(false) {
 		pSingleInstance=this;
@@ -151,10 +158,11 @@
 		::memset(buf,0,6144);		// pixel part
 		::memset(buf+6144,56,768);	// attribute part (56 = Paper 7 + Ink 0)
 		// - loading the File into Buffer
-		LPCTSTR errMsg=nullptr;
-		DOS->ExportFile( file, &CMemFile(buf,sizeof(buf)), sizeof(buf), &errMsg );
-		if (errMsg)
-			return DOS->ShowFileProcessingError(file,errMsg);
+		CDos::CFileReaderWriter frw( DOS, file );
+		frw.Seek( offset, CFile::begin );
+		frw.Read( &buf, 6144+showAttributes*768 );
+		if (const TStdWinError err=::GetLastError())
+			return DOS->ShowFileProcessingError( file, err );
 		// - resetting the parts not desired for display
 		if (!showPixels) // don't want pixels
 			::memset(buf,0,6144);
@@ -204,6 +212,15 @@
 					case ID_ATTRIBUTE:
 						((CCmdUI *)pExtra)->SetCheck(showAttributes);
 						return TRUE;
+					case ID_ALIGN:
+						((CCmdUI *)pExtra)->Enable( DOS->GetFileSize(pdt->entry)>0 );
+						return TRUE;
+					case ID_FILE_SHIFT_UP:
+						((CCmdUI *)pExtra)->Enable( offset<DOS->GetFileSize(pdt->entry) );
+						return TRUE;
+					case ID_FILE_SHIFT_DOWN:
+						((CCmdUI *)pExtra)->Enable( offset>0 );
+						return TRUE;
 				}
 				break;
 			case CN_COMMAND:
@@ -215,6 +232,22 @@
 						return TRUE;
 					case ID_ATTRIBUTE:
 						showAttributes=!showAttributes;
+						RefreshPreview();
+						return TRUE;
+					case ID_ALIGN:{
+						const PropGrid::Integer::TUpDownLimits limits={ 0, DOS->GetFileSize(pdt->entry)-1 };
+						if (const Utils::CSingleNumberDialog &&d=Utils::CSingleNumberDialog( _T("Offset"), _T("Screen data begin at (0=default)"), limits, offset, false, this )){
+							offset=d.Value;
+							RefreshPreview();
+						}
+						return TRUE;
+					}
+					case ID_FILE_SHIFT_UP:
+						offset++;
+						RefreshPreview();
+						return TRUE;
+					case ID_FILE_SHIFT_DOWN:
+						offset--;
 						RefreshPreview();
 						return TRUE;
 				}

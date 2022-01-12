@@ -823,6 +823,10 @@ BEGIN
         MENUITEM "Show attributes\tA",          ID_ATTRIBUTE, CHECKED
         MENUITEM SEPARATOR
         MENUITEM "Zoom 100%",                   ID_ZOOM_FIT
+        MENUITEM SEPARATOR
+        MENUITEM "Offset...\tD",                ID_ALIGN
+        MENUITEM "Offset by +1\tF",             ID_FILE_SHIFT_UP
+        MENUITEM "Offset by -1\tS",             ID_FILE_SHIFT_DOWN
     END
 END
 
