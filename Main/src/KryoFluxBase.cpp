@@ -83,7 +83,7 @@
 				// . making sure that a floppy is in the Drive
 				ShowDlgItem( ID_INFORMATION, false );
 				Medium::TType mt;
-				static constexpr WORD Interactivity[]={ ID_LATENCY, ID_NUMBER2, ID_GAP };
+				static constexpr WORD Interactivity[]={ ID_LATENCY, ID_NUMBER2, ID_GAP, 0 };
 				if (!EnableDlgItems( Interactivity, rkfb.GetInsertedMediumType(0,mt)==ERROR_SUCCESS ))
 					SetDlgItemText( ID_MEDIUM, _T("Not inserted") );
 				// . attempting to recognize any previous format on the floppy

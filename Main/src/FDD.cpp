@@ -1335,7 +1335,7 @@ Utils::Information(buf);}
 				// . making sure that a floppy is in the Drive
 				ShowDlgItem( ID_INFORMATION, false );
 				fdd->floppyType=Medium::UNKNOWN; // assumption (floppy not inserted or not recognized)
-				static constexpr WORD Interactivity[]={ ID_LATENCY, ID_NUMBER2, ID_GAP };
+				static constexpr WORD Interactivity[]={ ID_LATENCY, ID_NUMBER2, ID_GAP, 0 };
 				if (!EnableDlgItems( Interactivity, fdd->GetInsertedMediumType(0,fdd->floppyType)==ERROR_SUCCESS ))
 					SetDlgItemText( ID_MEDIUM, _T("Not inserted") );
 				// . attempting to recognize any previous format on the floppy

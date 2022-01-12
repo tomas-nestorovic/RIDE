@@ -383,8 +383,9 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				int i=rParams.rev5;
 				DDX_Radio( pDX, ID_STANDARD, i );
 				rParams.rev5=i>0;
-				static constexpr WORD Controls[]={ ID_STANDARD, ID_DRIVE, ID_PROTECTED, 0 } ;
-				EnableDlgItems( Controls, !readOnly&&allowTypeBeChanged );
+				static constexpr WORD Controls1[]={ ID_STANDARD, ID_DRIVE, ID_PROTECTED, 0 } ;
+				static constexpr WORD Controls2[]={ ID_CREATOR, ID_TRACK, IDOK, 0 } ;
+				EnableDlgItems( Controls1, EnableDlgItems(Controls2,!readOnly)&&allowTypeBeChanged );
 				// . Creator
 				const BYTE nCyls=rDiskInfo.nCylinders;
 				rDiskInfo.nCylinders=0; // converting the Creator field to a null-terminated string
@@ -404,7 +405,6 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 						cb.Detach();
 					}
 				rDiskInfo.nCylinders=nCyls;
-				EnableDlgItem( ID_CREATOR, !readOnly );
 				// . preservation of empty Tracks
 				i=rParams.preserveEmptyTracks;
 				DDX_Check( pDX, ID_TRACK, i );

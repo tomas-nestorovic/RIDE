@@ -1435,6 +1435,8 @@ namespace Utils{
 			hexa=IsDlgButtonChecked(ID_FORMAT);
 			PreInitDialog();
 			DoDataExchange( &CDataExchange(this,FALSE) );
+			FocusDlgItem( ID_NUMBER );
+			Edit_SetSel( GetDlgItemHwnd(ID_NUMBER), 0, -1 ); // selecting full content
 		}
 		return __super::WindowProc(msg,wParam,lParam);
 	}
