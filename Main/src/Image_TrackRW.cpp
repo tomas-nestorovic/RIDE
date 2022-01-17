@@ -611,8 +611,9 @@
 	CImage::CTrackReader::CBitSequence::CBitSequence(CTrackReader tr,TLogTime tFrom,const CTrackReader::TProfile &profileFrom, TLogTime tTo)
 		// ctor
 		: pBits(nullptr) , nBits(0) {
+		const TLogTime iwTimeDefaultHalf=tr.GetCurrentProfile().iwTimeDefault/2;
 		tr.SetCurrentTimeAndProfile( tFrom, profileFrom );
-		while (tr && tr.GetCurrentTime()<tTo)
+		while (tr && tr.GetCurrentTime()+iwTimeDefaultHalf<tTo)
 			tr.ReadBit(), nBits++;
 		pBits=(TBit *)::calloc( nBits+1, sizeof(TBit) ); // "+1" = auxiliary terminal Bit
 		tr.SetCurrentTimeAndProfile( tFrom, profileFrom );
