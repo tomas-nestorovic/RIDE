@@ -413,10 +413,21 @@
 			class CBitSequence sealed{
 			public:
 				typedef const struct TBit sealed{
-					bool value;
+					union{
+						struct{
+							BYTE value:1; // recognized 0 or 1 from the underlying low-level timing
+							BYTE fuzzy:1; // the Value is likely different in each Revolution
+							BYTE cosmeticFuzzy:1; // the Value is not wrong but should be displayed so for cosmetic reasons
+						};
+						BYTE flags;
+					};
 					TLogTime time;
 
-					inline bool operator==(const TBit &r) const{ return value==r.value; }
+					inline bool operator==(const TBit &r) const{
+						return	fuzzy && r.fuzzy // treat likely wrong values as equal
+								||
+								!(fuzzy||r.fuzzy) && value==r.value; // the Values are certain and equal
+					}
 				} *PCBit;
 			private:
 				TBit *pBits;

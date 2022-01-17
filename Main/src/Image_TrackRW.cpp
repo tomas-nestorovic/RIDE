@@ -327,7 +327,7 @@
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
 		const int StepGranularity=1000;
 		const BYTE nFullRevolutions=std::max( 0, GetIndexCount()-1 );
-		bac.SetProgressTarget( (4+std::max(0,nFullRevolutions*(nFullRevolutions-1)/2))*StepGranularity ); // (N)*X, N = analysis steps
+		bac.SetProgressTarget( (4+2*nFullRevolutions)*StepGranularity ); // (N)*X, N = analysis steps
 		// - Step 1: standard scanning using current Codec
 		const WORD nSectorsFound=Scan( pOutFoundSectors, pOutIdEnds, pOutIdProfiles, pOutIdStatuses, &rOutParseEvents );
 		bac.UpdateProgress( 1*StepGranularity );
@@ -490,68 +490,65 @@
 			CParseEventList fuzzyStdDataEvents;
 			const DWORD nSesItemsMax=pRevolutionBits[0]->GetBitCount()*3; // over-dimensioning the capacity to guarantee the Shortest Edit Script always fits in
 			const auto pSes=Utils::MakeCallocPtr<CDiffBase::TScriptItem>(nSesItemsMax);
-			const auto pLocalRegionsI=Utils::MakeCallocPtr<TRegion>(nSesItemsMax);
-			const auto pLocalRegionsJ=Utils::MakeCallocPtr<TRegion>(nSesItemsMax);
-			if (pSes && pLocalRegionsI && pLocalRegionsJ)
-				for( BYTE i=0; i<nFullRevolutions-1; i++ ){
-					const CBitSequence &iBits=*pRevolutionBits[i];
-					for( BYTE j=i+1; j<nFullRevolutions; j++ ){
-						const CBitSequence &jBits=*pRevolutionBits[j];
-						const int nSesItems=iBits.GetShortestEditScript( jBits, pSes, nSesItemsMax, &bac.CreateSubactionProgress(StepGranularity) );
-						if (nSesItems>0){ // Revolutions bitwise different?
-							// : projecting differences into both Revolutions
-							iBits.ScriptToLocalDiffs( pSes, nSesItems, pLocalRegionsI );
-							for( DWORD k=nSesItems; k>0; pSes[--k].ConvertToDual() );
-							jBits.ScriptToLocalDiffs( pSes, nSesItems, pLocalRegionsJ );
-							// : filtering out only those fuzzy regions that overlap with Sectors
-							for( DWORD g=0; g<nSesItems; g++ ){
-								const TRegion *pTwoRegions[2]={ &pLocalRegionsI[g], &pLocalRegionsJ[g] };
-								char fuzzyInOkSector=-1; // "-1" = in no Sector in either Revolution, "0" = only in bad Sector in all Revolutions, "1" = in OK Sector in at least one Revolution
-								for( BYTE r=0; r<2; r++ ){ // projecting the Script to both of the Revolutions
-									const TRegion &rgn=*pTwoRegions[r];
-									char fuzzyInBadSector=-1; // "-1" = in no Sector, "0" = only in OK Sector, "1" = in bad Sector
-									for( POSITION pos=rOutParseEvents.GetHeadPosition(); pos; ){
-										const TParseEvent &pe=rOutParseEvents.GetNext(pos);
-										if (pe.IsDataStd() || pe.IsCrc())
-											if (pe.Intersect(rgn))
-												if ( fuzzyInBadSector=pe.type==TParseEvent::DATA_BAD||pe.type==TParseEvent::CRC_BAD )
-													break;
-									}
-									if (fuzzyInBadSector>=0) // fuzzy in a Sector? (i.e. not in gaps or elsewhere)
-										if ( fuzzyInOkSector=fuzzyInBadSector==0 ) // only in OK Sector?
-											break;
-								}
-								for( BYTE r=0; r<2; r++ ){
-									const TRegion &rgn=*pTwoRegions[r];
-									fuzzyStdDataEvents.AddCopyAscendingByStart(
-										TParseEvent(
-											fuzzyInOkSector!=0 // "<0" (=negative) = fuzzy region out of Sector data (e.g. in gaps or elsewhere; such region is OK), ">0" (=positive) = fuzzy region in OK Sector data
-												? TParseEvent::FUZZY_OK
-												: TParseEvent::FUZZY_BAD,
-											rgn.tStart, rgn.tEnd, 0
-										)
-									);
-								}
-							}
-						}
+			const auto pLocalRegions=Utils::MakeCallocPtr<TRegion>(nSesItemsMax);
+			if (pSes && pLocalRegions){
+				// : accumulating differences from the first Revolution to the last; bits not included in the diff script are stable across all previous Revolutions
+				for( BYTE i=1; i<nFullRevolutions; i++ ){
+					const CBitSequence &iRev=*pRevolutionBits[i], &jRev=*pRevolutionBits[i-1];
+					const int nSesItems=iRev.GetShortestEditScript( jRev, pSes, nSesItemsMax, &bac.CreateSubactionProgress(StepGranularity) );
+					if (nSesItems>0){ // neighboring Revolutions bitwise different?
+						iRev.ScriptToLocalDiffs( pSes, nSesItems, pLocalRegions );
+						for( DWORD k=nSesItems; k>0; pSes[--k].ConvertToDual() );
+						jRev.ScriptToLocalDiffs( pSes, nSesItems, pLocalRegions );
 					}
 				}
-			// . merging consecutive overlapping ParseEvents
-			for( POSITION pos=fuzzyStdDataEvents.GetHeadPosition(),tmp; pos; ){
-				TParseEvent &rpe=fuzzyStdDataEvents.GetNext( tmp=pos );
-				if (tmp){
-					const TParseEvent &peNext=fuzzyStdDataEvents.GetAt(tmp);
-					if (rpe.Inflate(profile.iwTimeMin).Intersect(peNext)){ // do two consecutive ParseEvents overlap?
-						*static_cast<TLogTimeInterval *>(&rpe)=rpe.Unite(peNext);
-						if (rpe.type==TParseEvent::FUZZY_BAD) // if so far fuzzy only in bad Data ...
-							rpe.type=peNext.type; // ... trying to confirm that the Data are in at least one Revolution OK
-						fuzzyStdDataEvents.RemoveAt(tmp);
-					}else
-						pos=tmp;
-				}else
-					break;
+				// : projecting fuzzy bits accumulated in the last Revolution back to the first
+				for( BYTE j=nFullRevolutions-1; j>0; ){
+					const CBitSequence &jRev=*pRevolutionBits[j], &iRev=*pRevolutionBits[--j];
+					const int nSesItems=iRev.GetShortestEditScript( jRev, pSes, nSesItemsMax, &bac.CreateSubactionProgress(StepGranularity) );
+					if (nSesItems>0){ // neighboring Revolutions bitwise different?
+						iRev.ScriptToLocalDiffs( pSes, nSesItems, pLocalRegions );
+						for( DWORD k=nSesItems; k>0; pSes[--k].ConvertToDual() );
+						jRev.ScriptToLocalDiffs( pSes, nSesItems, pLocalRegions );
+					}
+				}
+				// : merging consecutive fuzzy bits into FuzzyEvents
+				POSITION pePos=rOutParseEvents.GetHeadPosition();
+				for( BYTE r=0; r<nFullRevolutions; r++ ){
+					const CBitSequence &rev=*pRevolutionBits[r];
+					CBitSequence::PCBit bit=rev.GetBits(), lastBit=bit+rev.GetBitCount();
+					do{
+						// > finding next Fuzzy interval
+						while (bit<lastBit && !(bit->fuzzy||bit->cosmeticFuzzy)) // skipping Bits that are not Fuzzy
+							bit++;
+						if (bit==lastBit) // no more Fuzzy bits?
+							break;
+						TLogTimeInterval fuzzy( bit->time, 0 );
+						while (bit<lastBit && (bit->fuzzy||bit->cosmeticFuzzy)) // discovering consecutive Fuzzy Bits
+							bit++;
+						fuzzy.tEnd=bit->time;
+						// > determining the type of fuzziness
+						bool fuzzyInBadSector=false;
+						while (pePos){
+							const TParseEvent &pe=rOutParseEvents.GetAt(pePos);
+							if (fuzzy.tEnd<=pe.tStart)
+								break;
+							if (pe.IsDataStd() || pe.IsCrc())
+								if (pe.Intersect(fuzzy))
+									if ( fuzzyInBadSector=pe.type==TParseEvent::DATA_BAD||pe.type==TParseEvent::CRC_BAD )
+										break;
+							rOutParseEvents.GetNext(pePos);
+						}
+						// > creating new FuzzyEvent
+						rOutParseEvents.AddCopyAscendingByStart(
+							TParseEvent(
+								fuzzyInBadSector ? TParseEvent::FUZZY_BAD : TParseEvent::FUZZY_OK,
+								fuzzy.tStart, fuzzy.tEnd, 0
+							)
+						);
+					} while (bit<lastBit);
+				}
 			}
-			rOutParseEvents.AddCopiesAscendingByStart( fuzzyStdDataEvents );
 		}
 		// - successfully analyzed
 		return nSectorsFound;
@@ -620,6 +617,7 @@
 		for( DWORD i=0; i<nBits; ){
 			TBit &r=pBits[i++];
 				r.time=tr.GetCurrentTime();
+				r.flags=0;
 				r.value=tr.ReadBit();
 		}
 		pBits[nBits].time=tr.GetCurrentTime(); // auxiliary terminal Bit
@@ -666,6 +664,7 @@
 					// "theirs" contains some extra bits that "this" misses
 					rDiff.color=0xb4; // tinted red
 					rDiff.tEnd=pBits[std::min<DWORD>( si.iPosA+1, nBits )].time; // even Insertions must be represented locally!
+					pBits[si.iPosA].cosmeticFuzzy=true;
 					break;
 				default:
 					ASSERT(FALSE); // we shouldn't end up here!
@@ -673,7 +672,11 @@
 				case CDiffBase::TScriptItem::DELETION:
 					// "theirs" misses some bits that "this" contains
 					rDiff.color=0x5555ff; // another tinted red
-					rDiff.tEnd=pBits[std::min<DWORD>( si.iPosA+si.del.nItemsA+1, nBits )].time; // "+1" = see above Insertion (only for cosmetical reasons)
+					int iDeletionEnd=std::min<DWORD>( si.iPosA+si.del.nItemsA+1, nBits ); // "+1" = see above Insertion (only for cosmetical reasons)
+					rDiff.tEnd=pBits[iDeletionEnd].time;
+					pBits[--iDeletionEnd].cosmeticFuzzy=true; // see above Insertion
+					while (iDeletionEnd>si.iPosA)
+						pBits[--iDeletionEnd].fuzzy=true;
 					break;
 			}
 		}
