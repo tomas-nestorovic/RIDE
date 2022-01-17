@@ -327,7 +327,7 @@
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
 		const int StepGranularity=1000;
 		const BYTE nFullRevolutions=std::max( 0, GetIndexCount()-1 );
-		bac.SetProgressTarget( (4+2*nFullRevolutions)*StepGranularity ); // (N)*X, N = analysis steps
+		bac.SetProgressTarget( (4+2*nFullRevolutions+1)*StepGranularity ); // (N)*X, N = analysis steps
 		// - Step 1: standard scanning using current Codec
 		const WORD nSectorsFound=Scan( pOutFoundSectors, pOutIdEnds, pOutIdProfiles, pOutIdStatuses, &rOutParseEvents );
 		bac.UpdateProgress( 1*StepGranularity );
@@ -513,9 +513,11 @@
 					}
 				}
 				// : merging consecutive fuzzy bits into FuzzyEvents
+				CActionProgress apMerge=bac.CreateSubactionProgress( StepGranularity, StepGranularity );
 				POSITION pePos=rOutParseEvents.GetHeadPosition();
-				for( BYTE r=0; r<nFullRevolutions; r++ ){
+				for( BYTE r=0; r<nFullRevolutions; apMerge.UpdateProgress(++r,TBPFLAG::TBPF_NORMAL) ){
 					const CBitSequence &rev=*pRevolutionBits[r];
+					CActionProgress apRev=apMerge.CreateSubactionProgress( StepGranularity/nFullRevolutions, rev.GetBitCount() );
 					CBitSequence::PCBit bit=rev.GetBits(), lastBit=bit+rev.GetBitCount();
 					do{
 						// > finding next Fuzzy interval
@@ -546,6 +548,7 @@
 								fuzzy.tStart, fuzzy.tEnd, 0
 							)
 						);
+						apRev.UpdateProgress( bit-rev.GetBits(), TBPFLAG::TBPF_NORMAL );
 					} while (bit<lastBit);
 				}
 			}
@@ -607,12 +610,12 @@
 
 	CImage::CTrackReader::CBitSequence::CBitSequence(CTrackReader tr,TLogTime tFrom,const CTrackReader::TProfile &profileFrom, TLogTime tTo)
 		// ctor
-		: pBits(nullptr) , nBits(0) {
+		: nBits(0) {
 		const TLogTime iwTimeDefaultHalf=tr.GetCurrentProfile().iwTimeDefault/2;
 		tr.SetCurrentTimeAndProfile( tFrom, profileFrom );
 		while (tr && tr.GetCurrentTime()+iwTimeDefaultHalf<tTo)
 			tr.ReadBit(), nBits++;
-		pBits=(TBit *)::calloc( nBits+1, sizeof(TBit) ); // "+1" = auxiliary terminal Bit
+		pBits.Realloc( nBits+1 ); // "+1" = auxiliary terminal Bit
 		tr.SetCurrentTimeAndProfile( tFrom, profileFrom );
 		for( DWORD i=0; i<nBits; ){
 			TBit &r=pBits[i++];
@@ -621,23 +624,6 @@
 				r.value=tr.ReadBit();
 		}
 		pBits[nBits].time=tr.GetCurrentTime(); // auxiliary terminal Bit
-	}
-
-	CImage::CTrackReader::CBitSequence::CBitSequence(const CBitSequence &r)
-		// copy ctor
-		: pBits(r.pBits) , nBits(r.nBits) {
-		ASSERT(FALSE); // copying prohibited!
-	}
-
-	CImage::CTrackReader::CBitSequence::CBitSequence(CBitSequence &&r)
-		// move ctor
-		: pBits(r.pBits) , nBits(r.nBits) {
-		ASSERT(FALSE); // moving prohibited!
-	}
-
-	CImage::CTrackReader::CBitSequence::~CBitSequence(){
-		// dtor
-		::free(pBits);
 	}
 
 	int CImage::CTrackReader::CBitSequence::GetShortestEditScript(const CBitSequence &theirs,CDiffBase::TScriptItem *pOutScript,DWORD nScriptItemsMax,PActionProgress pap) const{

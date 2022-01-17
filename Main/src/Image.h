@@ -430,14 +430,10 @@
 					}
 				} *PCBit;
 			private:
-				TBit *pBits;
+				Utils::CCallocPtr<TBit> pBits;
 				DWORD nBits;
-
-				CBitSequence(const CBitSequence &r);
-				CBitSequence(CBitSequence &&r);
 			public:
 				CBitSequence(CTrackReader tr,TLogTime tFrom,const CTrackReader::TProfile &profileFrom, TLogTime tTo);
-				~CBitSequence();
 
 				inline PCBit GetBits() const{ return pBits; }
 				inline DWORD GetBitCount() const{ return nBits; }
