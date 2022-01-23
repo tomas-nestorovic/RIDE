@@ -869,7 +869,9 @@ reportError:Utils::Information(buf);
 							break;
 					case TDirectoryTraversal::WARNING:
 						// any Warning becomes a real error!
-						return LOG_ERROR(pdt->warning);
+						if (pdt->warning!=ERROR_SECTOR_NOT_FOUND) // bad Sectors at the moment don't prevent from the import
+							return LOG_ERROR(pdt->warning);
+						break;
 					#ifdef _DEBUG
 					default:
 						Utils::Information(_T("CDos::__importFile__ - unknown pdt->entryType"));

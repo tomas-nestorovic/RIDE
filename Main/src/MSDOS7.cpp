@@ -673,9 +673,13 @@
 			// . allocating necessary number of DirectoryEntries to accommodate the long NameAndExtension
 			PDirectoryEntry longNameEntries[LONG_FILE_NAME_ENTRIES_COUNT_MAX], *plnde=longNameEntries;
 			TMsdos7DirectoryTraversal dt(this,currentDir);
-			for( BYTE n=(::lstrlen(longNameAndExt)+12)/13; n--; ) // 13 = number of characters in one LongNameEntry
+			for( BYTE n=(::lstrlen(longNameAndExt)+12)/13,i=n; i--; ) // 13 = number of characters in one LongNameEntry
 				if (!( *plnde++=dt.__allocateNewEntry__() ))
-					return Utils::ErrorByOs( ERROR_VOLMGR_DISK_NOT_ENOUGH_SPACE, ERROR_CANNOT_MAKE );
+					if (dt.entryType==TDirectoryTraversal::WARNING && dt.warning==ERROR_SECTOR_NOT_FOUND)
+						// simply retry after the bad Sector, marking all DirectoryEntries where the long name didn't fit in, as Empty
+						for( plnde--; ++i<n; *(PBYTE)*--plnde=UDirectoryEntry::EMPTY_ENTRY );
+					else
+						return Utils::ErrorByOs( ERROR_VOLMGR_DISK_NOT_ENOUGH_SPACE, ERROR_CANNOT_MAKE );
 			if (!( rRenamedFile=dt.__allocateNewEntry__() ))
 				return Utils::ErrorByOs( ERROR_VOLMGR_DISK_NOT_ENOUGH_SPACE, ERROR_CANNOT_MAKE );
 			// - initializing allocated LongNameEntries
@@ -1386,7 +1390,9 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 						entryType=TDirectoryTraversal::EMPTY;
 						break;
 					default:{
-						if (de->shortNameEntry.attributes&FILE_ATTRIBUTE_VOLUME)
+						if (foundEndOfDirectory) // anything (e.g. copy-protection) beyond official end of Directory maps to Empty
+							entryType=TDirectoryTraversal::EMPTY;
+						else if (de->shortNameEntry.attributes&FILE_ATTRIBUTE_VOLUME)
 							entryType=TDirectoryTraversal::CUSTOM;
 						else if (de->shortNameEntry.attributes&FILE_ATTRIBUTE_DIRECTORY)
 							switch (*(PDWORD)de){

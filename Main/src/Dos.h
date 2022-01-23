@@ -147,10 +147,8 @@
 				UNKNOWN	=98,// not yet known (e.g. TDirectoryTraversal-descendant just created)
 				END		=99 // end of Directory reached, no more DirectoryEntries can be neither allocated nor traversed
 			} entryType;
-			union{
-				PFile entry;
-				TStdWinError warning; // it's up to the caller to consider further traversal of the Directory (i.e. interpret this warning as a serious error)
-			};
+			PFile entry;
+			TStdWinError warning; // it's up to the caller to consider further traversal of the Directory (i.e. interpret this warning as a serious error)
 
 			TDirectoryTraversal(PCFile directory,WORD entrySize); // ctor
 
