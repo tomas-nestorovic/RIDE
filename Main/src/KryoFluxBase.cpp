@@ -636,11 +636,11 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 											isKryofluxStream|=::strstr( param, "KryoFlux" )!=nullptr;
 										else if (!::strncmp(param,"sck=",4)){
 											const double tmp=::atof(param+4); // a custom Sample-Clock value in defined ...
-											if ((int)tmp!=SAMPLE_CLOCK_DEFAULT) // ... and it is different from the Default
+											if (std::floor(tmp)!=SAMPLE_CLOCK_DEFAULT) // ... and it is different from the Default
 												sck=tmp;
 										}else if (!::strncmp(param,"ick=",4)){
 											const double tmp=::atof(param+4); // a custom Index-Clock value in defined ...
-											if ((int)tmp!=INDEX_CLOCK_DEFAULT) // ... and it is different from the Default
+											if (std::floor(tmp)!=INDEX_CLOCK_DEFAULT) // ... and it is different from the Default
 												ick=tmp;
 										}
 									}
