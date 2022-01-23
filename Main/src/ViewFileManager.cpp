@@ -221,7 +221,7 @@
 		if (informOnCapabilities){
 			informOnCapabilities=false;
 			TDI_INSTANCE->RedrawWindow(); // make sure TDI's whole client area is up-to-date before showing the following message
-			__informationWithCheckableShowNoMore__( _T("After unlocking the image for writing, work with the \"") FILE_MANAGER_TAB_LABEL _T("\" tab as you would with your favorite file explorer, renaming, copying, pasting, moving, and deleting files."), INI_MSG_CAPABILITIES );
+			__informationWithCheckableShowNoMore__( _T("After unlocking the image for writing, work with the \"") FILE_MANAGER_TAB_LABEL _T("\" tab as you would in Explorer, renaming, copying, pasting, moving, and deleting files."), INI_MSG_CAPABILITIES );
 		}
 		return result;
 	}

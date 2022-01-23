@@ -437,6 +437,9 @@
 				void ScriptToLocalDiffs(const CDiffBase::TScriptItem *pScript,int nScriptItems,TRegion *pOutDiffs) const;
 				DWORD ScriptToLocalRegions(const CDiffBase::TScriptItem *pScript,int nScriptItems,TRegion *pOutRegions,COLORREF regionColor) const;
 				void InheritFlagsFrom(const CBitSequence &theirs,const CDiffBase::TScriptItem *pScript,DWORD nScriptItems) const;
+			#ifdef _DEBUG
+				void SaveCsv(LPCTSTR filename) const;
+			#endif
 			};
 
 			CTrackReader(const CTrackReader &tr);
@@ -523,6 +526,9 @@
 			TFdcStatus ReadData(const TSectorId &id,TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,LPBYTE buffer);
 			BYTE __cdecl ShowModal(PCRegion pRegions,DWORD nRegions,UINT messageBoxButtons,bool initAllFeaturesOn,LPCTSTR format,...) const;
 			void __cdecl ShowModal(LPCTSTR format,...) const;
+		//#ifdef _DEBUG
+			void SaveCsv(LPCTSTR filename) const;
+		//#endif
 		};
 
 		class CTrackReaderWriter:public CTrackReader{

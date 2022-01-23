@@ -605,6 +605,14 @@
 		return st;
 	}
 
+//#ifdef _DEBUG
+	void CImage::CTrackReader::SaveCsv(LPCTSTR filename) const{
+		CFile f( filename, CFile::modeWrite|CFile::modeCreate );
+		for( DWORD i=0; i<nLogTimes; i++ )
+			Utils::WriteToFileFormatted( f, "%d\n", logTimes[i] );		
+	}
+//#endif
+
 
 
 
@@ -731,6 +739,14 @@
 			pScriptItem++, nScriptItems--;
 		} while(true);
 	}
+
+#ifdef _DEBUG
+	void CImage::CTrackReader::CBitSequence::SaveCsv(LPCTSTR filename) const{
+		CFile f( filename, CFile::modeWrite|CFile::modeCreate );
+		for( DWORD b=0; b<nBits; b++ )
+			Utils::WriteToFileFormatted( f, "%c\n", '0'+pBits[b].value );
+	}
+#endif
 
 
 

@@ -156,7 +156,7 @@
 									if (pErroneousTrack->hasDuplicatedIdFields)
 										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: Duplicated ID fields.</li>"));
 									if (pErroneousTrack->missesSomeSectors)
-										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: Some sectors missing.</li>"));
+										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: Some standard sectors missing.</li>"));
 								Utils::WriteToFile(fHtml,_T("</ul></td></tr>"));
 							}
 						Utils::WriteToFile(fHtml,_T("</table>"));
