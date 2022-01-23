@@ -486,71 +486,78 @@
 				pRevolutionBits[i].reset(
 					new CBitSequence( *this, GetIndexTime(i), CreateResetProfile(), GetIndexTime(i+1) )
 				);
-			// . comparing all Revolutions
-			CParseEventList fuzzyStdDataEvents;
-			const DWORD nSesItemsMax=pRevolutionBits[0]->GetBitCount()*3; // over-dimensioning the capacity to guarantee the Shortest Edit Script always fits in
-			const auto pSes=Utils::MakeCallocPtr<CDiffBase::TScriptItem>(nSesItemsMax);
-			const auto pLocalRegions=Utils::MakeCallocPtr<TRegion>(nSesItemsMax);
-			if (pSes && pLocalRegions){
-				// : accumulating differences from the first Revolution to the last; bits not included in the diff script are stable across all previous Revolutions
-				for( BYTE i=1; i<nFullRevolutions; i++ ){
-					const CBitSequence &iRev=*pRevolutionBits[i], &jRev=*pRevolutionBits[i-1];
-					const int nSesItems=iRev.GetShortestEditScript( jRev, pSes, nSesItemsMax, &bac.CreateSubactionProgress(StepGranularity) );
-					if (nSesItems>0){ // neighboring Revolutions bitwise different?
-						iRev.ScriptToLocalDiffs( pSes, nSesItems, pLocalRegions );
-						for( DWORD k=nSesItems; k>0; pSes[--k].ConvertToDual() );
-						jRev.ScriptToLocalDiffs( pSes, nSesItems, pLocalRegions );
-					}
+			// . forward comparison of Revolutions, from the first to the last; bits not included in the last diff script are stable across all previous Revolutions
+			struct:Utils::CCallocPtr<CDiffBase::TScriptItem,DWORD>{
+				DWORD nItems;
+			} shortesEditScripts[Revolution::MAX];
+			for( BYTE i=0; i<nFullRevolutions-1; ){
+				// : comparing the two neighboring Revolutions I and J
+				const CBitSequence &jRev=*pRevolutionBits[i], &iRev=*pRevolutionBits[++i];
+				const DWORD nSesItemsMax=iRev.GetBitCount()+jRev.GetBitCount();
+				auto &ses=shortesEditScripts[i];
+				ses.nItems=iRev.GetShortestEditScript( jRev, ses.Realloc(nSesItemsMax), nSesItemsMax, &bac.CreateSubactionProgress(StepGranularity) );
+				if (ses.nItems==0){ // neighboring Revolutions bitwise identical?
+					ses.reset();
+					continue;
+				}else if (ses.nItems<0){ // comparison failure?
+					ses.reset();
+					break;
+				}else
+					ses.Realloc(ses.nItems); // spare on space
+				// : marking different Bits as Fuzzy
+				iRev.ScriptToLocalDiffs( ses, ses.nItems, Utils::MakeCallocPtr<TRegion>(nSesItemsMax) );
+				// : inheriting fuzzyness from previous Revolution
+				iRev.InheritFlagsFrom( jRev, ses, ses.nItems );
+			}
+			// . backward comparison of Revolutions, from the last to the first
+			for( BYTE i=nFullRevolutions; i>1; )
+				if (const auto &ses=shortesEditScripts[--i]){ // neighboring Revolutions bitwise different?
+					// : conversion to dual script
+					for( DWORD k=ses.nItems; k>0; ses[--k].ConvertToDual() );
+					// : marking different Bits as Fuzzy
+					const CBitSequence &jRev=*pRevolutionBits[i], &iRev=*pRevolutionBits[i-1];
+					iRev.ScriptToLocalDiffs( ses, ses.nItems, Utils::MakeCallocPtr<TRegion>(ses.nItems) );
+					// : inheriting fuzzyness from next Revolution
+					iRev.InheritFlagsFrom( jRev, ses, ses.nItems );
 				}
-				// : projecting fuzzy bits accumulated in the last Revolution back to the first
-				for( BYTE j=nFullRevolutions-1; j>0; ){
-					const CBitSequence &jRev=*pRevolutionBits[j], &iRev=*pRevolutionBits[--j];
-					const int nSesItems=iRev.GetShortestEditScript( jRev, pSes, nSesItemsMax, &bac.CreateSubactionProgress(StepGranularity) );
-					if (nSesItems>0){ // neighboring Revolutions bitwise different?
-						iRev.ScriptToLocalDiffs( pSes, nSesItems, pLocalRegions );
-						for( DWORD k=nSesItems; k>0; pSes[--k].ConvertToDual() );
-						jRev.ScriptToLocalDiffs( pSes, nSesItems, pLocalRegions );
-					}
-				}
-				// : merging consecutive fuzzy bits into FuzzyEvents
-				CActionProgress apMerge=bac.CreateSubactionProgress( StepGranularity, StepGranularity );
-				POSITION pePos=rOutParseEvents.GetHeadPosition();
-				for( BYTE r=0; r<nFullRevolutions; apMerge.UpdateProgress(++r,TBPFLAG::TBPF_NORMAL) ){
-					const CBitSequence &rev=*pRevolutionBits[r];
-					CActionProgress apRev=apMerge.CreateSubactionProgress( StepGranularity/nFullRevolutions, rev.GetBitCount() );
-					CBitSequence::PCBit bit=rev.GetBits(), lastBit=bit+rev.GetBitCount();
-					do{
-						// > finding next Fuzzy interval
-						while (bit<lastBit && !(bit->fuzzy||bit->cosmeticFuzzy)) // skipping Bits that are not Fuzzy
-							bit++;
-						if (bit==lastBit) // no more Fuzzy bits?
+			// . merging consecutive fuzzy bits into FuzzyEvents
+			CActionProgress apMerge=bac.CreateSubactionProgress( StepGranularity, StepGranularity );
+			POSITION pePos=rOutParseEvents.GetHeadPosition();
+			for( BYTE r=0; r<nFullRevolutions; apMerge.UpdateProgress(++r,TBPFLAG::TBPF_NORMAL) ){
+				const CBitSequence &rev=*pRevolutionBits[r];
+				CActionProgress apRev=apMerge.CreateSubactionProgress( StepGranularity/nFullRevolutions, rev.GetBitCount() );
+				CBitSequence::PCBit bit=rev.GetBits(), lastBit=bit+rev.GetBitCount();
+				do{
+					// : finding next Fuzzy interval
+					while (bit<lastBit && !(bit->fuzzy||bit->cosmeticFuzzy)) // skipping Bits that are not Fuzzy
+						bit++;
+					if (bit==lastBit) // no more Fuzzy bits?
+						break;
+					TLogTimeInterval fuzzy( bit->time, 0 );
+					while (bit<lastBit && (bit->fuzzy||bit->cosmeticFuzzy)) // discovering consecutive Fuzzy Bits
+						bit++;
+					fuzzy.tEnd=bit->time;
+					// : determining the type of fuzziness
+					bool fuzzyInBadSector=false;
+					while (pePos){
+						const TParseEvent &pe=rOutParseEvents.GetAt(pePos);
+						if (fuzzy.tEnd<=pe.tStart)
 							break;
-						TLogTimeInterval fuzzy( bit->time, 0 );
-						while (bit<lastBit && (bit->fuzzy||bit->cosmeticFuzzy)) // discovering consecutive Fuzzy Bits
-							bit++;
-						fuzzy.tEnd=bit->time;
-						// > determining the type of fuzziness
-						bool fuzzyInBadSector=false;
-						while (pePos){
-							const TParseEvent &pe=rOutParseEvents.GetAt(pePos);
-							if (fuzzy.tEnd<=pe.tStart)
-								break;
-							if (pe.IsDataStd() || pe.IsCrc())
-								if (pe.Intersect(fuzzy))
-									if ( fuzzyInBadSector=pe.type==TParseEvent::DATA_BAD||pe.type==TParseEvent::CRC_BAD )
-										break;
-							rOutParseEvents.GetNext(pePos);
-						}
-						// > creating new FuzzyEvent
-						rOutParseEvents.AddCopyAscendingByStart(
-							TParseEvent(
-								fuzzyInBadSector ? TParseEvent::FUZZY_BAD : TParseEvent::FUZZY_OK,
-								fuzzy.tStart, fuzzy.tEnd, 0
-							)
-						);
-						apRev.UpdateProgress( bit-rev.GetBits(), TBPFLAG::TBPF_NORMAL );
-					} while (bit<lastBit);
-				}
+						if (pe.IsDataStd() || pe.IsCrc())
+							if (pe.Intersect(fuzzy))
+								if ( fuzzyInBadSector=pe.type==TParseEvent::DATA_BAD||pe.type==TParseEvent::CRC_BAD )
+									break;
+						rOutParseEvents.GetNext(pePos);
+					}
+					// : creating new FuzzyEvent
+					rOutParseEvents.AddCopyAscendingByStart(
+						TParseEvent(
+							fuzzyInBadSector ? TParseEvent::FUZZY_BAD : TParseEvent::FUZZY_OK,
+							fuzzy.tStart, fuzzy.tEnd, 0
+						)
+					);
+					apRev.UpdateProgress( bit-rev.GetBits(), TBPFLAG::TBPF_NORMAL );
+				} while (bit<lastBit);
 			}
 		}
 		// - successfully analyzed
@@ -686,6 +693,43 @@
 				tLastRegionEnd = pOutRegions[nRegions-1].tEnd = std::max(tLastRegionEnd,diff.tEnd);
 		}
 		return nRegions;
+	}
+
+	void CImage::CTrackReader::CBitSequence::InheritFlagsFrom(const CBitSequence &theirs,const CDiffBase::TScriptItem *pScriptItem,DWORD nScriptItems) const{
+		//
+		int iMyBit=0, iTheirBit=0;
+		do{
+			// . inheriting Flags from Bits identical up to the next ScriptItem
+			const int iDiffStartPos= nScriptItems>0 ? pScriptItem->iPosA : nBits;
+			int nIdentical=std::min<int>( iDiffStartPos-iMyBit, theirs.nBits-iTheirBit );
+			while (nIdentical-->0){
+				if (pBits[iMyBit].value!=theirs.pBits[iTheirBit].value)
+					Utils::Information("MRTKI!!!!");
+				#ifdef _DEBUG
+					const auto &mine=pBits[iMyBit], &their=theirs.pBits[iTheirBit];
+					ASSERT( mine.value==their.value ); // just to be sure; failing here may point at a bug in Diff implementation!
+				#endif
+				pBits[iMyBit++].flags|=theirs.pBits[iTheirBit++].flags;
+			}
+			// . if no more differences, then we have just processed the common tail Bits
+			if (!nScriptItems)
+				break;
+			// . skipping Bits that are different
+			switch (pScriptItem->operation){
+				case CDiffBase::TScriptItem::INSERTION:
+					// "theirs" contains some extra bits that "this" misses
+					iTheirBit+=pScriptItem->op.nItemsB;
+					break;
+				default:
+					ASSERT(FALSE); // we shouldn't end up here!
+					//fallthrough
+				case CDiffBase::TScriptItem::DELETION:
+					// "theirs" misses some bits that "this" contains
+					iMyBit+=pScriptItem->op.nItemsB;
+					break;
+			}
+			pScriptItem++, nScriptItems--;
+		} while(true);
 	}
 
 
