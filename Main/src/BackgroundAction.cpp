@@ -60,9 +60,10 @@
 
 
 
-	CActionProgress::CActionProgress(const CActionProgress *parent,int parentProgressBegin,int parentProgressInc)
+	CActionProgress::CActionProgress(const CActionProgress *parent,const volatile bool &cancelled,int parentProgressBegin,int parentProgressInc)
 		// ctor
 		: parent(parent)
+		, Cancelled(cancelled)
 		, parentProgressBegin(parentProgressBegin) , parentProgressInc(parentProgressInc)
 		, targetProgress(INT_MAX)
 		, currProgress(0) {
@@ -71,6 +72,7 @@
 	CActionProgress::CActionProgress(CActionProgress &&r)
 		// move ctor
 		: parent(r.parent)
+		, Cancelled(r.Cancelled)
 		, parentProgressBegin(r.parentProgressBegin) , parentProgressInc(r.parentProgressInc)
 		, targetProgress(r.targetProgress)
 		, currProgress(r.currProgress) {
@@ -102,11 +104,11 @@
 		);
 	}
 
-	CActionProgress CActionProgress::CreateSubactionProgress(int thisProgressIncrement,int subactionProgressTarget){
+	CActionProgress CActionProgress::CreateSubactionProgress(int thisProgressIncrement,int subactionProgressTarget) const{
 		// creates and returns a SubactionProgress; for it, call again UpdateProgress with values from <0,TargetProgress>
 		ASSERT( thisProgressIncrement>0 );
 		ASSERT( currProgress+thisProgressIncrement<=targetProgress );
-		CActionProgress tmp( this, currProgress, thisProgressIncrement );
+		CActionProgress tmp( this, Cancelled, currProgress, thisProgressIncrement );
 			tmp.SetProgressTarget( subactionProgressTarget );
 		return tmp;
 	}
@@ -125,7 +127,7 @@
 	CBackgroundActionCancelable::CBackgroundActionCancelable(UINT dlgResId)
 		// ctor
 		: Utils::CRideDialog( dlgResId, CWnd::GetActiveWindow() )
-		, CActionProgress( nullptr, 0, INT_MAX )
+		, CActionProgress( nullptr, bCancelled, 0, INT_MAX )
 		, callerThreadPriorityOrg( ::GetThreadPriority(::GetCurrentThread()) )
 		, pActionTaskbarList(nullptr)
 		, bCancelled(false) , bTargetStateReached(false) {
@@ -134,7 +136,7 @@
 	CBackgroundActionCancelable::CBackgroundActionCancelable(AFX_THREADPROC fnAction,LPCVOID actionParams,int actionThreadPriority)
 		// ctor
 		: Utils::CRideDialog( IDR_ACTION_PROGRESS, CWnd::GetActiveWindow() )
-		, CActionProgress( nullptr, 0, INT_MAX )
+		, CActionProgress( nullptr, bCancelled, 0, INT_MAX )
 		, callerThreadPriorityOrg( ::GetThreadPriority(::GetCurrentThread()) )
 		, pActionTaskbarList(nullptr)
 		, bCancelled(false) , bTargetStateReached(false) {

@@ -488,7 +488,7 @@
 				);
 			// . forward comparison of Revolutions, from the first to the last; bits not included in the last diff script are stable across all previous Revolutions
 			struct:Utils::CCallocPtr<CDiffBase::TScriptItem,DWORD>{
-				DWORD nItems;
+				int nItems;
 			} shortesEditScripts[Revolution::MAX];
 			for( BYTE i=0; i<nFullRevolutions-1; ){
 				// : comparing the two neighboring Revolutions I and J
@@ -501,6 +501,8 @@
 					continue;
 				}else if (ses.nItems<0){ // comparison failure?
 					ses.reset();
+					if (bac.IsCancelled())
+						return nSectorsFound;
 					break;
 				}else
 					ses.Realloc(ses.nItems); // spare on space

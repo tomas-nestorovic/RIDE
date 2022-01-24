@@ -64,11 +64,14 @@
 			fv[1] = rv[1] = 0;
 			const int delta=n-m;
 			// - SMS
+			static constexpr POINT Cancelled;
 			const bool oddDelta=(delta&1)!=0; // if the total number of characters is odd, then the front path will collide with the reverse path
 			int fkStart=0, fkEnd=0, rkStart=0, rkEnd=0; // offsets for start and end of k loop; prevent mapping of space beyond the grid
 			for( int D=0; D<DMax; D++ ){
 				// . extend the Front snake one step ahead
 				for( int k=-D+fkStart; k<=D-fkEnd; k+=2 ){
+					if (pap->Cancelled)
+						return Cancelled;
 					// : find the only or better starting point
 					int x =	k==-D  ||  k!=D && fv[k-1]<fv[k+1]
 							? fv[k+1]
@@ -97,6 +100,8 @@
 				}
 				// . extend the Back snake one step ahead
 				for( int k=-D+rkStart; k<=D-rkEnd; k+=2 ){
+					if (pap->Cancelled)
+						return Cancelled;
 					// : find the only or better starting point
 					int x =	k==-D  ||  k!=D && rv[k-1]<rv[k+1]
 							? rv[k+1]
@@ -165,6 +170,8 @@
 			// - find the shortest middle snake (SMS) and length of optimal path for A and B
 			pap->UpdateProgress( a-A, TBPFLAG::TBPF_NORMAL );
 			const POINT &&split=GetBisectSplit( a, n, b, m );
+			if (pap->Cancelled)
+				return false;
 			if (split.x<0) // no commonality at all?
 				return	GetShortestEditScript( a,n, b,0 ) // delete A
 						&&

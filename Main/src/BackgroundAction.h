@@ -27,15 +27,17 @@
 		int targetProgress; // call SetProgressTarget or ctor
 		mutable int currProgress;
 
-		CActionProgress(const CActionProgress *parent,int parentProgressBegin,int parentProgressInc);
+		CActionProgress(const CActionProgress *parent,const volatile bool &cancelled,int parentProgressBegin,int parentProgressInc);
 		CActionProgress(const CActionProgress &r); // can't copy!
 	public:
+		const volatile bool &Cancelled;
+
 		CActionProgress(CActionProgress &&r);
 		~CActionProgress();
 
 		virtual void SetProgressTarget(int targetProgress);
 		virtual void UpdateProgress(int newProgress,TBPFLAG status) const;
-		CActionProgress CreateSubactionProgress(int thisProgressIncrement,int subactionProgressTarget=INT_MAX);
+		CActionProgress CreateSubactionProgress(int thisProgressIncrement,int subactionProgressTarget=INT_MAX) const;
 	} *PActionProgress; // call UpdateProgress method with progress from <0;ProgressTarget)
 
 
