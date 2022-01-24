@@ -775,14 +775,14 @@
 			CImage::CTrackReader tr=rte.tr;
 			const auto resetProfile=tr.CreateResetProfile();
 			tr.SetCurrentTimeAndProfile( 0, resetProfile );
-			const auto nIwsMax=tr.GetTotalTime()/resetProfile.iwTimeMin+2;
+			const TLogTime iwTimeDefaultHalf=resetProfile.iwTimeDefault/2;
+			const auto nIwsMax=tr.GetTotalTime()/iwTimeDefaultHalf; // "resetProfile.iwTimeMin" not used to account for decoder phase adjustment, allowing for returning back in time
 			if (auto iwList=Utils::MakeCallocPtr<TInspectionWindow>(nIwsMax)){
 				TInspectionWindow *p=iwList;
 				p++->tEnd=0; // beginning of the very first inspection window
 				TLogTime tOne; // LogicalTime of recording that resulted in recognition of logical "1"
 				BYTE iwStatuses=0; // last 8 InspectionWindows statuses (0 = ok, 1 = bad)
 				BYTE nextIndexPulse=0;
-				const TLogTime iwTimeDefaultHalf=tr.GetCurrentProfile().iwTimeDefault/2;
 				for( pAction->SetProgressTarget(tr.GetTotalTime()); tr; pAction->UpdateProgress(p++->tEnd=tr.GetCurrentTime()+iwTimeDefaultHalf) )
 					if (pAction->IsCancelled())
 						return ERROR_CANCELLED;
