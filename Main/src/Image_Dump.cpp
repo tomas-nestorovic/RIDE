@@ -238,7 +238,10 @@
 					if ( hasDuplicatedIdFields=nReappearances>0 )
 						break;
 				}
-				if (p.chs.cylinder<dp.dos->formatBoot.nCylinders){ // reporing a missing official Sector makes sense only in official part of the disk
+				if (p.chs.cylinder<dp.dos->formatBoot.nCylinders // reporing a missing official Sector makes sense only in official part of the disk
+					&&
+					dp.dos->properties!=&CUnknownDos::Properties // must understand the disk structure to decide on "official part"
+				){
 					TSectorId stdIds[(TSector)-1];
 					const TSector nStdIds=dp.dos->GetListOfStdSectors( p.chs.cylinder, p.chs.head, stdIds );
 					for( TSector i=0; i<nStdIds; i++ ){
