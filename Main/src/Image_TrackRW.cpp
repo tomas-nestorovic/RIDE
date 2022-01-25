@@ -323,14 +323,14 @@
 		return nSectorsFound;
 	}
 
-	WORD CImage::CTrackReader::ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList &rOutParseEvents,CBackgroundActionCancelable &bac){
+	WORD CImage::CTrackReader::ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList &rOutParseEvents,CActionProgress &ap){
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
 		const int StepGranularity=1000;
 		const BYTE nFullRevolutions=std::max( 0, GetIndexCount()-1 );
-		bac.SetProgressTarget( (4+2*nFullRevolutions+1)*StepGranularity ); // (N)*X, N = analysis steps
+		ap.SetProgressTarget( (4+2*nFullRevolutions+1)*StepGranularity ); // (N)*X, N = analysis steps
 		// - Step 1: standard scanning using current Codec
 		const WORD nSectorsFound=Scan( pOutFoundSectors, pOutIdEnds, pOutIdProfiles, pOutIdStatuses, &rOutParseEvents );
-		bac.UpdateProgress( 1*StepGranularity );
+		ap.UpdateProgress( 1*StepGranularity );
 		// - Step 2: getting ParseEvents in Sector data
 		struct{
 			TLogTime time;
@@ -349,7 +349,7 @@
 			}
 			rOutParseEvents.AddCopiesAscendingByStart( peSector );
 		}
-		bac.UpdateProgress( 2*StepGranularity );
+		ap.UpdateProgress( 2*StepGranularity );
 		// - Step 3: search for non-formatted areas
 		if (nSectorsFound>0){ // makes sense only if some Sectors found
 			constexpr BYTE nCellsMin=64;
@@ -367,7 +367,7 @@
 							}
 					}
 		}
-		bac.UpdateProgress( 3*StepGranularity );
+		ap.UpdateProgress( 3*StepGranularity );
 		// - Step 4: search for data in gaps
 		if (nSectorsFound>0){ // makes sense only if some Sectors found
 			// . composition of all ends of ID and Data fields
@@ -477,7 +477,7 @@
 					}
 				}
 		}
-		bac.UpdateProgress( 4*StepGranularity );
+		ap.UpdateProgress( 4*StepGranularity );
 		// - Step 5,6,...: search for fuzzy regions in Sectors
 		if (nSectorsFound>0 && nFullRevolutions>=2){ // makes sense only if some Sectors found over several Revolutions
 			// . extraction of bits from each full Revolution
@@ -495,13 +495,13 @@
 				const CBitSequence &jRev=*pRevolutionBits[i], &iRev=*pRevolutionBits[++i];
 				const DWORD nSesItemsMax=iRev.GetBitCount()+jRev.GetBitCount();
 				auto &ses=shortesEditScripts[i];
-				ses.nItems=iRev.GetShortestEditScript( jRev, ses.Realloc(nSesItemsMax), nSesItemsMax, &bac.CreateSubactionProgress(StepGranularity) );
+				ses.nItems=iRev.GetShortestEditScript( jRev, ses.Realloc(nSesItemsMax), nSesItemsMax, &ap.CreateSubactionProgress(StepGranularity) );
 				if (ses.nItems==0){ // neighboring Revolutions bitwise identical?
 					ses.reset();
 					continue;
 				}else if (ses.nItems<0){ // comparison failure?
 					ses.reset();
-					if (bac.IsCancelled())
+					if (ap.Cancelled)
 						return nSectorsFound;
 					break;
 				}else
@@ -523,9 +523,9 @@
 					iRev.InheritFlagsFrom( jRev, ses, ses.nItems );
 				}
 			// . merging consecutive fuzzy bits into FuzzyEvents
-			CActionProgress apMerge=bac.CreateSubactionProgress( StepGranularity, StepGranularity );
+			CActionProgress apMerge=ap.CreateSubactionProgress( StepGranularity, StepGranularity );
 			POSITION pePos=rOutParseEvents.GetHeadPosition();
-			for( BYTE r=0; r<nFullRevolutions; apMerge.UpdateProgress(++r,TBPFLAG::TBPF_NORMAL) ){
+			for( BYTE r=0; r<nFullRevolutions; apMerge.UpdateProgress(++r) ){
 				const CBitSequence &rev=*pRevolutionBits[r];
 				CActionProgress apRev=apMerge.CreateSubactionProgress( StepGranularity/nFullRevolutions, rev.GetBitCount() );
 				CBitSequence::PCBit bit=rev.GetBits(), lastBit=bit+rev.GetBitCount();
@@ -558,17 +558,12 @@
 							fuzzy.tStart, fuzzy.tEnd, 0
 						)
 					);
-					apRev.UpdateProgress( bit-rev.GetBits(), TBPFLAG::TBPF_NORMAL );
+					apRev.UpdateProgress( bit-rev.GetBits() );
 				} while (bit<lastBit);
 			}
 		}
 		// - successfully analyzed
 		return nSectorsFound;
-	}
-
-	WORD CImage::CTrackReader::ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList &rOutParseEvents){
-		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
-		return	ScanAndAnalyze( pOutFoundSectors, pOutIdEnds, pOutIdProfiles, pOutIdStatuses, rOutParseEvents, CBackgroundMultiActionCancelable(0) );
 	}
 
 	TFdcStatus CImage::CTrackReader::ReadData(const TSectorId &id,TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,CParseEventList *pOutParseEvents){

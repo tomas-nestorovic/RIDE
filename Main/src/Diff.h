@@ -168,7 +168,7 @@
 				}else
 					return false; // insufficient buffer
 			// - find the shortest middle snake (SMS) and length of optimal path for A and B
-			pap->UpdateProgress( a-A, TBPFLAG::TBPF_NORMAL );
+			pap->UpdateProgress( a-A );
 			const POINT &&split=GetBisectSplit( a, n, b, m );
 			if (pap->Cancelled)
 				return false;

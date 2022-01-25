@@ -81,7 +81,7 @@
 
 	CActionProgress::~CActionProgress(){
 		// dtor
-		UpdateProgress( parentProgressBegin+parentProgressInc, TBPFLAG::TBPF_NORMAL );
+		UpdateProgress( parentProgressBegin+parentProgressInc );
 	}
 
 	void CActionProgress::SetProgressTarget(int targetProgress){
@@ -106,7 +106,7 @@
 
 	CActionProgress CActionProgress::CreateSubactionProgress(int thisProgressIncrement,int subactionProgressTarget) const{
 		// creates and returns a SubactionProgress; for it, call again UpdateProgress with values from <0,TargetProgress>
-		ASSERT( thisProgressIncrement>0 );
+		ASSERT( thisProgressIncrement>=0 );
 		ASSERT( currProgress+thisProgressIncrement<=targetProgress );
 		CActionProgress tmp( this, Cancelled, currProgress, thisProgressIncrement );
 			tmp.SetProgressTarget( subactionProgressTarget );
@@ -253,11 +253,6 @@
 					::EnableWindow( m_hWnd, FALSE ); // as about to be destroyed soon, mustn't parent any pop-up windows!
 					::PostMessage( m_hWnd, WM_COMMAND, IDOK, 0 );
 				}
-	}
-
-	void CBackgroundActionCancelable::UpdateProgress(int state) const{
-		// refreshes the displaying of actual progress
-		UpdateProgress( state, TBPFLAG::TBPF_NORMAL );
 	}
 
 	void CBackgroundActionCancelable::UpdateProgressFinished() const{

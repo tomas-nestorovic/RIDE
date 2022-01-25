@@ -36,7 +36,7 @@
 		~CActionProgress();
 
 		virtual void SetProgressTarget(int targetProgress);
-		virtual void UpdateProgress(int newProgress,TBPFLAG status) const;
+		virtual void UpdateProgress(int newProgress,TBPFLAG status=TBPFLAG::TBPF_NORMAL) const;
 		CActionProgress CreateSubactionProgress(int thisProgressIncrement,int subactionProgressTarget=INT_MAX) const;
 	} *PActionProgress; // call UpdateProgress method with progress from <0;ProgressTarget)
 
@@ -66,8 +66,7 @@
 		bool IsCancelled() const volatile;
 		void SetProgressTarget(int targetProgress) override;
 		void SetProgressTargetInfinity();
-		void UpdateProgress(int newProgress) const;
-		void UpdateProgress(int newProgress,TBPFLAG status) const override;
+		void UpdateProgress(int newProgress,TBPFLAG status=TBPFLAG::TBPF_NORMAL) const override;
 		void UpdateProgressFinished() const;
 		TStdWinError TerminateWithSuccess();
 		TStdWinError TerminateWithError(TStdWinError error);

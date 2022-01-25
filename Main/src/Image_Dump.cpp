@@ -226,7 +226,7 @@
 				if (trSrc && dp.fullTrackAnalysis){
 					TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; CImage::CTrackReader::TProfile idProfiles[Revolution::MAX*(TSector)-1]; TFdcStatus idStatuses[Revolution::MAX*(TSector)-1];
 					CImage::CTrackReader::CParseEventList peTrack;
-					trSrc.ScanAndAnalyze( ids, idEnds, idProfiles, idStatuses, peTrack );
+					trSrc.ScanAndAnalyze( ids, idEnds, idProfiles, idStatuses, peTrack, pAction->CreateSubactionProgress(0) );
 					hasNonformattedArea=peTrack.Contains( CImage::CTrackReader::TParseEvent::NONFORMATTED );
 					hasDataInGaps=peTrack.Contains( CImage::CTrackReader::TParseEvent::DATA_IN_GAP );
 					hasFuzzyData=peTrack.Contains( CImage::CTrackReader::TParseEvent::FUZZY_BAD );
@@ -255,6 +255,8 @@
 				}
 				const bool isEmpty=!nSectors;
 				// . reading individual Sectors
+				if (pAction->Cancelled)
+					return ERROR_CANCELLED;
 				#pragma pack(1)
 				struct{
 					TSector n;
@@ -266,6 +268,8 @@
 {LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("reading source"));
 				dp.source->GetTrackData( p.chs.cylinder, p.chs.head, Revolution::ANY_GOOD, bufferId, sectorIdAndPositionIdentity, nSectors, bufferSectorData, bufferLength, bufferFdcStatus ); // reading healthy Sectors (unhealthy ones read individually below)
 				for( TSector s=0; s<nSectors; ){
+					if (pAction->Cancelled)
+						return ERROR_CANCELLED;
 					// : reading SourceSector
 					p.chs.sectorId=bufferId[s];
 					if (p.chs==chsPrev && dp.source->GetAvailableRevolutionCount()<=Revolution::MAX)
@@ -543,6 +547,8 @@
 }
 				p.acceptance.remainingErrorsOnTrack=false; // "True" valid only for Track it was set on
 				// . formatting Target Track
+				if (pAction->Cancelled)
+					return ERROR_CANCELLED;
 {LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("formatting target"));
 				if (dp.formatJustBadTracks && dp.source->IsTrackHealthy(p.chs.cylinder,p.chs.head)){
 					if (!dp.gap3.valueValid){ // "real" Gap3 Value (i.e. the one that was used when previously formatting the disk) not yet determined
@@ -594,6 +600,8 @@ reformatTrack:		if (!p.trackWriteable){ // formatting the Track only if can't wr
 					}
 }
 				// . writing to Target Track
+				if (pAction->Cancelled)
+					return ERROR_CANCELLED;
 {LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("writing to Target Track"));
 				if (p.trackWriteable)
 					// can use the CImage::WriteTrack to write the whole Track at once
@@ -611,6 +619,8 @@ reformatTrack:		if (!p.trackWriteable){ // formatting the Track only if can't wr
 					// must write to each Sector individually
 					dp.target->BufferTrackData( p.chs.cylinder, p.chs.head, Revolution::ANY_GOOD, bufferId, sectorIdAndPositionIdentity, nSectors ); // make Sectors data ready for IMMEDIATE usage
 					for( BYTE s=0; s<nSectors; ){
+						if (pAction->Cancelled)
+							return ERROR_CANCELLED;
 						if (!bufferFdcStatus[s].DescribesMissingDam()){
 							p.chs.sectorId=bufferId[s]; WORD w;
 							LOG_SECTOR_ACTION(&p.chs.sectorId,_T("writing"));
