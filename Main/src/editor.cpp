@@ -407,7 +407,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		//nop (added by calling CDocument::SetPathName below)
 		// - determining the DOS
 		CDos::PCProperties dosProps=nullptr;
-		TFormat formatBoot; // information on Format (# of Cylinders, etc.) obtained from Image's Boot record
+		TFormat formatBoot=TFormat::Unknown; // information on Format (# of Cylinders, etc.) obtained from Image's Boot record
 		if (!manuallyForceDos){
 			// automatic recognition of suitable DOS by sequentially testing each of them
 			::SetLastError(ERROR_SUCCESS); // assumption (no errors)
@@ -473,8 +473,19 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 				return nullptr;
 			formatBoot=( dosProps=manuallyForceDos=d.dosProps )->stdFormats->params.format;
 			formatBoot.nCylinders++;
+			Medium::TType mt;
+			switch (const TStdWinError err=image->GetInsertedMediumType(0,mt)){
+				case ERROR_SUCCESS: // particular Medium inserted (e.g. KryoFlux Stream files)
+					formatBoot.mediumType=mt;
+					break;
+				case ERROR_NO_MEDIA_IN_DRIVE: // no specific medium inserted (e.g. raw images)
+					break;
+				default:
+					Utils::FatalError( _T("Can't recognize the medium"), err, _T("The disk can't be open.") );
+					return nullptr;
+			}
 			if (const TStdWinError err=image->SetMediumTypeAndGeometry( &formatBoot, CDos::StdSidesMap, d.dosProps->firstSectorNumber )){
-				Utils::FatalError( _T("Can't change the medium geometry"), err, _T("The container can't be open.") );
+				Utils::FatalError( _T("Can't change the medium geometry"), err, _T("The disk can't be open.") );
 				return nullptr;
 			}
 			// . informing
