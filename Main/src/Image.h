@@ -215,6 +215,7 @@
 		bool DescribesDataFieldCrcError() const;
 		void CancelDataFieldCrcError();
 		bool DescribesDeletedDam() const;
+		bool DescribesMissingId() const; // aka. Sector not found
 		bool DescribesMissingDam() const;
 	} *PCFdcStatus;
 

@@ -283,8 +283,12 @@
 						::memmove( bufferLength+s, bufferLength+s+1, sizeof(*bufferLength)*(nSectors-s) );
 						p.trackWriteable=false; // once modified, can't write the Track as a whole anymore
 						s--; // as below incremented
-					// : reporting SourceSector Errors if A&B, A = automatically not accepted Errors exist, B = Error reporting for current Track is enabled
-					}else if (bufferFdcStatus[s].ToWord()&~p.acceptance.automaticallyAcceptedErrors && !p.acceptance.remainingErrorsOnTrack){
+					// : reporting SourceSector Errors if ...
+					}else if (
+						bufferFdcStatus[s].DescribesMissingId() // ... Sector ID not found (e.g. extremely damaged disk where Sectors appear and disappear randomly in each Revolution)
+						||
+						bufferFdcStatus[s].ToWord()&~p.acceptance.automaticallyAcceptedErrors && !p.acceptance.remainingErrorsOnTrack // ... A&B, A = automatically not accepted Errors exist, B = Error reporting for current Track is enabled
+					){
 						// | Dialog definition
 						class CErroneousSectorDialog sealed:public Utils::CRideDialog{
 							const TDumpParams &dp;
@@ -328,7 +332,11 @@
 									{ ID_IMAGE, _T("Accept all errors on the disk") }
 								};
 								ConvertDlgButtonToSplitButton( IDOK, Actions, ACCEPT_OPTIONS_COUNT );
-								EnableDlgItem( IDOK, dynamic_cast<CImageRaw *>(dp.target.get())==nullptr ); // accepting errors is allowed only if the Target Image can accept them
+								EnableDlgItem( IDOK, // accepting errors is allowed only if ...
+									dynamic_cast<CImageRaw *>(dp.target.get())==nullptr // ... the Target Image can accept them
+									&&
+									!rFdcStatus.DescribesMissingId() // ... the Sector has been found
+								);
 								// > converting the "Resolve" button to a SplitButton
 								static constexpr Utils::TSplitButtonAction ResolveActions[RESOLVE_OPTIONS_COUNT]={
 									{ 0, _T("Resolve") }, // 0 = no default action

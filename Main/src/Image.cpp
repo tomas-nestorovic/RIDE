@@ -99,7 +99,7 @@
 
 
 	const TFdcStatus TFdcStatus::WithoutError;
-	const TFdcStatus TFdcStatus::SectorNotFound( FDC_ST1_DATA_ERROR, FDC_ST2_CRC_ERROR_IN_DATA );
+	const TFdcStatus TFdcStatus::SectorNotFound( FDC_ST1_NO_ADDRESS_MARK, 0 );
 	const TFdcStatus TFdcStatus::IdFieldCrcError( FDC_ST1_DATA_ERROR|FDC_ST1_NO_DATA, 0 );
 	const TFdcStatus TFdcStatus::DataFieldCrcError( FDC_ST1_DATA_ERROR, FDC_ST2_CRC_ERROR_IN_DATA );
 	const TFdcStatus TFdcStatus::NoDataField( FDC_ST1_NO_ADDRESS_MARK, FDC_ST2_NOT_DAM );
@@ -171,6 +171,11 @@
 	bool TFdcStatus::DescribesDeletedDam() const{
 		// True <=> Registers describe that using normal data reading command, deleted data have been read instead, otherwise False
 		return (reg2&FDC_ST2_DELETED_DAM)!=0;
+	}
+
+	bool TFdcStatus::DescribesMissingId() const{
+		// True <=> Registers describe that the Sector ID has not been found, otherwise False
+		return (reg1&FDC_ST1_NO_ADDRESS_MARK)!=0 && reg2==0;
 	}
 
 	bool TFdcStatus::DescribesMissingDam() const{
