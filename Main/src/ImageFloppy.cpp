@@ -146,8 +146,8 @@
 							//const Utils::CExclusivelyLocked<TScannedTracks> locker(scannedTracks); // postponed until below for smoother operation; may thus work with outdated values in ScannedTracks but that's ok!
 							const bool hasTrackBeenScannedBefore=image->IsTrackScanned( scannedTracks.n>>1, scannedTracks.n&1 );
 							const int tmp = ps->trackHexaInfos[scannedTracks.n].Update(*ps); // calls CImage::ScanTrack
-							ps->dataTotalLength = scannedTracks.dataTotalLength = tmp; // making sure the DataTotalLength is the last thing modified in the Locked section
 							const Utils::CExclusivelyLocked<TScannedTracks> locker(scannedTracks);
+							ps->dataTotalLength = scannedTracks.dataTotalLength = tmp; // making sure the DataTotalLength is the last thing modified in the Locked section
 							scannedTracks.allScanned=++scannedTracks.n>=2*image->GetCylinderCount();
 							if (!hasTrackBeenScannedBefore)
 								break; // a single time-expensive access to real Device is enough, let other parts of the app have a crack on the Device
