@@ -1003,7 +1003,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 		if (!IsFloppyInserted())
 			return LOG_ERROR(ERROR_NO_MEDIA_IN_DRIVE);
 		// - enumerating possible floppy Types and attempting to recognize some Sectors
-		WORD nHealthySectorsMax=0; // arbitering the MediumType by the # of healthy Sectors and indices distance
+		WORD highestScore=0; // arbitering the MediumType by the HighestScore and indices distance
 		Medium::TType bestMediumType=Medium::UNKNOWN;
 		const TLogTime avgIndexDistance=GetAvgIndexDistance(); // this is time-consuming, so doing it just once and re-using the result
 		for( DWORD type=1; type!=0; type<<=1 )
@@ -1012,14 +1012,14 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 					continue;
 				const PInternalTrack pit=internalTracks[cyl][0];
 				internalTracks[cyl][0]=nullptr; // forcing a new scan
-					if (WORD nHealthySectors=GetCountOfHealthySectors(cyl,0)){
+					if (WORD score= internalTracks[cyl][0]->nSectors + 32*GetCountOfHealthySectors(cyl,0)){
 						if (avgIndexDistance){ // measurement supported/succeeded?
 							const Medium::PCProperties mp=Medium::GetProperties((Medium::TType)type);
 							if (avgIndexDistance/10*9<mp->revolutionTime && mp->revolutionTime<avgIndexDistance/10*11) // 10% tolerance (don't set more for indices on 300 RPM drive appear only 16% slower than on 360 RPM drive!)
-								nHealthySectors|=0x8000;
+								score|=0x8000;
 						}
-						if (nHealthySectors>nHealthySectorsMax)
-							nHealthySectorsMax=nHealthySectors, bestMediumType=(Medium::TType)type;
+						if (score>highestScore)
+							highestScore=score, bestMediumType=(Medium::TType)type;
 					}
 					UnformatInternalTrack(cyl,0);
 				internalTracks[cyl][0]=pit;
