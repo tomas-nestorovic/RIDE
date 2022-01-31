@@ -786,7 +786,7 @@ namespace Medium{
 
 	Revolution::TType CImage::GetDirtyRevolution(RCPhysicalAddress chs,BYTE nSectorsToSkip) const{
 		// returns the Revolution that has been marked as "dirty"
-		return Revolution::UNKNOWN; // not applicable by default
+		return Revolution::NONE; // not applicable by default, hence no dirty Revolution by default
 	}
 
 	TStdWinError CImage::GetInsertedMediumType(TCylinder,Medium::TType &rOutMediumType) const{

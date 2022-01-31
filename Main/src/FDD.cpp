@@ -945,6 +945,20 @@ returnData:				outFdcStatuses[index]=psi->fdcStatus;
 		return ERROR_SUCCESS;
 	}
 
+	Revolution::TType CFDD::GetDirtyRevolution(RCPhysicalAddress chs,BYTE nSectorsToSkip) const{
+		// returns the Revolution that has been marked as "dirty"
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		if (const PInternalTrack pit=__getScannedTrack__(chs.cylinder,chs.head)){ // Track has already been scanned
+			const TInternalTrack::TSectorInfo *psi=pit->sectors;
+			for( TSector n=pit->nSectors; n--; psi++ )
+				if (nSectorsToSkip)
+					nSectorsToSkip--;
+				else if (psi->id==chs.sectorId)
+					return	psi->modified ? Revolution::UNKNOWN : Revolution::NONE;
+		}
+		return Revolution::NONE; // unknown Sector not Modified
+	}
+
 	TStdWinError CFDD::SetDataTransferSpeed(Medium::TType _floppyType) const{
 		// sets TransferSpeed for given FloppyType; returns Windows standard i/o error
 		DWORD nBytesTransferred;

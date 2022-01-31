@@ -188,10 +188,11 @@
 		#pragma pack(1)
 		struct TParams sealed{
 			TPhysicalAddress chs;
+			TSector s; // # of Sectors to skip
 			TTrack track;
 			bool trackWriteable; // Track can be written at once using CImage::WriteTrack
 			bool canCalibrateHeads;
-			BYTE nTrials;
+			BYTE revolution;
 			struct{
 				WORD automaticallyAcceptedErrors;
 				bool remainingErrorsOnTrack;
@@ -205,7 +206,6 @@
 		p.canCalibrateHeads=dp.source->SeekHeadsHome()!=ERROR_NOT_SUPPORTED;
 		const bool targetSupportsTrackWriting=dp.target->WriteTrack(0,0,CImage::CTrackReaderWriter::Invalid)!=ERROR_NOT_SUPPORTED;
 		const Utils::CByteIdentity sectorIdAndPositionIdentity;
-		TPhysicalAddress chsPrev=TPhysicalAddress::Invalid;
 		for( p.chs.cylinder=dp.cylinderA; p.chs.cylinder<=dp.cylinderZ; pAction->UpdateProgress(++p.chs.cylinder-dp.cylinderA) )
 			for( p.chs.head=0; p.chs.head<dp.nHeads; p.chs.head++ ){
 				if (pAction->IsCancelled()) return LOG_ERROR(ERROR_CANCELLED);
@@ -267,31 +267,25 @@
 				TFdcStatus bufferFdcStatus[(TSector)-1];
 {LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("reading source"));
 				dp.source->GetTrackData( p.chs.cylinder, p.chs.head, Revolution::ANY_GOOD, bufferId, sectorIdAndPositionIdentity, nSectors, bufferSectorData, bufferLength, bufferFdcStatus ); // reading healthy Sectors (unhealthy ones read individually below)
-				for( TSector s=0; s<nSectors; ){
+				for( TSector sPrev=~(p.s=0); p.s<nSectors; ){
 					if (pAction->Cancelled)
 						return ERROR_CANCELLED;
-					// : reading SourceSector
-					p.chs.sectorId=bufferId[s];
-					if (p.chs==chsPrev && dp.source->GetAvailableRevolutionCount()<=Revolution::MAX)
-						p.nTrials++;
-					else
-						p.nTrials=1;
-					chsPrev=p.chs;
-					LOG_SECTOR_ACTION(&p.chs.sectorId,_T("reading"));
-					bufferSectorData[s]=dp.source->GetSectorData( p.chs, s, Revolution::NEXT, bufferLength+s, bufferFdcStatus+s );
+					p.chs.sectorId=bufferId[p.s];
 					// : reporting SourceSector Exclusion
 					p.exclusion.current|= p.exclusion.allUnknown && dp.dos->GetSectorStatus(p.chs)==CDos::TSectorStatus::UNKNOWN;
 					if (p.exclusion.current){
 						nSectors--;
-						::memmove( bufferId+s, bufferId+s+1, sizeof(*bufferId)*(nSectors-s) );
-						::memmove( bufferLength+s, bufferLength+s+1, sizeof(*bufferLength)*(nSectors-s) );
+						::memmove( bufferId+p.s, bufferId+p.s+1, sizeof(*bufferId)*(nSectors-p.s) );
+						::memmove( bufferSectorData+p.s, bufferSectorData+p.s+1, sizeof(*bufferSectorData)*(nSectors-p.s) );
+						::memmove( bufferLength+p.s, bufferLength+p.s+1, sizeof(*bufferLength)*(nSectors-p.s) );
+						::memmove( bufferFdcStatus+p.s, bufferFdcStatus+p.s+1, sizeof(*bufferFdcStatus)*(nSectors-p.s) );
 						p.trackWriteable=false; // once modified, can't write the Track as a whole anymore
-						s--; // as below incremented
+						sPrev=~--p.s; // as below incremented
 					// : reporting SourceSector Errors if ...
 					}else if (
-						bufferFdcStatus[s].DescribesMissingId() // ... Sector ID not found (e.g. extremely damaged disk where Sectors appear and disappear randomly in each Revolution)
+						bufferFdcStatus[p.s].DescribesMissingId() // ... Sector ID not found (e.g. extremely damaged disk where Sectors appear and disappear randomly in each Revolution)
 						||
-						bufferFdcStatus[s].ToWord()&~p.acceptance.automaticallyAcceptedErrors && !p.acceptance.remainingErrorsOnTrack // ... A&B, A = automatically not accepted Errors exist, B = Error reporting for current Track is enabled
+						bufferFdcStatus[p.s].ToWord()&~p.acceptance.automaticallyAcceptedErrors && !p.acceptance.remainingErrorsOnTrack // ... A&B, A = automatically not accepted Errors exist, B = Error reporting for current Track is enabled
 					){
 						// | Dialog definition
 						class CErroneousSectorDialog sealed:public Utils::CRideDialog{
@@ -310,6 +304,16 @@
 								LPCTSTR bitDescriptions[20],*pDesc=bitDescriptions; // 20 = surely big enough buffer
 								rFdcStatus.GetDescriptionsOfSetBits(bitDescriptions);
 								TCHAR buf[512],*p=buf+::wsprintf(buf,_T("Cannot read sector with %s on source Track %d.\r\n"),(LPCTSTR)rp.chs.sectorId.ToString(),rp.track);
+								const Revolution::TType dirtyRevolution=dp.source->GetDirtyRevolution(rp.chs,rp.s);
+								const BYTE nRevolutions=dp.source->GetAvailableRevolutionCount();
+								if (nRevolutions==1)
+									p+=::lstrlen( ::lstrcpy(p,_T("Single revolution.\r\n")) );
+								else if (dirtyRevolution==Revolution::NONE)
+									p+=::wsprintf( p, _T("Revolution #%d\r\n"), rp.revolution+1 );
+								else if (dirtyRevolution<Revolution::MAX)
+									p+=::wsprintf( p, _T("Locked modified Revolution #%d.\r\n"), dirtyRevolution+1 );
+								else
+									p+=::lstrlen( ::lstrcpy(p,_T("Locked modified revolution.\r\n")) );
 								const bool onlyPartlyRecoverable=( rFdcStatus.ToWord() & ~(TFdcStatus::DataFieldCrcError.ToWord()|TFdcStatus::IdFieldCrcError.ToWord()) )!=0;
 								if (onlyPartlyRecoverable)
 									p+=::lstrlen( ::lstrcpy(p,_T("SOME ERRORS CAN'T BE FIXED!\r\n")) );
@@ -362,9 +366,8 @@
 									{ ID_HEAD, _T("Calibrate head and retry"), MF_GRAYED*!rp.canCalibrateHeads },
 								};
 								ConvertDlgButtonToSplitButton( IDRETRY, RetryActions, RETRY_OPTIONS_COUNT );
-								// > the "Retry" button enabled only if not all Revolutions yet exhausted
-								const BYTE nRevsAvailable=dp.source->GetAvailableRevolutionCount();
-								EnableDlgItem( IDRETRY, nRevsAvailable>=Revolution::MAX||rp.nTrials<nRevsAvailable );
+								// > the "Retry" button enabled only if Sector not yet modified and there are several Revolutions available
+								EnableDlgItem( IDRETRY, dirtyRevolution==Revolution::NONE && nRevolutions>1 );
 							}
 							LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 								// window procedure
@@ -521,7 +524,15 @@
 								: Utils::CRideDialog( IDR_IMAGE_DUMP_ERROR, pParentWnd )
 								, dp(dp) , rp(_rParams) , sectorData(sectorData) , sectorLength(sectorLength) , rFdcStatus(rFdcStatus) {
 							}
-						} d(pAction,dp,p,bufferSectorData[s],bufferLength[s],bufferFdcStatus[s]);
+						} d(pAction,dp,p,bufferSectorData[p.s],bufferLength[p.s],bufferFdcStatus[p.s]);
+						// | reading SourceSector particular Revolution
+						LOG_SECTOR_ACTION(&p.chs.sectorId,_T("reading"));
+						if (sPrev!=p.s) // is this the first trial?
+							p.revolution=Revolution::R0;
+						else if (dp.source->GetAvailableRevolutionCount()<=Revolution::MAX) // is the # of Revolutions limited?
+							if (++p.revolution>=dp.source->GetAvailableRevolutionCount())
+								p.revolution=Revolution::R0;
+						bufferSectorData[p.s]=dp.source->GetSectorData( p.chs, p.s, (Revolution::TType)p.revolution, bufferLength+p.s, bufferFdcStatus+p.s );
 						// | showing the Dialog and processing its result
 						LOG_DIALOG_DISPLAY(_T("CErroneousSectorDialog"));
 						switch (LOG_DIALOG_RESULT(d.DoModal())){
@@ -530,19 +541,20 @@
 								goto terminateWithError;
 							case RESOLVE_EXCLUDE_ID:
 								p.exclusion.current=true;
-								//fallthrough
+								continue;
 							case IDRETRY:
+								sPrev=p.s;
 								continue;
 						}
 					}
-					if (!bufferFdcStatus[s].IsWithoutError()){
+					if (!bufferFdcStatus[p.s].IsWithoutError()){
 						TDumpParams::TSourceSectorError *const psse=&erroneousSectors.buffer[erroneousSectors.n++];
-						psse->id=p.chs.sectorId, psse->fdcStatus=bufferFdcStatus[s];
+						psse->id=p.chs.sectorId, psse->fdcStatus=bufferFdcStatus[p.s];
 						psse->excluded=p.exclusion.current;
 					}
 					// : next SourceSector
 					p.exclusion.current=false;
-					s++;
+					p.s++;
 				}
 }
 				p.acceptance.remainingErrorsOnTrack=false; // "True" valid only for Track it was set on
