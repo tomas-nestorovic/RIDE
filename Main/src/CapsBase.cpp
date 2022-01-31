@@ -610,7 +610,9 @@
 				BYTE nDataAttempts=1; // assumption
 				if (pis->dirtyRevolution<Revolution::MAX)
 					pis->currentRevolution=pis->dirtyRevolution; // modified Revolution is obligatory for any subsequent data requests
-				else if (rev>=pis->nRevolutions)
+				else if (rev<pis->nRevolutions)
+					pis->currentRevolution=rev; // wanted particular Revolution
+				else
 					switch (rev){
 						default:
 							ASSERT(FALSE); // we shouldn't end up here!
@@ -620,7 +622,7 @@
 							pis->currentRevolution=(pis->currentRevolution+1)%pis->nRevolutions;
 							break;
 						case Revolution::ANY_GOOD:
-							nDataAttempts=pis->nRevolutions;
+							nDataAttempts=pis->nRevolutions+1; // "+1" = given the below DO-WHILE cycle, make sure we end-up where we started if all Revolutions contain bad data
 							break;
 					}
 				// . attempting for Sector data
