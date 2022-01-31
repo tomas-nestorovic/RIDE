@@ -678,7 +678,7 @@
 		, f( fileName, CFile::modeReadWrite|CFile::shareExclusive|CFile::typeBinary ) {
 		informOnCapabilities=false; // don't show default message on what the FileManager can do (showed customized later)
 		// - adjusting context menu
-		mnuContext.RemoveMenu( ID_SECTOR, MF_BYCOMMAND ); // a Tape doesn't have Sectors
+		mnuFocusedContext.RemoveMenu( ID_SECTOR, MF_BYCOMMAND ); // a Tape doesn't have Sectors
 		// - loading the Tape's content
 		for( WORD blockLength; f.Read(&blockLength,sizeof(blockLength))==sizeof(blockLength); )
 			if (nFiles==ZX_TAPE_FILE_COUNT_MAX){

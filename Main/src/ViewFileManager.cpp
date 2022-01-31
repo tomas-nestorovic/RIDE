@@ -34,7 +34,8 @@
 		, reportModeDisplayedInfosPrev(0) // no columns have been shown previously ...
 		, reportModeDisplayedInfos(-1) // ... and now wanting to show them all
 		, ordering(ORDER_NONE) , focusedFile(nullptr) , scrollY(0) , ownedDataSource(nullptr)
-		, mnuContext(IDR_FILEMANAGER_CONTEXT)
+		, mnuGeneralContext(IDR_FILEMANAGER_GENERAL_CONTEXT)
+		, mnuFocusedContext(IDR_FILEMANAGER_FOCUSED_CONTEXT)
 		, informOnCapabilities(true)
 		, pDirectoryStructureManagement(pDirectoryStructureManagement) {
 		// - switching to default DisplayMode
@@ -320,11 +321,26 @@
 
 	afx_msg void CFileManagerView::OnContextMenu(CWnd *pWndRightClicked,CPoint point){
 		// right mouse button released
-		mnuContext.UpdateUi(this);
-		SendMessage(
-			WM_COMMAND,
-			mnuContext.TrackPopupMenu( TPM_RETURNCMD, point.x, point.y, this )
-		);
+		__super::OnContextMenu( pWndRightClicked, point );
+		const CListCtrl &lv=GetListCtrl();
+		POINT ptItem=point;
+		ScreenToClient(&ptItem);
+		const int iItem=lv.HitTest( ptItem );
+		if (iItem<0){
+			// right-clicked off any Item
+			mnuGeneralContext.UpdateUi(this);
+			SendMessage(
+				WM_COMMAND,
+				mnuGeneralContext.TrackPopupMenu( TPM_RETURNCMD, point.x, point.y, this )
+			);
+		}else{
+			// right-clicked particular Item
+			mnuFocusedContext.UpdateUi(this);
+			SendMessage(
+				WM_COMMAND,
+				mnuFocusedContext.TrackPopupMenu( TPM_RETURNCMD, point.x, point.y, this )
+			);
+		}
 	}
 
 	afx_msg void CFileManagerView::MeasureItem(LPMEASUREITEMSTRUCT pmis){
