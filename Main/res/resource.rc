@@ -125,7 +125,16 @@ END
 
 IDR_DISKBROWSER ACCELERATORS DISCARDABLE 
 BEGIN
+    "1",            ID_DEFAULT1,            VIRTKEY, CONTROL, NOINVERT
+    "2",            ID_DEFAULT2,            VIRTKEY, CONTROL, NOINVERT
+    "3",            ID_DEFAULT3,            VIRTKEY, CONTROL, NOINVERT
+    "4",            ID_DEFAULT4,            VIRTKEY, CONTROL, NOINVERT
+    "5",            ID_DEFAULT5,            VIRTKEY, CONTROL, NOINVERT
+    "6",            ID_DEFAULT6,            VIRTKEY, CONTROL, NOINVERT
+    "7",            ID_DEFAULT7,            VIRTKEY, CONTROL, NOINVERT
+    "8",            ID_DEFAULT8,            VIRTKEY, CONTROL, NOINVERT
     "E",            ID_NAVIGATE_SECTOR,     VIRTKEY, CONTROL, NOINVERT
+    "G",            ID_AUTO,                VIRTKEY, NOINVERT
     "T",            ID_SELECT_CURRENT_TRACK, VIRTKEY, CONTROL, NOINVERT
     VK_NEXT,        ID_NAVIGATE_NEXTTRACK,  VIRTKEY, SHIFT, CONTROL, 
                                                     NOINVERT
@@ -572,8 +581,8 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Revolution"
         BEGIN
-            MENUITEM "Any with good data\tCtrl+0",  ID_AUTO
-            MENUITEM "Merge all",                   ID_INTERLEAVE
+            MENUITEM "Any with good data\tG",       ID_AUTO
+            MENUITEM "Intersection",                ID_INTERLEAVE
             MENUITEM SEPARATOR
             MENUITEM "1\tCtrl+1",                   ID_DEFAULT1
             MENUITEM "2\tCtrl+2",                   ID_DEFAULT2
