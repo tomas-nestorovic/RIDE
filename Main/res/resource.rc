@@ -815,12 +815,13 @@ BEGIN
         MENUITEM "Rename\tF2",                  ID_FILEMANAGER_FILE_EDIT
         MENUITEM "Delete\tDel",                 ID_FILEMANAGER_FILE_DELETE
         MENUITEM "Compare...\tCtrl+Shift+C",    ID_FILEMANAGER_FILE_COMPARE
-        MENUITEM "Show hexa\tCtrl+B",           ID_DOS_PREVIEWASBINARY
         MENUITEM SEPARATOR
         MENUITEM "Go to directory entry",       ID_DIRECTORY
         MENUITEM "Go to first sector",          ID_SECTOR
         MENUITEM SEPARATOR
         MENUITEM "Show as binary\tCtrl+B",      ID_DOS_PREVIEWASBINARY
+        MENUITEM SEPARATOR
+        MENUITEM "Properties\tAlt+Enter",       ID_FILEMANAGER_FILE_INFORMATION
     END
 END
 

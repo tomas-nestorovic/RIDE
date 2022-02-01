@@ -12,9 +12,9 @@
 		, varLengthCommandLineEditor(*this) {
 		// - adjusting context menu
 		const Utils::CRideContextMenu mnuTmp( IDR_MDOS );
-		mnuFocusedContext.AppendMenu( MF_STRING, ID_ZX_PREVIEWASSCREEN, mnuTmp.GetMenuStringByCmd(ID_ZX_PREVIEWASSCREEN) );
-		mnuFocusedContext.AppendMenu( MF_STRING, ID_ZX_PREVIEWASBASIC, mnuTmp.GetMenuStringByCmd(ID_ZX_PREVIEWASBASIC) );
-		mnuFocusedContext.AppendMenu( MF_STRING, ID_ZX_PREVIEWASASSEMBLER, mnuTmp.GetMenuStringByCmd(ID_ZX_PREVIEWASASSEMBLER) );
+		mnuFocusedContext.InsertMenu( ID_DOS_PREVIEWASBINARY, MF_BYCOMMAND, ID_ZX_PREVIEWASSCREEN, mnuTmp.GetMenuStringByCmd(ID_ZX_PREVIEWASSCREEN) );
+		mnuFocusedContext.InsertMenu( ID_DOS_PREVIEWASBINARY, MF_BYCOMMAND, ID_ZX_PREVIEWASBASIC, mnuTmp.GetMenuStringByCmd(ID_ZX_PREVIEWASBASIC) );
+		mnuFocusedContext.InsertMenu( ID_DOS_PREVIEWASBINARY, MF_BYCOMMAND, ID_ZX_PREVIEWASASSEMBLER, mnuTmp.GetMenuStringByCmd(ID_ZX_PREVIEWASASSEMBLER) );
 	}
 
 	CSpectrumDos::CSpectrumFileManagerView::CSpectrumFileManagerView(PDos dos,const TZxRom &rZxRom,BYTE supportedDisplayModes,BYTE initialDisplayMode,BYTE nInformation,PCFileInfo informationList,BYTE nameCharsMax,PCDirectoryStructureManagement pDirManagement)

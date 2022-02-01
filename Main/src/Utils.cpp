@@ -182,13 +182,13 @@ namespace Utils{
 	CRideContextMenu::CRideContextMenu(UINT idMenuRes,CWnd *pUiUpdater){
 		// ctor
 		parent.LoadMenu(idMenuRes);
-		m_hMenu=parent.GetSubMenu(0)->m_hMenu;
+		Attach( parent.GetSubMenu(0)->m_hMenu );
 		UpdateUI( pUiUpdater, this );
 	}
 
 	CRideContextMenu::~CRideContextMenu(){
 		// dtor
-		m_hMenu=(HMENU)INVALID_HANDLE_VALUE; // whole menu will be disposed by disposing the Parent
+		Detach(); // whole menu will be disposed by disposing the Parent
 	}
 
 	CString CRideContextMenu::GetMenuString(UINT uIDItem,UINT flags) const{
