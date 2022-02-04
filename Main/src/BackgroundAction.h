@@ -63,7 +63,6 @@
 		~CBackgroundActionCancelable();
 
 		TStdWinError Perform();
-		bool IsCancelled() const volatile;
 		void SetProgressTarget(int targetProgress) override;
 		void SetProgressTargetInfinity();
 		void UpdateProgress(int newProgress,TBPFLAG status=TBPFLAG::TBPF_NORMAL) const override;

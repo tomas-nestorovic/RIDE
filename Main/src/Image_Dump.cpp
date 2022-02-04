@@ -208,7 +208,7 @@
 		const Utils::CByteIdentity sectorIdAndPositionIdentity;
 		for( p.chs.cylinder=dp.cylinderA; p.chs.cylinder<=dp.cylinderZ; pAction->UpdateProgress(++p.chs.cylinder-dp.cylinderA) )
 			for( p.chs.head=0; p.chs.head<dp.nHeads; p.chs.head++ ){
-				if (pAction->IsCancelled()) return LOG_ERROR(ERROR_CANCELLED);
+				if (pAction->Cancelled) return LOG_ERROR(ERROR_CANCELLED);
 				LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("processing"));
 				p.track=p.chs.GetTrackNumber(dp.nHeads);
 				// . scanning Source Track

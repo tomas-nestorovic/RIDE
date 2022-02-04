@@ -134,7 +134,7 @@
 		do{
 			F->Seek( search.logPosFound, CFile::begin );
 			for( BYTE posMatched=0,b; F->GetPosition()<fEnd; pAction->UpdateProgress(F->GetPosition()) )
-				if (pAction->IsCancelled())
+				if (pAction->Cancelled)
 					return ERROR_CANCELLED;
 				else if (!F->Read( &b, 1 )){
 					F->Seek( 1, CFile::current ); // skipping irrecoverable portion of data ...

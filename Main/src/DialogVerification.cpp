@@ -305,7 +305,7 @@
 		CFileManagerView::CFileList visitedDirectories;
 		DWORD nItemsVisited=0; // Files and Directories
 		for( bfsFiles.AddTail((CDos::PFile)DOS_DIR_ROOT); bfsFiles.GetCount()>0; ){
-			if (pAction->IsCancelled()) return vp.CancelAll();
+			if (pAction->Cancelled) return vp.CancelAll();
 			// . retrieving File's FatPath
 			const CDos::PFile file=bfsFiles.RemoveHead();
 			const CDos::CFatPath fatPath( vp.dos, file );
@@ -366,7 +366,7 @@
 		CFileManagerView::CFileList visitedDirectories;
 		DWORD nItemsVisited=0; // Files and Directories
 		for( bfsFiles.AddTail((CDos::PFile)DOS_DIR_ROOT); bfsFiles.GetCount()>0; ){
-			if (pAction->IsCancelled()) return vp.CancelAll();
+			if (pAction->Cancelled) return vp.CancelAll();
 			const CDos::PFile file=bfsFiles.RemoveHead();
 			// . retrieving File's FatPath
 			const CDos::CFatPath fatPath( vp.dos, file );
@@ -395,7 +395,7 @@
 			// . checking that the File's FatPath is unique
 			bool fatModified=false; // assumption (the File is not cross-linked)
 			for( bool askedToAutoFixProblem=false; nItems--; pItem++ ){
-				if (pAction->IsCancelled()) return vp.CancelAll();
+				if (pAction->Cancelled) return vp.CancelAll();
 				// : checking preconditions
 				RCPhysicalAddress chs=pItem->chs;
 				if (chs.sectorId.cylinder!=chs.cylinder
@@ -513,7 +513,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 		CFileManagerView::CFileList visitedDirectories;
 		DWORD nItemsVisited=0; // Files and Directories
 		for( bfsFiles.AddTail((CDos::PFile)DOS_DIR_ROOT); bfsFiles.GetCount()>0; ){
-			if (pAction->IsCancelled()) return vp.CancelAll();
+			if (pAction->Cancelled) return vp.CancelAll();
 			const CDos::PFile file=bfsFiles.RemoveHead();
 			// . retrieving File's FatPath
 			const CDos::CFatPath fatPath( vp.dos, file );
@@ -523,7 +523,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 				continue; // makes no sense to test a File that occupies no space on the disk
 			// . recording Sectors affiliated to current File
 			while (nItems--){
-				if (pAction->IsCancelled()) return vp.CancelAll();
+				if (pAction->Cancelled) return vp.CancelAll();
 				// : checking preconditions
 				RCPhysicalAddress chs=pItem++->chs;
 				if (chs.sectorId.cylinder!=chs.cylinder
@@ -574,7 +574,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 		TPhysicalAddress chs;
 		for( chs.cylinder=0; chs.cylinder<vp.dos->formatBoot.nCylinders; chs.cylinder++ )
 			for( chs.head=0; chs.head<vp.dos->formatBoot.nHeads; chs.head++ ){
-				if (pAction->IsCancelled())
+				if (pAction->Cancelled)
 					return vp.CancelAll();
 				// . getting the list of standard Sectors
 				TSectorId bufferId[(TSector)-1];
@@ -693,7 +693,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 		TPhysicalAddress chs;
 		for( chs.cylinder=vp.dos->GetFirstCylinderWithEmptySector(); chs.cylinder<vp.dos->formatBoot.nCylinders; chs.cylinder++ )
 			for( chs.head=0; chs.head<vp.dos->formatBoot.nHeads; chs.head++ ){
-				if (pAction->IsCancelled()) return vp.CancelAll();
+				if (pAction->Cancelled) return vp.CancelAll();
 				// . getting the list of standard Sectors
 				TSectorId bufferId[(TSector)-1];
 				const TSector nSectors=vp.dos->GetListOfStdSectors( chs.cylinder, chs.head, bufferId );

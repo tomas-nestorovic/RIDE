@@ -787,7 +787,7 @@
 		pAction->SetProgressTarget( image->GetCylinderCount() );
 		for( TCylinder nCylinders=image->GetCylinderCount(),cyl=0; cyl<nCylinders; pAction->UpdateProgress(++cyl) )
 			for( THead nHeads=image->GetNumberOfFormattedSides(cyl),head=0; head<nHeads; head++,rsp.nTracksFormatted++ ){
-				if (pAction->IsCancelled()) return ERROR_CANCELLED;
+				if (pAction->Cancelled) return ERROR_CANCELLED;
 				TSectorId bufferId[(TSector)-1];
 				WORD bufferLength[(TSector)-1];
 				TSector nSectors=image->ScanTrack(cyl,head,nullptr,bufferId,bufferLength);

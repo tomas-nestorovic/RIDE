@@ -15,7 +15,7 @@
 		TCylinder cyl=ufp.cylZInclusive; // unformatting "backwards"
 		THead head= ufp.specificHeadOnly!=nullptr ? *ufp.specificHeadOnly : 0; // one particular or all Heads?
 		for( TTrack t=0; t<nTracks; pAction->UpdateProgress(++t) ){
-			if (pAction->IsCancelled()) return ERROR_CANCELLED;
+			if (pAction->Cancelled) return ERROR_CANCELLED;
 			// . unformatting
 			if (const TStdWinError err=ufp.dos->image->UnformatTrack(cyl,head))
 				return pAction->TerminateWithError(err);

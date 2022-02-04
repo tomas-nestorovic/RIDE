@@ -27,7 +27,7 @@
 		TPhysicalAddress chs;
 		for( chs.cylinder=pp.cylinderA; chs.cylinder<=pp.cylinderZ; pAction->UpdateProgress(++chs.cylinder-pp.cylinderA) )
 			for( chs.head=0; chs.head<pp.nHeads; chs.head++ ){
-				if (pAction->IsCancelled()) return ERROR_CANCELLED;
+				if (pAction->Cancelled) return ERROR_CANCELLED;
 				// . scanning Source Track
 				TSectorId bufferId[(TSector)-1];	WORD bufferLength[(TSector)-1];
 				Codec::TType codec;

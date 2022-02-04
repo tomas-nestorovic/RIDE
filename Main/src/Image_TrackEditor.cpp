@@ -784,7 +784,7 @@
 				BYTE iwStatuses=0; // last 8 InspectionWindows statuses (0 = ok, 1 = bad)
 				BYTE nextIndexPulse=0;
 				for( pAction->SetProgressTarget(tr.GetTotalTime()); tr; pAction->UpdateProgress(p++->tEnd=tr.GetCurrentTime()+iwTimeDefaultHalf) )
-					if (pAction->IsCancelled())
+					if (pAction->Cancelled)
 						return ERROR_CANCELLED;
 					else{
 						if (nextIndexPulse<tr.GetIndexCount() && tr.GetIndexTime(nextIndexPulse)<p[-1].tEnd){

@@ -95,7 +95,7 @@
 		pAction->SetProgressTarget( nTrials+1 );
 		TCylinder cyl=ptp.cyl;
 		while (--cyl>0) // finding a Cylinder with magnetically reliable Track
-			if (pAction->IsCancelled())
+			if (pAction->Cancelled)
 				return ERROR_CANCELLED;
 			else if (const TStdWinError err=ptp.cb.DetermineMagneticReliabilityByWriting( rPrecomp.floppyType, cyl, ptp.head )){
 				if (err!=ERROR_DISK_CORRUPT)
@@ -109,7 +109,7 @@
 		};
 		const auto A=Utils::MakeCallocPtr<TMatrixRow>(nRows);
 		for( BYTE nFailures=0,trial=0; trial<nTrials; ){
-			if (pAction->IsCancelled())
+			if (pAction->Cancelled)
 				return ERROR_CANCELLED;
 			// . composition of test Track
 			CTrackReaderWriter trw( mediumProps.nCells, CTrackReader::FDD_KEIR_FRASER, false );

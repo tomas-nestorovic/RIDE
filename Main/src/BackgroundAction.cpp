@@ -210,11 +210,6 @@
 			);
 	}
 
-	bool CBackgroundActionCancelable::IsCancelled() const volatile{
-		// True <=> the Worker can continue (user hasn't cancelled it), otherwise False
-		return bCancelled;
-	}
-
 	void CBackgroundActionCancelable::SetProgressTarget(int targetProgress){
 		// sets Worker's target progress state, "100% completed"
 		__super::SetProgressTarget(targetProgress);

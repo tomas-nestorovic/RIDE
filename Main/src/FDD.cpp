@@ -1204,7 +1204,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 				nNanoseconds=TIME_MICRO(20);
 				// : increasing the NumberOfNanoseconds until the specified NumberOfBytes is written for the first time
 				do{
-					if (pAction->IsCancelled()) return ERROR_CANCELLED;
+					if (pAction->Cancelled) return ERROR_CANCELLED;
 					nNanoseconds+=nsAccuracy;
 					if (const TStdWinError err=__writeSectorData__(nBytes))
 						return err;
@@ -1212,7 +1212,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 				const TLogTime nNanosecondsA=nNanoseconds;
 				// : increasing the NumberOfNanoseconds until a higher NumberOfBytes is written for the first time
 				do{
-					if (pAction->IsCancelled()) return ERROR_CANCELLED;
+					if (pAction->Cancelled) return ERROR_CANCELLED;
 					nNanoseconds+=nsAccuracy;
 					if (const TStdWinError err=__writeSectorData__(nBytes))
 						return err;
@@ -1227,7 +1227,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 		for( BYTE c=lp.nRepeats,state=0; c--; ){
 			// . STEP 1: writing the test Sector (DD = 4kB, HD = 8kB)
 			do{
-				if (pAction->IsCancelled()) return LOG_ERROR(ERROR_CANCELLED);
+				if (pAction->Cancelled) return LOG_ERROR(ERROR_CANCELLED);
 				// : seeking Head to the particular Cylinder
 				if (!lp.fdd->fddHead.__seekTo__(lp.cyl))
 					return LOG_ERROR(pAction->TerminateWithError(ERROR_REQUEST_REFUSED));
@@ -1249,7 +1249,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 			}while (true);
 			pAction->UpdateProgress(++state);
 			// . STEP 2: experimentally determining the ControllerLatency
-			if (pAction->IsCancelled()) return LOG_ERROR(ERROR_CANCELLED);
+			if (pAction->Cancelled) return LOG_ERROR(ERROR_CANCELLED);
 			const WORD nBytes=interruption.sectorLength/2;
 			if (const TStdWinError err=interruption.__setInterruptionToWriteSpecifiedNumberOfBytes__(nBytes))
 				return LOG_ERROR(pAction->TerminateWithError(err));
@@ -1262,7 +1262,7 @@ Utils::Information(buf);}
 //*/
 			pAction->UpdateProgress(++state);
 			// . STEP 3: experimentally determining the latency of one Byte
-			if (pAction->IsCancelled()) return LOG_ERROR(ERROR_CANCELLED);
+			if (pAction->Cancelled) return LOG_ERROR(ERROR_CANCELLED);
 			const TLogTime p = interruption.nNanoseconds = TIME_MILLI(65); // let's see how many Bytes are written during the 65 millisecond time frame
 			if (const TStdWinError err=interruption.__writeSectorData__(nBytes))
 				return LOG_ERROR(pAction->TerminateWithError(err));
@@ -1289,7 +1289,7 @@ Utils::Information(buf);}
 		pAction->SetProgressTarget( targetGap3 );
 		EXCLUSIVELY_LOCK_IMAGE(*lp.fdd); // locking the access so that no one can disturb during the testing
 		for( BYTE gap3=1; gap3<targetGap3; pAction->UpdateProgress(gap3+=3) ){
-			if (pAction->IsCancelled()) return LOG_ERROR(ERROR_CANCELLED);
+			if (pAction->Cancelled) return LOG_ERROR(ERROR_CANCELLED);
 			// . STEP 1: writing two test Sectors
 			static constexpr TSectorId SectorIds[]={ {1,0,1,2}, {1,0,2,2} };
 			static constexpr WORD SectorLengths[]={ 512, 512 };
@@ -1303,7 +1303,7 @@ Utils::Information(buf);}
 			// . STEP 2: reading the Sectors
 			BYTE c=0;
 			while (c<lp.nRepeats){
-				if (pAction->IsCancelled()) return LOG_ERROR(ERROR_CANCELLED);
+				if (pAction->Cancelled) return LOG_ERROR(ERROR_CANCELLED);
 				// . STEP 2.1: scanning the Track and seeing how distant the two test Sectors are on it
 				lp.fdd->UnformatInternalTrack(lp.cyl,lp.head); // disposing internal information on actual Track format
 				const TInternalTrack *const pit=lp.fdd->__scanTrack__(lp.cyl,lp.head);

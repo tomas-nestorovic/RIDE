@@ -307,7 +307,7 @@ quitWithErr:const DWORD err=::GetLastError();
 			return pBac ? pBac->TerminateWithError(err) : err;
 		}
 		if (pBac){
-			if (pBac->IsCancelled()) return ERROR_CANCELLED;
+			if (pBac->Cancelled) return ERROR_CANCELLED;
 			pBac->UpdateProgress(1);
 		}
 		// - Step 2: connecting to the repository server
@@ -315,7 +315,7 @@ quitWithErr:const DWORD err=::GetLastError();
 		if (hConnection==nullptr)
 			goto quitWithErr;
 		if (pBac){
-			if (pBac->IsCancelled()) return ERROR_CANCELLED;
+			if (pBac->Cancelled) return ERROR_CANCELLED;
 			pBac->UpdateProgress(2);
 		}
 		// - Step 3: creating a new Request to the server
@@ -327,14 +327,14 @@ quitWithErr:const DWORD err=::GetLastError();
 		if (hRequest==nullptr)
 			goto quitWithErr;
 		if (pBac){
-			if (pBac->IsCancelled()) return ERROR_CANCELLED;
+			if (pBac->Cancelled) return ERROR_CANCELLED;
 			pBac->UpdateProgress(3);
 		}
 		// - Step 4: sending the Request
 		if (!::HttpSendRequest( hRequest, "User-Agent:RIDE", -1, nullptr, 0 ))
 			goto quitWithErr;
 		if (pBac){
-			if (pBac->IsCancelled()) return ERROR_CANCELLED;
+			if (pBac->Cancelled) return ERROR_CANCELLED;
 			pBac->UpdateProgress(4);
 		}
 		// - Step 5: receiving the response
@@ -344,7 +344,7 @@ quitWithErr:const DWORD err=::GetLastError();
 			goto quitWithErr;
 		buffer[nBytesRead]='\0';
 		if (pBac){
-			if (pBac->IsCancelled()) return ERROR_CANCELLED;
+			if (pBac->Cancelled) return ERROR_CANCELLED;
 			pBac->UpdateProgress(5);
 		}
 		// - analysing the obtained information (comparing it against this instance version)

@@ -811,7 +811,7 @@
 				const CDos::PFile currentDirectory=dos->currentDir;
 				const TDirectoryEtc dirEtc={ dos->GetDirectoryUid(currentDirectory), nullptr };
 				for( POSITION pos=rFileManager.GetFirstSelectedFilePosition(); pos; ){
-					if (pAction->IsCancelled()) break;
+					if (pAction->Cancelled) break;
 					if (const auto pdt=dos->BeginDirectoryTraversal(currentDirectory)){
 						for( const CDos::PCFile file=rFileManager.GetNextSelectedFile(pos); pdt->GetNextFileOrSubdir()!=file; );
 						__countInFile__(pdt,&dirEtc);
@@ -838,7 +838,7 @@
 					// . involving Directory into Statistics
 					if (const auto subPdt=dos->BeginDirectoryTraversal(pdt->entry)){
 						for( rStatistics.nDirectories++,rStatistics.totalSizeInBytes+=dos->GetFileOfficialSize(pdt->entry),rStatistics.totalSizeOnDiskInBytes+=dos->GetFileSizeOnDisk(pdt->entry); subPdt->GetNextFileOrSubdir()!=nullptr; ){
-							if (pAction->IsCancelled()) break;
+							if (pAction->Cancelled) break;
 							if (subPdt->entryType!=CDos::TDirectoryTraversal::WARNING)
 								__countInFile__(subPdt,&dirEtc);
 						}
@@ -849,7 +849,7 @@
 		} tmp(pAction);
 		// - Statistics collected
 		pAction->UpdateProgressFinished();
-		return pAction->IsCancelled() ? ERROR_CANCELLED : ERROR_SUCCESS;
+		return pAction->Cancelled ? ERROR_CANCELLED : ERROR_SUCCESS;
 	}
 
 	afx_msg void CFileManagerView::__showSelectionProperties__(){

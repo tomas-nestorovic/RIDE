@@ -846,7 +846,7 @@
 		nFiles-=dp.boot->nFiles, pDeFree+=dp.boot->nFiles;
 		// - defragmenting
 		for( const PDirectoryEntry *pDe=directory+dp.boot->nFiles; nFiles--; pDe++ ){
-			if (pAction->IsCancelled()) return ERROR_CANCELLED;
+			if (pAction->Cancelled) return ERROR_CANCELLED;
 			const PDirectoryEntry de=(PDirectoryEntry)*pDe;
 			if (*(PCBYTE)de!=TDirectoryEntry::DELETED) // an existing (i.e. non-Deleted) File
 				if (pDe!=pDeFree){

@@ -176,7 +176,7 @@ reportError:Utils::Information(buf);
 			return pAction->TerminateWithError(ERROR_NOT_EMPTY);
 		// - checking if range of Cylinders empty
 		for( TCylinder cyl=ecp.cylA; cyl<=ecp.cylZInclusive; pAction->UpdateProgress(++cyl-ecp.cylA) ){
-			if (pAction->IsCancelled()) return ERROR_CANCELLED;
+			if (pAction->Cancelled) return ERROR_CANCELLED;
 			TSectorId bufferId[(TSector)-1];
 			for( THead head=0; head<ecp.dos->formatBoot.nHeads; head++ ){
 				const TStdWinError err=ecp.dos->__isTrackEmpty__( cyl, head, ecp.dos->GetListOfStdSectors(cyl,head,bufferId), bufferId );
@@ -312,7 +312,7 @@ reportError:Utils::Information(buf);
 		TCylinder cyl=fp.rParams.cylinder0;
 		THead head= fp.head!=nullptr ? *fp.head : 0; // one particular or all Heads?
 		for( TTrack t=0; t<statistics.nTracks; pAction->UpdateProgress(++t) ){
-			if (pAction->IsCancelled()) return ERROR_CANCELLED;
+			if (pAction->Cancelled) return ERROR_CANCELLED;
 			// . formatting Track
 			TFdcStatus bufferFdcStatus[(TSector)-1];
 			TSector nSectors;
@@ -447,7 +447,7 @@ reportError:Utils::Information(buf);
 		pAction->SetProgressTarget( image->GetCylinderCount() );
 		for( TCylinder cyl=0,const nCylinders=image->GetCylinderCount(); cyl<nCylinders; cyl++ )
 			for( THead head=fesp.dos->formatBoot.nHeads; head--; ){
-				if (pAction->IsCancelled()) return ERROR_CANCELLED;
+				if (pAction->Cancelled) return ERROR_CANCELLED;
 				// : determining standard Empty Sectors
 				TSectorId bufferId[(TSector)-1],*pId=bufferId,*pEmptyId=bufferId;
 				TSector nSectors=fesp.dos->GetListOfStdSectors(cyl,head,bufferId);
@@ -492,7 +492,7 @@ reportError:Utils::Information(buf);
 			const PFile dir=discoveredDirs.RemoveHead();
 			if (const auto pdt=fesp.dos->BeginDirectoryTraversal(dir))
 				while (const PCFile file=pdt->GetNextFileOrSubdir()){
-					if (pAction->IsCancelled()) return ERROR_CANCELLED;
+					if (pAction->Cancelled) return ERROR_CANCELLED;
 					switch (pdt->entryType){
 						case TDirectoryTraversal::FILE:{
 							// File
@@ -549,7 +549,7 @@ reportError:Utils::Information(buf);
 			const PFile dir=discoveredDirs.RemoveHead();
 			if (const auto pdt=fesp.dos->BeginDirectoryTraversal(dir))
 				while (pdt->AdvanceToNextEntry()){
-					if (pAction->IsCancelled()) return ERROR_CANCELLED;
+					if (pAction->Cancelled) return ERROR_CANCELLED;
 					switch (pdt->entryType){
 						case TDirectoryTraversal::EMPTY:
 							// Empty entry

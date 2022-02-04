@@ -1087,7 +1087,7 @@
 			CFileManagerView::CFileList bfsDirectories; // breadth first search, searching through Directories in breadth
 			TCylinder state=0;
 			for( bfsDirectories.AddTail(rlnp.msdos->currentDir); bfsDirectories.GetCount(); ){
-				if (pAction->IsCancelled()) return ERROR_CANCELLED;
+				if (pAction->Cancelled) return ERROR_CANCELLED;
 				TMsdos7DirectoryTraversal dt( rlnp.msdos, bfsDirectories.RemoveHead() );
 				while (dt.__existsNextEntry__()){
 					const PDirectoryEntry de=(PDirectoryEntry)dt.entry;

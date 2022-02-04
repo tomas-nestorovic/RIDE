@@ -817,7 +817,7 @@ namespace Medium{
 		// saves all Modified Tracks by calling the SaveTrack method for each of them; returns Windows standard i/o error
 		for( TCylinder cyl=0; cyl<GetCylinderCount(); pAction->UpdateProgress(++cyl) )
 			for( THead head=0; head<GetHeadCount(); head++ )
-				if (pAction->IsCancelled())
+				if (pAction->Cancelled)
 					return ERROR_CANCELLED;
 				else if (const TStdWinError err=SaveTrack( cyl, head ))
 					return err;

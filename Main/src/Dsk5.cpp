@@ -224,7 +224,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			// DSK Revision 5
 			pAction->SetProgressTarget( DSK_REV5_TRACKS_MAX );
 			for( BYTE track=0,*pOffset256=diskInfo.rev5_trackOffsets256; track<DSK_REV5_TRACKS_MAX; pOffset256++,ppti++,pAction->UpdateProgress(++track) )
-				if (pAction->IsCancelled())
+				if (pAction->Cancelled)
 					return ERROR_CANCELLED;
 				else if (const BYTE tmp=*pOffset256)
 					f.Write(*ppti,tmp<<8);
