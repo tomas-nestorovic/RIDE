@@ -28,7 +28,7 @@
 			const HGDIOBJ hBmp0=::SelectObject(dcTmpBmp,hTmpBmp);
 				const HWND hSysLink=__createMainControl__( value, pdis->hwndItem ); // creating the temporary SysLink control to adopt the appearance of
 					::SendMessage( hSysLink, WM_SETFONT, (WPARAM)TPropGridInfo::FONT_DEFAULT, 0 ); // explicitly setting DPI-scaled font
-					::SetWindowPos(	hSysLink, nullptr, 0,0, w,h, SWP_NOZORDER|SWP_SHOWWINDOW );
+					::SetWindowPos(	hSysLink, nullptr, 0,0, w,h, SWP_NOZORDER );
 					// . capturing the SysLink visuals to the TemporaryBitmap
 					::SendMessage( hSysLink, WM_PRINTCLIENT, (WPARAM)dcTmpBmp, PRF_CHILDREN|PRF_CLIENT );
 					// . drawing the captured visuals at place of the SysLink control
