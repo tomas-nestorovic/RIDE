@@ -623,6 +623,7 @@
 
 		static Utils::CPtrList<PCProperties> Known; // list of known Images (registered in CRideApp::InitInstance)
 		static Utils::CPtrList<PCProperties> Devices; // list of known Devices (registered in CRideApp::InitInstance)
+		static CMutex destructionLocker;
 
 		static CImage *GetActive();
 		static PCProperties DetermineType(LPCTSTR fileName);
@@ -692,5 +693,7 @@
 
 	#define EXCLUSIVELY_LOCK_IMAGE(rImg)	EXCLUSIVELY_LOCK(rImg)
 	#define EXCLUSIVELY_LOCK_THIS_IMAGE()	EXCLUSIVELY_LOCK_IMAGE(*this)
+
+	#define PREVENT_FROM_DESTRUCTION(rObj)	const Utils::CExclusivelyLocked locker( (rObj).destructionLocker )
 
 #endif // IMAGE_H

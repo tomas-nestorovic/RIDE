@@ -231,7 +231,7 @@
 				break;
 			const div_t d=div(trackNumber,nHeads);
 			// . scanning the Track to draw its Sector Statuses
-		{	EXCLUSIVELY_LOCK_IMAGE(*image);
+		{	PREVENT_FROM_DESTRUCTION(*image);
 			if (!::IsWindow(pvtm->m_hWnd)) // TrackMap may not exist if, for instance, switched to another view while still scanning some Track(s)
 				continue;
 			ti.cylinder=d.quot, ti.head=d.rem;
@@ -241,7 +241,7 @@
 			// . scanning the Track to draw its Sector data
 			if (pvtm->displayType>=TDisplayType::DATA_OK_ONLY){
 				TFdcStatus statuses[(TSector)-1];
-				EXCLUSIVELY_LOCK_IMAGE(*image);
+				PREVENT_FROM_DESTRUCTION(*image);
 				if (!::IsWindow(pvtm->m_hWnd)) // TrackMap may not exist if, for instance, switched to another view while still scanning some Track(s)
 					continue;
 				image->GetTrackData( ti.cylinder, ti.head, Revolution::CURRENT, ti.bufferId, sectorIdAndPositionIdentity, ti.nSectors, ti.bufferSectorData, ti.bufferLength, statuses );
@@ -522,6 +522,8 @@
 				rOutNanoseconds= ns<=longestTrackNanoseconds ? ns : -1;
 			}
 			// . determining the Sector on which the cursor hovers
+			if (point.x<SECTOR1_X) // in "Cylinder" or "Head" columns?
+				return TCursorPos::TRACK;
 			const TTrack track=point.y/TRACK_HEIGHT;
 			const div_t d=div( track, scanner.params.nHeads );
 			TSectorId bufferId[(TSector)-1];
@@ -603,7 +605,7 @@
 			case TCursorPos::TRACK:
 				// clicked on a Track
 				mnu.EnableMenuItem( ID_TRACK, MF_BYCOMMAND|MF_ENABLED );
-				if (IMAGE->ReadTrack( chs.cylinder, chs.head ))
+				if (IMAGE->WriteTrack(0,0,CImage::CTrackReaderWriter::Invalid)!=ERROR_NOT_SUPPORTED) // determining existence of low-level information by an attempt of writing
 					mnu.EnableMenuItem( ID_HEAD, MF_BYCOMMAND|MF_ENABLED );
 				break;
 			default:

@@ -855,10 +855,13 @@ namespace Medium{
 
 	BOOL CImage::CanCloseFrame(CFrameWnd* pFrame){
 		// True <=> the MainWindow can be closed (and thus the application), otherwise False
-		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		PREVENT_FROM_DESTRUCTION(*this);
+		//EXCLUSIVELY_LOCK_THIS_IMAGE(); // commented out as it's being not worked with the Image
 		// - first asking the DOS that handles this Image
 		if (!dos->CanBeShutDown(pFrame))
 			return FALSE;
 		// - then attempting to close this Image
-		return __super::CanCloseFrame(pFrame);
+		return	pFrame!=nullptr // Null if e.g. app closing
+				? __super::CanCloseFrame(pFrame)
+				: SaveModified();
 	}
