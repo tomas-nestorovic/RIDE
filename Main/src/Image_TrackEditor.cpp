@@ -128,7 +128,7 @@
 							const auto dcSettings0=::SaveDC(dc);
 								do{
 									rc.right=te.timeline.GetUnitCount(piw->tEnd)-nUnitsA;
-									const Utils::CExclusivelyLocked<const decltype(p.params)> locker(p.params);
+									EXCLUSIVELY_LOCK(p.params);
 										if ( continuePainting=p.params.id==id ){
 											::FillRect( dc, &rc, iwBrushes[piw->isBad][L++&1] );
 											#ifdef _DEBUG
@@ -178,7 +178,7 @@
 											while (continuePainting && pbi->tStart<ti.tEnd && (PCBYTE)pbi-(PCBYTE)pe.data<pe->size){ // draw visible part
 												rcLabel.left=te.timeline.GetUnitCount(pbi->tStart+iwTimeDefaultHalf)-nUnitsA;
 												rcLabel.right=rcLabel.left+1000;
-												const Utils::CExclusivelyLocked<const decltype(p.params)> locker(p.params);
+												EXCLUSIVELY_LOCK(p.params);
 													if ( continuePainting=p.params.id==id )
 														switch (showByteInfo){
 															case BI_MINIMAL:
@@ -216,7 +216,7 @@
 										rc.left=te.timeline.GetUnitCount(ti.tStart)-nUnitsA;
 										rc.right=te.timeline.GetUnitCount(ti.tEnd)-nUnitsA;
 										const Utils::CRideBrush brush(rgn.color);
-										const Utils::CExclusivelyLocked<const decltype(p.params)> locker(p.params);
+										EXCLUSIVELY_LOCK(p.params);
 											if ( continuePainting=p.params.id==id )
 												::FillRect( dc, &rc, brush );
 									}
@@ -235,7 +235,7 @@
 							::SelectObject( dc, Utils::CRideFont::Std );
 							for( TCHAR buf[16]; continuePainting && i<tr.GetIndexCount() && tr.GetIndexTime(i)<=visible.tEnd; i++ ){ // visible indices
 								const int x=te.timeline.GetUnitCount( tr.GetIndexTime(i) )-nUnitsA;
-								const Utils::CExclusivelyLocked<const decltype(p.params)> locker(p.params);
+								EXCLUSIVELY_LOCK(p.params);
 									if ( continuePainting=p.params.id==id ){
 										::MoveToEx( dc, x,-INDEX_HEIGHT, nullptr );
 										::LineTo( dc, x,INDEX_HEIGHT );
@@ -249,7 +249,7 @@
 						tr.SetCurrentTime(visible.tStart-1);
 						while (continuePainting && tr.GetCurrentTime()<=visible.tEnd){
 							const int x=te.timeline.GetUnitCount( tr.ReadTime() )-nUnitsA;
-							const Utils::CExclusivelyLocked<const decltype(p.params)> locker(p.params);
+							EXCLUSIVELY_LOCK(p.params);
 								if ( continuePainting=p.params.id==id ){
 									::MoveToEx( dc, x,0, nullptr );
 									::LineTo( dc, x,TIME_HEIGHT );
@@ -519,7 +519,7 @@
 				// . drawing the Timeline
 				const HDC dc=*pDC;
 				::SetBkMode( dc, TRANSPARENT );
-				const Utils::CExclusivelyLocked<decltype(painter.params)> locker(painter.params);
+				EXCLUSIVELY_LOCK(painter.params);
 					painter.params.id++;
 					timeline.Draw( dc, Utils::CRideFont::Std, &painter.params.visible.tStart, &painter.params.visible.tEnd );
 					painter.params.zoomFactor=timeline.zoomFactor;
@@ -601,7 +601,7 @@
 					si.fMask=SIF_POS;
 					si.nPos=Utils::LogicalUnitScaleFactor*timeline.GetUnitCount(t);
 				SetScrollInfo( SB_HORZ, &si, TRUE );
-				const Utils::CExclusivelyLocked<decltype(painter.params)> locker(painter.params);
+				EXCLUSIVELY_LOCK(painter.params);
 					painter.params.id++; // stopping current painting
 					PaintCursorFeaturesInverted(false);
 					ScrollWindow(	// "base"
@@ -648,7 +648,7 @@
 			}
 
 			void ToggleFeature(TCursorFeatures cf){
-				const Utils::CExclusivelyLocked<decltype(painter.params)> locker(painter.params);
+				EXCLUSIVELY_LOCK(painter.params);
 					const bool cfs0=cursorFeaturesShown;
 					PaintCursorFeaturesInverted(false);
 						if (IsFeatureShown(cf))
@@ -659,7 +659,7 @@
 			}
 
 			void ShowAllFeatures(){
-				const Utils::CExclusivelyLocked<decltype(painter.params)> locker(painter.params);
+				EXCLUSIVELY_LOCK(painter.params);
 					PaintCursorFeaturesInverted(false);
 						cursorFeatures=-1;
 					Invalidate();
@@ -1360,7 +1360,7 @@
 											const HGDIOBJ hBrush0=::SelectObject( p.dc, ::GetStockObject(NULL_BRUSH) );
 												for( POSITION pos=peList.GetHeadPosition(); pos; ){
 													const TParseEvent &pe=peList.GetNext(pos);
-													const Utils::CExclusivelyLocked<const CChartView::CPainter> locker(p);
+													EXCLUSIVELY_LOCK(p);
 													if (p.drawingId!=id)
 														break;
 													CRect rc( pe.tStart, TIME_MICRO(200), pe.tEnd, 1 ); // "Top" value should suffice for any Medium

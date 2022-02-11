@@ -17,6 +17,20 @@ namespace Utils{
 
 
 
+	CExclusivelyLocked::CExclusivelyLocked(CSyncObject &syncObj)
+		// ctor
+		: syncObj(syncObj) {
+		syncObj.Lock();
+	}
+
+	CExclusivelyLocked::~CExclusivelyLocked(){
+		// ctor
+		syncObj.Unlock();
+	}
+
+
+
+
 	CRidePen::CRidePen(BYTE thickness,COLORREF color)
 		// ctor
 		: CPen(PS_SOLID,thickness,color) {

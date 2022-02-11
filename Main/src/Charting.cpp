@@ -78,7 +78,7 @@
 		const CXyDisplayInfo &di=*(const CXyDisplayInfo *)&p.di;
 		const HGDIOBJ hPen0=::SelectObject( p.dc, hPen );
 			for( DWORD j=0; j<nPoints; j++ ){
-				const Utils::CExclusivelyLocked<const CPainter> locker(p);
+				EXCLUSIVELY_LOCK(p);
 				if (p.drawingId!=id)
 					break;
 				if (points[j].y>di.yMax)
@@ -117,7 +117,7 @@
 			POINT pt=di.Transform( *points );
 			::MoveToEx( p.dc, pt.x, pt.y, nullptr );
 			for( DWORD j=1; j<nPoints; j++ ){
-				const Utils::CExclusivelyLocked<const CPainter> locker(p);
+				EXCLUSIVELY_LOCK(p);
 				if (p.drawingId!=id)
 					break;
 				pt=di.Transform( points[j] );
@@ -161,7 +161,7 @@
 				const POINT &pt=points[i];
 				if (pt.x>di.xMax)
 					break;
-				const Utils::CExclusivelyLocked<const CPainter> locker(p);
+				EXCLUSIVELY_LOCK(p);
 				if (p.drawingId!=id)
 					break;
 				const POINT ptT=di.Transform( pt );
@@ -360,7 +360,7 @@
 		switch (msg){
 			case WM_PAINT:{
 				// window's size is being changed
-				const Utils::CExclusivelyLocked<CPainter> locker(painter);
+				EXCLUSIVELY_LOCK(painter);
 				painter.drawingId++;
 				break;
 			}
@@ -410,7 +410,7 @@
 		// - drawing the chart
 		RECT rcClient;
 		GetClientRect(&rcClient);
-		const Utils::CExclusivelyLocked<CPainter> locker(painter);
+		EXCLUSIVELY_LOCK(painter);
 		painter.drawingId++;
 		painter.di.DrawBackground( dc, rcClient );
 		// . drawing the rest in parallel thread due to computational complexity if painting the whole Track

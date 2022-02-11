@@ -133,7 +133,7 @@
 	#define KF_EP_BULK_OUT		0x01
 	#define KF_EP_BULK_IN		0x82
 
-	#define EXCLUSIVELY_LOCK_DEVICE()	const Utils::CExclusivelyLocked<const decltype(device)> deviceLocker(device)
+	#define EXCLUSIVELY_LOCK_DEVICE()	const Utils::CExclusivelyLocked deviceLocker(device.locker)
 	// always lock first the Image and THEN the Device, so that the locking is compatible with base classes!
 
 	#define hDevice	device.handle

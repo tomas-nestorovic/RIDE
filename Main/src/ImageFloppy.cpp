@@ -96,7 +96,7 @@
 	std::unique_ptr<CImage::CSectorDataSerializer> CFloppyImage::CreateSectorDataSerializer(CHexaEditor *pParentHexaEditor){
 		// abstracts all Sector data (good and bad) into a single file and returns the result
 		// - defining the Serializer class
-		#define EXCLUSIVELY_LOCK_SCANNED_TRACKS()	const Utils::CExclusivelyLocked<TScannedTracks> locker(GetFloppyImage().scannedTracks)
+		#define EXCLUSIVELY_LOCK_SCANNED_TRACKS()	EXCLUSIVELY_LOCK(GetFloppyImage().scannedTracks)
 		class CSerializer sealed:public CSectorDataSerializer{
 			inline CFloppyImage &GetFloppyImage() const{
 				return *(CFloppyImage *)image;
@@ -124,7 +124,7 @@
 								ids, sectorIdAndPositionIdentity,
 								ps->__scanTrack__( req.track, ids, nullptr )
 							);
-							const Utils::CExclusivelyLocked<TScannedTracks> locker(scannedTracks);
+							EXCLUSIVELY_LOCK(scannedTracks);
 							scannedTracks.infos[req.track].bufferedRevs|=1<<req.revolution;
 						}else{
 							// all Revolutions wanted
@@ -134,7 +134,7 @@
 									ids, sectorIdAndPositionIdentity,
 									ps->__scanTrack__( req.track, ids, nullptr )
 								);
-							const Utils::CExclusivelyLocked<TScannedTracks> locker(scannedTracks);
+							EXCLUSIVELY_LOCK(scannedTracks);
 							scannedTracks.infos[req.track].bufferedRevs=-1;
 						}
 						if (ps->workerStatus!=TScannerStatus::UNAVAILABLE) // should we terminate?
@@ -143,10 +143,10 @@
 					}else{
 						// : scanning the next remaining Track
 						do{
-							//const Utils::CExclusivelyLocked<TScannedTracks> locker(scannedTracks); // postponed until below for smoother operation; may thus work with outdated values in ScannedTracks but that's ok!
+							//EXCLUSIVELY_LOCK(scannedTracks); // postponed until below for smoother operation; may thus work with outdated values in ScannedTracks but that's ok!
 							const bool hasTrackBeenScannedBefore=image->IsTrackScanned( scannedTracks.n>>1, scannedTracks.n&1 );
 							const int tmp = ps->trackHexaInfos[scannedTracks.n].Update(*ps); // calls CImage::ScanTrack
-							const Utils::CExclusivelyLocked<TScannedTracks> locker(scannedTracks);
+							EXCLUSIVELY_LOCK(scannedTracks);
 							ps->dataTotalLength = scannedTracks.dataTotalLength = tmp; // making sure the DataTotalLength is the last thing modified in the Locked section
 							scannedTracks.allScanned=++scannedTracks.n>=2*image->GetCylinderCount();
 							if (!hasTrackBeenScannedBefore)

@@ -38,16 +38,18 @@
 	bool CMainWindow::CTdiTemplate::__closeDocument__(){
 		// closes the main Image (usually a disk)
 		if (m_pOnlyDoc){
-			if (!m_pOnlyDoc->SaveModified()) // if refused to close the document ...
+			if (!m_pOnlyDoc->CanCloseFrame(app.GetMainWindow())) // if refused to close the document ...
 				return false; // ... keeping it open
 			if (app.m_pMainWnd){ // may not exist if the application is starting or closing
 				TDI_INSTANCE->CloseAllTabsOfFocusedImage();
 				( (CFrameWnd *)app.m_pMainWnd )->OnUpdateFrameTitle(FALSE); // updating the MainWindow's title (now without document)
 			}
-			if (const PImage image=CImage::GetActive())
+			const PImage image=(PImage)m_pOnlyDoc;
+			image->locker.Lock(); // have exclusive right for manipulation
 				if (image->dos)
 					delete image->dos, image->dos=nullptr;
-			delete m_pOnlyDoc, m_pOnlyDoc=nullptr;
+				delete m_pOnlyDoc, m_pOnlyDoc=nullptr;
+			//image->locker.Unlock(); // commented out as Locker destroyed along with the Image
 		}
 		return true;
 	}

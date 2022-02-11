@@ -688,7 +688,9 @@
 		BOOL CanCloseFrame(CFrameWnd* pFrame) override;
 	};
 
-	#define EXCLUSIVELY_LOCK_IMAGE(rImg)	const Utils::CExclusivelyLocked<const CImage> locker(rImg)
+	#define EXCLUSIVELY_LOCK(rObj)			const Utils::CExclusivelyLocked locker( (rObj).locker )
+
+	#define EXCLUSIVELY_LOCK_IMAGE(rImg)	EXCLUSIVELY_LOCK(rImg)
 	#define EXCLUSIVELY_LOCK_THIS_IMAGE()	EXCLUSIVELY_LOCK_IMAGE(*this)
 
 #endif // IMAGE_H

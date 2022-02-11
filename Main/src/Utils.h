@@ -121,19 +121,11 @@ namespace Utils{
 		}
 	};
 
-	template<typename T>
 	class CExclusivelyLocked{
-		T &obj;
+		CSyncObject &syncObj;
 	public:
-		CExclusivelyLocked(T &obj)
-			// ctor
-			: obj(obj) {
-			obj.locker.Lock();
-		}
-		~CExclusivelyLocked(){
-			// ctor
-			obj.locker.Unlock();
-		}
+		CExclusivelyLocked(CSyncObject &syncObj);
+		~CExclusivelyLocked();
 	};
 
 	class CRidePen sealed:public ::CPen{
