@@ -989,6 +989,10 @@ invalidTrack:
 
 	CImage::CTrackReader CCapsBase::ReadTrack(TCylinder cyl,THead head) const{
 		// creates and returns a general description of the specified Track, represented using neutral LogicalTimes
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		// - checking that specified Track actually CAN exist
+		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
+			return CTrackReaderWriter::Invalid;
 		// - making sure the Track is buffered
 		ScanTrack( cyl, head );
 		// - returning the description

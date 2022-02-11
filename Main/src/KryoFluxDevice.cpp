@@ -835,7 +835,6 @@
 				return 0;
 	}
 			// . making sure the read content is a KryoFlux Stream whose data actually make sense
-			EXCLUSIVELY_LOCK_THIS_IMAGE();
 			PInternalTrack &rit=internalTracks[cyl][head];
 			if (CTrackReaderWriter trw=StreamToTrack( tmpDataBuffer, p-tmpDataBuffer )){
 				// it's a KryoFlux Stream whose data make sense
@@ -847,15 +846,18 @@
 					//else if (params.corrections.indexTiming) // DOS still being recognized ...
 						//trw.Normalize(); // ... hence can only improve readability by adjusting index-to-index timing
 				}
+				const PInternalTrack pit=CInternalTrack::CreateFrom( *this, trw ); // this is time-consuming, so it's out of locked section
+				EXCLUSIVELY_LOCK_THIS_IMAGE();
 				if (rit) // deleting whatever Track that emerged between the Image and Device locks
 					delete rit;
-				rit=CInternalTrack::CreateFrom( *this, trw );
+				rit=pit;
 				__super::ScanTrack( cyl, head, pCodec, bufferId, bufferLength, startTimesNanoseconds, pAvgGap3 );
 			}
 			// . if no more trials left, we are done
 			if (nRecoveryTrials<=0)
 				break;
 			// . attempting to return good data
+			EXCLUSIVELY_LOCK_THIS_IMAGE(); // !!! see also below this->{Lock,Unlock}
 			if (rit){ // may be Null if, e.g., device manually reset, disconnected, etc.
 				if (IsTrackHealthy(cyl,head) || !rit->nSectors // Track explicitly healthy or without Sectors
 					||
@@ -884,7 +886,10 @@
 						//fallthrough
 					case TParams::TCalibrationAfterError::FOR_EACH_SECTOR:
 						lastCalibratedCylinder=cyl;
-						SeekHome();
+						this->locker.Unlock();
+					{		EXCLUSIVELY_LOCK_DEVICE();
+							SeekHome();
+					}	this->locker.Lock();
 						break;
 				}				
 				delete rit; // disposing the erroneous Track ...
@@ -938,6 +943,7 @@
 
 	TStdWinError CKryoFluxDevice::FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte){
 		// formats given Track {Cylinder,Head} to the requested NumberOfSectors, each with corresponding Length and FillerByte as initial content; returns Windows standard i/o error
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - base
 		if (const TStdWinError err=__super::FormatTrack( cyl, head, codec, nSectors, bufferId, bufferLength, bufferFdcStatus, gap3, fillerByte ))
 			return err;

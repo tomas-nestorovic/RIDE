@@ -340,6 +340,9 @@
 
 	TStdWinError CKryoFluxBase::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus){
 		// marks Sector on a given PhysicalAddress as "dirty", plus sets it the given FdcStatus; returns Windows standard i/o error
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		if (chs.cylinder>capsImageInfo.maxcylinder || chs.head>capsImageInfo.maxhead)
+			return ERROR_INVALID_PARAMETER;
 		if (const PInternalTrack pit=internalTracks[chs.cylinder][chs.head]){
 			while (nSectorsToSkip<pit->nSectors){
 				auto &ris=pit->sectors[nSectorsToSkip++];
@@ -391,6 +394,7 @@
 		if (!tr) // caller is likely checking the support of this feature
 			return ERROR_INVALID_DATA; // yes, it's supported but the TrackReader is invalid
 		// - checking that specified Track actually CAN exist
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
 			return ERROR_INVALID_PARAMETER;
 		// - disposing previous Track, if any
@@ -411,6 +415,7 @@
 		if ((codec&properties->supportedCodecs)==0)
 			return ERROR_NOT_SUPPORTED;
 		// - checking that specified Track actually CAN exist
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
 			return ERROR_INVALID_PARAMETER;
 		// - disposing previous Track, if any
@@ -478,6 +483,7 @@
 		// unformats given Track {Cylinder,Head}; returns Windows standard i/o error
 		if (const Medium::PCProperties mp=Medium::GetProperties(floppyType)){
 			// . checking that specified Track actually CAN exist
+			EXCLUSIVELY_LOCK_THIS_IMAGE();
 			if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
 				return ERROR_INVALID_PARAMETER;
 			// . preparing Track content
