@@ -522,14 +522,15 @@
 				rOutNanoseconds= ns<=longestTrackNanoseconds ? ns : -1;
 			}
 			// . determining the Sector on which the cursor hovers
-			if (point.x<SECTOR1_X) // in "Cylinder" or "Head" columns?
-				return TCursorPos::TRACK;
 			const TTrack track=point.y/TRACK_HEIGHT;
 			const div_t d=div( track, scanner.params.nHeads );
+			rOutChs.cylinder=d.quot, rOutChs.head=d.rem;
+			if (point.x<SECTOR1_X) // in "Cylinder" or "Head" columns?
+				return TCursorPos::TRACK;
 			TSectorId bufferId[(TSector)-1];
 			WORD bufferLength[(TSector)-1];
 			TLogTime bufferStarts[(TSector)-1];
-			const TSector nSectors=IMAGE->ScanTrack( rOutChs.cylinder=d.quot, rOutChs.head=d.rem, nullptr, bufferId, bufferLength, bufferStarts );
+			const TSector nSectors=IMAGE->ScanTrack( d.quot, d.rem, nullptr, bufferId, bufferLength, bufferStarts );
 			TimesToPixels( nSectors, bufferStarts, bufferLength );
 			for( TSector s=0; s<nSectors; s++ )
 				if (bufferStarts[s]<=point.x && point.x<=bufferStarts[s]+(bufferLength[s]>>zoomLengthFactor)){
