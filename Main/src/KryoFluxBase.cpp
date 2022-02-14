@@ -25,7 +25,7 @@
 	#define INI_FIRMWARE_FILE			_T("fw")
 	#define INI_FLUX_DECODER			_T("decod")
 	#define INI_FLUX_DECODER_RESET		_T("drst")
-	#define INI_PRECISION				_T("prec")
+	#define INI_PRECISION				_T("prec2")
 	#define INI_CALIBRATE_SECTOR_ERROR	_T("clberr")
 	#define INI_CALIBRATE_SECTOR_ERROR_KNOWN _T("clbknw")
 	#define INI_CALIBRATE_FORMATTING	_T("clbfmt")
@@ -36,7 +36,7 @@
 		// ctor
 		// - persistent (saved and loaded)
 		: firmwareFileName( app.GetProfileString(INI_KRYOFLUX,INI_FIRMWARE_FILE) )
-		, precision( app.GetProfileInt(INI_KRYOFLUX,INI_PRECISION,0) )
+		, precision( (TPrecision)app.GetProfileInt(INI_KRYOFLUX,INI_PRECISION,TPrecision::BASIC) )
 		, fluxDecoder( (TFluxDecoder)app.GetProfileInt(INI_KRYOFLUX,INI_FLUX_DECODER,TFluxDecoder::KEIR_FRASER) )
 		, resetFluxDecoderOnIndex( (TFluxDecoder)app.GetProfileInt(INI_KRYOFLUX,INI_FLUX_DECODER_RESET,true)!=0 )
 		, calibrationAfterError( (TCalibrationAfterError)app.GetProfileInt(INI_KRYOFLUX,INI_CALIBRATE_SECTOR_ERROR,TCalibrationAfterError::ONCE_PER_CYLINDER) )
@@ -193,9 +193,11 @@
 			void DoDataExchange(CDataExchange* pDX) override{
 				// exchange of data from and to controls
 				// . Precision
-				DDX_CBIndex( pDX, ID_ROTATION,	params.precision );
+				int tmp=(params.precision-2)/2;
+				DDX_CBIndex( pDX, ID_ROTATION,	tmp );
+				params.precision=(TParams::TPrecision)(2*tmp+2);
 				// . FluxDecoder
-				int tmp=params.fluxDecoder;
+				tmp=params.fluxDecoder;
 				DDX_CBIndex( pDX, ID_ACCURACY,	tmp );
 				params.fluxDecoder=(TParams::TFluxDecoder)tmp;
 				tmp=params.resetFluxDecoderOnIndex;
@@ -335,7 +337,7 @@
 
 	BYTE CKryoFluxBase::GetAvailableRevolutionCount() const{
 		// returns the number of data variations of one Sector that are guaranteed to be distinct
-		return 2+params.precision*2;
+		return params.precision;
 	}
 
 	TStdWinError CKryoFluxBase::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus){

@@ -8,7 +8,11 @@
 		struct TParams{
 			// persistent (saved and loaded)
 			CString firmwareFileName;
-			int precision; // 0 = two full revolutions, 1 = four full revolutions
+			enum TPrecision:char{
+				SINGLE	=1,	// one full Revolution (only for writing verification)
+				BASIC	=2,	// two full revolutions
+				MEDIUM	=4	// four full revolutions
+			} mutable precision;
 			enum TFluxDecoder{ // in order of appearance in corresponding combo-box in IDR_KRYOFLUX_ACCESS dialog
 				NO_FLUX_DECODER,
 				KEIR_FRASER,
