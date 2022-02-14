@@ -311,7 +311,7 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 		}
 		oneByteLatency=app.GetProfileInt( iniSection, INI_LATENCY_1BYTE, defaultNanosecondsPerByte );
 		gap3Latency=app.GetProfileInt( iniSection, INI_LATENCY_GAP3, oneByteLatency*FDD_350_SECTOR_GAP3*4/5 ); // "4/5" = giving the FDC 20% tolerance for Gap3
-		return app.GetProfileInt( iniSection, INI_LATENCY_CONTROLLER, -1 )>0; // True <=> previously determined values used, otherwise False
+		return app.GetProfileInt( iniSection, INI_LATENCY_CONTROLLER, 0 )>0; // True <=> previously determined values used, otherwise False
 	}
 
 	void CFDD::TFddHead::TProfile::Save(TCHAR driveLetter,Medium::TType floppyType) const{
