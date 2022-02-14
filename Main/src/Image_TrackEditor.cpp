@@ -1320,7 +1320,7 @@
 									t0=t;
 								}
 								const Utils::CRidePen dotPen( 2, 0x2020ff );
-								const auto deltaTimeSeries=CChartView::CXyPointSeries(
+								auto deltaTimeSeries=CChartView::CXyPointSeries(
 									pLastItem-deltaTimes, deltaTimes, dotPen
 								);
 							const auto indexTimes=Utils::MakeCallocPtr<POINT>( tr.GetIndexCount() );
@@ -1384,13 +1384,14 @@
 							);
 							class CScatterPlotDialog sealed:public CChartDialog{
 								const CMainWindow::CDynMenu menu;
+								CChartView::CXyPointSeries &deltaTimeSeries;
 								CXyParseEventSeries &peSeries;
 								CChartView::CXyOrderedBarSeries &indexSeries;
 							public:
-								CScatterPlotDialog(CChartView::CXyDisplayInfo &di,CXyParseEventSeries &peSeries,CChartView::CXyOrderedBarSeries &indexSeries)
+								CScatterPlotDialog(CChartView::CXyDisplayInfo &di,CChartView::CXyPointSeries &deltaTimeSeries,CXyParseEventSeries &peSeries,CChartView::CXyOrderedBarSeries &indexSeries)
 									: CChartDialog(di)
 									, menu(IDR_SCATTERPLOT)
-									, peSeries(peSeries) , indexSeries(indexSeries) {
+									, deltaTimeSeries(deltaTimeSeries) , peSeries(peSeries) , indexSeries(indexSeries) {
 									m_bAutoMenuEnable=FALSE; // we are not set up for that
 								}
 
@@ -1419,6 +1420,9 @@
 										case CN_UPDATE_COMMAND_UI:
 											// update
 											switch (nID){
+												case ID_BUFFER:
+													((CCmdUI *)pExtra)->SetCheck( deltaTimeSeries.visible );
+													return TRUE;
 												case ID_ROTATION:
 													((CCmdUI *)pExtra)->SetCheck( indexSeries.visible );
 													return TRUE;
@@ -1431,6 +1435,10 @@
 										case CN_COMMAND:
 											// command
 											switch (nID){
+												case ID_BUFFER:
+													deltaTimeSeries.visible=!deltaTimeSeries.visible;
+													Invalidate();
+													return TRUE;
 												case ID_ROTATION:
 													indexSeries.visible=!indexSeries.visible;
 													Invalidate();
@@ -1444,7 +1452,7 @@
 									}
 									return __super::OnCmdMsg( nID, nCode, pExtra, pHandlerInfo );
 								}
-							} d( di, peSeries, indexTimeSeries );
+							} d( di, deltaTimeSeries, peSeries, indexTimeSeries );
 							d.ShowModal( caption, this, 800,600 );
 							return TRUE;
 						}

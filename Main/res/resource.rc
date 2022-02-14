@@ -205,6 +205,7 @@ END
 
 IDR_SCATTERPLOT ACCELERATORS DISCARDABLE 
 BEGIN
+    "F",            ID_BUFFER,              VIRTKEY, NOINVERT
     "I",            ID_ROTATION,            VIRTKEY, NOINVERT
     "V",            ID_SYSTEM,              VIRTKEY, NOINVERT
 END
@@ -855,6 +856,7 @@ IDR_SCATTERPLOT MENU DISCARDABLE
 BEGIN
     POPUP "X"
     BEGIN
+        MENUITEM "Show fluxes\tF",              ID_BUFFER
         MENUITEM "Show indices\tI",             ID_ROTATION
         MENUITEM "Show structure\tV",           ID_SYSTEM
         MENUITEM SEPARATOR
