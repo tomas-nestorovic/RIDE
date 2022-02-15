@@ -606,7 +606,7 @@
 			case TCursorPos::TRACK:
 				// clicked on a Track
 				mnu.EnableMenuItem( ID_TRACK, MF_BYCOMMAND|MF_ENABLED );
-				if (IMAGE->WriteTrack(0,0,CImage::CTrackReaderWriter::Invalid)!=ERROR_NOT_SUPPORTED) // determining existence of low-level information by an attempt of writing
+				if (IMAGE->ReadTrack( chs.cylinder, chs.head )) // CANNOT alternatively call WriteTrack with Invalid data for some containers (e.g. *.IPF) don't allow for writing!
 					mnu.EnableMenuItem( ID_HEAD, MF_BYCOMMAND|MF_ENABLED );
 				break;
 			default:
