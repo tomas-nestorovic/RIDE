@@ -623,7 +623,6 @@
 
 		static Utils::CPtrList<PCProperties> Known; // list of known Images (registered in CRideApp::InitInstance)
 		static Utils::CPtrList<PCProperties> Devices; // list of known Devices (registered in CRideApp::InitInstance)
-		static CMutex destructionLocker;
 
 		static CImage *GetActive();
 		static PCProperties DetermineType(LPCTSTR fileName);
@@ -637,6 +636,7 @@
 		const PCProperties properties;
 		const bool hasEditableSettings;
 		const CTrackMapView trackMap;
+		CMutex destructionLocker;
 		mutable CCriticalSection locker;
 		CMainWindow::CDockableToolBar toolbar;
 		PDos dos;

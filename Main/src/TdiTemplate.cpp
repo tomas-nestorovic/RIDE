@@ -35,8 +35,6 @@
 		return m_pOnlyDoc;
 	}
 
-	CMutex CImage::destructionLocker;
-
 	bool CMainWindow::CTdiTemplate::__closeDocument__(){
 		// closes the main Image (usually a disk)
 		if (m_pOnlyDoc){
@@ -47,12 +45,13 @@
 				( (CFrameWnd *)app.m_pMainWnd )->OnUpdateFrameTitle(FALSE); // updating the MainWindow's title (now without document)
 			}
 			const PImage image=(PImage)m_pOnlyDoc;
-			PREVENT_FROM_DESTRUCTION(*image); // have exlusive rights for destruction
-			image->locker.Lock(); // have exclusive right for manipulation
-				if (image->dos)
-					delete image->dos, image->dos=nullptr;
-				delete m_pOnlyDoc, m_pOnlyDoc=nullptr;
-			//image->locker.Unlock(); // commented out as Locker destroyed along with the Image
+			image->destructionLocker.Lock(); // have exlusive rights for destruction
+				image->locker.Lock(); // have exclusive right for manipulation
+					if (image->dos)
+						delete image->dos, image->dos=nullptr;
+					delete m_pOnlyDoc, m_pOnlyDoc=nullptr;
+				//image->locker.Unlock(); // commented out as Locker destroyed along with the Image
+			//image->destructionLocker.Unlock(); // commented out as Locker destroyed along with the Image
 		}
 		return true;
 	}
