@@ -1443,13 +1443,13 @@ BEGIN
                     ES_NOHIDESEL | ES_READONLY | WS_VSCROLL
 END
 
-IDR_FDD_ACCESS DIALOGEX 0, 0, 225, 265
+IDR_FDD_ACCESS DIALOGEX 0, 0, 225, 275
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
 CAPTION "FDD access options"
 FONT 8, "MS Sans Serif"
 BEGIN
-    DEFPUSHBUTTON   "OK",IDOK,115,244,50,14
-    PUSHBUTTON      "Cancel",IDCANCEL,168,244,50,14
+    DEFPUSHBUTTON   "OK",IDOK,115,254,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,168,254,50,14
     LTEXT           "Controller:",IDC_STATIC,7,8,32,8,NOT WS_GROUP
     LTEXT           "Static",ID_SYSTEM,71,8,147,8,NOT WS_GROUP
     LTEXT           "&Medium:",IDC_STATIC,7,24,28,8,NOT WS_GROUP
@@ -1473,7 +1473,7 @@ BEGIN
     LTEXT           "&Gap 3:",IDC_STATIC,71,105,22,8
     EDITTEXT        ID_GAP,110,103,38,12,ES_AUTOHSCROLL | NOT WS_BORDER,
                     WS_EX_STATICEDGE
-    LTEXT           "W",ID_INSTRUCTION,159,89,17,16,NOT WS_VISIBLE | NOT 
+    LTEXT           "W",ID_INSTRUCTION,156,87,17,16,NOT WS_VISIBLE | NOT 
                     WS_GROUP
     CONTROL         "<a id=""ID_AUTO"">Autodetermine</a>",ID_AUTO,"SysLink",
                     0x0,159,89,59,11
@@ -1484,23 +1484,24 @@ BEGIN
                     BS_AUTORADIOBUTTON,70,135,71,10
     CONTROL         "For each &sector",ID_SECTOR,"Button",BS_AUTORADIOBUTTON,
                     70,146,65,10
-    CONTROL         "Only &known sectors",ID_READABLE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,70,157,78,10
+    CONTROL         "Only &known sectors if DOS recognized",ID_READABLE,
+                    "Button",BS_AUTOCHECKBOX | BS_LEFT | BS_TOP | 
+                    BS_MULTILINE | WS_TABSTOP,70,157,78,18
     CONTROL         "Never",ID_ZERO,"Button",BS_AUTORADIOBUTTON | WS_GROUP,
-                    70,172,78,10
-    CONTROL         "&Each",ID_CYLINDER_N,"Button",BS_AUTORADIOBUTTON,70,183,
+                    70,180,78,10
+    CONTROL         "&Each",ID_CYLINDER_N,"Button",BS_AUTORADIOBUTTON,70,192,
                     31,10
-    EDITTEXT        ID_NUMBER,102,184,16,12,ES_RIGHT | ES_AUTOHSCROLL | 
+    EDITTEXT        ID_NUMBER,102,192,16,12,ES_RIGHT | ES_AUTOHSCROLL | 
                     ES_NUMBER | WS_DISABLED | NOT WS_BORDER
-    LTEXT           "-th cyl.",IDC_STATIC,118,184,22,8,NOT WS_GROUP
+    LTEXT           "-th cyl.",IDC_STATIC,118,192,22,8,NOT WS_GROUP
     CONTROL         "&Verify formatted tracks before writing any data (recommended)",
                     ID_VERIFY_TRACK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
-                    200,211,10
+                    208,211,10
     CONTROL         "Verify &written data (including requested data errors, if any)",
                     ID_VERIFY_SECTOR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
-                    211,195,10
+                    219,195,10
     CONTROL         "&Prefer relative over absolute seeking",ID_SEEK,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,222,131,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,230,131,10
 END
 
 IDR_FDD_LATENCY DIALOG DISCARDABLE  0, 0, 154, 85
@@ -1790,13 +1791,13 @@ BEGIN
     LTEXT           "Error",ID_ERROR,15,73,47,15,WS_BORDER | NOT WS_GROUP
 END
 
-IDR_KRYOFLUX_ACCESS DIALOG DISCARDABLE  0, 0, 225, 256
+IDR_KRYOFLUX_ACCESS DIALOG DISCARDABLE  0, 0, 225, 265
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
 CAPTION "KryoFlux access options"
 FONT 8, "MS Sans Serif"
 BEGIN
-    DEFPUSHBUTTON   "OK",IDOK,115,235,50,14
-    PUSHBUTTON      "Cancel",IDCANCEL,168,235,50,14
+    DEFPUSHBUTTON   "OK",IDOK,115,244,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,168,244,50,14
     LTEXT           "Firmware:",IDC_STATIC,7,8,31,8,NOT WS_GROUP
     LTEXT           "Static",ID_SYSTEM,71,8,147,8,NOT WS_GROUP
     LTEXT           "&Precision:",IDC_STATIC,7,24,32,8
@@ -1825,22 +1826,23 @@ BEGIN
                     BS_AUTORADIOBUTTON,71,135,71,10
     CONTROL         "For each &sector",ID_SECTOR,"Button",BS_AUTORADIOBUTTON,
                     71,146,65,10
-    CONTROL         "Only &known sectors",ID_READABLE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,71,157,78,10
+    CONTROL         "Only &known sectors if DOS recognized",ID_READABLE,
+                    "Button",BS_AUTOCHECKBOX | BS_TOP | BS_MULTILINE | 
+                    WS_TABSTOP,71,157,78,18
     CONTROL         "Never",ID_ZERO,"Button",BS_AUTORADIOBUTTON | WS_GROUP,
-                    71,172,78,10
-    CONTROL         "&Each",ID_CYLINDER_N,"Button",BS_AUTORADIOBUTTON,71,183,
+                    71,180,78,10
+    CONTROL         "&Each",ID_CYLINDER_N,"Button",BS_AUTORADIOBUTTON,71,192,
                     31,10
-    EDITTEXT        ID_NUMBER,103,184,16,12,ES_RIGHT | ES_AUTOHSCROLL | 
+    EDITTEXT        ID_NUMBER,103,192,16,12,ES_RIGHT | ES_AUTOHSCROLL | 
                     ES_NUMBER | WS_DISABLED | NOT WS_BORDER
-    LTEXT           "-th cyl.",IDC_STATIC,119,184,22,8,NOT WS_GROUP
+    LTEXT           "-th cyl.",IDC_STATIC,119,192,22,8,NOT WS_GROUP
     CONTROL         "&Verify formatted/written tracks (recommended)",
                     ID_VERIFY_TRACK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
-                    211,211,10
+                    219,211,10
     CONTROL         "Use jitter and other &corrections",ID_TRACK,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,200,112,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,208,112,10
     CONTROL         "(<a id=""correction"">Settings</a>)",ID_TIME,"SysLink",
-                    WS_TABSTOP,119,201,49,10
+                    WS_TABSTOP,119,209,49,10
 END
 
 IDR_CAPS DIALOGEX 0, 0, 186, 127
@@ -2118,7 +2120,7 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 218
         TOPMARGIN, 7
-        BOTTOMMARGIN, 258
+        BOTTOMMARGIN, 268
     END
 
     IDR_FDD_LATENCY, DIALOG
@@ -2232,7 +2234,7 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 218
         TOPMARGIN, 7
-        BOTTOMMARGIN, 249
+        BOTTOMMARGIN, 258
     END
 
     IDR_CAPS, DIALOG
