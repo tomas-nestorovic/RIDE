@@ -64,7 +64,7 @@
 			fv[1] = rv[1] = 0;
 			const int delta=n-m;
 			// - SMS
-			static constexpr POINT Cancelled;
+			static constexpr POINT Cancelled={0,0};
 			const bool oddDelta=(delta&1)!=0; // if the total number of characters is odd, then the front path will collide with the reverse path
 			int fkStart=0, fkEnd=0, rkStart=0, rkEnd=0; // offsets for start and end of k loop; prevent mapping of space beyond the grid
 			for( int D=0; D<DMax; D++ ){

@@ -489,7 +489,8 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 				return nullptr;
 			}
 			// . informing
-			Utils::InformationWithCheckableShowNoMore( _T("The image will be opened using the default format of the selected DOS (see the \"") BOOT_SECTOR_TAB_LABEL _T("\" tab if available).\n\nRISK OF DATA CORRUPTION if the selected DOS and/or format is not suitable!"), INI_GENERAL, INI_MSG_OPEN_AS );
+			if (dosProps!=&CUnknownDos::Properties) // a damage can't occur in Unknown DOS
+				Utils::InformationWithCheckableShowNoMore( _T("The image will be opened using the default format of the selected DOS (see the \"") BOOT_SECTOR_TAB_LABEL _T("\" tab if available).\n\nRISK OF DATA CORRUPTION if the selected DOS and/or format is not suitable!"), INI_GENERAL, INI_MSG_OPEN_AS );
 		}
 		// - instantiating recognized/selected DOS
 		const PDos dos = image->dos = dosProps->fnInstantiate( image.get(), &formatBoot );
@@ -531,7 +532,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 
 	afx_msg void CRideApp::__openDevice__(){
 		// opens access to a local real device
-		Utils::InformationWithCheckableShowNoMore( _T("This is a shorthand to access local devices. The longer way via \"Open\" and \"Open as\" commands may offer more possibilities."), INI_GENERAL, INI_MSG_DEVICE_SHORT );
+		//Utils::InformationWithCheckableShowNoMore( _T("This is a shorthand to access local devices. The longer way via \"Open\" and \"Open as\" commands may offer more possibilities."), INI_GENERAL, INI_MSG_DEVICE_SHORT );
 		manuallyForceDos=nullptr; // use automatic recognition
 		TCHAR deviceName[MAX_PATH];
 		*deviceName='\0';
