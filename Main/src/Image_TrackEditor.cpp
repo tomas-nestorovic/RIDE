@@ -117,6 +117,7 @@
 						const int d=Utils::LogicalUnitScaleFactor.quot*Utils::LogicalUnitScaleFactor.rem;
 						const int nUnitsA=te.timeline.GetUnitCount(te.GetScrollTime())/d*d;
 						::SetViewportOrgEx( dc, org.x+Utils::LogicalUnitScaleFactor*nUnitsA, org.y, nullptr );
+						const TLogTime iwTimeDefaultHalf=tr.GetCurrentProfile().iwTimeDefault/2;
 						bool continuePainting=true;
 						// . drawing inspection windows (if any)
 						if (te.IsFeatureShown(TCursorFeatures::INSPECT)){
@@ -155,7 +156,6 @@
 								const SIZE byteInfoSizeMin=font.GetTextSize(  label,  ::wsprintfA( label, ByteInfoFormat, 'M', 255 )  );
 								const int nUnitsPerByte=Utils::LogicalUnitScaleFactor*te.timeline.GetUnitCount( CImage::GetActive()->EstimateNanosecondsPerOneByte() );
 								const enum{ BI_NONE, BI_MINIMAL, BI_FULL } showByteInfo = nUnitsPerByte>byteInfoSizeMin.cx ? BI_FULL : nUnitsPerByte>1 ? BI_MINIMAL : BI_NONE;
-								const TLogTime iwTimeDefaultHalf=tr.GetCurrentProfile().iwTimeDefault/2;
 								for( POSITION pos=peList.GetHeadPosition(); continuePainting&&pos; ){
 									const TParseEventPtr pe=&peList.GetNext(pos);
 									if (const auto ti=pe->Add(iwTimeDefaultHalf).Intersect(visible)){ // offset ParseEvent visible?
@@ -212,7 +212,7 @@
 								RECT rc={ 0, TIME_HEIGHT, 0, TIME_HEIGHT+6 };
 								for( DWORD iRegion=0; continuePainting&&iRegion<te.nRegions; iRegion++ ){
 									const TRegion &rgn=te.pRegions[iRegion];
-									if (const auto ti=rgn.Intersect(visible)){ // Region visible?
+									if (const auto ti=rgn.Add(iwTimeDefaultHalf).Intersect(visible)){ // offset Region visible?
 										rc.left=te.timeline.GetUnitCount(ti.tStart)-nUnitsA;
 										rc.right=te.timeline.GetUnitCount(ti.tEnd)-nUnitsA;
 										const Utils::CRideBrush brush(rgn.color);
@@ -233,7 +233,7 @@
 							::SelectObject( dc, te.penIndex );
 							::SetTextColor( dc, 0xff0000 );
 							::SelectObject( dc, Utils::CRideFont::Std );
-							for( TCHAR buf[16]; continuePainting && i<tr.GetIndexCount() && tr.GetIndexTime(i)<=visible.tEnd; i++ ){ // visible indices
+							for( TCHAR buf[16]; continuePainting && i<tr.GetIndexCount() && tr.GetIndexTime(i)<visible.tEnd; i++ ){ // visible indices
 								const int x=te.timeline.GetUnitCount( tr.GetIndexTime(i) )-nUnitsA;
 								EXCLUSIVELY_LOCK(p.params);
 									if ( continuePainting=p.params.id==id ){
@@ -247,7 +247,7 @@
 							continue;
 						// . drawing Times
 						tr.SetCurrentTime(visible.tStart-1);
-						while (continuePainting && tr.GetCurrentTime()<=visible.tEnd){
+						while (continuePainting && tr.GetCurrentTime()<visible.tEnd){
 							const int x=te.timeline.GetUnitCount( tr.ReadTime() )-nUnitsA;
 							EXCLUSIVELY_LOCK(p.params);
 								if ( continuePainting=p.params.id==id ){
