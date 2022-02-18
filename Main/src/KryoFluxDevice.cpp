@@ -688,6 +688,7 @@
 			return ERROR_SUCCESS;
 		if (!pit->modified)
 			return ERROR_SUCCESS;
+		//CTrackReader::CBitSequence( *pit, 0, pit->CreateResetProfile(), pit->GetIndexTime(1) ).SaveCsv("r:\\format.txt");
 		pit->FlushSectorBuffers(); // convert all modifications into flux transitions
 		// - extracting the "best" Revolution into a temporary Track
 		//TODO better

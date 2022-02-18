@@ -741,7 +741,7 @@
 	void CImage::CTrackReader::CBitSequence::SaveCsv(LPCTSTR filename) const{
 		CFile f( filename, CFile::modeWrite|CFile::modeCreate );
 		for( DWORD b=0; b<nBits; b++ )
-			Utils::WriteToFileFormatted( f, "%c\n", '0'+pBits[b].value );
+			Utils::WriteToFileFormatted( f, "%c, %d\n", '0'+pBits[b].value, pBits[b].time );
 	}
 #endif
 
@@ -1198,6 +1198,9 @@
 		if (sr.DescribesDataFieldCrcError())
 			crc=~crc;
 		pBit=MFM::EncodeWord( Utils::CBigEndianWord(crc).GetBigEndian(), pBit ); // CRC already big-endian, converting it to little-endian
+		// - writing one extra "0" bit if the CRC ends with "1" (leaving this case uncovered often leads to magnetic problems)
+		if (pBit[-1]) // CRC ends with "1" ...
+			*pBit++=false; // ... so the gap must begin with "0"
 		// - writing the Bits
 		return	WriteBits( bits+1, pBit-bits-1 ) // "1" = the auxiliary "previous" bit of distorted 0xA1 sync mark
 				? nBytesToWrite

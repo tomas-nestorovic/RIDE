@@ -953,6 +953,7 @@
 					// command
 					switch (nID){
 						case IDRETRY:
+						case IDOK:
 							EndDialog(nID);
 							return TRUE;
 						case ID_ZOOM_IN:
