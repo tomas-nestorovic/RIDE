@@ -903,12 +903,38 @@ invalidTrack:
 							// : composition and display of shortest edit script (SES)
 							const DWORD nSesItemsMax=writtenBits.GetBitCount()+readBits.GetBitCount();
 							if (const auto pSes=Utils::MakeCallocPtr<CDiffBase::TScriptItem>(nSesItemsMax)){
-								const int nSesItems=writtenBits.GetShortestEditScript( readBits, pSes, nSesItemsMax );
-								if (nSesItems<=0)
+								struct TVerifParams sealed{
+									const CTrackReader::CBitSequence &writtenBits;
+									const CTrackReader::CBitSequence &readBits;
+									const DWORD nSesItemsMax;
+									const Utils::CCallocPtr<CDiffBase::TScriptItem,DWORD> &pSes;
+									int nSesItems; // to be computed
+		
+									TVerifParams(const CTrackReader::CBitSequence &writtenBits,const CTrackReader::CBitSequence &readBits,const DWORD nSesItemsMax,const Utils::CCallocPtr<CDiffBase::TScriptItem,DWORD> &pSes)
+										: writtenBits(writtenBits) , readBits(readBits)
+										, nSesItemsMax(nSesItemsMax) , pSes(pSes)
+										, nSesItems(-1) { // to be computed
+									}
+
+									static UINT AFX_CDECL Thread(PVOID pCancelableAction){
+										const PBackgroundActionCancelable pBac=(PBackgroundActionCancelable)pCancelableAction;
+										TVerifParams &vp=*(TVerifParams *)pBac->GetParams();
+										vp.nSesItems=vp.writtenBits.GetShortestEditScript( vp.readBits, vp.pSes, vp.nSesItemsMax, pBac );
+										return pBac->TerminateWithSuccess();
+									}
+								} vp( writtenBits, readBits, nSesItemsMax, pSes );
+								//writtenBits.SaveCsv("r:\\written.txt");
+								//readBits.SaveCsv("r:\\read.txt");
+								if (err=CBackgroundActionCancelable(
+										TVerifParams::Thread, &vp, THREAD_PRIORITY_NORMAL
+									).Perform()
+								)
+									; // nop
+								else if (vp.nSesItems<=0)
 									err=ERROR_FUNCTION_FAILED;
-								else if (const auto pBadRegions=Utils::MakeCallocPtr<CTrackReader::TRegion>(nSesItems)){
+								else if (const auto pBadRegions=Utils::MakeCallocPtr<CTrackReader::TRegion>(vp.nSesItems)){
 									// composition and display of non-overlapping erroneously written regions of the Track
-									const DWORD nBadRegions=writtenBits.ScriptToLocalRegions( pSes, nSesItems, pBadRegions, COLOR_RED );
+									const DWORD nBadRegions=writtenBits.ScriptToLocalRegions( pSes, vp.nSesItems, pBadRegions, COLOR_RED );
 									switch (pitWritten->ShowModal( pBadRegions, nBadRegions, MB_ABORTRETRYIGNORE, true, _T("Track %02d.%c verification failed: Review RED-MARKED errors and decide how to proceed!"), cyl, '0'+head )){
 										case IDOK: // ignore
 											err=ERROR_CONTINUE;
