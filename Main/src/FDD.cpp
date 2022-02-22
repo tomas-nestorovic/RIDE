@@ -59,7 +59,7 @@
 	#define _HANDLE		fddHead.handle
 	#define DRIVER		fddHead.driver
 
-	TStdWinError CFDD::TInternalTrack::TSectorInfo::__saveToDisk__(CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip,bool verify){
+	TStdWinError CFDD::TInternalTrack::TSectorInfo::SaveToDisk(CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip,bool verify,const volatile bool &cancelled){
 		// saves this Sector to inserted floppy; returns Windows standard i/o error
 		LOG_SECTOR_ACTION(&id,_T("TStdWinError CFDD::TInternalTrack::TSectorInfo::__saveToDisk__"));
 		// - seeking the Head
@@ -68,6 +68,8 @@
 		// - saving
 		char nSilentRetrials=1;
 		do{
+			if (cancelled)
+				return LOG_ERROR(ERROR_CANCELLED);
 			// : taking into account the NumberOfSectorsToSkip in current Track
 			if (pit->__isIdDuplicated__(&id)) // to speed matters up, only if ID is duplicated in Track
 				fdd->__setNumberOfSectorsToSkipOnCurrentTrack__(nSectorsToSkip);
@@ -128,10 +130,12 @@
 						for( TSector n=0; n<pit->nSectors; n++ )
 							bufferId[n]=pit->sectors[n].id, bufferLength[n]=pit->sectors[n].length, bufferStatus[n]=TFdcStatus::WithoutError;
 						fdd->internalTracks[cyl][head]=nullptr; // detaching the Track internal representation for it to be not destroyed during reformatting of the Track
-						err=fdd->FormatTrack(	cyl, head, pit->codec, pit->nSectors, bufferId, bufferLength, bufferStatus,
-												fdd->floppyType==Medium::FLOPPY_DD_525 ? FDD_525_SECTOR_GAP3 : FDD_350_SECTOR_GAP3, // if gap too small (e.g. 10) it's highly likely that sectors would be missed in a single disk revolution (so for instance, reading 9 sectors would require 9 disk revolutions)
-												fdd->dos->properties->sectorFillerByte
-											);
+						err=fdd->FormatTrack(
+							cyl, head, pit->codec, pit->nSectors, bufferId, bufferLength, bufferStatus,
+							fdd->floppyType==Medium::FLOPPY_DD_525 ? FDD_525_SECTOR_GAP3 : FDD_350_SECTOR_GAP3, // if gap too small (e.g. 10) it's highly likely that sectors would be missed in a single disk revolution (so for instance, reading 9 sectors would require 9 disk revolutions)
+							fdd->dos->properties->sectorFillerByte,
+							cancelled
+						);
 						if (err!=ERROR_SUCCESS){ // if formatting failed ...
 terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new InternalTrack representation
 							fdd->internalTracks[cyl][head]=(PInternalTrack)pit; // re-attaching the original InternalTrack representation
@@ -150,7 +154,7 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 						fdd->internalTracks[cyl][head]=(PInternalTrack)pit; // re-attaching the original InternalTrack representation
 						// . writing the 0..(K-1)-th Sectors back to the above reformatted Track, leaving K+1..N-th Sectors unwritten (caller's duty); we re-attempt to write this K-th Sector in the next iteration
 						for( TSector s=0; s<nSectorsToSkip; s++ )
-							if ( err=pit->sectors[s].__saveToDisk__(fdd,pit,s,verify) ) // if Sector not writeable even after reformatting the Track ...
+							if ( err=pit->sectors[s].SaveToDisk(fdd,pit,s,verify,cancelled) ) // if Sector not writeable even after reformatting the Track ...
 								return LOG_ERROR(err); // ... there's nothing else to do but terminating with Error
 						// . trying to write this K-th Sector once more, leaving K+1..N-th Sectors unwritten (caller's duty)
 						continue;
@@ -158,8 +162,8 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 				}
 			// : verifying the writing
 			else
-				if (verify)
-					switch (__verifySaving__(fdd,pit,nSectorsToSkip)){
+				if (verify && !cancelled)
+					switch (VerifySaving(fdd,pit,nSectorsToSkip)){
 						case IDIGNORE:	break;
 						case IDABORT:	return LOG_ERROR(ERROR_CANCELLED);
 						case IDRETRY:	continue;
@@ -169,7 +173,7 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 		return ERROR_SUCCESS;
 	}
 
-	BYTE CFDD::TInternalTrack::TSectorInfo::__verifySaving__(const CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip){
+	BYTE CFDD::TInternalTrack::TSectorInfo::VerifySaving(const CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip){
 		// verifies the saving made by during calling to __saveToDisk__
 		LOG_SECTOR_ACTION(&id,_T("verifying the writing"));
 		const TPhysicalAddress chs={ pit->cylinder, pit->head, id };
@@ -583,7 +587,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 						TInternalTrack::TSectorInfo &si=pit->sectors[n];
 						if (si.modified && !justSavedSectors[n]){
 							if (si.startNanoseconds-lastSectorEndNanoseconds>=fddHead.profile.gap3Latency) // sufficient distance between this and previously saved Sectors, so both of them can be processed in a single disk revolution
-								if (const TStdWinError err=si.__saveToDisk__( const_cast<CFDD *>(this), pit, n, false )) // False = verification carried out below
+								if (const TStdWinError err=si.SaveToDisk( const_cast<CFDD *>(this), pit, n, false, cancelled )) // False = verification carried out below
 									return err;
 								else{
 									si.modified=params.verifyWrittenData; // no longer Modified if Verification turned off
@@ -604,7 +608,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 						TInternalTrack::TSectorInfo &si=pit->sectors[n];
 						if (si.modified)
 							if (si.startNanoseconds-lastSectorEndNanoseconds>=fddHead.profile.gap3Latency){ // sufficient distance between this and previously saved Sectors, so both of them can be processed in a single disk revolution
-								if (si.__verifySaving__( this, pit, n )==IDABORT)
+								if (cancelled || si.VerifySaving(this,pit,n)==IDABORT)
 									return ERROR_CANCELLED;
 								lastSectorEndNanoseconds=si.endNanoseconds;
 								allSectorsProcessed=false; // will need one more cycle iteration to eventually find out that all Sectors are processed OK
@@ -1238,7 +1242,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 				// : formatting Track to a single Sector
 				const bool vft0=lp.fdd->params.verifyFormattedTracks;
 				lp.fdd->params.verifyFormattedTracks=false;
-					const TStdWinError err=lp.fdd->FormatTrack( lp.cyl, lp.head, Codec::MFM, 1,&interruption.sectorId,&interruption.sectorLength,&TFdcStatus::WithoutError, FDD_350_SECTOR_GAP3, 0 );
+					const TStdWinError err=lp.fdd->FormatTrack( lp.cyl, lp.head, Codec::MFM, 1,&interruption.sectorId,&interruption.sectorLength,&TFdcStatus::WithoutError, FDD_350_SECTOR_GAP3, 0, pAction->Cancelled );
 				lp.fdd->params.verifyFormattedTracks=vft0;
 				if (err!=ERROR_SUCCESS)
 					return LOG_ERROR(pAction->TerminateWithError(err));
@@ -1300,7 +1304,7 @@ Utils::Information(buf);}
 			static const TFdcStatus SectorStatuses[]={ TFdcStatus::WithoutError, TFdcStatus::WithoutError };
 			const bool vft0=lp.fdd->params.verifyFormattedTracks;
 			lp.fdd->params.verifyFormattedTracks=false;
-				const TStdWinError err=lp.fdd->FormatTrack( lp.cyl, lp.head, Codec::MFM, 2, SectorIds, SectorLengths, SectorStatuses, gap3, TEST_BYTE );
+				const TStdWinError err=lp.fdd->FormatTrack( lp.cyl, lp.head, Codec::MFM, 2, SectorIds, SectorLengths, SectorStatuses, gap3, TEST_BYTE, pAction->Cancelled );
 			lp.fdd->params.verifyFormattedTracks=vft0;
 			if (err!=ERROR_SUCCESS)
 				return pAction->TerminateWithError(err);
@@ -1664,7 +1668,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 		return ERROR_SUCCESS;
 	}
 
-	static BYTE ReportSectorVerificationError(RCPhysicalAddress chs){
+	static BYTE ReportSectorVerificationError(RCPhysicalAddress chs,const volatile bool &cancelled){
 		TStdWinError err=::GetLastError();
 		if (err==ERROR_SUCCESS) // if hardware itself reports no error ...
 			err=ERROR_DS_COMPARE_FALSE; // ... then the data are simply wrongly written
@@ -1674,10 +1678,12 @@ autodetermineLatencies:		// automatic determination of write latency values
 			Utils::CRideDialog::GetDialogTemplateCaptionText( IDR_DOS_FORMAT, buf, sizeof(buf)/sizeof(TCHAR) )
 		);
 		::wsprintf( buf, _T("Track %d verification failed for sector with %s"), chs.GetTrackNumber(2), (LPCTSTR)chs.sectorId.ToString() );
-		return Utils::AbortRetryIgnore( buf, err, MB_DEFBUTTON2, sug );
+		return	cancelled
+				? IDABORT
+				: Utils::AbortRetryIgnore( buf, err, MB_DEFBUTTON2, sug );
 	}
 
-	TStdWinError CFDD::__formatToOneLongVerifiedSector__(RCPhysicalAddress chs,BYTE fillerByte){
+	TStdWinError CFDD::FormatToOneLongVerifiedSector(RCPhysicalAddress chs,BYTE fillerByte,const volatile bool &cancelled){
 		// creates (and eventually verifies) a single long Sector with the given ID; returns Windows standard i/o error
 		LOG_TRACK_ACTION(chs.cylinder,chs.head,_T("TStdWinError CFDD::__formatToOneLongVerifiedSector__"));
 		do{
@@ -1717,7 +1723,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 					if (::GetLastError()==ERROR_FLOPPY_ID_MARK_NOT_FOUND) // this is an error for which it usually suffices ...
 						continue; // ... to repeat the formatting cycle
 					else
-						switch (ReportSectorVerificationError(chs)){
+						switch (ReportSectorVerificationError(chs,cancelled)){
 							case IDABORT:	return LOG_ERROR(ERROR_CANCELLED);
 							case IDRETRY:	continue;
 							case IDIGNORE:	break;
@@ -1748,7 +1754,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 	#define NUMBER_OF_OCCUPIED_BYTES(nSectors,sectorLength,gap3,withoutLastGap3)\
 		( nSectors*( NUMBER_OF_BYTES_OCCUPIED_BY_ID + GAP2_BYTES_COUNT + SYNCHRONIZATION_BYTES_COUNT + sizeof(TDataAddressMark) + sectorLength + sizeof(TCrc16) + gap3 )  -  withoutLastGap3*gap3 )
 
-	TStdWinError CFDD::FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte){
+	TStdWinError CFDD::FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte,const volatile bool &cancelled){
 		// formats given Track {Cylinder,Head} to the requested NumberOfSectors, each with corresponding Length and FillerByte as initial content; returns Windows standard i/o error
 		LOG_TRACK_ACTION(cyl,head,_T("TStdWinError CFDD::FormatTrack"));
 		#ifdef LOGGING_ENABLED
@@ -1828,7 +1834,7 @@ formatStandardWay:
 					for( TSector n=0; n<nSectors; n++ ){
 						const TPhysicalAddress chs={ cyl, head, bufferId[n] };
 						if (!statuses[n].IsWithoutError())
-							switch (ReportSectorVerificationError(chs)){
+							switch (ReportSectorVerificationError(chs,cancelled)){
 								case IDABORT:	return LOG_ERROR(ERROR_CANCELLED);
 								case IDRETRY:	goto formatStandardWay;
 								case IDIGNORE:	break;
@@ -1845,7 +1851,7 @@ formatStandardWay:
 				UnformatInternalTrack(cyl,head);
 				// . formatting the Track
 				const TPhysicalAddress chs={ cyl, head, *bufferId };
-				if (__formatToOneLongVerifiedSector__( chs, fillerByte )!=ERROR_SUCCESS)
+				if (FormatToOneLongVerifiedSector( chs, fillerByte, cancelled )!=ERROR_SUCCESS)
 					goto error;
 				// . Track formatted successfully
 				break;
@@ -1857,7 +1863,7 @@ formatStandardWay:
 				// . verifying Track surface (if requested to) by writing maximum number of known Bytes to it and trying to read them back
 				if (params.verifyFormattedTracks){
 					const TPhysicalAddress chs={ cyl, head, {0,0,0,GetMaximumSectorLengthCode()+1} };
-					if (__formatToOneLongVerifiedSector__( chs, fillerByte )!=ERROR_SUCCESS)
+					if (FormatToOneLongVerifiedSector( chs, fillerByte, cancelled )!=ERROR_SUCCESS)
 						goto error;
 				}
 				// . creating the PlanOfFormatting
@@ -1971,6 +1977,8 @@ formatCustomWay:
 				UnformatTrack(cyl,head);
 				// . executing the PlanOfFormatting - decremental formatting (i.e. formatting "backwards")
 				for( const TFormatStep *pfs=pFormatStep; pfs-->formatPlan; ){
+					if (cancelled)
+						return LOG_ERROR(ERROR_CANCELLED);
 					__setWaitingForIndex__();
 					// : setting shortened formatting
 					__setTimeBeforeInterruptingTheFdc__( pfs->interruption.nBytes, pfs->interruption.nNanoseconds );
@@ -2001,7 +2009,7 @@ formatCustomWay:
 						TFdcStatus sr;
 						__bufferSectorData__( chs, bufferLength[n], &it, n, &sr );
 						if (bufferFdcStatus[n].DescribesMissingDam()^sr.DescribesMissingDam())
-							switch (ReportSectorVerificationError(chs)){
+							switch (ReportSectorVerificationError(chs,cancelled)){
 								case IDABORT:	return LOG_ERROR(ERROR_CANCELLED);
 								case IDRETRY:	goto formatCustomWay;
 								case IDIGNORE:	break;

@@ -487,7 +487,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		return ERROR_SUCCESS;
 	}
 
-	TStdWinError CDsk5::FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte){
+	TStdWinError CDsk5::FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte,const volatile bool &cancelled){
 		// formats given Track {Cylinder,Head} to the requested NumberOfSectors, each with corresponding Length and FillerByte as initial content; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if ((codec&Properties.supportedCodecs)==0)
@@ -519,6 +519,8 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			UnformatTrack(cyl,head);
 		// - formatting Track
 		do{
+			if (cancelled)
+				return ERROR_CANCELLED;
 			if (const PTrackInfo ti = tracks[w] = (PTrackInfo)::malloc(trackLength)){
 				diskInfo.nCylinders=std::max<TCylinder>( diskInfo.nCylinders, 1+cyl ); // updating the NumberOfCylinders
 				diskInfo.std_trackLength=std::max<DWORD>( diskInfo.std_trackLength, trackLength );

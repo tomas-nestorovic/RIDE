@@ -44,7 +44,7 @@
 					bufferSectorData[s]=pp.source->GetSectorData( chs, s, Revolution::CURRENT, bufferLength+s, bufferFdcStatus+s );
 				}
 				// . formatting Target Track
-				TStdWinError err=pp.target->FormatTrack( chs.cylinder, chs.head, pp.dos->formatBoot.codecType, nSectors, bufferId, bufferLength, bufferFdcStatus, pp.gap3, 0x00 );
+				TStdWinError err=pp.target->FormatTrack( chs.cylinder, chs.head, pp.dos->formatBoot.codecType, nSectors, bufferId, bufferLength, bufferFdcStatus, pp.gap3, 0x00, pAction->Cancelled );
 				if (err!=ERROR_SUCCESS)
 terminateWithError:	return pAction->TerminateWithError(err);
 				// . writing to Target Track

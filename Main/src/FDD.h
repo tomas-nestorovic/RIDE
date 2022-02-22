@@ -46,8 +46,8 @@
 				TFdcStatus fdcStatus;
 				bool modified;
 
-				TStdWinError __saveToDisk__(CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip,bool verify);
-				BYTE __verifySaving__(const CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip);
+				TStdWinError SaveToDisk(CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip,bool verify,const volatile bool &cancelled);
+				BYTE VerifySaving(const CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip);
 			};
 			const Utils::CCallocPtr<TSectorInfo> sectors;
 
@@ -105,7 +105,7 @@
 		TStdWinError __setTimeBeforeInterruptingTheFdc__(WORD nDataBytesBeforeInterruption) const;
 		bool __bufferSectorData__(TCylinder cyl,THead head,PCSectorId psi,WORD sectorLength,const TInternalTrack *pit,BYTE nSectorsToSkip,TFdcStatus *pFdcStatus) const;
 		bool __bufferSectorData__(RCPhysicalAddress chs,WORD sectorLength,const TInternalTrack *pit,BYTE nSectorsToSkip,TFdcStatus *pFdcStatus) const;
-		TStdWinError __formatToOneLongVerifiedSector__(RCPhysicalAddress chs,BYTE fillerByte);
+		TStdWinError FormatToOneLongVerifiedSector(RCPhysicalAddress chs,BYTE fillerByte,const volatile bool &cancelled);
 		void UnformatInternalTrack(TCylinder cyl,THead head) const;
 		void __freeInternalTracks__();
 	public:
@@ -129,7 +129,7 @@
 		bool EditSettings(bool initialEditing) override;
 		TStdWinError Reset() override;
 		TStdWinError SaveTrack(TCylinder cyl,THead head,const volatile bool &cancelled) const override;
-		TStdWinError FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte) override;
+		TStdWinError FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte,const volatile bool &cancelled) override;
 		bool RequiresFormattedTracksVerification() const override;
 		TStdWinError PresumeHealthyTrackStructure(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,BYTE gap3,BYTE fillerByte) override;
 		TStdWinError UnformatTrack(TCylinder cyl,THead head) override;

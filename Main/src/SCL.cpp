@@ -129,7 +129,7 @@
 				pTrdos->importToSysTrack=false;
 				::memcpy( pTrdos->sideMap, sideMap, sizeof(pTrdos->sideMap) ); // overwriting the SideMap to make sure it complies with the one provided as input
 				// : formatting Image to the maximum possible capacity
-				TStdWinError err=__extendToNumberOfCylinders__( pTrdos->formatBoot.nCylinders, pTrdos->properties->sectorFillerByte );
+				TStdWinError err=ExtendToNumberOfCylinders( pTrdos->formatBoot.nCylinders, pTrdos->properties->sectorFillerByte, false );
 				if (err!=ERROR_SUCCESS){
 error:				f.Close();
 					::SetLastError(err);

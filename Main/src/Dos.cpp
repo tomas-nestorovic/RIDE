@@ -319,12 +319,14 @@ reportError:Utils::Information(buf);
 			TStdWinError err;
 			if (fp.nSectors)
 				// custom Sectors (caller generated their IDs into Buffer)
-				err=fp.dos->image->FormatTrack(	cyl, head,
-												fp.rParams.format.codecType,
-												nSectors=fp.nSectors, fp.bufferId, fp.bufferLength,
-												(PCFdcStatus)::memset(bufferFdcStatus,0,sizeof(TFdcStatus)*fp.nSectors),
-												fp.rParams.gap3, fp.dos->properties->sectorFillerByte
-											);
+				err=fp.dos->image->FormatTrack(
+					cyl, head,
+					fp.rParams.format.codecType,
+					nSectors=fp.nSectors, fp.bufferId, fp.bufferLength,
+					(PCFdcStatus)::memset(bufferFdcStatus,0,sizeof(TFdcStatus)*fp.nSectors),
+					fp.rParams.gap3, fp.dos->properties->sectorFillerByte,
+					pAction->Cancelled
+				);
 			else{
 				// standard Sectors (their IDs generated into Buffer now)
 				// : generating IDs
@@ -341,12 +343,14 @@ reportError:Utils::Information(buf);
 					i=(i+fp.rParams.interleaving)%nSectors;
 				}
 				// : formatting
-				err=fp.dos->image->FormatTrack(	cyl, head,
-												fp.rParams.format.codecType,
-												nSectors, stdSectors, fp.bufferLength,
-												(PCFdcStatus)::memset(bufferFdcStatus,0,sizeof(TFdcStatus)*nSectors),
-												fp.rParams.gap3, fp.dos->properties->sectorFillerByte
-											);
+				err=fp.dos->image->FormatTrack(
+					cyl, head,
+					fp.rParams.format.codecType,
+					nSectors, stdSectors, fp.bufferLength,
+					(PCFdcStatus)::memset(bufferFdcStatus,0,sizeof(TFdcStatus)*nSectors),
+					fp.rParams.gap3, fp.dos->properties->sectorFillerByte,
+					pAction->Cancelled
+				);
 			}
 			if (err!=ERROR_SUCCESS)
 				return pAction->TerminateWithError(err);

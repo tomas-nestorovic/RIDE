@@ -756,7 +756,7 @@
 			::wsprintf( msgSavingFailed, ERROR_SAVE_MESSAGE_TEMPLATE, cyl, '0'+head, _T("saving") );
 			if (err) // writing to the device failed
 				switch (
-					nSilentRetrials>0
+					nSilentRetrials>0 || cancelled
 					? IDRETRY
 					: Utils::AbortRetryIgnore(msgSavingFailed,err,MB_DEFBUTTON2)
 				){
@@ -765,11 +765,11 @@
 						break;
 					case IDABORT:	// aborting the saving
 						return err;
-					default:		// attempting to save the Track once more
+					default:		// attempting to save the Track once more (or returning ERROR_CANCELLED if operation externally cancelled)
 						continue;
 				}
 			// . writing verification
-			if (!err && params.verifyWrittenTracks && pit->nSectors>0 && !cancelled){ // can verify the Track only if A&B&C, A = writing successfull, B&C = at least one Sector is recognized in it
+			if (!err && params.verifyWrittenTracks && pit->nSectors>0){ // can verify the Track only if A&B&C, A = writing successfull, B&C = at least one Sector is recognized in it
 				const auto cae0=params.calibrationAfterError;
 				params.calibrationAfterError=TParams::TCalibrationAfterError::NONE; // already calibrated before writing
 					const auto p0=params.precision;
@@ -947,15 +947,15 @@
 		return ERROR_SUCCESS;
 	}
 
-	TStdWinError CKryoFluxDevice::FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte){
+	TStdWinError CKryoFluxDevice::FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte,const volatile bool &cancelled){
 		// formats given Track {Cylinder,Head} to the requested NumberOfSectors, each with corresponding Length and FillerByte as initial content; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - base
-		if (const TStdWinError err=__super::FormatTrack( cyl, head, codec, nSectors, bufferId, bufferLength, bufferFdcStatus, gap3, fillerByte ))
+		if (const TStdWinError err=__super::FormatTrack( cyl, head, codec, nSectors, bufferId, bufferLength, bufferFdcStatus, gap3, fillerByte, cancelled ))
 			return err;
 		// - writing the Track straigt away to catch disk surface problems before using the disk later
 		if (params.verifyWrittenTracks)
-			switch (const TStdWinError err=SaveAndVerifyTrack( cyl, head, false )){
+			switch (const TStdWinError err=SaveAndVerifyTrack( cyl, head, cancelled )){
 				case ERROR_CONTINUE:
 					// errors during writing or verification ignored by user
 					delete internalTracks[cyl][head]; // disposing unsuccessfully save Track ...
@@ -968,7 +968,7 @@
 					return err;
 			}
 		else
-			return SaveTrack( cyl, head, false );
+			return SaveTrack( cyl, head, cancelled );
 	}
 
 	BOOL CKryoFluxDevice::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){

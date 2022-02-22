@@ -42,14 +42,16 @@
 		return f.Open( fileName, CFile::modeReadWrite|CFile::typeBinary|CFile::shareExclusive )!=FALSE;
 	}
 
-	TStdWinError CImageRaw::__extendToNumberOfCylinders__(TCylinder nCyl,BYTE fillerByte){
+	TStdWinError CImageRaw::ExtendToNumberOfCylinders(TCylinder nCyl,BYTE fillerByte,const volatile bool &cancelled){
 		// formats new Cylinders to meet the minimum number requested; returns Windows standard i/o error
 		// - redimensioning the Image
 		if (!bufferOfCylinders.Realloc(nCyl))
 			return ERROR_NOT_ENOUGH_MEMORY;
 		// - initializing added Cylinders with the FillerByte
 		for( const DWORD nBytesOfCylinder=nHeads*nSectors*sectorLength; nCylinders<nCyl; )
-			if (const PVOID tmp=bufferOfCylinders[nCylinders]=::malloc(nBytesOfCylinder)){
+			if (cancelled)
+				return ERROR_CANCELLED;
+			else if (const PVOID tmp=bufferOfCylinders[nCylinders]=::malloc(nBytesOfCylinder)){
 				::memset( tmp, fillerByte, nBytesOfCylinder );
 				nCylinders++;
 			}else
@@ -666,7 +668,7 @@ trackNotFound:
 
 
 
-	TStdWinError CImageRaw::FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector _nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte){
+	TStdWinError CImageRaw::FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector _nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte,const volatile bool &cancelled){
 		// formats given Track {Cylinder,Head} to the requested NumberOfSectors, each with corresponding Length and FillerByte as initial content; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if ((codec&properties->supportedCodecs)==0)
@@ -713,15 +715,16 @@ trackNotFound:
 				case TTrackScheme::BY_SIDES:
 					if (nHeads>1) // if Image structured by Sides (and there are multiple Sides), all Cylinders must be buffered as the whole Image will have to be restructured when saving
 						for( TCylinder c=0; c<nCylinders; ){
+							if (cancelled)
+								return ERROR_CANCELLED;
 							const TPhysicalAddress chs={ c++, 0, {cyl,sideMap[0],firstSectorNumber,sectorLengthCode} };
 							GetHealthySectorData(chs);
 						}
 					//fallthrough
-				case TTrackScheme::BY_CYLINDERS:{
-					const TStdWinError err=__extendToNumberOfCylinders__(1+cyl,fillerByte);
-					if (err!=ERROR_SUCCESS) return err;
+				case TTrackScheme::BY_CYLINDERS:
+					if (const TStdWinError err=ExtendToNumberOfCylinders( 1+cyl, fillerByte, cancelled ))
+						return err;
 					break;
-				}
 				default:
 					ASSERT(FALSE);
 			}
