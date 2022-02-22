@@ -92,7 +92,7 @@
 		return __super::SaveAllModifiedTracks( lpszPathName, pAction );
 	}
 
-	TStdWinError CKryoFluxStreams::SaveTrack(TCylinder cyl,THead head) const{
+	TStdWinError CKryoFluxStreams::SaveTrack(TCylinder cyl,THead head,const volatile bool &cancelled) const{
 		// saves the specified Track to the inserted Medium; returns Windows standard i/o error
 		if (const auto pit=internalTracks[cyl][head])
 			if (pit->modified){

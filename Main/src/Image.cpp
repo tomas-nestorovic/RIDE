@@ -819,12 +819,12 @@ namespace Medium{
 			for( THead head=0; head<GetHeadCount(); head++ )
 				if (pAction->Cancelled)
 					return ERROR_CANCELLED;
-				else if (const TStdWinError err=SaveTrack( cyl, head ))
+				else if (const TStdWinError err=SaveTrack( cyl, head, pAction->Cancelled ))
 					return err;
 		return ERROR_SUCCESS;
 	}
 
-	TStdWinError CImage::SaveTrack(TCylinder cyl,THead head) const{
+	TStdWinError CImage::SaveTrack(TCylinder cyl,THead head,const volatile bool &cancelled) const{
 		// saves the specified Track to the inserted Medium; returns Windows standard i/o error
 		return ERROR_NOT_SUPPORTED; // individual Track saving is not supported for this kind of Image (OnSaveDocument must be called instead)
 	}

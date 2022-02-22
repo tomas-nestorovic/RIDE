@@ -655,7 +655,7 @@ errorDuringWriting:				TCHAR buf[80];
 					}
 				}
 				// . saving the writing to the Target Track (if the Target Image supports it)
-				switch ( err=dp.target->SaveTrack(p.chs.cylinder,p.chs.head) ){
+				switch ( err=dp.target->SaveTrack(p.chs.cylinder,p.chs.head,pAction->Cancelled) ){
 					case ERROR_SUCCESS:
 						//fallthrough
 					case ERROR_NOT_SUPPORTED:

@@ -865,7 +865,7 @@ invalidTrack:
 		return ERROR_SUCCESS;
 	}
 
-	TStdWinError CCapsBase::VerifyTrack(TCylinder cyl,THead head,const CTrackReaderWriter &trwWritten,bool showDiff) const{
+	TStdWinError CCapsBase::VerifyTrack(TCylinder cyl,THead head,const CTrackReaderWriter &trwWritten,bool showDiff,const volatile bool &cancelled) const{
 		// verifies specified Track that is assumed to be just written; returns Windows standard i/o error
 		// - Medium must be known
 		const Medium::PCProperties mp=Medium::GetProperties(floppyType);
@@ -877,7 +877,7 @@ invalidTrack:
 		internalTracks[cyl][head]=nullptr; // forcing rescan
 			ScanTrack( cyl, head );
 			if (const PInternalTrack pitVerif=internalTracks[cyl][head]){
-				if (pitVerif->nSectors>0){
+				if (pitVerif->nSectors>0 || !cancelled){
 					const PInternalTrack pitWritten=CInternalTrack::CreateFrom( *this, trwWritten );
 						// . comparing common cells between first two Indices
 						const auto &revWrittenFirstSector=pitWritten->sectors[0].revolutions[0];
@@ -925,7 +925,9 @@ invalidTrack:
 								} vp( writtenBits, readBits, nSesItemsMax, pSes );
 								//writtenBits.SaveCsv("r:\\written.txt");
 								//readBits.SaveCsv("r:\\read.txt");
-								if (err=CBackgroundActionCancelable(
+								if (cancelled)
+									err=ERROR_CANCELLED;
+								else if (err=CBackgroundActionCancelable(
 										TVerifParams::Thread, &vp, THREAD_PRIORITY_NORMAL
 									).Perform()
 								)
@@ -964,7 +966,7 @@ invalidTrack:
 		return err;
 	}
 
-	TStdWinError CCapsBase::DetermineMagneticReliabilityByWriting(Medium::TType floppyType,TCylinder cyl,THead head) const{
+	TStdWinError CCapsBase::DetermineMagneticReliabilityByWriting(Medium::TType floppyType,TCylinder cyl,THead head,const volatile bool &cancelled) const{
 		// determines if specified Track on real floppy can be trusted (ERROR_SUCCESS) or not (ERROR_DISK_CORRUPT); returns Windows standard i/o error
 		// - determining Medium
 		const Medium::PCProperties mp=Medium::GetProperties(floppyType);
@@ -983,7 +985,7 @@ invalidTrack:
 			PInternalTrack pit=CInternalTrack::CreateFrom( *this, trw );
 				pit->modified=true; // to pass the save conditions
 			std::swap( pit, internalTracks[cyl][head] );
-				const TStdWinError err=SaveTrack( cyl, head );
+				const TStdWinError err=SaveTrack( cyl, head, cancelled );
 			std::swap( pit, internalTracks[cyl][head] );
 			delete pit;
 			if (err!=ERROR_SUCCESS)

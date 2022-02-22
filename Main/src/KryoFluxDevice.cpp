@@ -679,7 +679,7 @@
 
 	#define ERROR_SAVE_MESSAGE_TEMPLATE	_T("Track %02d.%c %s failed")
 
-	TStdWinError CKryoFluxDevice::SaveAndVerifyTrack(TCylinder cyl,THead head) const{
+	TStdWinError CKryoFluxDevice::SaveAndVerifyTrack(TCylinder cyl,THead head,const volatile bool &cancelled) const{
 		// saves the specified Track to the inserted Medium; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - Track must already exist from before
@@ -718,6 +718,8 @@
 		// - writing (and optional verification)
 		char nSilentRetrials=4;
 		do{
+			if (cancelled)
+				return ERROR_CANCELLED;
 			// . consuming one SilentRetrial
 			nSilentRetrials--;
 			// . converting the temporary Track to "KFW" data, below streamed directly to KryoFlux
@@ -767,12 +769,12 @@
 						continue;
 				}
 			// . writing verification
-			if (!err && params.verifyWrittenTracks && pit->nSectors>0){ // can verify the Track only if A&B&C, A = writing successfull, B&C = at least one Sector is recognized in it
+			if (!err && params.verifyWrittenTracks && pit->nSectors>0 && !cancelled){ // can verify the Track only if A&B&C, A = writing successfull, B&C = at least one Sector is recognized in it
 				const auto cae0=params.calibrationAfterError;
 				params.calibrationAfterError=TParams::TCalibrationAfterError::NONE; // already calibrated before writing
 					const auto p0=params.precision;
 					params.precision=TParams::TPrecision::SINGLE;
-						err=VerifyTrack( cyl, head, trw, nSilentRetrials<0 );
+						err=VerifyTrack( cyl, head, trw, nSilentRetrials<0, cancelled );
 					params.precision=p0;
 				params.calibrationAfterError=cae0;
 				switch (err){
@@ -792,9 +794,9 @@
 		return err;
 	}
 
-	TStdWinError CKryoFluxDevice::SaveTrack(TCylinder cyl,THead head) const{
+	TStdWinError CKryoFluxDevice::SaveTrack(TCylinder cyl,THead head,const volatile bool &cancelled) const{
 		// saves the specified Track to the inserted Medium; returns Windows standard i/o error
-		switch (const TStdWinError err=SaveAndVerifyTrack(cyl,head)){
+		switch (const TStdWinError err=SaveAndVerifyTrack(cyl,head,cancelled)){
 			case ERROR_SUCCESS:
 			case ERROR_CONTINUE: // writing errors ignored
 				return ERROR_SUCCESS;
@@ -953,7 +955,7 @@
 			return err;
 		// - writing the Track straigt away to catch disk surface problems before using the disk later
 		if (params.verifyWrittenTracks)
-			switch (const TStdWinError err=SaveAndVerifyTrack( cyl, head )){
+			switch (const TStdWinError err=SaveAndVerifyTrack( cyl, head, false )){
 				case ERROR_CONTINUE:
 					// errors during writing or verification ignored by user
 					delete internalTracks[cyl][head]; // disposing unsuccessfully save Track ...
@@ -966,7 +968,7 @@
 					return err;
 			}
 		else
-			return SaveTrack( cyl, head );
+			return SaveTrack( cyl, head, false );
 	}
 
 	BOOL CKryoFluxDevice::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){

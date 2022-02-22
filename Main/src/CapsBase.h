@@ -140,8 +140,8 @@
 		CCapsBase(PCProperties properties,char realDriveLetter,bool hasEditableSettings);
 
 		void DestroyAllTracks();
-		TStdWinError VerifyTrack(TCylinder cyl,THead head,const CTrackReaderWriter &trwWritten,bool showDiff) const;
-		TStdWinError DetermineMagneticReliabilityByWriting(Medium::TType floppyType,TCylinder cyl,THead head) const;
+		TStdWinError VerifyTrack(TCylinder cyl,THead head,const CTrackReaderWriter &trwWritten,bool showDiff,const volatile bool &cancelled) const;
+		TStdWinError DetermineMagneticReliabilityByWriting(Medium::TType floppyType,TCylinder cyl,THead head,const volatile bool &cancelled) const;
 	public:
 		~CCapsBase();
 

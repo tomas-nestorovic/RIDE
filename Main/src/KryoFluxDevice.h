@@ -102,7 +102,7 @@
 		bool SeekTo(TCylinder cyl) const;
 		bool SeekHome() const;
 		bool SelectHead(THead head) const;
-		TStdWinError SaveAndVerifyTrack(TCylinder cyl,THead head) const;
+		TStdWinError SaveAndVerifyTrack(TCylinder cyl,THead head,const volatile bool &cancelled) const;
 	protected:
 		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
 	public:
@@ -120,7 +120,7 @@
 		//TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
 		bool EditSettings(bool initialEditing) override;
 		TStdWinError Reset() override;
-		TStdWinError SaveTrack(TCylinder cyl,THead head) const override;
+		TStdWinError SaveTrack(TCylinder cyl,THead head,const volatile bool &cancelled) const override;
 		TStdWinError FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte) override;
 		void SetPathName(LPCTSTR lpszPathName,BOOL bAddToMRU=TRUE) override;
 	};

@@ -564,7 +564,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 
 
 
-	TStdWinError CFDD::SaveTrack(TCylinder cyl,THead head) const{
+	TStdWinError CFDD::SaveTrack(TCylinder cyl,THead head,const volatile bool &cancelled) const{
 		// saves the specified Track to the inserted Medium; returns Windows standard i/o error
 		LOG_TRACK_ACTION(cyl,head,_T("UINT CFDD::SaveTrack"));
 		if (TInternalTrack *const pit=__getScannedTrack__(cyl,head)){
@@ -575,6 +575,8 @@ error:				switch (const TStdWinError err=::GetLastError()){
 				BYTE justSavedSectors[(TSector)-1];
 				::ZeroMemory(justSavedSectors,pit->nSectors);
 				do{
+					if (cancelled)
+						return ERROR_CANCELLED;
 					allSectorsProcessed=true; // assumption
 					TLogTime lastSectorEndNanoseconds=TIME_SECOND(-1); // minus one second
 					for( TSector n=0; n<pit->nSectors; n++ ){
@@ -594,6 +596,8 @@ error:				switch (const TStdWinError err=::GetLastError()){
 				}while (!allSectorsProcessed);
 				// : verification
 				do{
+					if (cancelled)
+						return ERROR_CANCELLED;
 					allSectorsProcessed=true; // assumption
 					TLogTime lastSectorEndNanoseconds=TIME_SECOND(-1); // minus one second
 					for( TSector n=0; n<pit->nSectors; n++ ){

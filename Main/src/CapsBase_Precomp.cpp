@@ -97,7 +97,7 @@
 		while (--cyl>0) // finding a Cylinder with magnetically reliable Track
 			if (pAction->Cancelled)
 				return ERROR_CANCELLED;
-			else if (const TStdWinError err=ptp.cb.DetermineMagneticReliabilityByWriting( rPrecomp.floppyType, cyl, ptp.head )){
+			else if (const TStdWinError err=ptp.cb.DetermineMagneticReliabilityByWriting( rPrecomp.floppyType, cyl, ptp.head, pAction->Cancelled )){
 				if (err!=ERROR_DISK_CORRUPT)
 					return pAction->TerminateWithError(err);
 			}else
@@ -137,7 +137,7 @@
 					const Medium::TType mt0=ptp.cb.floppyType;
 					Medium::TType &mt=*const_cast<Medium::TType *>(&ptp.cb.floppyType);
 					mt=rPrecomp.floppyType;
-						const TStdWinError err=ptp.cb.SaveTrack( cyl, ptp.head );
+						const TStdWinError err=ptp.cb.SaveTrack( cyl, ptp.head, pAction->Cancelled );
 					mt=mt0;
 				ptp.cb.precompensation.methodVersion=precompMethod0;
 			std::swap( pit, ptp.cb.internalTracks[cyl][ptp.head] );
