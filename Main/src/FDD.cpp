@@ -186,7 +186,7 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 			TCHAR buf[80];
 			::wsprintf( buf, _T("Verification failed for sector with %s on Track %d."), (LPCTSTR)id.ToString(), chs.GetTrackNumber(2) );
 			const BYTE result=Utils::AbortRetryIgnore( buf, MB_DEFBUTTON2 );
-			modified=result==IDIGNORE; // saved successfully if commanded to ignore any errors
+			modified=result!=IDIGNORE; // saved successfully if commanded to ignore any errors, otherwise ("!=") the Sector remains marked Modified
 			return result;
 		}else{
 			modified=false; // saved successfully, so the Sector is no longer Modified
