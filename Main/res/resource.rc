@@ -1473,10 +1473,10 @@ BEGIN
     LTEXT           "&Gap 3:",IDC_STATIC,71,105,22,8
     EDITTEXT        ID_GAP,110,103,38,12,ES_AUTOHSCROLL | NOT WS_BORDER,
                     WS_EX_STATICEDGE
-    LTEXT           "W",ID_INSTRUCTION,156,87,17,16,NOT WS_VISIBLE | NOT 
+    LTEXT           "W",ID_INSTRUCTION,158,87,17,16,NOT WS_VISIBLE | NOT 
                     WS_GROUP
     CONTROL         "<a id=""ID_AUTO"">Autodetermine</a>",ID_AUTO,"SysLink",
-                    0x0,159,89,59,11
+                    0x0,159,89,65,11
     LTEXT           "Calibrate head:",IDC_STATIC,7,124,48,8,NOT WS_GROUP
     CONTROL         "Never",ID_NONE,"Button",BS_AUTORADIOBUTTON | WS_GROUP,
                     70,124,74,10
