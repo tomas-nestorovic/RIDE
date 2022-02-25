@@ -538,18 +538,18 @@
 							bufferSectorData[p.s]=dp.source->GetSectorData( p.chs, p.s, Revolution::NEXT, bufferLength+p.s, bufferFdcStatus+p.s );
 						}
 						// | showing the Dialog and processing its result
-						LOG_DIALOG_DISPLAY(_T("CErroneousSectorDialog"));
+				{		LOG_DIALOG_DISPLAY(_T("CErroneousSectorDialog"));
 						switch (LOG_DIALOG_RESULT(d.DoModal())){
 							case IDCANCEL:
 								err=ERROR_CANCELLED;
-								goto terminateWithError;
+								return LOG_ERROR(pAction->TerminateWithError(err));
 							case RESOLVE_EXCLUDE_ID:
 								p.exclusion.current=true;
 								continue;
 							case IDRETRY:
 								sPrev=p.s;
 								continue;
-						}
+				}		}
 					}
 					if (!bufferFdcStatus[p.s].IsWithoutError()){
 						TDumpParams::TSourceSectorError *const psse=&erroneousSectors.buffer[erroneousSectors.n++];
@@ -612,7 +612,7 @@
 reformatTrack:		if (!p.trackWriteable){ // formatting the Track only if can't write the Track using CImage::WriteTrack
 						const Codec::TType targetCodec=Codec::FirstFromMany( dp.targetCodecs ); // the first of selected Codecs (available for the DOS/Medium combination)
 						if ( err=dp.target->FormatTrack(p.chs.cylinder,p.chs.head,targetCodec,nSectors,bufferId,bufferLength,bufferFdcStatus,dp.gap3.value,dp.fillerByte,pAction->Cancelled) )
-							goto terminateWithError;
+							return LOG_ERROR(pAction->TerminateWithError(err));
 					}
 }
 				// . writing to Target Track
