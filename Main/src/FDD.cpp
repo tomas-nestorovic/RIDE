@@ -879,7 +879,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 				}
 			}
 			// . executing the above composed Plan
-			const bool silentlyRecoverFromErrors=rev>=Revolution::NEXT;
+			const bool silentlyRecoverFromErrors=rev>=Revolution::ANY_GOOD;
 			for( const TPlanStep *pPlanStep=plan; pPlanStep<planEnd; pPlanStep++ ){
 				TInternalTrack::TSectorInfo *const psi=pPlanStep->psi;
 				const BYTE index=pPlanStep->indexIntoOutputBuffers;
@@ -1046,6 +1046,9 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 					UnformatInternalTrack(cyl,0);
 				internalTracks[cyl][0]=pit;
 			}
+		// - reverting to original data transfer speed
+		if (floppyType!=Medium::UNKNOWN)
+			SetDataTransferSpeed( floppyType );
 		// - Medium (possibly) recognized
 		rOutMediumType=bestMediumType; // may be Medium::UNKNOWN
 		return ERROR_SUCCESS;
