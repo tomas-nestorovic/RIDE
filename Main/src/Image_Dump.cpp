@@ -529,10 +529,14 @@
 						LOG_SECTOR_ACTION(&p.chs.sectorId,_T("reading"));
 						if (sPrev!=p.s) // is this the first trial?
 							p.revolution=Revolution::R0;
-						else if (dp.source->GetAvailableRevolutionCount()<=Revolution::MAX) // is the # of Revolutions limited?
+						else if (dp.source->GetAvailableRevolutionCount()<=Revolution::MAX){ // is the # of Revolutions limited?
 							if (++p.revolution>=dp.source->GetAvailableRevolutionCount())
 								p.revolution=Revolution::R0;
-						bufferSectorData[p.s]=dp.source->GetSectorData( p.chs, p.s, (Revolution::TType)p.revolution, bufferLength+p.s, bufferFdcStatus+p.s );
+							bufferSectorData[p.s]=dp.source->GetSectorData( p.chs, p.s, (Revolution::TType)p.revolution, bufferLength+p.s, bufferFdcStatus+p.s );
+						}else{
+							++p.revolution;
+							bufferSectorData[p.s]=dp.source->GetSectorData( p.chs, p.s, Revolution::NEXT, bufferLength+p.s, bufferFdcStatus+p.s );
+						}
 						// | showing the Dialog and processing its result
 						LOG_DIALOG_DISPLAY(_T("CErroneousSectorDialog"));
 						switch (LOG_DIALOG_RESULT(d.DoModal())){

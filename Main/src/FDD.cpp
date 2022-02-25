@@ -879,7 +879,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 				}
 			}
 			// . executing the above composed Plan
-			const bool silentlyRecoverFromErrors=rev>=Revolution::ANY_GOOD;
+			const bool silentlyRecoverFromErrors=rev>=Revolution::NEXT;
 			for( const TPlanStep *pPlanStep=plan; pPlanStep<planEnd; pPlanStep++ ){
 				TInternalTrack::TSectorInfo *const psi=pPlanStep->psi;
 				const BYTE index=pPlanStep->indexIntoOutputBuffers;
