@@ -45,8 +45,6 @@
 
 	CSpectrumDos::CTape::~CTape(){
 		// dtor
-		if (app.m_pMainWnd) // MainWindow still exists
-			CTdiCtrl::RemoveTab( TDI_HWND, &fileManager.tab );
 		if (pSingleInstance==this)
 			pSingleInstance=nullptr; // no longer accepting any requests
 		dos=nullptr; // to not destroy the Image (as DOS and Image are one structure in memory that is disposed at once)
