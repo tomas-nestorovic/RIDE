@@ -405,7 +405,7 @@
 			delete rit, rit=nullptr;
 		// - creation of new content
 		if ( rit = CInternalTrack::CreateFrom(*this,CTrackReaderWriter(tr)) ){
-			rit->modified=true;
+			SetModifiedFlag( rit->modified=true );
 			return ERROR_SUCCESS;
 		}else
 			return ERROR_NOT_ENOUGH_MEMORY;
@@ -474,8 +474,7 @@
 		// - instantiating the new Track
 		const CapsTrackInfoT2 cti={ 2, cyl, head, nSectors, 0, bitBuffer, cft.tracklen };
 		if ( rit=CInternalTrack::CreateFrom( *this, &cti, 1, 0 ) ){
-			rit->modified=true;
-			SetModifiedFlag();
+			SetModifiedFlag( rit->modified=true );
 			return ERROR_SUCCESS;
 		}else
 			return ERROR_GEN_FAILURE;
@@ -502,7 +501,7 @@
 				delete pit;
 			// . creation of new content
 			if ( const PInternalTrack pit = internalTracks[cyl][head] = CInternalTrack::CreateFrom(*this,trw) ){
-				pit->modified=true;
+				SetModifiedFlag( pit->modified=true );
 				return ERROR_SUCCESS;
 			}else
 				return ERROR_NOT_ENOUGH_MEMORY;
