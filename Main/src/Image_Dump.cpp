@@ -591,7 +591,7 @@
 								for( POSITION pos=sectorIdCounts.GetStartPosition(); pos; ){
 									PVOID count;
 									sectorIdCounts.GetNextAssoc( pos, CString(), count );
-									structuresIdentical=count==nullptr;
+									structuresIdentical&=count==nullptr;
 								}
 								// : adopting recognized Gap3
 								if (structuresIdentical){
