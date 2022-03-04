@@ -231,17 +231,15 @@
 				break;
 			const div_t d=div(trackNumber,nHeads);
 			// . scanning the Track to draw its Sector Statuses
-		{	PREVENT_FROM_DESTRUCTION(*image);
+			PREVENT_FROM_DESTRUCTION(*image);
 			if (!::IsWindow(pvtm->m_hWnd)) // TrackMap may not exist if, for instance, switched to another view while still scanning some Track(s)
 				continue;
 			ti.cylinder=d.quot, ti.head=d.rem;
 			//if (pvtm->displayType==TDisplayType::STATUS) // commented out because this scanning always needed
 			ti.nSectors=image->ScanTrack( ti.cylinder, ti.head, nullptr, ti.bufferId, ti.bufferLength, ti.bufferStartNanoseconds );
-		}
 			// . scanning the Track to draw its Sector data
 			if (pvtm->displayType>=TDisplayType::DATA_OK_ONLY){
 				TFdcStatus statuses[(TSector)-1];
-				PREVENT_FROM_DESTRUCTION(*image);
 				if (!::IsWindow(pvtm->m_hWnd)) // TrackMap may not exist if, for instance, switched to another view while still scanning some Track(s)
 					continue;
 				image->GetTrackData( ti.cylinder, ti.head, Revolution::CURRENT, ti.bufferId, sectorIdAndPositionIdentity, ti.nSectors, ti.bufferSectorData, ti.bufferLength, statuses );
