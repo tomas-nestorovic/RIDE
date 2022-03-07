@@ -163,6 +163,7 @@
 		// dialog initialization
 		if (SUCCEEDED(::CoCreateInstance( CLSID_TaskbarList, nullptr, CLSCTX_INPROC_SERVER, __uuidof(pActionTaskbarList), (LPVOID *)&pActionTaskbarList )))
 			pActionTaskbarList->HrInit();
+		SetTimer( ID_Y, 1000, nullptr );
 		::PostMessage( m_hWnd, WM_COMMAND, IDCONTINUE, 0 ); // launching the Worker
 		pSingleInstance=this;
 		return __super::OnInitDialog();
@@ -170,28 +171,41 @@
 
 	LRESULT CBackgroundActionCancelable::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
 		// window procedure
-		if (msg==WM_COMMAND)
-			switch (LOWORD(wParam)){
-				case IDCANCEL:
-					// cancelling the Worker and whole dialog
-					EnableWindow(FALSE); // as about to be destroyed soon, mustn't parent any pop-up windows!
-					bCancelled=true;
-					break;
-				case IDCONTINUE:
-					// resuming the Worker
-					EnableWindow(); // may parent pop-up windows
-					Resume();
-					return 0;
+		switch (msg){
+			case WM_COMMAND:
+				switch (LOWORD(wParam)){
+					case IDCANCEL:
+						// cancelling the Worker and whole dialog
+						EnableWindow(FALSE); // as about to be destroyed soon, mustn't parent any pop-up windows!
+						bCancelled=true;
+						break;
+					case IDCONTINUE:
+						// resuming the Worker
+						EnableWindow(); // may parent pop-up windows
+						Resume();
+						return 0;
+				}
+				break;
+			case WM_TIMER:{
+				// timer tick
+				const auto elapsedTime=Utils::CRideTime()-startTime;
+				TCHAR caption[50];
+				::wsprintf( caption, _T("Please wait... (%d:%02d)"), elapsedTime.wMinute, elapsedTime.wSecond );
+				SetWindowText( caption );
+				break;
 			}
+		}
 		return __super::WindowProc(msg,wParam,lParam);
 	}
 
 	TStdWinError CBackgroundActionCancelable::Perform(){
 		// returns the Worker's result; when performing, the actual progress is shown in a modal window
 		// - showing modal dialog and performing the Action
+		startTime=Utils::CRideTime();
 		DoModal();
 		// - waiting for the already running Worker
 		::WaitForSingleObject( *this, INFINITE );
+		duration=Utils::CRideTime()-startTime;
 		// - returning the Result
 		DWORD result=ERROR_SUCCESS;
 		::GetExitCodeThread( *this, &result );

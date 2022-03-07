@@ -48,6 +48,8 @@
 		volatile bool bCancelled;
 		mutable volatile bool bTargetStateReached;
 		ITaskbarList3 *pActionTaskbarList;
+		Utils::CRideTime startTime;
+		Utils::CRideTime duration;
 
 		CBackgroundActionCancelable(UINT dlgResId);
 
@@ -69,6 +71,7 @@
 		void UpdateProgressFinished() const;
 		TStdWinError TerminateWithSuccess();
 		TStdWinError TerminateWithError(TStdWinError error);
+		inline const Utils::CRideTime &GetDurationTime() const{ return duration; }
 	} *PBackgroundActionCancelable;
 
 
