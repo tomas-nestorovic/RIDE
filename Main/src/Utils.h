@@ -270,15 +270,20 @@ namespace Utils{
 		operator PCBYTE() const;
 	};
 
-	class CLocalTime sealed:public CTimeSpan{
-		short nMilliseconds;
-		CLocalTime(const CTimeSpan &ts,short nMilliseconds);
+	class CRideTime:public SYSTEMTIME{
+		CRideTime(const time_t &t);
+
+		operator time_t() const;
+		CRideTime operator-(const time_t &t2) const;
 	public:
-		CLocalTime();
-		CLocalTime operator+(const CLocalTime &rTime2) const;
-		CLocalTime operator-(const CLocalTime &rTime2) const;
-		WORD GetMilliseconds() const;
-		DWORD ToMilliseconds() const;
+		CRideTime(); // current local time
+		CRideTime(const FILETIME &t);
+
+		operator FILETIME() const;
+		CRideTime operator-(const FILETIME &t2) const;
+		CRideTime operator-(const CRideTime &t2) const;
+
+		int ToMilliseconds() const;
 	};
 
 	class CAxis{

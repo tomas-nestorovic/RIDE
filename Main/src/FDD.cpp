@@ -1322,9 +1322,9 @@ Utils::Information(buf);}
 				WORD w;
 				lp.fdd->GetHealthySectorData( lp.cyl, lp.head, &SectorIds[0], &w );
 				// : STEP 2.3: Reading the second formatted Sector and measuring how long the reading took
-				const Utils::CLocalTime startTime;
+				const Utils::CRideTime startTime;
 					lp.fdd->GetHealthySectorData( lp.cyl, lp.head, &SectorIds[1], &w );
-				const Utils::CLocalTime endTime;
+				const Utils::CRideTime endTime;
 				const TLogTime deltaNanoseconds=TIME_MILLI( (endTime-startTime).ToMilliseconds() );
 				// . STEP 2.4: determining if the readings took more than just one disk revolution or more
 				if (deltaNanoseconds>=pit->sectors[1].endNanoseconds-pit->sectors[0].endNanoseconds+TIME_MILLI(4)) // 4e6 = allowing circa 120 Bytes as a limit of detecting a single disk revolution

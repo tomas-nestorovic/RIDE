@@ -462,40 +462,46 @@ namespace Utils{
 
 
 
-	CLocalTime::CLocalTime(){
+	CRideTime::CRideTime(){
+		// ctor (current local time)
+		::GetLocalTime(this);
+	}
+
+	CRideTime::CRideTime(const time_t &t){
+		::FileTimeToSystemTime( (const FILETIME *)&t, this );
+	}
+
+	CRideTime::CRideTime(const FILETIME &t){
 		// ctor
-		SYSTEMTIME st;
-		::GetLocalTime(&st);
-		(CTimeSpan &)*this=CTimeSpan(st.wDay,st.wHour,st.wMinute,st.wSecond);
-		nMilliseconds=st.wMilliseconds;
+		::FileTimeToSystemTime( &t, this );
 	}
 
-	CLocalTime::CLocalTime(const CTimeSpan &ts,short nMilliseconds)
-		// ctor for internal purposes only
-		: CTimeSpan(ts)
-		, nMilliseconds(nMilliseconds) {
+	CRideTime::operator time_t() const{
+		static_assert( sizeof(FILETIME)==sizeof(time_t), "" );
+		return	*(time_t *)&operator FILETIME();
 	}
 
-	CLocalTime CLocalTime::operator+(const CLocalTime &rTime2) const{
-		const short tmpMilliseconds=nMilliseconds+rTime2.nMilliseconds;
-		return	tmpMilliseconds<0
-				? CLocalTime( __super::operator+(CTimeSpan(rTime2.GetDays(),rTime2.GetHours(),rTime2.GetMinutes(),rTime2.GetSeconds()+1)), tmpMilliseconds-1000 )
-				: CLocalTime( __super::operator+(rTime2), tmpMilliseconds );
+	CRideTime::operator FILETIME() const{
+		FILETIME tmp;
+		::SystemTimeToFileTime( this, &tmp );
+		return tmp;
 	}
 
-	CLocalTime CLocalTime::operator-(const CLocalTime &rTime2) const{
-		const short tmpMilliseconds=nMilliseconds-rTime2.nMilliseconds;
-		return	tmpMilliseconds<0
-				? CLocalTime( __super::operator-(CTimeSpan(rTime2.GetDays(),rTime2.GetHours(),rTime2.GetMinutes(),rTime2.GetSeconds()+1)), tmpMilliseconds+1000 )
-				: CLocalTime( __super::operator-(rTime2), tmpMilliseconds );
+	CRideTime CRideTime::operator-(const time_t &t2) const{
+		return	(time_t)*this-t2;
 	}
 
-	WORD CLocalTime::GetMilliseconds() const{
-		return nMilliseconds;
+	CRideTime CRideTime::operator-(const FILETIME &t2) const{
+		static_assert( sizeof(FILETIME)==sizeof(time_t), "" );
+		return	operator-( *(const time_t *)&t2 );
 	}
 
-	DWORD CLocalTime::ToMilliseconds() const{
-		return GetTotalSeconds()*1000+nMilliseconds;
+	CRideTime CRideTime::operator-(const CRideTime &t2) const{
+		return	operator-( (FILETIME)t2 );
+	}
+
+	int CRideTime::ToMilliseconds() const{
+		return	(time_t)*this/10000;
 	}
 
 
