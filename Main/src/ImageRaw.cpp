@@ -740,7 +740,7 @@ trackNotFound:
 		return ERROR_SUCCESS;
 	}
 
-	TStdWinError CImageRaw::UnformatTrack(TCylinder cyl,THead){
+	TStdWinError CImageRaw::UnformatTrack(TCylinder cyl,THead head){
 		// unformats given Track {Cylinder,Head}; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		switch (trackAccessScheme){
@@ -752,7 +752,10 @@ trackNotFound:
 					}
 				//fallthrough
 			case TTrackScheme::BY_CYLINDERS:
-				if (cyl==nCylinders-1){ // unformatting the last Cylinder in the Image
+				if (cyl==nCylinders-1 // unformatting the last Cylinder in the Image
+					&&
+					head==0 // ignore this command for any but zeroth Head (some copy-protected disks have hidden Cylinder with data only under Head 0 - finding nothing under Head 1 would destroy the whole Cylinder that Head 0 created in the RawImage, e.g. during dump)
+				){
 					// . redimensioning the Image
 					__freeCylinder__(cyl);
 					// . adjusting the NumberOfCylinders
