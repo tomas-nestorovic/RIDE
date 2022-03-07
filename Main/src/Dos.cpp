@@ -355,6 +355,14 @@ reportError:Utils::Information(buf);
 			if (err!=ERROR_SUCCESS)
 				return pAction->TerminateWithError(err);
 			statistics.nSectorsInTotal+=nSectors;
+			// . writing the Track (if supported)
+			switch ( err=fp.dos->image->SaveTrack( cyl, head, pAction->Cancelled ) ){
+				case ERROR_SUCCESS:
+				case ERROR_NOT_SUPPORTED: // saved later by the caller
+					break;
+				default:
+					return pAction->TerminateWithError(err);
+			}
 			// . verifying Tracks by trying to read their formatted Sectors
 			if (fp.dos->image->RequiresFormattedTracksVerification()){
 				// : buffering Sectors from the same Track by the underlying Image, making them ready for IMMEDIATE usage

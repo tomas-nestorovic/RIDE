@@ -219,8 +219,7 @@
 }
 				// . reading Source Track
 				CImage::CTrackReader trSrc=dp.source->ReadTrack( p.chs.cylinder, p.chs.head );
-				const CImage::CTrackReader &tr= targetSupportsTrackWriting ? trSrc : CImage::CTrackReaderWriter::Invalid;
-				p.trackWriteable= tr && (sourceCodec&dp.targetCodecs)!=0; // A&B, A = Source and Target must support whole Track access, B = Source and Target must support at least one common Codec
+				p.trackWriteable= trSrc && targetSupportsTrackWriting && (sourceCodec&dp.targetCodecs)!=0; // A&B&C, A&B = Source and Target must support whole Track access, C = Target must support the Codec used in Source
 				// . if possible, analyzing the read Source Track
 				bool hasNonformattedArea=false, hasDataInGaps=false, hasFuzzyData=false, hasDuplicatedIdFields=false, missesSomeSectors=false;
 				if (trSrc && dp.fullTrackAnalysis){
@@ -621,7 +620,7 @@ reformatTrack:		if (!p.trackWriteable){ // formatting the Track only if can't wr
 {LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("writing to Target Track"));
 				if (p.trackWriteable)
 					// can use the CImage::WriteTrack to write the whole Track at once
-					while (err=dp.target->WriteTrack( p.chs.cylinder, p.chs.head, tr )){
+					while (err=dp.target->WriteTrack( p.chs.cylinder, p.chs.head, trSrc )){
 						TCHAR buf[80];
 						::wsprintf( buf, _T("Can't write target Track %d"), p.track );
 						switch (Utils::AbortRetryIgnore(buf,err,MB_DEFBUTTON2)){

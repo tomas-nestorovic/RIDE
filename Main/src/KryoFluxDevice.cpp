@@ -947,30 +947,6 @@
 		return ERROR_SUCCESS;
 	}
 
-	TStdWinError CKryoFluxDevice::FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte,const volatile bool &cancelled){
-		// formats given Track {Cylinder,Head} to the requested NumberOfSectors, each with corresponding Length and FillerByte as initial content; returns Windows standard i/o error
-		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		// - base
-		if (const TStdWinError err=__super::FormatTrack( cyl, head, codec, nSectors, bufferId, bufferLength, bufferFdcStatus, gap3, fillerByte, cancelled ))
-			return err;
-		// - writing the Track straigt away to catch disk surface problems before using the disk later
-		if (params.verifyWrittenTracks)
-			switch (const TStdWinError err=SaveAndVerifyTrack( cyl, head, cancelled )){
-				case ERROR_CONTINUE:
-					// errors during writing or verification ignored by user
-					delete internalTracks[cyl][head]; // disposing unsuccessfully save Track ...
-					internalTracks[cyl][head]=nullptr; // ... and forcing caller to read its actually saved state
-					//fallthrough
-				case ERROR_SUCCESS:
-					// writing and verification successfull
-					return ERROR_SUCCESS; // can keep the Track buffered
-				default:
-					return err;
-			}
-		else
-			return SaveTrack( cyl, head, cancelled );
-	}
-
 	BOOL CKryoFluxDevice::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){
 		// command processing
 		if (nCode==CN_COMMAND) // a command
