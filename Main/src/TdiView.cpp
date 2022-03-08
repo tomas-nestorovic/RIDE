@@ -320,15 +320,6 @@
 		, pCurrentTab(nullptr)
 		// - initiating determination of recency of this app
 		, recencyStatusThread( RecencyDetermination_thread, INVALID_HANDLE_VALUE, 0 ) {
-		#ifndef _DEBUG
-			#ifndef APP_SPECIAL_VER
-				// this application is a standard release - can check if it's up-to-date or already outdated
-				DWORD now;
-				if (CMSDOS7::TDateTime( CMSDOS7::TDateTime::GetCurrent() ).ToDWord(&now))
-					if (app.dateRecencyLastChecked!=HIWORD(now)) // recency suffices to be checked once a day
-						recencyStatusThread.Resume();
-			#endif
-		#endif
 	}
 
 
@@ -448,6 +439,19 @@
 				// window created
 				if (const LRESULT err=__super::WindowProc(msg,wParam,lParam))
 					return err;
+				#ifndef _DEBUG
+					#ifndef APP_SPECIAL_VER
+						// this application is a standard release - can check if it's up-to-date or already outdated
+						if (const WORD today=CMSDOS7::TDateTime( Utils::CRideTime() ).GetDosDate())
+							if (app.dateRecencyLastChecked!=today) // recency suffices to be checked on-line once a day
+								recencyStatusThread.Resume();
+							else{ // using the latest known version for the rest of Today to inform about recency
+								app.dateRecencyLastChecked=::lstrcmp( APP_VERSION, app.GetProfileString(INI_GENERAL,INI_LATEST_KNOWN_VERSION) )==0;
+								if (!app.dateRecencyLastChecked) // outdated
+									TDI_INSTANCE->RepopulateGuidePost();
+							}
+					#endif
+				#endif
 				SetFocus();
 				return 0;
 			case WM_GUIDEPOST_REPOPULATE:

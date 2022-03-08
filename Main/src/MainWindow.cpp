@@ -356,6 +356,7 @@ quitWithErr:const DWORD err=::GetLastError();
 			if (PCHAR r=::strchr(githubTagName+sizeof(GITHUB_VERSION_TAG_NAME),'\"')){ // "R"emote tag
 				buffer[nBytesRead]='\"'; // guaranteeing that closing quote is always found
 				*::strchr( ++r, '\"' )='\0'; // "+1" = skipping the opening quote; replacing the closing quote with the Null character
+				app.WriteProfileString( INI_GENERAL, INI_LATEST_KNOWN_VERSION, r );
 				const TCHAR *t=APP_VERSION; // "T"his tag
 				do{
 					if (::isspace(*t))
