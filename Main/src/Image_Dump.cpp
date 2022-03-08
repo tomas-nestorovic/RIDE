@@ -51,11 +51,15 @@
 
 		~TDumpParams(){
 			// dtor
+			// . DOS mustn't be destroyed
 			if (target)
-				target->dos=nullptr; // to not also destroy the DOS
+				target->dos=nullptr;
+			// . destroying the list of SourceTrackErrors
+			while (const TSourceTrackErrors *const tmp=pOutErroneousTracks)
+				pOutErroneousTracks=pOutErroneousTracks->pNextErroneousTrack, ::free((PVOID)tmp);
 		}
 
-		void __exportErroneousTracksToHtml__(CFile &fHtml) const{
+		void __exportErroneousTracksToHtml__(CFile &fHtml,const Utils::CRideTime &duration) const{
 			// exports SourceTrackErrors to given HTML file
 			Utils::WriteToFile(fHtml,_T("<html><head><style>body,td{font-size:13pt;margin:24pt}table{border:1pt solid black;spacing:10pt}td{vertical-align:top}td.caption{font-size:14pt;background:silver}</style></head><body>"));
 				Medium::TType srcMediumType=Medium::UNKNOWN;
@@ -64,6 +68,7 @@
 					srcMediumType=dos->formatBoot.mediumType;
 				Utils::WriteToFileFormatted( fHtml, _T("<h3>Configuration</h3><table><tr><td class=caption>") APP_ABBREVIATION _T(" version:</td><td>") APP_VERSION _T("</td></tr><tr><td class=caption>System:</td><td>%s</td></tr><tr></tr><tr><td class=caption>Source:</td><td>%s<br>via<br>%s</td></tr><tr><td class=caption>Target:</td><td>%s<br>via<br>%s</td></tr><tr><td class=caption>Cylinders:</td><td>%d &#8211; %d (%s)</td></tr><tr><td class=caption>Full track analysis:</td><td>%s</td></tr></table><br>"), dos->properties->name, Medium::GetDescription(srcMediumType), source->GetPathName().GetLength()?source->GetPathName():_T("N/A"), Medium::GetDescription(mediumType), target->GetPathName().GetLength()?target->GetPathName():_T("N/A"), cylinderA,cylinderZ,cylinderA!=cylinderZ?_T("incl."):_T("single cylinder"), fullTrackAnalysis?_T("On"):_T("Off") );
 				Utils::WriteToFile(fHtml,_T("<h3>Overview</h3>"));
+					Utils::WriteToFileFormatted( fHtml, _T("<p>Duration: %d.%03d seconds (%02d:%02d:%02d.%03d).</p>"), div(duration.ToMilliseconds(),1000), duration.wHour, duration.wMinute, duration.wSecond, duration.wMilliseconds );
 					if (pOutErroneousTracks){
 						Utils::WriteToFile(fHtml,_T("<table><tr><td class=caption>Status</td><td class=caption>Count</td></tr>"));
 							union{
@@ -1062,14 +1067,14 @@ setDestination:						// : compacting FileName in order to be better displayable 
 									? deducedSides.map // ... adopt them
 									: dos->sideMap; // otherwise adopt Sides defined by the DOS
 			if ( err=d.dumpParams.target->SetMediumTypeAndGeometry( &targetGeometry, sideMap, dos->properties->firstSectorNumber ) )
-				goto error;
+error:			return Utils::FatalError(_T("Cannot dump"),err);
 			d.dumpParams.target->SetPathName( d.dumpParams.targetFileName, FALSE );
 			// . dumping
-			{CBackgroundMultiActionCancelable bmac( d.realtimeThreadPriority ? THREAD_PRIORITY_TIME_CRITICAL : THREAD_PRIORITY_NORMAL );
+			CBackgroundMultiActionCancelable bmac( d.realtimeThreadPriority ? THREAD_PRIORITY_TIME_CRITICAL : THREAD_PRIORITY_NORMAL );
 				bmac.AddAction( __dump_thread__, &d.dumpParams, _T("Dumping to target") );
 				const TSaveThreadParams stp={ d.dumpParams.target.get(), d.dumpParams.targetFileName };
 				bmac.AddAction( SaveAllModifiedTracks_thread, &stp, _T("Saving target") );
-			err=bmac.Perform();}
+			err=bmac.Perform();
 			if (err==ERROR_SUCCESS){
 				// : displaying statistics on SourceTrackErrors
 				if (d.showReport==BST_CHECKED){
@@ -1077,16 +1082,13 @@ setDestination:						// : compacting FileName in order to be better displayable 
 					TCHAR tmpFileName[MAX_PATH];
 					::GetTempPath(MAX_PATH,tmpFileName);
 					::GetTempFileName( tmpFileName, nullptr, FALSE, tmpFileName );
-					d.dumpParams.__exportErroneousTracksToHtml__( CFile(::lstrcat(tmpFileName,_T(".html")),CFile::modeCreate|CFile::modeWrite) );
+					d.dumpParams.__exportErroneousTracksToHtml__( CFile(::lstrcat(tmpFileName,_T(".html")),CFile::modeCreate|CFile::modeWrite), bmac.GetDurationTime() );
 					// | displaying
 					app.GetMainWindow()->OpenWebPage( _T("Dump results"), tmpFileName );
 				}
 				// : reporting success
 				Utils::Information(_T("Dumped successfully."));
 			}else
-error:			Utils::FatalError(_T("Cannot dump"),err);
-			// . destroying the list of SourceTrackErrors
-			while (const TDumpParams::TSourceTrackErrors *tmp=d.dumpParams.pOutErroneousTracks)
-				d.dumpParams.pOutErroneousTracks=d.dumpParams.pOutErroneousTracks->pNextErroneousTrack, ::free((PVOID)tmp);
+				goto error;
 		}
 	}
