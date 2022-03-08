@@ -856,11 +856,11 @@
 		// given specific File, populates the Created, LastRead, and LastWritten outputs
 		const PCDirectoryEntry de=(PCDirectoryEntry)file;
 		if (pCreated)
-			*pCreated= de!=MSDOS7_DIR_ROOT ? TDateTime(de->shortNameEntry.timeAndDateCreated) : TFileDateTime::None ;
+			*pCreated= de!=MSDOS7_DIR_ROOT ? TDateTime(de->shortNameEntry.timeAndDateCreated) : Utils::CRideTime::None ;
 		if (pLastRead)
-			*pLastRead= de!=MSDOS7_DIR_ROOT ? TDateTime(de->shortNameEntry.dateLastAccessed) : TFileDateTime::None ;
+			*pLastRead= de!=MSDOS7_DIR_ROOT ? TDateTime(de->shortNameEntry.dateLastAccessed) : Utils::CRideTime::None ;
 		if (pLastWritten)
-			*pLastWritten= de!=MSDOS7_DIR_ROOT ? TDateTime(de->shortNameEntry.timeAndDateLastModified) : TFileDateTime::None ;
+			*pLastWritten= de!=MSDOS7_DIR_ROOT ? TDateTime(de->shortNameEntry.timeAndDateLastModified) : Utils::CRideTime::None ;
 	}
 
 	void CMSDOS7::SetFileTimeStamps(PFile file,const FILETIME *pCreated,const FILETIME *pLastRead,const FILETIME *pLastWritten){

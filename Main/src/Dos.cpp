@@ -747,27 +747,27 @@ reportError:Utils::Information(buf);
 
 	void CDos::GetFileTimeStamps(PCFile file,LPFILETIME pCreated,LPFILETIME pLastRead,LPFILETIME pLastWritten) const{
 		// given specific File, populates the Created, LastRead, and LastWritten outputs
-		if (pCreated) *pCreated=TFileDateTime::None;	// Files don't have time stamps by default
-		if (pLastRead) *pLastRead=TFileDateTime::None;	// Files don't have time stamps by default
-		if (pLastWritten) *pLastWritten=TFileDateTime::None;	// Files don't have time stamps by default
+		if (pCreated) *pCreated=Utils::CRideTime::None;		// Files don't have time stamps by default
+		if (pLastRead) *pLastRead=Utils::CRideTime::None;	// Files don't have time stamps by default
+		if (pLastWritten) *pLastWritten=Utils::CRideTime::None;	// Files don't have time stamps by default
 	}
 
 	bool CDos::GetFileCreatedTimeStamp(PCFile file,FILETIME &rCreated) const{
 		// True <=> File has a Created time stamp copied to the output field, otherwise False
 		GetFileTimeStamps( file, &rCreated, nullptr, nullptr );
-		return TFileDateTime::None!=rCreated;
+		return Utils::CRideTime::None!=rCreated;
 	}
 
 	bool CDos::GetFileLastReadTimeStamp(PCFile file,FILETIME &rLastRead) const{
 		// True <=> File has a LastRead time stamp copied to the output field, otherwise False
 		GetFileTimeStamps( file, nullptr, &rLastRead, nullptr );
-		return TFileDateTime::None!=rLastRead;
+		return Utils::CRideTime::None!=rLastRead;
 	}
 
 	bool CDos::GetFileLastWrittenTimeStamp(PCFile file,FILETIME &rLastWritten) const{
 		// True <=> File has a LastRead time stamp copied to the output field, otherwise False
 		GetFileTimeStamps( file, nullptr, nullptr, &rLastWritten );
-		return TFileDateTime::None!=rLastWritten;
+		return Utils::CRideTime::None!=rLastWritten;
 	}
 
 	void CDos::SetFileTimeStamps(PFile file,const FILETIME *pCreated,const FILETIME *pLastRead,const FILETIME *pLastWritten){
@@ -1257,136 +1257,6 @@ reportError:Utils::Information(buf);
 		return result;
 	}
 
-
-
-
-
-
-
-
-	static constexpr FILETIME None={};
-
-	const CDos::TFileDateTime CDos::TFileDateTime::None(::None);
-
-	CDos::TFileDateTime CDos::TFileDateTime::GetCurrent(){
-		// creates and returns current DateTime object
-		SYSTEMTIME st;
-		::GetLocalTime(&st);
-		::SystemTimeToTzSpecificLocalTime( nullptr, &st, &st );
-		FILETIME ft;
-		::SystemTimeToFileTime( &st, &ft );
-		return TFileDateTime(ft);
-	}
-
-	CDos::TFileDateTime::TFileDateTime(const FILETIME &r)
-		// ctor
-		: FILETIME(r) {
-	}
-
-	bool CDos::TFileDateTime::operator==(const FILETIME &r) const{
-		// True <=> this DateTime is the same as the specified one, otherwise False
-		return dwLowDateTime==r.dwLowDateTime && dwHighDateTime==r.dwHighDateTime;
-	}
-
-	bool CDos::TFileDateTime::operator!=(const FILETIME &r) const{
-		// True <=> this DateTime is different from the specified one, otherwise False
-		return dwLowDateTime!=r.dwLowDateTime || dwHighDateTime!=r.dwHighDateTime;
-	}
-
-	PTCHAR CDos::TFileDateTime::DateToString(PTCHAR buf) const{
-		// populates the Buffer with this Date value and returns the buffer
-		static constexpr LPCTSTR MonthAbbreviations[]={ _T("Jan"), _T("Feb"), _T("Mar"), _T("Apr"), _T("May"), _T("Jun"), _T("Jul"), _T("Aug"), _T("Sep"), _T("Oct"), _T("Nov"), _T("Dec") };
-		SYSTEMTIME st;
-		::FileTimeToSystemTime( this, &st );
-		::SystemTimeToTzSpecificLocalTime( nullptr, &st, &st );
-		::wsprintf( buf, _T("%d/%s/%d"), st.wDay, MonthAbbreviations[st.wMonth-1], st.wYear );
-		return buf;
-	}
-
-	PTCHAR CDos::TFileDateTime::TimeToString(PTCHAR buf) const{
-		// populates the Buffer with this Time value and returns the buffer
-		SYSTEMTIME st;
-		::FileTimeToSystemTime( this, &st );
-		::SystemTimeToTzSpecificLocalTime( nullptr, &st, &st );
-		::wsprintf( buf, _T("%d:%02d:%02d"), st.wHour, st.wMinute, st.wSecond );
-		return buf;
-	}
-
-	bool CDos::TFileDateTime::Edit(bool dateEditingEnabled,bool timeEditingEnabled,const SYSTEMTIME *epoch){
-		// True <=> user confirmed the shown editation dialog and accepted the new value, otherwise False
-		// - defining the Dialog
-		class TDateTimeDialog sealed:public Utils::CRideDialog{
-			void DoDataExchange(CDataExchange *pDX) override{
-				// exchange of data from and to controls
-				SYSTEMTIME st;
-				if (pDX->m_bSaveAndValidate){
-					// saving the date and time combined from values of both controls together, impossible to do using DDX_* functions
-					SYSTEMTIME tmp;
-					SendDlgItemMessage( ID_DATE, MCM_GETCURSEL, 0, (LPARAM)&st );
-					SendDlgItemMessage( ID_TIME, DTM_GETSYSTEMTIME, 0, (LPARAM)&tmp );
-					st.wHour=tmp.wHour, st.wMinute=tmp.wMinute, st.wSecond=tmp.wSecond, st.wMilliseconds=tmp.wMilliseconds;
-					::SystemTimeToFileTime( &st, &ft );
-				}else{
-					// loading the date and time values
-					// . adjusting interactivity
-					EnableDlgItem( ID_DATE, dateEditingEnabled );
-					EnableDlgItem( ID_TIME, timeEditingEnabled );
-					// . restricting the Date control to specified Epoch only
-					SendDlgItemMessage( ID_DATE, MCM_SETRANGE, GDTR_MIN|GDTR_MAX, (LPARAM)epoch );
-					// . loading
-					::FileTimeToSystemTime( &ft, &st );
-					SendDlgItemMessage( ID_DATE, MCM_SETCURSEL, 0, (LPARAM)&st );
-					SendDlgItemMessage( ID_TIME, DTM_SETSYSTEMTIME, 0, (LPARAM)&st );
-				}
-			}
-			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
-				// window procedure
-				if (msg==WM_NOTIFY){
-					const PNMLINK pnml=(PNMLINK)lParam;
-					if (pnml->hdr.code==NM_CLICK || pnml->hdr.code==NM_RETURN)
-						switch (pnml->hdr.idFrom){
-							case ID_AUTO:{
-								// notification regarding the "Select current {date,time}" option
-								SYSTEMTIME st;
-								::GetLocalTime(&st);
-								pnml->item.iLink++;
-								if (pnml->item.iLink&1)
-									SendDlgItemMessage( ID_DATE, MCM_SETCURSEL, 0, (LPARAM)&st );
-								if (pnml->item.iLink&2)
-									SendDlgItemMessage( ID_TIME, DTM_SETSYSTEMTIME, 0, (LPARAM)&st );
-								return 0;
-							}
-							case ID_REMOVE:
-								// notification regarding the "Remove from FAT" option
-								EndDialog(ID_REMOVE);
-								break;
-						}
-				}
-				return __super::WindowProc(msg,wParam,lParam);
-			}
-		public:
-			const bool dateEditingEnabled, timeEditingEnabled;
-			const SYSTEMTIME *const epoch;
-			FILETIME ft;
-
-			TDateTimeDialog(const FILETIME &rDateTime,bool dateEditingEnabled,bool timeEditingEnabled,const SYSTEMTIME *epoch)
-				: Utils::CRideDialog(IDR_DOS_DATETIME_EDIT)
-				, dateEditingEnabled(dateEditingEnabled) , timeEditingEnabled(timeEditingEnabled) , epoch(epoch)
-				, ft(rDateTime) {
-			}
-		} d( *this, dateEditingEnabled, timeEditingEnabled, epoch );
-		// - showing the Dialog and processing its result
-		switch (d.DoModal()){
-			case ID_REMOVE:
-				d.ft=None;
-				//fallthrough
-			case IDOK:
-				*this=d.ft;
-				return true;
-			default:
-				return false;
-		}
-	}
 
 
 

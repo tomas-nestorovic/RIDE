@@ -276,14 +276,22 @@ namespace Utils{
 		operator time_t() const;
 		CRideTime operator-(const time_t &t2) const;
 	public:
+		static const CRideTime None;
+
 		CRideTime(); // current local time
 		CRideTime(const FILETIME &t);
 
 		operator FILETIME() const;
+		bool operator==(const FILETIME &t2) const;
+		bool operator!=(const FILETIME &t2) const;
 		CRideTime operator-(const FILETIME &t2) const;
 		CRideTime operator-(const CRideTime &t2) const;
 
 		int ToMilliseconds() const;
+		WORD GetDosDate() const;
+		CString DateToStdString() const;
+		CString TimeToStdString() const;
+		bool Edit(bool dateEditingEnabled,bool timeEditingEnabled,const SYSTEMTIME *epoch);
 	};
 
 	class CAxis{

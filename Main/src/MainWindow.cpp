@@ -348,9 +348,8 @@ quitWithErr:const DWORD err=::GetLastError();
 			pBac->UpdateProgress(5);
 		}
 		// - analysing the obtained information (comparing it against this instance version)
-		DWORD now;
-		if (CMSDOS7::TDateTime( CMSDOS7::TDateTime::GetCurrent() ).ToDWord(&now)){ // recording that recency last checked today
-			app.dateRecencyLastChecked=HIWORD(now); // today
+		if (const WORD today=Utils::CRideTime().GetDosDate()){ // recording that recency last checked Today
+			app.dateRecencyLastChecked=today;
 			app.WriteProfileInt( INI_GENERAL, INI_IS_UP_TO_DATE, app.dateRecencyLastChecked );
 		}
 		if (const PCHAR githubTagName=::strstr(buffer,GITHUB_VERSION_TAG_NAME))

@@ -106,20 +106,6 @@
 			BYTE GetValidGap3ForMedium(Medium::TType medium) const;
 		} *PCProperties;
 
-		struct TFileDateTime:public FILETIME{
-			static const TFileDateTime None;
-
-			static TFileDateTime GetCurrent();
-
-			TFileDateTime(const FILETIME &r);
-
-			bool operator==(const FILETIME &r) const;
-			bool operator!=(const FILETIME &r) const;
-			PTCHAR DateToString(PTCHAR buf) const;
-			PTCHAR TimeToString(PTCHAR buf) const;
-			bool Edit(bool dateEditingEnabled,bool timeEditingEnabled,const SYSTEMTIME *epoch);
-		};
-
 		class CHexaValuePropGridEditor sealed:public Utils::CRideDialog{
 			BYTE newValueBuffer[2048];
 			CHexaEditor hexaEditor;

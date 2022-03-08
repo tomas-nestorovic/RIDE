@@ -676,12 +676,12 @@
 										: (PCDirectoryEntry)file;
 			*pCreated =	de!=nullptr
 						? CMSDOS7::TDateTime(de->dateTimeCreated)
-						: TFileDateTime::None;
+						: Utils::CRideTime::None;
 		}
 		if (pLastRead)
-			*pLastRead=TFileDateTime::None;
+			*pLastRead=Utils::CRideTime::None;
 		if (pLastWritten)
-			*pLastWritten=TFileDateTime::None;
+			*pLastWritten=Utils::CRideTime::None;
 	}
 
 	void CBSDOS308::SetFileTimeStamps(PFile file,const FILETIME *pCreated,const FILETIME *pLastRead,const FILETIME *pLastWritten){
@@ -1002,7 +1002,7 @@
 			// . geometry
 			FlushToBootSector();
 			// . date this disk was formatted
-			CMSDOS7::TDateTime( CMSDOS7::TDateTime::GetCurrent() ).ToDWord(&boot->formattedDateTime);
+			CMSDOS7::TDateTime( Utils::CRideTime() ).ToDWord(&boot->formattedDateTime);
 			// . label
 			::memcpy(	::memset( boot->diskName, ' ', sizeof(boot->diskName) ),
 						VOLUME_LABEL_DEFAULT_ANSI_8CHARS,

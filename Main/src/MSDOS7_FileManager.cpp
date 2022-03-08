@@ -360,34 +360,37 @@
 
 	CMSDOS7::TDateTime::TDateTime(WORD msdosDate)
 		// ctor
-		: TFileDateTime(TFileDateTime::None) {
-		::DosDateTimeToFileTime( msdosDate, 0, this );
+		: Utils::CRideTime(Utils::CRideTime::None) {
+		FILETIME ft;
+ 		if (::DosDateTimeToFileTime( msdosDate, 0, &ft ))
+			::FileTimeToSystemTime( &ft, this );
 	}
 
 	CMSDOS7::TDateTime::TDateTime(DWORD msdosTimeAndDate)
 		// ctor
-		: TFileDateTime(TFileDateTime::None) {
-		::DosDateTimeToFileTime( HIWORD(msdosTimeAndDate), LOWORD(msdosTimeAndDate), this );
+		: Utils::CRideTime(Utils::CRideTime::None) {
+		FILETIME ft;
+		if (::DosDateTimeToFileTime( HIWORD(msdosTimeAndDate), LOWORD(msdosTimeAndDate), &ft ))
+			::FileTimeToSystemTime( &ft, this );
 	}
 
 	CMSDOS7::TDateTime::TDateTime(const FILETIME &r)
 		// ctor
-		: TFileDateTime(r) {
+		: Utils::CRideTime(r) {
 	}
 
 	LPCTSTR CMSDOS7::TDateTime::ToString(PTCHAR buf) const{
 		// populates the Buffer with this DateTime value and returns the buffer
-		if (DateToString(buf)){ // is valid in MS-DOS format?
-			TimeToString(  buf+::lstrlen( ::lstrcat(buf,_T(", ")) )  );
-			return buf;
-		}else
+		if (DateToString(buf)) // is valid in MS-DOS format?
+			return ::lstrcat(  ::lstrcat(buf,_T(", ")),  TimeToStdString()  );
+		else
 			return nullptr;
 	}
 
 	PTCHAR CMSDOS7::TDateTime::DateToString(PTCHAR buf) const{
 		// populates the Buffer with this Date value and returns the buffer
 		return	ToDWord(nullptr) // is valid in MS-DOS format?
-				? __super::DateToString(buf)
+				? ::lstrcpy( buf, DateToStdString() )
 				: nullptr;
 	}
 
@@ -395,15 +398,13 @@
 		// True <=> successfully packed this DateTime to a DWORD whose higher and lower Words contains MS-DOS compliant date and time, respectively, otherwise False
 		// - attempting to compose and return the result
 		WORD msdosDate, msdosTime;
-		if (::FileTimeToDosDateTime( this, &msdosDate, &msdosTime )){
+		if (::FileTimeToDosDateTime( &(FILETIME)*this, &msdosDate, &msdosTime )){
 			if (pOutResult) *pOutResult=MAKELONG(msdosTime,msdosDate);
 			return true;
 		}
 		// - the SystemTime contains values that CANNOT be represented in MS-DOS format
-		SYSTEMTIME st;
-		::FileTimeToSystemTime( this, &st );
 		if (pOutResult) *pOutResult=0; // 0 = begin of MS-DOS epoch
-		return !st.wYear; // zeroth Year reserved for clearing date-time entries in FAT (or whereever else used), see the Edit method
+		return !wYear; // zeroth Year reserved for clearing date-time entries in FAT (or whereever else used), see the Edit method
 	}
 
 	void CMSDOS7::TDateTime::DrawInPropGrid(HDC dc,RECT rc,bool onlyDate,BYTE horizonalAlignment) const{

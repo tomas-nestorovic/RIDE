@@ -247,7 +247,7 @@
 			void MarkSectorAsDirty() const;
 		} fsInfo;
 	public:
-		struct TDateTime sealed:public TFileDateTime{
+		struct TDateTime sealed:public Utils::CRideTime{
 			class CEditor sealed:public CFileManagerView::CValueEditorBase{
 			public:
 				static CFileManagerView::PEditorBase Create(PFile file,PDWORD pMsdosTimeAndDate);

@@ -462,6 +462,10 @@ namespace Utils{
 
 
 
+	static constexpr FILETIME None={};
+	
+	const CRideTime CRideTime::None(Utils::None);
+	
 	CRideTime::CRideTime(){
 		// ctor (current local time)
 		::GetLocalTime(this);
@@ -487,6 +491,14 @@ namespace Utils{
 		return tmp;
 	}
 
+	bool CRideTime::operator==(const FILETIME &t2) const{
+		return	operator-(t2)==0;
+	}
+
+	bool CRideTime::operator!=(const FILETIME &t2) const{
+		return	!operator==(t2);
+	}
+
 	CRideTime CRideTime::operator-(const time_t &t2) const{
 		return	(time_t)*this-t2;
 	}
@@ -502,6 +514,100 @@ namespace Utils{
 
 	int CRideTime::ToMilliseconds() const{
 		return	(time_t)*this/10000;
+	}
+
+	WORD CRideTime::GetDosDate() const{
+		WORD dosDate=0, dosTime;
+		::FileTimeToDosDateTime( &(FILETIME)*this, &dosDate, &dosTime );
+		return dosDate;
+	}
+
+	CString CRideTime::DateToStdString() const{
+		//return CTime(*this).Format(_T("%x")); // standard date string; commented out as e.g. "June 26, 2089" fires an exception
+		TCHAR buf[16];
+		static constexpr LPCTSTR MonthAbbreviations[]={ _T("Jan"), _T("Feb"), _T("Mar"), _T("Apr"), _T("May"), _T("Jun"), _T("Jul"), _T("Aug"), _T("Sep"), _T("Oct"), _T("Nov"), _T("Dec") };
+		::wsprintf( buf, _T("%d/%s/%d"), wDay, MonthAbbreviations[wMonth-1], wYear );
+		return buf;
+	}
+
+	CString CRideTime::TimeToStdString() const{
+		//return CTime(*this).Format(_T("%X")); // standard time string; commented out as e.g. "June 26, 2089" fires an exception
+		TCHAR buf[16];
+		::wsprintf( buf, _T("%d:%02d:%02d"), wHour, wMinute, wSecond );
+		return buf;
+	}
+
+	bool CRideTime::Edit(bool dateEditingEnabled,bool timeEditingEnabled,const SYSTEMTIME *epoch){
+		// True <=> user confirmed the shown editation dialog and accepted the new value, otherwise False
+		// - defining the Dialog
+		class CDateTimeDialog sealed:public CRideDialog{
+			void DoDataExchange(CDataExchange *pDX) override{
+				// exchange of data from and to controls
+				if (pDX->m_bSaveAndValidate){
+					// saving the date and time combined from values of both controls together, impossible to do using DDX_* functions
+					SYSTEMTIME tmp;
+					SendDlgItemMessage( ID_DATE, MCM_GETCURSEL, 0, (LPARAM)&st );
+					SendDlgItemMessage( ID_TIME, DTM_GETSYSTEMTIME, 0, (LPARAM)&tmp );
+					st.wHour=tmp.wHour, st.wMinute=tmp.wMinute, st.wSecond=tmp.wSecond, st.wMilliseconds=tmp.wMilliseconds;
+				}else{
+					// loading the date and time values
+					// . adjusting interactivity
+					EnableDlgItem( ID_DATE, dateEditingEnabled );
+					EnableDlgItem( ID_TIME, timeEditingEnabled );
+					// . restricting the Date control to specified Epoch only
+					SendDlgItemMessage( ID_DATE, MCM_SETRANGE, GDTR_MIN|GDTR_MAX, (LPARAM)epoch );
+					// . loading
+					SendDlgItemMessage( ID_DATE, MCM_SETCURSEL, 0, (LPARAM)&st );
+					SendDlgItemMessage( ID_TIME, DTM_SETSYSTEMTIME, 0, (LPARAM)&st );
+				}
+			}
+			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
+				// window procedure
+				if (msg==WM_NOTIFY){
+					const PNMLINK pnml=(PNMLINK)lParam;
+					if (pnml->hdr.code==NM_CLICK || pnml->hdr.code==NM_RETURN)
+						switch (pnml->hdr.idFrom){
+							case ID_AUTO:{
+								// notification regarding the "Select current {date,time}" option
+								::GetLocalTime(&st);
+								pnml->item.iLink++;
+								if (pnml->item.iLink&1)
+									SendDlgItemMessage( ID_DATE, MCM_SETCURSEL, 0, (LPARAM)&st );
+								if (pnml->item.iLink&2)
+									SendDlgItemMessage( ID_TIME, DTM_SETSYSTEMTIME, 0, (LPARAM)&st );
+								return 0;
+							}
+							case ID_REMOVE:
+								// notification regarding the "Remove from FAT" option
+								EndDialog(ID_REMOVE);
+								return 0;
+						}
+				}
+				return __super::WindowProc(msg,wParam,lParam);
+			}
+		public:
+			const bool dateEditingEnabled, timeEditingEnabled;
+			const SYSTEMTIME *const epoch;
+			SYSTEMTIME st;
+
+			CDateTimeDialog(const SYSTEMTIME &st,bool dateEditingEnabled,bool timeEditingEnabled,const SYSTEMTIME *epoch)
+				// ctor
+				: Utils::CRideDialog(IDR_DOS_DATETIME_EDIT)
+				, dateEditingEnabled(dateEditingEnabled) , timeEditingEnabled(timeEditingEnabled) , epoch(epoch)
+				, st(st) {
+			}
+		} d( *this, dateEditingEnabled, timeEditingEnabled, epoch );
+		// - showing the Dialog and processing its result
+		switch (d.DoModal()){
+			case ID_REMOVE:
+				d.st=None;
+				//fallthrough
+			case IDOK:
+				*static_cast<SYSTEMTIME *>(this)=d.st;
+				return true;
+			default:
+				return false;
+		}
 	}
 
 
