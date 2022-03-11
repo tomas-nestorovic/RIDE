@@ -4,6 +4,7 @@
 	#define INI_GENERAL			_T("General")
 
 	#define INI_IS_UP_TO_DATE	_T("iu2d")
+	#define INI_LATEST_KNOWN_VERSION _T("lu2d")
 
 	class CRideApp sealed:public CWinApp{
 		DECLARE_MESSAGE_MAP()
