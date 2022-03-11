@@ -46,6 +46,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #ifdef RELEASE_MFC42
 	#include <crtnew.h>
 #endif
+#include <atlbase.h>
 #include <Windows.h>
 #include <WindowsX.h>
 //#define _WIN32_WINNT 0x501

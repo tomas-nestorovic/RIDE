@@ -68,13 +68,13 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\WINDDK\inc\mfc42;..\Externals\capsimg;..\Externals\winusb;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\WINDDK\lib\mfc\i386;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\WINDDK\inc\mfc42;C:\WINDDK\inc\atl30;..\Externals\capsimg;..\Externals\winusb;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\WINDDK\lib\mfc\i386;C:\WINDDK\lib\atl\i386;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug in RAMdisk|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\WINDDK\inc\mfc42;..\Externals\capsimg;..\Externals\winusb;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\WINDDK\lib\mfc\i386;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\WINDDK\inc\mfc42;C:\WINDDK\inc\atl30;..\Externals\capsimg;..\Externals\winusb;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\WINDDK\lib\mfc\i386;C:\WINDDK\lib\atl\i386;$(LibraryPath)</LibraryPath>
     <IntDir>R:\Ride\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -86,7 +86,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release MFC 4.2|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>..\Externals\CrtNew;..\Externals\capsimg;C:\WINDDK\inc\mfc42;..\Externals\winusb;$(IncludePath)</IncludePath>
+    <IncludePath>..\Externals\CrtNew;..\Externals\capsimg;C:\WINDDK\inc\mfc42;C:\WINDDK\inc\atl30;..\Externals\winusb;$(IncludePath)</IncludePath>
     <LibraryPath>..\Externals\CrtNew;..\Externals\capsimg;D:\puvodni\zaloha\Program Files\Visual Studio 6\VC98\MFC\Lib;D:\puvodni\zaloha\Program Files\Visual Studio 6\Microsoft Platform SDK for Windows XP SP2\Lib;D:\puvodni\zaloha\Program Files\Visual Studio 6\VC98\Lib;..\Externals\winusb</LibraryPath>
     <GenerateManifest>true</GenerateManifest>
     <EmbedManifest>true</EmbedManifest>

@@ -47,7 +47,7 @@
 		const int callerThreadPriorityOrg;
 		volatile bool bCancelled;
 		mutable volatile bool bTargetStateReached;
-		ITaskbarList3 *pActionTaskbarList;
+		CComPtr<ITaskbarList3> pActionTaskbarList;
 		Utils::CRideTime startTime;
 		Utils::CRideTime duration;
 
@@ -83,7 +83,7 @@
 			LPCVOID fnParams;
 			LPCTSTR fnName;
 		} actions[16];
-		ITaskbarList3 *pMultiActionTaskbarList;
+		CComPtr<ITaskbarList3> pMultiActionTaskbarList;
 		struct{
 			int glyphX;
 			int charHeight;

@@ -129,7 +129,6 @@
 		: Utils::CRideDialog( dlgResId, CWnd::GetActiveWindow() )
 		, CActionProgress( nullptr, bCancelled, 0, INT_MAX )
 		, callerThreadPriorityOrg( ::GetThreadPriority(::GetCurrentThread()) )
-		, pActionTaskbarList(nullptr)
 		, bCancelled(false) , bTargetStateReached(false) {
 	}
 
@@ -138,7 +137,6 @@
 		: Utils::CRideDialog( IDR_ACTION_PROGRESS, CWnd::GetActiveWindow() )
 		, CActionProgress( nullptr, bCancelled, 0, INT_MAX )
 		, callerThreadPriorityOrg( ::GetThreadPriority(::GetCurrentThread()) )
-		, pActionTaskbarList(nullptr)
 		, bCancelled(false) , bTargetStateReached(false) {
 		BeginAnother( fnAction, actionParams, actionThreadPriority );
 		ChangeWorkerPriority( actionThreadPriority ); // making sure the caller is always responsive by temporarily elevating its priority
@@ -148,10 +146,8 @@
 		// dtor
 		pSingleInstance=nullptr;
 		// - clearing taskbar progress overlay
-		if (pActionTaskbarList){
+		if (pActionTaskbarList)
 			pActionTaskbarList->SetProgressState( *app.m_pMainWnd, TBPF_NOPROGRESS );
-			pActionTaskbarList->Release();
-		}
 		// - recovering caller's original priority
 		::SetThreadPriority( ::GetCurrentThread(), callerThreadPriorityOrg );
 	}
@@ -161,7 +157,7 @@
 
 	BOOL CBackgroundActionCancelable::OnInitDialog(){
 		// dialog initialization
-		if (SUCCEEDED(::CoCreateInstance( CLSID_TaskbarList, nullptr, CLSCTX_INPROC_SERVER, __uuidof(pActionTaskbarList), (LPVOID *)&pActionTaskbarList )))
+		if (SUCCEEDED(pActionTaskbarList.CoCreateInstance( CLSID_TaskbarList, nullptr, CLSCTX_INPROC_SERVER )))
 			pActionTaskbarList->HrInit();
 		SetTimer( ID_Y, 1000, nullptr );
 		::PostMessage( m_hWnd, WM_COMMAND, IDCONTINUE, 0 ); // launching the Worker
@@ -310,8 +306,7 @@
 		: CBackgroundActionCancelable( IDR_ACTION_SEQUENCE )
 		// - initialization
 		, actionThreadPriority(  std::max( std::min(actionThreadPriority,THREAD_PRIORITY_TIME_CRITICAL), THREAD_BASE_PRIORITY_MIN )  )
-		, nActions(0)
-		, pMultiActionTaskbarList(nullptr) {
+		, nActions(0) {
 		// - making sure the caller is always responsive by temporarily elevating its priority
 		ChangeWorkerPriority( actionThreadPriority );
 	}
@@ -376,8 +371,7 @@
 		::PostMessage( m_hWnd, WM_COMMAND, IDOK, 0 ); // next Action ...
 		const BOOL result=__super::OnInitDialog(); // ... and its launch
 		// - take control over taskbar button progress overlay
-		pMultiActionTaskbarList=pActionTaskbarList;
-		pActionTaskbarList=nullptr;
+		pMultiActionTaskbarList.Attach( pActionTaskbarList.Detach() );
 		// - displaying thread Priority
 		if (actionThreadPriority<=THREAD_BASE_PRIORITY_MAX)
 			// time-non-critical Actions - user is free to change Worker's priority
