@@ -58,8 +58,8 @@
 					// . drawing DIB
 					::StretchDIBits(dc,
 									0,0, r.right,r.bottom,
-									0,SCREEN_HEIGHT+1,
-									SCREEN_WIDTH,-SCREEN_HEIGHT,
+									0,0,
+									SCREEN_WIDTH,SCREEN_HEIGHT,
 									pSingleInstance->dib.data,
 									&pSingleInstance->dib.bmi, DIB_RGB_COLORS, SRCCOPY
 								);
@@ -113,10 +113,13 @@
 		, offset(0)
 		, showPixels(true) , showAttributes(true)
 		, paperFlash(false) {
+		// - disposing any previous instance
+		if (pSingleInstance)
+			pSingleInstance->DestroyWindow();
 		pSingleInstance=this;
 		// - creating the Device Independent Bitmap (DIB)
 		dib.bmi.bmiHeader.biSize=sizeof(dib.bmi);
-		dib.bmi.bmiHeader.biWidth=SCREEN_WIDTH, dib.bmi.bmiHeader.biHeight=SCREEN_HEIGHT;
+		dib.bmi.bmiHeader.biWidth=SCREEN_WIDTH, dib.bmi.bmiHeader.biHeight=-SCREEN_HEIGHT; // negative height = a top-down DIB (otherwise bottom-up)
 		dib.bmi.bmiHeader.biPlanes=1;
 		dib.bmi.bmiHeader.biBitCount=8;
 		dib.bmi.bmiHeader.biCompression=BI_RGB;
@@ -250,6 +253,43 @@
 						offset--;
 						RefreshPreview();
 						return TRUE;
+					case ID_FILE_SAVE_AS:{
+						const CString fileName=Utils::DoPromptSingleTypeFileName( _T(""), _T("Bitmap (*.bmp)|*.bmp"), 0 );
+						if (fileName.IsEmpty())
+							return TRUE;
+						struct{
+							LOGPALETTE header;
+							PALETTEENTRY palEntries[16];
+						} logPalette={ {0x300,16} };
+						for( BYTE c=0; c<16; c++ ){
+							const RGBQUAD &quad=dib.bmi.bmiColors[c];
+							PALETTEENTRY &r=logPalette.header.palPalEntry[c];
+							r.peRed=quad.rgbRed, r.peGreen=quad.rgbGreen, r.peBlue=quad.rgbBlue;
+						}
+						CPalette palette;
+						#define SCREEN_SAVE_ERROR_MSG	_T("Can't save screen")
+						if (!palette.CreatePalette(&logPalette.header)){
+							Utils::FatalError( SCREEN_SAVE_ERROR_MSG, ::GetLastError() );
+							return TRUE;
+						}
+						HRESULT hr;
+						PICTDESC pd={ sizeof(pd), PICTYPE_BITMAP };
+							pd.bmp.hbitmap=dib.handle;
+							pd.bmp.hpal=palette;
+						CComPtr<IPicture> picture;
+						if (SUCCEEDED( hr=::OleCreatePictureIndirect( &pd, __uuidof(IPicture), FALSE, (LPVOID*)&picture ) )){
+							CComPtr<IStream> stream;
+							if (SUCCEEDED( hr=::CreateStreamOnHGlobal( nullptr, TRUE, &stream ) ))
+								if (SUCCEEDED( hr=picture->SaveAsFile( stream, TRUE, nullptr ) )){
+									CComPtr<IPictureDisp> disp;
+									if (SUCCEEDED( hr=picture->QueryInterface(&disp) ))
+										hr=::OleSavePictureFile( disp, CComBSTR(fileName));
+								}
+						}
+						if (FAILED(hr))
+							Utils::FatalError( SCREEN_SAVE_ERROR_MSG, _com_error(hr).ErrorMessage() );
+						return TRUE;
+					}
 				}
 				break;
 		}

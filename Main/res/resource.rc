@@ -849,6 +849,8 @@ BEGIN
         MENUITEM "Offset...\tD",                ID_ALIGN
         MENUITEM "Offset by +1\tF",             ID_FILE_SHIFT_UP
         MENUITEM "Offset by -1\tS",             ID_FILE_SHIFT_DOWN
+        MENUITEM SEPARATOR
+        MENUITEM "Save as...",                  ID_FILE_SAVE_AS
     END
 END
 

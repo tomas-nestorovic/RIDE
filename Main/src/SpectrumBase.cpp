@@ -285,8 +285,6 @@
 		switch (cmd){
 			case ID_ZX_PREVIEWASSCREEN:
 				// previewing File(s) on Spectrum screen
-				if (CScreenPreview::pSingleInstance)
-					CScreenPreview::pSingleInstance->DestroyWindow();
 				new CScreenPreview(	CFileManagerView::pCurrentlyShown ? *CFileManagerView::pCurrentlyShown : *CDos::GetFocused()->pFileManager );
 				return TCmdResult::DONE;
 			case ID_ZX_PREVIEWASBASIC:

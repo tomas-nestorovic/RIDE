@@ -59,6 +59,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #include <Vsstyle.h>
 #include <MsHTML.h>
 #include <WinInet.h>
+#include <comdef.h>
 
 #include "..\..\Tdi\src\api.h"
 #include "..\..\PropGrid\src\api.h"
