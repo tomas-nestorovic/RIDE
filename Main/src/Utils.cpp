@@ -1916,6 +1916,37 @@ namespace Utils{
 		for( PBYTE p=(PBYTE)buffer; nBytes--; *p++=::rand() );
 	}
 
+	CString DoPromptSingleTypeFileName(LPCTSTR defaultSaveName,LPCTSTR singleFilter,DWORD flags){
+		// shows corresponding Open/Save dialog and returns full path selected in it (or empty string, if cancelled)
+		app.m_pMainWnd->BeginModalState(); // must not operate with the MainWindow
+			CString title;
+				title.LoadString( defaultSaveName==nullptr ? AFX_IDS_OPENFILE : AFX_IDS_SAVEFILE );
+			TCHAR fileName[MAX_PATH];
+			const HWND hParent=app.GetEnabledActiveWindow();
+			CFileDialog d(
+				defaultSaveName==nullptr,
+				singleFilter ? ::strrchr(singleFilter,'.') : nullptr,
+				nullptr,
+				OFN_EXPLORER | OFN_OVERWRITEPROMPT | flags,
+				singleFilter,
+				hParent ? CWnd::FromHandle(hParent) : nullptr
+			);
+				d.m_ofn.lStructSize=sizeof(OPENFILENAME); // to show the "Places bar"
+				d.m_ofn.nFilterIndex=1;
+				d.m_ofn.lpstrTitle=title;
+				d.m_ofn.lpstrFile=fileName;
+				if (defaultSaveName) // saving?
+					::lstrcpy( fileName, defaultSaveName );
+				else
+					*fileName='\0';
+			const bool dialogConfirmed=d.DoModal()==IDOK;
+		app.m_pMainWnd->EndModalState();
+		if (dialogConfirmed)
+			return fileName;
+		else
+			return (LPCTSTR)nullptr;
+	}
+
 
 
 

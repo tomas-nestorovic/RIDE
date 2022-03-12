@@ -30,6 +30,7 @@
 	#define FORMAT_ADDITIONAL_COUNT	2
 
 	#define TAPE_EXTENSION	_T(".tap")
+	#define TAPE_FILTER		_T("Tape (*") TAPE_EXTENSION _T(")|*") TAPE_EXTENSION
 
 	CDos::TCmdResult CSpectrumDos::ProcessCommand(WORD cmd){
 		// returns the Result of processing a DOS-related command
@@ -83,16 +84,8 @@
 				if (CTape::pSingleInstance) // closing the open Tape first
 					if (ProcessCommand(ID_FILE_CLOSE)==TCmdResult::REFUSED) // if closing of the open Tape rejected ...
 						return TCmdResult::DONE; // ... a new Tape cannot be created
-				TCHAR fileName[MAX_PATH];
-				*fileName='\0';
-				CString title;
-					title.LoadString(AFX_IDS_SAVEFILE);
-				CFileDialog d( FALSE, TAPE_EXTENSION, nullptr, OFN_OVERWRITEPROMPT|OFN_HIDEREADONLY|OFN_DONTADDTORECENT, _T("Tape (*") TAPE_EXTENSION _T(")|*") TAPE_EXTENSION _T("|") );
-					d.m_ofn.lStructSize=sizeof(OPENFILENAME); // to show the "Places bar"
-					d.m_ofn.nFilterIndex=1;
-					d.m_ofn.lpstrTitle=title;
-					d.m_ofn.lpstrFile=fileName;
-				if (d.DoModal()==IDOK){
+				const CString fileName=Utils::DoPromptSingleTypeFileName( _T("newTape") TAPE_EXTENSION, TAPE_FILTER, OFN_HIDEREADONLY|OFN_DONTADDTORECENT );
+				if (!fileName.IsEmpty()){
 					// . ejecting current Tape (if any)
 					if (CTape::pSingleInstance)
 						if (ProcessCommand(ID_TAPE_CLOSE)==TCmdResult::REFUSED) // if Tape not ejected ...
@@ -109,16 +102,8 @@
 				if (CTape::pSingleInstance) // closing the open Tape first
 					if (ProcessCommand(ID_FILE_CLOSE)==TCmdResult::REFUSED) // if closing of the open Tape rejected ...
 						return TCmdResult::DONE; // ... a new Tape cannot be open
-				TCHAR fileName[MAX_PATH];
-				*fileName='\0';
-				CString title;
-					title.LoadString(AFX_IDS_OPENFILE);
-				CFileDialog d( TRUE, TAPE_EXTENSION, nullptr, OFN_FILEMUSTEXIST, _T("Tape (*") TAPE_EXTENSION _T(")|*") TAPE_EXTENSION _T("|") );
-					d.m_ofn.lStructSize=sizeof(OPENFILENAME); // to show the "Places bar"
-					d.m_ofn.nFilterIndex=1;
-					d.m_ofn.lpstrTitle=title;
-					d.m_ofn.lpstrFile=fileName;
-				if (d.DoModal()==IDOK){
+				const CString fileName=Utils::DoPromptSingleTypeFileName( nullptr, TAPE_FILTER, OFN_FILEMUSTEXIST );
+				if (!fileName.IsEmpty()){
 					// . ejecting current Tape (if any)
 					if (CTape::pSingleInstance)
 						if (ProcessCommand(ID_TAPE_CLOSE)==TCmdResult::REFUSED) // if Tape not ejected ...
@@ -131,16 +116,8 @@
 			}
 			case ID_TAPE_APPEND:{
 				// copying content of another tape to the end of this tape
-				TCHAR fileName[MAX_PATH];
-				*fileName='\0';
-				CString title;
-					title.LoadString(AFX_IDS_OPENFILE);
-				CFileDialog d( TRUE, TAPE_EXTENSION, nullptr, OFN_FILEMUSTEXIST, _T("Tape (*") TAPE_EXTENSION _T(")|*") TAPE_EXTENSION _T("|") );
-					d.m_ofn.lStructSize=sizeof(OPENFILENAME); // to show the "Places bar"
-					d.m_ofn.nFilterIndex=1;
-					d.m_ofn.lpstrTitle=title;
-					d.m_ofn.lpstrFile=fileName;
-				if (d.DoModal()==IDOK){
+				const CString fileName=Utils::DoPromptSingleTypeFileName( nullptr, TAPE_FILTER, OFN_FILEMUSTEXIST );
+				if (!fileName.IsEmpty()){
 					// . opening the Tape to append
 					//const std::unique_ptr<const CTape> tape(new CTape(fileName,this,false));
 					const CTape *const tape=new CTape(fileName,this,false);

@@ -858,14 +858,8 @@ deleteSelection:		int posSrc=std::max(caret.selectionA,caret.position), posDst=s
 					}
 					case ID_FILE_SAVE_COPY_AS:{
 						// saving Selection as
-						TCHAR fileName[MAX_PATH];
-						CString title;
-							title.LoadString(AFX_IDS_SAVEFILE);
-						CFileDialog d( FALSE, _T(""), nullptr, OFN_OVERWRITEPROMPT, nullptr, this );
-							d.m_ofn.lStructSize=sizeof(OPENFILENAME); // to show the "Places bar"
-							d.m_ofn.lpstrTitle=title;
-							d.m_ofn.lpstrFile=::lstrcpy( fileName, _T("selection.bin") );
-						if (d.DoModal()==IDOK){
+						const CString fileName=Utils::DoPromptSingleTypeFileName( _T("selection.bin"), nullptr );
+						if (!fileName.IsEmpty()){
 							CFileException e;
 							CFile fDest;
 							if (fDest.Open( fileName, CFile::modeWrite|CFile::modeCreate|CFile::shareDenyWrite|CFile::typeBinary, &e ))
@@ -886,14 +880,8 @@ deleteSelection:		int posSrc=std::max(caret.selectionA,caret.position), posDst=s
 					}
 					case ID_EDIT_PASTE_SPECIAL:{
 						// pasting content of a file at current Caret Position
-						TCHAR fileName[MAX_PATH];
-						CString title;
-							title.LoadString(AFX_IDS_OPENFILE);
-						CFileDialog d( TRUE, _T(""), nullptr, OFN_FILEMUSTEXIST, nullptr, this );
-							d.m_ofn.lStructSize=sizeof(OPENFILENAME); // to show the "Places bar"
-							d.m_ofn.lpstrTitle=title;
-							*( d.m_ofn.lpstrFile=fileName )='\0';
-						if (d.DoModal()==IDOK){
+						const CString fileName=Utils::DoPromptSingleTypeFileName( nullptr, nullptr, OFN_FILEMUSTEXIST );
+						if (!fileName.IsEmpty()){
 							CFileException e;
 							CFile fSrc;
 							if (fSrc.Open( fileName, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary, &e )){
