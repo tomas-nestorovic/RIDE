@@ -287,7 +287,7 @@
 								}
 						}
 						if (FAILED(hr))
-							Utils::FatalError( SCREEN_SAVE_ERROR_MSG, _com_error(hr).ErrorMessage() );
+							Utils::FatalError( SCREEN_SAVE_ERROR_MSG, hr );
 						return TRUE;
 					}
 				}
