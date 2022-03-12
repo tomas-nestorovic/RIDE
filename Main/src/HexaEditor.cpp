@@ -700,6 +700,11 @@ deleteSelection:		int posSrc=std::max(caret.selectionA,caret.position), posDst=s
 						// refocusing the window that has previously lost the focus in favor of this HexaEditor
 						::SetFocus(hPreviouslyFocusedWnd);
 						break;
+					case VK_F5:
+						// redrawing
+						caret.hexaLow=true; // the next keystroke will modify the lower four bits of current hexa-value
+						Invalidate();
+						break;
 					default:
 						if (!editable) return 0; // can't edit content of a disabled window
 						if (ctrl){
