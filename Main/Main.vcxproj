@@ -178,6 +178,7 @@
       <CallingConvention>StdCall</CallingConvention>
       <FloatingPointExceptions>false</FloatingPointExceptions>
       <DisableSpecificWarnings>4482</DisableSpecificWarnings>
+      <TreatWChar_tAsBuiltInType>false</TreatWChar_tAsBuiltInType>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
