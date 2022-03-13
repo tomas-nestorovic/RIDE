@@ -628,6 +628,9 @@ importQuit2:		::GlobalUnlock(hg);
 			CFile f;
 			if (f.Open( pathAndName, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary, &e )){
 				::GetFileTime( (HANDLE)f.m_hFile, &created, &lastRead, &lastModified );
+				created=Utils::CRideTime(created).ToTzSpecificLocalTime();
+				lastRead=Utils::CRideTime(lastRead).ToTzSpecificLocalTime();
+				lastModified=Utils::CRideTime(lastModified).ToTzSpecificLocalTime();
 				return ImportFileAndResolveConflicts( &f, f.GetLength(), fileName, winAttr, created, lastRead, lastModified, rImportedFile, rConflictedSiblingResolution );
 			}else
 				return e.m_cause;

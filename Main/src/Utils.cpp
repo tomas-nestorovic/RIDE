@@ -537,6 +537,15 @@ namespace Utils{
 		return buf;
 	}
 
+	CRideTime CRideTime::ToTzSpecificLocalTime() const{
+		// factors into the date/time the local timezone and returns the result
+		CRideTime result;
+		if (::SystemTimeToTzSpecificLocalTime( nullptr, this, &result ))
+			return result;
+		else
+			return *this;
+	}
+
 	bool CRideTime::Edit(bool dateEditingEnabled,bool timeEditingEnabled,const SYSTEMTIME *epoch){
 		// True <=> user confirmed the shown editation dialog and accepted the new value, otherwise False
 		// - defining the Dialog

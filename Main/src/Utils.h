@@ -291,6 +291,7 @@ namespace Utils{
 		WORD GetDosDate() const;
 		CString DateToStdString() const;
 		CString TimeToStdString() const;
+		CRideTime ToTzSpecificLocalTime() const;
 		bool Edit(bool dateEditingEnabled,bool timeEditingEnabled,const SYSTEMTIME *epoch);
 	};
 
