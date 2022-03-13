@@ -29,7 +29,7 @@
 
 			static void CALLBACK __flash__(HWND hPreview,UINT nMsg,UINT nTimerID,DWORD dwTime);
 
-			bool showPixels, showAttributes;
+			bool showPixels, showAttributes, showFlashing;
 			HANDLE hFlashTimer;
 			bool paperFlash;
 			WORD offset;

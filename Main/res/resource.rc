@@ -843,6 +843,7 @@ BEGIN
     BEGIN
         MENUITEM "Show pixels\tP",              ID_DATA, CHECKED
         MENUITEM "Show attributes\tA",          ID_ATTRIBUTE, CHECKED
+        MENUITEM "Show blinking\tB",            ID_ACCURACY, CHECKED
         MENUITEM SEPARATOR
         MENUITEM "Zoom 100%",                   ID_ZOOM_FIT
         MENUITEM SEPARATOR

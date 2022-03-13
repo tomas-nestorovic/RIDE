@@ -34,6 +34,8 @@
 						return SendMessage( WM_COMMAND, ID_DATA );
 					case 'A':
 						return SendMessage( WM_COMMAND, ID_ATTRIBUTE );
+					case 'B':
+						return SendMessage( WM_COMMAND, ID_ACCURACY );
 					case 'D':
 						return SendMessage( WM_COMMAND, ID_ALIGN );
 					case 'F':
@@ -80,6 +82,9 @@
 
 	void CALLBACK CSpectrumBase::CScreenPreview::__flash__(HWND hPreview,UINT nMsg,UINT nTimerID,DWORD dwTime){
 		// swapping Colors of all FlashCombinations (Ink vs Paper) and redrawing the Preview
+		// - ignore this flash request if flashing disabled
+		if (!pSingleInstance->showFlashing)
+			return;
 		// - swapping Colors
 		RGBQUAD *bk=pSingleInstance->dib.flashCombinations, *colors=pSingleInstance->dib.colors;
 		if ( pSingleInstance->paperFlash=!pSingleInstance->paperFlash )
@@ -111,7 +116,7 @@
 		: CFilePreview( nullptr, INI_PREVIEW, rFileManager, SCREEN_WIDTH, SCREEN_HEIGHT, true, IDR_SPECTRUM_PREVIEW_SCREEN )
 		// - initialization
 		, offset(0)
-		, showPixels(true) , showAttributes(true)
+		, showPixels(true) , showAttributes(true) , showFlashing(true)
 		, paperFlash(false) {
 		// - disposing any previous instance
 		if (pSingleInstance)
@@ -215,6 +220,9 @@
 					case ID_ATTRIBUTE:
 						((CCmdUI *)pExtra)->SetCheck(showAttributes);
 						return TRUE;
+					case ID_ACCURACY:
+						((CCmdUI *)pExtra)->SetCheck(showFlashing);
+						return TRUE;
 					case ID_ALIGN:
 						((CCmdUI *)pExtra)->Enable( DOS->GetFileSize(pdt->entry)>0 );
 						return TRUE;
@@ -235,6 +243,10 @@
 						return TRUE;
 					case ID_ATTRIBUTE:
 						showAttributes=!showAttributes;
+						RefreshPreview();
+						return TRUE;
+					case ID_ACCURACY:
+						showFlashing=!showFlashing;
 						RefreshPreview();
 						return TRUE;
 					case ID_ALIGN:{
