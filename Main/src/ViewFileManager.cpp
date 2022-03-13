@@ -696,8 +696,7 @@
 				if (const TStdWinError err=(dos->*dos->pFileManager->pDirectoryStructureManagement->fnCreateSubdir)(name,FILE_ATTRIBUTE_DIRECTORY,subdirectory))
 					Utils::Information(_T("Cannot create the directory"),err);
 				else{
-					FILETIME ft;
-					::GetSystemTimeAsFileTime(&ft);
+					const FILETIME ft=Utils::CRideTime();
 					dos->SetFileTimeStamps( subdirectory, &ft, &ft, &ft );
 					__super::OnOK();
 				}
