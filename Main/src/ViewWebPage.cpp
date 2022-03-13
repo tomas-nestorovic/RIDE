@@ -98,21 +98,16 @@
 		__super::OnDocumentComplete(strURL);
 		// - recovering scroll position
 		if (!navigationToLabel)
-			if (const LPDISPATCH disp=GetHtmlDocument()){
-				IHTMLDocument2 *doc;
-				if (SUCCEEDED(disp->QueryInterface(IID_IHTMLDocument2,(void**)&doc))){
-					IHTMLElement *pBody;
+			if (const CComPtr<IDispatch> disp=GetHtmlDocument()){
+				CComPtr<IHTMLDocument2> doc;
+				if (SUCCEEDED(disp->QueryInterface(&doc))){
+					CComPtr<IHTMLElement> pBody;
 					if (SUCCEEDED(doc->get_body(&pBody)) && pBody){
-						IHTMLElement2 *pBody2;
-						if (SUCCEEDED(pBody->QueryInterface(IID_IHTMLElement2,(void**)&pBody2))){
+						CComPtr<IHTMLElement2> pBody2;
+						if (SUCCEEDED(pBody->QueryInterface(&pBody2)))
 							pBody2->put_scrollTop(history.currentPage->iScrollY);
-							pBody2->Release();
-						}
-						pBody->Release();
 					}
-					doc->Release();
 				}
-				disp->Release();
 			}
 		navigationToLabel=false;
 	}
@@ -124,21 +119,16 @@
 
 	void CWebPageView::__saveCurrentPageScrollPosition__() const{
 		// saves CurrentPage scroll position
-		if (const LPDISPATCH disp=GetHtmlDocument()){
-			IHTMLDocument2 *doc;
-			if (SUCCEEDED(disp->QueryInterface(IID_IHTMLDocument2,(void**)&doc))){
-				IHTMLElement *pBody;
+		if (const CComPtr<IDispatch> disp=GetHtmlDocument()){
+			CComPtr<IHTMLDocument2> doc;
+			if (SUCCEEDED(disp->QueryInterface(&doc))){
+				CComPtr<IHTMLElement> pBody;
 				if (SUCCEEDED(doc->get_body(&pBody)) && pBody){
-					IHTMLElement2 *pBody2;
-					if (SUCCEEDED(pBody->QueryInterface(IID_IHTMLElement2,(void**)&pBody2))){
+					CComPtr<IHTMLElement2> pBody2;
+					if (SUCCEEDED(pBody->QueryInterface(&pBody2)))
 						pBody2->get_scrollTop(&history.currentPage->iScrollY);
-						pBody2->Release();
-					}
-					pBody->Release();
 				}
-				doc->Release();
 			}
-			disp->Release();
 		}
 	}
 
