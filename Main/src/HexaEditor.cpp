@@ -900,6 +900,7 @@ deleteSelection:		int posSrc=std::max(caret.selectionA,caret.position), posDst=s
 									}
 								}
 								SendEditNotification( EN_CHANGE );
+								RepaintData();
 							}else
 								Utils::FatalError( _T("Can't paste file content"), e.m_cause );
 						}
