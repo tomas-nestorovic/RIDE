@@ -9,17 +9,17 @@
 
 	CWebPageView::THistory::THistory(LPCTSTR defaultUrl)
 		// ctor
-		: currentPage(new TPage(defaultUrl)) {
+		: initialPage(defaultUrl)
+		, currentPage(&initialPage) {
 	}
 
 	CWebPageView::THistory::~THistory(){
 		// dtor
-		__destroyNewerPages__();
-		while (const TPage *const tmp=currentPage)
-			currentPage=currentPage->older, delete tmp;
+		currentPage=&initialPage;
+		DestroyNewerPages();
 	}
 
-	void CWebPageView::THistory::__destroyNewerPages__() const{
+	void CWebPageView::THistory::DestroyNewerPages() const{
 		// removes from History Pages that are newer than CurrentPage
 		for( TPage *&rNewer=currentPage->newer; TPage *const tmp=rNewer; delete tmp )
 			rNewer=rNewer->newer;
@@ -87,7 +87,7 @@
 				return;
 		// - adding new Page and making it Current
 		__saveCurrentPageScrollPosition__();
-		history.__destroyNewerPages__(); // destroying newer History (if any)
+		history.DestroyNewerPages(); // destroying newer History (if any)
 		( history.currentPage->newer=new THistory::TPage(lpszURL) )->older=history.currentPage;
 		history.currentPage=history.currentPage->newer;
 	}
@@ -157,7 +157,7 @@
 	}
 	afx_msg void CWebPageView::__navigateBack_updateUI__(CCmdUI *pCmdUI){
 		// projecting existence of Historically older Page into UI
-		pCmdUI->Enable(history.currentPage->older!=nullptr);
+		pCmdUI->Enable( history.currentPage->older!=&history.initialPage );
 	}
 
 	afx_msg void CWebPageView::__navigateForward__(){

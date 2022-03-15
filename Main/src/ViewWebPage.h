@@ -11,12 +11,12 @@
 				long iScrollY; // ScrollBar position
 				TPage *older,*newer;
 				TPage(LPCTSTR _url); // ctor
-			} *currentPage;
+			} initialPage, *currentPage;
 
 			THistory(LPCTSTR defaultUrl);
 			~THistory();
 
-			void __destroyNewerPages__() const;
+			void DestroyNewerPages() const;
 		} history;
 		bool navigationToLabel;
 
