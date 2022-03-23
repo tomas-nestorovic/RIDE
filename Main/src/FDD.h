@@ -42,10 +42,17 @@
 				TSectorId id;
 				WORD length;
 				TLogTime startNanoseconds,endNanoseconds; // counted from the index pulse
-				PSectorData data;
-				TFdcStatus fdcStatus;
-				bool modified;
+				struct{
+					PSectorData data;
+					TFdcStatus fdcStatus;
 
+					inline bool HasHealthyData() const{ return data!=nullptr && fdcStatus.IsWithoutError(); }
+				} revolutions[Revolution::MAX]; // a First-In-First-Out buffer of Revolutions
+				BYTE nRevolutions;
+				BYTE currentRevolution;
+				Revolution::TType dirtyRevolution;
+
+				inline bool IsModified() const{ return dirtyRevolution!=Revolution::NONE; }
 				TStdWinError SaveToDisk(CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip,bool verify,const volatile bool &cancelled);
 				BYTE VerifySaving(const CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip);
 			};

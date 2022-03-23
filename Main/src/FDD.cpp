@@ -65,7 +65,13 @@
 		// - seeking the Head
 		if (!fdd->fddHead.__seekTo__(pit->cylinder))
 			return LOG_ERROR(::GetLastError());
+		// - spreading Dirty Data to all buffered Revolutions
+		if (IsModified())
+			for( BYTE r=0; r<nRevolutions; r++ )
+				if (const PSectorData d=revolutions[r].data)
+					::memcpy( d, revolutions[dirtyRevolution].data, length );
 		// - saving
+		const auto &rev=revolutions[currentRevolution]; // see spreading of Dirty Data above
 		char nSilentRetrials=1;
 		do{
 			if (cancelled)
@@ -79,9 +85,9 @@
 				case DRV_FDRAWCMD:{
 					// . preparing for reproduction of requested i/o errors
 					DWORD fdcCommand=IOCTL_FDCMD_WRITE_DATA,nBytesTransferred;
-					if (fdcStatus.DescribesDeletedDam())
+					if (rev.fdcStatus.DescribesDeletedDam())
 						fdcCommand=IOCTL_FDCMD_WRITE_DELETED_DATA;
-					if (fdcStatus.reg2 & FDC_ST2_CRC_ERROR_IN_DATA)
+					if (rev.fdcStatus.reg2 & FDC_ST2_CRC_ERROR_IN_DATA)
 						if ( err=fdd->__setTimeBeforeInterruptingTheFdc__(length) )
 							return err;
 					if (id.lengthCode>fdd->GetMaximumSectorLengthCode())
@@ -89,7 +95,7 @@
 					// . writing Sector
 					FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM, pit->head, id.cylinder,id.side,id.sector,id.lengthCode, id.sector+1, 1, 0xff };
 					LOG_ACTION(_T("DeviceIoControl fdcCommand"));
-					err=::DeviceIoControl( fdd->_HANDLE, fdcCommand, &rwp,sizeof(rwp), ::memcpy(fdd->dataBuffer,data,length),GetOfficialSectorLength(id.lengthCode), &nBytesTransferred, nullptr )!=0
+					err=::DeviceIoControl( fdd->_HANDLE, fdcCommand, &rwp,sizeof(rwp), ::memcpy(fdd->dataBuffer,rev.data,length),GetOfficialSectorLength(id.lengthCode), &nBytesTransferred, nullptr )!=0
 						? ERROR_SUCCESS
 						: LOG_ERROR(::GetLastError());
 					// . cleaning up after reproduction of requested i/o errors
@@ -174,22 +180,24 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 	}
 
 	BYTE CFDD::TInternalTrack::TSectorInfo::VerifySaving(const CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip){
-		// verifies the saving made by during calling to __saveToDisk__
+		// verifies the saving made by during a call to SaveToDisk
 		LOG_SECTOR_ACTION(&id,_T("verifying the writing"));
+		const auto &rev=revolutions[ IsModified() ? dirtyRevolution : currentRevolution ];
 		const TPhysicalAddress chs={ pit->cylinder, pit->head, id };
 		TFdcStatus sr;
 		fdd->__bufferSectorData__( chs, length, pit, nSectorsToSkip, &sr );
-		if (fdcStatus.DescribesDataFieldCrcError()^sr.DescribesDataFieldCrcError() // Data written with/without error than desired
+		if (rev.fdcStatus.DescribesDataFieldCrcError()^sr.DescribesDataFieldCrcError() // Data written with/without error than desired
 			||
-			::memcmp(data,fdd->dataBuffer,length) // Data written with error
+			::memcmp(rev.data,fdd->dataBuffer,length) // Data written with error
 		){
 			TCHAR buf[80];
 			::wsprintf( buf, _T("Verification failed for sector with %s on Track %d."), (LPCTSTR)id.ToString(), chs.GetTrackNumber(2) );
 			const BYTE result=Utils::AbortRetryIgnore( buf, MB_DEFBUTTON2 );
-			modified=result!=IDIGNORE; // saved successfully if commanded to ignore any errors, otherwise ("!=") the Sector remains marked Modified
+			if (result==IDIGNORE)
+				dirtyRevolution=Revolution::NONE; // saved successfully if commanded to ignore any errors, otherwise the Sector remains marked Modified
 			return result;
 		}else{
-			modified=false; // saved successfully, so the Sector is no longer Modified
+			dirtyRevolution=Revolution::NONE; // saved successfully, so the Sector has no longer any DirtyRevolution
 			return IDIGNORE; // do nothing after return
 		}
 	}
@@ -207,6 +215,7 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 		TInternalTrack::TSectorInfo *psi=sectors;
 		for( TSector s=0; s<nSectors; psi++->seqNum=s++ ){
 			psi->length=fdd->GetUsableSectorLength(( psi->id=*bufferId++ ).lengthCode );
+			psi->dirtyRevolution=Revolution::NONE;
 			if (sectorStartsNanoseconds>(PCLogTime)0x100) // if start times provided (that is, if no Gap3 information from <0;255> Bytes provided) ...
 				psi->startNanoseconds=*sectorStartsNanoseconds++; // ... they are used
 			else // if no start times provided (that is, if just Gap3 information from <0;255> Bytes provided) ...
@@ -248,7 +257,9 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 		// dtor
 		const TSectorInfo *psi=sectors;
 		for( TSector n=nSectors; n--; psi++ )
-			if (psi->data) FREE_SECTOR_DATA(psi->data);
+			for( BYTE r=0; r<psi->nRevolutions; r++ )
+				if (const PVOID data=psi->revolutions[r].data)
+					FREE_SECTOR_DATA(data);
 	}
 
 	bool CFDD::TInternalTrack::__isIdDuplicated__(PCSectorId pid) const{
@@ -585,12 +596,13 @@ error:				switch (const TStdWinError err=::GetLastError()){
 					TLogTime lastSectorEndNanoseconds=TIME_SECOND(-1); // minus one second
 					for( TSector n=0; n<pit->nSectors; n++ ){
 						TInternalTrack::TSectorInfo &si=pit->sectors[n];
-						if (si.modified && !justSavedSectors[n]){
+						if (si.IsModified() && !justSavedSectors[n]){
 							if (si.startNanoseconds-lastSectorEndNanoseconds>=fddHead.profile.gap3Latency) // sufficient distance between this and previously saved Sectors, so both of them can be processed in a single disk revolution
 								if (const TStdWinError err=si.SaveToDisk( const_cast<CFDD *>(this), pit, n, false, cancelled )) // False = verification carried out below
 									return err;
 								else{
-									si.modified=params.verifyWrittenData; // no longer Modified if Verification turned off
+									if (!params.verifyWrittenData)
+										si.dirtyRevolution=Revolution::NONE; // no longer Modified if Verification turned off
 									lastSectorEndNanoseconds=si.endNanoseconds;
 									justSavedSectors[n]=true;
 								}
@@ -606,7 +618,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 					TLogTime lastSectorEndNanoseconds=TIME_SECOND(-1); // minus one second
 					for( TSector n=0; n<pit->nSectors; n++ ){
 						TInternalTrack::TSectorInfo &si=pit->sectors[n];
-						if (si.modified)
+						if (si.IsModified())
 							if (si.startNanoseconds-lastSectorEndNanoseconds>=fddHead.profile.gap3Latency){ // sufficient distance between this and previously saved Sectors, so both of them can be processed in a single disk revolution
 								if (cancelled || si.VerifySaving(this,pit,n)==IDABORT)
 									return ERROR_CANCELLED;
@@ -881,40 +893,104 @@ error:				switch (const TStdWinError err=::GetLastError()){
 			// . executing the above composed Plan
 			const bool silentlyRecoverFromErrors=rev>=Revolution::ANY_GOOD;
 			for( const TPlanStep *pPlanStep=plan; pPlanStep<planEnd; pPlanStep++ ){
-				TInternalTrack::TSectorInfo *const psi=pPlanStep->psi;
+				TInternalTrack::TSectorInfo &rsi=*pPlanStep->psi;
 				const BYTE index=pPlanStep->indexIntoOutputBuffers;
-				const WORD length = outBufferLengths[index] = psi->length;
-				if (rev==Revolution::NEXT) // disposing previous Data
-					FREE_SECTOR_DATA(psi->data), psi->data=nullptr;
-				// : if Data already read WithoutError, returning them
-				if (psi->data || psi->fdcStatus.DescribesMissingDam()) // A|B, A = some data exist, B = reattempting to read the DAM-less Sector only if automatic recovery desired
-					if (psi->fdcStatus.IsWithoutError() || !silentlyRecoverFromErrors){ // A|B, A = returning error-free data, B = settling with any data if automatic recovery not desired
-returnData:				outFdcStatuses[index]=psi->fdcStatus;
-						outBufferData[index]=psi->data;
-						continue;
-					}else // disposing previous erroneous Data
-						FREE_SECTOR_DATA(psi->data), psi->data=nullptr;
-				// : seeking Head to the given Cylinder
-				if (!fddHead.__seekTo__(cyl))
-					return; // Sectors cannot be found as Head cannot be seeked
-				// : initial attempt to retrieve the Data
-				if (!__bufferSectorData__(cyl,head,&psi->id,length,pit,bufferNumbersOfSectorsToSkip[index],&psi->fdcStatus))
-					continue; // if a Sector with given ID physically not found in the Track, proceed with the next Planned Sector
-				// : recovering from errors
-				if (!psi->fdcStatus.IsWithoutError() && !psi->modified) // no Data, or Data with errors for a not-yet-Modified Sector
-					if (silentlyRecoverFromErrors && !fddHead.calibrated){
-						const TPhysicalAddress chs={ cyl, head, psi->id };
-						const bool knownSectorBad =	params.calibrationAfterErrorOnlyForKnownSectors && dos && dos->properties!=&CUnknownDos::Properties
-													? dos->GetSectorStatus(chs)!=CDos::TSectorStatus::UNKNOWN
-													: true;
-						if (knownSectorBad && params.calibrationAfterError!=TParams::TCalibrationAfterError::NONE)
-							if (fddHead.__calibrate__() && fddHead.__seekTo__(cyl))
-								fddHead.calibrated=params.calibrationAfterError!=TParams::TCalibrationAfterError::FOR_EACH_SECTOR;
-						__bufferSectorData__(cyl,head,&psi->id,length,pit,bufferNumbersOfSectorsToSkip[index],&psi->fdcStatus);
+				const WORD length = outBufferLengths[index] = rsi.length;
+				// : selecting Data by Revolution
+				if (rsi.IsModified())
+					// DirtyRevolution is obligatory for any subsequent data requests
+					rsi.currentRevolution=rsi.dirtyRevolution;
+				else
+					switch (rev){
+						default:
+							if (rev<rsi.nRevolutions)
+								// getting particular existing Revolution
+								rsi.currentRevolution=rev;
+							else if (rev<Revolution::MAX)
+								// getting particular non-existing Revolution by subsequently requesting Next Revolutions
+								for( WORD w; rsi.nRevolutions<rev; )
+									GetSectorData( cyl, head, Revolution::NEXT, &rsi.id, rsi.seqNum, &w, &TFdcStatus() );
+							else{
+								ASSERT(FALSE); // we shouldn't end up here!
+								::SetLastError( ERROR_BAD_COMMAND );
+							}
+							break;
+						case Revolution::CURRENT:
+							// getting Current Revolution
+							break;
+						case Revolution::NEXT:{
+							// getting Next Revolution
+							// > if the Next Revolution maps to an existing Revolution, return it
+							if (++rsi.currentRevolution<rsi.nRevolutions)
+								break;
+							// > if an exceeding Revolution requested, push the oldest one out of the buffer
+							if (rsi.nRevolutions==Revolution::MAX){
+								FREE_SECTOR_DATA( rsi.revolutions[0].data );
+								::memmove(
+									rsi.revolutions, rsi.revolutions+1,
+									(Revolution::MAX-1)*sizeof(*rsi.revolutions)
+								);
+								rsi.nRevolutions--;
+							}
+							auto &rev=rsi.revolutions[ rsi.currentRevolution=rsi.nRevolutions ]; // the last Revolution, below set empty
+								rev.data=nullptr; // Sector with given ID physically not found or has no DAM)
+								rev.fdcStatus=TFdcStatus::NoDataField;
+							// > seek Head over the given Cylinder
+							if (!fddHead.__seekTo__(cyl))
+								return; // Sectors cannot be found as Head cannot be seeked
+							// > attempt for the Data
+							if (__bufferSectorData__( cyl, head, &rsi.id, length, pit, bufferNumbersOfSectorsToSkip[index], &rev.fdcStatus ) // yes, Sector found ...
+								&&
+								!rev.fdcStatus.DescribesMissingDam() // ... and has a DAM
+							)
+								rev.data=(PSectorData)::memcpy( ALLOCATE_SECTOR_DATA(length), dataBuffer, length );
+							rsi.nRevolutions++;
+							break;
+						}
+						case Revolution::ANY_GOOD:{
+							// getting latest Revolution with healthy Data, eventually accessing the device for one more Revolution
+							// > checking if we already have healthy Data in the buffer
+							bool healthyDataExist=false;
+							for( rsi.currentRevolution=rsi.nRevolutions; rsi.currentRevolution>0; ) // check latest Revolution first
+								if ( healthyDataExist=rsi.revolutions[--rsi.currentRevolution].HasHealthyData() )
+									break;
+							if (healthyDataExist)
+								break;
+							// > trying Next Revolutions if they contain healthy Data
+							for( char nTrials=3; true; ){
+								WORD w;
+								if (GetSectorData( cyl, head, Revolution::NEXT, &rsi.id, rsi.seqNum, &w, &TFdcStatus() ))
+									if (rsi.revolutions[rsi.nRevolutions-1].fdcStatus.IsWithoutError())
+										break;
+								if (--nTrials==0)
+									break;
+								if (nTrials==1){ // calibrating Head for the last Trial
+									const TPhysicalAddress chs={ cyl, head, rsi.id };
+									const bool knownSectorBad =	params.calibrationAfterErrorOnlyForKnownSectors && dos && dos->properties!=&CUnknownDos::Properties
+																? dos->GetSectorStatus(chs)!=CDos::TSectorStatus::UNKNOWN
+																: true;
+									switch (params.calibrationAfterError){
+										case TParams::TCalibrationAfterError::FOR_EACH_SECTOR:
+											// calibrating for each bad Sector
+											fddHead.calibrated=false;
+											//fallthrough
+										case TParams::TCalibrationAfterError::ONCE_PER_CYLINDER:
+											// calibrating only once for the whole Cylinder
+											if (!fddHead.calibrated){
+												fddHead.__calibrate__(), fddHead.__seekTo__(cyl);
+												fddHead.calibrated=true;
+											}
+											break;
+									}
+								}
+							}
+							break;
+						}
 					}
-				if (!psi->fdcStatus.DescribesMissingDam())
-					psi->data=(PSectorData)::memcpy( ALLOCATE_SECTOR_DATA(length), dataBuffer, length );
-				goto returnData; // returning (any) Data
+				// : returning (any) Data
+				const auto &rev=rsi.revolutions[rsi.currentRevolution];
+				outFdcStatuses[index]=rev.fdcStatus;
+				outBufferData[index]=rev.data;
 			}
 		}else
 			LOG_MESSAGE(_T("Track not found"));
@@ -928,15 +1004,15 @@ returnData:				outFdcStatuses[index]=psi->fdcStatus;
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (const PInternalTrack pit=__getScannedTrack__(chs.cylinder,chs.head)){ // Track has already been scanned
 			// . Modifying data of Sector requested in current Track
-			TInternalTrack::TSectorInfo *psi=pit->sectors;
-			for( TSector n=pit->nSectors; n--; psi++ )
-				if (!nSectorsToSkip){
-					if (psi->id==chs.sectorId){
-						if (psi->data){ // Sector must have been buffered in the past before it can be Modified
-							psi->fdcStatus=*pFdcStatus;
-							m_bModified = psi->modified = true;
-						}
-						
+			while (nSectorsToSkip<pit->nSectors){
+				auto &ris=pit->sectors[nSectorsToSkip++];
+				if (ris.id==chs.sectorId){
+					ASSERT( !ris.IsModified() || ris.dirtyRevolution==ris.currentRevolution ); // no Revolution yet marked as "dirty" or marking "dirty" the same Revolution
+					if (ris.currentRevolution<ris.nRevolutions){ // Sector must be buffered to mark it Modified
+						auto &rev=ris.revolutions[ ris.dirtyRevolution=(Revolution::TType)ris.currentRevolution ];
+						rev.fdcStatus=*pFdcStatus;
+						SetModifiedFlag();
+					}
 						// : informing on unability to reproduce some errors (until all errors are supported in the future)
 						if (pFdcStatus->reg1 & (FDC_ST1_NO_DATA)){
 							TCHAR buf[200];
@@ -944,13 +1020,12 @@ returnData:				outFdcStatuses[index]=psi->fdcStatus;
 							Utils::Information(buf);
 							return LOG_ERROR(ERROR_BAD_COMMAND);
 						}
-
-						break;
-					}
-				}else
-					nSectorsToSkip--;
-		}
-		return ERROR_SUCCESS;
+					return ERROR_SUCCESS;
+				}
+			}
+			return ERROR_SECTOR_NOT_FOUND; // unknown Sector queried
+		}else
+			return ERROR_BAD_ARGUMENTS; // Track must be scanned first!
 	}
 
 	Revolution::TType CFDD::GetDirtyRevolution(RCPhysicalAddress chs,BYTE nSectorsToSkip) const{
@@ -962,7 +1037,7 @@ returnData:				outFdcStatuses[index]=psi->fdcStatus;
 				if (nSectorsToSkip)
 					nSectorsToSkip--;
 				else if (psi->id==chs.sectorId)
-					return	psi->modified ? Revolution::UNKNOWN : Revolution::NONE;
+					return	psi->dirtyRevolution;
 		}
 		return Revolution::NONE; // unknown Sector not Modified
 	}
@@ -2045,8 +2120,8 @@ formatCustomWay:
 		UnformatInternalTrack(cyl,head);
 		// - explicitly setting Track structure
 		TInternalTrack::TSectorInfo *psi=( internalTracks[cyl][head] = new TInternalTrack( this, cyl, head, Codec::MFM, nSectors, bufferId, (PCLogTime)gap3 ) )->sectors; // Gap3 = calculate Sector start times from information of this Gap3 and individual Sector lengths
-		for( TSector n=nSectors; n--; psi++ )
-			psi->data=(PSectorData)::memset( ALLOCATE_SECTOR_DATA(psi->length), fillerByte, psi->length );
+		for( TSector n=nSectors; n--; psi++->nRevolutions=1 )
+			psi->revolutions[0].data=(PSectorData)::memset( ALLOCATE_SECTOR_DATA(psi->length), fillerByte, psi->length );
 		// - presumption done
 		return ERROR_SUCCESS;
 	}
