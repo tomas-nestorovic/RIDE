@@ -110,7 +110,20 @@
 					::SetLastError( ERROR_SUCCESS );
 					return nBytesToRead;
 				}
-			}else if (const PCSectorData sectorData=image->GetSectorData(GetCurrentPhysicalAddress(),sector.indexOnTrack,revolution,&w,&sr)){
+			}else{
+				const TPhysicalAddress chs=GetCurrentPhysicalAddress();
+				PCSectorData sectorData=nullptr;
+				if (revolution==Revolution::ANY_GOOD){
+					for( BYTE rev=0; rev<nAvailableRevolutions; rev++ )
+						if (const PCSectorData tmpData=image->GetSectorData( chs, sector.indexOnTrack, (Revolution::TType)rev, &w, &sr ) ){
+							sectorData=tmpData;
+							if (sr.IsWithoutError())
+								break;
+						}
+				}else
+					sectorData=image->GetSectorData( chs, sector.indexOnTrack, revolution, &w, &sr );
+				if (!sectorData)
+					break;
 				if (!w) // e.g. reading Sector with LengthCode 231 - such Sector has by default no data (a pointer to zero-length data has been returned by GetSectorData)
 					break;
 				w-=sector.offset;
@@ -135,9 +148,8 @@
 						Seek( len, SeekPosition::current );
 						::SetLastError( ERROR_CRC );
 						return len; // bad data are to be retrieved in individual chunks
-					}					
-			}else
-				break;
+					}
+			}
 		::SetLastError(ERROR_READ_FAULT);
 		return nBytesToRead-nCount;
 	}
