@@ -18,11 +18,14 @@
 		, iScrollY(0) {
 		seekTo.chs=chsToSeekTo, seekTo.nSectorsToSkip=nSectorsToSkip;
 	}
+	
+	static const auto WM_REPORT_SCANNER_PROGRESS=::RegisterWindowMessage(INI_DISKBROWSER);
 
 	BEGIN_MESSAGE_MAP(CDiskBrowserView,CHexaEditor)
 		ON_WM_CREATE()
 		ON_COMMAND(ID_IMAGE_PROTECT,ToggleWriteProtection)
 		ON_COMMAND(ID_FILE_CLOSE,__closeView__)
+		ON_REGISTERED_MESSAGE(WM_REPORT_SCANNER_PROGRESS,ReportScanningProgress)
 		ON_WM_DESTROY()
 	END_MESSAGE_MAP()
 
@@ -345,6 +348,8 @@
 		}
 		// - content cannot be shorter or longer than the actual number of Bytes in all Sectors discovered thus far
 		SetLogicalBounds( newLogicalSize, newLogicalSize );
+		// - reporting on scanning progress in the status bar
+		::PostMessage( *this, WM_REPORT_SCANNER_PROGRESS, 0, 0 );
 	}
 
 	afx_msg void CDiskBrowserView::OnDestroy(){
@@ -355,12 +360,26 @@
 		__super::OnDestroy();
 		// - disposing the underlying File
 		f.reset();
+		// - clearing status bar
+		app.GetMainWindow()->__resetStatusBar__();
 	}
 
 	afx_msg void CDiskBrowserView::ToggleWriteProtection(){
 		// toggles Image's WriteProtection flag
 		IMAGE->ToggleWriteProtection(); // "base"
 		SetEditable( !IMAGE->IsWriteProtected() );
+	}
+
+	afx_msg LRESULT CDiskBrowserView::ReportScanningProgress(WPARAM,LPARAM){
+		// reports the disk scanning progress in StatusBar
+		TCylinder nScannedCyls;
+		if (f->GetTrackScannerStatus(&nScannedCyls)==CImage::CSectorDataSerializer::TScannerStatus::RUNNING){
+			TCHAR buf[32];
+			::wsprintf( buf, _T("%d %% of disk scanned"), 100*nScannedCyls/IMAGE->GetCylinderCount() );
+			CMainWindow::__setStatusBarText__(buf);
+		}else
+			CMainWindow::__resetStatusBar__();
+		return 0;
 	}
 
 	afx_msg void CDiskBrowserView::__closeView__(){
