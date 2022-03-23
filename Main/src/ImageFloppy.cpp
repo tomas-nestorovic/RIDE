@@ -305,9 +305,11 @@
 						break;
 				return result;
 			}
-			TScannerStatus GetTrackScannerStatus() const{
+			TScannerStatus GetTrackScannerStatus(PCylinder pnOutScannedCyls) const{
 				// returns Track scanner Status, if any
 				EXCLUSIVELY_LOCK_SCANNED_TRACKS();
+				if (pnOutScannedCyls)
+					*pnOutScannedCyls=GetFloppyImage().scannedTracks.n>>1;
 				return GetFloppyImage().scannedTracks.allScanned ? TScannerStatus::UNAVAILABLE : workerStatus;
 			}
 			void SetTrackScannerStatus(TScannerStatus status){
