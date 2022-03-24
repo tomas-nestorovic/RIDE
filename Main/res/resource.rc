@@ -135,6 +135,7 @@ BEGIN
     "8",            ID_DEFAULT8,            VIRTKEY, CONTROL, NOINVERT
     "E",            ID_NAVIGATE_SECTOR,     VIRTKEY, CONTROL, NOINVERT
     "G",            ID_AUTO,                VIRTKEY, NOINVERT
+    "N",            ID_INTERLEAVE,          VIRTKEY, NOINVERT
     "T",            ID_SELECT_CURRENT_TRACK, VIRTKEY, CONTROL, NOINVERT
     VK_NEXT,        ID_NAVIGATE_NEXTTRACK,  VIRTKEY, SHIFT, CONTROL, 
                                                     NOINVERT
@@ -583,7 +584,7 @@ BEGIN
         POPUP "Revolution"
         BEGIN
             MENUITEM "Any with good data\tG",       ID_AUTO
-            MENUITEM "Intersection",                ID_INTERLEAVE
+            MENUITEM "Intersection\tN",             ID_INTERLEAVE
             MENUITEM SEPARATOR
             MENUITEM "1\tCtrl+1",                   ID_DEFAULT1
             MENUITEM "2\tCtrl+2",                   ID_DEFAULT2
