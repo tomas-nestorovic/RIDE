@@ -610,8 +610,8 @@
 				BYTE nDataAttempts=1; // assumption
 				if (pis->dirtyRevolution<Revolution::MAX)
 					pis->currentRevolution=pis->dirtyRevolution; // modified Revolution is obligatory for any subsequent data requests
-				else if (rev<pis->nRevolutions)
-					pis->currentRevolution=rev; // wanted particular Revolution
+				else if (rev<Revolution::MAX)
+					pis->currentRevolution=rev; // wanted particular Revolution (existing or not)
 				else
 					switch (rev){
 						default:
