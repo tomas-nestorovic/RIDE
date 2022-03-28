@@ -194,6 +194,7 @@
 
 	#pragma pack(1)
 	typedef const struct TFdcStatus sealed{
+		static const TFdcStatus Unknown; // e.g. when Sector not yet attempted for reading
 		static const TFdcStatus WithoutError;
 		static const TFdcStatus SectorNotFound;
 		static const TFdcStatus IdFieldCrcError;

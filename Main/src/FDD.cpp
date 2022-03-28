@@ -215,6 +215,8 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 		TInternalTrack::TSectorInfo *psi=sectors;
 		for( TSector s=0; s<nSectors; psi++->seqNum=s++ ){
 			psi->length=fdd->GetUsableSectorLength(( psi->id=*bufferId++ ).lengthCode );
+			for( BYTE r=0; r<Revolution::MAX; r++ )
+				psi->revolutions[r].fdcStatus=TFdcStatus::Unknown; // not yet attempted for reading
 			psi->dirtyRevolution=Revolution::NONE;
 			if (sectorStartsNanoseconds>(PCLogTime)0x100) // if start times provided (that is, if no Gap3 information from <0;255> Bytes provided) ...
 				psi->startNanoseconds=*sectorStartsNanoseconds++; // ... they are used
@@ -891,7 +893,6 @@ error:				switch (const TStdWinError err=::GetLastError()){
 				}
 			}
 			// . executing the above composed Plan
-			const bool silentlyRecoverFromErrors=rev>=Revolution::ANY_GOOD;
 			for( const TPlanStep *pPlanStep=plan; pPlanStep<planEnd; pPlanStep++ ){
 				TInternalTrack::TSectorInfo &rsi=*pPlanStep->psi;
 				const BYTE index=pPlanStep->indexIntoOutputBuffers;
@@ -902,22 +903,24 @@ error:				switch (const TStdWinError err=::GetLastError()){
 					rsi.currentRevolution=rsi.dirtyRevolution;
 				else
 					switch (rev){
-						default:
-							if (rev<rsi.nRevolutions)
-								// getting particular existing Revolution
-								rsi.currentRevolution=rev;
-							else if (rev<Revolution::MAX)
-								// getting particular non-existing Revolution by subsequently requesting Next Revolutions
-								for( WORD w; rsi.nRevolutions<rev; )
-									GetSectorData( cyl, head, Revolution::NEXT, &rsi.id, rsi.seqNum, &w, &TFdcStatus() );
-							else{
-								ASSERT(FALSE); // we shouldn't end up here!
-								::SetLastError( ERROR_BAD_COMMAND );
-							}
-							break;
 						case Revolution::CURRENT:
 							// getting Current Revolution
 							break;
+						default:
+							if (rev<rsi.nRevolutions){
+								// getting particular existing Revolution
+								rsi.currentRevolution=rev;
+								break;
+							}else if (rev<Revolution::MAX){
+								// getting particular non-existing Revolution by subsequently requesting Next Revolutions
+								rsi.nRevolutions = rsi.currentRevolution = rev;
+								//fallthrough
+							}else{
+								ASSERT(FALSE); // we shouldn't end up here!
+								::SetLastError( ERROR_BAD_COMMAND );
+								return;
+							}
+							//fallthrough
 						case Revolution::NEXT:{
 							// getting Next Revolution
 							// > if the Next Revolution maps to an existing Revolution, return it
@@ -932,18 +935,10 @@ error:				switch (const TStdWinError err=::GetLastError()){
 								);
 								rsi.nRevolutions--;
 							}
+							// > attempt for the Data
 							auto &rev=rsi.revolutions[ rsi.currentRevolution=rsi.nRevolutions ]; // the last Revolution, below set empty
 								rev.data=nullptr; // Sector with given ID physically not found or has no DAM)
-								rev.fdcStatus=TFdcStatus::NoDataField;
-							// > seek Head over the given Cylinder
-							if (!fddHead.__seekTo__(cyl))
-								return; // Sectors cannot be found as Head cannot be seeked
-							// > attempt for the Data
-							if (__bufferSectorData__( cyl, head, &rsi.id, length, pit, bufferNumbersOfSectorsToSkip[index], &rev.fdcStatus ) // yes, Sector found ...
-								&&
-								!rev.fdcStatus.DescribesMissingDam() // ... and has a DAM
-							)
-								rev.data=(PSectorData)::memcpy( ALLOCATE_SECTOR_DATA(length), dataBuffer, length );
+								rev.fdcStatus=TFdcStatus::Unknown; // attempt for the data below
 							rsi.nRevolutions++;
 							break;
 						}
@@ -987,8 +982,18 @@ error:				switch (const TStdWinError err=::GetLastError()){
 							break;
 						}
 					}
+				// : if not yet attempted for the data, doing so now
+				auto &rev=rsi.revolutions[rsi.currentRevolution];
+				if (rev.fdcStatus.ToWord()==TFdcStatus::Unknown.ToWord()){
+					if (!fddHead.__seekTo__(cyl))
+						return; // Sectors cannot be found as Head cannot be seeked
+					if (__bufferSectorData__( cyl, head, &rsi.id, length, pit, bufferNumbersOfSectorsToSkip[index], &rev.fdcStatus ) // yes, Sector found ...
+						&&
+						!rev.fdcStatus.DescribesMissingDam() // ... and has a DAM
+					)
+						rev.data=(PSectorData)::memcpy( ALLOCATE_SECTOR_DATA(length), dataBuffer, length );
+				}
 				// : returning (any) Data
-				const auto &rev=rsi.revolutions[rsi.currentRevolution];
 				outFdcStatuses[index]=rev.fdcStatus;
 				outBufferData[index]=rev.data;
 			}

@@ -98,6 +98,7 @@
 
 
 
+	const TFdcStatus TFdcStatus::Unknown(-1,-1);
 	const TFdcStatus TFdcStatus::WithoutError;
 	const TFdcStatus TFdcStatus::SectorNotFound( FDC_ST1_NO_ADDRESS_MARK, 0 );
 	const TFdcStatus TFdcStatus::IdFieldCrcError( FDC_ST1_DATA_ERROR|FDC_ST1_NO_DATA, 0 );
