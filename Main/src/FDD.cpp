@@ -934,6 +934,10 @@ error:				switch (const TStdWinError err=::GetLastError()){
 									(Revolution::MAX-1)*sizeof(*rsi.revolutions)
 								);
 								rsi.nRevolutions--;
+								EXCLUSIVELY_LOCK(scannedTracks);
+								auto &info=scannedTracks.infos[(cyl<<1)+head];
+								info.bufferedRevs&=(1<<Revolution::MAX)-1; // keep only particular Revolution-related flags, resetting all special flags, e.g. whether AnyGood data exist
+								info.bufferedRevs>>=1;
 							}
 							// > attempt for the Data
 							auto &rev=rsi.revolutions[ rsi.currentRevolution=rsi.nRevolutions ]; // the last Revolution, below set empty

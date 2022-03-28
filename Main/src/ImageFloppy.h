@@ -2,6 +2,7 @@
 #define IMAGEFLOPPY_H
 
 	class CFloppyImage:public CImage{
+	protected:
 		struct TScannedTracks sealed{
 			CCriticalSection locker;
 			struct{
