@@ -856,7 +856,7 @@ deleteSelection:		int posSrc=std::max(caret.selectionA,caret.position), posDst=s
 					case ID_EDIT_SELECT_CURRENT:{
 						// selecting the whole Record under the Caret
 						int recordLength=0;
-						pContentAdviser->GetRecordInfo( caret.position, &caret.selectionA, &recordLength, NULL );
+						pContentAdviser->GetRecordInfo( caret.position, &caret.selectionA, &recordLength, nullptr );
 						caret.position=caret.selectionA+recordLength;
 						RepaintData();
 						goto caretRefresh;

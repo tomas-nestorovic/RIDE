@@ -113,15 +113,15 @@
 			}else{
 				const TPhysicalAddress chs=GetCurrentPhysicalAddress();
 				PCSectorData sectorData=nullptr;
-				if (revolution==Revolution::ANY_GOOD){
+				if (revolution<Revolution::MAX)
+					sectorData=image->GetSectorData( chs, sector.indexOnTrack, revolution, &w, &sr );
+				else
 					for( BYTE rev=0; rev<nAvailableRevolutions; rev++ )
 						if (const PCSectorData tmpData=image->GetSectorData( chs, sector.indexOnTrack, (Revolution::TType)rev, &w, &sr ) ){
 							sectorData=tmpData;
 							if (sr.IsWithoutError())
 								break;
 						}
-				}else
-					sectorData=image->GetSectorData( chs, sector.indexOnTrack, revolution, &w, &sr );
 				if (!sectorData)
 					break;
 				if (!w) // e.g. reading Sector with LengthCode 231 - such Sector has by default no data (a pointer to zero-length data has been returned by GetSectorData)

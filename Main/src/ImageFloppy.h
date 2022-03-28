@@ -5,7 +5,7 @@
 		struct TScannedTracks sealed{
 			CCriticalSection locker;
 			struct{
-				BYTE bufferedRevs; // bits mapped to individual Revolutions, e.g. bit 0 = Revolution::R0, etc.
+				WORD bufferedRevs; // bits mapped to individual Revolutions, e.g. bit 0 = Revolution::R0, etc.
 			} infos[FDD_CYLINDERS_MAX*2+1];
 			BYTE n;
 			bool allScanned;

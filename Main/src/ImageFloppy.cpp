@@ -115,29 +115,21 @@
 						ps->trackWorker.Suspend(); // again resumed via SetTrackScannerStatus method
 					// . first, processing a request to buffer a Track (if any)
 					if (ps->request.bufferEvent.Lock( scannedTracks.allScanned ? INFINITE : 2 )){
-						const auto &req=ps->request;
+						const TRequestParams req=ps->request;
 						TSectorId ids[FDD_SECTORS_MAX];
-						if (req.revolution<Revolution::MAX){
+						image->BufferTrackData(
+							req.track>>1, req.track&1, req.revolution,
+							ids, sectorIdAndPositionIdentity,
+							ps->__scanTrack__( req.track, ids, nullptr )
+						);
+				{		EXCLUSIVELY_LOCK(scannedTracks);
+						if (req.revolution<Revolution::MAX)
 							// only particular Revolution wanted
-							image->BufferTrackData(
-								req.track>>1, req.track&1, req.revolution,
-								ids, sectorIdAndPositionIdentity,
-								ps->__scanTrack__( req.track, ids, nullptr )
-							);
-							EXCLUSIVELY_LOCK(scannedTracks);
 							scannedTracks.infos[req.track].bufferedRevs|=1<<req.revolution;
-						}else{
+						else
 							// all Revolutions wanted
-							for( BYTE rev=std::min<BYTE>(Revolution::MAX,image->GetAvailableRevolutionCount()); rev-->0; )
-								image->BufferTrackData(
-									req.track>>1, req.track&1, (Revolution::TType)rev,
-									ids, sectorIdAndPositionIdentity,
-									ps->__scanTrack__( req.track, ids, nullptr )
-								);
-							EXCLUSIVELY_LOCK(scannedTracks);
-							scannedTracks.infos[req.track].bufferedRevs=-1;
-						}
-						if (ps->workerStatus!=TScannerStatus::UNAVAILABLE) // should we terminate?
+							scannedTracks.infos[req.track].bufferedRevs|=1<<Revolution::MAX;
+				}		if (ps->workerStatus!=TScannerStatus::UNAVAILABLE) // should we terminate?
 							ps->pParentHexaEditor->RepaintData(true); // True = immediate repainting
 					// . then, scanning the remaining Tracks (if not all yet scanned)
 					}else{
@@ -166,9 +158,11 @@
 			const CBackgroundAction trackWorker;
 			TScannerStatus workerStatus;
 			bool bChsValid;
-			struct{
+			struct TRequestParams{
 				TTrack track;
 				Revolution::TType revolution;
+			};
+			struct:public TRequestParams{
 				CEvent bufferEvent;
 			} request;
 			struct{
@@ -409,9 +403,7 @@
 						*pOutRecordLength = lengths[nSectors];
 				}
 				if (pOutDataReady){
-					const BYTE mask=revolution<Revolution::MAX
-									? 1<<revolution // only particular Revolution wanted
-									: -1; // all Revolutions wanted
+					const BYTE mask=1<<std::min( revolution, Revolution::MAX );
 					const auto &scannedTracks=GetFloppyImage().scannedTracks;
 					EXCLUSIVELY_LOCK_SCANNED_TRACKS(); // commented out for smoother operation; may thus work with outdated values in ScannedTracks but that's ok!
 					if (!( *pOutDataReady=(scannedTracks.infos[track].bufferedRevs&mask)==mask ))
