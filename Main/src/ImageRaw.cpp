@@ -75,6 +75,15 @@
 		}
 	}
 
+	bool CImageRaw::IsKnownSector(TCylinder cyl,THead head,RCSectorId id) const{
+		//
+		return	id.cylinder==cyl
+				&&
+				id.side==sideMap[head]
+				&&
+				id.sector>=firstSectorNumber && id.sector-firstSectorNumber<nSectors && id.lengthCode==sectorLengthCode;
+	}
+
 	PSectorData CImageRaw::__getBufferedSectorData__(TCylinder cyl,THead head,PCSectorId sectorId) const{
 		// finds and returns buffered data of given Sector (or Null if not yet buffered; note that returning Null does NOT imply that the Sector doesn't exist in corresponding Track!)
 		if (const PSectorData cylinderData=(PSectorData)bufferOfCylinders[cyl])
@@ -215,7 +224,7 @@
 		if (cyl<nCylinders && head<nHeads)
 			while (nSectors>0){
 				const TSectorId sectorId=*bufferId;
-				if (sectorId.cylinder==cyl && sectorId.side==sideMap[head] && sectorId.sector>=firstSectorNumber && sectorId.sector-firstSectorNumber<this->nSectors && sectorId.lengthCode==sectorLengthCode){
+				if (IsKnownSector( cyl, head, sectorId )){
 					// Sector with the given ID found in the Track
 					if (const PSectorData bufferedData=__getBufferedSectorData__(cyl,head,&sectorId)){
 						// Sector's Data successfully retrieved from the buffer
@@ -260,6 +269,16 @@ trackNotFound:
 			while (nSectors-->0)
 				*outBufferData++=nullptr, *outFdcStatuses++=TFdcStatus::SectorNotFound;
 		::SetLastError( *--outBufferData ? err : ERROR_SECTOR_NOT_FOUND );
+	}
+
+	TDataStatus CImageRaw::IsSectorDataReady(TCylinder cyl,THead head,RCSectorId id,BYTE nSectorsToSkip,Revolution::TType rev) const{
+		// True <=> specified Sector's data variation (Revolution) has been buffered, otherwise False
+		ASSERT( rev<Revolution::MAX );
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		if (cyl<nCylinders && head<nHeads)
+			if (IsKnownSector( cyl, head, id ))
+				return TDataStatus::READY_HEALTHY;
+		return TDataStatus::NOT_READY;
 	}
 
 	TStdWinError CImageRaw::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE,PCFdcStatus pFdcStatus){

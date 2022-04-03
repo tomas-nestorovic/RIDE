@@ -339,6 +339,19 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		::SetLastError( *--outBufferData ? ERROR_SUCCESS : ERROR_SECTOR_NOT_FOUND );
 	}
 
+	TDataStatus CDsk5::IsSectorDataReady(TCylinder cyl,THead head,RCSectorId id,BYTE nSectorsToSkip,Revolution::TType rev) const{
+		// True <=> specified Sector's data variation (Revolution) has been buffered, otherwise False
+		ASSERT( rev<Revolution::MAX );
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		if (const PTrackInfo ti=__findTrack__(cyl,head))
+			while (nSectorsToSkip<ti->nSectors){
+				const auto &si=ti->sectorInfo[nSectorsToSkip++];
+				if (si==id)
+					return	si.HasGoodDataReady() ? TDataStatus::READY_HEALTHY : TDataStatus::READY;
+			}
+		return TDataStatus::NOT_READY;
+	}
+
 	TStdWinError CDsk5::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus){
 		// marks Sector on a given PhysicalAddress as "dirty", plus sets it the given FdcStatus; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();

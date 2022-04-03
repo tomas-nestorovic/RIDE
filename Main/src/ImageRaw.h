@@ -8,6 +8,7 @@
 		TSector nSectors,firstSectorNumber;
 		BYTE sectorLengthCode;	WORD sectorLength;
 
+		bool IsKnownSector(TCylinder cyl,THead head,RCSectorId id) const;
 		PSectorData __getBufferedSectorData__(TCylinder cyl,THead head,PCSectorId sectorId) const;
 		void __saveTrackToCurrentPositionInFile__(CFile *pfOtherThanCurrentFile,TPhysicalAddress chs);
 	protected:
@@ -34,6 +35,7 @@
 		TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const override;
 		bool IsTrackScanned(TCylinder cyl,THead head) const override sealed;
 		void GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses) override;
+		TDataStatus IsSectorDataReady(TCylinder cyl,THead head,RCSectorId id,BYTE nSectorsToSkip,Revolution::TType rev) const override;
 		TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE,PCFdcStatus pFdcStatus) override;
 		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
 		bool EditSettings(bool initialEditing) override;

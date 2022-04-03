@@ -601,9 +601,9 @@
 					else if (pis->id==sectorId) // Sector IDs are equal
 						break;
 				// . if Sector with given ID not found in the Track, we are done
+				*outBufferLengths++=GetUsableSectorLength(sectorId.lengthCode); // e.g. Sector with LengthCode 167 has no data
 				if (!n){
 					*outBufferData++=nullptr, *outFdcStatuses++=TFdcStatus::SectorNotFound;
-					outBufferLengths++;
 					continue;
 				}
 				// . setting initial Revolution
@@ -612,7 +612,11 @@
 					pis->currentRevolution=pis->dirtyRevolution; // modified Revolution is obligatory for any subsequent data requests
 				else if (rev<pis->nRevolutions)
 					pis->currentRevolution=rev; // wanted particular existing Revolution
-				else
+				else if (rev<Revolution::MAX){
+					*outFdcStatuses++=TFdcStatus::SectorNotFound; // wanted particular non-existent Revolution
+					*outBufferData++=nullptr;
+					continue;
+				}else
 					switch (rev){
 						default:
 							ASSERT(FALSE); // we shouldn't end up here!
@@ -646,13 +650,34 @@
 				// . returning (any) Data
 				*outFdcStatuses++=currRev->fdcStatus;
 				*outBufferData++=currRev->data;
-				*outBufferLengths++=GetUsableSectorLength(sectorId.lengthCode); // e.g. Sector with LengthCode 167 has no data
+				//*outBufferLengths++=... // already set above
 			}
 		else
 invalidTrack:
 			while (nSectors-->0)
 				*outBufferData++=nullptr, *outFdcStatuses++=TFdcStatus::SectorNotFound;
 		::SetLastError( *--outBufferData ? ERROR_SUCCESS : ERROR_SECTOR_NOT_FOUND );
+	}
+
+	TDataStatus CCapsBase::IsSectorDataReady(TCylinder cyl,THead head,RCSectorId id,BYTE nSectorsToSkip,Revolution::TType rev) const{
+		// True <=> specified Sector's data variation (Revolution) has been buffered, otherwise False
+		ASSERT( rev<Revolution::MAX );
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		if (cyl<=capsImageInfo.maxcylinder && head<=capsImageInfo.maxhead) // does Track actually exist?
+			if (const PCInternalTrack pit=internalTracks[cyl][head]) // is Track scanned?
+				while (nSectorsToSkip<pit->nSectors){
+					const auto &ris=pit->sectors[nSectorsToSkip++];
+					if (ris.id==id)
+						if (rev>=ris.nRevolutions)
+							return TDataStatus::READY; // can't create another sample of the data (unlike in CFDD class where we have infinite # of trials), so here declaring "no data ready"
+						else if (ris.revolutions[rev].HasGoodDataReady())
+							return TDataStatus::READY_HEALTHY;
+						else if (ris.revolutions[rev].HasDataReady())
+							return TDataStatus::READY;
+						else
+							break;
+				}
+		return TDataStatus::NOT_READY;
 	}
 
 	Revolution::TType CCapsBase::GetDirtyRevolution(RCPhysicalAddress chs,BYTE nSectorsToSkip) const{

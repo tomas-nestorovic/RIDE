@@ -934,10 +934,6 @@ error:				switch (const TStdWinError err=::GetLastError()){
 									(Revolution::MAX-1)*sizeof(*rsi.revolutions)
 								);
 								rsi.nRevolutions--;
-								EXCLUSIVELY_LOCK(scannedTracks);
-								auto &info=scannedTracks.infos[(cyl<<1)+head];
-								info.bufferedRevs&=(1<<Revolution::MAX)-1; // keep only particular Revolution-related flags, resetting all special flags, e.g. whether AnyGood data exist
-								info.bufferedRevs>>=1;
 							}
 							// > attempt for the Data
 							auto &rev=rsi.revolutions[ rsi.currentRevolution=rsi.nRevolutions ]; // the last Revolution, below set empty
@@ -951,7 +947,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 							// > checking if we already have healthy Data in the buffer
 							bool healthyDataExist=false;
 							for( rsi.currentRevolution=rsi.nRevolutions; rsi.currentRevolution>0; ) // check latest Revolution first
-								if ( healthyDataExist=rsi.revolutions[--rsi.currentRevolution].HasHealthyData() )
+								if ( healthyDataExist=rsi.revolutions[--rsi.currentRevolution].HasGoodDataReady() )
 									break;
 							if (healthyDataExist)
 								break;
@@ -1005,6 +1001,26 @@ error:				switch (const TStdWinError err=::GetLastError()){
 			LOG_MESSAGE(_T("Track not found"));
 		// - outputting the result
 		::SetLastError( outBufferData[nSectors-1] ? ERROR_SUCCESS : ERROR_SECTOR_NOT_FOUND );
+	}
+
+	TDataStatus CFDD::IsSectorDataReady(TCylinder cyl,THead head,RCSectorId id,BYTE nSectorsToSkip,Revolution::TType rev) const{
+		// True <=> specified Sector's data variation (Revolution) has been buffered, otherwise False
+		ASSERT( rev<Revolution::MAX );
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		if (const PCInternalTrack pit=__getScannedTrack__(cyl,head)) // Track has already been scanned
+			while (nSectorsToSkip<pit->nSectors){
+				const auto &ris=pit->sectors[nSectorsToSkip++];
+				if (ris.id==id)
+					if (rev>=ris.nRevolutions)
+						break;
+					else if (ris.revolutions[rev].HasGoodDataReady())
+						return TDataStatus::READY_HEALTHY;
+					else if (ris.revolutions[rev].HasDataReady())
+						return TDataStatus::READY;
+					else
+						break;
+			}
+		return TDataStatus::NOT_READY;
 	}
 
 	TStdWinError CFDD::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus){

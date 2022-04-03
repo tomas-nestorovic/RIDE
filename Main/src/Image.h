@@ -153,7 +153,7 @@
 
 		CString ToString() const;
 	} *PSectorId;
-	typedef const TSectorId *PCSectorId;
+	typedef const TSectorId *PCSectorId,&RCSectorId;
 
 	#pragma pack(1)
 	typedef const struct TPhysicalAddress sealed{
@@ -168,6 +168,12 @@
 		TTrack GetTrackNumber() const;
 		TTrack GetTrackNumber(THead nHeads) const;
 	} &RCPhysicalAddress;
+
+	enum TDataStatus{
+		NOT_READY	=0,		// querying data via CImage::GetTrackData may lead to delay (e.g. application freezes if called from main thread)
+		READY		=1,		// erroneous data are buffered, there will be no delay in calling CImage::GetTrackData
+		READY_HEALTHY=READY|2 // healthy data are buffered, there will be no delay in calling CImage::GetTrackData
+	};
 
 
 	#define FDC_ST1_END_OF_CYLINDER		128
@@ -668,6 +674,7 @@
 		PSectorData GetHealthySectorData(RCPhysicalAddress chs,PWORD sectorLength);
 		PSectorData GetHealthySectorData(RCPhysicalAddress chs);
 		PSectorData GetHealthySectorDataOfUnknownLength(TPhysicalAddress &rChs,PWORD sectorLength);
+		virtual TDataStatus IsSectorDataReady(TCylinder cyl,THead head,RCSectorId id,BYTE nSectorsToSkip,Revolution::TType rev) const=0;
 		virtual TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus)=0;
 		void MarkSectorAsDirty(RCPhysicalAddress chs);
 		virtual Revolution::TType GetDirtyRevolution(RCPhysicalAddress chs,BYTE nSectorsToSkip) const;

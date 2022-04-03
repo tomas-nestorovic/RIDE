@@ -46,7 +46,8 @@
 					PSectorData data;
 					TFdcStatus fdcStatus;
 
-					inline bool HasHealthyData() const{ return data!=nullptr && fdcStatus.IsWithoutError(); }
+					inline bool HasDataReady() const{ return data!=nullptr || fdcStatus.DescribesMissingDam(); }
+					inline bool HasGoodDataReady() const{ return data!=nullptr && fdcStatus.IsWithoutError(); }
 				} revolutions[Revolution::MAX]; // a First-In-First-Out buffer of Revolutions
 				BYTE nRevolutions;
 				BYTE currentRevolution;
@@ -63,6 +64,7 @@
 
 			bool __isIdDuplicated__(PCSectorId id) const;
 		} *PInternalTrack;
+		typedef const TInternalTrack *PCInternalTrack;
 
 		static UINT AFX_CDECL __save_thread__(PVOID _pCancelableAction);
 		static UINT AFX_CDECL __determineControllerAndOneByteLatency_thread__(PVOID _pCancelableAction);
@@ -129,6 +131,7 @@
 		TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const override;
 		bool IsTrackScanned(TCylinder cyl,THead head) const override;
 		void GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses) override;
+		TDataStatus IsSectorDataReady(TCylinder cyl,THead head,RCSectorId id,BYTE nSectorsToSkip,Revolution::TType rev) const override;
 		TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus) override;
 		Revolution::TType GetDirtyRevolution(RCPhysicalAddress chs,BYTE nSectorsToSkip) const override;
 		TStdWinError GetInsertedMediumType(TCylinder cyl,Medium::TType &rOutMediumType) const override;

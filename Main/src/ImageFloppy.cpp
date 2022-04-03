@@ -35,7 +35,6 @@
 		// ctor
 		: n(0) , allScanned(false)
 		, dataTotalLength(0) {
-		::ZeroMemory( infos, sizeof(infos) );
 	}
 
 
@@ -115,21 +114,26 @@
 						ps->trackWorker.Suspend(); // again resumed via SetTrackScannerStatus method
 					// . first, processing a request to buffer a Track (if any)
 					if (ps->request.bufferEvent.Lock( scannedTracks.allScanned ? INFINITE : 2 )){
-						const TRequestParams req=ps->request;
+						ps->request.locker.Lock();
+							const TRequestParams req=ps->request;
+						ps->request.locker.Unlock();
 						TSectorId ids[FDD_SECTORS_MAX];
-						image->BufferTrackData(
-							req.track>>1, req.track&1, req.revolution,
-							ids, sectorIdAndPositionIdentity,
-							ps->__scanTrack__( req.track, ids, nullptr )
-						);
-				{		EXCLUSIVELY_LOCK(scannedTracks);
-						if (req.revolution<Revolution::MAX)
+						if (req.revolution!=Revolution::ALL_INTERSECTED)
 							// only particular Revolution wanted
-							scannedTracks.infos[req.track].bufferedRevs|=1<<req.revolution;
+							image->BufferTrackData(
+								req.track>>1, req.track&1, req.revolution,
+								ids, sectorIdAndPositionIdentity,
+								ps->__scanTrack__( req.track, ids, nullptr )
+							);
 						else
 							// all Revolutions wanted
-							scannedTracks.infos[req.track].bufferedRevs|=1<<Revolution::MAX;
-				}		if (ps->workerStatus!=TScannerStatus::UNAVAILABLE) // should we terminate?
+							for( BYTE rev=std::min<BYTE>(Revolution::MAX,image->GetAvailableRevolutionCount()); rev-->0; )
+								image->BufferTrackData(
+									req.track>>1, req.track&1, (Revolution::TType)rev,
+									ids, sectorIdAndPositionIdentity,
+									ps->__scanTrack__( req.track, ids, nullptr )
+								);
+						if (ps->workerStatus!=TScannerStatus::UNAVAILABLE) // should we terminate?
 							ps->pParentHexaEditor->RepaintData(true); // True = immediate repainting
 					// . then, scanning the remaining Tracks (if not all yet scanned)
 					}else{
@@ -163,6 +167,7 @@
 				Revolution::TType revolution;
 			};
 			struct:public TRequestParams{
+				CCriticalSection locker;
 				CEvent bufferEvent;
 			} request;
 			struct{
@@ -224,8 +229,9 @@
 				// dtor
 				// . terminating the Worker
 				workerStatus=TScannerStatus::UNAVAILABLE;
+		{		EXCLUSIVELY_LOCK(request);
 				request.track=0; // zeroth Track highly likely already scanned, so there will be no waiting time
-				request.bufferEvent.SetEvent(); // releasing the eventually blocked Worker
+		}		request.bufferEvent.SetEvent(); // releasing the eventually blocked Worker
 				::WaitForSingleObject( trackWorker, INFINITE );
 			}
 
@@ -389,8 +395,8 @@
 			}
 			void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength,bool *pOutDataReady) override{
 				// retrieves the start logical position and length of the Record pointed to by the input LogicalPosition
-				TTrack track;
-				if (!__getPhysicalAddress__(logPos,&track,nullptr,nullptr))
+				TTrack track; BYTE iSector;
+				if (!__getPhysicalAddress__(logPos,&track,&iSector,nullptr))
 					return;
 				if (pOutRecordStartLogPos || pOutRecordLength){
 					WORD lengths[FDD_SECTORS_MAX];
@@ -403,16 +409,42 @@
 						*pOutRecordLength = lengths[nSectors];
 				}
 				if (pOutDataReady){
-					const BYTE mask=1<<std::min( revolution, Revolution::MAX );
-					const auto &scannedTracks=GetFloppyImage().scannedTracks;
-					EXCLUSIVELY_LOCK_SCANNED_TRACKS(); // commented out for smoother operation; may thus work with outdated values in ScannedTracks but that's ok!
-					if (!( *pOutDataReady=(scannedTracks.infos[track].bufferedRevs&mask)==mask ))
+					TSectorId ids[(TSector)-1];
+					__scanTrack__( track, ids, nullptr );
+					switch (revolution){
+						case Revolution::ANY_GOOD:
+							*pOutDataReady=true; // assumption (all Revolutions already attempted, none holding healthy data)
+							for( BYTE r=0; r<std::min<BYTE>(Revolution::MAX,image->GetAvailableRevolutionCount()); r++ )
+								if (const TDataStatus ds=image->IsSectorDataReady( track>>1, track&1, ids[iSector], iSector, (Revolution::TType)r )){
+									if (ds==TDataStatus::READY_HEALTHY){
+										*pOutDataReady=true;
+										break;
+									}
+								}else{
+									// this Revolution hasn't yet been queried for data, so there is a chance it contains healthy data
+									*pOutDataReady=false;
+									EXCLUSIVELY_LOCK(request);
+									request.revolution=Revolution::NONE; // to issue a duplicate request below
+								}
+							break;
+						case Revolution::ALL_INTERSECTED:
+							*pOutDataReady=true; // assumption (all Revolutions already attempted)
+							for( BYTE r=0; r<std::min<BYTE>(Revolution::MAX,image->GetAvailableRevolutionCount()); r++ )
+								*pOutDataReady&=image->IsSectorDataReady( track>>1, track&1, ids[iSector], iSector, (Revolution::TType)r )!=TDataStatus::NOT_READY;
+							break;
+						default:
+							*pOutDataReady=image->IsSectorDataReady( track>>1, track&1, ids[iSector], iSector, revolution );
+							break;
+					}
+					if (!*pOutDataReady){
 						// Sector not yet buffered and its data probably wanted - buffering them now
+						EXCLUSIVELY_LOCK(request);
 						if (request.track!=track || request.revolution!=revolution){ // Request not yet issued
 							request.track=track;
 							request.revolution=revolution;
 							request.bufferEvent.SetEvent();
 						}
+					}
 				}
 			}
 			LPCWSTR GetRecordLabelW(int logPos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override{

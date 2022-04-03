@@ -16,6 +16,7 @@
 
 			bool operator==(const TSectorId &rSectorId) const;
 			bool __hasValidSectorLengthCode__() const;
+			inline bool HasGoodDataReady() const{ return fdcStatus.IsWithoutError(); }
 		} *PSectorInfo;
 
 		#pragma pack(1)
@@ -86,6 +87,7 @@
 		TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const override;
 		bool IsTrackScanned(TCylinder cyl,THead head) const override;
 		void GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses) override;
+		TDataStatus IsSectorDataReady(TCylinder cyl,THead head,RCSectorId id,BYTE nSectorsToSkip,Revolution::TType rev) const override;
 		TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus) override;
 		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
 		bool EditSettings(bool initialEditing) override;
