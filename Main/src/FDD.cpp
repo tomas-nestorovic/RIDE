@@ -951,11 +951,12 @@ error:				switch (const TStdWinError err=::GetLastError()){
 									break;
 							if (healthyDataExist)
 								break;
-							// > trying Next Revolutions if they contain healthy Data
+							// > trying several Next Revolutions if they contain healthy Data
+							rsi.currentRevolution=rsi.nRevolutions; // let the attempts be brand new Revolutions
 							for( char nTrials=3; true; ){
 								WORD w;
 								if (GetSectorData( cyl, head, Revolution::NEXT, &rsi.id, rsi.seqNum, &w, &TFdcStatus() ))
-									if (rsi.revolutions[rsi.nRevolutions-1].fdcStatus.IsWithoutError())
+									if (rsi.revolutions[rsi.currentRevolution].fdcStatus.IsWithoutError())
 										break;
 								if (--nTrials==0)
 									break;
