@@ -98,7 +98,7 @@
 			if (pit->modified){
 				pit->FlushSectorBuffers(); // convert all modifications into flux transitions
 				TCHAR fileName[MAX_PATH];
-				::wsprintf( fileName, _T("%s") TRACK_NAME_PATTERN, nameBase, cyl, '0'+head );
+				::wsprintf( fileName, _T("%s") TRACK_NAME_PATTERN, nameBase, cyl<<(BYTE)params.doubleTrackStep, '0'+head );
 				CFile f; CFileException e;
 				if (!f.Open( fileName, CFile::modeCreate|CFile::modeWrite|CFile::typeBinary|CFile::shareExclusive, &e ))
 					return e.m_cause;
