@@ -96,7 +96,7 @@
 					case ID_DEFAULT6:
 					case ID_DEFAULT7:
 					case ID_DEFAULT8:
-						if (nID-ID_DEFAULT1<std::min<BYTE>(Revolution::MAX,IMAGE->GetAvailableRevolutionCount())){
+						if (nID-ID_DEFAULT1<f->GetAllDiscoveredRevolutionCount()){
 							pCmdUi->SetRadio( revolution==nID-ID_DEFAULT1 );
 						}else if (pCmdUi->m_pMenu)
 							pCmdUi->m_pMenu->RemoveMenu( nID, MF_BYCOMMAND );
@@ -137,7 +137,7 @@
 					case ID_DEFAULT7:
 					case ID_DEFAULT8:
 						// selecting particular disk Revolution
-						if (nID-ID_DEFAULT1<IMAGE->GetAvailableRevolutionCount()) // do we have such Revolution?
+						if (nID-ID_DEFAULT1<f->GetAllDiscoveredRevolutionCount()) // do we have such Revolution?
 							f->SetCurrentRevolution( revolution=(Revolution::TType)(nID-ID_DEFAULT1) );
 						return TRUE;
 					case ID_BUFFER:

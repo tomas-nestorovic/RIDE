@@ -584,7 +584,7 @@
 		protected:
 			CHexaEditor *const pParentHexaEditor;
 			const PImage image;
-			const BYTE nAvailableRevolutions;
+			BYTE nDiscoveredRevolutions;
 			#if _MFC_VER>=0x0A00
 			LONGLONG dataTotalLength;
 			LONGLONG position;
@@ -621,6 +621,8 @@
 			UINT Read(LPVOID lpBuf,UINT nCount) override sealed;
 			void Write(LPCVOID lpBuf,UINT nCount) override sealed;
 			BYTE GetCurrentSectorIndexOnTrack() const;
+			BYTE GetAvailableRevolutionCount(TCylinder cyl,THead head) const;
+			inline BYTE GetAllDiscoveredRevolutionCount() const{ return nDiscoveredRevolutions; }
 			virtual void SetCurrentRevolution(Revolution::TType rev)=0;
 			virtual TPhysicalAddress GetCurrentPhysicalAddress() const=0;
 			virtual DWORD GetSectorStartPosition(RCPhysicalAddress chs,BYTE nSectorsToSkip) const=0;
@@ -659,7 +661,7 @@
 		virtual THead GetHeadCount() const=0;
 		THead GetNumberOfFormattedSides(TCylinder cyl) const;
 		TTrack GetTrackCount() const;
-		virtual BYTE GetAvailableRevolutionCount() const;
+		virtual BYTE GetAvailableRevolutionCount(TCylinder cyl,THead head) const;
 		virtual TStdWinError SeekHeadsHome();
 		virtual TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const=0;
 		virtual bool IsTrackScanned(TCylinder cyl,THead head) const=0;

@@ -10,7 +10,7 @@
 		BOOL OnOpenDocument(LPCTSTR lpszPathName) override;
 		//TCylinder GetCylinderCount() const override;
 		//THead GetNumberOfFormattedSides(TCylinder cyl) const override;
-		BYTE GetAvailableRevolutionCount() const override;
+		BYTE GetAvailableRevolutionCount(TCylinder cyl,THead head) const override;
 		//TSector ScanTrack(TCylinder cyl,THead head,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PINT startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const override;
 		//void GetTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses) override;
 		TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus) override;

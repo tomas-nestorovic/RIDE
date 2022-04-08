@@ -651,7 +651,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		return 2; // latest PC floppy drives had two Heads
 	}
 
-	BYTE CFDD::GetAvailableRevolutionCount() const{
+	BYTE CFDD::GetAvailableRevolutionCount(TCylinder cyl,THead head) const{
 		// returns the number of data variations of one Sector that are guaranteed to be distinct
 		return Revolution::INFINITY;
 	}

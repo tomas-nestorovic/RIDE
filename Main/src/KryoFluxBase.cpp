@@ -335,8 +335,12 @@
 
 
 
-	BYTE CKryoFluxBase::GetAvailableRevolutionCount() const{
+	BYTE CKryoFluxBase::GetAvailableRevolutionCount(TCylinder cyl,THead head) const{
 		// returns the number of data variations of one Sector that are guaranteed to be distinct
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		if (cyl<=capsImageInfo.maxcylinder && head<=capsImageInfo.maxhead)
+			if (const PInternalTrack pit=internalTracks[cyl][head])
+				return pit->GetIndexCount()-1; // # of full Revolutions
 		return params.precision;
 	}
 

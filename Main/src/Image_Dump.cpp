@@ -309,7 +309,7 @@
 								rFdcStatus.GetDescriptionsOfSetBits(bitDescriptions);
 								TCHAR buf[512],*p=buf+::wsprintf(buf,_T("Cannot read sector with %s on source Track %d.\r\n"),(LPCTSTR)rp.chs.sectorId.ToString(),rp.track);
 								const Revolution::TType dirtyRevolution=dp.source->GetDirtyRevolution(rp.chs,rp.s);
-								const BYTE nRevolutions=dp.source->GetAvailableRevolutionCount();
+								const BYTE nRevolutions=dp.source->GetAvailableRevolutionCount( rp.chs.cylinder, rp.chs.head );
 								if (nRevolutions==1)
 									p+=::lstrlen( ::lstrcpy(p,_T("Single revolution.\r\n")) );
 								else if (dirtyRevolution==Revolution::NONE)
@@ -531,10 +531,11 @@
 						} d(pAction,dp,p,bufferSectorData[p.s],bufferLength[p.s],bufferFdcStatus[p.s]);
 						// | reading SourceSector particular Revolution
 						LOG_SECTOR_ACTION(&p.chs.sectorId,_T("reading"));
+						const BYTE nRevsAvailable=dp.source->GetAvailableRevolutionCount( p.chs.cylinder, p.chs.head );
 						if (sPrev!=p.s) // is this the first trial?
 							p.revolution=Revolution::R0;
-						else if (dp.source->GetAvailableRevolutionCount()<=Revolution::MAX){ // is the # of Revolutions limited?
-							if (++p.revolution>=dp.source->GetAvailableRevolutionCount())
+						else if (nRevsAvailable<=Revolution::MAX){ // is the # of Revolutions limited?
+							if (++p.revolution>=nRevsAvailable)
 								p.revolution=Revolution::R0;
 							bufferSectorData[p.s]=dp.source->GetSectorData( p.chs, p.s, (Revolution::TType)p.revolution, bufferLength+p.s, bufferFdcStatus+p.s );
 						}else{

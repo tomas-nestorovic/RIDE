@@ -126,7 +126,7 @@
 		BOOL OnOpenDocument(LPCTSTR) override;
 		TCylinder GetCylinderCount() const override;
 		THead GetHeadCount() const override;
-		BYTE GetAvailableRevolutionCount() const override;
+		BYTE GetAvailableRevolutionCount(TCylinder cyl,THead head) const override;
 		TStdWinError SeekHeadsHome() override;
 		TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const override;
 		bool IsTrackScanned(TCylinder cyl,THead head) const override;

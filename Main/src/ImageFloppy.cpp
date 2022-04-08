@@ -127,7 +127,7 @@
 							);
 						else
 							// all Revolutions wanted
-							for( BYTE rev=std::min<BYTE>(Revolution::MAX,image->GetAvailableRevolutionCount()); rev-->0; )
+							for( BYTE rev=ps->GetAvailableRevolutionCount(req.track>>1,req.track&1); rev-->0; )
 								image->BufferTrackData(
 									req.track>>1, req.track&1, (Revolution::TType)rev,
 									ids, sectorIdAndPositionIdentity,
@@ -144,6 +144,7 @@
 							const int tmp = ps->trackHexaInfos[scannedTracks.n].Update(*ps); // calls CImage::ScanTrack
 							EXCLUSIVELY_LOCK(scannedTracks);
 							ps->dataTotalLength = scannedTracks.dataTotalLength = tmp; // making sure the DataTotalLength is the last thing modified in the Locked section
+							ps->nDiscoveredRevolutions=std::max( ps->nDiscoveredRevolutions, ps->GetAvailableRevolutionCount(scannedTracks.n>>1,scannedTracks.n&1) );
 							scannedTracks.allScanned=++scannedTracks.n>=2*image->GetCylinderCount();
 							if (!hasTrackBeenScannedBefore)
 								break; // a single time-expensive access to real Device is enough, let other parts of the app have a crack on the Device
@@ -414,7 +415,7 @@
 					switch (revolution){
 						case Revolution::ANY_GOOD:
 							*pOutDataReady=true; // assumption (all Revolutions already attempted, none holding healthy data)
-							for( BYTE r=0; r<std::min<BYTE>(Revolution::MAX,image->GetAvailableRevolutionCount()); r++ )
+							for( BYTE r=0; r<GetAvailableRevolutionCount(track>>1,track&1); r++ )
 								if (const TDataStatus ds=image->IsSectorDataReady( track>>1, track&1, ids[iSector], iSector, (Revolution::TType)r )){
 									if (ds==TDataStatus::READY_HEALTHY){
 										*pOutDataReady=true;
@@ -429,7 +430,7 @@
 							break;
 						case Revolution::ALL_INTERSECTED:
 							*pOutDataReady=true; // assumption (all Revolutions already attempted)
-							for( BYTE r=0; r<std::min<BYTE>(Revolution::MAX,image->GetAvailableRevolutionCount()); r++ )
+							for( BYTE r=0; r<GetAvailableRevolutionCount(track>>1,track&1); r++ )
 								*pOutDataReady&=image->IsSectorDataReady( track>>1, track&1, ids[iSector], iSector, (Revolution::TType)r )!=TDataStatus::NOT_READY;
 							break;
 						default:

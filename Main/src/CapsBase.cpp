@@ -502,7 +502,7 @@
 		return capsImageInfo.maxhead+1; // the last INCLUSIVE Head plus one
 	}
 
-	BYTE CCapsBase::GetAvailableRevolutionCount() const{
+	BYTE CCapsBase::GetAvailableRevolutionCount(TCylinder cyl,THead head) const{
 		// returns the number of data variations of one Sector that are guaranteed to be distinct
 		return 4;
 	}

@@ -49,7 +49,7 @@
 		return TRUE;
 	}
 
-	BYTE CIpf::GetAvailableRevolutionCount() const{
+	BYTE CIpf::GetAvailableRevolutionCount(TCylinder cyl,THead head) const{
 		// returns the number of data variations of one Sector that are guaranteed to be distinct
 		return CAPS_MTRS;
 	}

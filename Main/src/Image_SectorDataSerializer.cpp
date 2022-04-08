@@ -3,7 +3,7 @@
 	CImage::CSectorDataSerializer::CSectorDataSerializer(CHexaEditor *pParentHexaEditor,PImage image,LONG dataTotalLength)
 		// ctor
 		: pParentHexaEditor(pParentHexaEditor) , image(image) , dataTotalLength(dataTotalLength) , position(0) , currTrack(0)
-		, nAvailableRevolutions( std::min<BYTE>(Revolution::MAX,image->GetAvailableRevolutionCount()) )
+		, nDiscoveredRevolutions(1)
 		, revolution(Revolution::ANY_GOOD) {
 		sector.indexOnTrack=0, sector.offset=0;
 	}
@@ -76,6 +76,7 @@
 		while (true)
 			if (revolution==Revolution::ALL_INTERSECTED){
 				const TPhysicalAddress chs=GetCurrentPhysicalAddress();
+				const BYTE nAvailableRevolutions=GetAvailableRevolutionCount(chs.cylinder,chs.head);
 				PCSectorData data[Revolution::MAX];
 				bool allRevolutionsIdentical=true; // assumption
 				for( BYTE rev=0; rev<nAvailableRevolutions; rev++ ){
@@ -116,7 +117,7 @@
 				if (revolution<Revolution::MAX)
 					sectorData=image->GetSectorData( chs, sector.indexOnTrack, revolution, &w, &sr );
 				else
-					for( BYTE rev=0; rev<nAvailableRevolutions; rev++ )
+					for( BYTE rev=0,const nAvailableRevolutions=GetAvailableRevolutionCount(chs.cylinder,chs.head); rev<nAvailableRevolutions; rev++ )
 						if (const PCSectorData tmpData=image->GetSectorData( chs, sector.indexOnTrack, (Revolution::TType)rev, &w, &sr ) ){
 							sectorData=tmpData;
 							if (sr.IsWithoutError())
@@ -186,4 +187,9 @@
 	BYTE CImage::CSectorDataSerializer::GetCurrentSectorIndexOnTrack() const{
 		// returns the zero-based index of current Sector on the Track
 		return sector.indexOnTrack;
+	}
+
+	BYTE CImage::CSectorDataSerializer::GetAvailableRevolutionCount(TCylinder cyl,THead head) const{
+		// wrapper around CImage::GetAvailableRevolutionCount
+		return	std::min<BYTE>( Revolution::MAX, image->GetAvailableRevolutionCount(cyl,head) );
 	}
