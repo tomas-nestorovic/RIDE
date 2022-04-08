@@ -442,6 +442,9 @@
 			::SetLastError(ERROR_DEVICE_NOT_AVAILABLE);
 			return FALSE;
 		}
+		// - we are done if the CAPS library shouldn't be further involved in opening the Image
+		if (lpszPathName==nullptr)
+			return TRUE;
 		// - "mounting" the Image file to the Device
 		char fileName[MAX_PATH];
 		#ifdef UNICODE

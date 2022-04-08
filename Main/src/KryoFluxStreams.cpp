@@ -62,7 +62,7 @@
 	BOOL CKryoFluxStreams::OnOpenDocument(LPCTSTR lpszPathName){
 		// True <=> Image opened successfully, otherwise False
 		// - base
-		if (!__super::OnOpenDocument(lpszPathName)
+		if (!__super::OnOpenDocument(nullptr) // don't involve CAPS in Image opening
 			&&
 			::GetLastError()!=ERROR_NOT_SUPPORTED // the CAPS library currently doesn't support reading Stream files
 		)
