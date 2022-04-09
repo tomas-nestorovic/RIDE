@@ -167,12 +167,14 @@ namespace Utils{
 		static void UpdateUI(CWnd *pUiUpdater,CMenu *pMenu);
 
 		CRideContextMenu(UINT idMenuRes,CWnd *pUiUpdater=nullptr);
+		CRideContextMenu(HMENU hMenuOwnedByCaller);
 		~CRideContextMenu();
 
 		CString GetMenuString(UINT uIDItem,UINT flags) const;
 		inline void UpdateUi(CWnd *pUiUpdater){ UpdateUI(pUiUpdater,this); }
 		inline CString GetMenuStringByCmd(WORD cmd) const{ return GetMenuString(cmd,MF_BYCOMMAND); }
 		inline CString GetMenuStringByPos(WORD pos) const{ return GetMenuString(pos,MF_BYPOSITION); }
+		bool InsertAfter(WORD existingId,UINT nFlags,UINT_PTR nIDNewItem,LPCTSTR lpszNewItem);
 	};
 
 	typedef const struct TSplitButtonAction sealed{

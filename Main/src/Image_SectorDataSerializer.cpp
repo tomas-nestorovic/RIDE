@@ -1,9 +1,9 @@
 #include "stdafx.h"
 
-	CImage::CSectorDataSerializer::CSectorDataSerializer(CHexaEditor *pParentHexaEditor,PImage image,LONG dataTotalLength)
+	CImage::CSectorDataSerializer::CSectorDataSerializer(CHexaEditor *pParentHexaEditor,PImage image,LONG dataTotalLength,const BYTE &nDiscoveredRevolutions)
 		// ctor
 		: pParentHexaEditor(pParentHexaEditor) , image(image) , dataTotalLength(dataTotalLength) , position(0) , currTrack(0)
-		, nDiscoveredRevolutions(1)
+		, nDiscoveredRevolutions(nDiscoveredRevolutions)
 		, revolution(Revolution::ANY_GOOD) {
 		sector.indexOnTrack=0, sector.offset=0;
 	}

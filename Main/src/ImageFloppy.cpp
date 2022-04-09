@@ -33,7 +33,7 @@
 
 	CFloppyImage::TScannedTracks::TScannedTracks()
 		// ctor
-		: n(0) , allScanned(false)
+		: n(0) , allScanned(false) , nDiscoveredRevolutions(1)
 		, dataTotalLength(0) {
 	}
 
@@ -144,7 +144,7 @@
 							const int tmp = ps->trackHexaInfos[scannedTracks.n].Update(*ps); // calls CImage::ScanTrack
 							EXCLUSIVELY_LOCK(scannedTracks);
 							ps->dataTotalLength = scannedTracks.dataTotalLength = tmp; // making sure the DataTotalLength is the last thing modified in the Locked section
-							ps->nDiscoveredRevolutions=std::max( ps->nDiscoveredRevolutions, ps->GetAvailableRevolutionCount(scannedTracks.n>>1,scannedTracks.n&1) );
+							scannedTracks.nDiscoveredRevolutions=std::max( scannedTracks.nDiscoveredRevolutions, ps->GetAvailableRevolutionCount(scannedTracks.n>>1,scannedTracks.n&1) );
 							scannedTracks.allScanned=++scannedTracks.n>=2*image->GetCylinderCount();
 							if (!hasTrackBeenScannedBefore)
 								break; // a single time-expensive access to real Device is enough, let other parts of the app have a crack on the Device
@@ -206,7 +206,7 @@
 			CSerializer(CHexaEditor *pParentHexaEditor,CFloppyImage *image)
 				// ctor
 				// . base
-				: CSectorDataSerializer( pParentHexaEditor, image, image->scannedTracks.dataTotalLength )
+				: CSectorDataSerializer( pParentHexaEditor, image, image->scannedTracks.dataTotalLength, image->scannedTracks.nDiscoveredRevolutions )
 				// . initialization
 				, trackWorker( __trackWorker_thread__, this, THREAD_PRIORITY_IDLE )
 				, workerStatus(TScannerStatus::PAUSED) // set to Unavailable to terminate Worker's labor
@@ -231,7 +231,7 @@
 				// . terminating the Worker
 				workerStatus=TScannerStatus::UNAVAILABLE;
 		{		EXCLUSIVELY_LOCK(request);
-				request.track=0; // zeroth Track highly likely already scanned, so there will be no waiting time
+				request.track=0, request.revolution=Revolution::R0; // zeroth Track highly likely already scanned, so there will be no waiting time
 		}		request.bufferEvent.SetEvent(); // releasing the eventually blocked Worker
 				::WaitForSingleObject( trackWorker, INFINITE );
 			}

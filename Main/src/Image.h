@@ -584,7 +584,6 @@
 		protected:
 			CHexaEditor *const pParentHexaEditor;
 			const PImage image;
-			BYTE nDiscoveredRevolutions;
 			#if _MFC_VER>=0x0A00
 			LONGLONG dataTotalLength;
 			LONGLONG position;
@@ -599,13 +598,15 @@
 				WORD offset;
 			} sector;
 
-			CSectorDataSerializer(CHexaEditor *pParentHexaEditor,PImage image,LONG dataTotalLength);
+			CSectorDataSerializer(CHexaEditor *pParentHexaEditor,PImage image,LONG dataTotalLength,const BYTE &nDiscoveredRevolutions);
 		public:
 			enum TScannerStatus:BYTE{
 				RUNNING, // Track scanner exists and is running (e.g. parallel thread that scans Tracks on real FDD)
 				PAUSED, // Track scanner exists but is suspended (same example as above)
 				UNAVAILABLE // Track scanner doesn't exist (e.g. a CImageRaw descendant)
 			};
+
+			const BYTE &nDiscoveredRevolutions;
 
 			#if _MFC_VER>=0x0A00
 			ULONGLONG GetLength() const override sealed;
@@ -622,7 +623,6 @@
 			void Write(LPCVOID lpBuf,UINT nCount) override sealed;
 			BYTE GetCurrentSectorIndexOnTrack() const;
 			BYTE GetAvailableRevolutionCount(TCylinder cyl,THead head) const;
-			inline BYTE GetAllDiscoveredRevolutionCount() const{ return nDiscoveredRevolutions; }
 			virtual void SetCurrentRevolution(Revolution::TType rev)=0;
 			virtual TPhysicalAddress GetCurrentPhysicalAddress() const=0;
 			virtual DWORD GetSectorStartPosition(RCPhysicalAddress chs,BYTE nSectorsToSkip) const=0;

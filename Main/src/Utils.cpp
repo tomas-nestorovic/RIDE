@@ -193,6 +193,11 @@ namespace Utils{
 			}
 	}
 
+	CRideContextMenu::CRideContextMenu(HMENU hMenuOwnedByCaller){
+		// ctor (for internal purposes only)
+		Attach( hMenuOwnedByCaller ); // caller in charge to destroy the menu, see dtor
+	}
+
 	CRideContextMenu::CRideContextMenu(UINT idMenuRes,CWnd *pUiUpdater){
 		// ctor
 		parent.LoadMenu(idMenuRes);
@@ -211,6 +216,31 @@ namespace Utils{
 		if (::GetMenuString( m_hMenu, uIDItem, buf, sizeof(buf)/sizeof(TCHAR), flags )<=0)
 			*buf='\0';
 		return buf;
+	}
+
+	bool CRideContextMenu::InsertAfter(WORD existingId,UINT nFlags,UINT_PTR nIDNewItem,LPCTSTR lpszNewItem){
+		//
+		for( int i=0; i<GetMenuItemCount(); i++ )
+			switch (const UINT id=GetMenuItemID(i)){
+				case 0:
+					// menu separators and invalid commands are ignored
+					continue;
+				case UINT_MAX:
+					// recurrently processing Submenus
+					if (const CMenu *const pSubMenu=GetSubMenu(i))
+						if (CRideContextMenu(*pSubMenu).InsertAfter( existingId, nFlags, nIDNewItem, lpszNewItem ))
+							return true;
+					break;
+				default:
+					// normal menu item
+					if (id==existingId)
+						if (::GetMenuString( *this, nIDNewItem, nullptr, 0, MF_BYCOMMAND )>0) // does requested new command already exist?
+							return true;
+						else
+							return InsertMenu( ++i, MF_BYPOSITION|MF_STRING, nIDNewItem, lpszNewItem )!=FALSE;
+					break;
+			}
+		return false;
 	}
 
 

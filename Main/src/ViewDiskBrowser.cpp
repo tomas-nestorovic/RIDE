@@ -96,10 +96,7 @@
 					case ID_DEFAULT6:
 					case ID_DEFAULT7:
 					case ID_DEFAULT8:
-						if (nID-ID_DEFAULT1<f->GetAllDiscoveredRevolutionCount()){
-							pCmdUi->SetRadio( revolution==nID-ID_DEFAULT1 );
-						}else if (pCmdUi->m_pMenu)
-							pCmdUi->m_pMenu->RemoveMenu( nID, MF_BYCOMMAND );
+						pCmdUi->SetRadio( revolution==nID-ID_DEFAULT1 );
 						return TRUE;
 					case ID_BUFFER:
 						pCmdUi->SetCheck( f->GetTrackScannerStatus()==TScannerStatus::PAUSED );
@@ -137,7 +134,7 @@
 					case ID_DEFAULT7:
 					case ID_DEFAULT8:
 						// selecting particular disk Revolution
-						if (nID-ID_DEFAULT1<f->GetAllDiscoveredRevolutionCount()) // do we have such Revolution?
+						if (nID-ID_DEFAULT1<f->nDiscoveredRevolutions) // do we have such Revolution?
 							f->SetCurrentRevolution( revolution=(Revolution::TType)(nID-ID_DEFAULT1) );
 						return TRUE;
 					case ID_BUFFER:
@@ -372,6 +369,7 @@
 
 	afx_msg LRESULT CDiskBrowserView::ReportScanningProgress(WPARAM,LPARAM){
 		// reports the disk scanning progress in StatusBar
+		// - report in StatusBar
 		TCylinder nScannedCyls;
 		if (f->GetTrackScannerStatus(&nScannedCyls)==CImage::CSectorDataSerializer::TScannerStatus::RUNNING){
 			TCHAR buf[32];
@@ -379,6 +377,12 @@
 			CMainWindow::__setStatusBarText__(buf);
 		}else
 			CMainWindow::__resetStatusBar__();
+		// - update available Revolutions Submenu
+		Utils::CRideContextMenu mainMenu( *app.GetMainWindow()->GetMenu() );
+		for( TCHAR rev=Revolution::R1,cmdStr[16]; rev<f->nDiscoveredRevolutions; rev++ ){
+			::wsprintf( cmdStr, _T("%c\tCtrl+%c"), '1'+rev, '1'+rev );
+			mainMenu.InsertAfter( ID_DEFAULT1+rev-1, MF_BYCOMMAND, ID_DEFAULT1+rev, cmdStr );
+		}
 		return 0;
 	}
 

@@ -11,6 +11,7 @@
 			#else
 			LONG dataTotalLength;
 			#endif
+			BYTE nDiscoveredRevolutions;
 
 			TScannedTracks();
 		} scannedTracks;
