@@ -40,23 +40,27 @@
 
 
 
-	#define TRACK_NAME_PATTERN	_T("%02d.%c.raw")
+	#define TRACK_NAME_PATTERN_EXT	_T(".%c.raw")
+	#define TRACK_NAME_PATTERN		_T("%02d") TRACK_NAME_PATTERN_EXT
 
 	bool CKryoFluxStreams::SetNameBase(LPCTSTR fullName){
 		// True <=> a valid naming pattern has been recognized, otherwise False
-		const LPCTSTR trackIdentifier=fullName+::lstrlen(fullName)-2-1-1-1-3; // see the TrackNamingPattern
+		LPCTSTR trackIdentifier=fullName+::lstrlen(fullName)-2-1-1-1-3; // see the TrackNamingPattern
 		int cyl; char head;
-		if (_stscanf( trackIdentifier, TRACK_NAME_PATTERN, &cyl, &head )!=2
-			||
-			cyl>=FDD_CYLINDERS_MAX
-			||
-			head<'0' || '1'<head
+		if (trackIdentifier>fullName // sufficiently long name?
+			&&
+			(	_stscanf( trackIdentifier, TRACK_NAME_PATTERN, &cyl, &head )==2  &&  cyl<FDD_CYLINDERS_MAX // is the Track name fully ...
+				||
+				_stscanf( trackIdentifier+=2, TRACK_NAME_PATTERN_EXT, &head ) // ... or at least partially specified?
+			)
+			&&
+			'0'<=head && head<='1'
 		){
-			::SetLastError(ERROR_INVALID_NAME);
-			return false;
+			::lstrcpyn( nameBase, fullName, trackIdentifier-fullName+1 );
+			return true;
 		}
-		::lstrcpyn( nameBase, fullName, trackIdentifier-fullName+1 );
-		return true;
+		::SetLastError(ERROR_INVALID_NAME);
+		return false;
 	}
 
 	BOOL CKryoFluxStreams::OnOpenDocument(LPCTSTR lpszPathName){
