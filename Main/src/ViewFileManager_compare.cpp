@@ -126,6 +126,7 @@
 				const int buttonX=wndW-padding.x-buttonWidth+1, buttonY=wndH-padding.y-buttonHeight;
 				SetDlgItemPos( IDCANCEL, buttonX, buttonY );
 				SetDlgItemPos( IDOK, buttonX-padding.x-buttonWidth, buttonY );
+				InvalidateDlgItem( IDOK ); // otherwise drawing problems may arise when resizing the dialog
 				break;
 			}
 			case WM_COMMAND:

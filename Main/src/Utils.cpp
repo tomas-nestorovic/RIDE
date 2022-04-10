@@ -1262,6 +1262,11 @@ namespace Utils{
 		SetDlgItemPos( id, 0,0, cx,cy );
 	}
 
+	void CRideDialog::InvalidateDlgItem(WORD id) const{
+		// invalidates the Dialog control
+		::InvalidateRect( ::GetDlgItem(m_hWnd,id), nullptr, TRUE );
+	}
+
 	LONG_PTR CRideDialog::GetDlgComboBoxSelectedValue(WORD id) const{
 		// returns the Value selected in specified ComboBox
 		CComboBox cb;
