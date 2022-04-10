@@ -196,6 +196,15 @@
 				int tmp=(params.precision-2)/2;
 				DDX_CBIndex( pDX, ID_ROTATION,	tmp );
 				params.precision=(TParams::TPrecision)(2*tmp+2);
+				if (!EnableDlgItem( ID_ROTATION, rkfb.properties->IsRealDevice() )){
+					CComboBox cb;
+					cb.Attach( GetDlgItemHwnd(ID_ROTATION) );
+						const int i=cb.GetCurSel();
+						cb.DeleteString( i );
+						cb.InsertString( i, _T("Automatically") );
+						cb.SetCurSel( i );
+					cb.Detach();
+				}
 				// . FluxDecoder
 				tmp=params.fluxDecoder;
 				DDX_CBIndex( pDX, ID_ACCURACY,	tmp );
@@ -341,7 +350,7 @@
 		if (cyl<=capsImageInfo.maxcylinder && head<=capsImageInfo.maxhead)
 			if (const PInternalTrack pit=internalTracks[cyl][head])
 				return pit->GetIndexCount()-1; // # of full Revolutions
-		return params.precision;
+		return 0; // Track doesn't exist
 	}
 
 	TStdWinError CKryoFluxBase::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus){
