@@ -314,6 +314,14 @@
 		locker.Unlock();
 	}
 
+	int CHexaEditor::GetLogicalSize() const{
+		// returns the LogicalSize of File content
+		EXCLUSIVELY_LOCK(*this);
+		return	mouseInNcArea
+				? update.logicalSize
+				: logicalSize;
+	}
+
 	void CHexaEditor::SetLogicalSize(int _logicalSize){
 		// changes the LogicalSize of File content (originally set when Resetting the HexaEditor)
 		locker.Lock();

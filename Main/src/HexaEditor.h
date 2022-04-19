@@ -135,6 +135,7 @@
 		void Update(CFile *f,int minFileSize,int maxFileSize);
 		void Reset(CFile *f,int minFileSize,int maxFileSize);
 		void SetLogicalBounds(int _minFileSize,int _maxFileSize);
+		int GetLogicalSize() const;
 		virtual void SetLogicalSize(int _logicalSize);
 		void ScrollTo(int logicalPos,bool moveAlsoCaret=false);
 		void ScrollToRow(int iRow,bool moveAlsoCaret=false);

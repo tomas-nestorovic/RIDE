@@ -133,6 +133,7 @@
 									ids, sectorIdAndPositionIdentity,
 									ps->__scanTrack__( req.track, ids, nullptr )
 								);
+						EXCLUSIVELY_LOCK(ps->request); // synchronizing with dtor
 						if (ps->workerStatus!=TScannerStatus::UNAVAILABLE) // should we terminate?
 							ps->pParentHexaEditor->RepaintData(true); // True = immediate repainting
 					// . then, scanning the remaining Tracks (if not all yet scanned)
@@ -153,8 +154,11 @@
 							ps->Seek(0,SeekPosition::current); // initializing state of current Sector to read from or write to
 						// : the Serializer has changed its state - letting the related HexaEditor know of the change
 						//DEADLOCK: No need to have the ScannedTracks locked - the only place where the values can change is above, so what we read below IS in sync!
-						ps->pParentHexaEditor->SetLogicalBounds( 0, scannedTracks.dataTotalLength );
-						ps->pParentHexaEditor->SetLogicalSize(scannedTracks.dataTotalLength);
+						EXCLUSIVELY_LOCK(ps->request); // synchronizing with dtor
+						if (ps->workerStatus!=TScannerStatus::UNAVAILABLE){ // should we terminate?
+							ps->pParentHexaEditor->SetLogicalBounds( 0, scannedTracks.dataTotalLength );
+							ps->pParentHexaEditor->SetLogicalSize(scannedTracks.dataTotalLength);
+						}
 					}
 				} while (ps->workerStatus!=TScannerStatus::UNAVAILABLE); // should we terminate?
 				return ERROR_SUCCESS;
@@ -229,8 +233,8 @@
 			~CSerializer(){
 				// dtor
 				// . terminating the Worker
-				workerStatus=TScannerStatus::UNAVAILABLE;
 		{		EXCLUSIVELY_LOCK(request);
+				workerStatus=TScannerStatus::UNAVAILABLE;
 				request.track=0, request.revolution=Revolution::R0; // zeroth Track highly likely already scanned, so there will be no waiting time
 		}		request.bufferEvent.SetEvent(); // releasing the eventually blocked Worker
 				::WaitForSingleObject( trackWorker, INFINITE );

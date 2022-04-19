@@ -331,9 +331,13 @@
 	void CDiskBrowserView::SetLogicalSize(int newLogicalSize){
 		// changes the LogicalSize of File content (originally set when Resetting the HexaEditor)
 		// - base
+		const auto ls0=GetLogicalSize();
 		__super::SetLogicalSize(newLogicalSize);
 		// - seeking to particular PhysicalAddress
-		if (seekTo.chs!=TPhysicalAddress::Invalid){
+		if (seekTo.chs!=TPhysicalAddress::Invalid
+			&&
+			newLogicalSize!=ls0 // has anything changed?
+		){
 			const int posSector=f->GetSectorStartPosition( seekTo.chs, seekTo.nSectorsToSkip );
 			if (posSector<newLogicalSize){
 				// Sector already discovered on the disk
