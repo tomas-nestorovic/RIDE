@@ -791,6 +791,7 @@ trackNotFound:
 	std::unique_ptr<CImage::CSectorDataSerializer> CImageRaw::CreateSectorDataSerializer(CHexaEditor *pParentHexaEditor){
 		// abstracts all Sector data (good and bad) into a single file and returns the result
 		// - defining the Serializer class
+		static const BYTE nDiscoveredRawRevolutions=1;
 		class CSerializer sealed:public CSectorDataSerializer{
 			const CImageRaw *const image;
 
@@ -806,7 +807,7 @@ trackNotFound:
 		public:
 			CSerializer(CHexaEditor *pParentHexaEditor,CImageRaw *image)
 				// ctor
-				: CSectorDataSerializer( pParentHexaEditor, image, image->nCylinders*image->nHeads*image->nSectors*image->sectorLength, 1 )
+				: CSectorDataSerializer( pParentHexaEditor, image, image->nCylinders*image->nHeads*image->nSectors*image->sectorLength, nDiscoveredRawRevolutions )
 				, image(image) {
 			}
 
