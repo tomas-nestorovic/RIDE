@@ -27,6 +27,17 @@
 				}else
 					// if Ctrl key NOT pressed, simply handing the message over to the parent class
 					break;
+			case WM_COMMAND:
+				// command processing
+				switch (LOWORD(wParam)){
+					case ID_PREV:
+						offset=USHRT_MAX; // resetting the Offset before navigating to the previous File
+						break;
+					case ID_NEXT:
+						offset=USHRT_MAX; // resetting the Offset before navigating to the next File
+						break;
+				}
+				break;
 			case WM_KEYDOWN:
 				// character
 				switch (wParam){
@@ -115,7 +126,7 @@
 		// - base
 		: CFilePreview( nullptr, INI_PREVIEW, rFileManager, SCREEN_WIDTH, SCREEN_HEIGHT, true, IDR_SPECTRUM_PREVIEW_SCREEN )
 		// - initialization
-		, offset(0)
+		, offset(USHRT_MAX)
 		, showPixels(true) , showAttributes(true) , showFlashing(true)
 		, paperFlash(false) {
 		// - disposing any previous instance
@@ -167,6 +178,10 @@
 		::memset(buf+6144,56,768);	// attribute part (56 = Paper 7 + Ink 0)
 		// - loading the File into Buffer
 		CDos::CFileReaderWriter frw( DOS, file );
+		if (offset==USHRT_MAX){ // initial Offset? (i.e. NOT set manually)
+			offset=0;
+			rFileManager.tab.image->dos->GetFileSize( file, (PBYTE)&offset, nullptr );
+		}
 		frw.Seek( offset, CFile::begin );
 		frw.Read( &buf, 6144+showAttributes*768 );
 		if (const TStdWinError err=::GetLastError())
