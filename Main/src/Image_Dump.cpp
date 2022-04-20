@@ -29,7 +29,7 @@
 		const struct TSourceTrackErrors sealed{
 			TCylinder cyl;
 			THead head;
-			bool hasNonformattedArea, hasDataInGaps, hasFuzzyData, hasDuplicatedIdFields, isEmpty, missesSomeSectors;
+			bool scannedWithError, hasNonformattedArea, hasDataInGaps, hasFuzzyData, hasDuplicatedIdFields, isEmpty, missesSomeSectors;
 			const TSourceTrackErrors *pNextErroneousTrack;
 			TSector nErroneousSectors;
 			TSourceSectorError erroneousSectors[1];
@@ -97,6 +97,7 @@
 							}
 							int nWarnings=0;
 							for( const TSourceTrackErrors *pErroneousTrack=pOutErroneousTracks; pErroneousTrack; pErroneousTrack=pErroneousTrack->pNextErroneousTrack ){
+								nWarnings+=pErroneousTrack->scannedWithError;
 								nWarnings+=pErroneousTrack->hasNonformattedArea;
 								nWarnings+=pErroneousTrack->hasDataInGaps;
 								nWarnings+=pErroneousTrack->hasFuzzyData;
@@ -117,6 +118,8 @@
 								Utils::WriteToFile(fHtml,_T("<tr><td>"));
 									Utils::WriteToFileFormatted( fHtml, _T("Cyl %d, Head %d"), pErroneousTrack->cyl, pErroneousTrack->head );
 								Utils::WriteToFile(fHtml,_T("</td><td><ul>"));
+									if (pErroneousTrack->scannedWithError)
+										Utils::WriteToFile(fHtml,_T("<li><span style=color:red><b>Warning</b>: Error scanning the track!</span></li>"));
 									if (BYTE n=pErroneousTrack->nErroneousSectors)
 										for( PCSourceSectorError psse=pErroneousTrack->erroneousSectors; n; n--,psse++ ){
 											Utils::WriteToFile(fHtml,_T("<li>"));
@@ -220,8 +223,9 @@
 				TSectorId bufferId[(TSector)-1];	WORD bufferLength[(TSector)-1];
 				Codec::TType sourceCodec; TSector nSectors; TStdWinError err;
 {LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("scanning source"));
-				nSectors=dp.source->ScanTrack(p.chs.cylinder,p.chs.head,&sourceCodec,bufferId,bufferLength);
+				nSectors=dp.source->ScanTrack(p.chs.cylinder,p.chs.head,&sourceCodec,bufferId,bufferLength);				
 }
+				const bool scannedWithError=!dp.source->IsTrackScanned(p.chs.cylinder,p.chs.head); // was there a problem scanning the Track?
 				// . reading Source Track
 				CImage::CTrackReader trSrc=dp.source->ReadTrack( p.chs.cylinder, p.chs.head );
 				p.trackWriteable= trSrc && targetSupportsTrackWriting && (sourceCodec&dp.targetCodecs)!=0; // A&B&C, A&B = Source and Target must support whole Track access, C = Target must support the Codec used in Source
@@ -674,9 +678,10 @@ terminateWithError:		return LOG_ERROR(pAction->TerminateWithError(err));
 				}
 				// . registering Track with ErroneousSectors
 //Utils::Information("registering Track with ErroneousSectors");
-				if (hasNonformattedArea || hasDataInGaps || hasFuzzyData || hasDuplicatedIdFields || isEmpty || missesSomeSectors || erroneousSectors.n){
+				if (scannedWithError || hasNonformattedArea || hasDataInGaps || hasFuzzyData || hasDuplicatedIdFields || isEmpty || missesSomeSectors || erroneousSectors.n){
 					TDumpParams::TSourceTrackErrors *psse=(TDumpParams::TSourceTrackErrors *)::malloc(sizeof(TDumpParams::TSourceTrackErrors)+std::max(0,erroneousSectors.n-1)*sizeof(TDumpParams::TSourceSectorError));
 						psse->cyl=p.chs.cylinder, psse->head=p.chs.head;
+						psse->scannedWithError=scannedWithError;
 						psse->hasNonformattedArea=hasNonformattedArea;
 						psse->hasDataInGaps=hasDataInGaps;
 						psse->hasFuzzyData=hasFuzzyData;
