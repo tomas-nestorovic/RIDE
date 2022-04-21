@@ -823,7 +823,7 @@
 	{		EXCLUSIVELY_LOCK_DEVICE();
 			if (!SeekTo(cyl) || !SelectHead(head) || !SetMotorOn())
 				return 0;
-			const BYTE nIndicesRequested=std::min<BYTE>( GetAvailableRevolutionCount(cyl,head)+1, Revolution::MAX ); // N+1 indices = N full revolutions
+			const BYTE nIndicesRequested=std::min<BYTE>( params.PrecisionToFullRevolutionCount()+1, Revolution::MAX ); // N+1 indices = N full revolutions
 			SendRequest( TRequest::STREAM, MAKEWORD(1,nIndicesRequested) ); // start streaming
 				while (const DWORD nBytesFree=tmpDataBuffer+KF_BUFFER_CAPACITY-p)
 					if (const auto n=Read( p, nBytesFree )){

@@ -33,6 +33,8 @@
 
 			TParams();
 			~TParams();
+
+			inline BYTE PrecisionToFullRevolutionCount() const{ return precision; }
 		} params;
 
 		const LPCTSTR firmware;
