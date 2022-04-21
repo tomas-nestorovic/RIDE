@@ -15,7 +15,7 @@
 		MAKE_IMAGE_ID('C','A','P','S','_','K','F','S'), // a unique identifier
 		Recognize,	// list of recognized device names
 		Instantiate,	// instantiation function
-		_T("*.0.raw") IMAGE_FORMAT_SEPARATOR _T("*.1.raw"), // filter
+		_T("*.00.0.raw") IMAGE_FORMAT_SEPARATOR _T("*.00.1.raw"), // filter
 		Medium::FLOPPY_ANY, // supported Media
 		Codec::FLOPPY_ANY, // supported Codecs
 		1,2*6144	// Sector supported min and max length
@@ -71,6 +71,13 @@
 			::GetLastError()!=ERROR_NOT_SUPPORTED // the CAPS library currently doesn't support reading Stream files
 		)
 			return FALSE;
+		// - initial Stream file must exist (but other Tracks don't)
+		CFileException e;
+		CFile f;
+		if (!f.Open( lpszPathName, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary, &e )){
+			::SetLastError( e.m_cause );
+			return FALSE;
+		}
 		// - recognizing the name pattern
 		if (!SetNameBase(lpszPathName))
 			return FALSE;
