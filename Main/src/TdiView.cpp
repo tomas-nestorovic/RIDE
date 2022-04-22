@@ -104,7 +104,8 @@
 			// - base
 			__super::PreInitDialog();
 			GetClientRect(&rcCurrContent);
-			rcCurrContent.top=Utils::LogicalUnitScaleFactor*55, rcCurrContent.left=Utils::LogicalUnitScaleFactor*70, rcCurrContent.right-=Utils::LogicalUnitScaleFactor*16;
+			rcCurrContent.left=Utils::LogicalUnitScaleFactor*70, rcCurrContent.right-=Utils::LogicalUnitScaleFactor*16;
+			rcCurrContent.top= 8 + GetDlgItemClientRect(ID_HEAD).bottom;
 			// - informing on outdated version
 			if (!app.dateRecencyLastChecked){ // 0 = known that this app is outdated
 				__addCategory__( _T("Outdated!"), 0xf069 );
