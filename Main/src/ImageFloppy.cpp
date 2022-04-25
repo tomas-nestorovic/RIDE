@@ -135,7 +135,7 @@
 								);
 						EXCLUSIVELY_LOCK(ps->request); // synchronizing with dtor
 						if (ps->workerStatus!=TScannerStatus::UNAVAILABLE) // should we terminate?
-							ps->pParentHexaEditor->RepaintData(true); // True = immediate repainting
+							ps->pParentHexaEditor->RepaintData();
 					// . then, scanning the remaining Tracks (if not all yet scanned)
 					}else{
 						// : scanning the next remaining Track

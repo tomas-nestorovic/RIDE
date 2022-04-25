@@ -346,6 +346,33 @@
 		rLogicalEnd=__firstByteInRowToLogicalPosition__(i+nRowsDisplayed);
 	}
 
+	void CHexaEditor::ScrollToCaretAsync(){
+		// makes sure the Caret is visible
+		if (::GetCurrentThreadId()==::GetWindowThreadProcessId(*this,nullptr)) // do we owe the HexaEditor control?
+			SendMessage( WM_KEYDOWN, VK_KANJI );
+		else
+			PostMessage( WM_KEYDOWN, VK_KANJI );
+	}
+
+	int CHexaEditor::GetLogicalSelection(PINT pOutSelA,PINT pOutSelZ) const{
+		// gets current Selection and returns current Caret Position
+		if (pOutSelA)
+			*pOutSelA=caret.selectionA;
+		if (pOutSelZ)
+			*pOutSelZ=caret.position;
+		return caret.position;
+	}
+
+	void CHexaEditor::SetLogicalSelection(int selA,int selZ){
+		// sets current Selection, moving Caret to the end of the Selection
+		if (selA>selZ)
+			std::swap( selA, selZ );
+		caret.selectionA=std::max(0,selA);
+		caret.position=std::min(selZ,maxFileSize);
+		RepaintData();
+		ScrollToCaretAsync();
+	}
+
 	void CHexaEditor::ScrollTo(int logicalPos,bool moveAlsoCaret){
 		// independently from Caret, displays specified LogicalPosition
 		if (moveAlsoCaret)
@@ -430,8 +457,8 @@
 			PostMessage( WM_HEXA_PAINTSCROLLBARS );
 	}
 
-	void CHexaEditor::RepaintData(bool immediately) const{
-		// invalidates the "data" (the content below the Header), eventually repaints them Immediately
+	void CHexaEditor::RepaintData() const{
+		// invalidates the "data" (the content below the Header)
 		if (m_hWnd){
 			locker.Lock();
 				if (!mouseInNcArea) // when NOT in the non-client area (e.g. over a scrollbar), repainting normally
@@ -440,7 +467,7 @@
 			RECT rc;
 			GetClientRect(&rc);
 			rc.top=HEADER_HEIGHT;
-			::RedrawWindow( m_hWnd, &rc, nullptr, RDW_INVALIDATE|RDW_NOCHILDREN|(BYTE)immediately*RDW_UPDATENOW );
+			::InvalidateRect( m_hWnd, &rc, TRUE );
 		}
 	}
 
@@ -541,7 +568,7 @@
 				// key pressed
 				const bool ctrl=::GetKeyState(VK_CONTROL)<0;
 				switch (wParam){
-					case VK_LEFT:{
+					case VK_LEFT:
 						caret.position--;
 caretCorrectlyMoveTo:	// . adjusting the Caret's Position
 						caret.hexaLow=true; // the next keystroke will modify the lower four bits of current hexa-value
@@ -553,6 +580,8 @@ caretCorrectlyMoveTo:	// . adjusting the Caret's Position
 								RepaintData(); // ... invalidating the content as the Selection may no longer be valid (e.g. may be deselected)
 							caret.__detectNewSelection__();
 						}
+						//fallthrough
+					case VK_KANJI:{
 caretRefresh:			// . refreshing the Caret
 						HideCaret();
 							// : scrolling if Caret has been moved to an invisible part of the File content
@@ -1236,7 +1265,7 @@ leftMouseDragged:
 					// in either Hexa or Ascii areas
 					int recordStart,recordLength;
 					pContentAdviser->GetRecordInfo( logPos, &recordStart, &recordLength, nullptr );
-					HexaEditor_SetSelection( m_hWnd, recordStart, recordStart+recordLength );
+					SetLogicalSelection( recordStart, recordStart+recordLength );
 				}
 				break;
 			}
@@ -1311,11 +1340,7 @@ leftMouseDragged:
 				break;
 			case EM_GETSEL:
 				// gets current Selection
-				if (wParam!=0)
-					*(PINT)wParam=caret.selectionA;
-				if (lParam!=0)
-					*(PINT)lParam=caret.position;
-				return caret.position; // returned is the Caret Position, in contrast to the convenient value for an Edit control
+				return GetLogicalSelection( (PINT)wParam, (PINT)lParam ); // returns the Caret Position, in contrast to the convenient value for an Edit control
 			case EM_SETSEL:
 				// sets current Selection, moving Caret to the end of the Selection
 				if (wParam>lParam){

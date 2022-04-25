@@ -151,7 +151,7 @@
 						//fallthrough
 					case ID_SELECT_CURRENT_CYLINDER:{
 						// selecting current Cylinder and placing Cursor at the end of the selection
-						int pos=HexaEditor_GetCaretPos(m_hWnd);
+						int pos=GetCaretLogPos();
 						f->Seek(pos,CFile::begin);
 						const TPhysicalAddress currChs=f->GetCurrentPhysicalAddress();
 						int selectionA;
@@ -171,7 +171,7 @@
 							selectionZ+=sectorLength;
 							f->Seek(selectionZ,CFile::begin);
 						}while (!::memcmp( &currChs, &f->GetCurrentPhysicalAddress(), nBytesToCompare ));					
-						HexaEditor_SetSelection( m_hWnd, selectionA, selectionZ );
+						SetLogicalSelection( selectionA, selectionZ );
 						return TRUE;
 					}
 					case ID_NAVIGATE_PREVIOUSTRACK:
@@ -180,7 +180,7 @@
 						//fallthrough
 					case ID_NAVIGATE_PREVIOUSCYLINDER:{
 						// moving Cursor at the beginning of previous Cylinder
-						int pos=HexaEditor_GetCaretPos(m_hWnd);
+						int pos=GetCaretLogPos();
 						f->Seek(pos-1,CFile::begin);
 						const TPhysicalAddress currChs=f->GetCurrentPhysicalAddress();
 						int targetPos;
@@ -191,7 +191,7 @@
 							f->GetRecordInfo( --pos, &pos, nullptr, nullptr );
 							f->Seek(pos,CFile::begin);
 						}while (!::memcmp( &currChs, &f->GetCurrentPhysicalAddress(), nBytesToCompare ));
-						HexaEditor_SetSelection( m_hWnd, targetPos, targetPos );
+						SetLogicalSelection( targetPos, targetPos );
 						return TRUE;
 					}
 					case ID_NAVIGATE_NEXTTRACK:
@@ -200,7 +200,7 @@
 						//fallthrough
 					case ID_NAVIGATE_NEXTCYLINDER:{
 						// moving Cursor at the beginning of next Cylinder
-						int pos=HexaEditor_GetCaretPos(m_hWnd);
+						int pos=GetCaretLogPos();
 						f->Seek(pos,CFile::begin);
 						const TPhysicalAddress currChs=f->GetCurrentPhysicalAddress();
 						do{
@@ -211,13 +211,13 @@
 							pos+=sectorLength;
 							f->Seek(pos,CFile::begin);
 						}while (!::memcmp( &currChs, &f->GetCurrentPhysicalAddress(), nBytesToCompare ));
-						HexaEditor_SetSelection( m_hWnd, pos, pos );
+						SetLogicalSelection( pos, pos );
 						return TRUE;
 					}
 					case ID_NAVIGATE_SECTOR:{
 						// moving Cursor at the beginning of user-selected Sector
 						// . seeking at the Cursor Position to determine the PhysicalAddress
-						f->Seek( HexaEditor_GetCaretPos(m_hWnd), CFile::begin );
+						f->Seek( GetCaretLogPos(), CFile::begin );
 						// . defining the Dialog
 						class CGoToSectorDialog sealed:public Utils::CRideDialog{
 							const Utils::CRideFont symbolFont;
@@ -317,7 +317,7 @@
 						// . showing the Dialog and processing its result
 						if (d.DoModal()==IDOK){
 							const int pos=f->GetSectorStartPosition(d.chs,d.sectorIndexOnTrack);
-							HexaEditor_SetSelection( m_hWnd, pos, pos );
+							SetLogicalSelection( pos, pos );
 						}
 						return TRUE;
 					}
@@ -341,11 +341,11 @@
 			const int posSector=f->GetSectorStartPosition( seekTo.chs, seekTo.nSectorsToSkip );
 			if (posSector<newLogicalSize){
 				// Sector already discovered on the disk
-				HexaEditor_SetSelection( m_hWnd, posSector, posSector );
+				SetLogicalSelection( posSector, posSector );
 				seekTo.chs=TPhysicalAddress::Invalid; // seeking finished
 			}else
 				// disk still scanned for the Sector
-				HexaEditor_SetSelection( m_hWnd, newLogicalSize, newLogicalSize );
+				SetLogicalSelection( newLogicalSize, newLogicalSize );
 		}
 		// - content cannot be shorter or longer than the actual number of Bytes in all Sectors discovered thus far
 		SetLogicalBounds( newLogicalSize, newLogicalSize );

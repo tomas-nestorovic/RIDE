@@ -3,13 +3,6 @@
 
 	#define HEXAEDITOR_RECORD_SIZE_INFINITE	0x7fffff00
 
-	#define HexaEditor_GetSelection(hWnd,pOutSelA,pOutSelZ)\
-		::SendMessage( hWnd, EM_GETSEL, (WPARAM)(pOutSelA), (LPARAM)(pOutSelZ) )
-	#define HexaEditor_SetSelection(hWnd,selA,selZ)\
-		::SendMessage( hWnd, EM_SETSEL, selA, selZ )
-	#define HexaEditor_GetCaretPos(hWnd)\
-		HexaEditor_GetSelection( hWnd, nullptr, nullptr )
-
 	struct TState{
 		int minFileSize,maxFileSize;
 		int logicalSize; // zero by default
@@ -90,6 +83,7 @@
 		int __logicalPositionToRow__(int logPos) const;
 		int __logicalPositionFromPoint__(const POINT &rPoint,bool *pOutAsciiArea) const;
 		int __scrollToRow__(int row);
+		void ScrollToCaretAsync();
 		void __refreshVertically__();
 		void __refreshCaretDisplay__() const;
 		void __showMessage__(LPCTSTR msg) const;
@@ -137,12 +131,15 @@
 		void SetLogicalBounds(int _minFileSize,int _maxFileSize);
 		int GetLogicalSize() const;
 		virtual void SetLogicalSize(int _logicalSize);
+		int GetLogicalSelection(PINT pOutSelA,PINT pOutSelZ) const;
+		void SetLogicalSelection(int selA,int selZ);
+		inline int GetCaretLogPos() const{ return GetLogicalSelection(nullptr,nullptr); }
 		void ScrollTo(int logicalPos,bool moveAlsoCaret=false);
 		void ScrollToRow(int iRow,bool moveAlsoCaret=false);
 		void GetVisiblePart(int &rLogicalBegin,int &rLogicalEnd) const;
 		void AddEmphasis(int a,int z);
 		void CancelAllEmphases();
-		void RepaintData(bool immediately=false) const;
+		void RepaintData() const;
 		BOOL PreTranslateMessage(PMSG pMsg) override;
 	};
 

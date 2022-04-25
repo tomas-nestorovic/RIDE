@@ -139,7 +139,7 @@
 						// resetting selected DirectoryEntries to their default content
 						// . getting the selection range
 						int selA,selZ;
-						SendMessage( EM_GETSEL, (WPARAM)&selA, (LPARAM)&selZ );
+						GetLogicalSelection( &selA, &selZ );
 						if (selA>selZ)
 							std::swap(selA,selZ);
 						// . navigating to the first (at least partially) selected DirectoryEntry
