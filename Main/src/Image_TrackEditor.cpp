@@ -914,6 +914,8 @@
 						case ID_PREV_PANE:
 							if (const POSITION pos=timeEditor.GetParseEvents().GetPositionByStart(0,TParseEvent::FUZZY_OK,TParseEvent::FUZZY_BAD))
 								pCmdUi->Enable( timeEditor.GetParseEvents().GetAt(pos).tStart<timeEditor.GetCenterTime() );
+							else
+								pCmdUi->Enable( FALSE );
 							return TRUE;						
 						case ID_NEXT_PANE:
 							pCmdUi->Enable( timeEditor.GetParseEvents().GetPositionByStart(timeEditor.GetCenterTime()+1,TParseEvent::FUZZY_OK,TParseEvent::FUZZY_BAD)!=nullptr );
