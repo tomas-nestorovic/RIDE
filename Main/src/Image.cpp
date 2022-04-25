@@ -87,7 +87,7 @@
 	}
 	TTrack TPhysicalAddress::GetTrackNumber() const{
 		// determines and returns the Track number based on DOS's current Format
-		return GetTrackNumber( CImage::GetActive()->dos->formatBoot.nHeads );
+		return GetTrackNumber( CImage::GetActive()->GetHeadCount() );
 	}
 	TTrack TPhysicalAddress::GetTrackNumber(THead nHeads) const{
 		// determines and returns the Track number based on the specified NumberOfHeads

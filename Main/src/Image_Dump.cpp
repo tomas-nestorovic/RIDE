@@ -43,7 +43,7 @@
 			, fullTrackAnalysis( source->ReadTrack(0,0) ) // if the Source provides access to low-level recording, let's also do the FullTrackAnalysis
 			, fillerByte(dos->properties->sectorFillerByte)
 			, cylinderA(0) , cylinderZ(source->GetCylinderCount()-1)
-			, nHeads(source->GetNumberOfFormattedSides(0))
+			, nHeads(source->GetNumberOfFormattedSides(0)) // may be just a subset of GetHeadCount()
 			, pOutErroneousTracks(nullptr) {
 			gap3.value=dos->properties->GetValidGap3ForMedium(dos->formatBoot.mediumType);
 			gap3.valueValid=true;
