@@ -49,11 +49,6 @@
 		return TRUE;
 	}
 
-	BYTE CIpf::GetAvailableRevolutionCount(TCylinder cyl,THead head) const{
-		// returns the number of data variations of one Sector that are guaranteed to be distinct
-		return CAPS_MTRS;
-	}
-
 	TStdWinError CIpf::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus){
 		// marks Sector on a given PhysicalAddress as "dirty", plus sets it the given FdcStatus; returns Windows standard i/o error
 		return ERROR_NOT_SUPPORTED;

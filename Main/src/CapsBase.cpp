@@ -504,7 +504,11 @@
 
 	BYTE CCapsBase::GetAvailableRevolutionCount(TCylinder cyl,THead head) const{
 		// returns the number of data variations of one Sector that are guaranteed to be distinct
-		return 4;
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		if (cyl<=capsImageInfo.maxcylinder && head<=capsImageInfo.maxhead)
+			if (const PInternalTrack pit=internalTracks[cyl][head])
+				return pit->GetIndexCount()-1; // # of full Revolutions
+		return 0; // Track doesn't exist
 	}
 
 	TSector CCapsBase::ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec,PSectorId bufferId,PWORD bufferLength,PLogTime startTimesNanoseconds,PBYTE pAvgGap3) const{
