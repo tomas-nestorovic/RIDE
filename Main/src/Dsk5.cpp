@@ -291,7 +291,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 	bool CDsk5::IsTrackScanned(TCylinder cyl,THead head) const{
 		// True <=> Track exists and has already been scanned, otherwise False
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		return	__findTrack__(cyl,head)!=nullptr;
+		return	cyl<diskInfo.nCylinders && head<diskInfo.nHeads;
 	}
 
 	void CDsk5::GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses){
