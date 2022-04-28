@@ -281,11 +281,11 @@ BEGIN
             , GRAYED
         END
         MENUITEM SEPARATOR
-        POPUP "Floppy recognition"
+        POPUP "Version recognition"
         BEGIN
             MENUITEM "Autodetect",                  ID_MDOS_AUTODETECT
-            MENUITEM "Force version 1.0",           ID_MDOS_VERSION1
-            MENUITEM "Force version 2.0",           ID_MDOS_VERSION2
+            MENUITEM "Force 1.0",                   ID_MDOS_VERSION1
+            MENUITEM "Force 2.0",                   ID_MDOS_VERSION2
         END
         MENUITEM "Export with shell-compliant names", 
                                                 ID_DOS_SHELLCOMPLIANTNAMES

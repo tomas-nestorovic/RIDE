@@ -41,7 +41,7 @@
 	static constexpr CFormatDialog::TStdFormat StdFormats[]={
 		{ _T("3.5\" DS 80x9"), 0, {Medium::FLOPPY_DD,Codec::MFM,79,2,9,MDOS2_SECTOR_LENGTH_STD_CODE,MDOS2_SECTOR_LENGTH_STD,1}, 1, 0, FDD_350_SECTOR_GAP3, 1, 128 },
 		{ _T("3.5\" DS 40x9 (beware under MDOS1!)"), 0, {Medium::FLOPPY_DD,Codec::MFM,39,2,9,MDOS2_SECTOR_LENGTH_STD_CODE,MDOS2_SECTOR_LENGTH_STD,1}, 1, 0, FDD_350_SECTOR_GAP3, 1, 128 },
-		{ _T("5.25\" DS 40x9, 360 RPM"), 0, {Medium::FLOPPY_DD_525,Codec::MFM,39,2,9,MDOS2_SECTOR_LENGTH_STD_CODE,MDOS2_SECTOR_LENGTH_STD,1}, 1, 0, FDD_525_SECTOR_GAP3, 1, 128 }
+		{ _T("5.25\" DS 40x9, 360 RPM"), 0, {Medium::FLOPPY_DD_525,Codec::MFM,39,2,9,MDOS2_SECTOR_LENGTH_STD_CODE,MDOS2_SECTOR_LENGTH_STD,1}, 1, 0, FDD_350_SECTOR_GAP3, 1, 128 } // Gap3 is fine to be the same as with 3.5" media (plus the Format easier human-recognizable in the "Format cyls" dialog)
 	};
 	const CDos::TProperties CMDOS2::Properties={
 		_T("MDOS 2.0"), // name
