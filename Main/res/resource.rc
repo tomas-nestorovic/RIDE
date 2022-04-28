@@ -826,6 +826,8 @@ BEGIN
     BEGIN
         MENUITEM "Create subdir...\tCtrl+D",    ID_FILEMANAGER_SUBDIR_CREATE
         MENUITEM SEPARATOR
+        MENUITEM "Paste\tCtrl+V",               ID_EDIT_PASTE
+        MENUITEM SEPARATOR
         MENUITEM "Select all\tCtrl+A",          ID_EDIT_SELECT_ALL
         MENUITEM "Select none\tCtrl+Shift+A",   ID_EDIT_SELECT_NONE
     END
