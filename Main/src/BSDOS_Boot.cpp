@@ -61,8 +61,11 @@
 
 	#define BSDOS_SECTOR_GAP3	32 /* smaller than regular IBM norm-compliant Gap to make sure all Sectors fit in a Track */
 
+	#define DD_525_CAPTION	_T("5.25\" DS DD")
+
 	static constexpr CFormatDialog::TStdFormat StdFormats[]={
-		{ _T("5.25\" DS DD, 360 RPM"), 0, {Medium::FLOPPY_DD_525,Codec::MFM,39,2,5,TFormat::TLengthCode::LENGTHCODE_1024,BSDOS_SECTOR_LENGTH_STD,1}, 1, 0, BSDOS_SECTOR_GAP3, 2, 32 },
+		{ DD_525_CAPTION,	 0, {Medium::FLOPPY_DD_525,Codec::MFM,39,2,5,TFormat::TLengthCode::LENGTHCODE_1024,BSDOS_SECTOR_LENGTH_STD,1}, 1, 0, BSDOS_SECTOR_GAP3, 2, 32 },
+		{ DD_525_CAPTION,	 0, {Medium::FLOPPY_DD,Codec::MFM,39,2,5,TFormat::TLengthCode::LENGTHCODE_1024,BSDOS_SECTOR_LENGTH_STD,1}, 1, 0, BSDOS_SECTOR_GAP3, 2, 32 },
 		{ _T("3.5\" DS DD"), 0, {Medium::FLOPPY_DD,Codec::MFM,79,2,5,TFormat::TLengthCode::LENGTHCODE_1024,BSDOS_SECTOR_LENGTH_STD,1}, 1, 0, BSDOS_SECTOR_GAP3, 2, 32 },
 		{ _T("3.5\" DS HD"), 0, {Medium::FLOPPY_HD_350,Codec::MFM,79,2,11,TFormat::TLengthCode::LENGTHCODE_1024,BSDOS_SECTOR_LENGTH_STD,1}, 1, 0, BSDOS_SECTOR_GAP3, 2, 32 }
 	};
@@ -73,9 +76,9 @@
 		60, // recognition priority
 		__recognizeDisk__, // recognition function
 		__instantiate__, // instantiation function
-		Medium::FLOPPY_ANY, // Unknown Medium
+		Medium::FLOPPY_ANY,
 		&MBD::Properties, // the most common Image to contain data for this DOS (e.g. *.D80 Image for MDOS)
-		3,	// number of std Formats
+		sizeof(StdFormats)/sizeof(CFormatDialog::TStdFormat),	// number of std Formats
 		StdFormats,//CMDOS2::Properties.stdFormats, // std Formats ("some" Format in case of UnknownDos)
 		Codec::MFM, // a set of Codecs this DOS supports
 		1,11, // range of supported number of Sectors

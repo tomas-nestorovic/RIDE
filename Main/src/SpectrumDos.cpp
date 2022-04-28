@@ -43,7 +43,7 @@
 				// formatting standard Cylinders (i.e. with standard "official" Sectors)
 				const TCylinder cylMin=std::min<int>( 1+GetLastOccupiedStdCylinder(), formatBoot.nCylinders );
 				CFormatDialog::TStdFormat additionalFormats[]={
-					{ _T("Expand to 40 cylinders"),	cylMin, formatBoot, 1, 0, FDD_525_SECTOR_GAP3, properties->stdFormats->params.nAllocationTables, properties->nRootDirectoryEntriesMax },
+					{ _T("Expand to 40 cylinders"),	cylMin, formatBoot, 1, 0, FDD_350_SECTOR_GAP3, properties->stdFormats->params.nAllocationTables, properties->nRootDirectoryEntriesMax }, // Gap3 is fine even for 5.25" Spectrum floppies
 					{ _T("Expand to 80 cylinders"),	cylMin, formatBoot, 1, 0, FDD_350_SECTOR_GAP3, properties->stdFormats->params.nAllocationTables, properties->nRootDirectoryEntriesMax }
 				};
 					additionalFormats[0].params.format.nCylinders=39;

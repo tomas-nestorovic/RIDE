@@ -137,9 +137,9 @@
 
 	// 5.25" drives are likely 360 rpm ones in PC
 	#define DS80_CAPTION	_T("3.5\" DS 80 cylinders")
-	#define DS40_CAPTION	_T("5.25\" DS 40 cylinders, 360 rpm")
+	#define DS40_CAPTION	_T("5.25\" DS 40 cylinders")
 	#define SS80_CAPTION	_T("3.5\" SS 80 cylinders")
-	#define SS40_CAPTION	_T("5.25\" SS 40 cylinders, 360 rpm")
+	#define SS40_CAPTION	_T("5.25\" SS 40 cylinders")
 
 	static PDos __instantiate__(PImage image,PCFormat pFormatBoot){
 		return new CTRDOS503(image,pFormatBoot,&CTRDOS503::Properties);
@@ -151,7 +151,9 @@
 	const CFormatDialog::TStdFormat CTRDOS503::StdFormats[]={ // zeroth position must always be occupied by the biggest capacity
 		{ DS80_CAPTION, 0, {Medium::FLOPPY_DD,    Codec::MFM,79,2,TRDOS503_TRACK_SECTORS_COUNT,TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD,1}, 1, 0, TRDOS_SECTOR_GAP3, 0, 128 },
 		{ DS40_CAPTION, 0, {Medium::FLOPPY_DD_525,Codec::MFM,39,2,TRDOS503_TRACK_SECTORS_COUNT,TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD,1}, 1, 0, TRDOS_SECTOR_GAP3, 0, 128 },
-		{ SS80_CAPTION, 0, {Medium::FLOPPY_DD,	   Codec::MFM,79,1,TRDOS503_TRACK_SECTORS_COUNT,TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD,1}, 1, 0, TRDOS_SECTOR_GAP3, 0, 128 },
+		{ SS80_CAPTION, 0, {Medium::FLOPPY_DD,	  Codec::MFM,79,1,TRDOS503_TRACK_SECTORS_COUNT,TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD,1}, 1, 0, TRDOS_SECTOR_GAP3, 0, 128 },
+		{ DS40_CAPTION, 0, {Medium::FLOPPY_DD,    Codec::MFM,39,2,TRDOS503_TRACK_SECTORS_COUNT,TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD,1}, 1, 0, TRDOS_SECTOR_GAP3, 0, 128 },
+		{ SS40_CAPTION, 0, {Medium::FLOPPY_DD,	  Codec::MFM,39,1,TRDOS503_TRACK_SECTORS_COUNT,TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD,1}, 1, 0, TRDOS_SECTOR_GAP3, 0, 128 },
 		{ SS40_CAPTION, 0, {Medium::FLOPPY_DD_525,Codec::MFM,39,1,TRDOS503_TRACK_SECTORS_COUNT,TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD,1}, 1, 0, TRDOS_SECTOR_GAP3, 0, 128 }
 	};
 	const CDos::TProperties CTRDOS503::Properties={
@@ -162,7 +164,7 @@
 		__instantiate__, // instantiation function
 		Medium::FLOPPY_DD_ANY,
 		&TRD::Properties, // the most common Image to contain data for this DOS (e.g. *.D80 Image for MDOS)
-		4,	// number of std Formats
+		sizeof(StdFormats)/sizeof(CFormatDialog::TStdFormat),	// number of std Formats
 		StdFormats, // std Formats
 		Codec::MFM, // a set of Codecs this DOS supports
 		TRDOS503_TRACK_SECTORS_COUNT,TRDOS503_TRACK_SECTORS_COUNT, // range of supported number of Sectors
