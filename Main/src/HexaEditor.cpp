@@ -38,7 +38,7 @@
 		// adds a new Bookmark at specified LogicalPosition (if not already added there)
 		if (__getNearestNextBookmarkPosition__(logPos)==logPos) // if Bookmark already present ...
 			return; // ... we are done
-		WORD i=GetSize();
+		auto i=GetSize();
 		while (i>0)
 			if ((*this)[i-1]>logPos)
 				i--;
@@ -48,7 +48,7 @@
 	}
 	void CHexaEditor::CBookmarks::__removeBookmark__(int logPos){
 		// removes existing Bookmark from specified LogicalPosition (if not already removed before)
-		for( WORD i=GetSize(); i>0; )
+		for( auto i=GetSize(); i>0; )
 			if ((*this)[--i]==logPos){
 				RemoveAt(i);
 				break;
@@ -60,7 +60,7 @@
 	}
 	int CHexaEditor::CBookmarks::__getNearestNextBookmarkPosition__(int logPos) const{
 		// finds and returns the Bookmark at LogicalPosition or the nearest next Bookmark
-		WORD i=GetSize();
+		auto i=GetSize();
 		while (i>0)
 			if ((*this)[i-1]>=logPos)
 				i--;
@@ -130,7 +130,7 @@
 		}
 		// - search for next match of the Pattern
 		pAction->SetProgressTarget( F->GetLength()+1 ); // "+1" = to not preliminary end the search thread
-		int fEnd=F->GetLength();
+		auto fEnd=F->GetLength();
 		do{
 			F->Seek( search.logPosFound, CFile::begin );
 			for( BYTE posMatched=0,b; F->GetPosition()<fEnd; pAction->UpdateProgress(F->GetPosition()) )

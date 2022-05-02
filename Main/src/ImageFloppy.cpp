@@ -440,7 +440,7 @@
 								*pOutDataReady&=image->IsSectorDataReady( track>>1, track&1, ids[iSector], iSector, (Revolution::TType)r )!=TDataStatus::NOT_READY;
 							break;
 						default:
-							*pOutDataReady=image->IsSectorDataReady( track>>1, track&1, ids[iSector], iSector, revolution );
+							*pOutDataReady=TDataStatus::NOT_READY!=image->IsSectorDataReady( track>>1, track&1, ids[iSector], iSector, revolution );
 							break;
 					}
 					if (!*pOutDataReady){

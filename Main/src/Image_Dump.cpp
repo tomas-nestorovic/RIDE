@@ -1040,7 +1040,7 @@ setDestination:						// : compacting FileName in order to be better displayable 
 			if (d.dumpParams.target->IsWriteProtected()){
 				d.dumpParams.target->ToggleWriteProtection();
 				if (d.dumpParams.target->IsWriteProtected())
-					goto error;
+error:				return Utils::FatalError(_T("Cannot dump"),err);
 			}
 			if ( err=d.dumpParams.target->Reset() )
 				goto error;
@@ -1073,7 +1073,7 @@ setDestination:						// : compacting FileName in order to be better displayable 
 									? deducedSides.map // ... adopt them
 									: dos->sideMap; // otherwise adopt Sides defined by the DOS
 			if ( err=d.dumpParams.target->SetMediumTypeAndGeometry( &targetGeometry, sideMap, dos->properties->firstSectorNumber ) )
-error:			return Utils::FatalError(_T("Cannot dump"),err);
+				goto error;
 			d.dumpParams.target->SetPathName( d.dumpParams.targetFileName, FALSE );
 			// . dumping
 			CBackgroundMultiActionCancelable bmac( d.realtimeThreadPriority ? THREAD_PRIORITY_TIME_CRITICAL : THREAD_PRIORITY_NORMAL );
