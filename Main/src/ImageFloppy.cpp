@@ -234,6 +234,8 @@
 				// dtor
 				// . terminating the Worker
 		{		EXCLUSIVELY_LOCK(request);
+				if (workerStatus!=TScannerStatus::RUNNING) // e.g. Paused
+					return;
 				workerStatus=TScannerStatus::UNAVAILABLE;
 				request.track=0, request.revolution=Revolution::R0; // zeroth Track highly likely already scanned, so there will be no waiting time
 		}		request.bufferEvent.SetEvent(); // releasing the eventually blocked Worker
