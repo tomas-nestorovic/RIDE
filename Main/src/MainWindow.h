@@ -101,6 +101,7 @@
 			void RepopulateGuidePost() const;
 		} *pTdi;
 
+		static void SetStatusBarTextReady();
 		static void __resetStatusBar__();
 		static void __setStatusBarText__(LPCTSTR text);
 

@@ -12,6 +12,7 @@
 		std::unique_ptr<CImage::CSectorDataSerializer> f;
 		Revolution::TType revolution;
 
+		void UpdateStatusBar();
 		afx_msg int OnCreate(LPCREATESTRUCT lpcs);
 		afx_msg void OnDestroy();
 		afx_msg void ToggleWriteProtection();

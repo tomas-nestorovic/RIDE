@@ -54,6 +54,25 @@
 		return *dbView;
 	}
 
+	void CDiskBrowserView::UpdateStatusBar(){
+		// repopulates each pane in the StatusBar (if any)
+		CStatusBar &rStatusBar=app.GetMainWindow()->statusBar;
+		if (rStatusBar.m_hWnd) // may not exist if the app is closing
+			switch (revolution){
+				case Revolution::ANY_GOOD:
+					rStatusBar.SetPaneText( 1, _T("Any good") );
+					break;
+				case Revolution::ALL_INTERSECTED:
+					rStatusBar.SetPaneText( 1, _T("All intersected") );
+					break;
+				default:
+					TCHAR buf[8];
+					::wsprintf( buf, _T("Rev %c"), '1'+revolution );
+					rStatusBar.SetPaneText( 1, buf );
+					break;
+			}
+	}
+
 	afx_msg int CDiskBrowserView::OnCreate(LPCREATESTRUCT lpcs){
 		// window created
 		// - base
@@ -64,6 +83,14 @@
 		// - recovering the Scroll position and repainting the view (by setting its editability)
 		//SetScrollPos( SB_VERT, iScrollY ); //TODO: Uncomment when scroll position is represented as absolute position in content, not as a row
 		SetEditable( !IMAGE->IsWriteProtected() );
+		// - reinitializing the StatusBar
+		CStatusBar &rStatusBar=app.GetMainWindow()->statusBar;
+		if (rStatusBar.m_hWnd){ // may not exist if the app is closing
+			static constexpr UINT Indicators[]={ ID_SEPARATOR, ID_SEPARATOR };
+			rStatusBar.SetIndicators( Indicators, sizeof(Indicators)/sizeof(*Indicators) );
+			rStatusBar.SetPaneInfo( 1, ID_SEPARATOR, SBPS_NORMAL, 90 );
+		}
+		UpdateStatusBar();
 		return 0;
 	}
 
@@ -121,9 +148,11 @@
 					case ID_AUTO:
 						// selecting any Revolution with healthy data
 						f->SetCurrentRevolution( revolution=Revolution::ANY_GOOD );
+						UpdateStatusBar();
 						return TRUE;
 					case ID_INTERLEAVE:
 						f->SetCurrentRevolution( revolution=Revolution::ALL_INTERSECTED );
+						UpdateStatusBar();
 						return TRUE;
 					case ID_DEFAULT1:
 					case ID_DEFAULT2:
@@ -136,6 +165,7 @@
 						// selecting particular disk Revolution
 						if (nID-ID_DEFAULT1<f->nDiscoveredRevolutions) // do we have such Revolution?
 							f->SetCurrentRevolution( revolution=(Revolution::TType)(nID-ID_DEFAULT1) );
+						UpdateStatusBar();
 						return TRUE;
 					case ID_BUFFER:
 						// pause/resume scanning
@@ -380,7 +410,7 @@
 			::wsprintf( buf, _T("%d %% of disk scanned"), 100*nScannedCyls/IMAGE->GetCylinderCount() );
 			CMainWindow::__setStatusBarText__(buf);
 		}else
-			CMainWindow::__resetStatusBar__();
+			CMainWindow::SetStatusBarTextReady();
 		// - update available Revolutions Submenu
 		Utils::CRideContextMenu mainMenu( *app.GetMainWindow()->GetMenu() );
 		for( TCHAR rev=Revolution::R1,cmdStr[16]; rev<f->nDiscoveredRevolutions; rev++ ){

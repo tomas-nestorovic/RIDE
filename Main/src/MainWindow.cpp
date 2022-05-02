@@ -80,13 +80,19 @@
 
 
 
+	void CMainWindow::SetStatusBarTextReady(){
+		// sets the MainWindow's StatusBar text
+		CStatusBar &rsb=app.GetMainWindow()->statusBar;
+		if (rsb.m_hWnd)
+			rsb.SetPaneText(0,_T("Ready"));
+	}
 	void CMainWindow::__resetStatusBar__(){
 		// resets the MainWindow's StatusBar
 		CStatusBar &rsb=app.GetMainWindow()->statusBar;
 		if (rsb.m_hWnd){
 			static constexpr UINT Indicator=ID_SEPARATOR;
 			rsb.SetIndicators(&Indicator,1);
-			rsb.SetPaneText(0,_T("Ready"));
+			SetStatusBarTextReady();
 		}
 	}
 	void CMainWindow::__setStatusBarText__(LPCTSTR text){
