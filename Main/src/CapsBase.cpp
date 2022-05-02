@@ -642,10 +642,7 @@
 						// : attempting for Sector data in CurrentRevolution
 						pit->ReadSector( *pis, pis->currentRevolution );
 						// : if Data read WithoutError, returning them
-						if (currRev->data && currRev->fdcStatus.IsWithoutError() // healthy data exist
-							||
-							currRev->fdcStatus.DescribesMissingDam() // the Sector doesn't have the Data Field
-						)
+						if (currRev->data && currRev->fdcStatus.IsWithoutError()) // healthy data exist
 							break;
 						// : attempting next disk Revolution to retrieve healthy Data
 						if (!--nDataAttempts) // was this the last attempt?
