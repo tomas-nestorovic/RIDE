@@ -79,10 +79,10 @@
 		// - saving settings
 		app.WriteProfileInt( INI_TRACKMAP, INI_FILE_SELECTION_COLOR, fileSelectionColor );
 		// - waiting for the Scanner to finish properly
-		scanner.params.criticalSection.Lock();
+{		EXCLUSIVELY_LOCK(scanner.params);
 			scanner.params.nHeads=0; // 0 = terminate the Scanner
 			scanner.scanNextTrack.SetEvent();
-		scanner.params.criticalSection.Unlock();
+}
 		::WaitForSingleObject( scanner.action, INFINITE );
 	}
 
@@ -223,10 +223,10 @@
 			// . waiting for request to scan the next Track
 			rts.scanNextTrack.Lock();
 			// . getting the TrackNumber to scan
-			rts.params.criticalSection.Lock();
+			rts.params.locker.Lock();
 				const THead nHeads=rts.params.nHeads;
 				const TTrack trackNumber=rts.params.x;
-			rts.params.criticalSection.Unlock();
+			rts.params.locker.Unlock();
 			if (nHeads==0) // "nHeads==0" if disk without any Track (e.g. when opening RawImage of zero length, or if opening a corrupted DSK Image)
 				break;
 			const div_t d=div(trackNumber,nHeads);
@@ -234,8 +234,9 @@
 			PREVENT_FROM_DESTRUCTION(*image);
 			if (!::IsWindow(pvtm->m_hWnd)) // TrackMap may not exist if, for instance, switched to another view while still scanning some Track(s)
 				continue;
-			ti.cylinder=d.quot, ti.head=d.rem;
-			//if (pvtm->displayType==TDisplayType::STATUS) // commented out because this scanning always needed
+	{		EXCLUSIVELY_LOCK(rts.params);
+				ti.cylinder=d.quot, ti.head=d.rem; // syncing with Params due to comparison in drawing routine
+	}		//if (pvtm->displayType==TDisplayType::STATUS) // commented out because this scanning always needed
 			ti.nSectors=image->ScanTrack( ti.cylinder, ti.head, nullptr, ti.bufferId, ti.bufferLength, ti.bufferStartNanoseconds );
 			// . scanning the Track to draw its Sector data
 			if (pvtm->displayType>=TDisplayType::DATA_OK_ONLY){
@@ -249,7 +250,7 @@
 			}
 			// . sending scanned information for drawing
 			if (::IsWindow(pvtm->m_hWnd)) // TrackMap may not exist if, for instance, switched to another view while still scanning some Track(s)
-				pvtm->PostMessage( WM_TRACK_SCANNED, trackNumber, (LPARAM)&ti );
+				pvtm->PostMessage( WM_TRACK_SCANNED, 0, (LPARAM)&ti );
 		}
 		return ERROR_SUCCESS;
 	}
@@ -277,7 +278,7 @@
 
 	static constexpr int Tabs[]={ VIEW_PADDING, VIEW_PADDING+60, SECTOR1_X };
 
-	afx_msg LRESULT CTrackMapView::__drawTrack__(WPARAM trackNumber,LPARAM pTrackInfo){
+	afx_msg LRESULT CTrackMapView::__drawTrack__(WPARAM,LPARAM pTrackInfo){
 		// draws scanned Track
 		// - adjusting logical dimensions to accommodate the LongestTrack
 		const TTrackInfo &rti=*(TTrackInfo *)pTrackInfo;
@@ -309,7 +310,12 @@
 			}else
 				__updateLogicalDimensions__();
 		// - drawing
-		if (scanner.params.x==(TTrack)trackNumber){
+		scanner.params.locker.Lock();
+			const THead nHeads=scanner.params.nHeads;
+			const TTrack trackNumber=rti.cylinder*nHeads+rti.head;
+			const bool expectedTrackReceived=scanner.params.x==trackNumber;
+		scanner.params.locker.Unlock();
+		if (expectedTrackReceived){
 			// received scanned information of expected Track to draw
 			CClientDC dc(this);
 			OnPrepareDC(&dc);
@@ -390,7 +396,7 @@
 							CDos::CFatPath::PCItem item; DWORD n;
 							if (!fatPath.GetItems(item,n)) // FatPath valid
 								for( ; n--; item++ )
-									if (trackNumber==item->chs.GetTrackNumber(scanner.params.nHeads)){
+									if (trackNumber==item->chs.GetTrackNumber(nHeads)){
 										// this Sector (in currently drawn Track) belongs to one of selected Files
 										TSector s=0;
 										for( PCSectorId pRefId=&item->chs.sectorId; s<rti.nSectors; s++ )
@@ -404,9 +410,8 @@
 					::DeleteObject( ::SelectObject(dc,hPen0) );
 				}
 			// . next Track
-			scanner.params.criticalSection.Lock();
+			EXCLUSIVELY_LOCK(scanner.params);
 				scanner.params.x++;
-			scanner.params.criticalSection.Unlock();
 		}
 		// - if not all requested Tracks scanned yet, proceeding with scanning the next Track
 		if (scanner.params.x<scanner.params.z)
@@ -436,11 +441,10 @@
 		CRect r;
 		GetClientRect(&r);
 		const TTrack nTracks=IMAGE->GetTrackCount();
-		scanner.params.criticalSection.Lock();
+		EXCLUSIVELY_LOCK(scanner.params);
 			scanner.params.a=std::max( 0, (iScrollY-TRACK0_Y)/TRACK_HEIGHT );
 			scanner.params.z=std::min<LONG>( nTracks, std::max( 0L, (LONG)((iScrollY+r.Height()/Utils::LogicalUnitScaleFactor-TRACK0_Y+TRACK_HEIGHT-1)/TRACK_HEIGHT) ) );
 			scanner.params.x=scanner.params.a;
-		scanner.params.criticalSection.Unlock();
 		// - launching the Scanner of Tracks
 		scanner.scanNextTrack.SetEvent();
 	}
@@ -474,11 +478,10 @@
 		if (__super::OnCreate(lpcs)==-1) return -1;
 		OnInitialUpdate(); // because isn't called automatically by OnCreate; calls SetScrollSizes via OnUpdate
 		// - setting number of Heads
-		scanner.params.criticalSection.Lock();
+{		EXCLUSIVELY_LOCK(scanner.params);
 			if (scanner.params.nHeads) // no Heads if wanting to terminate the Scanner
 				scanner.params.nHeads=IMAGE->GetHeadCount();
-		scanner.params.criticalSection.Unlock();
-		// - recovering the scroll position
+}		// - recovering the scroll position
 		SetScrollPos( SB_HORZ, iScrollX, FALSE );
 		SetScrollPos( SB_VERT, iScrollY, FALSE );
 		// - updating the MainWindow's StatusBar
