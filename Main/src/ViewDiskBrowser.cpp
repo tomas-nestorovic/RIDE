@@ -71,6 +71,7 @@
 					rStatusBar.SetPaneText( 1, buf );
 					break;
 			}
+		ReportScanningProgress(0,0); // to make sure scanner status is immediatelly up-to-date
 	}
 
 	afx_msg int CDiskBrowserView::OnCreate(LPCREATESTRUCT lpcs){

@@ -110,14 +110,13 @@
 				auto &scannedTracks=image->scannedTracks;
 				const Utils::CByteIdentity sectorIdAndPositionIdentity;
 				do{
-					// . suspending the Worker if commanded so
-					if (ps->workerStatus==TScannerStatus::PAUSED)
-						pAction->Suspend(); // again resumed via SetTrackScannerStatus method
 					// . first, processing a request to buffer a Track (if any)
-					if (ps->request.bufferEvent.Lock( scannedTracks.allScanned ? INFINITE : 2 )){
+					if (ps->request.bufferEvent.Lock( scannedTracks.allScanned||ps->workerStatus==TScannerStatus::PAUSED ? INFINITE : 2 )){ // paused Worker processes only requests to retrieve data
 						ps->request.locker.Lock();
 							const TRequestParams req=ps->request;
 						ps->request.locker.Unlock();
+						if (req.track==-1) // a dummy data-retrieval request to "wake up" a Paused Worker?
+							continue;
 						TSectorId ids[FDD_SECTORS_MAX];
 						if (req.revolution!=Revolution::ALL_INTERSECTED)
 							// only particular Revolution wanted
@@ -329,7 +328,10 @@
 				if (workerStatus!=status)
 					switch ( GetFloppyImage().scannedTracks.scannerStatus= workerStatus = status ){
 						case TScannerStatus::RUNNING:
-							trackWorker.Resume();
+							if (request.track==-1) // just created Worker ...
+								trackWorker.Resume(); // ... is suspended, so resuming it
+							else // whereas a merely Paused Worker ...
+								request.bufferEvent.SetEvent(); // ... has been waiting for a data retrieval request
 							break;
 						case TScannerStatus::PAUSED:
 							break; // Worker suspends itself upon receiving this Status
