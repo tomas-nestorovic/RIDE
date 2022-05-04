@@ -4,6 +4,7 @@
 	class CFloppyImage:public CImage{
 		struct TScannedTracks sealed{
 			CCriticalSection locker;
+			CSectorDataSerializer::TScannerStatus scannerStatus;
 			BYTE n;
 			bool allScanned;
 			#if _MFC_VER>=0x0A00

@@ -34,6 +34,7 @@
 	CFloppyImage::TScannedTracks::TScannedTracks()
 		// ctor
 		: n(0) , allScanned(false) , nDiscoveredRevolutions(1)
+		, scannerStatus(CSectorDataSerializer::TScannerStatus::RUNNING)
 		, dataTotalLength(0) {
 	}
 
@@ -111,7 +112,7 @@
 				do{
 					// . suspending the Worker if commanded so
 					if (ps->workerStatus==TScannerStatus::PAUSED)
-						ps->trackWorker.Suspend(); // again resumed via SetTrackScannerStatus method
+						pAction->Suspend(); // again resumed via SetTrackScannerStatus method
 					// . first, processing a request to buffer a Track (if any)
 					if (ps->request.bufferEvent.Lock( scannedTracks.allScanned ? INFINITE : 2 )){
 						ps->request.locker.Lock();
@@ -312,17 +313,21 @@
 						break;
 				return result;
 			}
-			TScannerStatus GetTrackScannerStatus(PCylinder pnOutScannedCyls) const{
+			TScannerStatus GetTrackScannerStatus(PCylinder pnOutScannedCyls) const override{
 				// returns Track scanner Status, if any
 				EXCLUSIVELY_LOCK_SCANNED_TRACKS();
 				if (pnOutScannedCyls)
 					*pnOutScannedCyls=GetFloppyImage().scannedTracks.n>>1;
-				return GetFloppyImage().scannedTracks.allScanned ? TScannerStatus::UNAVAILABLE : workerStatus;
+				const auto &scannedTracks=GetFloppyImage().scannedTracks;
+				return	scannedTracks.allScanned
+						? TScannerStatus::UNAVAILABLE
+						: scannedTracks.scannerStatus; // returning what has been explicitly set via SetTrackScannerStatus (for the internal state may not yet reflect the explicit command)
 			}
-			void SetTrackScannerStatus(TScannerStatus status){
+			void SetTrackScannerStatus(TScannerStatus status) override{
 				// suspends/resumes Track scanner, if any (if none, simply ignores the request)
+				EXCLUSIVELY_LOCK_SCANNED_TRACKS();
 				if (workerStatus!=status)
-					switch ( workerStatus=status ){
+					switch ( GetFloppyImage().scannedTracks.scannerStatus= workerStatus = status ){
 						case TScannerStatus::RUNNING:
 							trackWorker.Resume();
 							break;

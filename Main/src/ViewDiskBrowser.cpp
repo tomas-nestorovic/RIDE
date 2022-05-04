@@ -99,7 +99,9 @@
 		f=IMAGE->CreateSectorDataSerializer(this);
 		const auto fLength=f->GetLength();
 		Update( f.get(), fLength, fLength );
-		f->SetTrackScannerStatus( TScannerStatus::RUNNING );
+		f->SetTrackScannerStatus(
+			f->GetTrackScannerStatus() // getting last known explicit status (e.g. by the user) ...
+		); // ... and resetting any internal status of the scanner
 	}
 
 	BOOL CDiskBrowserView::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){
@@ -405,12 +407,20 @@
 		// reports the disk scanning progress in StatusBar
 		// - report in StatusBar
 		TCylinder nScannedCyls;
-		if (f->GetTrackScannerStatus(&nScannedCyls)==CImage::CSectorDataSerializer::TScannerStatus::RUNNING){
-			TCHAR buf[32];
-			::wsprintf( buf, _T("%d %% of disk scanned"), 100*nScannedCyls/IMAGE->GetCylinderCount() );
-			CMainWindow::__setStatusBarText__(buf);
-		}else
-			CMainWindow::SetStatusBarTextReady();
+		switch (f->GetTrackScannerStatus(&nScannedCyls)){
+			case CImage::CSectorDataSerializer::TScannerStatus::RUNNING:{
+				TCHAR buf[32];
+				::wsprintf( buf, _T("%d %% of disk scanned"), 100*nScannedCyls/IMAGE->GetCylinderCount() );
+				CMainWindow::__setStatusBarText__(buf);
+				break;
+			}
+			case CImage::CSectorDataSerializer::TScannerStatus::PAUSED:
+				CMainWindow::__setStatusBarText__( _T("SCANNER PAUSED!") );
+				break;
+			default:
+				CMainWindow::SetStatusBarTextReady();
+				break;
+		}
 		// - update available Revolutions Submenu
 		Utils::CRideContextMenu mainMenu( *app.GetMainWindow()->GetMenu() );
 		for( TCHAR rev=Revolution::R1,cmdStr[16]; rev<f->nDiscoveredRevolutions; rev++ ){
