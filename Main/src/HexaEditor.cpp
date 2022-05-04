@@ -1449,7 +1449,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 					r.left=std::min<LONG>(xAsciiEnd,rcClip.right), r.right=std::min<>(rcClip.right,rcClip.right); // Label space; min(.) = to not paint over the scrollbar
 					::FillRect( dc, &r, Utils::CRideBrush::White );
 					// . drawing Addresses and data (both Ascii and Hexa parts)
-					const COLORREF labelColor=Utils::GetSaturatedColor(::GetSysColor(COLOR_GRAYTEXT),1.7f+.1f*!editable);
+					const COLORREF labelColor=Utils::GetSaturatedColor(::GetSysColor(COLOR_GRAYTEXT),1.7f);
 					const Utils::CRidePen recordDelimitingHairline( 0, labelColor );
 					const HGDIOBJ hPen0=::SelectObject( dc, recordDelimitingHairline );
 						int address=__firstByteInRowToLogicalPosition__(iRowA), y=HEADER_HEIGHT+iRowFirstToPaint*font.charHeight;
