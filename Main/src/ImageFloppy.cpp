@@ -226,6 +226,7 @@
 				image->scannedTracks.dataTotalLength=dataTotalLength;
 				// . launching the TrackWorker
 				request.track=-1;
+				trackWorker.Resume(); // initially Paused, gets locked waiting for the first data retrieval request
 				//SetTrackScannerStatus( TScannerStatus::RUNNING ); // commented out as up to caller to launch the scanner
 				// . initializing state of current Sector to read from or write to
 				//nop (in Worker)
@@ -328,10 +329,7 @@
 				if (workerStatus!=status)
 					switch ( GetFloppyImage().scannedTracks.scannerStatus= workerStatus = status ){
 						case TScannerStatus::RUNNING:
-							if (request.track==-1) // just created Worker ...
-								trackWorker.Resume(); // ... is suspended, so resuming it
-							else // whereas a merely Paused Worker ...
-								request.bufferEvent.SetEvent(); // ... has been waiting for a data retrieval request
+							request.bufferEvent.SetEvent(); // a previously Paused scanner has been waiting for a data retrieval request
 							break;
 						case TScannerStatus::PAUSED:
 							break; // Worker suspends itself upon receiving this Status
