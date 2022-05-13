@@ -209,6 +209,7 @@
 				bool current;
 				bool allUnknown;
 			} exclusion;
+			TFdcStatus fdcStatus;
 		} p;
 		::ZeroMemory(&p,sizeof(p));
 		p.canCalibrateHeads=dp.source->SeekHeadsHome()!=ERROR_NOT_SUPPORTED;
@@ -279,6 +280,7 @@
 					if (pAction->Cancelled)
 						return ERROR_CANCELLED;
 					p.chs.sectorId=bufferId[p.s];
+					p.fdcStatus=bufferFdcStatus[p.s];
 					// : reporting SourceSector Exclusion
 					p.exclusion.current|= p.exclusion.allUnknown && dp.dos->GetSectorStatus(p.chs)==CDos::TSectorStatus::UNKNOWN;
 					if (p.exclusion.current){
@@ -291,9 +293,9 @@
 						sPrev=~--p.s; // as below incremented
 					// : reporting SourceSector Errors if ...
 					}else if (
-						bufferFdcStatus[p.s].DescribesMissingId() // ... Sector ID not found (e.g. extremely damaged disk where Sectors appear and disappear randomly in each Revolution)
+						p.fdcStatus.DescribesMissingId() // ... Sector ID not found (e.g. extremely damaged disk where Sectors appear and disappear randomly in each Revolution)
 						||
-						bufferFdcStatus[p.s].ToWord()&~p.acceptance.automaticallyAcceptedErrors && !p.acceptance.remainingErrorsOnTrack // ... A&B, A = automatically not accepted Errors exist, B = Error reporting for current Track is enabled
+						p.fdcStatus.ToWord()&~p.acceptance.automaticallyAcceptedErrors && !p.acceptance.remainingErrorsOnTrack // ... A&B, A = automatically not accepted Errors exist, B = Error reporting for current Track is enabled
 					){
 						// | Dialog definition
 						class CErroneousSectorDialog sealed:public Utils::CRideDialog{
@@ -532,7 +534,7 @@
 								: Utils::CRideDialog( IDR_IMAGE_DUMP_ERROR, pParentWnd )
 								, dp(dp) , rp(_rParams) , sectorData(sectorData) , sectorLength(sectorLength) , rFdcStatus(rFdcStatus) {
 							}
-						} d(pAction,dp,p,bufferSectorData[p.s],bufferLength[p.s],bufferFdcStatus[p.s]);
+						} d(pAction,dp,p,bufferSectorData[p.s],bufferLength[p.s],p.fdcStatus);
 						// | reading SourceSector particular Revolution
 						LOG_SECTOR_ACTION(&p.chs.sectorId,_T("reading"));
 						const BYTE nRevsAvailable=dp.source->GetAvailableRevolutionCount( p.chs.cylinder, p.chs.head );
@@ -546,6 +548,7 @@
 							++p.revolution;
 							bufferSectorData[p.s]=dp.source->GetSectorData( p.chs, p.s, Revolution::NEXT, bufferLength+p.s, bufferFdcStatus+p.s );
 						}
+						p.fdcStatus=bufferFdcStatus[p.s]; // updating the Params
 						// | showing the Dialog and processing its result
 				{		LOG_DIALOG_DISPLAY(_T("CErroneousSectorDialog"));
 						switch (LOG_DIALOG_RESULT(d.DoModal())){
@@ -560,9 +563,9 @@
 								continue;
 				}		}
 					}
-					if (!bufferFdcStatus[p.s].IsWithoutError()){
+					if (!p.fdcStatus.IsWithoutError()){
 						TDumpParams::TSourceSectorError *const psse=&erroneousSectors.buffer[erroneousSectors.n++];
-						psse->id=p.chs.sectorId, psse->fdcStatus=bufferFdcStatus[p.s];
+						psse->id=p.chs.sectorId, psse->fdcStatus=p.fdcStatus;
 						psse->excluded=p.exclusion.current;
 					}
 					// : next SourceSector
