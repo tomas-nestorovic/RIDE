@@ -1247,7 +1247,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 		TLatencyParams(CFDD *fdd,WORD nsAccuracy,BYTE nRepeats)
 			: fdd(fdd)
 			, nsAccuracy(nsAccuracy) , nRepeats(nRepeats)
-			, cyl(0) , head(0) // a healthy Track will be found when determining the controller latency
+			, cyl(FDD_CYLINDERS_HD/2) , head(0) // a healthy Track will be found when determining the controller latency
 			, outControllerLatency(0) , out1ByteLatency(0) , outGap3Latency(0) {
 		}
 	};
@@ -1261,8 +1261,8 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 		private:
 			const PBackgroundActionCancelable pAction;
 			CFDD *const fdd;
-			TCylinder &rCyl;
-			THead &rHead;
+			const TCylinder &rCyl;
+			const THead &rHead;
 			const PVOID sectorDataToWrite;
 			const WORD nsAccuracy; // nanoseconds
 		public:
@@ -1356,7 +1356,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 				if (sr.IsWithoutError())
 					break; // yes, a healthy Track has been found - using it for computation of all latencies
 				// : attempting to create a Sector WithoutErrors on another Track
-				if (++lp.cyl==FDD_CYLINDERS_MAX)
+				if (!--lp.cyl)
 					return LOG_ERROR(pAction->TerminateWithError(ERROR_REQUEST_REFUSED));
 			}while (true);
 			pAction->UpdateProgress(++state);
