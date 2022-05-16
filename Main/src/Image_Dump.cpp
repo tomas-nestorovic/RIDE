@@ -548,7 +548,7 @@
 							++p.revolution;
 							bufferSectorData[p.s]=dp.source->GetSectorData( p.chs, p.s, Revolution::NEXT, bufferLength+p.s, bufferFdcStatus+p.s );
 						}
-						p.fdcStatus=bufferFdcStatus[p.s]; // updating the Params
+						p.fdcStatus=bufferFdcStatus[p.s]; // updating the Params (just in case the Sector was opted to exclude below and its FdcStatus in the Buffer lost)
 						// | showing the Dialog and processing its result
 				{		LOG_DIALOG_DISPLAY(_T("CErroneousSectorDialog"));
 						switch (LOG_DIALOG_RESULT(d.DoModal())){
@@ -562,6 +562,7 @@
 								sPrev=p.s;
 								continue;
 				}		}
+						bufferFdcStatus[p.s]=p.fdcStatus; // propagating modifications to the Buffer
 					}
 					if (!p.fdcStatus.IsWithoutError()){
 						TDumpParams::TSourceSectorError *const psse=&erroneousSectors.buffer[erroneousSectors.n++];
