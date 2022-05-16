@@ -547,7 +547,10 @@
 							break;
 						if (pe.IsDataStd() || pe.IsCrc())
 							if (pe.Intersect(fuzzy))
-								if ( fuzzyInBadSector=pe.type==TParseEvent::DATA_BAD||pe.type==TParseEvent::CRC_BAD )
+								if ( fuzzyInBadSector =	(pe.type==TParseEvent::DATA_BAD||pe.type==TParseEvent::CRC_BAD) // the fuzziness is in bad Sector data ...
+														&&
+														pe.tEnd<GetIndexTime(nFullRevolutions)-profile.iwTimeMax // ... and the data is complete (aka, it's NOT data over Index)
+								)
 									break;
 						rOutParseEvents.GetNext(pePos);
 					}
