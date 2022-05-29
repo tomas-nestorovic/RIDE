@@ -26,7 +26,7 @@
 		Medium::TType floppyType; // DD/HD
 
 		CFloppyImage(PCProperties properties,bool hasEditableSettings);
-
+	public:
 		WORD GetUsableSectorLength(BYTE sectorLengthCode) const;
 		TFormat::TLengthCode GetMaximumSectorLengthCode() const;
 		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;

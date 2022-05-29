@@ -156,7 +156,7 @@
 	typedef const TSectorId *PCSectorId,&RCSectorId;
 
 	#pragma pack(1)
-	typedef const struct TPhysicalAddress sealed{
+	typedef const struct TPhysicalAddress{
 		static const TPhysicalAddress Invalid;
 
 		TCylinder cylinder;

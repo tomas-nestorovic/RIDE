@@ -1234,28 +1234,63 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 	#define TEST_BYTE	'A'
 
 	#pragma pack(1)
-	struct TLatencyParams sealed{
+	struct TLatencyParams sealed:public TPhysicalAddress{ // addressing healthy Track to use for computation of the latencies
 		CFDD *const fdd;
 		const WORD nsAccuracy; // accuracy in nanoseconds
 		const BYTE nRepeats;
-		TCylinder cyl;	// healthy Track to use for computation of the latencies
-		THead head;		// healthy Track to use for computation of the latencies
 		TLogTime outControllerLatency;	// nanoseconds
 		TLogTime out1ByteLatency;		// nanoseconds
-		TLogTime outGap3Latency;			// nanoseconds
+		TLogTime outGap3Latency;		// nanoseconds
 
 		TLatencyParams(CFDD *fdd,WORD nsAccuracy,BYTE nRepeats)
 			: fdd(fdd)
 			, nsAccuracy(nsAccuracy) , nRepeats(nRepeats)
-			, cyl(FDD_CYLINDERS_HD/2) , head(0) // a healthy Track will be found when determining the controller latency
 			, outControllerLatency(0) , out1ByteLatency(0) , outGap3Latency(0) {
+			cylinder=FDD_CYLINDERS_HD/2, head=0; // a healthy Track will be found when determining the controller latency
+			sectorId.lengthCode=fdd->GetMaximumSectorLengthCode(); // test Sector (any values will do, so initializing only the LengthCode)
 		}
 	};
-	UINT AFX_CDECL CFDD::__determineControllerAndOneByteLatency_thread__(PVOID _pCancelableAction){
-		// thread to automatically determine the controller and one Byte write latencies
-		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
+	UINT AFX_CDECL CFDD::FindHealthyTrack_thread(PVOID pCancelableAction){
+		// thread to find healthy Track by writing a test Sector in it (DD = 4kB, HD = 8kB)
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
 		TLatencyParams &lp=*(TLatencyParams *)pAction->GetParams();
-		pAction->SetProgressTarget( lp.nRepeats*3 ); // 3 = number of steps of a single trial
+		const TCylinder cylMax=lp.cylinder;
+		const WORD testSectorLength=lp.fdd->GetOfficialSectorLength( lp.sectorId.lengthCode );
+		pAction->SetProgressTarget( cylMax+1 );
+		EXCLUSIVELY_LOCK_IMAGE(*lp.fdd); // locking the access so that no one can disturb during the testing
+		for( BYTE nSuccessfullWritings=0; true; ){
+			if (pAction->Cancelled) return LOG_ERROR(ERROR_CANCELLED);
+			// . seeking Head to the particular Cylinder
+			if (!lp.fdd->fddHead.__seekTo__(lp.cylinder))
+				return LOG_ERROR(pAction->TerminateWithError(ERROR_REQUEST_REFUSED));
+			// . formatting Track to a single Sector
+			const bool vft0=lp.fdd->params.verifyFormattedTracks;
+			lp.fdd->params.verifyFormattedTracks=false;
+				const TStdWinError err=lp.fdd->FormatTrack( lp.cylinder, lp.head, Codec::MFM, 1,&lp.sectorId,&testSectorLength,&TFdcStatus::WithoutError, FDD_350_SECTOR_GAP3, 0, pAction->Cancelled );
+			lp.fdd->params.verifyFormattedTracks=vft0;
+			if (err!=ERROR_SUCCESS)
+				return LOG_ERROR(pAction->TerminateWithError(err));
+			// . verifying the single formatted Sector
+			TFdcStatus sr;
+			lp.fdd->__bufferSectorData__( lp.cylinder, lp.head, &lp.sectorId, testSectorLength, &TInternalTrack(lp.fdd,lp.cylinder,lp.head,Codec::MFM,1,&lp.sectorId,(PCLogTime)FDD_350_SECTOR_GAP3), 0, &sr );
+			if (sr.IsWithoutError()) // a healthy Track ...
+				if (++nSuccessfullWritings==3) // ... whose healthiness can be repeatedly confirmed has been found
+					return pAction->TerminateWithSuccess(); // using it for computation of all latencies
+				else
+					continue;
+			// . attempting to create a Sector WithoutErrors on another Track
+			if (!--lp.cylinder)
+				break;
+			nSuccessfullWritings=0;
+			pAction->UpdateProgress( cylMax-lp.cylinder );
+		}
+		return LOG_ERROR( pAction->TerminateWithError(ERROR_REQUEST_REFUSED) );
+	}
+	UINT AFX_CDECL CFDD::DetermineControllerAndOneByteLatency_thread(PVOID pCancelableAction){
+		// thread to automatically determine the controller and one Byte write latencies
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
+		TLatencyParams &lp=*(TLatencyParams *)pAction->GetParams();
+		pAction->SetProgressTarget( lp.nRepeats*2 ); // 2 = number of steps of a single trial
 		// - defining the Interruption
 		struct TInterruption sealed{
 		private:
@@ -1266,18 +1301,18 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 			const PVOID sectorDataToWrite;
 			const WORD nsAccuracy; // nanoseconds
 		public:
+			const TSectorId sectorId;
 			const WORD sectorLength;
-			TSectorId sectorId;
 			TLogTime nNanoseconds;
 
 			TInterruption(const PBackgroundActionCancelable pAction,TLatencyParams &lp)
 				// ctor
 				: pAction(pAction)
-				, fdd(lp.fdd) , sectorLength(lp.fdd->GetOfficialSectorLength(lp.fdd->GetMaximumSectorLengthCode()))
-				, rCyl(lp.cyl) , rHead(lp.head) // a healthy Track yet to be found
+				, fdd(lp.fdd)
+				, sectorId(lp.sectorId) , sectorLength(lp.fdd->GetOfficialSectorLength(lp.sectorId.lengthCode))
+				, rCyl(lp.cylinder) , rHead(lp.head) // a healthy Track yet to be found
 				, sectorDataToWrite( ::VirtualAlloc(nullptr,SECTOR_LENGTH_MAX,MEM_COMMIT,PAGE_READWRITE) )
 				, nsAccuracy(lp.nsAccuracy) , nNanoseconds(0) {
-				sectorId.lengthCode=GetSectorLengthCode(sectorLength); // any Cylinder/Side/Sector values will do, so letting them uninitialized
 				::memset( sectorDataToWrite, TEST_BYTE, sectorLength );
 			}
 			~TInterruption(){
@@ -1336,31 +1371,10 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 		} interruption( pAction, lp );
 		// - testing
 		EXCLUSIVELY_LOCK_IMAGE(*lp.fdd); // locking the access so that no one can disturb during the testing
+		if (!lp.fdd->fddHead.__seekTo__(lp.cylinder)) // seeking Head to the particular healthy Track
+			return LOG_ERROR(pAction->TerminateWithError(ERROR_REQUEST_REFUSED));
 		for( BYTE c=lp.nRepeats,state=0; c--; ){
-			// . STEP 1: writing the test Sector (DD = 4kB, HD = 8kB)
-			do{
-				if (pAction->Cancelled) return LOG_ERROR(ERROR_CANCELLED);
-				// : seeking Head to the particular Cylinder
-				if (!lp.fdd->fddHead.__seekTo__(lp.cyl))
-					return LOG_ERROR(pAction->TerminateWithError(ERROR_REQUEST_REFUSED));
-				// : formatting Track to a single Sector
-				const bool vft0=lp.fdd->params.verifyFormattedTracks;
-				lp.fdd->params.verifyFormattedTracks=false;
-					const TStdWinError err=lp.fdd->FormatTrack( lp.cyl, lp.head, Codec::MFM, 1,&interruption.sectorId,&interruption.sectorLength,&TFdcStatus::WithoutError, FDD_350_SECTOR_GAP3, 0, pAction->Cancelled );
-				lp.fdd->params.verifyFormattedTracks=vft0;
-				if (err!=ERROR_SUCCESS)
-					return LOG_ERROR(pAction->TerminateWithError(err));
-				// : verifying the single formatted Sector
-				TFdcStatus sr;
-				lp.fdd->__bufferSectorData__( lp.cyl, lp.head, &interruption.sectorId, interruption.sectorLength, &TInternalTrack(lp.fdd,lp.cyl,lp.head,Codec::MFM,1,&interruption.sectorId,(PCLogTime)FDD_350_SECTOR_GAP3), 0, &sr );
-				if (sr.IsWithoutError())
-					break; // yes, a healthy Track has been found - using it for computation of all latencies
-				// : attempting to create a Sector WithoutErrors on another Track
-				if (!--lp.cyl)
-					return LOG_ERROR(pAction->TerminateWithError(ERROR_REQUEST_REFUSED));
-			}while (true);
-			pAction->UpdateProgress(++state);
-			// . STEP 2: experimentally determining the ControllerLatency
+			// . STEP 1: experimentally determining the ControllerLatency
 			if (pAction->Cancelled) return LOG_ERROR(ERROR_CANCELLED);
 			const WORD nBytes=interruption.sectorLength/2;
 			if (const TStdWinError err=interruption.__setInterruptionToWriteSpecifiedNumberOfBytes__(nBytes))
@@ -1373,7 +1387,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 Utils::Information(buf);}
 //*/
 			pAction->UpdateProgress(++state);
-			// . STEP 3: experimentally determining the latency of one Byte
+			// . STEP 2: experimentally determining the latency of one Byte
 			if (pAction->Cancelled) return LOG_ERROR(ERROR_CANCELLED);
 			const TLogTime p = interruption.nNanoseconds = TIME_MILLI(65); // let's see how many Bytes are written during the 65 millisecond time frame
 			if (const TStdWinError err=interruption.__writeSectorData__(nBytes))
@@ -1393,13 +1407,15 @@ Utils::Information(buf);}
 		lp.outControllerLatency/=lp.nRepeats, lp.out1ByteLatency/=lp.nRepeats;
 		return ERROR_SUCCESS;
 	}
-	UINT AFX_CDECL CFDD::__determineGap3Latency_thread__(PVOID _pCancelableAction){
+	UINT AFX_CDECL CFDD::DetermineGap3Latency_thread(PVOID pCancelableAction){
 		// thread to automatically determine the Gap3 latency
-		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
 		TLatencyParams &lp=*(TLatencyParams *)pAction->GetParams();
 		const BYTE targetGap3= lp.fdd->floppyType==Medium::FLOPPY_DD_525 ? FDD_525_SECTOR_GAP3 : FDD_350_SECTOR_GAP3;
 		pAction->SetProgressTarget( targetGap3 );
 		EXCLUSIVELY_LOCK_IMAGE(*lp.fdd); // locking the access so that no one can disturb during the testing
+		if (!lp.fdd->fddHead.__seekTo__(lp.cylinder)) // seeking Head to the particular healthy Track
+			return LOG_ERROR(pAction->TerminateWithError(ERROR_REQUEST_REFUSED));
 		for( BYTE gap3=1; gap3<targetGap3; pAction->UpdateProgress(gap3+=3) ){
 			if (pAction->Cancelled) return LOG_ERROR(ERROR_CANCELLED);
 			// . STEP 1: writing two test Sectors
@@ -1408,7 +1424,7 @@ Utils::Information(buf);}
 			static const TFdcStatus SectorStatuses[]={ TFdcStatus::WithoutError, TFdcStatus::WithoutError };
 			const bool vft0=lp.fdd->params.verifyFormattedTracks;
 			lp.fdd->params.verifyFormattedTracks=false;
-				const TStdWinError err=lp.fdd->FormatTrack( lp.cyl, lp.head, Codec::MFM, 2, SectorIds, SectorLengths, SectorStatuses, gap3, TEST_BYTE, pAction->Cancelled );
+				const TStdWinError err=lp.fdd->FormatTrack( lp.cylinder, lp.head, Codec::MFM, 2, SectorIds, SectorLengths, SectorStatuses, gap3, TEST_BYTE, pAction->Cancelled );
 			lp.fdd->params.verifyFormattedTracks=vft0;
 			if (err!=ERROR_SUCCESS)
 				return pAction->TerminateWithError(err);
@@ -1417,14 +1433,14 @@ Utils::Information(buf);}
 			while (c<lp.nRepeats){
 				if (pAction->Cancelled) return LOG_ERROR(ERROR_CANCELLED);
 				// . STEP 2.1: scanning the Track and seeing how distant the two test Sectors are on it
-				lp.fdd->UnformatInternalTrack(lp.cyl,lp.head); // disposing internal information on actual Track format
-				const TInternalTrack *const pit=lp.fdd->__scanTrack__(lp.cyl,lp.head);
+				lp.fdd->UnformatInternalTrack(lp.cylinder,lp.head); // disposing internal information on actual Track format
+				const TInternalTrack *const pit=lp.fdd->__scanTrack__(lp.cylinder,lp.head);
 				// : STEP 2.2: reading the first formatted Sector
 				WORD w;
-				lp.fdd->GetHealthySectorData( lp.cyl, lp.head, &SectorIds[0], &w );
+				lp.fdd->GetHealthySectorData( lp.cylinder, lp.head, &SectorIds[0], &w );
 				// : STEP 2.3: Reading the second formatted Sector and measuring how long the reading took
 				const Utils::CRideTime startTime;
-					lp.fdd->GetHealthySectorData( lp.cyl, lp.head, &SectorIds[1], &w );
+					lp.fdd->GetHealthySectorData( lp.cylinder, lp.head, &SectorIds[1], &w );
 				const Utils::CRideTime endTime;
 				const TLogTime deltaNanoseconds=TIME_MILLI( (endTime-startTime).ToMilliseconds() );
 				// . STEP 2.4: determining if the readings took more than just one disk revolution or more
@@ -1645,8 +1661,9 @@ autodetermineLatencies:		// automatic determination of write latency values
 											case 3: floppyType=Medium::FLOPPY_HD_350; break;
 										}
 										TLatencyParams lp( fdd, TIME_MICRO(1+d.usAccuracy), 1+d.nRepeats );
-										bmac.AddAction( __determineControllerAndOneByteLatency_thread__, &lp, _T("Determining controller latencies") );
-										bmac.AddAction( __determineGap3Latency_thread__, &lp, _T("Determining minimal Gap3 size") );
+										bmac.AddAction( FindHealthyTrack_thread, &lp, _T("Searching for healthy track") );
+										bmac.AddAction( DetermineControllerAndOneByteLatency_thread, &lp, _T("Determining controller latencies") );
+										bmac.AddAction( DetermineGap3Latency_thread, &lp, _T("Determining minimal Gap3 size") );
 									// : backing up existing InternalTracks and performing the multi-action
 									BYTE internalTracksOrg[sizeof(fdd->internalTracks)];
 									::memcpy( internalTracksOrg, fdd->internalTracks, sizeof(internalTracksOrg) );

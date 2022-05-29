@@ -67,8 +67,9 @@
 		typedef const TInternalTrack *PCInternalTrack;
 
 		static UINT AFX_CDECL __save_thread__(PVOID _pCancelableAction);
-		static UINT AFX_CDECL __determineControllerAndOneByteLatency_thread__(PVOID _pCancelableAction);
-		static UINT AFX_CDECL __determineGap3Latency_thread__(PVOID _pCancelableAction);
+		static UINT AFX_CDECL FindHealthyTrack_thread(PVOID pCancelableAction);
+		static UINT AFX_CDECL DetermineControllerAndOneByteLatency_thread(PVOID pCancelableAction);
+		static UINT AFX_CDECL DetermineGap3Latency_thread(PVOID pCancelableAction);
 		static UINT AFX_CDECL __formatTracks_thread__(PVOID _pCancelableAction);
 
 		const PVOID dataBuffer; // virtual memory (VirtualAlloc)
