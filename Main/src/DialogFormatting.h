@@ -22,10 +22,6 @@
 			TParameters params;
 		} *PCStdFormat;
 	private:
-		const PDos dos;
-		const PCStdFormat additionalFormats;
-		const BYTE nAdditionalFormats;
-
 		void PreInitDialog() override;
 		void DoDataExchange(CDataExchange *pDX) override;
 		BOOL OnNotify(WPARAM wParam,LPARAM lParam,LRESULT *pResult) override;
@@ -36,6 +32,9 @@
 		afx_msg void __recognizeStandardFormatAndRepaint__();
 		afx_msg void __toggleReportingOnFormatting__();
 	public:
+		const PDos dos;
+		const PCStdFormat additionalFormats;
+		const BYTE nAdditionalFormats;
 		TParameters params;
 		int updateBoot, addTracksToFat, showReportOnFormatting;
 

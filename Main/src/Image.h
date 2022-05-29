@@ -252,11 +252,6 @@
 		static bool OpenImageForReading(LPCTSTR fileName,CFile *f);
 		static bool OpenImageForWriting(LPCTSTR fileName,CFile *f);
 
-		typedef const struct TSaveThreadParams sealed{
-			PImage image;
-			LPCTSTR lpszPathName;
-		} &RCSaveThreadParams;
-
 		bool canBeModified;
 		PCSide sideMap; // explicit mapping of Heads to Side numbers (index = Head id, [index] = Side number); may be Null if the container doesn't have such feature (e.g. DSK images)
 
@@ -267,6 +262,15 @@
 		typedef DWORD TId;
 		typedef LPCTSTR (*TFnRecognize)(PTCHAR deviceNameList);
 		typedef CImage *(*TFnInstantiate)(LPCTSTR deviceName);
+
+		typedef const struct TSaveThreadParams sealed{
+			const PImage image;
+			const LPCTSTR lpszPathName;
+
+			inline TSaveThreadParams(PImage image,LPCTSTR lpszPathName)
+				: image(image) , lpszPathName(lpszPathName) {
+			}
+		} &RCSaveThreadParams;
 
 		#pragma pack(1)
 		typedef const struct TProperties sealed{

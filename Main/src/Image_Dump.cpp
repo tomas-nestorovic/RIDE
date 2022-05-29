@@ -1082,7 +1082,7 @@ error:				return Utils::FatalError(_T("Cannot dump"),err);
 			// . dumping
 			CBackgroundMultiActionCancelable bmac( d.realtimeThreadPriority ? THREAD_PRIORITY_TIME_CRITICAL : THREAD_PRIORITY_NORMAL );
 				bmac.AddAction( __dump_thread__, &d.dumpParams, _T("Dumping to target") );
-				const TSaveThreadParams stp={ d.dumpParams.target.get(), d.dumpParams.targetFileName };
+				const TSaveThreadParams stp( d.dumpParams.target.get(), d.dumpParams.targetFileName );
 				bmac.AddAction( SaveAllModifiedTracks_thread, &stp, _T("Saving target") );
 			err=bmac.Perform();
 			if (err==ERROR_SUCCESS){

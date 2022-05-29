@@ -636,10 +636,9 @@ namespace Medium{
 
 	BOOL CImage::OnSaveDocument(LPCTSTR lpszPathName){
 		// True <=> this Image has been successfully saved, otherwise False
-		const TSaveThreadParams stp={ this, lpszPathName };
 		const TStdWinError err=	CBackgroundActionCancelable(
 									SaveAllModifiedTracks_thread,
-									&stp,
+									&TSaveThreadParams( this, lpszPathName ),
 									THREAD_PRIORITY_ABOVE_NORMAL
 								).Perform();
 		::SetLastError(err);

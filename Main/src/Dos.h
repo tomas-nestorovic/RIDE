@@ -240,13 +240,14 @@
 		const PImage image;
 		const PCProperties properties;
 	private:
-		static UINT AFX_CDECL __checkCylindersAreEmpty_thread__(PVOID _pCancelableAction);
+		static UINT AFX_CDECL CheckCylindersAreEmpty_thread(PVOID pCancelableAction);
 		static UINT AFX_CDECL __fillEmptySectors_thread__(PVOID _pCancelableAction);
 		static UINT AFX_CDECL __fillEmptyLastSectors_thread__(PVOID _pCancelableAction);
 		static UINT AFX_CDECL __fillEmptyDirEntries_thread__(PVOID _pCancelableAction);
-		static UINT AFX_CDECL __formatTracks_thread__(PVOID _pCancelableAction);
+		static UINT AFX_CDECL FormatTracks_thread(PVOID pCancelableAction);
+		static UINT AFX_CDECL FormatTracksEx_thread(PVOID pCancelableAction);
 
-		TStdWinError __isTrackEmpty__(TCylinder cyl,THead head,TSector nSectors,PCSectorId sectors) const;
+		TStdWinError IsTrackEmpty(TCylinder cyl,THead head,TSector nSectors,PCSectorId sectors) const;
 	protected:
 		class CFilePreview:public CFrameWnd{
 			const CWnd *const pView;
@@ -289,8 +290,6 @@
 		void __writeProfileBool__(LPCTSTR entryName,bool value) const;
 		TStdWinError __showDialogAndFormatStdCylinders__(CFormatDialog &rd);
 		TStdWinError __formatStdCylinders__(const CFormatDialog &rd);
-		TStdWinError __formatTracks__(const CFormatDialog::TParameters &rParams,PCHead head,TSector nSectors,PSectorId bufferId,PCWORD bufferLength,bool showReport) const;
-		bool __addStdCylindersToFatAsEmpty__(TCylinder cylA,TCylinder cylZInclusive) const;
 		bool __fillEmptySpace__(CFillEmptySpaceDialog &rd);
 		bool __verifyVolume__(CVerifyVolumeDialog &rd);
 		LPCTSTR __exportFileData__(PCFile file,CFile *fOut,DWORD nMaxDataBytesToExport) const;
@@ -358,6 +357,7 @@
 		TCylinder GetLastOccupiedStdCylinder() const;
 		TStdWinError GetFirstEmptyHealthySector(bool skipBadSectors,TPhysicalAddress &rOutChs) const;
 		TStdWinError AreStdCylindersEmpty(TCylinder cylA,TCylinder cylZInclusive) const;
+		bool AddStdCylindersToFatAsEmpty(TCylinder cylA,TCylinder cylZInclusive) const;
 		bool RemoveStdCylindersFromFat(TCylinder cylA,TCylinder cylZInclusive) const;
 		// file system
 		virtual bool GetFileNameOrExt(PCFile file,PPathString pOutName,PPathString pOutExt) const=0;

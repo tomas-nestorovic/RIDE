@@ -127,7 +127,7 @@ reportError:Utils::Information(buf);
 		if (formatBoot.mediumType!=Medium::UNKNOWN) // Unknown Medium if creating a new Image
 			for( TCylinder cylMin=Medium::GetProperties(formatBoot.mediumType)->cylinderRange.iMax; cylMin--; )
 				for( THead head=formatBoot.nHeads; head--; )
-					if (ERROR_EMPTY!=__isTrackEmpty__( cylMin, head, GetListOfStdSectors(cylMin,head,bufferId), bufferId ))
+					if (ERROR_EMPTY!=IsTrackEmpty( cylMin, head, GetListOfStdSectors(cylMin,head,bufferId), bufferId ))
 						return cylMin;
 		return 0;
 	}
@@ -140,8 +140,8 @@ reportError:Utils::Information(buf);
 		return formatBoot.nSectors;
 	}
 
-	TStdWinError CDos::__isTrackEmpty__(TCylinder cyl,THead head,TSector nSectors,PCSectorId sectors) const{
-		// return ERROR_EMPTY/ERROR_NOT_EMPTY or another Windows standard i/o error
+	TStdWinError CDos::IsTrackEmpty(TCylinder cyl,THead head,TSector nSectors,PCSectorId sectors) const{
+		// returns ERROR_EMPTY/ERROR_NOT_EMPTY or another Windows standard i/o error
 		TSectorStatus statuses[(TSector)-1],*ps=statuses;
 		if (!GetSectorStatuses(cyl,head,nSectors,sectors,statuses))
 			return ERROR_SECTOR_NOT_FOUND;
@@ -166,9 +166,9 @@ reportError:Utils::Information(buf);
 			, cylA(cylA) , cylZInclusive(cylZInclusive) {
 		}
 	};
-	UINT AFX_CDECL CDos::__checkCylindersAreEmpty_thread__(PVOID _pCancelableAction){
-		// thread to determine if given Cylinders are empty; return ERROR_EMPTY/ERROR_NOT_EMPTY or another Windows standard i/o error
-		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
+	UINT AFX_CDECL CDos::CheckCylindersAreEmpty_thread(PVOID pCancelableAction){
+		// thread to determine if given Cylinders are empty; return ERROR_SUCCESS/ERROR_NOT_EMPTY or another Windows standard i/o error
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
 		const TEmptyCylinderParams &ecp=*(TEmptyCylinderParams *)pAction->GetParams();
 		pAction->SetProgressTarget( ecp.cylZInclusive+1-ecp.cylA );
 		// - range of Cylinders not empty if beginning located before FirstCylinderWithEmptySector
@@ -179,25 +179,43 @@ reportError:Utils::Information(buf);
 			if (pAction->Cancelled) return ERROR_CANCELLED;
 			TSectorId bufferId[(TSector)-1];
 			for( THead head=0; head<ecp.dos->formatBoot.nHeads; head++ ){
-				const TStdWinError err=ecp.dos->__isTrackEmpty__( cyl, head, ecp.dos->GetListOfStdSectors(cyl,head,bufferId), bufferId );
+				const TStdWinError err=ecp.dos->IsTrackEmpty( cyl, head, ecp.dos->GetListOfStdSectors(cyl,head,bufferId), bufferId );
 				if (err!=ERROR_EMPTY)
 					return pAction->TerminateWithError(err);
 			}
 		}
-		return ERROR_EMPTY;
+		return pAction->TerminateWithSuccess();
 	}
 	TStdWinError CDos::AreStdCylindersEmpty(TCylinder cylA,TCylinder cylZInclusive) const{
 		// checks if specified Cylinders are empty (i.e. none of their standard "official" Sectors is allocated, non-standard sectors ignored); returns Windows standard i/o error
 		if (cylA<=cylZInclusive)
-			return	CBackgroundActionCancelable(
-						__checkCylindersAreEmpty_thread__,
-						&TEmptyCylinderParams( this, cylA, cylZInclusive ),
-						THREAD_PRIORITY_BELOW_NORMAL
-					).Perform();
-		else
-			return ERROR_EMPTY;
+			if (const TStdWinError err=CBackgroundActionCancelable( // unlike this method, the Thread returns ERROR_SUCCESS if cyls empty!
+					CheckCylindersAreEmpty_thread,
+					&TEmptyCylinderParams( this, cylA, cylZInclusive ),
+					THREAD_PRIORITY_BELOW_NORMAL
+				).Perform()
+			)
+				return err;
+		return ERROR_EMPTY;
 	}
 
+
+	struct TFmtParams sealed{
+		CDos *const dos;
+		const CFormatDialog::TParameters &rParams;
+		const PCHead head;
+		const TSector nSectors;
+		const PSectorId bufferId; // non-const to be able to dynamically generate "Zoned Bit Recording" Sectors in the future
+		const PCWORD bufferLength;
+		const bool showReport;
+
+		TFmtParams(CDos *dos,const CFormatDialog::TParameters &params,PCHead head,TSector nSectors,PSectorId bufferId,PCWORD bufferLength,bool showReport)
+			: dos(dos)
+			, rParams(params) , head(head)
+			, nSectors(nSectors) , bufferId(bufferId) , bufferLength(bufferLength)
+			, showReport(showReport) {
+		}
+	};
 
 	TStdWinError CDos::__showDialogAndFormatStdCylinders__(CFormatDialog &rd){
 		// formats Cylinders using parameters obtained from the confirmed FormatDialog (CDos-derivate and FormatDialog guarantee that all parameters are valid); returns Windows standard i/o error
@@ -212,16 +230,43 @@ reportError:Utils::Information(buf);
 		return LOG_ERROR(err);
 	}
 
+	static UINT AFX_CDECL InitializeEmptyMedium_thread(PVOID pCancelableAction){
+		// thread to initialize a fresh formatted Medium, using TFmtParams
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
+		const TFmtParams &fp=*(TFmtParams *)pAction->GetParams();
+		fp.dos->formatBoot=fp.rParams.format;
+		fp.dos->formatBoot.nCylinders++; // because Cylinders numbered from zero
+		fp.dos->InitializeEmptyMedium(&fp.rParams); // DOS-specific initialization of newly formatted Medium
+		return pAction->TerminateWithSuccess();
+	}
+
+	static UINT AFX_CDECL RegisterAddedCylinders_thread(PVOID pCancelableAction){
+		// thread to optionally register newly formatted Cylinders into disk structure (e.g. Boot Sector, FAT, etc.)
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
+		const CFormatDialog &d=*(CFormatDialog *)pAction->GetParams();
+		pAction->SetProgressTarget(2);
+		if (d.updateBoot==BST_CHECKED){
+			// requested to update Format in Boot Sector
+			d.dos->formatBoot.nCylinders=std::max<int>( d.dos->formatBoot.nCylinders, d.params.format.nCylinders+1 ); // "+1" = because Cylinders numbered from zero
+			d.dos->FlushToBootSector();
+		}
+		pAction->UpdateProgress(1);
+		if (d.addTracksToFat==BST_CHECKED)
+			// requested to include newly formatted Tracks into FAT
+			if (!d.dos->AddStdCylindersToFatAsEmpty( d.params.cylinder0, d.params.format.nCylinders ))
+				Utils::Information( FAT_SECTOR_UNMODIFIABLE, ::GetLastError() );
+		pAction->UpdateProgress(2);
+		return pAction->TerminateWithSuccess();
+	}
+
 	TStdWinError CDos::__formatStdCylinders__(const CFormatDialog &rd){
 		// formats Cylinders using parameters obtained from the confirmed FormatDialog (CDos-derivate and FormatDialog guarantee that all parameters are valid); returns Windows standard i/o error
+		CBackgroundMultiActionCancelable bmac(THREAD_PRIORITY_TIME_CRITICAL); // transparently doing all changes to the disk in waterfall threads
 		// - checking if formatting can proceed
+		const TEmptyCylinderParams ecp( this, rd.params.cylinder0, rd.params.format.nCylinders );
 		if (rd.params.cylinder0){
 			// request to NOT format from the beginning of disk - all targeted Tracks must be empty
-			const TStdWinError err=AreStdCylindersEmpty( rd.params.cylinder0, rd.params.format.nCylinders );
-			if (err!=ERROR_EMPTY){
-				Utils::Information( DOS_ERR_CANNOT_FORMAT, DOS_ERR_CYLINDERS_NOT_EMPTY, DOS_MSG_CYLINDERS_UNCHANGED );
-				return err;
-			}
+			bmac.AddAction( CheckCylindersAreEmpty_thread, &ecp, _T("Checking region empty") );
 		}else{
 			// request to format from the beginning of disk - warning that all data will be destroyed
 			if (!Utils::QuestionYesNo(_T("About to format the whole image and destroy all data.\n\nContinue?!"),MB_DEFBUTTON2))
@@ -238,64 +283,53 @@ reportError:Utils::Information(buf);
 		// - carrying out the formatting
 		TSectorId bufferId[(TSector)-1];	WORD bufferLength[(TSector)-1];
 		for( TSector n=-1; n--; bufferLength[n]=rd.params.format.sectorLength );
-		const TSector nSectors0=formatBoot.nSectors;
-			const TFormat::TLengthCode lengthCode0=formatBoot.sectorLengthCode;
-				formatBoot.nSectors=rd.params.format.nSectors, formatBoot.sectorLengthCode=rd.params.format.sectorLengthCode;
-				const TStdWinError err=__formatTracks__(
-					rd.params,
-					nullptr, // all Heads
-					0, bufferId, bufferLength, // 0 = standard Sectors
-					rd.showReportOnFormatting==BST_CHECKED
-				);
-			formatBoot.sectorLengthCode=lengthCode0;
-		formatBoot.nSectors=nSectors0;
-		if (err!=ERROR_SUCCESS){
-			::SetLastError(err);
-			return err;
-		}
+		const TFmtParams fp(
+			this, rd.params,
+			nullptr, // all Heads
+			0, bufferId, bufferLength, // 0 = standard Sectors
+			rd.showReportOnFormatting==BST_CHECKED
+		);
+		bmac.AddAction( FormatTracks_thread, &fp, _T("Formatting cylinders") );
 		// - adding formatted Cylinders to Boot and FAT
+		const CImage::TSaveThreadParams spDevice( image, nullptr );
 		if (!rd.params.cylinder0){
 			// formatted from beginning of disk - updating internal information on Format
-			formatBoot=rd.params.format;
-			formatBoot.nCylinders++; // because Cylinders numbered from zero
-			InitializeEmptyMedium(&rd.params); // DOS-specific initialization of newly formatted Medium
+			bmac.AddAction( InitializeEmptyMedium_thread, &fp, _T("Initializing disk") );
 			if (image->properties->IsRealDevice()) // if formatted a real device ...
-				if (!image->OnSaveDocument(nullptr)) // ... immediately saving all Modified Sectors (Boot, FAT, Dir,...)
-					return ::GetLastError();
+				bmac.AddAction( CImage::SaveAllModifiedTracks_thread, &spDevice, _T("Saving initialization") ); // ... immediately saving all Modified Sectors (Boot, FAT, Dir,...)
 		}else{
 			// formatted only selected Cylinders
-			if (rd.updateBoot){
-				// requested to update Format in Boot Sector
-				formatBoot.nCylinders=std::max<int>( formatBoot.nCylinders, rd.params.format.nCylinders+1 ); // "+1" = because Cylinders numbered from zero
-				FlushToBootSector();
-			}
-			if (rd.addTracksToFat)
-				// requested to include newly formatted Tracks into FAT
-				if (!__addStdCylindersToFatAsEmpty__( rd.params.cylinder0, rd.params.format.nCylinders ))
-					Utils::Information(FAT_SECTOR_UNMODIFIABLE, ::GetLastError() );
+			if (rd.updateBoot|rd.addTracksToFat)
+				bmac.AddAction( RegisterAddedCylinders_thread, &rd, _T("Updating disk") );
+		}
+		// - carrying out the batch
+		if (const TStdWinError err=bmac.Perform()){
+			::SetLastError(err);
+			return err;
 		}
 		image->UpdateAllViews(nullptr); // although updated already in FormatTracks, here calling too as FormatBoot might have changed since then
 		return ERROR_SUCCESS;
 	}
-	struct TFmtParams sealed{
-		const CDos *const dos;
-		const CFormatDialog::TParameters &rParams;
-		const PCHead head;
-		const TSector nSectors;
-		const PSectorId bufferId; // non-const to be able to dynamically generate "Zoned Bit Recording" Sectors in the future
-		const PCWORD bufferLength;
-		const bool showReport;
 
-		TFmtParams(const CDos *dos,const CFormatDialog::TParameters &rParams,PCHead head,TSector nSectors,PSectorId bufferId,PCWORD bufferLength,bool showReport)
-			: dos(dos)
-			, rParams(rParams) , head(head)
-			, nSectors(nSectors) , bufferId(bufferId) , bufferLength(bufferLength)
-			, showReport(showReport) {
-		}
-	};
-	UINT AFX_CDECL CDos::__formatTracks_thread__(PVOID _pCancelableAction){
+	UINT AFX_CDECL CDos::FormatTracks_thread(PVOID pCancelableAction){
 		// thread to format selected Tracks
-		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
+		const TFmtParams &fp=*(TFmtParams *)pAction->GetParams();
+		const TSector nSectors0=fp.dos->formatBoot.nSectors;
+			fp.dos->formatBoot.nSectors=fp.rParams.format.nSectors;
+			const TFormat::TLengthCode lengthCode0=fp.dos->formatBoot.sectorLengthCode;
+				fp.dos->formatBoot.sectorLengthCode=fp.rParams.format.sectorLengthCode;
+				const TStdWinError err=FormatTracksEx_thread( pCancelableAction );
+				if (err!=ERROR_SUCCESS)
+					::SetLastError(err);
+			fp.dos->formatBoot.sectorLengthCode=lengthCode0;
+		fp.dos->formatBoot.nSectors=nSectors0;
+		return err;
+	}
+
+	UINT AFX_CDECL CDos::FormatTracksEx_thread(PVOID pCancelableAction){
+		// thread to format selected Tracks
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
 		const TFmtParams &fp=*(TFmtParams *)pAction->GetParams();
 		struct TStatistics sealed{
 			const TTrack nTracks;
@@ -394,19 +428,8 @@ reportError:Utils::Information(buf);
 		}
 		return ERROR_SUCCESS;
 	}
-	TStdWinError CDos::__formatTracks__(const CFormatDialog::TParameters &rParams,PCHead head,TSector nSectors,PSectorId bufferId,PCWORD bufferLength,bool showReport) const{
-		// formats given Tracks, each with given NumberOfSectors, each with given Length; returns Windows standard i/o error
-		const TStdWinError err=	CBackgroundActionCancelable(
-									__formatTracks_thread__,
-									&TFmtParams( this, rParams, head, nSectors, bufferId, bufferLength, showReport ),
-									THREAD_PRIORITY_TIME_CRITICAL
-								).Perform();
-		if (err!=ERROR_SUCCESS)
-			Utils::FatalError(_T("Cannot format a track"),err);
-		return err;
-	}
 
-	bool CDos::__addStdCylindersToFatAsEmpty__(TCylinder cylA,TCylinder cylZInclusive) const{
+	bool CDos::AddStdCylindersToFatAsEmpty(TCylinder cylA,TCylinder cylZInclusive) const{
 		// records standard "official" Sectors in given Cylinder range as Empty into FAT
 		bool result=true; // assumption (all Tracks successfully added to FAT)
 		TSectorId ids[(TSector)-1];

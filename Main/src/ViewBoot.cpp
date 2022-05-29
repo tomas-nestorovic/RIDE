@@ -94,7 +94,7 @@
 		if (newValue>nCyl0){
 			// adding Cylinders to FAT
 			::wsprintf( bufMsg, CYLINDER_OPERATION_FINISHED, _T("added to FAT as empty") );
-			if (dos->__addStdCylindersToFatAsEmpty__(cylA,cylZ-1))
+			if (dos->AddStdCylindersToFatAsEmpty(cylA,cylZ-1))
 				__informationWithCheckableShowNoMore__(bufMsg,CYLINDERS_ADDED_TO_FAT);
 			else{
 				::lstrcat( bufMsg, _T("\n\n") FAT_SECTOR_UNMODIFIABLE );
