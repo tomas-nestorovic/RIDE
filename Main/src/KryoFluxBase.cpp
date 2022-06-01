@@ -188,6 +188,15 @@
 					L'\xf0ea', (HFONT)Utils::CRideFont(FONT_WEBDINGS,175,false,true).Detach()
 				);
 				RefreshPrecompensationStatus();
+				// . adjusting calibration possibilities
+				extern CDos::PCProperties manuallyForceDos;
+				if (EnableDlgItem( ID_READABLE,
+						!rkfb.dos && manuallyForceDos!=&CUnknownDos::Properties // DOS now yet known: either automatic DOS recognition, or manual selection of DOS but Unknown
+						||
+						rkfb.dos && rkfb.dos->properties!=&CUnknownDos::Properties // DOS already known: it's NOT the Unknown DOS
+					)
+				)
+					CheckDlgButton( ID_READABLE, false ); // this option is never ticked for Unknown DOS
 			}
 
 			void DoDataExchange(CDataExchange* pDX) override{
