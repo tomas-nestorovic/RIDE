@@ -1555,6 +1555,15 @@ Utils::Information(buf);}
 					L'\xf0ea', (HFONT)Utils::CRideFont(FONT_WEBDINGS,175,false,true).Detach()
 				);
 				__refreshMediumInformation__();
+				// . adjusting calibration possibilities
+				extern CDos::PCProperties manuallyForceDos;
+				if (EnableDlgItem( ID_READABLE,
+						!fdd->dos && manuallyForceDos!=&CUnknownDos::Properties // DOS now yet known: either automatic DOS recognition, or manual selection of DOS but Unknown
+						||
+						fdd->dos && fdd->dos->properties!=&CUnknownDos::Properties // DOS already known: it's NOT the Unknown DOS
+					)
+				)
+					CheckDlgButton( ID_READABLE, false ); // this option is never ticked for Unknown DOS
 			}
 			void __exchangeLatency__(CDataExchange* pDX){
 				// exchange of latency-related data from and to controls
