@@ -88,6 +88,7 @@
 			static HWND WINAPI __fnGetHwnd__(LPCVOID pTab);
 
 			const CBackgroundAction recencyStatusThread;
+			CDockableToolBar toolbarMisc;
 			PTab pCurrentTab;
 
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;

@@ -319,6 +319,7 @@
 		: CCtrlView(WC_TABCONTROL,AFX_WS_DEFAULT_VIEW & ~WS_BORDER)
 		// - initialization
 		, pCurrentTab(nullptr)
+		, toolbarMisc( IDR_MISC, IDR_MISC )
 		// - initiating determination of recency of this app
 		, recencyStatusThread( RecencyDetermination_thread, INVALID_HANDLE_VALUE, 0 ) {
 	}
@@ -466,6 +467,7 @@
 				// window has received focus
 				if (!CIntroductoryGuidePost::pSingleInstance && !CTdiCtrl::GetCurrentTabContentRect(m_hWnd,nullptr))
 					CIntroductoryGuidePost::Show(); // displaying the introductory GuidePost
+				toolbarMisc.Show( app.GetMainWindow()->toolbar );
 				//fallthrough
 			case WM_SIZE:
 				// window size changed

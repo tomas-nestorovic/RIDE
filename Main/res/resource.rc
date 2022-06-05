@@ -875,6 +875,7 @@ IDR_ZX_TAPE             BITMAP  DISCARDABLE     "spectrumTape.bmp"
 IDR_IMAGE               BITMAP  DISCARDABLE     "image.bmp"
 IDR_WEBPAGE             BITMAP  DISCARDABLE     "webPage.bmp"
 IDR_HEXAEDITOR          BITMAP  DISCARDABLE     "hexaEditor.bmp"
+IDR_MISC                BITMAP  DISCARDABLE     "misc.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -957,6 +958,13 @@ BEGIN
     BUTTON      ID_NEXT
     BUTTON      ID_NAVIGATE_ADDRESS
 END
+
+IDR_MISC TOOLBAR DISCARDABLE  16, 16
+BEGIN
+    BUTTON      ID_HELP_DONATE
+    BUTTON      ID_HELP_FAQ
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -2444,7 +2452,7 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    ID_HELP_FAQ             "Read through Frequently Asked Questions (FAQ)"
+    ID_HELP_FAQ             "Read through Frequently Asked Questions (FAQ)\nHelp"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -2540,7 +2548,7 @@ BEGIN
     ID_BOOKMARK_DELETEALL   "Irreversively delete all set bookmarks"
     ID_ZX_PREVIEWASASSEMBLER "Show file as assembler listing"
     ID_TRACKMAP_TIMING      "Show sectors on timeline from index pulse\nTrack timeline (approx.)"
-    ID_HELP_DONATE          "Don't worry, anything BUT money!"
+    ID_HELP_DONATE          "Don't worry, anything BUT money!\nDonate"
 END
 
 #endif    // Neutral resources
