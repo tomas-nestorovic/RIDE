@@ -29,7 +29,7 @@
 		const struct TSourceTrackErrors sealed{
 			TCylinder cyl;
 			THead head;
-			bool scannedWithError, hasNonformattedArea, hasDataInGaps, hasFuzzyData, hasDuplicatedIdFields, isEmpty, missesSomeSectors;
+			bool scannedWithError, hasNonformattedArea, hasDataInGaps, hasFuzzyData, hasDataOverIndex, hasDuplicatedIdFields, isEmpty, missesSomeSectors;
 			const TSourceTrackErrors *pNextErroneousTrack;
 			TSector nErroneousSectors;
 			TSourceSectorError erroneousSectors[1];
@@ -101,6 +101,7 @@
 								nWarnings+=pErroneousTrack->hasNonformattedArea;
 								nWarnings+=pErroneousTrack->hasDataInGaps;
 								nWarnings+=pErroneousTrack->hasFuzzyData;
+								nWarnings+=pErroneousTrack->hasDataOverIndex;
 								nWarnings+=pErroneousTrack->hasDuplicatedIdFields;
 								nWarnings+=pErroneousTrack->isEmpty;
 								nWarnings+=pErroneousTrack->missesSomeSectors;
@@ -110,7 +111,7 @@
 							Utils::WriteToFile(fHtml,_T("</td></tr>"));							
 						Utils::WriteToFile(fHtml,_T("</table>"));
 					}else
-						Utils::WriteToFile(fHtml,_T("No errors occurred."));
+						Utils::WriteToFile(fHtml,_T("No errors or warnings occurred."));
 				Utils::WriteToFile(fHtml,_T("<h3>Details</h3>"));
 					if (pOutErroneousTracks){
 						Utils::WriteToFile(fHtml,_T("<table><tr><td class=caption width=120>Track</td><td class=caption>Errors</td></tr>"));
@@ -161,6 +162,8 @@
 										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: Suspected data in gap.</li>"));
 									if (pErroneousTrack->hasFuzzyData)
 										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: Always bad fuzzy data.</li>"));
+									if (pErroneousTrack->hasDataOverIndex)
+										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: Data over index.</li>"));
 									if (pErroneousTrack->hasDuplicatedIdFields)
 										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: Duplicated ID fields.</li>"));
 									if (pErroneousTrack->missesSomeSectors)
@@ -231,7 +234,7 @@
 				CImage::CTrackReader trSrc=dp.source->ReadTrack( p.chs.cylinder, p.chs.head );
 				p.trackWriteable= trSrc && targetSupportsTrackWriting && (sourceCodec&dp.targetCodecs)!=0; // A&B&C, A&B = Source and Target must support whole Track access, C = Target must support the Codec used in Source
 				// . if possible, analyzing the read Source Track
-				bool hasNonformattedArea=false, hasDataInGaps=false, hasFuzzyData=false, hasDuplicatedIdFields=false, missesSomeSectors=false;
+				bool hasNonformattedArea=false, hasDataInGaps=false, hasFuzzyData=false, hasDataOverIndex=false, hasDuplicatedIdFields=false, missesSomeSectors=false;
 				if (trSrc && dp.fullTrackAnalysis){
 					TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; CImage::CTrackReader::TProfile idProfiles[Revolution::MAX*(TSector)-1]; TFdcStatus idStatuses[Revolution::MAX*(TSector)-1];
 					CImage::CTrackReader::CParseEventList peTrack;
@@ -239,6 +242,13 @@
 					hasNonformattedArea=peTrack.Contains( CImage::CTrackReader::TParseEvent::NONFORMATTED );
 					hasDataInGaps=peTrack.Contains( CImage::CTrackReader::TParseEvent::DATA_IN_GAP );
 					hasFuzzyData=peTrack.Contains( CImage::CTrackReader::TParseEvent::FUZZY_BAD );
+					for( POSITION pos=peTrack.GetHeadPosition(); pos; )
+						if (  pos=peTrack.GetPositionByStart( 0, CImage::CTrackReader::TParseEvent::DATA_OK, CImage::CTrackReader::TParseEvent::DATA_BAD, pos )  ){
+							const auto &peData=peTrack.GetNext(pos);
+							for( BYTE i=0; i<trSrc.GetIndexCount(); i++ )
+								hasDataOverIndex|=peData.Contains( trSrc.GetIndexTime(i) );
+						}else
+							break;
 				}
 				for( TSector i=0; i<nSectors; i++ ){
 					BYTE nReappearances=0;
@@ -682,13 +692,14 @@ terminateWithError:		return LOG_ERROR(pAction->TerminateWithError(err));
 				}
 				// . registering Track with ErroneousSectors
 //Utils::Information("registering Track with ErroneousSectors");
-				if (scannedWithError || hasNonformattedArea || hasDataInGaps || hasFuzzyData || hasDuplicatedIdFields || isEmpty || missesSomeSectors || erroneousSectors.n){
+				if (scannedWithError || hasNonformattedArea || hasDataInGaps || hasFuzzyData || hasDataOverIndex || hasDuplicatedIdFields || isEmpty || missesSomeSectors || erroneousSectors.n){
 					TDumpParams::TSourceTrackErrors *psse=(TDumpParams::TSourceTrackErrors *)::malloc(sizeof(TDumpParams::TSourceTrackErrors)+std::max(0,erroneousSectors.n-1)*sizeof(TDumpParams::TSourceSectorError));
 						psse->cyl=p.chs.cylinder, psse->head=p.chs.head;
 						psse->scannedWithError=scannedWithError;
 						psse->hasNonformattedArea=hasNonformattedArea;
 						psse->hasDataInGaps=hasDataInGaps;
 						psse->hasFuzzyData=hasFuzzyData;
+						psse->hasDataOverIndex=hasDataOverIndex;
 						psse->hasDuplicatedIdFields=hasDuplicatedIdFields;
 						psse->isEmpty=isEmpty;
 						psse->missesSomeSectors=missesSomeSectors;
