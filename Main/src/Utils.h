@@ -188,6 +188,15 @@ namespace Utils{
 	class CRideDialog:public CDialog{
 	protected:
 		CRideDialog();
+
+		class CSplitterWnd:public ::CSplitterWnd{ // an overridden version to be used inside CRideDialog instances
+		protected:
+			BOOL OnCommand(WPARAM wParam,LPARAM lParam) override;
+			BOOL OnNotify(WPARAM wParam,LPARAM lParam,LRESULT *pResult) override;
+		public:
+			CWnd *GetActivePane(int *pRow,int *pCol) override;
+			void SetActivePane(int row,int col,CWnd *pWnd) override;
+		};
 	public:
 		static LPCTSTR GetDialogTemplateCaptionText(UINT idDlgRes,PTCHAR chars,WORD nCharsMax);
 		static LPCTSTR GetDialogTemplateItemText(UINT idDlgRes,WORD idItem,PTCHAR chars,WORD nCharsMax);
@@ -210,6 +219,8 @@ namespace Utils{
 		RECT MapDlgItemClientRect(WORD id) const;
 		POINT MapDlgItemClientOrigin(WORD id) const;
 		void OffsetDlgItem(WORD id,int dx,int dy) const;
+		void SetDlgItemPos(HWND itemHwnd,int x,int y,int cx=0,int cy=0) const;
+		void SetDlgItemPos(HWND itemHwnd,const RECT &rc) const;
 		void SetDlgItemPos(WORD id,int x,int y,int cx=0,int cy=0) const;
 		void SetDlgItemPos(WORD id,const RECT &rc) const;
 		void SetDlgItemSize(WORD id,int cx,int cy) const;

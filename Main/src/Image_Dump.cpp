@@ -314,12 +314,33 @@
 							const PSectorData sectorData;
 							const WORD sectorLength;
 							TFdcStatus &rFdcStatus;
+							CEdit errorTextBox;
+							CMemFile fSectorData;
+							CHexaEditor hexaEditor;
+							std::unique_ptr<CSplitterWnd> splitter;
 							Utils::TSplitButtonAction resolveActions[RESOLVE_OPTIONS_COUNT];
 
 							void PreInitDialog() override{
 								// dialog initialization
 								// > base
 								__super::PreInitDialog();
+								// > creating the Splitter
+								const CRect rcSplitter=MapDlgItemClientRect(ID_ALIGN);
+								splitter.reset( new CSplitterWnd );
+								splitter->CreateStatic( this, 2,1, WS_CHILD|WS_VISIBLE|WS_CLIPSIBLINGS );//WS_CLIPCHILDREN|
+									errorTextBox.Create(
+										AFX_WS_DEFAULT_VIEW&~WS_BORDER | WS_CLIPSIBLINGS | ES_MULTILINE | ES_AUTOHSCROLL | WS_VSCROLL | ES_NOHIDESEL | ES_READONLY,
+										CFrameWnd::rectDefault, splitter.get(), splitter->IdFromRowCol(0,0)
+									);
+									errorTextBox.SetFont( GetFont() );
+								splitter->SetRowInfo( 0, rcSplitter.Height()/3, 0 ); // Utils::LogicalUnitScaleFactor
+									hexaEditor.Reset( &fSectorData, sectorLength, sectorLength );
+									hexaEditor.Create(
+										nullptr, nullptr,
+										AFX_WS_DEFAULT_VIEW&~WS_BORDER | WS_CLIPSIBLINGS,
+										CFrameWnd::rectDefault, splitter.get(), splitter->IdFromRowCol(1,0)
+									);
+								SetDlgItemPos( splitter->m_hWnd, rcSplitter );
 								// > creating message on Errors
 								LPCTSTR bitDescriptions[20],*pDesc=bitDescriptions; // 20 = surely big enough buffer
 								rFdcStatus.GetDescriptionsOfSetBits(bitDescriptions);
@@ -351,7 +372,7 @@
 										p+=::wsprintf( p, _T("- %s\r\n"), *pDesc++ );
 								else
 									p+=::lstrlen(::lstrcpy(p,NO_STATUS_ERROR));
-								SetDlgItemText( ID_ERROR, buf );
+								errorTextBox.SetWindowText( buf );
 								// > converting the "Accept" button to a SplitButton
 								static constexpr Utils::TSplitButtonAction Actions[ACCEPT_OPTIONS_COUNT]={
 									{ ACCEPT_ERROR_ID, _T("Accept error") },
@@ -542,7 +563,8 @@
 							CErroneousSectorDialog(CWnd *pParentWnd,const TDumpParams &dp,TParams &_rParams,PSectorData sectorData,WORD sectorLength,TFdcStatus &rFdcStatus)
 								// ctor
 								: Utils::CRideDialog( IDR_IMAGE_DUMP_ERROR, pParentWnd )
-								, dp(dp) , rp(_rParams) , sectorData(sectorData) , sectorLength(sectorLength) , rFdcStatus(rFdcStatus) {
+								, dp(dp) , rp(_rParams) , sectorData(sectorData) , sectorLength(sectorLength) , rFdcStatus(rFdcStatus)
+								, fSectorData(sectorData,sectorLength) , hexaEditor(this) {
 							}
 						} d(pAction,dp,p,bufferSectorData[p.s],bufferLength[p.s],p.fdcStatus);
 						// | reading SourceSector particular Revolution

@@ -1241,15 +1241,25 @@ namespace Utils{
 		::SetWindowPos( hCtrl, 0, pt.x+dx, pt.y+dy, 0, 0, SWP_NOZORDER|SWP_NOSIZE );
 	}
 
-	void CRideDialog::SetDlgItemPos(WORD id,int x,int y,int cx,int cy) const{
+	void CRideDialog::SetDlgItemPos(HWND itemHwnd,int x,int y,int cx,int cy) const{
 		// changes Dialog control position and size
 		::SetWindowPos(
-			::GetDlgItem(m_hWnd,id),
+			itemHwnd,
 			0,
 			x, y,
 			cx, cy,
 			SWP_NOZORDER | (x|y?0:SWP_NOMOVE) | (cx|cy?0:SWP_NOSIZE)
 		);
+	}
+
+	void CRideDialog::SetDlgItemPos(HWND itemHwnd,const RECT &rc) const{
+		// changes Dialog control position and size
+		SetDlgItemPos( itemHwnd, rc.left,rc.top, rc.right-rc.left,rc.bottom-rc.top );
+	}
+
+	void CRideDialog::SetDlgItemPos(WORD id,int x,int y,int cx,int cy) const{
+		// changes Dialog control position and size
+		SetDlgItemPos( ::GetDlgItem(m_hWnd,id), x, y, cx, cy );
 	}
 
 	void CRideDialog::SetDlgItemPos(WORD id,const RECT &rc) const{
@@ -1505,6 +1515,43 @@ namespace Utils{
 		}
 		p[-2]='\0';
 		::SetDlgItemText( *this, id, buf );
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+	BOOL CRideDialog::CSplitterWnd::OnCommand(WPARAM wParam,LPARAM lParam){
+		// command processing
+		return	CWnd::OnCommand( wParam, lParam ); // <<<<< DON'T USE "__super" as this would call code that assumes CFrameWnd is the parent of this splitter!
+	}
+	
+	BOOL CRideDialog::CSplitterWnd::OnNotify(WPARAM wParam,LPARAM lParam,LRESULT *pResult){
+		// notification processing
+		return	CWnd::OnNotify( wParam, lParam, pResult ); // <<<<< DON'T USE "__super" as this would call code that assumes CFrameWnd is the parent of this splitter!
+	}
+	
+	CWnd *CRideDialog::CSplitterWnd::GetActivePane(int *pRow,int *pCol){
+		// returns the active view of the parent CFrameWnd, that exists as one of the SplitterWnd cells
+		if (CWnd *const pFocusedWnd=GetFocus())
+			if (IsChildPane( pFocusedWnd, pRow, pCol ))
+				return pFocusedWnd;
+		return nullptr;
+	}
+
+	void CRideDialog::CSplitterWnd::SetActivePane(int row,int col,CWnd *pWnd){
+		// sets the focus to the specified window
+		if (pWnd)
+			pWnd->SetFocus();
+		else
+			GetPane(row,col)->SetFocus();
 	}
 
 
