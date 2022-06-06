@@ -996,9 +996,10 @@ namespace Utils{
 									SWP_NOZORDER | SWP_NOMOVE
 								);
 					// . creating the CheckBox
+					::GetClientRect( hMsgBox, &r );
 					hCheckBox=::CreateWindow(	WC_BUTTON, checkBoxMessage,
 												WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX | checkBoxChecked,
-												CHECKBOX_MARGIN,  r.Height() - ::GetSystemMetrics(SM_CYCAPTION) - ::GetSystemMetrics(SM_CYBORDER),
+												CHECKBOX_MARGIN,  r.Height() - LogicalUnitScaleFactor*( ::GetSystemMetrics(SM_CYCAPTION) - ::GetSystemMetrics(SM_CYBORDER) ),
 												checkBoxSize.cx, checkBoxSize.cy,
 												hMsgBox, 0, AfxGetInstanceHandle(), nullptr
 											);
