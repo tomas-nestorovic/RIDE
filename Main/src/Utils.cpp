@@ -552,6 +552,12 @@ namespace Utils{
 		return dosDate;
 	}
 
+	DWORD CRideTime::GetDosDateTime() const{
+		WORD dosDate=0, dosTime=0;
+		::FileTimeToDosDateTime( &(FILETIME)*this, &dosDate, &dosTime );
+		return MAKELONG(dosTime,dosDate);
+	}
+
 	CString CRideTime::DateToStdString() const{
 		//return CTime(*this).Format(_T("%x")); // standard date string; commented out as e.g. "June 26, 2089" fires an exception
 		TCHAR buf[16];

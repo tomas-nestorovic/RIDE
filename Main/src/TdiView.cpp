@@ -107,9 +107,18 @@
 			rcCurrContent.left=Utils::LogicalUnitScaleFactor*70, rcCurrContent.right-=Utils::LogicalUnitScaleFactor*16;
 			rcCurrContent.top= 8 + GetDlgItemClientRect(ID_HEAD).bottom;
 			// - informing on outdated version
-			if (!app.dateRecencyLastChecked){ // 0 = known that this app is outdated
+			const CString strLkv=app.GetProfileString( INI_GENERAL, INI_LATEST_KNOWN_VERSION );
+			if (strLkv.GetLength()>0 && ::lstrcmp(APP_VERSION,strLkv)){ // known that this app is outdated?
 				__addCategory__( _T("Outdated!"), 0xf069 );
 				__addHyperlinkText__( L"A newer version available - get it <a id=\"UPDATE\">here</a>!" );
+			}
+			if (app.dateRecencyLastChecked){ // at least once in the past the recency has been checked on-line?
+				const CMSDOS7::TDateTime dateTimeRlc( app.dateRecencyLastChecked );
+				TCHAR recencyCheckReport[80];
+				::wsprintf( recencyCheckReport, _T("Recency last checked online: %s, %s"), (LPCTSTR)dateTimeRlc.DateToStdString(), (LPCTSTR)dateTimeRlc.TimeToStdString() );
+				SetDlgItemText( ID_LATENCY, recencyCheckReport );
+				SendDlgItemMessage( ID_LATENCY, WM_SETFONT, (WPARAM)(HFONT)Utils::CRideFont::Small, TRUE );
+				ShowDlgItem( ID_LATENCY );
 			}
 			// - composing the "Recently accessed locations" section
 			__addCategory__( _T("Recently accessed locations"), 0xf0cd );
@@ -160,6 +169,15 @@
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 			// window procedure
 			switch (msg){
+				case WM_CTLCOLORSTATIC:
+					// adjustment of static labels drawing
+					if ((HWND)lParam==GetDlgItemHwnd(ID_LATENCY)){
+						// we're about to draw the static
+						::SetBkMode( (HDC)wParam, TRANSPARENT );
+						::SetTextColor( (HDC)wParam, ::GetSysColor(COLOR_3DSHADOW) );
+						return (LRESULT)(HBRUSH)Utils::CRideBrush::None;
+					}
+					break;
 				case WM_PAINT:{
 					// drawing
 					// . base
@@ -445,13 +463,8 @@
 					#ifndef APP_SPECIAL_VER
 						// this application is a standard release - can check if it's up-to-date or already outdated
 						if (const WORD today=CMSDOS7::TDateTime( Utils::CRideTime() ).GetDosDate())
-							if (app.dateRecencyLastChecked!=today) // recency suffices to be checked on-line once a day
+							if (HIWORD(app.dateRecencyLastChecked)!=today) // recency suffices to be checked on-line once a day
 								recencyStatusThread.Resume();
-							else{ // using the latest known version for the rest of Today to inform about recency
-								app.dateRecencyLastChecked=::lstrcmp( APP_VERSION, app.GetProfileString(INI_GENERAL,INI_LATEST_KNOWN_VERSION) )==0;
-								if (!app.dateRecencyLastChecked) // outdated
-									TDI_INSTANCE->RepopulateGuidePost();
-							}
 					#endif
 				#endif
 				SetFocus();

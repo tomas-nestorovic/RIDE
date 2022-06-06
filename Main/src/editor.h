@@ -3,7 +3,7 @@
 
 	#define INI_GENERAL			_T("General")
 
-	#define INI_IS_UP_TO_DATE	_T("iu2d")
+	#define INI_IS_UP_TO_DATE	_T("iu2e")
 	#define INI_LATEST_KNOWN_VERSION _T("lu2d")
 
 	class CRideApp sealed:public CWinApp{
@@ -29,7 +29,7 @@
 
 		static CLIPFORMAT cfDescriptor,cfRideFileList,cfContent,cfPreferredDropEffect,cfPerformedDropEffect,cfPasteSucceeded;
 
-		WORD dateRecencyLastChecked; // 0 = already known from earlier that this app is outdated
+		DWORD dateRecencyLastChecked; // 0 = recency not yet automatically checked online
 
 		BOOL InitInstance() override;
 		int ExitInstance() override;

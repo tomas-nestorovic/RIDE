@@ -355,8 +355,8 @@ quitWithErr:const DWORD err=::GetLastError();
 			pBac->UpdateProgress(5);
 		}
 		// - analysing the obtained information (comparing it against this instance version)
-		if (const WORD today=Utils::CRideTime().GetDosDate()){ // recording that recency last checked Today
-			app.dateRecencyLastChecked=today;
+		if (const DWORD now=Utils::CRideTime().GetDosDateTime()){ // recording that recency last checked Now
+			app.dateRecencyLastChecked=now;
 			app.WriteProfileInt( INI_GENERAL, INI_IS_UP_TO_DATE, app.dateRecencyLastChecked );
 		}
 		if (const PCHAR githubTagName=::strstr(buffer,GITHUB_VERSION_TAG_NAME))
@@ -369,7 +369,6 @@ quitWithErr:const DWORD err=::GetLastError();
 					if (::isspace(*t))
 						t++; // ignoring any whitespaces in "T"his tag
 					else if (*r++!=*t++){
-						app.dateRecencyLastChecked=0; // now known that this app is outdated
 						if (pAction->GetParams())
 							TDI_INSTANCE->RepopulateGuidePost();
 						return ERROR_EVT_VERSION_TOO_OLD; // the app is outdated

@@ -303,6 +303,7 @@ namespace Utils{
 
 		int ToMilliseconds() const;
 		WORD GetDosDate() const;
+		DWORD GetDosDateTime() const;
 		CString DateToStdString() const;
 		CString TimeToStdString() const;
 		CRideTime ToTzSpecificLocalTime() const;
