@@ -798,9 +798,6 @@ deleteSelection:		int posSrc=std::max(caret.selectionA,caret.position), posDst=s
 			case WM_CONTEXTMENU:{
 				// context menu invocation
 				Utils::CRideContextMenu mnu( IDR_HEXAEDITOR, this );
-				const bool selectionExists=caret.selectionA!=caret.position;
-				mnu.EnableMenuItem( ID_BOOKMARK_TOGGLE, (MF_DISABLED|MF_GRAYED)*selectionExists );
-				mnu.CheckMenuItem( ID_BOOKMARK_TOGGLE, MF_CHECKED*(bookmarks.__getNearestNextBookmarkPosition__(caret.position)==caret.position) );
 				BYTE iSelectSubmenu, iResetSubmenu, iGotoSubmenu;
 				if (customSelectSubmenu){ // custom "Select" submenu
 					const HMENU hSubmenu=Utils::GetSubmenuByContainedCommand( mnu, ID_EDIT_SELECT_ALL, &iSelectSubmenu );
@@ -1617,8 +1614,13 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 						return TRUE;
 					}
 					case ID_BOOKMARK_TOGGLE:
-						((CCmdUI *)pExtra)->SetCheck(bookmarks.__getNearestNextBookmarkPosition__(caret.position)==caret.position );
-						//fallthrough
+						((CCmdUI *)pExtra)->Enable(
+							caret.selectionA==caret.position // no selection
+							&&
+							caret.position<F->GetLength() // can't set a Bookmark beyond the content
+						);
+						((CCmdUI *)pExtra)->SetCheck( bookmarks.__getNearestNextBookmarkPosition__(caret.position)==caret.position );
+						return TRUE;
 					case ID_BOOKMARK_DELETEALL:
 					case ID_EDIT_SELECT_ALL:
 					case ID_EDIT_SELECT_NONE:
