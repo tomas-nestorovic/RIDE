@@ -59,16 +59,17 @@
 				pOutErroneousTracks=pOutErroneousTracks->pNextErroneousTrack, ::free((PVOID)tmp);
 		}
 
-		void __exportErroneousTracksToHtml__(CFile &fHtml,const Utils::CRideTime &duration) const{
+		void __exportErroneousTracksToHtml__(CFile &fHtml,const Utils::CRideTime &duration,bool realtimePriority) const{
 			// exports SourceTrackErrors to given HTML file
 			Utils::WriteToFile(fHtml,_T("<html><head><style>body,td{font-size:13pt;margin:24pt}table{border:1pt solid black;spacing:10pt}td{vertical-align:top}td.caption{font-size:14pt;background:silver}</style></head><body>"));
 				Medium::TType srcMediumType=Medium::UNKNOWN;
 				source->GetInsertedMediumType( 0, srcMediumType );
 				if (srcMediumType==Medium::UNKNOWN)
 					srcMediumType=dos->formatBoot.mediumType;
-				Utils::WriteToFileFormatted( fHtml, _T("<h3>Configuration</h3><table><tr><td class=caption>") APP_ABBREVIATION _T(" version:</td><td>") APP_VERSION _T("</td></tr><tr><td class=caption>System:</td><td>%s</td></tr><tr></tr><tr><td class=caption>Source:</td><td>%s<br>via<br>%s</td></tr><tr><td class=caption>Target:</td><td>%s<br>via<br>%s</td></tr><tr><td class=caption>Cylinders:</td><td>%d &#8211; %d (%s)</td></tr><tr><td class=caption>Full track analysis:</td><td>%s</td></tr></table><br>"), dos->properties->name, Medium::GetDescription(srcMediumType), source->GetPathName().GetLength()?source->GetPathName():_T("N/A"), Medium::GetDescription(mediumType), target->GetPathName().GetLength()?target->GetPathName():_T("N/A"), cylinderA,cylinderZ,cylinderA!=cylinderZ?_T("incl."):_T("single cylinder"), fullTrackAnalysis?_T("On"):_T("Off") );
+				Utils::WriteToFileFormatted( fHtml, _T("<h3>Configuration</h3><table><tr><td class=caption>") APP_ABBREVIATION _T(" version:</td><td>") APP_VERSION _T("</td></tr><tr><td class=caption>System:</td><td>%s</td></tr><tr></tr><tr><td class=caption>Source:</td><td>%s<br>via<br>%s</td></tr><tr><td class=caption>Target:</td><td>%s<br>via<br>%s</td></tr><tr><td class=caption>Cylinders:</td><td>%d &#8211; %d (%s)</td></tr><tr><td class=caption>Full track analysis:</td><td>%s</td></tr><tr><td class=caption>Real-time priority:</td><td>%s</td></tr></table><br>"), dos->properties->name, Medium::GetDescription(srcMediumType), source->GetPathName().GetLength()?source->GetPathName():_T("N/A"), Medium::GetDescription(mediumType), target->GetPathName().GetLength()?target->GetPathName():_T("N/A"), cylinderA,cylinderZ,cylinderA!=cylinderZ?_T("incl."):_T("single cylinder"), fullTrackAnalysis?_T("On"):_T("Off"), realtimePriority?_T("On"):_T("Off") );
 				Utils::WriteToFile(fHtml,_T("<h3>Overview</h3>"));
 					Utils::WriteToFileFormatted( fHtml, _T("<p>Duration: %d.%03d seconds (%02d:%02d:%02d.%03d).</p>"), div(duration.ToMilliseconds(),1000), duration.wHour, duration.wMinute, duration.wSecond, duration.wMilliseconds );
+					Utils::WriteToFileFormatted( fHtml, _T("<p>Date finished: %s.</p>"), (LPCTSTR)Utils::CRideTime().DateToStdString() );
 					if (pOutErroneousTracks){
 						Utils::WriteToFile(fHtml,_T("<table><tr><td class=caption>Status</td><td class=caption>Count</td></tr>"));
 							union{
@@ -1125,7 +1126,7 @@ error:				return Utils::FatalError(_T("Cannot dump"),err);
 					TCHAR tmpFileName[MAX_PATH];
 					::GetTempPath(MAX_PATH,tmpFileName);
 					::GetTempFileName( tmpFileName, nullptr, FALSE, tmpFileName );
-					d.dumpParams.__exportErroneousTracksToHtml__( CFile(::lstrcat(tmpFileName,_T(".html")),CFile::modeCreate|CFile::modeWrite), bmac.GetDurationTime() );
+					d.dumpParams.__exportErroneousTracksToHtml__( CFile(::lstrcat(tmpFileName,_T(".html")),CFile::modeCreate|CFile::modeWrite), bmac.GetDurationTime(), d.realtimeThreadPriority!=BST_UNCHECKED );
 					// | displaying
 					app.GetMainWindow()->OpenWebPage( _T("Dump results"), tmpFileName );
 				}

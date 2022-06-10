@@ -1326,7 +1326,7 @@ BEGIN
     EDITTEXT        ID_NUMBER,91,130,40,12,ES_AUTOHSCROLL | ES_NUMBER | 
                     WS_DISABLED | NOT WS_BORDER,WS_EX_STATICEDGE
     PUSHBUTTON      "System default",ID_DEFAULT1,134,130,56,13,WS_DISABLED
-    CONTROL         "Medium &already formatted, so reformat just bad tracks",
+    CONTROL         "Medi&um already formatted, so reformat just bad tracks",
                     ID_FORMAT,"Button",BS_AUTOCHECKBOX | WS_DISABLED | 
                     WS_TABSTOP,7,154,187,10
     CONTROL         "Real-time thread &priority (normal priority if unchecked)",
