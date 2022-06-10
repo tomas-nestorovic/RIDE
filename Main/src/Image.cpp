@@ -181,7 +181,7 @@
 
 	bool TFdcStatus::DescribesMissingDam() const{
 		// True <=> Registers describe that the data portion of a Sector has not been found, otherwise False
-		return reg1&FDC_ST1_NO_ADDRESS_MARK || reg2&FDC_ST2_NOT_DAM;
+		return (reg1&FDC_ST1_NO_ADDRESS_MARK)!=0 || (reg2&FDC_ST2_NOT_DAM)!=0;
 	}
 
 

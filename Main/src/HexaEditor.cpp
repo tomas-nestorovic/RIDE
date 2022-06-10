@@ -1466,7 +1466,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 							rcHexa.left=xHexaStart;
 							// : File content
 							const bool isEof=F->GetPosition()==F->GetLength();
-							BYTE nBytesExpected=__firstByteInRowToLogicalPosition__(iRowA+1)-address;
+							BYTE nBytesExpected=std::min<int>( __firstByteInRowToLogicalPosition__(iRowA+1), F->GetLength() )-address;
 							bool dataReady=false; // assumption
 							pContentAdviser->GetRecordInfo( address, nullptr, nullptr, &dataReady );
 							if (dataReady){

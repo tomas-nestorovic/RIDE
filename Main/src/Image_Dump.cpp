@@ -307,12 +307,25 @@
 						||
 						p.fdcStatus.ToWord()&~p.acceptance.automaticallyAcceptedErrors && !p.acceptance.remainingErrorsOnTrack // ... A&B, A = automatically not accepted Errors exist, B = Error reporting for current Track is enabled
 					){
+						// | reading SourceSector particular Revolution
+						LOG_SECTOR_ACTION(&p.chs.sectorId,_T("reading"));
+						const BYTE nRevsAvailable=dp.source->GetAvailableRevolutionCount( p.chs.cylinder, p.chs.head );
+						if (sPrev!=p.s) // is this the first trial?
+							p.revolution=Revolution::R0;
+						else if (nRevsAvailable<=Revolution::MAX){ // is the # of Revolutions limited?
+							if (++p.revolution>=nRevsAvailable)
+								p.revolution=Revolution::R0;
+							bufferSectorData[p.s]=dp.source->GetSectorData( p.chs, p.s, (Revolution::TType)p.revolution, bufferLength+p.s, bufferFdcStatus+p.s );
+						}else{
+							++p.revolution;
+							bufferSectorData[p.s]=dp.source->GetSectorData( p.chs, p.s, Revolution::NEXT, bufferLength+p.s, bufferFdcStatus+p.s );
+						}
+						p.fdcStatus=bufferFdcStatus[p.s]; // updating the Params (just in case the Sector was opted to exclude below and its FdcStatus in the Buffer lost)
 						// | Dialog definition
 						class CErroneousSectorDialog sealed:public Utils::CRideDialog{
 							const TDumpParams &dp;
 							TParams &rp;
 							const PSectorData sectorData;
-							const WORD sectorLength;
 							TFdcStatus &rFdcStatus;
 							CEdit errorTextBox;
 							CMemFile fSectorData;
@@ -334,7 +347,7 @@
 									);
 									errorTextBox.SetFont( GetFont() );
 								splitter->SetRowInfo( 0, rcSplitter.Height()/3, 0 ); // Utils::LogicalUnitScaleFactor
-									hexaEditor.Reset( &fSectorData, sectorLength, sectorLength );
+									hexaEditor.Reset( &fSectorData, fSectorData.GetLength(), fSectorData.GetLength() );
 									hexaEditor.Create(
 										nullptr, nullptr,
 										AFX_WS_DEFAULT_VIEW&~WS_BORDER | WS_CLIPSIBLINGS,
@@ -397,8 +410,8 @@
 								::memcpy( resolveActions, ResolveActions, sizeof(ResolveActions) );
 									if (onlyPartlyRecoverable)
 										resolveActions->commandCaption=_T("Resolve partly");
-									resolveActions[3].menuItemFlags=MF_GRAYED*( rFdcStatus.DescribesMissingDam() || !rFdcStatus.DescribesDataFieldCrcError() ); // disabled if the Data CRC ok
-									resolveActions[4].menuItemFlags=MF_GRAYED*( rFdcStatus.DescribesMissingDam() || !rFdcStatus.DescribesIdFieldCrcError()&&!rFdcStatus.DescribesDataFieldCrcError() ); // enabled only if either ID or Data field with error
+									resolveActions[3].menuItemFlags=MF_GRAYED*( rFdcStatus.DescribesMissingDam() || rFdcStatus.DescribesMissingId() || !rFdcStatus.DescribesDataFieldCrcError() ); // disabled if the Data CRC ok
+									resolveActions[4].menuItemFlags=MF_GRAYED*( rFdcStatus.DescribesMissingDam() || rFdcStatus.DescribesMissingId() || !rFdcStatus.DescribesIdFieldCrcError()&&!rFdcStatus.DescribesDataFieldCrcError() ); // enabled only if either ID or Data field with error
 								ConvertDlgButtonToSplitButton( IDNO, resolveActions, RESOLVE_OPTIONS_COUNT );
 								EnableDlgItem( IDNO, dynamic_cast<CImageRaw *>(dp.target.get())==nullptr ); // recovering errors is allowed only if the Target Image can accept them
 								// > converting the "Retry" button to a SplitButton
@@ -534,7 +547,7 @@
 													switch (d.dataFieldRecoveryType){
 														case 2:
 															// replacing data with SubstituteByte
-															::memset( sectorData, d.dataFieldSubstituteFillerByte, sectorLength );
+															::memset( sectorData, d.dataFieldSubstituteFillerByte, fSectorData.GetLength() );
 															//fallthrough
 														case 1:
 															// recovering CRC
@@ -563,24 +576,11 @@
 							CErroneousSectorDialog(CWnd *pParentWnd,const TDumpParams &dp,TParams &_rParams,PSectorData sectorData,WORD sectorLength,TFdcStatus &rFdcStatus)
 								// ctor
 								: Utils::CRideDialog( IDR_IMAGE_DUMP_ERROR, pParentWnd )
-								, dp(dp) , rp(_rParams) , sectorData(sectorData) , sectorLength(sectorLength) , rFdcStatus(rFdcStatus)
-								, fSectorData(sectorData,sectorLength) , hexaEditor(this) {
+								, dp(dp) , rp(_rParams) , sectorData(sectorData) , rFdcStatus(rFdcStatus)
+								, fSectorData( rFdcStatus.DescribesMissingDam()?nullptr:sectorData, rFdcStatus.DescribesMissingDam()?0:sectorLength )
+								, hexaEditor(this) {
 							}
 						} d(pAction,dp,p,bufferSectorData[p.s],bufferLength[p.s],p.fdcStatus);
-						// | reading SourceSector particular Revolution
-						LOG_SECTOR_ACTION(&p.chs.sectorId,_T("reading"));
-						const BYTE nRevsAvailable=dp.source->GetAvailableRevolutionCount( p.chs.cylinder, p.chs.head );
-						if (sPrev!=p.s) // is this the first trial?
-							p.revolution=Revolution::R0;
-						else if (nRevsAvailable<=Revolution::MAX){ // is the # of Revolutions limited?
-							if (++p.revolution>=nRevsAvailable)
-								p.revolution=Revolution::R0;
-							bufferSectorData[p.s]=dp.source->GetSectorData( p.chs, p.s, (Revolution::TType)p.revolution, bufferLength+p.s, bufferFdcStatus+p.s );
-						}else{
-							++p.revolution;
-							bufferSectorData[p.s]=dp.source->GetSectorData( p.chs, p.s, Revolution::NEXT, bufferLength+p.s, bufferFdcStatus+p.s );
-						}
-						p.fdcStatus=bufferFdcStatus[p.s]; // updating the Params (just in case the Sector was opted to exclude below and its FdcStatus in the Buffer lost)
 						// | showing the Dialog and processing its result
 				{		LOG_DIALOG_DISPLAY(_T("CErroneousSectorDialog"));
 						switch (LOG_DIALOG_RESULT(d.DoModal())){
