@@ -376,12 +376,12 @@
 	void CCapsBase::CInternalTrack::ReadSector(TInternalSector &ris,BYTE rev){
 		// buffers specified Revolution of the Sector (assumed part of this Track)
 		auto &currRev=ris.revolutions[rev];
-		if (!IsValidSectorLengthCode(ris.id.lengthCode))
-			// e.g. invalid for copy-protection marks (Sector with LengthCode 167 has no data)
-			currRev.fdcStatus.ExtendWith( TFdcStatus::NoDataField );
-		else if (currRev.idEndTime<=0)
+		if (currRev.idEndTime<=0)
 			// Sector's ID Field not found in specified Revolution
 			currRev.fdcStatus.ExtendWith( TFdcStatus::SectorNotFound );
+		else if (!IsValidSectorLengthCode(ris.id.lengthCode))
+			// e.g. invalid for copy-protection marks (Sector with LengthCode 167 has no data)
+			currRev.fdcStatus.ExtendWith( TFdcStatus::NoDataField );
 		else if (!currRev.data){ // data not yet buffered
 			// at least Sector's ID Field found in specified Revolution
 			const WORD sectorOfficialLength=ris.GetOfficialSectorLength();
