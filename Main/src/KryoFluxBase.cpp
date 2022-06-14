@@ -765,6 +765,9 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 	DWORD CKryoFluxBase::TrackToStream(CTrackReader tr,LPBYTE outBuffer) const{
 		// converts specified Track representation into Stream data and returns the length of the Stream
 		PCHAR p=(PCHAR)outBuffer;
+		// - writing app signature
+		#define APP_SIGNATURE "creator=" APP_ABBREVIATION " " APP_VERSION
+		p+=::wsprintfA( p, "\xd\x4%c%c" APP_SIGNATURE, sizeof(APP_SIGNATURE), 0 )+1; // "+1" = terminal zero character
 		// - writing hardware information
 		#define HW_INFO_1 "host_date=2019.09.24, host_time=20:57:32, hc=0"
 		p+=::wsprintfA( p, "\xd\x4%c%c" HW_INFO_1, sizeof(HW_INFO_1), 0 )+1; // "+1" = terminal zero character
