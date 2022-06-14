@@ -94,8 +94,11 @@
 							if (EnableDlgItem( ID_40D80, initialEditing )){
 								const bool doubleTrackStep0=rkfb.params.doubleTrackStep;
 									rkfb.params.doubleTrackStep=false;
-									if (rkfb.GetInsertedMediumType(1,mt)==ERROR_SUCCESS)
-										CheckDlgButton( ID_40D80, !ShowDlgItem(ID_INFORMATION,mt!=Medium::UNKNOWN) ); // first Track is empty, so likely each odd Track is empty
+									const Medium::TType floppyType0=rkfb.floppyType;
+										rkfb.floppyType=mt;
+										if (rkfb.GetInsertedMediumType(1,mt)==ERROR_SUCCESS)
+											CheckDlgButton( ID_40D80, !ShowDlgItem(ID_INFORMATION,mt!=Medium::UNKNOWN) ); // first Track is empty, so likely each odd Track is empty
+									rkfb.floppyType=floppyType0;
 								rkfb.params.doubleTrackStep=doubleTrackStep0;
 								rkfb.GetInsertedMediumType(0,mt); // a workaround to make floppy Drive head seek home
 							}
