@@ -100,9 +100,9 @@
 		f=IMAGE->CreateSectorDataSerializer(this);
 		const auto fLength=f->GetLength();
 		Update( f.get(), fLength, fLength );
-		f->SetTrackScannerStatus(
-			f->GetTrackScannerStatus() // getting last known explicit status (e.g. by the user) ...
-		); // ... and resetting any internal status of the scanner
+		const auto lastKnownScannerStatus=f->GetTrackScannerStatus(); // getting last known explicit status (e.g. by the user) ...
+		if (lastKnownScannerStatus!=CImage::CSectorDataSerializer::TScannerStatus::UNAVAILABLE)
+			f->SetTrackScannerStatus(lastKnownScannerStatus); // ... and resetting any internal status of the scanner
 	}
 
 	BOOL CDiskBrowserView::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){
