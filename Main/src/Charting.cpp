@@ -81,7 +81,7 @@
 				EXCLUSIVELY_LOCK(p);
 				if (p.drawingId!=id)
 					break;
-				if (points[j].y>di.yMax)
+				if (points[j].y>di.GetAxisY().GetLength())
 					continue;
 				const POINT pt=di.Transform( points[j] );
 				::MoveToEx( p.dc, pt.x, pt.y, nullptr );
@@ -159,7 +159,7 @@
 		const HGDIOBJ hPen0=::SelectObject( p.dc, hPen );
 			for( DWORD i=0; i<nPoints; i++ ){
 				const POINT &pt=points[i];
-				if (pt.x>di.xMax)
+				if (pt.x>di.GetAxisX().GetLength())
 					break;
 				EXCLUSIVELY_LOCK(p);
 				if (p.drawingId!=id)
@@ -208,36 +208,36 @@
 		, gridPen( 0, 0xcacaca, PS_DOT ) // light gray
 		, fontAxes(fontAxes)
 		, xMaxOrg(xMax), yMaxOrg(yMax)
-		, xAxisUnit(xAxisUnit) , xMax(xMax) , xAxisUnitPrefixes(xAxisUnitPrefixes)
-		, yAxisUnit(yAxisUnit) , yMax(yMax) , yAxisUnitPrefixes(yAxisUnitPrefixes)
+		, xAxisUnit(xAxisUnit) , xAxisUnitPrefixes(xAxisUnitPrefixes)
+		, yAxisUnit(yAxisUnit) , yAxisUnitPrefixes(yAxisUnitPrefixes)
+		, xAxis( xMaxOrg, 1, 0, Utils::CAxis::TVerticalAlign::BOTTOM )
+		, yAxis( yMaxOrg, 1, 0, Utils::CAxis::TVerticalAlign::TOP )
 		, M(IdentityTransf)
 		// - all data shown by default
 		, percentile(10100) { // invalid, must call SetPercentile !
 		SetPercentile(10000);
 	}
 
-	XFORM CChartView::CXyDisplayInfo::DrawXyAxes(HDC dc,const CRect &rcClient) const{
-		// draws both X- and Y-Axis, and returns the graphic transformation to draw values into the Axes
+	void CChartView::CXyDisplayInfo::DrawBackground(HDC dc,const CRect &rcClient){
+		// draws background
+		// - drawing both X- and Y-Axis
 		CRect rcChartBody=rcClient;
 		rcChartBody.InflateRect( Utils::LogicalUnitScaleFactor*-margin.L, Utils::LogicalUnitScaleFactor*-margin.T, Utils::LogicalUnitScaleFactor*-margin.R, Utils::LogicalUnitScaleFactor*-margin.B );
 		const SIZE szChartBody={ rcChartBody.Width(), rcChartBody.Height() };
 		const SIZE szChartBodyUnits={ szChartBody.cx/Utils::LogicalUnitScaleFactor, szChartBody.cy/Utils::LogicalUnitScaleFactor };
-		const Utils::CAxis xAxis( xMax, 1, szChartBodyUnits.cx, 30 );
+		xAxis.SetZoomFactor( xAxis.GetZoomFactorToFitWidth(szChartBodyUnits.cx,30) );
 			const XFORM xAxisTransf={ (float)szChartBodyUnits.cx/xAxis.GetUnitCount(), 0, 0, 1, margin.L, rcClient.Height()/Utils::LogicalUnitScaleFactor-margin.B };
 			::SetWorldTransform( dc, &xAxisTransf );
-			xAxis.Draw( dc, szChartBody.cx, xAxisUnit, xAxisUnitPrefixes, fontAxes, Utils::CAxis::TVerticalAlign::BOTTOM, -szChartBodyUnits.cy, gridPen );
-		const Utils::CAxis yAxis( yMax, 1, szChartBodyUnits.cy, 30 );
+			xAxis.Draw( dc, szChartBody.cx, xAxisUnit, xAxisUnitPrefixes, fontAxes, -szChartBodyUnits.cy, gridPen );
+		yAxis.SetZoomFactor( yAxis.GetZoomFactorToFitWidth(szChartBodyUnits.cy,30) );
 			const XFORM yAxisTransf={ 0, -(float)szChartBodyUnits.cy/yAxis.GetUnitCount(), 1, 0, xAxisTransf.eDx, xAxisTransf.eDy };
 			::SetWorldTransform( dc, &yAxisTransf );
-			yAxis.Draw( dc, szChartBody.cy, yAxisUnit, yAxisUnitPrefixes, fontAxes, Utils::CAxis::TVerticalAlign::TOP, szChartBodyUnits.cx, gridPen );
+			yAxis.Draw( dc, szChartBody.cy, yAxisUnit, yAxisUnitPrefixes, fontAxes, szChartBodyUnits.cx, gridPen );
+		xAxisCursorPos = yAxisCursorPos = -1; // no cursor indicators shown on erased background
+		// - setting transformation to correctly draw all Series
 		::SetWorldTransform( dc, &IdentityTransf );
-		const XFORM valuesTransf={ xAxisTransf.eM11/(1<<xAxis.zoomFactor), 0, 0, yAxisTransf.eM12/(1<<yAxis.zoomFactor), xAxisTransf.eDx, xAxisTransf.eDy };
-		return valuesTransf;
-	}
-
-	void CChartView::CXyDisplayInfo::DrawBackground(HDC dc,const CRect &rcClient) const{
-		// draws background
-		const_cast<CXyDisplayInfo *>(this)->M=DrawXyAxes( dc, rcClient );
+		const XFORM valuesTransf={ xAxisTransf.eM11/(1<<xAxis.GetZoomFactor()), 0, 0, yAxisTransf.eM12/(1<<yAxis.GetZoomFactor()), xAxisTransf.eDx, xAxisTransf.eDy };
+		M=valuesTransf;
 	}
 
 	POINT CChartView::CXyDisplayInfo::Transform(long x,long y) const{
@@ -257,11 +257,12 @@
 		if (newPercentile==percentile)
 			return;
 		percentile=newPercentile;
-		xMax=xMaxOrg, yMax=yMaxOrg;
+		TLogValue xMax=xMaxOrg, yMax=yMaxOrg;
 		for( BYTE i=0; i<nGraphics; i++ )
 			if (const PCXyGraphics g=dynamic_cast<PCXyGraphics>(graphics[i]))
 				if (g->visible)
 					g->GetDrawingLimits( newPercentile, xMax, yMax );
+		xAxis.SetLength(xMax), yAxis.SetLength(yMax);
 	}
 
 	bool CChartView::CXyDisplayInfo::OnCmdMsg(CChartView &cv,UINT nID,int nCode,PVOID pExtra){

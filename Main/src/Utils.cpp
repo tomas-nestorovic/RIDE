@@ -666,19 +666,14 @@ namespace Utils{
 
 	const TCHAR CAxis::CountPrefixes[]=_T("   kkkMMMBBB"); // no-prefix, thousand, million, billion
 
-	CAxis::CAxis(TLogValue logLength,TLogTime logValuePerUnit,BYTE initZoomFactor)
+	CAxis::CAxis(TLogValue logLength,TLogTime logValuePerUnit,BYTE initZoomFactor,TVerticalAlign ticksAndLabelsAlign)
 		// ctor
 		: logLength(logLength) , logValuePerUnit(logValuePerUnit)
+		, ticksAndLabelsAlign(ticksAndLabelsAlign)
 		, zoomFactor(initZoomFactor) {
 	}
 
-	CAxis::CAxis(TLogValue logLength,TLogTime logValuePerUnit,int nUnitsToFitIn,BYTE zoomFactorMax)
-		// ctor
-		: logLength(logLength) , logValuePerUnit(logValuePerUnit)
-		, zoomFactor( GetZoomFactorToFitWidth(nUnitsToFitIn,zoomFactorMax) ) {
-	}
-
-	BYTE CAxis::Draw(HDC dc,long nVisiblePixels,TCHAR unit,LPCTSTR unitPrefixes,const CRideFont &font,TVerticalAlign ticksAndLabelsAlign,int primaryGridLength,HPEN hPrimaryGridPen,PLogTime pOutVisibleStart,PLogTime pOutVisibleEnd) const{
+	BYTE CAxis::Draw(HDC dc,long nVisiblePixels,TCHAR unit,LPCTSTR unitPrefixes,const CRideFont &font,int primaryGridLength,HPEN hPrimaryGridPen,PLogTime pOutVisibleStart,PLogTime pOutVisibleEnd) const{
 		// draws an Axis starting at current origin; returns index into the UnitPrefixes indicating which prefix was used to draw the Axis
 		// - determinining the primary granuality of the Axis
 		TCHAR label[32];
@@ -778,12 +773,26 @@ namespace Utils{
 		return	tmp<INT_MAX ? tmp : INT_MAX;
 	}
 
+	void CAxis::SetLength(TLogValue newLogLength){
+		logLength=newLogLength;
+	}
+
 	BYTE CAxis::GetZoomFactorToFitWidth(int nUnits,BYTE zoomFactorMax) const{
+		return	GetZoomFactorToFitWidth( logLength, nUnits, zoomFactorMax );
+	}
+
+	BYTE CAxis::GetZoomFactorToFitWidth(TLogValue logValue,int nUnits,BYTE zoomFactorMax) const{
 		BYTE zf=0;
-		while (GetUnitCount(logLength,zf)>nUnits && zf<zoomFactorMax)
+		while (GetUnitCount(logValue,zf)>nUnits && zf<zoomFactorMax)
 			zf++;
 		return zf;
 	}
+
+	void CAxis::SetZoomFactor(BYTE newZoomFactor){
+		zoomFactor=newZoomFactor;
+	}
+
+
 
 
 
@@ -818,7 +827,7 @@ namespace Utils{
 		// draws a HORIZONTAL Timeline starting at current origin
 		CRect rcClient;
 		::GetClientRect( ::WindowFromDC(dc), &rcClient );
-		__super::Draw( dc, rcClient.Width(), 's', TimePrefixes, font, TVerticalAlign::TOP, 0, nullptr, pOutVisibleStart, pOutVisibleEnd );
+		__super::Draw( dc, rcClient.Width(), 's', TimePrefixes, font, 0, nullptr, pOutVisibleStart, pOutVisibleEnd );
 	}
 
 

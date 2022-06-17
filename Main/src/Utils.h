@@ -313,29 +313,32 @@ namespace Utils{
 	class CAxis{
 	protected:
 		const TLogValue logValuePerUnit;
+		TLogValue logLength;
+		BYTE zoomFactor;
 
 		TLogValue PixelToValue(int pixel) const;
 	public:
-		enum TVerticalAlign{
+		const enum TVerticalAlign{
 			NONE,
 			TOP,
 			BOTTOM
-		};
+		} ticksAndLabelsAlign;
 
 		static const TCHAR CountPrefixes[];
 
-		const TLogValue logLength;
-		BYTE zoomFactor;
+		CAxis(TLogValue logLength,TLogTime logValuePerUnit,BYTE initZoomFactor,TVerticalAlign ticksAndLabelsAlign=TVerticalAlign::TOP);
 
-		CAxis(TLogValue logLength,TLogTime logValuePerUnit,BYTE initZoomFactor);
-		CAxis(TLogValue logLength,TLogTime logValuePerUnit,int nUnitsToFitIn,BYTE zoomFactorMax);
-
-		BYTE Draw(HDC dc,long nVisiblePixels,TCHAR unit,LPCTSTR unitPrefixes,const CRideFont &font,TVerticalAlign ticksAndLabelsAlign=TVerticalAlign::TOP,int primaryGridLength=0,HPEN hPrimaryGridPen=nullptr,PLogTime pOutVisibleStart=nullptr,PLogTime pOutVisibleEnd=nullptr) const;
+		BYTE Draw(HDC dc,long nVisiblePixels,TCHAR unit,LPCTSTR unitPrefixes,const CRideFont &font,int primaryGridLength=0,HPEN hPrimaryGridPen=nullptr,PLogTime pOutVisibleStart=nullptr,PLogTime pOutVisibleEnd=nullptr) const;
 		int GetUnitCount(TLogValue logValue,BYTE zoomFactor) const;
 		int GetUnitCount(TLogValue logValue) const;
 		int GetUnitCount() const;
 		TLogValue GetValue(int nUnits) const;
+		inline TLogValue GetLength() const{ return logLength; }
+		void SetLength(TLogValue newLogLength);
+		inline BYTE GetZoomFactor() const{ return zoomFactor; }
 		BYTE GetZoomFactorToFitWidth(int nUnits,BYTE zoomFactorMax) const;
+		BYTE GetZoomFactorToFitWidth(TLogValue logValue,int nUnits,BYTE zoomFactorMax) const;
+		void SetZoomFactor(BYTE newZoomFactor);
 	};
 
 	class CTimeline:public CAxis{

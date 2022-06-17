@@ -72,7 +72,7 @@
 
 			CDisplayInfo(UINT menuResourceId,RCMargin margin,const PCGraphics graphics[],BYTE nGraphics);
 
-			virtual void DrawBackground(HDC dc,const CRect &rcClient) const=0;
+			virtual void DrawBackground(HDC dc,const CRect &rcClient)=0;
 			virtual bool OnCmdMsg(CChartView &cv,UINT nID,int nCode,PVOID pExtra);
 		};
 
@@ -82,9 +82,9 @@
 			const TCHAR xAxisUnit,yAxisUnit;
 			const LPCTSTR xAxisUnitPrefixes,yAxisUnitPrefixes;
 			const TLogValue xMaxOrg, yMaxOrg;
+			Utils::CAxis xAxis, yAxis;
 			WORD percentile; // in hundredths (e.g. "2345" means 23.45)
 		public:
-			TLogValue xMax,yMax;
 			XFORM M; // matrix to transform data coordinates (TLogValue) to display coordinates (pixels)
 
 			CXyDisplayInfo(
@@ -95,8 +95,9 @@
 				TCHAR yAxisUnit, TLogValue yMax, LPCTSTR yAxisUnitPrefixes
 			);
 
-			XFORM DrawXyAxes(HDC dc,const CRect &rcClient) const;
-			void DrawBackground(HDC dc,const CRect &rcClient) const override;
+			inline const Utils::CAxis &GetAxisX() const{ return xAxis; }
+			inline const Utils::CAxis &GetAxisY() const{ return yAxis; }
+			void DrawBackground(HDC dc,const CRect &rcClient) override;
 			POINT Transform(long x,long y) const;
 			inline POINT Transform(const POINT &pt) const{ return Transform( pt.x, pt.y ); }
 			RECT Transform(const RECT &rc) const;

@@ -285,7 +285,7 @@
 			int GetInspectionWindow(TLogTime logTime) const{
 				// returns the index of inspection window at specified LogicalTime
 				ASSERT( inspectionWindows );
-				int L=0, R=timeline.logLength/tr.GetCurrentProfile().iwTimeMin;
+				int L=0, R=timeline.GetLength()/tr.GetCurrentProfile().iwTimeMin;
 				do{
 					const int M=(L+R)/2;
 					if (inspectionWindows[L].tEnd<=logTime && logTime<inspectionWindows[M].tEnd)
@@ -337,7 +337,7 @@
 								::DeleteObject( ::SelectObject(dcMem,hBmp0) );
 							}
 							// . painting space between neighboring Times at current position
-							if (IsFeatureShown(TCursorFeatures::SPACING) && cursorTime<timeline.logLength){
+							if (IsFeatureShown(TCursorFeatures::SPACING) && cursorTime<timeline.GetLength()){
 								tr.SetCurrentTime(cursorTime);
 								tr.TruncateCurrentTime();
 								const TLogTime a=tr.GetCurrentTime(), z=tr.ReadTime();
@@ -356,7 +356,7 @@
 								::LineTo( dc, xz+LINE_EXTENSION, SPACING_HEIGHT );
 							}
 							// . painting inspection window size at current position
-							if (IsFeatureShown(TCursorFeatures::INSPECT) && cursorTime<timeline.logLength){
+							if (IsFeatureShown(TCursorFeatures::INSPECT) && cursorTime<timeline.GetLength()){
 								const int i=GetInspectionWindow(cursorTime);
 								const TLogTime a=inspectionWindows[i-1].tEnd, z=inspectionWindows[i].tEnd;
 								const int xa=timeline.GetUnitCount(a-scrollTime), xz=timeline.GetUnitCount(z-scrollTime);
@@ -382,7 +382,7 @@
 			inline TLogTime ClientPixelToTime(int pixel) const{
 				return	std::min(
 							scrollTime + timeline.GetTime( pixel/Utils::LogicalUnitScaleFactor ),
-							timeline.logLength
+							timeline.GetLength()
 						);
 			}
 
@@ -407,12 +407,12 @@
 						::GetCursorPos(&cursor);
 						ScreenToClient(&cursor);
 						const int nUnitsX=cursor.x/Utils::LogicalUnitScaleFactor;
-						if ((short)HIWORD(wParam)<0 && timeline.zoomFactor<ZOOM_FACTOR_MAX)
+						if ((short)HIWORD(wParam)<0 && timeline.GetZoomFactor()<ZOOM_FACTOR_MAX)
 							// want zoom out and still can zoom out
-							SetZoomFactor( timeline.zoomFactor+1, nUnitsX );
-						else if ((short)HIWORD(wParam)>0 && timeline.zoomFactor>0)
+							SetZoomFactor( timeline.GetZoomFactor()+1, nUnitsX );
+						else if ((short)HIWORD(wParam)>0 && timeline.GetZoomFactor()>0)
 							// want zoom in and still can zoom in
-							SetZoomFactor( timeline.zoomFactor-1, nUnitsX );
+							SetZoomFactor( timeline.GetZoomFactor()-1, nUnitsX );
 						else
 							// can't process the zoom request
 							return 0;
@@ -446,7 +446,7 @@
 								SetScrollTime(0);
 								break;
 							case VK_END:
-								SetScrollTime(timeline.logLength);
+								SetScrollTime(timeline.GetLength());
 								break;
 							case VK_PRIOR:	// page up
 								OnScroll( SB_PAGELEFT, 0 );
@@ -522,7 +522,7 @@
 				EXCLUSIVELY_LOCK(painter.params);
 					painter.params.id++;
 					timeline.Draw( dc, Utils::CRideFont::Std, &painter.params.visible.tStart, &painter.params.visible.tEnd );
-					painter.params.zoomFactor=timeline.zoomFactor;
+					painter.params.zoomFactor=timeline.GetZoomFactor();
 				// . drawing the rest in parallel thread due to computational complexity if painting the whole Track
 				painter.repaintEvent.SetEvent();
 			}
@@ -557,7 +557,7 @@
 			void OnInitialUpdate() override{
 				// called after window creation
 				__super::OnInitialUpdate();
-				SetZoomFactor( timeline.zoomFactor, 0 ); // initialization
+				SetZoomFactor( timeline.GetZoomFactor(), 0 ); // initialization
 				painter.action.Resume();
 			}
 
@@ -567,7 +567,7 @@
 
 			void SetZoomFactor(BYTE newZoomFactor,int focusUnitX){
 				const TLogTime t=scrollTime+timeline.GetTime(focusUnitX);
-				timeline.zoomFactor=newZoomFactor;
+				timeline.SetZoomFactor( newZoomFactor );
 				OnUpdate( nullptr, 0, nullptr );
 				SetScrollTime(  timeline.GetTime( timeline.GetUnitCount(t)-focusUnitX )  );
 				Invalidate();
@@ -596,7 +596,7 @@
 
 			void SetScrollTime(TLogTime t){
 				if (t<0) t=0;
-				else if (t>timeline.logLength) t=timeline.logLength;
+				else if (t>timeline.GetLength()) t=timeline.GetLength();
 				SCROLLINFO si={ sizeof(si) };
 					si.fMask=SIF_POS;
 					si.nPos=Utils::LogicalUnitScaleFactor*timeline.GetUnitCount(t);
@@ -869,10 +869,10 @@
 					CCmdUI *const pCmdUi=(CCmdUI *)pExtra;
 					switch (nID){
 						case ID_ZOOM_IN:
-							pCmdUi->Enable( timeEditor.GetTimeline().zoomFactor>0 );
+							pCmdUi->Enable( timeEditor.GetTimeline().GetZoomFactor()>0 );
 							return TRUE;
 						case ID_ZOOM_OUT:
-							pCmdUi->Enable( timeEditor.GetTimeline().zoomFactor<ZOOM_FACTOR_MAX );
+							pCmdUi->Enable( timeEditor.GetTimeline().GetZoomFactor()<ZOOM_FACTOR_MAX );
 							//fallthrough
 						case ID_ZOOM_FIT:
 						case ID_REFRESH:
@@ -960,13 +960,13 @@
 							return TRUE;
 						case ID_ZOOM_IN:
 							timeEditor.SetZoomFactor(
-								timeEditor.GetTimeline().zoomFactor-1,
+								timeEditor.GetTimeline().GetZoomFactor()-1,
 								timeEditor.GetTimeline().GetUnitCount(timeEditor.GetClientCursorTime()-timeEditor.GetScrollTime())
 							);
 							return TRUE;
 						case ID_ZOOM_OUT:
 							timeEditor.SetZoomFactor(
-								timeEditor.GetTimeline().zoomFactor+1,
+								timeEditor.GetTimeline().GetZoomFactor()+1,
 								timeEditor.GetTimeline().GetUnitCount(timeEditor.GetClientCursorTime()-timeEditor.GetScrollTime())
 							);
 							return TRUE;
@@ -977,12 +977,13 @@
 							rev-=rev==tr.GetIndexCount(); // if after after the last Revolution, pointing at the end of the last Revolution
 							CRect rc;
 							timeEditor.GetClientRect(&rc);
-							const int nUnitsWidth=rc.Width()/Utils::LogicalUnitScaleFactor;
-							const TLogTime tRevolution=tr.GetIndexTime(rev)-tr.GetIndexTime(rev-1);
-							BYTE zf=0;
-							while (timeEditor.GetTimeline().GetUnitCount(tRevolution,zf)>nUnitsWidth && zf<ZOOM_FACTOR_MAX)
-								zf++;
-							timeEditor.SetZoomFactorCenter(zf);
+							timeEditor.SetZoomFactorCenter(
+								timeEditor.GetTimeline().GetZoomFactorToFitWidth(
+									tr.GetIndexTime(rev)-tr.GetIndexTime(rev-1), // Revolution time
+									rc.Width()/Utils::LogicalUnitScaleFactor, // # of units to fit the Revolution to
+									ZOOM_FACTOR_MAX
+								)
+							);
 							timeEditor.SetCenterTime( (tr.GetIndexTime(rev)+tr.GetIndexTime(rev-1))/2 );
 							return TRUE;
 						}
