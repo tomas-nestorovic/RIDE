@@ -240,6 +240,16 @@
 		M=valuesTransf;
 	}
 
+	void CChartView::CXyDisplayInfo::DrawCursorAt(HDC dc,const POINT &ptClient,const CRect &rcClient){
+		// indicades the positions of the cursor, given its position in the Display's client area
+		// - determining the XY-values at which the cursor points
+		const POINT value=InverselyTransform( ptClient/Utils::LogicalUnitScaleFactor );
+		// - drawing cursor indicators
+		Utils::ScaleLogicalUnit(dc);
+		xAxis.DrawCursorAt( dc, value.x );
+		yAxis.DrawCursorAt( dc, value.y );
+	}
+
 	POINT CChartView::CXyDisplayInfo::Transform(long x,long y) const{
 		const POINT tmp={
 			M.eDx + M.eM11*x + M.eM21*y,
@@ -250,6 +260,18 @@
 
 	RECT CChartView::CXyDisplayInfo::Transform(const RECT &rc) const{
 		return CRect( Transform(*(const POINT *)&rc), Transform(((const POINT *)&rc)[1]) );
+	}
+
+	POINT CChartView::CXyDisplayInfo::InverselyTransform(const POINT &pt) const{
+		// Solving of the system of equations:
+		// | m n d | x |
+		// | r s e | y |
+		// | 0 0 1 | 1 |
+		const double m=M.eM11, n=M.eM21, d=M.eDx;
+		const double r=M.eM12, s=M.eM22, e=M.eDy;
+		const double dx=pt.x-d, dy=pt.y-e;
+		const double resultY= (m*dy-r*dx) / (s*m-r*n);
+		return CPoint( (dx-n*resultY)/m, resultY );
 	}
 
 	void CChartView::CXyDisplayInfo::SetPercentile(WORD newPercentile){
@@ -363,6 +385,13 @@
 				// window's size is being changed
 				EXCLUSIVELY_LOCK(painter);
 				painter.drawingId++;
+				break;
+			}
+			case WM_MOUSEMOVE:{
+				// mouse moved
+				RECT rcClient;
+				GetClientRect(&rcClient);
+				painter.di.DrawCursorAt( CClientDC(this), CPoint(lParam), rcClient );
 				break;
 			}
 		}

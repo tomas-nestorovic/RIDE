@@ -315,6 +315,19 @@ namespace Utils{
 		const TLogValue logValuePerUnit;
 		TLogValue logLength;
 		BYTE zoomFactor;
+		class CDcState sealed{
+			int mappingMode,graphicsMode;
+			int nUnitsStart;
+			POINT ptViewportOrg;
+			XFORM advanced;
+		public:
+			inline CDcState(){}
+			CDcState(HDC dc,int nUnitsStart);
+
+			int ApplyTo(HDC dc) const;
+			void RevertFrom(HDC dc,int iSavedDc) const;
+		} dcState; // for any subsequent drawing, e.g. cursor indication
+		TLogValue logCursorPos;
 
 		TLogValue PixelToValue(int pixel) const;
 	public:
@@ -325,10 +338,12 @@ namespace Utils{
 		} ticksAndLabelsAlign;
 
 		static const TCHAR CountPrefixes[];
+		static const CRideFont FontWingdings;
 
 		CAxis(TLogValue logLength,TLogTime logValuePerUnit,BYTE initZoomFactor,TVerticalAlign ticksAndLabelsAlign=TVerticalAlign::TOP);
 
-		BYTE Draw(HDC dc,long nVisiblePixels,TCHAR unit,LPCTSTR unitPrefixes,const CRideFont &font,int primaryGridLength=0,HPEN hPrimaryGridPen=nullptr,PLogTime pOutVisibleStart=nullptr,PLogTime pOutVisibleEnd=nullptr) const;
+		BYTE Draw(HDC dc,long nVisiblePixels,TCHAR unit,LPCTSTR unitPrefixes,const CRideFont &font,int primaryGridLength=0,HPEN hPrimaryGridPen=nullptr,PLogTime pOutVisibleStart=nullptr,PLogTime pOutVisibleEnd=nullptr);
+		void DrawCursorAt(HDC dc,TLogValue newLogPos);
 		int GetUnitCount(TLogValue logValue,BYTE zoomFactor) const;
 		int GetUnitCount(TLogValue logValue) const;
 		int GetUnitCount() const;
@@ -348,7 +363,7 @@ namespace Utils{
 		CTimeline(TLogTime logTimeLength,TLogTime logTimePerUnit,BYTE initZoomFactor);
 
 		int TimeToReadableString(TLogTime logTime,PTCHAR buffer) const;
-		void Draw(HDC dc,const CRideFont &font,PLogTime pOutVisibleStart=nullptr,PLogTime pOutVisibleEnd=nullptr) const;
+		void Draw(HDC dc,const CRideFont &font,PLogTime pOutVisibleStart=nullptr,PLogTime pOutVisibleEnd=nullptr);
 
 		inline TLogTime GetTime(int nUnits) const{
 			return GetValue(nUnits);
@@ -396,6 +411,9 @@ namespace Utils{
 	}
 	inline TRationalNumber operator/(long lhs,const TRationalNumber &rhs){
 		return	TRationalNumber( rhs.rem*lhs, rhs.quot );
+	}
+	inline POINT operator/(const POINT &pt,const TRationalNumber &rhs){
+		return	CPoint( pt.x/rhs, pt.y/rhs );
 	}
 	inline int &operator/=(int &lhs,const TRationalNumber &rhs){
 		return lhs=operator/(lhs,rhs);

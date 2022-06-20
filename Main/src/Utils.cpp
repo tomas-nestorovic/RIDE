@@ -664,16 +664,45 @@ namespace Utils{
 
 
 
+	CAxis::CDcState::CDcState(HDC dc,int nUnitsStart)
+		// ctor
+		: mappingMode( ::GetMapMode(dc) )
+		, graphicsMode( ::GetGraphicsMode(dc) )
+		, nUnitsStart(nUnitsStart) {
+		::GetWorldTransform( dc, &advanced );
+		::GetViewportOrgEx( dc, &ptViewportOrg );
+	}
+
+	int CAxis::CDcState::ApplyTo(HDC dc) const{
+		// changes the state of the specified DeviceContext, returning the current back-up identifier for further restoration
+		const int iSavedDc=::SaveDC(dc);
+		::SetMapMode( dc, mappingMode );
+		::SetGraphicsMode( dc, graphicsMode );
+		::SetWorldTransform( dc, &advanced );
+		::SetViewportOrgEx( dc, LogicalUnitScaleFactor*nUnitsStart+ptViewportOrg.x, ptViewportOrg.y, nullptr );
+		return iSavedDc;
+	}
+
+	void CAxis::CDcState::RevertFrom(HDC dc,int iSavedDc) const{
+		// reverts changes previously applied to the specified DeviceContext
+		::RestoreDC( dc, iSavedDc );
+	}
+
+
+
+
 	const TCHAR CAxis::CountPrefixes[]=_T("   kkkMMMBBB"); // no-prefix, thousand, million, billion
+	const CRideFont CAxis::FontWingdings( FONT_WINGDINGS, 120 );
 
 	CAxis::CAxis(TLogValue logLength,TLogTime logValuePerUnit,BYTE initZoomFactor,TVerticalAlign ticksAndLabelsAlign)
 		// ctor
 		: logLength(logLength) , logValuePerUnit(logValuePerUnit)
+		, logCursorPos(-1) // cursor indicator hidden
 		, ticksAndLabelsAlign(ticksAndLabelsAlign)
 		, zoomFactor(initZoomFactor) {
 	}
 
-	BYTE CAxis::Draw(HDC dc,long nVisiblePixels,TCHAR unit,LPCTSTR unitPrefixes,const CRideFont &font,int primaryGridLength,HPEN hPrimaryGridPen,PLogTime pOutVisibleStart,PLogTime pOutVisibleEnd) const{
+	BYTE CAxis::Draw(HDC dc,long nVisiblePixels,TCHAR unit,LPCTSTR unitPrefixes,const CRideFont &font,int primaryGridLength,HPEN hPrimaryGridPen,PLogTime pOutVisibleStart,PLogTime pOutVisibleEnd){
 		// draws an Axis starting at current origin; returns index into the UnitPrefixes indicating which prefix was used to draw the Axis
 		// - determinining the primary granuality of the Axis
 		TCHAR label[32];
@@ -701,8 +730,11 @@ namespace Utils{
 		const TLogValue valueZ=std::min<LONGLONG>( logLength, ((LONGLONG)PixelToValue(std::max(-org.x,0L)+nVisiblePixels)+intervalBig-1)/intervalBig*intervalBig ); // rounding to whole multiples of IntervalBig
 		if (pOutVisibleEnd!=nullptr)
 			*pOutVisibleEnd=valueZ;
-		// - drawing using a workaround to overcome the coordinate space limits
+		// - saving the current state of DC for any subsequent drawing to match the Axis (e.g. cursor indicator)
 		const int nUnitsA=GetUnitCount(valueA);
+		dcState=CDcState( dc, nUnitsA );
+		logCursorPos=-1; // cursor indicator hidden
+		// - drawing using a workaround to overcome the coordinate space limits
 		const auto dcSettings0=::SaveDC(dc);
 			::SetViewportOrgEx( dc, LogicalUnitScaleFactor*nUnitsA+org.x, org.y, nullptr );
 			::SelectObject( dc, font );
@@ -774,7 +806,7 @@ namespace Utils{
 	}
 
 	void CAxis::SetLength(TLogValue newLogLength){
-		logLength=newLogLength;
+		logCursorPos=std::min( logCursorPos, logLength=newLogLength );
 	}
 
 	BYTE CAxis::GetZoomFactorToFitWidth(int nUnits,BYTE zoomFactorMax) const{
@@ -792,7 +824,34 @@ namespace Utils{
 		zoomFactor=newZoomFactor;
 	}
 
+	static void drawCursorAt(HDC dc,int nUnitsCenter,bool vaTop){
+		const WCHAR glyph=L'\xf0f1'+vaTop;
+		RECT rc={ nUnitsCenter-80, -80*vaTop, nUnitsCenter+80, 80*!vaTop };
+		::BeginPath(dc);
+			::DrawTextW( dc, &glyph,1, &rc, DT_SINGLELINE|DT_CENTER|DT_NOPREFIX|DT_NOCLIP|(DT_BOTTOM*vaTop) );
+		::EndPath(dc);
+		::StrokePath(dc);
+	}
 
+	void CAxis::DrawCursorAt(HDC dc,TLogValue newLogPos){
+		// sets logical position of the cursor indicator
+		if (ticksAndLabelsAlign==TVerticalAlign::NONE)
+			return;
+		const int iSavedDc=dcState.ApplyTo( dc );
+			const HGDIOBJ hFont0=::SelectObject( dc, FontWingdings );
+				::SetROP2( dc, R2_NOT );
+				::SetBkMode( dc, TRANSPARENT );
+				// . erasing previously drawn cursor, if any
+				if (logCursorPos>=0)
+					drawCursorAt( dc, GetUnitCount(logCursorPos), ticksAndLabelsAlign==TVerticalAlign::TOP );
+				// . drawing cursor at new position
+				if (0<=newLogPos && newLogPos<logLength)
+					drawCursorAt( dc, GetUnitCount(  logCursorPos=newLogPos  ), ticksAndLabelsAlign==TVerticalAlign::TOP );
+				else
+					logCursorPos=-1;
+			::SelectObject(dc,hFont0);
+		dcState.RevertFrom( dc, iSavedDc );
+	}
 
 
 
@@ -823,7 +882,7 @@ namespace Utils{
 		return	nChars+::wsprintf( buffer+nChars, _T(" %cs"), TimePrefixes[unitPrefix] );
 	}
 
-	void CTimeline::Draw(HDC dc,const CRideFont &font,PLogTime pOutVisibleStart,PLogTime pOutVisibleEnd) const{
+	void CTimeline::Draw(HDC dc,const CRideFont &font,PLogTime pOutVisibleStart,PLogTime pOutVisibleEnd){
 		// draws a HORIZONTAL Timeline starting at current origin
 		CRect rcClient;
 		::GetClientRect( ::WindowFromDC(dc), &rcClient );
