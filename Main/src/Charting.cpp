@@ -233,7 +233,6 @@
 			const XFORM yAxisTransf={ 0, -(float)szChartBodyUnits.cy/yAxis.GetUnitCount(), 1, 0, xAxisTransf.eDx, xAxisTransf.eDy };
 			::SetWorldTransform( dc, &yAxisTransf );
 			yAxis.Draw( dc, szChartBody.cy, yAxisUnit, yAxisUnitPrefixes, fontAxes, szChartBodyUnits.cx, gridPen );
-		xAxisCursorPos = yAxisCursorPos = -1; // no cursor indicators shown on erased background
 		// - setting transformation to correctly draw all Series
 		::SetWorldTransform( dc, &IdentityTransf );
 		const XFORM valuesTransf={ xAxisTransf.eM11/(1<<xAxis.GetZoomFactor()), 0, 0, yAxisTransf.eM12/(1<<yAxis.GetZoomFactor()), xAxisTransf.eDx, xAxisTransf.eDy };
