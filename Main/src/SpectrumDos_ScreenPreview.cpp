@@ -281,7 +281,7 @@
 						RefreshPreview();
 						return TRUE;
 					case ID_FILE_SAVE_AS:{
-						const CString fileName=Utils::DoPromptSingleTypeFileName( _T(""), _T("Bitmap (*.bmp)|*.bmp"), 0 );
+						const CString fileName=Utils::DoPromptSingleTypeFileName( _T(""), _T("Bitmap (*.bmp)|*.bmp|"), 0 );
 						if (fileName.IsEmpty())
 							return TRUE;
 						struct{
