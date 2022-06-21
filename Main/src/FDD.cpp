@@ -1264,10 +1264,15 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 			if (!lp.fdd->fddHead.__seekTo__(lp.cylinder))
 				return LOG_ERROR(pAction->TerminateWithError(ERROR_REQUEST_REFUSED));
 			// . formatting Track to a single Sector
-			const bool vft0=lp.fdd->params.verifyFormattedTracks;
-			lp.fdd->params.verifyFormattedTracks=false;
-				const TStdWinError err=lp.fdd->FormatTrack( lp.cylinder, lp.head, Codec::MFM, 1,&lp.sectorId,&testSectorLength,&TFdcStatus::WithoutError, FDD_350_SECTOR_GAP3, 0, pAction->Cancelled );
-			lp.fdd->params.verifyFormattedTracks=vft0;
+			PInternalTrack &rit=lp.fdd->internalTracks[lp.cylinder][lp.head];
+			const PInternalTrack it0=rit;
+			rit=nullptr; // not scanned yet
+				const bool vft0=lp.fdd->params.verifyFormattedTracks;
+				lp.fdd->params.verifyFormattedTracks=false;
+					const TStdWinError err=lp.fdd->FormatTrack( lp.cylinder, lp.head, Codec::MFM, 1,&lp.sectorId,&testSectorLength,&TFdcStatus::WithoutError, FDD_350_SECTOR_GAP3, 0, pAction->Cancelled );
+				lp.fdd->params.verifyFormattedTracks=vft0;
+				lp.fdd->UnformatInternalTrack(lp.cylinder,lp.head); // disposing any new InternalTrack representation
+			rit=it0;
 			if (err!=ERROR_SUCCESS)
 				return LOG_ERROR(pAction->TerminateWithError(err));
 			// . verifying the single formatted Sector
