@@ -126,11 +126,9 @@
 
 	void CDsk5::__freeAllTracks__(){
 		// disposes all Tracks
-		const bool pet0=params.preserveEmptyTracks;
-		params.preserveEmptyTracks=false;
-			while (diskInfo.nCylinders>0)
-				for( THead head=diskInfo.nHeads; head; UnformatTrack(diskInfo.nCylinders-1,--head) );
-		params.preserveEmptyTracks=pet0;
+		const Utils::CVarTempReset<bool> pet0( params.preserveEmptyTracks, false );
+		while (diskInfo.nCylinders>0)
+			for( THead head=diskInfo.nHeads; head; UnformatTrack(diskInfo.nCylinders-1,--head) );
 	}
 
 

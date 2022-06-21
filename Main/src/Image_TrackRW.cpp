@@ -572,22 +572,16 @@
 	TFdcStatus CImage::CTrackReader::ReadData(const TSectorId &id,TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,CParseEventList *pOutParseEvents){
 		// attempts to read specified amount of Bytes into the Buffer, starting at position pointed to by the BitReader
 		SetCurrentTimeAndProfile( idEndTime, idEndProfile );
-		TFdcStatus st=TFdcStatus::NoDataField; // assumption
-		const bool rdoi0=resetDecoderOnIndex;
-		resetDecoderOnIndex=false; // never reset when reading data
-			switch (codec){
-				case Codec::FM:
-					st=ReadDataFm( id, nBytesToRead, pOutParseEvents );
-					break;
-				case Codec::MFM:
-					st=ReadDataMfm( id, nBytesToRead, pOutParseEvents );
-					break;
-				default:
-					ASSERT(FALSE); // we shouldn't end up here - all Codecs should be included in the Switch statement!
-					break;
-			}
-		resetDecoderOnIndex=rdoi0; // recover the original setting
-		return st;
+		const Utils::CVarTempReset<bool> rdoi0( resetDecoderOnIndex, false ); // never reset when reading data
+		switch (codec){
+			case Codec::FM:
+				return	ReadDataFm( id, nBytesToRead, pOutParseEvents );
+			case Codec::MFM:
+				return	ReadDataMfm( id, nBytesToRead, pOutParseEvents );
+			default:
+				ASSERT(FALSE); // we shouldn't end up here - all Codecs should be included in the Switch statement!
+				return TFdcStatus::NoDataField;
+		}
 	}
 
 	TFdcStatus CImage::CTrackReader::ReadData(const TSectorId &id,TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,LPBYTE buffer){
@@ -1371,22 +1365,16 @@
 	WORD CImage::CTrackReaderWriter::WriteData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToWrite,PCBYTE buffer,TFdcStatus sr){
 		// attempts to write specified amount of Bytes in the Buffer, starting after specified IdEndTime; returns the number of Bytes actually written
 		SetCurrentTimeAndProfile( idEndTime, idEndProfile );
-		WORD nBytesWritten=0; // assumption (writing failed)
-		const bool rdoi0=resetDecoderOnIndex;
-		resetDecoderOnIndex=false; // never reset when reading data
-			switch (codec){
-				case Codec::FM:
-					nBytesWritten=WriteDataFm( nBytesToWrite, buffer, sr );
-					break;
-				case Codec::MFM:
-					nBytesWritten=WriteDataMfm( nBytesToWrite, buffer, sr );
-					break;
-				default:
-					ASSERT(FALSE); // we shouldn't end up here - all Codecs should be included in the Switch statement!
-					break;
-			}
-		resetDecoderOnIndex=rdoi0; // recover the original setting
-		return nBytesWritten;
+		const Utils::CVarTempReset<bool> rdoi0( resetDecoderOnIndex, false ); // never reset when reading data
+		switch (codec){
+			case Codec::FM:
+				return	WriteDataFm( nBytesToWrite, buffer, sr );
+			case Codec::MFM:
+				return	WriteDataMfm( nBytesToWrite, buffer, sr );
+			default:
+				ASSERT(FALSE); // we shouldn't end up here - all Codecs should be included in the Switch statement!
+				return 0;
+		}
 	}
 
 	static DWORD InterpolateTimes(PLogTime logTimes,DWORD nLogTimes,TLogTime tSrcA,DWORD iSrcA,TLogTime tSrcZ,TLogTime tDstA,TLogTime tDstZ){

@@ -1264,18 +1264,13 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 			if (!lp.fdd->fddHead.__seekTo__(lp.cylinder))
 				return LOG_ERROR(pAction->TerminateWithError(ERROR_REQUEST_REFUSED));
 			// . formatting Track to a single Sector
-			PInternalTrack &rit=lp.fdd->internalTracks[lp.cylinder][lp.head];
-			const PInternalTrack it0=rit;
-			rit=nullptr; // not scanned yet
-				const bool vft0=lp.fdd->params.verifyFormattedTracks;
-				lp.fdd->params.verifyFormattedTracks=false;
-					const TStdWinError err=lp.fdd->FormatTrack( lp.cylinder, lp.head, Codec::MFM, 1,&lp.sectorId,&testSectorLength,&TFdcStatus::WithoutError, FDD_350_SECTOR_GAP3, 0, pAction->Cancelled );
-				lp.fdd->params.verifyFormattedTracks=vft0;
-				lp.fdd->UnformatInternalTrack(lp.cylinder,lp.head); // disposing any new InternalTrack representation
-			rit=it0;
+	{		const Utils::CVarTempReset<PInternalTrack> it0( lp.fdd->internalTracks[lp.cylinder][lp.head], nullptr ); // not scanned yet
+			const Utils::CVarTempReset<bool> vft0( lp.fdd->params.verifyFormattedTracks, false );
+				const TStdWinError err=lp.fdd->FormatTrack( lp.cylinder, lp.head, Codec::MFM, 1,&lp.sectorId,&testSectorLength,&TFdcStatus::WithoutError, FDD_350_SECTOR_GAP3, 0, pAction->Cancelled );
+			lp.fdd->UnformatInternalTrack(lp.cylinder,lp.head); // disposing any new InternalTrack representation
 			if (err!=ERROR_SUCCESS)
 				return LOG_ERROR(pAction->TerminateWithError(err));
-			// . verifying the single formatted Sector
+	}		// . verifying the single formatted Sector
 			TFdcStatus sr;
 			lp.fdd->__bufferSectorData__( lp.cylinder, lp.head, &lp.sectorId, testSectorLength, &TInternalTrack(lp.fdd,lp.cylinder,lp.head,Codec::MFM,1,&lp.sectorId,(PCLogTime)FDD_350_SECTOR_GAP3), 0, &sr );
 			if (sr.IsWithoutError()) // a healthy Track ...
@@ -1427,13 +1422,10 @@ Utils::Information(buf);}
 			static constexpr TSectorId SectorIds[]={ {1,0,1,2}, {1,0,2,2} };
 			static constexpr WORD SectorLengths[]={ 512, 512 };
 			static const TFdcStatus SectorStatuses[]={ TFdcStatus::WithoutError, TFdcStatus::WithoutError };
-			const bool vft0=lp.fdd->params.verifyFormattedTracks;
-			lp.fdd->params.verifyFormattedTracks=false;
-				const TStdWinError err=lp.fdd->FormatTrack( lp.cylinder, lp.head, Codec::MFM, 2, SectorIds, SectorLengths, SectorStatuses, gap3, TEST_BYTE, pAction->Cancelled );
-			lp.fdd->params.verifyFormattedTracks=vft0;
-			if (err!=ERROR_SUCCESS)
+	{		const Utils::CVarTempReset<bool> vft0( lp.fdd->params.verifyFormattedTracks, false );
+			if (const TStdWinError err=lp.fdd->FormatTrack( lp.cylinder, lp.head, Codec::MFM, 2, SectorIds, SectorLengths, SectorStatuses, gap3, TEST_BYTE, pAction->Cancelled ))
 				return pAction->TerminateWithError(err);
-			// . STEP 2: reading the Sectors
+	}		// . STEP 2: reading the Sectors
 			BYTE c=0;
 			while (c<lp.nRepeats){
 				if (pAction->Cancelled) return LOG_ERROR(ERROR_CANCELLED);
@@ -1492,15 +1484,11 @@ Utils::Information(buf);}
 							SetDlgItemText( ID_MEDIUM, _T("5.25\" DD formatted, 360 RPM drive") );
 							if (EnableDlgItem( ID_40D80, initialEditing )){
 								fdd->fddHead.SeekHome();
-								const bool doubleTrackStep0=fdd->fddHead.doubleTrackStep;
-									fdd->fddHead.doubleTrackStep=false;
-									const PInternalTrack pit0=fdd->internalTracks[1][0]; // backing up original Track, if any
-										fdd->internalTracks[1][0]=nullptr; // the Track hasn't been scanned yet
-										const PInternalTrack pit=fdd->__scanTrack__(1,0);
-											CheckDlgButton( ID_40D80, !ShowDlgItem(ID_INFORMATION,pit->nSectors>0) );
-										fdd->UnformatInternalTrack(1,0);
-									fdd->internalTracks[1][0]=pit0; // restoring original Track
-								fdd->fddHead.doubleTrackStep=doubleTrackStep0;
+								const Utils::CVarTempReset<bool> dts0( fdd->fddHead.doubleTrackStep, false );
+								const Utils::CVarTempReset<PInternalTrack> pit0( fdd->internalTracks[1][0], nullptr ); // forcing new scan
+								if (const PInternalTrack pit=fdd->__scanTrack__(1,0))
+									CheckDlgButton( ID_40D80, !ShowDlgItem(ID_INFORMATION,pit->nSectors>0) );
+								fdd->UnformatInternalTrack(1,0);
 								fdd->fddHead.SeekHome();
 							}
 							break;
@@ -2212,7 +2200,6 @@ error:		return LOG_ERROR(::GetLastError());
 	}
 
 	void CFDD::SetPathName(LPCTSTR,BOOL bAddToMRU){
-		const auto tmpFile0=m_strPathName;
-			__super::SetPathName( devicePatternName, bAddToMRU );
-		m_strPathName=tmpFile0;
+		const Utils::CVarBackup<CString> tmpFile0=m_strPathName;
+		__super::SetPathName( devicePatternName, bAddToMRU );
 	}

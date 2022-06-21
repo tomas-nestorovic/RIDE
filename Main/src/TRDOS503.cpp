@@ -927,8 +927,7 @@
 			case ID_DOS_DEFRAGMENT:{
 				// defragmenting the disk
 				if (image->ReportWriteProtection()) return TCmdResult::DONE;
-				const TGetFileSizeOptions gfs0=getFileSizeDefaultOption;
-					getFileSizeDefaultOption=TGetFileSizeOptions::SizeOnDisk; // during the defragmentation, File size is given by the number of Sectors in FatPath (as some Files lie about its size in their DirectoryEntries as part of copy-protection scheme)
+				const Utils::CVarTempReset<TGetFileSizeOptions> gfs0( getFileSizeDefaultOption, TGetFileSizeOptions::SizeOnDisk ); // during the defragmentation, File size is given by the number of Sectors in FatPath (as some Files lie about its size in their DirectoryEntries as part of copy-protection scheme)
 					if (const PBootSector boot=GetBootSector())
 						CBackgroundActionCancelable(
 							__defragmentation_thread__,
@@ -937,7 +936,6 @@
 						).Perform();
 					else
 						__errorCannotDoCommand__( Utils::ErrorByOs(ERROR_VOLMGR_DISK_INVALID,ERROR_UNRECOGNIZED_VOLUME) );
-				getFileSizeDefaultOption=gfs0;
 				return TCmdResult::DONE_REDRAW;
 			}
 			case ID_DOS_TAKEATOUR:

@@ -121,6 +121,30 @@ namespace Utils{
 		}
 	};
 
+	template<typename T>
+	class CVarBackup{
+		const T value0;
+	protected:
+		T &var;
+	public:
+		inline CVarBackup(T &var)
+			: value0(var) , var(var) {
+		}
+		inline ~CVarBackup(){
+			var=value0;
+		}
+	};
+
+	template<typename T>
+	class CVarTempReset:public CVarBackup<T>{
+	public:
+		inline CVarTempReset(T &var,const T &newValue)
+			: CVarBackup(var) {
+			var=newValue;
+		}
+		inline operator T() const{ return var; }
+	};
+
 	class CExclusivelyLocked{
 		CSyncObject &syncObj;
 	public:

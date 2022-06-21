@@ -77,11 +77,9 @@
 		if (__super::OnCreate(lpcs)==-1)
 			return -1;
 		// - displaying the content
-		const auto sl0=DOS->formatBoot.sectorLength;
-		DOS->formatBoot.sectorLength=sectorLength;
-			OnUpdate(nullptr,0,nullptr);
-		DOS->formatBoot.sectorLength=sl0;
-		// - recovering the Scroll position and repainting the view (by setting its editability)
+{		const Utils::CVarTempReset<WORD> sl0( DOS->formatBoot.sectorLength, sectorLength );
+		OnUpdate(nullptr,0,nullptr);
+}		// - recovering the Scroll position and repainting the view (by setting its editability)
 		SetEditable( !IMAGE->IsWriteProtected() );
 		// - navigating to a particular Directory entry
 		if (fileToSeekTo)

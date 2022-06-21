@@ -92,15 +92,11 @@
 						case Medium::FLOPPY_DD_525:
 							SetDlgItemText( ID_MEDIUM, _T("5.25\" DD formatted, 360 RPM drive") );
 							if (EnableDlgItem( ID_40D80, initialEditing )){
-								const bool doubleTrackStep0=rkfb.params.doubleTrackStep;
-									rkfb.params.doubleTrackStep=false;
-									const Medium::TType floppyType0=rkfb.floppyType;
-										rkfb.floppyType=mt;
-										if (rkfb.GetInsertedMediumType(1,mt)==ERROR_SUCCESS)
-											CheckDlgButton( ID_40D80, !ShowDlgItem(ID_INFORMATION,mt!=Medium::UNKNOWN) ); // first Track is empty, so likely each odd Track is empty
-									rkfb.floppyType=floppyType0;
-								rkfb.params.doubleTrackStep=doubleTrackStep0;
-								rkfb.GetInsertedMediumType(0,mt); // a workaround to make floppy Drive head seek home
+						{		const Utils::CVarTempReset<bool> dts0( rkfb.params.doubleTrackStep, false );
+								const Utils::CVarTempReset<Medium::TType> ft0( rkfb.floppyType, mt );
+								if (rkfb.GetInsertedMediumType(1,mt)==ERROR_SUCCESS)
+									CheckDlgButton( ID_40D80, !ShowDlgItem(ID_INFORMATION,mt!=Medium::UNKNOWN) ); // first Track is empty, so likely each odd Track is empty
+						}		rkfb.GetInsertedMediumType(0,mt); // a workaround to make floppy Drive head seek home
 							}
 							break;
 						case Medium::FLOPPY_DD:
@@ -263,12 +259,10 @@
 						switch (wParam){
 							case MAKELONG(ID_ACCURACY,CBN_SELCHANGE):{
 								// FluxDecoder changed
-								const TParams::TFluxDecoder fd0=rkfb.params.fluxDecoder;
-									rkfb.params.fluxDecoder=(TParams::TFluxDecoder)GetDlgComboBoxSelectedIndex(ID_ACCURACY);
-									if (!EnableDlgItem( ID_TRACK, rkfb.params.fluxDecoder!=TParams::TFluxDecoder::NO_FLUX_DECODER ))
-										CheckDlgButton( ID_TRACK, BST_UNCHECKED ); // when archiving, any corrections must be turned off
-									SendMessage( WM_COMMAND, ID_RECOVER ); // refresh information on inserted Medium
-								rkfb.params.fluxDecoder=fd0;
+								const Utils::CVarTempReset<TParams::TFluxDecoder> fd0( rkfb.params.fluxDecoder, (TParams::TFluxDecoder)GetDlgComboBoxSelectedIndex(ID_ACCURACY) );
+								if (!EnableDlgItem( ID_TRACK, rkfb.params.fluxDecoder!=TParams::TFluxDecoder::NO_FLUX_DECODER ))
+									CheckDlgButton( ID_TRACK, BST_UNCHECKED ); // when archiving, any corrections must be turned off
+								SendMessage( WM_COMMAND, ID_RECOVER ); // refresh information on inserted Medium
 								break;
 							}
 							case ID_RECOVER:
@@ -310,8 +304,7 @@
 								const LITEM &item=pLink->item;
 								if (pLink->hdr.idFrom==ID_ALIGN){
 									rkfb.locker.Unlock(); // giving way to parallel thread
-										const bool vwt0=params.verifyWrittenTracks;
-										params.verifyWrittenTracks=false;
+							{			const Utils::CVarTempReset<bool> vwt0( params.verifyWrittenTracks, false );
 											if (!::lstrcmpW(item.szID,L"details"))
 												tmpPrecomp.ShowOrDetermineModal(rkfb);
 											else if (!::lstrcmpW(item.szID,L"compute"))
@@ -319,8 +312,7 @@
 													Utils::FatalError( _T("Can't determine precompensation"), err );
 												else
 													tmpPrecomp.Save();
-										params.verifyWrittenTracks=vwt0;
-									rkfb.locker.Lock();
+							}		rkfb.locker.Lock();
 									RefreshMediumInformation();
 								}else if (pLink->hdr.idFrom==ID_TIME)
 									params.corrections.ShowModal(this);

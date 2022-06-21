@@ -129,23 +129,17 @@
 				trw.AddTime( t+=doubleCellTime );
 			trw.AddTime( t+=doubleCellTime ); // one extra flux
 			// . saving the test Track
-			PInternalTrack pit=CInternalTrack::CreateFrom( ptp.cb, trw );
+	{		const PInternalTrack pit=CInternalTrack::CreateFrom( ptp.cb, trw );
 			pit->modified=true; // to pass the save conditions
-			std::swap( pit, ptp.cb.internalTracks[cyl][ptp.head] );
-				const auto precompMethod0=ptp.cb.precompensation.methodVersion;
-				ptp.cb.precompensation.methodVersion=CPrecompensation::Identity;
-					const Medium::TType mt0=ptp.cb.floppyType;
-					Medium::TType &mt=*const_cast<Medium::TType *>(&ptp.cb.floppyType);
-					mt=rPrecomp.floppyType;
-						const TStdWinError err=ptp.cb.SaveTrack( cyl, ptp.head, pAction->Cancelled );
-					mt=mt0;
-				ptp.cb.precompensation.methodVersion=precompMethod0;
-			std::swap( pit, ptp.cb.internalTracks[cyl][ptp.head] );
+			const Utils::CVarTempReset<PInternalTrack> pit0( ptp.cb.internalTracks[cyl][ptp.head], pit );
+			const Utils::CVarTempReset<TMethodVersion> pm0( ptp.cb.precompensation.methodVersion, CPrecompensation::Identity );
+			const Utils::CVarTempReset<Medium::TType> mt0( *const_cast<Medium::TType *>(&ptp.cb.floppyType), rPrecomp.floppyType );
+			const TStdWinError err=ptp.cb.SaveTrack( cyl, ptp.head, pAction->Cancelled );
 			delete pit;
 			if (err!=ERROR_SUCCESS)
 				return pAction->TerminateWithError(err);
-			// . reading the test Track back
-			pit=ptp.cb.internalTracks[cyl][ptp.head];
+	}		// . reading the test Track back
+			PInternalTrack pit=ptp.cb.internalTracks[cyl][ptp.head];
 				ptp.cb.internalTracks[cyl][ptp.head]=nullptr; // forcing a new scan
 				ptp.cb.ScanTrack(cyl,ptp.head);
 			std::swap( ptp.cb.internalTracks[cyl][ptp.head], pit );

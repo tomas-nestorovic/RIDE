@@ -146,13 +146,9 @@
 			return TRUE;
 		}else if (lpFormatEtc->cfFormat==CRideApp::cfRideFileList){
 			// generating the list of Files for another RIDE instance
-			const bool gscen0=fileManager->DOS->generateShellCompliantExportNames;
-			fileManager->DOS->generateShellCompliantExportNames=false; // changing underlying DOS' setting is important ...
-				const CLIPFORMAT cf0=lpFormatEtc->cfFormat;
-				lpFormatEtc->cfFormat=CRideApp::cfDescriptor;
-					COleVirtualFileDataSource::OnRenderGlobalData( lpFormatEtc, phGlobal); // ... after which we can proceed normally
-				lpFormatEtc->cfFormat=cf0;
-			fileManager->DOS->generateShellCompliantExportNames=gscen0;
+			const Utils::CVarTempReset<bool> gscen0( fileManager->DOS->generateShellCompliantExportNames, false ); // changing underlying DOS' setting is important ...
+			const Utils::CVarTempReset<CLIPFORMAT> cf0( lpFormatEtc->cfFormat, CRideApp::cfDescriptor );
+			COleVirtualFileDataSource::OnRenderGlobalData( lpFormatEtc, phGlobal); // ... after which we can proceed normally
 			return TRUE;
 		}else
 			// other form of generating (i.e. other than using CFSTR_FILEDESCRIPTOR)

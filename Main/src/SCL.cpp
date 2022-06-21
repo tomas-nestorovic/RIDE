@@ -72,16 +72,14 @@
 			CTRDOS503::PDirectoryEntry directory[TRDOS503_FILE_COUNT_MAX],*pde=directory;
 			for( BYTE n=trdos->__getDirectory__(directory); n--; f.Write(*pde++,sizeof(TSclDirectoryItem)) );
 			// - saving each File's data
-			const CDos::TGetFileSizeOptions gfso0=trdos->getFileSizeDefaultOption;
-			trdos->getFileSizeDefaultOption=CDos::TGetFileSizeOptions::SizeOnDisk; // exporting whole Sectors instead of just reported File length
+	{		const Utils::CVarTempReset<CDos::TGetFileSizeOptions> gfso0( trdos->getFileSizeDefaultOption, CDos::TGetFileSizeOptions::SizeOnDisk ); // exporting whole Sectors instead of just reported File length
 				BYTE buf[65536];
 				for( pde=directory; header.nFiles--; )
 					f.Write(buf,
 							trdos->ExportFile( *pde++, &CMemFile(buf,sizeof(buf)), sizeof(buf), nullptr )
 						);
 				m_bModified=FALSE;
-			trdos->getFileSizeDefaultOption=gfso0;
-			// - reopening the Image's underlying file
+	}		// - reopening the Image's underlying file
 			f.Close();
 			return __openImageForReadingAndWriting__(lpszPathName) ? ERROR_SUCCESS : ERROR_GEN_FAILURE;
 		}else

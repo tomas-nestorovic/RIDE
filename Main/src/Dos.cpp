@@ -315,15 +315,11 @@ reportError:Utils::Information(buf);
 		// thread to format selected Tracks
 		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
 		const TFmtParams &fp=*(TFmtParams *)pAction->GetParams();
-		const TSector nSectors0=fp.dos->formatBoot.nSectors;
-			fp.dos->formatBoot.nSectors=fp.rParams.format.nSectors;
-			const TFormat::TLengthCode lengthCode0=fp.dos->formatBoot.sectorLengthCode;
-				fp.dos->formatBoot.sectorLengthCode=fp.rParams.format.sectorLengthCode;
-				const TStdWinError err=FormatTracksEx_thread( pCancelableAction );
-				if (err!=ERROR_SUCCESS)
-					::SetLastError(err);
-			fp.dos->formatBoot.sectorLengthCode=lengthCode0;
-		fp.dos->formatBoot.nSectors=nSectors0;
+		const Utils::CVarTempReset<TSector> nSectors0( fp.dos->formatBoot.nSectors, fp.rParams.format.nSectors );
+		const Utils::CVarTempReset<TFormat::TLengthCode> lengthCode0( fp.dos->formatBoot.sectorLengthCode, fp.rParams.format.sectorLengthCode );
+		const TStdWinError err=FormatTracksEx_thread( pCancelableAction );
+		if (err!=ERROR_SUCCESS)
+			::SetLastError(err);
 		return err;
 	}
 

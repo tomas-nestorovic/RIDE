@@ -902,8 +902,7 @@ invalidTrack:
 			return ERROR_UNRECOGNIZED_MEDIA;
 		// - verification
 		TStdWinError err=ERROR_SUCCESS; // assumption (verification was successful)
-		const PInternalTrack pit0=internalTracks[cyl][head];
-		internalTracks[cyl][head]=nullptr; // forcing rescan
+		const Utils::CVarTempReset<PInternalTrack> pit0( internalTracks[cyl][head], nullptr ); // forcing rescan
 			ScanTrack( cyl, head );
 			if (const PInternalTrack pitVerif=internalTracks[cyl][head]){
 				if (pitVerif->nSectors>0 || !cancelled){
@@ -991,7 +990,6 @@ invalidTrack:
 				delete pitVerif;
 			}else
 				err=ERROR_GEN_FAILURE;
-		internalTracks[cyl][head]=pit0;
 		return err;
 	}
 

@@ -997,10 +997,8 @@ resetSelectionWithValue:BYTE buf[65535];
 							}
 						} d(this);
 						// . showing the Dialog and processing its result
-						const TCaret caret0=caret;
-							const bool dlgConfirmed=d.DoModal()==IDOK;
-						caret=caret0;
-						if (dlgConfirmed){
+						const Utils::CVarBackup<TCaret> caret0=caret;
+						if (d.DoModal()==IDOK){
 							switch (d.iRadioSel){
 								case 0: i=d.directoryDefaultByte; break;
 								case 1: i=d.dataDefaultByte; break;

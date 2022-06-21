@@ -770,14 +770,9 @@
 				}
 			// . writing verification
 			if (!err && params.verifyWrittenTracks && pit->nSectors>0){ // can verify the Track only if A&B&C, A = writing successfull, B&C = at least one Sector is recognized in it
-				const auto cae0=params.calibrationAfterError;
-				params.calibrationAfterError=TParams::TCalibrationAfterError::NONE; // already calibrated before writing
-					const auto p0=params.precision;
-					params.precision=TParams::TPrecision::SINGLE;
-						err=VerifyTrack( cyl, head, trw, nSilentRetrials<0, cancelled );
-					params.precision=p0;
-				params.calibrationAfterError=cae0;
-				switch (err){
+				const Utils::CVarTempReset<TParams::TCalibrationAfterError> cae0( params.calibrationAfterError, TParams::TCalibrationAfterError::NONE ); // already calibrated before writing
+				const Utils::CVarTempReset<TParams::TPrecision> p0( params.precision, TParams::TPrecision::SINGLE );
+				switch (err=VerifyTrack( cyl, head, trw, nSilentRetrials<0, cancelled )){
 					case ERROR_SUCCESS:	// validation was successfull
 					case ERROR_CONTINUE:// validation failed but ignore the failure and continue
 						break;
