@@ -27,7 +27,7 @@
 		// other
 		TStdWinError CreateUserInterface(HWND hTdi) override;
 		TCmdResult ProcessCommand(WORD cmd) override;
-		void InitializeEmptyMedium(CFormatDialog::PCParameters) override;
+		void InitializeEmptyMedium(CFormatDialog::PCParameters,CActionProgress &) override;
 	};
 
 #endif // DOS_UNKNOWN_H

@@ -212,7 +212,7 @@
 		void __markLogicalSectorAsDirty__(TLogSector logSector) const;
 		WORD __getLogicalSectorFatItem__(TLogSector logSector) const;
 		bool __setLogicalSectorFatItem__(TLogSector logSector,WORD value12) const;
-		void InitializeEmptyMedium(CFormatDialog::PCParameters params) override;
+		void InitializeEmptyMedium(CFormatDialog::PCParameters params,CActionProgress &ap) override;
 	public:
 		static const TProperties Properties;
 

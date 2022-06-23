@@ -424,7 +424,7 @@
 			// other
 			TCmdResult ProcessCommand(WORD cmd) override;
 			bool UpdateCommandUi(WORD cmd,CCmdUI *pCmdUI) const override;
-			void InitializeEmptyMedium(CFormatDialog::PCParameters) override;
+			void InitializeEmptyMedium(CFormatDialog::PCParameters,CActionProgress &) override;
 		};
 
 		class CSpectrumFileManagerView:public CSpectrumBaseFileManagerView{

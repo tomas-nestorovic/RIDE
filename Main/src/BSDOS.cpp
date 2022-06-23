@@ -987,8 +987,9 @@
 		return 0;
 	}
 
-	void CBSDOS308::InitializeEmptyMedium(CFormatDialog::PCParameters params){
+	void CBSDOS308::InitializeEmptyMedium(CFormatDialog::PCParameters params,CActionProgress &ap){
 		// initializes a fresh formatted Medium (Boot, FAT, root dir, etc.)
+		ap.SetProgressTarget(4);
 		// - initializing the Boot Sector
 		const PBootSector boot=TBootSector::GetData(image);
 		if (!boot) // Boot Sector may not be found
@@ -1011,6 +1012,7 @@
 			// . disk ID
 			Utils::RandomizeData( boot->diskId, sizeof(boot->diskId) );
 			boot->diskIdChecksum=__xorChecksum__( boot->diskId, sizeof(boot->diskId) );
+		ap.IncrementProgress();
 		// - FAT
 		TLogSector ls=1;
 		const TLogSector nSectorsTotal=formatBoot.GetCountOfAllSectors();
@@ -1042,15 +1044,18 @@
 				);
 		__setLogicalSectorFatItem__( 0, TFatValue( MAKEWORD(0,__getFatChecksum__(0)) ) ); // both FAT copies are the same at the moment, hence getting checksum of one of them
 		for( TLogSector lsUnknown=boot->nBytesInFat/sizeof(TFatValue); lsUnknown>nSectorsTotal; __setLogicalSectorFatItem__(--lsUnknown,TFatValue::SectorUnknown) );
+		ap.IncrementProgress();
 		// - root Directory
 		if (boot->dirsLogSector=__getNextHealthySectorWithoutFat__(ls,nSectorsTotal))
 			__setLogicalSectorFatItem__( ls, TFatValue(true,false,BSDOS_SECTOR_LENGTH_STD) );
 		else
 			return;
+		ap.IncrementProgress();
 		// - marking unhealthy Sectors encountered thus far as Bad
 		while (--ls>=2)
 			if (__getLogicalSectorFatItem__(ls)==TFatValue::SectorEmpty) // an unhealthy Empty Sector
 				__setLogicalSectorFatItem__( ls, TFatValue::SectorErrorInDataField );
+		ap.IncrementProgress();
 	}
 
 	bool CBSDOS308::ValidateFormatChangeAndReportProblem(bool considerBoot,bool considerFat,RCFormat f) const{

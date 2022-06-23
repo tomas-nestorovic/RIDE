@@ -256,7 +256,7 @@
 		TStdWinError CreateUserInterface(HWND hTdi) override;
 		TCmdResult ProcessCommand(WORD cmd) override;
 		bool UpdateCommandUi(WORD cmd,CCmdUI *pCmdUI) const override;
-		void InitializeEmptyMedium(CFormatDialog::PCParameters) override;
+		void InitializeEmptyMedium(CFormatDialog::PCParameters,CActionProgress &ap) override;
 		bool ValidateFormatChangeAndReportProblem(bool considerBoot,bool considerFat,RCFormat f) const override;
 	};
 

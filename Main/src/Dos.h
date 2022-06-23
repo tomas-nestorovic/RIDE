@@ -357,7 +357,7 @@
 		TCylinder GetLastOccupiedStdCylinder() const;
 		TStdWinError GetFirstEmptyHealthySector(bool skipBadSectors,TPhysicalAddress &rOutChs) const;
 		TStdWinError AreStdCylindersEmpty(TCylinder cylA,TCylinder cylZInclusive) const;
-		bool AddStdCylindersToFatAsEmpty(TCylinder cylA,TCylinder cylZInclusive) const;
+		bool AddStdCylindersToFatAsEmpty(TCylinder cylA,TCylinder cylZInclusive,CActionProgress &ap) const;
 		bool RemoveStdCylindersFromFat(TCylinder cylA,TCylinder cylZInclusive) const;
 		// file system
 		virtual bool GetFileNameOrExt(PCFile file,PPathString pOutName,PPathString pOutExt) const=0;
@@ -396,7 +396,7 @@
 					DONE		=2	// carried out OK and called doesn't have to do anything
 				} ProcessCommand(WORD cmd);
 		virtual bool UpdateCommandUi(WORD cmd,CCmdUI *pCmdUI) const;
-		virtual void InitializeEmptyMedium(CFormatDialog::PCParameters params)=0;
+		virtual void InitializeEmptyMedium(CFormatDialog::PCParameters params,CActionProgress &ap)=0;
 		virtual bool ValidateFormatChangeAndReportProblem(bool considerBoot,bool considerFat,RCFormat f) const;
 		void ShowFileProcessingError(PCFile file,LPCTSTR cause) const;
 		void ShowFileProcessingError(PCFile file,TStdWinError cause) const;

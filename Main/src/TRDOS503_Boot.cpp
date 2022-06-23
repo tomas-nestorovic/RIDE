@@ -352,7 +352,7 @@
 		}
 	}
 
-	void CTRDOS503::InitializeEmptyMedium(CFormatDialog::PCParameters){
+	void CTRDOS503::InitializeEmptyMedium(CFormatDialog::PCParameters,CActionProgress &){
 		// initializes a fresh formatted Medium (Boot, FAT, root dir, etc.)
 		// . initializing the Boot Sector
 		if (const PBootSector bootSector=GetBootSector()){

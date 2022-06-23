@@ -168,7 +168,7 @@
 
 		bool zeroLengthFilesEnabled;
 
-		void InitializeEmptyMedium(CFormatDialog::PCParameters params) override;
+		void InitializeEmptyMedium(CFormatDialog::PCParameters params,CActionProgress &ap) override;
 	public:
 		static const TProperties Properties;
 

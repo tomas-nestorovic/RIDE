@@ -1207,8 +1207,9 @@
 		return __super::UpdateCommandUi(cmd,pCmdUI);
 	}
 
-	void CMSDOS7::InitializeEmptyMedium(CFormatDialog::PCParameters params){
+	void CMSDOS7::InitializeEmptyMedium(CFormatDialog::PCParameters params,CActionProgress &ap){
 		// initializes a fresh formatted Medium (Boot, FAT, root dir, etc.)
+		ap.SetProgressTarget(4);
 		// - initializing Boot Sector
 		TPhysicalAddress chs={ 0, 0, {0,0,1,params->format.sectorLengthCode} };
 		boot.ChangeToSector(chs);
@@ -1224,6 +1225,7 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 				image->MarkSectorAsDirty(chs);
 			}
 		}
+		ap.IncrementProgress();
 		// - initializing the FS Info Sector
 		if (fat.type==CFat::FAT32)
 			if (const PFsInfoSector fsInfoSector=(PFsInfoSector)__getHealthyLogicalSectorData__(bootSector->fat32.fsInfo)){ // FS Info Sector may not be found after unsuccessfull formatting
@@ -1231,6 +1233,7 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 				fsInfo.MarkSectorAsDirty();
 			}else
 				goto error;
+		ap.IncrementProgress();
 		// - initializing FAT
 		fat.SetClusterValue( 0, 0x0fffff00|bootSector->medium ); // for backward compatibility with MS-DOS 1.0
 		fat.SetClusterValue( 1, MSDOS7_FAT_CLUSTER_EOF );
@@ -1245,6 +1248,7 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 				}
 			fat.SetClusterValue( c, clusterState );
 		}
+		ap.IncrementProgress();
 		// - initializing root Directory
 		SwitchToDirectory(MSDOS7_DIR_ROOT);
 		switch (fat.type){
@@ -1265,6 +1269,7 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 			default:
 				ASSERT(FALSE);
 		}
+		ap.IncrementProgress();
 	}
 
 

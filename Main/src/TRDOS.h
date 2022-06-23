@@ -150,7 +150,7 @@
 
 		PBootSector GetBootSector() const;
 		TSide GetSideNumber(THead head) const;
-		void InitializeEmptyMedium(CFormatDialog::PCParameters) override;
+		void InitializeEmptyMedium(CFormatDialog::PCParameters,CActionProgress &) override;
 		BYTE __getDirectory__(PDirectoryEntry *directory) const;
 		bool __parameterAfterData__(PCDirectoryEntry de,bool modify,WORD &rw,bool *pAA80=nullptr) const;
 		bool __getStdParameter1__(PCDirectoryEntry de,WORD &rParam1) const;

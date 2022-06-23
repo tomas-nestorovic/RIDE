@@ -108,6 +108,11 @@
 		);
 	}
 
+	void CActionProgress::IncrementProgress(int increment){
+		ASSERT( increment>0 );
+		UpdateProgress( currProgress+1 );
+	}
+
 	CActionProgress CActionProgress::CreateSubactionProgress(int thisProgressIncrement,int subactionProgressTarget) const{
 		// creates and returns a SubactionProgress; for it, call again UpdateProgress with values from <0,TargetProgress>
 		ASSERT( thisProgressIncrement>=0 );

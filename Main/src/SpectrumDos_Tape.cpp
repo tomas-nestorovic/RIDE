@@ -626,7 +626,7 @@
 		return __super::UpdateCommandUi(cmd,pCmdUI);
 	}
 
-	void CSpectrumDos::CTape::InitializeEmptyMedium(CFormatDialog::PCParameters){
+	void CSpectrumDos::CTape::InitializeEmptyMedium(CFormatDialog::PCParameters,CActionProgress &){
 		// initializes a fresh formatted Medium (Boot, FAT, root dir, etc.)
 		//nop
 	}

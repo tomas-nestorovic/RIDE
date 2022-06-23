@@ -249,8 +249,9 @@
 		}
 	}
 
-	void CMDOS2::InitializeEmptyMedium(CFormatDialog::PCParameters params){
+	void CMDOS2::InitializeEmptyMedium(CFormatDialog::PCParameters params,CActionProgress &ap){
 		// initializes a fresh formatted Medium (Boot, FAT, root dir, etc.)
+		ap.SetProgressTarget( 1705 + 100 ); // 1705 = max number of items in FAT12, 100 = granularity of progress-bar
 		// - initializing the Boot Sector
 		WORD w;
 		if (const PBootSector boot=(PBootSector)image->GetHealthySectorData(TBootSector::CHS,&w)){ // Boot Sector may not be found
@@ -273,11 +274,12 @@
 			Utils::RandomizeData( &boot->diskID, sizeof(boot->diskID) );
 			boot->sdos=SDOS_TEXT;
 		}
+		ap.UpdateProgress(100);
 		// - initializing the FAT (first 14 Sectors are System, the rest is Empty)
-		for( TLogSector logSector=MDOS2_DATA_LOGSECTOR_FIRST; logSector; __setLogicalSectorFatItem__(--logSector,MDOS2_FAT_SECTOR_SYSTEM) );
+		for( TLogSector logSector=MDOS2_DATA_LOGSECTOR_FIRST; logSector; __setLogicalSectorFatItem__(--logSector,MDOS2_FAT_SECTOR_SYSTEM),ap.IncrementProgress() );
 		TLogSector logSectorZ=formatBoot.GetCountOfAllSectors();
-		for( TLogSector logSector=MDOS2_DATA_LOGSECTOR_FIRST; logSector<logSectorZ; __setLogicalSectorFatItem__(logSector++,MDOS2_FAT_SECTOR_EMPTY) );
-		while (logSectorZ<1705) __setLogicalSectorFatItem__(logSectorZ++,MDOS2_FAT_SECTOR_UNAVAILABLE); // 1705 = max number of items in FAT12
+		for( TLogSector logSector=MDOS2_DATA_LOGSECTOR_FIRST; logSector<logSectorZ; __setLogicalSectorFatItem__(logSector++,MDOS2_FAT_SECTOR_EMPTY),ap.IncrementProgress() );
+		while (logSectorZ<1705) __setLogicalSectorFatItem__(logSectorZ++,MDOS2_FAT_SECTOR_UNAVAILABLE),ap.IncrementProgress(); // 1705 = max number of items in FAT12
 		// - empty Directory
 		//nop (DirectoryEntry set as Empty during formatting - FillerByte happens to have the same value)
 	}

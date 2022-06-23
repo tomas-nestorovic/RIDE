@@ -83,7 +83,7 @@
 		//nop (doesn't have a Boot Sector)
 	}
 
-	void CGDOS::InitializeEmptyMedium(CFormatDialog::PCParameters params){
+	void CGDOS::InitializeEmptyMedium(CFormatDialog::PCParameters params,CActionProgress &ap){
 		// initializes a fresh formatted Medium (Boot, FAT, root dir, etc.)
 		// - creating the Boot Sector
 		//nop (doesn't have a Boot Sector)

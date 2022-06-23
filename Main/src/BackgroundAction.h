@@ -39,6 +39,7 @@
 
 		virtual void SetProgressTarget(int targetProgress);
 		virtual void UpdateProgress(int newProgress,TBPFLAG status=TBPFLAG::TBPF_NORMAL) const;
+		void IncrementProgress(int increment=1);
 		CActionProgress CreateSubactionProgress(int thisProgressIncrement,int subactionProgressTarget=INT_MAX) const;
 	} *PActionProgress; // call UpdateProgress method with progress from <0;ProgressTarget)
 

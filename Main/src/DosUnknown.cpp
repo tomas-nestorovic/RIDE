@@ -137,6 +137,6 @@
 			return TCmdResult::REFUSED;
 	}
 
-	void CUnknownDos::InitializeEmptyMedium(CFormatDialog::PCParameters){
+	void CUnknownDos::InitializeEmptyMedium(CFormatDialog::PCParameters,CActionProgress &){
 		// initializes a fresh formatted Medium (Boot, FAT, root dir, etc.)
 	}
