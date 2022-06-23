@@ -30,6 +30,8 @@
 		CActionProgress(const CActionProgress *parent,const volatile bool &cancelled,int parentProgressBegin,int parentProgressInc);
 		CActionProgress(const CActionProgress &r); // can't copy!
 	public:
+		static CActionProgress None;
+
 		const volatile bool &Cancelled;
 
 		CActionProgress(CActionProgress &&r);

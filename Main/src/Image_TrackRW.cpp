@@ -495,7 +495,7 @@
 				const CBitSequence &jRev=*pRevolutionBits[i], &iRev=*pRevolutionBits[++i];
 				const DWORD nSesItemsMax=iRev.GetBitCount()+jRev.GetBitCount();
 				auto &ses=shortesEditScripts[i];
-				ses.nItems=iRev.GetShortestEditScript( jRev, ses.Realloc(nSesItemsMax), nSesItemsMax, &ap.CreateSubactionProgress(StepGranularity) );
+				ses.nItems=iRev.GetShortestEditScript( jRev, ses.Realloc(nSesItemsMax), nSesItemsMax, ap.CreateSubactionProgress(StepGranularity) );
 				if (ses.nItems==0){ // neighboring Revolutions bitwise identical?
 					ses.reset();
 					continue;
@@ -635,7 +635,7 @@
 		pBits[nBits].time=tr.GetCurrentTime(); // auxiliary terminal Bit
 	}
 
-	int CImage::CTrackReader::CBitSequence::GetShortestEditScript(const CBitSequence &theirs,CDiffBase::TScriptItem *pOutScript,DWORD nScriptItemsMax,PActionProgress pap) const{
+	int CImage::CTrackReader::CBitSequence::GetShortestEditScript(const CBitSequence &theirs,CDiffBase::TScriptItem *pOutScript,DWORD nScriptItemsMax,CActionProgress &ap) const{
 		// creates the shortest edit script (SES) and returns the number of its Items (or -1 if SES couldn't have been composed, e.g. insufficient output Buffer)
 		ASSERT( pOutScript!=nullptr );
 		return	CDiff<TBit>(
@@ -643,7 +643,7 @@
 				).GetShortestEditScript(
 					theirs.GetBits(), theirs.GetBitCount(),
 					pOutScript, nScriptItemsMax,
-					pap ? *pap : *&CBackgroundMultiActionCancelable(0)
+					ap
 				);
 	}
 

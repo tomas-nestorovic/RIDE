@@ -947,7 +947,7 @@ invalidTrack:
 									static UINT AFX_CDECL Thread(PVOID pCancelableAction){
 										const PBackgroundActionCancelable pBac=(PBackgroundActionCancelable)pCancelableAction;
 										TVerifParams &vp=*(TVerifParams *)pBac->GetParams();
-										vp.nSesItems=vp.writtenBits.GetShortestEditScript( vp.readBits, vp.pSes, vp.nSesItemsMax, pBac );
+										vp.nSesItems=vp.writtenBits.GetShortestEditScript( vp.readBits, vp.pSes, vp.nSesItemsMax, *pBac );
 										return pBac->TerminateWithSuccess();
 									}
 								} vp( writtenBits, readBits, nSesItemsMax, pSes );

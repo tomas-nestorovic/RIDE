@@ -188,7 +188,7 @@
 			: A(A) , N(N) {
 		}
 
-		int GetShortestEditScript(const T *B,int M,TScriptItem *pOutScriptItemBuffer,DWORD nScriptItemsBufferCapacity,CActionProgress &rap){
+		int GetShortestEditScript(const T *B,int M,TScriptItem *pOutScriptItemBuffer,DWORD nScriptItemsBufferCapacity,CActionProgress &ap){
 			// composes the shortest edit Script and returns the number of its Items (or -1 if Script couldn't have been composed, e.g. insufficient output Buffer)
 			this->B=B;
 			this->max=N+M+1;
@@ -196,7 +196,7 @@
 			nEmptyScriptItems=nScriptItemsBufferCapacity;
 			const auto fv=Utils::MakeCallocPtr<int>(2*max+2), rv=Utils::MakeCallocPtr<int>(2*max+2);
 			this->fv=fv+max, this->rv=rv+max;
-			( pap=&rap )->SetProgressTarget(N);
+			( pap=&ap )->SetProgressTarget(N);
 			return	GetShortestEditScript( A, N, B, M ) // Script composed?
 					? MergeScriptItems(pOutScriptItemBuffer)
 					: -1;

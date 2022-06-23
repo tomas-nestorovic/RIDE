@@ -60,6 +60,10 @@
 
 
 
+	static const bool NotCancelled;
+
+	CActionProgress CActionProgress::None( nullptr, NotCancelled, 0, INT_MAX );
+
 	CActionProgress::CActionProgress(const CActionProgress *parent,const volatile bool &cancelled,int parentProgressBegin,int parentProgressInc)
 		// ctor
 		: parent(parent)
@@ -76,7 +80,7 @@
 		, parentProgressBegin(r.parentProgressBegin) , parentProgressInc(r.parentProgressInc)
 		, targetProgress(r.targetProgress)
 		, currProgress(r.currProgress) {
-		r.parent=nullptr;
+		r.parent=&None;
 	}
 
 	CActionProgress::~CActionProgress(){
@@ -91,13 +95,13 @@
 
 	void CActionProgress::UpdateProgress(int newProgress,TBPFLAG status) const{
 		// refreshes the displaying of actual progress
+		if (this==&CActionProgress::None) // do nothing for the terminal
+			return;
 		if (newProgress<=currProgress) // always proceed towards the Target, never back
 			return;
 		if (currProgress==targetProgress) // don't propagate finished Action twice to its Parent
 			return;
 		currProgress=std::min( newProgress, targetProgress );
-		if (!parent) // did we reach the top-level ActionProgress?
-			return;
 		parent->UpdateProgress( // reflect progress of this Action in its Parent
 			parentProgressBegin + (LONGLONG)parentProgressInc*currProgress/targetProgress,
 			status
@@ -127,7 +131,7 @@
 	CBackgroundActionCancelable::CBackgroundActionCancelable(UINT dlgResId)
 		// ctor
 		: Utils::CRideDialog( dlgResId, CWnd::GetActiveWindow() )
-		, CActionProgress( nullptr, bCancelled, 0, INT_MAX )
+		, CActionProgress( &None, bCancelled, 0, INT_MAX )
 		, callerThreadPriorityOrg( ::GetThreadPriority(::GetCurrentThread()) )
 		, bCancelled(false) , bTargetStateReached(false) {
 	}
@@ -135,7 +139,7 @@
 	CBackgroundActionCancelable::CBackgroundActionCancelable(AFX_THREADPROC fnAction,LPCVOID actionParams,int actionThreadPriority)
 		// ctor
 		: Utils::CRideDialog( IDR_ACTION_PROGRESS, CWnd::GetActiveWindow() )
-		, CActionProgress( nullptr, bCancelled, 0, INT_MAX )
+		, CActionProgress( &None, bCancelled, 0, INT_MAX )
 		, callerThreadPriorityOrg( ::GetThreadPriority(::GetCurrentThread()) )
 		, bCancelled(false) , bTargetStateReached(false) {
 		BeginAnother( fnAction, actionParams, actionThreadPriority );
