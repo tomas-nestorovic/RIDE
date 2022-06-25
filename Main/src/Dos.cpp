@@ -255,6 +255,20 @@ reportError:Utils::Information(buf);
 			// requested to include newly formatted Tracks into FAT
 			if (!d.dos->AddStdCylindersToFatAsEmpty( d.params.cylinder0, d.params.format.nCylinders, pAction->CreateSubactionProgress(100) ))
 				Utils::Information( FAT_SECTOR_UNMODIFIABLE, ::GetLastError() );
+			else if (d.dos->image->RequiresFormattedTracksVerification()){ // mark bad Sectors in the FAT?
+				TSectorId ids[(TSector)-1];
+				TPhysicalAddress chs;
+				for( chs.cylinder=d.params.cylinder0; chs.cylinder<=d.params.format.nCylinders; chs.cylinder++ )
+					for( chs.head=0; chs.head<d.dos->formatBoot.nHeads; chs.head++ )
+						for( TSector n=d.dos->GetListOfStdSectors(chs.cylinder,chs.head,ids); n>0; ){
+							chs.sectorId=ids[--n];
+							d.dos->ModifyStdSectorStatus(
+								chs,
+								d.dos->image->GetHealthySectorData(chs) ? CDos::TSectorStatus::EMPTY : CDos::TSectorStatus::BAD
+							);
+						}
+
+			}
 		pAction->IncrementProgress(100);
 		return pAction->TerminateWithSuccess();
 	}

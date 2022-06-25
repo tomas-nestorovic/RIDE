@@ -488,6 +488,12 @@
 			return ERROR_GEN_FAILURE;
 	}
 
+	bool CKryoFluxBase::RequiresFormattedTracksVerification() const{
+		// True <=> the Image requires its newly formatted Tracks be verified, otherwise False (and caller doesn't have to carry out verification)
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		return params.verifyWrittenTracks;
+	}
+
 	TStdWinError CKryoFluxBase::UnformatTrack(TCylinder cyl,THead head){
 		// unformats given Track {Cylinder,Head}; returns Windows standard i/o error
 		if (const Medium::PCProperties mp=Medium::GetProperties(floppyType)){

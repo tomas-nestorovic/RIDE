@@ -894,7 +894,7 @@ invalidTrack:
 		return ERROR_SUCCESS;
 	}
 
-	TStdWinError CCapsBase::VerifyTrack(TCylinder cyl,THead head,const CTrackReaderWriter &trwWritten,bool showDiff,const volatile bool &cancelled) const{
+	TStdWinError CCapsBase::VerifyTrack(TCylinder cyl,THead head,const CTrackReaderWriter &trwWritten,bool showDiff,std::unique_ptr<CTrackReaderWriter> *ppOutReadTrack,const volatile bool &cancelled) const{
 		// verifies specified Track that is assumed to be just written; returns Windows standard i/o error
 		// - Medium must be known
 		const Medium::PCProperties mp=Medium::GetProperties(floppyType);
@@ -987,7 +987,10 @@ invalidTrack:
 					delete pitWritten;
 				}else
 					err=ERROR_SECTOR_NOT_FOUND;
-				delete pitVerif;
+				if (ppOutReadTrack)
+					ppOutReadTrack->reset( pitVerif );
+				else
+					delete pitVerif;
 			}else
 				err=ERROR_GEN_FAILURE;
 		return err;

@@ -683,7 +683,7 @@
 		// saves the specified Track to the inserted Medium; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - Track must already exist from before
-		const PInternalTrack pit=internalTracks[cyl][head];
+		const PInternalTrack &pit=internalTracks[cyl][head]; // the Track may be changed during verification, so don't remove the reference!
 		if (!pit)
 			return ERROR_SUCCESS;
 		if (!pit->modified)
@@ -772,9 +772,13 @@
 			if (!err && params.verifyWrittenTracks && pit->nSectors>0){ // can verify the Track only if A&B&C, A = writing successfull, B&C = at least one Sector is recognized in it
 				const Utils::CVarTempReset<TParams::TCalibrationAfterError> cae0( params.calibrationAfterError, TParams::TCalibrationAfterError::NONE ); // already calibrated before writing
 				const Utils::CVarTempReset<TParams::TPrecision> p0( params.precision, TParams::TPrecision::SINGLE );
-				switch (err=VerifyTrack( cyl, head, trw, nSilentRetrials<0, cancelled )){
-					case ERROR_SUCCESS:	// validation was successfull
+				std::unique_ptr<CTrackReaderWriter> pVerifiedTrack;
+				switch (err=VerifyTrack( cyl, head, trw, nSilentRetrials<0, &pVerifiedTrack, cancelled )){
 					case ERROR_CONTINUE:// validation failed but ignore the failure and continue
+						delete internalTracks[cyl][head];
+						internalTracks[cyl][head]=CInternalTrack::CreateFrom( *this, *pVerifiedTrack );
+						//fallthrough
+					case ERROR_SUCCESS:	// validation was successfull
 						break;
 					case ERROR_RETRY:	// attempting to save the Track once more
 					case ERROR_DS_COMPARE_FALSE: // silent automatic retrial
