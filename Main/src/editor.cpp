@@ -301,6 +301,7 @@
 			if (d.DoModal()!=IDOK) return;
 			// . creating selected Image
 			const PImage image=d.fnImage(d.deviceName);
+			CMainWindow::CTdiTemplate::pSingleInstance->AddDocument(image); // for the CImage::GetActive function to work
 			// . formatting Image under selected DOS
 			PDos dos = image->dos = d.dosProps->fnInstantiate(image,&TFormat::Unknown);
 				image->writeProtected=false; // just to be sure
@@ -316,8 +317,9 @@
 			dos = image->dos = CDos::CRecognition().__perform__(image,&formatBoot)->fnInstantiate(image,&formatBoot);
 			image->SetMediumTypeAndGeometry( &formatBoot, dos->sideMap, dos->properties->firstSectorNumber );
 			// . creating the user interface for recognized DOS
+			CMainWindow::CTdiTemplate::pSingleInstance->RemoveDocument(image); // added back in CreateUserInterface below
 			if (const TStdWinError err=dos->CreateUserInterface(TDI_HWND)){
-				delete image; // ... as it may change here!
+				delete image;
 				return Utils::FatalError( _T("Cannot access the image"), err );
 			}
 			image->SetPathName(
