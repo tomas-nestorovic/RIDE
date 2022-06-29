@@ -5,37 +5,15 @@
 
 	class CKryoFluxBase abstract:public CCapsBase{
 	protected:
-		struct TParams{
+		struct TParamsEtc{
 			// persistent (saved and loaded)
 			CString firmwareFileName;
-			enum TPrecision:char{
-				SINGLE	=1,	// one full Revolution (only for writing verification)
-				BASIC	=2,	// two full revolutions
-				MEDIUM	=4	// four full revolutions
-			} mutable precision;
-			enum TFluxDecoder{ // in order of appearance in corresponding combo-box in IDR_KRYOFLUX_ACCESS dialog
-				NO_FLUX_DECODER,
-				KEIR_FRASER,
-				MARK_OGDEN
-			} fluxDecoder;
-			bool resetFluxDecoderOnIndex;
-			enum TCalibrationAfterError{
-				NONE				=0,
-				ONCE_PER_CYLINDER	=1,
-				FOR_EACH_SECTOR		=2
-			} mutable calibrationAfterError;
-			bool calibrationAfterErrorOnlyForKnownSectors;
-			BYTE calibrationStepDuringFormatting;
-			TCorrections corrections;
-			bool verifyWrittenTracks;
 			// volatile (current session only)
-			bool doubleTrackStep, userForcedDoubleTrackStep;
+			//none
 
-			TParams();
-			~TParams();
-
-			inline BYTE PrecisionToFullRevolutionCount() const{ return precision; }
-		} params;
+			TParamsEtc();
+			~TParamsEtc();
+		} paramsEtc;
 
 		const LPCTSTR firmware;
 

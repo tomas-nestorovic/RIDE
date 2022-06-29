@@ -15,7 +15,7 @@
 		return ERROR_SUCCESS;
 	}
 
-	CCapsBase::CCapsBase(PCProperties properties,char realDriveLetter,bool hasEditableSettings)
+	CCapsBase::CCapsBase(PCProperties properties,char realDriveLetter,bool hasEditableSettings,LPCTSTR iniSectionName)
 		// ctor
 		// - base
 		: CFloppyImage(properties,hasEditableSettings)
@@ -26,6 +26,7 @@
 		// - initialization
 		, precompensation(realDriveLetter)
 		, forcedMediumType( Medium::FLOPPY_ANY )
+		, params(iniSectionName)
 		, lastSuccessfullCodec(Codec::MFM) {
 		::ZeroMemory( &capsImageInfo, sizeof(capsImageInfo) );
 		::ZeroMemory( internalTracks, sizeof(internalTracks) );
@@ -1060,6 +1061,333 @@ invalidTrack:
 			return *pit;
 		}else
 			return __super::ReadTrack(cyl,head);
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+	#define INI_FLUX_DECODER			_T("decod")
+	#define INI_FLUX_DECODER_RESET		_T("drst")
+	#define INI_PRECISION				_T("prec2")
+	#define INI_CALIBRATE_SECTOR_ERROR	_T("clberr")
+	#define INI_CALIBRATE_SECTOR_ERROR_KNOWN _T("clbknw")
+	#define INI_CALIBRATE_FORMATTING	_T("clbfmt")
+	#define INI_VERIFY_WRITTEN_TRACKS	_T("vwt")
+
+	CCapsBase::TParams::TParams(LPCTSTR iniSectionName)
+		// ctor
+		// - persistent (saved and loaded)
+		: iniSectionName( iniSectionName )
+		, precision( (TPrecision)app.GetProfileInt(iniSectionName,INI_PRECISION,TPrecision::BASIC) )
+		, fluxDecoder( (TFluxDecoder)app.GetProfileInt(iniSectionName,INI_FLUX_DECODER,TFluxDecoder::KEIR_FRASER) )
+		, resetFluxDecoderOnIndex( (TFluxDecoder)app.GetProfileInt(iniSectionName,INI_FLUX_DECODER_RESET,true)!=0 )
+		, calibrationAfterError( (TCalibrationAfterError)app.GetProfileInt(iniSectionName,INI_CALIBRATE_SECTOR_ERROR,TCalibrationAfterError::ONCE_PER_CYLINDER) )
+		, calibrationAfterErrorOnlyForKnownSectors( app.GetProfileInt(iniSectionName,INI_CALIBRATE_SECTOR_ERROR_KNOWN,0)!=0 )
+		, calibrationStepDuringFormatting( app.GetProfileInt(iniSectionName,INI_CALIBRATE_FORMATTING,0) )
+		, corrections( iniSectionName )
+		, verifyWrittenTracks( app.GetProfileInt(iniSectionName,INI_VERIFY_WRITTEN_TRACKS,true)!=0 )
+		// - volatile (current session only)
+		, doubleTrackStep(false)
+		, userForcedDoubleTrackStep(false) { // True once the ID_40D80 button in Settings dialog is pressed
+	}
+
+	CCapsBase::TParams::~TParams(){
+		// dtor
+		app.WriteProfileInt( iniSectionName, INI_PRECISION, precision );
+		app.WriteProfileInt( iniSectionName, INI_FLUX_DECODER, fluxDecoder );
+		app.WriteProfileInt( iniSectionName, INI_FLUX_DECODER_RESET, resetFluxDecoderOnIndex );
+		app.WriteProfileInt( iniSectionName, INI_CALIBRATE_SECTOR_ERROR, calibrationAfterError );
+		app.WriteProfileInt( iniSectionName, INI_CALIBRATE_SECTOR_ERROR_KNOWN, calibrationAfterErrorOnlyForKnownSectors );
+		app.WriteProfileInt( iniSectionName, INI_CALIBRATE_FORMATTING, calibrationStepDuringFormatting );
+		corrections.Save( iniSectionName );
+		app.WriteProfileInt( iniSectionName, INI_VERIFY_WRITTEN_TRACKS, verifyWrittenTracks );
+	}
+
+	bool CCapsBase::TParams::EditInModalDialog(CCapsBase &rcb,LPCTSTR firmware,bool initialEditing){
+		// True <=> new settings have been accepted (and adopted by this Image), otherwise False
+		// - defining the Dialog
+		class CParamsDialog sealed:public Utils::CRideDialog{
+			const LPCTSTR firmware;
+			const bool initialEditing;
+			CCapsBase &rcb;
+			CPrecompensation tmpPrecomp;
+			TCHAR doubleTrackDistanceTextOrg[80];
+
+			bool IsDoubleTrackDistanceForcedByUser() const{
+				// True <=> user has manually overridden DoubleTrackDistance setting, otherwise False
+				return ::lstrlen(doubleTrackDistanceTextOrg)!=::GetWindowTextLength( GetDlgItemHwnd(ID_40D80) );
+			}
+
+			void RefreshMediumInformation(){
+				// detects a floppy in the Drive and attempts to recognize its Type
+				// . making sure that a floppy is in the Drive
+				ShowDlgItem( ID_INFORMATION, false );
+				Medium::TType mt;
+				static constexpr WORD Interactivity[]={ ID_LATENCY, ID_NUMBER2, ID_GAP, 0 };
+				if (!EnableDlgItems( Interactivity, rcb.GetInsertedMediumType(0,mt)==ERROR_SUCCESS ))
+					SetDlgItemText( ID_MEDIUM, _T("Not inserted") );
+				// . attempting to recognize any previous format on the floppy
+				else
+					switch (mt){
+						case Medium::FLOPPY_DD_525:
+							SetDlgItemText( ID_MEDIUM, _T("5.25\" DD formatted, 360 RPM drive") );
+							if (EnableDlgItem( ID_40D80, initialEditing )){
+						{		const Utils::CVarTempReset<bool> dts0( rcb.params.doubleTrackStep, false );
+								const Utils::CVarTempReset<Medium::TType> ft0( rcb.floppyType, mt );
+								if (rcb.GetInsertedMediumType(1,mt)==ERROR_SUCCESS)
+									CheckDlgButton( ID_40D80, !ShowDlgItem(ID_INFORMATION,mt!=Medium::UNKNOWN) ); // first Track is empty, so likely each odd Track is empty
+						}		rcb.GetInsertedMediumType(0,mt); // a workaround to make floppy Drive head seek home
+							}
+							break;
+						case Medium::FLOPPY_DD:
+							SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" DD formatted, 300 RPM drive") );
+							CheckDlgButton( ID_40D80, false );
+							EnableDlgItem( ID_40D80, initialEditing );
+							break;
+						case Medium::FLOPPY_HD_525:
+						case Medium::FLOPPY_HD_350:
+							SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" HD formatted") );
+							CheckDlgButton( ID_40D80, false );
+							EnableDlgItem( ID_40D80, initialEditing );
+							break;
+						default:
+							SetDlgItemText( ID_MEDIUM, _T("Not formatted or faulty") );
+							CheckDlgButton( ID_40D80, false );
+							EnableDlgItem( ID_40D80, initialEditing );
+							break;
+					}
+				// . forcing redrawing (as the new text may be shorter than the original text, leaving the original partly visible)
+				GetDlgItem(ID_MEDIUM)->Invalidate();
+				// . refreshing the status of Precompensation
+				tmpPrecomp.Load(mt);
+				RefreshPrecompensationStatus();
+			}
+
+			void RefreshPrecompensationStatus(){
+				// retrieves and displays current write pre-compensation status
+				// . assuming pre-compensation determination error
+				const RECT rcWarning=MapDlgItemClientRect(ID_INSTRUCTION);
+				ShowDlgItem( ID_INSTRUCTION, true );
+				RECT rcMessage=MapDlgItemClientRect(ID_ALIGN);
+				rcMessage.left=rcWarning.right;
+				SetDlgItemPos( ID_ALIGN, rcMessage );
+				// . displaying current pre-compensation status
+				TCHAR msg[235];
+				switch (const TStdWinError err=tmpPrecomp.DetermineUsingLatestMethod(rcb,0)){
+					case ERROR_SUCCESS:
+						ShowDlgItem( ID_INSTRUCTION, false );
+						rcMessage.left=rcWarning.left;
+						SetDlgItemPos( ID_ALIGN, rcMessage );
+						::wsprintf( msg, _T("Determined for medium in Drive %c using latest <a id=\"details\">Method %d</a>. No action needed now."), tmpPrecomp.driveLetter, tmpPrecomp.methodVersion );
+						break;
+					case ERROR_INVALID_DATA:
+						::wsprintf( msg, _T("Not determined for medium in Drive %c!\n<a id=\"compute\">Determine now using latest Method %d</a>"), tmpPrecomp.driveLetter, CPrecompensation::MethodLatest );
+						break;
+					case ERROR_EVT_VERSION_TOO_OLD:
+						::wsprintf( msg, _T("Determined for medium using <a id=\"details\">Method %d</a>. <a id=\"compute\">Redetermine using latest Method %d</a>"), tmpPrecomp.methodVersion, CPrecompensation::MethodLatest );
+						break;
+					case ERROR_UNRECOGNIZED_MEDIA:
+						::wsprintf( msg, _T("Unknown medium in Drive %c.\n<a id=\"details\">Determine even so using latest Method %d</a>"), tmpPrecomp.driveLetter, CPrecompensation::MethodLatest );
+						break;
+					default:
+						::FormatMessage(
+							FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, err, 0,
+							msg+::lstrlen(::lstrcpy(msg,_T("Couldn't determine status because\n"))), sizeof(msg)-35,
+							nullptr
+						);
+						break;
+				}
+				SetDlgItemText( ID_ALIGN, msg );
+			}
+
+			void PreInitDialog() override{
+				// dialog initialization
+				// . base
+				__super::PreInitDialog();
+				// . displaying Firmware information
+				SetDlgItemText( ID_SYSTEM, firmware );
+				// . if DoubleTrackStep changed manually, adjusting the text of the ID_40D80 checkbox
+				GetDlgItemText( ID_40D80,  doubleTrackDistanceTextOrg, sizeof(doubleTrackDistanceTextOrg)/sizeof(TCHAR) );
+				if (rcb.params.userForcedDoubleTrackStep)
+					WindowProc( WM_COMMAND, ID_40D80, 0 );
+				CheckDlgButton( ID_40D80, rcb.params.doubleTrackStep );
+				// . some settings are changeable only during InitialEditing
+				static constexpr WORD InitialSettingIds[]={ ID_ROTATION, ID_ACCURACY, ID_DEFAULT1, ID_TRACK, ID_TIME, 0 };
+				EnableDlgItems( InitialSettingIds, initialEditing );
+				EnableDlgItem( ID_READABLE, params.calibrationAfterError!=TParams::TCalibrationAfterError::NONE );
+				// . displaying inserted Medium information
+				SetDlgItemSingleCharUsingFont( // a warning that a 40-track disk might have been misrecognized
+					ID_INFORMATION,
+					L'\xf0ea', (HFONT)Utils::CRideFont(FONT_WEBDINGS,175,false,true).Detach()
+				);
+				RefreshMediumInformation();
+				// . updating write pre-compensation status
+				SetDlgItemSingleCharUsingFont( // a warning that pre-compensation not up-to-date
+					ID_INSTRUCTION,
+					L'\xf0ea', (HFONT)Utils::CRideFont(FONT_WEBDINGS,175,false,true).Detach()
+				);
+				RefreshPrecompensationStatus();
+				// . adjusting calibration possibilities
+				extern CDos::PCProperties manuallyForceDos;
+				if (EnableDlgItem( ID_READABLE,
+						!rcb.dos && manuallyForceDos!=&CUnknownDos::Properties // DOS now yet known: either automatic DOS recognition, or manual selection of DOS but Unknown
+						||
+						rcb.dos && rcb.dos->properties!=&CUnknownDos::Properties // DOS already known: it's NOT the Unknown DOS
+					)
+				)
+					CheckDlgButton( ID_READABLE, false ); // this option is never ticked for Unknown DOS
+			}
+
+			void DoDataExchange(CDataExchange* pDX) override{
+				// exchange of data from and to controls
+				// . Precision
+				int tmp=(params.precision-2)/2;
+				DDX_CBIndex( pDX, ID_ROTATION,	tmp );
+				params.precision=(TParams::TPrecision)(2*tmp+2);
+				if (!EnableDlgItem( ID_ROTATION, rcb.properties->IsRealDevice() )){
+					CComboBox cb;
+					cb.Attach( GetDlgItemHwnd(ID_ROTATION) );
+						const int i=cb.GetCurSel();
+						cb.DeleteString( i );
+						cb.InsertString( i, _T("Automatically") );
+						cb.SetCurSel( i );
+					cb.Detach();
+				}
+				// . FluxDecoder
+				tmp=params.fluxDecoder;
+				DDX_CBIndex( pDX, ID_ACCURACY,	tmp );
+				params.fluxDecoder=(TParams::TFluxDecoder)tmp;
+				tmp=params.resetFluxDecoderOnIndex;
+				DDX_Check( pDX, ID_DEFAULT1,	tmp );
+				params.resetFluxDecoderOnIndex=tmp!=0;
+				// . CalibrationAfterError
+				tmp=params.calibrationAfterError;
+				DDX_Radio( pDX,	ID_NONE,		tmp );
+				params.calibrationAfterError=(TParams::TCalibrationAfterError)tmp;
+				tmp=params.calibrationAfterErrorOnlyForKnownSectors;
+				DDX_Check( pDX, ID_READABLE,	tmp );
+				params.calibrationAfterErrorOnlyForKnownSectors=tmp!=0;
+				// . CalibrationStepDuringFormatting
+				EnableDlgItem( ID_NUMBER, tmp=params.calibrationStepDuringFormatting!=0 );
+				DDX_Radio( pDX,	ID_ZERO,		tmp );
+				if (tmp)
+					DDX_Text( pDX,	ID_NUMBER,	tmp=params.calibrationStepDuringFormatting );
+				else
+					SetDlgItemInt(ID_NUMBER,4,FALSE);
+				params.calibrationStepDuringFormatting=tmp;
+				// . NormalizeReadTracks
+				tmp=params.corrections.use;
+				DDX_Check( pDX,	ID_TRACK,		tmp );
+				params.corrections.use=tmp!=0;
+				EnableDlgItem( ID_TRACK, params.fluxDecoder!=TParams::TFluxDecoder::NO_FLUX_DECODER&&initialEditing );
+				// . WrittenTracksVerification
+				tmp=params.verifyWrittenTracks;
+				DDX_Check( pDX,	ID_VERIFY_TRACK,	tmp );
+				params.verifyWrittenTracks=tmp!=0;
+			}
+
+			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
+				// window procedure
+				switch (msg){
+					case WM_PAINT:
+						// drawing
+						__super::OnPaint();
+						WrapDlgItemsByClosingCurlyBracketWithText( ID_NONE, ID_READABLE, _T("on read error"), 0 );
+						WrapDlgItemsByClosingCurlyBracketWithText( ID_ZERO, ID_CYLINDER_N, _T("when writing"), 0 );
+						return 0;
+					case WM_COMMAND:
+						switch (wParam){
+							case MAKELONG(ID_ACCURACY,CBN_SELCHANGE):{
+								// FluxDecoder changed
+								const Utils::CVarTempReset<TParams::TFluxDecoder> fd0( rcb.params.fluxDecoder, (TParams::TFluxDecoder)GetDlgComboBoxSelectedIndex(ID_ACCURACY) );
+								if (!EnableDlgItem( ID_TRACK, rcb.params.fluxDecoder!=TParams::TFluxDecoder::NO_FLUX_DECODER ))
+									CheckDlgButton( ID_TRACK, BST_UNCHECKED ); // when archiving, any corrections must be turned off
+								SendMessage( WM_COMMAND, ID_RECOVER ); // refresh information on inserted Medium
+								break;
+							}
+							case ID_RECOVER:
+								// refreshing information on (inserted) floppy
+								if (initialEditing) // if no Tracks are yet formatted ...
+									SetDlgItemText( ID_40D80, doubleTrackDistanceTextOrg ); // ... then resetting the flag that user has overridden DoubleTrackDistance
+								RefreshMediumInformation();
+								break;
+							case ID_40D80:{
+								// track distance changed manually
+								TCHAR buf[sizeof(doubleTrackDistanceTextOrg)/sizeof(TCHAR)+20];
+								SetDlgItemText( ID_40D80, ::lstrcat(::lstrcpy(buf,doubleTrackDistanceTextOrg),_T(" (user forced)")) );
+								ShowDlgItem( ID_INFORMATION, false ); // user manually revised the Track distance, so no need to continue display the warning
+								break;
+							}
+							case ID_NONE:
+							case ID_CYLINDER:
+							case ID_SECTOR:
+								// adjusting possibility to edit controls that depend on CalibrationAfterError
+								EnableDlgItem( ID_READABLE, wParam!=ID_NONE );
+								break;
+							case ID_ZERO:
+							case ID_CYLINDER_N:
+								// adjusting possibility to edit the CalibrationStep according to selected option
+								EnableDlgItem( ID_NUMBER, wParam!=ID_ZERO );
+								break;
+							case IDOK:
+								// attempting to confirm the Dialog
+								params.doubleTrackStep=IsDlgButtonChecked( ID_40D80 )!=BST_UNCHECKED;
+								params.userForcedDoubleTrackStep=IsDoubleTrackDistanceForcedByUser();
+								break;
+						}
+						break;
+					case WM_NOTIFY:
+						switch (((LPNMHDR)lParam)->code){
+							case NM_CLICK:
+							case NM_RETURN:{
+								PNMLINK pLink=(PNMLINK)lParam;
+								const LITEM &item=pLink->item;
+								if (pLink->hdr.idFrom==ID_ALIGN){
+									rcb.locker.Unlock(); // giving way to parallel thread
+							{			const Utils::CVarTempReset<bool> vwt0( params.verifyWrittenTracks, false );
+											if (!::lstrcmpW(item.szID,L"details"))
+												tmpPrecomp.ShowOrDetermineModal(rcb);
+											else if (!::lstrcmpW(item.szID,L"compute"))
+												if (const TStdWinError err=tmpPrecomp.DetermineUsingLatestMethod(rcb))
+													Utils::FatalError( _T("Can't determine precompensation"), err );
+												else
+													tmpPrecomp.Save();
+							}		rcb.locker.Lock();
+									RefreshMediumInformation();
+								}else if (pLink->hdr.idFrom==ID_TIME)
+									params.corrections.ShowModal(this);
+								break;
+							}
+						}
+						break;
+				}
+				return __super::WindowProc(msg,wParam,lParam);
+			}
+		public:
+			TParams params;
+
+			CParamsDialog(CCapsBase &rcb,LPCTSTR firmware,bool initialEditing)
+				// ctor
+				: Utils::CRideDialog(IDR_KRYOFLUX_ACCESS)
+				, rcb(rcb) , params(rcb.params) , initialEditing(initialEditing) , firmware(firmware)
+				, tmpPrecomp(rcb.precompensation) {
+			}
+		} d( rcb, firmware, initialEditing );
+		// - showing the Dialog and processing its result
+		if (d.DoModal()==IDOK){
+			*this=d.params;
+			rcb.capsImageInfo.maxcylinder=( FDD_CYLINDERS_HD>>(BYTE)doubleTrackStep )+FDD_CYLINDERS_EXTRA - 1; // "-1" = inclusive!
+			return true;
+		}else
+			return false;
 	}
 
 

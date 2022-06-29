@@ -26,10 +26,12 @@
 
 
 
+	#define INI_IPF	_T("Ipf")
+
 	CIpf::CIpf()
 		// ctor
 		// - base
-		: CCapsBase(&Properties,'\0',true) { // '\0' = not a real drive
+		: CCapsBase( &Properties, '\0', true, INI_IPF ) { // '\0' = not a real drive
 	}
 
 

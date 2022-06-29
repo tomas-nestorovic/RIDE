@@ -85,7 +85,7 @@
 						d.m_ofn.lpstrTitle=_T("Select KryoFlux firmware file");
 						d.m_ofn.lpstrFile=::lstrcpy( fileName, _T("firmware_kf_usb_rosalie.bin") );
 					if (d.DoModal()==IDOK){
-						tmp.params.firmwareFileName=fileName;
+						tmp.paramsEtc.firmwareFileName=fileName;
 						continue;
 					}
 				}
@@ -323,11 +323,11 @@
 			// . assuming failure
 			::lstrcpyA( device.firmwareVersion, "Not loaded" );
 			// . opening the firmware file for reading
-			if (params.firmwareFileName.IsEmpty()) // catching an empty string as it may succeed as filename on Win10!
+			if (paramsEtc.firmwareFileName.IsEmpty()) // catching an empty string as it may succeed as filename on Win10!
 				return ERROR_FILE_NOT_FOUND;
 			CFileException e;
 			CFile f;
-			if (!f.Open( params.firmwareFileName, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary, &e ))
+			if (!f.Open( paramsEtc.firmwareFileName, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary, &e ))
 				return e.m_cause;
 			// . firmware file must fit into the internal data buffer
 			const auto fLength=f.GetLength();

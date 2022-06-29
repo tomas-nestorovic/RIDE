@@ -31,7 +31,7 @@
 	CCtRaw::CCtRaw()
 		// ctor
 		// - base
-		: CCapsBase(&Properties,'\0',true) { // '\0' = not a real drive
+		: CCapsBase( &Properties, '\0', true, INI_CTRAW ) { // '\0' = not a real drive
 	}
 
 
