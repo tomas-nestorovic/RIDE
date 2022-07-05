@@ -1376,7 +1376,7 @@ invalidTrack:
 
 			CParamsDialog(CCapsBase &rcb,LPCTSTR firmware,bool initialEditing)
 				// ctor
-				: Utils::CRideDialog(IDR_KRYOFLUX_ACCESS)
+				: Utils::CRideDialog(IDR_CAPS_DEVICE_ACCESS)
 				, rcb(rcb) , params(rcb.params) , initialEditing(initialEditing) , firmware(firmware)
 				, tmpPrecomp(rcb.precompensation) {
 			}

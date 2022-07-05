@@ -59,7 +59,7 @@
 #define IDR_DRIVE_ACCESS                217
 #define IDR_SPECTRUM_PREVIEW_ASSEMBLER  218
 #define IDR_DOS_PREVIEW_BASE            219
-#define IDR_KRYOFLUX_ACCESS             220
+#define IDR_CAPS_DEVICE_ACCESS          220
 #define IDR_CAPS                        221
 #define IDR_TRACK_EDITOR                222
 #define IDR_CHARTFRAME_XY               223
