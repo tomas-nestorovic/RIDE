@@ -360,14 +360,18 @@ namespace Utils{
 			TOP,
 			BOTTOM
 		} ticksAndLabelsAlign;
+		const TCHAR unit;
+		const LPCTSTR unitPrefixes;
 
+		static const TCHAR NoPrefixes[];
 		static const TCHAR CountPrefixes[];
 		static const CRideFont FontWingdings;
 
-		CAxis(TLogValue logLength,TLogTime logValuePerUnit,BYTE initZoomFactor,TVerticalAlign ticksAndLabelsAlign=TVerticalAlign::TOP);
+		CAxis(TLogValue logLength,TLogTime logValuePerUnit,TCHAR unit,LPCTSTR unitPrefixes,BYTE initZoomFactor,TVerticalAlign ticksAndLabelsAlign=TVerticalAlign::TOP);
 
-		BYTE Draw(HDC dc,long nVisiblePixels,TCHAR unit,LPCTSTR unitPrefixes,const CRideFont &font,int primaryGridLength=0,HPEN hPrimaryGridPen=nullptr,PLogTime pOutVisibleStart=nullptr,PLogTime pOutVisibleEnd=nullptr);
-		void DrawCursorAt(HDC dc,TLogValue newLogPos);
+		BYTE Draw(HDC dc,long nVisiblePixels,const CRideFont &font,int primaryGridLength=0,HPEN hPrimaryGridPen=nullptr,PLogTime pOutVisibleStart=nullptr,PLogTime pOutVisibleEnd=nullptr);
+		inline TLogValue GetCursorPos() const{ return logCursorPos; }
+		void SetCursorPos(HDC dc,TLogValue newLogPos);
 		int GetUnitCount(TLogValue logValue,BYTE zoomFactor) const;
 		int GetUnitCount(TLogValue logValue) const;
 		int GetUnitCount() const;
@@ -378,6 +382,8 @@ namespace Utils{
 		BYTE GetZoomFactorToFitWidth(int nUnits,BYTE zoomFactorMax) const;
 		BYTE GetZoomFactorToFitWidth(TLogValue logValue,int nUnits,BYTE zoomFactorMax) const;
 		void SetZoomFactor(BYTE newZoomFactor);
+		int ValueToReadableString(TLogValue logValue,PTCHAR buffer) const;
+		CString ValueToReadableString(TLogValue logValue) const;
 	};
 
 	class CTimeline:public CAxis{
@@ -386,7 +392,6 @@ namespace Utils{
 
 		CTimeline(TLogTime logTimeLength,TLogTime logTimePerUnit,BYTE initZoomFactor);
 
-		int TimeToReadableString(TLogTime logTime,PTCHAR buffer) const;
 		void Draw(HDC dc,const CRideFont &font,PLogTime pOutVisibleStart=nullptr,PLogTime pOutVisibleEnd=nullptr);
 
 		inline TLogTime GetTime(int nUnits) const{

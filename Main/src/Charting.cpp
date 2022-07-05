@@ -38,7 +38,14 @@
 
 	CChartView::CGraphics::CGraphics()
 		// ctor
-		: visible(true) {
+		: visible(true)
+		, name(nullptr) { // caller eventually overrides
+	}
+
+	POINT CChartView::CGraphics::SnapCursorToNearestItem(const CDisplayInfo &,const CPoint &ptClient,int &rOutItemIndex) const{
+		// returns the client position closest to the input cursor position
+		ASSERT( !SupportsCursorSnapping() );
+		return rOutItemIndex=-1, ptClient; // no known item to snap cursor to
 	}
 
 
@@ -49,6 +56,14 @@
 	void CChartView::CXyGraphics::GetDrawingLimits(WORD percentile,TLogValue &rOutMaxX,TLogValue &rOutMaxY) const{
 		// returns the XY position of the last item still to be drawn with specified Percentile
 		//nop (not applicable)
+	}
+
+	static constexpr POINT Origin;
+
+	const POINT &CChartView::CXyGraphics::GetPoint(int index) const{
+		// returns the XY Point with the specified Index
+		ASSERT(FALSE);
+		return Origin;
 	}
 
 
@@ -70,6 +85,12 @@
 		rOutMaxY=1;
 		for( auto it=h.cbegin(); it!=h.cend()&&sum<sumMax; sum+=it++->second )
 			rOutMaxY=it->first;
+	}
+
+	const POINT &CChartView::CXyPointSeries::GetPoint(int index) const{
+		// returns the XY Point with the specified Index
+		ASSERT( 0<=index && index<nPoints );
+		return points[index];
 	}
 
 	void CChartView::CXyPointSeries::DrawAsync(const CPainter &p) const{
@@ -131,9 +152,10 @@
 
 
 
-	CChartView::CXyOrderedBarSeries::CXyOrderedBarSeries(DWORD nPoints,const POINT *points,HPEN hLinePen)
+	CChartView::CXyOrderedBarSeries::CXyOrderedBarSeries(DWORD nPoints,const POINT *points,HPEN hLinePen,LPCTSTR name)
 		// ctor
 		: CXyPointSeries( nPoints, points, hLinePen ) {
+		this->name=name;
 	}
 
 	void CChartView::CXyOrderedBarSeries::GetDrawingLimits(WORD percentile,TLogValue &rOutMaxX,TLogValue &rOutMaxY) const{
@@ -150,6 +172,30 @@
 			if (pt.y>rOutMaxY)
 				rOutMaxY=pt.y;
 		}
+	}
+
+	POINT CChartView::CXyOrderedBarSeries::SnapCursorToNearestItem(const CDisplayInfo &di,const CPoint &ptClient,int &rOutItemIndex) const{
+		// returns the client position closest to the input cursor position
+		if (!nPoints)
+			return	__super::SnapCursorToNearestItem( di, ptClient, rOutItemIndex );
+		const CXyDisplayInfo &xydi=*(const CXyDisplayInfo *)&di;
+		if (nPoints==1)
+			return	rOutItemIndex=0, xydi.Transform(*points);
+		DWORD L=0, R=nPoints-1;
+		for( DWORD M; L+1<R; )
+			if (ptClient.x<xydi.Transform(points[ M=(L+R)/2 ]).x)
+				R=M;
+			else
+				L=M;
+		const POINT ptL=xydi.Transform(points[L]);
+		if (ptClient.x<ptL.x) // cursor before first Point?
+			return rOutItemIndex=L, ptL;
+		const POINT ptR=xydi.Transform(points[R]);
+		if (ptR.x<ptClient.x) // cursor after last Point?
+			return rOutItemIndex=R, ptR;
+		return	ptR.x-ptClient.x<ptClient.x-ptL.x // return Point closer to the cursor
+				? ( rOutItemIndex=R, ptR )
+				: ( rOutItemIndex=L, ptL );
 	}
 
 	void CChartView::CXyOrderedBarSeries::DrawAsync(const CPainter &p) const{
@@ -177,14 +223,72 @@
 
 
 
-	CChartView::CDisplayInfo::CDisplayInfo(UINT menuResourceId,RCMargin margin,const PCGraphics *graphics,BYTE nGraphics)
+	CChartView::CDisplayInfo::CDisplayInfo(UINT menuResourceId,RCMargin margin,const PCGraphics graphics[],BYTE nGraphics)
 		// ctor
-		: menuResourceId(menuResourceId) , margin(margin) , graphics(graphics) , nGraphics(nGraphics) {
+		: menuResourceId(menuResourceId)
+		, margin(margin)
+		, graphics(graphics) , nGraphics(nGraphics)
+		, snapToNearestItem(true) {
+		::ZeroMemory( &snapped, sizeof(snapped) );
+	}
+
+	POINT CChartView::CDisplayInfo::SetCursorPos(HDC,const POINT &ptClient,const CRect &){
+		// returns the client point the input cursor has been actually set to
+		snapped.graphics=nullptr;
+		if (snapToNearestItem)
+			if (nGraphics>0){
+				const POINT &cursor=ptClient;
+				struct{
+					POINT pt;
+					long manhattanDistance;
+				} snapped={ {}, INT_MAX };
+				for( BYTE i=nGraphics; i>0; ){
+					const PCGraphics g=graphics[--i];
+					if (!g->SupportsCursorSnapping())
+						continue;
+					int itemIndex;
+					const POINT pt=g->SnapCursorToNearestItem( *this, cursor, itemIndex );
+					const long manhattanDistance= std::abs(pt.x-cursor.x) + std::abs(pt.y-cursor.y);
+					if (manhattanDistance<snapped.manhattanDistance){
+						snapped.pt=pt, snapped.manhattanDistance=manhattanDistance;
+						this->snapped.graphics=g, this->snapped.itemIndex=itemIndex;
+					}
+				};
+				if (snapped.manhattanDistance<INT_MAX) // snapped to an item?
+					return snapped.pt;
+			}
+		return ptClient;
 	}
 
 	bool CChartView::CDisplayInfo::OnCmdMsg(CChartView &cv,UINT nID,int nCode,PVOID pExtra){
 		// command processing
-		return false; // no common commands
+		switch (nCode){
+			case CN_UPDATE_COMMAND_UI:{
+				// update
+				CCmdUI *const pCmdUi=(CCmdUI *)pExtra;
+				switch (nID){
+					case ID_ALIGN:{
+						bool containsSnappableGraphics=false; // assumption
+						for( BYTE i=nGraphics; i; containsSnappableGraphics|=graphics[--i]->SupportsCursorSnapping() );
+						pCmdUi->Enable( containsSnappableGraphics );
+						pCmdUi->SetCheck( containsSnappableGraphics && snapToNearestItem );
+						return true;
+					}
+				}
+				break;
+			}
+			case CN_COMMAND:
+				// command
+				switch (nID){
+					case ID_ALIGN:
+						snapToNearestItem=!snapToNearestItem;
+						snapped.graphics=nullptr;
+						cv.Invalidate();
+						return true;
+				}
+				break;
+		}
+		return false; // unrecognized command
 	}
 
 
@@ -208,10 +312,8 @@
 		, gridPen( 0, 0xcacaca, PS_DOT ) // light gray
 		, fontAxes(fontAxes)
 		, xMaxOrg(xMax), yMaxOrg(yMax)
-		, xAxisUnit(xAxisUnit) , xAxisUnitPrefixes(xAxisUnitPrefixes)
-		, yAxisUnit(yAxisUnit) , yAxisUnitPrefixes(yAxisUnitPrefixes)
-		, xAxis( xMaxOrg, 1, 0, Utils::CAxis::TVerticalAlign::BOTTOM )
-		, yAxis( yMaxOrg, 1, 0, Utils::CAxis::TVerticalAlign::TOP )
+		, xAxis( xMaxOrg, 1, xAxisUnit, xAxisUnitPrefixes, 0, Utils::CAxis::TVerticalAlign::BOTTOM )
+		, yAxis( yMaxOrg, 1, yAxisUnit, yAxisUnitPrefixes, 0, Utils::CAxis::TVerticalAlign::TOP )
 		, M(IdentityTransf)
 		// - all data shown by default
 		, percentile(10100) { // invalid, must call SetPercentile !
@@ -228,25 +330,30 @@
 		xAxis.SetZoomFactor( xAxis.GetZoomFactorToFitWidth(szChartBodyUnits.cx,30) );
 			const XFORM xAxisTransf={ (float)szChartBodyUnits.cx/xAxis.GetUnitCount(), 0, 0, 1, margin.L, rcClient.Height()/Utils::LogicalUnitScaleFactor-margin.B };
 			::SetWorldTransform( dc, &xAxisTransf );
-			xAxis.Draw( dc, szChartBody.cx, xAxisUnit, xAxisUnitPrefixes, fontAxes, -szChartBodyUnits.cy, gridPen );
+			xAxis.Draw( dc, szChartBody.cx, fontAxes, -szChartBodyUnits.cy, gridPen );
 		yAxis.SetZoomFactor( yAxis.GetZoomFactorToFitWidth(szChartBodyUnits.cy,30) );
 			const XFORM yAxisTransf={ 0, -(float)szChartBodyUnits.cy/yAxis.GetUnitCount(), 1, 0, xAxisTransf.eDx, xAxisTransf.eDy };
 			::SetWorldTransform( dc, &yAxisTransf );
-			yAxis.Draw( dc, szChartBody.cy, yAxisUnit, yAxisUnitPrefixes, fontAxes, szChartBodyUnits.cx, gridPen );
+			yAxis.Draw( dc, szChartBody.cy, fontAxes, szChartBodyUnits.cx, gridPen );
 		// - setting transformation to correctly draw all Series
 		::SetWorldTransform( dc, &IdentityTransf );
 		const XFORM valuesTransf={ xAxisTransf.eM11/(1<<xAxis.GetZoomFactor()), 0, 0, yAxisTransf.eM12/(1<<yAxis.GetZoomFactor()), xAxisTransf.eDx, xAxisTransf.eDy };
 		M=valuesTransf;
 	}
 
-	void CChartView::CXyDisplayInfo::DrawCursorAt(HDC dc,const POINT &ptClient,const CRect &rcClient){
+	POINT CChartView::CXyDisplayInfo::SetCursorPos(HDC dc,const POINT &ptClient,const CRect &rcClient){
 		// indicades the positions of the cursor, given its position in the Display's client area
+		// - base
+		const POINT result=__super::SetCursorPos( dc, ptClient, rcClient );
 		// - determining the XY-values at which the cursor points
-		const POINT value=InverselyTransform( ptClient/Utils::LogicalUnitScaleFactor );
+		const POINT value =	snapped.graphics!=nullptr
+							? ((PCXyGraphics)snapped.graphics)->GetPoint( snapped.itemIndex )
+							: InverselyTransform( result/Utils::LogicalUnitScaleFactor );
 		// - drawing cursor indicators
 		Utils::ScaleLogicalUnit(dc);
-		xAxis.DrawCursorAt( dc, value.x );
-		yAxis.DrawCursorAt( dc, value.y );
+		xAxis.SetCursorPos( dc, value.x );
+		yAxis.SetCursorPos( dc, value.y );
+		return result;
 	}
 
 	POINT CChartView::CXyDisplayInfo::Transform(long x,long y) const{

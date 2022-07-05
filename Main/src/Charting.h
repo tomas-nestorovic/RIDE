@@ -19,19 +19,24 @@
 		};
 
 		class CPainter; // forward
+		class CDisplayInfo; // forward
 
 		typedef const class CGraphics abstract{
 		protected:
 			CGraphics();
 		public:
 			bool visible;
+			LPCTSTR name; // used for cursor snapping
 
+			inline bool SupportsCursorSnapping() const{ return name!=nullptr; }
+			virtual POINT SnapCursorToNearestItem(const CDisplayInfo &di,const CPoint &ptClient,int &rOutItemIndex) const;
 			virtual void DrawAsync(const CPainter &p) const=0;
 		} *PCGraphics;
 
 		typedef const class CXyGraphics abstract:public CGraphics{
 		public:
 			virtual void GetDrawingLimits(WORD percentile,TLogValue &rOutMaxX,TLogValue &rOutMaxY) const; // in hundredths (e.g. "2345" means 23.45)
+			virtual const POINT &GetPoint(int index) const;
 		} *PCXyGraphics;
 
 		class CXyPointSeries:public CXyGraphics{
@@ -43,6 +48,7 @@
 			CXyPointSeries(DWORD nPoints,const POINT *points,HPEN hVertexPen);
 
 			void GetDrawingLimits(WORD percentile,TLogValue &rOutMaxX,TLogValue &rOutMaxY) const override; // in hundredths (e.g. "2345" means 23.45)
+			const POINT &GetPoint(int index) const override;
 			void DrawAsync(const CPainter &p) const override;
 			CHistogram CreateXyHistogram() const;
 			CHistogram CreateYxHistogram() const;
@@ -57,13 +63,20 @@
 
 		class CXyOrderedBarSeries:public CXyPointSeries{
 		public:
-			CXyOrderedBarSeries(DWORD nPoints,const POINT *points,HPEN hLinePen);
+			CXyOrderedBarSeries(DWORD nPoints,const POINT *points,HPEN hLinePen,LPCTSTR name=nullptr);
 
 			void GetDrawingLimits(WORD percentile,TLogValue &rOutMaxX,TLogValue &rOutMaxY) const override; // in hundredths (e.g. "2345" means 23.45)
+			POINT SnapCursorToNearestItem(const CDisplayInfo &di,const CPoint &ptClient,int &rOutItemIndex) const override;
 			void DrawAsync(const CPainter &p) const override;
 		};
 
 		class CDisplayInfo abstract{
+		protected:
+			bool snapToNearestItem;
+			struct{
+				PCGraphics graphics;
+				int itemIndex;
+			} snapped;
 		public:
 			const UINT menuResourceId;
 			const TMargin margin;
@@ -72,16 +85,15 @@
 
 			CDisplayInfo(UINT menuResourceId,RCMargin margin,const PCGraphics graphics[],BYTE nGraphics);
 
+			inline bool WantSnapToNearestItem() const{ return snapToNearestItem; }
 			virtual void DrawBackground(HDC dc,const CRect &rcClient)=0;
-			virtual void DrawCursorAt(HDC dc,const POINT &ptClient,const CRect &rcClient)=0;
+			virtual POINT SetCursorPos(HDC dc,const POINT &ptClient,const CRect &rcClient);
 			virtual bool OnCmdMsg(CChartView &cv,UINT nID,int nCode,PVOID pExtra);
 		};
 
 		class CXyDisplayInfo:public CDisplayInfo{
 			const Utils::CRidePen gridPen;
 			const Utils::CRideFont &fontAxes;
-			const TCHAR xAxisUnit,yAxisUnit;
-			const LPCTSTR xAxisUnitPrefixes,yAxisUnitPrefixes;
 			const TLogValue xMaxOrg, yMaxOrg;
 			Utils::CAxis xAxis, yAxis;
 			WORD percentile; // in hundredths (e.g. "2345" means 23.45)
@@ -99,7 +111,7 @@
 			inline const Utils::CAxis &GetAxisX() const{ return xAxis; }
 			inline const Utils::CAxis &GetAxisY() const{ return yAxis; }
 			void DrawBackground(HDC dc,const CRect &rcClient) override;
-			void DrawCursorAt(HDC dc,const POINT &ptClient,const CRect &rcClient) override;
+			POINT SetCursorPos(HDC dc,const POINT &ptClient,const CRect &rcClient) override;
 			POINT Transform(long x,long y) const;
 			inline POINT Transform(const POINT &pt) const{ return Transform( pt.x, pt.y ); }
 			RECT Transform(const RECT &rc) const;

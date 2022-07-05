@@ -329,7 +329,7 @@
 							if (IsFeatureShown(TCursorFeatures::TIME)){
 								::MoveToEx( dc, x, -500, nullptr );
 								::LineTo( dc, x, 500 );
-								const int nLabelChars=timeline.TimeToReadableString(cursorTime,label);
+								const int nLabelChars=timeline.ValueToReadableString(cursorTime,label);
 								const SIZE sz=font.GetTextSize( label, nLabelChars );
 								const HGDIOBJ hBmp0=::SelectObject( dcMem, ::CreateCompatibleBitmap(dc,sz.cx,sz.cy) );
 									::TextOut( dcMem, 0,0, label,nLabelChars );
@@ -342,7 +342,7 @@
 								tr.TruncateCurrentTime();
 								const TLogTime a=tr.GetCurrentTime(), z=tr.ReadTime();
 								const int xa=timeline.GetUnitCount(a-scrollTime), xz=timeline.GetUnitCount(z-scrollTime);
-								const int nLabelChars=timeline.TimeToReadableString(z-a,label);
+								const int nLabelChars=timeline.ValueToReadableString(z-a,label);
 								const SIZE sz=font.GetTextSize( label, nLabelChars );
 								const HGDIOBJ hBmp0=::SelectObject( dcMem, ::CreateCompatibleBitmap(dc,sz.cx,sz.cy) );
 									::TextOut( dcMem, 0,0, label,nLabelChars );
@@ -360,7 +360,7 @@
 								const int i=GetInspectionWindow(cursorTime);
 								const TLogTime a=inspectionWindows[i-1].tEnd, z=inspectionWindows[i].tEnd;
 								const int xa=timeline.GetUnitCount(a-scrollTime), xz=timeline.GetUnitCount(z-scrollTime);
-								const int nLabelChars=timeline.TimeToReadableString(z-a,label);
+								const int nLabelChars=timeline.ValueToReadableString(z-a,label);
 								const SIZE sz=font.GetTextSize( label, nLabelChars );
 								const HGDIOBJ hBmp0=::SelectObject( dcMem, ::CreateCompatibleBitmap(dc,sz.cx,sz.cy) );
 									::TextOut( dcMem, 0,0, label,nLabelChars );
@@ -1491,7 +1491,7 @@
 									pLastItem++->y=it->second;
 								}
 								const auto xySeries=CChartView::CXyOrderedBarSeries(
-									pLastItem-data, data, barPen
+									pLastItem-data, data, barPen, _T("Flux")
 								);
 							const CChartView::PCGraphics graphics[]={ &xySeries };
 							CChartDialog(

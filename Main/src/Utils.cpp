@@ -691,27 +691,24 @@ namespace Utils{
 
 
 
+	const TCHAR CAxis::NoPrefixes[12]={};
 	const TCHAR CAxis::CountPrefixes[]=_T("   kkkMMMBBB"); // no-prefix, thousand, million, billion
 	const CRideFont CAxis::FontWingdings( FONT_WINGDINGS, 120 );
 
-	CAxis::CAxis(TLogValue logLength,TLogTime logValuePerUnit,BYTE initZoomFactor,TVerticalAlign ticksAndLabelsAlign)
+	CAxis::CAxis(TLogValue logLength,TLogTime logValuePerUnit,TCHAR unit,LPCTSTR unitPrefixes,BYTE initZoomFactor,TVerticalAlign ticksAndLabelsAlign)
 		// ctor
-		: logLength(logLength) , logValuePerUnit(logValuePerUnit)
+		: logLength(logLength+1) , logValuePerUnit(logValuePerUnit)
 		, logCursorPos(-1) // cursor indicator hidden
 		, ticksAndLabelsAlign(ticksAndLabelsAlign)
+		, unit(unit) , unitPrefixes(unitPrefixes)
 		, zoomFactor(initZoomFactor) {
+		ASSERT( unitPrefixes!=nullptr ); // use NoPrefixes instead of Nullptr
 	}
 
-	BYTE CAxis::Draw(HDC dc,long nVisiblePixels,TCHAR unit,LPCTSTR unitPrefixes,const CRideFont &font,int primaryGridLength,HPEN hPrimaryGridPen,PLogTime pOutVisibleStart,PLogTime pOutVisibleEnd){
+	BYTE CAxis::Draw(HDC dc,long nVisiblePixels,const CRideFont &font,int primaryGridLength,HPEN hPrimaryGridPen,PLogTime pOutVisibleStart,PLogTime pOutVisibleEnd){
 		// draws an Axis starting at current origin; returns index into the UnitPrefixes indicating which prefix was used to draw the Axis
 		// - determinining the primary granuality of the Axis
 		TCHAR label[32];
-		if (unit=='\0'){ // no Unit?
-			static constexpr TCHAR NoPrefixes[12]={};
-			if (!unitPrefixes)
-				unitPrefixes=NoPrefixes;
-		}else
-			ASSERT( unitPrefixes!=nullptr );
 		TLogValue intervalBig=1, iUnitPrefix=0;
 		for( TLogValue v=logLength; intervalBig<logLength; intervalBig*=10 ){
 			::wsprintf( label, _T("%d %c%c"), v, unitPrefixes[iUnitPrefix], unit );
@@ -806,7 +803,7 @@ namespace Utils{
 	}
 
 	void CAxis::SetLength(TLogValue newLogLength){
-		logCursorPos=std::min( logCursorPos, logLength=newLogLength );
+		logCursorPos=std::min( logCursorPos, logLength=newLogLength+1 );
 	}
 
 	BYTE CAxis::GetZoomFactorToFitWidth(int nUnits,BYTE zoomFactorMax) const{
@@ -833,7 +830,7 @@ namespace Utils{
 		::StrokePath(dc);
 	}
 
-	void CAxis::DrawCursorAt(HDC dc,TLogValue newLogPos){
+	void CAxis::SetCursorPos(HDC dc,TLogValue newLogPos){
 		// sets logical position of the cursor indicator
 		if (ticksAndLabelsAlign==TVerticalAlign::NONE)
 			return;
@@ -853,6 +850,26 @@ namespace Utils{
 		dcState.RevertFrom( dc, iSavedDc );
 	}
 
+	int CAxis::ValueToReadableString(TLogValue logValue,PTCHAR buffer) const{
+		// converts specified Value to an easy-to-read string, returning its length
+		BYTE unitPrefix=0;
+		div_t d={ logValue, 0 };
+		while (d.quot>=1000)
+			d=div(d.quot,1000), unitPrefix+=3;
+		int nChars=::wsprintf( buffer, _T("%d.%03d"), d.quot, d.rem );
+		while (buffer[nChars-1]=='0') // removing trail zeroes
+			nChars--;
+		nChars-=buffer[nChars-1]=='.'; // removing trail floating point
+		return	nChars+::wsprintf( buffer+nChars, _T(" %c%c"), unitPrefixes[unitPrefix], unit );
+	}
+
+	CString CAxis::ValueToReadableString(TLogValue logValue) const{
+		// converts specified Value to an easy-to-read string
+		TCHAR buffer[80];
+		ValueToReadableString( logValue, buffer );
+		return buffer;
+	}
+
 
 
 
@@ -864,29 +881,16 @@ namespace Utils{
 
 	CTimeline::CTimeline(TLogTime logTimeLength,TLogTime logTimePerUnit,BYTE initZoomFactor)
 		// ctor
-		: CAxis( logTimeLength, logTimePerUnit, initZoomFactor ) {
+		: CAxis( logTimeLength, logTimePerUnit, 's', TimePrefixes, initZoomFactor ) {
 	}
 
 	const TCHAR CTimeline::TimePrefixes[]=_T("nnnµµµmmm   "); // nano, micro, milli, no-prefix
-
-	int CTimeline::TimeToReadableString(TLogTime logTime,PTCHAR buffer) const{
-		// converts specified Time to string with same level of detail as Drawn on the timeline
-		BYTE unitPrefix=0;
-		div_t d={ logTime, 0 };
-		while (d.quot>=1000)
-			d=div(d.quot,1000), unitPrefix+=3;
-		int nChars=::wsprintf( buffer, _T("%d.%03d"), d.quot, d.rem );
-		while (buffer[nChars-1]=='0') // removing trail zeroes
-			nChars--;
-		nChars-=buffer[nChars-1]=='.'; // removing trail floating point
-		return	nChars+::wsprintf( buffer+nChars, _T(" %cs"), TimePrefixes[unitPrefix] );
-	}
 
 	void CTimeline::Draw(HDC dc,const CRideFont &font,PLogTime pOutVisibleStart,PLogTime pOutVisibleEnd){
 		// draws a HORIZONTAL Timeline starting at current origin
 		CRect rcClient;
 		::GetClientRect( ::WindowFromDC(dc), &rcClient );
-		__super::Draw( dc, rcClient.Width(), 's', TimePrefixes, font, 0, nullptr, pOutVisibleStart, pOutVisibleEnd );
+		__super::Draw( dc, rcClient.Width(), font, 0, nullptr, pOutVisibleStart, pOutVisibleEnd );
 	}
 
 

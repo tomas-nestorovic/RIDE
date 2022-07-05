@@ -795,6 +795,8 @@ BEGIN
         MENUITEM "Show 99.85 percentile\tCtrl+3", ID_STANDARD
         MENUITEM "Show percentile...\tCtrl+4",  ID_NUMBER
         MENUITEM SEPARATOR
+        MENUITEM "Snap to nearest item",        ID_ALIGN
+        MENUITEM SEPARATOR
         MENUITEM "Close\tEsc",                  IDCANCEL
     END
 END
