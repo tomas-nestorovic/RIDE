@@ -480,6 +480,13 @@
 				// - passing the focus over to the View
 				::SetFocus( chartView.m_hWnd );
 				return 0;
+			case WM_SETCURSOR:
+				// cursor must be updated
+				if (LOWORD(lParam)==HTCLIENT){
+					::SetCursor( app.LoadStandardCursor(IDC_CROSS) );
+					return TRUE;
+				}
+				break;
 		}
 		return __super::WindowProc(msg,wParam,lParam);
 	}
