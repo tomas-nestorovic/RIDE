@@ -853,6 +853,7 @@
 				}
 				const PInternalTrack pit=CInternalTrack::CreateFrom( *this, trw ); // this is time-consuming, so it's out of locked section
 				EXCLUSIVELY_LOCK_THIS_IMAGE();
+				ASSERT(!rit);
 				if (rit) // deleting whatever Track that emerged between the Image and Device locks
 					delete rit;
 				rit=pit;
@@ -887,6 +888,8 @@
 				switch (params.calibrationAfterError){
 					case TParams::TCalibrationAfterError::ONCE_PER_CYLINDER:
 						// calibrating only once for the whole Cylinder
+						if (lastCalibratedCylinder==cyl) // already calibrated?
+							break;
 						nRecoveryTrials=0;
 						//fallthrough
 					case TParams::TCalibrationAfterError::FOR_EACH_SECTOR:
