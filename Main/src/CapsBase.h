@@ -125,6 +125,7 @@
 			WORD firstSectorTime:1;
 			short firstSectorMicroseconds;
 
+			TCorrections(); // no Corrections
 			TCorrections(LPCTSTR iniSection,LPCTSTR iniName=_T("crt"));
 
 			void Save(LPCTSTR iniSection,LPCTSTR iniName=_T("crt")) const;

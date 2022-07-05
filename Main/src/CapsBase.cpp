@@ -1401,6 +1401,12 @@ invalidTrack:
 
 
 
+	CCapsBase::TCorrections::TCorrections()
+		// ctor of "no" Corrections
+		: valid(false)
+		, use(false) {
+	}
+	
 	CCapsBase::TCorrections::TCorrections(LPCTSTR iniSection,LPCTSTR iniName)
 		// ctor
 		// - the defaults
