@@ -111,10 +111,27 @@
 		::SelectObject( p.dc, hPen0 );
 	}
 
-	CChartView::CHistogram CChartView::CXyPointSeries::CreateYxHistogram() const{
+	CChartView::CHistogram CChartView::CXyPointSeries::CreateYxHistogram(int mergeFilter) const{
 		// creates histogram of Y values
 		CHistogram tmp;
 		for( DWORD n=nPoints; n>0; tmp.AddValue(points[--n].y) );
+		if (mergeFilter>0)
+			for( auto it=tmp.begin(); it!=tmp.end(); ){
+				auto itNext=it;
+				if (++itNext==tmp.end())
+					break;
+				if (itNext->first-it->first>mergeFilter) // values far away enough?
+					it=itNext;
+				else // add lower count to bigger count
+					if (it->second>=itNext->second){
+						it->second+=itNext->second;
+						tmp.erase(itNext);
+					}else{
+						itNext->second+=it->second;
+						tmp.erase(it);
+						it=itNext;
+					}
+			}
 		return tmp;
 	}
 

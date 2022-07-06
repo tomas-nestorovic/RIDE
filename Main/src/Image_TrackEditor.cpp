@@ -1484,7 +1484,7 @@
 								const Utils::CRidePen barPen( 2, 0x2020ff );
 								const auto h=CChartView::CXyPointSeries(
 									pLastItem-data, data, barPen
-								).CreateYxHistogram();
+								).CreateYxHistogram(1); // due to integral rounding, individual Times may be off by 1; amending for this by merging neighboring Times
 								pLastItem=data;
 								for( auto it=h.cbegin(); it!=h.cend(); it++ ){
 									pLastItem->x=it->first;

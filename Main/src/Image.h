@@ -539,6 +539,7 @@
 			void __cdecl ShowModal(LPCTSTR format,...) const;
 		//#ifdef _DEBUG
 			void SaveCsv(LPCTSTR filename) const;
+			void SaveDeltaCsv(LPCTSTR filename) const;
 		//#endif
 		};
 

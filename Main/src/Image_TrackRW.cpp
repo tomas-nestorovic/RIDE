@@ -605,6 +605,13 @@
 		for( DWORD i=0; i<nLogTimes; i++ )
 			Utils::WriteToFileFormatted( f, "%d\n", logTimes[i] );		
 	}
+
+	void CImage::CTrackReader::SaveDeltaCsv(LPCTSTR filename) const{
+		CFile f( filename, CFile::modeWrite|CFile::modeCreate );
+		TLogTime tPrev=0;
+		for( DWORD i=0; i<nLogTimes; tPrev=logTimes[i++] )
+			Utils::WriteToFileFormatted( f, "%d\n", logTimes[i]-tPrev );		
+	}
 //#endif
 
 

@@ -50,8 +50,7 @@
 			void GetDrawingLimits(WORD percentile,TLogValue &rOutMaxX,TLogValue &rOutMaxY) const override; // in hundredths (e.g. "2345" means 23.45)
 			const POINT &GetPoint(int index) const override;
 			void DrawAsync(const CPainter &p) const override;
-			CHistogram CreateXyHistogram() const;
-			CHistogram CreateYxHistogram() const;
+			CHistogram CreateYxHistogram(int mergeFilter=0) const;
 		};
 
 		class CXyBrokenLineSeries:public CXyPointSeries{
