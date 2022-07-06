@@ -1305,12 +1305,12 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 			const WORD sectorLength;
 			TLogTime nNanoseconds;
 
-			TInterruption(const PBackgroundActionCancelable pAction,TLatencyParams &lp)
+			TInterruption(const PBackgroundActionCancelable pAction,const TLatencyParams &lp)
 				// ctor
 				: pAction(pAction)
 				, fdd(lp.fdd)
 				, sectorId(lp.sectorId) , sectorLength(lp.fdd->GetOfficialSectorLength(lp.sectorId.lengthCode))
-				, rCyl(lp.cylinder) , rHead(lp.head) // a healthy Track yet to be found
+				, rCyl(lp.cylinder) , rHead(lp.head) // a healthy Track
 				, sectorDataToWrite( ::VirtualAlloc(nullptr,SECTOR_LENGTH_MAX,MEM_COMMIT,PAGE_READWRITE) )
 				, nsAccuracy(lp.nsAccuracy) , nNanoseconds(0) {
 				::memset( sectorDataToWrite, TEST_BYTE, sectorLength );

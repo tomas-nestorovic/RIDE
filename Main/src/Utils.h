@@ -384,6 +384,7 @@ namespace Utils{
 		void SetZoomFactor(BYTE newZoomFactor);
 		int ValueToReadableString(TLogValue logValue,PTCHAR buffer) const;
 		CString ValueToReadableString(TLogValue logValue) const;
+		inline CString CursorValueToReadableString() const{ return ValueToReadableString(logCursorPos); }
 	};
 
 	class CTimeline:public CAxis{

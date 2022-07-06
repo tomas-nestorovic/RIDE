@@ -445,7 +445,7 @@
 
 				inline PCBit GetBits() const{ return pBits; }
 				inline DWORD GetBitCount() const{ return nBits; }
-				int GetShortestEditScript(const CBitSequence &theirs,CDiffBase::TScriptItem *pOutScript,DWORD nScriptItemsMax,PActionProgress pap=nullptr) const;
+				int GetShortestEditScript(const CBitSequence &theirs,CDiffBase::TScriptItem *pOutScript,DWORD nScriptItemsMax,CActionProgress &ap) const;
 				void ScriptToLocalDiffs(const CDiffBase::TScriptItem *pScript,int nScriptItems,TRegion *pOutDiffs) const;
 				DWORD ScriptToLocalRegions(const CDiffBase::TScriptItem *pScript,int nScriptItems,TRegion *pOutRegions,COLORREF regionColor) const;
 				void InheritFlagsFrom(const CBitSequence &theirs,const CDiffBase::TScriptItem *pScript,DWORD nScriptItems) const;
@@ -709,6 +709,6 @@
 	#define EXCLUSIVELY_LOCK_IMAGE(rImg)	EXCLUSIVELY_LOCK(rImg)
 	#define EXCLUSIVELY_LOCK_THIS_IMAGE()	EXCLUSIVELY_LOCK_IMAGE(*this)
 
-	#define PREVENT_FROM_DESTRUCTION(rObj)	const Utils::CExclusivelyLocked locker( (rObj).destructionLocker )
+	#define PREVENT_FROM_DESTRUCTION(rObj)	const Utils::CExclusivelyLocked dlocker( (rObj).destructionLocker )
 
 #endif // IMAGE_H
