@@ -393,6 +393,18 @@
 		xAxis.SetLength(xMax), yAxis.SetLength(yMax);
 	}
 
+	CString CChartView::CXyDisplayInfo::GetStatus() const{
+		// composes a string representing actual display status
+		const CString x=xAxis.CursorValueToReadableString(), y=yAxis.CursorValueToReadableString();
+		CString status;
+		#define XY_STATUS	_T("x = %s,  y = %s")
+		if (snapped.graphics!=nullptr)
+			status.Format( _T("(%s),  ") XY_STATUS, snapped.graphics->name, (LPCTSTR)x, (LPCTSTR)y );
+		else
+			status.Format( XY_STATUS, (LPCTSTR)x, (LPCTSTR)y );
+		return status;
+	}
+
 	bool CChartView::CXyDisplayInfo::OnCmdMsg(CChartView &cv,UINT nID,int nCode,PVOID pExtra){
 		// command processing
 		switch (nCode){
@@ -493,13 +505,15 @@
 				painter.drawingId++;
 				break;
 			}
-			case WM_MOUSEMOVE:{
+			case WM_MOUSEMOVE:
 				// mouse moved
-				RECT rcClient;
-				GetClientRect(&rcClient);
-				painter.di.DrawCursorAt( CClientDC(this), CPoint(lParam), rcClient );
+				if (BYTE nGraphics=painter.di.nGraphics){
+					RECT rcClient;
+					GetClientRect(&rcClient);
+					painter.di.SetCursorPos( CClientDC(this), CPoint(lParam), rcClient );
+					GetParent()->SendMessage( WM_CHART_STATUS_CHANGED, (WPARAM)m_hWnd );
+				}
 				break;
-			}
 		}
 		return __super::WindowProc( msg, wParam, lParam );
 	}
@@ -513,6 +527,8 @@
 
 
 
+
+	const UINT CChartView::WM_CHART_STATUS_CHANGED=::RegisterWindowMessage(_T("WM_CHART_STATUS_CHANGED"));
 
 	CChartView::CChartView(CDisplayInfo &di)
 		// ctor
@@ -579,6 +595,9 @@
 			case WM_CREATE:{
 				const LRESULT result=__super::WindowProc(msg,wParam,lParam);
 				chartView.Create( nullptr, nullptr, AFX_WS_DEFAULT_VIEW&~WS_BORDER|WS_CLIPSIBLINGS, rectDefault, this, AFX_IDW_PANE_FIRST );
+				static constexpr UINT Indicator=ID_SEPARATOR;
+				statusBar.Create(this);
+				statusBar.SetIndicators(&Indicator,1);
 				return result;
 			}
 			case WM_ACTIVATE:
@@ -594,6 +613,11 @@
 					return TRUE;
 				}
 				break;
+			default:
+				if (msg==CChartView::WM_CHART_STATUS_CHANGED){
+					statusBar.SetPaneText( 0, chartView.painter.di.GetStatus() );
+					return 0;
+				}
 		}
 		return __super::WindowProc(msg,wParam,lParam);
 	}

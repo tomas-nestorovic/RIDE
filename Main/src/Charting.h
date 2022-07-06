@@ -88,6 +88,7 @@
 			inline bool WantSnapToNearestItem() const{ return snapToNearestItem; }
 			virtual void DrawBackground(HDC dc,const CRect &rcClient)=0;
 			virtual POINT SetCursorPos(HDC dc,const POINT &ptClient,const CRect &rcClient);
+			virtual CString GetStatus() const=0;
 			virtual bool OnCmdMsg(CChartView &cv,UINT nID,int nCode,PVOID pExtra);
 		};
 
@@ -118,6 +119,7 @@
 			POINT InverselyTransform(const POINT &pt) const;
 			inline WORD GetPercentile() const{ return percentile; }
 			void SetPercentile(WORD newPercentile);
+			CString GetStatus() const override;
 			bool OnCmdMsg(CChartView &cv,UINT nID,int nCode,PVOID pExtra) override;
 		};
 
@@ -139,6 +141,8 @@
 		void PostNcDestroy() override;
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 	public:
+		static const UINT WM_CHART_STATUS_CHANGED;
+
 		CChartView(CDisplayInfo &di);
 
 		inline const CDisplayInfo &GetDisplayInfo() const{ return painter.di; }
@@ -152,6 +156,7 @@
 	class CChartFrame:public CFrameWnd{
 	protected:
 		CChartView chartView;
+		CStatusBar statusBar;
 
 		BOOL PreCreateWindow(CREATESTRUCT &cs) override;
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
