@@ -427,6 +427,12 @@ namespace Utils{
 		inline bool operator!=(int i) const{
 			return i*rem!=quot;
 		}
+		inline TRationalNumber Simplify() const{
+			TRationalNumber result=*this;
+			while (((result.quot|result.rem)&1)==0)
+				result.quot>>=1, result.rem>>=1;
+			return result;
+		}
 	};
 
 	inline int &operator*=(int &lhs,const TRationalNumber &rhs){
@@ -439,6 +445,9 @@ namespace Utils{
 		return	TRationalNumber( rhs.rem*lhs, rhs.quot );
 	}
 	inline TRationalNumber operator/(long lhs,const TRationalNumber &rhs){
+		return	TRationalNumber( rhs.rem*lhs, rhs.quot );
+	}
+	inline TRationalNumber operator/(long long lhs,const TRationalNumber &rhs){
 		return	TRationalNumber( rhs.rem*lhs, rhs.quot );
 	}
 	inline POINT operator/(const POINT &pt,const TRationalNumber &rhs){

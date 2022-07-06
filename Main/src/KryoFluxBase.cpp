@@ -249,12 +249,12 @@
 		DWORD indexCounter;
 	};
 
-	#define MASTER_CLOCK_DEFAULT	(18432000*73/14/2)
-	#define SAMPLE_CLOCK_DEFAULT	(MASTER_CLOCK_DEFAULT/2)
-	#define INDEX_CLOCK_DEFAULT		(MASTER_CLOCK_DEFAULT/16)
+	static const Utils::TRationalNumber MasterClockDefault( 18432000*73, 14*2 );
+	static const Utils::TRationalNumber SampleClockDefault=(MasterClockDefault/2).Simplify();
+	static const Utils::TRationalNumber IndexClockDefault=(MasterClockDefault/16).Simplify();
 
 	DWORD CKryoFluxBase::TimeToStdSampleCounter(TLogTime t){
-		return (LONGLONG)t*SAMPLE_CLOCK_DEFAULT/TIME_SECOND(1);
+		return SampleClockDefault*t/TIME_SECOND(1);
 	}
 
 	CImage::CTrackReaderWriter CKryoFluxBase::StreamToTrack(LPBYTE rawBytes,DWORD nBytes) const{
@@ -370,11 +370,11 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 											isKryofluxStream|=::strstr( param, "KryoFlux" )!=nullptr;
 										else if (!::strncmp(param,"sck=",4)){
 											const double tmp=::atof(param+4); // a custom Sample-Clock value in defined ...
-											if (std::floor(tmp)!=SAMPLE_CLOCK_DEFAULT) // ... and it is different from the Default
+											if (std::floor(tmp)!=(int)SampleClockDefault) // ... and it is different from the Default
 												sck=tmp;
 										}else if (!::strncmp(param,"ick=",4)){
 											const double tmp=::atof(param+4); // a custom Index-Clock value in defined ...
-											if (std::floor(tmp)!=INDEX_CLOCK_DEFAULT) // ... and it is different from the Default
+											if (std::floor(tmp)!=(int)IndexClockDefault) // ... and it is different from the Default
 												ick=tmp;
 										}
 									}
@@ -440,7 +440,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 			if (pis-inStreamData>=nearestIndexPulsePos){
 				const DWORD indexSampleCounter=totalSampleCounter+indexPulses[nearestIndexPulse].sampleCounter;
 				if (sck==0) // default Sample-Clock, allowing for relatively precise computation of absolute timing
-					result.AddIndexTime( (LONGLONG)TIME_SECOND(1)*indexSampleCounter/SAMPLE_CLOCK_DEFAULT ); // temporary 64-bit precision even on 32-bit machines
+					result.AddIndexTime( (LONGLONG)TIME_SECOND(1)*indexSampleCounter/SampleClockDefault ); // temporary 64-bit precision even on 32-bit machines
 				else // custom Sample-Clock, involving floating-point number computation
 					result.AddIndexTime( (double)TIME_SECOND(1)*indexSampleCounter/sck ); // temporary 64-bit precision even on 32-bit machines
 				nearestIndexPulsePos= ++nearestIndexPulse<nIndexPulses ? indexPulses[nearestIndexPulse].posInStreamData : -1;
@@ -448,7 +448,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 			// . adding the flux into the Buffer
 			totalSampleCounter+=sampleCounter;
 			if (sck==0) // default Sample-Clock, allowing for relatively precise computation of absolute timing
-				*pLogTime++= (LONGLONG)TIME_SECOND(1)*totalSampleCounter/SAMPLE_CLOCK_DEFAULT; // temporary 64-bit precision even on 32-bit machines
+				*pLogTime++= (LONGLONG)TIME_SECOND(1)*totalSampleCounter/SampleClockDefault; // temporary 64-bit precision even on 32-bit machines, and mathematical rounding
 			else // custom Sample-Clock, involving floating-point number computation
 				*pLogTime++= (double)TIME_SECOND(1)*totalSampleCounter/sck; // temporary 64-bit precision even on 32-bit machines
 			sampleCounter=0;
@@ -466,7 +466,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 			0x0d, 0x02, sizeof(TIndexPulse),
 			inStreamDataLength,
 			CKryoFluxBase::TimeToStdSampleCounter(indexTime)-totalSampleCounter, // temporary 64-bit precision even on 32-bit machines
-			(LONGLONG)(indexTime-firstIndexTime)*INDEX_CLOCK_DEFAULT/TIME_SECOND(1) // temporary 64-bit precision even on 32-bit machines
+			IndexClockDefault*(indexTime-firstIndexTime)/TIME_SECOND(1) // temporary 64-bit precision even on 32-bit machines
 		};
 		::memcpy( outBuffer, &indexBlock, sizeof(indexBlock) );
 		return sizeof(indexBlock);
