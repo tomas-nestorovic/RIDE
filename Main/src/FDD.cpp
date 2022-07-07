@@ -449,11 +449,6 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 		::lstrcpy( devicePatternName, deviceName );
 		LOG_ACTION(_T("CFDD::ctor"));
 		::ZeroMemory( internalTracks, sizeof(internalTracks) );
-		// - creating a temporary file in order to not break the Document-View architecture
-		TCHAR tmpFileName[MAX_PATH];
-		::GetTempPath(MAX_PATH,tmpFileName);
-		::GetTempFileName( tmpFileName, nullptr, FALSE, tmpFileName );
-		const CFile fTmp( m_strPathName=tmpFileName, CFile::modeCreate );
 		// - connecting to the Drive
 		Reset();
 	}
@@ -467,8 +462,6 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 		__freeInternalTracks__();
 		// - freeing virtual memory
 		::VirtualFree(dataBuffer,0,MEM_RELEASE);
-		// - deleting the temporary file (created in ctor to not break the Document-View architecture)
-		CFile::Remove(m_strPathName);
 	}
 
 
@@ -2199,7 +2192,7 @@ error:		return LOG_ERROR(::GetLastError());
 		}
 	}
 
-	void CFDD::SetPathName(LPCTSTR,BOOL bAddToMRU){
-		const Utils::CVarBackup<CString> tmpFile0=m_strPathName;
-		__super::SetPathName( devicePatternName, bAddToMRU );
+	void CFDD::SetPathName(LPCTSTR lpszPathName,BOOL bAddToMRU){
+		__super::SetPathName( lpszPathName, bAddToMRU );
+		m_strPathName=lpszPathName;
 	}
