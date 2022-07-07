@@ -816,7 +816,7 @@
 	}
 		// - scanning (forced recovery from errors right during scanning)
 		const Utils::CCallocPtr<BYTE> tmpDataBuffer(KF_BUFFER_CAPACITY);
-		for( char nRecoveryTrials=3; true; nRecoveryTrials-- ){
+		for( char nRecoveryTrials=7; true; nRecoveryTrials-- ){
 			// . issuing a Request to the KryoFlux device to read fluxes in the specified Track
 			PBYTE p=tmpDataBuffer;
 	{		EXCLUSIVELY_LOCK_DEVICE();
@@ -865,7 +865,7 @@
 			// . attempting to return good data
 			EXCLUSIVELY_LOCK_THIS_IMAGE(); // !!! see also below this->{Lock,Unlock}
 			if (rit){ // may be Null if, e.g., device manually reset, disconnected, etc.
-				if (IsTrackHealthy(cyl,head) || !rit->nSectors // Track explicitly healthy or without Sectors
+				if (GetCountOfHealthySectors(cyl,head)>0 || !rit->nSectors // Track at least partly healthy or without known Sectors
 					||
 					params.calibrationAfterError==TParams::TCalibrationAfterError::NONE // calibration disabled
 				)
