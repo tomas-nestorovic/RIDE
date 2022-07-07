@@ -406,8 +406,9 @@
 		BYTE i=0;
 		TMsdos7DirectoryTraversal dt(this,currentDir);
 		while (dt.__existsNextEntry__())
-			if (( tmpBuf[i=++i&(LONG_FILE_NAME_ENTRIES_COUNT_MAX-1)]=(PDirectoryEntry)dt.entry )==de)
-				break;
+			if (dt.entryType!=TDirectoryTraversal::TDirEntryType::WARNING)
+				if (( tmpBuf[i=++i&(LONG_FILE_NAME_ENTRIES_COUNT_MAX-1)]=(PDirectoryEntry)dt.entry )==de)
+					break;
 		if (dt.entry!=de) return 0; // given File doesn't feature a long name
 		// - testing that found DirectoryEntries really comprise a long name
 		BYTE sequenceNumber=1;
