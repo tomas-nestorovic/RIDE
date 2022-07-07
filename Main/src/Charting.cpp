@@ -249,12 +249,12 @@
 		::ZeroMemory( &snapped, sizeof(snapped) );
 	}
 
-	POINT CChartView::CDisplayInfo::SetCursorPos(HDC,const POINT &ptClient,const CRect &){
+	POINT CChartView::CDisplayInfo::SetCursorPos(HDC,const POINT &ptClientUnits){
 		// returns the client point the input cursor has been actually set to
 		snapped.graphics=nullptr;
 		if (snapToNearestItem)
 			if (nGraphics>0){
-				const POINT &cursor=ptClient;
+				const POINT &cursor=ptClientUnits;
 				struct{
 					POINT pt;
 					long manhattanDistance;
@@ -274,7 +274,7 @@
 				if (snapped.manhattanDistance<INT_MAX) // snapped to an item?
 					return snapped.pt;
 			}
-		return ptClient;
+		return ptClientUnits;
 	}
 
 	bool CChartView::CDisplayInfo::OnCmdMsg(CChartView &cv,UINT nID,int nCode,PVOID pExtra){
@@ -358,14 +358,14 @@
 		M=valuesTransf;
 	}
 
-	POINT CChartView::CXyDisplayInfo::SetCursorPos(HDC dc,const POINT &ptClient,const CRect &rcClient){
+	POINT CChartView::CXyDisplayInfo::SetCursorPos(HDC dc,const POINT &ptClientUnits){
 		// indicades the positions of the cursor, given its position in the Display's client area
 		// - base
-		const POINT result=__super::SetCursorPos( dc, ptClient, rcClient );
+		const POINT result=__super::SetCursorPos( dc, ptClientUnits );
 		// - determining the XY-values at which the cursor points
 		const POINT value =	snapped.graphics!=nullptr
 							? ((PCXyGraphics)snapped.graphics)->GetPoint( snapped.itemIndex )
-							: InverselyTransform( result/Utils::LogicalUnitScaleFactor );
+							: InverselyTransform(result);
 		// - drawing cursor indicators
 		Utils::ScaleLogicalUnit(dc);
 		xAxis.SetCursorPos( dc, value.x );
@@ -524,10 +524,8 @@
 			}
 			case WM_MOUSEMOVE:
 				// mouse moved
-				if (BYTE nGraphics=painter.di.nGraphics){
-					RECT rcClient;
-					GetClientRect(&rcClient);
-					painter.di.SetCursorPos( CClientDC(this), CPoint(lParam), rcClient );
+				if (painter.di.nGraphics){
+					painter.di.SetCursorPos( CClientDC(this), CPoint(lParam)/Utils::LogicalUnitScaleFactor );
 					GetParent()->SendMessage( WM_CHART_STATUS_CHANGED, (WPARAM)m_hWnd );
 				}
 				break;

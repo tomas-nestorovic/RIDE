@@ -86,7 +86,7 @@
 
 			inline bool WantSnapToNearestItem() const{ return snapToNearestItem; }
 			virtual void DrawBackground(HDC dc,const CRect &rcClient)=0;
-			virtual POINT SetCursorPos(HDC dc,const POINT &ptClient,const CRect &rcClient);
+			virtual POINT SetCursorPos(HDC dc,const POINT &ptClientUnits);
 			virtual CString GetStatus() const=0;
 			virtual bool OnCmdMsg(CChartView &cv,UINT nID,int nCode,PVOID pExtra);
 		};
@@ -111,7 +111,7 @@
 			inline const Utils::CAxis &GetAxisX() const{ return xAxis; }
 			inline const Utils::CAxis &GetAxisY() const{ return yAxis; }
 			void DrawBackground(HDC dc,const CRect &rcClient) override;
-			POINT SetCursorPos(HDC dc,const POINT &ptClient,const CRect &rcClient) override;
+			POINT SetCursorPos(HDC dc,const POINT &ptClientUnits) override;
 			POINT Transform(long x,long y) const;
 			inline POINT Transform(const POINT &pt) const{ return Transform( pt.x, pt.y ); }
 			RECT Transform(const RECT &rc) const;
