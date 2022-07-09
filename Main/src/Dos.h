@@ -237,10 +237,20 @@
 			SizeOnDisk
 		};
 
+		struct TEmptyCylinderParams sealed{
+			static UINT AFX_CDECL Thread(PVOID pCancelableAction);
+
+			const CDos *const dos;
+			const TCylinder cylA,cylZInclusive;
+
+			TEmptyCylinderParams(const CDos *dos,TCylinder cylA,TCylinder cylZInclusive);
+
+			void AddAction(CBackgroundMultiActionCancelable &bmac) const;
+		};
+
 		const PImage image;
 		const PCProperties properties;
 	private:
-		static UINT AFX_CDECL CheckCylindersAreEmpty_thread(PVOID pCancelableAction);
 		static UINT AFX_CDECL __fillEmptySectors_thread__(PVOID _pCancelableAction);
 		static UINT AFX_CDECL __fillEmptyLastSectors_thread__(PVOID _pCancelableAction);
 		static UINT AFX_CDECL __fillEmptyDirEntries_thread__(PVOID _pCancelableAction);
@@ -358,7 +368,7 @@
 		TStdWinError GetFirstEmptyHealthySector(bool skipBadSectors,TPhysicalAddress &rOutChs) const;
 		TStdWinError AreStdCylindersEmpty(TCylinder cylA,TCylinder cylZInclusive) const;
 		bool AddStdCylindersToFatAsEmpty(TCylinder cylA,TCylinder cylZInclusive,CActionProgress &ap) const;
-		bool RemoveStdCylindersFromFat(TCylinder cylA,TCylinder cylZInclusive) const;
+		bool RemoveStdCylindersFromFat(TCylinder cylA,TCylinder cylZInclusive,CActionProgress &ap) const;
 		// file system
 		virtual bool GetFileNameOrExt(PCFile file,PPathString pOutName,PPathString pOutExt) const=0;
 		virtual CString GetFilePresentationNameAndExt(PCFile file) const;

@@ -6,9 +6,12 @@
 		, cylA(0) , cylZInclusive(0) {
 	}
 
-	UINT AFX_CDECL CUnformatDialog::__unformatTracks_thread__(PVOID _pCancelableAction){
+	#define DOS		params.dos
+	#define IMAGE	DOS->image
+
+	UINT AFX_CDECL CUnformatDialog::UnformatTracks_thread(PVOID pCancelableAction){
 		// thread to unformat specified Tracks
-		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
 		const TParams &ufp=*(TParams *)pAction->GetParams();
 		const TTrack nTracks=(ufp.cylZInclusive+1-ufp.cylA)*(ufp.specificHeadOnly!=nullptr?1:ufp.dos->formatBoot.nHeads);
 		pAction->SetProgressTarget( nTracks );
@@ -31,18 +34,24 @@
 		return ERROR_SUCCESS;
 	}
 
-	TStdWinError CUnformatDialog::TParams::UnformatTracks() const{
-		// unformats given Tracks; returns Windows standard i/o error
-		if (dos->image->ReportWriteProtection())
-			return ERROR_WRITE_PROTECT;
-		const TStdWinError err=	CBackgroundActionCancelable(
-									__unformatTracks_thread__,
-									this,
-									THREAD_PRIORITY_BELOW_NORMAL
-								).Perform();
-		if (err!=ERROR_SUCCESS)
-			Utils::FatalError(_T("Cannot unformat a track"),err);
-		return err;
+	UINT AFX_CDECL CUnformatDialog::UnregisterStdCylinders_thread(PVOID pCancelableAction){
+		// thread to remove std cylinders optionally from boot and FAT
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
+		const CUnformatDialog &d=*(CUnformatDialog *)pAction->GetParams();
+		pAction->SetProgressTarget(200);
+		if (d.updateBoot==BST_CHECKED){
+			// requested to update Format in Boot Sector
+			TCylinder &r=d.DOS->formatBoot.nCylinders;
+			if (1+d.params.cylZInclusive>=r)
+				r=std::min( r, d.params.cylA );
+			d.DOS->FlushToBootSector();
+		}
+		pAction->IncrementProgress(100);
+		if (d.removeTracksFromFat==BST_CHECKED)
+			// requested to include newly formatted Tracks into FAT
+			d.DOS->RemoveStdCylindersFromFat( d.params.cylA, d.params.cylZInclusive, pAction->CreateSubactionProgress(100) ); // no error checking as its assumed that some Cylinders couldn't be marked in (eventually shrunk) FAT as Unavailable
+		pAction->IncrementProgress(100);
+		return pAction->TerminateWithSuccess();
 	}
 
 
@@ -81,9 +90,6 @@
 
 	#define UNFORMAT_CUSTOM		nullptr
 
-	#define DOS		params.dos
-	#define IMAGE	DOS->image
-
 	void CUnformatDialog::PreInitDialog(){
 		// dialog initialization
 		// - base
@@ -111,13 +117,8 @@
 		DDX_Check( pDX, ID_BOOT		, updateBoot );
 		DDX_Check( pDX, ID_FAT		, removeTracksFromFat );
 		if (pDX->m_bSaveAndValidate){
-			// . checking that all Cylinders to unformat are Empty
-			if (ERROR_EMPTY!=DOS->AreStdCylindersEmpty( params.cylA, params.cylZInclusive )){
-				Utils::Information( DOS_ERR_CANNOT_UNFORMAT, DOS_ERR_CYLINDERS_NOT_EMPTY, DOS_MSG_CYLINDERS_UNCHANGED );
-				pDX->PrepareEditCtrl(ID_CYLINDER_N);
-				pDX->Fail();
 			// . checking that new format is acceptable
-			}else{
+			{
 				TFormat f=DOS->formatBoot;
 				if (f.nCylinders<=params.cylZInclusive+1)
 					f.nCylinders=std::min( f.nCylinders, params.cylA );
@@ -183,24 +184,26 @@
 	TStdWinError CUnformatDialog::ShowModalAndUnformatStdCylinders(){
 		// unformats Cylinders using Parameters obtained from confirmed UnformatDialog (CDos-derivate and UnformatDialog guarantee that all parameters are valid); returns Windows standard i/o error
 		if (IMAGE->ReportWriteProtection()) return ERROR_WRITE_PROTECT;
-		LOG_DIALOG_DISPLAY(_T("CUnformatDialog"));
-		if (LOG_DIALOG_RESULT(DoModal())!=IDOK) return ERROR_CANCELLED;
-		// - checking that all Cylinders to unformat are empty
-		//nop (tested in unformat dialog)
-		// - carrying out the unformatting
-		if (const TStdWinError err=params.UnformatTracks()){ // nullptr = all Heads
-			::SetLastError(err);
-			return LOG_ERROR(err);
-		}
-		// - removing unformatted Cylinders from Boot Sector and FAT (if commanded so)
-		if (updateBoot){
-			TCylinder &r=DOS->formatBoot.nCylinders;
-			if (1+params.cylZInclusive>=r)
-				r=std::min( r, params.cylA );
-			DOS->FlushToBootSector();
-		}
-		if (removeTracksFromFat)
-			DOS->RemoveStdCylindersFromFat( params.cylA, params.cylZInclusive ); // no error checking as its assumed that some Cylinders couldn't be marked in (eventually shrunk) FAT as Unavailable
+		do{
+			LOG_DIALOG_DISPLAY(_T("CUnformatDialog"));
+			if (LOG_DIALOG_RESULT(DoModal())!=IDOK)
+				return ERROR_CANCELLED;
+			CBackgroundMultiActionCancelable bmac(THREAD_PRIORITY_BELOW_NORMAL);
+				const CDos::TEmptyCylinderParams ecp( params.dos, params.cylA, params.cylZInclusive );
+				ecp.AddAction(bmac);
+				bmac.AddAction( UnformatTracks_thread, &params, _T("Unformatting") );
+				if (updateBoot|removeTracksFromFat)
+					bmac.AddAction( UnregisterStdCylinders_thread, this, _T("Updating disk") );
+			if (const TStdWinError err=bmac.Perform())
+				if (bmac.GetCurrentAction()==0){ // error in checking if disk region empty?
+					Utils::Information( DOS_ERR_CANNOT_UNFORMAT, DOS_ERR_CYLINDERS_NOT_EMPTY, DOS_MSG_CYLINDERS_UNCHANGED );
+					continue; // show this Dialog once again so the user can amend
+				}else{
+					::SetLastError(err);
+					return LOG_ERROR(err);
+				}
+			break;
+		}while (true);
 		IMAGE->UpdateAllViews(nullptr); // although updated already in UnformatTracks, here calling too as FormatBoot might have changed since then
 		return ERROR_SUCCESS;
 	}

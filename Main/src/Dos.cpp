@@ -157,16 +157,16 @@ reportError:Utils::Information(buf);
 		return ERROR_EMPTY;
 	}
 
-	struct TEmptyCylinderParams sealed{
-		const CDos *const dos;
-		const TCylinder cylA,cylZInclusive;
+	CDos::TEmptyCylinderParams::TEmptyCylinderParams(const CDos *dos,TCylinder cylA,TCylinder cylZInclusive)
+		: dos(dos)
+		, cylA(cylA) , cylZInclusive(cylZInclusive) {
+	}
 
-		TEmptyCylinderParams(const CDos *dos,TCylinder cylA,TCylinder cylZInclusive)
-			: dos(dos)
-			, cylA(cylA) , cylZInclusive(cylZInclusive) {
-		}
-	};
-	UINT AFX_CDECL CDos::CheckCylindersAreEmpty_thread(PVOID pCancelableAction){
+	void CDos::TEmptyCylinderParams::AddAction(CBackgroundMultiActionCancelable &bmac) const{
+		bmac.AddAction( Thread, this, _T("Checking region empty") );
+	}
+
+	UINT AFX_CDECL CDos::TEmptyCylinderParams::Thread(PVOID pCancelableAction){
 		// thread to determine if given Cylinders are empty; return ERROR_SUCCESS/ERROR_NOT_EMPTY or another Windows standard i/o error
 		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
 		const TEmptyCylinderParams &ecp=*(TEmptyCylinderParams *)pAction->GetParams();
@@ -190,7 +190,7 @@ reportError:Utils::Information(buf);
 		// checks if specified Cylinders are empty (i.e. none of their standard "official" Sectors is allocated, non-standard sectors ignored); returns Windows standard i/o error
 		if (cylA<=cylZInclusive)
 			if (const TStdWinError err=CBackgroundActionCancelable( // unlike this method, the Thread returns ERROR_SUCCESS if cyls empty!
-					CheckCylindersAreEmpty_thread,
+					TEmptyCylinderParams::Thread,
 					&TEmptyCylinderParams( this, cylA, cylZInclusive ),
 					THREAD_PRIORITY_BELOW_NORMAL
 				).Perform()
@@ -280,7 +280,7 @@ reportError:Utils::Information(buf);
 		const TEmptyCylinderParams ecp( this, rd.params.cylinder0, rd.params.format.nCylinders );
 		if (rd.params.cylinder0){
 			// request to NOT format from the beginning of disk - all targeted Tracks must be empty
-			bmac.AddAction( CheckCylindersAreEmpty_thread, &ecp, _T("Checking region empty") );
+			ecp.AddAction(bmac);
 		}else{
 			// request to format from the beginning of disk - warning that all data will be destroyed
 			if (!Utils::QuestionYesNo(_T("About to format the whole image and destroy all data.\n\nContinue?!"),MB_DEFBUTTON2))
@@ -454,12 +454,13 @@ reportError:Utils::Information(buf);
 		return result;
 	}
 
-	bool CDos::RemoveStdCylindersFromFat(TCylinder cylA,TCylinder cylZInclusive) const{
+	bool CDos::RemoveStdCylindersFromFat(TCylinder cylA,TCylinder cylZInclusive,CActionProgress &ap) const{
 		// records standard "official" Sectors in given Cylinders as Unavailable
 		bool result=true; // assumption (all Tracks successfully removed from FAT)
 		TSectorId ids[(TSector)-1];
 		TPhysicalAddress chs;
-		for( chs.cylinder=cylA; chs.cylinder<=cylZInclusive; chs.cylinder++ )
+		ap.SetProgressTarget( cylZInclusive+1-cylA );
+		for( chs.cylinder=cylA; chs.cylinder<=cylZInclusive; ap.UpdateProgress(++chs.cylinder-cylA) )
 			for( chs.head=0; chs.head<formatBoot.nHeads; chs.head++ )
 				for( TSector n=GetListOfStdSectors(chs.cylinder,chs.head,ids); n>0; ){
 					chs.sectorId=ids[--n];

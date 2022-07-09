@@ -110,7 +110,7 @@
 
 	void CActionProgress::IncrementProgress(int increment){
 		ASSERT( increment>0 );
-		UpdateProgress( currProgress+1 );
+		UpdateProgress( currProgress+increment );
 	}
 
 	CActionProgress CActionProgress::CreateSubactionProgress(int thisProgressIncrement,int subactionProgressTarget) const{
