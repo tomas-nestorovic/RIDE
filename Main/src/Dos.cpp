@@ -217,19 +217,6 @@ reportError:Utils::Information(buf);
 		}
 	};
 
-	TStdWinError CDos::__showDialogAndFormatStdCylinders__(CFormatDialog &rd){
-		// formats Cylinders using parameters obtained from the confirmed FormatDialog (CDos-derivate and FormatDialog guarantee that all parameters are valid); returns Windows standard i/o error
-		if (image->ReportWriteProtection()) return ERROR_WRITE_PROTECT;
-		LOG_DIALOG_DISPLAY(_T("CFormatDialog"));
-		if (LOG_DIALOG_RESULT(rd.DoModal())!=IDOK){
-			::SetLastError(ERROR_CANCELLED);
-			return ERROR_CANCELLED;
-		}
-		const TStdWinError err=__formatStdCylinders__(rd);
-		::SetLastError(err);
-		return LOG_ERROR(err);
-	}
-
 	static UINT AFX_CDECL InitializeEmptyMedium_thread(PVOID pCancelableAction){
 		// thread to initialize a fresh formatted Medium, using TFmtParams
 		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
@@ -273,54 +260,68 @@ reportError:Utils::Information(buf);
 		return pAction->TerminateWithSuccess();
 	}
 
-	TStdWinError CDos::__formatStdCylinders__(const CFormatDialog &rd){
+	TStdWinError CDos::ShowDialogAndFormatStdCylinders(CFormatDialog &rd){
 		// formats Cylinders using parameters obtained from the confirmed FormatDialog (CDos-derivate and FormatDialog guarantee that all parameters are valid); returns Windows standard i/o error
-		CBackgroundMultiActionCancelable bmac(THREAD_PRIORITY_TIME_CRITICAL); // transparently doing all changes to the disk in waterfall threads
-		// - checking if formatting can proceed
-		const TEmptyCylinderParams ecp( this, rd.params.cylinder0, rd.params.format.nCylinders );
-		if (rd.params.cylinder0){
-			// request to NOT format from the beginning of disk - all targeted Tracks must be empty
-			ecp.AddAction(bmac);
-		}else{
-			// request to format from the beginning of disk - warning that all data will be destroyed
-			if (!Utils::QuestionYesNo(_T("About to format the whole image and destroy all data.\n\nContinue?!"),MB_DEFBUTTON2))
+		if (image->ReportWriteProtection()) return ERROR_WRITE_PROTECT;
+		do{
+			LOG_DIALOG_DISPLAY(_T("CFormatDialog"));
+			if (LOG_DIALOG_RESULT(rd.DoModal())!=IDOK){
+				::SetLastError(ERROR_CANCELLED);
 				return ERROR_CANCELLED;
-			if (pFileManager && pFileManager->m_hWnd)
-				pFileManager->GetListCtrl().DeleteAllItems();
-			if (const TStdWinError err=image->Reset())
-				return err;
-			if (!image->EditSettings(true))
-				return ERROR_CANCELLED;
-			if (const TStdWinError err=image->SetMediumTypeAndGeometry( &rd.params.format, sideMap, properties->firstSectorNumber ))
-				return err;
-		}
-		// - carrying out the formatting
-		TSectorId bufferId[(TSector)-1];	WORD bufferLength[(TSector)-1];
-		for( TSector n=-1; n--; bufferLength[n]=rd.params.format.sectorLength );
-		const TFmtParams fp(
-			this, rd.params,
-			nullptr, // all Heads
-			0, bufferId, bufferLength, // 0 = standard Sectors
-			rd.showReportOnFormatting==BST_CHECKED
-		);
-		bmac.AddAction( FormatTracks_thread, &fp, _T("Formatting cylinders") );
-		// - adding formatted Cylinders to Boot and FAT
-		const CImage::TSaveThreadParams spDevice( image, nullptr );
-		if (!rd.params.cylinder0){
-			// formatted from beginning of disk - updating internal information on Format
-			bmac.AddAction( InitializeEmptyMedium_thread, &fp, _T("Initializing disk") );
-			if (image->properties->IsRealDevice()) // if formatted a real device ...
-				bmac.AddAction( CImage::SaveAllModifiedTracks_thread, &spDevice, _T("Saving initialization") ); // ... immediately saving all Modified Sectors (Boot, FAT, Dir,...)
-		}else{
-			// formatted only selected Cylinders
-			if (rd.updateBoot|rd.addTracksToFat)
-				bmac.AddAction( RegisterAddedCylinders_thread, &rd, _T("Updating disk") );
-		}
-		// - carrying out the batch
-		if (const TStdWinError err=bmac.Perform()){
-			::SetLastError(err);
-			return err;
-		}
+			}
+			CBackgroundMultiActionCancelable bmac(THREAD_PRIORITY_TIME_CRITICAL); // transparently doing all changes to the disk in waterfall threads
+			// . checking if formatting can proceed
+			const TEmptyCylinderParams ecp( this, rd.params.cylinder0, rd.params.format.nCylinders );
+			if (rd.params.cylinder0){
+				// request to NOT format from the beginning of disk - all targeted Tracks must be empty
+				ecp.AddAction(bmac);
+			}else{
+				// request to format from the beginning of disk - warning that all data will be destroyed
+				if (!Utils::QuestionYesNo(_T("About to format the whole image and destroy all data.\n\nContinue?!"),MB_DEFBUTTON2))
+					return ERROR_CANCELLED;
+				if (pFileManager && pFileManager->m_hWnd)
+					pFileManager->GetListCtrl().DeleteAllItems();
+				if (const TStdWinError err=image->Reset())
+					return err;
+				if (!image->EditSettings(true))
+					return ERROR_CANCELLED;
+				if (const TStdWinError err=image->SetMediumTypeAndGeometry( &rd.params.format, sideMap, properties->firstSectorNumber ))
+					return err;
+			}
+			// . carrying out the formatting
+			TSectorId bufferId[(TSector)-1];	WORD bufferLength[(TSector)-1];
+			for( TSector n=-1; n--; bufferLength[n]=rd.params.format.sectorLength );
+			const TFmtParams fp(
+				this, rd.params,
+				nullptr, // all Heads
+				0, bufferId, bufferLength, // 0 = standard Sectors
+				rd.showReportOnFormatting==BST_CHECKED
+			);
+			bmac.AddAction( FormatTracks_thread, &fp, _T("Formatting cylinders") );
+			// . adding formatted Cylinders to Boot and FAT
+			const CImage::TSaveThreadParams spDevice( image, nullptr );
+			if (!rd.params.cylinder0){
+				// formatted from beginning of disk - updating internal information on Format
+				bmac.AddAction( InitializeEmptyMedium_thread, &fp, _T("Initializing disk") );
+				if (image->properties->IsRealDevice()) // if formatted a real device ...
+					bmac.AddAction( CImage::SaveAllModifiedTracks_thread, &spDevice, _T("Saving initialization") ); // ... immediately saving all Modified Sectors (Boot, FAT, Dir,...)
+			}else{
+				// formatted only selected Cylinders
+				if (rd.updateBoot|rd.addTracksToFat)
+					bmac.AddAction( RegisterAddedCylinders_thread, &rd, _T("Updating disk") );
+			}
+			// . carrying out the batch
+			if (const TStdWinError err=bmac.Perform())
+				if (bmac.GetCurrentAction()==0){ // error in checking if disk region empty?
+					Utils::Information( DOS_ERR_CANNOT_FORMAT, DOS_ERR_CYLINDERS_NOT_EMPTY, DOS_MSG_CYLINDERS_UNCHANGED );
+					continue; // show this Dialog once again so the user can amend
+				}else{
+					::SetLastError(err);
+					return LOG_ERROR(err);
+				}
+			// . formatted successfully
+			break;
+		}while (true);
 		image->UpdateAllViews(nullptr); // although updated already in FormatTracks, here calling too as FormatBoot might have changed since then
 		return ERROR_SUCCESS;
 	}

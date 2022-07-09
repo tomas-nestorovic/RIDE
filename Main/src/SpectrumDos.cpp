@@ -51,7 +51,7 @@
 				CFormatDialog d(this, additionalFormats,
 								cylMin&&formatBoot.mediumType!=Medium::UNKNOWN ? FORMAT_ADDITIONAL_COUNT : 0 // AdditionalFormats available only if Image already formatted before
 							);
-				return	__showDialogAndFormatStdCylinders__(d)==ERROR_SUCCESS
+				return	ShowDialogAndFormatStdCylinders(d)==ERROR_SUCCESS
 						? TCmdResult::DONE_REDRAW
 						: TCmdResult::REFUSED;
 			}

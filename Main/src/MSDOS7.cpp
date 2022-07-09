@@ -1167,7 +1167,7 @@
 				return TCmdResult::DONE_REDRAW;			
 			case ID_DOS_FORMAT:
 				// formatting Cylinders
-				if (const TStdWinError err=__showDialogAndFormatStdCylinders__( CFormatDialog(this,nullptr,0) )){
+				if (const TStdWinError err=ShowDialogAndFormatStdCylinders( CFormatDialog(this,nullptr,0) )){
 					Utils::Information( DOS_ERR_CANNOT_FORMAT, err );
 					return TCmdResult::REFUSED;
 				}else

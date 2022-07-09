@@ -7,7 +7,7 @@
 		, addTracksToFat(BST_CHECKED)
 		, showReportOnFormatting(_dos->image->properties->IsRealDevice()?BST_CHECKED:BST_UNCHECKED)
 		, additionalFormats(_additionalFormats) , nAdditionalFormats(_nAdditionalFormats) {
-		params.format=dos->formatBoot; // to initialize Parameters using the first suitable Format; it holds: MediumType==Unknown <=> this is initial formatting of an Image, MediumType!=Unknown <=> any subsequent formatting of the same Image
+		params=dos->properties->stdFormats->params, params.format.mediumType=Medium::UNKNOWN, params.format.codecType=Codec::ANY; // initialization using the first StandardFormat (eventually a Custom one)
 	}
 
 	BEGIN_MESSAGE_MAP(CFormatDialog,CDialog)
@@ -71,7 +71,6 @@
 			CImage::PopulateComboBoxWithCompatibleMedia( GetDlgItemHwnd(ID_MEDIUM), propDos->supportedMedia, dos->image->properties );
 		else
 			CImage::PopulateComboBoxWithCompatibleMedia( GetDlgItemHwnd(ID_MEDIUM), params.format.mediumType, dos->image->properties );
-		params=propDos->stdFormats->params, params.format.mediumType=Medium::UNKNOWN, params.format.codecType=Codec::ANY; // initialization using the first StandardFormat (eventually a Custom one)
 		__onMediumOrEncodingChanged__();
 		// - adjusting interactivity
 		const bool bootSectorAlreadyExists=app.GetMainWindow()->pTdi->GetCurrentTab()!=nullptr;
@@ -129,19 +128,11 @@
 		DDX_Check( pDX, ID_VERIFY_TRACK, addTracksToFat );
 		DDX_Check( pDX, ID_REPORT	, showReportOnFormatting );
 		if (pDX->m_bSaveAndValidate){
-			// . checking that all Cylinders to format are Empty
-			if (params.cylinder0>0 && ERROR_EMPTY!=dos->AreStdCylindersEmpty( params.cylinder0, params.format.nCylinders )){
-				Utils::Information( DOS_ERR_CANNOT_FORMAT, DOS_ERR_CYLINDERS_NOT_EMPTY, DOS_MSG_CYLINDERS_UNCHANGED );
+			// . checking that new format is acceptable
+			const Utils::CVarTempReset<TCylinder> nCyls0( params.format.nCylinders, params.format.nCylinders+1 );
+			if (!dos->ValidateFormatChangeAndReportProblem( updateBoot&&params.cylinder0>0, addTracksToFat&&params.cylinder0>0, params.format )){
 				pDX->PrepareEditCtrl(ID_CYLINDER_N);
 				pDX->Fail();
-			// . checking that new format is acceptable
-			}else{
-				params.format.nCylinders++;
-					if (!dos->ValidateFormatChangeAndReportProblem( updateBoot&&params.cylinder0>0, addTracksToFat&&params.cylinder0>0, params.format )){
-						pDX->PrepareEditCtrl(ID_CYLINDER_N);
-						pDX->Fail();
-					}
-				params.format.nCylinders--;
 			}
 		}else{
 			__recognizeStandardFormat__(); // selecting StandardFormat in ComboBox
@@ -300,13 +291,13 @@
 		// - Recognizing StandardFormat
 		const HWND hFormat=GetDlgItemHwnd(ID_FORMAT);
 		const BYTE nFormatsInTotal=ComboBox_GetCount(hFormat);
-		params.cylinder0=GetDlgItemInt(ID_CYLINDER);
+		const TCylinder cylA=GetDlgItemInt(ID_CYLINDER);
 		const BYTE interleaving=GetDlgItemInt(ID_INTERLEAVE), skew=GetDlgItemInt(ID_SKEW), gap3=GetDlgItemInt(ID_GAP), nAllocationTables=GetDlgItemInt(ID_FAT);
 		const WORD nRootDirectoryEntries=GetDlgItemInt(ID_DIRECTORY);
 		const TFormat f={ Medium::UNKNOWN, Codec::ANY, GetDlgItemInt(ID_CYLINDER_N), GetDlgItemInt(ID_HEAD), GetDlgItemInt(ID_SECTOR), dos->formatBoot.sectorLengthCode, GetDlgItemInt(ID_SIZE), GetDlgComboBoxSelectedValue(ID_CLUSTER) };
 		for( BYTE n=nFormatsInTotal-1; n--; ){ // "-1" = custom format
 			const PCStdFormat psf=(PCStdFormat)ComboBox_GetItemData(hFormat,n);
-			if (psf->params.cylinder0==params.cylinder0 && psf->params.format==f && psf->params.interleaving==interleaving && psf->params.skew==skew && psf->params.gap3==gap3 && psf->params.nAllocationTables==nAllocationTables && psf->params.nRootDirectoryEntries==nRootDirectoryEntries){
+			if (psf->params.cylinder0==cylA && psf->params.format==f && psf->params.interleaving==interleaving && psf->params.skew==skew && psf->params.gap3==gap3 && psf->params.nAllocationTables==nAllocationTables && psf->params.nRootDirectoryEntries==nRootDirectoryEntries){
 				ComboBox_SetCurSel(hFormat,n);
 				return;
 			}

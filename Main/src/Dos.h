@@ -298,8 +298,7 @@
 		void __writeProfileInt__(LPCTSTR entryName,int value) const;
 		bool __getProfileBool__(LPCTSTR entryName,bool defaultValue) const;
 		void __writeProfileBool__(LPCTSTR entryName,bool value) const;
-		TStdWinError __showDialogAndFormatStdCylinders__(CFormatDialog &rd);
-		TStdWinError __formatStdCylinders__(const CFormatDialog &rd);
+		TStdWinError ShowDialogAndFormatStdCylinders(CFormatDialog &rd);
 		bool __fillEmptySpace__(CFillEmptySpaceDialog &rd);
 		bool __verifyVolume__(CVerifyVolumeDialog &rd);
 		LPCTSTR __exportFileData__(PCFile file,CFile *fOut,DWORD nMaxDataBytesToExport) const;
