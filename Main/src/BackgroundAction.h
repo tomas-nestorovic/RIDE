@@ -104,6 +104,7 @@
 		void AddAction(AFX_THREADPROC fnAction,LPCVOID actionParams,LPCTSTR name);
 		void UpdateProgress(int newProgress,TBPFLAG status) const override;
 		inline char GetCurrentAction() const{ return iCurrAction; }
+		inline AFX_THREADPROC GetCurrentFunction() const{ return actions[iCurrAction].fnAction; }
 	};
 
 #endif // BACKGROUNDACTION_H

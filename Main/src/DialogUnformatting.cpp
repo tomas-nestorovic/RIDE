@@ -195,7 +195,7 @@
 				if (updateBoot|removeTracksFromFat)
 					bmac.AddAction( UnregisterStdCylinders_thread, this, _T("Updating disk") );
 			if (const TStdWinError err=bmac.Perform())
-				if (bmac.GetCurrentAction()==0){ // error in checking if disk region empty?
+				if (bmac.GetCurrentFunction()==CDos::TEmptyCylinderParams::Thread){ // error in checking if disk region empty?
 					Utils::Information( DOS_ERR_CANNOT_UNFORMAT, DOS_ERR_CYLINDERS_NOT_EMPTY, DOS_MSG_CYLINDERS_UNCHANGED );
 					continue; // show this Dialog once again so the user can amend
 				}else{

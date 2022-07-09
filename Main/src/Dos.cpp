@@ -312,7 +312,7 @@ reportError:Utils::Information(buf);
 			}
 			// . carrying out the batch
 			if (const TStdWinError err=bmac.Perform())
-				if (bmac.GetCurrentAction()==0){ // error in checking if disk region empty?
+				if (bmac.GetCurrentFunction()==TEmptyCylinderParams::Thread){ // error in checking if disk region empty?
 					Utils::Information( DOS_ERR_CANNOT_FORMAT, DOS_ERR_CYLINDERS_NOT_EMPTY, DOS_MSG_CYLINDERS_UNCHANGED );
 					continue; // show this Dialog once again so the user can amend
 				}else{
