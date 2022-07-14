@@ -1236,14 +1236,13 @@ namespace Utils{
 
 	INT_PTR CRideDialog::DoModal(){
 		// modal processing
+		INT_PTR result;
 		app.m_pMainWnd->BeginModalState(); // block any interaction with the MainWindow
-			CWnd *const pActiveWindowOrg=app.m_pActiveWnd;
 			if (app.m_pActiveWnd) app.m_pActiveWnd->BeginModalState(); // block any interaction with previously active window
-				app.m_pActiveWnd=CWnd::FromHandle(m_hWnd); // let any default message boxes be parented by the Parent
-					CBackgroundActionCancelable::SignalPausedProgress( *this );
-					const INT_PTR result=__super::DoModal();
-				app.m_pActiveWnd=pActiveWindowOrg; 
-			if (app.m_pActiveWnd) app.m_pActiveWnd->EndModalState();
+				CBackgroundActionCancelable::SignalPausedProgress( *this );
+		{		const CVarBackup<CWnd *> pActiveWindowOrg( app.m_pActiveWnd );
+				result=__super::DoModal(); // sets pActiveWindowOrg via PreInitDialog
+		}	if (app.m_pActiveWnd) app.m_pActiveWnd->EndModalState();
 		app.m_pMainWnd->EndModalState();
 		return result;
 	}
