@@ -1666,7 +1666,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 										const auto floppyTypeOrg=fdd->floppyType;
 										fdd->SetDataTransferSpeed( fdd->floppyType=floppyType ); // setting transfer speed according to selected FloppyType
 											fdd->locker.Unlock(); // giving way to parallel thread
-												const TStdWinError err=bmac.Perform();
+												const TStdWinError err=bmac.Perform(true);
 											fdd->locker.Lock();
 											fdd->__freeInternalTracks__();
 										fdd->SetDataTransferSpeed( fdd->floppyType=floppyTypeOrg ); // reverting to original FloppyType

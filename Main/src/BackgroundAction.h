@@ -67,7 +67,7 @@
 		CBackgroundActionCancelable(AFX_THREADPROC fnAction,LPCVOID actionParams,int actionThreadPriority);
 		~CBackgroundActionCancelable();
 
-		TStdWinError Perform();
+		TStdWinError Perform(bool suspendAllViews=false);
 		void SetProgressTarget(int targetProgress) override;
 		void SetProgressTargetInfinity();
 		void UpdateProgress(int newProgress,TBPFLAG status=TBPFLAG::TBPF_NORMAL) const override;

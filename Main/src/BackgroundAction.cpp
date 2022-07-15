@@ -203,14 +203,18 @@
 		return __super::WindowProc(msg,wParam,lParam);
 	}
 
-	TStdWinError CBackgroundActionCancelable::Perform(){
+	TStdWinError CBackgroundActionCancelable::Perform(bool suspendAllViews){
 		// returns the Worker's result; when performing, the actual progress is shown in a modal window
 		// - showing modal dialog and performing the Action
+		if (suspendAllViews)
+			CImage::GetActive()->SetRedrawToAllViews(false);
 		startTime=Utils::CRideTime();
 		DoModal();
 		// - waiting for the already running Worker
 		::WaitForSingleObject( *this, INFINITE );
 		duration=Utils::CRideTime()-startTime;
+		if (suspendAllViews)
+			CImage::GetActive()->SetRedrawToAllViews(true);
 		// - returning the Result
 		DWORD result=ERROR_SUCCESS;
 		::GetExitCodeThread( *this, &result );

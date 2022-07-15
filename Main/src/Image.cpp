@@ -504,6 +504,11 @@ namespace Medium{
 		writeProtected=!writeProtected;
 	}
 
+	void CImage::SetRedrawToAllViews(bool redraw) const{
+		// notifies each of registered whether they should suspend or resume their drawing
+		for( POSITION pos=GetFirstViewPosition(); pos; GetNextView(pos)->SetRedraw(redraw) );
+	}
+
 	bool CImage::ReportWriteProtection() const{
 		// True <=> Image is WriteProtected and a warning window has been shown, otherwise False
 		if (writeProtected){
@@ -640,7 +645,7 @@ namespace Medium{
 									SaveAllModifiedTracks_thread,
 									&TSaveThreadParams( this, lpszPathName ),
 									THREAD_PRIORITY_ABOVE_NORMAL
-								).Perform();
+								).Perform(true);
 		::SetLastError(err);
 		return err==ERROR_SUCCESS;
 	}

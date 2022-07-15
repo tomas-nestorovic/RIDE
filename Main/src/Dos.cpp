@@ -311,7 +311,7 @@ reportError:Utils::Information(buf);
 					bmac.AddAction( RegisterAddedCylinders_thread, &rd, _T("Updating disk") );
 			}
 			// . carrying out the batch
-			if (const TStdWinError err=bmac.Perform())
+			if (const TStdWinError err=bmac.Perform(true))
 				if (bmac.GetCurrentFunction()==TEmptyCylinderParams::Thread){ // error in checking if disk region empty?
 					Utils::Information( DOS_ERR_CANNOT_FORMAT, DOS_ERR_CYLINDERS_NOT_EMPTY, DOS_MSG_CYLINDERS_UNCHANGED );
 					continue; // show this Dialog once again so the user can amend

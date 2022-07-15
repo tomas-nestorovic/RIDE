@@ -256,7 +256,7 @@ nextTrial:	;
 			bmac.AddAction( PrecompensationDetermination_thread, &paramsHead0, _T("Head 0") );
 			const TPrecompThreadParams paramsHead1( cb, 40, 1, nTrials, this );
 			bmac.AddAction( PrecompensationDetermination_thread, &paramsHead1, _T("Head 1") );
-		if (const TStdWinError err=bmac.Perform())
+		if (const TStdWinError err=bmac.Perform(true))
 			return err;
 		// - write pre-compensation parameters successfully determined using the latest Method
 		return ERROR_SUCCESS;

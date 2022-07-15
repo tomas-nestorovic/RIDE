@@ -1118,21 +1118,19 @@ error:				return Utils::FatalError(_T("Cannot dump"),err);
 				bmac.AddAction( __dump_thread__, &d.dumpParams, _T("Dumping to target") );
 				const TSaveThreadParams stp( d.dumpParams.target.get(), d.dumpParams.targetFileName );
 				bmac.AddAction( SaveAllModifiedTracks_thread, &stp, _T("Saving target") );
-			err=bmac.Perform();
-			if (err==ERROR_SUCCESS){
-				// : displaying statistics on SourceTrackErrors
-				if (d.showReport==BST_CHECKED){
-					// | saving to temporary file
-					TCHAR tmpFileName[MAX_PATH];
-					::GetTempPath(MAX_PATH,tmpFileName);
-					::GetTempFileName( tmpFileName, nullptr, FALSE, tmpFileName );
-					d.dumpParams.__exportErroneousTracksToHtml__( CFile(::lstrcat(tmpFileName,_T(".html")),CFile::modeCreate|CFile::modeWrite), bmac.GetDurationTime(), d.realtimeThreadPriority!=BST_UNCHECKED );
-					// | displaying
-					app.GetMainWindow()->OpenWebPage( _T("Dump results"), tmpFileName );
-				}
-				// : reporting success
-				Utils::Information(_T("Dumped successfully."));
-			}else
+			if ( err=bmac.Perform(true) )
 				goto error;
+			// . displaying statistics on SourceTrackErrors
+			if (d.showReport==BST_CHECKED){
+				// : saving to temporary file
+				TCHAR tmpFileName[MAX_PATH];
+				::GetTempPath(MAX_PATH,tmpFileName);
+				::GetTempFileName( tmpFileName, nullptr, FALSE, tmpFileName );
+				d.dumpParams.__exportErroneousTracksToHtml__( CFile(::lstrcat(tmpFileName,_T(".html")),CFile::modeCreate|CFile::modeWrite), bmac.GetDurationTime(), d.realtimeThreadPriority!=BST_UNCHECKED );
+				// : displaying
+				app.GetMainWindow()->OpenWebPage( _T("Dump results"), tmpFileName );
+			}
+			// . reporting success
+			Utils::Information(_T("Dumped successfully."));
 		}
 	}

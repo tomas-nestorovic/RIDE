@@ -698,6 +698,7 @@
 		virtual TStdWinError UnformatTrack(TCylinder cyl,THead head)=0;
 		virtual std::unique_ptr<CSectorDataSerializer> CreateSectorDataSerializer(CHexaEditor *pParentHexaEditor)=0;
 		virtual TStdWinError CreateUserInterface(HWND hTdi);
+		void SetRedrawToAllViews(bool redraw) const;
 		bool ReportWriteProtection() const;
 		void ToggleWriteProtection();
 		void SetPathName(LPCTSTR lpszPathName,BOOL bAddToMRU=TRUE) override;
