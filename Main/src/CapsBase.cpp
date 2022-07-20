@@ -1249,9 +1249,9 @@ invalidTrack:
 			void DoDataExchange(CDataExchange* pDX) override{
 				// exchange of data from and to controls
 				// . Precision
-				int tmp=(params.precision-2)/2;
+				int tmp=params.precision/2-1;
 				DDX_CBIndex( pDX, ID_ROTATION,	tmp );
-				params.precision=(TParams::TPrecision)(2*tmp+2);
+				params.precision=(TParams::TPrecision)((tmp+1)*2);
 				if (!EnableDlgItem( ID_ROTATION, rcb.properties->IsRealDevice() )){
 					CComboBox cb;
 					cb.Attach( GetDlgItemHwnd(ID_ROTATION) );
