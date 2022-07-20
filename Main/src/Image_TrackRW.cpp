@@ -323,7 +323,7 @@
 		return nSectorsFound;
 	}
 
-	WORD CImage::CTrackReader::ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList &rOutParseEvents,CActionProgress &ap){
+	WORD CImage::CTrackReader::ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList &rOutParseEvents,CActionProgress &ap,bool fullAnalysis){
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
 		const int StepGranularity=1000;
 		const BYTE nFullRevolutions=std::max( 0, GetIndexCount()-1 );
@@ -349,6 +349,8 @@
 			}
 			rOutParseEvents.AddCopiesAscendingByStart( peSector );
 		}
+		if (!fullAnalysis)
+			return nSectorsFound;
 		ap.UpdateProgress( 2*StepGranularity );
 		// - Step 3: search for non-formatted areas
 		if (nSectorsFound>0){ // makes sense only if some Sectors found
@@ -567,6 +569,14 @@
 		}
 		// - successfully analyzed
 		return nSectorsFound;
+	}
+	
+	CImage::CTrackReader::CParseEventList CImage::CTrackReader::ScanAndAnalyze(CActionProgress &ap,bool fullAnalysis){
+		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
+		CImage::CTrackReader::CParseEventList peTrack;
+		TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; CImage::CTrackReader::TProfile idProfiles[Revolution::MAX*(TSector)-1]; TFdcStatus statuses[Revolution::MAX*(TSector)-1];
+		ScanAndAnalyze( ids, idEnds, idProfiles, statuses, peTrack, ap, fullAnalysis );
+		return peTrack;
 	}
 
 	TFdcStatus CImage::CTrackReader::ReadData(const TSectorId &id,TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,CParseEventList *pOutParseEvents){
@@ -857,6 +867,14 @@
 
 
 
+	CImage::CTrackReader::CParseEventList::CParseEventList(CParseEventList &r){
+		// copy-ctor implemented as move-ctor
+		BYTE tmp[sizeof(*this)]; // TODO: the following is nasty!
+		::memcpy( tmp, this, sizeof(*this) );
+		::memcpy( this, &r, sizeof(*this) );
+		::memcpy( &r, tmp, sizeof(*this) );
+	}
+	
 	POSITION CImage::CTrackReader::CParseEventList::GetPositionByStart(TLogTime tStartMin,TParseEvent::TType typeFrom,TParseEvent::TType typeTo,POSITION posFrom) const{
 		if (!posFrom)
 			posFrom=GetHeadPosition();
@@ -897,6 +915,17 @@
 
 	bool CImage::CTrackReader::CParseEventList::Contains(TParseEvent::TType type,POSITION posFrom) const{
 		return GetPositionByStart( 0, type, posFrom )!=nullptr;
+	}
+
+	bool CImage::CTrackReader::CParseEventList::IntersectsWith(const TLogTimeInterval &ti) const{
+		for( POSITION pos=GetHeadPosition(); pos; ){
+			const auto &pe=GetNext(pos);
+			if (ti.tEnd<pe.tStart) // no further matches possible as this list is ordered ascending by Start
+				break;
+			if (pe.Contains(ti.tStart) || pe.Contains(ti.tEnd))
+				return true;
+		}
+		return false;
 	}
 
 	void CImage::CTrackReader::CParseEventList::AddCopyAscendingByStart(const TParseEvent &pe){

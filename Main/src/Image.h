@@ -386,6 +386,9 @@
 
 			class CParseEventList:public Utils::CCopyList<TParseEvent>{
 			public:
+				inline CParseEventList(){}
+				CParseEventList(CParseEventList &r); // copy-ctor implemented as move-ctor
+
 				inline POSITION AddHead(const TParseEvent &pe){ return __super::AddHead( pe, pe.size ); }
 				inline POSITION AddTail(const TParseEvent &pe){ return __super::AddTail( pe, pe.size ); }
 				inline POSITION InsertBefore(POSITION pos,const TParseEvent &pe){ return __super::InsertBefore( pos, pe, pe.size ); }
@@ -395,6 +398,7 @@
 				POSITION GetPositionByEnd(TLogTime tEndMin,TParseEvent::TType typeFrom=TParseEvent::NONE,TParseEvent::TType typeTo=TParseEvent::NONE,POSITION posFrom=nullptr) const;
 				POSITION GetPositionByEnd(TLogTime tEndMin,TParseEvent::TType type,POSITION posFrom=nullptr) const;
 				bool Contains(TParseEvent::TType type,POSITION posFrom=nullptr) const;
+				bool IntersectsWith(const TLogTimeInterval &ti) const;
 				void AddCopyAscendingByStart(const TParseEvent &pe);
 				void AddCopiesAscendingByStart(const CParseEventList &list);
 			};
@@ -532,7 +536,8 @@
 			bool ReadBits32(DWORD &rOut);
 			char ReadByte(ULONGLONG &rOutBits,PBYTE pOutValue=nullptr);
 			WORD Scan(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents=nullptr);
-			WORD ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList &rOutParseEvents,CActionProgress &ap);
+			WORD ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList &rOutParseEvents,CActionProgress &ap,bool fullAnalysis=true);
+			CParseEventList ScanAndAnalyze(CActionProgress &ap,bool fullAnalysis=true);
 			TFdcStatus ReadData(const TSectorId &id,TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,CParseEventList *pOutParseEvents);
 			TFdcStatus ReadData(const TSectorId &id,TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,LPBYTE buffer);
 			BYTE __cdecl ShowModal(PCRegion pRegions,DWORD nRegions,UINT messageBoxButtons,bool initAllFeaturesOn,LPCTSTR format,...) const;

@@ -966,20 +966,25 @@ invalidTrack:
 								else if (const auto pBadRegions=Utils::MakeCallocPtr<CTrackReader::TRegion>(vp.nSesItems)){
 									// composition and display of non-overlapping erroneously written regions of the Track
 									const DWORD nBadRegions=writtenBits.ScriptToLocalRegions( pSes, vp.nSesItems, pBadRegions, COLOR_RED );
-									switch (pitWritten->ShowModal( pBadRegions, nBadRegions, MB_ABORTRETRYIGNORE, true, _T("Track %02d.%c verification failed: Review RED-MARKED errors and decide how to proceed!"), cyl, '0'+head )){
-										case IDOK: // ignore
-											err=ERROR_CONTINUE;
+									const auto peTrack=pitWritten->ScanAndAnalyze( CActionProgress::None, false ); // False = only linear, time-inexpensive analysis (thus no need for doing this in parallel)
+									err=ERROR_CONTINUE; // assumption (no intersection with ID or Data fields, thus ignore this error in writing)
+									for( DWORD i=nBadRegions; i>0; )
+										if (peTrack.IntersectsWith(pBadRegions[--i])){
+											switch (pitWritten->ShowModal( pBadRegions, nBadRegions, MB_ABORTRETRYIGNORE, true, _T("Track %02d.%c verification failed: Review RED-MARKED errors and decide how to proceed!"), cyl, '0'+head )){
+												case IDOK: // ignore
+													break;
+												case IDCANCEL:
+													err=ERROR_CANCELLED;
+													break;
+												case IDRETRY:
+													err=ERROR_RETRY;
+													break;
+												default:
+													err=ERROR_FUNCTION_FAILED;
+													break;
+											}
 											break;
-										case IDCANCEL:
-											err=ERROR_CANCELLED;
-											break;
-										case IDRETRY:
-											err=ERROR_RETRY;
-											break;
-										default:
-											err=ERROR_FUNCTION_FAILED;
-											break;
-									}
+										}
 								}else
 									err=ERROR_NOT_ENOUGH_MEMORY;
 							}else
