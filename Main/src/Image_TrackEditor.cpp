@@ -27,6 +27,7 @@
 		const CImage::CTrackReader &tr;
 		const UINT messageBoxButtons;
 		const bool initAllFeaturesOn;
+		const TLogTime tInitScrollTo;
 		TCHAR caption[500];
 		CMainWindow::CDynMenu menu;
 		HANDLE hAutoscrollTimer;
@@ -701,8 +702,11 @@
 				default:
 					ASSERT(FALSE); break; // we shouldn't end up here - all used options must be covered!
 			}
+			// - if specific initial position specified, scrolling to it
+			if (tInitScrollTo>0)
+				timeEditor.SetCenterTime( tInitScrollTo );
 			// - if Regions are specified, navigating to the first of them
-			if (timeEditor.pRegions)
+			else if (timeEditor.pRegions)
 				timeEditor.SetCenterTime( timeEditor.pRegions->tStart );
 			// - if requested, displaying all Features
 			if (initAllFeaturesOn)
@@ -1510,13 +1514,13 @@
 		}
 
 	public:
-		CTrackEditor(const CImage::CTrackReader &tr,PCRegion pRegions,DWORD nRegions,UINT messageBoxButtons,bool initAllFeaturesOn,LPCTSTR captionFormat,va_list argList)
+		CTrackEditor(const CImage::CTrackReader &tr,PCRegion pRegions,DWORD nRegions,UINT messageBoxButtons,bool initAllFeaturesOn,TLogTime tScrollTo,LPCTSTR captionFormat,va_list argList)
 			// ctor
 			// - base
 			: Utils::CRideDialog( IDR_TRACK_EDITOR, CWnd::FromHandle(app.GetEnabledActiveWindow()) )
 			// - initialization
 			, tr(tr)
-			, menu( IDR_TRACK_EDITOR ) , messageBoxButtons(messageBoxButtons) , initAllFeaturesOn(initAllFeaturesOn)
+			, menu( IDR_TRACK_EDITOR ) , messageBoxButtons(messageBoxButtons) , initAllFeaturesOn(initAllFeaturesOn) , tInitScrollTo(tScrollTo)
 			, timeEditor( tr, pRegions, nRegions )
 			, hAutoscrollTimer(INVALID_HANDLE_VALUE) {
 			iwInfo.oneOkPercent=50;
@@ -1532,10 +1536,10 @@
 
 
 
-	BYTE __cdecl CImage::CTrackReader::ShowModal(PCRegion pRegions,DWORD nRegions,UINT messageBoxButtons,bool initAllFeaturesOn,LPCTSTR format,...) const{
+	BYTE __cdecl CImage::CTrackReader::ShowModal(PCRegion pRegions,DWORD nRegions,UINT messageBoxButtons,bool initAllFeaturesOn,TLogTime tScrollTo,LPCTSTR format,...) const{
 		va_list argList;
 		va_start( argList, format );
-			const BYTE result=CTrackEditor( *this, pRegions, nRegions, messageBoxButtons, initAllFeaturesOn, format, argList ).DoModal();
+			const BYTE result=CTrackEditor( *this, pRegions, nRegions, messageBoxButtons, initAllFeaturesOn, tScrollTo, format, argList ).DoModal();
 		va_end(argList);
 		return result;
 	}
@@ -1543,6 +1547,6 @@
 	void __cdecl CImage::CTrackReader::ShowModal(LPCTSTR format,...) const{
 		va_list argList;
 		va_start( argList, format );
-			CTrackEditor( *this, nullptr, 0, MB_OK, false, format, argList ).DoModal();
+			CTrackEditor( *this, nullptr, 0, MB_OK, false, 0, format, argList ).DoModal();
 		va_end(argList);
 	}

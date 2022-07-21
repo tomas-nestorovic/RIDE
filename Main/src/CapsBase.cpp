@@ -970,7 +970,7 @@ invalidTrack:
 									err=ERROR_CONTINUE; // assumption (no intersection with ID or Data fields, thus ignore this error in writing)
 									for( DWORD i=nBadRegions; i>0; )
 										if (peTrack.IntersectsWith(pBadRegions[--i])){
-											switch (pitWritten->ShowModal( pBadRegions, nBadRegions, MB_ABORTRETRYIGNORE, true, _T("Track %02d.%c verification failed: Review RED-MARKED errors and decide how to proceed!"), cyl, '0'+head )){
+											switch (pitWritten->ShowModal( pBadRegions, nBadRegions, MB_ABORTRETRYIGNORE, true, pBadRegions[i].tStart, _T("Track %02d.%c verification failed: Review RED-MARKED errors (use J and L keys) and decide how to proceed!"), cyl, '0'+head )){
 												case IDOK: // ignore
 													break;
 												case IDCANCEL:

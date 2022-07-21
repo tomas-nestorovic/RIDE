@@ -540,7 +540,7 @@
 			CParseEventList ScanAndAnalyze(CActionProgress &ap,bool fullAnalysis=true);
 			TFdcStatus ReadData(const TSectorId &id,TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,CParseEventList *pOutParseEvents);
 			TFdcStatus ReadData(const TSectorId &id,TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,LPBYTE buffer);
-			BYTE __cdecl ShowModal(PCRegion pRegions,DWORD nRegions,UINT messageBoxButtons,bool initAllFeaturesOn,LPCTSTR format,...) const;
+			BYTE __cdecl ShowModal(PCRegion pRegions,DWORD nRegions,UINT messageBoxButtons,bool initAllFeaturesOn,TLogTime tScrollTo,LPCTSTR format,...) const;
 			void __cdecl ShowModal(LPCTSTR format,...) const;
 		//#ifdef _DEBUG
 			void SaveCsv(LPCTSTR filename) const;

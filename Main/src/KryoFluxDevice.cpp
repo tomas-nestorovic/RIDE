@@ -691,11 +691,53 @@
 		//CTrackReader::CBitSequence( *pit, 0, pit->CreateResetProfile(), pit->GetIndexTime(1) ).SaveCsv("r:\\format.txt");
 		pit->FlushSectorBuffers(); // convert all modifications into flux transitions
 		// - extracting the "best" Revolution into a temporary Track
-		//TODO better
 		CTrackReaderWriter trw( pit->GetTimesCount(), CTrackReader::TDecoderMethod::FDD_KEIR_FRASER, false );
 		trw.AddIndexTime(0);
-			const TLogTime tIndex0=pit->RewindToIndex(0), tIndex1=pit->GetIndexTime(1);
-			while (*pit && pit->GetCurrentTime()<tIndex1)
+			// . finding the Revolution with the most of healthy Sectors
+			struct{
+				BYTE i;
+				TSector nHealthySectors;
+				bool hasDataOverIndex;
+			} bestRev={};
+			for( BYTE i=1; i<pit->GetIndexCount(); i++ ){
+				const BYTE r=i-1;
+				TSector nHealthySectors=0; bool hasDataOverIndex=false; // assumptions
+				for( TSector s=0; s<pit->nSectors; s++ ){
+					pit->ReadSector( pit->sectors[s], r );
+					const auto &rev=pit->sectors[s].revolutions[r];
+					if (pit->GetIndexTime(i)<rev.dataEndTime){ // data over index?
+						hasDataOverIndex=true;
+						if (i+1==pit->GetIndexCount()){
+							nHealthySectors=0; // can't use the last Revolution if it has data over index
+							break;
+						}
+					}
+					nHealthySectors +=	rev.fdcStatus==TFdcStatus::WithoutError // healthy data
+										||
+										rev.fdcStatus==TFdcStatus::DeletedDam; // Deleted but still healthy data
+				}
+				if (bestRev.nHealthySectors<nHealthySectors) // better Revolution found?
+					bestRev.i=r, bestRev.nHealthySectors=nHealthySectors, bestRev.hasDataOverIndex=hasDataOverIndex;
+				if (bestRev.nHealthySectors==pit->nSectors) // best possible Revolution found?
+					break;
+			}
+			// . extracting the minimum number of fluxes into the temporary Track
+			const TLogTime tIndex0=pit->RewindToIndex(bestRev.i), tIndex1=pit->GetIndexTime(bestRev.i+1);
+			TLogTime tWritingEnd=tIndex1;
+			if (bestRev.hasDataOverIndex){
+				const auto &firstSector=pit->sectors[0];
+				TLogTime tOverhang=INT_MAX;
+				for( BYTE r=0; r<firstSector.nRevolutions; r++ ){
+					TLogTime tIdEnd=firstSector.revolutions[r].idEndTime;
+					if (tIdEnd>0){ // Sector found in the Revolution?
+						tIdEnd-=pit->GetIndexTime(r); // relative to the Revolution beginning
+						if (tIdEnd<tOverhang)
+							tOverhang=tIdEnd;
+					}
+				}
+				tWritingEnd+= tOverhang - 500*pit->GetCurrentProfile().iwTimeMax; // "-N" = 12x sync 0x00, 3x distorted 0xA1, 1x mark Byte, 4x ID Bytes, 2x CRC Bytes, making 22 Bytes in total, or 176 data bits, or 352 cells on the disk, allowing for some reserve
+			}
+			while (*pit && pit->GetCurrentTime()<tWritingEnd)
 				trw.AddTime( pit->ReadTime()-tIndex0 );
 		trw.AddIndexTime( tIndex1-tIndex0 );
 		if (floppyType!=Medium::UNKNOWN){
