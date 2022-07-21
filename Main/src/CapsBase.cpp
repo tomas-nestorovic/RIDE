@@ -1408,7 +1408,7 @@ invalidTrack:
 
 	CCapsBase::TCorrections::TCorrections()
 		// ctor of "no" Corrections
-		: valid(false)
+		: valid(true)
 		, use(false) {
 	}
 	

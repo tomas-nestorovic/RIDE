@@ -207,14 +207,16 @@
 		// returns the Worker's result; when performing, the actual progress is shown in a modal window
 		// - showing modal dialog and performing the Action
 		if (suspendAllViews)
-			CImage::GetActive()->SetRedrawToAllViews(false);
+			if (CImage *const active=CImage::GetActive())
+				active->SetRedrawToAllViews(false);
 		startTime=Utils::CRideTime();
 		DoModal();
 		// - waiting for the already running Worker
 		::WaitForSingleObject( *this, INFINITE );
 		duration=Utils::CRideTime()-startTime;
 		if (suspendAllViews)
-			CImage::GetActive()->SetRedrawToAllViews(true);
+			if (CImage *const active=CImage::GetActive())
+				active->SetRedrawToAllViews(true);
 		// - returning the Result
 		DWORD result=ERROR_SUCCESS;
 		::GetExitCodeThread( *this, &result );
