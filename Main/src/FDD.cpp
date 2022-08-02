@@ -1334,6 +1334,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 			}
 			WORD __getNumberOfWrittenBytes__() const{
 				// counts and returns the number of TestBytes actually written in the most recent call to __writeSectorData__
+				::memset( fdd->dataBuffer, ~TEST_BYTE, sectorLength );
 				PCBYTE p=(PCBYTE)fdd->dataBuffer;
 				for( fdd->__bufferSectorData__(rCyl,rHead,&sectorId,sectorLength,&TInternalTrack(fdd,rCyl,rHead,Codec::MFM,1,&sectorId,(PCLogTime)FDD_350_SECTOR_GAP3),0,&TFdcStatus()); *p==TEST_BYTE; p++ );
 				return p-(PCBYTE)fdd->dataBuffer;
@@ -1342,23 +1343,43 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 				// sets this Interruption so that the specified NumberOfBytes is written to current Track; returns Windows standard i/o error
 				// : initialization using the default NumberOfNanoseconds
 				nNanoseconds=TIME_MICRO(20);
-				// : increasing the NumberOfNanoseconds until the specified NumberOfBytes is written for the first time
-				do{
-					if (pAction->Cancelled) return ERROR_CANCELLED;
-					nNanoseconds+=nsAccuracy;
+				// : increasing the NumberOfNanoseconds until the specified NumberOfBytes is repetitively written
+				#define LATENCY_REPRODUCTION_COUNT 5
+				for( BYTE nReproductions=0; nReproductions<LATENCY_REPRODUCTION_COUNT; ){
+					if (pAction->Cancelled)
+						return ERROR_CANCELLED;
 					if (const TStdWinError err=__writeSectorData__(nBytes))
 						return err;
-				}while (__getNumberOfWrittenBytes__()<nBytes);
-				const TLogTime nNanosecondsA=nNanoseconds;
-				// : increasing the NumberOfNanoseconds until a higher NumberOfBytes is written for the first time
-				do{
-					if (pAction->Cancelled) return ERROR_CANCELLED;
-					nNanoseconds+=nsAccuracy;
-					if (const TStdWinError err=__writeSectorData__(nBytes))
-						return err;
-				}while (__getNumberOfWrittenBytes__()<=nBytes);
+					const WORD nBytesRead=__getNumberOfWrittenBytes__();
+					if (nBytesRead<nBytes) // still insufficient # of Bytes written
+						nNanoseconds+=nsAccuracy, nReproductions=0;
+					else if (nBytesRead==nBytes) // written expected # of Bytes
+						nReproductions++;
+					//else // written bigger # of Bytes (Windows is not a real-time OS, so this might have been just a mistake)
+						//nop (ignore such random fluctuation)
+				}
+				const TLogTime nsReliableReproducibilityMin=nNanoseconds;
+				// : increasing the NumberOfNanoseconds further until a higher NumberOfBytes is repetitively written
+				while (BYTE nTrials=LATENCY_REPRODUCTION_COUNT){
+					for( nNanoseconds+=nsAccuracy; nTrials>0; ){
+						if (pAction->Cancelled)
+							return ERROR_CANCELLED;
+						if (const TStdWinError err=__writeSectorData__(nBytes))
+							return err;
+						const WORD nBytesRead=__getNumberOfWrittenBytes__();
+						if (nBytesRead<=nBytes) // still the correct # of Bytes written
+							nTrials--;
+						else if (nBytesRead==nBytes+1) // already unreliable, eventually writing the next Byte as well
+							break;
+						//else // written bigger # of Bytes (Windows is not a real-time OS, so this might have been just a mistake)
+							//nop (ignore such random fluctuation)
+					}
+					if (nTrials>0) // already unreliable reproduction?
+						break;
+				}
+				const TLogTime nsReliableReproducibilityMax=nNanoseconds-nsAccuracy;
 				// : the resulting NumberOfNanoseconds is the average of when the NumberOfBytes has been written for the first and last time
-				nNanoseconds=(nNanosecondsA+nNanoseconds)/2;
+				nNanoseconds=(nsReliableReproducibilityMin+nsReliableReproducibilityMax)/2;
 				return ERROR_SUCCESS;
 			}
 		} interruption( pAction, lp );
@@ -1657,7 +1678,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 										}
 										TLatencyParams lp( fdd, TIME_MICRO(1+d.usAccuracy), 1+d.nRepeats );
 										bmac.AddAction( FindHealthyTrack_thread, &lp, _T("Searching for healthy track") );
-										bmac.AddAction( DetermineControllerAndOneByteLatency_thread, &lp, _T("Determining controller latencies") );
+										bmac.AddAction( DetermineControllerAndOneByteLatency_thread, &lp, _T("Determining controller latencies (may take longer!)") );
 										bmac.AddAction( DetermineGap3Latency_thread, &lp, _T("Determining minimal Gap3 size") );
 									// : backing up existing InternalTracks and performing the multi-action
 									BYTE internalTracksOrg[sizeof(fdd->internalTracks)];
