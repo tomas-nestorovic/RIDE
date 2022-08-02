@@ -5,7 +5,6 @@
 		TCHAR nameBase[MAX_PATH];
 
 		TStdWinError SaveAllModifiedTracks(LPCTSTR lpszPathName,PBackgroundActionCancelable pAction) override;
-		TStdWinError UploadFirmware() override;
 		bool SetNameBase(LPCTSTR fullName);
 	public:
 		static const TProperties Properties;

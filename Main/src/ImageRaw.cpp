@@ -37,11 +37,6 @@
 
 
 
-	bool CImageRaw::__openImageForReadingAndWriting__(LPCTSTR fileName){
-		// True <=> given underlying file successfully opened for reading and writing, otherwise False
-		return f.Open( fileName, CFile::modeReadWrite|CFile::typeBinary|CFile::shareExclusive )!=FALSE;
-	}
-
 	TStdWinError CImageRaw::ExtendToNumberOfCylinders(TCylinder nCyl,BYTE fillerByte,const volatile bool &cancelled){
 		// formats new Cylinders to meet the minimum number requested; returns Windows standard i/o error
 		// - redimensioning the Image
@@ -94,8 +89,8 @@
 	BOOL CImageRaw::OnOpenDocument(LPCTSTR lpszPathName){
 		// True <=> Image opened successfully, otherwise False
 		// - opening
-		if (!__openImageForReadingAndWriting__(lpszPathName)) // if cannot open for both reading and writing ...
-			if (!OpenImageForReading(lpszPathName,&f)) // ... trying to open at least for reading, and if neither this works ...
+		if (!OpenImageForReadingAndWriting(lpszPathName,f,true)) // if cannot open for both reading and writing ...
+			if (!OpenImageForReading(lpszPathName,f)) // ... trying to open at least for reading, and if neither this works ...
 				return FALSE; // ... the Image cannot be open in any way
 			else
 				canBeModified=false;
@@ -139,7 +134,7 @@
 		// - saving
 		CFile fTmp;
 		const bool savingToCurrentFile= lpszPathName==f.GetFilePath() && ::GetFileAttributes(lpszPathName)!=INVALID_FILE_ATTRIBUTES; // saving to the same file and that file exists
-		if (!savingToCurrentFile && !OpenImageForWriting(lpszPathName,&fTmp))
+		if (!savingToCurrentFile && !CreateImageForWriting(lpszPathName,fTmp))
 			return ERROR_GEN_FAILURE;
 		if (f.m_hFile!=CFile::hFileNull) // handle doesn't exist when creating new Image
 			f.Seek(0,CFile::begin);
@@ -172,7 +167,7 @@
 		}
 		if (fTmp.m_hFile!=CFile::hFileNull)
 			fTmp.Close();
-		return __openImageForReadingAndWriting__(lpszPathName) ? ERROR_SUCCESS : ERROR_GEN_FAILURE;
+		return OpenImageForReadingAndWriting(lpszPathName,f,true) ? ERROR_SUCCESS : ERROR_GEN_FAILURE;
 	}
 
 	TCylinder CImageRaw::GetCylinderCount() const{

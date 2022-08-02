@@ -334,22 +334,31 @@ namespace Medium{
 		return (PImage)CMainWindow::CTdiTemplate::pSingleInstance->__getDocument__();
 	}
 
-	bool CImage::OpenImageForReading(LPCTSTR fileName,CFile *f){
+	bool CImage::OpenImageForReading(LPCTSTR fileName,CFile &f){
 		// True <=> File successfully opened for reading, otherwise False
-		return f->Open( fileName, CFile::modeRead|CFile::typeBinary|CFile::shareDenyWrite )!=FALSE;
+		return f.Open( fileName, CFile::modeRead|CFile::typeBinary|CFile::shareDenyWrite )!=FALSE;
 	}
 
-	bool CImage::OpenImageForWriting(LPCTSTR fileName,CFile *f){
-		// True <=> File successfully opened for writing, otherwise False
-		if (f->Open( fileName, CFile::modeCreate|CFile::modeWrite|CFile::typeBinary|CFile::shareExclusive )!=FALSE){
+	bool openImageForReadingAndWriting(LPCTSTR fileName,CFile &f,UINT flags,bool silentOnError){
+		if (f.Open( fileName, flags )!=FALSE){
 			::SetLastError(ERROR_SUCCESS); // because the last error might have been 183 (File cannot be created because it already exists)
 			return true;
-		}else{
+		}else if (!silentOnError){
 			TCHAR buf[MAX_PATH+30];
 			::wsprintf( buf, _T("Cannot save to \"%s\""), fileName );
 			Utils::FatalError(buf,::GetLastError());
-			return false;
 		}
+		return false;
+	}
+
+	bool CImage::OpenImageForReadingAndWriting(LPCTSTR fileName,CFile &f,bool silentOnError){
+		// True <=> File successfully opened for both reading and writing, otherwise False
+		return	openImageForReadingAndWriting( fileName, f, CFile::modeReadWrite|CFile::typeBinary|CFile::shareExclusive, silentOnError );
+	}
+
+	bool CImage::CreateImageForWriting(LPCTSTR fileName,CFile &f,bool silentOnError){
+		// True <=> File successfully created/truncated for reading+writing, otherwise False
+		return	openImageForReadingAndWriting( fileName, f, CFile::modeCreate|CFile::modeReadWrite|CFile::typeBinary|CFile::shareExclusive, silentOnError );
 	}
 
 	#define LENGTH_CODE_BASE	0x80

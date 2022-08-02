@@ -249,8 +249,9 @@
 		void Patch();
 		void OnCloseDocument() override sealed;
 	protected:
-		static bool OpenImageForReading(LPCTSTR fileName,CFile *f);
-		static bool OpenImageForWriting(LPCTSTR fileName,CFile *f);
+		static bool OpenImageForReading(LPCTSTR fileName,CFile &f);
+		static bool OpenImageForReadingAndWriting(LPCTSTR fileName,CFile &f,bool silentOnError=false);
+		static bool CreateImageForWriting(LPCTSTR fileName,CFile &f,bool silentOnError=false);
 
 		bool canBeModified;
 		PCSide sideMap; // explicit mapping of Heads to Side numbers (index = Head id, [index] = Side number); may be Null if the container doesn't have such feature (e.g. DSK images)

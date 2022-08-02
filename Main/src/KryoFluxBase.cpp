@@ -23,14 +23,6 @@
 
 
 	#define INI_FIRMWARE_FILE			_T("fw")
-	#define INI_FLUX_DECODER			_T("decod")
-	#define INI_FLUX_DECODER_RESET		_T("drst")
-	#define INI_PRECISION				_T("prec2")
-	#define INI_CALIBRATE_SECTOR_ERROR	_T("clberr")
-	#define INI_CALIBRATE_SECTOR_ERROR_KNOWN _T("clbknw")
-	#define INI_CALIBRATE_FORMATTING	_T("clbfmt")
-	#define INI_VERIFY_WRITTEN_TRACKS	_T("vwt")
-
 
 	CKryoFluxBase::TParamsEtc::TParamsEtc()
 		// ctor
@@ -40,7 +32,6 @@
 		//none
 		 { // True once the ID_40D80 button in Settings dialog is pressed
 	}
-
 
 	CKryoFluxBase::TParamsEtc::~TParamsEtc(){
 		// dtor
@@ -60,7 +51,7 @@
 
 
 
-	TStdWinError CKryoFluxBase::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus){
+	TStdWinError CCapsBase::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus){
 		// marks Sector on a given PhysicalAddress as "dirty", plus sets it the given FdcStatus; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (chs.cylinder>capsImageInfo.maxcylinder || chs.head>capsImageInfo.maxhead)
@@ -200,7 +191,7 @@
 			return ERROR_GEN_FAILURE;
 	}
 
-	bool CKryoFluxBase::RequiresFormattedTracksVerification() const{
+	bool CCapsBase::RequiresFormattedTracksVerification() const{
 		// True <=> the Image requires its newly formatted Tracks be verified, otherwise False (and caller doesn't have to carry out verification)
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		return params.verifyWrittenTracks;
@@ -393,19 +384,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 		}
 		const DWORD inStreamDataLength=pis-inStreamData;
 		// - creating and returning a Track representation of the Stream
-		CTrackReader::TDecoderMethod decoderMethod;
-		switch (params.fluxDecoder){
-			default:
-				ASSERT(FALSE);
-				//fallthrough
-			case TParams::TFluxDecoder::NO_FLUX_DECODER:
-				decoderMethod=CTrackReader::TDecoderMethod::NONE; break;
-			case TParams::TFluxDecoder::KEIR_FRASER:
-				decoderMethod=CTrackReader::TDecoderMethod::FDD_KEIR_FRASER; break;
-			case TParams::TFluxDecoder::MARK_OGDEN:
-				decoderMethod=CTrackReader::TDecoderMethod::FDD_MARK_OGDEN; break;
-		}
-		CTrackReaderWriter result( nFluxes*125/100, decoderMethod, params.resetFluxDecoderOnIndex ); // allowing for 25% of false "ones" introduced by "FDC-like" decoders
+		CTrackReaderWriter result( nFluxes*125/100, params.GetGlobalFluxDecoder(), params.resetFluxDecoderOnIndex ); // allowing for 25% of false "ones" introduced by "FDC-like" decoders
 		DWORD sampleCounter=0, totalSampleCounter=0; // delta and absolute sample counters
 		PLogTime buffer=result.GetBuffer(),pLogTime=buffer;
 		BYTE nearestIndexPulse=0;

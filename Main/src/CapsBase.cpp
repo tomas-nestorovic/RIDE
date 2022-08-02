@@ -433,6 +433,11 @@
 
 
 
+	TStdWinError CCapsBase::UploadFirmware(){
+		// uploads firmware to a CAPS-based device (e.g. KryoFlux); returns Windows standard i/o error
+		return ERROR_SUCCESS; // no firmware needed
+	}
+
 	BOOL CCapsBase::OnOpenDocument(LPCTSTR lpszPathName){
 		// True <=> Image opened successfully, otherwise False
 		// - determining if library initialized ok
@@ -1114,6 +1119,21 @@ invalidTrack:
 		app.WriteProfileInt( iniSectionName, INI_CALIBRATE_FORMATTING, calibrationStepDuringFormatting );
 		corrections.Save( iniSectionName );
 		app.WriteProfileInt( iniSectionName, INI_VERIFY_WRITTEN_TRACKS, verifyWrittenTracks );
+	}
+
+	CImage::CTrackReader::TDecoderMethod CCapsBase::TParams::GetGlobalFluxDecoder() const{
+		// converts locally defined FluxDecoder to one of used by the TrackReader
+		switch (fluxDecoder){
+			default:
+				ASSERT(FALSE);
+				//fallthrough
+			case TFluxDecoder::NO_FLUX_DECODER:
+				return CTrackReader::TDecoderMethod::NONE;
+			case TFluxDecoder::KEIR_FRASER:
+				return CTrackReader::TDecoderMethod::FDD_KEIR_FRASER;
+			case TFluxDecoder::MARK_OGDEN:
+				return CTrackReader::TDecoderMethod::FDD_MARK_OGDEN;
+		}
 	}
 
 	bool CCapsBase::TParams::EditInModalDialog(CCapsBase &rcb,LPCTSTR firmware,bool initialEditing){

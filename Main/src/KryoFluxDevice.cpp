@@ -606,7 +606,7 @@
 			BYTE index;
 			Utils::CBigEndianWord sampleCounter;
 		};
-		ASSERT( sizeof(TUniqueFlux)==sizeof(DWORD) );
+		static_assert( sizeof(TUniqueFlux)==sizeof(DWORD), "Incorrect size" );
 		static constexpr BYTE Data1[]={ 0xF4, 0x01, 0x00, 0x00, 0x88, 0x13, 0x00, 0x00 }; // TODO: find out the meaning
 		pb=(PBYTE)::memcpy( pb, Data1, sizeof(Data1) )+sizeof(Data1);
 		const BYTE nUniqueFluxesUsed=std::min( (WORD)255, histogram.GetUniqueFluxesCount() );

@@ -165,6 +165,7 @@
 			~TParams();
 
 			inline BYTE PrecisionToFullRevolutionCount() const{ return precision; }
+			CTrackReader::TDecoderMethod GetGlobalFluxDecoder() const;
 			bool EditInModalDialog(CCapsBase &rcb,LPCTSTR firmware,bool initialEditing);
 		} params;
 
@@ -178,6 +179,7 @@
 
 		CCapsBase(PCProperties properties,char realDriveLetter,bool hasEditableSettings,LPCTSTR iniSectionName);
 
+		virtual TStdWinError UploadFirmware();
 		void DestroyAllTracks();
 		TStdWinError VerifyTrack(TCylinder cyl,THead head,const CTrackReaderWriter &trwWritten,bool showDiff,std::unique_ptr<CTrackReaderWriter> *ppOutReadTrack,const volatile bool &cancelled) const;
 		TStdWinError DetermineMagneticReliabilityByWriting(Medium::TType floppyType,TCylinder cyl,THead head,const volatile bool &cancelled) const;
@@ -185,19 +187,21 @@
 		~CCapsBase();
 
 		BOOL OnOpenDocument(LPCTSTR lpszPathName) override;
-		TCylinder GetCylinderCount() const override;
-		THead GetHeadCount() const override;
-		BYTE GetAvailableRevolutionCount(TCylinder cyl,THead head) const override;
+		TCylinder GetCylinderCount() const override sealed;
+		THead GetHeadCount() const override sealed;
+		BYTE GetAvailableRevolutionCount(TCylinder cyl,THead head) const override sealed;
 		TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const override;
 		bool IsTrackScanned(TCylinder cyl,THead head) const override sealed;
-		void GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses) override;
-		TDataStatus IsSectorDataReady(TCylinder cyl,THead head,RCSectorId id,BYTE nSectorsToSkip,Revolution::TType rev) const override;
-		Revolution::TType GetDirtyRevolution(RCPhysicalAddress chs,BYTE nSectorsToSkip) const override;
+		void GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses) override sealed;
+		TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus) override;
+		TDataStatus IsSectorDataReady(TCylinder cyl,THead head,RCSectorId id,BYTE nSectorsToSkip,Revolution::TType rev) const override sealed;
+		Revolution::TType GetDirtyRevolution(RCPhysicalAddress chs,BYTE nSectorsToSkip) const override sealed;
 		TStdWinError GetInsertedMediumType(TCylinder cyl,Medium::TType &rOutMediumType) const override;
 		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
 		bool EditSettings(bool initialEditing) override;
 		TStdWinError Reset() override;
 		CTrackReader ReadTrack(TCylinder cyl,THead head) const override;
+		bool RequiresFormattedTracksVerification() const override sealed;
 	};
 
 

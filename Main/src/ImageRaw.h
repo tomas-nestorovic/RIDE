@@ -17,7 +17,6 @@
 		DWORD sizeWithoutGeometry;
 		CFile f;
 
-		bool __openImageForReadingAndWriting__(LPCTSTR fileName);
 		TStdWinError __setMediumTypeAndGeometry__(PCFormat pFormat,PCSide _sideMap,TSector _firstSectorNumber);
 		TStdWinError ExtendToNumberOfCylinders(TCylinder nCyl,BYTE fillerByte,const volatile bool &cancelled);
 		void __freeCylinder__(TCylinder cyl);

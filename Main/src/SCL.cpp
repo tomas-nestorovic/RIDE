@@ -60,7 +60,7 @@
 		if (const CTRDOS503::PCBootSector boot=CTRDOS503::TBootSector::Get(this)){
 			if (f.m_hFile!=CFile::hFileNull) // Image's underlying file doesn't exist if saving a fresh formatted Image
 				f.Close();
-			if (!OpenImageForWriting(lpszPathName,&f))
+			if (!CreateImageForWriting(lpszPathName,f))
 				return ERROR_GEN_FAILURE;
 			// - saving Header
 			TSclHeader header;
@@ -81,7 +81,7 @@
 				m_bModified=FALSE;
 	}		// - reopening the Image's underlying file
 			f.Close();
-			return __openImageForReadingAndWriting__(lpszPathName) ? ERROR_SUCCESS : ERROR_GEN_FAILURE;
+			return OpenImageForReadingAndWriting(lpszPathName,f,true) ? ERROR_SUCCESS : ERROR_GEN_FAILURE;
 		}else
 			return ERROR_SECTOR_NOT_FOUND;
 	}
