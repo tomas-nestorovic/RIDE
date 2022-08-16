@@ -832,12 +832,24 @@ namespace Medium{
 
 	TStdWinError CImage::SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap){
 		// saves all Modified Tracks by calling the SaveTrack method for each of them; returns Windows standard i/o error
-		for( TCylinder cyl=0; cyl<GetCylinderCount(); ap.UpdateProgress(++cyl) )
-			for( THead head=0; head<GetHeadCount(); head++ )
-				if (ap.Cancelled)
-					return ERROR_CANCELLED;
-				else if (const TStdWinError err=SaveTrack( cyl, head, ap.Cancelled ))
-					return err;
+		// - attempting to save the disk the "per-Track way" (must override this method in descendant if this way is not suitable for given disk, e.g. DSK images!)
+		if (m_bModified){
+			// the "Save" command is enabled only if disk Modified
+			if (!m_strPathName.IsEmpty() && m_strPathName!=lpszPathName) // saving to a different location?
+				return ERROR_NOT_SUPPORTED; // override in descendant the case for the "Save as" command!
+			for( TCylinder cyl=0; cyl<GetCylinderCount(); ap.UpdateProgress(++cyl) )
+				for( THead head=0; head<GetHeadCount(); head++ )
+					if (ap.Cancelled)
+						return ERROR_CANCELLED;
+					else if (const TStdWinError err=SaveTrack( cyl, head, ap.Cancelled ))
+						return err;
+		}else{
+			// we get here only with the "Save as" command
+			if (m_strPathName.IsEmpty() || ::GetFileAttributes(m_strPathName)==INVALID_FILE_ATTRIBUTES) // current file doesn't exist
+				return ERROR_FILE_NOT_FOUND;
+			if (!::CopyFile( m_strPathName, lpszPathName, FALSE ))
+				return ::GetLastError();
+		}
 		return ERROR_SUCCESS;
 	}
 
