@@ -101,7 +101,7 @@
 		return __super::SetMediumTypeAndGeometry( pFormat, sideMap, firstSectorNumber );
 	}
 
-	TStdWinError CKryoFluxBase::WriteTrack(TCylinder cyl,THead head,CTrackReader tr){
+	TStdWinError CCapsBase::WriteTrack(TCylinder cyl,THead head,CTrackReader tr){
 		// converts general description of the specified Track into Image-specific representation; caller may provide Invalid TrackReader to check support of this feature; returns Windows standard i/o error
 		// - TrackReader must be valid
 		if (!tr) // caller is likely checking the support of this feature
@@ -122,7 +122,7 @@
 			return ERROR_NOT_ENOUGH_MEMORY;
 	}
 
-	TStdWinError CKryoFluxBase::FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte,const volatile bool &cancelled){
+	TStdWinError CCapsBase::FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte,const volatile bool &cancelled){
 		// formats given Track {Cylinder,Head} to the requested NumberOfSectors, each with corresponding Length and FillerByte as initial content; returns Windows standard i/o error
 		// - must support the Codec specified
 		if ((codec&properties->supportedCodecs)==0)
@@ -197,7 +197,7 @@
 		return params.verifyWrittenTracks;
 	}
 
-	TStdWinError CKryoFluxBase::UnformatTrack(TCylinder cyl,THead head){
+	TStdWinError CCapsBase::UnformatTrack(TCylinder cyl,THead head){
 		// unformats given Track {Cylinder,Head}; returns Windows standard i/o error
 		if (const Medium::PCProperties mp=Medium::GetProperties(floppyType)){
 			// . checking that specified Track actually CAN exist

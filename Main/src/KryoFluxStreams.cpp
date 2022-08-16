@@ -94,13 +94,13 @@
 		return TRUE;
 	}
 
-	TStdWinError CKryoFluxStreams::SaveAllModifiedTracks(LPCTSTR lpszPathName,PBackgroundActionCancelable pAction){
+	TStdWinError CKryoFluxStreams::SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap){
 		// saves all Modified Tracks; returns Windows standard i/o error
 		// - recognizing the name pattern
 		if (!SetNameBase(lpszPathName))
 			return ERROR_FUNCTION_FAILED;
 		// - saving
-		return __super::SaveAllModifiedTracks( lpszPathName, pAction );
+		return __super::SaveAllModifiedTracks( lpszPathName, ap );
 	}
 
 	TStdWinError CKryoFluxStreams::SaveTrack(TCylinder cyl,THead head,const volatile bool &cancelled) const{

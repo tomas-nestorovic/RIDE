@@ -258,7 +258,7 @@
 
 		BOOL DoSave(LPCTSTR lpszPathName,BOOL bReplace) override;
 		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override; // enabling/disabling ToolBar buttons
-		virtual TStdWinError SaveAllModifiedTracks(LPCTSTR lpszPathName,PBackgroundActionCancelable pAction);
+		virtual TStdWinError SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap);
 	public:
 		typedef DWORD TId;
 		typedef LPCTSTR (*TFnRecognize)(PTCHAR deviceNameList);

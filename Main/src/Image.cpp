@@ -640,7 +640,7 @@ namespace Medium{
 		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
 		const TSaveThreadParams &stp=*(TSaveThreadParams *)pAction->GetParams();
 		pAction->SetProgressTarget( stp.image->GetCylinderCount()+1 ); // "+1" = action dialog closed once the SaveAllModifiedTracks method has finished
-		if (const TStdWinError err=stp.image->SaveAllModifiedTracks( stp.lpszPathName, pAction ))
+		if (const TStdWinError err=stp.image->SaveAllModifiedTracks( stp.lpszPathName, *pAction ))
 			return pAction->TerminateWithError(err);
 		else{
 			stp.image->m_bModified=FALSE;
@@ -827,13 +827,13 @@ namespace Medium{
 		return ERROR_NOT_SUPPORTED; // each Track by default must be explicitly formatted to be sure about its structure (but Images abstracting physical drives can override this setting)
 	}
 
-	TStdWinError CImage::SaveAllModifiedTracks(LPCTSTR lpszPathName,PBackgroundActionCancelable pAction){
+	TStdWinError CImage::SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap){
 		// saves all Modified Tracks by calling the SaveTrack method for each of them; returns Windows standard i/o error
-		for( TCylinder cyl=0; cyl<GetCylinderCount(); pAction->UpdateProgress(++cyl) )
+		for( TCylinder cyl=0; cyl<GetCylinderCount(); ap.UpdateProgress(++cyl) )
 			for( THead head=0; head<GetHeadCount(); head++ )
-				if (pAction->Cancelled)
+				if (ap.Cancelled)
 					return ERROR_CANCELLED;
-				else if (const TStdWinError err=SaveTrack( cyl, head, pAction->Cancelled ))
+				else if (const TStdWinError err=SaveTrack( cyl, head, ap.Cancelled ))
 					return err;
 		return ERROR_SUCCESS;
 	}

@@ -55,7 +55,7 @@
 		BYTE nFiles;
 	};
 
-	TStdWinError CSCL::SaveAllModifiedTracks(LPCTSTR lpszPathName,PBackgroundActionCancelable pAction){
+	TStdWinError CSCL::SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap){
 		// saves all Modified Tracks; returns Windows standard i/o error
 		if (const CTRDOS503::PCBootSector boot=CTRDOS503::TBootSector::Get(this)){
 			if (f.m_hFile!=CFile::hFileNull) // Image's underlying file doesn't exist if saving a fresh formatted Image

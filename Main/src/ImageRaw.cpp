@@ -129,7 +129,7 @@
 		}
 	}
 
-	TStdWinError CImageRaw::SaveAllModifiedTracks(LPCTSTR lpszPathName,PBackgroundActionCancelable pAction){
+	TStdWinError CImageRaw::SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap){
 		// saves all Modified Tracks; returns Windows standard i/o error
 		// - saving
 		CFile fTmp;
@@ -138,19 +138,20 @@
 			return ERROR_GEN_FAILURE;
 		if (f.m_hFile!=CFile::hFileNull) // handle doesn't exist when creating new Image
 			f.Seek(0,CFile::begin);
+		ap.SetProgressTarget( nCylinders*nHeads );
 		TPhysicalAddress chs;
 			chs.sectorId.lengthCode=sectorLengthCode;
 		switch (trackAccessScheme){
 			case TTrackScheme::BY_CYLINDERS:
-				for( chs.cylinder=0; chs.cylinder<nCylinders; pAction->UpdateProgress(++chs.cylinder) )
-					for( chs.sectorId.cylinder=chs.cylinder,chs.head=0; chs.head<nHeads; chs.head++ ){
+				for( chs.cylinder=0; chs.cylinder<nCylinders; chs.cylinder++ )
+					for( chs.sectorId.cylinder=chs.cylinder,chs.head=0; chs.head<nHeads; chs.head++,ap.IncrementProgress() ){
 						chs.sectorId.side=sideMap[chs.head];
 						__saveTrackToCurrentPositionInFile__( savingToCurrentFile?nullptr:&fTmp, chs );
 					}
 				break;
 			case TTrackScheme::BY_SIDES:
 				for( chs.head=0; chs.head<nHeads; chs.head++ )
-					for( chs.sectorId.side=sideMap[chs.head],chs.cylinder=0; chs.cylinder<nCylinders; chs.cylinder++ ){
+					for( chs.sectorId.side=sideMap[chs.head],chs.cylinder=0; chs.cylinder<nCylinders; chs.cylinder++,ap.IncrementProgress() ){
 						chs.sectorId.cylinder=chs.cylinder;
 						__saveTrackToCurrentPositionInFile__( savingToCurrentFile?nullptr:&fTmp, chs );
 					}

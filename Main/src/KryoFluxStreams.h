@@ -4,7 +4,7 @@
 	class CKryoFluxStreams sealed:public CKryoFluxBase{
 		TCHAR nameBase[MAX_PATH];
 
-		TStdWinError SaveAllModifiedTracks(LPCTSTR lpszPathName,PBackgroundActionCancelable pAction) override;
+		TStdWinError SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap) override;
 		bool SetNameBase(LPCTSTR fullName);
 	public:
 		static const TProperties Properties;

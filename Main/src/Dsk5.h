@@ -68,7 +68,7 @@
 		WORD __getSectorLength__(const TSectorInfo *si) const;
 		WORD __getTrackLength256__(const TTrackInfo *ti) const;
 		void __freeAllTracks__();
-		TStdWinError SaveAllModifiedTracks(LPCTSTR lpszPathName,PBackgroundActionCancelable pAction) override;
+		TStdWinError SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap) override;
 	public:
 		class CDummyDevice sealed{
 			static LPCTSTR Recognize(PTCHAR deviceNameList);

@@ -201,7 +201,10 @@
 		bool EditSettings(bool initialEditing) override;
 		TStdWinError Reset() override;
 		CTrackReader ReadTrack(TCylinder cyl,THead head) const override;
+		TStdWinError WriteTrack(TCylinder cyl,THead head,CTrackReader tr) override;
+		TStdWinError FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte,const volatile bool &cancelled) override;
 		bool RequiresFormattedTracksVerification() const override sealed;
+		TStdWinError UnformatTrack(TCylinder cyl,THead head) override;
 	};
 
 

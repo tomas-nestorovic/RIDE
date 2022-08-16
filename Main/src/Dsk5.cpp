@@ -188,7 +188,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		return TRUE;
 	}
 
-	TStdWinError CDsk5::SaveAllModifiedTracks(LPCTSTR lpszPathName,PBackgroundActionCancelable pAction){
+	TStdWinError CDsk5::SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap){
 		// saves all Modified Tracks; returns Windows standard i/o error
 		#ifdef _DEBUG
 			for( BYTE t=DSK_REV5_TRACKS_MAX; t--; )
@@ -221,16 +221,17 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		const PTrackInfo *ppti=tracks;
 		if (params.rev5){
 			// DSK Revision 5
-			pAction->SetProgressTarget( DSK_REV5_TRACKS_MAX );
-			for( BYTE track=0,*pOffset256=diskInfo.rev5_trackOffsets256; track<DSK_REV5_TRACKS_MAX; pOffset256++,ppti++,pAction->UpdateProgress(++track) )
-				if (pAction->Cancelled)
+			ap.SetProgressTarget( DSK_REV5_TRACKS_MAX );
+			for( BYTE track=0,*pOffset256=diskInfo.rev5_trackOffsets256; track<DSK_REV5_TRACKS_MAX; pOffset256++,ppti++,ap.UpdateProgress(++track) )
+				if (ap.Cancelled)
 					return ERROR_CANCELLED;
 				else if (const BYTE tmp=*pOffset256)
 					f.Write(*ppti,tmp<<8);
 		}else{
 			// standard DSK
 			bool mayLeadToIncompatibilityIssues=false; // assumption (none Track contains assets that could potentially lead to unreadability in randomly selected emulator)
-			for( TCylinder cyl=0; cyl<diskInfo.nCylinders; pAction->UpdateProgress(++cyl) )
+			ap.SetProgressTarget( diskInfo.nCylinders );
+			for( TCylinder cyl=0; cyl<diskInfo.nCylinders; ap.UpdateProgress(++cyl) )
 				for( THead head=diskInfo.nHeads; head--; ){
 					const TTrackInfo *const ti=*ppti++;
 					WORD trackLength=sizeof(TTrackInfo)+__getTrackLength256__(ti);

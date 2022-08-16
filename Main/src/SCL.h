@@ -2,7 +2,7 @@
 #define SCL_H
 
 	class CSCL sealed:public CImageRaw{
-		TStdWinError SaveAllModifiedTracks(LPCTSTR lpszPathName,PBackgroundActionCancelable pAction) override;
+		TStdWinError SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap) override;
 	public:
 		static const TProperties Properties;
 

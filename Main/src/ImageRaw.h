@@ -21,7 +21,7 @@
 		TStdWinError ExtendToNumberOfCylinders(TCylinder nCyl,BYTE fillerByte,const volatile bool &cancelled);
 		void __freeCylinder__(TCylinder cyl);
 		void __freeBufferOfCylinders__();
-		TStdWinError SaveAllModifiedTracks(LPCTSTR lpszPathName,PBackgroundActionCancelable pAction) override;
+		TStdWinError SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap) override;
 	public:
 		static const TProperties Properties;
 
