@@ -541,6 +541,9 @@ namespace Medium{
 					case ID_FILE_SAVE:
 						((CCmdUI *)pExtra)->Enable(m_bModified);
 						return TRUE;
+					case ID_FILE_SAVE_AS:
+						((CCmdUI *)pExtra)->Enable( !properties->IsRealDevice() ); // disabled for real Devices
+						return TRUE;
 					case ID_IMAGE_PROTECT:
 						((CCmdUI *)pExtra)->SetCheck(writeProtected);
 						((CCmdUI *)pExtra)->Enable(canBeModified && !PropGrid::IsValueBeingEdited());
