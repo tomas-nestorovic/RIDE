@@ -43,6 +43,12 @@
 	#define TRACK_NAME_PATTERN_EXT	_T(".%c.raw")
 	#define TRACK_NAME_PATTERN		_T("%02d") TRACK_NAME_PATTERN_EXT
 
+	CString CKryoFluxStreams::GetStreamFileName(LPCTSTR nameBase,TCylinder cyl,THead head) const{
+		CString result;
+		result.Format( _T("%s") TRACK_NAME_PATTERN, nameBase, cyl<<(BYTE)params.doubleTrackStep, '0'+head );
+		return result;
+	};
+
 	bool CKryoFluxStreams::SetNameBase(LPCTSTR fullName){
 		// True <=> a valid naming pattern has been recognized, otherwise False
 		LPCTSTR trackIdentifier=fullName+::lstrlen(fullName)-2-1-1-1-3; // see the TrackNamingPattern
@@ -97,10 +103,25 @@
 	TStdWinError CKryoFluxStreams::SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap){
 		// saves all Modified Tracks; returns Windows standard i/o error
 		// - recognizing the name pattern
+		const CString nameBaseOrg=nameBase;
 		if (!SetNameBase(lpszPathName))
 			return ERROR_FUNCTION_FAILED;
 		// - saving
-		return __super::SaveAllModifiedTracks( lpszPathName, ap );
+		for( TCylinder cyl=0; cyl<GetCylinderCount(); ap.UpdateProgress(++cyl) )
+			for( THead head=0; head<GetHeadCount(); head++ )
+				if (ap.Cancelled)
+					return ERROR_CANCELLED;
+				else{
+					if (const PCInternalTrack pit=internalTracks[cyl][head]) // Track buffered?
+						if (pit->modified)
+							if (const TStdWinError err=SaveTrack( cyl, head, ap.Cancelled ))
+								return err;
+							else
+								continue;
+					if (nameBaseOrg!=nameBase) // saving to a different location?
+						::CopyFile( GetStreamFileName(nameBaseOrg,cyl,head), GetStreamFileName(cyl,head), FALSE );
+				}
+		return ERROR_SUCCESS;
 	}
 
 	TStdWinError CKryoFluxStreams::SaveTrack(TCylinder cyl,THead head,const volatile bool &cancelled) const{
@@ -108,10 +129,8 @@
 		if (const auto pit=internalTracks[cyl][head])
 			if (pit->modified){
 				pit->FlushSectorBuffers(); // convert all modifications into flux transitions
-				TCHAR fileName[MAX_PATH];
-				::wsprintf( fileName, _T("%s") TRACK_NAME_PATTERN, nameBase, cyl<<(BYTE)params.doubleTrackStep, '0'+head );
 				CFile f; CFileException e;
-				if (!f.Open( fileName, CFile::modeCreate|CFile::modeWrite|CFile::typeBinary|CFile::shareExclusive, &e ))
+				if (!f.Open( GetStreamFileName(cyl,head), CFile::modeCreate|CFile::modeWrite|CFile::typeBinary|CFile::shareExclusive, &e ))
 					return e.m_cause;
 				if (const auto data=Utils::MakeCallocPtr<BYTE>(KF_BUFFER_CAPACITY)){
 					f.Write( data, TrackToStream(*pit,data) );
@@ -134,11 +153,9 @@
 		// - loading the underlying file that contains the specified Track
 		if (!*nameBase) // NameBase not set, e.g. when creating a new Image
 			return 0;
-		TCHAR filename[MAX_PATH];
-		::wsprintf( filename, _T("%s") TRACK_NAME_PATTERN, nameBase, cyl<<(BYTE)params.doubleTrackStep, '0'+head );
 		CFileException e;
 		CFile f;
-		if (!f.Open( filename, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary, &e )){
+		if (!f.Open( GetStreamFileName(cyl,head), CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary, &e )){
 			::SetLastError(e.m_cause);
 			return 0;
 		}

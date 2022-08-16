@@ -5,6 +5,8 @@
 		TCHAR nameBase[MAX_PATH];
 
 		TStdWinError SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap) override;
+		CString GetStreamFileName(LPCTSTR nameBase,TCylinder cyl,THead head) const;
+		inline CString GetStreamFileName(TCylinder cyl,THead head) const{ return GetStreamFileName(nameBase,cyl,head); }
 		bool SetNameBase(LPCTSTR fullName);
 	public:
 		static const TProperties Properties;
