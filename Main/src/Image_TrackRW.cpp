@@ -922,7 +922,7 @@
 			const auto &pe=GetNext(pos);
 			if (ti.tEnd<pe.tStart) // no further matches possible as this list is ordered ascending by Start
 				break;
-			if (pe.Contains(ti.tStart) || pe.Contains(ti.tEnd))
+			if (pe.Intersect(ti))
 				return true;
 		}
 		return false;

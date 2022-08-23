@@ -137,7 +137,7 @@
 		if (!savingToCurrentFile && !CreateImageForWriting(lpszPathName,fTmp))
 			return ERROR_GEN_FAILURE;
 		if (f.m_hFile!=CFile::hFileNull) // handle doesn't exist when creating new Image
-			f.Seek(0,CFile::begin);
+			f.SeekToBegin();
 		ap.SetProgressTarget( nCylinders*nHeads );
 		TPhysicalAddress chs;
 			chs.sectorId.lengthCode=sectorLengthCode;
