@@ -217,18 +217,10 @@
 
 
 	namespace TRD{
+		extern const CImage::TProperties Properties;
+
 		LPCTSTR Recognize(PTCHAR);
 		PImage Instantiate(LPCTSTR);
-
-		static constexpr CImage::TProperties Properties={
-			MAKE_IMAGE_ID('T','R','D','O','S','T','R','D'), // a unique identifier
-			Recognize,// name
-			Instantiate,// instantiation function
-			_T("*.trd"),	// filter
-			Medium::FLOPPY_DD_ANY,
-			Codec::MFM, // supported Codecs
-			TRDOS503_SECTOR_LENGTH_STD,TRDOS503_SECTOR_LENGTH_STD	// min and max length of storable Sectors
-		};
 	}
 
 #endif // TRDOS_H

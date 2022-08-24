@@ -409,6 +409,16 @@
 
 
 	namespace D80{
+		static constexpr CImage::TProperties Properties={
+			MAKE_IMAGE_ID('M','D','O','S','_','D','x','0'), // a unique identifier
+			Recognize,// name
+			Instantiate,// instantiation function
+			_T("*.d80") IMAGE_FORMAT_SEPARATOR _T("*.d40"),	// filter
+			Medium::FLOPPY_DD_ANY,
+			Codec::MFM, // supported Codecs
+			MDOS2_SECTOR_LENGTH_STD, MDOS2_SECTOR_LENGTH_STD	// min and max length of storable Sectors
+		};
+
 		LPCTSTR Recognize(PTCHAR){
 			static constexpr TCHAR SingleDeviceName[]=_T("Didaktik D40/D80\0");
 			return SingleDeviceName;

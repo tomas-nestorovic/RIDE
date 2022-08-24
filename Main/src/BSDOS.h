@@ -262,18 +262,10 @@
 
 
 	namespace MBD{
+		extern const CImage::TProperties Properties;
+
 		LPCTSTR Recognize(PTCHAR);
 		PImage Instantiate(LPCTSTR);
-
-		static constexpr CImage::TProperties Properties={
-			MAKE_IMAGE_ID('B','S','D','O','S','M','B','D'), // a unique identifier
-			Recognize, // name
-			Instantiate, // instantiation function
-			_T("*.mbd"), // filter
-			Medium::FLOPPY_ANY, // supported media
-			Codec::MFM, // supported Codecs
-			BSDOS_SECTOR_LENGTH_STD,BSDOS_SECTOR_LENGTH_STD	// min and max sector length
-		};
 	}
 
 #endif // BSDOS_H
