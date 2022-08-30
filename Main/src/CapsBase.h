@@ -51,6 +51,7 @@
 				TLogTime idEndTime;
 				CTrackReader::TProfile idEndProfile;
 				PSectorData data;
+				TLogTime dataEndTime;
 				TFdcStatus fdcStatus;
 
 				inline bool HasDataReady() const{ return data!=nullptr || fdcStatus.DescribesMissingDam(); }

@@ -394,8 +394,10 @@
 					sectorOfficialLength, buffer
 				)
 			);
-			if (!currRev.fdcStatus.DescribesMissingDam()) // "some" data found
+			if (!currRev.fdcStatus.DescribesMissingDam()){ // "some" data found
 				currRev.data=(PSectorData)::memcpy( ::malloc(sectorOfficialLength), buffer, sectorOfficialLength );
+				currRev.dataEndTime=GetCurrentTime();
+			}
 		}
 	}
 
@@ -760,10 +762,8 @@ invalidTrack:
 				if (type&forcedMediumType){
 					WORD nHealthySectorsCurr=0;
 					tmp.mediumType=(Medium::TType)type;
-					const PDos dos0=dos;
-					dos=nullptr;
-						SetMediumTypeAndGeometry( &tmp, sideMap, firstSectorNumber );
-					dos=dos0;
+					const Utils::CVarTempReset<PDos> dos0( dos, nullptr );
+					SetMediumTypeAndGeometry( &tmp, sideMap, firstSectorNumber );
 					for( TCylinder cyl=0; cyl<SCANNED_CYLINDERS; cyl++ ) // counting the # of healthy Sectors
 						for( THead head=2; head>0; nHealthySectorsCurr+=GetCountOfHealthySectors(cyl,--head) );
 					if (nHealthySectorsCurr>nHealthySectorsMax)

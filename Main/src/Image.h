@@ -213,6 +213,8 @@
 		TFdcStatus();
 		TFdcStatus(BYTE _reg1,BYTE _reg2);
 
+		inline bool operator==(const TFdcStatus st) const{ return ToWord()==st.ToWord(); }
+
 		void ExtendWith(TFdcStatus st);
 		WORD ToWord() const;
 		void GetDescriptionsOfSetBits(LPCTSTR *pDescriptions) const;
