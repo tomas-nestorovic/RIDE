@@ -231,6 +231,7 @@
     <ClInclude Include="src\SCL.h" />
     <ClInclude Include="src\SpectrumDos.h" />
     <ClInclude Include="src\stdafx.h" />
+    <ClInclude Include="src\SuperCardProBase.h" />
     <ClInclude Include="src\TRDOS.h" />
     <ClInclude Include="src\Utils.h" />
     <ClInclude Include="src\ViewBoot.h" />
@@ -311,6 +312,7 @@
     <ClCompile Include="src\SpectrumDos_Tape.cpp" />
     <ClCompile Include="src\SpectrumDos_FileManagerBase.cpp" />
     <ClCompile Include="src\SpectrumDos_ZXRom.cpp" />
+    <ClCompile Include="src\SuperCardProBase.cpp" />
     <ClCompile Include="src\TdiTemplate.cpp" />
     <ClCompile Include="src\TdiView.cpp" />
     <ClCompile Include="src\TRDOS503.cpp" />

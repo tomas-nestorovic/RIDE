@@ -219,6 +219,9 @@
     <ClInclude Include="src\ViewTrackMap.h">
       <Filter>Header Files\Image\Tabs</Filter>
     </ClInclude>
+    <ClInclude Include="src\SuperCardProBase.h">
+      <Filter>Header Files\Image</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\editor.cpp">
@@ -466,6 +469,9 @@
     </ClCompile>
     <ClCompile Include="src\ViewDiskBrowser.cpp">
       <Filter>Source Files\Image\Tabs</Filter>
+    </ClCompile>
+    <ClCompile Include="src\SuperCardProBase.cpp">
+      <Filter>Source Files\Image</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

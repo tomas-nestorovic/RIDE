@@ -1366,6 +1366,11 @@
 		indexPulses[nIndexPulses]=INT_MAX;
 	}
 
+	TLogTime CImage::CTrackReaderWriter::GetLastIndexTime() const{
+		// returns the LogicalTime of the last added Index (or 0)
+		return	nIndexPulses ? indexPulses[nIndexPulses-1] : 0;
+	}
+
 	bool CImage::CTrackReaderWriter::WriteBits(const bool *bits,DWORD nBits){
 		// True <=> specified amount of Bits in the buffer has successfully overwritten "nBits" immediatelly following the CurrentTime, otherwise False
 		// - determining the number of current "ones" in the immediatelly next "nBits" cells
