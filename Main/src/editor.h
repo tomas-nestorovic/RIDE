@@ -44,7 +44,7 @@
 		#else
 		afx_msg BOOL OnOpenRecentFile(UINT nID);
 		#endif
-		afx_msg void __createNewImage__();
+		afx_msg void CreateNewImage();
 		afx_msg void __openImage__();
 		afx_msg void __openImageAs__();
 		afx_msg void OpenImageWithoutDos();

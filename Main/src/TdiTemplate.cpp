@@ -73,6 +73,5 @@
 		// - opening the requested document (caller is now to load the document, and then call AddDocument)
 		if (const CImage::PCProperties p=CImage::DetermineType(lpszPathName))
 			return p->fnInstantiate(nullptr); // instantiating recognized file Image; Null as buffer = one Image represents only one "device" whose name is known at compile-time
-		Utils::FatalError(_T("Unknown container to load."));
 		return nullptr;
 	}

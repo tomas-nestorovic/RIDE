@@ -144,7 +144,7 @@
 
 
 	BEGIN_MESSAGE_MAP(CRideApp,CWinApp)
-		ON_COMMAND(ID_FILE_NEW,__createNewImage__)
+		ON_COMMAND(ID_FILE_NEW,CreateNewImage)
 		ON_COMMAND(ID_FILE_OPEN,__openImage__)
 		ON_COMMAND_RANGE(ID_FILE_MRU_FIRST,ID_FILE_MRU_LAST,OnOpenRecentFile)
 		ON_COMMAND(ID_OPEN_AS,__openImageAs__)
@@ -289,7 +289,7 @@
 		return godMode;
 	}
 
-	afx_msg void CRideApp::__createNewImage__(){
+	afx_msg void CRideApp::CreateNewImage(){
 		// initiates creation of new Image
 		OnFileNew(); // to close any previous Image
 		//SaveModified()
@@ -542,7 +542,12 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			if (const CDocument *const doc=CImage::GetActive())
 				if (doc->GetPathName()==deviceName) // if attempting to open an already opened Image ...
 					return; // ... doing nothing
-			OpenDocumentFile(deviceName);
+			if (OpenDocumentFile(deviceName))
+				return;
+		}
+		if (*deviceName){
+			const TStdWinError err=::GetLastError();
+			Utils::FatalError( _T("Can't access device"), err?err:ERROR_DEVICE_NOT_AVAILABLE );
 		}
 	}
 
@@ -689,7 +694,12 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			if (const CDocument *const doc=CImage::GetActive())
 				if (doc->GetPathName()==fileName) // if attempting to open an already opened Image ...
 					return; // ... doing nothing
-			OpenDocumentFile(fileName);
+			if (OpenDocumentFile(fileName))
+				return;
+		}
+		if (*fileName){
+			const TStdWinError err=::GetLastError();
+			Utils::FatalError( _T("Can't open the file"), err?err:MK_E_INVALIDEXTENSION );
 		}
 	}
 
