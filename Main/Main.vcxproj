@@ -229,6 +229,7 @@
     <ClInclude Include="src\MSDOS7.h" />
     <ClInclude Include="src\OptionalLibAPIs.h" />
     <ClInclude Include="src\SCL.h" />
+    <ClInclude Include="src\SCP.h" />
     <ClInclude Include="src\SpectrumDos.h" />
     <ClInclude Include="src\stdafx.h" />
     <ClInclude Include="src\SuperCardProBase.h" />
@@ -304,6 +305,7 @@
     <ClCompile Include="src\MSDOS7_FileManager.cpp" />
     <ClCompile Include="src\OptionalLibAPIs.cpp" />
     <ClCompile Include="src\SCL.cpp" />
+    <ClCompile Include="src\SCP.cpp" />
     <ClCompile Include="src\SpectrumBase.cpp" />
     <ClCompile Include="src\SpectrumDos.cpp" />
     <ClCompile Include="src\SpectrumDos_AssemblerPreview.cpp" />

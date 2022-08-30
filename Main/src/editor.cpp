@@ -10,6 +10,8 @@
 #include "KryoFluxBase.h"
 #include "KryoFluxStreams.h"
 #include "KryoFluxDevice.h"
+#include "SuperCardProBase.h"
+#include "SCP.h"
 
 	CRideApp::CRecentFileListEx::CRecentFileListEx(const CRecentFileList &rStdMru)
 		// ctor
@@ -194,6 +196,7 @@
 		CImage::Known.AddTail( &MGT::Properties );
 		CImage::Known.AddTail( &CImageRaw::Properties );
 		CImage::Known.AddTail( &CSCL::Properties );
+		CImage::Known.AddTail( &CSCP::Properties );
 		CImage::Known.AddTail( &TRD::Properties );
 		CImage::Devices.AddTail( &CFDD::Properties );
 		CImage::Devices.AddTail( &CKryoFluxDevice::Properties );
