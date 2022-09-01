@@ -334,31 +334,30 @@ namespace Medium{
 		return (PImage)CMainWindow::CTdiTemplate::pSingleInstance->__getDocument__();
 	}
 
-	bool CImage::OpenImageForReading(LPCTSTR fileName,CFile &f){
+	TStdWinError CImage::OpenImageForReading(LPCTSTR fileName,CFile &f){
 		// True <=> File successfully opened for reading, otherwise False
-		return f.Open( fileName, CFile::modeRead|CFile::typeBinary|CFile::shareDenyWrite )!=FALSE;
+		CFileException e;
+			e.m_cause=ERROR_SUCCESS;
+		f.Open( fileName, CFile::modeRead|CFile::typeBinary|CFile::shareDenyWrite, &e );
+		return e.m_cause;
 	}
 
-	bool openImageForReadingAndWriting(LPCTSTR fileName,CFile &f,UINT flags,bool silentOnError){
-		if (f.Open( fileName, flags )!=FALSE){
-			::SetLastError(ERROR_SUCCESS); // because the last error might have been 183 (File cannot be created because it already exists)
-			return true;
-		}else if (!silentOnError){
-			TCHAR buf[MAX_PATH+30];
-			::wsprintf( buf, _T("Cannot save to \"%s\""), fileName );
-			Utils::FatalError(buf,::GetLastError());
-		}
-		return false;
+	TStdWinError openImageForReadingAndWriting(LPCTSTR fileName,CFile &f,UINT flags){
+		CFileException e;
+		if (f.Open( fileName, flags, &e )!=FALSE)
+			e.m_cause=ERROR_SUCCESS; // because the last error might have been 183 (File cannot be created because it already exists)
+		::SetLastError(e.m_cause);
+		return e.m_cause;
 	}
 
-	bool CImage::OpenImageForReadingAndWriting(LPCTSTR fileName,CFile &f,bool silentOnError){
+	TStdWinError CImage::OpenImageForReadingAndWriting(LPCTSTR fileName,CFile &f){
 		// True <=> File successfully opened for both reading and writing, otherwise False
-		return	openImageForReadingAndWriting( fileName, f, CFile::modeReadWrite|CFile::typeBinary|CFile::shareExclusive, silentOnError );
+		return	openImageForReadingAndWriting( fileName, f, CFile::modeReadWrite|CFile::typeBinary|CFile::shareExclusive );
 	}
 
-	bool CImage::CreateImageForWriting(LPCTSTR fileName,CFile &f,bool silentOnError){
+	TStdWinError CImage::CreateImageForWriting(LPCTSTR fileName,CFile &f){
 		// True <=> File successfully created/truncated for reading+writing, otherwise False
-		return	openImageForReadingAndWriting( fileName, f, CFile::modeCreate|CFile::modeReadWrite|CFile::typeBinary|CFile::shareExclusive, silentOnError );
+		return	openImageForReadingAndWriting( fileName, f, CFile::modeCreate|CFile::modeReadWrite|CFile::typeBinary|CFile::shareExclusive );
 	}
 
 	#define LENGTH_CODE_BASE	0x80
@@ -653,13 +652,19 @@ namespace Medium{
 
 	BOOL CImage::OnSaveDocument(LPCTSTR lpszPathName){
 		// True <=> this Image has been successfully saved, otherwise False
-		const TStdWinError err=	CBackgroundActionCancelable(
-									SaveAllModifiedTracks_thread,
-									&TSaveThreadParams( this, lpszPathName ),
-									THREAD_PRIORITY_ABOVE_NORMAL
-								).Perform(true);
-		::SetLastError(err);
-		return err==ERROR_SUCCESS;
+		if (const TStdWinError err=CBackgroundActionCancelable(
+				SaveAllModifiedTracks_thread,
+				&TSaveThreadParams( this, lpszPathName ),
+				THREAD_PRIORITY_ABOVE_NORMAL
+			).Perform(true)
+		){
+			CString msg;
+			msg.Format( _T("Can't write to \"%s\""), lpszPathName );
+			Utils::FatalError( msg, err, _T("Some tracks remain unsaved.") );
+			::SetLastError(err);
+			return FALSE;
+		}else
+			return TRUE;
 	}
 
 	bool CImage::IsWriteProtected() const{

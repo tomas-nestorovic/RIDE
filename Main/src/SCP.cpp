@@ -43,10 +43,11 @@
 			return FALSE;
 		// - opening
 		canBeModified=true; // assumption
-		if (!OpenImageForReadingAndWriting(lpszPathName,f,true)) // if cannot open for both reading and writing ...
-			if (!OpenImageForReading(lpszPathName,f)) // ... trying to open at least for reading, and if neither this works ...
+		if (TStdWinError err=OpenImageForReadingAndWriting(lpszPathName,f)) // if cannot open for both reading and writing ...
+			if ( err=OpenImageForReading(lpszPathName,f) ){ // ... trying to open at least for reading, and if neither this works ...
+				::SetLastError(err);
 				return FALSE; // ... the Image cannot be open in any way
-			else
+			}else
 				canBeModified=false;
 		// - if data shorter than an empty Image, resetting to empty Image
 		const WORD nHeaderBytesRead=f.Read(&header,sizeof(header));
@@ -145,8 +146,9 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		// saves all Modified Tracks; returns Windows standard i/o error
 		CFile fTmp;
 		const bool savingToCurrentFile= lpszPathName==f.GetFilePath() && f.m_hFile!=CFile::hFileNull && ::GetFileAttributes(lpszPathName)!=INVALID_FILE_ATTRIBUTES; // saving to the same file and that file exists (handle doesn't exist when creating new Image)
-		if (!savingToCurrentFile && !CreateImageForWriting(lpszPathName,fTmp))
-			return ERROR_WRITE_FAULT;
+		if (!savingToCurrentFile)
+			if (const TStdWinError err=CreateImageForWriting(lpszPathName,fTmp))
+				return err;
 		ap.SetProgressTarget(4000);
 		const Medium::PCProperties mp=Medium::GetProperties( floppyType );
 		// - creating ContentLayout map of the file in which UNMODIFIED occupied space is represented by positive numbers, whereas gaps with negative numbers
@@ -327,5 +329,5 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			f.Close();
 		if (fTmp.m_hFile!=CFile::hFileNull)
 			fTmp.Close();
-		return OpenImageForReadingAndWriting(lpszPathName,f,true) ? ERROR_SUCCESS : ERROR_GEN_FAILURE;
+		return OpenImageForReadingAndWriting(lpszPathName,f);
 	}

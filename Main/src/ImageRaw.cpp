@@ -89,10 +89,11 @@
 	BOOL CImageRaw::OnOpenDocument(LPCTSTR lpszPathName){
 		// True <=> Image opened successfully, otherwise False
 		// - opening
-		if (!OpenImageForReadingAndWriting(lpszPathName,f,true)) // if cannot open for both reading and writing ...
-			if (!OpenImageForReading(lpszPathName,f)) // ... trying to open at least for reading, and if neither this works ...
+		if (TStdWinError err=OpenImageForReadingAndWriting(lpszPathName,f)) // if cannot open for both reading and writing ...
+			if ( err=OpenImageForReading(lpszPathName,f) ){ // ... trying to open at least for reading, and if neither this works ...
+				::SetLastError(err);
 				return FALSE; // ... the Image cannot be open in any way
-			else
+			}else
 				canBeModified=false;
 		// - currently without geometry (DOS must call SetMediumTypeAndGeometry)
 		if ( sizeWithoutGeometry=f.GetLength() )
@@ -134,8 +135,9 @@
 		// - saving
 		CFile fTmp;
 		const bool savingToCurrentFile= lpszPathName==f.GetFilePath() && ::GetFileAttributes(lpszPathName)!=INVALID_FILE_ATTRIBUTES; // saving to the same file and that file exists
-		if (!savingToCurrentFile && !CreateImageForWriting(lpszPathName,fTmp))
-			return ERROR_GEN_FAILURE;
+		if (!savingToCurrentFile)
+			if (const TStdWinError err=CreateImageForWriting(lpszPathName,fTmp))
+				return err;
 		if (f.m_hFile!=CFile::hFileNull) // handle doesn't exist when creating new Image
 			f.SeekToBegin();
 		ap.SetProgressTarget( nCylinders*nHeads );
@@ -168,7 +170,7 @@
 		}
 		if (fTmp.m_hFile!=CFile::hFileNull)
 			fTmp.Close();
-		return OpenImageForReadingAndWriting(lpszPathName,f,true) ? ERROR_SUCCESS : ERROR_GEN_FAILURE;
+		return OpenImageForReadingAndWriting(lpszPathName,f);
 	}
 
 	TCylinder CImageRaw::GetCylinderCount() const{
