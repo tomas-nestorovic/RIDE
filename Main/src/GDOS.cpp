@@ -299,7 +299,7 @@
 		// sets File's Name and Type based on the Buffer content
 		// - setting the Name trimmed to 10 characters at most
 		#ifdef UNICODE
-			ASSERT(FALSE)
+			static_assert( false, "Unicode support not implemented" );
 		#else
 			::memcpy(	::memset(name,' ',sizeof(name)),
 						newName,

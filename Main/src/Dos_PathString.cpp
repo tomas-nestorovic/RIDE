@@ -11,7 +11,7 @@
 		: nCharsInBuf(nRepeats) {
 		ASSERT(nCharsInBuf<MAX_PATH);
 		#ifdef UNICODE
-			ASSERT(FALSE);
+			static_assert( false, "Unicode support not implemented" );
 		#else
 			::memset( buf, c, nCharsInBuf*sizeof(char) );
 		#endif
@@ -23,7 +23,7 @@
 		: nCharsInBuf(::lstrlenA(str)) {
 		ASSERT(nCharsInBuf<MAX_PATH);
 		#ifdef UNICODE
-			ASSERT(FALSE);
+			static_assert( false, "Unicode support not implemented" );
 		#else
 			::lstrcpyA( buf, str );
 		#endif
@@ -34,7 +34,7 @@
 		: nCharsInBuf(strLength) {
 		ASSERT(nCharsInBuf<MAX_PATH);
 		#ifdef UNICODE
-			ASSERT(FALSE);
+			static_assert( false, "Unicode support not implemented" );
 		#else
 			::memcpy( buf, str, nCharsInBuf*sizeof(char) );
 		#endif

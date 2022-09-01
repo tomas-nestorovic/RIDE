@@ -394,7 +394,7 @@
 		TDirectoryEntry tmp=*de; // all changes are made to a temporary Entry before they are copied to disk
 		tmp.extension=*newExt;
 		#ifdef UNICODE
-			ASSERT(FALSE)
+			static_assert( false, "Unicode support not implemented" );
 		#else
 			::memcpy(	::memset(tmp.name,' ',TRDOS503_FILE_NAME_LENGTH_MAX),
 						newName, newName.GetLength()

@@ -183,7 +183,7 @@
 			return ERROR_FILENAME_EXCED_RANGE;
 		// - renaming
 		#ifdef UNICODE
-			ASSERT(FALSE)
+			static_assert( false, "Unicode support not implemented" );
 		#else
 			::memcpy(	::memset(name,' ',ZX_TAPE_FILE_NAME_LENGTH_MAX),
 						newName, newName.GetLength()
@@ -431,7 +431,7 @@
 				h->type=(TZxRom::TFileType)type;
 				// . Name
 				#ifdef UNICODE
-					ASSERT(FALSE);
+					static_assert( false, "Unicode support not implemented" );
 				#else
 					::memcpy(	::memset(h->name,' ',ZX_TAPE_FILE_NAME_LENGTH_MAX),
 								zxName, zxName.GetLength()

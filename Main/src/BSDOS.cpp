@@ -9,9 +9,9 @@
 		, boot(this)
 		, dirsSector(this)
 		, fileManager(this) {
-		ASSERT( sizeof(TFatValue)==sizeof(WORD) );
-		ASSERT( sizeof(TDirectoryEntry)==32 );
-		ASSERT( sizeof(CDirsSector::TSlot)==sizeof(DWORD) );
+		static_assert( sizeof(TFatValue)==sizeof(WORD), "Incompatible size of TFatValue" );
+		static_assert( sizeof(TDirectoryEntry)==32, "Incompatible size of TDirectoryEntry" );
+		static_assert( sizeof(CDirsSector::TSlot)==sizeof(DWORD), "Incompatible size of CDirsSector::TSlot" );
 		static_assert( BSDOS_FAT_COPIES_MAX==2, "The number of FAT copies must be exactly 2 otherwise major changes in the code are needed!" );
 	}
 

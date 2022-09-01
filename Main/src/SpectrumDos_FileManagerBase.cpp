@@ -196,7 +196,7 @@
 		const PDos dos=CDos::GetFocused();
 		const CSpectrumBaseFileManagerView *const pZxFileManager=(CSpectrumBaseFileManagerView *)dos->pFileManager;
 		const TZxRom::CLineComposerPropGridEditor &rEditor=pZxFileManager->zxRom.lineComposerPropGridEditor;
-		ASSERT( sizeof(*rEditor.GetCurrentZxText())==sizeof(char) );
+		static_assert( sizeof(*rEditor.GetCurrentZxText())==sizeof(char), "Incompatible size of *rEditor.GetCurrentZxText()" );
 		::memcpy( value, rEditor.GetCurrentZxText(), rEditor.GetCurrentZxTextLength() );
 		return true;
 	}
@@ -205,7 +205,7 @@
 		// creates and returns the Editor of Spectrum command line
 		ASSERT(cmdLengthMax<sizeof(bufOldCmd)/sizeof(TCHAR));
 		#ifdef UNICODE
-			ASSERT(FALSE);
+			static_assert( false, "Unicode support not implemented" );
 		#else
 			::memcpy( bufOldCmd, cmd, cmdLengthMax );
 			return	CreateStdEditor( 
@@ -241,7 +241,7 @@
 		rZxFileManager.DOS->GetFileNameOrExt( file, &oldName, nullptr );
 		::memset( bufOldCmd, paddingChar, fileNameLengthMax );
 		#ifdef UNICODE
-			ASSERT(FALSE);
+			static_assert( false, "Unicode support not implemented" );
 		#else
 			::memcpy( bufOldCmd, oldName, oldName.GetLength() );
 		#endif

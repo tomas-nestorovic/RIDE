@@ -314,7 +314,7 @@
 		const PDirectoryEntry de=(PDirectoryEntry)file;
 		de->extension=*newExt;
 		#ifdef UNICODE
-			ASSERT(FALSE)
+			static_assert( false, "Unicode support not implemented" );
 		#else
 			::memcpy(	::memset(de->name,0,MDOS2_FILE_NAME_LENGTH_MAX),
 						newName, newName.GetLength()

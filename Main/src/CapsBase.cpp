@@ -456,7 +456,7 @@
 		// - "mounting" the Image file to the Device
 		char fileName[MAX_PATH];
 		#ifdef UNICODE
-			x//TODO
+			static_assert( false, "Unicode support not implemented" );
 		#else
 			::lstrcpy( fileName, lpszPathName );
 		#endif

@@ -463,7 +463,7 @@
 		}else{
 			if (bufName){
 				#ifdef UNICODE
-					ASSERT(FALSE)
+					static_assert( false, "Unicode support not implemented" );
 				#else
 					::lstrcpynA( bufName, de->shortNameEntry.name, MSDOS7_FILE_NAME_LENGTH_MAX+1 );
 				#endif
@@ -473,7 +473,7 @@
 			}
 			if (bufExt){
 				#ifdef UNICODE
-					ASSERT(FALSE)
+					static_assert( false, "Unicode support not implemented" );
 				#else
 					::lstrcpynA( bufExt, de->shortNameEntry.extension, MSDOS7_FILE_EXT_LENGTH_MAX+1 );
 				#endif
@@ -488,7 +488,7 @@
 		PDirectoryEntry longNameEntries[LONG_FILE_NAME_ENTRIES_COUNT_MAX];
 		if (BYTE nEntries=__getLongFileNameEntries__(de,longNameEntries)){
 			#ifdef UNICODE
-				ASSERT(FALSE)
+				static_assert( false, "Unicode support not implemented" );
 			#else
 				WCHAR bufW[MAX_PATH],tmpW[14];
 				bufW[0]='\0', tmpW[13]='\0';
@@ -574,7 +574,7 @@
 		::memset( de->shortNameEntry.name, ' ', MSDOS7_FILE_NAME_LENGTH_MAX+MSDOS7_FILE_EXT_LENGTH_MAX );
 		TCHAR tmp[MSDOS7_FILE_NAME_LENGTH_MAX+1];
 		#ifdef UNICODE
-			ASSERT(FALSE);
+			static_assert( false, "Unicode support not implemented" );
 		#else
 			::memcpy( de->shortNameEntry.name, ::CharUpper(::lstrcpy(tmp,newName)), ::lstrlen(newName) );
 			::memcpy( de->shortNameEntry.extension, ::CharUpper(::lstrcpy(tmp,newExt)), ::lstrlen(newExt) );
@@ -686,7 +686,7 @@
 			// - initializing allocated LongNameEntries
 			WCHAR bufW[256], *pw=(PWCHAR)::memset(bufW,-1,sizeof(bufW));
 			#ifdef UNICODE
-				ASSERT(FALSE)
+				static_assert( false, "Unicode support not implemented" );
 			#else
 				::MultiByteToWideChar( CP_ACP,0, longNameAndExt,-1, bufW,sizeof(bufW)/sizeof(WCHAR) );
 			#endif
