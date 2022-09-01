@@ -784,7 +784,7 @@
 			WinUsb::ResetPipe( winusb.hDeviceInterface, KF_EP_BULK_IN );
 			// . streaming the "KFW" data to KryoFlux
 			SendRequest( TRequest::INDEX_WRITE, 2 ); // waiting for an index?
-			if (!SetMotorOn() || !SelectHead(head) || !SeekTo(cyl))
+			if (!SetMotorOn() || !SelectHead(head) || !SeekTo(cyl)) // some Drives require motor to be on before seeking Heads
 				return ERROR_NOT_READY;
 			SendRequest( TRequest::STREAM, 2 ); // start streaming
 				err=WriteFull( dataBuffer, nBytesToWrite );
@@ -862,7 +862,7 @@
 			// . issuing a Request to the KryoFlux device to read fluxes in the specified Track
 			PBYTE p=tmpDataBuffer;
 	{		EXCLUSIVELY_LOCK_DEVICE();
-			if (!SeekTo(cyl) || !SelectHead(head) || !SetMotorOn())
+			if (!SetMotorOn() || !SelectHead(head) || !SeekTo(cyl)) // some Drives require motor to be on before seeking Heads
 				return 0;
 			const BYTE nIndicesRequested=std::min<BYTE>( params.PrecisionToFullRevolutionCount()+1, Revolution::MAX ); // N+1 indices = N full revolutions
 			SendRequest( TRequest::STREAM, MAKEWORD(1,nIndicesRequested) ); // start streaming
