@@ -66,10 +66,7 @@
 			mutable CMutex locker;
 			HANDLE handle;
 			union{
-				struct{
-					WINUSB_INTERFACE_HANDLE hLibrary;
-					WINUSB_INTERFACE_HANDLE hDeviceInterface;
-				} winusb;
+				WinUsb::TDevInterfaceHandle winusb;
 			};
 			mutable char lastRequestResultMsg[240];
 			TCHAR firmwareVersion[100];
@@ -77,7 +74,6 @@
 		bool fddFound;
 		mutable TCylinder lastCalibratedCylinder;
 		
-		static LPCTSTR GetDevicePath(TDriver driver,PTCHAR devicePathBuf);
 		static LPCTSTR Recognize(PTCHAR deviceNameList);
 		static PImage Instantiate(LPCTSTR deviceName);
 

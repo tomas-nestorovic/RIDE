@@ -40,7 +40,12 @@ namespace UxTheme
 }
 
 
+DEFINE_GUID( GUID_DEVINTERFACE_USB_DEVICE, 0xA5DCBF10L, 0x6530, 0x11D2, 0x90, 0x1F, 0x00, 0xC0, 0x4F, 0xB9, 0x51, 0xED );
+
+
 namespace SetupDi
+{
+namespace Lib
 {
 	static HMODULE hLib;
 
@@ -49,7 +54,7 @@ namespace SetupDi
 	}
 
 	HDEVINFO GetClassDevs(
-		__in_opt CONST GUID *ClassGuid,
+		__in_opt CONST GUID &ClassGuid,
 		__in_opt PCTSTR Enumerator,
 		__in_opt HWND hwndParent,
 		__in DWORD Flags
@@ -60,20 +65,20 @@ namespace SetupDi
 		#else
 			if (const F f=(F)GetProcedure(_T("SetupDiGetClassDevsA")))
 		#endif
-				return f( ClassGuid, Enumerator, hwndParent, Flags );
+				return f( &ClassGuid, Enumerator, hwndParent, Flags );
 		return nullptr;
 	}
 
 	BOOL EnumDeviceInterfaces(
 		__in HDEVINFO DeviceInfoSet,
 		__in_opt PSP_DEVINFO_DATA DeviceInfoData,
-		__in CONST GUID *InterfaceClassGuid,
+		__in CONST GUID &InterfaceClassGuid,
 		__in DWORD MemberIndex,
 		__out PSP_DEVICE_INTERFACE_DATA DeviceInterfaceData
     ){
 		typedef BOOL (__stdcall *F)(HDEVINFO,PSP_DEVINFO_DATA,CONST GUID *,DWORD,PSP_DEVICE_INTERFACE_DATA);
 		if (const F f=(F)GetProcedure(_T("SetupDiEnumDeviceInterfaces")))
-			return f( DeviceInfoSet, DeviceInfoData, InterfaceClassGuid, MemberIndex, DeviceInterfaceData );
+			return f( DeviceInfoSet, DeviceInfoData, &InterfaceClassGuid, MemberIndex, DeviceInterfaceData );
 		return FALSE;
 	}
 
@@ -103,11 +108,41 @@ namespace SetupDi
 			return f(DeviceInfoSet);
 		return FALSE;
 	}
+} // namespace Lib
 
+
+	LPCTSTR GetDevicePath(HDEVINFO hDevList,const GUID &interfaceGuid,DWORD index,PTCHAR devicePathBuf,PSP_DEVINFO_DATA pdid=nullptr){
+		// determines and returns the path of the I-th locally connected device in the List; returns Null if device not found
+		*devicePathBuf='\0'; // initialization (just to be sure)
+		SP_DEVICE_INTERFACE_DATA devIntfData={ sizeof(devIntfData) };
+		if (!Lib::EnumDeviceInterfaces( hDevList, nullptr, interfaceGuid, 0, &devIntfData ))
+			return nullptr; // currently not connected to this computer
+		struct{
+			SP_DEVICE_INTERFACE_DETAIL_DATA detail;
+			TCHAR buffer[200];
+		} str;
+		DWORD dwSize=0;
+		str.detail.cbSize=sizeof(str.detail);
+		return	Lib::GetDeviceInterfaceDetail( hDevList, &devIntfData, &str.detail, sizeof(str), &dwSize, pdid )!=0
+				? ::lstrcpy( devicePathBuf, str.detail.DevicePath )
+				: nullptr;
+	}
+
+	LPCTSTR GetDevicePathByInterface(const GUID &interfaceGuid,PTCHAR devicePathBuf){
+		// determines and returns the path of a locally connected device; returns Null if device not found
+		const HDEVINFO hDevList=Lib::GetClassDevs( interfaceGuid, nullptr, nullptr, DIGCF_PRESENT|DIGCF_DEVICEINTERFACE );
+		if (hDevList==INVALID_HANDLE_VALUE) // not connected to this computer
+			return nullptr;
+		const bool found=GetDevicePath( hDevList, interfaceGuid, 0, devicePathBuf )!=nullptr;
+		Lib::DestroyDeviceInfoList(hDevList);
+		return	found ? devicePathBuf : nullptr;
+	}
 }
 
 
 namespace WinUsb
+{
+namespace Lib
 {
 	static HMODULE hLib;
 
@@ -233,6 +268,76 @@ namespace WinUsb
 		if (const F f=(F)GetProcedure(_T("WinUsb_AbortPipe")))
 			return f( InterfaceHandle, PipeID );
 		return FALSE;
+	}
+} // namespace Lib
+
+
+	void TDevInterfaceHandle::Clear(){
+		hLibrary = hDeviceInterface = INVALID_HANDLE_VALUE;
+	}
+
+	bool TDevInterfaceHandle::ConnectToInterface(HANDLE hDevice,UCHAR interfaceIndex){
+		// 
+		ASSERT( hLibrary==INVALID_HANDLE_VALUE && hDeviceInterface==INVALID_HANDLE_VALUE );
+		return	Lib::Initialize( hDevice, &hLibrary )!=0
+				&&
+				Lib::GetAssociatedInterface( hLibrary, interfaceIndex, &hDeviceInterface )!=0;
+	}
+
+	void TDevInterfaceHandle::DisconnectFromInterface(){
+		//
+		if (hDeviceInterface!=INVALID_HANDLE_VALUE)
+			Lib::Free( hDeviceInterface );
+		if (hLibrary!=INVALID_HANDLE_VALUE)
+			Lib::Free( hLibrary );
+		Clear();
+	}
+
+	LPCTSTR TDevInterfaceHandle::GetProductName(PTCHAR productNameBuffer,BYTE productNameBufferLength) const{
+		// determines and returns the product introduced upon the device connection
+		DWORD nBytesTransferred;
+		USB_DEVICE_DESCRIPTOR desc={ sizeof(desc), USB_DEVICE_DESCRIPTOR_TYPE };
+		if (Lib::GetDescriptor(
+				hLibrary,
+				USB_DEVICE_DESCRIPTOR_TYPE, 0, 0, (PUCHAR)&desc, sizeof(desc),
+				&nBytesTransferred
+			)!=0
+			&&
+			desc.iProduct>0
+		){
+			struct{
+				USB_STRING_DESCRIPTOR desc;
+				WCHAR buf[MAX_PATH];
+			} strW;
+			if (Lib::GetDescriptor(
+					hLibrary,
+					USB_STRING_DESCRIPTOR_TYPE, desc.iProduct, 0, (PUCHAR)&strW, sizeof(strW),
+					&nBytesTransferred
+				)!=0
+				&&
+				strW.desc.bLength>2
+			){
+				productNameBuffer[
+					::WideCharToMultiByte( CP_ACP, 0, strW.desc.bString,(strW.desc.bLength-2)/sizeof(WCHAR), productNameBuffer,productNameBufferLength, nullptr,nullptr )
+				]='\0';
+				return productNameBuffer;
+			}
+		}
+		return nullptr;
+	}
+
+	void TDevInterfaceHandle::SetPipePolicy(UCHAR bulkPipeId,BYTE enable,DWORD msTimeout) const{
+		Lib::SetPipePolicy( hDeviceInterface, bulkPipeId, SHORT_PACKET_TERMINATE, sizeof(enable), &enable );
+		Lib::SetPipePolicy( hDeviceInterface, bulkPipeId, AUTO_CLEAR_STALL, sizeof(enable), &enable );
+		Lib::SetPipePolicy( hDeviceInterface, bulkPipeId, PIPE_TRANSFER_TIMEOUT, sizeof(msTimeout), &msTimeout ); // milliseconds
+	}
+
+	void TDevInterfaceHandle::ClearIoPipes(UCHAR bulkInPipeId,UCHAR bulkOutPipeId) const{
+		// clears i/o pipes to communicate with the device
+		while (!Lib::AbortPipe( hDeviceInterface, bulkOutPipeId ));
+		Lib::ResetPipe( hDeviceInterface, bulkOutPipeId );
+		while (!Lib::AbortPipe( hDeviceInterface, bulkInPipeId ));
+		Lib::ResetPipe( hDeviceInterface, bulkInPipeId );
 	}
 
 }

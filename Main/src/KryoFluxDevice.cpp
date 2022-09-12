@@ -23,43 +23,13 @@
 
 	#define KF_DEVICE_NAME_ANSI		"KryoFlux DiskSystem"
 	#define KF_DEVICE_NAME_PATTERN	_T("KryoFlux floppy drive #%c (%s.sys)")
+	static_assert( sizeof(KF_DEVICE_NAME_PATTERN)/sizeof(TCHAR)+8<=DEVICE_NAME_CHARS_MAX, "Identifier too long" );
 
 	#define KF_ACCESS_DRIVER_WINUSB	_T("winusb")
 
 	#define KF_DRIVES_MAX			2
 
-	DEFINE_GUID( GUID_KRYOFLUX, 0x9E09C9CD, 0x5068, 0x4b31, 0x82, 0x89, 0xE3, 0x63, 0xE4, 0xE0, 0x62, 0xAC );
-
-	LPCTSTR CKryoFluxDevice::GetDevicePath(TDriver driver,PTCHAR devicePathBuf){
-		// determines and returns the path of a locally connected KryoFlux device; returns Null if device not found
-		*devicePathBuf='\0'; // initialization
-		switch (driver){
-			case TDriver::WINUSB:{
-				const HDEVINFO hDevInfo=SetupDi::GetClassDevs( &GUID_KRYOFLUX, nullptr, nullptr, DIGCF_PRESENT|DIGCF_DEVICEINTERFACE );
-				if (hDevInfo==INVALID_HANDLE_VALUE) // never connected to this computer
-					return nullptr;
-				SP_DEVINFO_DATA devInfoData={ sizeof(devInfoData) };
-				SP_DEVICE_INTERFACE_DATA devIntfData={ sizeof(devIntfData) };
-				if (SetupDi::EnumDeviceInterfaces( hDevInfo, nullptr, &GUID_KRYOFLUX, 0, &devIntfData )!=0){
-					// yes, currently connected to this computer
-					struct{
-						SP_DEVICE_INTERFACE_DETAIL_DATA detail;
-						TCHAR buffer[200];
-					} str;
-					DWORD dwSize=0;
-					str.detail.cbSize=sizeof(str.detail);
-					if (SetupDi::GetDeviceInterfaceDetail( hDevInfo, &devIntfData, &str.detail, sizeof(str), &dwSize, nullptr )!=0)
-						::lstrcpy( devicePathBuf, str.detail.DevicePath );
-				}
-				SetupDi::DestroyDeviceInfoList(hDevInfo);
-				break;
-			}
-			default:
-				ASSERT(FALSE); // all available access possibilities should be covered!
-				return nullptr;
-		}
-		return	*devicePathBuf!='\0' ? devicePathBuf : nullptr;
-	}
+	DEFINE_GUID( GUID_DEVINTERFACE_KRYOFLUX, 0x9E09C9CD, 0x5068, 0x4b31, 0x82, 0x89, 0xE3, 0x63, 0xE4, 0xE0, 0x62, 0xAC );
 
 	#define KF_FIRMWARE_LOAD_ADDR	0x202000
     #define KF_FIRMWARE_EXEC_ADDR	KF_FIRMWARE_LOAD_ADDR
@@ -68,13 +38,10 @@
 		// returns a null-separated list of floppy drives connected via a local KryoFlux device
 		// - evaluating possibilities how to access KryoFlux
 		ASSERT( deviceNameList!=nullptr );
-		TDriver driver;
-		if (GetDevicePath( TDriver::WINUSB, deviceNameList )!=nullptr)
-			driver=TDriver::WINUSB;
-		else
+		if (!SetupDi::GetDevicePathByInterface( GUID_DEVINTERFACE_KRYOFLUX, deviceNameList ))
 			return nullptr; // KryoFlux inaccessible
 		// - checking if firmware loaded
-		if (CKryoFluxDevice &&tmp=CKryoFluxDevice( driver, 0 )) // connected ...
+		if (CKryoFluxDevice &&tmp=CKryoFluxDevice( TDriver::WINUSB, 0 )) // connected ...
 			while (const TStdWinError err=tmp.UploadFirmware()){ // ... but firmware failed to load
 				if (Utils::QuestionYesNo( _T("KryoFlux found but without firmware loaded. Load it manually?\n\nUnless you move the firmware file, this step is needed only once."), MB_DEFBUTTON1 )){
 					TCHAR fileName[MAX_PATH];
@@ -151,7 +118,6 @@
 		informedOnPoorPrecompensation=false;
 		// - connecting to a local KryoFlux device
 		hDevice=INVALID_HANDLE_VALUE;
-		winusb.hLibrary = winusb.hDeviceInterface = INVALID_HANDLE_VALUE;
 		Connect();
 		DestroyAllTracks(); // because Connect scans zeroth Track
 	}
@@ -177,36 +143,25 @@
 		// - connecting to the device
 		ASSERT( hDevice==INVALID_HANDLE_VALUE );
 		hDevice=::CreateFile(
-					GetDevicePath( driver, (PTCHAR)dataBuffer.get() ),
+					SetupDi::GetDevicePathByInterface( GUID_DEVINTERFACE_KRYOFLUX, (PTCHAR)dataBuffer.get() ),
 					GENERIC_READ | GENERIC_WRITE,
 					FILE_SHARE_WRITE | FILE_SHARE_READ,
 					nullptr, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, nullptr
 				);
 		// - setting transfer properties
-		if (hDevice!=INVALID_HANDLE_VALUE){
-			DWORD timeout=1500; // milliseconds
-			BYTE enable=1;
+		if (hDevice!=INVALID_HANDLE_VALUE)
 			switch (driver){
 				case TDriver::WINUSB:
-					ASSERT( winusb.hLibrary==INVALID_HANDLE_VALUE && winusb.hDeviceInterface==INVALID_HANDLE_VALUE );
-					if (WinUsb::Initialize( hDevice, &winusb.hLibrary )!=0
-						&&
-						WinUsb::GetAssociatedInterface( winusb.hLibrary, KF_INTERFACE-1, &winusb.hDeviceInterface )!=0
-					){
-						WinUsb::SetPipePolicy( winusb.hDeviceInterface, KF_EP_BULK_IN, SHORT_PACKET_TERMINATE, sizeof(enable), &enable );
-						WinUsb::SetPipePolicy( winusb.hDeviceInterface, KF_EP_BULK_IN, AUTO_CLEAR_STALL, sizeof(enable), &enable );
-						WinUsb::SetPipePolicy( winusb.hDeviceInterface, KF_EP_BULK_IN, PIPE_TRANSFER_TIMEOUT, sizeof(timeout), &timeout );
-
-						WinUsb::SetPipePolicy( winusb.hDeviceInterface, KF_EP_BULK_OUT, SHORT_PACKET_TERMINATE, sizeof(enable), &enable );
-						WinUsb::SetPipePolicy( winusb.hDeviceInterface, KF_EP_BULK_OUT, AUTO_CLEAR_STALL, sizeof(enable), &enable );
-						WinUsb::SetPipePolicy( winusb.hDeviceInterface, KF_EP_BULK_OUT, PIPE_TRANSFER_TIMEOUT, sizeof(timeout), &timeout );
+					winusb.Clear();
+					if (winusb.ConnectToInterface( hDevice, KF_INTERFACE-1 )){
+						winusb.SetPipePolicy( KF_EP_BULK_IN, true, 1500 );
+						winusb.SetPipePolicy( KF_EP_BULK_OUT, true, 1500 );
 					}
 					break;
 				default:
 					ASSERT(FALSE);
 					return false;
 			}
-		}
 		// - selecting floppy drive
 		SendRequest( TRequest::DEVICE, fddId ); // not checking for success as firmware may not yet have been loaded
 		fddFound =	internalTracks[0][0]!=nullptr // floppy drive already found before disconnecting from KryoFlux?
@@ -223,11 +178,7 @@
 		fddFound=false;
 		switch (driver){
 			case TDriver::WINUSB:
-				if (winusb.hDeviceInterface!=INVALID_HANDLE_VALUE)
-					WinUsb::Free( winusb.hDeviceInterface );
-				if (winusb.hLibrary!=INVALID_HANDLE_VALUE)
-					WinUsb::Free( winusb.hLibrary );
-				winusb.hLibrary = winusb.hDeviceInterface = INVALID_HANDLE_VALUE;
+				winusb.DisconnectFromInterface();
 				break;
 			default:
 				ASSERT(FALSE);
@@ -278,38 +229,9 @@
 		// determines and returns the product introduced under a KryoFlux device connection
 		if (!*this)
 			return nullptr;
-		DWORD nBytesTransferred;
 		switch (driver){
-			case TDriver::WINUSB:{
-				USB_DEVICE_DESCRIPTOR desc={ sizeof(desc), USB_DEVICE_DESCRIPTOR_TYPE };
-				if (WinUsb::GetDescriptor(
-						winusb.hLibrary,
-						USB_DEVICE_DESCRIPTOR_TYPE, 0, 0, (PUCHAR)&desc, sizeof(desc),
-						&nBytesTransferred
-					)!=0
-					&&
-					desc.iProduct>0
-				){
-					struct{
-						USB_STRING_DESCRIPTOR desc;
-						WCHAR buf[MAX_PATH];
-					} strW;
-					if (WinUsb::GetDescriptor(
-							winusb.hLibrary,
-							USB_STRING_DESCRIPTOR_TYPE, desc.iProduct, 0, (PUCHAR)&strW, sizeof(strW),
-							&nBytesTransferred
-						)!=0
-						&&
-						strW.desc.bLength>2
-					){
-						device.lastRequestResultMsg[
-							::WideCharToMultiByte( CP_ACP, 0, strW.desc.bString,(strW.desc.bLength-2)/sizeof(WCHAR), device.lastRequestResultMsg,sizeof(device.lastRequestResultMsg), nullptr,nullptr )
-						]='\0';
-						return device.lastRequestResultMsg;
-					}
-				}
-				return nullptr;
-			}
+			case TDriver::WINUSB:
+				return	winusb.GetProductName( device.lastRequestResultMsg, sizeof(device.lastRequestResultMsg) );
 			default:
 				ASSERT(FALSE);
 				return nullptr;
@@ -390,7 +312,7 @@
 					index,
 					sizeof(device.lastRequestResultMsg)
 				};
-				return	WinUsb::ControlTransfer(
+				return	WinUsb::Lib::ControlTransfer(
 							winusb.hLibrary,
 							sp, (PUCHAR)device.lastRequestResultMsg, sizeof(device.lastRequestResultMsg),
 							&nBytesTransferred, nullptr
@@ -411,7 +333,7 @@
 		DWORD nBytesTransferred=0;
 		switch (driver){
 			case TDriver::WINUSB:
-				return	WinUsb::ReadPipe(
+				return	WinUsb::Lib::ReadPipe(
 							winusb.hDeviceInterface,
 							KF_EP_BULK_IN, (PUCHAR)buffer, nBytesFree,
 							&nBytesTransferred, nullptr
@@ -449,7 +371,7 @@
 		DWORD nBytesTransferred=0;
 		switch (driver){
 			case TDriver::WINUSB:
-				return	WinUsb::WritePipe(
+				return	WinUsb::Lib::WritePipe(
 							winusb.hDeviceInterface,
 							KF_EP_BULK_OUT, (PUCHAR)buffer, nBytes,
 							&nBytesTransferred, nullptr
@@ -778,10 +700,7 @@
 				}
 			#endif
 			// . clearing i/o pipes
-			while (!WinUsb::AbortPipe( winusb.hDeviceInterface, KF_EP_BULK_OUT ));
-			WinUsb::ResetPipe( winusb.hDeviceInterface, KF_EP_BULK_OUT );
-			while (!WinUsb::AbortPipe( winusb.hDeviceInterface, KF_EP_BULK_IN ));
-			WinUsb::ResetPipe( winusb.hDeviceInterface, KF_EP_BULK_IN );
+			winusb.ClearIoPipes( KF_EP_BULK_IN, KF_EP_BULK_OUT );
 			// . streaming the "KFW" data to KryoFlux
 			SendRequest( TRequest::INDEX_WRITE, 2 ); // waiting for an index?
 			if (!SetMotorOn() || !SelectHead(head) || !SeekTo(cyl)) // some Drives require motor to be on before seeking Heads
