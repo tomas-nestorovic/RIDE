@@ -76,7 +76,6 @@
 		} device;
 		bool fddFound;
 		mutable TCylinder lastCalibratedCylinder;
-		bool informedOnPoorPrecompensation;
 		
 		static LPCTSTR GetDevicePath(TDriver driver,PTCHAR devicePathBuf);
 		static LPCTSTR Recognize(PTCHAR deviceNameList);
@@ -103,8 +102,6 @@
 		bool SeekHome() const;
 		bool SelectHead(THead head) const;
 		TStdWinError SaveAndVerifyTrack(TCylinder cyl,THead head,const volatile bool &cancelled) const;
-	protected:
-		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
 	public:
 		static const TProperties Properties;
 

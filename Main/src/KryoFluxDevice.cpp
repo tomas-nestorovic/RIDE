@@ -147,8 +147,8 @@
 		, driver(driver) , fddId(fddId)
 		, dataBuffer( KF_BUFFER_CAPACITY )
 		, fddFound(false)
-		, lastCalibratedCylinder(0)
-		, informedOnPoorPrecompensation(false) {
+		, lastCalibratedCylinder(0) {
+		informedOnPoorPrecompensation=false;
 		// - connecting to a local KryoFlux device
 		hDevice=INVALID_HANDLE_VALUE;
 		winusb.hLibrary = winusb.hDeviceInterface = INVALID_HANDLE_VALUE;
@@ -991,7 +991,7 @@
 		return ERROR_SUCCESS;
 	}
 
-	BOOL CKryoFluxDevice::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){
+	BOOL CCapsBase::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){
 		// command processing
 		if (nCode==CN_COMMAND) // a command
 			if (nID==ID_IMAGE_PROTECT){ // toggling WriteProtection

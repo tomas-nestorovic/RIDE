@@ -25,6 +25,7 @@
 		, capsDeviceHandle(  capsLibLoadingError ? -1 : CAPS::AddImage()  )
 		// - initialization
 		, precompensation(realDriveLetter)
+		, informedOnPoorPrecompensation(true) // Devices override in their ctors to False
 		, forcedMediumType( Medium::FLOPPY_ANY )
 		, params(iniSectionName)
 		, lastSuccessfullCodec(Codec::MFM) {
