@@ -51,6 +51,7 @@
 		}else
 			SetWindowText(LABEL);
 		//SetWindowPos( nullptr, 0,0, 0,0, SWP_NOZORDER|SWP_NOMOVE|SWP_NOSIZE|SWP_FRAMECHANGED|SWP_NOSENDCHANGING );
+		hexaEditor.SetFocus();
 	}
 
 
