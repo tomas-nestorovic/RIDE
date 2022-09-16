@@ -14,6 +14,8 @@ namespace UxTheme
 
 namespace SetupDi
 {
+	extern const GUID GUID_DEVINTERFACE_USB_DEVICE;
+
 	namespace Lib{
 		HDEVINFO GetClassDevs(
 			__in_opt CONST GUID &ClassGuid,
@@ -36,12 +38,31 @@ namespace SetupDi
 			__out_opt PDWORD RequiredSize, 
 			__out_opt PSP_DEVINFO_DATA DeviceInfoData
 		);
+		BOOL GetDevicePropertyW(
+			__in HDEVINFO DeviceInfoSet,
+			__in PSP_DEVINFO_DATA DeviceInfoData,
+			__in CONST DEVPROPKEY &PropertyKey,
+			__out DEVPROPTYPE &PropertyType,
+			__out_bcount_opt(PropertyBufferSize) PBYTE PropertyBuffer,
+			__in DWORD PropertyBufferSize,
+			__out_opt PDWORD RequiredSize,
+			__in DWORD Flags
+		);
+		BOOL GetDeviceRegistryProperty(
+			__in HDEVINFO DeviceInfoSet,
+			__in PSP_DEVINFO_DATA DeviceInfoData,
+			__in DWORD Property,
+			__out_opt PDWORD PropertyRegDataType, 
+			__out_bcount_opt(PropertyBufferSize) PBYTE PropertyBuffer,
+			__in DWORD PropertyBufferSize,
+			__out_opt PDWORD RequiredSize 
+		);
 		BOOL DestroyDeviceInfoList(
 			__in HDEVINFO DeviceInfoSet
 		);
 	}
 
-	LPCTSTR GetDevicePathByInterface(const GUID &interfaceGuid,PTCHAR devicePathBuf);
+	CString GetDevicePath(const GUID &interfaceGuid,LPCWSTR deviceNameSubstr=nullptr);
 }
 
 

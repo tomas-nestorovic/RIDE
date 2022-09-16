@@ -38,7 +38,7 @@
 		// returns a null-separated list of floppy drives connected via a local KryoFlux device
 		// - evaluating possibilities how to access KryoFlux
 		ASSERT( deviceNameList!=nullptr );
-		if (!SetupDi::GetDevicePathByInterface( GUID_DEVINTERFACE_KRYOFLUX, deviceNameList ))
+		if (SetupDi::GetDevicePath( GUID_DEVINTERFACE_KRYOFLUX ).IsEmpty())
 			return nullptr; // KryoFlux inaccessible
 		// - checking if firmware loaded
 		if (CKryoFluxDevice &&tmp=CKryoFluxDevice( TDriver::WINUSB, 0 )) // connected ...
@@ -118,6 +118,7 @@
 		informedOnPoorPrecompensation=false;
 		// - connecting to a local KryoFlux device
 		hDevice=INVALID_HANDLE_VALUE;
+		winusb.Clear();
 		Connect();
 		DestroyAllTracks(); // because Connect scans zeroth Track
 	}
@@ -143,7 +144,7 @@
 		// - connecting to the device
 		ASSERT( hDevice==INVALID_HANDLE_VALUE );
 		hDevice=::CreateFile(
-					SetupDi::GetDevicePathByInterface( GUID_DEVINTERFACE_KRYOFLUX, (PTCHAR)dataBuffer.get() ),
+					SetupDi::GetDevicePath( GUID_DEVINTERFACE_KRYOFLUX ),
 					GENERIC_READ | GENERIC_WRITE,
 					FILE_SHARE_WRITE | FILE_SHARE_READ,
 					nullptr, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, nullptr

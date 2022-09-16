@@ -1,4 +1,12 @@
 #include "stdafx.h"
+#ifdef DEFINE_DEVPROPKEY
+	#undef DEFINE_DEVPROPKEY
+#endif
+#ifdef INITGUID
+	#define DEFINE_DEVPROPKEY(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8, pid) EXTERN_C const DEVPROPKEY DECLSPEC_SELECTANY name = { { l, w1, w2, { b1, b2,  b3,  b4,  b5,  b6,  b7,  b8 } }, pid }
+#else
+	#define DEFINE_DEVPROPKEY(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8, pid) EXTERN_C const DEVPROPKEY name
+#endif // INITGUID
 
 static PVOID GetProcedure(HMODULE &rhLib,LPCTSTR libName,LPCTSTR procName){
 	if (!rhLib)
@@ -40,11 +48,10 @@ namespace UxTheme
 }
 
 
-DEFINE_GUID( GUID_DEVINTERFACE_USB_DEVICE, 0xA5DCBF10L, 0x6530, 0x11D2, 0x90, 0x1F, 0x00, 0xC0, 0x4F, 0xB9, 0x51, 0xED );
-
-
 namespace SetupDi
 {
+DEFINE_GUID( GUID_DEVINTERFACE_USB_DEVICE, 0xA5DCBF10L, 0x6530, 0x11D2, 0x90, 0x1F, 0x00, 0xC0, 0x4F, 0xB9, 0x51, 0xED );
+
 namespace Lib
 {
 	static HMODULE hLib;
@@ -100,6 +107,37 @@ namespace Lib
 		return FALSE;
 	}
 
+	BOOL GetDevicePropertyW(
+		__in HDEVINFO DeviceInfoSet,
+		__in PSP_DEVINFO_DATA DeviceInfoData,
+		__in CONST DEVPROPKEY &PropertyKey,
+		__out DEVPROPTYPE &PropertyType,
+		__out_bcount_opt(PropertyBufferSize) PBYTE PropertyBuffer,
+		__in DWORD PropertyBufferSize,
+		__out_opt PDWORD RequiredSize,
+		__in DWORD Flags
+	){
+		typedef BOOL (__stdcall *F)(HDEVINFO,PSP_DEVINFO_DATA,CONST DEVPROPKEY *,DEVPROPTYPE *,PBYTE,DWORD,PDWORD,DWORD);
+		if (const F f=(F)GetProcedure(_T("SetupDiGetDevicePropertyW")))
+			return f( DeviceInfoSet, DeviceInfoData, &PropertyKey, &PropertyType, PropertyBuffer, PropertyBufferSize, RequiredSize, Flags );
+		return FALSE;
+	}
+
+	BOOL GetDeviceRegistryPropertyW(
+		__in HDEVINFO DeviceInfoSet,
+		__in PSP_DEVINFO_DATA DeviceInfoData,
+		__in DWORD Property,
+		__out_opt PDWORD PropertyRegDataType, 
+		__out_bcount_opt(PropertyBufferSize) PBYTE PropertyBuffer,
+		__in DWORD PropertyBufferSize,
+		__out_opt PDWORD RequiredSize 
+	){
+		typedef BOOL (__stdcall *F)(HDEVINFO,PSP_DEVINFO_DATA,DWORD,PDWORD,PBYTE,DWORD,PDWORD);
+		if (const F f=(F)GetProcedure(_T("SetupDiGetDeviceRegistryPropertyW")))
+			return f( DeviceInfoSet, DeviceInfoData, Property, PropertyRegDataType, PropertyBuffer, PropertyBufferSize, RequiredSize );
+		return FALSE;
+	}
+
 	BOOL DestroyDeviceInfoList(
 		__in HDEVINFO DeviceInfoSet
 	){
@@ -111,31 +149,43 @@ namespace Lib
 } // namespace Lib
 
 
-	LPCTSTR GetDevicePath(HDEVINFO hDevList,const GUID &interfaceGuid,DWORD index,PTCHAR devicePathBuf,PSP_DEVINFO_DATA pdid=nullptr){
-		// determines and returns the path of the I-th locally connected device in the List; returns Null if device not found
-		*devicePathBuf='\0'; // initialization (just to be sure)
-		SP_DEVICE_INTERFACE_DATA devIntfData={ sizeof(devIntfData) };
-		if (!Lib::EnumDeviceInterfaces( hDevList, nullptr, interfaceGuid, 0, &devIntfData ))
-			return nullptr; // currently not connected to this computer
-		struct{
-			SP_DEVICE_INTERFACE_DETAIL_DATA detail;
-			TCHAR buffer[200];
-		} str;
-		DWORD dwSize=0;
-		str.detail.cbSize=sizeof(str.detail);
-		return	Lib::GetDeviceInterfaceDetail( hDevList, &devIntfData, &str.detail, sizeof(str), &dwSize, pdid )!=0
-				? ::lstrcpy( devicePathBuf, str.detail.DevicePath )
-				: nullptr;
-	}
+	DEFINE_DEVPROPKEY( DEVPKEY_Device_BusReportedDeviceDesc, 0x540b947e, 0x8b40, 0x45bc, 0xa8, 0xa2, 0x6a, 0x0b, 0x89, 0x4c, 0xbd, 0xa2, 4 );
 
-	LPCTSTR GetDevicePathByInterface(const GUID &interfaceGuid,PTCHAR devicePathBuf){
-		// determines and returns the path of a locally connected device; returns Null if device not found
+	CString GetDevicePath(const GUID &interfaceGuid,LPCWSTR deviceNameSubstr){
+		// determines and returns the path of a locally connected Device; returns Null if device not found
 		const HDEVINFO hDevList=Lib::GetClassDevs( interfaceGuid, nullptr, nullptr, DIGCF_PRESENT|DIGCF_DEVICEINTERFACE );
 		if (hDevList==INVALID_HANDLE_VALUE) // not connected to this computer
-			return nullptr;
-		const bool found=GetDevicePath( hDevList, interfaceGuid, 0, devicePathBuf )!=nullptr;
+			return _T("");
+		struct{
+			SP_DEVICE_INTERFACE_DETAIL_DATA detail;
+			TCHAR buffer[2000];
+		} str;
+		str.detail.cbSize=sizeof(str.detail);
+		bool found=false; // assumption (no Device with such substring in location name)
+		for( DWORD i=0,dw; !found; i++ ){
+			SP_DEVICE_INTERFACE_DATA devIntfData={ sizeof(devIntfData) };
+			if (!Lib::EnumDeviceInterfaces( hDevList, nullptr, interfaceGuid, i, &devIntfData ))
+				break; // no more Devices with given Guid to enumerate
+			SP_DEVINFO_DATA did={ sizeof(did) };
+			if (!Lib::GetDeviceInterfaceDetail( hDevList, &devIntfData, &str.detail, sizeof(str), nullptr, &did ))
+				continue; // failed to retrieve this Device's path
+			if (deviceNameSubstr){
+				WCHAR str[128];
+				DEVPROPTYPE propType;
+				if (// Windows 7 and later
+					!Lib::GetDevicePropertyW( hDevList, &did, DEVPKEY_Device_BusReportedDeviceDesc, propType, (PBYTE)str, sizeof(str), nullptr, 0 )
+					&&
+					// Windows Vista and earlier
+					!Lib::GetDeviceRegistryPropertyW( hDevList, &did, SPDRP_LOCATION_INFORMATION, &dw, (PBYTE)str, sizeof(str), nullptr )
+				)
+					continue; // failed to obtain the necessary property
+				if (!::StrStrIW( str, deviceNameSubstr ))
+					continue; // not containing the searched substring
+			}
+			found=true;
+		}
 		Lib::DestroyDeviceInfoList(hDevList);
-		return	found ? devicePathBuf : nullptr;
+		return	found ? str.detail.DevicePath : _T("");
 	}
 }
 
