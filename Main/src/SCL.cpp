@@ -72,9 +72,9 @@
 			// - saving Directory
 			CTRDOS503 *const trdos=(CTRDOS503 *)dos;
 			CTRDOS503::PDirectoryEntry directory[TRDOS503_FILE_COUNT_MAX],*pde=directory;
-			if (GetCurrentDiskFreeSpace()<n*sizeof(TSclDirectoryItem))
-				return ERROR_DISK_FULL;
-			for( BYTE n=trdos->__getDirectory__(directory); n--; f.Write(*pde++,sizeof(TSclDirectoryItem)) );
+			for( BYTE n=trdos->__getDirectory__(directory); n--; f.Write(*pde++,sizeof(TSclDirectoryItem)) )
+				if (GetCurrentDiskFreeSpace()<sizeof(TSclDirectoryItem))
+					return ERROR_DISK_FULL;
 			// - saving each File's data
 	{		const Utils::CVarTempReset<CDos::TGetFileSizeOptions> gfso0( trdos->getFileSizeDefaultOption, CDos::TGetFileSizeOptions::SizeOnDisk ); // exporting whole Sectors instead of just reported File length
 				BYTE buf[65536];
