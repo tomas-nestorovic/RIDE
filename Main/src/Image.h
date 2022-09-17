@@ -251,6 +251,7 @@
 		void Patch();
 		void OnCloseDocument() override sealed;
 	protected:
+		static DWORD GetCurrentDiskFreeSpace();
 		static TStdWinError OpenImageForReading(LPCTSTR fileName,CFile &f);
 		static TStdWinError OpenImageForReadingAndWriting(LPCTSTR fileName,CFile &f);
 		static TStdWinError CreateImageForWriting(LPCTSTR fileName,CFile &f);

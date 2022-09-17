@@ -10,7 +10,7 @@
 
 		bool IsKnownSector(TCylinder cyl,THead head,RCSectorId id) const;
 		PSectorData __getBufferedSectorData__(TCylinder cyl,THead head,PCSectorId sectorId) const;
-		void __saveTrackToCurrentPositionInFile__(CFile *pfOtherThanCurrentFile,TPhysicalAddress chs);
+		TStdWinError SaveTrackToCurrentPositionInFile(CFile *pfOtherThanCurrentFile,TPhysicalAddress chs);
 	protected:
 		TTrackScheme trackAccessScheme;
 		Utils::CCallocPtr<TSide,THead> explicitSides; // non-Null = Side numbers explicitly provided by user

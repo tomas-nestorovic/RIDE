@@ -202,10 +202,12 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 								pit->FlushSectorBuffers(); // convert all modifications into flux transitions
 								if (const DWORD trackLength=TrackToStream( *pit, CMemFile(buffer,SCP_BUFFER_CAPACITY), cylFile, head, bStreamAdjusted )){
 									// conversion of the Track to SuperCardPro stream succeeded?
+									const LONG capacity=((TTrackDataHeader *)buffer.get())->GetFullTrackCapacityInBytes( mp, header );
+									if (GetCurrentDiskFreeSpace()<capacity)
+										return ERROR_DISK_FULL;
 									// . success thanks to adjustments to overcome SuperCard Pro limitations?
 									header.flags.normalized|=bStreamAdjusted;
 									// . search for sufficiently big gap
-									const LONG capacity=((TTrackDataHeader *)buffer.get())->GetFullTrackCapacityInBytes( mp, header );
 									tdhOffsets[cylFile][head]=fTargetLength; // assumption (no gap big enough to contain this Track, so must extend the file)
 									for( auto it=contentLayout.begin(); it!=contentLayout.end(); it++ )
 										if (it->second<0 && it->second<=-capacity){ // a gap that can contain the Track
@@ -233,11 +235,14 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 							pit->FlushSectorBuffers(); // convert all modifications into flux transitions
 							if (const DWORD trackLength=TrackToStream( *pit, CMemFile(buffer,SCP_BUFFER_CAPACITY), cylFile, head, bStreamAdjusted )){
 								// conversion of the Track to SuperCardPro stream succeeded?
+								const LONG capacity=((TTrackDataHeader *)buffer.get())->GetFullTrackCapacityInBytes( mp, header );
+								if (GetCurrentDiskFreeSpace()<capacity)
+									return ERROR_DISK_FULL;
 								// . success thanks to adjustments to overcome SuperCard Pro limitations?
 								header.flags.normalized|=bStreamAdjusted;
 								// . append Track to file
 								fTarget.SetLength( // make reserve so that the Track can expand upon different data
-									fTargetLength + ((TTrackDataHeader *)buffer.get())->GetFullTrackCapacityInBytes( mp, header )
+									fTargetLength + capacity
 								);
 								fTarget.Seek(
 									tdhOffsets[cylFile][head] = fTargetLength,
@@ -252,8 +257,11 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 							if (!tdh.Read( f, cylFile, head, header.nAvailableRevolutions ))
 								return ERROR_INVALID_BLOCK; // read invalid TrackDataHeader structure
 							f.Seek( tdhOffset, CFile::begin ); // seek back to the TrackDataHeader
+							const DWORD capacity=tdh.GetFullTrackCapacityInBytes( mp, header );
+							if (GetCurrentDiskFreeSpace()<capacity)
+								return ERROR_DISK_FULL;
 							fTarget.SetLength( // make reserve so that the Track can expand upon different data
-								fTargetLength + tdh.GetFullTrackCapacityInBytes( mp, header )
+								fTargetLength + capacity
 							);
 							fTarget.Seek( // append Track to file
 								tdhOffsets[cylFile][head] = fTargetLength,
@@ -277,6 +285,8 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		}*/
 		// - save Offsets
 		fTarget.Seek( sizeof(header)+header.flags.extended*0x70, CFile::begin );
+		if (GetCurrentDiskFreeSpace()<sizeof(tdhOffsets))
+			return ERROR_DISK_FULL;
 		fTarget.Write( tdhOffsets, sizeof(tdhOffsets) );
 		// - update Header
 		header.signatureAndRevision=THeader().signatureAndRevision;
@@ -322,7 +332,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			}while (fTarget.GetPosition()<fTarget.GetLength());
 		}
 		fTarget.SeekToBegin();
-		fTarget.Write( &header, sizeof(header) );
+		fTarget.Write( &header, sizeof(header) ); // no need to test free space on disk - we would already fail somewhere above
 		m_bModified=FALSE;
 		// - reopening Image's underlying file
 		if (f.m_hFile!=CFile::hFileNull)

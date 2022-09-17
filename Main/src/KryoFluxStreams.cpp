@@ -133,7 +133,10 @@
 				if (!f.Open( GetStreamFileName(cyl,head), CFile::modeCreate|CFile::modeWrite|CFile::typeBinary|CFile::shareExclusive, &e ))
 					return e.m_cause;
 				if (const auto data=Utils::MakeCallocPtr<BYTE>(KF_BUFFER_CAPACITY)){
-					f.Write( data, TrackToStream(*pit,data) );
+					const DWORD nTrackBytes=TrackToStream(*pit,data);
+					if (GetCurrentDiskFreeSpace()<nTrackBytes)
+						return ERROR_DISK_FULL;
+					f.Write( data, nTrackBytes );
 					pit->modified=false;
 				}else
 					return ERROR_NOT_ENOUGH_MEMORY;

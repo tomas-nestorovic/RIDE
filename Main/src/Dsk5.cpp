@@ -220,6 +220,8 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		CFile f;
 		if (const TStdWinError err=CreateImageForWriting(lpszPathName,f))
 			return err;
+		if (GetCurrentDiskFreeSpace()<sizeof(TDiskInfo))
+			return ERROR_DISK_FULL;
 		f.Write(&diskInfo,sizeof(TDiskInfo));
 		const PTrackInfo *ppti=tracks;
 		if (params.rev5){
@@ -228,8 +230,11 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			for( BYTE track=0,*pOffset256=diskInfo.rev5_trackOffsets256; track<DSK_REV5_TRACKS_MAX; pOffset256++,ppti++,ap.UpdateProgress(++track) )
 				if (ap.Cancelled)
 					return ERROR_CANCELLED;
-				else if (const BYTE tmp=*pOffset256)
-					f.Write(*ppti,tmp<<8);
+				else if (const DWORD tmp=*pOffset256<<8)
+					if (GetCurrentDiskFreeSpace()<tmp)
+						return ERROR_DISK_FULL;
+					else
+						f.Write(*ppti,tmp);
 		}else{
 			// standard DSK
 			bool mayLeadToIncompatibilityIssues=false; // assumption (none Track contains assets that could potentially lead to unreadability in randomly selected emulator)
@@ -238,6 +243,8 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				for( THead head=diskInfo.nHeads; head--; ){
 					const TTrackInfo *const ti=*ppti++;
 					WORD trackLength=sizeof(TTrackInfo)+__getTrackLength256__(ti);
+					if (GetCurrentDiskFreeSpace()<diskInfo.std_trackLength)
+						return ERROR_DISK_FULL;
 					f.Write( ti, trackLength );
 					if (trackLength<diskInfo.std_trackLength){
 						for( static constexpr BYTE Zero=0; trackLength++<diskInfo.std_trackLength; f.Write(&Zero,1) );

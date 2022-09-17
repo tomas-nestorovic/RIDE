@@ -66,18 +66,24 @@
 			TSclHeader header;
 			::lstrcpyA( header.id, HEADER_SINCLAIR );
 			header.nFiles=boot->nFiles;
+			if (GetCurrentDiskFreeSpace()<sizeof(header))
+				return ERROR_DISK_FULL;
 			f.Write(&header,sizeof(header));
 			// - saving Directory
 			CTRDOS503 *const trdos=(CTRDOS503 *)dos;
 			CTRDOS503::PDirectoryEntry directory[TRDOS503_FILE_COUNT_MAX],*pde=directory;
+			if (GetCurrentDiskFreeSpace()<n*sizeof(TSclDirectoryItem))
+				return ERROR_DISK_FULL;
 			for( BYTE n=trdos->__getDirectory__(directory); n--; f.Write(*pde++,sizeof(TSclDirectoryItem)) );
 			// - saving each File's data
 	{		const Utils::CVarTempReset<CDos::TGetFileSizeOptions> gfso0( trdos->getFileSizeDefaultOption, CDos::TGetFileSizeOptions::SizeOnDisk ); // exporting whole Sectors instead of just reported File length
 				BYTE buf[65536];
-				for( pde=directory; header.nFiles--; )
-					f.Write(buf,
-							trdos->ExportFile( *pde++, &CMemFile(buf,sizeof(buf)), sizeof(buf), nullptr )
-						);
+				for( pde=directory; header.nFiles--; ){
+					const DWORD fileLength=trdos->ExportFile( *pde++, &CMemFile(buf,sizeof(buf)), sizeof(buf), nullptr );
+					if (GetCurrentDiskFreeSpace()<fileLength)
+						return ERROR_DISK_FULL;
+					f.Write( buf, fileLength );
+				}
 				m_bModified=FALSE;
 	}		// - reopening the Image's underlying file
 			f.Close();

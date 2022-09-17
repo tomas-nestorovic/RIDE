@@ -106,9 +106,11 @@
 		return TRUE;
 	}
 
-	void CImageRaw::__saveTrackToCurrentPositionInFile__(CFile *pfOtherThanCurrentFile,TPhysicalAddress chs){
-		// saves Track defined by the {Cylinder,Head} pair in PhysicalAddress to the current position in the open file; after saving, the position in the file will advance immediately "after" the just saved Track
+	TStdWinError CImageRaw::SaveTrackToCurrentPositionInFile(CFile *pfOtherThanCurrentFile,TPhysicalAddress chs){
+		// saves Track defined by the {Cylinder,Head} pair in PhysicalAddress to the current position in the open file, returning Windows standard i/o error; after saving, the position in the file will advance immediately "after" the just saved Track
 		for( TSector s=0; s<nSectors; s++ ){
+			if (GetCurrentDiskFreeSpace()<sectorLength)
+				return ERROR_DISK_FULL;
 			chs.sectorId.sector=firstSectorNumber+s;
 			const PCSectorData bufferedData=__getBufferedSectorData__(chs.cylinder,chs.head,&chs.sectorId);
 			if (!pfOtherThanCurrentFile){
@@ -128,6 +130,7 @@
 					pfOtherThanCurrentFile->Write( buffer, f.Read(buffer,sectorLength) );
 				}
 		}
+		return ERROR_SUCCESS;
 	}
 
 	TStdWinError CImageRaw::SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap){
@@ -148,14 +151,16 @@
 				for( chs.cylinder=0; chs.cylinder<nCylinders; chs.cylinder++ )
 					for( chs.sectorId.cylinder=chs.cylinder,chs.head=0; chs.head<nHeads; chs.head++,ap.IncrementProgress() ){
 						chs.sectorId.side=sideMap[chs.head];
-						__saveTrackToCurrentPositionInFile__( savingToCurrentFile?nullptr:&fTmp, chs );
+						if (const TStdWinError err=SaveTrackToCurrentPositionInFile( savingToCurrentFile?nullptr:&fTmp, chs ))
+							return err;
 					}
 				break;
 			case TTrackScheme::BY_SIDES:
 				for( chs.head=0; chs.head<nHeads; chs.head++ )
 					for( chs.sectorId.side=sideMap[chs.head],chs.cylinder=0; chs.cylinder<nCylinders; chs.cylinder++,ap.IncrementProgress() ){
 						chs.sectorId.cylinder=chs.cylinder;
-						__saveTrackToCurrentPositionInFile__( savingToCurrentFile?nullptr:&fTmp, chs );
+						if (const TStdWinError err=SaveTrackToCurrentPositionInFile( savingToCurrentFile?nullptr:&fTmp, chs ))
+							return err;
 					}
 				break;
 			default:

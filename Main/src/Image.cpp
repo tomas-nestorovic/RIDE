@@ -334,6 +334,15 @@ namespace Medium{
 		return (PImage)CMainWindow::CTdiTemplate::pSingleInstance->__getDocument__();
 	}
 
+	DWORD CImage::GetCurrentDiskFreeSpace(){
+		// determines and returns number of free Bytes on current working disk (nullptr below); this function to be used during Image saving to avoid exceptions (for can't use try-catch blocks in "MFC4.2" release!)
+		DWORD nSectorsPerCluster,nBytesPerSector,nFreeClusters,nAllClusters;
+		if (!::GetDiskFreeSpace( nullptr, &nSectorsPerCluster, &nBytesPerSector, &nFreeClusters, &nAllClusters ))
+			return 0;
+		const auto nFreeBytes=(ULONGLONG)nSectorsPerCluster*nBytesPerSector*nFreeClusters;
+		return	nFreeBytes<ULONG_MAX ? nFreeBytes : ULONG_MAX;
+	}
+
 	TStdWinError CImage::OpenImageForReading(LPCTSTR fileName,CFile &f){
 		// True <=> File successfully opened for reading, otherwise False
 		CFileException e;
