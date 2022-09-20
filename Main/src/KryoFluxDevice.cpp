@@ -350,6 +350,7 @@
 						: 0;
 			default:
 				ASSERT(FALSE);
+				::SetLastError( ERROR_BAD_UNIT );
 				return 0;
 		}
 	}
@@ -357,7 +358,7 @@
 	TStdWinError CKryoFluxDevice::ReadFull(PVOID buffer,DWORD nBytes) const{
 		// blocks caller until all requested Bytes are read from the device; returns Windows standard i/o error
 		for( PBYTE p=(PBYTE)buffer; nBytes>0; )
-			if (const DWORD n=Read( buffer, nBytes )){
+			if (const DWORD n=Read( p, nBytes )){
 				p+=n;
 				if (p-(PBYTE)buffer>=nBytes)
 					break;
@@ -388,6 +389,7 @@
 						: 0;
 			default:
 				ASSERT(FALSE);
+				::SetLastError( ERROR_BAD_UNIT );
 				return 0;
 		}
 	}
@@ -395,7 +397,7 @@
 	TStdWinError CKryoFluxDevice::WriteFull(LPCVOID buffer,DWORD nBytes) const{
 		// blocks caller until all requested Bytes are written to the device; returns Windows standard i/o error
 		for( PCBYTE p=(PCBYTE)buffer; nBytes>0; )
-			if (const DWORD n=Write( buffer, nBytes )){
+			if (const DWORD n=Write( p, nBytes )){
 				p+=n;
 				if (p-(PCBYTE)buffer>=nBytes)
 					break;
@@ -791,7 +793,7 @@
 	{		EXCLUSIVELY_LOCK_DEVICE();
 			if (!SetMotorOn() || !SelectHead(head) || !SeekTo(cyl)) // some Drives require motor to be on before seeking Heads
 				return 0;
-			const BYTE nIndicesRequested=std::min<BYTE>( params.PrecisionToFullRevolutionCount()+1, Revolution::MAX ); // N+1 indices = N full revolutions
+			const BYTE nIndicesRequested=std::min<BYTE>( params.PrecisionToFullRevolutionCount(), Revolution::MAX )+1; // N+1 indices = N full revolutions
 			SendRequest( TRequest::STREAM, MAKEWORD(1,nIndicesRequested) ); // start streaming
 				while (const DWORD nBytesFree=tmpDataBuffer+KF_BUFFER_CAPACITY-p)
 					if (const auto n=Read( p, nBytesFree )){
