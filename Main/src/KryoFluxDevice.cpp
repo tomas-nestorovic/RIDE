@@ -118,7 +118,14 @@
 		informedOnPoorPrecompensation=false;
 		// - connecting to a local KryoFlux device
 		hDevice=INVALID_HANDLE_VALUE;
-		winusb.Clear();
+		switch (driver){
+			case TDriver::WINUSB:
+				winusb.Clear();
+				break;
+			default:
+				ASSERT(FALSE);
+				break;
+		}
 		Connect();
 		DestroyAllTracks(); // because Connect scans zeroth Track
 	}
@@ -149,20 +156,20 @@
 					FILE_SHARE_WRITE | FILE_SHARE_READ,
 					nullptr, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, nullptr
 				);
+		if (hDevice==INVALID_HANDLE_VALUE)
+			return false;
 		// - setting transfer properties
-		if (hDevice!=INVALID_HANDLE_VALUE)
-			switch (driver){
-				case TDriver::WINUSB:
-					winusb.Clear();
-					if (winusb.ConnectToInterface( hDevice, KF_INTERFACE-1 )){
-						winusb.SetPipePolicy( KF_EP_BULK_IN, true, 1500 );
-						winusb.SetPipePolicy( KF_EP_BULK_OUT, true, 1500 );
-					}
-					break;
-				default:
-					ASSERT(FALSE);
-					return false;
-			}
+		switch (driver){
+			case TDriver::WINUSB:
+				if (winusb.ConnectToInterface( hDevice, KF_INTERFACE-1 )){
+					winusb.SetPipePolicy( KF_EP_BULK_IN, true, 1500 );
+					winusb.SetPipePolicy( KF_EP_BULK_OUT, true, 1500 );
+				}
+				break;
+			default:
+				ASSERT(FALSE);
+				return false;
+		}
 		// - selecting floppy drive
 		SendRequest( TRequest::DEVICE, fddId ); // not checking for success as firmware may not yet have been loaded
 		fddFound =	internalTracks[0][0]!=nullptr // floppy drive already found before disconnecting from KryoFlux?
