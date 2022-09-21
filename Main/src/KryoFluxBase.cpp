@@ -11,6 +11,7 @@
 		: CCapsBase( properties, realDriveLetter, true, INI_KRYOFLUX )
 		// - initialization
 		, firmware(firmware) {
+		preservationQuality=false; // no descendant intended for preservation
 		// - setting a classical 5.25" floppy geometry
 		capsImageInfo.maxcylinder=FDD_CYLINDERS_HD/2+FDD_CYLINDERS_EXTRA - 1; // "-1" = inclusive!
 		capsImageInfo.maxhead=2-1; // inclusive!
@@ -72,33 +73,6 @@
 			return ERROR_SECTOR_NOT_FOUND; // unknown Sector queried
 		}else
 			return ERROR_BAD_ARGUMENTS; // Track must be scanned first!
-	}
-
-	TStdWinError CKryoFluxBase::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){
-		// sets the given MediumType and its geometry; returns Windows standard i/o error
-		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		// - "re-normalizing" already read Tracks according to the new Medium
-		if (params.corrections.use && !m_strPathName.IsEmpty()) // normalization makes sense only for existing Images - it's useless for Images just created
-			if (pFormat->mediumType!=Medium::UNKNOWN) // a particular Medium specified ...
-				if (floppyType!=pFormat->mediumType || dos!=nullptr) // ... and A|B, A = it's different, B = setting final MediumType
-					for( TCylinder cyl=0; cyl<FDD_CYLINDERS_MAX; cyl++ )
-						for( THead head=0; head<2; head++ )
-							if (auto pit=internalTracks[cyl][head]){
-								pit->SetMediumType(pFormat->mediumType);
-								if (dos!=nullptr){ // DOS already known
-									CTrackReaderWriter trw=*pit;
-									if (const TStdWinError err=params.corrections.ApplyTo(trw))
-										return err;
-									delete pit;
-									internalTracks[cyl][head]=CInternalTrack::CreateFrom( *this, trw );
-								}//the following commented out as it brings little to no readability improvement and leaves Tracks influenced by the MediumType
-								//else if (params.corrections.indexTiming) // DOS still being recognized ...
-									//if (!pit->Normalize()) // ... hence can only improve readability by adjusting index-to-index timing
-										//return ERROR_INVALID_MEDIA;
-
-							}
-		// - base
-		return __super::SetMediumTypeAndGeometry( pFormat, sideMap, firstSectorNumber );
 	}
 
 	TStdWinError CCapsBase::WriteTrack(TCylinder cyl,THead head,CTrackReader tr){

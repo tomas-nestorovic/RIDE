@@ -25,6 +25,7 @@
 		, capsDeviceHandle(  capsLibLoadingError ? -1 : CAPS::AddImage()  )
 		// - initialization
 		, precompensation(realDriveLetter)
+		, preservationQuality(true) // mustn't change Track timings (derived Images may override otherwise)
 		, informedOnPoorPrecompensation(true) // Devices override in their ctors to False
 		, forcedMediumType( Medium::FLOPPY_ANY )
 		, params(iniSectionName)
@@ -793,13 +794,21 @@ invalidTrack:
 			if (m_strPathName.IsEmpty() && blankMedium)
 				return ERROR_SUCCESS;
 			// . reinterpreting the fluxes
-			if (newMediumTypeDifferent && pFormat->mediumType!=Medium::UNKNOWN)
+			if (newMediumTypeDifferent || dos!=nullptr) // A|B, A = Medium different, B = setting final MediumType
 				for( TCylinder cyl=0; cyl<FDD_CYLINDERS_MAX; cyl++ )
 					for( THead head=0; head<2; head++ )
 						if (auto &rit=internalTracks[cyl][head]){
 							CTrackReaderWriter trw=*rit;
-								trw.SetMediumType( pFormat->mediumType );
+								trw.SetMediumType( pFormat->mediumType ); // keeps timing intact, just changes decoder's parameters for this Track
 							delete rit;
+							if (dos!=nullptr){ // DOS already known (aka. setting final MediumType)
+								if (!preservationQuality && params.corrections.use && !m_strPathName.IsEmpty()) // normalization makes sense only for existing Images - it's useless for Images just created
+									if (const TStdWinError err=params.corrections.ApplyTo(trw))
+										return err;
+							}//the following commented out as it brings little to no readability improvement and leaves Tracks influenced by the MediumType
+							//else if (params.corrections.indexTiming) // DOS still being recognized ...
+								//if (!pit->Normalize()) // ... hence can only improve readability by adjusting index-to-index timing
+									//return ERROR_INVALID_MEDIA;
 							rit=CInternalTrack::CreateFrom( *this, trw );
 						}
 			// . seeing if some Sectors can be recognized in any of Tracks

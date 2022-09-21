@@ -69,6 +69,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			::SetLastError(ERROR_NOT_SUPPORTED);
 			return FALSE;
 		}
+		preservationQuality=!header.flags.normalized;
 		if (header.flags.extended)
 			f.Seek( 0x70, CFile::current );
 		if (f.Read( tdhOffsets, sizeof(tdhOffsets) )!=sizeof(tdhOffsets))

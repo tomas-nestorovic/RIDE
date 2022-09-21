@@ -175,6 +175,7 @@
 		CapsVersionInfo capsVersionInfo;
 		CapsImageInfo capsImageInfo;
 		PInternalTrack mutable internalTracks[FDD_CYLINDERS_MAX][2]; // "2" = a floppy can have two Sides
+		bool preservationQuality; // Images intended for preservation (e.g. IPF and others) mustn't be re-normalized during DOS recognition
 		bool informedOnPoorPrecompensation;
 
 		mutable Codec::TType lastSuccessfullCodec;
