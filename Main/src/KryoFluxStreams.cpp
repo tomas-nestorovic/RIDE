@@ -126,6 +126,8 @@
 
 	TStdWinError CKryoFluxStreams::SaveTrack(TCylinder cyl,THead head,const volatile bool &cancelled) const{
 		// saves the specified Track to the inserted Medium; returns Windows standard i/o error
+		if (!*nameBase) // saving without knowing the common prefix for all Stream files is NOT SUPPORTED
+			return ERROR_NOT_SUPPORTED; // this error code is required!
 		if (const auto pit=internalTracks[cyl][head])
 			if (pit->modified){
 				pit->FlushSectorBuffers(); // convert all modifications into flux transitions
