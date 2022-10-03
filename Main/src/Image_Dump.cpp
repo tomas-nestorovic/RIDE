@@ -216,8 +216,8 @@
 			TFdcStatus fdcStatus;
 		} p;
 		::ZeroMemory(&p,sizeof(p));
-		p.canCalibrateHeads=dp.source->SeekHeadsHome()!=ERROR_NOT_SUPPORTED;
 		const bool targetSupportsTrackWriting=dp.target->WriteTrack(0,0,CImage::CTrackReaderWriter::Invalid)!=ERROR_NOT_SUPPORTED;
+		p.canCalibrateHeads=dp.source->SeekHeadsHome()==ERROR_SUCCESS && !targetSupportsTrackWriting;
 		const Utils::CByteIdentity sectorIdAndPositionIdentity;
 		for( p.chs.cylinder=dp.cylinderA; p.chs.cylinder<=dp.cylinderZ; pAction->UpdateProgress(++p.chs.cylinder-dp.cylinderA) )
 			for( p.chs.head=0; p.chs.head<dp.nHeads; p.chs.head++ ){

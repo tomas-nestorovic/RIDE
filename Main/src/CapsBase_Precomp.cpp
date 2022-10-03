@@ -131,7 +131,7 @@
 				trw.AddTime( t+=doubleCellTime );
 			trw.AddTime( t+=doubleCellTime ); // one extra flux
 			// . saving the test Track
-	{		const PInternalTrack pit=CInternalTrack::CreateFrom( ptp.cb, trw );
+	{		const PInternalTrack pit=CInternalTrack::CreateFrom( ptp.cb, trw, rPrecomp.floppyType );
 			pit->modified=true; // to pass the save conditions
 			const Utils::CVarTempReset<PInternalTrack> pit0( ptp.cb.internalTracks[cyl][ptp.head], pit );
 			const Utils::CVarTempReset<TMethodVersion> pm0( ptp.cb.precompensation.methodVersion, CPrecompensation::Identity );

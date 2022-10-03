@@ -677,7 +677,7 @@
 		THead GetNumberOfFormattedSides(TCylinder cyl) const;
 		TTrack GetTrackCount() const;
 		virtual BYTE GetAvailableRevolutionCount(TCylinder cyl,THead head) const;
-		virtual TStdWinError SeekHeadsHome();
+		virtual TStdWinError SeekHeadsHome() const;
 		virtual TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const=0;
 		virtual bool IsTrackScanned(TCylinder cyl,THead head) const=0;
 		virtual TLogTime EstimateNanosecondsPerOneByte() const;

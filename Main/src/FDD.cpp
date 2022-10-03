@@ -340,12 +340,7 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 		app.WriteProfileInt( iniSection, INI_LATENCY_GAP3, gap3Latency );
 	}
 
-	bool CFDD::TFddHead::SeekHome(){
-		// True <=> Head seeked "home", otherwise False and reporting the error
-		return __seekTo__(0);
-	}
-
-	bool CFDD::TFddHead::__seekTo__(TCylinder cyl){
+	bool CFDD::TFddHead::__seekTo__(TCylinder cyl) const{
 		// True <=> Head seeked to specified Cylinder, otherwise False and reporting the error
 		if (cyl!=position){
 			LOG_CYLINDER_ACTION(cyl,_T("bool CFDD::TFddHead::__seekTo__"));
@@ -649,9 +644,9 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		return Revolution::INFINITY;
 	}
 
-	TStdWinError CFDD::SeekHeadsHome(){
+	TStdWinError CFDD::SeekHeadsHome() const{
 		// attempts to send Heads "home"; returns Windows standard i/o error
-		return	fddHead.SeekHome() ? ERROR_SUCCESS : ::GetLastError();
+		return	fddHead.__seekTo__(0) ? ERROR_SUCCESS : ::GetLastError();
 	}
 
 	CFDD::PInternalTrack CFDD::__scanTrack__(TCylinder cyl,THead head){
@@ -1497,13 +1492,13 @@ Utils::Information(buf);}
 						case Medium::FLOPPY_DD_525:
 							SetDlgItemText( ID_MEDIUM, _T("5.25\" DD formatted, 360 RPM drive") );
 							if (EnableDlgItem( ID_40D80, initialEditing )){
-								fdd->fddHead.SeekHome();
+								fdd->SeekHeadsHome();
 								const Utils::CVarTempReset<bool> dts0( fdd->fddHead.doubleTrackStep, false );
 								const Utils::CVarTempReset<PInternalTrack> pit0( fdd->internalTracks[1][0], nullptr ); // forcing new scan
 								if (const PInternalTrack pit=fdd->__scanTrack__(1,0))
 									CheckDlgButton( ID_40D80, !ShowDlgItem(ID_INFORMATION,pit->nSectors>0) );
 								fdd->UnformatInternalTrack(1,0);
-								fdd->fddHead.SeekHome();
+								fdd->SeekHeadsHome();
 							}
 							break;
 						case Medium::FLOPPY_DD:

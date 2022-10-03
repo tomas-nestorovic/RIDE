@@ -73,7 +73,7 @@
 			CInternalTrack(const CTrackReaderWriter &trw,PInternalSector sectors,TSector nSectors);
 		public:
 			static CInternalTrack *CreateFrom(const CCapsBase &cb,const CapsTrackInfoT2 *ctiRevs,BYTE nRevs,UDWORD lockFlags);
-			static CInternalTrack *CreateFrom(const CCapsBase &cb,const CTrackReaderWriter &trw);
+			static CInternalTrack *CreateFrom(const CCapsBase &cb,CTrackReaderWriter trw,Medium::TType floppyType=Medium::UNKNOWN);
 
 			const TSector nSectors;
 			const Utils::CCallocPtr<TInternalSector> sectors;
@@ -175,6 +175,7 @@
 		CapsVersionInfo capsVersionInfo;
 		CapsImageInfo capsImageInfo;
 		PInternalTrack mutable internalTracks[FDD_CYLINDERS_MAX][2]; // "2" = a floppy can have two Sides
+		mutable TCylinder lastCalibratedCylinder;
 		bool preservationQuality; // Images intended for preservation (e.g. IPF and others) mustn't be re-normalized during DOS recognition
 		bool informedOnPoorPrecompensation;
 
@@ -194,7 +195,7 @@
 		TCylinder GetCylinderCount() const override sealed;
 		THead GetHeadCount() const override sealed;
 		BYTE GetAvailableRevolutionCount(TCylinder cyl,THead head) const override sealed;
-		TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const override;
+		TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const override sealed; // sealed = override ReadTrack method instead!
 		bool IsTrackScanned(TCylinder cyl,THead head) const override sealed;
 		void GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses) override sealed;
 		TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus) override;

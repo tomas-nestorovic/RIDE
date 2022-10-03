@@ -72,7 +72,6 @@
 			TCHAR firmwareVersion[100];
 		} device;
 		bool fddFound;
-		mutable TCylinder lastCalibratedCylinder;
 		
 		static LPCTSTR Recognize(PTCHAR deviceNameList);
 		static PImage Instantiate(LPCTSTR deviceName);
@@ -95,7 +94,6 @@
 		TStdWinError WriteFull(LPCVOID buffer,DWORD nBytes) const;
 		bool SetMotorOn(bool on=true) const;
 		bool SeekTo(TCylinder cyl) const;
-		bool SeekHome() const;
 		bool SelectHead(THead head) const;
 		TStdWinError SaveAndVerifyTrack(TCylinder cyl,THead head,const volatile bool &cancelled) const;
 	public:
@@ -107,12 +105,14 @@
 		//BOOL OnSaveDocument(LPCTSTR lpszPathName) override;
 		//TCylinder GetCylinderCount() const override;
 		//THead GetNumberOfFormattedSides(TCylinder cyl) const override;
-		TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const override;
+		TStdWinError SeekHeadsHome() const override;
+		//TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const override;
 		//void GetTrackData(TCylinder cyl,THead head,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses) override;
 		//TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus) override;
 		//TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
 		bool EditSettings(bool initialEditing) override;
 		TStdWinError Reset() override;
+		CTrackReader ReadTrack(TCylinder cyl,THead head) const override;
 		TStdWinError SaveTrack(TCylinder cyl,THead head,const volatile bool &cancelled) const override;
 		void SetPathName(LPCTSTR lpszPathName,BOOL bAddToMRU=TRUE) override;
 	};

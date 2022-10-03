@@ -25,6 +25,7 @@
 		, capsDeviceHandle(  capsLibLoadingError ? -1 : CAPS::AddImage()  )
 		// - initialization
 		, precompensation(realDriveLetter)
+		, lastCalibratedCylinder(0)
 		, preservationQuality(true) // mustn't change Track timings (derived Images may override otherwise)
 		, informedOnPoorPrecompensation(true) // Devices override in their ctors to False
 		, forcedMediumType( Medium::FLOPPY_ANY )
@@ -165,6 +166,7 @@
 		// - initialization
 		, modified(false)
 		, nSectors(nSectors) , sectors( nSectors, sectors ) {
+		RewindToIndex(0);
 	}
 
 	CCapsBase::CInternalTrack::~CInternalTrack(){
@@ -240,17 +242,27 @@
 		return CreateFrom( cb, trw );
 	}
 
-	CCapsBase::CInternalTrack *CCapsBase::CInternalTrack::CreateFrom(const CCapsBase &cb,const CTrackReaderWriter &trw){
+	CCapsBase::CInternalTrack *CCapsBase::CInternalTrack::CreateFrom(const CCapsBase &cb,CTrackReaderWriter trw,Medium::TType floppyType){
 		// creates and returns a Track decoded from underlying flux representation
-		CTrackReader tr=trw;
+		if (floppyType==Medium::UNKNOWN) // if type not explicitly overridden ...
+			floppyType=cb.floppyType; // ... adopt what the CapsBase contains
+		if (floppyType!=Medium::UNKNOWN){ // may be unknown if Medium is still being recognized
+			trw.SetMediumType(floppyType); // keeps timing intact, just presets codec parameters (codec itself determined below)
+			if (cb.dos!=nullptr) // DOS already known (aka. creating final version of the Track)
+				if (!cb.preservationQuality && !cb.m_strPathName.IsEmpty()) // normalization makes sense only for existing Images - it's useless for Images just created
+					cb.params.corrections.ApplyTo(trw);
+			//the following commented out as it brings little to no readability improvement and leaves Tracks influenced by the MediumType
+			//else if (params.corrections.indexTiming) // DOS still being recognized ...
+				//trw.Normalize(); // ... hence can only improve readability by adjusting index-to-index timing
+		}
 		Codec::TType c=cb.lastSuccessfullCodec; // turning first to the Codec that successfully decoded the previous Track
 		for( Codec::TTypeSet codecs=Codec::ANY,next=1; codecs!=0; c=(Codec::TType)next ){
 			// . determining the Codec to be used in the NEXT iteration for decoding
 			for( codecs&=~c; (codecs&next)==0&&(next&Codec::ANY)!=0; next<<=1 );
 			// . scanning the Track and if no Sector recognized, continuing with Next Codec
 			TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; TProfile idProfiles[Revolution::MAX*(TSector)-1]; TFdcStatus statuses[Revolution::MAX*(TSector)-1];
-			tr.SetCodec(c);
-			const WORD nSectorsFound=tr.Scan( ids, idEnds, idProfiles, statuses );
+			trw.SetCodec(c);
+			const WORD nSectorsFound=trw.Scan( ids, idEnds, idProfiles, statuses );
 			if (!nSectorsFound)
 				continue;
 			// . putting the found Sectors over all complete disk revolutions together (some might have not been recognized in one revolution, but might in another revolution)
@@ -361,14 +373,14 @@
 				}
 			} lcs(trw);
 			WORD start,end=0;
-			for( BYTE rev=0; rev<tr.GetIndexCount()-1; rev++ ){
-				const TLogTime revEndTime=tr.GetIndexTime(rev+1); // revolution end Time
+			for( BYTE rev=0; rev<trw.GetIndexCount()-1; rev++ ){
+				const TLogTime revEndTime=trw.GetIndexTime(rev+1); // revolution end Time
 				for( start=end; idEnds[end]<revEndTime; end++ );
 				lcs.Merge( rev, end-start, ids+start, idEnds+start, idProfiles+start, statuses+start );
 			}
 			for( TSector s=0; s<lcs.nUniqueSectors; s++ ){
 				auto &rsi=lcs.uniqueSectors[s];
-				rsi.nRevolutions=std::max( 1, tr.GetIndexCount()-1 );
+				rsi.nRevolutions=std::max( 1, trw.GetIndexCount()-1 );
 				rsi.dirtyRevolution=Revolution::NONE;
 			}
 			return new CInternalTrack( trw, lcs.uniqueSectors, lcs.nUniqueSectors );
@@ -523,49 +535,65 @@
 
 	TSector CCapsBase::ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec,PSectorId bufferId,PWORD bufferLength,PLogTime startTimesNanoseconds,PBYTE pAvgGap3) const{
 		// returns the number of Sectors found in given Track, and eventually populates the Buffer with their IDs (if Buffer!=Null); returns 0 if Track not formatted or not found
-		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		PInternalTrack &rit=internalTracks[cyl][head];
+	{	EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - checking that specified Track actually CAN exist
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
 			return 0;
-		// - if Track doesn't exists yet (e.g. not created by a derived class), reading it by the CAPS library
-		if (internalTracks[cyl][head]==nullptr){
-			static constexpr CapsTrackInfoT2 CtiEmpty={2};
-			const UDWORD lockFlags= capsVersionInfo.flag&( DI_LOCK_INDEX | DI_LOCK_DENVAR | DI_LOCK_DENAUTO | DI_LOCK_DENNOISE | DI_LOCK_NOISE | DI_LOCK_TYPE | DI_LOCK_OVLBIT | DI_LOCK_TRKBIT | DI_LOCK_UPDATEFD );
-			CapsTrackInfoT2 cti[CAPS_MTRS];
-			*cti=CtiEmpty;
-			if (CAPS::LockTrack( cti, capsDeviceHandle, cyl, head, lockFlags )!=imgeOk
-				||
-				(cti->type&CTIT_MASK_TYPE)==ctitNA // error during Track retrieval
-			)
-				return 0;
-			BYTE nRevs=1;
-			if (cti->weakcnt!=0) // Track contains some areas with fuzzy bits
-				while (nRevs<CAPS_MTRS){
-					CapsTrackInfoT2 &r = cti[nRevs] = *cti;
-					r.trackbuf=(PUBYTE)::memcpy( ::malloc(r.timelen), r.trackbuf, r.timelen ); // timelen = # of Time information and also # of Bytes that individual bits are stored in
-					r.timebuf=(PUDWORD)::memcpy( ::malloc(r.timelen*sizeof(UDWORD)), r.timebuf, r.timelen*sizeof(UDWORD) );
-					*cti=CtiEmpty;
-					if (CAPS::LockTrack( cti, capsDeviceHandle, cyl, head, capsVersionInfo.flag&(lockFlags|DI_LOCK_SETWSEED) )!=imgeOk
-						||
-						(r.type&CTIT_MASK_TYPE)==ctitNA // error during Track retrieval
-					)
+	}
+		// - scanning (forced recovery from errors right during scanning)
+		for( char nRecoveryTrials=7; !rit; nRecoveryTrials-- ){
+			// . attempting reading
+			ReadTrack( cyl, head );
+			// . only for real Devices may we need several trials to obtain healthy data
+			if (!properties->IsRealDevice())
+				break;
+			// . if no more trials left, we are done
+			if (nRecoveryTrials<=0)
+				break;
+			// . attempting to return good data
+			EXCLUSIVELY_LOCK_THIS_IMAGE(); // !!! see also below this->{Lock,Unlock}
+			if (rit){ // may be Null if, e.g., device manually reset, disconnected, etc.
+				if (GetCountOfHealthySectors(cyl,head)>0 || !rit->nSectors // Track at least partly healthy or without known Sectors
+					||
+					params.calibrationAfterError==TParams::TCalibrationAfterError::NONE // calibration disabled
+				)
+					break;
+				if (params.calibrationAfterErrorOnlyForKnownSectors && dos && dos->properties!=&CUnknownDos::Properties){
+					bool knownSectorBad=false; // assumption (the Track is unhealthy due to an irrelevant Unknown Sector, e.g. out of geometry)
+					for( TSector s=0; s<rit->nSectors; s++ ){
+						const TInternalSector &is=rit->sectors[s];
+						const TPhysicalAddress chs={ cyl, head, is.id };
+						if (dos->GetSectorStatus(chs)==CDos::TSectorStatus::UNKNOWN)
+							continue; // ignore Unknown Sector
+						WORD w; TFdcStatus st=TFdcStatus::WithoutError;
+						const_cast<CCapsBase *>(this)->GetSectorData( chs, s, Revolution::ANY_GOOD, &w, &st );
+						if ( knownSectorBad=!st.IsWithoutError() )
+							break;
+					}
+					if (!knownSectorBad)
 						break;
-					nRevs++;
 				}
-			if (const PInternalTrack tmp = CInternalTrack::CreateFrom( *this, cti, nRevs, lockFlags )){
-				CTrackReaderWriter trw=*tmp; // extracting raw flux data ...
-					trw.SetMediumType(floppyType);
-				delete tmp;
-				internalTracks[cyl][head] = CInternalTrack::CreateFrom( *this, trw ); // ... and rescanning the Track using current FloppyType Profile
+				switch (params.calibrationAfterError){
+					case TParams::TCalibrationAfterError::ONCE_PER_CYLINDER:
+						// calibrating only once for the whole Cylinder
+						if (lastCalibratedCylinder==cyl) // already calibrated?
+							break;
+						nRecoveryTrials=0;
+						//fallthrough
+					case TParams::TCalibrationAfterError::FOR_EACH_SECTOR:
+						lastCalibratedCylinder=cyl;
+						this->locker.Unlock(); // don't block other threads that may want to access already scanned Cylinders
+							SeekHeadsHome();
+						this->locker.Lock();
+						break;
+				}				
+				delete rit; // disposing the erroneous Track ...
+				rit=nullptr; // ... and attempting to obtain its data after head has been calibrated
 			}
-			while (--nRevs>0){
-				const CapsTrackInfoT2 &r=cti[nRevs];
-				::free(r.trackbuf), ::free(r.timebuf);
-			}
-			CAPS::UnlockTrack( capsDeviceHandle, cyl, head );
 		}
 		// - scanning the Track
-		if (const PCInternalTrack pit=internalTracks[cyl][head]){
+		if (const PCInternalTrack pit=rit){
 			for( TSector s=0; s<pit->nSectors; s++ ){
 				const TInternalSector &ris=pit->sectors[s];
 				if (bufferId)
@@ -723,9 +751,8 @@ invalidTrack:
 		WORD highestScore=0; // arbitering the MediumType by the HighestScore and indices distance
 		Medium::TType bestMediumType=Medium::UNKNOWN;
 		for( DWORD type=1; type!=0; type<<=1 )
-			if (type&Medium::FLOPPY_ANY){
-				trw.SetMediumType( rOutMediumType=(Medium::TType)type );
-				if ( pit=CInternalTrack::CreateFrom( *this, trw ) ){
+			if (type&Medium::FLOPPY_ANY)
+				if ( pit=CInternalTrack::CreateFrom( *this, trw, rOutMediumType=(Medium::TType)type ) ){
 					const TSector nRecognizedSectors=pit->nSectors;
 					std::swap( internalTracks[cyl][0], pit );
 						if (WORD score= nRecognizedSectors + 32*GetCountOfHealthySectors(cyl,0)){
@@ -740,7 +767,6 @@ invalidTrack:
 					std::swap( internalTracks[cyl][0], pit );
 					delete pit;
 				}
-			}
 		// - Medium (possibly) recognized
 		rOutMediumType=bestMediumType; // may be Medium::UNKNOWN
 		return ERROR_SUCCESS;
@@ -798,18 +824,9 @@ invalidTrack:
 				for( TCylinder cyl=0; cyl<FDD_CYLINDERS_MAX; cyl++ )
 					for( THead head=0; head<2; head++ )
 						if (auto &rit=internalTracks[cyl][head]){
-							CTrackReaderWriter trw=*rit;
-								trw.SetMediumType( pFormat->mediumType ); // keeps timing intact, just changes decoder's parameters for this Track
+							CTrackReaderWriter trw=*rit; // extract fluxes
 							delete rit;
-							if (dos!=nullptr){ // DOS already known (aka. setting final MediumType)
-								if (!preservationQuality && params.corrections.use && !m_strPathName.IsEmpty()) // normalization makes sense only for existing Images - it's useless for Images just created
-									if (const TStdWinError err=params.corrections.ApplyTo(trw))
-										return err;
-							}//the following commented out as it brings little to no readability improvement and leaves Tracks influenced by the MediumType
-							//else if (params.corrections.indexTiming) // DOS still being recognized ...
-								//if (!pit->Normalize()) // ... hence can only improve readability by adjusting index-to-index timing
-									//return ERROR_INVALID_MEDIA;
-							rit=CInternalTrack::CreateFrom( *this, trw );
+							rit=CInternalTrack::CreateFrom( *this, trw, pFormat->mediumType );
 						}
 			// . seeing if some Sectors can be recognized in any of Tracks
 			for( TCylinder cyl=0; cyl<SCANNED_CYLINDERS; cyl++ ) // examining just first N Cylinders
@@ -922,7 +939,7 @@ invalidTrack:
 			ScanTrack( cyl, head );
 			if (const PInternalTrack pitVerif=internalTracks[cyl][head]){
 				if (pitVerif->nSectors>0 || !cancelled){
-					const PInternalTrack pitWritten=CInternalTrack::CreateFrom( *this, trwWritten );
+					const PInternalTrack pitWritten=CInternalTrack::CreateFrom( *this, trwWritten, floppyType );
 						// . comparing common cells between first two Indices
 						const auto &revWrittenFirstSector=pitWritten->sectors[0].revolutions[0];
 						pitWritten->SetCurrentTimeAndProfile( revWrittenFirstSector.idEndTime, revWrittenFirstSector.idEndProfile );
@@ -1072,15 +1089,48 @@ invalidTrack:
 		// - checking that specified Track actually CAN exist
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
 			return CTrackReaderWriter::Invalid;
-		// - making sure the Track is buffered
-		ScanTrack( cyl, head );
-		// - returning the description
-		if (const PInternalTrack pit=internalTracks[cyl][head]){
-			pit->FlushSectorBuffers(); // convert all modifications into flux transitions
-			pit->SetCurrentTime(0); // just to be sure the internal TrackReader is returned in valid state (as invalid state indicates this functionality is not supported)
-			return *pit;
-		}else
-			return __super::ReadTrack(cyl,head);
+		// - if Track already read before, returning the result from before
+		PInternalTrack &rit=internalTracks[cyl][head];
+		if (rit){
+			rit->FlushSectorBuffers(); // convert all modifications into flux transitions
+			rit->SetCurrentTime(0); // just to be sure the internal TrackReader is returned in valid state (as invalid state indicates this functionality is not supported)
+			return *rit;
+		}
+		// - creating the description
+		static constexpr CapsTrackInfoT2 CtiEmpty={2};
+		const UDWORD lockFlags= capsVersionInfo.flag&( DI_LOCK_INDEX | DI_LOCK_DENVAR | DI_LOCK_DENAUTO | DI_LOCK_DENNOISE | DI_LOCK_NOISE | DI_LOCK_TYPE | DI_LOCK_OVLBIT | DI_LOCK_TRKBIT | DI_LOCK_UPDATEFD );
+		CapsTrackInfoT2 cti[CAPS_MTRS];
+		*cti=CtiEmpty;
+		if (CAPS::LockTrack( cti, capsDeviceHandle, cyl, head, lockFlags )!=imgeOk
+			||
+			(cti->type&CTIT_MASK_TYPE)==ctitNA // error during Track retrieval
+		)
+			return CTrackReaderWriter::Invalid;
+		BYTE nRevs=1;
+		if (cti->weakcnt!=0) // Track contains some areas with fuzzy bits
+			while (nRevs<CAPS_MTRS){
+				CapsTrackInfoT2 &r = cti[nRevs] = *cti;
+				r.trackbuf=(PUBYTE)::memcpy( ::malloc(r.timelen), r.trackbuf, r.timelen ); // timelen = # of Time information and also # of Bytes that individual bits are stored in
+				r.timebuf=(PUDWORD)::memcpy( ::malloc(r.timelen*sizeof(UDWORD)), r.timebuf, r.timelen*sizeof(UDWORD) );
+				*cti=CtiEmpty;
+				if (CAPS::LockTrack( cti, capsDeviceHandle, cyl, head, capsVersionInfo.flag&(lockFlags|DI_LOCK_SETWSEED) )!=imgeOk
+					||
+					(r.type&CTIT_MASK_TYPE)==ctitNA // error during Track retrieval
+				)
+					break;
+				nRevs++;
+			}
+		if (const PInternalTrack tmp=CInternalTrack::CreateFrom( *this, cti, nRevs, lockFlags )){
+			CTrackReaderWriter trw=*tmp; // extracting raw flux data ...
+			delete tmp;
+			rit=CInternalTrack::CreateFrom( *this, trw ); // ... and rescanning the Track using current FloppyType Profile
+		}
+		while (--nRevs>0){
+			const CapsTrackInfoT2 &r=cti[nRevs];
+			::free(r.trackbuf), ::free(r.timebuf);
+		}
+		CAPS::UnlockTrack( capsDeviceHandle, cyl, head );
+		return *rit;
 	}
 
 

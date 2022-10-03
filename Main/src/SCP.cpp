@@ -100,35 +100,27 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				: nullptr; // Cylinders beyond FDD_CYLINDERS_MAX are inaccessible
 	}
 
-	TSector CSCP::ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec,PSectorId bufferId,PWORD bufferLength,PLogTime startTimesNanoseconds,PBYTE pAvgGap3) const{
-		// returns the number of Sectors found in given Track, and eventually populates the Buffer with their IDs (if Buffer!=Null); returns 0 if Track not formatted or not found
+	CImage::CTrackReader CSCP::ReadTrack(TCylinder cyl,THead head) const{
+		// creates and returns a general description of the specified Track, represented using neutral LogicalTimes
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - checking that specified Track actually CAN exist
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
-			return 0;
-		// - if Track already scanned before, returning the result from before
+			return CTrackReaderWriter::Invalid;
+		// - if Track already read before, returning the result from before
+		PInternalTrack &rit=internalTracks[cyl][head];
 		if (GetInternalTrackSafe(cyl,head)!=nullptr)
-			return __super::ScanTrack( cyl, head, pCodec, bufferId, bufferLength, startTimesNanoseconds, pAvgGap3 );
+			return *rit;
 		// - construction of InternalTrack
 		const BYTE cylFile=cyl<<(BYTE)params.doubleTrackStep;
 		if (!tdhOffsets[cylFile][head]) // maybe a hardware error during Image creation?
-			return 0;
-		TSector nSectors=0;
+			return CTrackReaderWriter::Invalid;
 		f.Seek( tdhOffsets[cylFile][head], CFile::begin );
 		if (CTrackReaderWriter trw=StreamToTrack( f, cylFile, head )){
 			// it's a SuperCardPro Track
-			if (floppyType!=Medium::UNKNOWN){ // may be unknown if Medium is still being recognized
-				trw.SetMediumType(floppyType);
-				if (dos!=nullptr) // DOS already known
-					params.corrections.ApplyTo(trw);
-				//the following commented out as it brings little to no readability improvement and leaves Tracks influenced by the MediumType
-				//else if (params.corrections.indexTiming) // DOS still being recognized ...
-					//trw.Normalize(); // ... hence can only improve readability by adjusting index-to-index timing
-			}
-			internalTracks[cyl][head]=CInternalTrack::CreateFrom( *this, trw );
-			nSectors=__super::ScanTrack( cyl, head, pCodec, bufferId, bufferLength, startTimesNanoseconds, pAvgGap3 );
+			rit=CInternalTrack::CreateFrom( *this, trw );
+			return *rit;
 		}
-		return nSectors;
+		return CTrackReaderWriter::Invalid;
 	}
 
 	TStdWinError CSCP::Reset(){

@@ -77,9 +77,9 @@
 		struct TFddHead sealed{
 			HANDLE handle;
 			TSupportedDriver driver;
-			bool calibrated, preferRelativeSeeking;
+			bool mutable calibrated, preferRelativeSeeking;
 			bool doubleTrackStep, userForcedDoubleTrackStep;
-			TCylinder position;
+			TCylinder mutable position;
 			struct TProfile sealed{
 				TLogTime controllerLatency,oneByteLatency,gap3Latency; // in nanoseconds
 				
@@ -92,8 +92,7 @@
 			TFddHead(); //ctor
 			~TFddHead(); //dtor
 
-			bool SeekHome();
-			bool __seekTo__(TCylinder cyl);
+			bool __seekTo__(TCylinder cyl) const;
 			bool __calibrate__();
 		} fddHead;
 		mutable PInternalTrack internalTracks[FDD_CYLINDERS_MAX][2]; // 2 = a floppy can have two Sides
@@ -128,7 +127,7 @@
 		TCylinder GetCylinderCount() const override;
 		THead GetHeadCount() const override;
 		BYTE GetAvailableRevolutionCount(TCylinder cyl,THead head) const override;
-		TStdWinError SeekHeadsHome() override;
+		TStdWinError SeekHeadsHome() const override;
 		TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const override;
 		bool IsTrackScanned(TCylinder cyl,THead head) const override;
 		void GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses) override;

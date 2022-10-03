@@ -113,8 +113,7 @@
 		// - initialization
 		, driver(driver) , fddId(fddId)
 		, dataBuffer( KF_BUFFER_CAPACITY )
-		, fddFound(false)
-		, lastCalibratedCylinder(0) {
+		, fddFound(false) {
 		informedOnPoorPrecompensation=false;
 		// - connecting to a local KryoFlux device
 		hDevice=INVALID_HANDLE_VALUE;
@@ -420,11 +419,6 @@
 		return	SendRequest( TRequest::TRACK, cyl<<(BYTE)params.doubleTrackStep )==ERROR_SUCCESS;
 	}
 
-	inline
-	bool CKryoFluxDevice::SeekHome() const{
-		return SeekTo(0);
-	}
-
 	bool CKryoFluxDevice::SelectHead(THead head) const{
 		return	SendRequest( TRequest::SIDE, head )==ERROR_SUCCESS;
 	}
@@ -447,6 +441,12 @@
 			return FALSE;
 		// - successfully mounted
 		return TRUE; // failure may arise later on when attempting to access the Drive
+	}
+
+	TStdWinError CKryoFluxDevice::SeekHeadsHome() const{
+		// attempts to send Heads "home"; returns Windows standard i/o error
+		EXCLUSIVELY_LOCK_DEVICE();
+		return SeekTo(0) ? ERROR_SUCCESS : ::GetLastError();
 	}
 
 	DWORD CKryoFluxDevice::TrackToKfw1(CTrackReader tr) const{
@@ -687,7 +687,7 @@
 		if (params.calibrationStepDuringFormatting)
 			if (std::abs(cyl-lastCalibratedCylinder)>>(BYTE)params.doubleTrackStep>=params.calibrationStepDuringFormatting){
 				lastCalibratedCylinder=cyl;
-				SeekHome();
+				SeekHeadsHome();
 			}
 		// - writing (and optional verification)
 		char nSilentRetrials=4;
@@ -775,112 +775,52 @@
 		}
 	}
 
-	TSector CKryoFluxDevice::ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec,PSectorId bufferId,PWORD bufferLength,PLogTime startTimesNanoseconds,PBYTE pAvgGap3) const{
-		// returns the number of Sectors found in given Track, and eventually populates the Buffer with their IDs (if Buffer!=Null); returns 0 if Track not formatted or not found
+	CImage::CTrackReader CKryoFluxDevice::ReadTrack(TCylinder cyl,THead head) const{
+		// creates and returns a general description of the specified Track, represented using neutral LogicalTimes
+		PInternalTrack &rit=internalTracks[cyl][head];
 	{	EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - checking that specified Track actually CAN exist
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
-			return 0;
-		// - if Track already scanned before, returning the result from before
-		if (internalTracks[cyl][head]!=nullptr)
-			return __super::ScanTrack( cyl, head, pCodec, bufferId, bufferLength, startTimesNanoseconds, pAvgGap3 );
-	}
-		// - scanning (forced recovery from errors right during scanning)
-		const Utils::CCallocPtr<BYTE> tmpDataBuffer(KF_BUFFER_CAPACITY);
-		for( char nRecoveryTrials=7; true; nRecoveryTrials-- ){
-			// . issuing a Request to the KryoFlux device to read fluxes in the specified Track
-			PBYTE p=tmpDataBuffer;
-	{		EXCLUSIVELY_LOCK_DEVICE();
-			if (!SetMotorOn() || !SelectHead(head) || !SeekTo(cyl)) // some Drives require motor to be on before seeking Heads
-				return 0;
-			const BYTE nIndicesRequested=std::min<BYTE>( params.PrecisionToFullRevolutionCount(), Revolution::MAX )+1; // N+1 indices = N full revolutions
-			SendRequest( TRequest::STREAM, MAKEWORD(1,nIndicesRequested) ); // start streaming
-				while (const DWORD nBytesFree=tmpDataBuffer+KF_BUFFER_CAPACITY-p)
-					if (const auto n=Read( p, nBytesFree )){
-						p+=n;
-						if (p-tmpDataBuffer>7
-							&&
-							!::memcmp( p-7, "\xd\xd\xd\xd\xd\xd\xd", 7 ) // the final Out-of-Stream block (see KryoFlux Stream specification for explanation)
-						)
-							break;
-					}else if (::GetLastError()!=ERROR_IO_PENDING) // i/o operation anything but pending
-						break; // possibly disconnected while in operation
-				const TStdWinError err=::GetLastError();
-			SendRequest( TRequest::STREAM, 0 ); // stop streaming
-			if (err==ERROR_SEM_TIMEOUT) // currently, the only known way how to detect a non-existing FDD is to observe a timeout during reading
-				return 0;
-	}
-			// . making sure the read content is a KryoFlux Stream whose data actually make sense
-			PInternalTrack &rit=internalTracks[cyl][head];
-			if (CTrackReaderWriter trw=StreamToTrack( tmpDataBuffer, p-tmpDataBuffer )){
-				// it's a KryoFlux Stream whose data make sense
-				if (floppyType!=Medium::UNKNOWN){ // may be unknown if Medium is still being recognized
-					trw.SetMediumType(floppyType);
-					if (dos!=nullptr) // DOS already known
-						params.corrections.ApplyTo(trw);
-					//the following commented out as it brings little to no readability improvement and leaves Tracks influenced by the MediumType
-					//else if (params.corrections.indexTiming) // DOS still being recognized ...
-						//trw.Normalize(); // ... hence can only improve readability by adjusting index-to-index timing
-				}
-				const PInternalTrack pit=CInternalTrack::CreateFrom( *this, trw ); // this is time-consuming, so it's out of locked section
-				EXCLUSIVELY_LOCK_THIS_IMAGE();
-				ASSERT(!rit);
-				if (rit) // deleting whatever Track that emerged between the Image and Device locks
-					delete rit;
-				rit=pit;
-				__super::ScanTrack( cyl, head, pCodec, bufferId, bufferLength, startTimesNanoseconds, pAvgGap3 );
-			}
-			// . if no more trials left, we are done
-			if (nRecoveryTrials<=0)
-				break;
-			// . attempting to return good data
-			EXCLUSIVELY_LOCK_THIS_IMAGE(); // !!! see also below this->{Lock,Unlock}
-			if (rit){ // may be Null if, e.g., device manually reset, disconnected, etc.
-				if (GetCountOfHealthySectors(cyl,head)>0 || !rit->nSectors // Track at least partly healthy or without known Sectors
-					||
-					params.calibrationAfterError==TParams::TCalibrationAfterError::NONE // calibration disabled
-				)
-					return rit->nSectors;
-				if (params.calibrationAfterErrorOnlyForKnownSectors && dos && dos->properties!=&CUnknownDos::Properties){
-					bool knownSectorBad=false; // assumption (the Track is unhealthy due to an irrelevant Unknown Sector, e.g. out of geometry)
-					for( TSector s=0; s<rit->nSectors; s++ ){
-						const TInternalSector &is=rit->sectors[s];
-						const TPhysicalAddress chs={ cyl, head, is.id };
-						if (dos->GetSectorStatus(chs)==CDos::TSectorStatus::UNKNOWN)
-							continue; // ignore Unknown Sector
-						WORD w; TFdcStatus st=TFdcStatus::WithoutError;
-						const_cast<CKryoFluxDevice *>(this)->GetSectorData( chs, s, Revolution::ANY_GOOD, &w, &st );
-						if ( knownSectorBad=!st.IsWithoutError() )
-							break;
-					}
-					if (!knownSectorBad)
-						return rit->nSectors;
-				}
-				switch (params.calibrationAfterError){
-					case TParams::TCalibrationAfterError::ONCE_PER_CYLINDER:
-						// calibrating only once for the whole Cylinder
-						if (lastCalibratedCylinder==cyl) // already calibrated?
-							break;
-						nRecoveryTrials=0;
-						//fallthrough
-					case TParams::TCalibrationAfterError::FOR_EACH_SECTOR:
-						lastCalibratedCylinder=cyl;
-						this->locker.Unlock();
-					{		EXCLUSIVELY_LOCK_DEVICE();
-							SeekHome();
-					}	this->locker.Lock();
-						break;
-				}				
-				delete rit; // disposing the erroneous Track ...
-				rit=nullptr; // ... and attempting to obtain its data after head has been calibrated
-			}
+			return CTrackReaderWriter::Invalid;
+		// - if Track already read before, returning the result from before
+		if (rit){
+			rit->FlushSectorBuffers(); // convert all modifications into flux transitions
+			rit->SetCurrentTime(0); // just to be sure the internal TrackReader is returned in valid state (as invalid state indicates this functionality is not supported)
+			return *rit;
 		}
-		// - returning whatever has been read
-		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		if (const PCInternalTrack pit=internalTracks[cyl][head]) // may be Null if, e.g., device manually reset, disconnected, etc.
-			return pit->nSectors;
-		else
-			return 0;
+	}	// - issuing a Request to the KryoFlux device to read fluxes in the specified Track
+		const Utils::CCallocPtr<BYTE> tmpDataBuffer(KF_BUFFER_CAPACITY);
+		PBYTE p=tmpDataBuffer;
+	{	EXCLUSIVELY_LOCK_DEVICE();
+		if (!SetMotorOn() || !SelectHead(head) || !SeekTo(cyl)) // some Drives require motor to be on before seeking Heads
+			return CTrackReaderWriter::Invalid;
+		const BYTE nIndicesRequested=std::min<BYTE>( params.PrecisionToFullRevolutionCount(), Revolution::MAX )+1; // N+1 indices = N full revolutions
+		SendRequest( TRequest::STREAM, MAKEWORD(1,nIndicesRequested) ); // start streaming
+			while (const DWORD nBytesFree=tmpDataBuffer+KF_BUFFER_CAPACITY-p)
+				if (const auto n=Read( p, nBytesFree )){
+					p+=n;
+					if (p-tmpDataBuffer>7
+						&&
+						!::memcmp( p-7, "\xd\xd\xd\xd\xd\xd\xd", 7 ) // the final Out-of-Stream block (see KryoFlux Stream specification for explanation)
+					)
+						break;
+				}else if (::GetLastError()!=ERROR_IO_PENDING) // i/o operation anything but pending
+					break; // possibly disconnected while in operation
+			const TStdWinError err=::GetLastError();
+		SendRequest( TRequest::STREAM, 0 ); // stop streaming
+		if (err==ERROR_SEM_TIMEOUT) // currently, the only known way how to detect a non-existing FDD is to observe a timeout during reading
+			return CTrackReaderWriter::Invalid;
+	}	// - making sure the read content is a KryoFlux Stream whose data actually make sense
+		if (CTrackReaderWriter trw=StreamToTrack( tmpDataBuffer, p-tmpDataBuffer )){
+			// it's a KryoFlux Stream whose data make sense
+			EXCLUSIVELY_LOCK_THIS_IMAGE();
+			if (rit) // if a Track already emerged between the Image and Device locks, using it
+				ASSERT(FALSE); // but this shouldn't happen!
+			else
+				rit=CInternalTrack::CreateFrom( *this, trw );
+			return *rit;
+		}
+		return CTrackReaderWriter::Invalid;
 	}
 
 	bool CKryoFluxDevice::EditSettings(bool initialEditing){

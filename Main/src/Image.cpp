@@ -706,7 +706,7 @@ namespace Medium{
 		return 1;
 	}
 
-	TStdWinError CImage::SeekHeadsHome(){
+	TStdWinError CImage::SeekHeadsHome() const{
 		// attempts to send Heads "home"; returns Windows standard i/o error
 		return ERROR_NOT_SUPPORTED;
 	}

@@ -14,7 +14,7 @@
 		CSCP();
 
 		BOOL OnOpenDocument(LPCTSTR lpszPathName) override;
-		TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const override;
+		CTrackReader ReadTrack(TCylinder cyl,THead head) const override;
 		TStdWinError Reset() override;
 	};
 
