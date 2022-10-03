@@ -39,14 +39,15 @@
 	void CMDOS2::__recognizeVersion__(){
 		// recognizes MDOS Version based on readability of Sectors under Head 1, and adjusts the Side number for Head 1
 		// - attempting to get Sectors under Head 1 using Version 1.0
-		TPhysicalAddress chs={	0, 1,
-								{ 0, TVersion::VERSION_1, formatBoot.nSectors, MDOS2_SECTOR_LENGTH_STD_CODE }
-							};
-		for( ; chs.sectorId.sector; chs.sectorId.sector-- )
-			if (image->GetHealthySectorData(chs)!=nullptr){ // at least one Sector is readable = Version 1.0 successfully recognized
+		TSectorId ids[(TSector)-1];
+		const TSector nSectors=image->ScanTrack( 0, 1, nullptr, ids );
+		for( TSector s=0; s<nSectors; s++ ){
+			const TSectorId idRef={ 0, TVersion::VERSION_1, ids[s].sector, MDOS2_SECTOR_LENGTH_STD_CODE };
+			if (idRef.sector<MDOS2_TRACK_SECTORS_MAX && ids[s]==idRef){
 				sideMap[1]=TVersion::VERSION_1;
 				return;
 			}
+		}
 		// - recognized Version 2.0
 		sideMap[1]=TVersion::VERSION_2;
 	}
