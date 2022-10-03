@@ -225,6 +225,9 @@
     <ClInclude Include="src\SuperCardProBase.h">
       <Filter>Header Files\Image</Filter>
     </ClInclude>
+    <ClInclude Include="src\Greaseweazle.h">
+      <Filter>Header Files\Image</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\editor.cpp">
@@ -477,6 +480,9 @@
       <Filter>Source Files\Image</Filter>
     </ClCompile>
     <ClCompile Include="src\SuperCardProBase.cpp">
+      <Filter>Source Files\Image</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Greaseweazle.cpp">
       <Filter>Source Files\Image</Filter>
     </ClCompile>
   </ItemGroup>
