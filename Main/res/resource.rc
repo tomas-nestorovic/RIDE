@@ -1844,7 +1844,7 @@ BEGIN
                     31,10
     EDITTEXT        ID_NUMBER,103,192,16,12,ES_RIGHT | ES_AUTOHSCROLL | 
                     ES_NUMBER | WS_DISABLED | NOT WS_BORDER
-    LTEXT           "-th cyl.",IDC_STATIC,119,192,22,8,NOT WS_GROUP
+    LTEXT           "-th cyl.",ID_ADD,119,192,22,8,NOT WS_GROUP
     CONTROL         "&Verify formatted/written tracks (recommended)",
                     ID_VERIFY_TRACK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
                     219,211,10

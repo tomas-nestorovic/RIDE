@@ -1333,11 +1333,19 @@ invalidTrack:
 
 			void DoDataExchange(CDataExchange* pDX) override{
 				// exchange of data from and to controls
+				static constexpr WORD DeviceOnlyIds[]={
+					ID_ROTATION, // precision
+					ID_NONE, ID_CYLINDER, ID_SECTOR, ID_READABLE, // calibration upon read failure
+					ID_ZERO, ID_CYLINDER_N, ID_ADD, // calibration upon write failure
+					ID_VERIFY_TRACK,
+					0
+				};
+				const bool isRealDevice=rcb.properties->IsRealDevice();
 				// . Precision
 				int tmp=params.precision/2-1;
 				DDX_CBIndex( pDX, ID_ROTATION,	tmp );
 				params.precision=(TParams::TPrecision)((tmp+1)*2);
-				if (!EnableDlgItem( ID_ROTATION, rcb.properties->IsRealDevice() )){
+				if (!EnableDlgItems( DeviceOnlyIds, isRealDevice )){
 					CComboBox cb;
 					cb.Attach( GetDlgItemHwnd(ID_ROTATION) );
 						const int i=cb.GetCurSel();
@@ -1354,7 +1362,7 @@ invalidTrack:
 				DDX_Check( pDX, ID_DEFAULT1,	tmp );
 				params.resetFluxDecoderOnIndex=tmp!=0;
 				// . CalibrationAfterError
-				tmp=params.calibrationAfterError;
+				tmp= isRealDevice ? params.calibrationAfterError : TParams::TCalibrationAfterError::NONE;
 				DDX_Radio( pDX,	ID_NONE,		tmp );
 				params.calibrationAfterError=(TParams::TCalibrationAfterError)tmp;
 				tmp=params.calibrationAfterErrorOnlyForKnownSectors;
@@ -1374,7 +1382,7 @@ invalidTrack:
 				params.corrections.use=tmp!=0;
 				EnableDlgItem( ID_TRACK, params.fluxDecoder!=TParams::TFluxDecoder::NO_FLUX_DECODER&&initialEditing );
 				// . WrittenTracksVerification
-				tmp=params.verifyWrittenTracks;
+				tmp=params.verifyWrittenTracks&&isRealDevice;
 				DDX_Check( pDX,	ID_VERIFY_TRACK,	tmp );
 				params.verifyWrittenTracks=tmp!=0;
 			}
