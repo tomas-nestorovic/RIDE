@@ -14,6 +14,7 @@
 		CSCP();
 
 		BOOL OnOpenDocument(LPCTSTR lpszPathName) override;
+		TStdWinError SaveTrack(TCylinder cyl,THead head,const volatile bool &cancelled) const;
 		CTrackReader ReadTrack(TCylinder cyl,THead head) const override;
 		TStdWinError Reset() override;
 	};

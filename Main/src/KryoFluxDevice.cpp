@@ -609,9 +609,42 @@
 		return pb-dataBuffer;
 	}
 
+	TStdWinError CKryoFluxDevice::UploadTrack(TCylinder cyl,THead head,CTrackReader tr) const{
+		// uploads specified Track to a CAPS-based device (e.g. KryoFlux); returns Windows standard i/o error
+		EXCLUSIVELY_LOCK_DEVICE();
+		// - converting the supplied Track to "KFW" data, below streamed directly to KryoFlux
+		const DWORD nBytesToWrite=TrackToKfw1( tr );
+		#ifdef _DEBUG
+			if (false){
+				CFile f;
+				::CreateDirectory( _T("r:\\kfw"), nullptr );
+				TCHAR kfwName[80];
+				::wsprintf( kfwName, _T("r:\\kfw\\track%02d-%c.bin"), cyl, '0'+head );
+				f.Open( kfwName, CFile::modeCreate|CFile::modeWrite|CFile::typeBinary|CFile::shareExclusive );
+					f.Write( dataBuffer, nBytesToWrite );
+				f.Close();
+			}
+		#endif
+		// - clearing i/o pipes
+		winusb.ClearIoPipes( KF_EP_BULK_IN, KF_EP_BULK_OUT );
+		// - streaming the "KFW" data to KryoFlux
+		SendRequest( TRequest::INDEX_WRITE, 2 ); // waiting for an index?
+		if (!SetMotorOn() || !SelectHead(head) || !SeekTo(cyl)) // some Drives require motor to be on before seeking Heads
+			return ERROR_NOT_READY;
+		SendRequest( TRequest::STREAM, 2 ); // start streaming
+			TStdWinError err=WriteFull( dataBuffer, nBytesToWrite );
+			if (err==ERROR_SUCCESS)
+				do{
+					if (err=SendRequest( TRequest::RESULT_WRITE ))
+						break;
+				}while (::strrchr(device.lastRequestResultMsg,'=')[1]=='9'); // TODO: explain why sometimes instead of '0' a return code is '3' but the Track has been written; is it a timeout? if yes, how to solve it?
+		SendRequest( TRequest::STREAM, 0 ); // stop streaming
+		return err;
+	}
+
 	#define ERROR_SAVE_MESSAGE_TEMPLATE	_T("Track %02d.%c %s failed")
 
-	TStdWinError CKryoFluxDevice::SaveAndVerifyTrack(TCylinder cyl,THead head,const volatile bool &cancelled) const{
+	TStdWinError CCapsBase::SaveTrack(TCylinder cyl,THead head,const volatile bool &cancelled) const{
 		// saves the specified Track to the inserted Medium; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - Track must already exist from before
@@ -678,54 +711,27 @@
 		}
 		// - pre-compensation of the temporary Track
 		const CTrackReaderWriter trwCompensated( trw, false );
-		TStdWinError err;
 		if (precompensation.methodVersion!=CPrecompensation::None)
-			if ( err=precompensation.ApplyTo(*this,cyl,head,trwCompensated) )
+			if (const TStdWinError err=precompensation.ApplyTo( *this, cyl, head, trwCompensated ))
 				return err;
 		// - Drive's head calibration
-		EXCLUSIVELY_LOCK_DEVICE();
 		if (params.calibrationStepDuringFormatting)
-			if (std::abs(cyl-lastCalibratedCylinder)>>(BYTE)params.doubleTrackStep>=params.calibrationStepDuringFormatting){
-				lastCalibratedCylinder=cyl;
-				SeekHeadsHome();
-			}
+			if (std::abs(cyl-lastCalibratedCylinder)>>(BYTE)params.doubleTrackStep>=params.calibrationStepDuringFormatting)
+				if (const TStdWinError err=SeekHeadsHome())
+					return err;
+				else
+					lastCalibratedCylinder=cyl;
 		// - writing (and optional verification)
+		TStdWinError err;
+		TCHAR msgSavingFailed[80];
+		::wsprintf( msgSavingFailed, ERROR_SAVE_MESSAGE_TEMPLATE, cyl, '0'+head, _T("saving") );
 		char nSilentRetrials=4;
 		do{
 			if (cancelled)
 				return ERROR_CANCELLED;
 			// . consuming one SilentRetrial
 			nSilentRetrials--;
-			// . converting the temporary Track to "KFW" data, below streamed directly to KryoFlux
-			const DWORD nBytesToWrite=TrackToKfw1( trwCompensated );
-			#ifdef _DEBUG
-				if (false){
-					CFile f;
-					::CreateDirectory( _T("r:\\kfw"), nullptr );
-					TCHAR kfwName[80];
-					::wsprintf( kfwName, _T("r:\\kfw\\track%02d-%c.bin"), cyl, '0'+head );
-					f.Open( kfwName, CFile::modeCreate|CFile::modeWrite|CFile::typeBinary|CFile::shareExclusive );
-						f.Write( dataBuffer, nBytesToWrite );
-					f.Close();
-				}
-			#endif
-			// . clearing i/o pipes
-			winusb.ClearIoPipes( KF_EP_BULK_IN, KF_EP_BULK_OUT );
-			// . streaming the "KFW" data to KryoFlux
-			SendRequest( TRequest::INDEX_WRITE, 2 ); // waiting for an index?
-			if (!SetMotorOn() || !SelectHead(head) || !SeekTo(cyl)) // some Drives require motor to be on before seeking Heads
-				return ERROR_NOT_READY;
-			SendRequest( TRequest::STREAM, 2 ); // start streaming
-				err=WriteFull( dataBuffer, nBytesToWrite );
-				if (err==ERROR_SUCCESS)
-					do{
-						if (err=SendRequest( TRequest::RESULT_WRITE ))
-							break;
-					}while (::strrchr(device.lastRequestResultMsg,'=')[1]=='9'); // TODO: explain why sometimes instead of '0' a return code is '3' but the Track has been written; is it a timeout? if yes, how to solve it?
-			SendRequest( TRequest::STREAM, 0 ); // stop streaming
-			TCHAR msgSavingFailed[80];
-			::wsprintf( msgSavingFailed, ERROR_SAVE_MESSAGE_TEMPLATE, cyl, '0'+head, _T("saving") );
-			if (err) // writing to the device failed
+			if (err=UploadTrack( cyl, head, trwCompensated )) // writing to the device failed
 				switch (
 					nSilentRetrials>0 || cancelled
 					? IDRETRY
@@ -761,18 +767,9 @@
 		}while (err!=ERROR_SUCCESS && err!=ERROR_CONTINUE);
 		// - (successfully) saved - see TODOs
 		pit->modified=false;
+		if (err==ERROR_CONTINUE) // if writing errors commanded to ignore ...
+			err=ERROR_SUCCESS; // ... then the Track has been saved successfully
 		return err;
-	}
-
-	TStdWinError CKryoFluxDevice::SaveTrack(TCylinder cyl,THead head,const volatile bool &cancelled) const{
-		// saves the specified Track to the inserted Medium; returns Windows standard i/o error
-		switch (const TStdWinError err=SaveAndVerifyTrack(cyl,head,cancelled)){
-			case ERROR_SUCCESS:
-			case ERROR_CONTINUE: // writing errors ignored
-				return ERROR_SUCCESS;
-			default:
-				return err;
-		}
 	}
 
 	CImage::CTrackReader CKryoFluxDevice::ReadTrack(TCylinder cyl,THead head) const{

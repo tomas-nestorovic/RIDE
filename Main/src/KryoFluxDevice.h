@@ -85,6 +85,7 @@
 		LPCSTR GetProductName() const;
 		TStdWinError SamBaCommand(LPCSTR cmd,LPCSTR end) const;
 		TStdWinError UploadFirmware() override;
+		TStdWinError UploadTrack(TCylinder cyl,THead head,CTrackReader tr) const override;
 		DWORD TrackToKfw1(CTrackReader tr) const;
 		TStdWinError SendRequest(TRequest req,WORD index=0,WORD value=0) const;
 	    int GetLastRequestResult() const;
@@ -95,7 +96,6 @@
 		bool SetMotorOn(bool on=true) const;
 		bool SeekTo(TCylinder cyl) const;
 		bool SelectHead(THead head) const;
-		TStdWinError SaveAndVerifyTrack(TCylinder cyl,THead head,const volatile bool &cancelled) const;
 	public:
 		static const TProperties Properties;
 
@@ -113,7 +113,6 @@
 		bool EditSettings(bool initialEditing) override;
 		TStdWinError Reset() override;
 		CTrackReader ReadTrack(TCylinder cyl,THead head) const override;
-		TStdWinError SaveTrack(TCylinder cyl,THead head,const volatile bool &cancelled) const override;
 		void SetPathName(LPCTSTR lpszPathName,BOOL bAddToMRU=TRUE) override;
 	};
 

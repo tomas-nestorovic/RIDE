@@ -184,6 +184,7 @@
 		CCapsBase(PCProperties properties,char realDriveLetter,bool hasEditableSettings,LPCTSTR iniSectionName);
 
 		virtual TStdWinError UploadFirmware();
+		virtual TStdWinError UploadTrack(TCylinder cyl,THead head,CTrackReader tr) const;
 		void DestroyAllTracks();
 		TStdWinError VerifyTrack(TCylinder cyl,THead head,const CTrackReaderWriter &trwWritten,bool showDiff,std::unique_ptr<CTrackReaderWriter> *ppOutReadTrack,const volatile bool &cancelled) const;
 		TStdWinError DetermineMagneticReliabilityByWriting(Medium::TType floppyType,TCylinder cyl,THead head,const volatile bool &cancelled) const;
@@ -205,6 +206,7 @@
 		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
 		bool EditSettings(bool initialEditing) override;
 		TStdWinError Reset() override;
+		TStdWinError SaveTrack(TCylinder cyl,THead head,const volatile bool &cancelled) const override;
 		CTrackReader ReadTrack(TCylinder cyl,THead head) const override;
 		TStdWinError WriteTrack(TCylinder cyl,THead head,CTrackReader tr) override;
 		TStdWinError FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte,const volatile bool &cancelled) override;

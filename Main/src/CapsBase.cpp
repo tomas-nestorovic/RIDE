@@ -927,6 +927,12 @@ invalidTrack:
 		return ERROR_SUCCESS;
 	}
 
+	TStdWinError CCapsBase::UploadTrack(TCylinder cyl,THead head,CTrackReader tr) const{
+		// uploads specified Track to a CAPS-based device (e.g. KryoFlux); returns Windows standard i/o error
+		ASSERT(FALSE); // override in descendant to send Track to a Device
+		return ERROR_NOT_SUPPORTED;
+	}
+
 	TStdWinError CCapsBase::VerifyTrack(TCylinder cyl,THead head,const CTrackReaderWriter &trwWritten,bool showDiff,std::unique_ptr<CTrackReaderWriter> *ppOutReadTrack,const volatile bool &cancelled) const{
 		// verifies specified Track that is assumed to be just written; returns Windows standard i/o error
 		// - Medium must be known

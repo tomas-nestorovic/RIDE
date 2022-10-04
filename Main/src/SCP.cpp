@@ -135,6 +135,11 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		return ERROR_SUCCESS;
 	}
 
+	TStdWinError CSCP::SaveTrack(TCylinder cyl,THead head,const volatile bool &cancelled) const{
+		// saves the specified Track to the inserted Medium; returns Windows standard i/o error
+		return ERROR_NOT_SUPPORTED; // individual Track saving is not supported for this kind of Image (OnSaveDocument must be called instead)
+	}
+
 	TStdWinError CSCP::SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap){
 		// saves all Modified Tracks; returns Windows standard i/o error
 		CFile fTmp;
