@@ -549,8 +549,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 					return; // ... doing nothing
 			if (OpenDocumentFile(deviceName))
 				return;
-		}
-		if (*deviceName){
+		}else if (*deviceName){
 			const TStdWinError err=::GetLastError();
 			Utils::FatalError( _T("Can't access device"), err?err:ERROR_DEVICE_NOT_AVAILABLE );
 		}
@@ -701,8 +700,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 					return; // ... doing nothing
 			if (OpenDocumentFile(fileName))
 				return;
-		}
-		if (*fileName){
+		}else if (*fileName){
 			const TStdWinError err=::GetLastError();
 			Utils::FatalError( _T("Can't open the file"), err?err:MK_E_INVALIDEXTENSION );
 		}
