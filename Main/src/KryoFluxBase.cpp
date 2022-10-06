@@ -86,8 +86,11 @@
 			return ERROR_INVALID_PARAMETER;
 		// - disposing previous Track, if any
 		PInternalTrack &rit=internalTracks[cyl][head];
-		if (rit!=nullptr)
+		if (rit!=nullptr){
+			if (rit->modified)
+				return ERROR_WRITE_FAULT; // cannot overwrite Track that has already been Modified
 			delete rit, rit=nullptr;
+		}
 		// - creation of new content
 		if ( rit = CInternalTrack::CreateFrom(*this,CTrackReaderWriter(tr)) ){
 			SetModifiedFlag( rit->modified=true );
