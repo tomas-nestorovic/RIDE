@@ -38,7 +38,7 @@
 
 	CTrackMapView::TTrackScanner::TTrackScanner(const CTrackMapView *pvtm)
 		// ctor
-		: action( __thread__, pvtm, THREAD_PRIORITY_IDLE ) {
+		: action( Thread, pvtm, THREAD_PRIORITY_IDLE ) {
 		params.nHeads=-1; // Head count undetermined yet
 	}
 
@@ -54,23 +54,23 @@
 		ON_WM_RBUTTONUP()
 		ON_WM_MOUSEWHEEL()
 		ON_WM_DESTROY()
-		ON_MESSAGE(WM_TRACK_SCANNED,__drawTrack__)
-		ON_COMMAND_RANGE(ID_TRACKMAP_STATUS,ID_TRACKMAP_BAD_DATA,__changeDisplayType__)
+		ON_MESSAGE(WM_TRACK_SCANNED,DrawTrack)
+		ON_COMMAND_RANGE(ID_TRACKMAP_STATUS,ID_TRACKMAP_BAD_DATA,ChangeDisplayType)
 			ON_UPDATE_COMMAND_UI_RANGE(ID_TRACKMAP_STATUS,ID_TRACKMAP_BAD_DATA,__changeDisplayType_updateUI__)
-		ON_COMMAND(ID_TRACKMAP_NUMBERING,__toggleSectorNumbering__)
+		ON_COMMAND(ID_TRACKMAP_NUMBERING,ToggleSectorNumbering)
 			ON_UPDATE_COMMAND_UI(ID_TRACKMAP_NUMBERING,__toggleSectorNumbering_updateUI__)
-		ON_COMMAND(ID_TRACKMAP_TIMING,__toggleTiming__)
+		ON_COMMAND(ID_TRACKMAP_TIMING,ToggleTiming)
 			ON_UPDATE_COMMAND_UI(ID_TRACKMAP_TIMING,__toggleTiming_updateUI__)
-		ON_COMMAND(ID_ZOOM_IN,__zoomIn__)
+		ON_COMMAND(ID_ZOOM_IN,ZoomIn)
 			ON_UPDATE_COMMAND_UI(ID_ZOOM_IN,__zoomIn_updateUI__)
-		ON_COMMAND(ID_ZOOM_OUT,__zoomOut__)
+		ON_COMMAND(ID_ZOOM_OUT,ZoomOut)
 			ON_UPDATE_COMMAND_UI(ID_ZOOM_OUT,__zoomOut_updateUI__)
-		ON_COMMAND(ID_ZOOM_FIT,__zoomFitWidth__)
+		ON_COMMAND(ID_ZOOM_FIT,ZoomFitWidth)
 			ON_UPDATE_COMMAND_UI(ID_ZOOM_FIT,__zoomFitWidth_updateUI__)
-		ON_COMMAND(ID_FILE,__showSelectedFiles__)
+		ON_COMMAND(ID_FILE,ShowSelectedFiles)
 			ON_UPDATE_COMMAND_UI(ID_FILE,__showSelectedFiles_updateUI__)
-		ON_COMMAND(ID_COLOR,__changeFileSelectionColor__)
-		ON_COMMAND(ID_TRACKMAP_STATISTICS,__showDiskStatistics__)
+		ON_COMMAND(ID_COLOR,ChangeFileSelectionColor)
+		ON_COMMAND(ID_TRACKMAP_STATISTICS,ShowDiskStatistics)
 		ON_COMMAND(ID_REFRESH,RefreshDisplay)
 	END_MESSAGE_MAP()
 
@@ -137,12 +137,12 @@
 	void CTrackMapView::OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint){
 		// request to refresh the display of content
 		// - updating the logical dimensions
-		__updateLogicalDimensions__();
+		UpdateLogicalDimensions();
 		// - base
 		__super::OnUpdate(pSender,lHint,pHint);
 	}
 
-	void CTrackMapView::__updateLogicalDimensions__(){
+	void CTrackMapView::UpdateLogicalDimensions(){
 		// adjusts logical dimensions to accommodate the LongestTrack in the Image horizontally, and all Tracks in the Image vertically
 		SetScrollSizes(
 			MM_TEXT,
@@ -212,7 +212,7 @@
 		WORD bufferLength[(TSector)-1];
 		TLogTime bufferStartNanoseconds[(TSector)-1];
 	};
-	UINT AFX_CDECL CTrackMapView::TTrackScanner::__thread__(PVOID _pBackgroundAction){
+	UINT AFX_CDECL CTrackMapView::TTrackScanner::Thread(PVOID _pBackgroundAction){
 		// scanning of Tracks
 		const PCBackgroundAction pAction=(PCBackgroundAction)_pBackgroundAction;
 		CTrackMapView *const pvtm=(CTrackMapView *)pAction->GetParams();
@@ -227,9 +227,9 @@
 			TTrack trackNumber;
 	{		EXCLUSIVELY_LOCK(rts.params);
 			const THead nHeads=rts.params.nHeads;
-			trackNumber=rts.params.x;
 			if (nHeads==0) // "nHeads==0" if disk without any Track (e.g. when opening RawImage of zero length, or if opening a corrupted DSK Image)
 				break;
+			trackNumber=rts.params.x;
 			const div_t d=div(trackNumber,nHeads);
 			tmp.cylinder=d.quot, tmp.head=d.rem; // syncing with Params due to comparison in drawing routine
 	}		// . scanning the Track to draw its Sector Statuses
@@ -281,7 +281,7 @@
 
 	static constexpr int Tabs[]={ VIEW_PADDING, VIEW_PADDING+60, SECTOR1_X };
 
-	afx_msg LRESULT CTrackMapView::__drawTrack__(WPARAM,LPARAM pTrackInfo){
+	afx_msg LRESULT CTrackMapView::DrawTrack(WPARAM,LPARAM pTrackInfo){
 		// draws scanned Track
 		// - adjusting logical dimensions to accommodate the LongestTrack
 		const TTrackInfo &rti=*(TTrackInfo *)pTrackInfo;
@@ -311,7 +311,7 @@
 				Invalidate();
 				return 0;
 			}else
-				__updateLogicalDimensions__();
+				UpdateLogicalDimensions();
 		// - drawing
 		scanner.params.locker.Lock();
 			const THead nHeads=scanner.params.nHeads;
@@ -470,7 +470,7 @@
 		if (informOnCapabilities){
 			informOnCapabilities=false;
 			TDI_INSTANCE->RedrawWindow(); // make sure TDI's whole client area is up-to-date before showing the following message
-			Utils::InformationWithCheckableShowNoMore( _T("Use the \"") TRACK_MAP_TAB_LABEL _T("\" tab to explore the structure of the disk, incl. hidden sectors. Right-click a track or a sector for more operations."), INI_TRACKMAP, INI_MSG_CAPABILITIES );
+			Utils::InformationWithCheckableShowNoMore( _T("Use the \"") TRACK_MAP_TAB_LABEL _T("\" tab to explore the structure of the disk, incl. hidden features. Right-click a track or a sector for more operations."), INI_TRACKMAP, INI_MSG_CAPABILITIES );
 		}
 		return result;
 	}
@@ -649,9 +649,9 @@
 		if (nFlags&MK_CONTROL){
 			// Ctrl key is down - changing the zoom
 			if (delta>0)
-				__zoomIn__();
+				ZoomIn();
 			else
-				__zoomOut__();
+				ZoomOut();
 			return TRUE;
 		}else
 			// Ctrl key is not down - scrolling the content
@@ -670,7 +670,7 @@
 		__super::OnDestroy();
 	}
 
-	afx_msg void CTrackMapView::__changeDisplayType__(UINT id){
+	afx_msg void CTrackMapView::ChangeDisplayType(UINT id){
 		// DisplayType changed
 		displayType=(TDisplayType)id;
 		Invalidate(FALSE);
@@ -680,7 +680,7 @@
 		pCmdUI->SetRadio( displayType==pCmdUI->m_nID );
 	}
 
-	afx_msg void CTrackMapView::__toggleSectorNumbering__(){
+	afx_msg void CTrackMapView::ToggleSectorNumbering(){
 		// commanded toggling of ShowingSectorNumbers
 		showSectorNumbers=!showSectorNumbers;
 		Invalidate(TRUE);
@@ -691,7 +691,7 @@
 		pCmdUI->Enable(displayType==TDisplayType::STATUS);
 	}
 
-	afx_msg void CTrackMapView::__toggleTiming__(){
+	afx_msg void CTrackMapView::ToggleTiming(){
 		// commanded to toggle timed display of Sectors
 		showTimed=!showTimed;
 		OnUpdate( nullptr, 0, nullptr );
@@ -702,12 +702,12 @@
 		pCmdUI->Enable(longestTrackNanoseconds>0);
 	}
 
-	afx_msg void CTrackMapView::__zoomOut__(){
+	afx_msg void CTrackMapView::ZoomOut(){
 		// zooms out the view
 		if (CAN_ZOOM_OUT){
 			fitLongestTrackInWindow=false;
 			zoomLengthFactor++;
-			__updateLogicalDimensions__();
+			UpdateLogicalDimensions();
 			Invalidate(TRUE);
 		}
 	}
@@ -716,12 +716,12 @@
 		pCmdUI->Enable( CAN_ZOOM_OUT );
 	}
 
-	afx_msg void CTrackMapView::__zoomIn__(){
+	afx_msg void CTrackMapView::ZoomIn(){
 		// zooms in the view
 		if (CAN_ZOOM_IN){
 			fitLongestTrackInWindow=false;
 			zoomLengthFactor--;
-			__updateLogicalDimensions__();
+			UpdateLogicalDimensions();
 			Invalidate(TRUE);
 		}
 	}
@@ -730,7 +730,7 @@
 		pCmdUI->Enable( CAN_ZOOM_IN );
 	}
 
-	afx_msg void CTrackMapView::__zoomFitWidth__(){
+	afx_msg void CTrackMapView::ZoomFitWidth(){
 		// zooms in the view
 		if ( fitLongestTrackInWindow=!fitLongestTrackInWindow ){
 			CRect rc;
@@ -738,7 +738,7 @@
 			zoomLengthFactor =	showTimed
 								? TTrackLength::FromTime(longestTrackNanoseconds,IMAGE->EstimateNanosecondsPerOneByte()).GetZoomFactorToFitWidth(rc.Width())
 								: longestTrack.GetZoomFactorToFitWidth(rc.Width());
-			__updateLogicalDimensions__();
+			UpdateLogicalDimensions();
 			Invalidate(TRUE);
 		}
 	}
@@ -747,7 +747,7 @@
 		pCmdUI->SetCheck( fitLongestTrackInWindow );
 	}
 
-	afx_msg void CTrackMapView::__showSelectedFiles__(){
+	afx_msg void CTrackMapView::ShowSelectedFiles(){
 		// toggles display of Sectors occupied by one of Files selected in the FileManager
 		if (DOS->pFileManager!=nullptr)
 			showSelectedFiles=!showSelectedFiles;
@@ -758,7 +758,7 @@
 		pCmdUI->Enable( DOS->pFileManager!=nullptr ? DOS->pFileManager->GetCountOfSelectedFiles()>0 : false );
 	}
 
-	afx_msg void CTrackMapView::__changeFileSelectionColor__(){
+	afx_msg void CTrackMapView::ChangeFileSelectionColor(){
 		// displays the Color Picker dialog to select a new color for File selection display
 		CColorDialog d( fileSelectionColor );
 		if (d.DoModal()==IDOK){
@@ -817,7 +817,7 @@
 			}
 		return ERROR_SUCCESS;
 	}
-	afx_msg void CTrackMapView::__showDiskStatistics__(){
+	afx_msg void CTrackMapView::ShowDiskStatistics(){
 		// shows statistics on Tracks and their Sectors in current disk
 		// - collecting statistics on Tracks and their Sectors
 		TStatisticParams sp(DOS);

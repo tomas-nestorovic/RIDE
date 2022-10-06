@@ -32,7 +32,7 @@
 		} displayType;
 		HBRUSH rainbowBrushes[TRACK_MAP_COLORS_COUNT];
 		struct TTrackScanner sealed{
-			static UINT AFX_CDECL __thread__(PVOID _pBackgroundAction);
+			static UINT AFX_CDECL Thread(PVOID _pBackgroundAction);
 			const CBackgroundAction action;
 			struct TParams sealed{
 				CCriticalSection locker;
@@ -54,7 +54,7 @@
 		void TimesToPixels(TSector nSectors,PLogTime pInOutBuffer,PCWORD pInSectorLengths) const;
 		enum TCursorPos{ NONE, TRACK, SECTOR } GetPhysicalAddressAndNanosecondsFromPoint(POINT point,TPhysicalAddress &rOutChs,BYTE &rnOutSectorsToSkip,int &rOutNanoseconds);
 		void ResetStatusBarMessage() const;
-		void __updateLogicalDimensions__();
+		void UpdateLogicalDimensions();
 		afx_msg int OnCreate(LPCREATESTRUCT lpcs);
 		afx_msg void OnSize(UINT nType,int cx,int cy);
 		afx_msg void OnMouseMove(UINT nFlags,CPoint point);
@@ -62,23 +62,23 @@
 		afx_msg void OnRButtonUp(UINT nFlags,CPoint point);
 		afx_msg BOOL OnMouseWheel(UINT nFlags,short delta,CPoint point);
 		afx_msg void OnDestroy();
-		afx_msg LRESULT __drawTrack__(WPARAM wParam,LPARAM lParam);
-		afx_msg void __changeDisplayType__(UINT id);
+		afx_msg LRESULT DrawTrack(WPARAM wParam,LPARAM lParam);
+		afx_msg void ChangeDisplayType(UINT id);
 			afx_msg void __changeDisplayType_updateUI__(CCmdUI *pCmdUI);
-		afx_msg void __toggleSectorNumbering__();
+		afx_msg void ToggleSectorNumbering();
 			afx_msg void __toggleSectorNumbering_updateUI__(CCmdUI *pCmdUI);
-		afx_msg void __toggleTiming__();
+		afx_msg void ToggleTiming();
 			afx_msg void __toggleTiming_updateUI__(CCmdUI *pCmdUI);
-		afx_msg void __zoomOut__();
+		afx_msg void ZoomOut();
 			afx_msg void __zoomOut_updateUI__(CCmdUI *pCmdUI);
-		afx_msg void __zoomIn__();
+		afx_msg void ZoomIn();
 			afx_msg void __zoomIn_updateUI__(CCmdUI *pCmdUI);
-		afx_msg void __zoomFitWidth__();
+		afx_msg void ZoomFitWidth();
 			afx_msg void __zoomFitWidth_updateUI__(CCmdUI *pCmdUI);
-		afx_msg void __showSelectedFiles__();
+		afx_msg void ShowSelectedFiles();
 			afx_msg void __showSelectedFiles_updateUI__(CCmdUI *pCmdUI);
-		afx_msg void __changeFileSelectionColor__();
-		afx_msg void __showDiskStatistics__();
+		afx_msg void ChangeFileSelectionColor();
+		afx_msg void ShowDiskStatistics();
 	public:
 		CTrackMapView(PImage image);
 		~CTrackMapView();
