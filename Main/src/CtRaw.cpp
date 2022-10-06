@@ -33,28 +33,3 @@
 		// - base
 		: CCapsBase( &Properties, '\0', true, INI_CTRAW ) { // '\0' = not a real drive
 	}
-
-
-
-
-
-
-	TStdWinError CCtRaw::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus){
-		// marks Sector on a given PhysicalAddress as "dirty", plus sets it the given FdcStatus; returns Windows standard i/o error
-		return ERROR_NOT_SUPPORTED;
-	}
-
-	TStdWinError CCtRaw::WriteTrack(TCylinder cyl,THead head,CTrackReader tr){
-		// converts general description of the specified Track into Image-specific representation; caller may provide Invalid TrackReader to check support of this feature; returns Windows standard i/o error
-		return ERROR_NOT_SUPPORTED;
-	}
-
-	TStdWinError CCtRaw::FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte,const volatile bool &cancelled){
-		// formats given Track {Cylinder,Head} to the requested NumberOfSectors, each with corresponding Length and FillerByte as initial content; returns Windows standard i/o error
-		return ERROR_NOT_SUPPORTED;
-	}
-
-	TStdWinError CCtRaw::UnformatTrack(TCylinder cyl,THead head){
-		// unformats given Track {Cylinder,Head}; returns Windows standard i/o error
-		return ERROR_NOT_SUPPORTED;
-	}
