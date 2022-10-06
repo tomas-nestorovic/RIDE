@@ -1321,7 +1321,7 @@ reportError:Utils::Information(buf);
 
 	void WINAPI CDos::CHexaValuePropGridEditor::DrawValue(PropGrid::PCustomParam,PropGrid::PCValue value,PropGrid::TSize valueSize,PDRAWITEMSTRUCT pdis){
 		TCHAR buf[1024],*p=buf;
-		for( PCBYTE v=(PCBYTE)value,const vMax=(PCBYTE)value+std::min<PropGrid::TSize>(valueSize,sizeof(buf)/sizeof(TCHAR)/3); v<vMax; p+=::wsprintf(p,_T(" %02X"),*v++) );
+		for( PCBYTE v=(PCBYTE)value,const vMax=(PCBYTE)value+std::min<PropGrid::TSize>(valueSize,ARRAYSIZE(buf)/3); v<vMax; p+=::wsprintf(p,_T(" %02X"),*v++) );
 		::DrawText( pdis->hDC, buf,-1, &pdis->rcItem, DT_SINGLELINE|DT_VCENTER|DT_LEFT );
 	}
 

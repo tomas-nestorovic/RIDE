@@ -149,7 +149,7 @@ namespace Debug{
 		// logs given Error to the LogFile and returns the logged Error
 		TCHAR buf[220];
 		::FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, err, 0,
-						buf, sizeof(buf)/sizeof(TCHAR),
+						buf, ARRAYSIZE(buf),
 						nullptr
 					);
 		*this << CString('\t',nIndent) << Utils::CLocalTime() << _T(" Error ") << (DWORD)err << _T(": ") << buf << '\r' << '\n'; // separate new-line characters as the operator<<(LPCTSTR) operator removes new-line characters, so can't use _T("\r\n")

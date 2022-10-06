@@ -102,7 +102,7 @@
 	CString CDos::CPathString::EscapeToString() const{
 		// returns a string with non-alphanumeric characters substituted with "URL-like" escape sequences
 		TCHAR buffer[16384], *pWritten=buffer;
-		for( short i=0,bufferCharCapacity=sizeof(buffer)/sizeof(TCHAR)-1; i<nCharsInBuf; i++ ){ // "-1" = terminating Null character
+		for( short i=0,bufferCharCapacity=ARRAYSIZE(buffer)-1; i<nCharsInBuf; i++ ){ // "-1" = terminating Null character
 			#ifdef UNICODE
 				WORD c=buf[i];
 			#else

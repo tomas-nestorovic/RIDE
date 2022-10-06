@@ -1058,7 +1058,7 @@
 
 								TLogTime ParseTime() const{
 									TCHAR buf[80];
-									GetDlgItemText( ID_TIME, buf, sizeof(buf)/sizeof(TCHAR) );
+									GetDlgItemText( ID_TIME, buf, ARRAYSIZE(buf) );
 									LPCTSTR p=::CharLower(buf);
 									TLogTime tResult=-1; // assumption (no or invalid time entered)
 									char iLastUnitUsed=100; // no unit yet used
@@ -1381,7 +1381,7 @@
 							const CChartView::PCGraphics graphics[]={ &peSeries, &indexTimeSeries, &deltaTimeSeries };
 							CChartView::CXyDisplayInfo di(
 								CChartView::TMargin::Default,
-								graphics, sizeof(graphics)/sizeof(CChartView::PCGraphics),
+								graphics, ARRAYSIZE(graphics),
 								Utils::CRideFont::StdBold,
 								's', tr.GetTotalTime(), Utils::CTimeline::TimePrefixes,
 								's', INT_MIN, Utils::CTimeline::TimePrefixes
@@ -1497,7 +1497,7 @@
 							CChartDialog(
 								CChartView::CXyDisplayInfo(
 									CChartView::TMargin::Default,
-									graphics, sizeof(graphics)/sizeof(CChartView::PCGraphics),
+									graphics, ARRAYSIZE(graphics),
 									Utils::CRideFont::StdBold,
 									's', INT_MIN, Utils::CTimeline::TimePrefixes,
 									'\0', INT_MIN, Utils::CAxis::CountPrefixes

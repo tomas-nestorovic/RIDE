@@ -485,7 +485,7 @@
 							::wnsprintf( labelBuffer, labelBufferCharsMax, L"\x25d9Rev%d %s", dirtyRev+1, (LPCTSTR)ids[nSectors].ToString() );
 						#else
 							WCHAR idStrW[80];
-							::MultiByteToWideChar( CP_ACP, 0, ids[nSectors].ToString(),-1, idStrW,sizeof(idStrW)/sizeof(WCHAR) );
+							::MultiByteToWideChar( CP_ACP, 0, ids[nSectors].ToString(),-1, idStrW,ARRAYSIZE(idStrW) );
 							::wnsprintfW( labelBuffer, labelBufferCharsMax, L"\x25d9Rev%d %s", dirtyRev+1, idStrW );
 						#endif
 						return labelBuffer;

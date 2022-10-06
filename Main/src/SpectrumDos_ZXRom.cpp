@@ -431,7 +431,7 @@ caretMoved:					rEditor.hexaLow=true; // specifically for hexa-mode X
 							TCaret::TMode &rMode=rEditor.caret.mode;
 							BYTE m=0;
 							while (Modes[m++]!=rMode);
-							if (m==sizeof(Modes)/sizeof(TCaret::TMode))
+							if (m==ARRAYSIZE(Modes))
 								m=0;
 							rMode=Modes[m];
 							rEditor.hexaLow=true; // specifically for hexa-mode X

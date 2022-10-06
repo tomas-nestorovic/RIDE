@@ -430,7 +430,7 @@
 			TBootSector::DISK_525_320_DS_8,
 			TBootSector::DISK_HARD
 		};
-		rnMedia=sizeof(List)/sizeof(TBootSector::TMsdosMedium);
+		rnMedia=ARRAYSIZE(List);
 		return (PropGrid::Enum::PCValueList)List;
 	}
 	LPCTSTR WINAPI CMSDOS7::CMsdos7BootView::__getMediumDescription__(PVOID,PropGrid::Enum::UValue medium,PTCHAR,short){
@@ -454,7 +454,7 @@
 			TBootSector::FLOPPY,
 			TBootSector::HDD
 		};
-		rnMediumTypes=sizeof(List)/sizeof(TBootSector::TMsdosMediumType);
+		rnMediumTypes=ARRAYSIZE(List);
 		return (PropGrid::Enum::PCValueList)List;
 	}
 	LPCTSTR WINAPI CMSDOS7::CMsdos7BootView::__getMediumTypeDescription__(PVOID,PropGrid::Enum::UValue mediumType,PTCHAR,short){

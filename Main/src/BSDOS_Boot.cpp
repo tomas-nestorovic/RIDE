@@ -78,7 +78,7 @@
 		__instantiate__, // instantiation function
 		Medium::FLOPPY_ANY,
 		&MBD::Properties, // the most common Image to contain data for this DOS (e.g. *.D80 Image for MDOS)
-		sizeof(StdFormats)/sizeof(CFormatDialog::TStdFormat),	// number of std Formats
+		ARRAYSIZE(StdFormats),	// number of std Formats
 		StdFormats,//CMDOS2::Properties.stdFormats, // std Formats ("some" Format in case of UnknownDos)
 		Codec::MFM, // a set of Codecs this DOS supports
 		1,11, // range of supported number of Sectors

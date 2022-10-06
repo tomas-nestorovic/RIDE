@@ -88,7 +88,7 @@
 		CStatusBar &rStatusBar=app.GetMainWindow()->statusBar;
 		if (rStatusBar.m_hWnd){ // may not exist if the app is closing
 			static constexpr UINT Indicators[]={ ID_SEPARATOR, ID_SEPARATOR };
-			rStatusBar.SetIndicators( Indicators, sizeof(Indicators)/sizeof(*Indicators) );
+			rStatusBar.SetIndicators( Indicators, ARRAYSIZE(Indicators) );
 			rStatusBar.SetPaneInfo( 1, ID_SEPARATOR, SBPS_NORMAL, 90 );
 		}
 		UpdateStatusBar();

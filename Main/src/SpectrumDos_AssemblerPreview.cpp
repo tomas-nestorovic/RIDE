@@ -21,7 +21,7 @@
 		features.info=app.GetProfileInt( iniSection, INI_FEATURES, features.info );
 		constantInput.pfIn=nullptr; // no permanently existing input file
 		// - creating the TemporaryFile to store HTML-formatted content in
-		::GetTempPath( sizeof(tmpFileName)/sizeof(TCHAR), tmpFileName );
+		::GetTempPath( ARRAYSIZE(tmpFileName), tmpFileName );
 		::GetTempFileName( tmpFileName, nullptr, FALSE, tmpFileName );
 		// - creating the ContentView
 		contentView.Create( nullptr, nullptr, WS_CHILD|WS_VISIBLE, rectDefault, this, AFX_IDW_PANE_FIRST, nullptr );
@@ -769,7 +769,7 @@
 						Utils::WriteToFile( f, _T("</td>") );
 					}
 					if (features.instruction){
-						TCHAR format[sizeof(argSyntaxBuf)/sizeof(TCHAR)], params[2][64];
+						TCHAR format[ARRAYSIZE(argSyntaxBuf)], params[2][64];
 						for( TCHAR i=0,*p=::lstrcpy(format,argSyntax); const PTCHAR percent=_tcschr(p,'%'); p=percent+1,i++ ){
 							switch (percent[2]){
 								case 'j':

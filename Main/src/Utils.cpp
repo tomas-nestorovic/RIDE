@@ -213,7 +213,7 @@ namespace Utils{
 	CString CRideContextMenu::GetMenuString(UINT uIDItem,UINT flags) const{
 		//
 		TCHAR buf[80];
-		if (::GetMenuString( m_hMenu, uIDItem, buf, sizeof(buf)/sizeof(TCHAR), flags )<=0)
+		if (::GetMenuString( m_hMenu, uIDItem, buf, ARRAYSIZE(buf), flags )<=0)
 			*buf='\0';
 		return buf;
 	}
@@ -349,7 +349,7 @@ namespace Utils{
 					}
 					::SetBkMode(dc,TRANSPARENT);
 					TCHAR text[200];
-					::GetWindowText(hCmdBtn,text,sizeof(text)/sizeof(TCHAR));
+					::GetWindowText(hCmdBtn,text,ARRAYSIZE(text));
 					if (const WCHAR glyph=cmdInfo->wingdingsGlyphBeforeText){
 						// prefixing the Text with specified Glyph
 						const CRideFont font( FONT_WINGDINGS, 130+cmdInfo->glyphPointSizeIncrement, false, true );
@@ -1527,7 +1527,7 @@ namespace Utils{
 		// True <=> item with the specified ID contains list of integer values (grammar bellow), otherwise False
 		// - elimination of white spaces from the content
 		TCHAR buf[16384], *pEnd=buf;
-		for( int i=0,n=GetDlgItemText(id,buf,sizeof(buf)/sizeof(TCHAR)); i<n; i++ )
+		for( int i=0,n=GetDlgItemText(id,buf,ARRAYSIZE(buf)); i<n; i++ )
 			if (!::isspace(buf[i]))
 				*pEnd++=buf[i];
 		// - empty content is incorrect
@@ -1677,7 +1677,7 @@ namespace Utils{
 	bool CSingleNumberDialog::GetCurrentValue(int &outValue) const{
 		// True <=> input value successfully parsed, otherwise False
 		TCHAR buf[16], *p=buf;
-		auto nChars=GetDlgItemText( ID_NUMBER, buf, sizeof(buf)/sizeof(TCHAR) );
+		auto nChars=GetDlgItemText( ID_NUMBER, buf, ARRAYSIZE(buf) );
 		if (hexa!=BST_UNCHECKED){
 			if (nChars>2 && *buf=='0' && buf[1]=='x')
 				p+=2, nChars-=2;
@@ -1876,7 +1876,7 @@ namespace Utils{
 				}
 			case WM_SETTEXT:
 				// text about to change
-				::strncpy( psbi->text, (LPCTSTR)lParam, sizeof(psbi->text)/sizeof(TCHAR) );
+				::strncpy( psbi->text, (LPCTSTR)lParam, ARRAYSIZE(psbi->text) );
 				::InvalidateRect( hSplitBtn, nullptr, TRUE );
 				return 0;
 			case WM_PAINT:{

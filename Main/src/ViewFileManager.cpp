@@ -494,7 +494,7 @@
 				CListCtrl &lv=GetListCtrl();
 				TCHAR buf[80];
 				LVCOLUMN lvc;
-					lvc.mask=LVCF_TEXT, lvc.pszText=buf, lvc.cchTextMax=sizeof(buf)/sizeof(TCHAR);
+					lvc.mask=LVCF_TEXT, lvc.pszText=buf, lvc.cchTextMax=ARRAYSIZE(buf);
 				lv.GetColumn( columnId, &lvc );
 				*buf=ORDER_NONE_SYMBOL;
 				lv.SetColumn( columnId, &lvc );
@@ -527,7 +527,7 @@
 			if (columnId>=0){
 				TCHAR buf[80];
 				LVCOLUMN lvc;
-					lvc.mask=LVCF_TEXT, lvc.pszText=buf, lvc.cchTextMax=sizeof(buf)/sizeof(TCHAR);
+					lvc.mask=LVCF_TEXT, lvc.pszText=buf, lvc.cchTextMax=ARRAYSIZE(buf);
 				lv.GetColumn( columnId, &lvc );
 				*buf= ordering&ORDER_ASCENDING ? '+' : '–' ;
 				lv.SetColumn( columnId, &lvc );

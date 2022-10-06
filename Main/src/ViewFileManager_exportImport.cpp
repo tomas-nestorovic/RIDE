@@ -604,7 +604,7 @@ importQuit2:		::GlobalUnlock(hg);
 						case IDYES:{
 							// opening the File in new instance of the app (this may function only in Release mode, not in Debug mode)
 							rImportedFile=nullptr;
-							::GetModuleFileName( nullptr, buf, sizeof(buf)/sizeof(TCHAR) );
+							::GetModuleFileName( nullptr, buf, ARRAYSIZE(buf) );
 							TCHAR pathAndNameInQuotes[MAX_PATH+2];
 							::ShellExecute( nullptr, "open", buf, ::lstrcat(::lstrcat(::lstrcpy(pathAndNameInQuotes,_T("\"")),pathAndName),_T("\"")), nullptr, SW_SHOW );
 							return ::GetLastError();

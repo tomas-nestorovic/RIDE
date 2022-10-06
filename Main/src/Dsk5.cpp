@@ -420,7 +420,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 						cb.Attach(GetDlgItemHwnd(ID_CREATOR));
 							TCHAR buf[80];
 							cb.AddString( ::lstrcpyn(buf,APP_ABBREVIATION _T(" ") APP_VERSION,sizeof(rDiskInfo.creator)+1) );
-							DWORD dw=sizeof(buf)/sizeof(TCHAR);
+							DWORD dw=ARRAYSIZE(buf);
 							if (::GetUserName(buf,&dw)){
 								buf[sizeof(rDiskInfo.creator)]='\0';
 								cb.AddString(buf);

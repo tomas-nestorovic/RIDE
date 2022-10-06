@@ -86,7 +86,7 @@
 		constexpr BYTE nNeighboringFluxes=2; // must be an EVEN number!
 		constexpr BYTE nEvaluationFluxes=2+1+2; // "N+1+N", N = fluxes considered before/after the current flux
 		decltype(rPrecomp.latest) trialResults[9];
-		const BYTE nTrials=std::min<BYTE>( ptp.nTrials, sizeof(trialResults)/sizeof(*trialResults) );
+		const BYTE nTrials=std::min<BYTE>( ptp.nTrials, ARRAYSIZE(trialResults) );
 		const Medium::PCProperties pMediumProps=Medium::GetProperties(rPrecomp.floppyType);
 		const Utils::CVarTempReset<Medium::TType> mt0( const_cast<CCapsBase *>(&ptp.cb)->floppyType, rPrecomp.floppyType ); // force selected Medium
 		const Utils::CVarTempReset<TCorrections> cor0( const_cast<CCapsBase *>(&ptp.cb)->params.corrections, TCorrections() ); // disable Corrections
@@ -398,7 +398,7 @@ nextTrial:	;
 				case Identity:
 					return ERROR_SUCCESS;
 				case MethodVersion1:{
-					constexpr BYTE COEFFS_COUNT=sizeof(v1.coeffs[0])/sizeof(*v1.coeffs[0]);
+					constexpr BYTE COEFFS_COUNT=ARRAYSIZE(v1.coeffs[0]);
 					constexpr BYTE PIVOT_INDEX=COEFFS_COUNT/2;
 					const auto &coeffs=v1.coeffs[(i+PIVOT_INDEX)&1];
 					if (i<nTimes-COEFFS_COUNT){ // applicable range
@@ -413,7 +413,7 @@ nextTrial:	;
 				}
 				case MethodVersion2:{
 					const auto &headCoeffs=v2.coeffs[head];
-					constexpr BYTE COEFFS_COUNT=sizeof(headCoeffs[0])/sizeof(*headCoeffs[0]);
+					constexpr BYTE COEFFS_COUNT=ARRAYSIZE(headCoeffs[0]);
 					constexpr BYTE PIVOT_INDEX=COEFFS_COUNT/2;
 					const auto &coeffs=headCoeffs[(i+PIVOT_INDEX)&1];
 					if (i<nTimes-COEFFS_COUNT){ // applicable range

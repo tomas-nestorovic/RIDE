@@ -341,7 +341,7 @@
 					}
 				}
 				// - text
-				//DDX_Text(	pDX, ID_DATA	,bufT,sizeof(bufT)/sizeof(TCHAR)); // commented out as carried out below on custom basis
+				//DDX_Text(	pDX, ID_DATA	,bufT,ARRAYSIZE(bufT)); // commented out as carried out below on custom basis
 				DDX_Text(	pDX, ID_DX		,rGkfm.dx);
 					DDV_MinMaxInt( pDX, rGkfm.dx, 0, rGkfm.w );
 				DDX_Text(	pDX, ID_DY		,rGkfm.dy);
@@ -363,7 +363,7 @@ errorText:				TCHAR buf[400];
 						pDX->Fail();
 					}
 					// . converting char-sets PC->Desktop
-					GetDlgItemText( ID_DATA, bufT, sizeof(bufT)/sizeof(TCHAR) );
+					GetDlgItemText( ID_DATA, bufT, ARRAYSIZE(bufT) );
 					for( PTCHAR a=bufT; const TCHAR z=*a++; nCharsD++ ){
 						switch (z){
 							case '\r':

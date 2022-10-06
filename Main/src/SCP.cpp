@@ -154,7 +154,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		CContentLayout contentLayout; // key = position in file, value>0 = Track length, value<0 = unused gap size
 		if (savingToCurrentFile){
 			// . adding unmodified Tracks to ContentLayout as "occupied" (value>0)
-			for( TCylinder cylFile=sizeof(tdhOffsets)/sizeof(*tdhOffsets); cylFile-->0; )
+			for( TCylinder cylFile=ARRAYSIZE(tdhOffsets); cylFile-->0; )
 				for( THead head=2; head>0; )
 					if (const DWORD tdhOffset=tdhOffsets[cylFile][--head]){ // Track actually exists in the file?
 						const TCylinder cyl=cylFile>>(BYTE)params.doubleTrackStep;
@@ -188,7 +188,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			fTarget.SetLength( sizeof(header)+header.flags.extended*0x70+sizeof(tdhOffsets) );
 		if (const auto buffer=Utils::MakeCallocPtr<BYTE>(SCP_BUFFER_CAPACITY)){
 			auto sub=ap.CreateSubactionProgress( 2000, sizeof(tdhOffsets)/sizeof(DWORD) );
-			for( TCylinder cylFile=0; cylFile<sizeof(tdhOffsets)/sizeof(*tdhOffsets); cylFile++ ){
+			for( TCylinder cylFile=0; cylFile<ARRAYSIZE(tdhOffsets); cylFile++ ){
 				const TCylinder cyl=cylFile>>(BYTE)params.doubleTrackStep;
 				bool bStreamAdjusted;
 				for( THead head=0; head<2; ap.UpdateProgress(++head+cylFile*2) ){
@@ -315,7 +315,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		header.flags.footerPresent=false; // discard any footer
 		header.flags.createdUsingScp=false;
 		BYTE nTracks[2]; // for Head 0 and 1, respectively
-		for( TCylinder cylFile=sizeof(tdhOffsets)/sizeof(*tdhOffsets); cylFile-->0; )
+		for( TCylinder cylFile=ARRAYSIZE(tdhOffsets); cylFile-->0; )
 			for( THead head=2; head-->0; nTracks[head]+=tdhOffsets[cylFile][head]!=0 );
 		if (nTracks[0]>0 && nTracks[1]>0)
 			header.heads=THeader::BOTH_HEADS;

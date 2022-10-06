@@ -164,7 +164,7 @@
 		__instantiate__, // instantiation function
 		Medium::FLOPPY_DD_ANY,
 		&TRD::Properties, // the most common Image to contain data for this DOS (e.g. *.D80 Image for MDOS)
-		sizeof(StdFormats)/sizeof(CFormatDialog::TStdFormat),	// number of std Formats
+		ARRAYSIZE(StdFormats),	// number of std Formats
 		StdFormats, // std Formats
 		Codec::MFM, // a set of Codecs this DOS supports
 		TRDOS503_TRACK_SECTORS_COUNT,TRDOS503_TRACK_SECTORS_COUNT, // range of supported number of Sectors

@@ -968,9 +968,9 @@ resetSelectionWithValue:BYTE buf[65535];
 						class CResetDialog sealed:public Utils::CRideDialog{
 							BOOL OnInitDialog() override{
 								TCHAR buf[80];
-								::wsprintf( buf+GetDlgItemText(ID_DIRECTORY,buf,sizeof(buf)/sizeof(TCHAR)), _T(" (0x%02X)"), directoryDefaultByte );
+								::wsprintf( buf+GetDlgItemText(ID_DIRECTORY,buf,ARRAYSIZE(buf)), _T(" (0x%02X)"), directoryDefaultByte );
 								SetDlgItemText( ID_DIRECTORY, buf );
-								::wsprintf( buf+GetDlgItemText(ID_DATA,buf,sizeof(buf)/sizeof(TCHAR)), _T(" (0x%02X)"), dataDefaultByte );
+								::wsprintf( buf+GetDlgItemText(ID_DATA,buf,ARRAYSIZE(buf)), _T(" (0x%02X)"), dataDefaultByte );
 								SetDlgItemText( ID_DATA, buf );
 								return __super::OnInitDialog();
 							}
@@ -1556,7 +1556,7 @@ blendEmphasisAndSelection:	if (newEmphasisColor!=currEmphasisColor || newContent
 							// : drawing the Record label if the just drawn Row is the Record's first Row
 							if (!isEof){ // yes, a new Record can potentially start at the Row
 								WCHAR buf[80];
-								if (const LPCWSTR recordLabel=pContentAdviser->GetRecordLabelW( __firstByteInRowToLogicalPosition__(iRowA), buf, sizeof(buf)/sizeof(WCHAR), param )){
+								if (const LPCWSTR recordLabel=pContentAdviser->GetRecordLabelW( __firstByteInRowToLogicalPosition__(iRowA), buf, ARRAYSIZE(buf), param )){
 									RECT rc={ rcAscii.right+2*font.charAvgWidth, y, rcClip.right, rcClip.bottom };
 									const COLORREF textColor0=dc.SetTextColor(labelColor), bgColor0=dc.SetBkColor(COLOR_WHITE);
 										::DrawTextW( dc, recordLabel, -1, &rc, DT_LEFT|DT_TOP );

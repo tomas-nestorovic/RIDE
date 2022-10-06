@@ -688,7 +688,7 @@
 			#ifdef UNICODE
 				static_assert( false, "Unicode support not implemented" );
 			#else
-				::MultiByteToWideChar( CP_ACP,0, longNameAndExt,-1, bufW,sizeof(bufW)/sizeof(WCHAR) );
+				::MultiByteToWideChar( CP_ACP,0, longNameAndExt,-1, bufW,ARRAYSIZE(bufW) );
 			#endif
 			for( BYTE n=1,const checksum=(*rRenamedFile=*de).shortNameEntry.__getChecksum__(); plnde!=longNameEntries; ){
 				const PDirectoryEntry p=*--plnde;

@@ -7,7 +7,7 @@
 
 	#define GW_DEVICE_NAME_UNICODE	L"Greaseweazle"
 	#define GW_DEVICE_NAME_PATTERN	_T("Greaseweazle floppy drive #%c (%s.sys)")
-	static_assert( sizeof(GW_DEVICE_NAME_PATTERN)/sizeof(TCHAR)+8<=DEVICE_NAME_CHARS_MAX, "Identifier too long" );
+	static_assert( ARRAYSIZE(GW_DEVICE_NAME_PATTERN)+8<=DEVICE_NAME_CHARS_MAX, "Identifier too long" );
 
 	#define GW_ACCESS_DRIVER_USBSER	_T("usbser")
 

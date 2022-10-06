@@ -353,12 +353,12 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 						if (preferRelativeSeeking && cyl>position){ // RelativeSeeking is allowed only to higher Cylinder numbers
 							FD_RELATIVE_SEEK_PARAMS rsp={ FD_OPTION_MT|FD_OPTION_DIR, 0, (cyl-position)<<(BYTE)doubleTrackStep };
 							LOG_ACTION(_T("DeviceIoControl FD_RELATIVE_SEEK_PARAMS"));
-							seeked=::DeviceIoControl( handle, IOCTL_FDCMD_RELATIVE_SEEK, &rsp,sizeof(rsp), nullptr,0, &nBytesTransferred, nullptr )!=0;
+							seeked=::DeviceIoControl( handle, IOCTL_FDCMD_RELATIVE_SEEK, &rsp,sizeof(rsp), nullptr,0, &nBytesTransferred, nullptr )!=FALSE;
 							LOG_BOOL(seeked);
 						}else{
 							FD_SEEK_PARAMS sp={ cyl<<(BYTE)doubleTrackStep, 0 };
 							LOG_ACTION(_T("DeviceIoControl FD_SEEK_PARAMS"));
-							seeked=::DeviceIoControl( handle, IOCTL_FDCMD_SEEK, &sp,sizeof(sp), nullptr,0, &nBytesTransferred, nullptr )!=0;
+							seeked=::DeviceIoControl( handle, IOCTL_FDCMD_SEEK, &sp,sizeof(sp), nullptr,0, &nBytesTransferred, nullptr )!=FALSE;
 							LOG_BOOL(seeked);
 						}
 						break;
@@ -1541,7 +1541,7 @@ Utils::Information(buf);}
 				// . displaying controller information
 				SetDlgItemText( ID_SYSTEM, fdd->__getControllerType__() );
 				// . if DoubleTrackStep changed manually, adjusting the text of the ID_40D80 checkbox
-				GetDlgItemText( ID_40D80,  doubleTrackDistanceTextOrg, sizeof(doubleTrackDistanceTextOrg)/sizeof(TCHAR) );
+				GetDlgItemText( ID_40D80,  doubleTrackDistanceTextOrg, ARRAYSIZE(doubleTrackDistanceTextOrg) );
 				if (fdd->fddHead.userForcedDoubleTrackStep)
 					WindowProc( WM_COMMAND, ID_40D80, 0 );
 				CheckDlgButton( ID_40D80, fdd->fddHead.doubleTrackStep );
@@ -1721,7 +1721,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 								break;
 							case ID_40D80:{
 								// track distance changed manually
-								TCHAR buf[sizeof(doubleTrackDistanceTextOrg)/sizeof(TCHAR)+20];
+								TCHAR buf[ARRAYSIZE(doubleTrackDistanceTextOrg)+20];
 								SetDlgItemText( ID_40D80, ::lstrcat(::lstrcpy(buf,doubleTrackDistanceTextOrg),_T(" (user forced)")) );
 								ShowDlgItem( ID_INFORMATION, false ); // user manually revised the Track distance, so no need to continue display the warning
 								break;
@@ -1807,7 +1807,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 		TCHAR buf[100],sug[480];
 		::wsprintf(
 			sug, _T("- Has the correct medium been set in the \"%s\" dialog?\n- For copy-protected schemes, simply retrying often helps."),
-			Utils::CRideDialog::GetDialogTemplateCaptionText( IDR_DOS_FORMAT, buf, sizeof(buf)/sizeof(TCHAR) )
+			Utils::CRideDialog::GetDialogTemplateCaptionText( IDR_DOS_FORMAT, buf, ARRAYSIZE(buf) )
 		);
 		::wsprintf( buf, _T("Track %d verification failed for sector with %s"), chs.GetTrackNumber(2), (LPCTSTR)chs.sectorId.ToString() );
 		return	cancelled

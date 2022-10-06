@@ -203,7 +203,7 @@
 
 	CFileManagerView::PEditorBase CSpectrumBase::CSpectrumBaseFileManagerView::CVarLengthCommandLineEditor::Create(PFile file,PCHAR cmd,BYTE cmdLengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged) const{
 		// creates and returns the Editor of Spectrum command line
-		ASSERT(cmdLengthMax<sizeof(bufOldCmd)/sizeof(TCHAR));
+		ASSERT(cmdLengthMax<ARRAYSIZE(bufOldCmd));
 		#ifdef UNICODE
 			static_assert( false, "Unicode support not implemented" );
 		#else
@@ -236,7 +236,7 @@
 
 	CFileManagerView::PEditorBase CSpectrumBase::CSpectrumBaseFileManagerView::CVarLengthCommandLineEditor::CreateForFileName(PFile file,BYTE fileNameLengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged) const{
 		// creates and returns the Editor of File Name
-		ASSERT(fileNameLengthMax<sizeof(bufOldCmd)/sizeof(TCHAR));
+		ASSERT(fileNameLengthMax<ARRAYSIZE(bufOldCmd));
 		CPathString oldName;
 		rZxFileManager.DOS->GetFileNameOrExt( file, &oldName, nullptr );
 		::memset( bufOldCmd, paddingChar, fileNameLengthMax );

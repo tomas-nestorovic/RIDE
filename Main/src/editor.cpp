@@ -17,7 +17,7 @@
 	CRideApp::CRecentFileListEx::CRecentFileListEx(const CRecentFileList &rStdMru)
 		// ctor
 		: CRecentFileList( rStdMru.m_nStart, rStdMru.m_strSectionName, rStdMru.m_strEntryFormat, rStdMru.m_nSize, rStdMru.m_nMaxDisplayLength ) {
-		ASSERT( m_nSize<sizeof(openWith)/sizeof(openWith[0]) );
+		ASSERT( m_nSize<ARRAYSIZE(openWith) );
 	}
 
 	CDos::PCProperties CRideApp::CRecentFileListEx::GetDosMruFileOpenWith(int nIndex) const{
@@ -75,7 +75,7 @@
 		for( int iMru=0; iMru<m_nSize; iMru++ ){
 			// . explicitly forced DOS
 			openWith[iMru]=nullptr; // assumption (automatic recognition should be used)
-			::wsprintf( ::lstrcpy(entryName,PREFIX_MRU_DOS)+(sizeof(PREFIX_MRU_DOS)/sizeof(TCHAR)-1), m_strEntryFormat, iMru+1 );
+			::wsprintf( ::lstrcpy(entryName,PREFIX_MRU_DOS)+(ARRAYSIZE(PREFIX_MRU_DOS)-1), m_strEntryFormat, iMru+1 );
 			const CDos::TId dosId=app.GetProfileInt( m_strSectionName, entryName, 0 );
 			if (dosId==CUnknownDos::Properties.id)
 				openWith[iMru]=&CUnknownDos::Properties;
@@ -89,7 +89,7 @@
 				}
 			// . real Device
 			m_deviceProps[iMru]=nullptr; // assumption (actually an Image, not a real Device)
-			::wsprintf( ::lstrcpy(entryName,PREFIX_MRU_DEVICE)+(sizeof(PREFIX_MRU_DEVICE)/sizeof(TCHAR)-1), m_strEntryFormat, iMru+1 );
+			::wsprintf( ::lstrcpy(entryName,PREFIX_MRU_DEVICE)+(ARRAYSIZE(PREFIX_MRU_DEVICE)-1), m_strEntryFormat, iMru+1 );
 			const CDos::TId devId=app.GetProfileInt( m_strSectionName, entryName, 0 );
 			for( POSITION pos=CImage::Devices.GetHeadPosition(); pos; ){
 				const CImage::PCProperties props=CImage::Devices.GetNext(pos);
@@ -108,13 +108,13 @@
 		for( int iMru=0; iMru<m_nSize; iMru++ )
 			if (!m_arrNames[iMru].IsEmpty()){
 				// . explicitly forced DOS
-				::wsprintf( ::lstrcpy(entryName,PREFIX_MRU_DOS)+(sizeof(PREFIX_MRU_DOS)/sizeof(TCHAR)-1), m_strEntryFormat, iMru+1 );
+				::wsprintf( ::lstrcpy(entryName,PREFIX_MRU_DOS)+(ARRAYSIZE(PREFIX_MRU_DOS)-1), m_strEntryFormat, iMru+1 );
 				if (const auto *const forcedDosProps=openWith[iMru])
 					app.WriteProfileInt( m_strSectionName, entryName, forcedDosProps->id );
 				else
 					app.WriteProfileInt( m_strSectionName, entryName, 0 );
 				// . real Device
-				::wsprintf( ::lstrcpy(entryName,PREFIX_MRU_DEVICE)+(sizeof(PREFIX_MRU_DEVICE)/sizeof(TCHAR)-1), m_strEntryFormat, iMru+1 );
+				::wsprintf( ::lstrcpy(entryName,PREFIX_MRU_DEVICE)+(ARRAYSIZE(PREFIX_MRU_DEVICE)-1), m_strEntryFormat, iMru+1 );
 				if (m_deviceProps[iMru])
 					app.WriteProfileInt( m_strSectionName, entryName, m_deviceProps[iMru]->id );
 			}

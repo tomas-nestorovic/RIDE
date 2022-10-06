@@ -346,7 +346,7 @@
 			TCHAR txt[80];
 			vp.fReport.LogWarning(
 				_T("D40's often contained 80-track drives, please revise the \"%s\" setting"),
-				Utils::CRideDialog::GetDialogTemplateItemText( IDR_MDOS_DRIVE_EDITOR, ID_40D80, txt, sizeof(txt)/sizeof(TCHAR) )
+				Utils::CRideDialog::GetDialogTemplateItemText( IDR_MDOS_DRIVE_EDITOR, ID_40D80, txt, ARRAYSIZE(txt) )
 			);
 		}
 		// - verifying Current drive information (continued)

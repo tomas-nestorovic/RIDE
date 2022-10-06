@@ -16,7 +16,7 @@
 		// shows this Menu in MainWindow's menu
 		if (m_hMenu){ // may not if the MainWindow is being closed
 			TCHAR buf[30];
-			GetMenuString( 0, buf, sizeof(buf)/sizeof(TCHAR), MF_BYPOSITION );
+			GetMenuString( 0, buf, ARRAYSIZE(buf), MF_BYPOSITION );
 			app.m_pMainWnd->GetMenu()->InsertMenu(	position,
 													MF_BYPOSITION | MF_POPUP,
 													(UINT)::GetSubMenu(m_hMenu,0),

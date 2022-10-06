@@ -475,14 +475,14 @@
 														// | "ID Field" region
 														DDX_Radio( pDX, ID_IDFIELD, idFieldRecoveryType );
 															TCHAR bufSectorId[32];
-															DDX_Text( pDX, ID_IDFIELD_VALUE, bufSectorId, sizeof(bufSectorId)/sizeof(TCHAR) );
+															DDX_Text( pDX, ID_IDFIELD_VALUE, bufSectorId, ARRAYSIZE(bufSectorId) );
 															if (pDX->m_bSaveAndValidate){
 																int cyl,side,sect,len;
 																_stscanf( bufSectorId, _T("%d.%d.%d.%d"), &cyl, &side, &sect, &len );
 																idFieldSubstituteSectorId.cylinder=cyl, idFieldSubstituteSectorId.side=side, idFieldSubstituteSectorId.sector=sect, idFieldSubstituteSectorId.lengthCode=len;
 															}else
 																::wsprintf( bufSectorId, _T("%d.%d.%d.%d"), idFieldSubstituteSectorId.cylinder, idFieldSubstituteSectorId.side, idFieldSubstituteSectorId.sector, idFieldSubstituteSectorId.lengthCode );
-															DDX_Text( pDX, ID_IDFIELD_VALUE, bufSectorId, sizeof(bufSectorId)/sizeof(TCHAR) );
+															DDX_Text( pDX, ID_IDFIELD_VALUE, bufSectorId, ARRAYSIZE(bufSectorId) );
 															static constexpr WORD IdFieldRecoveryOptions[]={ ID_IDFIELD, ID_IDFIELD_CRC, ID_IDFIELD_REPLACE, 0 };
 															EnableDlgItems( IdFieldRecoveryOptions, rFdcStatus.DescribesIdFieldCrcError() );
 															static constexpr WORD IdFieldReplaceOption[]={ ID_IDFIELD_VALUE, ID_DEFAULT1, 0 };

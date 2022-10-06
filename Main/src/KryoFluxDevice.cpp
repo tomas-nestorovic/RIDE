@@ -23,7 +23,7 @@
 
 	#define KF_DEVICE_NAME_ANSI		"KryoFlux DiskSystem"
 	#define KF_DEVICE_NAME_PATTERN	_T("KryoFlux floppy drive #%c (%s.sys)")
-	static_assert( sizeof(KF_DEVICE_NAME_PATTERN)/sizeof(TCHAR)+8<=DEVICE_NAME_CHARS_MAX, "Identifier too long" );
+	static_assert( ARRAYSIZE(KF_DEVICE_NAME_PATTERN)+8<=DEVICE_NAME_CHARS_MAX, "Identifier too long" );
 
 	#define KF_ACCESS_DRIVER_WINUSB	_T("winusb")
 

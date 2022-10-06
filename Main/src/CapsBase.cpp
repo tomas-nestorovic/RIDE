@@ -1306,7 +1306,7 @@ invalidTrack:
 				// . displaying Firmware information
 				SetDlgItemText( ID_SYSTEM, firmware );
 				// . if DoubleTrackStep changed manually, adjusting the text of the ID_40D80 checkbox
-				GetDlgItemText( ID_40D80,  doubleTrackDistanceTextOrg, sizeof(doubleTrackDistanceTextOrg)/sizeof(TCHAR) );
+				GetDlgItemText( ID_40D80,  doubleTrackDistanceTextOrg, ARRAYSIZE(doubleTrackDistanceTextOrg) );
 				if (rcb.params.userForcedDoubleTrackStep)
 					WindowProc( WM_COMMAND, ID_40D80, 0 );
 				CheckDlgButton( ID_40D80, rcb.params.doubleTrackStep );
@@ -1420,7 +1420,7 @@ invalidTrack:
 								break;
 							case ID_40D80:{
 								// track distance changed manually
-								TCHAR buf[sizeof(doubleTrackDistanceTextOrg)/sizeof(TCHAR)+20];
+								TCHAR buf[ARRAYSIZE(doubleTrackDistanceTextOrg)+20];
 								SetDlgItemText( ID_40D80, ::lstrcat(::lstrcpy(buf,doubleTrackDistanceTextOrg),_T(" (user forced)")) );
 								ShowDlgItem( ID_INFORMATION, false ); // user manually revised the Track distance, so no need to continue display the warning
 								break;
