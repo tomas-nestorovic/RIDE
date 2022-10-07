@@ -1,17 +1,19 @@
 #include "stdafx.h"
 #include "CapsBase.h"
-#include "SuperCardProBase.h"
 #include "Greaseweazle.h"
 
 	#define INI_GREASEWEAZLE	_T("GrWeV4")
 
 	#define GW_DEVICE_NAME_UNICODE	L"Greaseweazle"
-	#define GW_DEVICE_NAME_PATTERN	_T("Greaseweazle floppy drive #%c (%s.sys)")
+	#define GW_DEVICE_NAME_T		_T("Greaseweazle")
+	#define GW_DEVICE_NAME_PATTERN	GW_DEVICE_NAME_T _T(" floppy drive #%c (%s.sys)")
 	static_assert( ARRAYSIZE(GW_DEVICE_NAME_PATTERN)+8<=DEVICE_NAME_CHARS_MAX, "Identifier too long" );
 
 	#define GW_ACCESS_DRIVER_USBSER	_T("usbser")
 
 	#define GW_DRIVES_MAX			2
+
+	#define GW_BUFFER_CAPACITY		1000000
 
 	LPCTSTR CGreaseweazleV4::Recognize(PTCHAR deviceNameList){
 		// returns a null-separated list of floppy drives connected via a local Greaseweazle device
@@ -66,14 +68,17 @@
 	CGreaseweazleV4::CGreaseweazleV4(TDriver driver,BYTE fddId)
 		// ctor
 		// - base
-		: CSuperCardProBase( &Properties, fddId+'0', INI_GREASEWEAZLE, _T("KUNDA") )
+		: CCapsBase( &Properties, fddId+'0', true, INI_GREASEWEAZLE )
 		// - initialization
 		, driver(driver) , fddId(fddId)
-		, dataBuffer( SCP_BUFFER_CAPACITY )
+		, dataBuffer( GW_BUFFER_CAPACITY )
 		, fddFound(false)
 		, sampleClock(0,1) {
 		preservationQuality=false;
 		informedOnPoorPrecompensation=false;
+		// - setting a classical 5.25" floppy geometry
+		capsImageInfo.maxcylinder=FDD_CYLINDERS_HD/2+FDD_CYLINDERS_EXTRA - 1; // "-1" = inclusive!
+		capsImageInfo.maxhead=2-1; // inclusive!
 		// - connecting to a local Greaseweazle device
 		hDevice=INVALID_HANDLE_VALUE;
 		Connect();
@@ -128,22 +133,15 @@
 				return false;
 		}
 		// - determining version of Device
-		#pragma pack(1);
-		struct{
-			BYTE major, minor, isMainFirmware, maxCmd;
-			DWORD sampleFrequency;
-			BYTE hardwareModel, hardwareSubmodel, usbSpeed, mcuId;
-			short mcuMhz, mcuRamKb;
-			BYTE reserved[16];
-		} deviceInfo;
 		static constexpr BYTE FIRMWARE_INFO=0;
 		if (SendRequest( TRequest::GET_INFO, &FIRMWARE_INFO, sizeof(FIRMWARE_INFO) )!=ERROR_SUCCESS)
 			return false;
-		if (ReadFull( &deviceInfo, sizeof(deviceInfo) )!=ERROR_SUCCESS)
+		static_assert( sizeof(firmwareInfo)==32, "Unexpected firmwareInfo size" );
+		if (ReadFull( &firmwareInfo, sizeof(firmwareInfo) )!=ERROR_SUCCESS)
 			return false;
-		if (deviceInfo.hardwareModel<4)
+		if (firmwareInfo.hardwareModel!=4)
 			return false;
-		sampleClock=Utils::TRationalNumber( TIME_SECOND(1), deviceInfo.sampleFrequency ).Simplify();
+		sampleClock=Utils::TRationalNumber( TIME_SECOND(1), firmwareInfo.sampleFrequency ).Simplify();
 		// - initial settings
 		static constexpr BYTE IBM_BUS=1;
 		if (SendRequest( TRequest::SET_BUS_TYPE, &IBM_BUS, sizeof(IBM_BUS) )!=ERROR_SUCCESS)
@@ -436,7 +434,7 @@
 		static_assert( sizeof(readParams)==6, "" );
 		if (const TStdWinError err=SendRequest( TRequest::READ_FLUX, &readParams, sizeof(readParams) ))
 			return CTrackReaderWriter::Invalid;
-		while (const DWORD nBytesFree=dataBuffer+SCP_BUFFER_CAPACITY-p){
+		while (const DWORD nBytesFree=dataBuffer+GW_BUFFER_CAPACITY-p){
 			p+=Read( p, nBytesFree );
 			if (!p[-1]) // terminal zero, aka. end of Track data?
 				break;
@@ -456,12 +454,11 @@
 
 	bool CGreaseweazleV4::EditSettings(bool initialEditing){
 		// True <=> new settings have been accepted (and adopted by this Image), otherwise False
-		//EXCLUSIVELY_LOCK_THIS_IMAGE(); // commented out as the following Dialog creates a parallel thread that in turn would attempt to lock this Image, yielding a deadlock
-		// - making sure the firmware is uploaded
-		Disconnect(), Connect();
-		UploadFirmware();
-		// - base
-		const bool result=__super::EditSettings(initialEditing);
+		// - displaying the dialog and processing its result
+		TCHAR firmware[80];
+		::wsprintf( firmware, GW_DEVICE_NAME_T _T(" Firmware %d.%d%c(Main)"), firmwareInfo.major, firmwareInfo.minor, firmwareInfo.isMainFirmware*' ' );
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		const bool result=params.EditInModalDialog( *this, firmware, initialEditing );
 		// - if this the InitialEditing, making sure the internal representation is empty
 		if (initialEditing)
 			DestroyAllTracks();

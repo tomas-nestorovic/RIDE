@@ -1,7 +1,7 @@
 #ifndef GREASEWEAZLE_H
 #define GREASEWEAZLE_H
 
-	class CGreaseweazleV4 sealed:public CSuperCardProBase{
+	class CGreaseweazleV4 sealed:public CCapsBase{
 		enum TRequest:BYTE{
 			GET_INFO		=0,
 			UPDATE			=1,
@@ -34,6 +34,14 @@
 		} driver;
 		const BYTE fddId;
 		const Utils::CCallocPtr<BYTE> dataBuffer;
+		#pragma pack(1);
+		struct{
+			BYTE major, minor, isMainFirmware, maxCmd;
+			DWORD sampleFrequency;
+			BYTE hardwareModel, hardwareSubmodel, usbSpeed, mcuId;
+			short mcuMhz, mcuRamKb;
+			BYTE reserved[16];
+		} firmwareInfo;
 		struct{
 			mutable CMutex locker;
 			HANDLE handle;
