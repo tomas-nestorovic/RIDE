@@ -338,6 +338,12 @@
 		return SeekTo(0) ? ERROR_SUCCESS : ::GetLastError();
 	}
 
+	enum TFluxOp:BYTE{ // Flux read Stream opcodes, preceded by 0xFF byte
+		Index	=1, // index information
+		Space	=2, // "long" flux addendum (e.g. unformatted area)
+		Astable	=3
+	};
+
 	static int ReadBits28(PCBYTE p){
 		return	p[0]>>1 | (p[1]&0xfe)<<6 | (p[2]&0xfe)<<13 | (p[3]&0xfe)<<20;
 	}
@@ -376,8 +382,8 @@
 				// special information
 				if (++p>=pEnd) // unexpected end of Stream? (incl. below Opcode)
 					return CTrackReaderWriter::Invalid;
-				switch (const BYTE opcode=*p++){
-					case 1:{ // index information
+				switch (const TFluxOp opcode=(TFluxOp)*p++){
+					case TFluxOp::Index:{ // index information
 						if (p+sizeof(int)>=pEnd) // unexpected end of Stream?
 							return CTrackReaderWriter::Invalid;
 						const int value=ReadBits28(p);
@@ -388,7 +394,7 @@
 						sampleCounterSinceIndex= -(sampleCounter+value);
 						break;
 					}
-					case 2: // "long" flux addendum (e.g. unformatted area)
+					case TFluxOp::Space: // "long" flux addendum (e.g. unformatted area)
 						if (p+sizeof(int)>=pEnd) // unexpected end of Stream?
 							return CTrackReaderWriter::Invalid;
 						sampleCounter+=ReadBits28(p);
@@ -439,6 +445,8 @@
 			if (!p[-1]) // terminal zero, aka. end of Track data?
 				break;
 		}
+		if (const TStdWinError err=SendRequest( TRequest::GET_FLUX_STATUS, nullptr, 0 ))
+			return CTrackReaderWriter::Invalid;
 	}	// - making sure the read content is a Greaseweazle Stream whose data actually make sense
 		if (CTrackReaderWriter trw=GwV4StreamToTrack( dataBuffer, p-dataBuffer )){
 			// it's a Greaseweazle Stream whose data make sense
