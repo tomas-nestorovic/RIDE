@@ -28,6 +28,23 @@
 			NO_CLICK_STEP	=22
 		};
 
+		enum TResponse:BYTE{
+			OKAY			=0,
+			BAD_COMMAND		=1,
+			NO_INDEX		=2,
+			NO_TRK0			=3,
+			FLUX_OVERFLOW	=4,
+			FLUX_UNDERFLOW	=5,
+			WRPROT			=6,
+			NO_UNIT			=7,
+			NO_BUS			=8,
+			BAD_UNIT		=9,
+			BAD_PIN			=10,
+			BAD_CYLINDER	=11,
+			OUT_OF_SRAM		=12,
+			OUT_OF_FLASH	=13
+		};
+
 		const enum TDriver{
 			UNSUPPORTED,
 			USBSER

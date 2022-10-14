@@ -292,10 +292,35 @@
 			return err;
 		if (*packet!=req)
 			return ERROR_ASSERTION_FAILURE;
-		if (packet[1]!=0)
-			return ERROR_GEN_FAILURE;
-		// -  Request successfully sent to the Device
-		return ERROR_SUCCESS;
+		switch (packet[1]){
+			case TResponse::OKAY:
+				return ERROR_SUCCESS; // Request successfully sent to the Device
+			case TResponse::BAD_COMMAND:
+				return ERROR_BAD_COMMAND;
+			case TResponse::NO_INDEX:
+				return ERROR_INDEX_ABSENT;
+			case TResponse::NO_TRK0:
+				return ERROR_UNRECOGNIZED_MEDIA;
+			case TResponse::FLUX_OVERFLOW:
+			case TResponse::FLUX_UNDERFLOW:
+				return ERROR_READ_FAULT;
+			case TResponse::WRPROT:
+				return ERROR_WRITE_PROTECT;
+			case TResponse::NO_UNIT:
+			case TResponse::NO_BUS:
+				return ERROR_INVALID_DRIVE;
+			case TResponse::BAD_UNIT:
+				return ERROR_INVALID_DRIVE_OBJECT;
+			case TResponse::BAD_PIN:
+				return ERROR_INVALID_PARAMETER;
+			case TResponse::BAD_CYLINDER:
+				return ERROR_FLOPPY_WRONG_CYLINDER;
+			case TResponse::OUT_OF_SRAM:
+			case TResponse::OUT_OF_FLASH:
+				return ERROR_NOT_ENOUGH_MEMORY;
+			default:
+				return ERROR_GEN_FAILURE;
+		}
 	}
 
 	bool CGreaseweazleV4::SetMotorOn(bool on) const{
