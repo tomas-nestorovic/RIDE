@@ -323,18 +323,22 @@
 		}
 	}
 
-	bool CGreaseweazleV4::SetMotorOn(bool on) const{
+	TStdWinError CGreaseweazleV4::SetMotorOn(bool on) const{
 		const BYTE params[]={ fddId, (BYTE)on };
-		return	SendRequest( TRequest::MOTOR, &params, sizeof(params) )==ERROR_SUCCESS;
+		return	SendRequest( TRequest::MOTOR, &params, sizeof(params) );
 	}
 
-	bool CGreaseweazleV4::SeekTo(TCylinder cyl) const{
+	TStdWinError CGreaseweazleV4::SeekTo(TCylinder cyl) const{
+		if (const TStdWinError err=SelectDrive())
+			return err;
+		if (const TStdWinError err=SetMotorOn()) // some Drives require motor to be on before seeking Heads
+			return err;
 		cyl<<=(BYTE)params.doubleTrackStep;
-		return	SendRequest( TRequest::SEEK_ABS, &cyl, sizeof(BYTE) )==ERROR_SUCCESS;
+		return	SendRequest( TRequest::SEEK_ABS, &cyl, sizeof(BYTE) );
 	}
 
-	bool CGreaseweazleV4::SelectHead(THead head) const{
-		return	SendRequest( TRequest::HEAD, &head, sizeof(BYTE) )==ERROR_SUCCESS;
+	TStdWinError CGreaseweazleV4::SelectHead(THead head) const{
+		return	SendRequest( TRequest::HEAD, &head, sizeof(BYTE) );
 	}
 
 
@@ -360,13 +364,14 @@
 	TStdWinError CGreaseweazleV4::SeekHeadsHome() const{
 		// attempts to send Heads "home"; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_DEVICE();
-		return SeekTo(0) ? ERROR_SUCCESS : ::GetLastError();
+		return SeekTo(0);
 	}
 
 	enum TFluxOp:BYTE{ // Flux read Stream opcodes, preceded by 0xFF byte
 		Index	=1, // index information
 		Space	=2, // "long" flux addendum (e.g. unformatted area)
-		Astable	=3
+		Astable	=3,
+		Special	=255
 	};
 
 	static int ReadBits28(PCBYTE p){
@@ -388,13 +393,13 @@
 		const PCBYTE pEnd=p+length;
 		for( int sampleCounter=0,sampleCounterSinceIndex=0; p<pEnd; p++ ){
 			const BYTE i=*p;
-			if (i<255){
+			if (i<TFluxOp::Special){
 				// flux information
 				if (i<250)
-					// "short" flux
+					// "short" flux (1-249 samples, single Byte; 0 indicates end of Stream)
 					sampleCounter+=i;
 				else{
-					// "long" flux
+					// "long" flux (250-1524 samples, two Bytes)
 					if (++p>=pEnd) // unexpected end of Stream?
 						return CTrackReaderWriter::Invalid;
 					sampleCounter+=250+(i-250)*255+*p-1;
@@ -419,12 +424,12 @@
 						sampleCounterSinceIndex= -(sampleCounter+value);
 						break;
 					}
-					case TFluxOp::Space: // "long" flux addendum (e.g. unformatted area)
+					case TFluxOp::Space: // "extra long" flux (1525-(2^28-1), seven Bytes, e.g. unformatted area)
 						if (p+sizeof(int)>=pEnd) // unexpected end of Stream?
 							return CTrackReaderWriter::Invalid;
-						sampleCounter+=ReadBits28(p);
+						sampleCounter+=ReadBits28(p); // addendum to a ...
 						p+=sizeof(int);
-						break;
+						break; // ... "short flux"
 					default:
 						return CTrackReaderWriter::Invalid;
 				}
@@ -449,10 +454,8 @@
 	}	// - selecting floppy drive
 		PBYTE p=dataBuffer;
 	{	EXCLUSIVELY_LOCK_DEVICE();
-		if (SendRequest( TRequest::SELECT_DRIVE, &fddId, sizeof(BYTE) )!=ERROR_SUCCESS)
-			return CTrackReaderWriter::Invalid;
 		// - issuing a Request to the Greaseweazle Device to read fluxes in the specified Track
-		if (!SetMotorOn() || !SelectHead(head) || !SeekTo(cyl)) // some Drives require motor to be on before seeking Heads
+		if (SeekTo(cyl) || SelectHead(head))
 			return CTrackReaderWriter::Invalid;
 		#pragma pack(1)
 		const struct{
@@ -470,7 +473,7 @@
 			if (!p[-1]) // terminal zero, aka. end of Track data?
 				break;
 		}
-		if (const TStdWinError err=SendRequest( TRequest::GET_FLUX_STATUS, nullptr, 0 ))
+		if (const TStdWinError err=GetLastFluxOperationError())
 			return CTrackReaderWriter::Invalid;
 	}	// - making sure the read content is a Greaseweazle Stream whose data actually make sense
 		if (CTrackReaderWriter trw=GwV4StreamToTrack( dataBuffer, p-dataBuffer )){

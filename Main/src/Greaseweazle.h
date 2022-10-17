@@ -84,9 +84,11 @@
 		TStdWinError WriteFull(LPCVOID buffer,DWORD nBytes) const;
 		TStdWinError SendRequest(TRequest req,LPCVOID params,BYTE paramsLength) const;
 		CTrackReaderWriter GwV4StreamToTrack(PCBYTE p,DWORD length) const;
-		bool SetMotorOn(bool on=true) const;
-		bool SeekTo(TCylinder cyl) const;
-		bool SelectHead(THead head) const;
+		inline TStdWinError GetLastFluxOperationError() const{ return SendRequest( TRequest::GET_FLUX_STATUS, nullptr, 0 ); }
+		inline TStdWinError SelectDrive() const{ return SendRequest( TRequest::SELECT_DRIVE, &fddId, sizeof(BYTE) ); }
+		TStdWinError SetMotorOn(bool on=true) const;
+		TStdWinError SeekTo(TCylinder cyl) const;
+		TStdWinError SelectHead(THead head) const;
 	public:
 		static const TProperties Properties;
 
