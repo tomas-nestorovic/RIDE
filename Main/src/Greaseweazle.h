@@ -66,7 +66,6 @@
 				// Driver-related params here
 			};
 		} device;
-		bool fddFound;
 		Utils::TRationalNumber sampleClock;
 		
 		static LPCTSTR Recognize(PTCHAR deviceNameList);
@@ -76,7 +75,7 @@
 
 		operator bool() const;
 
-		bool Connect();
+		TStdWinError Connect();
 		void Disconnect();
 		DWORD Read(PVOID buffer,DWORD nBytesFree) const;
 		TStdWinError ReadFull(PVOID buffer,DWORD nBytes) const;

@@ -72,7 +72,6 @@
 		// - initialization
 		, driver(driver) , fddId(fddId)
 		, dataBuffer( GW_BUFFER_CAPACITY )
-		, fddFound(false)
 		, sampleClock(0,1) {
 		preservationQuality=false;
 		informedOnPoorPrecompensation=false;
@@ -82,7 +81,7 @@
 		// - connecting to a local Greaseweazle device
 		hDevice=INVALID_HANDLE_VALUE;
 		Connect();
-		DestroyAllTracks(); // because Connect scans zeroth Track
+		Reset();
 	}
 
 	CGreaseweazleV4::~CGreaseweazleV4(){
@@ -99,8 +98,8 @@
 
 
 
-	bool CGreaseweazleV4::Connect(){
-		// True <=> successfully connected to a local Greaseweazle device, otherwise False
+	TStdWinError CGreaseweazleV4::Connect(){
+		// connects to a local Greaseweazle device; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		EXCLUSIVELY_LOCK_DEVICE();
 		// - connecting to the device
@@ -112,59 +111,55 @@
 					nullptr, OPEN_EXISTING, FILE_FLAG_WRITE_THROUGH, nullptr
 				);
 		if (hDevice==INVALID_HANDLE_VALUE)
-			return false;
+			return ::GetLastError();
 		// - setting transfer properties
 		switch (driver){
 			case TDriver::USBSER:{
 				//nop
 				DCB comPortParams={ sizeof(DCB) };
 				if (!::GetCommState( hDevice, &comPortParams ))
-					return false;
+					return ::GetLastError();
 				comPortParams.BaudRate=CBR_9600;
 				comPortParams.ByteSize=8;
 				comPortParams.Parity=NOPARITY;
 				comPortParams.StopBits=ONESTOPBIT;
 				if (!::SetCommState( hDevice, &comPortParams ))
-					return false;
+					return ::GetLastError();
 				break;
 			}
 			default:
 				ASSERT(FALSE);
-				return false;
+				return ERROR_BAD_DRIVER;
 		}
 		// - determining version of Device
 		static constexpr BYTE FIRMWARE_INFO=0;
-		if (SendRequest( TRequest::GET_INFO, &FIRMWARE_INFO, sizeof(FIRMWARE_INFO) )!=ERROR_SUCCESS)
-			return false;
+		if (const TStdWinError err=SendRequest( TRequest::GET_INFO, &FIRMWARE_INFO, sizeof(FIRMWARE_INFO) ))
+			return err;
 		static_assert( sizeof(firmwareInfo)==32, "Unexpected firmwareInfo size" );
-		if (ReadFull( &firmwareInfo, sizeof(firmwareInfo) )!=ERROR_SUCCESS)
-			return false;
+		if (const TStdWinError err=ReadFull( &firmwareInfo, sizeof(firmwareInfo) ))
+			return err;
 		if (firmwareInfo.hardwareModel!=4)
-			return false;
+			return ERROR_DEVICE_NOT_AVAILABLE;
 		sampleClock=Utils::TRationalNumber( TIME_SECOND(1), firmwareInfo.sampleFrequency ).Simplify();
 		// - initial settings
 		static constexpr BYTE IBM_BUS=1;
-		if (SendRequest( TRequest::SET_BUS_TYPE, &IBM_BUS, sizeof(IBM_BUS) )!=ERROR_SUCCESS)
-			return false;
+		if (const TStdWinError err=SendRequest( TRequest::SET_BUS_TYPE, &IBM_BUS, sizeof(IBM_BUS) ))
+			return err;
 		// - evaluating connection
-		fddFound =	internalTracks[0][0]!=nullptr // floppy drive already found before disconnecting from Greaseweazle?
-					? true
-					: ScanTrack(0,0)>0 || internalTracks[0][0]!=nullptr;
-		return *this;
+		return *this ? ERROR_SUCCESS : ERROR_GEN_FAILURE;
 	}
 
 	void CGreaseweazleV4::Disconnect(){
 		// disconnects from local Greaseweazle device
 		EXCLUSIVELY_LOCK_THIS_IMAGE(); // mustn't disconnect while device in use!
 		EXCLUSIVELY_LOCK_DEVICE();
-		fddFound=false;
 		switch (driver){
 			case TDriver::USBSER:
 				//nop
 				break;
 			default:
 				ASSERT(FALSE);
-				break;
+				return;
 		}
 		::CloseHandle( hDevice );
 		hDevice=INVALID_HANDLE_VALUE;
@@ -179,6 +174,7 @@
 				return true;
 			default:
 				ASSERT(FALSE);
+				::SetLastError( ERROR_BAD_DRIVER );
 				return false;
 		}
 	}
@@ -210,7 +206,7 @@
 			}
 			default:
 				ASSERT(FALSE);
-				::SetLastError( ERROR_BAD_UNIT );
+				::SetLastError( ERROR_BAD_DRIVER );
 				return 0;
 		}
 	}
@@ -249,7 +245,7 @@
 						: 0;
 			default:
 				ASSERT(FALSE);
-				::SetLastError( ERROR_BAD_UNIT );
+				::SetLastError( ERROR_BAD_DRIVER );
 				return 0;
 		}
 	}
@@ -526,10 +522,12 @@
 					break;
 			default:
 				ASSERT(FALSE);
-				return ERROR_BAD_UNIT;
+				return ERROR_BAD_DRIVER;
 		}
-		//SendRequest( TRequest::SOFT_RESET, nullptr, 0 ); //TODO: find out why Greaseweazle ceases to function if uncommented
-		return ERROR_SUCCESS;
+		if (const TStdWinError err=SendRequest( TRequest::SOFT_RESET, nullptr, 0 ))
+			return err;
+		Disconnect();
+		return Connect();
 	}
 
 	void CGreaseweazleV4::SetPathName(LPCTSTR lpszPathName,BOOL bAddToMRU){
