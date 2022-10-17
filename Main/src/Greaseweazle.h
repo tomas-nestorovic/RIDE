@@ -83,6 +83,8 @@
 		TStdWinError WriteFull(LPCVOID buffer,DWORD nBytes) const;
 		TStdWinError SendRequest(TRequest req,LPCVOID params,BYTE paramsLength) const;
 		CTrackReaderWriter GwV4StreamToTrack(PCBYTE p,DWORD length) const;
+		DWORD TrackToGwV4Stream(CTrackReader tr,PBYTE pOutStream) const;
+		TStdWinError UploadTrack(TCylinder cyl,THead head,CTrackReader tr) const override;
 		inline TStdWinError GetLastFluxOperationError() const{ return SendRequest( TRequest::GET_FLUX_STATUS, nullptr, 0 ); }
 		inline TStdWinError SelectDrive() const{ return SendRequest( TRequest::SELECT_DRIVE, &fddId, sizeof(BYTE) ); }
 		TStdWinError SetMotorOn(bool on=true) const;

@@ -484,6 +484,79 @@
 		return CTrackReaderWriter::Invalid;
 	}
 
+	static PBYTE WriteBits28(int i,PBYTE p){
+		*p++= 1 | i<<1;
+		*p++= 1 | i>>6;
+		*p++= 1 | i>>13;
+		*p++= 1 | i>>20;
+		return p;
+	}
+
+	DWORD CGreaseweazleV4::TrackToGwV4Stream(CTrackReader tr,PBYTE pOutStream) const{
+		// converts general Track representation to Device Stream
+		tr.SetCurrentTime(0);
+		PBYTE p=pOutStream;
+		int prevSampleCounter=0;
+		for( bool dummyFluxAppended=false; !dummyFluxAppended; ){
+			int fluxSampleCounter;
+			if (tr){
+				const int currSampleCounter=tr.ReadTime()/sampleClock;
+				fluxSampleCounter=currSampleCounter-prevSampleCounter;
+				prevSampleCounter=currSampleCounter;
+			}else{ // end of Track
+				fluxSampleCounter=TIME_MICRO(100)/sampleClock; // emit a final dummy Flux; never written to disk, just is sacrificial, ensuring that the real final flux gets written in full
+				dummyFluxAppended=true;
+			}
+			if (fluxSampleCounter<=0)
+				ASSERT(FALSE); // tachyon flux!
+			else if (fluxSampleCounter<250)
+				// "short" flux (1-249 samples, single Byte; 0 indicates end of Stream)
+				*p++=fluxSampleCounter;
+			else{
+                const int high=(fluxSampleCounter-250)/255;
+                if (high<5){
+					// "long" flux (250-1524 samples, two Bytes)
+					*p++=250+high;
+					*p++=1+(fluxSampleCounter-250)%255;
+				}else{
+					// "extra long" flux (1525-(2^28-1), seven Bytes, e.g. unformatted area)
+					*p++=TFluxOp::Special;
+					*p++=TFluxOp::Space;
+					p=WriteBits28( fluxSampleCounter-249, p ); // addendum to a ...
+					*p++=249; // ... "short flux"
+				}
+			}
+		}
+		*p++=0; // last Byte in the Stream must be 0x00
+		return p-pOutStream;
+	}
+
+	TStdWinError CGreaseweazleV4::UploadTrack(TCylinder cyl,THead head,CTrackReader tr) const{
+		// uploads specified Track to a CAPS-based device (e.g. KryoFlux); returns Windows standard i/o error
+		EXCLUSIVELY_LOCK_DEVICE();
+		// - converting the supplied Track to internal data format, below streamed directly to Greaseweazle
+		const DWORD nBytesToWrite=TrackToGwV4Stream( tr, dataBuffer );
+		// - streaming formatted data to Greaseweazle
+		if (const TStdWinError err=SeekTo(cyl))
+			return err;
+		if (const TStdWinError err=SelectHead(head))
+			return err;
+		static constexpr struct{
+			BYTE cueAtIndex;
+			BYTE terminateAtIndex;
+		} Params={
+			1,// sync with Index
+			0 // write whatever is supplied, even if over Index
+		};
+		if (const TStdWinError err=SendRequest( TRequest::WRITE_FLUX, &Params, sizeof(Params) ))
+			return err;
+		if (const TStdWinError err=WriteFull( dataBuffer, nBytesToWrite ))
+			return err;
+		if (const TStdWinError err=ReadFull( dataBuffer, 1 )) // sync with Greaseweazle
+			return err;
+		return GetLastFluxOperationError();
+	}
+
 	bool CGreaseweazleV4::EditSettings(bool initialEditing){
 		// True <=> new settings have been accepted (and adopted by this Image), otherwise False
 		// - displaying the dialog and processing its result
