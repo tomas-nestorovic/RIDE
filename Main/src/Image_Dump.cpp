@@ -202,8 +202,9 @@
 			TPhysicalAddress chs;
 			TSector s; // # of Sectors to skip
 			TTrack track;
+			bool trackScanned;
 			bool trackWriteable; // Track can be written at once using CImage::WriteTrack
-			bool canCalibrateHeads;
+			bool canCalibrateSourceHeads;
 			BYTE revolution;
 			struct{
 				WORD automaticallyAcceptedErrors;
@@ -216,21 +217,27 @@
 			TFdcStatus fdcStatus;
 		} p;
 		::ZeroMemory(&p,sizeof(p));
+		const bool sourceSupportsTrackReading=dp.source->WriteTrack(0,0,CImage::CTrackReaderWriter::Invalid)!=ERROR_NOT_SUPPORTED;
 		const bool targetSupportsTrackWriting=dp.target->WriteTrack(0,0,CImage::CTrackReaderWriter::Invalid)!=ERROR_NOT_SUPPORTED;
-		p.canCalibrateHeads=dp.source->SeekHeadsHome()==ERROR_SUCCESS && !targetSupportsTrackWriting;
+		const bool canSeekSourceHeadsHome=dp.source->SeekHeadsHome()==ERROR_SUCCESS;
 		const Utils::CByteIdentity sectorIdAndPositionIdentity;
 		for( p.chs.cylinder=dp.cylinderA; p.chs.cylinder<=dp.cylinderZ; pAction->UpdateProgress(++p.chs.cylinder-dp.cylinderA) )
-			for( p.chs.head=0; p.chs.head<dp.nHeads; p.chs.head++ ){
+			for( p.chs.head=0; p.chs.head<dp.nHeads; ){
 				if (pAction->Cancelled) return LOG_ERROR(ERROR_CANCELLED);
 				LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("processing"));
 				p.track=p.chs.GetTrackNumber(dp.nHeads);
+				p.trackScanned=dp.source->IsTrackScanned( p.chs.cylinder, p.chs.head );
+				p.canCalibrateSourceHeads =	canSeekSourceHeadsHome
+											&&
+											( !sourceSupportsTrackReading || !p.trackScanned );
 				// . scanning Source Track
 				TSectorId bufferId[(TSector)-1];	WORD bufferLength[(TSector)-1];
 				Codec::TType sourceCodec; TSector nSectors; TStdWinError err;
 {LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("scanning source"));
 				nSectors=dp.source->ScanTrack(p.chs.cylinder,p.chs.head,&sourceCodec,bufferId,bufferLength);				
 }
-				const bool scannedWithError=!dp.source->IsTrackScanned(p.chs.cylinder,p.chs.head); // was there a problem scanning the Track?
+				p.trackScanned=dp.source->IsTrackScanned( p.chs.cylinder, p.chs.head );
+				const bool scannedWithError=!p.trackScanned; // was there a problem scanning the Track?
 				// . reading Source Track
 				CImage::CTrackReader trSrc=dp.source->ReadTrack( p.chs.cylinder, p.chs.head );
 				p.trackWriteable= trSrc && targetSupportsTrackWriting && (sourceCodec&dp.targetCodecs)!=0; // A&B&C, A&B = Source and Target must support whole Track access, C = Target must support the Codec used in Source
@@ -416,9 +423,11 @@
 								ConvertDlgButtonToSplitButton( IDNO, resolveActions, RESOLVE_OPTIONS_COUNT );
 								EnableDlgItem( IDNO, dynamic_cast<CImageRaw *>(dp.target.get())==nullptr ); // recovering errors is allowed only if the Target Image can accept them
 								// > converting the "Retry" button to a SplitButton
+								static constexpr Utils::TSplitButtonAction CanCalibrateHeadsAction={ ID_HEAD, _T("Calibrate head and retry") };
+								static constexpr Utils::TSplitButtonAction CannotCalibrateHeadsAction={ ID_HEAD, _T("Can't calibrate heads for this track"), MF_GRAYED };
 								static const Utils::TSplitButtonAction RetryActions[RETRY_OPTIONS_COUNT]={
 									{ IDRETRY, _T("Retry") },
-									{ ID_HEAD, _T("Calibrate head and retry"), MF_GRAYED*!rp.canCalibrateHeads },
+									rp.canCalibrateSourceHeads ? CanCalibrateHeadsAction : CannotCalibrateHeadsAction
 								};
 								ConvertDlgButtonToSplitButton( IDRETRY, RetryActions, RETRY_OPTIONS_COUNT );
 								// > the "Retry" button enabled only if Sector not yet modified and there are several Revolutions available
@@ -429,10 +438,15 @@
 								switch (msg){
 									case WM_COMMAND:
 										switch (wParam){
-											case ID_HEAD:
-												if (const TStdWinError err=dp.source->SeekHeadsHome())
+											case ID_HEAD:{
+												TStdWinError err;
+												if (!( err=dp.source->SeekHeadsHome() ))
+													if (!( err=dp.source->UnscanTrack( rp.chs.cylinder, rp.chs.head ) ))
+														rp.trackScanned=false;
+												if (err)
 													Utils::Information( _T("Can't calibrate"), err, _T("Retrying without calibration.") );
 												//fallthrough
+											}
 											case IDRETRY:
 												UpdateData(TRUE);
 												EndDialog(IDRETRY);
@@ -592,6 +606,8 @@
 								p.exclusion.current=true;
 								continue;
 							case IDRETRY:
+								if (!p.trackScanned) // has the Track been disposed as part of the recovery from error?
+									p.s=nSectors; // break this cycle
 								sPrev=p.s;
 								continue;
 				}		}
@@ -608,6 +624,8 @@
 				}
 }
 				p.acceptance.remainingErrorsOnTrack=false; // "True" valid only for Track it was set on
+				if (!p.trackScanned) // has the Track been disposed as part of the recovery from error?
+					continue; // begin anew with this Track
 				// . formatting Target Track
 				if (pAction->Cancelled)
 					return ERROR_CANCELLED;
@@ -731,6 +749,7 @@ terminateWithError:		return LOG_ERROR(pAction->TerminateWithError(err));
 					*ppSrcTrackErrors=psse, ppSrcTrackErrors=&psse->pNextErroneousTrack;
 				}
 }
+				p.chs.head++;
 			}
 		return ERROR_SUCCESS;
 	}
@@ -756,7 +775,7 @@ terminateWithError:		return LOG_ERROR(pAction->TerminateWithError(err));
 				Utils::TSplitButtonAction *pAction=actions;
 				*pAction++=OpenDialogAction;
 				if (dynamic_cast<CCapsBase *>(dumpParams.source)!=nullptr){
-					static constexpr Utils::TSplitButtonAction HelpCreateStream={ ID_HELP_USING, _T("How do I create stream files? (online)") };
+					static constexpr Utils::TSplitButtonAction HelpCreateStream={ ID_HELP_USING, _T("FAQ: How do I create stream files? (online)") };
 					*pAction++=HelpCreateStream;
 				}
 				*pAction++=Utils::TSplitButtonAction::HorizontalLine;

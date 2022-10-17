@@ -711,6 +711,11 @@ namespace Medium{
 		return ERROR_NOT_SUPPORTED;
 	}
 
+	TStdWinError CImage::UnscanTrack(TCylinder cyl,THead head) const{
+		// disposes internal representation of specified Track if possible (e.g. can't if Track already modified); returns Windows standard i/o error
+		return ERROR_NOT_SUPPORTED;
+	}
+
 	TSector CImage::GetCountOfHealthySectors(TCylinder cyl,THead head) const{
 		// returns the number of Sectors whose data are healthy
 		EXCLUSIVELY_LOCK_THIS_IMAGE();

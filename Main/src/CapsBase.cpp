@@ -626,6 +626,19 @@
 				internalTracks[cyl][head]!=nullptr;
 	}
 
+	TStdWinError CCapsBase::UnscanTrack(TCylinder cyl,THead head) const{
+		// disposes internal representation of specified Track if possible (e.g. can't if Track already modified); returns Windows standard i/o error
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead) // can Track actually exist?
+			return ERROR_SEEK;
+		PInternalTrack &rit=internalTracks[cyl][head];
+		if (rit->modified)
+			return ERROR_REQUEST_REFUSED;
+		delete rit;
+		rit=nullptr;
+		return ERROR_SUCCESS;
+	}
+
 	void CCapsBase::GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses){
 		// populates output buffers with specified Sectors' data, usable lengths, and FDC statuses; ALWAYS attempts to buffer all Sectors - caller is then to sort out eventual read errors (by observing the FDC statuses); caller can call ::GetLastError to discover the error for the last Sector in the input list
 		ASSERT( outBufferData!=nullptr && outBufferLengths!=nullptr && outFdcStatuses!=nullptr );
