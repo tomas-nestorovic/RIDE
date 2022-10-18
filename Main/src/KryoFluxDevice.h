@@ -71,7 +71,6 @@
 			mutable char lastRequestResultMsg[240];
 			TCHAR firmwareVersion[100];
 		} device;
-		bool fddFound;
 		
 		static LPCTSTR Recognize(PTCHAR deviceNameList);
 		static PImage Instantiate(LPCTSTR deviceName);
@@ -80,7 +79,7 @@
 
 		operator bool() const;
 
-		bool Connect();
+		TStdWinError Connect();
 		void Disconnect();
 		LPCSTR GetProductName() const;
 		TStdWinError SamBaCommand(LPCSTR cmd,LPCSTR end) const;
@@ -93,9 +92,9 @@
 		TStdWinError ReadFull(PVOID buffer,DWORD nBytes) const;
 		DWORD Write(LPCVOID buffer,DWORD nBytes) const;
 		TStdWinError WriteFull(LPCVOID buffer,DWORD nBytes) const;
-		bool SetMotorOn(bool on=true) const;
-		bool SeekTo(TCylinder cyl) const;
-		bool SelectHead(THead head) const;
+		TStdWinError SetMotorOn(bool on=true) const;
+		TStdWinError SeekTo(TCylinder cyl) const;
+		TStdWinError SelectHead(THead head) const;
 	public:
 		static const TProperties Properties;
 

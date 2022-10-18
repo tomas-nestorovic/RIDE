@@ -112,8 +112,7 @@
 		: CKryoFluxBase( &Properties, fddId+'0', device.firmwareVersion )
 		// - initialization
 		, driver(driver) , fddId(fddId)
-		, dataBuffer( KF_BUFFER_CAPACITY )
-		, fddFound(false) {
+		, dataBuffer( KF_BUFFER_CAPACITY ) {
 		informedOnPoorPrecompensation=false;
 		// - connecting to a local KryoFlux device
 		hDevice=INVALID_HANDLE_VALUE;
@@ -143,8 +142,8 @@
 
 
 
-	bool CKryoFluxDevice::Connect(){
-		// True <=> successfully connected to a local KryoFlux device, otherwise False
+	TStdWinError CKryoFluxDevice::Connect(){
+		// connects to a local KryoFlux device; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		EXCLUSIVELY_LOCK_DEVICE();
 		// - connecting to the device
@@ -156,7 +155,7 @@
 					nullptr, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, nullptr
 				);
 		if (hDevice==INVALID_HANDLE_VALUE)
-			return false;
+			return ::GetLastError();
 		// - setting transfer properties
 		switch (driver){
 			case TDriver::WINUSB:
@@ -167,29 +166,25 @@
 				break;
 			default:
 				ASSERT(FALSE);
-				return false;
+				return ERROR_BAD_DRIVER;
 		}
-		// - selecting floppy drive
+		// - selecting specified floppy drive
 		SendRequest( TRequest::DEVICE, fddId ); // not checking for success as firmware may not yet have been loaded
-		fddFound =	internalTracks[0][0]!=nullptr // floppy drive already found before disconnecting from KryoFlux?
-					? true
-					: ScanTrack(0,0)>0 || internalTracks[0][0]!=nullptr;
 		// - evaluating connection
-		return *this;
+		return *this ? ERROR_SUCCESS : ERROR_GEN_FAILURE;
 	}
 
 	void CKryoFluxDevice::Disconnect(){
 		// disconnects from local KryoFlux device
 		EXCLUSIVELY_LOCK_THIS_IMAGE(); // mustn't disconnect while device in use!
 		EXCLUSIVELY_LOCK_DEVICE();
-		fddFound=false;
 		switch (driver){
 			case TDriver::WINUSB:
 				winusb.DisconnectFromInterface();
 				break;
 			default:
 				ASSERT(FALSE);
-				break;
+				return;
 		}
 		::CloseHandle( hDevice );
 		hDevice=INVALID_HANDLE_VALUE;
@@ -204,6 +199,7 @@
 				return	winusb.hLibrary!=INVALID_HANDLE_VALUE && winusb.hDeviceInterface!=INVALID_HANDLE_VALUE;
 			default:
 				ASSERT(FALSE);
+				::SetLastError( ERROR_BAD_DRIVER );
 				return false;
 		}
 	}
@@ -241,6 +237,7 @@
 				return	winusb.GetProductName( device.lastRequestResultMsg, sizeof(device.lastRequestResultMsg) );
 			default:
 				ASSERT(FALSE);
+				::SetLastError( ERROR_BAD_DRIVER );
 				return nullptr;
 		}
 	}
@@ -281,7 +278,7 @@
 			if (const TStdWinError err=SamBaCommand( cmd, nullptr ))
 				return err;
 			const auto p=Utils::MakeCallocPtr<BYTE>(fLength);
-			if (ReadFull(p,fLength)!=ERROR_SUCCESS || ::memcmp(dataBuffer,p,fLength)!=0) // uloaded wrongly?
+			if (ReadFull(p,fLength)!=ERROR_SUCCESS || ::memcmp(dataBuffer,p,fLength)!=0) // uploaded wrongly?
 				return ERROR_NOT_READY;
 			// . executing the firmware
 			::wsprintfA( cmd, "G%08lx#\r", KF_FIRMWARE_EXEC_ADDR );
@@ -292,8 +289,8 @@
 				::Sleep(1000);
 			// . reconnecting to the device may be needed
 			Disconnect();
-			if (!Connect())
-				return ERROR_NOT_READY;
+			if (const TStdWinError err=Connect())
+				return err;
 		}else{
 			// . resetting the KryoFlux device
 			if (const TStdWinError err=SendRequest( TRequest::RESET )) // TODO: is it necessary?
@@ -323,13 +320,13 @@
 							winusb.hLibrary,
 							sp, (PUCHAR)device.lastRequestResultMsg, sizeof(device.lastRequestResultMsg),
 							&nBytesTransferred, nullptr
-						)!=0
+						)!=FALSE
 						? ERROR_SUCCESS
 						: ::GetLastError();
 			}
 			default:
 				ASSERT(FALSE);
-				return ERROR_BAD_UNIT;
+				return ERROR_BAD_DRIVER;
 		}
 	}
 
@@ -344,12 +341,12 @@
 							winusb.hDeviceInterface,
 							KF_EP_BULK_IN, (PUCHAR)buffer, nBytesFree,
 							&nBytesTransferred, nullptr
-						)!=0
+						)!=FALSE
 						? nBytesTransferred
 						: 0;
 			default:
 				ASSERT(FALSE);
-				::SetLastError( ERROR_BAD_UNIT );
+				::SetLastError( ERROR_BAD_DRIVER );
 				return 0;
 		}
 	}
@@ -383,12 +380,12 @@
 							winusb.hDeviceInterface,
 							KF_EP_BULK_OUT, (PUCHAR)buffer, nBytes,
 							&nBytesTransferred, nullptr
-						)!=0
+						)!=FALSE
 						? nBytesTransferred
 						: 0;
 			default:
 				ASSERT(FALSE);
-				::SetLastError( ERROR_BAD_UNIT );
+				::SetLastError( ERROR_BAD_DRIVER );
 				return 0;
 		}
 	}
@@ -411,16 +408,18 @@
 		return ERROR_SUCCESS;
 	}
 
-	bool CKryoFluxDevice::SetMotorOn(bool on) const{
-		return	SendRequest( TRequest::MOTOR, on )==ERROR_SUCCESS;
+	TStdWinError CKryoFluxDevice::SetMotorOn(bool on) const{
+		return	SendRequest( TRequest::MOTOR, on );
 	}
 
-	bool CKryoFluxDevice::SeekTo(TCylinder cyl) const{
-		return	SendRequest( TRequest::TRACK, cyl<<(BYTE)params.doubleTrackStep )==ERROR_SUCCESS;
+	TStdWinError CKryoFluxDevice::SeekTo(TCylinder cyl) const{
+		if (const TStdWinError err=SetMotorOn()) // some Drives require motor to be on before seeking Heads
+			return err;
+		return	SendRequest( TRequest::TRACK, cyl<<(BYTE)params.doubleTrackStep );
 	}
 
-	bool CKryoFluxDevice::SelectHead(THead head) const{
-		return	SendRequest( TRequest::SIDE, head )==ERROR_SUCCESS;
+	TStdWinError CKryoFluxDevice::SelectHead(THead head) const{
+		return	SendRequest( TRequest::SIDE, head );
 	}
 
 
@@ -446,7 +445,7 @@
 	TStdWinError CKryoFluxDevice::SeekHeadsHome() const{
 		// attempts to send Heads "home"; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_DEVICE();
-		return SeekTo(0) ? ERROR_SUCCESS : ::GetLastError();
+		return SeekTo(0);
 	}
 
 	DWORD CKryoFluxDevice::TrackToKfw1(CTrackReader tr) const{
@@ -629,8 +628,10 @@
 		winusb.ClearIoPipes( KF_EP_BULK_IN, KF_EP_BULK_OUT );
 		// - streaming the "KFW" data to KryoFlux
 		SendRequest( TRequest::INDEX_WRITE, 2 ); // waiting for an index?
-		if (!SetMotorOn() || !SelectHead(head) || !SeekTo(cyl)) // some Drives require motor to be on before seeking Heads
-			return ERROR_NOT_READY;
+		if (const TStdWinError err=SeekTo(cyl))
+			return err;
+		if (const TStdWinError err=SelectHead(head))
+			return err;
 		SendRequest( TRequest::STREAM, 2 ); // start streaming
 			TStdWinError err=WriteFull( dataBuffer, nBytesToWrite );
 			if (err==ERROR_SUCCESS)
@@ -789,7 +790,7 @@
 		const Utils::CCallocPtr<BYTE> tmpDataBuffer(KF_BUFFER_CAPACITY);
 		PBYTE p=tmpDataBuffer;
 	{	EXCLUSIVELY_LOCK_DEVICE();
-		if (!SetMotorOn() || !SelectHead(head) || !SeekTo(cyl)) // some Drives require motor to be on before seeking Heads
+		if (SeekTo(cyl) || SelectHead(head))
 			return CTrackReaderWriter::Invalid;
 		const BYTE nIndicesRequested=std::min<BYTE>( params.PrecisionToFullRevolutionCount(), Revolution::MAX )+1; // N+1 indices = N full revolutions
 		SendRequest( TRequest::STREAM, MAKEWORD(1,nIndicesRequested) ); // start streaming
@@ -848,8 +849,8 @@
 		// - TODO: the following regards writing to disk and needs to be explained
 		EXCLUSIVELY_LOCK_DEVICE();
 		do{
-			if (!SetMotorOn())
-				return ERROR_DRIVE_NOT_INSTALLED;
+			if (const TStdWinError err=SetMotorOn())
+				return err;
 			if (const TStdWinError err=SendRequest( TRequest::INDEX_WRITE, 8 ))
 				return err;
 		}while (::strrchr(device.lastRequestResultMsg,'=')[1]!='8');
