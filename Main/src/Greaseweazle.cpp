@@ -464,11 +464,13 @@
 		static_assert( sizeof(readParams)==6, "" );
 		if (const TStdWinError err=SendRequest( TRequest::READ_FLUX, &readParams, sizeof(readParams) ))
 			return CTrackReaderWriter::Invalid;
-		while (const DWORD nBytesFree=dataBuffer+GW_BUFFER_CAPACITY-p){
-			p+=Read( p, nBytesFree );
-			if (!p[-1]) // terminal zero, aka. end of Track data?
+		while (const DWORD nBytesFree=dataBuffer+GW_BUFFER_CAPACITY-p)
+			if (const DWORD nBytesRead=Read( p, nBytesFree )){
+				p+=nBytesRead;
+				if (!p[-1]) // terminal zero, aka. end of Track data?
+					break;
+			}else
 				break;
-		}
 		if (const TStdWinError err=GetLastFluxOperationError())
 			return CTrackReaderWriter::Invalid;
 	}	// - making sure the read content is a Greaseweazle Stream whose data actually make sense
