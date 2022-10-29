@@ -319,6 +319,25 @@
 		}
 	}
 
+	TStdWinError CGreaseweazleV4::GetDriveInfo(TDriveInfo &rOutDi) const{
+		if (const TStdWinError err=SelectDrive())
+			return err;
+		static constexpr BYTE DRIVE_INFO=7;
+		if (const TStdWinError err=SendRequest( TRequest::GET_INFO, &DRIVE_INFO, sizeof(DRIVE_INFO) ))
+			return err;
+		static_assert( sizeof(rOutDi)==32, "Invalid TDriveInfo size" );
+		return ReadFull( &rOutDi, sizeof(rOutDi) );
+	}
+
+	TStdWinError CGreaseweazleV4::GetPin(BYTE pin,bool &outValue) const{
+		if (const TStdWinError err=SendRequest( TRequest::GET_PIN, &pin, sizeof(pin) ))
+			return err;
+		if (const TStdWinError err=ReadFull( &pin, sizeof(pin) ))
+			return err;
+		outValue=pin!=0;
+		return ERROR_SUCCESS;
+	}
+
 	TStdWinError CGreaseweazleV4::SetMotorOn(bool on) const{
 		const BYTE params[]={ fddId, (BYTE)on };
 		return	SendRequest( TRequest::MOTOR, &params, sizeof(params) );
@@ -360,7 +379,21 @@
 	TStdWinError CGreaseweazleV4::SeekHeadsHome() const{
 		// attempts to send Heads "home"; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_DEVICE();
-		return SeekTo(0);
+		if (const TStdWinError err=SeekTo(0)) // Head sent home ...
+			return err;
+		bool trk0;
+		if (const TStdWinError err=GetPin( 26, trk0 ))
+			return err;
+		if (trk0){ // ... but the drive doesn't signal that
+			// Keir Fraser: This can happen with KryoFlux flippy-modded Panasonic drives which may not assert the /TRK0 signal when stepping INWARD from Cylinder -1
+			TDriveInfo di;
+			if (const TStdWinError err=GetDriveInfo(di))
+				return err;
+			if (di.isFlippy)
+				if (const TStdWinError err=SendRequest( TRequest::NO_CLICK_STEP, nullptr, 0 )) // attempt a fake outward Head step to Cylinder -1
+					return err; // older firmwares don't recognize this command
+		}
+		return ERROR_SUCCESS;
 	}
 
 	enum TFluxOp:BYTE{ // Flux read Stream opcodes, preceded by 0xFF byte

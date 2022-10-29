@@ -45,6 +45,17 @@
 			OUT_OF_FLASH	=13
 		};
 
+		struct TDriveInfo sealed{
+			DWORD cylSeekedValid:1;
+			DWORD motorOn:1;
+			DWORD isFlippy:1;
+			union{
+				TCylinder cylSeeked;
+				int reserved1;
+			};
+			BYTE reserved2[24];
+		};
+
 		const enum TDriver{
 			UNSUPPORTED,
 			USBSER
@@ -87,6 +98,8 @@
 		TStdWinError UploadTrack(TCylinder cyl,THead head,CTrackReader tr) const override;
 		inline TStdWinError GetLastFluxOperationError() const{ return SendRequest( TRequest::GET_FLUX_STATUS, nullptr, 0 ); }
 		inline TStdWinError SelectDrive() const{ return SendRequest( TRequest::SELECT_DRIVE, &fddId, sizeof(BYTE) ); }
+		TStdWinError GetDriveInfo(TDriveInfo &rOutDi) const;
+		TStdWinError GetPin(BYTE pin,bool &outValue) const;
 		TStdWinError SetMotorOn(bool on=true) const;
 		TStdWinError SeekTo(TCylinder cyl) const;
 		TStdWinError SelectHead(THead head) const;
