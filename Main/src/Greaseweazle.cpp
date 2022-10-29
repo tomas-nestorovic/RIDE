@@ -459,6 +459,8 @@
 						sampleCounter+=ReadBits28(p); // addendum to a ...
 						p+=sizeof(int);
 						break; // ... "short flux"
+					//case TFluxOp::Astable:
+						//commented out as Astable is intended for representation of non-formatted areas during writing, so it never appears during reading [personal communication with Keir Fraser]
 					default:
 						return CTrackReaderWriter::Invalid;
 				}
@@ -531,15 +533,16 @@
 		// converts general Track representation to Device Stream
 		tr.SetCurrentTime(0);
 		PBYTE p=pOutStream;
-		int prevSampleCounter=0;
+		TLogTime tPrev=0; int prevSampleCounter=0;
 		for( bool dummyFluxAppended=false; !dummyFluxAppended; ){
-			int fluxSampleCounter;
+			TLogTime flux; int fluxSampleCounter;
 			if (tr){
-				const int currSampleCounter=tr.ReadTime()/sampleClock;
-				fluxSampleCounter=currSampleCounter-prevSampleCounter;
-				prevSampleCounter=currSampleCounter;
+				const TLogTime tCurr=tr.ReadTime();
+				const int currSampleCounter=tCurr/sampleClock;
+				flux=tCurr-tPrev, fluxSampleCounter=currSampleCounter-prevSampleCounter;
+				tPrev=tCurr, prevSampleCounter=currSampleCounter;
 			}else{ // end of Track
-				fluxSampleCounter=TIME_MICRO(100)/sampleClock; // emit a final dummy Flux; never written to disk, just is sacrificial, ensuring that the real final flux gets written in full
+				fluxSampleCounter=( flux=TIME_MICRO(100) )/sampleClock; // emit a final dummy Flux; never written to disk, just is sacrificial, ensuring that the real final flux gets written in full
 				dummyFluxAppended=true;
 			}
 			if (fluxSampleCounter<=0)
@@ -547,7 +550,8 @@
 			else if (fluxSampleCounter<250)
 				// "short" flux (1-249 samples, single Byte; 0 indicates end of Stream)
 				*p++=fluxSampleCounter;
-			else{
+			else if (flux<TIME_MICRO(150)){
+				// just an unusually long flux, i.e. not yet a non-formatted area
                 const int high=(fluxSampleCounter-250)/255;
                 if (high<5){
 					// "long" flux (250-1524 samples, two Bytes)
@@ -560,6 +564,14 @@
 					p=WriteBits28( fluxSampleCounter-249, p ); // addendum to a ...
 					*p++=249; // ... "short flux"
 				}
+			}else{
+				// non-formatted area, typically part of a copy-protection scheme (e.g. Theme Park Mystery by Image Works, 1990)
+				*p++=TFluxOp::Special;
+				*p++=TFluxOp::Space;
+				p=WriteBits28( fluxSampleCounter, p ); // a long flux to be written ...
+				*p++=TFluxOp::Special;
+				*p++=TFluxOp::Astable;
+				p=WriteBits28( TIME_NANO(1250)/sampleClock, p ); // ... as a sequence of quick fluxes
 			}
 		}
 		*p++=0; // last Byte in the Stream must be 0x00
