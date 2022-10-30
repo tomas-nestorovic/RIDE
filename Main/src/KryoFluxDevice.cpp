@@ -497,6 +497,16 @@
 					ASSERT(FALSE); // UNIQUE_FLUXES_COUNT_MAX should be enough, however the value can anytime be increased
 			}
 
+			void AddNonformattedAreaPeriod(WORD sampleCounterPeriod){
+				// adds a short flux to pad each non-formatted area with, and makes sure this flux is always the first one in the Histogram
+				Add( sampleCounterPeriod ); // create the flux in the Histogram
+				PVOID value;
+				sampleCounterToFluxInfo.Lookup( sampleCounterPeriod, value );
+				TUniqueFluxInfo &r=*(TUniqueFluxInfo *)value;
+				r.nOccurences=-2;
+				Add( sampleCounterPeriod ); // make sure it's always the first flux in the Histogram
+			}
+
 			inline WORD GetUniqueFluxesCount() const{
 				return nUniqueFluxes;
 			}
@@ -511,10 +521,18 @@
 				return descendingByOccurence[i];
 			}
 		} histogram;
+		struct{
+			const int sampleCounterThreshold;
+			const WORD sampleCounterPeriod;
+			bool present;
+		} nonformattedArea={
+			TimeToStdSampleCounter(TIME_MICRO(100)),
+			TimeToStdSampleCounter(TIME_NANO(1250))
+		};
 		DWORD totalSampleCounter=0;
 		for( tr.SetCurrentTime(0); tr; ){
 			const TLogTime currTime=tr.ReadTime();
-			int sampleCounter= TimeToStdSampleCounter(currTime)-totalSampleCounter; // temporary 64-bit precision even on 32-bit machines
+			const int sampleCounter= TimeToStdSampleCounter(currTime)-totalSampleCounter; // temporary 64-bit precision even on 32-bit machines
 			if (sampleCounter<=0){ // just to be sure
 				ASSERT(FALSE); // we shouldn't end up here!
 				#ifdef _DEBUG
@@ -524,8 +542,10 @@
 				continue;
 			}
 			totalSampleCounter+=sampleCounter;
-			if (sampleCounter>0xffff)
+			if (sampleCounter>nonformattedArea.sampleCounterThreshold){
+				nonformattedArea.present=true;
 				continue; // long fluxes below replaced with sequence of quick fluxes to indicate non-formatted area
+			}
 			histogram.Add(sampleCounter);
 		}
 		// - writing Signature
@@ -540,6 +560,8 @@
 		static_assert( sizeof(TUniqueFlux)==sizeof(DWORD), "Incorrect size" );
 		static constexpr BYTE Data1[]={ 0xF4, 0x01, 0x00, 0x00, 0x88, 0x13, 0x00, 0x00 }; // TODO: find out the meaning
 		pb=(PBYTE)::memcpy( pb, Data1, sizeof(Data1) )+sizeof(Data1);
+		if (nonformattedArea.present)
+			histogram.AddNonformattedAreaPeriod( nonformattedArea.sampleCounterPeriod );
 		const BYTE nUniqueFluxesUsed=std::min( (WORD)255, histogram.GetUniqueFluxesCount() );
 		const DWORD nUsedFluxesTableBytes = *pdw++ = nUniqueFluxesUsed*sizeof(TUniqueFlux)+0x0E; // TODO: find out why 0x0E
 		DWORD &rnFluxDataBytes=*pdw++; // set below
@@ -566,20 +588,29 @@
 		const PBYTE fluxesStart=pb;
 		static constexpr BYTE FluxesPreamble[]={ 0x00, 0x12, 0x00, 0x00 };
 		pb=(PBYTE)::memcpy( pb, FluxesPreamble, sizeof(FluxesPreamble) )+sizeof(FluxesPreamble);
-		totalSampleCounter=0;
-		for( tr.SetCurrentTime(0); tr; ){
-			const TLogTime currTime=tr.ReadTime();
-			const int sampleCounter= TimeToStdSampleCounter(currTime)-totalSampleCounter; // temporary 64-bit precision even on 32-bit machines
+		totalSampleCounter=0; tr.SetCurrentTime(0);
+		for( DWORD nNfaPeriods=0; tr; ){
+			const int sampleCounter=nNfaPeriods>0 // in nonformatted area?
+									? nonformattedArea.sampleCounterPeriod
+									: TimeToStdSampleCounter(tr.ReadTime())-totalSampleCounter;
 			if (sampleCounter<=0){ // just to be sure
 				ASSERT(FALSE); // we shouldn't end up here!
 				continue;
 			}
-			totalSampleCounter+=sampleCounter;
-			if (sampleCounter>0xffff){
-				ASSERT(FALSE); // TODO: replacing long fluxes with quick sequence of short fluxes to indicate non-formatted area
+			if (sampleCounter>nonformattedArea.sampleCounterThreshold){
+				nNfaPeriods=sampleCounter/nonformattedArea.sampleCounterPeriod;
 				continue;
 			}
-			if (((pb-fluxesStart)&0x7fff)!=0x7ffc){
+			totalSampleCounter+=sampleCounter;
+			if (((pb-fluxesStart)&0x7fff)==0x7ffc){
+				// each 32768 Bytes of flux data is a "check?" mark 0xb00 followed by a big endian sample counter of the next flux instead of an index
+				*pw++=0xb00;
+				::memcpy( pw++, &Utils::CBigEndianWord(sampleCounter), sizeof(WORD) );
+			}else if (nNfaPeriods>0){
+				// in non-formatted area
+				*pb++=1; // padding flux is always at the front of the Histogram
+				nNfaPeriods--;
+			}else{
 				// normal representation of flux as the index into the table of fluxes
 				trwFluxes.SetCurrentTime( sampleCounter );
 				trwFluxes.TruncateCurrentTime();
@@ -590,10 +621,6 @@
 				else
 					*pb++=1+histogram.GetIndex( biggerSampleCounter ); // closer to BiggerSampleCounter
 				ASSERT( 1<=pb[-1] && pb[-1]<=nUniqueFluxesUsed );
-			}else{
-				// each 32768 Bytes of flux data is a "check?" mark 0xb00 followed by a big endian sample counter of the next flux instead of an index
-				*pw++=0xb00;
-				::memcpy( pw++, &Utils::CBigEndianWord(sampleCounter), sizeof(WORD) );
 			}
 		}
 		rnFluxDataBytes=pb-fluxesStart+8; // TODO: find out why 8
