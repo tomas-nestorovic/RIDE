@@ -304,9 +304,10 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		return	cyl<diskInfo.nCylinders && head<diskInfo.nHeads;
 	}
 
-	void CDsk5::GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses){
+	void CDsk5::GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses,TLogTime *outDataStarts){
 		// populates output buffers with specified Sectors' data, usable lengths, and FDC statuses; ALWAYS attempts to buffer all Sectors - caller is then to sort out eventual read errors (by observing the FDC statuses); caller can call ::GetLastError to discover the error for the last Sector in the input list
-		ASSERT( outBufferData!=nullptr && outBufferLengths!=nullptr && outFdcStatuses!=nullptr );
+		ASSERT( outBufferData!=nullptr && outBufferLengths!=nullptr && outFdcStatuses!=nullptr && outDataStarts!=nullptr );
+		::ZeroMemory( outDataStarts, nSectors*sizeof(TLogTime) ); // no precise timing information for any of queried Sectors
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (const PTrackInfo ti=__findTrack__(cyl,head)){
 			#ifdef _DEBUG

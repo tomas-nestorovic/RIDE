@@ -292,8 +292,9 @@
 				erroneousSectors.n=0;
 				PSectorData bufferSectorData[(TSector)-1];
 				TFdcStatus bufferFdcStatus[(TSector)-1];
+				PVOID dummyBuffer[(TSector)-1];
 {LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("reading source"));
-				dp.source->GetTrackData( p.chs.cylinder, p.chs.head, Revolution::ANY_GOOD, bufferId, sectorIdAndPositionIdentity, nSectors, bufferSectorData, bufferLength, bufferFdcStatus ); // reading healthy Sectors (unhealthy ones read individually below)
+				dp.source->GetTrackData( p.chs.cylinder, p.chs.head, Revolution::ANY_GOOD, bufferId, sectorIdAndPositionIdentity, nSectors, bufferSectorData, bufferLength, bufferFdcStatus, (PLogTime)dummyBuffer ); // reading healthy Sectors (unhealthy ones read individually below); "DummyBuffer" = throw away any outputs
 				for( TSector sPrev=~(p.s=0); p.s<nSectors; ){
 					if (pAction->Cancelled)
 						return ERROR_CANCELLED;
@@ -702,9 +703,9 @@ reformatTrack:		if (!p.trackWriteable){ // formatting the Track only if can't wr
 						if (pAction->Cancelled)
 							return ERROR_CANCELLED;
 						if (!bufferFdcStatus[s].DescribesMissingDam()){
-							p.chs.sectorId=bufferId[s]; WORD w;
+							p.chs.sectorId=bufferId[s];
 							LOG_SECTOR_ACTION(&p.chs.sectorId,_T("writing"));
-							if (const PSectorData targetData=dp.target->GetSectorData(p.chs,s,Revolution::ANY_GOOD,&w,&TFdcStatus())){
+							if (const PSectorData targetData=dp.target->GetSectorData(p.chs,s,Revolution::ANY_GOOD)){
 								::memcpy( targetData, bufferSectorData[s], bufferLength[s] );
 								if (( err=dp.target->MarkSectorAsDirty(p.chs,s,bufferFdcStatus+s) )!=ERROR_SUCCESS)
 									goto errorDuringWriting;

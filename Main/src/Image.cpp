@@ -728,8 +728,8 @@ namespace Medium{
 		TSector nHealthySectors=0;
 		for( TSector s=0; s<nSectors; s++ ){
 			const TPhysicalAddress chs={ cyl, head, bufferId[s] };
-			WORD w; TFdcStatus st;
-			nHealthySectors+=	const_cast<PImage>(this)->GetSectorData(chs,s,Revolution::CURRENT,&w,&st)!=nullptr
+			TFdcStatus st;
+			nHealthySectors+=	const_cast<PImage>(this)->GetSectorData(chs,s,Revolution::CURRENT,nullptr,&st)!=nullptr
 								&&
 								st.IsWithoutError();
 		}
@@ -757,20 +757,30 @@ namespace Medium{
 		// buffers Sectors in the same Track by the underlying Image, making them ready for IMMEDIATE usage - later than immediate calls to GetSectorData may be slower
 		LOG_TRACK_ACTION(cyl,head,_T("void CImage::BufferTrackData"));
 		PVOID dummyBuffer[(TSector)-1];
-		GetTrackData( cyl, head, rev, bufferId, bufferNumbersOfSectorsToSkip, nSectors, (PSectorData *)dummyBuffer, (PWORD)dummyBuffer, (TFdcStatus *)dummyBuffer ); // "DummyBuffer" = throw away any outputs
+		GetTrackData( cyl, head, rev, bufferId, bufferNumbersOfSectorsToSkip, nSectors, (PSectorData *)dummyBuffer, (PWORD)dummyBuffer, (TFdcStatus *)dummyBuffer, (PLogTime)dummyBuffer ); // "DummyBuffer" = throw away any outputs
 	}
 
-	PSectorData CImage::GetSectorData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId pid,BYTE nSectorsToSkip,PWORD sectorLength,TFdcStatus *pFdcStatus){
+	PSectorData CImage::GetSectorData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId pid,BYTE nSectorsToSkip,PWORD pSectorLength,TFdcStatus *pFdcStatus,TLogTime *outDataStarts){
 		// returns Data of a Sector on a given PhysicalAddress; returns Null if Sector not found or Track not formatted
-		PSectorData data;
-		GetTrackData( cyl, head, rev, pid, &nSectorsToSkip, 1, &data, sectorLength, pFdcStatus );
+		PSectorData data; WORD w; TLogTime t;
+		GetTrackData(
+			cyl, head, rev, pid, &nSectorsToSkip, 1, &data,
+			pSectorLength?pSectorLength:&w,
+			pFdcStatus?pFdcStatus:&TFdcStatus(),
+			outDataStarts?outDataStarts:&t
+		);
 		return data;
 	}
 
-	PSectorData CImage::GetSectorData(RCPhysicalAddress chs,BYTE nSectorsToSkip,Revolution::TType rev,PWORD sectorLength,TFdcStatus *pFdcStatus){
+	PSectorData CImage::GetSectorData(RCPhysicalAddress chs,BYTE nSectorsToSkip,Revolution::TType rev,PWORD pSectorLength,TFdcStatus *pFdcStatus,TLogTime *outDataStarts){
 		// returns Data of a Sector on a given PhysicalAddress; returns Null if Sector not found or Track not formatted
-		PSectorData data;
-		GetTrackData( chs.cylinder, chs.head, rev, &chs.sectorId, &nSectorsToSkip, 1, &data, sectorLength, pFdcStatus );
+		PSectorData data; WORD w; TLogTime t;
+		GetTrackData(
+			chs.cylinder, chs.head, rev, &chs.sectorId, &nSectorsToSkip, 1, &data,
+			pSectorLength?pSectorLength:&w,
+			pFdcStatus?pFdcStatus:&TFdcStatus(),
+			outDataStarts?outDataStarts:&t
+		);
 		return data;
 	}
 

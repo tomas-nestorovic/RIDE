@@ -38,7 +38,8 @@
 				// . reading Source Track
 				PSectorData bufferSectorData[(TSector)-1];
 				TFdcStatus bufferFdcStatus[(TSector)-1];
-				pp.source->GetTrackData( chs.cylinder, chs.head, Revolution::ANY_GOOD, bufferId, sectorIdAndPositionIdentity, nSectors, bufferSectorData, bufferLength, bufferFdcStatus );
+				PVOID dummyBuffer[(TSector)-1];
+				pp.source->GetTrackData( chs.cylinder, chs.head, Revolution::ANY_GOOD, bufferId, sectorIdAndPositionIdentity, nSectors, bufferSectorData, bufferLength, bufferFdcStatus, (PLogTime)dummyBuffer ); // "DummyBuffer" = throw away any outputs
 				for( TSector s=0; s<nSectors; s++ ){
 					chs.sectorId=bufferId[s];
 					bufferSectorData[s]=pp.source->GetSectorData( chs, s, Revolution::CURRENT, bufferLength+s, bufferFdcStatus+s );
@@ -48,12 +49,11 @@
 				if (err!=ERROR_SUCCESS)
 terminateWithError:	return pAction->TerminateWithError(err);
 				// . writing to Target Track
-				PVOID dummyBuffer[(TSector)-1];
-				pp.target->GetTrackData( chs.cylinder, chs.head, Revolution::ANY_GOOD, bufferId, sectorIdAndPositionIdentity, nSectors, (PSectorData *)dummyBuffer, (PWORD)dummyBuffer, (TFdcStatus *)dummyBuffer ); // "DummyBuffer" = throw away any outputs
+				pp.target->GetTrackData( chs.cylinder, chs.head, Revolution::ANY_GOOD, bufferId, sectorIdAndPositionIdentity, nSectors, (PSectorData *)dummyBuffer, (PWORD)dummyBuffer, (TFdcStatus *)dummyBuffer, (PLogTime)dummyBuffer ); // "DummyBuffer" = throw away any outputs
 				for( BYTE s=0; s<nSectors; ){
 					if (!bufferFdcStatus[s].DescribesMissingDam()){
-						chs.sectorId=bufferId[s]; WORD w;
-						if (const PSectorData targetData=pp.target->GetSectorData(chs,s,Revolution::ANY_GOOD,&w,&TFdcStatus())){
+						chs.sectorId=bufferId[s];
+						if (const PSectorData targetData=pp.target->GetSectorData(chs,s,Revolution::ANY_GOOD)){
 							::memcpy( targetData, bufferSectorData[s], bufferLength[s] );
 							if (( err=pp.target->MarkSectorAsDirty(chs,s,bufferFdcStatus+s) )!=ERROR_SUCCESS)
 								goto errorDuringWriting;

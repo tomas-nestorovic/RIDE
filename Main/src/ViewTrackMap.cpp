@@ -243,7 +243,8 @@
 				TFdcStatus statuses[(TSector)-1];
 				if (!::IsWindow(pvtm->m_hWnd)) // TrackMap may not exist if, for instance, switched to another view while still scanning some Track(s)
 					continue;
-				image->GetTrackData( tmp.cylinder, tmp.head, Revolution::CURRENT, tmp.bufferId, sectorIdAndPositionIdentity, tmp.nSectors, tmp.bufferSectorData, tmp.bufferLength, statuses );
+				TLogTime tDataStarts[(TSector)-1];
+				image->GetTrackData( tmp.cylinder, tmp.head, Revolution::CURRENT, tmp.bufferId, sectorIdAndPositionIdentity, tmp.nSectors, tmp.bufferSectorData, tmp.bufferLength, statuses, tDataStarts );
 				for( TSector n=0; n<tmp.nSectors; n++ )
 					if (pvtm->displayType!=TDisplayType::DATA_ALL && !statuses[n].IsWithoutError())
 						tmp.bufferSectorData[n]=nullptr;
@@ -583,8 +584,8 @@
 			case TCursorPos::SECTOR:
 				// clicked on a Sector
 				if (app.IsInGodMode() && !IMAGE->IsWriteProtected()){
-					WORD w; TFdcStatus sr;
-					IMAGE->GetSectorData( chs, nSectorsToSkip, Revolution::CURRENT, &w, &sr );
+					TFdcStatus sr;
+					IMAGE->GetSectorData( chs, nSectorsToSkip, Revolution::CURRENT, nullptr, &sr );
 					if (!sr.IsWithoutError()){
 						if (Utils::QuestionYesNo(_T("Unformat this track?"),MB_DEFBUTTON1))
 							if (const TStdWinError err=IMAGE->UnformatTrack( chs.cylinder, chs.head ))

@@ -74,11 +74,11 @@
 	CBSDOS308::PDirectoryEntry CBSDOS308::CDirsSector::TryGetDirectoryEntry(PCSlot slot) const{
 		// attempts to get and return a DirectoryEntry corresponding to the specified Slot; returns Null if DirectoryEntry cannot be retrieved without error
 		if (slot->subdirExists){
-			WORD w; TFdcStatus sr;
+			TFdcStatus sr;
 			const PBYTE data=bsdos->image->GetSectorData(
 				bsdos->__logfyz__(slot->firstSector), 0,
 				Revolution::CURRENT, // don't calibrate head, settle with any (already buffered) Data, even erroneous
-				&w, &sr
+				nullptr, &sr
 			);
 			if (sr.IsWithoutError())
 				return (PDirectoryEntry)data; // although above settled with any, returned are only flawless Data
