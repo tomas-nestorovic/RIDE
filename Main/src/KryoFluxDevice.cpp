@@ -527,7 +527,7 @@
 			bool present;
 		} nonformattedArea={
 			TimeToStdSampleCounter(TIME_MICRO(100)),
-			TimeToStdSampleCounter(TIME_NANO(1250))
+			TimeToStdSampleCounter(TIME_NANO(1250)) // same value as Keir Fraser uses in Greaseweazle
 		};
 		DWORD totalSampleCounter=0;
 		for( tr.SetCurrentTime(0); tr; ){

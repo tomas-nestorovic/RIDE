@@ -783,6 +783,7 @@ BEGIN
         MENUITEM "Timing histogram...",         ID_HISTOGRAM
         MENUITEM SEPARATOR
         MENUITEM "Inspection evaluation...",    ID_INDICATOR_REC
+        MENUITEM "Export...",                   ID_FILE_SAVE_AS
     END
 END
 
@@ -1965,6 +1966,30 @@ BEGIN
 END
 
 
+IDR_TRACK_EXPORT DIALOG DISCARDABLE  0, 0, 190, 118
+STYLE WS_POPUP | WS_CAPTION
+CAPTION "Export fluxes"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "&File:",IDC_STATIC,7,9,14,8,NOT WS_GROUP
+    PUSHBUTTON      "",ID_FILE,52,7,131,13,BS_FLAT
+    LTEXT           "Range:",IDC_STATIC,7,27,24,8,NOT WS_GROUP
+    CONTROL         "&All revolutions",ID_TRACK,"Button",BS_AUTORADIOBUTTON | 
+                    WS_GROUP,52,27,59,10
+    CONTROL         "Full &revolutions only",ID_ROTATION,"Button",
+                    BS_AUTORADIOBUTTON,52,39,77,10
+    CONTROL         "Single revolution from index",ID_ORDER,"Button",
+                    BS_AUTORADIOBUTTON,52,51,102,10
+    COMBOBOX        ID_NUMBER,155,50,28,105,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
+    LTEXT           "Separate by:",IDC_STATIC,7,70,41,8,NOT WS_GROUP
+    COMBOBOX        ID_SEPARATOR,52,68,131,77,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
+    DEFPUSHBUTTON   "Export",IDOK,79,97,50,14
+    PUSHBUTTON      "Close",IDCANCEL,133,97,50,14
+END
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // DESIGNINFO
@@ -2289,6 +2314,14 @@ BEGIN
         RIGHTMARGIN, 296
         TOPMARGIN, 7
         BOTTOMMARGIN, 179
+    END
+
+    IDR_TRACK_EXPORT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 183
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 111
     END
 END
 #endif    // APSTUDIO_INVOKED

@@ -1507,6 +1507,120 @@
 							);
 							return TRUE;
 						}
+						case ID_FILE_SAVE_AS:
+							// export Track timing
+							class CExportDialog sealed:public Utils::CRideDialog{
+								const CImage::CTrackReader &tr;
+								int iRange, singleRevolution;
+								TCHAR separator;
+
+								void DoDataExchange(CDataExchange *pDX) override{
+									// transferring data to and from controls
+									const HWND hMedium=GetDlgItemHwnd(ID_MEDIUM);
+									if (pDX->m_bSaveAndValidate){
+										pDX->PrepareEditCtrl(ID_FILE);
+										if (!::lstrcmp(filename,ELLIPSIS)){
+											Utils::Information( _T("File not specified.") );
+											pDX->Fail();
+										}
+										separator=GetDlgComboBoxSelectedValue(ID_SEPARATOR);
+									}else{
+										SetDlgItemText( ID_FILE, ELLIPSIS );
+										static constexpr WORD SingleRevIds[]={ ID_ORDER, ID_NUMBER, 0 };
+										if (EnableDlgItems( SingleRevIds, tr.GetIndexCount()>0 ))
+											PopulateDlgComboBoxWithSequenceOfNumbers(
+												ID_NUMBER,
+												0, nullptr,
+												tr.GetIndexCount()-1, nullptr
+											);
+										EnableDlgItem( ID_ROTATION, tr.GetIndexCount()>1 );
+										CComboBox cb;
+										cb.Attach( GetDlgItemHwnd(ID_SEPARATOR) );
+											cb.SetItemData( cb.AddString(_T("Comma , (0x2C)")), ',' );
+											cb.SetItemData( cb.AddString(_T("Semicolon ; (0x3B)")), ';' );
+											cb.SetItemData( cb.AddString(_T("Space (0x20)")), ' ' );
+											cb.SetItemData( cb.AddString(_T("Tab ¬ (0x09)")), '\t' );
+											cb.SetItemData( cb.AddString(_T("Car.return CR (0x0D)")), '\r' );
+											cb.SetItemData( cb.AddString(_T("Line feed LF (0x0A)")), '\n' );
+											cb.SetCurSel(0);
+										cb.Detach();
+									}
+									DDX_Radio( pDX, ID_TRACK, iRange );
+									DDX_CBIndex( pDX, ID_NUMBER, singleRevolution );
+								}
+								BOOL OnCommand(WPARAM wParam, LPARAM lParam) override{
+									// WM_COMMAND message processing
+									switch (wParam){
+										case ID_FILE:{
+											const CString newFilename=Utils::DoPromptSingleTypeFileName( _T("trackTiming") TXT_EXTENSION, TXT_FILTER, OFN_HIDEREADONLY|OFN_DONTADDTORECENT );
+											if (!newFilename.IsEmpty())
+												SetDlgItemText(
+													ID_FILE,
+													CompactPathToFitInDlgItem( ID_FILE, ::lstrcpy(filename,newFilename) )
+												);
+											break;
+										}
+										case MAKELONG(ID_NUMBER,CBN_SELCHANGE):
+											CheckRadioButton( ID_TRACK, ID_ORDER, ID_ORDER );
+											break;
+									}
+									return __super::OnCommand( wParam, lParam );
+								}
+							public:
+								TCHAR filename[MAX_PATH];
+
+								CExportDialog(const CImage::CTrackReader &tr)
+									: Utils::CRideDialog( IDR_TRACK_EXPORT )
+									, tr(tr)
+									, iRange(0) // by default export all everything
+									, singleRevolution(0) {
+									::lstrcpy( filename, ELLIPSIS );
+								}
+
+								static UINT AFX_CDECL Thread(PVOID pCancelableAction){
+									// thread to export the Track timing
+									CBackgroundActionCancelable &bac=*(PBackgroundActionCancelable)pCancelableAction;
+									const CExportDialog &d=*(CExportDialog *)bac.GetParams();
+									CImage::CTrackReader tr=d.tr;
+									TLogTime tStart,tEnd;
+									switch (d.iRange){
+										default:
+											ASSERT(FALSE); // we shouldn't end up here!
+											//fallthrough
+										case 0: // whole Track
+											tStart=0;
+											tEnd=tr.GetTotalTime();
+											break;
+										case 1: // all full Revolutions
+											tStart=tr.GetIndexTime(0);
+											tEnd=tr.GetLastIndexTime();
+											break;
+										case 2: // single Revolution identified by initial Index
+											tStart=tr.GetIndexTime(d.singleRevolution);
+											tEnd=tr.GetIndexTime(d.singleRevolution+1);
+											break;
+									}
+									bac.SetProgressTarget( tEnd-tStart );
+									tr.SetCurrentTime( tStart );
+									CFile f;
+									CFileException e;
+									if (!f.Open( d.filename, CFile::modeCreate|CFile::modeWrite|CFile::typeBinary|CFile::shareExclusive ))
+										return bac.TerminateWithError( e.m_cause );
+									for( TLogTime tPrev=tStart; tr; bac.UpdateProgress(tPrev-tStart) ){
+										const TLogTime t=tr.ReadTime();
+										Utils::WriteToFile( f, t-tPrev );
+										if (t>=tEnd)
+											break;
+										Utils::WriteToFile( f, d.separator );
+										tPrev=t;
+									}
+									return bac.TerminateWithSuccess();
+								}
+							} d( tr );
+							if (d.DoModal()==IDOK)
+								if (const TStdWinError err=CBackgroundActionCancelable( CExportDialog::Thread, &d, THREAD_PRIORITY_IDLE ).Perform())
+									Utils::FatalError( _T("Can't export"), err );
+							return TRUE;
 					}
 					break;
 			}

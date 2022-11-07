@@ -219,6 +219,9 @@ struct TLogTimeInterval{
 #define TIME_MILLI(m)	((m)*1000000)
 #define TIME_SECOND(s)	((s)*1000000000)
 
+#define TXT_EXTENSION	_T(".txt")
+#define TXT_FILTER		_T("Plain text (*") TXT_EXTENSION _T(")|*") TXT_EXTENSION _T("|")
+
 extern CRideApp app;
 
 extern void WINAPI AfxThrowInvalidArgException();

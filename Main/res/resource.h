@@ -67,6 +67,7 @@
 #define IDR_CAPS_CORRECTIONS            225
 #define IDR_TRACK_EDITOR_GOTO_TIME      226
 #define IDR_FILEMANAGER_GENERAL_CONTEXT 227
+#define IDR_TRACK_EXPORT                230
 #define ID_HIDDEN                       1018
 #define ID_SYSTEM                       1019
 #define ID_CONNECTED                    1020
@@ -287,7 +288,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        228
+#define _APS_NEXT_RESOURCE_VALUE        232
 #define _APS_NEXT_COMMAND_VALUE         40291
 #define _APS_NEXT_CONTROL_VALUE         1185
 #define _APS_NEXT_SYMED_VALUE           103

@@ -1366,7 +1366,7 @@
 		indexPulses[nIndexPulses]=INT_MAX;
 	}
 
-	TLogTime CImage::CTrackReaderWriter::GetLastIndexTime() const{
+	TLogTime CImage::CTrackReader::GetLastIndexTime() const{
 		// returns the LogicalTime of the last added Index (or 0)
 		return	nIndexPulses ? indexPulses[nIndexPulses-1] : 0;
 	}

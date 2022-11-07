@@ -528,6 +528,7 @@
 			TProfile CreateResetProfile() const;
 			void TruncateCurrentTime();
 			TLogTime GetIndexTime(BYTE index) const;
+			TLogTime GetLastIndexTime() const;
 			TLogTime GetAvgIndexDistance() const;
 			TLogTime GetTotalTime() const;
 			TLogTime ReadTime();
@@ -589,7 +590,6 @@
 
 			void AddTimes(PCLogTime logTimes,DWORD nLogTimes);
 			void AddIndexTime(TLogTime logTime);
-			TLogTime GetLastIndexTime() const;
 			WORD WriteData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToWrite,PCBYTE buffer,TFdcStatus sr);
 			bool Normalize();
 			TStdWinError NormalizeEx(TLogTime timeOffset,bool fitTimesIntoIwMiddles,bool correctCellCountPerRevolution,bool correctRevolutionTime);
