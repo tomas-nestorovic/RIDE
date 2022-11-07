@@ -926,14 +926,11 @@ terminateWithError:		return LOG_ERROR(pAction->TerminateWithError(err));
 								if (const CImage::PCProperties imgProps=app.DoPromptFileName( dumpParams.targetFileName, true, AFX_IDS_SAVEFILE, 0, nullptr )){
 									targetImageProperties=imgProps;
 setDestination:						// : compacting FileName in order to be better displayable on the button
-									CWnd *const pBtnFile=GetDlgItem(ID_FILE);
-									RECT r;
-									pBtnFile->GetClientRect(&r);
-									TCHAR buf[MAX_PATH+100];
-									::PathCompactPath( CClientDC(pBtnFile), ::lstrcpy(buf,dumpParams.targetFileName), r.right-r.left );
-									if (!targetImageProperties->IsRealDevice())
-										::wsprintf( buf+::lstrlen(buf), _T("\n(%s)"), targetImageProperties->fnRecognize(nullptr) );
-									pBtnFile->SetWindowText(buf);
+									const CString compactPath=CompactPathToFitInDlgItem( ID_FILE, dumpParams.targetFileName );
+									if (targetImageProperties->IsRealDevice())
+										SetDlgItemText( ID_FILE, compactPath );
+									else
+										SetDlgItemFormattedText( ID_FILE, _T("%s\n(%s)"), compactPath, targetImageProperties->fnRecognize(nullptr) );
 									// : populating ComboBox with Media supported by both DOS and Image
 									BYTE nCompatibleMedia;
 									if (dos->formatBoot.mediumType!=Medium::UNKNOWN

@@ -127,7 +127,6 @@ errorDuringWriting:			TCHAR buf[80];
 								*fileName='\0';
 								if (sourceImageProperties=app.DoPromptFileName( fileName, false, AFX_IDS_OPENFILE, 0, &CDsk5::Properties )){
 									// . adjusting interactivity and updating values
-									CWnd *const pBtnFile=GetDlgItem(ID_FILE);
 									static constexpr WORD Controls[]={ ID_CYLINDER, ID_CYLINDER_N, ID_HEAD, ID_GAP, IDOK, 0 };
 									if (EnableDlgItems( Controls, sourceImageProperties==&CDsk5::Properties )){
 										// : interactivity
@@ -137,13 +136,12 @@ errorDuringWriting:			TCHAR buf[80];
 										patchParams.nHeads=std::min( patchParams.source->GetHeadCount(), patchParams.target->GetHeadCount() );
 										DoDataExchange( &CDataExchange(this,FALSE) );
 										// : compacting FileName in order to be displayable on the button
-										RECT r;
-										pBtnFile->GetClientRect(&r);
-										TCHAR buf[MAX_PATH];
-										::PathCompactPath( CClientDC(pBtnFile), ::lstrcpy(buf,fileName), r.right-r.left );
-										pBtnFile->SetWindowText(buf);
+										SetDlgItemText(
+											ID_FILE,
+											CompactPathToFitInDlgItem( ID_FILE, fileName )
+										);
 									}else
-										pBtnFile->SetWindowText( ::lstrcpy(fileName,ELLIPSIS) );
+										SetDlgItemText( ID_FILE, ::lstrcpy(fileName,ELLIPSIS) );
 									FocusDlgItem(IDOK);
 								}else
 									*fileName=c;

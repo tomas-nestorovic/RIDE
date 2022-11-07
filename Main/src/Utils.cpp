@@ -1480,6 +1480,16 @@ namespace Utils{
 		::SelectObject(dc,hFont0);
 	}
 
+	CString CRideDialog::CompactPathToFitInDlgItem(WORD id,LPCTSTR fullpath) const{
+		// compacts FullPath to fit in the dimensions of the given item
+		CWnd *const pWnd=GetDlgItem(id);
+		CRect rc;
+		pWnd->GetClientRect(&rc);
+		TCHAR buf[MAX_PATH];
+		::PathCompactPath( CClientDC(pWnd), ::lstrcpy(buf,fullpath), rc.Width() );
+		return buf;
+	}
+
 	void CRideDialog::SetDlgItemFormattedText(WORD id,LPCTSTR format,...) const{
 		// sets given window's text to the text Formatted using given string and parameters; returns the number of characters set
 		va_list argList;

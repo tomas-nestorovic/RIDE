@@ -254,6 +254,7 @@ namespace Utils{
 		int GetDlgComboBoxSelectedIndex(WORD id) const;
 		int GetDlgListBoxSelectedIndex(WORD id) const;
 		void WrapDlgItemsByClosingCurlyBracketWithText(WORD idA,WORD idZ,LPCTSTR text,DWORD textColor) const;
+		CString CompactPathToFitInDlgItem(WORD id,LPCTSTR fullpath) const;
 		void SetDlgItemFormattedText(WORD id,LPCTSTR format,...) const;
 		void SetDlgItemSingleCharUsingFont(WORD id,WCHAR singleChar,HFONT hFont) const;
 		void SetDlgItemSingleCharUsingFont(WORD id,WCHAR singleChar,LPCTSTR fontFace,int fontPointSize) const;
