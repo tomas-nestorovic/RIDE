@@ -16,7 +16,7 @@
 	#define GW_BUFFER_CAPACITY		1000000
 
 	LPCTSTR CGreaseweazleV4::Recognize(PTCHAR deviceNameList){
-		// returns a null-separated list of floppy drives connected via a local Greaseweazle device
+		// returns a null-separated list of floppy drives connected via a local Greaseweazle Device
 		// - evaluating possibilities how to access Greaseweazle
 		ASSERT( deviceNameList!=nullptr );
 		if (SetupDi::GetDevicePath( SetupDi::GUID_DEVINTERFACE_USB_DEVICE, GW_DEVICE_NAME_UNICODE ).IsEmpty())
@@ -32,7 +32,7 @@
 	}
 
 	PImage CGreaseweazleV4::Instantiate(LPCTSTR deviceName){
-		// creates and returns a GreaseweazleDevice instance for a specified floppy drive
+		// creates and returns a Greaseweazle Device instance for a specified floppy drive
 		TCHAR fddId, driverStr[16], tmp[MAX_PATH];
 		*_tcsrchr( ::lstrcpy(tmp,deviceName), '.' )='\0';
 		::sscanf( tmp, GW_DEVICE_NAME_PATTERN, &fddId, driverStr );
@@ -44,8 +44,8 @@
 	}
 
 	const CImage::TProperties CGreaseweazleV4::Properties={
-		MAKE_IMAGE_ID('S','C','P','_','G','W','V','4'), // a unique identifier
-		Recognize,	// list of recognized device names
+		MAKE_IMAGE_ID('K','E','I','R','G','W','V','4'), // a unique identifier
+		Recognize,	// list of recognized Device names
 		Instantiate,	// instantiation function
 		nullptr, // filter
 		Medium::FLOPPY_ANY, // supported Media
@@ -78,7 +78,7 @@
 		// - setting a classical 5.25" floppy geometry
 		capsImageInfo.maxcylinder=FDD_CYLINDERS_HD/2+FDD_CYLINDERS_EXTRA - 1; // "-1" = inclusive!
 		capsImageInfo.maxhead=2-1; // inclusive!
-		// - connecting to a local Greaseweazle device
+		// - connecting to a local Greaseweazle Device
 		hDevice=INVALID_HANDLE_VALUE;
 		Connect();
 		Reset();
@@ -99,10 +99,10 @@
 
 
 	TStdWinError CGreaseweazleV4::Connect(){
-		// connects to a local Greaseweazle device; returns Windows standard i/o error
+		// connects to a local Greaseweazle Device; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		EXCLUSIVELY_LOCK_DEVICE();
-		// - connecting to the device
+		// - connecting to the Device
 		ASSERT( hDevice==INVALID_HANDLE_VALUE );
 		hDevice=::CreateFile(
 					SetupDi::GetDevicePath( SetupDi::GUID_DEVINTERFACE_USB_DEVICE, GW_DEVICE_NAME_UNICODE ),
@@ -115,7 +115,6 @@
 		// - setting transfer properties
 		switch (driver){
 			case TDriver::USBSER:{
-				//nop
 				DCB comPortParams={ sizeof(DCB) };
 				if (!::GetCommState( hDevice, &comPortParams ))
 					return ::GetLastError();
@@ -150,8 +149,8 @@
 	}
 
 	void CGreaseweazleV4::Disconnect(){
-		// disconnects from local Greaseweazle device
-		EXCLUSIVELY_LOCK_THIS_IMAGE(); // mustn't disconnect while device in use!
+		// disconnects from local Greaseweazle Device
+		EXCLUSIVELY_LOCK_THIS_IMAGE(); // mustn't disconnect while Device in use!
 		EXCLUSIVELY_LOCK_DEVICE();
 		switch (driver){
 			case TDriver::USBSER:
@@ -166,7 +165,7 @@
 	}
 
 	CGreaseweazleV4::operator bool() const{
-		// True <=> connection to a Greaseweazle device established, otherwise False
+		// True <=> connection to a Greaseweazle Device established, otherwise False
 		if (hDevice==INVALID_HANDLE_VALUE)
 			return false;
 		switch (driver){
@@ -230,7 +229,7 @@
 	}
 
 	DWORD CGreaseweazleV4::Write(LPCVOID buffer,DWORD nBytes) const{
-		// writes a chunk of data to a Greaseweazle device; returns the number of Bytes accepted by the device
+		// writes a chunk of data to a Greaseweazle Device; returns the number of Bytes accepted by the Device
 		if (!*this) // not connected
 			return 0;
 		DWORD nBytesTransferred=0;
@@ -251,7 +250,7 @@
 	}
 
 	TStdWinError CGreaseweazleV4::WriteFull(LPCVOID buffer,DWORD nBytes) const{
-		// blocks caller until all requested Bytes are written to the device; returns Windows standard i/o error
+		// blocks caller until all requested Bytes are written to the Device; returns Windows standard i/o error
 		for( PCBYTE p=(PCBYTE)buffer; nBytes>0; )
 			if (const DWORD n=Write( p, nBytes )){
 				p+=n;
@@ -269,7 +268,7 @@
 	}
 
 	TStdWinError CGreaseweazleV4::SendRequest(TRequest req,LPCVOID params,BYTE paramsLength) const{
-		// sends a command to a locally connected Greaseweazle device; returns Windows standard i/o error
+		// sends a command to a locally connected Greaseweazle Device; returns Windows standard i/o error
 		// - if not connected, we are done
 		if (!*this)
 			return ERROR_NOT_READY;
@@ -579,7 +578,7 @@
 	}
 
 	TStdWinError CGreaseweazleV4::UploadTrack(TCylinder cyl,THead head,CTrackReader tr) const{
-		// uploads specified Track to a CAPS-based device (e.g. KryoFlux); returns Windows standard i/o error
+		// uploads specified Track to a CAPS-based Device (e.g. KryoFlux); returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_DEVICE();
 		// - converting the supplied Track to internal data format, below streamed directly to Greaseweazle
 		const DWORD nBytesToWrite=TrackToGwV4Stream( tr, dataBuffer );
@@ -628,7 +627,7 @@
 		::memcpy( internalTracks, tmp, sizeof(internalTracks) );
 		if (err!=ERROR_SUCCESS)
 			return err;
-		// - resetting the Greaseweazle device
+		// - resetting the Greaseweazle Device
 		EXCLUSIVELY_LOCK_DEVICE();
 		switch (driver){
 			case TDriver::USBSER:
