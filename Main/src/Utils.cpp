@@ -202,7 +202,8 @@ namespace Utils{
 		// ctor
 		parent.LoadMenu(idMenuRes);
 		Attach( parent.GetSubMenu(0)->m_hMenu );
-		UpdateUI( pUiUpdater, this );
+		if (pUiUpdater->GetSafeHwnd())
+			UpdateUI( pUiUpdater, this );
 	}
 
 	CRideContextMenu::~CRideContextMenu(){
@@ -241,6 +242,20 @@ namespace Utils{
 					break;
 			}
 		return false;
+	}
+
+	bool CRideContextMenu::ModifySubmenu(UINT uPosition,HMENU hNewSubmenu){
+		//
+		return	ModifyMenu( uPosition, MF_BYPOSITION|MF_POPUP, (UINT_PTR)hNewSubmenu, GetMenuStringByPos(uPosition) )!=FALSE;
+	}
+
+	int CRideContextMenu::GetPosByContainedSubcommand(WORD cmd) const{
+		//
+		for( int i=0; i<GetMenuItemCount(); i++ )
+			if (const HMENU hSubmenu=::GetSubMenu( *this, i )) // interested only in submenus if they contain specified Command
+				if (::GetMenuPosFromID( hSubmenu, cmd )>=0)
+					return i;
+		return -1; // none of the immediate Submenus contains the specified Command
 	}
 
 
@@ -2062,31 +2077,6 @@ namespace Utils{
 	PTCHAR GetApplicationOnlineHtmlDocumentUrl(LPCTSTR documentName,PTCHAR buffer){
 		// fills the Buffer with URL of an HTML document that is part of this application's on-line presentation, and returns the Buffer
 		return ::lstrcat( GetApplicationOnlineFileUrl(_T("html/"),buffer), documentName );
-	}
-
-	HMENU GetSubmenuByContainedCommand(HMENU hMenu,WORD cmd,PBYTE pOutSubmenuPosition){
-		// returns an immediate Submenu that contains the specified Command; returns Null if none of immediate submenus contains the Command
-		for( BYTE i=0; i<::GetMenuItemCount(hMenu); i++ )
-			if (const HMENU hSubmenu=::GetSubMenu(hMenu,i))
-				if (::GetMenuPosFromID(hSubmenu,cmd)>=0){
-					if (pOutSubmenuPosition) *pOutSubmenuPosition=i;
-					return hSubmenu;
-				}
-		return nullptr; // none of the immediate Submenus contains the specified Command
-	}
-
-	HMENU CreateSubmenuByContainedCommand(UINT menuResourceId,WORD cmd,PBYTE pOutSubmenuPosition){
-		// returns an immediate Submenu that contains the specified Command; returns Null if none of immediate submenus contains the Command
-		CMenu m;
-		if (m.LoadMenu(menuResourceId)){
-			BYTE pos;
-			if (const HMENU hSubmenu=GetSubmenuByContainedCommand( *m.GetSubMenu(0), cmd, &pos )){
-				m.GetSubMenu(0)->RemoveMenu( pos, MF_BYPOSITION ); // "detaching" the Submenu from the parent
-				if (pOutSubmenuPosition) *pOutSubmenuPosition=pos;
-				return hSubmenu;
-			}
-		}
-		return nullptr; // none of the immediate Submenus contains the specified Command
 	}
 
 	void RandomizeData(PVOID buffer,WORD nBytes){

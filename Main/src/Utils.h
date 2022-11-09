@@ -199,6 +199,8 @@ namespace Utils{
 		inline CString GetMenuStringByCmd(WORD cmd) const{ return GetMenuString(cmd,MF_BYCOMMAND); }
 		inline CString GetMenuStringByPos(WORD pos) const{ return GetMenuString(pos,MF_BYPOSITION); }
 		bool InsertAfter(WORD existingId,UINT nFlags,UINT_PTR nIDNewItem,LPCTSTR lpszNewItem);
+		bool ModifySubmenu(UINT uPosition,HMENU hNewSubmenu);
+		int GetPosByContainedSubcommand(WORD cmd) const;
 	};
 
 	typedef const struct TSplitButtonAction sealed{
@@ -529,8 +531,6 @@ namespace Utils{
 	CFile &WriteToFile(CFile &f,double number);
 	PTCHAR GetApplicationOnlineFileUrl(LPCTSTR documentName,PTCHAR buffer);
 	PTCHAR GetApplicationOnlineHtmlDocumentUrl(LPCTSTR documentName,PTCHAR buffer);
-	HMENU GetSubmenuByContainedCommand(HMENU hMenu,WORD cmd,PBYTE pOutSubmenuPosition=nullptr);
-	HMENU CreateSubmenuByContainedCommand(UINT menuResourceId,WORD cmd,PBYTE pOutSubmenuPosition=nullptr);
 	TStdWinError DownloadSingleFile(LPCTSTR onlineFileUrl,PBYTE fileDataBuffer,DWORD fileDataBufferLength,PDWORD pDownloadedFileSize,LPCTSTR fatalErrorConsequence);
 	void RandomizeData(PVOID buffer,WORD nBytes);
 	CString DoPromptSingleTypeFileName(LPCTSTR defaultSaveName,LPCTSTR singleFilter,DWORD flags=0);

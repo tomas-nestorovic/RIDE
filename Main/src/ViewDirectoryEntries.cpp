@@ -50,12 +50,18 @@
 	CDirEntriesView::CDirEntriesView(PDos dos,CDos::PFile directory,CDos::PCFile fileToSeekTo)
 		// ctor
 		// - base
-		: CHexaEditor( this, nullptr, Utils::CreateSubmenuByContainedCommand(IDR_DIRECTORYBROWSER,ID_DEFAULT1) )
+		: CHexaEditor( this )
 		// - initialization
 		, tab( IDR_DIRECTORYBROWSER, IDR_HEXAEDITOR, ID_CYLINDER, dos->image, this )
 		, fileToSeekTo(fileToSeekTo)
 		, sectorLength(dos->formatBoot.sectorLength)
 		, directory(directory) {
+		// - modification of default HexaEditor's ContextMenu
+		const Utils::CRideContextMenu mainMenu( *tab.menu.GetSubMenu(0) );
+		contextMenu.ModifySubmenu(
+			contextMenu.GetPosByContainedSubcommand(ID_ZERO),
+			*mainMenu.GetSubMenu( mainMenu.GetPosByContainedSubcommand(ID_DEFAULT1) )
+		);
 	}
 
 	BEGIN_MESSAGE_MAP(CDirEntriesView,CHexaEditor)
@@ -164,7 +170,7 @@
 								::memcpy( orgDirEntry+selA-dirEntryStart, rstDirEntry+selA-dirEntryStart, std::min<size_t>(selZ-selA,pdt->entrySize) );
 								f->Seek( dirEntryStart, CFile::begin );
 								f->Write( orgDirEntry, pdt->entrySize );
-								selA=std::min<>( dirEntryStart+pdt->entrySize, selZ );
+								selA=std::min( dirEntryStart+pdt->entrySize, selZ );
 							}
 						}
 						RepaintData();

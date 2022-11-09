@@ -11,12 +11,22 @@
 	CDiskBrowserView::CDiskBrowserView(PImage image,RCPhysicalAddress chsToSeekTo,BYTE nSectorsToSkip)
 		// ctor
 		// - base
-		: CHexaEditor( this, Utils::CreateSubmenuByContainedCommand(IDR_DISKBROWSER,ID_EDIT_SELECT_ALL), nullptr, Utils::CreateSubmenuByContainedCommand(IDR_DISKBROWSER,ID_NAVIGATE_ADDRESS) )
+		: CHexaEditor( this )
 		// - initialization
 		, tab( IDR_DISKBROWSER, IDR_HEXAEDITOR, ID_CYLINDER, image, this )
 		, revolution(Revolution::ANY_GOOD)
 		, iScrollY(0) {
 		seekTo.chs=chsToSeekTo, seekTo.nSectorsToSkip=nSectorsToSkip;
+		// - modification of default HexaEditor's ContextMenu
+		const Utils::CRideContextMenu mainMenu( *tab.menu.GetSubMenu(0) );
+		contextMenu.ModifySubmenu(
+			contextMenu.GetPosByContainedSubcommand(ID_EDIT_SELECT_ALL),
+			*mainMenu.GetSubMenu( mainMenu.GetPosByContainedSubcommand(ID_EDIT_SELECT_ALL) )
+		);
+		contextMenu.ModifySubmenu(
+			contextMenu.GetPosByContainedSubcommand(ID_NAVIGATE_ADDRESS),
+			*mainMenu.GetSubMenu( mainMenu.GetPosByContainedSubcommand(ID_NAVIGATE_ADDRESS) )
+		);
 	}
 	
 	static const auto WM_REPORT_SCANNER_PROGRESS=::RegisterWindowMessage(INI_DISKBROWSER);
@@ -28,13 +38,6 @@
 		ON_REGISTERED_MESSAGE(WM_REPORT_SCANNER_PROGRESS,ReportScanningProgress)
 		ON_WM_DESTROY()
 	END_MESSAGE_MAP()
-
-	CDiskBrowserView::~CDiskBrowserView(){
-		// dtor
-		// - destroying the custom "Select" and "Go to" submenus
-		::DestroyMenu(customSelectSubmenu);
-		::DestroyMenu(customGotoSubmenu);
-	}
 
 
 

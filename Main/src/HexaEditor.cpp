@@ -206,11 +206,11 @@
 
 	const CHexaEditor::TEmphasis CHexaEditor::TEmphasis::Terminator={ INT_MAX, INT_MAX };
 
-	CHexaEditor::CHexaEditor(PVOID param,HMENU customSelectSubmenu,HMENU customResetSubmenu,HMENU customGotoSubmenu)
+	CHexaEditor::CHexaEditor(PVOID param)
 		// ctor
 		// - initialization
 		: font(FONT_COURIER_NEW,105,false,true)
-		, customSelectSubmenu(customSelectSubmenu) , customResetSubmenu(customResetSubmenu) , customGotoSubmenu(customGotoSubmenu)
+		, contextMenu( IDR_HEXAEDITOR, this )
 		, hDefaultAccelerators(::LoadAccelerators(app.m_hInstance,MAKEINTRESOURCE(IDR_HEXAEDITOR)))
 		, caret(0) , param(param) , hPreviouslyFocusedWnd(0)
 		, logPosScrolledTo(0)
@@ -797,44 +797,15 @@ deleteSelection:		int posSrc=std::max(caret.selectionA,caret.position), posDst=s
 				return 0;
 			case WM_CONTEXTMENU:{
 				// context menu invocation
-				Utils::CRideContextMenu mnu( IDR_HEXAEDITOR, this );
-				BYTE iSelectSubmenu, iResetSubmenu, iGotoSubmenu;
-				if (customSelectSubmenu){ // custom "Select" submenu
-					const HMENU hSubmenu=Utils::GetSubmenuByContainedCommand( mnu, ID_EDIT_SELECT_ALL, &iSelectSubmenu );
-					mnu.ModifyMenu(
-						iSelectSubmenu, MF_BYPOSITION|MF_POPUP, (UINT_PTR)customSelectSubmenu,
-						mnu.GetMenuStringByPos( iSelectSubmenu )
-					);
-				}
-				if (customResetSubmenu){ // custom "Fill" submenu
-					const HMENU hSubmenu=Utils::GetSubmenuByContainedCommand( mnu, ID_ZERO, &iResetSubmenu );
-					mnu.ModifyMenu(
-						iResetSubmenu, MF_BYPOSITION|MF_POPUP, (UINT_PTR)customResetSubmenu,
-						mnu.GetMenuStringByPos( iResetSubmenu )
-					);
-				}
-				if (customGotoSubmenu){ // custom "Go to" submenu
-					const HMENU hSubmenu=Utils::GetSubmenuByContainedCommand( mnu, ID_NAVIGATE_ADDRESS, &iGotoSubmenu );
-					mnu.ModifyMenu(
-						iGotoSubmenu, MF_BYPOSITION|MF_POPUP, (UINT_PTR)customGotoSubmenu,
-						mnu.GetMenuStringByPos( iGotoSubmenu )
-					);
-				}
-				mnu.UpdateUi( this );
+				contextMenu.UpdateUi( this );
 				int x=GET_X_LPARAM(lParam), y=GET_Y_LPARAM(lParam);
 				if (x==-1){ // occurs if the context menu invoked using Shift+F10
 					POINT caretPos=GetCaretPos();
 					ClientToScreen(&caretPos);
 					x=caretPos.x+(1+!caret.ascii)*font.charAvgWidth, y=caretPos.y+font.charHeight;
 				}
-				if ( wParam=mnu.TrackPopupMenu( TPM_RETURNCMD, x,y, this ) )
+				if ( wParam=contextMenu.TrackPopupMenu( TPM_RETURNCMD, x,y, this ) )
 					OnCmdMsg( wParam, CN_COMMAND, nullptr, nullptr );
-				if (customGotoSubmenu) // custom "Go to" submenu
-					mnu.RemoveMenu( iGotoSubmenu, MF_BYPOSITION ); // "detaching" the Submenu from the parent
-				if (customResetSubmenu) // custom "Reset" submenu
-					mnu.RemoveMenu( iResetSubmenu, MF_BYPOSITION ); // "detaching" the Submenu from the parent
-				if (customSelectSubmenu) // custom "Select" submenu
-					mnu.RemoveMenu( iSelectSubmenu, MF_BYPOSITION ); // "detaching" the Submenu from the parent
 				return 0;
 			}
 			case WM_COMMAND:

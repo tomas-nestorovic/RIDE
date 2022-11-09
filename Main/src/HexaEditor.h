@@ -112,13 +112,13 @@
 		} search;
 		int logPosScrolledTo; // LogicalPosition in the upper left corner of the hexa-editor
 
-		const HMENU customSelectSubmenu, customResetSubmenu, customGotoSubmenu;
+		Utils::CRideContextMenu contextMenu;
 
 		void PostNcDestroy() override sealed;
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override; // enabling/disabling ToolBar buttons
 	public:
-		CHexaEditor(PVOID param,HMENU customSelectSubmenu=nullptr,HMENU customResetSubmenu=nullptr,HMENU customGotoSubmenu=nullptr);
+		CHexaEditor(PVOID param);
 		~CHexaEditor();
 
 		void SetEditable(bool _editable);

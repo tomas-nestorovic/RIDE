@@ -26,7 +26,6 @@
 		const CMainWindow::CTdiView::TTab tab;
 
 		CDiskBrowserView(PImage image,RCPhysicalAddress chsToSeekTo,BYTE nSectorsToSkip);
-		~CDiskBrowserView();
 
 		void SetLogicalSize(int newLogicalSize) override;
 	};
