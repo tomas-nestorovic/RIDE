@@ -279,7 +279,7 @@ reportError:Utils::Information(buf);
 				// request to format from the beginning of disk - warning that all data will be destroyed
 				if (!Utils::QuestionYesNo(_T("About to format the whole image and destroy all data.\n\nContinue?!"),MB_DEFBUTTON2))
 					return ERROR_CANCELLED;
-				if (pFileManager && pFileManager->m_hWnd)
+				if (pFileManager->GetSafeHwnd())
 					pFileManager->GetListCtrl().DeleteAllItems();
 				if (const TStdWinError err=image->Reset())
 					return err;

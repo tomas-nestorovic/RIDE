@@ -109,13 +109,18 @@
 		return GetErrorDesc();
 	}
 
+	CDos::CFatPath::PItem CDos::CFatPath::GetItem(DWORD i) const{
+		// returns I-th Item or Null
+		if (i>=nItems) // request out of bounds
+			return nullptr;
+		return buffer+i;
+	}
+
 	CDos::CFatPath::PItem CDos::CFatPath::GetHealthyItem(DWORD i) const{
 		// returns I-th Item or Null
 		if (error) // FatPath erroneous
 			return nullptr;
-		if (i>=nItems) // request out of bounds
-			return nullptr;
-		return buffer+i;
+		return GetItem(i);
 	}
 
 	DWORD CDos::CFatPath::GetNumberOfItems() const{

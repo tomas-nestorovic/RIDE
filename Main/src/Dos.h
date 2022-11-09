@@ -181,6 +181,7 @@
 			PCItem PopItem();
 			LPCTSTR GetItems(PCItem &rBuffer,DWORD &rnItems) const;
 			LPCTSTR GetItems(PItem &rBuffer,DWORD &rnItems) const;
+			PItem GetItem(DWORD i) const;
 			PItem GetHealthyItem(DWORD i) const;
 			DWORD GetNumberOfItems() const;
 			bool ContainsSector(RCPhysicalAddress chs) const;
@@ -230,6 +231,10 @@
 			int LogicalPositionToRow(int logPos,BYTE nBytesInRow) override;
 			int RowToLogicalPosition(int row,BYTE nBytesInRow) override;
 			LPCWSTR GetRecordLabelW(int logPos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override;
+
+			// others
+			const TPhysicalAddress &GetCurrentPhysicalAddress() const;
+			WORD GetPositionInCurrentSector() const;
 		};
 
 		enum TGetFileSizeOptions:BYTE{

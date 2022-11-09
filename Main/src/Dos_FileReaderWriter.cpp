@@ -172,6 +172,21 @@
 		}
 	}*/
 
+	const TPhysicalAddress &CDos::CFileReaderWriter::GetCurrentPhysicalAddress() const{
+		// returns the PhysicalAddress currently seeked to
+		const div_t d=div( (int)position, (int)sectorLength-dataBeginOffsetInSector-dataEndOffsetInSector );
+		if (const CDos::CFatPath::PCItem p=fatPath.GetItem(d.quot)) // Sector exists
+			return p->chs;
+		else
+			return TPhysicalAddress::Invalid;
+	}
+
+	WORD CDos::CFileReaderWriter::GetPositionInCurrentSector() const{
+		//
+		const div_t d=div( (int)position, (int)sectorLength-dataBeginOffsetInSector-dataEndOffsetInSector );
+		return dataBeginOffsetInSector+d.rem;
+	}
+
 
 
 

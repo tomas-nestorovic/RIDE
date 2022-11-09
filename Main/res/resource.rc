@@ -642,6 +642,9 @@ BEGIN
         MENUITEM "Paste from file...",          ID_EDIT_PASTE_SPECIAL
         MENUITEM "Delete\tDel",                 ID_EDIT_DELETE
         MENUITEM SEPARATOR
+        MENUITEM "Find...\tCtrl+F",             ID_EDIT_FIND
+        MENUITEM "Find next\tF3",               ID_EDIT_FIND_NEXT
+        MENUITEM SEPARATOR
         POPUP "Select"
         BEGIN
             MENUITEM "All\tCtrl+A",                 ID_EDIT_SELECT_ALL
@@ -666,6 +669,7 @@ BEGIN
             MENUITEM SEPARATOR
             MENUITEM "Address...\tCtrl+G",          ID_NAVIGATE_ADDRESS
         END
+        MENUITEM "Timing under cursor...",      ID_TIME
     END
 END
 
@@ -832,6 +836,7 @@ BEGIN
     POPUP "x"
     BEGIN
         MENUITEM "Create subdir...\tCtrl+D",    ID_FILEMANAGER_SUBDIR_CREATE
+        MENUITEM "Browse in hexa-mode",         ID_FILEMANAGER_DIR_HEXAMODE
         MENUITEM SEPARATOR
         MENUITEM "Paste\tCtrl+V",               ID_EDIT_PASTE
         MENUITEM SEPARATOR

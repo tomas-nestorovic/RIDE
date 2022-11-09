@@ -62,6 +62,8 @@
 			contextMenu.GetPosByContainedSubcommand(ID_ZERO),
 			*mainMenu.GetSubMenu( mainMenu.GetPosByContainedSubcommand(ID_DEFAULT1) )
 		);
+		contextMenu.AppendSeparator();
+		contextMenu.AppendMenu( MF_BYCOMMAND|MF_STRING, ID_TIME, mainMenu.GetMenuStringByCmd(ID_TIME) );
 	}
 
 	BEGIN_MESSAGE_MAP(CDirEntriesView,CHexaEditor)
@@ -134,6 +136,9 @@
 					case ID_DEFAULT1:
 						((CCmdUI *)pExtra)->Enable( IsEditable() );
 						return TRUE;
+					case ID_TIME:
+						((CCmdUI *)pExtra)->Enable( IMAGE->ReadTrack(0,0) );
+						return TRUE;
 				}
 				break;
 			case CN_COMMAND:
@@ -174,6 +179,23 @@
 							}
 						}
 						RepaintData();
+						return TRUE;
+					}
+					case ID_TIME:{
+						// display of low-level Track timing
+						f->Seek( GetCaretLogPos(), CFile::begin );
+						const TPhysicalAddress &chs=f->GetCurrentPhysicalAddress();
+						if (CImage::CTrackReader tr=IMAGE->ReadTrack( chs.cylinder, chs.head )){
+							TLogTime tDataStart;
+							if (IMAGE->GetSectorData( chs, 0, Revolution::ANY_GOOD, nullptr, nullptr, &tDataStart )!=nullptr){
+								const auto peList=tr.ScanAndAnalyze( CActionProgress::None, false );
+								const auto &peData=(CImage::CTrackReader::TDataParseEvent &)peList.GetAt(
+									peList.GetPositionByStart( tDataStart, CImage::CTrackReader::TParseEvent::DATA_OK, CImage::CTrackReader::TParseEvent::DATA_BAD )
+								);
+								const auto &bi=peData.byteInfos[ f->GetPositionInCurrentSector() ];
+								tr.ShowModal( nullptr, 0, MB_OK, true, bi.tStart, _T("KUNDA") );
+							}
+						}
 						return TRUE;
 					}
 				}

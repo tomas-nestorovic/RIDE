@@ -637,6 +637,7 @@
 			UINT Read(LPVOID lpBuf,UINT nCount) override sealed;
 			void Write(LPCVOID lpBuf,UINT nCount) override sealed;
 			BYTE GetCurrentSectorIndexOnTrack() const;
+			inline WORD GetPositionInCurrentSector() const{ return sector.offset; }
 			BYTE GetAvailableRevolutionCount(TCylinder cyl,THead head) const;
 			virtual void SetCurrentRevolution(Revolution::TType rev)=0;
 			virtual TPhysicalAddress GetCurrentPhysicalAddress() const=0;
