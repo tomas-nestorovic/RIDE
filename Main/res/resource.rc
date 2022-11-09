@@ -581,6 +581,9 @@ BEGIN
         MENUITEM "Paste from file...",          ID_EDIT_PASTE_SPECIAL
         MENUITEM "Delete\tDel",                 ID_EDIT_DELETE
         MENUITEM SEPARATOR
+        MENUITEM "Find...\tCtrl+F",             ID_EDIT_FIND
+        MENUITEM "Find next\tF3",               ID_EDIT_FIND_NEXT
+        MENUITEM SEPARATOR
         POPUP "Revolution"
         BEGIN
             MENUITEM "Any with good data\tF9",      ID_AUTO
@@ -620,6 +623,7 @@ BEGIN
             MENUITEM SEPARATOR
             MENUITEM "Address...\tCtrl+G",          ID_NAVIGATE_ADDRESS
         END
+        MENUITEM "Timing under cursor...",      ID_TIME
         MENUITEM SEPARATOR
         MENUITEM "Pause scanning\tPause",       ID_BUFFER
     END

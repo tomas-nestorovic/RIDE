@@ -27,6 +27,8 @@
 			contextMenu.GetPosByContainedSubcommand(ID_NAVIGATE_ADDRESS),
 			*mainMenu.GetSubMenu( mainMenu.GetPosByContainedSubcommand(ID_NAVIGATE_ADDRESS) )
 		);
+		contextMenu.AppendSeparator();
+		contextMenu.AppendMenu( MF_BYCOMMAND|MF_STRING, ID_TIME, mainMenu.GetMenuStringByCmd(ID_TIME) );
 	}
 	
 	static const auto WM_REPORT_SCANNER_PROGRESS=::RegisterWindowMessage(INI_DISKBROWSER);
