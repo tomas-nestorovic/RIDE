@@ -62,7 +62,7 @@
 		} driver;
 		const BYTE fddId;
 		const Utils::CCallocPtr<BYTE> dataBuffer;
-		#pragma pack(1);
+		#pragma pack(1)
 		struct{
 			BYTE major, minor, isMainFirmware, maxCmd;
 			DWORD sampleFrequency;

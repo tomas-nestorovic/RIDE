@@ -45,7 +45,7 @@
 		if (wideChar)
 			::lstrcpyW(buf+1,(LPCWSTR)value.buffer);
 		else
-			::MultiByteToWideChar( CP_ACP, 0, (LPCSTR)value.buffer,-1, buf+1,sizeof(buf)/sizeof(WCHAR)-1 );
+			::MultiByteToWideChar( CP_ACP, 0, (LPCSTR)value.buffer,-1, buf+1,ARRAYSIZE(buf)-1 );
 		return ::CreateWindowW(	WC_LINK,
 								buf,
 								EDITOR_STYLE,

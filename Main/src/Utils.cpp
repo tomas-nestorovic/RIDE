@@ -1548,7 +1548,7 @@ namespace Utils{
 	static constexpr TCHAR RangeSign='-'; // "minus"
 	static constexpr TCHAR Delimiters[]={ ',', ';', RangeSign, '\0' }; // valid integer delimiters, INCLUDING RangeSign
 
-	bool CRideDialog::GetDlgItemIntList(WORD id,CIntList &rOutList,const PropGrid::Integer::TUpDownLimits &limits,UINT nIntsMin,UINT nIntsMax) const{
+	bool CRideDialog::GetDlgItemIntList(WORD id,CIntList &rOutList,const PropGrid::Integer::TUpDownLimits &limits,int nIntsMin,int nIntsMax) const{
 		// True <=> item with the specified ID contains list of integer values (grammar bellow), otherwise False
 		// - elimination of white spaces from the content
 		TCHAR buf[16384], *pEnd=buf;

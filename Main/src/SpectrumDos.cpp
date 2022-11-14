@@ -30,7 +30,7 @@
 	#define FORMAT_ADDITIONAL_COUNT	2
 
 	#define TAPE_EXTENSION	_T(".tap")
-	#define TAPE_FILTER		_T("Tape (*") TAPE_EXTENSION _T(")|*") TAPE_EXTENSION
+	#define TAPE_FILTER		_T("Tape (*") TAPE_EXTENSION _T(")|*") TAPE_EXTENSION _T("|")
 
 	CDos::TCmdResult CSpectrumDos::ProcessCommand(WORD cmd){
 		// returns the Result of processing a DOS-related command

@@ -39,7 +39,7 @@
 				uValue.longValue=0;
 			::memcpy( &uValue, value.buffer, valueSize );
 			WCHAR desc[STRING_LENGTH_MAX+1];
-			__drawString__(	__getValueDescW__( value.param, uValue, desc, sizeof(desc)/sizeof(WCHAR) ), -1,
+			__drawString__(	__getValueDescW__( value.param, uValue, desc, ARRAYSIZE(desc) ), -1,
 							pdis
 						);
 		}
@@ -87,7 +87,7 @@
 					// string Value
 					WCHAR descW[100];
 					ComboBox_SetItemData(	hComboBox,
-											::SendMessageW( hComboBox, CB_ADDSTRING, 0, (LPARAM)__getValueDescW__(value.param,uValue,descW,sizeof(descW)/sizeof(WCHAR)) ),
+											::SendMessageW( hComboBox, CB_ADDSTRING, 0, (LPARAM)__getValueDescW__(value.param,uValue,descW,ARRAYSIZE(descW)) ),
 											uValue.longValue
 										);
 				}

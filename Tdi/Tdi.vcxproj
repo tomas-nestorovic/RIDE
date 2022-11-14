@@ -149,7 +149,6 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <StructMemberAlignment>Default</StructMemberAlignment>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <AdditionalOptions>/QIfist %(AdditionalOptions)</AdditionalOptions>
       <FloatingPointExceptions>false</FloatingPointExceptions>
       <DisableSpecificWarnings>4482;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>

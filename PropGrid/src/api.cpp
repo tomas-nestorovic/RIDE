@@ -55,7 +55,7 @@
 	HANDLE WINAPI PropGrid::AddPropertyA(HWND hPropGrid,HANDLE category,LPCSTR name,PValue value,PCEditor editor,PCustomParam param){
 		// creates, adds into PropertyGrid, and returns a new ValueItem with given Name and Value
 		WCHAR bufW[200];
-		::MultiByteToWideChar( CP_ACP, 0, name, -1, bufW, sizeof(bufW)/sizeof(WCHAR) );
+		::MultiByteToWideChar( CP_ACP, 0, name, -1, bufW, ARRAYSIZE(bufW) );
 		return AddPropertyW( hPropGrid, category, bufW, value, editor, param );
 	}
 
@@ -70,7 +70,7 @@
 	HANDLE WINAPI PropGrid::AddDisabledPropertyA(HWND hPropGrid,HANDLE category,LPCSTR name,PValue value,PCEditor editor,PCustomParam param){
 		// creates, adds into PropertyGrid, and returns a new ValueItem with given Name and Value
 		WCHAR bufW[200];
-		::MultiByteToWideChar( CP_ACP, 0, name, -1, bufW, sizeof(bufW)/sizeof(WCHAR) );
+		::MultiByteToWideChar( CP_ACP, 0, name, -1, bufW, ARRAYSIZE(bufW) );
 		return AddDisabledPropertyW( hPropGrid, category, bufW, value, editor, param );
 	}
 
@@ -92,7 +92,7 @@
 	HANDLE WINAPI PropGrid::AddCategoryA(HWND hPropGrid,HANDLE category,LPCSTR name,bool initiallyExpanded){
 		// creates, adds into PropertyGrid, and returns a new CategoryItem with given Name
 		WCHAR bufW[200];
-		::MultiByteToWideChar( CP_ACP, 0, name, -1, bufW, sizeof(bufW)/sizeof(WCHAR) );
+		::MultiByteToWideChar( CP_ACP, 0, name, -1, bufW, ARRAYSIZE(bufW) );
 		return AddCategoryW( hPropGrid, category, bufW, initiallyExpanded );
 	}
 

@@ -31,7 +31,7 @@
 		: tabId(_tabId) {
 		data.mask = TCIF_PARAM | TCIF_TEXT;
 		data.pszText=caption;
-		data.cchTextMax=sizeof(caption)/sizeof(TCHAR);
+		data.cchTextMax=ARRAYSIZE(caption);
 		TabCtrl_GetItem(hTdi,_tabId,&data);
 		TabCtrl_GetItemRect(hTdi,_tabId,&targetArea);
 	}
@@ -189,7 +189,7 @@
 								TCHAR tmpCaption[80];
 								tmp.mask = TCIF_PARAM | TCIF_TEXT;
 								tmp.pszText=tmpCaption;
-								tmp.cchTextMax=sizeof(tmpCaption)/sizeof(TCHAR);
+								tmp.cchTextMax=ARRAYSIZE(tmpCaption);
 							TabCtrl_GetItem( hTdi, iTargetTab, &tmp );
 							TabCtrl_SetItem( hTdi, iTargetTab, &pDraggedTabInfo->data );
 							TabCtrl_SetItem( hTdi, pDraggedTabInfo->tabId, &tmp );

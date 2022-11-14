@@ -173,7 +173,7 @@
       <CompileAsManaged>false</CompileAsManaged>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <DebugInformationFormat>OldStyle</DebugInformationFormat>
-      <AdditionalOptions>/QIfist /Zc:threadSafeInit- %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/QIfist %(AdditionalOptions)</AdditionalOptions>
       <OmitFramePointers>true</OmitFramePointers>
       <CallingConvention>StdCall</CallingConvention>
       <FloatingPointExceptions>false</FloatingPointExceptions>

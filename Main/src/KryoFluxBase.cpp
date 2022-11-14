@@ -212,7 +212,7 @@
 
 
 	struct TIndexPulse sealed{
-		DWORD posInStreamData;
+		int posInStreamData;
 		DWORD sampleCounter;
 		DWORD indexCounter;
 	};
@@ -365,7 +365,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 		DWORD sampleCounter=0, totalSampleCounter=0; // delta and absolute sample counters
 		PLogTime buffer=result.GetBuffer(),pLogTime=buffer;
 		BYTE nearestIndexPulse=0;
-		DWORD nearestIndexPulsePos= nIndexPulses>0 ? indexPulses[0].posInStreamData : INT_MAX;
+		int nearestIndexPulsePos= nIndexPulses>0 ? indexPulses[0].posInStreamData : INT_MAX;
 		for( PCBYTE pis=inStreamData,pLastInStreamData=pis+inStreamDataLength; pis<pLastInStreamData; ){
 			const BYTE header=*pis++;
 			// . extracting flux from the KryoFlux "in-Stream" data (pre-processed in ctor)
@@ -399,7 +399,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 					result.AddIndexTime( (LONGLONG)TIME_SECOND(1)*indexSampleCounter/SampleClockDefault ); // temporary 64-bit precision even on 32-bit machines
 				else // custom Sample-Clock, involving floating-point number computation
 					result.AddIndexTime( (double)TIME_SECOND(1)*indexSampleCounter/sck ); // temporary 64-bit precision even on 32-bit machines
-				nearestIndexPulsePos= ++nearestIndexPulse<nIndexPulses ? indexPulses[nearestIndexPulse].posInStreamData : -1;
+				nearestIndexPulsePos= ++nearestIndexPulse<nIndexPulses ? indexPulses[nearestIndexPulse].posInStreamData : INT_MAX;
 			}
 			// . adding the flux into the Buffer
 			totalSampleCounter+=sampleCounter;

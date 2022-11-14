@@ -49,7 +49,7 @@
 		// True <=> Editor's current Value is acceptable, otherwise False
 		const HWND hEdit=TEditor::pSingleShown->hMainCtrl;
 		TCHAR buf[16];
-		const int nChars=::GetWindowText( hEdit, buf, sizeof(buf)/sizeof(TCHAR) );
+		const int nChars=::GetWindowText( hEdit, buf, ARRAYSIZE(buf) );
 		static_assert( PropGrid::Integer::HEXADECIMAL==1, "PropGrid::Integer::HEXADECIMAL==1" );
 		const int i=_tcstol( buf, nullptr, 10+6*(features&PropGrid::Integer::HEXADECIMAL) );
 		const bool outOfRange=	features&PropGrid::Integer::HEXADECIMAL
