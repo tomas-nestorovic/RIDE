@@ -21,7 +21,7 @@
 			void Write(LPCVOID lpBuf,UINT nCount) override;
 		} fSectorData;
 		CWnd propGrid;
-		CHexaEditor hexaEditor;
+		CDos::CFileReaderWriter::CHexaEditor hexaEditor;
 
 		CCriticalSectorView(PDos dos,RCPhysicalAddress rChs);
 

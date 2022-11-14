@@ -239,3 +239,50 @@
 		}else
 			return nullptr;
 	}
+
+
+
+
+
+
+
+
+
+	CDos::CFileReaderWriter::CHexaEditor::CHexaEditor(PVOID param)
+		// ctor
+		// - base
+		: ::CHexaEditor(param) {
+		// - modification of ContextMenu
+		contextMenu.AppendSeparator();
+		contextMenu.AppendMenu( MF_BYCOMMAND|MF_STRING, ID_TIME, _T("Timing under cursor...") );
+	}
+
+	BOOL CDos::CFileReaderWriter::CHexaEditor::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){
+		// command processing
+		CFileReaderWriter &frw=*(CFileReaderWriter *)search.f;
+		switch (nCode){
+			case CN_UPDATE_COMMAND_UI:
+				// update
+				switch (nID){
+					case ID_TIME:
+						((CCmdUI *)pExtra)->Enable( frw.dos->image->ReadTrack(0,0) );
+						return TRUE;
+				}
+				break;
+			case CN_COMMAND:
+				// command
+				switch (nID){
+					case ID_TIME:
+						frw.Seek( GetCaretLogPos(), CFile::begin );
+						frw.dos->image->ShowModalTrackTimingAt(
+							frw.GetCurrentPhysicalAddress(),
+							0, // no Sectors with duplicated ID fields are expected for any File!
+							frw.GetPositionInCurrentSector(),
+							Revolution::ANY_GOOD
+						);
+						return TRUE;
+				}
+				break;
+		}
+		return __super::OnCmdMsg(nID,nCode,pExtra,pHandlerInfo);
+	}

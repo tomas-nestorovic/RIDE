@@ -62,7 +62,7 @@
 
 	CDos::CHexaPreview::CHexaEditorView::CHexaEditorView(PCDos dos,CHexaPreview *pHexaPreview)
 		// ctor
-		: CHexaEditor(pHexaPreview) {
+		: CFileReaderWriter::CHexaEditor(pHexaPreview) {
 	}
 
 	LRESULT CDos::CHexaPreview::CHexaEditorView::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){

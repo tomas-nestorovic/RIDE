@@ -192,7 +192,6 @@
 		};
 
 		class CFileReaderWriter:public CFile,public CHexaEditor::IContentAdviser{
-			const CDos *const dos;
 			const WORD sectorLength; // e.g. for Spectrum Tape, the SectorLength may temporarily be faked to correctly segment a display Headers, and then reset to normal to correctly display Tape data; this is the backup of the eventually faked value
 			const BYTE dataBeginOffsetInSector,dataEndOffsetInSector;
 			#if _MFC_VER>=0x0A00
@@ -205,6 +204,13 @@
 		protected:
 			int recordLength;
 		public:
+			class CHexaEditor:public ::CHexaEditor{
+				BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
+			public:
+				CHexaEditor(PVOID param);
+			};
+
+			const CDos *const dos;
 			const CFatPath fatPath;
 
 			CFileReaderWriter(const CDos *dos,PCFile file,bool wholeSectors=false); // ctor to read/edit an existing File on the Image
@@ -320,7 +326,7 @@
 		public:
 			static CHexaPreview *pSingleInstance; // only single file can be previewed at a time
 
-			class CHexaEditorView sealed:public CHexaEditor{
+			class CHexaEditorView sealed:public CFileReaderWriter::CHexaEditor{
 				LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 			public:
 				CHexaEditorView(PCDos dos,CHexaPreview *pHexaPreview);

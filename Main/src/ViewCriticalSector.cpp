@@ -51,7 +51,7 @@
 		// ctor
 		// - initialization
 		: tab(0,0,0,dos->image,this) , splitX(PROPGRID_WIDTH_DEFAULT)
-		, fSectorData(dos,rChs) , hexaEditor(this) {
+		, fSectorData(dos,rChs) , hexaEditor(*this) {
 		// - reset of HexaEditor's content
 		const TPhysicalAddress &chs=GetPhysicalAddress();
 		WORD sectorDataRealLength=CImage::GetOfficialSectorLength( chs.sectorId.lengthCode ); // initializing just in case the Sector is not found
