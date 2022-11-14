@@ -270,7 +270,7 @@
 				static constexpr DWORD SampleCounterOverflow=0;
 				switch (header.nFluxCellBits){
 					case 8:
-						for( ; nDeltaSamples>=256; nDeltaSamples-256 )
+						for( ; nDeltaSamples>=256; nDeltaSamples-=256 )
 							f.Write( &SampleCounterOverflow, sizeof(BYTE) );
 						if (nDeltaSamples)
 							f.Write( &nDeltaSamples, sizeof(BYTE) );
@@ -281,7 +281,7 @@
 						break;
 					case 0:
 					case 16:
-						for( ; nDeltaSamples>=65536; nDeltaSamples-65536 )
+						for( ; nDeltaSamples>=65536; nDeltaSamples-=65536 )
 							f.Write( &SampleCounterOverflow, sizeof(WORD) );
 						if (nDeltaSamples)
 							f.Write( &Utils::CBigEndianWord(nDeltaSamples), sizeof(WORD) );
