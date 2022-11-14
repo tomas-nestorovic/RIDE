@@ -713,6 +713,7 @@
 		void SetRedrawToAllViews(bool redraw) const;
 		bool ReportWriteProtection() const;
 		void ToggleWriteProtection();
+		BYTE ShowModalTrackTimingAt(RCPhysicalAddress chs,BYTE nSectorsToSkip,WORD positionInSector,Revolution::TType rev);
 		void SetPathName(LPCTSTR lpszPathName,BOOL bAddToMRU=TRUE) override;
 		BOOL CanCloseFrame(CFrameWnd* pFrame) override;
 	};

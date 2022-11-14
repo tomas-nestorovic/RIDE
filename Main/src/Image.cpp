@@ -521,6 +521,29 @@ namespace Medium{
 		writeProtected=!writeProtected;
 	}
 
+	BYTE CImage::ShowModalTrackTimingAt(RCPhysicalAddress chs,BYTE nSectorsToSkip,WORD positionInSector,Revolution::TType rev){
+		// displays modal dialog showing low-level timing for specified position on the Track
+		TCHAR msg[80];
+		::wsprintf( msg, _T("Can't determine timing for sector with %s"), (LPCTSTR)chs.sectorId.ToString() );
+		if (CImage::CTrackReader tr=ReadTrack( chs.cylinder, chs.head )){
+			TLogTime tDataStart;
+			if (GetSectorData( chs, nSectorsToSkip, rev, nullptr, nullptr, &tDataStart )!=nullptr){
+				const auto peList=tr.ScanAndAnalyze( CActionProgress::None, false );
+				const auto &peData=(CTrackReader::TDataParseEvent &)peList.GetAt(
+					peList.GetPositionByStart( tDataStart, CTrackReader::TParseEvent::DATA_OK, CTrackReader::TParseEvent::DATA_BAD )
+				);
+				const auto &bi=peData.byteInfos[ positionInSector ];
+				return tr.ShowModal(
+					nullptr, 0, MB_OK, true, bi.tStart,
+					_T("Track %d, sector %s data timing"), chs.GetTrackNumber(), (LPCTSTR)chs.sectorId.ToString()
+				);
+			}else
+				Utils::Information( msg, _T("Data field not found.") );
+		}else
+			Utils::Information( msg, ERROR_NOT_SUPPORTED );
+		return IDCLOSE;
+	}
+
 	void CImage::SetRedrawToAllViews(bool redraw) const{
 		// notifies each of registered whether they should suspend or resume their drawing
 		for( POSITION pos=GetFirstViewPosition(); pos; GetNextView(pos)->SetRedraw(redraw) );
