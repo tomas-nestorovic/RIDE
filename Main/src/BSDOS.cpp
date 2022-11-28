@@ -1149,7 +1149,7 @@
 
 
 	namespace MBD{
-		static constexpr CImage::TProperties Properties={
+		static const CImage::TProperties Properties={
 			MAKE_IMAGE_ID('B','S','D','O','S','M','B','D'), // a unique identifier
 			Recognize, // name
 			Instantiate, // instantiation function

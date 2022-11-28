@@ -102,7 +102,7 @@
 
 
 	namespace MGT{
-		static constexpr CImage::TProperties Properties={
+		static const CImage::TProperties Properties={
 			MAKE_IMAGE_ID('G','D','O','S','_','M','G','T'), // a unique identifier
 			Recognize,	// list of recognized device names
 			Instantiate,// instantiation function

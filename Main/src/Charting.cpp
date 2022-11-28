@@ -58,7 +58,7 @@
 		//nop (not applicable)
 	}
 
-	static constexpr POINT Origin;
+	static constexpr POINT Origin={0,0};
 
 	const POINT &CChartView::CXyGraphics::GetPoint(int index) const{
 		// returns the XY Point with the specified Index
