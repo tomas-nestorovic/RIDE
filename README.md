@@ -1,6 +1,7 @@
 # Briefly
 - Yes, it can access internal floppy drives on your PC.
 - Yes, it can work with KryoFlux (starting with 1.6 also for writing).
+- Yes, it can work with Greaseweazle.
 - Yes, this Windows XP application is confirmed to work in Linux via Wine.
 
 # Introduction (aka. "Why and What For")
