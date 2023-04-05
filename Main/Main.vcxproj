@@ -99,7 +99,6 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <UndefinePreprocessorDefinitions>TDI_EXPORT;PROPGRID_EXPORT</UndefinePreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <DisableSpecificWarnings>4482</DisableSpecificWarnings>
     </ClCompile>
@@ -345,6 +344,9 @@
     </ProjectReference>
     <ProjectReference Include="..\Tdi\Tdi.vcxproj">
       <Project>{a9001ea5-ca73-483d-b494-afe3b98d7e1d}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\YAHEL\Yahel\Yahel.vcxproj">
+      <Project>{7d9a9c78-93db-426c-9082-b466ed09bfea}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -188,7 +188,6 @@
 		};
 	protected:
 		class CFileComparisonDialog sealed:public Utils::CRideDialog{
-			CMemFile fEmpty;
 			POINT padding;
 			int buttonWidth,buttonHeight,addressColumnWidth;
 			HWND hCompareButton;
@@ -197,15 +196,15 @@
 				CFileComparisonDialog &rDialog;
 			public:
 				HWND hLabel,hEllipsisButton;
-				std::unique_ptr<CFile> f;
+				std::unique_ptr<COleStreamFile> f;
 
 				COleComparisonDropTarget(CFileComparisonDialog &rDialog); // ctor
 
 				void Init(CWnd *pLabel,CWnd *pButton);
 				void ChooseAndOpenPhysicalFile();
-				void OpenPhysicalFile(LPCTSTR fileName);
+				void OpenPhysicalFile(LPCWSTR fileName);
 				void Open(CDos::PCFile f);
-				void Open(std::unique_ptr<CFile> &fTmp,LPCTSTR fileName);
+				void Open(IStream *s,LPCWSTR fileName);
 				DROPEFFECT OnDragEnter(CWnd *,COleDataObject *pDataObject,DWORD dwKeyState,CPoint point) override;
 				DROPEFFECT OnDragOver(CWnd *pWnd,COleDataObject *pDataObject,DWORD dwKeyState,CPoint point) override;
 				BOOL OnDrop(CWnd *,COleDataObject *pDataObject,DROPEFFECT dropEffect,CPoint point) override;

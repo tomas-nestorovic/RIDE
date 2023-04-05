@@ -335,9 +335,9 @@
 							const TDumpParams &dp;
 							TParams &rp;
 							const PSectorData sectorData;
+							const WORD sectorDataLength;
 							TFdcStatus &rFdcStatus;
 							CEdit errorTextBox;
-							CMemFile fSectorData;
 							CHexaEditor hexaEditor;
 							std::unique_ptr<CSplitterWnd> splitter;
 							Utils::TSplitButtonAction resolveActions[RESOLVE_OPTIONS_COUNT];
@@ -356,7 +356,10 @@
 									);
 									errorTextBox.SetFont( GetFont() );
 								splitter->SetRowInfo( 0, rcSplitter.Height()/3, 0 ); // Utils::LogicalUnitScaleFactor
-									hexaEditor.Reset( &fSectorData, fSectorData.GetLength(), fSectorData.GetLength() );
+									if (IStream *const s=Yahel::Stream::FromBuffer( sectorData, sectorDataLength )){
+										hexaEditor.Reset( s, nullptr, sectorDataLength );
+										s->Release();
+									}
 									hexaEditor.Create(
 										nullptr, nullptr,
 										AFX_WS_DEFAULT_VIEW&~WS_BORDER | WS_CLIPSIBLINGS,
@@ -563,7 +566,7 @@
 													switch (d.dataFieldRecoveryType){
 														case 2:
 															// replacing data with SubstituteByte
-															::memset( sectorData, d.dataFieldSubstituteFillerByte, fSectorData.GetLength() );
+															::memset( sectorData, d.dataFieldSubstituteFillerByte, sectorDataLength );
 															//fallthrough
 														case 1:
 															// recovering CRC
@@ -592,8 +595,9 @@
 							CErroneousSectorDialog(CWnd *pParentWnd,const TDumpParams &dp,TParams &_rParams,PSectorData sectorData,WORD sectorLength,TFdcStatus &rFdcStatus)
 								// ctor
 								: Utils::CRideDialog( IDR_IMAGE_DUMP_ERROR, pParentWnd )
-								, dp(dp) , rp(_rParams) , sectorData(sectorData) , rFdcStatus(rFdcStatus)
-								, fSectorData( rFdcStatus.DescribesMissingDam()?nullptr:sectorData, rFdcStatus.DescribesMissingDam()?0:sectorLength )
+								, dp(dp) , rp(_rParams) , rFdcStatus(rFdcStatus)
+								, sectorData( rFdcStatus.DescribesMissingDam()?nullptr:sectorData )
+								, sectorDataLength( rFdcStatus.DescribesMissingDam()?0:sectorLength )
 								, hexaEditor(this) {
 							}
 						} d(pAction,dp,p,bufferSectorData[p.s],bufferLength[p.s],p.fdcStatus);

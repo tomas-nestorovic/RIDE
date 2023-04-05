@@ -5,14 +5,14 @@
 		DECLARE_MESSAGE_MAP()
 	private:
 		CDos::PCFile fileToSeekTo;
-		std::unique_ptr<CDos::CFileReaderWriter> f;
+		CComPtr<CDos::CFileReaderWriter> f;
 
 		afx_msg int OnCreate(LPCREATESTRUCT lpcs);
-		afx_msg void OnDestroy();
 		afx_msg void ToggleWriteProtection();
 		afx_msg void __closeView__();
 		void OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint) override;
-		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
+		int GetCustomCommandMenuFlags(WORD cmd) const override;
+		bool ProcessCustomCommand(UINT cmd) override;
 	public:
 		const CMainWindow::CTdiView::TTab tab;
 		const CDos::PFile directory;

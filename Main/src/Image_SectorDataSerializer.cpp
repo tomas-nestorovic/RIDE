@@ -184,6 +184,14 @@
 		::SetLastError(ERROR_WRITE_FAULT);
 	}
 
+	HRESULT CImage::CSectorDataSerializer::Clone(IStream **ppstm){
+		if (ppstm){
+			*ppstm=image->CreateSectorDataSerializer(pParentHexaEditor);
+			return S_OK;
+		}else
+			return E_INVALIDARG;
+	}
+
 	BYTE CImage::CSectorDataSerializer::GetCurrentSectorIndexOnTrack() const{
 		// returns the zero-based index of current Sector on the Track
 		return sector.indexOnTrack;

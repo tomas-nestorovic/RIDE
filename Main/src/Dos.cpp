@@ -1306,9 +1306,11 @@ reportError:Utils::Information(buf);
 		// - base
 		: Utils::CRideDialog(IDR_DOS_PROPGRID_HEXAEDITOR)
 		// - initialization
-		, hexaEditor(nullptr)
-		, f( (PBYTE)::memcpy(newValueBuffer,value,valueSize), valueSize ) {
-		hexaEditor.Reset( &f, valueSize, valueSize );
+		, hexaEditor(nullptr) {
+		if (IStream *const s=Yahel::Stream::FromBuffer( ::memcpy(newValueBuffer,value,valueSize), valueSize )){
+			hexaEditor.Reset( s, nullptr, valueSize );
+			s->Release();
+		}
 	}
 
 	void CDos::CHexaValuePropGridEditor::PreInitDialog(){

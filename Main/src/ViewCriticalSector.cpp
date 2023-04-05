@@ -56,7 +56,7 @@
 		const TPhysicalAddress &chs=GetPhysicalAddress();
 		WORD sectorDataRealLength=CImage::GetOfficialSectorLength( chs.sectorId.lengthCode ); // initializing just in case the Sector is not found
 		IMAGE->GetHealthySectorData( chs, &sectorDataRealLength );
-		hexaEditor.Reset( &fSectorData, sectorDataRealLength, sectorDataRealLength );
+		hexaEditor.Reset( &fSectorData, &fSectorData, sectorDataRealLength );
 	}
 
 	BEGIN_MESSAGE_MAP(CCriticalSectorView,CView)
@@ -89,7 +89,7 @@
 				propGrid.CreateEx( 0, PropGrid::GetWindowClass(app.m_hInstance), nullptr, AFX_WS_DEFAULT_VIEW&~WS_BORDER, 0,0,PROPGRID_WIDTH_DEFAULT,300, content->m_hWnd, (HMENU)content->IdFromRowCol(0,0) );
 				content->SetColumnInfo(0,Utils::LogicalUnitScaleFactor*PROPGRID_WIDTH_DEFAULT,0);
 			//content->CreateView(0,1,RUNTIME_CLASS(CHexaEditor),CSize(),&cc); // commented out as created manually below
-				hexaEditor.Update( &fSectorData );
+				hexaEditor.Update( &fSectorData, &fSectorData );
 				hexaEditor.Create( nullptr, nullptr, AFX_WS_DEFAULT_VIEW&~WS_BORDER|WS_CLIPSIBLINGS, CFrameWnd::rectDefault, content.get(), content->IdFromRowCol(0,1) );
 				//hexaEditor.CreateEx( 0, HEXAEDITOR_BASE_CLASS, nullptr, AFX_WS_DEFAULT_VIEW&~WS_BORDER, RECT(), nullptr, content->IdFromRowCol(0,1), nullptr );
 		OnSize( SIZE_RESTORED, lpcs->cx, lpcs->cy );
@@ -163,12 +163,12 @@
 	}
 
 	RCPhysicalAddress CCriticalSectorView::GetPhysicalAddress() const{
-		return fSectorData.fatPath.GetHealthyItem(0)->chs;
+		return fSectorData.fatPath->GetHealthyItem(0)->chs;
 	}
 
 	void CCriticalSectorView::ChangeToSector(RCPhysicalAddress rChs){
 		// changes to a different Sector with the PhysicalAddress specified
-		fSectorData.fatPath.GetHealthyItem(0)->chs=rChs;
+		fSectorData.fatPath->GetHealthyItem(0)->chs=rChs;
 		fSectorData.SeekToBegin();
 	}
 

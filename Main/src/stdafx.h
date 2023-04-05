@@ -62,6 +62,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 #include "..\..\Tdi\src\api.h"
 #include "..\..\PropGrid\src\api.h"
+#include "..\..\YAHEL\Yahel\src\api.h"
 
 #include "..\res\resource.h"
 #include "..\..\Externals\fdrawcmd\fdrawcmd.h"
@@ -155,6 +156,21 @@ struct TLogTimeInterval{
 #pragma warning( disable : 4228 ) // non-standard language extension
 #pragma warning( disable : 4341 ) // pre-C++14 enums shouldn't be signed
 
+#define ELLIPSIS	_T(". . .")
+
+#define COLOR_WHITE	0xffffff
+#define COLOR_BLACK	0
+#define COLOR_YELLOW 0xffff
+#define COLOR_RED	0xff
+
+#define TIME_NANO(n)	(n)
+#define TIME_MICRO(u)	((u)*1000)
+#define TIME_MILLI(m)	((m)*1000000)
+#define TIME_SECOND(s)	((s)*1000000000)
+
+#define TXT_EXTENSION	_T(".txt")
+#define TXT_FILTER		_T("Plain text (*") TXT_EXTENSION _T(")|*") TXT_EXTENSION _T("|")
+
 #include "Utils.h"
 #include "BackgroundAction.h"
 #include "Diff.h"
@@ -190,7 +206,7 @@ struct TLogTimeInterval{
 
 #define APP_FULLNAME	_T("Real and Imaginary Disk Editor")
 #define APP_ABBREVIATION _T("RIDE")
-#define APP_VERSION		_T("1.7 debug special")
+#define APP_VERSION		_T("1.7.1 debug special")
 //#define APP_SPECIAL_VER
 #define APP_IDENTIFIER	APP_ABBREVIATION APP_VERSION
 #define APP_CLASSNAME	_T("Afx:tomascz.") APP_ABBREVIATION
@@ -206,21 +222,6 @@ struct TLogTimeInterval{
 #define GITHUB_HTTPS_NAME		_T("https://github.com")
 #define GITHUB_API_SERVER_NAME	_T("api.github.com")
 #define GITHUB_VERSION_TAG_NAME	"\"tag_name\""
-
-#define ELLIPSIS	_T(". . .")
-
-#define COLOR_WHITE	0xffffff
-#define COLOR_BLACK	0
-#define COLOR_YELLOW 0xffff
-#define COLOR_RED	0xff
-
-#define TIME_NANO(n)	(n)
-#define TIME_MICRO(u)	((u)*1000)
-#define TIME_MILLI(m)	((m)*1000000)
-#define TIME_SECOND(s)	((s)*1000000000)
-
-#define TXT_EXTENSION	_T(".txt")
-#define TXT_FILTER		_T("Plain text (*") TXT_EXTENSION _T(")|*") TXT_EXTENSION _T("|")
 
 extern CRideApp app;
 

@@ -1,146 +1,89 @@
 #ifndef HEXAEDITOR_H
 #define HEXAEDITOR_H
 
-	#define HEXAEDITOR_RECORD_SIZE_INFINITE	0x7fffff00
-
-	struct TState{
-		int minFileSize,maxFileSize;
-		int logicalSize; // zero by default
-
-		inline
-		TState(){
-			::ZeroMemory( this, sizeof(*this) );
-		}
-
-		inline bool operator!=(const TState &r) const{
-			return ::memcmp( this, &r, sizeof(*this) )!=0;
-		}
-	};
-
-	class CHexaEditor:public CEditView, TState{
+	class CHexaEditor:public CCtrlView,protected Yahel::IOwner{
 	public:
-		typedef interface IContentAdviser{
-			virtual void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength,bool *pOutDataReady)=0;
-			virtual int LogicalPositionToRow(int logPos,BYTE nBytesInRow)=0;
-			virtual int RowToLogicalPosition(int row,BYTE nBytesInRow)=0;
-			virtual LPCWSTR GetRecordLabelW(int logPos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const=0;
-		} *PContentAdviser;
-	private:
-		class COleBinaryDataSource sealed:public COleDataSource{
-			CFile *const f;
-			const DWORD dataBegin,dataLength;
+		class CYahelStreamFile:public CFile,public IStream{
+			volatile ULONG nReferences;
 		public:
-			COleBinaryDataSource(CFile *_f,DWORD _dataBegin,DWORD dataEnd);
-
-			//BOOL OnRenderFileData(LPFORMATETC lpFormatEtc,CFile *pFile) override;
+			CYahelStreamFile();
+			CYahelStreamFile(const CYahelStreamFile &r);
+			virtual ~CYahelStreamFile();
+			// IUnknown methods
+			ULONG STDMETHODCALLTYPE AddRef() override;
+			ULONG STDMETHODCALLTYPE Release() override;
+			HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid,PVOID *ppvObject) override;
+			// IStream methods - all except for Clone are SEALED, override methods of CFile!
+			HRESULT STDMETHODCALLTYPE Seek(LARGE_INTEGER dlibMove,DWORD dwOrigin,ULARGE_INTEGER *plibNewPosition) override sealed;
+			HRESULT STDMETHODCALLTYPE SetSize(ULARGE_INTEGER libNewSize) override sealed;
+			HRESULT STDMETHODCALLTYPE CopyTo(IStream *pstm,ULARGE_INTEGER cb,ULARGE_INTEGER *pcbRead,ULARGE_INTEGER *pcbWritten) override sealed;
+			HRESULT STDMETHODCALLTYPE Commit(DWORD grfCommitFlags) override sealed;
+			HRESULT STDMETHODCALLTYPE Revert() override sealed;
+			HRESULT STDMETHODCALLTYPE LockRegion(ULARGE_INTEGER libOffset,ULARGE_INTEGER cb,DWORD dwLockType) override sealed;
+			HRESULT STDMETHODCALLTYPE UnlockRegion(ULARGE_INTEGER libOffset,ULARGE_INTEGER cb,DWORD dwLockType) override sealed;
+			HRESULT STDMETHODCALLTYPE Stat(STATSTG *pstatstg,DWORD grfStatFlag) override sealed;
+			HRESULT STDMETHODCALLTYPE Read(PVOID target,ULONG nCount,PULONG pcbRead) override sealed;
+			HRESULT STDMETHODCALLTYPE Write(LPCVOID data,ULONG dataLength,PULONG pcbWritten) override sealed;
 		};
-
-		typedef struct TEmphasis sealed{ // aka, "highlightings" in listing of underlying File (e.g. when comparing two Files using FileManager)
-			static const TEmphasis Terminator;
-
-			int a,z;
-			TEmphasis *pNext;
-		} *PEmphasis;
-
-		static void __informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId);
-
-		const PVOID param;
-		const Utils::CRideFont font;
-		const HACCEL hDefaultAccelerators;
-		BYTE nBytesInRow;
-		int nLogicalRows;
-		int nRowsDisplayed;
-		int nRowsOnPage;
-		HWND hPreviouslyFocusedWnd;
-		struct TCaret sealed{
-			bool ascii; // True <=> Caret is in the Ascii listing section
-			bool hexaLow; // True <=> ready to modify the lower half-byte in hexa mode
-			int selectionA; // beginning (including)
-			union{
-				int position; // current logical position in underlying File
-				const int selectionZ; // Selection end (excluding)
-			};
-			TCaret(int position); // ctor
-			TCaret &operator=(const TCaret &r);
-			void __detectNewSelection__();
-		} caret;
-		class CBookmarks sealed:CDWordArray{
-		public:
-			void __addBookmark__(int logPos);
-			void __removeBookmark__(int logPos);
-			void __removeAllBookmarks__();
-			int __getNearestNextBookmarkPosition__(int logPos) const;
-		} bookmarks;
-		PEmphasis emphases; // must be ordered ascending by A (and thus automatically also by Z)
-
-		mutable CCriticalSection locker;
-		PContentAdviser pContentAdviser;
-		BYTE addrLength; // Address format length (see ADDRESS_FORMAT); modified in ShowAddresses
-		bool editable;
-		TState update;
-
-		int __firstByteInRowToLogicalPosition__(int row) const;
-		int __logicalPositionToRow__(int logPos) const;
-		int __logicalPositionFromPoint__(const POINT &rPoint,bool *pOutAsciiArea) const;
-		int __scrollToRow__(int row);
-		void ScrollToCaretAsync();
-		void __refreshVertically__();
-		void __refreshCaretDisplay__() const;
-		void __showMessage__(LPCTSTR msg) const;
-		void SendEditNotification(WORD en) const;
 	protected:
-		class CSearch sealed{
-			static UINT AFX_CDECL SearchForward_thread(PVOID pCancelableAction);
-		public:
-			CFile *f;
-			int logPosFound;
-			enum:int{ // in order of radio buttons in the "Find" dialog
-				ASCII_ANY_CASE,
-				HEXA,
-				NOT_BYTE,
-				ASCII_MATCH_CASE
-			} type;
-			union{
-				BYTE bytes[SCHAR_MAX];
-				char chars[SCHAR_MAX];
-			} pattern; // pattern to find
-			BYTE patternLength;
-
-			CSearch();
-
-			TStdWinError FindNextPositionModal();
-		} search;
-		int logPosScrolledTo; // LogicalPosition in the upper left corner of the hexa-editor
-
+		const CComPtr<Yahel::IInstance> instance;
+		const HACCEL hDefaultAccelerators;
 		Utils::CRideContextMenu contextMenu;
 
-		void PostNcDestroy() override sealed;
+		void PostNcDestroy() override;
+		BOOL PreTranslateMessage(PMSG pMsg) override;
+		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override sealed; // use ProcessCommand and Yahel's GetCustomCommandMenuFlags instead!
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
-		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override; // enabling/disabling ToolBar buttons
+
+		// --- Yahel::IOwner ---
+		// searching
+		bool QueryNewSearchParams(Yahel::TSearchParams &outSp) const override;
+		Yahel::TPosition ContinueSearching(const Yahel::TSearchParams &sp) const override;
+		// navigation
+		bool QueryAddressToGoTo(Yahel::TGoToParams &outGtp) const override;
+		// resetting
+		bool QueryByteToResetSelectionWith(Yahel::TResetSelectionParams &outRsp) const override;
+		// GUI
+		int GetCustomCommandMenuFlags(WORD cmd) const override;
+		bool ShowOpenFileDialog(LPCWSTR singleFilter,DWORD ofnFlags,PWCHAR lpszFileNameBuffer,WORD bufferCapacity) const override sealed;
+		bool ShowSaveFileDialog(LPCWSTR singleFilter,DWORD ofnFlags,PWCHAR lpszFileNameBuffer,WORD bufferCapacity) const override sealed;
+		void ShowInformation(Yahel::TMsg id,UINT errorCode=ERROR_SUCCESS) const override sealed;
+		bool ShowQuestionYesNo(Yahel::TMsg id,UINT defaultButton=MB_DEFBUTTON2) const override sealed;
+
 	public:
 		CHexaEditor(PVOID param);
-		~CHexaEditor();
 
-		void SetEditable(bool _editable);
-		bool IsEditable() const;
-		int ShowAddressBand(bool _show);
-		inline BYTE GetBytesPerRow() const{ return nBytesInRow; }
-		void Update(CFile *f);
-		void Update(CFile *f,int minFileSize,int maxFileSize);
-		void Reset(CFile *f,int minFileSize,int maxFileSize);
-		void SetLogicalBounds(int _minFileSize,int _maxFileSize);
-		int GetLogicalSize() const;
-		virtual void SetLogicalSize(int _logicalSize);
-		int GetLogicalSelection(PINT pOutSelA,PINT pOutSelZ) const;
-		void SetLogicalSelection(int selA,int selZ);
-		inline int GetCaretLogPos() const{ return GetLogicalSelection(nullptr,nullptr); }
-		void ScrollTo(int logicalPos,bool moveAlsoCaret=false);
-		void ScrollToRow(int iRow,bool moveAlsoCaret=false);
-		void GetVisiblePart(int &rLogicalBegin,int &rLogicalEnd) const;
-		void AddEmphasis(int a,int z);
-		void CancelAllEmphases();
-		void RepaintData() const;
-		BOOL PreTranslateMessage(PMSG pMsg) override;
+		virtual bool ProcessCustomCommand(UINT cmd);
+
+		// general
+		inline void SetEditable(bool editable) const{ return instance->SetEditable(editable); }
+		inline bool IsEditable() const{ return instance->IsEditable(); }
+		inline void ShowColumns(BYTE columns) const{ return instance->ShowColumns(columns); }
+		inline CComPtr<IStream> GetCurrentStream() const{ CComPtr<IStream> s; s.Attach(instance->GetCurrentStream()); return s; }
+		inline void Update(IStream *s,Yahel::Stream::IAdvisor *sa) const{ instance->Update(s,sa); }
+		inline void Update(IStream *s,Yahel::Stream::IAdvisor *sa,const Yahel::TPosInterval &fileLogicalSizeLimits) const{ instance->Update(s,sa,fileLogicalSizeLimits); }
+		inline void Reset(IStream *s,Yahel::Stream::IAdvisor *sa,const Yahel::TPosInterval &fileLogicalSizeLimits) const{ instance->Reset( s, sa, fileLogicalSizeLimits ); }
+		inline bool SetLogicalSizeLimits(const Yahel::TPosInterval &limits) const{ return instance->SetStreamLogicalSizeLimits(limits); }
+		inline void SetLogicalSize(Yahel::TPosition logicalSize) const{ return instance->SetStreamLogicalSize(logicalSize); }
+		inline Yahel::TPosition GetCaretPosition() const{ return instance->GetCaretPosition(); }
+		inline Yahel::TPosInterval GetSelectionAsc() const{ return instance->GetSelectionAsc(); }
+		inline void SetSelection(Yahel::TPosition selStart,Yahel::TPosition selEnd) const{ return instance->SetSelection(selStart,selEnd); }
+		inline Yahel::TPosInterval GetVisiblePart() const{ return instance->GetVisiblePart(); }
+		inline void ScrollTo(Yahel::TPosition pos,bool moveAlsoCaret=false) const{ return instance->ScrollTo(pos,moveAlsoCaret); }
+		inline void ScrollToRow(Yahel::TRow iRow,bool moveAlsoCaret=false) const{ return instance->ScrollToRow(iRow,moveAlsoCaret); }
+		inline void RepaintData() const{ return instance->RepaintData(); }
+		inline Yahel::TRow GetVertScrollPos() const{ return GetScrollPos(SB_VERT); }
+
+		// "Address" column
+		inline int GetAddressColumnWidth() const{ return instance->GetAddressColumnWidth(); }
+
+		// "Stream" column
+		inline WORD GetBytesPerRow() const{ return instance->GetStreamBytesCountPerRow(); }
+
+		// highlights
+		inline bool AddHighlight(const Yahel::TPosInterval &range) const{ return instance->AddHighlight(range,COLOR_YELLOW); }
+		inline bool AddHighlight(Yahel::TPosition a,Yahel::TPosition z) const{ return instance->AddHighlight( Yahel::TPosInterval(a,z), COLOR_YELLOW ); }
+		inline void RemoveAllHighlights() const{ return instance->RemoveAllHighlights(); }
 	};
 
 #endif // HEXAEDITOR_H

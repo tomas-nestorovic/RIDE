@@ -1,8 +1,9 @@
 #include "stdafx.h"
+using namespace Yahel;
 
 	CDos::CFileReaderWriter::CFileReaderWriter(const CDos *dos,PCFile file,bool wholeSectors)
 		// ctor to read/edit an existing File in Image
-		: dos(dos) , sectorLength(dos->formatBoot.sectorLength) , fatPath(dos,file)
+		: dos(dos) , sectorLength(dos->formatBoot.sectorLength) , fatPath(new CFatPath(dos,file))
 		, fileSize( wholeSectors ? dos->GetFileSizeOnDisk(file) : dos->GetFileOccupiedSize(file) )
 		, dataBeginOffsetInSector( wholeSectors ? 0 : dos->properties->dataBeginOffsetInSector)
 		, dataEndOffsetInSector( wholeSectors ? 0 : dos->properties->dataEndOffsetInSector )
@@ -12,7 +13,7 @@
 
 	CDos::CFileReaderWriter::CFileReaderWriter(const CDos *dos,RCPhysicalAddress chs)
 		// ctor to read/edit particular Sector in Image (e.g. Boot Sector)
-		: dos(dos) , sectorLength(dos->formatBoot.sectorLength) , fatPath(dos,chs)
+		: dos(dos) , sectorLength(dos->formatBoot.sectorLength) , fatPath(new CFatPath(dos,chs))
 		, fileSize(sectorLength)
 		, dataBeginOffsetInSector(0) , dataEndOffsetInSector(0)
 		, position(0)
@@ -87,7 +88,7 @@
 		nCount=std::min<UINT>(nCount,fileSize-position);
 		const UINT nBytesToRead=nCount;
 		CFatPath::PCItem item; DWORD n;
-		if (!fatPath.GetItems(item,n)){
+		if (!fatPath->GetItems(item,n)){
 			div_t d=div((int)position,(int)sectorLength-dataBeginOffsetInSector-dataEndOffsetInSector);
 			item+=d.quot, n-=d.quot; // skipping Sectors from which not read
 			bool readWithoutCrcError=true;
@@ -116,7 +117,7 @@
 		// tries to write given NumberOfBytes from the Buffer to the current Position (increments the Position by the number of Bytes actually written)
 		nCount=std::min<UINT>(nCount,fileSize-position);
 		CFatPath::PCItem item; DWORD n;
-		if (!fatPath.GetItems(item,n)){
+		if (!fatPath->GetItems(item,n)){
 			div_t d=div((int)position,(int)sectorLength-dataBeginOffsetInSector-dataEndOffsetInSector);
 			item+=d.quot, n-=d.quot; // skipping Sectors into which not written
 			bool writtenWithoutCrcError=true;
@@ -175,7 +176,7 @@
 	const TPhysicalAddress &CDos::CFileReaderWriter::GetCurrentPhysicalAddress() const{
 		// returns the PhysicalAddress currently seeked to
 		const div_t d=div( (int)position, (int)sectorLength-dataBeginOffsetInSector-dataEndOffsetInSector );
-		if (const CDos::CFatPath::PCItem p=fatPath.GetItem(d.quot)) // Sector exists
+		if (const CDos::CFatPath::PCItem p=fatPath->GetItem(d.quot)) // Sector exists
 			return p->chs;
 		else
 			return TPhysicalAddress::Invalid;
@@ -194,8 +195,22 @@
 
 
 
+	HRESULT CDos::CFileReaderWriter::Clone(IStream **ppstm){
+		if (ppstm){
+			*ppstm=new CFileReaderWriter(*this);
+			return S_OK;
+		}else
+			return E_INVALIDARG;
+	}
 
-	void CDos::CFileReaderWriter::GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength,bool *pOutDataReady){
+
+
+
+
+
+
+
+	void CDos::CFileReaderWriter::GetRecordInfo(TPosition logPos,PPosition pOutRecordStartLogPos,PPosition pOutRecordLength,bool *pOutDataReady){
 		// retrieves the start logical position and length of the Record pointed to by the input LogicalPosition
 		if (pOutRecordStartLogPos)
 			*pOutRecordStartLogPos = logPos/recordLength * recordLength;
@@ -205,23 +220,23 @@
 			*pOutDataReady=true;
 	}
 
-	int CDos::CFileReaderWriter::LogicalPositionToRow(int logPos,BYTE nBytesInRow){
+	TRow CDos::CFileReaderWriter::LogicalPositionToRow(TPosition logPos,WORD nBytesInRow){
 		// computes and returns the row containing the specified LogicalPosition
-		const div_t d=div( logPos, recordLength );
-		const int nRowsPerRecord = (recordLength+nBytesInRow-1)/nBytesInRow;
+		const auto d=div( logPos, (TPosition)recordLength );
+		const TRow nRowsPerRecord = (recordLength+nBytesInRow-1)/nBytesInRow;
 		return d.quot*nRowsPerRecord + d.rem/nBytesInRow;// + (d.rem+nBytesInRow-1)/nBytesInRow;
 	}
 
-	int CDos::CFileReaderWriter::RowToLogicalPosition(int row,BYTE nBytesInRow){
+	TPosition CDos::CFileReaderWriter::RowToLogicalPosition(TRow row,WORD nBytesInRow){
 		// converts Row begin (i.e. its first Byte) to corresponding logical position in underlying File and returns the result
-		const int nRowsPerRecord = (recordLength+nBytesInRow-1)/nBytesInRow;
-		const div_t d=div( row, nRowsPerRecord );
+		const TRow nRowsPerRecord = (recordLength+nBytesInRow-1)/nBytesInRow;
+		const auto d=div( row, nRowsPerRecord );
 		return d.quot*recordLength + d.rem*nBytesInRow;
 	}
 
-	LPCWSTR CDos::CFileReaderWriter::GetRecordLabelW(int logPos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const{
+	LPCWSTR CDos::CFileReaderWriter::GetRecordLabelW(TPosition logPos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const{
 		// populates the Buffer with label for the Record that STARTS at specified LogicalPosition, and returns the Buffer; returns Null if no Record starts at specified LogicalPosition
-		const div_t d=div( logPos, recordLength );
+		const auto d=div( logPos, (TPosition)recordLength );
 		if (!d.rem){
 			CDos::CFatPath::PCItem pItem; DWORD nItems;
 			#ifdef UNICODE
@@ -230,7 +245,7 @@
 				else
 					return ::lstrcpyn( labelBuffer, (pItem+d.quot)->chs.sectorId.ToString(), labelBufferCharsMax );
 			#else
-				if (const LPCTSTR err=fatPath.GetItems(pItem,nItems))
+				if (const LPCTSTR err=fatPath->GetItems(pItem,nItems))
 					::MultiByteToWideChar( CP_ACP, 0, err,-1, labelBuffer,labelBufferCharsMax );
 				else
 					::MultiByteToWideChar( CP_ACP, 0, (pItem+d.quot)->chs.sectorId.ToString(),-1, labelBuffer,labelBufferCharsMax );
@@ -257,32 +272,29 @@
 		contextMenu.AppendMenu( MF_BYCOMMAND|MF_STRING, ID_TIME, _T("Timing under cursor...") );
 	}
 
-	BOOL CDos::CFileReaderWriter::CHexaEditor::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){
-		// command processing
-		CFileReaderWriter &frw=*(CFileReaderWriter *)search.f;
-		switch (nCode){
-			case CN_UPDATE_COMMAND_UI:
-				// update
-				switch (nID){
-					case ID_TIME:
-						((CCmdUI *)pExtra)->Enable( frw.dos->image->ReadTrack(0,0) );
-						return TRUE;
-				}
-				break;
-			case CN_COMMAND:
-				// command
-				switch (nID){
-					case ID_TIME:
-						frw.Seek( GetCaretLogPos(), CFile::begin );
-						frw.dos->image->ShowModalTrackTimingAt(
-							frw.GetCurrentPhysicalAddress(),
-							0, // no Sectors with duplicated ID fields are expected for any File!
-							frw.GetPositionInCurrentSector(),
-							Revolution::ANY_GOOD
-						);
-						return TRUE;
-				}
-				break;
+	int CDos::CFileReaderWriter::CHexaEditor::GetCustomCommandMenuFlags(WORD cmd) const{
+		// custom command GUI update
+		const CFileReaderWriter &frw=*(const CFileReaderWriter *)GetCurrentStream().p;
+		switch (cmd){
+			case ID_TIME:
+				return MF_GRAYED*!( frw.dos->image->ReadTrack(0,0) );
 		}
-		return __super::OnCmdMsg(nID,nCode,pExtra,pHandlerInfo);
+		return __super::GetCustomCommandMenuFlags(cmd);
+	}
+
+	bool CDos::CFileReaderWriter::CHexaEditor::ProcessCustomCommand(UINT cmd){
+		// custom command processing
+		CFileReaderWriter &frw=*(CFileReaderWriter *)GetCurrentStream().p;
+		switch (cmd){
+			case ID_TIME:
+				frw.Seek( instance->GetCaretPosition(), CFile::begin );
+				frw.dos->image->ShowModalTrackTimingAt(
+					frw.GetCurrentPhysicalAddress(),
+					0, // no Sectors with duplicated ID fields are expected for any File!
+					frw.GetPositionInCurrentSector(),
+					Revolution::ANY_GOOD
+				);
+				return true;
+		}
+		return __super::ProcessCustomCommand(cmd);
 	}

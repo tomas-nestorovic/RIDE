@@ -1,4 +1,5 @@
 #include "stdafx.h"
+using namespace Yahel;
 
 	static LPCTSTR Recognize(PTCHAR){
 		static constexpr TCHAR SingleDeviceName[]=_T("Raw data image\0");
@@ -792,7 +793,7 @@ trackNotFound:
 		return ERROR_SUCCESS;
 	}
 
-	std::unique_ptr<CImage::CSectorDataSerializer> CImageRaw::CreateSectorDataSerializer(CHexaEditor *pParentHexaEditor){
+	CImage::CSectorDataSerializer *CImageRaw::CreateSectorDataSerializer(CHexaEditor *pParentHexaEditor){
 		// abstracts all Sector data (good and bad) into a single file and returns the result
 		// - defining the Serializer class
 		static const BYTE nDiscoveredRawRevolutions=1;
@@ -851,20 +852,20 @@ trackNotFound:
 				//nop
 			}
 
-			// CHexaEditor::IContentAdviser methods
-			int LogicalPositionToRow(int logPos,BYTE nBytesInRow) override{
+			// Yahel::Stream::IAdvisor methods
+			TRow LogicalPositionToRow(TPosition logPos,WORD nBytesInRow) override{
 				// computes and returns the row containing the specified LogicalPosition
-				const div_t d=div( logPos, image->sectorLength );
-				const int nRowsPerRecord = (image->sectorLength+nBytesInRow-1)/nBytesInRow;
+				const auto d=div( logPos, (TPosition)image->sectorLength );
+				const TRow nRowsPerRecord = (image->sectorLength+nBytesInRow-1)/nBytesInRow;
 				return d.quot*nRowsPerRecord + d.rem/nBytesInRow;
 			}
-			int RowToLogicalPosition(int row,BYTE nBytesInRow) override{
+			TPosition RowToLogicalPosition(TRow row,WORD nBytesInRow) override{
 				// converts Row begin (i.e. its first Byte) to corresponding logical position in underlying File and returns the result
-				const int nRowsPerRecord = (image->sectorLength+nBytesInRow-1)/nBytesInRow;
-				const div_t d=div( row, nRowsPerRecord );
+				const TRow nRowsPerRecord = (image->sectorLength+nBytesInRow-1)/nBytesInRow;
+				const auto d=div( row, nRowsPerRecord );
 				return d.quot*image->sectorLength + d.rem*nBytesInRow;
 			}
-			void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength,bool *pOutDataReady) override{
+			void GetRecordInfo(TPosition logPos,PPosition pOutRecordStartLogPos,PPosition pOutRecordLength,bool *pOutDataReady) override{
 				// retrieves the start logical position and length of the Record pointed to by the input LogicalPosition
 				if (pOutRecordStartLogPos)
 					*pOutRecordStartLogPos = logPos/image->sectorLength*image->sectorLength;
@@ -873,7 +874,7 @@ trackNotFound:
 				if (pOutDataReady)
 					*pOutDataReady=true;
 			}
-			LPCWSTR GetRecordLabelW(int logPos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override{
+			LPCWSTR GetRecordLabelW(TPosition logPos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override{
 				// populates the Buffer with label for the Record that STARTS at specified LogicalPosition, and returns the Buffer; returns Null if no Record starts at specified LogicalPosition
 				if (logPos%image->sectorLength==0){
 					TTrack track; BYTE sectorIndex;
@@ -891,5 +892,5 @@ trackNotFound:
 			}
 		};
 		// - returning a Serializer class instance
-		return std::unique_ptr<CSectorDataSerializer>( new CSerializer( pParentHexaEditor, this ) );
+		return new CSerializer(pParentHexaEditor,this);
 	}

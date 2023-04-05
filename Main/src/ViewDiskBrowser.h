@@ -8,8 +8,8 @@
 			TPhysicalAddress chs;
 			BYTE nSectorsToSkip;
 		} seekTo;
-		int iScrollY; // ScrollBar position
-		std::unique_ptr<CImage::CSectorDataSerializer> f;
+		Yahel::TRow iScrollY; // ScrollBar position
+		CComPtr<CImage::CSectorDataSerializer> f;
 		Revolution::TType revolution;
 
 		void UpdateStatusBar();
@@ -19,15 +19,14 @@
 		afx_msg LRESULT ReportScanningProgress(WPARAM,LPARAM);
 		afx_msg void __closeView__();
 		void OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint) override;
-		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
+		int GetCustomCommandMenuFlags(WORD cmd) const override;
+		bool ProcessCustomCommand(UINT cmd) override;
 	public:
 		static CDiskBrowserView &CreateAndSwitchToTab(PImage image,RCPhysicalAddress chsToSeekTo,BYTE nSectorsToSkip);
 
 		const CMainWindow::CTdiView::TTab tab;
 
 		CDiskBrowserView(PImage image,RCPhysicalAddress chsToSeekTo,BYTE nSectorsToSkip);
-
-		void SetLogicalSize(int newLogicalSize) override;
 	};
 
 #endif // DISKHEXAVIEW_H

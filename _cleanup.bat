@@ -22,3 +22,8 @@ REM --- TDI project clean-up ---
 cd Tdi
 rd /s /q debug ipch release "Release MFC 4.2" "Debug in RAMdisk"
 cd..
+
+REM --- Yahel module clean-up ---
+cd Yahel
+_cleanup.bat
+cd..

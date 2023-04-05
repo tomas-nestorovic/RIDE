@@ -6,6 +6,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PropGrid", "PropGrid\PropGr
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Tdi", "Tdi\Tdi.vcxproj", "{A9001EA5-CA73-483D-B494-AFE3B98D7E1D}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Yahel", "YAHEL\Yahel\Yahel.vcxproj", "{7D9A9C78-93DB-426C-9082-B466ED09BFEA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug in RAMdisk|Win32 = Debug in RAMdisk|Win32
@@ -38,6 +40,14 @@ Global
 		{4942F917-831D-40A3-BE9F-EA565D721A34}.Release MFC 4.2|Win32.Build.0 = Release MFC 4.2|Win32
 		{4942F917-831D-40A3-BE9F-EA565D721A34}.Release|Win32.ActiveCfg = Release|Win32
 		{4942F917-831D-40A3-BE9F-EA565D721A34}.Release|Win32.Build.0 = Release|Win32
+		{7D9A9C78-93DB-426C-9082-B466ED09BFEA}.Debug in RAMdisk|Win32.ActiveCfg = Debug|Win32
+		{7D9A9C78-93DB-426C-9082-B466ED09BFEA}.Debug in RAMdisk|Win32.Build.0 = Debug|Win32
+		{7D9A9C78-93DB-426C-9082-B466ED09BFEA}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7D9A9C78-93DB-426C-9082-B466ED09BFEA}.Debug|Win32.Build.0 = Debug|Win32
+		{7D9A9C78-93DB-426C-9082-B466ED09BFEA}.Release MFC 4.2|Win32.ActiveCfg = Release MFC 4.2|Win32
+		{7D9A9C78-93DB-426C-9082-B466ED09BFEA}.Release MFC 4.2|Win32.Build.0 = Release MFC 4.2|Win32
+		{7D9A9C78-93DB-426C-9082-B466ED09BFEA}.Release|Win32.ActiveCfg = Release|Win32
+		{7D9A9C78-93DB-426C-9082-B466ED09BFEA}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

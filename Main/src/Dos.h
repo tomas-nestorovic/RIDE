@@ -109,7 +109,6 @@
 		class CHexaValuePropGridEditor sealed:public Utils::CRideDialog{
 			BYTE newValueBuffer[2048];
 			CHexaEditor hexaEditor;
-			CMemFile f;
 
 			void PreInitDialog() override;
 
@@ -191,7 +190,7 @@
 			LPCTSTR GetErrorDesc() const;
 		};
 
-		class CFileReaderWriter:public CFile,public CHexaEditor::IContentAdviser{
+		class CFileReaderWriter:public CHexaEditor::CYahelStreamFile,public Yahel::Stream::IAdvisor{
 			const WORD sectorLength; // e.g. for Spectrum Tape, the SectorLength may temporarily be faked to correctly segment a display Headers, and then reset to normal to correctly display Tape data; this is the backup of the eventually faked value
 			const BYTE dataBeginOffsetInSector,dataEndOffsetInSector;
 			#if _MFC_VER>=0x0A00
@@ -202,16 +201,17 @@
 			LONG position;
 			#endif
 		protected:
-			int recordLength;
+			Yahel::TPosition recordLength;
 		public:
 			class CHexaEditor:public ::CHexaEditor{
-				BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
+				int GetCustomCommandMenuFlags(WORD cmd) const override;
+				bool ProcessCustomCommand(UINT cmd) override;
 			public:
 				CHexaEditor(PVOID param);
 			};
 
 			const CDos *const dos;
-			const CFatPath fatPath;
+			const std::shared_ptr<const CFatPath> fatPath; // shared for copy ctor called in IStream::Clone method used for searching in YAHEL
 
 			CFileReaderWriter(const CDos *dos,PCFile file,bool wholeSectors=false); // ctor to read/edit an existing File on the Image
 			CFileReaderWriter(const CDos *dos,RCPhysicalAddress chs); // ctor to read/edit particular Sector in the Image (e.g. Boot Sector)
@@ -232,11 +232,14 @@
 			UINT Read(LPVOID lpBuf,UINT nCount) override;
 			void Write(LPCVOID lpBuf,UINT nCount) override;
 
-			// CHexaEditor::IContentAdviser methods
-			void GetRecordInfo(int logPos,PINT pOutRecordStartLogPos,PINT pOutRecordLength,bool *pOutDataReady) override;
-			int LogicalPositionToRow(int logPos,BYTE nBytesInRow) override;
-			int RowToLogicalPosition(int row,BYTE nBytesInRow) override;
-			LPCWSTR GetRecordLabelW(int logPos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override;
+			// IStream methods
+			HRESULT STDMETHODCALLTYPE Clone(IStream **ppstm) override;
+
+			// Yahel::Stream::IAdvisor methods
+			void GetRecordInfo(Yahel::TPosition pos,Yahel::PPosition pOutRecordStartLogPos,Yahel::PPosition pOutRecordLength,bool *pOutDataReady) override;
+			Yahel::TRow LogicalPositionToRow(Yahel::TPosition pos,WORD nStreamBytesInRow) override;
+			Yahel::TPosition RowToLogicalPosition(Yahel::TRow row,WORD nStreamBytesInRow) override;
+			LPCWSTR GetRecordLabelW(Yahel::TPosition pos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override;
 
 			// others
 			const TPhysicalAddress &GetCurrentPhysicalAddress() const;
@@ -319,9 +322,6 @@
 		TStdWinError __shiftFileContent__(const CFatPath &rFatPath,char nBytesShift) const;
 	public:
 		class CHexaPreview sealed:public CFilePreview{
-			CMemFile fEmpty;
-			std::unique_ptr<CFileReaderWriter> pFileRW;
-
 			void RefreshPreview() override;
 		public:
 			static CHexaPreview *pSingleInstance; // only single file can be previewed at a time

@@ -595,7 +595,7 @@
 			TStdWinError NormalizeEx(TLogTime timeOffset,bool fitTimesIntoIwMiddles,bool correctCellCountPerRevolution,bool correctRevolutionTime);
 		};
 
-		class CSectorDataSerializer abstract:public CFile,public CHexaEditor::IContentAdviser{
+		class CSectorDataSerializer abstract:public CHexaEditor::CYahelStreamFile,public Yahel::Stream::IAdvisor{
 		protected:
 			CHexaEditor *const pParentHexaEditor;
 			const PImage image;
@@ -623,6 +623,7 @@
 
 			const BYTE &nDiscoveredRevolutions;
 
+			// CFile methods
 			#if _MFC_VER>=0x0A00
 			ULONGLONG GetLength() const override sealed;
 			void SetLength(ULONGLONG dwNewLen) override sealed;
@@ -636,6 +637,11 @@
 			#endif
 			UINT Read(LPVOID lpBuf,UINT nCount) override sealed;
 			void Write(LPCVOID lpBuf,UINT nCount) override sealed;
+
+			// IStream methods
+			HRESULT STDMETHODCALLTYPE Clone(IStream **ppstm) override sealed;
+
+			// other
 			BYTE GetCurrentSectorIndexOnTrack() const;
 			inline WORD GetPositionInCurrentSector() const{ return sector.offset; }
 			BYTE GetAvailableRevolutionCount(TCylinder cyl,THead head) const;
@@ -708,7 +714,7 @@
 		virtual bool RequiresFormattedTracksVerification() const;
 		virtual TStdWinError PresumeHealthyTrackStructure(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,BYTE gap3,BYTE fillerByte);
 		virtual TStdWinError UnformatTrack(TCylinder cyl,THead head)=0;
-		virtual std::unique_ptr<CSectorDataSerializer> CreateSectorDataSerializer(CHexaEditor *pParentHexaEditor)=0;
+		virtual CSectorDataSerializer *CreateSectorDataSerializer(CHexaEditor *pParentHexaEditor)=0;
 		virtual TStdWinError CreateUserInterface(HWND hTdi);
 		void SetRedrawToAllViews(bool redraw) const;
 		bool ReportWriteProtection() const;

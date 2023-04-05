@@ -1,4 +1,5 @@
 #include "stdafx.h"
+using namespace Yahel;
 
 	#define INI_DIRENTRIES	_T("DirEnt")
 
@@ -15,12 +16,12 @@
 			if (const auto pdt=dos->BeginDirectoryTraversal(directory))
 				recordLength=pdt->entrySize;
 			else
-				recordLength=HEXAEDITOR_RECORD_SIZE_INFINITE;
+				recordLength=Stream::IAdvisor::GetMaximumRecordLength();
 		}
 
-		LPCWSTR GetRecordLabelW(int logPos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override{
+		LPCWSTR GetRecordLabelW(TPosition logPos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override{
 			// populates the Buffer with label for the Record that STARTS at specified LogicalPosition, and returns the Buffer; returns Null if no Record starts at specified LogicalPosition
-			div_t d=div( logPos, recordLength );
+			auto d=div( logPos, (TPosition)recordLength );
 			if (!d.rem){
 				const CDirEntriesView *const pdev=(CDirEntriesView *)param;
 				if (const auto pdt=pdev->DOS->BeginDirectoryTraversal(pdev->directory)){
@@ -59,7 +60,7 @@
 		// - modification of default HexaEditor's ContextMenu
 		const Utils::CRideContextMenu mainMenu( *tab.menu.GetSubMenu(0) );
 		contextMenu.ModifySubmenu(
-			contextMenu.GetPosByContainedSubcommand(ID_ZERO),
+			contextMenu.GetPosByContainedSubcommand(ID_YAHEL_EDIT_RESET_ZERO),
 			*mainMenu.GetSubMenu( mainMenu.GetPosByContainedSubcommand(ID_DEFAULT1) )
 		);
 		contextMenu.AppendSeparator();
@@ -70,7 +71,6 @@
 		ON_WM_CREATE()
 		ON_COMMAND(ID_IMAGE_PROTECT,ToggleWriteProtection)
 		ON_COMMAND(ID_FILE_CLOSE,__closeView__)
-		ON_WM_DESTROY()
 	END_MESSAGE_MAP()
 
 
@@ -85,9 +85,8 @@
 		if (__super::OnCreate(lpcs)==-1)
 			return -1;
 		// - displaying the content
-{		const Utils::CVarTempReset<WORD> sl0( DOS->formatBoot.sectorLength, sectorLength );
 		OnUpdate(nullptr,0,nullptr);
-}		// - recovering the Scroll position and repainting the view (by setting its editability)
+		// - recovering the Scroll position and repainting the view (by setting its editability)
 		SetEditable( !IMAGE->IsWriteProtected() );
 		// - navigating to a particular Directory entry
 		if (fileToSeekTo)
@@ -104,17 +103,9 @@
 
 	void CDirEntriesView::OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint){
 		// request to refresh the display of content
-		f.reset( new CDirectoryEntriesReaderWriter(DOS,directory) );
-		const auto dirLength=f->GetLength();
-		Update( f.get(), dirLength, dirLength );
-	}
-
-	afx_msg void CDirEntriesView::OnDestroy(){
-		// window destroyed
-		// - disposing the underlying File
-		f.reset();
-		// - base
-		__super::OnDestroy();
+		const Utils::CVarTempReset<WORD> sl0( DOS->formatBoot.sectorLength, sectorLength );
+		f.Attach( new CDirectoryEntriesReaderWriter(DOS,directory) );
+		Update( f, f, f->GetLength() );
 	}
 
 	afx_msg void CDirEntriesView::ToggleWriteProtection(){
@@ -127,67 +118,59 @@
 		CTdiCtrl::RemoveCurrentTab( TDI_HWND );
 	}
 
-	BOOL CDirEntriesView::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){
-		// command processing
-		switch (nCode){
-			case CN_UPDATE_COMMAND_UI:
-				// update
-				switch (nID){
-					case ID_DEFAULT1:
-						((CCmdUI *)pExtra)->Enable( IsEditable() );
-						return TRUE;
-					case ID_TIME:
-						((CCmdUI *)pExtra)->Enable( IMAGE->ReadTrack(0,0) );
-						return TRUE;
-				}
-				break;
-			case CN_COMMAND:
-				// command
-				switch (nID){
-					case ID_DEFAULT1:{
-						// resetting selected DirectoryEntries to their default content
-						// . getting the selection range
-						int selA,selZ;
-						GetLogicalSelection( &selA, &selZ );
-						if (selA>selZ)
-							std::swap(selA,selZ);
-						// . navigating to the first (at least partially) selected DirectoryEntry
-						const auto pdt=DOS->BeginDirectoryTraversal(directory);
-						for( DWORD n=selA/pdt->entrySize; n-->0; pdt->AdvanceToNextEntry() );
-						// . resetting the selected portion of DirectoryEntries
-						for( int dirEntryStart; selA<selZ; ){
-							pdt->AdvanceToNextEntry();
-							f->GetRecordInfo( selA, &dirEntryStart, nullptr, nullptr );
-							if (selA==dirEntryStart && dirEntryStart+pdt->entrySize<=selZ){
-								// whole DirectoryEntry requested to reset
-								pdt->ResetCurrentEntry(DOS->properties->directoryFillerByte);
-								IMAGE->MarkSectorAsDirty(pdt->chs);
-								f->Seek( selA+=pdt->entrySize, CFile::begin );
-							}else{
-								// just a part of the DirectoryEntry requested to reset
-								BYTE orgDirEntry[4096]; // should suffice to accommodate DirectoryEntry of *any* DOS
-								f->Seek( dirEntryStart, CFile::begin );
-								f->Read( orgDirEntry, pdt->entrySize );
-								pdt->ResetCurrentEntry(DOS->properties->directoryFillerByte);
-								f->Seek( dirEntryStart, CFile::begin );
-								BYTE rstDirEntry[4096]; // should suffice to accommodate DirectoryEntry of *any* DOS
-								f->Read( rstDirEntry, pdt->entrySize );
-								::memcpy( orgDirEntry+selA-dirEntryStart, rstDirEntry+selA-dirEntryStart, std::min<size_t>(selZ-selA,pdt->entrySize) );
-								f->Seek( dirEntryStart, CFile::begin );
-								f->Write( orgDirEntry, pdt->entrySize );
-								selA=std::min( dirEntryStart+pdt->entrySize, selZ );
-							}
-						}
-						RepaintData();
-						return TRUE;
-					}
-					case ID_TIME:
-						// display of low-level Track timing
-						f->Seek( GetCaretLogPos(), CFile::begin );
-						IMAGE->ShowModalTrackTimingAt( f->GetCurrentPhysicalAddress(), 0, f->GetPositionInCurrentSector(), Revolution::ANY_GOOD );
-						return TRUE;
-				}
-				break;
+	int CDirEntriesView::GetCustomCommandMenuFlags(WORD cmd) const{
+		// custom command GUI update
+		switch (cmd){
+			case ID_DEFAULT1:
+				return MF_GRAYED*!( IsEditable() );
+			case ID_TIME:
+				return MF_GRAYED*!( IMAGE->ReadTrack(0,0) );
 		}
-		return __super::OnCmdMsg(nID,nCode,pExtra,pHandlerInfo);
+		return __super::GetCustomCommandMenuFlags(cmd);
+	}
+
+	bool CDirEntriesView::ProcessCustomCommand(UINT cmd){
+		// custom command processing
+		switch (cmd){
+			case ID_DEFAULT1:{
+				// resetting selected DirectoryEntries to their default content
+				// . getting the selection range
+				auto sel=GetSelectionAsc();
+				// . navigating to the first (at least partially) selected DirectoryEntry
+				const auto pdt=DOS->BeginDirectoryTraversal(directory);
+				for( DWORD n=sel.a/pdt->entrySize; n-->0; pdt->AdvanceToNextEntry() );
+				// . resetting the selected portion of DirectoryEntries
+				for( TPosition dirEntryStart; sel; ){
+					pdt->AdvanceToNextEntry();
+					f->GetRecordInfo( sel.a, &dirEntryStart, nullptr, nullptr );
+					if (sel.a==dirEntryStart && dirEntryStart+pdt->entrySize<=sel.z){
+						// whole DirectoryEntry requested to reset
+						pdt->ResetCurrentEntry(DOS->properties->directoryFillerByte);
+						IMAGE->MarkSectorAsDirty(pdt->chs);
+						f->Seek( sel.a+=pdt->entrySize, CFile::begin );
+					}else{
+						// just a part of the DirectoryEntry requested to reset
+						BYTE orgDirEntry[4096]; // should suffice to accommodate DirectoryEntry of *any* DOS
+						f->Seek( dirEntryStart, CFile::begin );
+						f->Read( orgDirEntry, pdt->entrySize );
+						pdt->ResetCurrentEntry(DOS->properties->directoryFillerByte);
+						f->Seek( dirEntryStart, CFile::begin );
+						BYTE rstDirEntry[4096]; // should suffice to accommodate DirectoryEntry of *any* DOS
+						f->Read( rstDirEntry, pdt->entrySize );
+						::memcpy( orgDirEntry+sel.a-dirEntryStart, rstDirEntry+sel.a-dirEntryStart, std::min<TPosition>(sel.GetLength(),pdt->entrySize) );
+						f->Seek( dirEntryStart, CFile::begin );
+						f->Write( orgDirEntry, pdt->entrySize );
+						sel.a=std::min<TPosition>( dirEntryStart+pdt->entrySize, sel.z );
+					}
+				}
+				RepaintData();
+				return true;
+			}
+			case ID_TIME:
+				// display of low-level Track timing
+				f->Seek( GetCaretPosition(), CFile::begin );
+				IMAGE->ShowModalTrackTimingAt( f->GetCurrentPhysicalAddress(), 0, f->GetPositionInCurrentSector(), Revolution::ANY_GOOD );
+				return true;
+		}
+		return __super::ProcessCustomCommand(cmd);
 	}

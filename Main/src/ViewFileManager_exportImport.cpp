@@ -118,7 +118,7 @@
 		// - preferring IStream whenever it's possible (speed reasons)
 		if (lpFormatEtc->tymed&TYMED_ISTREAM) lpFormatEtc->tymed=TYMED_ISTREAM;
 		// - rendering
-		return __super::OnRenderData(lpFormatEtc,lpStgMedium);
+			return __super::OnRenderData(lpFormatEtc,lpStgMedium);
 	}
 
 	BOOL CFileManagerView::COleVirtualFileDataSource::OnRenderGlobalData(LPFORMATETC lpFormatEtc, HGLOBAL *phGlobal){
@@ -692,10 +692,12 @@ importQuit2:		::GlobalUnlock(hg);
 
 	afx_msg void CFileManagerView::__onBeginDrag__(NMHDR *pNMHDR,LRESULT *pResult){
 		// dragging of Files initiated
-		// - creating the VirtualFileDataSource
-		COleVirtualFileDataSource obj(this,DROPEFFECT_NONE);
-		// - launching drag&drop
-		obj.DoDragDrop(DROPEFFECT_COPY|( IMAGE->writeProtected ? 0 : DROPEFFECT_MOVE )); // not contained in switch(.) because: (1) drag/drop adopts here the same logic as with copy/cut/paste - see communication of target with source in OnDrop, (2) the result of DoDragDrop is inaccurate - see DataSource's OnSetData
+		if (auto *const pObj=new COleVirtualFileDataSource(this,DROPEFFECT_NONE)){
+			pObj->DoDragDrop( // launching drag&drop
+				DROPEFFECT_COPY|( IMAGE->writeProtected ? 0 : DROPEFFECT_MOVE ) // not contained in switch(.) because: (1) drag/drop adopts here the same logic as with copy/cut/paste - see communication of target with source in OnDrop, (2) the result of DoDragDrop is inaccurate - see DataSource's OnSetData
+			);
+			pObj->ExternalRelease();
+		}
 		//Utils::InformationWithCheckableShowNoMore(_T("Extra information has been appended to each file name.\n\nTo import the file back in the exact form as on this image, preserve this information."),INI_MSG_FILE_EXPORT_INFO);
 	}
 

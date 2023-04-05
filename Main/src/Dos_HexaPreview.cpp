@@ -17,11 +17,9 @@
 		// - base
 		: CFilePreview( &hexaEditor, INI_PREVIEW, rFileManager, HEXA_WIDTH, HEXA_HEIGHT, false, 0 )
 		// - initialization
-		, fEmpty((PBYTE)&fEmpty,0)
 		, hexaEditor(DOS,this) {
 		pSingleInstance=this;
 		// - creating the HexaEditor view
-		hexaEditor.Reset(&fEmpty,0,0);
 		hexaEditor.Create( nullptr, nullptr, AFX_WS_DEFAULT_VIEW&~WS_BORDER|WS_CLIPSIBLINGS, rectDefault, this, AFX_IDW_PANE_FIRST );
 		hexaEditor.SetEditable(!IMAGE->IsWriteProtected());
 		// - showing the first File
@@ -41,9 +39,9 @@
 		// refreshes the Preview (e.g. when switched to another File)
 		if (const PCFile file=pdt->entry){
 			// . resetting the content of the HexaPreview
-			pFileRW.reset(new CFileReaderWriter(DOS,file));
-			const DWORD size=DOS->GetFileOccupiedSize(file);
-			hexaEditor.Reset( pFileRW.get(), size, size );
+			CFileReaderWriter *const frw=new CFileReaderWriter(DOS,file);
+				hexaEditor.Reset( frw, frw, DOS->GetFileOccupiedSize(file) );
+			frw->Release();
 			// . updating the window caption
 			CString caption;
 			caption.Format( LABEL _T(" (%s)"), (LPCTSTR)DOS->GetFilePresentationNameAndExt(file) );
