@@ -127,7 +127,8 @@ using namespace Yahel;
 	CHexaEditor::CHexaEditor(PVOID param)
 		// ctor
 		: CCtrlView( IInstance::GetBaseClassNameA(AfxGetInstanceHandle()), AFX_WS_DEFAULT_VIEW&~WS_BORDER )
-		, instance( IInstance::Create(AfxGetInstanceHandle(),this,param) )
+		, font(FONT_COURIER_NEW,105,false,true)
+		, instance( IInstance::Create(AfxGetInstanceHandle(),this,param,font) )
 		, hDefaultAccelerators( instance->GetAcceleratorTable() )
 		, contextMenu( instance->GetContextMenu() ) {
 		instance.p->Release();

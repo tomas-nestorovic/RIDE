@@ -26,6 +26,7 @@
 			HRESULT STDMETHODCALLTYPE Write(LPCVOID data,ULONG dataLength,PULONG pcbWritten) override sealed;
 		};
 	protected:
+		const Utils::CRideFont font;
 		const CComPtr<Yahel::IInstance> instance;
 		const HACCEL hDefaultAccelerators;
 		Utils::CRideContextMenu contextMenu;
