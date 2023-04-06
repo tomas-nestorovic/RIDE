@@ -365,7 +365,7 @@
 		return ERROR_SUCCESS;
 	}
 
-	#define INFO_ATTRIBUTES	_T("T%x")
+	#define INFO_ATTRIBUTES	_T("R%x")
 
 	CString CMDOS2::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
 		// returns File name concatenated with File extension for export of the File to another Windows application (e.g. Explorer)
