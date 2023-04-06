@@ -690,7 +690,7 @@ reformatTrack:		if (!p.trackWriteable){ // formatting the Track only if can't wr
 {LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("writing to Target Track"));
 				if (p.trackWriteable)
 					// can use the CImage::WriteTrack to write the whole Track at once
-					while (err=dp.target->WriteTrack( p.chs.cylinder, p.chs.head, trSrc )){
+					for( trSrc.RewindToIndex(0); err=dp.target->WriteTrack( p.chs.cylinder, p.chs.head, trSrc ); ){
 						TCHAR buf[80];
 						::wsprintf( buf, _T("Can't write target Track %d"), p.track );
 						switch (Utils::AbortRetryIgnore(buf,err,MB_DEFBUTTON2)){
