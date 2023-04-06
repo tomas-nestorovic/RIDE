@@ -306,7 +306,7 @@
 		DrawReportModeCell( number, pdis, !checkmark );
 		// - "check" or "cross" symbol
 		const HDC dc=pdis->hDC;
-		r.left=std::max<>(r.right,r.left), r.right+=statusWidth;
+		r.left=std::max(r.right,r.left), r.right+=statusWidth;
 		const int color0 =	pdis->itemState&ODS_SELECTED
 							? ::GetTextColor(dc)
 							: ::SetTextColor( dc, checkmark?0xa0ffa0:0xff );

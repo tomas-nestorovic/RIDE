@@ -57,10 +57,10 @@
 				lOff+=position;
 				//fallthrough
 			case SeekPosition::begin:
-				position=std::min<>(lOff,dataTotalLength);
+				position=std::min(lOff,dataTotalLength);
 				break;
 			case SeekPosition::end:
-				position=std::max<>( dataTotalLength-lOff, (decltype(position))0 );
+				position=std::max( dataTotalLength-lOff, (decltype(position))0 );
 				break;
 			default:
 				ASSERT(FALSE);

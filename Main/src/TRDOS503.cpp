@@ -507,7 +507,7 @@
 									: fileSize; // ... otherwise take as the official File size the actual size of imported file
 		// - determining how much space the File will take on disk
 		const DWORD fileSizeOnDisk=	uts==TUniFileType::PROGRAM || uts==TUniFileType::NUMBER_ARRAY || uts==TUniFileType::CHAR_ARRAY
-									? std::max<>(fileSizeFormal,fileSize)+4 // "+4" = (WORD)0xAA80 (the mark that introduces a parameter "after" official data) and a WORD parameter
+									? std::max(fileSizeFormal,fileSize)+4 // "+4" = (WORD)0xAA80 (the mark that introduces a parameter "after" official data) and a WORD parameter
 									: fileSize;
 		// - checking if there's enough empty space on disk
 		TStdWinError err;

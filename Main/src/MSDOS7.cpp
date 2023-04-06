@@ -1105,7 +1105,7 @@
 						rlnp.msdos->MarkDirectorySectorAsDirty(de);
 					}
 				}
-				pAction->UpdateProgress( state=std::max<>(state,dt.chs.cylinder) );
+				pAction->UpdateProgress( state=std::max(state,dt.chs.cylinder) );
 			}
 		return pAction->TerminateWithSuccess();
 	}

@@ -148,8 +148,7 @@
 			// generating the list of Files for another RIDE instance
 			const Utils::CVarTempReset<bool> gscen0( fileManager->DOS->generateShellCompliantExportNames, false ); // changing underlying DOS' setting is important ...
 			const Utils::CVarTempReset<CLIPFORMAT> cf0( lpFormatEtc->cfFormat, CRideApp::cfDescriptor );
-			COleVirtualFileDataSource::OnRenderGlobalData( lpFormatEtc, phGlobal); // ... after which we can proceed normally
-			return TRUE;
+			return OnRenderGlobalData( lpFormatEtc, phGlobal); // ... after which we can proceed normally
 		}else
 			// other form of generating (i.e. other than using CFSTR_FILEDESCRIPTOR)
 			return __super::OnRenderGlobalData(lpFormatEtc,phGlobal);

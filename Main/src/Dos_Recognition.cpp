@@ -256,7 +256,7 @@
 													&recognition.order[i+1],
 													sizeof(CDos::PCProperties)*((recognition.nDoses--)-i)
 												);
-										lbIgnored.SetCurSel( std::min<>(lbIgnored.GetCurSel(),lbIgnored.GetCount()-2) );
+										lbIgnored.SetCurSel( std::min(lbIgnored.GetCurSel(),lbIgnored.GetCount()-2) );
 									lbIgnored.Detach();
 									// . adding (and selecting) the DOS to the "recognized portion" of the Recognition Order
 									lb.SetItemDataPtr( lb.AddString(""), (PVOID)&CUnknownDos::Properties ); // a dummy item for the below selection index to be valid
@@ -271,7 +271,7 @@
 												sizeof(CDos::PCProperties)*(iUnknownDos-i)
 											);
 									recognition.order[iUnknownDos]=props;
-									lb.SetCurSel( std::min<>(i-1,lb.GetCount()-2) );
+									lb.SetCurSel( std::min(i-1,lb.GetCount()-2) );
 									break;
 								}
 							}

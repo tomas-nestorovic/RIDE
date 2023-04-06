@@ -825,8 +825,7 @@ reportError:Utils::Information(buf);
 			return LOG_MESSAGE(err);
 		else{
 			BYTE nBytesReservedBeforeData;
-			DWORD nDataBytesToExport=GetFileSize(file,&nBytesReservedBeforeData,nullptr);
-			nDataBytesToExport=std::min<>( nDataBytesToExport, nMaxDataBytesToExport );
+			DWORD nDataBytesToExport=std::min( GetFileSize(file,&nBytesReservedBeforeData,nullptr), nMaxDataBytesToExport );
 			div_t d=div((int)nBytesReservedBeforeData,(int)formatBoot.sectorLength-properties->dataBeginOffsetInSector-properties->dataEndOffsetInSector);
 			item+=d.quot, n-=d.quot; // skipping Sectors from which not read thanks to the NumberOfBytesReservedBeforeData
 			for( const Utils::CByteIdentity sectorIdAndPositionIdentity; n; ){
@@ -887,7 +886,7 @@ reportError:Utils::Information(buf);
 			if (pOutError)
 				*pOutError=errMsg;
 		}
-		return std::min<>( GetFileSize(file), nBytesToExportMax );
+		return std::min( GetFileSize(file), nBytesToExportMax );
 	}
 
 	TStdWinError CDos::__importFileData__(CFile *f,PFile fDesc,RCPathString fileName,RCPathString fileExt,DWORD fileSize,bool skipBadSectors,PFile &rFile,CFatPath &rFatPath){
@@ -1214,7 +1213,7 @@ reportError:Utils::Information(buf);
 		CFormatDialog::PCStdFormat pStdFmt=stdFormats;
 		for( BYTE n=nStdFormats; n-->0; pStdFmt++ )
 			if (pStdFmt->params.format.mediumType & medium)
-				result=std::min<>( result, pStdFmt->params.gap3 );
+				result=std::min( result, pStdFmt->params.gap3 );
 		return result;
 	}
 

@@ -2003,8 +2003,8 @@ namespace Utils{
 		ASSERT(saturationFactor>=0);
 		COLORREF result=0;
 		for( BYTE i=sizeof(COLORREF),*pbIn=(PBYTE)&currentColor,*pbOut=(PBYTE)&result; i-->0; ){
-			const WORD w=*pbIn++*saturationFactor;
-			*pbOut++=std::min<>( w, (WORD)255 );
+			const float w=*pbIn++*saturationFactor;
+			*pbOut++=std::min( w, 255.f );
 		}
 		return result;
 	}
@@ -2014,8 +2014,8 @@ namespace Utils{
 		ASSERT(0.f<=blendFactor && blendFactor<=1.f);
 		COLORREF result=0;
 		for( BYTE i=sizeof(COLORREF),*pbIn1=(PBYTE)&color1,*pbIn2=(PBYTE)&color2,*pbOut=(PBYTE)&result; i-->0; ){
-			const WORD w = blendFactor**pbIn1++ + (1.f-blendFactor)**pbIn2++;
-			*pbOut++=std::min<>( w, (WORD)255 );
+			const float w = blendFactor**pbIn1++ + (1.f-blendFactor)**pbIn2++;
+			*pbOut++=std::min( w, 255.f );
 		}
 		return result;
 	}

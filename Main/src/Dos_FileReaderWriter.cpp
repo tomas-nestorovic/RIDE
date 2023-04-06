@@ -72,10 +72,10 @@ using namespace Yahel;
 				lOff+=position;
 				//fallthrough
 			case SeekPosition::begin:
-				position=std::min<>(lOff,fileSize);
+				position=std::min(lOff,fileSize);
 				break;
 			case SeekPosition::end:
-				position=std::max<>( fileSize-lOff, (decltype(position))0 );
+				position=std::max( fileSize-lOff, (decltype(position))0 );
 				break;
 			default:
 				ASSERT(FALSE);
