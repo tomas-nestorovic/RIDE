@@ -1,7 +1,6 @@
 //Microsoft Developer Studio generated resource script.
 //
 #include "resource.h"
-#include "..\..\YAHEL\Yahel\src\api.h"
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
@@ -10,6 +9,8 @@
 //
 #include "afxres.h"
 #include "windows.h"
+#include "..\..\YAHEL\Yahel\res\resource.h"
+#include "..\..\YAHEL\Yahel\src\api.h"
 
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
@@ -108,20 +109,20 @@ END
 IDR_HEXAEDITOR ACCELERATORS DISCARDABLE 
 BEGIN
     "0",            ID_YAHEL_EDIT_RESET_ZERO, VIRTKEY, CONTROL, NOINVERT
-    "A",            ID_YAHEL_SELECT_ALL,     VIRTKEY, CONTROL, NOINVERT
-    "A",            ID_YAHEL_SELECT_NONE,    VIRTKEY, SHIFT, CONTROL, 
+    "A",            ID_YAHEL_SELECT_ALL,    VIRTKEY, CONTROL, NOINVERT
+    "A",            ID_YAHEL_SELECT_NONE,   VIRTKEY, SHIFT, CONTROL, 
                                                     NOINVERT
-    "C",            ID_YAHEL_EDIT_COPY,           VIRTKEY, CONTROL, NOINVERT
+    "C",            ID_YAHEL_EDIT_COPY,     VIRTKEY, CONTROL, NOINVERT
     "F",            ID_YAHEL_FIND,          VIRTKEY, CONTROL, NOINVERT
-    "G",            ID_YAHEL_GOTO_ADDRESS,    VIRTKEY, CONTROL, NOINVERT
-    "K",            ID_YAHEL_BOOKMARK_TOGGLE,     VIRTKEY, CONTROL, NOINVERT
+    "G",            ID_YAHEL_GOTO_ADDRESS,  VIRTKEY, CONTROL, NOINVERT
+    "K",            ID_YAHEL_BOOKMARK_TOGGLE, VIRTKEY, CONTROL, NOINVERT
     "R",            ID_YAHEL_SELECT_CURRENT, VIRTKEY, CONTROL, NOINVERT
-    "V",            ID_YAHEL_EDIT_PASTE,          VIRTKEY, CONTROL, NOINVERT
-    VK_F11,         ID_YAHEL_BOOKMARK_PREV,       VIRTKEY, CONTROL, NOINVERT
-    VK_F12,         ID_YAHEL_BOOKMARK_NEXT,       VIRTKEY, CONTROL, NOINVERT
+    "V",            ID_YAHEL_EDIT_PASTE,    VIRTKEY, CONTROL, NOINVERT
+    VK_F11,         ID_YAHEL_BOOKMARK_PREV, VIRTKEY, CONTROL, NOINVERT
+    VK_F12,         ID_YAHEL_BOOKMARK_NEXT, VIRTKEY, CONTROL, NOINVERT
     VK_F3,          ID_YAHEL_FIND_NEXT,     VIRTKEY, NOINVERT
-    VK_NEXT,        ID_YAHEL_GOTO_RECORD_NEXT,                VIRTKEY, CONTROL, NOINVERT
-    VK_PRIOR,       ID_YAHEL_GOTO_RECORD_PREV,                VIRTKEY, CONTROL, NOINVERT
+    VK_NEXT,        ID_YAHEL_GOTO_RECORD_NEXT, VIRTKEY, CONTROL, NOINVERT
+    VK_PRIOR,       ID_YAHEL_GOTO_RECORD_PREV, VIRTKEY, CONTROL, NOINVERT
 END
 
 IDR_DISKBROWSER ACCELERATORS DISCARDABLE 
@@ -2649,15 +2650,15 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 1 TEXTINCLUDE DISCARDABLE 
 BEGIN
-    "#include ""resource.h""\r\n"
-    "#include ""..\..\YAHEL\Yahel\res\resource.h""\r\n"
-    "\0"
+    "resource.h\0"
 END
 
 2 TEXTINCLUDE DISCARDABLE 
 BEGIN
     "#include ""afxres.h""\r\n"
     "#include ""windows.h""\r\n"
+    "#include ""..\\..\\YAHEL\\Yahel\\res\\resource.h""\r\n"
+    "#include ""..\\..\\YAHEL\\Yahel\\src\\api.h""\r\n"
     "\0"
 END
 
