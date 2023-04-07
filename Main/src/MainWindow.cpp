@@ -130,6 +130,8 @@
 		ON_COMMAND(ID_HELP_REPORT_BUG,__openUrl_reportBug__)
 		ON_COMMAND(ID_HELP_REPOSITORY,__openUrl_repository__)
 		ON_COMMAND(ID_HELP_TUTORIALS,__openUrl_tutorials__)
+		ON_COMMAND(ID_YAHEL_REPOSITORY,OpenYahelRepositoryUrl)
+		ON_COMMAND(ID_YAHEL_ABOUT,ShowYahelAbout)
 		ON_COMMAND(ID_CREDITS,__openUrl_credits__)
 	END_MESSAGE_MAP()
 
@@ -426,6 +428,18 @@ quitWithErr:const DWORD err=::GetLastError();
 	afx_msg void CMainWindow::__openUrl_tutorials__(){
 		// opens the webpage with development tutorials in a new Tab
 		OpenApplicationPresentationWebPage(_T("Tutorials"),_T("tutorials.html"));
+	}
+
+	afx_msg void CMainWindow::OpenYahelRepositoryUrl(){
+		// opens YAHEL repository webpage in a new Tab
+		OpenWebPage(
+			_T("GitHub"),
+			GITHUB_HTTPS_NAME _T("/tomas-nestorovic/YAHEL")
+		);
+	}
+
+	afx_msg void CMainWindow::ShowYahelAbout(){
+		Yahel::IInstance::ShowModalAboutDialog();
 	}
 
 	afx_msg void CMainWindow::__openUrl_credits__(){

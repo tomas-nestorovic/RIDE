@@ -26,6 +26,8 @@
 		afx_msg void __openUrl_reportBug__();
 		afx_msg void __openUrl_repository__();
 		afx_msg void __openUrl_tutorials__();
+		afx_msg void OpenYahelRepositoryUrl();
+		afx_msg void ShowYahelAbout();
 		afx_msg void __openUrl_credits__();
 	public:
 		struct CDynMenu:public CMenu{

@@ -267,6 +267,8 @@
 #define ID_ZOOM_IN                      40268
 #define ID_ZOOM_PART                    40269
 #define ID_ADDRESS                      40271
+#define ID_YAHEL_REPOSITORY             40272
+#define ID_YAHEL_ABOUT                  40273
 #define ID_ZX_PREVIEWASASSEMBLER        40277
 #define ID_PREV_BAD                     40278
 #define ID_NEXT_BAD                     40279

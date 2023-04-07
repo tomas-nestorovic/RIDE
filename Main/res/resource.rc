@@ -257,6 +257,12 @@ BEGIN
             MENUITEM "Repository (GitHub)",         ID_HELP_REPOSITORY
             MENUITEM "Tutorials (online)",          ID_HELP_TUTORIALS
             , GRAYED
+            MENUITEM SEPARATOR
+            POPUP "YAHEL"
+            BEGIN
+                MENUITEM "Repository (GitHub)",         ID_YAHEL_REPOSITORY
+                MENUITEM "About",                       ID_YAHEL_ABOUT
+            END
         END
         MENUITEM SEPARATOR
         MENUITEM "Credits (online)",            ID_CREDITS
