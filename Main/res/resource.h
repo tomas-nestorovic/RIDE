@@ -42,7 +42,6 @@
 #define IDR_RAW_SETTINGS                196
 #define IDR_MISC                        201
 #define IDR_SCATTERPLOT                 202
-#define IDR_HEXAEDITOR_FIND             203
 #define IDR_SINGLE_NUMBER               204
 #define IDR_DISKBROWSER                 205
 #define IDR_DISKBROWSER_GOTOSECTOR      206
@@ -243,8 +242,6 @@
 #define ID_ZX_BASIC_BINARY_SHOWNUMBER   40219
 #define ID_HELP_REPORT_BUG              40221
 #define ID_FILEMANAGER_DIR_HEXAMODE     40223
-#define ID_EDIT_FIND_PREV               40225
-#define ID_EDIT_FIND_NEXT               40226
 #define ID_EDIT_DELETE                  40227
 #define ID_BOOKMARK_NEXT                40230
 #define ID_HELP_REPOSITORY              40232
