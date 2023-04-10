@@ -249,7 +249,6 @@
 
 		void Dump() const;
 		void Patch();
-		void OnCloseDocument() override sealed;
 	protected:
 		static DWORD GetCurrentDiskFreeSpace();
 		static TStdWinError OpenImageForReading(LPCTSTR fileName,CFile &f);
@@ -671,11 +670,13 @@
 		mutable CCriticalSection locker;
 		CMainWindow::CDockableToolBar toolbar;
 		PDos dos;
+		CComPtr<IDataObject> dataInClipboard;
 
 		CImage(PCProperties _properties,bool hasEditableSettings);
 		~CImage();
 
 		BOOL OnSaveDocument(LPCTSTR lpszPathName) override sealed; // sealed = override CImage::SaveAllModifiedTracks instead
+		void OnCloseDocument() override sealed;
 		bool IsWriteProtected() const;
 		bool CanBeModified() const;
 		inline PCSide GetSideMap() const{ return sideMap; }

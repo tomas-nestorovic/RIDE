@@ -45,6 +45,7 @@
 
 	CSpectrumDos::CTape::~CTape(){
 		// dtor
+		OnCloseDocument();
 		if (pSingleInstance==this)
 			pSingleInstance=nullptr; // no longer accepting any requests
 		dos=nullptr; // to not destroy the Image (as DOS and Image are one structure in memory that is disposed at once)

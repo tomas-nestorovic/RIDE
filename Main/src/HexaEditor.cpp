@@ -21,7 +21,7 @@ using namespace Yahel;
 
 	CHexaEditor::CYahelStreamFile::CYahelStreamFile(const CYahelStreamFile &r)
 		// copy ctor
-		: CFile() {
+		: CFile() , nReferences(1) {
 		ASSERT( r.m_hFile==CFile::hFileNull ); // must never be a filesystem instance!
 	}
 
@@ -180,11 +180,25 @@ using namespace Yahel;
 				// window created
 				instance->Attach( m_hWnd );
 				break;
+			case WM_COMMAND:
+				// command processing
+				if (LOWORD(wParam)==ID_YAHEL_EDIT_COPY){
+					LRESULT result;
+					CComPtr<IDataObject> odo;
+					instance->ProcessMessage( msg, wParam, (LPARAM)&odo.p, result );
+					if (odo) // new data put into clipboard?
+						CDos::GetFocused()->image->dataInClipboard=odo;
+					return result;
+				}else
+					break;
+			default:{
+				LRESULT result;
+				if (instance->ProcessMessage( msg, wParam, lParam, result )) // fully processed?
+					return result;
+				break;
+			}
 		}
-		LRESULT result;
-		return	instance->ProcessMessage( msg, wParam, lParam, result ) // fully processed?
-				? result
-				: __super::WindowProc( msg, wParam, lParam );
+		return __super::WindowProc( msg, wParam, lParam );
 	}
 
 
@@ -194,7 +208,7 @@ using namespace Yahel;
 
 
 	bool CHexaEditor::QueryNewSearchParams(TSearchParams &outSp) const{
-		return outSp.EditModalWithDefaultEnglishDialog( m_hWnd );
+		return outSp.EditModalWithDefaultEnglishDialog( m_hWnd, font );
 	}
 
 	struct TSearchParamsEx sealed:public TSearchParams{

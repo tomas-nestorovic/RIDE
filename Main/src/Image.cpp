@@ -493,6 +493,12 @@ namespace Medium{
 
 	void CImage::OnCloseDocument(){
 		// document is being closed
+		// - render data to clipboard
+		if (::OleIsCurrentClipboard(dataInClipboard)==S_OK){
+			::OleFlushClipboard();
+			dataInClipboard.Release();
+		}
+		// - base
 		//nop (CDocument::OnCloseDocument destroys parent FrameWnd (MainWindow) - this must exist even after the document was closed)
 	}
 
