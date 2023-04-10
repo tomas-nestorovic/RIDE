@@ -3,7 +3,7 @@ using namespace Yahel;
 
 	CDos::CFileReaderWriter::CFileReaderWriter(const CDos *dos,PCFile file,bool wholeSectors)
 		// ctor to read/edit an existing File in Image
-		: dos(dos) , sectorLength(dos->formatBoot.sectorLength) , fatPath(new CFatPath(dos,file))
+		: image(dos->image) , sectorLength(dos->formatBoot.sectorLength) , fatPath(new CFatPath(dos,file))
 		, fileSize( wholeSectors ? dos->GetFileSizeOnDisk(file) : dos->GetFileOccupiedSize(file) )
 		, dataBeginOffsetInSector( wholeSectors ? 0 : dos->properties->dataBeginOffsetInSector)
 		, dataEndOffsetInSector( wholeSectors ? 0 : dos->properties->dataEndOffsetInSector )
@@ -13,7 +13,7 @@ using namespace Yahel;
 
 	CDos::CFileReaderWriter::CFileReaderWriter(const CDos *dos,RCPhysicalAddress chs)
 		// ctor to read/edit particular Sector in Image (e.g. Boot Sector)
-		: dos(dos) , sectorLength(dos->formatBoot.sectorLength) , fatPath(new CFatPath(dos,chs))
+		: image(dos->image) , sectorLength(dos->formatBoot.sectorLength) , fatPath(new CFatPath(dos,chs))
 		, fileSize(sectorLength)
 		, dataBeginOffsetInSector(0) , dataEndOffsetInSector(0)
 		, position(0)
@@ -94,7 +94,7 @@ using namespace Yahel;
 			bool readWithoutCrcError=true;
 			TFdcStatus sr;
 			for( WORD w; n--; item++ )
-				if (const PCSectorData sectorData=dos->image->GetSectorData(item->chs,0,Revolution::ANY_GOOD,&w,&sr)){
+				if (const PCSectorData sectorData=image->GetSectorData(item->chs,0,Revolution::ANY_GOOD,&w,&sr)){
 					readWithoutCrcError&=sr.IsWithoutError();
 					w-=d.rem+dataBeginOffsetInSector+dataEndOffsetInSector;
 					if (w<nCount){
@@ -123,10 +123,10 @@ using namespace Yahel;
 			bool writtenWithoutCrcError=true;
 			TFdcStatus sr;
 			for( WORD w; n--; item++ )
-				if (const PSectorData sectorData=dos->image->GetSectorData(item->chs,0,Revolution::CURRENT,&w,&sr)){ // Revolution.Current = freezing the state of data (eventually erroneous)
+				if (const PSectorData sectorData=image->GetSectorData(item->chs,0,Revolution::CURRENT,&w,&sr)){ // Revolution.Current = freezing the state of data (eventually erroneous)
 					writtenWithoutCrcError&=sr.IsWithoutError();
 					w-=d.rem+dataBeginOffsetInSector+dataEndOffsetInSector;
-					dos->image->MarkSectorAsDirty(item->chs,0,&sr);
+					image->MarkSectorAsDirty(item->chs,0,&sr);
 					if (w<nCount){
 						::memcpy(sectorData+dataBeginOffsetInSector+d.rem,lpBuf,w);
 						lpBuf=(PCBYTE)lpBuf+w, nCount-=w, position+=w, d.rem=0;
@@ -277,7 +277,7 @@ using namespace Yahel;
 		const CFileReaderWriter &frw=*(const CFileReaderWriter *)GetCurrentStream().p;
 		switch (cmd){
 			case ID_TIME:
-				return MF_GRAYED*!( frw.dos->image->ReadTrack(0,0) );
+				return MF_GRAYED*!( frw.image->ReadTrack(0,0) );
 		}
 		return __super::GetCustomCommandMenuFlags(cmd);
 	}
@@ -288,7 +288,7 @@ using namespace Yahel;
 		switch (cmd){
 			case ID_TIME:
 				frw.Seek( instance->GetCaretPosition(), CFile::begin );
-				frw.dos->image->ShowModalTrackTimingAt(
+				frw.image->ShowModalTrackTimingAt(
 					frw.GetCurrentPhysicalAddress(),
 					0, // no Sectors with duplicated ID fields are expected for any File!
 					frw.GetPositionInCurrentSector(),

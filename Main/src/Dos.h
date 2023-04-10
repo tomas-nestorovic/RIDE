@@ -210,7 +210,7 @@
 				CHexaEditor(PVOID param);
 			};
 
-			const CDos *const dos;
+			CImage *const image;
 			const std::shared_ptr<const CFatPath> fatPath; // shared for copy ctor called in IStream::Clone method used for searching in YAHEL
 
 			CFileReaderWriter(const CDos *dos,PCFile file,bool wholeSectors=false); // ctor to read/edit an existing File on the Image

@@ -14,12 +14,14 @@
 		afx_msg void ToggleWriteProtection();
 		void __updateLookOfControls__();
 	protected:
-		class CSectorReaderWriter sealed:public CDos::CFileReaderWriter{
+		class CSectorReaderWriter:public CDos::CFileReaderWriter{
 		public:
 			CSectorReaderWriter(PCDos dos,RCPhysicalAddress chs);
 
 			void Write(LPCVOID lpBuf,UINT nCount) override;
-		} fSectorData;
+		};
+
+		CComPtr<CSectorReaderWriter> fSectorData;
 		CWnd propGrid;
 		CDos::CFileReaderWriter::CHexaEditor hexaEditor;
 
