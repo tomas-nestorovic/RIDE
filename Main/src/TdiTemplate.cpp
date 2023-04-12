@@ -45,9 +45,9 @@
 				( (CFrameWnd *)app.m_pMainWnd )->OnUpdateFrameTitle(FALSE); // updating the MainWindow's title (now without document)
 			}
 			const PImage image=(PImage)m_pOnlyDoc;
+			image->OnCloseDocument();
 			image->destructionLocker.Lock(); // have exlusive rights for destruction
 				image->locker.Lock(); // have exclusive right for manipulation
-					image->OnCloseDocument();
 					if (image->dos)
 						delete image->dos, image->dos=nullptr;
 					delete m_pOnlyDoc, m_pOnlyDoc=nullptr;
