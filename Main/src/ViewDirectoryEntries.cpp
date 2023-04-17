@@ -19,6 +19,15 @@ using namespace Yahel;
 				recordLength=Stream::IAdvisor::GetMaximumRecordLength();
 		}
 
+		HRESULT STDMETHODCALLTYPE Clone(IStream **ppstm) override{
+			// creates an exact copy of this object
+			if (ppstm){
+				*ppstm=new CDirectoryEntriesReaderWriter(*this);
+				return S_OK;
+			}else
+				return E_INVALIDARG;
+		}
+
 		LPCWSTR GetRecordLabelW(TPosition logPos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override{
 			// populates the Buffer with label for the Record that STARTS at specified LogicalPosition, and returns the Buffer; returns Null if no Record starts at specified LogicalPosition
 			auto d=div( logPos, (TPosition)recordLength );

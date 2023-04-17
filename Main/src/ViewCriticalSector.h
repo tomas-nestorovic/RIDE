@@ -18,7 +18,10 @@
 		public:
 			CSectorReaderWriter(PCDos dos,RCPhysicalAddress chs);
 
+			// CFile methods
 			void Write(LPCVOID lpBuf,UINT nCount) override;
+			// IStream methods
+			HRESULT STDMETHODCALLTYPE Clone(IStream **ppstm) override;
 		};
 
 		CComPtr<CSectorReaderWriter> fSectorData;

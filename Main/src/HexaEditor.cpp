@@ -41,23 +41,18 @@ using namespace Yahel;
 	}
 
 	HRESULT CHexaEditor::CYahelStreamFile::QueryInterface(REFIID riid,PVOID *ppvObject){
-		if (riid==IID_IUnknown){
-			if (ppvObject)
-				*ppvObject=static_cast<IUnknown *>(this), AddRef();
-			return S_OK;
-		}else if (riid==IID_IStream){
-			if (ppvObject)
-				*ppvObject=static_cast<IStream *>(this), AddRef();
-			return S_OK;
-		}
-		return E_NOINTERFACE;
+		static constexpr QITAB qit[]={
+			QITABENT( CYahelStreamFile, IStream ),
+			{ 0 },
+		};
+		return ::QISearch( this, qit, riid, ppvObject );
 	}
 
 	// IStream methods
 	HRESULT CHexaEditor::CYahelStreamFile::Seek(LARGE_INTEGER dlibMove,DWORD dwOrigin,ULARGE_INTEGER *plibNewPosition){
 		if (dwOrigin>STREAM_SEEK_END)
 			return E_INVALIDARG;
-		const TPosition seeked=dynamic_cast<CFile *>(this)->Seek( dlibMove.QuadPart, dwOrigin );
+		const TPosition seeked=static_cast<CFile *>(this)->Seek( dlibMove.QuadPart, dwOrigin );
 		if (plibNewPosition)
 			plibNewPosition->QuadPart=seeked;
 		return S_OK;
@@ -99,7 +94,7 @@ using namespace Yahel;
 
 	HRESULT CHexaEditor::CYahelStreamFile::Read(PVOID target,ULONG nCount,PULONG pcbRead){
 		::SetLastError(ERROR_SUCCESS);
-		const TPosition nBytesRead=dynamic_cast<CFile *>(this)->Read( target, nCount );
+		const TPosition nBytesRead=static_cast<CFile *>(this)->Read( target, nCount );
 		const auto err=::GetLastError();
 		if (pcbRead)
 			*pcbRead=nBytesRead;
@@ -110,7 +105,7 @@ using namespace Yahel;
 
 	HRESULT CHexaEditor::CYahelStreamFile::Write(LPCVOID data,ULONG dataLength,PULONG pcbWritten){
 		const auto orgPos=GetPosition();
-		dynamic_cast<CFile *>(this)->Write( data, dataLength );
+		static_cast<CFile *>(this)->Write( data, dataLength );
 		const auto nBytesWritten=GetPosition()-orgPos;
 		if (pcbWritten)
 			*pcbWritten=nBytesWritten;
@@ -139,6 +134,11 @@ using namespace Yahel;
 
 
 
+
+	void CHexaEditor::OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint){
+		// request to refresh the display of content
+		Invalidate();
+	}
 
 	void CHexaEditor::PostNcDestroy(){
 		// self-destruction

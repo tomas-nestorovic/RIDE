@@ -196,6 +196,7 @@ using namespace Yahel;
 
 
 	HRESULT CDos::CFileReaderWriter::Clone(IStream **ppstm){
+		// creates an exact copy of this object
 		if (ppstm){
 			*ppstm=new CFileReaderWriter(*this);
 			return S_OK;

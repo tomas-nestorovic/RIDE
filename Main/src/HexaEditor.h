@@ -31,6 +31,7 @@
 		const HACCEL hDefaultAccelerators;
 		Utils::CRideContextMenu contextMenu;
 
+		void OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint) override;
 		void PostNcDestroy() override;
 		BOOL PreTranslateMessage(PMSG pMsg) override;
 		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override sealed; // use ProcessCommand and Yahel's GetCustomCommandMenuFlags instead!

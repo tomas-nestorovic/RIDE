@@ -36,6 +36,15 @@
 		pCurrentlyShown->OnSectorChanging();
 	}
 
+	HRESULT CCriticalSectorView::CSectorReaderWriter::Clone(IStream **ppstm){
+		// creates an exact copy of this object
+		if (ppstm){
+			*ppstm=new CSectorReaderWriter(*this);
+			return S_OK;
+		}else
+			return E_INVALIDARG;
+	}
+
 
 
 
