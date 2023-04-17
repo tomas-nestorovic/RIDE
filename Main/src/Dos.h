@@ -193,13 +193,6 @@
 		class CFileReaderWriter:public CHexaEditor::CYahelStreamFile,public Yahel::Stream::IAdvisor{
 			const WORD sectorLength; // e.g. for Spectrum Tape, the SectorLength may temporarily be faked to correctly segment a display Headers, and then reset to normal to correctly display Tape data; this is the backup of the eventually faked value
 			const BYTE dataBeginOffsetInSector,dataEndOffsetInSector;
-			#if _MFC_VER>=0x0A00
-			LONGLONG fileSize;
-			LONGLONG position;
-			#else
-			LONG fileSize;
-			LONG position;
-			#endif
 		protected:
 			Yahel::TPosition recordLength;
 		public:
@@ -218,17 +211,6 @@
 			~CFileReaderWriter();
 
 			// CFile methods
-			#if _MFC_VER>=0x0A00
-			ULONGLONG GetLength() const override;
-			void SetLength(ULONGLONG dwNewLen) override;
-			ULONGLONG GetPosition() const override;
-			ULONGLONG Seek(LONGLONG lOff,UINT nFrom) override;
-			#else
-			DWORD GetLength() const override;
-			void SetLength(DWORD dwNewLen) override;
-			DWORD GetPosition() const override;
-			LONG Seek(LONG lOff,UINT nFrom) override;
-			#endif
 			UINT Read(LPVOID lpBuf,UINT nCount) override;
 			void Write(LPCVOID lpBuf,UINT nCount) override;
 

@@ -1,23 +1,23 @@
 #include "stdafx.h"
 using namespace Yahel;
 
+	#define fileSize	dataTotalLength
+
 	CDos::CFileReaderWriter::CFileReaderWriter(const CDos *dos,PCFile file,bool wholeSectors)
 		// ctor to read/edit an existing File in Image
 		: image(dos->image) , sectorLength(dos->formatBoot.sectorLength) , fatPath(new CFatPath(dos,file))
-		, fileSize( wholeSectors ? dos->GetFileSizeOnDisk(file) : dos->GetFileOccupiedSize(file) )
 		, dataBeginOffsetInSector( wholeSectors ? 0 : dos->properties->dataBeginOffsetInSector)
 		, dataEndOffsetInSector( wholeSectors ? 0 : dos->properties->dataEndOffsetInSector )
-		, position(0)
 		, recordLength(sectorLength) {
+		fileSize= wholeSectors ? dos->GetFileSizeOnDisk(file) : dos->GetFileOccupiedSize(file);
 	}
 
 	CDos::CFileReaderWriter::CFileReaderWriter(const CDos *dos,RCPhysicalAddress chs)
 		// ctor to read/edit particular Sector in Image (e.g. Boot Sector)
 		: image(dos->image) , sectorLength(dos->formatBoot.sectorLength) , fatPath(new CFatPath(dos,chs))
-		, fileSize(sectorLength)
 		, dataBeginOffsetInSector(0) , dataEndOffsetInSector(0)
-		, position(0)
 		, recordLength(sectorLength) {
+		fileSize=sectorLength;
 	}
 
 	CDos::CFileReaderWriter::~CFileReaderWriter(){
@@ -30,58 +30,6 @@ using namespace Yahel;
 
 
 
-
-	#if _MFC_VER>=0x0A00
-	ULONGLONG CDos::CFileReaderWriter::GetLength() const{
-	#else
-	DWORD CDos::CFileReaderWriter::GetLength() const{
-	#endif
-		// returns the File size
-		return fileSize;
-	}
-
-	#if _MFC_VER>=0x0A00
-	void CDos::CFileReaderWriter::SetLength(ULONGLONG dwNewLen){
-	#else
-	void CDos::CFileReaderWriter::SetLength(DWORD dwNewLen){
-	#endif
-		// overrides the reported FileSize
-		ASSERT( dwNewLen<=fileSize ); // can only "shrink" the reported FileSize
-		fileSize=dwNewLen;
-		if (position>fileSize)
-			position=fileSize;
-	}
-
-	#if _MFC_VER>=0x0A00
-	ULONGLONG CDos::CFileReaderWriter::GetPosition() const{
-	#else
-	DWORD CDos::CFileReaderWriter::GetPosition() const{
-	#endif
-		// returns the actual Position in open File
-		return position;
-	}
-
-	#if _MFC_VER>=0x0A00
-	ULONGLONG CDos::CFileReaderWriter::Seek(LONGLONG lOff,UINT nFrom){
-	#else
-	LONG CDos::CFileReaderWriter::Seek(LONG lOff,UINT nFrom){
-	#endif
-		// sets the actual Position in open File
-		switch ((SeekPosition)nFrom){
-			case SeekPosition::current:
-				lOff+=position;
-				//fallthrough
-			case SeekPosition::begin:
-				position=std::min(lOff,fileSize);
-				break;
-			case SeekPosition::end:
-				position=std::max( fileSize-lOff, (decltype(position))0 );
-				break;
-			default:
-				ASSERT(FALSE);
-		}
-		return position;
-	}
 
 	UINT CDos::CFileReaderWriter::Read(LPVOID lpBuf,UINT nCount){
 		// tries to read given NumberOfBytes into the Buffer, starting with current Position; returns the number of Bytes actually read (increments the Position by this actually read number of Bytes)

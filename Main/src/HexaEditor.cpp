@@ -16,12 +16,12 @@ using namespace Yahel;
 
 	CHexaEditor::CYahelStreamFile::CYahelStreamFile()
 		// ctor
-		: nReferences(1) {
+		: nReferences(1) , position(0) , dataTotalLength(0) {
 	}
 
 	CHexaEditor::CYahelStreamFile::CYahelStreamFile(const CYahelStreamFile &r)
 		// copy ctor
-		: CFile() , nReferences(1) {
+		: CFile() , nReferences(1) , position(0) , dataTotalLength(0) {
 		ASSERT( r.m_hFile==CFile::hFileNull ); // must never be a filesystem instance!
 	}
 
@@ -111,6 +111,60 @@ using namespace Yahel;
 			*pcbWritten=nBytesWritten;
 		return	nBytesWritten ? S_OK : E_FAIL;
 	}
+
+	// CFile methods
+#if _MFC_VER>=0x0A00
+	ULONGLONG CHexaEditor::CYahelStreamFile::GetLength() const{
+#else
+	DWORD CHexaEditor::CYahelStreamFile::GetLength() const{
+#endif
+		// returns the File size
+		return dataTotalLength;
+	}
+
+#if _MFC_VER>=0x0A00
+	void CHexaEditor::CYahelStreamFile::SetLength(ULONGLONG dwNewLen){
+#else
+	void CHexaEditor::CYahelStreamFile::SetLength(DWORD dwNewLen){
+#endif
+		// overrides the reported FileSize
+		ASSERT( dwNewLen<=dataTotalLength ); // can only "shrink" the reported FileSize
+		dataTotalLength=dwNewLen;
+		if (position>dataTotalLength)
+			position=dataTotalLength;
+	}
+
+#if _MFC_VER>=0x0A00
+	ULONGLONG CHexaEditor::CYahelStreamFile::GetPosition() const{
+#else
+	DWORD CHexaEditor::CYahelStreamFile::GetPosition() const{
+#endif
+		// returns the actual Position in the Serializer
+		return position;
+	}
+
+#if _MFC_VER>=0x0A00
+	ULONGLONG CHexaEditor::CYahelStreamFile::Seek(LONGLONG lOff,UINT nFrom){
+#else
+	LONG CHexaEditor::CYahelStreamFile::Seek(LONG lOff,UINT nFrom){
+#endif
+		// sets the actual Position in the Serializer
+		switch ((SeekPosition)nFrom){
+			case SeekPosition::current:
+				lOff+=position;
+				//fallthrough
+			case SeekPosition::begin:
+				position=std::min<TPosition>( lOff, dataTotalLength );
+				break;
+			case SeekPosition::end:
+				position=std::max<TPosition>( dataTotalLength-lOff, 0 );
+				break;
+			default:
+				ASSERT(FALSE);
+		}
+		return position;
+	}
+
 
 
 

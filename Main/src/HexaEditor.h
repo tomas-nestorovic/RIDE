@@ -5,6 +5,9 @@
 	public:
 		class CYahelStreamFile:public CFile,public IStream{
 			volatile ULONG nReferences;
+		protected:
+			Yahel::TPosition dataTotalLength;
+			Yahel::TPosition position;
 		public:
 			CYahelStreamFile();
 			CYahelStreamFile(const CYahelStreamFile &r);
@@ -24,6 +27,18 @@
 			HRESULT STDMETHODCALLTYPE Stat(STATSTG *pstatstg,DWORD grfStatFlag) override sealed;
 			HRESULT STDMETHODCALLTYPE Read(PVOID target,ULONG nCount,PULONG pcbRead) override sealed;
 			HRESULT STDMETHODCALLTYPE Write(LPCVOID data,ULONG dataLength,PULONG pcbWritten) override sealed;
+			// CFile methods
+			#if _MFC_VER>=0x0A00
+				ULONGLONG GetLength() const override sealed;
+				void SetLength(ULONGLONG dwNewLen) override;
+				ULONGLONG GetPosition() const override sealed;
+				ULONGLONG Seek(LONGLONG lOff,UINT nFrom) override;
+			#else
+				DWORD GetLength() const override sealed;
+				void SetLength(DWORD dwNewLen) override;
+				DWORD GetPosition() const override sealed;
+				LONG Seek(LONG lOff,UINT nFrom) override;
+			#endif
 		};
 	protected:
 		const Utils::CRideFont font;

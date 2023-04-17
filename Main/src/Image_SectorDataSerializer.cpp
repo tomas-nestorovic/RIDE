@@ -2,9 +2,10 @@
 
 	CImage::CSectorDataSerializer::CSectorDataSerializer(CHexaEditor *pParentHexaEditor,PImage image,LONG dataTotalLength,const BYTE &nDiscoveredRevolutions)
 		// ctor
-		: pParentHexaEditor(pParentHexaEditor) , image(image) , dataTotalLength(dataTotalLength) , position(0) , currTrack(0)
+		: pParentHexaEditor(pParentHexaEditor) , image(image) , currTrack(0)
 		, nDiscoveredRevolutions(nDiscoveredRevolutions)
 		, revolution(Revolution::ANY_GOOD) {
+		this->dataTotalLength=dataTotalLength;
 		sector.indexOnTrack=0, sector.offset=0;
 	}
 
@@ -15,58 +16,6 @@
 
 
 
-
-	#if _MFC_VER>=0x0A00
-	ULONGLONG CImage::CSectorDataSerializer::GetLength() const{
-	#else
-	DWORD CImage::CSectorDataSerializer::GetLength() const{
-	#endif
-		// returns the File size
-		return dataTotalLength;
-	}
-
-	#if _MFC_VER>=0x0A00
-	void CImage::CSectorDataSerializer::SetLength(ULONGLONG dwNewLen){
-	#else
-	void CImage::CSectorDataSerializer::SetLength(DWORD dwNewLen){
-	#endif
-		// overrides the reported DataTotalLength
-		ASSERT( dwNewLen<=dataTotalLength ); // can only "shrink" the reported DataTotalLength
-		dataTotalLength=dwNewLen;
-		if (position>dataTotalLength)
-			position=dataTotalLength;
-	}
-
-	#if _MFC_VER>=0x0A00
-	ULONGLONG CImage::CSectorDataSerializer::GetPosition() const{
-	#else
-	DWORD CImage::CSectorDataSerializer::GetPosition() const{
-	#endif
-		// returns the actual Position in the Serializer
-		return position;
-	}
-
-	#if _MFC_VER>=0x0A00
-	ULONGLONG CImage::CSectorDataSerializer::Seek(LONGLONG lOff,UINT nFrom){
-	#else
-	LONG CImage::CSectorDataSerializer::Seek(LONG lOff,UINT nFrom){
-	#endif
-		// sets the actual Position in the Serializer
-		switch ((SeekPosition)nFrom){
-			case SeekPosition::current:
-				lOff+=position;
-				//fallthrough
-			case SeekPosition::begin:
-				position=std::min(lOff,dataTotalLength);
-				break;
-			case SeekPosition::end:
-				position=std::max( dataTotalLength-lOff, (decltype(position))0 );
-				break;
-			default:
-				ASSERT(FALSE);
-		}
-		return position;
-	}
 
 	UINT CImage::CSectorDataSerializer::Read(LPVOID lpBuf,UINT nCount){
 		// tries to read given NumberOfBytes into the Buffer, starting with current Position; returns the number of Bytes actually read (increments the Position by this actually read number of Bytes)

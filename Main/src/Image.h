@@ -598,13 +598,6 @@
 		protected:
 			CHexaEditor *const pParentHexaEditor;
 			const PImage image;
-			#if _MFC_VER>=0x0A00
-			LONGLONG dataTotalLength;
-			LONGLONG position;
-			#else
-			LONG dataTotalLength;
-			LONG position;
-			#endif
 			TTrack currTrack; // Track (inferred from Position) to currently read from or write to
 			Revolution::TType revolution;
 			struct{ // Sector (inferred from Position) to currently read from or write to
@@ -623,17 +616,6 @@
 			const BYTE &nDiscoveredRevolutions;
 
 			// CFile methods
-			#if _MFC_VER>=0x0A00
-			ULONGLONG GetLength() const override sealed;
-			void SetLength(ULONGLONG dwNewLen) override sealed;
-			ULONGLONG GetPosition() const override sealed;
-			ULONGLONG Seek(LONGLONG lOff,UINT nFrom) override;
-			#else
-			DWORD GetLength() const override sealed;
-			void SetLength(DWORD dwNewLen) override sealed;
-			DWORD GetPosition() const override sealed;
-			LONG Seek(LONG lOff,UINT nFrom) override;
-			#endif
 			UINT Read(LPVOID lpBuf,UINT nCount) override sealed;
 			void Write(LPCVOID lpBuf,UINT nCount) override sealed;
 
