@@ -758,7 +758,12 @@ invalidTrack:
 			ScanTrack(cyl,0);
 		std::swap( internalTracks[cyl][0], pit );
 		if (pit==nullptr)
-			return ERROR_NO_MEDIA_IN_DRIVE;
+			if (properties->IsRealDevice())
+				return ERROR_NO_MEDIA_IN_DRIVE;
+			else{
+				rOutMediumType=Medium::UNKNOWN;
+				return ERROR_SUCCESS; // e.g. a KryoFlux Stream file has been manually deleted, thus Unknown Medium has been "successfully" recognized
+			}
 		// - enumerating possible floppy Types and attempting to recognize some Sectors
 		CTrackReaderWriter trw=*pit;
 		delete pit;
