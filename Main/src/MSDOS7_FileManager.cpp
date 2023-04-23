@@ -76,6 +76,21 @@
 
 	void CMSDOS7::CMsdos7FileManagerView::OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint){
 		// request to refresh the display of content
+		// - define YAHEL FAT item
+		switch (((PMSDOS7)DOS)->fat.type){
+			case CFat::FAT12:
+				fatEntryYahelDefinition=L"4;\x2192 bAa ";
+				break;
+			case CFat::FAT16:
+				fatEntryYahelDefinition=L"4;\x2192 BbAa ";
+				break;
+			case CFat::FAT32:
+				fatEntryYahelDefinition=L"4;\x2192 dCcBbAa "; // FAT32 is actually "FAT28"
+				break;
+			default:
+				ASSERT(FALSE);
+		}
+		static_assert( sizeof(CDos::CFatPath::TValue)==4, "" ); // see above constant in FAT pattern
 		// - updating the FAT indication in StatusBar
 		TCHAR buf[8];
 		::wsprintf( buf, _T("FAT%d"), ((PMSDOS7)DOS)->fat.type*4 );

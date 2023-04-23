@@ -94,6 +94,10 @@
 		// "Address" column
 		inline int GetAddressColumnWidth() const{ return instance->GetAddressColumnWidth(); }
 
+		// "View" column
+		inline Yahel::TError RedefineItem(LPCWSTR newItemDef,WORD nItemsInRowMin=1,WORD nItemsInRowMax=-2) const{ return instance->RedefineItem( newItemDef, nItemsInRowMin, nItemsInRowMax ); }
+		inline Yahel::TError SetItemCountPerRow(WORD nItemsInRowMin=1,WORD nItemsInRowMax=-1) const{ return instance->SetItemCountPerRow( nItemsInRowMin, nItemsInRowMax ); }
+
 		// "Stream" column
 		inline WORD GetBytesPerRow() const{ return instance->GetStreamBytesCountPerRow(); }
 

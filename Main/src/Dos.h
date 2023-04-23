@@ -145,9 +145,11 @@
 
 		class CFatPath{
 		public:
+			typedef DWORD TValue;
+
 			#pragma pack(1)
 			typedef const struct TItem sealed{
-				DWORD value;
+				TValue value;
 				TPhysicalAddress chs;
 			} *PCItem;
 			typedef TItem *PItem;

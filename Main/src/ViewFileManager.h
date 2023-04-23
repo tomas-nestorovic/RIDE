@@ -153,6 +153,8 @@
 		afx_msg void __createSubdirectory__();
 			afx_msg void __createSubdirectory_updateUI__(CCmdUI *pCmdUI);
 		afx_msg void GoToFocusedFileDirectoryEntry();
+		afx_msg void BrowseFocusedFileFatLinkage();
+			afx_msg void BrowseFocusedFileFatLinkage_updateUI(CCmdUI *pCmdUI);
 		afx_msg void BrowseCurrentDirInHexaMode();
 		afx_msg void GoToFocusedFileFirstSector();
 		afx_msg void __showSelectionProperties__();
@@ -245,6 +247,7 @@
 		CDos::PFile focusedFile;
 		Utils::CRideContextMenu mnuGeneralContext; // when right-clicked anywhere in the FileManager
 		Utils::CRideContextMenu mnuFocusedContext; // when particular File right-clicked
+		LPCWSTR fatEntryYahelDefinition; // Null <=> not supported
 
 		CFileManagerView(PDos _dos,BYTE _supportedDisplayModes,BYTE _initialDisplayMode,const CFont &rFont,BYTE reportModeRowHeightAdjustment,BYTE _nInformation,PCFileInfo _informationList,PCDirectoryStructureManagement pDirectoryStructureManagement);
 		~CFileManagerView();

@@ -163,10 +163,12 @@
 		THead head;
 		TSectorId sectorId;
 
+		inline operator bool() const{ return *this!=Invalid; }
 		bool operator==(const TPhysicalAddress &chs2) const;
 		bool operator!=(const TPhysicalAddress &chs2) const;
 		TTrack GetTrackNumber() const;
 		TTrack GetTrackNumber(THead nHeads) const;
+		inline void Invalidate(){ *this=Invalid; }
 	} &RCPhysicalAddress;
 
 	enum TDataStatus{

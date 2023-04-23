@@ -301,12 +301,12 @@
 		else
 			if (!de->shortNameEntry.size) // zero-length Files ...
 				return rFatPath.GetNumberOfItems()==0; // ... must in NOT be recorded in the FAT
-		TCluster32 cluster0=__logSector2cluster__(__fyzlog__( pItem++->chs ));
+		TCluster32 cluster0= pItem->chs ? __logSector2cluster__(__fyzlog__(pItem->chs)) : pItem->value;
 		de->shortNameEntry.__setFirstCluster__(cluster0);
 		for( TCluster32 c; --nItems; cluster0=c ) // all Sectors but the last one are Occupied in FatPath
-			fat.SetClusterValue(cluster0, // no need to test readability of FAT Sector - tested by the caller
-								c=__logSector2cluster__(__fyzlog__(pItem++->chs))
-							);
+			fat.SetClusterValue( cluster0, // no need to test readability of FAT Sector - tested by the caller
+				c = (++pItem)->chs ? __logSector2cluster__(__fyzlog__(pItem->chs)) : pItem->value
+			);
 		fat.SetClusterValue( cluster0, MSDOS7_FAT_CLUSTER_EOF ); // terminating the File's FatPath in FAT
 		MarkDirectorySectorAsDirty(de);
 		return true;

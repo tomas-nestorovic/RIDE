@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ViewFatHexa.h"
 
 	const CFileManagerView *CFileManagerView::pCurrentlyShown;
 
@@ -36,6 +37,7 @@
 		, ordering(ORDER_NONE) , focusedFile(nullptr) , scrollY(0) , ownedDataSource(nullptr)
 		, mnuGeneralContext(IDR_FILEMANAGER_GENERAL_CONTEXT)
 		, mnuFocusedContext(IDR_FILEMANAGER_FOCUSED_CONTEXT)
+		, fatEntryYahelDefinition(nullptr) // not supported
 		, informOnCapabilities(true)
 		, pDirectoryStructureManagement(pDirectoryStructureManagement) {
 		// - switching to default DisplayMode
@@ -77,6 +79,8 @@
 		ON_COMMAND(ID_FILEMANAGER_SUBDIR_CREATE,__createSubdirectory__)
 			ON_UPDATE_COMMAND_UI(ID_FILEMANAGER_SUBDIR_CREATE,__createSubdirectory_updateUI__)
 		ON_COMMAND(ID_DIRECTORY,GoToFocusedFileDirectoryEntry)
+		ON_COMMAND(ID_FAT,BrowseFocusedFileFatLinkage)
+			ON_UPDATE_COMMAND_UI(ID_FAT,BrowseFocusedFileFatLinkage_updateUI)
 		ON_COMMAND(ID_FILEMANAGER_DIR_HEXAMODE,BrowseCurrentDirInHexaMode)
 		ON_COMMAND(ID_SECTOR,GoToFocusedFileFirstSector)
 		ON_COMMAND(ID_FILEMANAGER_FILE_INFORMATION,__showSelectionProperties__)
@@ -741,6 +745,28 @@
 			iFocused>=0 // is there one File focused?
 			? (CDos::PCFile)lv.GetItemData(iFocused)
 			: nullptr
+		);
+	}
+
+	afx_msg void CFileManagerView::BrowseFocusedFileFatLinkage(){
+		// opens a new Tab with FAT linkage in a HexaEditor instance
+		const CListCtrl &lv=GetListCtrl();
+		const int iFocused=lv.GetNextItem(-1,LVNI_FOCUSED);
+		if (iFocused>=0){ // is there one File focused?
+			const CDos::PFile file=(CDos::PFile)lv.GetItemData(iFocused);
+			auto *const pView=new CFatHexaView( DOS, file, fatEntryYahelDefinition );
+				CString label;
+				label.Format( _T("FAT \"%s\""), (LPCTSTR)DOS->GetFilePresentationNameAndExt(file) );
+				CTdiCtrl::AddTabLast( TDI_HWND, label, &pView->tab, true, TDI_TAB_CANCLOSE_ALWAYS, CMainWindow::CTdiView::TTab::OnOptionalTabClosing );
+			ownedTabs.AddTail( &pView->tab );						
+		}
+	}
+
+	afx_msg void CFileManagerView::BrowseFocusedFileFatLinkage_updateUI(CCmdUI *pCmdUI){
+		pCmdUI->Enable(
+			fatEntryYahelDefinition // can browse File FAT linkages?
+			&&
+			GetListCtrl().GetNextItem(-1,LVNI_FOCUSED)>=0 // is there a File currently focused?
 		);
 	}
 

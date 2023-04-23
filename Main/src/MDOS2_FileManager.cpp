@@ -23,6 +23,8 @@
 	CMDOS2::CMdos2FileManagerView::CMdos2FileManagerView(PMDOS2 mdos)
 		// ctor
 		: CSpectrumFileManagerView( mdos, mdos->zxRom, BIG_ICONS|REPORT, LVS_REPORT, INFORMATION_COUNT, InformationList, MDOS2_FILE_NAME_LENGTH_MAX ) {
+		fatEntryYahelDefinition=L"4;\x2192 bAa ";
+		static_assert( sizeof(CDos::CFatPath::TValue)==4, "" ); // see above constant in FAT pattern
 	}
 
 

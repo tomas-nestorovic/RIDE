@@ -239,6 +239,7 @@
     <ClInclude Include="src\ViewCriticalSector.h" />
     <ClInclude Include="src\ViewDirectoryEntries.h" />
     <ClInclude Include="src\ViewDiskBrowser.h" />
+    <ClInclude Include="src\ViewFatHexa.h" />
     <ClInclude Include="src\ViewFileManager.h" />
     <ClInclude Include="src\ViewTrackMap.h" />
     <ClInclude Include="src\ViewWebPage.h" />
@@ -328,6 +329,7 @@
     <ClCompile Include="src\ViewCriticalSector.cpp" />
     <ClCompile Include="src\ViewDirectoryEntries.cpp" />
     <ClCompile Include="src\ViewDiskBrowser.cpp" />
+    <ClCompile Include="src\ViewFatHexa.cpp" />
     <ClCompile Include="src\ViewFileManager.cpp" />
     <ClCompile Include="src\ViewFileManager_editor.cpp" />
     <ClCompile Include="src\ViewFileManager_exportImport.cpp" />

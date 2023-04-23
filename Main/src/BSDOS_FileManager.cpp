@@ -39,6 +39,8 @@
 		// ctor
 		: CSpectrumFileManagerView( bsdos, bsdos->zxRom, REPORT, LVS_REPORT, INFORMATION_COUNT, InformationList, ZX_TAPE_FILE_NAME_LENGTH_MAX, &DirManagement )
 		, toolbar( IDR_ZX_TAPE, ID_SUBDIRECTORY ) { // "some" unique ID
+		fatEntryYahelDefinition=L"4;\x2192 bAa "; // for the first FAT value may be only 14-bit long (the others are full 16-bit long), allow modification of only lower 12-bits for all FAT values (sufficient for any known BS-DOS disk)
+		static_assert( sizeof(CDos::CFatPath::TValue)==4, "" ); // see above constant in FAT pattern
 	}
 
 

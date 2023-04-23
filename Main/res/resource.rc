@@ -834,6 +834,7 @@ BEGIN
         MENUITEM "Go to first sector",          ID_SECTOR
         MENUITEM SEPARATOR
         MENUITEM "Show as binary\tCtrl+B",      ID_DOS_PREVIEWASBINARY
+        MENUITEM "Show FAT linkage",            ID_FAT, GRAYED
         MENUITEM SEPARATOR
         MENUITEM "Properties\tAlt+Enter",       ID_FILEMANAGER_FILE_INFORMATION
     END

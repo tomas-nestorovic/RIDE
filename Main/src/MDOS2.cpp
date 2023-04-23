@@ -216,9 +216,11 @@
 		const DWORD fileLength=de->GetLength();
 		if (fileLength>0 && nItems>0){
 			// non-zero-length File
-			TLogSector ls = de->firstLogicalSector = __fyzlog__(pItem->chs);
+			TLogSector ls = de->firstLogicalSector =  pItem->chs ? __fyzlog__(pItem->chs) : pItem->value;
 			for( WORD h; --nItems; ls=h ) // all Sectors but the last one are Occupied in FatPath
-				__setLogicalSectorFatItem__( ls, h=__fyzlog__((++pItem)->chs) ); // no need to test FAT Sector existence (already tested above)
+				__setLogicalSectorFatItem__( ls, // no need to test FAT Sector existence (already tested above)
+					h = (++pItem)->chs ? __fyzlog__(pItem->chs) : pItem->value
+				); 
 			__setLogicalSectorFatItem__(ls, // terminating the FatPath in FAT
 										fileLength%MDOS2_SECTOR_LENGTH_STD+MDOS2_FAT_SECTOR_EOF
 									);
@@ -226,9 +228,10 @@
 			return true;
 		}else if (!fileLength && nItems==1){
 			// zero-length File
-			__setLogicalSectorFatItem__(de->firstLogicalSector=__fyzlog__(pItem->chs),
-										MDOS2_FAT_SECTOR_RESERVED
-									);
+			__setLogicalSectorFatItem__(
+				de->firstLogicalSector = pItem->chs ? __fyzlog__(pItem->chs) : pItem->value,
+				MDOS2_FAT_SECTOR_RESERVED
+			);
 			MarkDirectorySectorAsDirty(de);
 			return true;
 		}else
