@@ -629,7 +629,7 @@
 				}
 }
 				p.acceptance.remainingErrorsOnTrack=false; // "True" valid only for Track it was set on
-				if (!p.trackScanned) // has the Track been disposed as part of the recovery from error?
+				if (!p.trackScanned && !isEmpty) // has a non-empty Track been disposed as part of the recovery from error? (e.g. a Track may be empty for non-existent KryoFlux Streams)
 					continue; // begin anew with this Track
 				// . formatting Target Track
 				if (pAction->Cancelled)
