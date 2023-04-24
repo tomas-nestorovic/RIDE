@@ -295,7 +295,7 @@
 	void TTdiInfo::__fitContentToTdiCanvas__() const{
 		// stretches CurrentTabContent so that it covers the whole TDI canvas below Tab captions
 		RECT r;
-		if (CTdiCtrl::GetCurrentTabContentRect(handle,&r))
+		if (currentTabContent && CTdiCtrl::GetCurrentTabContentRect(handle,&r))
 			::SetWindowPos(	params.fnGetHwnd(currentTabContent), nullptr,
 							r.left, r.top,
 							r.right-r.left, r.bottom-r.top,
