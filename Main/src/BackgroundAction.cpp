@@ -215,8 +215,10 @@
 		::WaitForSingleObject( *this, INFINITE );
 		duration=Utils::CRideTime()-startTime;
 		if (suspendAllViews)
-			if (CImage *const active=CImage::GetActive())
+			if (CImage *const active=CImage::GetActive()){
 				active->SetRedrawToAllViews(true);
+				active->UpdateAllViews(nullptr);
+			}
 		// - returning the Result
 		DWORD result=ERROR_SUCCESS;
 		::GetExitCodeThread( *this, &result );
