@@ -87,7 +87,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release MFC 4.2|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>..\Externals\CrtNew;..\Externals\capsimg;C:\WINDDK\inc\mfc42;C:\WINDDK\inc\atl30;..\Externals\winusb;$(IncludePath)</IncludePath>
-    <LibraryPath>..\Externals\CrtNew;..\Externals\capsimg;D:\puvodni\zaloha\Program Files\Visual Studio 6\VC98\MFC\Lib;D:\puvodni\zaloha\Program Files\Visual Studio 6\Microsoft Platform SDK for Windows XP SP2\Lib;D:\puvodni\zaloha\Program Files\Visual Studio 6\VC98\Lib;..\Externals\winusb</LibraryPath>
+    <LibraryPath>$(WindowsSdkDir)lib;..\Externals\capsimg;D:\puvodni\zaloha\Program Files\Visual Studio 6\VC98\MFC\Lib;D:\puvodni\zaloha\Program Files\Visual Studio 6\VC98\Lib;..\Externals\winusb</LibraryPath>
     <GenerateManifest>true</GenerateManifest>
     <EmbedManifest>true</EmbedManifest>
     <ReferencePath />
