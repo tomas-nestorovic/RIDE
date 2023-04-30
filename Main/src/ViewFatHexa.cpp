@@ -148,16 +148,21 @@ using namespace Yahel;
 
 	TRow CFatHexaView::CFatPathReaderWriter::LogicalPositionToRow(TPosition logPos,WORD nBytesInRow){
 		// computes and returns the row containing the specified LogicalPosition
-		const auto d=div( logPos, dataTotalLength );
-		const TRow nRowsPerRecord = (dataTotalLength+nBytesInRow-1)/nBytesInRow;
-		return d.quot*nRowsPerRecord + d.rem/nBytesInRow;
+		if (dataTotalLength){
+			const auto d=div( logPos, dataTotalLength );
+			const TRow nRowsPerRecord = (dataTotalLength+nBytesInRow-1)/nBytesInRow;
+			return d.quot*nRowsPerRecord + d.rem/nBytesInRow;
+		}else
+			return 0;
 	}
 
 	TPosition CFatHexaView::CFatPathReaderWriter::RowToLogicalPosition(TRow row,WORD nBytesInRow){
 		// converts Row begin (i.e. its first Byte) to corresponding logical position in underlying File and returns the result
-		const TRow nRowsPerRecord = (dataTotalLength+nBytesInRow-1)/nBytesInRow;
-		const auto d=div( row, nRowsPerRecord );
-		return d.quot*dataTotalLength + d.rem*nBytesInRow;
+		if (const TRow nRowsPerRecord = (dataTotalLength+nBytesInRow-1)/nBytesInRow){
+			const auto d=div( row, nRowsPerRecord );
+			return d.quot*dataTotalLength + d.rem*nBytesInRow;
+		}else
+			return 0;
 	}
 
 	LPCWSTR CFatHexaView::CFatPathReaderWriter::GetRecordLabelW(TPosition pos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const{
