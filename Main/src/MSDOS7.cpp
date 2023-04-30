@@ -221,7 +221,7 @@
 					: 0;
 		if (IsDirectory(file)){
 			item.chs=boot.GetPhysicalAddress(); // certainly not any Directory's PhysicalAddress
-			for( TMsdos7DirectoryTraversal dt(this,file); dt.__existsNextEntry__(); item.value++ )
+			for( TMsdos7DirectoryTraversal dt(this,file); dt.AdvanceToNextEntry(); item.value++ )
 				if (item.chs!=dt.chs){
 					item.chs=dt.chs;
 					if (!rFatPath.AddItem(&item)) break; // also sets an error in FatPath
@@ -405,7 +405,7 @@
 		::ZeroMemory(tmpBuf,sizeof(tmpBuf));
 		BYTE i=0;
 		TMsdos7DirectoryTraversal dt(this,currentDir);
-		while (dt.__existsNextEntry__())
+		while (dt.AdvanceToNextEntry())
 			if (dt.entryType!=TDirectoryTraversal::TDirEntryType::WARNING)
 				if (( tmpBuf[i=++i&(LONG_FILE_NAME_ENTRIES_COUNT_MAX-1)]=(PDirectoryEntry)dt.entry )==de)
 					break;
@@ -558,7 +558,7 @@
 		// - making sure that the NewName+NewExt combination is not empty
 		//TODO
 		// - making sure that the NewName+NewExt combination isn't used by another File in CurrentDirectory
-		for( TMsdos7DirectoryTraversal dt(this,currentDir); dt.__existsNextEntry__(); )
+		for( TMsdos7DirectoryTraversal dt(this,currentDir); dt.AdvanceToNextEntry(); )
 			if (dt.entry!=de)
 				if (dt.entryType==TDirectoryTraversal::FILE || dt.entryType==TDirectoryTraversal::SUBDIR){
 					TCHAR tmpName[MAX_PATH],tmpExt[MAX_PATH];
@@ -646,7 +646,7 @@
 		// - making sure that the NewNameAndExtension is not empty
 		//TODO
 		// - making sure that the NewNameAndExtension isn't used by another File in CurrentDirectory
-		for( TMsdos7DirectoryTraversal dt(this,currentDir); dt.__existsNextEntry__(); )
+		for( TMsdos7DirectoryTraversal dt(this,currentDir); dt.AdvanceToNextEntry(); )
 			if (dt.entry!=de)
 				if (dt.entryType==TDirectoryTraversal::FILE || dt.entryType==TDirectoryTraversal::SUBDIR){
 					__getShortFileNameAndExt__( (PCDirectoryEntry)dt.entry, tmpName, tmpExt );
@@ -672,17 +672,11 @@
 			if (*newExt)
 				::lstrcat( ::lstrcat( longNameAndExt, _T(".") ), newExt );
 			// . allocating necessary number of DirectoryEntries to accommodate the long NameAndExtension
-			PDirectoryEntry longNameEntries[LONG_FILE_NAME_ENTRIES_COUNT_MAX], *plnde=longNameEntries;
-			TMsdos7DirectoryTraversal dt(this,currentDir);
-			for( BYTE n=(::lstrlen(longNameAndExt)+12)/13,i=n; i--; ) // 13 = number of characters in one LongNameEntry
-				if (!( *plnde++=dt.__allocateNewEntry__() ))
-					if (dt.entryType==TDirectoryTraversal::WARNING && dt.warning==ERROR_SECTOR_NOT_FOUND)
-						// simply retry after the bad Sector, marking all DirectoryEntries where the long name didn't fit in, as Empty
-						for( plnde--; ++i<n; *(PBYTE)*--plnde=UDirectoryEntry::EMPTY_ENTRY );
-					else
-						return Utils::ErrorByOs( ERROR_VOLMGR_DISK_NOT_ENOUGH_SPACE, ERROR_CANNOT_MAKE );
-			if (!( rRenamedFile=dt.__allocateNewEntry__() ))
-				return Utils::ErrorByOs( ERROR_VOLMGR_DISK_NOT_ENOUGH_SPACE, ERROR_CANNOT_MAKE );
+			PFile longNameEntries[LONG_FILE_NAME_ENTRIES_COUNT_MAX+1]; // "+1" = short name entry
+			const BYTE nLongNameEntries=(::lstrlen(longNameAndExt)+12)/13; // 13 = number of characters in one LongNameEntry
+			if (!TMsdos7DirectoryTraversal(this,currentDir).GetOrAllocateEmptyEntries( nLongNameEntries+1, longNameEntries )) // "+1" = short name entry
+				return ERROR_CANNOT_MAKE;
+			rRenamedFile=(PDirectoryEntry)longNameEntries[nLongNameEntries];
 			// - initializing allocated LongNameEntries
 			WCHAR bufW[256], *pw=(PWCHAR)::memset(bufW,-1,sizeof(bufW));
 			#ifdef UNICODE
@@ -690,22 +684,23 @@
 			#else
 				::MultiByteToWideChar( CP_ACP,0, longNameAndExt,-1, bufW,ARRAYSIZE(bufW) );
 			#endif
-			for( BYTE n=1,const checksum=(*rRenamedFile=*de).shortNameEntry.__getChecksum__(); plnde!=longNameEntries; ){
-				const PDirectoryEntry p=*--plnde;
-				p->longNameEntry.sequenceNumber=n++;
+			const BYTE shortNameChecksum=( *rRenamedFile=*de ).shortNameEntry.__getChecksum__();
+			for( BYTE n=nLongNameEntries,seqNum=1; n>0; ){
+				const PDirectoryEntry p=(PDirectoryEntry)longNameEntries[--n];
+				p->longNameEntry.sequenceNumber=seqNum++;
 				::memcpy( p->longNameEntry.name1, pw, 10 ),	pw+=5;
 				p->longNameEntry.attributes=FILE_ATTRIBUTE_LONGNAME;
 				p->longNameEntry.zero1=0, p->longNameEntry.zero2=0;
-				p->longNameEntry.checksum=checksum;
+				p->longNameEntry.checksum=shortNameChecksum;
 				::memcpy( p->longNameEntry.name2, pw, 12 ),	pw+=6;
 				::memcpy( p->longNameEntry.name3, pw, 4 ),	pw+=2;
 				MarkDirectorySectorAsDirty(p);
 			}
-			(*plnde)->longNameEntry.sequenceNumber|=UDirectoryEntry::LONG_NAME_END;
+			((PDirectoryEntry)longNameEntries[0])->longNameEntry.sequenceNumber|=UDirectoryEntry::LONG_NAME_END;
 			MarkDirectorySectorAsDirty(rRenamedFile);
 			// - removing original short and long NameAndExtension
-			for( BYTE n=__getLongFileNameEntries__(de,longNameEntries); n--; ){
-				const PDirectoryEntry p=*plnde++;
+			for( BYTE n=__getLongFileNameEntries__(de,(PDirectoryEntry *)longNameEntries); n>0; ){
+				const PDirectoryEntry p=(PDirectoryEntry)longNameEntries[--n];
 				*(PBYTE)p=UDirectoryEntry::EMPTY_ENTRY;
 				MarkDirectorySectorAsDirty(p);
 			}
@@ -767,7 +762,7 @@
 				return err;
 			}
 		if (rCreatedSubdir==&tmp) // new Subdirectory's name follows the "8.3" convention
-			if ( rCreatedSubdir=TMsdos7DirectoryTraversal(this,currentDir).__allocateNewEntry__() ){
+			if ( rCreatedSubdir=TMsdos7DirectoryTraversal(this,currentDir).GetOrAllocateEmptyEntry() ){
 				*rCreatedSubdir=tmp;
 				MarkDirectorySectorAsDirty(rCreatedSubdir);
 			}else{
@@ -776,10 +771,10 @@
 			}
 		// - creating the "dot" and "dotdot" entries in newly created Subdirectory
 		TMsdos7DirectoryTraversal dt(this,rCreatedSubdir);
-		const PDirectoryEntry dot=dt.__allocateNewEntry__();
+		const PDirectoryEntry dot=dt.GetOrAllocateEmptyEntry();
 			*dot=*rCreatedSubdir;
 			*(PCHAR)::memset( dot, ' ', MSDOS7_FILE_NAME_LENGTH_MAX+MSDOS7_FILE_EXT_LENGTH_MAX )='.';
-		const PDirectoryEntry dotdot=dt.__allocateNewEntry__();
+		const PDirectoryEntry dotdot=dt.GetOrAllocateEmptyEntry();
 			( *dotdot=*dot ).shortNameEntry.name[1]='.';
 			dotdot->shortNameEntry.__setFirstCluster__( currentDir!=MSDOS7_DIR_ROOT ? ((PCDirectoryEntry)currentDir)->shortNameEntry.__getFirstCluster__() : 0 );
 		return ERROR_SUCCESS;
@@ -813,7 +808,7 @@
 			return err;
 		// - if moving a File with "8.3" name (e.g. "MYFILE.TXT"), moving the single DirectoryEntry "manually"
 		if (rMovedFile==de) // a "8.3" named File - the above "registration" didn't function for it
-			if (const PDirectoryEntry newDe=TMsdos7DirectoryTraversal(this,currentDir).__allocateNewEntry__()){
+			if (const PDirectoryEntry newDe=TMsdos7DirectoryTraversal(this,currentDir).GetOrAllocateEmptyEntry()){
 				*newDe=*de;
 				*(PBYTE)de=UDirectoryEntry::EMPTY_ENTRY;
 			}else
@@ -840,7 +835,7 @@
 				if (IsDirectory(de)){
 					// Directory - finding out how much space it occupies on the disk (NOT including its content!)
 					DWORD sizeOnDisk=0;
-					for( TMsdos7DirectoryTraversal dt(this,de); dt.__existsNextEntry__(); sizeOnDisk+=sizeof(UDirectoryEntry) );
+					for( TMsdos7DirectoryTraversal dt(this,de); dt.AdvanceToNextEntry(); sizeOnDisk+=sizeof(UDirectoryEntry) );
 					return sizeOnDisk;
 				}else{
 					// File
@@ -906,7 +901,7 @@
 				if (!de->shortNameEntry.__isDotOrDotdot__()){ // "dot" and "dotdot" Entries skipped
 					// . recurrently deleting the content of a Directory
 					if (IsDirectory(de))
-						for( TMsdos7DirectoryTraversal dt(this,de); dt.__existsNextEntry__(); )
+						for( TMsdos7DirectoryTraversal dt(this,de); dt.AdvanceToNextEntry(); )
 							switch (dt.entryType){
 								case TDirectoryTraversal::SUBDIR:
 									// Directory
@@ -1090,7 +1085,7 @@
 			for( bfsDirectories.AddTail(rlnp.msdos->currentDir); bfsDirectories.GetCount(); ){
 				if (pAction->Cancelled) return ERROR_CANCELLED;
 				TMsdos7DirectoryTraversal dt( rlnp.msdos, bfsDirectories.RemoveHead() );
-				while (dt.__existsNextEntry__()){
+				while (dt.AdvanceToNextEntry()){
 					const PDirectoryEntry de=(PDirectoryEntry)dt.entry;
 					switch (dt.entryType){
 						case TDirectoryTraversal::SUBDIR:
@@ -1356,7 +1351,7 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 				}
 	}
 
-	bool CMSDOS7::TMsdos7DirectoryTraversal::__existsNextEntry__(){
+	bool CMSDOS7::TMsdos7DirectoryTraversal::AdvanceToNextEntry(){
 		// True <=> another Entry in current Directory exists (Empty or not), otherwise False
 		if (const PCBootSector bootSector=msdos7->boot.GetSectorData()){
 			// . getting next LogicalSector of CurrentDirectory
@@ -1426,42 +1421,39 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 			return false;
 	}
 
-	bool CMSDOS7::TMsdos7DirectoryTraversal::AdvanceToNextEntry(){
-		// True <=> found another entry in current Directory (Empty or not), otherwise False
-		return __existsNextEntry__();
-	}
-
-	CMSDOS7::PDirectoryEntry CMSDOS7::TMsdos7DirectoryTraversal::__allocateNewEntry__(){
-		// allocates new DirectoryEntry at the end of CurrentDirectory and returns the DirectoryEntry; returns Null if new DirectoryEntry cannot be allocated (e.g. because disk is full)
+	CDos::PFile CMSDOS7::TMsdos7DirectoryTraversal::GetOrAllocateEmptyEntries(BYTE count,PFile *pOutEmptyEntriesBuffer){
+		// finds or allocates specified Count of empty entries in current Directory; returns pointer to the first entry, or Null if not all entries could be found/allocated (e.g. because disk full)
+		BYTE nEmptyEntriesFound=0;
+		PDirectoryEntry deFirst=nullptr;
 		do{
-			// . moving pointer to the end of CurrentDirectory
-			while (__existsNextEntry__() && !foundEndOfDirectory); // cycle as long as there exists another Entry and the Entry isn't the end of CurrentDirectory
-			if (!foundEndOfDirectory) // if end of CurrentDirectory not found (e.g. because Sector unreadable or FAT error) ...
-				return nullptr; // ... we are unsuccessfully done
-			// . if an Empty DirectoryEntry found, we are successfully done
-			if (entryType==TDirectoryTraversal::EMPTY)
-				break;
-			// . at this point, we have found end of CurrentDirectory but without an Empty DirectoryEntry - allocating new Cluster and returning the first DirectoryEntry in it
-			switch (msdos7->fat.type){
-				case CFat::FAT12:
-				case CFat::FAT16:
-					if (directory==MSDOS7_DIR_ROOT) // for root Directory of FAT12/FAT16 ...
-						return nullptr; // ... cannot be allocated a new Cluster
-					//fallthrough
-				case CFat::FAT32:
-					if (( next=msdos7->__allocateAndResetDirectoryCluster__() )==MSDOS7_FAT_CLUSTER_EOF)
-						return nullptr; // failed to allocate a new Directory Cluster
-					msdos7->fat.SetClusterValue(cluster,next);
-					foundEndOfDirectory=false; // toggling the flag back - thanks to the newly allocated Cluster, the CurrentDirectory doesn't yet end
-					break;
-			}
+			if (!AdvanceToNextEntry()) // cannot continue in traversal?
+				if (foundEndOfDirectory && MARKS_CLUSTER_EOF(next)) // is it because regular end of Directory has been reached?
+					switch (msdos7->fat.type){ // can we allocate new Directory Cluster?
+						case CFat::FAT12:
+						case CFat::FAT16:
+							if (directory==MSDOS7_DIR_ROOT) // for root Directory of FAT12/FAT16 ...
+								return nullptr; // ... cannot be allocated a new Cluster
+							//fallthrough
+						case CFat::FAT32:
+							if (( next=msdos7->__allocateAndResetDirectoryCluster__() )==MSDOS7_FAT_CLUSTER_EOF)
+								return nullptr; // failed to allocate a new Directory Cluster
+							msdos7->fat.SetClusterValue(cluster,next);
+							foundEndOfDirectory=false; // toggling the flag back - thanks to the newly allocated Cluster, the CurrentDirectory doesn't yet end
+							continue;
+					}
+				else
+					return nullptr;
+			if (entryType==TDirectoryTraversal::EMPTY){
+				if (!nEmptyEntriesFound)
+					deFirst=(PDirectoryEntry)entry;
+				if (pOutEmptyEntriesBuffer)
+					pOutEmptyEntriesBuffer[nEmptyEntriesFound]=entry;
+				if (++nEmptyEntriesFound==count)
+					return deFirst;
+			}else
+				nEmptyEntriesFound=0;
 		}while (true);
-		return (PDirectoryEntry)entry;
-	}
-
-	CDos::PFile CMSDOS7::TMsdos7DirectoryTraversal::AllocateNewEntry(){
-		// allocates and returns new entry at the end of current Directory and returns; returns Null if new entry cannot be allocated (e.g. because disk is full)
-		return __allocateNewEntry__();
+		return nullptr;
 	}
 
 	void CMSDOS7::TMsdos7DirectoryTraversal::ResetCurrentEntry(BYTE directoryFillerByte){

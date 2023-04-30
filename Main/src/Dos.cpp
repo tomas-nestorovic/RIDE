@@ -1235,6 +1235,11 @@ reportError:Utils::Information(buf);
 		return nullptr; // Null = cannot allocate new Empty entry (aka. this Directory has fixed number of entries)
 	}
 
+	CDos::PFile CDos::TDirectoryTraversal::GetOrAllocateEmptyEntries(BYTE,PFile *){
+		// finds or allocates specified Count of empty entries in current Directory; returns pointer to the first entry, or Null if not all entries could be found/allocated (e.g. because disk full)
+		return nullptr;
+	}
+
 	CDos::PFile CDos::TDirectoryTraversal::GetNextFileOrSubdir(){
 		// finds and returns the next File or Subdirectory in current Directory; returns Null if not found
 		while (AdvanceToNextEntry())

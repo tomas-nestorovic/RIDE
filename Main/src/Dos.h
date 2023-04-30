@@ -138,6 +138,7 @@
 			TDirectoryTraversal(PCFile directory,WORD entrySize); // ctor
 
 			virtual PFile AllocateNewEntry();
+			virtual PFile GetOrAllocateEmptyEntries(BYTE count,PFile *pOutEmptyEntriesBuffer);
 			virtual bool AdvanceToNextEntry()=0;
 			virtual void ResetCurrentEntry(BYTE directoryFillerByte)=0;
 			PFile GetNextFileOrSubdir();

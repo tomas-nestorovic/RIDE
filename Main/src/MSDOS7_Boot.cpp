@@ -393,7 +393,7 @@
 					return;
 			}
 			//rParam.label.length=0; // assumption (Label doesn't exist); commented out as already zeroed by the caller
-			for( TMsdos7DirectoryTraversal dt(msdos,MSDOS7_DIR_ROOT); dt.__existsNextEntry__(); )
+			for( TMsdos7DirectoryTraversal dt(msdos,MSDOS7_DIR_ROOT); dt.AdvanceToNextEntry(); )
 				if (dt.entryType==TDirectoryTraversal::CUSTOM
 					&&
 					(((PCDirectoryEntry)dt.entry)->shortNameEntry.attributes&FILE_ATTRIBUTE_VOLUME)!=0
@@ -470,7 +470,7 @@
 	bool WINAPI CMSDOS7::CMsdos7BootView::__pg_createLabel__(PropGrid::PCustomParam,int hyperlinkId,LPCTSTR hyperlinkName){
 		// True <=> PropertyGrid's Editor can be destroyed after this function has terminated, otherwise False
 		const PMSDOS7 msdos=(PMSDOS7)CDos::GetFocused();
-		if (const PDirectoryEntry de=TMsdos7DirectoryTraversal(msdos,MSDOS7_DIR_ROOT).__allocateNewEntry__()){
+		if (const PDirectoryEntry de=TMsdos7DirectoryTraversal(msdos,MSDOS7_DIR_ROOT).GetOrAllocateEmptyEntry()){
 			de->shortNameEntry.attributes=FILE_ATTRIBUTE_VOLUME;
 			::memcpy(	::memset(de->shortNameEntry.name,' ',MSDOS7_LABEL_LENGTH_MAX),
 						VOLUME_LABEL_DEFAULT_ANSI_8CHARS,

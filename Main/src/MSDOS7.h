@@ -211,11 +211,11 @@
 			BYTE nRemainingEntriesInSector;
 		public:
 			TMsdos7DirectoryTraversal(const CMSDOS7 *_msdos7,PCFile directory); // ctor
-			PFile AllocateNewEntry() override;
-			PDirectoryEntry __allocateNewEntry__();
+
+			PFile GetOrAllocateEmptyEntries(BYTE count,PFile *pOutEmptyEntriesBuffer=nullptr) override;
+			inline PDirectoryEntry GetOrAllocateEmptyEntry(){ return (PDirectoryEntry)GetOrAllocateEmptyEntries(1); }
 			bool AdvanceToNextEntry() override;
 			void ResetCurrentEntry(BYTE directoryFillerByte) override;
-			bool __existsNextEntry__();
 		};
 
 		class CMsdos7BootView sealed:public CBootView{
