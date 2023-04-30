@@ -198,7 +198,7 @@ using namespace Yahel;
 					return rNext.logicalPosition;
 				}
 			} trackHexaInfos[FDD_CYLINDERS_MAX*2+1];
-			BYTE lastKnownHexaRowLength;
+			WORD lastKnownHexaRowLength;
 
 			TSector __scanTrack__(TTrack track,PSectorId ids,PWORD lengths) const{
 				// a wrapper around CImage::ScanTrack

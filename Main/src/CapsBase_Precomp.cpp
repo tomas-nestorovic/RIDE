@@ -431,8 +431,8 @@ nextTrial:	;
 					return ERROR_UNKNOWN_COMPONENT;
 			}
 		// - assuring that all fluxes are after pre-compensation still chronologically ordered
-		pt=trw.GetBuffer();
-		for( DWORD tPrev=*pt,i=1,j=1; i<nTimes; j++ ) // i = "target" position, j = "source" position
+		TLogTime tPrev=*( pt=trw.GetBuffer() );
+		for( DWORD i=1,j=1; i<nTimes; j++ ) // i = "target" position, j = "source" position
 			if (pt[j]<tPrev){
 				// no - the J-th flux should already been processed, meaning the Previous flux was a "tachyon" one!
 				ASSERT(FALSE);
