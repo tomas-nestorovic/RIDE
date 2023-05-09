@@ -178,7 +178,6 @@
 		}
 	};
 
-	#define ACCEPT_OPTIONS_COUNT	4
 	#define ACCEPT_ERROR_ID			IDOK
 
 	#define RESOLVE_OPTIONS_COUNT	5
@@ -208,6 +207,7 @@
 			BYTE revolution;
 			struct{
 				WORD automaticallyAcceptedErrors;
+				bool anyErrorsOnEmptySectors;
 				bool remainingErrorsOnTrack;
 			} acceptance;
 			struct{
@@ -314,7 +314,13 @@
 					}else if (
 						p.fdcStatus.DescribesMissingId() // ... Sector ID not found (e.g. extremely damaged disk where Sectors appear and disappear randomly in each Revolution)
 						||
-						p.fdcStatus.ToWord()&~p.acceptance.automaticallyAcceptedErrors && !p.acceptance.remainingErrorsOnTrack // ... A&B, A = automatically not accepted Errors exist, B = Error reporting for current Track is enabled
+						p.fdcStatus.ToWord() && !( // ... this error is NOT automatically accepted
+							p.fdcStatus.ToWord()&p.acceptance.automaticallyAcceptedErrors // an error to be accepted automatically?
+							||
+							p.acceptance.remainingErrorsOnTrack // want automatically accept all errors in the rest of current Track?
+							||
+							p.acceptance.anyErrorsOnEmptySectors && dp.dos->GetSectorStatus(p.chs)==CDos::TSectorStatus::EMPTY // want accept any error for Empty Sectors?
+						)
 					){
 						// | reading SourceSector particular Revolution
 						LOG_SECTOR_ACTION(&p.chs.sectorId,_T("reading"));
@@ -399,13 +405,14 @@
 									p+=::lstrlen(::lstrcpy(p,NO_STATUS_ERROR));
 								errorTextBox.SetWindowText( buf );
 								// > converting the "Accept" button to a SplitButton
-								static constexpr Utils::TSplitButtonAction Actions[ACCEPT_OPTIONS_COUNT]={
-									{ ACCEPT_ERROR_ID, _T("Accept error") },
+								static constexpr Utils::TSplitButtonAction Actions[]={
+									{ ACCEPT_ERROR_ID, _T("Accept this error") },
 									{ ID_ERROR, _T("Accept all errors of this kind") },
 									{ ID_TRACK, _T("Accept all errors in this track") },
+									{ ID_STATE, _T("Accept all errors on empty sectors") },
 									{ ID_IMAGE, _T("Accept all errors on the disk") }
 								};
-								ConvertDlgButtonToSplitButton( IDOK, Actions, ACCEPT_OPTIONS_COUNT );
+								ConvertDlgButtonToSplitButton( IDOK, Actions, ARRAYSIZE(Actions) );
 								EnableDlgItem( IDOK, // accepting errors is allowed only if ...
 									dynamic_cast<CImageRaw *>(dp.target.get())==nullptr // ... the Target Image can accept them
 									&&
@@ -457,6 +464,11 @@
 												return 0;
 											case ID_ERROR:
 												rp.acceptance.automaticallyAcceptedErrors|=rFdcStatus.ToWord();
+												UpdateData(TRUE);
+												EndDialog(ACCEPT_ERROR_ID);
+												return 0;
+											case ID_STATE:
+												rp.acceptance.anyErrorsOnEmptySectors=true;
 												UpdateData(TRUE);
 												EndDialog(ACCEPT_ERROR_ID);
 												return 0;
