@@ -100,7 +100,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release MFC 4.2|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
-    <LibraryPath>D:\puvodni\zaloha\Program Files\Visual Studio 6\VC98\MFC\Lib;D:\puvodni\zaloha\Program Files\Visual Studio 6\VC98\Lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>D:\puvodni\zaloha\Program Files\Visual Studio 6\VC98\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

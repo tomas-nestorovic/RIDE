@@ -162,6 +162,7 @@ struct TLogTimeInterval{
 #define COLOR_BLACK	0
 #define COLOR_YELLOW 0xffff
 #define COLOR_RED	0xff
+#define COLOR_BLUE	0xff0000
 
 #define TIME_NANO(n)	(n)
 #define TIME_MICRO(u)	((u)*1000)
@@ -206,7 +207,7 @@ struct TLogTimeInterval{
 
 #define APP_FULLNAME	_T("Real and Imaginary Disk Editor")
 #define APP_ABBREVIATION _T("RIDE")
-#define APP_VERSION		_T("1.7.1 debug special")
+#define APP_VERSION		_T("1.7.2 debug special")
 //#define APP_SPECIAL_VER
 #define APP_IDENTIFIER	APP_ABBREVIATION APP_VERSION
 #define APP_CLASSNAME	_T("Afx:tomascz.") APP_ABBREVIATION

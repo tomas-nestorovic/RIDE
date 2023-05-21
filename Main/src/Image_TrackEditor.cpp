@@ -232,7 +232,7 @@
 							i++;
 						const auto dcSettings0=::SaveDC(dc);
 							::SelectObject( dc, te.penIndex );
-							::SetTextColor( dc, 0xff0000 );
+							::SetTextColor( dc, COLOR_BLUE );
 							::SelectObject( dc, Utils::CRideFont::Std );
 							for( TCHAR buf[16]; continuePainting && i<tr.GetIndexCount() && tr.GetIndexTime(i)<visible.tEnd; i++ ){ // visible indices
 								const int x=te.timeline.GetUnitCount( tr.GetIndexTime(i) )-nUnitsA;
@@ -542,7 +542,7 @@
 				: timeline( tr.GetTotalTime(), 1, 10 )
 				, tr(tr)
 				, pRegions(pRegions) , nRegions(nRegions) // up to the caller to dispose allocated Regions!
-				, penIndex( 2, 0xff0000 )
+				, penIndex( 2, COLOR_BLUE )
 				, painter(*this)
 				, draggedTime(-1)
 				, cursorTime(-1) , cursorFeaturesShown(false) , cursorFeatures(TCursorFeatures::DEFAULT)

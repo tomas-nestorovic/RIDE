@@ -20,8 +20,6 @@
 
 
 	class CCapsBase abstract:public CFloppyImage{
-		friend struct TInternalTrack;
-
 		Medium::TType forcedMediumType;
 	protected:
 		class CBitReader sealed{
