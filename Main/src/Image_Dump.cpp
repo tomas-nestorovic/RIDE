@@ -66,7 +66,7 @@
 				source->GetInsertedMediumType( 0, srcMediumType );
 				if (srcMediumType==Medium::UNKNOWN)
 					srcMediumType=dos->formatBoot.mediumType;
-				Utils::WriteToFileFormatted( fHtml, _T("<h3>Configuration</h3><table><tr><td class=caption>") APP_ABBREVIATION _T(" version:</td><td>") APP_VERSION _T("</td></tr><tr><td class=caption>System:</td><td>%s</td></tr><tr></tr><tr><td class=caption>Source:</td><td>%s<br>via<br>%s</td></tr><tr><td class=caption>Target:</td><td>%s<br>via<br>%s</td></tr><tr><td class=caption>Cylinders:</td><td>%d &#8211; %d (%s)</td></tr><tr><td class=caption>Full track analysis:</td><td>%s</td></tr><tr><td class=caption>Real-time priority:</td><td>%s</td></tr></table><br>"), dos->properties->name, Medium::GetDescription(srcMediumType), source->GetPathName().GetLength()?source->GetPathName():_T("N/A"), Medium::GetDescription(mediumType), target->GetPathName().GetLength()?target->GetPathName():_T("N/A"), cylinderA,cylinderZ,cylinderA!=cylinderZ?_T("incl."):_T("single cylinder"), fullTrackAnalysis?_T("On"):_T("Off"), realtimePriority?_T("On"):_T("Off") );
+				Utils::WriteToFileFormatted( fHtml, _T("<h3>Configuration</h3><table><tr><td class=caption>") APP_ABBREVIATION _T(" version:</td><td>") APP_VERSION _T("</td></tr><tr><td class=caption>System:</td><td>%s</td></tr><tr></tr><tr><td class=caption>Source:</td><td>%s<br>via<br>%s</td></tr><tr><td class=caption>Target:</td><td>%s<br>via<br>%s</td></tr><tr><td class=caption>Cylinders:</td><td>%d &#8211; %d (%s)</td></tr><tr><td class=caption>Heads:</td><td>0 &#8211; %d (%s)</td></tr><tr><td class=caption>Full track analysis:</td><td>%s</td></tr><tr><td class=caption>Real-time priority:</td><td>%s</td></tr></table><br>"), dos->properties->name, Medium::GetDescription(srcMediumType), source->GetPathName().GetLength()?source->GetPathName():_T("N/A"), Medium::GetDescription(mediumType), target->GetPathName().GetLength()?target->GetPathName():_T("N/A"), cylinderA,cylinderZ,cylinderA!=cylinderZ?_T("incl."):_T("single cylinder"), nHeads-1,nHeads>1?_T("incl."):_T("single head"), fullTrackAnalysis?_T("On"):_T("Off"), realtimePriority?_T("On"):_T("Off") );
 				Utils::WriteToFile(fHtml,_T("<h3>Overview</h3>"));
 					Utils::WriteToFileFormatted( fHtml, _T("<p>Duration: %d.%03d seconds (%02d:%02d:%02d.%03d).</p>"), div(duration.ToMilliseconds(),1000), duration.wHour, duration.wMinute, duration.wSecond, duration.wMilliseconds );
 					Utils::WriteToFileFormatted( fHtml, _T("<p>Date finished: %s.</p>"), (LPCTSTR)Utils::CRideTime().DateToStdString() );
@@ -180,7 +180,7 @@
 
 	#define ACCEPT_ERROR_ID			IDOK
 
-	#define RESOLVE_OPTIONS_COUNT	5
+	#define RESOLVE_OPTIONS_COUNT	8
 	#define RESOLVE_EXCLUDE_ID		IDIGNORE
 	#define RESOLVE_EXCLUDE_UNKNOWN	IDCONTINUE
 
@@ -229,7 +229,7 @@
 				p.trackScanned=dp.source->IsTrackScanned( p.chs.cylinder, p.chs.head );
 				p.canCalibrateSourceHeads =	canSeekSourceHeadsHome
 											&&
-											( !sourceSupportsTrackReading || !p.trackScanned );
+											( !sourceSupportsTrackReading || !p.trackScanned || dp.source->dos->properties==&CUnknownDos::Properties );
 				// . scanning Source Track
 				TSectorId bufferId[(TSector)-1];	WORD bufferLength[(TSector)-1];
 				Codec::TType sourceCodec; TSector nSectors; TStdWinError err;
@@ -407,6 +407,7 @@
 								// > converting the "Accept" button to a SplitButton
 								static constexpr Utils::TSplitButtonAction Actions[]={
 									{ ACCEPT_ERROR_ID, _T("Accept this error") },
+									Utils::TSplitButtonAction::HorizontalLine,
 									{ ID_ERROR, _T("Accept all errors of this kind") },
 									{ ID_TRACK, _T("Accept all errors in this track") },
 									{ ID_STATE, _T("Accept all errors on empty sectors") },
@@ -419,18 +420,15 @@
 									!rFdcStatus.DescribesMissingId() // ... the Sector has been found
 								);
 								// > converting the "Resolve" button to a SplitButton
-								static constexpr Utils::TSplitButtonAction ResolveActions[RESOLVE_OPTIONS_COUNT]={
-									{ 0, _T("Resolve") }, // 0 = no default action
+								const Utils::TSplitButtonAction tmpResolveActions[RESOLVE_OPTIONS_COUNT]={
+									{ 0, onlyPartlyRecoverable?_T("Resolve partly"):_T("Resolve") }, // 0 = no default action
 									{ RESOLVE_EXCLUDE_ID, _T("Exclude from track") },
 									{ RESOLVE_EXCLUDE_UNKNOWN, _T("Exclude all unknown from disk") },
-									{ ID_DATAFIELD_CRC, _T("Fix Data CRC only") },
-									{ ID_RECOVER, _T("Fix ID or Data...") }
+									Utils::TSplitButtonAction::HorizontalLine,
+									{ ID_DATAFIELD_CRC, _T("Fix Data CRC only"), MF_GRAYED*( rFdcStatus.DescribesMissingDam() || rFdcStatus.DescribesMissingId() || !rFdcStatus.DescribesDataFieldCrcError() ) }, // disabled if the Data CRC ok
+									{ ID_RECOVER, _T("Fix ID or Data..."), MF_GRAYED*( rFdcStatus.DescribesMissingDam() || rFdcStatus.DescribesMissingId() || !rFdcStatus.DescribesIdFieldCrcError()&&!rFdcStatus.DescribesDataFieldCrcError() ) }, // enabled only if either ID or Data field with error
 								};
-								::memcpy( resolveActions, ResolveActions, sizeof(ResolveActions) );
-									if (onlyPartlyRecoverable)
-										resolveActions->commandCaption=_T("Resolve partly");
-									resolveActions[3].menuItemFlags=MF_GRAYED*( rFdcStatus.DescribesMissingDam() || rFdcStatus.DescribesMissingId() || !rFdcStatus.DescribesDataFieldCrcError() ); // disabled if the Data CRC ok
-									resolveActions[4].menuItemFlags=MF_GRAYED*( rFdcStatus.DescribesMissingDam() || rFdcStatus.DescribesMissingId() || !rFdcStatus.DescribesIdFieldCrcError()&&!rFdcStatus.DescribesDataFieldCrcError() ); // enabled only if either ID or Data field with error
+								::memcpy( resolveActions, tmpResolveActions, sizeof(tmpResolveActions) );
 								ConvertDlgButtonToSplitButton( IDNO, resolveActions, RESOLVE_OPTIONS_COUNT );
 								EnableDlgItem( IDNO, dynamic_cast<CImageRaw *>(dp.target.get())==nullptr ); // recovering errors is allowed only if the Target Image can accept them
 								// > converting the "Retry" button to a SplitButton
