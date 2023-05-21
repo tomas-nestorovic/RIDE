@@ -491,6 +491,9 @@
     <ClCompile Include="src\ViewFatHexa.cpp">
       <Filter>Source Files\Dos\Tabs</Filter>
     </ClCompile>
+    <ClCompile Include="src\CapsBase_Mining.cpp">
+      <Filter>Source Files\Image</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="res\resource.rc">

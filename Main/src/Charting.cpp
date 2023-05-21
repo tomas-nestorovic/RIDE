@@ -402,11 +402,16 @@
 		if (newPercentile==percentile)
 			return;
 		percentile=newPercentile;
-		TLogValue xMax=xMaxOrg, yMax=yMaxOrg;
+		RefreshDrawingLimits();
+	}
+
+	void CChartView::CXyDisplayInfo::RefreshDrawingLimits(TLogValue xMaxNew,TLogValue yMaxNew){
+		TLogValue xMax= xMaxNew<0 ? xMaxOrg : xMaxNew;
+		TLogValue yMax= yMaxNew<0 ? yMaxOrg : yMaxNew;
 		for( BYTE i=0; i<nGraphics; i++ )
 			if (const PCXyGraphics g=dynamic_cast<PCXyGraphics>(graphics[i]))
 				if (g->visible)
-					g->GetDrawingLimits( newPercentile, xMax, yMax );
+					g->GetDrawingLimits( percentile, xMax, yMax );
 		xAxis.SetLength(xMax), yAxis.SetLength(yMax);
 	}
 

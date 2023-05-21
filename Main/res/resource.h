@@ -67,6 +67,7 @@
 #define IDR_TRACK_EDITOR_GOTO_TIME      226
 #define IDR_FILEMANAGER_GENERAL_CONTEXT 227
 #define IDR_FDD_TEST                    228
+#define IDR_CAPS_MINING                 229
 #define IDR_TRACK_EXPORT                230
 #define ID_HIDDEN                       1018
 #define ID_SYSTEM                       1019

@@ -5,9 +5,8 @@
 	protected:
 		std::unique_ptr<CWinThread> pWorker;
 		LPCVOID fnParams;
-
-		CBackgroundAction();
 	public:
+		CBackgroundAction();
 		CBackgroundAction(AFX_THREADPROC fnAction,LPCVOID actionParams,int actionThreadPriority);
 		virtual ~CBackgroundAction(); // virtual in order for the keyword "this" to work in AfxBeginThread when constructing a descendant
 

@@ -283,6 +283,7 @@
     <ClCompile Include="src\GDOS_FileManager.cpp" />
     <ClCompile Include="src\Greaseweazle.cpp" />
     <ClCompile Include="src\HexaEditor.cpp" />
+    <ClCompile Include="src\CapsBase_Mining.cpp" />
     <ClCompile Include="src\Image_SectorDataSerializer.cpp" />
     <ClCompile Include="src\Image_TrackEditor.cpp" />
     <ClCompile Include="src\Image_TrackRW.cpp" />

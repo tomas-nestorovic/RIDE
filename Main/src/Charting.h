@@ -118,6 +118,7 @@
 			POINT InverselyTransform(const POINT &pt) const;
 			inline WORD GetPercentile() const{ return percentile; }
 			void SetPercentile(WORD newPercentile);
+			void RefreshDrawingLimits(TLogValue xNewMax=-1,TLogValue yNewMax=-1);
 			CString GetStatus() const override;
 			bool OnCmdMsg(CChartView &cv,UINT nID,int nCode,PVOID pExtra) override;
 		};

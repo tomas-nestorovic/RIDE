@@ -2004,6 +2004,21 @@ BEGIN
     PUSHBUTTON      "Close",IDCANCEL,133,97,50,14
 END
 
+IDR_CAPS_MINING DIALOG DISCARDABLE  0, 0, 413, 230
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "Start",IDOK,303,209,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,356,209,50,14
+    LTEXT           "Mining target:",IDC_STATIC,7,9,44,8,NOT WS_GROUP
+    COMBOBOX        ID_ACCURACY,63,7,343,166,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
+    LTEXT           "Approach:",IDC_STATIC,7,25,34,8,NOT WS_GROUP
+    COMBOBOX        ID_CREATOR,63,23,343,143,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
+    LTEXT           "Static",ID_CHART,7,48,399,149,NOT WS_VISIBLE | 
+                    WS_BORDER | NOT WS_GROUP
+END
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -2337,6 +2352,14 @@ BEGIN
         RIGHTMARGIN, 183
         TOPMARGIN, 7
         BOTTOMMARGIN, 111
+    END
+
+    IDR_CAPS_MINING, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 406
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 223
     END
 END
 #endif    // APSTUDIO_INVOKED

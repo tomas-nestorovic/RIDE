@@ -888,6 +888,11 @@ namespace Medium{
 		return ERROR_NOT_SUPPORTED; // each Track by default must be explicitly formatted to be sure about its structure (but Images abstracting physical drives can override this setting)
 	}
 
+	TStdWinError CImage::MineTrack(TCylinder cyl,THead head){
+		// begins mining of specified Track; returns Windows standard i/o error
+		return ERROR_NOT_SUPPORTED; // this container doesn't support Track mining
+	}
+
 	TStdWinError CImage::SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap){
 		// saves all Modified Tracks by calling the SaveTrack method for each of them; returns Windows standard i/o error
 		// - attempting to save the disk the "per-Track way" (must override this method in descendant if this way is not suitable for given disk, e.g. DSK images!)

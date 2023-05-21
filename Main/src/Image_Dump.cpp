@@ -427,6 +427,8 @@
 									Utils::TSplitButtonAction::HorizontalLine,
 									{ ID_DATAFIELD_CRC, _T("Fix Data CRC only"), MF_GRAYED*( rFdcStatus.DescribesMissingDam() || rFdcStatus.DescribesMissingId() || !rFdcStatus.DescribesDataFieldCrcError() ) }, // disabled if the Data CRC ok
 									{ ID_RECOVER, _T("Fix ID or Data..."), MF_GRAYED*( rFdcStatus.DescribesMissingDam() || rFdcStatus.DescribesMissingId() || !rFdcStatus.DescribesIdFieldCrcError()&&!rFdcStatus.DescribesDataFieldCrcError() ) }, // enabled only if either ID or Data field with error
+									Utils::TSplitButtonAction::HorizontalLine,
+									{ ID_TIME, _T("Mine track..."), MF_GRAYED*!(rp.canCalibrateSourceHeads && dp.source->MineTrack(TPhysicalAddress::Invalid.cylinder,TPhysicalAddress::Invalid.head)!=ERROR_NOT_SUPPORTED) }
 								};
 								::memcpy( resolveActions, tmpResolveActions, sizeof(tmpResolveActions) );
 								ConvertDlgButtonToSplitButton( IDNO, resolveActions, RESOLVE_OPTIONS_COUNT );
@@ -588,6 +590,14 @@
 												}
 												break;
 											}
+											case ID_TIME:
+												// Track mining
+												if (ERROR_SUCCESS==dp.source->MineTrack( rp.chs.cylinder, rp.chs.head )){
+													UpdateData(TRUE);
+													rp.trackScanned=false;
+													EndDialog(IDRETRY);
+												}
+												return 0;
 											case RESOLVE_EXCLUDE_UNKNOWN:
 												// exclusion of this and all future Unknown Sectors from the disk
 												rp.exclusion.allUnknown=true;
