@@ -344,9 +344,40 @@
 							const WORD sectorDataLength;
 							TFdcStatus &rFdcStatus;
 							CEdit errorTextBox;
-							CHexaEditor hexaEditor;
 							std::unique_ptr<CSplitterWnd> splitter;
 							Utils::TSplitButtonAction resolveActions[RESOLVE_OPTIONS_COUNT];
+
+							class CSectorHexaEditor sealed:public CHexaEditor{
+							public:
+								const TDumpParams &dp;
+								const TParams &p;
+
+								CSectorHexaEditor(const TDumpParams &dp,const TParams &p)
+									// ctor
+									// > base
+									: CHexaEditor((PVOID)&dp)
+									// > modification of ContextMenu
+									, dp(dp) , p(p) {
+									contextMenu.AppendSeparator();
+									contextMenu.AppendMenu(
+										MF_BYCOMMAND | MF_STRING | MF_GRAYED*!dp.source->ReadTrack(0,0),
+										ID_TIME, _T("Timing under cursor...")
+									);
+								}
+								bool ProcessCustomCommand(UINT cmd) override{
+									// custom command processing
+									switch (cmd){
+										case ID_TIME:
+											dp.source->ShowModalTrackTimingAt(
+												p.chs, 0,
+												instance->GetCaretPosition(),
+												(Revolution::TType)p.revolution
+											);
+											return true;
+									}
+									return __super::ProcessCustomCommand(cmd);
+								}
+							} hexaEditor;
 
 							void PreInitDialog() override{
 								// dialog initialization
@@ -618,7 +649,7 @@
 								, dp(dp) , rp(_rParams) , rFdcStatus(rFdcStatus)
 								, sectorData( rFdcStatus.DescribesMissingDam()?nullptr:sectorData )
 								, sectorDataLength( rFdcStatus.DescribesMissingDam()?0:sectorLength )
-								, hexaEditor(this) {
+								, hexaEditor( dp, _rParams ) {
 							}
 						} d(pAction,dp,p,bufferSectorData[p.s],bufferLength[p.s],p.fdcStatus);
 						// | showing the Dialog and processing its result
