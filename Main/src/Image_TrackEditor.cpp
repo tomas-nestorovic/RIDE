@@ -404,6 +404,10 @@
 						break;
 					case WM_MOUSEWHEEL:{
 						// mouse wheel was rotated
+						if (::GetAsyncKeyState(VK_CONTROL)>=0){ // if Ctrl+W NOT pressed
+							SetScrollTime( GetCenterTime() );
+							return 0;
+						}
 						POINT cursor;
 						::GetCursorPos(&cursor);
 						ScreenToClient(&cursor);
