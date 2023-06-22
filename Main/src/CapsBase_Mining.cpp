@@ -11,7 +11,7 @@
 		if (cyl>=GetCylinderCount() || head>=GetHeadCount())
 			return ERROR_INVALID_PARAMETER; // yes, the mining is supported but the parameters are invalid
 }		// - defining the Dialog
-		static constexpr WORD MiningParamIds[]={ ID_ACCURACY, ID_CREATOR, 0 };
+		static constexpr WORD MiningParamIds[]={ ID_ACCURACY, ID_CREATOR, ID_HEAD, 0 };
 		#define MINED_TRACK_TIMES_COUNT_MAX	800
 		class CTrackMiningDialog sealed:public Utils::CRideDialog{
 			CCapsBase &cb;
@@ -45,6 +45,12 @@
 				METHOD_NONE,
 				METHOD_READING_FROM_DRIVE
 			};
+
+			enum THeadCalibration{
+				HEAD_DONT_CALIBRATE					=INT_MAX,
+				HEAD_CALIBRATE_ON_START				=1,
+				HEAD_CALIBRATE_EACH_10_REVOLUTIONS	=10
+			} headCalibration;
 
 			void PreInitDialog() override{
 				// dialog initialization
@@ -106,6 +112,22 @@
 				);
 				if (pit)
 					ShowScatterPlotOfTrack(*pit);
+				// . Head calibration options
+				cbx.Attach( GetDlgItemHwnd(ID_HEAD) );
+					cbx.SetItemData(
+						cbx.AddString(_T("Don't calibrate head")),
+						HEAD_DONT_CALIBRATE
+					);
+					cbx.SetItemData(
+						cbx.AddString(_T("Calibrate head once on start")),
+						HEAD_CALIBRATE_ON_START
+					);
+					for( char nRevs=HEAD_CALIBRATE_EACH_10_REVOLUTIONS,buf[80]; nRevs<=30; nRevs+=10 ){
+						::wsprintfA( buf, _T("Calibrate head each %d revolutions"), nRevs );
+						cbx.SetItemData( cbx.AddString(buf), nRevs );
+					}
+				cbx.Detach();
+				SelectDlgComboBoxValue( ID_HEAD, headCalibration );
 			}
 
 			void ShowScatterPlotOfTrack(const CImage::CTrackReaderWriter &trw){
@@ -156,6 +178,12 @@
 					// launching the mining
 					miningRunning=true;
 					miningTarget=(TMiningTarget)GetDlgComboBoxSelectedValue(ID_ACCURACY);
+					headCalibration=(THeadCalibration)GetDlgComboBoxSelectedValue(ID_HEAD);
+					if (headCalibration==HEAD_CALIBRATE_ON_START){ // initial (and the only) Head calibration
+						if (const TStdWinError err=cb.SeekHeadsHome())
+							return PostMiningErrorMessage(err);
+						headCalibration=HEAD_DONT_CALIBRATE;
+					}
 					switch ((TMiningMethod)GetDlgComboBoxSelectedValue(ID_CREATOR)){
 						case METHOD_READING_FROM_DRIVE:
 							miningWorker.BeginAnother( RepeatedReadingFromDrive_thread, this, THREAD_PRIORITY_NORMAL );
@@ -217,8 +245,15 @@
 					ASSERT(FALSE); // we shouldn't end up here!
 					return d.PostMiningErrorMessage(ERROR_INVALID_OPERATION);
 				}
+				int nRevsToCalibration=d.headCalibration;
 				PInternalTrack &rit=d.cb.internalTracks[d.cyl][d.head];
 				while (d.miningRunning){
+					// . calibrate Head
+					if (!--nRevsToCalibration){
+						if (const TStdWinError err=cb.SeekHeadsHome())
+							return PostMiningErrorMessage(err);
+						nRevsToCalibration=d.headCalibration;
+					}
 					// . putting existing Track aside
 					std::unique_ptr<CInternalTrack> pitMined;
 			{		const Utils::CVarTempReset<PInternalTrack> pitOrg( rit, nullptr );
@@ -264,6 +299,7 @@
 				: Utils::CRideDialog(IDR_CAPS_MINING)
 				, cb(cb) , cyl(cyl) , head(head)
 				, miningTarget(TARGET_NONE)
+				, headCalibration(HEAD_DONT_CALIBRATE)
 				, minedTimingPen( 2, COLOR_RED )
 				, minedIndexPen( 2, COLOR_BLUE )
 				, minedTrackDeltaTiming( Utils::MakeCallocPtr<POINT,int>(MINED_TRACK_TIMES_COUNT_MAX) )

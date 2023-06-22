@@ -2018,6 +2018,8 @@ BEGIN
                     WS_TABSTOP
     LTEXT           "Static",ID_CHART,7,48,399,149,NOT WS_VISIBLE | 
                     WS_BORDER | NOT WS_GROUP
+    COMBOBOX        ID_HEAD,7,209,154,78,CBS_DROPDOWN | CBS_SORT | 
+                    WS_VSCROLL | WS_TABSTOP
 END
 
 /////////////////////////////////////////////////////////////////////////////
