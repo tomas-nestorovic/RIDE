@@ -116,7 +116,6 @@
 		UBYTE bitBuffer[32768];
 		CapsFormatTrack cft;
 			CapsFormatBlock cfb[(TSector)-1];
-				::ZeroMemory( cfb, sizeof(*cfb)*nSectors );
 				const CapsFormatBlock cfbDefault={
 					12,	0x00,	// gap length/value before first am
 					22,	0x4e,	// gap length/value after first am count
@@ -136,7 +135,7 @@
 					r.sectorlen=bufferLength[s]; //GetOfficialSectorLength(rid.lengthCode);
 				}
 			::ZeroMemory( &cft, sizeof(cft) );
-			cft.gapacnt= nSectors<11 ? 60 : 2;
+			cft.gapacnt= nSectors<11 ? 60 : 48;
 			cft.gapavalue=0x4e;
 			cft.gapbvalue=0x4e;
 			cft.trackbuf=bitBuffer;
