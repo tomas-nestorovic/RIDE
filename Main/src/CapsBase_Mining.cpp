@@ -180,8 +180,10 @@
 					miningTarget=(TMiningTarget)GetDlgComboBoxSelectedValue(ID_ACCURACY);
 					headCalibration=(THeadCalibration)GetDlgComboBoxSelectedValue(ID_HEAD);
 					if (headCalibration==HEAD_CALIBRATE_ON_START){ // initial (and the only) Head calibration
-						if (const TStdWinError err=cb.SeekHeadsHome())
-							return PostMiningErrorMessage(err);
+						if (const TStdWinError err=cb.SeekHeadsHome()){
+							PostMiningErrorMessage(err);
+							return;
+						}
 						headCalibration=HEAD_DONT_CALIBRATE;
 					}
 					switch ((TMiningMethod)GetDlgComboBoxSelectedValue(ID_CREATOR)){
@@ -250,8 +252,8 @@
 				while (d.miningRunning){
 					// . calibrate Head
 					if (!--nRevsToCalibration){
-						if (const TStdWinError err=cb.SeekHeadsHome())
-							return PostMiningErrorMessage(err);
+						if (const TStdWinError err=d.cb.SeekHeadsHome())
+							return d.PostMiningErrorMessage(err);
 						nRevsToCalibration=d.headCalibration;
 					}
 					// . putting existing Track aside
