@@ -506,6 +506,7 @@
 
 	afx_msg void CTrackMapView::OnSize(UINT nType,int cx,int cy){
 		// window size changed
+		__super::OnSize( nType, cx, cy );
 		if (fitLongestTrackInWindow)
 			zoomLengthFactor =	showTimed
 								? TTrackLength::FromTime(longestTrackNanoseconds,IMAGE->EstimateNanosecondsPerOneByte()).GetZoomFactorToFitWidth(cx)
