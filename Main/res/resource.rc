@@ -357,6 +357,8 @@ BEGIN
         MENUITEM "Show track low-level",        ID_HEAD, GRAYED
         MENUITEM SEPARATOR
         MENUITEM "Show sector hexa",            ID_SECTOR, GRAYED
+        MENUITEM SEPARATOR
+        MENUITEM "Rescan",                      ID_ACCURACY, GRAYED
     END
 END
 

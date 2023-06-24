@@ -614,6 +614,15 @@
 				mnu.EnableMenuItem( ID_TRACK, MF_BYCOMMAND|MF_ENABLED );
 				if (IMAGE->ReadTrack( chs.cylinder, chs.head )) // CANNOT alternatively call WriteTrack with Invalid data for some containers (e.g. *.IPF) don't allow for writing!
 					mnu.EnableMenuItem( ID_HEAD, MF_BYCOMMAND|MF_ENABLED );
+				if (!IMAGE->properties->IsRealDevice() // possible only for real Devices
+					||
+					IMAGE->UnscanTrack( TPhysicalAddress::Invalid.cylinder, TPhysicalAddress::Invalid.head )==ERROR_NOT_SUPPORTED
+					||
+					DOS->properties!=&CUnknownDos::Properties // "unscanning" a Track is safe only when no other operations with the disk are possible
+				)
+					mnu.ModifyMenu( ID_ACCURACY, MF_BYCOMMAND|MF_GRAYED, 0, _T("Can't rescan any track") );
+				else if (IMAGE->IsTrackScanned( chs.cylinder, chs.head ))
+					mnu.EnableMenuItem( ID_ACCURACY, MF_BYCOMMAND|MF_ENABLED );
 				break;
 			default:
 				return;
@@ -642,6 +651,20 @@
 				// display low-level Track timing
 				if (const auto tr=IMAGE->ReadTrack( chs.cylinder, chs.head ))
 					tr.ShowModal( _T("Track %d  (Cyl=%d, Head=%d)"), chs.GetTrackNumber(scanner.params.nHeads), chs.cylinder, chs.head );
+				break;
+			case ID_ACCURACY:
+				// rescan Track
+				if (const TStdWinError err=IMAGE->UnscanTrack( chs.cylinder, chs.head ))
+					Utils::Information( _T("Can't rescan"), err );
+				else{
+					RECT rcTrack;
+						GetClientRect(&rcTrack);
+						rcTrack.top= TRACK0_Y + (chs.cylinder*scanner.params.nHeads+chs.head)*TRACK_HEIGHT;
+						rcTrack.bottom=rcTrack.top+TRACK_HEIGHT;
+						Utils::ScaleLogicalUnit( (PINT)&rcTrack, 4 );	static_assert( sizeof(int)==sizeof(LONG), "" );
+						::OffsetRect( &rcTrack, 0, -GetScrollPos(SB_VERT) );
+					::InvalidateRect( *this, &rcTrack, TRUE );
+				}
 				break;
 		}
 	}
