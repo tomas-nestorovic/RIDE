@@ -520,6 +520,7 @@ namespace Utils{
 	CString BytesToHexaText(const char *chars,BYTE nChars,bool lastDelimitedWithAnd);
 	void NavigateToUrlInDefaultBrowser(LPCTSTR url);
 	void ScaleLogicalUnit(HDC dc);
+	void ScaleLogicalUnit(PINT values,BYTE nValues);
 	void UnscaleLogicalUnit(PINT values,BYTE nValues);
 	COLORREF GetSaturatedColor(COLORREF color,float saturationFactor);
 	COLORREF GetBlendedColor(COLORREF color1,COLORREF color2,float blendFactor=.5f);

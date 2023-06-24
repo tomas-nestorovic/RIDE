@@ -1992,6 +1992,12 @@ namespace Utils{
 		}
 	}
 
+	void ScaleLogicalUnit(PINT values,BYTE nValues){
+		// adds to specified Values the logical unit scale factor
+		while (nValues--)
+			*values++*=LogicalUnitScaleFactor;
+	}
+
 	void UnscaleLogicalUnit(PINT values,BYTE nValues){
 		// removes from specified Values the logical unit scale factor
 		while (nValues--)
