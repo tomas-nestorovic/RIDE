@@ -184,8 +184,6 @@
 	#define RESOLVE_EXCLUDE_ID		IDIGNORE
 	#define RESOLVE_EXCLUDE_UNKNOWN	IDCONTINUE
 
-	#define RETRY_OPTIONS_COUNT		2
-
 	#define NO_STATUS_ERROR	_T("- no error\r\n")
 
 	static UINT AFX_CDECL __dump_thread__(PVOID _pCancelableAction){
@@ -467,11 +465,12 @@
 								// > converting the "Retry" button to a SplitButton
 								static constexpr Utils::TSplitButtonAction CanCalibrateHeadsAction={ ID_HEAD, _T("Calibrate head and retry") };
 								static constexpr Utils::TSplitButtonAction CannotCalibrateHeadsAction={ ID_HEAD, _T("Can't calibrate heads for this track"), MF_GRAYED };
-								static const Utils::TSplitButtonAction RetryActions[RETRY_OPTIONS_COUNT]={
+								static Utils::TSplitButtonAction retryActions[]={
 									{ IDRETRY, _T("Retry") },
-									rp.canCalibrateSourceHeads ? CanCalibrateHeadsAction : CannotCalibrateHeadsAction
+									CanCalibrateHeadsAction
 								};
-								ConvertDlgButtonToSplitButton( IDRETRY, RetryActions, RETRY_OPTIONS_COUNT );
+								retryActions[1]= rp.canCalibrateSourceHeads ? CanCalibrateHeadsAction : CannotCalibrateHeadsAction;
+								ConvertDlgButtonToSplitButton( IDRETRY, retryActions, ARRAYSIZE(retryActions) );
 								// > the "Retry" button enabled only if Sector not yet modified and there are several Revolutions available
 								EnableDlgItem( IDRETRY, dirtyRevolution==Revolution::NONE && nRevolutions>1 );
 							}
