@@ -21,7 +21,7 @@ using namespace Yahel;
 
 	CHexaEditor::CYahelStreamFile::CYahelStreamFile(const CYahelStreamFile &r)
 		// copy ctor
-		: CFile() , nReferences(1) , position(0) , dataTotalLength(0) {
+		: CFile() , nReferences(1) , position(r.position) , dataTotalLength(r.dataTotalLength) {
 		ASSERT( r.m_hFile==CFile::hFileNull ); // must never be a filesystem instance!
 	}
 
