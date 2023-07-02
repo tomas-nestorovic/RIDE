@@ -611,9 +611,12 @@
 				//fallthrough
 			case TCursorPos::TRACK:
 				// clicked on a Track
+				// . Track hexa-preview
 				mnu.EnableMenuItem( ID_TRACK, MF_BYCOMMAND|MF_ENABLED );
+				// . Track low-level timing
 				if (IMAGE->ReadTrack( chs.cylinder, chs.head )) // CANNOT alternatively call WriteTrack with Invalid data for some containers (e.g. *.IPF) don't allow for writing!
 					mnu.EnableMenuItem( ID_HEAD, MF_BYCOMMAND|MF_ENABLED );
+				// . Track rescan
 				if (!IMAGE->properties->IsRealDevice() // possible only for real Devices
 					||
 					IMAGE->UnscanTrack( TPhysicalAddress::Invalid.cylinder, TPhysicalAddress::Invalid.head )==ERROR_NOT_SUPPORTED
@@ -623,6 +626,11 @@
 					mnu.ModifyMenu( ID_ACCURACY, MF_BYCOMMAND|MF_GRAYED, 0, _T("Can't rescan any track") );
 				else if (IMAGE->IsTrackScanned( chs.cylinder, chs.head ))
 					mnu.EnableMenuItem( ID_ACCURACY, MF_BYCOMMAND|MF_ENABLED );
+				// . Track mining
+				if (IMAGE->MineTrack( TPhysicalAddress::Invalid.cylinder, TPhysicalAddress::Invalid.head )==ERROR_NOT_SUPPORTED )
+					mnu.ModifyMenu( ID_AUTO, MF_BYCOMMAND|MF_GRAYED, 0, _T("Can't mine any track") );
+				else
+					mnu.EnableMenuItem( ID_AUTO, MF_BYCOMMAND|MF_ENABLED );
 				break;
 			default:
 				return;
@@ -665,6 +673,11 @@
 						::OffsetRect( &rcTrack, 0, -GetScrollPos(SB_VERT) );
 					::InvalidateRect( *this, &rcTrack, TRUE );
 				}
+				break;
+			case ID_AUTO:
+				// Track mining
+				if (const TStdWinError err=IMAGE->MineTrack( chs.cylinder, chs.head ))
+					Utils::Information( _T("Mining failed"), err );
 				break;
 		}
 	}
