@@ -608,6 +608,8 @@
 			case TCursorPos::SECTOR:
 				// clicked on a Sector
 				mnu.EnableMenuItem( ID_SECTOR, MF_BYCOMMAND|MF_ENABLED );
+				if (IMAGE->ReadTrack( chs.cylinder, chs.head ))
+					mnu.EnableMenuItem( ID_DATAFIELD, MF_BYCOMMAND|MF_ENABLED );
 				//fallthrough
 			case TCursorPos::TRACK:
 				// clicked on a Track
@@ -640,6 +642,10 @@
 			case ID_SECTOR:
 				// display hexa-data of Sector
 				CDiskBrowserView::CreateAndSwitchToTab( IMAGE, chs, nSectorsToSkip );
+				break;
+			case ID_DATAFIELD:
+				// display low-level timing of Sector data
+				IMAGE->ShowModalTrackTimingAt( chs, 0, 0, Revolution::ANY_GOOD );
 				break;
 			case ID_TRACK:{
 				// display hexa-data of Track
