@@ -4,7 +4,7 @@
 		// ctor
 		: logTimes(_logTimes+1) , nLogTimes(nLogTimes) // "+1" = hidden item represents reference counter
 		, iNextIndexPulse(0) , nIndexPulses(  std::min<BYTE>( Revolution::MAX, _nIndexPulses )  )
-		, iNextTime(0) , currentTime(0)
+		, iNextTime(0) , currentTime(0) , lastReadBits(0)
 		, method(method) , resetDecoderOnIndex(resetDecoderOnIndex) {
 		::memcpy( this->indexPulses, indexPulses, nIndexPulses*sizeof(TLogTime) );
 		this->indexPulses[nIndexPulses]=INT_MAX; // a virtual IndexPulse in infinity
@@ -15,7 +15,7 @@
 
 	CImage::CTrackReader::CTrackReader(const CTrackReader &tr)
 		// copy ctor
-		: logTimes(tr.logTimes) , method(tr.method) , resetDecoderOnIndex(tr.resetDecoderOnIndex) {
+		: logTimes(tr.logTimes) , lastReadBits(0) , method(tr.method) , resetDecoderOnIndex(tr.resetDecoderOnIndex) {
 		::memcpy( this, &tr, sizeof(*this) );
 		static_assert( sizeof(TLogTime)==sizeof(UINT), "InterlockedIncrement" );
 		::InterlockedIncrement( (PUINT)logTimes-1 ); // increasing the reference counter
@@ -23,7 +23,7 @@
 
 	CImage::CTrackReader::CTrackReader(CTrackReader &&rTrackReader)
 		// move ctor
-		: logTimes(rTrackReader.logTimes) , method(rTrackReader.method) , resetDecoderOnIndex(rTrackReader.resetDecoderOnIndex) {
+		: logTimes(rTrackReader.logTimes) , lastReadBits(0) , method(rTrackReader.method) , resetDecoderOnIndex(rTrackReader.resetDecoderOnIndex) {
 		::memcpy( this, &rTrackReader, sizeof(*this) );
 		static_assert( sizeof(TLogTime)==sizeof(UINT), "InterlockedIncrement" );
 		::InterlockedIncrement( (PUINT)logTimes-1 ); // increasing the reference counter
@@ -63,6 +63,7 @@
 		}while (R-L>1);
 		iNextTime=R;
 		currentTime= R<nLogTimes ? logTime : logTimes[L];
+		lastReadBits=0;
 	}
 
 	void CImage::CTrackReader::SetCurrentTimeAndProfile(TLogTime logTime,const TProfile &profile){
@@ -191,6 +192,7 @@
 				currentTime+=profile.iwTime;
 				const TLogTime diff=( rtOutOne=logTimes[iNextTime] )-currentTime;
 				iNextTime+=logTimes[iNextTime]<=currentTime; // eventual correction of the pointer to the next time
+				lastReadBits<<=1;
 				if (diff>=iwTimeHalf){
 					r.nConsecutiveZeros++;
 					return 0;
@@ -209,6 +211,7 @@
 					profile.iwTime=profile.iwTimeMax;
 				// - a "1" recognized
 				r.nConsecutiveZeros=0;
+				lastReadBits|=1;
 				return 1;
 			}
 			case TDecoderMethod::FDD_MARK_OGDEN:{
@@ -227,6 +230,7 @@
 				// . detecting zero
 				currentTime+=profile.iwTime;
 				const TLogTime diff=( rtOutOne=logTimes[iNextTime] )-currentTime;
+				lastReadBits<<=1;
 				if (diff>=iwTimeHalf)
 					return 0;
 				// . estimating data frequency
@@ -263,6 +267,7 @@
 							iNextTime--;
 				}
 				// . a "1" recognized
+				lastReadBits|=1;
 				return 1;
 			}
 			default:
@@ -325,7 +330,7 @@
 
 	WORD CImage::CTrackReader::ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList &rOutParseEvents,CActionProgress &ap,bool fullAnalysis){
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
-		const int StepGranularity=1000;
+		constexpr int StepGranularity=1000;
 		const BYTE nFullRevolutions=std::max( 0, GetIndexCount()-1 );
 		ap.SetProgressTarget( (4+2*nFullRevolutions+1)*StepGranularity ); // (N)*X, N = analysis steps
 		// - Step 1: standard scanning using current Codec
@@ -1023,6 +1028,13 @@
 				result=(result<<1)|((dw&0x40000000)!=0);
 			return result;
 		}
+
+		static bool IsWellEncodedSequence(BYTE bits){
+			if ((bits&1)!=0) // last read bit is "1"?
+				return (bits&2)==0; // previous bit must be "0"
+			else
+				return (bits&0xf)!=0; // four consecutive "0"s are forbidden
+		}
 	}
 
 	WORD CImage::CTrackReader::ScanMfm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents){
@@ -1259,6 +1271,19 @@
 			default:
 				ASSERT(FALSE); // we shouldn't end up here - check if all Codecs are included in the Switch statement!
 				return -1;
+		}
+	}
+
+	bool CImage::CTrackReader::IsLastReadBitHealthy() const{
+		// True <=> the bit read last by ReadBit* methods is well encoded, otherwise False (first bits on a Track or right after Index may be evaluated unreliably!)
+		switch (codec){
+			case Codec::FM:
+				return true;
+			case Codec::MFM:
+				return MFM::IsWellEncodedSequence( lastReadBits );
+			default:
+				ASSERT(FALSE); // we shouldn't end up here - check if all Codecs are included in the Switch statement!
+				return false;
 		}
 	}
 

@@ -799,19 +799,20 @@
 							tr.RewindToIndexAndResetProfile(nextIndexPulse);
 							p--, nextIndexPulse++;
 						}
+						p->isBad=false; // assumption
 						const TLogTime iwTime=tr.GetCurrentProfile().iwTime;
-						if (tr.ReadBit(tOne)){ // evaluated are only windows containing "1"
+						if (tr.ReadBit(tOne)){ // only windows containing "1" are evaluated as for timing
 							const TLogTime iwTimeHalf=iwTime/2;
 							const TLogTime absDiff=std::abs(tOne-tr.GetCurrentTime());
 							ASSERT( absDiff <= iwTimeHalf+1 ); // "+1" = when IwTime is odd, e.g. 1665, half of which is 833, not 832
-							if ( p->isBad=absDiff*100>iwTimeHalf*rte.iwInfo.oneOkPercent )
-								if (iwStatuses&3){ // between this and the previous bad InspectionWindow is at most one ok InspectionWindow
-									badBlocks.GetTail().tEnd=tr.GetCurrentTime()+iwTimeDefaultHalf; // extending an existing BadBlock
-									p[-1].isBad=true; // involving the previous InspectionWindow into the BadBlock
-								}else
-									badBlocks.AddTail(  TLogTimeInterval( tr.GetCurrentTime()-iwTimeDefaultHalf, tr.GetCurrentTime()+iwTimeDefaultHalf )  );
-						}else // whereas all windows containing "0" are always OK
-							p->isBad=false;
+							p->isBad=absDiff*100>iwTimeHalf*rte.iwInfo.oneOkPercent;
+						}
+						if ( p->isBad|=!tr.IsLastReadBitHealthy() )
+							if (iwStatuses&3){ // between this and the previous bad InspectionWindow is at most one ok InspectionWindow
+								badBlocks.GetTail().tEnd=tr.GetCurrentTime()+iwTimeDefaultHalf; // extending an existing BadBlock
+								p[-1].isBad=true; // involving the previous InspectionWindow into the BadBlock
+							}else
+								badBlocks.AddTail(  TLogTimeInterval( tr.GetCurrentTime()-iwTimeDefaultHalf, tr.GetCurrentTime()+iwTimeDefaultHalf )  );
 						p->uid=INT_MIN;
 						iwStatuses = (iwStatuses<<1) | (BYTE)p->isBad;
 					}
@@ -1299,7 +1300,7 @@
 						}
 						case ID_INDICATOR_REC:
 							if (const Utils::CSingleNumberDialog &&d=Utils::CSingleNumberDialog(
-									_T("Inspection evaluation"),
+									_T("Decoding evaluation"),
 									_T("Window bad if '1' off center more than [%]:"),
 									PropGrid::Integer::TUpDownLimits::Percent, iwInfo.oneOkPercent, false, this
 								)

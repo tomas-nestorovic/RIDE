@@ -419,6 +419,7 @@
 			Codec::TType codec;
 			Medium::TType mediumType;
 			BYTE nConsecutiveZerosMax; // # of consecutive zeroes to lose synchronization; e.g. 3 for MFM code
+			BYTE lastReadBits;
 
 			CTrackReader(PLogTime logTimes,DWORD nLogTimes,PCLogTime indexPulses,BYTE nIndexPulses,Medium::TType mediumType,Codec::TType codec,TDecoderMethod method,bool resetDecoderOnIndex);
 
@@ -537,6 +538,7 @@
 			void SetMediumType(Medium::TType mediumType);
 			bool ReadBit(TLogTime &rtOutOne);
 			bool ReadBit();
+			bool IsLastReadBitHealthy() const;
 			bool ReadBits15(WORD &rOut);
 			bool ReadBits16(WORD &rOut);
 			bool ReadBits32(DWORD &rOut);

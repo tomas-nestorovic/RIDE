@@ -801,7 +801,7 @@ BEGIN
         MENUITEM "Scatter plot...",             ID_CHART
         MENUITEM "Timing histogram...",         ID_HISTOGRAM
         MENUITEM SEPARATOR
-        MENUITEM "Inspection evaluation...",    ID_INDICATOR_REC
+        MENUITEM "Decoding evaluation...",      ID_INDICATOR_REC
         MENUITEM "Export...",                   ID_FILE_SAVE_AS
     END
 END
