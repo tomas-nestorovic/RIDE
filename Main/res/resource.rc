@@ -193,6 +193,7 @@ BEGIN
     "U",            ID_PREV,                VIRTKEY, NOINVERT
     "V",            ID_PREV_BAD,            VIRTKEY, NOINVERT
     VK_ESCAPE,      IDCANCEL,               VIRTKEY, NOINVERT
+    VK_F1,          ID_INFORMATION,         VIRTKEY, NOINVERT
     VK_F5,          ID_REFRESH,             VIRTKEY, NOINVERT
     "W",            ID_TRACK,               VIRTKEY, CONTROL, NOINVERT
 END
@@ -777,7 +778,7 @@ BEGIN
     BEGIN
         MENUITEM "Time...\tCtrl+T",             ID_NAVIGATE_ADDRESS
         MENUITEM SEPARATOR
-        MENUITEM "About shortcuts...",          ID_INFORMATION
+        MENUITEM "About shortcuts...\tF1",      ID_INFORMATION
         MENUITEM SEPARATOR
         MENUITEM "Previous revolution\tE",      ID_REVOLUTION_PREV
         MENUITEM "Previous window\tLeft",       ID_DOWN
