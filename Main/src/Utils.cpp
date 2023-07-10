@@ -1379,11 +1379,12 @@ namespace Utils{
 		return value;
 	}
 
-	bool CRideDialog::SelectDlgComboBoxValue(WORD id,LONG_PTR value) const{
+	bool CRideDialog::SelectDlgComboBoxValue(WORD id,LONG_PTR value,bool cancelPrevSelection) const{
 		// True <=> specified Value found in ComboBox's value list, otherwise False
 		CComboBox cb;
 		cb.Attach( GetDlgItemHwnd(id) );
-			cb.SetCurSel(-1); // cancelling previous selection
+			if (cancelPrevSelection)
+				cb.SetCurSel(-1); // cancelling previous selection
 			bool valueFound=false; // assumption
 			for( BYTE n=cb.GetCount(); n--; )
 				if ( valueFound=cb.GetItemData(n)==value ){

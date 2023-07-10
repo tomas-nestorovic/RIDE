@@ -2,6 +2,11 @@
 #include "CapsBase.h"
 #include "Charting.h"
 
+	#define INI_MINING		_T("MineTrk")
+	#define INI_TARGET		_T("trg")
+	#define INI_METHOD		_T("mtd")
+	#define INI_CALIBRATION	_T("calib")
+
 	#define MSG_CANT_MINE_TRACK	_T("« This track cannot be mined »")
 
 	TStdWinError CCapsBase::MineTrack(TCylinder cyl,THead head){
@@ -91,6 +96,8 @@
 					}
 					cbx.SetCurSel(0);
 				cbx.Detach();
+				if (const auto savedValue=app.GetProfileInt( INI_MINING, INI_TARGET, TARGET_NONE ))
+					SelectDlgComboBoxValue( ID_ACCURACY, savedValue, false );
 				// . populating the "Mining approach" combo-box
 				cbx.Attach( GetDlgItemHwnd(ID_CREATOR) );
 					if (cb.properties->IsRealDevice())
@@ -104,6 +111,8 @@
 					}
 					cbx.SetCurSel(0);
 				cbx.Detach();
+				if (const auto savedValue=app.GetProfileInt( INI_MINING, INI_METHOD, METHOD_NONE ))
+					SelectDlgComboBoxValue( ID_CREATOR, savedValue, false );
 				// . creating a Scatter Plot at position of the placeholder
 				scatterPlotView.Create(
 					nullptr, nullptr,
@@ -179,6 +188,8 @@
 					miningRunning=true;
 					miningTarget=(TMiningTarget)GetDlgComboBoxSelectedValue(ID_ACCURACY);
 					headCalibration=(THeadCalibration)GetDlgComboBoxSelectedValue(ID_HEAD);
+					app.WriteProfileInt( INI_MINING, INI_TARGET, miningTarget ); // save for next time
+					app.WriteProfileInt( INI_MINING, INI_CALIBRATION, headCalibration ); // save for next time
 					if (headCalibration==HEAD_CALIBRATE_ON_START){ // initial (and the only) Head calibration
 						if (const TStdWinError err=cb.SeekHeadsHome()){
 							PostMiningErrorMessage(err);
@@ -186,7 +197,9 @@
 						}
 						headCalibration=HEAD_DONT_CALIBRATE;
 					}
-					switch ((TMiningMethod)GetDlgComboBoxSelectedValue(ID_CREATOR)){
+					const TMiningMethod miningMethod=(TMiningMethod)GetDlgComboBoxSelectedValue(ID_CREATOR);
+					app.WriteProfileInt( INI_MINING, INI_METHOD, miningMethod ); // save for next time
+					switch (miningMethod){
 						case METHOD_READING_FROM_DRIVE:
 							miningWorker.BeginAnother( RepeatedReadingFromDrive_thread, this, THREAD_PRIORITY_NORMAL );
 							miningWorker.Resume();
@@ -301,7 +314,7 @@
 				: Utils::CRideDialog(IDR_CAPS_MINING)
 				, cb(cb) , cyl(cyl) , head(head)
 				, miningTarget(TARGET_NONE)
-				, headCalibration(HEAD_DONT_CALIBRATE)
+				, headCalibration( (THeadCalibration)app.GetProfileInt( INI_MINING, INI_CALIBRATION, HEAD_DONT_CALIBRATE ) )
 				, minedTimingPen( 2, COLOR_RED )
 				, minedIndexPen( 2, COLOR_BLUE )
 				, minedTrackDeltaTiming( Utils::MakeCallocPtr<POINT,int>(MINED_TRACK_TIMES_COUNT_MAX) )

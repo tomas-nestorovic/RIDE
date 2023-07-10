@@ -253,7 +253,7 @@ namespace Utils{
 		void SetDlgItemSize(WORD id,int cx,int cy) const;
 		void InvalidateDlgItem(WORD id) const;
 		LONG_PTR GetDlgComboBoxSelectedValue(WORD id) const;
-		bool SelectDlgComboBoxValue(WORD id,LONG_PTR value) const;
+		bool SelectDlgComboBoxValue(WORD id,LONG_PTR value,bool cancelPrevSelection=true) const;
 		int GetDlgComboBoxSelectedIndex(WORD id) const;
 		int GetDlgListBoxSelectedIndex(WORD id) const;
 		void WrapDlgItemsByClosingCurlyBracketWithText(WORD idA,WORD idZ,LPCTSTR text,DWORD textColor) const;
