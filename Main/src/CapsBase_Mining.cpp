@@ -225,14 +225,13 @@
 					case ID_ERROR:
 						// mining error message
 						TerminateMining();
-						if (lParam)
-							// an error
-							Utils::FatalError( _T("Can't continue mining"), lParam );
-						else{
-							// a notification on successfull mining
+						if (!lParam){
+							// a notification on a successfull mining
 							UpdateData(TRUE);
 							EndDialog(IDOK);
-						}
+						}else if (lParam!=ERROR_CANCELLED)
+							// a significant error
+							Utils::FatalError( _T("Can't continue mining"), lParam );
 						return TRUE;
 				}
 				return __super::OnCommand(wParam,lParam);
