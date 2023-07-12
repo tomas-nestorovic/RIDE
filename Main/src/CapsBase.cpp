@@ -626,11 +626,13 @@
 				internalTracks[cyl][head]!=nullptr;
 	}
 
-	TStdWinError CCapsBase::UnscanTrack(TCylinder cyl,THead head) const{
+	TStdWinError CCapsBase::UnscanTrack(TCylinder cyl,THead head){
 		// disposes internal representation of specified Track if possible (e.g. can't if Track already modified); returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead) // can Track actually exist?
 			return ERROR_SEEK;
+		if (const TStdWinError err=__super::UnscanTrack(cyl,head)) // base
+			return err;
 		PInternalTrack &rit=internalTracks[cyl][head];
 		if (rit->modified)
 			return ERROR_REQUEST_REFUSED;

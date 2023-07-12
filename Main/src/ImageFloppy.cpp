@@ -32,11 +32,17 @@ using namespace Yahel;
 
 
 
+	const CFloppyImage::TScannerState CFloppyImage::TScannerState::Initial={
+		CSectorDataSerializer::TScannerStatus::RUNNING,
+		0, // # of Tracks scanned thus far
+		false, // not all Tracks scanned yet
+		0, // total length of data discovered thus far
+		1 // at least one Revolution will be discovered
+	};
+
 	CFloppyImage::TScannedTracks::TScannedTracks()
 		// ctor
-		: n(0) , allScanned(false) , nDiscoveredRevolutions(1)
-		, scannerStatus(CSectorDataSerializer::TScannerStatus::RUNNING)
-		, dataTotalLength(0) {
+		: TScannerState( TScannerState::Initial ) {
 	}
 
 
@@ -93,6 +99,14 @@ using namespace Yahel;
 		floppyType=pFormat->mediumType;
 		return __super::SetMediumTypeAndGeometry( pFormat, sideMap, firstSectorNumber );
 	}
+
+	TStdWinError CFloppyImage::UnscanTrack(TCylinder cyl,THead head){
+		// unformats given Track {Cylinder,Head}; returns Windows standard i/o error
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
+{		EXCLUSIVELY_LOCK(scannedTracks);
+		*static_cast<TScannerState *>(&scannedTracks)=TScannerState::Initial;
+		return ERROR_SUCCESS;
+}	}
 
 	CImage::CSectorDataSerializer *CFloppyImage::CreateSectorDataSerializer(CHexaEditor *pParentHexaEditor){
 		// abstracts all Sector data (good and bad) into a single file and returns the result

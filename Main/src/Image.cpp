@@ -740,7 +740,7 @@ namespace Medium{
 		return ERROR_NOT_SUPPORTED;
 	}
 
-	TStdWinError CImage::UnscanTrack(TCylinder cyl,THead head) const{
+	TStdWinError CImage::UnscanTrack(TCylinder cyl,THead head){
 		// disposes internal representation of specified Track if possible (e.g. can't if Track already modified); returns Windows standard i/o error
 		return ERROR_NOT_SUPPORTED;
 	}
