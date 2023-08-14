@@ -34,9 +34,8 @@
 		(HACCEL)menu.hAccel=diskDos->menu.hAccel; // for DiskDos accelerators to work even if switched to Tape
 		SetPathName(fileName,FALSE);
 		// - showing the TapeFileManager
-		TCHAR buf[MAX_PATH];
-		::wsprintf( buf, TAB_LABEL _T(" \"%s\""), (LPCTSTR)fileManager.f.GetFileName() );
-		CTdiCtrl::AddTabLast( TDI_HWND, buf, &fileManager.tab, makeCurrentTab, CanTapeBeClosed, OnTapeClosing );
+		const CString label=Utils::SimpleFormat( TAB_LABEL _T(" \"%s\""), fileManager.f.GetFileName() );
+		CTdiCtrl::AddTabLast( TDI_HWND, label, &fileManager.tab, makeCurrentTab, CanTapeBeClosed, OnTapeClosing );
 		CSpectrumDos::__informationWithCheckableShowNoMore__( _T("Use the \"") TAB_LABEL _T("\" tab to transfer files (via clipboard) from/to the open disk image or between two tapes (open in two instances of ") _T(APP_ABBREVIATION) _T(").\n\nHeaderless files:\n- are transferred to disk with dummy names,\n- are used on tape to store \"tape-unfriendly\" data from a disk (sequential files, etc.)."), INI_MSG );
 		// - adding this Tape to most recently used ones
 		TCHAR fileNameCopy[MAX_PATH];
@@ -354,12 +353,11 @@
 		// - with user's intervention resolving the case that reported size is different from real size
 		if (officialFileSize!=fileSize){
 			// : defining the Dialog
-			CString msg;
 			TTapeFile tmp;
 				tmp.type=TTapeFile::TType::STD_HEADER;
 				tmp.stdHeader.SetName(zxName);
 				tmp.stdHeader.SetFileType(uts);
-			msg.Format( _T("Real (%d) and reported (%d) sizes of \"%s\" differ."), fileSize, officialFileSize, (LPCTSTR)GetFilePresentationNameAndExt(&tmp) );
+			const CString msg=Utils::SimpleFormat( _T("Real (%d) and reported (%d) sizes of \"%s\" differ."), fileSize, officialFileSize, GetFilePresentationNameAndExt(&tmp) );
 			class CSuggestionDialog sealed:public Utils::CCommandDialog{
 				const bool offerFileSplit;
 				const TUniFileType uts;

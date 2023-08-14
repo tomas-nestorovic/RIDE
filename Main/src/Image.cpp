@@ -529,8 +529,7 @@ namespace Medium{
 
 	BYTE CImage::ShowModalTrackTimingAt(RCPhysicalAddress chs,BYTE nSectorsToSkip,WORD positionInSector,Revolution::TType rev){
 		// displays modal dialog showing low-level timing for specified position on the Track
-		TCHAR msg[80];
-		::wsprintf( msg, _T("Can't determine timing for sector with %s"), (LPCTSTR)chs.sectorId.ToString() );
+		const CString msg=Utils::SimpleFormat( _T("Can't determine timing for sector with %s"), chs.sectorId.ToString() );
 		if (CImage::CTrackReader tr=ReadTrack( chs.cylinder, chs.head )){
 			TLogTime tDataStart;
 			if (GetSectorData( chs, nSectorsToSkip, rev, nullptr, nullptr, &tDataStart )!=nullptr){
@@ -696,8 +695,7 @@ namespace Medium{
 				THREAD_PRIORITY_ABOVE_NORMAL
 			).Perform(true)
 		){
-			CString msg;
-			msg.Format( _T("Can't write to \"%s\""), lpszPathName );
+			const CString msg=Utils::SimpleFormat( _T("Can't write to \"%s\""), lpszPathName );
 			Utils::FatalError( msg, err, _T("Some tracks remain unsaved.") );
 			::SetLastError(err);
 			return FALSE;

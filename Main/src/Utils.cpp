@@ -1004,6 +1004,30 @@ namespace Utils{
 		::MessageBox( app.GetEnabledActiveWindow(), text, nullptr, MB_ICONERROR|MB_TASKMODAL );
 	}
 
+	CString SimpleFormat(LPCTSTR format,LPCTSTR param){
+		CString result;
+		result.Format( format, param );
+		return result;
+	}
+
+	CString SimpleFormat(LPCTSTR format,LPCTSTR param1,LPCTSTR param2){
+		CString result;
+		result.Format( format, param1, param2 );
+		return result;
+	}
+
+	CString SimpleFormat(LPCTSTR format,int param1,LPCTSTR param2){
+		CString result;
+		result.Format( format, param1, param2 );
+		return result;
+	}
+
+	CString SimpleFormat(LPCTSTR format,int param1,int param2,LPCTSTR param3){
+		CString result;
+		result.Format( format, param1, param2, param3 );
+		return result;
+	}
+
 	#define ERROR_BECAUSE		_T("%s because:\n\n%s")
 	#define ERROR_CONSEQUENCE	_T("\n\n\n%s")
 

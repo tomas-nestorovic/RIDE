@@ -43,9 +43,9 @@
 				hexaEditor.Reset( frw, frw, DOS->GetFileOccupiedSize(file) );
 			frw->Release();
 			// . updating the window caption
-			CString caption;
-			caption.Format( LABEL _T(" (%s)"), (LPCTSTR)DOS->GetFilePresentationNameAndExt(file) );
-			SetWindowText(caption);
+			SetWindowText(
+				Utils::SimpleFormat( LABEL _T(" (%s)"), DOS->GetFilePresentationNameAndExt(file) )
+			);
 		}else
 			SetWindowText(LABEL);
 		//SetWindowPos( nullptr, 0,0, 0,0, SWP_NOZORDER|SWP_NOMOVE|SWP_NOSIZE|SWP_FRAMECHANGED|SWP_NOSENDCHANGING );

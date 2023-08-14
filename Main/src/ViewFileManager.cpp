@@ -726,8 +726,7 @@
 
 	void CFileManagerView::BrowseCurrentDirInHexaMode(CDos::PCFile fileToSeekTo){
 		CDirEntriesView *const deView=new CDirEntriesView( DOS, DOS->currentDir, fileToSeekTo );
-		CString label;
-		label.Format( _T("Dir \"%s\""), (LPCTSTR)DOS->GetFilePresentationNameAndExt(DOS->currentDir) );
+		const CString label=Utils::SimpleFormat( _T("Dir \"%s\""), DOS->GetFilePresentationNameAndExt(DOS->currentDir) );
 		CTdiCtrl::AddTabLast( TDI_HWND, label, &deView->tab, true, TDI_TAB_CANCLOSE_ALWAYS, CMainWindow::CTdiView::TTab::OnOptionalTabClosing );
 		ownedTabs.AddTail( &deView->tab );
 	}
@@ -755,8 +754,7 @@
 		if (iFocused>=0){ // is there one File focused?
 			const CDos::PFile file=(CDos::PFile)lv.GetItemData(iFocused);
 			auto *const pView=new CFatHexaView( DOS, file, fatEntryYahelDefinition );
-				CString label;
-				label.Format( _T("FAT \"%s\""), (LPCTSTR)DOS->GetFilePresentationNameAndExt(file) );
+				const CString label=Utils::SimpleFormat( _T("FAT \"%s\""), DOS->GetFilePresentationNameAndExt(file) );
 				CTdiCtrl::AddTabLast( TDI_HWND, label, &pView->tab, true, TDI_TAB_CANCLOSE_ALWAYS, CMainWindow::CTdiView::TTab::OnOptionalTabClosing );
 			ownedTabs.AddTail( &pView->tab );						
 		}
@@ -779,15 +777,13 @@
 			const CDos::CFatPath fatPath=CDos::CFatPath( DOS, f );
 			CDos::CFatPath::PCItem p; DWORD n;
 			if (const LPCTSTR err=fatPath.GetItems( p, n )){
-				CString msg;
-				msg.Format( _T("Error in FAT for \"%s\":%s\n\nGo to its first sector anyway?"), (LPCTSTR)DOS->GetFilePresentationNameAndExt(f), err );
+				const CString msg=Utils::SimpleFormat( _T("Error in FAT for \"%s\":%s\n\nGo to its first sector anyway?"), DOS->GetFilePresentationNameAndExt(f), err );
 				if (!Utils::QuestionYesNo(msg,MB_DEFBUTTON1))
 					return;
-			}else if (!n){
-				CString msg;
-				msg.Format( _T("Item \"%s\" occupies no sectors."), (LPCTSTR)DOS->GetFilePresentationNameAndExt(f) );
-				return Utils::Information( msg );
-			}
+			}else if (!n)
+				return Utils::Information(
+					Utils::SimpleFormat( _T("Item \"%s\" occupies no sectors."), DOS->GetFilePresentationNameAndExt(f) )
+				);
 			ownedTabs.AddTail(
 				&CDiskBrowserView::CreateAndSwitchToTab( IMAGE, p->chs, 0 ).tab
 			);

@@ -1061,8 +1061,7 @@ setDestination:						// : compacting FileName in order to be better displayable 
 									wParam-=ID_FILE_MRU_FIRST;
 									targetImageProperties=mruDevices.GetMruDevice(wParam);
 									if (!targetImageProperties->fnRecognize(dumpParams.targetFileName)){ // make sure Device is initialized (e.g. KryoFlux firmware loaded, etc.)
-										TCHAR msg[200+DEVICE_NAME_CHARS_MAX];
-										::wsprintf( msg, _T("Can't use \"%s\" device"), (LPCTSTR)mruDevices[wParam] );
+										const CString msg=Utils::SimpleFormat( _T("Can't use \"%s\" device"), mruDevices[wParam] );
 										Utils::Information( msg, ERROR_DEVICE_NOT_AVAILABLE );
 										break;
 									}

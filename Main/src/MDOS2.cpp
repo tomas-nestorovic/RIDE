@@ -258,11 +258,8 @@
 		// - Steps 1-N: verifying FAT Sectors readability
 		TPhysicalAddress chs={ 0, 0, {0,mdos->sideMap[0],FAT_LOGSECTOR_FIRST,MDOS2_SECTOR_LENGTH_STD_CODE} };
 		while (chs.sectorId.sector++<MDOS2_DIR_LOGSECTOR_FIRST){ // "++" = Sectors numbered from 1
-			if (!image->GetHealthySectorData(chs)){
-				TCHAR msg[80];
-				::wsprintf( msg, VERIF_MSG_FAT_SECTOR_BAD, (LPCTSTR)chs.sectorId.ToString() );
-				vp.fReport.LogWarning(msg);
-			}
+			if (!image->GetHealthySectorData(chs))
+				vp.fReport.LogWarning( VERIF_MSG_FAT_SECTOR_BAD, (LPCTSTR)chs.sectorId.ToString() );
 			pAction->UpdateProgress(++step);
 		}
 		// - checking that all Sectors beyond the official format are marked as Unavailable
@@ -648,8 +645,7 @@
 		for( TMdos2DirectoryTraversal dt(mdos); dt.AdvanceToNextEntry(); )
 			if (dt.entryType==TDirectoryTraversal::FILE){
 				const PDirectoryEntry de=(PDirectoryEntry)dt.entry;
-				TCHAR strItemId[MAX_PATH+16];
-				::wsprintf( strItemId, _T("File \"%s\""), (LPCTSTR)mdos->GetFilePresentationNameAndExt(de) );
+				const CString strItemId=Utils::SimpleFormat( _T("File \"%s\""), mdos->GetFilePresentationNameAndExt(de) );
 				// . verifying "the" and "by" Extension
 				switch (de->extension){
 					case TExtension::PROGRAM:
@@ -661,8 +657,7 @@
 						// : executable Attributes must indicate at least visibility, readability, and executability
 						#define ATTR_WHITE	(TDirectoryEntry::TAttribute::READABLE | TDirectoryEntry::TAttribute::EXECUTABLE)
 						if ((de->attributes&ATTR_WHITE)!=ATTR_WHITE){
-							CString msg;
-							msg.Format( _T("%s: Readability and/or executability attributes not set"), strItemId );
+							const CString msg=Utils::SimpleFormat( _T("%s: Readability and/or executability attributes not set"), strItemId );
 							switch (vp.ConfirmFix( msg, _T("") )){
 								case IDCANCEL:
 									return vp.CancelAll();
@@ -674,7 +669,7 @@
 							}
 						}
 						if (de->attributes&TDirectoryEntry::TAttribute::HIDDEN)
-							vp.fReport.LogWarning( _T("%s: The program is hidden"), strItemId );
+							vp.fReport.LogWarning( _T("%s: The program is hidden"), (LPCTSTR)strItemId );
 						break;
 					case TExtension::CHAR_ARRAY:
 					case TExtension::NUMBER_ARRAY:
@@ -685,11 +680,11 @@
 						vp.WarnSomeCharactersNonPrintable( strItemId, VERIF_FILE_NAME, de->name, sizeof(de->name), '\0' );
 						// : non-executable's Attributes must indicate at least readability
 						if ((de->attributes&TDirectoryEntry::TAttribute::READABLE)==0)
-							vp.fReport.LogWarning( _T("%s: Readability attribute not set"), strItemId ); // warning suffices - sometimes Files are not intended to be actually read (e.g. "Zadaj RUN" Files in Ultrasoft titles)
+							vp.fReport.LogWarning( _T("%s: Readability attribute not set"), (LPCTSTR)strItemId ); // warning suffices - sometimes Files are not intended to be actually read (e.g. "Zadaj RUN" Files in Ultrasoft titles)
 						break;
 					default:
 						// unknown File type
-						vp.fReport.LogWarning( VERIF_MSG_FILE_NONSTANDARD, strItemId );
+						vp.fReport.LogWarning( VERIF_MSG_FILE_NONSTANDARD, (LPCTSTR)strItemId );
 						vp.WarnSomeCharactersNonPrintable( strItemId, VERIF_FILE_NAME, de->name, sizeof(de->name), '\0' );
 						break;
 				}
@@ -704,8 +699,7 @@
 							lengthFromFat= (nItems-(lastSectorBytes>0))*MDOS2_SECTOR_LENGTH_STD + lastSectorBytes; // e.g., 1024 Bytes should be stored in nItems=2 Sectors (lastSectorBytes = 1024%512 = 0), NOT in three Sectors!
 						}
 						if (de->GetLength()!=lengthFromFat){
-							CString errMsg;
-							errMsg.Format( VERIF_MSG_ITEM_BAD_LENGTH, strItemId );
+							const CString errMsg=Utils::SimpleFormat( VERIF_MSG_ITEM_BAD_LENGTH, strItemId );
 							switch (vp.ConfirmFix( errMsg, VERIF_MSG_FILE_LENGTH_FROM_FAT )){
 								case IDCANCEL:
 									return vp.CancelAll();
@@ -720,8 +714,7 @@
 						}
 					}else{
 						// an invalid File has no Sectors affiliated; it's now known that anybody would ever do any tweaks to a Directory, hence this is highly likely an error in filesystem
-						CString errMsg;
-						errMsg.Format( VERIF_MSG_ITEM_NO_SECTORS, strItemId );
+						const CString errMsg=Utils::SimpleFormat( VERIF_MSG_ITEM_NO_SECTORS, strItemId );
 						switch (vp.ConfirmFix( errMsg, VERIF_MSG_FILE_DELETE )){
 							case IDCANCEL:
 								return vp.CancelAll();
@@ -729,17 +722,17 @@
 								break;
 							case IDYES:
 								if (const TStdWinError err=mdos->DeleteFile(de)) // an error shouldn't occur but just to be sure
-									vp.fReport.LogWarning( _T("%s: Can't delete the file"), strItemId );
+									vp.fReport.LogWarning( _T("%s: Can't delete the file"), (LPCTSTR)strItemId );
 								else
 									vp.fReport.CloseProblem(true);
 								continue; // the File no longer exists
 						}
 					}
 				}else
-					vp.fReport.LogWarning( VERIF_MSG_ITEM_FAT_ERROR, strItemId, fatPath.GetErrorDesc() );
+					vp.fReport.LogWarning( VERIF_MSG_ITEM_FAT_ERROR, (LPCTSTR)strItemId, fatPath.GetErrorDesc() );
 				// . verifying the starting Sector
 				if (de->firstLogicalSector>=mdos->formatBoot.GetCountOfAllSectors())
-					vp.fReport.LogWarning( _T("%s: First sector with %s out of disk"), strItemId, (LPCTSTR)mdos->__logfyz__(de->firstLogicalSector).sectorId.ToString() );
+					vp.fReport.LogWarning( _T("%s: First sector with %s out of disk"), (LPCTSTR)strItemId, (LPCTSTR)mdos->__logfyz__(de->firstLogicalSector).sectorId.ToString() );
 			}
 		// - successfully verified
 		return pAction->TerminateWithSuccess();

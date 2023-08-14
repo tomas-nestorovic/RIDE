@@ -95,8 +95,7 @@
 						break;
 					}
 					if (!askedAboutReordering){
-						TCHAR msg[MAX_PATH+100];
-						::wsprintf( msg, _T("File \"%s\" at wrong position in directory"), (LPCTSTR)trdos->GetFilePresentationNameAndExt(&tmp) );
+						const CString msg=Utils::SimpleFormat( _T("File \"%s\" at wrong position in directory"), trdos->GetFilePresentationNameAndExt(&tmp) );
 						switch (vp.ConfirmFix(msg,_T("Sorting by first sector suggested."))){
 							case IDCANCEL:
 								return vp.CancelAll();
@@ -121,8 +120,7 @@
 		for( TTrdosDirectoryTraversal dt(trdos); dt.AdvanceToNextEntry(); )
 			if (dt.entryType==TDirectoryTraversal::FILE){
 				const PDirectoryEntry de=(PDirectoryEntry)dt.entry;
-				TCHAR strItemId[MAX_PATH+16];
-				::wsprintf( strItemId, _T("File \"%s\""), (LPCTSTR)trdos->GetFilePresentationNameAndExt(de) );
+				const CString strItemId=Utils::SimpleFormat( _T("File \"%s\""), trdos->GetFilePresentationNameAndExt(de) );
 				// . verifying Extension
 				switch (de->extension){
 					case TExtension::BASIC_PRG:
@@ -131,7 +129,7 @@
 					case TExtension::PRINT:
 						break; //nop
 					default:
-						vp.fReport.LogWarning( VERIF_MSG_FILE_NONSTANDARD, strItemId );
+						vp.fReport.LogWarning( VERIF_MSG_FILE_NONSTANDARD, (LPCTSTR)strItemId );
 						break;
 				}
 				// . verifying Name
@@ -146,7 +144,7 @@
 					const CFatPath tmp(trdos,de);
 					CFatPath::PCItem p; DWORD n;
 					tmp.GetItems(p,n);
-					vp.fReport.LogWarning( _T("%s: First sector with %s out of disk"), strItemId, (LPCTSTR)p->chs.sectorId.ToString() );
+					vp.fReport.LogWarning( _T("%s: First sector with %s out of disk"), (LPCTSTR)strItemId, (LPCTSTR)p->chs.sectorId.ToString() );
 				}
 				// . verifying parameter after data
 				WORD w; bool AA80=false;
@@ -154,9 +152,9 @@
 					case TDirectoryEntry::BASIC_PRG:
 					case TDirectoryEntry::DATA_FIELD:
 						if (!trdos->__parameterAfterData__(de,false,w,&AA80))
-							vp.fReport.LogWarning( _T("%s: Missing Parameter 1 after data"), strItemId );
+							vp.fReport.LogWarning( _T("%s: Missing Parameter 1 after data"), (LPCTSTR)strItemId );
 						else if (!AA80)
-							vp.fReport.LogWarning( _T("%s: Parameter 1 after data not prefixed with 0xAA80 mark"), strItemId );
+							vp.fReport.LogWarning( _T("%s: Parameter 1 after data not prefixed with 0xAA80 mark"), (LPCTSTR)strItemId );
 						break;
 				}
 			}
@@ -1020,12 +1018,12 @@
 				// . confirming the resolution
 				const PDirectoryEntry de=directory[i];
 				const CString &&fileName=trdos->GetFilePresentationNameAndExt(de);
-				TCHAR msg[300]; LPCTSTR suggestion;
+				CString msg; LPCTSTR suggestion;
 				if (shiftSectors[i-1]<n){
-					::wsprintf( msg, _T("File \"%s\" in conflict with \"%s\""), (LPCTSTR)fileName, (LPCTSTR)trdos->GetFilePresentationNameAndExt(directory[i-1]) );
+					msg=Utils::SimpleFormat( _T("File \"%s\" in conflict with \"%s\""), fileName, trdos->GetFilePresentationNameAndExt(directory[i-1]) );
 					suggestion=VERIF_MSG_FILE_UNCROSS;
 				}else{
-					::wsprintf( msg, _T("File \"%s\" must be shifted to resolve conflicts earlier on the disk"), (LPCTSTR)fileName );
+					msg=Utils::SimpleFormat( _T("File \"%s\" must be shifted to resolve conflicts earlier on the disk"), fileName );
 					suggestion=_T("");
 				}
 				switch (vp.ConfirmFix(msg,suggestion)){
@@ -1038,7 +1036,7 @@
 				LPCTSTR err=nullptr;
 				const DWORD fileExportSize=trdos->ExportFile( de, &CMemFile(buffer,sizeof(buffer)), sizeof(buffer), &err );
 				if (err){
-					::wsprintf( msg, _T("%s: %s"), fileName, err );
+					msg.Format( _T("%s: %s"), fileName, err );
 					return vp.TerminateAndGoToNextAction((LPCTSTR)msg);
 				}
 				// . writing the File to new location

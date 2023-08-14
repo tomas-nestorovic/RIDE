@@ -131,11 +131,10 @@
 		if (const PSlot slots=BSDOS->dirsSector.GetSlots())
 			for( WORD i=0; i<BSDOS_DIRS_SLOTS_COUNT; pAction->UpdateProgress(++i) ){
 				const PSlot pSlot=slots+i;
-				TCHAR strItemId[MAX_PATH];
-				::wsprintf( strItemId, _T("Directory #%d"), i );
+				CString strItemId;
+				strItemId.Format( _T("Directory #%d"), i );
 				if (pSlot->reserved2 ^ (*(PCBYTE)pSlot>>6)){
-					CString errMsg;
-					errMsg.Format( VERIF_MSG_ITEM_INTEGRITY_ERR, strItemId );
+					const CString errMsg=Utils::SimpleFormat( VERIF_MSG_ITEM_INTEGRITY_ERR, strItemId );
 					switch (vp.ConfirmFix( errMsg, _T("") )){
 						case IDCANCEL:
 							return vp.CancelAll();
@@ -150,12 +149,12 @@
 					// . checking that Directory's Sector linkage is ok
 					PDirectoryEntry de=BSDOS->dirsSector.TryGetDirectoryEntry(pSlot);
 					if (de)
-						::wsprintf( strItemId, _T("Directory #%d (%s)"), i, (LPCTSTR)BSDOS->GetFilePresentationNameAndExt(pSlot) );
+						strItemId=Utils::SimpleFormat( _T("Directory #%d (%s)"), i, BSDOS->GetFilePresentationNameAndExt(pSlot) );
 					CFatPath fatPath(BSDOS,pSlot);
 					if (const LPCTSTR err=fatPath.GetErrorDesc()){
-						CString errMsg;
-						errMsg.Format( _T("%s: %s"), strItemId, err );
-						vp.fReport.OpenProblem(errMsg);
+						vp.fReport.OpenProblem(
+							Utils::SimpleFormat( _T("%s: %s"), strItemId, err )
+						);
 						vp.fReport.CloseProblem(false);
 						vp.fReport.LogWarning( _T("All files in Directory #%d also skipped"), i );
 						continue; // skipping erroneous Directory
@@ -163,8 +162,7 @@
 					// . checking all Sectors readability
 					CFatPath::PItem p; DWORD n;
 					if (!fatPath.AreAllSectorsReadable(BSDOS)){
-						CString errMsg;
-						errMsg.Format( VERIF_MSG_ITEM_BAD_SECTORS, strItemId );
+						const CString errMsg=Utils::SimpleFormat( VERIF_MSG_ITEM_BAD_SECTORS, strItemId );
 						switch (vp.ConfirmFix( errMsg, VERIF_MSG_BAD_SECTOR_EXCLUDE )){
 							case IDCANCEL:
 								return vp.CancelAll();
@@ -204,8 +202,7 @@
 					vp.WarnSomeCharactersNonPrintable( strItemId, VERIF_DIRECTORY_NAME, de->file.stdHeader.name, sizeof(de->file.stdHeader.name), ' ' );
 					// . checking basic information on the Directory
 					if (pSlot->nameChecksum!=de->GetDirNameChecksum()){
-						CString errMsg;
-						errMsg.Format( _T("%s: Directory name checksum incorrect"), strItemId );
+						const CString errMsg=Utils::SimpleFormat( _T("%s: Directory name checksum incorrect"), strItemId );
 						switch (vp.ConfirmFix( errMsg, VERIF_MSG_CHECKSUM_RECALC )){
 							case IDCANCEL:
 								return vp.CancelAll();
@@ -222,13 +219,12 @@
 					for( int j=1; dt.AdvanceToNextEntry(); j++ )
 						if (( de=(PDirectoryEntry)dt.entry )->occupied){
 							if (de->fileHasStdHeader)
-								::wsprintf( strItemId, _T("Dir #%d / File #%d (%s)"), i, j, (LPCTSTR)BSDOS->GetFilePresentationNameAndExt(de) );
+								strItemId=Utils::SimpleFormat( _T("Dir #%d / File #%d (%s)"), i, j, BSDOS->GetFilePresentationNameAndExt(de) );
 							else
-								::wsprintf( strItemId, _T("Dir #%d / File #%d"), i, j );
+								strItemId.Format( _T("Dir #%d / File #%d"), i, j );
 							// : checking DirectoryEntry consistency
 							if (de->special^de->file.integrityCheckpoint1 || de->special^de->file.integrityCheckpoint2){
-								CString errMsg;
-								errMsg.Format( VERIF_MSG_ITEM_INTEGRITY_ERR, strItemId );
+								const CString errMsg=Utils::SimpleFormat( VERIF_MSG_ITEM_INTEGRITY_ERR, strItemId );
 								switch (vp.ConfirmFix( errMsg, _T("") )){
 									case IDCANCEL:
 										return vp.CancelAll();
@@ -241,7 +237,7 @@
 							}
 							// : a File must have at least a Header or Data
 							if (!de->fileHasStdHeader && !de->fileHasData)
-								vp.fReport.LogWarning( _T("%s: Has neither header nor data"), strItemId ); // just a warning - maybe the Directory is tweaked to write certain message during its listing
+								vp.fReport.LogWarning( _T("%s: Has neither header nor data"), (LPCTSTR)strItemId ); // just a warning - maybe the Directory is tweaked to write certain message during its listing
 							// : checking recorded DataLength corresponds with FAT information
 							if (de->fileHasData)
 								if (const CFatPath &&fatPath=CFatPath(BSDOS,de)){
@@ -249,8 +245,7 @@
 									if (const DWORD nItems=fatPath.GetNumberOfItems())
 										lengthFromFat= (nItems-1)*BSDOS_SECTOR_LENGTH_STD + BSDOS->__getLogicalSectorFatItem__(BSDOS->__fyzlog__(fatPath.GetHealthyItem(nItems-1)->chs)).info;
 									if (de->file.dataLength!=lengthFromFat){
-										CString errMsg;
-										errMsg.Format( VERIF_MSG_ITEM_BAD_LENGTH, strItemId );
+										const CString errMsg=Utils::SimpleFormat( VERIF_MSG_ITEM_BAD_LENGTH, strItemId );
 										switch (vp.ConfirmFix( errMsg, VERIF_MSG_FILE_LENGTH_FROM_FAT )){
 											case IDCANCEL:
 												return vp.CancelAll();
@@ -264,9 +259,9 @@
 										}
 									}
 								}else{
-									CString errMsg;
-									errMsg.Format( VERIF_MSG_ITEM_FAT_ERROR, strItemId, fatPath.GetErrorDesc() );
-									vp.fReport.OpenProblem(errMsg);
+									vp.fReport.OpenProblem(
+										Utils::SimpleFormat( VERIF_MSG_ITEM_FAT_ERROR, strItemId, fatPath.GetErrorDesc() )
+									);
 									vp.fReport.CloseProblem(false);
 								}
 							// : checking File Name and Extension
@@ -278,11 +273,8 @@
 								else if (const TStdWinError err=vp.VerifyAllCharactersPrintable( dt.chs, strItemId, VERIF_FILE_NAME, rh.name, sizeof(rh.name), ' ' ))
 									// Program names are usually typed in by the user and thus may not contain non-printable characters
 									return vp.TerminateAll(err);
-								if (!rh.SetFileType(rh.GetUniFileType())){
-									CString errMsg;
-									errMsg.Format( VERIF_MSG_FILE_NONSTANDARD, strItemId );
-									vp.fReport.LogWarning( errMsg );
-								}
+								if (!rh.SetFileType(rh.GetUniFileType()))
+									vp.fReport.LogWarning( VERIF_MSG_FILE_NONSTANDARD, (LPCTSTR)strItemId );
 							}
 						}
 				}

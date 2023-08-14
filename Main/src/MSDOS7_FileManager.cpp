@@ -230,7 +230,7 @@
 		// True <=> NewNameAndExtension confirmed, otherwise False
 		const PMSDOS7 msdos=(PMSDOS7)CDos::GetFocused();
 		TCHAR tmpName[MAX_PATH];
-		PTCHAR pExt=_tcsrchr( ::lstrcpy(tmpName,(LPCTSTR)newNameAndExt), '.' );
+		PTCHAR pExt=_tcsrchr( ::lstrcpy(tmpName,newNameAndExt), '.' );
 		if (pExt)
 			*pExt++='\0';
 		else

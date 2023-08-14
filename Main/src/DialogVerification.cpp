@@ -330,8 +330,7 @@
 										return vp.TerminateAndGoToNextAction(ERROR_CANCELLED);
 								break;
 							case CDos::TDirectoryTraversal::WARNING:{
-								CString s;
-								s.Format( _T("The \"%s\" directory can't be processed entirely"), (LPCTSTR)vp.dos->GetFilePresentationNameAndExt(file) );
+								const CString s=Utils::SimpleFormat( _T("The \"%s\" directory can't be processed entirely"), vp.dos->GetFilePresentationNameAndExt(file) );
 								vp.fReport.LogWarning( Utils::ComposeErrorMessage(s,pdt->warning) );
 								continue;
 							}
@@ -436,8 +435,7 @@
 					}
 					// | finding an empty healthy Sector in the volume
 					while (const TStdWinError err=vp.dos->GetFirstEmptyHealthySector(true,pItem->chs)){
-						CString msg;
-						msg.Format( _T("\"%s\" cannot be fixed"), (LPCTSTR)vp.dos->GetFilePresentationNameAndExt(file) );
+						const CString msg=Utils::SimpleFormat( _T("\"%s\" cannot be fixed"), vp.dos->GetFilePresentationNameAndExt(file) );
 						switch (Utils::CancelRetryContinue( msg, err, MB_DEFBUTTON1 )){
 							case IDCANCEL:
 								return vp.CancelAll();
@@ -600,8 +598,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 						if (sectorAffiliation[chs.GetTrackNumber()].Lookup( chs.sectorId.sector, file ))
 							continue; // ok - Sector is reported Occupied or Reserved and is really affiliated
 						// : resolving the problem
-						CString msg;
-						msg.Format( _T("Sector with %s is reported occupied but is unaffiliated to any file or directory"), (LPCTSTR)chs.sectorId.ToString() );
+						const CString msg=Utils::SimpleFormat( _T("Sector with %s is reported occupied but is unaffiliated to any file or directory"), chs.sectorId.ToString() );
 						switch (vp.ConfirmFix( msg, _T("Sector will be represented as a file.") )){
 							case IDCANCEL:
 								return vp.CancelAll();
@@ -637,8 +634,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 							if (err==ERROR_SUCCESS)
 								break;
 							else if (err!=ERROR_FILE_EXISTS){
-								CString msg;
-								msg.Format( _T("Data of sector with %s cannot be put into a temporary file"), (LPCTSTR)chs.sectorId.ToString() );
+								const CString msg=Utils::SimpleFormat( _T("Data of sector with %s cannot be put into a temporary file"), chs.sectorId.ToString() );
 								const BYTE result=Utils::QuestionYesNoCancel( msg, MB_DEFBUTTON1, err, _T("Mark the sector as empty?") );
 								if (result==IDCANCEL)
 									return vp.CancelAll();

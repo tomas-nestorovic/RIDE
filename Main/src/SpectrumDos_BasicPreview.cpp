@@ -602,9 +602,9 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 			// . opening the HTML-formatted content
 			contentView.Navigate2(tmpFileName);
 			// . updating the window caption
-			CString caption;
-			caption.Format( PREVIEW_LABEL _T(" (%s)"), (LPCTSTR)DOS->GetFilePresentationNameAndExt(file) );
-			SetWindowText(caption);
+			SetWindowText(
+				Utils::SimpleFormat( PREVIEW_LABEL _T(" (%s)"), DOS->GetFilePresentationNameAndExt(file) )
+			);
 		}else
 			SetWindowText(PREVIEW_LABEL);
 		// - hiding/displaying additional menus

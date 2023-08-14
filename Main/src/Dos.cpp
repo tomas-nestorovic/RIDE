@@ -869,10 +869,8 @@ reportError:Utils::Information(buf);
 			else{
 				// invalid export name - generating an artifical one
 				static WORD fileId;
-				CString result;
-				result.Format( _T("File%04d.%s"), ++fileId, (LPCTSTR)ext ); // "%05d" and above isn't recommended - some DOSes can't accommodate more than 8 characters in name field
-				if (fileId==9999) fileId=0;
-				return result;
+				if (++fileId>9999) fileId=1;
+				return Utils::SimpleFormat( _T("File%04d.%s"), fileId, ext ); // "%05d" and above isn't recommended - some DOSes can't accommodate more than 8 characters in name field
 			}
 		}else
 			// exporting to another RIDE instance; substituting non-alphanumeric characters with "URL-like" escape sequences
@@ -1057,15 +1055,17 @@ reportError:Utils::Information(buf);
 
 	void CDos::ShowFileProcessingError(PCFile file,LPCTSTR cause) const{
 		// shows general error message on File being not processable due to occured Cause
-		CString s;
-		s.Format( ERROR_MSG_CANNOT_PROCESS, (LPCTSTR)GetFilePresentationNameAndExt(file) );
-		Utils::FatalError(s,cause);
+		Utils::FatalError(
+			Utils::SimpleFormat( ERROR_MSG_CANNOT_PROCESS, GetFilePresentationNameAndExt(file) ),
+			cause
+		);
 	}
 	void CDos::ShowFileProcessingError(PCFile file,TStdWinError cause) const{
 		// shows general error message on File being not processable due to occured Cause
-		CString s;
-		s.Format( ERROR_MSG_CANNOT_PROCESS, (LPCTSTR)GetFilePresentationNameAndExt(file) );
-		Utils::FatalError(s,cause);
+		Utils::FatalError(
+			Utils::SimpleFormat( ERROR_MSG_CANNOT_PROCESS, GetFilePresentationNameAndExt(file) ),
+			cause
+		);
 	}
 
 	CDos::PFile CDos::__findFile__(PCFile directory,RCPathString fileName,RCPathString fileExt,PCFile ignoreThisFile) const{

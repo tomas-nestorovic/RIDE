@@ -218,9 +218,9 @@
 		// - drawing the converted image
 		InvalidateRect(nullptr,FALSE);
 		// - updaring window's caption
-		CString caption;
-		caption.Format( LABEL _T(" (%s)"), (LPCTSTR)DOS->GetFilePresentationNameAndExt(file) );
-		SetWindowText(caption);
+		SetWindowText(
+			Utils::SimpleFormat( LABEL _T(" (%s)"), DOS->GetFilePresentationNameAndExt(file) )
+		);
 	}
 
 	BOOL CSpectrumBase::CScreenPreview::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){

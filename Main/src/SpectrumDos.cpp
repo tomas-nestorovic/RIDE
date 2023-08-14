@@ -133,9 +133,10 @@
 																0, f
 															)
 								){
-									CString msg;
-									msg.Format( _T("Failed to append block \"%s\""), (LPCTSTR)nameAndExt );
-									Utils::Information( msg, err, _T("Appended only partly.") );
+									Utils::Information(
+										Utils::SimpleFormat( _T("Failed to append block \"%s\""), nameAndExt ),
+										err, _T("Appended only partly.")
+									);
 									break;
 								}
 							}

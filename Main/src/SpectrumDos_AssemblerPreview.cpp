@@ -857,9 +857,9 @@
 			ParseZ80BinaryFileAndShowContent( frw );
 			constantInput.pfIn=nullptr; // the FileReaderWriter is a local object not to be remembered
 			// . updating the window caption
-			CString caption;
-			caption.Format( PREVIEW_LABEL _T(" (%s)"), (LPCTSTR)DOS->GetFilePresentationNameAndExt(file) );
-			SetWindowText(caption);
+			SetWindowText(
+				Utils::SimpleFormat( PREVIEW_LABEL _T(" (%s)"), DOS->GetFilePresentationNameAndExt(file) )
+			);
 		}else
 			SetWindowText(PREVIEW_LABEL);
 		SetWindowPos( nullptr, 0,0, 0,0, SWP_NOZORDER|SWP_NOMOVE|SWP_NOSIZE|SWP_FRAMECHANGED );
