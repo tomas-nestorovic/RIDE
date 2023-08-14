@@ -330,7 +330,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 									char buf[1024];
 									if (size>sizeof(buf))
 										goto badFormat;
-									for( LPCSTR param=::strtok( ::lstrcpyn(buf,(LPCSTR)rawBytes,size), _T(",") ); param!=nullptr; param=::strtok(nullptr,_T(",")) ){
+									for( LPCSTR param=::strtok( ::lstrcpynA(buf,(LPCSTR)rawBytes,size), "," ); param!=nullptr; param=::strtok(nullptr,",") ){
 										while (::isspace(*param))
 											param++;
 										if (!::strncmp(param,"name=",5))

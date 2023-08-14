@@ -143,11 +143,11 @@
 		if (PTCHAR pExt=_tcsrchr(buf,'.')){
 			// Extension specified (Dot found)
 			*pExt++='\0';
-			rOutExt=CPathString::Unescape( TZxRom::AsciiToZx(pExt,pExt,nullptr) ); // converting in place to ZX charset
+			rOutExt=CPathString::Unescape( Utils::ToStringT(TZxRom::AsciiToZx(pExt,pExt,nullptr)) ); // converting in place to ZX charset
 		}else // Extension not specified (Dot not found)
 			rOutExt=_T("");
 		// - unescaping and trimming the Name
-		rOutName=CPathString::Unescape( TZxRom::AsciiToZx(buf,buf,nullptr) ); // converting in place to ZX charset
+		rOutName=CPathString::Unescape( Utils::ToStringT(TZxRom::AsciiToZx(buf,buf,nullptr)) ); // converting in place to ZX charset
 	}
 
 	#define INFO_UNI	_T(" ZX%c")
@@ -241,11 +241,10 @@
 		// returns File name concatenated with File extension for presentation of the File to the user
 		CPathString name,ext;
 		GetFileNameOrExt( file, &name, &ext );
-		TCHAR buf[1024];
 		if (ext.GetLength())
-			return TZxRom::ZxToAscii( name, ((name+='.')+=ext).GetLength(), buf );
-		else
-			return TZxRom::ZxToAscii( name, name.GetLength(), buf );
+			(name+='.')+=ext;
+		TCHAR buf[1024];
+		return TZxRom::ZxToAscii( name.GetAnsi(), name.GetLength(), buf );
 	}
 
 	CString CSpectrumBase::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
@@ -254,14 +253,15 @@
 			// exporting to non-RIDE target (e.g. to the Explorer); excluding from the Buffer characters that are forbidden in FAT32 long file names
 			CPathString fileName,fileExt;
 			GetFileNameOrExt( file, &fileName, &fileExt );
+			fileName.ExcludeFat32LongNameInvalidChars(), fileExt.ExcludeFat32LongNameInvalidChars();
 			TCHAR buf[16384];
-			const PTCHAR pZxName=TZxRom::ZxToAscii( fileName, fileName.ExcludeFat32LongNameInvalidChars().GetLength(), buf );
+			const PTCHAR pZxName=TZxRom::ZxToAscii( fileName.GetAnsi(), fileName.GetLength(), buf );
 			if (short n=::lstrlen(pZxName)){
 				// valid export name - taking it as the result
-				if (const short fileExtLength=fileExt.ExcludeFat32LongNameInvalidChars().GetLength()){
+				if (const short fileExtLength=fileExt.GetLength()){
 					pZxName[n++]='.';
 					::lstrcpy(	pZxName+n,
-								TZxRom::ZxToAscii( fileExt, fileExtLength, pZxName+n )
+								TZxRom::ZxToAscii( fileExt.GetAnsi(), fileExtLength, pZxName+n )
 							);
 				}
 				return pZxName;

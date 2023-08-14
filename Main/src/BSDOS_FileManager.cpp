@@ -113,7 +113,7 @@
 						varLengthCommandLineEditor.DrawReportModeCell( de->dir.name, ZX_TAPE_FILE_NAME_LENGTH_MAX, ' ', pdis );
 					else{
 						const int color0=::SetTextColor( dc, COLOR_RED );
-							::DrawText( dc, BSDOS_DIR_CORRUPTED, -1, &r, DT_SINGLELINE|DT_VCENTER );
+							::DrawTextA( dc, BSDOS_DIR_CORRUPTED, -1, &r, DT_SINGLELINE|DT_VCENTER );
 						::SetTextColor(dc,color0);
 					}
 					break;
@@ -220,8 +220,8 @@
 							( de2!=nullptr ? de2->dateTimeCreated : 0 );
 				case INFORMATION_COMMENT:
 					return	::strncmp(
-								de1!=nullptr ? de1->dir.comment : _T(""),
-								de2!=nullptr ? de2->dir.comment : _T(""),
+								de1!=nullptr ? de1->dir.comment : "",
+								de2!=nullptr ? de2->dir.comment : "",
 								sizeof(de1->dir.comment)
 							);
 			}
@@ -235,8 +235,8 @@
 							( de2->fileHasStdHeader ? de2->file.stdHeader.type : TZxRom::TFileType::HEADERLESS );
 				case INFORMATION_NAME:
 					return	::strncmp(
-								de1->fileHasStdHeader ? de1->file.stdHeader.name : _T(""),
-								de2->fileHasStdHeader ? de2->file.stdHeader.name : _T(""),
+								de1->fileHasStdHeader ? de1->file.stdHeader.name : "",
+								de2->fileHasStdHeader ? de2->file.stdHeader.name : "",
 								ZX_TAPE_FILE_NAME_LENGTH_MAX
 							);
 				case INFORMATION_SIZE:

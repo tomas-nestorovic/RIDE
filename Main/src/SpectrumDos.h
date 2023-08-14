@@ -155,18 +155,18 @@
 				double ToDouble() const;
 			} *PCNumberInternalForm;
 
-			static const LPCSTR Keywords[];
+			static const LPCTSTR Keywords[];
 
 			static bool IsKnownFileType(TFileType type);
 			static LPCTSTR GetFileTypeName(TFileType type);
 			static PTCHAR ZxToAscii(LPCSTR zx,short zxLength,PTCHAR buf,char zxBefore=' ');
-			static PTCHAR AsciiToZx(LPCTSTR pc,PCHAR zx,PBYTE pOutZxLength);
+			static PCHAR AsciiToZx(LPCTSTR pc,PCHAR zx,PBYTE pOutZxLength);
 			//inline
 			static bool IsStdUdgSymbol(BYTE s);
 			//inline
 			static bool IsPrintable(BYTE s);
 			//inline
-			static LPCSTR GetKeywordTranscript(BYTE k);
+			static LPCTSTR GetKeywordTranscript(BYTE k);
 
 			TZxRom();
 

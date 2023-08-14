@@ -496,7 +496,7 @@
 		// - warning
 		if (capsImageInfo.maxcylinder>=FDD_CYLINDERS_MAX){ // inclusive!
 			TCHAR msg[200];
-			::wsprintf( msg, _T("The image contains %d cylinders, ") APP_ABBREVIATION _T(" shows just first %d of them."), capsImageInfo.maxcylinder+1, FDD_CYLINDERS_MAX );
+			::wsprintf( msg, _T("The image contains %d cylinders, ") _T(APP_ABBREVIATION) _T(" shows just first %d of them."), capsImageInfo.maxcylinder+1, FDD_CYLINDERS_MAX );
 			Utils::Warning(msg);
 			capsImageInfo.maxcylinder=FDD_CYLINDERS_MAX-1; // inclusive!
 		}
@@ -889,15 +889,15 @@ invalidTrack:
 				const SYSTEMTIME st={ cb.capsImageInfo.crdt.year, cb.capsImageInfo.crdt.month, 0, cb.capsImageInfo.crdt.day, cb.capsImageInfo.crdt.hour, cb.capsImageInfo.crdt.min, cb.capsImageInfo.crdt.sec };
 					FILETIME ft;
 					::SystemTimeToFileTime( &st, &ft );
-				TCHAR buf[256];
+		{		TCHAR buf[256];
 				SetDlgItemText( ID_DATE, CMSDOS7::TDateTime(ft).ToString(buf) );
-				*buf='\0';
+		}		char buf[256]; *buf='\0';
 				for( BYTE i=0; i<CAPS_MAXPLATFORM; i++ )
 					if (cb.capsImageInfo.platform[i]!=ciipNA)
-						::lstrcat(  ::lstrcat(buf, _T(", ") ),  CAPS::GetPlatformName(cb.capsImageInfo.platform[i])  );
+						::lstrcatA(  ::lstrcatA(buf, ", " ),  CAPS::GetPlatformName(cb.capsImageInfo.platform[i])  );
 					else if (!i) // no Platforms specified for the file
-						::lstrcpy( buf+2, _T("N/A") );
-				SetDlgItemText( ID_DOS, buf+2 );
+						::lstrcpyA( buf+2, "N/A" );
+				::SetDlgItemTextA( *this, ID_DOS, buf+2 );
 			}
 
 			void DoDataExchange(CDataExchange *pDX) override{

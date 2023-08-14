@@ -16,7 +16,7 @@
 
 	#define BSDOS_DIRS_SLOTS_COUNT		(BSDOS_SECTOR_LENGTH_STD/sizeof(CDirsSector::TSlot))
 
-	#define BSDOS_DIR_CORRUPTED			_T("« Corrupted »")
+	#define BSDOS_DIR_CORRUPTED			"« Corrupted »"
 
 	class CBSDOS308 sealed:public CSpectrumDos{
 	public:

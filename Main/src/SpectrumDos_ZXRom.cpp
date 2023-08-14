@@ -90,7 +90,7 @@
 		}
 	}
 
-	const LPCSTR CSpectrumBase::TZxRom::Keywords[]={
+	const LPCTSTR CSpectrumBase::TZxRom::Keywords[]={
 		_T("RND"), _T("INKEY$"), _T("PI"), _T("FN "), _T("POINT "), _T("SCREEN$ "), _T("ATTR "), _T("AT "), _T("TAB "), _T("VAL$ "), _T("CODE "), _T("VAL "), _T("LEN "), _T("SIN "), _T("COS "), _T("TAN "), _T("ASN "), _T("ACS "), _T("ATN "), _T("LN "), _T("EXP "), _T("INT "), _T("SQR "), _T("SGN "), _T("ABS "), _T("PEEK "), _T("IN "), _T("USR "), _T("STR$ "), _T("CHR$ "), _T("NOT "), _T("BIN "),
 		_T(" OR "), _T(" AND "), _T("<="), _T(">="), _T("<>"), _T(" LINE "), _T(" THEN "), _T(" TO "), _T(" STEP "), _T(" DEF FN "), _T(" CAT "), _T(" FORMAT "), _T(" MOVE "), _T(" ERASE "), _T(" OPEN #"), _T(" CLOSE #"), _T(" MERGE "), _T(" VERIFY "), _T(" BEEP "), _T(" CIRCLE "), _T(" INK "), _T(" PAPER "), _T(" FLASH "), _T(" BRIGHT "), _T(" INVERSE "), _T(" OVER "), _T(" OUT "), _T(" LPRINT "), _T(" LLIST "), _T(" STOP "), _T(" READ "), _T(" DATA "), _T(" RESTORE "),
 		_T(" NEW "), _T(" BORDER "), _T(" CONTINUE "), _T(" DIM "), _T(" REM "), _T(" FOR "), _T(" GO TO "), _T(" GO SUB "), _T(" INPUT "), _T(" LOAD "), _T(" LIST "), _T(" LET "), _T(" PAUSE "), _T(" NEXT "), _T(" POKE "), _T(" PRINT "), _T(" PLOT "), _T(" RUN "), _T(" SAVE "), _T(" RANDOMIZE "), _T(" IF "), _T(" CLS "), _T(" DRAW "), _T(" CLEAR "), _T(" RETURN "), _T(" COPY ")
@@ -118,7 +118,7 @@
 			else if (z<=164)
 				*t++=z-79; // UDG characters 'A'-'U'
 			else{
-				const LPCSTR K=Keywords[z-KEYWORD_TOKEN_FIRST];
+				const LPCTSTR K=Keywords[z-KEYWORD_TOKEN_FIRST];
 				if (*(t-1)==' ' && *K==' ')
 					::lstrcpy( t, 1+K ); // two consecutive spaces are not printed
 				else
@@ -130,7 +130,7 @@
 		return 1+bufT; // "1+" = see initialization above
 	}
 
-	PTCHAR CSpectrumBase::TZxRom::AsciiToZx(LPCTSTR pc,PCHAR zx,PBYTE pOutZxLength){
+	PCHAR CSpectrumBase::TZxRom::AsciiToZx(LPCTSTR pc,PCHAR zx,PBYTE pOutZxLength){
 		// converts text from PC's current character set to Spectrum character set and returns the result in Buffer
 		PCHAR buf=zx;
 		for( ; const TCHAR c=*pc; pc++ )
@@ -156,7 +156,7 @@
 		return s>=' ';
 	}
 
-	LPCSTR CSpectrumBase::TZxRom::GetKeywordTranscript(BYTE k){
+	LPCTSTR CSpectrumBase::TZxRom::GetKeywordTranscript(BYTE k){
 		// returns the textual representation of the given Keyword, or Null if the character is not a Keyword character
 		return	k>=KEYWORD_TOKEN_FIRST
 				? Keywords[k-KEYWORD_TOKEN_FIRST]
@@ -165,8 +165,8 @@
 
 	WORD CSpectrumBase::TZxRom::PrintAt(HDC dc,LPCSTR zx,short zxLength,RECT r,UINT drawTextFormat,char zxBefore) const{
 		// returns the number of ASCII characters to which the input ZX code has been converted and printed inside the given Rectangle
-		TCHAR buf[3000]; // a big-enough buffer to accommodate 255-times the keyword RANDOMIZE
-		const PCHAR pAscii=ZxToAscii( zx, zxLength, buf, zxBefore );
+		TCHAR buf[3000]; // a big-enough buffer to accommodate 255-times the longest keyword RANDOMIZE
+		const PTCHAR pAscii=ZxToAscii( zx, zxLength, buf, zxBefore );
 		WORD nAsciiChars=::lstrlen(pAscii);
 		if (drawTextFormat&DT_RIGHT){
 			drawTextFormat&=~DT_RIGHT;
@@ -254,8 +254,8 @@
 		const TZxRom &rZxRom=((CSpectrumBaseFileManagerView *)CDos::GetFocused()->pFileManager)->zxRom;
 		const HGDIOBJ hFont0=::SelectObject( pdis->hDC, rZxRom.font.m_hObject );
 			pdis->rcItem.left+=PROPGRID_CELL_MARGIN_LEFT;
-			CPathString tmp( (LPCSTR)value, LOBYTE(combinedValue) );
-			rZxRom.PrintAt(	pdis->hDC, tmp, tmp.TrimRight(HIBYTE(combinedValue)).GetLength(),
+			const CPathString tmp=CPathString( (LPCSTR)value, LOBYTE(combinedValue) ).TrimRight(HIBYTE(combinedValue));
+			rZxRom.PrintAt(	pdis->hDC, tmp.GetAnsi(), tmp.GetLength(),
 							pdis->rcItem,
 							DT_SINGLELINE | DT_LEFT | DT_VCENTER | DT_NOPREFIX
 						);

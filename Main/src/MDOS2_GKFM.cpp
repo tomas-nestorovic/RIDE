@@ -237,12 +237,12 @@
 			// . offering to update the GKFM on the disk from an on-line resource
 			PropGrid::AddProperty(	hPropGrid, hGkfm, MDOS2_RUNP,
 									BOOT_SECTOR_UPDATE_ONLINE_HYPERLINK,
-									PropGrid::Hyperlink::DefineEditorA(UpdateOnline)
+									PropGrid::Hyperlink::DefineEditorT(UpdateOnline)
 								);
 		}else
 			PropGrid::AddProperty(	hPropGrid, hGkfm, _T(""),
 									"<a>Create</a>",
-									PropGrid::Hyperlink::DefineEditorA( CreateNew, CBootView::__updateCriticalSectorView__ )
+									PropGrid::Hyperlink::DefineEditorT( CreateNew, CBootView::__updateCriticalSectorView__ )
 								);
 	}
 

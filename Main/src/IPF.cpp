@@ -13,7 +13,7 @@
 		MAKE_IMAGE_ID('C','A','P','S','_','I','P','F'), // a unique identifier
 		Recognize,	// list of recognized device names
 		Instantiate,	// instantiation function
-		_T("*.") CAPS_FILEEXT, // filter
+		_T("*.") _T(CAPS_FILEEXT), // filter
 		Medium::FLOPPY_ANY, // supported Media
 		Codec::FLOPPY_ANY, // supported Codecs
 		1,2*6144,	// Sector supported min and max length

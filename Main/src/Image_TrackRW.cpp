@@ -618,14 +618,14 @@
 	void CImage::CTrackReader::SaveCsv(LPCTSTR filename) const{
 		CFile f( filename, CFile::modeWrite|CFile::modeCreate );
 		for( DWORD i=0; i<nLogTimes; i++ )
-			Utils::WriteToFileFormatted( f, "%d\n", logTimes[i] );		
+			Utils::WriteToFileFormatted( f, _T("%d\n"), logTimes[i] );		
 	}
 
 	void CImage::CTrackReader::SaveDeltaCsv(LPCTSTR filename) const{
 		CFile f( filename, CFile::modeWrite|CFile::modeCreate );
 		TLogTime tPrev=0;
 		for( DWORD i=0; i<nLogTimes; tPrev=logTimes[i++] )
-			Utils::WriteToFileFormatted( f, "%d\n", logTimes[i]-tPrev );		
+			Utils::WriteToFileFormatted( f, _T("%d\n"), logTimes[i]-tPrev );		
 	}
 //#endif
 
@@ -728,7 +728,7 @@
 			int nIdentical=std::min<int>( iDiffStartPos-iMyBit, theirs.nBits-iTheirBit );
 			while (nIdentical-->0){
 				if (pBits[iMyBit].value!=theirs.pBits[iTheirBit].value)
-					Utils::Information("MRTKI!!!!");
+					Utils::Information(_T("MRTKI!!!!"));
 				#ifdef _DEBUG
 					const auto &mine=pBits[iMyBit], &their=theirs.pBits[iTheirBit];
 					ASSERT( mine.value==their.value ); // just to be sure; failing here may point at a bug in Diff implementation!

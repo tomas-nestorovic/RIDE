@@ -206,11 +206,11 @@ struct TLogTimeInterval{
 #define DLL_WININET		_T("wininet.dll")
 
 #define APP_FULLNAME	_T("Real and Imaginary Disk Editor")
-#define APP_ABBREVIATION _T("RIDE")
-#define APP_VERSION		_T("1.7.2 debug special")
+#define APP_ABBREVIATION "RIDE"
+#define APP_VERSION		"1.7.3 debug special"
 //#define APP_SPECIAL_VER
 #define APP_IDENTIFIER	APP_ABBREVIATION APP_VERSION
-#define APP_CLASSNAME	_T("Afx:tomascz.") APP_ABBREVIATION
+#define APP_CLASSNAME	_T("Afx:tomascz.") _T(APP_ABBREVIATION)
 
 #define FONT_MS_SANS_SERIF	_T("Microsoft Sans Serif")
 #define FONT_SYMBOL			_T("Symbol")

@@ -56,7 +56,7 @@
 	#define IMAGE	rFileManager.tab.image
 	#define DOS		IMAGE->dos
 
-	#define PREVIEW_LABEL	"Z80 assembler listing"
+	#define PREVIEW_LABEL	_T("Z80 assembler listing")
 
 	#define Z80_INST_ADC	_T("adc")
 	#define Z80_INST_ADD	_T("add")
@@ -858,7 +858,7 @@
 			constantInput.pfIn=nullptr; // the FileReaderWriter is a local object not to be remembered
 			// . updating the window caption
 			CString caption;
-			caption.Format( PREVIEW_LABEL " (%s)", (LPCTSTR)DOS->GetFilePresentationNameAndExt(file) );
+			caption.Format( PREVIEW_LABEL _T(" (%s)"), (LPCTSTR)DOS->GetFilePresentationNameAndExt(file) );
 			SetWindowText(caption);
 		}else
 			SetWindowText(PREVIEW_LABEL);

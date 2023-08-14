@@ -142,7 +142,7 @@ namespace WinUsb
 		void Clear();
 		bool ConnectToInterface(HANDLE hDevice,UCHAR interfaceIndex);
 		void DisconnectFromInterface();
-		LPCTSTR GetProductName(PTCHAR productNameBuffer,BYTE productNameBufferLength) const;
+		LPCSTR GetProductName(PCHAR productNameBuffer,BYTE productNameBufferLength) const;
 		void SetPipePolicy(UCHAR bulkPipeId,BYTE enable,DWORD msTimeout) const;
 		void ClearIoPipes(UCHAR bulkInPipeId,UCHAR bulkOutPipeId) const;
 	};

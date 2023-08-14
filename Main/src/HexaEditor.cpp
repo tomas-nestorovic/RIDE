@@ -173,9 +173,15 @@ using namespace Yahel;
 
 
 
+	#ifdef UNICODE
+		#define GetBaseClassName IInstance::GetBaseClassNameW
+	#else
+		#define GetBaseClassName IInstance::GetBaseClassNameA
+	#endif
+
 	CHexaEditor::CHexaEditor(PVOID param)
 		// ctor
-		: CCtrlView( IInstance::GetBaseClassNameA(AfxGetInstanceHandle()), AFX_WS_DEFAULT_VIEW&~WS_BORDER )
+		: CCtrlView( GetBaseClassName(AfxGetInstanceHandle()), AFX_WS_DEFAULT_VIEW&~WS_BORDER )
 		, font(FONT_COURIER_NEW,105,false,true)
 		, instance( IInstance::Create(AfxGetInstanceHandle(),this,param,font) )
 		, hDefaultAccelerators( instance->GetAcceleratorTable() )

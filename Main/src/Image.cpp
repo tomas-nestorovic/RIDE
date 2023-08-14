@@ -651,10 +651,10 @@ namespace Medium{
 			// FileName not determined yet or the file is read-only - determining FileName now
 			if (/*bReplace &&*/ m_strPathName.IsEmpty()){ // A&B; A = the "Save as" command, B = fully qualified FileName not determined yet; commented out as "Save file copy" command not used (when it holds bReplace==False)
 				// . validating that there are no Forbidden characters
-				if (const PTCHAR forbidden=::strpbrk( ::lstrcpy(bufFileName,m_strTitle), _T("#%;/\\<>:") ))
+				if (const PTCHAR forbidden=::StrPBrk( ::lstrcpy(bufFileName,m_strTitle), _T("#%;/\\<>:") ))
 					*forbidden='\0';
 				// . adding Extension
-				::strncat( bufFileName, 1+properties->filter, 4 ); // 1 = asterisk, 4 = dot and three-character extension (e.g. "*.d40")
+				::StrCatN( bufFileName, 1+properties->filter, 4+1 ); // 1 = asterisk, 4+1 = dot and three-character extension (e.g. "*.d40")
 			}else
 				::lstrcpy(bufFileName,m_strPathName);
 			if (!CRideApp::DoPromptFileName( bufFileName, false, AFX_IDS_SAVEFILE, OFN_HIDEREADONLY|OFN_PATHMUSTEXIST, properties ))

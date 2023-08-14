@@ -131,8 +131,8 @@
 						cbx.AddString(_T("Calibrate head once on start")),
 						HEAD_CALIBRATE_ON_START
 					);
-					for( char nRevs=HEAD_CALIBRATE_EACH_10_REVOLUTIONS,buf[80]; nRevs<=30; nRevs+=10 ){
-						::wsprintfA( buf, _T("Calibrate head each %d revolutions"), nRevs );
+					for( TCHAR nRevs=HEAD_CALIBRATE_EACH_10_REVOLUTIONS,buf[80]; nRevs<=30; nRevs+=10 ){
+						::wsprintf( buf, _T("Calibrate head each %d revolutions"), nRevs );
 						cbx.SetItemData( cbx.AddString(buf), nRevs );
 					}
 				cbx.Detach();

@@ -199,7 +199,7 @@
 		const HANDLE hBootstrap=PropGrid::AddCategory( hPropGrid, nullptr, _T("Bootstrap") );
 		PropGrid::AddProperty(	hPropGrid, hBootstrap, _T(""),
 								_T("<a>Show machine code</a>"),
-								PropGrid::Hyperlink::DefineEditorA(TBootSector::ShowBootstrapMachineCode),
+								PropGrid::Hyperlink::DefineEditorT(TBootSector::ShowBootstrapMachineCode),
 								boot
 							);
 	}

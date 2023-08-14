@@ -136,7 +136,7 @@
 			if (ext.GetLength()){
 				ext.LowerCase()+=',';
 				for( BYTE n=MSDOS7_FILE_ICONS_COUNT; --n>ICON_FILE_GENERAL; )
-					if (::strstr(ICON_INFOS[n].extensions,ext))
+					if (::StrStr(ICON_INFOS[n].extensions,ext))
 						return icons[n];
 			}
 			return icons[ICON_FILE_GENERAL];

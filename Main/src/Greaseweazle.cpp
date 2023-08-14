@@ -5,8 +5,8 @@
 	#define INI_GREASEWEAZLE	_T("GrWeV4")
 
 	#define GW_DEVICE_NAME_UNICODE	L"Greaseweazle"
-	#define GW_DEVICE_NAME_T		_T("Greaseweazle")
-	#define GW_DEVICE_NAME_PATTERN	GW_DEVICE_NAME_T _T(" floppy drive #%c (%s.sys)")
+	#define GW_DEVICE_NAME		"Greaseweazle"
+	#define GW_DEVICE_NAME_PATTERN	_T(GW_DEVICE_NAME) _T(" floppy drive #%c (%s.sys)")
 	static_assert( ARRAYSIZE(GW_DEVICE_NAME_PATTERN)+8<=DEVICE_NAME_CHARS_MAX, "Identifier too long" );
 
 	#define GW_ACCESS_DRIVER_USBSER	_T("usbser")
@@ -35,7 +35,7 @@
 		// creates and returns a Greaseweazle Device instance for a specified floppy drive
 		TCHAR fddId, driverStr[16], tmp[MAX_PATH];
 		*_tcsrchr( ::lstrcpy(tmp,deviceName), '.' )='\0';
-		::sscanf( tmp, GW_DEVICE_NAME_PATTERN, &fddId, driverStr );
+		::_stscanf( tmp, GW_DEVICE_NAME_PATTERN, &fddId, driverStr );
 		if (!::lstrcmp(driverStr,GW_ACCESS_DRIVER_USBSER))
 			return new CGreaseweazleV4( TDriver::USBSER, fddId-'0' );
 		ASSERT(FALSE);
@@ -607,7 +607,7 @@
 		// True <=> new settings have been accepted (and adopted by this Image), otherwise False
 		// - displaying the dialog and processing its result
 		TCHAR firmware[80];
-		::wsprintf( firmware, GW_DEVICE_NAME_T _T(" Firmware %d.%d%c(Main)"), firmwareInfo.major, firmwareInfo.minor, firmwareInfo.isMainFirmware*' ' );
+		::wsprintf( firmware, _T(GW_DEVICE_NAME) _T(" Firmware %d.%d%c(Main)"), firmwareInfo.major, firmwareInfo.minor, firmwareInfo.isMainFirmware*' ' );
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		const bool result=params.EditInModalDialog( *this, firmware, initialEditing );
 		// - if this the InitialEditing, making sure the internal representation is empty

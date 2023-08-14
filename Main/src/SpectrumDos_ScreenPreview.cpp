@@ -219,7 +219,7 @@
 		InvalidateRect(nullptr,FALSE);
 		// - updaring window's caption
 		CString caption;
-		caption.Format( LABEL " (%s)", (LPCTSTR)DOS->GetFilePresentationNameAndExt(file) );
+		caption.Format( LABEL _T(" (%s)"), (LPCTSTR)DOS->GetFilePresentationNameAndExt(file) );
 		SetWindowText(caption);
 	}
 

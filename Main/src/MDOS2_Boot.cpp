@@ -227,7 +227,7 @@
 		const HANDLE hUniRun=PropGrid::AddCategory(hPropGrid,nullptr,UNIRUN_NAME);
 			PropGrid::AddProperty(	hPropGrid, hUniRun, MDOS2_RUNP,
 									BOOT_SECTOR_UPDATE_ONLINE_HYPERLINK,
-									PropGrid::Hyperlink::DefineEditorA(__unirun_updateOnline__)
+									PropGrid::Hyperlink::DefineEditorT(__unirun_updateOnline__)
 								);
 	}
 

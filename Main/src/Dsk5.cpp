@@ -26,7 +26,7 @@
 	CDsk5::TParams::TParams()
 		// ctor
 		: rev5( app.GetProfileInt(INI_DSK,INI_VERSION,1)!=0 )
-		, preserveEmptyTracks( app.GetProfileIntA(INI_DSK,INI_EMPTY_TRACKS,0)!=0 ) {
+		, preserveEmptyTracks( app.GetProfileInt(INI_DSK,INI_EMPTY_TRACKS,0)!=0 ) {
 	}
 
 	#define STD_HEADER		"MV - CPC" /* suffices to recognize "standard" DSK format */
@@ -37,10 +37,11 @@
 		// ctor
 		::ZeroMemory(this,sizeof(*this));
 		::lstrcpyA( header, rParams.rev5?REV5_HEADER:STD_HEADER );
-		::strncpy(	creator,
-					app.GetProfileString( INI_DSK, INI_CREATOR, APP_ABBREVIATION _T(" ") APP_VERSION),
-					sizeof(creator)
-				);
+		::strncpy(
+			creator,
+			Utils::ToStringA(  app.GetProfileString( INI_DSK, INI_CREATOR, _T(APP_ABBREVIATION) _T(" ") _T(APP_VERSION) )  ),
+			sizeof(creator)
+		);
 		nHeads=2;
 	}
 
@@ -413,14 +414,14 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				// . Creator
 				const BYTE nCyls=rDiskInfo.nCylinders;
 				rDiskInfo.nCylinders=0; // converting the Creator field to a null-terminated string
-					DDX_Text( pDX, ID_CREATOR, rDiskInfo.creator, sizeof(rDiskInfo.creator)+1 ); // "+1" = terminal Null character
+					DDX_Text( pDX, ID_CREATOR, (PTCHAR)(LPCTSTR)Utils::ToStringT(rDiskInfo.creator), sizeof(rDiskInfo.creator)+1 ); // "+1" = terminal Null character
 						DDV_MaxChars( pDX, rDiskInfo.creator, sizeof(rDiskInfo.creator) );
 					if (!pDX->m_bSaveAndValidate){
 						// populating the Creator combo-box with preset names
 						CComboBox cb;
 						cb.Attach(GetDlgItemHwnd(ID_CREATOR));
 							TCHAR buf[80];
-							cb.AddString( ::lstrcpyn(buf,APP_ABBREVIATION _T(" ") APP_VERSION,sizeof(rDiskInfo.creator)+1) );
+							cb.AddString( ::lstrcpyn(buf,_T(APP_ABBREVIATION) _T(" ") _T(APP_VERSION),sizeof(rDiskInfo.creator)+1) );
 							DWORD dw=ARRAYSIZE(buf);
 							if (::GetUserName(buf,&dw)){
 								buf[sizeof(rDiskInfo.creator)]='\0';
@@ -492,7 +493,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			app.WriteProfileInt( INI_DSK, INI_EMPTY_TRACKS, params.preserveEmptyTracks );
 			const BYTE nCyls=diskInfo.nCylinders;
 			diskInfo.nCylinders=0; // converting the Creator field to a null-terminated string
-				app.WriteProfileString( INI_DSK, INI_CREATOR, diskInfo.creator );
+				app.WriteProfileString( INI_DSK, INI_CREATOR, Utils::ToStringT(diskInfo.creator) );
 			diskInfo.nCylinders=nCyls;
 			// . marking the Image as "dirty"
 			SetModifiedFlag(TRUE);
@@ -631,7 +632,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 	PImage CDsk5::CDummyDevice::Instantiate(LPCTSTR deviceName){
 		// creates and returns a KryoFluxDevice instance for a specified floppy drive
 		TCHAR fddId;
-		::sscanf( deviceName, DEVICE_NAME_PATTERN, &fddId );
+		::_stscanf( deviceName, DEVICE_NAME_PATTERN, &fddId );
 		if (fddId<'0'+DEVICE_COUNT)
 			return new CDsk5(&Properties);
 		ASSERT(FALSE);

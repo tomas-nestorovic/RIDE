@@ -1575,7 +1575,7 @@ namespace Utils{
 			if (!limits.Contains(i))
 				return false; // out of Limits
 			p+=n;
-			if (!::strchr(Delimiters,*p))
+			if (!::StrChr(Delimiters,*p))
 				return false; // each integer must be terminated with one of Delimiters
 			if (range.open){
 				if (*p==RangeSign)
@@ -1902,7 +1902,7 @@ namespace Utils{
 				}
 			case WM_SETTEXT:
 				// text about to change
-				::strncpy( psbi->text, (LPCTSTR)lParam, ARRAYSIZE(psbi->text) );
+				::StrCpyN( psbi->text, (LPCTSTR)lParam, ARRAYSIZE(psbi->text) );
 				::InvalidateRect( hSplitBtn, nullptr, TRUE );
 				return 0;
 			case WM_PAINT:{
@@ -2101,7 +2101,7 @@ namespace Utils{
 			const HWND hParent=app.GetEnabledActiveWindow();
 			CFileDialog d(
 				defaultSaveName==nullptr,
-				singleFilter ? ::strrchr(singleFilter,'.') : nullptr,
+				singleFilter ? ::StrRChr(singleFilter,nullptr,'.') : nullptr,
 				nullptr,
 				OFN_EXPLORER | OFN_OVERWRITEPROMPT | flags,
 				singleFilter,
@@ -2154,7 +2154,7 @@ namespace Utils{
 		pAction->SetProgressTargetInfinity();
 		HINTERNET hSession=nullptr, hOnlineFile=nullptr;
 		// - opening a new Session
-		hSession=::InternetOpen(APP_IDENTIFIER,
+		hSession=::InternetOpenA(APP_IDENTIFIER,
 								INTERNET_OPEN_TYPE_PRECONFIG,
 								nullptr, nullptr,
 								0

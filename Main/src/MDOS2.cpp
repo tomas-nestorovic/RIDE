@@ -525,7 +525,7 @@
 						deDefault.__attributes2text__(buf+1,false);
 					pCmdUI->SetText( ::lstrcat(buf,_T(")...")) );
 				}else
-					pCmdUI->SetText("(None)...");
+					pCmdUI->SetText(_T("(None)..."));
 				return true;
 		}
 		return __super::UpdateCommandUi(cmd,pCmdUI);

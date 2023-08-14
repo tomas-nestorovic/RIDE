@@ -440,7 +440,7 @@ importQuit2:		::GlobalUnlock(hg);
 			// . determining the range of Files to move in scope of this Directory (all such Files in make up a sequence in the input list that has the same Directory path)
 			int j=i;
 			for( const WORD n=::lstrlen(::lstrcat(lpfd->cFileName,_T("\\"))); j<nFiles; j++ )
-				if (::strncmp(files[j].cFileName,lpfd->cFileName,n)) break;
+				if (::StrCmpN(files[j].cFileName,lpfd->cFileName,n)) break;
 			// . resolving conflicts
 			if (err==ERROR_FILE_EXISTS) // Directory already exists on the disk
 				if (( err=__skipNameConflict__(DOS->GetFileSize(file),fileName,rMovedFile,rConflictedSiblingResolution) )==ERROR_SUCCESS){
@@ -555,16 +555,15 @@ importQuit2:		::GlobalUnlock(hg);
 				int nItemsToGenerate, fileLengthMin, fileLengthMax, i;
 				if (_stscanf( fileName, _T("GODMODE %d F %d %d.%c"), &nItemsToGenerate, &fileLengthMin, &fileLengthMax, &i )==4){
 					// processing the request
-					char data[16384];
+					char name[16],data[16384];
 					if (fileLengthMin<0) fileLengthMin=0;
 					if (fileLengthMax>sizeof(data)) fileLengthMax=sizeof(data);
 					for( static WORD fileId; nItemsToGenerate--; ){
 						const int fileLength=fileLengthMin+::rand()*(fileLengthMax-fileLengthMin)/RAND_MAX;
-						CDos::CPathString name;
 						do{
-							name.Format( _T("%04X.TMP"), fileId++ );
-							for( i=0; i<fileLength; i+=::wsprintf(data+i,_T("%s DATA "),(LPCSTR)name) );
-							if (const TStdWinError err=DOS->ImportFile( &CMemFile((PBYTE)data,sizeof(data)), fileLength, name, 0, rImportedFile ))
+							const int nameLength=::wsprintfA( name, "%04X.TMP", fileId++ );
+							for( i=0; i<fileLength; i+=::wsprintfA(data+i,"%s DATA ",name) );
+							if (const TStdWinError err=DOS->ImportFile( &CMemFile((PBYTE)data,sizeof(data)), fileLength, CDos::CPathString(name,nameLength), 0, rImportedFile ))
 								if (err==ERROR_FILE_EXISTS)
 									continue; // a File with a given Name already exists - trying another Name
 								else
@@ -587,7 +586,7 @@ importQuit2:		::GlobalUnlock(hg);
 							// | base
 							const BOOL result=__super::OnInitDialog();
 							// | supplying available actions
-							AddCommandButton( IDYES, _T("Open it in new instance of ") APP_ABBREVIATION _T(" (recommended)"), true );
+							AddCommandButton( IDYES, _T("Open it in new instance of ") _T(APP_ABBREVIATION) _T(" (recommended)"), true );
 							AddCommandButton( IDNO, _T("Import it to this image anyway") );
 							AddCancelButton();
 							return result;
@@ -605,7 +604,7 @@ importQuit2:		::GlobalUnlock(hg);
 							rImportedFile=nullptr;
 							::GetModuleFileName( nullptr, buf, ARRAYSIZE(buf) );
 							TCHAR pathAndNameInQuotes[MAX_PATH+2];
-							::ShellExecute( nullptr, "open", buf, ::lstrcat(::lstrcat(::lstrcpy(pathAndNameInQuotes,_T("\"")),pathAndName),_T("\"")), nullptr, SW_SHOW );
+							::ShellExecuteA( nullptr, "open", buf, ::lstrcat(::lstrcat(::lstrcpy(pathAndNameInQuotes,_T("\"")),pathAndName),_T("\"")), nullptr, SW_SHOW );
 							return ::GetLastError();
 						}
 						case IDNO:
@@ -656,7 +655,7 @@ importQuit2:		::GlobalUnlock(hg);
 			// . determining the range of Files to import into this Directory (all such Files in the input list have the same Directory path)
 			int j=++i;
 			for( ::lstrcat(lpfd->cFileName,_T("\\")); j<nFiles; j++ )
-				if (::strncmp(files[j].cFileName,lpfd->cFileName,::lstrlen(lpfd->cFileName))) break;
+				if (::StrCmpN(files[j].cFileName,lpfd->cFileName,::lstrlen(lpfd->cFileName))) break;
 			// . processing recurrently
 			if (err==ERROR_SUCCESS){
 				const CDos::PFile currentDirectory=DOS->currentDir;

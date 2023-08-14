@@ -46,7 +46,7 @@
 	#define IMAGE	rFileManager.tab.image
 	#define DOS		IMAGE->dos
 
-	#define PREVIEW_LABEL	"BASIC listing"
+	#define PREVIEW_LABEL	_T("BASIC listing")
 
 	void CSpectrumBase::CBasicPreview::__parseBasicFileAndGenerateHtmlFormattedContent__(PCFile file) const{
 		// generates HTML-formatted BASIC listing of the input File into a temporary file
@@ -351,7 +351,7 @@ defaultPrinting:				if (b<' ')
 								else if (TZxRom::IsStdUdgSymbol(b))
 									// standard UDG symbol 
 									__writeStdUdgSymbol__(b);
-								else if (const LPCSTR keywordTranscript=TZxRom::GetKeywordTranscript(b))
+								else if (const LPCTSTR keywordTranscript=TZxRom::GetKeywordTranscript(b))
 									// writing a Keyword including its start and trail spaces (will be correctly formatted by the HTML parser when displayed)
 									*this << ( keywordTranscript + (int)(isLastWrittenCharSpace&&*keywordTranscript==' ') ); // skipping initial space should it be preceeded by a non-breakable space in the TemporaryFile (as incorrectly two spaces would be displayed in the Listing)
 								else{
@@ -603,7 +603,7 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 			contentView.Navigate2(tmpFileName);
 			// . updating the window caption
 			CString caption;
-			caption.Format( PREVIEW_LABEL " (%s)", (LPCTSTR)DOS->GetFilePresentationNameAndExt(file) );
+			caption.Format( PREVIEW_LABEL _T(" (%s)"), (LPCTSTR)DOS->GetFilePresentationNameAndExt(file) );
 			SetWindowText(caption);
 		}else
 			SetWindowText(PREVIEW_LABEL);

@@ -108,7 +108,7 @@
 			rcCurrContent.top= 8 + GetDlgItemClientRect(ID_HEAD).bottom;
 			// - informing on outdated version
 			const CString strLkv=app.GetProfileString( INI_GENERAL, INI_LATEST_KNOWN_VERSION );
-			if (strLkv.GetLength()>0 && ::lstrcmp(APP_VERSION,strLkv)){ // known that this app is outdated?
+			if (strLkv.GetLength()>0 && ::lstrcmp(_T(APP_VERSION),strLkv)){ // known that this app is outdated?
 				__addCategory__( _T("Outdated!"), 0xf069 );
 				__addHyperlinkText__( L"A newer version available - get it <a id=\"UPDATE\">here</a>!" );
 			}
@@ -131,8 +131,8 @@
 					const CDos::PCProperties dosProps=pMru->GetDosMruFileOpenWith(i);
 					if (!dosProps)
 						::lstrcpy( dosName, _T("Auto") );
-					else if (const LPCTSTR space=::strchr(dosProps->name,' '))
-						::strncpy( dosName, dosProps->name, space-dosProps->name )[space-dosProps->name]='\0';
+					else if (const LPCTSTR space=::StrChr(dosProps->name,' '))
+						::StrCpyN( dosName, dosProps->name, space-dosProps->name+1 );
 					else
 						::lstrcpy( dosName, dosProps->name );
 					TCHAR buf[MAX_PATH];

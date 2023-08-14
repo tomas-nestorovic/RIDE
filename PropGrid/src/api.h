@@ -226,10 +226,14 @@
 			#define AddProperty AddPropertyW
 			#define AddDisabledProperty AddDisabledPropertyW
 			#define AddCategory AddCategoryW
+			#define DefineEditorT DefineEditorW
+			#define DefineConstStringListEditor DefineConstStringListEditorW
 		#else
 			#define AddProperty AddPropertyA
 			#define AddDisabledProperty AddDisabledPropertyA
 			#define AddCategory AddCategoryA
+			#define DefineEditorT DefineEditorA
+			#define DefineConstStringListEditor DefineConstStringListEditorA
 		#endif
 	}
 

@@ -164,7 +164,7 @@
 		rZxFileManager.DOS->GetFileNameOrExt(file,nullptr,&ext);
 		const PEditorBase result=CreateStdEditor(
 			file, &( data=*ext ),
-			PropGrid::Enum::DefineConstStringListEditorA( sizeof(data), __createValues__, __getDescription__, __freeValues__, __onChanged__ )
+			PropGrid::Enum::DefineConstStringListEditor( sizeof(data), __createValues__, __getDescription__, __freeValues__, __onChanged__ )
 		);
 		::SendMessage( result->hEditor, WM_SETFONT, (WPARAM)rZxFileManager.rFont.m_hObject, 0 );
 		return result;
@@ -254,6 +254,6 @@
 
 	void CSpectrumBase::CSpectrumBaseFileManagerView::CVarLengthCommandLineEditor::DrawReportModeCell(LPCSTR cmd,BYTE cmdLength,char paddingChar,LPDRAWITEMSTRUCT pdis) const{
 		// directly draws FileName
-		CPathString tmp( cmd, cmdLength );
-		rZxFileManager.zxRom.PrintAt( pdis->hDC, tmp, tmp.TrimRight(paddingChar).GetLength(), pdis->rcItem, DT_SINGLELINE|DT_VCENTER );
+		const CPathString tmp=CPathString( cmd, cmdLength ).TrimRight(paddingChar);
+		rZxFileManager.zxRom.PrintAt( pdis->hDC, tmp.GetAnsi(), tmp.GetLength(), pdis->rcItem, DT_SINGLELINE|DT_VCENTER );
 	}

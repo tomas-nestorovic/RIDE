@@ -8,9 +8,9 @@
 	#define DEFINE_DEVPROPKEY(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8, pid) EXTERN_C const DEVPROPKEY name
 #endif // INITGUID
 
-static PVOID GetProcedure(HMODULE &rhLib,LPCTSTR libName,LPCTSTR procName){
+static PVOID GetProcedure(HMODULE &rhLib,LPCSTR libName,LPCSTR procName){
 	if (!rhLib)
-		if (!( rhLib=::LoadLibrary(libName) ))
+		if (!( rhLib=::LoadLibraryA(libName) ))
 			return nullptr;
 	return ::GetProcAddress( rhLib, procName );
 }
@@ -20,27 +20,27 @@ namespace UxTheme
 {
 	static HMODULE hLib;
 
-	inline PVOID GetProcedure(LPCTSTR procName){
-		return	GetProcedure( hLib, _T("UxTheme.dll"), procName );
+	inline PVOID GetProcedure(LPCSTR procName){
+		return	GetProcedure( hLib, "UxTheme.dll", procName );
 	}
 
 	HTHEME OpenThemeData(HWND hwnd,LPCWSTR pszClassList){
 		typedef HTHEME (WINAPI *F)(HWND,LPCWSTR);
-		if (const F f=(F)GetProcedure(_T("OpenThemeData")))
+		if (const F f=(F)GetProcedure("OpenThemeData"))
 			return f( hwnd, pszClassList );
 		return nullptr;
 	}
 
 	HRESULT DrawThemeBackground(HTHEME hTheme,HDC hdc,int iPartId,int iStateId,LPCRECT pRect,LPCRECT pClipRect){
 		typedef HRESULT (WINAPI *F)(HTHEME,HDC,int,int,LPCRECT,LPCRECT);
-		if (const F f=(F)GetProcedure(_T("DrawThemeBackground")))
+		if (const F f=(F)GetProcedure("DrawThemeBackground"))
 			return f( hTheme, hdc, iPartId, iStateId, pRect, pClipRect );
 		return S_FALSE;
 	}
 
 	HRESULT CloseThemeData(HTHEME hTheme){
 		typedef HRESULT (WINAPI *F)(HTHEME);
-		if (const F f=(F)GetProcedure(_T("CloseThemeData")))
+		if (const F f=(F)GetProcedure("CloseThemeData"))
 			return f(hTheme);
 		return S_FALSE;
 	}
@@ -56,8 +56,8 @@ namespace Lib
 {
 	static HMODULE hLib;
 
-	inline PVOID GetProcedure(LPCTSTR procName){
-		return	GetProcedure( hLib, _T("SetupAPI.dll"), procName );
+	inline PVOID GetProcedure(LPCSTR procName){
+		return	GetProcedure( hLib, "SetupAPI.dll", procName );
 	}
 
 	HDEVINFO GetClassDevs(
@@ -68,9 +68,9 @@ namespace Lib
 	){
 		typedef HDEVINFO (__stdcall *F)(CONST GUID *,PCTSTR,HWND,DWORD);
 		#ifdef UNICODE
-			if (const F f=(F)GetProcedure(_T("SetupDiGetClassDevsW")))
+			if (const F f=(F)GetProcedure("SetupDiGetClassDevsW"))
 		#else
-			if (const F f=(F)GetProcedure(_T("SetupDiGetClassDevsA")))
+			if (const F f=(F)GetProcedure("SetupDiGetClassDevsA"))
 		#endif
 				return f( &ClassGuid, Enumerator, hwndParent, Flags );
 		return nullptr;
@@ -84,7 +84,7 @@ namespace Lib
 		__out PSP_DEVICE_INTERFACE_DATA DeviceInterfaceData
     ){
 		typedef BOOL (__stdcall *F)(HDEVINFO,PSP_DEVINFO_DATA,CONST GUID *,DWORD,PSP_DEVICE_INTERFACE_DATA);
-		if (const F f=(F)GetProcedure(_T("SetupDiEnumDeviceInterfaces")))
+		if (const F f=(F)GetProcedure("SetupDiEnumDeviceInterfaces"))
 			return f( DeviceInfoSet, DeviceInfoData, &InterfaceClassGuid, MemberIndex, DeviceInterfaceData );
 		return FALSE;
 	}
@@ -99,9 +99,9 @@ namespace Lib
     ){
 		typedef BOOL (__stdcall *F)(HDEVINFO,PSP_DEVICE_INTERFACE_DATA,PSP_DEVICE_INTERFACE_DETAIL_DATA,DWORD,PDWORD,PSP_DEVINFO_DATA);
 		#ifdef UNICODE
-			if (const F f=(F)GetProcedure(_T("SetupDiGetDeviceInterfaceDetailW")))
+			if (const F f=(F)GetProcedure("SetupDiGetDeviceInterfaceDetailW"))
 		#else
-			if (const F f=(F)GetProcedure(_T("SetupDiGetDeviceInterfaceDetailA")))
+			if (const F f=(F)GetProcedure("SetupDiGetDeviceInterfaceDetailA"))
 		#endif
 				return f( DeviceInfoSet, DeviceInterfaceData, DeviceInterfaceDetailData, DeviceInterfaceDetailDataSize, RequiredSize, DeviceInfoData );
 		return FALSE;
@@ -118,7 +118,7 @@ namespace Lib
 		__in DWORD Flags
 	){
 		typedef BOOL (__stdcall *F)(HDEVINFO,PSP_DEVINFO_DATA,CONST DEVPROPKEY *,DEVPROPTYPE *,PBYTE,DWORD,PDWORD,DWORD);
-		if (const F f=(F)GetProcedure(_T("SetupDiGetDevicePropertyW")))
+		if (const F f=(F)GetProcedure("SetupDiGetDevicePropertyW"))
 			return f( DeviceInfoSet, DeviceInfoData, &PropertyKey, &PropertyType, PropertyBuffer, PropertyBufferSize, RequiredSize, Flags );
 		return FALSE;
 	}
@@ -133,7 +133,7 @@ namespace Lib
 		__out_opt PDWORD RequiredSize 
 	){
 		typedef BOOL (__stdcall *F)(HDEVINFO,PSP_DEVINFO_DATA,DWORD,PDWORD,PBYTE,DWORD,PDWORD);
-		if (const F f=(F)GetProcedure(_T("SetupDiGetDeviceRegistryPropertyW")))
+		if (const F f=(F)GetProcedure("SetupDiGetDeviceRegistryPropertyW"))
 			return f( DeviceInfoSet, DeviceInfoData, Property, PropertyRegDataType, PropertyBuffer, PropertyBufferSize, RequiredSize );
 		return FALSE;
 	}
@@ -142,7 +142,7 @@ namespace Lib
 		__in HDEVINFO DeviceInfoSet
 	){
 		typedef BOOL (__stdcall *F)(HDEVINFO);
-		if (const F f=(F)GetProcedure(_T("SetupDiDestroyDeviceInfoList")))
+		if (const F f=(F)GetProcedure("SetupDiDestroyDeviceInfoList"))
 			return f(DeviceInfoSet);
 		return FALSE;
 	}
@@ -196,8 +196,8 @@ namespace Lib
 {
 	static HMODULE hLib;
 
-	inline PVOID GetProcedure(LPCTSTR procName){
-		return	GetProcedure( hLib, _T("WinUsb.dll"), procName );
+	inline PVOID GetProcedure(LPCSTR procName){
+		return	GetProcedure( hLib, "WinUsb.dll", procName );
 	}
 
 	BOOL Initialize(
@@ -205,7 +205,7 @@ namespace Lib
 		__out PWINUSB_INTERFACE_HANDLE InterfaceHandle
 	){
 		typedef BOOL (__stdcall *F)(HANDLE,PWINUSB_INTERFACE_HANDLE);
-		if (const F f=(F)GetProcedure(_T("WinUsb_Initialize")))
+		if (const F f=(F)GetProcedure("WinUsb_Initialize"))
 			return f( DeviceHandle, InterfaceHandle );
 		return FALSE;
 	}
@@ -216,7 +216,7 @@ namespace Lib
 		__out PWINUSB_INTERFACE_HANDLE AssociatedInterfaceHandle
 	){
 		typedef BOOL (__stdcall *F)(WINUSB_INTERFACE_HANDLE,UCHAR,PWINUSB_INTERFACE_HANDLE);
-		if (const F f=(F)GetProcedure(_T("WinUsb_GetAssociatedInterface")))
+		if (const F f=(F)GetProcedure("WinUsb_GetAssociatedInterface"))
 			return f( InterfaceHandle, AssociatedInterfaceIndex, AssociatedInterfaceHandle );
 		return FALSE;
 	}
@@ -229,7 +229,7 @@ namespace Lib
 		__in_bcount(ValueLength) PVOID Value
 	){
 		typedef BOOL (__stdcall *F)(WINUSB_INTERFACE_HANDLE,UCHAR,ULONG,ULONG,PVOID);
-		if (const F f=(F)GetProcedure(_T("WinUsb_SetPipePolicy")))
+		if (const F f=(F)GetProcedure("WinUsb_SetPipePolicy"))
 			return f( InterfaceHandle, PipeID, PolicyType, ValueLength, Value );
 		return FALSE;
 	}
@@ -238,7 +238,7 @@ namespace Lib
 		__in  WINUSB_INTERFACE_HANDLE InterfaceHandle
     ){
 		typedef BOOL (__stdcall *F)(WINUSB_INTERFACE_HANDLE);
-		if (const F f=(F)GetProcedure(_T("WinUsb_Free")))
+		if (const F f=(F)GetProcedure("WinUsb_Free"))
 			return f(InterfaceHandle);
 		return FALSE;
 	}
@@ -253,7 +253,7 @@ namespace Lib
 		__out PULONG LengthTransferred
     ){
 		typedef BOOL (__stdcall *F)(WINUSB_INTERFACE_HANDLE,UCHAR,UCHAR,USHORT,PUCHAR,ULONG,PULONG);
-		if (const F f=(F)GetProcedure(_T("WinUsb_GetDescriptor")))
+		if (const F f=(F)GetProcedure("WinUsb_GetDescriptor"))
 			return f( InterfaceHandle, DescriptorType, Index, LanguageID, Buffer, BufferLength, LengthTransferred );
 		return FALSE;
 	}
@@ -267,7 +267,7 @@ namespace Lib
 		__in_opt LPOVERLAPPED Overlapped
     ){
 		typedef BOOL (__stdcall *F)(WINUSB_INTERFACE_HANDLE,UCHAR,PUCHAR,ULONG,PULONG,LPOVERLAPPED);
-		if (const F f=(F)GetProcedure(_T("WinUsb_ReadPipe")))
+		if (const F f=(F)GetProcedure("WinUsb_ReadPipe"))
 			return f( InterfaceHandle, PipeID, Buffer, BufferLength, LengthTransferred, Overlapped );
 		return FALSE;
 	}
@@ -281,7 +281,7 @@ namespace Lib
 		__in_opt LPOVERLAPPED Overlapped    
     ){
 		typedef BOOL (__stdcall *F)(WINUSB_INTERFACE_HANDLE,UCHAR,PUCHAR,ULONG,PULONG,LPOVERLAPPED);
-		if (const F f=(F)GetProcedure(_T("WinUsb_WritePipe")))
+		if (const F f=(F)GetProcedure("WinUsb_WritePipe"))
 			return f( InterfaceHandle, PipeID, Buffer, BufferLength, LengthTransferred, Overlapped );
 		return FALSE;
 	}
@@ -295,7 +295,7 @@ namespace Lib
 		__in_opt  LPOVERLAPPED Overlapped    
     ){
 		typedef BOOL (__stdcall *F)(WINUSB_INTERFACE_HANDLE,WINUSB_SETUP_PACKET,PUCHAR,ULONG,PULONG,LPOVERLAPPED);
-		if (const F f=(F)GetProcedure(_T("WinUsb_ControlTransfer")))
+		if (const F f=(F)GetProcedure("WinUsb_ControlTransfer"))
 			return f( InterfaceHandle, SetupPacket, Buffer, BufferLength, LengthTransferred, Overlapped );
 		return FALSE;
 	}
@@ -305,7 +305,7 @@ namespace Lib
 		__in  UCHAR PipeID
 	){
 		typedef BOOL (__stdcall *F)(WINUSB_INTERFACE_HANDLE,UCHAR);
-		if (const F f=(F)GetProcedure(_T("WinUsb_ResetPipe")))
+		if (const F f=(F)GetProcedure("WinUsb_ResetPipe"))
 			return f( InterfaceHandle, PipeID );
 		return FALSE;
 	}
@@ -315,7 +315,7 @@ namespace Lib
 		__in  UCHAR PipeID
 	){
 		typedef BOOL (__stdcall *F)(WINUSB_INTERFACE_HANDLE,UCHAR);
-		if (const F f=(F)GetProcedure(_T("WinUsb_AbortPipe")))
+		if (const F f=(F)GetProcedure("WinUsb_AbortPipe"))
 			return f( InterfaceHandle, PipeID );
 		return FALSE;
 	}
@@ -343,7 +343,7 @@ namespace Lib
 		Clear();
 	}
 
-	LPCTSTR TDevInterfaceHandle::GetProductName(PTCHAR productNameBuffer,BYTE productNameBufferLength) const{
+	LPCSTR TDevInterfaceHandle::GetProductName(PCHAR productNameBuffer,BYTE productNameBufferLength) const{
 		// determines and returns the product introduced upon the device connection
 		DWORD nBytesTransferred;
 		USB_DEVICE_DESCRIPTOR desc={ sizeof(desc), USB_DEVICE_DESCRIPTOR_TYPE };
@@ -400,84 +400,84 @@ namespace CAPS
 	typedef SDWORD (__cdecl *CAPSHOOKN)(...);
 	typedef PCHAR  (__cdecl *CAPSHOOKS)(...);
 
-	inline PVOID GetProcedure(LPCTSTR procName){
-		return	GetProcedure( hLib, _T("CAPSimg.dll"), procName );
+	inline PVOID GetProcedure(LPCSTR procName){
+		return	GetProcedure( hLib, "CAPSimg.dll", procName );
 	}
 
 	SDWORD GetVersionInfo(PVOID pversioninfo, UDWORD flag){
-		if (const auto f=(CAPSHOOKN)GetProcedure(_T("CAPSGetVersionInfo")))
+		if (const auto f=(CAPSHOOKN)GetProcedure("CAPSGetVersionInfo"))
 			return f( pversioninfo, flag );
 		return imgeUnsupported;
 	}
 
 	SDWORD Init(){
-		if (const auto fnInit=(CAPSHOOKN)GetProcedure(_T("CAPSInit")))
+		if (const auto fnInit=(CAPSHOOKN)GetProcedure("CAPSInit"))
 			return fnInit();
 		return imgeUnsupported;
 	}
 
 	SDWORD Exit(){
-		if (const auto fnExit=(CAPSHOOKN)GetProcedure(_T("CAPSExit")))
+		if (const auto fnExit=(CAPSHOOKN)GetProcedure("CAPSExit"))
 			return fnExit();
 		return imgeUnsupported;
 	}
 
 	SDWORD AddImage(){
-		if (const auto f=(CAPSHOOKN)GetProcedure(_T("CAPSAddImage")))
+		if (const auto f=(CAPSHOOKN)GetProcedure("CAPSAddImage"))
 			return f();
 		return imgeUnsupported;
 	}
 
 	SDWORD RemImage(SDWORD id){
-		if (const auto f=(CAPSHOOKN)GetProcedure(_T("CAPSRemImage")))
+		if (const auto f=(CAPSHOOKN)GetProcedure("CAPSRemImage"))
 			return f(id);
 		return imgeUnsupported;
 	}
 
 	SDWORD LockImage(SDWORD id, PCHAR name){
-		if (const auto f=(CAPSHOOKN)GetProcedure(_T("CAPSLockImage")))
+		if (const auto f=(CAPSHOOKN)GetProcedure("CAPSLockImage"))
 			return f( id, name );
 		return imgeUnsupported;
 	}
 
 	SDWORD UnlockImage(SDWORD id){
-		if (const auto f=(CAPSHOOKN)GetProcedure(_T("CAPSUnlockImage")))
+		if (const auto f=(CAPSHOOKN)GetProcedure("CAPSUnlockImage"))
 			return f(id);
 		return imgeUnsupported;
 	}
 
 	SDWORD GetImageInfo(PCAPSIMAGEINFO pi, SDWORD id){
-		if (const auto f=(CAPSHOOKN)GetProcedure(_T("CAPSGetImageInfo")))
+		if (const auto f=(CAPSHOOKN)GetProcedure("CAPSGetImageInfo"))
 			return f( pi, id );
 		return imgeUnsupported;
 	}
 
 	SDWORD LockTrack(PVOID ptrackinfo, SDWORD id, UDWORD cylinder, UDWORD head, UDWORD flag){
-		if (const auto f=(CAPSHOOKN)GetProcedure(_T("CAPSLockTrack")))
+		if (const auto f=(CAPSHOOKN)GetProcedure("CAPSLockTrack"))
 			return f( ptrackinfo, id, cylinder, head, flag );
 		return imgeUnsupported;
 	}
 
 	SDWORD UnlockTrack(SDWORD id, UDWORD cylinder, UDWORD head){
-		if (const auto f=(CAPSHOOKN)GetProcedure(_T("CAPSUnlockTrack")))
+		if (const auto f=(CAPSHOOKN)GetProcedure("CAPSUnlockTrack"))
 			return f( id, cylinder, head );
 		return imgeUnsupported;
 	}
 
 	SDWORD UnlockAllTracks(SDWORD id){
-		if (const auto f=(CAPSHOOKN)GetProcedure(_T("CAPSUnlockAllTracks")))
+		if (const auto f=(CAPSHOOKN)GetProcedure("CAPSUnlockAllTracks"))
 			return f(id);
 		return imgeUnsupported;
 	}
 
 	PCHAR GetPlatformName(UDWORD pid){
-		if (const auto f=(CAPSHOOKS)GetProcedure(_T("CAPSGetPlatformName")))
+		if (const auto f=(CAPSHOOKS)GetProcedure("CAPSGetPlatformName"))
 			return f(pid);
 		return nullptr;
 	}
 
 	SDWORD FormatDataToMFM(PVOID pformattrack, UDWORD flag){
-		if (const auto f=(CAPSHOOKN)GetProcedure(_T("CAPSFormatDataToMFM")))
+		if (const auto f=(CAPSHOOKN)GetProcedure("CAPSFormatDataToMFM"))
 			return f( pformattrack, flag );
 		return imgeUnsupported;
 	}

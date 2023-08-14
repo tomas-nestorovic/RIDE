@@ -37,7 +37,7 @@
 		TCHAR buf[MAX_PATH];
 		::wsprintf( buf, TAB_LABEL _T(" \"%s\""), (LPCTSTR)fileManager.f.GetFileName() );
 		CTdiCtrl::AddTabLast( TDI_HWND, buf, &fileManager.tab, makeCurrentTab, CanTapeBeClosed, OnTapeClosing );
-		CSpectrumDos::__informationWithCheckableShowNoMore__( _T("Use the \"") TAB_LABEL _T("\" tab to transfer files (via clipboard) from/to the open disk image or between two tapes (open in two instances of ") APP_ABBREVIATION _T(").\n\nHeaderless files:\n- are transferred to disk with dummy names,\n- are used on tape to store \"tape-unfriendly\" data from a disk (sequential files, etc.)."), INI_MSG );
+		CSpectrumDos::__informationWithCheckableShowNoMore__( _T("Use the \"") TAB_LABEL _T("\" tab to transfer files (via clipboard) from/to the open disk image or between two tapes (open in two instances of ") _T(APP_ABBREVIATION) _T(").\n\nHeaderless files:\n- are transferred to disk with dummy names,\n- are used on tape to store \"tape-unfriendly\" data from a disk (sequential files, etc.)."), INI_MSG );
 		// - adding this Tape to most recently used ones
 		TCHAR fileNameCopy[MAX_PATH];
 		diskDos->mruTapes.Add( ::lstrcpy(fileNameCopy,fileName) ); // creating a copy as MFC may (for some reason) corrupt the original string
@@ -157,7 +157,7 @@
 
 
 	#define HEADERLESS_EXTENSION	'H'
-	#define HEADERLESS_N_A			_T("N/A")
+	#define HEADERLESS_N_A			"N/A"
 
 	const TCHAR CSpectrumDos::CTape::Extensions[ZX_TAPE_EXTENSION_STD_COUNT]={
 		ZX_TAPE_EXTENSION_PROGRAM,
@@ -1066,7 +1066,7 @@ drawChecksum:			// checksum
 		types=_types;
 		const PEditorBase result=CreateStdEditor(
 			file, &( data=type ),
-			PropGrid::Enum::DefineConstStringListEditorA( sizeof(data), __createValues__, __getDescription__, nullptr, onChanged )
+			PropGrid::Enum::DefineConstStringListEditor( sizeof(data), __createValues__, __getDescription__, nullptr, onChanged )
 		);
 		RCFileManagerView &rfm=*CDos::GetFocused()->pFileManager;
 		::SendMessage( CEditorBase::pSingleShown->hEditor, WM_SETFONT, (WPARAM)rfm.rFont.m_hObject, 0 );

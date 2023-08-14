@@ -72,7 +72,7 @@
 		// creates and returns a KryoFluxDevice instance for a specified floppy drive
 		TCHAR fddId, driverStr[16], tmp[MAX_PATH];
 		*_tcsrchr( ::lstrcpy(tmp,deviceName), '.' )='\0';
-		::sscanf( tmp, KF_DEVICE_NAME_PATTERN, &fddId, driverStr );
+		::_stscanf( tmp, KF_DEVICE_NAME_PATTERN, &fddId, driverStr );
 		if (!::lstrcmp(driverStr,KF_ACCESS_DRIVER_WINUSB))
 			return new CKryoFluxDevice( TDriver::WINUSB, fddId-'0' );
 		ASSERT(FALSE);
@@ -228,13 +228,13 @@
 			return ERROR_SUCCESS;
 	}
 
-	LPCTSTR CKryoFluxDevice::GetProductName() const{
+	LPCSTR CKryoFluxDevice::GetProductName() const{
 		// determines and returns the product introduced under a KryoFlux device connection
 		if (!*this)
 			return nullptr;
 		switch (driver){
 			case TDriver::WINUSB:
-				return	winusb.GetProductName( device.lastRequestResultMsg, sizeof(device.lastRequestResultMsg) );
+				return	winusb.GetProductName( device.lastRequestResultMsg, ARRAYSIZE(device.lastRequestResultMsg) );
 			default:
 				ASSERT(FALSE);
 				::SetLastError( ERROR_BAD_DRIVER );
@@ -247,7 +247,7 @@
 		// - uploading and launching a firmware
 		if (::lstrcmpA( GetProductName(), KF_DEVICE_NAME_ANSI )){
 			// . assuming failure
-			::lstrcpyA( device.firmwareVersion, "Not loaded" );
+			::lstrcpy( device.firmwareVersion, _T("Not loaded") );
 			// . opening the firmware file for reading
 			if (paramsEtc.firmwareFileName.IsEmpty()) // catching an empty string as it may succeed as filename on Win10!
 				return ERROR_FILE_NOT_FOUND;
@@ -297,7 +297,7 @@
 				return err;
 		}
 		// - retrieving firmware information
-		::lstrcpyA( device.firmwareVersion, KF_DEVICE_NAME_ANSI );
+		::lstrcpy( device.firmwareVersion, _T(KF_DEVICE_NAME_ANSI) );
 		// - firmware successfully uploaded
 		return ERROR_SUCCESS;
 	}

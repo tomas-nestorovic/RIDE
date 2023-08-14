@@ -218,7 +218,7 @@
 			struct TTmp sealed{ TCHAR profile[MAX_PATH]; }; // encapsulating the array into a structure - because MFC4.2 doesn't know the "new TCHAR[MAX_PATH]" operator!
 			PTCHAR pIniFileName=(new TTmp)->profile;
 			::GetModuleFileName(0,pIniFileName,MAX_PATH);
-			::lstrcpy( _tcsrchr(pIniFileName,'\\'), _T("\\") APP_ABBREVIATION _T(".INI") );
+			::lstrcpy( _tcsrchr(pIniFileName,'\\'), _T("\\") _T(APP_ABBREVIATION) _T(".INI") );
 			m_pszProfileName=pIniFileName;
 		}else // for Windows Vista and newer ...
 			SetRegistryKey(APP_FULLNAME); // ... list is stored to and read from system register (as INI files need explicit administrator rights)
@@ -328,7 +328,7 @@
 				return Utils::FatalError( _T("Cannot access the image"), err );
 			}
 			image->SetPathName(
-				image->properties->IsRealDevice() ? d.deviceName : VOLUME_LABEL_DEFAULT_ANSI_8CHARS,
+				image->properties->IsRealDevice() ? d.deviceName : _T(VOLUME_LABEL_DEFAULT_ANSI_8CHARS),
 				FALSE
 			);
 		}
@@ -572,7 +572,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 	afx_msg void CRideApp::__showAbout__(){
 		// about
 		TCHAR buf[80];
-		::wsprintf( buf, _T("Version ") APP_VERSION _T("\n\ntomascz, 2015—%d"), Utils::CRideTime().wYear );
+		::wsprintf( buf, _T("Version ") _T(APP_VERSION) _T("\n\ntomascz, 2015—%d"), Utils::CRideTime().wYear );
 		Utils::Information(buf);
 	}
 
@@ -678,8 +678,8 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			// selected an Image
 			if (singleAllowedImage){
 				if (CImage::DetermineType(fileName)!=singleAllowedImage) // not the expected Image type?
-					if (const LPCTSTR separator=::strchr(singleAllowedImage->filter,*IMAGE_FORMAT_SEPARATOR)) // are there more than one possible extension
-						::strncat( fileName, 1+singleAllowedImage->filter, separator-1-singleAllowedImage->filter ); // 1 = asterisk
+					if (const LPCTSTR separator=::StrChr(singleAllowedImage->filter,*IMAGE_FORMAT_SEPARATOR)) // are there more than one possible extension
+						::StrNCat( fileName, 1+singleAllowedImage->filter, separator-singleAllowedImage->filter ); // 1 = asterisk
 					else
 						::lstrcat( fileName, 1+singleAllowedImage->filter ); // 1 = asterisk
 				return singleAllowedImage;

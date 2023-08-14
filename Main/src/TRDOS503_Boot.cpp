@@ -294,7 +294,7 @@
 		// - Geometry category
 		PropGrid::AddProperty(	hPropGrid, hGeometry, _T("Format"),
 								&boot->format,
-								PropGrid::Enum::DefineConstStringListEditorA( sizeof(TDiskFormat), __getListOfKnownFormats__, __getFormatDescription__, nullptr, __onFormatChanged__ )
+								PropGrid::Enum::DefineConstStringListEditor( sizeof(TDiskFormat), __getListOfKnownFormats__, __getFormatDescription__, nullptr, __onFormatChanged__ )
 							);
 		// - Volume category
 		PropGrid::AddProperty(	hPropGrid, hVolume, _T("Label"),
@@ -329,7 +329,7 @@
 		const HANDLE hCygnusBoot=PropGrid::AddCategory(hPropGrid,nullptr,CYGNUSBOOT_NAME);
 			PropGrid::AddProperty(	hPropGrid, hCygnusBoot, _T("boot.B"),
 									BOOT_SECTOR_UPDATE_ONLINE_HYPERLINK,
-									PropGrid::Hyperlink::DefineEditorA(__cygnusBoot_updateOnline__)
+									PropGrid::Hyperlink::DefineEditorT(__cygnusBoot_updateOnline__)
 								);
 	}
 

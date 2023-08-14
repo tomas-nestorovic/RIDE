@@ -490,7 +490,7 @@
 		if (!rParam.label.length)
 			PropGrid::AddProperty(	hPropGrid, hVolume, _T("Label not found"),
 									"<a>Create</a>",
-									PropGrid::Hyperlink::DefineEditorA( __pg_createLabel__, CBootView::__updateCriticalSectorView__ )
+									PropGrid::Hyperlink::DefineEditorT( __pg_createLabel__, CBootView::__updateCriticalSectorView__ )
 								);
 		PropGrid::AddProperty(	hPropGrid, hVolume, _T("ID valid"),
 								&pvi->infoValid,
@@ -500,7 +500,7 @@
 			// . Medium
 			PropGrid::AddProperty(	hPropGrid, hGeometryAdvanced, _T("Medium"),
 									&boot->medium,
-									PropGrid::Enum::DefineConstStringListEditorA( sizeof(TBootSector::TMsdosMedium), __getListOfMedia__, __getMediumDescription__, nullptr, __bootSectorModified__, __onMediumChanged__ )
+									PropGrid::Enum::DefineConstStringListEditor( sizeof(TBootSector::TMsdosMedium), __getListOfMedia__, __getMediumDescription__, nullptr, __bootSectorModified__, __onMediumChanged__ )
 								);
 			// . number of Sectors on the disk
 			if (fatType==CFat::FAT32 || boot->nSectorsInTotal16==0)
@@ -532,7 +532,7 @@
 			// . MediumType
 			PropGrid::AddProperty(	hPropGrid, hVolumeAdvanced, _T("Medium type"),
 									fatType==CFat::FAT32?&boot->fat32.mediumType:&boot->fat1216.mediumType,
-									PropGrid::Enum::DefineConstStringListEditorA( sizeof(TBootSector::TMsdosMediumType), __getListOfMediaTypes__, __getMediumTypeDescription__, nullptr, __bootSectorModified__ )
+									PropGrid::Enum::DefineConstStringListEditor( sizeof(TBootSector::TMsdosMediumType), __getListOfMediaTypes__, __getMediumTypeDescription__, nullptr, __bootSectorModified__ )
 								);
 			// . FAT Name
 			PropGrid::AddProperty(	hPropGrid, hVolumeAdvanced, _T("FAT name"),

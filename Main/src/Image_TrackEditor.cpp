@@ -152,9 +152,9 @@
 								::SelectObject( dc, font );
 								::SelectObject( dc, Utils::CRidePen::BlackHairline );
 								::SetBkMode( dc, OPAQUE );
-								static constexpr char ByteInfoFormat[]="%c\n$%02X";
-								char label[80];
-								const SIZE byteInfoSizeMin=font.GetTextSize(  label,  ::wsprintfA( label, ByteInfoFormat, 'M', 255 )  );
+								static constexpr TCHAR ByteInfoFormat[]=_T("%c\n$%02X");
+								TCHAR label[80];
+								const SIZE byteInfoSizeMin=font.GetTextSize(  label,  ::wsprintf( label, ByteInfoFormat, 'M', 255 )  );
 								const int nUnitsPerByte=Utils::LogicalUnitScaleFactor*te.timeline.GetUnitCount( CImage::GetActive()->EstimateNanosecondsPerOneByte() );
 								const enum{ BI_NONE, BI_MINIMAL, BI_FULL } showByteInfo = nUnitsPerByte>byteInfoSizeMin.cx ? BI_FULL : nUnitsPerByte>1 ? BI_MINIMAL : BI_NONE;
 								for( POSITION pos=peList.GetHeadPosition(); continuePainting&&pos; ){
@@ -189,9 +189,9 @@
 															case BI_FULL:
 																::MoveToEx( dc, rcLabel.left,0, nullptr );
 																::LineTo( dc, rcLabel.left,rcLabel.bottom );
-																::DrawTextA(
+																::DrawText(
 																	dc,
-																	label,	::wsprintfA( label, ByteInfoFormat, ::isprint(pbi->value)?pbi->value:'?', pbi->value ),
+																	label,	::wsprintf( label, ByteInfoFormat, ::isprint(pbi->value)?pbi->value:'?', pbi->value ),
 																	&rcLabel, DT_LEFT|DT_BOTTOM
 																);
 																break;
@@ -700,7 +700,7 @@
 				case MB_ABORTRETRYIGNORE:{
 					static constexpr WORD RetryIgnoreIds[]={ IDRETRY, IDOK, 0 };
 					ShowDlgItems( RetryIgnoreIds, EnableDlgItems(RetryIgnoreIds,true) );
-					SetDlgItemText( IDOK, "Ignore" );
+					SetDlgItemText( IDOK, _T("Ignore") );
 					break;
 				}
 				default:
@@ -1075,7 +1075,7 @@
 											return -1; // invalid character in input
 										if (nItems==1 || ::isspace(u)) // no unit specifier ...
 											u='n'; // ... defaults to Nanoseconds
-										if (const LPCTSTR pUnit=::strchr( Units, u )){
+										if (const LPCTSTR pUnit=::StrChr( Units, u )){
 											const char iUnit=pUnit-Units;
 											if (iUnit>=iLastUnitUsed)
 												return -1; // mustn't use bigger (or the same) units after smaller have been used
@@ -1107,7 +1107,7 @@
 											pDX->Fail();
 									}else{
 										char iLargestUnit=-1;
-										short nUnits[sizeof(Units)]; // 0 = nanoseconds, 1 = microseconds, etc.
+										short nUnits[ARRAYSIZE(Units)]; // 0 = nanoseconds, 1 = microseconds, etc.
 										::ZeroMemory( nUnits, sizeof(nUnits) );
 										do{
 											const div_t d=div( tCenter, 1000 );

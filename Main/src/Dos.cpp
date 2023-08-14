@@ -659,7 +659,7 @@ reportError:Utils::Information(buf);
 			return false;
 		Utils::WriteToFile(rd.params.fReport,_T("<html><head><style>body,td{font-size:13pt;margin:24pt}</style></head><body>"));
 			rd.params.fReport.OpenSection( _T("Overview"), false );
-			Utils::WriteToFileFormatted( rd.params.fReport, _T("<table><tr><td>") APP_ABBREVIATION _T(" version</td><td><b>") APP_VERSION _T("</b></td></tr><tr><td>Location:</td><td><b>%s</b></td></tr><tr><td>System:</td><td><b>%s</b></td></tr></table>"), image->GetPathName().GetLength()?image->GetPathName():_T("N/A"), properties->name );
+			Utils::WriteToFileFormatted( rd.params.fReport, _T("<table><tr><td>") _T(APP_ABBREVIATION) _T(" version</td><td><b>") _T(APP_VERSION) _T("</b></td></tr><tr><td>Location:</td><td><b>%s</b></td></tr><tr><td>System:</td><td><b>%s</b></td></tr></table>"), image->GetPathName().GetLength()?image->GetPathName():_T("N/A"), properties->name );
 		// - verification
 		CBackgroundMultiActionCancelable &bmac=rd.params.action;
 			if (rd.params.verifyBootSector)

@@ -259,7 +259,7 @@
 										lbIgnored.SetCurSel( std::min(lbIgnored.GetCurSel(),lbIgnored.GetCount()-2) );
 									lbIgnored.Detach();
 									// . adding (and selecting) the DOS to the "recognized portion" of the Recognition Order
-									lb.SetItemDataPtr( lb.AddString(""), (PVOID)&CUnknownDos::Properties ); // a dummy item for the below selection index to be valid
+									lb.SetItemDataPtr( lb.AddString(_T("")), (PVOID)&CUnknownDos::Properties ); // a dummy item for the below selection index to be valid
 									lb.SetCurSel( recognition.__addDosByPriorityDescending__(props)-1 );
 									break;
 								}

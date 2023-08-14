@@ -304,7 +304,7 @@
 			pBac->SetProgressTarget(5); // 5 = see number of steps below
 		HINTERNET hSession=nullptr, hConnection=nullptr, hRequest=nullptr;
 		// - Step 1: opening a new Session
-		hSession=::InternetOpen( APP_IDENTIFIER, INTERNET_OPEN_TYPE_PRECONFIG, nullptr, nullptr, 0 );
+		hSession=::InternetOpenA( APP_IDENTIFIER, INTERNET_OPEN_TYPE_PRECONFIG, nullptr, nullptr, 0 );
 		if (hSession==nullptr){
 quitWithErr:const DWORD err=::GetLastError();
 			if (hRequest!=nullptr)
@@ -340,7 +340,7 @@ quitWithErr:const DWORD err=::GetLastError();
 			pBac->UpdateProgress(3);
 		}
 		// - Step 4: sending the Request
-		if (!::HttpSendRequest( hRequest, "User-Agent:RIDE", -1, nullptr, 0 ))
+		if (!::HttpSendRequestA( hRequest, "User-Agent:" APP_ABBREVIATION, -1, nullptr, 0 ))
 			goto quitWithErr;
 		if (pBac){
 			if (pBac->Cancelled) return ERROR_CANCELLED;
@@ -365,8 +365,8 @@ quitWithErr:const DWORD err=::GetLastError();
 			if (PCHAR r=::strchr(githubTagName+sizeof(GITHUB_VERSION_TAG_NAME),'\"')){ // "R"emote tag
 				buffer[nBytesRead]='\"'; // guaranteeing that closing quote is always found
 				*::strchr( ++r, '\"' )='\0'; // "+1" = skipping the opening quote; replacing the closing quote with the Null character
-				app.WriteProfileString( INI_GENERAL, INI_LATEST_KNOWN_VERSION, r );
-				const TCHAR *t=APP_VERSION; // "T"his tag
+				app.WriteProfileString( INI_GENERAL, INI_LATEST_KNOWN_VERSION, Utils::ToStringT(r) );
+				LPCSTR t=APP_VERSION; // "T"his tag
 				do{
 					if (::isspace(*t))
 						t++; // ignoring any whitespaces in "T"his tag
