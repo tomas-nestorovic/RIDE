@@ -1000,8 +1000,9 @@ namespace Utils{
 
 	void FatalError(LPCTSTR text){
 		// shows fatal error
-		//if (!hParent) hParent=::GetActiveWindow();
-		::MessageBox( app.GetEnabledActiveWindow(), text, nullptr, MB_ICONERROR|MB_TASKMODAL );
+		const HWND hParent=app.GetEnabledActiveWindow();
+		CBackgroundActionCancelable::SignalPausedProgress( hParent );
+		::MessageBox( hParent, text, nullptr, MB_ICONERROR|MB_TASKMODAL );
 	}
 
 	CString SimpleFormat(LPCTSTR format,LPCTSTR param){

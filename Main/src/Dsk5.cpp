@@ -207,10 +207,10 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 							&&
 							sectorsDebug[i].crc16!=GetCrc16Ccitt( dataStart, __getSectorLength__(si) ) // ... but its data show different CRC
 						){
-							TCHAR buf[200];
 							const TSectorId id={ si->cylinderNumber, si->sideNumber, si->sectorNumber, si->sectorLengthCode };
-							::wsprintf( buf, _T("Track %d: Sector with %s not marked as modified!"), t, (LPCTSTR)id.ToString() );
-							Utils::FatalError(buf);
+							Utils::FatalError(
+								Utils::SimpleFormat( _T("Track %d: Sector with %s not marked as modified!"), t, id.ToString() )
+							);
 							return ERROR_GEN_FAILURE;
 						}
 					::free(td), td=nullptr;
@@ -412,25 +412,23 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				static constexpr WORD Controls2[]={ ID_CREATOR, ID_TRACK, IDOK, 0 } ;
 				EnableDlgItems( Controls1, EnableDlgItems(Controls2,!readOnly)&&allowTypeBeChanged );
 				// . Creator
-				const BYTE nCyls=rDiskInfo.nCylinders;
-				rDiskInfo.nCylinders=0; // converting the Creator field to a null-terminated string
-					DDX_Text( pDX, ID_CREATOR, (PTCHAR)(LPCTSTR)Utils::ToStringT(rDiskInfo.creator), sizeof(rDiskInfo.creator)+1 ); // "+1" = terminal Null character
-						DDV_MaxChars( pDX, rDiskInfo.creator, sizeof(rDiskInfo.creator) );
-					if (!pDX->m_bSaveAndValidate){
-						// populating the Creator combo-box with preset names
-						CComboBox cb;
-						cb.Attach(GetDlgItemHwnd(ID_CREATOR));
-							TCHAR buf[80];
-							cb.AddString( ::lstrcpyn(buf,_T(APP_ABBREVIATION) _T(" ") _T(APP_VERSION),sizeof(rDiskInfo.creator)+1) );
-							DWORD dw=ARRAYSIZE(buf);
-							if (::GetUserName(buf,&dw)){
-								buf[sizeof(rDiskInfo.creator)]='\0';
-								cb.AddString(buf);
-							}
-						cb.Detach();
-					}
-				rDiskInfo.nCylinders=nCyls;
-				// . preservation of empty Tracks
+		{		const Utils::CVarTempReset<BYTE> nCyls0( rDiskInfo.nCylinders, 0 ); // converting the Creator field to a null-terminated string
+				DDX_Text( pDX, ID_CREATOR, (PTCHAR)(LPCTSTR)Utils::ToStringT(rDiskInfo.creator), sizeof(rDiskInfo.creator)+1 ); // "+1" = terminal Null character
+					DDV_MaxChars( pDX, rDiskInfo.creator, sizeof(rDiskInfo.creator) );
+				if (!pDX->m_bSaveAndValidate){
+					// populating the Creator combo-box with preset names
+					CComboBox cb;
+					cb.Attach(GetDlgItemHwnd(ID_CREATOR));
+						TCHAR buf[80];
+						cb.AddString( ::lstrcpyn(buf,_T(APP_ABBREVIATION) _T(" ") _T(APP_VERSION),sizeof(rDiskInfo.creator)+1) );
+						DWORD dw=ARRAYSIZE(buf);
+						if (::GetUserName(buf,&dw)){
+							buf[sizeof(rDiskInfo.creator)]='\0';
+							cb.AddString(buf);
+						}
+					cb.Detach();
+				}
+		}		// . preservation of empty Tracks
 				i=rParams.preserveEmptyTracks;
 				DDX_Check( pDX, ID_TRACK, i );
 				rParams.preserveEmptyTracks=i!=BST_UNCHECKED;
@@ -491,11 +489,9 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			// . saving settings
 			app.WriteProfileInt( INI_DSK, INI_VERSION, params.rev5 );
 			app.WriteProfileInt( INI_DSK, INI_EMPTY_TRACKS, params.preserveEmptyTracks );
-			const BYTE nCyls=diskInfo.nCylinders;
-			diskInfo.nCylinders=0; // converting the Creator field to a null-terminated string
-				app.WriteProfileString( INI_DSK, INI_CREATOR, Utils::ToStringT(diskInfo.creator) );
-			diskInfo.nCylinders=nCyls;
-			// . marking the Image as "dirty"
+	{		const Utils::CVarTempReset<BYTE> nCyls0( diskInfo.nCylinders, 0 ); // converting the Creator field to a null-terminated string
+			app.WriteProfileString( INI_DSK, INI_CREATOR, Utils::ToStringT(diskInfo.creator) );
+	}		// . marking the Image as "dirty"
 			SetModifiedFlag(TRUE);
 			return true;
 		}else

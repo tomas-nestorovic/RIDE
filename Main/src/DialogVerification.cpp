@@ -331,7 +331,7 @@
 								break;
 							case CDos::TDirectoryTraversal::WARNING:{
 								const CString s=Utils::SimpleFormat( _T("The \"%s\" directory can't be processed entirely"), vp.dos->GetFilePresentationNameAndExt(file) );
-								vp.fReport.LogWarning( Utils::ComposeErrorMessage(s,pdt->warning) );
+								vp.fReport.LogWarning( (LPCTSTR)Utils::ComposeErrorMessage(s,pdt->warning) );
 								continue;
 							}
 						}

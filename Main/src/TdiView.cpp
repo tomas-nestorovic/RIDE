@@ -114,9 +114,9 @@
 			}
 			if (app.dateRecencyLastChecked){ // at least once in the past the recency has been checked on-line?
 				const CMSDOS7::TDateTime dateTimeRlc( app.dateRecencyLastChecked );
-				TCHAR recencyCheckReport[80];
-				::wsprintf( recencyCheckReport, _T("Recency last checked online: %s, %s"), (LPCTSTR)dateTimeRlc.DateToStdString(), (LPCTSTR)dateTimeRlc.TimeToStdString() );
-				SetDlgItemText( ID_LATENCY, recencyCheckReport );
+				SetDlgItemText( ID_LATENCY,
+					Utils::SimpleFormat( _T("Recency last checked online: %s, %s"), dateTimeRlc.DateToStdString(), dateTimeRlc.TimeToStdString() )	
+				);
 				SendDlgItemMessage( ID_LATENCY, WM_SETFONT, (WPARAM)(HFONT)Utils::CRideFont::Small, TRUE );
 				ShowDlgItem( ID_LATENCY );
 			}
