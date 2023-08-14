@@ -43,34 +43,34 @@
 			UNKNOWN		=0x00ffff  // any Sector whose ID doesn't match any ID from the standard format, e.g. ID={2,1,0,3} for an MDOS Sector
 		} *PSectorStatus;
 
-		typedef class CPathString sealed{
-			short nCharsInBuf;
-			TCHAR buf[MAX_PATH];
+		typedef class CPathString sealed:public CString{
+			#ifdef UNICODE
+				mutable CString ansi;
+			#endif
 		public:
 			static bool IsValidFat32LongNameChar(WCHAR c);
-			static CPathString Unescape(LPCTSTR term);
-			static short Unescape(PTCHAR buf,LPCTSTR term);
 
-			CPathString();
+			inline CPathString(){};
+			inline CPathString(const CString &s) : CString(s) {};
 			CPathString(TCHAR c,short nRepeats=1);
-			CPathString(LPCSTR str);
-			CPathString(LPCSTR str,short strLength);
+			CPathString(LPCSTR str,int strLength=-1);
+			CPathString(LPCWSTR str,int strLength=-1);
 
-			operator LPCTSTR() const;
-			TCHAR operator[](int i) const;
-			//TCHAR &operator[](int i);
 			//bool operator==(const CPathString &r) const;
-			CPathString &operator+=(TCHAR c);
-			CPathString &operator+=(const CPathString &r);
+			//CPathString &operator+=(TCHAR c);
+			//CPathString &operator+=(const CPathString &r);
 
-			short GetLength() const;
+			#ifdef UNICODE
+				LPCSTR GetAnsi() const;
+			#else
+				inline LPCSTR GetAnsi() const{ return *this; }
+			#endif
 			bool Equals(const CPathString &r,TFnCompareNames comparer) const;
 			CString EscapeToString() const;
-			CPathString &LowerCase();
 			CPathString &TrimRight(TCHAR c);
-			CPathString &TrimToLength(short nCharsMax);
+			CPathString &TrimToLength(int nCharsMax);
 			CPathString &ExcludeFat32LongNameInvalidChars();
-			CPathString & AFX_CDECL Format(LPCTSTR format,...);
+			CPathString &Unescape();
 		} *PPathString,&RPathString;
 		typedef const CPathString *PCPathString,&RCPathString;
 

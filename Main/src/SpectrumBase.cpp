@@ -143,11 +143,11 @@
 		if (PTCHAR pExt=_tcsrchr(buf,'.')){
 			// Extension specified (Dot found)
 			*pExt++='\0';
-			rOutExt=CPathString::Unescape( Utils::ToStringT(TZxRom::AsciiToZx(pExt,pExt,nullptr)) ); // converting in place to ZX charset
+			rOutExt=CPathString( Utils::ToStringT(TZxRom::AsciiToZx(pExt,(PCHAR)pExt,nullptr)) ).Unescape(); // converting in place to ZX charset
 		}else // Extension not specified (Dot not found)
 			rOutExt=_T("");
 		// - unescaping and trimming the Name
-		rOutName=CPathString::Unescape( Utils::ToStringT(TZxRom::AsciiToZx(buf,buf,nullptr)) ); // converting in place to ZX charset
+		rOutName=CPathString( Utils::ToStringT(TZxRom::AsciiToZx(buf,(PCHAR)buf,nullptr)) ).Unescape(); // converting in place to ZX charset
 	}
 
 	#define INFO_UNI	_T(" ZX%c")
@@ -242,7 +242,7 @@
 		CPathString name,ext;
 		GetFileNameOrExt( file, &name, &ext );
 		if (ext.GetLength())
-			(name+='.')+=ext;
+			name+='.', name+=ext;
 		TCHAR buf[1024];
 		return TZxRom::ZxToAscii( name.GetAnsi(), name.GetLength(), buf );
 	}

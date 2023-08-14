@@ -606,6 +606,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 								continue;
 						}
 						// : if possible, creating a "LOSTnnnn" Directory to store temporary Files in
+						TCHAR lostItemName[16];
 						CDos::CFatPath::PItem pItem; DWORD nItems;
 						if (!dir.createdAndSwitchedTo){
 							if (const auto dsm=vp.dos->pFileManager->pDirectoryStructureManagement){ // yes, the Dos supports Directories
@@ -614,7 +615,8 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 									return vp.TerminateAll(err);
 								// > creating a "LOSTnnnn" Directory in Root
 								for( WORD dirId=1; dirId<10000; dirId++ ){
-									const TStdWinError err=(vp.dos->*dsm->fnCreateSubdir)( CDos::CPathString().Format(_T("LOST%04d"),dirId), FILE_ATTRIBUTE_DIRECTORY, dir.handle );
+									::wsprintf( lostItemName, _T("LOST%04d"), dirId );
+									const TStdWinError err=(vp.dos->*dsm->fnCreateSubdir)( lostItemName, FILE_ATTRIBUTE_DIRECTORY, dir.handle );
 									if (err==ERROR_SUCCESS)
 										break;
 									else if (err!=ERROR_FILE_EXISTS)
@@ -630,7 +632,8 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 						// : importing a Sector-long File, thus creating a valid directory entry
 						file=nullptr; // don't affiliate the lost Sector to a temporary File, mark it as Empty in FAT straight away
 						for( BYTE data[16384]; ++fileId<10000; ){
-							const TStdWinError err=vp.dos->ImportFile( &CMemFile(data,sizeof(data)), vp.dos->formatBoot.sectorLength, CDos::CPathString().Format(_T("LOST%04d"),fileId), 0, file );
+							::wsprintf( lostItemName, _T("LOST%04d"), fileId );
+							const TStdWinError err=vp.dos->ImportFile( &CMemFile(data,sizeof(data)), vp.dos->formatBoot.sectorLength, lostItemName, 0, file );
 							if (err==ERROR_SUCCESS)
 								break;
 							else if (err!=ERROR_FILE_EXISTS){
