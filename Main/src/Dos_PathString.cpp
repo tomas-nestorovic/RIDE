@@ -7,9 +7,7 @@
 
 	CDos::CPathString::CPathString(LPCSTR str,int strLength){
 		// ctor
-		if (strLength<0)
-			strLength=::lstrlenA(str);
-		const PTCHAR buf=GetBufferSetLength(strLength+1);
+		const PTCHAR buf=GetBufferSetLength(strLength);
 		buf[strLength]='\0';
 		#ifdef UNICODE
 			while (strLength-->0) // sequence may be interrupted by '\0' chars (e.g. Spectrum DOSes)
@@ -21,9 +19,7 @@
 
 	CDos::CPathString::CPathString(LPCWSTR str,int strLength){
 		// ctor
-		if (strLength<0)
-			strLength=::lstrlenW(str);
-		const PTCHAR buf=GetBufferSetLength(strLength+1);
+		const PTCHAR buf=GetBufferSetLength(strLength);
 		buf[strLength]='\0';
 		#ifdef UNICODE
 			::memcpy( buf, str, nCharsInBuf*sizeof(WCHAR) );
