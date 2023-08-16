@@ -1,9 +1,7 @@
 #include "stdafx.h"
 
-	CDos::CPathString::CPathString(TCHAR c,short nRepeats)
-		// ctor
-		: CString( c, nRepeats ) {
-	}
+	const CString CDos::CPathString::Invalid;
+
 
 	CDos::CPathString::CPathString(LPCSTR str,int strLength){
 		// ctor
@@ -30,11 +28,19 @@
 	}
 
 
+
+
+
+
+
 #ifdef UNICODE
 	LPCSTR CDos::CPathString::GetAnsi() const{
-		ansi=CString( ' ', nCharsInBuf );
-		const PCHAR a=(PCHAR)ansi.GetBuffer();
-		for( int i=nCharsInBuf; i-->0; a[i]=buf[i] );
+		int i=GetLength();
+		ansi=CString( ' ', i );
+		const LPCTSTR buf=*this;
+		const PCHAR a=(PCHAR)const_cast<PTCHAR>(buf);
+		while (--i>=0)
+			a[i]=buf[i];
 		return a;
 	}
 #endif
@@ -54,7 +60,7 @@
 
 	CString CDos::CPathString::EscapeToString() const{
 		// returns a string with non-alphanumeric characters substituted with "URL-like" escape sequences
-		CPathString result( CString('\0',16384) );
+		CPathString result( CString(_T('\0'),16384) );
 		PTCHAR pWritten=const_cast<PTCHAR>((LPCTSTR)result);
 		for( int i=0; i<GetLength(); i++ ){
 			const TCHAR c=operator[](i);
@@ -63,14 +69,14 @@
 			else
 				pWritten+=::wsprintf( pWritten, _T("%%%02x"), c );
 		}
-		return result.TrimToLength( pWritten-result );
+		return result.TrimToLength( pWritten-(LPCTSTR)result );
 	}
 
 	CDos::CPathString &CDos::CPathString::TrimRight(TCHAR c){
 		// trims continuous sequence of specified Character from the end of the string
 		for( LPCTSTR p=(LPCTSTR)*this+GetLength(); p!=*this; )
 			if (*--p!=c)
-				return TrimToLength( p+1-*this );
+				return TrimToLength( p+1-(LPCTSTR)*this );
 		Empty();
 		return *this;
 	}
@@ -89,7 +95,8 @@
 
 	CDos::CPathString &CDos::CPathString::ExcludeFat32LongNameInvalidChars(){
 		// returns this string with FAT32 non-compliant characters excluded
-		PTCHAR buf=const_cast<PTCHAR>((LPCTSTR)*this), pCompliant=buf;
+		const LPCTSTR buf=*this;
+		PTCHAR pCompliant=const_cast<PTCHAR>(buf);
 		for( int i=0; i<GetLength(); i++ )
 			if (IsValidFat32LongNameChar(buf[i]))
 				*pCompliant++=buf[i];
@@ -98,7 +105,8 @@
 
 	CDos::CPathString &CDos::CPathString::Unescape(){
 		// unescapes inplace previously escaped term; it holds that unescaped String is never longer than escaped Term
-		PTCHAR u=const_cast<PTCHAR>((LPCTSTR)*this); LPCTSTR term=u;
+		LPCTSTR term=*this;
+		PTCHAR u=const_cast<PTCHAR>(term);
 		for( int tmp; const TCHAR c=*term++; )
 			if (c!='%') // not the escape character '%'
 				*u++=c;
@@ -108,5 +116,5 @@
 				*u++=tmp, term+=2;
 			else // an invalid "%NN" escape sequence
 				break;
-		return TrimToLength( u-*this );
+		return TrimToLength( u-(LPCTSTR)*this );
 	}

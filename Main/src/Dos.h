@@ -48,13 +48,17 @@
 				mutable CString ansi;
 			#endif
 		public:
+			static const CString Invalid;
+
 			static bool IsValidFat32LongNameChar(WCHAR c);
 
 			inline CPathString(){};
 			inline CPathString(const CString &s) : CString(s) {};
-			CPathString(TCHAR c,short nRepeats=1);
-			CPathString(LPCSTR str,int strLength=-1);
-			CPathString(LPCWSTR str,int strLength=-1);
+			inline CPathString(TCHAR c) : CString(c) {}
+			inline CPathString(LPCSTR s) : CString(s) {}
+			inline CPathString(LPCWSTR s) : CString(s) {}
+			CPathString(LPCSTR str,int strLength);
+			CPathString(LPCWSTR str,int strLength);
 
 			//bool operator==(const CPathString &r) const;
 			//CPathString &operator+=(TCHAR c);
@@ -65,6 +69,7 @@
 			#else
 				inline LPCSTR GetAnsi() const{ return *this; }
 			#endif
+			inline bool IsValid() const{ return GetLength()>0; }
 			bool Equals(const CPathString &r,TFnCompareNames comparer) const;
 			CString EscapeToString() const;
 			CPathString &TrimRight(TCHAR c);
