@@ -203,8 +203,7 @@
 		// dragged cursor released above window
 		// - if the File "looks like an MDOS-File-Commander archivation file", confirming its import by the user
 		if (const LPCTSTR extension=_tcsrchr(pathAndName,'.')){ // has an Extension
-			TCHAR ext[MAX_PATH];
-			if (!::lstrcmp(::CharLower(::lstrcpy(ext,extension)),_T(".d_0"))){ // has correct Extension
+			if (!::lstrcmpi( extension, _T(".d_0") )){ // has correct Extension
 				#pragma pack(1)
 				struct TD_0 sealed{
 					BYTE version;
@@ -225,9 +224,8 @@
 					if (d_0.version==0 && !::strncmp(d_0.signature,"D_0",sizeof(d_0.signature)) && !::strncmp(d_0.fileSystemName,"MDOS_D4080",sizeof(d_0.fileSystemName))){
 						// . defining the Dialog
 						const LPCTSTR nameAndExt=_tcsrchr(pathAndName,'\\')+1;
-						TCHAR buf[MAX_PATH+80];
-						::wsprintf( buf, _T("\"%s\" looks like MDOS File Commander's archivation file."), nameAndExt );
 						class CResolutionDialog sealed:public Utils::CCommandDialog{
+							const CString msg;
 							BOOL OnInitDialog() override{
 								// dialog initialization
 								// : base
@@ -240,11 +238,14 @@
 								return result;
 							}
 						public:
-							CResolutionDialog(LPCTSTR msg)
+							CResolutionDialog(const CString &msg)
 								// ctor
-								: Utils::CCommandDialog(msg) {
+								: Utils::CCommandDialog(msg)
+								, msg(msg) {
 							}
-						} d(buf);
+						} d(
+							Utils::SimpleFormat( _T("\"%s\" looks like MDOS File Commander's archivation file."), nameAndExt )
+						);
 						// . showing the Dialog and processing its result
 						const BYTE resolution =	rConflictedSiblingResolution&0xff // previously wanted to apply the decision to all subsequent D_0 files?
 												? rConflictedSiblingResolution&0xff
@@ -265,8 +266,8 @@
 								// : extracting and importing the archived Boot Sector
 								if (d_0.bootValid){
 									// > defining the Dialog
-									::wsprintf( buf, _T("\"%s\" has an archived boot sector."), nameAndExt );
 									class CBootResolutionDialog sealed:public Utils::CCommandDialog{
+										const CString msg;
 										BOOL OnInitDialog() override{
 											// dialog initialization
 											const BOOL result=__super::OnInitDialog();
@@ -277,11 +278,14 @@
 											return result;
 										}
 									public:
-										CBootResolutionDialog(LPCTSTR msg)
+										CBootResolutionDialog(const CString &msg)
 											// ctor
-											: Utils::CCommandDialog(msg) {
+											: Utils::CCommandDialog(msg)
+											, msg(msg) {
 										}
-									} d(buf);
+									} d(
+										Utils::SimpleFormat( _T("\"%s\" has an archived boot sector."), nameAndExt )
+									);
 									// > showing the Dialog and processing its result
 									const WORD resolution =	rConflictedSiblingResolution&0xff00 // previously wanted to apply the decision to all subsequent archived Boot Sectors?
 															? rConflictedSiblingResolution&0xff00

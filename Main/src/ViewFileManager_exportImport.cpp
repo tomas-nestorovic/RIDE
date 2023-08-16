@@ -490,8 +490,7 @@ importQuit2:		::GlobalUnlock(hg);
 				break;
 			}
 			// - error while importing Directory/File
-			TCHAR errTxt[MAX_PATH+50];
-			::wsprintf( errTxt, _T("Cannot import the %s \"%s\""), f?_T("file"):_T("directory"), nameAndExtension );
+			const CString errTxt=Utils::SimpleFormat( _T("Cannot import the %s \"%s\""), f?_T("file"):_T("directory"), nameAndExtension );
 			switch (err){
 				case ERROR_FILE_EXISTS:
 					// Directory/File already exists on disk
@@ -578,9 +577,8 @@ importQuit2:		::GlobalUnlock(hg);
 			if (const LPCTSTR extension=_tcsrchr(pathAndName,'.'))
 				if (CImage::DetermineType(pathAndName)!=nullptr){
 					// : defining the Dialog
-					TCHAR buf[MAX_PATH+80];
-					::wsprintf( buf, _T("\"%s\" looks like an image."), _tcsrchr(pathAndName,'\\')+1 );
 					class CPossiblyAnImageDialog sealed:public Utils::CCommandDialog{
+						const CString msg;
 						BOOL OnInitDialog() override{
 							// dialog initialization
 							// | base
@@ -592,19 +590,23 @@ importQuit2:		::GlobalUnlock(hg);
 							return result;
 						}
 					public:
-						CPossiblyAnImageDialog(LPCTSTR msg)
+						CPossiblyAnImageDialog(const CString &msg)
 							// ctor
-							: Utils::CCommandDialog(msg) {
+							: Utils::CCommandDialog(msg)
+							, msg(msg) {
 						}
-					} d(buf);
+					} d(
+						Utils::SimpleFormat( _T("\"%s\" looks like an image."), _tcsrchr(pathAndName,'\\')+1 )
+					);
 					// : showing the Dialog and processing its result
 					switch (d.DoModal()){
 						case IDYES:{
 							// opening the File in new instance of the app (this may function only in Release mode, not in Debug mode)
 							rImportedFile=nullptr;
+							TCHAR buf[MAX_PATH];
 							::GetModuleFileName( nullptr, buf, ARRAYSIZE(buf) );
-							TCHAR pathAndNameInQuotes[MAX_PATH+2];
-							::ShellExecuteA( nullptr, "open", buf, ::lstrcat(::lstrcat(::lstrcpy(pathAndNameInQuotes,_T("\"")),pathAndName),_T("\"")), nullptr, SW_SHOW );
+							const CString pathAndNameInQuotes=Utils::SimpleFormat( _T("\"%s\""), pathAndName );
+							::ShellExecute( nullptr, _T("open"), buf, pathAndNameInQuotes, nullptr, SW_SHOW );
 							return ::GetLastError();
 						}
 						case IDNO:

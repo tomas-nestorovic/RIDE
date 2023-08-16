@@ -38,8 +38,8 @@
 		CTdiCtrl::AddTabLast( TDI_HWND, label, &fileManager.tab, makeCurrentTab, CanTapeBeClosed, OnTapeClosing );
 		CSpectrumDos::__informationWithCheckableShowNoMore__( _T("Use the \"") TAB_LABEL _T("\" tab to transfer files (via clipboard) from/to the open disk image or between two tapes (open in two instances of ") _T(APP_ABBREVIATION) _T(").\n\nHeaderless files:\n- are transferred to disk with dummy names,\n- are used on tape to store \"tape-unfriendly\" data from a disk (sequential files, etc.)."), INI_MSG );
 		// - adding this Tape to most recently used ones
-		TCHAR fileNameCopy[MAX_PATH];
-		diskDos->mruTapes.Add( ::lstrcpy(fileNameCopy,fileName) ); // creating a copy as MFC may (for some reason) corrupt the original string
+		const CString fileNameCopy=fileName; // creating a copy as MFC may (for some reason) corrupt the original string
+		diskDos->mruTapes.Add( fileNameCopy );
 	}
 
 	CSpectrumDos::CTape::~CTape(){

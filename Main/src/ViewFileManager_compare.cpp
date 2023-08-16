@@ -267,9 +267,13 @@ using namespace Yahel;
 					// File is readable (e.g. doesn't contain no "Sector no found" errors)
 					const FILEDESCRIPTOR *const pfd=pfgd->fgd;
 					osf->SetLength(pfd->nFileSizeLow);
-					WCHAR fileNameW[MAX_PATH];
-					::MultiByteToWideChar( CP_ACP,0, pfd->cFileName,-1, fileNameW,ARRAYSIZE(fileNameW) );
-					Open( osf->m_lpStream, fileNameW );
+					#ifdef UNICODE
+						Open( osf->m_lpStream, pfd->cFileName );
+					#else
+						WCHAR fileNameW[MAX_PATH];
+						::MultiByteToWideChar( CP_ACP,0, pfd->cFileName,-1, fileNameW,ARRAYSIZE(fileNameW) );
+						Open( osf->m_lpStream, fileNameW );
+					#endif
 				}
 				::GlobalUnlock(hg);
 			}

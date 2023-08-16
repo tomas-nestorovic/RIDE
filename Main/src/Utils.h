@@ -492,6 +492,13 @@ namespace Utils{
 
 
 	TStdWinError ErrorByOs(TStdWinError vistaOrNewer,TStdWinError xpOrOlder);
+#ifdef UNICODE
+	LPCSTR ToStringA(LPCWSTR s);
+	inline CString ToStringT(LPCSTR s){ return s; }
+#else
+	inline LPCSTR ToStringA(LPCSTR s){ return s; }
+	inline LPCTSTR ToStringT(LPCSTR s){ return s; }
+#endif
 	CString SimpleFormat(LPCTSTR format,LPCTSTR param);
 	CString SimpleFormat(LPCTSTR format,LPCTSTR param1,LPCTSTR param2);
 	CString SimpleFormat(LPCTSTR format,int param1,LPCTSTR param2);
@@ -528,6 +535,7 @@ namespace Utils{
 	void UnscaleLogicalUnit(PINT values,BYTE nValues);
 	COLORREF GetSaturatedColor(COLORREF color,float saturationFactor);
 	COLORREF GetBlendedColor(COLORREF color1,COLORREF color2,float blendFactor=.5f);
+	CString GenerateTemporaryFileName();
 	CFile &WriteToFile(CFile &f,LPCTSTR text);
 	CFile &WriteToFileFormatted(CFile &f,LPCTSTR format,...);
 	CFile &WriteToFile(CFile &f,TCHAR chr);

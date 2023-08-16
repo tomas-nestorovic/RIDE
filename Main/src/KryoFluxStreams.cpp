@@ -31,8 +31,6 @@
 		// ctor
 		// - base
 		: CKryoFluxBase( &Properties, '\0', Recognize(nullptr) ) { // '\0' = not a real drive
-		// - initialization
-		*nameBase='\0';
 	}
 
 
@@ -62,7 +60,7 @@
 			&&
 			'0'<=head && head<='1'
 		){
-			::lstrcpyn( nameBase, fullName, trackIdentifier-fullName+1 );
+			nameBase=CString( fullName, trackIdentifier-fullName );
 			return true;
 		}
 		::SetLastError(ERROR_INVALID_NAME);

@@ -43,14 +43,13 @@
 			else
 				break;
 		// - move MRU entries before this one down
-		TCHAR fileName[MAX_PATH];
-		::lstrcpy( fileName, lpszPathName ); // creating a copy as MFC may (for some reason) corrupt the original string
+		const CString fileNameCopy=lpszPathName; // creating a copy as MFC may (for some reason) corrupt the original string
 		for( int j=i; j>0; j-- )
 			m_arrNames[j]=m_arrNames[j-1];
 		::memmove( openWith+1, openWith, i*sizeof(openWith[0]) );
 		::memmove( m_deviceProps+1, m_deviceProps, i*sizeof(m_deviceProps[0]) );
 		// - place this one at the beginning
-		m_arrNames[0]=fileName;
+		m_arrNames[0]=fileNameCopy;
 		openWith[0]=dosProps;
 		m_deviceProps[0]=deviceProps;
 	}

@@ -67,12 +67,10 @@
 		// dragged cursor released above window
 		// - if the File "looks like an Tape Image", confirming its import by the user
 		if (const LPCTSTR extension=_tcsrchr(pathAndName,'.')){
-			TCHAR ext[MAX_PATH];
-			if (!::lstrcmp(::CharLower(::lstrcpy(ext,extension)),_T(".tap"))){
+			if (!::lstrcmpi( extension, _T(".tap") )){
 				// . defining the Dialog
-				TCHAR buf[MAX_PATH+80];
-				::wsprintf( buf, _T("\"%s\" looks like a tape."), _tcsrchr(pathAndName,'\\')+1 );
 				class CPossiblyATapeDialog sealed:public Utils::CCommandDialog{
+					const CString msg;
 					BOOL OnInitDialog() override{
 						// dialog initialization
 						// : base
@@ -84,11 +82,13 @@
 						return result;
 					}
 				public:
-					CPossiblyATapeDialog(LPCTSTR msg)
+					CPossiblyATapeDialog(const CString &msg)
 						// ctor
 						: Utils::CCommandDialog(msg) {
 					}
-				} d(buf);
+				} d(
+					Utils::SimpleFormat( _T("\"%s\" looks like a tape."), _tcsrchr(pathAndName,'\\')+1 )
+				);
 				// . showing the Dialog and processing its result
 				switch (d.DoModal()){
 					case IDYES:{

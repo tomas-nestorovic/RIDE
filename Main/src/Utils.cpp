@@ -2052,6 +2052,15 @@ namespace Utils{
 		return result;
 	}
 
+	CString GenerateTemporaryFileName(){
+		// generates and returns a new temporary file name
+		CString result;
+		const PTCHAR buf=result.GetBuffer( MAX_PATH );
+		::GetTempPath( MAX_PATH, buf );
+		::GetTempFileName( buf, nullptr, FALSE, buf );
+		return result;
+	}
+
 	CFile &WriteToFile(CFile &f,LPCTSTR text){
 		// writes specified Text into the File
 		f.Write( text, ::lstrlen(text) );

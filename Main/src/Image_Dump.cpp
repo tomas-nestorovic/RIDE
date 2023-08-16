@@ -1193,10 +1193,8 @@ error:				return Utils::FatalError(_T("Cannot dump"),err);
 			// . displaying statistics on SourceTrackErrors
 			if (d.showReport==BST_CHECKED){
 				// : saving to temporary file
-				TCHAR tmpFileName[MAX_PATH];
-				::GetTempPath(MAX_PATH,tmpFileName);
-				::GetTempFileName( tmpFileName, nullptr, FALSE, tmpFileName );
-				d.dumpParams.__exportErroneousTracksToHtml__( CFile(::lstrcat(tmpFileName,_T(".html")),CFile::modeCreate|CFile::modeWrite), bmac.GetDurationTime(), d.realtimeThreadPriority!=BST_UNCHECKED );
+				const CString tmpFileName=Utils::GenerateTemporaryFileName()+_T(".html");
+				d.dumpParams.__exportErroneousTracksToHtml__( CFile(tmpFileName,CFile::modeCreate|CFile::modeWrite), bmac.GetDurationTime(), d.realtimeThreadPriority!=BST_UNCHECKED );
 				// : displaying
 				app.GetMainWindow()->OpenWebPage( _T("Dump results"), tmpFileName );
 			}

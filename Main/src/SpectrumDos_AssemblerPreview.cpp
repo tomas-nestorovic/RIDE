@@ -13,6 +13,7 @@
 		// - base
 		: CFilePreview(	&contentView, iniSection, rFileManager, PREVIEW_WIDTH_DEFAULT, PREVIEW_HEIGHT_DEFAULT, false, resourceId )
 		, orgAddress(orgAddress) , canRebase(canRebase)
+		, tmpFileName( Utils::GenerateTemporaryFileName() )
 		, contentView(_T(""))
 		, numberFormat( (TNumberFormat)app.GetProfileInt(iniSection,INI_NUMBER_FORMAT,TNumberFormat::HexaHashtag) ) {
 		// - initialization
@@ -20,9 +21,6 @@
 		features.capitalSyntax=0; // ... except for the CapitalSyntax
 		features.info=app.GetProfileInt( iniSection, INI_FEATURES, features.info );
 		constantInput.pfIn=nullptr; // no permanently existing input file
-		// - creating the TemporaryFile to store HTML-formatted content in
-		::GetTempPath( ARRAYSIZE(tmpFileName), tmpFileName );
-		::GetTempFileName( tmpFileName, nullptr, FALSE, tmpFileName );
 		// - creating the ContentView
 		contentView.Create( nullptr, nullptr, WS_CHILD|WS_VISIBLE, rectDefault, this, AFX_IDW_PANE_FIRST, nullptr );
 		contentView.OnInitialUpdate();

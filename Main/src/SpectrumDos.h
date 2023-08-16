@@ -75,7 +75,7 @@
 			WORD orgAddress;
 		protected:
 			const bool canRebase;
-			TCHAR tmpFileName[MAX_PATH];
+			const CString tmpFileName; // file to store HTML-formatted content in
 			CWebPageView contentView;
 
 			CAssemblerPreview(const CFileManagerView &rFileManager,WORD orgAddress=0,bool canRebase=false,DWORD resourceId=IDR_SPECTRUM_PREVIEW_ASSEMBLER,LPCTSTR iniSection=_T("ZxZ80"));

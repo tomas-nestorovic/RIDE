@@ -2,7 +2,7 @@
 #define KRYOFLUXSTREAMS_H
 
 	class CKryoFluxStreams sealed:public CKryoFluxBase{
-		TCHAR nameBase[MAX_PATH];
+		CString nameBase;
 
 		TStdWinError SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap) override;
 		CString GetStreamFileName(LPCTSTR nameBase,TCylinder cyl,THead head) const;

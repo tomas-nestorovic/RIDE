@@ -652,10 +652,8 @@ reportError:Utils::Information(buf);
 		if (image->ReportWriteProtection()) return false;
 		if (rd.DoModal()!=IDOK) return false;
 		// - opening the HTML Report for writing
-		TCHAR tmpFileName[MAX_PATH];
-		::GetTempPath(MAX_PATH,tmpFileName);
-		::GetTempFileName( tmpFileName, nullptr, FALSE, tmpFileName );
-		if (!rd.params.fReport.Open( ::lstrcat(tmpFileName,_T(".html")), CFile::modeCreate|CFile::modeWrite ))
+		const CString tmpFileName=Utils::GenerateTemporaryFileName()+_T(".html");
+		if (!rd.params.fReport.Open( tmpFileName, CFile::modeCreate|CFile::modeWrite ))
 			return false;
 		Utils::WriteToFile(rd.params.fReport,_T("<html><head><style>body,td{font-size:13pt;margin:24pt}</style></head><body>"));
 			rd.params.fReport.OpenSection( _T("Overview"), false );
