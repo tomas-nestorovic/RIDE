@@ -314,9 +314,10 @@ importQuit1:		::DragFinish(hDrop);
 									// copying Files within the same Directory
 									if (!GenerateExportNameAndExtOfNextFileCopy(ownedDataSource->__getFile__(i),false,fileNameAndExt)){ // generating new FileName for each copied File
 										// error creating a File copy
-										TCHAR errMsg[MAX_PATH+40];
-										::wsprintf( errMsg, _T("Cannot copy \"%s\""), fileNameAndExt );
-										Utils::FatalError(errMsg,ERROR_CANNOT_MAKE,IMPORT_MSG_CANCELLED);
+										Utils::FatalError(
+											Utils::SimpleFormat( _T("Cannot copy \"%s\""), fileNameAndExt ),
+											ERROR_CANNOT_MAKE, IMPORT_MSG_CANCELLED
+										);
 										goto importQuit2;
 									}
 								}
@@ -530,10 +531,9 @@ importQuit2:		::GlobalUnlock(hg);
 					const HANDLE hFindFile=::FindFirstFile(::lstrcat(::lstrcpy(fd.cFileName,pathAndName),_T("\\*.*")),&fd);
 					if (hFindFile!=INVALID_HANDLE_VALUE){
 						for( DWORD csr=rConflictedSiblingResolution; true; ){
-							TCHAR buf[MAX_PATH];
 							if (::lstrcmp(fd.cFileName,_T(".")) && ::lstrcmp(fd.cFileName,_T(".."))){ // "dot" and "dotdot" entries skipped
 								CDos::PFile file;
-								err=ImportPhysicalFile( ::lstrcat(::lstrcat(::lstrcpy(buf,pathAndName),_T("\\")),fd.cFileName), file, csr );
+								err=ImportPhysicalFile( CString(pathAndName)+'\\'+fd.cFileName, file, csr );
 								if (err!=ERROR_SUCCESS && err!=ERROR_FILE_EXISTS) break;
 							}
 							if (!::FindNextFile(hFindFile,&fd)){

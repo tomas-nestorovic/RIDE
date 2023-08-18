@@ -136,10 +136,7 @@ errorDuringWriting:			TCHAR buf[80];
 										patchParams.nHeads=std::min( patchParams.source->GetHeadCount(), patchParams.target->GetHeadCount() );
 										DoDataExchange( &CDataExchange(this,FALSE) );
 										// : compacting FileName in order to be displayable on the button
-										SetDlgItemText(
-											ID_FILE,
-											CompactPathToFitInDlgItem( ID_FILE, fileName )
-										);
+										SetDlgItemCompactPath( ID_FILE, fileName );
 									}else
 										SetDlgItemText( ID_FILE, ::lstrcpy(fileName,ELLIPSIS) );
 									FocusDlgItem(IDOK);

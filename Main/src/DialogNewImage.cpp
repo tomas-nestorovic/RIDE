@@ -72,12 +72,10 @@
 		}
 		// - the selected DOS doesn't participate in the automatic recognition sequence
 		ShowDlgItem(ID_ERROR), pImageListBox->ShowWindow(SW_HIDE);
-		TCHAR errMsg[200];
 		if (dosProps)
-			::wsprintf( errMsg, _T("Can't create a disk of \"%s\" as it doesn't participate in automatic recognition.\n\n<a>Change the recognition sequence</a>"), dosProps->name );
+			SetDlgItemFormattedText( ID_ERROR, _T("Can't create a disk of \"%s\" as it doesn't participate in automatic recognition.\n\n<a>Change the recognition sequence</a>"), dosProps->name );
 		else
-			::wsprintf( errMsg, _T("Select a DOS first") );
-		SetDlgItemText( ID_ERROR, errMsg );
+			SetDlgItemText( ID_ERROR, _T("Select a DOS first") );
 	}
 
 	BOOL CNewImageDialog::OnCommand(WPARAM wParam,LPARAM lParam){

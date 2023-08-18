@@ -420,9 +420,7 @@ trackNotFound:
 						}
 						if (rawImage.trackAccessScheme==TTrackScheme::BY_SIDES)
 							if (nHeads!=rawImage.nHeads){ // Side numbers under- or over-specified?
-								TCHAR buf[80];
-								::wsprintf( buf, _T("< Given other settings, the number of heads must be %d."), rawImage.nHeads );
-								SetDlgItemText( ID_HEAD, buf );
+								SetDlgItemFormattedText( ID_HEAD, _T("< Given other settings, the number of heads must be %d."), rawImage.nHeads );
 								pDX->PrepareCtrl(ID_SIDE);
 								pDX->Fail();
 							}
@@ -431,7 +429,6 @@ trackNotFound:
 					// . can confirm the dialog only during InitialEditing
 					EnableDlgItem( IDOK, initialEditing );
 					// . ReadBufferSize
-					TCHAR buf[512];
 					int i=0;
 					DDX_CBIndex( pDX, ID_BUFFER, i );
 					/*cb.Attach( GetDlgItem(ID_BUFFER)->m_hWnd );
@@ -452,8 +449,7 @@ trackNotFound:
 						for( PVOID *pCyl=rawImage.bufferOfCylinders+nCylinders; pCyl>rawImage.bufferOfCylinders; nCylindersBuffered+=*--pCyl!=nullptr );
 						float nUnits; LPCTSTR unitName;
 						Utils::BytesToHigherUnits( nCylindersBuffered*nHeads*nSectors*rawImage.sectorLength, nUnits, unitName );
-						_stprintf( buf, _T("%d cylinders (%.2f %s)"), nCylindersBuffered, nUnits, unitName );
-						SetDlgItemText( ID_INFORMATION, buf );
+						SetDlgItemFormattedText( ID_INFORMATION, _T("%d cylinders (%.2f %s)"), nCylindersBuffered, nUnits, unitName );
 					}
 					// . populating dedicated combo-box with unique geometries
 					cb.Attach( *GetDlgItem(ID_FORMAT) );
@@ -558,10 +554,8 @@ trackNotFound:
 									static const PropGrid::Integer::TUpDownLimits SideLimits={ 0, (TSide)-1 };
 									Utils::CIntList list;
 									if (GetDlgItemIntList( ID_SIDE, list, SideLimits, 1, (THead)-1 )){
-										TCHAR buf[16];
 										nHeads=list.GetCount();
-										::wsprintf( buf, _T("%d head%c"), nHeads, nHeads>1?'s':'\0' );
-										SetDlgItemText( ID_HEAD, buf );
+										SetDlgItemFormattedText( ID_HEAD, _T("%d head%c"), nHeads, nHeads>1?'s':'\0' );
 										for( THead h=0; h<nHeads; sideNumbers[h++]=list.RemoveHead() );
 									}else{
 										SetDlgItemText( ID_HEAD, Incorrect );

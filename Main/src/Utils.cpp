@@ -1005,6 +1005,12 @@ namespace Utils{
 		::MessageBox( hParent, text, nullptr, MB_ICONERROR|MB_TASKMODAL );
 	}
 
+	CString SimpleFormat(LPCTSTR format,va_list v){
+		CString result;
+		result.FormatV( format, v );
+		return result;
+	}
+
 	CString SimpleFormat(LPCTSTR format,LPCTSTR param){
 		CString result;
 		result.Format( format, param );
@@ -1526,19 +1532,25 @@ namespace Utils{
 		CWnd *const pWnd=GetDlgItem(id);
 		CRect rc;
 		pWnd->GetClientRect(&rc);
-		TCHAR buf[MAX_PATH];
-		::PathCompactPath( CClientDC(pWnd), ::lstrcpy(buf,fullpath), rc.Width() );
-		return buf;
+		const CString result=fullpath;
+		::PathCompactPath( CClientDC(pWnd), const_cast<PTCHAR>((LPCTSTR)result), rc.Width() );
+		return result;
+	}
+
+	void CRideDialog::SetDlgItemCompactPath(WORD id,LPCTSTR fullpath) const{
+		// sets given window's text to compacted FullPath that fits in its dimensions
+		::SetDlgItemText(
+			m_hWnd, id,
+			CompactPathToFitInDlgItem( id, fullpath )
+		);
 	}
 
 	void CRideDialog::SetDlgItemFormattedText(WORD id,LPCTSTR format,...) const{
 		// sets given window's text to the text Formatted using given string and parameters; returns the number of characters set
 		va_list argList;
 		va_start( argList, format );
-			TCHAR buf[16384];
-			::wvsprintf( buf, format, argList );
+			::SetDlgItemText( m_hWnd, id, SimpleFormat(format,argList) );
 		va_end(argList);
-		::SetWindowText( ::GetDlgItem(m_hWnd,id), buf );
 	}
 
 	void CRideDialog::SetDlgItemSingleCharUsingFont(HWND hDlg,WORD controlId,WCHAR singleChar,HFONT hFont){
@@ -1762,9 +1774,7 @@ namespace Utils{
 		}else
 			if (hexa!=BST_UNCHECKED){
 				::SetWindowLong( hValue, GWL_STYLE, ::GetWindowLong(hValue,GWL_STYLE)&~ES_NUMBER );
-				TCHAR buf[16];
-				::wsprintf( buf, _T("0x%X"), Value );
-				SetDlgItemText( ID_NUMBER, buf );
+				SetDlgItemFormattedText( ID_NUMBER, _T("0x%X"), Value );
 			}else{
 				::SetWindowLong( hValue, GWL_STYLE, ::GetWindowLong(hValue,GWL_STYLE)|ES_NUMBER );
 				DDX_Text( pDX, ID_NUMBER, Value );

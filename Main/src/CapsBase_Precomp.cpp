@@ -327,9 +327,7 @@ nextTrial:	;
 				// - displaying precompensation report
 				ShowReportForLoadedFloppyType();
 				// - setting caption of the button to determine precompensation params
-				TCHAR caption[32];
-				::wsprintf( caption, _T("Determine using Method %d"), MethodLatest );
-				SetDlgItemText( IDRETRY, caption );
+				SetDlgItemFormattedText( IDRETRY, _T("Determine using Method %d"), MethodLatest );
 			}
 
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{

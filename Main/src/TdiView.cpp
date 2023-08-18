@@ -114,9 +114,7 @@
 			}
 			if (app.dateRecencyLastChecked){ // at least once in the past the recency has been checked on-line?
 				const CMSDOS7::TDateTime dateTimeRlc( app.dateRecencyLastChecked );
-				SetDlgItemText( ID_LATENCY,
-					Utils::SimpleFormat( _T("Recency last checked online: %s, %s"), dateTimeRlc.DateToStdString(), dateTimeRlc.TimeToStdString() )	
-				);
+				SetDlgItemFormattedText( ID_LATENCY, _T("Recency last checked online: %s, %s"), (LPCTSTR)dateTimeRlc.DateToStdString(), (LPCTSTR)dateTimeRlc.TimeToStdString() );
 				SendDlgItemMessage( ID_LATENCY, WM_SETFONT, (WPARAM)(HFONT)Utils::CRideFont::Small, TRUE );
 				ShowDlgItem( ID_LATENCY );
 			}
@@ -135,10 +133,11 @@
 						::StrCpyN( dosName, dosProps->name, space-dosProps->name+1 );
 					else
 						::lstrcpy( dosName, dosProps->name );
-					TCHAR buf[MAX_PATH];
-					::wsprintf( buf, _T("(%s) %s"), dosName, fileName );
-					::PathCompactPath( CClientDC(this), buf, rcCurrContent.Width() );
-					__addButton__( buf, ID_FILE_MRU_FILE1+i, 0xf030, 0x47bbbb );
+					__addButton__( _T(""), ID_FILE_MRU_FILE1+i, 0xf030, 0x47bbbb );
+					SetDlgItemCompactPath(
+						ID_FILE_MRU_FILE1+i,
+						Utils::SimpleFormat( _T("(%s) %s"), dosName, fileName )
+					);
 				}
 				if (!i){
 					//__addStaticText__( _T("Currently none. Files you open or drives you access will be shown here."), buttonCaptionFont );

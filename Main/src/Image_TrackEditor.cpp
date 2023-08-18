@@ -28,7 +28,7 @@
 		const UINT messageBoxButtons;
 		const bool initAllFeaturesOn;
 		const TLogTime tInitScrollTo;
-		TCHAR caption[500];
+		const CString caption;
 		CMainWindow::CDynMenu menu;
 		HANDLE hAutoscrollTimer;
 		struct{
@@ -1474,7 +1474,7 @@
 								::wsprintf( caption, _T("Timing histogram for region between Indices 0 and %d"), tr.GetIndexCount()-1 );
 							}else{ // will populate the Histogram with all Times the TrackReader provides
 								tBegin=0, tEnd=tr.GetTotalTime();
-								::wsprintf( caption, _T("Timing histogram for whole track"), tr.GetIndexCount()-1 );
+								::lstrcpy( caption, _T("Timing histogram for whole track") );
 							}
 							tr.SetCurrentTimeAndProfile( tBegin, tr.CreateResetProfile() );
 							const auto data=Utils::MakeCallocPtr<POINT>( tr.GetTimesCount() );
@@ -1524,7 +1524,7 @@
 									const HWND hMedium=GetDlgItemHwnd(ID_MEDIUM);
 									if (pDX->m_bSaveAndValidate){
 										pDX->PrepareEditCtrl(ID_FILE);
-										if (!::lstrcmp(filename,ELLIPSIS)){
+										if (filename==ELLIPSIS){
 											Utils::Information( _T("File not specified.") );
 											pDX->Fail();
 										}
@@ -1559,10 +1559,7 @@
 										case ID_FILE:{
 											const CString newFilename=Utils::DoPromptSingleTypeFileName( _T("trackTiming") TXT_EXTENSION, TXT_FILTER, OFN_HIDEREADONLY|OFN_DONTADDTORECENT );
 											if (!newFilename.IsEmpty())
-												SetDlgItemText(
-													ID_FILE,
-													CompactPathToFitInDlgItem( ID_FILE, ::lstrcpy(filename,newFilename) )
-												);
+												SetDlgItemCompactPath( ID_FILE, filename=newFilename );
 											break;
 										}
 										case MAKELONG(ID_NUMBER,CBN_SELCHANGE):
@@ -1572,14 +1569,14 @@
 									return __super::OnCommand( wParam, lParam );
 								}
 							public:
-								TCHAR filename[MAX_PATH];
+								CString filename;
 
 								CExportDialog(const CImage::CTrackReader &tr)
 									: Utils::CRideDialog( IDR_TRACK_EXPORT )
+									, filename(ELLIPSIS)
 									, tr(tr)
 									, iRange(0) // by default export all everything
 									, singleRevolution(0) {
-									::lstrcpy( filename, ELLIPSIS );
 								}
 
 								static UINT AFX_CDECL Thread(PVOID pCancelableAction){
@@ -1638,12 +1635,12 @@
 			// - base
 			: Utils::CRideDialog( IDR_TRACK_EDITOR, CWnd::FromHandle(app.GetEnabledActiveWindow()) )
 			// - initialization
+			, caption( Utils::SimpleFormat(captionFormat,argList) )
 			, tr(tr)
 			, menu( IDR_TRACK_EDITOR ) , messageBoxButtons(messageBoxButtons) , initAllFeaturesOn(initAllFeaturesOn) , tInitScrollTo(tScrollTo)
 			, timeEditor( tr, pRegions, nRegions )
 			, hAutoscrollTimer(INVALID_HANDLE_VALUE) {
 			iwInfo.oneOkPercent=50;
-			::wvsprintf( caption, captionFormat, argList );
 		}
 	};
 

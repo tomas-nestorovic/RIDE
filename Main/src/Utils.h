@@ -258,6 +258,7 @@ namespace Utils{
 		int GetDlgListBoxSelectedIndex(WORD id) const;
 		void WrapDlgItemsByClosingCurlyBracketWithText(WORD idA,WORD idZ,LPCTSTR text,DWORD textColor) const;
 		CString CompactPathToFitInDlgItem(WORD id,LPCTSTR fullpath) const;
+		void SetDlgItemCompactPath(WORD id,LPCTSTR fullpath) const;
 		void SetDlgItemFormattedText(WORD id,LPCTSTR format,...) const;
 		void SetDlgItemSingleCharUsingFont(WORD id,WCHAR singleChar,HFONT hFont) const;
 		void SetDlgItemSingleCharUsingFont(WORD id,WCHAR singleChar,LPCTSTR fontFace,int fontPointSize) const;
@@ -501,6 +502,7 @@ namespace Utils{
 	inline LPCTSTR ToStringT(LPCSTR s){ return s; }
 	inline CString ToStringT(LPCWSTR s){ return s; }
 #endif
+	CString SimpleFormat(LPCTSTR format,va_list v);
 	CString SimpleFormat(LPCTSTR format,LPCTSTR param);
 	CString SimpleFormat(LPCTSTR format,LPCTSTR param1,LPCTSTR param2);
 	CString SimpleFormat(LPCTSTR format,int param1,LPCTSTR param2);

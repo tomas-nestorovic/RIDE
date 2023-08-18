@@ -199,8 +199,7 @@
 											+
 											GetDlgItemInt(ID_GAP)+12+3	// Gap 3
 										);
-				::wsprintf( buf, _T("%d Bytes per track\n(see <a id=\"ID_TRACK\">IBM norm</a>)"), nBytesOnTrack );
-				SetDlgItemText(ID_TRACK,buf);
+				SetDlgItemFormattedText( ID_TRACK, _T("%d Bytes per track\n(see <a id=\"ID_TRACK\">IBM norm</a>)"), nBytesOnTrack );
 				ShowDlgItem(ID_TRACK);
 				break;
 			}

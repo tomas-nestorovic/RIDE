@@ -1439,13 +1439,11 @@ invalidTrack:
 									SetDlgItemText( ID_40D80, doubleTrackDistanceTextOrg ); // ... then resetting the flag that user has overridden DoubleTrackDistance
 								RefreshMediumInformation();
 								break;
-							case ID_40D80:{
+							case ID_40D80:
 								// track distance changed manually
-								TCHAR buf[ARRAYSIZE(doubleTrackDistanceTextOrg)+20];
-								SetDlgItemText( ID_40D80, ::lstrcat(::lstrcpy(buf,doubleTrackDistanceTextOrg),_T(" (user forced)")) );
+								SetDlgItemFormattedText( ID_40D80, _T("%s (user forced)"), doubleTrackDistanceTextOrg );
 								ShowDlgItem( ID_INFORMATION, false ); // user manually revised the Track distance, so no need to continue display the warning
 								break;
-							}
 							case ID_NONE:
 							case ID_CYLINDER:
 							case ID_SECTOR:
