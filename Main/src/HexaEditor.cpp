@@ -412,22 +412,19 @@ using namespace Yahel;
 	}
 
 	static bool DoPromptSingleTypeFileName(PWCHAR lpszFileNameBuffer,WORD bufferCapacity,LPCWSTR singleFilter,DWORD flags){
+		const CString fileName=Utils::DoPromptSingleTypeFileName(
+			lpszFileNameBuffer&&*lpszFileNameBuffer ? (LPCTSTR)Utils::ToStringT(lpszFileNameBuffer) : nullptr,
+			singleFilter&&*singleFilter ? (LPCTSTR)Utils::ToStringT(singleFilter) : nullptr,
+			flags
+		);
+		if (fileName.IsEmpty())
+			return false;
 		#ifdef UNICODE
-			static_assert(false,"");
+			::lstrcpyn( lpszFileNameBuffer, fileName, bufferCapacity );			
 		#else
-			char singleFilterA[80], lpszFileNameBufferA[MAX_PATH];
-			::WideCharToMultiByte( CP_ACP, 0, singleFilter,-1, singleFilterA,ARRAYSIZE(singleFilterA), nullptr,nullptr );
-			::WideCharToMultiByte( CP_ACP, 0, lpszFileNameBuffer,-1, lpszFileNameBufferA,ARRAYSIZE(lpszFileNameBufferA), nullptr,nullptr );
-			const CString fileName=Utils::DoPromptSingleTypeFileName(
-				lpszFileNameBuffer&&*lpszFileNameBuffer ? lpszFileNameBufferA : nullptr,
-				singleFilter&&*singleFilter ? singleFilterA : nullptr,
-				flags
-			);
-			if (fileName.IsEmpty())
-				return false;
 			::MultiByteToWideChar( CP_ACP,0, fileName,-1, lpszFileNameBuffer,bufferCapacity );
-			return true;
 		#endif
+		return true;
 	}
 
 	bool CHexaEditor::ShowOpenFileDialog(LPCWSTR singleFilter,DWORD ofnFlags,PWCHAR lpszFileNameBuffer,WORD bufferCapacity) const{

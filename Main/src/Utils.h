@@ -495,9 +495,11 @@ namespace Utils{
 #ifdef UNICODE
 	LPCSTR ToStringA(LPCWSTR s);
 	inline CString ToStringT(LPCSTR s){ return s; }
+	inline LPCTSTR ToStringT(LPCWSTR s){ return s; }
 #else
 	inline LPCSTR ToStringA(LPCSTR s){ return s; }
 	inline LPCTSTR ToStringT(LPCSTR s){ return s; }
+	inline CString ToStringT(LPCWSTR s){ return s; }
 #endif
 	CString SimpleFormat(LPCTSTR format,LPCTSTR param);
 	CString SimpleFormat(LPCTSTR format,LPCTSTR param1,LPCTSTR param2);
