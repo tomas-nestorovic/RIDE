@@ -165,7 +165,7 @@
 			};
 			#pragma pack(1)
 			struct TShortNameEntry sealed{
-				static bool __isCharacterValid__(char c);
+				static bool __isCharacterValid__(WCHAR c);
 
 				char name[MSDOS7_FILE_NAME_LENGTH_MAX];
 				char extension[MSDOS7_FILE_EXT_LENGTH_MAX];

@@ -478,7 +478,7 @@
 			#ifdef UNICODE
 				static_assert( false, "Unicode support not implemented" );
 			#else
-				WCHAR bufW[MAX_PATH],tmpW[14];
+				WCHAR bufW[LONG_FILE_NAME_ENTRIES_COUNT_MAX*13+1],tmpW[13+1]; // 13 = # of characters in one LongNameEntry
 				bufW[0]='\0', tmpW[13]='\0';
 				for( PDirectoryEntry *p=longNameEntries; nEntries--; ::lstrcatW(bufW,tmpW) ){
 					de=*p++;
@@ -596,7 +596,7 @@
 		do{
 			TCHAR bufNumericTail[MSDOS7_FILE_NAME_LENGTH_MAX+1];
 			const BYTE nCharsInTail=::wsprintf(bufNumericTail,_T("~%d"),numericTail++);
-			if (nCharsInShortName+nCharsInTail<MSDOS7_FILE_NAME_LENGTH_MAX)
+			if (nCharsInShortName+nCharsInTail<=MSDOS7_FILE_NAME_LENGTH_MAX)
 				::lstrcat( ::lstrcpy(tmp,bufShortName), bufNumericTail );
 			else
 				_stprintf( tmp, _T("%.*s%s"), MSDOS7_FILE_NAME_LENGTH_MAX-nCharsInTail, (LPCTSTR)bufShortName, bufNumericTail );
@@ -641,13 +641,16 @@
 			*( rRenamedFile=de )=tmpEntry;
 		else{
 			// NewNameAndExtension doesn't follow the "8.3" format
-			TCHAR longNameAndExt[MAX_PATH];
+			// . checking that the NewName+NewExt combination doesn't exceed allowed # of Entries
+			if (newName.GetLength()+1+newExt.GetLength()>LONG_FILE_NAME_ENTRIES_COUNT_MAX*13) // 13 = number of characters in one LongNameEntry
+				return ERROR_FILENAME_EXCED_RANGE;
+			TCHAR longNameAndExt[LONG_FILE_NAME_ENTRIES_COUNT_MAX*13+1]; // 13 = # of characters in one LongNameEntry
 			::lstrcpy(longNameAndExt,newName);
 			if (*newExt)
 				::lstrcat( ::lstrcat( longNameAndExt, _T(".") ), newExt );
 			// . allocating necessary number of DirectoryEntries to accommodate the long NameAndExtension
 			PFile longNameEntries[LONG_FILE_NAME_ENTRIES_COUNT_MAX+1]; // "+1" = short name entry
-			const BYTE nLongNameEntries=(::lstrlen(longNameAndExt)+12)/13; // 13 = number of characters in one LongNameEntry
+			const BYTE nLongNameEntries=(::lstrlen(longNameAndExt)+12)/13; // 13 = # of characters in one LongNameEntry
 			if (!TMsdos7DirectoryTraversal(this,currentDir).GetOrAllocateEmptyEntries( nLongNameEntries+1, longNameEntries )) // "+1" = short name entry
 				return ERROR_CANNOT_MAKE;
 			rRenamedFile=(PDirectoryEntry)longNameEntries[nLongNameEntries];
@@ -1251,10 +1254,11 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 
 	static constexpr WCHAR ForbiddenChars[]={ 0x22, 0x2a, 0x2b, 0x2c, 0x2e, 0x2f, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f, 0x5b, 0x5c, 0x5d, 0x7c, '\0' };
 
-	bool CMSDOS7::UDirectoryEntry::TShortNameEntry::__isCharacterValid__(char c){
+	bool CMSDOS7::UDirectoryEntry::TShortNameEntry::__isCharacterValid__(WCHAR c){
 		// True <=> specified Character is valid in short name, otherwise False
 		if (c<=' ' && c!=KANJI) return false;
 		if ('a'<=c && c<='z') return false;
+		if (c>255) return false;
 		return !::wcschr(ForbiddenChars,c);
 	}
 
