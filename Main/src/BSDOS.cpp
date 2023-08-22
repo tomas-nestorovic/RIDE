@@ -177,7 +177,7 @@
 									const TSlot slot0=*pSlot;
 									*pSlot=TSlot::Empty; // making guaranteed space for a ReplacementDirectory
 									PFile pReplacementDir;
-									if (const TStdWinError err=BSDOS->CreateSubdirectory( _T("Unnamed"), FILE_ATTRIBUTE_DIRECTORY, pReplacementDir )){
+									if (const TStdWinError err=BSDOS->CreateSubdirectory( CPathString::Unnamed8, FILE_ATTRIBUTE_DIRECTORY, pReplacementDir )){
 										*pSlot=slot0;
 										return vp.TerminateAndGoToNextAction(err);
 									}
@@ -550,9 +550,9 @@
 		if (file==ZX_DIR_ROOT){
 			// root Directory
 			if (pOutName)
-				*pOutName='\\';
+				*pOutName=CPathString::Root;
 			if (pOutExt)
-				*pOutExt=_T("");
+				*pOutExt=CPathString::Empty;
 		}else if (IsDirectory(file)){
 			// root Subdirectory
 			if (pOutName)
@@ -564,7 +564,7 @@
 					// Directory's first Sector is unreadable
 					*pOutName=BSDOS_DIR_CORRUPTED;
 			if (pOutExt)
-				*pOutExt=_T("");
+				*pOutExt=CPathString::Empty;
 		}else{
 			// File
 			const PCDirectoryEntry de=(PCDirectoryEntry)file;
@@ -573,11 +573,8 @@
 				de->file.stdHeader.GetNameOrExt( pOutName, pOutExt );
 			else{
 				// Headerless File or Fragment
-				if (pOutName){
-					TCHAR bufName[16];
-					::wsprintf( bufName, _T("%08d"), idHeaderless++ ); // ID padded with zeros to eight digits (to make up an acceptable name even for TR-DOS)
-					*pOutName=bufName;
-				}
+				if (pOutName)
+					pOutName->Format( _T("%08d"), idHeaderless++ ); // ID padded with zeros to eight digits (to make up an acceptable name even for TR-DOS)
 				if (pOutExt)
 					*pOutExt=TUniFileType::HEADERLESS;
 				return false; // name irrelevant

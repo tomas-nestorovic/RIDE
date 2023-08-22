@@ -296,7 +296,7 @@
 					de->fileHasStdHeader=true;
 					de->file.stdHeader.length=std::min<DWORD>( de->file.dataLength, (WORD)-1 );
 					de->file.stdHeader.params=TStdParameters::Default;
-					de->file.stdHeader.SetName(_T("Unnamed"));
+					de->file.stdHeader.SetName(CPathString::Unnamed8);
 					de->file.stdHeader.type=(TZxRom::TFileType)newType.charValue;
 					break;
 				}

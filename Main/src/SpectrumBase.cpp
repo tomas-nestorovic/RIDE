@@ -145,7 +145,7 @@
 			*pExt++='\0';
 			rOutExt=CPathString( TZxRom::AsciiToZx(pExt,(PCHAR)pExt,nullptr) ).Unescape(); // converting in place to ZX charset
 		}else // Extension not specified (Dot not found)
-			rOutExt=_T("");
+			rOutExt=CPathString::Empty;
 		// - unescaping and trimming the Name
 		rOutName=CPathString( TZxRom::AsciiToZx(buf,(PCHAR)buf,nullptr) ).Unescape(); // converting in place to ZX charset
 	}

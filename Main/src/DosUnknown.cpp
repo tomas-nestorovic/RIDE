@@ -109,7 +109,7 @@
 	}
 	CString CUnknownDos::GetFileExportNameAndExt(PCFile,bool) const{
 		// returns File name concatenated with File extension for export of the File to another Windows application (e.g. Explorer)
-		return _T("");
+		return CPathString::Empty;
 	}
 	TStdWinError CUnknownDos::ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile){
 		// imports specified File (physical or virtual) into the Image; returns Windows standard i/o error

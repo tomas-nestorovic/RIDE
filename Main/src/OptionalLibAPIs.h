@@ -157,7 +157,7 @@ namespace CAPS
 	SDWORD Exit();
 	SDWORD AddImage();
 	SDWORD RemImage(SDWORD id);
-	SDWORD LockImage(SDWORD id, PCHAR name);
+	SDWORD LockImage(SDWORD id, LPCSTR name);
 	SDWORD LockImageMemory(SDWORD id, PUBYTE buffer, UDWORD length, UDWORD flag);
 	SDWORD UnlockImage(SDWORD id);
 	SDWORD LoadImage(SDWORD id, UDWORD flag);

@@ -868,7 +868,7 @@ reportError:Utils::Information(buf);
 				// invalid export name - generating an artifical one
 				static WORD fileId;
 				if (++fileId>9999) fileId=1;
-				return Utils::SimpleFormat( _T("File%04d.%s"), fileId, ext ); // "%05d" and above isn't recommended - some DOSes can't accommodate more than 8 characters in name field
+				return CPathString().Format( _T("File%04d.%s"), fileId, (LPCTSTR)ext ); // "%05d" and above isn't recommended - some DOSes can't accommodate more than 8 characters in name field
 			}
 		}else
 			// exporting to another RIDE instance; substituting non-alphanumeric characters with "URL-like" escape sequences

@@ -434,7 +434,7 @@ namespace CAPS
 		return imgeUnsupported;
 	}
 
-	SDWORD LockImage(SDWORD id, PCHAR name){
+	SDWORD LockImage(SDWORD id, LPCSTR name){
 		if (const auto f=(CAPSHOOKN)GetProcedure("CAPSLockImage"))
 			return f( id, name );
 		return imgeUnsupported;

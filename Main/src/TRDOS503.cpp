@@ -358,9 +358,9 @@
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
 		if (file==ZX_DIR_ROOT){
 			if (pOutName)
-				*pOutName='\\';
+				*pOutName=CPathString::Root;
 			if (pOutExt)
-				*pOutExt=_T("");
+				*pOutExt=CPathString::Empty;
 		}else{
 			const PCDirectoryEntry de=(PCDirectoryEntry)file;
 			if (pOutName)

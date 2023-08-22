@@ -1,6 +1,8 @@
 #include "stdafx.h"
 
-	const CString CDos::CPathString::Invalid;
+	const CDos::CPathString CDos::CPathString::Empty;
+	const CDos::CPathString CDos::CPathString::Unnamed8=_T("Unnamed"); // must not exceed 8 characters!
+	const CDos::CPathString CDos::CPathString::Root=_T('\\');
 
 
 	CDos::CPathString::CPathString(LPCSTR str,int strLength){
@@ -38,12 +40,21 @@
 		int i=GetLength();
 		ansi=CString( ' ', i );
 		const LPCTSTR buf=*this;
-		const PCHAR a=(PCHAR)const_cast<PTCHAR>(buf);
+		const PCHAR a=const_cast<PTCHAR>(buf);
 		while (--i>=0)
 			a[i]=buf[i];
 		return a;
 	}
 #endif
+
+	void CDos::CPathString::MemcpyAnsiTo(PCHAR buf,BYTE bufCapacity,char padding) const{
+		//
+		::memcpy(
+			::memset( buf, padding, bufCapacity ),
+			GetAnsi(),
+			std::min<int>( GetLength(), bufCapacity )
+		);
+	}
 
 	bool CDos::CPathString::Equals(const CPathString &r,TFnCompareNames comparer) const{
 		// True <=> the two strings are equal using the specified Comparer, otherwise False
@@ -77,7 +88,7 @@
 		for( LPCTSTR p=(LPCTSTR)*this+GetLength(); p!=*this; )
 			if (*--p!=c)
 				return TrimToLength( p+1-(LPCTSTR)*this );
-		Empty();
+		__super::Empty();
 		return *this;
 	}
 
@@ -117,4 +128,17 @@
 			else // an invalid "%NN" escape sequence
 				break;
 		return TrimToLength( u-(LPCTSTR)*this );
+	}
+
+	CDos::CPathString &CDos::CPathString::Format(LPCTSTR format,...){
+		va_list argList;
+		va_start( argList, format );
+			FormatV( format, argList );
+		va_end(argList);
+		return *this;
+	}
+
+	CDos::CPathString &CDos::CPathString::FormatLostItem8(int itemId){
+		Format( _T("LOST%04d"), itemId );
+		return *this;
 	}

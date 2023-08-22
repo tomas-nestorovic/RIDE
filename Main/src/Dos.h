@@ -48,7 +48,9 @@
 				mutable CString ansi;
 			#endif
 		public:
-			static const CString Invalid;
+			static const CPathString Empty;
+			static const CPathString Unnamed8;
+			static const CPathString Root;
 
 			static bool IsValidFat32LongNameChar(WCHAR c);
 
@@ -69,13 +71,18 @@
 			#else
 				inline LPCSTR GetAnsi() const{ return *this; }
 			#endif
+			void MemcpyAnsiTo(PCHAR buf,BYTE bufCapacity,char padding) const;
 			inline bool IsValid() const{ return GetLength()>0; }
+			inline LPCTSTR FindLast(TCHAR c) const{ return _tcsrchr( *this, c ); }
+			inline LPCTSTR FindLastDot() const{ return FindLast('.'); }
 			bool Equals(const CPathString &r,TFnCompareNames comparer) const;
 			CString EscapeToString() const;
 			CPathString &TrimRight(TCHAR c);
 			CPathString &TrimToLength(int nCharsMax);
 			CPathString &ExcludeFat32LongNameInvalidChars();
 			CPathString &Unescape();
+			CPathString & __cdecl Format(LPCTSTR format,...);
+			CPathString &FormatLostItem8(int itemId);
 		} *PPathString,&RPathString;
 		typedef const CPathString *PCPathString,&RCPathString;
 

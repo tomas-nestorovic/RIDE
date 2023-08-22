@@ -315,11 +315,11 @@
 		TCluster32 __allocateAndResetDirectoryCluster__() const;
 		BYTE __getLongFileNameEntries__(PCDirectoryEntry de,PDirectoryEntry *bufEntries) const;
 		void __deleteLongFileNameEntries__(PCDirectoryEntry de) const;
-		void __getShortFileNameAndExt__(PCDirectoryEntry de,PTCHAR bufName,PTCHAR bufExt) const;
-		TStdWinError __changeShortFileNameAndExt__(PDirectoryEntry de,LPCTSTR newName,LPCTSTR newExt,PDirectoryEntry &rRenamedFile) const;
+		void __getShortFileNameAndExt__(PCDirectoryEntry de,PPathString bufName,PPathString bufExt) const;
+		TStdWinError __changeShortFileNameAndExt__(PDirectoryEntry de,RCPathString newName,RCPathString newExt,PDirectoryEntry &rRenamedFile) const;
 		void __generateShortFileNameAndExt__(PDirectoryEntry de,LPCTSTR longName,LPCTSTR longExt) const;
-		bool __getLongFileNameAndExt__(PCDirectoryEntry de,PTCHAR bufName,PTCHAR bufExt) const;
-		TStdWinError __changeLongFileNameAndExt__(PDirectoryEntry de,LPCTSTR newName,LPCTSTR newExt,PDirectoryEntry &rRenamedFile) const;
+		bool __getLongFileNameAndExt__(PCDirectoryEntry de,PPathString bufName,PPathString bufExt) const;
+		TStdWinError __changeLongFileNameAndExt__(PDirectoryEntry de,RCPathString newName,RCPathString newExt,PDirectoryEntry &rRenamedFile) const;
 	public:
 		static const TProperties Properties;
 

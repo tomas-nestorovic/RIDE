@@ -287,9 +287,9 @@
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
 		if (file==ZX_DIR_ROOT){
 			if (pOutName)
-				*pOutName='\\';
+				*pOutName=CPathString::Root;
 			if (pOutExt)
-				*pOutExt=_T("");
+				*pOutExt=CPathString::Empty;
 		}else
 			((PCDirectoryEntry)file)->GetNameOrExt(pOutName,pOutExt);
 		return true; // name relevant
@@ -298,14 +298,7 @@
 	void CGDOS::TDirectoryEntry::SetNameAndExt(RCPathString newName,RCPathString newExt){
 		// sets File's Name and Type based on the Buffer content
 		// - setting the Name trimmed to 10 characters at most
-		#ifdef UNICODE
-			static_assert( false, "Unicode support not implemented" );
-		#else
-			::memcpy(	::memset(name,' ',sizeof(name)),
-						newName,
-						std::min<size_t>( newName.GetLength(), sizeof(name) )
-					);
-		#endif
+		newName.MemcpyAnsiTo( name, sizeof(name), ' ' );
 		// - setting FileType
 		fileType=(TFileType)*newExt;
 		// - setting up StandardParameters for a StandardZxType
@@ -431,14 +424,13 @@
 	CString CGDOS::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
 		// returns File name concatenated with File extension for export of the File to another Windows application (e.g. Explorer)
 		const PDirectoryEntry de=(PDirectoryEntry)file;
-		CString result=__super::GetFileExportNameAndExt(de,shellCompliant);
+		CPathString result=__super::GetFileExportNameAndExt(de,shellCompliant);
 		if (shellCompliant){
 			// exporting to non-RIDE target (e.g. to the Explorer); excluding from the Buffer characters that are forbidden in FAT32 long file names
 			TCHAR bufExt[16];
 			if (de!=ZX_DIR_ROOT){
-				const int iDot=result.ReverseFind('.');
-				if (iDot>=0)
-					result=CString( result, iDot+1 );
+				if (const LPCTSTR pDot=result.FindLastDot())
+					result.TrimToLength( pDot+1-(LPCTSTR)result );
 				else
 					result+='.';
 				result+=de->__getFileTypeDesc__(bufExt);

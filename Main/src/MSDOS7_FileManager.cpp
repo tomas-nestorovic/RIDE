@@ -134,9 +134,9 @@
 			CPathString ext;
 			DOS->GetFileNameOrExt(de,nullptr,&ext);
 			if (ext.GetLength()){
-				ext.MakeLower(), ext+=',';
+				ext+=',';
 				for( BYTE n=MSDOS7_FILE_ICONS_COUNT; --n>ICON_FILE_GENERAL; )
-					if (::StrStr(ICON_INFOS[n].extensions,ext))
+					if (::StrStrI( ICON_INFOS[n].extensions, ext ))
 						return icons[n];
 			}
 			return icons[ICON_FILE_GENERAL];
@@ -313,10 +313,10 @@
 			CPathString fileCopyName;
 			if (((CMSDOS7 *)DOS)->dontShowLongFileNames)
 				// using only short "8.3" names
-				fileCopyName=CPathString( Utils::SimpleFormat(_T("%d~%s"),copyNumber,fileName) ).TrimToLength(MSDOS7_FILE_NAME_LENGTH_MAX);
+				fileCopyName.Format( _T("%d~%s"), copyNumber, fileName ).TrimToLength(MSDOS7_FILE_NAME_LENGTH_MAX);
 			else
 				// using long names
-				fileCopyName=CPathString( Utils::SimpleFormat(_T("Copy %d - %s"),copyNumber,fileName) );
+				fileCopyName.Format( _T("Copy %d - %s"), copyNumber, fileName );
 			// . finding if a file with given Name+Ext combination already exists
 			if (!DOS->FindFileInCurrentDir(fileCopyName,fileExt,nullptr))
 				// generated a unique Name for the next File copy - returning the final export name and extension

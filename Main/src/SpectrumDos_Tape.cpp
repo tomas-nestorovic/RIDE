@@ -183,13 +183,7 @@
 		if (newName.GetLength()>ZX_TAPE_FILE_NAME_LENGTH_MAX)
 			return ERROR_FILENAME_EXCED_RANGE;
 		// - renaming
-		#ifdef UNICODE
-			static_assert( false, "Unicode support not implemented" );
-		#else
-			::memcpy(	::memset(name,' ',ZX_TAPE_FILE_NAME_LENGTH_MAX),
-						newName, newName.GetLength()
-					);
-		#endif
+		newName.MemcpyAnsiTo( name, sizeof(name), ' ' );
 		// - successfully renamed
 		return ERROR_SUCCESS;
 	}
@@ -217,9 +211,9 @@
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
 		if (file==ZX_DIR_ROOT){
 			if (pOutName)
-				*pOutName='\\';
+				*pOutName=CPathString::Root;
 			if (pOutExt)
-				*pOutExt=_T("");
+				*pOutExt=CPathString::Empty;
 		}else{
 			const PCTapeFile tf=(PCTapeFile)file;
 			if (const PCHeader h=tf->GetHeader())
@@ -430,13 +424,7 @@
 				// . Extension
 				h->type=(TZxRom::TFileType)type;
 				// . Name
-				#ifdef UNICODE
-					static_assert( false, "Unicode support not implemented" );
-				#else
-					::memcpy(	::memset(h->name,' ',ZX_TAPE_FILE_NAME_LENGTH_MAX),
-								zxName, zxName.GetLength()
-							);
-				#endif
+				h->SetName(zxName);
 				// . Size
 				h->length=officialFileSize;
 				// . Parameters
@@ -1030,7 +1018,7 @@ drawChecksum:			// checksum
 					tf->type=TTapeFile::STD_HEADER;
 					h=tf->GetHeader();
 					h->length=tf->dataLength, h->params=TStdParameters::Default;
-					h->SetName(_T("Unnamed"));
+					h->SetName(CPathString::Unnamed8);
 					h->type=(TZxRom::TFileType)newType.charValue;
 					break;
 				}
