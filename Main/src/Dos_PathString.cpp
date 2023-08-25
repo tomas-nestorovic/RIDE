@@ -3,28 +3,31 @@
 	const CDos::CPathString CDos::CPathString::Empty;
 	const CDos::CPathString CDos::CPathString::Unnamed8=_T("Unnamed"); // must not exceed 8 characters!
 	const CDos::CPathString CDos::CPathString::Root=_T('\\');
+	const CDos::CPathString CDos::CPathString::DotDot=_T("..");
 
 
 	CDos::CPathString::CPathString(LPCSTR str,int strLength){
 		// ctor
+		if (strLength<0)
+			strLength=::lstrlenA(str);
 		const PTCHAR buf=GetBufferSetLength(strLength);
-		buf[strLength]='\0';
 		#ifdef UNICODE
-			while (strLength-->0) // sequence may be interrupted by '\0' chars (e.g. Spectrum DOSes)
+			for( ; strLength>=0; strLength-- ) // sequence may be interrupted by '\0' chars (e.g. Spectrum DOSes)
 				buf[strLength]=str[strLength];
 		#else
-			::memcpy( buf, str, strLength*sizeof(char) );
+			::memcpy( buf, str, (strLength+1)*sizeof(char) );
 		#endif
 	}
 
 	CDos::CPathString::CPathString(LPCWSTR str,int strLength){
 		// ctor
+		if (strLength<0)
+			strLength=::lstrlenW(str);
 		const PTCHAR buf=GetBufferSetLength(strLength);
-		buf[strLength]='\0';
 		#ifdef UNICODE
-			::memcpy( buf, str, nCharsInBuf*sizeof(WCHAR) );
+			::memcpy( buf, str, (strLength+1)*sizeof(WCHAR) );
 		#else
-			while (strLength-->0) // sequence may be interrupted by '\0' chars (e.g. Spectrum DOSes)
+			for( ; strLength>=0; strLength-- ) // sequence may be interrupted by '\0' chars (e.g. Spectrum DOSes)
 				buf[strLength]=str[strLength];
 		#endif
 	}
@@ -36,14 +39,16 @@
 
 
 #ifdef UNICODE
-	LPCSTR CDos::CPathString::GetAnsi() const{
+	static_assert( false, "Unicode support not implemented" );
+#else
+	CString CDos::CPathString::GetAnsi() const{
 		int i=GetLength();
-		ansi=CString( ' ', i );
+		CString result( ' ', i );
 		const LPCTSTR buf=*this;
-		const PCHAR a=const_cast<PTCHAR>(buf);
+		const PCHAR a=const_cast<PCHAR>((LPCSTR)result);
 		while (--i>=0)
 			a[i]=buf[i];
-		return a;
+		return result;
 	}
 #endif
 
@@ -61,7 +66,7 @@
 		if (GetLength()!=r.GetLength())
 			return false;
 		const LPCTSTR buf=*this, rBuf=r;
-		for( int i=0; i<GetLength(); i++ )
+		for( int i=0; i<GetLength(); i++ ) // sequence may be interrupted by '\0' chars (e.g. Spectrum DOSes)
 			if (comparer( buf+i, rBuf+i ))
 				return false;
 			else
@@ -69,10 +74,10 @@
 		return true;
 	}
 
-	CString CDos::CPathString::EscapeToString() const{
+	CDos::CPathString CDos::CPathString::EscapeToString() const{
 		// returns a string with non-alphanumeric characters substituted with "URL-like" escape sequences
 		CPathString result( CString(_T('\0'),16384) );
-		PTCHAR pWritten=const_cast<PTCHAR>((LPCTSTR)result);
+		PTCHAR pWritten=result;
 		for( int i=0; i<GetLength(); i++ ){
 			const TCHAR c=operator[](i);
 			if (::isalpha(c))
@@ -80,22 +85,39 @@
 			else
 				pWritten+=::wsprintf( pWritten, _T("%%%02x"), c );
 		}
-		return result.TrimToLength( pWritten-(LPCTSTR)result );
+		return result.TrimToCharExcl(pWritten);
+	}
+
+	CDos::CPathString &CDos::CPathString::AppendDotExtension(LPCTSTR extWithoutDot){
+		//
+		operator+=('.');
+		operator+=(extWithoutDot);
+		return *this;
+	}
+
+	CDos::CPathString &CDos::CPathString::MakeUpper(){
+		//
+		__super::MakeUpper();
+		return *this;
 	}
 
 	CDos::CPathString &CDos::CPathString::TrimRight(TCHAR c){
 		// trims continuous sequence of specified Character from the end of the string
 		for( LPCTSTR p=(LPCTSTR)*this+GetLength(); p!=*this; )
 			if (*--p!=c)
-				return TrimToLength( p+1-(LPCTSTR)*this );
-		__super::Empty();
-		return *this;
+				return TrimToCharExcl( p+1 );
+		return TrimToLength(0);
 	}
 
 	CDos::CPathString &CDos::CPathString::TrimToLength(int nCharsMax){
 		// trims the string to specified maximum number of characters
-		__super::ReleaseBuffer(nCharsMax);
+		__super::ReleaseBuffer( std::min(nCharsMax,GetLength()) );
 		return *this;
+	}
+
+	CDos::CPathString &CDos::CPathString::TrimToCharExcl(LPCTSTR pc){
+		// trims the string to specified position (exclusive this position!)
+		return TrimToLength( pc-(LPCTSTR)*this );
 	}
 
 	bool CDos::CPathString::IsValidFat32LongNameChar(WCHAR c){
@@ -107,7 +129,7 @@
 	CDos::CPathString &CDos::CPathString::ExcludeFat32LongNameInvalidChars(){
 		// returns this string with FAT32 non-compliant characters excluded
 		const LPCTSTR buf=*this;
-		PTCHAR pCompliant=const_cast<PTCHAR>(buf);
+		PTCHAR pCompliant=*this;
 		for( int i=0; i<GetLength(); i++ )
 			if (IsValidFat32LongNameChar(buf[i]))
 				*pCompliant++=buf[i];
@@ -117,7 +139,7 @@
 	CDos::CPathString &CDos::CPathString::Unescape(){
 		// unescapes inplace previously escaped term; it holds that unescaped String is never longer than escaped Term
 		LPCTSTR term=*this;
-		PTCHAR u=const_cast<PTCHAR>(term);
+		PTCHAR u=*this;
 		for( int tmp; const TCHAR c=*term++; )
 			if (c!='%') // not the escape character '%'
 				*u++=c;
@@ -127,7 +149,7 @@
 				*u++=tmp, term+=2;
 			else // an invalid "%NN" escape sequence
 				break;
-		return TrimToLength( u-(LPCTSTR)*this );
+		return TrimToCharExcl(u);
 	}
 
 	CDos::CPathString &CDos::CPathString::Format(LPCTSTR format,...){
@@ -139,6 +161,5 @@
 	}
 
 	CDos::CPathString &CDos::CPathString::FormatLostItem8(int itemId){
-		Format( _T("LOST%04d"), itemId );
-		return *this;
+		return Format( _T("LOST%04d"), itemId );
 	}

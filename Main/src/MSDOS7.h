@@ -286,7 +286,7 @@
 			void DrawReportModeCell(PCFileInfo pFileInfo,LPDRAWITEMSTRUCT pdis) const override;
 			int CompareFiles(PCFile file1,PCFile file2,BYTE information) const override;
 			PEditorBase CreateFileInformationEditor(PFile file,BYTE infoId) const override;
-			PTCHAR GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant,PTCHAR pOutBuffer) const override;
+			CPathString GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant) const override;
 			void OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint) override; // supplying File Icons
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 		public:
@@ -299,7 +299,7 @@
 		static TLogSector32 __cluster2logSector__(TCluster32 c,PCBootSector boot);
 		static UINT AFX_CDECL __removeLongNames_thread__(PVOID _pCancelableAction);
 		static void __informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId);
-		static PTCHAR __getFileExportNameAndExt__(LPCTSTR bufName,LPCTSTR bufExt,bool shellCompliant,PTCHAR pOutBuffer);
+		static CPathString __getFileExportNameAndExt__(LPCTSTR bufName,LPCTSTR bufExt,bool shellCompliant);
 
 		bool dontShowLongFileNames, dontShowDotEntries, dontShowDotdotEntries;
 
@@ -344,11 +344,11 @@
 		TStdWinError DeleteFile(PFile file) override;
 		std::unique_ptr<TDirectoryTraversal> BeginDirectoryTraversal(PCFile directory) const override;
 		DWORD GetDirectoryUid(PCFile dir) const override;
-		CString GetFileExportNameAndExt(PCFile file,bool shellCompliant) const override;
+		CPathString GetFileExportNameAndExt(PCFile file,bool shellCompliant) const override;
 		TStdWinError ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile) override;
-		TStdWinError CreateSubdirectory(LPCTSTR name,DWORD winAttr,PDirectoryEntry &rCreatedSubdir);
+		TStdWinError CreateSubdirectory(RCPathString name,DWORD winAttr,PDirectoryEntry &rCreatedSubdir);
 		TStdWinError SwitchToDirectory(PDirectoryEntry directory);
-		TStdWinError MoveFileToCurrDir(PDirectoryEntry de,LPCTSTR exportFileNameAndExt,PFile &rMovedFile);
+		TStdWinError MoveFileToCurrDir(PDirectoryEntry de,RCPathString exportFileNameAndExt,PFile &rMovedFile);
 		// other
 		TStdWinError CreateUserInterface(HWND hTdi) override;
 		TCmdResult ProcessCommand(WORD cmd) override;

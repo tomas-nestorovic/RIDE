@@ -176,7 +176,7 @@
 		DWORD GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData,TGetFileSizeOptions option) const override;
 		TStdWinError DeleteFile(PFile file) override;
 		std::unique_ptr<TDirectoryTraversal> BeginDirectoryTraversal(PCFile directory) const override;
-		CString GetFileExportNameAndExt(PCFile file,bool shellCompliant) const override;
+		CPathString GetFileExportNameAndExt(PCFile file,bool shellCompliant) const override;
 		TStdWinError ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile) override;
 		// other
 		TStdWinError CreateUserInterface(HWND hTdi) override;

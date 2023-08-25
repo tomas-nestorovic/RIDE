@@ -32,7 +32,7 @@
 	const CFileManagerView::TDirectoryStructureManagement CBSDOS308::CBsdos308FileManagerView::DirManagement={
 		(CDos::TFnCreateSubdirectory)&CBSDOS308::CreateSubdirectory,
 		(CDos::TFnChangeCurrentDirectory)&CBSDOS308::SwitchToDirectory,
-		(CDos::TFnMoveFileToCurrDir)&CBSDOS308::MoveFileToCurrentDir
+		(CDos::TFnMoveFileToCurrDir)&CBSDOS308::MoveFileToCurrDir
 	};
 
 	CBSDOS308::CBsdos308FileManagerView::CBsdos308FileManagerView(CBSDOS308 *bsdos)

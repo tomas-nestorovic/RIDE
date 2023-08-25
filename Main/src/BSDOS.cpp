@@ -329,7 +329,7 @@
 
 	#define INFO_DIR	_T("S%x")
 
-	TStdWinError CBSDOS308::CreateSubdirectory(LPCTSTR name,DWORD winAttr,PFile &rCreatedSubdir){
+	TStdWinError CBSDOS308::CreateSubdirectory(RCPathString name,DWORD winAttr,PFile &rCreatedSubdir){
 		// creates a new Subdirectory in CurrentDirectory; returns Windows standard i/o error
 		// - cannot create a new Subdirectory elsewhere but in the Root Directory
 		if (currentDir!=ZX_DIR_ROOT)
@@ -399,7 +399,7 @@
 				: 0;
 	}
 
-	TStdWinError CBSDOS308::MoveFileToCurrentDir(PFile file,LPCTSTR exportFileNameAndExt,PFile &rMovedFile){
+	TStdWinError CBSDOS308::MoveFileToCurrDir(PFile file,RCPathString exportFileNameAndExt,PFile &rMovedFile){
 		// moves given File to CurrentDirectory; returns Windows standard i/o error
 		// - cannot move "to" root Directory
 		if (currentDir==ZX_DIR_ROOT)
@@ -619,8 +619,8 @@
 				// . renaming
 				if (const TStdWinError err=de->file.stdHeader.SetName(newName))
 					return err;
-				if (!de->file.stdHeader.SetFileType((TUniFileType)*newExt))
-					de->file.stdHeader.type=(TZxRom::TFileType)*newExt;
+				if (!de->file.stdHeader.SetFileType((TUniFileType)newExt.FirstChar()))
+					de->file.stdHeader.type=(TZxRom::TFileType)newExt.FirstChar();
 				MarkDirectorySectorAsDirty(de);
 			}//else
 				// Headerless File or Fragment
@@ -746,9 +746,9 @@
 		return ERROR_SUCCESS;
 	}
 
-	CString CBSDOS308::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
+	CDos::CPathString CBSDOS308::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
 		// returns File name concatenated with File extension for export of the File to another Windows application (e.g. Explorer)
-		CString result=__super::GetFileExportNameAndExt(file,shellCompliant);
+		CPathString result=__super::GetFileExportNameAndExt(file,shellCompliant);
 		if (!shellCompliant){
 			// exporting to another RIDE instance
 			TCHAR buf[80];
@@ -824,7 +824,7 @@
 				case TUniFileType::BLOCK	: uftExt=uts; break;
 				case TUniFileType::SCREEN	: uftExt=TUniFileType::BLOCK; break;
 				default:
-					uftExt= zxExt.GetLength() ? *zxExt : TZxRom::TFileType::HEADERLESS;
+					uftExt= zxExt.GetLength() ? zxExt.FirstChar() : TZxRom::TFileType::HEADERLESS;
 					break;
 			}
 			// . importing to Image

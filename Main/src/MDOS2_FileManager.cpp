@@ -199,13 +199,13 @@
 		}
 	}
 
-	TStdWinError CMDOS2::CMdos2FileManagerView::ImportPhysicalFile(LPCTSTR pathAndName,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution){
+	TStdWinError CMDOS2::CMdos2FileManagerView::ImportPhysicalFile(RCPathString shellName,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution){
 		// dragged cursor released above window
 		// - if the File "looks like an MDOS-File-Commander archivation file", confirming its import by the user
-		if (const LPCTSTR extension=_tcsrchr(pathAndName,'.')){ // has an Extension
+		if (const LPCTSTR extension=shellName.FindLastDot()){ // has an Extension
 			if (!::lstrcmpi( extension, _T(".d_0") )){ // has correct Extension
 				#pragma pack(1)
-				struct TD_0 sealed{
+				struct{
 					BYTE version;
 					char signature[3]; // "D_0"
 					char fileSystemName[10]; // "MDOS_D4080"
@@ -218,12 +218,12 @@
 				} d_0;
 				CFileException e;
 				CFile f;
-				if (!f.Open( pathAndName, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary, &e ))
+				if (!f.Open( shellName, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary, &e ))
 					return e.m_cause;
 				if (f.Read(&d_0,sizeof(d_0))==sizeof(d_0))
 					if (d_0.version==0 && !::strncmp(d_0.signature,"D_0",sizeof(d_0.signature)) && !::strncmp(d_0.fileSystemName,"MDOS_D4080",sizeof(d_0.fileSystemName))){
 						// . defining the Dialog
-						const LPCTSTR nameAndExt=_tcsrchr(pathAndName,'\\')+1;
+						const auto nameAndExt=Utils::ToStringT(shellName.FindLast('\\')+1);
 						class CResolutionDialog sealed:public Utils::CCommandDialog{
 							const CString msg;
 							BOOL OnInitDialog() override{
@@ -319,7 +319,7 @@
 			}
 		}
 		// - importing the File
-		return __super::ImportPhysicalFile( pathAndName, rImportedFile, rConflictedSiblingResolution );
+		return __super::ImportPhysicalFile( shellName, rImportedFile, rConflictedSiblingResolution );
 	}
 
 

@@ -44,41 +44,43 @@
 		} *PSectorStatus;
 
 		typedef class CPathString sealed:public CString{
-			#ifdef UNICODE
-				mutable CString ansi;
-			#endif
 		public:
 			static const CPathString Empty;
 			static const CPathString Unnamed8;
 			static const CPathString Root;
+			static const CPathString DotDot;
 
 			static bool IsValidFat32LongNameChar(WCHAR c);
 
-			inline CPathString(){};
-			inline CPathString(const CString &s) : CString(s) {};
+			inline CPathString(){}
+			inline CPathString(const CString &s) : CString(s) {}
 			inline CPathString(TCHAR c) : CString(c) {}
-			inline CPathString(LPCSTR s) : CString(s) {}
-			inline CPathString(LPCWSTR s) : CString(s) {}
-			CPathString(LPCSTR str,int strLength);
-			CPathString(LPCWSTR str,int strLength);
+			CPathString(LPCSTR str,int strLength=-1);
+			CPathString(LPCWSTR str,int strLength=-1);
 
-			//bool operator==(const CPathString &r) const;
-			//CPathString &operator+=(TCHAR c);
-			//CPathString &operator+=(const CPathString &r);
+			inline operator PTCHAR() const{ return const_cast<PTCHAR>((LPCTSTR)*this); }
+			inline CPathString &operator+=(TCHAR c){ __super::operator+=(c); return *this; }
+			inline CPathString &operator+=(LPCTSTR lpsz){ __super::operator+=(lpsz); return *this; }
 
-			#ifdef UNICODE
-				LPCSTR GetAnsi() const;
-			#else
-				inline LPCSTR GetAnsi() const{ return *this; }
-			#endif
+		#ifdef UNICODE
+			static_assert( false, "GetAnsi not implemented for Unicode" );
+			inline const CPathString &ToString() const{ return *this; }
+		#else
+			CString GetAnsi() const;
+			inline CString ToString() const{ return GetAnsi(); }
+		#endif
+			inline TCHAR FirstChar() const{ return GetAt(0); }
 			void MemcpyAnsiTo(PCHAR buf,BYTE bufCapacity,char padding) const;
 			inline bool IsValid() const{ return GetLength()>0; }
-			inline LPCTSTR FindLast(TCHAR c) const{ return _tcsrchr( *this, c ); }
+			inline LPCTSTR FindLast(TCHAR c) const{ return _tcsrchr( (LPCTSTR)*this, c ); }
 			inline LPCTSTR FindLastDot() const{ return FindLast('.'); }
 			bool Equals(const CPathString &r,TFnCompareNames comparer) const;
-			CString EscapeToString() const;
+			CPathString EscapeToString() const;
+			CPathString &AppendDotExtension(LPCTSTR extWithoutDot);
+			CPathString &MakeUpper();
 			CPathString &TrimRight(TCHAR c);
 			CPathString &TrimToLength(int nCharsMax);
+			CPathString &TrimToCharExcl(LPCTSTR pc);
 			CPathString &ExcludeFat32LongNameInvalidChars();
 			CPathString &Unescape();
 			CPathString & __cdecl Format(LPCTSTR format,...);
@@ -88,9 +90,9 @@
 
 		typedef TStdWinError (*TFnRecognize)(PImage image,PFormat pFormatBoot);
 		typedef PDos (*TFnInstantiate)(PImage image,PCFormat pFormatBoot);
-		typedef TStdWinError (CDos::*TFnCreateSubdirectory)(LPCTSTR name,DWORD winAttr,PFile &rCreatedSubdir);
+		typedef TStdWinError (CDos::*TFnCreateSubdirectory)(RCPathString name,DWORD winAttr,PFile &rCreatedSubdir);
 		typedef TStdWinError (CDos::*TFnChangeCurrentDirectory)(PFile directory);
-		typedef TStdWinError (CDos::*TFnMoveFileToCurrDir)(PFile file,LPCTSTR exportFileNameAndExt,PFile &rMovedFile);
+		typedef TStdWinError (CDos::*TFnMoveFileToCurrDir)(PFile file,RCPathString exportFileNameAndExt,PFile &rMovedFile);
 
 		#pragma pack(1)
 		typedef const struct TProperties sealed{
@@ -400,7 +402,7 @@
 		virtual DWORD GetDirectoryUid(PCFile dir) const;
 		void MarkDirectorySectorAsDirty(PCFile file) const;
 		DWORD GetCountOfItemsInCurrentDir(TStdWinError &rError) const;
-		virtual CString GetFileExportNameAndExt(PCFile file,bool shellCompliant) const;
+		virtual CPathString GetFileExportNameAndExt(PCFile file,bool shellCompliant) const;
 		virtual DWORD ExportFile(PCFile file,CFile *fOut,DWORD nBytesToExportMax,LPCTSTR *pOutError) const;
 		virtual TStdWinError ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile)=0;
 		PFile FindFileInCurrentDir(RCPathString fileName,RCPathString fileExt,PCFile ignoreThisFile) const;

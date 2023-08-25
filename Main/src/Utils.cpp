@@ -2064,11 +2064,10 @@ namespace Utils{
 
 	CString GenerateTemporaryFileName(){
 		// generates and returns a new temporary file name
-		CString result;
-		const PTCHAR buf=result.GetBuffer( MAX_PATH );
-		::GetTempPath( MAX_PATH, buf );
+		TCHAR buf[MAX_PATH];
+		::GetTempPath( ARRAYSIZE(buf), buf );
 		::GetTempFileName( buf, nullptr, FALSE, buf );
-		return result;
+		return buf;
 	}
 
 	CFile &WriteToFile(CFile &f,LPCTSTR text){

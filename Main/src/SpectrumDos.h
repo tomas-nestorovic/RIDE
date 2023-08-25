@@ -285,7 +285,7 @@
 				PEditorBase Create(PFile file,TZxRom::TFileType type,TDisplayTypes _types,PropGrid::Enum::TOnValueConfirmed onChanged) const;
 			} stdTapeHeaderTypeEditor;
 
-			PTCHAR GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant,PTCHAR pOutBuffer) const override sealed;
+			CPathString GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant) const override sealed;
 		protected:
 			CSpectrumBaseFileManagerView(PDos dos,const TZxRom &rZxRom,BYTE supportedDisplayModes,BYTE initialDisplayMode,BYTE nInformation,PCFileInfo informationList,BYTE nameCharsMax,PCDirectoryStructureManagement pDirManagement=nullptr);
 		public:
@@ -310,7 +310,7 @@
 		~CSpectrumBase();
 	public:
 		CString GetFilePresentationNameAndExt(PCFile file) const override;
-		CString GetFileExportNameAndExt(PCFile file,bool shellCompliant) const override;
+		CPathString GetFileExportNameAndExt(PCFile file,bool shellCompliant) const override;
 		DWORD GetAttributes(PCFile file) const override;
 		TCmdResult ProcessCommand(WORD cmd) override;
 	};
@@ -419,7 +419,7 @@
 			DWORD GetAttributes(PCFile file) const override;
 			TStdWinError DeleteFile(PFile file) override;
 			std::unique_ptr<TDirectoryTraversal> BeginDirectoryTraversal(PCFile directory) const override;
-			CString GetFileExportNameAndExt(PCFile file,bool shellCompliant) const override;
+			CPathString GetFileExportNameAndExt(PCFile file,bool shellCompliant) const override;
 			TStdWinError ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile) override;
 			// other
 			TCmdResult ProcessCommand(WORD cmd) override;
@@ -429,7 +429,7 @@
 
 		class CSpectrumFileManagerView:public CSpectrumBaseFileManagerView{
 		protected:
-			TStdWinError ImportPhysicalFile(LPCTSTR pathAndName,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution) override;
+			TStdWinError ImportPhysicalFile(RCPathString shellName,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution) override;
 
 			CSpectrumFileManagerView(PDos dos,const TZxRom &rZxRom,BYTE supportedDisplayModes,BYTE initialDisplayMode,BYTE nInformation,PCFileInfo informationList,BYTE nameCharsMax,PCDirectoryStructureManagement pDirManagement=nullptr);
 		};

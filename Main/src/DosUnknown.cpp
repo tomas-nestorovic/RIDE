@@ -107,7 +107,7 @@
 		// initiates exploration of specified Directory through a DOS-specific DirectoryTraversal
 		return nullptr;
 	}
-	CString CUnknownDos::GetFileExportNameAndExt(PCFile,bool) const{
+	CDos::CPathString CUnknownDos::GetFileExportNameAndExt(PCFile,bool) const{
 		// returns File name concatenated with File extension for export of the File to another Windows application (e.g. Explorer)
 		return CPathString::Empty;
 	}

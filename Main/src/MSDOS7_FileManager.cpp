@@ -229,14 +229,13 @@
 	bool WINAPI CMSDOS7::CMsdos7FileManagerView::__onNameAndExtConfirmed__(PVOID file,LPCTSTR newNameAndExt,short nCharsOfNewNameAndExt){
 		// True <=> NewNameAndExtension confirmed, otherwise False
 		const PMSDOS7 msdos=(PMSDOS7)CDos::GetFocused();
-		TCHAR tmpName[MAX_PATH];
-		PTCHAR pExt=_tcsrchr( ::lstrcpy(tmpName,newNameAndExt), '.' );
-		if (pExt)
-			*pExt++='\0';
-		else
-			pExt=_T("");
+		CPathString tmpName=newNameAndExt, tmpExt;
+		if (const LPCTSTR pExt=tmpName.FindLastDot()){
+			tmpExt=pExt+1;
+			tmpName.TrimToCharExcl(pExt);
+		}
 		CDos::PFile renamedFile;
-		if (const TStdWinError err=msdos->ChangeFileNameAndExt(file,tmpName,pExt,renamedFile)){
+		if (const TStdWinError err=msdos->ChangeFileNameAndExt(file,tmpName,tmpExt,renamedFile)){
 			// at least two Files with the same Name+Extension combination exist
 			Utils::Information(FILE_MANAGER_ERROR_RENAMING,err);
 			return false;
@@ -302,7 +301,7 @@
 		}
 	}
 
-	PTCHAR CMSDOS7::CMsdos7FileManagerView::GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant,PTCHAR pOutBuffer) const{
+	CDos::CPathString CMSDOS7::CMsdos7FileManagerView::GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant) const{
 		// returns the Buffer populated with the export name and extension of the next File's copy in current Directory; returns Null if no further name and extension can be generated
 		// - getting copied File's Name and Extension
 		CPathString fileName, fileExt;
@@ -320,9 +319,9 @@
 			// . finding if a file with given Name+Ext combination already exists
 			if (!DOS->FindFileInCurrentDir(fileCopyName,fileExt,nullptr))
 				// generated a unique Name for the next File copy - returning the final export name and extension
-				return __getFileExportNameAndExt__( fileCopyName, fileExt, shellCompliant, pOutBuffer );
+				return __getFileExportNameAndExt__( fileCopyName, fileExt, shellCompliant );
 		}
-		return nullptr; // the Name for the next File copy cannot be generated
+		return CPathString::Empty; // the Name for the next File copy cannot be generated
 	}
 
 

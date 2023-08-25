@@ -75,7 +75,7 @@
 		};
 
 		class CNameConflictResolutionDialog sealed:public ::Utils::CCommandDialog{
-			const LPCTSTR conflictedName, conflictedNameType, captionForReplaceButton, captionForSkipButton;
+			const LPCTSTR captionForReplaceButton, captionForSkipButton;
 			TCHAR information[MAX_PATH+100];
 
 			BOOL OnInitDialog() override;
@@ -118,10 +118,10 @@
 		PCFileInfo __fileInfoFromColumnId__(BYTE columnId) const;
 		char __columnIdFromFileInfo__(BYTE fileInfoIndex) const;
 		char __columnIdFromFileInfo__(PCFileInfo fi) const;
-		TStdWinError __switchToDirectory__(PTCHAR path) const;
-		TStdWinError __skipNameConflict__(DWORD newFileSize,LPCTSTR newFileName,CDos::PFile conflict,DWORD &rConflictedSiblingResolution) const;
+		//TStdWinError __switchToDirectory__(PWCHAR path) const;
+		TStdWinError __skipNameConflict__(DWORD newFileSize,CDos::PFile conflict,DWORD &rConflictedSiblingResolution) const;
 		TStdWinError __moveFile__(int &i,LPFILEDESCRIPTOR files,int nFiles,CDos::PFile &rMovedFile,DWORD &rConflictedSiblingResolution);
-		TStdWinError __importVirtualFile__(int &i,LPCTSTR pathAndName,LPFILEDESCRIPTOR files,int nFiles,COleDataObject *pDataObject,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution);
+		TStdWinError __importVirtualFile__(int &i,CDos::RCPathString pathAndName,LPFILEDESCRIPTOR files,int nFiles,COleDataObject *pDataObject,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution);
 		CDos::PFile __getDirectoryUnderCursor__(CPoint &rPt) const;
 		void BrowseCurrentDirInHexaMode(CDos::PCFile fileToSeekTo);
 		afx_msg int OnCreate(LPCREATESTRUCT lpcs);
@@ -268,8 +268,8 @@
 		virtual void DrawReportModeCell(PCFileInfo pFileInfo,LPDRAWITEMSTRUCT pdis) const=0;
 		virtual int CompareFiles(CDos::PCFile file1,CDos::PCFile file2,BYTE information) const=0;
 		virtual PEditorBase CreateFileInformationEditor(CDos::PFile file,BYTE infoId) const=0;
-		virtual PTCHAR GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant,PTCHAR pOutBuffer) const=0;
-		virtual TStdWinError ImportPhysicalFile(LPCTSTR pathAndName,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution);
+		virtual CDos::CPathString GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant) const=0;
+		virtual TStdWinError ImportPhysicalFile(CDos::RCPathString shellName,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution);
 	public:
 		static const CFileManagerView *pCurrentlyShown; // FileManager that is currently shown (a disk can have multiple volumes, each with its own FileManager)
 

@@ -247,11 +247,11 @@
 		TStdWinError DeleteFile(PFile file) override;
 		std::unique_ptr<TDirectoryTraversal> BeginDirectoryTraversal(PCFile directory) const override;
 		DWORD GetDirectoryUid(PCFile dir) const override;
-		CString GetFileExportNameAndExt(PCFile file,bool shellCompliant) const override;
+		CPathString GetFileExportNameAndExt(PCFile file,bool shellCompliant) const override;
 		TStdWinError ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile) override;
-		TStdWinError CreateSubdirectory(LPCTSTR name,DWORD winAttr,PFile &rCreatedSubdir);
+		TStdWinError CreateSubdirectory(RCPathString name,DWORD winAttr,PFile &rCreatedSubdir);
 		TStdWinError SwitchToDirectory(PFile slot);
-		TStdWinError MoveFileToCurrentDir(PFile file,LPCTSTR exportFileNameAndExt,PFile &rMovedFile);
+		TStdWinError MoveFileToCurrDir(PFile file,RCPathString exportFileNameAndExt,PFile &rMovedFile);
 		// other
 		TStdWinError CreateUserInterface(HWND hTdi) override;
 		TCmdResult ProcessCommand(WORD cmd) override;

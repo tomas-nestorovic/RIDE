@@ -124,7 +124,7 @@
 						// . appending each File (or block)
 						if (const auto pdt=tape->BeginDirectoryTraversal(ZX_DIR_ROOT))
 							for( BYTE blockData[65536]; const PCFile file=pdt->GetNextFileOrSubdir(); ){
-								const CString nameAndExt=tape->GetFileExportNameAndExt( file, false );
+								const CPathString nameAndExt=tape->GetFileExportNameAndExt( file, false );
 								PFile f;
 								if (const TStdWinError err=	CTape::pSingleInstance->ImportFile(
 																&CMemFile(blockData,sizeof(blockData)), 
@@ -134,7 +134,7 @@
 															)
 								){
 									Utils::Information(
-										Utils::SimpleFormat( _T("Failed to append block \"%s\""), nameAndExt ),
+										Utils::SimpleFormat( _T("Failed to append block \"%s\""), tape->GetFilePresentationNameAndExt(file) ),
 										err, _T("Appended only partly.")
 									);
 									break;

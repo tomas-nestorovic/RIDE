@@ -32,12 +32,12 @@
 	#define IMAGE	tab.image
 	#define DOS		IMAGE->dos
 
-	PTCHAR CSpectrumBase::CSpectrumBaseFileManagerView::GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant,PTCHAR pOutBuffer) const{
+	CDos::CPathString CSpectrumBase::CSpectrumBaseFileManagerView::GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant) const{
 		// returns the Buffer populated with the export name and extension of the next File's copy in current Directory; returns Null if no further name and extension can be generated
 		// - if File Name+Ext combination is irrelevant (headerless Files), returning current export Name+Ext
 		CPathString fileName, fileExt;
 		if (!DOS->GetFileNameOrExt( file, &fileName, &fileExt )) // name irrelevant
-			return ::lstrcpy(  pOutBuffer,  DOS->GetFileExportNameAndExt( file, shellCompliant )  );
+			return DOS->GetFileExportNameAndExt( file, shellCompliant );
 		// - generating a unique File Name+Ext
 		if (const auto pdt=DOS->BeginDirectoryTraversal()){
 			BYTE tmpDirEntry[2048]; // "big enough" to accommodate any ZX Spectrum DirectoryEntry
@@ -53,20 +53,20 @@
 				switch (DOS->ChangeFileNameAndExt( &tmpDirEntry, bufCopyName, fileExt, fExisting )){
 					case ERROR_SUCCESS:
 						// generated a unique Name for the next File copy - returning the final export name and extension
-						return ::lstrcpy(  pOutBuffer,  DOS->GetFileExportNameAndExt( &tmpDirEntry, shellCompliant )  );
+						return DOS->GetFileExportNameAndExt( &tmpDirEntry, shellCompliant );
 					case ERROR_CANNOT_MAKE:
 						// Directory full
-						return nullptr;
+						return CPathString::Empty;
 				}
 			}
 		}
-		return nullptr; // the Name for the next File copy cannot be generated
+		return CPathString::Empty; // the Name for the next File copy cannot be generated
 	}
 
-	TStdWinError CSpectrumDos::CSpectrumFileManagerView::ImportPhysicalFile(LPCTSTR pathAndName,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution){
+	TStdWinError CSpectrumDos::CSpectrumFileManagerView::ImportPhysicalFile(RCPathString shellName,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution){
 		// dragged cursor released above window
 		// - if the File "looks like an Tape Image", confirming its import by the user
-		if (const LPCTSTR extension=_tcsrchr(pathAndName,'.')){
+		if (const LPCTSTR extension=shellName.FindLastDot()){
 			if (!::lstrcmpi( extension, _T(".tap") )){
 				// . defining the Dialog
 				class CPossiblyATapeDialog sealed:public Utils::CCommandDialog{
@@ -87,7 +87,7 @@
 						: Utils::CCommandDialog(msg) {
 					}
 				} d(
-					Utils::SimpleFormat( _T("\"%s\" looks like a tape."), _tcsrchr(pathAndName,'\\')+1 )
+					Utils::SimpleFormat( _T("\"%s\" looks like a tape."), Utils::ToStringT(shellName.FindLast('\\')+1) )
 				);
 				// . showing the Dialog and processing its result
 				switch (d.DoModal()){
@@ -98,7 +98,7 @@
 							if (DOS->ProcessCommand(ID_TAPE_CLOSE)==TCmdResult::REFUSED) // if Tape not ejected ...
 								return ERROR_CANCELLED; // ... we are done
 						// : inserting a recorded Tape (by opening its underlying physical file)
-						CTape::pSingleInstance=new CTape( pathAndName, (CSpectrumDos *)DOS, false ); // inserted Tape is WriteProtected by default
+						CTape::pSingleInstance=new CTape( shellName.ToString(), (CSpectrumDos *)DOS, false ); // inserted Tape is WriteProtected by default
 						rImportedFile=nullptr; // File processed another way than importing
 						return ERROR_SUCCESS;
 					}
@@ -112,7 +112,7 @@
 			}
 		}
 		// - importing the File
-		return __super::ImportPhysicalFile( pathAndName, rImportedFile, rConflictedSiblingResolution );
+		return __super::ImportPhysicalFile( shellName, rImportedFile, rConflictedSiblingResolution );
 	}
 
 
@@ -163,7 +163,7 @@
 		CPathString ext;
 		rZxFileManager.DOS->GetFileNameOrExt(file,nullptr,&ext);
 		const PEditorBase result=CreateStdEditor(
-			file, &( data=*ext ),
+			file, &( data=ext.FirstChar() ),
 			PropGrid::Enum::DefineConstStringListEditor( sizeof(data), __createValues__, __getDescription__, __freeValues__, __onChanged__ )
 		);
 		::SendMessage( result->hEditor, WM_SETFONT, (WPARAM)rZxFileManager.rFont.m_hObject, 0 );
@@ -239,12 +239,7 @@
 		ASSERT(fileNameLengthMax<ARRAYSIZE(bufOldCmd));
 		CPathString oldName;
 		rZxFileManager.DOS->GetFileNameOrExt( file, &oldName, nullptr );
-		::memset( bufOldCmd, paddingChar, fileNameLengthMax );
-		#ifdef UNICODE
-			static_assert( false, "Unicode support not implemented" );
-		#else
-			::memcpy( bufOldCmd, oldName, oldName.GetLength() );
-		#endif
+		oldName.MemcpyAnsiTo( bufOldCmd, fileNameLengthMax, paddingChar );
 		return	CreateStdEditor(
 					file,
 					bufOldCmd,

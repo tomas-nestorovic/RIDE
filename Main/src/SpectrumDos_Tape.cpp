@@ -247,7 +247,7 @@
 			// . renaming
 			if (const TStdWinError err=h->SetName(newName))
 				return err;
-			if (!h->SetFileType((TUniFileType)*newExt))
+			if (!h->SetFileType((TUniFileType)newExt.FirstChar()))
 				return ERROR_BAD_FILE_TYPE;
 			m_bModified=TRUE;
 			return ERROR_SUCCESS;
@@ -292,9 +292,9 @@
 
 	#define EXPORT_INFO_TAPE	_T("S%x")
 
-	CString CSpectrumDos::CTape::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
+	CDos::CPathString CSpectrumDos::CTape::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
 		// returns File name concatenated with File extension for export of the File to another Windows application (e.g. Explorer)
-		CString result=__super::GetFileExportNameAndExt(file,shellCompliant);
+		CPathString result=__super::GetFileExportNameAndExt(file,shellCompliant);
 		if (!shellCompliant){
 			const PCTapeFile tf=(PCTapeFile)file;
 			TCHAR buf[80];

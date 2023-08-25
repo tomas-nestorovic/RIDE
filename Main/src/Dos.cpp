@@ -738,10 +738,10 @@ reportError:Utils::Information(buf);
 		// returns File name concatenated with File extension for presentation of the File to the user
 		CPathString name,ext;
 		GetFileNameOrExt( file, &name, &ext );
-		CString result=name.ExcludeFat32LongNameInvalidChars();
+		name.ExcludeFat32LongNameInvalidChars();
 		if (ext.ExcludeFat32LongNameInvalidChars().GetLength()>0)
-			result+=CString(".")+ext;
-		return result;
+			name.AppendDotExtension(ext);
+		return name.ToString();
 	}
 
 	bool CDos::HasFileNameAndExt(PCFile file,RCPathString fileName,RCPathString fileExt) const{
@@ -854,25 +854,25 @@ reportError:Utils::Information(buf);
 		return nullptr;
 	}
 
-	CString CDos::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
+	CDos::CPathString CDos::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
 		// returns File name concatenated with File extension for export of the File to another Windows application (e.g. Explorer)
 		CPathString fileName,fileExt;
 		GetFileNameOrExt( file, &fileName, &fileExt );
 		if (shellCompliant){
 			// exporting to non-RIDE target (e.g. to the Explorer); excluding from the Buffer characters that are forbidden in FAT32 long file names
-			const CString ext=fileExt.ExcludeFat32LongNameInvalidChars();
+			fileExt.ExcludeFat32LongNameInvalidChars();
 			if (fileName.ExcludeFat32LongNameInvalidChars().GetLength())
 				// valid export name - taking it as the result
-				return CString(fileName)+_T(".")+ext;
+				return fileName.AppendDotExtension(fileExt);
 			else{
 				// invalid export name - generating an artifical one
 				static WORD fileId;
 				if (++fileId>9999) fileId=1;
-				return CPathString().Format( _T("File%04d.%s"), fileId, (LPCTSTR)ext ); // "%05d" and above isn't recommended - some DOSes can't accommodate more than 8 characters in name field
+				return CPathString().Format( _T("File%04d"), fileId ).AppendDotExtension(fileExt); // "%05d" and above isn't recommended - some DOSes can't accommodate more than 8 characters in name field
 			}
 		}else
 			// exporting to another RIDE instance; substituting non-alphanumeric characters with "URL-like" escape sequences
-			return fileName.EscapeToString()+_T(".")+fileExt.EscapeToString();
+			return fileName.EscapeToString().AppendDotExtension( fileExt.EscapeToString() );
 	}
 
 	DWORD CDos::ExportFile(PCFile file,CFile *fOut,DWORD nBytesToExportMax,LPCTSTR *pOutError) const{

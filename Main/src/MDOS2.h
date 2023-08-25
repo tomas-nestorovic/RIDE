@@ -192,7 +192,7 @@
 			void DrawReportModeCell(PCFileInfo pFileInfo,LPDRAWITEMSTRUCT pdis) const override;
 			int CompareFiles(PCFile file1,PCFile file2,BYTE information) const override;
 			PEditorBase CreateFileInformationEditor(PFile file,BYTE infoId) const override;
-			TStdWinError ImportPhysicalFile(LPCTSTR pathAndName,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution) override;
+			TStdWinError ImportPhysicalFile(RCPathString shellName,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution) override;
 			void OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint) override; // GK's File Manager icons
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 		public:
@@ -231,7 +231,7 @@
 		DWORD GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData,TGetFileSizeOptions option) const override;
 		TStdWinError DeleteFile(PFile file) override;
 		std::unique_ptr<TDirectoryTraversal> BeginDirectoryTraversal(PCFile directory) const override;
-		CString GetFileExportNameAndExt(PCFile file,bool shellCompliant) const override;
+		CPathString GetFileExportNameAndExt(PCFile file,bool shellCompliant) const override;
 		TStdWinError ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile) override;
 		// other
 		TStdWinError CreateUserInterface(HWND hTdi) override;

@@ -390,14 +390,8 @@
 			__getStdParameter1__(de,stdParams.param1), __getStdParameter2__(de,stdParams.param2);
 		// - renaming
 		TDirectoryEntry tmp=*de; // all changes are made to a temporary Entry before they are copied to disk
-		tmp.extension=*newExt;
-		#ifdef UNICODE
-			static_assert( false, "Unicode support not implemented" );
-		#else
-			::memcpy(	::memset(tmp.name,' ',TRDOS503_FILE_NAME_LENGTH_MAX),
-						newName, newName.GetLength()
-					);
-		#endif
+		tmp.extension=newExt.FirstChar();
+		newName.MemcpyAnsiTo( tmp.name, TRDOS503_FILE_NAME_LENGTH_MAX, ' ' );
 		// - setting important information about the File
 		tmp.parameterA = tmp.parameterB = officialFileSize;
 		__setStdParameter1__(&tmp,stdParams.param1), __setStdParameter2__(&tmp,stdParams.param2);
@@ -464,9 +458,9 @@
 
 	#define INFO_FILE_EX		_T("T%x")
 	
-	CString CTRDOS503::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
+	CDos::CPathString CTRDOS503::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
 		// returns File name concatenated with File extension for export of the File to another Windows application (e.g. Explorer)
-		CString result=__super::GetFileExportNameAndExt(file,shellCompliant);
+		CPathString result=__super::GetFileExportNameAndExt(file,shellCompliant);
 		if (!shellCompliant){
 			// exporting to another RIDE instance
 			const PCDirectoryEntry de=(PCDirectoryEntry)file;
@@ -523,7 +517,7 @@
 			case TUniFileType::SCREEN	: uftExt=TDirectoryEntry::BLOCK; break;
 			case TUniFileType::PRINT	: uftExt=TDirectoryEntry::PRINT; break;
 			default:
-				uftExt= zxExt.GetLength() ? *zxExt : TDirectoryEntry::BLOCK;
+				uftExt= zxExt.GetLength() ? zxExt.FirstChar() : TDirectoryEntry::BLOCK;
 				break;
 		}
 		// - initializing the description of File to import
@@ -857,7 +851,7 @@
 						dp.trdos->ShowFileProcessingError(de,errMsg);
 						return ERROR_CANCELLED; //TODO: making sure that the disk is in consistent state
 					}
-					const CString tmpName=dp.trdos->GetFileExportNameAndExt(de,false);
+					const CPathString tmpName=dp.trdos->GetFileExportNameAndExt(de,false);
 					// : importing File data from Buffer to new place in Image
 					PDirectoryEntry deFree=*pDeFree++;
 					*(PBYTE)deFree=TDirectoryEntry::END_OF_DIR; // marking the DirectoryEntry as the end of Directory (and thus Empty)
@@ -1036,7 +1030,7 @@
 				LPCTSTR err=nullptr;
 				const DWORD fileExportSize=trdos->ExportFile( de, &CMemFile(buffer,sizeof(buffer)), sizeof(buffer), &err );
 				if (err){
-					msg.Format( _T("%s: %s"), fileName, err );
+					msg.Format( _T("%s: %s"), (LPCTSTR)fileName, err );
 					return vp.TerminateAndGoToNextAction((LPCTSTR)msg);
 				}
 				// . writing the File to new location

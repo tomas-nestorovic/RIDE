@@ -313,14 +313,8 @@
 			return ERROR_FILE_EXISTS;
 		// - renaming
 		const PDirectoryEntry de=(PDirectoryEntry)file;
-		de->extension=*newExt;
-		#ifdef UNICODE
-			static_assert( false, "Unicode support not implemented" );
-		#else
-			::memcpy(	::memset(de->name,0,MDOS2_FILE_NAME_LENGTH_MAX),
-						newName, newName.GetLength()
-					);
-		#endif
+		de->extension=newExt.FirstChar();
+		newName.MemcpyAnsiTo( de->name, sizeof(de->name), '\0' );
 		MarkDirectorySectorAsDirty( rRenamedFile=file );
 		return ERROR_SUCCESS;
 	}
@@ -367,9 +361,9 @@
 
 	#define INFO_ATTRIBUTES	_T("R%x")
 
-	CString CMDOS2::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
+	CDos::CPathString CMDOS2::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
 		// returns File name concatenated with File extension for export of the File to another Windows application (e.g. Explorer)
-		CString result=__super::GetFileExportNameAndExt(file,shellCompliant);
+		CPathString result=__super::GetFileExportNameAndExt(file,shellCompliant);
 		if (!shellCompliant){
 			// exporting to another RIDE instance
 			const PCDirectoryEntry de=(PCDirectoryEntry)file;
@@ -427,7 +421,7 @@
 			case TUniFileType::SNAPSHOT_48k	: tmp.extension=TDirectoryEntry::SNAPSHOT; break;
 			case TUniFileType::SEQUENTIAL	: tmp.extension=TDirectoryEntry::SEQUENTIAL; break;
 			default:
-				tmp.extension= zxExt.GetLength() ? *zxExt : TDirectoryEntry::BLOCK;
+				tmp.extension= zxExt.GetLength() ? zxExt.FirstChar() : TDirectoryEntry::BLOCK;
 				break;
 		}
 		// - importing to Image

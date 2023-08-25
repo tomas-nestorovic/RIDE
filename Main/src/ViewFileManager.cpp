@@ -268,7 +268,7 @@
 				Utils::FatalError(ERROR_MSG_CANT_CHANGE_DIRECTORY,err);
 	}
 
-	TStdWinError CFileManagerView::__switchToDirectory__(PTCHAR path) const{
+	/*TStdWinError CFileManagerView::__switchToDirectory__(PTCHAR path) const{
 		// changes the current Directory; assumed that the Path is terminated by backslash; returns Windows standard i/o error
 		while (const PTCHAR backslash=_tcschr(path,'\\')){
 			// . switching to Subdirectory
@@ -288,7 +288,7 @@
 			path=1+backslash;
 		}
 		return ERROR_SUCCESS;
-	}
+	}*/
 
 	void CFileManagerView::SwitchToDirectory(CDos::PFile directory){
 		// puts current Directory onto top of PreviousDirectories stack and switches to the Directory specified

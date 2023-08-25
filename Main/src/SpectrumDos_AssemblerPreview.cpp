@@ -839,7 +839,7 @@
 			// . generating the HTML-formatted content
 			TUniFileType uft; TStdParameters params; DWORD tmp;
 			__importFileInformation__(
-				_tcsrchr( DOS->GetFileExportNameAndExt(file,false), ' ' ),
+				DOS->GetFileExportNameAndExt(file,false).FindLast(' '),
 				uft, params, tmp
 			);
 			if (!orgAddress)

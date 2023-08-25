@@ -458,12 +458,12 @@
 			if (bufName) *bufName='.';
 			if (bufExt)	 *bufExt=CPathString::Empty;
 		}else if (*(PDWORD)de==MSDOS7_DIR_DOTDOT){
-			if (bufName) *bufName=_T("..");
+			if (bufName) *bufName=CPathString::DotDot;
 			if (bufExt)	 *bufExt=CPathString::Empty;
 		}else{
 			if (bufName){
 				*bufName=CPathString( de->shortNameEntry.name, MSDOS7_FILE_NAME_LENGTH_MAX ).TrimRight(' ');
-				TCHAR &r=*const_cast<PTCHAR>((LPCTSTR)bufName);
+				TCHAR &r=*(PTCHAR)*bufName;
 				if (r==KANJI_PLACEHOLDER) r=KANJI; // Kanji character at the beginning of the Name
 			}
 			if (bufExt)
@@ -568,14 +568,13 @@
 	static CDos::CPathString __convertLongToShortTerm__(BYTE bufShortChars,LPCTSTR bufLong){
 		// returns BufferShort with long term (File name or extension) converted to short equivalent
 		CDos::CPathString result(bufShortChars);
-		PTCHAR j=const_cast<PTCHAR>((LPCTSTR)result);
+		PTCHAR j=result;
 			while (const TCHAR c=*bufLong++)
-				if (c!=' ' && c!='.'){ // preserving any other character but space or dot
+				if (c!=' ' && c!='.' && c<=255){ // preserving any other character but space or dot
 					*j++=c;
 					if (j-(LPCTSTR)result==bufShortChars) break;
 				}
-		result.TrimToLength( j-(LPCTSTR)result ).MakeUpper();
-		return result;
+		return result.TrimToCharExcl(j).MakeUpper();
 	}
 
 	void CMSDOS7::__generateShortFileNameAndExt__(PDirectoryEntry de,LPCTSTR longName,LPCTSTR longExt) const{
@@ -646,7 +645,7 @@
 				return ERROR_FILENAME_EXCED_RANGE;
 			TCHAR longNameAndExt[LONG_FILE_NAME_ENTRIES_COUNT_MAX*13+1]; // 13 = # of characters in one LongNameEntry
 			::lstrcpy(longNameAndExt,newName);
-			if (*newExt)
+			if (newExt.GetLength())
 				::lstrcat( ::lstrcat( longNameAndExt, _T(".") ), newExt );
 			// . allocating necessary number of DirectoryEntries to accommodate the long NameAndExtension
 			PFile longNameEntries[LONG_FILE_NAME_ENTRIES_COUNT_MAX+1]; // "+1" = short name entry
@@ -708,7 +707,7 @@
 		return result;
 	}
 
-	TStdWinError CMSDOS7::CreateSubdirectory(LPCTSTR name,DWORD winAttr,PDirectoryEntry &rCreatedSubdir){
+	TStdWinError CMSDOS7::CreateSubdirectory(RCPathString name,DWORD winAttr,PDirectoryEntry &rCreatedSubdir){
 		// creates a new Subdirectory in CurrentDirectory; returns Windows standard i/o error
 		// - allocating new Directory Cluster
 		const TCluster32 cluster=__allocateAndResetDirectoryCluster__();
@@ -721,7 +720,7 @@
 			CPathString tmpName=name, tmpExt;
 			if (const LPCTSTR pExt=tmpName.FindLastDot()){
 				tmpExt=pExt+1;
-				tmpName.TrimToLength( pExt-(LPCTSTR)tmpName );
+				tmpName.TrimToCharExcl(pExt);
 			}
 			__generateShortFileNameAndExt__( &tmp, tmpName, tmpExt );
 			// . size
@@ -772,15 +771,15 @@
 				: 0;
 	}
 	
-	TStdWinError CMSDOS7::MoveFileToCurrDir(PDirectoryEntry de,LPCTSTR exportFileNameAndExt,PFile &rMovedFile){
+	TStdWinError CMSDOS7::MoveFileToCurrDir(PDirectoryEntry de,RCPathString exportFileNameAndExt,PFile &rMovedFile){
 		// moves given File to CurrentDirectory; returns Windows standard i/o error
 		// - "registering" the File's Name+Extension in CurrentDirectory
-		TCHAR bufName[MAX_PATH], *pExt;
-		if (const PTCHAR pDot=_tcsrchr(::lstrcpy(bufName,exportFileNameAndExt),'.'))
-			*pDot='\0', pExt=1+pDot;
-		else
-			pExt=_T("");
-		if (const TStdWinError err=ChangeFileNameAndExt( de, bufName, pExt, rMovedFile )) // also destroys original short name DirectoryEntry (leaving long name Entries orphaned but that's still a legal approach)
+		CPathString bufName=exportFileNameAndExt, bufExt;
+		if (const LPCTSTR pExt=bufName.FindLastDot()){
+			bufExt=pExt+1;
+			bufName.TrimToCharExcl(pExt);
+		}
+		if (const TStdWinError err=ChangeFileNameAndExt( de, bufName, bufExt, rMovedFile )) // also destroys original short name DirectoryEntry (leaving long name Entries orphaned but that's still a legal approach)
 			return err;
 		// - if moving a File with "8.3" name (e.g. "MYFILE.TXT"), moving the single DirectoryEntry "manually"
 		if (rMovedFile==de) // a "8.3" named File - the above "registration" didn't function for it
@@ -791,7 +790,7 @@
 				return Utils::ErrorByOs( ERROR_VOLMGR_DISK_NOT_ENOUGH_SPACE, ERROR_CANNOT_MAKE );
 		// - if a Directory is being moved, changing the reference to the parent in the "dotdot" DirectoryEntry
 		if (IsDirectory(rMovedFile))
-			if (const PDirectoryEntry dotdot=(PDirectoryEntry)__findFile__( rMovedFile, _T(".."), CPathString::Empty, nullptr ))
+			if (const PDirectoryEntry dotdot=(PDirectoryEntry)__findFile__( rMovedFile, CPathString::DotDot, CPathString::Empty, nullptr ))
 				dotdot->shortNameEntry.__setFirstCluster__(	currentDir!=MSDOS7_DIR_ROOT
 															? ((PCDirectoryEntry)currentDir)->shortNameEntry.__getFirstCluster__()
 															: 0
@@ -918,21 +917,20 @@
 		return ERROR_SUCCESS;
 	}
 
-	PTCHAR CMSDOS7::__getFileExportNameAndExt__(LPCTSTR bufName,LPCTSTR bufExt,bool shellCompliant,PTCHAR pOutBuffer){
+	CDos::CPathString CMSDOS7::__getFileExportNameAndExt__(LPCTSTR bufName,LPCTSTR bufExt,bool shellCompliant){
 		// populates Buffer with specified export Name and Extension and returns the Buffer; returns Null if File cannot be exported (e.g. a "dotdot" entry in MS-DOS); caller guarantees that the Buffer is at least MAX_PATH characters big
 		if (*bufExt)
-			return ::lstrcat( ::lstrcat( ::lstrcpy(pOutBuffer,bufName), _T(".") ), bufExt );
+			return CPathString(bufName).AppendDotExtension(bufExt);
 		else
-			return ::lstrcpy(pOutBuffer,bufName);
+			return bufName;
 	}
 
-	CString CMSDOS7::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
+	CDos::CPathString CMSDOS7::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
 		// returns File name concatenated with File extension for export of the File to another Windows application (e.g. Explorer)
 		if (!((PCDirectoryEntry)file)->shortNameEntry.__isDotOrDotdot__()){
 			CPathString bufName, bufExt;
 			GetFileNameOrExt( file, &bufName, &bufExt );
-			TCHAR buf[16384];
-			return __getFileExportNameAndExt__( bufName, bufExt, shellCompliant, buf );
+			return __getFileExportNameAndExt__( bufName, bufExt, shellCompliant );
 		}else
 			return CPathString::Empty;
 	}
@@ -956,7 +954,7 @@
 			CPathString tmpName=nameAndExtension, tmpExt;
 			if (const LPCTSTR pExt=tmpName.FindLastDot()){
 				tmpExt=pExt+1;
-				tmpName.TrimToLength( pExt-(LPCTSTR)tmpName );
+				tmpName.TrimToCharExcl(pExt);
 			}
 			__generateShortFileNameAndExt__( &tmp, tmpName, tmpExt );
 			// . size

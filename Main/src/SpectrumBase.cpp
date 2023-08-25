@@ -242,12 +242,12 @@
 		CPathString name,ext;
 		GetFileNameOrExt( file, &name, &ext );
 		if (ext.GetLength())
-			name+='.', name+=ext;
+			name.AppendDotExtension(ext);
 		TCHAR buf[1024];
 		return TZxRom::ZxToAscii( name.GetAnsi(), name.GetLength(), buf );
 	}
 
-	CString CSpectrumBase::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
+	CDos::CPathString CSpectrumBase::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
 		// returns File name concatenated with File extension for export of the File to another Windows application (e.g. Explorer)
 		if (shellCompliant){
 			// exporting to non-RIDE target (e.g. to the Explorer); excluding from the Buffer characters that are forbidden in FAT32 long file names

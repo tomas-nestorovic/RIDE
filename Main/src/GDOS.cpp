@@ -300,7 +300,7 @@
 		// - setting the Name trimmed to 10 characters at most
 		newName.MemcpyAnsiTo( name, sizeof(name), ' ' );
 		// - setting FileType
-		fileType=(TFileType)*newExt;
+		fileType=(TFileType)newExt.FirstChar();
 		// - setting up StandardParameters for a StandardZxType
 		//nop (up to the caller)
 	}
@@ -421,7 +421,7 @@
 		return ERROR_SUCCESS;
 	}
 
-	CString CGDOS::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
+	CDos::CPathString CGDOS::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
 		// returns File name concatenated with File extension for export of the File to another Windows application (e.g. Explorer)
 		const PDirectoryEntry de=(PDirectoryEntry)file;
 		CPathString result=__super::GetFileExportNameAndExt(de,shellCompliant);
@@ -430,10 +430,8 @@
 			TCHAR bufExt[16];
 			if (de!=ZX_DIR_ROOT){
 				if (const LPCTSTR pDot=result.FindLastDot())
-					result.TrimToLength( pDot+1-(LPCTSTR)result );
-				else
-					result+='.';
-				result+=de->__getFileTypeDesc__(bufExt);
+					result.TrimToCharExcl(pDot);
+				result.AppendDotExtension( de->__getFileTypeDesc__(bufExt) );
 			}
 		}else{
 			// exporting to another RIDE instance
@@ -534,7 +532,7 @@
 			return ERROR_BAD_LENGTH;
 		// - importing to Image
 		CFatPath fatPath(this,offset+fileSize);
-		if (err=__importFileData__( f, &tmp, zxName, CPathString(tmp.fileType), fileSize, true, rFile, fatPath ))
+		if (err=__importFileData__( f, &tmp, zxName, tmp.fileType, fileSize, true, rFile, fatPath ))
 			return err;
 		// - finishing initialization of DirectoryEntry of successfully imported File
 		const PDirectoryEntry de=(PDirectoryEntry)rFile;

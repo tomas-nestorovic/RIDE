@@ -254,7 +254,7 @@ using namespace Yahel;
 			// physical Files (dragged over from Explorer)
 			if (const HDROP hDrop=(HDROP)::GlobalLock(hg)){
 				WCHAR buf[MAX_PATH];
-				::DragQueryFileW(hDrop,0,buf,MAX_PATH); // 0 = only first File, others ignored
+				::DragQueryFileW(hDrop,0,buf,ARRAYSIZE(buf)); // 0 = only first File, others ignored
 				OpenPhysicalFile(buf);
 				::DragFinish(hDrop);
 				::GlobalUnlock(hg);
