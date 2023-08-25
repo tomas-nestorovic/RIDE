@@ -562,13 +562,3 @@ addCharInWParam:						rEditor.__addChar__(wParam);
 		// creates and returns the ZX Spectrum line Editor
 		return PropGrid::Custom::DefineEditor( 0, MAKEWORD(nCharsMax,paddingChar), __drawValue__, __create__, __help__, onValueConfirmed?onValueConfirmed:__onChanged__, onValueChanged );
 	}
-
-	LPCSTR CSpectrumBase::TZxRom::CLineComposerPropGridEditor::GetCurrentZxText() const{
-		// returns Byte representation of current state of the edited line
-		return buf;
-	}
-
-	BYTE CSpectrumBase::TZxRom::CLineComposerPropGridEditor::GetCurrentZxTextLength() const{
-		// returns the length of Byte representation of current state of the edited line
-		return length;
-	}

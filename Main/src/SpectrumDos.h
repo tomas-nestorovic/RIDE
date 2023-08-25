@@ -193,13 +193,13 @@
 				BYTE length;
 				bool hexaLow; // True <=> ready to modify the lower half-byte in hexa mode
 				char paddingChar;
-				char buf[255]; // "big enough" to contain any ZX Spectrum line
+				char buf[256]; // "big enough" to contain any ZX Spectrum line
 				bool __addChar__(char c);
 			public:
 				static PropGrid::PCEditor Define(BYTE nCharsMax,char paddingChar,PropGrid::Custom::TOnValueConfirmed onValueConfirmed,PropGrid::TOnValueChanged onValueChanged);
 
-				LPCSTR GetCurrentZxText() const;
-				BYTE GetCurrentZxTextLength() const;
+				inline LPCSTR GetCurrentZxText() const{ return buf; } // returns Byte representation of current state of the edited line
+				inline BYTE GetCurrentZxTextLength() const{ return length; } // returns the length of Byte representation of current state of the edited line
 			} lineComposerPropGridEditor;
 
 			WORD PrintAt(HDC dc,LPCSTR zx,short zxLength,RECT r,UINT drawTextFormat,char zxBefore=' ') const;
@@ -257,7 +257,7 @@
 				static bool WINAPI __onFileNameConfirmed__(PVOID file,HWND,PVOID);
 
 				const CSpectrumBaseFileManagerView &rZxFileManager;
-				mutable TCHAR bufOldCmd[256];
+				mutable char bufOldCmd[256];
 			public:
 				CVarLengthCommandLineEditor(const CSpectrumBaseFileManagerView &rZxFileManager);
 
