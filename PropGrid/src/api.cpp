@@ -153,10 +153,10 @@
 											);
 			upDownWndProc0=(WNDPROC)::SetWindowLong( hUpDown, GWL_WNDPROC, (LONG)__upDown_wndProc__ );
 			::SetWindowLong( hEdit, GWL_STYLE, ::GetWindowLong(hEdit,GWL_STYLE)|ES_NUMBER );
-			::SendMessage( hUpDown, UDM_SETBUDDY, (WPARAM)hEdit, 0 );
-			::SendMessage( hUpDown, UDM_SETBASE, bHexadecimal?16:10, 0 );
-			::SendMessage( hUpDown, UDM_SETRANGE32, rLimits.iMax, rLimits.iMin );
-			::SendMessage( hUpDown, UDM_SETPOS32, 0, iCurrent );
+			::SendMessageW( hUpDown, UDM_SETBUDDY, (WPARAM)hEdit, 0 );
+			::SendMessageW( hUpDown, UDM_SETBASE, bHexadecimal?16:10, 0 );
+			::SendMessageW( hUpDown, UDM_SETRANGE32, rLimits.iMax, rLimits.iMin );
+			::SendMessageW( hUpDown, UDM_SETPOS32, 0, iCurrent );
 			return hUpDown;
 		}else
 			return 0;

@@ -11,7 +11,7 @@
 									PropGrid::TOnValueChanged onValueChanged
 								)
 		// ctor
-		: TEditor( EDITOR_DEFAULT_HEIGHT, true, std::min<>(STRING_LENGTH_MAX,nCharsMax), onEllipsisBtnClicked, onValueChanged )
+		: TEditor( EDITOR_DEFAULT_HEIGHT, true, std::min(STRING_LENGTH_MAX,nCharsMax), onEllipsisBtnClicked, onValueChanged )
 		, wideChar(wideChar)
 		, onValueConfirmed( onValueConfirmed ? onValueConfirmed : __alwaysAccept__ ) {
 	}
@@ -26,7 +26,7 @@
 
 	HWND TStringEditor::__createEditBox__(HWND hParent,UINT extraStyle){
 		// creates and returns an Edit box with given ExtraStyle
-		const HWND hEdit=::CreateWindow(WC_EDIT,
+		const HWND hEdit=::CreateWindowW(WC_EDITW,
 										nullptr, // descendant sets the edit-box content
 										extraStyle | ES_AUTOHSCROLL | ES_WANTRETURN | EDITOR_STYLE,
 										0,0, 1,1,
@@ -41,7 +41,7 @@
 		// - creating the Edit-box
 		const HWND hEdit=__createEditBox__(hParent,0);
 		// - constraining the length of text in the Edit-box
-		Edit_LimitText(hEdit,valueSize);
+		::SendMessageW( hEdit, EM_LIMITTEXT, valueSize, 0 );
 		// - returning the Edit-box
 		return hEdit;
 	}
@@ -74,7 +74,7 @@
 				// a key has been pressed
 				// . selecting all text upon the Ctrl+A shortcut
 				if (wParam=='A' && ::GetKeyState(VK_CONTROL)<0)
-					Edit_SetSel(hEdit,0,-1);
+					::SendMessageW( hEdit, EM_SETSEL, 0, -1 );
 				// . base
 				break;
 		}

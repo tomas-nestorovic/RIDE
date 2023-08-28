@@ -27,10 +27,10 @@
 			const HBITMAP hTmpBmp=::CreateCompatibleBitmap( pdis->hDC, w, h ); // TemporaryBitmap
 			const HGDIOBJ hBmp0=::SelectObject(dcTmpBmp,hTmpBmp);
 				const HWND hSysLink=__createMainControl__( value, pdis->hwndItem ); // creating the temporary SysLink control to adopt the appearance of
-					::SendMessage( hSysLink, WM_SETFONT, (WPARAM)TPropGridInfo::FONT_DEFAULT, 0 ); // explicitly setting DPI-scaled font
+					::SendMessageW( hSysLink, WM_SETFONT, (WPARAM)TPropGridInfo::FONT_DEFAULT, 0 ); // explicitly setting DPI-scaled font
 					::SetWindowPos(	hSysLink, nullptr, 0,0, w,h, SWP_NOZORDER );
 					// . capturing the SysLink visuals to the TemporaryBitmap
-					::SendMessage( hSysLink, WM_PRINTCLIENT, (WPARAM)dcTmpBmp, PRF_CHILDREN|PRF_CLIENT );
+					::SendMessageW( hSysLink, WM_PRINTCLIENT, (WPARAM)dcTmpBmp, PRF_CHILDREN|PRF_CLIENT );
 					// . drawing the captured visuals at place of the SysLink control
 					::TransparentBlt( pdis->hDC, 0,0, w,h, dcTmpBmp, 0,0, w,h, ::GetSysColor(COLOR_BTNFACE) );
 				::DestroyWindow(hSysLink);
@@ -67,7 +67,7 @@
 				LHITTESTINFO info;
 					info.pt.x=GET_X_LPARAM(lParam), info.pt.y=GET_Y_LPARAM(lParam);
 					info.item.mask=LIF_ITEMINDEX|LIF_ITEMID;
-				if (::SendMessage( hWnd, LM_HITTEST, 0, (LPARAM)&info )){
+				if (::SendMessageW( hWnd, LM_HITTEST, 0, (LPARAM)&info )){
 					ignoreRequestToDestroy=true;
 						const TPropGridInfo::TItem::TValue &value=TEditor::pSingleShown->value;
 						bool destroy;

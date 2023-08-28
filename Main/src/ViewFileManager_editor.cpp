@@ -25,16 +25,16 @@
 			rcEditorArea.right=lv.GetColumnWidth(0);
 		// - creating the Editor
 		(HWND)hEditor=PropGrid::BeginEditValue( value, file, editor, rcEditorArea, 0, parent.m_hWnd, (HWND *)&hEllipsisButton );
-		wndProc0=(WNDPROC)::SetWindowLong(hEditor,GWL_WNDPROC,(long)__wndProc__);
-		::SendMessage( hEditor, WM_SETFONT, (WPARAM)parent.rFont.m_hObject, 0 );
-		ellipsisButtonWndProc0=(WNDPROC)::SetWindowLong(hEllipsisButton,GWL_WNDPROC,(long)__ellipsisButton_wndProc__);
+		wndProc0=(WNDPROC)::SetWindowLongW(hEditor,GWL_WNDPROC,(long)__wndProc__);
+		::SendMessageW( hEditor, WM_SETFONT, (WPARAM)parent.rFont.m_hObject, 0 );
+		ellipsisButtonWndProc0=(WNDPROC)::SetWindowLongW(hEllipsisButton,GWL_WNDPROC,(long)__ellipsisButton_wndProc__);
 	}
 
 	CFileManagerView::CEditorBase::~CEditorBase(){
 		// dtor
 		// - revoking the subclassing (for the Editor to be NOT able to receive any custom messages)
-		::SetWindowLong( hEditor, GWL_WNDPROC, (long)wndProc0 );
-		::SetWindowLong( hEllipsisButton, GWL_WNDPROC, (long)ellipsisButtonWndProc0 );
+		::SetWindowLongW( hEditor, GWL_WNDPROC, (long)wndProc0 );
+		::SetWindowLongW( hEllipsisButton, GWL_WNDPROC, (long)ellipsisButtonWndProc0 );
 	}
 
 	LRESULT CALLBACK CFileManagerView::CEditorBase::__wndProc__(HWND hEditor,UINT msg,WPARAM wParam,LPARAM lParam){
@@ -47,7 +47,7 @@
 					const CDos::PFile file=pSingleShown->file;
 					const RCFileManagerView parent=pSingleShown->parent;
 					// . base
-					::CallWindowProc(pSingleShown->wndProc0,hEditor,msg,wParam,lParam);
+					::CallWindowProcW(pSingleShown->wndProc0,hEditor,msg,wParam,lParam);
 					// . if this Editor no longer exists, we can edit the next/previous Information on current File
 					if (!pSingleShown)
 						if (::GetKeyState(VK_SHIFT)<0)	// Shift pressed = editing previous editable Information on current File
@@ -60,12 +60,12 @@
 			case WM_NCDESTROY:
 				// about to be destroyed
 				// . base
-				::CallWindowProc(pSingleShown->wndProc0,hEditor,msg,wParam,lParam);
+				::CallWindowProcW(pSingleShown->wndProc0,hEditor,msg,wParam,lParam);
 				// . destroying
 				delete pSingleShown; pSingleShown=nullptr;
 				return 0;
 		}
-		return ::CallWindowProc(pSingleShown->wndProc0,hEditor,msg,wParam,lParam);
+		return ::CallWindowProcW(pSingleShown->wndProc0,hEditor,msg,wParam,lParam);
 	}
 
 	LRESULT CALLBACK CFileManagerView::CEditorBase::__ellipsisButton_wndProc__(HWND hEllipsisButton,UINT msg,WPARAM wParam,LPARAM lParam){
@@ -78,7 +78,7 @@
 					const CDos::PFile file=pSingleShown->file;
 					const RCFileManagerView parent=pSingleShown->parent;
 					// . base
-					::CallWindowProc(pSingleShown->ellipsisButtonWndProc0,hEllipsisButton,msg,wParam,lParam);
+					::CallWindowProcW(pSingleShown->ellipsisButtonWndProc0,hEllipsisButton,msg,wParam,lParam);
 					// . if this Editor no longer exists, we can edit the next/previous Information on current File
 					if (!pSingleShown)
 						if (::GetKeyState(VK_SHIFT)<0) // Shift pressed = editing previous editable Information on current File
@@ -89,7 +89,7 @@
 				}else
 					break;
 		}
-		return ::CallWindowProc(pSingleShown->ellipsisButtonWndProc0,hEllipsisButton,msg,wParam,lParam);
+		return ::CallWindowProcW(pSingleShown->ellipsisButtonWndProc0,hEllipsisButton,msg,wParam,lParam);
 	}
 
 	void CFileManagerView::CEditorBase::Repaint() const{
@@ -118,7 +118,7 @@
 		// creates and returns PropertyGrid's specified built-in Editor
 		RCFileManagerView &rfm=*CDos::GetFocused()->pFileManager;
 		const PEditorBase result=new CEditorBase( file, value, editor, rfm );
-		::SendMessage( result->hEditor, WM_SETFONT, (WPARAM)rfm.rFont.m_hObject, 0 );
+		::SendMessageW( result->hEditor, WM_SETFONT, (WPARAM)rfm.rFont.m_hObject, 0 );
 		return result;
 	}
 
@@ -171,7 +171,7 @@
 		}else{
 			lv.SetFocus();	// to edit File's label, the ListCtrl must be fokused
 			const HWND hEdit=ListView_EditLabel( lv.m_hWnd, fileId );
-			CEditorBase::pSingleShown=(PEditorBase)::SetWindowLong( hEdit, GWL_WNDPROC, (long)__editLabel_wndProc__ );
+			CEditorBase::pSingleShown=(PEditorBase)::SetWindowLongW( hEdit, GWL_WNDPROC, (long)__editLabel_wndProc__ );
 		}
 		// - emptying the clipboard
 		if (ownedDataSource) ::OleSetClipboard(nullptr);
@@ -182,7 +182,7 @@
 			// preventing the focus to be stolen by the parent (for some reason, the TdiView receives focus if the Editor is clicked)
 			return MA_ACTIVATE;
 		else
-			return ::CallWindowProc( (WNDPROC)CEditorBase::pSingleShown, hEdit, msg, wParam, lParam );
+			return ::CallWindowProcW( (WNDPROC)CEditorBase::pSingleShown, hEdit, msg, wParam, lParam );
 	}
 
 	void CFileManagerView::__editFileInformation__(CDos::PFile file,BYTE editableInformationSearchDirection) const{
@@ -254,8 +254,8 @@
 
 	afx_msg void CFileManagerView::__onEndLabelEdit__(NMHDR *pNMHDR,LRESULT *pResult){
 		// end of File label editing (occurs in DisplayMode other than Report)
-		const NMLVDISPINFO *const lpdi=(NMLVDISPINFO *)pNMHDR;
-		if (const LPCTSTR label=lpdi->item.pszText){ // editing NOT cancelled
+		const NMLVDISPINFOW *const lpdi=(NMLVDISPINFOW *)pNMHDR;
+		if (const LPCWSTR label=lpdi->item.pszText){ // editing NOT cancelled
 			CDos::PFile renamedFile;
 			CDos::CPathString bufName=label;
 			const CDos::CPathString bufExt=bufName.DetachExtension();

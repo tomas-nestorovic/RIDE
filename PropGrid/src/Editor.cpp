@@ -29,16 +29,18 @@
 											HWND_MESSAGE, // "Message-Only Window" (invisible window that only processes messages)
 											0,GET_PROPGRID_HINSTANCE(hParent), nullptr
 										);
-		(WNDPROC)wndProc0=SubclassWindow(hMainCtrl,editor->__wndProc__);
+
+		(WNDPROC)wndProc0=(WNDPROC)::SetWindowLongW( hMainCtrl, GWLP_WNDPROC, (LPARAM)editor->__wndProc__ );
 		(WNDPROC)ellipsisBtnWndProc0=SubclassWindow(hEllipsisBtn,__ellipsisBtn_wndProc__);
-		::SendMessage( hMainCtrl, WM_SETFONT, (WPARAM)TPropGridInfo::FONT_DEFAULT, 0 );
+		::SendMessageW( hMainCtrl, WM_SETFONT, (WPARAM)TPropGridInfo::FONT_DEFAULT, 0 );
 		::BringWindowToTop(hMainCtrl);
-		::SendMessage( hEllipsisBtn, WM_SETFONT, (WPARAM)TPropGridInfo::FONT_DEFAULT, 0 );
+		::SendMessageW( hEllipsisBtn, WM_SETFONT, (WPARAM)TPropGridInfo::FONT_DEFAULT, 0 );
 		::SetWindowLong( hEllipsisBtn, GWL_USERDATA, (LONG)editor->onEllipsisBtnClicked );
 		::BringWindowToTop(hEllipsisBtn);
 		// - focusing the MainControl
 		::SetFocus( mainControlExists ? hMainCtrl : hEllipsisBtn );
 		//::SetCapture(_hMainCtrl); // commented out, otherwise the Ellipsis button won't be clickable by mouse
+		__nop();
 	}
 
 	TEditor::TControl::~TControl(){
@@ -165,7 +167,7 @@
 				return 0;
 			}
 		}
-		return ::CallWindowProc(pSingleShown->wndProc0,hWnd,msg,wParam,lParam);
+		return ::CallWindowProcW(pSingleShown->wndProc0,hWnd,msg,wParam,lParam);
 	}
 
 
@@ -224,7 +226,7 @@
 						return 0; // cannot Break (and CallWindowProc below) as the Editor no longer exists at this moment
 					default:
 						// forwarding the key to the MainControl
-						return ::CallWindowProc((WNDPROC)::GetWindowLong(pSingleShown->hMainCtrl,GWL_WNDPROC),
+						return ::CallWindowProcW((WNDPROC)::GetWindowLongW(pSingleShown->hMainCtrl,GWL_WNDPROC),
 												pSingleShown->hMainCtrl,
 												msg, wParam, lParam
 											);
@@ -238,7 +240,7 @@
 				// . forwarding the message to the MainControl
 				return __wndProc__( hEllipsisBtn, WM_KILLFOCUS, wParam, lParam );
 		}
-		return ::CallWindowProc(pSingleShown->ellipsisBtnWndProc0,hEllipsisBtn,msg,wParam,lParam);
+		return ::CallWindowProcW(pSingleShown->ellipsisBtnWndProc0,hEllipsisBtn,msg,wParam,lParam);
 	}
 
 
