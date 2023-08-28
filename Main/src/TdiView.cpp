@@ -130,7 +130,7 @@
 					if (!dosProps)
 						::lstrcpy( dosName, _T("Auto") );
 					else if (const LPCTSTR space=::StrChr(dosProps->name,' '))
-						::StrCpyN( dosName, dosProps->name, space-dosProps->name+1 );
+						::lstrcpyn( dosName, dosProps->name, space-dosProps->name+1 );
 					else
 						::lstrcpy( dosName, dosProps->name );
 					__addButton__( _T(""), ID_FILE_MRU_FILE1+i, 0xf030, 0x47bbbb );

@@ -1937,7 +1937,7 @@ namespace Utils{
 				}
 			case WM_SETTEXT:
 				// text about to change
-				::StrCpyN( psbi->text, (LPCTSTR)lParam, ARRAYSIZE(psbi->text) );
+				::lstrcpyn( psbi->text, (LPCTSTR)lParam, ARRAYSIZE(psbi->text) );
 				::InvalidateRect( hSplitBtn, nullptr, TRUE );
 				return 0;
 			case WM_PAINT:{
@@ -2144,7 +2144,7 @@ namespace Utils{
 			const HWND hParent=app.GetEnabledActiveWindow();
 			CFileDialog d(
 				defaultSaveName==nullptr,
-				singleFilter ? ::StrRChr(singleFilter,nullptr,'.') : nullptr,
+				singleFilter ? _tcsrchr(singleFilter,'.') : nullptr,
 				nullptr,
 				OFN_EXPLORER | OFN_OVERWRITEPROMPT | flags,
 				singleFilter,

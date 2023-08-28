@@ -312,7 +312,7 @@ importQuit1:		::DragFinish(hDrop);
 								}else{
 									// copying Files within the same Directory
 									const auto copyNameAndExt=GenerateExportNameAndExtOfNextFileCopy( ownedDataSource->__getFile__(i), false );
-									if (copyNameAndExt.IsValid()) // generating new FileName for each copied File
+									if (copyNameAndExt.GetLength()>0) // generating new FileName for each copied File
 										fileNameAndExt=copyNameAndExt;
 									else{
 										// error creating a File copy
@@ -406,7 +406,7 @@ importQuit2:		::GlobalUnlock(hg);
 						Utils::BytesToHigherUnits(DOS->GetFileSize(conflict),higherUnit,higherUnitName);
 						_stprintf( bufSkip, _T("Keep current file (%.2f %s)"), higherUnit, higherUnitName );
 					}
-					CNameConflictResolutionDialog d( DOS->GetFilePresentationNameAndExt(conflict), directory?_T("directory"):_T("file"), bufOverwrite,bufSkip );
+				CNameConflictResolutionDialog d( DOS->GetFilePresentationNameAndExt(conflict), directory?_T("directory"):_T("file"), bufOverwrite,bufSkip );
 				b=d.DoModal();
 				if (d.useForAllSubsequentConflicts==BST_CHECKED)
 					rConflictedSiblingResolution =	(rConflictedSiblingResolution&TConflictResolution::CUSTOM_MASK)

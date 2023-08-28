@@ -37,10 +37,10 @@
 		// ctor
 		::ZeroMemory(this,sizeof(*this));
 		::lstrcpyA( header, rParams.rev5?REV5_HEADER:STD_HEADER );
-		::strncpy(
+		::lstrcpynA(
 			creator,
 			Utils::ToStringA(  app.GetProfileString( INI_DSK, INI_CREATOR, _T(APP_ABBREVIATION) _T(" ") _T(APP_VERSION) )  ),
-			sizeof(creator)
+			sizeof(creator)+1
 		);
 		nHeads=2;
 	}
@@ -413,7 +413,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				EnableDlgItems( Controls1, EnableDlgItems(Controls2,!readOnly)&&allowTypeBeChanged );
 				// . Creator
 		{		const Utils::CVarTempReset<BYTE> nCyls0( rDiskInfo.nCylinders, 0 ); // converting the Creator field to a null-terminated string
-				DDX_Text( pDX, ID_CREATOR, (PTCHAR)(LPCTSTR)Utils::ToStringT(rDiskInfo.creator), sizeof(rDiskInfo.creator)+1 ); // "+1" = terminal Null character
+				DDX_Text( pDX, ID_CREATOR, const_cast<PTCHAR>((LPCTSTR)Utils::ToStringT(rDiskInfo.creator)), sizeof(rDiskInfo.creator)+1 ); // "+1" = terminal Null character
 					DDV_MaxChars( pDX, rDiskInfo.creator, sizeof(rDiskInfo.creator) );
 				if (!pDX->m_bSaveAndValidate){
 					// populating the Creator combo-box with preset names

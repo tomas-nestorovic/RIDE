@@ -50,8 +50,6 @@
 			static const CPathString Root;
 			static const CPathString DotDot;
 
-			static bool IsValidFat32LongNameChar(WCHAR c);
-
 			inline CPathString(){}
 			inline CPathString(const CString &s) : CString(s) {}
 			inline CPathString(TCHAR c) : CString(c) {}
@@ -75,6 +73,7 @@
 			inline LPCTSTR FindLast(TCHAR c) const{ return _tcsrchr( (LPCTSTR)*this, c ); }
 			inline LPCTSTR FindLastDot() const{ return FindLast('.'); }
 			bool Equals(const CPathString &r,TFnCompareNames comparer) const;
+			CPathString DetachExtension();
 			CPathString EscapeToString() const;
 			CPathString &AppendDotExtension(LPCTSTR extWithoutDot);
 			CPathString &MakeUpper();

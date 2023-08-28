@@ -257,9 +257,9 @@
 		const NMLVDISPINFO *const lpdi=(NMLVDISPINFO *)pNMHDR;
 		if (const LPCTSTR label=lpdi->item.pszText){ // editing NOT cancelled
 			CDos::PFile renamedFile;
-			TCHAR buf[MAX_PATH], *pDot=_tcsrchr(::lstrcpy(buf,label),'.');
-			if (pDot) *pDot='\0'; else pDot=_T(".");
-			const TStdWinError err=DOS->ChangeFileNameAndExt( (CDos::PFile)lpdi->item.lParam, buf, pDot+1, renamedFile );
+			CDos::CPathString bufName=label;
+			const CDos::CPathString bufExt=bufName.DetachExtension();
+			const TStdWinError err=DOS->ChangeFileNameAndExt( (CDos::PFile)lpdi->item.lParam, bufName, bufExt, renamedFile );
 			if ( *pResult=err==ERROR_SUCCESS )
 				__replaceFileDisplay__( (CDos::PFile)lpdi->item.lParam, renamedFile );
 			else

@@ -716,11 +716,8 @@
 		UDirectoryEntry tmp;
 			::ZeroMemory(&tmp,sizeof(tmp));
 			// . generating short name
-			CPathString tmpName=name, tmpExt;
-			if (const LPCTSTR pExt=tmpName.FindLastDot()){
-				tmpExt=pExt+1;
-				tmpName.TrimToCharExcl(pExt);
-			}
+			CPathString tmpName=name;
+			const CPathString tmpExt=tmpName.DetachExtension();
 			__generateShortFileNameAndExt__( &tmp, tmpName, tmpExt );
 			// . size
 			//nop (always 0)
@@ -773,11 +770,8 @@
 	TStdWinError CMSDOS7::MoveFileToCurrDir(PDirectoryEntry de,RCPathString exportFileNameAndExt,PFile &rMovedFile){
 		// moves given File to CurrentDirectory; returns Windows standard i/o error
 		// - "registering" the File's Name+Extension in CurrentDirectory
-		CPathString bufName=exportFileNameAndExt, bufExt;
-		if (const LPCTSTR pExt=bufName.FindLastDot()){
-			bufExt=pExt+1;
-			bufName.TrimToCharExcl(pExt);
-		}
+		CPathString bufName=exportFileNameAndExt;
+		const CPathString bufExt=bufName.DetachExtension();
 		if (const TStdWinError err=ChangeFileNameAndExt( de, bufName, bufExt, rMovedFile )) // also destroys original short name DirectoryEntry (leaving long name Entries orphaned but that's still a legal approach)
 			return err;
 		// - if moving a File with "8.3" name (e.g. "MYFILE.TXT"), moving the single DirectoryEntry "manually"
@@ -950,11 +944,8 @@
 		UDirectoryEntry tmp;
 			::ZeroMemory(&tmp,sizeof(tmp));
 			// . generating File's short name
-			CPathString tmpName=nameAndExtension, tmpExt;
-			if (const LPCTSTR pExt=tmpName.FindLastDot()){
-				tmpExt=pExt+1;
-				tmpName.TrimToCharExcl(pExt);
-			}
+			CPathString tmpName=nameAndExtension;
+			CPathString tmpExt=tmpName.DetachExtension();
 			__generateShortFileNameAndExt__( &tmp, tmpName, tmpExt );
 			// . size
 			tmp.shortNameEntry.size=fileSize;

@@ -83,7 +83,7 @@
 		const LPCTSTR pNewLabel=_tcsrchr(lpszURL,'#');
 		const int nNewPageChars= pNewLabel!=nullptr ? pNewLabel-lpszURL : ::lstrlen(lpszURL);
 		if (nCurrPageChars==nNewPageChars)
-			if ( navigationToLabel=!::StrCmpN(history.currentPage->url,lpszURL,nNewPageChars) )
+			if ( navigationToLabel=!::strncmp(history.currentPage->url,lpszURL,nNewPageChars) )
 				return;
 		// - adding new Page and making it Current
 		__saveCurrentPageScrollPosition__();

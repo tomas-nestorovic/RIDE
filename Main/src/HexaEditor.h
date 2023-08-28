@@ -101,6 +101,9 @@
 		// "Stream" column
 		inline WORD GetBytesPerRow() const{ return instance->GetStreamBytesCountPerRow(); }
 
+		// "Label" column
+		inline Yahel::TError SetLabelColumnParams(char nCharsSpace,bool alwaysVisible) const{ return instance->SetLabelColumnParams( nCharsSpace, alwaysVisible ); }
+
 		// highlights
 		inline bool AddHighlight(const Yahel::TPosInterval &range) const{ return instance->AddHighlight(range,COLOR_YELLOW); }
 		inline bool AddHighlight(Yahel::TPosition a,Yahel::TPosition z) const{ return instance->AddHighlight( Yahel::TPosInterval(a,z), COLOR_YELLOW ); }

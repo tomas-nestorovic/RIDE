@@ -75,6 +75,16 @@
 		return true;
 	}
 
+	CDos::CPathString CDos::CPathString::DetachExtension(){
+		//
+		CPathString ext;
+		if (const LPCTSTR pExt=FindLastDot()){
+			ext=pExt+1;
+			TrimToCharExcl(pExt);
+		}
+		return ext;
+	}
+
 	CDos::CPathString CDos::CPathString::EscapeToString() const{
 		// returns a string with non-alphanumeric characters substituted with "URL-like" escape sequences
 		CPathString result( CString(_T('\0'),16384) );
@@ -98,7 +108,7 @@
 
 	CDos::CPathString &CDos::CPathString::MakeUpper(){
 		//
-		__super::MakeUpper();
+		for( int i=0; i<GetLength(); i+=::lstrlen(::CharUpper(&at(i))) ); // sequence may be interrupted by '\0' chars (e.g. Spectrum DOSes)
 		return *this;
 	}
 
@@ -121,12 +131,6 @@
 		return TrimToLength( pc-(LPCTSTR)*this );
 	}
 
-	bool CDos::CPathString::IsValidFat32LongNameChar(WCHAR c){
-		// True <=> specified Character is valid in FAT32 long file names, otherwise False
-		static constexpr WCHAR ForbiddenChars[]=L"%#&<>|/";
-		return (WORD)c>=32 && !::wcschr(ForbiddenChars,c);
-	}
-
 	CDos::CPathString &CDos::CPathString::ExcludeFat32LongNameInvalidChars(){
 		// returns this string with FAT32 non-compliant characters excluded
 		const LPCTSTR buf=*this;
@@ -134,7 +138,7 @@
 		for( int i=0; i<GetLength(); i++ )
 			if (CMSDOS7::UDirectoryEntry::TLongNameEntry::IsCharacterValid(buf[i]))
 				*pCompliant++=buf[i];
-		return TrimToLength( pCompliant-buf );
+		return TrimToCharExcl(pCompliant);
 	}
 
 	CDos::CPathString &CDos::CPathString::Unescape(){

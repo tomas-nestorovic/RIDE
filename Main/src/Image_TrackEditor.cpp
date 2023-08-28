@@ -1075,7 +1075,7 @@
 											return -1; // invalid character in input
 										if (nItems==1 || ::isspace(u)) // no unit specifier ...
 											u='n'; // ... defaults to Nanoseconds
-										if (const LPCTSTR pUnit=::StrChr( Units, u )){
+										if (const LPCTSTR pUnit=_tcschr( Units, u )){
 											const char iUnit=pUnit-Units;
 											if (iUnit>=iLastUnitUsed)
 												return -1; // mustn't use bigger (or the same) units after smaller have been used

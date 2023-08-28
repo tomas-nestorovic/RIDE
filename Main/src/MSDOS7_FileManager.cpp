@@ -229,11 +229,8 @@
 	bool WINAPI CMSDOS7::CMsdos7FileManagerView::__onNameAndExtConfirmed__(PVOID file,LPCTSTR newNameAndExt,short nCharsOfNewNameAndExt){
 		// True <=> NewNameAndExtension confirmed, otherwise False
 		const PMSDOS7 msdos=(PMSDOS7)CDos::GetFocused();
-		CPathString tmpName=newNameAndExt, tmpExt;
-		if (const LPCTSTR pExt=tmpName.FindLastDot()){
-			tmpExt=pExt+1;
-			tmpName.TrimToCharExcl(pExt);
-		}
+		CPathString tmpName=newNameAndExt;
+		const CPathString tmpExt=tmpName.DetachExtension();
 		CDos::PFile renamedFile;
 		if (const TStdWinError err=msdos->ChangeFileNameAndExt(file,tmpName,tmpExt,renamedFile)){
 			// at least two Files with the same Name+Extension combination exist
@@ -283,7 +280,7 @@
 							file,
 							const_cast<PTCHAR>((LPCTSTR)DOS->GetFilePresentationNameAndExt(file)),
 							#ifdef UNICODE
-								PropGrid::String::DefineDynamicLengthEditorW( __onNameAndExtConfirmed__ )
+							PropGrid::String::DefineDynamicLengthEditorW( __onNameAndExtConfirmed__ )
 							#else
 								PropGrid::String::DefineDynamicLengthEditorA( __onNameAndExtConfirmed__ )
 							#endif
