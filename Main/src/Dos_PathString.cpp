@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "MSDOS7.h"
 
 	const CDos::CPathString CDos::CPathString::Empty;
 	const CDos::CPathString CDos::CPathString::Unnamed8=_T("Unnamed"); // must not exceed 8 characters!
@@ -131,7 +132,7 @@
 		const LPCTSTR buf=*this;
 		PTCHAR pCompliant=*this;
 		for( int i=0; i<GetLength(); i++ )
-			if (IsValidFat32LongNameChar(buf[i]))
+			if (CMSDOS7::UDirectoryEntry::TLongNameEntry::IsCharacterValid(buf[i]))
 				*pCompliant++=buf[i];
 		return TrimToLength( pCompliant-buf );
 	}

@@ -530,10 +530,10 @@
 			// still checking for presence of lowercase letters - those cannot be in a short name! (unless manually tweaked)
 		//else{
 			for( LPCTSTR p=newName; const TCHAR c=*p++; )
-				if (!UDirectoryEntry::TShortNameEntry::__isCharacterValid__(c))
+				if (!UDirectoryEntry::TShortNameEntry::IsCharacterValid(c))
 					return ERROR_ILLEGAL_CHARACTER;
 			for( LPCTSTR p=newExt; const TCHAR c=*p++; )
-				if (!UDirectoryEntry::TShortNameEntry::__isCharacterValid__(c))
+				if (!UDirectoryEntry::TShortNameEntry::IsCharacterValid(c))
 					return ERROR_ILLEGAL_CHARACTER;
 		//}
 		// - making sure that the NewName+NewExt combination is not empty
@@ -565,21 +565,20 @@
 		return ERROR_SUCCESS;
 	}
 
-	static CDos::CPathString __convertLongToShortTerm__(BYTE bufShortChars,LPCTSTR bufLong){
+	static CDos::CPathString __convertLongToShortTerm__(BYTE bufShortChars,CDos::RCPathString longName){
 		// returns BufferShort with long term (File name or extension) converted to short equivalent
-		CDos::CPathString result(bufShortChars);
+		CDos::CPathString result=longName;
 		PTCHAR j=result;
-			while (const TCHAR c=*bufLong++)
-				if (c!=' ' && c!='.' && c<=255){ // preserving any other character but space or dot
-					*j++=c;
-					if (j-(LPCTSTR)result==bufShortChars) break;
-				}
+		for( LPCTSTR i=result.MakeUpper(); const TCHAR c=*i++; )
+			if (CMSDOS7::UDirectoryEntry::TShortNameEntry::IsCharacterValid(c)){
+				*j++=c;
+				if (j-(LPCTSTR)result==bufShortChars) break;
+			}
 		return result.TrimToCharExcl(j).MakeUpper();
 	}
 
-	void CMSDOS7::__generateShortFileNameAndExt__(PDirectoryEntry de,LPCTSTR longName,LPCTSTR longExt) const{
+	void CMSDOS7::__generateShortFileNameAndExt__(PDirectoryEntry de,RCPathString longName,RCPathString longExt) const{
 		// generates and sets File's short name and extension based on specified LongNameAndExtension
-		ASSERT(longName!=nullptr && longExt!=nullptr);
 		// - converting to upper-case, and removing all spaces and intermediate dots
 		const CPathString bufShortName=__convertLongToShortTerm__( MSDOS7_FILE_NAME_LENGTH_MAX, longName );
 		const CPathString bufShortExt=__convertLongToShortTerm__( MSDOS7_FILE_EXT_LENGTH_MAX, longExt );
@@ -595,10 +594,10 @@
 		do{
 			TCHAR bufNumericTail[MSDOS7_FILE_NAME_LENGTH_MAX+1];
 			const BYTE nCharsInTail=::wsprintf(bufNumericTail,_T("~%d"),numericTail++);
-			if (nCharsInShortName+nCharsInTail<=MSDOS7_FILE_NAME_LENGTH_MAX)
-				::lstrcat( ::lstrcpy(tmp,bufShortName), bufNumericTail );
-			else
-				_stprintf( tmp, _T("%.*s%s"), MSDOS7_FILE_NAME_LENGTH_MAX-nCharsInTail, (LPCTSTR)bufShortName, bufNumericTail );
+			::lstrcat(
+				::lstrcpyn( tmp, bufShortName, MSDOS7_FILE_NAME_LENGTH_MAX-nCharsInTail+1 ),
+				bufNumericTail
+			);
 		}while (__changeShortFileNameAndExt__(de,tmp,bufShortExt,renamedFile)!=ERROR_SUCCESS);
 	}
 
@@ -917,9 +916,9 @@
 		return ERROR_SUCCESS;
 	}
 
-	CDos::CPathString CMSDOS7::__getFileExportNameAndExt__(LPCTSTR bufName,LPCTSTR bufExt,bool shellCompliant){
+	CDos::CPathString CMSDOS7::__getFileExportNameAndExt__(LPCTSTR bufName,RCPathString bufExt){
 		// populates Buffer with specified export Name and Extension and returns the Buffer; returns Null if File cannot be exported (e.g. a "dotdot" entry in MS-DOS); caller guarantees that the Buffer is at least MAX_PATH characters big
-		if (*bufExt)
+		if (bufExt.GetLength())
 			return CPathString(bufName).AppendDotExtension(bufExt);
 		else
 			return bufName;
@@ -930,7 +929,7 @@
 		if (!((PCDirectoryEntry)file)->shortNameEntry.__isDotOrDotdot__()){
 			CPathString bufName, bufExt;
 			GetFileNameOrExt( file, &bufName, &bufExt );
-			return __getFileExportNameAndExt__( bufName, bufExt, shellCompliant );
+			return __getFileExportNameAndExt__( bufName, bufExt );
 		}else
 			return CPathString::Empty;
 	}
@@ -1252,11 +1251,18 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 
 	static constexpr WCHAR ForbiddenChars[]={ 0x22, 0x2a, 0x2b, 0x2c, 0x2e, 0x2f, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f, 0x5b, 0x5c, 0x5d, 0x7c, '\0' };
 
-	bool CMSDOS7::UDirectoryEntry::TShortNameEntry::__isCharacterValid__(WCHAR c){
+	bool CMSDOS7::UDirectoryEntry::TShortNameEntry::IsCharacterValid(WCHAR c){
 		// True <=> specified Character is valid in short name, otherwise False
-		if (c<=' ' && c!=KANJI) return false;
-		if ('a'<=c && c<='z') return false;
-		if (c>255) return false;
+		if (!TLongNameEntry::IsCharacterValid(c)) return false;
+		if (::IsCharSpaceW(c)) return false;
+		if (::IsCharLowerW(c)) return false;
+		return c<=127;
+	}
+
+	bool CMSDOS7::UDirectoryEntry::TLongNameEntry::IsCharacterValid(WCHAR c){
+		// True <=> specified Character is valid in short name, otherwise False
+		if (c=='\0') return true; // for practical reasons, RIDE tolerates trail Null character
+		if (c<' ') return false;
 		return !::wcschr(ForbiddenChars,c);
 	}
 

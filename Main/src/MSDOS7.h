@@ -155,7 +155,7 @@
 			void __init__();
 		} *PFsInfoSector;
 		typedef const TFsInfoSector *PCFsInfoSector;
-
+	public:
 		#pragma pack(1)
 		typedef union UDirectoryEntry{
 			enum:char{
@@ -165,7 +165,7 @@
 			};
 			#pragma pack(1)
 			struct TShortNameEntry sealed{
-				static bool __isCharacterValid__(WCHAR c);
+				static bool IsCharacterValid(WCHAR c);
 
 				char name[MSDOS7_FILE_NAME_LENGTH_MAX];
 				char extension[MSDOS7_FILE_EXT_LENGTH_MAX];
@@ -185,6 +185,8 @@
 			} shortNameEntry;
 			#pragma pack(1)
 			struct TLongNameEntry sealed{
+				static bool IsCharacterValid(WCHAR c);
+
 				BYTE sequenceNumber;
 				WCHAR name1[5];
 				BYTE attributes;
@@ -193,12 +195,10 @@
 				WCHAR name2[6];
 				WORD zero2;
 				WCHAR name3[2];
-
-				//bool __isCharacterValid__(WCHAR c) const; //TODO
 			} longNameEntry;
 		} *PDirectoryEntry;
 		typedef const UDirectoryEntry *PCDirectoryEntry;
-
+	private:
 		typedef CMSDOS7 *PMSDOS7;
 
 		struct TMsdos7DirectoryTraversal sealed:public TDirectoryTraversal{
@@ -299,7 +299,7 @@
 		static TLogSector32 __cluster2logSector__(TCluster32 c,PCBootSector boot);
 		static UINT AFX_CDECL __removeLongNames_thread__(PVOID _pCancelableAction);
 		static void __informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId);
-		static CPathString __getFileExportNameAndExt__(LPCTSTR bufName,LPCTSTR bufExt,bool shellCompliant);
+		static CPathString __getFileExportNameAndExt__(LPCTSTR bufName,RCPathString bufExt);
 
 		bool dontShowLongFileNames, dontShowDotEntries, dontShowDotdotEntries;
 
@@ -317,7 +317,7 @@
 		void __deleteLongFileNameEntries__(PCDirectoryEntry de) const;
 		void __getShortFileNameAndExt__(PCDirectoryEntry de,PPathString bufName,PPathString bufExt) const;
 		TStdWinError __changeShortFileNameAndExt__(PDirectoryEntry de,RCPathString newName,RCPathString newExt,PDirectoryEntry &rRenamedFile) const;
-		void __generateShortFileNameAndExt__(PDirectoryEntry de,LPCTSTR longName,LPCTSTR longExt) const;
+		void __generateShortFileNameAndExt__(PDirectoryEntry de,RCPathString longName,RCPathString longExt) const;
 		bool __getLongFileNameAndExt__(PCDirectoryEntry de,PPathString bufName,PPathString bufExt) const;
 		TStdWinError __changeLongFileNameAndExt__(PDirectoryEntry de,RCPathString newName,RCPathString newExt,PDirectoryEntry &rRenamedFile) const;
 	public:
