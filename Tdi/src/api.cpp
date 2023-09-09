@@ -56,7 +56,14 @@
 		return true;
 	}
 
-	void WINAPI CTdiCtrl::InsertTab(HWND hTdi,int iIndex,LPCTSTR tabName,TTab::PContent tabContent,bool makeCurrent,TTab::TCanBeClosed fnCanBeClosed,TTab::TOnClosing fnOnTabClosing){
+	void WINAPI CTdiCtrl::InsertTabA(HWND hTdi,int iIndex,LPCSTR tabName,TTab::PContent tabContent,bool makeCurrent,TTab::TCanBeClosed fnCanBeClosed,TTab::TOnClosing fnOnTabClosing){
+		// adds to specified position (Index) a new Tab with given Name and Content
+		WCHAR bufW[1024];
+		::MultiByteToWideChar( CP_ACP,0, tabName,-1, bufW,ARRAYSIZE(bufW) );
+		return InsertTabW( hTdi, iIndex, bufW, tabContent, makeCurrent, fnCanBeClosed, fnOnTabClosing );
+	}
+
+	void WINAPI CTdiCtrl::InsertTabW(HWND hTdi,int iIndex,LPCWSTR tabName,TTab::PContent tabContent,bool makeCurrent,TTab::TCanBeClosed fnCanBeClosed,TTab::TOnClosing fnOnTabClosing){
 		// adds to specified position (Index) a new Tab with given Name and Content
 		for( int i=TabCtrl_GetItemCount(hTdi); i--; ){
 			if (GetTabContent(hTdi,i)==tabContent){
@@ -67,32 +74,44 @@
 				return;
 			}
 		}
-		TCITEM ti;
+		TCITEMW ti;
 			ti.mask=TCIF_TEXT|TCIF_PARAM;
-			ti.pszText=(PTCHAR)tabName;
+			ti.pszText=(PWCHAR)tabName;
 			ti.lParam=(LPARAM)new TTabInfo( fnCanBeClosed, fnOnTabClosing, tabContent );
-		TabCtrl_InsertItem( hTdi, iIndex, &ti );
+		::SendMessageW( hTdi, TCM_INSERTITEMW, iIndex, (LPARAM)&ti );
 		if (makeCurrent){
 			SwitchToTab( hTdi, iIndex );
 			::InvalidateRect( hTdi, nullptr, TRUE );
 		}
 	}
 
-	void WINAPI CTdiCtrl::AddTabLast(HWND hTdi,LPCTSTR tabName,TTab::PContent tabContent,bool makeCurrent,TTab::TCanBeClosed fnCanBeClosed,TTab::TOnClosing fnOnTabClosing){
+	void WINAPI CTdiCtrl::AddTabLastA(HWND hTdi,LPCSTR tabName,TTab::PContent tabContent,bool makeCurrent,TTab::TCanBeClosed fnCanBeClosed,TTab::TOnClosing fnOnTabClosing){
 		// adds a new Tab with given Name and Content as the last Tab in the TDI
-		InsertTab( hTdi, TabCtrl_GetItemCount(hTdi), tabName, tabContent, makeCurrent, fnCanBeClosed, fnOnTabClosing );
+		InsertTabA( hTdi, TabCtrl_GetItemCount(hTdi), tabName, tabContent, makeCurrent, fnCanBeClosed, fnOnTabClosing );
 	}
 
-	void WINAPI CTdiCtrl::UpdateTabCaption(HWND hTdi,TTab::PContent tabContent,LPCTSTR tabNewName){
+	void WINAPI CTdiCtrl::AddTabLastW(HWND hTdi,LPCWSTR tabName,TTab::PContent tabContent,bool makeCurrent,TTab::TCanBeClosed fnCanBeClosed,TTab::TOnClosing fnOnTabClosing){
+		// adds a new Tab with given Name and Content as the last Tab in the TDI
+		InsertTabW( hTdi, TabCtrl_GetItemCount(hTdi), tabName, tabContent, makeCurrent, fnCanBeClosed, fnOnTabClosing );
+	}
+
+	void WINAPI CTdiCtrl::UpdateTabCaptionA(HWND hTdi,TTab::PContent tabContent,LPCSTR tabNewName){
+		// updates caption of a Tab identified by its Content (but doesn't switch to the Tab)
+		WCHAR bufW[1024];
+		::MultiByteToWideChar( CP_ACP,0, tabNewName,-1, bufW,ARRAYSIZE(bufW) );
+		return UpdateTabCaptionW( hTdi, tabContent, bufW );
+	}
+
+	void WINAPI CTdiCtrl::UpdateTabCaptionW(HWND hTdi,TTab::PContent tabContent,LPCWSTR tabNewName){
 		// updates caption of a Tab identified by its Content (but doesn't switch to the Tab)
 		for( int i=TabCtrl_GetItemCount(hTdi); i--; )
 			if (GetTabContent(hTdi,i)==tabContent){
 				// Tab exists
 				// . updating the caption
-				TCITEM ti;
+				TCITEMW ti;
 					ti.mask=TCIF_TEXT|TCIF_PARAM;
-					ti.pszText=(PTCHAR)tabNewName;
-				TabCtrl_SetItem(hTdi,i,&ti);
+					ti.pszText=(PWCHAR)tabNewName;
+				::SendMessageW( hTdi, TCM_SETITEMW, i, (LPARAM)&ti );
 				// . redrawing the CurrentTabContent (might have been obscured by the whole TDI after the above change of caption)
 				const PTdiInfo pTdiInfo=GET_TDI_INFO(hTdi);
 				pTdiInfo->params.fnRepaintContent( pTdiInfo->currentTabContent );

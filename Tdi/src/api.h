@@ -44,9 +44,12 @@
 		static void WINAPI SubclassWnd(HINSTANCE hInstance,HWND hTabCtrl,PCParams params);
 		static TTab::PContent GetTabContent(HWND hTdi,int iIndex);
 		static bool WINAPI GetCurrentTabContentRect(HWND hTdi,LPRECT pOutRect);
-		static void WINAPI InsertTab(HWND hTdi,int iIndex,LPCTSTR tabName,TTab::PContent tabContent,bool makeCurrent,TTab::TCanBeClosed fnCanBeClosed,TTab::TOnClosing fnOnTabClosing);
-		static void WINAPI AddTabLast(HWND hTdi,LPCTSTR tabName,TTab::PContent tabContent,bool makeCurrent,TTab::TCanBeClosed fnCanBeClosed,TTab::TOnClosing fnOnTabClosing);
-		static void WINAPI UpdateTabCaption(HWND hTdi,TTab::PContent tabContent,LPCTSTR tabNewName);
+		static void WINAPI InsertTabA(HWND hTdi,int iIndex,LPCSTR tabName,TTab::PContent tabContent,bool makeCurrent,TTab::TCanBeClosed fnCanBeClosed,TTab::TOnClosing fnOnTabClosing);
+		static void WINAPI InsertTabW(HWND hTdi,int iIndex,LPCWSTR tabName,TTab::PContent tabContent,bool makeCurrent,TTab::TCanBeClosed fnCanBeClosed,TTab::TOnClosing fnOnTabClosing);
+		static void WINAPI AddTabLastA(HWND hTdi,LPCSTR tabName,TTab::PContent tabContent,bool makeCurrent,TTab::TCanBeClosed fnCanBeClosed,TTab::TOnClosing fnOnTabClosing);
+		static void WINAPI AddTabLastW(HWND hTdi,LPCWSTR tabName,TTab::PContent tabContent,bool makeCurrent,TTab::TCanBeClosed fnCanBeClosed,TTab::TOnClosing fnOnTabClosing);
+		static void WINAPI UpdateTabCaptionA(HWND hTdi,TTab::PContent tabContent,LPCSTR tabNewName);
+		static void WINAPI UpdateTabCaptionW(HWND hTdi,TTab::PContent tabContent,LPCWSTR tabNewName);
 		static void WINAPI RemoveTab(HWND hTdi,int tabId);
 		static void WINAPI RemoveTab(HWND hTdi,TTab::PContent tabContent);
 		static void WINAPI RemoveCurrentTab(HWND hTdi);
@@ -55,5 +58,12 @@
 		static void WINAPI SwitchToNextTab(HWND hTdi);
 		static void WINAPI SwitchToPrevTab(HWND hTdi);
 	};
+
+#ifdef UNICODE
+#else
+	#define InsertTab		InsertTabA
+	#define AddTabLast		AddTabLastA
+	#define UpdateTabCaption UpdateTabCaptionA
+#endif
 
 #endif // TDI_API_H
