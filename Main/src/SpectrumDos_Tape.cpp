@@ -169,7 +169,7 @@
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
 		if (pOutName)
 			// Name wanted - removing trailing spaces
-			( *pOutName=CPathString(name,sizeof(name)) ).TrimRight(' ');
+			( *pOutName=CPathString(name,sizeof(name)) ).TrimRightSpace();
 		if (pOutExt)
 			// Extension wanted - trying to map Type to one of UniversalFileTypes
 			*pOutExt=	type<ZX_TAPE_EXTENSION_STD_COUNT
@@ -180,7 +180,7 @@
 	TStdWinError CSpectrumDos::CTape::THeader::SetName(RCPathString newName){
 		// tries to change given File's name and extension; returns Windows standard i/o error
 		// - checking that the NewName+NewExt combination follows the "10.1" convention
-		if (newName.GetLength()>ZX_TAPE_FILE_NAME_LENGTH_MAX)
+		if (newName.GetLengthW()>ZX_TAPE_FILE_NAME_LENGTH_MAX)
 			return ERROR_FILENAME_EXCED_RANGE;
 		// - renaming
 		newName.MemcpyAnsiTo( name, sizeof(name), ' ' );
@@ -240,14 +240,14 @@
 		if (const PHeader h=((PTapeFile)( rRenamedFile=file ))->GetHeader()){
 			// File with a Header
 			// . Extension must be specified
-			if (newExt.GetLength()<1)
+			if (newExt.GetLengthW()<1)
 				return ERROR_BAD_FILE_TYPE;
 			// . making sure that a File with given NameAndExtension doesn't yet exist 
 			//nop (Files on tape may he equal names)
 			// . renaming
 			if (const TStdWinError err=h->SetName(newName))
 				return err;
-			if (!h->SetFileType((TUniFileType)newExt.FirstChar()))
+			if (!h->SetFileType((TUniFileType)newExt.FirstCharA()))
 				return ERROR_BAD_FILE_TYPE;
 			m_bModified=TRUE;
 			return ERROR_SUCCESS;
@@ -307,7 +307,7 @@
 			else
 				// Fragment
 				__exportFileInformation__(buf,TUniFileType::FRAGMENT,TStdParameters::Default,tf->dataLength);
-			result+=buf;
+			result.Append(buf);
 		}
 		return result;
 	}
@@ -321,7 +321,7 @@
 		return flag;
 	}
 
-	TStdWinError CSpectrumDos::CTape::ImportFile(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile){
+	TStdWinError CSpectrumDos::CTape::ImportFile(CFile *f,DWORD fileSize,RCPathString nameAndExtension,DWORD winAttr,PFile &rFile){
 		// imports specified File (physical or virtual) into the Image; returns Windows standard i/o error
 		// - checking if there's an empty slot in Tape's "Directory"
 		if (fileManager.nFiles==ZX_TAPE_FILE_COUNT_MAX)
@@ -330,18 +330,17 @@
 		if (fileSize>FILE_LENGTH_MAX)
 			return ERROR_FILE_TOO_LARGE;
 		// - converting the NameAndExtension to the "10.1" form usable for Tape
-		CPathString zxName,zxExt; LPCTSTR zxInfo;
-		TCHAR buf[16384];
-		__parseFat32LongName__(	::lstrcpy(buf,nameAndExtension), zxName, zxExt, zxInfo );
-		zxName.TrimToLength(ZX_TAPE_FILE_NAME_LENGTH_MAX);
-		zxExt.TrimToLength(1);
+		CPathString zxName,zxExt;
+		const CString zxInfo=ParseFat32LongName( nameAndExtension, zxName, zxExt );
+		zxName.TrimToLengthW(ZX_TAPE_FILE_NAME_LENGTH_MAX);
+		zxExt.TrimToLengthW(1);
 		// - processing import information
 		int blockChecksum=-1;
 		TUniFileType uts; TStdParameters u; DWORD officialFileSize; BYTE blockFlag;
 		if (const int n=__importFileInformation__(zxInfo,uts,u,officialFileSize,blockFlag)){
 			if (uts==TUniFileType::SCREEN)
 				uts=TUniFileType::BLOCK;
-			_stscanf( zxInfo+n, EXPORT_INFO_TAPE, &blockChecksum );
+			_stscanf( (LPCTSTR)zxInfo+n, EXPORT_INFO_TAPE, &blockChecksum );
 		}else
 			officialFileSize=fileSize;
 		// - with user's intervention resolving the case that reported size is different from real size

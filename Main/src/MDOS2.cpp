@@ -292,7 +292,7 @@
 		}else{
 			const PCDirectoryEntry de=(PCDirectoryEntry)file;
 			if (pOutName)
-				*pOutName=CPathString( de->name, MDOS2_FILE_NAME_LENGTH_MAX ).TrimRight('\0'); // trimming trailing null-characters
+				*pOutName=CPathString( de->name, MDOS2_FILE_NAME_LENGTH_MAX ).TrimRightNull(); // trimming trailing null-characters
 			if (pOutExt)
 				*pOutExt=de->extension;
 		}
@@ -304,16 +304,16 @@
 		if (file==ZX_DIR_ROOT)
 			return ERROR_ACCESS_DENIED;
 		// - checking that the NewName+NewExt combination follows the "10.1" convention
-		if (newExt.GetLength()<1)
+		if (newExt.GetLengthW()<1)
 			return ERROR_BAD_FILE_TYPE;
-		if (newName.GetLength()>MDOS2_FILE_NAME_LENGTH_MAX || newExt.GetLength()>1)
+		if (newName.GetLengthW()>MDOS2_FILE_NAME_LENGTH_MAX || newExt.GetLengthW()>1)
 			return ERROR_FILENAME_EXCED_RANGE;
 		// - making sure that a File with given NameAndExtension doesn't yet exist
 		if ( rRenamedFile=FindFileInCurrentDir(newName,newExt,file) )
 			return ERROR_FILE_EXISTS;
 		// - renaming
 		const PDirectoryEntry de=(PDirectoryEntry)file;
-		de->extension=newExt.FirstChar();
+		de->extension=newExt.FirstCharA();
 		newName.MemcpyAnsiTo( de->name, sizeof(de->name), '\0' );
 		MarkDirectorySectorAsDirty( rRenamedFile=file );
 		return ERROR_SUCCESS;
@@ -381,19 +381,18 @@
 			_stprintf(	buf + __exportFileInformation__( buf, uts, de->params, GetFileOfficialSize(de) ),
 						INFO_ATTRIBUTES, de->attributes
 					);
-			result+=buf;
+			result.Append(buf);
 		}
 		return result;
 	}
 
-	TStdWinError CMDOS2::ImportFile(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile){
+	TStdWinError CMDOS2::ImportFile(CFile *f,DWORD fileSize,RCPathString nameAndExtension,DWORD winAttr,PFile &rFile){
 		// imports specified File (physical or virtual) into the Image; returns Windows standard i/o error
 		// - parsing the NameAndExtension into a usable "10.1" form
-		CPathString zxName,zxExt; LPCTSTR zxInfo;
-		TCHAR buf[16384];
-		__parseFat32LongName__(	::lstrcpy(buf,nameAndExtension), zxName, zxExt, zxInfo );
-		zxName.TrimToLength(MDOS2_FILE_NAME_LENGTH_MAX);
-		zxExt.TrimToLength(1);
+		CPathString zxName,zxExt;
+		const CString zxInfo=ParseFat32LongName( nameAndExtension, zxName, zxExt );
+		zxName.TrimToLengthW(MDOS2_FILE_NAME_LENGTH_MAX);
+		zxExt.TrimToLengthW(1);
 		// - initializing the description of File to import
 		TDirectoryEntry tmp; // the description
 			::ZeroMemory(&tmp,sizeof(tmp));
@@ -402,7 +401,7 @@
 			TUniFileType uts; DWORD dw;
 			if (const int n=__importFileInformation__(zxInfo,uts,tmp.params,dw)){
 				if (dw) fileSize=dw;
-				_stscanf( zxInfo+n, INFO_ATTRIBUTES, &attr );
+				_stscanf( (LPCTSTR)zxInfo+n, INFO_ATTRIBUTES, &attr );
 			}
 			tmp.attributes=attr;
 			// . name
@@ -421,7 +420,7 @@
 			case TUniFileType::SNAPSHOT_48k	: tmp.extension=TDirectoryEntry::SNAPSHOT; break;
 			case TUniFileType::SEQUENTIAL	: tmp.extension=TDirectoryEntry::SEQUENTIAL; break;
 			default:
-				tmp.extension= zxExt.GetLength() ? zxExt.FirstChar() : TDirectoryEntry::BLOCK;
+				tmp.extension= zxExt.GetLengthW() ? zxExt.FirstCharA() : TDirectoryEntry::BLOCK;
 				break;
 		}
 		// - importing to Image

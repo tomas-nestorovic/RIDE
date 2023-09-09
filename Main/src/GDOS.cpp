@@ -278,7 +278,7 @@
 	void CGDOS::TDirectoryEntry::GetNameOrExt(PPathString pOutName,PPathString pOutExt) const{
 		// populates the Buffers with File's name and extension; caller guarantees that the Buffer sizes are at least MAX_PATH characters each
 		if (pOutName)
-			(  *pOutName=CPathString( name, sizeof(name) )  ).TrimRight(' ');
+			(  *pOutName=CPathString( name, sizeof(name) )  ).TrimRightSpace();
 		if (pOutExt)
 			*pOutExt=fileType;
 	}
@@ -300,7 +300,7 @@
 		// - setting the Name trimmed to 10 characters at most
 		newName.MemcpyAnsiTo( name, sizeof(name), ' ' );
 		// - setting FileType
-		fileType=(TFileType)newExt.FirstChar();
+		fileType=(TFileType)newExt.FirstCharA();
 		// - setting up StandardParameters for a StandardZxType
 		//nop (up to the caller)
 	}
@@ -359,9 +359,9 @@
 		if (file==ZX_DIR_ROOT)
 			return ERROR_ACCESS_DENIED;
 		// - checking that the NewName+NewExt combination follows the "10.1" convention
-		if (newExt.GetLength()<1)
+		if (newExt.GetLengthW()<1)
 			return ERROR_BAD_FILE_TYPE;
-		if (newName.GetLength()>GDOS_FILE_NAME_LENGTH_MAX || newExt.GetLength()>1)
+		if (newName.GetLengthW()>GDOS_FILE_NAME_LENGTH_MAX || newExt.GetLengthW()>1)
 			return ERROR_FILENAME_EXCED_RANGE;
 		// - making sure that a File with given NameAndExtension doesn't yet exist
 		if ( rRenamedFile=FindFileInCurrentDir(newName,newExt,file) )
@@ -429,9 +429,8 @@
 			// exporting to non-RIDE target (e.g. to the Explorer); excluding from the Buffer characters that are forbidden in FAT32 long file names
 			TCHAR bufExt[16];
 			if (de!=ZX_DIR_ROOT){
-				if (const LPCTSTR pDot=result.FindLastDot())
-					result.TrimToCharExcl(pDot);
-				result.AppendDotExtension( de->__getFileTypeDesc__(bufExt) );
+				result.DetachExtension();
+				result.AppendDotExtensionIfAny( de->__getFileTypeDesc__(bufExt) );
 			}
 		}else{
 			// exporting to another RIDE instance
@@ -452,7 +451,7 @@
 				if (const PCWORD pw=de->__getStdParameter2__()) stdParams.param2=*pw;
 			TCHAR buf[80];
 			__exportFileInformation__( buf, uts, stdParams, GetFileOfficialSize(de) );
-			result+=buf;
+			result.Append(buf);
 		}
 		return result;
 	}
@@ -470,14 +469,13 @@
 		return reinterpret_cast<PCDos>(this)->GetFileSize(de)+sizeof(de->etc);
 	}
 
-	TStdWinError CGDOS::ImportFile(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile){
+	TStdWinError CGDOS::ImportFile(CFile *f,DWORD fileSize,RCPathString nameAndExtension,DWORD winAttr,PFile &rFile){
 		// imports specified File (physical or virtual) into the Image; returns Windows standard i/o error
 		// - parsing the NameAndExtension into a usable "10.1" form
-		CPathString zxName,zxExt; LPCTSTR zxInfo;
-		TCHAR buf[16384];
-		__parseFat32LongName__(	::lstrcpy(buf,nameAndExtension), zxName, zxExt, zxInfo );
-		zxName.TrimToLength(GDOS_FILE_NAME_LENGTH_MAX);
-		zxExt.TrimToLength(10); // 10 = Extension may be represented as text, e.g. "$-ARRAY", not just a single char, e.g. '0x03' (both representations are equal!)
+		CPathString zxName,zxExt;
+		const CString zxInfo=ParseFat32LongName( nameAndExtension, zxName, zxExt );
+		zxName.TrimToLengthW(GDOS_FILE_NAME_LENGTH_MAX);
+		zxExt.TrimToLengthW(10); // 10 = Extension may be represented as text, e.g. "$-ARRAY", not just a single char, e.g. '0x03' (both representations are equal!)
 		// - getting import information
 		TStdParameters params; TUniFileType uts; DWORD dw;
 		if (const int n=__importFileInformation__(zxInfo,uts,params,dw))
@@ -487,7 +485,7 @@
 			::ZeroMemory(&tmp,sizeof(tmp));
 			// . name
 			tmp.SetNameAndExt( zxName, zxExt );
-			switch (zxExt.GetLength()){
+			switch (zxExt.GetLengthW()){
 				case 0:
 					// no Extension provided - considering the File as Special
 					tmp.fileType=TDirectoryEntry::SPECIAL;

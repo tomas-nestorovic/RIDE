@@ -10,7 +10,7 @@
 	CMSDOS7::CMSDOS7(PImage image,PCFormat pFormatBoot)
 		// ctor
 		// - base
-		: CDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS, &Properties, ::lstrcmpi, CDos::StdSidesMap, IDR_MSDOS, &fileManager, TGetFileSizeOptions::OfficialDataLength, TSectorStatus::UNAVAILABLE )
+		: CDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS, &Properties, ::StrCmpNIW, CDos::StdSidesMap, IDR_MSDOS, &fileManager, TGetFileSizeOptions::OfficialDataLength, TSectorStatus::UNAVAILABLE )
 		// - initialization
 		, fat(*this) , fsInfo(this)
 		, boot(this) , fileManager(this)
@@ -462,12 +462,12 @@
 			if (bufExt)	 *bufExt=CPathString::Empty;
 		}else{
 			if (bufName){
-				*bufName=CPathString( de->shortNameEntry.name, MSDOS7_FILE_NAME_LENGTH_MAX ).TrimRight(' ');
-				TCHAR &r=*(PTCHAR)*bufName;
+				*bufName=CPathString( de->shortNameEntry.name, MSDOS7_FILE_NAME_LENGTH_MAX ).TrimRightSpace();
+				TCHAR &r=*bufName->GetBuffer();
 				if (r==KANJI_PLACEHOLDER) r=KANJI; // Kanji character at the beginning of the Name
 			}
 			if (bufExt)
-				*bufExt=CPathString( de->shortNameEntry.extension, MSDOS7_FILE_EXT_LENGTH_MAX ).TrimRight(' ');
+				*bufExt=CPathString( de->shortNameEntry.extension, MSDOS7_FILE_EXT_LENGTH_MAX ).TrimRightSpace();
 		}
 	}
 
@@ -475,30 +475,18 @@
 		// populates the Buffer with long File name and returns the Buffer; returns Null if the File has no long name); caller guarantess that Buffer's capacity is at least MAX_PATH chars
 		PDirectoryEntry longNameEntries[LONG_FILE_NAME_ENTRIES_COUNT_MAX];
 		if (BYTE nEntries=__getLongFileNameEntries__(de,longNameEntries)){
-			#ifdef UNICODE
-				static_assert( false, "Unicode support not implemented" );
-			#else
-				WCHAR bufW[LONG_FILE_NAME_ENTRIES_COUNT_MAX*13+1],tmpW[13+1]; // 13 = # of characters in one LongNameEntry
-				bufW[0]='\0', tmpW[13]='\0';
-				for( PDirectoryEntry *p=longNameEntries; nEntries--; ::lstrcatW(bufW,tmpW) ){
-					de=*p++;
-					::memcpy( tmpW, de->longNameEntry.name1, 10 );
-					::memcpy( tmpW+5, de->longNameEntry.name2, 12 );
-					::memcpy( tmpW+11, de->longNameEntry.name3, 4 );
-				}
-				if (const PWCHAR pDot=::wcsrchr(bufW,'.')){
-					*pDot='\0';
-					if (bufName)
-						*bufName=bufW;
-					if (bufExt)
-						*bufExt=pDot+1;
-				}else{
-					if (bufName)
-						*bufName=bufW;
-					if (bufExt)
-						*bufExt=CPathString::Empty;
-				}
-			#endif
+			CPathString buf;
+			for( PDirectoryEntry *p=longNameEntries; nEntries--; ){
+				de=*p++;
+				buf.Append( de->longNameEntry.name1, ARRAYSIZE(de->longNameEntry.name1) );
+				buf.Append( de->longNameEntry.name2, ARRAYSIZE(de->longNameEntry.name2) );
+				buf.Append( de->longNameEntry.name3, ARRAYSIZE(de->longNameEntry.name3) );
+			}
+			const CPathString ext=buf.TrimRightW(WCHAR_MAX).TrimRightNull().DetachExtension();
+			if (bufExt)
+				*bufExt=ext;
+			if (bufName)
+				*bufName=buf;
 			return true;
 		}else
 			return false;
@@ -522,19 +510,17 @@
 		if (de==MSDOS7_DIR_ROOT)
 			return ERROR_DIRECTORY;
 		// - checking that the NewName+NewExt combination follows the "8.3" convention
-		if (newName.GetLength()>MSDOS7_FILE_NAME_LENGTH_MAX || newExt.GetLength()>MSDOS7_FILE_EXT_LENGTH_MAX)
+		if (newName.GetLengthW()>MSDOS7_FILE_NAME_LENGTH_MAX || newExt.GetLengthW()>MSDOS7_FILE_EXT_LENGTH_MAX)
 			return ERROR_FILENAME_EXCED_RANGE;
 		// - making sure that the NewNameAndExtension is without forbidden characters
 		//TODO: carrying out this check only upon demand (a new user setting)
 		//if don't check
 			// still checking for presence of lowercase letters - those cannot be in a short name! (unless manually tweaked)
 		//else{
-			for( LPCTSTR p=newName; const TCHAR c=*p++; )
-				if (!UDirectoryEntry::TShortNameEntry::IsCharacterValid(c))
-					return ERROR_ILLEGAL_CHARACTER;
-			for( LPCTSTR p=newExt; const TCHAR c=*p++; )
-				if (!UDirectoryEntry::TShortNameEntry::IsCharacterValid(c))
-					return ERROR_ILLEGAL_CHARACTER;
+			if (newName.ContainsFat32ShortNameInvalidChars())
+				return ERROR_ILLEGAL_CHARACTER;
+			if (newExt.ContainsFat32ShortNameInvalidChars())
+				return ERROR_ILLEGAL_CHARACTER;
 		//}
 		// - making sure that the NewName+NewExt combination is not empty
 		//TODO
@@ -544,7 +530,7 @@
 				if (dt.entryType==TDirectoryTraversal::FILE || dt.entryType==TDirectoryTraversal::SUBDIR){
 					CPathString tmpName,tmpExt;
 					__getShortFileNameAndExt__( (PCDirectoryEntry)dt.entry, &tmpName, &tmpExt );
-					if (!::lstrcmpi(newName,tmpName)&&!lstrcmpi(newExt,tmpExt)){
+					if (EqualFileNames(newName,tmpName) && EqualFileNames(newExt,tmpExt)){
 						rRenamedFile=(PDirectoryEntry)dt.entry;
 						return ERROR_FILE_EXISTS;
 					}
@@ -567,14 +553,16 @@
 
 	static CDos::CPathString __convertLongToShortTerm__(BYTE bufShortChars,CDos::RCPathString longName){
 		// returns BufferShort with long term (File name or extension) converted to short equivalent
-		CDos::CPathString result=longName;
-		PTCHAR j=result;
-		for( LPCTSTR i=result.MakeUpper(); const TCHAR c=*i++; )
+		CDos::CPathString tmp(longName);
+		const LPCWSTR unicode=tmp.MakeUpper().GetUnicode();
+		PWCHAR j=const_cast<PWCHAR>(unicode);
+		for( LPCWSTR i=unicode; const WCHAR c=*i++; )
 			if (CMSDOS7::UDirectoryEntry::TShortNameEntry::IsCharacterValid(c)){
 				*j++=c;
-				if (j-(LPCTSTR)result==bufShortChars) break;
+				if (j-unicode==bufShortChars) break;
 			}
-		return result.TrimToCharExcl(j).MakeUpper();
+		*j=L'\0';
+		return unicode;
 	}
 
 	void CMSDOS7::__generateShortFileNameAndExt__(PDirectoryEntry de,RCPathString longName,RCPathString longExt) const{
@@ -584,18 +572,18 @@
 		const CPathString bufShortExt=__convertLongToShortTerm__( MSDOS7_FILE_EXT_LENGTH_MAX, longExt );
 		// - attempting to use the shortened "8.3" format
 		PDirectoryEntry renamedFile;
-		if (!::lstrcmp(bufShortName,longName)&&!::lstrcmp(bufShortExt,longExt)) // if the input LongName+LongExt combination is already in usable "8.3" format ...
+		if (EqualFileNames(bufShortName,longName) && EqualFileNames(bufShortExt,longExt)) // if the input LongName+LongExt combination is already in usable "8.3" format ...
 			if (__changeShortFileNameAndExt__(de,bufShortName,bufShortExt,renamedFile)==ERROR_SUCCESS) // ... trying to use it first before generating an artificial "8.3" short name
 				return;
 		// - generating an artificial "8.3" short name
-		const BYTE nCharsInShortName=bufShortName.GetLength();
+		const BYTE nCharsInShortName=bufShortName.GetLengthW();
 		DWORD numericTail=1; // numeric tail (e.g. the "1" in "PROGRA~1", which is the short name for "Program Files")
-		TCHAR tmp[MSDOS7_FILE_NAME_LENGTH_MAX+1];
+		WCHAR tmp[MSDOS7_FILE_NAME_LENGTH_MAX+1];
 		do{
-			TCHAR bufNumericTail[MSDOS7_FILE_NAME_LENGTH_MAX+1];
-			const BYTE nCharsInTail=::wsprintf(bufNumericTail,_T("~%d"),numericTail++);
-			::lstrcat(
-				::lstrcpyn( tmp, bufShortName, MSDOS7_FILE_NAME_LENGTH_MAX-nCharsInTail+1 ),
+			WCHAR bufNumericTail[MSDOS7_FILE_NAME_LENGTH_MAX+1];
+			const BYTE nCharsInTail=::wsprintfW(bufNumericTail,L"~%d",numericTail++);
+			::lstrcatW(
+				::lstrcpynW( tmp, bufShortName.GetUnicode(), MSDOS7_FILE_NAME_LENGTH_MAX-nCharsInTail+1 ),
 				bufNumericTail
 			);
 		}while (__changeShortFileNameAndExt__(de,tmp,bufShortExt,renamedFile)!=ERROR_SUCCESS);
@@ -609,7 +597,7 @@
 		// - doing nothing if the NewName and NewExt don't differ from the old name and old extension
 		CPathString tmpName,tmpExt;
 		if (__getLongFileNameAndExt__( de, &tmpName, &tmpExt ))
-			if (!::lstrcmp(newName,tmpName) && !::lstrcmp(newExt,tmpExt)){
+			if (EqualFileNames(newName,tmpName) && EqualFileNames(newExt,tmpExt)){
 				rRenamedFile=de;
 				return ERROR_SUCCESS;
 			}
@@ -622,12 +610,12 @@
 			if (dt.entry!=de)
 				if (dt.entryType==TDirectoryTraversal::FILE || dt.entryType==TDirectoryTraversal::SUBDIR){
 					__getShortFileNameAndExt__( (PCDirectoryEntry)dt.entry, &tmpName, &tmpExt );
-					if (!::lstrcmpi(newName,tmpName)&&!::lstrcmpi(newExt,tmpExt)){
+					if (EqualFileNames(newName,tmpName) && EqualFileNames(newExt,tmpExt)){
 						rRenamedFile=(PDirectoryEntry)dt.entry;
 						return ERROR_FILE_EXISTS;
 					}
 					if (__getLongFileNameAndExt__( (PCDirectoryEntry)dt.entry, &tmpName, &tmpExt )) // long name and extension exist
-						if (!::lstrcmpi(newName,tmpName)&&!::lstrcmpi(newExt,tmpExt)){
+						if (EqualFileNames(newName,tmpName) && EqualFileNames(newExt,tmpExt)){
 							rRenamedFile=(PDirectoryEntry)dt.entry;
 							return ERROR_FILE_EXISTS;
 						}
@@ -640,25 +628,19 @@
 		else{
 			// NewNameAndExtension doesn't follow the "8.3" format
 			// . checking that the NewName+NewExt combination doesn't exceed allowed # of Entries
-			if (newName.GetLength()+1+newExt.GetLength()>LONG_FILE_NAME_ENTRIES_COUNT_MAX*13) // 13 = number of characters in one LongNameEntry
+			WCHAR bufW[LONG_FILE_NAME_ENTRIES_COUNT_MAX*13+1]; // 13 = # of characters in one LongNameEntry
+			if (newName.GetLengthW()+1+newExt.GetLengthW()>=ARRAYSIZE(bufW))
 				return ERROR_FILENAME_EXCED_RANGE;
-			TCHAR longNameAndExt[LONG_FILE_NAME_ENTRIES_COUNT_MAX*13+1]; // 13 = # of characters in one LongNameEntry
-			::lstrcpy(longNameAndExt,newName);
-			if (newExt.GetLength())
-				::lstrcat( ::lstrcat( longNameAndExt, _T(".") ), newExt );
+			LPCWSTR pw=::lstrcpyW( (PWCHAR)::memset(bufW,-1,sizeof(bufW)), newName.GetUnicode() ); // 13 = # of characters in one LongNameEntry
+			if (newExt.GetLengthW()>0)
+				::lstrcatW( ::lstrcatW(bufW,L"."), newExt.GetUnicode() );
 			// . allocating necessary number of DirectoryEntries to accommodate the long NameAndExtension
 			PFile longNameEntries[LONG_FILE_NAME_ENTRIES_COUNT_MAX+1]; // "+1" = short name entry
-			const BYTE nLongNameEntries=(::lstrlen(longNameAndExt)+12)/13; // 13 = # of characters in one LongNameEntry
+			const BYTE nLongNameEntries=(::lstrlenW(bufW)+12)/13; // 13 = # of characters in one LongNameEntry
 			if (!TMsdos7DirectoryTraversal(this,currentDir).GetOrAllocateEmptyEntries( nLongNameEntries+1, longNameEntries )) // "+1" = short name entry
 				return ERROR_CANNOT_MAKE;
 			rRenamedFile=(PDirectoryEntry)longNameEntries[nLongNameEntries];
 			// - initializing allocated LongNameEntries
-			WCHAR bufW[256], *pw=(PWCHAR)::memset(bufW,-1,sizeof(bufW));
-			#ifdef UNICODE
-				static_assert( false, "Unicode support not implemented" );
-			#else
-				::MultiByteToWideChar( CP_ACP,0, longNameAndExt,-1, bufW,ARRAYSIZE(bufW) );
-			#endif
 			const BYTE shortNameChecksum=( *rRenamedFile=*de ).shortNameEntry.__getChecksum__();
 			for( BYTE n=nLongNameEntries,seqNum=1; n>0; ){
 				const PDirectoryEntry p=(PDirectoryEntry)longNameEntries[--n];
@@ -910,25 +892,17 @@
 		return ERROR_SUCCESS;
 	}
 
-	CDos::CPathString CMSDOS7::__getFileExportNameAndExt__(LPCTSTR bufName,RCPathString bufExt){
-		// populates Buffer with specified export Name and Extension and returns the Buffer; returns Null if File cannot be exported (e.g. a "dotdot" entry in MS-DOS); caller guarantees that the Buffer is at least MAX_PATH characters big
-		if (bufExt.GetLength())
-			return CPathString(bufName).AppendDotExtension(bufExt);
-		else
-			return bufName;
-	}
-
 	CDos::CPathString CMSDOS7::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
 		// returns File name concatenated with File extension for export of the File to another Windows application (e.g. Explorer)
 		if (!((PCDirectoryEntry)file)->shortNameEntry.__isDotOrDotdot__()){
 			CPathString bufName, bufExt;
 			GetFileNameOrExt( file, &bufName, &bufExt );
-			return __getFileExportNameAndExt__( bufName, bufExt );
+			return bufName.AppendDotExtensionIfAny(bufExt);
 		}else
 			return CPathString::Empty;
 	}
 
-	TStdWinError CMSDOS7::ImportFile(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile){
+	TStdWinError CMSDOS7::ImportFile(CFile *f,DWORD fileSize,RCPathString nameAndExtension,DWORD winAttr,PFile &rFile){
 		// imports specified File (physical or virtual) into the Image; returns Windows standard i/o error
 		// - marking the Volume as "dirty"
 		//TODO (below just draft)
@@ -1240,21 +1214,20 @@ error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastE
 
 
 
-	static constexpr WCHAR ForbiddenChars[]={ 0x22, 0x2a, 0x2b, 0x2c, 0x2e, 0x2f, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f, 0x5b, 0x5c, 0x5d, 0x7c, '\0' };
-
 	bool CMSDOS7::UDirectoryEntry::TShortNameEntry::IsCharacterValid(WCHAR c){
 		// True <=> specified Character is valid in short name, otherwise False
 		if (!TLongNameEntry::IsCharacterValid(c)) return false;
 		if (::IsCharSpaceW(c)) return false;
 		if (::IsCharLowerW(c)) return false;
-		return c<=127;
+		if (c>127) return false;
+		return !::wcschr(L"+,.;=[]",c); // must not be a forbidden character
 	}
 
 	bool CMSDOS7::UDirectoryEntry::TLongNameEntry::IsCharacterValid(WCHAR c){
 		// True <=> specified Character is valid in short name, otherwise False
 		if (c=='\0') return true; // for practical reasons, RIDE tolerates trail Null character
 		if (c<' ') return false;
-		return !::wcschr(ForbiddenChars,c);
+		return !::wcschr(L"\\/:*?\"<>|",c); // must not be a forbidden character
 	}
 
 	CMSDOS7::TCluster32 CMSDOS7::UDirectoryEntry::TShortNameEntry::__getFirstCluster__() const{

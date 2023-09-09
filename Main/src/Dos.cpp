@@ -734,21 +734,28 @@ reportError:Utils::Information(buf);
 		return 0; // caller should start looking for Empty Sectors from the beginning of disk
 	}
 
-	CString CDos::GetFilePresentationNameAndExt(PCFile file) const{
+	CDos::CPathString CDos::GetFilePresentationNameAndExt(PCFile file) const{
 		// returns File name concatenated with File extension for presentation of the File to the user
 		CPathString name,ext;
 		GetFileNameOrExt( file, &name, &ext );
-		name.ExcludeFat32LongNameInvalidChars();
-		if (ext.ExcludeFat32LongNameInvalidChars().GetLength()>0)
-			name.AppendDotExtension(ext);
-		return name.ToString();
+		return name.ExcludeFat32LongNameInvalidChars().AppendDotExtensionIfAny( ext.ExcludeFat32LongNameInvalidChars() );
+	}
+
+	int CDos::CompareFileNames(RCPathString filename1,RCPathString filename2) const{
+		// returns an integer indicating if FileName1 preceedes, equals to, or succeeds FileName2
+		return filename1.Compare( filename2, fnCompareNames );
+	}
+
+	bool CDos::EqualFileNames(RCPathString filename1,RCPathString filename2) const{
+		// True <=> FileName1 and FileName2 are equal, otherwise False
+		return !CompareFileNames( filename1, filename2 );
 	}
 
 	bool CDos::HasFileNameAndExt(PCFile file,RCPathString fileName,RCPathString fileExt) const{
 		// True <=> given File has the name and extension as specified, otherwise False
 		CPathString name,ext;
 		return	GetFileNameOrExt( file, &name, &ext )
-				? fileName.Equals(name,fnCompareNames) && fileExt.Equals(ext,fnCompareNames) // name relevant
+				? EqualFileNames(name,fileName) && EqualFileNames(ext,fileExt) // name relevant
 				: false; // name irrelevant
 	}
 
@@ -861,18 +868,18 @@ reportError:Utils::Information(buf);
 		if (shellCompliant){
 			// exporting to non-RIDE target (e.g. to the Explorer); excluding from the Buffer characters that are forbidden in FAT32 long file names
 			fileExt.ExcludeFat32LongNameInvalidChars();
-			if (fileName.ExcludeFat32LongNameInvalidChars().GetLength())
+			if (fileName.ExcludeFat32LongNameInvalidChars().GetLengthW())
 				// valid export name - taking it as the result
-				return fileName.AppendDotExtension(fileExt);
+				return fileName.AppendDotExtensionIfAny(fileExt);
 			else{
 				// invalid export name - generating an artifical one
 				static WORD fileId;
 				if (++fileId>9999) fileId=1;
-				return CPathString().Format( _T("File%04d"), fileId ).AppendDotExtension(fileExt); // "%05d" and above isn't recommended - some DOSes can't accommodate more than 8 characters in name field
+				return CPathString().Format( _T("File%04d"), fileId ).AppendDotExtensionIfAny(fileExt); // "%05d" and above isn't recommended - some DOSes can't accommodate more than 8 characters in name field
 			}
 		}else
 			// exporting to another RIDE instance; substituting non-alphanumeric characters with "URL-like" escape sequences
-			return fileName.EscapeToString().AppendDotExtension( fileExt.EscapeToString() );
+			return fileName.AppendDotExtensionIfAny(fileExt).Escape();
 	}
 
 	DWORD CDos::ExportFile(PCFile file,CFile *fOut,DWORD nBytesToExportMax,LPCTSTR *pOutError) const{

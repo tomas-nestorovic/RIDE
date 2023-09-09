@@ -494,13 +494,10 @@ namespace Utils{
 
 	TStdWinError ErrorByOs(TStdWinError vistaOrNewer,TStdWinError xpOrOlder);
 #ifdef UNICODE
-	LPCSTR ToStringA(LPCWSTR s);
-	inline CString ToStringT(LPCSTR s){ return s; }
-	inline LPCTSTR ToStringT(LPCWSTR s){ return s; }
 #else
-	inline LPCSTR ToStringA(LPCSTR s){ return s; }
+	inline LPCSTR ToStringA(LPCTSTR s){ return s; }
 	inline LPCTSTR ToStringT(LPCSTR s){ return s; }
-	inline CString ToStringT(LPCWSTR s){ return s; }
+	CString ToStringT(LPCWSTR lpsz); // converts to UTF-8
 #endif
 	CString SimpleFormat(LPCTSTR format,va_list v);
 	CString SimpleFormat(LPCTSTR format,LPCTSTR param);

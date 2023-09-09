@@ -130,6 +130,11 @@
 		return 1+bufT; // "1+" = see initialization above
 	}
 
+	PTCHAR CSpectrumBase::TZxRom::ZxToAscii(const CString &zx,PTCHAR bufT,char zxBefore){
+		// converts text from Spectrum character set to PC's current character set and returns the result in Buffer
+		return ZxToAscii( zx, zx.GetLength(), bufT, zxBefore );
+	}
+
 	PCHAR CSpectrumBase::TZxRom::AsciiToZx(LPCTSTR pc,PCHAR zx,PBYTE pOutZxLength){
 		// converts text from PC's current character set to Spectrum character set and returns the result in Buffer
 		PCHAR buf=zx;
@@ -254,8 +259,8 @@
 		const TZxRom &rZxRom=((CSpectrumBaseFileManagerView *)CDos::GetFocused()->pFileManager)->zxRom;
 		const HGDIOBJ hFont0=::SelectObject( pdis->hDC, rZxRom.font.m_hObject );
 			pdis->rcItem.left+=PROPGRID_CELL_MARGIN_LEFT;
-			const CPathString tmp=CPathString( (LPCSTR)value, LOBYTE(combinedValue) ).TrimRight(HIBYTE(combinedValue));
-			rZxRom.PrintAt(	pdis->hDC, tmp.GetAnsi(), tmp.GetLength(),
+			const CString zx=CPathString( (LPCSTR)value, LOBYTE(combinedValue) ).TrimRightW(HIBYTE(combinedValue)).GetAnsi();
+			rZxRom.PrintAt(	pdis->hDC, zx, zx.GetLength(),
 							pdis->rcItem,
 							DT_SINGLELINE | DT_LEFT | DT_VCENTER | DT_NOPREFIX
 						);

@@ -27,7 +27,7 @@
 		friend class CTrackMapView;
 		friend class CFileManagerView;
 	public:
-		typedef int (WINAPI *TFnCompareNames)(LPCTSTR name1,LPCTSTR name2);
+		typedef int (WINAPI *TFnCompareNames)(LPCWSTR name1,LPCWSTR name2,int n);
 		typedef DWORD TId;
 		typedef PVOID PFile;
 		typedef LPCVOID PCFile;
@@ -43,47 +43,68 @@
 			UNKNOWN		=0x00ffff  // any Sector whose ID doesn't match any ID from the standard format, e.g. ID={2,1,0,3} for an MDOS Sector
 		} *PSectorStatus;
 
-		typedef class CPathString sealed:public CString{
+		typedef class CPathString sealed:protected CString{
+			mutable CString unicode;
+
+			CPathString GetTail(TCHAR fromLast) const;
 		public:
+			typedef bool (TFnValidChar)(WCHAR c);
+
 			static const CPathString Empty;
 			static const CPathString Unnamed8;
 			static const CPathString Root;
 			static const CPathString DotDot;
 
 			inline CPathString(){}
-			inline CPathString(const CString &s) : CString(s) {}
-			inline CPathString(TCHAR c) : CString(c) {}
-			CPathString(LPCSTR str,int strLength=-1);
-			CPathString(LPCWSTR str,int strLength=-1);
+			CPathString(WCHAR c);
+			CPathString(LPCWSTR lpsz);
+			CPathString(LPCSTR ansi,int strLength=-1);
+			CPathString(const CPathString &r);
 
-			inline operator PTCHAR() const{ return const_cast<PTCHAR>((LPCTSTR)*this); }
-			inline CPathString &operator+=(TCHAR c){ __super::operator+=(c); return *this; }
-			inline CPathString &operator+=(LPCTSTR lpsz){ __super::operator+=(lpsz); return *this; }
+			operator LPCTSTR() const{ return GetBuffer(); } // returns UTF-8 string in ANSI build
 
 		#ifdef UNICODE
-			static_assert( false, "GetAnsi not implemented for Unicode" );
-			inline const CPathString &ToString() const{ return *this; }
+			static_assert( false, "GetAnsi/GetUnicode not implemented for Unicode" );
 		#else
 			CString GetAnsi() const;
-			inline CString ToString() const{ return GetAnsi(); }
+			LPCWSTR GetUnicode() const;
 		#endif
-			inline TCHAR FirstChar() const{ return GetAt(0); }
+			inline CPathString Clone() const{ return CPathString(*this); }
+			int GetLengthW() const;
+			PTCHAR GetBuffer() const; // returns UTF-8 string in ANSI build
+			char FirstCharA() const;
 			void MemcpyAnsiTo(PCHAR buf,BYTE bufCapacity,char padding) const;
-			inline bool IsValid() const{ return GetLength()>0; }
-			inline LPCTSTR FindLast(TCHAR c) const{ return _tcsrchr( (LPCTSTR)*this, c ); }
-			inline LPCTSTR FindLastDot() const{ return FindLast('.'); }
-			bool Equals(const CPathString &r,TFnCompareNames comparer) const;
+			PTCHAR FindLast(TCHAR c) const;
+			inline PTCHAR FindLastDot() const{ return FindLast('.'); }
+			int Compare(const CPathString &other,TFnCompareNames comparer) const;
+			int Compare(const CPathString &other) const;
+			int CompareI(const CPathString &other) const;
+			inline CPathString GetFileName() const{ return GetTail('\\'); }
+			CPathString GetQuoted() const;
 			CPathString DetachExtension();
-			CPathString EscapeToString() const;
-			CPathString &AppendDotExtension(LPCTSTR extWithoutDot);
+			CPathString &Prepend(LPCTSTR lpsz);
+			CPathString &Append(const CPathString &r);
+			CPathString &Append(WCHAR c);
+			CPathString &Append(LPCTSTR lpsz);
+			CPathString &Append(LPCWSTR str,int strLength);
+			CPathString &AppendBackslashItem(LPCWSTR itemWithoutBackslash);
+			CPathString &AppendDotExtensionIfAny(LPCWSTR extWithoutDot);
+			CPathString &AppendDotExtensionIfAny(const CPathString &extWithoutDot);
 			CPathString &MakeUpper();
-			CPathString &TrimRight(TCHAR c);
-			CPathString &TrimToLength(int nCharsMax);
+			CPathString &TrimRightW(WCHAR c);
+			inline CPathString &TrimRightSpace(){ return TrimRightW(L' '); }
+			inline CPathString &TrimRightNull(){ return TrimRightW(L'\0'); }
+			CPathString &TrimToLengthW(int nCharsMaxW);
 			CPathString &TrimToCharExcl(LPCTSTR pc);
+			bool ContainsInvalidChars(TFnValidChar isCharValid) const;
+			bool ContainsFat32ShortNameInvalidChars() const;
+			bool ContainsFat32LongNameInvalidChars() const;
 			CPathString &ExcludeFat32LongNameInvalidChars();
+			CPathString &Escape();
 			CPathString &Unescape();
 			CPathString & __cdecl Format(LPCTSTR format,...);
 			CPathString &FormatLostItem8(int itemId);
+			HANDLE CreateFile(DWORD dwDesiredAccess,DWORD dwShareMode,DWORD dwCreationDisposition,DWORD dwFlagsAndAttributes=FILE_ATTRIBUTE_NORMAL) const;
 		} *PPathString,&RPathString;
 		typedef const CPathString *PCPathString,&RCPathString;
 
@@ -379,7 +400,9 @@
 		bool RemoveStdCylindersFromFat(TCylinder cylA,TCylinder cylZInclusive,CActionProgress &ap) const;
 		// file system
 		virtual bool GetFileNameOrExt(PCFile file,PPathString pOutName,PPathString pOutExt) const=0;
-		virtual CString GetFilePresentationNameAndExt(PCFile file) const;
+		virtual CPathString GetFilePresentationNameAndExt(PCFile file) const;
+		int CompareFileNames(RCPathString filename1,RCPathString filename2) const;
+		bool EqualFileNames(RCPathString filename1,RCPathString filename2) const;
 		bool HasFileNameAndExt(PCFile file,RCPathString fileName,RCPathString fileExt) const;
 		virtual TStdWinError ChangeFileNameAndExt(PFile file,RCPathString newName,RCPathString newExt,PFile &rRenamedFile)=0;
 		virtual DWORD GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData,TGetFileSizeOptions option) const=0;
@@ -403,7 +426,7 @@
 		DWORD GetCountOfItemsInCurrentDir(TStdWinError &rError) const;
 		virtual CPathString GetFileExportNameAndExt(PCFile file,bool shellCompliant) const;
 		virtual DWORD ExportFile(PCFile file,CFile *fOut,DWORD nBytesToExportMax,LPCTSTR *pOutError) const;
-		virtual TStdWinError ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile)=0;
+		virtual TStdWinError ImportFile(CFile *fIn,DWORD fileSize,RCPathString nameAndExtension,DWORD winAttr,PFile &rFile)=0;
 		PFile FindFileInCurrentDir(RCPathString fileName,RCPathString fileExt,PCFile ignoreThisFile) const;
 		// other
 		TSector GetListOfStdSectors(TCylinder cyl,THead head,PSectorId bufferId) const;

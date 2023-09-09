@@ -271,7 +271,7 @@
 		};
 	private:
 		class CMsdos7FileManagerView sealed:public CFileManagerView{
-			static bool WINAPI __onNameAndExtConfirmed__(PVOID file,LPCTSTR newNameAndExt,short nCharsOfNewNameAndExt);
+			static bool WINAPI __onNameAndExtConfirmed__(PVOID file,LPCWSTR newNameAndExt,short nCharsOfNewNameAndExt);
 			static bool WINAPI __editFileAttributes__(PVOID file,PVOID,short);
 
 			static const TFileInfo InformationList[];
@@ -299,7 +299,6 @@
 		static TLogSector32 __cluster2logSector__(TCluster32 c,PCBootSector boot);
 		static UINT AFX_CDECL __removeLongNames_thread__(PVOID _pCancelableAction);
 		static void __informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId);
-		static CPathString __getFileExportNameAndExt__(LPCTSTR bufName,RCPathString bufExt);
 
 		bool dontShowLongFileNames, dontShowDotEntries, dontShowDotdotEntries;
 
@@ -345,7 +344,7 @@
 		std::unique_ptr<TDirectoryTraversal> BeginDirectoryTraversal(PCFile directory) const override;
 		DWORD GetDirectoryUid(PCFile dir) const override;
 		CPathString GetFileExportNameAndExt(PCFile file,bool shellCompliant) const override;
-		TStdWinError ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile) override;
+		TStdWinError ImportFile(CFile *fIn,DWORD fileSize,RCPathString nameAndExtension,DWORD winAttr,PFile &rFile) override;
 		TStdWinError CreateSubdirectory(RCPathString name,DWORD winAttr,PDirectoryEntry &rCreatedSubdir);
 		TStdWinError SwitchToDirectory(PDirectoryEntry directory);
 		TStdWinError MoveFileToCurrDir(PDirectoryEntry de,RCPathString exportFileNameAndExt,PFile &rMovedFile);

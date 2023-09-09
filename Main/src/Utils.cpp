@@ -261,6 +261,39 @@ namespace Utils{
 
 
 
+#ifdef UNICODE
+	static_assert( false, "Unicode support not implemented" );
+#else
+	CString ToStringT(LPCWSTR lpsz){
+		// converts Unicode to UTF-8
+		CString result;
+		::WideCharToMultiByte(
+			CP_UTF8, 0,
+			lpsz,-1,
+			result.GetBufferSetLength(
+				::WideCharToMultiByte( CP_UTF8, 0, lpsz,-1, nullptr,0, nullptr,nullptr )
+			), SHRT_MAX,
+			nullptr,nullptr
+		);
+		return result;
+	}
+
+	LPCWSTR ToStringW(LPCSTR lpszUtf8){
+		// converts input UTF-8 string to Unicode, making use of static object - BEWARE CONCURRENCY!
+		static CString unicode;
+		::MultiByteToWideChar(
+			CP_UTF8, 0,
+			lpszUtf8,-1,
+			(PWCHAR)unicode.GetBufferSetLength( (::lstrlen(lpszUtf8)+1)*sizeof(WCHAR) ), // pessimistic estimation
+			SHRT_MAX
+		);
+		return (LPCWSTR)(LPCTSTR)unicode;
+	}
+#endif
+
+
+
+
 	CCommandDialog::CCommandDialog(LPCTSTR _information)
 		// ctor
 		: CRideDialog( IDR_ACTION_DIALOG, CWnd::FromHandle(app.GetEnabledActiveWindow()) )
@@ -279,7 +312,7 @@ namespace Utils{
 		__super::OnInitDialog();
 		// - initializing the main message
 		SetFocus();
-		SetDlgItemText( ID_INFORMATION, information );
+		::SetDlgItemTextW( m_hWnd, ID_INFORMATION, ToStringW(information) );
 		const HWND hInfo=GetDlgItemHwnd(ID_INFORMATION);
 		int infoHeight=Edit_GetLineCount(hInfo)*CRideFont(*this).charHeight;
 		RECT r;
@@ -1002,7 +1035,7 @@ namespace Utils{
 		// shows fatal error
 		const HWND hParent=app.GetEnabledActiveWindow();
 		CBackgroundActionCancelable::SignalPausedProgress( hParent );
-		::MessageBox( hParent, text, nullptr, MB_ICONERROR|MB_TASKMODAL );
+		::MessageBoxW( hParent, ToStringW(text), nullptr, MB_ICONERROR|MB_TASKMODAL );
 	}
 
 	CString SimpleFormat(LPCTSTR format,va_list v){
@@ -1069,7 +1102,7 @@ namespace Utils{
 		// shows Textual information
 		const HWND hParent=app.GetEnabledActiveWindow();
 		CBackgroundActionCancelable::SignalPausedProgress( hParent );
-		::MessageBox( hParent, text, _T("Information"), MB_ICONINFORMATION|MB_TASKMODAL );
+		::MessageBoxW( hParent, ToStringW(text), L"Information", MB_ICONINFORMATION|MB_TASKMODAL );
 	}
 	void Information(LPCTSTR text,LPCTSTR causeOfError,LPCTSTR consequence){
 		// shows Textual information along with its Cause and immediate Consequence
@@ -1166,7 +1199,7 @@ namespace Utils{
 		const HWND hParent=app.GetEnabledActiveWindow();
 		CBackgroundActionCancelable::SignalPausedProgress( hParent );
 		LOG_DIALOG_DISPLAY(text);
-		return LOG_DIALOG_RESULT(  ::MessageBox( hParent, text, _T("Information"), MB_ICONINFORMATION|MB_OKCANCEL|MB_TASKMODAL )==IDOK  );
+		return LOG_DIALOG_RESULT(  ::MessageBoxW( hParent, ToStringW(text), L"Information", MB_ICONINFORMATION|MB_OKCANCEL|MB_TASKMODAL )==IDOK  );
 	}
 
 
@@ -1178,7 +1211,7 @@ namespace Utils{
 		const HWND hParent=app.GetEnabledActiveWindow();
 		CBackgroundActionCancelable::SignalPausedProgress( hParent );
 		LOG_DIALOG_DISPLAY(text);
-		return LOG_DIALOG_RESULT(  ::MessageBox( hParent, text, _T("Question"), MB_ICONQUESTION|MB_TASKMODAL|MB_YESNO|defaultButton )==IDYES  );
+		return LOG_DIALOG_RESULT(  ::MessageBoxW( hParent, ToStringW(text), L"Question", MB_ICONQUESTION|MB_TASKMODAL|MB_YESNO|defaultButton )==IDYES  );
 	}
 
 
@@ -1189,7 +1222,7 @@ namespace Utils{
 		const HWND hParent=app.GetEnabledActiveWindow();
 		CBackgroundActionCancelable::SignalPausedProgress( hParent );
 		LOG_DIALOG_DISPLAY(text);
-		return LOG_DIALOG_RESULT(  ::MessageBox( hParent, text, _T("Question"), MB_ICONQUESTION|MB_TASKMODAL|MB_YESNOCANCEL|defaultButton )  );
+		return LOG_DIALOG_RESULT(  ::MessageBoxW( hParent, ToStringW(text), L"Question", MB_ICONQUESTION|MB_TASKMODAL|MB_YESNOCANCEL|defaultButton )  );
 	}
 	BYTE QuestionYesNoCancel(LPCTSTR text,UINT defaultButton,LPCTSTR causeOfError,LPCTSTR consequence){
 		// shows a yes-no question along with its Cause and immediate Consequence
@@ -1208,7 +1241,7 @@ namespace Utils{
 		const HWND hParent=app.GetEnabledActiveWindow();
 		CBackgroundActionCancelable::SignalPausedProgress( hParent );
 		LOG_DIALOG_DISPLAY(text);
-		return LOG_DIALOG_RESULT(  ::MessageBox( hParent, text, _T("Question"), MB_ICONQUESTION|MB_TASKMODAL|MB_ABORTRETRYIGNORE|defaultButton )  );
+		return LOG_DIALOG_RESULT(  ::MessageBoxW( hParent, ToStringW(text), L"Question", MB_ICONQUESTION|MB_TASKMODAL|MB_ABORTRETRYIGNORE|defaultButton )  );
 	}
 
 	BYTE AbortRetryIgnore(LPCTSTR text,TStdWinError causeOfError,UINT defaultButton,LPCTSTR consequence){
@@ -1227,7 +1260,7 @@ namespace Utils{
 		const HWND hParent=app.GetEnabledActiveWindow();
 		CBackgroundActionCancelable::SignalPausedProgress( hParent );
 		LOG_DIALOG_DISPLAY(text);
-		return LOG_DIALOG_RESULT(  ::MessageBox( hParent, text, _T("Question"), MB_ICONEXCLAMATION|MB_TASKMODAL|MB_RETRYCANCEL|MB_DEFBUTTON1 )==IDRETRY  );
+		return LOG_DIALOG_RESULT(  ::MessageBoxW( hParent, ToStringW(text), L"Question", MB_ICONEXCLAMATION|MB_TASKMODAL|MB_RETRYCANCEL|MB_DEFBUTTON1 )==IDRETRY  );
 	}
 	bool RetryCancel(TStdWinError causeOfError){
 		// shows an retry-cancel question
@@ -1240,7 +1273,7 @@ namespace Utils{
 		const HWND hParent=app.GetEnabledActiveWindow();
 		CBackgroundActionCancelable::SignalPausedProgress( hParent );
 		LOG_DIALOG_DISPLAY(text);
-		return LOG_DIALOG_RESULT(  ::MessageBox( hParent, text, _T("Question"), MB_ICONEXCLAMATION|MB_TASKMODAL|MB_CANCELTRYCONTINUE|defaultButton )  );
+		return LOG_DIALOG_RESULT(  ::MessageBoxW( hParent, ToStringW(text), L"Question", MB_ICONEXCLAMATION|MB_TASKMODAL|MB_CANCELTRYCONTINUE|defaultButton )  );
 	}
 	BYTE CancelRetryContinue(LPCTSTR text,TStdWinError causeOfError,UINT defaultButton,LPCTSTR consequence){
 		// shows an cancel-retry-continue question along with its Cause
@@ -1253,7 +1286,7 @@ namespace Utils{
 		// shows Textual warning
 		const HWND hParent=app.GetEnabledActiveWindow();
 		CBackgroundActionCancelable::SignalPausedProgress( hParent );
-		::MessageBox( hParent, text, _T("Warning"), MB_ICONINFORMATION|MB_TASKMODAL );
+		::MessageBoxW( hParent, ToStringW(text), L"Warning", MB_ICONINFORMATION|MB_TASKMODAL );
 	}
 
 

@@ -53,16 +53,16 @@
 
 
 
-	DWORD CFileManagerView::COleVirtualFileDataSource::__addFileToExport__(PTCHAR relativeDir,CDos::PFile file,LPFILEDESCRIPTOR lpfd,TStdWinError &rOutError){
+	DWORD CFileManagerView::COleVirtualFileDataSource::__addFileToExport__(PWCHAR relativeDir,CDos::PFile file,LPFILEDESCRIPTORW lpfd,TStdWinError &rOutError){
 		// adds given File for exporting by initializing the FileDescriptor structure; returns the number of Files (and Directories) added by this command
 		// - checking if the File can be exported
 		const auto exportName=fileManager->DOS->GetFileExportNameAndExt(file,fileManager->DOS->generateShellCompliantExportNames);
-		if (!exportName.GetLength()) return 0;
-		const PTCHAR pExportName=::lstrcpy( relativeDir+::lstrlen(relativeDir), exportName );
+		if (!exportName.GetLengthW()) return 0;
+		const PWCHAR pExportName=::lstrcpyW( relativeDir+::lstrlenW(relativeDir), exportName.GetUnicode() );
 		// - adding specified File
 		if (lpfd){
 			lpfd->dwFlags=FD_ATTRIBUTES|FD_FILESIZE;
-			::lstrcpy( lpfd->cFileName, relativeDir );
+			::lstrcpyW( lpfd->cFileName, relativeDir );
 			lpfd->dwFileAttributes=fileManager->DOS->GetAttributes(file);
 			lpfd->nFileSizeLow=fileManager->DOS->ExportFile(file,nullptr,-1,nullptr); // getting only the export size of Files, not actually exporting any Files
 			if (fileManager->DOS->GetFileCreatedTimeStamp( file, lpfd->ftCreationTime ))
@@ -82,7 +82,7 @@
 			const CDos::PFile originalDirectory=fileManager->DOS->currentDir;
 			if (rOutError=(fileManager->DOS->*fileManager->pDirectoryStructureManagement->fnChangeCurrentDir)(file))
 				return 0; // if error, quit
-			::lstrcat( pExportName, _T("\\") );
+			::lstrcatW( pExportName, L"\\" );
 			// . enumerating "Subfiles"
 			if (const auto pdt=fileManager->DOS->BeginDirectoryTraversal())
 				while (pdt->AdvanceToNextEntry())
@@ -124,8 +124,8 @@
 	BOOL CFileManagerView::COleVirtualFileDataSource::OnRenderGlobalData(LPFORMATETC lpFormatEtc, HGLOBAL *phGlobal){
 		// generates the list of Files to transfer
 		if (lpFormatEtc->cfFormat==CRideApp::cfDescriptor){
-			// generating the list of Files for shell or another RIDE instance (i.e. CFSTR_FILEDESCRIPTOR array; in reality, transferred will be only files that will be actually selected
-			TCHAR relativeDir[32768]; // big enough to accommodate any path
+			// generating the list of Files for shell or another RIDE instance (i.e. CFSTR_FILEDESCRIPTORW array; in reality, transferred will be only files that will be actually selected
+			WCHAR relativeDir[32768]; // big enough to accommodate any path
 			// . determining the NumberOfFilesToExport
 			TStdWinError err;
 			*relativeDir='\0';
@@ -134,12 +134,12 @@
 				nFilesToExport+=__addFileToExport__( relativeDir, fileManager->GetNextSelectedFile(pos), nullptr, err );
 			// . allocating the FileGroupDescriptor structure
 			if (!*phGlobal)
-				*phGlobal=::GlobalAlloc( GPTR, sizeof(FILEGROUPDESCRIPTOR)+(nFilesToExport-1)*sizeof(FILEDESCRIPTOR) ); // GHND = allocated memory zeroed
+				*phGlobal=::GlobalAlloc( GPTR, sizeof(FILEGROUPDESCRIPTORW)+(nFilesToExport-1)*sizeof(FILEDESCRIPTORW) ); // GHND = allocated memory zeroed
 			// . populating the FileGroupDescriptor structure
 			*relativeDir='\0';
-			const LPFILEGROUPDESCRIPTOR pFgd=(LPFILEGROUPDESCRIPTOR)::GlobalLock(*phGlobal);
+			const LPFILEGROUPDESCRIPTORW pFgd=(LPFILEGROUPDESCRIPTORW)::GlobalLock(*phGlobal);
 				pFgd->cItems=nFilesToExport;
-				LPFILEDESCRIPTOR lpfd=pFgd->fgd;
+				LPFILEDESCRIPTORW lpfd=pFgd->fgd;
 				for( POSITION pos=fileManager->GetFirstSelectedFilePosition(); pos; )
 					lpfd+=__addFileToExport__( relativeDir, fileManager->GetNextSelectedFile(pos), lpfd, err );
 			::GlobalUnlock(*phGlobal);
@@ -150,7 +150,7 @@
 			const Utils::CVarTempReset<CLIPFORMAT> cf0( lpFormatEtc->cfFormat, CRideApp::cfDescriptor );
 			return OnRenderGlobalData( lpFormatEtc, phGlobal); // ... after which we can proceed normally
 		}else
-			// other form of generating (i.e. other than using CFSTR_FILEDESCRIPTOR)
+			// other form of generating (i.e. other than using CFSTR_FILEDESCRIPTORW)
 			return __super::OnRenderGlobalData(lpFormatEtc,phGlobal);
 	}
 
@@ -270,9 +270,9 @@
 			if (HGLOBAL hg=pDataObject->GetGlobalData(CF_HDROP)){
 				// importing physical Files (by dragging them from Explorer)
 				if (const HDROP hDrop=(HDROP)::GlobalLock(hg)){
-					TCHAR buf[MAX_PATH];
+					WCHAR buf[MAX_PATH];
 					for( UINT n=::DragQueryFile(hDrop,-1,nullptr,0); n; )
-						if (::DragQueryFile(hDrop,--n,buf,ARRAYSIZE(buf)))
+						if (::DragQueryFileW(hDrop,--n,buf,ARRAYSIZE(buf)))
 							// creating File in Image
 							switch (ImportPhysicalFile(buf,importedFile,conflictResolution)){ // shows also error messages
 								case ERROR_SUCCESS:
@@ -297,7 +297,7 @@ importQuit1:		::DragFinish(hDrop);
 				// importing virtual Files (by dragging them from FileManager, no matter if this one or across applications)
 				if (!( hg=pDataObject->GetGlobalData(CRideApp::cfRideFileList) )) // if RIDE native list of Files not available ...
 					hg=pDataObject->GetGlobalData(CRideApp::cfDescriptor); // ... then settle with shell native list of Files
-				if (const LPFILEGROUPDESCRIPTOR pfgd=(LPFILEGROUPDESCRIPTOR)::GlobalLock(hg)){
+				if (const LPFILEGROUPDESCRIPTORW pfgd=(LPFILEGROUPDESCRIPTORW)::GlobalLock(hg)){
 					bool moveWithinCurrentDisk=false; // assumption (Files are NOT moved within current disk but are imported from external source)
 					const int nFiles=pfgd->cItems;
 					for( int i=0; i<nFiles; ){
@@ -312,12 +312,12 @@ importQuit1:		::DragFinish(hDrop);
 								}else{
 									// copying Files within the same Directory
 									const auto copyNameAndExt=GenerateExportNameAndExtOfNextFileCopy( ownedDataSource->__getFile__(i), false );
-									if (copyNameAndExt.GetLength()>0) // generating new FileName for each copied File
+									if (copyNameAndExt.GetLengthW()>0) // generating new FileName for each copied File
 										fileNameAndExt=copyNameAndExt;
 									else{
 										// error creating a File copy
 										Utils::FatalError(
-											Utils::SimpleFormat( _T("Cannot copy \"%s\""), (LPCTSTR)fileNameAndExt ),
+											Utils::SimpleFormat( _T("Cannot copy \"%s\""), fileNameAndExt ),
 											ERROR_CANNOT_MAKE, IMPORT_MSG_CANCELLED
 										);
 										goto importQuit2;
@@ -431,19 +431,19 @@ importQuit2:		::GlobalUnlock(hg);
 		}
 	}
 
-	TStdWinError CFileManagerView::__moveFile__(int &i,LPFILEDESCRIPTOR files,int nFiles,CDos::PFile &rMovedFile,DWORD &rConflictedSiblingResolution){
+	TStdWinError CFileManagerView::__moveFile__(int &i,LPFILEDESCRIPTORW files,int nFiles,CDos::PFile &rMovedFile,DWORD &rConflictedSiblingResolution){
 		// moves virtual File within Image; returns Windows standard i/o error
-		const LPFILEDESCRIPTOR lpfd=files+i;
-		const LPCTSTR backslash=_tcsrchr(lpfd->cFileName,'\\');
-		const LPCTSTR fileName= backslash&&pDirectoryStructureManagement ? 1+backslash : lpfd->cFileName;
+		const LPFILEDESCRIPTORW lpfd=files+i;
+		const LPCWSTR backslash=::StrRChrW(lpfd->cFileName,nullptr,'\\');
+		const LPCWSTR fileName= backslash&&pDirectoryStructureManagement ? 1+backslash : lpfd->cFileName;
 		const CDos::PFile file=ownedDataSource->__getFile__(i++);
 		TStdWinError err=(DOS->*pDirectoryStructureManagement->fnMoveFileToCurrDir)( file, fileName, rMovedFile );
 		if (lpfd->dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY){
 			// Directory
 			// . determining the range of Files to move in scope of this Directory (all such Files in make up a sequence in the input list that has the same Directory path)
 			int j=i;
-			for( const int n=::lstrlen(::lstrcat(lpfd->cFileName,_T("\\"))); j<nFiles; j++ )
-				if (::StrCmpN(files[j].cFileName,lpfd->cFileName,n)) break;
+			for( const int n=::lstrlenW(::lstrcatW(lpfd->cFileName,L"\\")); j<nFiles; j++ )
+				if (::StrCmpNW(files[j].cFileName,lpfd->cFileName,n)) break;
 			// . resolving conflicts
 			if (err==ERROR_FILE_EXISTS) // Directory already exists on the disk
 				if (( err=__skipNameConflict__(DOS->GetFileSize(file),rMovedFile,rConflictedSiblingResolution) )==ERROR_SUCCESS){
@@ -470,7 +470,7 @@ importQuit2:		::GlobalUnlock(hg);
 		return err;
 	}
 
-	TStdWinError CFileManagerView::ImportFileAndResolveConflicts(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,const FILETIME &rCreated,const FILETIME &rLastRead,const FILETIME &rLastModified,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution){
+	TStdWinError CFileManagerView::ImportFileAndResolveConflicts(CFile *f,DWORD fileSize,CDos::RCPathString nameAndExtension,DWORD winAttr,const FILETIME &rCreated,const FILETIME &rLastRead,const FILETIME &rLastModified,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution){
 		// imports physical or virtual File; returns Windows standard i/o error (ERROR_SUCCESS = imported successfully, ERROR_CANCELLED = import of a set of Files was cancelled, ERROR_* = other error)
 		do{
 			// - importing
@@ -514,14 +514,14 @@ importQuit2:		::GlobalUnlock(hg);
 
 	TStdWinError CFileManagerView::ImportPhysicalFile(CDos::RCPathString shellName,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution){
 		// imports physical File with given Name into current Directory; returns Windows standard i/o error
-		const LPCTSTR fileName=_tcsrchr((LPCTSTR)shellName,'\\')+1;
-		const DWORD winAttr=::GetFileAttributes(shellName);
+		const CDos::CPathString fileName=shellName.GetFileName();
+		const DWORD winAttr=::GetFileAttributesW(shellName.GetUnicode());
 		FILETIME created,lastRead,lastModified;
 		if (winAttr&FILE_ATTRIBUTE_DIRECTORY){
 			// Directory
 			if (IMAGE->IsWriteProtected())
 				return ERROR_WRITE_PROTECT;
-			const HANDLE hDir=::CreateFile( shellName, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS, nullptr );
+			const HANDLE hDir=shellName.CreateFile( GENERIC_READ, FILE_SHARE_READ, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS );
 			::GetFileTime( hDir, &created, &lastRead, &lastModified );
 			::CloseHandle(hDir);
 			TStdWinError err=ImportFileAndResolveConflicts( nullptr, 0, fileName, winAttr, created, lastRead, lastModified, rImportedFile, rConflictedSiblingResolution );
@@ -529,16 +529,16 @@ importQuit2:		::GlobalUnlock(hg);
 				// Directory created successfully - recurrently importing all contained Files
 				const CDos::PFile currentDirectory=DOS->currentDir;
 				__switchToDirectory__(rImportedFile);
-					WIN32_FIND_DATA fd;
-					const HANDLE hFindFile=::FindFirstFile(::lstrcat(::lstrcpy(fd.cFileName,shellName),_T("\\*.*")),&fd);
+					WIN32_FIND_DATAW fd;
+					const HANDLE hFindFile=::FindFirstFileW(::lstrcatW(::lstrcpyW(fd.cFileName,shellName.GetUnicode()),L"\\*.*"),&fd);
 					if (hFindFile!=INVALID_HANDLE_VALUE){
 						for( DWORD csr=rConflictedSiblingResolution; true; ){
-							if (::lstrcmp(fd.cFileName,_T(".")) && ::lstrcmp(fd.cFileName,CDos::CPathString::DotDot)){ // "dot" and "dotdot" entries skipped
+							if (::lstrcmpW(fd.cFileName,L".") && ::lstrcmpW(fd.cFileName,L"..")){ // "dot" and "dotdot" entries skipped
 								CDos::PFile file;
-								err=ImportPhysicalFile( CDos::CPathString().Format(_T("%s\\%s"),shellName,fd.cFileName), file, csr );
+								err=ImportPhysicalFile( shellName.Clone().AppendBackslashItem(fd.cFileName), file, csr );
 								if (err!=ERROR_SUCCESS && err!=ERROR_FILE_EXISTS) break;
 							}
-							if (!::FindNextFile(hFindFile,&fd)){
+							if (!::FindNextFileW(hFindFile,&fd)){
 								if (( err=::GetLastError() )==ERROR_NO_MORE_FILES)
 									err=ERROR_SUCCESS;
 								break;
@@ -598,16 +598,16 @@ importQuit2:		::GlobalUnlock(hg);
 							, msg(msg) {
 						}
 					} d(
-						Utils::SimpleFormat( _T("\"%s\" looks like an image."), Utils::ToStringT(shellName.FindLast('\\')+1) )
+						Utils::SimpleFormat( _T("\"%s\" looks like an image."), shellName.GetFileName() )
 					);
 					// : showing the Dialog and processing its result
 					switch (d.DoModal()){
 						case IDYES:{
 							// opening the File in new instance of the app (this may function only in Release mode, not in Debug mode)
 							rImportedFile=nullptr;
-							TCHAR buf[MAX_PATH];
-							::GetModuleFileName( nullptr, buf, ARRAYSIZE(buf) );
-							::ShellExecute( nullptr, _T("open"), buf, CDos::CPathString().Format(_T("\"%s\""),shellName), nullptr, SW_SHOW );
+							WCHAR buf[MAX_PATH];
+							::GetModuleFileNameW( nullptr, buf, ARRAYSIZE(buf) );
+							::ShellExecuteW( nullptr, L"open", buf, shellName.GetQuoted().GetUnicode(), nullptr, SW_SHOW );
 							return ::GetLastError();
 						}
 						case IDNO:
@@ -621,24 +621,24 @@ importQuit2:		::GlobalUnlock(hg);
 			// . importing the File
 			if (IMAGE->IsWriteProtected())
 				return ERROR_WRITE_PROTECT;
-			CFileException e;
 			CFile f;
-			if (f.Open( shellName, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary, &e )){
+			f.m_hFile=(decltype(f.m_hFile))shellName.CreateFile( GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING );
+			if (f.m_hFile!=CFile::hFileNull){
 				::GetFileTime( (HANDLE)f.m_hFile, &created, &lastRead, &lastModified );
 				created=Utils::CRideTime(created).ToTzSpecificLocalTime();
 				lastRead=Utils::CRideTime(lastRead).ToTzSpecificLocalTime();
 				lastModified=Utils::CRideTime(lastModified).ToTzSpecificLocalTime();
 				return ImportFileAndResolveConflicts( &f, f.GetLength(), fileName, winAttr, created, lastRead, lastModified, rImportedFile, rConflictedSiblingResolution );
 			}else
-				return e.m_cause;
+				return ::GetLastError();
 		}
 	}
 
 	#define FD_ATTRIBUTES_MANDATORY	(FD_ATTRIBUTES|FD_FILESIZE)
 
-	TStdWinError CFileManagerView::__importVirtualFile__(int &i,CDos::RCPathString pathAndName,LPFILEDESCRIPTOR files,int nFiles,COleDataObject *pDataObject,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution){
+	TStdWinError CFileManagerView::__importVirtualFile__(int &i,CDos::RCPathString pathAndName,LPFILEDESCRIPTORW files,int nFiles,COleDataObject *pDataObject,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution){
 		// imports virtual File with given Name into current Directory; returns Windows standard i/o error
-		const LPFILEDESCRIPTOR lpfd=files+i;
+		const LPFILEDESCRIPTORW lpfd=files+i;
 		// - making sure that FileDescriptor structure contains all mandatory information
 		if ((lpfd->dwFlags&FD_ATTRIBUTES_MANDATORY)!=FD_ATTRIBUTES_MANDATORY)
 			return ERROR_NOT_SUPPORTED;
@@ -648,8 +648,8 @@ importQuit2:		::GlobalUnlock(hg);
 		const FILETIME &rCreated= lpfd->dwFlags&FD_CREATETIME ? lpfd->ftCreationTime : Utils::CRideTime::None;
 		const FILETIME &rLastRead= lpfd->dwFlags&FD_ACCESSTIME ? lpfd->ftLastAccessTime : Utils::CRideTime::None;
 		const FILETIME &rLastWritten= lpfd->dwFlags&FD_WRITESTIME ? lpfd->ftLastWriteTime : Utils::CRideTime::None;
-		const LPCTSTR backslash=pathAndName.FindLast('\\');
-		const LPCTSTR fileName= backslash&&pDirectoryStructureManagement ? 1+backslash : pathAndName;
+		const CDos::CPathString tmp=pathAndName.GetFileName();
+		const CDos::CPathString &fileName= tmp.GetLengthW()&&pDirectoryStructureManagement ? tmp : pathAndName;
 		const DWORD winAttr=lpfd->dwFileAttributes;
 		if (winAttr&FILE_ATTRIBUTE_DIRECTORY){
 			// Directory
@@ -657,8 +657,8 @@ importQuit2:		::GlobalUnlock(hg);
 			TStdWinError err=ImportFileAndResolveConflicts( nullptr, 0, fileName, winAttr, rCreated, rLastRead, rLastWritten, rImportedFile, rConflictedSiblingResolution );
 			// . determining the range of Files to import into this Directory (all such Files in the input list have the same Directory path)
 			int j=++i;
-			for( const int n=::lstrlen(::lstrcat(lpfd->cFileName,_T("\\"))); j<nFiles; j++ )
-				if (::StrCmpN(files[j].cFileName,lpfd->cFileName,n)) break;
+			for( const int n=::lstrlenW(::lstrcatW(lpfd->cFileName,L"\\")); j<nFiles; j++ )
+				if (::StrCmpNW(files[j].cFileName,lpfd->cFileName,n)) break;
 			// . processing recurrently
 			if (err==ERROR_SUCCESS){
 				const CDos::PFile currentDirectory=DOS->currentDir;

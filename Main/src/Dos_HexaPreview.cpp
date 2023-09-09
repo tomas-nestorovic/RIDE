@@ -43,8 +43,9 @@
 				hexaEditor.Reset( frw, frw, DOS->GetFileOccupiedSize(file) );
 			frw->Release();
 			// . updating the window caption
-			SetWindowText(
-				Utils::SimpleFormat( LABEL _T(" (%s)"), DOS->GetFilePresentationNameAndExt(file) )
+			::SendMessageW( // avoided '::SetWindowTextW' that eventually translates Unicode to ANSI because the window has been registered by MFC as ANSI!
+				m_hWnd, WM_SETTEXT, 0,
+				(LPARAM)DOS->GetFilePresentationNameAndExt(file).Prepend( LABEL _T(" (") ).Append(L')').GetUnicode()
 			);
 		}else
 			SetWindowText(LABEL);

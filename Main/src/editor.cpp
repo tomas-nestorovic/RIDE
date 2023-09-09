@@ -180,8 +180,8 @@
 		static constexpr INITCOMMONCONTROLSEX Icc={ sizeof(Icc), ICC_LINK_CLASS };
 		if (!::InitCommonControlsEx(&Icc))
 			return FALSE; // will end-up here if running on Windows 2000 or older!
-		cfDescriptor=::RegisterClipboardFormat(CFSTR_FILEDESCRIPTOR);
-		cfRideFileList=::RegisterClipboardFormat( _T("Ride") CFSTR_FILEDESCRIPTOR );
+		cfDescriptor=::RegisterClipboardFormat(CFSTR_FILEDESCRIPTORW);
+		cfRideFileList=::RegisterClipboardFormat( _T("Ride") CFSTR_FILEDESCRIPTORW );
 		cfContent=::RegisterClipboardFormat(CFSTR_FILECONTENTS);
 		cfPreferredDropEffect=::RegisterClipboardFormat(CFSTR_PREFERREDDROPEFFECT);
 		cfPerformedDropEffect=::RegisterClipboardFormat(CFSTR_PERFORMEDDROPEFFECT);
@@ -571,7 +571,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 	afx_msg void CRideApp::__showAbout__(){
 		// about
 		TCHAR buf[80];
-		::wsprintf( buf, _T("Version ") _T(APP_VERSION) _T("\n\ntomascz, 2015—%d"), Utils::CRideTime().wYear );
+		::wsprintf( buf, _T("Version ") _T(APP_VERSION) _T("\n\ntomascz, 2015-%d"), Utils::CRideTime().wYear );
 		Utils::Information(buf);
 	}
 

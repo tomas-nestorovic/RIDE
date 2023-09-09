@@ -40,12 +40,7 @@ using namespace Yahel;
 						switch (pdt->entryType){
 							case CDos::TDirectoryTraversal::SUBDIR:
 							case CDos::TDirectoryTraversal::FILE:
-								#ifdef UNICODE
-									return ::lstrcpyn( labelBuffer, pdev->DOS->GetFilePresentationNameAndExt(pdt->entry), labelBufferCharsMax );
-								#else
-									::MultiByteToWideChar( CP_ACP, 0, pdev->DOS->GetFilePresentationNameAndExt(pdt->entry),-1, labelBuffer,labelBufferCharsMax );
-									return labelBuffer;
-								#endif
+								return ::lstrcpynW( labelBuffer, pdev->DOS->GetFilePresentationNameAndExt(pdt->entry).GetUnicode(), labelBufferCharsMax );
 							case CDos::TDirectoryTraversal::EMPTY:
 								return L"[ empty ]";
 						}

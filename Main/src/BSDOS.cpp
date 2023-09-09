@@ -342,22 +342,21 @@
 			if (!slot->subdirExists)
 				if (GetFirstEmptyHealthySector(true,chs)==ERROR_SUCCESS){
 					// . parsing the Name (can be an import name with escaped Spectrum tokens)
-					CPathString zxName,zxExt; LPCTSTR zxInfo;
-					TCHAR buf[16384];
-					__parseFat32LongName__(	::lstrcpy(buf,name), zxName, zxExt, zxInfo );
-					zxName.TrimToLength(ZX_TAPE_FILE_NAME_LENGTH_MAX);
-					zxExt.TrimToLength(1);
+					CPathString zxName,zxExt;
+					const CString zxInfo=ParseFat32LongName( name, zxName, zxExt );
+					zxName.TrimToLengthW(ZX_TAPE_FILE_NAME_LENGTH_MAX);
+					zxExt.TrimToLengthW(1);
 					// . validating type
 					int dirNameChecksum=-1;
-					if (zxInfo!=nullptr){
+					if (zxInfo.GetLength()){
 						TUniFileType uts;
 						const int n=__importFileInformation__( zxInfo, uts );
 						if (uts!=TUniFileType::SUBDIRECTORY)
 							return ERROR_BAD_FILE_TYPE;
-						_stscanf( zxInfo+n, INFO_DIR, &dirNameChecksum );
+						_stscanf( (LPCTSTR)zxInfo+n, INFO_DIR, &dirNameChecksum );
 					}
 					// . validating Name
-					if (zxExt.GetLength())
+					if (zxExt.GetLengthW())
 						return ERROR_FILENAME_EXCED_RANGE;
 					if (const TStdWinError err=TDirectoryEntry(this,0).file.stdHeader.SetName(zxName))
 						return err;
@@ -611,7 +610,7 @@
 			if (de->fileHasStdHeader){
 				// File with Header
 				// . Extension must be specified
-				if (newExt.GetLength()<1)
+				if (newExt.GetLengthW()<1)
 					return ERROR_BAD_FILE_TYPE;
 				// . making sure that a File with given NameAndExtension doesn't yet exist
 				if ( rRenamedFile=FindFileInCurrentDir(newName,newExt,file) )
@@ -619,8 +618,8 @@
 				// . renaming
 				if (const TStdWinError err=de->file.stdHeader.SetName(newName))
 					return err;
-				if (!de->file.stdHeader.SetFileType((TUniFileType)newExt.FirstChar()))
-					de->file.stdHeader.type=(TZxRom::TFileType)newExt.FirstChar();
+				if (!de->file.stdHeader.SetFileType((TUniFileType)newExt.FirstCharA()))
+					de->file.stdHeader.type=(TZxRom::TFileType)newExt.FirstCharA();
 				MarkDirectorySectorAsDirty(de);
 			}//else
 				// Headerless File or Fragment
@@ -769,19 +768,18 @@
 					// Headerless File
 					__exportFileInformation__( buf, TUniFileType::HEADERLESS, TStdParameters::Default, de->file.dataLength, de->file.dataFlag );
 			}
-			result+=buf;
+			result.Append(buf);
 		}
 		return result;
 	}
 
-	TStdWinError CBSDOS308::ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile){
+	TStdWinError CBSDOS308::ImportFile(CFile *fIn,DWORD fileSize,RCPathString nameAndExtension,DWORD winAttr,PFile &rFile){
 		// imports specified File (physical or virtual) into the Image; returns Windows standard i/o error
 		// - converting the NameAndExtension to the "10.1" form usable for Tape
-		CPathString zxName,zxExt; LPCTSTR zxInfo;
-		TCHAR buf[16384];
-		__parseFat32LongName__(	::lstrcpy(buf,nameAndExtension), zxName, zxExt, zxInfo );
-		zxName.TrimToLength(ZX_TAPE_FILE_NAME_LENGTH_MAX);
-		zxExt.TrimToLength(1);
+		CPathString zxName,zxExt;
+		const CString zxInfo=ParseFat32LongName( nameAndExtension, zxName, zxExt );
+		zxName.TrimToLengthW(ZX_TAPE_FILE_NAME_LENGTH_MAX);
+		zxExt.TrimToLengthW(1);
 		// - importing
 		TUniFileType uts;
 		const int n=__importFileInformation__( zxInfo, uts );
@@ -792,7 +790,7 @@
 				return ERROR_BAD_FILE_TYPE;
 			// . processing import information
 			int dirNameChecksum=-1;
-			_stscanf( zxInfo+n, INFO_DIR, &dirNameChecksum );
+			_stscanf( (LPCTSTR)zxInfo+n, INFO_DIR, &dirNameChecksum );
 			// . creating a Subdirectory with given name
 			if (const TStdWinError err=CreateSubdirectory( zxName, FILE_ATTRIBUTE_DIRECTORY, rFile ))
 				return err;
@@ -824,7 +822,7 @@
 				case TUniFileType::BLOCK	: uftExt=uts; break;
 				case TUniFileType::SCREEN	: uftExt=TUniFileType::BLOCK; break;
 				default:
-					uftExt= zxExt.GetLength() ? zxExt.FirstChar() : TZxRom::TFileType::HEADERLESS;
+					uftExt= zxExt.GetLengthW() ? zxExt.FirstCharA() : TZxRom::TFileType::HEADERLESS;
 					break;
 			}
 			// . importing to Image

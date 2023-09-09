@@ -133,8 +133,8 @@
 		else{
 			CPathString ext;
 			DOS->GetFileNameOrExt(de,nullptr,&ext);
-			if (ext.GetLength()){
-				ext+=',';
+			if (ext.GetLengthW()){
+				ext.Append(',');
 				for( BYTE n=MSDOS7_FILE_ICONS_COUNT; --n>ICON_FILE_GENERAL; )
 					if (::StrStrI( ICON_INFOS[n].extensions, ext ))
 						return icons[n];
@@ -172,7 +172,7 @@
 				const auto &dpiScaleFactor=Utils::LogicalUnitScaleFactor;
 				::DrawIconEx( dc, r.left,r.top, __getIcon__(de), dpiScaleFactor*16,dpiScaleFactor*16, 0, nullptr, DI_NORMAL|DI_COMPAT );
 				r.left+=dpiScaleFactor*20;
-				::DrawText( dc, DOS->GetFilePresentationNameAndExt(de),-1, &r, DT_SINGLELINE|DT_VCENTER );
+				::DrawTextW( dc, DOS->GetFilePresentationNameAndExt(de).GetUnicode(),-1, &r, DT_SINGLELINE|DT_VCENTER );
 				break;
 			}
 			case INFORMATION_SIZE:
@@ -211,7 +211,7 @@
 				if (const int d=(f1->shortNameEntry.attributes&FILE_ATTRIBUTE_DIRECTORY)-(f2->shortNameEntry.attributes&FILE_ATTRIBUTE_DIRECTORY))
 					return -d; // Directories first
 				else
-					return ::lstrcmpi( DOS->GetFilePresentationNameAndExt(f1), DOS->GetFilePresentationNameAndExt(f2) );
+					return DOS->CompareFileNames( DOS->GetFilePresentationNameAndExt(f1), DOS->GetFilePresentationNameAndExt(f2) );
 			case INFORMATION_SIZE:
 				return DOS->GetFileOfficialSize(f1)-DOS->GetFileOfficialSize(f2);
 			case INFORMATION_ATTRIBUTES:
@@ -226,7 +226,7 @@
 		return 0;
 	}
 
-	bool WINAPI CMSDOS7::CMsdos7FileManagerView::__onNameAndExtConfirmed__(PVOID file,LPCTSTR newNameAndExt,short nCharsOfNewNameAndExt){
+	bool WINAPI CMSDOS7::CMsdos7FileManagerView::__onNameAndExtConfirmed__(PVOID file,LPCWSTR newNameAndExt,short nCharsOfNewNameAndExt){
 		// True <=> NewNameAndExtension confirmed, otherwise False
 		const PMSDOS7 msdos=(PMSDOS7)CDos::GetFocused();
 		CPathString tmpName=newNameAndExt;
@@ -278,12 +278,8 @@
 			case INFORMATION_NAME_A_EXT:
 				return	CValueEditorBase::CreateStdEditor(
 							file,
-							const_cast<PTCHAR>((LPCTSTR)DOS->GetFilePresentationNameAndExt(file)),
-							#ifdef UNICODE
+							const_cast<PWCHAR>(DOS->GetFileExportNameAndExt(file,false).GetUnicode()),
 							PropGrid::String::DefineDynamicLengthEditorW( __onNameAndExtConfirmed__ )
-							#else
-								PropGrid::String::DefineDynamicLengthEditorA( __onNameAndExtConfirmed__ )
-							#endif
 						);
 			case INFORMATION_ATTRIBUTES:
 				return CValueEditorBase::CreateStdEditorWithEllipsis( file, __editFileAttributes__ );
@@ -309,14 +305,14 @@
 			CPathString fileCopyName;
 			if (((CMSDOS7 *)DOS)->dontShowLongFileNames)
 				// using only short "8.3" names
-				fileCopyName.Format( _T("%d~%s"), copyNumber, (LPCTSTR)fileName ).TrimToLength(MSDOS7_FILE_NAME_LENGTH_MAX);
+				fileCopyName.Format( _T("%d~%s"), copyNumber, (LPCTSTR)fileName ).TrimToLengthW(MSDOS7_FILE_NAME_LENGTH_MAX);
 			else
 				// using long names
 				fileCopyName.Format( _T("Copy %d - %s"), copyNumber, (LPCTSTR)fileName );
 			// . finding if a file with given Name+Ext combination already exists
 			if (!DOS->FindFileInCurrentDir(fileCopyName,fileExt,nullptr))
 				// generated a unique Name for the next File copy - returning the final export name and extension
-				return __getFileExportNameAndExt__( fileCopyName, fileExt );
+				return fileCopyName.AppendDotExtensionIfAny(fileExt);;
 		}
 		return CPathString::Empty; // the Name for the next File copy cannot be generated
 	}

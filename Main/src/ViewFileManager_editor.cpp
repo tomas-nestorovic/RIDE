@@ -170,7 +170,7 @@
 			__editFileInformation__( file, SEARCH_DIRECTION_RIGHT );
 		}else{
 			lv.SetFocus();	// to edit File's label, the ListCtrl must be fokused
-			const HWND hEdit=ListView_EditLabel( lv.m_hWnd, fileId );
+			const HWND hEdit=(HWND)::SendMessageW( lv.m_hWnd, LVM_EDITLABELW, fileId, 0 );
 			CEditorBase::pSingleShown=(PEditorBase)::SetWindowLongW( hEdit, GWL_WNDPROC, (long)__editLabel_wndProc__ );
 		}
 		// - emptying the clipboard

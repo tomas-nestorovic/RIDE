@@ -248,7 +248,7 @@
 		std::unique_ptr<TDirectoryTraversal> BeginDirectoryTraversal(PCFile directory) const override;
 		DWORD GetDirectoryUid(PCFile dir) const override;
 		CPathString GetFileExportNameAndExt(PCFile file,bool shellCompliant) const override;
-		TStdWinError ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile) override;
+		TStdWinError ImportFile(CFile *fIn,DWORD fileSize,RCPathString nameAndExtension,DWORD winAttr,PFile &rFile) override;
 		TStdWinError CreateSubdirectory(RCPathString name,DWORD winAttr,PFile &rCreatedSubdir);
 		TStdWinError SwitchToDirectory(PFile slot);
 		TStdWinError MoveFileToCurrDir(PFile file,RCPathString exportFileNameAndExt,PFile &rMovedFile);

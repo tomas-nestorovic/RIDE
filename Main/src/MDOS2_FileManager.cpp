@@ -216,14 +216,14 @@
 					BYTE dataXorChecksum; // is usually not computed, thus may be ignored
 					TBootSector boot;
 				} d_0;
-				CFileException e;
 				CFile f;
-				if (!f.Open( shellName, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary, &e ))
-					return e.m_cause;
+				f.m_hFile=(decltype(f.m_hFile))shellName.CreateFile( GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING );
+				if (f.m_hFile==CFile::hFileNull)
+					return ::GetLastError();
 				if (f.Read(&d_0,sizeof(d_0))==sizeof(d_0))
 					if (d_0.version==0 && !::strncmp(d_0.signature,"D_0",sizeof(d_0.signature)) && !::strncmp(d_0.fileSystemName,"MDOS_D4080",sizeof(d_0.fileSystemName))){
 						// . defining the Dialog
-						const auto nameAndExt=Utils::ToStringT(shellName.FindLast('\\')+1);
+						const auto nameAndExt=shellName.GetFileName();
 						class CResolutionDialog sealed:public Utils::CCommandDialog{
 							const CString msg;
 							BOOL OnInitDialog() override{

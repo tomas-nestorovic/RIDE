@@ -204,13 +204,7 @@ using namespace Yahel;
 		// opens specified File stored in currently open Image, and shows its content in HexaEditor
 		const PCDos dos=rDialog.fm.tab.image->dos;
 		IStream *const s=new CDos::CFileReaderWriter(dos,f);
-			#ifdef UNICODE
-				Open( s, dos->GetFilePresentationNameAndExt(f) );
-			#else
-				WCHAR fileNameW[MAX_PATH];
-				::MultiByteToWideChar( CP_ACP,0, dos->GetFilePresentationNameAndExt(f),-1, fileNameW,ARRAYSIZE(fileNameW) );
-				Open( s, fileNameW );
-			#endif
+			Open( s, dos->GetFilePresentationNameAndExt(f).GetUnicode() );
 		s->Release();
 	}
 
@@ -261,19 +255,13 @@ using namespace Yahel;
 			}
 		}else if (const HGLOBAL hg=pDataObject->GetGlobalData(CRideApp::cfDescriptor)){
 			// virtual Files (dragged over from an instance of FileManager, even from another instance of this application)
-			if (const LPFILEGROUPDESCRIPTOR pfgd=(LPFILEGROUPDESCRIPTOR)::GlobalLock(hg)){
+			if (const LPFILEGROUPDESCRIPTORW pfgd=(LPFILEGROUPDESCRIPTORW)::GlobalLock(hg)){
 				FORMATETC etcFileContents={ CRideApp::cfContent, nullptr, DVASPECT_CONTENT, 0, TYMED_ISTREAM }; // 0 = only first File, others ignored
 				if (COleStreamFile *const osf=dynamic_cast<COleStreamFile *>(pDataObject->GetFileData(CRideApp::cfContent,&etcFileContents))){ // abstracting virtual data into a File
 					// File is readable (e.g. doesn't contain no "Sector no found" errors)
-					const FILEDESCRIPTOR *const pfd=pfgd->fgd;
+					const FILEDESCRIPTORW *const pfd=pfgd->fgd;
 					osf->SetLength(pfd->nFileSizeLow);
-					#ifdef UNICODE
-						Open( osf->m_lpStream, pfd->cFileName );
-					#else
-						WCHAR fileNameW[MAX_PATH];
-						::MultiByteToWideChar( CP_ACP,0, pfd->cFileName,-1, fileNameW,ARRAYSIZE(fileNameW) );
-						Open( osf->m_lpStream, fileNameW );
-					#endif
+					Open( osf->m_lpStream, pfd->cFileName );
 				}
 				::GlobalUnlock(hg);
 			}

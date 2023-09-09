@@ -364,7 +364,7 @@
 		}else{
 			const PCDirectoryEntry de=(PCDirectoryEntry)file;
 			if (pOutName)
-				( *pOutName=CPathString(de->name,TRDOS503_FILE_NAME_LENGTH_MAX) ).TrimRight(' '); // trimming trailing spaces
+				( *pOutName=CPathString(de->name,TRDOS503_FILE_NAME_LENGTH_MAX) ).TrimRightSpace(); // trimming trailing spaces
 			if (pOutExt)
 				*pOutExt=de->extension;
 		}
@@ -376,9 +376,9 @@
 		if (file==ZX_DIR_ROOT)
 			return ERROR_ACCESS_DENIED;
 		// - checking that the NewName+NewExt combination follows the "8.1" convention
-		if (newExt.GetLength()<1)
+		if (newExt.GetLengthW()<1)
 			return ERROR_BAD_FILE_TYPE;
-		if (newName.GetLength()>TRDOS503_FILE_NAME_LENGTH_MAX || newExt.GetLength()>1)
+		if (newName.GetLengthW()>TRDOS503_FILE_NAME_LENGTH_MAX || newExt.GetLengthW()>1)
 			return ERROR_FILENAME_EXCED_RANGE;
 		// - making sure that a File with given NameAndExtension doesn't yet exist
 		if ( rRenamedFile=FindFileInCurrentDir(newName,newExt,file) )
@@ -390,7 +390,7 @@
 			__getStdParameter1__(de,stdParams.param1), __getStdParameter2__(de,stdParams.param2);
 		// - renaming
 		TDirectoryEntry tmp=*de; // all changes are made to a temporary Entry before they are copied to disk
-		tmp.extension=newExt.FirstChar();
+		tmp.extension=newExt.FirstCharA();
 		newName.MemcpyAnsiTo( tmp.name, TRDOS503_FILE_NAME_LENGTH_MAX, ' ' );
 		// - setting important information about the File
 		tmp.parameterA = tmp.parameterB = officialFileSize;
@@ -478,22 +478,21 @@
 			::wsprintf(	buf+__exportFileInformation__( buf, uts, params, de->__getOfficialFileSize__(nullptr) ),
 						INFO_FILE_EX, de->nSectors
 					);
-			result+=buf;
+			result.Append(buf);
 		}
 		return result;
 	}
 
-	TStdWinError CTRDOS503::ImportFile(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile){
+	TStdWinError CTRDOS503::ImportFile(CFile *f,DWORD fileSize,RCPathString nameAndExtension,DWORD winAttr,PFile &rFile){
 		// imports specified File (physical or virtual) into the Image; returns Windows standard i/o error
 		// - parsing the NameAndExtension into a usable "8.1" form
-		CPathString zxName,zxExt; LPCTSTR zxInfo;
-		TCHAR buf[16384];
-		__parseFat32LongName__(	::lstrcpy(buf,nameAndExtension), zxName, zxExt, zxInfo );
-		zxName.TrimToLength(TRDOS503_FILE_NAME_LENGTH_MAX);
-		zxExt.TrimToLength(1);
+		CPathString zxName,zxExt;
+		const CString zxInfo=ParseFat32LongName( nameAndExtension, zxName, zxExt );
+		zxName.TrimToLengthW(TRDOS503_FILE_NAME_LENGTH_MAX);
+		zxExt.TrimToLengthW(1);
 		// - getting import information
 		TStdParameters params;	TUniFileType uts;	DWORD dw;
-		const LPCTSTR pTrdosSpecificInfo=zxInfo+__importFileInformation__(zxInfo,uts,params,dw);
+		const LPCTSTR pTrdosSpecificInfo=(LPCTSTR)zxInfo+__importFileInformation__(zxInfo,uts,params,dw);
 		const DWORD fileSizeFormal=	pTrdosSpecificInfo>zxInfo // if record on official File size exists in ZxInformation ...
 									? dw // ... use that record
 									: fileSize; // ... otherwise take as the official File size the actual size of imported file
@@ -517,7 +516,7 @@
 			case TUniFileType::SCREEN	: uftExt=TDirectoryEntry::BLOCK; break;
 			case TUniFileType::PRINT	: uftExt=TDirectoryEntry::PRINT; break;
 			default:
-				uftExt= zxExt.GetLength() ? zxExt.FirstChar() : TDirectoryEntry::BLOCK;
+				uftExt= zxExt.GetLengthW() ? zxExt.FirstCharA() : TDirectoryEntry::BLOCK;
 				break;
 		}
 		// - initializing the description of File to import
@@ -1011,7 +1010,7 @@
 			if (const WORD n=shiftSectors[--i]){ // the File is cross-linked with another File
 				// . confirming the resolution
 				const PDirectoryEntry de=directory[i];
-				const CString &&fileName=trdos->GetFilePresentationNameAndExt(de);
+				const CPathString &&fileName=trdos->GetFilePresentationNameAndExt(de);
 				CString msg; LPCTSTR suggestion;
 				if (shiftSectors[i-1]<n){
 					msg=Utils::SimpleFormat( _T("File \"%s\" in conflict with \"%s\""), fileName, trdos->GetFilePresentationNameAndExt(directory[i-1]) );

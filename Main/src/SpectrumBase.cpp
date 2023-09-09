@@ -130,24 +130,22 @@
 		Utils::InformationWithCheckableShowNoMore( text, INI_SPECTRUM, messageId );
 	}
 
-	void CSpectrumBase::__parseFat32LongName__(PTCHAR buf,RPathString rOutName,RPathString rOutExt,LPCTSTR &rOutZxInfo){
-		// parses input FAT long name into three components: ZX Name (of LengthMax chars at most), single-char ZX Extension, and ZX Information
+	CString CSpectrumBase::ParseFat32LongName(RCPathString shellName,RPathString rOutName,RPathString rOutExt){
+		// parses input FAT long name into three components: ZX Name (of LengthMax chars at most), single-char ZX Extension, and ZX Information (returned)
+		CPathString buf=shellName.Clone().Unescape();
 		// - finding ZX import information
-		rOutZxInfo=nullptr; // assumption (no ZX import information found)
-		if (PTCHAR pSpace=_tcsrchr(buf,' ')) // string may be terminated with import information, see CSpectrumDos::__importFileInformation__
+		CString zxInfo;
+		if (PTCHAR pSpace=buf.FindLast(' ')) // string may be terminated with import information, see CSpectrumDos::__importFileInformation__
 			if (pSpace[1]=='Z' && pSpace[2]=='X'){ // ZX import information must be correctly prefixed
 				*pSpace++='\0'; // terminating the File's Name+Extension
-				rOutZxInfo=pSpace;
+				zxInfo=pSpace;
 			}
-		// - finding, unescaping, and trimming the Extension
-		if (PTCHAR pExt=_tcsrchr(buf,'.')){
-			// Extension specified (Dot found)
-			*pExt++='\0';
-			rOutExt=CPathString( TZxRom::AsciiToZx(pExt,(PCHAR)pExt,nullptr) ).Unescape(); // converting in place to ZX charset
-		}else // Extension not specified (Dot not found)
-			rOutExt=CPathString::Empty;
-		// - unescaping and trimming the Name
-		rOutName=CPathString( TZxRom::AsciiToZx(buf,(PCHAR)buf,nullptr) ).Unescape(); // converting in place to ZX charset
+		// - finding and trimming the Extension
+		TCHAR zx[1024]; // should suffice for any filename of any Spectrum DOS
+		buf=TZxRom::AsciiToZx( buf.GetAnsi(), zx, nullptr );
+		rOutExt=buf.DetachExtension();
+		rOutName=buf;
+		return zxInfo;
 	}
 
 	#define INFO_UNI	_T(" ZX%c")
@@ -215,7 +213,7 @@
 
 	CSpectrumBase::CSpectrumBase(PImage image,PCFormat pFormatBoot,TTrackScheme trackAccessScheme,PCProperties properties,UINT nResId,CSpectrumBaseFileManagerView *pFileManager,TGetFileSizeOptions _getFileSizeDefaultOption,TSectorStatus unformatFatStatus)
 		// ctor
-		: CDos(image,pFormatBoot,trackAccessScheme,properties,::lstrcmp,sideMap,nResId,pFileManager,_getFileSizeDefaultOption,unformatFatStatus) {
+		: CDos(image,pFormatBoot,trackAccessScheme,properties,::StrCmpNW,sideMap,nResId,pFileManager,_getFileSizeDefaultOption,unformatFatStatus) {
 		::memcpy( sideMap, StdSidesMap, sizeof(sideMap) ); // mapping Head numbers to Side numbers as the IBM norm dictates
 	}
 
@@ -237,14 +235,12 @@
 
 
 
-	CString CSpectrumBase::GetFilePresentationNameAndExt(PCFile file) const{
+	CDos::CPathString CSpectrumBase::GetFilePresentationNameAndExt(PCFile file) const{
 		// returns File name concatenated with File extension for presentation of the File to the user
 		CPathString name,ext;
 		GetFileNameOrExt( file, &name, &ext );
-		if (ext.GetLength())
-			name.AppendDotExtension(ext);
 		TCHAR buf[1024];
-		return TZxRom::ZxToAscii( name.GetAnsi(), name.GetLength(), buf );
+		return TZxRom::ZxToAscii( name.AppendDotExtensionIfAny(ext).GetAnsi(), buf );
 	}
 
 	CDos::CPathString CSpectrumBase::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
@@ -255,13 +251,13 @@
 			GetFileNameOrExt( file, &fileName, &fileExt );
 			fileName.ExcludeFat32LongNameInvalidChars(), fileExt.ExcludeFat32LongNameInvalidChars();
 			TCHAR buf[16384];
-			const PTCHAR pZxName=TZxRom::ZxToAscii( fileName.GetAnsi(), fileName.GetLength(), buf );
+			const PTCHAR pZxName=TZxRom::ZxToAscii( fileName.GetAnsi(), buf );
 			if (short n=::lstrlen(pZxName)){
 				// valid export name - taking it as the result
-				if (const short fileExtLength=fileExt.GetLength()){
+				if (fileExt.GetLengthW()){
 					pZxName[n++]='.';
 					::lstrcpy(	pZxName+n,
-								TZxRom::ZxToAscii( fileExt.GetAnsi(), fileExtLength, pZxName+n )
+								TZxRom::ZxToAscii( fileExt.GetAnsi(), pZxName+n )
 							);
 				}
 				return pZxName;

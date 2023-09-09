@@ -58,7 +58,7 @@
 			const DROPEFFECT preferredDropEffect;
 			CFileList listOfFiles;
 
-			DWORD __addFileToExport__(PTCHAR relativeDir,CDos::PFile file,LPFILEDESCRIPTOR lpfd,TStdWinError &rOutError);
+			DWORD __addFileToExport__(PWCHAR relativeDir,CDos::PFile file,LPFILEDESCRIPTORW lpfd,TStdWinError &rOutError);
 			BOOL OnRenderData(LPFORMATETC lpFormatEtc,LPSTGMEDIUM lpStgMedium) override;
 			BOOL OnRenderGlobalData(LPFORMATETC lpFormatEtc,HGLOBAL *phGlobal) override;
 			BOOL OnRenderFileData(LPFORMATETC lpFormatEtc,CFile *pFile) override;
@@ -120,8 +120,8 @@
 		char __columnIdFromFileInfo__(PCFileInfo fi) const;
 		//TStdWinError __switchToDirectory__(PWCHAR path) const;
 		TStdWinError __skipNameConflict__(DWORD newFileSize,CDos::PFile conflict,DWORD &rConflictedSiblingResolution) const;
-		TStdWinError __moveFile__(int &i,LPFILEDESCRIPTOR files,int nFiles,CDos::PFile &rMovedFile,DWORD &rConflictedSiblingResolution);
-		TStdWinError __importVirtualFile__(int &i,CDos::RCPathString pathAndName,LPFILEDESCRIPTOR files,int nFiles,COleDataObject *pDataObject,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution);
+		TStdWinError __moveFile__(int &i,LPFILEDESCRIPTORW files,int nFiles,CDos::PFile &rMovedFile,DWORD &rConflictedSiblingResolution);
+		TStdWinError __importVirtualFile__(int &i,CDos::RCPathString pathAndName,LPFILEDESCRIPTORW files,int nFiles,COleDataObject *pDataObject,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution);
 		CDos::PFile __getDirectoryUnderCursor__(CPoint &rPt) const;
 		void BrowseCurrentDirInHexaMode(CDos::PCFile fileToSeekTo);
 		afx_msg int OnCreate(LPCREATESTRUCT lpcs);
@@ -283,7 +283,7 @@
 		CDos::PFile GetPreviousSelectedFile(POSITION &pos) const;
 		void SelectFiles(const CFileList &selection);
 		DWORD GetCountOfSelectedFiles() const;
-		TStdWinError ImportFileAndResolveConflicts(CFile *f,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,const FILETIME &rCreated,const FILETIME &rLastRead,const FILETIME &rLastModified,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution);
+		TStdWinError ImportFileAndResolveConflicts(CFile *f,DWORD fileSize,CDos::RCPathString nameAndExtension,DWORD winAttr,const FILETIME &rCreated,const FILETIME &rLastRead,const FILETIME &rLastModified,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution);
 		void SwitchToDirectory(CDos::PFile directory);
 		afx_msg void RefreshDisplay();
 		BOOL Create(LPCTSTR lpszClassName,LPCTSTR lpszWindowName,DWORD dwStyle,const RECT &rect,CWnd *pParentWnd,UINT nID,CCreateContext *pContext=nullptr) override;

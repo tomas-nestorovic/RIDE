@@ -46,8 +46,7 @@
 				// . composing the Name for the File copy
 				TCHAR postfix[8];
 				const BYTE n=::wsprintf(postfix,_T("%c%d"),255,copyNumber); // 255 = token of the "COPY" keyword
-				CPathString bufCopyName=fileName;
-				bufCopyName.TrimToLength(nameCharsMax-n)+=postfix;
+				const CPathString bufCopyName=fileName.Clone().TrimToLengthW(nameCharsMax-n).Append(postfix);
 				// . attempting to rename the TemporaryDirectoryEntry
 				CDos::PFile fExisting;
 				switch (DOS->ChangeFileNameAndExt( &tmpDirEntry, bufCopyName, fileExt, fExisting )){
@@ -84,10 +83,11 @@
 				public:
 					CPossiblyATapeDialog(const CString &msg)
 						// ctor
-						: Utils::CCommandDialog(msg) {
+						: Utils::CCommandDialog(msg)
+						, msg(msg) {
 					}
 				} d(
-					Utils::SimpleFormat( _T("\"%s\" looks like a tape."), Utils::ToStringT(shellName.FindLast('\\')+1) )
+					Utils::SimpleFormat( _T("\"%s\" looks like a tape."), shellName.GetFileName() )
 				);
 				// . showing the Dialog and processing its result
 				switch (d.DoModal()){
@@ -98,7 +98,7 @@
 							if (DOS->ProcessCommand(ID_TAPE_CLOSE)==TCmdResult::REFUSED) // if Tape not ejected ...
 								return ERROR_CANCELLED; // ... we are done
 						// : inserting a recorded Tape (by opening its underlying physical file)
-						CTape::pSingleInstance=new CTape( shellName.ToString(), (CSpectrumDos *)DOS, false ); // inserted Tape is WriteProtected by default
+						CTape::pSingleInstance=new CTape( shellName, (CSpectrumDos *)DOS, false ); // inserted Tape is WriteProtected by default
 						rImportedFile=nullptr; // File processed another way than importing
 						return ERROR_SUCCESS;
 					}
@@ -163,7 +163,7 @@
 		CPathString ext;
 		rZxFileManager.DOS->GetFileNameOrExt(file,nullptr,&ext);
 		const PEditorBase result=CreateStdEditor(
-			file, &( data=ext.FirstChar() ),
+			file, &( data=ext.FirstCharA() ),
 			PropGrid::Enum::DefineConstStringListEditor( sizeof(data), __createValues__, __getDescription__, __freeValues__, __onChanged__ )
 		);
 		::SendMessage( result->hEditor, WM_SETFONT, (WPARAM)rZxFileManager.rFont.m_hObject, 0 );
@@ -249,6 +249,6 @@
 
 	void CSpectrumBase::CSpectrumBaseFileManagerView::CVarLengthCommandLineEditor::DrawReportModeCell(LPCSTR cmd,BYTE cmdLength,char paddingChar,LPDRAWITEMSTRUCT pdis) const{
 		// directly draws FileName
-		const CPathString tmp=CPathString( cmd, cmdLength ).TrimRight(paddingChar);
-		rZxFileManager.zxRom.PrintAt( pdis->hDC, tmp.GetAnsi(), tmp.GetLength(), pdis->rcItem, DT_SINGLELINE|DT_VCENTER );
+		const CString zx=CPathString( cmd, cmdLength ).TrimRightW(paddingChar).GetAnsi();
+		rZxFileManager.zxRom.PrintAt( pdis->hDC, zx, zx.GetLength(), pdis->rcItem, DT_SINGLELINE|DT_VCENTER );
 	}

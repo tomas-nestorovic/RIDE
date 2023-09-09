@@ -60,7 +60,7 @@
 		ON_NOTIFY_REFLECT(NM_DBLCLK,__onDblClick__)
 		ON_COMMAND(ID_NAVIGATE_UP,__navigateBack__)
 			ON_UPDATE_COMMAND_UI(ID_NAVIGATE_UP,__navigateBack_updateUI__)
-		ON_NOTIFY_REFLECT(LVN_ENDLABELEDIT,__onEndLabelEdit__)
+		ON_NOTIFY_REFLECT(LVN_ENDLABELEDITW,__onEndLabelEdit__)
 		ON_COMMAND(ID_FILEMANAGER_FILE_COMPARE,__compareFiles__)
 		ON_COMMAND(ID_EDIT_SELECT_ALL,__selectAllFilesInCurrentDir__)
 		ON_COMMAND(ID_EDIT_SELECT_NONE,__unselectAllFilesInCurrentDir__)
@@ -552,12 +552,12 @@
 
 	void CFileManagerView::__addFileToTheEndOfList__(CDos::PCFile file){
 		// adds given File to the end of the list
-		const CString name=DOS->GetFilePresentationNameAndExt(file);
-		LVITEM lvi={ LVIF_TEXT|LVIF_PARAM, nativelyLastFile++ };
+		const CDos::CPathString name=DOS->GetFilePresentationNameAndExt(file);
+		LVITEMW lvi={ LVIF_TEXT|LVIF_PARAM, nativelyLastFile++ };
 			nativeOrderOfFiles[(PVOID)file]=lvi.iItem;
 			lvi.lParam=(LPARAM)file;
-			lvi.pszText=const_cast<PTCHAR>( (LPCTSTR)name );
-		GetListCtrl().InsertItem(&lvi);
+			lvi.pszText=const_cast<PWCHAR>( name.GetUnicode() );
+		GetListCtrl().SendMessage( LVM_INSERTITEMW, 0, (LPARAM)&lvi );
 	}
 
 	void CFileManagerView::__markDirectorySectorAsDirty__(PVOID dirEntry){
@@ -695,8 +695,8 @@
 
 			void OnOK() override{
 				// the Name of new Subdirectory confirmed
-				CString name;
-				GetDlgItemText( ID_DIRECTORY, name );
+				WCHAR name[MAX_PATH];
+				GetDlgItemTextW( *this, ID_DIRECTORY, name, ARRAYSIZE(name) );
 				if (const TStdWinError err=(dos->*dos->pFileManager->pDirectoryStructureManagement->fnCreateSubdir)(name,FILE_ATTRIBUTE_DIRECTORY,subdirectory))
 					Utils::Information(_T("Cannot create the directory"),err);
 				else{
@@ -726,8 +726,10 @@
 
 	void CFileManagerView::BrowseCurrentDirInHexaMode(CDos::PCFile fileToSeekTo){
 		CDirEntriesView *const deView=new CDirEntriesView( DOS, DOS->currentDir, fileToSeekTo );
-		const CString label=Utils::SimpleFormat( _T("Dir \"%s\""), DOS->GetFilePresentationNameAndExt(DOS->currentDir) );
-		CTdiCtrl::AddTabLast( TDI_HWND, label, &deView->tab, true, TDI_TAB_CANCLOSE_ALWAYS, CMainWindow::CTdiView::TTab::OnOptionalTabClosing );
+		CTdiCtrl::AddTabLastW( TDI_HWND,
+			DOS->GetFilePresentationNameAndExt(DOS->currentDir).Prepend(_T("Dir \"")).Append(L'\"').GetUnicode(),
+			&deView->tab, true, TDI_TAB_CANCLOSE_ALWAYS, CMainWindow::CTdiView::TTab::OnOptionalTabClosing
+		);
 		ownedTabs.AddTail( &deView->tab );
 	}
 
@@ -754,8 +756,10 @@
 		if (iFocused>=0){ // is there one File focused?
 			const CDos::PFile file=(CDos::PFile)lv.GetItemData(iFocused);
 			auto *const pView=new CFatHexaView( DOS, file, fatEntryYahelDefinition );
-				const CString label=Utils::SimpleFormat( _T("FAT \"%s\""), DOS->GetFilePresentationNameAndExt(file) );
-				CTdiCtrl::AddTabLast( TDI_HWND, label, &pView->tab, true, TDI_TAB_CANCLOSE_ALWAYS, CMainWindow::CTdiView::TTab::OnOptionalTabClosing );
+				CTdiCtrl::AddTabLastW( TDI_HWND,
+					DOS->GetFilePresentationNameAndExt(file).Prepend( _T("FAT \"") ).Append(L'\"').GetUnicode(),
+					&pView->tab, true, TDI_TAB_CANCLOSE_ALWAYS, CMainWindow::CTdiView::TTab::OnOptionalTabClosing
+				);
 			ownedTabs.AddTail( &pView->tab );						
 		}
 	}

@@ -160,6 +160,7 @@
 			static bool IsKnownFileType(TFileType type);
 			static LPCTSTR GetFileTypeName(TFileType type);
 			static PTCHAR ZxToAscii(LPCSTR zx,short zxLength,PTCHAR buf,char zxBefore=' ');
+			static PTCHAR ZxToAscii(const CString &zx,PTCHAR buf,char zxBefore=' ');
 			static PCHAR AsciiToZx(LPCTSTR pc,PCHAR zx,PBYTE pOutZxLength);
 			//inline
 			static bool IsStdUdgSymbol(BYTE s);
@@ -205,7 +206,7 @@
 			WORD PrintAt(HDC dc,LPCSTR zx,short zxLength,RECT r,UINT drawTextFormat,char zxBefore=' ') const;
 		} zxRom;
 	protected:
-		enum TUniFileType:char{ // ZX platform-independent File types ("universal" types) - used during exporting/importing of Files across ZX platforms
+		enum TUniFileType:TCHAR{ // ZX platform-independent File types ("universal" types) - used during exporting/importing of Files across ZX platforms
 			UNKNOWN			='X',
 			SUBDIRECTORY	='D',
 			PROGRAM			='P',
@@ -295,7 +296,7 @@
 		static const RGBQUAD Colors[16];
 		static DWORD idHeaderless;
 
-		static void __parseFat32LongName__(PTCHAR buf,RPathString rOutName,RPathString rOutExt,LPCTSTR &rOutZxInfo);
+		static CString ParseFat32LongName(RCPathString buf,RPathString rOutName,RPathString rOutExt);
 		static int __exportFileInformation__(PTCHAR buf,TUniFileType uniFileType);
 		static int __exportFileInformation__(PTCHAR buf,TUniFileType uniFileType,TStdParameters params,DWORD fileLength);
 		static int __exportFileInformation__(PTCHAR buf,TUniFileType uniFileType,TStdParameters params,DWORD fileLength,BYTE dataFlag);
@@ -309,7 +310,7 @@
 		CSpectrumBase(PImage image,PCFormat pFormatBoot,TTrackScheme trackAccessScheme,PCProperties properties,UINT nResId,CSpectrumBaseFileManagerView *pFileManager,TGetFileSizeOptions getFileSizeDefaultOption,TSectorStatus unformatFatStatus);
 		~CSpectrumBase();
 	public:
-		CString GetFilePresentationNameAndExt(PCFile file) const override;
+		CPathString GetFilePresentationNameAndExt(PCFile file) const override;
 		CPathString GetFileExportNameAndExt(PCFile file,bool shellCompliant) const override;
 		DWORD GetAttributes(PCFile file) const override;
 		TCmdResult ProcessCommand(WORD cmd) override;
@@ -420,7 +421,7 @@
 			TStdWinError DeleteFile(PFile file) override;
 			std::unique_ptr<TDirectoryTraversal> BeginDirectoryTraversal(PCFile directory) const override;
 			CPathString GetFileExportNameAndExt(PCFile file,bool shellCompliant) const override;
-			TStdWinError ImportFile(CFile *fIn,DWORD fileSize,LPCTSTR nameAndExtension,DWORD winAttr,PFile &rFile) override;
+			TStdWinError ImportFile(CFile *fIn,DWORD fileSize,RCPathString nameAndExtension,DWORD winAttr,PFile &rFile) override;
 			// other
 			TCmdResult ProcessCommand(WORD cmd) override;
 			bool UpdateCommandUi(WORD cmd,CCmdUI *pCmdUI) const override;
