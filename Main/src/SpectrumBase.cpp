@@ -141,7 +141,7 @@
 				zxInfo=pSpace;
 			}
 		// - finding and trimming the Extension
-		TCHAR zx[1024]; // should suffice for any filename of any Spectrum DOS
+		char zx[1024]; // should suffice for any filename of any Spectrum DOS
 		buf=TZxRom::AsciiToZx( buf.GetAnsi(), zx, nullptr );
 		rOutExt=buf.DetachExtension();
 		rOutName=buf;
@@ -251,17 +251,13 @@
 			GetFileNameOrExt( file, &fileName, &fileExt );
 			fileName.ExcludeFat32LongNameInvalidChars(), fileExt.ExcludeFat32LongNameInvalidChars();
 			TCHAR buf[16384];
-			const PTCHAR pZxName=TZxRom::ZxToAscii( fileName.GetAnsi(), buf );
-			if (short n=::lstrlen(pZxName)){
+			CPathString zxName=TZxRom::ZxToAscii( fileName.GetAnsi(), buf );
+			if (zxName.GetLengthW())
 				// valid export name - taking it as the result
-				if (fileExt.GetLengthW()){
-					pZxName[n++]='.';
-					::lstrcpy(	pZxName+n,
-								TZxRom::ZxToAscii( fileExt.GetAnsi(), pZxName+n )
-							);
-				}
-				return pZxName;
-			}else
+				return zxName.AppendDotExtensionIfAny(
+					TZxRom::ZxToAscii( fileExt.GetAnsi(), buf )
+				);
+			else
 				// invalid export name - generating an artifical one
 				return __super::GetFileExportNameAndExt(file,shellCompliant);
 		}else

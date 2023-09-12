@@ -249,6 +249,8 @@
 
 	void CSpectrumBase::CSpectrumBaseFileManagerView::CVarLengthCommandLineEditor::DrawReportModeCell(LPCSTR cmd,BYTE cmdLength,char paddingChar,LPDRAWITEMSTRUCT pdis) const{
 		// directly draws FileName
-		const CString zx=CPathString( cmd, cmdLength ).TrimRightW(paddingChar).GetAnsi();
-		rZxFileManager.zxRom.PrintAt( pdis->hDC, zx, zx.GetLength(), pdis->rcItem, DT_SINGLELINE|DT_VCENTER );
+		rZxFileManager.zxRom.PrintAt( pdis->hDC,
+			CPathString( cmd, cmdLength ).TrimRightW(paddingChar).GetAnsi(),
+			pdis->rcItem, DT_SINGLELINE|DT_VCENTER
+		);
 	}

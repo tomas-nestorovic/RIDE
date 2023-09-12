@@ -224,6 +224,11 @@
 		return nAsciiChars;
 	}
 
+	WORD CSpectrumBase::TZxRom::PrintAt(HDC dc,const CString &zx,const RECT &r,UINT drawTextFormat,char zxBefore) const{
+		// returns the number of ASCII characters to which the input ZX code has been converted and printed inside the given Rectangle
+		return PrintAt( dc, zx, zx.GetLength(), r, drawTextFormat, zxBefore );
+	}
+
 
 
 
@@ -259,11 +264,11 @@
 		const TZxRom &rZxRom=((CSpectrumBaseFileManagerView *)CDos::GetFocused()->pFileManager)->zxRom;
 		const HGDIOBJ hFont0=::SelectObject( pdis->hDC, rZxRom.font.m_hObject );
 			pdis->rcItem.left+=PROPGRID_CELL_MARGIN_LEFT;
-			const CString zx=CPathString( (LPCSTR)value, LOBYTE(combinedValue) ).TrimRightW(HIBYTE(combinedValue)).GetAnsi();
-			rZxRom.PrintAt(	pdis->hDC, zx, zx.GetLength(),
-							pdis->rcItem,
-							DT_SINGLELINE | DT_LEFT | DT_VCENTER | DT_NOPREFIX
-						);
+			rZxRom.PrintAt(	pdis->hDC,
+				CPathString( (LPCSTR)value, LOBYTE(combinedValue) ).TrimRightW(HIBYTE(combinedValue)).GetAnsi(),
+				pdis->rcItem,
+				DT_SINGLELINE | DT_LEFT | DT_VCENTER | DT_NOPREFIX
+			);
 		::SelectObject(pdis->hDC,hFont0);
 	}
 

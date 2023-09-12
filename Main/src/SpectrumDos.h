@@ -204,6 +204,7 @@
 			} lineComposerPropGridEditor;
 
 			WORD PrintAt(HDC dc,LPCSTR zx,short zxLength,RECT r,UINT drawTextFormat,char zxBefore=' ') const;
+			WORD PrintAt(HDC dc,const CString &zx,const RECT &r,UINT drawTextFormat,char zxBefore=' ') const;
 		} zxRom;
 	protected:
 		enum TUniFileType:TCHAR{ // ZX platform-independent File types ("universal" types) - used during exporting/importing of Files across ZX platforms

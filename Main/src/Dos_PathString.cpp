@@ -187,7 +187,7 @@
 		if (extWithoutDot && *extWithoutDot)
 			return Append(L'.').Append( extWithoutDot, ::lstrlenW(extWithoutDot) );
 		else
-			*this;
+			return *this;
 	}
 
 	CDos::CPathString &CDos::CPathString::AppendDotExtensionIfAny(RCPathString extWithoutDot){

@@ -47,6 +47,8 @@
 			mutable CString unicode;
 
 			CPathString GetTail(TCHAR fromLast) const;
+
+			PTCHAR GetBuffer() const; // returns UTF-8 string in ANSI build
 		public:
 			typedef bool (TFnValidChar)(WCHAR c);
 
@@ -71,7 +73,6 @@
 		#endif
 			inline CPathString Clone() const{ return CPathString(*this); }
 			int GetLengthW() const;
-			PTCHAR GetBuffer() const; // returns UTF-8 string in ANSI build
 			char FirstCharA() const;
 			void MemcpyAnsiTo(PCHAR buf,BYTE bufCapacity,char padding) const;
 			PTCHAR FindLast(TCHAR c) const;

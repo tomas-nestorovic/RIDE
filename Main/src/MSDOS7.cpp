@@ -462,9 +462,11 @@
 			if (bufExt)	 *bufExt=CPathString::Empty;
 		}else{
 			if (bufName){
+				char &r=const_cast<char &>(*de->shortNameEntry.name);
+				const Utils::CVarBackup<char> kanji(r);
+				if (r==KANJI_PLACEHOLDER)
+					r=KANJI; // Kanji character at the beginning of the Name
 				*bufName=CPathString( de->shortNameEntry.name, MSDOS7_FILE_NAME_LENGTH_MAX ).TrimRightSpace();
-				TCHAR &r=*bufName->GetBuffer();
-				if (r==KANJI_PLACEHOLDER) r=KANJI; // Kanji character at the beginning of the Name
 			}
 			if (bufExt)
 				*bufExt=CPathString( de->shortNameEntry.extension, MSDOS7_FILE_EXT_LENGTH_MAX ).TrimRightSpace();
