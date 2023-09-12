@@ -775,7 +775,7 @@ importQuit2:		::GlobalUnlock(hg);
 		ConvertToCommandLikeButton( GetDlgItemHwnd(IDNO) );
 		// - initializing the "Cancel" button
 		SetDlgItemText( IDCANCEL, _T("Quit importing") );
-		ConvertToCommandLikeButton( GetDlgItemHwnd(IDCANCEL) );
+		ConvertToCancelLikeButton( GetDlgItemHwnd(IDCANCEL) );
 		return result;
 	}
 

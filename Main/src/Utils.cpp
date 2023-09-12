@@ -494,9 +494,12 @@ namespace Utils{
 		AddButton( id, caption, 0xf026 ); // a symbol with open book
 	}
 
+	#define CANCEL_COMMAND_GLYPH	0xf0e5
+										// = arrow left-down
+
 	void CCommandDialog::AddCancelButton(LPCTSTR caption){
 		// adds a new "command-like" Button with given Id and Caption
-		AddButton( IDCANCEL, caption, 0xf0e5 ); // a symbol with open book
+		AddButton( IDCANCEL, caption, CANCEL_COMMAND_GLYPH );
 	}
 
 	void CCommandDialog::AddCheckBox(LPCTSTR caption){
@@ -2050,6 +2053,11 @@ namespace Utils{
 					);
 		::SendMessage( hStdBtn, WM_SETFONT, ::SendMessage(::GetParent(hStdBtn),WM_GETFONT,0,0), 0 );
 		::InvalidateRect(hStdBtn,nullptr,FALSE);
+	}
+
+	void CRideDialog::ConvertToCancelLikeButton(HWND hStdBtn,COLORREF textColor,int glyphPointSizeIncrement,COLORREF glyphColor){
+		// converts an existing standard button to a "command-like" one known from Windows Vista, featuring specified GlypfBeforeText ('\0' = no Glyph)
+		ConvertToCommandLikeButton( hStdBtn, CANCEL_COMMAND_GLYPH, textColor, glyphPointSizeIncrement, glyphColor );
 	}
 
 	void ScaleLogicalUnit(HDC dc){

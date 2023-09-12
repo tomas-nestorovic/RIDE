@@ -229,8 +229,8 @@ namespace Utils{
 		static LPCTSTR GetDialogTemplateItemText(UINT idDlgRes,WORD idItem,PTCHAR chars,WORD nCharsMax);
 		static void DrawClosingCurlyBracket(HDC dc,int x,int yMin,int yMax);
 		static void SetDlgItemSingleCharUsingFont(HWND hDlg,WORD id,WCHAR singleChar,HFONT hFont);
-		static void ConvertToCommandLikeButton(HWND hStdBtn,WCHAR wingdingsGlyphBeforeText=0xf0e8,COLORREF textColor=0,int glyphPointSizeIncrement=0,COLORREF glyphColor=0); // 0xf0e8 = arrow right
-
+		static void ConvertToCommandLikeButton(HWND hStdBtn,WCHAR wingdingsGlyphBeforeText=0xf0e0,COLORREF textColor=0,int glyphPointSizeIncrement=0,COLORREF glyphColor=0); // 0xf0e0 = thin arrow right
+		static void ConvertToCancelLikeButton(HWND hStdBtn,COLORREF textColor=0,int glyphPointSizeIncrement=0,COLORREF glyphColor=0);
 		CRideDialog(LPCTSTR lpszTemplateName,const CWnd *pParentWnd=nullptr);
 		CRideDialog(UINT nIDTemplate,const CWnd *pParentWnd=nullptr);
 
