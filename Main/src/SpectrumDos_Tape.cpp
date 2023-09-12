@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "MDOS2.h"
 
 	#define INI_MSG	_T("tapeinit")
 
@@ -25,8 +26,8 @@
 
 	CSpectrumDos::CTape::CTape(LPCTSTR fileName,const CSpectrumDos *diskDos,bool makeCurrentTab)
 		// ctor
-		// - base
-		: CSpectrumBase( this, &TapeFormat, TTrackScheme::BY_CYLINDERS, diskDos->properties, 0, &fileManager, TGetFileSizeOptions::OfficialDataLength, TSectorStatus::UNAVAILABLE )
+		// - base (using Properties of a Spectrum DOS that has no specific disk features that might be wrongly propagated to hexa-browser, for instance)
+		: CSpectrumBase( this, &TapeFormat, TTrackScheme::BY_CYLINDERS, &CMDOS2::Properties, 0, &fileManager, TGetFileSizeOptions::OfficialDataLength, TSectorStatus::UNAVAILABLE )
 		, CImageRaw(&CImageRaw::Properties,false) // "some" Image
 		// - initialization
 		, fileManager( this, diskDos->zxRom, fileName, makeCurrentTab ) {
