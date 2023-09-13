@@ -71,7 +71,7 @@
 
 
 
-	CChartView::CXyPointSeries::CXyPointSeries(DWORD nPoints,const POINT *points,HPEN hVertexPen)
+	CChartView::CXyPointSeries::CXyPointSeries(int nPoints,const POINT *points,HPEN hVertexPen)
 		// ctor
 		: nPoints(nPoints) , points(points)
 		, hPen(hVertexPen) {
@@ -80,7 +80,7 @@
 	void CChartView::CXyPointSeries::GetDrawingLimits(WORD percentile,TLogValue &rOutMaxX,TLogValue &rOutMaxY) const{
 		// sets corresponding outputs to the last item still to be drawn with specified Percentile
 		const CHistogram h=CreateYxHistogram();
-		DWORD sum=0,const sumMax=(ULONGLONG)nPoints*percentile/10000;
+		int sum=0,const sumMax=(ULONGLONG)nPoints*percentile/10000;
 		//rOutMaxX=...; // working out percentile along Y-axis only
 		rOutMaxY=1;
 		for( auto it=h.cbegin(); it!=h.cend()&&sum<sumMax; sum+=it++->second )
@@ -98,7 +98,7 @@
 		const WORD id=p.GetCurrentDrawingIdSync();
 		const CXyDisplayInfo &di=*(const CXyDisplayInfo *)&p.di;
 		const HGDIOBJ hPen0=::SelectObject( p.dc, hPen );
-			for( DWORD j=0; j<nPoints; j++ ){
+			for( int j=0; j<nPoints; j++ ){
 				EXCLUSIVELY_LOCK(p);
 				if (p.drawingId!=id)
 					break;
@@ -114,7 +114,7 @@
 	CChartView::CHistogram CChartView::CXyPointSeries::CreateYxHistogram(int mergeFilter) const{
 		// creates histogram of Y values
 		CHistogram tmp;
-		for( DWORD n=nPoints; n>0; tmp.AddValue(points[--n].y) );
+		for( int n=nPoints; n>0; tmp.AddValue(points[--n].y) );
 		if (mergeFilter>0)
 			for( auto it=tmp.begin(); it!=tmp.end(); ){
 				auto itNext=it;
@@ -140,7 +140,7 @@
 
 
 
-	CChartView::CXyBrokenLineSeries::CXyBrokenLineSeries(DWORD nPoints,const POINT *points,HPEN hLinePen)
+	CChartView::CXyBrokenLineSeries::CXyBrokenLineSeries(int nPoints,const POINT *points,HPEN hLinePen)
 		// ctor
 		: CXyPointSeries( nPoints, points, hLinePen ) {
 	}
@@ -154,7 +154,7 @@
 		const HGDIOBJ hPen0=::SelectObject( p.dc, hPen );
 			POINT pt=di.Transform( *points );
 			::MoveToEx( p.dc, pt.x, pt.y, nullptr );
-			for( DWORD j=1; j<nPoints; j++ ){
+			for( int j=1; j<nPoints; j++ ){
 				EXCLUSIVELY_LOCK(p);
 				if (p.drawingId!=id)
 					break;
@@ -169,7 +169,7 @@
 
 
 
-	CChartView::CXyOrderedBarSeries::CXyOrderedBarSeries(DWORD nPoints,const POINT *points,HPEN hLinePen,LPCTSTR name)
+	CChartView::CXyOrderedBarSeries::CXyOrderedBarSeries(int nPoints,const POINT *points,HPEN hLinePen,LPCTSTR name)
 		// ctor
 		: CXyPointSeries( nPoints, points, hLinePen ) {
 		this->name=name;
@@ -178,10 +178,10 @@
 	void CChartView::CXyOrderedBarSeries::GetDrawingLimits(WORD percentile,TLogValue &rOutMaxX,TLogValue &rOutMaxY) const{
 		// sets corresponding outputs to the last item still to be drawn with specified Percentile
 		LONGLONG ySum=0;
-		for( DWORD i=0; i<nPoints; ySum+=points[i++].y );
+		for( int i=0; i<nPoints; ySum+=points[i++].y );
 		ySum=ySum*percentile/10000; // estimation of percentile
 		rOutMaxX = rOutMaxY = 1;
-		for( DWORD i=0; i<nPoints&&ySum>0; i++ ){
+		for( int i=0; i<nPoints&&ySum>0; i++ ){
 			const POINT &pt=points[i];
 			ySum-=pt.y;
 			if (pt.x>rOutMaxX)
@@ -198,8 +198,8 @@
 		const CXyDisplayInfo &xydi=*(const CXyDisplayInfo *)&di;
 		if (nPoints==1)
 			return	rOutItemIndex=0, xydi.Transform(*points);
-		DWORD L=0, R=nPoints-1;
-		for( DWORD M; L+1<R; )
+		int L=0, R=nPoints-1;
+		for( int M; L+1<R; )
 			if (ptClient.x<xydi.Transform(points[ M=(L+R)/2 ]).x)
 				R=M;
 			else
@@ -220,7 +220,7 @@
 		const WORD id=p.GetCurrentDrawingIdSync();
 		const CXyDisplayInfo &di=*(const CXyDisplayInfo *)&p.di;
 		const HGDIOBJ hPen0=::SelectObject( p.dc, hPen );
-			for( DWORD i=0; i<nPoints; i++ ){
+			for( int i=0; i<nPoints; i++ ){
 				const POINT &pt=points[i];
 				if (pt.x>di.GetAxisX().GetLength())
 					break;

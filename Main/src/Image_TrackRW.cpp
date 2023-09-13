@@ -845,7 +845,7 @@
 		buffer=TParseEvent( TType::META_STRING, tStart, tEnd, 0 );
 		buffer.size =	sizeof(TMetaStringParseEvent)
 						+
-						::lstrlenA(  ::lstrcpynA( buffer.lpszMetaString, lpszMetaString, (decltype(buffer.size))-1-sizeof(TParseEvent) )  )
+						::lstrlenA(  ::lstrcpyA( buffer.lpszMetaString, lpszMetaString )  ) // caller responsible for allocating enough buffer
 						+
 						1 // "+1" = including terminal Null character
 						-

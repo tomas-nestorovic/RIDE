@@ -41,11 +41,11 @@
 
 		class CXyPointSeries:public CXyGraphics{
 		protected:
-			const DWORD nPoints;
+			const int nPoints;
 			const POINT *const points;
 			const HPEN hPen;
 		public:
-			CXyPointSeries(DWORD nPoints,const POINT *points,HPEN hVertexPen);
+			CXyPointSeries(int nPoints,const POINT *points,HPEN hVertexPen);
 
 			void GetDrawingLimits(WORD percentile,TLogValue &rOutMaxX,TLogValue &rOutMaxY) const override; // in hundredths (e.g. "2345" means 23.45)
 			const POINT &GetPoint(int index) const override;
@@ -55,14 +55,14 @@
 
 		class CXyBrokenLineSeries:public CXyPointSeries{
 		public:
-			CXyBrokenLineSeries(DWORD nPoints,const POINT *points,HPEN hLinePen);
+			CXyBrokenLineSeries(int nPoints,const POINT *points,HPEN hLinePen);
 
 			void DrawAsync(const CPainter &p) const override;
 		};
 
 		class CXyOrderedBarSeries:public CXyPointSeries{
 		public:
-			CXyOrderedBarSeries(DWORD nPoints,const POINT *points,HPEN hLinePen,LPCTSTR name=nullptr);
+			CXyOrderedBarSeries(int nPoints,const POINT *points,HPEN hLinePen,LPCTSTR name=nullptr);
 
 			void GetDrawingLimits(WORD percentile,TLogValue &rOutMaxX,TLogValue &rOutMaxY) const override; // in hundredths (e.g. "2345" means 23.45)
 			POINT SnapCursorToNearestItem(const CDisplayInfo &di,const CPoint &ptClient,int &rOutItemIndex) const override;
