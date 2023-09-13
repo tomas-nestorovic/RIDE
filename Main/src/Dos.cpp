@@ -1316,7 +1316,7 @@ reportError:Utils::Information(buf);
 		: Utils::CRideDialog(IDR_DOS_PROPGRID_HEXAEDITOR)
 		// - initialization
 		, hexaEditor(nullptr) {
-		hexaEditor.SetLabelColumnParams( 0, false );
+		hexaEditor.SetLabelColumnParams( 0 );
 		hexaEditor.SetEditable( !CImage::GetActive()->IsWriteProtected() );
 		if (IStream *const s=Yahel::Stream::FromBuffer( ::memcpy(newValueBuffer,value,valueSize), valueSize )){
 			hexaEditor.Reset( s, nullptr, valueSize );
