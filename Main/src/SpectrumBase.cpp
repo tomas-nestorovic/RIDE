@@ -132,7 +132,7 @@
 
 	CString CSpectrumBase::ParseFat32LongName(RCPathString shellName,RPathString rOutName,RPathString rOutExt){
 		// parses input FAT long name into three components: ZX Name (of LengthMax chars at most), single-char ZX Extension, and ZX Information (returned)
-		CPathString buf=shellName.Clone().Unescape();
+		CPathString buf=shellName.Clone();
 		// - finding ZX import information
 		CString zxInfo;
 		if (PTCHAR pSpace=buf.FindLast(' ')) // string may be terminated with import information, see CSpectrumDos::__importFileInformation__
@@ -143,8 +143,8 @@
 		// - finding and trimming the Extension
 		char zx[1024]; // should suffice for any filename of any Spectrum DOS
 		buf=TZxRom::AsciiToZx( buf.GetAnsi(), zx, nullptr );
-		rOutExt=buf.DetachExtension();
-		rOutName=buf;
+		rOutExt=buf.DetachExtension().Unescape();
+		rOutName=buf.Unescape();
 		return zxInfo;
 	}
 
