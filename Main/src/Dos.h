@@ -102,7 +102,7 @@
 			bool ContainsFat32ShortNameInvalidChars() const;
 			bool ContainsFat32LongNameInvalidChars() const;
 			CPathString &ExcludeFat32LongNameInvalidChars();
-			CPathString &Escape();
+			CPathString &Escape(bool preserveEncoding=false);
 			CPathString &Unescape();
 			CPathString & __cdecl Format(LPCTSTR format,...);
 			CPathString &FormatLostItem8(int itemId);

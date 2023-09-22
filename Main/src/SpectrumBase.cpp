@@ -239,7 +239,9 @@
 		// returns File name concatenated with File extension for presentation of the File to the user
 		CPathString name,ext;
 		GetFileNameOrExt( file, &name, &ext );
-		return TZxRom::ZxToAscii( name.AppendDotExtensionIfAny(ext).GetAnsi() );
+		name=TZxRom::ZxToAscii( name.GetAnsi() );
+		ext=TZxRom::ZxToAscii( ext.GetAnsi() );
+		return name.Escape(true).AppendDotExtensionIfAny( ext.Escape(true) );
 	}
 
 	CDos::CPathString CSpectrumBase::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{

@@ -106,9 +106,7 @@
 		PTCHAR t=1+bufT;
 		while (zxLength--){
 			const BYTE z=*zx++;
-			if (!z)
-				*t++=(char)255; // null character
-			else if (z==96)
+			if (z==96)
 				*t++=(char)163; // Pound sign, £
 			else if (z<=126)
 				*t++=z; // the same as ASCII up to character 126 (0x7e)
@@ -178,10 +176,10 @@
 		}
 		for( int i=0; i<ansi.GetLength(); i++ ){
 			BYTE c=ansi.GetAt(i); // cannot use TCHAR because must use non-signed type
-			if (c<' ' || c==255){
-				// non-printable character (255 = replacement for null character 0x00)
+			if (c<' '){
+				// non-printable character
 				TCHAR tmp[4];
-				::wsprintf( tmp, _T("%02X"), c<' '?c:0 );
+				::wsprintf( tmp, _T("%02X"), c );
 				RECT rHexa=r;
 					rHexa.right=r.left+2*font.charAvgWidth;
 				if ((drawTextFormat&DT_CALCRECT)==0)
