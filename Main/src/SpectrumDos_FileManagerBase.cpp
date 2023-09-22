@@ -156,7 +156,10 @@
 	}
 	LPCTSTR WINAPI CSpectrumBase::CSpectrumBaseFileManagerView::CSingleCharExtensionEditor::__getDescription__(PVOID file,PropGrid::Enum::UValue extension,PTCHAR buf,short bufCapacity){
 		// sets the Buffer to textual description of given Extension and returns its beginning in the Buffer
-		return TZxRom::ZxToAscii( &extension.charValue, 1, buf );
+		return ::lstrcpy(
+			buf,
+			TZxRom::ZxToAscii( &extension.charValue, 1 )
+		);
 	}
 	CFileManagerView::PEditorBase CSpectrumBase::CSpectrumBaseFileManagerView::CSingleCharExtensionEditor::Create(PFile file) const{
 		// creates and returns an Editor of File's single-character Extension

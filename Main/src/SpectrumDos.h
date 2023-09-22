@@ -159,8 +159,8 @@
 
 			static bool IsKnownFileType(TFileType type);
 			static LPCTSTR GetFileTypeName(TFileType type);
-			static PTCHAR ZxToAscii(LPCSTR zx,short zxLength,PTCHAR buf,char zxBefore=' ');
-			static PTCHAR ZxToAscii(const CString &zx,PTCHAR buf,char zxBefore=' ');
+			static CString ZxToAscii(LPCSTR zx,short zxLength,char zxBefore=' ');
+			static CString ZxToAscii(const CString &zx,char zxBefore=' ');
 			static PCHAR AsciiToZx(LPCTSTR pc,PCHAR zx,PBYTE pOutZxLength);
 			//inline
 			static bool IsStdUdgSymbol(BYTE s);
@@ -203,8 +203,8 @@
 				inline BYTE GetCurrentZxTextLength() const{ return length; } // returns the length of Byte representation of current state of the edited line
 			} lineComposerPropGridEditor;
 
-			WORD PrintAt(HDC dc,LPCSTR zx,short zxLength,RECT r,UINT drawTextFormat,char zxBefore=' ') const;
-			WORD PrintAt(HDC dc,const CString &zx,const RECT &r,UINT drawTextFormat,char zxBefore=' ') const;
+			int PrintAt(HDC dc,LPCSTR zx,short zxLength,RECT r,UINT drawTextFormat,char zxBefore=' ') const;
+			int PrintAt(HDC dc,const CString &zx,const RECT &r,UINT drawTextFormat,char zxBefore=' ') const;
 		} zxRom;
 	protected:
 		enum TUniFileType:TCHAR{ // ZX platform-independent File types ("universal" types) - used during exporting/importing of Files across ZX platforms

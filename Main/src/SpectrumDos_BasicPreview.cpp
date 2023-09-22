@@ -356,8 +356,7 @@ defaultPrinting:				if (b<' ')
 									*this << ( keywordTranscript + (int)(isLastWrittenCharSpace&&*keywordTranscript==' ') ); // skipping initial space should it be preceeded by a non-breakable space in the TemporaryFile (as incorrectly two spaces would be displayed in the Listing)
 								else{
 									// a character that doesn't require a special treatment - just converting between ZX Spectrum and Ascii charsets
-									TCHAR buf[16];
-									*this << TZxRom::ZxToAscii((LPCSTR)&b,1,buf);
+									*this << (LPCTSTR)TZxRom::ZxToAscii((LPCSTR)&b,1);
 								}
 								break;
 						}

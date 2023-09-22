@@ -99,8 +99,9 @@
 	// KEYWORD_TOKEN_FIRST corresponds to the "RND" Keyword in ZX Spectrum charset
 	#define KEYWORD_TOKEN_FIRST	165
 
-	PTCHAR CSpectrumBase::TZxRom::ZxToAscii(LPCSTR zx,short zxLength,PTCHAR bufT,char zxBefore){
+	CString CSpectrumBase::TZxRom::ZxToAscii(LPCSTR zx,short zxLength,char zxBefore){
 		// converts text from Spectrum character set to PC's current character set and returns the result in Buffer
+		TCHAR bufT[3000]; // a big-enough buffer to accommodate 255-times the longest keyword RANDOMIZE
 		bufT[0]=zxBefore; // initialization
 		PTCHAR t=1+bufT;
 		while (zxLength--){
@@ -126,13 +127,12 @@
 				t+=::lstrlen(t);
 			}
 		}
-		*t='\0';
-		return 1+bufT; // "1+" = see initialization above
+		return CString( 1+bufT, t-(1+bufT) ); // "1+" = see initialization above
 	}
 
-	PTCHAR CSpectrumBase::TZxRom::ZxToAscii(const CString &zx,PTCHAR bufT,char zxBefore){
+	CString CSpectrumBase::TZxRom::ZxToAscii(const CString &zx,char zxBefore){
 		// converts text from Spectrum character set to PC's current character set and returns the result in Buffer
-		return ZxToAscii( zx, zx.GetLength(), bufT, zxBefore );
+		return ZxToAscii( zx, zx.GetLength(), zxBefore );
 	}
 
 	PCHAR CSpectrumBase::TZxRom::AsciiToZx(LPCTSTR pc,PCHAR zx,PBYTE pOutZxLength){
@@ -168,17 +168,16 @@
 				: nullptr;
 	}
 
-	WORD CSpectrumBase::TZxRom::PrintAt(HDC dc,LPCSTR zx,short zxLength,RECT r,UINT drawTextFormat,char zxBefore) const{
+	int CSpectrumBase::TZxRom::PrintAt(HDC dc,LPCSTR zx,short zxLength,RECT r,UINT drawTextFormat,char zxBefore) const{
 		// returns the number of ASCII characters to which the input ZX code has been converted and printed inside the given Rectangle
-		TCHAR buf[3000]; // a big-enough buffer to accommodate 255-times the longest keyword RANDOMIZE
-		const PTCHAR pAscii=ZxToAscii( zx, zxLength, buf, zxBefore );
-		WORD nAsciiChars=::lstrlen(pAscii);
+		const CString ansi=ZxToAscii( zx, zxLength, zxBefore );
+		int nCharsPrinted=ansi.GetLength();
 		if (drawTextFormat&DT_RIGHT){
 			drawTextFormat&=~DT_RIGHT;
-			r.left=r.right-nAsciiChars*font.charAvgWidth;
+			r.left=r.right-nCharsPrinted*font.charAvgWidth;
 		}
-		for( WORD i=pAscii-buf,const iEnd=i+nAsciiChars; i<iEnd; i++ ){
-			BYTE c=buf[i]; // cannot use TCHAR because must use non-signed type
+		for( int i=0; i<ansi.GetLength(); i++ ){
+			BYTE c=ansi.GetAt(i); // cannot use TCHAR because must use non-signed type
 			if (c<' ' || c==255){
 				// non-printable character (255 = replacement for null character 0x00)
 				TCHAR tmp[4];
@@ -194,7 +193,7 @@
 					::MoveToEx( dc, rHexa.right, r.top, nullptr );
 					::LineTo( dc, rHexa.right, r.bottom );
 				::SelectObject(dc,hPen0);
-				nAsciiChars++; // one extra character is used to represent both half-Bytes
+				nCharsPrinted++; // one extra character is used to represent both half-Bytes
 				r.left+=font.charAvgWidth; // adjustment for the second printed hexa-character made below
 			}else if (!IsStdUdgSymbol(c))
 				// directly printable character
@@ -221,10 +220,10 @@
 			}
 			r.left+=font.charAvgWidth;
 		}
-		return nAsciiChars;
+		return nCharsPrinted;
 	}
 
-	WORD CSpectrumBase::TZxRom::PrintAt(HDC dc,const CString &zx,const RECT &r,UINT drawTextFormat,char zxBefore) const{
+	int CSpectrumBase::TZxRom::PrintAt(HDC dc,const CString &zx,const RECT &r,UINT drawTextFormat,char zxBefore) const{
 		// returns the number of ASCII characters to which the input ZX code has been converted and printed inside the given Rectangle
 		return PrintAt( dc, zx, zx.GetLength(), r, drawTextFormat, zxBefore );
 	}
@@ -310,7 +309,7 @@
 						r.bottom=rZxRom.font.charHeight;
 						// . making sure the Caret is always visible
 						const int w=r.Width();
-						const WORD nAsciiChars=rZxRom.PrintAt( // not actually printing anything, see DT_CALCRECT
+						const int nAsciiChars=rZxRom.PrintAt( // not actually printing anything, see DT_CALCRECT
 							dc, rEditor.buf, rEditor.caret.position,
 							r,
 							DT_CALCRECT | DT_SINGLELINE | DT_LEFT | DT_VCENTER | DT_NOPREFIX
@@ -364,10 +363,9 @@
 				const CClientDC screen(nullptr);
 				int minDistance=INT_MAX;
 				for( rEditor.caret.position=0; rEditor.caret.position<=rEditor.length+1; rEditor.caret.position++ ){
-					CRect r;
-					const WORD nAsciiChars=rZxRom.PrintAt( // not actually printing anything, see DT_CALCRECT
+					const int nAsciiChars=rZxRom.PrintAt( // not actually printing anything, see DT_CALCRECT
 						screen, tmp, rEditor.caret.position,
-						r,
+						CRect(),
 						DT_CALCRECT | DT_SINGLELINE | DT_LEFT | DT_VCENTER | DT_NOPREFIX
 					);
 					const int dist=std::abs( nAsciiChars*rZxRom.font.charAvgWidth - cursorX ); // distance of Caret from mouse Cursor (excluding the Caret)

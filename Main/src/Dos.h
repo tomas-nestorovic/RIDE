@@ -61,6 +61,7 @@
 			CPathString(WCHAR c);
 			CPathString(LPCWSTR lpsz);
 			CPathString(LPCSTR ansi,int strLength=-1);
+			CPathString(const CString &s);
 			CPathString(const CPathString &r);
 
 			operator LPCTSTR() const{ return GetBuffer(); } // returns UTF-8 string in ANSI build

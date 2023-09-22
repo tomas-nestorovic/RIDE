@@ -26,6 +26,11 @@
 		Append( unicode, strLength );
 	}
 
+	CDos::CPathString::CPathString(const CString &s){
+		// ctor
+		*this=CPathString( s, s.GetLength() );
+	}
+
 	CDos::CPathString::CPathString(const CPathString &r){
 		// copy ctor
 		const int n=r.GetLength();
@@ -306,7 +311,7 @@
 			CString tmp;
 			tmp.FormatV( format, argList );
 		va_end(argList);
-		return Append( tmp );
+		return Append( (LPCTSTR)tmp );
 	}
 
 	CDos::CPathString &CDos::CPathString::FormatLostItem8(int itemId){

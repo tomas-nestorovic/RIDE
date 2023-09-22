@@ -239,8 +239,7 @@
 		// returns File name concatenated with File extension for presentation of the File to the user
 		CPathString name,ext;
 		GetFileNameOrExt( file, &name, &ext );
-		TCHAR buf[1024];
-		return TZxRom::ZxToAscii( name.AppendDotExtensionIfAny(ext).GetAnsi(), buf );
+		return TZxRom::ZxToAscii( name.AppendDotExtensionIfAny(ext).GetAnsi() );
 	}
 
 	CDos::CPathString CSpectrumBase::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
@@ -250,12 +249,11 @@
 			CPathString fileName,fileExt;
 			GetFileNameOrExt( file, &fileName, &fileExt );
 			fileName.ExcludeFat32LongNameInvalidChars(), fileExt.ExcludeFat32LongNameInvalidChars();
-			TCHAR buf[16384];
-			CPathString zxName=TZxRom::ZxToAscii( fileName.GetAnsi(), buf );
+			CPathString zxName=TZxRom::ZxToAscii( fileName.GetAnsi() );
 			if (zxName.GetLengthW())
 				// valid export name - taking it as the result
 				return zxName.AppendDotExtensionIfAny(
-					TZxRom::ZxToAscii( fileExt.GetAnsi(), buf )
+					TZxRom::ZxToAscii( fileExt.GetAnsi() )
 				);
 			else
 				// invalid export name - generating an artifical one
