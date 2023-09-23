@@ -405,7 +405,8 @@
 					case WM_MOUSEWHEEL:{
 						// mouse wheel was rotated
 						if (::GetAsyncKeyState(VK_CONTROL)>=0){ // if Ctrl+W NOT pressed
-							SetScrollTime( GetCenterTime() );
+							const TLogTime dt=(scrollTime-GetCenterTime())*(short)HIWORD(wParam)/WHEEL_DELTA;
+							SetScrollTime( scrollTime+dt );
 							return 0;
 						}
 						POINT cursor;
