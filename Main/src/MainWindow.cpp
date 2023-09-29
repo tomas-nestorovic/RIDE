@@ -439,7 +439,7 @@ quitWithErr:const DWORD err=::GetLastError();
 	}
 
 	afx_msg void CMainWindow::ShowYahelAbout(){
-		Yahel::IInstance::ShowModalAboutDialog();
+		Yahel::IInstance::ShowModalAboutDialog( app.m_pMainWnd->m_hWnd );
 	}
 
 	afx_msg void CMainWindow::__openUrl_credits__(){

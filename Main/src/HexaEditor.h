@@ -87,7 +87,7 @@
 		inline void SetSelection(Yahel::TPosition selStart,Yahel::TPosition selEnd) const{ return instance->SetSelection(selStart,selEnd); }
 		inline Yahel::TPosInterval GetVisiblePart() const{ return instance->GetVisiblePart(); }
 		inline void ScrollTo(Yahel::TPosition pos,bool moveAlsoCaret=false) const{ return instance->ScrollTo(pos,moveAlsoCaret); }
-		inline void ScrollToRow(Yahel::TRow iRow,bool moveAlsoCaret=false) const{ return instance->ScrollToRow(iRow,moveAlsoCaret); }
+		inline void ScrollToRow(Yahel::TRow iRow) const{ return instance->ScrollToRow(iRow); }
 		inline void RepaintData() const{ return instance->RepaintData(); }
 		inline Yahel::TRow GetVertScrollPos() const{ return GetScrollPos(SB_VERT); }
 
