@@ -295,6 +295,14 @@
 		return true; // name relevant
 	}
 
+	CDos::CPathString CGDOS::GetFilePresentationNameAndExt(PCFile file) const{
+		// returns File name concatenated with File extension for presentation of the File to the user
+		CPathString result=__super::GetFilePresentationNameAndExt(file);
+		result.DetachExtension(); // detach e.g. ".%07" ...
+		TCHAR bufExt[16];
+		return result.AppendDotExtensionIfAny( ((PCDirectoryEntry)file)->__getFileTypeDesc__(bufExt) ); // ... and replace it with e.g. ".SCREEN$"
+	}
+
 	void CGDOS::TDirectoryEntry::SetNameAndExt(RCPathString newName,RCPathString newExt){
 		// sets File's Name and Type based on the Buffer content
 		// - setting the Name trimmed to 10 characters at most

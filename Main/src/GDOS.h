@@ -183,6 +183,7 @@
 		bool ModifyFileFatPath(PFile file,const CFatPath &rFatPath) const override;
 		// file system
 		bool GetFileNameOrExt(PCFile file,PPathString pOutName,PPathString pOutExt) const override;
+		CPathString GetFilePresentationNameAndExt(PCFile file) const override;
 		TStdWinError ChangeFileNameAndExt(PFile file,RCPathString newName,RCPathString newExt,PFile &rRenamedFile) override;
 		DWORD GetFileSize(PCFile file,PBYTE pnBytesReservedBeforeData,PBYTE pnBytesReservedAfterData,TGetFileSizeOptions option) const override;
 		TStdWinError DeleteFile(PFile file) override;
