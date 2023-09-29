@@ -131,8 +131,7 @@
 		if (DOS->IsDirectory(de))
 			return icons[ICON_FOLDER_OPEN];
 		else{
-			CPathString ext;
-			DOS->GetFileNameOrExt(de,nullptr,&ext);
+			CPathString ext=DOS->GetFileExt(de);
 			if (ext.GetLengthW()){
 				ext.Append(',');
 				for( BYTE n=MSDOS7_FILE_ICONS_COUNT; --n>ICON_FILE_GENERAL; )

@@ -402,6 +402,8 @@
 		bool RemoveStdCylindersFromFat(TCylinder cylA,TCylinder cylZInclusive,CActionProgress &ap) const;
 		// file system
 		virtual bool GetFileNameOrExt(PCFile file,PPathString pOutName,PPathString pOutExt) const=0;
+		CPathString GetFileName(PCFile file) const;
+		CPathString GetFileExt(PCFile file) const;
 		virtual CPathString GetFilePresentationNameAndExt(PCFile file) const;
 		int CompareFileNames(RCPathString filename1,RCPathString filename2) const;
 		bool EqualFileNames(RCPathString filename1,RCPathString filename2) const;

@@ -1065,6 +1065,21 @@ reportError:Utils::Information(buf);
 			cause
 		);
 	}
+
+	CDos::CPathString CDos::GetFileName(PCFile file) const{
+		// return File's Name alone (without extension)
+		CPathString name;
+		GetFileNameOrExt( file, &name, nullptr );
+		return name;
+	}
+
+	CDos::CPathString CDos::GetFileExt(PCFile file) const{
+		// return File's Extension (without prefixed dot '.')
+		CPathString ext;
+		GetFileNameOrExt( file, nullptr, &ext );
+		return ext;
+	}
+
 	void CDos::ShowFileProcessingError(PCFile file,TStdWinError cause) const{
 		// shows general error message on File being not processable due to occured Cause
 		Utils::FatalError(

@@ -133,8 +133,7 @@
 		// changes the single-character Extension of given File
 		const PDos dos=CDos::GetFocused();
 		// - getting File's original Name
-		CPathString oldName;
-		dos->GetFileNameOrExt(file,&oldName,nullptr);
+		const CPathString oldName=dos->GetFileName(file);
 		// - validating File's new Name and Extension
 		if (const TStdWinError err=dos->ChangeFileNameAndExt( file, oldName, newExt.charValue, file )){
 			// at least two Files with the same OldName+NewExtension combination exist
@@ -163,8 +162,7 @@
 	}
 	CFileManagerView::PEditorBase CSpectrumBase::CSpectrumBaseFileManagerView::CSingleCharExtensionEditor::Create(PFile file) const{
 		// creates and returns an Editor of File's single-character Extension
-		CPathString ext;
-		rZxFileManager.DOS->GetFileNameOrExt(file,nullptr,&ext);
+		const CPathString ext=rZxFileManager.DOS->GetFileExt(file);
 		const PEditorBase result=CreateStdEditor(
 			file, &( data=ext.FirstCharA() ),
 			PropGrid::Enum::DefineConstStringListEditor( sizeof(data), __createValues__, __getDescription__, __freeValues__, __onChanged__ )
@@ -224,8 +222,7 @@
 		const PDos dos=CDos::GetFocused();
 		const CSpectrumBaseFileManagerView *const pZxFileManager=(CSpectrumBaseFileManagerView *)dos->pFileManager;
 		// - getting File's original Extension
-		CPathString oldExt;
-		dos->GetFileNameOrExt(file,nullptr,&oldExt);
+		const CPathString oldExt=dos->GetFileExt(file);
 		// - validating File's new Name+Extension combination
 		const TZxRom::CLineComposerPropGridEditor &rEditor=pZxFileManager->zxRom.lineComposerPropGridEditor;
 		if (const TStdWinError err=dos->ChangeFileNameAndExt( file, CPathString(rEditor.GetCurrentZxText(),rEditor.GetCurrentZxTextLength()), oldExt, file )){
@@ -240,8 +237,7 @@
 	CFileManagerView::PEditorBase CSpectrumBase::CSpectrumBaseFileManagerView::CVarLengthCommandLineEditor::CreateForFileName(PFile file,BYTE fileNameLengthMax,char paddingChar,PropGrid::TOnValueChanged onChanged) const{
 		// creates and returns the Editor of File Name
 		ASSERT(fileNameLengthMax<ARRAYSIZE(bufOldCmd));
-		CPathString oldName;
-		rZxFileManager.DOS->GetFileNameOrExt( file, &oldName, nullptr );
+		const CPathString oldName=rZxFileManager.DOS->GetFileName(file);
 		oldName.MemcpyAnsiTo( bufOldCmd, fileNameLengthMax, paddingChar );
 		return	CreateStdEditor(
 					file,
