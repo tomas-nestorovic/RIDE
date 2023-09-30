@@ -317,6 +317,17 @@ using namespace Yahel;
 	LRESULT CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
 		// window procedure
 		switch (msg){
+			case WM_HSCROLL:{
+				// wanted to scroll horizontally
+				// . base (doing the scrolling)
+				__super::WindowProc(msg,wParam,lParam);
+				// . synchronously scrolling the OtherHexaEditor
+				auto &rOtherHexaEditor=	this==&rDialog.file1
+										? rDialog.file2
+										: rDialog.file1;
+				rOtherHexaEditor.ScrollToColumn( GetHorzScrollPos() );
+				return 0;
+			}
 			case WM_VSCROLL:{
 				// wanted to scroll vertically
 				// . base (doing the scrolling)
