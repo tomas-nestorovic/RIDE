@@ -119,6 +119,7 @@
 
 	#define LABEL	_T("Screen$")
 
+	const CSpectrumBase::CScreenPreview::TOffsetByFileType *CSpectrumBase::CScreenPreview::pOffsetsByFileType;
 	CSpectrumBase::CScreenPreview *CSpectrumBase::CScreenPreview::pSingleInstance;
 
 	CSpectrumBase::CScreenPreview::CScreenPreview(const CFileManagerView &rFileManager)
@@ -158,6 +159,7 @@
 		::KillTimer(m_hWnd,ID_FLASH);
 		::DeleteObject(dib.handle);
 		pSingleInstance=nullptr;
+		pOffsetsByFileType=nullptr; // client's responsibility to free the array
 	}
 
 
@@ -181,6 +183,15 @@
 		if (offset==USHRT_MAX){ // initial Offset? (i.e. NOT set manually)
 			offset=0;
 			rFileManager.tab.image->dos->GetFileSize( file, (PBYTE)&offset, nullptr );
+			if (const TOffsetByFileType *fileTypeOffset=pOffsetsByFileType){
+				const CPathString ext=rFileManager.tab.image->dos->GetFileExt(file);
+				do{
+					if (fileTypeOffset->fileType==ext.FirstCharA()){
+						offset=fileTypeOffset->offset;
+						break;
+					}
+				}while (!fileTypeOffset++->isLast);
+			}
 		}
 		frw.Seek( offset, CFile::begin );
 		frw.Read( &buf, 6144+showAttributes*768 );

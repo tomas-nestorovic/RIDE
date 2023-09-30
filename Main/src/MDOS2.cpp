@@ -454,6 +454,16 @@
 	CDos::TCmdResult CMDOS2::ProcessCommand(WORD cmd){
 		// returns the Result of processing a DOS-related command
 		switch (cmd){
+			case ID_ZX_PREVIEWASSCREEN:{
+				// previewing File(s) on Spectrum screen
+				static constexpr CScreenPreview::TOffsetByFileType ScreenOffsets[]={
+					{ TDirectoryEntry::SNAPSHOT, 128, true }
+				};
+				if (CScreenPreview::pSingleInstance)
+					CScreenPreview::pSingleInstance->DestroyWindow();
+				CScreenPreview::pOffsetsByFileType=ScreenOffsets;
+				break; // call base
+			}
 			case ID_DOS_VERIFY:{
 				// volume verification
 				static constexpr TVerificationFunctions vf={

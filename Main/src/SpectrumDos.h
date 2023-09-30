@@ -24,9 +24,7 @@
 
 	class CSpectrumBase:public CDos{
 	protected:
-		class CScreenPreview sealed:CFilePreview{
-			friend class CSpectrumBase;
-
+		class CScreenPreview sealed:public CFilePreview{
 			static void CALLBACK __flash__(HWND hPreview,UINT nMsg,UINT nTimerID,DWORD dwTime);
 
 			bool showPixels, showAttributes, showFlashing;
@@ -45,6 +43,12 @@
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 			BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
 		public:
+			static const struct TOffsetByFileType sealed{
+				char fileType; // e.g. an MDOS Snapshot ".S" file ...
+				WORD offset; // ... has screen offset by 128 Bytes
+				bool isLast;
+			} *pOffsetsByFileType; // client's responsibility to allocate and free the array
+
 			static CScreenPreview *pSingleInstance;
 
 			CScreenPreview(const CFileManagerView &rFileManager);
