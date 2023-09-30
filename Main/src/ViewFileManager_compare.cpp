@@ -159,6 +159,7 @@ using namespace Yahel;
 		// ctor
 		: CHexaEditor(nullptr)
 		, rDialog(rDialog) {
+		SetLabelColumnParams( 0 );
 	}
 
 
@@ -168,7 +169,7 @@ using namespace Yahel;
 	void CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::Init(CWnd *pLabel,CWnd *pButton){
 		// initialization
 		hLabel=pLabel->m_hWnd, hEllipsisButton=pButton->m_hWnd;
-		Create( nullptr, nullptr, WS_CHILD /*|WS_VISIBLE*/, CFrameWnd::rectDefault, pLabel->GetParent(), 0 ); // commented out because see WM_SIZE
+		Create( nullptr, nullptr, WS_CHILD|WS_CLIPSIBLINGS /*|WS_VISIBLE*/, CFrameWnd::rectDefault, pLabel->GetParent(), 0 ); // commented out because see WM_SIZE
 		Register(this); // making HexaEditor a target of drag&drop
 		DragAcceptFiles(); // to not pass the WM_DROPFILES message to the MainWindow (which would attempt to open the dropped File as an Image)
 	}
