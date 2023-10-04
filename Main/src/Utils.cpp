@@ -1005,30 +1005,38 @@ namespace Utils{
 
 	#define ERROR_BUFFER_SIZE	220
 
-	PTCHAR __formatErrorCode__(PTCHAR buf,TStdWinError errCode){
+	PTCHAR FormatErrorCode(PTCHAR buf,TStdWinError errCode){
 		// generates into Buffer a message corresponding to the ErrorCode; assumed that the Buffer is at least ERROR_BUFFER_SIZE characters big
-		PTCHAR p;
+		WCHAR msg[ERROR_BUFFER_SIZE];
 		if (errCode<=12000 || errCode>USHRT_MAX)
 			// "standard" or COM (HRESULT) error
-			p=buf+::FormatMessage(	FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, errCode, 0,
-									buf, ERROR_BUFFER_SIZE-20,
-									nullptr
-								);
+			::FormatMessageW(
+				FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, errCode, 0,
+				msg, ERROR_BUFFER_SIZE-20,
+				nullptr
+			);
 		else
 			// WinInet error
 			if (errCode!=ERROR_INTERNET_EXTENDED_ERROR)
 				// "standard" WinInet error message
-				p=buf+::FormatMessage(	FORMAT_MESSAGE_FROM_HMODULE, ::GetModuleHandle(DLL_WININET), errCode, 0,
-										buf, ERROR_BUFFER_SIZE-20,
-										nullptr
-									);
+				::FormatMessageW(
+					FORMAT_MESSAGE_FROM_HMODULE, ::GetModuleHandle(DLL_WININET), errCode, 0,
+					msg, ERROR_BUFFER_SIZE-20,
+					nullptr
+				);
 			else{
 				// detailed error message from the server
 				DWORD tmp, bufLength=ERROR_BUFFER_SIZE-20;
-				::InternetGetLastResponseInfo( &tmp, buf, &bufLength );
-				p=buf+bufLength;
+				::InternetGetLastResponseInfoW( &tmp, msg, &bufLength );
 			}
-		::wsprintf( p, _T("(Error 0x%X)"), errCode );
+		#ifdef UNICODE
+			static_assert( false, "Unicode support not implemented" );
+		#else
+			::wsprintf(
+				buf+::WideCharToMultiByte( CP_UTF8, 0, msg,-1, buf,ERROR_BUFFER_SIZE-20, nullptr, nullptr ),
+				_T("(Error 0x%X)"), errCode
+			);
+		#endif
 		return buf;
 	}
 
@@ -1086,7 +1094,7 @@ namespace Utils{
 	CString ComposeErrorMessage(LPCTSTR text,TStdWinError causeOfError,LPCTSTR consequence){
 		// compiles a message explaining the situation caused by the Error, and appends immediate Consequence it implies
 		TCHAR buf[ERROR_BUFFER_SIZE];
-		return ComposeErrorMessage( text, __formatErrorCode__(buf,causeOfError), consequence );
+		return ComposeErrorMessage( text, FormatErrorCode(buf,causeOfError), consequence );
 	}
 
 	void FatalError(LPCTSTR text,LPCTSTR causeOfError,LPCTSTR consequence){
@@ -1255,7 +1263,7 @@ namespace Utils{
 	BYTE AbortRetryIgnore(TStdWinError causeOfError,UINT defaultButton){
 		// shows an abort-retry-ignore question
 		TCHAR bufCause[ERROR_BUFFER_SIZE];
-		return AbortRetryIgnore( __formatErrorCode__(bufCause,causeOfError), defaultButton );
+		return AbortRetryIgnore( FormatErrorCode(bufCause,causeOfError), defaultButton );
 	}
 
 	bool RetryCancel(LPCTSTR text){
@@ -1268,7 +1276,7 @@ namespace Utils{
 	bool RetryCancel(TStdWinError causeOfError){
 		// shows an retry-cancel question
 		TCHAR bufCause[ERROR_BUFFER_SIZE];
-		return RetryCancel( __formatErrorCode__(bufCause,causeOfError) );
+		return RetryCancel( FormatErrorCode(bufCause,causeOfError) );
 	}
 
 	BYTE CancelRetryContinue(LPCTSTR text,UINT defaultButton){
