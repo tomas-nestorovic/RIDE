@@ -725,6 +725,22 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		return	__getScannedTrack__(cyl,head)!=nullptr;
 	}
 
+	TStdWinError CFDD::UnscanTrack(TCylinder cyl,THead head){
+		// disposes internal representation of specified Track if possible (e.g. can't if Track already modified); returns Windows standard i/o error
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		const PInternalTrack pit=__getScannedTrack__(cyl,head);
+		if (!pit) // Track not yet scanned?
+			return ERROR_SEEK;
+		for( TSector i=0; i<pit->nSectors; i++ )
+			if (pit->sectors[i].IsModified())
+				return ERROR_REQUEST_REFUSED;
+		if (const TStdWinError err=__super::UnscanTrack(cyl,head)) // base
+			return err;
+		delete pit;
+		internalTracks[cyl][head]=nullptr;
+		return ERROR_SUCCESS;
+	}
+
 	void CFDD::__setWaitingForIndex__() const{
 		// sets waiting for the index pulse before executing the next command
 		LOG_ACTION(_T("void CFDD::__setWaitingForIndex__"));
