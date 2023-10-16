@@ -863,7 +863,7 @@
 					CDirsSector::Verification_thread, // Filesystem
 					TVerificationFunctions::WholeDiskSurfaceVerification_thread // Volume surface
 				};
-				__verifyVolume__(
+				VerifyVolume(
 					CVerifyVolumeDialog( TSpectrumVerificationParams(this,vf) )
 				);
 				return TCmdResult::DONE_REDRAW;

@@ -221,7 +221,7 @@
 			LPCTSTR GetItems(PItem &rBuffer,DWORD &rnItems) const;
 			PItem GetItem(DWORD i) const;
 			PItem GetHealthyItem(DWORD i) const;
-			DWORD GetNumberOfItems() const;
+			inline DWORD GetNumberOfItems() const{ return nItems; }
 			bool ContainsSector(RCPhysicalAddress chs) const;
 			bool AreAllSectorsReadable(const CDos *dos) const;
 			bool MarkAllSectorsModified(PImage image) const;
@@ -335,7 +335,7 @@
 		void __writeProfileBool__(LPCTSTR entryName,bool value) const;
 		TStdWinError ShowDialogAndFormatStdCylinders(CFormatDialog &rd);
 		bool __fillEmptySpace__(CFillEmptySpaceDialog &rd);
-		bool __verifyVolume__(CVerifyVolumeDialog &rd);
+		bool VerifyVolume(CVerifyVolumeDialog &rd);
 		LPCTSTR __exportFileData__(PCFile file,CFile *fOut,DWORD nMaxDataBytesToExport) const;
 		TStdWinError __importData__(CFile *fIn,DWORD fileSize,bool skipBadSectors,CFatPath &rFatPath) const;
 		TStdWinError __importFileData__(CFile *fIn,PFile fDesc,RCPathString fileName,RCPathString fileExt,DWORD fileSize,bool skipBadSectors,PFile &rFile,CFatPath &rFatPath);

@@ -300,7 +300,9 @@
 		const CVerifyVolumeDialog::TParams &vp=*(CVerifyVolumeDialog::TParams *)pAction->GetParams();
 		vp.fReport.OpenSection(_T("File sector linkage in FAT"));
 		const PImage image=vp.dos->image;
-		pAction->SetProgressTarget( vp.dos->formatBoot.nCylinders );
+		const auto nSectorsOnDisk=vp.dos->formatBoot.GetCountOfAllSectors();
+		DWORD nSectorsVisited=0;
+		pAction->SetProgressTarget( nSectorsOnDisk+1 );
 		CFileManagerView::CFileList bfsFiles; // breadth first search, searching through Directories in breadth
 		CFileManagerView::CFileList visitedDirectories;
 		DWORD nItemsVisited=0; // Files and Directories
@@ -316,6 +318,7 @@
 				continue; // makes no sense to test a File that occupies no space on the disk
 			// . if the File is actually a Directory, processing it recurrently
 			if (vp.dos->IsDirectory(file)){
+				visitedDirectories.AddTail(file);
 				if (const auto pdt=vp.dos->BeginDirectoryTraversal(file))
 					while (const CDos::PFile subfile=pdt->GetNextFileOrSubdir())
 						switch (pdt->entryType){
@@ -325,7 +328,7 @@
 								//fallthrough
 							case CDos::TDirectoryTraversal::FILE:
 								bfsFiles.AddTail(subfile);
-								if (++nItemsVisited==vp.dos->formatBoot.GetCountOfAllSectors())
+								if (++nItemsVisited==nSectorsOnDisk)
 									if (Utils::QuestionYesNo(VERIFICATION_WARNING_SIGNIFICANT_PROBLEM,MB_DEFBUTTON1))
 										return vp.TerminateAndGoToNextAction(ERROR_CANCELLED);
 								break;
@@ -335,11 +338,10 @@
 								continue;
 							}
 						}
-				visitedDirectories.AddTail(file);
 			}
 			// . informing on progress
 			if (!fatPath.error)
-				pAction->UpdateProgress( pItem->chs.cylinder ); // File's first Cylinder
+				pAction->UpdateProgress(  std::min( nSectorsVisited+=fatPath.GetNumberOfItems(), nSectorsOnDisk )  );
 		}
 		return pAction->TerminateWithSuccess();
 	}
@@ -353,13 +355,15 @@
 			||
 			vp.dos->formatBoot.nHeads>2
 			||
-			vp.dos->formatBoot.clusterSize!=1
+			vp.dos->formatBoot.clusterSize!=1 // because of call to CDos::GetFirstEmptyHealthySector
 		)
 			return vp.TerminateAndGoToNextAction(ERROR_NOT_SUPPORTED);
 		// - verifying the volume
 		vp.fReport.OpenSection(FAT_VERIFICATION_CROSSLINKED _T(" (floppy)"));
 		const PImage image=vp.dos->image;
-		pAction->SetProgressTarget( vp.dos->formatBoot.nCylinders );
+		const auto nSectorsOnDisk=vp.dos->formatBoot.GetCountOfAllSectors();
+		DWORD nSectorsVisited=0;
+		pAction->SetProgressTarget( nSectorsOnDisk+1 );
 		CMapWordToPtr sectorOccupation[FDD_CYLINDERS_MAX*2];
 		CFileManagerView::CFileList bfsFiles; // breadth first search, searching through Directories in breadth
 		CFileManagerView::CFileList visitedDirectories;
@@ -374,7 +378,6 @@
 				continue; // silently ignoring problems in FatPath - warnings should be taken care of elsewhere
 			if (!nItems)
 				continue; // makes no sense to test a File that occupies no space on the disk
-			const TCylinder firstFileCylinder=pItem->chs.cylinder;
 			// . the changes in FAT must be transactional - all or nothing!
 			const struct TFatTransaction sealed{
 				const PDos dos;
@@ -393,6 +396,7 @@
 			} fatTransaction( vp.dos, fatPath );
 			// . checking that the File's FatPath is unique
 			bool fatModified=false; // assumption (the File is not cross-linked)
+			CString msg;
 			for( bool askedToAutoFixProblem=false; nItems--; pItem++ ){
 				if (pAction->Cancelled) return vp.CancelAll();
 				// : checking preconditions
@@ -411,7 +415,6 @@
 				if (sectorOccupation[chs.GetTrackNumber()].Lookup( chs.sectorId.sector, sectorOccupiedByFile )){
 					// | asking whether or not to fix this problem
 					if (!askedToAutoFixProblem){
-						CString msg;
 						msg.Format( _T("%s \"%s\" is cross-linked with %s \"%s\""), vp.dos->IsDirectory(file)?_T("Directory"):_T("File"), (LPCTSTR)vp.dos->GetFilePresentationNameAndExt(file), vp.dos->IsDirectory(sectorOccupiedByFile)?_T("directory"):_T("file"), (LPCTSTR)vp.dos->GetFilePresentationNameAndExt(sectorOccupiedByFile) );
 						switch (vp.ConfirmFix( msg, VERIF_MSG_FILE_UNCROSS )){
 							case IDCANCEL:
@@ -424,7 +427,6 @@
 					// | reading the cross-linked Sector
 					PCSectorData crossLinkedSectorData;
 					while (!( crossLinkedSectorData=image->GetHealthySectorData(chs) )){
-						CString msg;
 						msg.Format( _T("Sector %s in \"%s\" %s is unreadable"), (LPCTSTR)chs.sectorId.ToString(), (LPCTSTR)vp.dos->GetFilePresentationNameAndExt(file), vp.dos->IsDirectory(file)?_T("directory"):_T("file") );
 						switch (Utils::CancelRetryContinue( msg, ::GetLastError(), MB_DEFBUTTON2, VERIF_MSG_FILE_UNCROSS )){
 							case IDCANCEL:
@@ -435,7 +437,7 @@
 					}
 					// | finding an empty healthy Sector in the volume
 					while (const TStdWinError err=vp.dos->GetFirstEmptyHealthySector(true,pItem->chs)){
-						const CString msg=Utils::SimpleFormat( _T("\"%s\" cannot be fixed"), vp.dos->GetFilePresentationNameAndExt(file) );
+						msg.Format( _T("\"%s\" cannot be fixed"), (LPCTSTR)vp.dos->GetFilePresentationNameAndExt(file) );
 						switch (Utils::CancelRetryContinue( msg, err, MB_DEFBUTTON1 )){
 							case IDCANCEL:
 								return vp.CancelAll();
@@ -467,6 +469,7 @@
 			}
 nextFile:	// . if the File is actually a Directory, processing it recurrently
 			if (vp.dos->IsDirectory(file)){
+				visitedDirectories.AddTail(file);
 				if (const auto pdt=vp.dos->BeginDirectoryTraversal(file))
 					while (const CDos::PFile subfile=pdt->GetNextFileOrSubdir())
 						switch (pdt->entryType){
@@ -476,17 +479,16 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 								//fallthrough
 							case CDos::TDirectoryTraversal::FILE:
 								bfsFiles.AddTail(subfile);
-								if (++nItemsVisited==vp.dos->formatBoot.GetCountOfAllSectors())
+								if (++nItemsVisited==nSectorsOnDisk)
 									if (Utils::QuestionYesNo(VERIFICATION_WARNING_SIGNIFICANT_PROBLEM,MB_DEFBUTTON1))
 										return vp.TerminateAndGoToNextAction(ERROR_CANCELLED);
 								break;
 							case CDos::TDirectoryTraversal::WARNING:
-								continue; // silently ignoring FAT unreadability - warnings should be taken care of elsewhere
+								continue; // silently ignore FAT unreadability - warnings should be taken care of elsewhere
 						}
-				visitedDirectories.AddTail(file);
 			}
 			// . informing on progress
-			pAction->UpdateProgress( firstFileCylinder );
+			pAction->UpdateProgress(  std::min( nSectorsVisited+=fatPath.GetNumberOfItems(), nSectorsOnDisk )  );
 		}
 		return pAction->TerminateWithSuccess();
 	}
@@ -503,15 +505,19 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 			vp.dos->formatBoot.clusterSize!=1
 		)
 			return vp.TerminateAndGoToNextAction(ERROR_NOT_SUPPORTED);
-		// - composing a picture of which Sectors are actually affiliated to which Files
 		vp.fReport.OpenSection(FAT_VERIFICATION_LOSTSECTORS _T(" (floppy)"));
 		const PImage image=vp.dos->image;
+		const auto nSectorsOnDisk=vp.dos->formatBoot.GetCountOfAllSectors();
+		pAction->SetProgressTarget( 2*nSectorsOnDisk+1 ); // "2" = this verification consists of two parts
 		CMapWordToPtr sectorAffiliation[FDD_CYLINDERS_MAX*2];
+		// - (1) composing a picture of which Sectors are actually affiliated to which Files
+{		CActionProgress ap=pAction->CreateSubactionProgress( nSectorsOnDisk, nSectorsOnDisk );
 		CFileManagerView::CFileList bfsFiles; // in-breath search of Files
 		CFileManagerView::CFileList visitedDirectories;
+		DWORD nSectorsVisited=0;
 		DWORD nItemsVisited=0; // Files and Directories
 		for( bfsFiles.AddTail((CDos::PFile)DOS_DIR_ROOT); bfsFiles.GetCount()>0; ){
-			if (pAction->Cancelled) return vp.CancelAll();
+			if (ap.Cancelled) return vp.CancelAll();
 			const CDos::PFile file=bfsFiles.RemoveHead();
 			// . retrieving File's FatPath
 			const CDos::CFatPath fatPath( vp.dos, file );
@@ -521,7 +527,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 				continue; // makes no sense to test a File that occupies no space on the disk
 			// . recording Sectors affiliated to current File
 			while (nItems--){
-				if (pAction->Cancelled) return vp.CancelAll();
+				if (ap.Cancelled) return vp.CancelAll();
 				// : checking preconditions
 				RCPhysicalAddress chs=pItem++->chs;
 				if (chs.sectorId.cylinder!=chs.cylinder
@@ -538,6 +544,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 			}
 			// . if the File is actually a Directory, processing it recurrently
 			if (vp.dos->IsDirectory(file)){
+				visitedDirectories.AddTail(file);
 				if (const auto pdt=vp.dos->BeginDirectoryTraversal(file))
 					while (const CDos::PFile subfile=pdt->GetNextFileOrSubdir())
 						switch (pdt->entryType){
@@ -554,10 +561,12 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 							case CDos::TDirectoryTraversal::WARNING:
 								continue; // silently ignoring FAT unreadability - warnings should be taken care of elsewhere
 						}
-				visitedDirectories.AddTail(file);
 			}
+			// . informing on progress
+			ap.UpdateProgress(  std::min( nSectorsVisited+=fatPath.GetNumberOfItems(), nSectorsOnDisk )  );
 		}
-		// - verifying the volume
+}		// - (2) verifying the volume
+{		CActionProgress ap=pAction->CreateSubactionProgress( nSectorsOnDisk, vp.dos->formatBoot.nCylinders );
 		struct TDir sealed{
 			CDos::PFile handle;
 			bool createdAndSwitchedTo;
@@ -567,12 +576,11 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 			}
 		} dir; // Directory to store Files addressing lost Sectors
 		WORD fileId=0;
-		pAction->SetProgressTarget( vp.dos->formatBoot.nCylinders );
 		const Utils::CByteIdentity sectorIdAndPositionIdentity;
 		TPhysicalAddress chs;
-		for( chs.cylinder=0; chs.cylinder<vp.dos->formatBoot.nCylinders; chs.cylinder++ )
+		for( chs.cylinder=0; chs.cylinder<vp.dos->formatBoot.nCylinders; ap.UpdateProgress(chs.cylinder++) )
 			for( chs.head=0; chs.head<vp.dos->formatBoot.nHeads; chs.head++ ){
-				if (pAction->Cancelled)
+				if (ap.Cancelled)
 					return vp.CancelAll();
 				// . getting the list of standard Sectors
 				TSectorId bufferId[(TSector)-1];
@@ -628,12 +636,12 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 							dir.createdAndSwitchedTo=true;
 						}
 						// : importing a Sector-long File, thus creating a valid directory entry
-						file=nullptr; // don't affiliate the lost Sector to a temporary File, mark it as Empty in FAT straight away
+						file=nullptr; // don't affiliate the lost Sector with a temporary File, mark it as Empty in FAT straight away
 						for( BYTE data[16384]; ++fileId<10000; ){
 							const TStdWinError err=vp.dos->ImportFile( &CMemFile(data,sizeof(data)), vp.dos->formatBoot.sectorLength, CDos::CPathString().FormatLostItem8(fileId), 0, file );
 							if (err==ERROR_SUCCESS)
 								break;
-							else if (err!=ERROR_FILE_EXISTS){
+							if (err!=ERROR_FILE_EXISTS){
 								const CString msg=Utils::SimpleFormat( _T("Data of sector with %s cannot be put into a temporary file"), chs.sectorId.ToString() );
 								const BYTE result=Utils::QuestionYesNoCancel( msg, MB_DEFBUTTON1, err, _T("Mark the sector as empty?") );
 								if (result==IDCANCEL)
@@ -655,8 +663,6 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 								sectorAffiliation[chs.GetTrackNumber()].SetAt( chs.sectorId.sector, dir.handle );
 							}
 						}
-						// : informing on progress
-						pAction->UpdateProgress( chs.cylinder );
 						// : if temporary File couldn't be created, proceeding with the next Sector
 						if (!file)
 							continue;
@@ -674,7 +680,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 						vp.fReport.CloseProblem(true);
 					}
 			}
-		// - successfully verified
+}		// - successfully verified
 		return pAction->TerminateWithSuccess();
 	}
 
@@ -687,7 +693,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 		pAction->SetProgressTarget( vp.dos->formatBoot.nCylinders );
 		const Utils::CByteIdentity sectorIdAndPositionIdentity;
 		TPhysicalAddress chs;
-		for( chs.cylinder=vp.dos->GetFirstCylinderWithEmptySector(); chs.cylinder<vp.dos->formatBoot.nCylinders; chs.cylinder++ )
+		for( chs.cylinder=vp.dos->GetFirstCylinderWithEmptySector(); chs.cylinder<vp.dos->formatBoot.nCylinders; pAction->UpdateProgress(chs.cylinder++) )
 			for( chs.head=0; chs.head<vp.dos->formatBoot.nHeads; chs.head++ ){
 				if (pAction->Cancelled) return vp.CancelAll();
 				// . getting the list of standard Sectors
@@ -709,9 +715,8 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 					if (statuses[s]==CDos::TSectorStatus::EMPTY){
 						chs.sectorId=bufferId[s];
 						if (!image->GetHealthySectorData(chs)){
-							TCHAR buf[120];
-							::wsprintf( buf, _T("On Track %d, empty sector with %s is bad but is not marked so in the FAT."), chs.GetTrackNumber(vp.dos->formatBoot.nHeads), (LPCTSTR)chs.sectorId.ToString() );
-							switch (vp.ConfirmFix(buf,_T("Future data loss at stake if not marked so."))){
+							const CString msg=Utils::SimpleFormat( _T("On Track %d, empty sector with %s is bad but is not marked so in the FAT."), chs.GetTrackNumber(vp.dos->formatBoot.nHeads), chs.sectorId.ToString() );
+							switch (vp.ConfirmFix(msg,_T("Future data loss at stake if not marked so."))){
 								case IDCANCEL:
 									return vp.CancelAll();
 								case IDNO:
@@ -721,7 +726,6 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 							vp.fReport.CloseProblem(true);
 						}
 					}
-				pAction->UpdateProgress(chs.cylinder);
 			}
 		return pAction->TerminateWithSuccess();
 	}

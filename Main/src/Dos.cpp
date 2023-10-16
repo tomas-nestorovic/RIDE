@@ -646,7 +646,7 @@ reportError:Utils::Information(buf);
 		return true;
 	}
 
-	bool CDos::__verifyVolume__(CVerifyVolumeDialog &rd){
+	bool CDos::VerifyVolume(CVerifyVolumeDialog &rd){
 		// True <=> volume verification was performed (even unsuccessfull), otherwise False (e.g. user cancelled)
 		// - displaying the Dialog
 		if (image->ReportWriteProtection()) return false;

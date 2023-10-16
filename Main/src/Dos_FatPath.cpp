@@ -123,11 +123,6 @@
 		return GetItem(i);
 	}
 
-	DWORD CDos::CFatPath::GetNumberOfItems() const{
-		// returns the NumberOfItems currenty in the FileFatPath
-		return nItems;
-	}
-
 	bool CDos::CFatPath::ContainsSector(RCPhysicalAddress chs) const{
 		// True <=> the FatPath has the specified Sector linked in, otherwise False
 		for( PCItem p=buffer; p<pLastItem; p++ )
