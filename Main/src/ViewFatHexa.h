@@ -29,9 +29,11 @@
 			LPCWSTR GetRecordLabelW(Yahel::TPosition pos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override;
 		};
 	protected:
+		const CDos::PFile file;
 		CComPtr<CFatPathReaderWriter> pFatData;
 
 		bool ProcessCustomCommand(UINT cmd) override;
+		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 	public:
 		const CMainWindow::CTdiView::TTab tab;
 

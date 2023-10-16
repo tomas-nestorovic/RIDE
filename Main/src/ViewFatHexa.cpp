@@ -10,14 +10,28 @@ using namespace Yahel;
 		// - base
 		: CHexaEditor(this)
 		// - initialization
-		, tab(0,0,0,dos->image,this)
-		, pFatData( new CFatPathReaderWriter(dos,file) ) {
-		pFatData.p->Release();
+		, file(file)
+		, tab(0,0,0,dos->image,this) {
 		// - setting up YAHEL
-		Reset( pFatData, pFatData, pFatData->GetLength() );
 		RedefineItem( itemDefinition );
 		ShowColumns( IInstance::TColumn::VIEW );
 		SetEditable( !IMAGE->IsWriteProtected() );
+	}
+
+	LRESULT CFatHexaView::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
+		// window procedure
+		switch (msg){
+			case WM_CREATE:
+				// window created
+				// . reflecting write-protection into the look of controls
+				SetEditable( !IMAGE->IsWriteProtected() );
+				// . reinitializing content
+				pFatData.Attach( new CFatPathReaderWriter(DOS,file) );
+				Update( pFatData, pFatData, pFatData->GetLength() );
+				// . base
+				break;
+		}
+		return __super::WindowProc( msg, wParam, lParam );
 	}
 
 	bool CFatHexaView::ProcessCustomCommand(UINT cmd){
