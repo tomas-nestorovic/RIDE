@@ -326,25 +326,35 @@
 	afx_msg void CFileManagerView::OnContextMenu(CWnd *pWndRightClicked,CPoint point){
 		// right mouse button released
 		__super::OnContextMenu( pWndRightClicked, point );
-		const CListCtrl &lv=GetListCtrl();
-		POINT ptItem=point;
-		ScreenToClient(&ptItem);
-		const int iItem=lv.HitTest( ptItem );
-		if (iItem<0){
-			// right-clicked off any Item
-			mnuGeneralContext.UpdateUi(this);
-			SendMessage(
-				WM_COMMAND,
-				mnuGeneralContext.TrackPopupMenu( TPM_RETURNCMD, point.x, point.y, this )
-			);
+		CListCtrl &lv=GetListCtrl();
+		RECT rcHeader;
+		lv.GetHeaderCtrl()->GetClientRect(&rcHeader);
+		Utils::CRideContextMenu *pContextMenu;
+		if (!GetCountOfSelectedFiles()){
+			// no Files selected
+			pContextMenu=&mnuGeneralContext;
+			if ((point.x|point.y)<0){ // context menu invoked via keyboard?
+				point.x=rcHeader.left, point.y=rcHeader.bottom; // show context menu just under the header
+				ClientToScreen(&point);
+			}
 		}else{
-			// right-clicked particular Item
-			mnuFocusedContext.UpdateUi(this);
-			SendMessage(
-				WM_COMMAND,
-				mnuFocusedContext.TrackPopupMenu( TPM_RETURNCMD, point.x, point.y, this )
-			);
+			// some Files selected
+			pContextMenu=&mnuFocusedContext;
+			if ((point.x|point.y)<0){ // context menu invoked via keyboard?
+				for( POSITION pos=lv.GetFirstSelectedItemPosition(); pos; ){
+					int iSelected=lv.GetNextSelectedItem(pos);
+					lv.GetItemPosition( iSelected, &point );
+					if (point.y>=rcHeader.bottom)
+						break; // show context menu at first visible File
+				}
+				ClientToScreen(&point);
+			}
 		}
+		pContextMenu->UpdateUi(this);
+		SendMessage(
+			WM_COMMAND,
+			pContextMenu->TrackPopupMenu( TPM_RETURNCMD, point.x, point.y, this )
+		);
 	}
 
 	afx_msg void CFileManagerView::MeasureItem(LPMEASUREITEMSTRUCT pmis){
