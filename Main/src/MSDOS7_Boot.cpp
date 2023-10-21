@@ -279,9 +279,13 @@
 
 	#define BOOSTED_CAPACITY	_T("Boosted capacity (beware under WinNT!)")
 	#define ARCHIVE_CAPACITY	_T("Single archive (beware under WinNT!)")
+	#define DMF_1024			_T("DMF 1024 (beware under WinNT!)")
+	#define DMF_2048			_T("DMF 2048 (beware under WinNT!)")
 
 	static constexpr CFormatDialog::TStdFormat StdFormats[]={
 		{ _T("Standard 3.5\", 1440 kB"), 0, {Medium::FLOPPY_HD_350,Codec::MFM,79,2,18,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,1}, 1, 0, FDD_350_SECTOR_GAP3, 2, 224 },
+		{ DMF_1024, 0, {Medium::FLOPPY_HD_350,Codec::MFM,79,2,21,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,2}, 2, 0, 6, 2, 16 },
+		{ DMF_2048, 0, {Medium::FLOPPY_HD_350,Codec::MFM,FDD_CYLINDERS_MAX-1,2,21,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,4}, 2, 0, 6, 2, 16 },
 		{ BOOSTED_CAPACITY, 0, {Medium::FLOPPY_HD_350,Codec::MFM,FDD_CYLINDERS_MAX-1,2,21,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,2}, 2, 20, 5, 2, 128 },
 		{ ARCHIVE_CAPACITY, 0, {Medium::FLOPPY_HD_350,Codec::MFM,FDD_CYLINDERS_MAX-1,2,21,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,16}, 2, 20, 5, 1, 16 },
 		{ _T("Standard 3.5\", 720 kB"), 0, {Medium::FLOPPY_DD,Codec::MFM,79,2,9,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,1}, 1, 0, FDD_350_SECTOR_GAP3, 2, 224 },
@@ -297,7 +301,7 @@
 		__instantiate__, // instantiation function
 		Medium::ANY,
 		&CImageRaw::Properties, // the most common Image to contain data for this DOS (e.g. *.D80 Image for MDOS)
-		7,	// number of std Formats
+		ARRAYSIZE(StdFormats),	// number of std Formats
 		StdFormats, // std Formats
 		Codec::FLOPPY_IBM, // a set of Codecs this DOS supports
 		1,127, // range of supported number of Sectors
