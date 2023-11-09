@@ -650,6 +650,7 @@
 	}
 
 	void CGreaseweazleV4::SetPathName(LPCTSTR lpszPathName,BOOL bAddToMRU){
-		__super::SetPathName( lpszPathName, bAddToMRU );
-		m_strPathName=lpszPathName;
+		TCHAR copy[DEVICE_NAME_CHARS_MAX+1];
+		__super::SetPathName( ::lstrcpy(copy,lpszPathName), bAddToMRU );
+		m_strPathName=copy;
 	}
