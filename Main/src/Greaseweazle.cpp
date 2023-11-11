@@ -81,7 +81,7 @@
 		// - connecting to a local Greaseweazle Device
 		hDevice=INVALID_HANDLE_VALUE;
 		Connect();
-		Reset();
+		//Reset();
 	}
 
 	CGreaseweazleV4::~CGreaseweazleV4(){
@@ -141,9 +141,15 @@
 			return ERROR_DEVICE_NOT_AVAILABLE;
 		sampleClock=Utils::TRationalNumber( TIME_SECOND(1), firmwareInfo.sampleFrequency ).Simplify();
 		// - initial settings
-		static constexpr BYTE IBM_BUS=1;
-		if (const TStdWinError err=SendRequest( TRequest::SET_BUS_TYPE, &IBM_BUS, sizeof(IBM_BUS) ))
-			return err;
+		for( BYTE busType=BUS_UNKNOWN+1; busType<BUS_LAST; busType++ ){
+			if (const TStdWinError err=SendRequest( TRequest::SET_BUS_TYPE, &busType, sizeof(busType) ))
+				return err;
+			if (!ReadTrack(0,0))
+				continue; // must be able to turn motor on, seek to a Cylinder and read a Track
+			UnscanTrack(0,0);
+			params.shugartDrive=busType==BUS_SHUGART;
+			break;
+		}
 		// - evaluating connection
 		return *this ? ERROR_SUCCESS : ERROR_GEN_FAILURE;
 	}

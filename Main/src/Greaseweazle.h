@@ -60,6 +60,12 @@
 			UNSUPPORTED,
 			USBSER
 		} driver;
+		enum TBusType:BYTE{
+			BUS_UNKNOWN,
+			BUS_IBM,
+			BUS_SHUGART,
+			BUS_LAST
+		};
 		const BYTE fddId;
 		const Utils::CCallocPtr<BYTE> dataBuffer;
 		#pragma pack(1)

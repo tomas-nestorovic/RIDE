@@ -1211,6 +1211,7 @@ invalidTrack:
 		, corrections( iniSectionName )
 		, verifyWrittenTracks( app.GetProfileInt(iniSectionName,INI_VERIFY_WRITTEN_TRACKS,true)!=0 )
 		// - volatile (current session only)
+		, shugartDrive(false)
 		, doubleTrackStep(false)
 		, userForcedDoubleTrackStep(false) { // True once the ID_40D80 button in Settings dialog is pressed
 	}
@@ -1263,6 +1264,7 @@ invalidTrack:
 				ShowDlgItem( ID_INFORMATION, false );
 				Medium::TType mt;
 				static constexpr WORD Interactivity[]={ ID_LATENCY, ID_NUMBER2, ID_GAP, 0 };
+				const bool shugartDrive=IsDlgItemChecked(ID_DRIVE);
 				if (!EnableDlgItems( Interactivity, rcb.GetInsertedMediumType(0,mt)==ERROR_SUCCESS ))
 					SetDlgItemText( ID_MEDIUM, _T("Not inserted") );
 				// . attempting to recognize any previous format on the floppy
@@ -1270,26 +1272,26 @@ invalidTrack:
 					switch (mt){
 						case Medium::FLOPPY_DD_525:
 							SetDlgItemText( ID_MEDIUM, _T("5.25\" DD formatted, 360 RPM drive") );
-							if (EnableDlgItem( ID_40D80, initialEditing )){
+							if (EnableDlgItem( ID_40D80, initialEditing&&!shugartDrive )){
 						{		const Utils::CVarTempReset<bool> dts0( rcb.params.doubleTrackStep, false );
 								const Utils::CVarTempReset<Medium::TType> ft0( rcb.floppyType, mt );
 								if (rcb.GetInsertedMediumType(1,mt)==ERROR_SUCCESS)
-									CheckDlgButton( ID_40D80, !ShowDlgItem(ID_INFORMATION,mt!=Medium::UNKNOWN) ); // first Track is empty, so likely each odd Track is empty
+									CheckDlgItem( ID_40D80, !ShowDlgItem(ID_INFORMATION,mt!=Medium::UNKNOWN) ); // first Track is empty, so likely each odd Track is empty
 						}		rcb.GetInsertedMediumType(0,mt); // a workaround to make floppy Drive head seek home
 							}
 							break;
 						case Medium::FLOPPY_DD:
-							SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" DD formatted, 300 RPM drive") );
-							CheckAndEnableDlgItem( ID_40D80, false, initialEditing );
+							SetDlgItemText( ID_MEDIUM, _T("3.x\"/5.25\" DD formatted, 300 RPM drive") );
+							CheckAndEnableDlgItem( ID_40D80, false, initialEditing&&!shugartDrive );
 							break;
 						case Medium::FLOPPY_HD_525:
 						case Medium::FLOPPY_HD_350:
 							SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" HD formatted") );
-							CheckAndEnableDlgItem( ID_40D80, false, initialEditing );
+							CheckAndEnableDlgItem( ID_40D80, false, initialEditing&&!shugartDrive );
 							break;
 						default:
 							SetDlgItemText( ID_MEDIUM, _T("Not formatted or faulty") );
-							CheckAndEnableDlgItem( ID_40D80, false, initialEditing );
+							CheckAndEnableDlgItem( ID_40D80, false, initialEditing&&!shugartDrive );
 							break;
 					}
 				// . forcing redrawing (as the new text may be shorter than the original text, leaving the original partly visible)
@@ -1343,10 +1345,14 @@ invalidTrack:
 				// . displaying Firmware information
 				SetDlgItemText( ID_SYSTEM, firmware );
 				// . if DoubleTrackStep changed manually, adjusting the text of the ID_40D80 checkbox
+				SetDlgItemSingleCharUsingFont( ID_RECOVER, 0xf071, FONT_WEBDINGS, 120 );
 				GetDlgItemText( ID_40D80,  doubleTrackDistanceTextOrg, ARRAYSIZE(doubleTrackDistanceTextOrg) );
 				if (rcb.params.userForcedDoubleTrackStep)
 					WindowProc( WM_COMMAND, ID_40D80, 0 );
-				CheckDlgButton( ID_40D80, rcb.params.doubleTrackStep );
+				CheckAndEnableDlgItem( ID_40D80,
+					rcb.params.doubleTrackStep,
+					!CheckDlgItem( ID_DRIVE, rcb.params.shugartDrive )
+				);
 				// . some settings are changeable only during InitialEditing
 				static constexpr WORD InitialSettingIds[]={ ID_ROTATION, ID_ACCURACY, ID_DEFAULT1, ID_TRACK, ID_TIME, 0 };
 				EnableDlgItems( InitialSettingIds, initialEditing );
@@ -1455,9 +1461,14 @@ invalidTrack:
 									SetDlgItemText( ID_40D80, doubleTrackDistanceTextOrg ); // ... then resetting the flag that user has overridden DoubleTrackDistance
 								RefreshMediumInformation();
 								break;
+							case ID_DRIVE:
+								// drive physical track range changed manually
+								CheckAndEnableDlgItem( ID_40D80, false, !IsDlgItemChecked(ID_DRIVE) );
+								ShowDlgItem( ID_INFORMATION, false ); // user manually revised the Track distance, so no need to continue display the warning
+								break;
 							case ID_40D80:
 								// track distance changed manually
-								SetDlgItemFormattedText( ID_40D80, _T("%s (user forced)"), doubleTrackDistanceTextOrg );
+								//SetDlgItemFormattedText( ID_40D80, _T("%s (user forced)"), doubleTrackDistanceTextOrg );
 								ShowDlgItem( ID_INFORMATION, false ); // user manually revised the Track distance, so no need to continue display the warning
 								break;
 							case ID_NONE:
@@ -1473,6 +1484,7 @@ invalidTrack:
 								break;
 							case IDOK:
 								// attempting to confirm the Dialog
+								params.shugartDrive=IsDlgItemChecked(ID_DRIVE);
 								params.doubleTrackStep=IsDlgItemChecked(ID_40D80);
 								params.userForcedDoubleTrackStep=IsDoubleTrackDistanceForcedByUser();
 								break;
@@ -1518,7 +1530,7 @@ invalidTrack:
 		// - showing the Dialog and processing its result
 		if (d.DoModal()==IDOK){
 			*this=d.params;
-			rcb.capsImageInfo.maxcylinder=( FDD_CYLINDERS_HD>>(BYTE)doubleTrackStep )+FDD_CYLINDERS_EXTRA - 1; // "-1" = inclusive!
+			rcb.capsImageInfo.maxcylinder=( FDD_CYLINDERS_HD>>(BYTE)(doubleTrackStep||shugartDrive) )+FDD_CYLINDERS_EXTRA - 1; // "-1" = inclusive!
 			return true;
 		}else
 			return false;

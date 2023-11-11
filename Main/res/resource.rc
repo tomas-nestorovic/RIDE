@@ -1808,11 +1808,13 @@ BEGIN
                     WS_TABSTOP,71,55,147,10
     LTEXT           "&Medium:",IDC_STATIC,7,72,28,8,NOT WS_GROUP
     CONTROL         "Static",ID_MEDIUM,"Static",SS_SIMPLE | WS_BORDER,71,70,
-                    96,13
-    PUSHBUTTON      "Refresh",ID_RECOVER,170,70,48,13
+                    125,13
+    PUSHBUTTON      "",ID_RECOVER,199,70,19,13
     RTEXT           "Warn",ID_INFORMATION,42,84,24,16,NOT WS_GROUP
+    CONTROL         "&40-track drive",ID_DRIVE,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,71,86,59,10
     CONTROL         "&Double track distance",ID_40D80,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,71,87,147,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,135,87,85,10
     LTEXT           "Pre-compensation:",IDC_STATIC,7,102,60,8
     LTEXT           "W",ID_INSTRUCTION,71,103,18,16,NOT WS_VISIBLE | NOT 
                     WS_GROUP
