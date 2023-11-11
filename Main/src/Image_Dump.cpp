@@ -1030,12 +1030,9 @@ setDestination:						// : compacting FileName in order to be better displayable 
 								);
 								// : enabling/disabling controls
 								static constexpr WORD Controls[]={ ID_CYLINDER, ID_CYLINDER_N, ID_HEAD, ID_GAP, ID_NUMBER, ID_DEFAULT1, IDOK, 0 };
-								CheckDlgButton(
+								CheckAndEnableDlgItem(
 									ID_FORMAT,
-									EnableDlgItem(
-										ID_FORMAT,
-										EnableDlgItems( Controls, mt!=Medium::UNKNOWN&&nCompatibleCodecs>0 )  &&  targetImageProperties->IsRealDevice()
-									)
+									EnableDlgItems( Controls, mt!=Medium::UNKNOWN&&nCompatibleCodecs>0 )  &&  targetImageProperties->IsRealDevice()
 								);
 								FocusDlgItem(IDOK);
 								break;

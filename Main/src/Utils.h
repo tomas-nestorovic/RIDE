@@ -236,8 +236,11 @@ namespace Utils{
 
 		INT_PTR DoModal() override;
 		HWND GetDlgItemHwnd(WORD id) const;
+		bool CheckDlgItem(WORD id,bool checked=true) const;
 		bool EnableDlgItem(WORD id,bool enabled=true) const;
 		bool EnableDlgItems(PCWORD pIds,bool enabled) const;
+		void CheckAndEnableDlgItem(WORD id,bool check,bool enable) const;
+		void CheckAndEnableDlgItem(WORD id,bool checkAndEnable) const;
 		bool ShowDlgItem(WORD id,bool show=true) const;
 		bool ShowDlgItems(PCWORD pIds,bool show=true) const;
 		void FocusDlgItem(WORD id) const;

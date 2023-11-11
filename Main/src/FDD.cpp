@@ -1519,23 +1519,19 @@ Utils::Information(buf);}
 							break;
 						case Medium::FLOPPY_DD:
 							SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" DD formatted, 300 RPM drive") );
-							CheckDlgButton( ID_40D80, false );
-							EnableDlgItem( ID_40D80, initialEditing );
+							CheckAndEnableDlgItem( ID_40D80, false, initialEditing );
 							break;
 						case Medium::FLOPPY_HD_350:
 							SetDlgItemText( ID_MEDIUM, _T("3.5\" HD formatted") );
-							CheckDlgButton( ID_40D80, false );
-							EnableDlgItem( ID_40D80, initialEditing );
+							CheckAndEnableDlgItem( ID_40D80, false, initialEditing );
 							break;
 						case Medium::FLOPPY_HD_525:
 							SetDlgItemText( ID_MEDIUM, _T("5.25\" HD formatted") );
-							CheckDlgButton( ID_40D80, false );
-							EnableDlgItem( ID_40D80, initialEditing );
+							CheckAndEnableDlgItem( ID_40D80, false, initialEditing );
 							break;
 						default:
 							SetDlgItemText( ID_MEDIUM, _T("Not formatted or faulty") );
-							CheckDlgButton( ID_40D80, false );
-							EnableDlgItem( ID_40D80, initialEditing );
+							CheckAndEnableDlgItem( ID_40D80, false, initialEditing );
 							break;
 					}
 				// . loading the Profile associated with the current drive and FloppyType

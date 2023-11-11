@@ -1342,6 +1342,12 @@ namespace Utils{
 		return ::GetDlgItem( m_hWnd, id );
 	}
 
+	bool CRideDialog::CheckDlgItem(WORD id,bool checked) const{
+		// checks/unchecks the specified two-state Dialog control and returns this new state
+		::CheckDlgButton( m_hWnd, id, checked );
+		return checked;
+	}
+
 	bool CRideDialog::EnableDlgItem(WORD id,bool enabled) const{
 		// enables/disables the specified Dialog control and returns this new state
 		::EnableWindow( ::GetDlgItem(m_hWnd,id), enabled );
@@ -1353,6 +1359,17 @@ namespace Utils{
 		while (const WORD id=*pIds++)
 			::EnableWindow( ::GetDlgItem(m_hWnd,id), enabled );
 		return enabled;
+	}
+
+	void CRideDialog::CheckAndEnableDlgItem(WORD id,bool check,bool enable) const{
+		// checking and enabling of a control at once
+		CheckDlgItem( id, check );
+		EnableDlgItem( id, enable );
+	}
+
+	void CRideDialog::CheckAndEnableDlgItem(WORD id,bool checkAndEnable) const{
+		// checking and enabling of a control at once
+		CheckAndEnableDlgItem( id, checkAndEnable, checkAndEnable );
 	}
 
 	bool CRideDialog::ShowDlgItem(WORD id,bool show) const{

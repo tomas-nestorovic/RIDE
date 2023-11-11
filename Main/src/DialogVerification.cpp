@@ -250,9 +250,9 @@
 			case WM_NOTIFY:
 				// processing notification from child control
 				if (((LPNMHDR)lParam)->code==NM_CLICK){
-					CheckDlgButton( ID_BOOT, BST_CHECKED&&IsDlgItemEnabled(ID_BOOT) );
-					CheckDlgButton( ID_FAT, BST_CHECKED&&IsDlgItemEnabled(ID_FAT) );
-					CheckDlgButton( ID_FILE1, BST_CHECKED&&IsDlgItemEnabled(ID_FILE1) );
+					CheckDlgItem( ID_BOOT, IsDlgItemEnabled(ID_BOOT) );
+					CheckDlgItem( ID_FAT, IsDlgItemEnabled(ID_FAT) );
+					CheckDlgItem( ID_FILE1, IsDlgItemEnabled(ID_FILE1) );
 					wParam=ID_BOOT; // for the below fallthrough
 					//fallthrough
 				}else
