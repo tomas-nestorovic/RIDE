@@ -261,13 +261,13 @@
 				// processing a command
 				if (ID_BOOT<=wParam && wParam<=ID_IMAGE){
 					// one of check-boxes (un)ticked
-					nOptionsChecked=(IsDlgButtonChecked(ID_BOOT)==BST_CHECKED)
+					nOptionsChecked=IsDlgItemChecked(ID_BOOT)
 									+
-									(IsDlgButtonChecked(ID_FAT)==BST_CHECKED)
+									IsDlgItemChecked(ID_FAT)
 									+
-									(IsDlgButtonChecked(ID_FILE1)==BST_CHECKED)
+									IsDlgItemChecked(ID_FILE1)
 									+
-									(IsDlgButtonChecked(ID_IMAGE)==BST_CHECKED);
+									IsDlgItemChecked(ID_IMAGE);
 					EnableDlgItem( IDOK, nOptionsChecked>0 );
 				}
 				break;

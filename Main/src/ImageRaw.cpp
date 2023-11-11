@@ -540,7 +540,7 @@ trackNotFound:
 							// changed the access scheme (by Cylinders/Sides)
 							if (!ignoreUiNotifications){
 								ignoreUiNotifications++;
-									if (EnableDlgItem( ID_CYLINDER, IsDlgButtonChecked(ID_AUTO)==BST_UNCHECKED ))
+									if (EnableDlgItem( ID_CYLINDER, !IsDlgItemChecked(ID_AUTO) ))
 										SetDlgItemInt( ID_CYLINDER, nCylinders );
 									else
 										SetDlgItemText( ID_CYLINDER, Auto );

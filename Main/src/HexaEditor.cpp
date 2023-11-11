@@ -358,7 +358,7 @@ using namespace Yahel;
 			}
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 				if (msg==WM_COMMAND)
-					EnableDlgItem( ID_NUMBER, IsDlgButtonChecked(ID_NUMBER2)==BST_CHECKED );
+					EnableDlgItem( ID_NUMBER, IsDlgItemChecked(ID_NUMBER2) );
 				return __super::WindowProc(msg,wParam,lParam);
 			}
 		public:

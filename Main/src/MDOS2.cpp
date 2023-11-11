@@ -566,7 +566,7 @@
 			void DoDataExchange(CDataExchange *pDX) override{
 				// exchange of data from and to controls
 				if (pDX->m_bSaveAndValidate)
-					for( BYTE i=0; i<8; attributes=(attributes<<1)|(BYTE)IsDlgButtonChecked(Controls[i++]) );
+					for( BYTE i=0; i<8; attributes=(attributes<<1)|(BYTE)IsDlgItemChecked(Controls[i++]) );
 				else
 					for( BYTE i=8; i--; CheckDlgButton(Controls[i],attributes&1),attributes>>=1 );
 			}

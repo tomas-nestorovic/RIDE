@@ -1749,7 +1749,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 								break;
 							case IDOK:
 								// attempting to confirm the Dialog
-								fdd->fddHead.doubleTrackStep=IsDlgButtonChecked( ID_40D80 )!=BST_UNCHECKED;
+								fdd->fddHead.doubleTrackStep=IsDlgItemChecked(ID_40D80);
 								fdd->fddHead.userForcedDoubleTrackStep=IsDoubleTrackDistanceForcedByUser();
 								TCHAR iniSection[16];
 								GetFddProfileName( iniSection, fdd->GetDriveLetter(), fdd->floppyType );

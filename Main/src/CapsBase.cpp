@@ -1473,7 +1473,7 @@ invalidTrack:
 								break;
 							case IDOK:
 								// attempting to confirm the Dialog
-								params.doubleTrackStep=IsDlgButtonChecked( ID_40D80 )!=BST_UNCHECKED;
+								params.doubleTrackStep=IsDlgItemChecked(ID_40D80);
 								params.userForcedDoubleTrackStep=IsDoubleTrackDistanceForcedByUser();
 								break;
 						}

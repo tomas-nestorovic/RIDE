@@ -1348,6 +1348,11 @@ namespace Utils{
 		return checked;
 	}
 
+	bool CRideDialog::IsDlgItemChecked(WORD id) const{
+		// True <=> the specified Dialog control is checked, otherwise False
+		return ::IsDlgButtonChecked( m_hWnd, id )==BST_CHECKED;
+	}
+
 	bool CRideDialog::EnableDlgItem(WORD id,bool enabled) const{
 		// enables/disables the specified Dialog control and returns this new state
 		::EnableWindow( ::GetDlgItem(m_hWnd,id), enabled );

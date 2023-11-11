@@ -251,7 +251,7 @@
 			void DoDataExchange(CDataExchange *pDX) override{
 				static constexpr WORD Controls[]={ ID_ARCHIVE, ID_DIRECTORY, ID_VOLUME, ID_SYSTEM, ID_HIDDEN, ID_READONLY };
 				if (pDX->m_bSaveAndValidate)
-					for( BYTE i=0; i<ATTRIBUTES_COUNT; attributes=(attributes<<1)|(BYTE)IsDlgButtonChecked(Controls[i++]) );
+					for( BYTE i=0; i<ATTRIBUTES_COUNT; attributes=(attributes<<1)|(BYTE)IsDlgItemChecked(Controls[i++]) );
 				else
 					for( BYTE i=ATTRIBUTES_COUNT; i--; CheckDlgButton(Controls[i],attributes&1),attributes>>=1 );
 			}
