@@ -247,7 +247,7 @@
 		// True <=> Attributes editing confirmed, otherwise False
 		const PDirectoryEntry de=(PDirectoryEntry)file;
 		// - defining the Dialog
-		class CAttributesDialog sealed:public CDialog{
+		class CAttributesDialog sealed:public Utils::CRideDialog{
 			void DoDataExchange(CDataExchange *pDX) override{
 				static constexpr WORD Controls[]={ ID_ARCHIVE, ID_DIRECTORY, ID_VOLUME, ID_SYSTEM, ID_HIDDEN, ID_READONLY };
 				if (pDX->m_bSaveAndValidate)
@@ -258,7 +258,7 @@
 		public:
 			BYTE attributes;
 			CAttributesDialog(BYTE _attributes)
-				: CDialog(IDR_MSDOS_FILE_ATTRIBUTES_EDITOR)
+				: Utils::CRideDialog(IDR_MSDOS_FILE_ATTRIBUTES_EDITOR)
 				, attributes(_attributes) {
 			}
 		} d(de->shortNameEntry.attributes);
