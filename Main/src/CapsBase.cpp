@@ -1271,7 +1271,7 @@ invalidTrack:
 				else
 					switch (mt){
 						case Medium::FLOPPY_DD_525:
-							SetDlgItemText( ID_MEDIUM, _T("5.25\" DD formatted, 360 RPM drive") );
+							SetDlgItemText( ID_MEDIUM, Medium::GetDescription(mt) );
 							if (EnableDlgItem( ID_40D80, initialEditing&&!shugartDrive )){
 						{		const Utils::CVarTempReset<bool> dts0( rcb.params.doubleTrackStep, false );
 								const Utils::CVarTempReset<Medium::TType> ft0( rcb.floppyType, mt );
@@ -1281,12 +1281,12 @@ invalidTrack:
 							}
 							break;
 						case Medium::FLOPPY_DD:
-							SetDlgItemText( ID_MEDIUM, _T("3.x\"/5.25\" DD formatted, 300 RPM drive") );
+							SetDlgItemText( ID_MEDIUM, Medium::GetDescription(mt) );
 							CheckAndEnableDlgItem( ID_40D80, false, initialEditing&&!shugartDrive );
 							break;
 						case Medium::FLOPPY_HD_525:
 						case Medium::FLOPPY_HD_350:
-							SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" HD formatted") );
+							SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" HD floppy") );
 							CheckAndEnableDlgItem( ID_40D80, false, initialEditing&&!shugartDrive );
 							break;
 						default:

@@ -1504,9 +1504,9 @@ Utils::Information(buf);}
 					SetDlgItemText( ID_MEDIUM, _T("Not inserted") );
 				// . attempting to recognize any previous format on the floppy
 				else
-					switch (fdd->floppyType){
+					switch (const Medium::TType mt=fdd->floppyType){
 						case Medium::FLOPPY_DD_525:
-							SetDlgItemText( ID_MEDIUM, _T("5.25\" DD formatted, 360 RPM drive") );
+							SetDlgItemText( ID_MEDIUM, Medium::GetDescription(mt) );
 							if (EnableDlgItem( ID_40D80, initialEditing )){
 								fdd->SeekHeadsHome();
 								const Utils::CVarTempReset<bool> dts0( fdd->fddHead.doubleTrackStep, false );
@@ -1518,15 +1518,15 @@ Utils::Information(buf);}
 							}
 							break;
 						case Medium::FLOPPY_DD:
-							SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" DD formatted, 300 RPM drive") );
+							SetDlgItemText( ID_MEDIUM, Medium::GetDescription(mt) );
 							CheckAndEnableDlgItem( ID_40D80, false, initialEditing );
 							break;
 						case Medium::FLOPPY_HD_350:
-							SetDlgItemText( ID_MEDIUM, _T("3.5\" HD formatted") );
+							SetDlgItemText( ID_MEDIUM, Medium::GetDescription(mt) );
 							CheckAndEnableDlgItem( ID_40D80, false, initialEditing );
 							break;
 						case Medium::FLOPPY_HD_525:
-							SetDlgItemText( ID_MEDIUM, _T("5.25\" HD formatted") );
+							SetDlgItemText( ID_MEDIUM, Medium::GetDescription(mt) );
 							CheckAndEnableDlgItem( ID_40D80, false, initialEditing );
 							break;
 						default:

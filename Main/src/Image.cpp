@@ -225,7 +225,7 @@ namespace Medium{
 	};
 
 	const TProperties TProperties::FLOPPY_DD={
-		_T("3.5\"/5.25\" 2DD floppy, 300 RPM drive"), // description
+		_T("3.x\"/5.25\" 2DD floppy, 300 RPM drive"), // description
 		{ 1, FDD_CYLINDERS_MAX }, // supported range of Cylinders (min and max)
 		{ 1, 2 },	// supported range of Heads (min and max)
 		{ 1, FDD_SECTORS_MAX }, // supported range of Sectors (min and max)
