@@ -448,7 +448,7 @@
 					return CTrackReaderWriter::Invalid;
 				switch (const TFluxOp opcode=(TFluxOp)*p++){
 					case TFluxOp::Index:{ // index information
-						if (p+sizeof(int)>=pEnd) // unexpected end of Stream?
+						if (p+sizeof(int)>pEnd) // unexpected end of Stream?
 							return CTrackReaderWriter::Invalid;
 						const int value=ReadBits28(p);
 						p+=sizeof(int)-1; // "-1" = see "p++" at the end of cycle
@@ -459,7 +459,7 @@
 						break;
 					}
 					case TFluxOp::Space: // "extra long" flux (1525-(2^28-1), seven Bytes, e.g. unformatted area)
-						if (p+sizeof(int)>=pEnd) // unexpected end of Stream?
+						if (p+sizeof(int)>pEnd) // unexpected end of Stream?
 							return CTrackReaderWriter::Invalid;
 						sampleCounter+=ReadBits28(p); // addendum to ...
 						p+=sizeof(int)-1; // "-1" = see "p++" at the end of cycle
