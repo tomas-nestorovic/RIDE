@@ -158,7 +158,8 @@
 			TCorrections corrections;
 			bool verifyWrittenTracks;
 			// volatile (current session only)
-			bool shugartDrive, doubleTrackStep, userForcedDoubleTrackStep;
+			bool shugartDrive, userForcedShugartDrive;
+			bool doubleTrackStep, userForcedDoubleTrackStep;
 
 			TParams(LPCTSTR iniSectionName);
 			~TParams();

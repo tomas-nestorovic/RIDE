@@ -1211,9 +1211,8 @@ invalidTrack:
 		, corrections( iniSectionName )
 		, verifyWrittenTracks( app.GetProfileInt(iniSectionName,INI_VERIFY_WRITTEN_TRACKS,true)!=0 )
 		// - volatile (current session only)
-		, shugartDrive(false)
-		, doubleTrackStep(false)
-		, userForcedDoubleTrackStep(false) { // True once the ID_40D80 button in Settings dialog is pressed
+		, shugartDrive(false) , userForcedShugartDrive(false)
+		, doubleTrackStep(false) , userForcedDoubleTrackStep(false) { // True once the ID_40D80 button in Settings dialog is pressed
 	}
 
 	CCapsBase::TParams::~TParams(){
@@ -1251,11 +1250,16 @@ invalidTrack:
 			const bool initialEditing;
 			CCapsBase &rcb;
 			CPrecompensation tmpPrecomp;
-			TCHAR doubleTrackDistanceTextOrg[80];
+			TCHAR shugartDriveTextOrg[80],doubleTrackDistanceTextOrg[80];
+
+			bool IsShugartDriveForcedByUser() const{
+				// True <=> user has manually overridden DoubleTrackDistance setting, otherwise False
+				return ::lstrlen(shugartDriveTextOrg)!=GetDlgItemTextLength(ID_DRIVE);
+			}
 
 			bool IsDoubleTrackDistanceForcedByUser() const{
 				// True <=> user has manually overridden DoubleTrackDistance setting, otherwise False
-				return ::lstrlen(doubleTrackDistanceTextOrg)!=::GetWindowTextLength( GetDlgItemHwnd(ID_40D80) );
+				return ::lstrlen(doubleTrackDistanceTextOrg)!=GetDlgItemTextLength(ID_40D80);
 			}
 
 			void RefreshMediumInformation(){
@@ -1295,7 +1299,7 @@ invalidTrack:
 							break;
 					}
 				// . forcing redrawing (as the new text may be shorter than the original text, leaving the original partly visible)
-				GetDlgItem(ID_MEDIUM)->Invalidate();
+				InvalidateDlgItem(ID_MEDIUM);
 				// . refreshing the status of Precompensation
 				tmpPrecomp.Load(mt);
 				RefreshPrecompensationStatus();
@@ -1348,7 +1352,10 @@ invalidTrack:
 				SetDlgItemSingleCharUsingFont( ID_RECOVER, 0xf071, FONT_WEBDINGS, 120 );
 				GetDlgItemText( ID_40D80,  doubleTrackDistanceTextOrg, ARRAYSIZE(doubleTrackDistanceTextOrg) );
 				if (rcb.params.userForcedDoubleTrackStep)
-					WindowProc( WM_COMMAND, ID_40D80, 0 );
+					SendMessage( WM_COMMAND, ID_40D80 );
+				GetDlgItemText( ID_DRIVE,  shugartDriveTextOrg, ARRAYSIZE(shugartDriveTextOrg) );
+				if (rcb.params.userForcedShugartDrive)
+					SendMessage( WM_COMMAND, ID_DRIVE );
 				CheckAndEnableDlgItem( ID_40D80,
 					rcb.params.doubleTrackStep,
 					!CheckDlgItem( ID_DRIVE, rcb.params.shugartDrive )
@@ -1442,6 +1449,8 @@ invalidTrack:
 					case WM_PAINT:
 						// drawing
 						__super::OnPaint();
+						if (IsDlgItemShown(ID_INFORMATION))
+							WrapDlgItemsByOpeningCurlyBracket( ID_DRIVE, ID_40D80 );
 						WrapDlgItemsByClosingCurlyBracketWithText( ID_NONE, ID_READABLE, _T("on read error"), 0 );
 						WrapDlgItemsByClosingCurlyBracketWithText( ID_ZERO, ID_CYLINDER_N, _T("when writing"), 0 );
 						return 0;
@@ -1463,12 +1472,13 @@ invalidTrack:
 								break;
 							case ID_DRIVE:
 								// drive physical track range changed manually
+								SetDlgItemFormattedText( ID_DRIVE, _T("%s (user forced)"), shugartDriveTextOrg );
 								CheckAndEnableDlgItem( ID_40D80, false, !IsDlgItemChecked(ID_DRIVE) );
 								ShowDlgItem( ID_INFORMATION, false ); // user manually revised the Track distance, so no need to continue display the warning
 								break;
 							case ID_40D80:
 								// track distance changed manually
-								//SetDlgItemFormattedText( ID_40D80, _T("%s (user forced)"), doubleTrackDistanceTextOrg );
+								SetDlgItemFormattedText( ID_40D80, _T("%s (user forced)"), doubleTrackDistanceTextOrg );
 								ShowDlgItem( ID_INFORMATION, false ); // user manually revised the Track distance, so no need to continue display the warning
 								break;
 							case ID_NONE:

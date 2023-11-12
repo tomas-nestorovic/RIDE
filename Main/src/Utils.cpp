@@ -1342,6 +1342,16 @@ namespace Utils{
 		return ::GetDlgItem( m_hWnd, id );
 	}
 
+	int CRideDialog::GetDlgItemTextLength(WORD id) const{
+		// returns the length of text in a text-box with specified Id
+		return ::GetWindowTextLength( GetDlgItemHwnd(id) );
+	}
+
+	bool CRideDialog::IsDlgItemShown(WORD id) const{
+		// <=> control with specified Id is shown, otherwise False
+		return ::IsWindowVisible( GetDlgItemHwnd(id) )!=FALSE;
+	}
+
 	bool CRideDialog::CheckDlgItem(WORD id,bool checked) const{
 		// checks/unchecks the specified two-state Dialog control and returns this new state
 		::CheckDlgButton( m_hWnd, id, checked );
@@ -1554,20 +1564,21 @@ namespace Utils{
 
 	#define BRACKET_CURLY_FONT_SIZE	12
 
-	void CRideDialog::DrawClosingCurlyBracket(HDC dc,int x,int yMin,int yMax){
-		// draws a closing curly bracket at position X and wrapping all points in {yMin,...,yMax}
+	struct TCurlyBracket sealed{
+		WCHAR CurveUpper, CurveLower, CurveMiddle;
+	};
+
+	static void DrawCurlyBracket(HDC dc,int x,int yMin,int yMax,const TCurlyBracket &cb){
+		// draws a CurlyBracket at position X and wrapping all points in {yMin,...,yMax}
 		const CRideFont font( FONT_SYMBOL, BRACKET_CURLY_FONT_SIZE*10, false, true );
 		::SetBkMode(dc,TRANSPARENT);
 		const HGDIOBJ hFont0=::SelectObject(dc,font);
 			RECT r={ x, yMin, x+100, yMax };
-			static constexpr WCHAR CurveUpper=0xf0fc;
-			::DrawTextW( dc, &CurveUpper,1, &r, DT_LEFT|DT_TOP|DT_SINGLELINE );
-			static constexpr WCHAR CurveLower=0xf0fe;
-			::DrawTextW( dc, &CurveLower,1, &r, DT_LEFT|DT_BOTTOM|DT_SINGLELINE );
-			static constexpr WCHAR CurveMiddle=0xf0fd;
-			::DrawTextW( dc, &CurveMiddle,1, &r, DT_LEFT|DT_VCENTER|DT_SINGLELINE );
+			::DrawTextW( dc, &cb.CurveUpper,1, &r, DT_LEFT|DT_TOP|DT_SINGLELINE );
+			::DrawTextW( dc, &cb.CurveLower,1, &r, DT_LEFT|DT_BOTTOM|DT_SINGLELINE );
+			::DrawTextW( dc, &cb.CurveMiddle,1, &r, DT_LEFT|DT_VCENTER|DT_SINGLELINE );
 			SIZE fontSize;
-			::GetTextExtentPoint32W(dc,&CurveMiddle,1,&fontSize);
+			::GetTextExtentPoint32W(dc,&cb.CurveMiddle,1,&fontSize);
 			r.top+=fontSize.cy/5, r.bottom-=fontSize.cy/5;
 			while (r.bottom-r.top>2.2*fontSize.cy){
 				static constexpr WCHAR CurveStraight=0xf0ef;
@@ -1576,6 +1587,26 @@ namespace Utils{
 				r.top++, r.bottom--;
 			}
 		::SelectObject(dc,hFont0);
+	}
+
+	void CRideDialog::DrawOpeningCurlyBracket(HDC dc,int x,int yMin,int yMax){
+		// draws a opening curly bracket at position X and wrapping all points in {yMin,...,yMax}
+		static constexpr TCurlyBracket CurlyBracket={ 0xf0ec, 0xf0ee, 0xf0ed };
+		DrawCurlyBracket( dc, x, yMin, yMax, CurlyBracket );
+	}
+
+	void CRideDialog::WrapDlgItemsByOpeningCurlyBracket(WORD idA,WORD idZ) const{
+		// wraps ControlsA-Z from left using opening curly bracket
+		const RECT rcA=MapDlgItemClientRect(idA), rcZ=MapDlgItemClientRect(idZ);
+		RECT r={ std::min(rcA.left,rcZ.left)-13, rcA.top-6, 1000, rcZ.bottom+6 };
+		const CClientDC dc( const_cast<CRideDialog *>(this) );
+		DrawOpeningCurlyBracket( dc, r.left, r.top, r.bottom );
+	}
+
+	void CRideDialog::DrawClosingCurlyBracket(HDC dc,int x,int yMin,int yMax){
+		// draws a closing curly bracket at position X and wrapping all points in {yMin,...,yMax}
+		static constexpr TCurlyBracket CurlyBracket={ 0xf0fc, 0xf0fe, 0xf0fd };
+		DrawCurlyBracket( dc, x, yMin, yMax, CurlyBracket );
 	}
 
 	void CRideDialog::WrapDlgItemsByClosingCurlyBracketWithText(WORD idA,WORD idZ,LPCTSTR text,DWORD textColor) const{

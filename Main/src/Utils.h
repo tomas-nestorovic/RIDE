@@ -227,6 +227,7 @@ namespace Utils{
 	public:
 		static LPCTSTR GetDialogTemplateCaptionText(UINT idDlgRes,PTCHAR chars,WORD nCharsMax);
 		static LPCTSTR GetDialogTemplateItemText(UINT idDlgRes,WORD idItem,PTCHAR chars,WORD nCharsMax);
+		static void DrawOpeningCurlyBracket(HDC dc,int x,int yMin,int yMax);
 		static void DrawClosingCurlyBracket(HDC dc,int x,int yMin,int yMax);
 		static void SetDlgItemSingleCharUsingFont(HWND hDlg,WORD id,WCHAR singleChar,HFONT hFont);
 		static void ConvertToCommandLikeButton(HWND hStdBtn,WCHAR wingdingsGlyphBeforeText=0xf0e0,COLORREF textColor=0,int glyphPointSizeIncrement=0,COLORREF glyphColor=0); // 0xf0e0 = thin arrow right
@@ -236,6 +237,8 @@ namespace Utils{
 
 		INT_PTR DoModal() override;
 		HWND GetDlgItemHwnd(WORD id) const;
+		int GetDlgItemTextLength(WORD id) const;
+		bool IsDlgItemShown(WORD id) const;
 		bool CheckDlgItem(WORD id,bool checked=true) const;
 		bool IsDlgItemChecked(WORD id) const;
 		bool EnableDlgItem(WORD id,bool enabled=true) const;
@@ -260,6 +263,7 @@ namespace Utils{
 		bool SelectDlgComboBoxValue(WORD id,LONG_PTR value,bool cancelPrevSelection=true) const;
 		int GetDlgComboBoxSelectedIndex(WORD id) const;
 		int GetDlgListBoxSelectedIndex(WORD id) const;
+		void WrapDlgItemsByOpeningCurlyBracket(WORD idA,WORD idZ) const;
 		void WrapDlgItemsByClosingCurlyBracketWithText(WORD idA,WORD idZ,LPCTSTR text,DWORD textColor) const;
 		CString CompactPathToFitInDlgItem(WORD id,LPCTSTR fullpath) const;
 		void SetDlgItemCompactPath(WORD id,LPCTSTR fullpath) const;

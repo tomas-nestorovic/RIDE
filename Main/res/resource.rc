@@ -1790,12 +1790,12 @@ BEGIN
     LTEXT           "Error",ID_ERROR,15,73,47,15,WS_BORDER | NOT WS_GROUP
 END
 
-IDR_CAPS_DEVICE_ACCESS DIALOG DISCARDABLE  0, 0, 225, 265
+IDR_CAPS_DEVICE_ACCESS DIALOG DISCARDABLE  0, 0, 225, 275
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
 CAPTION "Flux device access options"
 BEGIN
-    DEFPUSHBUTTON   "OK",IDOK,115,244,50,14
-    PUSHBUTTON      "Cancel",IDCANCEL,168,244,50,14
+    DEFPUSHBUTTON   "OK",IDOK,115,254,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,168,254,50,14
     LTEXT           "Firmware:",IDC_STATIC,7,8,31,8,NOT WS_GROUP
     LTEXT           "Static",ID_SYSTEM,71,8,147,8,NOT WS_GROUP
     LTEXT           "&Precision:",IDC_STATIC,7,24,32,8
@@ -1810,39 +1810,39 @@ BEGIN
     CONTROL         "Static",ID_MEDIUM,"Static",SS_SIMPLE | WS_BORDER,71,70,
                     125,13
     PUSHBUTTON      "",ID_RECOVER,199,70,19,13
-    RTEXT           "Warn",ID_INFORMATION,42,84,24,16,NOT WS_GROUP
+    RTEXT           "Warn",ID_INFORMATION,37,90,24,16,NOT WS_GROUP
     CONTROL         "&40-track drive",ID_DRIVE,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,71,86,59,10
+                    WS_TABSTOP,71,87,147,10
     CONTROL         "&Double track distance",ID_40D80,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,135,87,85,10
-    LTEXT           "Pre-compensation:",IDC_STATIC,7,102,60,8
-    LTEXT           "W",ID_INSTRUCTION,71,103,18,16,NOT WS_VISIBLE | NOT 
+                    BS_AUTOCHECKBOX | WS_TABSTOP,71,99,147,10
+    LTEXT           "Pre-compensation:",IDC_STATIC,7,112,60,8
+    LTEXT           "W",ID_INSTRUCTION,71,113,18,16,NOT WS_VISIBLE | NOT 
                     WS_GROUP
-    CONTROL         "",ID_ALIGN,"SysLink",WS_TABSTOP,71,102,147,16
-    LTEXT           "Calibrate head:",IDC_STATIC,7,124,48,8,NOT WS_GROUP
+    CONTROL         "",ID_ALIGN,"SysLink",WS_TABSTOP,71,112,147,16
+    LTEXT           "Calibrate head:",IDC_STATIC,7,134,48,8,NOT WS_GROUP
     CONTROL         "Never",ID_NONE,"Button",BS_AUTORADIOBUTTON | WS_GROUP,
-                    71,124,74,10
+                    71,134,74,10
     CONTROL         "O&nce per cylinder",ID_CYLINDER,"Button",
-                    BS_AUTORADIOBUTTON,71,135,71,10
+                    BS_AUTORADIOBUTTON,71,145,71,10
     CONTROL         "For each &sector",ID_SECTOR,"Button",BS_AUTORADIOBUTTON,
-                    71,146,65,10
+                    71,156,65,10
     CONTROL         "Only &known sectors if DOS recognized",ID_READABLE,
                     "Button",BS_AUTOCHECKBOX | BS_TOP | BS_MULTILINE | 
-                    WS_TABSTOP,71,157,78,18
+                    WS_TABSTOP,71,167,78,18
     CONTROL         "Never",ID_ZERO,"Button",BS_AUTORADIOBUTTON | WS_GROUP,
-                    71,180,78,10
-    CONTROL         "&Each",ID_CYLINDER_N,"Button",BS_AUTORADIOBUTTON,71,192,
+                    71,190,78,10
+    CONTROL         "&Each",ID_CYLINDER_N,"Button",BS_AUTORADIOBUTTON,71,202,
                     31,10
-    EDITTEXT        ID_NUMBER,103,192,16,12,ES_RIGHT | ES_AUTOHSCROLL | 
+    EDITTEXT        ID_NUMBER,103,202,16,12,ES_RIGHT | ES_AUTOHSCROLL | 
                     ES_NUMBER | WS_DISABLED | NOT WS_BORDER
-    LTEXT           "-th cyl.",ID_ADD,119,192,22,8,NOT WS_GROUP
+    LTEXT           "-th cyl.",ID_ADD,119,202,22,8,NOT WS_GROUP
     CONTROL         "&Verify formatted/written tracks (recommended)",
                     ID_VERIFY_TRACK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
-                    219,211,10
+                    229,211,10
     CONTROL         "Use jitter and other &corrections",ID_TRACK,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,208,112,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,218,112,10
     CONTROL         "(<a id=""correction"">Settings</a>)",ID_TIME,"SysLink",
-                    WS_TABSTOP,119,209,49,10
+                    WS_TABSTOP,119,219,49,10
 END
 
 IDR_CAPS DIALOGEX 0, 0, 186, 127
@@ -2264,7 +2264,7 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 218
         TOPMARGIN, 7
-        BOTTOMMARGIN, 258
+        BOTTOMMARGIN, 268
     END
 
     IDR_CAPS, DIALOG
