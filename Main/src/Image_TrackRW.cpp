@@ -1578,3 +1578,13 @@
 		// - successfully aligned
 		return ERROR_SUCCESS;
 	}
+
+	void CImage::CTrackReaderWriter::Revert(){
+		// True <=> asked and successfully normalized for a known MediumType, otherwise False
+		// - reverting Indices
+		for( BYTE i=0; i<GetIndexCount(); i++ )
+			indexPulses[i]=GetTotalTime()-indexPulses[i];
+		// - reverting Times
+		for( DWORD i=0; i<nLogTimes; i++ )
+			logTimes[i]=GetTotalTime()-logTimes[i];
+	}

@@ -158,6 +158,7 @@
 			TCorrections corrections;
 			bool verifyWrittenTracks;
 			// volatile (current session only)
+			bool flippyDisk;
 			bool shugartDrive, userForcedShugartDrive;
 			bool doubleTrackStep, userForcedDoubleTrackStep;
 

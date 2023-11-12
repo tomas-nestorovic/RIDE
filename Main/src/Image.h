@@ -596,6 +596,7 @@
 			WORD WriteData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToWrite,PCBYTE buffer,TFdcStatus sr);
 			bool Normalize();
 			TStdWinError NormalizeEx(TLogTime timeOffset,bool fitTimesIntoIwMiddles,bool correctCellCountPerRevolution,bool correctRevolutionTime);
+			void Revert();
 		};
 
 		class CSectorDataSerializer abstract:public CHexaEditor::CYahelStreamFile,public Yahel::Stream::IAdvisor{

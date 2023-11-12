@@ -1211,6 +1211,7 @@ invalidTrack:
 		, corrections( iniSectionName )
 		, verifyWrittenTracks( app.GetProfileInt(iniSectionName,INI_VERIFY_WRITTEN_TRACKS,true)!=0 )
 		// - volatile (current session only)
+		, flippyDisk(false)
 		, shugartDrive(false) , userForcedShugartDrive(false)
 		, doubleTrackStep(false) , userForcedDoubleTrackStep(false) { // True once the ID_40D80 button in Settings dialog is pressed
 	}
@@ -1275,7 +1276,6 @@ invalidTrack:
 				else
 					switch (mt){
 						case Medium::FLOPPY_DD_525:
-							SetDlgItemText( ID_MEDIUM, Medium::GetDescription(mt) );
 							if (EnableDlgItem( ID_40D80, initialEditing&&!shugartDrive )){
 						{		const Utils::CVarTempReset<bool> dts0( rcb.params.doubleTrackStep, false );
 								const Utils::CVarTempReset<Medium::TType> ft0( rcb.floppyType, mt );
@@ -1283,18 +1283,28 @@ invalidTrack:
 									CheckDlgItem( ID_40D80, !ShowDlgItem(ID_INFORMATION,mt!=Medium::UNKNOWN) ); // first Track is empty, so likely each odd Track is empty
 						}		rcb.GetInsertedMediumType(0,mt); // a workaround to make floppy Drive head seek home
 							}
-							break;
+							//fallthrough
 						case Medium::FLOPPY_DD:
 							SetDlgItemText( ID_MEDIUM, Medium::GetDescription(mt) );
-							CheckAndEnableDlgItem( ID_40D80, false, initialEditing&&!shugartDrive );
+							if (mt==Medium::FLOPPY_DD)
+								CheckAndEnableDlgItem( ID_40D80, false, initialEditing&&!shugartDrive );
+							if (EnableDlgItem( ID_SIDE, initialEditing )){
+								PInternalTrack &rit=rcb.internalTracks[0][1]; // the test Track
+								const Utils::CVarTempReset<PInternalTrack> pit0( rit, nullptr ); // forcing a new scanning
+								const Utils::CVarTempReset<bool> fd0( rcb.params.flippyDisk, true ); // assumption (this is a FlippyDisk)
+								CheckDlgItem( ID_SIDE, rcb.ScanTrack(0,1)>0 );
+								delete rit;
+							}
 							break;
 						case Medium::FLOPPY_HD_525:
 						case Medium::FLOPPY_HD_350:
 							SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" HD floppy") );
+							CheckAndEnableDlgItem( ID_SIDE, false );
 							CheckAndEnableDlgItem( ID_40D80, false, initialEditing&&!shugartDrive );
 							break;
 						default:
 							SetDlgItemText( ID_MEDIUM, _T("Not formatted or faulty") );
+							CheckAndEnableDlgItem( ID_SIDE, false );
 							CheckAndEnableDlgItem( ID_40D80, false, initialEditing&&!shugartDrive );
 							break;
 					}
@@ -1494,6 +1504,7 @@ invalidTrack:
 								break;
 							case IDOK:
 								// attempting to confirm the Dialog
+								params.flippyDisk=IsDlgItemChecked(ID_SIDE);
 								params.shugartDrive=IsDlgItemChecked(ID_DRIVE);
 								params.doubleTrackStep=IsDlgItemChecked(ID_40D80);
 								params.userForcedDoubleTrackStep=IsDoubleTrackDistanceForcedByUser();

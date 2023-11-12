@@ -516,6 +516,8 @@
 	}	// - making sure the read content is a Greaseweazle Stream whose data actually make sense
 		if (CTrackReaderWriter trw=GwV4StreamToTrack( dataBuffer, p-dataBuffer )){
 			// it's a Greaseweazle Stream whose data make sense
+			if (head && params.flippyDisk)
+				trw.Revert();
 			EXCLUSIVELY_LOCK_THIS_IMAGE();
 			if (rit) // if a Track already emerged between the Image and Device locks, using it
 				ASSERT(FALSE); // but this shouldn't happen!
