@@ -117,6 +117,8 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		f.Seek( tdhOffsets[cylFile][head], CFile::begin );
 		if (CTrackReaderWriter trw=StreamToTrack( f, cylFile, head )){
 			// it's a SuperCardPro Track
+			if (head && params.flippyDisk)
+				trw.Reverse();
 			rit=CInternalTrack::CreateFrom( *this, trw );
 			return *rit;
 		}

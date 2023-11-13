@@ -1579,12 +1579,17 @@
 		return ERROR_SUCCESS;
 	}
 
-	void CImage::CTrackReaderWriter::Revert(){
-		// True <=> asked and successfully normalized for a known MediumType, otherwise False
-		// - reverting Indices
+	void CImage::CTrackReaderWriter::Reverse(){
+		// reverses timing of this Track
+		// - reversing Indices
+		const auto tTotal=GetTotalTime();
+		for( BYTE i=0; i<GetIndexCount()/2; i++ )
+			std::swap( indexPulses[i], indexPulses[GetIndexCount()-1-i] );
 		for( BYTE i=0; i<GetIndexCount(); i++ )
-			indexPulses[i]=GetTotalTime()-indexPulses[i];
-		// - reverting Times
+			indexPulses[i]=tTotal-indexPulses[i];
+		// - reversing Times
+		for( DWORD i=0; i<nLogTimes/2; i++ )
+			std::swap( logTimes[i], logTimes[nLogTimes-1-i] );
 		for( DWORD i=0; i<nLogTimes; i++ )
-			logTimes[i]=GetTotalTime()-logTimes[i];
+			logTimes[i]=tTotal-logTimes[i];
 	}

@@ -838,6 +838,8 @@
 	}	// - making sure the read content is a KryoFlux Stream whose data actually make sense
 		if (CTrackReaderWriter trw=StreamToTrack( tmpDataBuffer, p-tmpDataBuffer )){
 			// it's a KryoFlux Stream whose data make sense
+			if (head && params.flippyDisk)
+				trw.Reverse();
 			EXCLUSIVELY_LOCK_THIS_IMAGE();
 			if (rit) // if a Track already emerged between the Image and Device locks, using it
 				ASSERT(FALSE); // but this shouldn't happen!

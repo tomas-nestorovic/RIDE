@@ -172,6 +172,8 @@
 			if (f.Read( data, fLength )==fLength)
 				if (CTrackReaderWriter trw=StreamToTrack( data, f.GetLength() )){
 					// it's a KryoFlux Stream whose data make sense
+					if (head && params.flippyDisk)
+						trw.Reverse();
 					rit=CInternalTrack::CreateFrom( *this, trw );
 					return *rit;
 				}
