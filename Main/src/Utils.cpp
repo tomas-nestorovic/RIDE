@@ -1348,7 +1348,7 @@ namespace Utils{
 	}
 
 	bool CRideDialog::IsDlgItemShown(WORD id) const{
-		// <=> control with specified Id is shown, otherwise False
+		// True <=> control with specified Id is shown, otherwise False
 		return ::IsWindowVisible( GetDlgItemHwnd(id) )!=FALSE;
 	}
 

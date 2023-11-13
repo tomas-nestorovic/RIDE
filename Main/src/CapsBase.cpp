@@ -1211,7 +1211,7 @@ invalidTrack:
 		, corrections( iniSectionName )
 		, verifyWrittenTracks( app.GetProfileInt(iniSectionName,INI_VERIFY_WRITTEN_TRACKS,true)!=0 )
 		// - volatile (current session only)
-		, flippyDisk(false)
+		, flippyDisk(false) , userForcedFlippyDisk(false)
 		, shugartDrive(false) , userForcedShugartDrive(false)
 		, doubleTrackStep(false) , userForcedDoubleTrackStep(false) { // True once the ID_40D80 button in Settings dialog is pressed
 	}
@@ -1251,15 +1251,20 @@ invalidTrack:
 			const bool initialEditing;
 			CCapsBase &rcb;
 			CPrecompensation tmpPrecomp;
-			TCHAR shugartDriveTextOrg[80],doubleTrackDistanceTextOrg[80];
+			TCHAR flippyDiskTextOrg[40],shugartDriveTextOrg[80],doubleTrackDistanceTextOrg[80];
+
+			bool IsFlippyDiskForcedByUser() const{
+				// True <=> user has manually overrode FlippyDisk setting, otherwise False
+				return ::lstrlen(flippyDiskTextOrg)!=GetDlgItemTextLength(ID_SIDE);
+			}
 
 			bool IsShugartDriveForcedByUser() const{
-				// True <=> user has manually overridden DoubleTrackDistance setting, otherwise False
+				// True <=> user has manually overrode ShugartDrive setting, otherwise False
 				return ::lstrlen(shugartDriveTextOrg)!=GetDlgItemTextLength(ID_DRIVE);
 			}
 
 			bool IsDoubleTrackDistanceForcedByUser() const{
-				// True <=> user has manually overridden DoubleTrackDistance setting, otherwise False
+				// True <=> user has manually overrode DoubleTrackDistance setting, otherwise False
 				return ::lstrlen(doubleTrackDistanceTextOrg)!=GetDlgItemTextLength(ID_40D80);
 			}
 
@@ -1358,8 +1363,15 @@ invalidTrack:
 				__super::PreInitDialog();
 				// . displaying Firmware information
 				SetDlgItemText( ID_SYSTEM, firmware );
+				// . some settings are changeable only during InitialEditing
+				static constexpr WORD InitialSettingIds[]={ ID_ROTATION, ID_ACCURACY, ID_DEFAULT1, ID_SIDE, ID_DRIVE, ID_40D80, ID_TRACK, ID_TIME, 0 };
+				EnableDlgItems( InitialSettingIds, initialEditing );
+				EnableDlgItem( ID_READABLE, params.calibrationAfterError!=TParams::TCalibrationAfterError::NONE );
 				// . if DoubleTrackStep changed manually, adjusting the text of the ID_40D80 checkbox
 				SetDlgItemSingleCharUsingFont( ID_RECOVER, 0xf071, FONT_WEBDINGS, 120 );
+				GetDlgItemText( ID_SIDE,   flippyDiskTextOrg, ARRAYSIZE(flippyDiskTextOrg) );
+				if (CheckDlgItem(ID_SIDE,rcb.params.flippyDisk) && rcb.params.userForcedFlippyDisk)
+					SendMessage( WM_COMMAND, ID_SIDE );
 				GetDlgItemText( ID_40D80,  doubleTrackDistanceTextOrg, ARRAYSIZE(doubleTrackDistanceTextOrg) );
 				if (rcb.params.userForcedDoubleTrackStep)
 					SendMessage( WM_COMMAND, ID_40D80 );
@@ -1370,10 +1382,6 @@ invalidTrack:
 					rcb.params.doubleTrackStep,
 					!CheckDlgItem( ID_DRIVE, rcb.params.shugartDrive )
 				);
-				// . some settings are changeable only during InitialEditing
-				static constexpr WORD InitialSettingIds[]={ ID_ROTATION, ID_ACCURACY, ID_DEFAULT1, ID_TRACK, ID_TIME, 0 };
-				EnableDlgItems( InitialSettingIds, initialEditing );
-				EnableDlgItem( ID_READABLE, params.calibrationAfterError!=TParams::TCalibrationAfterError::NONE );
 				// . displaying inserted Medium information
 				SetDlgItemSingleCharUsingFont( // a warning that a 40-track disk might have been misrecognized
 					ID_INFORMATION,
@@ -1476,15 +1484,23 @@ invalidTrack:
 							}
 							case ID_RECOVER:
 								// refreshing information on (inserted) floppy
-								if (initialEditing) // if no Tracks are yet formatted ...
-									SetDlgItemText( ID_40D80, doubleTrackDistanceTextOrg ); // ... then resetting the flag that user has overridden DoubleTrackDistance
+								if (initialEditing){ // if no Tracks are yet formatted, then resetting the flag that user has overridden these settings
+									CheckDlgItem( ID_DRIVE, CheckDlgItem(ID_SIDE,false) );
+									SetDlgItemText( ID_SIDE, flippyDiskTextOrg );
+									SetDlgItemText( ID_DRIVE, shugartDriveTextOrg );
+									SetDlgItemText( ID_40D80, doubleTrackDistanceTextOrg );
+								}
 								RefreshMediumInformation();
+								break;
+							case ID_SIDE:
+								// flippy disk setting changed manually
+								SetDlgItemFormattedText( ID_SIDE, _T("%s (user forced)"), flippyDiskTextOrg );
 								break;
 							case ID_DRIVE:
 								// drive physical track range changed manually
 								SetDlgItemFormattedText( ID_DRIVE, _T("%s (user forced)"), shugartDriveTextOrg );
 								CheckAndEnableDlgItem( ID_40D80, false, !IsDlgItemChecked(ID_DRIVE) );
-								ShowDlgItem( ID_INFORMATION, false ); // user manually revised the Track distance, so no need to continue display the warning
+								ShowDlgItem( ID_INFORMATION, false ); // user manually revised the drive's physical # of Track distance, so no need to continue display the warning
 								break;
 							case ID_40D80:
 								// track distance changed manually
@@ -1505,7 +1521,9 @@ invalidTrack:
 							case IDOK:
 								// attempting to confirm the Dialog
 								params.flippyDisk=IsDlgItemChecked(ID_SIDE);
+								params.userForcedFlippyDisk=IsFlippyDiskForcedByUser();
 								params.shugartDrive=IsDlgItemChecked(ID_DRIVE);
+								params.userForcedShugartDrive=IsShugartDriveForcedByUser();
 								params.doubleTrackStep=IsDlgItemChecked(ID_40D80);
 								params.userForcedDoubleTrackStep=IsDoubleTrackDistanceForcedByUser();
 								break;
