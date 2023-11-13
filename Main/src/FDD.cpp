@@ -9,6 +9,7 @@
 	
 	#define INI_FDD	_T("FDD")
 
+	#define INI_40_TRACK_DRIVE			_T("sd40")
 	#define INI_LATENCY_DETERMINED		_T("latdet")
 	#define INI_LATENCY_CONTROLLER		_T("latfdc")
 	#define INI_LATENCY_1BYTE			_T("lat1b")
@@ -311,6 +312,7 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 		// True <=> explicit Profile for specified Drive/FloppyType exists and loaded, otherwise False
 		TCHAR iniSection[16];
 		GetFddProfileName( iniSection, driveLetter, floppyType );
+		fortyTrackDrive=app.GetProfileInt( iniSection, INI_40_TRACK_DRIVE, 0 )!=0;
 		switch (floppyType){
 			default:
 				ASSERT(FALSE);
@@ -335,6 +337,7 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 		// saves the Profile for specified Drive and FloppyType
 		TCHAR iniSection[16];
 		GetFddProfileName( iniSection, driveLetter, floppyType );
+		app.WriteProfileInt( iniSection, INI_40_TRACK_DRIVE, fortyTrackDrive );
 		app.WriteProfileInt( iniSection, INI_LATENCY_CONTROLLER, controllerLatency );
 		app.WriteProfileInt( iniSection, INI_LATENCY_1BYTE, oneByteLatency );
 		app.WriteProfileInt( iniSection, INI_LATENCY_GAP3, gap3Latency );
@@ -1491,10 +1494,10 @@ Utils::Information(buf);}
 
 			bool IsDoubleTrackDistanceForcedByUser() const{
 				// True <=> user has manually overridden DoubleTrackDistance setting, otherwise False
-				return ::lstrlen(doubleTrackDistanceTextOrg)!=::GetWindowTextLength( GetDlgItemHwnd(ID_40D80) );
+				return ::lstrlen(doubleTrackDistanceTextOrg)!=GetDlgItemTextLength(ID_40D80);
 			}
 
-			void __refreshMediumInformation__(){
+			void RefreshMediumInformation(){
 				// detects a floppy in the Drive and attempts to recognize its Type
 				// . making sure that a floppy is in the Drive
 				ShowDlgItem( ID_INFORMATION, false );
@@ -1507,7 +1510,7 @@ Utils::Information(buf);}
 					switch (const Medium::TType mt=fdd->floppyType){
 						case Medium::FLOPPY_DD_525:
 							SetDlgItemText( ID_MEDIUM, Medium::GetDescription(mt) );
-							if (EnableDlgItem( ID_40D80, initialEditing )){
+							if (EnableDlgItem( ID_40D80, initialEditing&&!fdd->fddHead.profile.fortyTrackDrive )){
 								fdd->SeekHeadsHome();
 								const Utils::CVarTempReset<bool> dts0( fdd->fddHead.doubleTrackStep, false );
 								const Utils::CVarTempReset<PInternalTrack> pit0( fdd->internalTracks[1][0], nullptr ); // forcing new scan
@@ -1544,7 +1547,7 @@ Utils::Information(buf);}
 				SetDlgItemPos( ID_AUTO, rcMessage );
 				__exchangeLatency__( &CDataExchange(this,FALSE) );
 				// . forcing redrawing (as the new text may be shorter than the original text, leaving the original partly visible)
-				GetDlgItem(ID_MEDIUM)->Invalidate();
+				InvalidateDlgItem(ID_MEDIUM);
 			}
 			void PreInitDialog() override{
 				// dialog initialization
@@ -1555,9 +1558,12 @@ Utils::Information(buf);}
 				// . if DoubleTrackStep changed manually, adjusting the text of the ID_40D80 checkbox
 				GetDlgItemText( ID_40D80,  doubleTrackDistanceTextOrg, ARRAYSIZE(doubleTrackDistanceTextOrg) );
 				if (fdd->fddHead.userForcedDoubleTrackStep)
-					WindowProc( WM_COMMAND, ID_40D80, 0 );
-				CheckDlgButton( ID_40D80, fdd->fddHead.doubleTrackStep );
-				// . some settings are changeable only during InitialEditing
+					SendMessage( WM_COMMAND, ID_40D80 );
+				EnableDlgItem( ID_DRIVE, initialEditing );
+				CheckAndEnableDlgItem( ID_40D80,
+					fdd->fddHead.doubleTrackStep,
+					!CheckDlgItem( ID_DRIVE, fdd->fddHead.profile.fortyTrackDrive )
+				);
 				EnableDlgItem( ID_READABLE, params.calibrationAfterError!=TParams::TCalibrationAfterError::NONE );
 				// . displaying inserted Medium information
 				SetDlgItemSingleCharUsingFont( // a warning that a 40-track disk might have been misrecognized
@@ -1568,7 +1574,7 @@ Utils::Information(buf);}
 					ID_INSTRUCTION,
 					L'\xf0ea', (HFONT)Utils::CRideFont(FONT_WEBDINGS,175,false,true).Detach()
 				);
-				__refreshMediumInformation__();
+				RefreshMediumInformation();
 				// . adjusting calibration possibilities
 				extern CDos::PCProperties manuallyForceDos;
 				if (EnableDlgItem( ID_READABLE,
@@ -1631,7 +1637,9 @@ Utils::Information(buf);}
 				// drawing
 				// - base
 				__super::OnPaint();
-				// - drawing of curly brackets
+				// - drawing curly brackets
+				if (IsDlgItemShown(ID_INFORMATION))
+					WrapDlgItemsByOpeningCurlyBracket( ID_DRIVE, ID_40D80 );
 				WrapDlgItemsByClosingCurlyBracketWithText( ID_LATENCY, ID_GAP, nullptr, 0 );
 				WrapDlgItemsByClosingCurlyBracketWithText( ID_NONE, ID_READABLE, _T("on read error"), 0 );
 				WrapDlgItemsByClosingCurlyBracketWithText( ID_ZERO, ID_CYLINDER_N, _T("when formatting"), 0 );
@@ -1729,7 +1737,12 @@ autodetermineLatencies:		// automatic determination of write latency values
 								// refreshing information on (inserted) floppy
 								if (initialEditing) // if no Tracks are yet formatted ...
 									SetDlgItemText( ID_40D80, doubleTrackDistanceTextOrg ); // ... then resetting the flag that user has overridden DoubleTrackDistance
-								__refreshMediumInformation__();
+								RefreshMediumInformation();
+								break;
+							case ID_DRIVE:
+								// drive physical track range changed manually
+								CheckAndEnableDlgItem( ID_40D80, false, !IsDlgItemChecked(ID_DRIVE) );
+								ShowDlgItem( ID_INFORMATION, false ); // user manually revised the drive's physical # of Track distance, so no need to continue display the warning
 								break;
 							case ID_40D80:
 								// track distance changed manually
@@ -1749,12 +1762,13 @@ autodetermineLatencies:		// automatic determination of write latency values
 								break;
 							case IDOK:
 								// attempting to confirm the Dialog
+								fdd->fddHead.profile.fortyTrackDrive=IsDlgItemChecked(ID_DRIVE);
 								fdd->fddHead.doubleTrackStep=IsDlgItemChecked(ID_40D80);
 								fdd->fddHead.userForcedDoubleTrackStep=IsDoubleTrackDistanceForcedByUser();
 								TCHAR iniSection[16];
 								GetFddProfileName( iniSection, fdd->GetDriveLetter(), fdd->floppyType );
 								if (!app.GetProfileInt( iniSection, INI_LATENCY_DETERMINED, FALSE ))
-									switch (Utils::QuestionYesNoCancel(_T("Latencies not yet determined, I/O operations may perform suboptimal.\n\nAutodetermine latencies now?"),MB_DEFBUTTON1)){
+									switch (Utils::QuestionYesNoCancel(_T("Latencies not yet determined, I/O operations may perform suboptimally.\n\nAutodetermine latencies now?"),MB_DEFBUTTON1)){
 										case IDYES:
 											msg=WM_PAINT; // changing the Message to one that won't close the Dialog
 											goto autodetermineLatencies;

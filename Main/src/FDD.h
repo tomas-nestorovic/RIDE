@@ -81,6 +81,7 @@
 			bool doubleTrackStep, userForcedDoubleTrackStep;
 			TCylinder mutable position;
 			struct TProfile sealed{
+				bool fortyTrackDrive;
 				TLogTime controllerLatency,oneByteLatency,gap3Latency; // in nanoseconds
 				
 				TProfile();
