@@ -111,7 +111,10 @@
 
 	TLogTime CImage::CTrackReader::GetTotalTime() const{
 		// returns the last recorded Time
-		return	nLogTimes>0 ? logTimes[nLogTimes-1] : 0;
+		return	std::max(
+					nLogTimes>0 ? logTimes[nLogTimes-1] : 0,
+					GetLastIndexTime()
+				);
 	}
 
 	TLogTime CImage::CTrackReader::ReadTime(){
