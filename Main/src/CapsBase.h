@@ -159,7 +159,7 @@
 			bool verifyWrittenTracks;
 			// volatile (current session only)
 			bool flippyDisk, userForcedFlippyDisk;
-			bool shugartDrive, userForcedShugartDrive;
+			bool fortyTrackDrive, userForcedFortyTrackDrive;
 			bool doubleTrackStep, userForcedDoubleTrackStep;
 
 			TParams(LPCTSTR iniSectionName);

@@ -1212,7 +1212,7 @@ invalidTrack:
 		, verifyWrittenTracks( app.GetProfileInt(iniSectionName,INI_VERIFY_WRITTEN_TRACKS,true)!=0 )
 		// - volatile (current session only)
 		, flippyDisk(false) , userForcedFlippyDisk(false)
-		, shugartDrive(false) , userForcedShugartDrive(false)
+		, fortyTrackDrive(false) , userForcedFortyTrackDrive(false)
 		, doubleTrackStep(false) , userForcedDoubleTrackStep(false) { // True once the ID_40D80 button in Settings dialog is pressed
 	}
 
@@ -1251,7 +1251,7 @@ invalidTrack:
 			const bool initialEditing;
 			CCapsBase &rcb;
 			CPrecompensation tmpPrecomp;
-			TCHAR flippyDiskTextOrg[40],shugartDriveTextOrg[80],doubleTrackDistanceTextOrg[80];
+			TCHAR flippyDiskTextOrg[40],fortyTrackDriveTextOrg[80],doubleTrackDistanceTextOrg[80];
 
 			bool IsFlippyDiskForcedByUser() const{
 				// True <=> user has manually overrode FlippyDisk setting, otherwise False
@@ -1260,7 +1260,7 @@ invalidTrack:
 
 			bool IsShugartDriveForcedByUser() const{
 				// True <=> user has manually overrode ShugartDrive setting, otherwise False
-				return ::lstrlen(shugartDriveTextOrg)!=GetDlgItemTextLength(ID_DRIVE);
+				return ::lstrlen(fortyTrackDriveTextOrg)!=GetDlgItemTextLength(ID_DRIVE);
 			}
 
 			bool IsDoubleTrackDistanceForcedByUser() const{
@@ -1274,14 +1274,14 @@ invalidTrack:
 				ShowDlgItem( ID_INFORMATION, false );
 				Medium::TType mt;
 				static constexpr WORD Interactivity[]={ ID_LATENCY, ID_NUMBER2, ID_GAP, 0 };
-				const bool shugartDrive=IsDlgItemChecked(ID_DRIVE);
+				const bool fortyTrackDrive=IsDlgItemChecked(ID_DRIVE);
 				if (!EnableDlgItems( Interactivity, rcb.GetInsertedMediumType(0,mt)==ERROR_SUCCESS ))
 					SetDlgItemText( ID_MEDIUM, _T("Not inserted") );
 				// . attempting to recognize any previous format on the floppy
 				else
 					switch (mt){
 						case Medium::FLOPPY_DD_525:
-							if (EnableDlgItem( ID_40D80, initialEditing&&!shugartDrive )){
+							if (EnableDlgItem( ID_40D80, initialEditing&&!fortyTrackDrive )){
 						{		const Utils::CVarTempReset<bool> dts0( rcb.params.doubleTrackStep, false );
 								const Utils::CVarTempReset<Medium::TType> ft0( rcb.floppyType, mt );
 								if (rcb.GetInsertedMediumType(1,mt)==ERROR_SUCCESS)
@@ -1292,7 +1292,7 @@ invalidTrack:
 						case Medium::FLOPPY_DD:
 							SetDlgItemText( ID_MEDIUM, Medium::GetDescription(mt) );
 							if (mt==Medium::FLOPPY_DD)
-								CheckAndEnableDlgItem( ID_40D80, false, initialEditing&&!shugartDrive );
+								CheckAndEnableDlgItem( ID_40D80, false, initialEditing&&!fortyTrackDrive );
 							if (EnableDlgItem( ID_SIDE, initialEditing )){
 								PInternalTrack &rit=rcb.internalTracks[0][1]; // the test Track
 								const Utils::CVarTempReset<PInternalTrack> pit0( rit, nullptr ); // forcing a new scanning
@@ -1305,12 +1305,12 @@ invalidTrack:
 						case Medium::FLOPPY_HD_350:
 							SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" HD floppy") );
 							CheckAndEnableDlgItem( ID_SIDE, false );
-							CheckAndEnableDlgItem( ID_40D80, false, initialEditing&&!shugartDrive );
+							CheckAndEnableDlgItem( ID_40D80, false, initialEditing&&!fortyTrackDrive );
 							break;
 						default:
 							SetDlgItemText( ID_MEDIUM, _T("Not formatted or faulty") );
 							CheckAndEnableDlgItem( ID_SIDE, false );
-							CheckAndEnableDlgItem( ID_40D80, false, initialEditing&&!shugartDrive );
+							CheckAndEnableDlgItem( ID_40D80, false, initialEditing&&!fortyTrackDrive );
 							break;
 					}
 				// . forcing redrawing (as the new text may be shorter than the original text, leaving the original partly visible)
@@ -1375,12 +1375,12 @@ invalidTrack:
 				GetDlgItemText( ID_40D80,  doubleTrackDistanceTextOrg, ARRAYSIZE(doubleTrackDistanceTextOrg) );
 				if (rcb.params.userForcedDoubleTrackStep)
 					SendMessage( WM_COMMAND, ID_40D80 );
-				GetDlgItemText( ID_DRIVE,  shugartDriveTextOrg, ARRAYSIZE(shugartDriveTextOrg) );
-				if (rcb.params.userForcedShugartDrive)
+				GetDlgItemText( ID_DRIVE,  fortyTrackDriveTextOrg, ARRAYSIZE(fortyTrackDriveTextOrg) );
+				if (rcb.params.userForcedFortyTrackDrive)
 					SendMessage( WM_COMMAND, ID_DRIVE );
 				CheckAndEnableDlgItem( ID_40D80,
 					rcb.params.doubleTrackStep,
-					!CheckDlgItem( ID_DRIVE, rcb.params.shugartDrive )
+					!CheckDlgItem( ID_DRIVE, rcb.params.fortyTrackDrive )
 				);
 				// . displaying inserted Medium information
 				SetDlgItemSingleCharUsingFont( // a warning that a 40-track disk might have been misrecognized
@@ -1487,7 +1487,7 @@ invalidTrack:
 								if (initialEditing){ // if no Tracks are yet formatted, then resetting the flag that user has overridden these settings
 									CheckDlgItem( ID_DRIVE, CheckDlgItem(ID_SIDE,false) );
 									SetDlgItemText( ID_SIDE, flippyDiskTextOrg );
-									SetDlgItemText( ID_DRIVE, shugartDriveTextOrg );
+									SetDlgItemText( ID_DRIVE, fortyTrackDriveTextOrg );
 									SetDlgItemText( ID_40D80, doubleTrackDistanceTextOrg );
 								}
 								RefreshMediumInformation();
@@ -1498,14 +1498,15 @@ invalidTrack:
 								break;
 							case ID_DRIVE:
 								// drive physical track range changed manually
-								SetDlgItemFormattedText( ID_DRIVE, _T("%s (user forced)"), shugartDriveTextOrg );
+								SetDlgItemFormattedText( ID_DRIVE, _T("%s (user forced)"), fortyTrackDriveTextOrg );
 								CheckAndEnableDlgItem( ID_40D80, false, !IsDlgItemChecked(ID_DRIVE) );
-								ShowDlgItem( ID_INFORMATION, false ); // user manually revised the drive's physical # of Track distance, so no need to continue display the warning
-								break;
+								//fallthrough
 							case ID_40D80:
 								// track distance changed manually
-								SetDlgItemFormattedText( ID_40D80, _T("%s (user forced)"), doubleTrackDistanceTextOrg );
-								ShowDlgItem( ID_INFORMATION, false ); // user manually revised the Track distance, so no need to continue display the warning
+								if (wParam==ID_40D80)
+									SetDlgItemFormattedText( ID_40D80, _T("%s (user forced)"), doubleTrackDistanceTextOrg );
+								ShowDlgItem( ID_INFORMATION, false ); // user manually revised # of Tracks either on Medium's or Drive's side, so no need to continue displaying the warning
+								Invalidate(); // get also rid of the curly bracket
 								break;
 							case ID_NONE:
 							case ID_CYLINDER:
@@ -1522,8 +1523,8 @@ invalidTrack:
 								// attempting to confirm the Dialog
 								params.flippyDisk=IsDlgItemChecked(ID_SIDE);
 								params.userForcedFlippyDisk=IsFlippyDiskForcedByUser();
-								params.shugartDrive=IsDlgItemChecked(ID_DRIVE);
-								params.userForcedShugartDrive=IsShugartDriveForcedByUser();
+								params.fortyTrackDrive=IsDlgItemChecked(ID_DRIVE);
+								params.userForcedFortyTrackDrive=IsShugartDriveForcedByUser();
 								params.doubleTrackStep=IsDlgItemChecked(ID_40D80);
 								params.userForcedDoubleTrackStep=IsDoubleTrackDistanceForcedByUser();
 								break;
@@ -1569,7 +1570,7 @@ invalidTrack:
 		// - showing the Dialog and processing its result
 		if (d.DoModal()==IDOK){
 			*this=d.params;
-			rcb.capsImageInfo.maxcylinder=( FDD_CYLINDERS_HD>>(BYTE)(doubleTrackStep||shugartDrive) )+FDD_CYLINDERS_EXTRA - 1; // "-1" = inclusive!
+			rcb.capsImageInfo.maxcylinder=( FDD_CYLINDERS_HD>>(BYTE)(doubleTrackStep||fortyTrackDrive) )+FDD_CYLINDERS_EXTRA - 1; // "-1" = inclusive!
 			return true;
 		}else
 			return false;

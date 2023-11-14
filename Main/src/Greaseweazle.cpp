@@ -147,7 +147,7 @@
 			if (!ReadTrack(0,0))
 				continue; // must be able to turn motor on, seek to a Cylinder and read a Track
 			UnscanTrack(0,0);
-			params.shugartDrive=busType==BUS_SHUGART;
+			params.fortyTrackDrive=busType==BUS_SHUGART;
 			break;
 		}
 		// - evaluating connection
