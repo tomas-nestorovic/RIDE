@@ -282,19 +282,34 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 
 
 
+	static void GetFddIniSection(PTCHAR buf,TCHAR driveLetter){
+		::wsprintf( buf, INI_FDD _T("_%c"), driveLetter );
+	}
+
 	CFDD::TFddHead::TFddHead()
 		// ctor
 		: handle(INVALID_HANDLE_VALUE) // see Reset
+		, fortyTrackDrive(false)
 		, calibrated(false) , position(0)
-		, doubleTrackStep( app.GetProfileInt(INI_FDD,INI_TRACK_DOUBLE_STEP,false)!=0 )
+		, doubleTrackStep(false)
 		, userForcedDoubleTrackStep(false) // True once the ID_40D80 button in Settings dialog is pressed
-		, preferRelativeSeeking( app.GetProfileInt(INI_FDD,INI_SEEKING,0)!=0 ) {
+		, preferRelativeSeeking(false) {
 	}
 
-	CFDD::TFddHead::~TFddHead(){
-		// dtor
-		app.WriteProfileInt( INI_FDD, INI_TRACK_DOUBLE_STEP, doubleTrackStep );
-		app.WriteProfileInt( INI_FDD, INI_SEEKING, preferRelativeSeeking );
+	void CFDD::TFddHead::Load(TCHAR driveLetter){
+		// loads last settings for specified drive
+		TCHAR iniSection[16];
+		GetFddIniSection( iniSection, driveLetter );
+		fortyTrackDrive=app.GetProfileInt( iniSection, INI_40_TRACK_DRIVE, 0 )!=0;
+		preferRelativeSeeking=app.GetProfileInt( iniSection, INI_SEEKING, 0 )!=0;
+	}
+
+	void CFDD::TFddHead::Save(TCHAR driveLetter) const{
+		// saves current settings for specified drive
+		TCHAR iniSection[16];
+		GetFddIniSection( iniSection, driveLetter );
+		app.WriteProfileInt( iniSection, INI_40_TRACK_DRIVE, fortyTrackDrive );
+		app.WriteProfileInt( iniSection, INI_SEEKING, preferRelativeSeeking );
 	}
 
 	CFDD::TFddHead::TProfile::TProfile()
@@ -312,7 +327,6 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 		// True <=> explicit Profile for specified Drive/FloppyType exists and loaded, otherwise False
 		TCHAR iniSection[16];
 		GetFddProfileName( iniSection, driveLetter, floppyType );
-		fortyTrackDrive=app.GetProfileInt( iniSection, INI_40_TRACK_DRIVE, 0 )!=0;
 		switch (floppyType){
 			default:
 				ASSERT(FALSE);
@@ -337,7 +351,6 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 		// saves the Profile for specified Drive and FloppyType
 		TCHAR iniSection[16];
 		GetFddProfileName( iniSection, driveLetter, floppyType );
-		app.WriteProfileInt( iniSection, INI_40_TRACK_DRIVE, fortyTrackDrive );
 		app.WriteProfileInt( iniSection, INI_LATENCY_CONTROLLER, controllerLatency );
 		app.WriteProfileInt( iniSection, INI_LATENCY_1BYTE, oneByteLatency );
 		app.WriteProfileInt( iniSection, INI_LATENCY_GAP3, gap3Latency );
@@ -631,7 +644,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		LOG_ACTION(_T("TCylinder CFDD::GetCylinderCount"));
 		return	GetNumberOfFormattedSides(0) // if zeroth Cylinder exists ...
-				? (FDD_CYLINDERS_HD>>(BYTE)fddHead.doubleTrackStep)+FDD_CYLINDERS_EXTRA // ... then it's assumed that there is the maximum number of Cylinders available (the actual number may be adjusted by systematically scanning the Tracks)
+				? ( FDD_CYLINDERS_HD>>(BYTE)(fddHead.doubleTrackStep||fddHead.fortyTrackDrive) )+FDD_CYLINDERS_EXTRA // ... then it's assumed that there is the maximum number of Cylinders available (the actual number may be adjusted by systematically scanning the Tracks)
 				: 0; // ... otherwise the floppy is considered not formatted
 	}
 
@@ -1510,37 +1523,36 @@ Utils::Information(buf);}
 					switch (const Medium::TType mt=fdd->floppyType){
 						case Medium::FLOPPY_DD_525:
 							SetDlgItemText( ID_MEDIUM, Medium::GetDescription(mt) );
-							if (EnableDlgItem( ID_40D80, initialEditing&&!fdd->fddHead.profile.fortyTrackDrive )){
+							if (EnableDlgItem( ID_40D80, initialEditing&&!fddHead.fortyTrackDrive )){
 								fdd->SeekHeadsHome();
 								const Utils::CVarTempReset<bool> dts0( fdd->fddHead.doubleTrackStep, false );
 								const Utils::CVarTempReset<PInternalTrack> pit0( fdd->internalTracks[1][0], nullptr ); // forcing new scan
-								if (const PInternalTrack pit=fdd->__scanTrack__(1,0))
-									CheckDlgButton( ID_40D80, !ShowDlgItem(ID_INFORMATION,pit->nSectors>0) );
+								CheckDlgButton( ID_40D80, !ShowDlgItem(ID_INFORMATION,fdd->ScanTrack(1,0)>0) );
 								fdd->UnformatInternalTrack(1,0);
 								fdd->SeekHeadsHome();
 							}
 							break;
 						case Medium::FLOPPY_DD:
 							SetDlgItemText( ID_MEDIUM, Medium::GetDescription(mt) );
-							CheckAndEnableDlgItem( ID_40D80, false, initialEditing );
+							CheckAndEnableDlgItem( ID_40D80, false, initialEditing&&!fddHead.fortyTrackDrive );
 							break;
 						case Medium::FLOPPY_HD_350:
 							SetDlgItemText( ID_MEDIUM, Medium::GetDescription(mt) );
-							CheckAndEnableDlgItem( ID_40D80, false, initialEditing );
+							CheckAndEnableDlgItem( ID_40D80, false, initialEditing&&!fddHead.fortyTrackDrive );
 							break;
 						case Medium::FLOPPY_HD_525:
 							SetDlgItemText( ID_MEDIUM, Medium::GetDescription(mt) );
-							CheckAndEnableDlgItem( ID_40D80, false, initialEditing );
+							CheckAndEnableDlgItem( ID_40D80, false, initialEditing&&!fddHead.fortyTrackDrive );
 							break;
 						default:
 							SetDlgItemText( ID_MEDIUM, _T("Not formatted or faulty") );
-							CheckAndEnableDlgItem( ID_40D80, false, initialEditing );
+							CheckAndEnableDlgItem( ID_40D80, false, initialEditing&&!fddHead.fortyTrackDrive );
 							break;
 					}
 				// . loading the Profile associated with the current drive and FloppyType
 				const RECT rcWarning=MapDlgItemClientRect(ID_INSTRUCTION);
 				RECT rcMessage=MapDlgItemClientRect(ID_AUTO);
-				if (ShowDlgItem(  ID_INSTRUCTION,  !profile.Load( fdd->GetDriveLetter(), fdd->floppyType, fdd->EstimateNanosecondsPerOneByte() )  ))
+				if (ShowDlgItem(  ID_INSTRUCTION,  !fddHead.profile.Load( fdd->GetDriveLetter(), fdd->floppyType, fdd->EstimateNanosecondsPerOneByte() )  ))
 					rcMessage.left=rcWarning.right;
 				else
 					rcMessage.left=rcWarning.left;
@@ -1555,14 +1567,17 @@ Utils::Information(buf);}
 				__super::PreInitDialog();
 				// . displaying controller information
 				SetDlgItemText( ID_SYSTEM, fdd->__getControllerType__() );
+				// . some settings are changeable only during InitialEditing
+				static constexpr WORD InitialSettingIds[]={ ID_RECOVER, ID_DRIVE, ID_40D80, 0 };
+				EnableDlgItems( InitialSettingIds, initialEditing );
 				// . if DoubleTrackStep changed manually, adjusting the text of the ID_40D80 checkbox
 				GetDlgItemText( ID_40D80,  doubleTrackDistanceTextOrg, ARRAYSIZE(doubleTrackDistanceTextOrg) );
-				if (fdd->fddHead.userForcedDoubleTrackStep)
+				if (fddHead.userForcedDoubleTrackStep)
 					SendMessage( WM_COMMAND, ID_40D80 );
 				EnableDlgItem( ID_DRIVE, initialEditing );
 				CheckAndEnableDlgItem( ID_40D80,
-					fdd->fddHead.doubleTrackStep,
-					!CheckDlgItem( ID_DRIVE, fdd->fddHead.profile.fortyTrackDrive )
+					fddHead.doubleTrackStep,
+					!CheckDlgItem( ID_DRIVE, fddHead.fortyTrackDrive )
 				);
 				EnableDlgItem( ID_READABLE, params.calibrationAfterError!=TParams::TCalibrationAfterError::NONE );
 				// . displaying inserted Medium information
@@ -1587,15 +1602,15 @@ Utils::Information(buf);}
 			}
 			void __exchangeLatency__(CDataExchange* pDX){
 				// exchange of latency-related data from and to controls
-				float tmp=profile.controllerLatency/1e3f;
+				float tmp=fddHead.profile.controllerLatency/1e3f;
 					DDX_Text( pDX,	ID_LATENCY,	tmp );
-				profile.controllerLatency=tmp*1e3f;
-				tmp=profile.oneByteLatency/1e3f;
+				fddHead.profile.controllerLatency=tmp*1e3f;
+				tmp=fddHead.profile.oneByteLatency/1e3f;
 					DDX_Text( pDX,	ID_NUMBER2,	tmp );
-				profile.oneByteLatency=tmp*1e3f;
-				tmp=profile.gap3Latency/1e3f;
+				fddHead.profile.oneByteLatency=tmp*1e3f;
+				tmp=fddHead.profile.gap3Latency/1e3f;
 					DDX_Text( pDX,	ID_GAP,		tmp );
-				profile.gap3Latency=tmp*1e3f;
+				fddHead.profile.gap3Latency=tmp*1e3f;
 			}
 			void DoDataExchange(CDataExchange* pDX) override{
 				// exchange of data from and to controls
@@ -1629,9 +1644,9 @@ Utils::Information(buf);}
 				DDX_Check( pDX,	ID_VERIFY_SECTOR,	tmp );
 				params.verifyWrittenData=tmp!=0;
 				// . RelativeSeekingVerification
-				tmp=fdd->fddHead.preferRelativeSeeking;
+				tmp=fddHead.preferRelativeSeeking;
 				DDX_Check( pDX,	ID_SEEK,	tmp );
-				fdd->fddHead.preferRelativeSeeking=tmp!=0;
+				fddHead.preferRelativeSeeking=tmp!=0;
 			}
 			afx_msg void OnPaint(){
 				// drawing
@@ -1724,7 +1739,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 										app.WriteProfileInt( iniSection, INI_LATENCY_DETERMINED, TRUE ); // latencies hereby at least once determined
 									// : adopting the found latencies to current floppy Profile
 									if (floppyType==fdd->floppyType){
-										fdd->fddHead.profile = profile = tmp;
+										fdd->fddHead.profile = fddHead.profile = tmp;
 										__exchangeLatency__( &CDataExchange(this,FALSE) );
 									}
 								}
@@ -1742,12 +1757,13 @@ autodetermineLatencies:		// automatic determination of write latency values
 							case ID_DRIVE:
 								// drive physical track range changed manually
 								CheckAndEnableDlgItem( ID_40D80, false, !IsDlgItemChecked(ID_DRIVE) );
-								ShowDlgItem( ID_INFORMATION, false ); // user manually revised the drive's physical # of Track distance, so no need to continue display the warning
-								break;
+								//fallthrough
 							case ID_40D80:
 								// track distance changed manually
-								SetDlgItemFormattedText( ID_40D80, _T("%s (user forced)"), doubleTrackDistanceTextOrg );
-								ShowDlgItem( ID_INFORMATION, false ); // user manually revised the Track distance, so no need to continue display the warning
+								if (wParam==ID_40D80)
+									SetDlgItemFormattedText( ID_40D80, _T("%s (user forced)"), doubleTrackDistanceTextOrg );
+								ShowDlgItem( ID_INFORMATION, false ); // user manually revised # of Tracks either on Medium's or Drive's side, so no need to continue displaying the warning
+								Invalidate(); // get also rid of the curly bracket
 								break;
 							case ID_NONE:
 							case ID_CYLINDER:
@@ -1762,9 +1778,9 @@ autodetermineLatencies:		// automatic determination of write latency values
 								break;
 							case IDOK:
 								// attempting to confirm the Dialog
-								fdd->fddHead.profile.fortyTrackDrive=IsDlgItemChecked(ID_DRIVE);
-								fdd->fddHead.doubleTrackStep=IsDlgItemChecked(ID_40D80);
-								fdd->fddHead.userForcedDoubleTrackStep=IsDoubleTrackDistanceForcedByUser();
+								fddHead.fortyTrackDrive=IsDlgItemChecked(ID_DRIVE);
+								fddHead.doubleTrackStep=IsDlgItemChecked(ID_40D80);
+								fddHead.userForcedDoubleTrackStep=IsDoubleTrackDistanceForcedByUser();
 								TCHAR iniSection[16];
 								GetFddProfileName( iniSection, fdd->GetDriveLetter(), fdd->floppyType );
 								if (!app.GetProfileInt( iniSection, INI_LATENCY_DETERMINED, FALSE ))
@@ -1785,11 +1801,13 @@ autodetermineLatencies:		// automatic determination of write latency values
 			}
 		public:
 			TParams params;
-			TFddHead::TProfile profile;
+			TFddHead fddHead;
 
-			CSettingDialog(CFDD *_fdd,bool initialEditing)
+			CSettingDialog(CFDD *fdd,bool initialEditing)
 				// ctor
-				: Utils::CRideDialog(IDR_FDD_ACCESS) , fdd(_fdd) , params(_fdd->params) , profile(_fdd->fddHead.profile) , initialEditing(initialEditing) {
+				: Utils::CRideDialog(IDR_FDD_ACCESS)
+				, initialEditing(initialEditing) , fdd(fdd)
+				, params(fdd->params) , fddHead(fdd->fddHead) {
 			}
 		} d(this,initialEditing);
 		// - showing the Dialog and processing its result
@@ -1799,6 +1817,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 		SetDataTransferSpeed( floppyType=floppyTypeOrg ); // reverting to original FloppyType, should it be changed in the Dialog
 		if (dialogConfirmed){
 			params=d.params;
+			( fddHead=d.fddHead ).Save( GetDriveLetter() );
 			__setSecondsBeforeTurningMotorOff__(params.nSecondsToTurnMotorOff);
 			__informationWithCheckableShowNoMore__( _T("To spare both floppy and drive, all activity is buffered: CHANGES (WRITINGS, DELETIONS) MADE TO THE FLOPPY ARE SAVED ONLY WHEN YOU COMMAND SO (Ctrl+S). If you don't save them, they will NOT appear on the disk next time. FORMATTING DESTROYS THE CONTENT IMMEDIATELLY!"), INI_MSG_RESET );
 			return true;
@@ -1817,6 +1836,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 		__disconnectFromFloppyDrive__();
 		if (const TStdWinError err=__connectToFloppyDrive__(DRV_AUTO))
 			return LOG_ERROR(err);
+		fddHead.Load( GetDriveLetter() );
 		// - sending Head home
 		if (!fddHead.__calibrate__())
 			return LOG_ERROR(::GetLastError());

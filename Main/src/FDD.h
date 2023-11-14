@@ -77,11 +77,11 @@
 		struct TFddHead sealed{
 			HANDLE handle;
 			TSupportedDriver driver;
+			bool fortyTrackDrive;
 			bool mutable calibrated, preferRelativeSeeking;
 			bool doubleTrackStep, userForcedDoubleTrackStep;
 			TCylinder mutable position;
 			struct TProfile sealed{
-				bool fortyTrackDrive;
 				TLogTime controllerLatency,oneByteLatency,gap3Latency; // in nanoseconds
 				
 				TProfile();
@@ -91,10 +91,11 @@
 			} profile;
 
 			TFddHead(); //ctor
-			~TFddHead(); //dtor
 
 			bool __seekTo__(TCylinder cyl) const;
 			bool __calibrate__();
+			void Load(TCHAR driveLetter);
+			void Save(TCHAR driveLetter) const;
 		} fddHead;
 		mutable PInternalTrack internalTracks[FDD_CYLINDERS_MAX][2]; // 2 = a floppy can have two Sides
 
