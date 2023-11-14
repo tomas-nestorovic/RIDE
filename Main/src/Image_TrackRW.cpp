@@ -1582,7 +1582,7 @@
 		return ERROR_SUCCESS;
 	}
 
-	void CImage::CTrackReaderWriter::Reverse(){
+	CImage::CTrackReaderWriter &CImage::CTrackReaderWriter::Reverse(){
 		// reverses timing of this Track
 		// - reversing Indices
 		const auto tTotal=GetTotalTime();
@@ -1595,4 +1595,5 @@
 			std::swap( logTimes[i], logTimes[nLogTimes-1-i] );
 		for( DWORD i=0; i<nLogTimes; i++ )
 			logTimes[i]=tTotal-logTimes[i];
+		return *this;
 	}

@@ -133,7 +133,12 @@
 				if (!f.Open( GetStreamFileName(cyl,head), CFile::modeCreate|CFile::modeWrite|CFile::typeBinary|CFile::shareExclusive, &e ))
 					return e.m_cause;
 				if (const auto data=Utils::MakeCallocPtr<BYTE>(KF_BUFFER_CAPACITY)){
-					const DWORD nTrackBytes=TrackToStream(*pit,data);
+					const DWORD nTrackBytes=TrackToStream(
+						head && params.flippyDisk
+							? CTrackReaderWriter(*pit,false).Reverse()
+							: *pit,
+						data
+					);
 					if (GetCurrentDiskFreeSpace()<nTrackBytes)
 						return ERROR_DISK_FULL;
 					f.Write( data, nTrackBytes );

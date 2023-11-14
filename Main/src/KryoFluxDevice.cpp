@@ -750,6 +750,8 @@
 				else
 					lastCalibratedCylinder=cyl;
 		// - writing (and optional verification)
+		if (head && params.flippyDisk)
+			trw.Reverse();
 		TStdWinError err;
 		TCHAR msgSavingFailed[80];
 		::wsprintf( msgSavingFailed, ERROR_SAVE_MESSAGE_TEMPLATE, cyl, '0'+head, _T("saving") );
