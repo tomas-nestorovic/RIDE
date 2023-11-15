@@ -52,6 +52,7 @@
 		, lastSuccessfullCodec(Codec::MFM) {
 		::ZeroMemory( &capsImageInfo, sizeof(capsImageInfo) );
 		::ZeroMemory( internalTracks, sizeof(internalTracks) );
+		params.fortyTrackDrive&=properties->IsRealDevice();
 	}
 
 	CCapsBase::~CCapsBase(){
@@ -1193,6 +1194,7 @@ invalidTrack:
 	#define INI_FLUX_DECODER			_T("decod")
 	#define INI_FLUX_DECODER_RESET		_T("drst")
 	#define INI_PRECISION				_T("prec2")
+	#define INI_40_TRACK_DRIVE			_T("sd40")
 	#define INI_CALIBRATE_SECTOR_ERROR	_T("clberr")
 	#define INI_CALIBRATE_SECTOR_ERROR_KNOWN _T("clbknw")
 	#define INI_CALIBRATE_FORMATTING	_T("clbfmt")
@@ -1205,6 +1207,7 @@ invalidTrack:
 		, precision( (TPrecision)app.GetProfileInt(iniSectionName,INI_PRECISION,TPrecision::BASIC) )
 		, fluxDecoder( (TFluxDecoder)app.GetProfileInt(iniSectionName,INI_FLUX_DECODER,TFluxDecoder::KEIR_FRASER) )
 		, resetFluxDecoderOnIndex( (TFluxDecoder)app.GetProfileInt(iniSectionName,INI_FLUX_DECODER_RESET,true)!=0 )
+		, fortyTrackDrive( app.GetProfileInt(iniSectionName,INI_40_TRACK_DRIVE,0)!=0 )
 		, calibrationAfterError( (TCalibrationAfterError)app.GetProfileInt(iniSectionName,INI_CALIBRATE_SECTOR_ERROR,TCalibrationAfterError::ONCE_PER_CYLINDER) )
 		, calibrationAfterErrorOnlyForKnownSectors( app.GetProfileInt(iniSectionName,INI_CALIBRATE_SECTOR_ERROR_KNOWN,0)!=0 )
 		, calibrationStepDuringFormatting( app.GetProfileInt(iniSectionName,INI_CALIBRATE_FORMATTING,0) )
@@ -1212,7 +1215,6 @@ invalidTrack:
 		, verifyWrittenTracks( app.GetProfileInt(iniSectionName,INI_VERIFY_WRITTEN_TRACKS,true)!=0 )
 		// - volatile (current session only)
 		, flippyDisk(false) , userForcedFlippyDisk(false)
-		, fortyTrackDrive(false) , userForcedFortyTrackDrive(false)
 		, doubleTrackStep(false) , userForcedDoubleTrackStep(false) { // True once the ID_40D80 button in Settings dialog is pressed
 	}
 
@@ -1221,6 +1223,7 @@ invalidTrack:
 		app.WriteProfileInt( iniSectionName, INI_PRECISION, precision );
 		app.WriteProfileInt( iniSectionName, INI_FLUX_DECODER, fluxDecoder );
 		app.WriteProfileInt( iniSectionName, INI_FLUX_DECODER_RESET, resetFluxDecoderOnIndex );
+		app.WriteProfileInt( iniSectionName, INI_40_TRACK_DRIVE, fortyTrackDrive );
 		app.WriteProfileInt( iniSectionName, INI_CALIBRATE_SECTOR_ERROR, calibrationAfterError );
 		app.WriteProfileInt( iniSectionName, INI_CALIBRATE_SECTOR_ERROR_KNOWN, calibrationAfterErrorOnlyForKnownSectors );
 		app.WriteProfileInt( iniSectionName, INI_CALIBRATE_FORMATTING, calibrationStepDuringFormatting );
@@ -1251,16 +1254,11 @@ invalidTrack:
 			const bool initialEditing;
 			CCapsBase &rcb;
 			CPrecompensation tmpPrecomp;
-			TCHAR flippyDiskTextOrg[40],fortyTrackDriveTextOrg[80],doubleTrackDistanceTextOrg[80];
+			TCHAR flippyDiskTextOrg[40],doubleTrackDistanceTextOrg[80];
 
 			bool IsFlippyDiskForcedByUser() const{
 				// True <=> user has manually overrode FlippyDisk setting, otherwise False
 				return ::lstrlen(flippyDiskTextOrg)!=GetDlgItemTextLength(ID_SIDE);
-			}
-
-			bool IsShugartDriveForcedByUser() const{
-				// True <=> user has manually overrode ShugartDrive setting, otherwise False
-				return ::lstrlen(fortyTrackDriveTextOrg)!=GetDlgItemTextLength(ID_DRIVE);
 			}
 
 			bool IsDoubleTrackDistanceForcedByUser() const{
@@ -1375,9 +1373,6 @@ invalidTrack:
 				GetDlgItemText( ID_40D80,  doubleTrackDistanceTextOrg, ARRAYSIZE(doubleTrackDistanceTextOrg) );
 				if (rcb.params.userForcedDoubleTrackStep)
 					SendMessage( WM_COMMAND, ID_40D80 );
-				GetDlgItemText( ID_DRIVE,  fortyTrackDriveTextOrg, ARRAYSIZE(fortyTrackDriveTextOrg) );
-				if (rcb.params.userForcedFortyTrackDrive)
-					SendMessage( WM_COMMAND, ID_DRIVE );
 				CheckAndEnableDlgItem( ID_40D80,
 					rcb.params.doubleTrackStep,
 					!CheckDlgItem( ID_DRIVE, rcb.params.fortyTrackDrive )
@@ -1487,7 +1482,6 @@ invalidTrack:
 								if (initialEditing){ // if no Tracks are yet formatted, then resetting the flag that user has overridden these settings
 									CheckDlgItem( ID_DRIVE, CheckDlgItem(ID_SIDE,false) );
 									SetDlgItemText( ID_SIDE, flippyDiskTextOrg );
-									SetDlgItemText( ID_DRIVE, fortyTrackDriveTextOrg );
 									SetDlgItemText( ID_40D80, doubleTrackDistanceTextOrg );
 								}
 								RefreshMediumInformation();
@@ -1498,7 +1492,6 @@ invalidTrack:
 								break;
 							case ID_DRIVE:
 								// drive physical track range changed manually
-								SetDlgItemFormattedText( ID_DRIVE, _T("%s (user forced)"), fortyTrackDriveTextOrg );
 								CheckAndEnableDlgItem( ID_40D80, false, !IsDlgItemChecked(ID_DRIVE) );
 								//fallthrough
 							case ID_40D80:
@@ -1524,7 +1517,6 @@ invalidTrack:
 								params.flippyDisk=IsDlgItemChecked(ID_SIDE);
 								params.userForcedFlippyDisk=IsFlippyDiskForcedByUser();
 								params.fortyTrackDrive=IsDlgItemChecked(ID_DRIVE);
-								params.userForcedFortyTrackDrive=IsShugartDriveForcedByUser();
 								params.doubleTrackStep=IsDlgItemChecked(ID_40D80);
 								params.userForcedDoubleTrackStep=IsDoubleTrackDistanceForcedByUser();
 								break;

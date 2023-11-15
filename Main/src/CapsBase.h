@@ -148,6 +148,7 @@
 				MARK_OGDEN
 			} fluxDecoder;
 			bool resetFluxDecoderOnIndex;
+			bool fortyTrackDrive;
 			enum TCalibrationAfterError{
 				NONE				=0,
 				ONCE_PER_CYLINDER	=1,
@@ -159,7 +160,6 @@
 			bool verifyWrittenTracks;
 			// volatile (current session only)
 			bool flippyDisk, userForcedFlippyDisk;
-			bool fortyTrackDrive, userForcedFortyTrackDrive;
 			bool doubleTrackStep, userForcedDoubleTrackStep;
 
 			TParams(LPCTSTR iniSectionName);
