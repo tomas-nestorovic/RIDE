@@ -366,11 +366,11 @@
 		public:
 			CRecognition();
 
-			void __saveToProfile__() const;
-			BYTE __addDosByPriorityDescending__(PCProperties props);
-			BYTE __getOrderIndex__(PCProperties props) const;
-			POSITION __getFirstRecognizedDosPosition__() const;
-			PCProperties __getNextRecognizedDos__(POSITION &pos) const;
+			void SaveToProfile() const;
+			BYTE AddDosByPriorityDescending(PCProperties props);
+			BYTE GetOrderIndex(PCProperties props) const;
+			POSITION GetFirstRecognizedDosPosition() const;
+			PCProperties GetNextRecognizedDos(POSITION &pos) const;
 			PCProperties Perform(PImage image,PFormat pOutFormatBoot) const;
 		};
 

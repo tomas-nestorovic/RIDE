@@ -30,16 +30,16 @@
 			order[++nDoses]=&CUnknownDos::Properties;
 	}
 
-	void CDos::CRecognition::__saveToProfile__() const{
+	void CDos::CRecognition::SaveToProfile() const{
 		// saves the Recognition Order to profile
 		TCHAR buf[1024],*p=buf;
 		for( BYTE i=1; i<=nDoses; p+=::wsprintf(p,INI_RECOGNITION_DOS_ID,order[i++]->id) ); // indexing starts from 1
 		app.WriteProfileString( INI_GENERAL, INI_RECOGNITION_ORDER, buf );
 	}
 
-	BYTE CDos::CRecognition::__addDosByPriorityDescending__(PCProperties props){
+	BYTE CDos::CRecognition::AddDosByPriorityDescending(PCProperties props){
 		// adds specified DOS to the earliest possible moment in recognition, respecting eventual previous user-defined ordering; returns the 1-based index at which it was added to
-		BYTE i=__getOrderIndex__(&CUnknownDos::Properties);
+		BYTE i=GetOrderIndex(&CUnknownDos::Properties);
 		while (i>1 && props->recognitionPriority>order[i-1]->recognitionPriority) // indexing starts from 1
 			i--;
 		::memmove(	&order[i+1],
@@ -50,7 +50,7 @@
 		return i;
 	}
 
-	BYTE CDos::CRecognition::__getOrderIndex__(PCProperties props) const{
+	BYTE CDos::CRecognition::GetOrderIndex(PCProperties props) const{
 		// returns 1-based Order index of the particular DOS (or 0 if DOS not found in the Order array)
 		for( BYTE i=1; i<=nDoses; i++ ) // indexing starts from 1
 			if (order[i]==props)
@@ -58,13 +58,13 @@
 		return 0;
 	}
 
-	POSITION CDos::CRecognition::__getFirstRecognizedDosPosition__() const{
+	POSITION CDos::CRecognition::GetFirstRecognizedDosPosition() const{
 		// returns the position of the first DOS that participates in Image recognition
 		return	order[1]!=&CUnknownDos::Properties // indexing starts from 1
 				? (POSITION)1
 				: nullptr;
 	}
-	CDos::PCProperties CDos::CRecognition::__getNextRecognizedDos__(POSITION &pos) const{
+	CDos::PCProperties CDos::CRecognition::GetNextRecognizedDos(POSITION &pos) const{
 		// returns the Properties of the next DOS that participates in Image recognition
 		const PCProperties result=order[(BYTE)pos++];
 		if (order[(BYTE)pos]==&CUnknownDos::Properties)
@@ -82,7 +82,7 @@
 		TRecognitionParams(const CDos::CRecognition &recognition,PImage image,PFormat pOutFormatBoot)
 			// ctor
 			: recognition(recognition) , image(image) , pOutFormatBoot(pOutFormatBoot)
-			, pos( recognition.__getFirstRecognizedDosPosition__() )
+			, pos( recognition.GetFirstRecognizedDosPosition() )
 			, props(nullptr) {
 		}
 	};
@@ -91,12 +91,12 @@
 		// thread to recognize an implemented DOS
 		CBackgroundActionCancelable &bac=*(CBackgroundActionCancelable *)pCancelableAction;
 		TRecognitionParams &rp=*(TRecognitionParams *)bac.GetParams();
-		bac.SetProgressTarget( rp.recognition.__getOrderIndex__(&CUnknownDos::Properties)+1 );
+		bac.SetProgressTarget( rp.recognition.GetOrderIndex(&CUnknownDos::Properties) ); // indexing starts from 1, hence N+1 is the return value!
 		while (rp.pos){
 			if (bac.Cancelled)
 				return ERROR_CANCELLED;
 			else
-				switch (( rp.props=rp.recognition.__getNextRecognizedDos__(rp.pos) )->fnRecognize(rp.image,rp.pOutFormatBoot)){
+				switch (( rp.props=rp.recognition.GetNextRecognizedDos(rp.pos) )->fnRecognize(rp.image,rp.pOutFormatBoot)){
 					case ERROR_SUCCESS:
 						return bac.TerminateWithSuccess();
 					case ERROR_CANCELLED:
@@ -179,11 +179,11 @@
 				CDos::PCProperties *pNewlyDetectedDos=newlyDetectedDoses;
 				for( POSITION pos=CDos::Known.GetHeadPosition(); pos; ){
 					const CDos::PCProperties props=CDos::Known.GetNext(pos);
-					if (!recognition.__getOrderIndex__(props))
-						recognition.__addDosByPriorityDescending__( *pNewlyDetectedDos++=props );
+					if (!recognition.GetOrderIndex(props))
+						recognition.AddDosByPriorityDescending( *pNewlyDetectedDos++=props );
 				}
 				*pNewlyDetectedDos=nullptr; // terminating the array
-				//recognition.__saveToProfile__();
+				//recognition.SaveToProfile();
 				if (pNewlyDetectedDos>newlyDetectedDoses)
 					Utils::Information( _T("Some new DOSes have been detected!\nPlease confirm the auto-recognition sequence where they've all been added to (and marked).") );
 				// - populating the ListBoxes with current Recognition Order
@@ -249,7 +249,7 @@
 						CListBox lb;
 						lb.Attach( GetDlgItemHwnd(ID_DOS) ); // attaching the ListBox of recognized DOSes right away as most commands work with it
 							CDos::PCProperties props=(CDos::PCProperties)lb.GetItemDataPtr(lb.GetCurSel());
-							BYTE i=recognition.__getOrderIndex__(props); // indexing starts from 1
+							BYTE i=recognition.GetOrderIndex(props); // indexing starts from 1
 							switch (wParam){
 								case ID_UP:
 									// moving selected recognized DOS to an earlier position in the Recognition Order
@@ -266,12 +266,12 @@
 								case ID_ORDER:{
 									// ordering automatically recognized DOSes by their RecognitionPriority descending
 									const CDos::CRecognition original(recognition);
-									const BYTE iUnknownDos=original.__getOrderIndex__(&CUnknownDos::Properties);
+									const BYTE iUnknownDos=original.GetOrderIndex(&CUnknownDos::Properties);
 									::memmove(	&recognition.order[1], // indexing starts from 1
 												&recognition.order[iUnknownDos],
 												sizeof(CDos::PCProperties)*(( recognition.nDoses-=iUnknownDos-1 ))
 											);
-									for( BYTE j=1; j<iUnknownDos; recognition.__addDosByPriorityDescending__(original.order[j++]) );
+									for( BYTE j=1; j<iUnknownDos; recognition.AddDosByPriorityDescending(original.order[j++]) );
 									if (i){ // if any of recognized DOSes selected before clicking on the button ...
 										for( i=1; recognition.order[i]!=props; i++ );
 										lb.SetCurSel(i-1); // ... reselecting the DOS after they've been ordered by priority
@@ -284,7 +284,7 @@
 									CListBox lbIgnored;
 									lbIgnored.Attach( GetDlgItemHwnd(ID_HIDDEN) );
 										props=(CDos::PCProperties)lbIgnored.GetItemDataPtr(lbIgnored.GetCurSel());
-										i=recognition.__getOrderIndex__(props); // indexing starts from 1
+										i=recognition.GetOrderIndex(props); // indexing starts from 1
 										::memmove(	&recognition.order[i],
 													&recognition.order[i+1],
 													sizeof(CDos::PCProperties)*((recognition.nDoses--)-i)
@@ -293,12 +293,12 @@
 									lbIgnored.Detach();
 									// . adding (and selecting) the DOS to the "recognized portion" of the Recognition Order
 									lb.SetItemDataPtr( lb.AddString(_T("")), (PVOID)&CUnknownDos::Properties ); // a dummy item for the below selection index to be valid
-									lb.SetCurSel( recognition.__addDosByPriorityDescending__(props)-1 );
+									lb.SetCurSel( recognition.AddDosByPriorityDescending(props)-1 );
 									break;
 								}
 								case ID_REMOVE:{
 									// removing selected recognized DOS from the Recognition Order
-									const BYTE iUnknownDos=recognition.__getOrderIndex__(&CUnknownDos::Properties);
+									const BYTE iUnknownDos=recognition.GetOrderIndex(&CUnknownDos::Properties);
 									::memmove(	&recognition.order[i],
 												&recognition.order[i+1],
 												sizeof(CDos::PCProperties)*(iUnknownDos-i)
@@ -359,5 +359,5 @@
 		} d;
 		// - showing the Dialog and processing its result
 		if (d.DoModal()==IDOK)
-			d.recognition.__saveToProfile__();
+			d.recognition.SaveToProfile();
 	}

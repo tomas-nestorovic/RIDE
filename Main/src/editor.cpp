@@ -240,7 +240,7 @@
 		TDI_INSTANCE->SetFocus(); // explicitly focusing on the TDI View to activate the IntroductoryGuidePost
 		// - searching for newly added DOSes
 		for( POSITION pos=CDos::Known.GetHeadPosition(); pos; )
-			if (!CDos::CRecognition().__getOrderIndex__(CDos::Known.GetNext(pos))){
+			if (!CDos::CRecognition().GetOrderIndex(CDos::Known.GetNext(pos))){
 				// found a DOS that's not recorded in the profile - displaying the dialog to confirm its recognition
 				GetMainWindow()->__changeAutomaticDiskRecognitionOrder__();
 				break;
