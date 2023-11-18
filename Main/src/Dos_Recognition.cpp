@@ -72,19 +72,52 @@
 		return result;
 	}
 
-	CDos::PCProperties CDos::CRecognition::__perform__(PImage image,PFormat pOutFormatBoot) const{
-		// returns Properties of DOS recognized in the specified Image (populates the output Format recognized in the boot Sector); returns UnknownDos if no DOS can be recognized; returns Null if recognition sequence cancelled by the user
-		for( POSITION pos=__getFirstRecognizedDosPosition__(); pos; ){
-			const PCProperties props=__getNextRecognizedDos__(pos);
-			switch (props->fnRecognize(image,pOutFormatBoot)){
-				case ERROR_SUCCESS:
-					return props;
-				case ERROR_CANCELLED:
-					return nullptr;
-			}
+	struct TRecognitionParams sealed{
+		const CDos::CRecognition &recognition;
+		const PImage image;
+		const PFormat pOutFormatBoot;
+		POSITION pos;
+		CDos::PCProperties props;
+
+		TRecognitionParams(const CDos::CRecognition &recognition,PImage image,PFormat pOutFormatBoot)
+			// ctor
+			: recognition(recognition) , image(image) , pOutFormatBoot(pOutFormatBoot)
+			, pos( recognition.__getFirstRecognizedDosPosition__() )
+			, props(nullptr) {
 		}
-		CUnknownDos::Properties.fnRecognize(image,pOutFormatBoot); // just a formality to properly fill up the FormatBoot
-		return &CUnknownDos::Properties;
+	};
+
+	UINT AFX_CDECL CDos::CRecognition::Thread(PVOID pCancelableAction){
+		// thread to recognize an implemented DOS
+		CBackgroundActionCancelable &bac=*(CBackgroundActionCancelable *)pCancelableAction;
+		TRecognitionParams &rp=*(TRecognitionParams *)bac.GetParams();
+		bac.SetProgressTarget( rp.recognition.__getOrderIndex__(&CUnknownDos::Properties)+1 );
+		while (rp.pos){
+			if (bac.Cancelled)
+				return ERROR_CANCELLED;
+			else
+				switch (( rp.props=rp.recognition.__getNextRecognizedDos__(rp.pos) )->fnRecognize(rp.image,rp.pOutFormatBoot)){
+					case ERROR_SUCCESS:
+						return bac.TerminateWithSuccess();
+					case ERROR_CANCELLED:
+						return bac.TerminateWithError(ERROR_CANCELLED);
+				}
+			bac.IncrementProgress();
+		}
+		( rp.props=&CUnknownDos::Properties )->fnRecognize( rp.image, rp.pOutFormatBoot ); // just a formality to properly fill up the FormatBoot
+		return bac.TerminateWithSuccess();
+	}
+
+	CDos::PCProperties CDos::CRecognition::Perform(PImage image,PFormat pOutFormatBoot) const{
+		// returns Properties of DOS recognized in the specified Image (populates the output Format recognized in the boot Sector); returns UnknownDos if no DOS can be recognized; returns Null if recognition sequence cancelled by the user
+		TRecognitionParams rp( *this, image, pOutFormatBoot );
+		return	CBackgroundActionCancelable(
+					Thread,
+					&rp,
+					THREAD_PRIORITY_BELOW_NORMAL
+				).Perform()==ERROR_SUCCESS
+				? rp.props
+				: nullptr;
 	}
 
 

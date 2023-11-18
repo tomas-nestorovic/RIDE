@@ -318,7 +318,7 @@
 			delete dos;
 			// . automatically recognizing suitable DOS (e.g. because a floppy might not have been formatted correctly)
 			TFormat formatBoot;
-			dos = image->dos = CDos::CRecognition().__perform__(image,&formatBoot)->fnInstantiate(image,&formatBoot);
+			dos = image->dos = CDos::CRecognition().Perform(image,&formatBoot)->fnInstantiate(image,&formatBoot);
 			image->SetMediumTypeAndGeometry( &formatBoot, dos->sideMap, dos->properties->firstSectorNumber );
 			// . creating the user interface for recognized DOS
 			CMainWindow::CTdiTemplate::pSingleInstance->RemoveDocument(image); // added back in CreateUserInterface below
@@ -417,7 +417,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		if (!manuallyForceDos){
 			// automatic recognition of suitable DOS by sequentially testing each of them
 			::SetLastError(ERROR_SUCCESS); // assumption (no errors)
-			dosProps=CDos::CRecognition().__perform__( image.get(), &formatBoot );
+			dosProps=CDos::CRecognition().Perform( image.get(), &formatBoot );
 			if (!dosProps) // if recognition sequence cancelled ...
 				return nullptr; // ... no Image or disk is accessed
 			if (dosProps==&CUnknownDos::Properties)

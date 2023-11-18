@@ -361,6 +361,8 @@
 			friend class CMainWindow; // as that's where the CAutomaticRecognitionOrderDialog is defined
 			BYTE nDoses;
 			PCProperties order[(BYTE)-1];
+
+			static UINT AFX_CDECL Thread(PVOID pCancelableAction);
 		public:
 			CRecognition();
 
@@ -369,7 +371,7 @@
 			BYTE __getOrderIndex__(PCProperties props) const;
 			POSITION __getFirstRecognizedDosPosition__() const;
 			PCProperties __getNextRecognizedDos__(POSITION &pos) const;
-			PCProperties __perform__(PImage image,PFormat pOutFormatBoot) const;
+			PCProperties Perform(PImage image,PFormat pOutFormatBoot) const;
 		};
 
 		static Utils::CPtrList<PCProperties> Known; // list of known DOSes (registered in CRideApp::InitInstance)
