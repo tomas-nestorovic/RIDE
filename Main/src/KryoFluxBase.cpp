@@ -210,12 +210,6 @@
 
 
 
-	struct TIndexPulse sealed{
-		int posInStreamData;
-		DWORD sampleCounter;
-		DWORD indexCounter;
-	};
-
 	static const Utils::TRationalNumber MasterClockDefault( 18432000*73, 14*2 );
 	static const Utils::TRationalNumber SampleClockDefault=(MasterClockDefault/2).Simplify();
 	static const Utils::TRationalNumber IndexClockDefault=(MasterClockDefault/16).Simplify();
@@ -223,6 +217,20 @@
 	DWORD CKryoFluxBase::TimeToStdSampleCounter(TLogTime t){
 		return SampleClockDefault*t/TIME_SECOND(1);
 	}
+
+	struct TIndexPulse sealed{
+		int posInStreamData;
+		DWORD sampleCounter;
+		DWORD indexCounter;
+
+		void AddIndexTime(CImage::CTrackReaderWriter &trw,DWORD totalSampleCounter,double sck) const{
+			const DWORD indexSampleCounter=totalSampleCounter+sampleCounter;
+			if (sck==0) // default Sample-Clock, allowing for relatively precise computation of absolute timing
+				trw.AddIndexTime( (LONGLONG)TIME_SECOND(1)*indexSampleCounter/SampleClockDefault ); // temporary 64-bit precision even on 32-bit machines
+			else // custom Sample-Clock, involving floating-point number computation
+				trw.AddIndexTime( (double)TIME_SECOND(1)*indexSampleCounter/sck ); // temporary 64-bit precision even on 32-bit machines
+		}
+	};
 
 	CImage::CTrackReaderWriter CKryoFluxBase::StreamToTrack(LPBYTE rawBytes,DWORD nBytes) const{
 		// creates and returns a Track representation of the Stream data
@@ -393,11 +401,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 				}
 			// . adding an index pulse if its time has already been reached
 			if (pis-inStreamData>=nearestIndexPulsePos){
-				const DWORD indexSampleCounter=totalSampleCounter+indexPulses[nearestIndexPulse].sampleCounter;
-				if (sck==0) // default Sample-Clock, allowing for relatively precise computation of absolute timing
-					result.AddIndexTime( (LONGLONG)TIME_SECOND(1)*indexSampleCounter/SampleClockDefault ); // temporary 64-bit precision even on 32-bit machines
-				else // custom Sample-Clock, involving floating-point number computation
-					result.AddIndexTime( (double)TIME_SECOND(1)*indexSampleCounter/sck ); // temporary 64-bit precision even on 32-bit machines
+				indexPulses[nearestIndexPulse].AddIndexTime( result, totalSampleCounter, sck );
 				nearestIndexPulsePos= ++nearestIndexPulse<nIndexPulses ? indexPulses[nearestIndexPulse].posInStreamData : INT_MAX;
 			}
 			// . adding the flux into the Buffer
@@ -409,6 +413,9 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 			sampleCounter=0;
 		}
 		result.AddTimes( buffer, pLogTime-buffer );
+		// - final index pulse might not have been added if the Track ends with an unformatted area
+		if (nearestIndexPulse<nIndexPulses)
+			indexPulses[nearestIndexPulse].AddIndexTime( result, totalSampleCounter, sck );
 		return result;
 	}
 
