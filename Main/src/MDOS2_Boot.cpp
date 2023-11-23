@@ -47,6 +47,7 @@
 		_T("MDOS 2.0"), // name
 		MAKE_DOS_ID('M','D','O','S','2','0','_','_'), // unique identifier
 		80, // recognition priority (the bigger the number the earlier the DOS gets crack on the image)
+		0, // the Cylinder where usually the Boot Sector (or its backup) is found
 		__recognizeDisk__, // recognition function
 		__instantiate__, // instantiation function
 		Medium::FLOPPY_DD_ANY,

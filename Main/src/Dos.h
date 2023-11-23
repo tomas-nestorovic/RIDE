@@ -121,6 +121,7 @@
 			LPCTSTR name;
 			TId id; // DOS unique identifier (see other DOSes to be REALLY unique!)
 			BYTE recognitionPriority; // the order in which the DOS gets crack at the disk content (the bigger the number the earlier it sniffes the disk)
+			TCylinder stdBootCylinder; // where usually the Boot Sector (or its backup) is found
 			TFnRecognize fnRecognize;
 			TFnInstantiate fnInstantiate;
 			Medium::TType supportedMedia; // a set of MediumTypes this DOS supports

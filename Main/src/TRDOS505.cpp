@@ -19,6 +19,7 @@
 		TRDOS_NAME_BASE _T(" 5.05"), // name
 		MAKE_DOS_ID('T','R','D','O','S','5','0','5'), // unique identifier
 		44, // recognition priority (the bigger the number the earlier the DOS gets crack on the image)
+		0, // the Cylinder where usually the Boot Sector (or its backup) is found
 		__recognizeDisk__, // recognition function
 		__instantiate__, // instantiation function
 		Medium::FLOPPY_DD_ANY,

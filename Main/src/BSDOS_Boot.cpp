@@ -74,6 +74,7 @@
 		_T("BS-DOS 308 (MB-02)"), // name
 		MAKE_DOS_ID('B','S','D','O','S','-','0','2'), // unique identifier
 		60, // recognition priority
+		0, // the Cylinder where usually the Boot Sector (or its backup) is found
 		__recognizeDisk__, // recognition function
 		__instantiate__, // instantiation function
 		Medium::FLOPPY_ANY,

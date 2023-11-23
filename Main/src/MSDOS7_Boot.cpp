@@ -297,6 +297,7 @@
 		_T("MS-DOS 7.1 (experimental)"), // name
 		MAKE_DOS_ID('M','S','-','D','O','S','7','1'), // unique identifier
 		90, // recognition priority (the bigger the number the earlier the DOS gets crack on the image)
+		0, // the Cylinder where usually the Boot Sector (or its backup) is found
 		__recognizeDisk__, // recognition function
 		__instantiate__, // instantiation function
 		Medium::ANY,

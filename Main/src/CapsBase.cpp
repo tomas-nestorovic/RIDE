@@ -869,16 +869,23 @@ invalidTrack:
 							delete rit;
 							rit=CInternalTrack::CreateFrom( *this, trw, pFormat->mediumType );
 						}
-			// . seeing if some Sectors can be recognized in any of Tracks
-			for( TCylinder cyl=0; cyl<SCANNED_CYLINDERS; cyl++ ) // examining just first N Cylinders
-				for( THead head=2; head>0; )
-					if (ScanTrack(cyl,--head)!=0){
-						if (!IsTrackHealthy(cyl,head)){ // if Track read with errors ...
-							auto &rit=internalTracks[cyl][head];
-							delete rit, rit=nullptr; // ... disposing it and letting DOS later read it once again
+			// . seeing if some Sectors can be recognized in any of Tracks that usually contain the Boot Sector of implemented DOSes
+			CMapWordToPtr bootCylinders; // unique Cylinders where usually the Boot Sector (or its backup) is found
+			for( POSITION pos=CDos::Known.GetHeadPosition(); pos; )
+				bootCylinders.SetAt( CDos::Known.GetNext(pos)->stdBootCylinder, nullptr );
+			for( POSITION pos=bootCylinders.GetStartPosition(); pos; ){
+				WORD cyl; LPVOID tmp;
+				bootCylinders.GetNextAssoc( pos, cyl, tmp );
+				for( const TCylinder cylZ=cyl+SCANNED_CYLINDERS; cyl<cylZ; cyl++ ) // examining just first N Cylinders
+					for( THead head=2; head>0; )
+						if (ScanTrack(cyl,--head)!=0){
+							if (!IsTrackHealthy(cyl,head)){ // if Track read with errors ...
+								auto &rit=internalTracks[cyl][head];
+								delete rit, rit=nullptr; // ... disposing it and letting DOS later read it once again
+							}
+							return ERROR_SUCCESS;
 						}
-						return ERROR_SUCCESS;
-					}
+			}
 		}
 		// - no data could be recognized on any of Tracks
 		return ERROR_NOT_SUPPORTED;

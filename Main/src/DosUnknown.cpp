@@ -13,6 +13,7 @@
 		_T("Unknown"), // name
 		MAKE_DOS_ID('U','n','k','n','o','w','n','!'), // unique identifier
 		0, // recognition priority
+		0, // the Cylinder where usually the Boot Sector (or its backup) is found
 		__recognize__, // recognition function
 		__instantiate__, // instantiation function
 		Medium::UNKNOWN, // Unknown Medium

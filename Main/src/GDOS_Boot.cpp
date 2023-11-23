@@ -51,6 +51,7 @@
 		_T("GDOS (experimental)"), // name
 		MAKE_DOS_ID('G','D','O','S','_','_','_','_'), // unique identifier
 		20, // recognition priority (the bigger the number the earlier the DOS gets crack on the image)
+		0, // the Cylinder where usually the Boot Sector (or its backup) is found
 		__recognizeDisk__, // recognition function
 		__instantiate__, // instantiation function
 		Medium::FLOPPY_DD_ANY,
