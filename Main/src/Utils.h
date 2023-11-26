@@ -251,6 +251,7 @@ namespace Utils{
 		bool IsDlgItemEnabled(WORD id) const;
 		RECT GetDlgItemClientRect(WORD id) const;
 		RECT MapDlgItemClientRect(WORD id) const;
+		RECT MapDlgItemClientRect(HWND hItem) const;
 		POINT MapDlgItemClientOrigin(WORD id) const;
 		void OffsetDlgItem(WORD id,int dx,int dy) const;
 		void SetDlgItemPos(HWND itemHwnd,int x,int y,int cx=0,int cy=0) const;
@@ -259,6 +260,7 @@ namespace Utils{
 		void SetDlgItemPos(WORD id,const RECT &rc) const;
 		void SetDlgItemSize(WORD id,int cx,int cy) const;
 		void InvalidateDlgItem(WORD id) const;
+		void InvalidateDlgItem(HWND hItem) const;
 		LONG_PTR GetDlgComboBoxSelectedValue(WORD id) const;
 		bool SelectDlgComboBoxValue(WORD id,LONG_PTR value,bool cancelPrevSelection=true) const;
 		int GetDlgComboBoxSelectedIndex(WORD id) const;

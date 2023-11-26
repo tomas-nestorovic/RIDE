@@ -1418,8 +1418,12 @@ namespace Utils{
 	}
 
 	RECT CRideDialog::MapDlgItemClientRect(WORD id) const{
-		//
-		const HWND hItem=::GetDlgItem(m_hWnd,id);
+		// returns coordinates of the client area of the specified item
+		return MapDlgItemClientRect( ::GetDlgItem(m_hWnd,id) );
+	}
+
+	RECT CRideDialog::MapDlgItemClientRect(HWND hItem) const{
+		// returns coordinates of the client area of the specified item
 		RECT tmp;
 		::GetClientRect( hItem, &tmp );
 		::MapWindowPoints( hItem, m_hWnd, (LPPOINT)&tmp, 2 );
@@ -1474,7 +1478,15 @@ namespace Utils{
 
 	void CRideDialog::InvalidateDlgItem(WORD id) const{
 		// invalidates the Dialog control
-		::InvalidateRect( ::GetDlgItem(m_hWnd,id), nullptr, TRUE );
+		InvalidateDlgItem( ::GetDlgItem(m_hWnd,id) );
+	}
+
+	void CRideDialog::InvalidateDlgItem(HWND hItem) const{
+		// invalidates the Dialog control
+		// - invalidating the Item
+		::InvalidateRect( hItem, nullptr, TRUE );
+		// - invalidating also the Dialog under the Item (e.g. static controls; see https://stackoverflow.com/questions/1823883 )
+		::RedrawWindow( m_hWnd, &MapDlgItemClientRect(hItem), nullptr, RDW_ERASE|RDW_INVALIDATE );
 	}
 
 	LONG_PTR CRideDialog::GetDlgComboBoxSelectedValue(WORD id) const{

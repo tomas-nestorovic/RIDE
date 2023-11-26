@@ -128,7 +128,6 @@ using namespace Yahel;
 				const int buttonX=wndW-padding.x-buttonWidth+1, buttonY=wndH-padding.y-buttonHeight;
 				SetDlgItemPos( IDCANCEL, buttonX, buttonY );
 				SetDlgItemPos( IDOK, buttonX-padding.x-buttonWidth, buttonY );
-				InvalidateDlgItem( IDOK ); // otherwise drawing problems may arise when resizing the dialog
 				break;
 			}
 			case WM_COMMAND:
@@ -219,6 +218,7 @@ using namespace Yahel;
 		s->AddRef();
 		Update( s, nullptr, f->GetLength() );
 		::SetWindowTextW(hLabel,fileName);
+		rDialog.InvalidateDlgItem(hLabel);
 		// - updating the LogicalSizes of both HexaEditors to BiggerSize of the two Files
 		const auto L1= rDialog.file1.f ? rDialog.file1.f->GetLength() : 0;
 		const auto L2= rDialog.file2.f ? rDialog.file2.f->GetLength() : 0;
