@@ -185,6 +185,7 @@
 
 		virtual TStdWinError UploadFirmware();
 		virtual TStdWinError UploadTrack(TCylinder cyl,THead head,CTrackReader tr) const;
+		void WarnOnAndCorrectExceedingCylinders();
 		void DestroyAllTracks();
 		TStdWinError VerifyTrack(TCylinder cyl,THead head,const CTrackReaderWriter &trwWritten,bool showDiff,std::unique_ptr<CTrackReaderWriter> *ppOutReadTrack,const volatile bool &cancelled) const;
 		TStdWinError DetermineMagneticReliabilityByWriting(Medium::TType floppyType,TCylinder cyl,THead head,const volatile bool &cancelled) const;

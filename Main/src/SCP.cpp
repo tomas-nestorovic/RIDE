@@ -84,13 +84,8 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			return FALSE;
 		}
 		header.flags.normalized|=params.corrections.valid&&params.corrections.use;
-		// - warning
-		if (capsImageInfo.maxcylinder>=FDD_CYLINDERS_MAX){ // inclusive!
-			TCHAR msg[200];
-			::wsprintf( msg, _T("The image contains %d cylinders, ") _T(APP_ABBREVIATION) _T(" shows just first %d of them."), capsImageInfo.maxcylinder+1, FDD_CYLINDERS_MAX );
-			Utils::Warning(msg);
-			capsImageInfo.maxcylinder=FDD_CYLINDERS_MAX-1; // inclusive!
-		}
+		// - warning on unsupported Cylinders
+		WarnOnAndCorrectExceedingCylinders();
 		return TRUE;
 	}
 

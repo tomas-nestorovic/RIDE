@@ -513,13 +513,8 @@
 			::SetLastError( ERROR_CANCELLED );
 			return FALSE;
 		}
-		// - warning
-		if (capsImageInfo.maxcylinder>=FDD_CYLINDERS_MAX){ // inclusive!
-			TCHAR msg[200];
-			::wsprintf( msg, _T("The image contains %d cylinders, ") _T(APP_ABBREVIATION) _T(" shows just first %d of them."), capsImageInfo.maxcylinder+1, FDD_CYLINDERS_MAX );
-			Utils::Warning(msg);
-			capsImageInfo.maxcylinder=FDD_CYLINDERS_MAX-1; // inclusive!
-		}
+		// - warning on unsupported Cylinders
+		WarnOnAndCorrectExceedingCylinders();
 		// - successfully mounted
 		return TRUE;
 	}
@@ -956,6 +951,16 @@ invalidTrack:
 			return true;
 		}else
 			return false;
+	}
+
+	void CCapsBase::WarnOnAndCorrectExceedingCylinders(){
+		// if current # of Cylinders exceeds supported limit, shows a pop-up message and corrects the #
+		if (capsImageInfo.maxcylinder>=FDD_CYLINDERS_MAX){ // inclusive!
+			TCHAR msg[200];
+			::wsprintf( msg, _T("The image contains %d cylinders, ") _T(APP_ABBREVIATION) _T(" shows just first %d of them."), capsImageInfo.maxcylinder+1, FDD_CYLINDERS_MAX );
+			Utils::Warning(msg);
+			capsImageInfo.maxcylinder=FDD_CYLINDERS_MAX-1; // inclusive!
+		}
 	}
 
 	void CCapsBase::DestroyAllTracks(){
