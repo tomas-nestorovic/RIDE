@@ -46,18 +46,28 @@
 			, nCategories(0) {
 		}
 
-		void __addStaticText__(LPCTSTR text,const Utils::CRideFont &rFont){
+		void __addStaticText__(LPCTSTR text,const Utils::CRideFont &font){
 			// adds a new static text under currently open category
-			const int height=rFont.charHeight+2*(1+::GetSystemMetrics(SM_CYBORDER));
+			const CClientDC dc(this);
+			const HGDIOBJ hFont0=::SelectObject( dc, buttonCaptionFont );
+				CRect rc=rcCurrContent;
+				::DrawText( dc, text, -1, &rc, DT_WORDBREAK|DT_CALCRECT );
+			::SelectObject( dc, hFont0 );
+			const int height=rc.Height()+2*(1+::GetSystemMetrics(SM_CYBORDER));
 			::SendMessage(
 				::CreateWindow(
-					WC_STATIC, text, WS_VISIBLE|WS_CHILD|SS_CENTERIMAGE,
+					WC_STATIC, text, WS_VISIBLE|WS_CHILD,
 					rcCurrContent.left,rcCurrContent.top, rcCurrContent.Width(),height,
 					m_hWnd, 0, app.m_hInstance, nullptr
 				),
-				WM_SETFONT, (WPARAM)rFont.m_hObject, 0
+				WM_SETFONT, (WPARAM)font.m_hObject, 0
 			);
 			rcCurrContent.top+=height;
+		}
+
+		void __addStaticText__(LPCTSTR text){
+			// adds a new static text under currently open category
+			__addStaticText__(text,buttonCaptionFont);
 		}
 
 		void __addCategory__(LPCTSTR title,WCHAR webdingsGlyph){
