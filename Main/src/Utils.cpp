@@ -2176,6 +2176,11 @@ namespace Utils{
 		return result;
 	}
 
+	BYTE GetReversedByte(BYTE b){
+		// the bit twiddling hack by R. Schroeppel, see https://graphics.stanford.edu/~seander/bithacks.html#BitReverseObvious
+		return (b*0x0202020202ull & 0x010884422010ull) % 0x3ff;
+	}
+
 	CString GenerateTemporaryFileName(){
 		// generates and returns a new temporary file name
 		TCHAR buf[MAX_PATH];

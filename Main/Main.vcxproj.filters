@@ -231,6 +231,9 @@
     <ClInclude Include="src\ViewFatHexa.h">
       <Filter>Header Files\Dos\Tabs</Filter>
     </ClInclude>
+    <ClInclude Include="src\HFE.h">
+      <Filter>Header Files\Image</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\editor.cpp">
@@ -492,6 +495,9 @@
       <Filter>Source Files\Dos\Tabs</Filter>
     </ClCompile>
     <ClCompile Include="src\CapsBase_Mining.cpp">
+      <Filter>Source Files\Image</Filter>
+    </ClCompile>
+    <ClCompile Include="src\HFE.cpp">
       <Filter>Source Files\Image</Filter>
     </ClCompile>
   </ItemGroup>

@@ -13,6 +13,7 @@
 #include "SuperCardProBase.h"
 #include "SCP.h"
 #include "Greaseweazle.h"
+#include "HFE.h"
 
 	CRideApp::CRecentFileListEx::CRecentFileListEx(const CRecentFileList &rStdMru)
 		// ctor
@@ -190,6 +191,7 @@
 		CImage::Known.AddTail( &CCtRaw::Properties );
 		CImage::Known.AddTail( &D80::Properties );
 		CImage::Known.AddTail( &CDsk5::Properties );
+		CImage::Known.AddTail( &CHFE::Properties );
 		CImage::Known.AddTail( &CIpf::Properties );
 		CImage::Known.AddTail( &CKryoFluxStreams::Properties );
 		CImage::Known.AddTail( &MBD::Properties );

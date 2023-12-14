@@ -145,6 +145,11 @@ namespace Utils{
 		inline operator T() const{ return var; }
 	};
 
+	template<typename T>
+	T RoundDivUp(T value,T denominator){
+		return (value+denominator-1)/denominator;
+	}
+
 	class CExclusivelyLocked{
 		CSyncObject &syncObj;
 	public:
@@ -546,6 +551,7 @@ namespace Utils{
 	void UnscaleLogicalUnit(PINT values,BYTE nValues);
 	COLORREF GetSaturatedColor(COLORREF color,float saturationFactor);
 	COLORREF GetBlendedColor(COLORREF color1,COLORREF color2,float blendFactor=.5f);
+	BYTE GetReversedByte(BYTE b);
 	CString GenerateTemporaryFileName();
 	CFile &WriteToFile(CFile &f,LPCTSTR text);
 	CFile &WriteToFileFormatted(CFile &f,LPCTSTR format,...);
