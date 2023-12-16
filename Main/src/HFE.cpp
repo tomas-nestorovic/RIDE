@@ -125,8 +125,8 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		}
 		// - warning on unsupported features
 		if (header.formatRevision!=0
-			||
-			header.step!=TStep::SINGLE
+			//||
+			//header.step!=TStep::SINGLE // according to official HxC source code, this parameter is completely ignored during Image loading
 			||
 			header.alternative[0].disabled==0
 			||
