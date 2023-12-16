@@ -40,18 +40,23 @@
 
 
 
-	CMainWindow::CDockableToolBar::CDockableToolBar(UINT nResId,UINT id){
+	CMainWindow::CDockableToolBar::CDockableToolBar(UINT nResId,UINT id)
 		// ctor
-		if (nResId){
-			Create( app.m_pMainWnd, WS_CHILD|CBRS_TOP|CBRS_TOOLTIPS, id );
-			LoadToolBar(nResId);
-			EnableDocking(CBRS_ALIGN_TOP);
-		}
+		: nResId(nResId) , id(id) {
+		ASSERT( !nResId || id );
 	}
 
 	void CMainWindow::CDockableToolBar::Show(const CToolBar &rDockNextTo){
 		// shows this ToolBar docked immediately next to the specified existing one
-		if (m_hWnd && rDockNextTo.m_hWnd){ // only if both ToolBars exist (may not if the MainWindow is being closed)
+		if (!nResId)
+			return;
+		ASSERT( CWnd::FromHandle(*app.m_pMainWnd)==app.m_pMainWnd ); // must be launched from the main thread
+		if (!m_hWnd){
+			Create( app.m_pMainWnd, WS_CHILD|CBRS_TOP|CBRS_TOOLTIPS, id );
+			LoadToolBar(nResId);
+			EnableDocking(CBRS_ALIGN_TOP);
+		}
+		if (m_hWnd && rDockNextTo.m_hWnd){ // only if both ToolBars exist (may not if the MainWin			w is being closed)
 			RECT r;
 			rDockNextTo.GetWindowRect(&r);
 			::OffsetRect(&r,1,0);
