@@ -163,12 +163,10 @@
 	CFileManagerView::PEditorBase CSpectrumBase::CSpectrumBaseFileManagerView::CSingleCharExtensionEditor::Create(PFile file) const{
 		// creates and returns an Editor of File's single-character Extension
 		const CPathString ext=rZxFileManager.DOS->GetFileExt(file);
-		const PEditorBase result=CreateStdEditor(
+		return CreateStdEditor(
 			file, &( data=ext.FirstCharA() ),
 			PropGrid::Enum::DefineConstStringListEditor( sizeof(data), __createValues__, __getDescription__, __freeValues__, __onChanged__ )
 		);
-		::SendMessage( result->hEditor, WM_SETFONT, (WPARAM)rZxFileManager.rFont.m_hObject, 0 );
-		return result;
 	}
 	void CSpectrumBase::CSpectrumBaseFileManagerView::CSingleCharExtensionEditor::DrawReportModeCell(BYTE extension,LPDRAWITEMSTRUCT pdis,LPCSTR knownExtensions) const{
 		// directly draws File's single-character Extension

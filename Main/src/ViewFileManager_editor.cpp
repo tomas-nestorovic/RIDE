@@ -26,7 +26,7 @@
 		// - creating the Editor
 		(HWND)hEditor=PropGrid::BeginEditValue( value, file, editor, rcEditorArea, 0, parent.m_hWnd, (HWND *)&hEllipsisButton );
 		wndProc0=(WNDPROC)::SetWindowLongW(hEditor,GWL_WNDPROC,(long)__wndProc__);
-		::SendMessageW( hEditor, WM_SETFONT, (WPARAM)parent.rFont.m_hObject, 0 );
+		::SendMessageW( hEditor, WM_SETFONT, parent.font, 0 );
 		ellipsisButtonWndProc0=(WNDPROC)::SetWindowLongW(hEllipsisButton,GWL_WNDPROC,(long)__ellipsisButton_wndProc__);
 	}
 
@@ -116,10 +116,7 @@
 
 	CFileManagerView::PEditorBase CFileManagerView::CValueEditorBase::CreateStdEditor(CDos::PFile file,PropGrid::PValue value,PropGrid::PCEditor editor){
 		// creates and returns PropertyGrid's specified built-in Editor
-		RCFileManagerView &rfm=*CDos::GetFocused()->pFileManager;
-		const PEditorBase result=new CEditorBase( file, value, editor, rfm );
-		::SendMessageW( result->hEditor, WM_SETFONT, (WPARAM)rfm.rFont.m_hObject, 0 );
-		return result;
+		return new CEditorBase( file, value, editor, *CDos::GetFocused()->pFileManager );
 	}
 
 	CFileManagerView::PEditorBase CFileManagerView::CValueEditorBase::CreateStdEditorWithEllipsis(CDos::PFile file,PropGrid::TOnEllipsisButtonClicked buttonAction){

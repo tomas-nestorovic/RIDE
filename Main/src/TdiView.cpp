@@ -50,17 +50,17 @@
 			// adds a new static text under currently open category
 			const CClientDC dc(this);
 			const HGDIOBJ hFont0=::SelectObject( dc, buttonCaptionFont );
-				CRect rc=rcCurrContent;
-				::DrawText( dc, text, -1, &rc, DT_WORDBREAK|DT_CALCRECT );
+			CRect rc=rcCurrContent;
+			::DrawText( dc, text, -1, &rc, DT_WORDBREAK|DT_CALCRECT );
 			::SelectObject( dc, hFont0 );
 			const int height=rc.Height()+2*(1+::GetSystemMetrics(SM_CYBORDER));
-			::SendMessage(
+			SetDlgItemFont(
 				::CreateWindow(
 					WC_STATIC, text, WS_VISIBLE|WS_CHILD,
 					rcCurrContent.left,rcCurrContent.top, rcCurrContent.Width(),height,
 					m_hWnd, 0, app.m_hInstance, nullptr
 				),
-				WM_SETFONT, (WPARAM)font.m_hObject, 0
+				font
 			);
 			rcCurrContent.top+=height;
 		}
@@ -92,19 +92,19 @@
 				-20,
 				glyphColor
 			);
-			SendDlgItemMessage( id, WM_SETFONT, (WPARAM)buttonCaptionFont.m_hObject );
+			SetDlgItemFont( id, buttonCaptionFont );
 			rcCurrContent.top+=singleLineButtonHeight;
 		}
 
 		void __addHyperlinkText__(LPCWSTR hyperlinkText){
 			// adds a new static text under currently open category
-			::SendMessage(
+			SetDlgItemFont(
 				::CreateWindowW(
 					WC_LINK, hyperlinkText, WS_VISIBLE|WS_CHILD|SS_CENTERIMAGE,
 					rcCurrContent.left,rcCurrContent.top, rcCurrContent.Width(),singleLineButtonHeight,
 					m_hWnd, 0, app.m_hInstance, nullptr
 				),
-				WM_SETFONT, (WPARAM)buttonCaptionFont.m_hObject, 0
+				buttonCaptionFont
 			);
 			rcCurrContent.top+=singleLineButtonHeight;
 		}
@@ -125,7 +125,7 @@
 			if (app.dateRecencyLastChecked){ // at least once in the past the recency has been checked on-line?
 				const CMSDOS7::TDateTime dateTimeRlc( app.dateRecencyLastChecked );
 				SetDlgItemFormattedText( ID_LATENCY, _T("Recency last checked online: %s, %s"), (LPCTSTR)dateTimeRlc.DateToStdString(), (LPCTSTR)dateTimeRlc.TimeToStdString() );
-				SendDlgItemMessage( ID_LATENCY, WM_SETFONT, (WPARAM)(HFONT)Utils::CRideFont::Small, TRUE );
+				SetDlgItemFont( ID_LATENCY, Utils::CRideFont::Small );
 				ShowDlgItem( ID_LATENCY );
 			}
 			// - composing the "Recently accessed locations" section

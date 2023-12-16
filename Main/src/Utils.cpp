@@ -1476,6 +1476,16 @@ namespace Utils{
 		SetDlgItemPos( id, 0,0, cx,cy );
 	}
 
+	void CRideDialog::SetDlgItemFont(HWND hWnd,const CRideFont &font) const{
+		// changes font of the specified Dialog control
+		::SendMessageW( hWnd, WM_SETFONT, font, TRUE );
+	}
+
+	void CRideDialog::SetDlgItemFont(WORD id,const CRideFont &font) const{
+		// changes font of the specified Dialog control
+		SetDlgItemFont( GetDlgItemHwnd(id), font );
+	}
+
 	void CRideDialog::InvalidateDlgItem(WORD id) const{
 		// invalidates the Dialog control
 		InvalidateDlgItem( ::GetDlgItem(m_hWnd,id) );

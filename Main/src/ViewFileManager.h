@@ -249,7 +249,7 @@
 		Utils::CRideContextMenu mnuFocusedContext; // when particular File right-clicked
 		LPCWSTR fatEntryYahelDefinition; // Null <=> not supported
 
-		CFileManagerView(PDos _dos,BYTE _supportedDisplayModes,BYTE _initialDisplayMode,const CFont &rFont,BYTE reportModeRowHeightAdjustment,BYTE _nInformation,PCFileInfo _informationList,PCDirectoryStructureManagement pDirectoryStructureManagement);
+		CFileManagerView(PDos _dos,BYTE _supportedDisplayModes,BYTE _initialDisplayMode,const Utils::CRideFont &font,BYTE reportModeRowHeightAdjustment,BYTE _nInformation,PCFileInfo _informationList,PCDirectoryStructureManagement pDirectoryStructureManagement);
 		~CFileManagerView();
 
 		void __editFileInformation__(CDos::PFile file,BYTE editableInformationSearchDirection) const;
@@ -273,7 +273,7 @@
 	public:
 		static const CFileManagerView *pCurrentlyShown; // FileManager that is currently shown (a disk can have multiple volumes, each with its own FileManager)
 
-		const CFont &rFont;
+		const Utils::CRideFont &font;
 		const PCDirectoryStructureManagement pDirectoryStructureManagement;
 		const CMainWindow::CTdiView::TTab tab;
 

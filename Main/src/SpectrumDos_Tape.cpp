@@ -1050,13 +1050,10 @@ drawChecksum:			// checksum
 	CFileManagerView::PEditorBase CSpectrumBase::CSpectrumBaseFileManagerView::CStdTapeHeaderBlockTypeEditor::Create(PFile file,TZxRom::TFileType type,TDisplayTypes _types,PropGrid::Enum::TOnValueConfirmed onChanged) const{
 		// creates and returns an Editor of standard File Type
 		types=_types;
-		const PEditorBase result=CreateStdEditor(
+		return CreateStdEditor(
 			file, &( data=type ),
 			PropGrid::Enum::DefineConstStringListEditor( sizeof(data), __createValues__, __getDescription__, nullptr, onChanged )
 		);
-		RCFileManagerView &rfm=*CDos::GetFocused()->pFileManager;
-		::SendMessage( CEditorBase::pSingleShown->hEditor, WM_SETFONT, (WPARAM)rfm.rFont.m_hObject, 0 );
-		return result;
 	}
 
 	void CSpectrumBase::CSpectrumBaseFileManagerView::CStdTapeHeaderBlockTypeEditor::DrawReportModeCell(BYTE type,LPDRAWITEMSTRUCT pdis){

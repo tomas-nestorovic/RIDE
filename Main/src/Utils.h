@@ -186,6 +186,8 @@ namespace Utils{
 		CRideFont(LPCTSTR face,int pointHeight,bool bold=false,bool dpiScaled=false,int pointWidth=0);
 		CRideFont(HWND hWnd,bool bold=false);
 
+		inline operator WPARAM() const{ return (WPARAM)m_hObject; }
+
 		SIZE GetTextSize(LPCTSTR text,int textLength) const;
 		SIZE GetTextSize(LPCTSTR text) const;
 	};
@@ -264,6 +266,8 @@ namespace Utils{
 		void SetDlgItemPos(WORD id,int x,int y,int cx=0,int cy=0) const;
 		void SetDlgItemPos(WORD id,const RECT &rc) const;
 		void SetDlgItemSize(WORD id,int cx,int cy) const;
+		void SetDlgItemFont(HWND hWnd,const CRideFont &font) const;
+		void SetDlgItemFont(WORD id,const CRideFont &font) const;
 		void InvalidateDlgItem(WORD id) const;
 		void InvalidateDlgItem(HWND hItem) const;
 		LONG_PTR GetDlgComboBoxSelectedValue(WORD id) const;

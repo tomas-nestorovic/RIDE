@@ -295,14 +295,11 @@ error:			*de=tmp; // recovering the original DirectoryEntry
 	}
 	CFileManagerView::PEditorBase CGDOS::CGdosFileManagerView::CExtensionEditor::Create(PDirectoryEntry de) const{
 		// creates and returns the Editor of File "extension"
-		const PDos dos=CDos::GetFocused();
 		RCFileManagerView &rfm=*CDos::GetFocused()->pFileManager;
-		const PEditorBase result=CreateStdEditor(
+		return CreateStdEditor(
 			de, &( data=de->fileType ),
 			PropGrid::Enum::DefineConstStringListEditor( sizeof(data), __createValues__, __getDescription__, __freeValues__, __onChanged__ )
 		);
-		::SendMessage( result->hEditor, WM_SETFONT, (WPARAM)rfm.rFont.m_hObject, 0 );
-		return result;
 	}
 
 

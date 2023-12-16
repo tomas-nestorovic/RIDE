@@ -24,11 +24,11 @@
 
 
 
-	CFileManagerView::CFileManagerView(PDos _dos,BYTE _supportedDisplayModes,BYTE _initialDisplayMode,const CFont &rFont,BYTE reportModeRowHeightAdjustment,BYTE _nInformation,PCFileInfo _informationList,PCDirectoryStructureManagement pDirectoryStructureManagement)
+	CFileManagerView::CFileManagerView(PDos _dos,BYTE _supportedDisplayModes,BYTE _initialDisplayMode,const Utils::CRideFont &font,BYTE reportModeRowHeightAdjustment,BYTE _nInformation,PCFileInfo _informationList,PCDirectoryStructureManagement pDirectoryStructureManagement)
 		// ctor
 		// - initialization
 		: tab( IDR_FILEMANAGER, IDR_FILEMANAGER, ID_FILE, _dos->image, this )
-		, rFont(rFont)
+		, font(font)
 		, reportModeRowHeightAdjustment(reportModeRowHeightAdjustment)
 		, nInformation(_nInformation) , informationList(_informationList)
 		, supportedDisplayModes(_supportedDisplayModes) , displayMode(_initialDisplayMode)
@@ -360,7 +360,7 @@
 	afx_msg void CFileManagerView::MeasureItem(LPMEASUREITEMSTRUCT pmis){
 		// determining the row size in Report DisplayMode given the Font size
 		LOGFONT lf;
-		rFont.GetObject(sizeof(lf),&lf);
+		font.GetObject(sizeof(lf),&lf);
 		pmis->itemHeight=	( lf.lfHeight<0 ? -lf.lfHeight : lf.lfHeight )
 							+
 							Utils::LogicalUnitScaleFactor*reportModeRowHeightAdjustment; // e.g., for the underscore "_" to be visible as well
@@ -469,7 +469,7 @@
 			::SetTextColor( dc, COLOR_BLACK );
 		}
 		// - drawing Information
-		const HGDIOBJ hFont0=::SelectObject(dc,rFont.m_hObject);
+		const HGDIOBJ hFont0=::SelectObject(dc,font);
 			DRAWITEMSTRUCT dis=*lpdi;
 			for( BYTE i=0,iColumn=0; i<nInformation; i++ )
 				if (reportModeDisplayedInfos&1<<i){
