@@ -6,7 +6,6 @@
 
 		DWORD tdhOffsets[84][2]; // Track Data Header offsets
 
-		PInternalTrack GetInternalTrackSafe(TCylinder cyl,THead head) const;
 		TStdWinError SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap) override;
 	public:
 		static const TProperties Properties;

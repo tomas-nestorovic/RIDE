@@ -636,9 +636,7 @@
 	bool CCapsBase::IsTrackScanned(TCylinder cyl,THead head) const{
 		// True <=> Track exists and has already been scanned, otherwise False
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		return	cyl<FDD_CYLINDERS_MAX && head<2
-				&&
-				internalTracks[cyl][head]!=nullptr;
+		return GetInternalTrackSafe(cyl,head)!=nullptr;
 	}
 
 	TStdWinError CCapsBase::UnscanTrack(TCylinder cyl,THead head){
@@ -755,7 +753,7 @@ invalidTrack:
 
 	Revolution::TType CCapsBase::GetDirtyRevolution(RCPhysicalAddress chs,BYTE nSectorsToSkip) const{
 		// returns the Revolution that has been marked as "dirty"
-		if (const PCInternalTrack pit=internalTracks[chs.cylinder][chs.head]){
+		if (const PCInternalTrack pit=GetInternalTrackSafe(chs.cylinder,chs.head)){
 			while (nSectorsToSkip<pit->nSectors){
 				const auto &ris=pit->sectors[nSectorsToSkip++];
 				if (ris.id==chs.sectorId)

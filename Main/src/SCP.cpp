@@ -89,8 +89,8 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		return TRUE;
 	}
 
-	CCapsBase::PInternalTrack CSCP::GetInternalTrackSafe(TCylinder cyl,THead head) const{
-		return	cyl<FDD_CYLINDERS_MAX
+	CCapsBase::PInternalTrack CCapsBase::GetInternalTrackSafe(TCylinder cyl,THead head) const{
+		return	cyl<FDD_CYLINDERS_MAX && head<2
 				? internalTracks[cyl][head]
 				: nullptr; // Cylinders beyond FDD_CYLINDERS_MAX are inaccessible
 	}
