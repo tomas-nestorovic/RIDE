@@ -11,7 +11,7 @@
 	}
 
 	const CImage::TProperties CHFE::Properties={
-		MAKE_IMAGE_ID('H','x','C','F','M','T','1','1'), // a unique identifier
+		MAKE_IMAGE_ID('H','x','C','-','2','0','0','1'), // a unique identifier
 		Recognize,	// list of recognized device names
 		Instantiate,// instantiation function
 		_T("*.hfe"),	// filter
@@ -47,6 +47,8 @@
 				&&
 				formatRevision==0
 				&&
+				0<nCylinders // mustn't be zero for 'capsImageInfo.maxcylinder' is inclusive! (and "-1" isn't valid)
+				&&
 				0<nHeads && nHeads<=2
 				&&
 				bitrate>0
@@ -63,7 +65,7 @@
 
 
 
-	#define INI_SECTION		_T("HxCFlopEm")
+	#define INI_SECTION		_T("HxC2k1")
 
 	CHFE::CHFE()
 		// ctor
@@ -149,8 +151,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		if (rit!=nullptr)
 			return *rit;
 		// - construction of InternalTrack
-		//const BYTE cylPhysical=cyl<<(BYTE)header.WantDoubleTrackStep();
-		if (!cylInfos[cyl].nBlocksOffset) // maybe an error during Image creation?
+		if (!cylInfos[cyl].IsValid()) // maybe an error during Image creation?
 			return CTrackReaderWriter::Invalid;
 		f.Seek( cylInfos[cyl].nBlocksOffset*sizeof(TCylinderBlock)+head*sizeof(TTrackBlock), CFile::begin );
 		BYTE trackBytes[USHRT_MAX+1], *pTrackBytes=trackBytes;

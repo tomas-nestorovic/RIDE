@@ -79,6 +79,8 @@
 		struct TCylinderInfo sealed{
 			WORD nBlocksOffset;
 			WORD nBytesLength;
+
+			inline bool IsValid() const{ return nBlocksOffset!=0 && nBytesLength!=0; }
 		} cylInfos[FDD_CYLINDERS_MAX];
 
 		mutable CFile f;
