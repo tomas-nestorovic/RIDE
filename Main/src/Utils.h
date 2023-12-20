@@ -150,6 +150,11 @@ namespace Utils{
 		return (value+denominator-1)/denominator;
 	}
 
+	template<typename T>
+	T RoundUpToMuls(T value,T mul){
+		return RoundDivUp(value,mul)*mul;
+	}
+
 	class CExclusivelyLocked{
 		CSyncObject &syncObj;
 	public:

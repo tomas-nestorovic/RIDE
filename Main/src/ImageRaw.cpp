@@ -850,12 +850,12 @@ trackNotFound:
 			TRow LogicalPositionToRow(TPosition logPos,WORD nBytesInRow) override{
 				// computes and returns the row containing the specified LogicalPosition
 				const auto d=div( logPos, (TPosition)image->sectorLength );
-				const TRow nRowsPerRecord = (image->sectorLength+nBytesInRow-1)/nBytesInRow;
+				const TRow nRowsPerRecord=Utils::RoundDivUp( image->sectorLength, nBytesInRow );
 				return d.quot*nRowsPerRecord + d.rem/nBytesInRow;
 			}
 			TPosition RowToLogicalPosition(TRow row,WORD nBytesInRow) override{
 				// converts Row begin (i.e. its first Byte) to corresponding logical position in underlying File and returns the result
-				const TRow nRowsPerRecord = (image->sectorLength+nBytesInRow-1)/nBytesInRow;
+				const TRow nRowsPerRecord=Utils::RoundDivUp( image->sectorLength, nBytesInRow );
 				const auto d=div( row, nRowsPerRecord );
 				return d.quot*image->sectorLength + d.rem*nBytesInRow;
 			}

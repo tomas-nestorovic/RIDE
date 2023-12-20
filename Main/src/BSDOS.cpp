@@ -646,7 +646,7 @@
 				case TGetFileSizeOptions::OfficialDataLength:
 					return de->file.dataLength;
 				case TGetFileSizeOptions::SizeOnDisk:
-					return (de->file.dataLength+BSDOS_SECTOR_LENGTH_STD-1)/BSDOS_SECTOR_LENGTH_STD * BSDOS_SECTOR_LENGTH_STD;
+					return Utils::RoundUpToMuls<DWORD>( de->file.dataLength, BSDOS_SECTOR_LENGTH_STD );
 				default:
 					ASSERT(FALSE);
 					return 0;
@@ -1001,7 +1001,7 @@
 		// - FAT
 		TLogSector ls=1;
 		const TLogSector nSectorsTotal=formatBoot.GetCountOfAllSectors();
-		boot->nSectorsPerFat=(nSectorsTotal+BSDOS_FAT_ITEMS_PER_SECTOR-1)/BSDOS_FAT_ITEMS_PER_SECTOR;
+		boot->nSectorsPerFat=Utils::RoundDivUp<WORD>( nSectorsTotal, BSDOS_FAT_ITEMS_PER_SECTOR );
 		boot->nBytesInFat=boot->nSectorsPerFat*BSDOS_SECTOR_LENGTH_STD;
 		TFatValue fatFirstSector[BSDOS_FAT_ITEMS_PER_SECTOR];
 			::ZeroMemory( fatFirstSector, sizeof(fatFirstSector) );
@@ -1075,7 +1075,7 @@
 			}
 			// . collecting information for the upcoming Format change
 			const DWORD nNewSectorsTotal=f.GetCountOfAllSectors();
-			const WORD nNewFatSectors=(nNewSectorsTotal+BSDOS_FAT_ITEMS_PER_SECTOR-1)/BSDOS_FAT_ITEMS_PER_SECTOR;
+			const WORD nNewFatSectors=Utils::RoundDivUp<DWORD>( nNewSectorsTotal, BSDOS_FAT_ITEMS_PER_SECTOR );
 			// . adjusting the FAT
 			deFats[0].file.dataLength = deFats[1].file.dataLength = nNewFatSectors*BSDOS_SECTOR_LENGTH_STD;
 			if (nNewFatSectors<bootSector->nSectorsPerFat)

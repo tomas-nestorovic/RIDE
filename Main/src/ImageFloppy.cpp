@@ -207,7 +207,7 @@ using namespace Yahel;
 					while (nSectors>0){
 						const WORD length=lengths[--nSectors];
 						rNext.logicalPosition+=length;
-						rNext.nRowsAtLogicalPosition+=(length+s.lastKnownHexaRowLength-1)/s.lastKnownHexaRowLength;
+						rNext.nRowsAtLogicalPosition+=Utils::RoundDivUp( length, s.lastKnownHexaRowLength );
 					}
 					return rNext.logicalPosition;
 				}
@@ -380,7 +380,7 @@ using namespace Yahel;
 				do{
 					const WORD length=lengths[--nSectors];
 					pos-=length;
-					nRows-=(length+nBytesInRow-1)/nBytesInRow;
+					nRows-=Utils::RoundDivUp( length, nBytesInRow );
 				}while (pos>logPos);
 				return nRows + (logPos-pos)/nBytesInRow;
 			}
@@ -413,7 +413,7 @@ using namespace Yahel;
 							do{
 								const WORD length=lengths[--nSectors];
 								logPos-=length;
-								nRows-=(length+nBytesInRow-1)/nBytesInRow;
+								nRows-=Utils::RoundDivUp( length, nBytesInRow );
 							}while (nRows>row);
 							return logPos + (row-nRows)*nBytesInRow;
 						}//else

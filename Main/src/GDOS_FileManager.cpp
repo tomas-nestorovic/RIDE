@@ -68,13 +68,13 @@
 			case INFORMATION_SIZE:{
 				// File Size
 				const DWORD sz=DOS->GetFileOfficialSize(de);
-				integerEditor.DrawReportModeCell( sz, pdis, (sz+GDOS_SECTOR_LENGTH_STD-1)/GDOS_SECTOR_LENGTH_STD!=de->nSectors );
+				integerEditor.DrawReportModeCell( sz, pdis, Utils::RoundDivUp<DWORD>(sz,GDOS_SECTOR_LENGTH_STD)!=de->nSectors );
 				break;
 			}
 			case INFORMATION_SECTOR_COUNT:{
 				// # of File Sectors
 				const DWORD sz=DOS->GetFileOfficialSize(de);
-				integerEditor.DrawReportModeCell( de->nSectors, pdis, (sz+GDOS_SECTOR_LENGTH_STD-1)/GDOS_SECTOR_LENGTH_STD!=de->nSectors );
+				integerEditor.DrawReportModeCell( de->nSectors, pdis, Utils::RoundDivUp<DWORD>(sz,GDOS_SECTOR_LENGTH_STD)!=de->nSectors );
 				break;
 			}
 			case INFORMATION_SECTOR_FIRST:
@@ -213,7 +213,7 @@
 				return true;
 			}
 			// . getting the File FatPath with enough Sectors to accommodate the NewOffset before shifting the content
-			const DWORD nSectorsAfterRetyping=(newDataSize+newOffset+GDOS_SECTOR_LENGTH_STD-sizeof(TSectorInfo)-1)/(GDOS_SECTOR_LENGTH_STD-sizeof(TSectorInfo));
+			const DWORD nSectorsAfterRetyping=Utils::RoundDivUp<DWORD>( newDataSize+newOffset, GDOS_SECTOR_LENGTH_STD-sizeof(TSectorInfo) );
 			CFatPath fatPath(gdos,&tmp);
 			CFatPath::PCItem pItem; DWORD n;
 			if (nSectorsAfterRetyping>de->nSectors){

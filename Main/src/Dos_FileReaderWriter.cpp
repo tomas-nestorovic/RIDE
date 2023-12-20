@@ -172,13 +172,13 @@ using namespace Yahel;
 	TRow CDos::CFileReaderWriter::LogicalPositionToRow(TPosition logPos,WORD nBytesInRow){
 		// computes and returns the row containing the specified LogicalPosition
 		const auto d=div( logPos, (TPosition)recordLength );
-		const TRow nRowsPerRecord = (recordLength+nBytesInRow-1)/nBytesInRow;
+		const TRow nRowsPerRecord=Utils::RoundDivUp<TPosition>( recordLength, nBytesInRow );
 		return d.quot*nRowsPerRecord + d.rem/nBytesInRow;// + (d.rem+nBytesInRow-1)/nBytesInRow;
 	}
 
 	TPosition CDos::CFileReaderWriter::RowToLogicalPosition(TRow row,WORD nBytesInRow){
 		// converts Row begin (i.e. its first Byte) to corresponding logical position in underlying File and returns the result
-		const TRow nRowsPerRecord = (recordLength+nBytesInRow-1)/nBytesInRow;
+		const TRow nRowsPerRecord=Utils::RoundDivUp<TPosition>( recordLength, nBytesInRow );
 		const auto d=div( row, nRowsPerRecord );
 		return d.quot*recordLength + d.rem*nBytesInRow;
 	}

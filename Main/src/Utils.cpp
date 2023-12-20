@@ -775,7 +775,7 @@ namespace Utils{
 		const TLogValue valueA=std::max( PixelToValue(-org.x), 0 )/intervalBig*intervalBig;
 		if (pOutVisibleStart!=nullptr)
 			*pOutVisibleStart=valueA;
-		const TLogValue valueZ=std::min<LONGLONG>( logLength, ((LONGLONG)PixelToValue(std::max(-org.x,0L)+nVisiblePixels)+intervalBig-1)/intervalBig*intervalBig ); // rounding to whole multiples of IntervalBig
+		const TLogValue valueZ=std::min<LONGLONG>(  logLength,  RoundUpToMuls<LONGLONG>( PixelToValue(std::max(-org.x,0L)+nVisiblePixels), intervalBig )  ); // rounding to whole multiples of IntervalBig
 		if (pOutVisibleEnd!=nullptr)
 			*pOutVisibleEnd=valueZ;
 		// - saving the current state of DC for any subsequent drawing to match the Axis (e.g. cursor indicator)

@@ -330,7 +330,7 @@
 				case TGetFileSizeOptions::OfficialDataLength:
 					return de->GetLength();
 				case TGetFileSizeOptions::SizeOnDisk:
-					return (de->GetLength()+MDOS2_SECTOR_LENGTH_STD-1)/MDOS2_SECTOR_LENGTH_STD * MDOS2_SECTOR_LENGTH_STD;
+					return Utils::RoundUpToMuls<DWORD>( de->GetLength(), MDOS2_SECTOR_LENGTH_STD );
 				default:
 					ASSERT(FALSE);
 					return 0;

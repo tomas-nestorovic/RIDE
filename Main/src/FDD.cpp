@@ -2102,9 +2102,7 @@ formatStandardWay:
 					// : computing DeltaGap3 that aids to "stretch" the above determined NumberOfReservedSectors across the whole length of Reserved area
 //const WORD tmp=NUMBER_OF_OCCUPIED_BYTES(nReservedSectors,reservedSectorLength,gap3,false);
 					const BYTE deltaGap3=	nReservedSectors
-											?	( nBytesReserved+gap3 - NUMBER_OF_OCCUPIED_BYTES(nReservedSectors,reservedSectorLength,gap3,false) + nReservedSectors-1 )
-												/
-												nReservedSectors
+											?	Utils::RoundDivUp<WORD>(  nBytesReserved+gap3 - NUMBER_OF_OCCUPIED_BYTES(nReservedSectors,reservedSectorLength,gap3,false),  nReservedSectors  )
 											:	0;
 /*
 {TCHAR buf[80];

@@ -164,7 +164,7 @@ using namespace Yahel;
 		// computes and returns the row containing the specified LogicalPosition
 		if (dataTotalLength){
 			const auto d=div( logPos, dataTotalLength );
-			const TRow nRowsPerRecord = (dataTotalLength+nBytesInRow-1)/nBytesInRow;
+			const TRow nRowsPerRecord=Utils::RoundDivUp<TPosition>( dataTotalLength, nBytesInRow );
 			return d.quot*nRowsPerRecord + d.rem/nBytesInRow;
 		}else
 			return 0;
@@ -172,7 +172,7 @@ using namespace Yahel;
 
 	TPosition CFatHexaView::CFatPathReaderWriter::RowToLogicalPosition(TRow row,WORD nBytesInRow){
 		// converts Row begin (i.e. its first Byte) to corresponding logical position in underlying File and returns the result
-		if (const TRow nRowsPerRecord = (dataTotalLength+nBytesInRow-1)/nBytesInRow){
+		if (const TRow nRowsPerRecord=Utils::RoundDivUp<TPosition>( dataTotalLength, nBytesInRow )){
 			const auto d=div( row, nRowsPerRecord );
 			return d.quot*dataTotalLength + d.rem*nBytesInRow;
 		}else

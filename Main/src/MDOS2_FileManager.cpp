@@ -140,7 +140,7 @@
 			case INFORMATION_SIZE:{
 				// File Size
 				const CDos::CFatPath fatPath(DOS,de);
-				integerEditor.DrawReportModeCell( de->GetLength(), pdis, !fatPath||fatPath.GetNumberOfItems()!=(de->GetLength()+MDOS2_SECTOR_LENGTH_STD-1)/MDOS2_SECTOR_LENGTH_STD );
+				integerEditor.DrawReportModeCell( de->GetLength(), pdis, !fatPath||fatPath.GetNumberOfItems()!=Utils::RoundDivUp<DWORD>(de->GetLength(),MDOS2_SECTOR_LENGTH_STD) );
 				break;
 			}
 			case INFORMATION_ATTRIBUTES:{

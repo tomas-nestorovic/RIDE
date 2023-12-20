@@ -157,7 +157,7 @@
 			nRootDirectoryEntries= rOutFat.type!=CFat::FAT32 ? params->nRootDirectoryEntries : 0;
 			const DWORD fatTmpVal1=nSectorsInTotal-( nReservedSectors=ReservedSectorCounts[f] )-__getCountOfPermanentRootDirectorySectors__();
 			const DWORD fatTmpVal2= sectorSize*nSectorsInCluster*2/rOutFat.type + nFatCopies ;
-			nSectorsFat=(fatTmpVal1+fatTmpVal2-1)/fatTmpVal2;
+			nSectorsFat=Utils::RoundDivUp( fatTmpVal1, fatTmpVal2);
 			// . making sure that FAT usable
 			if (CFat::GetFatType( (fatTmpVal1-nFatCopies*nSectorsFat)/nSectorsInCluster )==rOutFat.type)
 				break;
@@ -207,7 +207,7 @@
 	CMSDOS7::TLogSector16 CMSDOS7::TBootSector::__getCountOfPermanentRootDirectorySectors__() const{
 		// computes and returns the number of Sectors that are permanently occupied by root Directory
 		return	sectorSize
-				? (nRootDirectoryEntries*sizeof(UDirectoryEntry)+sectorSize-1)/sectorSize
+				? Utils::RoundDivUp<DWORD>( nRootDirectoryEntries*sizeof(UDirectoryEntry), sectorSize )
 				: 0;
 	}
 

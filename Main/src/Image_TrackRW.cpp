@@ -164,7 +164,7 @@
 			if (resetDecoderOnIndex){
 				profile.Reset();
 				const TLogTime indexTime=indexPulses[ iNextIndexPulse++ ];
-				currentTime=indexTime + (currentTime-indexTime+profile.iwTimeDefault-1)/profile.iwTimeDefault*profile.iwTimeDefault;
+				currentTime=indexTime + Utils::RoundUpToMuls( currentTime-indexTime, profile.iwTimeDefault );
 			}else
 				iNextIndexPulse++;
 		}
