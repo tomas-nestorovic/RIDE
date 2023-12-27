@@ -78,6 +78,8 @@
 			TLogTime revolutionTime; // single revolution time [nanoseconds]
 			TLogTime cellTime; // single recorded data cell time [nanoseconds]
 			DWORD nCells; // RevolutionTime/CellTime
+
+			bool IsAcceptableCountOfCells(DWORD nCellsQueried) const;
 		} *PCProperties;
 
 		LPCTSTR GetDescription(TType mediumType);

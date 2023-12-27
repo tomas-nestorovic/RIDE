@@ -174,6 +174,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 
 	TStdWinError CHFE::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - must be setting Medium compatible with the FloppyInterface specified in the Header
 		if (header.floppyInterface<TFloppyInterface::LAST_KNOWN)
 			switch (pFormat->mediumType){
@@ -199,7 +200,17 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				default:
 					return ERROR_UNRECOGNIZED_MEDIA;
 			}
+		// - must be setting Medium compatible with the nominal # of Cells
+		if (pFormat->mediumType!=Medium::UNKNOWN)
+			for( TCylinder cyl=0; cyl<=capsImageInfo.maxcylinder; cyl++ ) // inclusive!
+				if (cylInfos[cyl].IsValid())
+					if (Medium::GetProperties(pFormat->mediumType)->IsAcceptableCountOfCells( cylInfos[cyl].nBytesLength/2*8 ))
+						break;
+					else
+						return ERROR_UNRECOGNIZED_MEDIA;		
 		// - base
+		if (floppyType!=pFormat->mediumType)
+			DestroyAllTracks(); // must reconstruct all Tracks with parameters corresponding to new Medium Type
 		return __super::SetMediumTypeAndGeometry( pFormat, sideMap, firstSectorNumber );
 	}
 

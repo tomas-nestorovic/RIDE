@@ -194,6 +194,12 @@
 
 
 namespace Medium{
+	bool TProperties::IsAcceptableCountOfCells(DWORD nCellsQueried) const{
+		return nCells/100*80<nCellsQueried && nCellsQueried<nCells/100*120;
+	}
+
+
+
 	LPCTSTR GetDescription(TType mediumType){
 		// returns the string description of a given MediumType
 		if (const PCProperties p=GetProperties(mediumType))
