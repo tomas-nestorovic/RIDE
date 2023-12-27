@@ -229,23 +229,11 @@
 				return nullptr;
 			}
 		trw.AddIndexTime(0);
-		const TLogTime fullRevolutionTime=nBitsPerTrackOfficial*trw.GetCurrentProfile().iwTimeDefault;
-		TLogTime currentTime=0, *pFluxTimeBuffer=trw.GetBuffer(), *pFluxTime=pFluxTimeBuffer;
-		TLogTime nextIndexTime=fullRevolutionTime;
+		TLogTime currentTime=0, *pFluxTime=trw.GetBuffer();
 		for( BYTE rev=0; rev<nRevs; ){
 			const CapsTrackInfoT2 &cti=ctiRevs[rev++];
+			// . creating fluxes for this Revolution
 			for( CBitReader br(cti,lockFlags); br; ){
-				// . adding new index
-				if (currentTime>=nextIndexTime){
-					trw.AddIndexTime( nextIndexTime );
-					if (rev<nRevs){ // if more Revolutions to follow ...
-						currentTime=nextIndexTime;
-						nextIndexTime+=fullRevolutionTime;
-						break; // ... mustn't overlap into them
-					}else
-						nextIndexTime+=fullRevolutionTime;
-				}
-				// . adding new flux
 				const UDWORD i=br.GetPosition()>>3;
 				if (i<cti.timelen)
 					currentTime+= trw.GetCurrentProfile().iwTimeDefault * cti.timebuf[i]/1000;
@@ -254,10 +242,10 @@
 				if (br.ReadBit())
 					*pFluxTime++=currentTime;
 			}
+			// . adding new index
+			trw.AddIndexTime( currentTime );
 		}
-		trw.AddTimes( pFluxTimeBuffer, pFluxTime-pFluxTimeBuffer );
-		if (trw.GetIndexCount()<=nRevs) // an IPF image may end up here
-			trw.AddIndexTime(currentTime);
+		trw.AddTimes( trw.GetBuffer(), pFluxTime-trw.GetBuffer() );
 		// - creating a Track from above reconstructed flux information
 		return CreateFrom( cb, trw );
 	}
