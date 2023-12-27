@@ -17,6 +17,7 @@
 			EMU_SHUGART,
 			S950_DD,
 			S950_HD,
+			LAST_KNOWN,
 			DISABLED	=0xfe
 		};
 

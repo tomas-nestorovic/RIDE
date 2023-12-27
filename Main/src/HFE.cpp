@@ -175,7 +175,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 	TStdWinError CHFE::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		// - must be setting Medium compatible with the FloppyInterface specified in the Header
-		if (header.floppyInterface!=TFloppyInterface::DISABLED)
+		if (header.floppyInterface<TFloppyInterface::LAST_KNOWN)
 			switch (pFormat->mediumType){
 				case Medium::FLOPPY_DD:{
 					static constexpr TFloppyInterface Compatibles[]={ TFloppyInterface::IBM_PC_DD, TFloppyInterface::ATARI_ST_DD, TFloppyInterface::AMIGA_DD, TFloppyInterface::CPC_DD, TFloppyInterface::GENERIC_SHUGART_DD, TFloppyInterface::MSX2_DD, TFloppyInterface::C64_DD, TFloppyInterface::EMU_SHUGART, TFloppyInterface::S950_DD };
