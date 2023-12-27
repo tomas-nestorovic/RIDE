@@ -1156,11 +1156,8 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 				const PInternalTrack pit=internalTracks[cyl][0];
 				internalTracks[cyl][0]=nullptr; // forcing a new scan
 					if (WORD score= internalTracks[cyl][0]->nSectors + 32*GetCountOfHealthySectors(cyl,0)){
-						if (avgIndexDistance){ // measurement supported/succeeded?
-							const Medium::PCProperties mp=Medium::GetProperties((Medium::TType)type);
-							if (avgIndexDistance/10*9<mp->revolutionTime && mp->revolutionTime<avgIndexDistance/10*11) // 10% tolerance (don't set more for indices on 300 RPM drive appear only 16% slower than on 360 RPM drive!)
-								score|=0x8000;
-						}
+						if (Medium::GetProperties( (Medium::TType)type )->IsAcceptableRevolutionTime(avgIndexDistance))
+							score|=0x8000;
 						if (score>highestScore)
 							highestScore=score, bestMediumType=(Medium::TType)type;
 					}

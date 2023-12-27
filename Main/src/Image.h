@@ -79,6 +79,7 @@
 			TLogTime cellTime; // single recorded data cell time [nanoseconds]
 			DWORD nCells; // RevolutionTime/CellTime
 
+			bool IsAcceptableRevolutionTime(TLogTime tRevolutionQueried) const;
 			bool IsAcceptableCountOfCells(DWORD nCellsQueried) const;
 		} *PCProperties;
 

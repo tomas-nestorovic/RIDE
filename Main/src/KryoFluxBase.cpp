@@ -140,7 +140,7 @@
 			cft.gapbvalue=0x4e;
 			cft.trackbuf=bitBuffer;
 			if (const Medium::PCProperties p=Medium::GetProperties(floppyType))
-				cft.tracklen=(p->nCells+7)/8; // # of bits to # of whole Bytes
+				cft.tracklen=Utils::RoundDivUp( p->nCells, (DWORD)8 ); // # of bits round up to whole # of Bytes
 			else
 				return ERROR_INVALID_MEDIA;
 			cft.buflen=sizeof(bitBuffer);

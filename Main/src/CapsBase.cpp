@@ -204,29 +204,27 @@
 			return nullptr;
 		// - reconstructing flux information over all Revolutions of the disk
 		nRevs=std::min( nRevs, (BYTE)CAPS_MTRS ); // just to be sure we don't overrun the buffers
-		UDWORD nBitsPerTrack[CAPS_MTRS], nBitsPerTrackOfficial, nBitsTotally=0;
+		UDWORD nBitsPerTrack[CAPS_MTRS], nBitsTotally=0;
 		for( BYTE rev=0; rev<nRevs; rev++ )
 			nBitsTotally += nBitsPerTrack[rev] = CBitReader(ctiRevs[rev],lockFlags).Count;
 		CTrackReaderWriter trw( nBitsTotally*125/100, CTrackReader::FDD_KEIR_FRASER, true ); // pessimistic estimation of # of fluxes; allowing for 25% of false "ones" introduced by "FDC-like" decoders
 			if (cb.floppyType!=Medium::UNKNOWN && !ctiRevs[0].timelen){
 				// Medium already known and the CAPS Track does NOT contain explicit timing information
-				nBitsPerTrackOfficial=Medium::GetProperties(cb.floppyType)->nCells;
 				trw.SetMediumType(cb.floppyType); // adopting the Medium
-			}else if (*nBitsPerTrack>( nBitsPerTrackOfficial=Medium::TProperties::FLOPPY_HD_350.nCells )*95/100) // 5% tolerance
-				// likely a 3.5" HD medium
-				trw.SetMediumType( Medium::FLOPPY_HD_350 );
-			else if (*nBitsPerTrack>( nBitsPerTrackOfficial=Medium::TProperties::FLOPPY_HD_525.nCells )*95/100) // 5% tolerance
-				// likely a 5.25" HD medium
-				trw.SetMediumType( Medium::FLOPPY_HD_525 );
-			else if (*nBitsPerTrack>( nBitsPerTrackOfficial=Medium::TProperties::FLOPPY_DD.nCells )*95/100) // 5% tolerance
-				// likely a 3.5" DD or 5.25" medium in 300 RPM drive
-				trw.SetMediumType( Medium::FLOPPY_DD );
-			else if (*nBitsPerTrack>( nBitsPerTrackOfficial=Medium::TProperties::FLOPPY_DD_525.nCells )*95/100) // 5% tolerance
-				// likely a 5.25" DD medium in 360 RPM drive
-				trw.SetMediumType( Medium::FLOPPY_DD_525 );
-			else{
-				ASSERT(FALSE); //TODO: 8" SD medium
-				return nullptr;
+			}else{
+				// Medium not yet known; estimating it by the average # of Cells per Revolution
+				DWORD type=1;
+				for( const UDWORD nBitsPerTrackAvg=nBitsTotally/nRevs; type!=0; type<<=1 )
+					if (type&Medium::FLOPPY_ANY)
+						if (Medium::GetProperties( (Medium::TType)type )->IsAcceptableCountOfCells(nBitsPerTrackAvg)){
+							// likely the correct Medium type
+							trw.SetMediumType( (Medium::TType)type );
+							break;
+						}
+				if (!type){
+					ASSERT(FALSE); //TODO: 8" SD medium
+					return nullptr;
+				}
 			}
 		trw.AddIndexTime(0);
 		TLogTime currentTime=0, *pFluxTime=trw.GetBuffer();
@@ -778,11 +776,8 @@ invalidTrack:
 					const TSector nRecognizedSectors=pit->nSectors;
 					std::swap( internalTracks[cyl][0], pit );
 						if (WORD score= nRecognizedSectors + 32*GetCountOfHealthySectors(cyl,0)){
-							if (const TLogTime avgIndexDistance=trw.GetAvgIndexDistance()){ // at least two Indices on the Track?
-								const Medium::PCProperties mp=Medium::GetProperties((Medium::TType)type);
-								if (avgIndexDistance/10*9<mp->revolutionTime && mp->revolutionTime<avgIndexDistance/10*11) // 10% tolerance (don't set more for indices on 300 RPM drive appear only 16% slower than on 360 RPM drive!)
-									score|=0x8000;
-							}
+							if (Medium::GetProperties( (Medium::TType)type )->IsAcceptableRevolutionTime( trw.GetAvgIndexDistance() ))
+								score|=0x8000;
 							if (score>highestScore)
 								highestScore=score, bestMediumType=rOutMediumType;
 						}

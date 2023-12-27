@@ -194,6 +194,10 @@
 
 
 namespace Medium{
+	bool TProperties::IsAcceptableRevolutionTime(TLogTime tRevolutionQueried) const{
+		return revolutionTime/10*9<tRevolutionQueried && tRevolutionQueried<revolutionTime/10*11; // 10% tolerance (don't set more for indices on 300 RPM drive appear only 16% slower than on 360 RPM drive!)
+	}
+
 	bool TProperties::IsAcceptableCountOfCells(DWORD nCellsQueried) const{
 		return nCells/100*80<nCellsQueried && nCellsQueried<nCells/100*120;
 	}
