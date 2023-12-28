@@ -155,8 +155,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				for( THead head=2; head>0; )
 					if (const DWORD tdhOffset=tdhOffsets[cylFile][--head]){ // Track actually exists in the file?
 						const TCylinder cyl=cylFile>>(BYTE)params.doubleTrackStep;
-						const PCInternalTrack pit=GetInternalTrackSafe(cyl,head);
-						if (!pit || !pit->modified){ // not Modified or not even read Track?
+						if (GetModifiedTrackSafe(cyl,head)==nullptr){ // not Modified or not even read Track?
 							TTrackDataHeader tdh(0);
 							f.Seek( tdhOffset, CFile::begin );
 							if (!tdh.Read( f, cylFile, head, header.nAvailableRevolutions ))
@@ -192,8 +191,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 					const auto fTargetLength=fTarget.GetLength();
 					if (savingToCurrentFile){
 						// modifying existing file
-						if (const PInternalTrack pit=GetInternalTrackSafe(cyl,head)) // Track read?
-							if (pit->modified){ // and Modified?
+						if (const PInternalTrack pit=GetModifiedTrackSafe(cyl,head)){ // Track modified?
 								pit->FlushSectorBuffers(); // convert all modifications into flux transitions
 								if (const DWORD trackLength=TrackToStream( *pit, CMemFile(buffer,SCP_BUFFER_CAPACITY), cylFile, head, bStreamAdjusted )){
 									// conversion of the Track to SuperCardPro stream succeeded?
@@ -225,8 +223,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 							}
 					}else{
 						// creating a brand new file
-						const PInternalTrack pit=GetInternalTrackSafe(cyl,head);
-						if (pit && pit->modified){ // Track Modified?
+						if (const PInternalTrack pit=GetModifiedTrackSafe(cyl,head)){ // Track Modified?
 							pit->FlushSectorBuffers(); // convert all modifications into flux transitions
 							if (const DWORD trackLength=TrackToStream( *pit, CMemFile(buffer,SCP_BUFFER_CAPACITY), cylFile, head, bStreamAdjusted )){
 								// conversion of the Track to SuperCardPro stream succeeded?

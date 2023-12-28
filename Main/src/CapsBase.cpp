@@ -944,6 +944,19 @@ invalidTrack:
 		}
 	}
 
+	CCapsBase::PInternalTrack CCapsBase::GetModifiedTrackSafe(TCylinder cyl,THead head) const{
+		if (cyl<=capsImageInfo.maxcylinder && head<=capsImageInfo.maxhead) // inclusive!
+			if (const PInternalTrack pit=internalTracks[cyl][head]) // Track buffered?
+				if (pit->modified)
+					return pit;
+		return nullptr;
+	}
+
+	bool CCapsBase::AnyTrackModified(TCylinder cyl) const{
+		// True <=> Track under any of Heads has been Modified, otherwise False
+		return GetModifiedTrackSafe(cyl,0)!=GetModifiedTrackSafe(cyl,1); // both Null if none of the Modified
+	}
+
 	void CCapsBase::DestroyAllTracks(){
 		// disposes all InternalTracks created thus far
 		EXCLUSIVELY_LOCK_THIS_IMAGE();

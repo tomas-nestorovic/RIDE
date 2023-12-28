@@ -187,6 +187,8 @@
 		virtual TStdWinError UploadTrack(TCylinder cyl,THead head,CTrackReader tr) const;
 		void WarnOnAndCorrectExceedingCylinders();
 		PInternalTrack GetInternalTrackSafe(TCylinder cyl,THead head) const;
+		PInternalTrack GetModifiedTrackSafe(TCylinder cyl,THead head) const;
+		bool AnyTrackModified(TCylinder cyl) const;
 		void DestroyAllTracks();
 		TStdWinError VerifyTrack(TCylinder cyl,THead head,const CTrackReaderWriter &trwWritten,bool showDiff,std::unique_ptr<CTrackReaderWriter> *ppOutReadTrack,const volatile bool &cancelled) const;
 		TStdWinError DetermineMagneticReliabilityByWriting(Medium::TType floppyType,TCylinder cyl,THead head,const volatile bool &cancelled) const;
