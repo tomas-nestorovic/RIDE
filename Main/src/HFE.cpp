@@ -65,6 +65,37 @@
 
 
 
+	CHFE::CTrackBytes::CTrackBytes(WORD count)
+		// ctor
+		: Utils::CCallocPtr<BYTE>( Utils::RoundUpToMuls(count,(WORD)sizeof(TTrackData)), 0 )
+		, count(count) {
+		ASSERT( count>0 ); // call Invalidate() to indicate "no Bytes"
+	}
+
+	CHFE::CTrackBytes::CTrackBytes(CTrackBytes &&r)
+		// move ctor
+		: count(r.count) {
+		reset( r.release() );
+	}
+
+	void CHFE::CTrackBytes::Invalidate(){
+		// disposes all Bytes, rendering this object unusable
+		reset(nullptr), count=0;
+	}
+
+	void CHFE::CTrackBytes::ReverseBitsInEachByte() const{
+		// reverses the order of bits in each Byte
+		for( PBYTE p=*this,pLast=p+count; p<pLast; p++ )
+			*p=Utils::GetReversedByte(*p);
+	}
+
+
+
+
+
+
+
+
 	#define INI_SECTION		_T("HxC2k1")
 
 	CHFE::CHFE()
@@ -153,19 +184,11 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		// - construction of InternalTrack
 		if (!cylInfos[cyl].IsValid()) // maybe an error during Image creation?
 			return CTrackReaderWriter::Invalid;
-		f.Seek( cylInfos[cyl].nBlocksOffset*sizeof(TCylinderBlock)+head*sizeof(TTrackBlock), CFile::begin );
-		BYTE trackBytes[USHRT_MAX+1], *pTrackBytes=trackBytes;
-		for( WORD nCylBlocks=Utils::RoundDivUp(cylInfos[cyl].nBytesLength,(WORD)sizeof(TCylinderBlock)); nCylBlocks-->0; ){
-			const auto nBytesRead=f.Read( pTrackBytes, sizeof(TTrackBlock) );
-			f.Seek( sizeof(TTrackBlock), CFile::current ); // skip unwanted Head
-			pTrackBytes+=nBytesRead;
-		}
-		if (const auto trackLength=std::min<UDWORD>( cylInfos[cyl].nBytesLength, pTrackBytes-trackBytes )){
+		if (const auto &&trackBytes=ReadTrackBytes( cyl, head )){
+			trackBytes.ReverseBitsInEachByte();
 			CapsTrackInfoT2 cti={};
 				cti.trackbuf=trackBytes;
-				cti.tracklen=trackLength;
-				while (pTrackBytes-->trackBytes)
-					*pTrackBytes=Utils::GetReversedByte(*pTrackBytes);
+				cti.tracklen=trackBytes.GetCount();
 			rit = CInternalTrack::CreateFrom( *this, &cti, 1, 0 );
 			return *rit;
 		}
@@ -230,4 +253,22 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		::ZeroMemory( cylInfos, sizeof(cylInfos) );
 		::ZeroMemory( &capsImageInfo, sizeof(capsImageInfo) );
 		return ERROR_SUCCESS;
+	}
+
+
+	CHFE::CTrackBytes CHFE::ReadTrackBytes(TCylinder cyl,THead head) const{
+		// reads from File and returns raw data of specified Track
+		f.Seek(  cylInfos[cyl].nBlocksOffset*sizeof(TCylinderBlock) + head*sizeof(TTrackData),  CFile::begin  );
+		CTrackBytes result( cylInfos[cyl].nBytesLength/2 );
+		PBYTE pLast=result;
+		for( auto nCylBlocks=Utils::RoundDivUp(cylInfos[cyl].nBytesLength,(WORD)sizeof(TCylinderBlock)); nCylBlocks-->0; ){
+			const auto nBytesRead=f.Read( pLast, sizeof(TTrackData) );
+			if (nBytesRead!=sizeof(TTrackData)){
+				result.Invalidate();
+				break;
+			}
+			f.Seek( sizeof(TTrackData), CFile::current ); // skip unwanted Head
+			pLast+=nBytesRead;
+		}
+		return result;
 	}

@@ -63,17 +63,16 @@
 			UHeader();
 
 			bool IsValid() const;
-			inline bool WantDoubleTrackStep() const{ return step==TStep::DOUBLE; }
 		} header;
 
 		#pragma pack(1)
-		struct TTrackBlock sealed{
-			BYTE data[256]; // 256*8 bits
+		struct TTrackData sealed{
+			BYTE bytes[256]; // 256*8 bits
 		};
 
 		#pragma pack(1)
 		struct TCylinderBlock sealed{
-			TTrackBlock data[2]; // 2 Heads
+			TTrackData head[2]; // 2 Heads
 		};
 
 		#pragma pack(1)
@@ -84,8 +83,21 @@
 			inline bool IsValid() const{ return nBlocksOffset!=0 && nBytesLength!=0; }
 		} cylInfos[FDD_CYLINDERS_MAX];
 
+		class CTrackBytes sealed:public Utils::CCallocPtr<BYTE>{
+			WORD count;
+		public:
+			CTrackBytes(WORD count);
+			CTrackBytes(CTrackBytes &&r);
+
+			inline operator PBYTE() const{ return get(); }
+			inline WORD GetCount() const{ return count; }
+			void Invalidate();
+			void ReverseBitsInEachByte() const;
+		};
+
 		mutable CFile f;
 
+		CTrackBytes ReadTrackBytes(TCylinder cyl,THead head) const;
 		//TStdWinError SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap) override;
 	public:
 		static const TProperties Properties;
