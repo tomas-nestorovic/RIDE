@@ -285,6 +285,14 @@
 		return ReadBit(tDummy);
 	}
 
+	char CImage::CTrackReader::ReadBits8(BYTE &rOut){
+		// returns the number of bits read into the output Byte
+		for( char n=0; n<8; n++,rOut=(rOut<<1)|(BYTE)ReadBit() )
+			if (!*this)
+				return n;
+		return 8;
+	}
+
 	bool CImage::CTrackReader::ReadBits15(WORD &rOut){
 		// True <=> at least 16 bits have not yet been read, otherwise False
 		for( BYTE n=15; n-->0; rOut=(rOut<<1)|(BYTE)ReadBit() )

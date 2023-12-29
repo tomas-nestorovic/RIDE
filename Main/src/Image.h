@@ -542,6 +542,7 @@
 			bool ReadBit(TLogTime &rtOutOne);
 			bool ReadBit();
 			bool IsLastReadBitHealthy() const;
+			char ReadBits8(BYTE &rOut);
 			bool ReadBits15(WORD &rOut);
 			bool ReadBits16(WORD &rOut);
 			bool ReadBits32(DWORD &rOut);

@@ -92,6 +92,7 @@
 			inline operator PBYTE() const{ return get(); }
 			inline WORD GetCount() const{ return count; }
 			inline PBYTE GetEnd() const{ return get()+count; }
+			inline void TrimTo(WORD newCount){ count=newCount; }
 			void Invalidate();
 			void ReverseBitsInEachByte() const;
 		};
@@ -99,18 +100,20 @@
 		mutable CFile f;
 
 		CTrackBytes ReadTrackBytes(TCylinder cyl,THead head) const;
-		//TStdWinError SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap) override;
+		CTrackBytes TrackToBytes(CInternalTrack &rit) const;
+		TStdWinError SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap) override;
 	public:
 		static const TProperties Properties;
 
 		CHFE();
 
 		BOOL OnOpenDocument(LPCTSTR lpszPathName) override;
-		//TStdWinError SaveTrack(TCylinder cyl,THead head,const volatile bool &cancelled) const;
+		TStdWinError SaveTrack(TCylinder cyl,THead head,const volatile bool &cancelled) const;
 		CTrackReader ReadTrack(TCylinder cyl,THead head) const override;
 		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
 		bool EditSettings(bool initialEditing) override;
 		TStdWinError Reset() override;
+		TStdWinError FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte,const volatile bool &cancelled) override;
 	};
 
 #endif // HFE_H

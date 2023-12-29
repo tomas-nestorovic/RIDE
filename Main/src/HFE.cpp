@@ -18,7 +18,6 @@
 		Medium::FLOPPY_ANY, // supported Media
 		Codec::MFM, // supported Codecs
 		1,16384	// Sector supported min and max length
-		,true // read-only
 	};
 
 
@@ -64,6 +63,8 @@
 
 
 
+
+	#define TRACK_BYTES_MAX	USHRT_MAX
 
 	CHFE::CTrackBytes::CTrackBytes(WORD count)
 		// ctor
@@ -120,7 +121,7 @@
 		)
 			return FALSE;
 		// - opening
-		canBeModified=false; // assumption; TODO: assume True
+		canBeModified=true; // assumption
 		if (TStdWinError err=OpenImageForReadingAndWriting(lpszPathName,f)) // if cannot open for both reading and writing ...
 			if ( err=OpenImageForReading(lpszPathName,f) ){ // ... trying to open at least for reading, and if neither this works ...
 				::SetLastError(err);
@@ -256,6 +257,26 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		return ERROR_SUCCESS;
 	}
 
+	TStdWinError CHFE::SaveTrack(TCylinder cyl,THead head,const volatile bool &cancelled) const{
+		// saves the specified Track to the inserted Medium; returns Windows standard i/o error
+		return ERROR_NOT_SUPPORTED; // individual Track saving is not supported for this kind of Image (OnSaveDocument must be called instead)
+	}
+
+	TStdWinError CHFE::FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte,const volatile bool &cancelled){
+		// formats given Track {Cylinder,Head} to the requested NumberOfSectors, each with corresponding Length and FillerByte as initial content; returns Windows standard i/o error
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		// - grow before calling base (for current Cyl/Head dimensions mustn't be the cause of failure)
+		const UDWORD nNewCylsMax=std::max<UDWORD>( capsImageInfo.maxcylinder, cyl ); // inclusive!
+		const UDWORD nNewHeadsMax=std::max<UDWORD>( capsImageInfo.maxhead, head ); // inclusive!
+{		const auto mc0=Utils::CVarTempReset<UDWORD>( capsImageInfo.maxcylinder, nNewCylsMax );
+		const auto mh0=Utils::CVarTempReset<UDWORD>( capsImageInfo.maxhead, nNewHeadsMax );
+		if (const TStdWinError err=__super::FormatTrack( cyl, head, codec, nSectors, bufferId, bufferLength, bufferFdcStatus, gap3, fillerByte, cancelled ))
+			return err;
+}		// - adopt grown Cyl/Head dimensions
+		capsImageInfo.maxcylinder=nNewCylsMax;
+		capsImageInfo.maxhead=nNewHeadsMax;
+		return ERROR_SUCCESS;
+	}
 
 	CHFE::CTrackBytes CHFE::ReadTrackBytes(TCylinder cyl,THead head) const{
 		// reads from File and returns raw data of specified Track
@@ -272,4 +293,121 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			pLast+=nBytesRead;
 		}
 		return result;
+	}
+
+	CHFE::CTrackBytes CHFE::TrackToBytes(CInternalTrack &rit) const{
+		// converts specified InternalTrack to HFE-encoded Bytes
+		CTrackBytes result(TRACK_BYTES_MAX);
+		rit.FlushSectorBuffers();
+		PBYTE p=result;
+		CTrackReader tr=rit;
+		for( tr.RewindToIndexAndResetProfile(0); tr; ){
+			const char nBitsRead=tr.ReadBits8(*p);
+			*p<<=(8-nBitsRead);
+			p++;
+		}
+		result.TrimTo( p-result );
+		result.ReverseBitsInEachByte();
+		return result;
+	}
+
+	TStdWinError CHFE::SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap){
+		// saves all Modified Tracks; returns Windows standard i/o error
+		const DWORD nRequiredBytesHeaderAndCylInfos=sizeof(UHeader)+Utils::RoundUpToMuls( (int)sizeof(TCylinderInfo)*GetCylinderCount(), (int)sizeof(TBlock) );
+		if (nRequiredBytesHeaderAndCylInfos!=sizeof(UHeader)+sizeof(TBlock)) // only 1 Block allowed for CylInfo table
+			return ERROR_NOT_SUPPORTED;
+{		CFile fTmp;
+		const bool savingToCurrentFile= lpszPathName==f.GetFilePath() && f.m_hFile!=CFile::hFileNull && ::GetFileAttributes(lpszPathName)!=INVALID_FILE_ATTRIBUTES; // saving to the same file and that file exists (handle doesn't exist when creating new Image)
+		if (!savingToCurrentFile)
+			if (const TStdWinError err=CreateImageForWriting(lpszPathName,fTmp))
+				return err;
+		ap.SetProgressTarget( 2*ARRAYSIZE(cylInfos) + 1 + 1 );
+		const Medium::PCProperties mp=Medium::GetProperties( floppyType );
+		// - creating ContentLayout map of the file in which UNMODIFIED occupied space is represented by positive numbers, whereas gaps with negative numbers
+		typedef std::map<DWORD,LONG> CContentLayout;
+		CContentLayout contentLayout; // key = position in file, value>0 = Track length, value<0 = unused gap size
+		if (savingToCurrentFile){
+			// . adding unmodified Tracks to ContentLayout as "occupied" (value>0)
+			for( TCylinder cyl=ARRAYSIZE(cylInfos); cyl-->0; )
+				if (cylInfos[cyl].IsValid()) // Cylinder actually existed in the file before?
+					if (!AnyTrackModified(cyl)) // not Modified or not even read Cylinder?
+						contentLayout.insert(
+							std::make_pair( cylInfos[cyl].nBlocksOffset*sizeof(TBlock), (LONG)cylInfos[cyl].nBytesLength )
+						);
+			// . adding gaps (value<0)
+			CContentLayout gaps;
+			DWORD prevTrackEnd=sizeof(UHeader)+Utils::RoundUpToMuls(header.nCylinders*sizeof(TCylinderInfo), sizeof(TBlock) );
+			for each( const auto &kvp in contentLayout ){
+				if (prevTrackEnd<kvp.first) // gap in the file?
+					gaps.insert(  std::make_pair( prevTrackEnd, prevTrackEnd-kvp.first )  );
+				prevTrackEnd=kvp.first+kvp.second;
+			}
+			contentLayout.insert( gaps.cbegin(), gaps.cend() );
+		}
+		// - saving
+		CFile &fTarget= savingToCurrentFile ? f : fTmp;
+		if (!savingToCurrentFile)
+			fTarget.SetLength( nRequiredBytesHeaderAndCylInfos );
+		auto sub=ap.CreateSubactionProgress( ARRAYSIZE(cylInfos), ARRAYSIZE(cylInfos) );
+		for( TCylinder cyl=0; cyl<ARRAYSIZE(cylInfos); sub.UpdateProgress(++cyl) ){
+			bool cylinderModified=false; // assumption (nothing to do with the underlying Image)
+			if (!AnyTrackModified(cyl)) // not Modified or not even read Cylinder?
+				continue;
+			const PInternalTrack pitHead0=GetModifiedTrackSafe(cyl,0), pitHead1=GetModifiedTrackSafe(cyl,1);
+			const CTrackBytes head0=pitHead0!=nullptr // Track 0 modified?
+									? TrackToBytes( *pitHead0 )
+									: ReadTrackBytes( cyl, 0 );
+			const CTrackBytes head1=pitHead1!=nullptr // Track 1 modified?
+									? TrackToBytes( *pitHead1 )
+									: ReadTrackBytes( cyl, 1 );
+			const auto nBytesLongerTrack=std::max( head0.GetCount(), head1.GetCount() );
+			auto nBytesCylinder=Utils::RoundUpToMuls( nBytesLongerTrack*2, (int)sizeof(TCylinderBlock) );
+			DWORD fPosition=Utils::RoundUpToMuls<DWORD>( fTarget.GetLength(), sizeof(TBlock) ); // assumption (Cylinder doesn't fit in anywhere between existing Track and must be appended to the Image)
+			for( auto it=contentLayout.begin(); it!=contentLayout.end(); it++ )
+				if (it->second<=-nBytesCylinder){ // a gap that can contain the Cylinder
+					if (it->second<-nBytesCylinder) // the gap not yet entirely filled?
+						contentLayout.insert( // shrunk new gap
+							std::make_pair( it->first+nBytesCylinder, it->second+nBytesCylinder )
+						);
+					fPosition=it->first; // save Cylinder in this gap
+					it->second=nBytesCylinder; // this gap is now the Cylinder
+					break;
+				}
+			cylInfos[cyl].nBlocksOffset=Utils::RoundDivUp<DWORD>( fPosition, sizeof(TBlock) );
+			cylInfos[cyl].nBytesLength=nBytesCylinder;
+			if (fTarget.Seek( fPosition, CFile::begin )<fPosition)
+				fTarget.SetLength(fPosition), fTarget.SeekToEnd();
+			TCylinderBlock cylBlock;
+			for( PCBYTE p0=head0, p1=head1; nBytesCylinder>0; nBytesCylinder-=sizeof(cylBlock) ){
+				::ZeroMemory( &cylBlock, sizeof(cylBlock) );
+				if (p0<head0.GetEnd())
+					::memcpy( cylBlock.head[0].bytes, p0, sizeof(TTrackData) ),  p0+=sizeof(TTrackData);
+				if (p1<head1.GetEnd())
+					::memcpy( cylBlock.head[1].bytes, p1, sizeof(TTrackData) ),  p1+=sizeof(TTrackData);
+				fTarget.Write( &cylBlock, sizeof(cylBlock) );
+			}
+		}
+		// - consolidating/defragmenting the file
+		if (savingToCurrentFile){ //TODO
+			auto sub=ap.CreateSubactionProgress( ARRAYSIZE(cylInfos), f.GetLength() );
+			//TODO
+			//f.SetLength(f.GetPosition()); // "trimming" eventual unnecessary data (e.g. when unformatting Cylinders)
+		}
+		// - save CylInfos
+		fTarget.Seek( sizeof(header), CFile::begin );
+		fTarget.Write( cylInfos, sizeof(cylInfos) );
+		ap.IncrementProgress();
+		// - update and save Header
+		header.nCylinders=GetCylinderCount();
+		header.nHeads=GetHeadCount();
+		header.bitrate=Medium::GetProperties(floppyType)->nCells/1000;
+		ASSERT( header.IsValid() );
+		fTarget.SeekToBegin();
+		fTarget.Write( &header, sizeof(header) );
+		ap.IncrementProgress();
+		// - reopening Image's underlying file
+		//m_bModified=FALSE; // commented out as done by caller
+		if (f.m_hFile!=CFile::hFileNull)
+			f.Close();
+}		return OpenImageForReadingAndWriting(lpszPathName,f);
 	}
