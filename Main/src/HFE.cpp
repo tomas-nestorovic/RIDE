@@ -67,7 +67,7 @@
 
 	CHFE::CTrackBytes::CTrackBytes(WORD count)
 		// ctor
-		: Utils::CCallocPtr<BYTE>( Utils::RoundUpToMuls(count,(WORD)sizeof(TTrackData)), 0 )
+		: Utils::CCallocPtr<BYTE>( Utils::RoundUpToMuls<int>(count,sizeof(TTrackData)), 0 )
 		, count(count) {
 		ASSERT( count>0 ); // call Invalidate() to indicate "no Bytes"
 	}
@@ -85,7 +85,7 @@
 
 	void CHFE::CTrackBytes::ReverseBitsInEachByte() const{
 		// reverses the order of bits in each Byte
-		for( PBYTE p=*this,pLast=p+count; p<pLast; p++ )
+		for( PBYTE p=*this,pLast=GetEnd(); p<pLast; p++ )
 			*p=Utils::GetReversedByte(*p);
 	}
 
@@ -232,8 +232,9 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 					else
 						return ERROR_UNRECOGNIZED_MEDIA;		
 		// - base
-		if (floppyType!=pFormat->mediumType)
-			DestroyAllTracks(); // must reconstruct all Tracks with parameters corresponding to new Medium Type
+		if (floppyType!=pFormat->mediumType) // must reconstruct all Tracks with parameters corresponding to new Medium Type?
+			if (m_strPathName.GetLength()>0)
+				DestroyAllTracks(); 
 		return __super::SetMediumTypeAndGeometry( pFormat, sideMap, firstSectorNumber );
 	}
 

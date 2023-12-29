@@ -80,7 +80,7 @@
 			WORD nBlocksOffset;
 			WORD nBytesLength;
 
-			inline bool IsValid() const{ return nBlocksOffset!=0 && nBytesLength!=0; }
+			inline bool IsValid() const{ return nBlocksOffset>=2 && nBytesLength!=0; }
 		} cylInfos[FDD_CYLINDERS_MAX];
 
 		class CTrackBytes sealed:public Utils::CCallocPtr<BYTE>{
@@ -91,6 +91,7 @@
 
 			inline operator PBYTE() const{ return get(); }
 			inline WORD GetCount() const{ return count; }
+			inline PBYTE GetEnd() const{ return get()+count; }
 			void Invalidate();
 			void ReverseBitsInEachByte() const;
 		};
