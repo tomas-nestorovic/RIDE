@@ -295,10 +295,9 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		rit.FlushSectorBuffers();
 		PBYTE p=result;
 		CTrackReader tr=rit;
-		for( tr.RewindToIndexAndResetProfile(0); tr; ){
+		for( tr.RewindToIndexAndResetProfile(0); tr && p-result<TRACK_BYTES_MAX; ){
 			const char nBitsRead=tr.ReadBits8(*p);
-			*p<<=(8-nBitsRead);
-			p++;
+			*p++<<=(8-nBitsRead);
 		}
 		result.TrimTo( p-result );
 		result.ReverseBitsInEachByte();
@@ -330,6 +329,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		ap.SetProgressTarget( 2*ARRAYSIZE(cylInfos) + 1 + 1 );
 		const Medium::PCProperties mp=Medium::GetProperties( floppyType );
 		// - creating ContentLayout map of the file in which UNMODIFIED occupied space is represented by positive numbers, whereas gaps with negative numbers
+		CFile &fTarget= savingToCurrentFile ? f : fTmp;
 		typedef std::map<DWORD,LONG> CContentLayout;
 		CContentLayout contentLayout; // key = position in file, value>0 = Track length, value<0 = unused gap size
 		if (savingToCurrentFile){
@@ -338,9 +338,16 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				if (cylInfos[cyl].IsValid()) // Cylinder actually existed in the file before?
 					if (!AnyTrackModified(cyl)) // not Modified or not even read Cylinder?
 						contentLayout.insert(
-							std::make_pair( cylInfos[cyl].nBlocksOffset*sizeof(TBlock), (LONG)cylInfos[cyl].nBytesLength )
+							std::make_pair( cylInfos[cyl].nBlocksOffset*sizeof(TBlock), Utils::RoundUpToMuls<LONG>(cylInfos[cyl].nBytesLength,sizeof(TBlock)) )
 						);
 			// . adding gaps (value<0)
+			if (contentLayout.size()>0){ // some Cylinders left untouched in the Image?
+				const auto itLastCyl=contentLayout.crbegin();
+				const auto lastCylEnd=itLastCyl->first+itLastCyl->second;
+				contentLayout.insert(
+					std::make_pair( lastCylEnd, lastCylEnd-fTarget.GetLength() )
+				);
+			}
 			CContentLayout gaps;
 			DWORD prevTrackEnd=sizeof(UHeader)+Utils::RoundUpToMuls(header.nCylinders*sizeof(TCylinderInfo), sizeof(TBlock) );
 			for each( const auto &kvp in contentLayout ){
@@ -349,16 +356,13 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				prevTrackEnd=kvp.first+kvp.second;
 			}
 			contentLayout.insert( gaps.cbegin(), gaps.cend() );
-		}
-		// - saving
-		CFile &fTarget= savingToCurrentFile ? f : fTmp;
-		if (!savingToCurrentFile)
+		}else
 			fTarget.SetLength( nRequiredBytesHeaderAndCylInfos );
+		// - saving
 		auto sub=ap.CreateSubactionProgress( ARRAYSIZE(cylInfos), ARRAYSIZE(cylInfos) );
 		CTrackBytes invalidTrackBytes(1);
 			invalidTrackBytes.Invalidate();
 		for( TCylinder cyl=0; cyl<ARRAYSIZE(cylInfos); sub.UpdateProgress(++cyl) ){
-			bool cylinderModified=false; // assumption (nothing to do with the underlying Image)
 			if (!AnyTrackModified(cyl)) // not Modified or not even read Cylinder?
 				continue;
 			const PInternalTrack pitHead0=GetInternalTrackSafe(cyl,0), pitHead1=GetInternalTrackSafe(cyl,1);
@@ -382,7 +386,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 					break;
 				}
 			cylInfos[cyl].nBlocksOffset=Utils::RoundDivUp<DWORD>( fPosition, sizeof(TBlock) );
-			cylInfos[cyl].nBytesLength=nBytesCylinder;
+			cylInfos[cyl].nBytesLength=nBytesLongerTrack*2;
 			if (fTarget.Seek( fPosition, CFile::begin )<fPosition)
 				fTarget.SetLength(fPosition), fTarget.SeekToEnd();
 			TCylinderBlock cylBlock;
