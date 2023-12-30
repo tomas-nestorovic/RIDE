@@ -101,6 +101,7 @@
 
 		CTrackBytes ReadTrackBytes(TCylinder cyl,THead head) const;
 		CTrackBytes TrackToBytes(CInternalTrack &rit) const;
+		PInternalTrack BytesToTrack(const CTrackBytes &bytes) const;
 		TStdWinError SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap) override;
 	public:
 		static const TProperties Properties;

@@ -182,18 +182,12 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		PInternalTrack &rit=internalTracks[cyl][head];
 		if (rit!=nullptr)
 			return *rit;
-		// - construction of InternalTrack
+		// - construction of InternalTracks for both Heads
 		if (!cylInfos[cyl].IsValid()) // maybe an error during Image creation?
 			return CTrackReaderWriter::Invalid;
-		if (const auto &&trackBytes=ReadTrackBytes( cyl, head )){
-			trackBytes.ReverseBitsInEachByte();
-			CapsTrackInfoT2 cti={};
-				cti.trackbuf=trackBytes;
-				cti.tracklen=trackBytes.GetCount();
-			rit = CInternalTrack::CreateFrom( *this, &cti, 1, 0 );
-			return *rit;
-		}
-		return CTrackReaderWriter::Invalid;
+		internalTracks[cyl][0]=BytesToTrack( ReadTrackBytes(cyl,0) );
+		internalTracks[cyl][1]=BytesToTrack( ReadTrackBytes(cyl,1) );
+		return	rit ? *rit : CTrackReaderWriter::Invalid;
 	}
 
 	TStdWinError CHFE::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){
@@ -311,6 +305,18 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		return result;
 	}
 
+	CCapsBase::PInternalTrack CHFE::BytesToTrack(const CTrackBytes &bytes) const{
+		// converts specified HFE-encoded Bytes to InternalTrack
+		if (bytes){
+			bytes.ReverseBitsInEachByte();
+			CapsTrackInfoT2 cti={};
+				cti.trackbuf=bytes;
+				cti.tracklen=bytes.GetCount();
+			return CInternalTrack::CreateFrom( *this, &cti, 1, 0 );
+		}else
+			return nullptr;
+	}
+
 	TStdWinError CHFE::SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap){
 		// saves all Modified Tracks; returns Windows standard i/o error
 		const DWORD nRequiredBytesHeaderAndCylInfos=sizeof(UHeader)+Utils::RoundUpToMuls( (int)sizeof(TCylinderInfo)*GetCylinderCount(), (int)sizeof(TBlock) );
@@ -349,17 +355,19 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		if (!savingToCurrentFile)
 			fTarget.SetLength( nRequiredBytesHeaderAndCylInfos );
 		auto sub=ap.CreateSubactionProgress( ARRAYSIZE(cylInfos), ARRAYSIZE(cylInfos) );
+		CTrackBytes invalidTrackBytes(1);
+			invalidTrackBytes.Invalidate();
 		for( TCylinder cyl=0; cyl<ARRAYSIZE(cylInfos); sub.UpdateProgress(++cyl) ){
 			bool cylinderModified=false; // assumption (nothing to do with the underlying Image)
 			if (!AnyTrackModified(cyl)) // not Modified or not even read Cylinder?
 				continue;
-			const PInternalTrack pitHead0=GetModifiedTrackSafe(cyl,0), pitHead1=GetModifiedTrackSafe(cyl,1);
-			const CTrackBytes head0=pitHead0!=nullptr // Track 0 modified?
+			const PInternalTrack pitHead0=GetInternalTrackSafe(cyl,0), pitHead1=GetInternalTrackSafe(cyl,1);
+			const CTrackBytes head0=pitHead0!=nullptr // Track 0 exists?
 									? TrackToBytes( *pitHead0 )
-									: ReadTrackBytes( cyl, 0 );
-			const CTrackBytes head1=pitHead1!=nullptr // Track 1 modified?
+									: std::move(invalidTrackBytes);
+			const CTrackBytes head1=pitHead1!=nullptr // Track 1 exists?
 									? TrackToBytes( *pitHead1 )
-									: ReadTrackBytes( cyl, 1 );
+									: std::move(invalidTrackBytes);
 			const auto nBytesLongerTrack=std::max( head0.GetCount(), head1.GetCount() );
 			auto nBytesCylinder=Utils::RoundUpToMuls( nBytesLongerTrack*2, (int)sizeof(TCylinderBlock) );
 			DWORD fPosition=Utils::RoundUpToMuls<DWORD>( fTarget.GetLength(), sizeof(TBlock) ); // assumption (Cylinder doesn't fit in anywhere between existing Track and must be appended to the Image)
