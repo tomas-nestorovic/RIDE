@@ -81,7 +81,7 @@
 			WORD nBytesLength;
 
 			inline bool IsValid() const{ return nBlocksOffset>=2 && nBytesLength!=0; }
-		} cylInfos[FDD_CYLINDERS_MAX];
+		} cylInfos[84];
 
 		class CTrackBytes sealed:public Utils::CCallocPtr<BYTE>{
 			WORD count;
