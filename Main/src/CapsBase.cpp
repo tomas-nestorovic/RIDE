@@ -76,7 +76,7 @@
 	CCapsBase::CBitReader::CBitReader(const CapsTrackInfoT2 &cti,UDWORD lockFlags)
 		// ctor to iterate over bits on all available disk revolutions
 		: pCurrByte(cti.trackbuf-1) , currBitMask(0) // pointing "before" the first valid bit
-		, nRemainingBits( lockFlags&DI_LOCK_TRKBIT ? cti.tracklen : cti.tracklen*8 )
+		, nRemainingBits( lockFlags&DI_LOCK_TRKBIT ? cti.tracklen : cti.tracklen*CHAR_BIT )
 		, Count(nRemainingBits) {
 	}
 

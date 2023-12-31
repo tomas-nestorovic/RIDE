@@ -53,7 +53,7 @@
 			double ieee754;
 		} tmp;
 		tmpMantissa<<=1; // dismissing the most significant bit which (thanks to the normalization above) is always 1
-		tmp.uint64=(long long)tmpMantissa<<(52-sizeof(tmpMantissa)*8);
+		tmp.uint64=(long long)tmpMantissa<<(52-sizeof(tmpMantissa)*CHAR_BIT);
 		tmp.words[3]|=(tmpExponent+895-1)<<4; // 895 = difference between ZX exponent bias (128) and IEEE-754 (64-bit) exponent bias (1023); TODO: need to explain "-1"
 		if ((int)mantissa<0)
 			tmp.words[3]|=0x8000;

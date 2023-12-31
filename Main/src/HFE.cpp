@@ -222,7 +222,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		if (pFormat->mediumType!=Medium::UNKNOWN)
 			for( TCylinder cyl=0; cyl<=capsImageInfo.maxcylinder; cyl++ ) // inclusive!
 				if (cylInfos[cyl].IsValid())
-					if (Medium::GetProperties(pFormat->mediumType)->IsAcceptableCountOfCells( cylInfos[cyl].nBytesLength/2*8 ))
+					if (Medium::GetProperties(pFormat->mediumType)->IsAcceptableCountOfCells( cylInfos[cyl].nBytesLength/2*CHAR_BIT ))
 						break;
 					else
 						return ERROR_UNRECOGNIZED_MEDIA;		
