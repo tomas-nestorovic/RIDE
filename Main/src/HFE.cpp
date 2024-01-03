@@ -197,7 +197,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		if (header.floppyInterface<TFloppyInterface::LAST_KNOWN)
 			switch (pFormat->mediumType){
 				case Medium::FLOPPY_DD:{
-					static constexpr TFloppyInterface Compatibles[]={ TFloppyInterface::IBM_PC_DD, TFloppyInterface::ATARI_ST_DD, TFloppyInterface::AMIGA_DD, TFloppyInterface::CPC_DD, TFloppyInterface::GENERIC_SHUGART_DD, TFloppyInterface::MSX2_DD, TFloppyInterface::C64_DD, TFloppyInterface::EMU_SHUGART, TFloppyInterface::S950_DD };
+					static constexpr TFloppyInterface Compatibles[]={ TFloppyInterface::IBM_PC_DD, TFloppyInterface::ATARI_ST_DD, TFloppyInterface::AMIGA_DD, TFloppyInterface::CPC_DD, TFloppyInterface::GENERIC_SHUGART, TFloppyInterface::MSX2_DD, TFloppyInterface::C64_DD, TFloppyInterface::EMU_SHUGART, TFloppyInterface::S950_DD };
 					if (::memchr( Compatibles, header.floppyInterface, sizeof(Compatibles) ))
 						break;
 					return ERROR_UNRECOGNIZED_MEDIA;
@@ -210,7 +210,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				}
 				case Medium::FLOPPY_HD_525:
 				case Medium::FLOPPY_HD_350:{
-					static constexpr TFloppyInterface Compatibles[]={ TFloppyInterface::IBM_PC_HD, TFloppyInterface::ATARI_ST_HD, TFloppyInterface::AMIGA_HD, TFloppyInterface::S950_HD };
+					static constexpr TFloppyInterface Compatibles[]={ TFloppyInterface::IBM_PC_HD, TFloppyInterface::ATARI_ST_HD, TFloppyInterface::AMIGA_HD, TFloppyInterface::S950_HD, TFloppyInterface::GENERIC_SHUGART };
 					if (::memchr( Compatibles, header.floppyInterface, sizeof(Compatibles) ))
 						break;
 					return ERROR_UNRECOGNIZED_MEDIA;
