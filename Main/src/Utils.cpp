@@ -1535,30 +1535,12 @@ namespace Utils{
 	}
 
 	class CTempDlg sealed:public CDialog{
-		const HRSRC hRes;
-		const HGLOBAL gRes;
-		const LPCDLGTEMPLATE lpRes;
+		CDialogTemplate dt;
 	public:
-		CTempDlg(UINT idDlgRes)
+		CTempDlg(UINT idDlgRes){
 			// ctor
-			: hRes(
-				::FindResource( app.m_hInstance, MAKEINTRESOURCE(idDlgRes), RT_DIALOG )		)
-			, gRes(
-				hRes!=nullptr
-				? ::LoadResource( app.m_hInstance, hRes )
-				: nullptr	)
-			, lpRes(
-				(LPCDLGTEMPLATE)::LockResource( gRes )	) {
-			if (lpRes)
-				CreateDlgIndirect( lpRes, nullptr, app.m_hInstance );
-		}
-
-		~CTempDlg(){
-			// dtor
-			if (gRes){
-				::UnlockResource(gRes);
-				::FreeResource(gRes);
-			}
+			dt.Load( (LPCTSTR)idDlgRes );
+			CreateIndirect( dt.m_hTemplate );
 		}
 
 		operator bool() const{
