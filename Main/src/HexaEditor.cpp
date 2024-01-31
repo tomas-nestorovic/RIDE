@@ -236,10 +236,12 @@ using namespace Yahel;
 	LRESULT CHexaEditor::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
 		// window procedure
 		switch (msg){
-			case WM_CREATE:
+			case WM_CREATE:{
 				// window created
+				const LRESULT result=__super::WindowProc( msg, wParam, lParam );
 				instance->Attach( m_hWnd );
-				break;
+				return result;
+			}
 			case WM_COMMAND:
 				// command processing
 				if (LOWORD(wParam)==ID_YAHEL_EDIT_COPY){
