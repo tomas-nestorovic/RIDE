@@ -17,7 +17,7 @@
 		::ZeroMemory( this, MSDOS7_SECTOR_LENGTH_STD );
 		mark41615252=0x41615252;
 		mark61417272=0x61417272;
-		nFreeClusters = firstFreeCluster = -1; // "-1" = information not available (will be set, for instance, in __getFirstFreeHealthyCluster__)
+		nFreeClusters = firstFreeCluster = -1; // "-1" = information not available (will be set, for instance, in GetFirstFreeHealthyDataCluster)
 		markAA550000=0xAA550000;
 	}
 
@@ -57,7 +57,8 @@
 	void CMSDOS7::CFsInfoView::MarkSectorAsDirty() const{
 		// marks the FS Info Sector as dirty
 		if (const PCBootSector bootSector=MSDOS->boot.GetSectorData())
-			MSDOS->__markLogicalSectorAsDirty__( bootSector->fat32.fsInfo );
+			if (MSDOS->fat.type==CFat::FAT32)
+				MSDOS->__markLogicalSectorAsDirty__( bootSector->fat32.fsInfo );
 	}
 
 	bool WINAPI CMSDOS7::CFsInfoView::__sectorModified__(PropGrid::PCustomParam,int){

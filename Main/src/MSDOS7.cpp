@@ -342,49 +342,40 @@
 		}
 	}
 
-	CMSDOS7::TCluster32 CMSDOS7::__getFirstFreeHealthyCluster__() const{
+	CMSDOS7::TCluster32 CMSDOS7::GetFirstFreeHealthyDataCluster() const{
 		// searches for and returns the first Cluster that's reported Empty and is fully intact (i.e. is readable, and thus assumed also writeable); returns MSDOS7_FAT_CLUSTER_EOF if no free healthy Cluster can be found
-		for( TPhysicalAddress chs; GetFirstEmptyHealthySector(true,chs)==ERROR_SUCCESS; ){
-			// found an empty healthy Sector
-			// . checking whether the whole Cluster is healthy
-			const TCluster32 cluster=__logSector2cluster__( __fyzlog__(chs) );
-			bool healthy=true; // assumption
-			BYTE n;
-			for( TLogSector32 ls=__cluster2logSector__(cluster,n); n--; healthy&=__getHealthyLogicalSectorData__(ls++)!=nullptr );
-			// . if unhealthy, marking the Cluster as Bad in FAT and proceeding with the next Cluster
-			if (!healthy){
-				fat.SetClusterValue(cluster,MSDOS7_FAT_CLUSTER_BAD); // marking the Cluster as Bad
+		const PFsInfoSector fsInfoSector=fsInfo.GetSectorData();
+		// - if available, begin from previously known FirstFreeCluster
+		TCluster32 &rFirstFreeCluster= fsInfoSector!=nullptr ? fsInfoSector->firstFreeCluster : fat.firstFreeClusterTemp; // take referential value either from FS-Info Sector, or this session only
+		TCluster32 cluster=	rFirstFreeCluster<MSDOS7_FAT_CLUSTER_EOF // is the previous value initialized ?
+							? rFirstFreeCluster // assume it's up-to-date
+							: MSDOS7_DATA_CLUSTER_FIRST;
+		// - check healthiness of the Cluster (and advance to next if bad)
+		const TCluster32 clusterMax=MSDOS7_DATA_CLUSTER_FIRST+__getCountOfClusters__();
+		for( BYTE n; cluster<clusterMax; cluster++ ){
+			// . must be Empty
+			if (fat.GetClusterValue(cluster)!=MSDOS7_FAT_CLUSTER_EMPTY)
 				continue;
-			}
-			// . updating the information on first free Cluster
-			if (const PFsInfoSector fsInfoSector=fsInfo.GetSectorData()){
-				// for FAT32, using the FS-Info Sector
-				fsInfoSector->firstFreeCluster=cluster; // just in case the value was invalid
-				fsInfo.MarkSectorAsDirty();
-			}else
-				// for FAT32 without FS-Info Sector or for FAT16/FAT12, using the temporary information on first free Cluster
-				fat.firstFreeClusterTemp=cluster; // just in case the value was invalid
-			// . an empty healthy Cluster found - we are done
-			return cluster;
+			// . must be Healthy (or marked in FAT as Bad)
+			bool healthy=true; // assumption
+			for( TLogSector32 ls=__cluster2logSector__(cluster,n); n--; healthy&=__getHealthyLogicalSectorData__(ls++)!=nullptr );
+			if (!healthy)
+				fat.SetClusterValue(cluster,MSDOS7_FAT_CLUSTER_BAD);
+			// . Empty Healthy Cluster found
+			break;
 		}
-		return MSDOS7_FAT_CLUSTER_EOF; // no free healhy Cluster found
+		rFirstFreeCluster=cluster; // update the value
+		fsInfo.MarkSectorAsDirty();
+		return cluster<clusterMax ? cluster : MSDOS7_FAT_CLUSTER_EOF;
 	}
 
 	TCylinder CMSDOS7::GetFirstCylinderWithEmptySector() const{
 		// determines and returns the first Cylinder which contains at least one Empty Sector
-		const TCluster32 clusterMax=MSDOS7_DATA_CLUSTER_FIRST+__getCountOfClusters__();
-		const PFsInfoSector fsInfoSector=fsInfo.GetSectorData();
-		TCluster32 result=MSDOS7_DATA_CLUSTER_FIRST;
-		if (fsInfoSector){
-			// for FAT32, using the FS-Info Sector
-			if (fsInfoSector->firstFreeCluster<clusterMax) // FS-Info Sector exists and contains initialized value
-				result=fsInfoSector->firstFreeCluster;
-		}else
-			// for FAT32 without FS-Info Sector or for FAT16/FAT12, using the temporary information on first free Cluster
-			if (fat.firstFreeClusterTemp<clusterMax)
-				result=fat.firstFreeClusterTemp;
+		const TCluster32 cluster=GetFirstFreeHealthyDataCluster();
 		BYTE b;
-		return __logfyz__( __cluster2logSector__(result,b) ).cylinder;
+		return	cluster<MSDOS7_FAT_CLUSTER_EOF
+				? __logfyz__( __cluster2logSector__(cluster,b) ).cylinder
+				: formatBoot.nCylinders;
 	}
 
 	#define FILE_ATTRIBUTE_LONGNAME			( FILE_ATTRIBUTE_READONLY | FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_VOLUME )
@@ -678,7 +669,7 @@
 
 	CMSDOS7::TCluster32 CMSDOS7::__allocateAndResetDirectoryCluster__() const{
 		// allocates, initializes and returns a new Directory Cluster; if new Cluster cannot be allocated (e.g. because disk full), returns MSDOS7_FAT_CLUSTER_EOF
-		const TCluster32 result=__getFirstFreeHealthyCluster__();
+		const TCluster32 result=GetFirstFreeHealthyDataCluster();
 		if (result!=MSDOS7_FAT_CLUSTER_EOF){
 			fat.SetClusterValue( result, MSDOS7_FAT_CLUSTER_EOF ); // guaranteed that FAT Sector exists
 			BYTE n;

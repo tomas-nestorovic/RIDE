@@ -89,21 +89,15 @@ nextByte:		;
 		// True <=> NewValue of given Cluster successfully written into at least one copy of FAT, otherwise False
 		if (const PCBootSector bootSector=msdos.boot.GetSectorData()){
 			// . modifying the information on first free Cluster
-			if (const PFsInfoSector fsInfo=msdos.fsInfo.GetSectorData()){
-				// for FAT32, using the FS-Info Sector
-				if (newValue==MSDOS7_FAT_CLUSTER_EMPTY && cluster<fsInfo->firstFreeCluster){
-					fsInfo->firstFreeCluster=cluster;
-					msdos.fsInfo.MarkSectorAsDirty();
-				}else if (newValue!=MSDOS7_FAT_CLUSTER_EMPTY && cluster==fsInfo->firstFreeCluster){
-					fsInfo->firstFreeCluster++;
-					msdos.fsInfo.MarkSectorAsDirty();
-				}
-			}else
-				// for FAT32 without FS-Info Sector or for FAT16/FAT12, using the temporary information on first free Cluster
-				if (newValue==MSDOS7_FAT_CLUSTER_EMPTY && cluster<firstFreeClusterTemp)
-					firstFreeClusterTemp=cluster;
-				else if (newValue!=MSDOS7_FAT_CLUSTER_EMPTY && cluster==firstFreeClusterTemp)
-					firstFreeClusterTemp++;
+			const PFsInfoSector fsInfoSector=msdos.fsInfo.GetSectorData();
+			TCluster32 &rFirstFreeCluster= fsInfoSector!=nullptr ? fsInfoSector->firstFreeCluster : firstFreeClusterTemp; // take referential value either from FS-Info Sector, or this session only
+			if (newValue==MSDOS7_FAT_CLUSTER_EMPTY && cluster<rFirstFreeCluster){
+				rFirstFreeCluster=cluster;
+				msdos.fsInfo.MarkSectorAsDirty();
+			}else if (newValue!=MSDOS7_FAT_CLUSTER_EMPTY && cluster==rFirstFreeCluster){
+				rFirstFreeCluster++;
+				msdos.fsInfo.MarkSectorAsDirty();
+			}
 			// . adjusting the NewValue and Mask
 			DWORD mask;
 			switch (type){
