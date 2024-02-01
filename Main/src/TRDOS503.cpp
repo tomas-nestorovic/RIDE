@@ -265,7 +265,8 @@
 			pRgn->start=lastRegionStart;
 			pRgn++->status=TSectorStatus::UNAVAILABLE;
 		}
-		pRgn++->status=TSectorStatus::EMPTY, pRgn->start.sector=0, pRgn->start.track=formatBoot.nCylinders*formatBoot.nHeads; // terminator
+		pRgn->status=TSectorStatus::EMPTY, pRgn->start.sector=0, pRgn->start.track=formatBoot.nCylinders*formatBoot.nHeads; // terminator
+		pRgn++;
 		// - determining the Statuses of Sectors
 		for( const BYTE track=cyl*formatBoot.nHeads+head; nSectors--; bufferId++ ){
 			const TSector sector=bufferId->sector;
