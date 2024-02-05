@@ -157,6 +157,12 @@ reportError:Utils::Information(buf);
 		return ERROR_EMPTY;
 	}
 
+	TStdWinError CDos::IsStdTrackEmpty(TCylinder cyl,THead head) const{
+		// returns ERROR_EMPTY/ERROR_NOT_EMPTY or another Windows standard i/o error
+		TSectorId bufferId[(TSector)-1];
+		return IsTrackEmpty( cyl, head, GetListOfStdSectors(cyl,head,bufferId), bufferId );
+	}
+
 	CDos::TEmptyCylinderParams::TEmptyCylinderParams(const CDos *dos,TCylinder cylA,TCylinder cylZInclusive)
 		: dos(dos)
 		, cylA(cylA) , cylZInclusive(cylZInclusive) {
@@ -177,9 +183,8 @@ reportError:Utils::Information(buf);
 		// - checking if range of Cylinders empty
 		for( TCylinder cyl=ecp.cylA; cyl<=ecp.cylZInclusive; pAction->UpdateProgress(++cyl-ecp.cylA) ){
 			if (pAction->Cancelled) return ERROR_CANCELLED;
-			TSectorId bufferId[(TSector)-1];
 			for( THead head=0; head<ecp.dos->formatBoot.nHeads; head++ ){
-				const TStdWinError err=ecp.dos->IsTrackEmpty( cyl, head, ecp.dos->GetListOfStdSectors(cyl,head,bufferId), bufferId );
+				const TStdWinError err=ecp.dos->IsStdTrackEmpty( cyl, head );
 				if (err!=ERROR_EMPTY)
 					return pAction->TerminateWithError(err);
 			}

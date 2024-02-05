@@ -163,7 +163,7 @@
 						const LPCTSTR currMediumDesc=Medium::GetDescription((Medium::TType)ComboBox_GetItemData( hMedium, ComboBox_GetCurSel(hMedium) ));
 						CImage::PopulateComboBoxWithCompatibleMedia( hMedium, dos->properties->supportedMedia, dos->image->properties );
 						ComboBox_SelectString( hMedium, 0, currMediumDesc );
-						::SetWindowPos( hMedium, nullptr, 0,0, rc.Width(),rc.Height(), SWP_NOZORDER|SWP_NOMOVE );
+						SetDlgItemSize( ID_MEDIUM, rc.Width(), rc.Height() );
 						::EnableWindow( hMedium, TRUE );
 					}
 					*pResult=0;

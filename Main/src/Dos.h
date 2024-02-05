@@ -400,6 +400,7 @@
 		virtual TCylinder GetFirstCylinderWithEmptySector() const;
 		TCylinder GetLastOccupiedStdCylinder() const;
 		TStdWinError GetFirstEmptyHealthySector(bool skipBadSectors,TPhysicalAddress &rOutChs) const;
+		TStdWinError IsStdTrackEmpty(TCylinder cyl,THead head) const;
 		TStdWinError AreStdCylindersEmpty(TCylinder cylA,TCylinder cylZInclusive) const;
 		bool AddStdCylindersToFatAsEmpty(TCylinder cylA,TCylinder cylZInclusive,CActionProgress &ap) const;
 		bool RemoveStdCylindersFromFat(TCylinder cylA,TCylinder cylZInclusive,CActionProgress &ap) const;

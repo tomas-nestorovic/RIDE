@@ -536,8 +536,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		if (trackLength>0xff80) // 0xff80 = maximum for "standard" DSK, 0xff00 = maximum for Revision 5
 			return ERROR_BAD_COMMAND;
 		// - if Track already formatted, unformatting it
-		if (__findTrack__(cyl,head))
-			UnformatTrack(cyl,head);
+		UnformatTrack(cyl,head);
 		// - formatting Track
 		do{
 			if (cancelled)
