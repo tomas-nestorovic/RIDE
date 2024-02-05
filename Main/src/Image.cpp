@@ -753,6 +753,17 @@ namespace Medium{
 		return ERROR_NOT_SUPPORTED;
 	}
 
+	bool CImage::IsTrackDirty(TCylinder cyl,THead head) const{
+		// True <=> any of Track's Sectors is dirty, otherwise False
+		TSectorId bufferId[(TSector)-1];
+		for( TSector n=ScanTrack(cyl,head,nullptr,bufferId); n>0; ){
+			const TPhysicalAddress chs={ cyl, head, bufferId[--n] };
+			if (GetDirtyRevolution( chs, n )!=Revolution::NONE)
+				return true;
+		}
+		return false;
+	}
+
 	TSector CImage::GetCountOfHealthySectors(TCylinder cyl,THead head) const{
 		// returns the number of Sectors whose data are healthy
 		EXCLUSIVELY_LOCK_THIS_IMAGE();

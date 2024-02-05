@@ -668,6 +668,12 @@
 				break;
 			case ID_ACCURACY:
 				// rescan Track
+				if (IMAGE->IsTrackDirty( chs.cylinder, chs.head )){
+					CString msg;
+					msg.Format( _T("Track %d (Cyl=%d, Head=%d) has modifications, rescanning discards them.\n\nContinue?"), chs.GetTrackNumber(scanner.params.nHeads), chs.cylinder, chs.head );
+					if (!Utils::QuestionYesNo( msg, MB_DEFBUTTON2 ))
+						break;
+				}
 				if (const TStdWinError err=IMAGE->UnscanTrack( chs.cylinder, chs.head ))
 					Utils::Information( _T("Can't rescan"), err );
 				else{
