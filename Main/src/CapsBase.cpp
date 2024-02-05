@@ -633,8 +633,6 @@
 		if (const TStdWinError err=__super::UnscanTrack(cyl,head)) // base
 			return err;
 		PInternalTrack &rit=internalTracks[cyl][head];
-		if (rit->modified)
-			return ERROR_REQUEST_REFUSED;
 		delete rit;
 		rit=nullptr;
 		return ERROR_SUCCESS;

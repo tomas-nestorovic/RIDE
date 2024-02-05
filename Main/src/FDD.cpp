@@ -747,9 +747,6 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		const PInternalTrack pit=__getScannedTrack__(cyl,head);
 		if (!pit) // Track not yet scanned?
 			return ERROR_SEEK;
-		for( TSector i=0; i<pit->nSectors; i++ )
-			if (pit->sectors[i].IsModified())
-				return ERROR_REQUEST_REFUSED;
 		if (const TStdWinError err=__super::UnscanTrack(cyl,head)) // base
 			return err;
 		delete pit;
