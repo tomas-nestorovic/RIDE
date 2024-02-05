@@ -48,11 +48,8 @@
 
 		void __addStaticText__(LPCTSTR text,const Utils::CRideFont &font){
 			// adds a new static text under currently open category
-			const CClientDC dc(this);
-			const HGDIOBJ hFont0=::SelectObject( dc, buttonCaptionFont );
 			CRect rc=rcCurrContent;
-			::DrawText( dc, text, -1, &rc, DT_WORDBREAK|DT_CALCRECT );
-			::SelectObject( dc, hFont0 );
+			::DrawText( CRideDC(*this,ID_HEAD), text, -1, &rc, DT_WORDBREAK|DT_CALCRECT );
 			const int height=rc.Height()+2*(1+::GetSystemMetrics(SM_CYBORDER));
 			SetDlgItemFont(
 				::CreateWindow(
@@ -192,16 +189,15 @@
 					// . base
 					__super::WindowProc(msg,wParam,lParam);
 					// . header background
-					const CClientDC dc(this);
-					RECT rc=GetDlgItemClientRect(ID_HEAD);
-					::FillRect( dc, &rc, Utils::CRideBrush::White );
+					CRideDC dc( *this, ID_HEAD );
+					::FillRect( dc, &dc.rect, Utils::CRideBrush::White );
 					// . application title
 					::SetBkMode(dc,TRANSPARENT);
-					rc.left=Utils::LogicalUnitScaleFactor*55;
+					dc.rect.left=Utils::LogicalUnitScaleFactor*55;
 					const Utils::CRideFont fontTitle( FONT_MS_SANS_SERIF, 195, false, true );
 					const HGDIOBJ hFont0=::SelectObject( dc, fontTitle );
 						::SetTextColor( dc, 0xffecd9 );
-						::DrawText( dc, APP_FULLNAME,-1, &rc, DT_LEFT|DT_VCENTER|DT_SINGLELINE|DT_NOPREFIX );
+						::DrawText( dc, APP_FULLNAME,-1, &dc.rect, DT_LEFT|DT_VCENTER|DT_SINGLELINE|DT_NOPREFIX );
 					//::SelectObject(dc,hFont0); // commented out as further changes to DC's font below
 					// . category Glyphs etc
 					const Utils::CRideFont fontGlyph( FONT_WEBDINGS, 300, false, true );

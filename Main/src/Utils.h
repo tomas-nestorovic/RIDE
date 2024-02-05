@@ -183,6 +183,7 @@ namespace Utils{
 	};
 
 	class CRideFont sealed:public ::CFont{
+		void InitBy(const LOGFONT &lf);
 	public:
 		static const CRideFont Small, Std, StdBold;
 
@@ -226,6 +227,16 @@ namespace Utils{
 
 	class CRideDialog:public CDialog{
 	protected:
+		class CRideDC:public CClientDC{
+			int iDc0;
+		public:
+			CRect rect;
+
+			CRideDC(const CRideDialog &d);
+			CRideDC(const CRideDialog &d,WORD id);
+			~CRideDC();
+		};
+
 		CRideDialog();
 
 		class CSplitterWnd:public ::CSplitterWnd{ // an overridden version to be used inside CRideDialog instances

@@ -454,25 +454,22 @@
 				const LRESULT result=__super::WindowProc(msg,wParam,lParam);
 				// . preparing for drawing Actions
 				RECT rc=painting.rcActions;
-				const CClientDC dc(this);
+				const CRideDC dc(*this);
 				::SetBkMode( dc, TRANSPARENT );
 				// . painting
 				BYTE i=0;
-				const Utils::CRideFont font(m_hWnd);
-				const HGDIOBJ hFont0=::SelectObject( dc, font );
 					// Actions already completed
 					while (i<iCurrAction)
 						__drawAction__(	dc, 0xf0fc, actions[i++].fnName, rc );
 				const Utils::CRideFont fontBold(m_hWnd,true);
-				::SelectObject( dc, fontBold );
+				const HGDIOBJ hFont0=::SelectObject( dc, fontBold );
 					// Action currently in progress
 					__drawAction__(	dc, 0xf0e0, actions[i].fnName, rc );
 					rc.top+=PADDING_STATUS+painting.progressHeight+PADDING_STATUS;
-				::SelectObject( dc, font );
+				::SelectObject( dc, hFont0 );
 					// Actions yet to be performed
 					while (++i<nActions)
 						__drawAction__(	dc, 0xf09f, actions[i].fnName, rc );
-				::SelectObject( dc, hFont0 );
 				return result;
 			}
 		}

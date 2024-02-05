@@ -389,12 +389,10 @@ errorText:				TCHAR buf[400];
 				if (message==WM_PAINT){
 					// drawing icons
 					const POINT iconPosition=MapDlgItemClientOrigin(ID_IMAGE);
-					const CClientDC dc(this);
-					const int iDc0=::SaveDC(dc);
+					const CRideDC dc(*this);
 						::SetViewportOrgEx(dc,iconPosition.x,iconPosition.y,nullptr);
 						Utils::ScaleLogicalUnit(dc);
 						DrawIcon( dc, rGkfm.GetAboutIconData(), 2 );
-					::RestoreDC(dc,iDc0);
 				}else if (message==WM_COMMAND)
 					switch (wParam){
 						case MAKELONG(ID_INK,EN_SETFOCUS):

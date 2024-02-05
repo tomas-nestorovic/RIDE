@@ -85,45 +85,35 @@ namespace Utils{
 
 	CRideFont::CRideFont(LPCTSTR face,int pointHeight,bool bold,bool dpiScaled,int pointWidth){
 		// ctor
-		// - creating the Font
-		//CreatePointFont(pointHeight,face);
 		Utils::TRationalNumber scaleFactor=Utils::LogicalUnitScaleFactor;
 		if (!dpiScaled)
 			scaleFactor.quot = scaleFactor.rem = 1;
-		const int fontHeight=scaleFactor*(10*-pointHeight)/72, fontWidth=scaleFactor*(10*-pointWidth)/72;
-		CreateFont( fontHeight, fontWidth, 0, 0,
-					bold*FW_BOLD,
-					FALSE, FALSE, FALSE,
-					DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-					ANTIALIASED_QUALITY,
-					FF_DONTCARE,
-					face
-				);
-/*		if (bold){
-			LOGFONT logFont;
-			GetObject(sizeof(logFont),&logFont);
-				logFont.lfWeight=FW_BOLD;
-			DeleteObject();
-			CreateFontIndirect(&logFont);
-		}*/
-		// - determining the AvgWidth and Height of Font characters
-		CClientDC dc(app.m_pMainWnd);
-		const HGDIOBJ hFont0=::SelectObject( dc, m_hObject );
-			TEXTMETRIC tm;
-			dc.GetTextMetrics(&tm);
-			charAvgWidth=tm.tmAveCharWidth;
-			charHeight=tm.tmHeight;
-		::SelectObject(dc,hFont0);
+		LOGFONT lf={
+			scaleFactor*(10*-pointHeight)/72, // height
+			scaleFactor*(10*-pointWidth)/72, // width
+			0, 0,
+			bold*FW_BOLD, // weight
+			FALSE, FALSE, FALSE,
+			DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+			ANTIALIASED_QUALITY,
+			FF_DONTCARE
+		};
+		::lstrcpy( lf.lfFaceName, face );
+		InitBy(lf);
 	}
 
 	CRideFont::CRideFont(HWND hWnd,bool bold){
 		// ctor
+		LOGFONT lf;
+			::GetObject( (HGDIOBJ)::SendMessage(hWnd,WM_GETFONT,0,0), sizeof(lf), &lf );
+			lf.lfWeight=bold*FW_BOLD;
+		InitBy(lf);
+	}
+
+	void CRideFont::InitBy(const LOGFONT &lf){
+		// Font initialization
 		// - creating the Font
-		LOGFONT logFont;
-			::GetObject( (HGDIOBJ)::SendMessage(hWnd,WM_GETFONT,0,0), sizeof(logFont), &logFont );
-			if (bold)
-				logFont.lfWeight=FW_BOLD;
-		CreateFontIndirect(&logFont);
+		CreateFontIndirect(&lf);
 		// - determining the AvgWidth and Height of Font characters
 		CClientDC dc(app.m_pMainWnd);
 		const HGDIOBJ hFont0=::SelectObject( dc, m_hObject );
@@ -1310,6 +1300,30 @@ namespace Utils{
 
 
 
+	CRideDialog::CRideDC::CRideDC(const CRideDialog &d)
+		// ctor
+		: CClientDC( const_cast<CRideDialog *>(&d) ) {
+		iDc0=::SaveDC(m_hDC);
+		::SelectObject( *this, (HFONT)::SendMessageW(d,WM_GETFONT,0,0) );
+		d.GetClientRect(&rect);
+	}
+
+	CRideDialog::CRideDC::CRideDC(const CRideDialog &d,WORD id)
+		// ctor
+		: CClientDC( CWnd::FromHandle(d.GetDlgItemHwnd(id)) ) {
+		iDc0=::SaveDC(m_hDC);
+		::SelectObject( *this, (HFONT)::SendMessageW(d,WM_GETFONT,0,0) );
+		rect=d.GetDlgItemClientRect(id);
+	}
+
+	CRideDialog::CRideDC::~CRideDC(){
+		// dtor
+		::ReleaseDC( m_hWnd, m_hDC );
+	}
+
+
+
+
 	CRideDialog::CRideDialog(){
 		// ctor
 	}
@@ -1618,23 +1632,19 @@ namespace Utils{
 		// - drawing curly brackets
 		const RECT rcA=MapDlgItemClientRect(idA), rcZ=MapDlgItemClientRect(idZ);
 		RECT r={ std::max(rcA.right,rcZ.right)+5, rcA.top-6, 1000, rcZ.bottom+6 };
-		CClientDC dc( const_cast<CRideDialog *>(this) );
-		dc.SetTextColor( textColor );
+		const CRideDC dc(*this);
+		::SetTextColor( dc, textColor );
 		DrawClosingCurlyBracket( dc, r.left, r.top, r.bottom );
 		// . text
 		r.left+=LogicalUnitScaleFactor*14;
-		const HGDIOBJ hFont0=::SelectObject( dc, GetFont()->m_hObject );
-			dc.DrawText( text,-1, &r, DT_VCENTER|DT_SINGLELINE );
-		::SelectObject(dc,hFont0);
+		::DrawText( dc, text,-1, &r, DT_VCENTER|DT_SINGLELINE );
 	}
 
 	CString CRideDialog::CompactPathToFitInDlgItem(WORD id,LPCTSTR fullpath) const{
 		// compacts FullPath to fit in the dimensions of the given item
-		CWnd *const pWnd=GetDlgItem(id);
-		CRect rc;
-		pWnd->GetClientRect(&rc);
+		const CRideDC dc( *this, id );
 		const CString result=fullpath;
-		::PathCompactPath( CClientDC(pWnd), const_cast<PTCHAR>((LPCTSTR)result), rc.Width() );
+		::PathCompactPath( dc, const_cast<PTCHAR>((LPCTSTR)result), dc.rect.Width() );
 		return result;
 	}
 
