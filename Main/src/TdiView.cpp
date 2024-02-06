@@ -89,7 +89,6 @@
 				-20,
 				glyphColor
 			);
-			SetDlgItemFont( id, buttonCaptionFont );
 			rcCurrContent.top+=singleLineButtonHeight;
 		}
 
@@ -140,10 +139,9 @@
 						::lstrcpyn( dosName, dosProps->name, space-dosProps->name+1 );
 					else
 						::lstrcpy( dosName, dosProps->name );
-					__addButton__( _T(""), ID_FILE_MRU_FILE1+i, 0xf030, 0x47bbbb );
-					SetDlgItemCompactPath(
-						ID_FILE_MRU_FILE1+i,
-						Utils::SimpleFormat( _T("(%s) %s"), dosName, fileName )
+					__addButton__(
+						Utils::SimpleFormat( _T("(%s) %s"), dosName, fileName ),
+						ID_FILE_MRU_FILE1+i, 0xf030, 0x47bbbb
 					);
 				}
 				if (!i){

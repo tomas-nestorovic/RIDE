@@ -301,22 +301,21 @@ namespace Utils{
 		// - base
 		__super::OnInitDialog();
 		// - initializing the main message
-		SetFocus();
+		CRideDC dc( *this, ID_INFORMATION );
+			const int infoWidth0=dc.rect.Width();
+			const int infoHeight0=dc.rect.Height();
+			::DrawTextW( dc, ToStringW(information), -1, &dc.rect, DT_WORDBREAK|DT_CALCRECT );
+			SetDlgItemSize( ID_INFORMATION, infoWidth0, dc.rect.bottom );
 		::SetDlgItemTextW( m_hWnd, ID_INFORMATION, ToStringW(information) );
-		const HWND hInfo=GetDlgItemHwnd(ID_INFORMATION);
-		int infoHeight=Edit_GetLineCount(hInfo)*CRideFont(*this).charHeight;
-		RECT r;
-		::GetClientRect( hInfo, &r );
-		SetDlgItemSize( ID_INFORMATION, r.right, infoHeight );
-		infoHeight-=r.bottom; // now the difference
 		// - increasing the window size for the Information to fit in
+		RECT r;
 		GetWindowRect(&r);
 		SetWindowPos(
 			nullptr,
-			0,0, r.right-r.left, r.bottom-r.top+infoHeight,
+			0,0, r.right-r.left, r.bottom-r.top+dc.rect.Height()-infoHeight0,
 			SWP_NOZORDER|SWP_NOMOVE
 		);
-		return FALSE; // False = focus already set manually
+		return TRUE;
 	}
 
 	void CCommandDialog::DoDataExchange(CDataExchange *pDX){
@@ -329,12 +328,13 @@ namespace Utils{
 		const COLORREF textColor, glyphColor;
 		const WCHAR wingdingsGlyphBeforeText;
 		const int glyphPointSizeIncrement;
+		const bool compactPath;
 		bool cursorHovering, pressed;
-		TCommandLikeButtonInfo(WNDPROC _wndProc0,WCHAR wingdingsGlyphBeforeText,COLORREF glyphColor,int glyphPointSizeIncrement,COLORREF textColor)
+		TCommandLikeButtonInfo(WNDPROC _wndProc0,WCHAR wingdingsGlyphBeforeText,COLORREF glyphColor,int glyphPointSizeIncrement,COLORREF textColor,bool compactPath)
 			// ctor
 			: wndProc0(_wndProc0) , textColor(textColor)
 			, wingdingsGlyphBeforeText(wingdingsGlyphBeforeText) , glyphColor(glyphColor) , glyphPointSizeIncrement(glyphPointSizeIncrement)
-			, cursorHovering(false) , pressed(false) {
+			, compactPath(compactPath) , cursorHovering(false) , pressed(false) {
 		}
 	} *PCommandLikeButtonInfo;
 
@@ -365,6 +365,10 @@ namespace Utils{
 				cmdInfo->pressed=false;
 				::InvalidateRect(hCmdBtn,nullptr,TRUE);
 				break;
+			case WM_SETFOCUS:
+			case WM_KILLFOCUS:
+				::InvalidateRect( hCmdBtn, nullptr, TRUE );
+				break;
 			case WM_PAINT:{
 				// drawing
 				RECT r;
@@ -385,29 +389,27 @@ namespace Utils{
 							else
 								::DrawFrameControl( dc, &r, DFC_BUTTON, DFCS_BUTTONPUSH );
 					}
+					if (Button_GetState(hCmdBtn)&BST_FOCUS)
+						::DrawFocusRect( dc, &r );
 					::SetBkMode(dc,TRANSPARENT);
-					TCHAR text[200];
-					::GetWindowText(hCmdBtn,text,ARRAYSIZE(text));
+					r.left+=10;
 					if (const WCHAR glyph=cmdInfo->wingdingsGlyphBeforeText){
 						// prefixing the Text with specified Glyph
 						const CRideFont font( FONT_WINGDINGS, 130+cmdInfo->glyphPointSizeIncrement, false, true );
 						const HGDIOBJ hFont0=::SelectObject( dc, font );
-							r.left+=10;
 							::SetTextColor( dc, cmdInfo->glyphColor );
 							::DrawTextW( dc, &glyph,1, &r, DT_SINGLELINE|DT_LEFT|DT_VCENTER );
-						::SelectObject( dc, (HGDIOBJ)::SendMessage(hCmdBtn,WM_GETFONT,0,0) );
-							r.left+=35;
-							::SetTextColor( dc, cmdInfo->textColor );
-							::DrawText( dc, text,-1, &r, DT_SINGLELINE|DT_LEFT|DT_VCENTER );
 						::SelectObject(dc,hFont0);
-					}else{
-						// keeping the text without prefix
-						const HGDIOBJ hFont0=::SelectObject( dc, (HGDIOBJ)::SendMessage(::GetParent(hCmdBtn),WM_GETFONT,0,0) );
-							r.left+=10;
-							::SetTextColor( dc, cmdInfo->textColor );
-							::DrawText( dc, text,-1, &r, DT_SINGLELINE|DT_LEFT|DT_VCENTER );
-						::SelectObject(dc,hFont0);
+						r.left+=35;
 					}
+					TCHAR text[200];
+					::GetWindowText( hCmdBtn, text, ARRAYSIZE(text) );
+					const HGDIOBJ hFont0=::SelectObject( dc, (HGDIOBJ)::SendMessage(::GetParent(hCmdBtn),WM_GETFONT,0,0) );
+						::SetTextColor( dc, cmdInfo->textColor );
+						if (cmdInfo->compactPath)
+							::PathCompactPath( dc, text, r.right-r.left );
+						::DrawText( dc, text,-1, &r, DT_SINGLELINE|DT_LEFT|DT_VCENTER );
+					::SelectObject(dc,hFont0);
 				::EndPaint(hCmdBtn,&ps);
 				break;
 			}
@@ -456,7 +458,7 @@ namespace Utils{
 		ConvertToCommandLikeButton(
 			::CreateWindow(
 				WC_BUTTON,caption,
-				WS_CHILD|WS_VISIBLE,
+				WS_CHILD|WS_VISIBLE|WS_TABSTOP,
 				t.left, r.bottom-t.top-CMDBUTTON_HEIGHT, t.right-t.left, CMDBUTTON_HEIGHT,
 				m_hWnd,
 				(HMENU)id,
@@ -2115,7 +2117,7 @@ namespace Utils{
 		::InvalidateRect(hStdBtn,nullptr,TRUE);
 	}
 
-	void CRideDialog::ConvertToCommandLikeButton(HWND hStdBtn,WCHAR wingdingsGlyphBeforeText,COLORREF textColor,int glyphPointSizeIncrement,COLORREF glyphColor){
+	void CRideDialog::ConvertToCommandLikeButton(HWND hStdBtn,WCHAR wingdingsGlyphBeforeText,COLORREF textColor,int glyphPointSizeIncrement,COLORREF glyphColor,bool compactPath){
 		// converts an existing standard button to a "command-like" one known from Windows Vista, featuring specified GlypfBeforeText ('\0' = no Glyph)
 		::SetWindowLong( hStdBtn, GWL_STYLE, ::GetWindowLong(hStdBtn,GWL_STYLE)|BS_OWNERDRAW );
 		::SetWindowLong(hStdBtn,
@@ -2123,10 +2125,9 @@ namespace Utils{
 						(long)new TCommandLikeButtonInfo(
 							(WNDPROC)::SetWindowLong( hStdBtn, GWL_WNDPROC, (long)__commandLikeButton_wndProc__ ),
 							wingdingsGlyphBeforeText, glyphColor, glyphPointSizeIncrement,
-							textColor
+							textColor, compactPath
 						)
 					);
-		::SendMessage( hStdBtn, WM_SETFONT, ::SendMessage(::GetParent(hStdBtn),WM_GETFONT,0,0), 0 );
 		::InvalidateRect(hStdBtn,nullptr,FALSE);
 	}
 
