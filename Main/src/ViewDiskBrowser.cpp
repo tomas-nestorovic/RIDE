@@ -87,6 +87,7 @@ using namespace Yahel;
 			return -1;
 		// - displaying the content
 		OnUpdate(nullptr,0,nullptr);
+		instance->Attach(*this);
 		// - recovering the Scroll position and repainting the view (by setting its editability)
 		//SetScrollPos( SB_VERT, iScrollY ); //TODO: Uncomment when scroll position is represented as absolute position in content, not as a row
 		SetEditable( !IMAGE->IsWriteProtected() );
