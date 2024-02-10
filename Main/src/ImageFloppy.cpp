@@ -202,8 +202,10 @@ using namespace Yahel;
 					WORD lengths[FDD_SECTORS_MAX];
 					TSector nSectors=s.__scanTrack__( track, nullptr, lengths );
 					// . updating the state - the results are stored in the NEXT structure
+					auto &scannedTracks=s.GetFloppyImage().scannedTracks;
+					EXCLUSIVELY_LOCK(scannedTracks);
 					auto &rNext=*(this+1);
-					rNext.logicalPosition=logicalPosition, rNext.nRowsAtLogicalPosition=nRowsAtLogicalPosition;
+					rNext=*this;
 					while (nSectors>0){
 						const WORD length=lengths[--nSectors];
 						rNext.logicalPosition+=length;
@@ -361,17 +363,17 @@ using namespace Yahel;
 					return 0;
 				const auto &scannedTracks=GetFloppyImage().scannedTracks;
 		{		EXCLUSIVELY_LOCK_SCANNED_TRACKS();
-				if (logPos>=scannedTracks.dataTotalLength)
-					return trackHexaInfos[scannedTracks.n].nRowsAtLogicalPosition;
-				if (!dataTotalLength)
-					return 0;
 				// . updating the ScannedTrack structure if necessary
 				if (nBytesInRow!=lastKnownHexaRowLength){
 					lastKnownHexaRowLength=nBytesInRow;
 					for( BYTE t=0; t<scannedTracks.n; trackHexaInfos[t++].Update(*this) );
 				}
-		}		// . returning the result
-				TTrack track;
+				// . returning the result
+				if (logPos>=scannedTracks.dataTotalLength)
+					return trackHexaInfos[scannedTracks.n].nRowsAtLogicalPosition;
+				if (!dataTotalLength)
+					return 0;
+		}		TTrack track;
 				__getPhysicalAddress__(logPos,&track,nullptr,nullptr); // guaranteed to always succeed
 				auto pos=trackHexaInfos[track+1].logicalPosition;
 				auto nRows=trackHexaInfos[track+1].nRowsAtLogicalPosition;
@@ -391,16 +393,16 @@ using namespace Yahel;
 				const auto &scannedTracks=GetFloppyImage().scannedTracks;
 				BYTE track;
 		{		EXCLUSIVELY_LOCK_SCANNED_TRACKS();
-				if (row>=trackHexaInfos[scannedTracks.n].nRowsAtLogicalPosition)
-					return trackHexaInfos[scannedTracks.n].logicalPosition;
-				if (!dataTotalLength)
-					return 0;
 				// . updating the ScannedTrack structure if necessary
 				if (nBytesInRow!=lastKnownHexaRowLength){
 					lastKnownHexaRowLength=nBytesInRow;
 					for( BYTE t=0; t<scannedTracks.n; trackHexaInfos[t++].Update(*this) );
 				}
 				// . returning the result
+				if (row>=trackHexaInfos[scannedTracks.n].nRowsAtLogicalPosition)
+					return trackHexaInfos[scannedTracks.n].logicalPosition;
+				if (!dataTotalLength)
+					return 0;
 				track=scannedTracks.n;
 		}		if (track)
 					do{
