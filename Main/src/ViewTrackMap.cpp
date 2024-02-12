@@ -621,8 +621,6 @@
 				// . Track rescan
 				if (!IMAGE->properties->IsRealDevice() // possible only for real Devices
 					||
-					IMAGE->UnscanTrack( TPhysicalAddress::Invalid.cylinder, TPhysicalAddress::Invalid.head )==ERROR_NOT_SUPPORTED
-					||
 					DOS->properties!=&CUnknownDos::Properties // "unscanning" a Track is safe only when no other operations with the disk are possible
 				)
 					mnu.ModifyMenu( ID_ACCURACY, MF_BYCOMMAND|MF_GRAYED, 0, _T("Can't rescan any track") );

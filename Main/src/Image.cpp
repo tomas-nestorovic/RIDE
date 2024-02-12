@@ -749,7 +749,7 @@ namespace Medium{
 	}
 
 	TStdWinError CImage::UnscanTrack(TCylinder cyl,THead head){
-		// disposes internal representation of specified Track if possible (e.g. can't if Track already modified); returns Windows standard i/o error
+		// disposes internal representation of specified Track if possible; returns Windows standard i/o error
 		return ERROR_NOT_SUPPORTED;
 	}
 

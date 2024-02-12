@@ -305,6 +305,23 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		return	cyl<diskInfo.nCylinders && head<diskInfo.nHeads;
 	}
 
+	TStdWinError CDsk5::UnscanTrack(TCylinder cyl,THead head){
+		// disposes internal representation of specified Track if possible; returns Windows standard i/o error
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		if (const TStdWinError err=__super::UnscanTrack( cyl, head ))
+			return err;
+		if (const PTrackInfo ti=__findTrack__(cyl,head)){
+			diskInfo.rev5_trackOffsets256[cyl*diskInfo.nHeads+head]=0;
+			::free(ti), tracks[cyl*diskInfo.nHeads+head]=nullptr;
+			#ifdef _DEBUG
+				if (TSectorDebug *&td=tracksDebug[cyl*diskInfo.nHeads+head])
+					::free(td), td=nullptr;
+			#endif
+			m_bModified=TRUE;
+		}
+		return ERROR_SUCCESS;
+	}
+
 	void CDsk5::GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses,TLogTime *outDataStarts){
 		// populates output buffers with specified Sectors' data, usable lengths, and FDC statuses; ALWAYS attempts to buffer all Sectors - caller is then to sort out eventual read errors (by observing the FDC statuses); caller can call ::GetLastError to discover the error for the last Sector in the input list
 		ASSERT( outBufferData!=nullptr && outBufferLengths!=nullptr && outFdcStatuses!=nullptr && outDataStarts!=nullptr );
@@ -535,8 +552,9 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		trackLength&=0xffffff00; // rounding up to whole multiples of 256
 		if (trackLength>0xff80) // 0xff80 = maximum for "standard" DSK, 0xff00 = maximum for Revision 5
 			return ERROR_BAD_COMMAND;
-		// - if Track already formatted, unformatting it
-		UnformatTrack(cyl,head);
+		// - disposing current Track
+		if (const TStdWinError err=UnscanTrack( cyl, head ))
+			return err;
 		// - formatting Track
 		do{
 			if (cancelled)
@@ -575,15 +593,9 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (head<diskInfo.nHeads && (params.rev5||cyl==diskInfo.nCylinders-1)){
 			// A&(B|C); A = existing Head, B|C = existing Cylinder
-			// . redimensioning the Image
-			if (const PTrackInfo ti=__findTrack__(cyl,head)){
-				diskInfo.rev5_trackOffsets256[cyl*diskInfo.nHeads+head]=0;
-				::free(ti), tracks[cyl*diskInfo.nHeads+head]=nullptr;
-				#ifdef _DEBUG
-					if (TSectorDebug *&td=tracksDebug[cyl*diskInfo.nHeads+head])
-						::free(td), td=nullptr;
-				#endif
-			}
+			// . disposing the Track
+			if (const TStdWinError err=UnscanTrack( cyl, head ))
+				return err;
 			// . updating the NumberOfCylinders
 			if (params.preserveEmptyTracks)
 				diskInfo.nCylinders=std::max<BYTE>( 1+cyl, diskInfo.nCylinders );

@@ -742,15 +742,13 @@ error:				switch (const TStdWinError err=::GetLastError()){
 	}
 
 	TStdWinError CFDD::UnscanTrack(TCylinder cyl,THead head){
-		// disposes internal representation of specified Track if possible (e.g. can't if Track already modified); returns Windows standard i/o error
+		// disposes internal representation of specified Track if possible; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		const PInternalTrack pit=__getScannedTrack__(cyl,head);
-		if (!pit) // Track not yet scanned?
+		if (cyl>=FDD_CYLINDERS_MAX || head>=2)
 			return ERROR_SEEK;
 		if (const TStdWinError err=__super::UnscanTrack(cyl,head)) // base
 			return err;
-		delete pit;
-		internalTracks[cyl][head]=nullptr;
+		UnformatInternalTrack( cyl, head );
 		return ERROR_SUCCESS;
 	}
 
@@ -1932,6 +1930,8 @@ autodetermineLatencies:		// automatic determination of write latency values
 			::wsprintf(formatTrackParams,_T("Cyl=%d, Head=%d, codec=%d, nSectors=%d, gap3=%d, fillerByte=%d"),cyl,head,codec,nSectors,gap3,fillerByte);
 			LOG_MESSAGE(formatTrackParams);
 		#endif
+		if (cyl>=FDD_CYLINDERS_MAX || head>=2)
+			return LOG_ERROR(ERROR_SEEK);
 		if (codec!=Codec::MFM)
 			return LOG_ERROR(ERROR_NOT_SUPPORTED);
 		if (nSectors>FDD_SECTORS_MAX)
@@ -1968,6 +1968,9 @@ error:				return LOG_ERROR(::GetLastError());
 					break;
 				}
 		}
+		// - disposing internal information on actual Track
+		if (const TStdWinError err=UnscanTrack( cyl, head ))
+			return err;
 		// - formatting using selected FormatStyle and eventually verifying the Track
 		DWORD nBytesTransferred;
 		switch (formatStyle){
@@ -2218,6 +2221,8 @@ formatCustomWay:
 
 	TStdWinError CFDD::UnformatTrack(TCylinder cyl,THead head){
 		// unformats given Track {Cylinder,Head}; returns Windows standard i/o error
+		if (cyl>=FDD_CYLINDERS_MAX || head>=2)
+			return ERROR_SEEK;
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		LOG_TRACK_ACTION(cyl,head,_T("TStdWinError CFDD::UnformatTrack"));
 		// - moving Head above the corresponding Cylinder
@@ -2232,16 +2237,17 @@ error:		return LOG_ERROR(::GetLastError());
 										{cyl,head,0,LengthCode}
 									};
 				LOG_ACTION(_T("DeviceIoControl IOCTL_FDCMD_FORMAT_TRACK"));
-				if (::DeviceIoControl( _HANDLE, IOCTL_FDCMD_FORMAT_TRACK, &fmt,sizeof(fmt), nullptr,0, &nBytesTransferred, nullptr )!=0){
-					UnformatInternalTrack(cyl,head); // disposing internal information on actual Track format
-					return ERROR_SUCCESS;
-				}else
+				if (::DeviceIoControl( _HANDLE, IOCTL_FDCMD_FORMAT_TRACK, &fmt,sizeof(fmt), nullptr,0, &nBytesTransferred, nullptr )!=0)
+					break;
+				else
 					goto error;
 			}
 			default:
 				ASSERT(FALSE);
 				return LOG_ERROR(ERROR_DEVICE_NOT_AVAILABLE);
 		}
+		// - disposing internal information on actual Track
+		return UnscanTrack( cyl, head );
 	}
 
 	void CFDD::SetPathName(LPCTSTR lpszPathName,BOOL bAddToMRU){

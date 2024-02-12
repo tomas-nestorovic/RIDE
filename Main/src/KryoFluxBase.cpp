@@ -108,10 +108,9 @@
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
 			return ERROR_INVALID_PARAMETER;
-		// - disposing previous Track, if any
-		PInternalTrack &rit=internalTracks[cyl][head];
-		if (rit!=nullptr)
-			delete rit, rit=nullptr;
+		// - disposal of previous content
+		if (const TStdWinError err=UnscanTrack( cyl, head ))
+			return err;
 		// - defining the new Track layout
 		UBYTE bitBuffer[32768];
 		CapsFormatTrack cft;
@@ -160,7 +159,7 @@
 		}
 		// - instantiating the new Track
 		const CapsTrackInfoT2 cti={ 2, cyl, head, nSectors, 0, bitBuffer, cft.tracklen };
-		if ( rit=CInternalTrack::CreateFrom( *this, &cti, 1, 0 ) ){
+		if ( PInternalTrack &rit=internalTracks[cyl][head]=CInternalTrack::CreateFrom( *this, &cti, 1, 0 ) ){
 			SetModifiedFlag( rit->modified=true );
 			return ERROR_SUCCESS;
 		}else
@@ -190,8 +189,8 @@
 				if (!trw.Normalize())
 					return ERROR_MEDIA_INCOMPATIBLE;
 			// . disposal of previous content
-			if (const PInternalTrack pit=internalTracks[cyl][head])
-				delete pit;
+			if (const TStdWinError err=UnscanTrack( cyl, head ))
+				return err;
 			// . creation of new content
 			if ( const PInternalTrack pit = internalTracks[cyl][head] = CInternalTrack::CreateFrom(*this,trw) ){
 				SetModifiedFlag( pit->modified=true );
