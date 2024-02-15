@@ -132,7 +132,7 @@
 		// - if data shorter than an empty Image, keeping reset to empty Image
 		const WORD nHeaderBytesRead=f.Read(&header,sizeof(header));
 		if (!app.IsInGodMode()) // must follow the rules?
-			canBeModified&=header.writeable;
+			canBeModified&=header.writeable!=0;
 		if (!nHeaderBytesRead)
 			return TRUE;
 		else if (nHeaderBytesRead<sizeof(header)){
