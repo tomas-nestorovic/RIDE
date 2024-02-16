@@ -55,7 +55,7 @@
 			&&
 			(	_stscanf( trackIdentifier, TRACK_NAME_PATTERN, &cyl, &head )==2  &&  cyl<FDD_CYLINDERS_MAX // is the Track name fully ...
 				||
-				_stscanf( trackIdentifier+=2, TRACK_NAME_PATTERN_EXT, &head ) // ... or at least partially specified?
+				_stscanf( trackIdentifier+=2, TRACK_NAME_PATTERN_EXT, &head )>0 // ... or at least partially specified?
 			)
 			&&
 			'0'<=head && head<='1'

@@ -306,7 +306,7 @@
 				*u++=c;
 			else if (*term=='%') // the "%%" sequence to express the '%' character
 				*u++=c, term++;
-			else if (_stscanf(term,_T("%02x"),&tmp)) // a valid "%NN" escape sequence
+			else if (_stscanf(term,_T("%02x"),&tmp)>0) // a valid "%NN" escape sequence
 				*u++=tmp, term+=2;
 			else // an invalid "%NN" escape sequence
 				break;

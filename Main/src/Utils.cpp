@@ -1720,7 +1720,7 @@ namespace Utils{
 		} range={};
 		for( const TCHAR *p=buf; p<pEnd; p++ ){
 			int i,n;
-			if (!_stscanf( p, _T("%d%n"), &i, &n ))
+			if (_stscanf( p, _T("%d%n"), &i, &n )<=0)
 				return false; // invalid or no number
 			if (!limits.Contains(i))
 				return false; // out of Limits
