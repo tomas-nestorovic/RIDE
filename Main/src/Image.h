@@ -409,6 +409,7 @@
 				bool IntersectsWith(const TLogTimeInterval &ti) const;
 				void AddCopyAscendingByStart(const TParseEvent &pe);
 				void AddCopiesAscendingByStart(const CParseEventList &list);
+				void RemoveConsecutiveBeforeEnd(TLogTime tEndMax);
 			};
 		protected:
 			const PLogTime logTimes; // absolute logical times since the start of recording
@@ -548,7 +549,8 @@
 			bool ReadBits32(DWORD &rOut);
 			char ReadByte(ULONGLONG &rOutBits,PBYTE pOutValue=nullptr);
 			WORD Scan(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents=nullptr);
-			WORD ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList &rOutParseEvents,CActionProgress &ap,bool fullAnalysis=true);
+			WORD ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,PLogTime pOutDataEnds,CParseEventList &rOutParseEvents,CActionProgress &ap,bool fullAnalysis=true);
+			WORD ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,PLogTime pOutDataEnds,CParseEventList &rOutParseEvents,CActionProgress &ap,bool fullAnalysis=true);
 			CParseEventList ScanAndAnalyze(CActionProgress &ap,bool fullAnalysis=true);
 			TFdcStatus ReadData(const TSectorId &id,TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,CParseEventList *pOutParseEvents);
 			TFdcStatus ReadData(const TSectorId &id,TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,LPBYTE buffer);

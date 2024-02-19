@@ -157,7 +157,7 @@
 			bool calibrationAfterErrorOnlyForKnownSectors;
 			BYTE calibrationStepDuringFormatting;
 			TCorrections corrections;
-			bool verifyWrittenTracks;
+			bool verifyWrittenTracks, verifyBadSectors;
 			// volatile (current session only)
 			bool flippyDisk, userForcedFlippyDisk;
 			bool doubleTrackStep, userForcedDoubleTrackStep;

@@ -339,7 +339,7 @@
 		return nSectorsFound;
 	}
 
-	WORD CImage::CTrackReader::ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList &rOutParseEvents,CActionProgress &ap,bool fullAnalysis){
+	WORD CImage::CTrackReader::ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,PLogTime pOutDataEnds,CParseEventList &rOutParseEvents,CActionProgress &ap,bool fullAnalysis){
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
 		constexpr int StepGranularity=1000;
 		const BYTE nFullRevolutions=std::max( 0, GetIndexCount()-1 );
@@ -362,7 +362,9 @@
 				auto &r=dataEnds[nDataEnds++];
 					r.time=currentTime;
 					r.profile=profile;
-			}
+				pOutDataEnds[s]=currentTime;
+			}else
+				pOutDataEnds[s]=0;
 			rOutParseEvents.AddCopiesAscendingByStart( peSector );
 		}
 		if (!fullAnalysis)
@@ -586,12 +588,18 @@
 		// - successfully analyzed
 		return nSectorsFound;
 	}
+
+	WORD CImage::CTrackReader::ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,PLogTime pOutDataEnds,CParseEventList &rOutParseEvents,CActionProgress &ap,bool fullAnalysis){
+		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
+		CImage::CTrackReader::TProfile idProfiles[Revolution::MAX*(TSector)-1]; TFdcStatus statuses[Revolution::MAX*(TSector)-1];
+		return ScanAndAnalyze( pOutFoundSectors, pOutIdEnds, idProfiles, statuses, pOutDataEnds, rOutParseEvents, ap, fullAnalysis );
+	}
 	
 	CImage::CTrackReader::CParseEventList CImage::CTrackReader::ScanAndAnalyze(CActionProgress &ap,bool fullAnalysis){
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
 		CImage::CTrackReader::CParseEventList peTrack;
-		TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; CImage::CTrackReader::TProfile idProfiles[Revolution::MAX*(TSector)-1]; TFdcStatus statuses[Revolution::MAX*(TSector)-1];
-		ScanAndAnalyze( ids, idEnds, idProfiles, statuses, peTrack, ap, fullAnalysis );
+		TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; TLogTime dataEnds[Revolution::MAX*(TSector)-1];
+		ScanAndAnalyze( ids, idEnds, dataEnds, peTrack, ap, fullAnalysis );
 		return peTrack;
 	}
 
@@ -960,6 +968,20 @@
 				InsertBefore( pos, list.GetNext(listPos) );
 		while (listPos)
 			AddTail( list.GetNext(listPos) );
+	}
+
+	void CImage::CTrackReader::CParseEventList::RemoveConsecutiveBeforeEnd(TLogTime tEndMax){
+		// removes all ParseEvents that touch or overlap just before the End time
+		POSITION pos=GetPositionByEnd(tEndMax);
+		if (pos && GetAt(pos).tEnd>tEndMax)
+			GetPrev(pos);
+		for( bool consequtive=pos!=nullptr; consequtive; ){
+			const POSITION curr=pos;
+			const auto &peCurr=GetPrev(pos);
+			const TLogTime tPrevEnd= pos!=nullptr ? GetAt(pos).tEnd : -1;
+			consequtive=peCurr.tStart<=tPrevEnd; // touching or overlapping?
+			RemoveAt(curr);
+		}
 	}
 
 

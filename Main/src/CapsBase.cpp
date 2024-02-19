@@ -1049,10 +1049,20 @@ invalidTrack:
 								else if (const auto pBadRegions=Utils::MakeCallocPtr<CTrackReader::TRegion>(vp.nSesItems)){
 									// composition and display of non-overlapping erroneously written regions of the Track
 									const DWORD nBadRegions=writtenBits.ScriptToLocalRegions( pSes, vp.nSesItems, pBadRegions, COLOR_RED );
-									const auto peTrack=pitWritten->ScanAndAnalyze( CActionProgress::None, false ); // False = only linear, time-inexpensive analysis (thus no need for doing this in parallel)
+									CTrackReader::CParseEventList peTrack;
+									TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; TLogTime dataEnds[Revolution::MAX*(TSector)-1];
+									const auto nSectors=pitWritten->ScanAndAnalyze( ids, idEnds, dataEnds, peTrack, CActionProgress::None, false ); // False = only linear, time-inexpensive analysis (thus no need for doing this in parallel)
+									if (!params.verifyBadSectors) // remove Events that relate to Bad Sectors
+										for( auto i=nSectors; i>0; ){
+											const TPhysicalAddress chs={ cyl, head, ids[--i] };
+											if (dos->GetSectorStatus(chs)==CDos::TSectorStatus::BAD){
+												peTrack.RemoveConsecutiveBeforeEnd( idEnds[i] );
+												peTrack.RemoveConsecutiveBeforeEnd( dataEnds[i] );
+											}
+										}
 									err=ERROR_CONTINUE; // assumption (no intersection with ID or Data fields, thus ignore this error in writing)
-									for( DWORD i=nBadRegions; i>0; )
-										if (peTrack.IntersectsWith(pBadRegions[--i])){
+									for( DWORD i=0; i<nBadRegions; i++ )
+										if (peTrack.IntersectsWith(pBadRegions[i])){
 											switch (pitWritten->ShowModal( pBadRegions, nBadRegions, MB_ABORTRETRYIGNORE, true, pBadRegions[i].tStart, _T("Track %02d.%c verification failed: Review RED-MARKED errors (use J and L keys) and decide how to proceed!"), cyl, '0'+head )){
 												case IDOK: // ignore
 													break;
@@ -1203,6 +1213,7 @@ invalidTrack:
 	#define INI_CALIBRATE_SECTOR_ERROR_KNOWN _T("clbknw")
 	#define INI_CALIBRATE_FORMATTING	_T("clbfmt")
 	#define INI_VERIFY_WRITTEN_TRACKS	_T("vwt")
+	#define INI_VERIFY_BAD_SECTORS		_T("vwtbs")
 
 	CCapsBase::TParams::TParams(LPCTSTR iniSectionName)
 		// ctor
@@ -1217,6 +1228,7 @@ invalidTrack:
 		, calibrationStepDuringFormatting( app.GetProfileInt(iniSectionName,INI_CALIBRATE_FORMATTING,0) )
 		, corrections( iniSectionName )
 		, verifyWrittenTracks( app.GetProfileInt(iniSectionName,INI_VERIFY_WRITTEN_TRACKS,true)!=0 )
+		, verifyBadSectors( app.GetProfileInt(iniSectionName,INI_VERIFY_BAD_SECTORS,true)!=0 )
 		// - volatile (current session only)
 		, flippyDisk(false) , userForcedFlippyDisk(false)
 		, doubleTrackStep(false) , userForcedDoubleTrackStep(false) { // True once the ID_40D80 button in Settings dialog is pressed
@@ -1233,6 +1245,7 @@ invalidTrack:
 		app.WriteProfileInt( iniSectionName, INI_CALIBRATE_FORMATTING, calibrationStepDuringFormatting );
 		corrections.Save( iniSectionName );
 		app.WriteProfileInt( iniSectionName, INI_VERIFY_WRITTEN_TRACKS, verifyWrittenTracks );
+		app.WriteProfileInt( iniSectionName, INI_VERIFY_BAD_SECTORS, verifyBadSectors );
 	}
 
 	CImage::CTrackReader::TDecoderMethod CCapsBase::TParams::GetGlobalFluxDecoder() const{
@@ -1410,7 +1423,7 @@ invalidTrack:
 					ID_ROTATION, // precision
 					ID_NONE, ID_CYLINDER, ID_SECTOR, ID_READABLE, // calibration upon read failure
 					ID_ZERO, ID_CYLINDER_N, ID_ADD, // calibration upon write failure
-					ID_VERIFY_TRACK,
+					ID_VERIFY_TRACK, ID_VERIFY_SECTOR,
 					0
 				};
 				const bool isRealDevice=rcb.properties->IsRealDevice();
@@ -1458,6 +1471,10 @@ invalidTrack:
 				tmp=params.verifyWrittenTracks&&isRealDevice;
 				DDX_Check( pDX,	ID_VERIFY_TRACK,	tmp );
 				params.verifyWrittenTracks=tmp!=0;
+				tmp=params.verifyBadSectors&&isRealDevice;
+				DDX_Check( pDX,	ID_VERIFY_SECTOR,	tmp );					
+					EnableDlgItem( ID_VERIFY_SECTOR, params.verifyWrittenTracks );
+				params.verifyBadSectors=tmp!=0;
 			}
 
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
@@ -1515,6 +1532,10 @@ invalidTrack:
 							case ID_CYLINDER_N:
 								// adjusting possibility to edit the CalibrationStep according to selected option
 								EnableDlgItem( ID_NUMBER, wParam!=ID_ZERO );
+								break;
+							case MAKELONG(ID_VERIFY_TRACK,BN_CLICKED):
+								// whole Track verification
+								EnableDlgItem( ID_VERIFY_SECTOR, IsDlgItemChecked(ID_VERIFY_TRACK) );
 								break;
 							case IDOK:
 								// attempting to confirm the Dialog
