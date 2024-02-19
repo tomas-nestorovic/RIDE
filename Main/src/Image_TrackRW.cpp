@@ -2,7 +2,7 @@
 
 	CImage::CTrackReader::CTrackReader(PLogTime _logTimes,DWORD nLogTimes,PCLogTime indexPulses,BYTE _nIndexPulses,Medium::TType mediumType,Codec::TType codec,TDecoderMethod method,bool resetDecoderOnIndex)
 		// ctor
-		: logTimes(_logTimes+1) , nLogTimes(nLogTimes) // "+1" = hidden item represents reference counter
+		: logTimes(_logTimes+2) , nLogTimes(nLogTimes) // "+2" = hidden items represent buffer capacity and reference counter
 		, iNextIndexPulse(0) , nIndexPulses(  std::min<BYTE>( Revolution::MAX, _nIndexPulses )  )
 		, iNextTime(0) , currentTime(0) , lastReadBits(0)
 		, method(method) , resetDecoderOnIndex(resetDecoderOnIndex) {
@@ -33,7 +33,7 @@
 		// dtor
 		static_assert( sizeof(TLogTime)==sizeof(UINT), "InterlockedDecrement" );
 		if (!::InterlockedDecrement( (PUINT)logTimes-1 )) // decreasing the reference counter
-			::free(logTimes-1);
+			::free(logTimes-2);
 	}
 
 
@@ -1376,36 +1376,33 @@
 
 	CImage::CTrackReaderWriter::CTrackReaderWriter(DWORD nLogTimesMax,TDecoderMethod method,bool resetDecoderOnIndex)
 		// ctor
-		: CTrackReader( (PLogTime)::calloc(1+nLogTimesMax+1,sizeof(TLogTime)), 0, nullptr, 0, Medium::FLOPPY_DD, Codec::MFM, method, resetDecoderOnIndex ) // "1+" = hidden item represents reference counter, "+1" = for stop-conditions and other purposes
-		, nLogTimesMax(nLogTimesMax) {
+		: CTrackReader( (PLogTime)::calloc(2+nLogTimesMax+1,sizeof(TLogTime)), 0, nullptr, 0, Medium::FLOPPY_DD, Codec::MFM, method, resetDecoderOnIndex ) { // "2+" = hidden items represent buffer capacity and reference counter, "+1" = for stop-conditions and other purposes
+		logTimes[-2]=nLogTimesMax;
 	}
 
 	CImage::CTrackReaderWriter::CTrackReaderWriter(const CTrackReaderWriter &rTrackReaderWriter,bool shareTimes)
 		// copy ctor
-		: CTrackReader( rTrackReaderWriter )
-		, nLogTimesMax( rTrackReaderWriter.nLogTimesMax ) {
+		: CTrackReader( rTrackReaderWriter ) {
 		if (!shareTimes){
-			CTrackReaderWriter tmp( rTrackReaderWriter.nLogTimesMax, rTrackReaderWriter.method, rTrackReaderWriter.resetDecoderOnIndex );
-			std::swap( *const_cast<PLogTime *>(&tmp.logTimes), *const_cast<PLogTime *>(&logTimes) );
+			CTrackReaderWriter tmp( rTrackReaderWriter.GetBufferCapacity(), rTrackReaderWriter.method, rTrackReaderWriter.resetDecoderOnIndex );
+			std::swap( tmp.logTimes, logTimes );
 			::memcpy( logTimes, rTrackReaderWriter.logTimes, nLogTimes*sizeof(TLogTime) );
 		}
 	}
 	
 	CImage::CTrackReaderWriter::CTrackReaderWriter(CTrackReaderWriter &&rTrackReaderWriter)
 		// move ctor
-		: CTrackReader( std::move(rTrackReaderWriter) )
-		, nLogTimesMax( rTrackReaderWriter.nLogTimesMax ) {
+		: CTrackReader( std::move(rTrackReaderWriter) ) {
 	}
 	
 	CImage::CTrackReaderWriter::CTrackReaderWriter(const CTrackReader &tr)
 		// copy ctor
-		: CTrackReader(tr)
-		, nLogTimesMax( tr.GetTimesCount() ) {
+		: CTrackReader(tr) {
 	}
 	
 	void CImage::CTrackReaderWriter::AddTimes(PCLogTime logTimes,DWORD nLogTimes){
 		// appends given amount of LogicalTimes at the end of the Track
-		ASSERT( this->nLogTimes+nLogTimes<=nLogTimesMax );
+		ASSERT( this->nLogTimes+nLogTimes<=GetBufferCapacity() );
 		if (this->logTimes+this->nLogTimes==logTimes)
 			// caller wrote directly into the buffer (e.g. creation of initial content); faster than calling N-times AddTime
 			this->nLogTimes+=nLogTimes;
@@ -1443,7 +1440,7 @@
 		// - overwriting the "nBits" cells with new Bits
 		SetCurrentTimeAndProfile( tOverwritingStart, overwritingStartProfile );
 		const DWORD nNewLogTimes=nLogTimes+nOnesCurrently-nOnesPreviously;
-		if (nNewLogTimes>nLogTimesMax)
+		if (nNewLogTimes>GetBufferCapacity())
 			return false;
 		const PLogTime pOverwritingStart=logTimes+iNextTime;
 		::memmove(
@@ -1531,7 +1528,7 @@
 		const TLogTime tLastIndex=GetIndexTime(nIndexPulses-1);
 		const DWORD iModifStart=iNextTime;
 		DWORD iTime=iModifStart;
-		const Utils::CCallocPtr<TLogTime> buffer(nLogTimesMax);
+		const Utils::CCallocPtr<TLogTime> buffer(GetBufferCapacity());
 		const PLogTime ptModified=buffer.get();
 		for( BYTE nextIndex=1; nextIndex<nIndexPulses; nextIndex++ ){
 			// . resetting inspection conditions
@@ -1544,7 +1541,7 @@
 				// alignment wanted
 				for( ; *this&&logTimes[iNextTime]<tNextIndexOrg; nAlignedCells++ )
 					if (ReadBit())
-						if (iTime<nLogTimesMax)
+						if (iTime<GetBufferCapacity())
 							ptModified[iTime++] = tCurrIndexOrg + nAlignedCells*profile.iwTimeDefault;
 						else
 							return ERROR_INSUFFICIENT_BUFFER; // mustn't overrun the Buffer
@@ -1600,7 +1597,7 @@
 			iTime=iModifRevEnd;
 		}
 		// - copying Modified LogicalTimes to the Track
-		if (nLogTimes+iTime-iNextTime>=nLogTimesMax)
+		if (nLogTimes+iTime-iNextTime>=GetBufferCapacity())
 			return ERROR_INSUFFICIENT_BUFFER; // mustn't overrun the Buffer
 		::memmove( logTimes+iTime, logTimes+iNextTime, (nLogTimes-iNextTime)*sizeof(TLogTime) );
 		nLogTimes+=iTime-iNextTime;

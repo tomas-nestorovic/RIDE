@@ -563,8 +563,6 @@
 		};
 
 		class CTrackReaderWriter:public CTrackReader{
-			const DWORD nLogTimesMax;
-
 			bool WriteBits(const bool *bits,DWORD nBits);
 			WORD WriteDataFm(WORD nBytesToWrite,PCBYTE buffer,TFdcStatus sr);
 			WORD WriteDataMfm(WORD nBytesToWrite,PCBYTE buffer,TFdcStatus sr);
@@ -583,9 +581,14 @@
 			}
 
 			inline
+			DWORD GetBufferCapacity() const{
+				return logTimes[-2];
+			}
+
+			inline
 			void AddTime(TLogTime logTime){
 				// appends LogicalTime at the end of the Track
-				ASSERT( nLogTimes<nLogTimesMax );
+				ASSERT( nLogTimes<GetBufferCapacity() );
 				ASSERT( logTime>=0 );
 				logTimes[nLogTimes++]=logTime;
 			}
