@@ -242,9 +242,7 @@
 				// . if possible, analyzing the read Source Track
 				bool hasNonformattedArea=false, hasDataInGaps=false, hasFuzzyData=false, hasDataOverIndex=false, hasDuplicatedIdFields=false, missesSomeSectors=false;
 				if (trSrc && dp.fullTrackAnalysis){
-					TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; CImage::CTrackReader::TProfile idProfiles[Revolution::MAX*(TSector)-1]; TFdcStatus idStatuses[Revolution::MAX*(TSector)-1];
-					CImage::CTrackReader::CParseEventList peTrack;
-					trSrc.ScanAndAnalyze( ids, idEnds, idProfiles, idStatuses, peTrack, pAction->CreateSubactionProgress(0) );
+					const auto peTrack=trSrc.ScanAndAnalyze( pAction->CreateSubactionProgress(0) );
 					hasNonformattedArea=peTrack.Contains( CImage::CTrackReader::TParseEvent::NONFORMATTED );
 					hasDataInGaps=peTrack.Contains( CImage::CTrackReader::TParseEvent::DATA_IN_GAP );
 					hasFuzzyData=peTrack.Contains( CImage::CTrackReader::TParseEvent::FUZZY_BAD );

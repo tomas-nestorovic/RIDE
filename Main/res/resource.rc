@@ -1839,13 +1839,13 @@ BEGIN
     EDITTEXT        ID_NUMBER,103,214,16,12,ES_RIGHT | ES_AUTOHSCROLL | 
                     ES_NUMBER | WS_DISABLED | NOT WS_BORDER
     LTEXT           "-th cyl.",ID_ADD,119,214,22,8,NOT WS_GROUP
-    CONTROL         "&Verify formatted/written tracks (recommended)",
-                    ID_VERIFY_TRACK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
-                    241,211,10
     CONTROL         "Use jitter and other &corrections",ID_TRACK,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,7,230,112,10
     CONTROL         "(<a id=""correction"">Settings</a>)",ID_TIME,"SysLink",
                     WS_TABSTOP,119,231,49,10
+    CONTROL         "&Verify formatted/written tracks (recommended)",
+                    ID_VERIFY_TRACK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
+                    241,211,10
     CONTROL         "Verify sectors marked as bad in FAT",ID_VERIFY_SECTOR,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,18,252,200,10
 END
