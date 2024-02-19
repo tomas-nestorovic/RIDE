@@ -1525,10 +1525,11 @@
 		// - ignoring what's before the first Index
 		TLogTime tCurrIndexOrg=RewindToIndex(0);
 		// - normalization
-		const TLogTime tLastIndex=GetIndexTime(nIndexPulses-1);
+		const TLogTime tLastIndex=GetLastIndexTime();
 		const DWORD iModifStart=iNextTime;
 		DWORD iTime=iModifStart;
-		const Utils::CCallocPtr<TLogTime> buffer(GetBufferCapacity());
+		const DWORD nLogTimesMaxNew=std::max( nIndexPulses*mp->nCells, GetBufferCapacity() );
+		const Utils::CCallocPtr<TLogTime> buffer( nLogTimesMaxNew, 0 ); // pessimistic estimation for FM encoding
 		const PLogTime ptModified=buffer.get();
 		for( BYTE nextIndex=1; nextIndex<nIndexPulses; nextIndex++ ){
 			// . resetting inspection conditions
@@ -1541,7 +1542,7 @@
 				// alignment wanted
 				for( ; *this&&logTimes[iNextTime]<tNextIndexOrg; nAlignedCells++ )
 					if (ReadBit())
-						if (iTime<GetBufferCapacity())
+						if (iTime<nLogTimesMaxNew)
 							ptModified[iTime++] = tCurrIndexOrg + nAlignedCells*profile.iwTimeDefault;
 						else
 							return ERROR_INSUFFICIENT_BUFFER; // mustn't overrun the Buffer
@@ -1597,15 +1598,17 @@
 			iTime=iModifRevEnd;
 		}
 		// - copying Modified LogicalTimes to the Track
-		if (nLogTimes+iTime-iNextTime>=GetBufferCapacity())
-			return ERROR_INSUFFICIENT_BUFFER; // mustn't overrun the Buffer
-		::memmove( logTimes+iTime, logTimes+iNextTime, (nLogTimes-iNextTime)*sizeof(TLogTime) );
-		nLogTimes+=iTime-iNextTime;
-		if (const TLogTime dt=indexPulses[nIndexPulses-1]-tLastIndex)
-			for( DWORD i=iTime; i<nLogTimes; logTimes[i++]+=dt );
-		::memcpy( logTimes+iModifStart, ptModified+iModifStart, (iTime-iModifStart)*sizeof(TLogTime) );
+		const DWORD nNewLogTimes=nLogTimes+iTime-iNextTime;
+		CTrackReaderWriter tmp( nLogTimesMaxNew, method, resetDecoderOnIndex );
+			::memcpy( tmp.logTimes, logTimes, iModifStart*sizeof(TLogTime) ); // Times before first Index
+			::memcpy( tmp.logTimes+iModifStart, ptModified+iModifStart, (iTime-iModifStart)*sizeof(TLogTime) ); // Times in full Revolutions
+			::memcpy( tmp.logTimes+iTime, logTimes+iNextTime, (nLogTimes-iNextTime)*sizeof(TLogTime) ); // Times after last Index
+			if (const TLogTime dt=GetLastIndexTime()-tLastIndex)
+				for( DWORD i=iTime; i<nNewLogTimes; tmp.logTimes[i++]+=dt );
+		std::swap( tmp.logTimes, logTimes );
+		nLogTimes=nNewLogTimes;
 		SetCurrentTime(0); // setting valid state
-		// - successfully aligned
+		// - successfully normalized
 		return ERROR_SUCCESS;
 	}
 

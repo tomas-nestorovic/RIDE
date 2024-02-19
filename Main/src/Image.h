@@ -412,7 +412,7 @@
 				void RemoveConsecutiveBeforeEnd(TLogTime tEndMax);
 			};
 		protected:
-			const PLogTime logTimes; // absolute logical times since the start of recording
+			PLogTime logTimes; // absolute logical times since the start of recording
 			const TDecoderMethod method;
 			bool resetDecoderOnIndex;
 			DWORD iNextTime,nLogTimes;
