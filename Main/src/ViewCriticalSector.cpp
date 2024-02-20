@@ -96,7 +96,7 @@
 			content->CreateStatic(this,1,2,WS_CHILD|WS_VISIBLE|WS_CLIPSIBLINGS);//WS_CLIPCHILDREN|
 			//content->CreateView(0,0,RUNTIME_CLASS(CPropertyGridView),CSize(splitX,0),&cc);
 			//const HWND hPropGrid=content->GetDlgItemHwnd( content->IdFromRowCol(0,0) );
-				propGrid.CreateEx( 0, PropGrid::GetWindowClass(app.m_hInstance), nullptr, AFX_WS_DEFAULT_VIEW&~WS_BORDER, 0,0,PROPGRID_WIDTH_DEFAULT,300, content->m_hWnd, (HMENU)content->IdFromRowCol(0,0) );
+				propGrid.CreateEx( 0, (LPCTSTR)PropGrid::GetWindowClass(app.m_hInstance), nullptr, AFX_WS_DEFAULT_VIEW&~WS_BORDER, 0,0,PROPGRID_WIDTH_DEFAULT,300, content->m_hWnd, (HMENU)content->IdFromRowCol(0,0) );
 				content->SetColumnInfo(0,Utils::LogicalUnitScaleFactor*PROPGRID_WIDTH_DEFAULT,0);
 			//content->CreateView(0,1,RUNTIME_CLASS(CHexaEditor),CSize(),&cc); // commented out as created manually below
 				hexaEditor.Update( fSectorData, fSectorData );
