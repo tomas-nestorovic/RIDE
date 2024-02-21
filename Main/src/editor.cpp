@@ -187,6 +187,7 @@
 		cfPreferredDropEffect=::RegisterClipboardFormat(CFSTR_PREFERREDDROPEFFECT);
 		cfPerformedDropEffect=::RegisterClipboardFormat(CFSTR_PERFORMEDDROPEFFECT);
 		cfPasteSucceeded=::RegisterClipboardFormat(CFSTR_PASTESUCCEEDED);
+		propGridWndClass=PropGrid::RegisterWindowClass( m_hInstance );
 		// - registering recognizable Image types and known DOSes (in alphabetical order)
 		CImage::Known.AddTail( &CCtRaw::Properties );
 		CImage::Known.AddTail( &D80::Properties );

@@ -10,6 +10,7 @@
 		DECLARE_MESSAGE_MAP()
 	private:
 		bool godMode;
+		ATOM propGridWndClass;
 	public:
 		class CRecentFileListEx sealed:public CRecentFileList{
 			CDos::PCProperties openWith[ID_FILE_MRU_LAST+1-ID_FILE_MRU_FIRST];
@@ -38,6 +39,7 @@
 		CRecentFileListEx *GetRecentFileList() const;
 		HWND GetEnabledActiveWindow() const;
 		bool IsInGodMode() const;
+		inline LPCTSTR GetPropGridWndClass() const{ return (LPCTSTR)propGridWndClass; }
 		inline CMainWindow *GetMainWindow() const{ return (CMainWindow *)m_pMainWnd; }
 		#if _MFC_VER>=0x0A00
 		afx_msg void OnOpenRecentFile(UINT nID);

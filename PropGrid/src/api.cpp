@@ -2,7 +2,7 @@
 
 	#define PG_CLASS_NAME	_T("WCPropGridClass32")
 
-	ATOM WINAPI PropGrid::GetWindowClass(HINSTANCE hInstance){
+	ATOM WINAPI PropGrid::RegisterWindowClass(HINSTANCE hInstance){
 		// creates and returns PropertyGrid window class
 		WNDCLASS wc;
 			::ZeroMemory(&wc,sizeof(wc));
@@ -15,7 +15,8 @@
 	HWND WINAPI PropGrid::Create(HINSTANCE hInstance,LPCTSTR windowName,UINT style,int x,int y,int width,int height,HWND hParent){
 		// creates and returns a new instance of the PropertyGrid
 		//if (width<=2*CATEGORY_HEIGHT) width=2*CATEGORY_HEIGHT;
-		return ::CreateWindow(	(LPCTSTR)GetWindowClass(hInstance), // making sure the window class is always defined
+		RegisterWindowClass(hInstance); // making sure the window class is always defined
+		return ::CreateWindow(	PG_CLASS_NAME,
 								windowName,
 								WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | style,
 								x,y, width,height,

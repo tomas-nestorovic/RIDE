@@ -205,7 +205,7 @@
 			);
 		}
 
-		PROPGRID_DECLSPEC ATOM WINAPI GetWindowClass(HINSTANCE hInstance);
+		PROPGRID_DECLSPEC ATOM WINAPI RegisterWindowClass(HINSTANCE hInstance);
 		PROPGRID_DECLSPEC HWND WINAPI Create(HINSTANCE hInstance,LPCTSTR windowName,UINT style,int x,int y,int width,int height,HWND hParent);
 		PROPGRID_DECLSPEC HANDLE WINAPI AddPropertyW(HWND hPropGrid,HANDLE category,LPCWSTR name,PValue value,PCEditor editor,PCustomParam param=nullptr);
 		PROPGRID_DECLSPEC HANDLE WINAPI AddPropertyA(HWND hPropGrid,HANDLE category,LPCSTR name,PValue value,PCEditor editor,PCustomParam param=nullptr);
