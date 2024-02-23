@@ -299,12 +299,14 @@
 			const CWnd *const pView;
 			const PFile directory;
 		protected:
+			const LPCTSTR caption;
 			const LPCTSTR iniSection;
 			const short initialClientWidth,initialClientHeight;
 			std::unique_ptr<CDos::TDirectoryTraversal> pdt;
 
-			CFilePreview(const CWnd *pView,LPCTSTR iniSection,const CFileManagerView &rFileManager,short initialClientWidth,short initialClientHeight,bool keepAspectRatio,DWORD resourceId);
+			CFilePreview(const CWnd *pView,LPCTSTR caption,LPCTSTR iniSection,const CFileManagerView &rFileManager,short initialClientWidth,short initialClientHeight,bool keepAspectRatio,DWORD resourceId);
 
+			void UpdateCaption();
 			void __showNextFile__();
 			void __showPreviousFile__();
 			virtual void RefreshPreview()=0;

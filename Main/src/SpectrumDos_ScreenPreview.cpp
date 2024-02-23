@@ -125,7 +125,7 @@
 	CSpectrumBase::CScreenPreview::CScreenPreview(const CFileManagerView &rFileManager)
 		// ctor
 		// - base
-		: CFilePreview( nullptr, INI_PREVIEW, rFileManager, SCREEN_WIDTH, SCREEN_HEIGHT, true, IDR_SPECTRUM_PREVIEW_SCREEN )
+		: CFilePreview( nullptr, LABEL, INI_PREVIEW, rFileManager, SCREEN_WIDTH, SCREEN_HEIGHT, true, IDR_SPECTRUM_PREVIEW_SCREEN )
 		// - initialization
 		, offset(USHRT_MAX)
 		, showPixels(true) , showAttributes(true) , showFlashing(true)
@@ -228,10 +228,6 @@
 		}
 		// - drawing the converted image
 		InvalidateRect(nullptr,FALSE);
-		// - updaring window's caption
-		SetWindowText(
-			Utils::SimpleFormat( LABEL _T(" (%s)"), DOS->GetFilePresentationNameAndExt(file) )
-		);
 	}
 
 	BOOL CSpectrumBase::CScreenPreview::OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){

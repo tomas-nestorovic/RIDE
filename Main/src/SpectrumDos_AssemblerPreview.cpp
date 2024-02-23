@@ -8,10 +8,10 @@
 	#define INI_FEATURES		_T("feats")
 	#define INI_NUMBER_FORMAT	_T("numfmt")
 
-	CSpectrumBase::CAssemblerPreview::CAssemblerPreview(const CFileManagerView &rFileManager,WORD orgAddress,bool canRebase,DWORD resourceId,LPCTSTR iniSection)
+	CSpectrumBase::CAssemblerPreview::CAssemblerPreview(const CFileManagerView &rFileManager,WORD orgAddress,bool canRebase,DWORD resourceId,LPCTSTR caption,LPCTSTR iniSection)
 		// ctor
 		// - base
-		: CFilePreview(	&contentView, iniSection, rFileManager, PREVIEW_WIDTH_DEFAULT, PREVIEW_HEIGHT_DEFAULT, false, resourceId )
+		: CFilePreview(	&contentView, caption, iniSection, rFileManager, PREVIEW_WIDTH_DEFAULT, PREVIEW_HEIGHT_DEFAULT, false, resourceId )
 		, orgAddress(orgAddress) , canRebase(canRebase)
 		, tmpFileName( Utils::GenerateTemporaryFileName() )
 		, contentView(_T(""))
@@ -53,8 +53,6 @@
 
 	#define IMAGE	rFileManager.tab.image
 	#define DOS		IMAGE->dos
-
-	#define PREVIEW_LABEL	_T("Z80 assembler listing")
 
 	#define Z80_INST_ADC	_T("adc")
 	#define Z80_INST_ADD	_T("add")
@@ -854,12 +852,7 @@
 				}
 			ParseZ80BinaryFileAndShowContent( frw );
 			constantInput.pfIn=nullptr; // the FileReaderWriter is a local object not to be remembered
-			// . updating the window caption
-			SetWindowText(
-				Utils::SimpleFormat( PREVIEW_LABEL _T(" (%s)"), DOS->GetFilePresentationNameAndExt(file) )
-			);
-		}else
-			SetWindowText(PREVIEW_LABEL);
+		}
 		SetWindowPos( nullptr, 0,0, 0,0, SWP_NOZORDER|SWP_NOMOVE|SWP_NOSIZE|SWP_FRAMECHANGED );
 	}
 

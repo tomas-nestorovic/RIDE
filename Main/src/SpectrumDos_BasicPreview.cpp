@@ -2,6 +2,8 @@
 
 	CSpectrumBase::CBasicPreview *CSpectrumBase::CBasicPreview::pSingleInstance;
 
+	#define PREVIEW_LABEL	_T("BASIC listing")
+
 	#define INI_PREVIEW	_T("ZxBasic")
 
 	#define PREVIEW_WIDTH_DEFAULT	750
@@ -14,7 +16,7 @@
 	CSpectrumBase::CBasicPreview::CBasicPreview(const CFileManagerView &rFileManager)
 		// ctor
 		// - base
-		: CAssemblerPreview( rFileManager, 0, false, IDR_SPECTRUM_PREVIEW_BASIC, INI_PREVIEW )
+		: CAssemblerPreview( rFileManager, 0, false, IDR_SPECTRUM_PREVIEW_BASIC, PREVIEW_LABEL, INI_PREVIEW )
 		, machineCodeMenu(IDR_SPECTRUM_PREVIEW_ASSEMBLER)
 		, dataAfterBasic( (TDataAfterBasic)app.GetProfileInt(INI_PREVIEW,INI_INTERPRET_PAST_BASIC,TDataAfterBasic::SHOW_AS_VARIABLES) )
 		, binaryAfter0x14( (TBinaryAfter0x14)app.GetProfileInt(INI_PREVIEW,INI_SHOW_INTERNAL_BINARY,TBinaryAfter0x14::DONT_SHOW) ) {
@@ -45,8 +47,6 @@
 
 	#define IMAGE	rFileManager.tab.image
 	#define DOS		IMAGE->dos
-
-	#define PREVIEW_LABEL	_T("BASIC listing")
 
 	void CSpectrumBase::CBasicPreview::__parseBasicFileAndGenerateHtmlFormattedContent__(PCFile file) const{
 		// generates HTML-formatted BASIC listing of the input File into a temporary file
@@ -600,12 +600,7 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 			__parseBasicFileAndGenerateHtmlFormattedContent__(file);
 			// . opening the HTML-formatted content
 			contentView.Navigate2(tmpFileName);
-			// . updating the window caption
-			SetWindowText(
-				Utils::SimpleFormat( PREVIEW_LABEL _T(" (%s)"), DOS->GetFilePresentationNameAndExt(file) )
-			);
-		}else
-			SetWindowText(PREVIEW_LABEL);
+		}
 		// - hiding/displaying additional menus
 		GetMenu()->RemoveMenu( (UINT)::GetSubMenu(machineCodeMenu.m_hMenu,0), MF_BYCOMMAND|MF_POPUP );
 		if (dataAfterBasic==TDataAfterBasic::SHOW_AS_MACHINE_CODE || features.showRemAsMachineCode)

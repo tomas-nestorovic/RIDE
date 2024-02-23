@@ -15,7 +15,7 @@
 	CDos::CHexaPreview::CHexaPreview(const CFileManagerView &rFileManager)
 		// ctor
 		// - base
-		: CFilePreview( &hexaEditor, INI_PREVIEW, rFileManager, HEXA_WIDTH, HEXA_HEIGHT, false, 0 )
+		: CFilePreview( &hexaEditor, LABEL, INI_PREVIEW, rFileManager, HEXA_WIDTH, HEXA_HEIGHT, false, 0 )
 		// - initialization
 		, hexaEditor(DOS,this) {
 		pSingleInstance=this;
@@ -42,13 +42,7 @@
 			CFileReaderWriter *const frw=new CFileReaderWriter(DOS,file);
 				hexaEditor.Reset( frw, frw, DOS->GetFileOccupiedSize(file) );
 			frw->Release();
-			// . updating the window caption
-			::SendMessageW( // avoided '::SetWindowTextW' that eventually translates Unicode to ANSI because the window has been registered by MFC as ANSI!
-				m_hWnd, WM_SETTEXT, 0,
-				(LPARAM)DOS->GetFilePresentationNameAndExt(file).Prepend( LABEL _T(" (") ).Append(L')').GetUnicode()
-			);
-		}else
-			SetWindowText(LABEL);
+		}
 		//SetWindowPos( nullptr, 0,0, 0,0, SWP_NOZORDER|SWP_NOMOVE|SWP_NOSIZE|SWP_FRAMECHANGED|SWP_NOSENDCHANGING );
 		hexaEditor.SetFocus();
 	}

@@ -7,11 +7,11 @@
 
 	static constexpr RECT defaultRect={ 0, 0, 0, 0 };
 
-	CDos::CFilePreview::CFilePreview(const CWnd *pView,LPCTSTR iniSection,const CFileManagerView &rFileManager,short initialClientWidth,short initialClientHeight,bool keepAspectRatio,DWORD resourceId)
+	CDos::CFilePreview::CFilePreview(const CWnd *pView,LPCTSTR caption,LPCTSTR iniSection,const CFileManagerView &rFileManager,short initialClientWidth,short initialClientHeight,bool keepAspectRatio,DWORD resourceId)
 		// ctor
 		// - initialization
 		: pView(pView)
-		, iniSection(iniSection) , rFileManager(rFileManager)
+		, caption(caption) , iniSection(iniSection) , rFileManager(rFileManager)
 		, initialClientWidth( keepAspectRatio?initialClientWidth:-initialClientWidth )
 		, initialClientHeight( keepAspectRatio?initialClientHeight:-initialClientHeight )
 		, directory(DOS->currentDir)
@@ -52,6 +52,17 @@
 
 
 
+	void CDos::CFilePreview::UpdateCaption(){
+		// displays current File in the Preview window caption
+		if (const PCFile file=pdt->entry)
+			::SendMessageW( // avoided '::SetWindowTextW' that eventually translates Unicode to ANSI because the window has been registered by MFC as ANSI!
+				m_hWnd, WM_SETTEXT, 0,
+				(LPARAM)DOS->GetFilePresentationNameAndExt(file).Prepend(_T(" (")).Prepend(caption).Append(L')').GetUnicode()
+			);
+		else
+			SetWindowText(caption);
+	}
+
 	void CDos::CFilePreview::__showNextFile__(){
 		// shows next File
 		if (!pdt) return;
@@ -81,6 +92,7 @@
 		}
 		RecalcLayout();
 		RefreshPreview();
+		UpdateCaption();
 	}
 
 	void CDos::CFilePreview::__showPreviousFile__(){
@@ -116,6 +128,7 @@
 		}
 		RecalcLayout();
 		RefreshPreview();
+		UpdateCaption();
 	}
 
 	void CDos::CFilePreview::SetInitialClientSize(BYTE scale){
