@@ -77,6 +77,7 @@ using namespace Yahel;
 				break;
 			}
 		}
+		file1.RepaintData(), file2.RepaintData();
 		if (length1||length2){
 			file1.ScrollTo( fileSize1-length1, true );
 			file2.ScrollTo( fileSize2-length1, true );
