@@ -241,7 +241,7 @@
 		GetFileNameOrExt( file, &name, &ext );
 		name=TZxRom::ZxToAscii( name.GetAnsi() );
 		ext=TZxRom::ZxToAscii( ext.GetAnsi() );
-		return name.Escape(true).AppendDotExtensionIfAny( ext.Escape(true) );
+		return name.AppendDotExtensionIfAny( ext );
 	}
 
 	CDos::CPathString CSpectrumBase::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{

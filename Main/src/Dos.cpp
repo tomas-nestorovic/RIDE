@@ -743,7 +743,7 @@ reportError:Utils::Information(buf);
 		// returns File name concatenated with File extension for presentation of the File to the user
 		CPathString name,ext;
 		GetFileNameOrExt( file, &name, &ext );
-		return name.ExcludeFat32LongNameInvalidChars().AppendDotExtensionIfAny( ext.ExcludeFat32LongNameInvalidChars() );
+		return name.AppendDotExtensionIfAny( ext );
 	}
 
 	int CDos::CompareFileNames(RCPathString filename1,RCPathString filename2) const{
