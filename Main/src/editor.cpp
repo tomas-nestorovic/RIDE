@@ -215,7 +215,7 @@
 		CDos::Known.AddTail( &CTRDOS504::Properties );
 		CDos::Known.AddTail( &CTRDOS505::Properties );
 		// - restoring Most Recently Used (MRU) file Images
-		if ((::GetVersion()&0xff)<=5){ // for Windows XP and older ...
+		if (!Utils::IsVistaOrNewer()){ // for Windows XP and older ...
 			delete m_pszProfileName; // ... list is stored to and read from the INI file in application's folder
 			struct TTmp sealed{ TCHAR profile[MAX_PATH]; }; // encapsulating the array into a structure - because MFC4.2 doesn't know the "new TCHAR[MAX_PATH]" operator!
 			PTCHAR pIniFileName=(new TTmp)->profile;

@@ -527,6 +527,7 @@ namespace Utils{
 	};
 
 
+	bool IsVistaOrNewer();
 	TStdWinError ErrorByOs(TStdWinError vistaOrNewer,TStdWinError xpOrOlder);
 #ifdef UNICODE
 #else

@@ -988,11 +988,13 @@ namespace Utils{
 
 
 
+	bool IsVistaOrNewer(){
+		return (::GetVersion()&0xff)>=6;
+	}
+
 	TStdWinError ErrorByOs(TStdWinError vistaOrNewer,TStdWinError xpOrOlder){
 		// returns the error code by observing the current operating system version; it's up to the caller to know whether specified error is supported by the OS
-		return	(::GetVersion()&0xff)<=5 // Windows XP or older
-				? xpOrOlder
-				: vistaOrNewer;
+		return	IsVistaOrNewer() ? vistaOrNewer : xpOrOlder;
 	}
 
 	#define ERROR_BUFFER_SIZE	220
@@ -2009,7 +2011,7 @@ namespace Utils{
 		}
 	} *PSplitButtonInfo;
 
-	#define SPLITBUTTON_ARROW_WIDTH	(LogicalUnitScaleFactor*18)
+	#define SPLITBUTTON_ARROW_WIDTH	(LogicalUnitScaleFactor*16)
 
 	static LRESULT WINAPI __splitButton_wndProc__(HWND hSplitBtn,UINT msg,WPARAM wParam,LPARAM lParam){
 		const PSplitButtonInfo psbi=(PSplitButtonInfo)::GetWindowLong(hSplitBtn,GWL_USERDATA);
@@ -2050,11 +2052,15 @@ namespace Utils{
 				}
 			case WM_SETTEXT:
 				// text about to change
+				if (IsVistaOrNewer())
+					break; // do nothing as Split Button is integral part of Windows
 				::lstrcpyn( psbi->text, (LPCTSTR)lParam, ARRAYSIZE(psbi->text) );
 				::InvalidateRect( hSplitBtn, nullptr, TRUE );
 				return 0;
 			case WM_PAINT:{
 				// drawing
+				if (IsVistaOrNewer())
+					break; // do nothing as Split Button is integral part of Windows
 				// . base
 				::CallWindowProc( wndProc0, hSplitBtn, msg, wParam, lParam );
 				// . drawing
@@ -2113,6 +2119,8 @@ namespace Utils{
 							(WNDPROC)::SetWindowLong( hStdBtn, GWL_WNDPROC, (long)__splitButton_wndProc__ )
 						)
 					);
+		if (IsVistaOrNewer())
+			::SetWindowLong( hStdBtn, GWL_STYLE, ::GetWindowLong(hStdBtn,GWL_STYLE)|BS_SPLITBUTTON );
 		::SetWindowText(hStdBtn,pAction->commandCaption); // after window procedure changed
 		::InvalidateRect(hStdBtn,nullptr,TRUE);
 	}
