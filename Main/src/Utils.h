@@ -540,6 +540,7 @@ namespace Utils{
 	CString SimpleFormat(LPCTSTR format,LPCTSTR param1,LPCTSTR param2);
 	CString SimpleFormat(LPCTSTR format,int param1,LPCTSTR param2);
 	CString SimpleFormat(LPCTSTR format,int param1,int param2,LPCTSTR param3);
+	CString SimpleFormat(LPCTSTR format,int param1,int param2,int param3);
 	CString ComposeErrorMessage(LPCTSTR text,LPCTSTR causeOfError,LPCTSTR consequence=nullptr);
 	CString ComposeErrorMessage(LPCTSTR text,TStdWinError causeOfError,LPCTSTR consequence=nullptr);
 	void FatalError(LPCTSTR text);

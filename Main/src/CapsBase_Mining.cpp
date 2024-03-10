@@ -22,6 +22,7 @@
 			CCapsBase &cb;
 			const TCylinder cyl;
 			const THead head;
+			const CString trackName;
 			const Utils::CRidePen minedTimingPen;
 			const Utils::CRidePen minedIndexPen;
 			const Utils::CCallocPtr<POINT> minedTrackDeltaTiming;
@@ -62,10 +63,7 @@
 				// . base
 				__super::PreInitDialog();
 				// . dialog title
-				TCHAR buf[80];
-				const TPhysicalAddress chs={ cyl, head };
-				::wsprintf( buf, _T("Mining Track %d (Cyl %d, Head %d)"), chs.GetTrackNumber(cb.GetHeadCount()), cyl, head );
-				SetWindowText(buf);
+				SetWindowText( _T("Mining ")+trackName );
 				// . populating the "Mining target" combo-box
 				const PCInternalTrack pit=cb.internalTracks[cyl][head];
 				CComboBox cbx;
@@ -246,6 +244,10 @@
 				// thread to mine specified Track using repeated reading from drive
 				const CBackgroundAction &ba=*(PCBackgroundAction)_pBackgroundAction;
 				CTrackMiningDialog &d=*(CTrackMiningDialog *)ba.GetParams();
+				if (const PCInternalTrack pit=d.cb.GetInternalTrackSafe( d.cyl, d.head ))
+					if (pit->modified)
+						if (!Utils::QuestionYesNo(  Utils::SimpleFormat( _T("Track %s is dirty, mining disposes its modifications.\n\nContinue?"), d.trackName ),  MB_DEFBUTTON1  ))
+							return d.PostMiningErrorMessage(ERROR_CANCELLED);
 				EXCLUSIVELY_LOCK_IMAGE(d.cb);
 				struct{
 					TSector n;
@@ -312,6 +314,7 @@
 				// ctor
 				: Utils::CRideDialog(IDR_CAPS_MINING)
 				, cb(cb) , cyl(cyl) , head(head)
+				, trackName(  Utils::SimpleFormat( _T("Track %d (Cyl %d, Head %d)"), TPhysicalAddress::GetTrackNumber(cyl,head,cb.GetHeadCount()), cyl, head )  )
 				, miningTarget(TARGET_NONE)
 				, headCalibration( (THeadCalibration)app.GetProfileInt( INI_MINING, INI_CALIBRATION, HEAD_DONT_CALIBRATE ) )
 				, minedTimingPen( 2, COLOR_RED )

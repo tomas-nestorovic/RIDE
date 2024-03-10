@@ -91,7 +91,7 @@
 	}
 	TTrack TPhysicalAddress::GetTrackNumber(THead nHeads) const{
 		// determines and returns the Track number based on the specified NumberOfHeads
-		return cylinder*nHeads+head;
+		return GetTrackNumber( cylinder, head, nHeads );
 	}
 
 

@@ -162,6 +162,8 @@
 	typedef const struct TPhysicalAddress{
 		static const TPhysicalAddress Invalid;
 
+		inline static TTrack GetTrackNumber(TCylinder cyl,THead head,THead nHeads){ return cyl*nHeads+head; }
+
 		TCylinder cylinder;
 		THead head;
 		TSectorId sectorId;

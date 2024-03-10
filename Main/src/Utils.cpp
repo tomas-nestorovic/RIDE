@@ -1073,6 +1073,12 @@ namespace Utils{
 		return result;
 	}
 
+	CString SimpleFormat(LPCTSTR format,int param1,int param2,int param3){
+		CString result;
+		result.Format( format, param1, param2, param3 );
+		return result;
+	}
+
 	#define ERROR_BECAUSE		_T("%s because:\n\n%s")
 	#define ERROR_CONSEQUENCE	_T("\n\n\n%s")
 
