@@ -171,7 +171,7 @@ using namespace Yahel;
 						//DEADLOCK: No need to have the ScannedTracks locked - the only place where the values can change is above, so what we read below IS in sync!
 						EXCLUSIVELY_LOCK(ps->request); // synchronizing with dtor
 						if (ps->workerStatus!=TScannerStatus::UNAVAILABLE){ // should we terminate?
-							ps->pParentHexaEditor->SetLogicalSizeLimits( TPosInterval(0,scannedTracks.dataTotalLength) );
+							ps->pParentHexaEditor->SetLogicalSizeLimits( scannedTracks.dataTotalLength );
 							ps->pParentHexaEditor->SetLogicalSize(scannedTracks.dataTotalLength);
 							ps->pParentHexaEditor->ProcessCustomCommand(ID_CREATOR);
 						}
