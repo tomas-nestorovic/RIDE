@@ -253,7 +253,7 @@
 		const HWND hEditor=::CreateWindow(	AfxRegisterWndClass(0,app.LoadStandardCursor(IDC_IBEAM),Utils::CRideBrush::White),
 											nullptr, WS_CHILD|WS_VISIBLE|WS_CLIPSIBLINGS, 0,0, 1,1, hParent, 0, AfxGetInstanceHandle(), nullptr
 										);
-		(WNDPROC)::SetWindowLong(hEditor,GWL_WNDPROC,(LONG)__wndProc__);
+		Utils::SubclassWindow( hEditor, __wndProc__ );
 		return rEditor.handle = hEditor;
 	}
 

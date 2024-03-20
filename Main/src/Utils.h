@@ -227,6 +227,9 @@ namespace Utils{
 
 	class CRideDialog:public CDialog{
 	protected:
+		static LRESULT WINAPI SplitButton_WndProc(HWND hSplitBtn,UINT msg,WPARAM wParam,LPARAM lParam);
+		static LRESULT WINAPI CommandLikeButton_WndProc(HWND hCmdBtn,UINT msg,WPARAM wParam,LPARAM lParam);
+
 		class CRideDC:public CClientDC{
 			int iDc0;
 		public:
@@ -255,12 +258,16 @@ namespace Utils{
 		static void SetDlgItemSingleCharUsingFont(HWND hDlg,WORD id,WCHAR singleChar,HFONT hFont);
 		static void ConvertToCommandLikeButton(HWND hStdBtn,WCHAR wingdingsGlyphBeforeText=0xf0e0,COLORREF textColor=0,int glyphPointSizeIncrement=0,COLORREF glyphColor=0,bool compactPath=true); // 0xf0e0 = thin arrow right
 		static void ConvertToCancelLikeButton(HWND hStdBtn,COLORREF textColor=0,int glyphPointSizeIncrement=0,COLORREF glyphColor=0);
+		template<typename T> static T GetWindowUserData(HWND hWnd){ return (T)::GetWindowLongW( hWnd, GWL_USERDATA ); }
+		template<typename T> static void SetWindowUserData(HWND hWnd,const T &data){ ::SetWindowLongW( hWnd, GWL_USERDATA, (long)data ); }
+
 		CRideDialog(LPCTSTR lpszTemplateName,const CWnd *pParentWnd=nullptr);
 		CRideDialog(UINT nIDTemplate,const CWnd *pParentWnd=nullptr);
 
 		INT_PTR DoModal() override;
 		HWND GetDlgItemHwnd(WORD id) const;
 		int GetDlgItemTextLength(WORD id) const;
+		void SetDlgItemText(WORD id,LPCTSTR text) const;
 		bool IsDlgItemShown(WORD id) const;
 		bool CheckDlgItem(WORD id,bool checked=true) const;
 		bool IsDlgItemChecked(WORD id) const;
@@ -272,6 +279,7 @@ namespace Utils{
 		bool ShowDlgItems(PCWORD pIds,bool show=true) const;
 		void FocusDlgItem(WORD id) const;
 		bool IsDlgItemEnabled(WORD id) const;
+		void ModifyDlgItemStyle(WORD id,UINT addedStyle,UINT removedStyle=0) const;
 		RECT GetDlgItemClientRect(WORD id) const;
 		RECT MapDlgItemClientRect(WORD id) const;
 		RECT MapDlgItemClientRect(HWND hItem) const;
@@ -284,6 +292,8 @@ namespace Utils{
 		void SetDlgItemSize(WORD id,int cx,int cy) const;
 		void SetDlgItemFont(HWND hWnd,const CRideFont &font) const;
 		void SetDlgItemFont(WORD id,const CRideFont &font) const;
+		template<typename T> T GetDlgItemUserData(WORD id) const{ return GetWindowUserData( GetDlgItemHwnd(id) ); }
+		template<typename T> void SetDlgItemUserData(WORD id,const T &data) const{ SetWindowUserData( GetDlgItemHwnd(id), data ); }
 		void InvalidateDlgItem(WORD id) const;
 		void InvalidateDlgItem(HWND hItem) const;
 		LONG_PTR GetDlgComboBoxSelectedValue(WORD id) const;
@@ -587,6 +597,7 @@ namespace Utils{
 	PTCHAR GetApplicationOnlineHtmlDocumentUrl(LPCTSTR documentName,PTCHAR buffer);
 	TStdWinError DownloadSingleFile(LPCTSTR onlineFileUrl,PBYTE fileDataBuffer,DWORD fileDataBufferLength,PDWORD pDownloadedFileSize,LPCTSTR fatalErrorConsequence);
 	void RandomizeData(PVOID buffer,WORD nBytes);
+	WNDPROC SubclassWindow(HWND hWnd,WNDPROC newWndProc);
 	CString DoPromptSingleTypeFileName(LPCTSTR defaultSaveName,LPCTSTR singleFilter,DWORD flags=0);
 }
 

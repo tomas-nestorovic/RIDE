@@ -338,8 +338,8 @@ namespace Utils{
 		}
 	} *PCommandLikeButtonInfo;
 
-	static LRESULT WINAPI __commandLikeButton_wndProc__(HWND hCmdBtn,UINT msg,WPARAM wParam,LPARAM lParam){
-		const PCommandLikeButtonInfo cmdInfo=(PCommandLikeButtonInfo)::GetWindowLong(hCmdBtn,GWL_USERDATA);
+	LRESULT WINAPI CRideDialog::CommandLikeButton_WndProc(HWND hCmdBtn,UINT msg,WPARAM wParam,LPARAM lParam){
+		const PCommandLikeButtonInfo cmdInfo=GetWindowUserData<PCommandLikeButtonInfo>(hCmdBtn);
 		const WNDPROC wndProc0=cmdInfo->wndProc0;
 		switch (msg){
 			case WM_MOUSEMOVE:{
@@ -430,7 +430,7 @@ namespace Utils{
 						wParam=defaultCommandId;
 					else
 						return 0;
-				if (::GetWindowLong((HWND)lParam,GWL_WNDPROC)==(LONG)__commandLikeButton_wndProc__){
+				if (::GetWindowLong((HWND)lParam,GWL_WNDPROC)==(LONG)CommandLikeButton_WndProc){
 					UpdateData(TRUE);
 					EndDialog(wParam);
 					return 0;
@@ -1371,6 +1371,10 @@ namespace Utils{
 		return ::GetWindowTextLength( GetDlgItemHwnd(id) );
 	}
 
+	void CRideDialog::SetDlgItemText(WORD id,LPCTSTR text) const{
+		::SetDlgItemText( m_hWnd, id, text );
+	}
+
 	bool CRideDialog::IsDlgItemShown(WORD id) const{
 		// True <=> control with specified Id is shown, otherwise False
 		return ::IsWindowVisible( GetDlgItemHwnd(id) )!=FALSE;
@@ -1432,6 +1436,10 @@ namespace Utils{
 	bool CRideDialog::IsDlgItemEnabled(WORD id) const{
 		// True <=> the specified Dialog control is enabled, otherwise False
 		return ::IsWindowEnabled( ::GetDlgItem(m_hWnd,id) )!=FALSE;
+	}
+
+	void CRideDialog::ModifyDlgItemStyle(WORD id,UINT addedStyle,UINT removedStyle) const{
+		ModifyStyle( ::GetDlgItem(m_hWnd,id), removedStyle, addedStyle, 0 );
 	}
 
 	RECT CRideDialog::GetDlgItemClientRect(WORD id) const{
@@ -1660,8 +1668,8 @@ namespace Utils{
 
 	void CRideDialog::SetDlgItemCompactPath(WORD id,LPCTSTR fullpath) const{
 		// sets given window's text to compacted FullPath that fits in its dimensions
-		::SetDlgItemText(
-			m_hWnd, id,
+		SetDlgItemText(
+			id,
 			CompactPathToFitInDlgItem( id, fullpath )
 		);
 	}
@@ -1670,7 +1678,7 @@ namespace Utils{
 		// sets given window's text to the text Formatted using given string and parameters; returns the number of characters set
 		va_list argList;
 		va_start( argList, format );
-			::SetDlgItemText( m_hWnd, id, SimpleFormat(format,argList) );
+			SetDlgItemText( id, SimpleFormat(format,argList) );
 		va_end(argList);
 	}
 
@@ -1776,7 +1784,7 @@ namespace Utils{
 				p+=::wsprintf( p, _T("%d%c%d%c "), rangeBegin, RangeSign, rangeEnd, *Delimiters );
 		}
 		p[-2]='\0';
-		::SetDlgItemText( *this, id, buf );
+		SetDlgItemText( id, buf );
 	}
 
 
@@ -1894,10 +1902,10 @@ namespace Utils{
 			Value=v;
 		}else
 			if (hexa!=BST_UNCHECKED){
-				::SetWindowLong( hValue, GWL_STYLE, ::GetWindowLong(hValue,GWL_STYLE)&~ES_NUMBER );
+				ModifyDlgItemStyle( ID_NUMBER, 0, ES_NUMBER );
 				SetDlgItemFormattedText( ID_NUMBER, _T("0x%X"), Value );
 			}else{
-				::SetWindowLong( hValue, GWL_STYLE, ::GetWindowLong(hValue,GWL_STYLE)|ES_NUMBER );
+				ModifyDlgItemStyle( ID_NUMBER, ES_NUMBER );
 				DDX_Text( pDX, ID_NUMBER, Value );
 			}
 		DDX_Check( pDX, ID_FORMAT, hexa );
@@ -2019,8 +2027,8 @@ namespace Utils{
 
 	#define SPLITBUTTON_ARROW_WIDTH	(LogicalUnitScaleFactor*16)
 
-	static LRESULT WINAPI __splitButton_wndProc__(HWND hSplitBtn,UINT msg,WPARAM wParam,LPARAM lParam){
-		const PSplitButtonInfo psbi=(PSplitButtonInfo)::GetWindowLong(hSplitBtn,GWL_USERDATA);
+	LRESULT WINAPI CRideDialog::SplitButton_WndProc(HWND hSplitBtn,UINT msg,WPARAM wParam,LPARAM lParam){
+		const PSplitButtonInfo psbi=GetWindowUserData<PSplitButtonInfo>(hSplitBtn);
 		const WNDPROC wndProc0=psbi->wndProc0;
 		switch (msg){
 			case WM_CAPTURECHANGED:
@@ -2117,17 +2125,17 @@ namespace Utils{
 		const HWND hStdBtn=GetDlgItemHwnd(id);
 		::SetWindowText(hStdBtn,nullptr); // before window procedure changed
 		::SetWindowLong(hStdBtn,GWL_ID,pAction->commandId); // 0.Action is the default
-		::SetWindowLong(hStdBtn, GWL_USERDATA,
-						(long)new TSplitButtonInfo(
-							hStdBtn,
-							pAction,
-							nActions,
-							(WNDPROC)::SetWindowLong( hStdBtn, GWL_WNDPROC, (long)__splitButton_wndProc__ )
-						)
-					);
+		SetDlgItemUserData( id,
+			new TSplitButtonInfo(
+				hStdBtn,
+				pAction,
+				nActions,
+				SubclassWindow( hStdBtn, SplitButton_WndProc )
+			)
+		);
 		if (IsVistaOrNewer())
-			::SetWindowLong( hStdBtn, GWL_STYLE, ::GetWindowLong(hStdBtn,GWL_STYLE)|BS_SPLITBUTTON );
-		::SetWindowText(hStdBtn,pAction->commandCaption); // after window procedure changed
+			ModifyDlgItemStyle( id, BS_SPLITBUTTON );
+		SetDlgItemText(id,pAction->commandCaption); // after window procedure changed
 		::InvalidateRect(hStdBtn,nullptr,TRUE);
 	}
 
@@ -2183,15 +2191,14 @@ namespace Utils{
 
 	void CRideDialog::ConvertToCommandLikeButton(HWND hStdBtn,WCHAR wingdingsGlyphBeforeText,COLORREF textColor,int glyphPointSizeIncrement,COLORREF glyphColor,bool compactPath){
 		// converts an existing standard button to a "command-like" one known from Windows Vista, featuring specified GlypfBeforeText ('\0' = no Glyph)
-		::SetWindowLong( hStdBtn, GWL_STYLE, ::GetWindowLong(hStdBtn,GWL_STYLE)|BS_OWNERDRAW );
-		::SetWindowLong(hStdBtn,
-						GWL_USERDATA,
-						(long)new TCommandLikeButtonInfo(
-							(WNDPROC)::SetWindowLong( hStdBtn, GWL_WNDPROC, (long)__commandLikeButton_wndProc__ ),
-							wingdingsGlyphBeforeText, glyphColor, glyphPointSizeIncrement,
-							textColor, compactPath
-						)
-					);
+		ModifyStyle( hStdBtn, 0, BS_OWNERDRAW, 0 );
+		SetWindowUserData( hStdBtn,
+			new TCommandLikeButtonInfo(
+				SubclassWindow( hStdBtn, CommandLikeButton_WndProc ),
+				wingdingsGlyphBeforeText, glyphColor, glyphPointSizeIncrement,
+				textColor, compactPath
+			)
+		);
 		::InvalidateRect(hStdBtn,nullptr,FALSE);
 	}
 
@@ -2319,6 +2326,10 @@ namespace Utils{
 		// populates Buffer with given CountOfBytes of random data
 		::srand( ::GetTickCount() );
 		for( PBYTE p=(PBYTE)buffer; nBytes--; *p++=::rand() );
+	}
+
+	WNDPROC SubclassWindow(HWND hWnd,WNDPROC newWndProc){
+		return (WNDPROC)::SetWindowLongW( hWnd, GWL_WNDPROC, (LONG)newWndProc );
 	}
 
 	CString DoPromptSingleTypeFileName(LPCTSTR defaultSaveName,LPCTSTR singleFilter,DWORD flags){
