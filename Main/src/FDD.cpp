@@ -1591,6 +1591,7 @@ Utils::Information(buf);}
 					)
 				)
 					CheckDlgButton( ID_READABLE, false ); // this option is never ticked for Unknown DOS
+				ConvertDlgCheckboxToHyperlink( ID_SEEK, ID_STEPPING, L"&Prefer relative over absolute seeking (<a>see why</a>)" );
 			}
 			void __exchangeLatency__(CDataExchange* pDX){
 				// exchange of latency-related data from and to controls
@@ -1658,7 +1659,9 @@ Utils::Information(buf);}
 						OnPaint();
 						return 0;
 					case WM_NOTIFY:
-						if (wParam==ID_AUTO && ((LPNMHDR)lParam)->code==NM_CLICK){
+						if (((LPNMHDR)lParam)->code!=NM_CLICK)
+							break;
+						if (wParam==ID_AUTO){
 autodetermineLatencies:		// automatic determination of write latency values
 							// . defining the Dialog
 							class CLatencyAutoDeterminationDialog sealed:public Utils::CRideDialog{
@@ -1736,7 +1739,8 @@ autodetermineLatencies:		// automatic determination of write latency values
 									}
 								}
 							}
-						}
+						}else if (wParam==ID_STEPPING)
+							app.GetMainWindow()->OpenApplicationFaqWebPage(_T("faq_fddCalibration.html"));
 						break;
 					case WM_COMMAND:
 						switch (wParam){

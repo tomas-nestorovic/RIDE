@@ -78,6 +78,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #undef min
 #undef max
 #undef INFINITY
+#undef SubclassWindow
 
 #if _MSC_VER<=1600
 	#define constexpr const

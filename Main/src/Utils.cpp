@@ -2131,6 +2131,56 @@ namespace Utils{
 		::InvalidateRect(hStdBtn,nullptr,TRUE);
 	}
 
+	void CRideDialog::ConvertDlgCheckboxToHyperlink(WORD id,WORD idHyperlinkControl,LPCWSTR hyperlinkControlText) const{
+		// converts an existing standard check-box to one with a hyperlink in its text
+		static struct{
+			WNDPROC checkbox0;
+
+			static LRESULT WINAPI Checkbox(HWND hCheckbox,UINT msg,WPARAM wParam,LPARAM lParam){
+				switch (msg){
+					case WM_SETFOCUS:
+					case WM_KILLFOCUS:
+						::InvalidateRect( GetWindowUserData<HWND>(hCheckbox), nullptr, TRUE );
+						break;
+					case WM_NOTIFY:
+						return ::SendMessage( ::GetParent(hCheckbox), msg, wParam, lParam ); // forward to Dialog
+					case WM_PAINT:{
+						// . first draw the Checkbox
+						const LRESULT result=::CallWindowProc( wndProc.checkbox0, hCheckbox, msg, wParam, lParam );
+						// . then immediately refresh the Hyperlink
+						const HWND hHyperlink=GetWindowUserData<HWND>(hCheckbox);
+						::RedrawWindow(
+							hHyperlink, nullptr, nullptr,
+							RDW_INVALIDATE | RDW_UPDATENOW | RDW_ERASE
+						);
+						// . if Checkbox focused, draw focus rectangle around the Hyperlink
+						if (::GetFocus()==hCheckbox){
+							RECT rcClient;
+							::GetClientRect( hHyperlink, &rcClient );
+							const HDC dc=::GetDC(hHyperlink);
+								::DrawFocusRect( dc, &rcClient );
+							::ReleaseDC( hHyperlink, dc );
+						}
+						return result;
+					}
+				}
+				return ::CallWindowProc( wndProc.checkbox0, hCheckbox, msg, wParam, lParam );
+			};
+		} wndProc;
+
+		const HWND hStdCheckbox=GetDlgItemHwnd(id);
+		wndProc.checkbox0=Utils::SubclassWindow( hStdCheckbox, wndProc.Checkbox );
+		SetDlgItemText( id, nullptr );
+		CRect rc=GetDlgItemClientRect(id);
+			rc.left=16; //TODO: replace by real margin from left edge
+		const HWND hHyperlink=::CreateWindowW(
+			WC_LINK, hyperlinkControlText, WS_CHILD|WS_VISIBLE,
+			rc.left, rc.top, rc.Width(), rc.Height(), hStdCheckbox, (HMENU)idHyperlinkControl, 0, nullptr
+		);
+		SetDlgItemUserData( id, hHyperlink );
+		::SendMessageW( hHyperlink, WM_SETFONT, (WPARAM)GetFont()->m_hObject, 0 );
+	}
+
 	void CRideDialog::ConvertToCommandLikeButton(HWND hStdBtn,WCHAR wingdingsGlyphBeforeText,COLORREF textColor,int glyphPointSizeIncrement,COLORREF glyphColor,bool compactPath){
 		// converts an existing standard button to a "command-like" one known from Windows Vista, featuring specified GlypfBeforeText ('\0' = no Glyph)
 		::SetWindowLong( hStdBtn, GWL_STYLE, ::GetWindowLong(hStdBtn,GWL_STYLE)|BS_OWNERDRAW );

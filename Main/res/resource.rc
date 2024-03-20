@@ -1513,8 +1513,9 @@ BEGIN
     CONTROL         "Verify &written data (including requested data errors, if any)",
                     ID_VERIFY_SECTOR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
                     229,195,10
-    CONTROL         "&Prefer relative over absolute seeking",ID_SEEK,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,240,131,10
+    CONTROL         "&Prefer relative over absolute seeking (see why)",
+                    ID_SEEK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,240,163,
+                    10
 END
 
 IDR_FDD_LATENCY DIALOG DISCARDABLE  0, 0, 154, 85
@@ -1840,9 +1841,7 @@ BEGIN
                     ES_NUMBER | WS_DISABLED | NOT WS_BORDER
     LTEXT           "-th cyl.",ID_ADD,119,214,22,8,NOT WS_GROUP
     CONTROL         "Use jitter and other &corrections",ID_TRACK,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,230,112,10
-    CONTROL         "(<a id=""correction"">Settings</a>)",ID_TIME,"SysLink",
-                    WS_TABSTOP,119,231,49,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,230,211,10
     CONTROL         "&Verify formatted/written tracks (recommended)",
                     ID_VERIFY_TRACK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
                     241,211,10

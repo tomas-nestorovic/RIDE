@@ -1415,6 +1415,7 @@ invalidTrack:
 					)
 				)
 					CheckDlgButton( ID_READABLE, false ); // this option is never ticked for Unknown DOS
+				ConvertDlgCheckboxToHyperlink( ID_TRACK, ID_TIME, L"Use jitter and other &corrections (<a id=\"correction\">Settings</a>)" );
 			}
 
 			void DoDataExchange(CDataExchange* pDX) override{
