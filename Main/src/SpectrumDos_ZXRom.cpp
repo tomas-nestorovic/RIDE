@@ -196,7 +196,7 @@
 			}else if (!IsStdUdgSymbol(c))
 				// directly printable character
 				::DrawTextA( dc, (LPCSTR)&c,1, &r, drawTextFormat );
-			else{
+			else if ((drawTextFormat&DT_CALCRECT)==0){
 				// UDG character - composed from four 0x2588 characters printed in half scale
 				const int mapMode0=::SetMapMode(dc,MM_ANISOTROPIC);
 					// . printing in half scale (MM_ISOTROPIC)
@@ -318,7 +318,7 @@
 						else if ((nAsciiChars+1)*rZxRom.font.charAvgWidth>=rEditor.scrollX+w && w>rZxRom.font.charAvgWidth) // A&B, A = Caret must also be visible, B = under the condition that it can be actually displayed; "+1" = Caret
 							// Caret "after" visible rectangle - scrolling the content so that the Caret is again visible
 							rEditor.scrollX=nAsciiChars*rZxRom.font.charAvgWidth-3*w/4;
-						::SetWindowOrgEx( dc, rEditor.scrollX, 0, nullptr );
+						::SetViewportOrgEx( dc, -rEditor.scrollX, 0, nullptr );
 						r.right=rEditor.scrollX+w;
 						// . printing content BEFORE Caret
 						rZxRom.PrintAt(
