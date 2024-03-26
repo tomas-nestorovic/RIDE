@@ -2179,14 +2179,16 @@ namespace Utils{
 		const HWND hStdCheckbox=GetDlgItemHwnd(id);
 		wndProc.checkbox0=Utils::SubclassWindow( hStdCheckbox, wndProc.Checkbox );
 		SetDlgItemText( id, nullptr );
+		const Utils::CRideFont dlgFont(m_hWnd);
 		CRect rc=GetDlgItemClientRect(id);
-			rc.left=16; //TODO: replace by real margin from left edge
+			rc.left=Utils::LogicalUnitScaleFactor*16; //TODO: replace by real margin from left edge
+			rc.top=(rc.Height()-dlgFont.charHeight)/2;
 		const HWND hHyperlink=::CreateWindowW(
 			WC_LINK, hyperlinkControlText, WS_CHILD|WS_VISIBLE,
 			rc.left, rc.top, rc.Width(), rc.Height(), hStdCheckbox, (HMENU)idHyperlinkControl, 0, nullptr
 		);
 		SetDlgItemUserData( id, hHyperlink );
-		::SendMessageW( hHyperlink, WM_SETFONT, (WPARAM)GetFont()->m_hObject, 0 );
+		::SendMessageW( hHyperlink, WM_SETFONT, dlgFont, 0 );
 	}
 
 	void CRideDialog::ConvertToCommandLikeButton(HWND hStdBtn,WCHAR wingdingsGlyphBeforeText,COLORREF textColor,int glyphPointSizeIncrement,COLORREF glyphColor,bool compactPath){
