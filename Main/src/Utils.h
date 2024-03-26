@@ -598,6 +598,7 @@ namespace Utils{
 	TStdWinError DownloadSingleFile(LPCTSTR onlineFileUrl,PBYTE fileDataBuffer,DWORD fileDataBufferLength,PDWORD pDownloadedFileSize,LPCTSTR fatalErrorConsequence);
 	void RandomizeData(PVOID buffer,WORD nBytes);
 	WNDPROC SubclassWindow(HWND hWnd,WNDPROC newWndProc);
+	WNDPROC SubclassWindowW(HWND hWnd,WNDPROC newWndProc);
 	CString DoPromptSingleTypeFileName(LPCTSTR defaultSaveName,LPCTSTR singleFilter,DWORD flags=0);
 }
 

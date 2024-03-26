@@ -25,16 +25,16 @@
 			rcEditorArea.right=lv.GetColumnWidth(0);
 		// - creating the Editor
 		(HWND)hEditor=PropGrid::BeginEditValue( value, file, editor, rcEditorArea, 0, parent.m_hWnd, (HWND *)&hEllipsisButton );
-		wndProc0=Utils::SubclassWindow( hEditor, __wndProc__ );
+		wndProc0=Utils::SubclassWindowW( hEditor, __wndProc__ );
 		::SendMessageW( hEditor, WM_SETFONT, parent.font, 0 );
-		ellipsisButtonWndProc0=Utils::SubclassWindow( hEllipsisButton, __ellipsisButton_wndProc__ );
+		ellipsisButtonWndProc0=Utils::SubclassWindowW( hEllipsisButton, __ellipsisButton_wndProc__ );
 	}
 
 	CFileManagerView::CEditorBase::~CEditorBase(){
 		// dtor
 		// - revoking the subclassing (for the Editor to be NOT able to receive any custom messages)
-		Utils::SubclassWindow( hEditor, wndProc0 );
-		Utils::SubclassWindow( hEllipsisButton, ellipsisButtonWndProc0 );
+		Utils::SubclassWindowW( hEditor, wndProc0 );
+		Utils::SubclassWindowW( hEllipsisButton, ellipsisButtonWndProc0 );
 	}
 
 	LRESULT CALLBACK CFileManagerView::CEditorBase::__wndProc__(HWND hEditor,UINT msg,WPARAM wParam,LPARAM lParam){
@@ -168,7 +168,7 @@
 		}else{
 			lv.SetFocus();	// to edit File's label, the ListCtrl must be fokused
 			const HWND hEdit=(HWND)::SendMessageW( lv.m_hWnd, LVM_EDITLABELW, fileId, 0 );
-			CEditorBase::pSingleShown=(PEditorBase)Utils::SubclassWindow( hEdit, __editLabel_wndProc__ );
+			CEditorBase::pSingleShown=(PEditorBase)Utils::SubclassWindowW( hEdit, __editLabel_wndProc__ );
 		}
 		// - emptying the clipboard
 		if (ownedDataSource) ::OleSetClipboard(nullptr);

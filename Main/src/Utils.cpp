@@ -2130,7 +2130,7 @@ namespace Utils{
 				hStdBtn,
 				pAction,
 				nActions,
-				SubclassWindow( hStdBtn, SplitButton_WndProc )
+				Utils::SubclassWindow( hStdBtn, SplitButton_WndProc )
 			)
 		);
 		if (IsVistaOrNewer())
@@ -2196,7 +2196,7 @@ namespace Utils{
 		ModifyStyle( hStdBtn, 0, BS_OWNERDRAW, 0 );
 		SetWindowUserData( hStdBtn,
 			new TCommandLikeButtonInfo(
-				SubclassWindow( hStdBtn, CommandLikeButton_WndProc ),
+				Utils::SubclassWindow( hStdBtn, CommandLikeButton_WndProc ),
 				wingdingsGlyphBeforeText, glyphColor, glyphPointSizeIncrement,
 				textColor, compactPath
 			)
@@ -2331,6 +2331,10 @@ namespace Utils{
 	}
 
 	WNDPROC SubclassWindow(HWND hWnd,WNDPROC newWndProc){
+		return (WNDPROC)::SetWindowLong( hWnd, GWL_WNDPROC, (LONG)newWndProc );
+	}
+
+	WNDPROC SubclassWindowW(HWND hWnd,WNDPROC newWndProc){
 		return (WNDPROC)::SetWindowLongW( hWnd, GWL_WNDPROC, (LONG)newWndProc );
 	}
 
