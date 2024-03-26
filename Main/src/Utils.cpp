@@ -1193,6 +1193,8 @@ namespace Utils{
 	}
 	void InformationWithCheckableShowNoMore(LPCTSTR text,LPCTSTR sectionId,LPCTSTR messageId){
 		// shows Textual information with a "Show no more" CheckBox
+		// - no extra information for God users
+		if (app.IsInGodMode()) return;
 		// - suppressing this message if the user has decided in the past to not show it anymore
 		if (app.GetProfileInt(sectionId,messageId,0)) return;
 		// - storing user's decision of showing or not this message the next time
