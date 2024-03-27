@@ -260,7 +260,7 @@
 		static DWORD GetCurrentDiskFreeSpace();
 		static TStdWinError OpenImageForReading(LPCTSTR fileName,CFile &f);
 		static TStdWinError OpenImageForReadingAndWriting(LPCTSTR fileName,CFile &f);
-		static TStdWinError CreateImageForWriting(LPCTSTR fileName,CFile &f);
+		static TStdWinError CreateImageForReadingAndWriting(LPCTSTR fileName,CFile &f);
 
 		bool canBeModified;
 		PCSide sideMap; // explicit mapping of Heads to Side numbers (index = Head id, [index] = Side number); may be Null if the container doesn't have such feature (e.g. DSK images)

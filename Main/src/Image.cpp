@@ -371,12 +371,12 @@ namespace Medium{
 
 	TStdWinError CImage::OpenImageForReadingAndWriting(LPCTSTR fileName,CFile &f){
 		// True <=> File successfully opened for both reading and writing, otherwise False
-		return	openImageForReadingAndWriting( fileName, f, CFile::modeReadWrite|CFile::typeBinary|CFile::shareExclusive );
+		return	openImageForReadingAndWriting( fileName, f, CFile::modeReadWrite|CFile::typeBinary|CFile::shareExclusive|CFile::modeNoInherit );
 	}
 
-	TStdWinError CImage::CreateImageForWriting(LPCTSTR fileName,CFile &f){
+	TStdWinError CImage::CreateImageForReadingAndWriting(LPCTSTR fileName,CFile &f){
 		// True <=> File successfully created/truncated for reading+writing, otherwise False
-		return	openImageForReadingAndWriting( fileName, f, CFile::modeCreate|CFile::modeReadWrite|CFile::typeBinary|CFile::shareExclusive );
+		return	openImageForReadingAndWriting( fileName, f, CFile::modeCreate|CFile::modeCreate|CFile::modeReadWrite|CFile::typeBinary|CFile::shareExclusive|CFile::modeNoInherit );
 	}
 
 	#define LENGTH_CODE_BASE	0x80

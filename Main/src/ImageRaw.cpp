@@ -140,7 +140,7 @@ using namespace Yahel;
 		CFile fTmp;
 		const bool savingToCurrentFile= lpszPathName==f.GetFilePath() && ::GetFileAttributes(lpszPathName)!=INVALID_FILE_ATTRIBUTES; // saving to the same file and that file exists
 		if (!savingToCurrentFile)
-			if (const TStdWinError err=CreateImageForWriting(lpszPathName,fTmp))
+			if (const TStdWinError err=CreateImageForReadingAndWriting(lpszPathName,fTmp))
 				return err;
 		if (f.m_hFile!=CFile::hFileNull) // handle doesn't exist when creating new Image
 			f.SeekToBegin();
@@ -169,14 +169,14 @@ using namespace Yahel;
 		}
 		m_bModified=FALSE;
 		// - reopening Image's underlying file
-		if (f.m_hFile!=CFile::hFileNull){
-			if (savingToCurrentFile)
-				f.SetLength(f.GetPosition()); // "trimming" eventual unnecessary data (e.g. when unformatting Cylinders)
-			f.Close();
+		if (savingToCurrentFile)
+			f.SetLength(f.GetPosition()); // "trimming" eventual unnecessary data (e.g. when unformatting Cylinders)
+		else{
+			if (f.m_hFile!=CFile::hFileNull)
+				f.Close();
+			std::swap( f.m_hFile, fTmp.m_hFile );
 		}
-		if (fTmp.m_hFile!=CFile::hFileNull)
-			fTmp.Close();
-		return OpenImageForReadingAndWriting(lpszPathName,f);
+		return ERROR_SUCCESS;
 	}
 
 	TCylinder CImageRaw::GetCylinderCount() const{

@@ -219,7 +219,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				return ERROR_CANCELLED;
 		#endif
 		CFile f;
-		if (const TStdWinError err=CreateImageForWriting(lpszPathName,f))
+		if (const TStdWinError err=CreateImageForReadingAndWriting(lpszPathName,f))
 			return err;
 		if (GetCurrentDiskFreeSpace()<sizeof(TDiskInfo))
 			return ERROR_DISK_FULL;

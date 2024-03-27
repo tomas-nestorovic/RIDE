@@ -321,10 +321,10 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		const DWORD nRequiredBytesHeaderAndCylInfos=sizeof(UHeader)+Utils::RoundUpToMuls( (int)sizeof(TCylinderInfo)*GetCylinderCount(), (int)sizeof(TBlock) );
 		if (nRequiredBytesHeaderAndCylInfos!=sizeof(UHeader)+sizeof(TBlock)) // only 1 Block allowed for CylInfo table
 			return ERROR_NOT_SUPPORTED;
-{		CFile fTmp;
+		CFile fTmp;
 		const bool savingToCurrentFile= lpszPathName==f.GetFilePath() && f.m_hFile!=CFile::hFileNull && ::GetFileAttributes(lpszPathName)!=INVALID_FILE_ATTRIBUTES; // saving to the same file and that file exists (handle doesn't exist when creating new Image)
 		if (!savingToCurrentFile)
-			if (const TStdWinError err=CreateImageForWriting(lpszPathName,fTmp))
+			if (const TStdWinError err=CreateImageForReadingAndWriting(lpszPathName,fTmp))
 				return err;
 		ap.SetProgressTarget( 2*ARRAYSIZE(cylInfos) + 1 + 1 );
 		const Medium::PCProperties mp=Medium::GetProperties( floppyType );
@@ -419,7 +419,10 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		ap.IncrementProgress();
 		// - reopening Image's underlying file
 		//m_bModified=FALSE; // commented out as done by caller
-		if (f.m_hFile!=CFile::hFileNull)
-			f.Close();
-}		return OpenImageForReadingAndWriting(lpszPathName,f);
+		if (!savingToCurrentFile){ // saved to a different File?
+			if (f.m_hFile!=CFile::hFileNull)
+				f.Close();
+			std::swap( f.m_hFile, fTmp.m_hFile );
+		}
+		return ERROR_SUCCESS;
 	}
