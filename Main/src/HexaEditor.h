@@ -60,6 +60,9 @@
 		bool QueryAddressToGoTo(Yahel::TGoToParams &outGtp) const override;
 		// resetting
 		bool QueryByteToResetSelectionWith(Yahel::TResetSelectionParams &outRsp) const override;
+		// checksum
+		bool QueryChecksumParams(Yahel::TChecksumParams &outCp) const override;
+		int ComputeChecksum(const Yahel::TChecksumParams &cp) const override;
 		// GUI
 		int GetCustomCommandMenuFlags(WORD cmd) const override;
 		bool ShowOpenFileDialog(LPCWSTR singleFilter,DWORD ofnFlags,PWCHAR lpszFileNameBuffer,WORD bufferCapacity) const override sealed;

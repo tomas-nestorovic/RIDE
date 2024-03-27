@@ -403,6 +403,58 @@ using namespace Yahel;
 
 
 
+	bool CHexaEditor::QueryChecksumParams(TChecksumParams &outCp) const{
+		return outCp.EditModalWithDefaultEnglishDialog(*this);
+	}
+
+	struct TChecksumParamsEx sealed:public TChecksumParams{
+		const IInstance &yahel;
+		
+		TChecksumParamsEx(const TChecksumParams &cp,const IInstance &yahel)
+			: TChecksumParams(cp)
+			, yahel(yahel) {
+		}
+	};
+
+	static UINT AFX_CDECL Checksum_thread(PVOID pCancelableAction){
+		// thread to compute Checksum
+		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
+		TChecksumParamsEx &cpe=*(TChecksumParamsEx *)pAction->GetParams();
+		pAction->SetProgressTarget( cpe.range.GetLength() );
+		const auto checksum=cpe.yahel.GetChecksum( cpe, pAction->Cancelled );
+		if (pAction->Cancelled)
+			return pAction->TerminateWithError( ERROR_CANCELLED );
+		if (checksum==cpe.GetErrorChecksumValue())
+			return pAction->TerminateWithError( ERROR_FUNCTION_FAILED );
+		cpe.initValue=checksum; // reuse the field
+		return pAction->TerminateWithSuccess();
+	}
+
+	int CHexaEditor::ComputeChecksum(const TChecksumParams &cp) const{
+		TChecksumParamsEx cpe( cp, *instance );
+		if (const TStdWinError err=CBackgroundActionCancelable( Checksum_thread, &cpe, THREAD_PRIORITY_BELOW_NORMAL ).Perform())
+			return cpe.GetErrorChecksumValue();
+		CString checksumText;
+		checksumText.Format( _T("%d (0x%X)"), cpe.initValue, cpe.initValue ); // reused during computation
+		const CString msg=Utils::SimpleFormat( _T("The checksum of selected stream is (little endian)\n\n%s\n\nCopy to clipboard?"), checksumText );
+		if (Utils::QuestionYesNo( msg, MB_DEFBUTTON2 )){
+			const HANDLE hText=::GlobalAlloc( GMEM_MOVEABLE, checksumText.GetLength()+1 );
+				::lstrcpy( (LPTSTR)::GlobalLock(hText), checksumText );
+			::GlobalUnlock(hText);
+			COleDataSource *const pds=new COleDataSource;
+			pds->CacheGlobalData( CF_TEXT, hText );
+			pds->SetClipboard();
+			::OleFlushClipboard();
+		}
+		return cpe.GetErrorChecksumValue(); // don't do default processing
+	}
+
+
+
+
+
+
+
 	bool CHexaEditor::ProcessCustomCommand(UINT cmd){
 		// custom command processing
 		return false; // no custom commands yet
