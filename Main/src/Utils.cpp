@@ -2125,8 +2125,7 @@ namespace Utils{
 	void CRideDialog::ConvertDlgButtonToSplitButton(WORD id,PCSplitButtonAction pAction,BYTE nActions) const{
 		// converts an existing standard button to a SplitButton featuring specified additional Actions
 		const HWND hStdBtn=GetDlgItemHwnd(id);
-		::SetWindowText(hStdBtn,nullptr); // before window procedure changed
-		::SetWindowLong(hStdBtn,GWL_ID,pAction->commandId); // 0.Action is the default
+		SetDlgItemText(id,nullptr); // before window procedure changed
 		SetDlgItemUserData( id,
 			new TSplitButtonInfo(
 				hStdBtn,
@@ -2139,6 +2138,10 @@ namespace Utils{
 			ModifyDlgItemStyle( id, BS_SPLITBUTTON );
 		SetDlgItemText(id,pAction->commandCaption); // after window procedure changed
 		::InvalidateRect(hStdBtn,nullptr,TRUE);
+		if (const auto defaultId=pAction->commandId){ // is there any default Action? (0.Action is the default)
+			ASSERT( id==defaultId ); // the case when ID changes always requires attention! ("CDialog::*DlgItem*" methods cease to work for previous ID)
+			::SetWindowLong( hStdBtn, GWL_ID, defaultId );
+		}
 	}
 
 	void CRideDialog::ConvertDlgCheckboxToHyperlink(WORD id,WORD idHyperlinkControl,LPCWSTR hyperlinkControlText) const{
