@@ -2193,7 +2193,7 @@ namespace Utils{
 			rc.left, rc.top, rc.Width(), rc.Height(), hStdCheckbox, (HMENU)idHyperlinkControl, 0, nullptr
 		);
 		SetDlgItemUserData( id, hHyperlink );
-		::SendMessageW( hHyperlink, WM_SETFONT, dlgFont, 0 );
+		::SendMessageW( hHyperlink, WM_SETFONT, ::SendDlgItemMessageW(*this,id,WM_GETFONT,0,0), 0 );
 	}
 
 	void CRideDialog::ConvertToCommandLikeButton(HWND hStdBtn,WCHAR wingdingsGlyphBeforeText,COLORREF textColor,int glyphPointSizeIncrement,COLORREF glyphColor,bool compactPath){
