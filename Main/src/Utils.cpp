@@ -1510,14 +1510,9 @@ namespace Utils{
 		SetDlgItemPos( id, 0,0, cx,cy );
 	}
 
-	void CRideDialog::SetDlgItemFont(HWND hWnd,const CRideFont &font) const{
-		// changes font of the specified Dialog control
-		::SendMessageW( hWnd, WM_SETFONT, font, TRUE );
-	}
-
 	void CRideDialog::SetDlgItemFont(WORD id,const CRideFont &font) const{
 		// changes font of the specified Dialog control
-		SetDlgItemFont( GetDlgItemHwnd(id), font );
+		SetWindowFont( GetDlgItemHwnd(id), font, TRUE );
 	}
 
 	void CRideDialog::InvalidateDlgItem(WORD id) const{
@@ -1689,7 +1684,7 @@ namespace Utils{
 		const HWND hCtrl=::GetDlgItem(hDlg,controlId);
 		const WCHAR buf[]={ singleChar, '\0' };
 		::SetWindowTextW( hCtrl, buf );
-		::SendMessage( hCtrl, WM_SETFONT, (WPARAM)hFont, 0 );
+		SetWindowFont( hCtrl, hFont, FALSE );
 	}
 
 	void CRideDialog::SetDlgItemSingleCharUsingFont(WORD controlId,WCHAR singleChar,HFONT hFont) const{
@@ -2193,7 +2188,7 @@ namespace Utils{
 			rc.left, rc.top, rc.Width(), rc.Height(), hStdCheckbox, (HMENU)idHyperlinkControl, 0, nullptr
 		);
 		SetDlgItemUserData( id, hHyperlink );
-		::SendMessageW( hHyperlink, WM_SETFONT, ::SendDlgItemMessageW(*this,id,WM_GETFONT,0,0), 0 );
+		SetWindowFont( hHyperlink, GetWindowFont(hStdCheckbox), FALSE );
 	}
 
 	void CRideDialog::ConvertToCommandLikeButton(HWND hStdBtn,WCHAR wingdingsGlyphBeforeText,COLORREF textColor,int glyphPointSizeIncrement,COLORREF glyphColor,bool compactPath){

@@ -51,13 +51,13 @@
 			CRect rc=rcCurrContent;
 			::DrawText( CRideDC(*this,ID_HEAD), text, -1, &rc, DT_WORDBREAK|DT_CALCRECT );
 			const int height=rc.Height()+2*(1+::GetSystemMetrics(SM_CYBORDER));
-			SetDlgItemFont(
+			SetWindowFont(
 				::CreateWindow(
 					WC_STATIC, text, WS_VISIBLE|WS_CHILD,
 					rcCurrContent.left,rcCurrContent.top, rcCurrContent.Width(),height,
 					m_hWnd, 0, app.m_hInstance, nullptr
 				),
-				font
+				font, TRUE
 			);
 			rcCurrContent.top+=height;
 		}
@@ -94,13 +94,13 @@
 
 		void __addHyperlinkText__(LPCWSTR hyperlinkText){
 			// adds a new static text under currently open category
-			SetDlgItemFont(
+			SetWindowFont(
 				::CreateWindowW(
 					WC_LINK, hyperlinkText, WS_VISIBLE|WS_CHILD|SS_CENTERIMAGE,
 					rcCurrContent.left,rcCurrContent.top, rcCurrContent.Width(),singleLineButtonHeight,
 					m_hWnd, 0, app.m_hInstance, nullptr
 				),
-				buttonCaptionFont
+				buttonCaptionFont, TRUE
 			);
 			rcCurrContent.top+=singleLineButtonHeight;
 		}

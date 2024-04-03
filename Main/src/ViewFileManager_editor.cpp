@@ -26,7 +26,7 @@
 		// - creating the Editor
 		(HWND)hEditor=PropGrid::BeginEditValue( value, file, editor, rcEditorArea, 0, parent.m_hWnd, (HWND *)&hEllipsisButton );
 		wndProc0=Utils::SubclassWindowW( hEditor, __wndProc__ );
-		::SendMessageW( hEditor, WM_SETFONT, parent.font, 0 );
+		SetWindowFont( hEditor, parent.font, FALSE );
 		ellipsisButtonWndProc0=Utils::SubclassWindowW( hEllipsisButton, __ellipsisButton_wndProc__ );
 	}
 

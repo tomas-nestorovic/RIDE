@@ -290,7 +290,6 @@ namespace Utils{
 		void SetDlgItemPos(WORD id,int x,int y,int cx=0,int cy=0) const;
 		void SetDlgItemPos(WORD id,const RECT &rc) const;
 		void SetDlgItemSize(WORD id,int cx,int cy) const;
-		void SetDlgItemFont(HWND hWnd,const CRideFont &font) const;
 		void SetDlgItemFont(WORD id,const CRideFont &font) const;
 		template<typename T> T GetDlgItemUserData(WORD id) const{ return GetWindowUserData( GetDlgItemHwnd(id) ); }
 		template<typename T> void SetDlgItemUserData(WORD id,const T &data) const{ SetWindowUserData( GetDlgItemHwnd(id), data ); }
