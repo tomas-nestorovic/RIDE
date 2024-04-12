@@ -585,6 +585,7 @@ namespace Utils{
 	COLORREF GetBlendedColor(COLORREF color1,COLORREF color2,float blendFactor=.5f);
 	BYTE GetReversedByte(BYTE b);
 	CString GenerateTemporaryFileName();
+	CString GetCommonHtmlHeadStyleBody(COLORREF bodyBg=CLR_DEFAULT,LPCTSTR tableStyle=_T("table{border:1pt solid black;spacing:10pt}"));
 	CFile &WriteToFile(CFile &f,LPCTSTR text);
 	CFile &WriteToFileFormatted(CFile &f,LPCTSTR format,...);
 	CFile &WriteToFile(CFile &f,TCHAR chr);

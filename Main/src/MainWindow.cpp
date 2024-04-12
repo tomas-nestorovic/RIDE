@@ -286,7 +286,7 @@
 		TCHAR url[MAX_PATH];
 		OpenWebPage(
 			tabCaption ? tabCaption : _T("GitHub"),
-			::lstrcat(  ::lstrcpy( url, GITHUB_HTTPS_NAME _T("/tomas-nestorovic/RIDE") ),  documentName  )
+			::lstrcat(  ::lstrcpy( url, GITHUB_REPOSITORY ),  documentName  )
 		);
 	}
 	void CMainWindow::OpenApplicationPresentationWebPage(LPCTSTR tabCaption,LPCTSTR documentName){

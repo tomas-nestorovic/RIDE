@@ -222,6 +222,7 @@ struct TLogTimeInterval{
 #define FONT_LUCIDA_CONSOLE	_T("Lucida Console")
 
 #define GITHUB_HTTPS_NAME		_T("https://github.com")
+#define GITHUB_REPOSITORY		GITHUB_HTTPS_NAME _T("/tomas-nestorovic/RIDE")
 #define GITHUB_API_SERVER_NAME	_T("api.github.com")
 #define GITHUB_VERSION_TAG_NAME	"\"tag_name\""
 
