@@ -1415,7 +1415,7 @@
 
 	void CImage::CTrackReaderWriter::AddIndexTime(TLogTime logTime){
 		// appends LogicalTime representing the position of the index pulse on the disk
-		ASSERT( nIndexPulses<Revolution::MAX );
+		ASSERT( nIndexPulses<=Revolution::MAX );
 		ASSERT( logTime>=0 );
 		indexPulses[nIndexPulses++]=logTime;
 		indexPulses[nIndexPulses]=INT_MAX;

@@ -418,7 +418,7 @@
 			const TDecoderMethod method;
 			bool resetDecoderOnIndex;
 			DWORD iNextTime,nLogTimes;
-			TLogTime indexPulses[Revolution::MAX+1];
+			TLogTime indexPulses[Revolution::MAX+2]; // "+2" = "+1+1" = "+A+B", A = tail IndexPulse of last possible Revolution, B = terminator
 			BYTE iNextIndexPulse,nIndexPulses;
 			TProfile profile;
 			TLogTime currentTime;
