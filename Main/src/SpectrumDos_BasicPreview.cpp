@@ -6,9 +6,6 @@
 
 	#define INI_PREVIEW	_T("ZxBasic")
 
-	#define PREVIEW_WIDTH_DEFAULT	750
-	#define PREVIEW_HEIGHT_DEFAULT	300
-
 	#define INI_FEATURES				_T("basfeats")
 	#define INI_SHOW_INTERNAL_BINARY	_T("bin")
 	#define INI_INTERPRET_PAST_BASIC	_T("past")

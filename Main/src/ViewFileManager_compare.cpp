@@ -204,9 +204,9 @@ using namespace Yahel;
 	void CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::Open(CDos::PCFile f){
 		// opens specified File stored in currently open Image, and shows its content in HexaEditor
 		const PCDos dos=rDialog.fm.tab.image->dos;
-		IStream *const s=new CDos::CFileReaderWriter(dos,f);
-			Open( s, dos->GetFilePresentationNameAndExt(f).GetUnicode() );
-		s->Release();
+		CComPtr<IStream> s;
+		s.p=new CDos::CFileReaderWriter(dos,f);
+		Open( s, dos->GetFilePresentationNameAndExt(f).GetUnicode() );
 	}
 
 	void CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::Open(IStream *s,LPCWSTR fileName){
