@@ -459,7 +459,7 @@
 								};
 								::memcpy( resolveActions, tmpResolveActions, sizeof(tmpResolveActions) );
 								ConvertDlgButtonToSplitButton( IDNO, resolveActions, RESOLVE_OPTIONS_COUNT );
-								EnableDlgItem( IDNO, dynamic_cast<CImageRaw *>(dp.target.get())==nullptr ); // recovering errors is allowed only if the Target Image can accept them
+								//EnableDlgItem( IDNO, dynamic_cast<CImageRaw *>(dp.target.get())==nullptr ); // recovering errors is allowed only if the Target Image can accept them
 								// > converting the "Retry" button to a SplitButton
 								static constexpr Utils::TSplitButtonAction CanCalibrateHeadsAction={ ID_HEAD, _T("Calibrate head and retry") };
 								static constexpr Utils::TSplitButtonAction CannotCalibrateHeadsAction={ ID_HEAD, _T("Can't calibrate heads for this track"), MF_GRAYED };
