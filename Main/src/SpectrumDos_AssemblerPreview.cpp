@@ -807,7 +807,7 @@
 		// generates HTML-formatted Z80 instruction listing of the input File into a temporary file, and then shows it
 		// - generating the HTML-formatted content
 		CFile f( tmpFileName, CFile::modeWrite|CFile::modeCreate );
-			Utils::WriteToFileFormatted( f, _T("<html><body style=\"background-color:#%06x\">"), *(PCINT)&Colors[7] );
+			Utils::WriteToFile( f, Utils::GetCommonHtmlHeadStyleBody( *(COLORREF *)&Colors[7], _T("") ) );
 				constantInput.pfIn=&fIn; // remembering the input file for Content refresh
 				const auto fInPos=fIn.GetPosition();
 					ParseZ80BinaryFileAndGenerateHtmlFormattedContent( fIn, orgAddress, f );

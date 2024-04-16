@@ -398,7 +398,7 @@ defaultPrinting:				if (b<' ')
 					}
 					listing << _T("<tr>");
 						// | adding a new cell to the "Line Number" column
-						listing << _T("<td align=right valign=top style=\"padding-right:5pt\"><b>");
+						listing << _T("<td align=right style=\"padding-right:5pt\"><b>");
 							Utils::WriteToFile(listing,lineNumber);
 						//listing << _T("</td>"); // commented out as written in the following command
 						// | adding a new cell to the "BASIC Listing" column
@@ -447,11 +447,11 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 							BYTE variableType;
 							if (error=frw.Read(&variableType,sizeof(variableType))!=sizeof(variableType)) // error
 								break;
-							listing << _T("<tr><td align=right valign=top><b>");
+							listing << _T("<tr><td align=right><b>");
 								TCHAR varName[256],*pVarName=varName;
 								*pVarName++=(variableType&31)+'@'; // extracting Variable's name first capital letter
 								*pVarName='\0'; // terminating the Variable name as most of the names may consist only of just one letter (further chars eventually added below)
-								#define HTML_END_OF_NAME_AND_START_OF_VALUE _T("</b></td><td valign=top>=</td><td valign=top>")
+								#define HTML_END_OF_NAME_AND_START_OF_VALUE _T("</b></td><td>=</td><td>")
 								switch (variableType&0xe0){ // masking out the part of the first Byte that determines the Type of the Variable
 									case 0x40:{
 										// string Variable (always with a single-letter name)
