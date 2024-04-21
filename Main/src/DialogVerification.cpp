@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "XmlDocs.h"
 
 	CVerifyVolumeDialog::TParams::TParams(CDos *dos,const TVerificationFunctions &rvf)
 		// ctor
@@ -152,7 +153,7 @@
 	void CVerifyVolumeDialog::TParams::CReportFile::CloseSection(LPCTSTR errMsg){
 		// closes current section
 		if (errMsg){
-			Utils::WriteToFileFormatted( *this, _T("<p style=\"border:1pt solid black;padding:8pt\"><b>%s</b></p>"), errMsg );
+			Utils::WriteToFileFormatted( *this, _T("<p style=\"border:1pt solid black;padding:8pt\"><b>%s</b></p>"), (LPCTSTR)CXmlDocument::EncodeXml(errMsg) );
 			problemOpen=false; // problem implicitly solved by writing the ErrorMessage
 		}else if (problemOpen)
 			CloseProblem(false);
@@ -177,7 +178,7 @@
 			TCHAR buf[16384];
 			::wvsprintf( buf, format, argList );
 		va_end(argList);
-		Utils::WriteToFileFormatted( *this, _T("<li>WARNING: %s.</li>"), buf );
+		Utils::WriteToFileFormatted( *this, _T("<li>WARNING: %s.</li>"), (LPCTSTR)CXmlDocument::EncodeXml(buf) );
 	}
 
 	void CVerifyVolumeDialog::TParams::CReportFile::OpenProblem(LPCTSTR problemDesc){
@@ -188,7 +189,7 @@
 			Utils::WriteToFile(*this,_T("<ul>"));
 			itemListBegun=true;
 		}
-		Utils::WriteToFileFormatted( *this, _T("<li>%s."), problemDesc );
+		Utils::WriteToFileFormatted( *this, _T("<li>%s."), (LPCTSTR)CXmlDocument::EncodeXml(problemDesc) );
 		problemOpen=true;
 	}
 

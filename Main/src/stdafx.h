@@ -58,6 +58,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 //#include <Uxtheme.h>
 #include <Vsstyle.h>
 #include <MsHTML.h>
+#include <msxml6.h>
 #include <WinInet.h>
 
 #include "..\..\Tdi\src\api.h"

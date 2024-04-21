@@ -234,6 +234,9 @@
     <ClInclude Include="src\HFE.h">
       <Filter>Header Files\Image</Filter>
     </ClInclude>
+    <ClInclude Include="src\XmlDocs.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\editor.cpp">
@@ -499,6 +502,9 @@
     </ClCompile>
     <ClCompile Include="src\HFE.cpp">
       <Filter>Source Files\Image</Filter>
+    </ClCompile>
+    <ClCompile Include="src\XmlDocs.cpp">
+      <Filter>Source Files\Utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
