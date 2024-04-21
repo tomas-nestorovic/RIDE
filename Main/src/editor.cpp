@@ -423,7 +423,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			dosProps=CDos::CRecognition().Perform( image.get(), &formatBoot );
 			if (!dosProps) // if recognition sequence cancelled ...
 				return nullptr; // ... no Image or disk is accessed
-			if (dosProps==&CUnknownDos::Properties)
+			if (!dosProps->IsKnown())
 				Utils::Information(_T("CANNOT RECOGNIZE THE DOS!\nDoes it participate in recognition?") ENTERING_LIMITED_MODE );
 		}else{
 			// manual recognition of suitable DOS by user
@@ -498,7 +498,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 				return nullptr;
 			}
 			// . informing
-			if (dosProps!=&CUnknownDos::Properties) // a damage can't occur in Unknown DOS
+			if (dosProps->IsKnown()) // a damage can't occur in Unknown DOS
 				Utils::InformationWithCheckableShowNoMore( _T("The image will be opened using the default format of the selected DOS (see the \"") BOOT_SECTOR_TAB_LABEL _T("\" tab if available).\n\nRISK OF DATA CORRUPTION if the selected DOS and/or format is not suitable!"), INI_GENERAL, INI_MSG_OPEN_AS );
 		}
 		// - instantiating recognized/selected DOS

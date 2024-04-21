@@ -976,7 +976,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 									break;
 								if (nTrials==1){ // calibrating Head for the last Trial
 									const TPhysicalAddress chs={ cyl, head, rsi.id };
-									const bool knownSectorBad =	params.calibrationAfterErrorOnlyForKnownSectors && dos && dos->properties!=&CUnknownDos::Properties
+									const bool knownSectorBad =	params.calibrationAfterErrorOnlyForKnownSectors && dos->IsKnown()
 																? dos->GetSectorStatus(chs)!=CDos::TSectorStatus::UNKNOWN
 																: true;
 									switch (params.calibrationAfterError){
@@ -1585,9 +1585,9 @@ Utils::Information(buf);}
 				// . adjusting calibration possibilities
 				extern CDos::PCProperties manuallyForceDos;
 				if (EnableDlgItem( ID_READABLE,
-						!fdd->dos && manuallyForceDos!=&CUnknownDos::Properties // DOS now yet known: either automatic DOS recognition, or manual selection of DOS but Unknown
+						!fdd->dos && manuallyForceDos->IsKnown() // DOS now yet known: either automatic DOS recognition, or manual selection of DOS but Unknown
 						||
-						fdd->dos && fdd->dos->properties!=&CUnknownDos::Properties // DOS already known: it's NOT the Unknown DOS
+						fdd->dos->IsKnown() // DOS already known: it's NOT the Unknown DOS
 					)
 				)
 					CheckDlgButton( ID_READABLE, false ); // this option is never ticked for Unknown DOS

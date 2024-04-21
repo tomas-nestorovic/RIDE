@@ -60,14 +60,14 @@
 
 	POSITION CDos::CRecognition::GetFirstRecognizedDosPosition() const{
 		// returns the position of the first DOS that participates in Image recognition
-		return	order[1]!=&CUnknownDos::Properties // indexing starts from 1
+		return	order[1]->IsKnown() // indexing starts from 1
 				? (POSITION)1
 				: nullptr;
 	}
 	CDos::PCProperties CDos::CRecognition::GetNextRecognizedDos(POSITION &pos) const{
 		// returns the Properties of the next DOS that participates in Image recognition
 		const PCProperties result=order[(BYTE)pos++];
-		if (order[(BYTE)pos]==&CUnknownDos::Properties)
+		if (!order[(BYTE)pos]->IsKnown())
 			pos=nullptr;
 		return result;
 	}
@@ -147,7 +147,7 @@
 					// : populating
 					int scrollY=lb.GetTopIndex(), iSelected=lb.GetCurSel();
 						lb.ResetContent();
-						while (( props=recognition.order[++i] )!=&CUnknownDos::Properties) // indexing starts from 1
+						while (( props=recognition.order[++i] )->IsKnown()) // indexing starts from 1
 							lb.SetItemDataPtr( lb.AddString(props->name), (PVOID)props );
 					lb.SetTopIndex(scrollY), lb.SetCurSel(iSelected);
 					// : updating interaction possibilities

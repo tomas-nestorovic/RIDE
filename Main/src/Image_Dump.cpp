@@ -263,7 +263,7 @@
 				}
 				if (p.chs.cylinder<dp.dos->formatBoot.nCylinders // reporing a missing official Sector makes sense only in official part of the disk
 					&&
-					dp.dos->properties!=&CUnknownDos::Properties // must understand the disk structure to decide on "official part"
+					dp.dos->IsKnown() // must understand the disk structure to decide on "official part"
 				){
 					TSectorId stdIds[(TSector)-1];
 					const TSector nStdIds=dp.dos->GetListOfStdSectors( p.chs.cylinder, p.chs.head, stdIds );
@@ -548,7 +548,7 @@
 														// | "Data Field" region
 														DDX_Radio( pDX, ID_DATAFIELD, dataFieldRecoveryType );
 															DDX_Text( pDX, ID_DATAFIELD_FILLERBYTE, dataFieldSubstituteFillerByte );
-															if (dosProps==&CUnknownDos::Properties)
+															if (!dosProps->IsKnown())
 																SetDlgItemText( ID_DEFAULT2, _T("Random value") );
 															static constexpr WORD DataFieldRecoveryOptions[]={ ID_DATAFIELD, ID_DATAFIELD_CRC, ID_DATAFIELD_REPLACE, 0 };
 															EnableDlgItems( DataFieldRecoveryOptions, rFdcStatus.DescribesDataFieldCrcError() );
@@ -568,7 +568,7 @@
 																		DoDataExchange( &CDataExchange(this,FALSE) ); // updating visuals
 																		break;
 																	case ID_DEFAULT2:
-																		if (dosProps!=&CUnknownDos::Properties)
+																		if (dosProps->IsKnown())
 																			dataFieldSubstituteFillerByte=dosProps->sectorFillerByte;
 																		else
 																			Utils::RandomizeData( &dataFieldSubstituteFillerByte, sizeof(dataFieldSubstituteFillerByte) );
@@ -821,7 +821,7 @@ terminateWithError:		return LOG_ERROR(pAction->TerminateWithError(err));
 				// . base
 				__super::PreInitDialog();
 				// . adjusting text in button next to FillerByte edit box
-				if (dos->properties==&CUnknownDos::Properties)
+				if (!dos->IsKnown())
 					SetDlgItemText( ID_DEFAULT1, _T("Random value") );
 				// . showing devices recently dumped to in hidden menu
 				static constexpr Utils::TSplitButtonAction OpenDialogAction={ ID_FILE, _T("Select image or device...") };
@@ -900,7 +900,7 @@ terminateWithError:		return LOG_ERROR(pAction->TerminateWithError(err));
 					}
 					// : suggesting to dump only Cylinders within the officially reported Format (where suitable to)
 					if (
-						dos->properties!=&CUnknownDos::Properties // Unknown DOS doesn't have valid Format information
+						dos->IsKnown() // Unknown DOS doesn't have valid Format information
 					)
 							if (dumpParams.cylinderA || dumpParams.cylinderZ+1!=dos->formatBoot.nCylinders){ // "+1" = Cylinders are numbered from 0
 								// : defining the Dialog
@@ -1036,7 +1036,7 @@ setDestination:						// : compacting FileName in order to be better displayable 
 								break;
 							}
 							case ID_DEFAULT1:
-								SetDlgItemInt( ID_NUMBER, dos->properties!=&CUnknownDos::Properties ? dos->properties->sectorFillerByte : ::GetTickCount()&0xff );
+								SetDlgItemInt( ID_NUMBER, dos->IsKnown() ? dos->properties->sectorFillerByte : ::GetTickCount()&0xff );
 								break;
 							case MAKELONG(ID_CYLINDER,EN_CHANGE):
 							case MAKELONG(ID_CYLINDER_N,EN_CHANGE):

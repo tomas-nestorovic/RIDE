@@ -1166,6 +1166,10 @@ reportError:Utils::Information(buf);
 
 
 
+	bool CDos::IsKnown() const{
+		return	this!=nullptr && properties->IsKnown();
+	}
+
 	TStdWinError CDos::CreateUserInterface(HWND hTdi){
 		// creates DOS-specific Tabs in TDI; returns Windows standard i/o error
 		return image->CreateUserInterface(hTdi); // creating disk-specific Tabs in TDI
@@ -1231,6 +1235,10 @@ reportError:Utils::Information(buf);
 
 
 
+
+	bool CDos::TProperties::IsKnown() const{
+		return this!=&CUnknownDos::Properties;
+	}
 
 	BYTE CDos::TProperties::GetValidGap3ForMedium(Medium::TType medium) const{
 		// infers and returns the minimum Gap3 value applicable for all available StandardFormats that regard the specified Medium

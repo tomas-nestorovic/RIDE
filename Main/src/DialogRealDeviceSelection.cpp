@@ -72,7 +72,7 @@
 			const WORD dosStdSectorLength=dosProps->stdFormats->params.format.sectorLength;
 			for( POSITION pos=CImage::Devices.GetHeadPosition(); pos; ){
 				const CImage::PCProperties devProps=CImage::Devices.GetNext(pos);
-				if (dosProps==&CUnknownDos::Properties // no preconditions on a Device
+				if (!dosProps->IsKnown() // no preconditions on a Device
 					||
 					devProps->supportedMedia&dosProps->supportedMedia // DOS and Image support common Media
 					&&
@@ -95,7 +95,7 @@
 			ShowDlgItem(ID_ERROR), pDeviceListBox->ShowWindow(SW_HIDE);
 			TCHAR quotedDosName[50];
 			::wsprintf( quotedDosName, _T("\"%s\""), dosProps->name );
-			SetDlgItemFormattedText( ID_ERROR, _T("No local physical device compatible with %s found. Maybe they are all being already used?"), dosProps!=&CUnknownDos::Properties?quotedDosName:_T("any DOS") );
+			SetDlgItemFormattedText( ID_ERROR, _T("No local physical device compatible with %s found. Maybe they are all being already used?"), dosProps->IsKnown()?quotedDosName:_T("any DOS") );
 		}
 	}
 

@@ -68,7 +68,7 @@
 				const PCInternalTrack pit=cb.internalTracks[cyl][head];
 				CComboBox cbx;
 				cbx.Attach( GetDlgItemHwnd(ID_ACCURACY) );
-					if (cb.dos->properties!=&CUnknownDos::Properties){
+					if (cb.dos->IsKnown()){
 						cbx.SetItemData(
 							cbx.AddString(_T("All standard sectors healthy")),
 							TARGET_ALL_STD_SECTORS_HEALTHY

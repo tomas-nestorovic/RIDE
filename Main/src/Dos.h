@@ -140,6 +140,7 @@
 			BYTE sectorFillerByte,directoryFillerByte; // regular Sector and Directory Sector filler Byte
 			BYTE dataBeginOffsetInSector,dataEndOffsetInSector; // number of reserved Bytes at the beginning and end of each Sector
 
+			bool IsKnown() const;
 			BYTE GetValidGap3ForMedium(Medium::TType medium) const;
 		} *PCProperties;
 
@@ -439,6 +440,7 @@
 		virtual TStdWinError ImportFile(CFile *fIn,DWORD fileSize,RCPathString nameAndExtension,DWORD winAttr,PFile &rFile)=0;
 		PFile FindFileInCurrentDir(RCPathString fileName,RCPathString fileExt,PCFile ignoreThisFile) const;
 		// other
+		bool IsKnown() const;
 		TSector GetListOfStdSectors(TCylinder cyl,THead head,PSectorId bufferId) const;
 		virtual TStdWinError CreateUserInterface(HWND hTdi);
 		virtual enum TCmdResult:BYTE{

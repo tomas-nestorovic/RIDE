@@ -560,7 +560,7 @@
 					params.calibrationAfterError==TParams::TCalibrationAfterError::NONE // calibration disabled
 				)
 					break;
-				if (params.calibrationAfterErrorOnlyForKnownSectors && dos && dos->properties!=&CUnknownDos::Properties){
+				if (params.calibrationAfterErrorOnlyForKnownSectors && dos->IsKnown()){
 					bool knownSectorBad=false; // assumption (the Track is unhealthy due to an irrelevant Unknown Sector, e.g. out of geometry)
 					for( TSector s=0; s<rit->nSectors; s++ ){
 						const TInternalSector &is=rit->sectors[s];
@@ -1409,9 +1409,9 @@ invalidTrack:
 				// . adjusting calibration possibilities
 				extern CDos::PCProperties manuallyForceDos;
 				if (EnableDlgItem( ID_READABLE,
-						!rcb.dos && manuallyForceDos!=&CUnknownDos::Properties // DOS now yet known: either automatic DOS recognition, or manual selection of DOS but Unknown
+						!rcb.dos && manuallyForceDos->IsKnown() // DOS now yet known: either automatic DOS recognition, or manual selection of DOS but Unknown
 						||
-						rcb.dos && rcb.dos->properties!=&CUnknownDos::Properties // DOS already known: it's NOT the Unknown DOS
+						rcb.dos->IsKnown() // DOS already known: it's NOT the Unknown DOS
 					)
 				)
 					CheckDlgButton( ID_READABLE, false ); // this option is never ticked for Unknown DOS
