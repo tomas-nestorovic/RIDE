@@ -884,7 +884,7 @@ reportError:Utils::Information(buf);
 			}
 		}else
 			// exporting to another RIDE instance; substituting non-alphanumeric characters with "URL-like" escape sequences
-			return fileName.Escape().AppendDotExtensionIfAny( fileExt.Escape() ); // let the result contain mostly one dot '.' that delimits file name from its extension
+			return fileName.Escape(true).AppendDotExtensionIfAny( fileExt.Escape(true) ); // let the result contain mostly one dot '.' that delimits file name from its extension
 	}
 
 	DWORD CDos::ExportFile(PCFile file,CFile *fOut,DWORD nBytesToExportMax,LPCTSTR *pOutError) const{

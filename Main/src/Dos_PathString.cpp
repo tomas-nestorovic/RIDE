@@ -272,19 +272,19 @@
 		return Append( buf, pCompliant-buf );
 	}
 
-	CDos::CPathString &CDos::CPathString::Escape(bool preserveEncoding){
+	CDos::CPathString &CDos::CPathString::Escape(bool escapeShellForbidden){
 		// replaces inplace non-alphanumeric characters with "URL-like" escape sequences "%NN"
 		TCHAR tmp[32768], *pWritten=tmp;
 		for( int i=0; i<__super::GetLength(); i++ ){
 			const TCHAR c=operator[](i);
-			if (0<c && c<=127 // a candidate for direct output without escaping
+			if (::isprint(c) // a candidate for direct output without escaping
 				&&(
-					::IsCharAlphaNumeric(c) || c==' ' // must be printable
+					!escapeShellForbidden // preserve shell forbidden chars?
 					||
-					::ispunct(c) && CMSDOS7::UDirectoryEntry::TLongNameEntry::IsCharacterValid(c) && c!='.' // must not be forbidden in FAT32 long filenames (Dot '.' is always forbidden in this context)
+					CMSDOS7::UDirectoryEntry::TLongNameEntry::IsCharacterValid(c) && c!='.' // must not be forbidden in FAT32 long filenames (Dot '.' is always forbidden in this context)
 				)
 				||
-				preserveEncoding && c<0 // UTF-8 encoding begins from 0x80
+				c<0 // each UTF-8 encoded Byte begins by 0x80
 			)
 				*pWritten++=c;
 			else
