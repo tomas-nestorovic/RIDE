@@ -214,6 +214,7 @@
 			TFdcStatus fdcStatus;
 		} p;
 		::ZeroMemory(&p,sizeof(p));
+		p.exclusion.allUnknown=dp.dos->IsKnown() && dynamic_cast<CImageRaw *>(dp.target.get())!=nullptr; // Unknown Sectors in recognized DOS cause preliminary termination of dumping to a RawImage, hence excluding them all automatically
 		const bool sourceSupportsTrackReading=dp.source->WriteTrack(0,0,CImage::CTrackReaderWriter::Invalid)!=ERROR_NOT_SUPPORTED;
 		const bool targetSupportsTrackWriting=dp.target->WriteTrack(0,0,CImage::CTrackReaderWriter::Invalid)!=ERROR_NOT_SUPPORTED;
 		const bool canSeekSourceHeadsHome=dp.source->SeekHeadsHome()==ERROR_SUCCESS;
@@ -665,7 +666,7 @@
 				}		}
 						bufferFdcStatus[p.s]=p.fdcStatus; // propagating modifications to the Buffer
 					}
-					if (!p.fdcStatus.IsWithoutError()){
+					if (!p.fdcStatus.IsWithoutError() || p.exclusion.current){
 						TDumpParams::TSourceSectorError *const psse=&erroneousSectors.buffer[erroneousSectors.n++];
 						psse->id=p.chs.sectorId, psse->fdcStatus=p.fdcStatus;
 						psse->excluded=p.exclusion.current;
