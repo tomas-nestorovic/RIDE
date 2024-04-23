@@ -1,5 +1,4 @@
 #include "stdafx.h"
-#include "CapsBase.h"
 
 	#define INI_DUMP	_T("Dump")
 
@@ -827,10 +826,8 @@ terminateWithError:		return LOG_ERROR(pAction->TerminateWithError(err));
 				static constexpr Utils::TSplitButtonAction OpenDialogAction={ ID_FILE, _T("Select image or device...") };
 				Utils::TSplitButtonAction *pAction=actions;
 				*pAction++=OpenDialogAction;
-				if (dynamic_cast<CCapsBase *>(dumpParams.source)!=nullptr){
-					static constexpr Utils::TSplitButtonAction HelpCreateStream={ ID_HELP_USING, _T("FAQ: How do I create stream files? (online)") };
-					*pAction++=HelpCreateStream;
-				}
+				static constexpr Utils::TSplitButtonAction HelpCreateStream={ ID_HELP_USING, _T("FAQ: How do I create stream files? (online)") };
+				*pAction++=HelpCreateStream;
 				*pAction++=Utils::TSplitButtonAction::HorizontalLine;
 				if (!mruDevices[0].IsEmpty())
 					for( int i=0; !mruDevices[i].IsEmpty(); i++ ){
