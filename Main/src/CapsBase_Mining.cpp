@@ -3,7 +3,7 @@
 #include "Charting.h"
 
 	#define INI_MINING		_T("MineTrk")
-	#define INI_TARGET		_T("trg")
+	#define INI_TARGET		_T("trg2")
 	#define INI_METHOD		_T("mtd")
 	#define INI_CALIBRATION	_T("calib")
 
@@ -41,9 +41,10 @@
 
 			enum TMiningTarget{
 				TARGET_NONE,
-				TARGET_ALL_STD_SECTORS_PRESENT		=2,
+				TARGET_FLAG_HEALTHY					=1,
+				TARGET_ALL_STD_SECTORS_PRESENT		=8,
 				TARGET_ALL_STD_SECTORS_HEALTHY,
-				TARGET_ALL_CURRENT_SECTORS_PRESENT	=4,
+				TARGET_ALL_CURRENT_SECTORS_PRESENT	=16,
 				TARGET_ALL_CURRENT_SECTORS_HEALTHY,
 			} miningTarget;
 
@@ -74,7 +75,7 @@
 							TARGET_ALL_STD_SECTORS_HEALTHY
 						);
 						cbx.SetItemData(
-							cbx.AddString(_T("All standard sectors present (ID healthy, data present)")),
+							cbx.AddString(_T("All standard sectors present (ID healthy, data present or same healthy as now)")),
 							TARGET_ALL_STD_SECTORS_PRESENT
 						);
 					}
@@ -84,7 +85,7 @@
 							TARGET_ALL_CURRENT_SECTORS_HEALTHY
 						);
 						cbx.SetItemData(
-							cbx.AddString(_T("All current sectors present (ID healthy, data present)")),
+							cbx.AddString(_T("All current sectors present (ID healthy, data present or same healthy as now)")),
 							TARGET_ALL_CURRENT_SECTORS_PRESENT
 						);
 					}
@@ -249,18 +250,33 @@
 						if (!Utils::QuestionYesNo(  Utils::SimpleFormat( _T("Track %s is dirty, mining disposes its modifications.\n\nContinue?"), d.trackName ),  MB_DEFBUTTON1  ))
 							return d.PostMiningErrorMessage(ERROR_CANCELLED);
 				EXCLUSIVELY_LOCK_IMAGE(d.cb);
-				struct{
+				const struct TSearchedSectors sealed{
 					TSector n;
 					TSectorId list[(TSector)-1];
-				} searchedSectors;
-				if (d.miningTarget&TARGET_ALL_STD_SECTORS_PRESENT)
-					searchedSectors.n=d.cb.dos->GetListOfStdSectors( d.cyl, d.head, searchedSectors.list );
-				else if (d.miningTarget&TARGET_ALL_CURRENT_SECTORS_PRESENT)
-					searchedSectors.n=d.cb.ScanTrack( d.cyl, d.head, nullptr, searchedSectors.list );
-				else{
-					ASSERT(FALSE); // we shouldn't end up here!
+					bool mustBeHealthy[(TSector)-1];
+
+					TSearchedSectors(const CTrackMiningDialog &d)
+						: n(0) {
+						if (d.miningTarget&TARGET_ALL_STD_SECTORS_PRESENT)
+							n=d.cb.dos->GetListOfStdSectors( d.cyl, d.head, list );
+						else if (d.miningTarget&TARGET_ALL_CURRENT_SECTORS_PRESENT)
+							n=d.cb.ScanTrack( d.cyl, d.head, nullptr, list );
+						else{
+							ASSERT(FALSE); // we shouldn't end up here!
+							return;
+						}
+						if (d.miningTarget&TARGET_FLAG_HEALTHY)
+							::memset( mustBeHealthy, true, n );
+						else
+							for( TSector i=0; i<n; i++ ){
+								TFdcStatus st;
+								d.cb.GetSectorData( d.cyl, d.head, Revolution::ANY_GOOD, list+i, i, nullptr, &st );
+								mustBeHealthy[i]=st.IsWithoutError();
+							}
+					}
+				} searchedSectors(d);
+				if (!searchedSectors.n)
 					return d.PostMiningErrorMessage(ERROR_INVALID_OPERATION);
-				}
 				int nRevsToCalibration=d.headCalibration;
 				PInternalTrack &rit=d.cb.internalTracks[d.cyl][d.head];
 				while (d.miningRunning){
@@ -281,22 +297,10 @@
 					d.ShowScatterPlotOfTrack( *rit );
 					// . evaluating the Track against the MiningTarget
 					TSector i=0;
-					switch (d.miningTarget){
-						case TARGET_ALL_STD_SECTORS_HEALTHY:
-						case TARGET_ALL_CURRENT_SECTORS_HEALTHY:
-							for( WORD w; i<searchedSectors.n; i++ )
-								if (!d.cb.GetHealthySectorData( d.cyl, d.head, searchedSectors.list+i, &w ))
-									break;
+					for( TFdcStatus st; i<searchedSectors.n; i++ ){
+						d.cb.GetSectorData( d.cyl, d.head, Revolution::ANY_GOOD, searchedSectors.list+i, i, nullptr, &st );
+						if (st.IsWithoutError()<searchedSectors.mustBeHealthy[i])
 							break;
-						case TARGET_ALL_STD_SECTORS_PRESENT:
-						case TARGET_ALL_CURRENT_SECTORS_PRESENT:
-							for( WORD w; i<searchedSectors.n; i++ )
-								if (!d.cb.GetSectorData( d.cyl, d.head, Revolution::ANY_GOOD, searchedSectors.list+i, i, &w ))
-									break;
-							break;
-						default:
-							ASSERT(FALSE); // we shouldn't end up here!
-							return d.PostMiningErrorMessage(ERROR_INVALID_OPERATION);
 					}
 					if (i<searchedSectors.n) // some Sectors not healthy or missing?
 						continue;
