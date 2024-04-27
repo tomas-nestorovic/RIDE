@@ -332,7 +332,6 @@ namespace Utils{
 
 	class CCommandDialog:public CRideDialog{
 		const LPCTSTR information;
-		WORD defaultCommandId;
 	protected:
 		void AddButton(WORD id,LPCTSTR caption,WCHAR wingdingsGlyphBeforeText);
 		void AddCommandButton(WORD id,LPCTSTR caption,bool defaultCommand=false);

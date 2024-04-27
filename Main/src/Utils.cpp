@@ -287,13 +287,13 @@ namespace Utils{
 	CCommandDialog::CCommandDialog(LPCTSTR _information)
 		// ctor
 		: CRideDialog( IDR_ACTION_DIALOG, CWnd::FromHandle(app.GetEnabledActiveWindow()) )
-		, information(_information) , defaultCommandId(0) , checkBoxStatus(BST_UNCHECKED) {
+		, information(_information) , checkBoxStatus(BST_UNCHECKED) {
 	}
 
 	CCommandDialog::CCommandDialog(WORD dialogId,LPCTSTR _information)
 		// ctor
 		: CRideDialog( dialogId, CWnd::FromHandle(app.GetEnabledActiveWindow()) )
-		, information(_information) , defaultCommandId(0) , checkBoxStatus(BST_UNCHECKED) {
+		, information(_information) , checkBoxStatus(BST_UNCHECKED) {
 	}
 
 	BOOL CCommandDialog::OnInitDialog(){
@@ -425,11 +425,13 @@ namespace Utils{
 		// window procedure
 		switch (msg){
 			case WM_COMMAND:
-				if (wParam==IDOK)
-					if (defaultCommandId)
-						wParam=defaultCommandId;
-					else
-						return 0;
+				if (wParam==IDOK){
+					const HWND hFocused=::GetFocus();
+					if (::GetWindowLong(hFocused,GWL_WNDPROC)!=(LONG)CommandLikeButton_WndProc)
+						return 0; // do nothing if a command-like button not focused
+					lParam=(LPARAM)hFocused;
+					wParam=::GetDlgCtrlID(hFocused);
+				}
 				if (::GetWindowLong((HWND)lParam,GWL_WNDPROC)==(LONG)CommandLikeButton_WndProc){
 					UpdateData(TRUE);
 					EndDialog(wParam);
@@ -470,12 +472,8 @@ namespace Utils{
 
 	void CCommandDialog::AddCommandButton(WORD id,LPCTSTR caption,bool defaultCommand){
 		// adds a new "command-like" Button with given Id and Caption
-		if (defaultCommand){
-			ASSERT( defaultCommandId==0 ); // the Dialog can contain at most one DefaultCommand
-			defaultCommandId=id;
-		}
 		AddButton(
-			defaultCommand ? IDOK : id,
+			id,
 			caption,
 			defaultCommand ? 0xf0e8 : 0xf0e0 // a thick or thin arrow right
 		);
