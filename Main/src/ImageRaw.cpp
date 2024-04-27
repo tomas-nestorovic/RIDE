@@ -137,8 +137,8 @@ using namespace Yahel;
 	TStdWinError CImageRaw::SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap){
 		// saves all Modified Tracks; returns Windows standard i/o error
 		// - saving
-		CFile fTmp;
 		const bool savingToCurrentFile= lpszPathName==f.GetFilePath() && ::GetFileAttributes(lpszPathName)!=INVALID_FILE_ATTRIBUTES; // saving to the same file and that file exists
+{		CFile fTmp;
 		if (!savingToCurrentFile)
 			if (const TStdWinError err=CreateImageForReadingAndWriting(lpszPathName,fTmp))
 				return err;
@@ -167,16 +167,13 @@ using namespace Yahel;
 			default:
 				ASSERT(FALSE);
 		}
-		m_bModified=FALSE;
+}		m_bModified=FALSE;
 		// - reopening Image's underlying file
-		if (savingToCurrentFile)
+		if (savingToCurrentFile){
 			f.SetLength(f.GetPosition()); // "trimming" eventual unnecessary data (e.g. when unformatting Cylinders)
-		else{
-			if (f.m_hFile!=CFile::hFileNull)
-				f.Close();
-			std::swap( f.m_hFile, fTmp.m_hFile );
+			return ERROR_SUCCESS;
 		}
-		return ERROR_SUCCESS;
+		return OpenImageForReadingAndWriting(lpszPathName,f);
 	}
 
 	TCylinder CImageRaw::GetCylinderCount() const{

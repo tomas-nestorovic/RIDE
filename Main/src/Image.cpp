@@ -361,17 +361,15 @@ namespace Medium{
 		return e.m_cause;
 	}
 
-	TStdWinError openImageForReadingAndWriting(LPCTSTR fileName,CFile &f,UINT flags){
+	TStdWinError CImage::OpenImageForReadingAndWriting(LPCTSTR fileName,CFile &f){
+		// True <=> File successfully opened for both reading and writing, otherwise False
+		if (f.m_hFile!=CFile::hFileNull)
+			f.Close();
 		CFileException e;
-		if (f.Open( fileName, flags, &e )!=FALSE)
+		if (f.Open( fileName, CFile::modeReadWrite|CFile::shareExclusive|CFile::typeBinary, &e )!=FALSE)
 			e.m_cause=ERROR_SUCCESS; // because the last error might have been 183 (File cannot be created because it already exists)
 		::SetLastError(e.m_cause);
 		return e.m_cause;
-	}
-
-	TStdWinError CImage::OpenImageForReadingAndWriting(LPCTSTR fileName,CFile &f){
-		// True <=> File successfully opened for both reading and writing, otherwise False
-		return	openImageForReadingAndWriting( fileName, f, CFile::modeReadWrite|CFile::shareExclusive|CFile::typeBinary );
 	}
 
 	TStdWinError CImage::CreateImageForReadingAndWriting(LPCTSTR fileName,CFile &f){
