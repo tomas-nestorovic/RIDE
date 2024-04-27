@@ -10,7 +10,7 @@
 			bool excluded;
 		} *PCSourceSectorError;
 
-		const CDos *const dos;
+		const PCDos dos;
 		Medium::TType mediumType;
 		Codec::TTypeSet targetCodecs;
 		const PImage source;
@@ -34,7 +34,7 @@
 			TSourceSectorError erroneousSectors[1];
 		} *pOutErroneousTracks;
 
-		TDumpParams(PDos _dos)
+		TDumpParams(PCDos _dos)
 			// ctor
 			: dos(_dos)
 			, source(dos->image)
@@ -224,15 +224,14 @@
 				if (pAction->Cancelled) return LOG_ERROR(ERROR_CANCELLED);
 				LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("processing"));
 				p.track=p.chs.GetTrackNumber(dp.nHeads);
-				p.trackScanned=dp.source->IsTrackScanned( p.chs.cylinder, p.chs.head );
 				p.canCalibrateSourceHeads =	canSeekSourceHeadsHome
 											&&
-											( !sourceSupportsTrackReading || !p.trackScanned || dp.source->dos->properties==&CUnknownDos::Properties );
+											( !sourceSupportsTrackReading || !dp.source->dos->IsKnown() );
 				// . scanning Source Track
 				TSectorId bufferId[(TSector)-1];	WORD bufferLength[(TSector)-1];
 				Codec::TType sourceCodec; TSector nSectors; TStdWinError err;
 {LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("scanning source"));
-				nSectors=dp.source->ScanTrack(p.chs.cylinder,p.chs.head,&sourceCodec,bufferId,bufferLength);				
+				nSectors=dp.source->ScanTrack(p.chs.cylinder,p.chs.head,&sourceCodec,bufferId,bufferLength);
 }
 				p.trackScanned=dp.source->IsTrackScanned( p.chs.cylinder, p.chs.head );
 				const bool scannedWithError=!p.trackScanned; // was there a problem scanning the Track?
@@ -455,7 +454,7 @@
 									{ ID_DATAFIELD_CRC, _T("Fix Data CRC only"), MF_GRAYED*( rFdcStatus.DescribesMissingDam() || rFdcStatus.DescribesMissingId() || !rFdcStatus.DescribesDataFieldCrcError() ) }, // disabled if the Data CRC ok
 									{ ID_RECOVER, _T("Fix ID or Data..."), MF_GRAYED*( rFdcStatus.DescribesMissingDam() || rFdcStatus.DescribesMissingId() || !rFdcStatus.DescribesIdFieldCrcError()&&!rFdcStatus.DescribesDataFieldCrcError() ) }, // enabled only if either ID or Data field with error
 									Utils::TSplitButtonAction::HorizontalLine,
-									{ ID_TIME, _T("Mine track..."), MF_GRAYED*!(rp.canCalibrateSourceHeads && dp.source->MineTrack(TPhysicalAddress::Invalid.cylinder,TPhysicalAddress::Invalid.head)!=ERROR_NOT_SUPPORTED) }
+									{ ID_TIME, _T("Mine track..."), MF_GRAYED*!( dp.source->MineTrack(TPhysicalAddress::Invalid.cylinder,TPhysicalAddress::Invalid.head)!=ERROR_NOT_SUPPORTED ) }
 								};
 								::memcpy( resolveActions, tmpResolveActions, sizeof(tmpResolveActions) );
 								ConvertDlgButtonToSplitButton( IDNO, resolveActions, RESOLVE_OPTIONS_COUNT );
@@ -1181,7 +1180,9 @@ error:				return Utils::FatalError(_T("Cannot dump"),err);
 				bmac.AddAction( __dump_thread__, &d.dumpParams, _T("Dumping to target") );
 				const TSaveThreadParams stp( d.dumpParams.target.get(), d.dumpParams.targetFileName );
 				bmac.AddAction( SaveAllModifiedTracks_thread, &stp, _T("Saving target") );
-			if ( err=bmac.Perform(true) )
+			err=bmac.Perform(true);
+			const_cast<PImage>(this)->UpdateAllViews(nullptr);
+			if (err)
 				goto error;
 			// . displaying statistics on SourceTrackErrors
 			if (d.showReport==BST_CHECKED){
