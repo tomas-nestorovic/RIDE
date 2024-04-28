@@ -54,12 +54,13 @@
 
 	void CDos::CFilePreview::UpdateCaption(){
 		// displays current File in the Preview window caption
-		if (const PCFile file=pdt->entry)
-			::SendMessageW( // avoided '::SetWindowTextW' that eventually translates Unicode to ANSI because the window has been registered by MFC as ANSI!
-				m_hWnd, WM_SETTEXT, 0,
-				(LPARAM)DOS->GetFilePresentationNameAndExt(file).Prepend(_T(" (")).Prepend(caption).Append(L')').GetUnicode()
-			);
-		else
+		if (const PCFile file=pdt->entry){
+			const auto old=Utils::SubclassWindow( m_hWnd, ::DefWindowProcW ); // temporarily set Unicode wndproc that can work with Unicode chars
+				::SetWindowText( *this, // call the generic (eventually ANSI) function ...
+					(LPCTSTR)DOS->GetFilePresentationNameAndExt(file).Prepend(_T(" (")).Prepend(caption).Append(L')').GetUnicode() // ... but always provide it with Unicode text
+				);
+			Utils::SubclassWindow( m_hWnd, old );
+		}else
 			SetWindowText(caption);
 	}
 

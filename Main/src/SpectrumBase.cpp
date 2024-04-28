@@ -241,7 +241,21 @@
 		GetFileNameOrExt( file, &name, &ext );
 		name=TZxRom::ZxToAscii( name.GetAnsi() );
 		ext=TZxRom::ZxToAscii( ext.GetAnsi() );
-		return name.AppendDotExtensionIfAny( ext ).Escape();
+		name.AppendDotExtensionIfAny( ext ).Escape();
+		CPathString semigraphics;
+		const CString ansi=name.GetAnsi();
+		for( LPCSTR p=ansi; char c=*p++; )
+			if (TZxRom::IsStdUdgSymbol(c)){
+				static constexpr WCHAR Unicode[]={
+					L'\x2002', // en space
+					L'\x259d', L'\x2598', L'\x2580', L'\x2597', L'\x2590', L'\x259a', L'\x259c',
+					L'\x2596', L'\x259e', L'\x258c', L'\x259b', L'\x2584', L'\x259f', L'\x2599',
+					L'\x2588'
+				};
+				semigraphics.Append( Unicode[c&0xf] ); // lower four bits encode which "quadrants" of UDG character are shown (e.g. the UDG character of "L" shape = 2+4+8 = 14)
+			}else
+				semigraphics.Append(c);
+		return semigraphics;
 	}
 
 	CDos::CPathString CSpectrumBase::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
