@@ -16,7 +16,7 @@
 		const PImage source;
 		std::unique_ptr<CImage> target;
 		TCHAR targetFileName[MAX_PATH];
-		bool formatJustBadTracks, fullTrackAnalysis;
+		bool formatJustBadTracks, requireAllStdSectorDataPresent, fullTrackAnalysis;
 		TCylinder cylinderA,cylinderZ;
 		THead nHeads;
 		struct{
@@ -39,6 +39,7 @@
 			: dos(_dos)
 			, source(dos->image)
 			, formatJustBadTracks(false)
+			, requireAllStdSectorDataPresent( source->properties->IsRealDevice() && dos->IsKnown() )
 			, fullTrackAnalysis( source->ReadTrack(0,0) ) // if the Source provides access to low-level recording, let's also do the FullTrackAnalysis
 			, fillerByte(dos->properties->sectorFillerByte)
 			, cylinderA(0) , cylinderZ(source->GetCylinderCount()-1)
@@ -235,6 +236,24 @@
 }
 				p.trackScanned=dp.source->IsTrackScanned( p.chs.cylinder, p.chs.head );
 				const bool scannedWithError=!p.trackScanned; // was there a problem scanning the Track?
+				if (dp.requireAllStdSectorDataPresent && p.trackScanned){
+					TSectorId stdIds[(TSector)-1];
+					const TSector nStdIds=dp.dos->GetListOfStdSectors( p.chs.cylinder, p.chs.head, stdIds );
+					for( TSector iStd=0; iStd<nStdIds; ){
+						const auto id=stdIds[iStd++];
+						TSector iFound=0;
+						while (iFound<nSectors)
+							if (bufferId[iFound]!=id)
+								iFound++;
+							else
+								break;
+						if (iFound==nSectors){
+							// a standard Sector missing; add it to the list to later invoke a common error dialog
+							bufferId[nSectors]=id, bufferLength[nSectors]=CImage::GetOfficialSectorLength(id.lengthCode);
+							nSectors++;
+						}
+					}
+				}
 				// . reading Source Track
 				CImage::CTrackReader trSrc=dp.source->ReadTrack( p.chs.cylinder, p.chs.head );
 				p.trackWriteable= trSrc && targetSupportsTrackWriting && (sourceCodec&dp.targetCodecs)!=0; // A&B&C, A&B = Source and Target must support whole Track access, C = Target must support the Codec used in Source
@@ -873,6 +892,10 @@ terminateWithError:		return LOG_ERROR(pAction->TerminateWithError(err));
 					DDX_Check( pDX, ID_ACCURACY, i );
 					EnableDlgItem( ID_ACCURACY, dumpParams.fullTrackAnalysis );
 				dumpParams.fullTrackAnalysis=i!=0;
+				i=dumpParams.requireAllStdSectorDataPresent;
+					DDX_Check( pDX, ID_STANDARD, i );
+					EnableDlgItem( ID_STANDARD, dos->IsKnown() );
+				dumpParams.requireAllStdSectorDataPresent=i!=0;
 				DDX_Text( pDX,	ID_CYLINDER,	(RCylinder)dumpParams.cylinderA );
 					if (mp)
 						DDV_MinMaxUInt( pDX,dumpParams.cylinderA, 0, mp->cylinderRange.iMax-1 );
