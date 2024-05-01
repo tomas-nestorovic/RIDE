@@ -254,7 +254,7 @@
 				};
 				semigraphics.Append( Unicode[c&0xf] ); // lower four bits encode which "quadrants" of UDG character are shown (e.g. the UDG character of "L" shape = 2+4+8 = 14)
 			}else
-				semigraphics.Append(c);
+				semigraphics.Append( (BYTE)c );
 		return semigraphics;
 	}
 
