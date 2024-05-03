@@ -54,14 +54,7 @@
 
 	void CDos::CFilePreview::UpdateCaption(){
 		// displays current File in the Preview window caption
-		if (const PCFile file=pdt->entry){
-			const auto old=Utils::SubclassWindow( m_hWnd, ::DefWindowProcW ); // temporarily set Unicode wndproc that can work with Unicode chars
-				::SetWindowText( *this, // call the generic (eventually ANSI) function ...
-					(LPCTSTR)DOS->GetFilePresentationNameAndExt(file).Prepend(_T(" (")).Prepend(caption).Append(L')').GetUnicode() // ... but always provide it with Unicode text
-				);
-			Utils::SubclassWindow( m_hWnd, old );
-		}else
-			SetWindowText(caption);
+		SendMessage(WM_SETTEXT);
 	}
 
 	void CDos::CFilePreview::__showNextFile__(){
@@ -74,7 +67,7 @@
 					break;
 			if (!pos)
 				pos=rFileManager.GetFirstSelectedFilePosition();
-			pdt->entry=rFileManager.GetNextSelectedFile(pos);
+			pdt->entry=rFileManager.GetNextSelectedFile(pos), pdt->entryType=TDirectoryTraversal::CUSTOM;
 		}else{
 			// next File (any)
 			PFile next=nullptr;
@@ -106,7 +99,7 @@
 					break;
 			if (!pos)
 				pos=rFileManager.GetLastSelectedFilePosition();
-			pdt->entry=rFileManager.GetPreviousSelectedFile(pos);
+			pdt->entry=rFileManager.GetPreviousSelectedFile(pos), pdt->entryType=TDirectoryTraversal::CUSTOM;
 		}else{
 			// previous File (any)
 			PFile prev=nullptr;
@@ -191,6 +184,28 @@
 				return TRUE;
 				break;
 			}*/
+			case WM_NCPAINT:
+				__super::WindowProc(msg,wParam,lParam);
+				//fallthrough
+			case WM_SETTEXT:
+				// forces Unicode caption even for an ANSI window
+				if (const PCFile file=pdt->entry){
+					if (pdt->entryType==TDirectoryTraversal::UNKNOWN)
+						return 0;
+					const auto tmp=DOS->GetFilePresentationNameAndExt(file).Prepend(_T(" (")).Prepend(caption).Append(L')');
+					const auto wndProc0=Utils::SubclassWindow( m_hWnd, ::DefWindowProcW ); // temporarily set Unicode wndproc that can work with Unicode chars
+						if (Utils::IsVistaOrNewer())
+							::SetWindowText( m_hWnd, // call the generic (eventually ANSI) function ...
+								(LPCTSTR)tmp.GetUnicode() // ... but always provide it with Unicode text
+							);
+						else
+							::SetWindowTextW( m_hWnd, // call excplicitly the Unicode function
+								tmp.GetUnicode()
+							);
+					Utils::SubclassWindow( m_hWnd, wndProc0 );
+				}else
+					SetWindowText(caption);
+				return 0;
 			case WM_SIZE:
 				// window size changed
 				InvalidateRect(nullptr,TRUE);
