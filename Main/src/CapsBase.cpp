@@ -798,21 +798,24 @@ invalidTrack:
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (pFormat->mediumType==Medium::UNKNOWN){
 			// no particular Medium specified - enumerating all supported floppy Types
-			WORD nHealthySectorsMax=0; // arbitering the MediumType by the # of healthy Sectors
+			WORD scoreMax=0; // arbitering the MediumType by scores
 			Medium::TType bestMediumType=Medium::UNKNOWN;
 			TFormat tmp=*pFormat;
 			for( DWORD type=1; type!=0; type<<=1 )
 				if (type&forcedMediumType){
-					WORD nHealthySectorsCurr=0;
+					WORD score=0;
 					tmp.mediumType=(Medium::TType)type;
 					const Utils::CVarTempReset<PDos> dos0( dos, nullptr );
 					SetMediumTypeAndGeometry( &tmp, sideMap, firstSectorNumber );
 					for( TCylinder cyl=0; cyl<SCANNED_CYLINDERS; cyl++ ) // counting the # of healthy Sectors
-						for( THead head=2; head>0; nHealthySectorsCurr+=GetCountOfHealthySectors(cyl,--head) );
-					if (nHealthySectorsCurr>nHealthySectorsMax)
-						nHealthySectorsMax=nHealthySectorsCurr, bestMediumType=tmp.mediumType;
+						for( THead head=0; head<2; head++ )
+							score+=	ScanTrack(cyl,head)
+									+
+									8*GetCountOfHealthySectors(cyl,head);
+					if (score>scoreMax)
+						scoreMax=score, bestMediumType=tmp.mediumType;
 				}
-			if (nHealthySectorsMax>0){
+			if (scoreMax>0){
 				tmp.mediumType=bestMediumType;
 				return SetMediumTypeAndGeometry( &tmp, sideMap, firstSectorNumber );
 			}
