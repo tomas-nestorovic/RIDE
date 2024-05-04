@@ -240,14 +240,14 @@
 					TSectorId stdIds[(TSector)-1];
 					const TSector nStdIds=dp.dos->GetListOfStdSectors( p.chs.cylinder, p.chs.head, stdIds );
 					for( TSector iStd=0; iStd<nStdIds; ){
-						const auto id=stdIds[iStd++];
+						const auto id = p.chs.sectorId=stdIds[iStd++];
 						TSector iFound=0;
 						while (iFound<nSectors)
 							if (bufferId[iFound]!=id)
 								iFound++;
 							else
 								break;
-						if (iFound==nSectors){
+						if (iFound==nSectors && dp.dos->GetSectorStatus(p.chs)!=CDos::TSectorStatus::UNKNOWN){
 							// a standard Sector missing; add it to the list to later invoke a common error dialog
 							bufferId[nSectors]=id, bufferLength[nSectors]=CImage::GetOfficialSectorLength(id.lengthCode);
 							nSectors++;
