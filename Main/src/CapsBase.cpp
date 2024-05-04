@@ -1272,6 +1272,7 @@ invalidTrack:
 		class CParamsDialog sealed:public Utils::CRideDialog{
 			const LPCTSTR firmware;
 			const bool initialEditing;
+			const Utils::CRideFont warningFont;
 			CCapsBase &rcb;
 			CPrecompensation tmpPrecomp;
 			TCHAR flippyDiskTextOrg[40],doubleTrackDistanceTextOrg[80];
@@ -1333,6 +1334,7 @@ invalidTrack:
 					}
 				// . forcing redrawing (as the new text may be shorter than the original text, leaving the original partly visible)
 				InvalidateDlgItem(ID_MEDIUM);
+				Invalidate(FALSE);
 				// . refreshing the status of Precompensation
 				tmpPrecomp.Load(mt);
 				RefreshPrecompensationStatus();
@@ -1385,6 +1387,9 @@ invalidTrack:
 				static constexpr WORD InitialSettingIds[]={ ID_ROTATION, ID_ACCURACY, ID_DEFAULT1, ID_SIDE, ID_DRIVE, ID_40D80, ID_TRACK, ID_TIME, 0 };
 				EnableDlgItems( InitialSettingIds, initialEditing );
 				EnableDlgItem( ID_READABLE, params.calibrationAfterError!=TParams::TCalibrationAfterError::NONE );
+				SetDlgItemSingleCharUsingFont( // a warning that No decoder selected (archivation)
+					ID_HIDDEN, L'\xf0ea', warningFont
+				);
 				// . if DoubleTrackStep changed manually, adjusting the text of the ID_40D80 checkbox
 				SetDlgItemSingleCharUsingFont( ID_RECOVER, 0xf071, FONT_WEBDINGS, 120 );
 				GetDlgItemText( ID_SIDE,   flippyDiskTextOrg, ARRAYSIZE(flippyDiskTextOrg) );
@@ -1399,14 +1404,12 @@ invalidTrack:
 				);
 				// . displaying inserted Medium information
 				SetDlgItemSingleCharUsingFont( // a warning that a 40-track disk might have been misrecognized
-					ID_INFORMATION,
-					L'\xf0ea', (HFONT)Utils::CRideFont(FONT_WEBDINGS,175,false,true).Detach()
+					ID_INFORMATION, L'\xf0ea', warningFont
 				);
 				RefreshMediumInformation();
 				// . updating write pre-compensation status
 				SetDlgItemSingleCharUsingFont( // a warning that pre-compensation not up-to-date
-					ID_INSTRUCTION,
-					L'\xf0ea', (HFONT)Utils::CRideFont(FONT_WEBDINGS,175,false,true).Detach()
+					ID_INSTRUCTION, L'\xf0ea', warningFont
 				);
 				RefreshPrecompensationStatus();
 				// . adjusting calibration possibilities
@@ -1497,7 +1500,7 @@ invalidTrack:
 							case MAKELONG(ID_ACCURACY,CBN_SELCHANGE):{
 								// FluxDecoder changed
 								const Utils::CVarTempReset<TParams::TFluxDecoder> fd0( rcb.params.fluxDecoder, (TParams::TFluxDecoder)GetDlgComboBoxSelectedIndex(ID_ACCURACY) );
-								if (!EnableDlgItem( ID_TRACK, rcb.params.fluxDecoder!=TParams::TFluxDecoder::NO_FLUX_DECODER ))
+								if (ShowDlgItem(  ID_HIDDEN,  !EnableDlgItem( ID_TRACK, rcb.params.fluxDecoder!=TParams::TFluxDecoder::NO_FLUX_DECODER )  ))
 									CheckDlgButton( ID_TRACK, BST_UNCHECKED ); // when archiving, any corrections must be turned off
 								SendMessage( WM_COMMAND, ID_RECOVER ); // refresh information on inserted Medium
 								break;
@@ -1584,6 +1587,7 @@ invalidTrack:
 			CParamsDialog(CCapsBase &rcb,LPCTSTR firmware,bool initialEditing)
 				// ctor
 				: Utils::CRideDialog(IDR_CAPS_DEVICE_ACCESS)
+				, warningFont( FONT_WEBDINGS, 175, false, true )
 				, rcb(rcb) , params(rcb.params) , initialEditing(initialEditing) , firmware(firmware)
 				, tmpPrecomp(rcb.precompensation) {
 			}
