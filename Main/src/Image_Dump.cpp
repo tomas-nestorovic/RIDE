@@ -205,6 +205,7 @@
 			BYTE revolution;
 			struct{
 				WORD automaticallyAcceptedErrors;
+				bool anyErrorsOnUnknownSectors;
 				bool anyErrorsOnEmptySectors;
 				bool remainingErrorsOnTrack;
 			} acceptance;
@@ -333,6 +334,8 @@
 							||
 							p.acceptance.remainingErrorsOnTrack // want automatically accept all errors in the rest of current Track?
 							||
+							p.acceptance.anyErrorsOnUnknownSectors && dp.dos->GetSectorStatus(p.chs)==CDos::TSectorStatus::UNKNOWN // want accept all Unknown Sector errors?
+							||
 							p.acceptance.anyErrorsOnEmptySectors && dp.dos->GetSectorStatus(p.chs)==CDos::TSectorStatus::EMPTY // want accept any error for Empty Sectors?
 						)
 					){
@@ -455,6 +458,7 @@
 									Utils::TSplitButtonAction::HorizontalLine,
 									{ ID_ERROR, _T("Accept all errors of this kind") },
 									{ ID_TRACK, _T("Accept all errors in this track") },
+									{ ID_DRIVE, _T("Accept all errors on unknown sectors") },
 									{ ID_STATE, _T("Accept all errors on empty sectors") },
 									{ ID_IMAGE, _T("Accept all errors on the disk") }
 								};
@@ -510,6 +514,11 @@
 												return 0;
 											case ID_ERROR:
 												rp.acceptance.automaticallyAcceptedErrors|=rFdcStatus.ToWord();
+												UpdateData(TRUE);
+												EndDialog(ACCEPT_ERROR_ID);
+												return 0;
+											case ID_DRIVE:
+												rp.acceptance.anyErrorsOnUnknownSectors=true;
 												UpdateData(TRUE);
 												EndDialog(ACCEPT_ERROR_ID);
 												return 0;
