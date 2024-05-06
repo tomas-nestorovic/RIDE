@@ -16,7 +16,7 @@
 
 
 
-	TPhysicalAddress CMSDOS7::TBootSector::__getRecognizedChs__(PImage image,bool recognizeBoot,bool *pSuccess){
+	TPhysicalAddress CMSDOS7::TBootSector::__getRecognizedChs__(PImage image,bool recognizeBoot,bool *pSuccess,Medium::TType *pOutMedium){
 		// True <=> Boot Sector has been recognized on the disk, otherwise False
 		TPhysicalAddress chs={ 0, 0, {0,0,1,-1} };
 		// - in case the Image is a physical floppy disk, determining the Type of Medium (type of floppy)
@@ -41,6 +41,7 @@
 			if (!boot || recognizeBoot&&!boot->__recognize__(w))
 				if (pSuccess) *pSuccess=false; // neither normal nor backup Boot Sector could be recognized
 		}
+		if (pOutMedium) *pOutMedium=fmt.mediumType;
 		return chs;
 	}
 
@@ -237,19 +238,10 @@
 
 	TStdWinError CMSDOS7::__recognizeDisk__(PImage image,PFormat pFormatBoot){
 		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
-		// - in case the Image is a physical floppy disk, determining the Type of Medium (type of floppy)
-		TFormat fmt={ Medium::FLOPPY_DD_525, Codec::MFM, 1,1,MSDOS7_SECTOR_BKBOOT, MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD, 1 };
-		if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
-			fmt.mediumType=Medium::FLOPPY_DD;
-			if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
-				fmt.mediumType=Medium::FLOPPY_HD_350;
-				if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0))
-					return ERROR_UNRECOGNIZED_VOLUME; // unknown Medium Type
-			}
-		}
+		TFormat fmt={ Medium::UNKNOWN, Codec::MFM, 1,1,MSDOS7_SECTOR_BKBOOT, MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD, 1 };
 		// - finding Boot Sector
 		bool bootSectorRecognized;
-		const TPhysicalAddress bootChs=TBootSector::__getRecognizedChs__(image,true,&bootSectorRecognized);
+		const TPhysicalAddress bootChs=TBootSector::__getRecognizedChs__(image,true,&bootSectorRecognized,&fmt.mediumType);
 		if (!bootSectorRecognized)
 			return ERROR_UNRECOGNIZED_VOLUME; // neither normal nor backup Boot Sector recognized
 		const PCBootSector bootSector=(PCBootSector)image->GetHealthySectorData(bootChs);
@@ -333,7 +325,7 @@
 					TBootSector::__getRecognizedChs__(
 						msdos->image,
 						false, // False = no attempt to recognize Boot Sector, just getting a readable Sector where a Boot is normally expected (this is for the case that the Image is being "Opened as")
-						nullptr
+						nullptr, nullptr
 					)
 				) {
 		// - extracting information from Boot Sector (for the case that the Image is being "Opened as")

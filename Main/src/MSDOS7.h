@@ -74,7 +74,7 @@
 					HDD		=0x80
 			};
 
-			static TPhysicalAddress __getRecognizedChs__(PImage image,bool recognizeBoot,bool *pSuccess);
+			static TPhysicalAddress __getRecognizedChs__(PImage image,bool recognizeBoot,bool *pSuccess,Medium::TType *pOutMedium);
 
 			#pragma pack(1)
 			struct{
