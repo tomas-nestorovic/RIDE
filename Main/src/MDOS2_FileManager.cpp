@@ -250,7 +250,7 @@
 						const BYTE resolution =	rConflictedSiblingResolution&0xff // previously wanted to apply the decision to all subsequent D_0 files?
 												? rConflictedSiblingResolution&0xff
 												: d.DoModal();
-						if (d.checkBoxStatus==BST_CHECKED) // want to apply the decision to all subsequent D_0 files?
+						if (d.checkBoxTicked) // want to apply the decision to all subsequent D_0 files?
 							rConflictedSiblingResolution|=resolution;
 						switch (resolution){
 							case IDYES:{
@@ -290,7 +290,7 @@
 									const WORD resolution =	rConflictedSiblingResolution&0xff00 // previously wanted to apply the decision to all subsequent archived Boot Sectors?
 															? rConflictedSiblingResolution&0xff00
 															: d.DoModal()<<8;
-									if (d.checkBoxStatus==BST_CHECKED) // want to apply the decision to all subsequent D_0 files?
+									if (d.checkBoxTicked) // want to apply the decision to all subsequent D_0 files?
 										rConflictedSiblingResolution|=resolution;
 									switch (resolution>>8){
 										case IDYES:

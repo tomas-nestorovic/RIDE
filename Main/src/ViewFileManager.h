@@ -82,7 +82,7 @@
 			void DoDataExchange(CDataExchange *pDX) override;
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam);
 		public:
-			int useForAllSubsequentConflicts;
+			bool useForAllSubsequentConflicts;
 
 			CNameConflictResolutionDialog(LPCTSTR _conflictedName,LPCTSTR _conflictedNameType,LPCTSTR _captionForReplaceButton,LPCTSTR _captionForSkipButton);
 		};

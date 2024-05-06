@@ -408,7 +408,7 @@ importQuit2:		::GlobalUnlock(hg);
 					}
 				CNameConflictResolutionDialog d( DOS->GetFilePresentationNameAndExt(conflict), directory?_T("directory"):_T("file"), bufOverwrite,bufSkip );
 				b=d.DoModal();
-				if (d.useForAllSubsequentConflicts==BST_CHECKED)
+				if (d.useForAllSubsequentConflicts)
 					rConflictedSiblingResolution =	(rConflictedSiblingResolution&TConflictResolution::CUSTOM_MASK)
 													|
 													( b==IDYES ? TConflictResolution::MERGE : TConflictResolution::SKIP );
@@ -760,7 +760,7 @@ importQuit2:		::GlobalUnlock(hg);
 		: Utils::CCommandDialog(IDR_FILEMANAGER_IMPORT_CONFLICT,information)
 		// - initialization
 		, captionForReplaceButton(_captionForReplaceButton) , captionForSkipButton(_captionForSkipButton)
-		, useForAllSubsequentConflicts(BST_UNCHECKED) {
+		, useForAllSubsequentConflicts(false) {
 		// - initializing Information (i.e. the main message of the dialog)
 		::wsprintf( information, _T("This folder already contains the %s \"%s\"."), _conflictedNameType, _conflictedName );
 	}

@@ -39,7 +39,7 @@
 		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
 		const CUnformatDialog &d=*(CUnformatDialog *)pAction->GetParams();
 		pAction->SetProgressTarget(200);
-		if (d.updateBoot==BST_CHECKED){
+		if (d.updateBoot){
 			// requested to update Format in Boot Sector
 			TCylinder &r=d.DOS->formatBoot.nCylinders;
 			if (1+d.params.cylZInclusive>=r)
@@ -47,7 +47,7 @@
 			d.DOS->FlushToBootSector();
 		}
 		pAction->IncrementProgress(100);
-		if (d.removeTracksFromFat==BST_CHECKED)
+		if (d.removeTracksFromFat)
 			// requested to include newly formatted Tracks into FAT
 			d.DOS->RemoveStdCylindersFromFat( d.params.cylA, d.params.cylZInclusive, pAction->CreateSubactionProgress(100) ); // no error checking as its assumed that some Cylinders couldn't be marked in (eventually shrunk) FAT as Unavailable
 		pAction->IncrementProgress(100);
@@ -68,7 +68,7 @@
 		// - initialization
 		, params(dos,nullptr)
 		, stdUnformats(stdUnformats) , nStdUnformats(nStdUnformats)
-		, updateBoot(BST_CHECKED) , removeTracksFromFat(BST_CHECKED) {
+		, updateBoot(true) , removeTracksFromFat(true) {
 		params.cylA = params.cylZInclusive = dos->image->GetCylinderCount()-1;
 	}
 

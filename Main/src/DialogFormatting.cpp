@@ -3,9 +3,9 @@
 	CFormatDialog::CFormatDialog(PDos _dos,PCStdFormat _additionalFormats,BYTE _nAdditionalFormats)
 		// ctor
 		: Utils::CRideDialog(IDR_DOS_FORMAT) , dos(_dos)
-		, updateBoot(BST_CHECKED)
-		, addTracksToFat(BST_CHECKED)
-		, showReportOnFormatting(_dos->image->properties->IsRealDevice()?BST_CHECKED:BST_UNCHECKED)
+		, updateBoot(true)
+		, addTracksToFat(true)
+		, showReportOnFormatting(_dos->image->properties->IsRealDevice())
 		, additionalFormats(_additionalFormats) , nAdditionalFormats(_nAdditionalFormats) {
 		params=dos->properties->stdFormats->params, params.format.mediumType=Medium::UNKNOWN, params.format.codecType=Codec::ANY; // initialization using the first StandardFormat (eventually a Custom one)
 	}

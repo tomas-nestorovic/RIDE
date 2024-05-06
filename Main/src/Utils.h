@@ -311,6 +311,7 @@ namespace Utils{
 		void ConvertDlgCheckboxToHyperlink(WORD id,WORD idHyperlinkControl,LPCWSTR hyperlinkControlText) const;
 		bool GetDlgItemIntList(WORD id,CIntList &rOutList,const PropGrid::Integer::TUpDownLimits &limits,int nIntsMin=0,int nIntsMax=INT_MAX) const;
 		void SetDlgItemIntList(WORD id,const CIntList &list) const;
+		void DDX_CheckEnable(CDataExchange *pDX,int nIDC,bool &value,bool enable) const;
 	};
 
 	class CSingleNumberDialog sealed:public CRideDialog{
@@ -346,7 +347,7 @@ namespace Utils{
 		void DoDataExchange(CDataExchange *pDX) override;
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 	public:
-		int checkBoxStatus;
+		bool checkBoxTicked;
 	};
 
 	class CByteIdentity sealed{
@@ -600,6 +601,15 @@ namespace Utils{
 	WNDPROC SubclassWindow(HWND hWnd,WNDPROC newWndProc);
 	WNDPROC SubclassWindowW(HWND hWnd,WNDPROC newWndProc);
 	CString DoPromptSingleTypeFileName(LPCTSTR defaultSaveName,LPCTSTR singleFilter,DWORD flags=0);
+}
+
+void DDX_Check(CDataExchange *pDX,int nIDC,bool &value);
+
+template<typename T>
+void DDX_CBIndex(CDataExchange *pDX,int nIDC,T &value){
+	int tmp=value;
+		DDX_CBIndex( pDX, nIDC, tmp );
+	value=(T)tmp;
 }
 
 #endif // UTILS_H

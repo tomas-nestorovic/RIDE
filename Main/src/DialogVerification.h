@@ -64,8 +64,8 @@
 		struct TParams{
 			const PDos dos;
 			mutable CBackgroundMultiActionCancelable action;
-			int verifyBootSector, verifyFat, verifyFilesystem;
-			int verifyVolumeSurface;
+			bool verifyBootSector, verifyFat, verifyFilesystem;
+			bool verifyVolumeSurface;
 			int repairStyle;
 			const TVerificationFunctions verificationFunctions;
 			mutable class CReportFile sealed:public CFile{

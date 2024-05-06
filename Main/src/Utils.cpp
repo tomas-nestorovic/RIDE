@@ -287,13 +287,13 @@ namespace Utils{
 	CCommandDialog::CCommandDialog(LPCTSTR _information)
 		// ctor
 		: CRideDialog( IDR_ACTION_DIALOG, CWnd::FromHandle(app.GetEnabledActiveWindow()) )
-		, information(_information) , checkBoxStatus(BST_UNCHECKED) {
+		, information(_information) , checkBoxTicked(false) {
 	}
 
 	CCommandDialog::CCommandDialog(WORD dialogId,LPCTSTR _information)
 		// ctor
 		: CRideDialog( dialogId, CWnd::FromHandle(app.GetEnabledActiveWindow()) )
-		, information(_information) , checkBoxStatus(BST_UNCHECKED) {
+		, information(_information) , checkBoxTicked(false) {
 	}
 
 	BOOL CCommandDialog::OnInitDialog(){
@@ -320,7 +320,7 @@ namespace Utils{
 
 	void CCommandDialog::DoDataExchange(CDataExchange *pDX){
 		// exchange of data from and to controls
-		DDX_Check( pDX, ID_APPLY, checkBoxStatus );
+		DDX_Check( pDX, ID_APPLY, checkBoxTicked );
 	}
 
 	typedef struct TCommandLikeButtonInfo sealed{
@@ -1788,6 +1788,12 @@ namespace Utils{
 		SetDlgItemText( id, buf );
 	}
 
+	void CRideDialog::DDX_CheckEnable(CDataExchange *pDX,int nIDC,bool &value,bool enable) const{
+		DDX_Check( pDX, nIDC, value );
+		EnableDlgItem( nIDC, enable );
+	}
+
+
 
 
 
@@ -2456,4 +2462,14 @@ quitWithErr:const DWORD err=::GetLastError();
 		return err;
 	}
 
+}
+
+
+
+
+
+void DDX_Check(CDataExchange *pDX,int nIDC,bool &value){
+	int tmp=value;
+		DDX_Check( pDX, nIDC, tmp );
+	value=tmp!=BST_UNCHECKED;
 }

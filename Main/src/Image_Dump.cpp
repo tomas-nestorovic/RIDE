@@ -894,17 +894,9 @@ terminateWithError:		return LOG_ERROR(pAction->TerminateWithError(err));
 				const Medium::PCProperties mp=	targetImageProperties // ComboBox populated with compatible Media and one of them selected
 												? Medium::GetProperties( dumpParams.mediumType=(Medium::TType)GetDlgComboBoxSelectedValue(ID_MEDIUM) )
 												: nullptr;
-				int i=dumpParams.formatJustBadTracks;
-					DDX_Check( pDX, ID_FORMAT, i );
-				dumpParams.formatJustBadTracks=i!=0;
-				i=dumpParams.fullTrackAnalysis;
-					DDX_Check( pDX, ID_ACCURACY, i );
-					EnableDlgItem( ID_ACCURACY, dumpParams.fullTrackAnalysis );
-				dumpParams.fullTrackAnalysis=i!=0;
-				i=dumpParams.requireAllStdSectorDataPresent;
-					DDX_Check( pDX, ID_STANDARD, i );
-					EnableDlgItem( ID_STANDARD, dos->IsKnown() );
-				dumpParams.requireAllStdSectorDataPresent=i!=0;
+				DDX_Check( pDX, ID_FORMAT, dumpParams.formatJustBadTracks );
+				DDX_CheckEnable( pDX, ID_ACCURACY, dumpParams.fullTrackAnalysis, dumpParams.fullTrackAnalysis );
+				DDX_CheckEnable( pDX, ID_STANDARD, dumpParams.requireAllStdSectorDataPresent, dos->IsKnown() );
 				DDX_Text( pDX,	ID_CYLINDER,	(RCylinder)dumpParams.cylinderA );
 					if (mp)
 						DDV_MinMaxUInt( pDX,dumpParams.cylinderA, 0, mp->cylinderRange.iMax-1 );
@@ -1146,15 +1138,15 @@ setDestination:						// : compacting FileName in order to be better displayable 
 		public:
 			CImage::PCProperties targetImageProperties;
 			TDumpParams dumpParams;
-			int realtimeThreadPriority,showReport;
+			bool realtimeThreadPriority,showReport;
 
 			CDumpDialog(PDos _dos)
 				// ctor
 				: Utils::CRideDialog(IDR_IMAGE_DUMP)
 				, dos(_dos) , targetImageProperties(nullptr) , dumpParams(_dos)
 				, mruDevices( CRecentFileList(0,INI_DUMP,_T("MruDev%d"),4) )
-				, realtimeThreadPriority(BST_UNCHECKED)
-				, showReport(BST_CHECKED) {
+				, realtimeThreadPriority(false)
+				, showReport(true) {
 				::lstrcpy( dumpParams.targetFileName, ELLIPSIS );
 				mruDevices.ReadList();
 			}
@@ -1217,10 +1209,10 @@ error:				return Utils::FatalError(_T("Cannot dump"),err);
 			if (err)
 				goto error;
 			// . displaying statistics on SourceTrackErrors
-			if (d.showReport==BST_CHECKED){
+			if (d.showReport){
 				// : saving to temporary file
 				const CString tmpFileName=Utils::GenerateTemporaryFileName()+_T(".html");
-				d.dumpParams.__exportErroneousTracksToHtml__( CFile(tmpFileName,CFile::modeCreate|CFile::modeWrite), bmac.GetDurationTime(), d.realtimeThreadPriority!=BST_UNCHECKED );
+				d.dumpParams.__exportErroneousTracksToHtml__( CFile(tmpFileName,CFile::modeCreate|CFile::modeWrite), bmac.GetDurationTime(), d.realtimeThreadPriority );
 				// : displaying
 				app.GetMainWindow()->OpenWebPage( _T("Dump results"), tmpFileName );
 			}

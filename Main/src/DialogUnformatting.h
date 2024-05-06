@@ -13,7 +13,7 @@
 	private:
 		const PCStdUnformat stdUnformats;
 		const BYTE nStdUnformats;
-		int updateBoot, removeTracksFromFat;
+		bool updateBoot, removeTracksFromFat;
 
 		static UINT AFX_CDECL UnformatTracks_thread(PVOID pCancelableAction);
 		static UINT AFX_CDECL UnregisterStdCylinders_thread(PVOID pCancelableAction);

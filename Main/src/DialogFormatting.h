@@ -36,7 +36,7 @@
 		const PCStdFormat additionalFormats;
 		const BYTE nAdditionalFormats;
 		TParameters params;
-		int updateBoot, addTracksToFat, showReportOnFormatting;
+		bool updateBoot, addTracksToFat, showReportOnFormatting;
 
 		CFormatDialog(PDos _dos,PCStdFormat _additionalFormats,BYTE _nAdditionalFormats);
 	};

@@ -14,9 +14,9 @@
 		afx_msg void __setDefaultFillerByteForDirectorySectors__();
 	public:
 		BYTE sectorFillerByte,directoryFillerByte;
-		int fillEmptySectors;
-		int fillFileEndings, fillSubdirectoryFileEndings;
-		int fillEmptyDirectoryEntries, fillEmptySubdirectoryEntries;
+		bool fillEmptySectors;
+		bool fillFileEndings, fillSubdirectoryFileEndings;
+		bool fillEmptyDirectoryEntries, fillEmptySubdirectoryEntries;
 
 		CFillEmptySpaceDialog(const CDos *dos);
 	};

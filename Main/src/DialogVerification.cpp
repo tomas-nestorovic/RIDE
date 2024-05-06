@@ -5,8 +5,8 @@
 		// ctor
 		: dos(dos)
 		, action(THREAD_PRIORITY_BELOW_NORMAL)
-		, verifyBootSector(BST_UNCHECKED) , verifyFat(BST_UNCHECKED) , verifyFilesystem(BST_UNCHECKED)
-		, verifyVolumeSurface(BST_UNCHECKED)
+		, verifyBootSector(false) , verifyFat(false) , verifyFilesystem(false)
+		, verifyVolumeSurface(false)
 		, repairStyle(0)
 		, verificationFunctions(rvf) {
 	}
@@ -234,14 +234,10 @@
 	void CVerifyVolumeDialog::DoDataExchange(CDataExchange *pDX){
 		// exchange of data from and to controls
 		DDX_Text( pDX, ID_DOS, CString(params.dos->properties->name) );
-		DDX_Check( pDX, ID_BOOT,	params.verifyBootSector );
-			EnableDlgItem( ID_BOOT, params.verificationFunctions.fnBootSector!=nullptr );
-		DDX_Check( pDX, ID_FAT,		params.verifyFat );
-			EnableDlgItem( ID_FAT, params.verificationFunctions.fnFatFullyReadable||params.verificationFunctions.fnFatFilePathsOk||params.verificationFunctions.fnFatCrossedFiles||params.verificationFunctions.fnFatLostAllocUnits );
-		DDX_Check( pDX, ID_FILE1,	params.verifyFilesystem );
-			EnableDlgItem( ID_FILE1, params.verificationFunctions.fnFilesystem!=nullptr );
-		DDX_Check( pDX, ID_IMAGE,	params.verifyVolumeSurface );
-			EnableDlgItem( ID_IMAGE, params.verificationFunctions.fnVolumeSurface!=nullptr );
+		DDX_CheckEnable( pDX, ID_BOOT,	params.verifyBootSector, params.verificationFunctions.fnBootSector!=nullptr );
+		DDX_CheckEnable( pDX, ID_FAT,	params.verifyFat, params.verificationFunctions.fnFatFullyReadable||params.verificationFunctions.fnFatFilePathsOk||params.verificationFunctions.fnFatCrossedFiles||params.verificationFunctions.fnFatLostAllocUnits );
+		DDX_CheckEnable( pDX, ID_FILE1,	params.verifyFilesystem, params.verificationFunctions.fnFilesystem!=nullptr );
+		DDX_CheckEnable( pDX, ID_IMAGE,	params.verifyVolumeSurface, params.verificationFunctions.fnVolumeSurface!=nullptr );
 		DDX_CBIndex( pDX, ID_REPAIR, params.repairStyle );
 	}
 

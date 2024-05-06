@@ -446,10 +446,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 					cb.Detach();
 				}
 		}		// . preservation of empty Tracks
-				i=rParams.preserveEmptyTracks;
-				DDX_Check( pDX, ID_TRACK, i );
-				rParams.preserveEmptyTracks=i!=BST_UNCHECKED;
-				EnableDlgItem( ID_TRACK, !readOnly );
+				DDX_CheckEnable( pDX, ID_TRACK, rParams.preserveEmptyTracks, !readOnly );
 			}
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 				// window procedure

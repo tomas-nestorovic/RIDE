@@ -9,9 +9,9 @@
 		, dosProps(dos->properties)
 		, sectorFillerByte(dosProps->sectorFillerByte) , directoryFillerByte(dosProps->directoryFillerByte)
 		, nOptionsChecked(0)
-		, fillEmptySectors(BST_UNCHECKED)
-		, fillFileEndings(BST_UNCHECKED) , fillSubdirectoryFileEndings(BST_UNCHECKED)
-		, fillEmptyDirectoryEntries(BST_UNCHECKED) , fillEmptySubdirectoryEntries(BST_UNCHECKED) {
+		, fillEmptySectors(false)
+		, fillFileEndings(false) , fillSubdirectoryFileEndings(false)
+		, fillEmptyDirectoryEntries(false) , fillEmptySubdirectoryEntries(false) {
 	}
 
 	BEGIN_MESSAGE_MAP(CFillEmptySpaceDialog,CDialog)

@@ -1613,9 +1613,7 @@ Utils::Information(buf);}
 				int tmp=params.calibrationAfterError;
 				DDX_Radio( pDX,	ID_NONE,		tmp );
 				params.calibrationAfterError=(TParams::TCalibrationAfterError)tmp;
-				tmp=params.calibrationAfterErrorOnlyForKnownSectors;
-				DDX_Check( pDX, ID_READABLE,	tmp );
-				params.calibrationAfterErrorOnlyForKnownSectors=tmp!=0;
+				DDX_Check( pDX, ID_READABLE,	params.calibrationAfterErrorOnlyForKnownSectors );
 				// . CalibrationStepDuringFormatting
 				EnableDlgItem( ID_NUMBER, tmp=params.calibrationStepDuringFormatting!=0 );
 				DDX_Radio( pDX,	ID_ZERO,		tmp );
@@ -1625,21 +1623,13 @@ Utils::Information(buf);}
 					SetDlgItemInt(ID_NUMBER,4,FALSE);
 				params.calibrationStepDuringFormatting=tmp;
 				// . NumberOfSecondsToTurnMotorOff
-				tmp=params.nSecondsToTurnMotorOff;
-				DDX_CBIndex( pDX, ID_ROTATION,	tmp );
-				params.nSecondsToTurnMotorOff=tmp;
+				DDX_CBIndex( pDX, ID_ROTATION,	params.nSecondsToTurnMotorOff );
 				// . FormattedTracksVerification
-				tmp=params.verifyFormattedTracks;
-				DDX_Check( pDX,	ID_VERIFY_TRACK,	tmp );
-				params.verifyFormattedTracks=tmp!=0;
+				DDX_Check( pDX,	ID_VERIFY_TRACK, params.verifyFormattedTracks );
 				// . WrittenDataVerification
-				tmp=params.verifyWrittenData;
-				DDX_Check( pDX,	ID_VERIFY_SECTOR,	tmp );
-				params.verifyWrittenData=tmp!=0;
+				DDX_Check( pDX,	ID_VERIFY_SECTOR, params.verifyWrittenData );
 				// . RelativeSeekingVerification
-				tmp=fddHead.preferRelativeSeeking;
-				DDX_Check( pDX,	ID_SEEK,	tmp );
-				fddHead.preferRelativeSeeking=tmp!=0;
+				DDX_Check( pDX,	ID_SEEK, fddHead.preferRelativeSeeking );
 			}
 			afx_msg void OnPaint(){
 				// drawing

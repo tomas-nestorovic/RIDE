@@ -237,13 +237,13 @@ reportError:Utils::Information(buf);
 		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
 		const CFormatDialog &d=*(CFormatDialog *)pAction->GetParams();
 		pAction->SetProgressTarget(200);
-		if (d.updateBoot==BST_CHECKED){
+		if (d.updateBoot){
 			// requested to update Format in Boot Sector
 			d.dos->formatBoot.nCylinders=std::max<int>( d.dos->formatBoot.nCylinders, d.params.format.nCylinders+1 ); // "+1" = because Cylinders numbered from zero
 			d.dos->FlushToBootSector();
 		}
 		pAction->IncrementProgress(100);
-		if (d.addTracksToFat==BST_CHECKED)
+		if (d.addTracksToFat)
 			// requested to include newly formatted Tracks into FAT
 			if (!d.dos->AddStdCylindersToFatAsEmpty( d.params.cylinder0, d.params.format.nCylinders, pAction->CreateSubactionProgress(100) ))
 				Utils::Information( FAT_SECTOR_UNMODIFIABLE, ::GetLastError() );
@@ -300,7 +300,7 @@ reportError:Utils::Information(buf);
 				this, rd.params,
 				nullptr, // all Heads
 				0, bufferId, bufferLength, // 0 = standard Sectors
-				rd.showReportOnFormatting==BST_CHECKED
+				rd.showReportOnFormatting
 			);
 			bmac.AddAction( FormatTracks_thread, &fp, _T("Formatting cylinders") );
 			// . adding formatted Cylinders to Boot and FAT

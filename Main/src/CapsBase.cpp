@@ -1448,19 +1448,13 @@ invalidTrack:
 					cb.Detach();
 				}
 				// . FluxDecoder
-				tmp=params.fluxDecoder;
-				DDX_CBIndex( pDX, ID_ACCURACY,	tmp );
-				params.fluxDecoder=(TParams::TFluxDecoder)tmp;
-				tmp=params.resetFluxDecoderOnIndex;
-				DDX_Check( pDX, ID_DEFAULT1,	tmp );
-				params.resetFluxDecoderOnIndex=tmp!=0;
+				DDX_CBIndex( pDX, ID_ACCURACY,	params.fluxDecoder );
+				DDX_Check( pDX, ID_DEFAULT1,	params.resetFluxDecoderOnIndex );
 				// . CalibrationAfterError
 				tmp= isRealDevice ? params.calibrationAfterError : TParams::TCalibrationAfterError::NONE;
 				DDX_Radio( pDX,	ID_NONE,		tmp );
 				params.calibrationAfterError=(TParams::TCalibrationAfterError)tmp;
-				tmp=params.calibrationAfterErrorOnlyForKnownSectors;
-				DDX_Check( pDX, ID_READABLE,	tmp );
-				params.calibrationAfterErrorOnlyForKnownSectors=tmp!=0;
+				DDX_Check( pDX, ID_READABLE,	params.calibrationAfterErrorOnlyForKnownSectors );
 				// . CalibrationStepDuringFormatting
 				EnableDlgItem( ID_NUMBER, tmp=params.calibrationStepDuringFormatting!=0 );
 				DDX_Radio( pDX,	ID_ZERO,		tmp );
@@ -1475,13 +1469,8 @@ invalidTrack:
 				params.corrections.use=tmp!=0;
 				EnableDlgItem( ID_TRACK, params.fluxDecoder!=TParams::TFluxDecoder::NO_FLUX_DECODER&&initialEditing );
 				// . WrittenTracksVerification
-				tmp=params.verifyWrittenTracks&&isRealDevice;
-				DDX_Check( pDX,	ID_VERIFY_TRACK,	tmp );
-				params.verifyWrittenTracks=tmp!=0;
-				tmp=params.verifyBadSectors&&isRealDevice;
-				DDX_Check( pDX,	ID_VERIFY_SECTOR,	tmp );					
-					EnableDlgItem( ID_VERIFY_SECTOR, params.verifyWrittenTracks );
-				params.verifyBadSectors=tmp!=0;
+				DDX_Check( pDX,	ID_VERIFY_TRACK, params.verifyWrittenTracks&=isRealDevice );
+				DDX_CheckEnable( pDX, ID_VERIFY_SECTOR, params.verifyBadSectors&=isRealDevice, params.verifyWrittenTracks );
 			}
 
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{

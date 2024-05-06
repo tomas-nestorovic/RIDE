@@ -7,14 +7,14 @@
 		TCylinder cylinderA,cylinderZ;
 		THead nHeads;
 		BYTE gap3;
-		int skipEmptySourceTracks;
+		bool skipEmptySourceTracks;
 
 		TPatchParams(PDos dos)
 			// ctor
 			: dos(dos) , target(dos->image)
 			, cylinderA(0) , cylinderZ(0) , nHeads(1)
 			, gap3( dos->properties->GetValidGap3ForMedium(dos->formatBoot.mediumType) )
-			, skipEmptySourceTracks(BST_CHECKED) {
+			, skipEmptySourceTracks(true) {
 		}
 	};
 
@@ -33,7 +33,7 @@
 				Codec::TType codec;
 				const TSector nSectors=pp.source->ScanTrack(chs.cylinder,chs.head,&codec,bufferId,bufferLength);
 				// . if Source Track empty, skipping it if commanded so
-				if (!nSectors && pp.skipEmptySourceTracks==BST_CHECKED)
+				if (!nSectors && pp.skipEmptySourceTracks)
 					continue; // skipping empty Source Track
 				// . reading Source Track
 				PSectorData bufferSectorData[(TSector)-1];
@@ -164,7 +164,7 @@ errorDuringWriting:			TCHAR buf[80];
 			TCHAR fileName[MAX_PATH];
 			TPatchParams patchParams;
 			CImage::PCProperties sourceImageProperties;
-			int realtimeThreadPriority;
+			bool realtimeThreadPriority;
 
 			CPatchDialog(PDos dos)
 				// ctor
