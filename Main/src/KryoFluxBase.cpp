@@ -238,7 +238,7 @@
 		bool isKryofluxStream=false; // assumption (actually NOT a KryoFlux Stream)
 		LPBYTE pis=rawBytes; // "in-stream-data" only
 		DWORD nFluxes=0;
-		TIndexPulse indexPulses[Revolution::MAX];
+		TIndexPulse indexPulses[Revolution::MAX+1]; // N+1 indices = N full revolutions
 		BYTE nIndexPulses=0;
 		double mck=0,sck=0,ick=0; // all defaults, allowing flux computation with minimal precision loss
 		for( const PCBYTE pLastRawByte=rawBytes+nBytes; rawBytes<pLastRawByte; ){
@@ -306,7 +306,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 									// index
 									if (size!=12)
 										goto badFormat;
-									if (nIndexPulses==Revolution::MAX){
+									if (nIndexPulses>Revolution::MAX){
 										::SetLastError(ERROR_INVALID_INDEX);
 										return CTrackReaderWriter::Invalid;
 									}
