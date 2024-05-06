@@ -310,7 +310,7 @@
 		void __adoptMediumFromBootSector__();
 		PSectorData __getHealthyLogicalSectorData__(TLogSector32 logSector) const;
 		void __markLogicalSectorAsDirty__(TLogSector32 logSector) const;
-		TCluster32 GetFirstFreeHealthyDataCluster() const;
+		TCluster32 GetFirstFreeDataCluster(bool mustBeHealthy=false) const;
 		TCluster32 __allocateAndResetDirectoryCluster__() const;
 		BYTE __getLongFileNameEntries__(PCDirectoryEntry de,PDirectoryEntry *bufEntries) const;
 		void __deleteLongFileNameEntries__(PCDirectoryEntry de) const;
