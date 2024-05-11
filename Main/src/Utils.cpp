@@ -1034,11 +1034,18 @@ namespace Utils{
 
 
 
-	void FatalError(LPCTSTR text){
-		// shows fatal error
+	static int showMessageBox(LPCTSTR utf8text,LPCWSTR caption,UINT flags){
 		const HWND hParent=app.GetEnabledActiveWindow();
 		CBackgroundActionCancelable::SignalPausedProgress( hParent );
-		::MessageBoxW( hParent, ToStringW(text), nullptr, MB_ICONERROR|MB_TASKMODAL );
+		if (CRideDialog::BeepWhenShowed)
+			StdBeep();
+		LOG_DIALOG_DISPLAY(utf8text);
+		return LOG_DIALOG_RESULT(  ::MessageBoxW( hParent, ToStringW(utf8text), caption, flags|MB_TASKMODAL )  );
+	}
+
+	void FatalError(LPCTSTR text){
+		// shows fatal error
+		showMessageBox( text, nullptr, MB_ICONERROR );
 	}
 
 	CString SimpleFormat(LPCTSTR format,va_list v){
@@ -1115,9 +1122,7 @@ namespace Utils{
 
 	void Information(LPCTSTR text){
 		// shows Textual information
-		const HWND hParent=app.GetEnabledActiveWindow();
-		CBackgroundActionCancelable::SignalPausedProgress( hParent );
-		::MessageBoxW( hParent, ToStringW(text), L"Information", MB_ICONINFORMATION|MB_TASKMODAL );
+		showMessageBox( text, L"Information", MB_ICONINFORMATION );
 	}
 	void Information(LPCTSTR text,LPCTSTR causeOfError,LPCTSTR consequence){
 		// shows Textual information along with its Cause and immediate Consequence
@@ -1213,10 +1218,7 @@ namespace Utils{
 
 	bool InformationOkCancel(LPCTSTR text){
 		// True <=> user confirmed the shown Textual information, otherwise False
-		const HWND hParent=app.GetEnabledActiveWindow();
-		CBackgroundActionCancelable::SignalPausedProgress( hParent );
-		LOG_DIALOG_DISPLAY(text);
-		return LOG_DIALOG_RESULT(  ::MessageBoxW( hParent, ToStringW(text), L"Information", MB_ICONINFORMATION|MB_OKCANCEL|MB_TASKMODAL )==IDOK  );
+		return showMessageBox( text, L"Information", MB_ICONINFORMATION|MB_OKCANCEL )==IDOK;
 	}
 
 
@@ -1225,10 +1227,7 @@ namespace Utils{
 
 	bool QuestionYesNo(LPCTSTR text,UINT defaultButton){
 		// shows a yes-no question
-		const HWND hParent=app.GetEnabledActiveWindow();
-		CBackgroundActionCancelable::SignalPausedProgress( hParent );
-		LOG_DIALOG_DISPLAY(text);
-		return LOG_DIALOG_RESULT(  ::MessageBoxW( hParent, ToStringW(text), L"Question", MB_ICONQUESTION|MB_TASKMODAL|MB_YESNO|defaultButton )==IDYES  );
+		return showMessageBox( text, L"Question", MB_ICONQUESTION|MB_YESNO|defaultButton )==IDYES;
 	}
 
 
@@ -1236,10 +1235,7 @@ namespace Utils{
 
 	BYTE QuestionYesNoCancel(LPCTSTR text,UINT defaultButton){
 		// shows a yes-no question
-		const HWND hParent=app.GetEnabledActiveWindow();
-		CBackgroundActionCancelable::SignalPausedProgress( hParent );
-		LOG_DIALOG_DISPLAY(text);
-		return LOG_DIALOG_RESULT(  ::MessageBoxW( hParent, ToStringW(text), L"Question", MB_ICONQUESTION|MB_TASKMODAL|MB_YESNOCANCEL|defaultButton )  );
+		return showMessageBox( text, L"Question", MB_ICONQUESTION|MB_YESNOCANCEL|defaultButton );
 	}
 	BYTE QuestionYesNoCancel(LPCTSTR text,UINT defaultButton,LPCTSTR causeOfError,LPCTSTR consequence){
 		// shows a yes-no question along with its Cause and immediate Consequence
@@ -1255,10 +1251,7 @@ namespace Utils{
 
 	BYTE AbortRetryIgnore(LPCTSTR text,UINT defaultButton){
 		// shows an abort-retry-ignore question
-		const HWND hParent=app.GetEnabledActiveWindow();
-		CBackgroundActionCancelable::SignalPausedProgress( hParent );
-		LOG_DIALOG_DISPLAY(text);
-		return LOG_DIALOG_RESULT(  ::MessageBoxW( hParent, ToStringW(text), L"Question", MB_ICONQUESTION|MB_TASKMODAL|MB_ABORTRETRYIGNORE|defaultButton )  );
+		return showMessageBox( text, L"Question", MB_ICONQUESTION|MB_ABORTRETRYIGNORE|defaultButton );
 	}
 
 	BYTE AbortRetryIgnore(LPCTSTR text,TStdWinError causeOfError,UINT defaultButton,LPCTSTR consequence){
@@ -1274,10 +1267,7 @@ namespace Utils{
 
 	bool RetryCancel(LPCTSTR text){
 		// shows an retry-cancel question
-		const HWND hParent=app.GetEnabledActiveWindow();
-		CBackgroundActionCancelable::SignalPausedProgress( hParent );
-		LOG_DIALOG_DISPLAY(text);
-		return LOG_DIALOG_RESULT(  ::MessageBoxW( hParent, ToStringW(text), L"Question", MB_ICONEXCLAMATION|MB_TASKMODAL|MB_RETRYCANCEL|MB_DEFBUTTON1 )==IDRETRY  );
+		return showMessageBox( text, L"Question", MB_ICONEXCLAMATION|MB_RETRYCANCEL|MB_DEFBUTTON1 )==IDRETRY;
 	}
 	bool RetryCancel(TStdWinError causeOfError){
 		// shows an retry-cancel question
@@ -1287,10 +1277,7 @@ namespace Utils{
 
 	BYTE CancelRetryContinue(LPCTSTR text,UINT defaultButton){
 		// shows an cancel-retry-continue question
-		const HWND hParent=app.GetEnabledActiveWindow();
-		CBackgroundActionCancelable::SignalPausedProgress( hParent );
-		LOG_DIALOG_DISPLAY(text);
-		return LOG_DIALOG_RESULT(  ::MessageBoxW( hParent, ToStringW(text), L"Question", MB_ICONEXCLAMATION|MB_TASKMODAL|MB_CANCELTRYCONTINUE|defaultButton )  );
+		return showMessageBox( text, L"Question", MB_ICONEXCLAMATION|MB_CANCELTRYCONTINUE|defaultButton );
 	}
 	BYTE CancelRetryContinue(LPCTSTR text,TStdWinError causeOfError,UINT defaultButton,LPCTSTR consequence){
 		// shows an cancel-retry-continue question along with its Cause
@@ -1301,9 +1288,7 @@ namespace Utils{
 
 	void Warning(LPCTSTR text){
 		// shows Textual warning
-		const HWND hParent=app.GetEnabledActiveWindow();
-		CBackgroundActionCancelable::SignalPausedProgress( hParent );
-		::MessageBoxW( hParent, ToStringW(text), L"Warning", MB_ICONINFORMATION|MB_TASKMODAL );
+		showMessageBox( text, L"Warning", MB_ICONINFORMATION );
 	}
 
 
@@ -1340,6 +1325,8 @@ namespace Utils{
 
 
 
+	bool CRideDialog::BeepWhenShowed;
+
 	CRideDialog::CRideDialog(){
 		// ctor
 	}
@@ -1360,6 +1347,8 @@ namespace Utils{
 		app.m_pMainWnd->BeginModalState(); // block any interaction with the MainWindow
 			if (app.m_pActiveWnd) app.m_pActiveWnd->BeginModalState(); // block any interaction with previously active window
 				CBackgroundActionCancelable::SignalPausedProgress( *this );
+				if (BeepWhenShowed)
+					StdBeep();
 		{		const CVarBackup<CWnd *> pActiveWindowOrg( app.m_pActiveWnd );
 				result=__super::DoModal(); // sets pActiveWindowOrg via PreInitDialog
 		}	if (app.m_pActiveWnd) app.m_pActiveWnd->EndModalState();
@@ -2386,6 +2375,10 @@ namespace Utils{
 			return fileName;
 		else
 			return (LPCTSTR)nullptr;
+	}
+
+	void StdBeep(){
+		::Beep( 1000, 50 );
 	}
 
 

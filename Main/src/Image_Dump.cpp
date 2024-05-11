@@ -17,6 +17,7 @@
 		std::unique_ptr<CImage> target;
 		TCHAR targetFileName[MAX_PATH];
 		bool formatJustBadTracks, requireAllStdSectorDataPresent, fullTrackAnalysis;
+		bool beepOnError;
 		TCylinder cylinderA,cylinderZ;
 		THead nHeads;
 		struct{
@@ -41,6 +42,7 @@
 			, formatJustBadTracks(false)
 			, requireAllStdSectorDataPresent( source->properties->IsRealDevice() && dos->IsKnown() )
 			, fullTrackAnalysis( source->ReadTrack(0,0) ) // if the Source provides access to low-level recording, let's also do the FullTrackAnalysis
+			, beepOnError( source->properties->IsRealDevice() )
 			, fillerByte(dos->properties->sectorFillerByte)
 			, cylinderA(0) , cylinderZ(source->GetCylinderCount()-1)
 			, nHeads(source->GetNumberOfFormattedSides(0)) // may be just a subset of GetHeadCount()
@@ -193,6 +195,7 @@
 		TDumpParams &dp=*(TDumpParams *)pAction->GetParams();
 		pAction->SetProgressTarget( dp.cylinderZ+1-dp.cylinderA );
 		// - dumping
+		const Utils::CVarTempReset<bool> bws0( Utils::CRideDialog::BeepWhenShowed, dp.beepOnError );
 		const TDumpParams::TSourceTrackErrors **ppSrcTrackErrors=&dp.pOutErroneousTracks;
 		#pragma pack(1)
 		struct TParams sealed{
@@ -493,6 +496,10 @@
 								ConvertDlgButtonToSplitButton( IDRETRY, retryActions, ARRAYSIZE(retryActions) );
 								// > the "Retry" button enabled only if Sector not yet modified and there are several Revolutions available
 								EnableDlgItem( IDRETRY, dirtyRevolution==Revolution::NONE && nRevolutions>1 );
+							}
+							void DoDataExchange(CDataExchange *pDX) override{
+								// exchange of data from and to controls
+								DDX_Check( pDX, ID_BEEP, Utils::CRideDialog::BeepWhenShowed );
 							}
 							LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 								// window procedure
@@ -867,6 +874,7 @@ terminateWithError:		return LOG_ERROR(pAction->TerminateWithError(err));
 					*pAction++=NoMruDevices;
 				}
 				ConvertDlgButtonToSplitButton( ID_FILE, actions, pAction-actions );
+				ConvertDlgCheckboxToHyperlink( ID_BEEP, ID_DEFAULT4, L"Beep &on error (<a>test</a>)" );
 			}
 			void DoDataExchange(CDataExchange *pDX) override{
 				// transferring data to and from controls
@@ -897,6 +905,7 @@ terminateWithError:		return LOG_ERROR(pAction->TerminateWithError(err));
 				DDX_Check( pDX, ID_FORMAT, dumpParams.formatJustBadTracks );
 				DDX_CheckEnable( pDX, ID_ACCURACY, dumpParams.fullTrackAnalysis, dumpParams.fullTrackAnalysis );
 				DDX_CheckEnable( pDX, ID_STANDARD, dumpParams.requireAllStdSectorDataPresent, dos->IsKnown() );
+				DDX_Check( pDX, ID_BEEP, dumpParams.beepOnError );
 				DDX_Text( pDX,	ID_CYLINDER,	(RCylinder)dumpParams.cylinderA );
 					if (mp)
 						DDV_MinMaxUInt( pDX,dumpParams.cylinderA, 0, mp->cylinderRange.iMax-1 );
@@ -1089,7 +1098,11 @@ setDestination:						// : compacting FileName in order to be better displayable 
 						}
 						break;
 					case WM_NOTIFY:
-						if (((LPNMHDR)lParam)->code==NM_CLICK){
+						if (((LPNMHDR)lParam)->code==NM_CLICK || ((LPNMHDR)lParam)->code==NM_RETURN){
+							if (((LPNMHDR)lParam)->idFrom==ID_DEFAULT4){ // beep test
+								Utils::StdBeep();
+								return 0;
+							}
 							// . defining the Dialog
 							class CHelpDialog sealed:public Utils::CCommandDialog{
 								BOOL OnInitDialog() override{

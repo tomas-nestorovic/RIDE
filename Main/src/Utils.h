@@ -251,6 +251,8 @@ namespace Utils{
 			void SetActivePane(int row,int col,CWnd *pWnd) override;
 		};
 	public:
+		static bool BeepWhenShowed;
+
 		static LPCTSTR GetDialogTemplateCaptionText(UINT idDlgRes,PTCHAR chars,WORD nCharsMax);
 		static LPCTSTR GetDialogTemplateItemText(UINT idDlgRes,WORD idItem,PTCHAR chars,WORD nCharsMax);
 		static void DrawOpeningCurlyBracket(HDC dc,int x,int yMin,int yMax);
@@ -601,6 +603,7 @@ namespace Utils{
 	WNDPROC SubclassWindow(HWND hWnd,WNDPROC newWndProc);
 	WNDPROC SubclassWindowW(HWND hWnd,WNDPROC newWndProc);
 	CString DoPromptSingleTypeFileName(LPCTSTR defaultSaveName,LPCTSTR singleFilter,DWORD flags=0);
+	void StdBeep();
 }
 
 void DDX_Check(CDataExchange *pDX,int nIDC,bool &value);

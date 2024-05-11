@@ -161,6 +161,7 @@
 #define ID_FILE1                        1177
 #define ID_FILE2                        1178
 #define ID_IMAGE                        1179
+#define ID_BEEP                         1180
 #define ID_TEXT                         1182
 #define ID_REPAIR                       1183
 #define ID_TDI_SWITCH                   40033

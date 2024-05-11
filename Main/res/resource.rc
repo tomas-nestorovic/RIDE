@@ -1306,14 +1306,14 @@ BEGIN
                     172,14
 END
 
-IDR_IMAGE_DUMP DIALOGEX 0, 0, 201, 241
+IDR_IMAGE_DUMP DIALOGEX 0, 0, 201, 252
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
 CAPTION "Dump to destination"
 BEGIN
-    DEFPUSHBUTTON   "Dump",IDOK,90,220,50,14,WS_DISABLED
-    PUSHBUTTON      "Cancel",IDCANCEL,144,220,50,14
+    DEFPUSHBUTTON   "Dump",IDOK,90,231,50,14,WS_DISABLED
+    PUSHBUTTON      "Cancel",IDCANCEL,144,231,50,14
     CONTROL         "<a id=""ID_HELP"">Need help?</a>",ID_HELP_INDEX,"SysLink",
-                    WS_TABSTOP,7,223,66,11
+                    WS_TABSTOP,7,234,66,11
     LTEXT           "&Destination:",IDC_STATIC,7,9,38,8,NOT WS_GROUP
     PUSHBUTTON      "",ID_FILE,54,7,140,23,BS_MULTILINE | BS_FLAT
     LTEXT           "&Medium:",IDC_STATIC,7,35,28,8,NOT WS_GROUP
@@ -1352,8 +1352,10 @@ BEGIN
     CONTROL         "Real-time thread &priority (normal priority if unchecked)",
                     ID_PRIORITY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,187,
                     187,10
+    CONTROL         "Beep &on error",ID_BEEP,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,7,198,111,10
     CONTROL         "Show &report when done",ID_REPORT,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,198,174,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,209,174,10
 END
 
 IDR_MSDOS_FILE_ATTRIBUTES_EDITOR DIALOG DISCARDABLE  0, 0, 118, 111
@@ -1456,6 +1458,8 @@ BEGIN
     PUSHBUTTON      "Resolve",IDNO,225,259,63,14
     PUSHBUTTON      "Abort",IDCANCEL,410,259,50,14
     LTEXT           "",ID_ALIGN,7,7,453,243,NOT WS_VISIBLE
+    CONTROL         "Beep &on error",ID_BEEP,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,7,262,59,10
 END
 
 IDR_FDD_ACCESS DIALOGEX 0, 0, 225, 282
@@ -2094,7 +2098,7 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 194
         TOPMARGIN, 7
-        BOTTOMMARGIN, 234
+        BOTTOMMARGIN, 245
     END
 
     IDR_MSDOS_FILE_ATTRIBUTES_EDITOR, DIALOG
