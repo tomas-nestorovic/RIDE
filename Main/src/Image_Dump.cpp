@@ -14,6 +14,7 @@
 		Medium::TType mediumType;
 		Codec::TTypeSet targetCodecs;
 		const PImage source;
+		const bool canCalibrateSourceHeads;
 		std::unique_ptr<CImage> target;
 		TCHAR targetFileName[MAX_PATH];
 		bool formatJustBadTracks, requireAllStdSectorDataPresent, fullTrackAnalysis;
@@ -39,6 +40,7 @@
 			// ctor
 			: dos(_dos)
 			, source(dos->image)
+			, canCalibrateSourceHeads( source->SeekHeadsHome()==ERROR_SUCCESS )
 			, formatJustBadTracks(false)
 			, requireAllStdSectorDataPresent( source->properties->IsRealDevice() && dos->IsKnown() )
 			, fullTrackAnalysis( source->ReadTrack(0,0) ) // if the Source provides access to low-level recording, let's also do the FullTrackAnalysis
@@ -204,7 +206,6 @@
 			TTrack track;
 			bool trackScanned;
 			bool trackWriteable; // Track can be written at once using CImage::WriteTrack
-			bool canCalibrateSourceHeads;
 			BYTE revolution;
 			struct{
 				WORD automaticallyAcceptedErrors;
@@ -222,16 +223,12 @@
 		p.exclusion.allUnknown=dp.dos->IsKnown() && dynamic_cast<CImageRaw *>(dp.target.get())!=nullptr; // Unknown Sectors in recognized DOS cause preliminary termination of dumping to a RawImage, hence excluding them all automatically
 		const bool sourceSupportsTrackReading=dp.source->WriteTrack(0,0,CImage::CTrackReaderWriter::Invalid)!=ERROR_NOT_SUPPORTED;
 		const bool targetSupportsTrackWriting=dp.target->WriteTrack(0,0,CImage::CTrackReaderWriter::Invalid)!=ERROR_NOT_SUPPORTED;
-		const bool canSeekSourceHeadsHome=dp.source->SeekHeadsHome()==ERROR_SUCCESS;
 		const Utils::CByteIdentity sectorIdAndPositionIdentity;
 		for( p.chs.cylinder=dp.cylinderA; p.chs.cylinder<=dp.cylinderZ; pAction->UpdateProgress(++p.chs.cylinder-dp.cylinderA) )
 			for( p.chs.head=0; p.chs.head<dp.nHeads; ){
 				if (pAction->Cancelled) return LOG_ERROR(ERROR_CANCELLED);
 				LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("processing"));
 				p.track=p.chs.GetTrackNumber(dp.nHeads);
-				p.canCalibrateSourceHeads =	canSeekSourceHeadsHome
-											&&
-											( !sourceSupportsTrackReading || !dp.source->dos->IsKnown() );
 				// . scanning Source Track
 				TSectorId bufferId[(TSector)-1];	WORD bufferLength[(TSector)-1];
 				Codec::TType sourceCodec; TSector nSectors; TStdWinError err;
@@ -492,7 +489,7 @@
 									{ IDRETRY, _T("Retry") },
 									CanCalibrateHeadsAction
 								};
-								retryActions[1]= rp.canCalibrateSourceHeads ? CanCalibrateHeadsAction : CannotCalibrateHeadsAction;
+								retryActions[1]= dp.canCalibrateSourceHeads ? CanCalibrateHeadsAction : CannotCalibrateHeadsAction;
 								ConvertDlgButtonToSplitButton( IDRETRY, retryActions, ARRAYSIZE(retryActions) );
 								// > the "Retry" button enabled only if Sector not yet modified and there are several Revolutions available
 								EnableDlgItem( IDRETRY, dirtyRevolution==Revolution::NONE && nRevolutions>1 );
