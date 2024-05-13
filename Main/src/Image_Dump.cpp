@@ -423,7 +423,7 @@
 								// > creating message on Errors
 								LPCTSTR bitDescriptions[20],*pDesc=bitDescriptions; // 20 = surely big enough buffer
 								rFdcStatus.GetDescriptionsOfSetBits(bitDescriptions);
-								TCHAR buf[512],*p=buf+::wsprintf(buf,_T("Cannot read sector with %s on source Track %d.\r\n"),(LPCTSTR)rp.chs.sectorId.ToString(),rp.track);
+								TCHAR buf[1024],*p=buf+::wsprintf(buf,_T("Cannot read sector with %s on source Track %d.\r\n"),(LPCTSTR)rp.chs.sectorId.ToString(),rp.track);
 								const Revolution::TType dirtyRevolution=dp.source->GetDirtyRevolution(rp.chs,rp.s);
 								const BYTE nRevolutions=dp.source->GetAvailableRevolutionCount( rp.chs.cylinder, rp.chs.head );
 								if (nRevolutions==1)
@@ -451,6 +451,8 @@
 										p+=::wsprintf( p, _T("- %s\r\n"), *pDesc++ );
 								else
 									p+=::lstrlen(::lstrcpy(p,NO_STATUS_ERROR));
+								const CString sectorList=dp.source->ListSectors( rp.chs.cylinder, rp.chs.head );
+								p+=::wsprintf( p, _T("\r\nAll sectors on this track (chronologically):\r\n%s\r\n"), (LPCTSTR)sectorList );
 								errorTextBox.SetWindowText( buf );
 								// > converting the "Accept" button to a SplitButton
 								static constexpr Utils::TSplitButtonAction Actions[]={

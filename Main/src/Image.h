@@ -687,6 +687,7 @@
 		virtual TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const=0;
 		virtual bool IsTrackScanned(TCylinder cyl,THead head) const=0;
 		virtual TStdWinError UnscanTrack(TCylinder cyl,THead head);
+		CString ListSectors(TCylinder cyl,THead head) const;
 		bool IsTrackDirty(TCylinder cyl,THead head) const;
 		virtual TLogTime EstimateNanosecondsPerOneByte() const;
 		TSector GetCountOfHealthySectors(TCylinder cyl,THead head) const;

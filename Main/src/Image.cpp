@@ -752,6 +752,17 @@ namespace Medium{
 		return ERROR_NOT_SUPPORTED;
 	}
 
+	CString CImage::ListSectors(TCylinder cyl,THead head) const{
+		// creates and returns a List of current Sector IDs as they chronologically appear on the specified Track
+		CString list;
+		TSectorId ids[(TSector)-1];
+		for( TSector i=0,const n=ScanTrack(cyl,head,nullptr,ids); i<n; i++ )
+			list+=_T("- ")+ids[i].ToString()+_T("\r\n");
+		if (list.IsEmpty())
+			list=_T("- [none]");
+		return list;
+	}
+
 	bool CImage::IsTrackDirty(TCylinder cyl,THead head) const{
 		// True <=> any of Track's Sectors is dirty, otherwise False
 		TSectorId bufferId[(TSector)-1];
