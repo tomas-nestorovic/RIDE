@@ -1352,8 +1352,8 @@ BEGIN
     CONTROL         "Real-time thread &priority (normal priority if unchecked)",
                     ID_PRIORITY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,187,
                     187,10
-    CONTROL         "Beep &on error",ID_BEEP,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,7,198,111,10
+    CONTROL         "Beep &on error (<a>test</a>)",ID_BEEP,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,198,111,10
     CONTROL         "Show &report when done",ID_REPORT,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,7,209,174,10
 END
@@ -1520,8 +1520,8 @@ BEGIN
     CONTROL         "Verify &written data (including requested data errors, if any)",
                     ID_VERIFY_SECTOR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
                     229,195,10
-    CONTROL         "&Prefer relative over absolute seeking (see why)",
-                    ID_SEEK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,240,163,
+    CONTROL         "&Prefer relative over absolute seeking (<a>see why</a>)",
+                    ID_SEEK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,240,190,
                     10
 END
 
@@ -1848,8 +1848,9 @@ BEGIN
     EDITTEXT        ID_NUMBER,103,214,16,12,ES_RIGHT | ES_AUTOHSCROLL | 
                     ES_NUMBER | WS_DISABLED | NOT WS_BORDER
     LTEXT           "-th cyl.",ID_ADD,119,214,22,8,NOT WS_GROUP
-    CONTROL         "Use jitter and other &corrections",ID_TRACK,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,230,211,10
+    CONTROL         "Use jitter and other &corrections (<a>Settings</a>)",
+                    ID_TRACK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,230,211,
+                    10
     CONTROL         "&Verify formatted/written tracks (recommended)",
                     ID_VERIFY_TRACK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
                     241,211,10

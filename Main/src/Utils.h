@@ -237,7 +237,7 @@ namespace Utils{
 
 			CRideDC(const CRideDialog &d);
 			CRideDC(const CRideDialog &d,WORD id);
-			~CRideDC();
+			CRideDC(HWND hWnd);
 		};
 
 		CRideDialog();
@@ -310,7 +310,7 @@ namespace Utils{
 		void SetDlgItemSingleCharUsingFont(WORD id,WCHAR singleChar,LPCTSTR fontFace,int fontPointSize) const;
 		void PopulateDlgComboBoxWithSequenceOfNumbers(WORD cbId,BYTE iStartValue,LPCTSTR strStartValueDesc,BYTE iEndValue,LPCTSTR strEndValueDesc) const;
 		void ConvertDlgButtonToSplitButton(WORD id,PCSplitButtonAction pAction,BYTE nActions) const;
-		void ConvertDlgCheckboxToHyperlink(WORD id,WORD idHyperlinkControl,LPCWSTR hyperlinkControlText) const;
+		void ConvertDlgCheckboxToHyperlink(WORD id,WORD idHyperlinkControl) const;
 		bool GetDlgItemIntList(WORD id,CIntList &rOutList,const PropGrid::Integer::TUpDownLimits &limits,int nIntsMin=0,int nIntsMax=INT_MAX) const;
 		void SetDlgItemIntList(WORD id,const CIntList &list) const;
 		void DDX_CheckEnable(CDataExchange *pDX,int nIDC,bool &value,bool enable) const;

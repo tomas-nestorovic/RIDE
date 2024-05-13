@@ -1317,9 +1317,10 @@ namespace Utils{
 		rect=d.GetDlgItemClientRect(id);
 	}
 
-	CRideDialog::CRideDC::~CRideDC(){
-		// dtor
-		::ReleaseDC( m_hWnd, m_hDC );
+	CRideDialog::CRideDC::CRideDC(HWND hWnd)
+		// ctor
+		: CClientDC( CWnd::FromHandle(hWnd) ) {
+		::GetClientRect( hWnd, &rect );
 	}
 
 
@@ -1367,7 +1368,8 @@ namespace Utils{
 	}
 
 	void CRideDialog::SetDlgItemText(WORD id,LPCTSTR text) const{
-		::SetDlgItemText( m_hWnd, id, text );
+		//::SetDlgItemText( m_hWnd, id, text ); // commented out as doesn't send WM_SETTEXT
+		::SetWindowText( GetDlgItemHwnd(id), text ); // sends WM_SETTEXT (needed for a checkbox with hyperlink)
 	}
 
 	bool CRideDialog::IsDlgItemShown(WORD id) const{
@@ -2138,7 +2140,7 @@ namespace Utils{
 		}
 	}
 
-	void CRideDialog::ConvertDlgCheckboxToHyperlink(WORD id,WORD idHyperlinkControl,LPCWSTR hyperlinkControlText) const{
+	void CRideDialog::ConvertDlgCheckboxToHyperlink(WORD id,WORD idHyperlinkControl) const{
 		// converts an existing standard check-box to one with a hyperlink in its text
 		static struct{
 			WNDPROC checkbox0;
@@ -2148,25 +2150,35 @@ namespace Utils{
 					case WM_SETFOCUS:
 					case WM_KILLFOCUS:
 						::InvalidateRect( GetWindowUserData<HWND>(hCheckbox), nullptr, TRUE );
+						return 0;
+					case WM_GETTEXT:
+					case WM_GETTEXTLENGTH:
+					case WM_SETTEXT:
+						if (const HWND hHyperlink=GetWindowUserData<HWND>(hCheckbox))
+							return ::SendMessage( hHyperlink, msg, wParam, lParam );
 						break;
 					case WM_NOTIFY:
 						return ::SendMessage( ::GetParent(hCheckbox), msg, wParam, lParam ); // forward to Dialog
 					case WM_PAINT:{
 						// . first draw the Checkbox
-						const LRESULT result=::CallWindowProc( wndProc.checkbox0, hCheckbox, msg, wParam, lParam );
-						// . then immediately refresh the Hyperlink
 						const HWND hHyperlink=GetWindowUserData<HWND>(hCheckbox);
+						const bool focused=::GetFocus()==hCheckbox;
+						if (focused)
+							::SetFocus(hHyperlink); // pass focus over to not draw the focus rectangle in the CheckBox
+						const LRESULT result=::CallWindowProc( wndProc.checkbox0, hCheckbox, msg, wParam, lParam );
+						if (focused){
+							::SetFocus(hCheckbox); // recover the original focus
+							//::ValidateRect( hCheckbox, nullptr );
+						}
+						// . then immediately refresh the Hyperlink
 						::RedrawWindow(
 							hHyperlink, nullptr, nullptr,
-							RDW_INVALIDATE | RDW_UPDATENOW | RDW_ERASE
+							RDW_INVALIDATE | RDW_UPDATENOW
 						);
-						// . if Checkbox focused, draw focus rectangle around the Hyperlink
-						if (::GetFocus()==hCheckbox){
-							RECT rcClient;
-							::GetClientRect( hHyperlink, &rcClient );
-							const HDC dc=::GetDC(hHyperlink);
-								::DrawFocusRect( dc, &rcClient );
-							::ReleaseDC( hHyperlink, dc );
+						// . if Checkbox Focused, draw focus rectangle around the Hyperlink
+						if (focused){
+							const CRideDC dc(hHyperlink);
+							::DrawFocusRect( dc, &dc.rect );
 						}
 						return result;
 					}
@@ -2177,13 +2189,21 @@ namespace Utils{
 
 		const HWND hStdCheckbox=GetDlgItemHwnd(id);
 		wndProc.checkbox0=Utils::SubclassWindow( hStdCheckbox, wndProc.Checkbox );
-		SetDlgItemText( id, nullptr );
 		const Utils::CRideFont dlgFont(m_hWnd);
 		CRect rc=GetDlgItemClientRect(id);
-			rc.left=Utils::LogicalUnitScaleFactor*16; //TODO: replace by real margin from left edge
+			if (IsVistaOrNewer()){
+				rc.left=16 * ::GetSystemMetrics(SM_CXMENUCHECK)/15; //TODO: replace by real margin from left edge
+			}else{
+				RECT tmp={ 12 }; // by convention, the text in a checkbox is 12 dialog units away from the LEFT BORDER of the checkbox
+				::MapDialogRect( m_hWnd, &tmp );
+				rc.left=tmp.left;
+			}
+			//SetDlgItemPos( ID_DEFAULT4, tmp.left, 90 );
 			rc.top=(rc.Height()-dlgFont.charHeight)/2;
+		WCHAR checkboxText[80];
+		::GetDlgItemTextW( m_hWnd, id, checkboxText, ARRAYSIZE(checkboxText) );
 		const HWND hHyperlink=::CreateWindowW(
-			WC_LINK, hyperlinkControlText, WS_CHILD|WS_VISIBLE,
+			WC_LINK, checkboxText, WS_CHILD|WS_VISIBLE,
 			rc.left, rc.top, rc.Width(), rc.Height(), hStdCheckbox, (HMENU)idHyperlinkControl, 0, nullptr
 		);
 		SetDlgItemUserData( id, hHyperlink );

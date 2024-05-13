@@ -873,7 +873,7 @@ terminateWithError:		return LOG_ERROR(pAction->TerminateWithError(err));
 					*pAction++=NoMruDevices;
 				}
 				ConvertDlgButtonToSplitButton( ID_FILE, actions, pAction-actions );
-				ConvertDlgCheckboxToHyperlink( ID_BEEP, ID_DEFAULT4, L"Beep &on error (<a>test</a>)" );
+				ConvertDlgCheckboxToHyperlink( ID_BEEP, ID_DEFAULT4 );
 			}
 			void DoDataExchange(CDataExchange *pDX) override{
 				// transferring data to and from controls

@@ -1591,7 +1591,7 @@ Utils::Information(buf);}
 					)
 				)
 					CheckDlgButton( ID_READABLE, false ); // this option is never ticked for Unknown DOS
-				ConvertDlgCheckboxToHyperlink( ID_SEEK, ID_STEPPING, L"&Prefer relative over absolute seeking (<a>see why</a>)" );
+				ConvertDlgCheckboxToHyperlink( ID_SEEK, ID_STEPPING );
 			}
 			void __exchangeLatency__(CDataExchange* pDX){
 				// exchange of latency-related data from and to controls
