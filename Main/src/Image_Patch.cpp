@@ -151,7 +151,7 @@ errorDuringWriting:			TCHAR buf[80];
 						}
 						break;
 					case WM_NOTIFY:
-						if (((LPNMHDR)lParam)->code==NM_CLICK){
+						if (GetClickedHyperlinkId(lParam)){
 							TCHAR url[200];
 							Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_patch.html"),url) );
 						}

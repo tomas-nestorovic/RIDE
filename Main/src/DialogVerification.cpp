@@ -246,7 +246,7 @@
 		switch (msg){
 			case WM_NOTIFY:
 				// processing notification from child control
-				if (((LPNMHDR)lParam)->code==NM_CLICK){
+				if (GetClickedHyperlinkId(lParam)){
 					CheckDlgItem( ID_BOOT, IsDlgItemEnabled(ID_BOOT) );
 					CheckDlgItem( ID_FAT, IsDlgItemEnabled(ID_FAT) );
 					CheckDlgItem( ID_FILE1, IsDlgItemEnabled(ID_FILE1) );

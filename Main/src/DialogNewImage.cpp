@@ -114,11 +114,8 @@
 
 	BOOL CNewImageDialog::OnNotify(WPARAM wParam,LPARAM lParam,LRESULT *pResult){
 		// processes notification
-		const LPCWPSTRUCT pcws=(LPCWPSTRUCT)lParam;
-		if (pcws->wParam==ID_HELP_INDEX)
-			switch (pcws->message){
-				case NM_CLICK:
-				case NM_RETURN:{
+		switch (GetClickedHyperlinkId(lParam)){
+			case ID_HELP_INDEX:{
 					// . defining the Dialog
 					class CHelpDialog sealed:public Utils::CCommandDialog{
 						BOOL OnInitDialog() override{
@@ -153,18 +150,13 @@
 					}
 					*pResult=0;
 					return TRUE;
-				}
 			}
-		else if (pcws->wParam==ID_ERROR)
-			switch (pcws->message){
-				case NM_CLICK:
-				case NM_RETURN:{
+			case ID_ERROR:
 					app.GetMainWindow()->__changeAutomaticDiskRecognitionOrder__();
 					__refreshListOfContainers__();
 					*pResult=0;
 					return TRUE;
-				}
-			}
+		}
 		return __super::OnNotify(wParam,lParam,pResult);
 	}
 

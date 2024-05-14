@@ -142,33 +142,25 @@
 
 	BOOL CFormatDialog::OnNotify(WPARAM wParam,LPARAM lParam,LRESULT *pResult){
 		// processes notification
-		const LPCWPSTRUCT pcws=(LPCWPSTRUCT)lParam;
-		if (pcws->wParam==ID_TRACK) // notification regarding Drive A:
-			switch (pcws->message){
-				case NM_CLICK:
-				case NM_RETURN:{
-					Utils::NavigateToUrlInDefaultBrowser(_T("http://www.hermannseib.com/documents/floppy.pdf"));
-					*pResult=0;
-					return TRUE;
+		switch (GetClickedHyperlinkId(lParam)){
+			case ID_TRACK: // notification regarding Drive A:
+				Utils::NavigateToUrlInDefaultBrowser(_T("http://www.hermannseib.com/documents/floppy.pdf"));
+				*pResult=0;
+				return TRUE;
+			case ID_DRIVE: // notification regarding Drive A:
+				if (Utils::QuestionYesNo(_T("Media may introduce themselves wrongly (e.g. copy-protection). Instead of here, the introduction (if any) can be changed in the \"") BOOT_SECTOR_TAB_LABEL _T("\" tab.\n\nUnlock this setting anyway?"),MB_DEFBUTTON2)){
+					ShowDlgItem( ID_DRIVE, false );
+					const CRect rc=GetDlgItemClientRect(ID_FORMAT);
+					const HWND hMedium=GetDlgItemHwnd(ID_MEDIUM);
+					const LPCTSTR currMediumDesc=Medium::GetDescription((Medium::TType)ComboBox_GetItemData( hMedium, ComboBox_GetCurSel(hMedium) ));
+					CImage::PopulateComboBoxWithCompatibleMedia( hMedium, dos->properties->supportedMedia, dos->image->properties );
+					ComboBox_SelectString( hMedium, 0, currMediumDesc );
+					SetDlgItemSize( ID_MEDIUM, rc.Width(), rc.Height() );
+					::EnableWindow( hMedium, TRUE );
 				}
-			}
-		if (pcws->wParam==ID_DRIVE) // notification regarding Drive A:
-			switch (pcws->message){
-				case NM_CLICK:
-				case NM_RETURN:
-					if (Utils::QuestionYesNo(_T("Media may introduce themselves wrongly (e.g. copy-protection). Instead of here, the introduction (if any) can be changed in the \"") BOOT_SECTOR_TAB_LABEL _T("\" tab.\n\nUnlock this setting anyway?"),MB_DEFBUTTON2)){
-						ShowDlgItem( ID_DRIVE, false );
-						const CRect rc=GetDlgItemClientRect(ID_FORMAT);
-						const HWND hMedium=GetDlgItemHwnd(ID_MEDIUM);
-						const LPCTSTR currMediumDesc=Medium::GetDescription((Medium::TType)ComboBox_GetItemData( hMedium, ComboBox_GetCurSel(hMedium) ));
-						CImage::PopulateComboBoxWithCompatibleMedia( hMedium, dos->properties->supportedMedia, dos->image->properties );
-						ComboBox_SelectString( hMedium, 0, currMediumDesc );
-						SetDlgItemSize( ID_MEDIUM, rc.Width(), rc.Height() );
-						::EnableWindow( hMedium, TRUE );
-					}
-					*pResult=0;
-					return TRUE;
-			}
+				*pResult=0;
+				return TRUE;
+		}
 		return __super::OnNotify(wParam,lParam,pResult);
 	}
 

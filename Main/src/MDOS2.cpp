@@ -586,7 +586,7 @@
 					return 0;
 				}else if (msg==WM_NOTIFY && wParam==ID_ATTRIBUTE)
 					// notification regarding the "RWED" Attributes
-					if (((LPNMHDR)lParam)->code==NM_CLICK)
+					if (GetClickedHyperlinkId(lParam))
 						for( BYTE i=4; i<8; CheckDlgButton(Controls[i++],BST_CHECKED) );
 				return __super::WindowProc(msg,wParam,lParam);
 			}

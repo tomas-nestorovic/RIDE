@@ -649,26 +649,23 @@ namespace Utils{
 			}
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 				// window procedure
-				if (msg==WM_NOTIFY){
-					const PNMLINK pnml=(PNMLINK)lParam;
-					if (pnml->hdr.code==NM_CLICK || pnml->hdr.code==NM_RETURN)
-						switch (pnml->hdr.idFrom){
-							case ID_AUTO:{
-								// notification regarding the "Select current {date,time}" option
-								::GetLocalTime(&st);
-								pnml->item.iLink++;
-								if (pnml->item.iLink&1)
-									SendDlgItemMessage( ID_DATE, MCM_SETCURSEL, 0, (LPARAM)&st );
-								if (pnml->item.iLink&2)
-									SendDlgItemMessage( ID_TIME, DTM_SETSYSTEMTIME, 0, (LPARAM)&st );
-								return 0;
-							}
-							case ID_REMOVE:
-								// notification regarding the "Remove from FAT" option
-								EndDialog(ID_REMOVE);
-								return 0;
+				if (msg==WM_NOTIFY)
+					switch (GetClickedHyperlinkId(lParam)){
+						case ID_AUTO:{
+							// notification regarding the "Select current {date,time}" option
+							::GetLocalTime(&st);
+							const auto iLink=((PNMLINK)lParam)->item.iLink+1;
+							if (iLink&1)
+								SendDlgItemMessage( ID_DATE, MCM_SETCURSEL, 0, (LPARAM)&st );
+							if (iLink&2)
+								SendDlgItemMessage( ID_TIME, DTM_SETSYSTEMTIME, 0, (LPARAM)&st );
+							return 0;
 						}
-				}
+						case ID_REMOVE:
+							// notification regarding the "Remove from FAT" option
+							EndDialog(ID_REMOVE);
+							return 0;
+					}
 				return __super::WindowProc(msg,wParam,lParam);
 			}
 		public:
@@ -1590,6 +1587,13 @@ namespace Utils{
 			return nullptr;
 	}
 
+	WORD CRideDialog::GetClickedHyperlinkId(LPARAM lNotify){
+		const PNMLINK pLink=(PNMLINK)lNotify;
+		return	pLink->hdr.code==NM_CLICK || pLink->hdr.code==NM_RETURN
+				? pLink->hdr.idFrom
+				: 0;
+	}
+
 	#define BRACKET_CURLY_FONT_SIZE	12
 
 	struct TCurlyBracket sealed{
@@ -2140,7 +2144,7 @@ namespace Utils{
 		}
 	}
 
-	void CRideDialog::ConvertDlgCheckboxToHyperlink(WORD id,WORD idHyperlinkControl) const{
+	void CRideDialog::ConvertDlgCheckboxToHyperlink(WORD id) const{
 		// converts an existing standard check-box to one with a hyperlink in its text
 		static struct{
 			WNDPROC checkbox0;
@@ -2204,7 +2208,7 @@ namespace Utils{
 		::GetDlgItemTextW( m_hWnd, id, checkboxText, ARRAYSIZE(checkboxText) );
 		const HWND hHyperlink=::CreateWindowW(
 			WC_LINK, checkboxText, WS_CHILD|WS_VISIBLE,
-			rc.left, rc.top, rc.Width(), rc.Height(), hStdCheckbox, (HMENU)idHyperlinkControl, 0, nullptr
+			rc.left, rc.top, rc.Width(), rc.Height(), hStdCheckbox, (HMENU)id, 0, nullptr
 		);
 		SetDlgItemUserData( id, hHyperlink );
 		SetWindowFont( hHyperlink, GetWindowFont(hStdCheckbox), FALSE );

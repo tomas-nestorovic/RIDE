@@ -1421,7 +1421,7 @@ invalidTrack:
 					)
 				)
 					CheckDlgButton( ID_READABLE, false ); // this option is never ticked for Unknown DOS
-				ConvertDlgCheckboxToHyperlink( ID_TRACK, ID_TIME );
+				ConvertDlgCheckboxToHyperlink( ID_TRACK );
 			}
 
 			void DoDataExchange(CDataExchange* pDX) override{
@@ -1544,27 +1544,24 @@ invalidTrack:
 						}
 						break;
 					case WM_NOTIFY:
-						switch (((LPNMHDR)lParam)->code){
-							case NM_CLICK:
-							case NM_RETURN:{
-								PNMLINK pLink=(PNMLINK)lParam;
-								const LITEM &item=pLink->item;
-								if (pLink->hdr.idFrom==ID_ALIGN){
-									rcb.locker.Unlock(); // giving way to parallel thread
-							{			const Utils::CVarTempReset<bool> vwt0( params.verifyWrittenTracks, false );
-											if (!::lstrcmpW(item.szID,L"details"))
-												tmpPrecomp.ShowOrDetermineModal(rcb);
-											else if (!::lstrcmpW(item.szID,L"compute"))
-												if (const TStdWinError err=tmpPrecomp.DetermineUsingLatestMethod(rcb))
-													Utils::FatalError( _T("Can't determine precompensation"), err );
-												else
-													tmpPrecomp.Save();
-							}		rcb.locker.Lock();
-									RefreshMediumInformation();
-								}else if (pLink->hdr.idFrom==ID_TIME)
-									params.corrections.ShowModal(this);
+						switch (GetClickedHyperlinkId(lParam)){
+							case ID_ALIGN:
+								rcb.locker.Unlock(); // giving way to parallel thread
+						{			const Utils::CVarTempReset<bool> vwt0( params.verifyWrittenTracks, false );
+									const LPCWSTR strId=((PNMLINK)lParam)->item.szID;
+									if (!::lstrcmpW(strId,L"details"))
+										tmpPrecomp.ShowOrDetermineModal(rcb);
+									else if (!::lstrcmpW(strId,L"compute"))
+										if (const TStdWinError err=tmpPrecomp.DetermineUsingLatestMethod(rcb))
+											Utils::FatalError( _T("Can't determine precompensation"), err );
+										else
+											tmpPrecomp.Save();
+						}		rcb.locker.Lock();
+								RefreshMediumInformation();
 								break;
-							}
+							case ID_TRACK:
+								params.corrections.ShowModal(this);
+								break;
 						}
 						break;
 				}

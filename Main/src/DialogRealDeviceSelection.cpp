@@ -117,15 +117,10 @@
 
 	BOOL CRealDeviceSelectionDialog::OnNotify(WPARAM wParam,LPARAM lParam,LRESULT *pResult){
 		// processes notification
-		const LPCWPSTRUCT pcws=(LPCWPSTRUCT)lParam;
-		if (pcws->wParam==ID_HELP_INDEX)
-			switch (pcws->message){
-				case NM_CLICK:
-				case NM_RETURN:{
+		if (GetClickedHyperlinkId(lParam)){
 					refreshListOfDevices();
 					*pResult=0;
 					return TRUE;
-				}
-			}
+		}
 		return __super::OnNotify(wParam,lParam,pResult);
 	}

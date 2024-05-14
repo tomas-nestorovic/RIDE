@@ -230,13 +230,13 @@
 					}
 					break;
 				case WM_NOTIFY:
-					if (((LPNMHDR)lParam)->code==NM_CLICK){ // some hyperlink clicked
-						const PNMLINK pNmLink=(PNMLINK)lParam;
-						if (!::lstrcmpW(pNmLink->item.szID,L"OPENIMG"))
+					if (GetClickedHyperlinkId(lParam)){ // some hyperlink clicked
+						const LPCWSTR strId=((PNMLINK)lParam)->item.szID;
+						if (!::lstrcmpW(strId,L"OPENIMG"))
 							app.__openImage__();
-						else if (!::lstrcmpW(pNmLink->item.szID,L"ACCSDRV"))
+						else if (!::lstrcmpW(strId,L"ACCSDRV"))
 							app.__openDevice__();
-						else if (!::lstrcmpW(pNmLink->item.szID,L"UPDATE"))
+						else if (!::lstrcmpW(strId,L"UPDATE"))
 							app.GetMainWindow()->OpenRepositoryWebPage( nullptr, _T("/releases") );
 						return 0;
 					}

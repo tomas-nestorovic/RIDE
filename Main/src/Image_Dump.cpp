@@ -873,7 +873,7 @@ terminateWithError:		return LOG_ERROR(pAction->TerminateWithError(err));
 					*pAction++=NoMruDevices;
 				}
 				ConvertDlgButtonToSplitButton( ID_FILE, actions, pAction-actions );
-				ConvertDlgCheckboxToHyperlink( ID_BEEP, ID_DEFAULT4 );
+				ConvertDlgCheckboxToHyperlink( ID_BEEP );
 			}
 			void DoDataExchange(CDataExchange *pDX) override{
 				// transferring data to and from controls
@@ -1097,11 +1097,11 @@ setDestination:						// : compacting FileName in order to be better displayable 
 						}
 						break;
 					case WM_NOTIFY:
-						if (((LPNMHDR)lParam)->code==NM_CLICK || ((LPNMHDR)lParam)->code==NM_RETURN){
-							if (((LPNMHDR)lParam)->idFrom==ID_DEFAULT4){ // beep test
-								Utils::StdBeep();
-								return 0;
-							}
+						switch (GetClickedHyperlinkId(lParam)){
+						case ID_BEEP: // beep test
+							Utils::StdBeep();
+							break;
+						case ID_HELP_INDEX:{
 							// . defining the Dialog
 							class CHelpDialog sealed:public Utils::CCommandDialog{
 								BOOL OnInitDialog() override{
@@ -1142,6 +1142,8 @@ setDestination:						// : compacting FileName in order to be better displayable 
 									Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_copyFloppy.html"),url) );
 									break;
 							}
+							break;
+						}
 						}
 						break;
 				}

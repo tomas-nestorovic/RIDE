@@ -603,10 +603,9 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 				);
 				::PostMessage( hComment, WM_SHOW_HINT, 0, (LPARAM)INI_MSG_REAL_DEVICES );
 			}
-		}else if (pcws->message==WM_NOTIFY && pcws->wParam==ID_DRIVEA) // notification regarding Drive A:
-			switch ( ((LPNMHDR)pcws->lParam)->code ){
-				case NM_CLICK:
-				case NM_RETURN:
+		}else if (pcws->message==WM_NOTIFY)
+			switch (Utils::CRideDialog::GetClickedHyperlinkId(pcws->lParam)){
+				case ID_DRIVEA:
 					::EndDialog( ::GetParent(pcws->hwnd), IDOK );
 					ofn_fileName=REAL_DRIVE_ACCESS;
 					return 0;

@@ -312,41 +312,38 @@
 						__repopulateListBoxesAndUpdateInteractivity__(); // "redrawing" the dialog
 						break;
 					}
-					case WM_NOTIFY:{
+					case WM_NOTIFY:
 						// processing a notification
-						const LPCWPSTRUCT pcws=(LPCWPSTRUCT)lParam;
-						if (pcws->wParam==ID_HELP_INDEX)
-							switch (pcws->message){
-								case NM_CLICK:
-								case NM_RETURN:{
-									// . defining the Dialog
-									class CHelpDialog sealed:public Utils::CCommandDialog{
-										BOOL OnInitDialog() override{
-											// dialog initialization
-											// : base
-											const BOOL result=__super::OnInitDialog();
-											// : supplying available actions
-											AddHelpButton( ID_DRIVE, _T("What is a recognition sequence good for?") );
-											AddCancelButton( MSG_HELP_CANCEL );
-											return result;
-										}
-									public:
-										CHelpDialog()
-											// ctor
-											: Utils::CCommandDialog(_T("This might interest you:")) {
-										}
-									} d;
-									// . showing the Dialog and processing its result
-									TCHAR url[200];
-									switch (d.DoModal()){
-										case ID_DRIVE:
-											Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_recognition.html"),url) );
-											break;
+						switch (GetClickedHyperlinkId(lParam)){
+							case ID_HELP_INDEX:{
+								// . defining the Dialog
+								class CHelpDialog sealed:public Utils::CCommandDialog{
+									BOOL OnInitDialog() override{
+										// dialog initialization
+										// : base
+										const BOOL result=__super::OnInitDialog();
+										// : supplying available actions
+										AddHelpButton( ID_DRIVE, _T("What is a recognition sequence good for?") );
+										AddCancelButton( MSG_HELP_CANCEL );
+										return result;
 									}
-									return TRUE;
+								public:
+									CHelpDialog()
+										// ctor
+										: Utils::CCommandDialog(_T("This might interest you:")) {
+									}
+								} d;
+								// . showing the Dialog and processing its result
+								TCHAR url[200];
+								switch (d.DoModal()){
+									case ID_DRIVE:
+										Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_recognition.html"),url) );
+										break;
 								}
+								return TRUE;
 							}
-					}
+						}
+						break;
 				}
 				return __super::WindowProc(msg,wParam,lParam);
 			}

@@ -452,7 +452,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				// window procedure
 				switch (msg){
 					case WM_NOTIFY:
-						if (((LPNMHDR)lParam)->code==NM_CLICK){
+						if (GetClickedHyperlinkId(lParam)){
 							// . defining the Dialog
 							class CHelpDialog sealed:public Utils::CCommandDialog{
 								BOOL OnInitDialog() override{
