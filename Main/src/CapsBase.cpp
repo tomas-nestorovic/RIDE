@@ -1406,6 +1406,7 @@ invalidTrack:
 				SetDlgItemSingleCharUsingFont( // a warning that a 40-track disk might have been misrecognized
 					ID_INFORMATION, L'\xf0ea', warningFont
 				);
+				ConvertDlgCheckboxToHyperlink( ID_40D80 );
 				RefreshMediumInformation();
 				// . updating write pre-compensation status
 				SetDlgItemSingleCharUsingFont( // a warning that pre-compensation not up-to-date
@@ -1513,8 +1514,14 @@ invalidTrack:
 								//fallthrough
 							case ID_40D80:
 								// track distance changed manually
-								if (wParam==ID_40D80)
-									SetDlgItemFormattedText( ID_40D80, _T("%s (user forced)"), doubleTrackDistanceTextOrg );
+								if (wParam==ID_40D80){
+									TCHAR tmp[80];
+									::lstrcpy(
+										_tcsrchr( ::lstrcpy(tmp,doubleTrackDistanceTextOrg), '(' ),
+										_T("(user forced)")
+									);
+									SetDlgItemText( ID_40D80, tmp );
+								}
 								ShowDlgItem( ID_INFORMATION, false ); // user manually revised # of Tracks either on Medium's or Drive's side, so no need to continue displaying the warning
 								Invalidate(); // get also rid of the curly bracket
 								break;
@@ -1558,6 +1565,12 @@ invalidTrack:
 											tmpPrecomp.Save();
 						}		rcb.locker.Lock();
 								RefreshMediumInformation();
+								break;
+							case ID_40D80:
+								rcb.ScanTrack( 1, 0 );
+								Utils::Information(
+									CString(_T("Sectors on Track 1 (chronologically):\n")) + rcb.ListSectors(1,0)
+								);
 								break;
 							case ID_TRACK:
 								params.corrections.ShowModal(this);
