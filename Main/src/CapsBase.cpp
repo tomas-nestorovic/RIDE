@@ -1316,11 +1316,22 @@ invalidTrack:
 					switch (currentMediumType){
 						case Medium::FLOPPY_DD_525:
 							if (EnableDlgItem( ID_40D80, initialEditing&&!fortyTrackDrive )){
-						{		const Utils::CVarTempReset<bool> dts0( rcb.params.doubleTrackStep, false );
+								const Utils::CVarTempReset<bool> dts0( rcb.params.doubleTrackStep, false );
 								const Utils::CVarTempReset<Medium::TType> ft0( rcb.floppyType, currentMediumType );
-								if (rcb.GetInsertedMediumType(1,currentMediumType)==ERROR_SUCCESS)
-									CheckDlgItem( ID_40D80, !ShowDlgItem(ID_INFORMATION,currentMediumType!=Medium::UNKNOWN) ); // first Track is empty, so likely each odd Track is empty
-						}		rcb.GetInsertedMediumType(0,currentMediumType); // a workaround to make floppy Drive head seek home
+								if (rcb.GetInsertedMediumType(1,currentMediumType)==ERROR_SUCCESS){
+									const CTrackTempReset rit( rcb.internalTracks[2][0] );
+									TSectorId ids[(TSector)-1];
+									ShowDlgItem( ID_INFORMATION,
+										!CheckDlgItem( ID_40D80,
+											currentMediumType==Medium::UNKNOWN // first Track is empty, so likely each odd Track is empty
+											||
+											CountSectorsBelongingToCylinder( 1, ids, rcb.ScanTrack(2,0,nullptr,ids) )>=5 // ">=N" = at least N Sectors (empirical value) from Cylinder 2 actually belong to Cylinder 1
+										)
+										&&
+										CountSectorsBelongingToCylinder( 1, ids, rcb.ScanTrack(1,0,nullptr,ids) )<5 // "<N" = less than N Sectors (empirical value) from Cylinder 1 actually belong to Cylinder 1
+									);
+								}
+								rcb.SeekHeadsHome();
 							}
 							//fallthrough
 						case Medium::FLOPPY_DD:

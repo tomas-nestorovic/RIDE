@@ -378,6 +378,14 @@ namespace Medium{
 		return	OpenImageForReadingAndWriting( fileName, f );
 	}
 
+	TSector CImage::CountSectorsBelongingToCylinder(TCylinder cylRef,PCSectorId ids,TSector nIds){
+		// returns # of input IDs whose Cylinder value is the same as Referential
+		TSector result=0;
+		while (nIds-->0)
+			result+=ids++->cylinder==cylRef;
+		return result;
+	}
+
 	#define LENGTH_CODE_BASE	0x80
 
 	TFormat::TLengthCode CImage::GetSectorLengthCode(WORD sectorLength){
