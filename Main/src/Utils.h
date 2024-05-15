@@ -143,6 +143,7 @@ namespace Utils{
 			var=newValue;
 		}
 		inline operator T() const{ return var; }
+		inline T &operator->() const{ return var; }
 	};
 
 	template<typename T>

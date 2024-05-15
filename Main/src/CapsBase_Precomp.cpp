@@ -131,25 +131,22 @@
 				trw.AddTime( t+=doubleCellTime );
 			trw.AddTime( t+=doubleCellTime ); // one extra flux
 			// . saving the test Track
-	{		const PInternalTrack pit=CInternalTrack::CreateFrom( ptp.cb, trw, rPrecomp.floppyType );
-			pit->modified=true; // to pass the save conditions
-			const Utils::CVarTempReset<PInternalTrack> pit0( ptp.cb.internalTracks[cyl][ptp.head], pit );
+	{		const CTrackTempReset rit(
+				ptp.cb.internalTracks[cyl][ptp.head],
+				CInternalTrack::CreateFrom( ptp.cb, trw, rPrecomp.floppyType )
+			);
+			rit->modified=true; // to pass the save conditions
 			const Utils::CVarTempReset<TMethodVersion> pm0( ptp.cb.precompensation.methodVersion, CPrecompensation::Identity );
 			const Utils::CVarTempReset<Medium::TType> mt0( *const_cast<Medium::TType *>(&ptp.cb.floppyType), rPrecomp.floppyType );
-			const TStdWinError err=ptp.cb.SaveTrack( cyl, ptp.head, pAction->Cancelled );
-			delete pit;
-			if (err!=ERROR_SUCCESS)
+			if (const TStdWinError err=ptp.cb.SaveTrack( cyl, ptp.head, pAction->Cancelled ))
 				return pAction->TerminateWithError(err);
 	}		// . reading the test Track back
-			PInternalTrack pit=ptp.cb.internalTracks[cyl][ptp.head];
-				ptp.cb.internalTracks[cyl][ptp.head]=nullptr; // forcing a new scan
-				ptp.cb.ScanTrack(cyl,ptp.head);
-			std::swap( ptp.cb.internalTracks[cyl][ptp.head], pit );
-			if (pit==nullptr)
+			const CTrackTempReset rit( ptp.cb.internalTracks[cyl][ptp.head] ); // forcing a new scan
+			ptp.cb.ScanTrack(cyl,ptp.head);
+			if (rit==nullptr)
 				return pAction->TerminateWithError(ERROR_FUNCTION_FAILED);
 			// . evaluating what we read
-			CTrackReader tr=*pit;
-			delete pit;
+			CTrackReader tr=*rit;
 			TLogTime t0=tr.GetIndexTime(0)+120*mediumProps.cellTime; // "+N" = ignoring the region immediatelly after index - may be invalid due to Write Gate signal still on
 			tr.SetCurrentTime(t0);
 			for( const TLogTime threshold=mediumProps.cellTime*3; ( t=tr.ReadTime() )-t0<threshold; t0=t ); // skipping initial stabilisation

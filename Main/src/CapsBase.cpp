@@ -773,11 +773,9 @@ invalidTrack:
 		// True <=> Medium inserted in the Drive and recognized, otherwise False
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - retrieving currently inserted Medium zeroth Track
-		PInternalTrack pit=internalTracks[cyl][0];
-			internalTracks[cyl][0]=nullptr; // forcing a new scanning
+		const CTrackTempReset ritInserted( internalTracks[cyl][0] ); // forcing a new scanning
 		ScanTrack(cyl,0);
-		std::swap( internalTracks[cyl][0], pit );
-		if (pit==nullptr)
+		if (ritInserted==nullptr)
 			if (properties->IsRealDevice())
 				return ERROR_NO_MEDIA_IN_DRIVE;
 			else{
@@ -785,23 +783,23 @@ invalidTrack:
 				return ERROR_SUCCESS; // e.g. a KryoFlux Stream file has been manually deleted, thus Unknown Medium has been "successfully" recognized
 			}
 		// - enumerating possible floppy Types and attempting to recognize some Sectors
-		CTrackReaderWriter trw=*pit;
-		delete pit;
+		CTrackReaderWriter trw=*ritInserted;
 		WORD highestScore=0; // arbitering the MediumType by the HighestScore and indices distance
 		Medium::TType bestMediumType=Medium::UNKNOWN;
 		for( DWORD type=1; type!=0; type<<=1 )
 			if (type&Medium::FLOPPY_ANY)
-				if ( pit=CInternalTrack::CreateFrom( *this, trw, rOutMediumType=(Medium::TType)type ) ){
-					const TSector nRecognizedSectors=pit->nSectors;
-					std::swap( internalTracks[cyl][0], pit );
+				if (const CTrackTempReset &&rit=CTrackTempReset(
+						internalTracks[cyl][0],
+						CInternalTrack::CreateFrom( *this, trw, rOutMediumType=(Medium::TType)type )
+					)
+				){
+					const TSector nRecognizedSectors=rit->nSectors;
 					if (WORD score= nRecognizedSectors + 32*GetCountOfHealthySectors(cyl,0)){
 						if (Medium::GetProperties( (Medium::TType)type )->IsAcceptableRevolutionTime( trw.GetAvgIndexDistance() ))
 							score|=0x8000;
 						if (score>highestScore)
 							highestScore=score, bestMediumType=rOutMediumType;
 					}
-					std::swap( internalTracks[cyl][0], pit );
-					delete pit;
 				}
 		// - Medium (possibly) recognized
 		rOutMediumType=bestMediumType; // may be Medium::UNKNOWN
@@ -1135,25 +1133,21 @@ invalidTrack:
 		// - evaluating Track magnetic reliability
 		for( BYTE nTrials=3; nTrials>0; nTrials-- ){
 			// . saving the test Track
-			PInternalTrack pit=CInternalTrack::CreateFrom( *this, trw );
-				pit->modified=true; // to pass the save conditions
-			std::swap( pit, internalTracks[cyl][head] );
-				const TStdWinError err=SaveTrack( cyl, head, cancelled );
-			std::swap( pit, internalTracks[cyl][head] );
-			delete pit;
-			if (err!=ERROR_SUCCESS)
+	{		const CTrackTempReset rit(
+				internalTracks[cyl][head],
+				CInternalTrack::CreateFrom( *this, trw )
+			);
+			rit->modified=true; // to pass the save conditions
+			if (const TStdWinError err=SaveTrack( cyl, head, cancelled ))
 				return err;
-			// . reading the test Track back
-			pit=internalTracks[cyl][head];
-				internalTracks[cyl][head]=nullptr; // forcing a new scan
+	}		// . reading the test Track back
+			const CTrackTempReset rit( internalTracks[cyl][head] ); // forcing a new scan
 			ScanTrack( cyl, head );
-			std::swap( pit, internalTracks[cyl][head] );
-			if (pit==nullptr)
+			if (rit==nullptr)
 				return ERROR_FUNCTION_FAILED;
 			//pit->SetMediumType( floppyType ); // commented out as unnecessary (no decoder used here)
 			// . evaluating what we read
-			CTrackReader tr=*pit;
-			delete pit;
+			CTrackReader tr=*rit;
 			TLogTime t=tr.GetIndexTime(0)+60*doubleCellTime; // "+N" = ignoring the region immediatelly after index - may be invalid due to Write Gate signal still on
 			tr.SetCurrentTime(t);
 			for( const TLogTime tOkA=doubleCellTime*80/100,tOkZ=doubleCellTime*120/100; t<mp->revolutionTime; ){ // allowing for 20% deviation from nominal Flux transition
@@ -1334,11 +1328,9 @@ invalidTrack:
 							if (currentMediumType==Medium::FLOPPY_DD)
 								CheckAndEnableDlgItem( ID_40D80, false, initialEditing&&!fortyTrackDrive );
 							if (EnableDlgItem( ID_SIDE, initialEditing )){
-								PInternalTrack &rit=rcb.internalTracks[0][1]; // the test Track
-								const Utils::CVarTempReset<PInternalTrack> pit0( rit, nullptr ); // forcing a new scanning
+								const CTrackTempReset rit( rcb.internalTracks[0][1] ); // forcing a new scanning
 								const Utils::CVarTempReset<bool> fd0( rcb.params.flippyDisk, true ); // assumption (this is a FlippyDisk)
 								CheckDlgItem( ID_SIDE, rcb.ScanTrack(0,1)>0 );
-								delete rit;
 							}
 							break;
 						case Medium::FLOPPY_HD_525:
