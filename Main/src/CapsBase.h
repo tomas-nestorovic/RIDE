@@ -84,6 +84,12 @@
 		} *PInternalTrack;
 		typedef const CInternalTrack *PCInternalTrack;
 
+		class CTrackTempReset:public Utils::CVarTempReset<PInternalTrack>{
+		public:
+			CTrackTempReset(PInternalTrack &rit,PInternalTrack newTrack=nullptr);
+			~CTrackTempReset();
+		};
+
 		class CPrecompensation sealed{
 			Medium::TType floppyType;
 

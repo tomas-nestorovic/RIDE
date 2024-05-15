@@ -455,6 +455,27 @@
 
 
 
+	CCapsBase::CTrackTempReset::CTrackTempReset(PInternalTrack &rit,PInternalTrack newTrack)
+		// ctor
+		: Utils::CVarTempReset<PInternalTrack>( rit, newTrack ) {
+	}
+
+	CCapsBase::CTrackTempReset::~CTrackTempReset(){
+		// dtor
+		if (var)
+			delete var;
+	}
+
+
+
+
+
+
+
+
+
+
+
 	TStdWinError CCapsBase::UploadFirmware(){
 		// uploads firmware to a CAPS-based device (e.g. KryoFlux); returns Windows standard i/o error
 		return ERROR_SUCCESS; // no firmware needed
@@ -754,7 +775,7 @@ invalidTrack:
 		// - retrieving currently inserted Medium zeroth Track
 		PInternalTrack pit=internalTracks[cyl][0];
 			internalTracks[cyl][0]=nullptr; // forcing a new scanning
-			ScanTrack(cyl,0);
+		ScanTrack(cyl,0);
 		std::swap( internalTracks[cyl][0], pit );
 		if (pit==nullptr)
 			if (properties->IsRealDevice())
@@ -773,12 +794,12 @@ invalidTrack:
 				if ( pit=CInternalTrack::CreateFrom( *this, trw, rOutMediumType=(Medium::TType)type ) ){
 					const TSector nRecognizedSectors=pit->nSectors;
 					std::swap( internalTracks[cyl][0], pit );
-						if (WORD score= nRecognizedSectors + 32*GetCountOfHealthySectors(cyl,0)){
-							if (Medium::GetProperties( (Medium::TType)type )->IsAcceptableRevolutionTime( trw.GetAvgIndexDistance() ))
-								score|=0x8000;
-							if (score>highestScore)
-								highestScore=score, bestMediumType=rOutMediumType;
-						}
+					if (WORD score= nRecognizedSectors + 32*GetCountOfHealthySectors(cyl,0)){
+						if (Medium::GetProperties( (Medium::TType)type )->IsAcceptableRevolutionTime( trw.GetAvgIndexDistance() ))
+							score|=0x8000;
+						if (score>highestScore)
+							highestScore=score, bestMediumType=rOutMediumType;
+					}
 					std::swap( internalTracks[cyl][0], pit );
 					delete pit;
 				}
@@ -1125,7 +1146,7 @@ invalidTrack:
 			// . reading the test Track back
 			pit=internalTracks[cyl][head];
 				internalTracks[cyl][head]=nullptr; // forcing a new scan
-				ScanTrack( cyl, head );
+			ScanTrack( cyl, head );
 			std::swap( pit, internalTracks[cyl][head] );
 			if (pit==nullptr)
 				return ERROR_FUNCTION_FAILED;
@@ -1274,6 +1295,7 @@ invalidTrack:
 			const bool initialEditing;
 			const Utils::CRideFont warningFont;
 			CCapsBase &rcb;
+			Medium::TType currentMediumType;
 			CPrecompensation tmpPrecomp;
 			TCHAR flippyDiskTextOrg[40],doubleTrackDistanceTextOrg[80];
 
@@ -1291,26 +1313,25 @@ invalidTrack:
 				// detects a floppy in the Drive and attempts to recognize its Type
 				// . making sure that a floppy is in the Drive
 				ShowDlgItem( ID_INFORMATION, false );
-				Medium::TType mt;
 				static constexpr WORD Interactivity[]={ ID_LATENCY, ID_NUMBER2, ID_GAP, 0 };
 				const bool fortyTrackDrive=IsDlgItemChecked(ID_DRIVE);
-				if (!EnableDlgItems( Interactivity, rcb.GetInsertedMediumType(0,mt)==ERROR_SUCCESS ))
+				if (!EnableDlgItems( Interactivity, rcb.GetInsertedMediumType(0,currentMediumType)==ERROR_SUCCESS ))
 					SetDlgItemText( ID_MEDIUM, _T("Not inserted") );
 				// . attempting to recognize any previous format on the floppy
 				else
-					switch (mt){
+					switch (currentMediumType){
 						case Medium::FLOPPY_DD_525:
 							if (EnableDlgItem( ID_40D80, initialEditing&&!fortyTrackDrive )){
 						{		const Utils::CVarTempReset<bool> dts0( rcb.params.doubleTrackStep, false );
-								const Utils::CVarTempReset<Medium::TType> ft0( rcb.floppyType, mt );
-								if (rcb.GetInsertedMediumType(1,mt)==ERROR_SUCCESS)
-									CheckDlgItem( ID_40D80, !ShowDlgItem(ID_INFORMATION,mt!=Medium::UNKNOWN) ); // first Track is empty, so likely each odd Track is empty
-						}		rcb.GetInsertedMediumType(0,mt); // a workaround to make floppy Drive head seek home
+								const Utils::CVarTempReset<Medium::TType> ft0( rcb.floppyType, currentMediumType );
+								if (rcb.GetInsertedMediumType(1,currentMediumType)==ERROR_SUCCESS)
+									CheckDlgItem( ID_40D80, !ShowDlgItem(ID_INFORMATION,currentMediumType!=Medium::UNKNOWN) ); // first Track is empty, so likely each odd Track is empty
+						}		rcb.GetInsertedMediumType(0,currentMediumType); // a workaround to make floppy Drive head seek home
 							}
 							//fallthrough
 						case Medium::FLOPPY_DD:
-							SetDlgItemText( ID_MEDIUM, Medium::GetDescription(mt) );
-							if (mt==Medium::FLOPPY_DD)
+							SetDlgItemText( ID_MEDIUM, Medium::GetDescription(currentMediumType) );
+							if (currentMediumType==Medium::FLOPPY_DD)
 								CheckAndEnableDlgItem( ID_40D80, false, initialEditing&&!fortyTrackDrive );
 							if (EnableDlgItem( ID_SIDE, initialEditing )){
 								PInternalTrack &rit=rcb.internalTracks[0][1]; // the test Track
@@ -1336,7 +1357,7 @@ invalidTrack:
 				InvalidateDlgItem(ID_MEDIUM);
 				Invalidate(FALSE);
 				// . refreshing the status of Precompensation
-				tmpPrecomp.Load(mt);
+				tmpPrecomp.Load(currentMediumType);
 				RefreshPrecompensationStatus();
 			}
 
@@ -1566,12 +1587,16 @@ invalidTrack:
 						}		rcb.locker.Lock();
 								RefreshMediumInformation();
 								break;
-							case ID_40D80:
+							case ID_40D80:{
+								const Utils::CVarTempReset<bool> dts0( rcb.params.doubleTrackStep, false );
+								const Utils::CVarTempReset<Medium::TType> ft0( rcb.floppyType, currentMediumType );
+								const CTrackTempReset rit( rcb.internalTracks[1][0] );
 								rcb.ScanTrack( 1, 0 );
 								Utils::Information(
 									CString(_T("Sectors on Track 1 (chronologically):\n")) + rcb.ListSectors(1,0)
 								);
 								break;
+							}
 							case ID_TRACK:
 								params.corrections.ShowModal(this);
 								break;
@@ -1588,6 +1613,7 @@ invalidTrack:
 				: Utils::CRideDialog(IDR_CAPS_DEVICE_ACCESS)
 				, warningFont( FONT_WEBDINGS, 175, false, true )
 				, rcb(rcb) , params(rcb.params) , initialEditing(initialEditing) , firmware(firmware)
+				, currentMediumType(Medium::UNKNOWN)
 				, tmpPrecomp(rcb.precompensation) {
 			}
 		} d( rcb, firmware, initialEditing );

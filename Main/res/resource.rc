@@ -1825,7 +1825,7 @@ BEGIN
     RTEXT           "Warn",ID_INFORMATION,37,102,24,16,NOT WS_GROUP
     CONTROL         "&40-track drive",ID_DRIVE,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,71,99,147,10
-    CONTROL         "&Double track distance (<a>Track 1 IDs</a>)",ID_40D80,
+    CONTROL         "&Double track distance (<a>see Track 1 IDs</a>)",ID_40D80,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,71,111,147,10
     LTEXT           "Pre-compensation:",IDC_STATIC,7,124,60,8
     LTEXT           "W",ID_INSTRUCTION,71,125,18,16,NOT WS_VISIBLE | NOT 
