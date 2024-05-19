@@ -383,6 +383,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 
 	TStdWinError CDsk5::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus){
 		// marks Sector on a given PhysicalAddress as "dirty", plus sets it the given FdcStatus; returns Windows standard i/o error
+		ASSERT( !IsWriteProtected() );
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (const PTrackInfo ti=__findTrack__(chs.cylinder,chs.head)){
 			PSectorInfo si=ti->sectorInfo;

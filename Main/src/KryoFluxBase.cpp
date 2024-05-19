@@ -54,6 +54,7 @@
 
 	TStdWinError CCapsBase::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus){
 		// marks Sector on a given PhysicalAddress as "dirty", plus sets it the given FdcStatus; returns Windows standard i/o error
+		ASSERT( !IsWriteProtected() );
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (chs.cylinder>capsImageInfo.maxcylinder || chs.head>capsImageInfo.maxhead)
 			return ERROR_INVALID_PARAMETER;

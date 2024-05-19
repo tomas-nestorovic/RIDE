@@ -285,6 +285,7 @@ trackNotFound:
 
 	TStdWinError CImageRaw::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE,PCFdcStatus pFdcStatus){
 		// marks Sector with given PhysicalAddress as "dirty", plus sets it the given FdcStatus; returns Windows standard i/o error
+		ASSERT( !IsWriteProtected() );
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (pFdcStatus->IsWithoutError()){
 			m_bModified=TRUE;

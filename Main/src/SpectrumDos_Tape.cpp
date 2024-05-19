@@ -87,6 +87,7 @@
 
 	TStdWinError CSpectrumDos::CTape::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus){
 		// marks Sector on a given PhysicalAddress as "dirty", plus sets it the given FdcStatus; returns Windows standard i/o error
+		ASSERT( !IsWriteProtected() );
 		if (chs.cylinder<fileManager.nFiles){
 			fileManager.files[chs.cylinder]->dataChecksumStatus=TTapeFile::TDataChecksumStatus::UNDETERMINED; // the Checksum needs re-comparison
 			m_bModified=true;

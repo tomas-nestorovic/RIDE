@@ -1041,6 +1041,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 
 	TStdWinError CFDD::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus){
 		// marks Sector with specified PhysicalAddress as "dirty", plus sets it the given FdcStatus; returns Windows standard i/o error
+		ASSERT( !IsWriteProtected() );
 		LOG_SECTOR_ACTION(&chs.sectorId,_T("TStdWinError CFDD::MarkSectorAsDirty"));
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (const PInternalTrack pit=__getScannedTrack__(chs.cylinder,chs.head)){ // Track has already been scanned

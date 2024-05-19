@@ -368,7 +368,7 @@
 			break;
 		}
 		rFirstFreeCluster=cluster; // update the value
-		fsInfo.MarkSectorAsDirty();
+		//fsInfo.MarkSectorAsDirty(); // commented out as mustn't do any changes to the disk here
 		return cluster<clusterMax ? cluster : MSDOS7_FAT_CLUSTER_EOF;
 	}
 
