@@ -891,12 +891,15 @@
 
 
 
-	CImage::CTrackReader::CParseEventList::CParseEventList(CParseEventList &r){
-		// copy-ctor implemented as move-ctor
-		BYTE tmp[sizeof(*this)]; // TODO: the following is nasty!
-		::memcpy( tmp, this, sizeof(*this) );
-		::memcpy( this, &r, sizeof(*this) );
-		::memcpy( &r, tmp, sizeof(*this) );
+	CImage::CTrackReader::CParseEventList::CParseEventList(){
+		// shallow-copy ctor
+		::ZeroMemory( peTypeCounts, sizeof(peTypeCounts) );
+	}
+	
+	CImage::CTrackReader::CParseEventList::CParseEventList(const CParseEventList &r)
+		// shallow-copy ctor
+		: Utils::CCopyList<TParseEvent>(r) {
+		::memcpy( peTypeCounts, r.peTypeCounts, sizeof(peTypeCounts) );
 	}
 	
 	POSITION CImage::CTrackReader::CParseEventList::GetPositionByStart(TLogTime tStartMin,TParseEvent::TType typeFrom,TParseEvent::TType typeTo,POSITION posFrom) const{
@@ -935,10 +938,6 @@
 
 	POSITION CImage::CTrackReader::CParseEventList::GetPositionByEnd(TLogTime tEndMin,TParseEvent::TType type,POSITION posFrom) const{
 		return	GetPositionByEnd( tEndMin, type, type, posFrom);
-	}
-
-	bool CImage::CTrackReader::CParseEventList::Contains(TParseEvent::TType type,POSITION posFrom) const{
-		return GetPositionByStart( 0, type, posFrom )!=nullptr;
 	}
 
 	bool CImage::CTrackReader::CParseEventList::IntersectsWith(const TLogTimeInterval &ti) const{

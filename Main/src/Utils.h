@@ -81,9 +81,16 @@ namespace Utils{
 	template<typename T>
 	class CCopyList:public CStringList{
 	public:
+		CCopyList(){}
+		CCopyList(const CCopyList &r){
+			// shallow-copy ctor
+			for( POSITION pos=r.GetHeadPosition(); pos; )
+				__super::AddTail( static_cast<const CStringList &>(r).GetNext(pos) );
+		}
+
 		POSITION AddHead(const T &element,int elementSize=sizeof(T)){
 			const POSITION pos=__super::AddHead(_T(""));
-			::memcpy( __super::GetAt(pos).GetBuffer(elementSize), &element, elementSize );
+			SetAt( pos, element, elementSize );
 			return pos;
 		}
 		POSITION AddTail(const T &element,int elementSize=sizeof(T)){
