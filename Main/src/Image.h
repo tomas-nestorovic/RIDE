@@ -396,11 +396,7 @@
 			};
 
 			class CParseEventList:public Utils::CCopyList<TParseEvent>{
-				DWORD peTypeCounts[TParseEvent::LAST];
 			public:
-				CParseEventList();
-				CParseEventList(const CParseEventList &r);
-
 				inline POSITION AddHead(const TParseEvent &pe){ return __super::AddHead( pe, pe.size ); }
 				inline POSITION AddTail(const TParseEvent &pe){ return __super::AddTail( pe, pe.size ); }
 				inline POSITION InsertBefore(POSITION pos,const TParseEvent &pe){ return __super::InsertBefore( pos, pe, pe.size ); }
@@ -409,7 +405,7 @@
 				POSITION GetPositionByStart(TLogTime tStartMin,TParseEvent::TType type,POSITION posFrom=nullptr) const;
 				POSITION GetPositionByEnd(TLogTime tEndMin,TParseEvent::TType typeFrom=TParseEvent::NONE,TParseEvent::TType typeTo=TParseEvent::LAST,POSITION posFrom=nullptr) const;
 				POSITION GetPositionByEnd(TLogTime tEndMin,TParseEvent::TType type,POSITION posFrom=nullptr) const;
-				inline bool Contains(TParseEvent::TType type) const{ return peTypeCounts[type]>0; }
+				bool Contains(TParseEvent::TType type) const;
 				bool IntersectsWith(const TLogTimeInterval &ti) const;
 				void AddCopyAscendingByStart(const TParseEvent &pe);
 				void AddCopiesAscendingByStart(const CParseEventList &list);
