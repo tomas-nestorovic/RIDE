@@ -405,9 +405,9 @@
 				inline POSITION AddTail(const TParseEvent &pe){ return __super::AddTail( pe, pe.size ); }
 				inline POSITION InsertBefore(POSITION pos,const TParseEvent &pe){ return __super::InsertBefore( pos, pe, pe.size ); }
 				inline POSITION InsertAfter(POSITION pos,const TParseEvent &pe){ return __super::InsertAfter( pos, pe, pe.size ); }
-				POSITION GetPositionByStart(TLogTime tStartMin,TParseEvent::TType typeFrom=TParseEvent::NONE,TParseEvent::TType typeTo=TParseEvent::NONE,POSITION posFrom=nullptr) const;
+				POSITION GetPositionByStart(TLogTime tStartMin,TParseEvent::TType typeFrom=TParseEvent::NONE,TParseEvent::TType typeTo=TParseEvent::LAST,POSITION posFrom=nullptr) const;
 				POSITION GetPositionByStart(TLogTime tStartMin,TParseEvent::TType type,POSITION posFrom=nullptr) const;
-				POSITION GetPositionByEnd(TLogTime tEndMin,TParseEvent::TType typeFrom=TParseEvent::NONE,TParseEvent::TType typeTo=TParseEvent::NONE,POSITION posFrom=nullptr) const;
+				POSITION GetPositionByEnd(TLogTime tEndMin,TParseEvent::TType typeFrom=TParseEvent::NONE,TParseEvent::TType typeTo=TParseEvent::LAST,POSITION posFrom=nullptr) const;
 				POSITION GetPositionByEnd(TLogTime tEndMin,TParseEvent::TType type,POSITION posFrom=nullptr) const;
 				inline bool Contains(TParseEvent::TType type) const{ return peTypeCounts[type]>0; }
 				bool IntersectsWith(const TLogTimeInterval &ti) const;

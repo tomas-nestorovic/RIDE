@@ -908,10 +908,7 @@
 		while (posFrom){
 			const POSITION result=posFrom;
 			const TParseEvent &pe=GetNext(posFrom);
-			if (tStartMin<=pe.tStart
-				&&
-				( (typeFrom|typeTo)==TParseEvent::NONE || typeFrom<=pe.type&&pe.type<=typeTo )
-			)
+			if (tStartMin<=pe.tStart && typeFrom<=pe.type&&pe.type<=typeTo)
 				return result;
 		}
 		return nullptr;
@@ -927,10 +924,7 @@
 		while (posFrom){
 			const POSITION result=posFrom;
 			const TParseEvent &pe=GetNext(posFrom);
-			if (tEndMin<=pe.tEnd
-				&&
-				( (typeFrom|typeTo)==TParseEvent::NONE || typeFrom<=pe.type&&pe.type<=typeTo )
-			)
+			if (tEndMin<=pe.tEnd && typeFrom<=pe.type&&pe.type<=typeTo)
 				return result;
 		}
 		return nullptr;
@@ -963,7 +957,7 @@
 		// adds all ParseEvents to this list, ordered by their Start times ascending (MergeSort)
 		POSITION listPos=list.GetHeadPosition();
 		for( POSITION pos=GetHeadPosition(); pos&&listPos; )
-			if ( pos=GetPositionByStart( list.GetAt(listPos).tStart, TParseEvent::NONE, pos ) )
+			if ( pos=GetPositionByStart( list.GetAt(listPos).tStart, TParseEvent::NONE, TParseEvent::LAST, pos ) )
 				InsertBefore( pos, list.GetNext(listPos) );
 		while (listPos)
 			AddTail( list.GetNext(listPos) );
