@@ -1086,24 +1086,23 @@
 			sync1 =	(sync1<<1) | (BYTE)ReadBit();
 			if ((sync1&0xffdf)!=0x4489 || (sync23&0xffdfffdf)!=0x44894489)
 				continue;
-			if (pOutParseEvents)
-				pOutParseEvents->AddTail( TParseEvent( TParseEvent::SYNC_3BYTES, tSyncStarts[(iSyncStart+256-48)&63], currentTime, 0xa1a1a1 ) );
+			//if (pOutParseEvents) // commented out as added later
+				//pOutParseEvents->AddTail( TParseEvent( TParseEvent::SYNC_3BYTES, tSyncStarts[(iSyncStart+256-48)&63], currentTime, 0xa1a1a1 ) );
 			sync1=0; // invalidating "buffered" synchronization, so that it isn't reused
 			// . an ID Field mark should follow the synchronization
 			tEventStart=currentTime;
 			if (!ReadBits16(w)) // Track end encountered
 				break;
 			const BYTE idam=MFM::DecodeByte(w);
-			if ((idam&0xfe)!=0xfe){ // not the expected ID Field mark; the least significant bit is always ignored by the FDC [http://info-coach.fr/atari/documents/_mydoc/Atari-Copy-Protection.pdf]
-				if (pOutParseEvents)
-					pOutParseEvents->RemoveTail(); // dismiss the synchronization ParseEvent
-				continue;
-			}
+			if ((idam&0xfe)!=0xfe) // not the expected ID Field mark; the least significant bit is always ignored by the FDC [http://info-coach.fr/atari/documents/_mydoc/Atari-Copy-Protection.pdf]
+				continue;			
 			struct{
 				BYTE idFieldAm, cyl, side, sector, length;
 			} data={ idam };
-			if (pOutParseEvents)
+			if (pOutParseEvents){
+				pOutParseEvents->AddTail( TParseEvent( TParseEvent::SYNC_3BYTES, tSyncStarts[(iSyncStart+256-48)&63], tEventStart, 0xa1a1a1 ) );
 				pOutParseEvents->AddTail( TParseEvent( TParseEvent::MARK_1BYTE, tEventStart, currentTime, idam ) );
+			}
 			// . reading SectorId
 			tEventStart=currentTime;
 			TSectorId &rid=*pOutFoundSectors++;
