@@ -772,6 +772,10 @@ invalidTrack:
 	TStdWinError CCapsBase::GetInsertedMediumType(TCylinder cyl,Medium::TType &rOutMediumType) const{
 		// True <=> Medium inserted in the Drive and recognized, otherwise False
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		if (params.userForcedMedium){
+			rOutMediumType=floppyType;
+			return ERROR_SUCCESS;
+		}
 		// - retrieving currently inserted Medium zeroth Track
 		const CTrackTempReset ritInserted( internalTracks[cyl][0] ); // forcing a new scanning
 		ScanTrack(cyl,0);
@@ -826,6 +830,8 @@ invalidTrack:
 					tmp.mediumType=(Medium::TType)type;
 					const Utils::CVarTempReset<PDos> dos0( dos, nullptr );
 					SetMediumTypeAndGeometry( &tmp, sideMap, firstSectorNumber );
+					if (params.userForcedMedium && tmp.mediumType==floppyType)
+						return ERROR_SUCCESS;
 					for( TCylinder cyl=0; cyl<SCANNED_CYLINDERS; cyl++ ) // counting the # of healthy Sectors
 						for( THead head=0; head<2; head++ )
 							score+=	ScanTrack(cyl,head)
@@ -1313,7 +1319,7 @@ invalidTrack:
 				ShowDlgItem( ID_INFORMATION, false );
 				static constexpr WORD Interactivity[]={ ID_LATENCY, ID_NUMBER2, ID_GAP, 0 };
 				const bool fortyTrackDrive=IsDlgItemChecked(ID_DRIVE);
-				if (!EnableDlgItems( Interactivity, params.userForcedMedium||rcb.GetInsertedMediumType(0,currentMediumType)==ERROR_SUCCESS ))
+				if (!EnableDlgItems( Interactivity, rcb.GetInsertedMediumType(0,currentMediumType)==ERROR_SUCCESS ))
 					SetDlgItemText( ID_MEDIUM, _T("Not inserted") );
 				// . attempting to recognize any previous format on the floppy
 				else
