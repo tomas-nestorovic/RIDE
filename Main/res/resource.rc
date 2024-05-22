@@ -1817,8 +1817,9 @@ BEGIN
     CONTROL         "&Reset on index",ID_DEFAULT1,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,71,55,147,10
     LTEXT           "&Medium:",IDC_STATIC,7,72,28,8,NOT WS_GROUP
-    CONTROL         "Static",ID_MEDIUM,"Static",SS_SIMPLE | WS_BORDER,71,70,
-                    125,13
+    COMBOBOX        ID_VARIABLE,40,71,26,107,NOT WS_VISIBLE | CBS_DROPDOWNLIST |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "",ID_MEDIUM,"SysLink",WS_BORDER,71,70,125,13
     PUSHBUTTON      "",ID_RECOVER,199,70,19,13
     CONTROL         "Fl&ippy disk",ID_SIDE,"Button",BS_AUTOCHECKBOX | 
                     WS_DISABLED | WS_TABSTOP,71,87,147,10

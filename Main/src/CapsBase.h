@@ -165,6 +165,7 @@
 			TCorrections corrections;
 			bool verifyWrittenTracks, verifyBadSectors;
 			// volatile (current session only)
+			bool userForcedMedium;
 			bool flippyDisk, userForcedFlippyDisk;
 			bool doubleTrackStep, userForcedDoubleTrackStep;
 

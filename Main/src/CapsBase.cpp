@@ -838,7 +838,7 @@ invalidTrack:
 				tmp.mediumType=bestMediumType;
 				return SetMediumTypeAndGeometry( &tmp, sideMap, firstSectorNumber );
 			}
-		}else{
+		}else if (!params.userForcedMedium || params.userForcedMedium&&pFormat->mediumType==floppyType){
 			// a particular Medium specified
 			// . determining if this is yet a non-formatted disk
 			bool blankMedium=true;
@@ -866,6 +866,8 @@ invalidTrack:
 							rit=CInternalTrack::CreateFrom( *this, trw, pFormat->mediumType );
 						}
 			// . seeing if some Sectors can be recognized in any of Tracks that usually contain the Boot Sector of implemented DOSes
+			if (params.userForcedMedium)
+				return ERROR_SUCCESS;
 			CMapWordToPtr bootCylinders; // unique Cylinders where usually the Boot Sector (or its backup) is found
 			for( POSITION pos=CDos::Known.GetHeadPosition(); pos; )
 				bootCylinders.SetAt( CDos::Known.GetNext(pos)->stdBootCylinder, nullptr );
@@ -1248,6 +1250,7 @@ invalidTrack:
 		, verifyWrittenTracks( app.GetProfileInt(iniSectionName,INI_VERIFY_WRITTEN_TRACKS,true)!=0 )
 		, verifyBadSectors( app.GetProfileInt(iniSectionName,INI_VERIFY_BAD_SECTORS,true)!=0 )
 		// - volatile (current session only)
+		, userForcedMedium(false)
 		, flippyDisk(false) , userForcedFlippyDisk(false)
 		, doubleTrackStep(false) , userForcedDoubleTrackStep(false) { // True once the ID_40D80 button in Settings dialog is pressed
 	}
@@ -1283,6 +1286,7 @@ invalidTrack:
 
 	bool CCapsBase::TParams::EditInModalDialog(CCapsBase &rcb,LPCTSTR firmware,bool initialEditing){
 		// True <=> new settings have been accepted (and adopted by this Image), otherwise False
+		static WORD AutoRecognizedMediumIds[]={ ID_MEDIUM, ID_RECOVER, 0 };
 		// - defining the Dialog
 		class CParamsDialog sealed:public Utils::CRideDialog{
 			const LPCTSTR firmware;
@@ -1309,7 +1313,7 @@ invalidTrack:
 				ShowDlgItem( ID_INFORMATION, false );
 				static constexpr WORD Interactivity[]={ ID_LATENCY, ID_NUMBER2, ID_GAP, 0 };
 				const bool fortyTrackDrive=IsDlgItemChecked(ID_DRIVE);
-				if (!EnableDlgItems( Interactivity, rcb.GetInsertedMediumType(0,currentMediumType)==ERROR_SUCCESS ))
+				if (!EnableDlgItems( Interactivity, params.userForcedMedium||rcb.GetInsertedMediumType(0,currentMediumType)==ERROR_SUCCESS ))
 					SetDlgItemText( ID_MEDIUM, _T("Not inserted") );
 				// . attempting to recognize any previous format on the floppy
 				else
@@ -1318,12 +1322,13 @@ invalidTrack:
 							if (EnableDlgItem( ID_40D80, initialEditing&&!fortyTrackDrive )){
 								const Utils::CVarTempReset<bool> dts0( rcb.params.doubleTrackStep, false );
 								const Utils::CVarTempReset<Medium::TType> ft0( rcb.floppyType, currentMediumType );
-								if (rcb.GetInsertedMediumType(1,currentMediumType)==ERROR_SUCCESS){
+								Medium::TType mt;
+								if (rcb.GetInsertedMediumType(1,mt)==ERROR_SUCCESS){
 									const CTrackTempReset rit( rcb.internalTracks[2][0] );
 									TSectorId ids[(TSector)-1];
 									ShowDlgItem( ID_INFORMATION,
 										!CheckDlgItem( ID_40D80,
-											currentMediumType==Medium::UNKNOWN // first Track is empty, so likely each odd Track is empty
+											mt==Medium::UNKNOWN // first Track is empty, so likely each odd Track is empty
 											||
 											CountSectorsBelongingToCylinder( 1, ids, rcb.ScanTrack(2,0,nullptr,ids) )>=5 // ">=N" = at least N Sectors (empirical value) from Cylinder 2 actually belong to Cylinder 1
 										)
@@ -1351,7 +1356,7 @@ invalidTrack:
 							CheckAndEnableDlgItem( ID_40D80, false, initialEditing&&!fortyTrackDrive );
 							break;
 						default:
-							SetDlgItemText( ID_MEDIUM, _T("Not formatted or faulty") );
+							SetDlgItemFormattedText( ID_MEDIUM, _T("Not formatted or faulty%c(<a>set manually</a>)"), initialEditing?' ':'\0' );
 							CheckAndEnableDlgItem( ID_SIDE, false );
 							CheckAndEnableDlgItem( ID_40D80, false, initialEditing&&!fortyTrackDrive );
 							break;
@@ -1408,7 +1413,12 @@ invalidTrack:
 				// . displaying Firmware information
 				SetDlgItemText( ID_SYSTEM, firmware );
 				// . some settings are changeable only during InitialEditing
-				static constexpr WORD InitialSettingIds[]={ ID_ROTATION, ID_ACCURACY, ID_DEFAULT1, ID_SIDE, ID_DRIVE, ID_40D80, ID_TRACK, ID_TIME, 0 };
+				PopulateComboBoxWithCompatibleMedia(
+					GetDlgItemHwnd(ID_VARIABLE),
+					Medium::ANY,
+					rcb.properties
+				);
+				static constexpr WORD InitialSettingIds[]={ ID_ROTATION, ID_ACCURACY, ID_DEFAULT1, ID_VARIABLE, ID_MEDIUM, ID_SIDE, ID_DRIVE, ID_40D80, ID_TRACK, ID_TIME, 0 };
 				EnableDlgItems( InitialSettingIds, initialEditing );
 				EnableDlgItem( ID_READABLE, params.calibrationAfterError!=TParams::TCalibrationAfterError::NONE );
 				SetDlgItemSingleCharUsingFont( // a warning that No decoder selected (archivation)
@@ -1431,6 +1441,12 @@ invalidTrack:
 					ID_INFORMATION, L'\xf0ea', warningFont
 				);
 				ConvertDlgCheckboxToHyperlink( ID_40D80 );
+				CRect rc;
+				rc.UnionRect( &MapDlgItemClientRect(ID_MEDIUM), &MapDlgItemClientRect(ID_RECOVER) );
+				SetDlgItemPos( ID_VARIABLE, rc );
+				ShowDlgItems( AutoRecognizedMediumIds, !ShowDlgItem(ID_VARIABLE,params.userForcedMedium) );
+				if (params.userForcedMedium)
+					SelectDlgComboBoxValue( ID_VARIABLE, rcb.floppyType );
 				RefreshMediumInformation();
 				// . updating write pre-compensation status
 				SetDlgItemSingleCharUsingFont( // a warning that pre-compensation not up-to-date
@@ -1475,6 +1491,12 @@ invalidTrack:
 				// . FluxDecoder
 				DDX_CBIndex( pDX, ID_ACCURACY,	params.fluxDecoder );
 				DDX_Check( pDX, ID_DEFAULT1,	params.resetFluxDecoderOnIndex );
+				// . manually set Medium
+				if (params.userForcedMedium)
+					if (pDX->m_bSaveAndValidate)
+						rcb.floppyType=(Medium::TType)GetDlgComboBoxSelectedValue(ID_VARIABLE);
+					else
+						SelectDlgComboBoxValue(ID_VARIABLE,rcb.floppyType);
 				// . CalibrationAfterError
 				tmp= isRealDevice ? params.calibrationAfterError : TParams::TCalibrationAfterError::NONE;
 				DDX_Radio( pDX,	ID_NONE,		tmp );
@@ -1519,6 +1541,10 @@ invalidTrack:
 								SendMessage( WM_COMMAND, ID_RECOVER ); // refresh information on inserted Medium
 								break;
 							}
+							case MAKELONG(ID_VARIABLE,CBN_SELCHANGE):
+								currentMediumType=(Medium::TType)GetDlgComboBoxSelectedValue(ID_VARIABLE);
+								RefreshMediumInformation();
+								break;
 							case ID_RECOVER:
 								// refreshing information on (inserted) floppy
 								if (initialEditing){ // if no Tracks are yet formatted, then resetting the flag that user has overridden these settings
@@ -1576,6 +1602,10 @@ invalidTrack:
 						break;
 					case WM_NOTIFY:
 						switch (GetClickedHyperlinkId(lParam)){
+							case ID_MEDIUM:
+								ShowDlgItems(AutoRecognizedMediumIds,false);
+								params.userForcedMedium=ShowDlgItem(ID_VARIABLE);
+								break;
 							case ID_ALIGN:
 								rcb.locker.Unlock(); // giving way to parallel thread
 						{			const Utils::CVarTempReset<bool> vwt0( params.verifyWrittenTracks, false );
@@ -1616,7 +1646,7 @@ invalidTrack:
 				: Utils::CRideDialog(IDR_CAPS_DEVICE_ACCESS)
 				, warningFont( FONT_WEBDINGS, 175, false, true )
 				, rcb(rcb) , params(rcb.params) , initialEditing(initialEditing) , firmware(firmware)
-				, currentMediumType(Medium::UNKNOWN)
+				, currentMediumType(rcb.floppyType)
 				, tmpPrecomp(rcb.precompensation) {
 			}
 		} d( rcb, firmware, initialEditing );
