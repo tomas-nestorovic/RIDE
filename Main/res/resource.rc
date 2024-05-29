@@ -360,6 +360,7 @@ BEGIN
         MENUITEM "Show sector hexa",            ID_SECTOR, GRAYED
         MENUITEM "Show sector data low-level...", ID_DATAFIELD, GRAYED
         MENUITEM SEPARATOR
+        MENUITEM "List sector IDs...",          ID_IDFIELD
         MENUITEM "Rescan",                      ID_ACCURACY, GRAYED
         MENUITEM "Mine...",                     ID_AUTO, GRAYED
     END

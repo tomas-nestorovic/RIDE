@@ -662,6 +662,12 @@
 				if (const auto tr=IMAGE->ReadTrack( chs.cylinder, chs.head ))
 					tr.ShowModal( chs.GetTrackIdDesc(scanner.params.nHeads) );
 				break;
+			case ID_IDFIELD:
+				// list Sector IDs
+				Utils::Information(
+					Utils::SimpleFormat( _T("%s sectors (chronologically):\n\n%s"), chs.GetTrackIdDesc(scanner.params.nHeads), IMAGE->ListSectors(chs.cylinder,chs.head) )
+				);
+				break;
 			case ID_ACCURACY:
 				// rescan Track
 				if (IMAGE->IsTrackDirty( chs.cylinder, chs.head )){
