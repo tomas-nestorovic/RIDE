@@ -98,7 +98,7 @@
 				::CreateWindowW(
 					WC_LINK, hyperlinkText, WS_VISIBLE|WS_CHILD|SS_CENTERIMAGE,
 					rcCurrContent.left,rcCurrContent.top, rcCurrContent.Width(),singleLineButtonHeight,
-					m_hWnd, 0, app.m_hInstance, nullptr
+					m_hWnd, (HMENU)1, app.m_hInstance, nullptr
 				),
 				buttonCaptionFont, TRUE
 			);
