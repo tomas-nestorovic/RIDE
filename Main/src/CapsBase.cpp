@@ -1632,7 +1632,7 @@ invalidTrack:
 								const CTrackTempReset rit( rcb.internalTracks[1][0] );
 								rcb.ScanTrack( 1, 0 );
 								Utils::Information(
-									CString(_T("Sectors on Track 1 (chronologically):\n")) + rcb.ListSectors(1,0)
+									CString(_T("Sectors on physical Track 1 (Cyl=1, Head=0) of assumed 80-track drive (chronologically):\n\n")) + rcb.ListSectors(1,0)
 								);
 								break;
 							}
