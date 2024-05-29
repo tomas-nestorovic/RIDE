@@ -712,7 +712,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 					if (statuses[s]==CDos::TSectorStatus::EMPTY){
 						chs.sectorId=bufferId[s];
 						if (!image->GetHealthySectorData(chs)){
-							const CString msg=Utils::SimpleFormat( _T("On Track %d, empty sector with %s is bad but is not marked so in the FAT."), chs.GetTrackNumber(vp.dos->formatBoot.nHeads), chs.sectorId.ToString() );
+							const CString msg=Utils::SimpleFormat( _T("On %s, empty sector with %s is bad but is not marked so in the FAT."), chs.GetTrackIdDesc(vp.dos->formatBoot.nHeads), chs.sectorId.ToString() );
 							switch (vp.ConfirmFix(msg,_T("Future data loss at stake if not marked so."))){
 								case IDCANCEL:
 									return vp.CancelAll();

@@ -191,9 +191,8 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 			||
 			::memcmp(rev.data,fdd->dataBuffer,length) // Data written with error
 		){
-			TCHAR buf[80];
-			::wsprintf( buf, _T("Verification failed for sector with %s on Track %d."), (LPCTSTR)id.ToString(), chs.GetTrackNumber(2) );
-			const BYTE result=Utils::AbortRetryIgnore( buf, MB_DEFBUTTON2 );
+			const CString msg=Utils::SimpleFormat( _T("Verification failed for sector with %s on %s."), id.ToString(), chs.GetTrackIdDesc(2) );
+			const BYTE result=Utils::AbortRetryIgnore( msg, MB_DEFBUTTON2 );
 			if (result==IDIGNORE)
 				dirtyRevolution=Revolution::NONE; // saved successfully if commanded to ignore any errors, otherwise the Sector remains marked Modified
 			return result;
@@ -1843,10 +1842,10 @@ autodetermineLatencies:		// automatic determination of write latency values
 			sug, _T("- Has the correct medium been set in the \"%s\" dialog?\n- For copy-protected schemes, simply retrying often helps."),
 			Utils::CRideDialog::GetDialogTemplateCaptionText( IDR_DOS_FORMAT, buf, ARRAYSIZE(buf) )
 		);
-		::wsprintf( buf, _T("Track %d verification failed for sector with %s"), chs.GetTrackNumber(2), (LPCTSTR)chs.sectorId.ToString() );
+		const CString msg=Utils::SimpleFormat( _T("%s verification failed for sector with %s"), chs.GetTrackIdDesc(2), chs.sectorId.ToString() );
 		return	cancelled
 				? IDABORT
-				: Utils::AbortRetryIgnore( buf, err, MB_DEFBUTTON2, sug );
+				: Utils::AbortRetryIgnore( msg, err, MB_DEFBUTTON2, sug );
 	}
 
 	TStdWinError CFDD::FormatToOneLongVerifiedSector(RCPhysicalAddress chs,BYTE fillerByte,const volatile bool &cancelled){

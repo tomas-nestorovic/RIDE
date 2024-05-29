@@ -173,6 +173,7 @@
 		bool operator!=(const TPhysicalAddress &chs2) const;
 		TTrack GetTrackNumber() const;
 		TTrack GetTrackNumber(THead nHeads) const;
+		CString GetTrackIdDesc(THead nHeads=0) const;
 		inline void Invalidate(){ *this=Invalid; }
 	} &RCPhysicalAddress;
 

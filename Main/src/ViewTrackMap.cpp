@@ -580,7 +580,7 @@
 				// clicked on a Track
 				if (app.IsInGodMode())
 					if (const auto tr=IMAGE->ReadTrack( chs.cylinder, chs.head ))
-						tr.ShowModal( _T("Track %d  (Cyl=%d, Head=%d)"), chs.GetTrackNumber(scanner.params.nHeads), chs.cylinder, chs.head );
+						tr.ShowModal( chs.GetTrackIdDesc(scanner.params.nHeads) );
 				break;
 			case TCursorPos::SECTOR:
 				// clicked on a Sector
@@ -647,13 +647,11 @@
 				break;
 			case ID_TRACK:{
 				// display hexa-data of Track
-				TCHAR caption[80];
-				::wsprintf( caption, _T("Track %d (Cyl %d, Head %d)"), chs.GetTrackNumber(), chs.cylinder, chs.head );
 				TSectorId ids[(TSector)-1];
 				IMAGE->ScanTrack( chs.cylinder, chs.head, nullptr, ids );
 				chs.sectorId=*ids;
 				CTdiCtrl::AddTabLast(
-					TDI_HWND, caption,
+					TDI_HWND, chs.GetTrackIdDesc(),
 					&(new CDiskBrowserView( IMAGE, chs, 0 ))->tab,
 					true, TDI_TAB_CANCLOSE_ALWAYS, CMainWindow::CTdiView::TTab::OnOptionalTabClosing
 				);
@@ -662,13 +660,12 @@
 			case ID_HEAD:
 				// display low-level Track timing
 				if (const auto tr=IMAGE->ReadTrack( chs.cylinder, chs.head ))
-					tr.ShowModal( _T("Track %d  (Cyl=%d, Head=%d)"), chs.GetTrackNumber(scanner.params.nHeads), chs.cylinder, chs.head );
+					tr.ShowModal( chs.GetTrackIdDesc(scanner.params.nHeads) );
 				break;
 			case ID_ACCURACY:
 				// rescan Track
 				if (IMAGE->IsTrackDirty( chs.cylinder, chs.head )){
-					CString msg;
-					msg.Format( _T("Track %d (Cyl=%d, Head=%d) has modifications, rescanning discards them.\n\nContinue?"), chs.GetTrackNumber(scanner.params.nHeads), chs.cylinder, chs.head );
+					const CString msg=Utils::SimpleFormat( _T("%s has modifications, rescanning discards them.\n\nContinue?"), chs.GetTrackIdDesc(scanner.params.nHeads) );
 					if (!Utils::QuestionYesNo( msg, MB_DEFBUTTON2 ))
 						break;
 				}

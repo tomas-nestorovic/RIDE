@@ -318,7 +318,7 @@
 				// ctor
 				: Utils::CRideDialog(IDR_CAPS_MINING)
 				, cb(cb) , cyl(cyl) , head(head)
-				, trackName(  Utils::SimpleFormat( _T("Track %d (Cyl %d, Head %d)"), TPhysicalAddress::GetTrackNumber(cyl,head,cb.GetHeadCount()), cyl, head )  )
+				, trackName(  Utils::SimpleFormat( _T("Track %d (Cyl=%d, Head=%d)"), TPhysicalAddress::GetTrackNumber(cyl,head,cb.GetHeadCount()), cyl, head )  )
 				, miningTarget(TARGET_NONE)
 				, headCalibration( (THeadCalibration)app.GetProfileInt( INI_MINING, INI_CALIBRATION, HEAD_DONT_CALIBRATE ) )
 				, minedTimingPen( 2, COLOR_RED )

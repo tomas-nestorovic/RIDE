@@ -89,6 +89,14 @@
 		// determines and returns the Track number based on DOS's current Format
 		return GetTrackNumber( CImage::GetActive()->GetHeadCount() );
 	}
+	CString TPhysicalAddress::GetTrackIdDesc(THead nHeads) const{
+		// returns a string identifying current Track
+		if (!nHeads)
+			nHeads=CImage::GetActive()->GetHeadCount();
+		CString desc;
+		desc.Format( _T("Track %d (Cyl=%d, Head=%d)"), GetTrackNumber(nHeads), cylinder, head );
+		return desc;
+	}
 	TTrack TPhysicalAddress::GetTrackNumber(THead nHeads) const{
 		// determines and returns the Track number based on the specified NumberOfHeads
 		return GetTrackNumber( cylinder, head, nHeads );
@@ -557,7 +565,7 @@ namespace Medium{
 				const auto &bi=peData.byteInfos[ positionInSector ];
 				return tr.ShowModal(
 					nullptr, 0, MB_OK, true, bi.tStart,
-					_T("Track %d, sector %s data timing"), chs.GetTrackNumber(), (LPCTSTR)chs.sectorId.ToString()
+					_T("%s, sector %s data timing"), (LPCTSTR)chs.GetTrackIdDesc(), (LPCTSTR)chs.sectorId.ToString()
 				);
 			}else
 				Utils::Information( msg, _T("Data field not found.") );
