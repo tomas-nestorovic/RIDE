@@ -552,35 +552,39 @@
 				do{
 					// : finding next Fuzzy interval
 					while (bit<lastBit && !(bit->fuzzy||bit->cosmeticFuzzy)) // skipping Bits that are not Fuzzy
-						bit++;
+						if (ap.Cancelled)
+							return nSectorsFound;
+						else
+							bit++;
 					if (bit==lastBit) // no more Fuzzy bits?
 						break;
-					TLogTimeInterval fuzzy( bit->time, 0 );
+					TParseEvent peFuzzy( TParseEvent::FUZZY_OK, bit->time, 0, 0 ); // "FUZZY_OK" = assumption (the fuzzy sequence occurs NOT in a Bad Sector)
 					while (bit<lastBit && (bit->fuzzy||bit->cosmeticFuzzy)) // discovering consecutive Fuzzy Bits
-						bit++;
-					fuzzy.tEnd=bit->time;
+						if (ap.Cancelled)
+							return nSectorsFound;
+						else
+							bit++;
+					peFuzzy.tEnd=bit->time;
 					// : determining the type of fuzziness
-					bool fuzzyInBadSector=false;
 					while (pePos){
+						if (ap.Cancelled)
+							return nSectorsFound;
 						const TParseEvent &pe=rOutParseEvents.GetAt(pePos);
-						if (fuzzy.tEnd<=pe.tStart)
+						if (peFuzzy.tEnd<=pe.tStart)
 							break;
 						if (pe.IsDataStd() || pe.IsCrc())
-							if (pe.Intersect(fuzzy))
-								if ( fuzzyInBadSector =	(pe.type==TParseEvent::DATA_BAD||pe.type==TParseEvent::CRC_BAD) // the fuzziness is in bad Sector data ...
-														&&
-														pe.tEnd<GetIndexTime(nFullRevolutions)-profile.iwTimeMax // ... and the data is complete (aka, it's NOT data over Index)
-								)
+							if (pe.Intersect(peFuzzy))
+								if ((pe.type==TParseEvent::DATA_BAD||pe.type==TParseEvent::CRC_BAD) // the fuzziness is in Bad Sector data ...
+									&&
+									pe.tEnd<GetIndexTime(nFullRevolutions)-profile.iwTimeMax // ... and the data is complete (aka, it's NOT data over Index)
+								){
+									peFuzzy.type=TParseEvent::FUZZY_BAD;
 									break;
+								}
 						rOutParseEvents.GetNext(pePos);
 					}
 					// : creating new FuzzyEvent
-					rOutParseEvents.AddCopyAscendingByStart(
-						TParseEvent(
-							fuzzyInBadSector ? TParseEvent::FUZZY_BAD : TParseEvent::FUZZY_OK,
-							fuzzy.tStart, fuzzy.tEnd, 0
-						)
-					);
+					rOutParseEvents.AddCopyAscendingByStart( peFuzzy );
 					apRev.UpdateProgress( bit-rev.GetBits() );
 				} while (bit<lastBit);
 			}
