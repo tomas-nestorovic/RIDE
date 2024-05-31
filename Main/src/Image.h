@@ -361,9 +361,11 @@
 				inline TParseEvent(){}
 				TParseEvent(TType type,TLogTime tStart,TLogTime tEnd,DWORD data);
 
-				inline bool IsDataStd() const{ return type==DATA_OK || type==DATA_BAD; }
-				inline bool IsDataAny() const{ return IsDataStd() || type==DATA_IN_GAP; }
-				inline bool IsCrc() const{ return type==CRC_OK || type==CRC_BAD; }
+				inline bool IsType(TParseEvent::TType typeFrom,TParseEvent::TType typeTo) const{ return typeFrom<=type && type<=typeTo; }
+				inline bool IsDataStd() const{ return IsType( DATA_OK, DATA_BAD ); }
+				inline bool IsDataAny() const{ return IsType( DATA_OK, DATA_IN_GAP ); }
+				inline bool IsCrc() const{ return IsType( CRC_OK, CRC_BAD ); }
+				inline bool IsFuzzy() const{ return IsType( FUZZY_OK, FUZZY_BAD ); }
 				CString GetDescription() const;
 			} *PCParseEvent;
 
@@ -378,11 +380,11 @@
 				} *PCByteInfo;
 
 				TSectorId sectorId; // or TSectorId::Invalid
-				TByteInfo byteInfos[1];
+				TByteInfo byteInfos[(WORD)-1]; // derive from this ParseEvent if buffer not sufficient
 
-				static void Create(TParseEvent &buffer,const TSectorId &sectorId,bool dataOk,TLogTime tStart,TLogTime tEnd,DWORD nBytes,PCByteInfo pByteInfos);
-				static void Create(TParseEvent &buffer,const TSectorId &sectorId,TParseEvent::TType type,TLogTime tStart,TLogTime tEnd,DWORD nBytes,PCByteInfo pByteInfos);
+				TDataParseEvent(const TSectorId &sectorId,TLogTime tStart);
 
+				void Finalize(TLogTime tEnd,DWORD nBytes,TType type=DATA_BAD);
 				inline bool HasByteInfo() const{ return size>sizeof(TParseEvent); }
 			} *PCDataParseEvent;
 
@@ -396,20 +398,41 @@
 				inline PCParseEvent operator->() const{ return gen; }
 			};
 
-			class CParseEventList:public Utils::CCopyList<TParseEvent>{
+			class CParseEventList:private Utils::CCopyList<TParseEvent>{
+				DWORD peTypeCounts[TParseEvent::LAST];
 			public:
-				inline POSITION AddHead(const TParseEvent &pe){ return __super::AddHead( pe, pe.size ); }
-				inline POSITION AddTail(const TParseEvent &pe){ return __super::AddTail( pe, pe.size ); }
-				inline POSITION InsertBefore(POSITION pos,const TParseEvent &pe){ return __super::InsertBefore( pos, pe, pe.size ); }
-				inline POSITION InsertAfter(POSITION pos,const TParseEvent &pe){ return __super::InsertAfter( pos, pe, pe.size ); }
-				POSITION GetPositionByStart(TLogTime tStartMin,TParseEvent::TType typeFrom=TParseEvent::NONE,TParseEvent::TType typeTo=TParseEvent::LAST,POSITION posFrom=nullptr) const;
-				POSITION GetPositionByStart(TLogTime tStartMin,TParseEvent::TType type,POSITION posFrom=nullptr) const;
-				POSITION GetPositionByEnd(TLogTime tEndMin,TParseEvent::TType typeFrom=TParseEvent::NONE,TParseEvent::TType typeTo=TParseEvent::LAST,POSITION posFrom=nullptr) const;
-				POSITION GetPositionByEnd(TLogTime tEndMin,TParseEvent::TType type,POSITION posFrom=nullptr) const;
-				bool Contains(TParseEvent::TType type) const;
+				typedef std::multimap<TLogTime,PCParseEvent> CLogTiming; // multimap to allow ParseEvents starting concurrently at the same time
+
+				typedef class CIterator:public CLogTiming::const_iterator{
+					friend class CParseEventList;
+					const CLogTiming &logTimes;
+				public:
+					CIterator(const CLogTiming &logTimes,const CLogTiming::const_iterator &it);
+
+					inline operator const TParseEvent &() const{ return *(*this)->second; }
+					inline operator bool() const{ return *this!=logTimes.cend(); }
+					inline CIterator &operator=(const CLogTiming::const_iterator &r){ return __super::operator=(r),*this; }
+				} CIteratorByStart, CIteratorByEnd;
+			private:
+				struct TBinarySearch sealed:public CLogTiming{
+					CIterator Find(TLogTime tMin,TParseEvent::TType typeFrom,TParseEvent::TType typeTo,const CIterator *pItContinue) const;
+				} logStarts, logEnds; // values may not correspond to real ParseEvent timing (hence the prefix "logical") - but the value is always AT LEAST the real Start/End
+			public:
+				CParseEventList();
+				CParseEventList(CParseEventList &r); // copy-ctor implemented as move-ctor
+
+				void Add(const TParseEvent &pe);
+				void Add(const CParseEventList &list);
+				CIterator GetIterator() const;
+				inline DWORD GetCount() const{ return logStarts.size(); }
+				inline CIteratorByStart GetFirstByStart() const{ return GetIterator(); }
+				CIteratorByStart GetLastByStart() const;
+				CIteratorByStart FindByStart(TLogTime tStartMin,TParseEvent::TType typeFrom=TParseEvent::NONE,TParseEvent::TType typeTo=TParseEvent::LAST,const CIteratorByStart *pItContinue=nullptr) const;
+				CIteratorByStart FindByStart(TLogTime tStartMin,TParseEvent::TType type,const CIteratorByStart *pItContinue=nullptr) const;
+				CIteratorByEnd FindByEnd(TLogTime tEndMin,TParseEvent::TType typeFrom=TParseEvent::NONE,TParseEvent::TType typeTo=TParseEvent::LAST,const CIteratorByEnd *pItContinue=nullptr) const;
+				CIteratorByEnd FindByEnd(TLogTime tEndMin,TParseEvent::TType type,const CIteratorByEnd *pItContinue=nullptr) const;
+				inline bool Contains(TParseEvent::TType type) const{ return peTypeCounts[type]>0; }
 				bool IntersectsWith(const TLogTimeInterval &ti) const;
-				void AddCopyAscendingByStart(const TParseEvent &pe);
-				void AddCopiesAscendingByStart(const CParseEventList &list);
 				void RemoveConsecutiveBeforeEnd(TLogTime tEndMax);
 			};
 		protected:

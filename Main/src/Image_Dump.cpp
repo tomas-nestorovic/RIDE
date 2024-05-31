@@ -265,9 +265,9 @@
 					hasNonformattedArea=peTrack.Contains( CImage::CTrackReader::TParseEvent::NONFORMATTED );
 					hasDataInGaps=peTrack.Contains( CImage::CTrackReader::TParseEvent::DATA_IN_GAP );
 					hasFuzzyData=peTrack.Contains( CImage::CTrackReader::TParseEvent::FUZZY_BAD );
-					for( POSITION pos=peTrack.GetHeadPosition(); pos; )
-						if (  pos=peTrack.GetPositionByStart( 0, CImage::CTrackReader::TParseEvent::DATA_OK, CImage::CTrackReader::TParseEvent::DATA_BAD, pos )  ){
-							const auto &peData=peTrack.GetNext(pos);
+					for( auto it=peTrack.GetIterator(); it; )
+						if (  it=peTrack.FindByStart( 0, CImage::CTrackReader::TParseEvent::DATA_OK, CImage::CTrackReader::TParseEvent::DATA_BAD, &it )  ){
+							const auto &peData=*it++->second;
 							for( BYTE i=0; i<trSrc.GetIndexCount(); i++ )
 								hasDataOverIndex|=peData.Contains( trSrc.GetIndexTime(i) );
 						}else

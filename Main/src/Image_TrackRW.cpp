@@ -365,7 +365,7 @@
 				pOutDataEnds[s]=currentTime;
 			}else
 				pOutDataEnds[s]=0;
-			rOutParseEvents.AddCopiesAscendingByStart( peSector );
+			rOutParseEvents.Add( peSector );
 		}
 		if (!fullAnalysis)
 			return nSectorsFound;
@@ -376,11 +376,11 @@
 			const TLogTime tAreaLengthMin=nCellsMin*profile.iwTimeDefault; // ignore all non-formatted areas that are shorter
 			for( TLogTime t0=RewindToIndexAndResetProfile(0),t; *this; t0=t )
 				if (( t=ReadTime() )-t0>=tAreaLengthMin)
-					for( POSITION pos=rOutParseEvents.GetHeadPosition(); pos; ){
-						const TParseEvent &pe=rOutParseEvents.GetNext(pos);
+					for( auto it=rOutParseEvents.GetIterator(); it; ){
+						const TParseEvent &pe=*it++->second;
 						if (pe.IsDataStd())
 							if (pe.Contains(t0) || pe.Contains(t)){
-								rOutParseEvents.AddCopyAscendingByStart(
+								rOutParseEvents.Add(
 									TParseEvent( TParseEvent::NONFORMATTED, t0, t-profile.iwTimeDefault, 0 )
 								);
 								break;
@@ -404,13 +404,13 @@
 			char bitPatternLength=-1; // number of valid bits in the BitPattern
 			for( WORD i=nGaps; i>0; ){
 				const auto &r=dataEnds[--i];
-				if (const POSITION pos=rOutParseEvents.GetPositionByEnd(r.time+1))
-					if (rOutParseEvents.GetAt(pos).tStart<r.time) // gap that overlaps a ParseEvent (e.g. Sector within Sector copy protection) ...
+				if (const auto it=rOutParseEvents.FindByEnd(r.time+1))
+					if (it->second->tStart<r.time) // gap that overlaps a ParseEvent (e.g. Sector within Sector copy protection) ...
 						continue; // ... is not a gap
-				const POSITION posNext=rOutParseEvents.GetPositionByStart(r.time);
-				if (!posNext)
+				const auto itNext=rOutParseEvents.FindByStart(r.time);
+				if (!itNext)
 					continue; // don't collect data in Gap4 after the last Sector (but yes, search the Gap4 after the Histogram is complete)
-				const TParseEvent &peNext=rOutParseEvents.GetAt(posNext);
+				const TParseEvent &peNext=*itNext->second;
 				SetCurrentTimeAndProfile( r.time, r.profile );
 				BYTE nBytesInspected=0;
 				for( TLogTime t=r.time; t<peNext.tStart && nBytesInspected<nBytesInspectedMax; nBytesInspected++ ){
@@ -453,18 +453,18 @@
 			if (histogram->count>0) // a gap should always consits of some Bytes, but just to be sure
 				for( WORD i=nGaps; i>0; ){
 					const auto &r=dataEnds[--i];
-					if (const POSITION pos=rOutParseEvents.GetPositionByEnd(r.time+1))
-						if (rOutParseEvents.GetAt(pos).tStart<r.time) // gap that overlaps a ParseEvent (e.g. Sector within Sector copy protection) ...
+					if (const auto it=rOutParseEvents.FindByEnd(r.time+1))
+						if (it->second->tStart<r.time) // gap that overlaps a ParseEvent (e.g. Sector within Sector copy protection) ...
 							continue; // ... is not a gap
-					const POSITION posNext=rOutParseEvents.GetPositionByStart(r.time);
-					const TLogTime tNextStart= posNext ? rOutParseEvents.GetAt(posNext).tStart : INT_MAX;
+					const auto itNext=rOutParseEvents.FindByStart(r.time);
+					const TLogTime tNextStart= itNext ? itNext->second->tStart : INT_MAX;
 					SetCurrentTimeAndProfile( r.time, r.profile );
 					const TItem &typicalItem=*histogram; // "typically" the filler Byte of post-ID Gap2, created during formatting, and thus always well aligned
 					BYTE nBytesInspected=0, nBytesTypical=0;
 					constexpr BYTE nGapBytesMax=250;
-					TDataParseEvent::TByteInfo byteInfos[nGapBytesMax];
+					TDataParseEvent peData( TSectorId::Invalid, r.time );
 					while (*this && nBytesInspected<nBytesInspectedMax){
-						TDataParseEvent::TByteInfo &rbi=byteInfos[nBytesInspected++];
+						TDataParseEvent::TByteInfo &rbi=peData.byteInfos[nBytesInspected];
 							rbi.tStart=currentTime;
 							ReadByte( bitPattern, &rbi.value );
 						if (currentTime>=tNextStart){
@@ -472,11 +472,12 @@
 							break;
 						}
 						nBytesTypical+=typicalItem.HasSameBitPatternRotated( bitPattern, bitPatternLength );
+						nBytesInspected++;
 					}
 					if (nBytesInspected-nBytesTypical>4){
 						// significant amount of other than TypicalBytes, beyond a random noise on Track
 						while (*this && nBytesInspected<nGapBytesMax){
-							TDataParseEvent::TByteInfo &rbi=byteInfos[nBytesInspected];
+							TDataParseEvent::TByteInfo &rbi=peData.byteInfos[nBytesInspected];
 								rbi.tStart=currentTime;
 								ReadByte( bitPattern, &rbi.value );
 							if (currentTime>=tNextStart
@@ -485,15 +486,11 @@
 							){
 								currentTime=rbi.tStart; // putting unsuitable Byte back
 								break; // again Typical, so probably all gap data discovered
-							}else
-								nBytesInspected++;
+							}
+							nBytesInspected++;
 						}
-						struct{
-							TDataParseEvent base;
-							BYTE buffer[2000];
-						} peData;
-						TDataParseEvent::Create( peData.base, TSectorId::Invalid, TParseEvent::DATA_IN_GAP, r.time, currentTime, nBytesInspected, byteInfos );
-						rOutParseEvents.AddCopyAscendingByStart( peData.base );
+						peData.Finalize( currentTime, nBytesInspected, TParseEvent::DATA_IN_GAP );
+						rOutParseEvents.Add( peData );
 					}
 				}
 		}
@@ -544,7 +541,7 @@
 				}
 			// . merging consecutive fuzzy bits into FuzzyEvents
 			CActionProgress apMerge=ap.CreateSubactionProgress( StepGranularity, StepGranularity );
-			POSITION pePos=rOutParseEvents.GetHeadPosition();
+			auto peIt=rOutParseEvents.GetIterator();
 			for( BYTE r=0; r<nFullRevolutions; apMerge.UpdateProgress(++r) ){
 				const CBitSequence &rev=*pRevolutionBits[r];
 				CActionProgress apRev=apMerge.CreateSubactionProgress( StepGranularity/nFullRevolutions, rev.GetBitCount() );
@@ -566,10 +563,10 @@
 							bit++;
 					peFuzzy.tEnd=bit->time;
 					// : determining the type of fuzziness
-					while (pePos){
+					while (peIt){
 						if (ap.Cancelled)
 							return nSectorsFound;
-						const TParseEvent &pe=rOutParseEvents.GetAt(pePos);
+						const TParseEvent &pe=*peIt->second;
 						if (peFuzzy.tEnd<=pe.tStart)
 							break;
 						if (pe.IsDataStd() || pe.IsCrc())
@@ -581,10 +578,10 @@
 									peFuzzy.type=TParseEvent::FUZZY_BAD;
 									break;
 								}
-						rOutParseEvents.GetNext(pePos);
+						peIt++;
 					}
 					// : creating new FuzzyEvent
-					rOutParseEvents.AddCopyAscendingByStart( peFuzzy );
+					rOutParseEvents.Add( peFuzzy );
 					apRev.UpdateProgress( bit-rev.GetBits() );
 				} while (bit<lastBit);
 			}
@@ -626,8 +623,8 @@
 		// attempts to read specified amount of Bytes into the Buffer, starting at position pointed to by the BitReader
 		CParseEventList peSector;
 		const TFdcStatus st=ReadData( id, idEndTime, idEndProfile, nBytesToRead, &peSector );
-		for( POSITION pos=peSector.GetHeadPosition(); pos; ){
-			const TParseEventPtr pe=&peSector.GetNext(pos);
+		for( auto it=peSector.GetIterator(); it; ){
+			const TParseEventPtr pe=it++->second;
 			if (pe->IsDataStd()){
 				DWORD nBytes=pe.data->dw;
 				for( auto *pbi=pe.data->byteInfos; nBytes--; *buffer++=pbi++->value );
@@ -875,103 +872,130 @@
 						sizeof(buffer.lpszMetaString); // already counted into Size
 	}
 
-	void CImage::CTrackReader::TDataParseEvent::Create(TParseEvent &buffer,const TSectorId &sectorId,bool dataOk,TLogTime tStart,TLogTime tEnd,DWORD nBytes,PCByteInfo pByteInfos){
-		Create( buffer, sectorId, dataOk?DATA_OK:DATA_BAD, tStart, tEnd, nBytes, pByteInfos );
+	CImage::CTrackReader::TDataParseEvent::TDataParseEvent(const TSectorId &sectorId,TLogTime tStart)
+		: TParseEvent( NONE, tStart, 0, 0 )
+		, sectorId(sectorId) {
 	}
 
-	void CImage::CTrackReader::TDataParseEvent::Create(TParseEvent &buffer,const TSectorId &sectorId,TParseEvent::TType type,TLogTime tStart,TLogTime tEnd,DWORD nBytes,PCByteInfo pByteInfos){
-		ASSERT( nBytes>0 && pByteInfos!=nullptr );
-		buffer=TParseEvent( type, tStart, tEnd, nBytes );
-		((TDataParseEvent &)buffer).sectorId=sectorId;
-		if (sizeof(TDataParseEvent)+nBytes*sizeof(TByteInfo)<=(decltype(buffer.size))-1){
-			::memcpy( ((TDataParseEvent *)&buffer)->byteInfos, pByteInfos, nBytes*sizeof(TByteInfo) );
-			buffer.size =	sizeof(TDataParseEvent)
-							+
-							(nBytes-1)*sizeof(TByteInfo); // "-1" = already counted into Size
-		}else // if ParseEvent Size would exceed the range, can't store information on ByteEnds
-			ASSERT(FALSE); // need to increase the Size capacity
+	void CImage::CTrackReader::TDataParseEvent::Finalize(TLogTime tEnd,DWORD nBytes,TType type){
+		ASSERT( nBytes>0 );
+		static_cast<TParseEvent &>(*this)=TParseEvent( type, tStart, tEnd, nBytes );
+		size=(PCBYTE)byteInfos-(PCBYTE)this+nBytes*sizeof(TByteInfo);
 	}
 
 
 
 
-	POSITION CImage::CTrackReader::CParseEventList::GetPositionByStart(TLogTime tStartMin,TParseEvent::TType typeFrom,TParseEvent::TType typeTo,POSITION posFrom) const{
-		if (!posFrom)
-			posFrom=GetHeadPosition();
-		while (posFrom){
-			const POSITION result=posFrom;
-			const TParseEvent &pe=GetNext(posFrom);
-			if (tStartMin<=pe.tStart && typeFrom<=pe.type&&pe.type<=typeTo)
-				return result;
+	CImage::CTrackReader::CParseEventList::CParseEventList(){
+		// shallow-copy ctor
+		::ZeroMemory( peTypeCounts, sizeof(peTypeCounts) );
+	}
+
+	CImage::CTrackReader::CParseEventList::CParseEventList(CParseEventList &r)
+		// copy-ctor implemented as move-ctor
+		: Utils::CCopyList<TParseEvent>(r)
+		, logStarts( std::move(r.logStarts) )
+		, logEnds( std::move(r.logEnds) ) {
+		::memcpy( peTypeCounts, r.peTypeCounts, sizeof(peTypeCounts) );
+	}
+
+	void CImage::CTrackReader::CParseEventList::Add(const TParseEvent &pe){
+		// adds copy of the specified ParseEvent into this List
+		// - creating a copy of the ParseEvent
+		const TParseEvent &copy=GetAt( AddTail(pe,pe.size) );
+		// - registering the ParseEvent for quick searching by Start/End time
+		logStarts.insert( std::make_pair(pe.tStart,&copy) );
+		logEnds.insert( std::make_pair(pe.tEnd,&copy) );
+		// - increasing counter
+		peTypeCounts[pe.type]++;
+	}
+
+	void CImage::CTrackReader::CParseEventList::Add(const CParseEventList &list){
+		// adds all ParseEvents to this -List
+		for( auto it=list.GetIterator(); it; )
+			Add( *it++->second );
+	}
+
+	CImage::CTrackReader::CParseEventList::CIterator::CIterator(const CLogTiming &logTimes,const CLogTiming::const_iterator &it)
+		// ctor
+		: CLogTiming::const_iterator(it)
+		, logTimes(logTimes) {
+	}
+
+	typedef CImage::CTrackReader::CParseEventList::CIterator CParseEventListIterator;
+
+	CParseEventListIterator CImage::CTrackReader::CParseEventList::GetIterator() const{
+		return CParseEventListIterator( logStarts, logStarts.cbegin() );
+	}
+
+	CParseEventListIterator CImage::CTrackReader::CParseEventList::GetLastByStart() const{
+		CParseEventListIterator it( logStarts, logStarts.cend() );
+		if (GetCount()>0)
+			it--;
+		return it;
+	}
+
+	CParseEventListIterator CImage::CTrackReader::CParseEventList::TBinarySearch::Find(TLogTime tMin,TParseEvent::TType typeFrom,TParseEvent::TType typeTo,const CIterator *pItContinue) const{
+		CParseEventListIterator it=
+			pItContinue!=nullptr
+			? *pItContinue
+			: CParseEventListIterator( *this, lower_bound(tMin) );
+		for( ; it; it++ ){
+			const TParseEvent &pe=*it->second;
+			if (tMin<=it->first && pe.IsType(typeFrom,typeTo))
+				break;
 		}
-		return nullptr;
+		return it;
 	}
 
-	POSITION CImage::CTrackReader::CParseEventList::GetPositionByStart(TLogTime tStartMin,TParseEvent::TType type,POSITION posFrom) const{
-		return	GetPositionByStart( tStartMin, type, type, posFrom);
+	CParseEventListIterator CImage::CTrackReader::CParseEventList::FindByStart(TLogTime tStartMin,TParseEvent::TType typeFrom,TParseEvent::TType typeTo,const CIteratorByStart *pItContinue) const{
+		ASSERT( !pItContinue || &pItContinue->logTimes==&logStarts ); // mustn't mix iterators
+		return	logStarts.Find( tStartMin, typeFrom, typeTo, pItContinue );
 	}
 
-	POSITION CImage::CTrackReader::CParseEventList::GetPositionByEnd(TLogTime tEndMin,TParseEvent::TType typeFrom,TParseEvent::TType typeTo,POSITION posFrom) const{
-		if (!posFrom)
-			posFrom=GetHeadPosition();
-		while (posFrom){
-			const POSITION result=posFrom;
-			const TParseEvent &pe=GetNext(posFrom);
-			if (tEndMin<=pe.tEnd && typeFrom<=pe.type&&pe.type<=typeTo)
-				return result;
-		}
-		return nullptr;
+	CParseEventListIterator CImage::CTrackReader::CParseEventList::FindByStart(TLogTime tStartMin,TParseEvent::TType type,const CIteratorByStart *pItContinue) const{
+		return	FindByStart( tStartMin, type, type, pItContinue );
 	}
 
-	POSITION CImage::CTrackReader::CParseEventList::GetPositionByEnd(TLogTime tEndMin,TParseEvent::TType type,POSITION posFrom) const{
-		return	GetPositionByEnd( tEndMin, type, type, posFrom);
+	CParseEventListIterator CImage::CTrackReader::CParseEventList::FindByEnd(TLogTime tEndMin,TParseEvent::TType typeFrom,TParseEvent::TType typeTo,const CIteratorByEnd *pItContinue) const{
+		ASSERT( !pItContinue || &pItContinue->logTimes==&logEnds ); // mustn't mix iterators
+		return	logEnds.Find( tEndMin, typeFrom, typeTo, pItContinue );
 	}
 
-	bool CImage::CTrackReader::CParseEventList::Contains(TParseEvent::TType type) const{
-		return GetPositionByStart( 0, type, type )!=nullptr;
+	CParseEventListIterator CImage::CTrackReader::CParseEventList::FindByEnd(TLogTime tEndMin,TParseEvent::TType type,const CIteratorByEnd *pItContinue) const{
+		return	FindByEnd( tEndMin, type, type, pItContinue );
 	}
 
 	bool CImage::CTrackReader::CParseEventList::IntersectsWith(const TLogTimeInterval &ti) const{
-		for( POSITION pos=GetHeadPosition(); pos; ){
-			const auto &pe=GetNext(pos);
-			if (ti.tEnd<pe.tStart) // no further matches possible as this list is ordered ascending by Start
-				break;
-			if (pe.Intersect(ti))
+		const auto itEnd=logEnds.upper_bound(ti.tStart);
+		if (itEnd!=logEnds.cend())
+			if (ti.tStart<itEnd->second->tEnd)
 				return true;
-		}
-		return false;
-	}
-
-	void CImage::CTrackReader::CParseEventList::AddCopyAscendingByStart(const TParseEvent &pe){
-		// adds specified ParseEvents to this list so that the result is ordered by Start times
-		if (const POSITION pos=GetPositionByStart( pe.tStart ))
-			InsertBefore( pos, pe );
-		else
-			AddTail(pe);
-	}
-
-	void CImage::CTrackReader::CParseEventList::AddCopiesAscendingByStart(const CParseEventList &list){
-		// adds all ParseEvents to this list, ordered by their Start times ascending (MergeSort)
-		POSITION listPos=list.GetHeadPosition();
-		for( POSITION pos=GetHeadPosition(); pos&&listPos; )
-			if ( pos=GetPositionByStart( list.GetAt(listPos).tStart, TParseEvent::NONE, TParseEvent::LAST, pos ) )
-				InsertBefore( pos, list.GetNext(listPos) );
-		while (listPos)
-			AddTail( list.GetNext(listPos) );
+		return FindByStart(ti.tStart);
 	}
 
 	void CImage::CTrackReader::CParseEventList::RemoveConsecutiveBeforeEnd(TLogTime tEndMax){
 		// removes all ParseEvents that touch or overlap just before the End time
-		POSITION pos=GetPositionByEnd(tEndMax);
-		if (pos && GetAt(pos).tEnd>tEndMax)
-			GetPrev(pos);
-		for( bool consequtive=pos!=nullptr; consequtive; ){
-			const POSITION curr=pos;
-			const auto &peCurr=GetPrev(pos);
-			const TLogTime tPrevEnd= pos!=nullptr ? GetAt(pos).tEnd : -1;
-			consequtive=peCurr.tStart<=tPrevEnd; // touching or overlapping?
-			RemoveAt(curr);
+		auto it=FindByEnd(tEndMax);
+		if (it && it->second->tEnd>tEndMax)
+			it--;
+		TLogTime tStart=tEndMax;
+		while (it){
+			const auto &pe=*(it--)->second;
+			if (tStart<=pe.tEnd){ // touching or overlapping?
+				tStart=pe.tStart;
+				peTypeCounts[pe.type]--; // adjust the -Counter
+			}else
+				break;
 		}
+		logStarts.erase(
+			FindByStart(tStart),
+			FindByStart(tEndMax)
+		);
+		logEnds.erase(
+			logEnds.upper_bound(tStart),
+			logEnds.upper_bound(tEndMax)
+		);
 	}
 
 
@@ -1091,8 +1115,8 @@
 				BYTE idFieldAm, cyl, side, sector, length;
 			} data={ idam };
 			if (pOutParseEvents){
-				pOutParseEvents->AddTail( TParseEvent( TParseEvent::SYNC_3BYTES, tSyncStarts[(iSyncStart+256-48)&63], tEventStart, 0xa1a1a1 ) );
-				pOutParseEvents->AddTail( TParseEvent( TParseEvent::MARK_1BYTE, tEventStart, currentTime, idam ) );
+				pOutParseEvents->Add( TParseEvent( TParseEvent::SYNC_3BYTES, tSyncStarts[(iSyncStart+256-48)&63], tEventStart, 0xa1a1a1 ) );
+				pOutParseEvents->Add( TParseEvent( TParseEvent::MARK_1BYTE, tEventStart, currentTime, idam ) );
 			}
 			// . reading SectorId
 			tEventStart=currentTime;
@@ -1115,7 +1139,7 @@
 					BYTE etc[80];
 				} peId;
 				TMetaStringParseEvent::Create( peId.base, tEventStart, currentTime, rid.ToString() );
-				pOutParseEvents->AddTail( peId.base );
+				pOutParseEvents->Add( peId.base );
 			}
 			// . reading and comparing ID Field's CRC
 			tEventStart=currentTime;
@@ -1128,7 +1152,7 @@
 			*pOutIdEnds++=currentTime;
 			*pOutIdProfiles++=profile;
 			if (pOutParseEvents)
-				pOutParseEvents->AddTail( TParseEvent( crcBad?TParseEvent::CRC_BAD:TParseEvent::CRC_OK, tEventStart, currentTime, crc ) );
+				pOutParseEvents->Add( TParseEvent( crcBad?TParseEvent::CRC_BAD:TParseEvent::CRC_OK, tEventStart, currentTime, crc ) );
 			// . sector found
 			nSectors++;
 		}
@@ -1153,7 +1177,7 @@
 		if (!*this) // Track end encountered
 			return TFdcStatus::NoDataField;
 		if (pOutParseEvents)
-			pOutParseEvents->AddTail( TParseEvent( TParseEvent::SYNC_3BYTES, tSyncStarts[(iSyncStart+256-48)&63], currentTime, 0xa1a1a1 ) );
+			pOutParseEvents->Add( TParseEvent( TParseEvent::SYNC_3BYTES, tSyncStarts[(iSyncStart+256-48)&63], currentTime, 0xa1a1a1 ) );
 		// - a Data Field mark should follow the synchronization
 		tEventStart=currentTime;
 		if (!ReadBits16(w)) // Track end encountered
@@ -1171,11 +1195,12 @@
 				return TFdcStatus::NoDataField; // not the expected Data mark
 		}
 		if (pOutParseEvents)
-			pOutParseEvents->AddTail( TParseEvent( TParseEvent::MARK_1BYTE, tEventStart, currentTime, dam ) );
+			pOutParseEvents->Add( TParseEvent( TParseEvent::MARK_1BYTE, tEventStart, currentTime, dam ) );
 		// - reading specified amount of Bytes into the Buffer
-		TDataParseEvent::TByteInfo byteInfos[16384], *p=byteInfos;
+		TDataParseEvent peData( sectorId, currentTime );
+		TDataParseEvent::TByteInfo *p=peData.byteInfos;
 		CFloppyImage::TCrc16 crc=CFloppyImage::GetCrc16Ccitt( MFM::CRC_A1A1A1, &dam, sizeof(dam) ); // computing actual CRC along the way
-		for( tEventStart=currentTime; *this&&nBytesToRead>0; nBytesToRead-- ){
+		for( ; *this&&nBytesToRead>0; nBytesToRead-- ){
 			p->tStart=currentTime;
 			if (!ReadBits16(w)){ // Track end encountered
 				result.ExtendWith( TFdcStatus::DataFieldCrcError );
@@ -1184,16 +1209,11 @@
 			p->value=MFM::DecodeByte(w);
 			crc=CFloppyImage::GetCrc16Ccitt( crc, &p++->value, 1 );
 		}
-		if (pOutParseEvents){
-			struct{
-				TParseEvent base;
-				BYTE etc[(WORD)-1*sizeof(TDataParseEvent::TByteInfo)];
-			} peData;
-			TDataParseEvent::Create( peData.base, sectorId, !nBytesToRead, tEventStart, currentTime, p-byteInfos, byteInfos );
-			pOutParseEvents->AddTail( peData.base );
-		}
-		if (!*this)
+		peData.Finalize( currentTime, p-peData.byteInfos );
+		if (!*this){
+			pOutParseEvents->Add( peData );
 			return result;
+		}
 		// - comparing Data Field's CRC
 		tEventStart=currentTime;
 		DWORD dw;
@@ -1201,12 +1221,15 @@
 		if (crcBad){
 			result.ExtendWith( TFdcStatus::DataFieldCrcError );
 			if (pOutParseEvents){
-				pOutParseEvents->GetTail().type=TParseEvent::DATA_BAD;
-				pOutParseEvents->AddTail( TParseEvent( TParseEvent::CRC_BAD, tEventStart, currentTime, crc ) );
+				pOutParseEvents->Add( peData );
+				pOutParseEvents->Add( TParseEvent( TParseEvent::CRC_BAD, tEventStart, currentTime, crc ) );
 			}
 		}else
-			if (pOutParseEvents)
-				pOutParseEvents->AddTail( TParseEvent( TParseEvent::CRC_OK, tEventStart, currentTime, crc ) );
+			if (pOutParseEvents){
+				peData.type=TParseEvent::DATA_OK;
+				pOutParseEvents->Add( peData );
+				pOutParseEvents->Add( TParseEvent( TParseEvent::CRC_OK, tEventStart, currentTime, crc ) );
+			}
 		return result;
 	}
 

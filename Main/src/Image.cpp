@@ -559,9 +559,9 @@ namespace Medium{
 			TLogTime tDataStart;
 			if (GetSectorData( chs, nSectorsToSkip, rev, nullptr, nullptr, &tDataStart )!=nullptr){
 				const auto peList=tr.ScanAndAnalyze( CActionProgress::None, false );
-				const auto &peData=(CTrackReader::TDataParseEvent &)peList.GetAt(
-					peList.GetPositionByStart( tDataStart, CTrackReader::TParseEvent::DATA_OK, CTrackReader::TParseEvent::DATA_BAD )
-				);
+				const auto &peData=*static_cast<const CTrackReader::TDataParseEvent *>(peList.FindByStart(
+					tDataStart, CTrackReader::TParseEvent::DATA_OK, CTrackReader::TParseEvent::DATA_BAD
+				)->second);
 				const auto &bi=peData.byteInfos[ positionInSector ];
 				return tr.ShowModal(
 					nullptr, 0, MB_OK, true, bi.tStart,

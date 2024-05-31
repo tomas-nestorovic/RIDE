@@ -157,8 +157,8 @@
 								const SIZE byteInfoSizeMin=font.GetTextSize(  label,  ::wsprintf( label, ByteInfoFormat, 'M', 255 )  );
 								const int nUnitsPerByte=Utils::LogicalUnitScaleFactor*te.timeline.GetUnitCount( CImage::GetActive()->EstimateNanosecondsPerOneByte() );
 								const enum{ BI_NONE, BI_MINIMAL, BI_FULL } showByteInfo = nUnitsPerByte>byteInfoSizeMin.cx ? BI_FULL : nUnitsPerByte>1 ? BI_MINIMAL : BI_NONE;
-								for( POSITION pos=peList.GetHeadPosition(); continuePainting&&pos; ){
-									const TParseEventPtr pe=&peList.GetNext(pos);
+								for( auto it=peList.GetIterator(); continuePainting&&it; ){
+									const TParseEventPtr pe=it++->second;
 									if (const auto ti=pe->Add(iwTimeDefaultHalf).Intersect(visible)){ // offset ParseEvent visible?
 										const int xa=te.timeline.GetUnitCount(ti.tStart)-nUnitsA, xz=te.timeline.GetUnitCount(ti.tEnd)-nUnitsA;
 										RECT rcLabel={ te.timeline.GetUnitCount(pe->tStart+iwTimeDefaultHalf)-nUnitsA, -1000, xz, -EVENT_HEIGHT-3 };
@@ -646,7 +646,7 @@
 
 			void SetParseEvents(const CImage::CTrackReader::CParseEventList &list){
 				ASSERT( parseEvents.GetCount()==0 ); // can set only once
-				parseEvents.AddCopiesAscendingByStart( list );
+				parseEvents.Add( list );
 			}
 
 			inline bool IsFeatureShown(TCursorFeatures cf) const{
@@ -848,14 +848,13 @@
 			pAction->SetProgressTarget(tr.GetTotalTime());
 			const auto &peList=te.timeEditor.GetParseEvents();
 			const TLogTime iwTimeDefaultHalf=tr.GetCurrentProfile().iwTimeDefault/2;
-			POSITION posFuzzy=nullptr;
 			for( BYTE i=1; i<tr.GetIndexCount(); i++ ){
 				TInspectionWindow *iw=iwList+te.timeEditor.GetInspectionWindow( tr.GetIndexTime(i-1) );
 				const PCInspectionWindow iwRevEnd=iwList+te.timeEditor.GetInspectionWindow( tr.GetIndexTime(i) );
 				int uid=1;
 				do{
-					posFuzzy=peList.GetPositionByEnd( iw->tEnd, CImage::CTrackReader::TParseEvent::FUZZY_OK, CImage::CTrackReader::TParseEvent::FUZZY_BAD, posFuzzy );
-					const TLogTimeInterval tiFuzzy= posFuzzy ? peList.GetAt(posFuzzy).Add(iwTimeDefaultHalf) : TLogTimeInterval::Invalid;
+					const auto it=peList.FindByEnd( iw->tEnd, CImage::CTrackReader::TParseEvent::FUZZY_OK, CImage::CTrackReader::TParseEvent::FUZZY_BAD );
+					const TLogTimeInterval tiFuzzy= it ? it->second->Add(iwTimeDefaultHalf) : TLogTimeInterval::Invalid;
 					while (iw<iwRevEnd && iw->tEnd<=tiFuzzy.tStart) // assigning InspectionWindows BEFORE the next Fuzzy event their UniqueIdentifiers
 						iw++->uid=uid++;
 					while (iw<iwRevEnd && iw->tEnd<=tiFuzzy.tEnd) // assigning InspectionWindows BEFORE the next Fuzzy event negative UniqueIdentifiers of the last non-Fuzzy InspectionWindow
@@ -912,19 +911,25 @@
 							pCmdUi->Enable( tr.GetIndexCount()>0 && timeEditor.GetCenterTime()<tr.GetIndexTime(tr.GetIndexCount()-1) );
 							return TRUE;
 						case ID_FILE_SHIFT_DOWN:
-							pCmdUi->Enable( timeEditor.GetParseEvents().GetCount()>0 && timeEditor.GetCenterTime()>timeEditor.GetParseEvents().GetHead().tStart );
+							if (const auto it=timeEditor.GetParseEvents().GetFirstByStart())
+								pCmdUi->Enable( it->second->tStart<timeEditor.GetCenterTime() );
+							else
+								pCmdUi->Enable( FALSE );
 							return TRUE;
 						case ID_FILE_SHIFT_UP:
-							pCmdUi->Enable( timeEditor.GetParseEvents().GetCount()>0 && timeEditor.GetCenterTime()<timeEditor.GetParseEvents().GetTail().tStart );
+							if (const auto it=timeEditor.GetParseEvents().GetLastByStart())
+								pCmdUi->Enable( timeEditor.GetCenterTime()<it->second->tStart );
+							else
+								pCmdUi->Enable( FALSE );
 							return TRUE;
 						case ID_PREV_PANE:
-							if (const POSITION pos=timeEditor.GetParseEvents().GetPositionByStart(0,TParseEvent::FUZZY_OK,TParseEvent::FUZZY_BAD))
-								pCmdUi->Enable( timeEditor.GetParseEvents().GetAt(pos).tStart<timeEditor.GetCenterTime() );
+							if (const auto it=timeEditor.GetParseEvents().FindByStart(0,TParseEvent::FUZZY_OK,TParseEvent::FUZZY_BAD))
+								pCmdUi->Enable( it->second->tStart<timeEditor.GetCenterTime() );
 							else
 								pCmdUi->Enable( FALSE );
 							return TRUE;						
 						case ID_NEXT_PANE:
-							pCmdUi->Enable( timeEditor.GetParseEvents().GetPositionByStart(timeEditor.GetCenterTime()+1,TParseEvent::FUZZY_OK,TParseEvent::FUZZY_BAD)!=nullptr );
+							pCmdUi->Enable( timeEditor.GetParseEvents().FindByStart(timeEditor.GetCenterTime()+1,TParseEvent::FUZZY_OK,TParseEvent::FUZZY_BAD) );
 							return TRUE;
 						case ID_RECORD_PREV:
 							pCmdUi->Enable( timeEditor.pRegions && timeEditor.GetCenterTime()>timeEditor.pRegions->tStart );
@@ -1162,45 +1167,28 @@
 								timeEditor.SetCenterTime( tr.GetIndexTime(i) );
 							return TRUE;
 						}
-						case ID_FILE_SHIFT_DOWN:{
-							const auto &peList=timeEditor.GetParseEvents();
-							const TLogTime tCenter=timeEditor.GetCenterTime();
-							PCParseEvent pe=nullptr;
-							for( POSITION pos=peList.GetHeadPosition(); pos; pe=&peList.GetNext(pos) )
-								if (tCenter<=peList.GetAt(pos).tStart)
-									break;
-							if (pe)
-								timeEditor.SetCenterTime( pe->tStart );
+						case ID_FILE_SHIFT_DOWN:
+							timeEditor.SetCenterTime(
+								(--timeEditor.GetParseEvents().FindByStart( timeEditor.GetCenterTime() ))->second->tStart
+							);
 							return TRUE;
-						}
-						case ID_FILE_SHIFT_UP:{
-							const auto &peList=timeEditor.GetParseEvents();
-							const TLogTime tCenter=timeEditor.GetCenterTime();
-							for( POSITION pos=peList.GetHeadPosition(); pos; ){
-								const TParseEvent &pe=peList.GetNext(pos);
-								if (tCenter<pe.tStart){
-									timeEditor.SetCenterTime( pe.tStart );
-									break;
-								}
-							}
+						case ID_FILE_SHIFT_UP:
+							timeEditor.SetCenterTime(
+								timeEditor.GetParseEvents().FindByStart( timeEditor.GetCenterTime()+1 )->second->tStart
+							);
 							return TRUE;
-						}
 						case ID_PREV_PANE:{
-							const TLogTime tCurrent=timeEditor.GetCenterTime();
-							const auto &peList=timeEditor.GetParseEvents();
-							TLogTime tPrev=-1;
-							for( POSITION pos=peList.GetHeadPosition(); pos=peList.GetPositionByStart(tPrev+1,TParseEvent::FUZZY_OK,TParseEvent::FUZZY_BAD,pos); )
-								if (peList.GetAt(pos).tStart<tCurrent)
-									tPrev=peList.GetAt(pos).tStart;
-								else
-									break;
-							if (tPrev>=0)
-								timeEditor.SetCenterTime( tPrev );
+							auto it=timeEditor.GetParseEvents().FindByStart(timeEditor.GetCenterTime());
+							do{
+								it--;
+							}while (!it->second->IsFuzzy());
+							timeEditor.SetCenterTime( it->second->tStart );
 							return TRUE;
 						}
 						case ID_NEXT_PANE:
-							if (const POSITION pos=timeEditor.GetParseEvents().GetPositionByStart(timeEditor.GetCenterTime()+1,TParseEvent::FUZZY_OK,TParseEvent::FUZZY_BAD))
-								timeEditor.SetCenterTime( timeEditor.GetParseEvents().GetAt(pos).tStart );
+							timeEditor.SetCenterTime(
+								timeEditor.GetParseEvents().FindByStart( timeEditor.GetCenterTime()+1, TParseEvent::FUZZY_OK, TParseEvent::FUZZY_BAD )->second->tStart
+							);
 							return TRUE;
 						case ID_RECORD_PREV:{
 							WORD i=0;
@@ -1368,8 +1356,8 @@
 										logFont.lfOrientation = logFont.lfEscapement=900; // in tenths of degrees (a tweak to draw vertically oriented text without world transformation)
 										const HGDIOBJ hFont0=::SelectObject( p.dc, ::CreateFontIndirect(&logFont) );
 											const HGDIOBJ hBrush0=::SelectObject( p.dc, ::GetStockObject(NULL_BRUSH) );
-												for( POSITION pos=peList.GetHeadPosition(); pos; ){
-													const TParseEvent &pe=peList.GetNext(pos);
+												for( auto it=peList.GetIterator(); it; ){
+													const TParseEvent &pe=*it++->second;
 													EXCLUSIVELY_LOCK(p);
 													if (p.drawingId!=id)
 														break;
