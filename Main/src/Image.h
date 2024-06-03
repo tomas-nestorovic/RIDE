@@ -144,6 +144,9 @@
 	typedef struct TSectorId sealed{
 		static const TSectorId Invalid;
 
+		static TSector CountAppearances(const TSectorId *ids,TSector nIds,const TSectorId &id);
+		static CString List(const TSectorId *ids,TSector nIds);
+
 		TCylinder cylinder;
 		TSide side;
 		TSector sector;

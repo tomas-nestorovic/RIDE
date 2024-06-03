@@ -273,13 +273,9 @@
 						}else
 							break;
 				}
-				for( TSector i=0; i<nSectors; i++ ){
-					BYTE nReappearances=0;
-					const TSectorId &id=bufferId[i];
-					for( BYTE j=i; ++j<nSectors; nReappearances+=bufferId[j]==id );
-					if ( hasDuplicatedIdFields=nReappearances>0 )
+				for( TSector i=0; i<nSectors; i++ )
+					if ( hasDuplicatedIdFields=TSectorId::CountAppearances(bufferId,i,bufferId[i])>0 )
 						break;
-				}
 				if (p.chs.cylinder<dp.dos->formatBoot.nCylinders // reporing a missing official Sector makes sense only in official part of the disk
 					&&
 					dp.dos->IsKnown() // must understand the disk structure to decide on "official part"
@@ -452,7 +448,7 @@
 								else
 									p+=::lstrlen(::lstrcpy(p,NO_STATUS_ERROR));
 								const CString sectorList=dp.source->ListSectors( rp.chs.cylinder, rp.chs.head );
-								p+=::wsprintf( p, _T("\r\nAll sectors on this track (chronologically):\r\n%s\r\n"), (LPCTSTR)sectorList );
+								p+=::wsprintf( p, _T("\r\nAll sectors on this track:\r\n%s\r\n"), (LPCTSTR)sectorList );
 								errorTextBox.SetWindowText( buf );
 								// > converting the "Accept" button to a SplitButton
 								static constexpr Utils::TSplitButtonAction Actions[]={

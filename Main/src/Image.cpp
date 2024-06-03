@@ -37,6 +37,33 @@
 
 	const TSectorId TSectorId::Invalid={ -1, -1, -1, -1 };
 	
+	TSector TSectorId::CountAppearances(const TSectorId *ids,TSector nIds,const TSectorId &id){
+		// returns the # of appearances of specified ID
+		TSector nAppearances=0;
+		while (nIds--)
+			nAppearances+=*ids++==id;
+		return nAppearances;
+	}
+
+	CString TSectorId::List(PCSectorId ids,TSector nIds){
+		// creates and returns a List of Sector IDs in order as provided
+		if (!nIds)
+			return _T("- [none]\r\n");
+		CString list;
+		list.Format( _T("- [%d sectors, chronologically]\r\n"), nIds );
+		for( TSector i=0; i<nIds; i++ ){
+			TCHAR duplicateId[8];
+			if (const TSector nDuplicates=CountAppearances( ids, i, ids[i] ))
+				::wsprintf( duplicateId, _T(" (%d)"), nDuplicates+1 );
+			else
+				*duplicateId='\0';
+			CString tmp;
+			tmp.Format( _T("- %s%s\r\n"), ids[i].ToString(), duplicateId );
+			list+=tmp;
+		}
+		return list;
+	}
+
 	bool TSectorId::operator==(const TSectorId &id2) const{
 		// True <=> Sector IDs are equal, otherwise False
 		return	cylinder==id2.cylinder
@@ -770,13 +797,8 @@ namespace Medium{
 
 	CString CImage::ListSectors(TCylinder cyl,THead head) const{
 		// creates and returns a List of current Sector IDs as they chronologically appear on the specified Track
-		CString list;
 		TSectorId ids[(TSector)-1];
-		for( TSector i=0,const n=ScanTrack(cyl,head,nullptr,ids); i<n; i++ )
-			list+=_T("- ")+ids[i].ToString()+_T("\r\n");
-		if (list.IsEmpty())
-			list=_T("- [none]");
-		return list;
+		return TSectorId::List( ids, ScanTrack(cyl,head,nullptr,ids) );
 	}
 
 	bool CImage::IsTrackDirty(TCylinder cyl,THead head) const{

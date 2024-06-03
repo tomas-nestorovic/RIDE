@@ -665,7 +665,7 @@
 			case ID_IDFIELD:
 				// list Sector IDs
 				Utils::Information(
-					Utils::SimpleFormat( _T("%s sectors (chronologically):\n\n%s"), chs.GetTrackIdDesc(scanner.params.nHeads), IMAGE->ListSectors(chs.cylinder,chs.head) )
+					Utils::SimpleFormat( _T("%s sectors:\n\n%s"), chs.GetTrackIdDesc(scanner.params.nHeads), IMAGE->ListSectors(chs.cylinder,chs.head) )
 				);
 				break;
 			case ID_ACCURACY:
