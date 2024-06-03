@@ -977,9 +977,11 @@
 	void CImage::CTrackReader::CParseEventList::RemoveConsecutiveBeforeEnd(TLogTime tEndMax){
 		// removes all ParseEvents that touch or overlap just before the End time
 		auto it=FindByEnd(tEndMax);
-		if (it && it->second->tEnd>tEndMax)
+		while (it && it->second->tEnd>tEndMax) // 'while' for Event having the same EndTime
 			it--;
-		TLogTime tStart=tEndMax;
+		if (!it)
+			return;
+		TLogTime tStart = tEndMax = it->second->tEnd;
 		while (it){
 			const auto &pe=*(it--)->second;
 			if (tStart<=pe.tEnd){ // touching or overlapping?
@@ -1209,9 +1211,11 @@
 			p->value=MFM::DecodeByte(w);
 			crc=CFloppyImage::GetCrc16Ccitt( crc, &p++->value, 1 );
 		}
-		peData.Finalize( currentTime, p-peData.byteInfos );
+		const auto nDataBytes=p-peData.byteInfos;
+		peData.Finalize( currentTime, nDataBytes );
 		if (!*this){
-			pOutParseEvents->Add( peData );
+			if (pOutParseEvents && nDataBytes)
+				pOutParseEvents->Add( peData );
 			return result;
 		}
 		// - comparing Data Field's CRC
