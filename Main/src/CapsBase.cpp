@@ -405,6 +405,8 @@
 			currRev.fdcStatus.ExtendWith( TFdcStatus::NoDataField );
 		else if (!currRev.data){ // data not yet buffered
 			// at least Sector's ID Field found in specified Revolution
+			if (currRev.fdcStatus.DescribesMissingDam()) // known from before that data don't exist?
+				return;
 			const WORD sectorOfficialLength=ris.GetOfficialSectorLength();
 			BYTE buffer[16384]; // big enough to contain the longest possible Sector
 			currRev.fdcStatus.ExtendWith(
