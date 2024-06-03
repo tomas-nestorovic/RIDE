@@ -97,6 +97,7 @@
 				cbx.Detach();
 				if (const auto savedValue=app.GetProfileInt( INI_MINING, INI_TARGET, TARGET_NONE ))
 					SelectDlgComboBoxValue( ID_ACCURACY, savedValue, false );
+				SetDlgItemSingleCharUsingFont( ID_SECTOR, 0xf09d, FONT_WEBDINGS, 120 );
 				// . populating the "Mining approach" combo-box
 				cbx.Attach( GetDlgItemHwnd(ID_CREATOR) );
 					if (cb.properties->IsRealDevice())
@@ -232,6 +233,17 @@
 							// a significant error
 							Utils::FatalError( _T("Can't continue mining"), lParam );
 						return TRUE;
+					case ID_SECTOR:{
+						// message about the MiningTarget
+						miningTarget=(TMiningTarget)GetDlgComboBoxSelectedValue(ID_ACCURACY);
+						CString msg=_T("Target sectors:\n\n");
+						if (miningTarget&TARGET_ALL_STD_SECTORS_PRESENT)
+							msg+=cb.dos->ListStdSectors( cyl, head );
+						else if (miningTarget&TARGET_ALL_CURRENT_SECTORS_PRESENT)
+							msg+=cb.ListSectors( cyl, head );
+						Utils::Information(msg);
+						return TRUE;
+					}
 				}
 				return __super::OnCommand(wParam,lParam);
 			}

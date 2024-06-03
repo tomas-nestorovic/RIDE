@@ -442,6 +442,7 @@
 		// other
 		bool IsKnown() const;
 		TSector GetListOfStdSectors(TCylinder cyl,THead head,PSectorId bufferId) const;
+		CString ListStdSectors(TCylinder cyl,THead head) const;
 		virtual TStdWinError CreateUserInterface(HWND hTdi);
 		virtual enum TCmdResult:BYTE{
 					REFUSED	=0,	// not carried out (e.g. because cannot)

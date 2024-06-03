@@ -140,6 +140,12 @@ reportError:Utils::Information(buf);
 		return formatBoot.nSectors;
 	}
 
+	CString CDos::ListStdSectors(TCylinder cyl,THead head) const{
+		// creates and returns a List of standard DOS Sector IDs
+		TSectorId ids[(TSector)-1];
+		return TSectorId::List( ids, GetListOfStdSectors(cyl,head,ids) );
+	}
+
 	TStdWinError CDos::IsTrackEmpty(TCylinder cyl,THead head,TSector nSectors,PCSectorId sectors) const{
 		// returns ERROR_EMPTY/ERROR_NOT_EMPTY or another Windows standard i/o error
 		TSectorStatus statuses[(TSector)-1],*ps=statuses;
