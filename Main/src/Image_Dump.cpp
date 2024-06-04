@@ -620,6 +620,7 @@
 													}
 												} d(this,dp.dos,rp,rFdcStatus);
 												// : showing the Dialog and processing its result
+												const Utils::CVarTempReset<bool> tempDisabledBeeping( Utils::CRideDialog::BeepWhenShowed, false );
 												if (d.DoModal()==IDOK){
 													switch (d.idFieldRecoveryType){
 														case 2:
@@ -647,14 +648,16 @@
 												}
 												break;
 											}
-											case ID_TIME:
+											case ID_TIME:{
 												// Track mining
+												const Utils::CVarTempReset<bool> tempDisabledBeeping( Utils::CRideDialog::BeepWhenShowed, false );
 												if (ERROR_SUCCESS==dp.source->MineTrack( rp.chs.cylinder, rp.chs.head )){
 													UpdateData(TRUE);
 													rp.trackScanned=false;
 													EndDialog(IDRETRY);
 												}
 												return 0;
+											}
 											case RESOLVE_EXCLUDE_UNKNOWN:
 												// exclusion of this and all future Unknown Sectors from the disk
 												rp.exclusion.allUnknown=true;
