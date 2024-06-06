@@ -1031,6 +1031,8 @@ setDestination:						// : compacting FileName in order to be better displayable 
 											dos->formatBoot.mediumType,
 											targetImageProperties
 										);
+									// : can change Medium only when Source has no explicit Track timing
+									EnableDlgItem( ID_MEDIUM, dos->image->WriteTrack(0,0,CImage::CTrackReaderWriter::Invalid)==ERROR_NOT_SUPPORTED );
 									// : preselection of current MediumType (if any recognized)
 									Medium::TType mt=Medium::UNKNOWN; // assumption (Medium not recognized)
 									dos->image->GetInsertedMediumType( 0, mt );
@@ -1054,6 +1056,8 @@ setDestination:						// : compacting FileName in order to be better displayable 
 									dos->properties->supportedCodecs,
 									mt!=Medium::UNKNOWN ? targetImageProperties : nullptr
 								);
+								// : can change Codec only when Source has no explicit Track timing
+								EnableDlgItem( ID_CODEC, dos->image->WriteTrack(0,0,CImage::CTrackReaderWriter::Invalid)==ERROR_NOT_SUPPORTED );
 								// : enabling/disabling controls
 								static constexpr WORD Controls[]={ ID_CYLINDER, ID_CYLINDER_N, ID_HEAD, ID_GAP, ID_NUMBER, ID_DEFAULT1, IDOK, 0 };
 								CheckAndEnableDlgItem(
