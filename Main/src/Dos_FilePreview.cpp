@@ -204,7 +204,7 @@
 							);
 					Utils::SubclassWindow( m_hWnd, wndProc0 );
 				}else
-					SetWindowText(caption);
+					return __super::WindowProc( msg, 0, (LPARAM)caption );
 				return 0;
 			case WM_SIZE:
 				// window size changed

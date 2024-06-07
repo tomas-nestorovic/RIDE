@@ -1266,7 +1266,7 @@ reportError:Utils::Information(buf);
 	CDos::TDirectoryTraversal::TDirectoryTraversal(PCFile directory,WORD entrySize)
 		// ctor
 		: directory(directory) , entrySize(entrySize)
-		, entryType(TDirectoryTraversal::UNKNOWN) {
+		, entry(nullptr) , entryType(TDirectoryTraversal::UNKNOWN) {
 	}
 
 	CDos::PFile CDos::TDirectoryTraversal::AllocateNewEntry(){
