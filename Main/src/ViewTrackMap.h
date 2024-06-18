@@ -38,6 +38,7 @@
 				CCriticalSection locker;
 				THead nHeads; // 0 = terminate the Scanner
 				TTrack a,z,x; // first, last, and currect Track to scan; it holds: A <= X < Z
+				bool skipUnscannedTracks; // True <=> display only Tracks scanned thus far, otherwise scan all Tracks
 			} params;
 			CEvent scanNextTrack;
 			TTrackScanner(const CTrackMapView *pvtm); // ctor
@@ -77,6 +78,8 @@
 			afx_msg void __zoomFitWidth_updateUI__(CCmdUI *pCmdUI);
 		afx_msg void ShowSelectedFiles();
 			afx_msg void __showSelectedFiles_updateUI__(CCmdUI *pCmdUI);
+		afx_msg void TogglePaused();
+			afx_msg void TogglePaused_updateUI(CCmdUI *pCmdUI);
 		afx_msg void ChangeFileSelectionColor();
 		afx_msg void ShowDiskStatistics();
 	public:

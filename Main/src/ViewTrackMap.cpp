@@ -40,6 +40,7 @@
 		// ctor
 		: action( Thread, pvtm, THREAD_PRIORITY_IDLE ) {
 		params.nHeads=-1; // Head count undetermined yet
+		params.skipUnscannedTracks=false; // display all Tracks
 	}
 
 	#define WM_TRACK_SCANNED	WM_USER+1
@@ -69,6 +70,8 @@
 			ON_UPDATE_COMMAND_UI(ID_ZOOM_FIT,__zoomFitWidth_updateUI__)
 		ON_COMMAND(ID_FILE,ShowSelectedFiles)
 			ON_UPDATE_COMMAND_UI(ID_FILE,__showSelectedFiles_updateUI__)
+		ON_COMMAND(ID_SEEK,TogglePaused)
+			ON_UPDATE_COMMAND_UI(ID_SEEK,TogglePaused_updateUI)
 		ON_COMMAND(ID_COLOR,ChangeFileSelectionColor)
 		ON_COMMAND(ID_TRACKMAP_STATISTICS,ShowDiskStatistics)
 		ON_COMMAND(ID_REFRESH,RefreshDisplay)
@@ -224,14 +227,16 @@
 			rts.scanNextTrack.Lock();
 			// . getting the TrackNumber to scan
 			TTrackInfo tmp;
-			TTrack trackNumber;
 	{		EXCLUSIVELY_LOCK(rts.params);
 			const THead nHeads=rts.params.nHeads;
 			if (nHeads==0) // "nHeads==0" if disk without any Track (e.g. when opening RawImage of zero length, or if opening a corrupted DSK Image)
 				break;
-			trackNumber=rts.params.x;
-			const div_t d=div(trackNumber,nHeads);
-			tmp.cylinder=d.quot, tmp.head=d.rem; // syncing with Params due to comparison in drawing routine
+			do{
+				const div_t d=div( ++rts.params.x, nHeads );
+				tmp.cylinder=d.quot, tmp.head=d.rem; // syncing with Params due to comparison in drawing routine
+			}while (rts.params.x<rts.params.z && rts.params.skipUnscannedTracks && !image->IsTrackScanned(tmp.cylinder,tmp.head));
+			if (rts.params.x==rts.params.z) // everything painted?
+				continue; // wait until again something changes
 	}		// . scanning the Track to draw its Sector Statuses
 			PREVENT_FROM_DESTRUCTION(*image);
 			if (!::IsWindow(pvtm->m_hWnd)) // TrackMap may not exist if, for instance, switched to another view while still scanning some Track(s)
@@ -250,9 +255,6 @@
 						tmp.bufferSectorData[n]=nullptr;
 			}
 			// . sending scanned information for drawing
-			EXCLUSIVELY_LOCK(rts.params);
-			if (trackNumber!=rts.params.x) // did anything change since we last owned the Params?
-				continue;
 			if (::IsWindow(pvtm->m_hWnd)) // TrackMap may not exist if, for instance, switched to another view while still scanning some Track(s)
 				pvtm->PostMessage( WM_TRACK_SCANNED, 0, (LPARAM)::memcpy(&ti,&tmp,sizeof(tmp)) );
 		}
@@ -413,12 +415,10 @@
 						}
 					::DeleteObject( ::SelectObject(dc,hPen0) );
 				}
-			// . next Track
-			EXCLUSIVELY_LOCK(scanner.params);
-				scanner.params.x++;
 		}
 		// - if not all requested Tracks scanned yet, proceeding with scanning the next Track
-		if (scanner.params.x<scanner.params.z)
+		EXCLUSIVELY_LOCK(scanner.params);
+		if (expectedTrackReceived && scanner.params.x<scanner.params.z)
 			scanner.scanNextTrack.SetEvent();
 		return 0;
 	}
@@ -448,7 +448,7 @@
 		EXCLUSIVELY_LOCK(scanner.params);
 			scanner.params.a=std::max( 0, (iScrollY-TRACK0_Y)/TRACK_HEIGHT );
 			scanner.params.z=std::min<LONG>( nTracks, std::max( 0L, Utils::RoundDivUp<LONG>(iScrollY+r.Height()/Utils::LogicalUnitScaleFactor-TRACK0_Y,TRACK_HEIGHT) ) );
-			scanner.params.x=scanner.params.a;
+			scanner.params.x=scanner.params.a-1; // "-1" = see "++x" in scanner Thread
 		// - launching the Scanner of Tracks
 		scanner.scanNextTrack.SetEvent();
 	}
@@ -531,6 +531,8 @@
 			const TTrack track=point.y/TRACK_HEIGHT;
 			const div_t d=div( track, scanner.params.nHeads );
 			rOutChs.cylinder=d.quot, rOutChs.head=d.rem;
+			if (scanner.params.skipUnscannedTracks && !IMAGE->IsTrackScanned(d.quot,d.rem))
+				return TCursorPos::NONE;
 			if (point.x<SECTOR1_X) // in "Cylinder" or "Head" columns?
 				return TCursorPos::TRACK;
 			TSectorId bufferId[(TSector)-1];
@@ -569,7 +571,10 @@
 		if (cursorOverSector)
 			// cursor over a Sector
 			::wsprintf( p, _T("Tr%d, %s: %s"), chs.GetTrackNumber(scanner.params.nHeads), (LPCTSTR)chs.sectorId.ToString(), DOS->GetSectorStatusText(chs) );
-		CMainWindow::__setStatusBarText__(buf);
+		if (*buf || !scanner.params.skipUnscannedTracks)
+			CMainWindow::__setStatusBarText__(buf);
+		else
+			CMainWindow::__setStatusBarText__( _T("SCANNER PAUSED!") );
 	}
 
 	afx_msg void CTrackMapView::OnLButtonUp(UINT nFlags,CPoint point){
@@ -807,6 +812,28 @@
 	afx_msg void CTrackMapView::__showSelectedFiles_updateUI__(CCmdUI *pCmdUI){
 		pCmdUI->SetCheck( showSelectedFiles );
 		pCmdUI->Enable( DOS->pFileManager!=nullptr ? DOS->pFileManager->GetCountOfSelectedFiles()>0 : false );
+	}
+
+	afx_msg void CTrackMapView::TogglePaused(){
+		auto &p=scanner.params;
+		EXCLUSIVELY_LOCK(p);
+		if (p.skipUnscannedTracks){
+			p.skipUnscannedTracks=false;
+			for( p.x=p.a; p.x<p.z; p.x++ ){
+				const auto d=div( p.x, p.nHeads );
+				if (!IMAGE->IsTrackScanned( d.quot, d.rem ))
+					break;
+			}
+			p.x=p.a-1; // "-1" = see "++x" in scanner Thread
+			scanner.scanNextTrack.SetEvent();
+			ResetStatusBarMessage();
+		}else{
+			p.skipUnscannedTracks=true;
+			CMainWindow::__setStatusBarText__( _T("SCANNER PAUSED!") );
+		}
+	}
+	afx_msg void CTrackMapView::TogglePaused_updateUI(CCmdUI *pCmdUI){
+		pCmdUI->SetCheck( scanner.params.skipUnscannedTracks );
 	}
 
 	afx_msg void CTrackMapView::ChangeFileSelectionColor(){

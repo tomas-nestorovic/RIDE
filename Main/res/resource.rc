@@ -171,6 +171,7 @@ BEGIN
     "3",            ID_TRACKMAP_BAD_DATA,   VIRTKEY, CONTROL, NOINVERT
     "E",            ID_FILE,                VIRTKEY, CONTROL, NOINVERT
     VK_F5,          ID_REFRESH,             VIRTKEY, NOINVERT
+    VK_PAUSE,       ID_SEEK,                VIRTKEY, NOINVERT
 END
 
 IDR_TRACK_EDITOR ACCELERATORS DISCARDABLE 
@@ -346,6 +347,7 @@ BEGIN
             , GRAYED
         END
         MENUITEM SEPARATOR
+        MENUITEM "Pause scanning\tPause",       ID_SEEK
         MENUITEM "Refresh\tF5",                 ID_REFRESH
     END
 END
@@ -921,6 +923,8 @@ BEGIN
     BUTTON      ID_ZOOM_OUT
     BUTTON      ID_ZOOM_IN
     BUTTON      ID_ZOOM_FIT
+    SEPARATOR
+    BUTTON      ID_SEEK
 END
 
 IDR_FILEMANAGER TOOLBAR DISCARDABLE  16, 16
