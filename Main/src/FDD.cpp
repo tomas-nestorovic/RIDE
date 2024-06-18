@@ -1466,11 +1466,10 @@ Utils::Information(buf);}
 				lp.fdd->UnformatInternalTrack(lp.cylinder,lp.head); // disposing internal information on actual Track format
 				const TInternalTrack *const pit=lp.fdd->__scanTrack__(lp.cylinder,lp.head);
 				// : STEP 2.2: reading the first formatted Sector
-				WORD w;
-				lp.fdd->GetHealthySectorData( lp.cylinder, lp.head, &SectorIds[0], &w );
+				lp.fdd->GetHealthySectorData( lp.cylinder, lp.head, &SectorIds[0] );
 				// : STEP 2.3: Reading the second formatted Sector and measuring how long the reading took
 				const Utils::CRideTime startTime;
-					lp.fdd->GetHealthySectorData( lp.cylinder, lp.head, &SectorIds[1], &w );
+					lp.fdd->GetHealthySectorData( lp.cylinder, lp.head, &SectorIds[1] );
 				const Utils::CRideTime endTime;
 				const TLogTime deltaNanoseconds=TIME_MILLI( (endTime-startTime).ToMilliseconds() );
 				// . STEP 2.4: determining if the readings took more than just one disk revolution or more

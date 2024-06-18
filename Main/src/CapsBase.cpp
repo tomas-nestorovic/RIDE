@@ -590,9 +590,7 @@
 						const TPhysicalAddress chs={ cyl, head, is.id };
 						if (dos->GetSectorStatus(chs)==CDos::TSectorStatus::UNKNOWN)
 							continue; // ignore Unknown Sector
-						TFdcStatus st=TFdcStatus::WithoutError;
-						const_cast<CCapsBase *>(this)->GetSectorData( chs, s, Revolution::ANY_GOOD, nullptr, &st );
-						if ( knownSectorBad=!st.IsWithoutError() )
+						if ( knownSectorBad=!const_cast<CCapsBase *>(this)->GetHealthySectorData(chs,nullptr,s) )
 							break;
 					}
 					if (!knownSectorBad)

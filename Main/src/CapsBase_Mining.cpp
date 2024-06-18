@@ -280,11 +280,8 @@
 						if (d.miningTarget&TARGET_FLAG_HEALTHY)
 							::memset( mustBeHealthy, true, n );
 						else
-							for( TSector i=0; i<n; i++ ){
-								TFdcStatus st;
-								d.cb.GetSectorData( d.cyl, d.head, Revolution::ANY_GOOD, list+i, i, nullptr, &st );
-								mustBeHealthy[i]=st.IsWithoutError();
-							}
+							for( TSector i=0; i<n; i++ )
+								mustBeHealthy[i]=d.cb.GetHealthySectorData( d.cyl, d.head, list+i, nullptr, i );
 					}
 				} searchedSectors(d);
 				if (!searchedSectors.n)
@@ -309,9 +306,9 @@
 					d.ShowScatterPlotOfTrack( *rit );
 					// . evaluating the Track against the MiningTarget
 					TSector i=0;
-					for( TFdcStatus st; i<searchedSectors.n; i++ ){
-						d.cb.GetSectorData( d.cyl, d.head, Revolution::ANY_GOOD, searchedSectors.list+i, i, nullptr, &st );
-						if (st.IsWithoutError()<searchedSectors.mustBeHealthy[i])
+					for( ; i<searchedSectors.n; i++ ){
+						const bool isHealthy=d.cb.GetHealthySectorData( d.cyl, d.head, searchedSectors.list+i, nullptr, i );
+						if (isHealthy<searchedSectors.mustBeHealthy[i])
 							break;
 					}
 					if (i<searchedSectors.n) // some Sectors not healthy or missing?
