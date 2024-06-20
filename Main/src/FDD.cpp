@@ -135,7 +135,7 @@
 						// . reformatting the Track
 						TSectorId bufferId[(BYTE)-1]; WORD bufferLength[(BYTE)-1]; TFdcStatus bufferStatus[(BYTE)-1];
 						for( TSector n=0; n<pit->nSectors; n++ )
-							bufferId[n]=pit->sectors[n].id, bufferLength[n]=pit->sectors[n].length, bufferStatus[n]=TFdcStatus::WithoutError;
+							bufferId[n]=pit->sectors[n].id, bufferLength[n]=pit->sectors[n].length;
 						fdd->internalTracks[cyl][head]=nullptr; // detaching the Track internal representation for it to be not destroyed during reformatting of the Track
 						err=fdd->FormatTrack(
 							cyl, head, pit->codec, pit->nSectors, bufferId, bufferLength, bufferStatus,

@@ -245,9 +245,9 @@
 			tmp.nSectors=image->ScanTrack( tmp.cylinder, tmp.head, nullptr, tmp.bufferId, tmp.bufferLength, tmp.bufferStartNanoseconds );
 			// . scanning the Track to draw its Sector data
 			if (pvtm->displayType>=TDisplayType::DATA_OK_ONLY){
-				TFdcStatus statuses[(TSector)-1];
 				if (!::IsWindow(pvtm->m_hWnd)) // TrackMap may not exist if, for instance, switched to another view while still scanning some Track(s)
 					continue;
+				TFdcStatus statuses[(TSector)-1];
 				TLogTime tDataStarts[(TSector)-1];
 				image->GetTrackData( tmp.cylinder, tmp.head, Revolution::CURRENT, tmp.bufferId, sectorIdAndPositionIdentity, tmp.nSectors, tmp.bufferSectorData, tmp.bufferLength, statuses, tDataStarts );
 				for( TSector n=0; n<tmp.nSectors; n++ )

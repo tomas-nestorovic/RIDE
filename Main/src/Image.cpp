@@ -182,7 +182,7 @@
 
 	bool TFdcStatus::DescribesIdFieldCrcError() const{
 		// True <=> Registers describe that ID Field cannot be read without error, otherwise False
-		return (reg1&FDC_ST1_NO_DATA)!=0;
+		return (ToWord()&IdFieldCrcError.ToWord())==IdFieldCrcError.ToWord();
 	}
 
 	void TFdcStatus::CancelIdFieldCrcError(){
@@ -899,8 +899,7 @@ namespace Medium{
 
 	PSectorData CImage::GetHealthySectorData(RCPhysicalAddress chs){
 		// returns Data of a Sector on a given PhysicalAddress; returns Null if Sector not found or Track not formatted
-		WORD w;
-		return GetHealthySectorData(chs,&w);
+		return GetHealthySectorData(chs,nullptr);
 	}
 
 	PSectorData CImage::GetHealthySectorDataOfUnknownLength(TPhysicalAddress &rChs,PWORD sectorLength){

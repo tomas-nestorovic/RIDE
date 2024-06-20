@@ -378,8 +378,7 @@ reportError:Utils::Information(buf);
 				err=fp.dos->image->FormatTrack(
 					cyl, head,
 					fp.rParams.format.codecType,
-					nSectors=fp.nSectors, fp.bufferId, fp.bufferLength,
-					(PCFdcStatus)::memset(bufferFdcStatus,0,sizeof(TFdcStatus)*fp.nSectors),
+					nSectors=fp.nSectors, fp.bufferId, fp.bufferLength, bufferFdcStatus,
 					fp.rParams.gap3, fp.dos->properties->sectorFillerByte,
 					pAction->Cancelled
 				);
@@ -402,8 +401,7 @@ reportError:Utils::Information(buf);
 				err=fp.dos->image->FormatTrack(
 					cyl, head,
 					fp.rParams.format.codecType,
-					nSectors, stdSectors, fp.bufferLength,
-					(PCFdcStatus)::memset(bufferFdcStatus,0,sizeof(TFdcStatus)*nSectors),
+					nSectors, stdSectors, fp.bufferLength, bufferFdcStatus,
 					fp.rParams.gap3, fp.dos->properties->sectorFillerByte,
 					pAction->Cancelled
 				);
