@@ -40,8 +40,8 @@ using namespace Yahel;
 			div_t d=div((int)position,(int)sectorLength-dataBeginOffsetInSector-dataEndOffsetInSector);
 			item+=d.quot, n-=d.quot; // skipping Sectors from which not read
 			bool readWithoutCrcError=true;
-			TFdcStatus sr;
-			for( WORD w; n--; item++ )
+			for( WORD w; n--; item++ ){
+				TFdcStatus sr; // in/out
 				if (const PCSectorData sectorData=image->GetSectorData(item->chs,0,Revolution::ANY_GOOD,&w,&sr)){
 					readWithoutCrcError&=sr.IsWithoutError();
 					w-=d.rem+dataBeginOffsetInSector+dataEndOffsetInSector;
@@ -56,6 +56,7 @@ using namespace Yahel;
 					}
 				}else
 					break;
+			}
 		}
 		::SetLastError(ERROR_READ_FAULT);
 		return nBytesToRead-nCount;
@@ -69,8 +70,8 @@ using namespace Yahel;
 			div_t d=div((int)position,(int)sectorLength-dataBeginOffsetInSector-dataEndOffsetInSector);
 			item+=d.quot, n-=d.quot; // skipping Sectors into which not written
 			bool writtenWithoutCrcError=true;
-			TFdcStatus sr;
-			for( WORD w; n--; item++ )
+			for( WORD w; n--; item++ ){
+				TFdcStatus sr; // in/out
 				if (const PSectorData sectorData=image->GetSectorData(item->chs,0,Revolution::CURRENT,&w,&sr)){ // Revolution.Current = freezing the state of data (eventually erroneous)
 					writtenWithoutCrcError&=sr.IsWithoutError();
 					w-=d.rem+dataBeginOffsetInSector+dataEndOffsetInSector;
@@ -86,6 +87,7 @@ using namespace Yahel;
 					}
 				}else
 					break;
+			}
 		}
 		::SetLastError(ERROR_WRITE_FAULT);
 	}

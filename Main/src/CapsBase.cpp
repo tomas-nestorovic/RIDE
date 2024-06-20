@@ -708,13 +708,16 @@
 							break;
 					}
 				// . attempting for Sector data
-				auto *currRev=pis->revolutions+pis->currentRevolution;
+				const WORD fdcStatusMask=~outFdcStatuses->ToWord();
+				const auto *currRev=pis->revolutions+pis->currentRevolution;
+				const auto *optRev=currRev;
 					do{
 						// : attempting for Sector data in CurrentRevolution
 						pit->ReadSector( *pis, pis->currentRevolution );
-						// : if Data read WithoutError, returning them
-						if (currRev->data && currRev->fdcStatus.IsWithoutError()) // healthy data exist
-							break;
+						// : if "better" Data read (by the count of errors), make them a candidate
+						if (currRev->data && currRev->fdcStatus.GetSeverity(fdcStatusMask)<optRev->fdcStatus.GetSeverity(fdcStatusMask)) // better Data read?
+							if (( optRev=currRev )->fdcStatus.IsWithoutError()) // healthy Data read?
+								break; // return them
 						// : attempting next disk Revolution to retrieve healthy Data
 						if (!--nDataAttempts) // was this the last attempt?
 							break;
@@ -723,9 +726,9 @@
 						currRev=pis->revolutions+pis->currentRevolution;
 					}while (true);
 				// . returning (any) Data
-				*outDataStarts++=currRev->idEndTime;
-				*outFdcStatuses++=currRev->fdcStatus;
-				*outBufferData++=currRev->data;
+				*outDataStarts++=optRev->idEndTime;
+				*outFdcStatuses++=optRev->fdcStatus;
+				*outBufferData++=optRev->data;
 				//*outBufferLengths++=... // already set above
 			}
 		else

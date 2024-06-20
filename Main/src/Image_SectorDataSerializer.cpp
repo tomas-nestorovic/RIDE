@@ -21,8 +21,7 @@
 		// tries to read given NumberOfBytes into the Buffer, starting with current Position; returns the number of Bytes actually read (increments the Position by this actually read number of Bytes)
 		nCount=std::min<UINT>( nCount, dataTotalLength-position );
 		const UINT nBytesToRead=nCount;
-		WORD w; TFdcStatus sr;
-		while (true)
+		for( WORD w; true; )
 			if (revolution==Revolution::ALL_INTERSECTED){
 				const TPhysicalAddress chs=GetCurrentPhysicalAddress();
 				const BYTE nAvailableRevolutions=GetAvailableRevolutionCount(chs.cylinder,chs.head);
@@ -64,6 +63,7 @@
 				const TPhysicalAddress chs=GetCurrentPhysicalAddress();
 				if (revolution>=Revolution::MAX)
 					revolution=Revolution::ANY_GOOD;
+				TFdcStatus sr; // in/out
 				const PCSectorData sectorData=image->GetSectorData( chs, sector.indexOnTrack, revolution, &w, &sr );
 				if (!sectorData)
 					break;
@@ -101,9 +101,9 @@
 		// tries to write given NumberOfBytes from the Buffer to the current Position (increments the Position by the number of Bytes actually written)
 		nCount=std::min<UINT>( nCount, dataTotalLength-position );
 		bool writtenWithoutCrcError=true; // assumption
-		WORD w; TFdcStatus sr;
-		while (true){
+		for( WORD w; true; ){
 			const TPhysicalAddress chs=GetCurrentPhysicalAddress();
+			TFdcStatus sr; // in/out
 			if (const PSectorData sectorData=image->GetSectorData(chs,sector.indexOnTrack,Revolution::CURRENT,&w,&sr)){ // Revolution.Current = freezing the state of data (eventually erroneous)
 				if (!w) // e.g. reading Sector with LengthCode 231 - such Sector has by default no data (a pointer to zero-length data has been returned by GetSectorData)
 					break;

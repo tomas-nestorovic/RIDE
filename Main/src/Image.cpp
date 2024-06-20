@@ -152,6 +152,29 @@
 		, reg2(_reg2 & (FDC_ST2_DELETED_DAM|FDC_ST2_CRC_ERROR_IN_DATA|FDC_ST2_NOT_DAM)) {
 	}
 
+	WORD TFdcStatus::GetSeverity(WORD mask) const{
+		// returns a number representing the severity of the errors (higher number is more severe)
+		enum TSeverity:WORD{
+			MAXIMUM	=0xffff,
+			HIGH	=0x8000,
+			MEDIUM	=0x4000
+		};
+		if (DescribesMissingId()) // ID not found?
+			return TSeverity::MAXIMUM;
+		union{
+			struct{ BYTE low,high; };
+			WORD value;
+		} result;
+		const WORD w=ToWord()&mask;
+		result.low=Utils::CountSetBits(ToWord());
+		result.high=Utils::CountSetBits(w);
+		if (DescribesIdFieldCrcError()) // ID with CRC error?
+			result.value|=TSeverity::HIGH;
+		if (DescribesMissingDam()) // Data not found?
+			result.value|=TSeverity::MEDIUM;
+		return result.value;
+	}
+
 	void TFdcStatus::ExtendWith(TFdcStatus st){
 		// "unites" both this and specified Statuses
 		reg1|=st.reg1, reg2|=st.reg2;
@@ -824,7 +847,7 @@ namespace Medium{
 		TSector nHealthySectors=0;
 		for( TSector s=0; s<nSectors; s++ ){
 			const TPhysicalAddress chs={ cyl, head, bufferId[s] };
-			TFdcStatus st;
+			TFdcStatus st; // in/out
 			nHealthySectors+=	const_cast<PImage>(this)->GetSectorData(chs,s,Revolution::CURRENT,nullptr,&st)!=nullptr
 								&&
 								st.IsWithoutError();
@@ -853,7 +876,8 @@ namespace Medium{
 		// buffers Sectors in the same Track by the underlying Image, making them ready for IMMEDIATE usage - later than immediate calls to GetSectorData may be slower
 		LOG_TRACK_ACTION(cyl,head,_T("void CImage::BufferTrackData"));
 		PVOID dummyBuffer[(TSector)-1];
-		GetTrackData( cyl, head, rev, bufferId, bufferNumbersOfSectorsToSkip, nSectors, (PSectorData *)dummyBuffer, (PWORD)dummyBuffer, (TFdcStatus *)dummyBuffer, (PLogTime)dummyBuffer ); // "DummyBuffer" = throw away any outputs
+		TFdcStatus statuses[(TSector)-1];
+		GetTrackData( cyl, head, rev, bufferId, bufferNumbersOfSectorsToSkip, nSectors, (PSectorData *)dummyBuffer, (PWORD)dummyBuffer, statuses, (PLogTime)dummyBuffer ); // "DummyBuffer" = throw away any outputs
 	}
 
 	PSectorData CImage::GetSectorData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId pid,BYTE nSectorsToSkip,PWORD pSectorLength,TFdcStatus *pFdcStatus,TLogTime *outDataStarts){

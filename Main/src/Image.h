@@ -226,6 +226,7 @@
 
 		inline bool operator==(const TFdcStatus st) const{ return ToWord()==st.ToWord(); }
 
+		WORD GetSeverity(WORD mask=-1) const;
 		void ExtendWith(TFdcStatus st);
 		WORD ToWord() const;
 		void GetDescriptionsOfSetBits(LPCTSTR *pDescriptions) const;

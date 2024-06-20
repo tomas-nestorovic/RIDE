@@ -2280,6 +2280,14 @@ namespace Utils{
 		return (b*0x0202020202ull & 0x010884422010ull) % 0x3ff;
 	}
 
+	BYTE CountSetBits(WORD w){
+		// counts and returns the number of '1' bits in the input Word
+		BYTE result=0;
+		for( ; w; w>>=1 )
+			result+=w&1;
+		return result;
+	}
+
 	CString GenerateTemporaryFileName(){
 		// generates and returns a new temporary file name
 		TCHAR buf[MAX_PATH];
