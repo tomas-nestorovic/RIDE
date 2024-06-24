@@ -141,11 +141,6 @@
 	const TFdcStatus TFdcStatus::NoDataField( FDC_ST1_NO_ADDRESS_MARK, FDC_ST2_NOT_DAM );
 	const TFdcStatus TFdcStatus::DeletedDam( FDC_ST1_NO_DATA, FDC_ST2_DELETED_DAM );
 
-	TFdcStatus::TFdcStatus()
-		// ctor
-		: reg1(0) , reg2(0) {
-	}
-
 	TFdcStatus::TFdcStatus(BYTE _reg1,BYTE _reg2)
 		// ctor
 		: reg1(_reg1 & (FDC_ST1_END_OF_CYLINDER|FDC_ST1_DATA_ERROR|FDC_ST1_NO_DATA|FDC_ST1_NO_ADDRESS_MARK))
@@ -165,24 +160,14 @@
 			struct{ BYTE low,high; };
 			WORD value;
 		} result;
-		const WORD w=ToWord()&mask;
-		result.low=Utils::CountSetBits(ToWord());
-		result.high=Utils::CountSetBits(w);
+		const WORD wm=w&mask;
+		result.low=Utils::CountSetBits(w);
+		result.high=Utils::CountSetBits(wm);
 		if (DescribesIdFieldCrcError()) // ID with CRC error?
 			result.value|=TSeverity::HIGH;
 		if (DescribesMissingDam()) // Data not found?
 			result.value|=TSeverity::MEDIUM;
 		return result.value;
-	}
-
-	void TFdcStatus::ExtendWith(TFdcStatus st){
-		// "unites" both this and specified Statuses
-		reg1|=st.reg1, reg2|=st.reg2;
-	}
-
-	WORD TFdcStatus::ToWord() const{
-		// returns Registers{1,2} as a combination in a single Word
-		return MAKEWORD(reg1,reg2);
 	}
 
 	void TFdcStatus::GetDescriptionsOfSetBits(LPCTSTR *pDescriptions) const{
@@ -205,7 +190,7 @@
 
 	bool TFdcStatus::DescribesIdFieldCrcError() const{
 		// True <=> Registers describe that ID Field cannot be read without error, otherwise False
-		return (ToWord()&IdFieldCrcError.ToWord())==IdFieldCrcError.ToWord();
+		return (w&IdFieldCrcError.w)==IdFieldCrcError.w;
 	}
 
 	void TFdcStatus::CancelIdFieldCrcError(){

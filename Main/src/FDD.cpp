@@ -998,7 +998,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 					}
 				// : if not yet attempted for the data, doing so now
 				auto &rev=rsi.revolutions[rsi.currentRevolution];
-				if (rev.fdcStatus.ToWord()==TFdcStatus::Unknown.ToWord()){
+				if (rev.fdcStatus==TFdcStatus::Unknown){
 					if (!fddHead.__seekTo__(cyl))
 						return; // Sectors cannot be found as Head cannot be seeked
 					if (__bufferSectorData__( cyl, head, &rsi.id, length, pit, bufferNumbersOfSectorsToSkip[index], &rev.fdcStatus ) // yes, Sector found ...

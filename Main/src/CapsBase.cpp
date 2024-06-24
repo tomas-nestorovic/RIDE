@@ -708,7 +708,7 @@
 							break;
 					}
 				// . attempting for Sector data
-				const WORD fdcStatusMask=~outFdcStatuses->ToWord();
+				const WORD fdcStatusMask=~outFdcStatuses->w;
 				const auto *currRev=pis->revolutions+pis->currentRevolution;
 				const auto *optRev=currRev;
 					do{

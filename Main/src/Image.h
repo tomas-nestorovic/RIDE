@@ -219,16 +219,22 @@
 		static const TFdcStatus NoDataField;
 		static const TFdcStatus DeletedDam;
 
-		BYTE reg1,reg2;
+		union{
+			struct{
+				BYTE reg1,reg2;
+			};
+			WORD w;
+		};
 
-		TFdcStatus();
+		inline TFdcStatus() : w(0) {}
+		inline TFdcStatus(WORD w) : w(w) {}
 		TFdcStatus(BYTE _reg1,BYTE _reg2);
 
-		inline bool operator==(const TFdcStatus st) const{ return ToWord()==st.ToWord(); }
+		inline operator WORD() const{ return w; }
+		inline bool operator==(const WORD st) const{ return w==st; }
 
 		WORD GetSeverity(WORD mask=-1) const;
-		void ExtendWith(TFdcStatus st);
-		WORD ToWord() const;
+		inline void ExtendWith(const WORD st){ w|=st; }
 		void GetDescriptionsOfSetBits(LPCTSTR *pDescriptions) const;
 		bool IsWithoutError() const;
 		bool DescribesIdFieldCrcError() const;

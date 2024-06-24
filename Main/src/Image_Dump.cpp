@@ -76,19 +76,14 @@
 					Utils::WriteToFileFormatted( fHtml, _T("<p>Date finished: %s.</p>"), (LPCTSTR)Utils::CRideTime().DateToStdString() );
 					if (pOutErroneousTracks){
 						Utils::WriteToFile(fHtml,_T("<table><tr><th>Status</th><th>Count</th></tr>"));
-							union{
-								BYTE bRegisters[2];
-								WORD wRegisters;
-							} fdc;
-							for( fdc.wRegisters=1; fdc.wRegisters; fdc.wRegisters<<=1 ){
-								const TFdcStatus sr(fdc.bRegisters[0],fdc.bRegisters[1]);
+							for( TFdcStatus sr=1; sr.w; sr.w<<=1 ){
 								if (sr.IsWithoutError())
 									continue; 
 								int nErrorOccurences=0;
 								for( const TSourceTrackErrors *pErroneousTrack=pOutErroneousTracks; pErroneousTrack; pErroneousTrack=pErroneousTrack->pNextErroneousTrack ){
 									PCSourceSectorError psse=pErroneousTrack->erroneousSectors;
 									for( BYTE n=pErroneousTrack->nErroneousSectors; n; n-- )
-										nErrorOccurences+=(psse++->fdcStatus.ToWord()&fdc.wRegisters)!=0;
+										nErrorOccurences+=(psse++->fdcStatus&sr)!=0;
 								}
 								if (nErrorOccurences){
 									LPCTSTR bitDescriptions[3]; // 3 = prave jedna Chyba a dvakrat Null
@@ -208,7 +203,7 @@
 			bool trackWriteable; // Track can be written at once using CImage::WriteTrack
 			BYTE revolution;
 			struct{
-				WORD automaticallyAcceptedErrors;
+				TFdcStatus automaticallyAcceptedErrors;
 				bool anyErrorsOnUnknownSectors;
 				bool anyErrorsOnEmptySectors;
 				bool remainingErrorsOnTrack;
@@ -323,10 +318,8 @@
 						sPrev=~--p.s; // as below incremented
 					// : reporting SourceSector Errors if ...
 					}else if (
-						p.fdcStatus.DescribesMissingId() // ... Sector ID not found (e.g. extremely damaged disk where Sectors appear and disappear randomly in each Revolution)
-						||
-						p.fdcStatus.ToWord() && !( // ... this error is NOT automatically accepted
-							p.fdcStatus.ToWord()&p.acceptance.automaticallyAcceptedErrors // an error to be accepted automatically?
+						p.fdcStatus && !( // ... this error is NOT automatically accepted
+							p.fdcStatus&p.acceptance.automaticallyAcceptedErrors // an error to be accepted automatically?
 							||
 							p.acceptance.remainingErrorsOnTrack // want automatically accept all errors in the rest of current Track?
 							||
@@ -430,7 +423,7 @@
 									p+=::wsprintf( p, _T("Locked modified Revolution #%d.\r\n"), dirtyRevolution+1 );
 								else
 									p+=::lstrlen( ::lstrcpy(p,_T("Locked modified revolution.\r\n")) );
-								const bool onlyPartlyRecoverable=( rFdcStatus.ToWord() & ~(TFdcStatus::DataFieldCrcError.ToWord()|TFdcStatus::IdFieldCrcError.ToWord()) )!=0;
+								const bool onlyPartlyRecoverable=( rFdcStatus & ~(TFdcStatus::DataFieldCrcError|TFdcStatus::IdFieldCrcError) )!=0;
 								if (onlyPartlyRecoverable)
 									p+=::lstrlen( ::lstrcpy(p,_T("SOME ERRORS CAN'T BE FIXED!\r\n")) );
 								p+=::wsprintf( p, _T("\r\nFAT reports this sector \"%s\".\r\n"), dp.dos->GetSectorStatusText(rp.chs) );
@@ -515,7 +508,7 @@
 												EndDialog(IDRETRY);
 												return 0;
 											case ID_ERROR:
-												rp.acceptance.automaticallyAcceptedErrors|=rFdcStatus.ToWord();
+												rp.acceptance.automaticallyAcceptedErrors.ExtendWith(rFdcStatus);
 												UpdateData(TRUE);
 												EndDialog(ACCEPT_ERROR_ID);
 												return 0;
@@ -530,7 +523,7 @@
 												EndDialog(ACCEPT_ERROR_ID);
 												return 0;
 											case ID_IMAGE:
-												rp.acceptance.automaticallyAcceptedErrors=-1;
+												rp.acceptance.automaticallyAcceptedErrors.ExtendWith(~TFdcStatus::SectorNotFound); // all but "Missing ID Field" accepted (e.g. extremely damaged disk where Sectors appear and disappear randomly in each Revolution)
 												//fallthrough
 											case ID_TRACK:
 												rp.acceptance.remainingErrorsOnTrack=true;
