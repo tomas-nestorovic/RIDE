@@ -222,10 +222,11 @@
 		TTrackScanner &rts=pvtm->scanner;
 		const PImage image=pvtm->IMAGE;
 		const Utils::CByteIdentity sectorIdAndPositionIdentity;
-		for( TTrackInfo ti,tmp; true; ){
+		for( TTrackInfo tmp; true; ){
 			// . waiting for request to scan the next Track
 			rts.scanNextTrack.Lock();
 			// . getting the TrackNumber to scan
+			TTrack trackNumber;
 	{		EXCLUSIVELY_LOCK(rts.params);
 			const THead nHeads=rts.params.nHeads;
 			if (nHeads==0) // "nHeads==0" if disk without any Track (e.g. when opening RawImage of zero length, or if opening a corrupted DSK Image)
@@ -236,6 +237,7 @@
 			}while (rts.params.x<rts.params.z && rts.params.skipUnscannedTracks && !image->IsTrackScanned(tmp.cylinder,tmp.head));
 			if (rts.params.x>=rts.params.z) // everything painted?
 				continue; // wait until again something changes
+			trackNumber=rts.params.x;
 	}		// . scanning the Track to draw its Sector Statuses
 			PREVENT_FROM_DESTRUCTION(*image);
 			if (!::IsWindow(pvtm->m_hWnd)) // TrackMap may not exist if, for instance, switched to another view while still scanning some Track(s)
@@ -254,8 +256,9 @@
 						tmp.bufferSectorData[n]=nullptr;
 			}
 			// . sending scanned information for drawing
+			EXCLUSIVELY_LOCK(rts.params); // synchronized access to TrackInfo
 			if (::IsWindow(pvtm->m_hWnd)) // TrackMap may not exist if, for instance, switched to another view while still scanning some Track(s)
-				pvtm->PostMessage( WM_TRACK_SCANNED, 0, (LPARAM)&(ti=tmp) );
+				pvtm->PostMessage( WM_TRACK_SCANNED, trackNumber, (LPARAM)&tmp );
 		}
 		return ERROR_SUCCESS;
 	}
@@ -283,21 +286,29 @@
 
 	static constexpr int Tabs[]={ VIEW_PADDING, VIEW_PADDING+60, SECTOR1_X };
 
-	afx_msg LRESULT CTrackMapView::DrawTrack(WPARAM,LPARAM pTrackInfo){
+	afx_msg LRESULT CTrackMapView::DrawTrack(WPARAM trackNumber,LPARAM pTrackInfo){
 		// draws scanned Track
-		// - adjusting logical dimensions to accommodate the LongestTrack
-		const TTrackInfo &rti=*(TTrackInfo *)pTrackInfo;
+		// - is this the expected Track to draw?
+		TTrackInfo ti;
+		THead nHeads;
+{		EXCLUSIVELY_LOCK(scanner.params); // also synchronized access to TrackInfo
+		const bool expectedTrackReceived=scanner.params.x==trackNumber;
+		if (!expectedTrackReceived)
+			return 0;
+		nHeads=scanner.params.nHeads;
+		ti=*(TTrackInfo *)pTrackInfo; // take over TrackInfo from the Scanner
+}		// - adjusting logical dimensions to accommodate the LongestTrack
 		int nBytesOnTrack=0;
-		for( TSector s=rti.nSectors; s>0; nBytesOnTrack+=rti.bufferLength[--s] );
+		for( TSector s=ti.nSectors; s>0; nBytesOnTrack+=ti.bufferLength[--s] );
 		bool outdated=false;
-		const TTrackLength tmp( rti.nSectors, nBytesOnTrack );
+		const TTrackLength tmp( ti.nSectors, nBytesOnTrack );
 		if (longestTrack<tmp){
 			longestTrack=tmp;
 			outdated|=!showTimed;
 		}
 		const TLogTime nNanosecondsPerByte=IMAGE->EstimateNanosecondsPerOneByte();
-		const TLogTime nNanosecondsOnTrack =rti.nSectors>0
-											? rti.bufferStartNanoseconds[rti.nSectors-1]+rti.bufferLength[rti.nSectors-1]*nNanosecondsPerByte
+		const TLogTime nNanosecondsOnTrack =ti.nSectors>0
+											? ti.bufferStartNanoseconds[ti.nSectors-1]+ti.bufferLength[ti.nSectors-1]*nNanosecondsPerByte
 											: 0;
 		if (longestTrackNanoseconds<nNanosecondsOnTrack){
 			longestTrackNanoseconds=nNanosecondsOnTrack;
@@ -314,111 +325,102 @@
 				return 0;
 			}else
 				UpdateLogicalDimensions();
-		// - drawing
-		scanner.params.locker.Lock();
-			const THead nHeads=scanner.params.nHeads;
-			const TTrack trackNumber=rti.cylinder*nHeads+rti.head;
-			const bool expectedTrackReceived=scanner.params.x==trackNumber;
-		scanner.params.locker.Unlock();
-		if (expectedTrackReceived){
-			// received scanned information of expected Track to draw
-			CClientDC dc(this);
-			OnPrepareDC(&dc);
-			// . basic drawing
-			CRect rc;
-			GetClientRect(&rc);
-			::SetBkMode(dc,TRANSPARENT);
-			const HGDIOBJ font0=::SelectObject(dc,Utils::CRideFont::Std);
-				TCHAR buf[16];
-				// : drawing Cylinder and Side numbers
-				const int y=TRACK0_Y+trackNumber*TRACK_HEIGHT;
-				if (const THead head=rti.head)
-					::wsprintf(buf,_T("\t\t%d"),head);
-				else
-					::wsprintf(buf,_T("\t%d\t0"),rti.cylinder);
-				::TabbedTextOut( dc, 0,y, buf,-1, 3,Tabs, 0 );
-				// : drawing Sectors
-				iScrollX=GetScrollPos(SB_HORZ)/Utils::LogicalUnitScaleFactor;
-				int sectorStartPixels[(TSector)-1];
-				TimesToPixels( rti.nSectors, (PINT)::memcpy(sectorStartPixels,rti.bufferStartNanoseconds,rti.nSectors*sizeof(int)), rti.bufferLength );
-				RECT r={ SECTOR1_X, y+(TRACK_HEIGHT-SECTOR_HEIGHT)/2, SECTOR1_X, y+(TRACK_HEIGHT+SECTOR_HEIGHT)/2 };
-				const HGDIOBJ hBrush0=::SelectObject(dc,Utils::CRideBrush::White);
-					if (displayType==TDisplayType::STATUS){
-						// drawing Sector Statuses
-						CDos::TSectorStatus statuses[(TSector)-1];
-						DOS->GetSectorStatuses( rti.cylinder, rti.head, rti.nSectors, rti.bufferId, statuses );
-						for( TSector s=0; s<rti.nSectors; s++ ){
-							r.left=sectorStartPixels[s];
-							r.right=r.left+1+(rti.bufferLength[s]>>zoomLengthFactor); // "1+" = to correctly display a zero-length Sector
-							if (iScrollX<r.right || r.left<iScrollX+rc.Width()){
-								// Sector in horizontally visible part of the TrackMap
-								const CBrush brush(statuses[s]);
-								const HGDIOBJ hBrush0=::SelectObject(dc,brush);
-									dc.Rectangle(&r);
-									if (showSectorNumbers) // drawing Sector numbers
-										::DrawText( dc, _itot(rti.bufferId[s].sector,buf,10),-1, &r, DT_CENTER|DT_VCENTER|DT_SINGLELINE );
-								::SelectObject(dc,hBrush0);
-							}
-						}
-					}else
-						// drawing Sector data
-						for( TSector s=0; s<rti.nSectors; s++ ){
-							r.left=sectorStartPixels[s];
-							r.right=r.left+1+(rti.bufferLength[s]>>zoomLengthFactor); // "1+" = to correctly display a zero-length Sector
-							WORD w=rti.bufferLength[s]>>zoomLengthFactor;
-							if (r.right+w<=iScrollX || iScrollX+rc.Width()<=r.left)
-								// Sector out of horizontally visible part of the TrackMap
-								continue;
-							if (PCBYTE sample=(PCBYTE)rti.bufferSectorData[s]){
-								// Sector found - drawing its data
-								RECT rcSample=r;
-								for( rcSample.right=rcSample.left+2; w--; sample+=(1<<zoomLengthFactor),rcSample.left++,rcSample.right++ )
-									::FillRect( dc, &rcSample, rainbowBrushes[*sample] );
-								::SelectObject( dc, ::GetStockObject(NULL_BRUSH) );
+		// - basic drawing
+		CClientDC dc(this);
+		OnPrepareDC(&dc);
+		CRect rc;
+		GetClientRect(&rc);
+		::SetBkMode(dc,TRANSPARENT);
+		const HGDIOBJ font0=::SelectObject(dc,Utils::CRideFont::Std);
+			TCHAR buf[16];
+			// : drawing Cylinder and Side numbers
+			const int y=TRACK0_Y+trackNumber*TRACK_HEIGHT;
+			if (const THead head=ti.head)
+				::wsprintf(buf,_T("\t\t%d"),head);
+			else
+				::wsprintf(buf,_T("\t%d\t0"),ti.cylinder);
+			::TabbedTextOut( dc, 0,y, buf,-1, 3,Tabs, 0 );
+			// : drawing Sectors
+			iScrollX=GetScrollPos(SB_HORZ)/Utils::LogicalUnitScaleFactor;
+			int sectorStartPixels[(TSector)-1];
+			TimesToPixels( ti.nSectors, (PINT)::memcpy(sectorStartPixels,ti.bufferStartNanoseconds,ti.nSectors*sizeof(int)), ti.bufferLength );
+			RECT r={ SECTOR1_X, y+(TRACK_HEIGHT-SECTOR_HEIGHT)/2, SECTOR1_X, y+(TRACK_HEIGHT+SECTOR_HEIGHT)/2 };
+			const HGDIOBJ hBrush0=::SelectObject(dc,Utils::CRideBrush::White);
+				if (displayType==TDisplayType::STATUS){
+					// drawing Sector Statuses
+					CDos::TSectorStatus statuses[(TSector)-1];
+					DOS->GetSectorStatuses( ti.cylinder, ti.head, ti.nSectors, ti.bufferId, statuses );
+					for( TSector s=0; s<ti.nSectors; s++ ){
+						r.left=sectorStartPixels[s];
+						r.right=r.left+1+(ti.bufferLength[s]>>zoomLengthFactor); // "1+" = to correctly display a zero-length Sector
+						if (iScrollX<r.right || r.left<iScrollX+rc.Width()){
+							// Sector in horizontally visible part of the TrackMap
+							const CBrush brush(statuses[s]);
+							const HGDIOBJ hBrush0=::SelectObject(dc,brush);
 								dc.Rectangle(&r);
-							}else{
-								// Sector not found - drawing crossing-out
-								const HGDIOBJ hPen0=::SelectObject(dc,Utils::CRidePen::RedHairline);
-									::SelectObject( dc, Utils::CRideBrush::White );
+								if (showSectorNumbers) // drawing Sector numbers
+									::DrawText( dc, _itot(ti.bufferId[s].sector,buf,10),-1, &r, DT_CENTER|DT_VCENTER|DT_SINGLELINE );
+							::SelectObject(dc,hBrush0);
+						}
+					}
+				}else
+					// drawing Sector data
+					for( TSector s=0; s<ti.nSectors; s++ ){
+						r.left=sectorStartPixels[s];
+						r.right=r.left+1+(ti.bufferLength[s]>>zoomLengthFactor); // "1+" = to correctly display a zero-length Sector
+						WORD w=ti.bufferLength[s]>>zoomLengthFactor;
+						if (r.right+w<=iScrollX || iScrollX+rc.Width()<=r.left)
+							// Sector out of horizontally visible part of the TrackMap
+							continue;
+						if (PCBYTE sample=(PCBYTE)ti.bufferSectorData[s]){
+							// Sector found - drawing its data
+							RECT rcSample=r;
+							for( rcSample.right=rcSample.left+2; w--; sample+=(1<<zoomLengthFactor),rcSample.left++,rcSample.right++ )
+								::FillRect( dc, &rcSample, rainbowBrushes[*sample] );
+							::SelectObject( dc, ::GetStockObject(NULL_BRUSH) );
+							dc.Rectangle(&r);
+						}else{
+							// Sector not found - drawing crossing-out
+							const HGDIOBJ hPen0=::SelectObject(dc,Utils::CRidePen::RedHairline);
+								::SelectObject( dc, Utils::CRideBrush::White );
+								dc.Rectangle(&r);
+								::MoveToEx( dc, r.left, r.top, nullptr );
+								::LineTo( dc, r.right, r.bottom );
+								::MoveToEx( dc, r.left, r.bottom, nullptr );
+								::LineTo( dc, r.right, r.top);
+							::SelectObject(dc,hPen0);
+						}
+					}
+			::SelectObject(dc,hBrush0);
+		::SelectObject(dc,font0);
+		// - drawing current selection in FileManager
+		if (showSelectedFiles)
+			if (const CFileManagerView *const pFileManager=DOS->pFileManager){
+				::SelectObject(dc,::GetStockObject(NULL_BRUSH));
+				const LOGPEN pen={ PS_SOLID, 2,2, fileSelectionColor };
+				const HGDIOBJ hPen0=::SelectObject( dc, ::CreatePenIndirect(&pen) );
+					for( POSITION pos=pFileManager->GetFirstSelectedFilePosition(); pos; ){
+						const CDos::CFatPath fatPath( DOS, pFileManager->GetNextSelectedFile(pos) );
+						CDos::CFatPath::PCItem item; DWORD n;
+						if (!fatPath.GetItems(item,n)) // FatPath valid
+							for( ; n--; item++ )
+								if (trackNumber==item->chs.GetTrackNumber(nHeads)){
+									// this Sector (in currently drawn Track) belongs to one of selected Files
+									TSector s=0;
+									for( PCSectorId pRefId=&item->chs.sectorId; s<ti.nSectors; s++ )
+										if (*pRefId==ti.bufferId[s])
+											break;
+									r.left=sectorStartPixels[s];
+									r.right=r.left+1+(ti.bufferLength[s]>>zoomLengthFactor); // "1+" = to correctly display a zero-length Sector
 									dc.Rectangle(&r);
-									::MoveToEx( dc, r.left, r.top, nullptr );
-									::LineTo( dc, r.right, r.bottom );
-									::MoveToEx( dc, r.left, r.bottom, nullptr );
-									::LineTo( dc, r.right, r.top);
-								::SelectObject(dc,hPen0);
-							}
-						}
-				::SelectObject(dc,hBrush0);
-			::SelectObject(dc,font0);
-			// . drawing current selection in FileManager
-			if (showSelectedFiles)
-				if (const CFileManagerView *const pFileManager=DOS->pFileManager){
-					::SelectObject(dc,::GetStockObject(NULL_BRUSH));
-					const LOGPEN pen={ PS_SOLID, 2,2, fileSelectionColor };
-					const HGDIOBJ hPen0=::SelectObject( dc, ::CreatePenIndirect(&pen) );
-						for( POSITION pos=pFileManager->GetFirstSelectedFilePosition(); pos; ){
-							const CDos::CFatPath fatPath( DOS, pFileManager->GetNextSelectedFile(pos) );
-							CDos::CFatPath::PCItem item; DWORD n;
-							if (!fatPath.GetItems(item,n)) // FatPath valid
-								for( ; n--; item++ )
-									if (trackNumber==item->chs.GetTrackNumber(nHeads)){
-										// this Sector (in currently drawn Track) belongs to one of selected Files
-										TSector s=0;
-										for( PCSectorId pRefId=&item->chs.sectorId; s<rti.nSectors; s++ )
-											if (*pRefId==rti.bufferId[s])
-												break;
-										r.left=sectorStartPixels[s];
-										r.right=r.left+1+(rti.bufferLength[s]>>zoomLengthFactor); // "1+" = to correctly display a zero-length Sector
-										dc.Rectangle(&r);
-									}
-						}
-					::DeleteObject( ::SelectObject(dc,hPen0) );
-				}
-			// . next Track
-			EXCLUSIVELY_LOCK(scanner.params);
-			if (scanner.params.x<scanner.params.z)
-				scanner.scanNextTrack.SetEvent();
-		}
+								}
+					}
+				::DeleteObject( ::SelectObject(dc,hPen0) );
+			}
+		// - next Track
+		EXCLUSIVELY_LOCK(scanner.params);
+		if (scanner.params.x<scanner.params.z)
+			scanner.scanNextTrack.SetEvent();
 		return 0;
 	}
 
