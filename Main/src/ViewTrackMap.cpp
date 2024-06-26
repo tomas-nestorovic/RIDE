@@ -222,11 +222,10 @@
 		TTrackScanner &rts=pvtm->scanner;
 		const PImage image=pvtm->IMAGE;
 		const Utils::CByteIdentity sectorIdAndPositionIdentity;
-		for( TTrackInfo ti; true; ){
+		for( TTrackInfo ti,tmp; true; ){
 			// . waiting for request to scan the next Track
 			rts.scanNextTrack.Lock();
 			// . getting the TrackNumber to scan
-			TTrackInfo tmp;
 	{		EXCLUSIVELY_LOCK(rts.params);
 			const THead nHeads=rts.params.nHeads;
 			if (nHeads==0) // "nHeads==0" if disk without any Track (e.g. when opening RawImage of zero length, or if opening a corrupted DSK Image)
@@ -235,7 +234,7 @@
 				const div_t d=div( ++rts.params.x, nHeads );
 				tmp.cylinder=d.quot, tmp.head=d.rem; // syncing with Params due to comparison in drawing routine
 			}while (rts.params.x<rts.params.z && rts.params.skipUnscannedTracks && !image->IsTrackScanned(tmp.cylinder,tmp.head));
-			if (rts.params.x==rts.params.z) // everything painted?
+			if (rts.params.x>=rts.params.z) // everything painted?
 				continue; // wait until again something changes
 	}		// . scanning the Track to draw its Sector Statuses
 			PREVENT_FROM_DESTRUCTION(*image);
@@ -256,7 +255,7 @@
 			}
 			// . sending scanned information for drawing
 			if (::IsWindow(pvtm->m_hWnd)) // TrackMap may not exist if, for instance, switched to another view while still scanning some Track(s)
-				pvtm->PostMessage( WM_TRACK_SCANNED, 0, (LPARAM)::memcpy(&ti,&tmp,sizeof(tmp)) );
+				pvtm->PostMessage( WM_TRACK_SCANNED, 0, (LPARAM)&(ti=tmp) );
 		}
 		return ERROR_SUCCESS;
 	}
@@ -415,11 +414,11 @@
 						}
 					::DeleteObject( ::SelectObject(dc,hPen0) );
 				}
+			// . next Track
+			EXCLUSIVELY_LOCK(scanner.params);
+			if (scanner.params.x<scanner.params.z)
+				scanner.scanNextTrack.SetEvent();
 		}
-		// - if not all requested Tracks scanned yet, proceeding with scanning the next Track
-		EXCLUSIVELY_LOCK(scanner.params);
-		if (expectedTrackReceived && scanner.params.x<scanner.params.z)
-			scanner.scanNextTrack.SetEvent();
 		return 0;
 	}
 
