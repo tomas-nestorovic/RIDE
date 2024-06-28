@@ -297,6 +297,8 @@
 			return 0;
 		nHeads=scanner.params.nHeads;
 		ti=*(TTrackInfo *)pTrackInfo; // take over TrackInfo from the Scanner
+		if (scanner.params.x<scanner.params.z)
+			scanner.scanNextTrack.SetEvent(); // don't waste time and scan the next Track while this Track is still being painted
 }		// - adjusting logical dimensions to accommodate the LongestTrack
 		int nBytesOnTrack=0;
 		for( TSector s=ti.nSectors; s>0; nBytesOnTrack+=ti.bufferLength[--s] );
@@ -417,10 +419,6 @@
 					}
 				::DeleteObject( ::SelectObject(dc,hPen0) );
 			}
-		// - next Track
-		EXCLUSIVELY_LOCK(scanner.params);
-		if (scanner.params.x<scanner.params.z)
-			scanner.scanNextTrack.SetEvent();
 		return 0;
 	}
 
