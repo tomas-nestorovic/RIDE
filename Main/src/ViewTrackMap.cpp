@@ -226,15 +226,17 @@
 			// . waiting for request to scan the next Track
 			rts.scanNextTrack.Lock();
 			// . getting the TrackNumber to scan
+			tmp.cylinder=TPhysicalAddress::Invalid.cylinder, tmp.head=TPhysicalAddress::Invalid.head; // set below after everything else has been specified
 			TTrack trackNumber;
+			TCylinder cyl; THead head;
 	{		EXCLUSIVELY_LOCK(rts.params);
 			const THead nHeads=rts.params.nHeads;
 			if (nHeads==0) // "nHeads==0" if disk without any Track (e.g. when opening RawImage of zero length, or if opening a corrupted DSK Image)
 				break;
 			do{
 				const div_t d=div( ++rts.params.x, nHeads );
-				tmp.cylinder=d.quot, tmp.head=d.rem; // syncing with Params due to comparison in drawing routine
-			}while (rts.params.x<rts.params.z && rts.params.skipUnscannedTracks && !image->IsTrackScanned(tmp.cylinder,tmp.head));
+				cyl=d.quot, head=d.rem;
+			}while (rts.params.x<rts.params.z && rts.params.skipUnscannedTracks && !image->IsTrackScanned(cyl,head));
 			if (rts.params.x>=rts.params.z) // everything painted?
 				continue; // wait until again something changes
 			trackNumber=rts.params.x;
@@ -243,20 +245,21 @@
 			if (!::IsWindow(pvtm->m_hWnd)) // TrackMap may not exist if, for instance, switched to another view while still scanning some Track(s)
 				continue;
 			//if (pvtm->displayType==TDisplayType::STATUS) // commented out because this scanning always needed
-			tmp.nSectors=image->ScanTrack( tmp.cylinder, tmp.head, nullptr, tmp.bufferId, tmp.bufferLength, tmp.bufferStartNanoseconds );
+			tmp.nSectors=image->ScanTrack( cyl, head, nullptr, tmp.bufferId, tmp.bufferLength, tmp.bufferStartNanoseconds );
 			// . scanning the Track to draw its Sector data
 			if (pvtm->displayType>=TDisplayType::DATA_OK_ONLY){
 				if (!::IsWindow(pvtm->m_hWnd)) // TrackMap may not exist if, for instance, switched to another view while still scanning some Track(s)
 					continue;
 				TFdcStatus statuses[(TSector)-1];
 				TLogTime tDataStarts[(TSector)-1];
-				image->GetTrackData( tmp.cylinder, tmp.head, Revolution::CURRENT, tmp.bufferId, sectorIdAndPositionIdentity, tmp.nSectors, tmp.bufferSectorData, tmp.bufferLength, statuses, tDataStarts );
+				image->GetTrackData( cyl, head, Revolution::CURRENT, tmp.bufferId, sectorIdAndPositionIdentity, tmp.nSectors, tmp.bufferSectorData, tmp.bufferLength, statuses, tDataStarts );
 				for( TSector n=0; n<tmp.nSectors; n++ )
 					if (pvtm->displayType!=TDisplayType::DATA_ALL && !statuses[n].IsWithoutError())
 						tmp.bufferSectorData[n]=nullptr;
 			}
 			// . sending scanned information for drawing
 			EXCLUSIVELY_LOCK(rts.params); // synchronized access to TrackInfo
+			tmp.cylinder=cyl, tmp.head=head;
 			if (::IsWindow(pvtm->m_hWnd)) // TrackMap may not exist if, for instance, switched to another view while still scanning some Track(s)
 				pvtm->PostMessage( WM_TRACK_SCANNED, trackNumber, (LPARAM)&tmp );
 		}
