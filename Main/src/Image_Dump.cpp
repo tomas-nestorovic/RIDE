@@ -15,6 +15,7 @@
 		Codec::TTypeSet targetCodecs;
 		const PImage source;
 		const bool canCalibrateSourceHeads;
+		const bool sourceSupportsTrackReading;
 		std::unique_ptr<CImage> target;
 		TCHAR targetFileName[MAX_PATH];
 		bool formatJustBadTracks, requireAllStdSectorDataPresent, fullTrackAnalysis;
@@ -41,6 +42,7 @@
 			: dos(_dos)
 			, source(dos->image)
 			, canCalibrateSourceHeads( source->SeekHeadsHome()==ERROR_SUCCESS )
+			, sourceSupportsTrackReading( source->WriteTrack(0,0,CImage::CTrackReaderWriter::Invalid)!=ERROR_NOT_SUPPORTED )
 			, formatJustBadTracks(false)
 			, requireAllStdSectorDataPresent( source->properties->IsRealDevice() && dos->IsKnown() )
 			, fullTrackAnalysis( source->ReadTrack(0,0) ) // if the Source provides access to low-level recording, let's also do the FullTrackAnalysis
@@ -196,6 +198,7 @@
 		const TDumpParams::TSourceTrackErrors **ppSrcTrackErrors=&dp.pOutErroneousTracks;
 		#pragma pack(1)
 		struct TParams sealed{
+			bool targetSupportsTrackWriting;
 			TPhysicalAddress chs;
 			TSector s; // # of Sectors to skip
 			TTrack track;
@@ -216,8 +219,7 @@
 		} p;
 		::ZeroMemory(&p,sizeof(p));
 		p.exclusion.allUnknown=dp.dos->IsKnown() && dynamic_cast<CImageRaw *>(dp.target.get())!=nullptr; // Unknown Sectors in recognized DOS cause preliminary termination of dumping to a RawImage, hence excluding them all automatically
-		const bool sourceSupportsTrackReading=dp.source->WriteTrack(0,0,CImage::CTrackReaderWriter::Invalid)!=ERROR_NOT_SUPPORTED;
-		const bool targetSupportsTrackWriting=dp.target->WriteTrack(0,0,CImage::CTrackReaderWriter::Invalid)!=ERROR_NOT_SUPPORTED;
+		p.targetSupportsTrackWriting=dp.target->WriteTrack(0,0,CImage::CTrackReaderWriter::Invalid)!=ERROR_NOT_SUPPORTED;
 		const Utils::CByteIdentity sectorIdAndPositionIdentity;
 		for( p.chs.cylinder=dp.cylinderA; p.chs.cylinder<=dp.cylinderZ; pAction->UpdateProgress(++p.chs.cylinder-dp.cylinderA) )
 			for( p.chs.head=0; p.chs.head<dp.nHeads; ){
@@ -252,7 +254,7 @@
 				}
 				// . reading Source Track
 				CImage::CTrackReader trSrc=dp.source->ReadTrack( p.chs.cylinder, p.chs.head );
-				p.trackWriteable= trSrc && targetSupportsTrackWriting && (sourceCodec&dp.targetCodecs)!=0; // A&B&C, A&B = Source and Target must support whole Track access, C = Target must support the Codec used in Source
+				p.trackWriteable= trSrc && p.targetSupportsTrackWriting && (sourceCodec&dp.targetCodecs)!=0; // A&B&C, A&B = Source and Target must support whole Track access, C = Target must support the Codec used in Source
 				// . if possible, analyzing the read Source Track
 				bool hasNonformattedArea=false, hasDataInGaps=false, hasFuzzyData=false, hasDataOverIndex=false, hasDuplicatedIdFields=false, missesSomeSectors=false;
 				if (trSrc && dp.fullTrackAnalysis){
@@ -490,6 +492,38 @@
 								// exchange of data from and to controls
 								DDX_Check( pDX, ID_BEEP, Utils::CRideDialog::BeepWhenShowed );
 							}
+							bool ConfirmLowLevelTrackModifications(){
+								// True <=> user confirmed an original command, otherwise False
+								if (!dp.sourceSupportsTrackReading || !rp.targetSupportsTrackWriting)
+									return true; // automatically confirmed if Source or Target don't support low-level Track timing
+								class CConfirmationDialog sealed:public Utils::CCommandDialog{
+									BOOL OnInitDialog() override{
+										// dialog initialization
+										const BOOL result=__super::OnInitDialog();
+										AddCommandButton( IDYES, _T("Carry out anyway"), true );
+										AddCommandButton( IDNO, _T("Accept this sector (recommended)") );
+										AddCancelButton(_T("Return"));
+										return result;
+									}
+								public:
+									CConfirmationDialog(LPCTSTR msg)
+										// ctor
+										: Utils::CCommandDialog(msg) {
+									}
+								} d(
+									_T("This command may destroy low-level information for this track. Consider using one of the \"Accept\" options.")
+								);
+								switch (d.DoModal()){
+									case IDYES:
+										return true;
+									case IDNO:
+										UpdateData(TRUE);
+										EndDialog( ACCEPT_ERROR_ID );
+										//fallthrough
+									default:
+										return false;
+								}
+							}
 							LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 								// window procedure
 								switch (msg){
@@ -533,6 +567,8 @@
 												return 0;
 											case ID_DATAFIELD_CRC:
 												// recovering CRC
+												if (!ConfirmLowLevelTrackModifications())
+													return 0;
 												rFdcStatus.CancelDataFieldCrcError();
 												rp.trackWriteable=false; // once modified, can't write the Track as a whole anymore
 												UpdateData(TRUE);
@@ -540,6 +576,8 @@
 												return 0;
 											case ID_RECOVER:{
 												// Sector recovery
+												if (!ConfirmLowLevelTrackModifications())
+													return 0;
 												// : Dialog definition
 												class CSectorRecoveryDialog sealed:public Utils::CRideDialog{
 												public:
@@ -654,10 +692,15 @@
 											}
 											case RESOLVE_EXCLUDE_UNKNOWN:
 												// exclusion of this and all future Unknown Sectors from the disk
+												if (!ConfirmLowLevelTrackModifications())
+													return 0;
 												rp.exclusion.allUnknown=true;
-												//fallthrough
+												EndDialog(RESOLVE_EXCLUDE_ID);
+												return 0;
 											case RESOLVE_EXCLUDE_ID:
 												// exclusion of this Sector
+												if (!ConfirmLowLevelTrackModifications())
+													return 0;
 												EndDialog(RESOLVE_EXCLUDE_ID);
 												return 0;
 										}
