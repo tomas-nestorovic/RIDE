@@ -450,7 +450,7 @@
 									Utils::TSplitButtonAction::HorizontalLine,
 									{ ID_ERROR, _T("Accept all errors of this kind") },
 									{ ID_TRACK, _T("Accept all errors in this track") },
-									{ ID_DRIVE, _T("Accept all errors on unknown sectors") },
+									{ ID_DRIVE, _T("Accept all errors on unknown sectors"), MF_GRAYED*( !dp.source->dos->IsKnown() ) }, // not available if DOS Unknown
 									{ ID_STATE, _T("Accept all errors on empty sectors") },
 									{ ID_IMAGE, _T("Accept all errors on the disk") }
 								};
@@ -464,7 +464,7 @@
 								const Utils::TSplitButtonAction tmpResolveActions[RESOLVE_OPTIONS_COUNT]={
 									{ 0, onlyPartlyRecoverable?_T("Resolve partly"):_T("Resolve") }, // 0 = no default action
 									{ RESOLVE_EXCLUDE_ID, _T("Exclude from track") },
-									{ RESOLVE_EXCLUDE_UNKNOWN, _T("Exclude all unknown from disk") },
+									{ RESOLVE_EXCLUDE_UNKNOWN, _T("Exclude all unknown from disk"), MF_GRAYED*( !dp.source->dos->IsKnown() ) }, // not available if DOS Unknown
 									Utils::TSplitButtonAction::HorizontalLine,
 									{ ID_DATAFIELD_CRC, _T("Fix Data CRC only"), MF_GRAYED*( rFdcStatus.DescribesMissingDam() || rFdcStatus.DescribesMissingId() || !rFdcStatus.DescribesDataFieldCrcError() ) }, // disabled if the Data CRC ok
 									{ ID_RECOVER, _T("Fix ID or Data..."), MF_GRAYED*( rFdcStatus.DescribesMissingDam() || rFdcStatus.DescribesMissingId() || !rFdcStatus.DescribesIdFieldCrcError()&&!rFdcStatus.DescribesDataFieldCrcError() ) }, // enabled only if either ID or Data field with error
