@@ -445,14 +445,15 @@
 								p+=::wsprintf( p, _T("\r\nAll sectors on this track:\r\n%s\r\n"), (LPCTSTR)sectorList );
 								errorTextBox.SetWindowText( buf );
 								// > converting the "Accept" button to a SplitButton
+								const bool sectorNotFound=rFdcStatus.DescribesMissingId();
 								const Utils::TSplitButtonAction Actions[]={
-									{ ACCEPT_ERROR_ID, _T("Accept this error") },
+									{ ACCEPT_ERROR_ID, _T("Accept this error"), MF_GRAYED*( sectorNotFound&&!(dp.requireAllStdSectorDataPresent&&dp.dos->IsStdSector(rp.chs)) ) }, // allow acceptance of missing standard Sector (e.g. copy-protection in "Life & Death" PC game)
 									Utils::TSplitButtonAction::HorizontalLine,
-									{ ID_ERROR, _T("Accept all errors of this kind") },
-									{ ID_TRACK, _T("Accept all errors in this track") },
-									{ ID_DRIVE, _T("Accept all errors on unknown sectors"), MF_GRAYED*( !dp.source->dos->IsKnown() ) }, // not available if DOS Unknown
-									{ ID_STATE, _T("Accept all errors on empty sectors") },
-									{ ID_IMAGE, _T("Accept all errors on the disk") }
+									{ ID_ERROR, _T("Accept all errors of this kind"), MF_GRAYED*( sectorNotFound ) },
+									{ ID_TRACK, _T("Accept all errors in this track"), MF_GRAYED*( sectorNotFound ) },
+									{ ID_DRIVE, _T("Accept all errors on unknown sectors"), MF_GRAYED*( !dp.source->dos->IsKnown() || sectorNotFound ) }, // not available if DOS Unknown
+									{ ID_STATE, _T("Accept all errors on empty sectors"), MF_GRAYED*( sectorNotFound ) },
+									{ ID_IMAGE, _T("Accept all errors on the disk"), MF_GRAYED*( sectorNotFound ) }
 								};
 								ConvertDlgButtonToSplitButton( IDOK, Actions );
 								EnableDlgItem( IDOK, // accepting errors is allowed only if ...
