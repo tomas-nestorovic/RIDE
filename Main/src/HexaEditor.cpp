@@ -41,7 +41,7 @@ using namespace Yahel;
 	}
 
 	HRESULT CHexaEditor::CYahelStreamFile::QueryInterface(REFIID riid,PVOID *ppvObject){
-		static constexpr QITAB qit[]={
+		static const QITAB qit[]={
 			QITABENT( CYahelStreamFile, IStream ),
 			{ 0 },
 		};

@@ -588,7 +588,7 @@
 					for( TSector s=0; s<rit->nSectors; s++ ){
 						const TInternalSector &is=rit->sectors[s];
 						const TPhysicalAddress chs={ cyl, head, is.id };
-						if (dos->GetSectorStatus(chs)==CDos::TSectorStatus::UNKNOWN)
+						if (!dos->IsStdSector(chs))
 							continue; // ignore Unknown Sector
 						if ( knownSectorBad=!const_cast<CCapsBase *>(this)->GetHealthySectorData(chs,nullptr,s) )
 							break;

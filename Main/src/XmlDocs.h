@@ -14,12 +14,13 @@
 		};
 
 		class CXmlElement:public CComPtr<IXMLDOMElement>{
-			static const CXmlElement InvalidXmlElement;
 		public:
 			// ctors
 			inline CXmlElement(){}
 			CXmlElement(const CXmlDocument &doc,LPCSTR elementName);
 			CXmlElement(CXmlElement &&element);
+
+			inline void operator=(const CXmlElement &r){ __super::operator=(r); }
 
 			// cloning
 			inline CXmlElement operator/(const CXmlElement &element){ return AppendChildElement(element); }

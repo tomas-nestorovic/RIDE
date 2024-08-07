@@ -281,7 +281,7 @@
 							::memset( mustBeHealthy, true, n );
 						else
 							for( TSector i=0; i<n; i++ )
-								mustBeHealthy[i]=d.cb.GetHealthySectorData( d.cyl, d.head, list+i, nullptr, i );
+								mustBeHealthy[i]=d.cb.GetHealthySectorData( d.cyl, d.head, list+i, nullptr, i )!=nullptr;
 					}
 				} searchedSectors(d);
 				if (!searchedSectors.n)
@@ -307,7 +307,7 @@
 					// . evaluating the Track against the MiningTarget
 					TSector i=0;
 					for( ; i<searchedSectors.n; i++ ){
-						const bool isHealthy=d.cb.GetHealthySectorData( d.cyl, d.head, searchedSectors.list+i, nullptr, i );
+						const bool isHealthy=d.cb.GetHealthySectorData( d.cyl, d.head, searchedSectors.list+i, nullptr, i )!=nullptr;
 						if (isHealthy<searchedSectors.mustBeHealthy[i])
 							break;
 					}

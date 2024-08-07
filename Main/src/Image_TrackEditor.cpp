@@ -1480,9 +1480,9 @@
 									pLastItem-data, data, barPen
 								).CreateYxHistogram(1); // due to integral rounding, individual Times may be off by 1; amending for this by merging neighboring Times
 								pLastItem=data;
-								for( auto it=h.cbegin(); it!=h.cend(); it++ ){
-									pLastItem->x=it->first;
-									pLastItem++->y=it->second;
+								for each( const auto &p in h ){
+									pLastItem->x=p.first;
+									pLastItem++->y=p.second;
 								}
 								const auto xySeries=CChartView::CXyOrderedBarSeries(
 									pLastItem-data, data, barPen, _T("Flux")

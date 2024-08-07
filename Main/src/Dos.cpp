@@ -140,6 +140,11 @@ reportError:Utils::Information(buf);
 		return formatBoot.nSectors;
 	}
 
+	bool CDos::IsStdSector(RCPhysicalAddress chs) const{
+		// True <=> specified Sector is recognized ("official") by the DOS, otherwise False
+		return GetSectorStatus(chs)!=TSectorStatus::UNKNOWN;
+	}
+
 	CString CDos::ListStdSectors(TCylinder cyl,THead head) const{
 		// creates and returns a List of standard DOS Sector IDs
 		TSectorId ids[(TSector)-1];

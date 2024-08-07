@@ -245,7 +245,7 @@
 								iFound++;
 							else
 								break;
-						if (iFound==nSectors && dp.dos->GetSectorStatus(p.chs)!=CDos::TSectorStatus::UNKNOWN){
+						if (iFound==nSectors && dp.dos->IsStdSector(p.chs)){
 							// a standard Sector missing; add it to the list to later invoke a common error dialog
 							bufferId[nSectors]=id, bufferLength[nSectors]=CImage::GetOfficialSectorLength(id.lengthCode);
 							nSectors++;
@@ -310,7 +310,7 @@
 					p.chs.sectorId=bufferId[p.s];
 					p.fdcStatus=bufferFdcStatus[p.s];
 					// : reporting SourceSector Exclusion
-					p.exclusion.current|= p.exclusion.allUnknown && dp.dos->GetSectorStatus(p.chs)==CDos::TSectorStatus::UNKNOWN;
+					p.exclusion.current|= p.exclusion.allUnknown && !dp.dos->IsStdSector(p.chs);
 					if (p.exclusion.current){
 						nSectors--;
 						::memmove( bufferId+p.s, bufferId+p.s+1, sizeof(*bufferId)*(nSectors-p.s) );
@@ -326,7 +326,7 @@
 							||
 							p.acceptance.remainingErrorsOnTrack // want automatically accept all errors in the rest of current Track?
 							||
-							p.acceptance.anyErrorsOnUnknownSectors && dp.dos->GetSectorStatus(p.chs)==CDos::TSectorStatus::UNKNOWN // want accept all Unknown Sector errors?
+							p.acceptance.anyErrorsOnUnknownSectors && !dp.dos->IsStdSector(p.chs) // want accept all Unknown Sector errors?
 							||
 							p.acceptance.anyErrorsOnEmptySectors && dp.dos->GetSectorStatus(p.chs)==CDos::TSectorStatus::EMPTY // want accept any error for Empty Sectors?
 						)

@@ -976,7 +976,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 								if (nTrials==1){ // calibrating Head for the last Trial
 									const TPhysicalAddress chs={ cyl, head, rsi.id };
 									const bool knownSectorBad =	params.calibrationAfterErrorOnlyForKnownSectors && dos->IsKnown()
-																? dos->GetSectorStatus(chs)!=CDos::TSectorStatus::UNKNOWN
+																? dos->IsStdSector(chs)
 																: true;
 									switch (params.calibrationAfterError){
 										case TParams::TCalibrationAfterError::FOR_EACH_SECTOR:

@@ -443,10 +443,10 @@
 				}
 			} histogram[2500];
 			WORD nUniqueBitPatterns=0;
-			for( auto it=tmpHist.cbegin(); it!=tmpHist.cend(); it++ ){
+			for each( const auto &p in tmpHist ){
 				TItem &r=histogram[nUniqueBitPatterns++];
-					r.bitPattern=it->first;
-					r.count=it->second;
+					r.bitPattern=p.first;
+					r.count=p.second;
 			}
 			std::sort( histogram, histogram+nUniqueBitPatterns );
 			// . production of new ParseEvents

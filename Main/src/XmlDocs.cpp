@@ -35,8 +35,6 @@
 
 
 
-	const CXmlDocument::CXmlElement CXmlDocument::CXmlElement::InvalidXmlElement;
-
 	CXmlDocument::CXmlElement::CXmlElement(const CXmlDocument &doc,LPCSTR elementName){
 		// ctor
 		doc->createElement( COleVariant(elementName).bstrVal, &p );
@@ -52,10 +50,10 @@
 
 	CXmlDocument::CXmlElement CXmlDocument::CXmlElement::AppendChildElement(const CXmlElement &element){
 		//
+		CXmlElement result;
 		CComPtr<IXMLDOMNode> parent;
 		if (FAILED(element->get_parentNode(&parent.p)))
-			return InvalidXmlElement;
-		CXmlElement result;
+			return result;
 		if (parent) // already has a Parent?
 			element->cloneNode( VARIANT_FALSE, (IXMLDOMNode **)&result.p ); // must create a copy
 		else

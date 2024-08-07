@@ -442,6 +442,7 @@
 		// other
 		bool IsKnown() const;
 		TSector GetListOfStdSectors(TCylinder cyl,THead head,PSectorId bufferId) const;
+		bool IsStdSector(RCPhysicalAddress chs) const;
 		CString ListStdSectors(TCylinder cyl,THead head) const;
 		virtual TStdWinError CreateUserInterface(HWND hTdi);
 		virtual enum TCmdResult:BYTE{
