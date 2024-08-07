@@ -181,7 +181,6 @@
 
 	#define ACCEPT_ERROR_ID			IDOK
 
-	#define RESOLVE_OPTIONS_COUNT	8
 	#define RESOLVE_EXCLUDE_ID		IDIGNORE
 	#define RESOLVE_EXCLUDE_UNKNOWN	IDCONTINUE
 
@@ -354,7 +353,6 @@
 							TFdcStatus &rFdcStatus;
 							CEdit errorTextBox;
 							std::unique_ptr<CSplitterWnd> splitter;
-							Utils::TSplitButtonAction resolveActions[RESOLVE_OPTIONS_COUNT];
 
 							class CSectorHexaEditor sealed:public CHexaEditor{
 							public:
@@ -447,7 +445,7 @@
 								p+=::wsprintf( p, _T("\r\nAll sectors on this track:\r\n%s\r\n"), (LPCTSTR)sectorList );
 								errorTextBox.SetWindowText( buf );
 								// > converting the "Accept" button to a SplitButton
-								static constexpr Utils::TSplitButtonAction Actions[]={
+								const Utils::TSplitButtonAction Actions[]={
 									{ ACCEPT_ERROR_ID, _T("Accept this error") },
 									Utils::TSplitButtonAction::HorizontalLine,
 									{ ID_ERROR, _T("Accept all errors of this kind") },
@@ -456,14 +454,12 @@
 									{ ID_STATE, _T("Accept all errors on empty sectors") },
 									{ ID_IMAGE, _T("Accept all errors on the disk") }
 								};
-								ConvertDlgButtonToSplitButton( IDOK, Actions, ARRAYSIZE(Actions) );
+								ConvertDlgButtonToSplitButton( IDOK, Actions );
 								EnableDlgItem( IDOK, // accepting errors is allowed only if ...
 									dynamic_cast<CImageRaw *>(dp.target.get())==nullptr // ... the Target Image can accept them
-									&&
-									!rFdcStatus.DescribesMissingId() // ... the Sector has been found
 								);
 								// > converting the "Resolve" button to a SplitButton
-								const Utils::TSplitButtonAction tmpResolveActions[RESOLVE_OPTIONS_COUNT]={
+								const Utils::TSplitButtonAction resolveActions[]={
 									{ 0, onlyPartlyRecoverable?_T("Resolve partly"):_T("Resolve") }, // 0 = no default action
 									{ RESOLVE_EXCLUDE_ID, _T("Exclude from track") },
 									{ RESOLVE_EXCLUDE_UNKNOWN, _T("Exclude all unknown from disk"), MF_GRAYED*( !dp.source->dos->IsKnown() ) }, // not available if DOS Unknown
@@ -473,18 +469,16 @@
 									Utils::TSplitButtonAction::HorizontalLine,
 									{ ID_TIME, _T("Mine track..."), MF_GRAYED*!( dp.source->MineTrack(TPhysicalAddress::Invalid.cylinder,TPhysicalAddress::Invalid.head)!=ERROR_NOT_SUPPORTED ) }
 								};
-								::memcpy( resolveActions, tmpResolveActions, sizeof(tmpResolveActions) );
-								ConvertDlgButtonToSplitButton( IDNO, resolveActions, RESOLVE_OPTIONS_COUNT );
+								ConvertDlgButtonToSplitButton( IDNO, resolveActions );
 								//EnableDlgItem( IDNO, dynamic_cast<CImageRaw *>(dp.target.get())==nullptr ); // recovering errors is allowed only if the Target Image can accept them
 								// > converting the "Retry" button to a SplitButton
 								static constexpr Utils::TSplitButtonAction CanCalibrateHeadsAction={ ID_HEAD, _T("Calibrate head and retry") };
 								static constexpr Utils::TSplitButtonAction CannotCalibrateHeadsAction={ ID_HEAD, _T("Can't calibrate heads for this track"), MF_GRAYED };
-								static Utils::TSplitButtonAction retryActions[]={
+								const Utils::TSplitButtonAction retryActions[]={
 									{ IDRETRY, _T("Retry") },
-									CanCalibrateHeadsAction
+									dp.canCalibrateSourceHeads ? CanCalibrateHeadsAction : CannotCalibrateHeadsAction
 								};
-								retryActions[1]= dp.canCalibrateSourceHeads ? CanCalibrateHeadsAction : CannotCalibrateHeadsAction;
-								ConvertDlgButtonToSplitButton( IDRETRY, retryActions, ARRAYSIZE(retryActions) );
+								ConvertDlgButtonToSplitButton( IDRETRY, retryActions );
 								// > the "Retry" button enabled only if Sector not yet modified and there are several Revolutions available
 								EnableDlgItem( IDRETRY, dirtyRevolution==Revolution::NONE && nRevolutions>1 );
 							}
@@ -883,7 +877,6 @@ terminateWithError:		return LOG_ERROR(pAction->TerminateWithError(err));
 		class CDumpDialog sealed:public Utils::CRideDialog{
 			const PDos dos;
 			CRideApp::CRecentFileListEx mruDevices;
-			Utils::TSplitButtonAction actions[10];
 
 			void PreInitDialog() override{
 				// dialog initialization
@@ -894,7 +887,7 @@ terminateWithError:		return LOG_ERROR(pAction->TerminateWithError(err));
 					SetDlgItemText( ID_DEFAULT1, _T("Random value") );
 				// . showing devices recently dumped to in hidden menu
 				static constexpr Utils::TSplitButtonAction OpenDialogAction={ ID_FILE, _T("Select image or device...") };
-				Utils::TSplitButtonAction *pAction=actions;
+				Utils::TSplitButtonAction actions[10], *pAction=actions;
 				*pAction++=OpenDialogAction;
 				static constexpr Utils::TSplitButtonAction HelpCreateStream={ ID_HELP_USING, _T("FAQ: How do I create stream files? (online)") };
 				*pAction++=HelpCreateStream;
@@ -908,7 +901,7 @@ terminateWithError:		return LOG_ERROR(pAction->TerminateWithError(err));
 					static constexpr Utils::TSplitButtonAction NoMruDevices={ ID_FILE, _T("No recent target devices"), MF_GRAYED };
 					*pAction++=NoMruDevices;
 				}
-				ConvertDlgButtonToSplitButton( ID_FILE, actions, pAction-actions );
+				ConvertDlgButtonToSplitButtonEx( ID_FILE, actions, pAction-actions );
 				ConvertDlgCheckboxToHyperlink( ID_BEEP );
 			}
 			void DoDataExchange(CDataExchange *pDX) override{

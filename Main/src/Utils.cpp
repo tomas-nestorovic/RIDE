@@ -2009,21 +2009,26 @@ namespace Utils{
 	const TSplitButtonAction TSplitButtonAction::HorizontalLine={ 0, 0, MF_SEPARATOR };
 
 	typedef struct TSplitButtonInfo sealed{
-		const PCSplitButtonAction pAction;
-		const BYTE nActions;
+		const bool existsDefaultAction;
 		const WNDPROC wndProc0;
 		RECT rcClientArea;
 		TCHAR text[512];
+		CMenu mnu;
 
-		TSplitButtonInfo(HWND hBtn,PCSplitButtonAction _pAction,BYTE _nActions,WNDPROC _wndProc0)
+		TSplitButtonInfo(HWND hBtn,PCSplitButtonAction pActions,BYTE nActions,WNDPROC wndProc0)
 			// ctor
-			: pAction(_pAction) , nActions(_nActions) , wndProc0(_wndProc0) {
+			: existsDefaultAction(pActions->commandId!=0) , wndProc0(wndProc0) {
 			::GetClientRect(hBtn,&rcClientArea);
 			*text='\0';
+			mnu.CreatePopupMenu();
+			for( BYTE id=!existsDefaultAction; id<nActions; id++ ){
+				const auto &a=pActions[id];
+				mnu.AppendMenu( a.menuItemFlags, a.commandId, a.commandCaption );
+			}
 		}
 
 		inline bool ExistsDefaultAction() const{
-			return pAction->commandId!=0;
+			return existsDefaultAction;
 		}
 	} *PSplitButtonInfo;
 
@@ -2045,15 +2050,9 @@ namespace Utils{
 					break; // base
 				else{
 					// in area of selecting additional Actions
-					CMenu mnu;
-					mnu.CreatePopupMenu();
-					for( BYTE id=!psbi->ExistsDefaultAction(); id<psbi->nActions; id++ ){
-						const auto &a=psbi->pAction[id];
-						mnu.AppendMenu( a.menuItemFlags, a.commandId, a.commandCaption );
-					}
 					POINT pt={ psbi->rcClientArea.right-SPLITBUTTON_ARROW_WIDTH, psbi->rcClientArea.bottom };
 					::ClientToScreen( hSplitBtn, &pt );
-					::TrackPopupMenu( mnu.m_hMenu, TPM_LEFTALIGN|TPM_LEFTBUTTON|TPM_RIGHTBUTTON, pt.x, pt.y, 0, ::GetParent(hSplitBtn), nullptr );
+					::TrackPopupMenu( psbi->mnu, TPM_LEFTALIGN|TPM_LEFTBUTTON|TPM_RIGHTBUTTON, pt.x, pt.y, 0, ::GetParent(hSplitBtn), nullptr );
 					//fallthrough
 				}
 			case WM_LBUTTONUP:
@@ -2122,7 +2121,7 @@ namespace Utils{
 		return ::CallWindowProc( wndProc0, hSplitBtn, msg, wParam, lParam );
 	}
 
-	void CRideDialog::ConvertDlgButtonToSplitButton(WORD id,PCSplitButtonAction pAction,BYTE nActions) const{
+	void CRideDialog::ConvertDlgButtonToSplitButtonEx(WORD id,PCSplitButtonAction pAction,BYTE nActions) const{
 		// converts an existing standard button to a SplitButton featuring specified additional Actions
 		const HWND hStdBtn=GetDlgItemHwnd(id);
 		SetDlgItemText(id,nullptr); // before window procedure changed

@@ -318,11 +318,16 @@ namespace Utils{
 		void SetDlgItemSingleCharUsingFont(WORD id,WCHAR singleChar,HFONT hFont) const;
 		void SetDlgItemSingleCharUsingFont(WORD id,WCHAR singleChar,LPCTSTR fontFace,int fontPointSize) const;
 		void PopulateDlgComboBoxWithSequenceOfNumbers(WORD cbId,BYTE iStartValue,LPCTSTR strStartValueDesc,BYTE iEndValue,LPCTSTR strEndValueDesc) const;
-		void ConvertDlgButtonToSplitButton(WORD id,PCSplitButtonAction pAction,BYTE nActions) const;
+		void ConvertDlgButtonToSplitButtonEx(WORD id,PCSplitButtonAction pAction,BYTE nActions) const;
 		void ConvertDlgCheckboxToHyperlink(WORD id) const;
 		bool GetDlgItemIntList(WORD id,CIntList &rOutList,const PropGrid::Integer::TUpDownLimits &limits,int nIntsMin=0,int nIntsMax=INT_MAX) const;
 		void SetDlgItemIntList(WORD id,const CIntList &list) const;
 		void DDX_CheckEnable(CDataExchange *pDX,int nIDC,bool &value,bool enable) const;
+
+		template <size_t N>
+		void ConvertDlgButtonToSplitButton(WORD id,const TSplitButtonAction (&actions)[N]) const{
+			ConvertDlgButtonToSplitButtonEx( id, actions, N );
+		}
 	};
 
 	class CSingleNumberDialog sealed:public CRideDialog{
