@@ -45,7 +45,7 @@
 	#define IMAGE	rFileManager.tab.image
 	#define DOS		IMAGE->dos
 
-	void CSpectrumBase::CBasicPreview::__parseBasicFileAndGenerateHtmlFormattedContent__(PCFile file) const{
+	void CSpectrumBase::CBasicPreview::ParseBasicFileAndGenerateHtmlFormattedContent(PCFile file) const{
 		// generates HTML-formatted BASIC listing of the input File into a temporary file
 		// - creating the File reader
 		CFileReaderWriter frw(DOS,pdt->entry);
@@ -100,7 +100,7 @@
 				, specialFormattingOpen(TSpecialFormatting::NONE) {
 				__resetColors__();
 				// . writing the opening HTML tags
-				Utils::WriteToFileFormatted( *this, _T("<html><body style=\"background-color:#%06x\">"), *(PCINT)&Colors[7] );
+				Utils::WriteToFile( *this, Utils::GetCommonHtmlHeadStyleBody( *(COLORREF *)&Colors[7], _T("") ) );
 			}
 			~CFormattedBasicListingFile(){
 				// dtor
@@ -594,7 +594,7 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 		// - composing and displaying the content
 		if (const PCFile file=pdt->entry){
 			// . describing the BASIC file using HTML-formatted text
-			__parseBasicFileAndGenerateHtmlFormattedContent__(file);
+			ParseBasicFileAndGenerateHtmlFormattedContent(file);
 			// . opening the HTML-formatted content
 			contentView.Navigate2(tmpFileName);
 		}

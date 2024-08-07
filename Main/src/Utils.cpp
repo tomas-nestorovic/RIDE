@@ -2300,7 +2300,7 @@ namespace Utils{
 		CString bodyStyle,result;
 		if (bodyBg<CLR_DEFAULT)
 			bodyStyle.Format( _T(" style=\"background-color:#%06x\""), bodyBg );
-		result.Format( _T("<html><head><meta charset=\"utf-8\"><style>body,td,th{font-size:13pt;margin:24pt;vertical-align:top}th{background:silver;text-align:left}%s</style></head><body%s>"), tableStyle, (LPCTSTR)bodyStyle );
+		result.Format( _T("<html><head><meta charset=\"utf-8\"><style>body,td,th{margin:24pt;vertical-align:top}th{background:silver;text-align:left}%s</style></head><body%s>"), tableStyle, (LPCTSTR)bodyStyle );
 		return result;
 	}
 

@@ -119,7 +119,7 @@
 				SHOW_AS_MACHINE_CODE=ID_INSTRUCTION
 			} dataAfterBasic;
 
-			void __parseBasicFileAndGenerateHtmlFormattedContent__(PCFile file) const;
+			void ParseBasicFileAndGenerateHtmlFormattedContent(PCFile file) const;
 			void RefreshPreview() override;
 			BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
 		public:
