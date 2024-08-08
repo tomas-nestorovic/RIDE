@@ -579,29 +579,17 @@ importQuit2:		::GlobalUnlock(hg);
 			if (const LPCTSTR extension=shellName.FindLastDot())
 				if (CImage::DetermineType(shellName)!=nullptr){
 					// : defining the Dialog
-					class CPossiblyAnImageDialog sealed:public Utils::CCommandDialog{
-						const CString msg;
-						BOOL OnInitDialog() override{
-							// dialog initialization
-							// | base
-							const BOOL result=__super::OnInitDialog();
-							// | supplying available actions
-							AddCommandButton( IDYES, _T("Open it in new instance of ") _T(APP_ABBREVIATION) _T(" (recommended)"), true );
-							AddCommandButton( IDNO, _T("Import it to this image anyway") );
-							AddCancelButton();
-							return result;
-						}
-					public:
-						CPossiblyAnImageDialog(const CString &msg)
-							// ctor
-							: Utils::CCommandDialog(msg)
-							, msg(msg) {
-						}
-					} d(
-						Utils::SimpleFormat( _T("\"%s\" looks like an image."), shellName.GetFileName() )
-					);
+					static constexpr Utils::CSimpleCommandDialog::TCmdButtonInfo CmdButtons[]={
+						{ IDYES, _T("Open it in new instance of ") _T(APP_ABBREVIATION) _T(" (recommended)") },
+						{ IDNO, _T("Import it to this image anyway") }
+					};
 					// : showing the Dialog and processing its result
-					switch (d.DoModal()){
+					switch (
+						Utils::CSimpleCommandDialog(
+							Utils::SimpleFormat( _T("\"%s\" looks like an image."), shellName.GetFileName() ),
+							CmdButtons, ARRAYSIZE(CmdButtons), true
+						).DoModal()
+					){
 						case IDYES:{
 							// opening the File in new instance of the app (this may function only in Release mode, not in Debug mode)
 							rImportedFile=nullptr;

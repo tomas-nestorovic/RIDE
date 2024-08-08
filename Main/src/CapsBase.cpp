@@ -5,27 +5,21 @@
 	static TStdWinError InitCapsLibrary(CapsVersionInfo &cvi){
 		// - checking version
 		if (CAPS::GetVersionInfo(&cvi,0) || cvi.release<5 || cvi.release==5&&cvi.revision<1){
-			class CLibraryErrorDialog sealed:public Utils::CCommandDialog{
-				BOOL OnInitDialog() override{
-					// dialog initialization
-					// : base
-					const BOOL result=__super::OnInitDialog();
-					// : supplying available actions
-					AddCommandButton( IDYES, _T("Get 32-bit version from SPS website (recommended)"), true );
-					AddCancelButton();
-					return result;
-				}
-			public:
-				CLibraryErrorDialog()
-					// ctor
-					: Utils::CCommandDialog( _T("CAPS library outdated, 5.1 or newer required!") ) {
-				}
-			} d;
-			if (d.DoModal()==IDYES){
-				app.GetMainWindow()->OpenWebPage( _T("SPS"), _T("http://www.softpres.org/download") );
-				return ERROR_INSTALL_USEREXIT;
-			}else
-				return ERROR_EVT_VERSION_TOO_OLD;
+			static constexpr Utils::CSimpleCommandDialog::TCmdButtonInfo CmdButtons[]={
+				{ IDYES, _T("Get 32-bit version from SPS website (recommended)") }
+			};
+			switch (
+				Utils::CSimpleCommandDialog(
+					_T("CAPS library outdated, 5.1 or newer required!"),
+					CmdButtons, ARRAYSIZE(CmdButtons), true
+				).DoModal()
+			){
+				case IDYES:
+					app.GetMainWindow()->OpenWebPage( _T("SPS"), _T("http://www.softpres.org/download") );
+					return ERROR_INSTALL_USEREXIT;
+				default:
+					return ERROR_EVT_VERSION_TOO_OLD;
+			}
 		}
 		// - initializing the library
 		if (CAPS::Init())

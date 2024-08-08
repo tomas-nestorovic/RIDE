@@ -68,29 +68,17 @@
 		if (const LPCTSTR extension=shellName.FindLastDot()){
 			if (!::lstrcmpi( extension, _T(".tap") )){
 				// . defining the Dialog
-				class CPossiblyATapeDialog sealed:public Utils::CCommandDialog{
-					const CString msg;
-					BOOL OnInitDialog() override{
-						// dialog initialization
-						// : base
-						const BOOL result=__super::OnInitDialog();
-						// : supplying available actions
-						AddCommandButton( IDYES, _T("Open it in a new tab (recommended)"), true );
-						AddCommandButton( IDNO, _T("Import it to this image anyway") );
-						AddCancelButton();
-						return result;
-					}
-				public:
-					CPossiblyATapeDialog(const CString &msg)
-						// ctor
-						: Utils::CCommandDialog(msg)
-						, msg(msg) {
-					}
-				} d(
-					Utils::SimpleFormat( _T("\"%s\" looks like a tape."), shellName.GetFileName() )
-				);
+				static constexpr Utils::CSimpleCommandDialog::TCmdButtonInfo CmdButtons[]={
+					{ IDYES, _T("Open it in a new tab (recommended)") },
+					{ IDNO, _T("Import it to this image anyway") }
+				};
 				// . showing the Dialog and processing its result
-				switch (d.DoModal()){
+				switch (
+					Utils::CSimpleCommandDialog(
+						Utils::SimpleFormat( _T("\"%s\" looks like a tape."), shellName.GetFileName() ),
+						CmdButtons, ARRAYSIZE(CmdButtons), true
+					).DoModal()
+				){
 					case IDYES:{
 						// opening the File in a new TDI Tab
 						// : ejecting current Tape (if any)

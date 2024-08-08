@@ -376,25 +376,16 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 					case ERROR_BAD_FORMAT:
 						if (!dynamic_cast<CImageRaw *>(image.get())){
 							// . defining the Dialog
-							class CWrongInnerFormatDialog sealed:public Utils::CCommandDialog{
-								BOOL OnInitDialog() override{
-									// dialog initialization
-									// : base
-									const BOOL result=__super::OnInitDialog();
-									// : supplying available actions
-									AddCommandButton( IDYES, _T("Open at least valid part of it"), true );
-									AddCommandButton( IDNO, _T("Try to open it as a raw sector image") );
-									AddCancelButton( _T("Don't open it") );
-									return result;
-								}
-							public:
-								CWrongInnerFormatDialog()
-									// ctor
-									: Utils::CCommandDialog(_T("The image seems to be malformatted.")) {
-								}
-							} d;
+							static constexpr Utils::CSimpleCommandDialog::TCmdButtonInfo CmdButtons[]={
+								{ IDYES, _T("Open at least valid part of it") },
+								{ IDNO, _T("Try to open it as a raw sector image") },
+								{ IDCANCEL, _T("Don't open it") }
+							};
 							// . showing the Dialog and processing its result
-							const BYTE command=d.DoModal();
+							const BYTE command=Utils::CSimpleCommandDialog(
+								_T("The image seems to be malformatted."),
+								CmdButtons, ARRAYSIZE(CmdButtons)
+							).DoModal();
 							if (command==IDYES) break;
 							OnFileNew();
 							if (command==IDCANCEL) return nullptr;

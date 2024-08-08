@@ -366,6 +366,22 @@ namespace Utils{
 		bool checkBoxTicked;
 	};
 
+	class CSimpleCommandDialog:public CCommandDialog{
+	public:
+		typedef const struct TCmdButtonInfo{
+			WORD id;
+			LPCTSTR caption;
+		} *PCCmdButtonInfo;
+	protected:
+		const PCCmdButtonInfo buttons;
+		const BYTE nButtons;
+		const bool addDefaultCancelButton;
+
+		BOOL OnInitDialog() override;
+	public:
+		CSimpleCommandDialog(LPCTSTR information,PCCmdButtonInfo buttons,BYTE nButtons,bool canCancel=false);
+	};
+
 	class CByteIdentity sealed{
 		BYTE values[(BYTE)-1+1];
 	public:

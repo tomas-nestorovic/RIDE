@@ -500,24 +500,17 @@
 								// True <=> user confirmed an original command, otherwise False
 								if (!dp.sourceSupportsTrackReading || !rp.targetSupportsTrackWriting)
 									return true; // automatically confirmed if Source or Target don't support low-level Track timing
-								class CConfirmationDialog sealed:public Utils::CCommandDialog{
-									BOOL OnInitDialog() override{
-										// dialog initialization
-										const BOOL result=__super::OnInitDialog();
-										AddCommandButton( IDYES, _T("Carry out anyway"), true );
-										AddCommandButton( IDNO, _T("Accept this sector (recommended)") );
-										AddCancelButton(_T("Return"));
-										return result;
-									}
-								public:
-									CConfirmationDialog(LPCTSTR msg)
-										// ctor
-										: Utils::CCommandDialog(msg) {
-									}
-								} d(
-									_T("This command may destroy low-level information for this track. Consider using one of the \"Accept\" options.")
-								);
-								switch (d.DoModal()){
+								static constexpr Utils::CSimpleCommandDialog::TCmdButtonInfo CmdButtons[]={
+									{ IDYES, _T("Carry out anyway") },
+									{ IDNO, _T("Accept this sector (recommended)") },
+									{ IDCANCEL, _T("Return") }
+								};
+								switch (
+									Utils::CSimpleCommandDialog(
+										_T("This command may destroy low-level information for this track. Consider using one of the \"Accept\" options."),
+										CmdButtons, ARRAYSIZE(CmdButtons)
+									).DoModal()
+								){
 									case IDYES:
 										return true;
 									case IDNO:
