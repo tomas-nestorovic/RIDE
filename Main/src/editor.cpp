@@ -436,6 +436,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 					// - populating the list of known DOSes
 					CListBox lb;
 					lb.Attach(GetDlgItemHwnd(ID_DOS));
+						lb.SetItemDataPtr( lb.AddString(_T("[ Open without DOS ]")), (PVOID)&CUnknownDos::Properties );
 						for( POSITION pos=CDos::Known.GetHeadPosition(); pos; ){
 							const CDos::PCProperties p=CDos::Known.GetNext(pos);
 							lb.SetItemDataPtr( lb.AddString(p->name), (PVOID)p );
