@@ -145,7 +145,7 @@
 		static const TSectorId Invalid;
 
 		static TSector CountAppearances(const TSectorId *ids,TSector nIds,const TSectorId &id);
-		static CString List(const TSectorId *ids,TSector nIds);
+		static CString List(const TSectorId *ids,TSector nIds,TSector iHighlight=-1,char highlightBullet='\0');
 
 		TCylinder cylinder;
 		TSide side;
@@ -719,7 +719,7 @@
 		virtual TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const=0;
 		virtual bool IsTrackScanned(TCylinder cyl,THead head) const=0;
 		virtual TStdWinError UnscanTrack(TCylinder cyl,THead head);
-		CString ListSectors(TCylinder cyl,THead head) const;
+		CString ListSectors(TCylinder cyl,THead head,TSector iHighlight=-1,char highlightBullet='\0') const;
 		bool IsTrackDirty(TCylinder cyl,THead head) const;
 		virtual TLogTime EstimateNanosecondsPerOneByte() const;
 		TSector GetCountOfHealthySectors(TCylinder cyl,THead head) const;

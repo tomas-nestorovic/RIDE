@@ -45,8 +45,9 @@
 		return nAppearances;
 	}
 
-	CString TSectorId::List(PCSectorId ids,TSector nIds){
+	CString TSectorId::List(PCSectorId ids,TSector nIds,TSector iHighlight,char highlightBullet){
 		// creates and returns a List of Sector IDs in order as provided
+		ASSERT( iHighlight>=nIds || highlightBullet );
 		if (!nIds)
 			return _T("- [none]\r\n");
 		CString list;
@@ -58,7 +59,7 @@
 			else
 				*duplicateId='\0';
 			CString tmp;
-			tmp.Format( _T("- %s%s\r\n"), ids[i].ToString(), duplicateId );
+			tmp.Format( _T("%c %s%s\r\n"), i!=iHighlight?'-':highlightBullet, ids[i].ToString(), duplicateId );
 			list+=tmp;
 		}
 		return list;
@@ -803,10 +804,10 @@ namespace Medium{
 		return ERROR_NOT_SUPPORTED;
 	}
 
-	CString CImage::ListSectors(TCylinder cyl,THead head) const{
+	CString CImage::ListSectors(TCylinder cyl,THead head,TSector iHighlight,char highlightBullet) const{
 		// creates and returns a List of current Sector IDs as they chronologically appear on the specified Track
 		TSectorId ids[(TSector)-1];
-		return TSectorId::List( ids, ScanTrack(cyl,head,nullptr,ids) );
+		return TSectorId::List( ids, ScanTrack(cyl,head,nullptr,ids), iHighlight, highlightBullet );
 	}
 
 	bool CImage::IsTrackDirty(TCylinder cyl,THead head) const{

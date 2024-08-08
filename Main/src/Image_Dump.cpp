@@ -351,8 +351,8 @@
 							const PSectorData sectorData;
 							const WORD sectorDataLength;
 							TFdcStatus &rFdcStatus;
-							CEdit errorTextBox;
-							std::unique_ptr<CSplitterWnd> splitter;
+							CEdit errorTextBox,sectorListTextBox;
+							std::unique_ptr<CSplitterWnd> splitter,upperSplitter;
 
 							class CSectorHexaEditor sealed:public CHexaEditor{
 							public:
@@ -394,11 +394,19 @@
 								const CRect rcSplitter=MapDlgItemClientRect(ID_ALIGN);
 								splitter.reset( new CSplitterWnd );
 								splitter->CreateStatic( this, 2,1, WS_CHILD|WS_VISIBLE|WS_CLIPSIBLINGS );//WS_CLIPCHILDREN|
-									errorTextBox.Create(
-										AFX_WS_DEFAULT_VIEW&~WS_BORDER | WS_CLIPSIBLINGS | ES_MULTILINE | ES_AUTOHSCROLL | WS_VSCROLL | ES_NOHIDESEL | ES_READONLY,
-										CFrameWnd::rectDefault, splitter.get(), splitter->IdFromRowCol(0,0)
-									);
-									errorTextBox.SetFont( GetFont() );
+									upperSplitter.reset( new CSplitterWnd );
+									upperSplitter->CreateStatic( splitter.get(), 1,2, WS_CHILD|WS_VISIBLE|WS_CLIPSIBLINGS );//WS_CLIPCHILDREN|
+									upperSplitter->SetColumnInfo( 0, rcSplitter.Width()*2/3, 0 ); // Utils::LogicalUnitScaleFactor
+										errorTextBox.Create(
+											AFX_WS_DEFAULT_VIEW&~WS_BORDER | WS_CLIPSIBLINGS | ES_MULTILINE | ES_AUTOHSCROLL | WS_VSCROLL | ES_NOHIDESEL | ES_READONLY,
+											CFrameWnd::rectDefault, upperSplitter.get(), upperSplitter->IdFromRowCol(0,0)
+										);
+										errorTextBox.SetFont( GetFont() );
+										sectorListTextBox.Create(
+											AFX_WS_DEFAULT_VIEW&~WS_BORDER | WS_CLIPSIBLINGS | ES_MULTILINE | ES_AUTOHSCROLL | WS_VSCROLL | ES_NOHIDESEL | ES_READONLY,
+											CFrameWnd::rectDefault, upperSplitter.get(), upperSplitter->IdFromRowCol(0,1)
+										);
+										sectorListTextBox.SetFont( GetFont() );
 								splitter->SetRowInfo( 0, rcSplitter.Height()/3, 0 ); // Utils::LogicalUnitScaleFactor
 									if (IStream *const s=Yahel::Stream::FromBuffer( sectorData, sectorDataLength )){
 										hexaEditor.Reset( s, nullptr, sectorDataLength );
@@ -441,9 +449,10 @@
 										p+=::wsprintf( p, _T("- %s\r\n"), *pDesc++ );
 								else
 									p+=::lstrlen(::lstrcpy(p,NO_STATUS_ERROR));
-								const CString sectorList=dp.source->ListSectors( rp.chs.cylinder, rp.chs.head );
-								p+=::wsprintf( p, _T("\r\nAll sectors on this track:\r\n%s\r\n"), (LPCTSTR)sectorList );
 								errorTextBox.SetWindowText( buf );
+								const CString sectorList=dp.source->ListSectors( rp.chs.cylinder, rp.chs.head, rp.s, '>' );
+								::wsprintf( buf, _T("All sectors on this track:\r\n%s\r\n"), sectorList );
+								sectorListTextBox.SetWindowText( buf );
 								// > converting the "Accept" button to a SplitButton
 								const bool sectorNotFound=rFdcStatus.DescribesMissingId();
 								const Utils::TSplitButtonAction Actions[]={
