@@ -245,7 +245,7 @@
 		for( POSITION pos=CDos::Known.GetHeadPosition(); pos; )
 			if (!CDos::CRecognition().GetOrderIndex(CDos::Known.GetNext(pos))){
 				// found a DOS that's not recorded in the profile - displaying the dialog to confirm its recognition
-				GetMainWindow()->__changeAutomaticDiskRecognitionOrder__();
+				GetMainWindow()->EditAutomaticRecognitionSequence();
 				break;
 			}
 		// - suggesting to visit the FAQ page to learn more about the application
@@ -342,8 +342,6 @@
 	CImage::PCProperties imageProps=nullptr; // Null = an Image, not a real Device
 	CDos::PCProperties manuallyForceDos=nullptr; // Null = use automatic recognition
 
-	#define ENTERING_LIMITED_MODE	_T("\n\nContinuing to view the image in limited mode.")
-
 	CDocument *CRideApp::OpenDocumentFile(LPCTSTR lpszFileName){
 		// opens document with specified FileName
 		app.m_pMainWnd->SetFocus(); // to immediately carry out actions that depend on focus
@@ -407,15 +405,41 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		// - determining the DOS
 		CDos::PCProperties dosProps=nullptr;
 		TFormat formatBoot=TFormat::Unknown; // information on Format (# of Cylinders, etc.) obtained from Image's Boot record
-		if (!manuallyForceDos){
+		if (!manuallyForceDos)
 			// automatic recognition of suitable DOS by sequentially testing each of them
-			::SetLastError(ERROR_SUCCESS); // assumption (no errors)
-			dosProps=CDos::CRecognition().Perform( image.get(), &formatBoot );
-			if (!dosProps) // if recognition sequence cancelled ...
-				return nullptr; // ... no Image or disk is accessed
-			if (!dosProps->IsKnown())
-				Utils::Information(_T("CANNOT RECOGNIZE THE DOS!\nDoes it participate in recognition?") ENTERING_LIMITED_MODE );
-		}else{
+			do{
+				::SetLastError(ERROR_SUCCESS); // assumption (no errors)
+				dosProps=CDos::CRecognition().Perform( image.get(), &formatBoot );
+				if (!dosProps) // if recognition sequence cancelled ...
+					return nullptr; // ... no Image or disk is accessed
+				if (!dosProps->IsKnown()){
+					static constexpr Utils::CSimpleCommandDialog::TCmdButtonInfo CmdButtons[]={
+						{ IDCONTINUE, _T("Continue without DOS") },
+						{ IDRETRY, _T("Retry (recommended)") },
+						{ IDTRYAGAIN, _T("Revise recognition sequence, and retry") },
+						{ IDNO, _T("Manually select DOS") }
+					};
+					switch (
+						Utils::CSimpleCommandDialog(
+							_T("CANNOT RECOGNIZE THE DOS!\nDoes it participate in recognition?"),
+							CmdButtons, ARRAYSIZE(CmdButtons)
+						).DoModal()
+					){
+						case IDCANCEL:
+							return nullptr;
+						case IDNO:
+							manuallyForceDos=(CDos::PCProperties)INVALID_HANDLE_VALUE;
+							break;
+						case IDTRYAGAIN:
+							CDos::CRecognition::EditSequence();
+							//fallthrough
+						case IDRETRY:
+							continue;
+					}
+				}
+				break;
+			}while (true);
+		if (manuallyForceDos){ // testing again for the flag could have been changed above
 			// manual recognition of suitable DOS by user
 			// . defining the Dialog
 			class CDosSelectionDialog sealed:public Utils::CRideDialog{

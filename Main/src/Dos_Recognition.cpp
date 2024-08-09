@@ -120,15 +120,8 @@
 				: nullptr;
 	}
 
-
-
-
-
-
-
-
-	afx_msg void CMainWindow::__changeAutomaticDiskRecognitionOrder__(){
-		// shows the Dialog to manually modify the recognition order of DOS
+	bool CDos::CRecognition::EditSequence(){
+		// True <=> the new order of DOSes that get crack on the disk has been confirmed, otherwise False
 		// - defining the Dialog
 		class CAutomaticRecognitionOrderDialog sealed:public Utils::CRideDialog{
 		public:
@@ -355,6 +348,9 @@
 			}
 		} d;
 		// - showing the Dialog and processing its result
-		if (d.DoModal()==IDOK)
+		if (d.DoModal()==IDOK){
 			d.recognition.SaveToProfile();
+			return true;
+		}else
+			return false;
 	}

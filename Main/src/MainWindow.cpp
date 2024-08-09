@@ -127,7 +127,7 @@
 		ON_COMMAND(ID_TDI_SWITCH_BACK,__switchToPrevTab__)
 		ON_COMMAND(ID_FILE_CLOSE,__closeCurrentTab__)
 			ON_UPDATE_COMMAND_UI(ID_FILE_CLOSE,__closeCurrentTab_updateUI__)
-		ON_COMMAND(ID_RECOGNIZE,__changeAutomaticDiskRecognitionOrder__)
+		ON_COMMAND(ID_RECOGNIZE,EditAutomaticRecognitionSequence)
 		ON_COMMAND(ID_APP_UPDATE,__openUrl_checkForUpdates__)
 			ON_UPDATE_COMMAND_UI(ID_APP_UPDATE,__openUrl_checkForUpdates_updateUI__)
 		ON_COMMAND(ID_HELP_FAQ,__openUrl_faq__)
@@ -297,6 +297,10 @@
 
 	void CMainWindow::OpenApplicationFaqWebPage(LPCTSTR documentName){
 		OpenApplicationPresentationWebPage( _T("Answer"), documentName );
+	}
+
+	afx_msg void CMainWindow::EditAutomaticRecognitionSequence(){
+		CDos::CRecognition::EditSequence();
 	}
 
 	#define VERSION_LATEST_WEB	_T("usingLatest.html")

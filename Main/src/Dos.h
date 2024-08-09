@@ -368,6 +368,8 @@
 
 			static UINT AFX_CDECL Thread(PVOID pCancelableAction);
 		public:
+			static bool EditSequence();
+
 			CRecognition();
 
 			void SaveToProfile() const;

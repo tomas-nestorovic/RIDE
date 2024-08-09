@@ -152,7 +152,7 @@
 					return TRUE;
 			}
 			case ID_ERROR:
-					app.GetMainWindow()->__changeAutomaticDiskRecognitionOrder__();
+					app.GetMainWindow()->EditAutomaticRecognitionSequence();
 					__refreshListOfContainers__();
 					*pResult=0;
 					return TRUE;
