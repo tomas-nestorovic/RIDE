@@ -76,7 +76,7 @@
 				switch (
 					Utils::CSimpleCommandDialog(
 						Utils::SimpleFormat( _T("\"%s\" looks like a tape."), shellName.GetFileName() ),
-						CmdButtons, ARRAYSIZE(CmdButtons), true
+						CmdButtons, ARRAYSIZE(CmdButtons)
 					).DoModal()
 				){
 					case IDYES:{

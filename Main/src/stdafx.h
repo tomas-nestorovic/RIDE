@@ -174,6 +174,8 @@ struct TLogTimeInterval{
 #define TXT_EXTENSION	_T(".txt")
 #define TXT_FILTER		_T("Plain text (*") TXT_EXTENSION _T(")|*") TXT_EXTENSION _T("|")
 
+#define STR_CANCEL		_T("Cancel")
+
 #include "Utils.h"
 #include "BackgroundAction.h"
 #include "Diff.h"

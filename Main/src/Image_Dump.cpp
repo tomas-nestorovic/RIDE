@@ -502,13 +502,12 @@
 									return true; // automatically confirmed if Source or Target don't support low-level Track timing
 								static constexpr Utils::CSimpleCommandDialog::TCmdButtonInfo CmdButtons[]={
 									{ IDYES, _T("Carry out anyway") },
-									{ IDNO, _T("Accept this sector (recommended)") },
-									{ IDCANCEL, _T("Return") }
+									{ IDNO, _T("Accept this sector (recommended)") }
 								};
 								switch (
 									Utils::CSimpleCommandDialog(
 										_T("This command may destroy low-level information for this track. Consider using one of the \"Accept\" options."),
-										CmdButtons, ARRAYSIZE(CmdButtons)
+										CmdButtons, ARRAYSIZE(CmdButtons), _T("Return")
 									).DoModal()
 								){
 									case IDYES:

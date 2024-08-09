@@ -517,11 +517,11 @@ namespace Utils{
 
 
 
-	CSimpleCommandDialog::CSimpleCommandDialog(LPCTSTR information,PCCmdButtonInfo buttons,BYTE nButtons,bool canCancel)
+	CSimpleCommandDialog::CSimpleCommandDialog(LPCTSTR information,PCCmdButtonInfo buttons,BYTE nButtons,LPCTSTR cancelButtonCaption)
 		// ctor
 		: CCommandDialog(information)
 		, buttons(buttons) , nButtons(nButtons)
-		, addDefaultCancelButton(canCancel) {
+		, cancelButtonCaption(cancelButtonCaption) {
 	}
 
 	BOOL CSimpleCommandDialog::OnInitDialog(){
@@ -533,8 +533,8 @@ namespace Utils{
 			const TCmdButtonInfo &cbi=buttons[i];
 			AddCommandButton( cbi.id, cbi.caption, i==0 );
 		}
-		if (addDefaultCancelButton)
-			AddCancelButton();
+		if (cancelButtonCaption)
+			AddCancelButton(cancelButtonCaption);
 		return TRUE;
 	}
 

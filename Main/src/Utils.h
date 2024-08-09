@@ -353,7 +353,7 @@ namespace Utils{
 		void AddButton(WORD id,LPCTSTR caption,WCHAR wingdingsGlyphBeforeText);
 		void AddCommandButton(WORD id,LPCTSTR caption,bool defaultCommand=false);
 		void AddHelpButton(WORD id,LPCTSTR caption);
-		void AddCancelButton(LPCTSTR caption=_T("Cancel"));
+		void AddCancelButton(LPCTSTR caption=STR_CANCEL);
 		void AddCheckBox(LPCTSTR caption);
 
 		CCommandDialog(LPCTSTR _information);
@@ -375,11 +375,11 @@ namespace Utils{
 	protected:
 		const PCCmdButtonInfo buttons;
 		const BYTE nButtons;
-		const bool addDefaultCancelButton;
+		const LPCTSTR cancelButtonCaption;
 
 		BOOL OnInitDialog() override;
 	public:
-		CSimpleCommandDialog(LPCTSTR information,PCCmdButtonInfo buttons,BYTE nButtons,bool canCancel=false);
+		CSimpleCommandDialog(LPCTSTR information,PCCmdButtonInfo buttons,BYTE nButtons,LPCTSTR cancelButtonCaption=STR_CANCEL);
 	};
 
 	class CByteIdentity sealed{

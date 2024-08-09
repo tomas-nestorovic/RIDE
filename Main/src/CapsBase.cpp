@@ -11,7 +11,7 @@
 			switch (
 				Utils::CSimpleCommandDialog(
 					_T("CAPS library outdated, 5.1 or newer required!"),
-					CmdButtons, ARRAYSIZE(CmdButtons), true
+					CmdButtons, ARRAYSIZE(CmdButtons)
 				).DoModal()
 			){
 				case IDYES:

@@ -587,7 +587,7 @@ importQuit2:		::GlobalUnlock(hg);
 					switch (
 						Utils::CSimpleCommandDialog(
 							Utils::SimpleFormat( _T("\"%s\" looks like an image."), shellName.GetFileName() ),
-							CmdButtons, ARRAYSIZE(CmdButtons), true
+							CmdButtons, ARRAYSIZE(CmdButtons)
 						).DoModal()
 					){
 						case IDYES:{

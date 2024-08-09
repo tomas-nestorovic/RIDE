@@ -378,13 +378,12 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 							// . defining the Dialog
 							static constexpr Utils::CSimpleCommandDialog::TCmdButtonInfo CmdButtons[]={
 								{ IDYES, _T("Open at least valid part of it") },
-								{ IDNO, _T("Try to open it as a raw sector image") },
-								{ IDCANCEL, _T("Don't open it") }
+								{ IDNO, _T("Try to open it as a raw sector image") }
 							};
 							// . showing the Dialog and processing its result
 							const BYTE command=Utils::CSimpleCommandDialog(
 								_T("The image seems to be malformatted."),
-								CmdButtons, ARRAYSIZE(CmdButtons)
+								CmdButtons, ARRAYSIZE(CmdButtons), _T("Don't open it")
 							).DoModal();
 							if (command==IDYES) break;
 							OnFileNew();
