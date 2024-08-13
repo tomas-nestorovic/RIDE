@@ -967,11 +967,10 @@
 	}
 
 	bool CImage::CTrackReader::CParseEventList::IntersectsWith(const TLogTimeInterval &ti) const{
-		const auto itEnd=logEnds.upper_bound(ti.tStart);
-		if (itEnd!=logEnds.cend())
-			if (ti.tStart<itEnd->second->tEnd)
-				return true;
-		return FindByStart(ti.tStart);
+		static_assert( std::is_same<decltype(ti.tStart),int>::value, "type must be integral" ); // ...
+		if (const auto it=FindByEnd( ti.tStart+1 )) // ... otherwise use 'upper_bound' here
+			return it->second->Intersect(ti);
+		return false;
 	}
 
 	void CImage::CTrackReader::CParseEventList::RemoveConsecutiveBeforeEnd(TLogTime tEndMax){
