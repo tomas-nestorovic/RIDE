@@ -261,13 +261,15 @@
 					hasNonformattedArea=peTrack.Contains( CImage::CTrackReader::TParseEvent::NONFORMATTED );
 					hasDataInGaps=peTrack.Contains( CImage::CTrackReader::TParseEvent::DATA_IN_GAP );
 					hasFuzzyData=peTrack.Contains( CImage::CTrackReader::TParseEvent::FUZZY_BAD );
-					for( auto it=peTrack.GetIterator(); it; )
-						if (  it=peTrack.FindByStart( 0, CImage::CTrackReader::TParseEvent::DATA_OK, CImage::CTrackReader::TParseEvent::DATA_BAD, &it )  ){
-							const auto &peData=*it++->second;
+					for( auto it=peTrack.GetIterator(); it; ){
+						const auto &pe=*it++->second;
+						if (pe.IsDataStd()){
 							for( BYTE i=0; i<trSrc.GetIndexCount(); i++ )
-								hasDataOverIndex|=peData.Contains( trSrc.GetIndexTime(i) );
-						}else
-							break;
+								hasDataOverIndex|=pe.Contains( trSrc.GetIndexTime(i) );
+							if (hasDataOverIndex)
+								break;
+						}
+					}
 				}
 				for( TSector i=0; i<nSectors; i++ )
 					if ( hasDuplicatedIdFields=TSectorId::CountAppearances(bufferId,i,bufferId[i])>0 )

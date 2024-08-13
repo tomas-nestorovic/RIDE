@@ -912,8 +912,8 @@
 
 	void CImage::CTrackReader::CParseEventList::Add(const CParseEventList &list){
 		// adds all ParseEvents to this -List
-		for( auto it=list.GetIterator(); it; )
-			Add( *it++->second );
+		for each( const auto &pair in list.logStarts )
+			Add( *pair.second );
 	}
 
 	CImage::CTrackReader::CParseEventList::CIterator::CIterator(const CLogTiming &logTimes,const CLogTiming::const_iterator &it)
@@ -935,35 +935,29 @@
 		return it;
 	}
 
-	CParseEventListIterator CImage::CTrackReader::CParseEventList::TBinarySearch::Find(TLogTime tMin,TParseEvent::TType typeFrom,TParseEvent::TType typeTo,const CIterator *pItContinue) const{
-		CParseEventListIterator it=
-			pItContinue!=nullptr
-			? *pItContinue
-			: CParseEventListIterator( *this, lower_bound(tMin) );
-		for( ; it; it++ ){
+	CParseEventListIterator CImage::CTrackReader::CParseEventList::TBinarySearch::Find(TLogTime tMin,TParseEvent::TType typeFrom,TParseEvent::TType typeTo) const{
+		for( auto it=lower_bound(tMin); it!=cend(); it++ ){
 			const TParseEvent &pe=*it->second;
-			if (tMin<=it->first && pe.IsType(typeFrom,typeTo))
-				break;
+			if (pe.IsType(typeFrom,typeTo))
+				return CParseEventListIterator( *this, it );
 		}
-		return it;
+		return CParseEventListIterator( *this, cend() );
 	}
 
-	CParseEventListIterator CImage::CTrackReader::CParseEventList::FindByStart(TLogTime tStartMin,TParseEvent::TType typeFrom,TParseEvent::TType typeTo,const CIteratorByStart *pItContinue) const{
-		ASSERT( !pItContinue || &pItContinue->logTimes==&logStarts ); // mustn't mix iterators
-		return	logStarts.Find( tStartMin, typeFrom, typeTo, pItContinue );
+	CParseEventListIterator CImage::CTrackReader::CParseEventList::FindByStart(TLogTime tStartMin,TParseEvent::TType typeFrom,TParseEvent::TType typeTo) const{
+		return	logStarts.Find( tStartMin, typeFrom, typeTo );
 	}
 
-	CParseEventListIterator CImage::CTrackReader::CParseEventList::FindByStart(TLogTime tStartMin,TParseEvent::TType type,const CIteratorByStart *pItContinue) const{
-		return	FindByStart( tStartMin, type, type, pItContinue );
+	CParseEventListIterator CImage::CTrackReader::CParseEventList::FindByStart(TLogTime tStartMin,TParseEvent::TType type) const{
+		return	FindByStart( tStartMin, type, type );
 	}
 
-	CParseEventListIterator CImage::CTrackReader::CParseEventList::FindByEnd(TLogTime tEndMin,TParseEvent::TType typeFrom,TParseEvent::TType typeTo,const CIteratorByEnd *pItContinue) const{
-		ASSERT( !pItContinue || &pItContinue->logTimes==&logEnds ); // mustn't mix iterators
-		return	logEnds.Find( tEndMin, typeFrom, typeTo, pItContinue );
+	CParseEventListIterator CImage::CTrackReader::CParseEventList::FindByEnd(TLogTime tEndMin,TParseEvent::TType typeFrom,TParseEvent::TType typeTo) const{
+		return	logEnds.Find( tEndMin, typeFrom, typeTo );
 	}
 
-	CParseEventListIterator CImage::CTrackReader::CParseEventList::FindByEnd(TLogTime tEndMin,TParseEvent::TType type,const CIteratorByEnd *pItContinue) const{
-		return	FindByEnd( tEndMin, type, type, pItContinue );
+	CParseEventListIterator CImage::CTrackReader::CParseEventList::FindByEnd(TLogTime tEndMin,TParseEvent::TType type) const{
+		return	FindByEnd( tEndMin, type, type );
 	}
 
 	bool CImage::CTrackReader::CParseEventList::IntersectsWith(const TLogTimeInterval &ti) const{

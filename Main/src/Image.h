@@ -425,7 +425,7 @@
 				} CIteratorByStart, CIteratorByEnd;
 			private:
 				struct TBinarySearch sealed:public CLogTiming{
-					CIterator Find(TLogTime tMin,TParseEvent::TType typeFrom,TParseEvent::TType typeTo,const CIterator *pItContinue) const;
+					CIterator Find(TLogTime tMin,TParseEvent::TType typeFrom,TParseEvent::TType typeTo) const;
 				} logStarts, logEnds; // values may not correspond to real ParseEvent timing (hence the prefix "logical") - but the value is always AT LEAST the real Start/End
 			public:
 				CParseEventList();
@@ -437,10 +437,10 @@
 				inline DWORD GetCount() const{ return logStarts.size(); }
 				inline CIteratorByStart GetFirstByStart() const{ return GetIterator(); }
 				CIteratorByStart GetLastByStart() const;
-				CIteratorByStart FindByStart(TLogTime tStartMin,TParseEvent::TType typeFrom=TParseEvent::NONE,TParseEvent::TType typeTo=TParseEvent::LAST,const CIteratorByStart *pItContinue=nullptr) const;
-				CIteratorByStart FindByStart(TLogTime tStartMin,TParseEvent::TType type,const CIteratorByStart *pItContinue=nullptr) const;
-				CIteratorByEnd FindByEnd(TLogTime tEndMin,TParseEvent::TType typeFrom=TParseEvent::NONE,TParseEvent::TType typeTo=TParseEvent::LAST,const CIteratorByEnd *pItContinue=nullptr) const;
-				CIteratorByEnd FindByEnd(TLogTime tEndMin,TParseEvent::TType type,const CIteratorByEnd *pItContinue=nullptr) const;
+				CIteratorByStart FindByStart(TLogTime tStartMin,TParseEvent::TType typeFrom=TParseEvent::NONE,TParseEvent::TType typeTo=TParseEvent::LAST) const;
+				CIteratorByStart FindByStart(TLogTime tStartMin,TParseEvent::TType type) const;
+				CIteratorByEnd FindByEnd(TLogTime tEndMin,TParseEvent::TType typeFrom=TParseEvent::NONE,TParseEvent::TType typeTo=TParseEvent::LAST) const;
+				CIteratorByEnd FindByEnd(TLogTime tEndMin,TParseEvent::TType type) const;
 				inline bool Contains(TParseEvent::TType type) const{ return peTypeCounts[type]>0; }
 				bool IntersectsWith(const TLogTimeInterval &ti) const;
 				void RemoveConsecutiveBeforeEnd(TLogTime tEndMax);
