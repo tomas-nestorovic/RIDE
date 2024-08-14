@@ -323,14 +323,16 @@
 						sPrev=~--p.s; // as below incremented
 					// : reporting SourceSector Errors if ...
 					}else if (
-						p.fdcStatus && !( // ... this error is NOT automatically accepted
-							p.fdcStatus&p.acceptance.automaticallyAcceptedErrors // an error to be accepted automatically?
-							||
-							p.acceptance.remainingErrorsOnTrack // want automatically accept all errors in the rest of current Track?
-							||
-							p.acceptance.anyErrorsOnUnknownSectors && !dp.dos->IsStdSector(p.chs) // want accept all Unknown Sector errors?
-							||
-							p.acceptance.anyErrorsOnEmptySectors && dp.dos->GetSectorStatus(p.chs)==CDos::TSectorStatus::EMPTY // want accept any error for Empty Sectors?
+						p.fdcStatus & ~( // do remain any errors that can't be accepted automatically?
+							p.acceptance.automaticallyAcceptedErrors
+							|
+							TFdcStatus::SectorNotFound*(
+								p.acceptance.remainingErrorsOnTrack
+								||
+								p.acceptance.anyErrorsOnUnknownSectors && !dp.dos->IsStdSector(p.chs)
+								||
+								p.acceptance.anyErrorsOnEmptySectors && dp.dos->GetSectorStatus(p.chs)==CDos::TSectorStatus::EMPTY
+							)
 						)
 					){
 						// | reading SourceSector particular Revolution
