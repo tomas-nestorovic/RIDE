@@ -709,7 +709,7 @@
 						// : attempting for Sector data in CurrentRevolution
 						pit->ReadSector( *pis, pis->currentRevolution );
 						// : if "better" Data read (by the count of errors), make them a candidate
-						if (currRev->data && currRev->fdcStatus.GetSeverity(fdcStatusMask)<optRev->fdcStatus.GetSeverity(fdcStatusMask)) // better Data read?
+						if (currRev->fdcStatus.GetSeverity(fdcStatusMask)<optRev->fdcStatus.GetSeverity(fdcStatusMask)) // better Data read?
 							if (( optRev=currRev )->fdcStatus.IsWithoutError()) // healthy Data read?
 								break; // return them
 						// : attempting next disk Revolution to retrieve healthy Data
