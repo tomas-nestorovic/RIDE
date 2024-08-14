@@ -200,6 +200,7 @@
 			bool targetSupportsTrackWriting;
 			TPhysicalAddress chs;
 			TSector s; // # of Sectors to skip
+			TSector nSectorsExcluded;
 			TTrack track;
 			bool trackScanned;
 			bool trackWriteable; // Track can be written at once using CImage::WriteTrack
@@ -305,7 +306,7 @@
 				PVOID dummyBuffer[(TSector)-1];
 {LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("reading source"));
 				dp.source->GetTrackData( p.chs.cylinder, p.chs.head, Revolution::ANY_GOOD, bufferId, sectorIdAndPositionIdentity, nSectors, bufferSectorData, bufferLength, bufferFdcStatus, (PLogTime)dummyBuffer ); // reading healthy Sectors (unhealthy ones read individually below); "DummyBuffer" = throw away any outputs
-				for( TSector sPrev=~(p.s=0); p.s<nSectors; ){
+				for( TSector sPrev=~(p.s=p.nSectorsExcluded=0); p.s<nSectors; ){
 					if (pAction->Cancelled)
 						return ERROR_CANCELLED;
 					p.chs.sectorId=bufferId[p.s];
@@ -313,7 +314,7 @@
 					// : reporting SourceSector Exclusion
 					p.exclusion.current|= p.exclusion.allUnknown && !dp.dos->IsStdSector(p.chs);
 					if (p.exclusion.current){
-						nSectors--;
+						nSectors--, p.nSectorsExcluded++;
 						::memmove( bufferId+p.s, bufferId+p.s+1, sizeof(*bufferId)*(nSectors-p.s) );
 						::memmove( bufferSectorData+p.s, bufferSectorData+p.s+1, sizeof(*bufferSectorData)*(nSectors-p.s) );
 						::memmove( bufferLength+p.s, bufferLength+p.s+1, sizeof(*bufferLength)*(nSectors-p.s) );
@@ -452,7 +453,7 @@
 								else
 									p+=::lstrlen(::lstrcpy(p,NO_STATUS_ERROR));
 								errorTextBox.SetWindowText( buf );
-								const CString sectorList=dp.source->ListSectors( rp.chs.cylinder, rp.chs.head, rp.s, '>' );
+								const CString sectorList=dp.source->ListSectors( rp.chs.cylinder, rp.chs.head, rp.s+rp.nSectorsExcluded, '>' );
 								::wsprintf( buf, _T("All sectors on this track:\r\n%s\r\n"), sectorList );
 								sectorListTextBox.SetWindowText( buf );
 								// > converting the "Accept" button to a SplitButton
