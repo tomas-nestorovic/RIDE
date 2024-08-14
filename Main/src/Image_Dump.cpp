@@ -469,6 +469,8 @@
 								};
 								ConvertDlgButtonToSplitButton( IDOK, Actions );
 								EnableDlgItem( IDOK, // accepting errors is allowed only if ...
+									!Actions->menuItemFlags // can accept this error?
+									&&
 									dynamic_cast<CImageRaw *>(dp.target.get())==nullptr // ... the Target Image can accept them
 								);
 								// > converting the "Resolve" button to a SplitButton
