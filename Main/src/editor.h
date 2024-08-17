@@ -13,11 +13,15 @@
 		ATOM propGridWndClass;
 	public:
 		class CRecentFileListEx sealed:public CRecentFileList{
+			HACCEL hAccelTable;
 			CDos::PCProperties openWith[ID_FILE_MRU_LAST+1-ID_FILE_MRU_FIRST];
 			CImage::PCProperties m_deviceProps[ID_FILE_MRU_LAST+1-ID_FILE_MRU_FIRST];
 		public:
 			CRecentFileListEx(const CRecentFileList &rStdMru);
+			~CRecentFileListEx();
 
+			inline const CString &operator[](int nIndex) const{ return const_cast<CRecentFileListEx *>(this)->__super::operator[](nIndex); }
+			inline bool PreTranslateMessage(HWND hWnd,PMSG pMsg) const{ return ::TranslateAccelerator( hWnd, hAccelTable, pMsg )!=0; }
 			CDos::PCProperties GetDosMruFileOpenWith(int nIndex) const;
 			CImage::PCProperties GetMruDevice(int nIndex) const;
 			void Add(LPCTSTR lpszPathName,CDos::PCProperties dosProps,CImage::PCProperties deviceProps);

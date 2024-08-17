@@ -19,6 +19,17 @@
 		// ctor
 		: CRecentFileList( rStdMru.m_nStart, rStdMru.m_strSectionName, rStdMru.m_strEntryFormat, rStdMru.m_nSize, rStdMru.m_nMaxDisplayLength ) {
 		ASSERT( m_nSize<ARRAYSIZE(openWith) );
+		ACCEL accels[ARRAYSIZE(openWith)];
+		for( int i=0; i<ARRAYSIZE(accels); i++ ){
+			ACCEL &r=accels[i];
+			r.fVirt=FVIRTKEY|FCONTROL, r.key='1'+i, r.cmd=ID_FILE_MRU_FIRST+i;
+		}
+		hAccelTable=::CreateAcceleratorTable( accels, ARRAYSIZE(accels) );
+	}
+
+	CRideApp::CRecentFileListEx::~CRecentFileListEx(){
+		// dtor
+		::DestroyAcceleratorTable(hAccelTable);
 	}
 
 	CDos::PCProperties CRideApp::CRecentFileListEx::GetDosMruFileOpenWith(int nIndex) const{

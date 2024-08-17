@@ -292,11 +292,16 @@
 	#if _MFC_VER>=0x0A00
 	afx_msg void CRideApp::OnOpenRecentFile(UINT nID){
 		// opens document from the MRU files list under the given index
+		// - do nothing if MRU entry empty
+		const int i=nID-ID_FILE_MRU_FIRST;
+		const auto &mruList=*app.GetRecentFileList();
+		if (i>=mruList.GetSize() || mruList[i].IsEmpty())
+			return;
 		// - base
 		extern CImage::PCProperties imageProps;
-		imageProps=app.GetRecentFileList()->GetMruDevice(nID-ID_FILE_MRU_FIRST);
+		imageProps=mruList.GetMruDevice(i);
 		extern CDos::PCProperties manuallyForceDos;
-		manuallyForceDos=app.GetRecentFileList()->GetDosMruFileOpenWith(nID-ID_FILE_MRU_FIRST);
+		manuallyForceDos=mruList.GetDosMruFileOpenWith(i);
 		__super::OnOpenRecentFile(nID);
 		// - if no Image opened, it wasn't found in which case it was removed from the MRU files list - projecting the updated MRU files list to the just shown introductory GuidePost
 		if (!CImage::GetActive()){
@@ -307,11 +312,16 @@
 	#else
 	afx_msg BOOL CRideApp::OnOpenRecentFile(UINT nID){
 		// opens document from the MRU files list under the given index
+		// - do nothing if MRU entry empty
+		const int i=nID-ID_FILE_MRU_FIRST;
+		const auto &mruList=*app.GetRecentFileList();
+		if (i>=mruList.GetSize() || mruList[i].IsEmpty())
+			return FALSE;
 		// - base
 		extern CImage::PCProperties imageProps;
-		imageProps=app.GetRecentFileList()->GetMruDevice(nID-ID_FILE_MRU_FIRST);
+		imageProps=mruList.GetMruDevice(i);
 		extern CDos::PCProperties manuallyForceDos;
-		manuallyForceDos=app.GetRecentFileList()->GetDosMruFileOpenWith(nID-ID_FILE_MRU_FIRST);
+		manuallyForceDos=mruList.GetDosMruFileOpenWith(i);
 		if (!__super::OnOpenRecentFile(nID))
 			return FALSE;
 		// - if no Image opened, it wasn't found in which case it was removed from the MRU files list - projecting the updated MRU files list to the just shown introductory GuidePost
