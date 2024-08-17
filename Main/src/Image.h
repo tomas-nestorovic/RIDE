@@ -263,8 +263,6 @@
 		friend class CTrackMapView;
 		friend class CFileManagerView;
 
-		bool writeProtected;
-
 		void Dump() const;
 		void Patch();
 	protected:
@@ -274,7 +272,8 @@
 		static TStdWinError CreateImageForReadingAndWriting(LPCTSTR fileName,CFile &f);
 		static TSector CountSectorsBelongingToCylinder(TCylinder cylRef,PCSectorId ids,TSector nIds);
 
-		bool canBeModified;
+		bool writeProtected;
+		bool canBeModified; // can remove the WriteProtection? (e.g. can't for CAPS *.IPF images that is always read-only)
 		PCSide sideMap; // explicit mapping of Heads to Side numbers (index = Head id, [index] = Side number); may be Null if the container doesn't have such feature (e.g. DSK images)
 
 		BOOL DoSave(LPCTSTR lpszPathName,BOOL bReplace) override;

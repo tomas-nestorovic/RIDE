@@ -139,6 +139,7 @@ error:				f.Close();
 					return err;
 				}
 				// : initializing empty TRDOS Image
+				const Utils::CVarTempReset<bool> wp0( writeProtected, false );
 				pTrdos->InitializeEmptyMedium( nullptr, CActionProgress::None );
 				// : reading SCL Directory
 				TSclDirectoryItem directory[TRDOS503_FILE_COUNT_MAX],*pdi=directory;
