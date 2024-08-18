@@ -609,11 +609,13 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 
 	
 
-	#define REAL_DRIVE_ACCESS	nullptr
+	#define SHORTCUT_DEVICES			L"dev"
+	#define SHORTCUT_KRYOFLUX_STREAMS	L"kfs"
 
 	static HHOOK ofn_hHook;
 	static HHOOK ofn_hMsgHook;
-	static PTCHAR ofn_fileName;
+	static WCHAR ofn_shortcut[4]; // long enough to accommodate any of the above 3-char Shortcuts
+	static CString ofn_shortcutHint;
 
 	#define WM_SHOW_HINT	WM_USER+1
 
@@ -621,6 +623,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		// hooking the "Open/Save File" dialogs
 		const LPCWPSTRUCT pcws=(LPCWPSTRUCT)lParam;
 		if (pcws->message==WM_INITDIALOG){
+			::SetDlgItemText( pcws->hwnd, ID_DRIVEA, ofn_shortcutHint );
 			if (const HWND hComment=::GetDlgItem( pcws->hwnd, ID_COMMENT )){
 				// initializing the customized part of the dialog
 				Utils::CRideDialog::SetDlgItemSingleCharUsingFont(
@@ -631,10 +634,17 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			}
 		}else if (pcws->message==WM_NOTIFY)
 			switch (Utils::CRideDialog::GetClickedHyperlinkId(pcws->lParam)){
-				case ID_DRIVEA:
-					::EndDialog( ::GetParent(pcws->hwnd), IDOK );
-					ofn_fileName=REAL_DRIVE_ACCESS;
+				case ID_DRIVEA:{
+					const HWND hDlg=::GetParent(pcws->hwnd);
+					if (const HWND hFileNameComboBox=::GetDlgItem( hDlg, 0x47c )){ // ID obtained via Spy++
+						::SetWindowTextW( // manually set the file name
+							hFileNameComboBox,
+							::lstrcpyW( ofn_shortcut, ((PNMLINK)pcws->lParam)->item.szID )
+						);
+						return ::SendMessageW( hDlg, WM_COMMAND, IDOK, 0 ); // manually confirm the dialog
+					}
 					return 0;
+				}
 			}
 		return ::CallNextHookEx(ofn_hHook,code,wParam,lParam);
 	}
@@ -656,6 +666,11 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 
 	CImage::PCProperties CRideApp::DoPromptFileName(PTCHAR fileName,bool deviceAccessAllowed,UINT stdStringId,DWORD flags,CImage::PCProperties singleAllowedImage){
 		// reimplementation of CDocManager::DoPromptFileName
+		ofn_shortcutHint.Empty();
+		if (deviceAccessAllowed && !singleAllowedImage)
+			ofn_shortcutHint+=_T("<a id=\"dev\">Access real devices on this computer</a> (additional drivers may be required). ");
+		if (stdStringId==AFX_IDS_SAVEFILE && (!singleAllowedImage||singleAllowedImage==&CKryoFluxStreams::Properties))
+			ofn_shortcutHint+=_T("Continue with <a id=\"kfs\">KryoFlux streams</a>. ");
 		// - creating the list of Filters
 		TCHAR buf[2048],*a=buf; // an "always big enough" buffer
 		DWORD nFilters=0;
@@ -685,20 +700,24 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			d.m_ofn.lpstrTitle=title;
 			d.m_ofn.lpstrFile=fileName;
 		bool dialogConfirmed;
-		if (deviceAccessAllowed){
+		if (!ofn_shortcutHint.IsEmpty()){
 			// . extending the standard Dialog with a control to access local devices
 			d.m_ofn.Flags|= OFN_ENABLETEMPLATE | OFN_EXPLORER;
 			d.m_ofn.lpTemplateName=MAKEINTRESOURCE(IDR_OPEN_CUSTOM);
 			// . hooking, showing the Dialog, processing its Result, unhooking, and returning the Result
-			ofn_fileName=fileName;
+			*ofn_shortcut=L'\0';
 			ofn_hHook=::SetWindowsHookEx( WH_CALLWNDPROC, __dlgOpen_hook__, 0, ::GetCurrentThreadId() );
 				ofn_hMsgHook=::SetWindowsHookEx( WH_GETMESSAGE, __dlgOpen_msgHook__, 0, ::GetCurrentThreadId() );
 					dialogConfirmed=d.DoModal()==IDOK;
 				::UnhookWindowsHookEx(ofn_hMsgHook);
 			::UnhookWindowsHookEx(ofn_hHook);
-			if (ofn_fileName==REAL_DRIVE_ACCESS)
-				// selection of real device to access
+			if (!::lstrcmpW(ofn_shortcut,SHORTCUT_DEVICES)) // want access real device?
 				return ChooseLocalDevice(fileName);
+			if (!::lstrcmpW(ofn_shortcut,SHORTCUT_KRYOFLUX_STREAMS)) // want save as KryoFlux Streams?
+				if (const LPTSTR lastBackslash=_tcsrchr(fileName,'\\')){
+					::lstrcpy( lastBackslash+1, _T("track00.0.raw") );
+					return &CKryoFluxStreams::Properties;
+				}
 		}else
 			dialogConfirmed=d.DoModal()==IDOK;
 		if (dialogConfirmed){
