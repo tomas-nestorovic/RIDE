@@ -821,7 +821,7 @@
 	{	EXCLUSIVELY_LOCK_DEVICE();
 		if (SeekTo(cyl) || SelectHead(head))
 			return CTrackReaderWriter::Invalid;
-		const BYTE nIndicesRequested=std::min<BYTE>( params.PrecisionToFullRevolutionCount(), Revolution::MAX )+1; // N+1 indices = N full revolutions
+		const BYTE nIndicesRequested=std::min( params.PrecisionToFullRevolutionCount(), (BYTE)Revolution::MAX )+1; // N+1 indices = N full revolutions
 		SendRequest( TRequest::STREAM, MAKEWORD(1,nIndicesRequested) ); // start streaming
 			while (const DWORD nBytesFree=tmpDataBuffer+KF_BUFFER_CAPACITY-p)
 				if (const auto n=Read( p, nBytesFree )){

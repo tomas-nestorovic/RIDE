@@ -1040,16 +1040,16 @@ invalidTrack:
 							const CTrackReader::CBitSequence writtenBits( *pitWritten, revWrittenFirstSector.idEndTime, revWrittenFirstSector.idEndProfile, pitWritten->GetIndexTime(1) );
 							const CTrackReader::CBitSequence readBits( *pitVerif, revVerifFirstSector.idEndTime, revVerifFirstSector.idEndProfile, pitVerif->GetIndexTime(1) );
 							// : composition and display of shortest edit script (SES)
-							const DWORD nSesItemsMax=writtenBits.GetBitCount()+readBits.GetBitCount();
+							const auto nSesItemsMax=writtenBits.GetBitCount()+readBits.GetBitCount();
 							if (const auto pSes=Utils::MakeCallocPtr<CDiffBase::TScriptItem>(nSesItemsMax)){
 								struct TVerifParams sealed{
 									const CTrackReader::CBitSequence &writtenBits;
 									const CTrackReader::CBitSequence &readBits;
-									const DWORD nSesItemsMax;
-									const Utils::CCallocPtr<CDiffBase::TScriptItem,DWORD> &pSes;
+									const int nSesItemsMax;
+									const Utils::CCallocPtr<CDiffBase::TScriptItem> &pSes;
 									int nSesItems; // to be computed
 		
-									TVerifParams(const CTrackReader::CBitSequence &writtenBits,const CTrackReader::CBitSequence &readBits,const DWORD nSesItemsMax,const Utils::CCallocPtr<CDiffBase::TScriptItem,DWORD> &pSes)
+									TVerifParams(const CTrackReader::CBitSequence &writtenBits,const CTrackReader::CBitSequence &readBits,int nSesItemsMax,const Utils::CCallocPtr<CDiffBase::TScriptItem> &pSes)
 										: writtenBits(writtenBits) , readBits(readBits)
 										, nSesItemsMax(nSesItemsMax) , pSes(pSes)
 										, nSesItems(-1) { // to be computed

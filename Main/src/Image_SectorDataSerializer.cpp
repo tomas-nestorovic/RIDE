@@ -141,5 +141,5 @@
 
 	BYTE CImage::CSectorDataSerializer::GetAvailableRevolutionCount(TCylinder cyl,THead head) const{
 		// wrapper around CImage::GetAvailableRevolutionCount
-		return	std::min<BYTE>( Revolution::MAX, image->GetAvailableRevolutionCount(cyl,head) );
+		return	std::min( (BYTE)Revolution::MAX, image->GetAvailableRevolutionCount(cyl,head) );
 	}

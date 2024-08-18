@@ -86,7 +86,7 @@
 		constexpr BYTE nNeighboringFluxes=2; // must be an EVEN number!
 		constexpr BYTE nEvaluationFluxes=2+1+2; // "N+1+N", N = fluxes considered before/after the current flux
 		decltype(rPrecomp.latest) trialResults[9];
-		const BYTE nTrials=std::min<BYTE>( ptp.nTrials, ARRAYSIZE(trialResults) );
+		const BYTE nTrials=std::min( ptp.nTrials, (BYTE)ARRAYSIZE(trialResults) );
 		const Medium::PCProperties pMediumProps=Medium::GetProperties(rPrecomp.floppyType);
 		const Utils::CVarTempReset<Medium::TType> mt0( const_cast<CCapsBase *>(&ptp.cb)->floppyType, rPrecomp.floppyType ); // force selected Medium
 		const Utils::CVarTempReset<TCorrections> cor0( const_cast<CCapsBase *>(&ptp.cb)->params.corrections, TCorrections() ); // disable Corrections
@@ -124,7 +124,7 @@
 			for( BYTE n=10; n>0; n-- ) // indication of beginning of test data
 				trw.AddTime( t+=5*mediumProps.cellTime );
 			for( WORD n=0; n<sizeof(distances); n++ ){ // generating test data
-				distances[n]=std::min<BYTE>( 4, 2+(::rand()&3) ); // "2+" = between two 1's must always be at least one 0 (otherwise pre-compensation is useless, e.g. FM encoding)
+				distances[n]=std::min( 4, 2+(::rand()&3) ); // "2+" = between two 1's must always be at least one 0 (otherwise pre-compensation is useless, e.g. FM encoding)
 				trw.AddTime( t+=distances[n]*mediumProps.cellTime );
 			}
 			while (t<mediumProps.revolutionTime) // filling the remainder of the Track

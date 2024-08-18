@@ -449,7 +449,7 @@
 		const TTrack nTracks=IMAGE->GetTrackCount();
 		EXCLUSIVELY_LOCK(scanner.params);
 			scanner.params.a=std::max( 0, (iScrollY-TRACK0_Y)/TRACK_HEIGHT );
-			scanner.params.z=std::min<LONG>( nTracks, std::max( 0L, Utils::RoundDivUp<LONG>(iScrollY+r.Height()/Utils::LogicalUnitScaleFactor-TRACK0_Y,TRACK_HEIGHT) ) );
+			scanner.params.z=std::min( nTracks, std::max( 0, Utils::RoundDivUp(iScrollY+r.Height()/Utils::LogicalUnitScaleFactor-TRACK0_Y,TRACK_HEIGHT) ) );
 			scanner.params.x=scanner.params.a-1; // "-1" = see "++x" in scanner Thread
 		// - launching the Scanner of Tracks
 		scanner.scanNextTrack.SetEvent();

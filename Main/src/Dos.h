@@ -75,7 +75,7 @@
 			inline CPathString Clone() const{ return CPathString(*this); }
 			int GetLengthW() const;
 			char FirstCharA() const;
-			void MemcpyAnsiTo(PCHAR buf,BYTE bufCapacity,char padding) const;
+			void MemcpyAnsiTo(PCHAR buf,int bufCapacity,char padding) const;
 			PTCHAR FindLast(TCHAR c) const;
 			inline PTCHAR FindLastDot() const{ return FindLast('.'); }
 			int Compare(const CPathString &other,TFnCompareNames comparer) const;

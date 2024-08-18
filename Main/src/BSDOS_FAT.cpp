@@ -60,7 +60,7 @@
 
 
 	bool CBSDOS308::__isValidFatSectorNumber__(TLogSector lsFat) const{
-		return	BSDOS_FAT_LOGSECTOR_MIN<=lsFat && lsFat<std::min<DWORD>(BSDOS_FAT_LOGSECTOR_MAX,formatBoot.GetCountOfAllSectors());
+		return	BSDOS_FAT_LOGSECTOR_MIN<=lsFat && lsFat<std::min((DWORD)BSDOS_FAT_LOGSECTOR_MAX,formatBoot.GetCountOfAllSectors());
 	}
 
 	CBSDOS308::TFatValue CBSDOS308::__getLogicalSectorFatItem__(TLogSector logSector) const{

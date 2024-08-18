@@ -294,7 +294,7 @@
 					break;
 				default:{
 					de->fileHasStdHeader=true;
-					de->file.stdHeader.length=std::min<DWORD>( de->file.dataLength, (WORD)-1 );
+					de->file.stdHeader.length=std::min( de->file.dataLength, (DWORD)USHRT_MAX );
 					de->file.stdHeader.params=TStdParameters::Default;
 					de->file.stdHeader.SetName(CPathString::Unnamed8);
 					de->file.stdHeader.type=(TZxRom::TFileType)newType.charValue;

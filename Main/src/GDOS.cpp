@@ -471,8 +471,8 @@
 			// . exporting File's data
 			__super::ExportFile( file, fOut, nBytesToExportMax, pOutError );
 			// . exporting Etc data stored in DirectoryEntry
-			if (const DWORD nBytesReserved=nBytesToExportMax-fOut->GetLength())
-				fOut->Write( &de->etc, std::min<UINT>(nBytesReserved,sizeof(de->etc)) );
+			if (const UINT nBytesReserved=nBytesToExportMax-fOut->GetLength())
+				fOut->Write( &de->etc, std::min(nBytesReserved,sizeof(de->etc)) );
 		}
 		return reinterpret_cast<PCDos>(this)->GetFileSize(de)+sizeof(de->etc);
 	}

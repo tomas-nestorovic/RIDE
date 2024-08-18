@@ -165,7 +165,7 @@ using namespace Yahel;
 						::memcpy( orgDirEntry+sel.a-dirEntryStart, rstDirEntry+sel.a-dirEntryStart, std::min<TPosition>(sel.GetLength(),pdt->entrySize) );
 						f->Seek( dirEntryStart, CFile::begin );
 						f->Write( orgDirEntry, pdt->entrySize );
-						sel.a=std::min<TPosition>( dirEntryStart+pdt->entrySize, sel.z );
+						sel.a=std::min( dirEntryStart+pdt->entrySize, sel.z );
 					}
 				}
 				RepaintData();

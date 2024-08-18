@@ -87,13 +87,13 @@
 		return *GetAnsi();
 	}
 
-	void CDos::CPathString::MemcpyAnsiTo(PCHAR buf,BYTE bufCapacity,char padding) const{
+	void CDos::CPathString::MemcpyAnsiTo(PCHAR buf,int bufCapacity,char padding) const{
 		// copies the ANSI version of the string to provided Buffer (incl. any non-printables characters inside, e.g. Null characters), filling the rest of its Capacity with given Padding character
 		const auto ansi=GetAnsi();
 		::memcpy( // sequence may be interrupted by '\0' chars (e.g. Spectrum DOSes)
 			::memset( buf, padding, bufCapacity ),
 			ansi,
-			std::min<int>( ansi.GetLength(), bufCapacity )
+			std::min( ansi.GetLength(), bufCapacity )
 		);
 	}
 

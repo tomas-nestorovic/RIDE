@@ -354,7 +354,7 @@
 					if (sizeof(TGKFileManager)<=w && w<sizeof(boot.reserved1)) // GKFM_VRAM+2 = GK's File Manager data length in Boot Sector
 						nCharsMaxD=sizeof(boot.reserved1)-w;
 					else if (w>=MDOS2_SECTOR_LENGTH_STD-sizeof(UReserved3) && w<MDOS2_SECTOR_LENGTH_STD)
-						nCharsMaxD=std::min<WORD>( GKFM_TEXT_MAX, MDOS2_SECTOR_LENGTH_STD-w );
+						nCharsMaxD=std::min( GKFM_TEXT_MAX, MDOS2_SECTOR_LENGTH_STD-w );
 					else{
 errorText:				TCHAR buf[400];
 						::wsprintf( buf, _T("Text location collides with critical section in the boot.\n\nTo resolve, try to\n(a) shorten the text to max.%d characters (incl. all Desktop formatting characters), or\n(b) change its beginning in the ") BOOT_SECTOR_ADVANCED _T(" setting subcategory."), GKFM_TEXT_MAX );

@@ -94,10 +94,10 @@
 		DDX_Text( pDX,	ID_CYLINDER	,(RCylinder)params.cylinder0 );
 			DDV_MinMaxUInt( pDX, params.cylinder0, 0, params.format.nCylinders );
 		DDX_Text( pDX,	ID_HEAD	,params.format.nHeads );
-			const THead nHeadsMax =	params.cylinder0 ? std::min<int>(dos->formatBoot.nHeads,propMedium->headRange.iMax) : propMedium->headRange.iMax;
+			const THead nHeadsMax =	params.cylinder0 ? std::min((int)dos->formatBoot.nHeads,propMedium->headRange.iMax) : propMedium->headRange.iMax;
 			DDV_MinMaxUInt( pDX, params.format.nHeads, propMedium->headRange.iMin, nHeadsMax );
 		DDX_Text( pDX,	ID_SECTOR	,params.format.nSectors );
-			DDV_MinMaxUInt( pDX, params.format.nSectors, std::max<int>(propMedium->sectorRange.iMin,propDos->nSectorsOnTrackMin), std::min<int>(propMedium->sectorRange.iMax,propDos->nSectorsOnTrackMax) );
+			DDV_MinMaxUInt( pDX, params.format.nSectors, std::max(propMedium->sectorRange.iMin,(int)propDos->nSectorsOnTrackMin), std::min<int>(propMedium->sectorRange.iMax,propDos->nSectorsOnTrackMax) );
 		DDX_Text( pDX,	ID_SIZE	,(short &)params.format.sectorLength );
 			DDV_MinMaxUInt( pDX, params.format.sectorLength, propImage->sectorLengthMin, propImage->sectorLengthMax );
 			if (pDX->m_bSaveAndValidate)

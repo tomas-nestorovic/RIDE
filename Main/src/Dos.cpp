@@ -250,7 +250,7 @@ reportError:Utils::Information(buf);
 		pAction->SetProgressTarget(200);
 		if (d.updateBoot){
 			// requested to update Format in Boot Sector
-			d.dos->formatBoot.nCylinders=std::max<int>( d.dos->formatBoot.nCylinders, d.params.format.nCylinders+1 ); // "+1" = because Cylinders numbered from zero
+			d.dos->formatBoot.nCylinders=std::max( (int)d.dos->formatBoot.nCylinders, d.params.format.nCylinders+1 ); // "+1" = because Cylinders numbered from zero
 			d.dos->FlushToBootSector();
 		}
 		pAction->IncrementProgress(100);

@@ -78,7 +78,7 @@
 		// updates the FAT after the number of Cylinders in the FAT has been changed
 		const PDos dos=CDos::GetFocused();
 		// - making sure affected Cylinders are Empty
-		const TCylinder nCyl0=dos->formatBoot.nCylinders, cylA=std::min<int>(nCyl0,newValue), cylZ=std::max<int>(nCyl0,newValue);
+		const TCylinder nCyl0=dos->formatBoot.nCylinders, cylA=std::min((int)nCyl0,newValue), cylZ=std::max((int)nCyl0,newValue);
 		const THead nHeads=dos->formatBoot.nHeads;
 		if (dos->AreStdCylindersEmpty(cylA,cylZ-1)!=ERROR_EMPTY){
 			Utils::Information( DOS_ERR_CANNOT_ACCEPT_VALUE, DOS_ERR_CYLINDERS_NOT_EMPTY, DOS_MSG_HIT_ESC );
@@ -175,7 +175,7 @@
 				if (cbp.chs){
 					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.nCylinders, nullptr, __updateFatAfterChangingCylinderCount__, props->cylinderRange.iMax, _T("Cylinders") );
 					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.nHeads, CRITICAL_VALUE_SIDES_COUNT, __confirmCriticalValueInBoot__, props->headRange.iMax, _T("Heads") );
-					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.nSectors, CRITICAL_VALUE_SECTORS_COUNT, __confirmCriticalValueInBoot__, std::min<int>(props->sectorRange.iMax,DOS->properties->nSectorsOnTrackMax), _T("Sectors/track") );
+					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.nSectors, CRITICAL_VALUE_SECTORS_COUNT, __confirmCriticalValueInBoot__, std::min(props->sectorRange.iMax,(int)DOS->properties->nSectorsOnTrackMax), _T("Sectors/track") );
 				}
 				if (cbp.sectorLength)
 					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.sectorLength, CRITICAL_VALUE_SECTOR_SIZE, __confirmCriticalValueInBoot__, 16384, _T("Sector size") );

@@ -499,7 +499,7 @@
 			WORD nIndicesRequested;
 		} readParams={
 			0,
-			std::min<BYTE>( params.PrecisionToFullRevolutionCount(), Revolution::MAX )+1 // N+1 indices = N full revolutions
+			std::min( params.PrecisionToFullRevolutionCount(), (BYTE)Revolution::MAX )+1 // N+1 indices = N full revolutions
 		};
 		static_assert( sizeof(readParams)==6, "" );
 		if (const TStdWinError err=SendRequest( TRequest::READ_FLUX, &readParams, sizeof(readParams) ))

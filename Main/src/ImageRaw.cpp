@@ -98,7 +98,7 @@ using namespace Yahel;
 				canBeModified=false;
 		// - currently without geometry (DOS must call SetMediumTypeAndGeometry)
 		if ( sizeWithoutGeometry=f.GetLength() )
-			nCylinders=1, nHeads=1, nSectors=1, sectorLengthCode=GetSectorLengthCode( sectorLength=std::min<DWORD>(sizeWithoutGeometry,(WORD)-1) );
+			nCylinders=1, nHeads=1, nSectors=1, sectorLengthCode=GetSectorLengthCode( sectorLength=std::min(sizeWithoutGeometry,(DWORD)USHRT_MAX) );
 		// - confirming initial settings
 		if (!EditSettings(true)){ // dialog cancelled?
 			::SetLastError( ERROR_CANCELLED );
@@ -340,7 +340,7 @@ trackNotFound:
 			// MediumType and/or its Format were not successfully determined (DosUnknown)
 			__freeBufferOfCylinders__();
 			if (fileSize){
-				nCylinders=1, nHeads=1, nSectors=1, sectorLengthCode=GetSectorLengthCode( sectorLength=std::min<DWORD>(fileSize,(WORD)-1) );
+				nCylinders=1, nHeads=1, nSectors=1, sectorLengthCode=GetSectorLengthCode( sectorLength=std::min(fileSize,(DWORD)USHRT_MAX) );
 				bufferOfCylinders.reset( Utils::MakeCallocPtr<PVOID,TCylinder>(nCylinders,0).release() );
 			}//else
 				//nop (see ctor, or specifically OnOpenDocument)

@@ -214,7 +214,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 										}
 									// . saving the Track to the file
 									fTarget.SetLength( // make reserve so that the Track can expand upon different data
-										std::max<DWORD>( fTargetLength, tdhOffsets[cylFile][head]+capacity )
+										std::max( fTargetLength, tdhOffsets[cylFile][head]+capacity )
 									);
 									fTarget.Seek( tdhOffsets[cylFile][head], CFile::begin );
 									fTarget.Write( buffer, trackLength );

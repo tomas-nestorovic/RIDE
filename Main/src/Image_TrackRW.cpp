@@ -3,7 +3,7 @@
 	CImage::CTrackReader::CTrackReader(PLogTime _logTimes,DWORD nLogTimes,PCLogTime indexPulses,BYTE _nIndexPulses,Medium::TType mediumType,Codec::TType codec,TDecoderMethod method,bool resetDecoderOnIndex)
 		// ctor
 		: logTimes(_logTimes+2) , nLogTimes(nLogTimes) // "+2" = hidden items represent buffer capacity and reference counter
-		, iNextIndexPulse(0) , nIndexPulses(  std::min<BYTE>( Revolution::MAX, _nIndexPulses )  )
+		, iNextIndexPulse(0) , nIndexPulses(  std::min( (BYTE)Revolution::MAX, _nIndexPulses )  )
 		, iNextTime(0) , currentTime(0) , lastReadBits(0)
 		, method(method) , resetDecoderOnIndex(resetDecoderOnIndex) {
 		::memcpy( this->indexPulses, indexPulses, nIndexPulses*sizeof(TLogTime) );
@@ -504,13 +504,13 @@
 					new CBitSequence( *this, GetIndexTime(i), CreateResetProfile(), GetIndexTime(i+1) )
 				);
 			// . forward comparison of Revolutions, from the first to the last; bits not included in the last diff script are stable across all previous Revolutions
-			struct:Utils::CCallocPtr<CDiffBase::TScriptItem,DWORD>{
+			struct:Utils::CCallocPtr<CDiffBase::TScriptItem>{
 				int nItems;
 			} shortesEditScripts[Revolution::MAX];
 			for( BYTE i=0; i<nFullRevolutions-1; ){
 				// : comparing the two neighboring Revolutions I and J
 				const CBitSequence &jRev=*pRevolutionBits[i], &iRev=*pRevolutionBits[++i];
-				const DWORD nSesItemsMax=iRev.GetBitCount()+jRev.GetBitCount();
+				const auto nSesItemsMax=iRev.GetBitCount()+jRev.GetBitCount();
 				auto &ses=shortesEditScripts[i];
 				ses.nItems=iRev.GetShortestEditScript( jRev, ses.Realloc(nSesItemsMax), nSesItemsMax, ap.CreateSubactionProgress(StepGranularity) );
 				if (ses.nItems==0){ // neighboring Revolutions bitwise identical?
@@ -668,7 +668,7 @@
 			tr.ReadBit(), nBits++;
 		pBits.Realloc( nBits+1 ); // "+1" = auxiliary terminal Bit
 		tr.SetCurrentTimeAndProfile( tFrom, profileFrom );
-		for( DWORD i=0; i<nBits; ){
+		for( int i=0; i<nBits; ){
 			TBit &r=pBits[i++];
 				r.time=tr.GetCurrentTime();
 				r.flags=0;
@@ -677,7 +677,7 @@
 		pBits[nBits].time=tr.GetCurrentTime(); // auxiliary terminal Bit
 	}
 
-	int CImage::CTrackReader::CBitSequence::GetShortestEditScript(const CBitSequence &theirs,CDiffBase::TScriptItem *pOutScript,DWORD nScriptItemsMax,CActionProgress &ap) const{
+	int CImage::CTrackReader::CBitSequence::GetShortestEditScript(const CBitSequence &theirs,CDiffBase::TScriptItem *pOutScript,int nScriptItemsMax,CActionProgress &ap) const{
 		// creates the shortest edit script (SES) and returns the number of its Items (or -1 if SES couldn't have been composed, e.g. insufficient output Buffer)
 		ASSERT( pOutScript!=nullptr );
 		return	CDiff<TBit>(
@@ -700,7 +700,7 @@
 				case CDiffBase::TScriptItem::INSERTION:
 					// "theirs" contains some extra bits that "this" misses
 					rDiff.color=0xb4; // tinted red
-					rDiff.tEnd=pBits[std::min<DWORD>( si.iPosA+1, nBits )].time; // even Insertions must be represented locally!
+					rDiff.tEnd=pBits[std::min( si.iPosA+1, nBits )].time; // even Insertions must be represented locally!
 					pBits[si.iPosA].cosmeticFuzzy=true;
 					break;
 				default:
@@ -709,7 +709,7 @@
 				case CDiffBase::TScriptItem::DELETION:
 					// "theirs" misses some bits that "this" contains
 					rDiff.color=0x5555ff; // another tinted red
-					int iDeletionEnd=std::min<DWORD>( si.iPosA+si.del.nItemsA+1, nBits ); // "+1" = see above Insertion (only for cosmetical reasons)
+					int iDeletionEnd=std::min( si.iPosA+si.del.nItemsA+1, nBits ); // "+1" = see above Insertion (only for cosmetical reasons)
 					rDiff.tEnd=pBits[iDeletionEnd].time;
 					pBits[--iDeletionEnd].cosmeticFuzzy=true; // see above Insertion
 					while (iDeletionEnd>si.iPosA)
@@ -745,7 +745,7 @@
 		do{
 			// . inheriting Flags from Bits identical up to the next ScriptItem
 			const int iDiffStartPos= nScriptItems>0 ? pScriptItem->iPosA : nBits;
-			int nIdentical=std::min<int>( iDiffStartPos-iMyBit, theirs.nBits-iTheirBit );
+			int nIdentical=std::min( iDiffStartPos-iMyBit, theirs.nBits-iTheirBit );
 			while (nIdentical-->0){
 				if (pBits[iMyBit].value!=theirs.pBits[iTheirBit].value)
 					Utils::Information(_T("MRTKI!!!!"));
@@ -779,7 +779,7 @@
 #ifdef _DEBUG
 	void CImage::CTrackReader::CBitSequence::SaveCsv(LPCTSTR filename) const{
 		CFile f( filename, CFile::modeWrite|CFile::modeCreate );
-		for( DWORD b=0; b<nBits; b++ )
+		for( int b=0; b<nBits; b++ )
 			Utils::WriteToFileFormatted( f, "%c, %d\n", '0'+pBits[b].value, pBits[b].time );
 	}
 #endif

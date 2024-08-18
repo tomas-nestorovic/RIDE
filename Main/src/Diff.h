@@ -28,7 +28,7 @@
 		} *PCScriptItem;
 	protected:
 		mutable TScriptItem *pEmptyScriptItem;
-		mutable DWORD nEmptyScriptItems;
+		mutable int nEmptyScriptItems;
 
 		int MergeScriptItems(TScriptItem *buffer) const;
 	};
@@ -188,7 +188,7 @@
 			: A(A) , N(N) {
 		}
 
-		int GetShortestEditScript(const T *B,int M,TScriptItem *pOutScriptItemBuffer,DWORD nScriptItemsBufferCapacity,CActionProgress &ap){
+		int GetShortestEditScript(const T *B,int M,TScriptItem *pOutScriptItemBuffer,int nScriptItemsBufferCapacity,CActionProgress &ap){
 			// composes the shortest edit Script and returns the number of its Items (or -1 if Script couldn't have been composed, e.g. insufficient output Buffer)
 			this->B=B;
 			this->max=N+M+1;

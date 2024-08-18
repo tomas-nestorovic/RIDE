@@ -188,7 +188,7 @@
 				::ZeroMemory(&ofn,sizeof(ofn));
 				ofn.lStructSize=sizeof(ofn);
 				ofn.hInstance=GET_PROPGRID_HINSTANCE( ofn.hwndOwner=hEdit );
-				ofn.lpstrFile=::lstrcpynW( buf, (LPCWSTR)value.buffer, std::min<>(valueSize+1,MAX_PATH) );
+				ofn.lpstrFile=::lstrcpynW( buf, (LPCWSTR)value.buffer, std::min(valueSize+1,MAX_PATH) );
 				ofn.nMaxFile=MAX_PATH;
 			if (::GetOpenFileNameW(&ofn))
 				return ::SetWindowTextW( hEdit, buf )!=FALSE;
@@ -200,7 +200,7 @@
 				::ZeroMemory(&ofn,sizeof(ofn));
 				ofn.lStructSize=sizeof(ofn);
 				ofn.hInstance=GET_PROPGRID_HINSTANCE( ofn.hwndOwner=hEdit );
-				ofn.lpstrFile=::lstrcpynA( buf, (LPCSTR)value.buffer, std::min<>(valueSize+1,MAX_PATH) );
+				ofn.lpstrFile=::lstrcpynA( buf, (LPCSTR)value.buffer, std::min(valueSize+1,MAX_PATH) );
 				ofn.nMaxFile=MAX_PATH;
 			if (::GetOpenFileNameA(&ofn))
 				return ::SetWindowTextA( hEdit, buf )!=FALSE;

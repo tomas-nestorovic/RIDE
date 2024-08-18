@@ -211,7 +211,7 @@
 								const LONG b =	r.top+LogicalUnitScaleFactor*EDITOR_DEFAULT_HEIGHT
 												+
 												1; // width of the horizontal line separating individial ListBox Items
-								r.bottom=std::min<>(r.bottom,b);
+								r.bottom=std::min(r.bottom,b);
 									pItem->__drawIndentedName__( dc, r, FONT_DEFAULT );
 								r.bottom=i;
 							// | drawing decorations
