@@ -2172,9 +2172,8 @@ namespace Utils{
 
 	void CRideDialog::ConvertDlgCheckboxToHyperlink(WORD id) const{
 		// converts an existing standard check-box to one with a hyperlink in its text
+		static WNDPROC checkboxWndProc0;
 		static struct{
-			WNDPROC checkbox0;
-
 			static LRESULT WINAPI Checkbox(HWND hCheckbox,UINT msg,WPARAM wParam,LPARAM lParam){
 				switch (msg){
 					case WM_SETFOCUS:
@@ -2195,7 +2194,7 @@ namespace Utils{
 						const bool focused=::GetFocus()==hCheckbox;
 						if (focused)
 							::SetFocus(hHyperlink); // pass focus over to not draw the focus rectangle in the CheckBox
-						const LRESULT result=::CallWindowProc( wndProc.checkbox0, hCheckbox, msg, wParam, lParam );
+						const LRESULT result=::CallWindowProc( checkboxWndProc0, hCheckbox, msg, wParam, lParam );
 						if (focused){
 							::SetFocus(hCheckbox); // recover the original focus
 							//::ValidateRect( hCheckbox, nullptr );
@@ -2213,12 +2212,12 @@ namespace Utils{
 						return result;
 					}
 				}
-				return ::CallWindowProc( wndProc.checkbox0, hCheckbox, msg, wParam, lParam );
+				return ::CallWindowProc( checkboxWndProc0, hCheckbox, msg, wParam, lParam );
 			};
 		} wndProc;
 
 		const HWND hStdCheckbox=GetDlgItemHwnd(id);
-		wndProc.checkbox0=Utils::SubclassWindow( hStdCheckbox, wndProc.Checkbox );
+		checkboxWndProc0=Utils::SubclassWindow( hStdCheckbox, wndProc.Checkbox );
 		const Utils::CRideFont dlgFont(m_hWnd);
 		CRect rc=GetDlgItemClientRect(id);
 			if (IsVistaOrNewer()){
