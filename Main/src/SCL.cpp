@@ -114,7 +114,7 @@
 				// : instantiating the TRDOS with the highest priority in the recognition sequence
 				std::unique_ptr<CTRDOS503> pTrdos=nullptr; // assumption (no TR-DOS participates in the recognition sequence)
 				const CDos::CRecognition recognition;
-				for( POSITION pos=recognition.GetFirstRecognizedDosPosition(); pos; ){
+				for( auto pos=recognition.GetFirstRecognizedDosPosition(); pos; ){
 					const CDos::PCProperties p=recognition.GetNextRecognizedDos(pos);
 					if (!::memcmp(p->name,TRDOS_NAME_BASE,sizeof(TRDOS_NAME_BASE)-1)){
 						const TFormat fmt={

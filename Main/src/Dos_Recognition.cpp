@@ -58,17 +58,15 @@
 		return 0;
 	}
 
-	POSITION CDos::CRecognition::GetFirstRecognizedDosPosition() const{
+	BYTE CDos::CRecognition::GetFirstRecognizedDosPosition() const{
 		// returns the position of the first DOS that participates in Image recognition
-		return	order[1]->IsKnown() // indexing starts from 1
-				? (POSITION)1
-				: nullptr;
+		return	order[1]->IsKnown(); // indexing starts from 1; returns 0 if Order empty
 	}
-	CDos::PCProperties CDos::CRecognition::GetNextRecognizedDos(POSITION &pos) const{
+	CDos::PCProperties CDos::CRecognition::GetNextRecognizedDos(BYTE &pos) const{
 		// returns the Properties of the next DOS that participates in Image recognition
-		const PCProperties result=order[(BYTE)pos++];
-		if (!order[(BYTE)pos]->IsKnown())
-			pos=nullptr;
+		const PCProperties result=order[pos++];
+		if (!order[pos]->IsKnown())
+			pos=0;
 		return result;
 	}
 
@@ -76,7 +74,7 @@
 		const CDos::CRecognition &recognition;
 		const PImage image;
 		const PFormat pOutFormatBoot;
-		POSITION pos;
+		BYTE pos;
 		CDos::PCProperties props;
 
 		TRecognitionParams(const CDos::CRecognition &recognition,PImage image,PFormat pOutFormatBoot)

@@ -40,7 +40,6 @@
 		// - focusing the MainControl
 		::SetFocus( mainControlExists ? hMainCtrl : hEllipsisBtn );
 		//::SetCapture(_hMainCtrl); // commented out, otherwise the Ellipsis button won't be clickable by mouse
-		__nop();
 	}
 
 	TEditor::TControl::~TControl(){

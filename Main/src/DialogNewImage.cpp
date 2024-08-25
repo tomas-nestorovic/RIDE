@@ -54,7 +54,7 @@
 		if (dosProps){
 			// some DOS selected
 			const CDos::CRecognition recognition;
-			for( POSITION pos=recognition.GetFirstRecognizedDosPosition(); pos; )
+			for( auto pos=recognition.GetFirstRecognizedDosPosition(); pos; )
 				if (recognition.GetNextRecognizedDos(pos)==dosProps){
 					// yes, DOS participates in the automatic recognition sequence
 					CListBox lb;

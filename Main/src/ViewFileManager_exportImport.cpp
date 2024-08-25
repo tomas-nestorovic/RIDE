@@ -553,7 +553,7 @@ importQuit2:		::GlobalUnlock(hg);
 			// File
 			// . "God Mode" - automatic generation of random Files
 			if (app.IsInGodMode()){
-				int nItemsToGenerate, fileLengthMin, fileLengthMax, i;
+				int nItemsToGenerate, fileLengthMin, fileLengthMax, i=0;
 				if (_stscanf( fileName, _T("GODMODE %d F %d %d.%c"), &nItemsToGenerate, &fileLengthMin, &fileLengthMax, &i )==4){
 					// processing the request
 					char name[16],data[16384];

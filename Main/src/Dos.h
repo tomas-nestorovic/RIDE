@@ -375,8 +375,8 @@
 			void SaveToProfile() const;
 			BYTE AddDosByPriorityDescending(PCProperties props);
 			BYTE GetOrderIndex(PCProperties props) const;
-			POSITION GetFirstRecognizedDosPosition() const;
-			PCProperties GetNextRecognizedDos(POSITION &pos) const;
+			BYTE GetFirstRecognizedDosPosition() const;
+			PCProperties GetNextRecognizedDos(BYTE &pos) const;
 			PCProperties Perform(PImage image,PFormat pOutFormatBoot) const;
 		};
 
