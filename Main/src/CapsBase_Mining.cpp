@@ -153,7 +153,7 @@
 				);
 				graphics.list[0]=minedTrackIndexSeries.get();
 				// . timing
-				const auto iTimeStride=Utils::RoundDivUp<DWORD>( trw.GetTimesCount(), MINED_TRACK_TIMES_COUNT_MAX ); // round up so that we never overrun the buffer
+				const auto iTimeStride=Utils::RoundDivUp( trw.GetTimesCount(), (DWORD)MINED_TRACK_TIMES_COUNT_MAX ); // round up so that we never overrun the buffer
 				const PCLogTime trackTiming=trw.GetBuffer();
 				LPPOINT pxy=minedTrackDeltaTiming;
 				for( DWORD i=1; i<trw.GetTimesCount(); i+=iTimeStride,pxy++ ){

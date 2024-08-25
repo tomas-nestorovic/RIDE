@@ -188,7 +188,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				const TCylinder cyl=cylFile>>(BYTE)params.doubleTrackStep;
 				bool bStreamAdjusted;
 				for( THead head=0; head<2; ap.UpdateProgress(++head+cylFile*2) ){
-					const auto fTargetLength=fTarget.GetLength();
+					const DWORD fTargetLength=fTarget.GetLength();
 					if (savingToCurrentFile){
 						// modifying existing file
 						if (const PInternalTrack pit=GetModifiedTrackSafe(cyl,head)){ // Track modified?

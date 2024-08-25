@@ -208,7 +208,7 @@
 	CMSDOS7::TLogSector16 CMSDOS7::TBootSector::__getCountOfPermanentRootDirectorySectors__() const{
 		// computes and returns the number of Sectors that are permanently occupied by root Directory
 		return	sectorSize
-				? Utils::RoundDivUp<DWORD>( nRootDirectoryEntries*sizeof(UDirectoryEntry), sectorSize )
+				? Utils::RoundDivUp( nRootDirectoryEntries*sizeof(UDirectoryEntry), (UINT)sectorSize )
 				: 0;
 	}
 

@@ -655,7 +655,7 @@
 			case TDirectoryEntry::SNAPSHOT_128K:
 			case TDirectoryEntry::OPENTYPE:*/
 			default:
-				nSectors=Utils::RoundDivUp<DWORD>( size, GDOS_SECTOR_LENGTH_STD-sizeof(TSectorInfo) );
+				nSectors=Utils::RoundDivUp( size, (DWORD)GDOS_SECTOR_LENGTH_STD-sizeof(TSectorInfo) );
 				break;
 		}
 	}

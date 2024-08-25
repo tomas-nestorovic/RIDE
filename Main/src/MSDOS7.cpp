@@ -863,16 +863,16 @@
 									break;
 							}
 					// : modifying the information on free space
-					const TSector nSectorsInCluster=boot.GetSectorData()->nSectorsInCluster; // Boot Sector guarateed to exist in this context
+					const DWORD nSectorsInCluster=boot.GetSectorData()->nSectorsInCluster; // Boot Sector guarateed to exist in this context
 					if (const PFsInfoSector fsInfoSector=fsInfo.GetSectorData()){
 						// for FAT32, using the FS-Info Sector
 						fsInfoSector->nFreeClusters // guaranteed that NumberOfFreeClusters initialized (as caller had to call GetFreeSpaceInBytes, where it eventually has been initialized)
-							+=Utils::RoundDivUp<DWORD>( n, nSectorsInCluster ); // count of Directory Sectors rounded up to whole Clusters
+							+=Utils::RoundDivUp( n, nSectorsInCluster ); // count of Directory Sectors rounded up to whole Clusters
 						fsInfo.MarkSectorAsDirty();
 					}else
 						// for FAT32 without FS Info Sector or for FAT16/FAT12, using the temporary information on free space
 						fat.nFreeClustersTemp
-							+=Utils::RoundDivUp<DWORD>( n, nSectorsInCluster ); // count of Directory Sectors rounded up to whole Clusters
+							+=Utils::RoundDivUp( n, nSectorsInCluster ); // count of Directory Sectors rounded up to whole Clusters
 					// : marking occupied Clusters as Empty in FAT
 					if (n)
 						fat.FreeChainOfClusters(item->value);
@@ -943,16 +943,16 @@
 			// . first Cluster
 			de->shortNameEntry.__setFirstCluster__(cluster0);
 		// - modifying the information on free space
-		const TSector nSectorsInCluster=boot.GetSectorData()->nSectorsInCluster; // Boot Sector guarateed to exist in this context
+		const DWORD nSectorsInCluster=boot.GetSectorData()->nSectorsInCluster; // Boot Sector guarateed to exist in this context
 		if (const PFsInfoSector fsInfoSector=fsInfo.GetSectorData()){
 			// for FAT32, using the FS-Info Sector
 			fsInfoSector->nFreeClusters // guaranteed that NumberOfFreeClusters initialized (as caller had to call GetFreeSpaceInBytes, where it eventually has been initialized)
-				-=Utils::RoundDivUp<DWORD>( n, nSectorsInCluster ); // count of Directory Sectors rounded up to whole Clusters
+				-=Utils::RoundDivUp( n, nSectorsInCluster ); // count of Directory Sectors rounded up to whole Clusters
 			fsInfo.MarkSectorAsDirty();
 		}else
 			// for FAT32 without FS-Info Sector or for FAT16/FAT12, using the temporary information on free space
 			fat.nFreeClustersTemp
-				-=Utils::RoundDivUp<DWORD>( n, nSectorsInCluster ); // count of Directory Sectors rounded up to whole Clusters
+				-=Utils::RoundDivUp( n, nSectorsInCluster ); // count of Directory Sectors rounded up to whole Clusters
 		// - marking newly occupied Clusters in the FAT
 		ModifyFileFatPath( de, fatPath );
 		// - File successfully imported to Image

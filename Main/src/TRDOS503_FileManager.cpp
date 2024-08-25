@@ -80,14 +80,14 @@
 				break;
 			case INFORMATION_SIZE:{
 				// File Size
-				const WORD sz=de->__getOfficialFileSize__(nullptr);
-				integerEditor.DrawReportModeCell( sz, pdis, Utils::RoundDivUp<WORD>(sz,TRDOS503_SECTOR_LENGTH_STD)!=de->nSectors );
+				const int sz=de->__getOfficialFileSize__(nullptr);
+				integerEditor.DrawReportModeCell( sz, pdis, Utils::RoundDivUp(sz,TRDOS503_SECTOR_LENGTH_STD)!=de->nSectors );
 				break;
 			}
 			case INFORMATION_SECTORS_COUNT:{
 				// # of File Sectors
-				const WORD sz=de->__getOfficialFileSize__(nullptr);
-				integerEditor.DrawReportModeCell( de->nSectors, pdis, Utils::RoundDivUp<WORD>(sz,TRDOS503_SECTOR_LENGTH_STD)!=de->nSectors );
+				const int sz=de->__getOfficialFileSize__(nullptr);
+				integerEditor.DrawReportModeCell( de->nSectors, pdis, Utils::RoundDivUp(sz,TRDOS503_SECTOR_LENGTH_STD)!=de->nSectors );
 				break;
 			}
 			case INFORMATION_FIRST_SECTOR:

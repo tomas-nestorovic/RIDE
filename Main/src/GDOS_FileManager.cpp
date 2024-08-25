@@ -67,14 +67,14 @@
 				break;
 			case INFORMATION_SIZE:{
 				// File Size
-				const DWORD sz=DOS->GetFileOfficialSize(de);
-				integerEditor.DrawReportModeCell( sz, pdis, Utils::RoundDivUp<DWORD>(sz,GDOS_SECTOR_LENGTH_STD)!=de->nSectors );
+				const auto sz=DOS->GetFileOfficialSize(de);
+				integerEditor.DrawReportModeCell( sz, pdis, Utils::RoundDivUp(sz,(DWORD)GDOS_SECTOR_LENGTH_STD)!=de->nSectors );
 				break;
 			}
 			case INFORMATION_SECTOR_COUNT:{
 				// # of File Sectors
-				const DWORD sz=DOS->GetFileOfficialSize(de);
-				integerEditor.DrawReportModeCell( de->nSectors, pdis, Utils::RoundDivUp<DWORD>(sz,GDOS_SECTOR_LENGTH_STD)!=de->nSectors );
+				const auto sz=DOS->GetFileOfficialSize(de);
+				integerEditor.DrawReportModeCell( de->nSectors, pdis, Utils::RoundDivUp(sz,(DWORD)GDOS_SECTOR_LENGTH_STD)!=de->nSectors );
 				break;
 			}
 			case INFORMATION_SECTOR_FIRST:
