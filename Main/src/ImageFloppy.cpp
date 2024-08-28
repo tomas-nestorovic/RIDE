@@ -490,7 +490,6 @@ using namespace Yahel;
 					return nullptr;
 				const TPhysicalAddress chs={ track>>1, track&1, ids[nSectors] };
 				switch (const Revolution::TType dirtyRev=image->GetDirtyRevolution(chs,nSectors)){
-					case Revolution::UNKNOWN:
 					case Revolution::NONE:
 						#ifdef UNICODE
 							return ::lstrcpyn( labelBuffer, ids[nSectors].ToString(), labelBufferCharsMax );

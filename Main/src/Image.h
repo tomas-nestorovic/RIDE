@@ -45,7 +45,6 @@
 			NONE,
 			// constants to describe quantities
 			QUANTITY_FIRST,
-			UNKNOWN		=QUANTITY_FIRST,
 			INFINITY,
 			// the following constants should be ignored by all containers
 			ALL_INTERSECTED

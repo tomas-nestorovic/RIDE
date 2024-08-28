@@ -431,7 +431,7 @@
 								const BYTE nRevolutions=dp.source->GetAvailableRevolutionCount( rp.chs.cylinder, rp.chs.head );
 								if (nRevolutions==1)
 									p+=::lstrlen( ::lstrcpy(p,_T("Single revolution.\r\n")) );
-								else if (dirtyRevolution==Revolution::NONE)
+								else if (dirtyRevolution==Revolution::NONE) // not yet modified or Unknown Sector queried
 									p+=::wsprintf( p, _T("Revolution #%d\r\n"), rp.revolution+1 );
 								else if (dirtyRevolution<Revolution::MAX)
 									p+=::wsprintf( p, _T("Locked modified Revolution #%d.\r\n"), dirtyRevolution+1 );

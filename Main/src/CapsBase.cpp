@@ -755,15 +755,13 @@ invalidTrack:
 
 	Revolution::TType CCapsBase::GetDirtyRevolution(RCPhysicalAddress chs,BYTE nSectorsToSkip) const{
 		// returns the Revolution that has been marked as "dirty"
-		if (const PCInternalTrack pit=GetInternalTrackSafe(chs.cylinder,chs.head)){
+		if (const PCInternalTrack pit=GetInternalTrackSafe(chs.cylinder,chs.head))
 			while (nSectorsToSkip<pit->nSectors){
 				const auto &ris=pit->sectors[nSectorsToSkip++];
 				if (ris.id==chs.sectorId)
 					return ris.dirtyRevolution;
 			}
-			return Revolution::UNKNOWN; // unknown Sector queried
-		}else
-			return Revolution::NONE; // not modified yet
+		return Revolution::NONE; // unknown Track or Sector is never "dirty"
 	}
 
 	TStdWinError CCapsBase::GetInsertedMediumType(TCylinder cyl,Medium::TType &rOutMediumType) const{
