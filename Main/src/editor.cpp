@@ -609,8 +609,9 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 
 	
 
-	#define SHORTCUT_DEVICES			L"dev"
-	#define SHORTCUT_KRYOFLUX_STREAMS	L"kfs"
+	// CAPITALS to close the hooked dialog by IDOK (mean it Save or Open), otherwise by IDCANCEL
+	#define SHORTCUT_DEVICES			_T("dev")
+	#define SHORTCUT_KRYOFLUX_STREAMS	_T("KFS")
 
 	static HHOOK ofn_hHook;
 	static HHOOK ofn_hMsgHook;
@@ -641,7 +642,10 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 							hFileNameComboBox,
 							::lstrcpyW( ofn_shortcut, ((PNMLINK)pcws->lParam)->item.szID )
 						);
-						return ::SendMessageW( hDlg, WM_COMMAND, IDOK, 0 ); // manually confirm the dialog
+						return ::SendMessageW( hDlg, WM_COMMAND,
+							::IsCharLowerW(*ofn_shortcut) ? IDCANCEL : IDOK, // manually close the dialog
+							0
+						);
 					}
 					return 0;
 				}
@@ -668,9 +672,9 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		// reimplementation of CDocManager::DoPromptFileName
 		ofn_shortcutHint.Empty();
 		if (deviceAccessAllowed && !singleAllowedImage)
-			ofn_shortcutHint+=_T("<a id=\"dev\">Access real devices on this computer</a> (additional drivers may be required). ");
+			ofn_shortcutHint+=_T("<a id=\"") SHORTCUT_DEVICES _T("\">Access real devices on this computer</a> (additional drivers may be required). ");
 		if (stdStringId==AFX_IDS_SAVEFILE && (!singleAllowedImage||singleAllowedImage==&CKryoFluxStreams::Properties))
-			ofn_shortcutHint+=_T("Continue with <a id=\"kfs\">KryoFlux streams</a>. ");
+			ofn_shortcutHint+=_T("Continue with <a id=\"") SHORTCUT_KRYOFLUX_STREAMS _T("\">KryoFlux streams</a>. ");
 		// - creating the list of Filters
 		TCHAR buf[2048],*a=buf; // an "always big enough" buffer
 		DWORD nFilters=0;
@@ -708,12 +712,13 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			*ofn_shortcut=L'\0';
 			ofn_hHook=::SetWindowsHookEx( WH_CALLWNDPROC, __dlgOpen_hook__, 0, ::GetCurrentThreadId() );
 				ofn_hMsgHook=::SetWindowsHookEx( WH_GETMESSAGE, __dlgOpen_msgHook__, 0, ::GetCurrentThreadId() );
-					dialogConfirmed=d.DoModal()==IDOK;
+					dialogConfirmed=d.DoModal()==IDOK || *ofn_shortcut;
 				::UnhookWindowsHookEx(ofn_hMsgHook);
 			::UnhookWindowsHookEx(ofn_hHook);
-			if (!::lstrcmpW(ofn_shortcut,SHORTCUT_DEVICES)) // want access real device?
+			const CDos::CPathString shortcut(ofn_shortcut);
+			if (!::lstrcmp(shortcut,SHORTCUT_DEVICES)) // want access real device?
 				return ChooseLocalDevice(fileName);
-			if (!::lstrcmpW(ofn_shortcut,SHORTCUT_KRYOFLUX_STREAMS)) // want save as KryoFlux Streams?
+			if (!::lstrcmp(shortcut,SHORTCUT_KRYOFLUX_STREAMS)) // want save as KryoFlux Streams?
 				if (const LPTSTR lastBackslash=_tcsrchr(fileName,'\\')){
 					::lstrcpy( lastBackslash+1, _T("track00.0.raw") );
 					return &CKryoFluxStreams::Properties;
