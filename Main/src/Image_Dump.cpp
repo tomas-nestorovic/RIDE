@@ -326,7 +326,7 @@
 						p.fdcStatus & ~( // do remain any errors that can't be accepted automatically?
 							p.acceptance.automaticallyAcceptedErrors
 							|
-							TFdcStatus::SectorNotFound*(
+							~TFdcStatus::SectorNotFound*(
 								p.acceptance.remainingErrorsOnTrack
 								||
 								p.acceptance.anyErrorsOnUnknownSectors && !dp.dos->IsStdSector(p.chs)
