@@ -90,7 +90,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 	}
 
 	CCapsBase::PInternalTrack CCapsBase::GetInternalTrackSafe(TCylinder cyl,THead head) const{
-		return	cyl<FDD_CYLINDERS_MAX && head<2
+		return	cyl<=capsImageInfo.maxcylinder && head<=capsImageInfo.maxhead // does Track actually exist?
 				? internalTracks[cyl][head]
 				: nullptr; // Cylinders beyond FDD_CYLINDERS_MAX are inaccessible
 	}

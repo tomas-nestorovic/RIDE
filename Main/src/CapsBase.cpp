@@ -545,9 +545,8 @@
 	BYTE CCapsBase::GetAvailableRevolutionCount(TCylinder cyl,THead head) const{
 		// returns the number of data variations of one Sector that are guaranteed to be distinct
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		if (cyl<=capsImageInfo.maxcylinder && head<=capsImageInfo.maxhead)
-			if (const PInternalTrack pit=internalTracks[cyl][head])
-				return pit->GetIndexCount()-1; // # of full Revolutions
+		if (const PInternalTrack pit=GetInternalTrackSafe(cyl,head))
+			return pit->GetIndexCount()-1; // # of full Revolutions
 		return 0; // Track doesn't exist
 	}
 
@@ -736,20 +735,19 @@ invalidTrack:
 		// True <=> specified Sector's data variation (Revolution) has been buffered, otherwise False
 		ASSERT( rev<Revolution::MAX );
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		if (cyl<=capsImageInfo.maxcylinder && head<=capsImageInfo.maxhead) // does Track actually exist?
-			if (const PCInternalTrack pit=internalTracks[cyl][head]) // is Track scanned?
-				while (nSectorsToSkip<pit->nSectors){
-					const auto &ris=pit->sectors[nSectorsToSkip++];
-					if (ris.id==id)
-						if (rev>=ris.nRevolutions)
-							return TDataStatus::READY; // can't create another sample of the data (unlike in CFDD class where we have infinite # of trials), so here declaring "no data ready"
-						else if (ris.revolutions[rev].HasGoodDataReady())
-							return TDataStatus::READY_HEALTHY;
-						else if (ris.revolutions[rev].HasDataReady())
-							return TDataStatus::READY;
-						else
-							break;
-				}
+		if (const PCInternalTrack pit=GetInternalTrackSafe(cyl,head)) // is Track scanned?
+			while (nSectorsToSkip<pit->nSectors){
+				const auto &ris=pit->sectors[nSectorsToSkip++];
+				if (ris.id==id)
+					if (rev>=ris.nRevolutions)
+						return TDataStatus::READY; // can't create another sample of the data (unlike in CFDD class where we have infinite # of trials), so here declaring "no data ready"
+					else if (ris.revolutions[rev].HasGoodDataReady())
+						return TDataStatus::READY_HEALTHY;
+					else if (ris.revolutions[rev].HasDataReady())
+						return TDataStatus::READY;
+					else
+						break;
+			}
 		return TDataStatus::NOT_READY;
 	}
 
@@ -968,10 +966,9 @@ invalidTrack:
 	}
 
 	CCapsBase::PInternalTrack CCapsBase::GetModifiedTrackSafe(TCylinder cyl,THead head) const{
-		if (cyl<=capsImageInfo.maxcylinder && head<=capsImageInfo.maxhead) // inclusive!
-			if (const PInternalTrack pit=internalTracks[cyl][head]) // Track buffered?
-				if (pit->modified)
-					return pit;
+		if (const PInternalTrack pit=GetInternalTrackSafe(cyl,head)) // Track buffered?
+			if (pit->modified)
+				return pit;
 		return nullptr;
 	}
 
