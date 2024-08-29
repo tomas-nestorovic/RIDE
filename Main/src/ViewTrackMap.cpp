@@ -626,10 +626,7 @@
 				if (IMAGE->ReadTrack( chs.cylinder, chs.head )) // CANNOT alternatively call WriteTrack with Invalid data for some containers (e.g. *.IPF) don't allow for writing!
 					mnu.EnableMenuItem( ID_HEAD, MF_BYCOMMAND|MF_ENABLED );
 				// . Track rescan
-				if (!IMAGE->properties->IsRealDevice() // possible only for real Devices
-					||
-					DOS->IsKnown() // "unscanning" a Track is safe only when no other operations with the disk are possible
-				)
+				if (!IMAGE->properties->IsRealDevice()) // possible only for real Devices
 					mnu.ModifyMenu( ID_ACCURACY, MF_BYCOMMAND|MF_GRAYED, 0, _T("Can't rescan any track") );
 				else if (IMAGE->IsTrackScanned( chs.cylinder, chs.head ))
 					mnu.EnableMenuItem( ID_ACCURACY, MF_BYCOMMAND|MF_ENABLED );
