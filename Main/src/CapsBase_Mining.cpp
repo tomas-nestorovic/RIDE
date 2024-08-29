@@ -302,6 +302,8 @@
 					TSectorId foundSectors[(TSector)-1];
 					const TSector nFoundSectors=d.cb.ScanTrack( d.cyl, d.head, nullptr, foundSectors );
 					pitMined.reset(rit);
+					if (!rit)
+						continue;
 					// . displaying the Track
 					d.ShowScatterPlotOfTrack( *rit );
 					// . evaluating the Track against the MiningTarget
