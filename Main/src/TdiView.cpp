@@ -149,7 +149,7 @@
 					__addHyperlinkText__( L"Currently none. Begin by <a id=\"OPENIMG\">opening an image</a> or <a id=\"ACCSDRV\">accessing a drive</a>." );
 				}
 			// - composing the "FAQ" section
-			__addCategory__( _T("Frequent questions (network connection needed)"), 0xf0a8 );
+			__addCategory__( _T("Frequent questions (answers online)"), 0xf0a8 );
 				#define HELP_GLYPH_COLOR	0x585858
 				__addButton__( _T("How do I format a real floppy?"), ID_FORMAT, 0xf026, HELP_GLYPH_COLOR );
 				__addButton__( _T("How do I dump a real floppy to an image?"), ID_IMAGE, 0xf026, HELP_GLYPH_COLOR );

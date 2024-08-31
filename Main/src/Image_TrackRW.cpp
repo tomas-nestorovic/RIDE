@@ -810,7 +810,6 @@
 		0xa79b8a	// custom (variable string)
 	};
 
-	inline
 	CImage::CTrackReader::TParseEvent::TParseEvent(TType type,TLogTime tStart,TLogTime tEnd,DWORD data)
 		// ctor
 		: TLogTimeInterval( tStart, tEnd )
