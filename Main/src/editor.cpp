@@ -445,6 +445,9 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 							CDos::CRecognition::EditSequence();
 							//fallthrough
 						case IDRETRY:
+							for( TCylinder cyl=image->GetCylinderCount(); cyl-->0; )
+								for( THead head=image->GetHeadCount(); head-->0; )
+									image->UnscanTrack( cyl, head );
 							continue;
 					}
 				}
