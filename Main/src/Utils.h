@@ -7,32 +7,39 @@ typedef long TStdWinError; // Windows standard i/o error
 
 namespace Utils{
 
-	template<typename T,typename TCount=int>
+	template<typename T,typename TIndex=int>
 	class CCallocPtr:public std::unique_ptr<T,void (__cdecl *)(PVOID)>{
 	public:
+		TIndex length;
+
 		CCallocPtr()
-			: std::unique_ptr<T,void (__cdecl *)(PVOID)>( pointer(), ::free ) {
+			: std::unique_ptr<T,void (__cdecl *)(PVOID)>( pointer(), ::free )
+			, length(0) {
 		}
-		CCallocPtr(TCount count)
-			: std::unique_ptr<T,void (__cdecl *)(PVOID)>( (T *)::calloc(count,sizeof(T)), ::free ) {
+		CCallocPtr(TIndex length)
+			: std::unique_ptr<T,void (__cdecl *)(PVOID)>( (T *)::calloc(length,sizeof(T)), ::free )
+			, length(length) {
 		}
-		CCallocPtr(TCount count,int initByte)
-			: std::unique_ptr<T,void (__cdecl *)(PVOID)>(  (T *)::memset( ::calloc(count,sizeof(T)), initByte, count*sizeof(T) ),  ::free  ) {
+		CCallocPtr(TIndex length,int initByte)
+			: std::unique_ptr<T,void (__cdecl *)(PVOID)>(  (T *)::memset( ::calloc(length,sizeof(T)), initByte, length*sizeof(T) ),  ::free  )
+			, length(length) {
 		}
-		CCallocPtr(TCount count,const T *pCopyInitData)
-			: std::unique_ptr<T,void (__cdecl *)(PVOID)>(  (T *)::memcpy( ::calloc(count,sizeof(T)), pCopyInitData, count*sizeof(T) ),  ::free  ) {
+		CCallocPtr(TIndex length,const T *pCopyInitData)
+			: std::unique_ptr<T,void (__cdecl *)(PVOID)>(  (T *)::memcpy( ::calloc(length,sizeof(T)), pCopyInitData, length*sizeof(T) ),  ::free  )
+			, length(length) {
 		}
 
 		inline operator bool() const{ return get()!=pointer(); }
 		inline operator T *() const{ return get(); }
-		inline T *operator+(TCount i) const{ return get()+i; }
-		inline T &operator[](TCount i) const{ return get()[i]; }
+		inline T *operator+(TIndex i) const{ return get()+i; }
+		inline T &operator[](TIndex i) const{ return get()[i]; }
 
-		T *Realloc(TCount newCount){
-			if (const PVOID tmp=::realloc( get(), sizeof(T)*newCount )){ // enough memory for reallocation?
+		T *Realloc(TIndex newLength){
+			if (const PVOID tmp=::realloc( get(), sizeof(T)*newLength )){ // enough memory for reallocation?
 				if (tmp!=get()){ // had to move the memory block?
 					release(); // already ::Freed, so don't call ::Free again
 					reset( (T *)tmp );
+					length=newLength;
 				}
 				return get();
 			}else
@@ -41,17 +48,17 @@ namespace Utils{
 	};
 
 	// a workaround to template argument deduction on pre-2017 compilers
-	template<typename T,typename TCount>
-	inline static CCallocPtr<T,typename std::tr1::decay<TCount>::type> MakeCallocPtr(TCount count){
-		return CCallocPtr<T,typename std::tr1::decay<TCount>::type>( count );
+	template<typename T,typename TIndex>
+	inline static CCallocPtr<T,typename std::tr1::decay<TIndex>::type> MakeCallocPtr(TIndex length){
+		return CCallocPtr<T,typename std::tr1::decay<TIndex>::type>( length );
 	}
-	template<typename T,typename TCount>
-	inline static CCallocPtr<T,typename std::tr1::decay<TCount>::type> MakeCallocPtr(TCount count,int initByte){
-		return CCallocPtr<T,typename std::tr1::decay<TCount>::type>( count, initByte );
+	template<typename T,typename TIndex>
+	inline static CCallocPtr<T,typename std::tr1::decay<TIndex>::type> MakeCallocPtr(TIndex length,int initByte){
+		return CCallocPtr<T,typename std::tr1::decay<TIndex>::type>( length, initByte );
 	}
-	template<typename T,typename TCount>
-	inline static CCallocPtr<T,typename std::tr1::decay<TCount>::type> MakeCallocPtr(TCount count,const T *pCopyInitData){
-		return CCallocPtr<T,typename std::tr1::decay<TCount>::type>( count, pCopyInitData );
+	template<typename T,typename TIndex>
+	inline static CCallocPtr<T,typename std::tr1::decay<TIndex>::type> MakeCallocPtr(TIndex length,const T *pCopyInitData){
+		return CCallocPtr<T,typename std::tr1::decay<TIndex>::type>( length, pCopyInitData );
 	}
 
 	template<typename Ptr>

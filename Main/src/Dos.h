@@ -203,7 +203,6 @@
 				FILE			=16	// invalid File entry to find path of, e.g. an empty Directory entry
 			} error;
 		private:
-			const DWORD nItemsMax;
 			Utils::CCallocPtr<TItem,DWORD> buffer;
 			DWORD nItems;
 			TItem *pLastItem;

@@ -25,43 +25,41 @@
 
 	CDos::CFatPath::CFatPath(DWORD nItemsMax)
 		// ctor for Dummy object which has no Buffer and just counts the Items (allocation units)
-		: nItemsMax(nItemsMax) , buffer(0)
+		: buffer(0)
 		, nItems(0) , pLastItem(nullptr) , error(TError::OK) {
+		buffer.length=nItemsMax;
 	}
 
 	CDos::CFatPath::CFatPath(const CDos *dos,PCFile file)
 		// ctor for exporting a File in Image
-		: nItemsMax(dos->formatBoot.clusterSize // "clusterSize+" = to round up to whole multiples of ClusterSize
+		: buffer(	dos->formatBoot.clusterSize // "clusterSize+" = to round up to whole multiples of ClusterSize
 					+
 					dos->GetFileSizeOnDisk(file)/dos->formatBoot.sectorLength
 					+
 					1 ) // "1" = for the case that caller wanted to extend the File content (e.g. before calling CDos::ShiftFileContent)
-		, buffer(nItemsMax)
 		, nItems(0) , pLastItem(buffer) , error(TError::OK) {
 		if (!dos->GetFileFatPath(file,*this))
 			error=TError::FILE;
 	}
 	CDos::CFatPath::CFatPath(const CDos *dos,DWORD fileSize)
 		// ctor for importing a File to Image
-		: nItemsMax(dos->formatBoot.clusterSize // "clusterSize+" = to round up to whole multiples of ClusterSize
+		: buffer(	dos->formatBoot.clusterSize // "clusterSize+" = to round up to whole multiples of ClusterSize
 					+
 					fileSize/(dos->formatBoot.sectorLength-dos->properties->dataBeginOffsetInSector-dos->properties->dataEndOffsetInSector) )
-		, buffer(nItemsMax)
 		, nItems(0) , pLastItem(buffer) , error(TError::OK) {
 	}
 	CDos::CFatPath::CFatPath(const CDos *dos,RCPhysicalAddress chs)
 		// ctor for editing a Sector (e.g. Boot Sector)
-		: nItemsMax(1)
-		, buffer(nItemsMax)
+		: buffer(1)
 		, nItems(0) , pLastItem(buffer) , error(TError::OK) {
 		const TItem p={ 0, chs };
 		AddItem(&p);
 	}
 	CDos::CFatPath::CFatPath(CFatPath &&r)
 		// move ctor
-		: nItemsMax(r.nItemsMax)
-		, nItems(r.nItems) , pLastItem(r.pLastItem) , error(r.error) {
+		: nItems(r.nItems) , pLastItem(r.pLastItem) , error(r.error) {
 		buffer.reset( r.buffer.release() );
+		buffer.length=r.buffer.length;
 	}
 
 
@@ -80,7 +78,7 @@
 	bool CDos::CFatPath::AddItem(PCItem pItem){
 		// True <=> FatPath extended with given Item is valid, otherwise False
 		// - VALIDATION: FatPath must be acyclic (detected by wanting to exceed the expected number of Items)
-		if (nItems==nItemsMax){ error=VALUE_CYCLE; return false; }
+		if (nItems==buffer.length){ error=VALUE_CYCLE; return false; }
 		// - extending FatPath
 		if (pLastItem!=nullptr)
 			*pLastItem++=*pItem;
