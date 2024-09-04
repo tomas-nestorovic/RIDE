@@ -25,7 +25,7 @@
 			const CString trackName;
 			const Utils::CRidePen minedTimingPen;
 			const Utils::CRidePen minedIndexPen;
-			const Utils::CCallocPtr<POINT> minedTrackDeltaTiming;
+			Utils::CCallocPtr<POINT> minedTrackDeltaTiming;
 			POINT minedTrackIndices[Revolution::MAX+1];
 			struct TGraphics sealed{
 				CChartView::PCGraphics list[2];
@@ -155,6 +155,8 @@
 				// . timing
 				const auto iTimeStride=Utils::RoundDivUp( trw.GetTimesCount(), (DWORD)MINED_TRACK_TIMES_COUNT_MAX ); // round up so that we never overrun the buffer
 				const PCLogTime trackTiming=trw.GetBuffer();
+				if (minedTrackDeltaTiming.length<trw.GetTimesCount())
+					minedTrackDeltaTiming.Realloc( trw.GetTimesCount()+1000 ); // avoid excessive reallocations by allowing some reserve
 				LPPOINT pxy=minedTrackDeltaTiming;
 				for( DWORD i=1; i<trw.GetTimesCount(); i+=iTimeStride,pxy++ ){
 					pxy->x=trackTiming[i];
@@ -334,7 +336,6 @@
 				, headCalibration( (THeadCalibration)app.GetProfileInt( INI_MINING, INI_CALIBRATION, HEAD_DONT_CALIBRATE ) )
 				, minedTimingPen( 2, COLOR_RED )
 				, minedIndexPen( 2, COLOR_BLUE )
-				, minedTrackDeltaTiming( Utils::MakeCallocPtr<POINT,int>(MINED_TRACK_TIMES_COUNT_MAX) )
 				, di(
 					CChartView::TMargin::Default, graphics.list, ARRAYSIZE(graphics.list), Utils::CRideFont::StdBold,
 					's', INT_MIN, Utils::CTimeline::TimePrefixes,
