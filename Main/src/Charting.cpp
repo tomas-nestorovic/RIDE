@@ -81,7 +81,7 @@
 		// sets corresponding outputs to the last item still to be drawn with specified Percentile
 		const CHistogram h=CreateYxHistogram();
 		int sum=0,const sumMax=(ULONGLONG)nPoints*percentile/10000;
-		//rOutMaxX=...; // working out percentile along Y-axis only
+		rOutMaxX=std::max( (LONG)rOutMaxX, points[nPoints-1].x );
 		rOutMaxY=1;
 		for( auto it=h.cbegin(); it!=h.cend()&&sum<sumMax; sum+=it++->second )
 			rOutMaxY=it->first;
