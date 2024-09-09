@@ -48,9 +48,9 @@
 				&&
 				0<nCylinders // mustn't be zero for 'capsImageInfo.maxcylinder' is inclusive! (and "-1" isn't valid)
 				&&
-				0<nHeads && nHeads<=2
+				0<nHeads && nHeads<=2 // mustn't be zero for 'capsImageInfo.maxhead' is inclusive! (and "-1" isn't valid)
 				&&
-				bitrate>0
+				dataBitRate>0
 				//&&
 				//driveRpm>0 // commented out as this is often not set correctly
 				&&
@@ -190,6 +190,10 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		return	rit ? *rit : CTrackReaderWriter::Invalid;
 	}
 
+	inline int GetTotalBitRate(int dataBitRate){
+		return dataBitRate*2; // "*2" = data and clock bits
+	}
+
 	TStdWinError CHFE::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
@@ -222,7 +226,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		if (pFormat->mediumType!=Medium::UNKNOWN)
 			for( TCylinder cyl=0; cyl<=capsImageInfo.maxcylinder; cyl++ ) // inclusive!
 				if (cylInfos[cyl].IsValid())
-					if (Medium::GetProperties(pFormat->mediumType)->IsAcceptableCountOfCells( cylInfos[cyl].nBytesLength/2*CHAR_BIT ))
+					if (Medium::GetProperties(pFormat->mediumType)->IsAcceptableCountOfCells( GetTotalBitRate(header.dataBitRate) ))
 						break;
 					else
 						return ERROR_UNRECOGNIZED_MEDIA;		
@@ -307,14 +311,14 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 	CCapsBase::PInternalTrack CHFE::BytesToTrack(const CTrackBytes &bytes) const{
 		// converts specified HFE-encoded Bytes to InternalTrack
 		if (bytes){
-			bytes.ReverseBitsInEachByte();
+		bytes.ReverseBitsInEachByte();
 			CapsTrackInfoT2 cti={};
 				cti.trackbuf=bytes;
 				cti.tracklen=bytes.GetCount();
 			return CInternalTrack::CreateFrom( *this, &cti, 1, 0 );
 		}else
 			return nullptr;
-	}
+		}
 
 	TStdWinError CHFE::SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap){
 		// saves all Modified Tracks; returns Windows standard i/o error
@@ -412,7 +416,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		// - update and save Header
 		header.nCylinders=GetCylinderCount();
 		header.nHeads=GetHeadCount();
-		header.bitrate=Medium::GetProperties(floppyType)->nCells/1000;
+		header.dataBitRate=Medium::GetProperties(floppyType)->nCells/1000/2; // "/2" = only data bits, not clock bits
 		ASSERT( header.IsValid() );
 		fTarget.SeekToBegin();
 		fTarget.Write( &header, sizeof(header) );

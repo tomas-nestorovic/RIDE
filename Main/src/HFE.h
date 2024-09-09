@@ -46,7 +46,7 @@
 				BYTE nCylinders;
 				BYTE nHeads;
 				TTrackEncoding trackEncoding;
-				WORD bitrate; // kBit/s; e.g. 250 = 250,000 bit/s
+				WORD dataBitRate; // data kBit/s; e.g. 250 = 250,000 bit/s; multiply by 2 to get total bitrate (data and clock bits)
 				WORD driveRpm;
 				TFloppyInterface floppyInterface;
 				BYTE reserved; // don't use
