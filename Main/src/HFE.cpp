@@ -34,7 +34,7 @@
 		::ZeroMemory( this, sizeof(*this) );
 		::lstrcpyA( signature, HEADER_SIGNATURE );
 		trackEncoding=TTrackEncoding::UNKNOWN;
-		floppyInterface=TFloppyInterface::DISABLED;
+		floppyInterface=TFloppyInterface::GENERIC_SHUGART;
 		cylInfosBegin=1;
 		writeable=true;
 		alternative[0].disabled = alternative[1].disabled = true;
@@ -211,7 +211,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 					return ERROR_UNRECOGNIZED_MEDIA;
 				}
 				case Medium::FLOPPY_DD_525:{
-					static constexpr TFloppyInterface Compatibles[]={ TFloppyInterface::IBM_PC_DD, TFloppyInterface::ATARI_ST_DD, TFloppyInterface::AMIGA_DD, TFloppyInterface::C64_DD };
+					static constexpr TFloppyInterface Compatibles[]={ TFloppyInterface::IBM_PC_DD, TFloppyInterface::ATARI_ST_DD, TFloppyInterface::AMIGA_DD, TFloppyInterface::GENERIC_SHUGART, TFloppyInterface::C64_DD };
 					if (::memchr( Compatibles, header.floppyInterface, sizeof(Compatibles) ))
 						break;
 					return ERROR_UNRECOGNIZED_MEDIA;
