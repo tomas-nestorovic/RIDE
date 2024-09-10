@@ -194,6 +194,10 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		return dataBitRate*2; // "*2" = data and clock bits
 	}
 
+	inline static TLogTime GetCellTime(int dataBitRate){
+		return TIME_SECOND(1)/GetTotalBitRate(dataBitRate);
+	}
+
 	TStdWinError CHFE::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
@@ -223,13 +227,11 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 					return ERROR_UNRECOGNIZED_MEDIA;
 			}
 		// - must be setting Medium compatible with the nominal # of Cells
-		if (pFormat->mediumType!=Medium::UNKNOWN)
-			for( TCylinder cyl=0; cyl<=capsImageInfo.maxcylinder; cyl++ ) // inclusive!
-				if (cylInfos[cyl].IsValid())
-					if (Medium::GetProperties(pFormat->mediumType)->IsAcceptableCountOfCells( GetTotalBitRate(header.dataBitRate) ))
-						break;
-					else
-						return ERROR_UNRECOGNIZED_MEDIA;		
+		if (pFormat->mediumType!=Medium::UNKNOWN){
+			const auto mp=Medium::GetProperties(pFormat->mediumType);
+			if (!mp->IsAcceptableCountOfCells( mp->revolutionTime/GetCellTime(header.dataBitRate*1000) ))
+				return ERROR_UNRECOGNIZED_MEDIA;
+		}
 		// - base
 		if (floppyType!=pFormat->mediumType) // must reconstruct all Tracks with parameters corresponding to new Medium Type?
 			if (m_strPathName.GetLength()>0)
