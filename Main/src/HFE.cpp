@@ -202,7 +202,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - must be setting Medium compatible with the FloppyInterface specified in the Header
-		if (header.floppyInterface<TFloppyInterface::LAST_KNOWN)
+		/*if (header.floppyInterface<TFloppyInterface::LAST_KNOWN)
 			switch (pFormat->mediumType){
 				case Medium::FLOPPY_DD:{
 					static constexpr TFloppyInterface Compatibles[]={ TFloppyInterface::IBM_PC_DD, TFloppyInterface::ATARI_ST_DD, TFloppyInterface::AMIGA_DD, TFloppyInterface::CPC_DD, TFloppyInterface::GENERIC_SHUGART, TFloppyInterface::MSX2_DD, TFloppyInterface::C64_DD, TFloppyInterface::EMU_SHUGART, TFloppyInterface::S950_DD };
@@ -225,7 +225,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				}
 				default:
 					return ERROR_UNRECOGNIZED_MEDIA;
-			}
+			}*/
 		// - must be setting Medium compatible with the nominal # of Cells
 		if (pFormat->mediumType!=Medium::UNKNOWN){
 			const auto mp=Medium::GetProperties(pFormat->mediumType);
