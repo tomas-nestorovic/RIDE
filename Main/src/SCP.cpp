@@ -98,17 +98,17 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 	CImage::CTrackReader CSCP::ReadTrack(TCylinder cyl,THead head) const{
 		// creates and returns a general description of the specified Track, represented using neutral LogicalTimes
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		// - if Track already read before, returning the result from before
+		if (const auto tr=ReadExistingTrack(cyl,head))
+			return tr;
 		// - checking that specified Track actually CAN exist
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
 			return CTrackReaderWriter::Invalid;
-		// - if Track already read before, returning the result from before
-		PInternalTrack &rit=internalTracks[cyl][head];
-		if (GetInternalTrackSafe(cyl,head)!=nullptr)
-			return *rit;
 		// - construction of InternalTrack
 		const BYTE cylFile=cyl<<(BYTE)params.doubleTrackStep;
 		if (!tdhOffsets[cylFile][head]) // maybe a hardware error during Image creation?
 			return CTrackReaderWriter::Invalid;
+		PInternalTrack &rit=internalTracks[cyl][head];
 		f.Seek( tdhOffsets[cylFile][head], CFile::begin );
 		if (CTrackReaderWriter trw=StreamToTrack( f, cylFile, head )){
 			// it's a SuperCardPro Track

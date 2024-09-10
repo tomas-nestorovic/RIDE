@@ -150,16 +150,12 @@
 	CImage::CTrackReader CKryoFluxStreams::ReadTrack(TCylinder cyl,THead head) const{
 		// creates and returns a general description of the specified Track, represented using neutral LogicalTimes
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		// - if Track already read before, returning the result from before
+		if (const auto tr=ReadExistingTrack(cyl,head))
+			return tr;
 		// - checking that specified Track actually CAN exist
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
 			return CTrackReaderWriter::Invalid;
-		// - if Track already read before, returning the result from before
-		PInternalTrack &rit=internalTracks[cyl][head];
-		if (rit){
-			rit->FlushSectorBuffers(); // convert all modifications into flux transitions
-			rit->SetCurrentTime(0); // just to be sure the internal TrackReader is returned in valid state (as invalid state indicates this functionality is not supported)
-			return *rit;
-		}
 		// - loading the underlying file that contains the specified Track
 		if (!*nameBase) // NameBase not set, e.g. when creating a new Image
 			return CTrackReaderWriter::Invalid;
@@ -170,6 +166,7 @@
 			return CTrackReaderWriter::Invalid;
 		}
 		// - making sure the loaded content is a KryoFlux Stream whose data actually make sense
+		PInternalTrack &rit=internalTracks[cyl][head];
 		const auto fLength=f.GetLength();
 		if (const auto data=Utils::MakeCallocPtr<BYTE>(fLength))
 			if (f.Read( data, fLength )==fLength)

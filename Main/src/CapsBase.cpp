@@ -1165,16 +1165,12 @@ invalidTrack:
 	CImage::CTrackReader CCapsBase::ReadTrack(TCylinder cyl,THead head) const{
 		// creates and returns a general description of the specified Track, represented using neutral LogicalTimes
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		// - if Track already read before, returning the result from before
+		if (const auto tr=ReadExistingTrack(cyl,head))
+			return tr;
 		// - checking that specified Track actually CAN exist
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
 			return CTrackReaderWriter::Invalid;
-		// - if Track already read before, returning the result from before
-		PInternalTrack &rit=internalTracks[cyl][head];
-		if (rit){
-			rit->FlushSectorBuffers(); // convert all modifications into flux transitions
-			rit->SetCurrentTime(0); // just to be sure the internal TrackReader is returned in valid state (as invalid state indicates this functionality is not supported)
-			return *rit;
-		}
 		// - creating the description
 		static constexpr CapsTrackInfoT2 CtiEmpty={2};
 		const UDWORD lockFlags= capsVersionInfo.flag&( DI_LOCK_INDEX | DI_LOCK_DENVAR | DI_LOCK_DENAUTO | DI_LOCK_DENNOISE | DI_LOCK_NOISE | DI_LOCK_TYPE | DI_LOCK_OVLBIT | DI_LOCK_TRKBIT | DI_LOCK_UPDATEFD );
@@ -1199,6 +1195,7 @@ invalidTrack:
 					break;
 				nRevs++;
 			}
+		PInternalTrack &rit=internalTracks[cyl][head];
 		if (const PInternalTrack tmp=CInternalTrack::CreateFrom( *this, cti, nRevs, lockFlags )){
 			CTrackReaderWriter trw=*tmp; // extracting raw flux data ...
 			delete tmp;
@@ -1210,6 +1207,17 @@ invalidTrack:
 		}
 		CAPS::UnlockTrack( capsDeviceHandle, cyl, head );
 		return *rit;
+	}
+
+	CImage::CTrackReader CCapsBase::ReadExistingTrack(TCylinder cyl,THead head) const{
+		// creates and returns a general description of the specified Track, represented using neutral LogicalTimes
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		if (const PInternalTrack pit=GetInternalTrackSafe(cyl,head)){
+			pit->FlushSectorBuffers(); // convert all modifications into flux transitions
+			pit->SetCurrentTime(0); // just to be sure the internal TrackReader is returned in valid state (as invalid state indicates this functionality is not supported)
+			return *pit;
+		}else
+			return CTrackReaderWriter::Invalid;
 	}
 
 

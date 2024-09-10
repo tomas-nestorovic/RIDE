@@ -478,15 +478,12 @@
 		// creates and returns a general description of the specified Track, represented using neutral LogicalTimes
 		PInternalTrack &rit=internalTracks[cyl][head];
 	{	EXCLUSIVELY_LOCK_THIS_IMAGE();
+		// - if Track already read before, returning the result from before
+		if (const auto tr=ReadExistingTrack(cyl,head))
+			return tr;
 		// - checking that specified Track actually CAN exist
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
 			return CTrackReaderWriter::Invalid;
-		// - if Track already read before, returning the result from before
-		if (rit){
-			rit->FlushSectorBuffers(); // convert all modifications into flux transitions
-			rit->SetCurrentTime(0); // just to be sure the internal TrackReader is returned in valid state (as invalid state indicates this functionality is not supported)
-			return *rit;
-		}
 	}	// - selecting floppy drive
 		PBYTE p=dataBuffer;
 	{	EXCLUSIVELY_LOCK_DEVICE();

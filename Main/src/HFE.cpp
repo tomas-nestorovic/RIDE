@@ -175,14 +175,14 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 	CImage::CTrackReader CHFE::ReadTrack(TCylinder cyl,THead head) const{
 		// creates and returns a general description of the specified Track, represented using neutral LogicalTimes
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		// - if Track already read before, returning the result from before
+		if (const auto tr=ReadExistingTrack(cyl,head))
+			return tr;
 		// - checking that specified Track actually CAN exist
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
 			return CTrackReaderWriter::Invalid;
-		// - if Track already read before, returning the result from before
-		PInternalTrack &rit=internalTracks[cyl][head];
-		if (rit!=nullptr)
-			return *rit;
 		// - construction of InternalTracks for both Heads
+		PInternalTrack &rit=internalTracks[cyl][head];
 		if (!cylInfos[cyl].IsValid()) // maybe an error during Image creation?
 			return CTrackReaderWriter::Invalid;
 		internalTracks[cyl][0]=BytesToTrack( ReadTrackBytes(cyl,0) );
