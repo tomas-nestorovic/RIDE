@@ -60,9 +60,10 @@
 			};
 			TBlock block;
 
-			UHeader();
+			UHeader(LPCSTR signature);
 
 			bool IsValid() const;
+			bool IsVersion3() const;
 		} header;
 
 		#pragma pack(1)
@@ -95,6 +96,15 @@
 			inline void TrimTo(WORD newCount){ count=newCount; }
 			void Invalidate();
 			void ReverseBitsInEachByte() const;
+		};
+
+		enum TOpCode:BYTE{
+			NOP			=0xf0,
+			SETINDEX,
+			SETBITRATE,
+			SKIPBITS,
+			RANDOM,
+			LAST
 		};
 
 		mutable CFile f;

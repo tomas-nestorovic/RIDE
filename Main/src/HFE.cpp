@@ -27,12 +27,15 @@
 
 	
 
-	#define HEADER_SIGNATURE	"HXCPICFE"
+	#define HEADER_SIGNATURE_V1	"HXCPICFE"
+	#define HEADER_SIGNATURE_V3	"HXCHFEV3"
 
-	CHFE::UHeader::UHeader(){
+	#define BASE_FREQUENCY	36000000
+
+	CHFE::UHeader::UHeader(LPCSTR signature){
 		// ctor
 		::ZeroMemory( this, sizeof(*this) );
-		::lstrcpyA( signature, HEADER_SIGNATURE );
+		::lstrcpyA( this->signature, signature );
 		trackEncoding=TTrackEncoding::UNKNOWN;
 		floppyInterface=TFloppyInterface::GENERIC_SHUGART;
 		cylInfosBegin=1;
@@ -42,9 +45,10 @@
 
 	bool CHFE::UHeader::IsValid() const{
 		// True <=> this Header follows HFE specification, otherwise False
-		return	!::memcmp( signature, HEADER_SIGNATURE, sizeof(signature) )
-				&&
-				formatRevision==0
+		return	(	IsVersion3() && floppyInterface<TFloppyInterface::LAST_KNOWN
+					||
+					!::memcmp( signature, HEADER_SIGNATURE_V1, sizeof(signature) ) && formatRevision==0
+				)
 				&&
 				0<nCylinders // mustn't be zero for 'capsImageInfo.maxcylinder' is inclusive! (and "-1" isn't valid)
 				&&
@@ -57,6 +61,10 @@
 				cylInfosBegin>0;
 	}
 
+	bool CHFE::UHeader::IsVersion3() const{
+		// True <=> this Header describes Version 3 of HFE, otherwise False
+		return !::memcmp( signature, HEADER_SIGNATURE_V3, sizeof(signature) );
+	}
 
 
 
@@ -101,7 +109,8 @@
 
 	CHFE::CHFE()
 		// ctor
-		: CCapsBase( &Properties, '\0', true, INI_SECTION ) {
+		: CCapsBase( &Properties, '\0', true, INI_SECTION )
+		, header(HEADER_SIGNATURE_V1) {
 		Reset();
 	}
 
@@ -139,6 +148,7 @@
 formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			return FALSE;
 		}
+		canBeModified&=!header.IsVersion3(); //TODO: Version 3 currently read-only
 		// - reading content of the Image and continuously validating its structure
 		if (!header.IsValid()){
 			::SetLastError(ERROR_INVALID_DATA);
@@ -182,11 +192,11 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
 			return CTrackReaderWriter::Invalid;
 		// - construction of InternalTracks for both Heads
-		PInternalTrack &rit=internalTracks[cyl][head];
 		if (!cylInfos[cyl].IsValid()) // maybe an error during Image creation?
 			return CTrackReaderWriter::Invalid;
 		internalTracks[cyl][0]=BytesToTrack( ReadTrackBytes(cyl,0) );
 		internalTracks[cyl][1]=BytesToTrack( ReadTrackBytes(cyl,1) );
+		const PInternalTrack &rit=internalTracks[cyl][head];
 		return	rit ? *rit : CTrackReaderWriter::Invalid;
 	}
 
@@ -252,7 +262,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		if (const TStdWinError err=__super::Reset())
 			return err;
 		// - reinitializing to an empty Image
-		header=UHeader();
+		header=UHeader(HEADER_SIGNATURE_V1);
 		::ZeroMemory( cylInfos, sizeof(cylInfos) );
 		::ZeroMemory( &capsImageInfo, sizeof(capsImageInfo) );
 		return ERROR_SUCCESS;
@@ -304,7 +314,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		CTrackReader tr=rit;
 		for( tr.RewindToIndexAndResetProfile(0); tr && p-result<TRACK_BYTES_MAX; ){
 			const char nBitsRead=tr.ReadBits8(*p);
-			*p++<<=(8-nBitsRead);
+			*p++<<=(CHAR_BIT-nBitsRead);
 		}
 		result.TrimTo( p-result );
 		result.ReverseBitsInEachByte();
@@ -313,15 +323,67 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 
 	CCapsBase::PInternalTrack CHFE::BytesToTrack(const CTrackBytes &bytes) const{
 		// converts specified HFE-encoded Bytes to InternalTrack
-		if (bytes){
+		if (!bytes)
+			return nullptr;
 		bytes.ReverseBitsInEachByte();
+		if (header.IsVersion3()){
+			CTrackReaderWriter trw( bytes.GetCount()*CHAR_BIT, CTrackReader::FDD_KEIR_FRASER, false );
+			PCBYTE p=bytes,const pLast=bytes.GetEnd();
+			TLogTime tCell=GetCellTime( header.dataBitRate*1000 );
+			TLogTime tCurr=0;
+			for( BYTE nFollowingDataBitsToSkip=0; p<pLast; )
+				switch (const BYTE b=*p++){
+					case TOpCode::SETINDEX:
+						trw.AddIndexTime( tCurr );
+						break;
+					case TOpCode::SETBITRATE:
+						if (p<pLast)
+							if (const BYTE div=*p++)
+								tCell=GetCellTime( BASE_FREQUENCY/(div*2) );
+						break;
+					case TOpCode::SKIPBITS:
+						if (p<pLast){
+							nFollowingDataBitsToSkip=*p++&7;
+							ASSERT(nFollowingDataBitsToSkip>0);
+						}
+						break;
+					case TOpCode::RANDOM:{
+						BYTE nBits=CHAR_BIT-nFollowingDataBitsToSkip;
+						const TLogTime tSpan=nBits*tCell;
+						for( TLogTime t=0,const tLimit=tSpan-tCell/2; nBits>0; nBits-- ) // "tLimit" = make sure two Times don't overlap (e.g. end of this Random region and beginning of common data region)
+							if (( t+=::rand()%tSpan )<tLimit)
+								trw.AddTime( tCurr+t );
+							else
+								break;
+						tCurr+=tSpan;
+						nFollowingDataBitsToSkip=0;
+						break;
+					}
+					default:
+						ASSERT( b<=TOpCode::NOP ); // 'TOpCode::NOP' is fine here (as it doesn't have its own 'case' in this 'switch')
+						if (b>=TOpCode::NOP) // invalid OpCode ?
+							break; // skip it
+						const BYTE nBits=CHAR_BIT-nFollowingDataBitsToSkip;
+						const TLogTime tSpan=nBits*tCell;
+						for( BYTE data=b<<nFollowingDataBitsToSkip,i=0; data; data<<=1,i++ )
+							if ((char)data<0)
+								trw.AddTime( tCurr + i*tCell );
+						tCurr+=tSpan;
+						nFollowingDataBitsToSkip=0;
+						break;
+				}
+			if (trw.GetIndexCount()<1)
+				trw.AddIndexTime(0);
+			if (trw.GetIndexCount()<2)
+				trw.AddIndexTime(tCurr);
+			return CInternalTrack::CreateFrom( *this, trw, floppyType );
+		}else{
 			CapsTrackInfoT2 cti={};
 				cti.trackbuf=bytes;
 				cti.tracklen=bytes.GetCount();
 			return CInternalTrack::CreateFrom( *this, &cti, 1, 0 );
-		}else
-			return nullptr;
 		}
+	}
 
 	TStdWinError CHFE::SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap){
 		// saves all Modified Tracks; returns Windows standard i/o error
@@ -380,6 +442,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 									? TrackToBytes( *pitHead1 )
 									: std::move(invalidTrackBytes);
 			const auto nBytesLongerTrack=std::max( head0.GetCount(), head1.GetCount() );
+			ASSERT( nBytesLongerTrack<USHRT_MAX/2 );
 			auto nBytesCylinder=Utils::RoundUpToMuls( nBytesLongerTrack*2, (int)sizeof(TCylinderBlock) );
 			DWORD fPosition=Utils::RoundUpToMuls<DWORD>( fTarget.GetLength(), sizeof(TBlock) ); // assumption (Cylinder doesn't fit in anywhere between existing Track and must be appended to the Image)
 			for( auto it=contentLayout.begin(); it!=contentLayout.end(); it++ )
@@ -392,7 +455,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 					it->second=nBytesCylinder; // this gap is now the Cylinder
 					break;
 				}
-			cylInfos[cyl].nBlocksOffset=Utils::RoundDivUp<DWORD>( fPosition, sizeof(TBlock) );
+			cylInfos[cyl].nBlocksOffset=Utils::RoundDivUp( fPosition, (DWORD)sizeof(TBlock) );
 			cylInfos[cyl].nBytesLength=nBytesLongerTrack*2;
 			if (fTarget.Seek( fPosition, CFile::begin )<fPosition)
 				fTarget.SetLength(fPosition), fTarget.SeekToEnd();
