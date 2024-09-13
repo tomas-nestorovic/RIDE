@@ -1088,7 +1088,7 @@
 		TLogTime tEventStart;
 		TLogTime tSyncStarts[64]; BYTE iSyncStart=0;
 		WORD nSectors=0, w, sync1=0; DWORD sync23=0;
-		for( const TLogTime revolutionEndTime=GetIndexTime(nIndexPulses+1); *this; ){
+		while (*this){
 			// . searching for three consecutive 0xA1 distorted synchronization Bytes
 			tSyncStarts[iSyncStart++&63]=currentTime;
 			sync23=	(sync23<<1) | ((sync1&0x8000)!=0);

@@ -202,7 +202,8 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - must be setting Medium compatible with the FloppyInterface specified in the Header
-		/*if (header.floppyInterface<TFloppyInterface::LAST_KNOWN)
+		/* // commented out as the 'floppyInterface' value seems to be not trusted (came across a MS-DOS HD disk where set to ATARI_ST_DD)
+		if (header.floppyInterface<TFloppyInterface::LAST_KNOWN)
 			switch (pFormat->mediumType){
 				case Medium::FLOPPY_DD:{
 					static constexpr TFloppyInterface Compatibles[]={ TFloppyInterface::IBM_PC_DD, TFloppyInterface::ATARI_ST_DD, TFloppyInterface::AMIGA_DD, TFloppyInterface::CPC_DD, TFloppyInterface::GENERIC_SHUGART, TFloppyInterface::MSX2_DD, TFloppyInterface::C64_DD, TFloppyInterface::EMU_SHUGART, TFloppyInterface::S950_DD };
@@ -227,15 +228,15 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 					return ERROR_UNRECOGNIZED_MEDIA;
 			}*/
 		// - must be setting Medium compatible with the nominal # of Cells
-		if (pFormat->mediumType!=Medium::UNKNOWN){
+		if (pFormat->mediumType!=Medium::UNKNOWN
+			&&
+			header.dataBitRate // zero when creating a new image
+		){
 			const auto mp=Medium::GetProperties(pFormat->mediumType);
 			if (!mp->IsAcceptableCountOfCells( mp->revolutionTime/GetCellTime(header.dataBitRate*1000) ))
 				return ERROR_UNRECOGNIZED_MEDIA;
 		}
 		// - base
-		if (floppyType!=pFormat->mediumType) // must reconstruct all Tracks with parameters corresponding to new Medium Type?
-			if (m_strPathName.GetLength()>0)
-				DestroyAllTracks(); 
 		return __super::SetMediumTypeAndGeometry( pFormat, sideMap, firstSectorNumber );
 	}
 

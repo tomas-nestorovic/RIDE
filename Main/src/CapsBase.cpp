@@ -822,9 +822,11 @@ invalidTrack:
 					WORD score=0;
 					tmp.mediumType=(Medium::TType)type;
 					const Utils::CVarTempReset<PDos> dos0( dos, nullptr );
-					SetMediumTypeAndGeometry( &tmp, sideMap, firstSectorNumber );
+					const TStdWinError err=SetMediumTypeAndGeometry( &tmp, sideMap, firstSectorNumber );
 					if (params.userForcedMedium && tmp.mediumType==floppyType)
 						return ERROR_SUCCESS;
+					if (err)
+						continue;
 					for( TCylinder cyl=0; cyl<SCANNED_CYLINDERS; cyl++ ) // counting the # of healthy Sectors
 						for( THead head=0; head<2; head++ )
 							score+=	ScanTrack(cyl,head)
