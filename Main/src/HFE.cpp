@@ -111,6 +111,7 @@
 		// ctor
 		: CCapsBase( &Properties, '\0', true, INI_SECTION )
 		, header(HEADER_SIGNATURE_V1) {
+		preservationQuality=false; // no descendant intended for preservation
 		Reset();
 	}
 
