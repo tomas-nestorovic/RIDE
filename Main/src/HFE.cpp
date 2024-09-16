@@ -252,7 +252,11 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 
 	bool CHFE::EditSettings(bool initialEditing){
 		// True <=> new settings have been accepted (and adopted by this Image), otherwise False
-		return true;
+		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		if (header.IsVersion3())
+			return params.EditInModalDialog( *this, _T("HxC Floppy Emulator image"), initialEditing );
+		else
+			return true;
 	}
 
 	TStdWinError CHFE::Reset(){
@@ -327,7 +331,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			return nullptr;
 		bytes.ReverseBitsInEachByte();
 		if (header.IsVersion3()){
-			CTrackReaderWriter trw( bytes.GetCount()*CHAR_BIT, CTrackReader::FDD_KEIR_FRASER, false );
+			CTrackReaderWriter trw( bytes.GetCount()*CHAR_BIT, params.GetGlobalFluxDecoder(), params.resetFluxDecoderOnIndex );
 			PCBYTE p=bytes,const pLast=bytes.GetEnd();
 			TLogTime tCell=GetCellTime( header.dataBitRate*1000 );
 			TLogTime tCurr=0;
