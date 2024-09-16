@@ -179,13 +179,13 @@
 		: CTrackReaderWriter(trw)
 		// - initialization
 		, modified(false)
-		, nSectors(nSectors) , sectors( nSectors, sectors ) {
+		, sectors( nSectors, sectors ) {
 		RewindToIndex(0);
 	}
 
 	CCapsBase::CInternalTrack::~CInternalTrack(){
 		// dtor
-		for( TSector i=0; i<nSectors; i++ )
+		for( TSector i=0; i<sectors.length; i++ )
 			for( BYTE r=0; r<Revolution::MAX; r++ )
 				if (const PVOID data=sectors[i].revolutions[r].data)
 					::free(data);
@@ -419,7 +419,7 @@
 
 	void CCapsBase::CInternalTrack::FlushSectorBuffers(){
 		// spreads referential "dirty" data (if Sector modified) across each Revolution
-		for( TSector s=0; s<nSectors; s++ ){
+		for( TSector s=0; s<sectors.length; s++ ){
 			const TInternalSector &ris=sectors[s];
 			if (ris.dirtyRevolution<Revolution::MAX){
 				// Sector has been modified
@@ -571,14 +571,14 @@
 			// . attempting to return good data
 			EXCLUSIVELY_LOCK_THIS_IMAGE(); // !!! see also below this->{Lock,Unlock}
 			if (rit){ // may be Null if, e.g., device manually reset, disconnected, etc.
-				if (GetCountOfHealthySectors(cyl,head)>0 || !rit->nSectors // Track at least partly healthy or without known Sectors
+				if (GetCountOfHealthySectors(cyl,head)>0 || !rit->sectors.length // Track at least partly healthy or without known Sectors
 					||
 					params.calibrationAfterError==TParams::TCalibrationAfterError::NONE // calibration disabled
 				)
 					break;
 				if (params.calibrationAfterErrorOnlyForKnownSectors && dos->IsKnown()){
 					bool knownSectorBad=false; // assumption (the Track is unhealthy due to an irrelevant Unknown Sector, e.g. out of geometry)
-					for( TSector s=0; s<rit->nSectors; s++ ){
+					for( TSector s=0; s<rit->sectors.length; s++ ){
 						const TInternalSector &is=rit->sectors[s];
 						const TPhysicalAddress chs={ cyl, head, is.id };
 						if (!dos->IsStdSector(chs))
@@ -609,7 +609,7 @@
 		}
 		// - scanning the Track
 		if (const PCInternalTrack pit=rit){
-			for( TSector s=0; s<pit->nSectors; s++ ){
+			for( TSector s=0; s<pit->sectors.length; s++ ){
 				const TInternalSector &ris=pit->sectors[s];
 				if (bufferId)
 					*bufferId++=ris.id;
@@ -628,7 +628,7 @@
 				*pCodec=pit->GetCodec();
 			if (pAvgGap3)
 				*pAvgGap3=FDD_350_SECTOR_GAP3*2/3; // TODO
-			return pit->nSectors;
+			return pit->sectors.length;
 		}else
 			return 0;
 	}
@@ -665,7 +665,7 @@
 				// . searching for the Sector on the Track
 				const TSectorId sectorId=*bufferId++;
 				TInternalSector *pis=pit->sectors;
-				TSector n=pit->nSectors;
+				TSector n=pit->sectors.length;
 				for( BYTE nSectorsToSkip=*bufferNumbersOfSectorsToSkip++; n>0; n--,pis++ )
 					if (nSectorsToSkip)
 						nSectorsToSkip--;
@@ -736,7 +736,7 @@ invalidTrack:
 		ASSERT( rev<Revolution::MAX );
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (const PCInternalTrack pit=GetInternalTrackSafe(cyl,head)) // is Track scanned?
-			while (nSectorsToSkip<pit->nSectors){
+			while (nSectorsToSkip<pit->sectors.length){
 				const auto &ris=pit->sectors[nSectorsToSkip++];
 				if (ris.id==id)
 					if (rev>=ris.nRevolutions)
@@ -754,7 +754,7 @@ invalidTrack:
 	Revolution::TType CCapsBase::GetDirtyRevolution(RCPhysicalAddress chs,BYTE nSectorsToSkip) const{
 		// returns the Revolution that has been marked as "dirty"
 		if (const PCInternalTrack pit=GetInternalTrackSafe(chs.cylinder,chs.head))
-			while (nSectorsToSkip<pit->nSectors){
+			while (nSectorsToSkip<pit->sectors.length){
 				const auto &ris=pit->sectors[nSectorsToSkip++];
 				if (ris.id==chs.sectorId)
 					return ris.dirtyRevolution;
@@ -790,7 +790,7 @@ invalidTrack:
 						CInternalTrack::CreateFrom( *this, trw, rOutMediumType=(Medium::TType)type )
 					)
 				){
-					const TSector nRecognizedSectors=rit->nSectors;
+					const TSector nRecognizedSectors=rit->sectors.length;
 					if (WORD score= nRecognizedSectors + 32*GetCountOfHealthySectors(cyl,0)){
 						if (Medium::GetProperties( (Medium::TType)type )->IsAcceptableRevolutionTime( trw.GetAvgIndexDistance() ))
 							score|=0x8000;
@@ -1013,12 +1013,12 @@ invalidTrack:
 		const Utils::CVarTempReset<PInternalTrack> pit0( internalTracks[cyl][head], nullptr ); // forcing rescan
 			ScanTrack( cyl, head );
 			if (const PInternalTrack pitVerif=internalTracks[cyl][head]){
-				if (pitVerif->nSectors>0 || !cancelled){
+				if (pitVerif->sectors.length>0 || !cancelled){
 					const PInternalTrack pitWritten=CInternalTrack::CreateFrom( *this, trwWritten, floppyType );
 						// . comparing common cells between first two Indices
-						const auto &revWrittenFirstSector=pitWritten->sectors[0].revolutions[0];
+						const auto &revWrittenFirstSector=pitWritten->sectors[(TSector)0].revolutions[0];
 						pitWritten->SetCurrentTimeAndProfile( revWrittenFirstSector.idEndTime, revWrittenFirstSector.idEndProfile );
-						const auto &revVerifFirstSector=pitVerif->sectors[0].revolutions[0];
+						const auto &revVerifFirstSector=pitVerif->sectors[(TSector)0].revolutions[0];
 						pitVerif->SetCurrentTimeAndProfile( revVerifFirstSector.idEndTime, revVerifFirstSector.idEndProfile );
 						while (
 							*pitWritten && pitWritten->GetCurrentTime()<pitWritten->GetIndexTime(1)

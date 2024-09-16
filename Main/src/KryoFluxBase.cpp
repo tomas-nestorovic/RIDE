@@ -59,7 +59,7 @@
 		if (chs.cylinder>capsImageInfo.maxcylinder || chs.head>capsImageInfo.maxhead)
 			return ERROR_INVALID_PARAMETER;
 		if (const PInternalTrack pit=internalTracks[chs.cylinder][chs.head]){
-			while (nSectorsToSkip<pit->nSectors){
+			while (nSectorsToSkip<pit->sectors.length){
 				auto &ris=pit->sectors[nSectorsToSkip++];
 				if (ris.id==chs.sectorId){
 					ASSERT( ris.dirtyRevolution>=Revolution::MAX||ris.dirtyRevolution==ris.currentRevolution ); // no Revolution yet marked as "dirty" or marking "dirty" the same Revolution

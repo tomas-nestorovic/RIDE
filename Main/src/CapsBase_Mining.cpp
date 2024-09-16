@@ -79,7 +79,7 @@
 							TARGET_ALL_STD_SECTORS_PRESENT
 						);
 					}
-					if (pit && pit->nSectors){
+					if (pit && pit->sectors.length){
 						cbx.SetItemData(
 							cbx.AddString(_T("All current sectors healthy")),
 							TARGET_ALL_CURRENT_SECTORS_HEALTHY
