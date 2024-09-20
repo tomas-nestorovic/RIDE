@@ -1,5 +1,6 @@
 #include "stdafx.h"
 
+	CSpectrumBase::PCFilePreviewOffsetByFileType CSpectrumBase::CBasicPreview::pOffsetsByFileType;
 	CSpectrumBase::CBasicPreview *CSpectrumBase::CBasicPreview::pSingleInstance;
 
 	#define PREVIEW_LABEL	_T("BASIC listing")
@@ -57,7 +58,10 @@
 			#define MinLength(a,b) std::min<ULONG>(a,b)
 		#endif
 		frw.SetLength( MinLength(frw.GetLength(),a+fileOfficialSize) ); // ignoring appended custom data (e.g. as in TR-DOS)
-		frw.Seek( a, CFile::begin ); // ignoring prepended custom data (e.g. as in GDOS)
+		const auto offsetInFile=pOffsetsByFileType->FindOffset(
+			rFileManager.tab.image->dos->GetFileExt(file)
+		);
+		frw.Seek( a+offsetInFile, CFile::begin ); // ignoring prepended custom data (e.g. as in GDOS)
 		// - opening the temporary HTML file for writing
 		class CFormattedBasicListingFile sealed:public CFile{
 			const CBasicPreview &rBasicPreview;

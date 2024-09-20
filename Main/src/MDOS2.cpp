@@ -464,6 +464,16 @@
 				CScreenPreview::pOffsetsByFileType=Offsets;
 				break; // call base
 			}
+			case ID_ZX_PREVIEWASBASIC:{
+				// previewing File(s) as Basic program listing
+				static constexpr TFilePreviewOffsetByFileType Offsets[]={
+					{ TDirectoryEntry::SNAPSHOT, 7499, true }
+				};
+				if (CBasicPreview::pSingleInstance)
+					CBasicPreview::pSingleInstance->DestroyWindow();
+				CBasicPreview::pOffsetsByFileType=Offsets;
+				break; // call base
+			}
 			case ID_DOS_VERIFY:{
 				// volume verification
 				static constexpr TVerificationFunctions vf={

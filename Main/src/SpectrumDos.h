@@ -129,6 +129,7 @@
 			BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
 		public:
 			static CBasicPreview *pSingleInstance; // only single file can be previewed at a time
+			static PCFilePreviewOffsetByFileType pOffsetsByFileType; // client's responsibility to allocate and free the array
 
 			CBasicPreview(const CFileManagerView &rFileManager);
 			~CBasicPreview();
