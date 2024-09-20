@@ -456,12 +456,12 @@
 		switch (cmd){
 			case ID_ZX_PREVIEWASSCREEN:{
 				// previewing File(s) on Spectrum screen
-				static constexpr CScreenPreview::TOffsetByFileType ScreenOffsets[]={
+				static constexpr TFilePreviewOffsetByFileType Offsets[]={
 					{ TDirectoryEntry::SNAPSHOT, 128, true }
 				};
 				if (CScreenPreview::pSingleInstance)
 					CScreenPreview::pSingleInstance->DestroyWindow();
-				CScreenPreview::pOffsetsByFileType=ScreenOffsets;
+				CScreenPreview::pOffsetsByFileType=Offsets;
 				break; // call base
 			}
 			case ID_DOS_VERIFY:{

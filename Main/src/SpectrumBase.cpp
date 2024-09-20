@@ -308,3 +308,17 @@
 		}
 		return __super::ProcessCommand(cmd);
 	}
+
+	WORD CSpectrumBase::TFilePreviewOffsetByFileType::FindOffset(char fileType) const{
+		if (!this)
+			return 0;
+		if (this->fileType==fileType)
+			return offset;
+		if (isLast)
+			return 0;
+		return this[1].FindOffset(fileType);
+	}
+
+	WORD CSpectrumBase::TFilePreviewOffsetByFileType::FindOffset(const CPathString &fileName) const{
+		return FindOffset( fileName.FirstCharA() );
+	}
