@@ -79,7 +79,12 @@
 				END_OF_DIR	=0
 			};
 
-			char name[TRDOS503_FILE_NAME_LENGTH_MAX];
+			union{
+				char name[TRDOS503_FILE_NAME_LENGTH_MAX];
+				struct{
+					int nameLow,nameHigh;
+				};
+			};
 			BYTE extension;
 			WORD parameterA;
 			WORD parameterB;

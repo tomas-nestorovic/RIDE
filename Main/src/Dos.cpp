@@ -889,8 +889,11 @@ reportError:Utils::Information(buf);
 				// invalid export name - generating an artifical one
 				return CPathString().FormatCounter8().AppendDotExtensionIfAny(fileExt);
 		}
-		}else
-			// exporting to another RIDE instance; substituting non-alphanumeric characters with "URL-like" escape sequences
+		if (FindFileInCurrentDir( fileName, fileExt, file )) // is File Name+Ext duplicated in the Directory? (e.g. a tweak in TR-DOS Directory)
+			// generate an artificial one
+			return CPathString().FormatCounter8().AppendDotExtensionIfAny( fileExt.Escape(true) );
+		else
+			// substitute non-alphanumeric characters with "URL-like" escape sequences
 			return fileName.Escape(true).AppendDotExtensionIfAny( fileExt.Escape(true) ); // let the result contain mostly one dot '.' that delimits file name from its extension
 	}
 
