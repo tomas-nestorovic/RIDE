@@ -314,7 +314,7 @@
 		// - renaming
 		const PDirectoryEntry de=(PDirectoryEntry)file;
 		de->extension=newExt.FirstCharA();
-		newName.MemcpyAnsiTo( de->name, sizeof(de->name), '\0' );
+		newName.MemcpyAnsiTo( de->name, '\0' );
 		MarkDirectorySectorAsDirty( rRenamedFile=file );
 		return ERROR_SUCCESS;
 	}

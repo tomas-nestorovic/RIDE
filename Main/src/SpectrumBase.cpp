@@ -19,8 +19,6 @@
 		255,255,255,0
 	};
 
-	DWORD CSpectrumBase::idHeaderless=1;
-
 
 
 

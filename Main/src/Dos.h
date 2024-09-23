@@ -75,7 +75,7 @@
 			inline CPathString Clone() const{ return CPathString(*this); }
 			int GetLengthW() const;
 			char FirstCharA() const;
-			void MemcpyAnsiTo(PCHAR buf,int bufCapacity,char padding) const;
+			void MemcpyAnsiToEx(PCHAR buf,int bufCapacity,char padding) const;
 			PTCHAR FindLast(TCHAR c) const;
 			inline PTCHAR FindLastDot() const{ return FindLast('.'); }
 			int Compare(const CPathString &other,TFnCompareNames comparer) const;
@@ -105,8 +105,19 @@
 			CPathString &Escape(bool escapeShellForbidden=false);
 			CPathString &Unescape();
 			CPathString & __cdecl Format(LPCTSTR format,...);
+			CPathString &FormatCounter8();
 			CPathString &FormatLostItem8(int itemId);
 			HANDLE CreateFile(DWORD dwDesiredAccess,DWORD dwShareMode,DWORD dwCreationDisposition,DWORD dwFlagsAndAttributes=FILE_ATTRIBUTE_NORMAL) const;
+
+			template <size_t N>
+			void MemcpyAnsiTo(char (&buf)[N],char padding=' ') const{
+				MemcpyAnsiToEx( buf, N, padding );
+			}
+
+			template <size_t N>
+			CPathString &AppendAll(const WCHAR (&buf)[N]){
+				return Append( buf, N );
+			}
 		} *PPathString,&RPathString;
 		typedef const CPathString *PCPathString,&RCPathString;
 

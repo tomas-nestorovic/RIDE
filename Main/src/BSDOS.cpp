@@ -573,7 +573,7 @@
 			else{
 				// Headerless File or Fragment
 				if (pOutName)
-					pOutName->Format( _T("%08d"), idHeaderless++ ); // ID padded with zeros to eight digits (to make up an acceptable name even for TR-DOS)
+					pOutName->FormatCounter8();
 				if (pOutExt)
 					*pOutExt=TUniFileType::HEADERLESS;
 				return false; // name irrelevant

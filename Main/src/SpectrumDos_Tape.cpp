@@ -185,7 +185,7 @@
 		if (newName.GetLengthW()>ZX_TAPE_FILE_NAME_LENGTH_MAX)
 			return ERROR_FILENAME_EXCED_RANGE;
 		// - renaming
-		newName.MemcpyAnsiTo( name, sizeof(name), ' ' );
+		newName.MemcpyAnsiTo( name );
 		// - successfully renamed
 		return ERROR_SUCCESS;
 	}
@@ -224,7 +224,7 @@
 			else{
 				// Headerless File or Fragment
 				if (pOutName)
-					pOutName->Format( _T("%08d"), idHeaderless++ ); // ID padded with zeros to eight digits (to make up an acceptable name even for TR-DOS)
+					pOutName->FormatCounter8();
 				if (pOutExt)
 					*pOutExt=HEADERLESS_EXTENSION;
 				return false; // name irrelevant

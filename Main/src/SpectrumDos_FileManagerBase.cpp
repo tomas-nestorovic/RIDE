@@ -224,7 +224,7 @@
 		// creates and returns the Editor of File Name
 		ASSERT(fileNameLengthMax<ARRAYSIZE(bufOldCmd));
 		const CPathString oldName=rZxFileManager.DOS->GetFileName(file);
-		oldName.MemcpyAnsiTo( bufOldCmd, fileNameLengthMax, paddingChar );
+		oldName.MemcpyAnsiToEx( bufOldCmd, fileNameLengthMax, paddingChar );
 		return	CreateStdEditor(
 					file,
 					bufOldCmd,

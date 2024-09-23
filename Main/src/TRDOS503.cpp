@@ -392,7 +392,7 @@
 		// - renaming
 		TDirectoryEntry tmp=*de; // all changes are made to a temporary Entry before they are copied to disk
 		tmp.extension=newExt.FirstCharA();
-		newName.MemcpyAnsiTo( tmp.name, TRDOS503_FILE_NAME_LENGTH_MAX, ' ' );
+		newName.MemcpyAnsiTo( tmp.name );
 		// - setting important information about the File
 		tmp.parameterA = tmp.parameterB = officialFileSize;
 		__setStdParameter1__(&tmp,stdParams.param1), __setStdParameter2__(&tmp,stdParams.param2);

@@ -305,7 +305,6 @@
 		};
 
 		static const RGBQUAD Colors[16];
-		static DWORD idHeaderless;
 
 		static CString ParseFat32LongName(RCPathString buf,RPathString rOutName,RPathString rOutExt);
 		static int __exportFileInformation__(PTCHAR buf,TUniFileType uniFileType);

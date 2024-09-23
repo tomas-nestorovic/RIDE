@@ -87,7 +87,7 @@
 		return *GetAnsi();
 	}
 
-	void CDos::CPathString::MemcpyAnsiTo(PCHAR buf,int bufCapacity,char padding) const{
+	void CDos::CPathString::MemcpyAnsiToEx(PCHAR buf,int bufCapacity,char padding) const{
 		// copies the ANSI version of the string to provided Buffer (incl. any non-printables characters inside, e.g. Null characters), filling the rest of its Capacity with given Padding character
 		const auto ansi=GetAnsi();
 		::memcpy( // sequence may be interrupted by '\0' chars (e.g. Spectrum DOSes)
@@ -320,6 +320,11 @@
 			tmp.FormatV( format, argList );
 		va_end(argList);
 		return Append( (LPCTSTR)tmp );
+	}
+
+	CDos::CPathString &CDos::CPathString::FormatCounter8(){
+		static int id;
+		return Format( _T("%08X"), ++id ); // ID padded with zeros to eight digits (to make up an acceptable name even for TR-DOS)
 	}
 
 	CDos::CPathString &CDos::CPathString::FormatLostItem8(int itemId){

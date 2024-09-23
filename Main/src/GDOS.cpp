@@ -306,7 +306,7 @@
 	void CGDOS::TDirectoryEntry::SetNameAndExt(RCPathString newName,RCPathString newExt){
 		// sets File's Name and Type based on the Buffer content
 		// - setting the Name trimmed to 10 characters at most
-		newName.MemcpyAnsiTo( name, sizeof(name), ' ' );
+		newName.MemcpyAnsiTo( name );
 		// - setting FileType
 		fileType=(TFileType)newExt.FirstCharA();
 		// - setting up StandardParameters for a StandardZxType

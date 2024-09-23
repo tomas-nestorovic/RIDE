@@ -474,9 +474,9 @@
 			CPathString buf;
 			for( PDirectoryEntry *p=longNameEntries; nEntries--; ){
 				de=*p++;
-				buf.Append( de->longNameEntry.name1, ARRAYSIZE(de->longNameEntry.name1) );
-				buf.Append( de->longNameEntry.name2, ARRAYSIZE(de->longNameEntry.name2) );
-				buf.Append( de->longNameEntry.name3, ARRAYSIZE(de->longNameEntry.name3) );
+				buf.AppendAll( de->longNameEntry.name1 );
+				buf.AppendAll( de->longNameEntry.name2 );
+				buf.AppendAll( de->longNameEntry.name3 );
 			}
 			const CPathString ext=buf.TrimRightW(WCHAR_MAX).TrimRightNull().DetachExtension();
 			if (bufExt)
@@ -534,8 +534,8 @@
 		// - renaming
 		PDirectoryEntry longNameEntries[LONG_FILE_NAME_ENTRIES_COUNT_MAX];
 		BYTE n=__getLongFileNameEntries__(de,longNameEntries);
-		newName.MemcpyAnsiTo( de->shortNameEntry.name, MSDOS7_FILE_NAME_LENGTH_MAX, ' ' );
-		newExt.MemcpyAnsiTo( de->shortNameEntry.extension, MSDOS7_FILE_EXT_LENGTH_MAX, ' ' );
+		newName.MemcpyAnsiTo( de->shortNameEntry.name );
+		newExt.MemcpyAnsiTo( de->shortNameEntry.extension );
 		MarkDirectorySectorAsDirty( rRenamedFile=de );
 		// - recalculating the Checksum for File's long name Entries
 		PDirectoryEntry *p=longNameEntries;
