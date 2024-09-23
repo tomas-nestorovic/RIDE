@@ -28,6 +28,10 @@ namespace Utils{
 			: std::unique_ptr<T,void (__cdecl *)(PVOID)>(  (T *)::memcpy( ::calloc(length,sizeof(T)), pCopyInitData, length*sizeof(T) ),  ::free  )
 			, length(length) {
 		}
+		CCallocPtr(CCallocPtr &&r)
+			: std::unique_ptr<T,void (__cdecl *)(PVOID)>( std::move(r) )
+			, length(r.length) {
+		}
 
 		inline operator bool() const{ return get()!=pointer(); }
 		inline operator T *() const{ return get(); }
@@ -45,6 +49,10 @@ namespace Utils{
 			}else
 				return nullptr; // currently allocated memory has not been affected
 		}
+
+		// 'for each' support
+		inline T *begin() const{ return get(); }
+		inline T *end() const{ return get()+length; }
 	};
 
 	// a workaround to template argument deduction on pre-2017 compilers

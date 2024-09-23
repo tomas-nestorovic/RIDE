@@ -185,9 +185,9 @@
 
 	CCapsBase::CInternalTrack::~CInternalTrack(){
 		// dtor
-		for( TSector i=0; i<sectors.length; i++ )
-			for( BYTE r=0; r<Revolution::MAX; r++ )
-				if (const PVOID data=sectors[i].revolutions[r].data)
+		for each( const TInternalSector &ris in sectors )
+			for each( auto &r in ris.revolutions )
+				if (const PVOID data=r.data)
 					::free(data);
 	}
 
@@ -419,8 +419,7 @@
 
 	void CCapsBase::CInternalTrack::FlushSectorBuffers(){
 		// spreads referential "dirty" data (if Sector modified) across each Revolution
-		for( TSector s=0; s<sectors.length; s++ ){
-			const TInternalSector &ris=sectors[s];
+		for each( const TInternalSector &ris in sectors )
 			if (ris.dirtyRevolution<Revolution::MAX){
 				// Sector has been modified
 				const WORD sectorOfficialDataLength=ris.GetOfficialSectorLength();
@@ -437,7 +436,6 @@
 				}
 				//ris.dirtyRevolution=Revolution::NONE; // commented out - particular Revolution remains "selected" until the end of this session
 			}
-		}
 		//modified=false; // commented out as the Track hasn't yet been saved!
 	}
 
@@ -609,8 +607,7 @@
 		}
 		// - scanning the Track
 		if (const PCInternalTrack pit=rit){
-			for( TSector s=0; s<pit->sectors.length; s++ ){
-				const TInternalSector &ris=pit->sectors[s];
+			for each( const TInternalSector &ris in pit->sectors ){
 				if (bufferId)
 					*bufferId++=ris.id;
 				if (bufferLength)
@@ -1016,9 +1013,9 @@ invalidTrack:
 				if (pitVerif->sectors.length>0 || !cancelled){
 					const PInternalTrack pitWritten=CInternalTrack::CreateFrom( *this, trwWritten, floppyType );
 						// . comparing common cells between first two Indices
-						const auto &revWrittenFirstSector=pitWritten->sectors[(TSector)0].revolutions[0];
+						const auto &revWrittenFirstSector=pitWritten->sectors.begin()->revolutions[0];
 						pitWritten->SetCurrentTimeAndProfile( revWrittenFirstSector.idEndTime, revWrittenFirstSector.idEndProfile );
-						const auto &revVerifFirstSector=pitVerif->sectors[(TSector)0].revolutions[0];
+						const auto &revVerifFirstSector=pitVerif->sectors.begin()->revolutions[0];
 						pitVerif->SetCurrentTimeAndProfile( revVerifFirstSector.idEndTime, revVerifFirstSector.idEndProfile );
 						while (
 							*pitWritten && pitWritten->GetCurrentTime()<pitWritten->GetIndexTime(1)
@@ -1349,7 +1346,7 @@ invalidTrack:
 							//fallthrough
 						case Medium::FLOPPY_DD:
 							SetDlgItemText( ID_MEDIUM, Medium::GetDescription(currentMediumType) );
-							if (currentMediumType==Medium::FLOPPY_DD)
+								if (currentMediumType==Medium::FLOPPY_DD)
 								CheckAndEnableDlgItem( ID_40D80, false, initialEditing&&!fortyTrackDrive );
 							if (EnableDlgItem( ID_SIDE, initialEditing )){
 								const CTrackTempReset rit( rcb.internalTracks[0][1] ); // forcing a new scanning
@@ -1360,12 +1357,12 @@ invalidTrack:
 						case Medium::FLOPPY_HD_525:
 						case Medium::FLOPPY_HD_350:
 							SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" HD floppy") );
-							CheckAndEnableDlgItem( ID_SIDE, false );
+								CheckAndEnableDlgItem( ID_SIDE, false );
 							CheckAndEnableDlgItem( ID_40D80, false, initialEditing&&!fortyTrackDrive );
 							break;
 						default:
 							SetDlgItemFormattedText( ID_MEDIUM, _T("Not formatted or faulty%c(<a>set manually</a>)"), initialEditing?' ':'\0' );
-							CheckAndEnableDlgItem( ID_SIDE, false );
+								CheckAndEnableDlgItem( ID_SIDE, false );
 							CheckAndEnableDlgItem( ID_40D80, false, initialEditing&&!fortyTrackDrive );
 							break;
 					}
@@ -1526,7 +1523,7 @@ invalidTrack:
 				// . WrittenTracksVerification
 				DDX_Check( pDX,	ID_VERIFY_TRACK, params.verifyWrittenTracks&=isRealDevice );
 				DDX_CheckEnable( pDX, ID_VERIFY_SECTOR, params.verifyBadSectors&=isRealDevice, params.verifyWrittenTracks );
-			}
+				}
 
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 				// window procedure

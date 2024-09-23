@@ -215,8 +215,8 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 		TInternalTrack::TSectorInfo *psi=sectors;
 		for( TSector s=0; s<nSectors; psi++->seqNum=s++ ){
 			psi->length=fdd->GetUsableSectorLength(( psi->id=*bufferId++ ).lengthCode );
-			for( BYTE r=0; r<Revolution::MAX; r++ )
-				psi->revolutions[r].fdcStatus=TFdcStatus::Unknown; // not yet attempted for reading
+			for each( auto &rev in psi->revolutions )
+				rev.fdcStatus=TFdcStatus::Unknown; // not yet attempted for reading
 			psi->dirtyRevolution=Revolution::NONE;
 			if (sectorStartsNanoseconds>(PCLogTime)0x100) // if start times provided (that is, if no Gap3 information from <0;255> Bytes provided) ...
 				psi->startNanoseconds=*sectorStartsNanoseconds++; // ... they are used

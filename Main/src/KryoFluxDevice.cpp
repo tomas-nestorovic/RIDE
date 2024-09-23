@@ -695,9 +695,9 @@
 			for( BYTE i=1; i<pit->GetIndexCount(); i++ ){
 				const BYTE r=i-1;
 				TSector nHealthySectors=0; bool hasDataOverIndex=false; // assumptions
-				for( TSector s=0; s<pit->sectors.length; s++ ){
-					pit->ReadSector( pit->sectors[s], r );
-					const auto &rev=pit->sectors[s].revolutions[r];
+				for each( auto &ris in pit->sectors ){
+					pit->ReadSector( ris, r );
+					const auto &rev=ris.revolutions[r];
 					if (pit->GetIndexTime(i)<rev.dataEndTime){ // data over index?
 						hasDataOverIndex=true;
 						if (i+1==pit->GetIndexCount()){
@@ -718,7 +718,7 @@
 			const TLogTime tIndex0=pit->RewindToIndex(bestRev.i), tIndex1=pit->GetIndexTime(bestRev.i+1);
 			TLogTime tWritingEnd=tIndex1;
 			if (bestRev.hasDataOverIndex){
-				const auto &firstSector=pit->sectors[(TSector)0];
+				const auto &firstSector=*pit->sectors.begin();
 				TLogTime tOverhang=INT_MAX;
 				for( BYTE r=0; r<firstSector.nRevolutions; r++ ){
 					TLogTime tIdEnd=firstSector.revolutions[r].idEndTime;

@@ -92,7 +92,7 @@
 
 			inline operator PBYTE() const{ return get(); }
 			inline WORD GetCount() const{ return count; }
-			inline PBYTE GetEnd() const{ return get()+count; }
+			inline PBYTE end() const{ return get()+count; }
 			inline void TrimTo(WORD newCount){ count=newCount; }
 			void Invalidate();
 			void ReverseBitsInEachByte() const;

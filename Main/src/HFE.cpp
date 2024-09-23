@@ -83,19 +83,19 @@
 
 	CHFE::CTrackBytes::CTrackBytes(CTrackBytes &&r)
 		// move ctor
-		: count(r.count) {
-		reset( r.release() );
+		: Utils::CCallocPtr<BYTE>( std::move(r) )
+		, count(r.count) {
 	}
 
 	void CHFE::CTrackBytes::Invalidate(){
 		// disposes all Bytes, rendering this object unusable
-		reset(nullptr), count=0;
+		reset(), count=0;
 	}
 
 	void CHFE::CTrackBytes::ReverseBitsInEachByte() const{
 		// reverses the order of bits in each Byte
-		for( PBYTE p=*this,pLast=GetEnd(); p<pLast; p++ )
-			*p=Utils::GetReversedByte(*p);
+		for each( BYTE &r in *this )
+			r=Utils::GetReversedByte(r);
 	}
 
 
@@ -333,7 +333,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		bytes.ReverseBitsInEachByte();
 		if (header.IsVersion3()){
 			CTrackReaderWriter trw( bytes.GetCount()*CHAR_BIT, params.GetGlobalFluxDecoder(), params.resetFluxDecoderOnIndex );
-			PCBYTE p=bytes,const pLast=bytes.GetEnd();
+			PCBYTE p=bytes,const pLast=bytes.end();
 			TLogTime tCell=GetCellTime( header.dataBitRate*1000 );
 			TLogTime tCurr=0;
 			for( BYTE nFollowingDataBitsToSkip=0; p<pLast; )
@@ -467,9 +467,9 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			TCylinderBlock cylBlock;
 			for( PCBYTE p0=head0, p1=head1; nBytesCylinder>0; nBytesCylinder-=sizeof(cylBlock) ){
 				::ZeroMemory( &cylBlock, sizeof(cylBlock) );
-				if (p0<head0.GetEnd())
+				if (p0<head0.end())
 					::memcpy( cylBlock.head[0].bytes, p0, sizeof(TTrackData) ),  p0+=sizeof(TTrackData);
-				if (p1<head1.GetEnd())
+				if (p1<head1.end())
 					::memcpy( cylBlock.head[1].bytes, p1, sizeof(TTrackData) ),  p1+=sizeof(TTrackData);
 				fTarget.Write( &cylBlock, sizeof(cylBlock) );
 			}
