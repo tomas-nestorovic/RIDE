@@ -98,16 +98,18 @@
 		const WORD id=p.GetCurrentDrawingIdSync();
 		const CXyDisplayInfo &di=*(const CXyDisplayInfo *)&p.di;
 		const HGDIOBJ hPen0=::SelectObject( p.dc, hPen );
-			for( int j=0; j<nPoints; j++ ){
-				EXCLUSIVELY_LOCK(p);
-				if (p.drawingId!=id)
-					break;
-				if (points[j].y>di.GetAxisY().GetLength())
-					continue;
-				const POINT pt=di.Transform( points[j] );
-				::MoveToEx( p.dc, pt.x, pt.y, nullptr );
-				::LineTo( p.dc, pt.x+1, pt.y );
-			}
+			constexpr int Stride=64;
+			for( int i=0; i<Stride; i++ )
+				for( int j=i+0; j<nPoints; j+=Stride ){
+					EXCLUSIVELY_LOCK(p);
+					if (p.drawingId!=id)
+						break;
+					if (points[j].y>di.GetAxisY().GetLength())
+						continue;
+					const POINT pt=di.Transform( points[j] );
+					::MoveToEx( p.dc, pt.x, pt.y, nullptr );
+					::LineTo( p.dc, pt.x+1, pt.y );
+				}
 		::SelectObject( p.dc, hPen0 );
 	}
 
@@ -427,6 +429,19 @@
 		return status;
 	}
 
+	static WORD MenuItemToStdPercentile(UINT menuItemId){
+		switch (menuItemId){
+			case ID_DATA:
+				return 10000;
+			case ID_ACCURACY:
+				return 9995;
+			case ID_STANDARD:
+				return 9985;
+			default:
+				return -1;
+		}
+	}
+
 	bool CChartView::CXyDisplayInfo::OnCmdMsg(CChartView &cv,UINT nID,int nCode,PVOID pExtra){
 		// command processing
 		switch (nCode){
@@ -437,6 +452,8 @@
 					case ID_DATA:
 					case ID_ACCURACY:
 					case ID_STANDARD:
+						pCmdUi->SetCheck( percentile==MenuItemToStdPercentile(nID) );
+						//fallthrough
 					case ID_NUMBER:
 						pCmdUi->Enable();
 						return true;
@@ -447,15 +464,9 @@
 				// command
 				switch (nID){
 					case ID_DATA:
-						SetPercentile(10000);
-						cv.Invalidate();
-						return true;
 					case ID_ACCURACY:
-						SetPercentile(9995);
-						cv.Invalidate();
-						return true;
 					case ID_STANDARD:
-						SetPercentile(9985);
+						SetPercentile( MenuItemToStdPercentile(nID) );
 						cv.Invalidate();
 						return true;
 					case ID_NUMBER:
@@ -496,15 +507,21 @@
 			p.redrawEvent.Lock();
 			if (!::IsWindow(cv.m_hWnd)) // window closed?
 				break;
+			cv.SetStatus(DRAWING);
 			const WORD id=p.GetCurrentDrawingIdSync();
 			// . creating and preparing the canvas
 			const CClientDC dc( &cv );
+			::SetMapMode( dc, MM_ANISOTROPIC );
+			::SetGraphicsMode( dc, GM_ADVANCED );
 			::SetBkMode( dc, TRANSPARENT );
 			Utils::ScaleLogicalUnit(dc);
 			p.dc=dc;
-			// . preventing from drawing inside the Margin
 			RECT rcClient;
 			cv.GetClientRect(&rcClient);
+			p.di.DrawBackground( dc, rcClient );
+			if (id!=p.GetCurrentDrawingIdSync()) // new paint request?
+				continue;
+			// . preventing from drawing inside the Margin
 			::IntersectClipRect( dc, p.di.margin.L, p.di.margin.T/2, rcClient.right/Utils::LogicalUnitScaleFactor-p.di.margin.R/2, rcClient.bottom/Utils::LogicalUnitScaleFactor-p.di.margin.B );
 			// . drawing all Graphic assets as they appear in the list
 			for( BYTE i=0; i<p.di.nGraphics; i++ ){
@@ -514,6 +531,7 @@
 				if (id!=p.GetCurrentDrawingIdSync()) // new paint request?
 					break;
 			}
+			cv.SetStatus(READY);
 		}while (true);
 		return ERROR_SUCCESS;
 	}
@@ -552,18 +570,36 @@
 
 	CChartView::CChartView(CDisplayInfo &di)
 		// ctor
-		: painter( *this, di ) {
+		: painter( *this, di )
+		, status(READY) {
 		painter.Resume();
+	}
+
+	LPCTSTR CChartView::GetCaptionSuffix() const{
+		switch (status){
+			case DRAWING:
+				return _T("[Drawing]");
+			default:
+				ASSERT(FALSE);
+				//fallthrough
+			case READY:
+				return _T("");
+		}
+	}
+
+	void CChartView::SetStatus(TStatus newStatus){
+		status=newStatus;
+		if (::IsWindow(m_hWnd)) // window not yet closed?
+			GetParent()->SendMessage( WM_CHART_STATUS_CHANGED, (WPARAM)m_hWnd );
 	}
 
 	void CChartView::PostNcDestroy(){
 		// self-destruction
 		// - letting the Painter finish normally
-		painter.locker.Lock();
-			painter.drawingId++;
-		painter.locker.Unlock();
+{		EXCLUSIVELY_LOCK(painter);
+		painter.drawingId++;
 		painter.redrawEvent.SetEvent();
-		::WaitForSingleObject( painter, INFINITE );
+}		::WaitForSingleObject( painter, INFINITE );
 		// - base
 		//__super::PostNcDestroy(); // commented out (View destroyed by its owner)
 	}
@@ -572,20 +608,9 @@
 		// drawing
 		// - base
 		__super::OnDraw(pDC);
-		// - scaling the canvas
-		Utils::ScaleLogicalUnit(*pDC);
-		// - preparing the canvas for drawing a Chart of specified Type
-		const HDC dc=*pDC;
-		pDC->SetBkMode(TRANSPARENT);
-		pDC->SetMapMode(MM_ANISOTROPIC);
-		::SetGraphicsMode( dc, GM_ADVANCED );
-		// - drawing the chart
-		RECT rcClient;
-		GetClientRect(&rcClient);
+		// - drawing the chart (in parallel thread due to computational complexity if painting the whole Track)
 		EXCLUSIVELY_LOCK(painter);
 		painter.drawingId++;
-		painter.di.DrawBackground( dc, rcClient );
-		// . drawing the rest in parallel thread due to computational complexity if painting the whole Track
 		painter.redrawEvent.SetEvent();
 	}
 
@@ -597,9 +622,10 @@
 
 
 
-	CChartFrame::CChartFrame(CChartView::CDisplayInfo &di)
+	CChartFrame::CChartFrame(const CString &caption,CChartView::CDisplayInfo &di)
 		// ctor
-		: chartView(di) {
+		: chartView(di)
+		, captionBase(caption) {
 	}
 
 	BOOL CChartFrame::PreCreateWindow(CREATESTRUCT &cs){
@@ -614,7 +640,7 @@
 		switch (msg){
 			case WM_CREATE:{
 				const LRESULT result=__super::WindowProc(msg,wParam,lParam);
-				chartView.Create( nullptr, nullptr, AFX_WS_DEFAULT_VIEW&~WS_BORDER|WS_CLIPSIBLINGS, rectDefault, this, AFX_IDW_PANE_FIRST );
+				chartView.Create( nullptr, captionBase, AFX_WS_DEFAULT_VIEW&~WS_BORDER|WS_CLIPSIBLINGS, rectDefault, this, AFX_IDW_PANE_FIRST );
 				static constexpr UINT Indicator=ID_SEPARATOR;
 				statusBar.Create(this);
 				statusBar.SetIndicators(&Indicator,1);
@@ -635,6 +661,9 @@
 				break;
 			default:
 				if (msg==CChartView::WM_CHART_STATUS_CHANGED){
+					SetWindowText(
+						Utils::SimpleFormat( _T("%s %s"), captionBase, chartView.GetCaptionSuffix() )
+					);
 					statusBar.SetPaneText( 0, chartView.painter.di.GetStatus() );
 					return 0;
 				}
@@ -679,7 +708,7 @@
 
 	CChartDialog::CChartDialog(CChartView::CDisplayInfo &di)
 		// ctor
-		: CChartFrame(di) {
+		: CChartFrame(_T(""),di) {
 	}
 
 	LRESULT CChartDialog::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
@@ -694,12 +723,12 @@
 		//nop (assumed Dialog allocated on stack)
 	}
 	
-	void CChartDialog::ShowModal(LPCTSTR caption,CWnd *pParentWnd,WORD width,WORD height,DWORD dwStyle){
+	void CChartDialog::ShowModal(const CString &caption,CWnd *pParentWnd,WORD width,WORD height,DWORD dwStyle){
 		// modal display of the Dialog
 		CWnd *const pBlockedWnd= pParentWnd ? pParentWnd : app.m_pMainWnd;
 		pBlockedWnd->BeginModalState();
 			LoadFrame( chartView.GetDisplayInfo().menuResourceId, dwStyle, pParentWnd );
-			SetWindowText(caption);
+			SetWindowText( captionBase=caption );
 			SetWindowPos( nullptr, 0,0, width*Utils::LogicalUnitScaleFactor, height*Utils::LogicalUnitScaleFactor, SWP_NOZORDER|SWP_NOMOVE );
 			RunModalLoop( MLF_SHOWONIDLE|MLF_NOIDLEMSG );
 		pBlockedWnd->EndModalState();

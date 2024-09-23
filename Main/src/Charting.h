@@ -3,6 +3,11 @@
 
 	class CChartView:public CView{
 	public:
+		enum TStatus{
+			DRAWING,
+			READY
+		};
+
 		typedef const struct TMargin sealed{
 			static const TMargin None;
 			static const TMargin Default;
@@ -137,6 +142,9 @@
 			WORD GetCurrentDrawingIdSync() const;
 		} painter;
 	protected:
+		TStatus status;
+
+		void SetStatus(TStatus newStatus);
 		void OnDraw(CDC *pDC) override;
 		void PostNcDestroy() override;
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
@@ -145,6 +153,8 @@
 
 		CChartView(CDisplayInfo &di);
 
+		inline TStatus GetStatus() const{ return status; }
+		LPCTSTR GetCaptionSuffix() const;
 		inline const CDisplayInfo &GetDisplayInfo() const{ return painter.di; }
 	};
 
@@ -155,6 +165,7 @@
 
 	class CChartFrame:public CFrameWnd{
 	protected:
+		CString captionBase;
 		CChartView chartView;
 		CStatusBar statusBar;
 
@@ -162,7 +173,7 @@
 		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
 	public:
-		CChartFrame(CChartView::CDisplayInfo &di);
+		CChartFrame(const CString &caption,CChartView::CDisplayInfo &di);
 	};
 
 
@@ -178,7 +189,7 @@
 		CChartDialog(CChartView::CDisplayInfo &di);
 
 		void ShowModal(
-            LPCTSTR caption,
+			const CString &caption,
             CWnd *pParentWnd = nullptr,
             WORD width=800, WORD height=600,
             DWORD dwStyle = WS_MAXIMIZEBOX|WS_POPUP|WS_CAPTION|WS_SYSMENU|WS_THICKFRAME|WS_VISIBLE
