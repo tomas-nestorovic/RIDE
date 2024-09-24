@@ -2,6 +2,21 @@
 
 	#define INI_DUMP	_T("Dump")
 
+	struct TWarnings{
+		WORD scannedWithError:1;
+		WORD hasNonformattedArea:1;
+		WORD hasDataInGaps:1;
+		WORD hasFuzzyData:1;
+		WORD hasDataOverIndex:1;
+		WORD hasDuplicatedIdFields:1;
+		WORD isEmpty:1;
+		WORD missesSomeSectors:1;
+
+		inline TWarnings(){ *(PWORD)this=0; }
+
+		inline operator WORD() const{ return *(PWORD)this; }
+	};
+
 	struct TDumpParams sealed{
 		#pragma pack(1)
 		typedef const struct TSourceSectorError sealed{
@@ -28,13 +43,17 @@
 		} gap3;
 		BYTE fillerByte;
 		#pragma pack(1)
-		const struct TSourceTrackErrors sealed{
-			TCylinder cyl;
-			THead head;
-			bool scannedWithError, hasNonformattedArea, hasDataInGaps, hasFuzzyData, hasDataOverIndex, hasDuplicatedIdFields, isEmpty, missesSomeSectors;
+		const struct TSourceTrackErrors sealed:TWarnings{
+			const TCylinder cyl;
+			const THead head;
+			const Utils::CCallocPtr<TSourceSectorError,TSector> erroneousSectors;
 			const TSourceTrackErrors *pNextErroneousTrack;
-			TSector nErroneousSectors;
-			TSourceSectorError erroneousSectors[1];
+			TSourceTrackErrors(TCylinder cyl,THead head,TWarnings warnings,const TSourceSectorError *erroneousSectors,TSector nErroneousSectors)
+				: TWarnings(warnings)
+				, cyl(cyl) , head(head)
+				, erroneousSectors( nErroneousSectors, erroneousSectors )
+				, pNextErroneousTrack(nullptr) {
+			}
 		} *pOutErroneousTracks;
 
 		TDumpParams(PCDos _dos)
@@ -62,7 +81,7 @@
 				target->dos=nullptr;
 			// . destroying the list of SourceTrackErrors
 			while (const TSourceTrackErrors *const tmp=pOutErroneousTracks)
-				pOutErroneousTracks=pOutErroneousTracks->pNextErroneousTrack, ::free((PVOID)tmp);
+				pOutErroneousTracks=pOutErroneousTracks->pNextErroneousTrack, delete tmp;
 		}
 
 		void __exportErroneousTracksToHtml__(CFile &fHtml,const Utils::CRideTime &duration,bool realtimePriority) const{
@@ -82,11 +101,9 @@
 								if (sr.IsWithoutError())
 									continue; 
 								int nErrorOccurences=0;
-								for( const TSourceTrackErrors *pErroneousTrack=pOutErroneousTracks; pErroneousTrack; pErroneousTrack=pErroneousTrack->pNextErroneousTrack ){
-									PCSourceSectorError psse=pErroneousTrack->erroneousSectors;
-									for( BYTE n=pErroneousTrack->nErroneousSectors; n; n-- )
-										nErrorOccurences+=(psse++->fdcStatus&sr)!=0;
-								}
+								for( const TSourceTrackErrors *pErroneousTrack=pOutErroneousTracks; pErroneousTrack; pErroneousTrack=pErroneousTrack->pNextErroneousTrack )
+									for each( const auto &es in pErroneousTrack->erroneousSectors )
+										nErrorOccurences+=(es.fdcStatus&sr)!=0;
 								if (nErrorOccurences){
 									LPCTSTR bitDescriptions[3]; // 3 = prave jedna Chyba a dvakrat Null
 									sr.GetDescriptionsOfSetBits(bitDescriptions);
@@ -98,16 +115,8 @@
 								}
 							}
 							int nWarnings=0;
-							for( const TSourceTrackErrors *pErroneousTrack=pOutErroneousTracks; pErroneousTrack; pErroneousTrack=pErroneousTrack->pNextErroneousTrack ){
-								nWarnings+=pErroneousTrack->scannedWithError;
-								nWarnings+=pErroneousTrack->hasNonformattedArea;
-								nWarnings+=pErroneousTrack->hasDataInGaps;
-								nWarnings+=pErroneousTrack->hasFuzzyData;
-								nWarnings+=pErroneousTrack->hasDataOverIndex;
-								nWarnings+=pErroneousTrack->hasDuplicatedIdFields;
-								nWarnings+=pErroneousTrack->isEmpty;
-								nWarnings+=pErroneousTrack->missesSomeSectors;
-							}
+							for( const TSourceTrackErrors *pErroneousTrack=pOutErroneousTracks; pErroneousTrack; pErroneousTrack=pErroneousTrack->pNextErroneousTrack )
+								nWarnings+=Utils::CountSetBits(*pErroneousTrack);
 							Utils::WriteToFile(fHtml,_T("<tr><td>Warning</td><td align=right>"));
 								Utils::WriteToFile(fHtml,nWarnings);
 							Utils::WriteToFile(fHtml,_T("</td></tr>"));							
@@ -123,15 +132,15 @@
 								Utils::WriteToFile(fHtml,_T("</td><td><ul>"));
 									if (pErroneousTrack->scannedWithError)
 										Utils::WriteToFile(fHtml,_T("<li><span style=color:red><b>Warning</b>: Error scanning the track!</span></li>"));
-									if (BYTE n=pErroneousTrack->nErroneousSectors)
-										for( PCSourceSectorError psse=pErroneousTrack->erroneousSectors; n; n--,psse++ ){
+									if (pErroneousTrack->erroneousSectors.length)
+										for each( const auto &es in pErroneousTrack->erroneousSectors ){
 											Utils::WriteToFile(fHtml,_T("<li>"));
-												Utils::WriteToFileFormatted( fHtml, _T("%s<b>%s</b>. "), psse->excluded?_T("Excluded "):_T(""), (LPCTSTR)psse->id.ToString() );
+												Utils::WriteToFileFormatted( fHtml, _T("%s<b>%s</b>. "), es.excluded?_T("Excluded "):_T(""), (LPCTSTR)es.id.ToString() );
 												LPCTSTR bitDescriptions[10],*pDesc=bitDescriptions;
-												const TPhysicalAddress chs={ pErroneousTrack->cyl, pErroneousTrack->head, psse->id };
+												const TPhysicalAddress chs={ pErroneousTrack->cyl, pErroneousTrack->head, es.id };
 												Utils::WriteToFileFormatted( fHtml, _T("<i>FAT</i>: %s, "), dos->GetSectorStatusText(chs) );
-												psse->fdcStatus.GetDescriptionsOfSetBits(bitDescriptions);
-												Utils::WriteToFileFormatted( fHtml, _T("<i>SR1</i> (0x%02X): "), psse->fdcStatus.reg1 );
+												es.fdcStatus.GetDescriptionsOfSetBits(bitDescriptions);
+												Utils::WriteToFileFormatted( fHtml, _T("<i>SR1</i> (0x%02X): "), es.fdcStatus.reg1 );
 												if (*pDesc){
 													Utils::WriteToFile(fHtml,*pDesc++);
 													while (*pDesc){
@@ -142,7 +151,7 @@
 													Utils::WriteToFile(fHtml,_T("No error"));
 												Utils::WriteToFile(fHtml,_T("."));
 												pDesc++; // skipping Null that terminates the list of bits set in Register 1
-												Utils::WriteToFileFormatted( fHtml, _T(" <i>SR2</i> (0x%02X): "), psse->fdcStatus.reg2 );
+												Utils::WriteToFileFormatted( fHtml, _T(" <i>SR2</i> (0x%02X): "), es.fdcStatus.reg2 );
 												if (*pDesc){
 													Utils::WriteToFile(fHtml,*pDesc++);
 													while (*pDesc){
@@ -156,7 +165,7 @@
 										}
 									else if (!pErroneousTrack->isEmpty)
 										Utils::WriteToFile(fHtml,_T("<li>All sectors ok.</li>"));
-									else
+									if (pErroneousTrack->isEmpty)
 										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: No recognized sectors.</li>"));
 									if (pErroneousTrack->hasNonformattedArea)
 										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: Significant non-formatted area.</li>"));
@@ -232,8 +241,10 @@
 {LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("scanning source"));
 				nSectors=dp.source->ScanTrack(p.chs.cylinder,p.chs.head,&sourceCodec,bufferId,bufferLength);
 }
+				TWarnings warnings;
+				warnings.isEmpty=!nSectors;
 				p.trackScanned=dp.source->IsTrackScanned( p.chs.cylinder, p.chs.head );
-				const bool scannedWithError=!p.trackScanned; // was there a problem scanning the Track?
+				warnings.scannedWithError=!p.trackScanned; // was there a problem scanning the Track?
 				if (dp.requireAllStdSectorDataPresent && p.trackScanned){
 					TSectorId stdIds[(TSector)-1];
 					const TSector nStdIds=dp.dos->GetListOfStdSectors( p.chs.cylinder, p.chs.head, stdIds );
@@ -256,24 +267,23 @@
 				CImage::CTrackReader trSrc=dp.source->ReadTrack( p.chs.cylinder, p.chs.head );
 				p.trackWriteable= trSrc && p.targetSupportsTrackWriting && (sourceCodec&dp.targetCodecs)!=0; // A&B&C, A&B = Source and Target must support whole Track access, C = Target must support the Codec used in Source
 				// . if possible, analyzing the read Source Track
-				bool hasNonformattedArea=false, hasDataInGaps=false, hasFuzzyData=false, hasDataOverIndex=false, hasDuplicatedIdFields=false, missesSomeSectors=false;
 				if (trSrc && dp.fullTrackAnalysis){
 					const auto peTrack=trSrc.ScanAndAnalyze( pAction->CreateSubactionProgress(0) );
-					hasNonformattedArea=peTrack.Contains( CImage::CTrackReader::TParseEvent::NONFORMATTED );
-					hasDataInGaps=peTrack.Contains( CImage::CTrackReader::TParseEvent::DATA_IN_GAP );
-					hasFuzzyData=peTrack.Contains( CImage::CTrackReader::TParseEvent::FUZZY_BAD );
+					warnings.hasNonformattedArea=peTrack.Contains( CImage::CTrackReader::TParseEvent::NONFORMATTED );
+					warnings.hasDataInGaps=peTrack.Contains( CImage::CTrackReader::TParseEvent::DATA_IN_GAP );
+					warnings.hasFuzzyData=peTrack.Contains( CImage::CTrackReader::TParseEvent::FUZZY_BAD );
 					for( auto it=peTrack.GetIterator(); it; ){
 						const auto &pe=*it++->second;
 						if (pe.IsDataStd()){
 							for( BYTE i=0; i<trSrc.GetIndexCount(); i++ )
-								hasDataOverIndex|=pe.Contains( trSrc.GetIndexTime(i) );
-							if (hasDataOverIndex)
+								warnings.hasDataOverIndex|=pe.Contains( trSrc.GetIndexTime(i) );
+							if (warnings.hasDataOverIndex)
 								break;
 						}
 					}
 				}
 				for( TSector i=0; i<nSectors; i++ )
-					if ( hasDuplicatedIdFields=TSectorId::CountAppearances(bufferId,i,bufferId[i])>0 )
+					if ( warnings.hasDuplicatedIdFields=TSectorId::CountAppearances(bufferId,i,bufferId[i])>0 )
 						break;
 				if (p.chs.cylinder<dp.dos->formatBoot.nCylinders // reporing a missing official Sector makes sense only in official part of the disk
 					&&
@@ -286,11 +296,10 @@
 						TSector j=0;
 						while (j<nSectors && bufferId[j]!=p.chs.sectorId)
 							j++;
-						if ( missesSomeSectors=j==nSectors ) // missing a Sector in official geometry?
+						if ( warnings.missesSomeSectors=j==nSectors ) // missing a Sector in official geometry?
 							break;
 					}
 				}
-				const bool isEmpty=!nSectors;
 				// . reading individual Sectors
 				if (pAction->Cancelled)
 					return ERROR_CANCELLED;
@@ -749,7 +758,7 @@
 				}
 }
 				p.acceptance.remainingErrorsOnTrack=false; // "True" valid only for Track it was set on
-				if (!p.trackScanned && !isEmpty) // has a non-empty Track been disposed as part of the recovery from error? (e.g. a Track may be empty for non-existent KryoFlux Streams)
+				if (!p.trackScanned && !warnings.isEmpty) // has a non-empty Track been disposed as part of the recovery from error? (e.g. a Track may be empty due to non-existent KryoFlux Streams)
 					continue; // begin anew with this Track
 				// . formatting Target Track
 				if (pAction->Cancelled)
@@ -858,20 +867,13 @@ terminateWithError:		return LOG_ERROR(pAction->TerminateWithError(err));
 				}
 				// . registering Track with ErroneousSectors
 //Utils::Information("registering Track with ErroneousSectors");
-				if (scannedWithError || hasNonformattedArea || hasDataInGaps || hasFuzzyData || hasDataOverIndex || hasDuplicatedIdFields || isEmpty || missesSomeSectors || erroneousSectors.n){
-					TDumpParams::TSourceTrackErrors *psse=(TDumpParams::TSourceTrackErrors *)::malloc(sizeof(TDumpParams::TSourceTrackErrors)+std::max(0,erroneousSectors.n-1)*sizeof(TDumpParams::TSourceSectorError));
-						psse->cyl=p.chs.cylinder, psse->head=p.chs.head;
-						psse->scannedWithError=scannedWithError;
-						psse->hasNonformattedArea=hasNonformattedArea;
-						psse->hasDataInGaps=hasDataInGaps;
-						psse->hasFuzzyData=hasFuzzyData;
-						psse->hasDataOverIndex=hasDataOverIndex;
-						psse->hasDuplicatedIdFields=hasDuplicatedIdFields;
-						psse->isEmpty=isEmpty;
-						psse->missesSomeSectors=missesSomeSectors;
-						psse->pNextErroneousTrack=nullptr;
-						::memcpy( psse->erroneousSectors, erroneousSectors.buffer, ( psse->nErroneousSectors=erroneousSectors.n )*sizeof(TDumpParams::TSourceSectorError) );
-					*ppSrcTrackErrors=psse, ppSrcTrackErrors=&psse->pNextErroneousTrack;
+				if (warnings || erroneousSectors.n){
+					auto *const pste=new TDumpParams::TSourceTrackErrors(
+						p.chs.cylinder, p.chs.head,
+						warnings,
+						erroneousSectors.buffer, erroneousSectors.n
+					);
+					*ppSrcTrackErrors=pste, ppSrcTrackErrors=&pste->pNextErroneousTrack;
 				}
 }
 				p.chs.head++;
