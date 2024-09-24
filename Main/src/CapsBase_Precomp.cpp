@@ -114,7 +114,7 @@
 			if (pAction->Cancelled)
 				return ERROR_CANCELLED;
 			// . composition of test Track
-			CTrackReaderWriter trw( mediumProps.nCells, CTrackReader::FDD_KEIR_FRASER, false );
+			CTrackReaderWriter trw( mediumProps.nCells, CTrackReader::KEIR_FRASER, false );
 				trw.SetMediumType(rPrecomp.floppyType);
 				trw.AddIndexTime(0);
 				trw.AddIndexTime(mediumProps.revolutionTime);

@@ -422,7 +422,7 @@
 			return CTrackReaderWriter::Invalid;
 		CTrackReaderWriter result(
 			length, // a pessimistic estimation of # of Fluxes
-			params.GetGlobalFluxDecoder(), params.resetFluxDecoderOnIndex
+			params.fluxDecoder, params.resetFluxDecoderOnIndex
 		);
 		const PCBYTE pEnd=p+length;
 		for( int sampleCounter=0,sampleCounterSinceIndex=0; p<pEnd; p++ ){

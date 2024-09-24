@@ -309,11 +309,13 @@
 		class CTrackReader{
 		public:
 			enum TDecoderMethod:BYTE{
-				NONE				=0,
-				FDD_KEIR_FRASER		=1,
-				FDD_MARK_OGDEN		=2,
-				FDD_METHODS			=FDD_KEIR_FRASER|FDD_MARK_OGDEN
+				NONE			=1,
+				KEIR_FRASER		=2,
+				MARK_OGDEN		=8,
+				FDD_METHODS		=NONE|KEIR_FRASER|MARK_OGDEN
 			};
+
+			static LPCTSTR GetDescription(TDecoderMethod dm);
 
 			struct TProfile sealed{
 				static const TProfile HD;		// 3.5" HD or 5.25" HD in 360 RPM drive

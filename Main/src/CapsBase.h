@@ -147,11 +147,7 @@
 				ADVANCED=6,	// six full revolutions
 				PRESERVATION=8	// eight full revolutions
 			} mutable precision;
-			enum TFluxDecoder{ // in order of appearance in corresponding combo-box in IDR_KRYOFLUX_ACCESS dialog
-				NO_FLUX_DECODER,
-				KEIR_FRASER,
-				MARK_OGDEN
-			} fluxDecoder;
+			CTrackReader::TDecoderMethod fluxDecoder;
 			bool resetFluxDecoderOnIndex;
 			bool fortyTrackDrive;
 			enum TCalibrationAfterError{
@@ -172,7 +168,6 @@
 			~TParams();
 
 			inline BYTE PrecisionToFullRevolutionCount() const{ return precision; }
-			CTrackReader::TDecoderMethod GetGlobalFluxDecoder() const;
 			bool EditInModalDialog(CCapsBase &rcb,LPCTSTR firmware,bool initialEditing);
 		} params;
 

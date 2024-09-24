@@ -201,7 +201,7 @@
 		UDWORD nBitsPerTrack[CAPS_MTRS], nBitsTotally=0;
 		for( BYTE rev=0; rev<nRevs; rev++ )
 			nBitsTotally += nBitsPerTrack[rev] = CBitReader(ctiRevs[rev],lockFlags).Count;
-		CTrackReaderWriter trw( nBitsTotally*125/100, CTrackReader::FDD_KEIR_FRASER, true ); // pessimistic estimation of # of fluxes; allowing for 25% of false "ones" introduced by "FDC-like" decoders
+		CTrackReaderWriter trw( nBitsTotally*125/100, CTrackReader::KEIR_FRASER, true ); // pessimistic estimation of # of fluxes; allowing for 25% of false "ones" introduced by "FDC-like" decoders
 			if (cb.floppyType!=Medium::UNKNOWN && !ctiRevs[0].timelen){
 				// Medium already known and the CAPS Track does NOT contain explicit timing information
 				trw.SetMediumType(cb.floppyType); // adopting the Medium
@@ -1123,7 +1123,7 @@ invalidTrack:
 		if (!mp)
 			return ERROR_UNRECOGNIZED_MEDIA;
 		// - composition of test Track
-		CTrackReaderWriter trw( mp->nCells, CTrackReader::FDD_KEIR_FRASER, false );
+		CTrackReaderWriter trw( mp->nCells, CTrackReader::KEIR_FRASER, false );
 			trw.SetMediumType(floppyType);
 			trw.AddIndexTime(0);
 			trw.AddIndexTime(mp->revolutionTime);
@@ -1230,7 +1230,7 @@ invalidTrack:
 
 
 
-	#define INI_FLUX_DECODER			_T("decod")
+	#define INI_FLUX_DECODER			_T("deco2")
 	#define INI_FLUX_DECODER_RESET		_T("drst")
 	#define INI_PRECISION				_T("prec2")
 	#define INI_40_TRACK_DRIVE			_T("sd40")
@@ -1239,6 +1239,8 @@ invalidTrack:
 	#define INI_CALIBRATE_FORMATTING	_T("clbfmt")
 	#define INI_VERIFY_WRITTEN_TRACKS	_T("vwt")
 	#define INI_VERIFY_BAD_SECTORS		_T("vwtbs")
+
+	typedef CImage::CTrackReader::TDecoderMethod TFluxDecoder;
 
 	CCapsBase::TParams::TParams(LPCTSTR iniSectionName)
 		// ctor
@@ -1272,21 +1274,6 @@ invalidTrack:
 		corrections.Save( iniSectionName );
 		app.WriteProfileInt( iniSectionName, INI_VERIFY_WRITTEN_TRACKS, verifyWrittenTracks );
 		app.WriteProfileInt( iniSectionName, INI_VERIFY_BAD_SECTORS, verifyBadSectors );
-	}
-
-	CImage::CTrackReader::TDecoderMethod CCapsBase::TParams::GetGlobalFluxDecoder() const{
-		// converts locally defined FluxDecoder to one of used by the TrackReader
-		switch (fluxDecoder){
-			default:
-				ASSERT(FALSE);
-				//fallthrough
-			case TFluxDecoder::NO_FLUX_DECODER:
-				return CTrackReader::TDecoderMethod::NONE;
-			case TFluxDecoder::KEIR_FRASER:
-				return CTrackReader::TDecoderMethod::FDD_KEIR_FRASER;
-			case TFluxDecoder::MARK_OGDEN:
-				return CTrackReader::TDecoderMethod::FDD_MARK_OGDEN;
-		}
 	}
 
 	bool CCapsBase::TParams::EditInModalDialog(CCapsBase &rcb,LPCTSTR firmware,bool initialEditing){
@@ -1417,6 +1404,10 @@ invalidTrack:
 				__super::PreInitDialog();
 				// . displaying Firmware information
 				SetDlgItemText( ID_SYSTEM, firmware );
+				// . populating combo-box with available DecoderMethods
+				for( BYTE dm=1; dm; dm<<=1 )
+					if (dm&TFluxDecoder::FDD_METHODS)
+						AppendDlgComboBoxValue( ID_ACCURACY, dm, CTrackReader::GetDescription((TFluxDecoder)dm) );
 				// . some settings are changeable only during InitialEditing
 				PopulateComboBoxWithCompatibleMedia(
 					GetDlgItemHwnd(ID_VARIABLE),
@@ -1494,7 +1485,7 @@ invalidTrack:
 					cb.Detach();
 				}
 				// . FluxDecoder
-				DDX_CBIndex( pDX, ID_ACCURACY,	params.fluxDecoder );
+				DDX_CBValue( pDX, ID_ACCURACY,	params.fluxDecoder );
 				DDX_Check( pDX, ID_DEFAULT1,	params.resetFluxDecoderOnIndex );
 				// . manually set Medium
 				if (params.userForcedMedium)
@@ -1519,7 +1510,7 @@ invalidTrack:
 				tmp=params.corrections.use;
 				DDX_Check( pDX,	ID_TRACK,		tmp );
 				params.corrections.use=tmp!=0;
-				EnableDlgItem( ID_TRACK, params.fluxDecoder!=TParams::TFluxDecoder::NO_FLUX_DECODER&&initialEditing );
+				EnableDlgItem( ID_TRACK, params.fluxDecoder!=TFluxDecoder::NONE );
 				// . WrittenTracksVerification
 				DDX_Check( pDX,	ID_VERIFY_TRACK, params.verifyWrittenTracks&=isRealDevice );
 				DDX_CheckEnable( pDX, ID_VERIFY_SECTOR, params.verifyBadSectors&=isRealDevice, params.verifyWrittenTracks );
@@ -1540,8 +1531,8 @@ invalidTrack:
 						switch (wParam){
 							case MAKELONG(ID_ACCURACY,CBN_SELCHANGE):{
 								// FluxDecoder changed
-								const Utils::CVarTempReset<TParams::TFluxDecoder> fd0( rcb.params.fluxDecoder, (TParams::TFluxDecoder)GetDlgComboBoxSelectedIndex(ID_ACCURACY) );
-								if (ShowDlgItem(  ID_HIDDEN,  !EnableDlgItem( ID_TRACK, rcb.params.fluxDecoder!=TParams::TFluxDecoder::NO_FLUX_DECODER )  ))
+								const Utils::CVarTempReset<TFluxDecoder> fd0( rcb.params.fluxDecoder, (TFluxDecoder)GetDlgComboBoxSelectedValue(ID_ACCURACY) );
+								if (ShowDlgItem(  ID_HIDDEN,  !EnableDlgItem( ID_TRACK, rcb.params.fluxDecoder!=TFluxDecoder::NONE )  ))
 									CheckDlgButton( ID_TRACK, BST_UNCHECKED ); // when archiving, any corrections must be turned off
 								SendMessage( WM_COMMAND, ID_RECOVER ); // refresh information on inserted Medium
 								break;

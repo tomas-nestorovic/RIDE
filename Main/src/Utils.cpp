@@ -1577,6 +1577,16 @@ namespace Utils{
 		return ::SendDlgItemMessage( *this, id, CB_GETCURSEL, 0, 0 );
 	}
 
+	void CRideDialog::AppendDlgComboBoxValue(WORD id,LONG_PTR value,LPCTSTR text) const{
+		// appends Text representing given Value into a ComboBox with specified dialog ID
+		const HWND hComboBox=GetDlgItemHwnd(id);
+		ComboBox_SetItemData(
+			hComboBox,
+			ComboBox_AddString( hComboBox, text ),
+			value
+		);
+	}
+
 	int CRideDialog::GetDlgListBoxSelectedIndex(WORD id) const{
 		// returns the index of the item selected in specified ListBox
 		return ::SendDlgItemMessage( *this, id, LB_GETCURSEL, 0, 0 );

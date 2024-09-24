@@ -324,6 +324,7 @@ namespace Utils{
 		LONG_PTR GetDlgComboBoxSelectedValue(WORD id) const;
 		bool SelectDlgComboBoxValue(WORD id,LONG_PTR value,bool cancelPrevSelection=true) const;
 		int GetDlgComboBoxSelectedIndex(WORD id) const;
+		void AppendDlgComboBoxValue(WORD id,LONG_PTR value,LPCTSTR text) const;
 		int GetDlgListBoxSelectedIndex(WORD id) const;
 		void WrapDlgItemsByOpeningCurlyBracket(WORD idA,WORD idZ) const;
 		void WrapDlgItemsByClosingCurlyBracketWithText(WORD idA,WORD idZ,LPCTSTR text,DWORD textColor) const;
@@ -338,6 +339,14 @@ namespace Utils{
 		bool GetDlgItemIntList(WORD id,CIntList &rOutList,const PropGrid::Integer::TUpDownLimits &limits,int nIntsMin=0,int nIntsMax=INT_MAX) const;
 		void SetDlgItemIntList(WORD id,const CIntList &list) const;
 		void DDX_CheckEnable(CDataExchange *pDX,int nIDC,bool &value,bool enable) const;
+
+		template <typename T>
+		void DDX_CBValue(CDataExchange *pDX,WORD id,T &value) const{
+			if (pDX->m_bSaveAndValidate)
+				value=(T)GetDlgComboBoxSelectedValue(id);
+			else
+				SelectDlgComboBoxValue( id, value );
+		}
 
 		template <size_t N>
 		void ConvertDlgButtonToSplitButton(WORD id,const TSplitButtonAction (&actions)[N]) const{

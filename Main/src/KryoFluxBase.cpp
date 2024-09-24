@@ -182,7 +182,7 @@
 				return ERROR_INVALID_PARAMETER;
 			// . preparing Track content
 			const int nLogTimes=mp->nCells*2;
-			CTrackReaderWriter trw( nLogTimes, CTrackReader::TDecoderMethod::FDD_KEIR_FRASER, true );
+			CTrackReaderWriter trw( nLogTimes, CTrackReader::TDecoderMethod::KEIR_FRASER, true );
 				trw.AddIndexTime(0);
 					for( TLogTime t=0; t<nLogTimes; trw.AddTime(++t) );
 				trw.AddIndexTime( nLogTimes );
@@ -368,7 +368,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 		}
 		const DWORD inStreamDataLength=pis-inStreamData;
 		// - creating and returning a Track representation of the Stream
-		CTrackReaderWriter result( nFluxes*125/100, params.GetGlobalFluxDecoder(), params.resetFluxDecoderOnIndex ); // allowing for 25% of false "ones" introduced by "FDC-like" decoders
+		CTrackReaderWriter result( nFluxes*125/100, params.fluxDecoder, params.resetFluxDecoderOnIndex ); // allowing for 25% of false "ones" introduced by "FDC-like" decoders
 		DWORD sampleCounter=0, totalSampleCounter=0; // delta and absolute sample counters
 		PLogTime buffer=result.GetBuffer(),pLogTime=buffer;
 		BYTE nearestIndexPulse=0;

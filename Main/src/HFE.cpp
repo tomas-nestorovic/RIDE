@@ -332,7 +332,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			return nullptr;
 		bytes.ReverseBitsInEachByte();
 		if (header.IsVersion3()){
-			CTrackReaderWriter trw( bytes.GetCount()*CHAR_BIT, params.GetGlobalFluxDecoder(), params.resetFluxDecoderOnIndex );
+			CTrackReaderWriter trw( bytes.GetCount()*CHAR_BIT, params.fluxDecoder, params.resetFluxDecoderOnIndex );
 			PCBYTE p=bytes,const pLast=bytes.end();
 			TLogTime tCell=GetCellTime( header.dataBitRate*1000 );
 			TLogTime tCurr=0;

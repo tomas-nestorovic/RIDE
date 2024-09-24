@@ -191,7 +191,7 @@
 		const TLogTime sampleClockTime=header.GetSampleClockTime();
 		DWORD nFluxesTotally=0;
 		for( BYTE u=nUniqueRevolutions; u>0; nFluxesTotally+=tdh.revolutions[iUniqueRevolutions[--u]].nFluxes );
-		CTrackReaderWriter result( nFluxesTotally*125/100, params.GetGlobalFluxDecoder(), params.resetFluxDecoderOnIndex ); // allowing for 25% of false "ones" introduced by "FDC-like" decoders
+		CTrackReaderWriter result( nFluxesTotally*125/100, params.fluxDecoder, params.resetFluxDecoderOnIndex ); // allowing for 25% of false "ones" introduced by "FDC-like" decoders
 		if (header.flags.indexAligned) // if NOT index-aligned, there is no information on original index pulses as the disk was revolving (based on the drive RPM information, the SCP device just slices whatever fluxes have been read into 200/166ms intervals, thus merely "imitating" indices) - placing here any Indices thus makes no sense
 			result.AddIndexTime(0);
 		for( BYTE u=0; u<nUniqueRevolutions; u++ ){

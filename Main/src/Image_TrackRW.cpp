@@ -157,6 +157,20 @@
 		profile.Reset();
 	}
 
+	LPCTSTR CImage::CTrackReader::GetDescription(TDecoderMethod dm){
+		switch (dm){
+			case TDecoderMethod::NONE:
+				return _T("None (just archivation)");
+			case TDecoderMethod::KEIR_FRASER:
+				return _T("Keir Fraser's FDC-like decoder");
+			case TDecoderMethod::MARK_OGDEN:
+				return _T("Mark Ogden's FDC-like decoder");
+			default:
+				ASSERT(FALSE);
+				return nullptr;
+		}
+	}
+
 	bool CImage::CTrackReader::ReadBit(TLogTime &rtOutOne){
 		// returns first bit not yet read
 		// - if we just crossed an IndexPulse, resetting the Profile
@@ -178,7 +192,7 @@
 						iNextTime++;
 				}
 				return 0;
-			case TDecoderMethod::FDD_KEIR_FRASER:{
+			case TDecoderMethod::KEIR_FRASER:{
 				// FDC-like flux reversal decoding from Keir Fraser's Disk-Utilities/libdisk
 				// - reading some more from the Track
 				auto &r=profile.method.fraser;
@@ -217,7 +231,7 @@
 				lastReadBits|=1;
 				return 1;
 			}
-			case TDecoderMethod::FDD_MARK_OGDEN:{
+			case TDecoderMethod::MARK_OGDEN:{
 				// FDC-like flux reversal decoding from Mark Ogdens's DiskTools/flux2track
 				// . reading some more from the Track for the next time
 				auto &r=profile.method.ogden;
