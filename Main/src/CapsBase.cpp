@@ -1685,7 +1685,7 @@ invalidTrack:
 		// ctor
 		// - the defaults
 		: valid(true)
-		, use(true)
+		, use(false)
 		, indexTiming(true)
 		, cellCountPerTrack(true)
 		, fitFluxesIntoIwMiddles(true)
