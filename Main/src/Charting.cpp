@@ -511,10 +511,10 @@
 			const WORD id=p.GetCurrentDrawingIdSync();
 			// . creating and preparing the canvas
 			const CClientDC dc( &cv );
+			Utils::ScaleLogicalUnit(dc);
 			::SetMapMode( dc, MM_ANISOTROPIC );
 			::SetGraphicsMode( dc, GM_ADVANCED );
 			::SetBkMode( dc, TRANSPARENT );
-			Utils::ScaleLogicalUnit(dc);
 			p.dc=dc;
 			RECT rcClient;
 			cv.GetClientRect(&rcClient);
