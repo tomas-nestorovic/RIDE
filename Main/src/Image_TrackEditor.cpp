@@ -1069,7 +1069,7 @@
 
 								TLogTime ParseTime() const{
 									TCHAR buf[80];
-									GetDlgItemText( ID_TIME, buf, ARRAYSIZE(buf) );
+									GetDlgItemText( ID_TIME, buf );
 									LPCTSTR p=::CharLower(buf);
 									TLogTime tResult=-1; // assumption (no or invalid time entered)
 									char iLastUnitUsed=100; // no unit yet used
@@ -1396,13 +1396,9 @@
 								BOOL OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext) override{
 									const BOOL result=__super::OnCreateClient( lpcs, pContext );
 									if (CMenu *const pFrameMenu=GetMenu())
-										if (CMenu *const pSubmenu=pFrameMenu->GetSubMenu(0)){
-											const Utils::CRideContextMenu tmp(IDR_SCATTERPLOT);
-											for( int i=0; i<tmp.GetMenuItemCount(); i++ )
-												if (const auto id=tmp.GetMenuItemID(i))
-													pSubmenu->InsertMenu( i, MF_BYPOSITION|MF_STRING, id, tmp.GetMenuStringByPos(i) );
-												else
-													pSubmenu->InsertMenu( i, MF_BYPOSITION|MF_SEPARATOR );
+										if (Utils::CRideContextMenu subMenu=*pFrameMenu->GetSubMenu(0)){
+											// . prepend chart-specific menu
+											subMenu.Prepend( IDR_SCATTERPLOT );
 										}
 									return result;
 								}

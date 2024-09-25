@@ -700,13 +700,13 @@
 		// - if Image WriteProtected, quit
 		if (IMAGE->ReportWriteProtection()) return;
 		// - definition and instantiation of Dialog
-		class CNewSubdirectoryDialog sealed:public CDialog{
+		class CNewSubdirectoryDialog sealed:public Utils::CRideDialog{
 			const PDos dos;
 
 			void OnOK() override{
 				// the Name of new Subdirectory confirmed
 				WCHAR name[MAX_PATH];
-				GetDlgItemTextW( *this, ID_DIRECTORY, name, ARRAYSIZE(name) );
+				GetDlgItemTextW( ID_DIRECTORY, name );
 				if (const TStdWinError err=(dos->*dos->pFileManager->pDirectoryStructureManagement->fnCreateSubdir)(name,FILE_ATTRIBUTE_DIRECTORY,subdirectory))
 					Utils::Information(_T("Cannot create the directory"),err);
 				else{
@@ -720,7 +720,7 @@
 
 			CNewSubdirectoryDialog(PDos _dos)
 				// ctor
-				: CDialog(IDR_FILEMANAGER_SUBDIR_NEW) , dos(_dos) {
+				: Utils::CRideDialog(IDR_FILEMANAGER_SUBDIR_NEW) , dos(_dos) {
 			}
 		} d(DOS);
 		// - showing the Dialog and processing its result (plus updating the FileManager)

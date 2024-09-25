@@ -363,7 +363,7 @@ errorText:				TCHAR buf[400];
 						pDX->Fail();
 					}
 					// . converting char-sets PC->Desktop
-					GetDlgItemText( ID_DATA, bufT, ARRAYSIZE(bufT) );
+					GetDlgItemText( ID_DATA, bufT );
 					for( PTCHAR a=bufT; const TCHAR z=*a++; nCharsD++ ){
 						switch (z){
 							case '\r':

@@ -235,7 +235,10 @@ namespace Utils{
 		inline CString GetMenuStringByCmd(WORD cmd) const{ return GetMenuString(cmd,MF_BYCOMMAND); }
 		inline CString GetMenuStringByPos(WORD pos) const{ return GetMenuString(pos,MF_BYPOSITION); }
 		inline void AppendSeparator(){ AppendMenu(MF_SEPARATOR); }
+		void Insert(UINT uPosition,const CRideContextMenu &menu);
 		bool InsertAfter(WORD existingId,UINT nFlags,UINT_PTR nIDNewItem,LPCTSTR lpszNewItem);
+		inline void Prepend(const CRideContextMenu &menu){ Insert(0,menu); }
+		void Append(const CRideContextMenu &menu);
 		bool ModifySubmenu(UINT uPosition,HMENU hNewSubmenu);
 		int GetPosByContainedSubcommand(WORD cmd) const;
 	};
@@ -351,6 +354,16 @@ namespace Utils{
 		template <size_t N>
 		void ConvertDlgButtonToSplitButton(WORD id,const TSplitButtonAction (&actions)[N]) const{
 			ConvertDlgButtonToSplitButtonEx( id, actions, N );
+		}
+
+		template <size_t N>
+		int GetDlgItemText(WORD id,TCHAR (&buffer)[N]) const{
+			return ::GetDlgItemText( m_hWnd, id, buffer, N );
+		}
+
+		template <size_t N>
+		int GetDlgItemTextW(WORD id,WCHAR (&buffer)[N]) const{
+			return ::GetDlgItemTextW( m_hWnd, id, buffer, N );
 		}
 	};
 
@@ -664,10 +677,10 @@ namespace Utils{
 void DDX_Check(CDataExchange *pDX,int nIDC,bool &value);
 
 template<typename T>
-void DDX_CBIndex(CDataExchange *pDX,int nIDC,T &value){
-	int tmp=value;
+void DDX_CBIndex(CDataExchange *pDX,int nIDC,T &index){
+	int tmp=index;
 		DDX_CBIndex( pDX, nIDC, tmp );
-	value=(T)tmp;
+	index=(T)tmp;
 }
 
 #endif // UTILS_H

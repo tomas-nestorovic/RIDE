@@ -347,9 +347,9 @@ using namespace Yahel;
 		class CResetDialog sealed:public Utils::CRideDialog{
 			BOOL OnInitDialog() override{
 				TCHAR buf[80];
-				::wsprintf( buf+GetDlgItemText(ID_DIRECTORY,buf,ARRAYSIZE(buf)), _T(" (0x%02X)"), directoryDefaultByte );
+				::wsprintf( buf+GetDlgItemText(ID_DIRECTORY,buf), _T(" (0x%02X)"), directoryDefaultByte );
 				SetDlgItemText( ID_DIRECTORY, buf );
-				::wsprintf( buf+GetDlgItemText(ID_DATA,buf,ARRAYSIZE(buf)), _T(" (0x%02X)"), dataDefaultByte );
+				::wsprintf( buf+GetDlgItemText(ID_DATA,buf), _T(" (0x%02X)"), dataDefaultByte );
 				SetDlgItemText( ID_DATA, buf );
 				return __super::OnInitDialog();
 			}

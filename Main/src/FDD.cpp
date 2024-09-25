@@ -1562,7 +1562,7 @@ Utils::Information(buf);}
 				static constexpr WORD InitialSettingIds[]={ ID_RECOVER, ID_DRIVE, ID_40D80, 0 };
 				EnableDlgItems( InitialSettingIds, initialEditing );
 				// . if DoubleTrackStep changed manually, adjusting the text of the ID_40D80 checkbox
-				GetDlgItemText( ID_40D80,  doubleTrackDistanceTextOrg, ARRAYSIZE(doubleTrackDistanceTextOrg) );
+				GetDlgItemText( ID_40D80,  doubleTrackDistanceTextOrg );
 				if (fddHead.userForcedDoubleTrackStep)
 					SendMessage( WM_COMMAND, ID_40D80 );
 				EnableDlgItem( ID_DRIVE, initialEditing );

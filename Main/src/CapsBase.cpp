@@ -1422,10 +1422,10 @@ invalidTrack:
 				);
 				// . if DoubleTrackStep changed manually, adjusting the text of the ID_40D80 checkbox
 				SetDlgItemSingleCharUsingFont( ID_RECOVER, 0xf071, FONT_WEBDINGS, 120 );
-				GetDlgItemText( ID_SIDE,   flippyDiskTextOrg, ARRAYSIZE(flippyDiskTextOrg) );
+				GetDlgItemText( ID_SIDE,   flippyDiskTextOrg );
 				if (CheckDlgItem(ID_SIDE,rcb.params.flippyDisk) && rcb.params.userForcedFlippyDisk)
 					SendMessage( WM_COMMAND, ID_SIDE );
-				GetDlgItemText( ID_40D80,  doubleTrackDistanceTextOrg, ARRAYSIZE(doubleTrackDistanceTextOrg) );
+				GetDlgItemText( ID_40D80,  doubleTrackDistanceTextOrg );
 				if (rcb.params.userForcedDoubleTrackStep)
 					SendMessage( WM_COMMAND, ID_40D80 );
 				CheckAndEnableDlgItem( ID_40D80,
@@ -1485,14 +1485,11 @@ invalidTrack:
 					cb.Detach();
 				}
 				// . FluxDecoder
-				DDX_CBValue( pDX, ID_ACCURACY,	params.fluxDecoder );
+				DDX_CBValue( pDX, ID_ACCURACY, params.fluxDecoder );
 				DDX_Check( pDX, ID_DEFAULT1,	params.resetFluxDecoderOnIndex );
 				// . manually set Medium
 				if (params.userForcedMedium)
-					if (pDX->m_bSaveAndValidate)
-						rcb.floppyType=(Medium::TType)GetDlgComboBoxSelectedValue(ID_VARIABLE);
-					else
-						SelectDlgComboBoxValue(ID_VARIABLE,rcb.floppyType);
+					DDX_CBValue( pDX, ID_VARIABLE, rcb.floppyType );
 				// . CalibrationAfterError
 				tmp= isRealDevice ? params.calibrationAfterError : TParams::TCalibrationAfterError::NONE;
 				DDX_Radio( pDX,	ID_NONE,		tmp );

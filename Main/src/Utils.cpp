@@ -209,6 +209,34 @@ namespace Utils{
 		return buf;
 	}
 
+	void CRideContextMenu::Insert(UINT uPosition,const CRideContextMenu &menu){
+		//
+		for( int i=0; i<menu.GetMenuItemCount(); i++ )
+			switch (const auto id=menu.GetMenuItemID(i)){
+				case 0:
+					// menu separator (or invalid command)
+					InsertMenu( uPosition++, MF_BYPOSITION|MF_SEPARATOR );
+					break;
+				case UINT_MAX:
+					// recurrently processing Submenus
+					if (const CRideContextMenu src=*menu.GetSubMenu(i)){
+						CRideContextMenu trg( ::CreatePopupMenu() );
+						InsertMenu( uPosition++, MF_BYPOSITION|MF_POPUP, (UINT_PTR)trg.m_hMenu, menu.GetMenuString(i,MF_BYPOSITION) );
+						trg.Insert( 0, src );
+					}
+					break;
+				default:
+					// normal menu item
+					InsertMenu( uPosition++, MF_BYPOSITION|MF_STRING, id, menu.GetMenuString(i,MF_BYPOSITION) );
+					break;
+			}
+	}
+
+	void CRideContextMenu::Append(const CRideContextMenu &menu){
+		//
+		Insert( GetMenuItemCount(), menu );
+	}
+
 	bool CRideContextMenu::InsertAfter(WORD existingId,UINT nFlags,UINT_PTR nIDNewItem,LPCTSTR lpszNewItem){
 		//
 		for( int i=0; i<GetMenuItemCount(); i++ )
@@ -1563,8 +1591,8 @@ namespace Utils{
 			if (cancelPrevSelection)
 				cb.SetCurSel(-1); // cancelling previous selection
 			bool valueFound=false; // assumption
-			for( BYTE n=cb.GetCount(); n--; )
-				if ( valueFound=cb.GetItemData(n)==value ){
+			for( auto n=cb.GetCount(); n>0; )
+				if ( valueFound=cb.GetItemData(--n)==value ){
 					cb.SetCurSel(n);
 					break;
 				}
@@ -1752,7 +1780,7 @@ namespace Utils{
 		// True <=> item with the specified ID contains list of integer values (grammar bellow), otherwise False
 		// - elimination of white spaces from the content
 		TCHAR buf[16384], *pEnd=buf;
-		for( int i=0,n=GetDlgItemText(id,buf,ARRAYSIZE(buf)); i<n; i++ )
+		for( auto i=0,n=GetDlgItemText(id,buf); i<n; i++ )
 			if (!::isspace(buf[i]))
 				*pEnd++=buf[i];
 		// - empty content is incorrect
@@ -1908,7 +1936,7 @@ namespace Utils{
 	bool CSingleNumberDialog::GetCurrentValue(int &outValue) const{
 		// True <=> input value successfully parsed, otherwise False
 		TCHAR buf[16], *p=buf;
-		auto nChars=GetDlgItemText( ID_NUMBER, buf, ARRAYSIZE(buf) );
+		auto nChars=GetDlgItemText( ID_NUMBER, buf );
 		if (hexa!=BST_UNCHECKED){
 			if (nChars>2 && *buf=='0' && buf[1]=='x')
 				p+=2, nChars-=2;
@@ -2240,7 +2268,7 @@ namespace Utils{
 			//SetDlgItemPos( ID_DEFAULT4, tmp.left, 90 );
 			rc.top=(rc.Height()-dlgFont.charHeight)/2;
 		WCHAR checkboxText[80];
-		::GetDlgItemTextW( m_hWnd, id, checkboxText, ARRAYSIZE(checkboxText) );
+		GetDlgItemTextW( id, checkboxText );
 		const HWND hHyperlink=::CreateWindowW(
 			WC_LINK, checkboxText, WS_CHILD|WS_VISIBLE,
 			rc.left, rc.top, rc.Width(), rc.Height(), hStdCheckbox, (HMENU)id, 0, nullptr
