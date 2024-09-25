@@ -1247,8 +1247,8 @@ invalidTrack:
 		// - persistent (saved and loaded)
 		: iniSectionName( iniSectionName )
 		, precision( (TPrecision)app.GetProfileInt(iniSectionName,INI_PRECISION,TPrecision::BASIC) )
-		, fluxDecoder( (TFluxDecoder)app.GetProfileInt(iniSectionName,INI_FLUX_DECODER,TFluxDecoder::KEIR_FRASER) )
-		, resetFluxDecoderOnIndex( (TFluxDecoder)app.GetProfileInt(iniSectionName,INI_FLUX_DECODER_RESET,true)!=0 )
+		, fluxDecoder( app.GetProfileEnum(iniSectionName,INI_FLUX_DECODER,TFluxDecoder::KEIR_FRASER) )
+		, resetFluxDecoderOnIndex( app.GetProfileInt(iniSectionName,INI_FLUX_DECODER_RESET,true)!=0 )
 		, fortyTrackDrive( app.GetProfileInt(iniSectionName,INI_40_TRACK_DRIVE,0)!=0 )
 		, calibrationAfterError( (TCalibrationAfterError)app.GetProfileInt(iniSectionName,INI_CALIBRATE_SECTOR_ERROR,TCalibrationAfterError::ONCE_PER_CYLINDER) )
 		, calibrationAfterErrorOnlyForKnownSectors( app.GetProfileInt(iniSectionName,INI_CALIBRATE_SECTOR_ERROR_KNOWN,0)!=0 )
@@ -1278,7 +1278,8 @@ invalidTrack:
 
 	bool CCapsBase::TParams::EditInModalDialog(CCapsBase &rcb,LPCTSTR firmware,bool initialEditing){
 		// True <=> new settings have been accepted (and adopted by this Image), otherwise False
-		static WORD AutoRecognizedMediumIds[]={ ID_MEDIUM, ID_RECOVER, 0 };
+		static constexpr WORD InitialSettingIds[]={ ID_ROTATION, ID_ACCURACY, ID_DEFAULT1, ID_VARIABLE, ID_MEDIUM, ID_SIDE, ID_DRIVE, ID_40D80, ID_TRACK, ID_TIME, 0 };
+		static constexpr WORD AutoRecognizedMediumIds[]={ ID_MEDIUM, ID_RECOVER, 0 };
 		// - defining the Dialog
 		class CParamsDialog sealed:public Utils::CRideDialog{
 			const LPCTSTR firmware;
@@ -1333,9 +1334,9 @@ invalidTrack:
 							//fallthrough
 						case Medium::FLOPPY_DD:
 							SetDlgItemText( ID_MEDIUM, Medium::GetDescription(currentMediumType) );
+							if (initialEditing){
 								if (currentMediumType==Medium::FLOPPY_DD)
-								CheckAndEnableDlgItem( ID_40D80, false, initialEditing&&!fortyTrackDrive );
-							if (EnableDlgItem( ID_SIDE, initialEditing )){
+									CheckAndEnableDlgItem( ID_40D80, false, !fortyTrackDrive );
 								const CTrackTempReset rit( rcb.internalTracks[0][1] ); // forcing a new scanning
 								const Utils::CVarTempReset<bool> fd0( rcb.params.flippyDisk, true ); // assumption (this is a FlippyDisk)
 								CheckDlgItem( ID_SIDE, rcb.ScanTrack(0,1)>0 );
@@ -1344,13 +1345,17 @@ invalidTrack:
 						case Medium::FLOPPY_HD_525:
 						case Medium::FLOPPY_HD_350:
 							SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" HD floppy") );
+							if (initialEditing){
 								CheckAndEnableDlgItem( ID_SIDE, false );
-							CheckAndEnableDlgItem( ID_40D80, false, initialEditing&&!fortyTrackDrive );
+								CheckAndEnableDlgItem( ID_40D80, false, !fortyTrackDrive );
+							}
 							break;
 						default:
 							SetDlgItemFormattedText( ID_MEDIUM, _T("Not formatted or faulty%c(<a>set manually</a>)"), initialEditing?' ':'\0' );
+							if (initialEditing){
 								CheckAndEnableDlgItem( ID_SIDE, false );
-							CheckAndEnableDlgItem( ID_40D80, false, initialEditing&&!fortyTrackDrive );
+								CheckAndEnableDlgItem( ID_40D80, false, !fortyTrackDrive );
+							}
 							break;
 					}
 				// . forcing redrawing (as the new text may be shorter than the original text, leaving the original partly visible)
@@ -1414,7 +1419,6 @@ invalidTrack:
 					Medium::ANY,
 					rcb.properties
 				);
-				static constexpr WORD InitialSettingIds[]={ ID_ROTATION, ID_ACCURACY, ID_DEFAULT1, ID_VARIABLE, ID_MEDIUM, ID_SIDE, ID_DRIVE, ID_40D80, ID_TRACK, ID_TIME, 0 };
 				EnableDlgItems( InitialSettingIds, initialEditing );
 				EnableDlgItem( ID_READABLE, params.calibrationAfterError!=TParams::TCalibrationAfterError::NONE );
 				SetDlgItemSingleCharUsingFont( // a warning that No decoder selected (archivation)
@@ -1443,12 +1447,10 @@ invalidTrack:
 				ShowDlgItems( AutoRecognizedMediumIds, !ShowDlgItem(ID_VARIABLE,params.userForcedMedium) );
 				if (params.userForcedMedium)
 					SelectDlgComboBoxValue( ID_VARIABLE, rcb.floppyType );
-				RefreshMediumInformation();
 				// . updating write pre-compensation status
 				SetDlgItemSingleCharUsingFont( // a warning that pre-compensation not up-to-date
 					ID_INSTRUCTION, L'\xf0ea', warningFont
 				);
-				RefreshPrecompensationStatus();
 				// . adjusting calibration possibilities
 				extern CDos::PCProperties manuallyForceDos;
 				if (EnableDlgItem( ID_READABLE,
@@ -1511,7 +1513,13 @@ invalidTrack:
 				// . WrittenTracksVerification
 				DDX_Check( pDX,	ID_VERIFY_TRACK, params.verifyWrittenTracks&=isRealDevice );
 				DDX_CheckEnable( pDX, ID_VERIFY_SECTOR, params.verifyBadSectors&=isRealDevice, params.verifyWrittenTracks );
+				// . finish dialog initialization
+				if (!pDX->m_bSaveAndValidate){ // still initializing?
+					SendMessage( WM_COMMAND, MAKELONG(ID_ACCURACY,CBN_SELCHANGE) );
+					if (!initialEditing)
+						EnableDlgItems( InitialSettingIds, false ); // disable what should be disabled (just to be sure)
 				}
+			}
 
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 				// window procedure

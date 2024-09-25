@@ -56,6 +56,11 @@
 		afx_msg void OpenImageWithoutDos();
 		afx_msg void __openDevice__();
 		afx_msg void __showAbout__();
+
+		template<typename T>
+		T GetProfileEnum(LPCTSTR sectionName,LPCTSTR keyName,T nDefault){
+			return (T)GetProfileInt( sectionName, keyName, nDefault );
+		}
 	};
 
 #endif // RIDEAPP_H
