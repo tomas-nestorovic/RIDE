@@ -505,7 +505,7 @@
 									{ 0, onlyPartlyRecoverable?_T("Resolve partly"):_T("Resolve") }, // 0 = no default action
 									{ RESOLVE_EXCLUDE_ID, _T("Exclude from track") },
 									{ RESOLVE_EXCLUDE_UNKNOWN, _T("Exclude all unknown from disk"), MF_GRAYED*( !dp.source->dos->IsKnown() ) }, // not available if DOS Unknown
-									{ ID_CREATOR, _T("Add missing standard sector"), MF_GRAYED*( !rFdcStatus.DescribesMissingId() || !dp.source->dos->IsSectorStatusBadOrEmpty(rp.chs) ) },
+									{ ID_CREATOR, _T("Add missing standard sector"), MF_GRAYED*( !(rFdcStatus.DescribesMissingId()||rFdcStatus.DescribesMissingDam()) || !dp.source->dos->IsSectorStatusBadOrEmpty(rp.chs) ) },
 									Utils::TSplitButtonAction::HorizontalLine,
 									{ ID_DATAFIELD_CRC, _T("Fix Data CRC only"), MF_GRAYED*( rFdcStatus.DescribesMissingDam() || rFdcStatus.DescribesMissingId() || !rFdcStatus.DescribesDataFieldCrcError() ) }, // disabled if the Data CRC ok
 									{ ID_RECOVER, _T("Fix ID or Data..."), MF_GRAYED*( rFdcStatus.DescribesMissingDam() || rFdcStatus.DescribesMissingId() || !rFdcStatus.DescribesIdFieldCrcError()&&!rFdcStatus.DescribesDataFieldCrcError() ) }, // enabled only if either ID or Data field with error
@@ -787,7 +787,8 @@
 						warnings.manuallyCreatedStdSectors=true;
 						p.trackWriteable=false; // once modified, can't write the Track as a whole anymore
 					}
-					bufferFdcStatus[p.s]=p.fdcStatus; // propagate modifications to the Buffer
+					if (!p.exclusion.current)
+						bufferFdcStatus[p.s]=p.fdcStatus; // propagate modifications to the Buffer
 					// : next SourceSector
 					p.exclusion.current = p.modification.idCrc = p.modification.dataCrc = p.modification.stdSectorAdded = false;
 					p.s++;
