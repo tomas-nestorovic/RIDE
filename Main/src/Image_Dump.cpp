@@ -13,6 +13,7 @@
 		WORD missesSomeSectors:1;
 		WORD manuallyChangedCrc:1;
 		WORD manuallyCreatedStdSectors:1;
+		WORD trackNonwriteable:1;
 
 		inline TWarnings(){ *(PWORD)this=0; }
 
@@ -185,6 +186,8 @@
 										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: Some CRCs manually modified.</li>"));
 									if (pErroneousTrack->manuallyCreatedStdSectors)
 										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: Some standard sectors manually created.</li>"));
+									if (pErroneousTrack->trackNonwriteable) // this warning should always be the last, justified by previous errors/warnings
+										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: Track reconstructed, preservation quality lost.</li>"));
 								Utils::WriteToFile(fHtml,_T("</ul></td></tr>"));
 							}
 						Utils::WriteToFile(fHtml,_T("</table>"));
@@ -278,7 +281,7 @@
 				}
 				// . reading Source Track
 				CImage::CTrackReader trSrc=dp.source->ReadTrack( p.chs.cylinder, p.chs.head );
-				p.trackWriteable= trSrc && p.targetSupportsTrackWriting && (sourceCodec&dp.targetCodecs)!=0; // A&B&C, A&B = Source and Target must support whole Track access, C = Target must support the Codec used in Source
+				const bool trackWriteable0 = p.trackWriteable = trSrc && p.targetSupportsTrackWriting && (sourceCodec&dp.targetCodecs)!=0; // A&B&C, A&B = Source and Target must support whole Track access, C = Target must support the Codec used in Source
 				// . if possible, analyzing the read Source Track
 				if (trSrc && dp.fullTrackAnalysis){
 					const auto peTrack=trSrc.ScanAndAnalyze( pAction->CreateSubactionProgress(0) );
@@ -841,6 +844,7 @@
 						goto reformatTrack;
 				}else
 reformatTrack:		if (!p.trackWriteable){ // formatting the Track only if can't write the Track using CImage::WriteTrack
+						warnings.trackNonwriteable=trackWriteable0; // warn if the Track was writeable before
 						const Codec::TType targetCodec=Codec::FirstFromMany( dp.targetCodecs ); // the first of selected Codecs (available for the DOS/Medium combination)
 						if ( err=dp.target->FormatTrack(p.chs.cylinder,p.chs.head,targetCodec,nSectors,bufferId,bufferLength,bufferFdcStatus,dp.gap3.value,dp.fillerByte,pAction->Cancelled) )
 							return LOG_ERROR(pAction->TerminateWithError(err));
