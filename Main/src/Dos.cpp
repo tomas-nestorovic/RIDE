@@ -725,6 +725,11 @@ reportError:Utils::Information(buf);
 		}
 	}
 
+	bool CDos::IsSectorStatusBadOrEmpty(RCPhysicalAddress chs) const{
+		const TSectorStatus fatStatus=GetSectorStatus(chs);
+		return fatStatus==TSectorStatus::BAD || fatStatus==TSectorStatus::EMPTY;
+	}
+
 	DWORD CDos::GetFreeSpaceInBytes(TStdWinError &rError) const{
 		// computes and returns the empty space on Image in Bytes
 		DWORD result=0; rError=ERROR_SUCCESS; // assumption (no empty space, no error)

@@ -12,6 +12,7 @@
 		WORD isEmpty:1;
 		WORD missesSomeSectors:1;
 		WORD manuallyChangedCrc:1;
+		WORD manuallyCreatedStdSectors:1;
 
 		inline TWarnings(){ *(PWORD)this=0; }
 
@@ -182,6 +183,8 @@
 										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: Some standard sectors missing.</li>"));
 									if (pErroneousTrack->manuallyChangedCrc)
 										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: Some CRCs manually modified.</li>"));
+									if (pErroneousTrack->manuallyCreatedStdSectors)
+										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: Some standard sectors manually created.</li>"));
 								Utils::WriteToFile(fHtml,_T("</ul></td></tr>"));
 							}
 						Utils::WriteToFile(fHtml,_T("</table>"));
@@ -205,6 +208,8 @@
 		TDumpParams &dp=*(TDumpParams *)pAction->GetParams();
 		pAction->SetProgressTarget( dp.cylinderZ+1-dp.cylinderA );
 		// - dumping
+		BYTE defaultSectorContent[16384];
+		::memset( defaultSectorContent, dp.dos->properties->sectorFillerByte, sizeof(defaultSectorContent) );
 		const Utils::CVarTempReset<bool> bws0( Utils::CRideDialog::BeepWhenShowed, dp.beepOnError );
 		const TDumpParams::TSourceTrackErrors **ppSrcTrackErrors=&dp.pOutErroneousTracks;
 		#pragma pack(1)
@@ -230,7 +235,8 @@
 			struct{
 				bool idCrc;
 				bool dataCrc;
-			} correction;
+				bool stdSectorAdded;
+			} modification;
 			TFdcStatus fdcStatus;
 		} p;
 		::ZeroMemory(&p,sizeof(p));
@@ -496,6 +502,7 @@
 									{ 0, onlyPartlyRecoverable?_T("Resolve partly"):_T("Resolve") }, // 0 = no default action
 									{ RESOLVE_EXCLUDE_ID, _T("Exclude from track") },
 									{ RESOLVE_EXCLUDE_UNKNOWN, _T("Exclude all unknown from disk"), MF_GRAYED*( !dp.source->dos->IsKnown() ) }, // not available if DOS Unknown
+									{ ID_CREATOR, _T("Add missing standard sector"), MF_GRAYED*( !rFdcStatus.DescribesMissingId() || !dp.source->dos->IsSectorStatusBadOrEmpty(rp.chs) ) },
 									Utils::TSplitButtonAction::HorizontalLine,
 									{ ID_DATAFIELD_CRC, _T("Fix Data CRC only"), MF_GRAYED*( rFdcStatus.DescribesMissingDam() || rFdcStatus.DescribesMissingId() || !rFdcStatus.DescribesDataFieldCrcError() ) }, // disabled if the Data CRC ok
 									{ ID_RECOVER, _T("Fix ID or Data..."), MF_GRAYED*( rFdcStatus.DescribesMissingDam() || rFdcStatus.DescribesMissingId() || !rFdcStatus.DescribesIdFieldCrcError()&&!rFdcStatus.DescribesDataFieldCrcError() ) }, // enabled only if either ID or Data field with error
@@ -525,7 +532,7 @@
 									return true; // automatically confirmed if Source or Target don't support low-level Track timing
 								static constexpr Utils::CSimpleCommandDialog::TCmdButtonInfo CmdButtons[]={
 									{ IDYES, _T("Carry out anyway") },
-									{ IDNO, _T("Accept this sector (recommended)") }
+									{ IDNO, _T("Accept this sector error (recommended)") }
 								};
 								switch (
 									Utils::CSimpleCommandDialog(
@@ -588,7 +595,7 @@
 												// recovering CRC
 												if (!ConfirmLowLevelTrackModifications())
 													return 0;
-												rp.correction.dataCrc=true;
+												rp.modification.dataCrc=true;
 												UpdateData(TRUE);
 												EndDialog(ACCEPT_ERROR_ID);
 												return 0;
@@ -679,7 +686,7 @@
 															//fallthrough
 														case 1:
 															// recovering CRC
-															rp.correction.idCrc=true;
+															rp.modification.idCrc=true;
 															break;
 													}
 													switch (d.dataFieldRecoveryType){
@@ -720,6 +727,13 @@
 													return 0;
 												EndDialog(RESOLVE_EXCLUDE_ID);
 												return 0;
+											case ID_CREATOR:
+												// add missing standard Sector
+												if (!ConfirmLowLevelTrackModifications())
+													return 0;
+												rp.modification.stdSectorAdded=true;
+												EndDialog(ID_CREATOR);
+												return 0;
 										}
 										break;
 								}
@@ -756,17 +770,23 @@
 						psse->id=p.chs.sectorId, psse->fdcStatus=p.fdcStatus;
 						psse->excluded=p.exclusion.current;
 					}
-					if (p.correction.idCrc || p.correction.dataCrc){
-						if (p.correction.idCrc)
+					if (p.modification.idCrc || p.modification.dataCrc){
+						if (p.modification.idCrc)
 							p.fdcStatus.CancelIdFieldCrcError();
 						else
 							p.fdcStatus.CancelDataFieldCrcError();
 						warnings.manuallyChangedCrc=true;
 						p.trackWriteable=false; // once modified, can't write the Track as a whole anymore
 					}
+					if (p.modification.stdSectorAdded){
+						bufferSectorData[p.s]=defaultSectorContent;
+						p.fdcStatus=TFdcStatus::WithoutError;
+						warnings.manuallyCreatedStdSectors=true;
+						p.trackWriteable=false; // once modified, can't write the Track as a whole anymore
+					}
 					bufferFdcStatus[p.s]=p.fdcStatus; // propagate modifications to the Buffer
 					// : next SourceSector
-					p.exclusion.current = p.correction.idCrc = p.correction.dataCrc = false;
+					p.exclusion.current = p.modification.idCrc = p.modification.dataCrc = p.modification.stdSectorAdded = false;
 					p.s++;
 				}
 }
