@@ -11,6 +11,7 @@
 		WORD hasDuplicatedIdFields:1;
 		WORD isEmpty:1;
 		WORD missesSomeSectors:1;
+		WORD manuallyChangedCrc:1;
 
 		inline TWarnings(){ *(PWORD)this=0; }
 
@@ -179,6 +180,8 @@
 										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: Duplicated ID fields.</li>"));
 									if (pErroneousTrack->missesSomeSectors)
 										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: Some standard sectors missing.</li>"));
+									if (pErroneousTrack->manuallyChangedCrc)
+										Utils::WriteToFile(fHtml,_T("<li><b>Warning</b>: Some CRCs manually modified.</li>"));
 								Utils::WriteToFile(fHtml,_T("</ul></td></tr>"));
 							}
 						Utils::WriteToFile(fHtml,_T("</table>"));
@@ -224,6 +227,10 @@
 				bool current;
 				bool allUnknown;
 			} exclusion;
+			struct{
+				bool idCrc;
+				bool dataCrc;
+			} correction;
 			TFdcStatus fdcStatus;
 		} p;
 		::ZeroMemory(&p,sizeof(p));
@@ -581,8 +588,7 @@
 												// recovering CRC
 												if (!ConfirmLowLevelTrackModifications())
 													return 0;
-												rFdcStatus.CancelDataFieldCrcError();
-												rp.trackWriteable=false; // once modified, can't write the Track as a whole anymore
+												rp.correction.dataCrc=true;
 												UpdateData(TRUE);
 												EndDialog(ACCEPT_ERROR_ID);
 												return 0;
@@ -673,8 +679,7 @@
 															//fallthrough
 														case 1:
 															// recovering CRC
-															rFdcStatus.CancelIdFieldCrcError();
-															rp.trackWriteable=false; // once modified, can't write the Track as a whole anymore
+															rp.correction.idCrc=true;
 															break;
 													}
 													switch (d.dataFieldRecoveryType){
@@ -745,15 +750,23 @@
 								sPrev=p.s;
 								continue;
 				}		}
-						bufferFdcStatus[p.s]=p.fdcStatus; // propagating modifications to the Buffer
 					}
 					if (!p.fdcStatus.IsWithoutError() || p.exclusion.current){
 						TDumpParams::TSourceSectorError *const psse=&erroneousSectors.buffer[erroneousSectors.n++];
 						psse->id=p.chs.sectorId, psse->fdcStatus=p.fdcStatus;
 						psse->excluded=p.exclusion.current;
 					}
+					if (p.correction.idCrc || p.correction.dataCrc){
+						if (p.correction.idCrc)
+							p.fdcStatus.CancelIdFieldCrcError();
+						else
+							p.fdcStatus.CancelDataFieldCrcError();
+						warnings.manuallyChangedCrc=true;
+						p.trackWriteable=false; // once modified, can't write the Track as a whole anymore
+					}
+					bufferFdcStatus[p.s]=p.fdcStatus; // propagate modifications to the Buffer
 					// : next SourceSector
-					p.exclusion.current=false;
+					p.exclusion.current = p.correction.idCrc = p.correction.dataCrc = false;
 					p.s++;
 				}
 }
