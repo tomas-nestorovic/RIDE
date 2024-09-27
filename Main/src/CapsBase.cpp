@@ -1685,8 +1685,8 @@ invalidTrack:
 		, indexTiming(true)
 		, cellCountPerTrack(true)
 		, fitFluxesIntoIwMiddles(true)
-		, firstSectorTime(false)
-		, firstSectorMicroseconds(1500) {
+		, offsetIndices(false)
+		, indexOffsetMicroseconds(1500) {
 		// - attempting to load existing values from last session
 		if (const DWORD settings=app.GetProfileInt(iniSection,iniName,0)) // do Valid settings exist?
 			*(PDWORD)this=settings;
@@ -1712,13 +1712,13 @@ invalidTrack:
 				tmp=corr.fitFluxesIntoIwMiddles;
 					DDX_Check( pDX, ID_ACCURACY, tmp );
 				corr.fitFluxesIntoIwMiddles=tmp!=BST_UNCHECKED;
-				tmp=corr.firstSectorTime;
+				tmp=corr.offsetIndices;
 					DDX_Check( pDX, ID_ADDRESS, tmp );
-				corr.firstSectorTime=tmp!=BST_UNCHECKED;
-				tmp=corr.firstSectorMicroseconds;
+				corr.offsetIndices=tmp!=BST_UNCHECKED;
+				tmp=corr.indexOffsetMicroseconds;
 					DDX_Text( pDX, ID_TIME, tmp );
 						DDV_MinMaxInt( pDX, tmp, SHRT_MIN, SHRT_MAX );
-				corr.firstSectorMicroseconds=tmp;
+				corr.indexOffsetMicroseconds=tmp;
 			}
 		public:
 			TCorrections corr;
@@ -1741,7 +1741,7 @@ invalidTrack:
 		ASSERT( valid );
 		if (use)
 			return	trw.NormalizeEx(
-						firstSectorTime ? firstSectorMicroseconds*1000 : 0, // micro- to nanoseconds
+						offsetIndices ? TIME_MICRO(indexOffsetMicroseconds) : 0, // micro- to nanoseconds
 						fitFluxesIntoIwMiddles,
 						cellCountPerTrack,
 						indexTiming

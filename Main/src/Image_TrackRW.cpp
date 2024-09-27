@@ -1535,7 +1535,7 @@
 		return true;
 	}
 
-	TStdWinError CImage::CTrackReaderWriter::NormalizeEx(TLogTime timeOffset,bool fitTimesIntoIwMiddles,bool correctCellCountPerRevolution,bool correctRevolutionTime){
+	TStdWinError CImage::CTrackReaderWriter::NormalizeEx(TLogTime indicesOffset,bool fitTimesIntoIwMiddles,bool correctCellCountPerRevolution,bool correctRevolutionTime){
 		// True <=> all Revolutions of this Track successfully normalized using specified parameters, otherwise False
 		// - if the Track contains less than two Indices, we are successfully done
 		if (nIndexPulses<2)
@@ -1544,6 +1544,15 @@
 		const Medium::PCProperties mp=Medium::GetProperties(mediumType);
 		if (!mp)
 			return ERROR_UNRECOGNIZED_MEDIA;
+		// - shifting Indices by shifting all Times in oposite direction
+		if (indicesOffset){
+			for( DWORD i=0; i<nLogTimes; logTimes[i++]-=indicesOffset ); // shift all Times in oposite direction
+			for( DWORD i=0; i<nLogTimes; i++ ) // discard negative Times
+				if (logTimes[i]>=0){
+					::memcpy( logTimes, logTimes+i, (nLogTimes-=i)*sizeof(TLogTime) );
+					break;
+				}
+		}
 		// - ignoring what's before the first Index
 		TLogTime tCurrIndexOrg=RewindToIndex(0);
 		// - normalization
@@ -1573,24 +1582,6 @@
 				while (*this && logTimes[iNextTime]<tNextIndexOrg)
 					ptModified[iTime++]=ReadTime();
 			DWORD iModifRevEnd=iTime;
-			// . offsetting all LogicalTimes in this Revolution
-			if (timeOffset){
-				timeOffset=	nAlignedCells>0 // do we have time-corrected cells from above?
-							? timeOffset/profile.iwTimeDefault*profile.iwTimeDefault // rounding down to whole multiples of correctly-sized cells
-							: (LONGLONG)timeOffset*(tNextIndexOrg-tCurrIndexOrg)/mp->revolutionTime;
-				ptModified[iModifRevEnd]=INT_MAX-timeOffset; // stop-condition
-				for( iTime=iModifRevStart; ptModified[iTime]+timeOffset<=tCurrIndexOrg; iTime++ ); // ignoring Times that would end up before this Revolution has begun
-				iModifRevEnd=iModifRevStart;
-				if (nAlignedCells>0){ // are we working with time-corrected cells?
-					const TLogTime tLastAlignedCell= tCurrIndexOrg + nAlignedCells*profile.iwTimeDefault;
-					while (( ptModified[iModifRevEnd]=ptModified[iTime++]+timeOffset )<tLastAlignedCell) // adjusting Times that remain within this Revolution
-						iModifRevEnd++;
-					if (iModifRevEnd>iModifRevStart) // at least one Time
-						nAlignedCells=(ptModified[iModifRevEnd-1]-tCurrIndexOrg)/profile.iwTimeDefault;
-				}else
-					while (( ptModified[iModifRevEnd]=ptModified[iTime++]+timeOffset )<tNextIndexOrg) // adjusting Times that remain within this Revolution
-						iModifRevEnd++;
-			}
 			// . shortening/prolonging this revolution to correct number of cells
 			if (correctCellCountPerRevolution){
 				ptModified[iModifRevEnd]=INT_MAX; // stop-condition

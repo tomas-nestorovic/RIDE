@@ -126,8 +126,8 @@
 			WORD indexTiming:1;
 			WORD cellCountPerTrack:1;
 			WORD fitFluxesIntoIwMiddles:1;
-			WORD firstSectorTime:1;
-			short firstSectorMicroseconds;
+			WORD offsetIndices:1;
+			short indexOffsetMicroseconds;
 
 			TCorrections(); // no Corrections
 			TCorrections(LPCTSTR iniSection,LPCTSTR iniName=_T("crt"));
