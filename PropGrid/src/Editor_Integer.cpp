@@ -18,15 +18,18 @@
 		, onValueConfirmed( onValueConfirmed ? onValueConfirmed : __alwaysAccept__ ) {
 	}
 
+	PTCHAR TIntegerEditor::Format(PTCHAR buf,int value) const{
+		// populates the Buffer with correctly formatted Value
+		::wsprintf( buf, features&PropGrid::Integer::HEXADECIMAL?_T("0x%X"):_T("%d"), value );
+		return buf;
+	}
+
 	void TIntegerEditor::__drawValue__(const TPropGridInfo::TItem::TValue &value,PDRAWITEMSTRUCT pdis) const{
 		// draws the Value into the specified rectangle
 		int i=0;
 		::memcpy( &i, value.buffer, nValueBytes );
 		TCHAR buf[16];
-		__drawString__( buf,
-						::wsprintf( buf, features&PropGrid::Integer::HEXADECIMAL?_T("0x%X"):_T("%d"), i ),
-						pdis
-					);
+		__drawString__( Format(buf,i), -1, pdis );
 	}
 
 	HWND TIntegerEditor::__createMainControl__(const TPropGridInfo::TItem::TValue &value,HWND hParent) const{
@@ -51,10 +54,11 @@
 		TCHAR buf[16];
 		const int nChars=::GetWindowText( hEdit, buf, ARRAYSIZE(buf) );
 		static_assert( PropGrid::Integer::HEXADECIMAL==1, "PropGrid::Integer::HEXADECIMAL==1" );
-		const int i=_tcstol( buf, nullptr, 10+6*(features&PropGrid::Integer::HEXADECIMAL) );
-		const bool outOfRange=	features&PropGrid::Integer::HEXADECIMAL
-								? nChars>sizeof(int)*2 || !limits.ContainsUnsigned(i)
-								: nChars>11 || !limits.Contains(i); // "11" as in "-1234567890"
+		int i;
+		bool outOfRange=::StrToIntEx( buf, STIF_SUPPORT_HEX*(features&PropGrid::Integer::HEXADECIMAL), &i )!=TRUE;
+		outOfRange|=features&PropGrid::Integer::HEXADECIMAL
+					? nChars>sizeof(int)*2 || !limits.ContainsUnsigned(i)
+					: nChars>11 || !limits.Contains(i); // "11" as in "-1234567890"
 		if (outOfRange){
 			TCHAR buf[80], strHexaMin[16], strHexaMax[16];
 			::wsprintf( buf, _T("0x%%0%dX"), ::lstrlen(_itot(limits.iMin|limits.iMax,strHexaMax,16)) );
@@ -78,26 +82,32 @@
 		switch (msg){
 			case WM_PASTE:
 				// pasting from the clipboard - preventing to paste non-number content or number that violates the Limits
-				if (::OpenClipboard(0))
-					if (const HGLOBAL h=::GetClipboardData(CF_TEXT)){
-						// . getting the content from the clipboard and checking if it all characters are digits
-						PTCHAR t;
-						const int i=_tcstol( (LPCTSTR)::GlobalLock(h), &t, features&PropGrid::Integer::HEXADECIMAL?16:10 );
-						while (::isspace(*t)) t++;
-						const TCHAR nondigit=*t;
+				if (::OpenClipboard(0)){
+					// . getting the content from the clipboard and checking if it all characters are digits
+					int i; bool validText=false; // assumption (clipboard doesn't contain text containing a number)
+					static_assert( PropGrid::Integer::HEXADECIMAL==1, "PropGrid::Integer::HEXADECIMAL" );
+					if (const HGLOBAL h=::GetClipboardData(CF_UNICODETEXT)){
+						validText=::StrToIntExW( (LPCWSTR)::GlobalLock(h), STIF_SUPPORT_HEX*(features&PropGrid::Integer::HEXADECIMAL), &i )==TRUE;
 						::GlobalUnlock(h);
-						::CloseClipboard();
-						// . preventing from pasting non-number content
-						if (nondigit)
-							return 0;
-						// . preventing from pasting an out-of-range number
-						if (features&PropGrid::Integer::HEXADECIMAL){
-							if (!limits.ContainsUnsigned(i))
-								return 0;
-						}else
-							if (!limits.Contains(i))
-								return 0;
+					}else if (const HGLOBAL h=::GetClipboardData(CF_TEXT)){
+						validText=::StrToIntExA( (LPCSTR)::GlobalLock(h), STIF_SUPPORT_HEX*(features&PropGrid::Integer::HEXADECIMAL), &i )==TRUE;
+						::GlobalUnlock(h);
 					}
+					::CloseClipboard();
+					if (!validText)
+						return 0;
+					// . preventing from pasting an out-of-range number
+					if (features&PropGrid::Integer::HEXADECIMAL){
+						if (!limits.ContainsUnsigned(i))
+							return 0;
+					}else
+						if (!limits.Contains(i))
+							return 0;
+					// . setting the integer
+					TCHAR buf[16];
+					::SetWindowText( hEdit, Format(buf,i) );
+					return ::SendMessageW( hEdit, EM_SETSEL, i, i );
+				}
 				break;
 		}
 		return __super::__mainCtrl_wndProc__(hEdit,msg,wParam,lParam);

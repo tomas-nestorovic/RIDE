@@ -134,6 +134,7 @@
 		const PropGrid::Integer::TUpDownLimits limits;
 		const PropGrid::Integer::TOnValueConfirmed onValueConfirmed;
 	protected:
+		PTCHAR Format(PTCHAR buf,int value) const;
 		void __drawValue__(const TPropGridInfo::TItem::TValue &value,PDRAWITEMSTRUCT pdis) const override;
 		HWND __createMainControl__(const TPropGridInfo::TItem::TValue &value,HWND hParent) const override;
 		bool __tryToAcceptMainCtrlValue__() const override;
