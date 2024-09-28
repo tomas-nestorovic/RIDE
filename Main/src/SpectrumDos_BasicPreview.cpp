@@ -420,7 +420,7 @@ defaultPrinting:				if (b<' ')
 												listing << _T("<small>");
 													ParseZ80BinaryFileAndGenerateHtmlFormattedContent(
 														CMemFile( remContentStart, p-remContentStart ),
-														0,
+														ZX_BASIC_START_ADDR+frw.GetPosition()-a-offsetInFile,
 														listing,
 														true
 													);
@@ -588,7 +588,7 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 				break;
 			case SHOW_AS_MACHINE_CODE:
 				// generating the HTML-formatted listing of machine code
-				ParseZ80BinaryFileAndGenerateHtmlFormattedContent( frw, ZX_BASIC_START_ADDR+frw.GetPosition()-a, listing ); // "-a" = ignoring prepended custom data
+				ParseZ80BinaryFileAndGenerateHtmlFormattedContent( frw, ZX_BASIC_START_ADDR+frw.GetPosition()-a-offsetInFile, listing ); // "-a" = ignoring prepended custom data
 				break;
 		}
 	}
