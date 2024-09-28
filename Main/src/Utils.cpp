@@ -2052,15 +2052,7 @@ namespace Utils{
 			TCHAR buf[300];
 			::wsprintf(buf,_T("Cannot navigate to\n%s\n\nDo you want to copy the link to clipboard?"),url);
 			if (QuestionYesNo(buf,MB_DEFBUTTON1))
-				if (::OpenClipboard(0)){
-					::EmptyClipboard();
-					const HGLOBAL h=::GlobalAlloc(GMEM_MOVEABLE,1+::lstrlen(url));
-						::lstrcpy((PTCHAR)::GlobalLock(h),url);
-					::GlobalUnlock(h);
-					::SetClipboardData(CF_TEXT,h);
-					::CloseClipboard();
-				}else
-					FatalError(_T("Couldn't copy to clipboard"),::GetLastError());
+				SetClipboardString(url);
 		}
 	}
 
@@ -2439,6 +2431,25 @@ namespace Utils{
 
 	WNDPROC SubclassWindowW(HWND hWnd,WNDPROC newWndProc){
 		return (WNDPROC)::SetWindowLongW( hWnd, GWL_WNDPROC, (LONG)newWndProc );
+	}
+
+	void SetClipboardString(LPCTSTR str){
+		const auto nChars=::lstrlen(str)+1; // incl. terminal null char
+		COleDataSource *const pds=new COleDataSource;
+			HANDLE hText=::GlobalAlloc( GMEM_MOVEABLE, nChars*sizeof(TCHAR) );
+				::lstrcpy( (LPTSTR)::GlobalLock(hText), str );
+			::GlobalUnlock(hText);
+		#ifdef UNICODE
+			static_assert( false, "Unicode support not implemented" );
+		#else
+			pds->CacheGlobalData( CF_TEXT, hText );
+			hText=::GlobalAlloc( GMEM_MOVEABLE, nChars*sizeof(WCHAR) );
+				::MultiByteToWideChar( CP_ACP, 0, str,-1, (PWCHAR)::GlobalLock(hText),nChars );
+			::GlobalUnlock(hText);
+			pds->CacheGlobalData( CF_UNICODETEXT, hText );
+		#endif
+		pds->SetClipboard();
+		::OleFlushClipboard();
 	}
 
 	CString DoPromptSingleTypeFileName(LPCTSTR defaultSaveName,LPCTSTR singleFilter,DWORD flags){

@@ -437,15 +437,8 @@ using namespace Yahel;
 		CString checksumText;
 		checksumText.Format( _T("%d (0x%X)"), cpe.initValue, cpe.initValue ); // reused during computation
 		const CString msg=Utils::SimpleFormat( _T("The checksum of selected stream is (little endian)\n\n%s\n\nCopy to clipboard?"), checksumText );
-		if (Utils::QuestionYesNo( msg, MB_DEFBUTTON2 )){
-			const HANDLE hText=::GlobalAlloc( GMEM_MOVEABLE, checksumText.GetLength()+1 );
-				::lstrcpy( (LPTSTR)::GlobalLock(hText), checksumText );
-			::GlobalUnlock(hText);
-			COleDataSource *const pds=new COleDataSource;
-			pds->CacheGlobalData( CF_TEXT, hText );
-			pds->SetClipboard();
-			::OleFlushClipboard();
-		}
+		if (Utils::QuestionYesNo( msg, MB_DEFBUTTON2 ))
+			Utils::SetClipboardString( checksumText );
 		return cpe.GetErrorChecksumValue(); // don't do default processing
 	}
 

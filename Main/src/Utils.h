@@ -670,6 +670,7 @@ namespace Utils{
 	void RandomizeData(PVOID buffer,WORD nBytes);
 	WNDPROC SubclassWindow(HWND hWnd,WNDPROC newWndProc);
 	WNDPROC SubclassWindowW(HWND hWnd,WNDPROC newWndProc);
+	void SetClipboardString(LPCTSTR str);
 	CString DoPromptSingleTypeFileName(LPCTSTR defaultSaveName,LPCTSTR singleFilter,DWORD flags=0);
 	void StdBeep();
 }
