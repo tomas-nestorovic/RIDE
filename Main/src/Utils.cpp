@@ -1257,7 +1257,7 @@ namespace Utils{
 		// - no extra information for God users
 		if (app.IsInGodMode()) return;
 		// - suppressing this message if the user has decided in the past to not show it anymore
-		if (app.GetProfileInt(sectionId,messageId,0)) return;
+		if (app.GetProfileBool(sectionId,messageId)) return;
 		// - storing user's decision of showing or not this message the next time
 		app.WriteProfileInt(	sectionId, messageId,
 								InformationWithCheckBox(text,_T("Don't show this message again"))
@@ -1781,7 +1781,7 @@ namespace Utils{
 		// - elimination of white spaces from the content
 		TCHAR buf[16384], *pEnd=buf;
 		for( auto i=0,n=GetDlgItemText(id,buf); i<n; i++ )
-			if (!::isspace(buf[i]))
+			if (!::IsCharSpace(buf[i]))
 				*pEnd++=buf[i];
 		// - empty content is incorrect
 		if (pEnd==buf)

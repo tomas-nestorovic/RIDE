@@ -15,7 +15,7 @@
 		, orgAddress(orgAddress) , canRebase(canRebase)
 		, tmpFileName( Utils::GenerateTemporaryFileName() )
 		, contentView(_T(""))
-		, numberFormat( (TNumberFormat)app.GetProfileInt(iniSection,INI_NUMBER_FORMAT,TNumberFormat::HexaHashtag) ) {
+		, numberFormat( app.GetProfileEnum(iniSection,INI_NUMBER_FORMAT,TNumberFormat::HexaHashtag) ) {
 		// - initialization
 		features.info=-1; // by default, show all columns and turn on all other features ...
 		features.capitalSyntax=0; // ... except for the CapitalSyntax
@@ -758,7 +758,7 @@
 					if (features.machineCodeChars){
 						Utils::WriteToFile( f, _T("<td style=\"padding-right:40pt\">") );
 							for( BYTE i=0; i<op.length; i++ )
-								if ( ::isprint(op.machineCode[i]) && !::isspace(op.machineCode[i]))
+								if ( ::isprint(op.machineCode[i]) && !::IsCharSpaceA(op.machineCode[i]))
 									Utils::WriteToFileFormatted( f, _T("&#%d;&nbsp;"), op.machineCode[i] );
 								else
 									Utils::WriteToFile( f, _T("&#8729;&nbsp;") ); // small bullet

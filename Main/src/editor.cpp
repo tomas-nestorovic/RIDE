@@ -260,7 +260,7 @@
 				break;
 			}
 		// - suggesting to visit the FAQ page to learn more about the application
-		if (app.GetProfileInt(INI_GENERAL,INI_MSG_FAQ,FALSE)==0){
+		if (!app.GetProfileBool(INI_GENERAL,INI_MSG_FAQ)){
 			if (Utils::QuestionYesNo(_T("Looks like you've launched this app for the first time. Do you want to visit the \"Frequently Asked Questions\" (FAQ) page to see what it can do?"),MB_DEFBUTTON1))
 				m_pMainWnd->SendMessage(WM_COMMAND,ID_HELP_FAQ);
 			else
@@ -300,6 +300,10 @@
 		app.WriteProfileInt( INI_GENERAL, INI_CRASHED, app.GetProfileInt(INI_GENERAL,INI_CRASHED,1)-1 );
 		// - base
 		return __super::ExitInstance();
+	}
+
+	bool CRideApp::GetProfileBool(LPCTSTR sectionName,LPCTSTR keyName,bool bDefault=false){
+		return GetProfileInt( sectionName, keyName, bDefault )!=0;
 	}
 
 	bool CRideApp::IsInGodMode() const{

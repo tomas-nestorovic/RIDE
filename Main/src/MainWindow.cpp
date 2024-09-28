@@ -378,7 +378,7 @@ quitWithErr:const DWORD err=::GetLastError();
 				app.WriteProfileString( INI_GENERAL, INI_LATEST_KNOWN_VERSION, Utils::ToStringT(r) );
 				LPCSTR t=APP_VERSION; // "T"his tag
 				do{
-					if (::isspace(*t))
+					if (::IsCharSpaceA(*t))
 						t++; // ignoring any whitespaces in "T"his tag
 					else if (*r++!=*t++){
 						if (pAction->GetParams())

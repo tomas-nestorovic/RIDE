@@ -25,7 +25,7 @@
 		this->floppyType=floppyType;
 		TCHAR iniSection[32];
 		::wsprintf( iniSection, INI_SECTION_PATTERN, driveLetter, floppyType );
-		switch (methodVersion=(TMethodVersion)app.GetProfileInt(iniSection,INI_METHOD_VERSION,None)){
+		switch (methodVersion=app.GetProfileEnum(iniSection,INI_METHOD_VERSION,None)){
 			case MethodVersion1:{
 				double *pd=&v1.coeffs[0][0];
 				for( TCHAR i=0,iniValue[]=_T("coefA"); i<sizeof(v1.coeffs)/sizeof(v1.coeffs[0][0]); i++,iniValue[4]++ )

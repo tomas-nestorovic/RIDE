@@ -1079,7 +1079,7 @@
 											break; // no (further) input
 										if (!nItems)
 											return -1; // invalid character in input
-										if (nItems==1 || ::isspace(u)) // no unit specifier ...
+										if (nItems==1 || ::IsCharSpace(u)) // no unit specifier ...
 											u='n'; // ... defaults to Nanoseconds
 										if (const LPCTSTR pUnit=_tcschr( Units, u )){
 											const char iUnit=pUnit-Units;
@@ -1399,7 +1399,7 @@
 										if (Utils::CRideContextMenu subMenu=*pFrameMenu->GetSubMenu(0)){
 											// . prepend chart-specific menu
 											subMenu.Prepend( IDR_SCATTERPLOT );
-										}
+											}
 									return result;
 								}
 

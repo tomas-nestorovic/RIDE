@@ -16,8 +16,8 @@
 		// - base
 		: CAssemblerPreview( rFileManager, 0, false, IDR_SPECTRUM_PREVIEW_BASIC, PREVIEW_LABEL, INI_PREVIEW )
 		, machineCodeMenu(IDR_SPECTRUM_PREVIEW_ASSEMBLER)
-		, dataAfterBasic( (TDataAfterBasic)app.GetProfileInt(INI_PREVIEW,INI_INTERPRET_PAST_BASIC,TDataAfterBasic::SHOW_AS_VARIABLES) )
-		, binaryAfter0x14( (TBinaryAfter0x14)app.GetProfileInt(INI_PREVIEW,INI_SHOW_INTERNAL_BINARY,TBinaryAfter0x14::DONT_SHOW) ) {
+		, dataAfterBasic( app.GetProfileEnum(INI_PREVIEW,INI_INTERPRET_PAST_BASIC,TDataAfterBasic::SHOW_AS_VARIABLES) )
+		, binaryAfter0x14( app.GetProfileEnum(INI_PREVIEW,INI_SHOW_INTERNAL_BINARY,TBinaryAfter0x14::DONT_SHOW) ) {
 		// - initialization
 		features.info=0; // by default all extra Features off ...
 		features.applyColors=true; // ... except for the application of colors

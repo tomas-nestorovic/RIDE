@@ -33,11 +33,11 @@
 
 	CFDD::TParams::TParams()
 		// ctor
-		: calibrationAfterError( (TCalibrationAfterError)app.GetProfileInt(INI_FDD,INI_CALIBRATE_SECTOR_ERROR,TCalibrationAfterError::ONCE_PER_CYLINDER) )
-		, calibrationAfterErrorOnlyForKnownSectors( app.GetProfileInt(INI_FDD,INI_CALIBRATE_SECTOR_ERROR_KNOWN,0)!=0 )
+		: calibrationAfterError( app.GetProfileEnum(INI_FDD,INI_CALIBRATE_SECTOR_ERROR,TCalibrationAfterError::ONCE_PER_CYLINDER) )
+		, calibrationAfterErrorOnlyForKnownSectors( app.GetProfileBool(INI_FDD,INI_CALIBRATE_SECTOR_ERROR_KNOWN) )
 		, calibrationStepDuringFormatting( app.GetProfileInt(INI_FDD,INI_CALIBRATE_FORMATTING,0) )
-		, verifyFormattedTracks( app.GetProfileInt(INI_FDD,INI_VERIFY_FORMATTING,true)!=0 )
-		, verifyWrittenData( app.GetProfileInt(INI_FDD,INI_VERIFY_WRITTEN_DATA,false)!=0 )
+		, verifyFormattedTracks( app.GetProfileBool(INI_FDD,INI_VERIFY_FORMATTING,true) )
+		, verifyWrittenData( app.GetProfileBool(INI_FDD,INI_VERIFY_WRITTEN_DATA) )
 		, nSecondsToTurnMotorOff( app.GetProfileInt(INI_FDD,INI_MOTOR_OFF_SECONDS,2) ) { // 0 = 1 second, 1 = 2 seconds, 2 = 3 seconds
 	}
 
@@ -299,8 +299,8 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 		// loads last settings for specified drive
 		TCHAR iniSection[16];
 		GetFddIniSection( iniSection, driveLetter );
-		fortyTrackDrive=app.GetProfileInt( iniSection, INI_40_TRACK_DRIVE, 0 )!=0;
-		preferRelativeSeeking=app.GetProfileInt( iniSection, INI_SEEKING, 0 )!=0;
+		fortyTrackDrive=app.GetProfileBool( iniSection, INI_40_TRACK_DRIVE );
+		preferRelativeSeeking=app.GetProfileBool( iniSection, INI_SEEKING );
 	}
 
 	void CFDD::TFddHead::Save(TCHAR driveLetter) const{
@@ -1771,7 +1771,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 								fddHead.userForcedDoubleTrackStep=IsDoubleTrackDistanceForcedByUser();
 								TCHAR iniSection[16];
 								GetFddProfileName( iniSection, fdd->GetDriveLetter(), fdd->floppyType );
-								if (!app.GetProfileInt( iniSection, INI_LATENCY_DETERMINED, FALSE ))
+								if (!app.GetProfileBool( iniSection, INI_LATENCY_DETERMINED ))
 									switch (Utils::QuestionYesNoCancel(_T("Latencies not yet determined, I/O operations may perform suboptimally.\n\nAutodetermine latencies now?"),MB_DEFBUTTON1)){
 										case IDYES:
 											msg=WM_PAINT; // changing the Message to one that won't close the Dialog

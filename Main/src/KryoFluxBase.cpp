@@ -339,7 +339,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 									if (size>sizeof(buf))
 										goto badFormat;
 									for( LPCSTR param=::strtok( ::lstrcpynA(buf,(LPCSTR)rawBytes,size), "," ); param!=nullptr; param=::strtok(nullptr,",") ){
-										while (::isspace(*param))
+										while (::IsCharSpaceA(*param))
 											param++;
 										if (!::strncmp(param,"name=",5))
 											isKryofluxStream|=::strstr( param, "KryoFlux" )!=nullptr;

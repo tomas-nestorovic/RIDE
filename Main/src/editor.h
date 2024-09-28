@@ -38,6 +38,7 @@
 
 		BOOL InitInstance() override;
 		int ExitInstance() override;
+		bool GetProfileBool(LPCTSTR sectionName,LPCTSTR keyName,bool bDefault=false);
 		CDocument *OpenDocumentFile(LPCTSTR lpszFileName) override;
 		void OnFileOpen(); // public wrapper
 		CRecentFileListEx *GetRecentFileList() const;

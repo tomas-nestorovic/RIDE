@@ -95,7 +95,7 @@
 					}
 					cbx.SetCurSel(0);
 				cbx.Detach();
-				if (const auto savedValue=app.GetProfileInt( INI_MINING, INI_TARGET, TARGET_NONE ))
+				if (const auto savedValue=app.GetProfileEnum( INI_MINING, INI_TARGET, TARGET_NONE ))
 					SelectDlgComboBoxValue( ID_ACCURACY, savedValue, false );
 				SetDlgItemSingleCharUsingFont( ID_SECTOR, 0xf09d, FONT_WEBDINGS, 120 );
 				// . populating the "Mining approach" combo-box
@@ -111,7 +111,7 @@
 					}
 					cbx.SetCurSel(0);
 				cbx.Detach();
-				if (const auto savedValue=app.GetProfileInt( INI_MINING, INI_METHOD, METHOD_NONE ))
+				if (const auto savedValue=app.GetProfileEnum( INI_MINING, INI_METHOD, METHOD_NONE ))
 					SelectDlgComboBoxValue( ID_CREATOR, savedValue, false );
 				// . creating a Scatter Plot at position of the placeholder
 				scatterPlotView.Create(
@@ -333,7 +333,7 @@
 				, cb(cb) , cyl(cyl) , head(head)
 				, trackName(  Utils::SimpleFormat( _T("Track %d (Cyl=%d, Head=%d)"), TPhysicalAddress::GetTrackNumber(cyl,head,cb.GetHeadCount()), cyl, head )  )
 				, miningTarget(TARGET_NONE)
-				, headCalibration( (THeadCalibration)app.GetProfileInt( INI_MINING, INI_CALIBRATION, HEAD_DONT_CALIBRATE ) )
+				, headCalibration( app.GetProfileEnum( INI_MINING, INI_CALIBRATION, HEAD_DONT_CALIBRATE ) )
 				, minedTimingPen( 2, COLOR_RED )
 				, minedIndexPen( 2, COLOR_BLUE )
 				, di(
