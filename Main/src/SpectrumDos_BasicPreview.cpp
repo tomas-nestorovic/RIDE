@@ -220,8 +220,9 @@
 					return false;
 			}
 
-			void __parseBasicLine__(PCBYTE pLineStart,WORD nBytesOfLine){
-				// parses a BASIC line of given length and writes corresponding HTML-formatted text into this file
+			WORD ParseBasicLine(PCBYTE pLineStart,WORD nBytesOfLine,PCBYTE *pOutRemContents=nullptr){
+				// parses a BASIC line of given length and writes corresponding HTML-formatted text into this file; returns # of REM commands encountered
+				WORD nRems=0; // # of REM commands
 				__startApplicationOfColors__();
 					bool isLastWrittenCharSpace=false; // True <=> the last character written to the TemporaryFile is a space, otherwise False
 					bool isLastWrittenCharBreakable=false; // True <=> the last character written to the TemporaryFile is breakable (e.g. space 0x32), otherwise False
@@ -352,10 +353,15 @@ defaultPrinting:				if (b<' ')
 								else if (TZxRom::IsStdUdgSymbol(b))
 									// standard UDG symbol 
 									__writeStdUdgSymbol__(b);
-								else if (const LPCTSTR keywordTranscript=TZxRom::GetKeywordTranscript(b))
+								else if (const LPCTSTR keywordTranscript=TZxRom::GetKeywordTranscript(b)){
 									// writing a Keyword including its start and trail spaces (will be correctly formatted by the HTML parser when displayed)
 									*this << ( keywordTranscript + (int)(isLastWrittenCharSpace&&*keywordTranscript==' ') ); // skipping initial space should it be preceeded by a non-breakable space in the TemporaryFile (as incorrectly two spaces would be displayed in the Listing)
-								else{
+									if (b==0xea){ // REM command
+										if (pOutRemContents)
+											*pOutRemContents=pLineStart;
+										nRems++;
+									}
+								}else{
 									// a character that doesn't require a special treatment - just converting between ZX Spectrum and Ascii charsets
 									*this << (LPCTSTR)TZxRom::ZxToAscii((LPCSTR)&b,1);
 								}
@@ -364,6 +370,7 @@ defaultPrinting:				if (b<' ')
 						isLastWrittenCharBreakable&=( isLastWrittenCharSpace=b==' ' );
 					}
 				__endApplicationOfColors__();
+				return nRems;
 			}
 
 		} listing(*this);
@@ -408,25 +415,26 @@ defaultPrinting:				if (b<' ')
 						// | adding a new cell to the "BASIC Listing" column
 						listing << _T("</b></td><td style=\"padding-left:5pt\">");
 							if (nBytesOfLine){
-								listing.__parseBasicLine__( lineBytes, nBytesOfLine-1 ); // "-1" = skipping the terminating Enter character (0x0d)
+								PCBYTE remContents[4096]; // REM command contents
+								const PCBYTE pEndOfLine=lineBytes+nBytesOfLine;
+								const WORD nRems=listing.ParseBasicLine( lineBytes, nBytesOfLine-1, remContents ); // "-1" = skipping the terminating Enter character (0x0d)
 								if (features.showRemAsMachineCode)
-									for( PBYTE p=lineBytes,pEndOfLine=p+nBytesOfLine; p<pEndOfLine; p++ )
-										if (*p==0xea){ // begin of REM command
-											const PBYTE remContentStart=++p;
-											for( ; p<pEndOfLine; p++ )
-												if (*p==':') // end of REM command
-													break;
-											listing.__endApplicationOfColors__();
-												listing << _T("<small>");
-													ParseZ80BinaryFileAndGenerateHtmlFormattedContent(
-														CMemFile( remContentStart, p-remContentStart ),
-														ZX_BASIC_START_ADDR+frw.GetPosition()-a-offsetInFile,
-														listing,
-														true
-													);
-												listing << _T("</small>");
-											listing.__startApplicationOfColors__();
-										}
+									for( WORD i=0; i<nRems; i++ ){
+										PCBYTE p=remContents[i]; // beginning of REM content
+										const PCBYTE remContentStart=p;
+										while (*p!=':' && p<pEndOfLine) // end of REM content
+											p++;
+										listing.__endApplicationOfColors__();
+											listing << _T("<small>");
+												ParseZ80BinaryFileAndGenerateHtmlFormattedContent(
+													CMemFile( (PBYTE)remContentStart, p-remContentStart ),
+													ZX_BASIC_START_ADDR+frw.GetPosition()-a-offsetInFile,
+													listing,
+													true
+												);
+											listing << _T("</small>");
+										listing.__startApplicationOfColors__();
+									}
 							}
 						//Utils::WriteToFile(fTmp,_T("</td>")); // commented out as written in the following command
 					listing << _T("</td></tr>");
@@ -465,7 +473,7 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 										BYTE strBytes[65536];
 										if (error=frw.Read(strBytes,strLength)!=strLength) // error
 											break;
-										(  listing << ::CharUpper(varName) << _T(":string(") << (int)strLength << _T(")") HTML_END_OF_NAME_AND_START_OF_VALUE ).__parseBasicLine__( strBytes, strLength );
+										(  listing << ::CharUpper(varName) << _T(":string(") << (int)strLength << _T(")") HTML_END_OF_NAME_AND_START_OF_VALUE ).ParseBasicLine( strBytes, strLength );
 										break;
 									}
 									case 0x80:{
@@ -543,7 +551,7 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 											for( BYTE byte; nItems-->0; ){
 												frw.Read(&byte,sizeof(byte));
 												listing << _T("'");
-													listing.__parseBasicLine__(&byte,1);
+													listing.ParseBasicLine(&byte,1);
 												listing << _T("', ");
 											}
 											listing.Seek(-2,CFile::current); // dismissing the ", " string added after the last Item in the array
