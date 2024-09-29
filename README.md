@@ -2,7 +2,7 @@
 - Yes, it can access internal floppy drives on your PC.
 - Yes, it can _directly_ work with KryoFlux (starting with 1.6 also for direct writing).
 - Yes, it can _directly_ work with Greaseweazle.
-- Yes, this Windows XP application is confirmed to work in Linux via Wine.
+- Yes, this Windows XP application is confirmed to work in Linux via Wine (see [this FAQ](http://nestorovic.hyperlink.cz/ride/html/faq_linux.html)).
 
 # Introduction (aka. "Why and What For")
 It all started in Spring of 2014 when I, for a reason which I no longer remember, wanted to access 3.5" floppies of an 8-bit ZX Spectrum computer clone (branded _Didaktik_) on a modern PC. I already knew that this was possible as I saw (and worked with) several PC-designed special utilities to create images of floppies of Atari ST, CP/M, etc. The utilities had poor interfaces (if any) and very limited possibilities on how to manipulate files (they were rather dump tools instead of disk explorers). I knew there existed the [OmniFlop](http://www.shlock.co.uk/Utils/OmniFlop) tool for… well, I don't know – I never managed to run it due to strange (yet free) licencing and the author not responding to my e-mail requests to get a licence. But as far as I know, it should be another pure dump tool. I knew there existed the [SamDisk](http://simonowen.com/samdisk) tool which I worked with until then as it offered soft-grained possibilities on creating images of floppies, including the _heavily copy-protected ones_!
