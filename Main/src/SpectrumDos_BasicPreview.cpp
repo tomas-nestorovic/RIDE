@@ -581,7 +581,7 @@ errorInBasic:listing << _T("<p style=\"color:red\">Error in BASIC file structure
 										break;
 								}
 							listing << _T("</td></tr>");
-						} while (frw.GetPosition()<frw.GetLength());
+						} while (!error && frw.GetPosition()<frw.GetLength());
 				listing << _T("</table>");
 				if (error)
 					goto errorInBasic;
