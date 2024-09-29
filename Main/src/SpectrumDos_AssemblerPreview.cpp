@@ -162,21 +162,27 @@
 					return Read(index);
 				}
 
-				void Parse(int i,PTCHAR buf) const{
+				PTCHAR IntToStr(int i,PTCHAR buf) const{
 					switch (numberFormat){
 						case TNumberFormat::HexaHashtag:
-							::wsprintf( buf, _T("<span class=num>#%X</span>"), i );
+							::wsprintf( buf, _T("#%X"), i );
 							break;
 						case TNumberFormat::Hexa0x:
-							::wsprintf( buf, _T("<span class=num>0x%X</span>"), i );
+							::wsprintf( buf, _T("0x%X"), i );
 							break;
 						case TNumberFormat::HexaH:
-							::wsprintf( buf, _T("<span class=num>%Xh</span>"), i );
+							::wsprintf( buf, _T("%Xh"), i );
 							break;
 						case TNumberFormat::Decadic:
-							::wsprintf( buf, _T("<span class=num>%d</span>"), i );
+							::wsprintf( buf, _T("%d"), i );
 							break;
 					}
+					return buf;
+				}
+
+				void Parse(int i,PTCHAR buf) const{
+					TCHAR tmp[16];
+					::wsprintf( buf, _T("<span class=num>%s</span>"), IntToStr(i,tmp) );
 				}
 
 				bool ParseNextByte(){
@@ -747,7 +753,8 @@
 					break;
 				Utils::WriteToFile( f, _T("<tr>") );
 					if (features.address){
-						Utils::WriteToFileFormatted( f, _T("<td align=right style=\"padding-right:40pt\">%X</td>"), op.orgAddress );
+						TCHAR tmp[16];
+						Utils::WriteToFileFormatted( f, _T("<td align=right style=\"padding-right:40pt\">%s</td>"), op.IntToStr(op.orgAddress,tmp) );
 					}
 					if (features.machineCode){
 						Utils::WriteToFile( f, _T("<td style=\"padding-right:40pt\">") );
