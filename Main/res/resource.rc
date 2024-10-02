@@ -887,8 +887,8 @@ BEGIN
         MENUITEM "Show fluxes\tF",              ID_BUFFER
         MENUITEM "Show indices\tI",             ID_ROTATION
         MENUITEM "Show structure\tV",           ID_SYSTEM
-        MENUITEM SEPARATOR
-    END
+            MENUITEM SEPARATOR
+        END
 END
 
 
@@ -1928,8 +1928,8 @@ BEGIN
     CONTROL         "Fit fluxes into middle of inspection windows (jitter)",
                     ID_ACCURACY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,49,
                     172,10
-    CONTROL         "Offset all fluxes by [µs]:",ID_ADDRESS,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,66,88,10
+    CONTROL         "Offset all indices by [µs]:",ID_ADDRESS,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,66,92,10
     EDITTEXT        ID_TIME,97,65,26,12,ES_AUTOHSCROLL | NOT WS_BORDER
 END
 

@@ -302,7 +302,7 @@
 		return __super::ExitInstance();
 	}
 
-	bool CRideApp::GetProfileBool(LPCTSTR sectionName,LPCTSTR keyName,bool bDefault=false){
+	bool CRideApp::GetProfileBool(LPCTSTR sectionName,LPCTSTR keyName,bool bDefault){
 		return GetProfileInt( sectionName, keyName, bDefault )!=0;
 	}
 
