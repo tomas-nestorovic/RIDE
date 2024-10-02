@@ -68,8 +68,8 @@
 			return LOG_ERROR(::GetLastError());
 		// - spreading Dirty Data to all buffered Revolutions
 		if (IsModified())
-			for( BYTE r=0; r<nRevolutions; r++ )
-				if (const PSectorData d=revolutions[r].data)
+			for each( const auto &rev in revolutions )
+				if (const PSectorData d=rev.data)
 					::memcpy( d, revolutions[dirtyRevolution].data, length );
 		// - saving
 		const auto &rev=revolutions[currentRevolution]; // see spreading of Dirty Data above
@@ -134,18 +134,17 @@
 						// To recap: A healthy Sector has been read, yet it cannot be written back - WE END UP HERE ONLY WHEN DUMPING AN IMAGE TO A FLOPPY WITH "Reformat just bad tracks" TICKED
 						// . reformatting the Track
 						TSectorId bufferId[(BYTE)-1]; WORD bufferLength[(BYTE)-1]; TFdcStatus bufferStatus[(BYTE)-1];
-						for( TSector n=0; n<pit->nSectors; n++ )
+						for( TSector n=0; n<pit->sectors.length; n++ )
 							bufferId[n]=pit->sectors[n].id, bufferLength[n]=pit->sectors[n].length;
-						fdd->internalTracks[cyl][head]=nullptr; // detaching the Track internal representation for it to be not destroyed during reformatting of the Track
+				{		const Utils::CVarTempReset<PInternalTrack> pit0( fdd->internalTracks[cyl][head], nullptr ); // detaching the Track internal representation for it to be not destroyed during reformatting of the Track
 						err=fdd->FormatTrack(
-							cyl, head, pit->codec, pit->nSectors, bufferId, bufferLength, bufferStatus,
+							cyl, head, pit->codec, pit->sectors.length, bufferId, bufferLength, bufferStatus,
 							fdd->floppyType==Medium::FLOPPY_DD_525 ? FDD_525_SECTOR_GAP3 : FDD_350_SECTOR_GAP3, // if gap too small (e.g. 10) it's highly likely that sectors would be missed in a single disk revolution (so for instance, reading 9 sectors would require 9 disk revolutions)
 							fdd->dos->properties->sectorFillerByte,
 							cancelled
 						);
 						if (err!=ERROR_SUCCESS){ // if formatting failed ...
 terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new InternalTrack representation
-							fdd->internalTracks[cyl][head]=(PInternalTrack)pit; // re-attaching the original InternalTrack representation
 							return LOG_ERROR(err); // ... there's nothing else to do but terminating with Error
 						}
 						// . if this is the K-th Sector, making sure that the 0..(K-1)-th Sectors have been formatted well
@@ -158,8 +157,7 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 						}
 						// . disposing the new InternalTrack representations (as it's been worked only with the original one), restoring the original
 						fdd->UnformatInternalTrack(cyl,head); // disposing any new InternalTrack representation
-						fdd->internalTracks[cyl][head]=(PInternalTrack)pit; // re-attaching the original InternalTrack representation
-						// . writing the 0..(K-1)-th Sectors back to the above reformatted Track, leaving K+1..N-th Sectors unwritten (caller's duty); we re-attempt to write this K-th Sector in the next iteration
+				}		// . writing the 0..(K-1)-th Sectors back to the above reformatted Track, leaving K+1..N-th Sectors unwritten (caller's duty); we re-attempt to write this K-th Sector in the next iteration
 						for( TSector s=0; s<nSectorsToSkip; s++ )
 							if ( err=pit->sectors[s].SaveToDisk(fdd,pit,s,verify,cancelled) ) // if Sector not writeable even after reformatting the Track ...
 								return LOG_ERROR(err); // ... there's nothing else to do but terminating with Error
@@ -207,11 +205,11 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 
 	#define SECTOR_LENGTH_MAX	16384
 
-	CFDD::TInternalTrack::TInternalTrack(const CFDD *fdd,TCylinder cyl,THead head,Codec::TType codec,TSector _nSectors,PCSectorId bufferId,PCLogTime sectorStartsNanoseconds)
+	CFDD::TInternalTrack::TInternalTrack(const CFDD *fdd,TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCLogTime sectorStartsNanoseconds)
 		// ctor
 		// - initialization
 		: cylinder(cyl) , head(head) , codec(codec)
-		, nSectors(_nSectors) , sectors( nSectors, 0 ) {
+		, sectors( nSectors, 0 ) {
 		TInternalTrack::TSectorInfo *psi=sectors;
 		for( TSector s=0; s<nSectors; psi++->seqNum=s++ ){
 			psi->length=fdd->GetUsableSectorLength(( psi->id=*bufferId++ ).lengthCode );
@@ -222,7 +220,7 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 				psi->startNanoseconds=*sectorStartsNanoseconds++; // ... they are used
 			else // if no start times provided (that is, if just Gap3 information from <0;255> Bytes provided) ...
 				if (s) // ... then simply inferring them
-					psi->startNanoseconds=	sectors[s-1].endNanoseconds
+					psi->startNanoseconds=	sectors[(TSector)(s-1)].endNanoseconds
 											+
 											(BYTE)sectorStartsNanoseconds * fdd->fddHead.profile.oneByteLatency;	// default inter-sector Gap3 length in nanoseconds
 				else
@@ -257,18 +255,17 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 
 	CFDD::TInternalTrack::~TInternalTrack(){
 		// dtor
-		const TSectorInfo *psi=sectors;
-		for( TSector n=nSectors; n--; psi++ )
-			for( BYTE r=0; r<psi->nRevolutions; r++ )
-				if (const PVOID data=psi->revolutions[r].data)
-					FREE_SECTOR_DATA(data);
+		for each( const TSectorInfo &si in sectors )
+			for each( const auto &rev in si.revolutions )
+				if (rev.data)
+					FREE_SECTOR_DATA(rev.data);
 	}
 
 	bool CFDD::TInternalTrack::__isIdDuplicated__(PCSectorId pid) const{
 		// True <=> at least two Sectors on the Track have the same ID, otherwise False
 		BYTE nAppearances=0;
-		const TSectorInfo *psi=sectors;
-		for( BYTE n=nSectors; n--; nAppearances+=*pid==psi++->id );
+		for each( const TSectorInfo &si in sectors )
+			nAppearances+=*pid==si.id;
 		return nAppearances>1;
 	}
 
@@ -593,13 +590,13 @@ error:				switch (const TStdWinError err=::GetLastError()){
 			do{
 				// : saving
 				BYTE justSavedSectors[(TSector)-1];
-				::ZeroMemory(justSavedSectors,pit->nSectors);
+				::ZeroMemory(justSavedSectors,pit->sectors.length);
 				do{
 					if (cancelled)
 						return ERROR_CANCELLED;
 					allSectorsProcessed=true; // assumption
 					TLogTime lastSectorEndNanoseconds=TIME_SECOND(-1); // minus one second
-					for( TSector n=0; n<pit->nSectors; n++ ){
+					for( TSector n=0; n<pit->sectors.length; n++ ){
 						TInternalTrack::TSectorInfo &si=pit->sectors[n];
 						if (si.IsModified() && !justSavedSectors[n]){
 							if (si.startNanoseconds-lastSectorEndNanoseconds>=fddHead.profile.gap3Latency) // sufficient distance between this and previously saved Sectors, so both of them can be processed in a single disk revolution
@@ -621,7 +618,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 						return ERROR_CANCELLED;
 					allSectorsProcessed=true; // assumption
 					TLogTime lastSectorEndNanoseconds=TIME_SECOND(-1); // minus one second
-					for( TSector n=0; n<pit->nSectors; n++ ){
+					for( TSector n=0; n<pit->sectors.length; n++ ){
 						TInternalTrack::TSectorInfo &si=pit->sectors[n];
 						if (si.IsModified())
 							if (si.startNanoseconds-lastSectorEndNanoseconds>=fddHead.profile.gap3Latency){ // sufficient distance between this and previously saved Sectors, so both of them can be processed in a single disk revolution
@@ -709,26 +706,25 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (const PInternalTrack pit=((CFDD *)this)->__scanTrack__(cyl,head)){
 			// Track managed to be scanned
-			const TInternalTrack::TSectorInfo *psi=pit->sectors;
-			for( TSector s=0; s<pit->nSectors; s++,psi++ ){
+			for each( const TInternalTrack::TSectorInfo &si in pit->sectors ){
 				if (bufferId)
-					*bufferId++=psi->id;
+					*bufferId++=si.id;
 				if (bufferLength)
-					*bufferLength++=psi->length;
+					*bufferLength++=si.length;
 				if (startTimesNanoseconds)
-					*startTimesNanoseconds++=psi->startNanoseconds;
+					*startTimesNanoseconds++=si.startNanoseconds;
 			}
 			if (pCodec)
 				*pCodec=Codec::MFM; // TODO: currently only MFM support implemented
 			if (pAvgGap3)
-				if (pit->nSectors>1){
+				if (pit->sectors.length>1){
 					TLogTime nsSum=0; // sum of Gap3 nanoseconds
 					const TInternalTrack::TSectorInfo *psi=pit->sectors;
-					for( TSector s=0; s<pit->nSectors-1; nsSum-=psi->endNanoseconds,s++,psi++,nsSum+=psi->startNanoseconds );
-					*pAvgGap3=nsSum/((pit->nSectors-1)*fddHead.profile.oneByteLatency);
+					for( TSector s=0; s<pit->sectors.length-1; nsSum-=psi->endNanoseconds,s++,psi++,nsSum+=psi->startNanoseconds );
+					*pAvgGap3=nsSum/((pit->sectors.length-1)*fddHead.profile.oneByteLatency);
 				}else
 					*pAvgGap3= floppyType==Medium::FLOPPY_DD_525 ? FDD_525_SECTOR_GAP3 : FDD_350_SECTOR_GAP3;
-			return pit->nSectors;
+			return pit->sectors.length;
 		}else
 			// Track failed to be scanned
 			return 0;
@@ -877,11 +873,9 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		if (const PInternalTrack pit=__scanTrack__(cyl,head)){
 			// . Planning the requested Sectors retrieval
 			#ifdef LOGGING_ENABLED			
-				TCHAR buf[4000];
-				for( TCHAR n=0,*p=buf; n<pit->nSectors; n++ ){
-					const int i=::wsprintf(p,_T("%d:<%d,%d> "),n,pit->sectors[n].startNanoseconds,pit->sectors[n].endNanoseconds);
-					p+=i;
-				}
+				TCHAR buf[4000],*p=buf;
+				for( TSector n=0; n<pit->sectors.length; n++ )
+					p+=::wsprintf(p,_T("%d:<%d,%d> "),n,pit->sectors[n].startNanoseconds,pit->sectors[n].endNanoseconds);
 				LOG_MESSAGE(buf);
 			#endif
 			struct TPlanStep sealed{
@@ -892,7 +886,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 			::ZeroMemory(alreadyPlannedSectors,nSectors);
 			for( BYTE nSectorsToPlan=nSectors; planEnd-plan<nSectors && nSectorsToPlan; nSectorsToPlan-- ){ // A&B, A = all Sectors requested to read planned, B = all Sectors are planned in N iterations in the worst case (preventing infinite loop in case that at least one Sector isn't found on the Track)
 				TLogTime lastSectorEndNanoseconds=TIME_SECOND(-1); // minus one second
-				for( TSector n=0; n<pit->nSectors; n++ ){
+				for( TSector n=0; n<pit->sectors.length; n++ ){
 					TInternalTrack::TSectorInfo &si=pit->sectors[n];
 					for( TSector s=0; s<nSectors; s++ )
 						if (!alreadyPlannedSectors[s] && bufferId[s]==si.id && bufferNumbersOfSectorsToSkip[s]<=n)
@@ -1023,7 +1017,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		ASSERT( rev<Revolution::MAX );
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (const PCInternalTrack pit=__getScannedTrack__(cyl,head)) // Track has already been scanned
-			while (nSectorsToSkip<pit->nSectors){
+			while (nSectorsToSkip<pit->sectors.length){
 				const auto &ris=pit->sectors[nSectorsToSkip++];
 				if (ris.id==id)
 					if (rev>=ris.nRevolutions)
@@ -1045,7 +1039,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (const PInternalTrack pit=__getScannedTrack__(chs.cylinder,chs.head)){ // Track has already been scanned
 			// . Modifying data of Sector requested in current Track
-			while (nSectorsToSkip<pit->nSectors){
+			while (nSectorsToSkip<pit->sectors.length){
 				auto &ris=pit->sectors[nSectorsToSkip++];
 				if (ris.id==chs.sectorId){
 					ASSERT( !ris.IsModified() || ris.dirtyRevolution==ris.currentRevolution ); // no Revolution yet marked as "dirty" or marking "dirty" the same Revolution
@@ -1074,7 +1068,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (const PInternalTrack pit=__getScannedTrack__(chs.cylinder,chs.head)){ // Track has already been scanned
 			const TInternalTrack::TSectorInfo *psi=pit->sectors;
-			for( TSector n=pit->nSectors; n--; psi++ )
+			for( TSector n=pit->sectors.length; n--; psi++ )
 				if (nSectorsToSkip)
 					nSectorsToSkip--;
 				else if (psi->id==chs.sectorId)
@@ -1148,16 +1142,14 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 			if (type&Medium::FLOPPY_ANY){
 				if (SetDataTransferSpeed( (Medium::TType)type )) // error?
 					continue;
-				const PInternalTrack pit=internalTracks[cyl][0];
-				internalTracks[cyl][0]=nullptr; // forcing a new scan
-					if (WORD score= internalTracks[cyl][0]->nSectors + 32*GetCountOfHealthySectors(cyl,0)){
-						if (Medium::GetProperties( (Medium::TType)type )->IsAcceptableRevolutionTime(avgIndexDistance))
-							score|=0x8000;
-						if (score>highestScore)
-							highestScore=score, bestMediumType=(Medium::TType)type;
-					}
-					UnformatInternalTrack(cyl,0);
-				internalTracks[cyl][0]=pit;
+				const Utils::CVarTempReset<PInternalTrack> pit0( internalTracks[cyl][0], nullptr ); // forcing a new scan
+				if (WORD score= internalTracks[cyl][0]->sectors.length + 32*GetCountOfHealthySectors(cyl,0)){
+					if (Medium::GetProperties( (Medium::TType)type )->IsAcceptableRevolutionTime(avgIndexDistance))
+						score|=0x8000;
+					if (score>highestScore)
+						highestScore=score, bestMediumType=(Medium::TType)type;
+				}
+				UnformatInternalTrack(cyl,0);
 			}
 		// - reverting to original data transfer speed
 		if (floppyType!=Medium::UNKNOWN)
@@ -1473,7 +1465,7 @@ Utils::Information(buf);}
 				const Utils::CRideTime endTime;
 				const TLogTime deltaNanoseconds=TIME_MILLI( (endTime-startTime).ToMilliseconds() );
 				// . STEP 2.4: determining if the readings took more than just one disk revolution or more
-				if (deltaNanoseconds>=pit->sectors[1].endNanoseconds-pit->sectors[0].endNanoseconds+TIME_MILLI(4)) // 4e6 = allowing circa 120 Bytes as a limit of detecting a single disk revolution
+				if (deltaNanoseconds>=pit->sectors[(TSector)1].endNanoseconds-pit->sectors.begin()->endNanoseconds+TIME_MILLI(4)) // 4e6 = allowing circa 120 Bytes as a limit of detecting a single disk revolution
 					break;
 				c++;
 			}
@@ -2208,9 +2200,11 @@ formatCustomWay:
 		// - disposing internal information on actual Track format
 		UnformatInternalTrack(cyl,head);
 		// - explicitly setting Track structure
-		TInternalTrack::TSectorInfo *psi=( internalTracks[cyl][head] = new TInternalTrack( this, cyl, head, Codec::MFM, nSectors, bufferId, (PCLogTime)gap3 ) )->sectors; // Gap3 = calculate Sector start times from information of this Gap3 and individual Sector lengths
-		for( TSector n=nSectors; n--; psi++->nRevolutions=1 )
-			psi->revolutions[0].data=(PSectorData)::memset( ALLOCATE_SECTOR_DATA(psi->length), fillerByte, psi->length );
+		internalTracks[cyl][head] = new TInternalTrack( this, cyl, head, Codec::MFM, nSectors, bufferId, (PCLogTime)gap3 ); // Gap3 = calculate Sector start times from information of this Gap3 and individual Sector lengths
+		for each( TInternalTrack::TSectorInfo &si in internalTracks[cyl][head]->sectors ){
+			si.revolutions[0].data=(PSectorData)::memset( ALLOCATE_SECTOR_DATA(si.length), fillerByte, si.length );
+			si.nRevolutions=1;
+		}
 		// - presumption done
 		return ERROR_SUCCESS;
 	}

@@ -35,7 +35,6 @@
 			const TCylinder cylinder;
 			const THead head;
 			const Codec::TType codec;
-			const TSector nSectors;
 			#pragma pack(1)
 			struct TSectorInfo sealed{
 				BYTE seqNum; // "zero-based" sequence number of this Sector on containing Track
@@ -57,9 +56,9 @@
 				TStdWinError SaveToDisk(CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip,bool verify,const volatile bool &cancelled);
 				BYTE VerifySaving(const CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip);
 			};
-			const Utils::CCallocPtr<TSectorInfo> sectors;
+			const Utils::CCallocPtr<TSectorInfo,TSector> sectors;
 
-			TInternalTrack(const CFDD *fdd,TCylinder cyl,THead head,Codec::TType codec,TSector _nSectors,PCSectorId bufferId,PCLogTime sectorStartsNanoseconds); //ctor
+			TInternalTrack(const CFDD *fdd,TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCLogTime sectorStartsNanoseconds); //ctor
 			~TInternalTrack(); //dtor
 
 			bool __isIdDuplicated__(PCSectorId id) const;
