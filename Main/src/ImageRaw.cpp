@@ -445,9 +445,9 @@ trackNotFound:
 					else{
 						TCylinder nCylindersBuffered=0;
 						for( PVOID *pCyl=rawImage.bufferOfCylinders+nCylinders; pCyl>rawImage.bufferOfCylinders; nCylindersBuffered+=*--pCyl!=nullptr );
-						float nUnits; LPCTSTR unitName;
-						Utils::BytesToHigherUnits( nCylindersBuffered*nHeads*nSectors*rawImage.sectorLength, nUnits, unitName );
-						SetDlgItemFormattedText( ID_INFORMATION, _T("%d cylinders (%.2f %s)"), nCylindersBuffered, nUnits, unitName );
+						SetDlgItemFormattedText( ID_INFORMATION, _T("%d cylinders (%s)"), nCylindersBuffered,
+							Utils::BytesToHigherUnits( nCylindersBuffered*nHeads*nSectors*rawImage.sectorLength )
+						);
 					}
 					// . populating dedicated combo-box with unique geometries
 					cb.Attach( *GetDlgItem(ID_FORMAT) );

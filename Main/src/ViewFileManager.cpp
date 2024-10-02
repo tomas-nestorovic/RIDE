@@ -208,13 +208,14 @@
 
 	void CFileManagerView::__updateSummaryInStatusBar__() const{
 		// creates and in MainWindow's StatusBar shows a report on Files in current Directory
-		TStdWinError errFat,errDir;
-		float freeSpace; LPCTSTR unit;
-		Utils::BytesToHigherUnits( DOS->GetFreeSpaceInBytes(errFat), freeSpace, unit );
+		TStdWinError errFat=ERROR_SUCCESS, errDir=ERROR_SUCCESS;
 		TCHAR buf[200];
-		_stprintf(buf,_T("%d files, %.2f %s of free space"),DOS->GetCountOfItemsInCurrentDir(errDir),freeSpace,unit);
-		if (errFat!=ERROR_SUCCESS) ::lstrcat( buf, _T(", issues with FAT") );
-		if (errDir!=ERROR_SUCCESS) ::lstrcat( buf, _T(", issues with the directory"));
+		::wsprintf( buf,
+			_T("%d files, %s of free space%s%s"),
+			DOS->GetCountOfItemsInCurrentDir(errDir), Utils::BytesToHigherUnits(DOS->GetFreeSpaceInBytes(errFat)),
+			errFat ? _T(", issues with FAT") : _T(""),
+			errDir ? _T(", issues with the directory") : _T("")
+		);
 		CMainWindow::__setStatusBarText__(buf);
 	}
 

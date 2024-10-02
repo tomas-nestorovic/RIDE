@@ -644,7 +644,7 @@ namespace Utils{
 	BYTE CancelRetryContinue(LPCTSTR text,UINT defaultButton);
 	BYTE CancelRetryContinue(LPCTSTR text,TStdWinError causeOfError,UINT defaultButton,LPCTSTR consequence=nullptr);
 	void Warning(LPCTSTR text);
-	void BytesToHigherUnits(DWORD bytes,float &rHigherUnit,LPCTSTR &rHigherUnitName);
+	CString BytesToHigherUnits(DWORD bytes);
 	CString BytesToHexaText(PCBYTE bytes,BYTE nBytes,bool lastDelimitedWithAnd);
 	CString BytesToHexaText(const char *chars,BYTE nChars,bool lastDelimitedWithAnd);
 	void NavigateToUrlInDefaultBrowser(LPCTSTR url);

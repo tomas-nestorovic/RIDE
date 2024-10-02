@@ -2013,16 +2013,11 @@ namespace Utils{
 
 
 
-	void BytesToHigherUnits(DWORD bytes,float &rHigherUnit,LPCTSTR &rHigherUnitName){
+	CString BytesToHigherUnits(DWORD bytes){
 		// converts Bytes to suitable HigherUnits (e.g. "12345 Bytes" to "12.345 kiB")
-		if (bytes>=0x40000000)
-			rHigherUnit=(double)bytes/0x40000000, rHigherUnitName=_T("GiB");
-		else if (bytes>=0x100000)
-			rHigherUnit=(float)bytes/0x100000, rHigherUnitName=_T("MiB");
-		else if (bytes>=0x400)
-			rHigherUnit=(float)bytes/0x400, rHigherUnitName=_T("KiB");
-		else
-			rHigherUnit=bytes, rHigherUnitName=_T("Bytes");
+		TCHAR buf[32];
+		::StrFormatByteSize( bytes, buf, ARRAYSIZE(buf) );
+		return buf;
 	}
 
 	CString BytesToHexaText(PCBYTE bytes,BYTE nBytes,bool lastDelimitedWithAnd){
@@ -2198,7 +2193,7 @@ namespace Utils{
 			ASSERT( id==defaultId ); // the case when ID changes always requires attention! ("CDialog::*DlgItem*" methods cease to work for previous ID)
 			::SetWindowLong( hStdBtn, GWL_ID, defaultId );
 		}
-	}
+				}
 
 	void CRideDialog::ConvertDlgCheckboxToHyperlink(WORD id) const{
 		// converts an existing standard check-box to one with a hyperlink in its text

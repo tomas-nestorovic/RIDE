@@ -446,9 +446,7 @@ reportError:Utils::Information(buf);
 		}
 		if (fp.showReport){
 			TCHAR buf[512];
-			float units; LPCTSTR unitsName;
-			Utils::BytesToHigherUnits( statistics.availableGoodCapacityInBytes, units, unitsName );
-			_stprintf( buf, _T("LOW-LEVEL FORMATTING DONE\n\n\n- formatted %d track(s)\n- with totally %d sectors\n- of which %d are bad (%.2f %%)\n- resulting in %.2f %s raw good capacity.\n\nSee the Track Map tab for more information."), statistics.nTracks, statistics.nSectorsInTotal, statistics.nSectorsBad, (float)statistics.nSectorsBad*100/statistics.nSectorsInTotal, units, unitsName );
+			_stprintf( buf, _T("LOW-LEVEL FORMATTING DONE\n\n\n- formatted %d track(s)\n- with totally %d sectors\n- of which %d are bad (%.2f %%)\n- resulting in %s of raw good capacity.\n\nSee the Track Map tab for more information."), statistics.nTracks, statistics.nSectorsInTotal, statistics.nSectorsBad, (float)statistics.nSectorsBad*100/statistics.nSectorsInTotal, Utils::BytesToHigherUnits(statistics.availableGoodCapacityInBytes) );
 			Utils::Information(buf);
 		}
 		return ERROR_SUCCESS;

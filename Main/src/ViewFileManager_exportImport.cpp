@@ -391,21 +391,16 @@ importQuit2:		::GlobalUnlock(hg);
 			case TConflictResolution::MERGE	:b=IDYES; break;
 			case TConflictResolution::SKIP	:b=IDNO; break;
 			default:{
-				float higherUnit;	LPCTSTR higherUnitName;
 				TCHAR bufOverwrite[80];
 					if (directory)
 						::lstrcpy(bufOverwrite,_T("Merge existing directory with new one"));
-					else{
-						Utils::BytesToHigherUnits(newFileSize,higherUnit,higherUnitName);
-						_stprintf( bufOverwrite, _T("Replace with new file (%.2f %s)"), higherUnit, higherUnitName );
-					}	
+					else
+						::wsprintf( bufOverwrite, _T("Replace with new file (%s)"), Utils::BytesToHigherUnits(newFileSize) );
 				TCHAR bufSkip[80];
 					if (directory)
 						::lstrcpy(bufSkip,_T("Skip this directory"));
-					else{
-						Utils::BytesToHigherUnits(DOS->GetFileSize(conflict),higherUnit,higherUnitName);
-						_stprintf( bufSkip, _T("Keep current file (%.2f %s)"), higherUnit, higherUnitName );
-					}
+					else
+						::wsprintf( bufSkip, _T("Keep current file (%s)"), Utils::BytesToHigherUnits(DOS->GetFileSize(conflict)) );
 				CNameConflictResolutionDialog d( DOS->GetFilePresentationNameAndExt(conflict), directory?_T("directory"):_T("file"), bufOverwrite,bufSkip );
 				b=d.DoModal();
 				if (d.useForAllSubsequentConflicts)
