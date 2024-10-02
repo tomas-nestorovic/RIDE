@@ -383,6 +383,7 @@
 							TFdcStatus &rFdcStatus;
 							CEdit errorTextBox,sectorListTextBox;
 							std::unique_ptr<CSplitterWnd> splitter,upperSplitter;
+							HACCEL hAccel;
 
 							class CSectorHexaEditor sealed:public CHexaEditor{
 							public:
@@ -484,6 +485,7 @@
 								::wsprintf( buf, _T("All sectors on this track:\r\n%s\r\n"), sectorList );
 								sectorListTextBox.SetWindowText( buf );
 								// > converting the "Accept" button to a SplitButton
+								ACCEL accels[16],*pLastAccel=accels;
 								const bool sectorNotFound=rFdcStatus.DescribesMissingId();
 								const Utils::TSplitButtonAction Actions[]={
 									{ ACCEPT_ERROR_ID, _T("Accept this error"), MF_GRAYED*( sectorNotFound&&!(dp.requireAllStdSectorDataPresent&&dp.dos->IsStdSector(rp.chs)) ) }, // allow acceptance of missing standard Sector (e.g. copy-protection in "Life & Death" PC game)
@@ -503,27 +505,29 @@
 								// > converting the "Resolve" button to a SplitButton
 								const Utils::TSplitButtonAction resolveActions[]={
 									{ 0, onlyPartlyRecoverable?_T("Resolve partly"):_T("Resolve") }, // 0 = no default action
-									{ RESOLVE_EXCLUDE_ID, _T("Exclude from track") },
+									{ RESOLVE_EXCLUDE_ID, _T("Exclude from track\tCtrl+X") },
 									{ RESOLVE_EXCLUDE_UNKNOWN, _T("Exclude all unknown from disk"), MF_GRAYED*( !dp.source->dos->IsKnown() ) }, // not available if DOS Unknown
-									{ ID_CREATOR, _T("Add missing standard sector"), MF_GRAYED*( !(rFdcStatus.DescribesMissingId()||rFdcStatus.DescribesMissingDam()) || !dp.source->dos->IsSectorStatusBadOrEmpty(rp.chs) ) },
+									{ ID_CREATOR, _T("Add missing standard sector\tCtrl+A"), MF_GRAYED*( !(rFdcStatus.DescribesMissingId()||rFdcStatus.DescribesMissingDam()) || !dp.source->dos->IsSectorStatusBadOrEmpty(rp.chs) ) },
 									Utils::TSplitButtonAction::HorizontalLine,
-									{ ID_DATAFIELD_CRC, _T("Fix Data CRC only"), MF_GRAYED*( rFdcStatus.DescribesMissingDam() || rFdcStatus.DescribesMissingId() || !rFdcStatus.DescribesDataFieldCrcError() ) }, // disabled if the Data CRC ok
-									{ ID_RECOVER, _T("Fix ID or Data..."), MF_GRAYED*( rFdcStatus.DescribesMissingDam() || rFdcStatus.DescribesMissingId() || !rFdcStatus.DescribesIdFieldCrcError()&&!rFdcStatus.DescribesDataFieldCrcError() ) }, // enabled only if either ID or Data field with error
+									{ ID_DATAFIELD_CRC, _T("Fix Data CRC only\tCtrl+D"), MF_GRAYED*( rFdcStatus.DescribesMissingDam() || rFdcStatus.DescribesMissingId() || !rFdcStatus.DescribesDataFieldCrcError() ) }, // disabled if the Data CRC ok
+									{ ID_RECOVER, _T("Fix ID or Data...\tCtrl+F"), MF_GRAYED*( rFdcStatus.DescribesMissingDam() || rFdcStatus.DescribesMissingId() || !rFdcStatus.DescribesIdFieldCrcError()&&!rFdcStatus.DescribesDataFieldCrcError() ) }, // enabled only if either ID or Data field with error
 									Utils::TSplitButtonAction::HorizontalLine,
-									{ ID_TIME, _T("Mine track..."), MF_GRAYED*!( dp.source->MineTrack(TPhysicalAddress::Invalid.cylinder,TPhysicalAddress::Invalid.head)!=ERROR_NOT_SUPPORTED ) }
+									{ ID_TIME, _T("Mine track...\tCtrl+M"), MF_GRAYED*!( dp.source->MineTrack(TPhysicalAddress::Invalid.cylinder,TPhysicalAddress::Invalid.head)!=ERROR_NOT_SUPPORTED ) }
 								};
-								ConvertDlgButtonToSplitButton( IDNO, resolveActions );
+								ConvertDlgButtonToSplitButton( IDNO, resolveActions, &pLastAccel );
 								//EnableDlgItem( IDNO, dynamic_cast<CImageRaw *>(dp.target.get())==nullptr ); // recovering errors is allowed only if the Target Image can accept them
 								// > converting the "Retry" button to a SplitButton
-								static constexpr Utils::TSplitButtonAction CanCalibrateHeadsAction={ ID_HEAD, _T("Calibrate head and retry") };
+								static constexpr Utils::TSplitButtonAction CanCalibrateHeadsAction={ ID_HEAD, _T("Calibrate head and retry\tCtrl+R") };
 								static constexpr Utils::TSplitButtonAction CannotCalibrateHeadsAction={ ID_HEAD, _T("Can't calibrate heads for this track"), MF_GRAYED };
 								const Utils::TSplitButtonAction retryActions[]={
 									{ IDRETRY, _T("Retry") },
 									dp.canCalibrateSourceHeads ? CanCalibrateHeadsAction : CannotCalibrateHeadsAction
 								};
-								ConvertDlgButtonToSplitButton( IDRETRY, retryActions );
+								ConvertDlgButtonToSplitButton( IDRETRY, retryActions, &pLastAccel );
 								// > the "Retry" button enabled only if Sector not yet modified and there are several Revolutions available
 								EnableDlgItem( IDRETRY, dirtyRevolution==Revolution::NONE && nRevolutions>1 );
+								// > creating accelerator table
+								hAccel=::CreateAcceleratorTable( accels, pLastAccel-accels );
 							}
 							void DoDataExchange(CDataExchange *pDX) override{
 								// exchange of data from and to controls
@@ -553,11 +557,17 @@
 										return false;
 								}
 							}
+							BOOL PreTranslateMessage(PMSG pMsg){
+								// pre-processing the Message
+								if (::TranslateAccelerator( m_hWnd, hAccel, pMsg ))
+									return TRUE;
+								return __super::PreTranslateMessage(pMsg);
+							}
 							LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
 								// window procedure
 								switch (msg){
 									case WM_COMMAND:
-										switch (wParam){
+										switch (LOWORD(wParam)){
 											case ID_HEAD:{
 												TStdWinError err;
 												if (!( err=dp.source->SeekHeadsHome() ))
@@ -750,6 +760,10 @@
 								, sectorData( rFdcStatus.DescribesMissingDam()?nullptr:sectorData )
 								, sectorDataLength( rFdcStatus.DescribesMissingDam()?0:sectorLength )
 								, hexaEditor( dp, _rParams ) {
+							}
+							~CErroneousSectorDialog(){
+								// dtor
+								::DestroyAcceleratorTable(hAccel);
 							}
 						} d(pAction,dp,p,bufferSectorData[p.s],bufferLength[p.s],p.fdcStatus);
 						// | showing the Dialog and processing its result

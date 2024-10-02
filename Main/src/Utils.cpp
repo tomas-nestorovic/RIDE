@@ -2173,7 +2173,7 @@ namespace Utils{
 		return ::CallWindowProc( wndProc0, hSplitBtn, msg, wParam, lParam );
 	}
 
-	void CRideDialog::ConvertDlgButtonToSplitButtonEx(WORD id,PCSplitButtonAction pAction,BYTE nActions) const{
+	void CRideDialog::ConvertDlgButtonToSplitButtonEx(WORD id,PCSplitButtonAction pAction,BYTE nActions,LPACCEL *ppOutAccels) const{
 		// converts an existing standard button to a SplitButton featuring specified additional Actions
 		const HWND hStdBtn=GetDlgItemHwnd(id);
 		SetDlgItemText(id,nullptr); // before window procedure changed
@@ -2193,7 +2193,18 @@ namespace Utils{
 			ASSERT( id==defaultId ); // the case when ID changes always requires attention! ("CDialog::*DlgItem*" methods cease to work for previous ID)
 			::SetWindowLong( hStdBtn, GWL_ID, defaultId );
 		}
+		if (ppOutAccels)
+			for( auto i=nActions; i>0; ){
+				const auto &action=pAction[--i];
+				if (action.menuItemFlags&MF_GRAYED) // item disabled?
+					continue;
+				const LPCTSTR caption=action.commandCaption;
+				if (::StrChr(caption,'\t')){ // contains a shortcut hint?
+					ACCEL &r=*(*ppOutAccels)++;
+					r.fVirt=FVIRTKEY|FCONTROL, r.key=caption[::lstrlen(caption)-1], r.cmd=action.commandId;
 				}
+			}
+	}
 
 	void CRideDialog::ConvertDlgCheckboxToHyperlink(WORD id) const{
 		// converts an existing standard check-box to one with a hyperlink in its text
