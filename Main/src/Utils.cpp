@@ -757,11 +757,10 @@ namespace Utils{
 
 
 
-	CAxis::CDcState::CDcState(HDC dc,int nUnitsStart)
+	CAxis::CDcState::CDcState(HDC dc)
 		// ctor
 		: mappingMode( ::GetMapMode(dc) )
-		, graphicsMode( ::GetGraphicsMode(dc) )
-		, nUnitsStart(nUnitsStart) {
+		, graphicsMode( ::GetGraphicsMode(dc) ) {
 		::GetWorldTransform( dc, &advanced );
 		::GetViewportOrgEx( dc, &ptViewportOrg );
 	}
@@ -772,7 +771,7 @@ namespace Utils{
 		::SetMapMode( dc, mappingMode );
 		::SetGraphicsMode( dc, graphicsMode );
 		::SetWorldTransform( dc, &advanced );
-		::SetViewportOrgEx( dc, LogicalUnitScaleFactor*nUnitsStart+ptViewportOrg.x, ptViewportOrg.y, nullptr );
+		::SetViewportOrgEx( dc, ptViewportOrg.x, ptViewportOrg.y, nullptr );
 		return iSavedDc;
 	}
 
@@ -822,11 +821,11 @@ namespace Utils{
 			*pOutVisibleEnd=valueZ;
 		// - saving the current state of DC for any subsequent drawing to match the Axis (e.g. cursor indicator)
 		const int nUnitsA=GetUnitCount(valueA);
-		dcState=CDcState( dc, nUnitsA );
 		logCursorPos=-1; // cursor indicator hidden
 		// - drawing using a workaround to overcome the coordinate space limits
 		const auto dcSettings0=::SaveDC(dc);
 			::SetViewportOrgEx( dc, LogicalUnitScaleFactor*nUnitsA+org.x, org.y, nullptr );
+			dcState=CDcState(dc);
 			::SelectObject( dc, font );
 			short smallMarkLength=0, bigMarkLength=0, labelY=0;
 			switch (ticksAndLabelsAlign){

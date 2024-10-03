@@ -464,12 +464,11 @@ namespace Utils{
 		BYTE zoomFactor;
 		class CDcState sealed{
 			int mappingMode,graphicsMode;
-			int nUnitsStart;
 			POINT ptViewportOrg;
 			XFORM advanced;
 		public:
 			inline CDcState(){}
-			CDcState(HDC dc,int nUnitsStart);
+			CDcState(HDC dc);
 
 			int ApplyTo(HDC dc) const;
 			void RevertFrom(HDC dc,int iSavedDc) const;
