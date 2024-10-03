@@ -168,13 +168,17 @@ namespace Utils{
 		inline T &operator->() const{ return var; }
 	};
 
+#ifdef RELEASE_MFC42
+	//#pragma optimize("",off) // optimizations off for RoundDivUp ('_alldvrm' routine may not be found for 'long long' arguments, must use '_alldiv' and '_allrem' instead)
+#endif
 	template<typename T>
-	T RoundDivUp(T value,T denominator){
-		return (value+denominator-1)/denominator;
+	T RoundDivUp(const T value,const T denominator){
+		//return (value+denominator-1)/denominator; // this may cause range overrun, e.g. when rounding 1.5 second up to whole seconds (1,500,000,000 + 1,000,000,000 doesn't fit into 'int')
+		return value/denominator + (value%denominator!=0);
 	}
 
 	template<typename T>
-	T RoundUpToMuls(T value,T mul){
+	T RoundUpToMuls(const T value,const T mul){
 		return RoundDivUp(value,mul)*mul;
 	}
 
