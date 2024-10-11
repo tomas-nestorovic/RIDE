@@ -247,6 +247,24 @@ namespace Utils{
 		int GetPosByContainedSubcommand(WORD cmd) const;
 	};
 
+	struct TGdiMatrix:XFORM{
+		static const XFORM Identity;
+
+		inline TGdiMatrix(const XFORM &m=Identity) : XFORM(m) {}
+		inline TGdiMatrix(HDC dc){ ::GetWorldTransform(dc,this); }
+		TGdiMatrix(float dx,float dy);
+
+		TGdiMatrix &Shift(float dx,float dy);
+		TGdiMatrix &RotateCv90();
+		TGdiMatrix &RotateCcv90();
+		TGdiMatrix &Scale(float sx,float sy);
+		TGdiMatrix &Combine(const XFORM &next);
+
+		POINTF Transform(float x,float y) const;
+		inline POINTF Transform(const POINTF &pt) const{ return Transform( pt.x, pt.y ); }
+		POINTF TransformInversely(const POINTF &pt) const;
+	};
+
 	typedef const struct TSplitButtonAction sealed{
 		static const TSplitButtonAction HorizontalLine;
 
@@ -457,31 +475,43 @@ namespace Utils{
 		bool Edit(bool dateEditingEnabled,bool timeEditingEnabled,const SYSTEMTIME *epoch);
 	};
 
+	struct TViewportOrg:public POINT{
+		inline TViewportOrg(HDC dc){ ::GetViewportOrgEx(dc,this); }
+	};
+
+	struct TClientRect:CRect{
+		inline TClientRect(HWND hWnd){ ::GetClientRect(hWnd,this); }
+	};
+
 	class CAxis{
 	protected:
-		const TLogValue logValuePerUnit;
+		// any value that is 'long' is in device pixels (incl. 'POINT' and 'RECT' structs!)
+		// any value that is 'int' is in device units (e.g. for drawing)
+		// any value that is 'TLogValue' is in Axis units
 		TLogValue logLength;
 		BYTE zoomFactor;
-		class CDcState sealed{
-			int mappingMode,graphicsMode;
-			POINT ptViewportOrg;
-			XFORM advanced;
-		public:
-			inline CDcState(){}
-			CDcState(HDC dc);
+		struct TDcState sealed{
+			TLogValue valueAtOrigin;
+			int nUnitsAtOrigin;
+			int graphicsMode;
+			TViewportOrg ptViewportOrg; // [pixels] GM_COMPATIBLE
+			TGdiMatrix mAdvanced; // [units] GM_ADVANCED
+
+			TDcState(HDC dc,int nVisibleUnitsA,int nDrawnUnitsA);
 
 			int ApplyTo(HDC dc) const;
 			void RevertFrom(HDC dc,int iSavedDc) const;
-		} dcState; // for any subsequent drawing, e.g. cursor indication
+		} dcLastDrawing; // for any subsequent drawing, e.g. cursor indication
 		TLogValue logCursorPos;
 
-		TLogValue PixelToValue(int pixel) const;
+		TLogValue PixelToValue(long pixel) const;
 	public:
 		const enum TVerticalAlign{
 			NONE,
 			TOP,
 			BOTTOM
 		} ticksAndLabelsAlign;
+		const TLogValue logValuePerUnit;
 		const TCHAR unit;
 		const LPCTSTR unitPrefixes;
 
@@ -491,13 +521,26 @@ namespace Utils{
 
 		CAxis(TLogValue logLength,TLogTime logValuePerUnit,TCHAR unit,LPCTSTR unitPrefixes,BYTE initZoomFactor,TVerticalAlign ticksAndLabelsAlign=TVerticalAlign::TOP);
 
-		BYTE Draw(HDC dc,long nVisiblePixels,const CRideFont &font,int primaryGridLength=0,HPEN hPrimaryGridPen=nullptr,PLogTime pOutVisibleStart=nullptr,PLogTime pOutVisibleEnd=nullptr);
+		// any value that is 'long' is in device pixels (incl. 'POINT' and 'RECT' structs!)
+		// any value that is 'int' is in device units (e.g. for drawing)
+		// any value that is 'TLogValue' is in Axis units
+		inline int BeginDraw(HDC dc) const{ return dcLastDrawing.ApplyTo(dc); }
+		inline void EndDraw(HDC dc,int iSavedDc) const{ dcLastDrawing.RevertFrom(dc,iSavedDc); }
+		void Draw(HDC dc,TLogInterval visible,const CRideFont &font,int primaryGridLength=0,HPEN hPrimaryGridPen=nullptr,PLogInterval pOutDrawn=nullptr);
+		void Draw(HDC dc,TLogValue from,long nVisiblePixels,const CRideFont &font,int primaryGridLength=0,HPEN hPrimaryGridPen=nullptr,PLogInterval pOutDrawn=nullptr);
+		void DrawWhole(HDC dc,const CRideFont &font,int primaryGridLength=0,HPEN hPrimaryGridPen=nullptr);
+		void DrawScrolled(HDC dc,long scrollPos,long nVisiblePixels,const CRideFont &font,int primaryGridLength=0,HPEN hPrimaryGridPen=nullptr,PLogInterval pOutDrawn=nullptr);
+		void DrawScrolled(HDC dc,const CRideFont &font,int primaryGridLength=0,HPEN hPrimaryGridPen=nullptr,PLogInterval pOutDrawn=nullptr);
 		inline TLogValue GetCursorPos() const{ return logCursorPos; }
-		void SetCursorPos(HDC dc,TLogValue newLogPos);
+		void DrawCursorPos(HDC dc,TLogValue newLogPos);
+		void DrawCursorPos(HDC dc,const POINT &ptClient);
 		int GetUnitCount(TLogValue logValue,BYTE zoomFactor) const;
 		int GetUnitCount(TLogValue logValue) const;
 		int GetUnitCount() const;
 		TLogValue GetValue(int nUnits) const;
+		TLogValue GetValue(const POINT &ptClient) const;
+		long GetClient(TLogValue logValue) const;
+		int GetClientUnits(TLogValue logValue) const; // for drawing in client area
 		inline TLogValue GetLength() const{ return logLength; }
 		void SetLength(TLogValue newLogLength);
 		inline BYTE GetZoomFactor() const{ return zoomFactor; }
@@ -515,11 +558,7 @@ namespace Utils{
 
 		CTimeline(TLogTime logTimeLength,TLogTime logTimePerUnit,BYTE initZoomFactor);
 
-		void Draw(HDC dc,const CRideFont &font,PLogTime pOutVisibleStart=nullptr,PLogTime pOutVisibleEnd=nullptr);
-
-		inline TLogTime GetTime(int nUnits) const{
-			return GetValue(nUnits);
-		}
+		inline TLogTime GetTime(int nUnits) const{ return GetValue(nUnits); }
 	};
 
 	struct TRationalNumber{

@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "Charting.h"
 
+using namespace Charting;
+
 	#define ZOOM_FACTOR_MAX	24
 
 	#define TIME_HEIGHT		30
@@ -110,14 +112,19 @@
 						if (visible.tStart<0 && visible.tEnd<0) // window closing?
 							break;
 						::SetBkMode( dc, TRANSPARENT );
-						const struct TOrigin sealed:public POINT{
-							TOrigin(const CDC &dc){
-								::GetViewportOrgEx( dc, this );
+						const struct TTimelineDrawing{
+							const Utils::CTimeline &timeline;
+							const HDC dc;
+							const int i;
+							inline TTimelineDrawing(HDC dc,const Utils::CTimeline &timeline)
+								: timeline(timeline) , dc(dc) , i(timeline.BeginDraw(dc)) {
 							}
-						} org(dc);
-						const int d=Utils::LogicalUnitScaleFactor.quot*Utils::LogicalUnitScaleFactor.rem;
-						const int nUnitsA=te.timeline.GetUnitCount(te.GetScrollTime())/d*d;
-						::SetViewportOrgEx( dc, org.x+Utils::LogicalUnitScaleFactor*nUnitsA, org.y, nullptr );
+							inline ~TTimelineDrawing(){
+								timeline.EndDraw( dc, i );
+							}
+						} dcState0( dc, te.timeline );
+						const Utils::CRideFont &font=Utils::CRideFont::Std;
+						::SelectObject( dc, font );
 						const TLogTime iwTimeDefaultHalf=tr.GetCurrentProfile().iwTimeDefault/2;
 						bool continuePainting=true;
 						// . drawing inspection windows (if any)
@@ -126,10 +133,10 @@
 							int L=te.GetInspectionWindow(visible.tStart);
 							// : drawing visible inspection windows (avoiding the GDI coordinate limitations by moving the viewport origin)
 							PCInspectionWindow piw=te.inspectionWindows+L-1; // "-1" = the End of the previous is the start for the next
-							RECT rc={ te.timeline.GetUnitCount(piw++->tEnd)-nUnitsA, 1, 0, IW_HEIGHT };
+							RECT rc={ te.timeline.GetClientUnits(piw++->tEnd), 1, 0, IW_HEIGHT };
 							const auto dcSettings0=::SaveDC(dc);
 								do{
-									rc.right=te.timeline.GetUnitCount(piw->tEnd)-nUnitsA;
+									rc.right=te.timeline.GetClientUnits(piw->tEnd);
 									EXCLUSIVELY_LOCK(p.params);
 										if ( continuePainting=p.params.id==id ){
 											::FillRect( dc, &rc, iwBrushes[piw->isBad][L++&1] );
@@ -160,8 +167,8 @@
 								for( auto it=peList.GetIterator(); continuePainting&&it; ){
 									const TParseEventPtr pe=it++->second;
 									if (const auto ti=pe->Add(iwTimeDefaultHalf).Intersect(visible)){ // offset ParseEvent visible?
-										const int xa=te.timeline.GetUnitCount(ti.tStart)-nUnitsA, xz=te.timeline.GetUnitCount(ti.tEnd)-nUnitsA;
-										RECT rcLabel={ te.timeline.GetUnitCount(pe->tStart+iwTimeDefaultHalf)-nUnitsA, -1000, xz, -EVENT_HEIGHT-3 };
+										const int xa=te.timeline.GetClientUnits(ti.tStart), xz=te.timeline.GetClientUnits(ti.tEnd);
+										RECT rcLabel={ te.timeline.GetClientUnits(pe->tStart+iwTimeDefaultHalf), -1000, xz, -EVENT_HEIGHT-3 };
 										p.params.locker.Lock();
 											if ( continuePainting=p.params.id==id ){
 												::SelectObject( dc, parseEventBrushes[pe->type] );
@@ -177,7 +184,7 @@
 											while (pbi->tStart+iwTimeDefaultHalf<ti.tStart) pbi++; // skip invisible part
 											rcLabel.bottom-=font.charHeight, rcLabel.top=rcLabel.bottom-byteInfoSizeMin.cy;
 											while (continuePainting && pbi->tStart<ti.tEnd && (PCBYTE)pbi-(PCBYTE)pe.data<pe->size){ // draw visible part
-												rcLabel.left=te.timeline.GetUnitCount(pbi->tStart+iwTimeDefaultHalf)-nUnitsA;
+												rcLabel.left=te.timeline.GetClientUnits(pbi->tStart+iwTimeDefaultHalf);
 												rcLabel.right=rcLabel.left+1000;
 												EXCLUSIVELY_LOCK(p.params);
 													if ( continuePainting=p.params.id==id )
@@ -214,8 +221,8 @@
 								for( DWORD iRegion=0; continuePainting&&iRegion<te.nRegions; iRegion++ ){
 									const TRegion &rgn=te.pRegions[iRegion];
 									if (const auto ti=rgn.Add(iwTimeDefaultHalf).Intersect(visible)){ // offset Region visible?
-										rc.left=te.timeline.GetUnitCount(ti.tStart)-nUnitsA;
-										rc.right=te.timeline.GetUnitCount(ti.tEnd)-nUnitsA;
+										rc.left=te.timeline.GetClientUnits(ti.tStart);
+										rc.right=te.timeline.GetClientUnits(ti.tEnd);
 										const Utils::CRideBrush brush(rgn.color);
 										EXCLUSIVELY_LOCK(p.params);
 											if ( continuePainting=p.params.id==id )
@@ -235,7 +242,7 @@
 							::SetTextColor( dc, COLOR_BLUE );
 							::SelectObject( dc, Utils::CRideFont::Std );
 							for( TCHAR buf[16]; continuePainting && i<tr.GetIndexCount() && tr.GetIndexTime(i)<visible.tEnd; i++ ){ // visible indices
-								const int x=te.timeline.GetUnitCount( tr.GetIndexTime(i) )-nUnitsA;
+								const int x=te.timeline.GetClientUnits( tr.GetIndexTime(i) );
 								EXCLUSIVELY_LOCK(p.params);
 									if ( continuePainting=p.params.id==id ){
 										::MoveToEx( dc, x,-INDEX_HEIGHT, nullptr );
@@ -249,7 +256,7 @@
 						// . drawing Times
 						tr.SetCurrentTime(visible.tStart-1);
 						while (continuePainting && tr.GetCurrentTime()<visible.tEnd){
-							const int x=te.timeline.GetUnitCount( tr.ReadTime() )-nUnitsA;
+							const int x=te.timeline.GetClientUnits( tr.ReadTime() );
 							EXCLUSIVELY_LOCK(p.params);
 								if ( continuePainting=p.params.id==id ){
 									::MoveToEx( dc, x,0, nullptr );
@@ -509,7 +516,7 @@
 				// . changing the viewport
 				CRect rc;
 				GetClientRect(&rc);
-				pDC->SetViewportOrg( Utils::LogicalUnitScaleFactor*-timeline.GetUnitCount(scrollTime), rc.Height()/2 );
+				pDC->SetViewportOrg( 0, rc.Height()/2 );
 			}
 
 			void OnPrepareDC(CDC *pDC,CPrintInfo *pInfo=nullptr) override{
@@ -527,7 +534,9 @@
 				::SetBkMode( dc, TRANSPARENT );
 				EXCLUSIVELY_LOCK(painter.params);
 					painter.params.id++;
-					timeline.Draw( dc, Utils::CRideFont::Std, &painter.params.visible.tStart, &painter.params.visible.tEnd );
+					TLogInterval drawn;
+					timeline.Draw( dc, scrollTime, -1, Utils::CRideFont::Std, 0, nullptr, &drawn );
+					painter.params.visible.tStart=drawn.a, painter.params.visible.tEnd=drawn.z;
 					painter.params.zoomFactor=timeline.GetZoomFactor();
 				// . drawing the rest in parallel thread due to computational complexity if painting the whole Track
 				painter.repaintEvent.SetEvent();
@@ -619,7 +628,7 @@
 					::GetCursorPos(&cursor);
 					ScreenToClient(&cursor);
 					cursorTime=ClientPixelToTime( cursor.x );
-				painter.repaintEvent.SetEvent();
+				//painter.repaintEvent.SetEvent(); // commented out as drawing invoked by 'ScrollWindow'
 			}
 
 			TLogTime GetCenterTime() const{
@@ -1310,8 +1319,8 @@
 							// modal display of scatter plot of time differences
 							CImage::CTrackReader tr=this->tr;
 							tr.SetCurrentTimeAndProfile( 0, tr.CreateResetProfile() );
-							const auto deltaTimes=Utils::MakeCallocPtr<POINT>( tr.GetTimesCount() );
-								LPPOINT pLastItem=deltaTimes;
+							const auto deltaTimes=Utils::MakeCallocPtr<TLogPoint,TIndex>( tr.GetTimesCount() );
+								PLogPoint pLastItem=deltaTimes;
 								for( TLogTime t0=0; tr; pLastItem++ ){
 									const TLogTime t = pLastItem->x = tr.ReadTime();
 									pLastItem->y=t-t0; // delta Time
@@ -1321,9 +1330,9 @@
 								auto deltaTimeSeries=CChartView::CXyPointSeries(
 									pLastItem-deltaTimes, deltaTimes, dotPen
 								);
-							const auto indexTimes=Utils::MakeCallocPtr<POINT>( tr.GetIndexCount() );
+							const auto indexTimes=Utils::MakeCallocPtr<TLogPoint,TIndex>( tr.GetIndexCount() );
 								for( BYTE i=0; i<tr.GetIndexCount(); i++ ){
-									POINT &r=indexTimes[i];
+									auto &r=indexTimes[i];
 										r.x=tr.GetIndexTime(i);
 										r.y=TIME_MILLI(200); // should suffice for any Medium
 								}
@@ -1361,15 +1370,14 @@
 													EXCLUSIVELY_LOCK(p);
 													if (p.drawingId!=id)
 														break;
-													CRect rc( pe.tStart, TIME_MICRO(200), pe.tEnd, 1 ); // "Top" value should suffice for any Medium
-														rc=di.Transform(rc);
+													CRect rc( di.GetClientUnits(pe.tStart,0).x, 0, di.GetClientUnits(pe.tEnd,0).x, di.GetClientUnits(0,1).y );
 													::SelectObject( p.dc, peBrushes[pe.type] );
 													::PatBlt( p.dc, rc.left,rc.top, rc.Width(),rc.Height(), 0xa000c9 ); // ternary raster operation "dest AND pattern"
 													::SetTextColor( p.dc, Utils::GetBlendedColor(TParseEvent::TypeColors[pe.type],COLOR_WHITE,0.5f) );
 													::DrawText( p.dc, pe.GetDescription(),-1, &rc, DT_LEFT|DT_BOTTOM|DT_SINGLELINE );
 												}
 											::SelectObject( p.dc, hBrush0 );
-										::SelectObject( p.dc, hFont0 );
+										::DeleteObject( ::SelectObject( p.dc, hFont0 ) );
 									}
 								} peSeries(peList);
 							const CChartView::PCGraphics graphics[]={ &peSeries, &indexTimeSeries, &deltaTimeSeries };
@@ -1462,8 +1470,8 @@
 								::lstrcpy( caption, _T("Timing histogram for whole track") );
 							}
 							tr.SetCurrentTimeAndProfile( tBegin, tr.CreateResetProfile() );
-							const auto data=Utils::MakeCallocPtr<POINT>( tr.GetTimesCount() );
-								LPPOINT pLastItem=data;
+							const auto data=Utils::MakeCallocPtr<TLogPoint,TIndex>( tr.GetTimesCount() );
+								PLogPoint pLastItem=data;
 								for( TLogTime t0=tBegin; tr; pLastItem++ ){
 									const TLogTime t = pLastItem->x = tr.ReadTime();
 									if (tr.GetCurrentTime()>tEnd)

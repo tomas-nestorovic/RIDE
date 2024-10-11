@@ -179,10 +179,11 @@
 		}
 		if (si.nPos<0) si.nPos=0;
 		else if (si.nPos>si.nMax-si.nPage) si.nPos=si.nMax-si.nPage;
-		ScrollWindow(	// "base"
-						(iScroll0-si.nPos),//*Utils::GetLogicalUnitScaleFactor(CClientDC(this))
-						0
-					); 
+		si.nPos=si.nPos/Utils::LogicalUnitScaleFactor.quot*Utils::LogicalUnitScaleFactor.quot;
+		ScrollWindow( // "base"
+			iScroll0-si.nPos,
+			0
+		);
 		SetScrollInfo(SB_HORZ,&si,TRUE);
 		// - vertical ScrollBar
 		GetScrollInfo( SB_VERT, &si, SIF_POS|SIF_TRACKPOS|SIF_RANGE|SIF_PAGE );
@@ -433,12 +434,16 @@
 		const HGDIOBJ font0=::SelectObject(dc,Utils::CRideFont::StdBold);
 			::TabbedTextOut( dc, 0,VIEW_PADDING, _T("\tCylinder\tHead"),-1, 2,Tabs, 0 );
 			if (showTimed){
-				const Utils::CRideFont &rFont=Utils::CRideFont::StdBold;
-				CPoint newOrg=pDC->GetViewportOrg();
-				newOrg.Offset( Utils::LogicalUnitScaleFactor*SECTOR1_X, VIEW_PADDING+rFont.charHeight );
-				const POINT oldOrg=pDC->SetViewportOrg(newOrg);
-					Utils::CTimeline( longestTrackNanoseconds, IMAGE->EstimateNanosecondsPerOneByte(), zoomLengthFactor ).Draw( *pDC, rFont );
-				pDC->SetViewportOrg(oldOrg);
+				const Utils::CRideFont &font=Utils::CRideFont::StdBold;
+				const Utils::TViewportOrg org(dc);
+				const long timelinePositionX=org.x+Utils::RoundUpToMuls<long>(Utils::LogicalUnitScaleFactor*SECTOR1_X,Utils::LogicalUnitScaleFactor.quot);
+				pDC->SetViewportOrg( timelinePositionX, org.y+VIEW_PADDING+font.charHeight );
+					Utils::CTimeline(
+						longestTrackNanoseconds, IMAGE->EstimateNanosecondsPerOneByte(), zoomLengthFactor
+					).DrawScrolled(
+						dc, -std::min(timelinePositionX,0L), -1, font
+					);
+				pDC->SetViewportOrg(org);
 			}else
 				::TabbedTextOut( dc, 0,VIEW_PADDING, _T("\t\t\tSectors"),-1, 3,Tabs, 0 );
 		::SelectObject(dc,font0);

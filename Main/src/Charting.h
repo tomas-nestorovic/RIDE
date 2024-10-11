@@ -1,6 +1,16 @@
 #ifndef CHARTING_H
 #define CHARTING_H
 
+// any value that is 'long' is in device pixels (incl. 'POINT' and 'RECT' structs!)
+// any value that is 'int' is in device units (e.g. for drawing)
+// any value that is 'TLogValue' is in Axis units
+
+namespace Charting
+{
+	typedef int TIndex;
+
+	typedef LPCVOID PCItem;
+
 	class CChartView:public CView{
 	public:
 		enum TStatus{
@@ -12,20 +22,21 @@
 			static const TMargin None;
 			static const TMargin Default;
 
-			short L,R,T,B;
+			int L,R,T,B;
 		} &RCMargin;
 
-		class CHistogram:public std::map<int,int>{
+		class CHistogram:public std::map<TLogValue,TIndex>{
 		public:
-			operator bool() const;
-			void AddValue(int value);
-			int GetCount(int value) const;
+			inline operator bool() const{ return size()>0; }
+			void AddValue(TLogValue value);
+			TIndex GetCount(TLogValue value) const;
 			CHistogram &Append(const CHistogram &r);
 		};
 
 		class CPainter; // forward
 		class CDisplayInfo; // forward
 
+		// see type convention note above
 		typedef const class CGraphics abstract{
 		protected:
 			CGraphics();
@@ -34,53 +45,61 @@
 			LPCTSTR name; // used for cursor snapping
 
 			inline bool SupportsCursorSnapping() const{ return name!=nullptr; }
-			virtual POINT SnapCursorToNearestItem(const CDisplayInfo &di,const CPoint &ptClient,int &rOutItemIndex) const;
+			virtual PCItem GetItem(TIndex i,const POINT &ptClient) const;
+			virtual TIndex GetNearestItemIndex(const CDisplayInfo &di,const POINT &ptClient,TLogValue &rOutDistance) const;
 			virtual void DrawAsync(const CPainter &p) const=0;
 		} *PCGraphics;
 
+		// see type convention note above
 		typedef const class CXyGraphics abstract:public CGraphics{
 		public:
 			virtual void GetDrawingLimits(WORD percentile,TLogValue &rOutMaxX,TLogValue &rOutMaxY) const; // in hundredths (e.g. "2345" means 23.45)
-			virtual const POINT &GetPoint(int index) const;
 		} *PCXyGraphics;
 
+		// see type convention note above
 		class CXyPointSeries:public CXyGraphics{
 		protected:
-			const int nPoints;
-			const POINT *const points;
+			const TIndex nPoints;
+			const PCLogPoint points;
 			const HPEN hPen;
 		public:
-			CXyPointSeries(int nPoints,const POINT *points,HPEN hVertexPen);
+			CXyPointSeries(TIndex nPoints,PCLogPoint points,HPEN hVertexPen);
 
 			void GetDrawingLimits(WORD percentile,TLogValue &rOutMaxX,TLogValue &rOutMaxY) const override; // in hundredths (e.g. "2345" means 23.45)
-			const POINT &GetPoint(int index) const override;
+			PCItem GetItem(TIndex i,const POINT &ptClient) const override;
+			inline TIndex GetPointCount() const{ return nPoints; }
 			void DrawAsync(const CPainter &p) const override;
-			CHistogram CreateYxHistogram(int mergeFilter=0) const;
+			CHistogram CreateYxHistogram(TLogValue mergeFilter=0) const;
 		};
 
+		// see type convention note above
 		class CXyBrokenLineSeries:public CXyPointSeries{
 		public:
-			CXyBrokenLineSeries(int nPoints,const POINT *points,HPEN hLinePen);
+			CXyBrokenLineSeries(TIndex nPoints,PCLogPoint points,HPEN hLinePen);
 
 			void DrawAsync(const CPainter &p) const override;
 		};
 
+		// see type convention note above
 		class CXyOrderedBarSeries:public CXyPointSeries{
 		public:
-			CXyOrderedBarSeries(int nPoints,const POINT *points,HPEN hLinePen,LPCTSTR name=nullptr);
+			CXyOrderedBarSeries(TIndex nPoints,PCLogPoint points,HPEN hLinePen,LPCTSTR name=nullptr);
 
 			void GetDrawingLimits(WORD percentile,TLogValue &rOutMaxX,TLogValue &rOutMaxY) const override; // in hundredths (e.g. "2345" means 23.45)
-			POINT SnapCursorToNearestItem(const CDisplayInfo &di,const CPoint &ptClient,int &rOutItemIndex) const override;
+			TIndex GetNearestItemIndex(const CDisplayInfo &di,const POINT &ptClient,TLogValue &rOutDistance) const override;
 			void DrawAsync(const CPainter &p) const override;
 		};
 
+		// see type convention note above
 		class CDisplayInfo abstract{
+		public:
+			typedef const struct TSnappedItem{
+				PCGraphics graphics;
+				TIndex itemIndex;
+			} *PCSnappedItem;
 		protected:
 			bool snapToNearestItem;
-			struct{
-				PCGraphics graphics;
-				int itemIndex;
-			} snapped;
+			TSnappedItem snapped;
 		public:
 			const UINT menuResourceId;
 			const TMargin margin;
@@ -91,19 +110,20 @@
 
 			inline bool WantSnapToNearestItem() const{ return snapToNearestItem; }
 			virtual void DrawBackground(HDC dc,const CRect &rcClient)=0;
-			virtual POINT SetCursorPos(HDC dc,const POINT &ptClientUnits);
+			virtual PCSnappedItem DrawCursor(HDC dc,const POINT &ptClient);
 			virtual CString GetStatus() const=0;
 			virtual bool OnCmdMsg(CChartView &cv,UINT nID,int nCode,PVOID pExtra);
 		};
 
+		// see type convention note above
 		class CXyDisplayInfo:public CDisplayInfo{
 			const Utils::CRidePen gridPen;
 			const Utils::CRideFont &fontAxes;
 			const TLogValue xMaxOrg, yMaxOrg;
 			Utils::CAxis xAxis, yAxis;
 			WORD percentile; // in hundredths (e.g. "2345" means 23.45)
+			Utils::TGdiMatrix mValues; // matrix to transform LogPoints to display coordinates (pixels)
 		public:
-			XFORM M; // matrix to transform data coordinates (TLogValue) to display coordinates (pixels)
 
 			CXyDisplayInfo(
 				RCMargin margin,
@@ -116,14 +136,12 @@
 			inline const Utils::CAxis &GetAxisX() const{ return xAxis; }
 			inline const Utils::CAxis &GetAxisY() const{ return yAxis; }
 			void DrawBackground(HDC dc,const CRect &rcClient) override;
-			POINT SetCursorPos(HDC dc,const POINT &ptClientUnits) override;
-			POINT Transform(long x,long y) const;
-			inline POINT Transform(const POINT &pt) const{ return Transform( pt.x, pt.y ); }
-			RECT Transform(const RECT &rc) const;
-			POINT InverselyTransform(const POINT &pt) const;
+			PCSnappedItem DrawCursor(HDC dc,const POINT &ptClient) override;
 			inline WORD GetPercentile() const{ return percentile; }
 			void SetPercentile(WORD newPercentile);
 			void RefreshDrawingLimits(TLogValue xNewMax=-1,TLogValue yNewMax=-1);
+			POINT GetClientUnits(TLogValue x,TLogValue y) const;
+			inline POINT GetClientUnits(const TLogPoint &pt) const{ return GetClientUnits( pt.x, pt.y ); }
 			CString GetStatus() const override;
 			bool OnCmdMsg(CChartView &cv,UINT nID,int nCode,PVOID pExtra) override;
 		};
@@ -196,4 +214,5 @@
 		);
 	};
 
+}
 #endif // CHARTING_H

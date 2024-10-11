@@ -2,6 +2,8 @@
 #include "CapsBase.h"
 #include "Charting.h"
 
+using namespace Charting;
+
 	#define INI_MINING		_T("MineTrk")
 	#define INI_TARGET		_T("trg2")
 	#define INI_METHOD		_T("mtd")
@@ -25,8 +27,8 @@
 			const CString trackName;
 			const Utils::CRidePen minedTimingPen;
 			const Utils::CRidePen minedIndexPen;
-			Utils::CCallocPtr<POINT> minedTrackDeltaTiming;
-			POINT minedTrackIndices[Revolution::MAX+1];
+			Utils::CCallocPtr<TLogPoint,TIndex> minedTrackDeltaTiming;
+			TLogPoint minedTrackIndices[Revolution::MAX+1];
 			struct TGraphics sealed{
 				CChartView::PCGraphics list[2];
 
@@ -143,7 +145,7 @@
 				// populates the ScatterPlotView with Track's simplified timing
 				// . indices
 				for( BYTE i=0; i<trw.GetIndexCount(); i++ ){
-					POINT &r=minedTrackIndices[i];
+					TLogPoint &r=minedTrackIndices[i];
 						r.x=trw.GetIndexTime(i);
 						r.y=TIME_MICRO(200); // should suffice for any Medium
 				}
@@ -157,7 +159,7 @@
 				const PCLogTime trackTiming=trw.GetBuffer();
 				if (minedTrackDeltaTiming.length<trw.GetTimesCount())
 					minedTrackDeltaTiming.Realloc( trw.GetTimesCount()+1000 ); // avoid excessive reallocations by allowing some reserve
-				LPPOINT pxy=minedTrackDeltaTiming;
+				PLogPoint pxy=minedTrackDeltaTiming;
 				for( DWORD i=1; i<trw.GetTimesCount(); i+=iTimeStride,pxy++ ){
 					pxy->x=trackTiming[i];
 					pxy->y=trackTiming[i]-trackTiming[i-1];

@@ -117,6 +117,16 @@ typedef const int *PCINT;
 
 typedef int TLogValue,*PLogValue;
 typedef const TLogValue *PCLogValue;
+typedef Yahel::TInterval<TLogValue> TLogInterval,*PLogInterval;
+
+constexpr TLogValue LogValueMax=INT_MAX;
+
+typedef struct TLogPoint{
+	TLogValue x,y;
+
+	TLogValue ManhattanDistance(const TLogPoint &other) const;
+} *PLogPoint;
+typedef const TLogPoint *PCLogPoint;
 
 typedef TLogValue TLogTime,*PLogTime; // time in nanoseconds
 typedef const TLogTime *PCLogTime;

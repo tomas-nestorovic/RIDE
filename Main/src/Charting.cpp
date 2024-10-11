@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "Charting.h"
 
+namespace Charting
+{
 	const CChartView::TMargin CChartView::TMargin::None;
 	const CChartView::TMargin CChartView::TMargin::Default={ 20, 20, 20, 20 };
 
@@ -8,12 +10,7 @@
 
 
 
-	CChartView::CHistogram::operator bool() const{
-		// True <=> the Histogram isn't empty, otherwise False
-		return size()>0;
-	}
-
-	void CChartView::CHistogram::AddValue(int value){
+	void CChartView::CHistogram::AddValue(TLogValue value){
 		// increases by one the number of occurences of Value
 		auto it=find(value);
 		if (it!=cend())
@@ -22,7 +19,7 @@
 			insert( std::make_pair(value,1) );
 	}
 
-	int CChartView::CHistogram::GetCount(int value) const{
+	TIndex CChartView::CHistogram::GetCount(TLogValue value) const{
 		// returns the number of occurences of Value (or zero)
 		const auto it=find(value);
 		if (it!=cend())
@@ -42,10 +39,15 @@
 		, name(nullptr) { // caller eventually overrides
 	}
 
-	POINT CChartView::CGraphics::SnapCursorToNearestItem(const CDisplayInfo &,const CPoint &ptClient,int &rOutItemIndex) const{
-		// returns the client position closest to the input cursor position
+	PCItem CChartView::CGraphics::GetItem(TIndex i,const POINT &ptClient) const{
+		// returns pointer to an item identified by the Index and input client position
+		return nullptr;
+	}
+
+	TIndex CChartView::CGraphics::GetNearestItemIndex(const CDisplayInfo &,const POINT &ptClient,TLogValue &rOutDistance) const{
+		// returns the Index of the item closest to the input position
 		ASSERT( !SupportsCursorSnapping() );
-		return rOutItemIndex=-1, ptClient; // no known item to snap cursor to
+		return rOutDistance=LogValueMax, -1; // no known item to snap cursor to
 	}
 
 
@@ -58,20 +60,12 @@
 		//nop (not applicable)
 	}
 
-	static constexpr POINT Origin={0,0};
-
-	const POINT &CChartView::CXyGraphics::GetPoint(int index) const{
-		// returns the XY Point with the specified Index
-		ASSERT(FALSE);
-		return Origin;
-	}
 
 
 
 
 
-
-	CChartView::CXyPointSeries::CXyPointSeries(int nPoints,const POINT *points,HPEN hVertexPen)
+	CChartView::CXyPointSeries::CXyPointSeries(TIndex nPoints,PCLogPoint points,HPEN hVertexPen)
 		// ctor
 		: nPoints(nPoints) , points(points)
 		, hPen(hVertexPen) {
@@ -81,16 +75,16 @@
 		// sets corresponding outputs to the last item still to be drawn with specified Percentile
 		const CHistogram h=CreateYxHistogram();
 		int sum=0,const sumMax=(ULONGLONG)nPoints*percentile/10000;
-		rOutMaxX=std::max( (LONG)rOutMaxX, points[nPoints-1].x );
+		rOutMaxX=std::max( rOutMaxX, points[nPoints-1].x );
 		rOutMaxY=1;
 		for( auto it=h.cbegin(); it!=h.cend()&&sum<sumMax; sum+=it++->second )
 			rOutMaxY=it->first;
 	}
 
-	const POINT &CChartView::CXyPointSeries::GetPoint(int index) const{
-		// returns the XY Point with the specified Index
-		ASSERT( 0<=index && index<nPoints );
-		return points[index];
+	PCItem CChartView::CXyPointSeries::GetItem(TIndex i,const POINT &ptClient) const{
+		// returns pointer to an item identified by the Index and input client position
+		ASSERT( 0<=i && i<nPoints );
+		return points+i;
 	}
 
 	void CChartView::CXyPointSeries::DrawAsync(const CPainter &p) const{
@@ -98,25 +92,25 @@
 		const WORD id=p.GetCurrentDrawingIdSync();
 		const CXyDisplayInfo &di=*(const CXyDisplayInfo *)&p.di;
 		const HGDIOBJ hPen0=::SelectObject( p.dc, hPen );
-			constexpr int Stride=64;
-			for( int i=0; i<Stride; i++ )
-				for( int j=i+0; j<nPoints; j+=Stride ){
+			constexpr TIndex Stride=64;
+			for( TIndex i=0; i<Stride; i++ )
+				for( TIndex j=i+0; j<nPoints; j+=Stride ){
 					EXCLUSIVELY_LOCK(p);
 					if (p.drawingId!=id)
 						break;
 					if (points[j].y>di.GetAxisY().GetLength())
 						continue;
-					const POINT pt=di.Transform( points[j] );
+					const POINT &&pt=di.GetClientUnits( points[j] );
 					::MoveToEx( p.dc, pt.x, pt.y, nullptr );
 					::LineTo( p.dc, pt.x+1, pt.y );
 				}
 		::SelectObject( p.dc, hPen0 );
 	}
 
-	CChartView::CHistogram CChartView::CXyPointSeries::CreateYxHistogram(int mergeFilter) const{
+	CChartView::CHistogram CChartView::CXyPointSeries::CreateYxHistogram(TLogValue mergeFilter) const{
 		// creates histogram of Y values
 		CHistogram tmp;
-		for( int n=nPoints; n>0; tmp.AddValue(points[--n].y) );
+		for( TIndex n=nPoints; n>0; tmp.AddValue(points[--n].y) );
 		if (mergeFilter>0)
 			for( auto it=tmp.begin(); it!=tmp.end(); ){
 				auto itNext=it;
@@ -142,7 +136,7 @@
 
 
 
-	CChartView::CXyBrokenLineSeries::CXyBrokenLineSeries(int nPoints,const POINT *points,HPEN hLinePen)
+	CChartView::CXyBrokenLineSeries::CXyBrokenLineSeries(TIndex nPoints,PCLogPoint points,HPEN hLinePen)
 		// ctor
 		: CXyPointSeries( nPoints, points, hLinePen ) {
 	}
@@ -154,13 +148,13 @@
 		const WORD id=p.GetCurrentDrawingIdSync();
 		const CXyDisplayInfo &di=*(const CXyDisplayInfo *)&p.di;
 		const HGDIOBJ hPen0=::SelectObject( p.dc, hPen );
-			POINT pt=di.Transform( *points );
+			POINT pt=di.GetClientUnits( *points );
 			::MoveToEx( p.dc, pt.x, pt.y, nullptr );
-			for( int j=1; j<nPoints; j++ ){
+			for( TIndex j=1; j<nPoints; j++ ){
 				EXCLUSIVELY_LOCK(p);
 				if (p.drawingId!=id)
 					break;
-				pt=di.Transform( points[j] );
+				pt=di.GetClientUnits( points[j] );
 				::LineTo( p.dc, pt.x+1, pt.y );
 			}
 		::SelectObject( p.dc, hPen0 );
@@ -171,7 +165,7 @@
 
 
 
-	CChartView::CXyOrderedBarSeries::CXyOrderedBarSeries(int nPoints,const POINT *points,HPEN hLinePen,LPCTSTR name)
+	CChartView::CXyOrderedBarSeries::CXyOrderedBarSeries(TIndex nPoints,PCLogPoint points,HPEN hLinePen,LPCTSTR name)
 		// ctor
 		: CXyPointSeries( nPoints, points, hLinePen ) {
 		this->name=name;
@@ -180,11 +174,11 @@
 	void CChartView::CXyOrderedBarSeries::GetDrawingLimits(WORD percentile,TLogValue &rOutMaxX,TLogValue &rOutMaxY) const{
 		// sets corresponding outputs to the last item still to be drawn with specified Percentile
 		LONGLONG ySum=0;
-		for( int i=0; i<nPoints; ySum+=points[i++].y );
+		for( TIndex i=nPoints; i>0; ySum+=points[--i].y );
 		ySum=ySum*percentile/10000; // estimation of percentile
 		rOutMaxX = rOutMaxY = 1;
-		for( int i=0; i<nPoints&&ySum>0; i++ ){
-			const POINT &pt=points[i];
+		for( TIndex i=0; i<nPoints&&ySum>0; i++ ){
+			const TLogPoint &pt=points[i];
 			ySum-=pt.y;
 			if (pt.x>rOutMaxX)
 				rOutMaxX=pt.x;
@@ -193,28 +187,25 @@
 		}
 	}
 
-	POINT CChartView::CXyOrderedBarSeries::SnapCursorToNearestItem(const CDisplayInfo &di,const CPoint &ptClient,int &rOutItemIndex) const{
-		// returns the client position closest to the input cursor position
+	TIndex CChartView::CXyOrderedBarSeries::GetNearestItemIndex(const CDisplayInfo &di,const POINT &ptClient,TLogValue &rOutDistance) const{
+		// returns the Index of the item closest to the input position
 		if (!nPoints)
-			return	__super::SnapCursorToNearestItem( di, ptClient, rOutItemIndex );
+			return	__super::GetNearestItemIndex( di, ptClient, rOutDistance );
 		const CXyDisplayInfo &xydi=*(const CXyDisplayInfo *)&di;
+		const TLogPoint ptClientValue={ xydi.GetAxisX().GetValue(ptClient), xydi.GetAxisY().GetValue(ptClient) };
 		if (nPoints==1)
-			return	rOutItemIndex=0, xydi.Transform(*points);
-		int L=0, R=nPoints-1;
-		for( int M; L+1<R; )
-			if (ptClient.x<xydi.Transform(points[ M=(L+R)/2 ]).x)
+			return	rOutDistance=ptClientValue.ManhattanDistance(*points), 0;
+		TIndex L=0, R=nPoints-1;
+		for( TIndex M; L+1<R; )
+			if (ptClientValue.x<points[ M=(L+R)/2 ].x)
 				R=M;
 			else
 				L=M;
-		const POINT ptL=xydi.Transform(points[L]);
-		if (ptClient.x<ptL.x) // cursor before first Point?
-			return rOutItemIndex=L, ptL;
-		const POINT ptR=xydi.Transform(points[R]);
-		if (ptR.x<ptClient.x) // cursor after last Point?
-			return rOutItemIndex=R, ptR;
-		return	ptR.x-ptClient.x<ptClient.x-ptL.x // return Point closer to the cursor
-				? ( rOutItemIndex=R, ptR )
-				: ( rOutItemIndex=L, ptL );
+		const TLogPoint &ptL=points[L],&ptR=points[R];
+		if (ptClientValue.x-ptL.x<ptR.x-ptClientValue.x) // cursor closer to the left Point?
+			return rOutDistance=ptClientValue.ManhattanDistance(ptL), L;
+		else
+			return rOutDistance=ptClientValue.ManhattanDistance(ptR), R;
 	}
 
 	void CChartView::CXyOrderedBarSeries::DrawAsync(const CPainter &p) const{
@@ -222,16 +213,16 @@
 		const WORD id=p.GetCurrentDrawingIdSync();
 		const CXyDisplayInfo &di=*(const CXyDisplayInfo *)&p.di;
 		const HGDIOBJ hPen0=::SelectObject( p.dc, hPen );
-			for( int i=0; i<nPoints; i++ ){
-				const POINT &pt=points[i];
+			for( TIndex i=0; i<nPoints; i++ ){
+				const TLogPoint &pt=points[i];
 				if (pt.x>di.GetAxisX().GetLength())
 					break;
 				EXCLUSIVELY_LOCK(p);
 				if (p.drawingId!=id)
 					break;
-				const POINT ptT=di.Transform( pt );
+				const POINT &&ptT=di.GetClientUnits( pt );
 				::MoveToEx( p.dc, ptT.x, ptT.y, nullptr );
-				const POINT ptB=di.Transform( pt.x, 0 );
+				const POINT &&ptB=di.GetClientUnits( pt.x, 0 );
 				::LineTo( p.dc, ptB.x, ptB.y );
 			}
 		::SelectObject( p.dc, hPen0 );
@@ -251,32 +242,24 @@
 		::ZeroMemory( &snapped, sizeof(snapped) );
 	}
 
-	POINT CChartView::CDisplayInfo::SetCursorPos(HDC,const POINT &ptClientUnits){
-		// returns the client point the input cursor has been actually set to
+	CChartView::CDisplayInfo::PCSnappedItem CChartView::CDisplayInfo::DrawCursor(HDC,const POINT &ptClient){
+		// draws cursor eventually Snapped to an Item (or Null)
 		snapped.graphics=nullptr;
-		if (snapToNearestItem)
-			if (nGraphics>0){
-				const POINT &cursor=ptClientUnits;
-				struct{
-					POINT pt;
-					long manhattanDistance;
-				} snapped={ {}, INT_MAX };
-				for( BYTE i=nGraphics; i>0; ){
-					const PCGraphics g=graphics[--i];
-					if (!g->SupportsCursorSnapping())
-						continue;
-					int itemIndex;
-					const POINT pt=g->SnapCursorToNearestItem( *this, cursor, itemIndex );
-					const long manhattanDistance= std::abs(pt.x-cursor.x) + std::abs(pt.y-cursor.y);
-					if (manhattanDistance<snapped.manhattanDistance){
-						snapped.pt=pt, snapped.manhattanDistance=manhattanDistance;
-						this->snapped.graphics=g, this->snapped.itemIndex=itemIndex;
-					}
-				};
-				if (snapped.manhattanDistance<INT_MAX) // snapped to an item?
-					return snapped.pt;
-			}
-		return ptClientUnits;
+		if (snapToNearestItem){
+			TLogValue nearest=LogValueMax;
+			for( BYTE i=nGraphics; i>0; ){
+				const PCGraphics g=graphics[--i];
+				if (!g->SupportsCursorSnapping())
+					continue;
+				TLogValue distance=LogValueMax;
+				const TIndex iItem=g->GetNearestItemIndex( *this, ptClient, distance );
+				if (distance<nearest){
+					nearest=distance;
+					snapped.graphics=g, snapped.itemIndex=iItem;
+				}
+			};
+		}
+		return snapped.graphics ? &snapped : nullptr;
 	}
 
 	bool CChartView::CDisplayInfo::OnCmdMsg(CChartView &cv,UINT nID,int nCode,PVOID pExtra){
@@ -315,8 +298,6 @@
 
 
 
-	static constexpr XFORM IdentityTransf={ 1, 0, 0, 1, 0, 0 };
-
 	CChartView::CXyDisplayInfo::CXyDisplayInfo(
 		RCMargin margin,
 		const PCGraphics graphics[], BYTE nGraphics,
@@ -333,7 +314,6 @@
 		, xMaxOrg(xMax), yMaxOrg(yMax)
 		, xAxis( xMaxOrg, 1, xAxisUnit, xAxisUnitPrefixes, 0, Utils::CAxis::TVerticalAlign::BOTTOM )
 		, yAxis( yMaxOrg, 1, yAxisUnit, yAxisUnitPrefixes, 0, Utils::CAxis::TVerticalAlign::TOP )
-		, M(IdentityTransf)
 		// - all data shown by default
 		, percentile(10100) { // invalid, must call SetPercentile !
 		SetPercentile(10000);
@@ -346,57 +326,42 @@
 		rcChartBody.InflateRect( Utils::LogicalUnitScaleFactor*-margin.L, Utils::LogicalUnitScaleFactor*-margin.T, Utils::LogicalUnitScaleFactor*-margin.R, Utils::LogicalUnitScaleFactor*-margin.B );
 		const SIZE szChartBody={ rcChartBody.Width(), rcChartBody.Height() };
 		const SIZE szChartBodyUnits={ szChartBody.cx/Utils::LogicalUnitScaleFactor, szChartBody.cy/Utils::LogicalUnitScaleFactor };
+		const Utils::TGdiMatrix shiftOrigin(
+			//rcChartBody.left, rcChartBody.bottom // in pixels
+			margin.L, margin.T+szChartBodyUnits.cy // in units
+		);
 		xAxis.SetZoomFactor( xAxis.GetZoomFactorToFitWidth(szChartBodyUnits.cx,30) );
-			const XFORM xAxisTransf={ (float)szChartBodyUnits.cx/xAxis.GetUnitCount(), 0, 0, 1, margin.L, rcClient.Height()/Utils::LogicalUnitScaleFactor-margin.B };
-			::SetWorldTransform( dc, &xAxisTransf );
-			xAxis.Draw( dc, szChartBody.cx, fontAxes, -szChartBodyUnits.cy, gridPen );
+			const float xAxisScale=(float)szChartBodyUnits.cx/xAxis.GetUnitCount();
+			::SetWorldTransform( dc,
+				&Utils::TGdiMatrix().Scale( xAxisScale, 1 ).Combine( shiftOrigin )
+			);
+			xAxis.DrawWhole( dc, fontAxes, -szChartBodyUnits.cy, gridPen );
 		yAxis.SetZoomFactor( yAxis.GetZoomFactorToFitWidth(szChartBodyUnits.cy,30) );
-			const XFORM yAxisTransf={ 0, -(float)szChartBodyUnits.cy/yAxis.GetUnitCount(), 1, 0, xAxisTransf.eDx, xAxisTransf.eDy };
-			::SetWorldTransform( dc, &yAxisTransf );
-			yAxis.Draw( dc, szChartBody.cy, fontAxes, szChartBodyUnits.cx, gridPen );
-		// - setting transformation to correctly draw all Series
-		::SetWorldTransform( dc, &IdentityTransf );
-		const XFORM valuesTransf={ xAxisTransf.eM11/(1<<xAxis.GetZoomFactor()), 0, 0, yAxisTransf.eM12/(1<<yAxis.GetZoomFactor()), xAxisTransf.eDx, xAxisTransf.eDy };
-		M=valuesTransf;
+			const float yAxisScale=(float)szChartBodyUnits.cy/yAxis.GetUnitCount();
+			::SetWorldTransform( dc,
+				&Utils::TGdiMatrix().RotateCcv90().Scale( 1, yAxisScale ).Combine( shiftOrigin )
+			);
+			yAxis.DrawWhole( dc, fontAxes, szChartBodyUnits.cx, gridPen );
+		// - setting transformation to correctly draw all Series (looks better than when relying on the Axes)
+		mValues=Utils::TGdiMatrix().Scale(
+			xAxisScale/xAxis.GetValue(1), -yAxisScale/yAxis.GetValue(1)
+		).Combine(
+			shiftOrigin
+		);
 	}
 
-	POINT CChartView::CXyDisplayInfo::SetCursorPos(HDC dc,const POINT &ptClientUnits){
-		// indicades the positions of the cursor, given its position in the Display's client area
-		// - base
-		const POINT result=__super::SetCursorPos( dc, ptClientUnits );
-		// - determining the XY-values at which the cursor points
-		const POINT value =	snapped.graphics!=nullptr
-							? ((PCXyGraphics)snapped.graphics)->GetPoint( snapped.itemIndex )
-							: InverselyTransform(result);
-		// - drawing cursor indicators
-		Utils::ScaleLogicalUnit(dc);
-		xAxis.SetCursorPos( dc, value.x );
-		yAxis.SetCursorPos( dc, value.y );
-		return result;
-	}
-
-	POINT CChartView::CXyDisplayInfo::Transform(long x,long y) const{
-		const POINT tmp={
-			M.eDx + M.eM11*x + M.eM21*y,
-			M.eDy + M.eM12*x + M.eM22*y
-		};
-		return tmp;
-	}
-
-	RECT CChartView::CXyDisplayInfo::Transform(const RECT &rc) const{
-		return CRect( Transform(*(const POINT *)&rc), Transform(((const POINT *)&rc)[1]) );
-	}
-
-	POINT CChartView::CXyDisplayInfo::InverselyTransform(const POINT &pt) const{
-		// Solving of the system of equations:
-		// | m n d | x |
-		// | r s e | y |
-		// | 0 0 1 | 1 |
-		const double m=M.eM11, n=M.eM21, d=M.eDx;
-		const double r=M.eM12, s=M.eM22, e=M.eDy;
-		const double dx=pt.x-d, dy=pt.y-e;
-		const double resultY= (m*dy-r*dx) / (s*m-r*n);
-		return CPoint( (dx-n*resultY)/m, resultY );
+	CChartView::CDisplayInfo::PCSnappedItem CChartView::CXyDisplayInfo::DrawCursor(HDC dc,const POINT &ptClient){
+		// draws cursor eventually Snapped to an Item (or Null)
+		if (const PCSnappedItem psi=__super::DrawCursor( dc, ptClient )){ // snapped?
+			const TLogPoint &pt=*(PCLogPoint)psi->graphics->GetItem( psi->itemIndex, ptClient );
+			xAxis.DrawCursorPos( dc, pt.x );
+			yAxis.DrawCursorPos( dc, pt.y );
+			return psi;
+		}else{
+			xAxis.DrawCursorPos( dc, ptClient );
+			yAxis.DrawCursorPos( dc, ptClient );
+			return nullptr;
+		}
 	}
 
 	void CChartView::CXyDisplayInfo::SetPercentile(WORD newPercentile){
@@ -415,6 +380,12 @@
 				if (g->visible)
 					g->GetDrawingLimits( percentile, xMax, yMax );
 		xAxis.SetLength(xMax), yAxis.SetLength(yMax);
+	}
+
+	POINT CChartView::CXyDisplayInfo::GetClientUnits(TLogValue x,TLogValue y) const{
+		const POINTF &&ptUnitsF=mValues.Transform( x, y );
+		const POINT ptUnits={ ptUnitsF.x, ptUnitsF.y };
+		return ptUnits;
 	}
 
 	CString CChartView::CXyDisplayInfo::GetStatus() const{
@@ -491,10 +462,8 @@
 	}
 
 	WORD CChartView::CPainter::GetCurrentDrawingIdSync() const{
-		locker.Lock();
-			const WORD id=drawingId;
-		locker.Unlock();
-		return id;
+		EXCLUSIVELY_LOCK(*this);
+		return drawingId;
 	}
 
 	UINT AFX_CDECL CChartView::CPainter::Thread(PVOID _pBackgroundAction){
@@ -512,16 +481,15 @@
 			// . creating and preparing the canvas
 			const CClientDC dc( &cv );
 			Utils::ScaleLogicalUnit(dc);
-			::SetMapMode( dc, MM_ANISOTROPIC );
 			::SetGraphicsMode( dc, GM_ADVANCED );
 			::SetBkMode( dc, TRANSPARENT );
 			p.dc=dc;
-			RECT rcClient;
-			cv.GetClientRect(&rcClient);
+			const Utils::TClientRect rcClient(cv);
 			p.di.DrawBackground( dc, rcClient );
 			if (id!=p.GetCurrentDrawingIdSync()) // new paint request?
 				continue;
 			// . preventing from drawing inside the Margin
+			::SetWorldTransform( dc, &Utils::TGdiMatrix::Identity );
 			::IntersectClipRect( dc, p.di.margin.L, p.di.margin.T/2, rcClient.right/Utils::LogicalUnitScaleFactor-p.di.margin.R/2, rcClient.bottom/Utils::LogicalUnitScaleFactor-p.di.margin.B );
 			// . drawing all Graphic assets as they appear in the list
 			for( BYTE i=0; i<p.di.nGraphics; i++ ){
@@ -548,7 +516,7 @@
 			case WM_MOUSEMOVE:
 				// mouse moved
 				if (painter.di.nGraphics){
-					painter.di.SetCursorPos( CClientDC(this), CPoint(lParam)/Utils::LogicalUnitScaleFactor );
+					painter.di.DrawCursor( CClientDC(this), CPoint(lParam) );
 					GetParent()->SendMessage( WM_CHART_STATUS_CHANGED, (WPARAM)m_hWnd );
 				}
 				break;
@@ -733,4 +701,17 @@
 			RunModalLoop( MLF_SHOWONIDLE|MLF_NOIDLEMSG );
 		pBlockedWnd->EndModalState();
 		pBlockedWnd->BringWindowToTop();
+	}
+
+}
+
+
+
+
+
+
+
+
+	TLogValue TLogPoint::ManhattanDistance(const TLogPoint &other) const{
+		return std::abs(x-other.x)+std::abs(y-other.y);
 	}

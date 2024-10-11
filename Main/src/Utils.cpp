@@ -10,6 +10,11 @@ namespace Utils{
 		const CClientDC screen(nullptr);
 		quot=std::min( ::GetDeviceCaps(screen,LOGPIXELSX), ::GetDeviceCaps(screen,LOGPIXELSY) );
 		rem=SCREEN_DPI_DEFAULT;
+		static_cast<TRationalNumber &>(*this)=Simplify();
+		const div_t dQuot=div( (int)quot, 3 );
+		const div_t dRem=div( (int)rem, 3 );
+		if ((dQuot.rem|dRem.rem)==0) // divisible also by 3 ?
+			quot=dQuot.quot, rem=dRem.quot; // simplify even further
 	}
 
 	const TLogicalUnitScaleFactor LogicalUnitScaleFactor;
@@ -274,6 +279,74 @@ namespace Utils{
 				if (::GetMenuPosFromID( hSubmenu, cmd )>=0)
 					return i;
 		return -1; // none of the immediate Submenus contains the specified Command
+	}
+
+
+
+
+	const XFORM TGdiMatrix::Identity={ 1, 0, 0, 1, 0, 0 };
+
+	TGdiMatrix::TGdiMatrix(float dx,float dy)
+		// ctor
+		: XFORM(Identity) {
+		eDx=dx, eDy=dy;
+	}
+
+	TGdiMatrix &TGdiMatrix::Shift(float dx,float dy){
+		// current transformation first, followed by a shift
+		const XFORM m={ 1, 0, 0, 1, dx, dy };
+		return Combine(m);
+	}
+
+	TGdiMatrix &TGdiMatrix::RotateCv90(){
+		// current transformation first, followed by a rotation
+		const XFORM m={ 0, 1, -1, 0, 0, 0 };
+		return Combine(m);
+	}
+
+	TGdiMatrix &TGdiMatrix::RotateCcv90(){
+		// current transformation first, followed by a rotation
+		const XFORM m={ 0, -1, 1, 0, 0, 0 };
+		return Combine(m);
+	}
+
+	TGdiMatrix &TGdiMatrix::Scale(float sx,float sy){
+		// current transformation first, followed by a scale
+		const XFORM m={ sx, 0, 0, sy, 0, 0 };
+		return Combine(m);
+	}
+
+	TGdiMatrix &TGdiMatrix::Combine(const XFORM &next){
+		// current transformation first, followed by a Next
+		::CombineTransform( this, this, &next );
+		return *this;
+	}
+
+	POINTF TGdiMatrix::Transform(float x,float y) const{
+		// applies transformation
+		const POINTF tmp={
+			eDx + eM11*x + eM21*y,
+			eDy + eM12*x + eM22*y
+		};
+		return tmp;
+	}
+
+	POINTF TGdiMatrix::TransformInversely(const POINTF &pt) const{
+		// solves (Gaussian elimination) the system of equations:
+		// | m n d | x |
+		// | r s e | y |
+		// | 0 0 1 | 1 |
+		if (std::abs(eM11)<2*FLT_EPSILON){ // must swap first and second rows?
+			const POINTF ptSwapped={ pt.y, pt.x };
+			const XFORM mSwapped={ eM12, eM11, eM22, eM21, eDy, eDx }; // must swap columns in U.S. notation
+			return TGdiMatrix(mSwapped).TransformInversely( ptSwapped );
+		}
+		const float m=eM11, n=eM21, d=eDx;
+		const float r=eM12, s=eM22, e=eDy;
+		const float dx=pt.x-d, dy=pt.y-e;
+		const float resultY= (m*dy-r*dx) / (s*m-r*n);
+		const POINTF ptf={ (dx-n*resultY)/m, resultY };
+		return ptf;
 	}
 
 
@@ -757,25 +830,35 @@ namespace Utils{
 
 
 
-	CAxis::CDcState::CDcState(HDC dc)
+	CAxis::TDcState::TDcState(HDC dc,int nVisibleUnitsA,int nDrawnUnitsA)
 		// ctor
-		: mappingMode( ::GetMapMode(dc) )
-		, graphicsMode( ::GetGraphicsMode(dc) ) {
-		::GetWorldTransform( dc, &advanced );
-		::GetViewportOrgEx( dc, &ptViewportOrg );
+		: graphicsMode( ::GetGraphicsMode(dc) )
+		, ptViewportOrg(dc)
+		, mAdvanced(dc) {
+		const int d=LogicalUnitScaleFactor.quot*LogicalUnitScaleFactor.rem;
+		nUnitsAtOrigin=nDrawnUnitsA/d*d;
+		switch (graphicsMode){
+			case GM_COMPATIBLE:
+				ptViewportOrg.x+= LogicalUnitScaleFactor*-nVisibleUnitsA + LogicalUnitScaleFactor*nUnitsAtOrigin;
+				break;
+			default:{
+				const long nPixelsInvisible=LogicalUnitScaleFactor*-nVisibleUnitsA + LogicalUnitScaleFactor*nUnitsAtOrigin;
+				mAdvanced=TGdiMatrix(-nPixelsInvisible,0).Combine(mAdvanced);
+				break;
+			}
+		}
 	}
 
-	int CAxis::CDcState::ApplyTo(HDC dc) const{
+	int CAxis::TDcState::ApplyTo(HDC dc) const{
 		// changes the state of the specified DeviceContext, returning the current back-up identifier for further restoration
 		const int iSavedDc=::SaveDC(dc);
-		::SetMapMode( dc, mappingMode );
 		::SetGraphicsMode( dc, graphicsMode );
-		::SetWorldTransform( dc, &advanced );
+		::SetWorldTransform( dc, &mAdvanced );
 		::SetViewportOrgEx( dc, ptViewportOrg.x, ptViewportOrg.y, nullptr );
 		return iSavedDc;
 	}
 
-	void CAxis::CDcState::RevertFrom(HDC dc,int iSavedDc) const{
+	void CAxis::TDcState::RevertFrom(HDC dc,int iSavedDc) const{
 		// reverts changes previously applied to the specified DeviceContext
 		::RestoreDC( dc, iSavedDc );
 	}
@@ -793,41 +876,42 @@ namespace Utils{
 		, logCursorPos(-1) // cursor indicator hidden
 		, ticksAndLabelsAlign(ticksAndLabelsAlign)
 		, unit(unit) , unitPrefixes(unitPrefixes)
+		, dcLastDrawing(nullptr,0,0)
 		, zoomFactor(initZoomFactor) {
 		ASSERT( unitPrefixes!=nullptr ); // use NoPrefixes instead of Nullptr
 	}
 
-	BYTE CAxis::Draw(HDC dc,long nVisiblePixels,const CRideFont &font,int primaryGridLength,HPEN hPrimaryGridPen,PLogTime pOutVisibleStart,PLogTime pOutVisibleEnd){
-		// draws an Axis starting at current origin; returns index into the UnitPrefixes indicating which prefix was used to draw the Axis
+	void CAxis::Draw(HDC dc,TLogInterval visible,const CRideFont &font,int primaryGridLength,HPEN hPrimaryGridPen,PLogInterval pOutDrawn){
+		// draws an Axis starting at current origin
+		visible.a=std::max( visible.a, 0 );
+		visible.z=std::min( visible.z, logLength );
 		// - determinining the primary granuality of the Axis
-		TCHAR label[32];
-		TLogValue intervalBig=1, iUnitPrefix=0;
-		for( TLogValue v=logLength; intervalBig<logLength; intervalBig*=10 ){
-			::wsprintf( label, _T("%d %c%c"), v, unitPrefixes[iUnitPrefix], unit );
-			if (font.GetTextSize(label).cx<LogicalUnitScaleFactor*GetUnitCount(intervalBig))
-				// the consecutive Labels won't overlap - adopting it
-				break;
+		struct{
+			TCHAR buffer[32];
+			inline operator LPCTSTR() const{ return buffer; }
+			int Format(TLogValue v,TCHAR unitPrefix,TCHAR unit){
+				return ::wsprintf( buffer, _T("%d %c%c"), v, unitPrefix, unit )-(unit=='\0');
+			}
+		} label;
+		TLogValue intervalBig=1,k=1; BYTE iUnitPrefix=0;
+		for( TLogValue v=logLength; intervalBig<logLength; intervalBig*=10 )
+			if (font.GetTextSize( label, label.Format(v,unitPrefixes[iUnitPrefix],unit) ).cx<GetUnitCount(intervalBig))
+				break; // the consecutive Labels won't overlap - adopting BigInterval
 			else if (++iUnitPrefix%3==0)
-				v/=1000;
-		}
-		// - determining the visible range to draw
-		POINT org;
-		::GetViewportOrgEx( dc, &org );
-		const TLogValue valueA=std::max( PixelToValue(-org.x), 0 )/intervalBig*intervalBig;
-		if (pOutVisibleStart!=nullptr)
-			*pOutVisibleStart=valueA;
-		const TLogValue valueZ=std::min(  logLength,  RoundUpToMuls( PixelToValue(std::max(-org.x,0L)+nVisiblePixels), intervalBig )  ); // rounding to whole multiples of IntervalBig
-		if (pOutVisibleEnd!=nullptr)
-			*pOutVisibleEnd=valueZ;
-		// - saving the current state of DC for any subsequent drawing to match the Axis (e.g. cursor indicator)
-		const int nUnitsA=GetUnitCount(valueA);
+				v/=1000, k*=1000;
+		// - determining the range to draw
+		const TLogInterval draw(
+			std::max( visible.a, 0 )/intervalBig*intervalBig,
+			std::min( logLength, RoundUpToMuls(visible.z,intervalBig) )
+		);
+		if (pOutDrawn)
+			*pOutDrawn=draw;
+		// - drawing it
 		logCursorPos=-1; // cursor indicator hidden
-		// - drawing using a workaround to overcome the coordinate space limits
-		const auto dcSettings0=::SaveDC(dc);
-			::SetViewportOrgEx( dc, LogicalUnitScaleFactor*nUnitsA+org.x, org.y, nullptr );
-			dcState=CDcState(dc);
+		dcLastDrawing=TDcState( dc, GetUnitCount(visible.a), GetUnitCount(draw.a) ); // saving the current state of DC for any subsequent drawing (e.g. position indicator) to match the Axis
+		const auto dcState0=BeginDraw(dc);
 			::SelectObject( dc, font );
-			short smallMarkLength=0, bigMarkLength=0, labelY=0;
+			int smallMarkLength=0, bigMarkLength=0, labelY=0;
 			switch (ticksAndLabelsAlign){
 				case TVerticalAlign::TOP:
 					smallMarkLength=-4, bigMarkLength=-7, labelY=bigMarkLength-font.charHeight;
@@ -836,24 +920,22 @@ namespace Utils{
 					smallMarkLength=4, bigMarkLength = labelY = 7;
 					break;
 			}
-			// . horizontal line representing the timeline
-			::MoveToEx( dc, 0,0, nullptr );
-			::LineTo( dc, GetUnitCount(valueZ)-nUnitsA, 0 );
-			// . drawing secondary time marks on the timeline
+			// . horizontal line representing the Axis
+			::MoveToEx( dc, GetClientUnits(0),0, nullptr );
+			::LineTo( dc, GetClientUnits(draw.z), 0 );
+			// . drawing secondary time marks on the Axis
 			if (smallMarkLength)
 				if (const TLogValue intervalSmall=intervalBig/10)
-					for( TLogValue v=valueA; v<valueZ; v+=intervalSmall ){
-						const auto x=GetUnitCount(v)-nUnitsA;
+					for( TLogValue v=draw.a; v<draw.z; v+=intervalSmall ){
+						const int x=GetClientUnits(v);
 						::MoveToEx( dc, x,0, nullptr );
 						::LineTo( dc, x,smallMarkLength );
 					}
-			// . drawing primary time marks on the timeline along with respective times
-			if (bigMarkLength){
-				int k=1;
-				for( int i=iUnitPrefix/3; i--; k*=1000 );
-				for( TLogValue v=valueA; v<=valueZ; v+=intervalBig ){
-					const auto x=GetUnitCount(v)-nUnitsA;
-					if (primaryGridLength && v>valueA){ // it's undesired to draw a grid at ValueA, e.g. when drawing two orthogonal Axes to divide a plane (one overdraws the other)
+			// . drawing primary value marks on the Axis along with respective Labels
+			if (bigMarkLength)
+				for( TLogValue v=draw.a; v<=draw.z; v+=intervalBig ){
+					const int x=GetClientUnits(v);
+					if (primaryGridLength && v>draw.a){ // it's undesired to draw a grid at ValueA, e.g. when drawing two orthogonal Axes to divide a plane (one overdraws the other)
 						const HGDIOBJ hPen0=::SelectObject( dc, hPrimaryGridPen );
 							::MoveToEx( dc, x,primaryGridLength, nullptr );
 							::LineTo( dc, x,0 );
@@ -861,19 +943,44 @@ namespace Utils{
 					}else
 						::MoveToEx( dc, x,0, nullptr );
 					::LineTo( dc, x,bigMarkLength );
-					::wsprintf( label, _T("%d %c%c"), v/k, unitPrefixes[iUnitPrefix], unit );
 					::TextOut(
 						dc,
 						x, labelY,
-						label, ::lstrlen(label)
+						label, label.Format( v/k, unitPrefixes[iUnitPrefix], unit )
 					);
 				}
-			}
-		::RestoreDC(dc,dcSettings0);
-		return iUnitPrefix;
+		EndDraw( dc, dcState0 );
 	}
 
-	TLogValue CAxis::PixelToValue(int pixel) const{
+	void CAxis::Draw(HDC dc,TLogValue from,long nVisiblePixels,const CRideFont &font,int primaryGridLength,HPEN hPrimaryGridPen,PLogInterval pOutDrawn){
+		// draws an Axis starting at [0,Origin.Y], while '-Origin.X' determines zero-based starting Value; returns index into the UnitPrefixes indicating which prefix was used to draw the Axis
+		if (nVisiblePixels<0)
+			nVisiblePixels=TClientRect( ::WindowFromDC(dc) ).Width();
+		const TLogInterval visible( from, from+PixelToValue(nVisiblePixels) );
+		Draw( dc, visible, font, primaryGridLength, hPrimaryGridPen, pOutDrawn );
+	}
+
+	void CAxis::DrawWhole(HDC dc,const CRideFont &font,int primaryGridLength,HPEN hPrimaryGridPen){
+		// draws an Axis starting at current origin; returns index into the UnitPrefixes indicating which prefix was used to draw the Axis
+		static const TLogInterval WholeAxis( 0, LogValueMax );
+		Draw( dc, WholeAxis, font, primaryGridLength, hPrimaryGridPen );
+	}
+
+	void CAxis::DrawScrolled(HDC dc,long scrollPos,long nVisiblePixels,const CRideFont &font,int primaryGridLength,HPEN hPrimaryGridPen,PLogInterval pOutDrawn){
+		// draws an Axis starting at [0,Origin.Y], while '-Origin.X' determines zero-based starting Value; returns index into the UnitPrefixes indicating which prefix was used to draw the Axis
+		const TLogValue from=PixelToValue(scrollPos);
+		const TViewportOrg org(dc);
+		::SetViewportOrgEx( dc, org.x+scrollPos, org.y, nullptr );
+			Draw( dc, from, nVisiblePixels, font, primaryGridLength, hPrimaryGridPen, pOutDrawn );
+		::SetViewportOrgEx( dc, org.x, org.y, nullptr );
+	}
+
+	void CAxis::DrawScrolled(HDC dc,const CRideFont &font,int primaryGridLength,HPEN hPrimaryGridPen,PLogInterval pOutDrawn){
+		// draws an Axis starting at [0,Origin.Y], while '-Origin.X' determines zero-based starting Value; returns index into the UnitPrefixes indicating which prefix was used to draw the Axis
+		return DrawScrolled( dc, TViewportOrg(dc).x, -1, font, primaryGridLength, hPrimaryGridPen, pOutDrawn );
+	}
+
+	TLogValue CAxis::PixelToValue(long pixel) const{
 		return	GetValue( pixel/LogicalUnitScaleFactor );
 	}
 
@@ -892,6 +999,26 @@ namespace Utils{
 	TLogValue CAxis::GetValue(int nUnits) const{
 		const auto tmp=((LONGLONG)nUnits<<zoomFactor)*logValuePerUnit;
 		return	tmp<INT_MAX ? tmp : INT_MAX;
+	}
+
+	TLogValue CAxis::GetValue(const POINT &ptClient) const{
+		switch (dcLastDrawing.graphicsMode){
+			case GM_COMPATIBLE:
+				return GetValue(
+					dcLastDrawing.nUnitsAtOrigin + (dcLastDrawing.ptViewportOrg.x-ptClient.x)/LogicalUnitScaleFactor
+				);
+			default:{
+				const POINTF ptClientUnitsF={ ptClient.x/Utils::LogicalUnitScaleFactor, ptClient.y/Utils::LogicalUnitScaleFactor };
+				return GetValue(
+					dcLastDrawing.nUnitsAtOrigin + dcLastDrawing.mAdvanced.TransformInversely(ptClientUnitsF).x
+				);
+			}
+		}
+	}
+
+	int CAxis::GetClientUnits(TLogValue logValue) const{
+		// for drawing in client area
+		return GetUnitCount(logValue)-dcLastDrawing.nUnitsAtOrigin;
 	}
 
 	void CAxis::SetLength(TLogValue newLogLength){
@@ -914,32 +1041,38 @@ namespace Utils{
 	}
 
 	static void drawCursorAt(HDC dc,int nUnitsCenter,bool vaTop){
-		const WCHAR glyph=L'\xf0f1'+vaTop;
-		RECT rc={ nUnitsCenter-80, -80*vaTop, nUnitsCenter+80, 80*!vaTop };
-		::BeginPath(dc);
-			::DrawTextW( dc, &glyph,1, &rc, DT_SINGLELINE|DT_CENTER|DT_NOPREFIX|DT_NOCLIP|(DT_BOTTOM*vaTop) );
-		::EndPath(dc);
-		::StrokePath(dc);
+		POINT arrow[]={ {0,0}, {4,8}, {2,8}, {2,16}, {-2,16}, {-2,8}, {-4,8}, {0,0} };
+		for each( POINT &pt in arrow ){
+			pt.x+=nUnitsCenter;
+			pt.y=(1-2*vaTop)*(pt.y+2);
+		}
+		::Polyline( dc, arrow, ARRAYSIZE(arrow) );
 	}
 
-	void CAxis::SetCursorPos(HDC dc,TLogValue newLogPos){
+	void CAxis::DrawCursorPos(HDC dc,TLogValue newLogPos){
 		// sets logical position of the cursor indicator
 		if (ticksAndLabelsAlign==TVerticalAlign::NONE)
 			return;
-		const int iSavedDc=dcState.ApplyTo( dc );
+		Utils::ScaleLogicalUnit(dc);
+		const int iSavedDc=BeginDraw( dc );
 			const HGDIOBJ hFont0=::SelectObject( dc, FontWingdings );
 				::SetROP2( dc, R2_NOT );
 				::SetBkMode( dc, TRANSPARENT );
 				// . erasing previously drawn cursor, if any
 				if (logCursorPos>=0)
-					drawCursorAt( dc, GetUnitCount(logCursorPos), ticksAndLabelsAlign==TVerticalAlign::TOP );
+					drawCursorAt( dc, GetClientUnits(logCursorPos), ticksAndLabelsAlign==TVerticalAlign::TOP );
 				// . drawing cursor at new position
 				if (0<=newLogPos && newLogPos<logLength)
-					drawCursorAt( dc, GetUnitCount(  logCursorPos=newLogPos  ), ticksAndLabelsAlign==TVerticalAlign::TOP );
+					drawCursorAt( dc, GetClientUnits(  logCursorPos=newLogPos  ), ticksAndLabelsAlign==TVerticalAlign::TOP );
 				else
 					logCursorPos=-1;
 			::SelectObject(dc,hFont0);
-		dcState.RevertFrom( dc, iSavedDc );
+		EndDraw( dc, iSavedDc );
+	}
+
+	void CAxis::DrawCursorPos(HDC dc,const POINT &ptClient){
+		// sets logical position of the cursor indicator
+		DrawCursorPos( dc, GetValue(ptClient) );
 	}
 
 	int CAxis::ValueToReadableString(TLogValue logValue,PTCHAR buffer) const{
@@ -949,10 +1082,15 @@ namespace Utils{
 		while (d.quot>=1000)
 			d=div(d.quot,1000), unitPrefix+=3;
 		int nChars=::wsprintf( buffer, _T("%d.%03d"), d.quot, d.rem );
-		while (buffer[nChars-1]=='0') // removing trail zeroes
+		while (buffer[nChars-1]=='0') // removing tail zeroes
 			nChars--;
-		nChars-=buffer[nChars-1]=='.'; // removing trail floating point
-		return	nChars+::wsprintf( buffer+nChars, _T(" %c%c"), unitPrefixes[unitPrefix], unit );
+		nChars-=buffer[nChars-1]=='.'; // removing tail floating point
+		buffer[nChars++]=' ';
+		buffer[nChars++]=unitPrefixes[unitPrefix];
+		if (unit)
+			buffer[nChars++]=unit;
+		buffer[nChars]='\0';
+		return nChars;
 	}
 
 	CString CAxis::ValueToReadableString(TLogValue logValue) const{
@@ -977,13 +1115,6 @@ namespace Utils{
 	}
 
 	const TCHAR CTimeline::TimePrefixes[]=_T("nnnµµµmmm   "); // nano, micro, milli, no-prefix
-
-	void CTimeline::Draw(HDC dc,const CRideFont &font,PLogTime pOutVisibleStart,PLogTime pOutVisibleEnd){
-		// draws a HORIZONTAL Timeline starting at current origin
-		CRect rcClient;
-		::GetClientRect( ::WindowFromDC(dc), &rcClient );
-		__super::Draw( dc, rcClient.Width(), font, 0, nullptr, pOutVisibleStart, pOutVisibleEnd );
-	}
 
 
 
