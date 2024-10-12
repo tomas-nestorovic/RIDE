@@ -111,20 +111,7 @@ using namespace Charting;
 						p.params.locker.Unlock();
 						if (visible.tStart<0 && visible.tEnd<0) // window closing?
 							break;
-						::SetBkMode( dc, TRANSPARENT );
-						const struct TTimelineDrawing{
-							const Utils::CTimeline &timeline;
-							const HDC dc;
-							const int i;
-							inline TTimelineDrawing(HDC dc,const Utils::CTimeline &timeline)
-								: timeline(timeline) , dc(dc) , i(timeline.BeginDraw(dc)) {
-							}
-							inline ~TTimelineDrawing(){
-								timeline.EndDraw( dc, i );
-							}
-						} dcState0( dc, te.timeline );
-						const Utils::CRideFont &font=Utils::CRideFont::Std;
-						::SelectObject( dc, font );
+						const auto &&g=te.timeline.CreateGraphics(dc);
 						const TLogTime iwTimeDefaultHalf=tr.GetCurrentProfile().iwTimeDefault/2;
 						bool continuePainting=true;
 						// . drawing inspection windows (if any)
@@ -134,34 +121,30 @@ using namespace Charting;
 							// : drawing visible inspection windows (avoiding the GDI coordinate limitations by moving the viewport origin)
 							PCInspectionWindow piw=te.inspectionWindows+L-1; // "-1" = the End of the previous is the start for the next
 							RECT rc={ te.timeline.GetClientUnits(piw++->tEnd), 1, 0, IW_HEIGHT };
-							const auto dcSettings0=::SaveDC(dc);
-								do{
-									rc.right=te.timeline.GetClientUnits(piw->tEnd);
-									EXCLUSIVELY_LOCK(p.params);
-										if ( continuePainting=p.params.id==id ){
-											::FillRect( dc, &rc, iwBrushes[piw->isBad][L++&1] );
-											#ifdef _DEBUG
-												TCHAR uid[8];
-												::DrawText( dc, _itot(piw->uid%100,uid,10), -1, &rc, DT_SINGLELINE|DT_CENTER );
-											#endif
-										}
-									rc.left=rc.right;
-								}while (continuePainting && piw++->tEnd<visible.tEnd);
-							::RestoreDC( dc, dcSettings0 );
+							do{
+								rc.right=te.timeline.GetClientUnits(piw->tEnd);
+								EXCLUSIVELY_LOCK(p.params);
+									if ( continuePainting=p.params.id==id ){
+										::FillRect( dc, &rc, iwBrushes[piw->isBad][L++&1] );
+										#ifdef _DEBUG
+											TCHAR uid[8];
+											::DrawText( dc, _itot(piw->uid%100,uid,10), -1, &rc, DT_SINGLELINE|DT_CENTER );
+										#endif
+									}
+								rc.left=rc.right;
+							}while (continuePainting && piw++->tEnd<visible.tEnd);
 							if (!continuePainting) // new paint request?
 								continue;
 						}
 						// . drawing ParseEvents
 						if (te.IsFeatureShown(TCursorFeatures::STRUCT)){
 							const auto &peList=te.GetParseEvents();
-							const Utils::CRideFont &font=Utils::CRideFont::Std;
 							const auto dcSettings0=::SaveDC(dc);
-								::SelectObject( dc, font );
 								::SelectObject( dc, Utils::CRidePen::BlackHairline );
 								::SetBkMode( dc, OPAQUE );
 								static constexpr TCHAR ByteInfoFormat[]=_T("%c\n$%02X");
 								TCHAR label[80];
-								const SIZE byteInfoSizeMin=font.GetTextSize(  label,  ::wsprintf( label, ByteInfoFormat, 'M', 255 )  );
+								const SIZE byteInfoSizeMin=te.timeline.font.GetTextSize(  label,  ::wsprintf( label, ByteInfoFormat, 'M', 255 )  );
 								const int nUnitsPerByte=Utils::LogicalUnitScaleFactor*te.timeline.GetUnitCount( CImage::GetActive()->EstimateNanosecondsPerOneByte() );
 								const enum{ BI_NONE, BI_MINIMAL, BI_FULL } showByteInfo = nUnitsPerByte>byteInfoSizeMin.cx ? BI_FULL : nUnitsPerByte>1 ? BI_MINIMAL : BI_NONE;
 								for( auto it=peList.GetIterator(); continuePainting&&it; ){
@@ -169,20 +152,19 @@ using namespace Charting;
 									if (const auto ti=pe->Add(iwTimeDefaultHalf).Intersect(visible)){ // offset ParseEvent visible?
 										const int xa=te.timeline.GetClientUnits(ti.tStart), xz=te.timeline.GetClientUnits(ti.tEnd);
 										RECT rcLabel={ te.timeline.GetClientUnits(pe->tStart+iwTimeDefaultHalf), -1000, xz, -EVENT_HEIGHT-3 };
-										p.params.locker.Lock();
+								{		EXCLUSIVELY_LOCK(p.params);
 											if ( continuePainting=p.params.id==id ){
 												::SelectObject( dc, parseEventBrushes[pe->type] );
 												::PatBlt( dc, xa,-EVENT_HEIGHT, xz-xa,EVENT_HEIGHT, 0xa000c9 ); // ternary raster operation "dest AND pattern"
 												::SetTextColor( dc, TParseEvent::TypeColors[pe->type] );
 												::DrawText( dc, pe->GetDescription(),-1, &rcLabel, DT_LEFT|DT_BOTTOM|DT_SINGLELINE );
 											}
-										p.params.locker.Unlock();
-										if (!continuePainting) // new paint request?
+								}		if (!continuePainting) // new paint request?
 											break;
 										if (showByteInfo && pe->IsDataAny()){
 											auto pbi=pe.data->byteInfos;
 											while (pbi->tStart+iwTimeDefaultHalf<ti.tStart) pbi++; // skip invisible part
-											rcLabel.bottom-=font.charHeight, rcLabel.top=rcLabel.bottom-byteInfoSizeMin.cy;
+											rcLabel.bottom-=te.timeline.font.charHeight, rcLabel.top=rcLabel.bottom-byteInfoSizeMin.cy;
 											while (continuePainting && pbi->tStart<ti.tEnd && (PCBYTE)pbi-(PCBYTE)pe.data<pe->size){ // draw visible part
 												rcLabel.left=te.timeline.GetClientUnits(pbi->tStart+iwTimeDefaultHalf);
 												rcLabel.right=rcLabel.left+1000;
@@ -216,39 +198,31 @@ using namespace Charting;
 						}
 						// . drawing Regions
 						if (te.IsFeatureShown(TCursorFeatures::REGIONS) && te.pRegions){
-							const auto dcSettings0=::SaveDC(dc);
-								RECT rc={ 0, TIME_HEIGHT, 0, TIME_HEIGHT+6 };
-								for( DWORD iRegion=0; continuePainting&&iRegion<te.nRegions; iRegion++ ){
-									const TRegion &rgn=te.pRegions[iRegion];
-									if (const auto ti=rgn.Add(iwTimeDefaultHalf).Intersect(visible)){ // offset Region visible?
-										rc.left=te.timeline.GetClientUnits(ti.tStart);
-										rc.right=te.timeline.GetClientUnits(ti.tEnd);
-										const Utils::CRideBrush brush(rgn.color);
-										EXCLUSIVELY_LOCK(p.params);
-											if ( continuePainting=p.params.id==id )
-												::FillRect( dc, &rc, brush );
-									}
+							for( DWORD iRegion=0; continuePainting&&iRegion<te.nRegions; iRegion++ ){
+								const TRegion &rgn=te.pRegions[iRegion];
+								if (const auto ti=rgn.Add(iwTimeDefaultHalf).Intersect(visible)){ // offset Region visible?
+									EXCLUSIVELY_LOCK(p.params);
+									if ( continuePainting=p.params.id==id )
+										g.Rect( ti.tStart, ti.tEnd, TIME_HEIGHT, TIME_HEIGHT+6, Utils::CRideBrush(rgn.color) );
 								}
-							::RestoreDC( dc, dcSettings0 );
+							}
 							if (!continuePainting) // new paint request?
 								continue;
 						}
 						// . drawing Index pulses
-						BYTE i=0;
-						while (i<tr.GetIndexCount() && tr.GetIndexTime(i)<visible.tStart) // skipping invisible indices before visible region
-							i++;
 						const auto dcSettings0=::SaveDC(dc);
 							::SelectObject( dc, te.penIndex );
 							::SetTextColor( dc, COLOR_BLUE );
-							::SelectObject( dc, Utils::CRideFont::Std );
-							for( TCHAR buf[16]; continuePainting && i<tr.GetIndexCount() && tr.GetIndexTime(i)<visible.tEnd; i++ ){ // visible indices
-								const int x=te.timeline.GetClientUnits( tr.GetIndexTime(i) );
+							for( BYTE i=0; continuePainting && i<tr.GetIndexCount() && tr.GetIndexTime(i)<visible.tEnd; i++ ){ // visible indices
+								const TLogTime tIndex=tr.GetIndexTime(i);
+								if (!visible.Contains(tIndex))
+									continue; // skip invisible index
 								EXCLUSIVELY_LOCK(p.params);
-									if ( continuePainting=p.params.id==id ){
-										::MoveToEx( dc, x,-INDEX_HEIGHT, nullptr );
-										::LineTo( dc, x,INDEX_HEIGHT );
-										::TextOut( dc, x+4,-INDEX_HEIGHT, buf, ::wsprintf(buf,_T("Index %d"),i) );
-									}
+								if ( continuePainting=p.params.id==id )
+									g.PerpLineAndText(
+										tr.GetIndexTime(i), INDEX_HEIGHT, -INDEX_HEIGHT, 0,
+										_T("Index %d"), i
+									);
 							}
 						::RestoreDC(dc,dcSettings0);
 						if (!continuePainting) // new paint request?
@@ -256,12 +230,9 @@ using namespace Charting;
 						// . drawing Times
 						tr.SetCurrentTime(visible.tStart-1);
 						while (continuePainting && tr.GetCurrentTime()<visible.tEnd){
-							const int x=te.timeline.GetClientUnits( tr.ReadTime() );
 							EXCLUSIVELY_LOCK(p.params);
-								if ( continuePainting=p.params.id==id ){
-									::MoveToEx( dc, x,0, nullptr );
-									::LineTo( dc, x,TIME_HEIGHT );
-								}
+							if ( continuePainting=p.params.id==id )
+								g.PerpLine( tr.ReadTime(), TIME_HEIGHT );
 						}
 						if (!continuePainting) // new paint request?
 							continue;
@@ -322,67 +293,29 @@ using namespace Charting;
 				// paints CursorTime by inverting pixels; painting twice the same CursorTime shows nothing
 				if ((show^cursorFeaturesShown)!=0 && cursorFeatures!=0){
 					CClientDC dc(this);
-					PrepareDC(&dc);
-					dc.SetViewportOrg( 0, dc.GetViewportOrg().y );
+					const auto &&g=timeline.CreateGraphics(dc);
 					::SetROP2( dc, R2_NOT );
-					const auto &font=Utils::CRideFont::Std;
-					const HDC dcMem=::CreateCompatibleDC(dc);
-						::SetTextColor( dcMem, COLOR_WHITE );
-						::SetBkMode( dcMem, TRANSPARENT );
-						Utils::ScaleLogicalUnit(dcMem);
-						const HGDIOBJ hFont0=::SelectObject( dcMem, font );
-							TCHAR label[32];
-							const int x=timeline.GetUnitCount(cursorTime-scrollTime);
-							// . painting vertical line to indicate current position on the Timeline
-							if (IsFeatureShown(TCursorFeatures::TIME)){
-								::MoveToEx( dc, x, -500, nullptr );
-								::LineTo( dc, x, 500 );
-								const int nLabelChars=timeline.ValueToReadableString(cursorTime,label);
-								const SIZE sz=font.GetTextSize( label, nLabelChars );
-								const HGDIOBJ hBmp0=::SelectObject( dcMem, ::CreateCompatibleBitmap(dc,sz.cx,sz.cy) );
-									::TextOut( dcMem, 0,0, label,nLabelChars );
-									::BitBlt( dc, x+2,-80, sz.cx,sz.cy, dcMem, 0,0, SRCINVERT );
-								::DeleteObject( ::SelectObject(dcMem,hBmp0) );
-							}
-							// . painting space between neighboring Times at current position
-							if (IsFeatureShown(TCursorFeatures::SPACING) && cursorTime<timeline.GetLength()){
-								tr.SetCurrentTime(cursorTime);
-								tr.TruncateCurrentTime();
-								const TLogTime a=tr.GetCurrentTime(), z=tr.ReadTime();
-								const int xa=timeline.GetUnitCount(a-scrollTime), xz=timeline.GetUnitCount(z-scrollTime);
-								const int nLabelChars=timeline.ValueToReadableString(z-a,label);
-								const SIZE sz=font.GetTextSize( label, nLabelChars );
-								const HGDIOBJ hBmp0=::SelectObject( dcMem, ::CreateCompatibleBitmap(dc,sz.cx,sz.cy) );
-									::TextOut( dcMem, 0,0, label,nLabelChars );
-									::BitBlt( dc, (xz+xa-sz.cx)/2,SPACING_HEIGHT+LINE_EXTENSION/2, sz.cx,sz.cy, dcMem, 0,0, SRCINVERT );
-								::DeleteObject( ::SelectObject(dcMem,hBmp0) );
-								::MoveToEx( dc, xa, TIME_HEIGHT, nullptr );
-								::LineTo( dc, xa, SPACING_HEIGHT+LINE_EXTENSION );
-								::MoveToEx( dc, xz, TIME_HEIGHT, nullptr );
-								::LineTo( dc, xz, SPACING_HEIGHT+LINE_EXTENSION );
-								::MoveToEx( dc, xa-LINE_EXTENSION, SPACING_HEIGHT, nullptr );
-								::LineTo( dc, xz+LINE_EXTENSION, SPACING_HEIGHT );
-							}
-							// . painting inspection window size at current position
-							if (IsFeatureShown(TCursorFeatures::INSPECT) && cursorTime<timeline.GetLength()){
-								const int i=GetInspectionWindow(cursorTime);
-								const TLogTime a=inspectionWindows[i-1].tEnd, z=inspectionWindows[i].tEnd;
-								const int xa=timeline.GetUnitCount(a-scrollTime), xz=timeline.GetUnitCount(z-scrollTime);
-								const int nLabelChars=timeline.ValueToReadableString(z-a,label);
-								const SIZE sz=font.GetTextSize( label, nLabelChars );
-								const HGDIOBJ hBmp0=::SelectObject( dcMem, ::CreateCompatibleBitmap(dc,sz.cx,sz.cy) );
-									::TextOut( dcMem, 0,0, label,nLabelChars );
-									::BitBlt( dc, (xz+xa-sz.cx)/2,IW_TIME_HEIGHT+LINE_EXTENSION/2, sz.cx,sz.cy, dcMem, 0,0, SRCINVERT );
-								::DeleteObject( ::SelectObject(dcMem,hBmp0) );
-								::MoveToEx( dc, xa, IW_HEIGHT, nullptr );
-								::LineTo( dc, xa, IW_TIME_HEIGHT+LINE_EXTENSION );
-								::MoveToEx( dc, xz, IW_HEIGHT, nullptr );
-								::LineTo( dc, xz, IW_TIME_HEIGHT+LINE_EXTENSION );
-								::MoveToEx( dc, xa-LINE_EXTENSION, IW_TIME_HEIGHT, nullptr );
-								::LineTo( dc, xz+LINE_EXTENSION, IW_TIME_HEIGHT );
-							}
-						::SelectObject( dcMem, hFont0 );
-					::DeleteDC(dcMem);
+					// . painting vertical line to indicate current position on the Timeline
+					if (IsFeatureShown(TCursorFeatures::TIME))
+						g.PerpLineAndTextIndirect(
+							cursorTime, -500, 500, -80, timeline.font, timeline.ValueToReadableString(cursorTime)
+						);
+					// . painting space between neighboring Times at current position
+					if (IsFeatureShown(TCursorFeatures::SPACING) && cursorTime<timeline.GetLength()){
+						tr.SetCurrentTime(cursorTime), tr.TruncateCurrentTime();
+						const TLogTime a=tr.GetCurrentTime(), z=tr.ReadTime();
+						g.DimensioningIndirect(
+							a, z, TIME_HEIGHT, SPACING_HEIGHT, timeline.ValueToReadableString(z-a), LINE_EXTENSION
+						);
+					}
+					// . painting inspection window size at current position
+					if (IsFeatureShown(TCursorFeatures::INSPECT) && cursorTime<timeline.GetLength()){
+						const int i=GetInspectionWindow(cursorTime);
+						const TLogTime a=inspectionWindows[i-1].tEnd, z=inspectionWindows[i].tEnd;
+						g.DimensioningIndirect(
+							a, z, IW_HEIGHT, IW_TIME_HEIGHT, timeline.ValueToReadableString(z-a), LINE_EXTENSION
+						);
+					}
 				}
 				cursorFeaturesShown=show;
 			}

@@ -156,6 +156,11 @@ namespace Utils{
 		return GetTextSize( text, ::lstrlen(text) );
 	}
 
+	SIZE CRideFont::GetTextSize(const CString &text) const{
+		// determines and returns the Size of the specified Text using using this font face
+		return GetTextSize( text, text.GetLength() );
+	}
+
 	const CRideFont CRideFont::Small(FONT_MS_SANS_SERIF,70,false,false);
 	const CRideFont CRideFont::Std(FONT_MS_SANS_SERIF,90,false,false);
 	const CRideFont CRideFont::StdBold(FONT_MS_SANS_SERIF,90,true,false);
@@ -828,6 +833,22 @@ namespace Utils{
 
 
 
+	CViewportOrgBackup::CViewportOrgBackup(HDC dc)
+		// ctor
+		: TViewportOrg(dc)
+		, dc(dc) {
+	}
+
+	CViewportOrgBackup::~CViewportOrgBackup(){
+		// dtor
+		::SetViewportOrgEx( dc, x, y, nullptr );
+	}
+
+
+
+
+
+
 
 
 	CAxis::TDcState::TDcState(HDC dc,int nVisibleUnitsA,int nDrawnUnitsA)
@@ -866,16 +887,98 @@ namespace Utils{
 
 
 
+	CAxis::CGraphics::CGraphics(HDC dc,const CAxis &axis)
+		// ctor
+		// - initialization
+		: axis(axis) , dc(dc) , iSavedDc(axis.dcLastDrawing.ApplyTo(dc)) {
+		::SelectObject( dc, axis.font );
+		::SetBkMode( dc, TRANSPARENT );
+		Utils::ScaleLogicalUnit(dc);
+		// - creating and initializing auxilliary DC
+		dcMem.Attach( ::CreateCompatibleDC(dc) );
+		::SetTextColor( dcMem, COLOR_WHITE );
+		::SetBkMode( dcMem, TRANSPARENT );
+		::SelectObject( dcMem, axis.font );
+		Utils::ScaleLogicalUnit(dcMem);
+	}
+
+	CAxis::CGraphics::~CGraphics(){
+		// dtor
+		axis.dcLastDrawing.RevertFrom( dc, iSavedDc );
+	}
+
+	int CAxis::CGraphics::PerpLine(TLogValue v,int nUnitsFrom,int nUnitsTo) const{
+		// draws a line perpendicular to the Axis
+		const int x=axis.GetClientUnits(v);
+		::MoveToEx( dc, x,nUnitsFrom, nullptr );
+		::LineTo( dc, x,nUnitsTo );
+		return x;
+	}
+
+	int CAxis::CGraphics::PerpLine(TLogValue v,int nUnitsLength) const{
+		// draws a line perpendicular to the Axis
+		return PerpLine( v, 0, nUnitsLength );
+	}
+
+	int CAxis::CGraphics::PerpLineAndText(TLogValue v,int nUnitsFrom,int nUnitsTo,int nUnitsLabelOffset,LPCTSTR format,...) const{
+		// draws a line perpendicular to the Axis, and text description
+		const int x=PerpLine( v, nUnitsFrom, nUnitsTo );
+		va_list argList;
+		va_start( argList, format );
+			TCHAR text[80];
+			::TextOut( dc, x+4,nUnitsTo+nUnitsLabelOffset, text,::wvsprintf(text,format,argList) );
+		va_end(argList);
+		return x;
+	}
+
+	int CAxis::CGraphics::TextIndirect(int nUnitsX,int nUnitsY,const CRideFont &font,const CString &text,int rop) const{
+		// draws text using an auxilliary bitmap
+		const SIZE sz=font.GetTextSize(text);
+		const HGDIOBJ hBmp0=::SelectObject( dcMem, ::CreateCompatibleBitmap(dc,sz.cx,sz.cy) );
+			const HGDIOBJ hFont0=::SelectObject( dcMem, font );
+				::TextOut( dcMem, 0,0, text,text.GetLength() );
+				::BitBlt( dc, nUnitsX+2,nUnitsY, sz.cx,sz.cy, dcMem, 0,0, rop );
+			::SelectObject( dcMem, hFont0 );
+		::DeleteObject( ::SelectObject(dcMem,hBmp0) );
+		return nUnitsX;
+	}
+
+	int CAxis::CGraphics::PerpLineAndTextIndirect(TLogValue v,int nUnitsFrom,int nUnitsTo,int nUnitsLabel,const CRideFont &font,const CString &text,int rop) const{ // perpendicular line with text description
+		// draws a line perpendicular to the Axis, and text description
+		return TextIndirect(
+			PerpLine( v, nUnitsFrom, nUnitsTo ),
+			nUnitsLabel, font, text, rop
+		);
+	}
+
+	void CAxis::CGraphics::DimensioningIndirect(TLogValue vStart,TLogValue vEnd,int nUnitsFrom,int nUnitsTo,const CString &text,int nUnitsExtra,int rop) const{
+		// draws technical dimensioning on the Axis
+		const int xa=PerpLine(vStart,nUnitsFrom,nUnitsTo+nUnitsExtra), xz=PerpLine(vEnd,nUnitsFrom,nUnitsTo+nUnitsExtra);
+		const SIZE sz=axis.font.GetTextSize(text);
+		TextIndirect( (xa+xz-sz.cx)/2, nUnitsTo+nUnitsExtra/2, axis.font, text, rop );
+		::MoveToEx( dc, xa-nUnitsExtra, nUnitsTo, nullptr );
+		::LineTo( dc, xz+nUnitsExtra, nUnitsTo );
+	}
+
+	void CAxis::CGraphics::Rect(TLogValue vStart,TLogValue vEnd,int nUnitsTop,int nUnitsBottom,HBRUSH brush) const{
+		// draws a rectangle
+		const RECT rc={ axis.GetClientUnits(vStart), nUnitsTop, axis.GetClientUnits(vEnd), nUnitsBottom };
+		::FillRect( dc, &rc, brush );
+	}
+
+
+
+
 	const TCHAR CAxis::NoPrefixes[12]={};
 	const TCHAR CAxis::CountPrefixes[]=_T("   kkkMMMBBB"); // no-prefix, thousand, million, billion
 	const CRideFont CAxis::FontWingdings( FONT_WINGDINGS, 120 );
 
-	CAxis::CAxis(TLogValue logLength,TLogTime logValuePerUnit,TCHAR unit,LPCTSTR unitPrefixes,BYTE initZoomFactor,TVerticalAlign ticksAndLabelsAlign)
+	CAxis::CAxis(TLogValue logLength,TLogTime logValuePerUnit,TCHAR unit,LPCTSTR unitPrefixes,BYTE initZoomFactor,TVerticalAlign ticksAndLabelsAlign,const CRideFont &font)
 		// ctor
 		: logLength(logLength+1) , logValuePerUnit(logValuePerUnit)
 		, logCursorPos(-1) // cursor indicator hidden
 		, ticksAndLabelsAlign(ticksAndLabelsAlign)
-		, unit(unit) , unitPrefixes(unitPrefixes)
+		, unit(unit) , unitPrefixes(unitPrefixes) , font(font)
 		, dcLastDrawing(nullptr,0,0)
 		, zoomFactor(initZoomFactor) {
 		ASSERT( unitPrefixes!=nullptr ); // use NoPrefixes instead of Nullptr
@@ -909,8 +1012,7 @@ namespace Utils{
 		// - drawing it
 		logCursorPos=-1; // cursor indicator hidden
 		dcLastDrawing=TDcState( dc, GetUnitCount(visible.a), GetUnitCount(draw.a) ); // saving the current state of DC for any subsequent drawing (e.g. position indicator) to match the Axis
-		const auto dcState0=BeginDraw(dc);
-			::SelectObject( dc, font );
+		const auto &&g=CreateGraphics(dc);
 			int smallMarkLength=0, bigMarkLength=0, labelY=0;
 			switch (ticksAndLabelsAlign){
 				case TVerticalAlign::TOP:
@@ -926,30 +1028,23 @@ namespace Utils{
 			// . drawing secondary time marks on the Axis
 			if (smallMarkLength)
 				if (const TLogValue intervalSmall=intervalBig/10)
-					for( TLogValue v=draw.a; v<draw.z; v+=intervalSmall ){
-						const int x=GetClientUnits(v);
-						::MoveToEx( dc, x,0, nullptr );
-						::LineTo( dc, x,smallMarkLength );
-					}
+					for( TLogValue v=draw.a; v<draw.z; v+=intervalSmall )
+						g.PerpLine( v, smallMarkLength );
 			// . drawing primary value marks on the Axis along with respective Labels
 			if (bigMarkLength)
 				for( TLogValue v=draw.a; v<=draw.z; v+=intervalBig ){
-					const int x=GetClientUnits(v);
+					const int x=g.PerpLine( v, bigMarkLength );
 					if (primaryGridLength && v>draw.a){ // it's undesired to draw a grid at ValueA, e.g. when drawing two orthogonal Axes to divide a plane (one overdraws the other)
 						const HGDIOBJ hPen0=::SelectObject( dc, hPrimaryGridPen );
-							::MoveToEx( dc, x,primaryGridLength, nullptr );
-							::LineTo( dc, x,0 );
+							g.PerpLine( v, primaryGridLength );
 						::SelectObject(dc,hPen0);
-					}else
-						::MoveToEx( dc, x,0, nullptr );
-					::LineTo( dc, x,bigMarkLength );
+					}
 					::TextOut(
 						dc,
 						x, labelY,
 						label, label.Format( v/k, unitPrefixes[iUnitPrefix], unit )
 					);
 				}
-		EndDraw( dc, dcState0 );
 	}
 
 	void CAxis::Draw(HDC dc,TLogValue from,long nVisiblePixels,const CRideFont &font,int primaryGridLength,HPEN hPrimaryGridPen,PLogInterval pOutDrawn){
@@ -969,10 +1064,9 @@ namespace Utils{
 	void CAxis::DrawScrolled(HDC dc,long scrollPos,long nVisiblePixels,const CRideFont &font,int primaryGridLength,HPEN hPrimaryGridPen,PLogInterval pOutDrawn){
 		// draws an Axis starting at [0,Origin.Y], while '-Origin.X' determines zero-based starting Value; returns index into the UnitPrefixes indicating which prefix was used to draw the Axis
 		const TLogValue from=PixelToValue(scrollPos);
-		const TViewportOrg org(dc);
+		const CViewportOrgBackup org(dc);
 		::SetViewportOrgEx( dc, org.x+scrollPos, org.y, nullptr );
-			Draw( dc, from, nVisiblePixels, font, primaryGridLength, hPrimaryGridPen, pOutDrawn );
-		::SetViewportOrgEx( dc, org.x, org.y, nullptr );
+		Draw( dc, from, nVisiblePixels, font, primaryGridLength, hPrimaryGridPen, pOutDrawn );
 	}
 
 	void CAxis::DrawScrolled(HDC dc,const CRideFont &font,int primaryGridLength,HPEN hPrimaryGridPen,PLogInterval pOutDrawn){
@@ -1053,21 +1147,17 @@ namespace Utils{
 		// sets logical position of the cursor indicator
 		if (ticksAndLabelsAlign==TVerticalAlign::NONE)
 			return;
-		Utils::ScaleLogicalUnit(dc);
-		const int iSavedDc=BeginDraw( dc );
-			const HGDIOBJ hFont0=::SelectObject( dc, FontWingdings );
-				::SetROP2( dc, R2_NOT );
-				::SetBkMode( dc, TRANSPARENT );
-				// . erasing previously drawn cursor, if any
-				if (logCursorPos>=0)
-					drawCursorAt( dc, GetClientUnits(logCursorPos), ticksAndLabelsAlign==TVerticalAlign::TOP );
-				// . drawing cursor at new position
-				if (0<=newLogPos && newLogPos<logLength)
-					drawCursorAt( dc, GetClientUnits(  logCursorPos=newLogPos  ), ticksAndLabelsAlign==TVerticalAlign::TOP );
-				else
-					logCursorPos=-1;
-			::SelectObject(dc,hFont0);
-		EndDraw( dc, iSavedDc );
+		const auto &&g=CreateGraphics(dc);
+			::SelectObject( dc, FontWingdings );
+			::SetROP2( dc, R2_NOT );
+			// . erasing previously drawn cursor, if any
+			if (logCursorPos>=0)
+				drawCursorAt( dc, GetClientUnits(logCursorPos), ticksAndLabelsAlign==TVerticalAlign::TOP );
+			// . drawing cursor at new position
+			if (0<=newLogPos && newLogPos<logLength)
+				drawCursorAt( dc, GetClientUnits(  logCursorPos=newLogPos  ), ticksAndLabelsAlign==TVerticalAlign::TOP );
+			else
+				logCursorPos=-1;
 	}
 
 	void CAxis::DrawCursorPos(HDC dc,const POINT &ptClient){

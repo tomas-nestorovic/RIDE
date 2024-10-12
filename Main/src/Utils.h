@@ -223,6 +223,7 @@ namespace Utils{
 
 		SIZE GetTextSize(LPCTSTR text,int textLength) const;
 		SIZE GetTextSize(LPCTSTR text) const;
+		SIZE GetTextSize(const CString &text) const;
 	};
 
 	class CRideContextMenu sealed:public ::CMenu{
@@ -479,6 +480,13 @@ namespace Utils{
 		inline TViewportOrg(HDC dc){ ::GetViewportOrgEx(dc,this); }
 	};
 
+	class CViewportOrgBackup:public TViewportOrg{
+		const HDC dc;
+	public:
+		CViewportOrgBackup(HDC dc);
+		~CViewportOrgBackup();
+	};
+
 	struct TClientRect:CRect{
 		inline TClientRect(HWND hWnd){ ::GetClientRect(hWnd,this); }
 	};
@@ -506,6 +514,24 @@ namespace Utils{
 
 		TLogValue PixelToValue(long pixel) const;
 	public:
+		class CGraphics{
+			const CAxis &axis;
+			const HDC dc;
+			const int iSavedDc;
+			CDC dcMem;
+		public:
+			CGraphics(HDC dc,const CAxis &axis);
+			~CGraphics();
+
+			int PerpLine(TLogValue v,int nUnitsFrom,int nUnitsTo) const; // perpendicular line
+			int PerpLine(TLogValue v,int nUnitsLength) const; // perpendicular line
+			int __cdecl PerpLineAndText(TLogValue v,int nUnitsFrom,int nUnitsTo,int nUnitsLabelOffset,LPCTSTR format,...) const; // perpendicular line with text description
+			int TextIndirect(int nUnitsX,int nUnitsY,const CRideFont &font,const CString &text,int rop=SRCINVERT) const;
+			int PerpLineAndTextIndirect(TLogValue v,int nUnitsFrom,int nUnitsTo,int nUnitsLabel,const CRideFont &font,const CString &text,int rop=SRCINVERT) const; // perpendicular line with text description
+			void DimensioningIndirect(TLogValue vStart,TLogValue vEnd,int nUnitsFrom,int nUnitsTo,const CString &text,int nUnitsExtra=5,int rop=SRCINVERT) const;
+			void Rect(TLogValue vStart,TLogValue vEnd,int nUnitsTop,int nUnitsBottom,HBRUSH brush) const;
+		};
+
 		const enum TVerticalAlign{
 			NONE,
 			TOP,
@@ -514,18 +540,18 @@ namespace Utils{
 		const TLogValue logValuePerUnit;
 		const TCHAR unit;
 		const LPCTSTR unitPrefixes;
+		const CRideFont &font;
 
 		static const TCHAR NoPrefixes[];
 		static const TCHAR CountPrefixes[];
 		static const CRideFont FontWingdings;
 
-		CAxis(TLogValue logLength,TLogTime logValuePerUnit,TCHAR unit,LPCTSTR unitPrefixes,BYTE initZoomFactor,TVerticalAlign ticksAndLabelsAlign=TVerticalAlign::TOP);
+		CAxis(TLogValue logLength,TLogTime logValuePerUnit,TCHAR unit,LPCTSTR unitPrefixes,BYTE initZoomFactor,TVerticalAlign ticksAndLabelsAlign=TVerticalAlign::TOP,const CRideFont &font=CRideFont::Std);
 
 		// any value that is 'long' is in device pixels (incl. 'POINT' and 'RECT' structs!)
 		// any value that is 'int' is in device units (e.g. for drawing)
 		// any value that is 'TLogValue' is in Axis units
-		inline int BeginDraw(HDC dc) const{ return dcLastDrawing.ApplyTo(dc); }
-		inline void EndDraw(HDC dc,int iSavedDc) const{ dcLastDrawing.RevertFrom(dc,iSavedDc); }
+		inline CGraphics CreateGraphics(HDC dc) const{ return CGraphics(dc,*this); }
 		void Draw(HDC dc,TLogInterval visible,const CRideFont &font,int primaryGridLength=0,HPEN hPrimaryGridPen=nullptr,PLogInterval pOutDrawn=nullptr);
 		void Draw(HDC dc,TLogValue from,long nVisiblePixels,const CRideFont &font,int primaryGridLength=0,HPEN hPrimaryGridPen=nullptr,PLogInterval pOutDrawn=nullptr);
 		void DrawWhole(HDC dc,const CRideFont &font,int primaryGridLength=0,HPEN hPrimaryGridPen=nullptr);

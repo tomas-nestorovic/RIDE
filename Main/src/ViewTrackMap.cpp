@@ -435,7 +435,7 @@
 			::TabbedTextOut( dc, 0,VIEW_PADDING, _T("\tCylinder\tHead"),-1, 2,Tabs, 0 );
 			if (showTimed){
 				const Utils::CRideFont &font=Utils::CRideFont::StdBold;
-				const Utils::TViewportOrg org(dc);
+				const Utils::CViewportOrgBackup org(dc);
 				const long timelinePositionX=org.x+Utils::RoundUpToMuls<long>(Utils::LogicalUnitScaleFactor*SECTOR1_X,Utils::LogicalUnitScaleFactor.quot);
 				pDC->SetViewportOrg( timelinePositionX, org.y+VIEW_PADDING+font.charHeight );
 					Utils::CTimeline(
@@ -443,7 +443,6 @@
 					).DrawScrolled(
 						dc, -std::min(timelinePositionX,0L), -1, font
 					);
-				pDC->SetViewportOrg(org);
 			}else
 				::TabbedTextOut( dc, 0,VIEW_PADDING, _T("\t\t\tSectors"),-1, 3,Tabs, 0 );
 		::SelectObject(dc,font0);
