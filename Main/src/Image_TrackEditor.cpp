@@ -107,7 +107,6 @@ using namespace Charting;
 						p.params.locker.Lock();
 							const WORD id=p.params.id;
 							const TLogTimeInterval visible=p.params.visible;
-							te.PrepareDC(&dc);
 						p.params.locker.Unlock();
 						if (visible.tStart<0 && visible.tEnd<0) // window closing?
 							break;
@@ -442,22 +441,6 @@ using namespace Charting;
 				return TRUE;
 			}
 
-			void PrepareDC(CDC *pDC) const{
-				//
-				// . scaling
-				Utils::ScaleLogicalUnit(*pDC);
-				// . changing the viewport
-				CRect rc;
-				GetClientRect(&rc);
-				pDC->SetViewportOrg( 0, rc.Height()/2 );
-			}
-
-			void OnPrepareDC(CDC *pDC,CPrintInfo *pInfo=nullptr) override{
-				//
-				__super::OnPrepareDC(pDC,pInfo);
-				PrepareDC(pDC);
-			}
-
 			void OnDraw(CDC *pDC) override{
 				// drawing the LogicalTimes
 				// . hiding CursorTime information
@@ -465,6 +448,7 @@ using namespace Charting;
 				// . drawing the Timeline
 				const HDC dc=*pDC;
 				::SetBkMode( dc, TRANSPARENT );
+				::SetViewportOrgEx( dc, 0, Utils::TClientRect(m_hWnd).Height()/2, nullptr );
 				EXCLUSIVELY_LOCK(painter.params);
 					painter.params.id++;
 					TLogInterval drawn;
