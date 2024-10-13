@@ -858,15 +858,14 @@ namespace Utils{
 		, mAdvanced(dc) {
 		const int d=LogicalUnitScaleFactor.quot*LogicalUnitScaleFactor.rem;
 		nUnitsAtOrigin=nDrawnUnitsA/d*d;
+		const long nPixelsInvisible=LogicalUnitScaleFactor*(nUnitsAtOrigin-nVisibleUnitsA);
 		switch (graphicsMode){
 			case GM_COMPATIBLE:
-				ptViewportOrg.x+= LogicalUnitScaleFactor*-nVisibleUnitsA + LogicalUnitScaleFactor*nUnitsAtOrigin;
+				ptViewportOrg.x+=nPixelsInvisible;
 				break;
-			default:{
-				const long nPixelsInvisible=LogicalUnitScaleFactor*-nVisibleUnitsA + LogicalUnitScaleFactor*nUnitsAtOrigin;
+			default:
 				mAdvanced=TGdiMatrix(-nPixelsInvisible,0).Combine(mAdvanced);
 				break;
-			}
 		}
 	}
 
@@ -970,7 +969,7 @@ namespace Utils{
 
 
 	const TCHAR CAxis::NoPrefixes[12]={};
-	const TCHAR CAxis::CountPrefixes[]=_T("   kkkMMMBBB"); // no-prefix, thousand, million, billion
+	const TCHAR CAxis::CountPrefixes[]=_T("   kkkMMMGGG"); // no-prefix, thousand, million, billion
 	const CRideFont CAxis::FontWingdings( FONT_WINGDINGS, 120 );
 
 	CAxis::CAxis(TLogValue logLength,TLogTime logValuePerUnit,TCHAR unit,LPCTSTR unitPrefixes,BYTE initZoomFactor,TVerticalAlign ticksAndLabelsAlign,const CRideFont &font)
@@ -1135,7 +1134,7 @@ namespace Utils{
 	}
 
 	static void drawCursorAt(HDC dc,int nUnitsCenter,bool vaTop){
-		POINT arrow[]={ {0,0}, {4,8}, {2,8}, {2,16}, {-2,16}, {-2,8}, {-4,8}, {0,0} };
+		POINT arrow[]={ {0,0}, {4,8}, {2,8}, {2,13}, {-2,13}, {-2,8}, {-4,8}, {0,0} };
 		for each( POINT &pt in arrow ){
 			pt.x+=nUnitsCenter;
 			pt.y=(1-2*vaTop)*(pt.y+2);
@@ -1148,8 +1147,9 @@ namespace Utils{
 		if (ticksAndLabelsAlign==TVerticalAlign::NONE)
 			return;
 		const auto &&g=CreateGraphics(dc);
-			::SelectObject( dc, FontWingdings );
-			::SetROP2( dc, R2_NOT );
+		::SelectObject( dc, FontWingdings );
+		::SetROP2( dc, R2_NOT );
+		const HGDIOBJ hPen0=::SelectObject( dc, ::CreatePen(PS_SOLID,1,COLOR_BLACK) );
 			// . erasing previously drawn cursor, if any
 			if (logCursorPos>=0)
 				drawCursorAt( dc, GetClientUnits(logCursorPos), ticksAndLabelsAlign==TVerticalAlign::TOP );
@@ -1158,6 +1158,7 @@ namespace Utils{
 				drawCursorAt( dc, GetClientUnits(  logCursorPos=newLogPos  ), ticksAndLabelsAlign==TVerticalAlign::TOP );
 			else
 				logCursorPos=-1;
+		::DeleteObject( ::SelectObject(dc,hPen0) );
 	}
 
 	void CAxis::DrawCursorPos(HDC dc,const POINT &ptClient){
