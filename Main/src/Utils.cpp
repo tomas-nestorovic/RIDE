@@ -864,7 +864,7 @@ namespace Utils{
 				ptViewportOrg.x+=nPixelsInvisible;
 				break;
 			default:
-				mAdvanced=TGdiMatrix(-nPixelsInvisible,0).Combine(mAdvanced);
+				mAdvanced=TGdiMatrix( nPixelsInvisible/LogicalUnitScaleFactor, 0 ).Combine(mAdvanced);
 				break;
 		}
 	}
@@ -873,7 +873,7 @@ namespace Utils{
 		// changes the state of the specified DeviceContext, returning the current back-up identifier for further restoration
 		const int iSavedDc=::SaveDC(dc);
 		::SetGraphicsMode( dc, graphicsMode );
-		::SetWorldTransform( dc, &mAdvanced );
+				::SetWorldTransform( dc, &mAdvanced );
 		::SetViewportOrgEx( dc, ptViewportOrg.x, ptViewportOrg.y, nullptr );
 		return iSavedDc;
 	}

@@ -315,6 +315,7 @@ namespace Charting
 		, xAxis( xMaxOrg, 1, xAxisUnit, xAxisUnitPrefixes, 0, Utils::CAxis::TVerticalAlign::BOTTOM )
 		, yAxis( yMaxOrg, 1, yAxisUnit, yAxisUnitPrefixes, 0, Utils::CAxis::TVerticalAlign::TOP )
 		// - all data shown by default
+		, xAxisFocus( 0, LogValueMax )
 		, percentile(10100) { // invalid, must call SetPercentile !
 		SetPercentile(10000);
 	}
@@ -326,16 +327,16 @@ namespace Charting
 		rcChartBody.InflateRect( Utils::LogicalUnitScaleFactor*-margin.L, Utils::LogicalUnitScaleFactor*-margin.T, Utils::LogicalUnitScaleFactor*-margin.R, Utils::LogicalUnitScaleFactor*-margin.B );
 		const SIZE szChartBody={ rcChartBody.Width(), rcChartBody.Height() };
 		const SIZE szChartBodyUnits={ szChartBody.cx/Utils::LogicalUnitScaleFactor, szChartBody.cy/Utils::LogicalUnitScaleFactor };
+		const TLogValue xAxisVisibleLength=std::min( xAxis.GetLength(), xAxisFocus.GetLength() );
 		const Utils::TGdiMatrix shiftOrigin(
-			//rcChartBody.left, rcChartBody.bottom // in pixels
 			margin.L, margin.T+szChartBodyUnits.cy // in units
 		);
-		xAxis.SetZoomFactor( xAxis.GetZoomFactorToFitWidth(szChartBodyUnits.cx,30) );
-			const float xAxisScale=(float)szChartBodyUnits.cx/xAxis.GetUnitCount();
+		xAxis.SetZoomFactor( xAxis.GetZoomFactorToFitWidth(xAxisVisibleLength,szChartBodyUnits.cx,30) );
+			const float xAxisScale=(float)szChartBodyUnits.cx/xAxis.GetUnitCount(xAxisVisibleLength);
 			::SetWorldTransform( dc,
 				&Utils::TGdiMatrix().Scale( xAxisScale, 1 ).Combine( shiftOrigin )
 			);
-			xAxis.DrawWhole( dc, fontAxes, -szChartBodyUnits.cy, gridPen );
+			xAxis.Draw( dc, xAxisFocus, fontAxes, -szChartBodyUnits.cy, gridPen );
 		yAxis.SetZoomFactor( yAxis.GetZoomFactorToFitWidth(szChartBodyUnits.cy,30) );
 			const float yAxisScale=(float)szChartBodyUnits.cy/yAxis.GetUnitCount();
 			::SetWorldTransform( dc,
@@ -343,7 +344,9 @@ namespace Charting
 			);
 			yAxis.DrawWhole( dc, fontAxes, szChartBodyUnits.cx, gridPen );
 		// - setting transformation to correctly draw all Series (looks better than when relying on the Axes)
-		mValues=Utils::TGdiMatrix().Scale(
+		mValues=Utils::TGdiMatrix(
+			-xAxisFocus.a , 0
+		).Scale(
 			xAxisScale/xAxis.GetValue(1), -yAxisScale/yAxis.GetValue(1)
 		).Combine(
 			shiftOrigin

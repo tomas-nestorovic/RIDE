@@ -124,6 +124,7 @@ namespace Charting
 			WORD percentile; // in hundredths (e.g. "2345" means 23.45)
 			Utils::TGdiMatrix mValues; // matrix to transform LogPoints to display coordinates (pixels)
 		public:
+			TLogInterval xAxisFocus;
 
 			CXyDisplayInfo(
 				RCMargin margin,
