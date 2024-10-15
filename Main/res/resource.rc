@@ -210,9 +210,18 @@ END
 
 IDR_SCATTERPLOT ACCELERATORS DISCARDABLE 
 BEGIN
+    "1",            ID_DEFAULT1,            ASCII,  NOINVERT
+    "2",            ID_DEFAULT2,            ASCII,  NOINVERT
+    "3",            ID_DEFAULT3,            ASCII,  NOINVERT
+    "4",            ID_DEFAULT4,            ASCII,  NOINVERT
+    "5",            ID_DEFAULT5,            ASCII,  NOINVERT
+    "6",            ID_DEFAULT6,            ASCII,  NOINVERT
+    "7",            ID_DEFAULT7,            ASCII,  NOINVERT
+    "8",            ID_DEFAULT8,            ASCII,  NOINVERT
     "F",            ID_BUFFER,              VIRTKEY, NOINVERT
     "I",            ID_ROTATION,            VIRTKEY, NOINVERT
     "V",            ID_SYSTEM,              VIRTKEY, NOINVERT
+    VK_F8,          ID_TRACK,               VIRTKEY, NOINVERT
 END
 
 /////////////////////////////////////////////////////////////////////////////
@@ -887,8 +896,14 @@ BEGIN
         MENUITEM "Show fluxes\tF",              ID_BUFFER
         MENUITEM "Show indices\tI",             ID_ROTATION
         MENUITEM "Show structure\tV",           ID_SYSTEM
+        POPUP "Show revolution"
+        BEGIN
+            MENUITEM "Whole track\tF8",             ID_TRACK
             MENUITEM SEPARATOR
+            MENUITEM "1\t1",                        ID_DEFAULT1
         END
+        MENUITEM SEPARATOR
+    END
 END
 
 

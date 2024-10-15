@@ -1297,24 +1297,29 @@ using namespace Charting;
 										::DeleteObject( ::SelectObject( p.dc, hFont0 ) );
 									}
 								} peSeries(peList);
-							const CChartView::PCGraphics graphics[]={ &peSeries, &indexTimeSeries, &deltaTimeSeries };
-							CChartView::CXyDisplayInfo di(
-								CChartView::TMargin::Default,
-								graphics, ARRAYSIZE(graphics),
-								Utils::CRideFont::StdBold,
-								's', tr.GetTotalTime(), Utils::CTimeline::TimePrefixes,
-								's', INT_MIN, Utils::CTimeline::TimePrefixes
-							);
 							class CScatterPlotDialog sealed:public CChartDialog{
 								const CMainWindow::CDynMenu menu;
-								CChartView::CXyPointSeries &deltaTimeSeries;
+								const CImage::CTrackReader &tr;
+								Revolution::TType revolution;
+								const CChartView::PCGraphics graphicsBegin; // the following is an implicit array of Graphics ...
 								CXyParseEventSeries &peSeries;
 								CChartView::CXyOrderedBarSeries &indexSeries;
+								CChartView::CXyPointSeries &deltaTimeSeries;
+								CChartView::CXyDisplayInfo di; // ... and this indicates its end
 							public:
-								CScatterPlotDialog(CChartView::CXyDisplayInfo &di,CChartView::CXyPointSeries &deltaTimeSeries,CXyParseEventSeries &peSeries,CChartView::CXyOrderedBarSeries &indexSeries)
+								CScatterPlotDialog(const CImage::CTrackReader &tr,CChartView::CXyPointSeries &deltaTimeSeries,CXyParseEventSeries &peSeries,CChartView::CXyOrderedBarSeries &indexSeries)
 									: CChartDialog(di)
 									, menu(IDR_SCATTERPLOT)
-									, deltaTimeSeries(deltaTimeSeries) , peSeries(peSeries) , indexSeries(indexSeries) {
+									, tr(tr) , revolution(Revolution::NONE) // show whole Track
+									, graphicsBegin(nullptr)
+									, deltaTimeSeries(deltaTimeSeries) , peSeries(peSeries) , indexSeries(indexSeries)
+									, di(
+										CChartView::TMargin::Default,
+										&graphicsBegin+1, (CChartView::PCGraphics *)&di-&graphicsBegin-1,
+										Utils::CRideFont::StdBold,
+										's', tr.GetTotalTime(), Utils::CTimeline::TimePrefixes,
+										's', INT_MIN, Utils::CTimeline::TimePrefixes
+									){
 									m_bAutoMenuEnable=FALSE; // we are not set up for that
 								}
 
@@ -1324,7 +1329,12 @@ using namespace Charting;
 										if (Utils::CRideContextMenu subMenu=*pFrameMenu->GetSubMenu(0)){
 											// . prepend chart-specific menu
 											subMenu.Prepend( IDR_SCATTERPLOT );
+											// . update available Revolutions submenu
+											for( TCHAR rev=Revolution::R2,cmdStr[16]; rev<indexSeries.GetPointCount(); rev++ ){ 
+												::wsprintf( cmdStr, _T("%c\t%c"), '0'+rev, '0'+rev );
+												subMenu.InsertAfter( ID_DEFAULT1+rev-2, MF_BYCOMMAND, ID_DEFAULT1+rev-1, cmdStr );
 											}
+										}
 									return result;
 								}
 
@@ -1349,6 +1359,19 @@ using namespace Charting;
 													((CCmdUI *)pExtra)->Enable( peSeries.peList.GetCount()>0 );
 													((CCmdUI *)pExtra)->SetCheck( peSeries.visible );
 													return TRUE;
+												case ID_TRACK:
+													((CCmdUI *)pExtra)->SetCheck( revolution==Revolution::NONE );
+													return TRUE;
+												case ID_DEFAULT1:
+												case ID_DEFAULT2:
+												case ID_DEFAULT3:
+												case ID_DEFAULT4:
+												case ID_DEFAULT5:
+												case ID_DEFAULT6:
+												case ID_DEFAULT7:
+												case ID_DEFAULT8:
+													((CCmdUI *)pExtra)->SetCheck( revolution==nID-ID_DEFAULT1 );
+													return TRUE;
 											}
 											break;
 										case CN_COMMAND:
@@ -1366,12 +1389,31 @@ using namespace Charting;
 													peSeries.visible=!peSeries.visible;
 													Invalidate();
 													return TRUE;
+												case ID_TRACK:
+													di.xAxisFocus.a=0;
+													di.xAxisFocus.z=LogValueMax;
+													Invalidate();
+													return TRUE;
+												case ID_DEFAULT1:
+												case ID_DEFAULT2:
+												case ID_DEFAULT3:
+												case ID_DEFAULT4:
+												case ID_DEFAULT5:
+												case ID_DEFAULT6:
+												case ID_DEFAULT7:
+												case ID_DEFAULT8:
+													if (nID-ID_DEFAULT1<tr.GetIndexCount()-1){
+														di.xAxisFocus.a=tr.GetIndexTime(nID-ID_DEFAULT1);
+														di.xAxisFocus.z=tr.GetIndexTime(nID-ID_DEFAULT1+1);
+														Invalidate();
+													}
+													return TRUE;
 											}
 											break;
 									}
 									return __super::OnCmdMsg( nID, nCode, pExtra, pHandlerInfo );
 								}
-							} d( di, deltaTimeSeries, peSeries, indexTimeSeries );
+							} d( tr, deltaTimeSeries, peSeries, indexTimeSeries );
 							d.ShowModal( caption, this, 800,600 );
 							return TRUE;
 						}
