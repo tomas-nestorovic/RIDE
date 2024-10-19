@@ -1076,7 +1076,7 @@ invalidTrack:
 									if (!params.verifyBadSectors) // remove Events that relate to Bad Sectors
 										for( auto i=nSectors; i>0; ){
 											const TPhysicalAddress chs={ cyl, head, ids[--i] };
-											if (dos->GetSectorStatus(chs)==CDos::TSectorStatus::BAD){
+											if (dos->GetSectorStatus(chs)==TSectorStatus::BAD){
 												peTrack.RemoveConsecutiveBeforeEnd( idEnds[i] );
 												peTrack.RemoveConsecutiveBeforeEnd( dataEnds[i] );
 											}

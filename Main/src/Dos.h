@@ -32,17 +32,6 @@
 		typedef PVOID PFile;
 		typedef LPCVOID PCFile;
 
-		typedef enum TSectorStatus:COLORREF{ // each value must be bigger than the biggest possible Sector length (typically 16384)
-			SYSTEM		=0xff40ff, // e.g. reserved for root Directory
-			UNAVAILABLE	=0x707070, // Sectors that are not included in FAT (e.g. beyond the FAT, or FAT Sector error)
-			SKIPPED		=0xb8b8b8, // e.g. deleted Files in TR-DOS
-			BAD			=0x0000ff,
-			OCCUPIED	=0xffcc99,
-			RESERVED	=0xffff99, // e.g. zero-length File in MDOS, or File with error during importing
-			EMPTY		=0xffffff, // reported as unallocated
-			UNKNOWN		=0x00ffff  // any Sector whose ID doesn't match any ID from the standard format, e.g. ID={2,1,0,3} for an MDOS Sector
-		} *PSectorStatus;
-
 		typedef class CPathString sealed:protected CString{
 			mutable CString unicode;
 

@@ -356,7 +356,7 @@
 								||
 								p.acceptance.anyErrorsOnUnknownSectors && !dp.dos->IsStdSector(p.chs)
 								||
-								p.acceptance.anyErrorsOnEmptySectors && dp.dos->GetSectorStatus(p.chs)==CDos::TSectorStatus::EMPTY
+								p.acceptance.anyErrorsOnEmptySectors && dp.dos->GetSectorStatus(p.chs)==TSectorStatus::EMPTY
 							)
 						)
 					){

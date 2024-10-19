@@ -388,7 +388,7 @@
 					CDos::CFatPath::PItem pItem; DWORD nItems;
 					for( rFatPath.GetItems(pItem,nItems); nItems--; pItem++ )
 						if (pItem->value) // if Sector cross-linked ...
-							dos->ModifyStdSectorStatus( pItem->chs, CDos::TSectorStatus::EMPTY ); // ... reverting its reservation, setting it Empty again
+							dos->ModifyStdSectorStatus( pItem->chs, TSectorStatus::EMPTY ); // ... reverting its reservation, setting it Empty again
 				}
 			} fatTransaction( vp.dos, fatPath );
 			// . checking that the File's FatPath is unique
@@ -443,7 +443,7 @@
 						}
 					}
 					// | reserving the found empty healthy Sector by marking it Bad so that it's excluded from available empty Sectors
-					if (vp.dos->ModifyStdSectorStatus( pItem->chs, CDos::TSectorStatus::BAD ))
+					if (vp.dos->ModifyStdSectorStatus( pItem->chs, TSectorStatus::BAD ))
 						pItem->value=1; // Sector succesfully reserved
 					else
 						return vp.TerminateAll(ERROR_NOT_SUPPORTED); // DOS unable to reserve the above Sector
@@ -583,10 +583,10 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 				TSectorId bufferId[(TSector)-1];
 				const TSector nSectors=vp.dos->GetListOfStdSectors( chs.cylinder, chs.head, bufferId );
 				// . verifying whether officially Occupied or Reserved Sectors are actually affiliated to any File
-				CDos::TSectorStatus statuses[(TSector)-1];
+				TSectorStatus statuses[(TSector)-1];
 				vp.dos->GetSectorStatuses( chs.cylinder, chs.head, nSectors, bufferId, statuses );
 				for( TSector s=0; s<nSectors; s++ )
-					if (statuses[s]==CDos::TSectorStatus::OCCUPIED || statuses[s]==CDos::TSectorStatus::RESERVED){
+					if (statuses[s]==TSectorStatus::OCCUPIED || statuses[s]==TSectorStatus::RESERVED){
 						// : checking preconditions
 						chs.sectorId=bufferId[s];
 						if (chs.sectorId.cylinder!=chs.cylinder
@@ -644,7 +644,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 								if (result==IDCANCEL)
 									return vp.CancelAll();
 								if (result==IDYES){
-									vp.dos->ModifyStdSectorStatus( chs, CDos::TSectorStatus::EMPTY );
+									vp.dos->ModifyStdSectorStatus( chs, TSectorStatus::EMPTY );
 									vp.fReport.CloseProblem(true);
 								}
 								break;
@@ -669,7 +669,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 							return vp.TerminateAll(ERROR_OPEN_FAILED); // errors shouldn't occur at this moment, but just to be sure
 						if (nItems!=1)
 							return vp.TerminateAll(ERROR_OPEN_FAILED); // errors shouldn't occur at this moment, but just to be sure
-						vp.dos->ModifyStdSectorStatus( pItem->chs, CDos::TSectorStatus::EMPTY );
+						vp.dos->ModifyStdSectorStatus( pItem->chs, TSectorStatus::EMPTY );
 						// : associating the lost Sector with the temporary File
 						pItem->chs=chs;
 						vp.dos->ModifyFileFatPath( file, fatPath );
@@ -697,11 +697,11 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 				TSectorId bufferId[(TSector)-1];
 				const TSector nSectors=vp.dos->GetListOfStdSectors( chs.cylinder, chs.head, bufferId );
 				// . determining whether the Track contains some Empty Sectors
-				CDos::TSectorStatus statuses[(TSector)-1];
+				TSectorStatus statuses[(TSector)-1];
 				vp.dos->GetSectorStatuses( chs.cylinder, chs.head, nSectors, bufferId, statuses );
 				bool trackContainsEmptySectors=false; // assumption
 				for( TSector s=0; s<nSectors; s++ )
-					trackContainsEmptySectors|=statuses[s]==CDos::TSectorStatus::EMPTY;
+					trackContainsEmptySectors|=statuses[s]==TSectorStatus::EMPTY;
 				// . if the Track contains no Empty Sectors, proceeding with the next Track
 				if (!trackContainsEmptySectors)
 					continue;
@@ -709,7 +709,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 				image->BufferTrackData( chs.cylinder, chs.head, Revolution::ANY_GOOD, bufferId, sectorIdAndPositionIdentity, nSectors );
 				// . determining healthiness of Empty Sectors
 				for( TSector s=0; s<nSectors; s++ )
-					if (statuses[s]==CDos::TSectorStatus::EMPTY){
+					if (statuses[s]==TSectorStatus::EMPTY){
 						chs.sectorId=bufferId[s];
 						if (!image->GetHealthySectorData(chs)){
 							const CString msg=Utils::SimpleFormat( _T("On %s, empty sector with %s is bad but is not marked so in the FAT."), chs.GetTrackIdDesc(vp.dos->formatBoot.nHeads), chs.sectorId.ToString() );
@@ -719,7 +719,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 								case IDNO:
 									continue;
 							}
-							vp.dos->ModifyStdSectorStatus( chs, CDos::TSectorStatus::BAD );
+							vp.dos->ModifyStdSectorStatus( chs, TSectorStatus::BAD );
 							vp.fReport.CloseProblem(true);
 						}
 					}

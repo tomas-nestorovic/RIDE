@@ -320,10 +320,9 @@
 			longestTrackNanoseconds=nNanosecondsOnTrack;
 			outdated|=showTimed;
 		}
+		const Utils::TClientRect rc(m_hWnd);
 		if (outdated)
 			if (fitLongestTrackInWindow){
-				CRect rc;
-				GetClientRect(&rc);
 				zoomLengthFactor =	showTimed
 									? TTrackLength::FromTime(longestTrackNanoseconds,nNanosecondsPerByte).GetZoomFactorToFitWidth(rc.Width())
 									: longestTrack.GetZoomFactorToFitWidth(rc.Width());
@@ -334,12 +333,10 @@
 		// - basic drawing
 		CClientDC dc(this);
 		OnPrepareDC(&dc);
-		CRect rc;
-		GetClientRect(&rc);
 		::SetBkMode(dc,TRANSPARENT);
 		const HGDIOBJ font0=::SelectObject(dc,Utils::CRideFont::Std);
 			TCHAR buf[16];
-			// : drawing Cylinder and Side numbers
+			// : drawing Cylinder and Head numbers
 			const int y=TRACK0_Y+trackNumber*TRACK_HEIGHT;
 			if (const THead head=ti.head)
 				::wsprintf(buf,_T("\t\t%d"),head);
@@ -354,15 +351,14 @@
 			const HGDIOBJ hBrush0=::SelectObject(dc,Utils::CRideBrush::White);
 				if (displayType==TDisplayType::STATUS){
 					// drawing Sector Statuses
-					CDos::TSectorStatus statuses[(TSector)-1];
+					TSectorStatus statuses[(TSector)-1];
 					DOS->GetSectorStatuses( ti.cylinder, ti.head, ti.nSectors, ti.bufferId, statuses );
 					for( TSector s=0; s<ti.nSectors; s++ ){
 						r.left=sectorStartPixels[s];
 						r.right=r.left+1+(ti.bufferLength[s]>>zoomLengthFactor); // "1+" = to correctly display a zero-length Sector
 						if (iScrollX<r.right || r.left<iScrollX+rc.Width()){
 							// Sector in horizontally visible part of the TrackMap
-							const CBrush brush(statuses[s]);
-							const HGDIOBJ hBrush0=::SelectObject(dc,brush);
+							const HGDIOBJ hBrush0=::SelectObject( dc, statusBrushes[statuses[s]] );
 								dc.Rectangle(&r);
 								if (showSectorNumbers) // drawing Sector numbers
 									::DrawText( dc, _itot(ti.bufferId[s].sector,buf,10),-1, &r, DT_CENTER|DT_VCENTER|DT_SINGLELINE );
@@ -496,6 +492,20 @@
 		SetScrollPos( SB_VERT, iScrollY, FALSE );
 		// - updating the MainWindow's StatusBar
 		ResetStatusBarMessage();
+		// - creating StatusBrushes
+		static constexpr COLORREF StatusColors[]={
+			0xff40ff, // SYSTEM
+			0x707070, // UNAVAILABLE
+			0xb8b8b8, // SKIPPED
+			0x0000ff, // BAD
+			0xffcc99, // OCCUPIED
+			0xffff99, // RESERVED
+			0xffffff, // EMPTY
+			0x00ffff  // UNKNOWN
+		};
+		static_assert( ARRAYSIZE(StatusColors)==ARRAYSIZE(statusBrushes), "" );
+		for( BYTE i=0; i<ARRAYSIZE(statusBrushes); i++ )
+			statusBrushes[i]=(HBRUSH)CBrush(StatusColors[i]).Detach();
 		// - creating RainbowBrushes, see "Using out-of-phase sine waves to make rainbows" at http://krazydad.com/tutorials/makecolors.php
 		for( int t=TRACK_MAP_COLORS_COUNT; t--; )
 			rainbowBrushes[t]=(HBRUSH)CBrush( RGB(	128 + 127*sin( (float)2*M_PI*t/TRACK_MAP_COLORS_COUNT ),
@@ -722,8 +732,12 @@
 		// - saving scrolling position for later
 		iScrollX=GetScrollPos(SB_HORZ);
 		iScrollY=GetScrollPos(SB_VERT);
-		// - disposing the RainbowPens (assuming that the FillerByte color is a stock object)
-		for( int t=TRACK_MAP_COLORS_COUNT; t--; ::DeleteObject(rainbowBrushes[t]) );
+		// - disposing the StatusBrushes
+		for each( HBRUSH hBrush in statusBrushes)
+			::DeleteObject(hBrush);
+		// - disposing the RainbowBrushes (assuming that the FillerByte color is a stock object)
+		for each( HBRUSH hBrush in rainbowBrushes)
+			::DeleteObject(hBrush);
 		// - base
 		EXCLUSIVELY_LOCK_IMAGE(*IMAGE);
 		__super::OnDestroy();
@@ -880,17 +894,17 @@
 				WORD bufferLength[(TSector)-1];
 				TSector nSectors=image->ScanTrack(cyl,head,nullptr,bufferId,bufferLength);
 				rsp.sectors.nTotally+=nSectors;
-				CDos::TSectorStatus statuses[(TSector)-1];
+				TSectorStatus statuses[(TSector)-1];
 				for( rsp.dos->GetSectorStatuses(cyl,head,nSectors,bufferId,statuses); nSectors--; )
 					switch (statuses[nSectors]){
-						case CDos::TSectorStatus::SYSTEM	:rsp.sectors.nSystem++; break;
-						case CDos::TSectorStatus::BAD		:rsp.sectors.nBad++; break;
-						case CDos::TSectorStatus::OCCUPIED	:rsp.sectors.nOccupied++; break;
-						case CDos::TSectorStatus::RESERVED	:rsp.sectors.nReserved++; break;
-						case CDos::TSectorStatus::EMPTY		:rsp.sectors.nFree++; break;
-						case CDos::TSectorStatus::SKIPPED	:
-						case CDos::TSectorStatus::UNAVAILABLE:rsp.sectors.nInaccessible++; break;
-						case CDos::TSectorStatus::UNKNOWN	:rsp.sectors.nUnknown++; break;
+						case TSectorStatus::SYSTEM	:rsp.sectors.nSystem++; break;
+						case TSectorStatus::BAD		:rsp.sectors.nBad++; break;
+						case TSectorStatus::OCCUPIED	:rsp.sectors.nOccupied++; break;
+						case TSectorStatus::RESERVED	:rsp.sectors.nReserved++; break;
+						case TSectorStatus::EMPTY		:rsp.sectors.nFree++; break;
+						case TSectorStatus::SKIPPED	:
+						case TSectorStatus::UNAVAILABLE:rsp.sectors.nInaccessible++; break;
+						case TSectorStatus::UNKNOWN	:rsp.sectors.nUnknown++; break;
 						#ifdef _DEBUG
 							default: ASSERT(FALSE); // unknown Status
 						#endif

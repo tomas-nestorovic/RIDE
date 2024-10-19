@@ -1,6 +1,17 @@
 #ifndef TRACKMAPVIEW_H
 #define TRACKMAPVIEW_H
 
+	typedef enum TSectorStatus:BYTE{
+		SYSTEM,		// e.g. reserved for root Directory
+		UNAVAILABLE,// Sectors that are not included in FAT (e.g. beyond the FAT, or FAT Sector error)
+		SKIPPED,	// e.g. deleted Files in TR-DOS
+		BAD,
+		OCCUPIED,
+		RESERVED,	// e.g. zero-length File in MDOS, or File with error during importing
+		EMPTY,		// reported as unallocated
+		UNKNOWN		// any Sector whose ID doesn't match any ID from the standard format, e.g. ID={2,1,0,3} for an MDOS Sector
+	} *PSectorStatus;
+
 	#define TRACK_MAP_TAB_LABEL	_T("Track map")
 
 	#define TRACK_MAP_COLORS_COUNT	256
@@ -30,6 +41,7 @@
 			DATA_OK_ONLY=ID_TRACKMAP_DATA,
 			DATA_ALL	=ID_TRACKMAP_BAD_DATA
 		} displayType;
+		HBRUSH statusBrushes[TSectorStatus::UNKNOWN+1];
 		HBRUSH rainbowBrushes[TRACK_MAP_COLORS_COUNT];
 		struct TTrackScanner sealed{
 			static UINT AFX_CDECL Thread(PVOID _pBackgroundAction);

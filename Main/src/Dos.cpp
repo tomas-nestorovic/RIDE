@@ -267,7 +267,7 @@ reportError:Utils::Information(buf);
 							chs.sectorId=ids[--n];
 							d.dos->ModifyStdSectorStatus(
 								chs,
-								d.dos->image->GetHealthySectorData(chs) ? CDos::TSectorStatus::EMPTY : CDos::TSectorStatus::BAD
+								d.dos->image->GetHealthySectorData(chs) ? TSectorStatus::EMPTY : TSectorStatus::BAD
 							);
 						}
 
@@ -702,7 +702,7 @@ reportError:Utils::Information(buf);
 
 
 
-	CDos::TSectorStatus CDos::GetSectorStatus(RCPhysicalAddress chs) const{
+	TSectorStatus CDos::GetSectorStatus(RCPhysicalAddress chs) const{
 		// determines and returns the Status of the Sector on the specified PhysicalAddress
 		TSectorStatus result;
 		GetSectorStatuses( chs.cylinder, chs.head, 1, &chs.sectorId, &result );
@@ -712,13 +712,13 @@ reportError:Utils::Information(buf);
 	LPCTSTR CDos::GetSectorStatusText(RCPhysicalAddress chs) const{
 		// determines and returns the Status of the Sector on the specified PhysicalAddress
 		switch (GetSectorStatus(chs)){
-			case CDos::TSectorStatus::SYSTEM:	return _T("System");
-			case CDos::TSectorStatus::UNAVAILABLE: return _T("Unavailable");
-			case CDos::TSectorStatus::SKIPPED:	return _T("Skipped");
-			case CDos::TSectorStatus::BAD:		return _T("Bad");
-			case CDos::TSectorStatus::OCCUPIED:	return _T("Occupied");
-			case CDos::TSectorStatus::RESERVED:	return _T("Reserved");
-			case CDos::TSectorStatus::EMPTY:	return _T("Empty");
+			case TSectorStatus::SYSTEM:	return _T("System");
+			case TSectorStatus::UNAVAILABLE: return _T("Unavailable");
+			case TSectorStatus::SKIPPED:	return _T("Skipped");
+			case TSectorStatus::BAD:		return _T("Bad");
+			case TSectorStatus::OCCUPIED:	return _T("Occupied");
+			case TSectorStatus::RESERVED:	return _T("Reserved");
+			case TSectorStatus::EMPTY:	return _T("Empty");
 			default:							return _T("Unknown");
 		}
 	}
