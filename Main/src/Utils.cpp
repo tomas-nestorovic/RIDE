@@ -853,17 +853,17 @@ namespace Utils{
 	CAxis::TDcState::TDcState(HDC dc,int nVisibleUnitsA,int nDrawnUnitsA)
 		// ctor
 		: graphicsMode( ::GetGraphicsMode(dc) )
+		, nUnitsAtOrigin( nDrawnUnitsA/LogicalUnitScaleFactor.rem*LogicalUnitScaleFactor.rem )
 		, ptViewportOrg(dc)
 		, mAdvanced(dc) {
-		const int d=LogicalUnitScaleFactor.quot*LogicalUnitScaleFactor.rem;
-		nUnitsAtOrigin=nDrawnUnitsA/d*d;
-		const long nPixelsInvisible=LogicalUnitScaleFactor*(nUnitsAtOrigin-nVisibleUnitsA);
 		switch (graphicsMode){
 			case GM_COMPATIBLE:
-				ptViewportOrg.x+=nPixelsInvisible;
+				ptViewportOrg.Offset(
+					GetPixelDistance( nVisibleUnitsA, nUnitsAtOrigin )
+				);
 				break;
 			default:
-				mAdvanced=TGdiMatrix( nPixelsInvisible/LogicalUnitScaleFactor, 0 ).Combine(mAdvanced);
+				mAdvanced=TGdiMatrix( nUnitsAtOrigin-nVisibleUnitsA, 0 ).Combine(mAdvanced);
 				break;
 		}
 	}
@@ -1021,7 +1021,7 @@ namespace Utils{
 					break;
 			}
 			// . horizontal line representing the Axis
-			::MoveToEx( dc, GetClientUnits(0),0, nullptr );
+			::MoveToEx( dc, 0,0, nullptr );
 			::LineTo( dc, GetClientUnits(draw.z), 0 );
 			// . drawing secondary time marks on the Axis
 			if (smallMarkLength)
@@ -1049,7 +1049,7 @@ namespace Utils{
 		// draws an Axis starting at [0,Origin.Y], while '-Origin.X' determines zero-based starting Value; returns index into the UnitPrefixes indicating which prefix was used to draw the Axis
 		if (nVisiblePixels<0)
 			nVisiblePixels=TClientRect( ::WindowFromDC(dc) ).Width();
-		const TLogInterval visible( from, from+PixelToValue(nVisiblePixels) );
+		const TLogInterval visible( from, from+DPtoV(nVisiblePixels) );
 		Draw( dc, visible, font, primaryGridLength, hPrimaryGridPen, pOutDrawn );
 	}
 
@@ -1061,7 +1061,7 @@ namespace Utils{
 
 	void CAxis::DrawScrolled(HDC dc,long scrollPos,long nVisiblePixels,const CRideFont &font,int primaryGridLength,HPEN hPrimaryGridPen,PLogInterval pOutDrawn){
 		// draws an Axis starting at [0,Origin.Y], while '-Origin.X' determines zero-based starting Value; returns index into the UnitPrefixes indicating which prefix was used to draw the Axis
-		const TLogValue from=PixelToValue(scrollPos);
+		const TLogValue from=DPtoV(scrollPos);
 		const CViewportOrgBackup org(dc);
 		::SetViewportOrgEx( dc, org.x+scrollPos, org.y, nullptr );
 		Draw( dc, from, nVisiblePixels, font, primaryGridLength, hPrimaryGridPen, pOutDrawn );
@@ -1072,8 +1072,9 @@ namespace Utils{
 		return DrawScrolled( dc, TViewportOrg(dc).x, -1, font, primaryGridLength, hPrimaryGridPen, pOutDrawn );
 	}
 
-	TLogValue CAxis::PixelToValue(long pixel) const{
-		return	GetValue( pixel/LogicalUnitScaleFactor );
+	TLogValue CAxis::DPtoV(long pixel) const{
+		POINT pt={pixel};
+		return DPtoV(pt);
 	}
 
 	int CAxis::GetUnitCount(TLogValue logValue,BYTE zoomFactor) const{
@@ -1108,9 +1109,26 @@ namespace Utils{
 		}
 	}
 
+	const POINT &CAxis::VtoDP(TLogValue v) const{
+		POINT pt={ GetUnitCount(v) };
+		return LPtoDP(pt);
+	}
+
+	TLogValue CAxis::DPtoV(const POINT &pt) const{
+		POINT tmp=pt;
+		return GetValue( DPtoLP(tmp).x );
+	}
+
 	int CAxis::GetClientUnits(TLogValue logValue) const{
 		// for drawing in client area
 		return GetUnitCount(logValue)-dcLastDrawing.nUnitsAtOrigin;
+	}
+
+	SIZE CAxis::GetPixelDistance(int nUnitsA,int nUnitsZ){
+		POINT ptA={nUnitsA}, ptB={nUnitsZ};
+		LPtoDP(ptA), LPtoDP(ptB);
+		const SIZE result={ ptB.x-ptA.x, ptB.y-ptA.y };
+		return result;
 	}
 
 	void CAxis::SetLength(TLogValue newLogLength){
@@ -2539,6 +2557,14 @@ namespace Utils{
 		const CClientDC screen(nullptr);
 		ScaleLogicalUnit(screen);
 		::LPtoDP( screen, &pt, 1 );
+		return pt;
+	}
+
+	POINT &DPtoLP(POINT &pt){
+		// converts Point in pixels to a point in logical units
+		const CClientDC screen(nullptr);
+		ScaleLogicalUnit(screen);
+		::DPtoLP( screen, &pt, 1 );
 		return pt;
 	}
 

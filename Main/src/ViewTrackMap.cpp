@@ -179,7 +179,6 @@
 		}
 		if (si.nPos<0) si.nPos=0;
 		else if (si.nPos>si.nMax-si.nPage) si.nPos=si.nMax-si.nPage;
-		si.nPos=si.nPos/Utils::LogicalUnitScaleFactor.quot*Utils::LogicalUnitScaleFactor.quot;
 		ScrollWindow( // "base"
 			iScroll0-si.nPos,
 			0
@@ -201,8 +200,8 @@
 		else if (si.nPos>si.nMax-si.nPage) si.nPos=si.nMax-si.nPage;
 		ScrollWindow(	// "base"
 			0,
-						(iScroll0-si.nPos)//*Utils::GetLogicalUnitScaleFactor(CClientDC(this))
-					); 
+			iScroll0-si.nPos
+		);
 		SetScrollInfo(SB_VERT,&si,TRUE);
 		return TRUE;
 	}
@@ -431,13 +430,12 @@
 			if (showTimed){
 				const Utils::CRideFont &font=Utils::CRideFont::StdBold;
 				const Utils::CViewportOrgBackup org(dc);
-				const long timelinePositionX=org.x+Utils::RoundUpToMuls<long>(Utils::LogicalUnitScaleFactor*SECTOR1_X,Utils::LogicalUnitScaleFactor.quot);
-				pDC->SetViewportOrg( timelinePositionX, org.y+VIEW_PADDING+font.charHeight );
-					Utils::CTimeline(
-						longestTrackNanoseconds, IMAGE->EstimateNanosecondsPerOneByte(), zoomLengthFactor
-					).DrawScrolled(
-						dc, -std::min(timelinePositionX,0L), -1, font
-					);
+				POINT timelinePosition={ SECTOR1_X, VIEW_PADDING+font.charHeight };
+				::LPtoDP( dc, &timelinePosition, 1 );
+				::SetViewportOrgEx( dc, timelinePosition.x, timelinePosition.y, nullptr );
+				Utils::CTimeline(
+					longestTrackNanoseconds, IMAGE->EstimateNanosecondsPerOneByte(), zoomLengthFactor
+				).DrawWhole( dc, font );
 			}else
 				::TabbedTextOut( dc, 0,VIEW_PADDING, _T("\t\t\tSectors"),-1, 3,Tabs, 0 );
 		::SelectObject(dc,font0);

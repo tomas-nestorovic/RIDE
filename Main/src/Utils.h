@@ -476,7 +476,7 @@ namespace Utils{
 		bool Edit(bool dateEditingEnabled,bool timeEditingEnabled,const SYSTEMTIME *epoch);
 	};
 
-	struct TViewportOrg:public POINT{
+	struct TViewportOrg:public CPoint{
 		inline TViewportOrg(HDC dc){ ::GetViewportOrgEx(dc,this); }
 	};
 
@@ -499,7 +499,6 @@ namespace Utils{
 		TLogValue logLength;
 		BYTE zoomFactor;
 		struct TDcState sealed{
-			TLogValue valueAtOrigin;
 			int nUnitsAtOrigin;
 			int graphicsMode;
 			TViewportOrg ptViewportOrg; // [pixels] GM_COMPATIBLE
@@ -511,8 +510,6 @@ namespace Utils{
 			void RevertFrom(HDC dc,int iSavedDc) const;
 		} dcLastDrawing; // for any subsequent drawing, e.g. cursor indication
 		TLogValue logCursorPos;
-
-		TLogValue PixelToValue(long pixel) const;
 	public:
 		class CGraphics{
 			const CAxis &axis;
@@ -546,6 +543,8 @@ namespace Utils{
 		static const TCHAR CountPrefixes[];
 		static const CRideFont FontWingdings;
 
+		static SIZE GetPixelDistance(int nUnitsA,int nUnitsZ);
+
 		CAxis(TLogValue logLength,TLogTime logValuePerUnit,TCHAR unit,LPCTSTR unitPrefixes,BYTE initZoomFactor,TVerticalAlign ticksAndLabelsAlign=TVerticalAlign::TOP,const CRideFont &font=CRideFont::Std);
 
 		// any value that is 'long' is in device pixels (incl. 'POINT' and 'RECT' structs!)
@@ -565,7 +564,9 @@ namespace Utils{
 		int GetUnitCount() const;
 		TLogValue GetValue(int nUnits) const;
 		TLogValue GetValue(const POINT &ptClient) const;
-		long GetClient(TLogValue logValue) const;
+		const POINT &VtoDP(TLogValue v) const;
+		TLogValue DPtoV(const POINT &pt) const;
+		TLogValue DPtoV(long pixel) const;
 		int GetClientUnits(TLogValue logValue) const; // for drawing in client area
 		inline TLogValue GetLength() const{ return logLength; }
 		void SetLength(TLogValue newLogLength);
@@ -720,6 +721,7 @@ namespace Utils{
 	void ScaleLogicalUnit(PINT values,BYTE nValues);
 	void UnscaleLogicalUnit(PINT values,BYTE nValues);
 	POINT &LPtoDP(POINT &pt);
+	POINT &DPtoLP(POINT &pt);
 	COLORREF GetSaturatedColor(COLORREF color,float saturationFactor);
 	COLORREF GetBlendedColor(COLORREF color1,COLORREF color2,float blendFactor=.5f);
 	BYTE GetReversedByte(BYTE b);

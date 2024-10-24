@@ -322,9 +322,9 @@ using namespace Charting;
 				cursorFeaturesShown=show;
 			}
 
-			inline TLogTime ClientPixelToTime(int pixel) const{
+			TLogTime ClientPixelToTime(long pixel) const{
 				return	std::min(
-							scrollTime + timeline.GetTime( pixel/Utils::LogicalUnitScaleFactor ),
+							scrollTime + timeline.DPtoV(pixel),
 							timeline.GetLength()
 						);
 			}
@@ -440,7 +440,7 @@ using namespace Charting;
 					case SB_THUMBPOSITION:	// "thumb" released
 					case SB_THUMBTRACK	: si.nPos=si.nTrackPos;	break;
 				}
-				SetScrollTime( timeline.GetTime(si.nPos/Utils::LogicalUnitScaleFactor) );
+				SetScrollTime( timeline.DPtoV(si.nPos) );
 				return TRUE;
 			}
 
@@ -534,15 +534,14 @@ using namespace Charting;
 			void SetScrollTime(TLogTime t){
 				if (t<0) t=0;
 				else if (t>timeline.GetLength()) t=timeline.GetLength();
-				SCROLLINFO si={ sizeof(si) };
-					si.fMask=SIF_POS;
-					si.nPos=Utils::LogicalUnitScaleFactor*timeline.GetUnitCount(t);
+				SCROLLINFO si={ sizeof(si), SIF_POS };
+					si.nPos=timeline.VtoDP(t).x;
 				SetScrollInfo( SB_HORZ, &si, TRUE );
 				EXCLUSIVELY_LOCK(painter.params);
 					painter.params.id++; // stopping current painting
 					PaintCursorFeaturesInverted(false);
 					ScrollWindow(	// "base"
-						Utils::LogicalUnitScaleFactor*timeline.GetUnitCount(scrollTime) - si.nPos,
+						timeline.VtoDP(scrollTime).x - si.nPos,
 						0
 					);
 					scrollTime=t;
@@ -556,7 +555,7 @@ using namespace Charting;
 			TLogTime GetCenterTime() const{
 				CRect rc;
 				GetClientRect(&rc);
-				return scrollTime+timeline.GetTime( rc.Width()/(Utils::LogicalUnitScaleFactor*2) );
+				return scrollTime+timeline.DPtoV( rc.Width()/2 );
 			}
 
 			void SetCenterTime(TLogTime t){
