@@ -147,7 +147,6 @@ namespace Utils{
 					}
 				}
 		::SelectObject( screen, hFont0 );
-		result.cx*=LogicalUnitScaleFactor, result.cy*=LogicalUnitScaleFactor;
 		return result;
 	}
 
@@ -932,7 +931,7 @@ namespace Utils{
 
 	int CAxis::CGraphics::TextIndirect(int nUnitsX,int nUnitsY,const CRideFont &font,const CString &text,int rop) const{
 		// draws text using an auxilliary bitmap
-		const SIZE sz=font.GetTextSize(text);
+		const SIZE sz=LPtoDP( font.GetTextSize(text) );
 		const HGDIOBJ hBmp0=::SelectObject( dcMem, ::CreateCompatibleBitmap(dc,sz.cx,sz.cy) );
 			const HGDIOBJ hFont0=::SelectObject( dcMem, font );
 				::TextOut( dcMem, 0,0, text,text.GetLength() );
@@ -953,7 +952,7 @@ namespace Utils{
 	void CAxis::CGraphics::DimensioningIndirect(TLogValue vStart,TLogValue vEnd,int nUnitsFrom,int nUnitsTo,const CString &text,int nUnitsExtra,int rop) const{
 		// draws technical dimensioning on the Axis
 		const int xa=PerpLine(vStart,nUnitsFrom,nUnitsTo+nUnitsExtra), xz=PerpLine(vEnd,nUnitsFrom,nUnitsTo+nUnitsExtra);
-		const SIZE sz=axis.font.GetTextSize(text);
+		const SIZE sz=axis.font.GetTextSize(text); // in units
 		TextIndirect( (xa+xz-sz.cx)/2, nUnitsTo+nUnitsExtra/2, axis.font, text, rop );
 		::MoveToEx( dc, xa-nUnitsExtra, nUnitsTo, nullptr );
 		::LineTo( dc, xz+nUnitsExtra, nUnitsTo );
@@ -2533,6 +2532,14 @@ namespace Utils{
 		// removes from specified Values the logical unit scale factor
 		while (nValues--)
 			*values++/=LogicalUnitScaleFactor;
+	}
+
+	POINT &LPtoDP(POINT &pt){
+		// converts Point in logical units to a point in pixels
+		const CClientDC screen(nullptr);
+		ScaleLogicalUnit(screen);
+		::LPtoDP( screen, &pt, 1 );
+		return pt;
 	}
 
 	COLORREF GetSaturatedColor(COLORREF currentColor,float saturationFactor){

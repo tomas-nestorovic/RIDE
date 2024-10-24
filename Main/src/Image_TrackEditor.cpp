@@ -147,7 +147,7 @@ using namespace Charting;
 								const LPCTSTR byteInfoFormat= te.decadicByteValues ? _T("%c\n%d") : _T("%c\n$%02X");
 								TCHAR label[80];
 								const SIZE byteInfoSizeMin=te.timeline.font.GetTextSize(  label,  ::wsprintf( label, byteInfoFormat, 'M', 255 )  );
-								const int nUnitsPerByte=Utils::LogicalUnitScaleFactor*te.timeline.GetUnitCount( CImage::GetActive()->EstimateNanosecondsPerOneByte() );
+								const int nUnitsPerByte=te.timeline.GetUnitCount( CImage::GetActive()->EstimateNanosecondsPerOneByte() );
 								const enum{ BI_NONE, BI_MINIMAL, BI_FULL } showByteInfo = nUnitsPerByte>byteInfoSizeMin.cx ? BI_FULL : nUnitsPerByte>1 ? BI_MINIMAL : BI_NONE;
 								for( auto it=peList.GetIterator(); continuePainting&&it; ){
 									const TParseEventPtr pe=it++->second;

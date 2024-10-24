@@ -719,6 +719,7 @@ namespace Utils{
 	void ScaleLogicalUnit(HDC dc);
 	void ScaleLogicalUnit(PINT values,BYTE nValues);
 	void UnscaleLogicalUnit(PINT values,BYTE nValues);
+	POINT &LPtoDP(POINT &pt);
 	COLORREF GetSaturatedColor(COLORREF color,float saturationFactor);
 	COLORREF GetBlendedColor(COLORREF color1,COLORREF color2,float blendFactor=.5f);
 	BYTE GetReversedByte(BYTE b);
@@ -741,6 +742,11 @@ namespace Utils{
 	void SetClipboardString(LPCTSTR str);
 	CString DoPromptSingleTypeFileName(LPCTSTR defaultSaveName,LPCTSTR singleFilter,DWORD flags=0);
 	void StdBeep();
+
+	inline SIZE &LPtoDP(SIZE &sz){
+		static_assert( sizeof(sz)==sizeof(POINT), "" );
+		return (SIZE &)LPtoDP((POINT &)sz);
+	}
 }
 
 void DDX_Check(CDataExchange *pDX,int nIDC,bool &value);
