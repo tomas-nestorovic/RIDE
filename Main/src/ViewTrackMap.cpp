@@ -117,7 +117,7 @@
 		return	Utils::CTimeline(nBytes,1,zoomFactor).GetUnitCount() + nSectors*SECTOR_MARGIN;
 	}
 
-	BYTE CTrackMapView::TTrackLength::GetZoomFactorToFitWidth(int pixelWidth) const{
+	BYTE CTrackMapView::TTrackLength::GetZoomFactorToFitWidth(long pixelWidth) const{
 		BYTE zoomLengthFactor=0;
 		const int nUnits=pixelWidth/Utils::LogicalUnitScaleFactor-SECTOR1_X;
 		while (GetUnitCount(zoomLengthFactor)>nUnits && CAN_ZOOM_OUT)
@@ -200,7 +200,7 @@
 		if (si.nPos<0) si.nPos=0;
 		else if (si.nPos>si.nMax-si.nPage) si.nPos=si.nMax-si.nPage;
 		ScrollWindow(	// "base"
-						0,
+			0,
 						(iScroll0-si.nPos)//*Utils::GetLogicalUnitScaleFactor(CClientDC(this))
 					); 
 		SetScrollInfo(SB_VERT,&si,TRUE);
@@ -275,7 +275,7 @@
 		Utils::ScaleLogicalUnit(*pDC);
 	}
 
-	void CTrackMapView::TimesToPixels(TSector nSectors,PLogTime pInOutBuffer,PCWORD pInSectorLengths) const{
+	void CTrackMapView::TimesToUnits(TSector nSectors,PLogTime pInOutBuffer,PCWORD pInSectorLengths) const{
 		// converts times (in nanoseconds) in Buffer to pixels
 		if (showTimed){
 			const TLogTime nNanosecondsPerByte=IMAGE->EstimateNanosecondsPerOneByte();
@@ -345,8 +345,8 @@
 			::TabbedTextOut( dc, 0,y, buf,-1, 3,Tabs, 0 );
 			// : drawing Sectors
 			iScrollX=GetScrollPos(SB_HORZ)/Utils::LogicalUnitScaleFactor;
-			int sectorStartPixels[(TSector)-1];
-			TimesToPixels( ti.nSectors, (PINT)::memcpy(sectorStartPixels,ti.bufferStartNanoseconds,ti.nSectors*sizeof(int)), ti.bufferLength );
+			TLogTime sectorStartUnits[(TSector)-1];
+			TimesToUnits( ti.nSectors, (PLogTime)::memcpy(sectorStartUnits,ti.bufferStartNanoseconds,ti.nSectors*sizeof(TLogTime)), ti.bufferLength );
 			RECT r={ SECTOR1_X, y+(TRACK_HEIGHT-SECTOR_HEIGHT)/2, SECTOR1_X, y+(TRACK_HEIGHT+SECTOR_HEIGHT)/2 };
 			const HGDIOBJ hBrush0=::SelectObject(dc,Utils::CRideBrush::White);
 				if (displayType==TDisplayType::STATUS){
@@ -354,21 +354,20 @@
 					TSectorStatus statuses[(TSector)-1];
 					DOS->GetSectorStatuses( ti.cylinder, ti.head, ti.nSectors, ti.bufferId, statuses );
 					for( TSector s=0; s<ti.nSectors; s++ ){
-						r.left=sectorStartPixels[s];
+						r.left=sectorStartUnits[s];
 						r.right=r.left+1+(ti.bufferLength[s]>>zoomLengthFactor); // "1+" = to correctly display a zero-length Sector
 						if (iScrollX<r.right || r.left<iScrollX+rc.Width()){
 							// Sector in horizontally visible part of the TrackMap
-							const HGDIOBJ hBrush0=::SelectObject( dc, statusBrushes[statuses[s]] );
-								dc.Rectangle(&r);
-								if (showSectorNumbers) // drawing Sector numbers
-									::DrawText( dc, _itot(ti.bufferId[s].sector,buf,10),-1, &r, DT_CENTER|DT_VCENTER|DT_SINGLELINE );
-							::SelectObject(dc,hBrush0);
+							::SelectObject( dc, statusBrushes[statuses[s]] );
+							dc.Rectangle(&r);
+							if (showSectorNumbers) // drawing Sector numbers
+								::DrawText( dc, _itot(ti.bufferId[s].sector,buf,10),-1, &r, DT_CENTER|DT_VCENTER|DT_SINGLELINE );
 						}
 					}
 				}else
 					// drawing Sector data
 					for( TSector s=0; s<ti.nSectors; s++ ){
-						r.left=sectorStartPixels[s];
+						r.left=sectorStartUnits[s];
 						r.right=r.left+1+(ti.bufferLength[s]>>zoomLengthFactor); // "1+" = to correctly display a zero-length Sector
 						WORD w=ti.bufferLength[s]>>zoomLengthFactor;
 						if (r.right+w<=iScrollX || iScrollX+rc.Width()<=r.left)
@@ -412,7 +411,7 @@
 									for( PCSectorId pRefId=&item->chs.sectorId; s<ti.nSectors; s++ )
 										if (*pRefId==ti.bufferId[s])
 											break;
-									r.left=sectorStartPixels[s];
+									r.left=sectorStartUnits[s];
 									r.right=r.left+1+(ti.bufferLength[s]>>zoomLengthFactor); // "1+" = to correctly display a zero-length Sector
 									dc.Rectangle(&r);
 								}
@@ -555,7 +554,7 @@
 			WORD bufferLength[(TSector)-1];
 			TLogTime bufferStarts[(TSector)-1];
 			const TSector nSectors=IMAGE->ScanTrack( d.quot, d.rem, nullptr, bufferId, bufferLength, bufferStarts );
-			TimesToPixels( nSectors, bufferStarts, bufferLength );
+			TimesToUnits( nSectors, bufferStarts, bufferLength );
 			for( TSector s=0; s<nSectors; s++ )
 				if (bufferStarts[s]<=point.x && point.x<=bufferStarts[s]+(bufferLength[s]>>zoomLengthFactor)){
 					// cursor over a Sector

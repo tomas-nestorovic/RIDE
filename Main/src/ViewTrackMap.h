@@ -32,7 +32,7 @@
 			TTrackLength(TSector nSectors,int nBytes); // ctor
 
 			int GetUnitCount(BYTE zoomFactor) const;
-			BYTE GetZoomFactorToFitWidth(int pixelWidth) const;
+			BYTE GetZoomFactorToFitWidth(long pixelWidth) const;
 			bool operator<(const TTrackLength &r) const;
 		} longestTrack; // to infer maximum horizontal scroll position
 		TLogTime longestTrackNanoseconds;
@@ -64,7 +64,7 @@
 		void OnPrepareDC(CDC *pDC,CPrintInfo *pInfo=nullptr) override;
 		void OnDraw(CDC *pDC) override;
 		void PostNcDestroy() override;
-		void TimesToPixels(TSector nSectors,PLogTime pInOutBuffer,PCWORD pInSectorLengths) const;
+		void TimesToUnits(TSector nSectors,PLogTime pInOutBuffer,PCWORD pInSectorLengths) const;
 		enum TCursorPos{ NONE, TRACK, SECTOR } GetPhysicalAddressAndNanosecondsFromPoint(POINT point,TPhysicalAddress &rOutChs,BYTE &rnOutSectorsToSkip,int &rOutNanoseconds);
 		void ResetStatusBarMessage() const;
 		void UpdateLogicalDimensions();
