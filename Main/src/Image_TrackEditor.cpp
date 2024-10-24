@@ -25,6 +25,9 @@ using namespace Charting;
 
 	#define MSG_FUZZY_NAVIGATION	_T("This fuzzy bit has no counterpart in any revolution")
 
+	#define INI_SECTION	_T("imgte")
+	#define INI_DECADIC	_T("dec")
+
 	class CTrackEditor sealed:public Utils::CRideDialog{
 		const CImage::CTrackReader &tr;
 		const UINT messageBoxButtons;
@@ -141,9 +144,9 @@ using namespace Charting;
 							const auto dcSettings0=::SaveDC(dc);
 								::SelectObject( dc, Utils::CRidePen::BlackHairline );
 								::SetBkMode( dc, OPAQUE );
-								static constexpr TCHAR ByteInfoFormat[]=_T("%c\n$%02X");
+								const LPCTSTR byteInfoFormat= te.decadicByteValues ? _T("%c\n%d") : _T("%c\n$%02X");
 								TCHAR label[80];
-								const SIZE byteInfoSizeMin=te.timeline.font.GetTextSize(  label,  ::wsprintf( label, ByteInfoFormat, 'M', 255 )  );
+								const SIZE byteInfoSizeMin=te.timeline.font.GetTextSize(  label,  ::wsprintf( label, byteInfoFormat, 'M', 255 )  );
 								const int nUnitsPerByte=Utils::LogicalUnitScaleFactor*te.timeline.GetUnitCount( CImage::GetActive()->EstimateNanosecondsPerOneByte() );
 								const enum{ BI_NONE, BI_MINIMAL, BI_FULL } showByteInfo = nUnitsPerByte>byteInfoSizeMin.cx ? BI_FULL : nUnitsPerByte>1 ? BI_MINIMAL : BI_NONE;
 								for( auto it=peList.GetIterator(); continuePainting&&it; ){
@@ -179,7 +182,7 @@ using namespace Charting;
 																::LineTo( dc, rcLabel.left,rcLabel.bottom );
 																::DrawText(
 																	dc,
-																	label,	::wsprintf( label, ByteInfoFormat, ::isprint(pbi->value)?pbi->value:'?', pbi->value ),
+																	label,	::wsprintf( label, byteInfoFormat, ::isprint(pbi->value)?pbi->value:'?', pbi->value ),
 																	&rcLabel, DT_LEFT|DT_BOTTOM
 																);
 																break;
@@ -467,6 +470,7 @@ using namespace Charting;
 			const PCRegion pRegions;
 			const DWORD nRegions;
 			const Utils::CRidePen penIndex;
+			bool decadicByteValues;
 
 			CTimeEditor(const CImage::CTrackReader &tr,CImage::CTrackReader::PCRegion pRegions,DWORD nRegions)
 				// ctor
@@ -475,6 +479,7 @@ using namespace Charting;
 				, pRegions(pRegions) , nRegions(nRegions) // up to the caller to dispose allocated Regions!
 				, penIndex( 2, COLOR_BLUE )
 				, painter(*this)
+				, decadicByteValues( app.GetProfileBool(INI_SECTION,INI_DECADIC) )
 				, draggedTime(-1)
 				, cursorTime(-1) , cursorFeaturesShown(false) , cursorFeatures(TCursorFeatures::DEFAULT)
 				, scrollTime(0) {
@@ -1464,6 +1469,13 @@ using namespace Charting;
 							);
 							return TRUE;
 						}
+						case ID_NUMBER:
+							// decadic or hexa-decimal Byte values
+							app.WriteProfileInt( INI_SECTION, INI_DECADIC,
+								timeEditor.decadicByteValues=!timeEditor.decadicByteValues
+							);
+							timeEditor.Invalidate();
+							return TRUE;
 						case ID_FILE_SAVE_AS:
 							// export Track timing
 							class CExportDialog sealed:public Utils::CRideDialog{
