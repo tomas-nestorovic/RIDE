@@ -921,7 +921,7 @@ using namespace Charting;
 							timeEditor.SetZoomFactorCenter(
 								timeEditor.GetTimeline().GetZoomFactorToFitWidth(
 									tr.GetIndexTime(rev)-tr.GetIndexTime(rev-1), // Revolution time
-									rc.Width()/Utils::LogicalUnitScaleFactor, // # of units to fit the Revolution to
+									rc.Width(), // # of Pixels to fit the Revolution to
 									ZOOM_FACTOR_MAX
 								)
 							);
@@ -931,7 +931,7 @@ using namespace Charting;
 						case ID_ZOOM_FIT:{
 							CRect rc;
 							timeEditor.GetClientRect(&rc);
-							timeEditor.SetZoomFactorCenter( timeEditor.GetTimeline().GetZoomFactorToFitWidth(rc.Width()/Utils::LogicalUnitScaleFactor,ZOOM_FACTOR_MAX) );
+							timeEditor.SetZoomFactorCenter( timeEditor.GetTimeline().GetZoomFactorToFitWidth(rc.Width(),ZOOM_FACTOR_MAX) );
 							return TRUE;
 						}
 						case ID_REFRESH:

@@ -564,6 +564,7 @@ namespace Utils{
 		int GetUnitCount() const;
 		TLogValue GetValue(int nUnits) const;
 		TLogValue GetValue(const POINT &ptClient) const;
+		const POINT &VtoDP(TLogValue v,BYTE zoomFactor) const;
 		const POINT &VtoDP(TLogValue v) const;
 		TLogValue DPtoV(const POINT &pt) const;
 		TLogValue DPtoV(long pixel) const;
@@ -571,8 +572,8 @@ namespace Utils{
 		inline TLogValue GetLength() const{ return logLength; }
 		void SetLength(TLogValue newLogLength);
 		inline BYTE GetZoomFactor() const{ return zoomFactor; }
-		BYTE GetZoomFactorToFitWidth(int nUnits,BYTE zoomFactorMax) const;
-		BYTE GetZoomFactorToFitWidth(TLogValue logValue,int nUnits,BYTE zoomFactorMax) const;
+		BYTE GetZoomFactorToFitWidth(long width,BYTE zoomFactorMax) const;
+		BYTE GetZoomFactorToFitWidth(TLogValue logValue,long width,BYTE zoomFactorMax) const;
 		void SetZoomFactor(BYTE newZoomFactor);
 		int ValueToReadableString(TLogValue logValue,PTCHAR buffer) const;
 		CString ValueToReadableString(TLogValue logValue) const;

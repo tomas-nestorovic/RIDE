@@ -1109,9 +1109,13 @@ namespace Utils{
 		}
 	}
 
-	const POINT &CAxis::VtoDP(TLogValue v) const{
-		POINT pt={ GetUnitCount(v) };
+	const POINT &CAxis::VtoDP(TLogValue v,BYTE zoomFactor) const{
+		POINT pt={ GetUnitCount(v,zoomFactor) };
 		return LPtoDP(pt);
+	}
+
+	const POINT &CAxis::VtoDP(TLogValue v) const{
+		return VtoDP( v, zoomFactor );
 	}
 
 	TLogValue CAxis::DPtoV(const POINT &pt) const{
@@ -1135,13 +1139,13 @@ namespace Utils{
 		logCursorPos=std::min( logCursorPos, logLength=newLogLength+1 );
 	}
 
-	BYTE CAxis::GetZoomFactorToFitWidth(int nUnits,BYTE zoomFactorMax) const{
-		return	GetZoomFactorToFitWidth( logLength, nUnits, zoomFactorMax );
+	BYTE CAxis::GetZoomFactorToFitWidth(long width,BYTE zoomFactorMax) const{
+		return	GetZoomFactorToFitWidth( logLength, width, zoomFactorMax );
 	}
 
-	BYTE CAxis::GetZoomFactorToFitWidth(TLogValue logValue,int nUnits,BYTE zoomFactorMax) const{
+	BYTE CAxis::GetZoomFactorToFitWidth(TLogValue logValue,long width,BYTE zoomFactorMax) const{
 		BYTE zf=0;
-		while (GetUnitCount(logValue,zf)>nUnits && zf<zoomFactorMax)
+		while (VtoDP(logValue,zf).x>width && zf<zoomFactorMax)
 			zf++;
 		return zf;
 	}

@@ -331,13 +331,13 @@ namespace Charting
 		const Utils::TGdiMatrix shiftOrigin(
 			margin.L, margin.T+szChartBodyUnits.cy // in units
 		);
-		xAxis.SetZoomFactor( xAxis.GetZoomFactorToFitWidth(xAxisVisibleLength,szChartBodyUnits.cx,30) );
+		xAxis.SetZoomFactor( xAxis.GetZoomFactorToFitWidth(xAxisVisibleLength,szChartBody.cx,30) );
 			const float xAxisScale=(float)szChartBodyUnits.cx/xAxis.GetUnitCount(xAxisVisibleLength);
 			::SetWorldTransform( dc,
 				&Utils::TGdiMatrix().Scale( xAxisScale, 1 ).Combine( shiftOrigin )
 			);
 			xAxis.Draw( dc, xAxisFocus, fontAxes, -szChartBodyUnits.cy, gridPen );
-		yAxis.SetZoomFactor( yAxis.GetZoomFactorToFitWidth(szChartBodyUnits.cy,30) );
+		yAxis.SetZoomFactor( yAxis.GetZoomFactorToFitWidth(szChartBody.cy,30) );
 			const float yAxisScale=(float)szChartBodyUnits.cy/yAxis.GetUnitCount();
 			::SetWorldTransform( dc,
 				&Utils::TGdiMatrix().RotateCcv90().Scale( 1, yAxisScale ).Combine( shiftOrigin )
