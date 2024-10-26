@@ -355,8 +355,7 @@ namespace Utils{
 		int GetDlgListBoxSelectedIndex(WORD id) const;
 		void WrapDlgItemsByOpeningCurlyBracket(WORD idA,WORD idZ) const;
 		void WrapDlgItemsByClosingCurlyBracketWithText(WORD idA,WORD idZ,LPCTSTR text,DWORD textColor) const;
-		CString CompactPathToFitInDlgItem(WORD id,LPCTSTR fullpath) const;
-		void SetDlgItemCompactPath(WORD id,LPCTSTR fullpath) const;
+		inline void SetDlgItemCompactPath(WORD id,LPCTSTR fullpath) const{ ::PathSetDlgItemPath( m_hWnd, id, fullpath ); }
 		void SetDlgItemFormattedText(WORD id,LPCTSTR format,...) const;
 		void SetDlgItemSingleCharUsingFont(WORD id,WCHAR singleChar,HFONT hFont) const;
 		void SetDlgItemSingleCharUsingFont(WORD id,WCHAR singleChar,LPCTSTR fontFace,int fontPointSize) const;

@@ -1972,22 +1972,6 @@ namespace Utils{
 		::DrawText( dc, text,-1, &r, DT_VCENTER|DT_SINGLELINE );
 	}
 
-	CString CRideDialog::CompactPathToFitInDlgItem(WORD id,LPCTSTR fullpath) const{
-		// compacts FullPath to fit in the dimensions of the given item
-		const CRideDC dc( *this, id );
-		const CString result=fullpath;
-		::PathCompactPath( dc, const_cast<PTCHAR>((LPCTSTR)result), dc.rect.Width() );
-		return result;
-	}
-
-	void CRideDialog::SetDlgItemCompactPath(WORD id,LPCTSTR fullpath) const{
-		// sets given window's text to compacted FullPath that fits in its dimensions
-		SetDlgItemText(
-			id,
-			CompactPathToFitInDlgItem( id, fullpath )
-		);
-	}
-
 	void CRideDialog::SetDlgItemFormattedText(WORD id,LPCTSTR format,...) const{
 		// sets given window's text to the text Formatted using given string and parameters; returns the number of characters set
 		va_list argList;
