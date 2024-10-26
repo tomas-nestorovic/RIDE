@@ -264,6 +264,7 @@ namespace Utils{
 		POINTF Transform(float x,float y) const;
 		inline POINTF Transform(const POINTF &pt) const{ return Transform( pt.x, pt.y ); }
 		POINTF TransformInversely(const POINTF &pt) const;
+		POINTF TransformInversely(const POINT &pt) const;
 	};
 
 	typedef const struct TSplitButtonAction sealed{
@@ -543,7 +544,7 @@ namespace Utils{
 		static const TCHAR CountPrefixes[];
 		static const CRideFont FontWingdings;
 
-		static SIZE GetPixelDistance(int nUnitsA,int nUnitsZ);
+		static long GetPixelDistance(int nUnitsA,int nUnitsZ);
 
 		CAxis(TLogValue logLength,TLogTime logValuePerUnit,TCHAR unit,LPCTSTR unitPrefixes,BYTE initZoomFactor,TVerticalAlign ticksAndLabelsAlign=TVerticalAlign::TOP,const CRideFont &font=CRideFont::Std);
 
@@ -564,10 +565,9 @@ namespace Utils{
 		int GetUnitCount() const;
 		TLogValue GetValue(int nUnits) const;
 		TLogValue GetValue(const POINT &ptClient) const;
-		const POINT &VtoDP(TLogValue v,BYTE zoomFactor) const;
-		const POINT &VtoDP(TLogValue v) const;
-		TLogValue DPtoV(const POINT &pt) const;
-		TLogValue DPtoV(long pixel) const;
+		TLogValue GetValueFromPixel(long nPixels) const;
+		long GetPixelCount(TLogValue v,BYTE zoomFactor) const;
+		long GetPixelCount(TLogValue v) const;
 		int GetClientUnits(TLogValue logValue) const; // for drawing in client area
 		inline TLogValue GetLength() const{ return logLength; }
 		void SetLength(TLogValue newLogLength);
@@ -721,8 +721,9 @@ namespace Utils{
 	void ScaleLogicalUnit(HDC dc);
 	void ScaleLogicalUnit(PINT values,BYTE nValues);
 	void UnscaleLogicalUnit(PINT values,BYTE nValues);
-	POINT &LPtoDP(POINT &pt);
-	POINT &DPtoLP(POINT &pt);
+	POINT LPtoDP(const POINT &pt);
+	SIZE LPtoDP(const SIZE &sz);
+	POINT DPtoLP(const POINT &pt);
 	COLORREF GetSaturatedColor(COLORREF color,float saturationFactor);
 	COLORREF GetBlendedColor(COLORREF color1,COLORREF color2,float blendFactor=.5f);
 	BYTE GetReversedByte(BYTE b);
@@ -745,11 +746,6 @@ namespace Utils{
 	void SetClipboardString(LPCTSTR str);
 	CString DoPromptSingleTypeFileName(LPCTSTR defaultSaveName,LPCTSTR singleFilter,DWORD flags=0);
 	void StdBeep();
-
-	inline SIZE &LPtoDP(SIZE &sz){
-		static_assert( sizeof(sz)==sizeof(POINT), "" );
-		return (SIZE &)LPtoDP((POINT &)sz);
-	}
 }
 
 void DDX_Check(CDataExchange *pDX,int nIDC,bool &value);

@@ -324,7 +324,7 @@ using namespace Charting;
 
 			TLogTime ClientPixelToTime(long pixel) const{
 				return	std::min(
-							scrollTime + timeline.DPtoV(pixel),
+							scrollTime + timeline.GetValueFromPixel(pixel),
 							timeline.GetLength()
 						);
 			}
@@ -440,7 +440,7 @@ using namespace Charting;
 					case SB_THUMBPOSITION:	// "thumb" released
 					case SB_THUMBTRACK	: si.nPos=si.nTrackPos;	break;
 				}
-				SetScrollTime( timeline.DPtoV(si.nPos) );
+				SetScrollTime( timeline.GetValueFromPixel(si.nPos) );
 				return TRUE;
 			}
 
@@ -535,13 +535,13 @@ using namespace Charting;
 				if (t<0) t=0;
 				else if (t>timeline.GetLength()) t=timeline.GetLength();
 				SCROLLINFO si={ sizeof(si), SIF_POS };
-					si.nPos=timeline.VtoDP(t).x;
+					si.nPos=timeline.GetPixelCount(t);
 				SetScrollInfo( SB_HORZ, &si, TRUE );
 				EXCLUSIVELY_LOCK(painter.params);
 					painter.params.id++; // stopping current painting
 					PaintCursorFeaturesInverted(false);
 					ScrollWindow(	// "base"
-						timeline.VtoDP(scrollTime).x - si.nPos,
+						timeline.GetPixelCount(scrollTime) - si.nPos,
 						0
 					);
 					scrollTime=t;
@@ -555,7 +555,7 @@ using namespace Charting;
 			TLogTime GetCenterTime() const{
 				CRect rc;
 				GetClientRect(&rc);
-				return scrollTime+timeline.DPtoV( rc.Width()/2 );
+				return scrollTime+timeline.GetValueFromPixel( rc.Width()/2 );
 			}
 
 			void SetCenterTime(TLogTime t){

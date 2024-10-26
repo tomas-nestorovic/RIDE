@@ -10,14 +10,21 @@ namespace Utils{
 		const CClientDC screen(nullptr);
 		quot=std::min( ::GetDeviceCaps(screen,LOGPIXELSX), ::GetDeviceCaps(screen,LOGPIXELSY) );
 		rem=SCREEN_DPI_DEFAULT;
-		static_cast<TRationalNumber &>(*this)=Simplify();
-		const div_t dQuot=div( (int)quot, 3 );
-		const div_t dRem=div( (int)rem, 3 );
-		if ((dQuot.rem|dRem.rem)==0) // divisible also by 3 ?
-			quot=dQuot.quot, rem=dRem.quot; // simplify even further
 	}
 
 	const TLogicalUnitScaleFactor LogicalUnitScaleFactor;
+
+	static void LPtoDP(LPPOINT points,int nPoints){
+		const CClientDC screen(nullptr);
+		ScaleLogicalUnit(screen);
+		::LPtoDP( screen, points, nPoints );
+	}
+
+	static void DPtoLP(LPPOINT points,int nPoints){
+		const CClientDC screen(nullptr);
+		ScaleLogicalUnit(screen);
+		::DPtoLP( screen, points, nPoints );
+	}
 
 
 
@@ -351,6 +358,11 @@ namespace Utils{
 		const float resultY= (m*dy-r*dx) / (s*m-r*n);
 		const POINTF ptf={ (dx-n*resultY)/m, resultY };
 		return ptf;
+	}
+
+	POINTF TGdiMatrix::TransformInversely(const POINT &pt) const{
+		const POINTF ptf={ pt.x, pt.y };
+		return TransformInversely(ptf);
 	}
 
 
@@ -853,14 +865,12 @@ namespace Utils{
 	CAxis::TDcState::TDcState(HDC dc,int nVisibleUnitsA,int nDrawnUnitsA)
 		// ctor
 		: graphicsMode( ::GetGraphicsMode(dc) )
-		, nUnitsAtOrigin( nDrawnUnitsA/LogicalUnitScaleFactor.rem*LogicalUnitScaleFactor.rem )
+		, nUnitsAtOrigin( nDrawnUnitsA/SCREEN_DPI_DEFAULT*SCREEN_DPI_DEFAULT )
 		, ptViewportOrg(dc)
 		, mAdvanced(dc) {
 		switch (graphicsMode){
 			case GM_COMPATIBLE:
-				ptViewportOrg.Offset(
-					GetPixelDistance( nVisibleUnitsA, nUnitsAtOrigin )
-				);
+				ptViewportOrg.x+=GetPixelDistance( nVisibleUnitsA, nUnitsAtOrigin );
 				break;
 			default:
 				mAdvanced=TGdiMatrix( nUnitsAtOrigin-nVisibleUnitsA, 0 ).Combine(mAdvanced);
@@ -1049,7 +1059,7 @@ namespace Utils{
 		// draws an Axis starting at [0,Origin.Y], while '-Origin.X' determines zero-based starting Value; returns index into the UnitPrefixes indicating which prefix was used to draw the Axis
 		if (nVisiblePixels<0)
 			nVisiblePixels=TClientRect( ::WindowFromDC(dc) ).Width();
-		const TLogInterval visible( from, from+DPtoV(nVisiblePixels) );
+		const TLogInterval visible( from, from+GetValueFromPixel(nVisiblePixels) );
 		Draw( dc, visible, font, primaryGridLength, hPrimaryGridPen, pOutDrawn );
 	}
 
@@ -1061,7 +1071,7 @@ namespace Utils{
 
 	void CAxis::DrawScrolled(HDC dc,long scrollPos,long nVisiblePixels,const CRideFont &font,int primaryGridLength,HPEN hPrimaryGridPen,PLogInterval pOutDrawn){
 		// draws an Axis starting at [0,Origin.Y], while '-Origin.X' determines zero-based starting Value; returns index into the UnitPrefixes indicating which prefix was used to draw the Axis
-		const TLogValue from=DPtoV(scrollPos);
+		const TLogValue from=GetValueFromPixel(scrollPos);
 		const CViewportOrgBackup org(dc);
 		::SetViewportOrgEx( dc, org.x+scrollPos, org.y, nullptr );
 		Draw( dc, from, nVisiblePixels, font, primaryGridLength, hPrimaryGridPen, pOutDrawn );
@@ -1070,11 +1080,6 @@ namespace Utils{
 	void CAxis::DrawScrolled(HDC dc,const CRideFont &font,int primaryGridLength,HPEN hPrimaryGridPen,PLogInterval pOutDrawn){
 		// draws an Axis starting at [0,Origin.Y], while '-Origin.X' determines zero-based starting Value; returns index into the UnitPrefixes indicating which prefix was used to draw the Axis
 		return DrawScrolled( dc, TViewportOrg(dc).x, -1, font, primaryGridLength, hPrimaryGridPen, pOutDrawn );
-	}
-
-	TLogValue CAxis::DPtoV(long pixel) const{
-		POINT pt={pixel};
-		return DPtoV(pt);
 	}
 
 	int CAxis::GetUnitCount(TLogValue logValue,BYTE zoomFactor) const{
@@ -1100,27 +1105,36 @@ namespace Utils{
 				return GetValue(
 					dcLastDrawing.nUnitsAtOrigin + (dcLastDrawing.ptViewportOrg.x-ptClient.x)/LogicalUnitScaleFactor
 				);
-			default:{
-				const POINTF ptClientUnitsF={ ptClient.x/Utils::LogicalUnitScaleFactor, ptClient.y/Utils::LogicalUnitScaleFactor };
+			default:
 				return GetValue(
-					dcLastDrawing.nUnitsAtOrigin + dcLastDrawing.mAdvanced.TransformInversely(ptClientUnitsF).x
+					dcLastDrawing.nUnitsAtOrigin + dcLastDrawing.mAdvanced.TransformInversely(DPtoLP(ptClient)).x
 				);
-			}
 		}
 	}
 
-	const POINT &CAxis::VtoDP(TLogValue v,BYTE zoomFactor) const{
-		POINT pt={ GetUnitCount(v,zoomFactor) };
-		return LPtoDP(pt);
+	TLogValue CAxis::GetValueFromPixel(long nPixels) const{
+		// see UnitsToPixels function for the explanation of equation (just in reverse)
+		const long currDpi=LogicalUnitScaleFactor.quot;
+		const auto d=div( nPixels, currDpi*SCREEN_DPI_DEFAULT );
+		const POINT pt={d.rem};
+		return GetValue( DPtoLP(pt).x + d.quot*SCREEN_DPI_DEFAULT*SCREEN_DPI_DEFAULT );
 	}
 
-	const POINT &CAxis::VtoDP(TLogValue v) const{
-		return VtoDP( v, zoomFactor );
+	static long UnitsToPixels(int nUnits){
+		const int currDpi=LogicalUnitScaleFactor.quot;
+		const auto d=div( nUnits, currDpi*SCREEN_DPI_DEFAULT ); // a value of circa 6M is confirmed to still stick to the empirically determined formula "zoom*nUnits+0.5", e.g. "1.25*nUnits+0.5" for 125% zoom
+		const POINT pt={d.rem}; // apply "LPtoDP" function to only the value under 6M ...
+		return LPtoDP(pt).x + d.quot*currDpi*currDpi; // ... and manually compute the rest by multiplication (optimized expr. "d.quot*d.rem*currDpi/SCREEN_DPI_DEFAULT")
+		// the following (commented out) is the implementation of the formula "zoom*nUnits+0.5", e.g. "1.25*nUnits+0.5" for 125% zoom
+		//return  ( currDpi*nUnits + SCREEN_DPI_DEFAULT/2 ) / SCREEN_DPI_DEFAULT;
 	}
 
-	TLogValue CAxis::DPtoV(const POINT &pt) const{
-		POINT tmp=pt;
-		return GetValue( DPtoLP(tmp).x );
+	long CAxis::GetPixelCount(TLogValue v,BYTE zoomFactor) const{
+		return UnitsToPixels( GetUnitCount(v,zoomFactor) );
+	}
+
+	long CAxis::GetPixelCount(TLogValue v) const{
+		return GetPixelCount( v, zoomFactor );
 	}
 
 	int CAxis::GetClientUnits(TLogValue logValue) const{
@@ -1128,11 +1142,8 @@ namespace Utils{
 		return GetUnitCount(logValue)-dcLastDrawing.nUnitsAtOrigin;
 	}
 
-	SIZE CAxis::GetPixelDistance(int nUnitsA,int nUnitsZ){
-		POINT ptA={nUnitsA}, ptB={nUnitsZ};
-		LPtoDP(ptA), LPtoDP(ptB);
-		const SIZE result={ ptB.x-ptA.x, ptB.y-ptA.y };
-		return result;
+	long CAxis::GetPixelDistance(int nUnitsA,int nUnitsZ){
+		return UnitsToPixels(nUnitsZ)-UnitsToPixels(nUnitsA);
 	}
 
 	void CAxis::SetLength(TLogValue newLogLength){
@@ -1145,7 +1156,7 @@ namespace Utils{
 
 	BYTE CAxis::GetZoomFactorToFitWidth(TLogValue logValue,long width,BYTE zoomFactorMax) const{
 		BYTE zf=0;
-		while (VtoDP(logValue,zf).x>width && zf<zoomFactorMax)
+		while (GetPixelCount(logValue,zf)>width && zf<zoomFactorMax)
 			zf++;
 		return zf;
 	}
@@ -2556,20 +2567,26 @@ namespace Utils{
 			*values++/=LogicalUnitScaleFactor;
 	}
 
-	POINT &LPtoDP(POINT &pt){
+	POINT LPtoDP(const POINT &pt){
 		// converts Point in logical units to a point in pixels
-		const CClientDC screen(nullptr);
-		ScaleLogicalUnit(screen);
-		::LPtoDP( screen, &pt, 1 );
-		return pt;
+		POINT result=pt;
+		LPtoDP( &result, 1 );
+		return result;
 	}
 
-	POINT &DPtoLP(POINT &pt){
+	SIZE LPtoDP(const SIZE &sz){
+		// converts Size in logical units to a size in pixels
+		SIZE result=sz;
+		static_assert( sizeof(result)==sizeof(POINT), "" );
+		LPtoDP( (LPPOINT)&result, 1 );
+		return result;
+	}
+
+	POINT DPtoLP(const POINT &pt){
 		// converts Point in pixels to a point in logical units
-		const CClientDC screen(nullptr);
-		ScaleLogicalUnit(screen);
-		::DPtoLP( screen, &pt, 1 );
-		return pt;
+		POINT result=pt;
+		DPtoLP( &result, 1 );
+		return result;
 	}
 
 	COLORREF GetSaturatedColor(COLORREF currentColor,float saturationFactor){
