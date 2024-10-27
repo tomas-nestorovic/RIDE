@@ -297,6 +297,12 @@ namespace Utils{
 
 	const XFORM TGdiMatrix::Identity={ 1, 0, 0, 1, 0, 0 };
 
+	TGdiMatrix::TGdiMatrix(HDC dc)
+		// ctor
+		: XFORM(Identity) {
+		::GetWorldTransform(dc,this);
+	}
+
 	TGdiMatrix::TGdiMatrix(float dx,float dy)
 		// ctor
 		: XFORM(Identity) {

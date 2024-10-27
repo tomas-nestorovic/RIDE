@@ -252,7 +252,7 @@ namespace Utils{
 		static const XFORM Identity;
 
 		inline TGdiMatrix(const XFORM &m=Identity) : XFORM(m) {}
-		inline TGdiMatrix(HDC dc){ ::GetWorldTransform(dc,this); }
+		TGdiMatrix(HDC dc);
 		TGdiMatrix(float dx,float dy);
 
 		TGdiMatrix &Shift(float dx,float dy);
