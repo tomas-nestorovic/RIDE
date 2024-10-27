@@ -992,7 +992,7 @@ namespace Utils{
 		ASSERT( unitPrefixes!=nullptr ); // use NoPrefixes instead of Nullptr
 	}
 
-	void CAxis::Draw(HDC dc,TLogInterval visible,const CRideFont &font,int primaryGridLength,HPEN hPrimaryGridPen,PLogInterval pOutDrawn){
+	TLogInterval CAxis::Draw(HDC dc,TLogInterval visible,int primaryGridLength,HPEN hPrimaryGridPen){
 		// draws an Axis starting at current origin
 		visible.a=std::max( visible.a, 0 );
 		visible.z=std::min( visible.z, logLength );
@@ -1015,8 +1015,6 @@ namespace Utils{
 			std::max( visible.a, 0 )/intervalBig*intervalBig,
 			std::min( logLength, RoundUpToMuls(visible.z,intervalBig) )
 		);
-		if (pOutDrawn)
-			*pOutDrawn=draw;
 		// - drawing it
 		logCursorPos=-1; // cursor indicator hidden
 		dcLastDrawing=TDcState( dc, GetUnitCount(visible.a), GetUnitCount(draw.a) ); // saving the current state of DC for any subsequent drawing (e.g. position indicator) to match the Axis
@@ -1053,33 +1051,35 @@ namespace Utils{
 						label, label.Format( v/k, unitPrefixes[iUnitPrefix], unit )
 					);
 				}
+		// - return what has been drawn
+		return draw;
 	}
 
-	void CAxis::Draw(HDC dc,TLogValue from,long nVisiblePixels,const CRideFont &font,int primaryGridLength,HPEN hPrimaryGridPen,PLogInterval pOutDrawn){
+	TLogInterval CAxis::Draw(HDC dc,TLogValue from,long nVisiblePixels,int primaryGridLength,HPEN hPrimaryGridPen){
 		// draws an Axis starting at [0,Origin.Y], while '-Origin.X' determines zero-based starting Value; returns index into the UnitPrefixes indicating which prefix was used to draw the Axis
 		if (nVisiblePixels<0)
 			nVisiblePixels=TClientRect( ::WindowFromDC(dc) ).Width();
 		const TLogInterval visible( from, from+GetValueFromPixel(nVisiblePixels) );
-		Draw( dc, visible, font, primaryGridLength, hPrimaryGridPen, pOutDrawn );
+		return Draw( dc, visible, primaryGridLength, hPrimaryGridPen );
 	}
 
-	void CAxis::DrawWhole(HDC dc,const CRideFont &font,int primaryGridLength,HPEN hPrimaryGridPen){
+	TLogInterval CAxis::DrawWhole(HDC dc,int primaryGridLength,HPEN hPrimaryGridPen){
 		// draws an Axis starting at current origin; returns index into the UnitPrefixes indicating which prefix was used to draw the Axis
 		static const TLogInterval WholeAxis( 0, LogValueMax );
-		Draw( dc, WholeAxis, font, primaryGridLength, hPrimaryGridPen );
+		return Draw( dc, WholeAxis, primaryGridLength, hPrimaryGridPen );
 	}
 
-	void CAxis::DrawScrolled(HDC dc,long scrollPos,long nVisiblePixels,const CRideFont &font,int primaryGridLength,HPEN hPrimaryGridPen,PLogInterval pOutDrawn){
+	TLogInterval CAxis::DrawScrolled(HDC dc,long scrollPos,long nVisiblePixels,int primaryGridLength,HPEN hPrimaryGridPen){
 		// draws an Axis starting at [0,Origin.Y], while '-Origin.X' determines zero-based starting Value; returns index into the UnitPrefixes indicating which prefix was used to draw the Axis
 		const TLogValue from=GetValueFromPixel(scrollPos);
 		const CViewportOrgBackup org(dc);
 		::SetViewportOrgEx( dc, org.x+scrollPos, org.y, nullptr );
-		Draw( dc, from, nVisiblePixels, font, primaryGridLength, hPrimaryGridPen, pOutDrawn );
+		return Draw( dc, from, nVisiblePixels, primaryGridLength, hPrimaryGridPen );
 	}
 
-	void CAxis::DrawScrolled(HDC dc,const CRideFont &font,int primaryGridLength,HPEN hPrimaryGridPen,PLogInterval pOutDrawn){
+	TLogInterval CAxis::DrawScrolled(HDC dc,int primaryGridLength,HPEN hPrimaryGridPen){
 		// draws an Axis starting at [0,Origin.Y], while '-Origin.X' determines zero-based starting Value; returns index into the UnitPrefixes indicating which prefix was used to draw the Axis
-		return DrawScrolled( dc, TViewportOrg(dc).x, -1, font, primaryGridLength, hPrimaryGridPen, pOutDrawn );
+		return DrawScrolled( dc, TViewportOrg(dc).x, -1, primaryGridLength, hPrimaryGridPen );
 	}
 
 	int CAxis::GetUnitCount(TLogValue logValue,BYTE zoomFactor) const{

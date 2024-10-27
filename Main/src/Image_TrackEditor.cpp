@@ -454,8 +454,7 @@ using namespace Charting;
 				::SetViewportOrgEx( dc, 0, Utils::TClientRect(m_hWnd).Height()/2, nullptr );
 				EXCLUSIVELY_LOCK(painter.params);
 					painter.params.id++;
-					TLogInterval drawn;
-					timeline.Draw( dc, scrollTime, -1, Utils::CRideFont::Std, 0, nullptr, &drawn );
+					const TLogInterval drawn=timeline.Draw( dc, scrollTime, -1, 0, nullptr );
 					painter.params.visible.tStart=drawn.a, painter.params.visible.tEnd=drawn.z;
 					painter.params.zoomFactor=timeline.GetZoomFactor();
 				// . drawing the rest in parallel thread due to computational complexity if painting the whole Track

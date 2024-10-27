@@ -551,11 +551,11 @@ namespace Utils{
 		// any value that is 'int' is in device units (e.g. for drawing)
 		// any value that is 'TLogValue' is in Axis units
 		inline CGraphics CreateGraphics(HDC dc) const{ return CGraphics(dc,*this); }
-		void Draw(HDC dc,TLogInterval visible,const CRideFont &font,int primaryGridLength=0,HPEN hPrimaryGridPen=nullptr,PLogInterval pOutDrawn=nullptr);
-		void Draw(HDC dc,TLogValue from,long nVisiblePixels,const CRideFont &font,int primaryGridLength=0,HPEN hPrimaryGridPen=nullptr,PLogInterval pOutDrawn=nullptr);
-		void DrawWhole(HDC dc,const CRideFont &font,int primaryGridLength=0,HPEN hPrimaryGridPen=nullptr);
-		void DrawScrolled(HDC dc,long scrollPos,long nVisiblePixels,const CRideFont &font,int primaryGridLength=0,HPEN hPrimaryGridPen=nullptr,PLogInterval pOutDrawn=nullptr);
-		void DrawScrolled(HDC dc,const CRideFont &font,int primaryGridLength=0,HPEN hPrimaryGridPen=nullptr,PLogInterval pOutDrawn=nullptr);
+		TLogInterval Draw(HDC dc,TLogInterval visible,int primaryGridLength=0,HPEN hPrimaryGridPen=nullptr);
+		TLogInterval Draw(HDC dc,TLogValue from,long nVisiblePixels,int primaryGridLength=0,HPEN hPrimaryGridPen=nullptr);
+		TLogInterval DrawWhole(HDC dc,int primaryGridLength=0,HPEN hPrimaryGridPen=nullptr);
+		TLogInterval DrawScrolled(HDC dc,long scrollPos,long nVisiblePixels,int primaryGridLength=0,HPEN hPrimaryGridPen=nullptr);
+		TLogInterval DrawScrolled(HDC dc,int primaryGridLength=0,HPEN hPrimaryGridPen=nullptr);
 		inline TLogValue GetCursorPos() const{ return logCursorPos; }
 		void DrawCursorPos(HDC dc,TLogValue newLogPos);
 		void DrawCursorPos(HDC dc,const POINT &ptClient);

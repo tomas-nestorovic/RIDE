@@ -312,8 +312,8 @@ namespace Charting
 		, gridPen( 0, 0xcacaca, PS_DOT ) // light gray
 		, fontAxes(fontAxes)
 		, xMaxOrg(xMax), yMaxOrg(yMax)
-		, xAxis( xMaxOrg, 1, xAxisUnit, xAxisUnitPrefixes, 0, Utils::CAxis::TVerticalAlign::BOTTOM )
-		, yAxis( yMaxOrg, 1, yAxisUnit, yAxisUnitPrefixes, 0, Utils::CAxis::TVerticalAlign::TOP )
+		, xAxis( xMaxOrg, 1, xAxisUnit, xAxisUnitPrefixes, 0, Utils::CAxis::TVerticalAlign::BOTTOM, fontAxes )
+		, yAxis( yMaxOrg, 1, yAxisUnit, yAxisUnitPrefixes, 0, Utils::CAxis::TVerticalAlign::TOP, fontAxes )
 		// - all data shown by default
 		, xAxisFocus( 0, LogValueMax )
 		, percentile(10100) { // invalid, must call SetPercentile !
@@ -336,13 +336,13 @@ namespace Charting
 			::SetWorldTransform( dc,
 				&Utils::TGdiMatrix().Scale( xAxisScale, 1 ).Combine( shiftOrigin )
 			);
-			xAxis.Draw( dc, xAxisFocus, fontAxes, -szChartBodyUnits.cy, gridPen );
+			xAxis.Draw( dc, xAxisFocus, -szChartBodyUnits.cy, gridPen );
 		yAxis.SetZoomFactor( yAxis.GetZoomFactorToFitWidth(szChartBody.cy,30) );
 			const float yAxisScale=(float)szChartBodyUnits.cy/yAxis.GetUnitCount();
 			::SetWorldTransform( dc,
 				&Utils::TGdiMatrix().RotateCcv90().Scale( 1, yAxisScale ).Combine( shiftOrigin )
 			);
-			yAxis.DrawWhole( dc, fontAxes, szChartBodyUnits.cx, gridPen );
+			yAxis.DrawWhole( dc, szChartBodyUnits.cx, gridPen );
 		// - setting transformation to correctly draw all Series (looks better than when relying on the Axes)
 		mValues=Utils::TGdiMatrix(
 			-xAxisFocus.a , 0
