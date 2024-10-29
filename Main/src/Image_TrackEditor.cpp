@@ -1276,7 +1276,11 @@ using namespace Charting;
 											);
 										visible=peList.GetCount()>0;
 									}
-									void DrawAsync(const CChartView::CPainter &p) const override{
+									TIndex GetItemCount() const{
+										// returns the number of available items
+										return peList.GetCount();
+									}
+									void DrawAsync(const CChartView::CPainter &p,const CActionProgress &ap) const override{
 										// asynchronous drawing; always compare actual drawing ID with the one on start
 										const WORD id=p.GetCurrentDrawingIdSync();
 										const auto &di=*(const CChartView::CXyDisplayInfo *)&p.di;
@@ -1285,7 +1289,7 @@ using namespace Charting;
 										logFont.lfOrientation = logFont.lfEscapement=900; // in tenths of degrees (a tweak to draw vertically oriented text without world transformation)
 										const HGDIOBJ hFont0=::SelectObject( p.dc, ::CreateFontIndirect(&logFont) );
 											const HGDIOBJ hBrush0=::SelectObject( p.dc, ::GetStockObject(NULL_BRUSH) );
-												for( auto it=peList.GetIterator(); it; ){
+												for( auto it=peList.GetIterator(); it; ap.IncrementProgress() ){
 													const TParseEvent &pe=*it++->second;
 													EXCLUSIVELY_LOCK(p);
 													if (p.drawingId!=id)
@@ -1333,7 +1337,7 @@ using namespace Charting;
 											// . prepend chart-specific menu
 											subMenu.Prepend( IDR_SCATTERPLOT );
 											// . update available Revolutions submenu
-											for( TCHAR rev=Revolution::R2,cmdStr[16]; rev<indexSeries.GetPointCount(); rev++ ){ 
+											for( TCHAR rev=Revolution::R2,cmdStr[16]; rev<indexSeries.GetItemCount(); rev++ ){ 
 												::wsprintf( cmdStr, _T("%c\t%c"), '0'+rev, '0'+rev );
 												subMenu.InsertAfter( ID_DEFAULT1+rev-2, MF_BYCOMMAND, ID_DEFAULT1+rev-1, cmdStr );
 											}

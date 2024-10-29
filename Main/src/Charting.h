@@ -46,8 +46,9 @@ namespace Charting
 
 			inline bool SupportsCursorSnapping() const{ return name!=nullptr; }
 			virtual PCItem GetItem(TIndex i,const POINT &ptClient) const;
+			virtual TIndex GetItemCount() const=0;
 			virtual TIndex GetNearestItemIndex(const CDisplayInfo &di,const POINT &ptClient,TLogValue &rOutDistance) const;
-			virtual void DrawAsync(const CPainter &p) const=0;
+			virtual void DrawAsync(const CPainter &p,const CActionProgress &ap) const=0;
 		} *PCGraphics;
 
 		// see type convention note above
@@ -67,8 +68,8 @@ namespace Charting
 
 			void GetDrawingLimits(WORD percentile,TLogValue &rOutMaxX,TLogValue &rOutMaxY) const override; // in hundredths (e.g. "2345" means 23.45)
 			PCItem GetItem(TIndex i,const POINT &ptClient) const override;
-			inline TIndex GetPointCount() const{ return nPoints; }
-			void DrawAsync(const CPainter &p) const override;
+			TIndex GetItemCount() const override;
+			void DrawAsync(const CPainter &p,const CActionProgress &ap) const override;
 			CHistogram CreateYxHistogram(TLogValue mergeFilter=0) const;
 		};
 
@@ -77,7 +78,7 @@ namespace Charting
 		public:
 			CXyBrokenLineSeries(TIndex nPoints,PCLogPoint points,HPEN hLinePen);
 
-			void DrawAsync(const CPainter &p) const override;
+			void DrawAsync(const CPainter &p,const CActionProgress &ap) const override;
 		};
 
 		// see type convention note above
@@ -87,11 +88,11 @@ namespace Charting
 
 			void GetDrawingLimits(WORD percentile,TLogValue &rOutMaxX,TLogValue &rOutMaxY) const override; // in hundredths (e.g. "2345" means 23.45)
 			TIndex GetNearestItemIndex(const CDisplayInfo &di,const POINT &ptClient,TLogValue &rOutDistance) const override;
-			void DrawAsync(const CPainter &p) const override;
+			void DrawAsync(const CPainter &p,const CActionProgress &ap) const override;
 		};
 
 		// see type convention note above
-		class CDisplayInfo abstract{
+		class CDisplayInfo abstract:public CActionProgressBar{
 		public:
 			typedef const struct TSnappedItem{
 				PCGraphics graphics;
@@ -173,7 +174,6 @@ namespace Charting
 		CChartView(CDisplayInfo &di);
 
 		inline TStatus GetStatus() const{ return status; }
-		LPCTSTR GetCaptionSuffix() const;
 		inline const CDisplayInfo &GetDisplayInfo() const{ return painter.di; }
 	};
 
@@ -186,6 +186,7 @@ namespace Charting
 	protected:
 		CString captionBase;
 		CChartView chartView;
+		CProgressCtrl drawingProgressBar;
 		CStatusBar statusBar;
 
 		BOOL PreCreateWindow(CREATESTRUCT &cs) override;

@@ -87,14 +87,19 @@ namespace Charting
 		return points+i;
 	}
 
-	void CChartView::CXyPointSeries::DrawAsync(const CPainter &p) const{
+	TIndex CChartView::CXyPointSeries::GetItemCount() const{
+		// returns the number of available items
+		return nPoints;
+	}
+
+	void CChartView::CXyPointSeries::DrawAsync(const CPainter &p,const CActionProgress &ap) const{
 		// asynchronous drawing; always compare actual drawing ID with the one on start
 		const WORD id=p.GetCurrentDrawingIdSync();
 		const CXyDisplayInfo &di=*(const CXyDisplayInfo *)&p.di;
 		const HGDIOBJ hPen0=::SelectObject( p.dc, hPen );
 			constexpr TIndex Stride=64;
 			for( TIndex i=0; i<Stride; i++ )
-				for( TIndex j=i+0; j<nPoints; j+=Stride ){
+				for( TIndex j=i+0; j<nPoints; j+=Stride,ap.IncrementProgress() ){
 					EXCLUSIVELY_LOCK(p);
 					if (p.drawingId!=id)
 						break;
@@ -141,7 +146,7 @@ namespace Charting
 		: CXyPointSeries( nPoints, points, hLinePen ) {
 	}
 
-	void CChartView::CXyBrokenLineSeries::DrawAsync(const CPainter &p) const{
+	void CChartView::CXyBrokenLineSeries::DrawAsync(const CPainter &p,const CActionProgress &ap) const{
 		// asynchronous drawing; always compare actual drawing ID with the one on start
 		if (nPoints<2)
 			return;
@@ -150,7 +155,7 @@ namespace Charting
 		const HGDIOBJ hPen0=::SelectObject( p.dc, hPen );
 			POINT pt=di.GetClientUnits( *points );
 			::MoveToEx( p.dc, pt.x, pt.y, nullptr );
-			for( TIndex j=1; j<nPoints; j++ ){
+			for( TIndex j=1; j<nPoints; j++,ap.IncrementProgress() ){
 				EXCLUSIVELY_LOCK(p);
 				if (p.drawingId!=id)
 					break;
@@ -208,12 +213,12 @@ namespace Charting
 			return rOutDistance=ptClientValue.ManhattanDistance(ptR), R;
 	}
 
-	void CChartView::CXyOrderedBarSeries::DrawAsync(const CPainter &p) const{
+	void CChartView::CXyOrderedBarSeries::DrawAsync(const CPainter &p,const CActionProgress &ap) const{
 		// asynchronous drawing; always compare actual drawing ID with the one on start
 		const WORD id=p.GetCurrentDrawingIdSync();
 		const CXyDisplayInfo &di=*(const CXyDisplayInfo *)&p.di;
 		const HGDIOBJ hPen0=::SelectObject( p.dc, hPen );
-			for( TIndex i=0; i<nPoints; i++ ){
+			for( TIndex i=0; i<nPoints; i++,ap.IncrementProgress() ){
 				const TLogPoint &pt=points[i];
 				if (pt.x>di.GetAxisX().GetLength())
 					break;
@@ -233,9 +238,12 @@ namespace Charting
 
 
 
+	static const bool CannotBeCancelled;
+
 	CChartView::CDisplayInfo::CDisplayInfo(UINT menuResourceId,RCMargin margin,const PCGraphics graphics[],BYTE nGraphics)
 		// ctor
-		: menuResourceId(menuResourceId)
+		: CActionProgressBar(CannotBeCancelled)
+		, menuResourceId(menuResourceId)
 		, margin(margin)
 		, graphics(graphics) , nGraphics(nGraphics)
 		, snapToNearestItem(true) {
@@ -479,6 +487,10 @@ namespace Charting
 			p.redrawEvent.Lock();
 			if (!::IsWindow(cv.m_hWnd)) // window closed?
 				break;
+			TIndex nItemsTotal=0;
+			for( BYTE i=0; i<p.di.nGraphics; i++ )
+				nItemsTotal+=p.di.graphics[i]->GetItemCount();
+			p.di.SetProgressTarget( nItemsTotal );
 			cv.SetStatus(DRAWING);
 			const WORD id=p.GetCurrentDrawingIdSync();
 			// . creating and preparing the canvas
@@ -498,7 +510,7 @@ namespace Charting
 			for( BYTE i=0; i<p.di.nGraphics; i++ ){
 				const PCGraphics g=p.di.graphics[i];
 				if (g->visible)
-					g->DrawAsync( p );
+					g->DrawAsync( p, p.di );
 				if (id!=p.GetCurrentDrawingIdSync()) // new paint request?
 					break;
 			}
@@ -544,18 +556,6 @@ namespace Charting
 		: painter( *this, di )
 		, status(READY) {
 		painter.Resume();
-	}
-
-	LPCTSTR CChartView::GetCaptionSuffix() const{
-		switch (status){
-			case DRAWING:
-				return _T("[Drawing]");
-			default:
-				ASSERT(FALSE);
-				//fallthrough
-			case READY:
-				return _T("");
-		}
 	}
 
 	void CChartView::SetStatus(TStatus newStatus){
@@ -612,9 +612,13 @@ namespace Charting
 			case WM_CREATE:{
 				const LRESULT result=__super::WindowProc(msg,wParam,lParam);
 				chartView.Create( nullptr, captionBase, AFX_WS_DEFAULT_VIEW&~WS_BORDER|WS_CLIPSIBLINGS, rectDefault, this, AFX_IDW_PANE_FIRST );
-				static constexpr UINT Indicator=ID_SEPARATOR;
+				static constexpr UINT Indicators[]={ ID_SEPARATOR, ID_SEPARATOR };
 				statusBar.Create(this);
-				statusBar.SetIndicators(&Indicator,1);
+				statusBar.SetIndicators( Indicators, ARRAYSIZE(Indicators) );
+				statusBar.SetPaneInfo( 0, ID_SEPARATOR, SBPS_NOBORDERS, 64 );
+				statusBar.SetPaneInfo( 1, ID_SEPARATOR, SBPS_NORMAL|SBPS_STRETCH, 0 );
+				drawingProgressBar.Create( WS_CHILD, rectDefault, &statusBar, 0 );
+				chartView.painter.di.hProgressBar=drawingProgressBar.m_hWnd;
 				return result;
 			}
 			case WM_ACTIVATE:
@@ -632,10 +636,20 @@ namespace Charting
 				break;
 			default:
 				if (msg==CChartView::WM_CHART_STATUS_CHANGED){
-					SetWindowText(
-						Utils::SimpleFormat( _T("%s %s"), captionBase, chartView.GetCaptionSuffix() )
-					);
-					statusBar.SetPaneText( 0, chartView.painter.di.GetStatus() );
+					switch (chartView.GetStatus()){
+						case CChartView::TStatus::READY:
+							statusBar.SetPaneText( 0, _T("Ready") );
+							drawingProgressBar.ShowWindow(SW_HIDE);
+							break;
+						case CChartView::TStatus::DRAWING:{
+							CRect rc;
+							statusBar.GetItemRect(0,&rc);
+							drawingProgressBar.SetWindowPos( nullptr, rc.left, rc.top, rc.Width(), rc.Height(), SWP_NOZORDER );
+							drawingProgressBar.ShowWindow(SW_SHOW);
+							break;
+						}
+					}
+					statusBar.SetPaneText( 1, chartView.painter.di.GetStatus() );
 					return 0;
 				}
 		}
