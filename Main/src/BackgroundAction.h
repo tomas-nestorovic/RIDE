@@ -38,13 +38,28 @@
 
 		virtual void SetProgressTarget(int targetProgress);
 		virtual void UpdateProgress(int newProgress,TBPFLAG status=TBPFLAG::TBPF_NORMAL) const;
-		void IncrementProgress(int increment=1);
+		void IncrementProgress(int increment=1) const;
 		CActionProgress CreateSubactionProgress(int thisProgressIncrement,int subactionProgressTarget=INT_MAX) const;
 	} *PActionProgress; // call UpdateProgress method with progress from <0;ProgressTarget)
 
 
 
-	typedef class CBackgroundActionCancelable:public CBackgroundAction,public CActionProgress,public Utils::CRideDialog{
+	class CActionProgressBar:public CActionProgress{
+	protected:
+		bool IsVisibleProgress(int newProgress) const;
+	public:
+		HWND hProgressBar;
+
+		CActionProgressBar(const volatile bool &cancelled);
+
+		void SetProgressTarget(int targetProgress) override;
+		void SetProgressTargetInfinity();
+		void UpdateProgress(int newProgress,TBPFLAG status=TBPFLAG::TBPF_NORMAL) const override;
+	};
+
+
+
+	typedef class CBackgroundActionCancelable:public CBackgroundAction,public CActionProgressBar,public Utils::CRideDialog{
 	protected:
 		const int callerThreadPriorityOrg;
 		volatile bool bCancelled;
@@ -67,8 +82,6 @@
 		~CBackgroundActionCancelable();
 
 		TStdWinError Perform(bool suspendAllViews=false);
-		void SetProgressTarget(int targetProgress) override;
-		void SetProgressTargetInfinity();
 		void UpdateProgress(int newProgress,TBPFLAG status=TBPFLAG::TBPF_NORMAL) const override;
 		void UpdateProgressFinished() const;
 		TStdWinError TerminateWithSuccess();

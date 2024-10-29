@@ -91,6 +91,7 @@
 	void CActionProgress::SetProgressTarget(int targetProgress){
 		// sets Worker's target progress state, "100% completed"
 		this->targetProgress=targetProgress;
+		this->currProgress=0;
 	}
 
 	void CActionProgress::UpdateProgress(int newProgress,TBPFLAG status) const{
@@ -108,7 +109,7 @@
 		);
 	}
 
-	void CActionProgress::IncrementProgress(int increment){
+	void CActionProgress::IncrementProgress(int increment) const{
 		ASSERT( increment>0 );
 		UpdateProgress( currProgress+increment );
 	}
@@ -131,12 +132,56 @@
 
 
 
+	CActionProgressBar::CActionProgressBar(const volatile bool &cancelled)
+		// ctor
+		: CActionProgress( &None, cancelled, 0, INT_MAX )
+		, hProgressBar(0) {
+	}
+
+	void CActionProgressBar::SetProgressTarget(int targetProgress){
+		// sets Worker's target progress state, "100% completed"
+		__super::SetProgressTarget(targetProgress);
+		::PostMessage( hProgressBar, PBM_SETRANGE32, 0, targetProgress );
+		::PostMessage( hProgressBar, PBM_SETPOS, 0, 0 ); // zeroing the progress-bar
+	}
+
+	void CActionProgressBar::SetProgressTargetInfinity(){
+		// sets Worker's target progress state to infinity
+		SetProgressTarget(INT_MAX);
+	}
+
+	#define PB_RESOLUTION	100
+
+	bool CActionProgressBar::IsVisibleProgress(int newProgress) const{
+		// True <=> the NewProgress visibly changes, otherwise False; this is to prevent from overwhelming the app with messages - target of 60k mustn't mean 60.000 messages!
+		return newProgress*PB_RESOLUTION/targetProgress > currProgress*PB_RESOLUTION/targetProgress; // always progressing towards the Target, never back
+	}
+
+	void CActionProgressBar::UpdateProgress(int newProgress,TBPFLAG status) const{
+		// refreshes the displaying of actual progress
+		if (hProgressBar) // the window doesn't exist if Worker already cancelled but the Worker hasn't yet found out that it can no longer Continue
+			if (newProgress<targetProgress){ // not yet finished?
+				if (IsVisibleProgress(newProgress))
+					::PostMessage( hProgressBar, PBM_SETPOS, newProgress, 0 );
+				__super::UpdateProgress( newProgress, status );	
+			}
+	}
+
+
+
+
+
+
+
+
+
+
 	const CBackgroundActionCancelable *CBackgroundActionCancelable::pSingleInstance;
 
 	CBackgroundActionCancelable::CBackgroundActionCancelable(UINT dlgResId)
 		// ctor
 		: Utils::CRideDialog( dlgResId, CWnd::GetActiveWindow() )
-		, CActionProgress( &None, bCancelled, 0, INT_MAX )
+		, CActionProgressBar( bCancelled )
 		, callerThreadPriorityOrg( ::GetThreadPriority(::GetCurrentThread()) )
 		, bCancelled(false) , bTargetStateReached(false) {
 	}
@@ -144,7 +189,7 @@
 	CBackgroundActionCancelable::CBackgroundActionCancelable(AFX_THREADPROC fnAction,LPCVOID actionParams,int actionThreadPriority)
 		// ctor
 		: Utils::CRideDialog( IDR_ACTION_PROGRESS, CWnd::GetActiveWindow() )
-		, CActionProgress( &None, bCancelled, 0, INT_MAX )
+		, CActionProgressBar( bCancelled )
 		, callerThreadPriorityOrg( ::GetThreadPriority(::GetCurrentThread()) )
 		, bCancelled(false) , bTargetStateReached(false) {
 		BeginAnother( fnAction, actionParams, actionThreadPriority );
@@ -168,6 +213,7 @@
 		// dialog initialization
 		if (SUCCEEDED(pActionTaskbarList.CoCreateInstance( CLSID_TaskbarList, nullptr, CLSCTX_INPROC_SERVER )))
 			pActionTaskbarList->HrInit();
+		hProgressBar=GetDlgItemHwnd(ID_STATE);
 		SetTimer( ID_Y, 1000, nullptr );
 		::PostMessage( m_hWnd, WM_COMMAND, IDCONTINUE, 0 ); // launching the Worker
 		pSingleInstance=this;
@@ -237,35 +283,15 @@
 			);
 	}
 
-	void CBackgroundActionCancelable::SetProgressTarget(int targetProgress){
-		// sets Worker's target progress state, "100% completed"
-		__super::SetProgressTarget(targetProgress);
-		::PostMessage(
-			GetDlgItemHwnd(ID_STATE),
-			PBM_SETRANGE32,
-			0, targetProgress
-		);
-	}
-
-	void CBackgroundActionCancelable::SetProgressTargetInfinity(){
-		// sets Worker's target progress state to infinity
-		SetProgressTarget(INT_MAX);
-	}
-
-	#define PB_RESOLUTION	100
-
 	void CBackgroundActionCancelable::UpdateProgress(int newProgress,TBPFLAG status) const{
 		// refreshes the displaying of actual progress
 		if (m_hWnd) // the window doesn't exist if Worker already cancelled but the Worker hasn't yet found out that it can no longer Continue
 			if (newProgress<targetProgress){
 				// Worker not yet finished - refreshing
-				if (newProgress>currProgress) // always progressing towards the Target, never back
-					if (newProgress*PB_RESOLUTION/targetProgress > currProgress*PB_RESOLUTION/targetProgress){ // preventing from overwhelming the app with messages - target of 60k shouldn't mean 60.000 messages
-						GetDlgItem(ID_STATE)->PostMessage( PBM_SETPOS, newProgress );
-						if (pActionTaskbarList){
-							pActionTaskbarList->SetProgressValue( *app.m_pMainWnd, newProgress, targetProgress );
-							pActionTaskbarList->SetProgressState( *app.m_pMainWnd, status );
-						}
+				if (IsVisibleProgress(newProgress))
+					if (pActionTaskbarList){
+						pActionTaskbarList->SetProgressValue( *app.m_pMainWnd, newProgress, targetProgress );
+						pActionTaskbarList->SetProgressState( *app.m_pMainWnd, status );
 					}
 				__super::UpdateProgress( newProgress, status );	
 			}else
@@ -439,7 +465,6 @@
 										iCurrAction*(painting.charHeight+PADDING_ACTION)
 										+
 										painting.charHeight+PADDING_STATUS;
-							SendDlgItemMessage( ID_STATE, PBM_SETPOS, 0 ); // zeroing the progress-bar
 							SetDlgItemPos( ID_STATE, painting.rcActions.left, y );
 							// . repainting the list of Actions
 							Invalidate();
