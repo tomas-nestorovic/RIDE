@@ -1162,8 +1162,9 @@ namespace Utils{
 
 	BYTE CAxis::GetZoomFactorToFitWidth(TLogValue logValue,long width,BYTE zoomFactorMax) const{
 		BYTE zf=0;
-		while (GetPixelCount(logValue,zf)>width && zf<zoomFactorMax)
-			zf++;
+		for( const Yahel::TInterval<long> ti(0,width); zf<zoomFactorMax; zf++ ) // consider integer overflow into negative numbers
+			if (ti.Contains( GetPixelCount(logValue,zf) ))
+				break;
 		return zf;
 	}
 
