@@ -994,7 +994,7 @@ namespace Utils{
 		, ticksAndLabelsAlign(ticksAndLabelsAlign)
 		, unit(unit) , unitPrefixes(unitPrefixes) , font(font)
 		, dcLastDrawing(nullptr,0,0)
-		, zoomFactor(initZoomFactor) {
+		, zoomFactor(initZoomFactor) , scrollFactor(0) {
 		ASSERT( unitPrefixes!=nullptr ); // use NoPrefixes instead of Nullptr
 	}
 
@@ -1100,9 +1100,17 @@ namespace Utils{
 		return	GetUnitCount( logLength );
 	}
 
+	TLogValue CAxis::GetValue(int nUnits,BYTE factor) const{
+		const auto tmp=((TLogValue)nUnits<<factor)*logValuePerUnit;
+		return	tmp<LogValueMax ? tmp : LogValueMax;
+	}
+
 	TLogValue CAxis::GetValue(int nUnits) const{
-		const auto tmp=((LONGLONG)nUnits<<zoomFactor)*logValuePerUnit;
-		return	tmp<INT_MAX ? tmp : INT_MAX;
+		return GetValue( nUnits, zoomFactor );
+	}
+
+	TLogValue CAxis::GetValueFromScroll(TScrollPos pos) const{
+		return GetValue( pos, scrollFactor );
 	}
 
 	TLogValue CAxis::GetValue(const POINT &ptClient) const{
@@ -1154,6 +1162,16 @@ namespace Utils{
 
 	void CAxis::SetLength(TLogValue newLogLength){
 		logCursorPos=std::min( logCursorPos, logLength=newLogLength+1 );
+	}
+
+	CAxis::TScrollPos CAxis::GetScrollMax(){
+		TScrollPos scrollMax;
+		for( scrollFactor=zoomFactor; ( scrollMax=GetUnitCount(logLength,scrollFactor)+1 )>SHRT_MAX; scrollFactor++ );
+		return scrollMax;
+	}
+
+	CAxis::TScrollPos CAxis::GetScrollPos(TLogValue v) const{
+		return GetUnitCount( v, scrollFactor );
 	}
 
 	BYTE CAxis::GetZoomFactorToFitWidth(long width,BYTE zoomFactorMax) const{

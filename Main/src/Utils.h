@@ -498,6 +498,7 @@ namespace Utils{
 		// any value that is 'TLogValue' is in Axis units
 		TLogValue logLength;
 		BYTE zoomFactor;
+		BYTE scrollFactor;
 		struct TDcState sealed{
 			int nUnitsAtOrigin;
 			int graphicsMode;
@@ -510,7 +511,11 @@ namespace Utils{
 			void RevertFrom(HDC dc,int iSavedDc) const;
 		} dcLastDrawing; // for any subsequent drawing, e.g. cursor indication
 		TLogValue logCursorPos;
+
+		TLogValue GetValue(int nUnits,BYTE factor) const;
 	public:
+		typedef int TScrollPos;
+
 		class CGraphics{
 			const CAxis &axis;
 			const HDC dc;
@@ -564,12 +569,15 @@ namespace Utils{
 		int GetUnitCount() const;
 		TLogValue GetValue(int nUnits) const;
 		TLogValue GetValue(const POINT &ptClient) const;
+		TLogValue GetValueFromScroll(TScrollPos pos) const;
 		TLogValue GetValueFromPixel(long nPixels) const;
 		long GetPixelCount(TLogValue v,BYTE zoomFactor) const;
 		long GetPixelCount(TLogValue v) const;
 		int GetClientUnits(TLogValue logValue) const; // for drawing in client area
 		inline TLogValue GetLength() const{ return logLength; }
 		void SetLength(TLogValue newLogLength);
+		TScrollPos GetScrollMax();
+		TScrollPos GetScrollPos(TLogValue v) const;
 		inline BYTE GetZoomFactor() const{ return zoomFactor; }
 		BYTE GetZoomFactorToFitWidth(long width,BYTE zoomFactorMax) const;
 		BYTE GetZoomFactorToFitWidth(TLogValue logValue,long width,BYTE zoomFactorMax) const;

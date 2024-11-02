@@ -251,16 +251,19 @@ using namespace Charting;
 		public:
 			void OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint) override{
 				// request to refresh the display of content
-				CRect rc;
-				GetClientRect(&rc);
-				SCROLLINFO si={ sizeof(si), SIF_PAGE };
+				const auto page=timeline.GetScrollPos(
+					timeline.GetValueFromPixel( Utils::TClientRect(m_hWnd).Width() )
+				);
 				SetScrollSizes(
 					MM_TEXT,
-					CSize( Utils::LogicalUnitScaleFactor*timeline.GetUnitCount(), 0 ), // total
-					CSize( si.nPage=rc.Width(), 0 ), // page
-					CSize( std::max<int>(Utils::LogicalUnitScaleFactor*timeline.GetUnitCount(tr.GetCurrentProfile().iwTimeDefault),2), 0 ) // line
+					CSize( timeline.GetScrollMax(), 0 ), // total
+					sizeDefault, // page
+					CSize( std::max(timeline.GetUnitCount(tr.GetCurrentProfile().iwTimeDefault),1), 0 ) // line
 				);
-				SetScrollInfo( SB_HORZ, &si, SIF_ALL );
+				SCROLLINFO si;
+				GetScrollInfo( SB_HORZ, &si );
+				si.nPage=page; // no matter what input above, this value is reset in an undesired way by MFC
+				SetScrollInfo( SB_HORZ, &si );
 			}
 
 			int GetInspectionWindow(TLogTime logTime) const{
@@ -440,7 +443,8 @@ using namespace Charting;
 					case SB_THUMBPOSITION:	// "thumb" released
 					case SB_THUMBTRACK	: si.nPos=si.nTrackPos;	break;
 				}
-				SetScrollTime( timeline.GetValueFromPixel(si.nPos) );
+				si.nPos=std::min( si.nPos, si.nMax-(int)si.nPage );
+				SetScrollTime( timeline.GetValueFromScroll(si.nPos) );
 				return TRUE;
 			}
 
@@ -533,14 +537,12 @@ using namespace Charting;
 			void SetScrollTime(TLogTime t){
 				if (t<0) t=0;
 				else if (t>timeline.GetLength()) t=timeline.GetLength();
-				SCROLLINFO si={ sizeof(si), SIF_POS };
-					si.nPos=timeline.GetPixelCount(t);
-				SetScrollInfo( SB_HORZ, &si, TRUE );
+				SetScrollPos( SB_HORZ, timeline.GetScrollPos(t) );
 				EXCLUSIVELY_LOCK(painter.params);
 					painter.params.id++; // stopping current painting
 					PaintCursorFeaturesInverted(false);
 					ScrollWindow(	// "base"
-						timeline.GetPixelCount(scrollTime) - si.nPos,
+						timeline.GetPixelCount(scrollTime) - timeline.GetPixelCount(t),
 						0
 					);
 					scrollTime=t;
