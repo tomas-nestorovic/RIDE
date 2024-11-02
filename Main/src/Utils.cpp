@@ -5,11 +5,10 @@ namespace Utils{
 	#define SCREEN_DPI_DEFAULT	96
 
 	TLogicalUnitScaleFactor::TLogicalUnitScaleFactor()
-		: TRationalNumber(0,1) {
+		: TRationalNumber(0,SCREEN_DPI_DEFAULT) {
 		// ctor; computes the factor (from (0;oo)) to multiply the size of one logical unit with; returns 1 if the logical unit size doesn't have to be changed
 		const CClientDC screen(nullptr);
 		quot=std::min( ::GetDeviceCaps(screen,LOGPIXELSX), ::GetDeviceCaps(screen,LOGPIXELSY) );
-		rem=SCREEN_DPI_DEFAULT;
 	}
 
 	const TLogicalUnitScaleFactor LogicalUnitScaleFactor;

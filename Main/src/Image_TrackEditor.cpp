@@ -100,21 +100,21 @@ using namespace Charting;
 						TParseEvent::TypeColors[11],
 						TParseEvent::TypeColors[12]
 					};
+					const TLogTime iwTimeDefaultHalf=te.tr.GetCurrentProfile().iwTimeDefault/2;
 					for( CImage::CTrackReader tr=te.tr; true; ){
 						// . waiting for next request to paint the Track
 						p.repaintEvent.Lock();
 						if (!::IsWindow(te.m_hWnd)) // window closed?
 							break;
 						// . retrieving the Parameters
-						CClientDC dc( const_cast<CTimeEditor *>(&te) );
 						p.params.locker.Lock();
 							const WORD id=p.params.id;
 							const TLogTimeInterval visible=p.params.visible;
 						p.params.locker.Unlock();
 						if (visible.tStart<0 && visible.tEnd<0) // window closing?
 							break;
+						const CClientDC dc( const_cast<CTimeEditor *>(&te) );
 						const auto &&g=te.timeline.CreateGraphics(dc);
-						const TLogTime iwTimeDefaultHalf=tr.GetCurrentProfile().iwTimeDefault/2;
 						bool continuePainting=true;
 						// . drawing inspection windows (if any)
 						if (te.IsFeatureShown(TCursorFeatures::INSPECT)){
@@ -457,9 +457,9 @@ using namespace Charting;
 				::SetBkMode( dc, TRANSPARENT );
 				::SetViewportOrgEx( dc, 0, Utils::TClientRect(m_hWnd).Height()/2, nullptr );
 				EXCLUSIVELY_LOCK(painter.params);
-					painter.params.id++;
+					painter.params.id++; // stop current painting
 					const TLogInterval drawn=timeline.Draw( dc, scrollTime, -1, 0, nullptr );
-					painter.params.visible.tStart=drawn.a, painter.params.visible.tEnd=drawn.z;
+					painter.params.visible.tStart=scrollTime, painter.params.visible.tEnd=drawn.z;
 					painter.params.zoomFactor=timeline.GetZoomFactor();
 				// . drawing the rest in parallel thread due to computational complexity if painting the whole Track
 				painter.repaintEvent.SetEvent();
@@ -539,7 +539,7 @@ using namespace Charting;
 				else if (t>timeline.GetLength()) t=timeline.GetLength();
 				SetScrollPos( SB_HORZ, timeline.GetScrollPos(t) );
 				EXCLUSIVELY_LOCK(painter.params);
-					painter.params.id++; // stopping current painting
+					painter.params.id++; // stop current painting
 					PaintCursorFeaturesInverted(false);
 					ScrollWindow(	// "base"
 						timeline.GetPixelCount(scrollTime) - timeline.GetPixelCount(t),
