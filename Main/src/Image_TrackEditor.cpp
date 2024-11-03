@@ -538,18 +538,17 @@ using namespace Charting;
 				if (t<0) t=0;
 				else if (t>timeline.GetLength()) t=timeline.GetLength();
 				SetScrollPos( SB_HORZ, timeline.GetScrollPos(t) );
-				EXCLUSIVELY_LOCK(painter.params);
+				if (const long scroll=timeline.GetPixelCount(scrollTime)-timeline.GetPixelCount(t)){ // scrolling needed?
+					EXCLUSIVELY_LOCK(painter.params);
 					painter.params.id++; // stop current painting
 					PaintCursorFeaturesInverted(false);
-					ScrollWindow(	// "base"
-						timeline.GetPixelCount(scrollTime) - timeline.GetPixelCount(t),
-						0
-					);
+					ScrollWindow( scroll, 0 ); // "base"
 					scrollTime=t;
 					POINT cursor;
 					::GetCursorPos(&cursor);
 					ScreenToClient(&cursor);
 					cursorTime=ClientPixelToTime( cursor.x );
+				}
 				//painter.repaintEvent.SetEvent(); // commented out as drawing invoked by 'ScrollWindow'
 			}
 
