@@ -2,7 +2,7 @@
 
 namespace Utils{
 
-	#define SCREEN_DPI_DEFAULT	96
+	#define SCREEN_DPI_DEFAULT	USER_DEFAULT_SCREEN_DPI
 
 	TLogicalUnitScaleFactor::TLogicalUnitScaleFactor()
 		: TRationalNumber(0,SCREEN_DPI_DEFAULT) {

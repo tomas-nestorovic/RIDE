@@ -104,7 +104,7 @@
 			return;
 		currProgress=std::min( newProgress, targetProgress );
 		parent->UpdateProgress( // reflect progress of this Action in its Parent
-			parentProgressBegin + (LONGLONG)parentProgressInc*currProgress/targetProgress,
+			parentProgressBegin + ::MulDiv(parentProgressInc,currProgress,targetProgress),
 			status
 		);
 	}

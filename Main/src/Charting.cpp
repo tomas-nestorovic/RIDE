@@ -74,7 +74,7 @@ namespace Charting
 	void CChartView::CXyPointSeries::GetDrawingLimits(WORD percentile,TLogValue &rOutMaxX,TLogValue &rOutMaxY) const{
 		// sets corresponding outputs to the last item still to be drawn with specified Percentile
 		const CHistogram h=CreateYxHistogram();
-		int sum=0,const sumMax=(ULONGLONG)nPoints*percentile/10000;
+		int sum=0,const sumMax=::MulDiv( nPoints, percentile, 10000 );
 		rOutMaxX=std::max( rOutMaxX, points[nPoints-1].x );
 		rOutMaxY=1;
 		for( auto it=h.cbegin(); it!=h.cend()&&sum<sumMax; sum+=it++->second )
