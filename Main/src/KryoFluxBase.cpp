@@ -396,7 +396,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 					default:
 						// Nop1, Nop2, Nop3 - no other values are expected at this moment!
 						ASSERT( 0x08<=header && header<=0x0a );
-						pis+=0x0a-0x08;
+						pis+=header-0x08;
 						continue;
 				}
 			// . adding an index pulse if its time has already been reached
