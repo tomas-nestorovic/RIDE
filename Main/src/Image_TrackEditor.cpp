@@ -1400,6 +1400,7 @@ using namespace Charting;
 												case ID_TRACK:
 													di.xAxisFocus.a=0;
 													di.xAxisFocus.z=LogValueMax;
+													revolution=Revolution::NONE;
 													Invalidate();
 													return TRUE;
 												case ID_DEFAULT1:
@@ -1413,6 +1414,7 @@ using namespace Charting;
 													if (nID-ID_DEFAULT1<tr.GetIndexCount()-1){
 														di.xAxisFocus.a=tr.GetIndexTime(nID-ID_DEFAULT1);
 														di.xAxisFocus.z=tr.GetIndexTime(nID-ID_DEFAULT1+1);
+														revolution=Revolution::TType(nID-ID_DEFAULT1);
 														Invalidate();
 													}
 													return TRUE;
