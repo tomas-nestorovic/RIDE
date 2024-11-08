@@ -96,7 +96,7 @@ namespace Charting
 		// asynchronous drawing; always compare actual drawing ID with the one on start
 		const WORD id=p.GetCurrentDrawingIdSync();
 		const CXyDisplayInfo &di=*(const CXyDisplayInfo *)&p.di;
-		const HGDIOBJ hPen0=::SelectObject( p.dc, hPen );
+		const HGDIOBJ hPen0=::SelectObject( p, hPen );
 			constexpr TIndex Stride=64;
 			for( TIndex i=0; i<Stride; i++ )
 				for( TIndex j=i+0; j<nPoints; j+=Stride,ap.IncrementProgress() ){
@@ -106,10 +106,10 @@ namespace Charting
 					if (points[j].y>di.GetAxisY().GetLength())
 						continue;
 					const POINT &&pt=di.GetClientUnits( points[j] );
-					::MoveToEx( p.dc, pt.x, pt.y, nullptr );
-					::LineTo( p.dc, pt.x+1, pt.y );
+					::MoveToEx( p, pt.x, pt.y, nullptr );
+					::LineTo( p, pt.x+1, pt.y );
 				}
-		::SelectObject( p.dc, hPen0 );
+		::SelectObject( p, hPen0 );
 	}
 
 	CChartView::CHistogram CChartView::CXyPointSeries::CreateYxHistogram(TLogValue mergeFilter) const{
@@ -152,17 +152,17 @@ namespace Charting
 			return;
 		const WORD id=p.GetCurrentDrawingIdSync();
 		const CXyDisplayInfo &di=*(const CXyDisplayInfo *)&p.di;
-		const HGDIOBJ hPen0=::SelectObject( p.dc, hPen );
+		const HGDIOBJ hPen0=::SelectObject( p, hPen );
 			POINT pt=di.GetClientUnits( *points );
-			::MoveToEx( p.dc, pt.x, pt.y, nullptr );
+			::MoveToEx( p, pt.x, pt.y, nullptr );
 			for( TIndex j=1; j<nPoints; j++,ap.IncrementProgress() ){
 				EXCLUSIVELY_LOCK(p);
 				if (p.drawingId!=id)
 					break;
 				pt=di.GetClientUnits( points[j] );
-				::LineTo( p.dc, pt.x+1, pt.y );
+				::LineTo( p, pt.x+1, pt.y );
 			}
-		::SelectObject( p.dc, hPen0 );
+		::SelectObject( p, hPen0 );
 	}
 
 
@@ -217,7 +217,7 @@ namespace Charting
 		// asynchronous drawing; always compare actual drawing ID with the one on start
 		const WORD id=p.GetCurrentDrawingIdSync();
 		const CXyDisplayInfo &di=*(const CXyDisplayInfo *)&p.di;
-		const HGDIOBJ hPen0=::SelectObject( p.dc, hPen );
+		const HGDIOBJ hPen0=::SelectObject( p, hPen );
 			for( TIndex i=0; i<nPoints; i++,ap.IncrementProgress() ){
 				const TLogPoint &pt=points[i];
 				if (pt.x>di.GetAxisX().GetLength())
@@ -226,11 +226,11 @@ namespace Charting
 				if (p.drawingId!=id)
 					break;
 				const POINT &&ptT=di.GetClientUnits( pt );
-				::MoveToEx( p.dc, ptT.x, ptT.y, nullptr );
+				::MoveToEx( p, ptT.x, ptT.y, nullptr );
 				const POINT &&ptB=di.GetClientUnits( pt.x, 0 );
-				::LineTo( p.dc, ptB.x, ptB.y );
+				::LineTo( p, ptB.x, ptB.y );
 			}
-		::SelectObject( p.dc, hPen0 );
+		::SelectObject( p, hPen0 );
 	}
 
 
@@ -477,6 +477,38 @@ namespace Charting
 		return drawingId;
 	}
 
+	bool CChartView::CPainter::Draw(HDC dc,const CRect &rcClient){
+		// True <=> all Chart Graphics painted, otherwise False
+		const WORD id=GetCurrentDrawingIdSync();
+		// - estimate drawing complexity
+		TIndex nItemsTotal=0;
+		for( BYTE i=0; i<di.nGraphics; i++ )
+			nItemsTotal+=di.graphics[i]->GetItemCount();
+		di.SetProgressTarget( nItemsTotal );
+		// - registering and preparing the canvas
+		this->dc=dc;
+		Utils::ScaleLogicalUnit(dc);
+		::SetGraphicsMode( dc, GM_ADVANCED );
+		::SetBkMode( dc, TRANSPARENT );
+		// - drawing the background
+		di.DrawBackground( dc, rcClient );
+		if (id!=GetCurrentDrawingIdSync()) // new paint request?
+			return false;
+		// - preventing from drawing inside the Margin
+		::SetWorldTransform( dc, &Utils::TGdiMatrix::Identity );
+		::IntersectClipRect( dc, di.margin.L, di.margin.T/2, rcClient.right/Utils::LogicalUnitScaleFactor-di.margin.R/2, rcClient.bottom/Utils::LogicalUnitScaleFactor-di.margin.B );
+		// - drawing all Graphic assets as they appear in the list
+		for( BYTE i=0; i<di.nGraphics; i++ ){
+			const PCGraphics g=di.graphics[i];
+			if (g->visible)
+				g->DrawAsync( *this, di );
+			if (id!=GetCurrentDrawingIdSync()) // new paint request?
+				return false;
+		}
+		// - all Graphics successfully painted
+		return true;
+	}
+
 	UINT AFX_CDECL CChartView::CPainter::Thread(PVOID _pBackgroundAction){
 		// thread to paint the Chart
 		const PCBackgroundAction pAction=(PCBackgroundAction)_pBackgroundAction;
@@ -487,33 +519,10 @@ namespace Charting
 			p.redrawEvent.Lock();
 			if (!::IsWindow(cv.m_hWnd)) // window closed?
 				break;
-			TIndex nItemsTotal=0;
-			for( BYTE i=0; i<p.di.nGraphics; i++ )
-				nItemsTotal+=p.di.graphics[i]->GetItemCount();
-			p.di.SetProgressTarget( nItemsTotal );
+			// . drawing
 			cv.SetStatus(DRAWING);
-			const WORD id=p.GetCurrentDrawingIdSync();
-			// . creating and preparing the canvas
-			const CClientDC dc( &cv );
-			Utils::ScaleLogicalUnit(dc);
-			::SetGraphicsMode( dc, GM_ADVANCED );
-			::SetBkMode( dc, TRANSPARENT );
-			p.dc=dc;
-			const Utils::TClientRect rcClient(cv);
-			p.di.DrawBackground( dc, rcClient );
-			if (id!=p.GetCurrentDrawingIdSync()) // new paint request?
-				continue;
-			// . preventing from drawing inside the Margin
-			::SetWorldTransform( dc, &Utils::TGdiMatrix::Identity );
-			::IntersectClipRect( dc, p.di.margin.L, p.di.margin.T/2, rcClient.right/Utils::LogicalUnitScaleFactor-p.di.margin.R/2, rcClient.bottom/Utils::LogicalUnitScaleFactor-p.di.margin.B );
-			// . drawing all Graphic assets as they appear in the list
-			for( BYTE i=0; i<p.di.nGraphics; i++ ){
-				const PCGraphics g=p.di.graphics[i];
-				if (g->visible)
-					g->DrawAsync( p, p.di );
-				if (id!=p.GetCurrentDrawingIdSync()) // new paint request?
-					break;
-			}
+				if (!p.Draw( CClientDC(&cv), Utils::TClientRect(cv) )) // new paint request during drawing?
+					continue;
 			cv.SetStatus(READY);
 		}while (true);
 		return ERROR_SUCCESS;

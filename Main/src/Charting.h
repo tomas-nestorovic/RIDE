@@ -150,16 +150,19 @@ namespace Charting
 
 		class CPainter sealed:public CBackgroundAction{
 			static UINT AFX_CDECL Thread(PVOID _pBackgroundAction);
+
+			HDC dc;
 		public:
 			CDisplayInfo &di;
 			mutable CCriticalSection locker;
 			WORD drawingId;
-			HDC dc;
 			CEvent redrawEvent;
 
 			CPainter(const CChartView &cv,CDisplayInfo &di);
 
+			inline operator HDC() const{ return dc; }
 			WORD GetCurrentDrawingIdSync() const;
+			bool Draw(HDC dc,const CRect &rcClient);
 		} painter;
 	protected:
 		TStatus status;
