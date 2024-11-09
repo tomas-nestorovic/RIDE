@@ -832,6 +832,7 @@ BEGIN
         MENUITEM "Show percentile...\tCtrl+4",  ID_NUMBER
         MENUITEM SEPARATOR
         MENUITEM "Snap to nearest item",        ID_ALIGN
+        MENUITEM "Save screenshot as...",       ID_FILE_SAVE_AS
         MENUITEM SEPARATOR
         MENUITEM "Close\tEsc",                  IDCANCEL
     END

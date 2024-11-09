@@ -265,6 +265,41 @@ namespace Charting
 		return snapped.graphics ? &snapped : nullptr;
 	}
 
+namespace Screenshot
+{
+	struct TParams sealed{
+		const CString fileName;
+		CChartView &cv;
+
+		TParams(const CString &fileName,CChartView &cv)
+			: fileName(fileName) , cv(cv) {
+		}
+	};
+
+	static UINT AFX_CDECL Thread(PVOID pCancelableAction){
+		// thread to take a screenshot of current state of Chart
+		CBackgroundActionCancelable &bac=*(PBackgroundActionCancelable)pCancelableAction;
+		TParams &p=*(TParams *)bac.GetParams();
+		CChartView &cv=p.cv;
+		const CClientDC dc(&cv);
+		const Utils::TClientRect rc(cv);
+		const CRect rcEmf( 0, 0, // see MSDN "Creating an Enhanced Metafile" article
+			rc.Width()*100*::GetDeviceCaps(dc,HORZSIZE)/::GetDeviceCaps(dc,HORZRES),
+			rc.Height()*100*::GetDeviceCaps(dc,VERTSIZE)/::GetDeviceCaps(dc,VERTRES)
+		);
+		if (const HDC dcMem=::CreateEnhMetaFile( dc, p.fileName, rcEmf, nullptr )){
+			cv.painter.Draw( dcMem, rc, bac );
+			if (const HENHMETAFILE h=::CloseEnhMetaFile(dcMem))
+				if (::DeleteEnhMetaFile(h))
+					if (bac.Cancelled){
+						::DeleteFile(p.fileName);
+						return ERROR_CANCELLED;
+					}else
+						return bac.TerminateWithSuccess();
+		}
+		return bac.TerminateWithError( ::GetLastError() );
+	}
+}
 	bool CChartView::CDisplayInfo::OnCmdMsg(CChartView &cv,UINT nID,int nCode,PVOID pExtra){
 		// command processing
 		switch (nCode){
@@ -279,6 +314,8 @@ namespace Charting
 						pCmdUi->SetCheck( containsSnappableGraphics && snapToNearestItem );
 						return true;
 					}
+					case ID_FILE_SAVE_AS:
+						return true;
 				}
 				break;
 			}
@@ -290,6 +327,19 @@ namespace Charting
 						snapped.graphics=nullptr;
 						cv.Invalidate();
 						return true;
+					case ID_FILE_SAVE_AS:{
+						// save screenshot as
+						const Screenshot::TParams sp(
+							Utils::DoPromptSingleTypeFileName( _T(""), _T("Windows Metafile (*.wmf)|*.wmf|"), 0 ),
+							cv
+						);
+						if (sp.fileName.IsEmpty())
+							return true;
+						if (const TStdWinError err=CBackgroundActionCancelable( Screenshot::Thread, &sp, THREAD_PRIORITY_ABOVE_NORMAL ).Perform())
+							if (err!=ERROR_CANCELLED)
+								Utils::Information( _T("Screenshot creation failed"), err );
+						return true;
+					}
 				}
 				break;
 		}
