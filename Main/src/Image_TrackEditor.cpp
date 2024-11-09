@@ -1281,27 +1281,27 @@ using namespace Charting;
 										// returns the number of available items
 										return peList.GetCount();
 									}
-									void DrawAsync(const CChartView::CPainter &p,const CActionProgress &ap) const override{
+									void DrawAsync(const CChartView::CPainter &p,HDC dc,const CActionProgress &ap) const override{
 										// asynchronous drawing; always compare actual drawing ID with the one on start
 										const auto &di=*(const CChartView::CXyDisplayInfo *)&p.di;
 										LOGFONT logFont;
 										::GetObject( Utils::CRideFont::Std, sizeof(logFont), &logFont );
 										logFont.lfOrientation = logFont.lfEscapement=900; // in tenths of degrees (a tweak to draw vertically oriented text without world transformation)
-										const HGDIOBJ hFont0=::SelectObject( p, ::CreateFontIndirect(&logFont) );
-											const HGDIOBJ hBrush0=::SelectObject( p, ::GetStockObject(NULL_BRUSH) );
+										const HGDIOBJ hFont0=::SelectObject( dc, ::CreateFontIndirect(&logFont) );
+											const HGDIOBJ hBrush0=::SelectObject( dc, ::GetStockObject(NULL_BRUSH) );
 												for( auto it=peList.GetIterator(); it; ap.IncrementProgress() ){
 													const TParseEvent &pe=*it++->second;
 													EXCLUSIVELY_LOCK(p);
-													if (di.drawingCancelled)
+													if (ap.Cancelled)
 														break;
 													CRect rc( di.GetClientUnits(pe.tStart,0).x, 0, di.GetClientUnits(pe.tEnd,0).x, di.GetClientUnits(0,1).y );
-													::SelectObject( p, peBrushes[pe.type] );
-													::PatBlt( p, rc.left,rc.top, rc.Width(),rc.Height(), 0xa000c9 ); // ternary raster operation "dest AND pattern"
-													::SetTextColor( p, Utils::GetBlendedColor(TParseEvent::TypeColors[pe.type],COLOR_WHITE,0.5f) );
-													::DrawText( p, pe.GetDescription(),-1, &rc, DT_LEFT|DT_BOTTOM|DT_SINGLELINE );
+													::SelectObject( dc, peBrushes[pe.type] );
+													::PatBlt( dc, rc.left,rc.top, rc.Width(),rc.Height(), 0xa000c9 ); // ternary raster operation "dest AND pattern"
+													::SetTextColor( dc, Utils::GetBlendedColor(TParseEvent::TypeColors[pe.type],COLOR_WHITE,0.5f) );
+													::DrawText( dc, pe.GetDescription(),-1, &rc, DT_LEFT|DT_BOTTOM|DT_SINGLELINE );
 												}
-											::SelectObject( p, hBrush0 );
-										::DeleteObject( ::SelectObject( p, hFont0 ) );
+											::SelectObject( dc, hBrush0 );
+										::DeleteObject( ::SelectObject( dc, hFont0 ) );
 									}
 								} peSeries(peList);
 							class CScatterPlotDialog sealed:public CChartDialog{

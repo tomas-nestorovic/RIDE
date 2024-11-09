@@ -48,7 +48,7 @@ namespace Charting
 			virtual PCItem GetItem(TIndex i,const POINT &ptClient) const;
 			virtual TIndex GetItemCount() const=0;
 			virtual TIndex GetNearestItemIndex(const CDisplayInfo &di,const POINT &ptClient,TLogValue &rOutDistance) const;
-			virtual void DrawAsync(const CPainter &p,const CActionProgress &ap) const=0;
+			virtual void DrawAsync(const CPainter &p,HDC dc,const CActionProgress &ap) const=0;
 		} *PCGraphics;
 
 		// see type convention note above
@@ -69,7 +69,7 @@ namespace Charting
 			void GetDrawingLimits(WORD percentile,TLogValue &rOutMaxX,TLogValue &rOutMaxY) const override; // in hundredths (e.g. "2345" means 23.45)
 			PCItem GetItem(TIndex i,const POINT &ptClient) const override;
 			TIndex GetItemCount() const override;
-			void DrawAsync(const CPainter &p,const CActionProgress &ap) const override;
+			void DrawAsync(const CPainter &p,HDC dc,const CActionProgress &ap) const override;
 			CHistogram CreateYxHistogram(TLogValue mergeFilter=0) const;
 		};
 
@@ -78,7 +78,7 @@ namespace Charting
 		public:
 			CXyBrokenLineSeries(TIndex nPoints,PCLogPoint points,HPEN hLinePen);
 
-			void DrawAsync(const CPainter &p,const CActionProgress &ap) const override;
+			void DrawAsync(const CPainter &p,HDC dc,const CActionProgress &ap) const override;
 		};
 
 		// see type convention note above
@@ -88,17 +88,19 @@ namespace Charting
 
 			void GetDrawingLimits(WORD percentile,TLogValue &rOutMaxX,TLogValue &rOutMaxY) const override; // in hundredths (e.g. "2345" means 23.45)
 			TIndex GetNearestItemIndex(const CDisplayInfo &di,const POINT &ptClient,TLogValue &rOutDistance) const override;
-			void DrawAsync(const CPainter &p,const CActionProgress &ap) const override;
+			void DrawAsync(const CPainter &p,HDC dc,const CActionProgress &ap) const override;
 		};
 
 		// see type convention note above
 		class CDisplayInfo abstract:public CActionProgressBar{
+			friend class CPainter;
 		public:
 			typedef const struct TSnappedItem{
 				PCGraphics graphics;
 				TIndex itemIndex;
 			} *PCSnappedItem;
 		protected:
+			bool drawingCancelled;
 			bool snapToNearestItem;
 			TSnappedItem snapped;
 		public:
@@ -106,7 +108,6 @@ namespace Charting
 			const TMargin margin;
 			const PCGraphics *const graphics;
 			const BYTE nGraphics;
-			bool drawingCancelled;
 
 			CDisplayInfo(UINT menuResourceId,RCMargin margin,const PCGraphics graphics[],BYTE nGraphics);
 
@@ -151,8 +152,6 @@ namespace Charting
 
 		class CPainter sealed:public CBackgroundAction{
 			static UINT AFX_CDECL Thread(PVOID _pBackgroundAction);
-
-			HDC dc;
 		public:
 			CDisplayInfo &di;
 			mutable CCriticalSection locker;
@@ -160,10 +159,8 @@ namespace Charting
 
 			CPainter(const CChartView &cv,CDisplayInfo &di);
 
-			inline operator HDC() const{ return dc; }
-			bool IsDrawingCancelledSync() const;
 			void CancelDrawingSync(bool cancel=true);
-			bool Draw(HDC dc,const CRect &rcClient,CActionProgress &ap);
+			bool Draw(HDC dc,const CRect &rcClient,CActionProgress &ap) const;
 		} painter;
 	protected:
 		TStatus status;

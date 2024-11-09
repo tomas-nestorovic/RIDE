@@ -92,23 +92,23 @@ namespace Charting
 		return nPoints;
 	}
 
-	void CChartView::CXyPointSeries::DrawAsync(const CPainter &p,const CActionProgress &ap) const{
+	void CChartView::CXyPointSeries::DrawAsync(const CPainter &p,HDC dc,const CActionProgress &ap) const{
 		// asynchronous drawing; always compare actual drawing ID with the one on start
 		const CXyDisplayInfo &di=*(const CXyDisplayInfo *)&p.di;
-		const HGDIOBJ hPen0=::SelectObject( p, hPen );
+		const HGDIOBJ hPen0=::SelectObject( dc, hPen );
 			constexpr TIndex Stride=64;
 			for( TIndex i=0; i<Stride; i++ )
 				for( TIndex j=i+0; j<nPoints; j+=Stride,ap.IncrementProgress() ){
 					EXCLUSIVELY_LOCK(p);
-					if (di.drawingCancelled)
+					if (ap.Cancelled)
 						break;
 					if (points[j].y>di.GetAxisY().GetLength())
 						continue;
 					const POINT &&pt=di.GetClientUnits( points[j] );
-					::MoveToEx( p, pt.x, pt.y, nullptr );
-					::LineTo( p, pt.x+1, pt.y );
+					::MoveToEx( dc, pt.x, pt.y, nullptr );
+					::LineTo( dc, pt.x+1, pt.y );
 				}
-		::SelectObject( p, hPen0 );
+		::SelectObject( dc, hPen0 );
 	}
 
 	CChartView::CHistogram CChartView::CXyPointSeries::CreateYxHistogram(TLogValue mergeFilter) const{
@@ -145,22 +145,22 @@ namespace Charting
 		: CXyPointSeries( nPoints, points, hLinePen ) {
 	}
 
-	void CChartView::CXyBrokenLineSeries::DrawAsync(const CPainter &p,const CActionProgress &ap) const{
+	void CChartView::CXyBrokenLineSeries::DrawAsync(const CPainter &p,HDC dc,const CActionProgress &ap) const{
 		// asynchronous drawing; always compare actual drawing ID with the one on start
 		if (nPoints<2)
 			return;
 		const CXyDisplayInfo &di=*(const CXyDisplayInfo *)&p.di;
-		const HGDIOBJ hPen0=::SelectObject( p, hPen );
+		const HGDIOBJ hPen0=::SelectObject( dc, hPen );
 			POINT pt=di.GetClientUnits( *points );
-			::MoveToEx( p, pt.x, pt.y, nullptr );
+			::MoveToEx( dc, pt.x, pt.y, nullptr );
 			for( TIndex j=1; j<nPoints; j++,ap.IncrementProgress() ){
 				EXCLUSIVELY_LOCK(p);
-				if (di.drawingCancelled)
+				if (ap.Cancelled)
 					break;
 				pt=di.GetClientUnits( points[j] );
-				::LineTo( p, pt.x+1, pt.y );
+				::LineTo( dc, pt.x+1, pt.y );
 			}
-		::SelectObject( p, hPen0 );
+		::SelectObject( dc, hPen0 );
 	}
 
 
@@ -211,23 +211,23 @@ namespace Charting
 			return rOutDistance=ptClientValue.ManhattanDistance(ptR), R;
 	}
 
-	void CChartView::CXyOrderedBarSeries::DrawAsync(const CPainter &p,const CActionProgress &ap) const{
+	void CChartView::CXyOrderedBarSeries::DrawAsync(const CPainter &p,HDC dc,const CActionProgress &ap) const{
 		// asynchronous drawing; always compare actual drawing ID with the one on start
 		const CXyDisplayInfo &di=*(const CXyDisplayInfo *)&p.di;
-		const HGDIOBJ hPen0=::SelectObject( p, hPen );
+		const HGDIOBJ hPen0=::SelectObject( dc, hPen );
 			for( TIndex i=0; i<nPoints; i++,ap.IncrementProgress() ){
 				const TLogPoint &pt=points[i];
 				if (pt.x>di.GetAxisX().GetLength())
 					break;
 				EXCLUSIVELY_LOCK(p);
-				if (di.drawingCancelled)
+				if (ap.Cancelled)
 					break;
 				const POINT &&ptT=di.GetClientUnits( pt );
-				::MoveToEx( p, ptT.x, ptT.y, nullptr );
+				::MoveToEx( dc, ptT.x, ptT.y, nullptr );
 				const POINT &&ptB=di.GetClientUnits( pt.x, 0 );
-				::LineTo( p, ptB.x, ptB.y );
+				::LineTo( dc, ptB.x, ptB.y );
 			}
-		::SelectObject( p, hPen0 );
+		::SelectObject( dc, hPen0 );
 	}
 
 
@@ -467,17 +467,12 @@ namespace Charting
 		, di(di) {
 	}
 
-	bool CChartView::CPainter::IsDrawingCancelledSync() const{
-		EXCLUSIVELY_LOCK(*this);
-		return di.drawingCancelled;
-	}
-
 	void CChartView::CPainter::CancelDrawingSync(bool cancel){
 		EXCLUSIVELY_LOCK(*this);
 		di.drawingCancelled=cancel;
 	}
 
-	bool CChartView::CPainter::Draw(HDC dc,const CRect &rcClient,CActionProgress &ap){
+	bool CChartView::CPainter::Draw(HDC dc,const CRect &rcClient,CActionProgress &ap) const{
 		// True <=> all Chart Graphics painted, otherwise False
 		// - estimate drawing complexity
 		TIndex nItemsTotal=0;
@@ -485,13 +480,12 @@ namespace Charting
 			nItemsTotal+=di.graphics[i]->GetItemCount();
 		ap.SetProgressTarget( nItemsTotal );
 		// - registering and preparing the canvas
-		this->dc=dc;
 		Utils::ScaleLogicalUnit(dc);
 		::SetGraphicsMode( dc, GM_ADVANCED );
 		::SetBkMode( dc, TRANSPARENT );
 		// - drawing the background
 		di.DrawBackground( dc, rcClient );
-		if (IsDrawingCancelledSync()) // new paint request?
+		if (ap.Cancelled) // new paint request?
 			return false;
 		// - preventing from drawing inside the Margin
 		::SetWorldTransform( dc, &Utils::TGdiMatrix::Identity );
@@ -500,8 +494,8 @@ namespace Charting
 		for( BYTE i=0; i<di.nGraphics; i++ ){
 			const PCGraphics g=di.graphics[i];
 			if (g->visible)
-				g->DrawAsync( *this, ap );
-			if (IsDrawingCancelledSync()) // new paint request?
+				g->DrawAsync( *this, dc, ap );
+			if (ap.Cancelled) // new paint request?
 				return false;
 		}
 		// - all Graphics successfully painted
