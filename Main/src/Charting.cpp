@@ -94,14 +94,13 @@ namespace Charting
 
 	void CChartView::CXyPointSeries::DrawAsync(const CPainter &p,const CActionProgress &ap) const{
 		// asynchronous drawing; always compare actual drawing ID with the one on start
-		const WORD id=p.GetCurrentDrawingIdSync();
 		const CXyDisplayInfo &di=*(const CXyDisplayInfo *)&p.di;
 		const HGDIOBJ hPen0=::SelectObject( p, hPen );
 			constexpr TIndex Stride=64;
 			for( TIndex i=0; i<Stride; i++ )
 				for( TIndex j=i+0; j<nPoints; j+=Stride,ap.IncrementProgress() ){
 					EXCLUSIVELY_LOCK(p);
-					if (p.drawingId!=id)
+					if (di.drawingCancelled)
 						break;
 					if (points[j].y>di.GetAxisY().GetLength())
 						continue;
@@ -150,14 +149,13 @@ namespace Charting
 		// asynchronous drawing; always compare actual drawing ID with the one on start
 		if (nPoints<2)
 			return;
-		const WORD id=p.GetCurrentDrawingIdSync();
 		const CXyDisplayInfo &di=*(const CXyDisplayInfo *)&p.di;
 		const HGDIOBJ hPen0=::SelectObject( p, hPen );
 			POINT pt=di.GetClientUnits( *points );
 			::MoveToEx( p, pt.x, pt.y, nullptr );
 			for( TIndex j=1; j<nPoints; j++,ap.IncrementProgress() ){
 				EXCLUSIVELY_LOCK(p);
-				if (p.drawingId!=id)
+				if (di.drawingCancelled)
 					break;
 				pt=di.GetClientUnits( points[j] );
 				::LineTo( p, pt.x+1, pt.y );
@@ -215,7 +213,6 @@ namespace Charting
 
 	void CChartView::CXyOrderedBarSeries::DrawAsync(const CPainter &p,const CActionProgress &ap) const{
 		// asynchronous drawing; always compare actual drawing ID with the one on start
-		const WORD id=p.GetCurrentDrawingIdSync();
 		const CXyDisplayInfo &di=*(const CXyDisplayInfo *)&p.di;
 		const HGDIOBJ hPen0=::SelectObject( p, hPen );
 			for( TIndex i=0; i<nPoints; i++,ap.IncrementProgress() ){
@@ -223,7 +220,7 @@ namespace Charting
 				if (pt.x>di.GetAxisX().GetLength())
 					break;
 				EXCLUSIVELY_LOCK(p);
-				if (p.drawingId!=id)
+				if (di.drawingCancelled)
 					break;
 				const POINT &&ptT=di.GetClientUnits( pt );
 				::MoveToEx( p, ptT.x, ptT.y, nullptr );
@@ -238,15 +235,13 @@ namespace Charting
 
 
 
-	static const bool CannotBeCancelled;
-
 	CChartView::CDisplayInfo::CDisplayInfo(UINT menuResourceId,RCMargin margin,const PCGraphics graphics[],BYTE nGraphics)
 		// ctor
-		: CActionProgressBar(CannotBeCancelled)
+		: CActionProgressBar(drawingCancelled)
 		, menuResourceId(menuResourceId)
 		, margin(margin)
 		, graphics(graphics) , nGraphics(nGraphics)
-		, snapToNearestItem(true) {
+		, snapToNearestItem(true) , drawingCancelled(false) {
 		::ZeroMemory( &snapped, sizeof(snapped) );
 	}
 
@@ -472,19 +467,23 @@ namespace Charting
 		, di(di) {
 	}
 
-	WORD CChartView::CPainter::GetCurrentDrawingIdSync() const{
+	bool CChartView::CPainter::IsDrawingCancelledSync() const{
 		EXCLUSIVELY_LOCK(*this);
-		return drawingId;
+		return di.drawingCancelled;
 	}
 
-	bool CChartView::CPainter::Draw(HDC dc,const CRect &rcClient){
+	void CChartView::CPainter::CancelDrawingSync(bool cancel){
+		EXCLUSIVELY_LOCK(*this);
+		di.drawingCancelled=cancel;
+	}
+
+	bool CChartView::CPainter::Draw(HDC dc,const CRect &rcClient,CActionProgress &ap){
 		// True <=> all Chart Graphics painted, otherwise False
-		const WORD id=GetCurrentDrawingIdSync();
 		// - estimate drawing complexity
 		TIndex nItemsTotal=0;
 		for( BYTE i=0; i<di.nGraphics; i++ )
 			nItemsTotal+=di.graphics[i]->GetItemCount();
-		di.SetProgressTarget( nItemsTotal );
+		ap.SetProgressTarget( nItemsTotal );
 		// - registering and preparing the canvas
 		this->dc=dc;
 		Utils::ScaleLogicalUnit(dc);
@@ -492,7 +491,7 @@ namespace Charting
 		::SetBkMode( dc, TRANSPARENT );
 		// - drawing the background
 		di.DrawBackground( dc, rcClient );
-		if (id!=GetCurrentDrawingIdSync()) // new paint request?
+		if (IsDrawingCancelledSync()) // new paint request?
 			return false;
 		// - preventing from drawing inside the Margin
 		::SetWorldTransform( dc, &Utils::TGdiMatrix::Identity );
@@ -501,8 +500,8 @@ namespace Charting
 		for( BYTE i=0; i<di.nGraphics; i++ ){
 			const PCGraphics g=di.graphics[i];
 			if (g->visible)
-				g->DrawAsync( *this, di );
-			if (id!=GetCurrentDrawingIdSync()) // new paint request?
+				g->DrawAsync( *this, ap );
+			if (IsDrawingCancelledSync()) // new paint request?
 				return false;
 		}
 		// - all Graphics successfully painted
@@ -521,7 +520,8 @@ namespace Charting
 				break;
 			// . drawing
 			cv.SetStatus(DRAWING);
-				if (!p.Draw( CClientDC(&cv), Utils::TClientRect(cv) )) // new paint request during drawing?
+				p.CancelDrawingSync(false); // begin new drawing
+				if (!p.Draw( CClientDC(&cv), Utils::TClientRect(cv), cv.painter.di )) // new paint request during drawing?
 					continue;
 			cv.SetStatus(READY);
 		}while (true);
@@ -531,12 +531,10 @@ namespace Charting
 	LRESULT CChartView::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
 		// window procedure
 		switch (msg){
-			case WM_PAINT:{
+			case WM_PAINT:
 				// window's size is being changed
-				EXCLUSIVELY_LOCK(painter);
-				painter.drawingId++;
+				painter.CancelDrawingSync();
 				break;
-			}
 			case WM_MOUSEMOVE:
 				// mouse moved
 				if (painter.di.nGraphics){
@@ -576,10 +574,9 @@ namespace Charting
 	void CChartView::PostNcDestroy(){
 		// self-destruction
 		// - letting the Painter finish normally
-{		EXCLUSIVELY_LOCK(painter);
-		painter.drawingId++;
+		painter.CancelDrawingSync();
 		painter.redrawEvent.SetEvent();
-}		::WaitForSingleObject( painter, INFINITE );
+		::WaitForSingleObject( painter, INFINITE );
 		// - base
 		//__super::PostNcDestroy(); // commented out (View destroyed by its owner)
 	}
@@ -589,8 +586,7 @@ namespace Charting
 		// - base
 		__super::OnDraw(pDC);
 		// - drawing the chart (in parallel thread due to computational complexity if painting the whole Track)
-		EXCLUSIVELY_LOCK(painter);
-		painter.drawingId++;
+		painter.CancelDrawingSync();
 		painter.redrawEvent.SetEvent();
 	}
 

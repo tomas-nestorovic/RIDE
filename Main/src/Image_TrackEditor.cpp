@@ -1283,7 +1283,6 @@ using namespace Charting;
 									}
 									void DrawAsync(const CChartView::CPainter &p,const CActionProgress &ap) const override{
 										// asynchronous drawing; always compare actual drawing ID with the one on start
-										const WORD id=p.GetCurrentDrawingIdSync();
 										const auto &di=*(const CChartView::CXyDisplayInfo *)&p.di;
 										LOGFONT logFont;
 										::GetObject( Utils::CRideFont::Std, sizeof(logFont), &logFont );
@@ -1293,7 +1292,7 @@ using namespace Charting;
 												for( auto it=peList.GetIterator(); it; ap.IncrementProgress() ){
 													const TParseEvent &pe=*it++->second;
 													EXCLUSIVELY_LOCK(p);
-													if (p.drawingId!=id)
+													if (di.drawingCancelled)
 														break;
 													CRect rc( di.GetClientUnits(pe.tStart,0).x, 0, di.GetClientUnits(pe.tEnd,0).x, di.GetClientUnits(0,1).y );
 													::SelectObject( p, peBrushes[pe.type] );

@@ -106,6 +106,7 @@ namespace Charting
 			const TMargin margin;
 			const PCGraphics *const graphics;
 			const BYTE nGraphics;
+			bool drawingCancelled;
 
 			CDisplayInfo(UINT menuResourceId,RCMargin margin,const PCGraphics graphics[],BYTE nGraphics);
 
@@ -155,14 +156,14 @@ namespace Charting
 		public:
 			CDisplayInfo &di;
 			mutable CCriticalSection locker;
-			WORD drawingId;
 			CEvent redrawEvent;
 
 			CPainter(const CChartView &cv,CDisplayInfo &di);
 
 			inline operator HDC() const{ return dc; }
-			WORD GetCurrentDrawingIdSync() const;
-			bool Draw(HDC dc,const CRect &rcClient);
+			bool IsDrawingCancelledSync() const;
+			void CancelDrawingSync(bool cancel=true);
+			bool Draw(HDC dc,const CRect &rcClient,CActionProgress &ap);
 		} painter;
 	protected:
 		TStatus status;
