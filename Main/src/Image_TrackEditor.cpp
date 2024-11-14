@@ -459,7 +459,8 @@ using namespace Charting;
 				EXCLUSIVELY_LOCK(painter.params);
 					painter.params.id++; // stop current painting
 					const TLogInterval drawn=timeline.Draw( dc, scrollTime, -1, 0, nullptr );
-					painter.params.visible.tStart=scrollTime, painter.params.visible.tEnd=drawn.z;
+					painter.params.visible.tStart=drawn.a; // good-enough for drawing Indices (an Index at Time=0 -> the caption begins to appear as scrolled towards Time=0)
+					painter.params.visible.tEnd=drawn.z;
 					painter.params.zoomFactor=timeline.GetZoomFactor();
 				// . drawing the rest in parallel thread due to computational complexity if painting the whole Track
 				painter.repaintEvent.SetEvent();
