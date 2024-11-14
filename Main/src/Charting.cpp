@@ -315,6 +315,7 @@ namespace Screenshot
 						return true;
 					}
 					case ID_FILE_SAVE_AS:
+						pCmdUi->Enable(true);
 						return true;
 				}
 				break;
