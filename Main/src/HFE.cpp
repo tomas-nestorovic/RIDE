@@ -337,7 +337,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			TLogTime tCell=GetCellTime( header.dataBitRate*1000 );
 			TLogTime tCurr=0;
 			for( BYTE nFollowingDataBitsToSkip=0; p<pLast; )
-				switch (const BYTE b=*p++){
+				switch (BYTE b=*p++){
 					case TOpCode::SETINDEX:
 						trw.AddIndexTime( tCurr );
 						break;
@@ -352,22 +352,14 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 							ASSERT(nFollowingDataBitsToSkip>0);
 						}
 						break;
-					case TOpCode::RANDOM:{
-						BYTE nBits=CHAR_BIT-nFollowingDataBitsToSkip;
-						const TLogTime tSpan=nBits*tCell;
-						for( TLogTime t=0,const tLimit=tSpan-tCell/2; nBits>0; nBits-- ) // "tLimit" = make sure two Times don't overlap (e.g. end of this Random region and beginning of common data region)
-							if (( t+=::rand()%tSpan )<tLimit)
-								trw.AddTime( tCurr+t );
-							else
-								break;
-						tCurr+=tSpan;
-						nFollowingDataBitsToSkip=0;
-						break;
-					}
+					case TOpCode::RANDOM:
+						b=::rand()&0x54; // constant adopted from HxC2001 emulator
+						//fallthrough ('b' is now smaller than 'TOpCode::NOP')
 					default:
-						ASSERT( b<=TOpCode::NOP ); // 'TOpCode::NOP' is fine here (as it doesn't have its own 'case' in this 'switch')
-						if (b>=TOpCode::NOP) // invalid OpCode ?
+						if (b>=TOpCode::NOP){ // invalid OpCode ?
+							ASSERT( b==TOpCode::NOP ); // 'TOpCode::NOP' is fine here (as it doesn't have its own 'case' in this 'switch')
 							break; // skip it
+						}
 						const BYTE nBits=CHAR_BIT-nFollowingDataBitsToSkip;
 						const TLogTime tSpan=nBits*tCell;
 						for( BYTE data=b<<nFollowingDataBitsToSkip,i=0; data; data<<=1,i++ )
