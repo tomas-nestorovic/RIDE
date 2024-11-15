@@ -109,12 +109,14 @@
 		return distSum/(nIndexPulses-1);
 	}
 
-	TLogTime CImage::CTrackReader::GetTotalTime() const{
+	TLogTime CImage::CTrackReader::GetLastTime() const{
 		// returns the last recorded Time
-		return	std::max(
-					nLogTimes>0 ? logTimes[nLogTimes-1] : 0,
-					GetLastIndexTime()
-				);
+		return	nLogTimes>0 ? logTimes[nLogTimes-1] : 0;
+	}
+
+	TLogTime CImage::CTrackReader::GetTotalTime() const{
+		// returns the minimum time that covers both Indices and recorded Times
+		return	std::max( GetLastTime(), GetLastIndexTime() );
 	}
 
 	TLogTime CImage::CTrackReader::ReadTime(){

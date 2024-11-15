@@ -306,7 +306,7 @@ using namespace Charting;
 							cursorTime, -500, 500, -80, timeline.font, timeline.ValueToReadableString(cursorTime)
 						);
 					// . painting space between neighboring Times at current position
-					if (IsFeatureShown(TCursorFeatures::SPACING) && cursorTime<timeline.GetLength()){
+					if (IsFeatureShown(TCursorFeatures::SPACING) && cursorTime<tr.GetLastTime()){
 						tr.SetCurrentTime(cursorTime);
 						const TLogTime a=tr.TruncateCurrentTime(), z=tr.ReadTime();
 						g.DimensioningIndirect(
@@ -314,7 +314,7 @@ using namespace Charting;
 						);
 					}
 					// . painting inspection window size at current position
-					if (IsFeatureShown(TCursorFeatures::INSPECT) && cursorTime<timeline.GetLength()){
+					if (IsFeatureShown(TCursorFeatures::INSPECT) && cursorTime<tr.GetLastTime()){
 						const int i=GetInspectionWindow(cursorTime);
 						const TLogTime a=inspectionWindows[i-1].tEnd, z=inspectionWindows[i].tEnd;
 						g.DimensioningIndirect(

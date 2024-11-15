@@ -570,6 +570,7 @@
 			TLogTime GetIndexTime(BYTE index) const;
 			TLogTime GetLastIndexTime() const;
 			TLogTime GetAvgIndexDistance() const;
+			TLogTime GetLastTime() const;
 			TLogTime GetTotalTime() const;
 			TLogTime ReadTime();
 			void SetCodec(Codec::TType codec);
