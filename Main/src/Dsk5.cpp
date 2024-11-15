@@ -85,12 +85,14 @@
 		return (sectorLengthCode&0xf8)==0;
 	}
 
-	#define	TRACKINFO_HEADER "Track-Info\r\n"
+	#define TRACKINFO		 "Track-Info"
+	#define	TRACKINFO_HEADER TRACKINFO "\r\n"
 
 	bool CDsk5::TTrackInfo::__readAndValidate__(CFile &f){
 		// True <=> valid TrackInfo read from the given File, otherwise False
 		if (f.Read(this,sizeof(*this))<sizeof(*this)) return false;
-		if (::strncmp(header,TRACKINFO_HEADER,sizeof(header))) return false;
+		static_assert( sizeof(TRACKINFO)<sizeof(header), "" );
+		if (::strncmp(header,TRACKINFO_HEADER,sizeof(TRACKINFO)-1)) return false;
 		if (nSectors>DSK_TRACKINFO_SECTORS_MAX) return false;
 		return true;
 	}
