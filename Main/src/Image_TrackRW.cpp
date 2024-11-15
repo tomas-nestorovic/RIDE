@@ -1208,9 +1208,9 @@
 		TDataParseEvent peData( sectorId, currentTime );
 		TDataParseEvent::TByteInfo *p=peData.byteInfos;
 		CFloppyImage::TCrc16 crc=CFloppyImage::GetCrc16Ccitt( MFM::CRC_A1A1A1, &dam, sizeof(dam) ); // computing actual CRC along the way
-		for( ; *this&&nBytesToRead>0; nBytesToRead-- ){
+		for( ; nBytesToRead>0; nBytesToRead-- ){
 			p->tStart=currentTime;
-			if (!ReadBits16(w)){ // Track end encountered
+			if (!*this || !ReadBits16(w)){ // Track end encountered
 				result.ExtendWith( TFdcStatus::DataFieldCrcError );
 				break;
 			}
