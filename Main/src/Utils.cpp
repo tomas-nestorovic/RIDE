@@ -198,6 +198,12 @@ namespace Utils{
 			}
 	}
 
+	CRideContextMenu::CRideContextMenu(){
+		// ctor
+		parent.CreatePopupMenu();
+		Attach( parent );
+	}
+
 	CRideContextMenu::CRideContextMenu(HMENU hMenuOwnedByCaller){
 		// ctor (for internal purposes only)
 		Attach( hMenuOwnedByCaller ); // caller in charge to destroy the menu, see dtor
@@ -2326,14 +2332,13 @@ namespace Utils{
 		const WNDPROC wndProc0;
 		RECT rcClientArea;
 		TCHAR text[512];
-		CMenu mnu;
+		CRideContextMenu mnu;
 
 		TSplitButtonInfo(HWND hBtn,PCSplitButtonAction pActions,BYTE nActions,WNDPROC wndProc0)
 			// ctor
 			: existsDefaultAction(pActions->commandId!=0) , wndProc0(wndProc0) {
 			::GetClientRect(hBtn,&rcClientArea);
 			*text='\0';
-			mnu.CreatePopupMenu();
 			for( BYTE id=!existsDefaultAction; id<nActions; id++ ){
 				const auto &a=pActions[id];
 				mnu.AppendMenu( a.menuItemFlags, a.commandId, a.commandCaption );

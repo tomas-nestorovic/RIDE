@@ -132,9 +132,6 @@
 
 
 
-	#define CYLINDER_COUNT_MIN	1
-	#define CYLINDER_COUNT_MAX	FDD_CYLINDERS_MAX
-
 	// 5.25" drives are likely 360 rpm ones in PC
 	#define DS80_CAPTION	_T("3.5\" DS 80 cylinders")
 	#define DS40_CAPTION	_T("5.25\" DS 40 cylinders")

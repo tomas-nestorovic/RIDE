@@ -566,7 +566,7 @@
 			void SetCurrentTime(TLogTime logTime);
 			void SetCurrentTimeAndProfile(TLogTime logTime,const TProfile &profile);
 			TProfile CreateResetProfile() const;
-			void TruncateCurrentTime();
+			TLogTime TruncateCurrentTime();
 			TLogTime GetIndexTime(BYTE index) const;
 			TLogTime GetLastIndexTime() const;
 			TLogTime GetAvgIndexDistance() const;

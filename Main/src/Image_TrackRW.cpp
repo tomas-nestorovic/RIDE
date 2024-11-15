@@ -79,14 +79,14 @@
 		return result;
 	}
 
-	void CImage::CTrackReader::TruncateCurrentTime(){
-		// truncates CurrentTime to the nearest lower LogicalTime
+	TLogTime CImage::CTrackReader::TruncateCurrentTime(){
+		// truncates CurrentTime to the nearest lower LogicalTime, and returns it
 		if (!iNextTime)
-			currentTime=0;
+			return currentTime=0;
 		if (iNextTime<nLogTimes)
-			currentTime=logTimes[iNextTime-1];
+			return currentTime=logTimes[iNextTime-1];
 		else
-			currentTime=logTimes[nLogTimes-1];
+			return currentTime=logTimes[nLogTimes-1];
 	}
 
 	TLogTime CImage::CTrackReader::GetIndexTime(BYTE index) const{

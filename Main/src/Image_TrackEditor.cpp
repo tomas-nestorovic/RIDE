@@ -307,8 +307,8 @@ using namespace Charting;
 						);
 					// . painting space between neighboring Times at current position
 					if (IsFeatureShown(TCursorFeatures::SPACING) && cursorTime<timeline.GetLength()){
-						tr.SetCurrentTime(cursorTime), tr.TruncateCurrentTime();
-						const TLogTime a=tr.GetCurrentTime(), z=tr.ReadTime();
+						tr.SetCurrentTime(cursorTime);
+						const TLogTime a=tr.TruncateCurrentTime(), z=tr.ReadTime();
 						g.DimensioningIndirect(
 							a, z, TIME_HEIGHT, SPACING_HEIGHT, timeline.ValueToReadableString(z-a), LINE_EXTENSION
 						);

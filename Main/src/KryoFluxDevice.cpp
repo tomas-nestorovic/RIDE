@@ -613,8 +613,7 @@
 			}else{
 				// normal representation of flux as the index into the table of fluxes
 				trwFluxes.SetCurrentTime( sampleCounter );
-				trwFluxes.TruncateCurrentTime();
-				const TLogTime smallerSampleCounter=trwFluxes.GetCurrentTime();
+				const TLogTime smallerSampleCounter=trwFluxes.TruncateCurrentTime();
 				const TLogTime biggerSampleCounter=trwFluxes.ReadTime();
 				if (sampleCounter-smallerSampleCounter<biggerSampleCounter-sampleCounter || biggerSampleCounter<=0)
 					*pb++=1+histogram.GetIndex( smallerSampleCounter ); // closer to SmallerSampleCounter or no BiggerSampleCounter

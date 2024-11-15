@@ -231,6 +231,7 @@ namespace Utils{
 	public:
 		static void UpdateUI(CWnd *pUiUpdater,CMenu *pMenu);
 
+		CRideContextMenu();
 		CRideContextMenu(UINT idMenuRes,CWnd *pUiUpdater=nullptr);
 		CRideContextMenu(HMENU hMenuOwnedByCaller);
 		~CRideContextMenu();
