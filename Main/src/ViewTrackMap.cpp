@@ -435,7 +435,7 @@
 				::SetViewportOrgEx( dc, timelinePosition.x, timelinePosition.y, nullptr );
 				Utils::CTimeline(
 					longestTrackNanoseconds, IMAGE->EstimateNanosecondsPerOneByte(), zoomLengthFactor
-				).DrawWhole( dc, font );
+				).DrawWhole( dc );
 			}else
 				::TabbedTextOut( dc, 0,VIEW_PADDING, _T("\t\t\tSectors"),-1, 3,Tabs, 0 );
 		::SelectObject(dc,font0);
