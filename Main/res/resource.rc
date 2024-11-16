@@ -206,6 +206,7 @@ BEGIN
     "3",            ID_STANDARD,            VIRTKEY, CONTROL, NOINVERT
     "4",            ID_NUMBER,              VIRTKEY, CONTROL, NOINVERT
     VK_ESCAPE,      IDCANCEL,               VIRTKEY, NOINVERT
+    VK_F5,          ID_REFRESH,             VIRTKEY, NOINVERT
 END
 
 IDR_SCATTERPLOT ACCELERATORS DISCARDABLE 
@@ -833,6 +834,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Snap to nearest item",        ID_ALIGN
         MENUITEM "Save screenshot as...",       ID_FILE_SAVE_AS
+        MENUITEM "Refresh\tF5",                 ID_REFRESH
         MENUITEM SEPARATOR
         MENUITEM "Close\tEsc",                  IDCANCEL
     END

@@ -315,6 +315,7 @@ namespace Screenshot
 						return true;
 					}
 					case ID_FILE_SAVE_AS:
+					case ID_REFRESH:
 						pCmdUi->Enable(true);
 						return true;
 				}
@@ -326,6 +327,8 @@ namespace Screenshot
 					case ID_ALIGN:
 						snapToNearestItem=!snapToNearestItem;
 						snapped.graphics=nullptr;
+						//fallthrough
+					case ID_REFRESH:
 						cv.Invalidate();
 						return true;
 					case ID_FILE_SAVE_AS:{
