@@ -257,12 +257,12 @@ using namespace Charting;
 				SetScrollSizes(
 					MM_TEXT,
 					CSize( timeline.GetScrollMax(), 0 ), // total
-					sizeDefault, // page
+					sizeDefault, // page (see comment below)
 					CSize( std::max(timeline.GetUnitCount(tr.GetCurrentProfile().iwTimeDefault),1), 0 ) // line
 				);
 				SCROLLINFO si;
 				GetScrollInfo( SB_HORZ, &si );
-				si.nPage=page; // no matter what input above, this value is reset in an undesired way by MFC
+				si.nPage = m_pageDev.cx = page; // no matter what input above, this value is reset in an undesired way by MFC
 				SetScrollInfo( SB_HORZ, &si );
 			}
 
