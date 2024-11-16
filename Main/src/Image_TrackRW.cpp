@@ -211,6 +211,7 @@
 				currentTime+=profile.iwTime;
 				const TLogTime diff=( rtOutOne=logTimes[iNextTime] )-currentTime;
 				iNextTime+=logTimes[iNextTime]<=currentTime; // eventual correction of the pointer to the next time
+				lastReadBits<<=1, lastReadBits|=1; // 'valid' flag
 				lastReadBits<<=1;
 				if (diff>=iwTimeHalf){
 					r.nConsecutiveZeros++;
@@ -249,6 +250,7 @@
 				// . detecting zero
 				currentTime+=profile.iwTime;
 				const TLogTime diff=( rtOutOne=logTimes[iNextTime] )-currentTime;
+				lastReadBits<<=1, lastReadBits|=1; // 'valid' flag
 				lastReadBits<<=1;
 				if (diff>=iwTimeHalf)
 					return 0;
@@ -1087,10 +1089,11 @@
 		}
 
 		static bool IsWellEncodedSequence(BYTE bits){
-			if ((bits&1)!=0) // last read bit is "1"?
-				return (bits&2)==0; // previous bit must be "0"
+			// see comment at 'CTrackReader::lastReadBits'
+			if ((bits&3)==3) // last valid bit is "1"?
+				return (bits&4)==0; // previous bit must be "0" (and we don't care if it's valid or not)
 			else
-				return (bits&0xf)!=0; // four consecutive "0"s are forbidden
+				return bits!=0xaa; // four valid consecutive "0"s are forbidden
 		}
 	}
 
