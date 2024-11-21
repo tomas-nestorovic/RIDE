@@ -247,6 +247,8 @@
 		if (floppyType==Medium::UNKNOWN) // if type not explicitly overridden ...
 			floppyType=cb.floppyType; // ... adopt what the CapsBase contains
 		if (floppyType!=Medium::UNKNOWN){ // may be unknown if Medium is still being recognized
+			if (!Medium::GetProperties(floppyType)->IsAcceptableRevolutionTime( trw.GetAvgIndexDistance() ))
+				return new CInternalTrack( trw, nullptr, 0 );
 			trw.SetMediumType(floppyType); // keeps timing intact, just presets codec parameters (codec itself determined below)
 			if (cb.dos!=nullptr) // DOS already known (aka. creating final version of the Track)
 				if (!cb.preservationQuality && !cb.m_strPathName.IsEmpty()) // normalization makes sense only for existing Images - it's useless for Images just created
@@ -788,9 +790,7 @@ invalidTrack:
 					)
 				){
 					const TSector nRecognizedSectors=rit->sectors.length;
-					if (WORD score= nRecognizedSectors + 32*GetCountOfHealthySectors(cyl,0)){
-						if (Medium::GetProperties( (Medium::TType)type )->IsAcceptableRevolutionTime( trw.GetAvgIndexDistance() ))
-							score|=0x8000;
+					if (const WORD score= nRecognizedSectors + 32*GetCountOfHealthySectors(cyl,0)){
 						if (score>highestScore)
 							highestScore=score, bestMediumType=rOutMediumType;
 					}
