@@ -1,39 +1,35 @@
 #include "stdafx.h"
 
-	CImage::CTrackReader::CTrackReader(PLogTime _logTimes,DWORD nLogTimes,PCLogTime indexPulses,BYTE _nIndexPulses,Medium::TType mediumType,Codec::TType codec,TDecoderMethod method,bool resetDecoderOnIndex)
+	CImage::CTrackReader::CTrackReader(PLogTimesInfo pLti,DWORD nLogTimes,Codec::TType codec,TDecoderMethod method,bool resetDecoderOnIndex)
 		// ctor
-		: logTimes(_logTimes+2) , nLogTimes(nLogTimes) // "+2" = hidden items represent buffer capacity and reference counter
-		, iNextIndexPulse(0) , nIndexPulses(  std::min( (BYTE)Revolution::MAX, _nIndexPulses )  )
+		: pNextInfo(pLti+1) , nLogTimes(nLogTimes)
+		, indexPulses(pLti->indexPulses) , iNextIndexPulse(0) , nIndexPulses(0)
 		, iNextTime(0) , currentTime(0) , lastReadBits(0)
 		, method(method) , resetDecoderOnIndex(resetDecoderOnIndex) {
-		::memcpy( this->indexPulses, indexPulses, nIndexPulses*sizeof(TLogTime) );
-		this->indexPulses[nIndexPulses]=INT_MAX; // a virtual IndexPulse in infinity
-		logTimes[-1]=1; // initializing the reference counter
+	#ifdef _DEBUG
+		pCurrInfo=&GetInfo();
+	#endif
 		SetCodec(codec); // setting values associated with the specified Codec
-		SetMediumType(mediumType); // setting values associated with the specified MediumType
 	}
 
 	CImage::CTrackReader::CTrackReader(const CTrackReader &tr)
 		// copy ctor
-		: logTimes(tr.logTimes) , lastReadBits(0) , method(tr.method) , resetDecoderOnIndex(tr.resetDecoderOnIndex) {
+		: method(TDecoderMethod::NONE) {
 		::memcpy( this, &tr, sizeof(*this) );
-		static_assert( sizeof(TLogTime)==sizeof(UINT), "InterlockedIncrement" );
-		::InterlockedIncrement( (PUINT)logTimes-1 ); // increasing the reference counter
+		GetInfo().AddRef();
 	}
 
 	CImage::CTrackReader::CTrackReader(CTrackReader &&rTrackReader)
 		// move ctor
-		: logTimes(rTrackReader.logTimes) , lastReadBits(0) , method(rTrackReader.method) , resetDecoderOnIndex(rTrackReader.resetDecoderOnIndex) {
+		: method(TDecoderMethod::NONE) {
 		::memcpy( this, &rTrackReader, sizeof(*this) );
-		static_assert( sizeof(TLogTime)==sizeof(UINT), "InterlockedIncrement" );
-		::InterlockedIncrement( (PUINT)logTimes-1 ); // increasing the reference counter
+		GetInfo().AddRef();
 	}
 
 	CImage::CTrackReader::~CTrackReader(){
 		// dtor
-		static_assert( sizeof(TLogTime)==sizeof(UINT), "InterlockedDecrement" );
-		if (!::InterlockedDecrement( (PUINT)logTimes-1 )) // decreasing the reference counter
-			::free(logTimes-2);
+		if (GetInfo().Release()) // decreasing the reference counter
+			::free( &GetInfo() );
 	}
 
 
@@ -141,7 +137,7 @@
 
 	void CImage::CTrackReader::SetMediumType(Medium::TType mediumType){
 		// changes the interpretation of recorded LogicalTimes according to the new MediumType
-		switch ( this->mediumType=mediumType ){
+		switch ( GetInfo().mediumType=mediumType ){
 			default:
 				ASSERT(FALSE); // we shouldn't end-up here, all Media Types applicable for general Track description should be covered
 				//fallthrough
@@ -157,6 +153,10 @@
 				break;
 		}
 		profile.Reset();
+	}
+
+	Medium::PCProperties CImage::CTrackReader::GetMediumProperties() const{
+		return Medium::GetProperties(GetInfo().mediumType);
 	}
 
 	LPCTSTR CImage::CTrackReader::GetDescription(TDecoderMethod dm){
@@ -1403,17 +1403,23 @@
 
 	CImage::CTrackReaderWriter::CTrackReaderWriter(DWORD nLogTimesMax,TDecoderMethod method,bool resetDecoderOnIndex)
 		// ctor
-		: CTrackReader( (PLogTime)::calloc(2+nLogTimesMax+1,sizeof(TLogTime)), 0, nullptr, 0, Medium::FLOPPY_DD, Codec::MFM, method, resetDecoderOnIndex ) { // "2+" = hidden items represent buffer capacity and reference counter, "+1" = for stop-conditions and other purposes
-		logTimes[-2]=nLogTimesMax;
+		: CTrackReader( (PLogTimesInfo)::malloc(sizeof(TLogTimesInfo)+(nLogTimesMax+1)*sizeof(TLogTime)), 0, Codec::MFM, method, resetDecoderOnIndex ) { // "+1" = for stop-conditions and other purposes
+		::memcpy( &GetInfo(), &TLogTimesInfo(nLogTimesMax), sizeof(TLogTimesInfo) );
+		SetMediumType(Medium::FLOPPY_DD); // setting values associated with the specified MediumType
 	}
 
-	CImage::CTrackReaderWriter::CTrackReaderWriter(const CTrackReaderWriter &rTrackReaderWriter,bool shareTimes)
+	CImage::CTrackReaderWriter::CTrackReaderWriter(const CTrackReaderWriter &trw,bool shareTimes)
 		// copy ctor
-		: CTrackReader( rTrackReaderWriter ) {
+		: CTrackReader( trw ) {
 		if (!shareTimes){
-			CTrackReaderWriter tmp( rTrackReaderWriter.GetBufferCapacity(), rTrackReaderWriter.method, rTrackReaderWriter.resetDecoderOnIndex );
+			CTrackReaderWriter tmp( trw.GetBufferCapacity(), trw.method, trw.resetDecoderOnIndex );
 			std::swap( tmp.logTimes, logTimes );
-			::memcpy( logTimes, rTrackReaderWriter.logTimes, nLogTimes*sizeof(TLogTime) );
+			::memcpy( logTimes, trw.logTimes, nLogTimes*sizeof(TLogTime) );
+			indexPulses=GetInfo().indexPulses;
+			::memcpy( indexPulses, trw.indexPulses, sizeof(GetInfo().indexPulses) );
+		#ifdef _DEBUG
+			pCurrInfo=&GetInfo();
+		#endif
 		}
 	}
 	
@@ -1427,6 +1433,14 @@
 		: CTrackReader(tr) {
 	}
 	
+	CImage::CTrackReader::TLogTimesInfo::TLogTimesInfo(DWORD nLogTimesMax)
+		// ctor
+		: nRefs(1)
+		, nLogTimesMax(nLogTimesMax)
+		, mediumType(Medium::UNKNOWN) {
+		*indexPulses=INT_MAX; // a virtual IndexPulse in infinity
+	}
+
 	void CImage::CTrackReaderWriter::AddTimes(PCLogTime logTimes,DWORD nLogTimes){
 		// appends given amount of LogicalTimes at the end of the Track
 		ASSERT( this->nLogTimes+nLogTimes<=GetBufferCapacity() );
@@ -1518,7 +1532,7 @@
 			return true;
 		// - determining the RevolutionTime to the next Index
 		TLogTime revolutionTime;
-		if (const Medium::PCProperties mp=Medium::GetProperties(mediumType))
+		if (const Medium::PCProperties mp=GetMediumProperties())
 			revolutionTime=mp->revolutionTime;
 		else
 			return false;
@@ -1546,7 +1560,7 @@
 		if (nIndexPulses<2)
 			return ERROR_SUCCESS;
 		// - MediumType must be supported
-		const Medium::PCProperties mp=Medium::GetProperties(mediumType);
+		const Medium::PCProperties mp=GetMediumProperties();
 		if (!mp)
 			return ERROR_UNRECOGNIZED_MEDIA;
 		// - shifting Indices by shifting all Times in oposite direction

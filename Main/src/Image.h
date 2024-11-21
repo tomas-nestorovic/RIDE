@@ -446,21 +446,40 @@
 				void RemoveConsecutiveBeforeEnd(TLogTime tEndMax);
 			};
 		protected:
-			PLogTime logTimes; // absolute logical times since the start of recording
+			typedef struct TLogTimesInfo sealed{
+				UINT nRefs;
+				const DWORD nLogTimesMax;
+				Medium::TType mediumType;
+				TLogTime indexPulses[Revolution::MAX+2]; // "+2" = "+1+1" = "+A+B", A = tail IndexPulse of last possible Revolution, B = terminator
+
+				TLogTimesInfo(DWORD nLogTimesMax);
+
+				inline void AddRef(){ ::InterlockedIncrement(&nRefs); }
+				inline bool Release(){ return ::InterlockedDecrement(&nRefs)==0; }
+			} *PLogTimesInfo;
+
+			union{
+				PLogTime logTimes; // absolute logical times since the start of recording
+				PLogTimesInfo pNextInfo; // use 'operator[-1]' to get actual structure
+			};
+		#ifdef _DEBUG
+			PLogTimesInfo pCurrInfo;
+		#endif
 			const TDecoderMethod method;
 			bool resetDecoderOnIndex;
 			DWORD iNextTime,nLogTimes;
-			TLogTime indexPulses[Revolution::MAX+2]; // "+2" = "+1+1" = "+A+B", A = tail IndexPulse of last possible Revolution, B = terminator
+			PLogTime indexPulses; // buffer to contain Max Revolutions
 			BYTE iNextIndexPulse,nIndexPulses;
 			TProfile profile;
 			TLogTime currentTime;
 			Codec::TType codec;
-			Medium::TType mediumType;
 			BYTE nConsecutiveZerosMax; // # of consecutive zeroes to lose synchronization; e.g. 3 for MFM code
 			WORD lastReadBits; // validity flag and bit, e.g. 10b = valid bit '0', 11b = valid bit '1', 0Xb = invalid bit 'X'
 
-			CTrackReader(PLogTime logTimes,DWORD nLogTimes,PCLogTime indexPulses,BYTE nIndexPulses,Medium::TType mediumType,Codec::TType codec,TDecoderMethod method,bool resetDecoderOnIndex);
+			CTrackReader(PLogTimesInfo pLti,DWORD nLogTimes,Codec::TType codec,TDecoderMethod method,bool resetDecoderOnIndex);
 
+			inline TLogTimesInfo &GetInfo() const{ return pNextInfo[-1]; }
+			Medium::PCProperties GetMediumProperties() const;
 			WORD ScanFm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents);
 			WORD ScanMfm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents);
 			TFdcStatus ReadDataFm(const TSectorId &sectorId,WORD nBytesToRead,CParseEventList *pOutParseEvents);
@@ -556,12 +575,6 @@
 				return codec;
 			}
 
-			inline
-			Medium::TType GetMediumType() const{
-				// returns currently used/recognized MediumType
-				return mediumType;
-			}
-
 
 			void SetCurrentTime(TLogTime logTime);
 			void SetCurrentTimeAndProfile(TLogTime logTime,const TProfile &profile);
@@ -605,7 +618,7 @@
 			static const CTrackReaderWriter Invalid;
 
 			CTrackReaderWriter(DWORD nLogTimesMax,TDecoderMethod method,bool resetDecoderOnIndex);
-			CTrackReaderWriter(const CTrackReaderWriter &rTrackReaderWriter,bool shareTimes=true);
+			CTrackReaderWriter(const CTrackReaderWriter &trw,bool shareTimes=true);
 			CTrackReaderWriter(CTrackReaderWriter &&rTrackReaderWriter);
 			CTrackReaderWriter(const CTrackReader &tr);
 
@@ -617,7 +630,7 @@
 
 			inline
 			DWORD GetBufferCapacity() const{
-				return logTimes[-2];
+				return pNextInfo[-1].nLogTimesMax;
 			}
 
 			inline
