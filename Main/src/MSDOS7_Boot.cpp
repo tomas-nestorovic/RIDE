@@ -26,8 +26,11 @@
 			if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
 				fmt.mediumType=Medium::FLOPPY_HD_350;
 				if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
-					if (pSuccess) *pSuccess=false; // unknown Medium
-					return chs; // unknown Medium Type, any address will sooner or later cause a failure in access
+					fmt.mediumType=Medium::FLOPPY_HD_525;
+					if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
+						if (pSuccess) *pSuccess=false; // unknown Medium
+						return chs; // unknown Medium Type, any address will sooner or later cause a failure in access
+					}
 				}
 			}
 		}

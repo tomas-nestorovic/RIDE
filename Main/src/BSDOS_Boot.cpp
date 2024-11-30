@@ -9,8 +9,11 @@
 			fmt.mediumType=Medium::FLOPPY_DD;
 			if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,BSDOS_SECTOR_NUMBER_FIRST)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
 				fmt.mediumType=Medium::FLOPPY_HD_350;
-				if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,BSDOS_SECTOR_NUMBER_FIRST)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0))
-					return ERROR_UNRECOGNIZED_VOLUME; // unknown Medium Type
+				if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,BSDOS_SECTOR_NUMBER_FIRST)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
+					fmt.mediumType=Medium::FLOPPY_HD_525;
+					if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,BSDOS_SECTOR_NUMBER_FIRST)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0))
+						return ERROR_UNRECOGNIZED_VOLUME; // unknown Medium Type
+				}
 			}
 		}
 		// - recognition attempt
