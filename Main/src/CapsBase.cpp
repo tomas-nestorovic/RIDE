@@ -1344,7 +1344,7 @@ invalidTrack:
 							break;
 						case Medium::FLOPPY_HD_525:
 						case Medium::FLOPPY_HD_350:
-							SetDlgItemText( ID_MEDIUM, _T("3.5\"/5.25\" HD floppy") );
+							SetDlgItemText( ID_MEDIUM, Medium::GetDescription(currentMediumType) );
 							if (initialEditing){
 								CheckAndEnableDlgItem( ID_SIDE, false );
 								CheckAndEnableDlgItem( ID_40D80, false, !fortyTrackDrive );
