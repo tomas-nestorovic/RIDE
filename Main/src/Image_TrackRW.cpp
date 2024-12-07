@@ -1449,7 +1449,7 @@
 			this->nLogTimes+=nLogTimes;
 		else{
 			// caller used its own buffer to store new LogicalTimes
-			::memcpy( this->logTimes, logTimes, nLogTimes*sizeof(TLogTime) );
+			::memcpy( this->logTimes+this->nLogTimes, logTimes, nLogTimes*sizeof(TLogTime) );
 			this->nLogTimes+=nLogTimes;
 		}
 	}
