@@ -1258,7 +1258,8 @@ using namespace Charting;
 										r.x=tr.GetIndexTime(i);
 										r.y=TIME_MILLI(200); // should suffice for any Medium
 								}
-								std::swap( *indexTimes.get(), indexTimes.get()[tr.GetIndexCount()-1] ); // swapping first and last index pulse to disable application of percentiles, unapplicable to Index pulses
+								if (indexTimes.length)
+									std::swap( *indexTimes.get(), indexTimes.get()[tr.GetIndexCount()-1] ); // swapping first and last index pulse to disable application of percentiles, unapplicable to Index pulses
 								auto indexTimeSeries=CChartView::CXyOrderedBarSeries(
 									tr.GetIndexCount(), indexTimes, timeEditor.penIndex
 								);
