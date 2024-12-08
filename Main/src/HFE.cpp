@@ -336,7 +336,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			PCBYTE p=bytes,const pLast=bytes.end();
 			TLogTime tCell=GetCellTime( header.dataBitRate*1000 );
 			TLogTime tCurr=0;
-			for( BYTE nFollowingDataBitsToSkip=0; p<pLast; )
+			for( BYTE nFollowingDataBitsToSkip=0,fuzzyQuot=100; p<pLast; )
 				switch (BYTE b=*p++){
 					case TOpCode::SETINDEX:
 						trw.AddIndexTime( tCurr );
@@ -354,6 +354,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 						break;
 					case TOpCode::RANDOM:
 						b=::rand()&0x54; // constant adopted from HxC2001 emulator
+						fuzzyQuot=146; // let fluxes be at the very edge of neighboring cells
 						//fallthrough ('b' is now smaller than 'TOpCode::NOP')
 					default:
 						if (b>=TOpCode::NOP){ // invalid OpCode ?
@@ -361,12 +362,12 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 							break; // skip it
 						}
 						const BYTE nBits=CHAR_BIT-nFollowingDataBitsToSkip;
-						const TLogTime tSpan=nBits*tCell;
+						const TLogTime tSpan=nBits*tCell, tFuzzy=tCell*fuzzyQuot/100;
 						for( BYTE data=b<<nFollowingDataBitsToSkip,i=0; data; data<<=1,i++ )
 							if ((char)data<0)
-								trw.AddTime( tCurr + i*tCell );
+								trw.AddTime( tCurr + i*tCell+tFuzzy );
 						tCurr+=tSpan;
-						nFollowingDataBitsToSkip=0;
+						nFollowingDataBitsToSkip=0, fuzzyQuot=100;
 						break;
 				}
 			if (trw.GetIndexCount()<1)
