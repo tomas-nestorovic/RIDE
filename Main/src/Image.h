@@ -306,7 +306,7 @@
 			bool IsRealDevice() const;
 		} *PCProperties;
 
-		class CTrackReader{
+		class CTrackReaderBase abstract{
 		public:
 			enum TDecoderMethod:BYTE{
 				NONE			=1,
@@ -314,8 +314,6 @@
 				MARK_OGDEN		=8,
 				FDD_METHODS		=NONE|KEIR_FRASER|MARK_OGDEN
 			};
-
-			static LPCTSTR GetDescription(TDecoderMethod dm);
 
 			struct TProfile sealed{
 				static const TProfile HD;		// 3.5" HD or 5.25" HD in 360 RPM drive
@@ -341,6 +339,49 @@
 
 				void Reset();
 			};
+
+			~CTrackReaderBase();
+		protected:
+			struct TLogTimesInfoData abstract{
+				DWORD nLogTimesMax;
+				Medium::TType mediumType;
+				TLogTime indexPulses[Revolution::MAX+2]; // "+2" = "+1+1" = "+A+B", A = tail IndexPulse of last possible Revolution, B = terminator
+			};
+
+			typedef class CLogTimesInfo sealed:public TLogTimesInfoData{
+				UINT nRefs;
+			public:
+				static CLogTimesInfo *Create(DWORD nLogTimesMax);
+
+				inline void AddRef(){ ::InterlockedIncrement(&nRefs); }
+				bool Release();
+			} *PLogTimesInfo;
+
+			union{
+				PLogTime logTimes; // absolute logical times since the start of recording
+				PLogTimesInfo pNextInfo; // use 'operator[-1]' to get actual structure
+			};
+			const TDecoderMethod method;
+			bool resetDecoderOnIndex;
+			DWORD iNextTime,nLogTimes;
+			PLogTime indexPulses; // buffer to contain Max Revolutions
+			BYTE iNextIndexPulse,nIndexPulses;
+			TProfile profile;
+			TLogTime currentTime;
+			Codec::TType codec;
+			BYTE nConsecutiveZerosMax; // # of consecutive zeroes to lose synchronization; e.g. 3 for MFM code
+			WORD lastReadBits; // validity flag and bit, e.g. 10b = valid bit '0', 11b = valid bit '1', 0Xb = invalid bit 'X'
+
+			CTrackReaderBase(PLogTimesInfo pLti,DWORD nLogTimes,Codec::TType codec,TDecoderMethod method,bool resetDecoderOnIndex);
+		public:
+			inline CLogTimesInfo &GetInfo() const{ return pNextInfo[-1]; }
+			void SetCodec(Codec::TType codec);
+			void SetMediumType(Medium::TType mediumType);
+		};
+
+		class CTrackReader:public CTrackReaderBase{
+		public:
+			static LPCTSTR GetDescription(TDecoderMethod dm);
 
 			typedef const struct TParseEvent:public TLogTimeInterval{
 				enum TType:BYTE{
@@ -446,39 +487,12 @@
 				void RemoveConsecutiveBeforeEnd(TLogTime tEndMax);
 			};
 		protected:
-			typedef struct TLogTimesInfo sealed{
-				UINT nRefs;
-				const DWORD nLogTimesMax;
-				Medium::TType mediumType;
-				TLogTime indexPulses[Revolution::MAX+2]; // "+2" = "+1+1" = "+A+B", A = tail IndexPulse of last possible Revolution, B = terminator
-
-				TLogTimesInfo(DWORD nLogTimesMax);
-
-				inline void AddRef(){ ::InterlockedIncrement(&nRefs); }
-				inline bool Release(){ return ::InterlockedDecrement(&nRefs)==0; }
-			} *PLogTimesInfo;
-
-			union{
-				PLogTime logTimes; // absolute logical times since the start of recording
-				PLogTimesInfo pNextInfo; // use 'operator[-1]' to get actual structure
-			};
 		#ifdef _DEBUG
 			PLogTimesInfo pCurrInfo;
 		#endif
-			const TDecoderMethod method;
-			bool resetDecoderOnIndex;
-			DWORD iNextTime,nLogTimes;
-			PLogTime indexPulses; // buffer to contain Max Revolutions
-			BYTE iNextIndexPulse,nIndexPulses;
-			TProfile profile;
-			TLogTime currentTime;
-			Codec::TType codec;
-			BYTE nConsecutiveZerosMax; // # of consecutive zeroes to lose synchronization; e.g. 3 for MFM code
-			WORD lastReadBits; // validity flag and bit, e.g. 10b = valid bit '0', 11b = valid bit '1', 0Xb = invalid bit 'X'
 
 			CTrackReader(PLogTimesInfo pLti,DWORD nLogTimes,Codec::TType codec,TDecoderMethod method,bool resetDecoderOnIndex);
 
-			inline TLogTimesInfo &GetInfo() const{ return pNextInfo[-1]; }
 			Medium::PCProperties GetMediumProperties() const;
 			WORD ScanFm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents);
 			WORD ScanMfm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents);
@@ -523,7 +537,6 @@
 
 			CTrackReader(const CTrackReader &tr);
 			CTrackReader(CTrackReader &&rTrackReader);
-			~CTrackReader();
 
 			inline
 			operator bool() const{
@@ -586,8 +599,6 @@
 			TLogTime GetLastTime() const;
 			TLogTime GetTotalTime() const;
 			TLogTime ReadTime();
-			void SetCodec(Codec::TType codec);
-			void SetMediumType(Medium::TType mediumType);
 			bool ReadBit(TLogTime &rtOutOne);
 			bool ReadBit();
 			bool IsLastReadBitHealthy() const;

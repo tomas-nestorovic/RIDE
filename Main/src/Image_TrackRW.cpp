@@ -1,11 +1,23 @@
 #include "stdafx.h"
 
-	CImage::CTrackReader::CTrackReader(PLogTimesInfo pLti,DWORD nLogTimes,Codec::TType codec,TDecoderMethod method,bool resetDecoderOnIndex)
+	CImage::CTrackReaderBase::CTrackReaderBase(PLogTimesInfo pLti,DWORD nLogTimes,Codec::TType codec,TDecoderMethod method,bool resetDecoderOnIndex)
 		// ctor
 		: pNextInfo(pLti+1) , nLogTimes(nLogTimes)
 		, indexPulses(pLti->indexPulses) , iNextIndexPulse(0) , nIndexPulses(0)
 		, iNextTime(0) , currentTime(0) , lastReadBits(0)
 		, method(method) , resetDecoderOnIndex(resetDecoderOnIndex) {
+	}
+
+	CImage::CTrackReaderBase::~CTrackReaderBase(){
+		// dtor
+		GetInfo().Release();
+	}
+
+
+
+	CImage::CTrackReader::CTrackReader(PLogTimesInfo pLti,DWORD nLogTimes,Codec::TType codec,TDecoderMethod method,bool resetDecoderOnIndex)
+		// ctor
+		: CTrackReaderBase( pLti, nLogTimes, codec, method, resetDecoderOnIndex ) {
 	#ifdef _DEBUG
 		pCurrInfo=&GetInfo();
 	#endif
@@ -14,22 +26,14 @@
 
 	CImage::CTrackReader::CTrackReader(const CTrackReader &tr)
 		// copy ctor
-		: method(TDecoderMethod::NONE) {
-		::memcpy( this, &tr, sizeof(*this) );
+		: CTrackReaderBase(tr) {
 		GetInfo().AddRef();
 	}
 
-	CImage::CTrackReader::CTrackReader(CTrackReader &&rTrackReader)
+	CImage::CTrackReader::CTrackReader(CTrackReader &&tr)
 		// move ctor
-		: method(TDecoderMethod::NONE) {
-		::memcpy( this, &rTrackReader, sizeof(*this) );
+		: CTrackReaderBase(tr) {
 		GetInfo().AddRef();
-	}
-
-	CImage::CTrackReader::~CTrackReader(){
-		// dtor
-		if (GetInfo().Release()) // decreasing the reference counter
-			::free( &GetInfo() );
 	}
 
 
@@ -120,7 +124,7 @@
 		return	*this ? (currentTime=logTimes[iNextTime++]) : 0;
 	}
 
-	void CImage::CTrackReader::SetCodec(Codec::TType codec){
+	void CImage::CTrackReaderBase::SetCodec(Codec::TType codec){
 		// changes the interpretation of recorded LogicalTimes according to the new Codec
 		switch ( this->codec=codec ){
 			default:
@@ -135,7 +139,7 @@
 		}
 	}
 
-	void CImage::CTrackReader::SetMediumType(Medium::TType mediumType){
+	void CImage::CTrackReaderBase::SetMediumType(Medium::TType mediumType){
 		// changes the interpretation of recorded LogicalTimes according to the new MediumType
 		switch ( GetInfo().mediumType=mediumType ){
 			default:
@@ -1359,22 +1363,22 @@
 
 
 
-	const CImage::CTrackReader::TProfile CImage::CTrackReader::TProfile::HD(
+	const CImage::CTrackReader::TProfile CImage::CTrackReaderBase::TProfile::HD(
 		Medium::TProperties::FLOPPY_HD_350, // same for both 3.5" and 5.25" HD floppies
 		4 // inspection window size tolerance
 	);
 
-	const CImage::CTrackReader::TProfile CImage::CTrackReader::TProfile::DD(
+	const CImage::CTrackReader::TProfile CImage::CTrackReaderBase::TProfile::DD(
 		Medium::TProperties::FLOPPY_DD,
 		4 // inspection window size tolerance
 	);
 
-	const CImage::CTrackReader::TProfile CImage::CTrackReader::TProfile::DD_525(
+	const CImage::CTrackReader::TProfile CImage::CTrackReaderBase::TProfile::DD_525(
 		Medium::TProperties::FLOPPY_DD_525,
 		4 // inspection window size tolerance
 	);
 
-	CImage::CTrackReader::TProfile::TProfile(const Medium::TProperties &floppyProps,BYTE iwTimeTolerancePercent)
+	CImage::CTrackReaderBase::TProfile::TProfile(const Medium::TProperties &floppyProps,BYTE iwTimeTolerancePercent)
 		// ctor
 		: iwTimeDefault(floppyProps.cellTime)
 		, iwTime(iwTimeDefault)
@@ -1383,7 +1387,7 @@
 		, adjustmentPercentMax(30) {
 	}
 
-	void CImage::CTrackReader::TProfile::Reset(){
+	void CImage::CTrackReaderBase::TProfile::Reset(){
 		iwTime=iwTimeDefault;
 		::ZeroMemory( &method, sizeof(method) );
 	}
@@ -1403,8 +1407,7 @@
 
 	CImage::CTrackReaderWriter::CTrackReaderWriter(DWORD nLogTimesMax,TDecoderMethod method,bool resetDecoderOnIndex)
 		// ctor
-		: CTrackReader( (PLogTimesInfo)::malloc(sizeof(TLogTimesInfo)+(nLogTimesMax+1)*sizeof(TLogTime)), 0, Codec::MFM, method, resetDecoderOnIndex ) { // "+1" = for stop-conditions and other purposes
-		::memcpy( &GetInfo(), &TLogTimesInfo(nLogTimesMax), sizeof(TLogTimesInfo) );
+		: CTrackReader( CLogTimesInfo::Create(nLogTimesMax), 0, Codec::MFM, method, resetDecoderOnIndex ) {
 		SetMediumType(Medium::FLOPPY_DD); // setting values associated with the specified MediumType
 	}
 
@@ -1415,8 +1418,7 @@
 			CTrackReaderWriter tmp( trw.GetBufferCapacity(), trw.method, trw.resetDecoderOnIndex );
 			std::swap( tmp.logTimes, logTimes );
 			::memcpy( logTimes, trw.logTimes, nLogTimes*sizeof(TLogTime) );
-			indexPulses=GetInfo().indexPulses;
-			::memcpy( indexPulses, trw.indexPulses, sizeof(GetInfo().indexPulses) );
+			static_cast<TLogTimesInfoData &>(GetInfo())=trw.GetInfo();
 		#ifdef _DEBUG
 			pCurrInfo=&GetInfo();
 		#endif
@@ -1433,12 +1435,24 @@
 		: CTrackReader(tr) {
 	}
 	
-	CImage::CTrackReader::TLogTimesInfo::TLogTimesInfo(DWORD nLogTimesMax)
-		// ctor
-		: nRefs(1)
-		, nLogTimesMax(nLogTimesMax)
-		, mediumType(Medium::UNKNOWN) {
-		*indexPulses=INT_MAX; // a virtual IndexPulse in infinity
+	CImage::CTrackReader::CLogTimesInfo *CImage::CTrackReaderBase::CLogTimesInfo::Create(DWORD nLogTimesMax){
+		// "ctor"
+		const PLogTimesInfo result=(PLogTimesInfo)::malloc( sizeof(CLogTimesInfo)+(nLogTimesMax+1)*sizeof(TLogTime) );
+			::ZeroMemory( result, sizeof(*result) );
+			result->nRefs=1;
+			result->nLogTimesMax=nLogTimesMax;
+			result->mediumType=Medium::UNKNOWN;
+			*result->indexPulses=INT_MAX; // a virtual IndexPulse in infinity
+		return result;
+	}
+
+	bool CImage::CTrackReaderBase::CLogTimesInfo::Release(){
+		// "dtor"
+		if (::InterlockedDecrement(&nRefs)==0){
+			::free(this);
+			return true;
+		}else
+			return false;
 	}
 
 	void CImage::CTrackReaderWriter::AddTimes(PCLogTime logTimes,DWORD nLogTimes){
