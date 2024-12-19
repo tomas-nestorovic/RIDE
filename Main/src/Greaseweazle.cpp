@@ -13,7 +13,7 @@
 
 	#define GW_DRIVES_MAX			2
 
-	#define GW_BUFFER_CAPACITY		1000000
+	#define GW_BUFFER_CAPACITY		2000000
 
 	LPCTSTR CGreaseweazleV4::Recognize(PTCHAR deviceNameList){
 		// returns a null-separated list of floppy drives connected via a local Greaseweazle Device

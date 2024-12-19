@@ -3,7 +3,7 @@
 
 	#define INI_SUPERCARDPRO	_T("Scpflux")
 
-	#define SCP_BUFFER_CAPACITY		1000000
+	#define SCP_BUFFER_CAPACITY		2000000
 
 	class CSuperCardProBase abstract:public CCapsBase{
 	protected:

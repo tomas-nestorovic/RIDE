@@ -1,7 +1,7 @@
 #ifndef KRYOFLUXBASE_H
 #define KRYOFLUXBASE_H
 
-	#define KF_BUFFER_CAPACITY		1000000
+	#define KF_BUFFER_CAPACITY		2000000
 
 	class CKryoFluxBase abstract:public CCapsBase{
 	protected:
