@@ -345,36 +345,35 @@
 			struct TLogTimesInfoData abstract{
 				DWORD nLogTimesMax;
 				Medium::TType mediumType;
+				bool resetDecoderOnIndex;
+				Codec::TType codec;
 				TLogTime indexPulses[Revolution::MAX+2]; // "+2" = "+1+1" = "+A+B", A = tail IndexPulse of last possible Revolution, B = terminator
+
+				TLogTimesInfoData(DWORD nLogTimesMax,bool resetDecoderOnIndex);
 			};
 
 			typedef class CLogTimesInfo sealed:public TLogTimesInfoData{
 				UINT nRefs;
 			public:
-				static CLogTimesInfo *Create(DWORD nLogTimesMax);
+				CLogTimesInfo(DWORD nLogTimesMax,bool resetDecoderOnIndex);
 
 				inline void AddRef(){ ::InterlockedIncrement(&nRefs); }
 				bool Release();
 			} *PLogTimesInfo;
 
-			union{
-				PLogTime logTimes; // absolute logical times since the start of recording
-				PLogTimesInfo pNextInfo; // use 'operator[-1]' to get actual structure
-			};
-			const TDecoderMethod method;
-			bool resetDecoderOnIndex;
+			PLogTime logTimes; // absolute logical times since the start of recording
+			PLogTimesInfo pLogTimesInfo;
+			TDecoderMethod method;
 			DWORD iNextTime,nLogTimes;
-			PLogTime indexPulses; // buffer to contain Max Revolutions
+			PLogTime indexPulses; // buffer to contain 'Max' full Revolutions
 			BYTE iNextIndexPulse,nIndexPulses;
 			TProfile profile;
 			TLogTime currentTime;
-			Codec::TType codec;
 			BYTE nConsecutiveZerosMax; // # of consecutive zeroes to lose synchronization; e.g. 3 for MFM code
 			WORD lastReadBits; // validity flag and bit, e.g. 10b = valid bit '0', 11b = valid bit '1', 0Xb = invalid bit 'X'
 
-			CTrackReaderBase(PLogTimesInfo pLti,DWORD nLogTimes,Codec::TType codec,TDecoderMethod method,bool resetDecoderOnIndex);
+			CTrackReaderBase(PLogTime logTimes,PLogTimesInfo pLti,TDecoderMethod method);
 		public:
-			inline CLogTimesInfo &GetInfo() const{ return pNextInfo[-1]; }
 			void SetCodec(Codec::TType codec);
 			void SetMediumType(Medium::TType mediumType);
 		};
@@ -487,11 +486,7 @@
 				void RemoveConsecutiveBeforeEnd(TLogTime tEndMax);
 			};
 		protected:
-		#ifdef _DEBUG
-			PLogTimesInfo pCurrInfo;
-		#endif
-
-			CTrackReader(PLogTimesInfo pLti,DWORD nLogTimes,Codec::TType codec,TDecoderMethod method,bool resetDecoderOnIndex);
+			CTrackReader(PLogTime logTimes,PLogTimesInfo pLti,Codec::TType codec,TDecoderMethod method);
 
 			Medium::PCProperties GetMediumProperties() const;
 			WORD ScanFm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents);
@@ -585,7 +580,7 @@
 			inline
 			Codec::TType GetCodec() const{
 				// returns currently used/recognized Codec
-				return codec;
+				return pLogTimesInfo->codec;
 			}
 
 
@@ -641,7 +636,7 @@
 
 			inline
 			DWORD GetBufferCapacity() const{
-				return pNextInfo[-1].nLogTimesMax;
+				return pLogTimesInfo->nLogTimesMax;
 			}
 
 			inline

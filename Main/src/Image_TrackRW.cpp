@@ -1,39 +1,68 @@
 #include "stdafx.h"
 
-	CImage::CTrackReaderBase::CTrackReaderBase(PLogTimesInfo pLti,DWORD nLogTimes,Codec::TType codec,TDecoderMethod method,bool resetDecoderOnIndex)
+	CImage::CTrackReaderBase::CTrackReaderBase(PLogTime logTimes,PLogTimesInfo pLti,TDecoderMethod method)
 		// ctor
-		: pNextInfo(pLti+1) , nLogTimes(nLogTimes)
+		: logTimes(logTimes) , nLogTimes(0) , pLogTimesInfo(pLti)
 		, indexPulses(pLti->indexPulses) , iNextIndexPulse(0) , nIndexPulses(0)
 		, iNextTime(0) , currentTime(0) , lastReadBits(0)
-		, method(method) , resetDecoderOnIndex(resetDecoderOnIndex) {
+		, method(method) {
 	}
 
 	CImage::CTrackReaderBase::~CTrackReaderBase(){
 		// dtor
-		GetInfo().Release();
+		if (pLogTimesInfo->Release())
+			::free(logTimes);
 	}
 
 
 
-	CImage::CTrackReader::CTrackReader(PLogTimesInfo pLti,DWORD nLogTimes,Codec::TType codec,TDecoderMethod method,bool resetDecoderOnIndex)
+
+
+
+	CImage::CTrackReader::TLogTimesInfoData::TLogTimesInfoData(DWORD nLogTimesMax,bool resetDecoderOnIndex)
 		// ctor
-		: CTrackReaderBase( pLti, nLogTimes, codec, method, resetDecoderOnIndex ) {
-	#ifdef _DEBUG
-		pCurrInfo=&GetInfo();
-	#endif
+		: nLogTimesMax(nLogTimesMax)
+		, mediumType(Medium::UNKNOWN) , codec(Codec::UNKNOWN)
+		, resetDecoderOnIndex(resetDecoderOnIndex) {
+		*indexPulses=INT_MAX; // a virtual IndexPulse in infinity
+	}
+
+	CImage::CTrackReader::CLogTimesInfo::CLogTimesInfo(DWORD nLogTimesMax,bool resetDecoderOnIndex)
+		// "ctor"
+		: TLogTimesInfoData( nLogTimesMax, resetDecoderOnIndex )
+		, nRefs(1) {
+	}
+
+	bool CImage::CTrackReaderBase::CLogTimesInfo::Release(){
+		// "dtor"
+		if (::InterlockedDecrement(&nRefs)==0){
+			delete this;
+			return true;
+		}else
+			return false;
+	}
+
+
+
+
+
+
+	CImage::CTrackReader::CTrackReader(PLogTime logTimes,PLogTimesInfo pLti,Codec::TType codec,TDecoderMethod method)
+		// ctor
+		: CTrackReaderBase( logTimes, pLti, method ) {
 		SetCodec(codec); // setting values associated with the specified Codec
 	}
 
 	CImage::CTrackReader::CTrackReader(const CTrackReader &tr)
 		// copy ctor
 		: CTrackReaderBase(tr) {
-		GetInfo().AddRef();
+		pLogTimesInfo->AddRef();
 	}
 
 	CImage::CTrackReader::CTrackReader(CTrackReader &&tr)
 		// move ctor
 		: CTrackReaderBase(tr) {
-		GetInfo().AddRef();
+		pLogTimesInfo->AddRef();
 	}
 
 
@@ -126,7 +155,7 @@
 
 	void CImage::CTrackReaderBase::SetCodec(Codec::TType codec){
 		// changes the interpretation of recorded LogicalTimes according to the new Codec
-		switch ( this->codec=codec ){
+		switch ( pLogTimesInfo->codec=codec ){
 			default:
 				ASSERT(FALSE); // we shouldn't end up here, this value must be set for all implemented Codecs!
 				//fallthrough
@@ -141,7 +170,7 @@
 
 	void CImage::CTrackReaderBase::SetMediumType(Medium::TType mediumType){
 		// changes the interpretation of recorded LogicalTimes according to the new MediumType
-		switch ( GetInfo().mediumType=mediumType ){
+		switch ( pLogTimesInfo->mediumType=mediumType ){
 			default:
 				ASSERT(FALSE); // we shouldn't end-up here, all Media Types applicable for general Track description should be covered
 				//fallthrough
@@ -160,7 +189,7 @@
 	}
 
 	Medium::PCProperties CImage::CTrackReader::GetMediumProperties() const{
-		return Medium::GetProperties(GetInfo().mediumType);
+		return Medium::GetProperties( pLogTimesInfo->mediumType );
 	}
 
 	LPCTSTR CImage::CTrackReader::GetDescription(TDecoderMethod dm){
@@ -181,7 +210,7 @@
 		// returns first bit not yet read
 		// - if we just crossed an IndexPulse, resetting the Profile
 		if (currentTime>=indexPulses[iNextIndexPulse]){
-			if (resetDecoderOnIndex){
+			if (pLogTimesInfo->resetDecoderOnIndex){
 				profile.Reset();
 				const TLogTime indexTime=indexPulses[ iNextIndexPulse++ ];
 				currentTime=indexTime + Utils::RoundUpToMuls( currentTime-indexTime, profile.iwTimeDefault );
@@ -347,7 +376,7 @@
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
 		profile.Reset();
 		WORD nSectorsFound;
-		switch (codec){
+		switch (pLogTimesInfo->codec){
 			case Codec::FM:
 				nSectorsFound=ScanFm( pOutFoundSectors, pOutIdEnds, pOutIdProfiles, pOutIdStatuses, pOutParseEvents );
 				break;
@@ -629,8 +658,8 @@
 	TFdcStatus CImage::CTrackReader::ReadData(const TSectorId &id,TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,CParseEventList *pOutParseEvents){
 		// attempts to read specified amount of Bytes into the Buffer, starting at position pointed to by the BitReader
 		SetCurrentTimeAndProfile( idEndTime, idEndProfile );
-		const Utils::CVarTempReset<bool> rdoi0( resetDecoderOnIndex, false ); // never reset when reading data
-		switch (codec){
+		const Utils::CVarTempReset<bool> rdoi0( pLogTimesInfo->resetDecoderOnIndex, false ); // never reset when reading data
+		switch (pLogTimesInfo->codec){
 			case Codec::FM:
 				return	ReadDataFm( id, nBytesToRead, pOutParseEvents );
 			case Codec::MFM:
@@ -1036,14 +1065,14 @@
 
 	TFdcStatus CImage::CTrackReader::ReadDataFm(const TSectorId &sectorId,WORD nBytesToRead,CParseEventList *pOutParseEvents){
 		// attempts to read specified amount of Bytes into the Buffer, starting at current position; returns the amount of Bytes actually read
-		ASSERT( codec==Codec::FM );
+		ASSERT( pLogTimesInfo->codec==Codec::FM );
 		//TODO
 		return TFdcStatus::SectorNotFound;
 	}
 
 	WORD CImage::CTrackReaderWriter::WriteDataFm(WORD nBytesToWrite,PCBYTE buffer,TFdcStatus sr){
 		// attempts to write specified amount of Bytes in the Buffer, starting at current position; returns the amount of Bytes actually written
-		ASSERT( codec==Codec::FM );
+		ASSERT( pLogTimesInfo->codec==Codec::FM );
 		//TODO
 		return 0;
 	}
@@ -1179,7 +1208,7 @@
 
 	TFdcStatus CImage::CTrackReader::ReadDataMfm(const TSectorId &sectorId,WORD nBytesToRead,CParseEventList *pOutParseEvents){
 		// attempts to read specified amount of Bytes into the Buffer, starting at position pointed to by the BitReader; returns the amount of Bytes actually read
-		ASSERT( codec==Codec::MFM );
+		ASSERT( pLogTimesInfo->codec==Codec::MFM );
 		// - searching for the nearest three consecutive 0xA1 distorted synchronization Bytes
 		TLogTime tEventStart;
 		TLogTime tSyncStarts[64]; BYTE iSyncStart=0;
@@ -1254,7 +1283,7 @@
 
 	WORD CImage::CTrackReaderWriter::WriteDataMfm(WORD nBytesToWrite,PCBYTE buffer,TFdcStatus sr){
 		// attempts to write specified amount of Bytes in the Buffer, starting at current position; returns the amount of Bytes actually written
-		ASSERT( codec==Codec::MFM );
+		ASSERT( pLogTimesInfo->codec==Codec::MFM );
 		// - searching for the nearest three consecutive 0xA1 distorted synchronization Bytes
 		WORD w, sync1=0; DWORD sync23=0;
 		while (*this){
@@ -1318,7 +1347,7 @@
 
 	char CImage::CTrackReader::ReadByte(ULONGLONG &rOutBits,PBYTE pOutValue){
 		// reads number of bits corresponding to one Byte; if all such bits successfully read, returns their count, or -1 otherwise
-		switch (codec){
+		switch (pLogTimesInfo->codec){
 			case Codec::FM:
 				ASSERT(FALSE); //TODO
 				return -1;
@@ -1340,7 +1369,7 @@
 
 	bool CImage::CTrackReader::IsLastReadBitHealthy() const{
 		// True <=> the bit read last by ReadBit* methods is well encoded, otherwise False (first bits on a Track or right after Index may be evaluated unreliably!)
-		switch (codec){
+		switch (pLogTimesInfo->codec){
 			case Codec::FM:
 				return true;
 			case Codec::MFM:
@@ -1407,7 +1436,12 @@
 
 	CImage::CTrackReaderWriter::CTrackReaderWriter(DWORD nLogTimesMax,TDecoderMethod method,bool resetDecoderOnIndex)
 		// ctor
-		: CTrackReader( CLogTimesInfo::Create(nLogTimesMax), 0, Codec::MFM, method, resetDecoderOnIndex ) {
+		: CTrackReader(
+			(PLogTime)::calloc( nLogTimesMax+1, sizeof(TLogTime) ),
+			new CLogTimesInfo( nLogTimesMax, resetDecoderOnIndex ),
+			Codec::MFM,
+			method
+		){
 		SetMediumType(Medium::FLOPPY_DD); // setting values associated with the specified MediumType
 	}
 
@@ -1415,13 +1449,10 @@
 		// copy ctor
 		: CTrackReader( trw ) {
 		if (!shareTimes){
-			CTrackReaderWriter tmp( trw.GetBufferCapacity(), trw.method, trw.resetDecoderOnIndex );
-			std::swap( tmp.logTimes, logTimes );
+			CTrackReaderWriter tmp( trw.GetBufferCapacity(), trw.method, trw.pLogTimesInfo->resetDecoderOnIndex );
+			std::swap<CTrackReader>( tmp, *this );
 			::memcpy( logTimes, trw.logTimes, nLogTimes*sizeof(TLogTime) );
-			static_cast<TLogTimesInfoData &>(GetInfo())=trw.GetInfo();
-		#ifdef _DEBUG
-			pCurrInfo=&GetInfo();
-		#endif
+			*static_cast<TLogTimesInfoData *>(pLogTimesInfo)=*trw.pLogTimesInfo;
 		}
 	}
 	
@@ -1435,26 +1466,6 @@
 		: CTrackReader(tr) {
 	}
 	
-	CImage::CTrackReader::CLogTimesInfo *CImage::CTrackReaderBase::CLogTimesInfo::Create(DWORD nLogTimesMax){
-		// "ctor"
-		const PLogTimesInfo result=(PLogTimesInfo)::malloc( sizeof(CLogTimesInfo)+(nLogTimesMax+1)*sizeof(TLogTime) );
-			::ZeroMemory( result, sizeof(*result) );
-			result->nRefs=1;
-			result->nLogTimesMax=nLogTimesMax;
-			result->mediumType=Medium::UNKNOWN;
-			*result->indexPulses=INT_MAX; // a virtual IndexPulse in infinity
-		return result;
-	}
-
-	bool CImage::CTrackReaderBase::CLogTimesInfo::Release(){
-		// "dtor"
-		if (::InterlockedDecrement(&nRefs)==0){
-			::free(this);
-			return true;
-		}else
-			return false;
-	}
-
 	void CImage::CTrackReaderWriter::AddTimes(PCLogTime logTimes,DWORD nLogTimes){
 		// appends given amount of LogicalTimes at the end of the Track
 		ASSERT( this->nLogTimes+nLogTimes<=GetBufferCapacity() );
@@ -1516,8 +1527,8 @@
 	WORD CImage::CTrackReaderWriter::WriteData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToWrite,PCBYTE buffer,TFdcStatus sr){
 		// attempts to write specified amount of Bytes in the Buffer, starting after specified IdEndTime; returns the number of Bytes actually written
 		SetCurrentTimeAndProfile( idEndTime, idEndProfile );
-		const Utils::CVarTempReset<bool> rdoi0( resetDecoderOnIndex, false ); // never reset when reading data
-		switch (codec){
+		const Utils::CVarTempReset<bool> rdoi0( pLogTimesInfo->resetDecoderOnIndex, false ); // never reset when reading data
+		switch (pLogTimesInfo->codec){
 			case Codec::FM:
 				return	WriteDataFm( nBytesToWrite, buffer, sr );
 			case Codec::MFM:
@@ -1645,7 +1656,7 @@
 		}
 		// - copying Modified LogicalTimes to the Track
 		const DWORD nNewLogTimes=nLogTimes+iTime-iNextTime;
-		CTrackReaderWriter tmp( nLogTimesMaxNew, method, resetDecoderOnIndex );
+		CTrackReaderWriter tmp( nLogTimesMaxNew, method, pLogTimesInfo->resetDecoderOnIndex );
 			::memcpy( tmp.logTimes, logTimes, iModifStart*sizeof(TLogTime) ); // Times before first Index
 			::memcpy( tmp.logTimes+iModifStart, ptModified+iModifStart, (iTime-iModifStart)*sizeof(TLogTime) ); // Times in full Revolutions
 			::memcpy( tmp.logTimes+iTime, logTimes+iNextTime, (nLogTimes-iNextTime)*sizeof(TLogTime) ); // Times after last Index
