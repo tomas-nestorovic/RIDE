@@ -80,18 +80,18 @@
 		if (logTime<*logTimes){
 			iNextTime=0;
 			currentTime=logTime;
-			return;
+		}else{
+			DWORD L=0, R=nLogTimes;
+			do{
+				const DWORD M=(L+R)/2;
+				if (logTimes[L]<=logTime && logTime<logTimes[M])
+					R=M;
+				else
+					L=M;
+			}while (R-L>1);
+			iNextTime=R;
+			currentTime= R<nLogTimes ? logTime : logTimes[L];
 		}
-		DWORD L=0, R=nLogTimes;
-		do{
-			const DWORD M=(L+R)/2;
-			if (logTimes[L]<=logTime && logTime<logTimes[M])
-				R=M;
-			else
-				L=M;
-		}while (R-L>1);
-		iNextTime=R;
-		currentTime= R<nLogTimes ? logTime : logTimes[L];
 		lastReadBits=0;
 	}
 
