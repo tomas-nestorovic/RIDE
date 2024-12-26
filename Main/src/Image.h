@@ -315,6 +315,18 @@
 				FDD_METHODS		=NONE|KEIR_FRASER|MARK_OGDEN
 			};
 
+			typedef const struct TMetaDataItem sealed:public TLogTimeInterval{
+				bool isFuzzy;
+				TLogTime forcedIwTime; // 0 = don't force inspection window (IW) size, use DPLL algorithm to adjust next IW size
+
+				TMetaDataItem(const TLogTimeInterval &ti,bool isFuzzy,TLogTime forcedIwTime);
+
+				inline bool operator<(const TMetaDataItem &r) const{ return tStart<r.tStart; }
+				inline bool IsDefault() const{ return !isFuzzy && !forcedIwTime; }
+				inline bool Equals(const TMetaDataItem &r) const{ return isFuzzy==r.isFuzzy && forcedIwTime==r.forcedIwTime; }
+				inline TLogTime GetForcedIwTimeSafe() const{ return this?forcedIwTime:0; }
+			} *PCMetaDataItem;
+
 			struct TProfile sealed{
 				static const TProfile HD;		// 3.5" HD or 5.25" HD in 360 RPM drive
 				static const TProfile DD;		// 3.5" DD or 5.25" DD in 300 RPM drive
@@ -338,7 +350,11 @@
 				TProfile(const Medium::TProperties &floppyProps,BYTE iwTimeTolerancePercent);
 
 				void Reset();
+				void ClampIwTime();
+				void Apply(const TMetaDataItem &mdi);
 			};
+
+			typedef std::set<TMetaDataItem> CMetaData;
 
 			~CTrackReaderBase();
 		protected:
@@ -348,6 +364,7 @@
 				bool resetDecoderOnIndex;
 				Codec::TType codec;
 				TLogTime indexPulses[Revolution::MAX+2]; // "+2" = "+1+1" = "+A+B", A = tail IndexPulse of last possible Revolution, B = terminator
+				CMetaData metaData;
 
 				TLogTimesInfoData(DWORD nLogTimesMax,bool resetDecoderOnIndex);
 			};
@@ -367,12 +384,18 @@
 			DWORD iNextTime,nLogTimes;
 			PLogTime indexPulses; // buffer to contain 'Max' full Revolutions
 			BYTE iNextIndexPulse,nIndexPulses;
+			CMetaData::const_iterator itCurrMetaData;
 			TProfile profile;
 			TLogTime currentTime;
 			BYTE nConsecutiveZerosMax; // # of consecutive zeroes to lose synchronization; e.g. 3 for MFM code
 			WORD lastReadBits; // validity flag and bit, e.g. 10b = valid bit '0', 11b = valid bit '1', 0Xb = invalid bit 'X'
 
 			CTrackReaderBase(PLogTime logTimes,PLogTimesInfo pLti,TDecoderMethod method);
+
+			PCMetaDataItem GetCurrentTimeMetaData() const;
+			PCMetaDataItem ApplyCurrentTimeMetaData();
+			PCMetaDataItem IncrMetaDataIteratorAndApply();
+			PCMetaDataItem FindMetaDataIteratorAndApply();
 		public:
 			void SetCodec(Codec::TType codec);
 			void SetMediumType(Medium::TType mediumType);
@@ -656,6 +679,9 @@
 
 			void AddTimes(PCLogTime logTimes,DWORD nLogTimes);
 			void AddIndexTime(TLogTime logTime);
+			void AddMetaData(const TMetaDataItem &mdi);
+			void ClearMetaData(TLogTime a,TLogTime z);
+			void ClearAllMetaData();
 			WORD WriteData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToWrite,PCBYTE buffer,TFdcStatus sr);
 			bool Normalize();
 			TStdWinError NormalizeEx(TLogTime indicesOffset,bool fitTimesIntoIwMiddles,bool correctCellCountPerRevolution,bool correctRevolutionTime);

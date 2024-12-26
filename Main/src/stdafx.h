@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <memory>
 #include <map>
+#include <set>
 
 // use Common-Controls library version 6
 #pragma comment(linker,"\"/manifestdependency:type='win32' \

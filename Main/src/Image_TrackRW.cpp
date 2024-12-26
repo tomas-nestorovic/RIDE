@@ -6,6 +6,7 @@
 		, indexPulses(pLti->indexPulses) , iNextIndexPulse(0) , nIndexPulses(0)
 		, iNextTime(0) , currentTime(0) , lastReadBits(0)
 		, method(method) {
+		itCurrMetaData=pLogTimesInfo->metaData.cbegin();
 	}
 
 	CImage::CTrackReaderBase::~CTrackReaderBase(){
@@ -14,10 +15,49 @@
 			::free(logTimes);
 	}
 
+	CImage::CTrackReaderBase::PCMetaDataItem CImage::CTrackReaderBase::GetCurrentTimeMetaData() const{
+		// returns the MetaDataItem that contain the CurrentTime, or Null
+		return	itCurrMetaData!=pLogTimesInfo->metaData.cend() && itCurrMetaData->Contains(currentTime)
+				? &*itCurrMetaData
+				: nullptr;
+	}
+
+	CImage::CTrackReaderBase::PCMetaDataItem CImage::CTrackReaderBase::ApplyCurrentTimeMetaData(){
+		// uses the MetaDataItem at CurrentTime for reading
+		if (const PCMetaDataItem pmdi=GetCurrentTimeMetaData())
+			return profile.Apply(*pmdi), pmdi;
+		else
+			return nullptr;
+	}
+
+	CImage::CTrackReaderBase::PCMetaDataItem CImage::CTrackReaderBase::IncrMetaDataIteratorAndApply(){
+		// the CurrentTime has moved forward, and the good strategy is to iterate to the MetaDataItem that contains it
+		while (itCurrMetaData!=pLogTimesInfo->metaData.cend())
+			if (currentTime<itCurrMetaData->tEnd)
+				return ApplyCurrentTimeMetaData();
+			else
+				itCurrMetaData++;
+		return nullptr;
+	}
+
+	CImage::CTrackReaderBase::PCMetaDataItem CImage::CTrackReaderBase::FindMetaDataIteratorAndApply(){
+		// the CurrentTime has changed randomly
+		itCurrMetaData=pLogTimesInfo->metaData.lower_bound(
+			TMetaDataItem( TLogTimeInterval(currentTime,INT_MAX), false, 0 )
+		);
+		return ApplyCurrentTimeMetaData();
+	}
 
 
 
 
+
+
+	CImage::CTrackReaderBase::TMetaDataItem::TMetaDataItem(const TLogTimeInterval &ti,bool isFuzzy,TLogTime forcedIwTime)
+		// ctor
+		: TLogTimeInterval(ti)
+		, isFuzzy(isFuzzy) , forcedIwTime(forcedIwTime) {
+	}
 
 	CImage::CTrackReader::TLogTimesInfoData::TLogTimesInfoData(DWORD nLogTimesMax,bool resetDecoderOnIndex)
 		// ctor
@@ -93,12 +133,13 @@
 			currentTime= R<nLogTimes ? logTime : logTimes[L];
 		}
 		lastReadBits=0;
+		FindMetaDataIteratorAndApply();
 	}
 
 	void CImage::CTrackReader::SetCurrentTimeAndProfile(TLogTime logTime,const TProfile &profile){
 		// seeks to the specified LogicalTime, setting also the specified Profile at that LogicalTime
-		SetCurrentTime(logTime);
-		this->profile=profile;
+		this->profile=profile; // eventually overridden ...
+		SetCurrentTime(logTime); // ... here
 	}
 
 	CImage::CTrackReader::TProfile CImage::CTrackReader::CreateResetProfile() const{
@@ -111,11 +152,13 @@
 	TLogTime CImage::CTrackReader::TruncateCurrentTime(){
 		// truncates CurrentTime to the nearest lower LogicalTime, and returns it
 		if (!iNextTime)
-			return currentTime=0;
+			currentTime=0;
 		if (iNextTime<nLogTimes)
-			return currentTime=logTimes[iNextTime-1];
+			currentTime=logTimes[iNextTime-1];
 		else
-			return currentTime=logTimes[nLogTimes-1];
+			currentTime=logTimes[nLogTimes-1];
+		FindMetaDataIteratorAndApply();
+		return currentTime;
 	}
 
 	TLogTime CImage::CTrackReader::GetIndexTime(BYTE index) const{
@@ -150,7 +193,12 @@
 
 	TLogTime CImage::CTrackReader::ReadTime(){
 		// returns the next LogicalTime (or zero if all time information already read)
-		return	*this ? (currentTime=logTimes[iNextTime++]) : 0;
+		if (*this){
+			currentTime=logTimes[iNextTime++];
+			IncrMetaDataIteratorAndApply();
+			return currentTime;
+		}else
+			return 0;
 	}
 
 	void CImage::CTrackReaderBase::SetCodec(Codec::TType codec){
@@ -186,6 +234,7 @@
 				break;
 		}
 		profile.Reset();
+		ApplyCurrentTimeMetaData();
 	}
 
 	Medium::PCProperties CImage::CTrackReader::GetMediumProperties() const{
@@ -214,6 +263,7 @@
 				profile.Reset();
 				const TLogTime indexTime=indexPulses[ iNextIndexPulse++ ];
 				currentTime=indexTime + Utils::RoundUpToMuls( currentTime-indexTime, profile.iwTimeDefault );
+				FindMetaDataIteratorAndApply();
 			}else
 				iNextIndexPulse++;
 		}
@@ -242,6 +292,7 @@
 				}while (true);
 				// - detecting zero (longer than 3/2 of an inspection window)
 				currentTime+=profile.iwTime;
+				const bool canUseDpll=!IncrMetaDataIteratorAndApply()->GetForcedIwTimeSafe(); // no explicit indication of which IW Time to use?
 				const TLogTime diff=( rtOutOne=logTimes[iNextTime] )-currentTime;
 				iNextTime+=logTimes[iNextTime]<=currentTime; // eventual correction of the pointer to the next time
 				lastReadBits<<=1, lastReadBits|=1; // 'valid' flag
@@ -251,17 +302,15 @@
 					return 0;
 				}
 				// - adjust data frequency according to phase mismatch
-				if (r.nConsecutiveZeros<=nConsecutiveZerosMax)
-					// in sync - adjust inspection window by percentage of phase mismatch
-					profile.iwTime+= diff * profile.adjustmentPercentMax/100;
-				else
-					// out of sync - adjust inspection window towards its Default size
-					profile.iwTime+= (profile.iwTimeDefault-profile.iwTime) * profile.adjustmentPercentMax/100;
-				// - keep the inspection window size within limits
-				if (profile.iwTime<profile.iwTimeMin)
-					profile.iwTime=profile.iwTimeMin;
-				else if (profile.iwTime>profile.iwTimeMax)
-					profile.iwTime=profile.iwTimeMax;
+				if (canUseDpll){
+					if (r.nConsecutiveZeros<=nConsecutiveZerosMax)
+						// in sync - adjust inspection window by percentage of phase mismatch
+						profile.iwTime+= diff * profile.adjustmentPercentMax/100;
+					else
+						// out of sync - adjust inspection window towards its Default size
+						profile.iwTime+= (profile.iwTimeDefault-profile.iwTime) * profile.adjustmentPercentMax/100;
+					profile.ClampIwTime(); // keep the inspection window size within limits
+				}
 				// - a "1" recognized
 				r.nConsecutiveZeros=0;
 				lastReadBits|=1;
@@ -282,43 +331,47 @@
 				}while (true);
 				// . detecting zero
 				currentTime+=profile.iwTime;
+				const bool canUseDpll=!IncrMetaDataIteratorAndApply()->GetForcedIwTimeSafe(); // no explicit indication of which IW Time to use?
 				const TLogTime diff=( rtOutOne=logTimes[iNextTime] )-currentTime;
 				lastReadBits<<=1, lastReadBits|=1; // 'valid' flag
 				lastReadBits<<=1;
 				if (diff>=iwTimeHalf)
 					return 0;
-				// . estimating data frequency
-				const BYTE iSlot=((diff+iwTimeHalf)<<4)/profile.iwTime;
-				BYTE cState=1; // default is IPC
-				if (iSlot<7 || iSlot>8){
-					if (iSlot<7&&!r.up || iSlot>8&&r.up)
-						r.up=!r.up, r.pcCnt = r.fCnt = 0;
-					if (++r.fCnt>=3 || iSlot<3&&++r.aifCnt>=3 || iSlot>12&&++r.adfCnt>=3){
-						static const TLogTime iwDelta=profile.iwTimeDefault/100;
-						if (r.up){
-							if (( profile.iwTime-=iwDelta )<profile.iwTimeMin)
-								profile.iwTime=profile.iwTimeMin;
-						}else
-							if (( profile.iwTime+=iwDelta )>profile.iwTimeMax)
-								profile.iwTime=profile.iwTimeMax;
-						cState = r.fCnt = r.aifCnt = r.adfCnt = r.pcCnt = 0;
-					}else if (++r.pcCnt>=2)
-						cState = r.pcCnt = 0;
-				}
-				static constexpr BYTE PhaseAdjustments[2][16]={ // C1/C2, C3
-					//	8	9	A	B	C	D	E	F	0	1	2	3	4	5	6	7
-					 { 12, 13, 13, 14, 14, 15, 15, 16, 16, 17, 17, 18, 18, 19, 19, 20 },
-					 { 13, 14, 14, 15, 15, 16, 16, 16, 16, 16, 16, 17, 17, 18, 18, 19 }
-				};
-				// . estimating data phase
-				if (const TLogTime dt= (PhaseAdjustments[cState][iSlot]*profile.iwTime>>4) - profile.iwTime){
-					currentTime+=dt;
-					if (dt>0)
-						while (iNextTime<nLogTimes && logTimes[iNextTime]<=currentTime)
-							iNextTime++;
-					else
-						while (iNextTime>0 && currentTime<logTimes[iNextTime-1])
-							iNextTime--;
+				// . estimating data frequency and data phase
+				if (canUseDpll){
+					// : data frequency
+					const BYTE iSlot=((diff+iwTimeHalf)<<4)/profile.iwTime;
+					BYTE cState=1; // default is IPC
+					if (iSlot<7 || iSlot>8){
+						if (iSlot<7&&!r.up || iSlot>8&&r.up)
+							r.up=!r.up, r.pcCnt = r.fCnt = 0;
+						if (++r.fCnt>=3 || iSlot<3&&++r.aifCnt>=3 || iSlot>12&&++r.adfCnt>=3){
+							static const TLogTime iwDelta=profile.iwTimeDefault/100;
+							if (r.up){
+								if (( profile.iwTime-=iwDelta )<profile.iwTimeMin)
+									profile.iwTime=profile.iwTimeMin;
+							}else
+								if (( profile.iwTime+=iwDelta )>profile.iwTimeMax)
+									profile.iwTime=profile.iwTimeMax;
+							cState = r.fCnt = r.aifCnt = r.adfCnt = r.pcCnt = 0;
+						}else if (++r.pcCnt>=2)
+							cState = r.pcCnt = 0;
+					}
+					// : data phase
+					static constexpr BYTE PhaseAdjustments[2][16]={ // C1/C2, C3
+						//	8	9	A	B	C	D	E	F	0	1	2	3	4	5	6	7
+						 { 12, 13, 13, 14, 14, 15, 15, 16, 16, 17, 17, 18, 18, 19, 19, 20 },
+						 { 13, 14, 14, 15, 15, 16, 16, 16, 16, 16, 16, 17, 17, 18, 18, 19 }
+					};
+					if (const TLogTime dt= (PhaseAdjustments[cState][iSlot]*profile.iwTime>>4) - profile.iwTime){
+						currentTime+=dt;
+						if (dt>0)
+							while (iNextTime<nLogTimes && logTimes[iNextTime]<=currentTime)
+								iNextTime++;
+						else
+							while (iNextTime>0 && currentTime<logTimes[iNextTime-1])
+								iNextTime--;
+					}
 				}
 				// . a "1" recognized
 				lastReadBits|=1;
@@ -1421,6 +1474,19 @@
 		::ZeroMemory( &method, sizeof(method) );
 	}
 
+	void CImage::CTrackReaderBase::TProfile::ClampIwTime(){
+		// keep the inspection window size within limits
+		if (iwTime<iwTimeMin)
+			iwTime=iwTimeMin;
+		else if (iwTime>iwTimeMax)
+			iwTime=iwTimeMax;
+	}
+
+	void CImage::CTrackReaderBase::TProfile::Apply(const TMetaDataItem &mdi){
+		if (mdi.forcedIwTime)
+			iwTime=mdi.forcedIwTime;
+	}
+
 
 
 
@@ -1487,6 +1553,79 @@
 		indexPulses[nIndexPulses]=INT_MAX;
 	}
 
+	void CImage::CTrackReaderWriter::AddMetaData(const TMetaDataItem &mdi){
+		// inserts the MetaDataItem, eventually overwritting some existing MetaDataItems
+		if (!mdi) // empty or invalid?
+			return;
+		auto &metaData=pLogTimesInfo->metaData;
+		auto it=metaData.lower_bound(mdi);
+		// - do we FULLY clear any later MetaDataItem?
+		while (it!=metaData.end())
+			if (it->tEnd<=mdi.tEnd){ // yes, we do
+				const auto itErase=it++;
+				metaData.erase(itErase); // remove such Emphasis
+			}else
+				break;
+		// - do we PARTLY clear the nearest later MetaDataItem?
+		if (it!=metaData.end())
+			if (it->tStart<mdi.tEnd){ // yes, we do
+				TMetaDataItem tmp=*it;
+					tmp.tStart=mdi.tEnd;
+				metaData.erase(it), it=metaData.insert(tmp).first; // replace such MetaDataItem
+			}
+		// - do we anyhow overwrite the nearest previous MetaDataItem?
+		if (it!=metaData.begin()){
+			const auto itPrev=--it;
+			if (mdi.tEnd<itPrev->tEnd){ // yes, we split the previous MetaDataItem into two pieces
+				TMetaDataItem tmp=*itPrev;
+					tmp.tStart=mdi.tEnd;
+				it=metaData.insert(tmp).first; // second part
+				const_cast<TLogTime &>(itPrev->tEnd)=mdi.tStart; // first part always non-empty; doing this is OK because the End doesn't serve as the key for the MetaDataItem std::set
+			}else if (mdi.tStart<it->tEnd) // yes, only partly the end
+				const_cast<TLogTime &>(it++->tEnd)=mdi.tStart; // doing this is OK because the End doesn't serve as the key for the MetaDataItem std::set
+			else
+				it++;
+		}
+		// - was this a deletion call?
+		if (mdi.IsDefault())
+			return; // deletion has just been done
+		// - can the new MetaDataItem be merged with nearest next one?
+		bool merged=false;
+		if (it->tStart==mdi.tEnd && it->Equals(mdi)){ // yes, it can
+			TMetaDataItem tmp=*it;
+				tmp.tStart=mdi.tStart;
+			metaData.erase(it), it=metaData.insert(tmp).first; // merge them
+			merged=true;
+		}
+		// - can the new MetaDataItem be merged with nearest previous one?
+		if (it!=metaData.begin())
+			if ((--it)->tEnd==mdi.tStart && it->Equals(mdi)){ // yes, it can
+				const_cast<TLogTime &>(it->tEnd)=mdi.tEnd; // merge them; doing this is OK because the End doesn't serve as the key for the MetaDataItem std::set
+				if (merged) // already Merged above?
+					metaData.erase(++it);
+				else
+					merged=true;
+			}
+		// - adding the new MetaDataItem
+		if (!merged)
+			metaData.insert(mdi);
+	}
+
+	void CImage::CTrackReaderWriter::ClearMetaData(TLogTime a,TLogTime z){
+		// removes (or just shortens) all MetaDataItems in specified range
+		AddMetaData(
+			TMetaDataItem( TLogTimeInterval(a,z), false, 0 )
+		);
+		FindMetaDataIteratorAndApply();
+	}
+
+	void CImage::CTrackReaderWriter::ClearAllMetaData(){
+		// removes all MetaDataItems
+		auto &metaData=pLogTimesInfo->metaData;
+		metaData.clear();
+		itCurrMetaData=metaData.cbegin();
+	}
+
 	TLogTime CImage::CTrackReader::GetLastIndexTime() const{
 		// returns the LogicalTime of the last added Index (or 0)
 		return	nIndexPulses ? indexPulses[nIndexPulses-1] : 0;
@@ -1504,6 +1643,7 @@
 		DWORD nOnesCurrently=0;
 		for( DWORD n=nBits; n-->0; nOnesCurrently+=bits[n] );
 		// - overwriting the "nBits" cells with new Bits
+		ClearMetaData( tOverwritingStart, tOverwritingEnd );
 		SetCurrentTimeAndProfile( tOverwritingStart, overwritingStartProfile );
 		const DWORD nNewLogTimes=nLogTimes+nOnesCurrently-nOnesPreviously;
 		if (nNewLogTimes>GetBufferCapacity())
@@ -1561,6 +1701,7 @@
 			revolutionTime=mp->revolutionTime;
 		else
 			return false;
+		ClearAllMetaData();
 		// - adjusting consecutive index-to-index distances
 		RewindToIndex(0);
 		for( BYTE i=0; i+1<nIndexPulses; i++ )
@@ -1588,6 +1729,7 @@
 		const Medium::PCProperties mp=GetMediumProperties();
 		if (!mp)
 			return ERROR_UNRECOGNIZED_MEDIA;
+		ClearAllMetaData();
 		// - shifting Indices by shifting all Times in oposite direction
 		if (indicesOffset){
 			for( DWORD i=0; i<nLogTimes; logTimes[i++]-=indicesOffset ); // shift all Times in oposite direction
@@ -1671,6 +1813,7 @@
 
 	CImage::CTrackReaderWriter &CImage::CTrackReaderWriter::Reverse(){
 		// reverses timing of this Track
+		//TODO: metadata reversal
 		// - reversing Indices
 		const auto tTotal=GetTotalTime();
 		for( BYTE i=0; i<GetIndexCount()/2; i++ )
