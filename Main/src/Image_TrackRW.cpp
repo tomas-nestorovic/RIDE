@@ -672,11 +672,7 @@
 							bit++;
 					peFuzzy.tEnd=bit->time;
 					// : determining the type of fuzziness
-					peFuzzy.type=rOutParseEvents.GetTypeOfFuzziness(
-						peIt, peFuzzy, tTrackEnd, ap.Cancelled
-					);
-					if (ap.Cancelled) // in this case the type of fuzziness is set to 'None'
-						return nSectorsFound;
+					peFuzzy.type=rOutParseEvents.GetTypeOfFuzziness( peIt, peFuzzy, tTrackEnd );
 					// : creating new FuzzyEvent
 					rOutParseEvents.Add( peFuzzy );
 					apRev.UpdateProgress( bit-rev.GetBits() );
@@ -684,19 +680,21 @@
 			}
 		}
 		auto peIt=rOutParseEvents.GetIterator();
-		for each( const auto &mdi in GetMetaData() ){
+		for( auto itMdi=GetMetaData().cbegin(),itMdiEnd=GetMetaData().cend(); itMdi!=itMdiEnd; itMdi++ )
 			if (ap.Cancelled)
 				return nSectorsFound;
-			if (mdi.isFuzzy){
-				const TParseEvent peFuzzy(
-					rOutParseEvents.GetTypeOfFuzziness( peIt, mdi, tTrackEnd, ap.Cancelled ),
-					mdi.tStart, mdi.tEnd, 0
+			else if (itMdi->isFuzzy){
+				// merge all consecutive "fuzzy" MetaDataItems
+				TLogTimeInterval ti=*itMdi;
+				while (++itMdi!=itMdiEnd && itMdi->isFuzzy)
+					ti.tEnd=itMdi->tEnd;
+				rOutParseEvents.Add(
+					TParseEvent(
+						rOutParseEvents.GetTypeOfFuzziness( peIt, ti, tTrackEnd ),
+						ti.tStart, ti.tEnd, 0
+					)
 				);
-				if (ap.Cancelled) // in this case the type of fuzziness is set to 'None'
-					return nSectorsFound;
-				rOutParseEvents.Add( peFuzzy );
 			}
-		}
 		// - successfully analyzed
 		return nSectorsFound;
 	}
@@ -1103,11 +1101,9 @@
 		);
 	}
 
-	CImage::CTrackReader::TParseEvent::TType CImage::CTrackReader::CParseEventList::GetTypeOfFuzziness(CIterator &itContinue,const TLogTimeInterval &tiFuzzy,TLogTime tTrackEnd,volatile const bool &cancelled) const{
+	CImage::CTrackReader::TParseEvent::TType CImage::CTrackReader::CParseEventList::GetTypeOfFuzziness(CIterator &itContinue,const TLogTimeInterval &tiFuzzy,TLogTime tTrackEnd) const{
 		// observing the existing ParseEvents, determines and returns the type of fuzziness in the specified Interval
 		while (itContinue){
-			if (cancelled)
-				return TParseEvent::NONE;
 			const TParseEvent &pe=*itContinue->second;
 			if (tiFuzzy.tEnd<=pe.tStart)
 				break;
@@ -1618,7 +1614,7 @@
 			return; // deletion has just been done
 		// - can the new MetaDataItem be merged with nearest next one?
 		bool merged=false;
-		if (it->tStart==mdi.tEnd && it->Equals(mdi)){ // yes, it can
+		if (it!=metaData.end() && it->tStart==mdi.tEnd && it->Equals(mdi)){ // yes, it can
 			TMetaDataItem tmp=*it;
 				tmp.tStart=mdi.tStart;
 			metaData.erase(it), it=metaData.insert(tmp).first; // merge them

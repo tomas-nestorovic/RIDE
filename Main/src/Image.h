@@ -509,7 +509,7 @@
 				inline bool Contains(TParseEvent::TType type) const{ return peTypeCounts[type]>0; }
 				bool IntersectsWith(const TLogTimeInterval &ti) const;
 				void RemoveConsecutiveBeforeEnd(TLogTime tEndMax);
-				TParseEvent::TType GetTypeOfFuzziness(CIterator &itContinue,const TLogTimeInterval &tiFuzzy,TLogTime tTrackEnd,volatile const bool &cancelled) const;
+				TParseEvent::TType GetTypeOfFuzziness(CIterator &itContinue,const TLogTimeInterval &tiFuzzy,TLogTime tTrackEnd) const;
 			};
 		protected:
 			CTrackReader(PLogTime logTimes,PLogTimesInfo pLti,Codec::TType codec,TDecoderMethod method);
