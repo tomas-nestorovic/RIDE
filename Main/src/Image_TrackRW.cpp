@@ -42,9 +42,7 @@
 
 	CImage::CTrackReaderBase::PCMetaDataItem CImage::CTrackReaderBase::FindMetaDataIteratorAndApply(){
 		// the CurrentTime has changed randomly
-		itCurrMetaData=pLogTimesInfo->metaData.lower_bound(
-			TMetaDataItem( TLogTimeInterval(currentTime,INT_MAX), false, 0 )
-		);
+		itCurrMetaData=pLogTimesInfo->metaData.lower_bound( TLogTimeInterval(currentTime,INT_MAX) );
 		return ApplyCurrentTimeMetaData();
 	}
 
@@ -53,6 +51,12 @@
 
 
 
+	CImage::CTrackReaderBase::TMetaDataItem::TMetaDataItem(const TLogTimeInterval &ti)
+		// ctor (for clearing MetaData in specified Interval)
+		: TLogTimeInterval(ti)
+		, isFuzzy(false) , forcedIwTime(0) {
+	}
+	
 	CImage::CTrackReaderBase::TMetaDataItem::TMetaDataItem(const TLogTimeInterval &ti,bool isFuzzy,TLogTime forcedIwTime)
 		// ctor
 		: TLogTimeInterval(ti)
@@ -600,6 +604,7 @@
 		}
 		ap.UpdateProgress( 4*StepGranularity );
 		// - Step 5,6,...: search for fuzzy regions in Sectors
+		const TLogTime tTrackEnd=GetIndexTime(nFullRevolutions)-profile.iwTimeMax;
 		if (nSectorsFound>0 && nFullRevolutions>=2){ // makes sense only if some Sectors found over several Revolutions
 			// . extraction of bits from each full Revolution
 			std::unique_ptr<CBitSequence> pRevolutionBits[Revolution::MAX];
@@ -659,7 +664,7 @@
 							bit++;
 					if (bit==lastBit) // no more Fuzzy bits?
 						break;
-					TParseEvent peFuzzy( TParseEvent::FUZZY_OK, bit->time, 0, 0 ); // "FUZZY_OK" = assumption (the fuzzy sequence occurs NOT in a Bad Sector)
+					TParseEvent peFuzzy( TParseEvent::NONE, bit->time, 0, 0 );
 					while (bit<lastBit && (bit->fuzzy||bit->cosmeticFuzzy)) // discovering consecutive Fuzzy Bits
 						if (ap.Cancelled)
 							return nSectorsFound;
@@ -667,27 +672,29 @@
 							bit++;
 					peFuzzy.tEnd=bit->time;
 					// : determining the type of fuzziness
-					while (peIt){
-						if (ap.Cancelled)
-							return nSectorsFound;
-						const TParseEvent &pe=*peIt->second;
-						if (peFuzzy.tEnd<=pe.tStart)
-							break;
-						if (pe.IsDataStd() || pe.IsCrc())
-							if (pe.Intersect(peFuzzy))
-								if ((pe.type==TParseEvent::DATA_BAD||pe.type==TParseEvent::CRC_BAD) // the fuzziness is in Bad Sector data ...
-									&&
-									pe.tEnd<GetIndexTime(nFullRevolutions)-profile.iwTimeMax // ... and the data is complete (aka, it's NOT data over Index)
-								){
-									peFuzzy.type=TParseEvent::FUZZY_BAD;
-									break;
-								}
-						peIt++;
-					}
+					peFuzzy.type=rOutParseEvents.GetTypeOfFuzziness(
+						peIt, peFuzzy, tTrackEnd, ap.Cancelled
+					);
+					if (ap.Cancelled) // in this case the type of fuzziness is set to 'None'
+						return nSectorsFound;
 					// : creating new FuzzyEvent
 					rOutParseEvents.Add( peFuzzy );
 					apRev.UpdateProgress( bit-rev.GetBits() );
 				} while (bit<lastBit);
+			}
+		}
+		auto peIt=rOutParseEvents.GetIterator();
+		for each( const auto &mdi in GetMetaData() ){
+			if (ap.Cancelled)
+				return nSectorsFound;
+			if (mdi.isFuzzy){
+				const TParseEvent peFuzzy(
+					rOutParseEvents.GetTypeOfFuzziness( peIt, mdi, tTrackEnd, ap.Cancelled ),
+					mdi.tStart, mdi.tEnd, 0
+				);
+				if (ap.Cancelled) // in this case the type of fuzziness is set to 'None'
+					return nSectorsFound;
+				rOutParseEvents.Add( peFuzzy );
 			}
 		}
 		// - successfully analyzed
@@ -1094,6 +1101,26 @@
 			logEnds.upper_bound(tStart),
 			logEnds.upper_bound(tEndMax)
 		);
+	}
+
+	CImage::CTrackReader::TParseEvent::TType CImage::CTrackReader::CParseEventList::GetTypeOfFuzziness(CIterator &itContinue,const TLogTimeInterval &tiFuzzy,TLogTime tTrackEnd,volatile const bool &cancelled) const{
+		// observing the existing ParseEvents, determines and returns the type of fuzziness in the specified Interval
+		while (itContinue){
+			if (cancelled)
+				return TParseEvent::NONE;
+			const TParseEvent &pe=*itContinue->second;
+			if (tiFuzzy.tEnd<=pe.tStart)
+				break;
+			if (pe.IsDataStd() || pe.IsCrc())
+				if (pe.Intersect(tiFuzzy))
+					if ((pe.type==TParseEvent::DATA_BAD||pe.type==TParseEvent::CRC_BAD) // the fuzziness is in Bad Sector data ...
+						&&
+						pe.tEnd<tTrackEnd // ... and the data is complete (aka, it's NOT data over Index)
+					)
+						return TParseEvent::FUZZY_BAD;
+			itContinue++;
+		}
+		return TParseEvent::FUZZY_OK; // the fuzzy Interval occurs NOT in a Bad Sector
 	}
 
 
@@ -1613,9 +1640,7 @@
 
 	void CImage::CTrackReaderWriter::ClearMetaData(TLogTime a,TLogTime z){
 		// removes (or just shortens) all MetaDataItems in specified range
-		AddMetaData(
-			TMetaDataItem( TLogTimeInterval(a,z), false, 0 )
-		);
+		AddMetaData( TLogTimeInterval(a,z) );
 		FindMetaDataIteratorAndApply();
 	}
 

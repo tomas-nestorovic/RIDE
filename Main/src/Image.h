@@ -319,6 +319,7 @@
 				bool isFuzzy;
 				TLogTime forcedIwTime; // 0 = don't force inspection window (IW) size, use DPLL algorithm to adjust next IW size
 
+				TMetaDataItem(const TLogTimeInterval &ti); // for clearing MetaData in specified Interval
 				TMetaDataItem(const TLogTimeInterval &ti,bool isFuzzy,TLogTime forcedIwTime);
 
 				inline bool operator<(const TMetaDataItem &r) const{ return tStart<r.tStart; }
@@ -397,6 +398,7 @@
 			PCMetaDataItem IncrMetaDataIteratorAndApply();
 			PCMetaDataItem FindMetaDataIteratorAndApply();
 		public:
+			inline const CMetaData &GetMetaData() const{ return pLogTimesInfo->metaData; }
 			void SetCodec(Codec::TType codec);
 			void SetMediumType(Medium::TType mediumType);
 		};
@@ -507,6 +509,7 @@
 				inline bool Contains(TParseEvent::TType type) const{ return peTypeCounts[type]>0; }
 				bool IntersectsWith(const TLogTimeInterval &ti) const;
 				void RemoveConsecutiveBeforeEnd(TLogTime tEndMax);
+				TParseEvent::TType GetTypeOfFuzziness(CIterator &itContinue,const TLogTimeInterval &tiFuzzy,TLogTime tTrackEnd,volatile const bool &cancelled) const;
 			};
 		protected:
 			CTrackReader(PLogTime logTimes,PLogTimesInfo pLti,Codec::TType codec,TDecoderMethod method);
