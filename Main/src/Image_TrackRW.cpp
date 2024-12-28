@@ -24,9 +24,10 @@
 
 	CImage::CTrackReaderBase::PCMetaDataItem CImage::CTrackReaderBase::ApplyCurrentTimeMetaData(){
 		// uses the MetaDataItem at CurrentTime for reading
-		if (const PCMetaDataItem pmdi=GetCurrentTimeMetaData())
-			return profile.Apply(*pmdi), pmdi;
-		else
+		if (const PCMetaDataItem pmdi=GetCurrentTimeMetaData()){
+			// application of found MetaDataItem
+			return pmdi;
+		}else
 			return nullptr;
 	}
 
@@ -296,7 +297,7 @@
 				}while (true);
 				// - detecting zero (longer than 3/2 of an inspection window)
 				currentTime+=profile.iwTime;
-				const bool canUseDpll=!IncrMetaDataIteratorAndApply()->GetForcedIwTimeSafe(); // no explicit indication of which IW Time to use?
+				IncrMetaDataIteratorAndApply();
 				const TLogTime diff=( rtOutOne=logTimes[iNextTime] )-currentTime;
 				iNextTime+=logTimes[iNextTime]<=currentTime; // eventual correction of the pointer to the next time
 				lastReadBits<<=1, lastReadBits|=1; // 'valid' flag
@@ -306,15 +307,13 @@
 					return 0;
 				}
 				// - adjust data frequency according to phase mismatch
-				if (canUseDpll){
-					if (r.nConsecutiveZeros<=nConsecutiveZerosMax)
-						// in sync - adjust inspection window by percentage of phase mismatch
-						profile.iwTime+= diff * profile.adjustmentPercentMax/100;
-					else
-						// out of sync - adjust inspection window towards its Default size
-						profile.iwTime+= (profile.iwTimeDefault-profile.iwTime) * profile.adjustmentPercentMax/100;
-					profile.ClampIwTime(); // keep the inspection window size within limits
-				}
+				if (r.nConsecutiveZeros<=nConsecutiveZerosMax)
+					// in sync - adjust inspection window by percentage of phase mismatch
+					profile.iwTime+= diff * profile.adjustmentPercentMax/100;
+				else
+					// out of sync - adjust inspection window towards its Default size
+					profile.iwTime+= (profile.iwTimeDefault-profile.iwTime) * profile.adjustmentPercentMax/100;
+				profile.ClampIwTime(); // keep the inspection window size within limits
 				// - a "1" recognized
 				r.nConsecutiveZeros=0;
 				lastReadBits|=1;
@@ -335,47 +334,44 @@
 				}while (true);
 				// . detecting zero
 				currentTime+=profile.iwTime;
-				const bool canUseDpll=!IncrMetaDataIteratorAndApply()->GetForcedIwTimeSafe(); // no explicit indication of which IW Time to use?
+				IncrMetaDataIteratorAndApply();
 				const TLogTime diff=( rtOutOne=logTimes[iNextTime] )-currentTime;
 				lastReadBits<<=1, lastReadBits|=1; // 'valid' flag
 				lastReadBits<<=1;
 				if (diff>=iwTimeHalf)
 					return 0;
-				// . estimating data frequency and data phase
-				if (canUseDpll){
-					// : data frequency
-					const BYTE iSlot=((diff+iwTimeHalf)<<4)/profile.iwTime;
-					BYTE cState=1; // default is IPC
-					if (iSlot<7 || iSlot>8){
-						if (iSlot<7&&!r.up || iSlot>8&&r.up)
-							r.up=!r.up, r.pcCnt = r.fCnt = 0;
-						if (++r.fCnt>=3 || iSlot<3&&++r.aifCnt>=3 || iSlot>12&&++r.adfCnt>=3){
-							static const TLogTime iwDelta=profile.iwTimeDefault/100;
-							if (r.up){
-								if (( profile.iwTime-=iwDelta )<profile.iwTimeMin)
-									profile.iwTime=profile.iwTimeMin;
-							}else
-								if (( profile.iwTime+=iwDelta )>profile.iwTimeMax)
-									profile.iwTime=profile.iwTimeMax;
-							cState = r.fCnt = r.aifCnt = r.adfCnt = r.pcCnt = 0;
-						}else if (++r.pcCnt>=2)
-							cState = r.pcCnt = 0;
-					}
-					// : data phase
-					static constexpr BYTE PhaseAdjustments[2][16]={ // C1/C2, C3
-						//	8	9	A	B	C	D	E	F	0	1	2	3	4	5	6	7
-						 { 12, 13, 13, 14, 14, 15, 15, 16, 16, 17, 17, 18, 18, 19, 19, 20 },
-						 { 13, 14, 14, 15, 15, 16, 16, 16, 16, 16, 16, 17, 17, 18, 18, 19 }
-					};
-					if (const TLogTime dt= (PhaseAdjustments[cState][iSlot]*profile.iwTime>>4) - profile.iwTime){
-						currentTime+=dt;
-						if (dt>0)
-							while (iNextTime<nLogTimes && logTimes[iNextTime]<=currentTime)
-								iNextTime++;
-						else
-							while (iNextTime>0 && currentTime<logTimes[iNextTime-1])
-								iNextTime--;
-					}
+				// . estimating data frequency
+				const BYTE iSlot=((diff+iwTimeHalf)<<4)/profile.iwTime;
+				BYTE cState=1; // default is IPC
+				if (iSlot<7 || iSlot>8){
+					if (iSlot<7&&!r.up || iSlot>8&&r.up)
+						r.up=!r.up, r.pcCnt = r.fCnt = 0;
+					if (++r.fCnt>=3 || iSlot<3&&++r.aifCnt>=3 || iSlot>12&&++r.adfCnt>=3){
+						static const TLogTime iwDelta=profile.iwTimeDefault/100;
+						if (r.up){
+							if (( profile.iwTime-=iwDelta )<profile.iwTimeMin)
+								profile.iwTime=profile.iwTimeMin;
+						}else
+							if (( profile.iwTime+=iwDelta )>profile.iwTimeMax)
+								profile.iwTime=profile.iwTimeMax;
+						cState = r.fCnt = r.aifCnt = r.adfCnt = r.pcCnt = 0;
+					}else if (++r.pcCnt>=2)
+						cState = r.pcCnt = 0;
+				}
+				// . estimating data phase
+				static constexpr BYTE PhaseAdjustments[2][16]={ // C1/C2, C3
+					//	8	9	A	B	C	D	E	F	0	1	2	3	4	5	6	7
+					 { 12, 13, 13, 14, 14, 15, 15, 16, 16, 17, 17, 18, 18, 19, 19, 20 },
+					 { 13, 14, 14, 15, 15, 16, 16, 16, 16, 16, 16, 17, 17, 18, 18, 19 }
+				};
+				if (const TLogTime dt= (PhaseAdjustments[cState][iSlot]*profile.iwTime>>4) - profile.iwTime){
+					currentTime+=dt;
+					if (dt>0)
+						while (iNextTime<nLogTimes && logTimes[iNextTime]<=currentTime)
+							iNextTime++;
+					else
+						while (iNextTime>0 && currentTime<logTimes[iNextTime-1])
+							iNextTime--;
 				}
 				// . a "1" recognized
 				lastReadBits|=1;
@@ -1503,11 +1499,6 @@
 			iwTime=iwTimeMin;
 		else if (iwTime>iwTimeMax)
 			iwTime=iwTimeMax;
-	}
-
-	void CImage::CTrackReaderBase::TProfile::Apply(const TMetaDataItem &mdi){
-		if (mdi.forcedIwTime)
-			iwTime=mdi.forcedIwTime;
 	}
 
 

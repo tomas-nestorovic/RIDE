@@ -352,7 +352,6 @@
 
 				void Reset();
 				void ClampIwTime();
-				void Apply(const TMetaDataItem &mdi);
 			};
 
 			typedef std::set<TMetaDataItem> CMetaData;
