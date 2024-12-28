@@ -1655,11 +1655,15 @@
 		DWORD nOnesCurrently=0;
 		for( DWORD n=nBits; n-->0; nOnesCurrently+=bits[n] );
 		// - overwriting the "nBits" cells with new Bits
-		ClearMetaData( tOverwritingStart, tOverwritingEnd );
 		SetCurrentTimeAndProfile( tOverwritingStart, overwritingStartProfile );
 		const DWORD nNewLogTimes=nLogTimes+nOnesCurrently-nOnesPreviously;
 		if (nNewLogTimes>GetBufferCapacity())
 			return false;
+		const TLogTime tOverwritingLength=tOverwritingEnd-tOverwritingStart;
+		if (GetMetaData().size()) // does this Track use MetaData?
+			AddMetaData(
+				TMetaDataItem( TLogTimeInterval(tOverwritingStart,tOverwritingEnd), false, tOverwritingLength/nBits )
+			);
 		const PLogTime pOverwritingStart=logTimes+iNextTime;
 		::memmove(
 			pOverwritingStart+nOnesCurrently,
@@ -1671,7 +1675,7 @@
 			PLogTime pt=newLogTimesTemp;
 			for( DWORD i=0; i++<nBits; )
 				if (*bits++)
-					*pt++=tOverwritingStart+(LONGLONG)(tOverwritingEnd-tOverwritingStart)*i/nBits;
+					*pt++=tOverwritingStart+(LONGLONG)tOverwritingLength*i/nBits;
 			::memcpy( pOverwritingStart, newLogTimesTemp, nOnesCurrently*sizeof(TLogTime) );
 		return true;
 	}
