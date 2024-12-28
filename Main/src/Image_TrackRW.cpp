@@ -1829,7 +1829,6 @@
 
 	CImage::CTrackReaderWriter &CImage::CTrackReaderWriter::Reverse(){
 		// reverses timing of this Track
-		//TODO: metadata reversal
 		// - reversing Indices
 		const auto tTotal=GetTotalTime();
 		for( BYTE i=0; i<GetIndexCount()/2; i++ )
@@ -1841,5 +1840,14 @@
 			std::swap( logTimes[i], logTimes[nLogTimes-1-i] );
 		for( DWORD i=0; i<nLogTimes; i++ )
 			logTimes[i]=tTotal-logTimes[i];
+		// - reversing MetaData
+		CMetaData metaData;
+		for each( auto mdi in GetMetaData() ){
+			std::swap( mdi.tStart, mdi.tEnd );
+			mdi.tStart=tTotal-mdi.tStart;
+			mdi.tEnd=tTotal-mdi.tEnd;
+			metaData.insert(mdi);
+		}
+		pLogTimesInfo->metaData=metaData;
 		return *this;
 	}
