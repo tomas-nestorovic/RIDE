@@ -388,7 +388,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 
 	TStdWinError CHFE::SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap){
 		// saves all Modified Tracks; returns Windows standard i/o error
-		const DWORD nRequiredBytesHeaderAndCylInfos=sizeof(UHeader)+Utils::RoundUpToMuls( (int)sizeof(TCylinderInfo)*GetCylinderCount(), (int)sizeof(TBlock) );
+		const DWORD nRequiredBytesHeaderAndCylInfos=sizeof(UHeader)+Utils::RoundUpToMuls( sizeof(TCylinderInfo)*GetCylinderCount(), sizeof(TBlock) );
 		if (nRequiredBytesHeaderAndCylInfos!=sizeof(UHeader)+sizeof(TBlock)) // only 1 Block allowed for CylInfo table
 			return ERROR_NOT_SUPPORTED;
 {		CFile fTmp;
