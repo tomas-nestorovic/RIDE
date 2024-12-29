@@ -770,6 +770,7 @@ invalidTrack:
 		}
 		// - retrieving currently inserted Medium zeroth Track
 		const CTrackTempReset ritInserted( internalTracks[cyl][0] ); // forcing a new scanning
+		const CTrackTempReset resetHead1( internalTracks[cyl][1] ); // dispose eventually changed Head 1 Track (e.g. in *.HFE that loads whole cylinders at once)
 		ScanTrack(cyl,0);
 		if (ritInserted==nullptr)
 			if (properties->IsRealDevice())

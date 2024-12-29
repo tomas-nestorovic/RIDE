@@ -196,7 +196,8 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		if (!cylInfos[cyl].IsValid()) // maybe an error during Image creation?
 			return CTrackReaderWriter::Invalid;
 		internalTracks[cyl][0]=BytesToTrack( ReadTrackBytes(cyl,0) );
-		internalTracks[cyl][1]=BytesToTrack( ReadTrackBytes(cyl,1) );
+		if (!params.flippyDisk) // flippy disks not known to be represented backwards in *.HFE, hence always fail if this flag is set
+			internalTracks[cyl][1]=BytesToTrack( ReadTrackBytes(cyl,1) );
 		const PInternalTrack &rit=internalTracks[cyl][head];
 		return	rit ? *rit : CTrackReaderWriter::Invalid;
 	}
