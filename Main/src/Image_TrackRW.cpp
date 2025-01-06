@@ -5,7 +5,7 @@
 		: logTimes(logTimes) , nLogTimes(0) , pLogTimesInfo(pLti)
 		, indexPulses(pLti->indexPulses) , iNextIndexPulse(0) , nIndexPulses(0)
 		, iNextTime(0) , currentTime(0) , lastReadBits(0)
-		, method(method) {
+		, profile(method) {
 		itCurrMetaData=pLogTimesInfo->metaData.cbegin();
 	}
 
@@ -17,9 +17,11 @@
 
 	CImage::CTrackReaderBase::PCMetaDataItem CImage::CTrackReaderBase::GetCurrentTimeMetaData() const{
 		// returns the MetaDataItem that contain the CurrentTime, or Null
-		return	itCurrMetaData!=pLogTimesInfo->metaData.cend() && itCurrMetaData->Contains(currentTime)
-				? &*itCurrMetaData
-				: nullptr;
+		if (itCurrMetaData!=pLogTimesInfo->metaData.cend()){
+			ASSERT( itCurrMetaData->Contains(currentTime) ); // just to be sure
+			return &*itCurrMetaData;
+		}else
+			return nullptr;
 	}
 
 	CImage::CTrackReaderBase::PCMetaDataItem CImage::CTrackReaderBase::ApplyCurrentTimeMetaData(){
@@ -43,7 +45,9 @@
 
 	CImage::CTrackReaderBase::PCMetaDataItem CImage::CTrackReaderBase::FindMetaDataIteratorAndApply(){
 		// the CurrentTime has changed randomly
-		itCurrMetaData=pLogTimesInfo->metaData.lower_bound( TLogTimeInterval(currentTime,INT_MAX) );
+		itCurrMetaData=pLogTimesInfo->metaData.upper_bound( TLogTimeInterval(currentTime,INT_MAX) ); // 'upper_bound' = don't search the sharp beginning but rather something bigger ...
+		if (itCurrMetaData!=pLogTimesInfo->metaData.cbegin())
+			itCurrMetaData--; // ... and then iterate back, because that's the usual case when "randomly" pinning in the timeline
 		return ApplyCurrentTimeMetaData();
 	}
 
@@ -55,26 +59,66 @@
 	CImage::CTrackReaderBase::TMetaDataItem::TMetaDataItem(const TLogTimeInterval &ti)
 		// ctor (for clearing MetaData in specified Interval)
 		: TLogTimeInterval(ti)
-		, isFuzzy(false) , forcedIwTime(0) {
+		, isFuzzy(false) , nBits(0) {
 	}
 	
-	CImage::CTrackReaderBase::TMetaDataItem::TMetaDataItem(const TLogTimeInterval &ti,bool isFuzzy,TLogTime forcedIwTime)
+	CImage::CTrackReaderBase::TMetaDataItem::TMetaDataItem(const TLogTimeInterval &ti,bool isFuzzy,int nBits)
 		// ctor
 		: TLogTimeInterval(ti)
-		, isFuzzy(isFuzzy) , forcedIwTime(forcedIwTime) {
+		, isFuzzy(isFuzzy) , nBits(nBits) {
 	}
 
-	CImage::CTrackReader::TLogTimesInfoData::TLogTimesInfoData(DWORD nLogTimesMax,bool resetDecoderOnIndex)
+	TLogTime CImage::CTrackReaderBase::TMetaDataItem::GetBitTimeAvg() const{
+		// computes and returns the average inspection window size
+		ASSERT( nBits>0 );
+		return GetLength()/nBits;
+	}
+
+	TLogTime CImage::CTrackReaderBase::TMetaDataItem::GetBitTime(int iBit) const{
+		// computes and returns the LogicalTime of I-th bit (aka. the center of I-th inspection window)
+		ASSERT( 0<=iBit && iBit<nBits );
+		return	tStart + ::MulDiv( GetLength(), iBit, nBits );
+	}
+
+	int CImage::CTrackReaderBase::TMetaDataItem::GetBitIndex(TLogTime t) const{
+		//
+		ASSERT( Contains(t) );
+		return ::MulDiv( t-tStart, nBits, GetLength() ); // mathematic rounding
+	}
+
+	TLogTimeInterval CImage::CTrackReaderBase::TMetaDataItem::GetIw(int iBit) const{
+		// determines and returns the inspection window that has the I-th bit at its center
+		const TLogTime tCenter=GetBitTime(iBit), tAvgSize=GetBitTimeAvg();
+		const TLogTime tStart=tCenter-tAvgSize/2;
+		return TLogTimeInterval( tStart, tStart+tAvgSize );
+	}
+
+	CImage::CTrackReaderBase::TMetaDataItem CImage::CTrackReaderBase::TMetaDataItem::Split(TLogTime tAt){
+		// trims this MetaDataItem to Interval [tStart,tAt), returning the rest; this semantics is compatible with 'operator<' which uses 'tStart' - when "un-const-ed", Split(.) can be call directly on 'std::set' items (which is nasty, btw)
+		const int iBit=GetBitIndex(tAt);
+		ASSERT( GetBitTime(iBit)==tAt ); // up to the caller to correctly align!
+		const TMetaDataItem result( TLogTimeInterval(tAt,tEnd), isFuzzy, nBits-iBit );
+		nBits=iBit;
+		return result;
+	}
+
+	bool CImage::CTrackReaderBase::TMetaDataItem::Equals(const TMetaDataItem &r) const{
+		// True <=> the two MetaDataItems can be merged, otherwise False
+		return isFuzzy==r.isFuzzy && GetBitTimeAvg()==r.GetBitTimeAvg();
+	}
+
+	CImage::CTrackReader::TLogTimesInfoData::TLogTimesInfoData(DWORD nLogTimesMax,TDecoderMethod defaultDecoder,bool resetDecoderOnIndex)
 		// ctor
 		: nLogTimesMax(nLogTimesMax)
 		, mediumType(Medium::UNKNOWN) , codec(Codec::UNKNOWN)
+		, defaultDecoder(defaultDecoder)
 		, resetDecoderOnIndex(resetDecoderOnIndex) {
 		*indexPulses=INT_MAX; // a virtual IndexPulse in infinity
 	}
 
-	CImage::CTrackReader::CLogTimesInfo::CLogTimesInfo(DWORD nLogTimesMax,bool resetDecoderOnIndex)
+	CImage::CTrackReader::CLogTimesInfo::CLogTimesInfo(DWORD nLogTimesMax,TDecoderMethod defaultDecoder,bool resetDecoderOnIndex)
 		// "ctor"
-		: TLogTimesInfoData( nLogTimesMax, resetDecoderOnIndex )
+		: TLogTimesInfoData( nLogTimesMax, defaultDecoder, resetDecoderOnIndex )
 		, nRefs(1) {
 	}
 
@@ -138,7 +182,13 @@
 			currentTime= R<nLogTimes ? logTime : logTimes[L];
 		}
 		lastReadBits=0;
-		FindMetaDataIteratorAndApply();
+		if (const PCMetaDataItem pmdi=FindMetaDataIteratorAndApply()){
+			profile.method=TDecoderMethod::METADATA;
+			profile.methodState.metaData.iCurrBit=pmdi->GetBitIndex(currentTime)-1;
+		}else if (profile.method==TDecoderMethod::METADATA){
+			profile.method=pLogTimesInfo->defaultDecoder;
+			profile.Reset();
+		}
 	}
 
 	void CImage::CTrackReader::SetCurrentTimeAndProfile(TLogTime logTime,const TProfile &profile){
@@ -228,14 +278,16 @@
 				ASSERT(FALSE); // we shouldn't end-up here, all Media Types applicable for general Track description should be covered
 				//fallthrough
 			case Medium::FLOPPY_DD:
-				profile=TProfile::DD;
+				static_cast<Medium::TIwProfile &>(profile)=Medium::TProperties::FLOPPY_DD.CreateIwProfile();
 				break;
 			case Medium::FLOPPY_DD_525:
-				profile=TProfile::DD_525;
+				static_cast<Medium::TIwProfile &>(profile)=Medium::TProperties::FLOPPY_DD_525.CreateIwProfile();
 				break;
 			case Medium::FLOPPY_HD_350:
+				static_cast<Medium::TIwProfile &>(profile)=Medium::TProperties::FLOPPY_HD_350.CreateIwProfile();
+				break;
 			case Medium::FLOPPY_HD_525:
-				profile=TProfile::HD;
+				static_cast<Medium::TIwProfile &>(profile)=Medium::TProperties::FLOPPY_HD_525.CreateIwProfile();
 				break;
 		}
 		profile.Reset();
@@ -273,7 +325,7 @@
 				iNextIndexPulse++;
 		}
 		// - reading next bit
-		switch (method){
+		switch (profile.method){
 			case TDecoderMethod::NONE:
 				// no decoder - aka. "don't extract bits from the record"
 				if (*this){
@@ -285,7 +337,7 @@
 			case TDecoderMethod::KEIR_FRASER:{
 				// FDC-like flux reversal decoding from Keir Fraser's Disk-Utilities/libdisk
 				// - reading some more from the Track
-				auto &r=profile.method.fraser;
+				auto &r=profile.methodState.fraser;
 				const TLogTime iwTimeHalf=profile.iwTime/2;
 				do{
 					if (!*this)
@@ -307,12 +359,13 @@
 					return 0;
 				}
 				// - adjust data frequency according to phase mismatch
+				constexpr int AdjustmentPercentMax=30; // percentual "speed" in inspection window adjustment
 				if (r.nConsecutiveZeros<=nConsecutiveZerosMax)
 					// in sync - adjust inspection window by percentage of phase mismatch
-					profile.iwTime+= diff * profile.adjustmentPercentMax/100;
+					profile.iwTime+= diff * AdjustmentPercentMax/100;
 				else
 					// out of sync - adjust inspection window towards its Default size
-					profile.iwTime+= (profile.iwTimeDefault-profile.iwTime) * profile.adjustmentPercentMax/100;
+					profile.iwTime+= (profile.iwTimeDefault-profile.iwTime) * AdjustmentPercentMax/100;
 				profile.ClampIwTime(); // keep the inspection window size within limits
 				// - a "1" recognized
 				r.nConsecutiveZeros=0;
@@ -322,7 +375,7 @@
 			case TDecoderMethod::MARK_OGDEN:{
 				// FDC-like flux reversal decoding from Mark Ogdens's DiskTools/flux2track
 				// . reading some more from the Track for the next time
-				auto &r=profile.method.ogden;
+				auto &r=profile.methodState.ogden;
 				const TLogTime iwTimeHalf=profile.iwTime/2;
 				do{
 					if (!*this)
@@ -376,6 +429,35 @@
 				// . a "1" recognized
 				lastReadBits|=1;
 				return 1;
+			}
+			case TDecoderMethod::METADATA:{
+				// a hidden decoder to help extract bits from Times tagged with MetaData
+				if (!*this)
+					return 0;
+				auto &r=profile.methodState.metaData;
+				PCMetaDataItem pmdi;
+				do{
+					if (!( pmdi=IncrMetaDataIteratorAndApply() )){
+						ASSERT(FALSE);
+						return 0;
+					}
+					if (++r.iCurrBit<pmdi->nBits)
+						break;
+					currentTime=pmdi->tEnd;
+					r.iCurrBit=-1;
+				}while (true);
+				currentTime=pmdi->GetBitTime(r.iCurrBit);
+				profile.iwTime = profile.iwTimeDefault = pmdi->GetBitTimeAvg();
+				const auto &&ti=pmdi->GetIw(r.iCurrBit);
+				ASSERT( ti.Contains(currentTime) ); // just to be sure
+				const bool result =	ti.Contains( rtOutOne=logTimes[iNextTime] ) // // is there a Time in the second half of the inspection window?
+									||
+									iNextTime>0 && ti.Contains( rtOutOne=logTimes[iNextTime-1] ); // is there a Time in the first half of the inspection window?
+				while (*this && logTimes[iNextTime]<=ti.tEnd)
+					iNextTime++;
+				lastReadBits<<=1, lastReadBits|=1; // 'valid' flag
+				lastReadBits<<=1, lastReadBits|=result;
+				return result;
 			}
 			default:
 				ASSERT(FALSE);
@@ -690,6 +772,8 @@
 						ti.tStart, ti.tEnd, 0
 					)
 				);
+				if (itMdi==itMdiEnd)
+					break;
 			}
 		// - successfully analyzed
 		return nSectorsFound;
@@ -1464,41 +1548,29 @@
 
 
 
-	const CImage::CTrackReader::TProfile CImage::CTrackReaderBase::TProfile::HD(
-		Medium::TProperties::FLOPPY_HD_350, // same for both 3.5" and 5.25" HD floppies
-		4 // inspection window size tolerance
-	);
-
-	const CImage::CTrackReader::TProfile CImage::CTrackReaderBase::TProfile::DD(
-		Medium::TProperties::FLOPPY_DD,
-		4 // inspection window size tolerance
-	);
-
-	const CImage::CTrackReader::TProfile CImage::CTrackReaderBase::TProfile::DD_525(
-		Medium::TProperties::FLOPPY_DD_525,
-		4 // inspection window size tolerance
-	);
-
-	CImage::CTrackReaderBase::TProfile::TProfile(const Medium::TProperties &floppyProps,BYTE iwTimeTolerancePercent)
+	CImage::CTrackReaderBase::TProfile::TProfile(TDecoderMethod method)
 		// ctor
-		: iwTimeDefault(floppyProps.cellTime)
-		, iwTime(iwTimeDefault)
-		, iwTimeMin( iwTimeDefault*(100-iwTimeTolerancePercent)/100 )
-		, iwTimeMax( iwTimeDefault*(100+iwTimeTolerancePercent)/100 )
-		, adjustmentPercentMax(30) {
+		: Medium::TIwProfile(0)
+		, method(method) {
+		Reset();
+	}
+
+	CImage::CTrackReaderBase::TProfile::TProfile(const TMetaDataItem &mdi)
+		// ctor
+		: Medium::TIwProfile( mdi.GetBitTimeAvg() )
+		, method(TDecoderMethod::METADATA) {
+		methodState.metaData.iCurrBit=-1; // begin "before" the MetaDataItem
 	}
 
 	void CImage::CTrackReaderBase::TProfile::Reset(){
 		iwTime=iwTimeDefault;
-		::ZeroMemory( &method, sizeof(method) );
-	}
-
-	void CImage::CTrackReaderBase::TProfile::ClampIwTime(){
-		// keep the inspection window size within limits
-		if (iwTime<iwTimeMin)
-			iwTime=iwTimeMin;
-		else if (iwTime>iwTimeMax)
-			iwTime=iwTimeMax;
+		switch (method){
+			default:
+				::ZeroMemory( &methodState, sizeof(methodState) );
+				//fallthrough
+			case TDecoderMethod::METADATA:
+				break;
+		}
 	}
 
 
@@ -1518,7 +1590,7 @@
 		// ctor
 		: CTrackReader(
 			(PLogTime)::calloc( nLogTimesMax+1, sizeof(TLogTime) ),
-			new CLogTimesInfo( nLogTimesMax, resetDecoderOnIndex ),
+			new CLogTimesInfo( nLogTimesMax, method, resetDecoderOnIndex ),
 			Codec::MFM,
 			method
 		){
@@ -1529,7 +1601,7 @@
 		// copy ctor
 		: CTrackReader( trw ) {
 		if (!shareTimes){
-			CTrackReaderWriter tmp( trw.GetBufferCapacity(), trw.method, trw.pLogTimesInfo->resetDecoderOnIndex );
+			CTrackReaderWriter tmp( trw.GetBufferCapacity(), trw.profile.method, trw.pLogTimesInfo->resetDecoderOnIndex );
 			std::swap<CTrackReader>( tmp, *this );
 			::memcpy( logTimes, trw.logTimes, nLogTimes*sizeof(TLogTime) );
 			*static_cast<TLogTimesInfoData *>(pLogTimesInfo)=*trw.pLogTimesInfo;
@@ -1584,19 +1656,16 @@
 		if (it!=metaData.end())
 			if (it->tStart<mdi.tEnd){ // yes, we do
 				TMetaDataItem tmp=*it;
-					tmp.tStart=mdi.tEnd;
-				metaData.erase(it), it=metaData.insert(tmp).first; // replace such MetaDataItem
+				metaData.erase(it), it=metaData.insert(tmp.Split(mdi.tEnd)).first; // replace such MetaDataItem
 			}
 		// - do we anyhow overwrite the nearest previous MetaDataItem?
 		if (it!=metaData.begin()){
-			const auto itPrev=--it;
-			if (mdi.tEnd<itPrev->tEnd){ // yes, we split the previous MetaDataItem into two pieces
-				TMetaDataItem tmp=*itPrev;
-					tmp.tStart=mdi.tEnd;
-				it=metaData.insert(tmp).first; // second part
-				const_cast<TLogTime &>(itPrev->tEnd)=mdi.tStart; // first part always non-empty; doing this is OK because the End doesn't serve as the key for the MetaDataItem std::set
+			it--;
+			if (mdi.tEnd<it->tEnd){ // yes, we split the previous MetaDataItem into two pieces
+				TMetaDataItem tmp=const_cast<TMetaDataItem &>(*it).Split(mdi.tStart); // first part
+				it=metaData.insert( tmp.Split(mdi.tEnd) ).first; // second part
 			}else if (mdi.tStart<it->tEnd) // yes, only partly the end
-				const_cast<TLogTime &>(it++->tEnd)=mdi.tStart; // doing this is OK because the End doesn't serve as the key for the MetaDataItem std::set
+				const_cast<TMetaDataItem &>(*it++).Split(mdi.tStart);
 			else
 				it++;
 		}
@@ -1608,6 +1677,7 @@
 		if (it!=metaData.end() && it->tStart==mdi.tEnd && it->Equals(mdi)){ // yes, it can
 			TMetaDataItem tmp=*it;
 				tmp.tStart=mdi.tStart;
+				tmp.nBits+=mdi.nBits;
 			metaData.erase(it), it=metaData.insert(tmp).first; // merge them
 			merged=true;
 		}
@@ -1615,6 +1685,7 @@
 		if (it!=metaData.begin())
 			if ((--it)->tEnd==mdi.tStart && it->Equals(mdi)){ // yes, it can
 				const_cast<TLogTime &>(it->tEnd)=mdi.tEnd; // merge them; doing this is OK because the End doesn't serve as the key for the MetaDataItem std::set
+				const_cast<int &>(it->nBits)+=mdi.nBits;
 				if (merged) // already Merged above?
 					metaData.erase(++it);
 				else
@@ -1635,7 +1706,7 @@
 		// removes all MetaDataItems
 		auto &metaData=pLogTimesInfo->metaData;
 		metaData.clear();
-		itCurrMetaData=metaData.cbegin();
+		itCurrMetaData=metaData.cend();
 	}
 
 	TLogTime CImage::CTrackReader::GetLastIndexTime() const{
@@ -1662,7 +1733,7 @@
 		const TLogTime tOverwritingLength=tOverwritingEnd-tOverwritingStart;
 		if (GetMetaData().size()) // does this Track use MetaData?
 			AddMetaData(
-				TMetaDataItem( TLogTimeInterval(tOverwritingStart,tOverwritingEnd), false, tOverwritingLength/nBits )
+				TMetaDataItem( TLogTimeInterval(tOverwritingStart,tOverwritingEnd), false, nBits )
 			);
 		const PLogTime pOverwritingStart=logTimes+iNextTime;
 		::memmove(
@@ -1814,7 +1885,7 @@
 		}
 		// - copying Modified LogicalTimes to the Track
 		const DWORD nNewLogTimes=nLogTimes+iTime-iNextTime;
-		CTrackReaderWriter tmp( nLogTimesMaxNew, method, pLogTimesInfo->resetDecoderOnIndex );
+		CTrackReaderWriter tmp( nLogTimesMaxNew, profile.method, pLogTimesInfo->resetDecoderOnIndex );
 			::memcpy( tmp.logTimes, logTimes, iModifStart*sizeof(TLogTime) ); // Times before first Index
 			::memcpy( tmp.logTimes+iModifStart, ptModified+iModifStart, (iTime-iModifStart)*sizeof(TLogTime) ); // Times in full Revolutions
 			::memcpy( tmp.logTimes+iTime, logTimes+iNextTime, (nLogTimes-iNextTime)*sizeof(TLogTime) ); // Times after last Index

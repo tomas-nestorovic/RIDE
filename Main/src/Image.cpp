@@ -246,6 +246,22 @@ namespace Medium{
 		return nCells/100*80<nCellsQueried && nCellsQueried<nCells/100*120;
 	}
 
+	TIwProfile::TIwProfile(TLogTime iwTimeDefault,BYTE iwTimeTolerancePercent)
+		// ctor
+		: iwTimeDefault(iwTimeDefault)
+		, iwTime(iwTimeDefault)
+		, iwTimeMin( iwTimeDefault*(100-iwTimeTolerancePercent)/100 )
+		, iwTimeMax( iwTimeDefault*(100+iwTimeTolerancePercent)/100 ) {
+	}
+
+	void TIwProfile::ClampIwTime(){
+		// keep the inspection window size within limits
+		if (iwTime<iwTimeMin)
+			iwTime=iwTimeMin;
+		else if (iwTime>iwTimeMax)
+			iwTime=iwTimeMax;
+	}
+
 
 
 	LPCTSTR GetDescription(TType mediumType){

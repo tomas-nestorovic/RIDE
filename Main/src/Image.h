@@ -66,6 +66,17 @@
 		};
 
 		#pragma pack(1)
+		struct TIwProfile{
+			TLogTime iwTimeDefault; // inspection window default size
+			TLogTime iwTime; // inspection window size; a "1" is expected in its centre
+			TLogTime iwTimeMin,iwTimeMax; // inspection window possible time range
+
+			TIwProfile(TLogTime iwTimeDefault,BYTE iwTimeTolerancePercent=0);
+
+			void ClampIwTime();
+		};
+
+		#pragma pack(1)
 		typedef const struct TProperties sealed{
 			static const TProperties FLOPPY_HD_350;
 			static const TProperties FLOPPY_HD_525;
@@ -80,6 +91,7 @@
 
 			bool IsAcceptableRevolutionTime(TLogTime tRevolutionQueried) const;
 			bool IsAcceptableCountOfCells(DWORD nCellsQueried) const;
+			inline TIwProfile CreateIwProfile(BYTE iwTimeTolerancePercent=4) const{ return TIwProfile(cellTime,iwTimeTolerancePercent); }
 		} *PCProperties;
 
 		LPCTSTR GetDescription(TType mediumType);
@@ -312,31 +324,29 @@
 				NONE			=1,
 				KEIR_FRASER		=2,
 				MARK_OGDEN		=8,
+				METADATA		=16, // a hidden decoder to help extract bits from Times tagged with MetaData
 				FDD_METHODS		=NONE|KEIR_FRASER|MARK_OGDEN
 			};
 
 			typedef const struct TMetaDataItem sealed:public TLogTimeInterval{
 				bool isFuzzy;
-				TLogTime forcedIwTime; // 0 = don't force inspection window (IW) size, use DPLL algorithm to adjust next IW size
+				int nBits; // 0 = no explicit # of bits, use DPLL algorithm to adjust next IW size
 
 				TMetaDataItem(const TLogTimeInterval &ti); // for clearing MetaData in specified Interval
-				TMetaDataItem(const TLogTimeInterval &ti,bool isFuzzy,TLogTime forcedIwTime);
+				TMetaDataItem(const TLogTimeInterval &ti,bool isFuzzy,int nBits);
 
 				inline bool operator<(const TMetaDataItem &r) const{ return tStart<r.tStart; }
-				inline bool IsDefault() const{ return !isFuzzy && !forcedIwTime; }
-				inline bool Equals(const TMetaDataItem &r) const{ return isFuzzy==r.isFuzzy && forcedIwTime==r.forcedIwTime; }
-				inline TLogTime GetForcedIwTimeSafe() const{ return this?forcedIwTime:0; }
+				inline bool IsDefault() const{ return nBits<=0; }
+				TLogTime GetBitTimeAvg() const;
+				TLogTime GetBitTime(int iBit) const;
+				int GetBitIndex(TLogTime t) const;
+				TLogTimeInterval GetIw(int iBit) const;
+				TMetaDataItem Split(TLogTime tAt);
+				bool Equals(const TMetaDataItem &r) const;
 			} *PCMetaDataItem;
 
-			struct TProfile sealed{
-				static const TProfile HD;		// 3.5" HD or 5.25" HD in 360 RPM drive
-				static const TProfile DD;		// 3.5" DD or 5.25" DD in 300 RPM drive
-				static const TProfile DD_525;	// 5.25" DD in 360 RPM drive
-
-				TLogTime iwTimeDefault; // inspection window default size
-				TLogTime iwTime; // inspection window size; a "1" is expected in its centre
-				TLogTime iwTimeMin,iwTimeMax; // inspection window possible time range
-				BYTE adjustmentPercentMax; // percentual "speed" in inspection window adjustment
+			struct TProfile sealed:public Medium::TIwProfile{
+				TDecoderMethod method;
 				union{
 					struct{
 						DWORD nConsecutiveZeros;
@@ -345,13 +355,15 @@
 						bool up;
 						BYTE fCnt, aifCnt, adfCnt, pcCnt;
 					} ogden;
-				} method;
+					struct{
+						int iCurrBit;
+					} metaData;
+				} methodState;
 
-				inline TProfile(){}
-				TProfile(const Medium::TProperties &floppyProps,BYTE iwTimeTolerancePercent);
+				TProfile(TDecoderMethod method=TDecoderMethod::NONE);
+				TProfile(const TMetaDataItem &mdi);
 
 				void Reset();
-				void ClampIwTime();
 			};
 
 			typedef std::set<TMetaDataItem> CMetaData;
@@ -365,14 +377,15 @@
 				Codec::TType codec;
 				TLogTime indexPulses[Revolution::MAX+2]; // "+2" = "+1+1" = "+A+B", A = tail IndexPulse of last possible Revolution, B = terminator
 				CMetaData metaData;
+				TDecoderMethod defaultDecoder; // when no MetaData available
 
-				TLogTimesInfoData(DWORD nLogTimesMax,bool resetDecoderOnIndex);
+				TLogTimesInfoData(DWORD nLogTimesMax,TDecoderMethod defaultDecoder,bool resetDecoderOnIndex);
 			};
 
 			typedef class CLogTimesInfo sealed:public TLogTimesInfoData{
 				UINT nRefs;
 			public:
-				CLogTimesInfo(DWORD nLogTimesMax,bool resetDecoderOnIndex);
+				CLogTimesInfo(DWORD nLogTimesMax,TDecoderMethod defaultDecoder,bool resetDecoderOnIndex);
 
 				inline void AddRef(){ ::InterlockedIncrement(&nRefs); }
 				bool Release();
@@ -380,7 +393,6 @@
 
 			PLogTime logTimes; // absolute logical times since the start of recording
 			PLogTimesInfo pLogTimesInfo;
-			TDecoderMethod method;
 			DWORD iNextTime,nLogTimes;
 			PLogTime indexPulses; // buffer to contain 'Max' full Revolutions
 			BYTE iNextIndexPulse,nIndexPulses;

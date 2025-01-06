@@ -781,6 +781,7 @@ invalidTrack:
 			}
 		// - enumerating possible floppy Types and attempting to recognize some Sectors
 		CTrackReaderWriter trw=*ritInserted;
+		trw.ClearAllMetaData(); // don't influence recognition with MetaData
 		WORD highestScore=0; // arbitering the MediumType by the HighestScore and indices distance
 		Medium::TType bestMediumType=Medium::UNKNOWN;
 		for( DWORD type=1; type!=0; type<<=1 )
