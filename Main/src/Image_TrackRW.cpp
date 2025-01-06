@@ -336,20 +336,21 @@
 				return 0;
 			case TDecoderMethod::KEIR_FRASER:{
 				// FDC-like flux reversal decoding from Keir Fraser's Disk-Utilities/libdisk
-				// - reading some more from the Track
+				// . skip all fluxes in current inspection window
 				auto &r=profile.methodState.fraser;
-				const TLogTime iwTimeHalf=profile.iwTime/2;
+				const TLogTime iwTimeHalf=profile.iwTime/2, tCurrIwEnd=currentTime+iwTimeHalf;
 				do{
 					if (!*this)
 						return 0;
-					if (logTimes[iNextTime]-currentTime<iwTimeHalf)
+					if (logTimes[iNextTime]<tCurrIwEnd)
 						iNextTime++;
 					else
 						break;
 				}while (true);
-				// - detecting zero (longer than 3/2 of an inspection window)
+				// . move to the next inspection window
 				currentTime+=profile.iwTime;
 				IncrMetaDataIteratorAndApply();
+				// . detect zero (longer than 1/2 of an inspection window size)
 				const TLogTime diff=( rtOutOne=logTimes[iNextTime] )-currentTime;
 				iNextTime+=logTimes[iNextTime]<=currentTime; // eventual correction of the pointer to the next time
 				lastReadBits<<=1, lastReadBits|=1; // 'valid' flag
@@ -358,7 +359,7 @@
 					r.nConsecutiveZeros++;
 					return 0;
 				}
-				// - adjust data frequency according to phase mismatch
+				// . adjust data frequency according to phase mismatch
 				constexpr int AdjustmentPercentMax=30; // percentual "speed" in inspection window adjustment
 				if (r.nConsecutiveZeros<=nConsecutiveZerosMax)
 					// in sync - adjust inspection window by percentage of phase mismatch
@@ -367,33 +368,34 @@
 					// out of sync - adjust inspection window towards its Default size
 					profile.iwTime+= (profile.iwTimeDefault-profile.iwTime) * AdjustmentPercentMax/100;
 				profile.ClampIwTime(); // keep the inspection window size within limits
-				// - a "1" recognized
+				// . a "1" recognized
 				r.nConsecutiveZeros=0;
 				lastReadBits|=1;
 				return 1;
 			}
 			case TDecoderMethod::MARK_OGDEN:{
 				// FDC-like flux reversal decoding from Mark Ogdens's DiskTools/flux2track
-				// . reading some more from the Track for the next time
+				// . skip all fluxes in current inspection window
 				auto &r=profile.methodState.ogden;
-				const TLogTime iwTimeHalf=profile.iwTime/2;
+				const TLogTime iwTimeHalf=profile.iwTime/2, tCurrIwEnd=currentTime+iwTimeHalf;
 				do{
 					if (!*this)
 						return 0;
-					if (logTimes[iNextTime]-currentTime<iwTimeHalf)
+					if (logTimes[iNextTime]<tCurrIwEnd)
 						iNextTime++;
 					else
 						break;
 				}while (true);
-				// . detecting zero
+				// . move to the next inspection window
 				currentTime+=profile.iwTime;
 				IncrMetaDataIteratorAndApply();
+				// . detect zero (longer than 1/2 of an inspection window size)
 				const TLogTime diff=( rtOutOne=logTimes[iNextTime] )-currentTime;
 				lastReadBits<<=1, lastReadBits|=1; // 'valid' flag
 				lastReadBits<<=1;
 				if (diff>=iwTimeHalf)
 					return 0;
-				// . estimating data frequency
+				// . estimate new data frequency
 				const BYTE iSlot=((diff+iwTimeHalf)<<4)/profile.iwTime;
 				BYTE cState=1; // default is IPC
 				if (iSlot<7 || iSlot>8){
@@ -411,7 +413,7 @@
 					}else if (++r.pcCnt>=2)
 						cState = r.pcCnt = 0;
 				}
-				// . estimating data phase
+				// . estimate new data phase
 				static constexpr BYTE PhaseAdjustments[2][16]={ // C1/C2, C3
 					//	8	9	A	B	C	D	E	F	0	1	2	3	4	5	6	7
 					 { 12, 13, 13, 14, 14, 15, 15, 16, 16, 17, 17, 18, 18, 19, 19, 20 },
@@ -1731,7 +1733,7 @@
 		if (nNewLogTimes>GetBufferCapacity())
 			return false;
 		const TLogTime tOverwritingLength=tOverwritingEnd-tOverwritingStart;
-		if (GetMetaData().size()) // does this Track use MetaData?
+		if (GetMetaData()) // does this Track use MetaData?
 			AddMetaData(
 				TMetaDataItem( TLogTimeInterval(tOverwritingStart,tOverwritingEnd), false, nBits )
 			);

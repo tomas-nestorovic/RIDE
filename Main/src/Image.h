@@ -366,7 +366,9 @@
 				void Reset();
 			};
 
-			typedef std::set<TMetaDataItem> CMetaData;
+			typedef struct:public std::set<TMetaDataItem>{
+				inline operator bool() const{ return size()>0; }
+			} CMetaData;
 
 			~CTrackReaderBase();
 		protected:
