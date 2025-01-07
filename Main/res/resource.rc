@@ -778,6 +778,7 @@ BEGIN
         MENUITEM "Zoom to track\tCtrl+0",       ID_ZOOM_FIT
         MENUITEM SEPARATOR
         MENUITEM "Show cursor time",            ID_TIME
+        MENUITEM "Show metadata",               ID_ARCHIVE
         MENUITEM "Show time spacing",           ID_GAP
         MENUITEM "Show inspection",             ID_RECOGNIZE
         MENUITEM "Show intervals",              ID_INTERLEAVE

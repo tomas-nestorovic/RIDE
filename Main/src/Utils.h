@@ -218,12 +218,15 @@ namespace Utils{
 
 		CRideFont(LPCTSTR face,int pointHeight,bool bold=false,bool dpiScaled=false,int pointWidth=0);
 		CRideFont(HWND hWnd,bool bold=false);
+		CRideFont(HFONT hFont);
 
 		inline operator WPARAM() const{ return (WPARAM)m_hObject; }
 
+		BOOL Attach(HFONT hFont);
 		SIZE GetTextSize(LPCTSTR text,int textLength) const;
 		SIZE GetTextSize(LPCTSTR text) const;
 		SIZE GetTextSize(const CString &text) const;
+		HFONT CreateRotated(int nDegrees) const;
 	};
 
 	class CRideContextMenu sealed:public ::CMenu{

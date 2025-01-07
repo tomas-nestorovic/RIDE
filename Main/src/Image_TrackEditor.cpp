@@ -8,6 +8,7 @@ using namespace Charting;
 	#define TIME_HEIGHT		30
 	#define IW_HEIGHT		(TIME_HEIGHT+10)
 	#define INDEX_HEIGHT	64
+	#define METADATA_HEIGHT	80
 	#define LINE_EXTENSION	5
 	#define SPACING_HEIGHT	(IW_HEIGHT+LINE_EXTENSION)
 	#define IW_TIME_HEIGHT	(SPACING_HEIGHT+20)
@@ -47,6 +48,7 @@ using namespace Charting;
 			INSPECT	=4,
 			STRUCT	=8,
 			REGIONS	=16,
+			METADATA=32,
 			DEFAULT	= TIME//|SPACING
 		};
 
@@ -229,8 +231,33 @@ using namespace Charting;
 						::RestoreDC(dc,dcSettings0);
 						if (!continuePainting) // new paint request?
 							continue;
-						// . drawing Times
+						// . drawing MetaData
 						tr.SetCurrentTime(visible.tStart-1);
+						if (te.IsFeatureShown(TCursorFeatures::METADATA)){
+							const auto dcSettings0=::SaveDC(dc);
+								::SelectObject( dc, te.penMetaData );
+								::SelectObject( dc, te.fontMetaData );
+								::SetTextColor( dc, 0x666666 );
+								TCHAR label[80];
+								for( auto it=tr.GetCurrentTimeMetaDataIterator(); it!=tr.GetMetaData().cend(); it++ ){
+									if (visible.tEnd<it->tStart)
+										break;
+									//const int bitrate=TIME_SECOND(1)/it->GetBitTimeAvg();
+									const int bitrate=TIME_MILLI(1)/it->GetBitTimeAvg(); // kilobits
+									EXCLUSIVELY_LOCK(p.params);
+									if ( continuePainting=p.params.id==id ){
+										g.PerpLineAndText(
+											it->tStart, METADATA_HEIGHT, -METADATA_HEIGHT,
+											te.fontMetaData.GetTextSize(  label,  ::wsprintf( label, _T("Fuzzy %d kbps")+6*!it->isFuzzy, bitrate )  ).cx,
+											label
+										);
+									}
+								}
+							::RestoreDC(dc,dcSettings0);
+						}
+						if (!continuePainting) // new paint request?
+							continue;
+						// . drawing Times
 						while (continuePainting && tr.GetCurrentTime()<visible.tEnd){
 							EXCLUSIVELY_LOCK(p.params);
 							if ( continuePainting=p.params.id==id )
@@ -474,6 +501,8 @@ using namespace Charting;
 			const PCRegion pRegions;
 			const DWORD nRegions;
 			const Utils::CRidePen penIndex;
+			const Utils::CRidePen penMetaData;
+			const Utils::CRideFont fontMetaData;
 			bool decadicByteValues;
 
 			CTimeEditor(const CImage::CTrackReader &tr,CImage::CTrackReader::PCRegion pRegions,DWORD nRegions)
@@ -482,10 +511,13 @@ using namespace Charting;
 				, tr(tr)
 				, pRegions(pRegions) , nRegions(nRegions) // up to the caller to dispose allocated Regions!
 				, penIndex( 2, COLOR_BLUE )
+				, penMetaData( 1, COLOR_BLACK, PS_DOT )
+				, fontMetaData( Utils::CRideFont::Small.CreateRotated(90) )
 				, painter(*this)
 				, decadicByteValues( app.GetProfileBool(INI_SECTION,INI_DECADIC) )
 				, draggedTime(-1)
-				, cursorTime(-1) , cursorFeaturesShown(false) , cursorFeatures(TCursorFeatures::DEFAULT)
+				, cursorTime(-1) , cursorFeaturesShown(false)
+				, cursorFeatures( TCursorFeatures::DEFAULT | tr.GetMetaData()*TCursorFeatures::METADATA )
 				, scrollTime(0) {
 			}
 			
@@ -820,6 +852,10 @@ using namespace Charting;
 						case ID_TIME:
 							pCmdUi->SetCheck( timeEditor.IsFeatureShown(TCursorFeatures::TIME) );
 							return TRUE;
+						case ID_ARCHIVE:
+							pCmdUi->Enable( tr.GetMetaData() );
+							pCmdUi->SetCheck( tr.GetMetaData() && timeEditor.IsFeatureShown(TCursorFeatures::METADATA) );
+							return TRUE;
 						case ID_GAP:
 							pCmdUi->SetCheck( timeEditor.IsFeatureShown(TCursorFeatures::SPACING) );
 							return TRUE;
@@ -943,6 +979,10 @@ using namespace Charting;
 							return TRUE;
 						case ID_TIME:
 							timeEditor.ToggleFeature(TCursorFeatures::TIME);
+							return TRUE;
+						case ID_ARCHIVE:
+							timeEditor.ToggleFeature(TCursorFeatures::METADATA);
+							timeEditor.Invalidate();
 							return TRUE;
 						case ID_GAP:
 							timeEditor.ToggleFeature(TCursorFeatures::SPACING);

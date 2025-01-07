@@ -412,6 +412,7 @@
 			PCMetaDataItem FindMetaDataIteratorAndApply();
 		public:
 			inline const CMetaData &GetMetaData() const{ return pLogTimesInfo->metaData; }
+			inline const CMetaData::const_iterator &GetCurrentTimeMetaDataIterator() const{ return itCurrMetaData; }
 			void SetCodec(Codec::TType codec);
 			void SetMediumType(Medium::TType mediumType);
 		};

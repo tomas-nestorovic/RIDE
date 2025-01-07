@@ -121,18 +121,29 @@ namespace Utils{
 		InitBy(lf);
 	}
 
+	CRideFont::CRideFont(HFONT hFont){
+		// ctor
+		Attach(hFont);
+	}
+
 	void CRideFont::InitBy(const LOGFONT &lf){
 		// Font initialization
-		// - creating the Font
-		CreateFontIndirect(&lf);
-		// - determining the AvgWidth and Height of Font characters
-		CClientDC dc(app.m_pMainWnd);
-		const HGDIOBJ hFont0=::SelectObject( dc, m_hObject );
-			TEXTMETRIC tm;
-			dc.GetTextMetrics(&tm);
-			charAvgWidth=tm.tmAveCharWidth;
-			charHeight=tm.tmHeight;
-		::SelectObject(dc,hFont0);
+		Attach( ::CreateFontIndirect(&lf) );
+	}
+
+	BOOL CRideFont::Attach(HFONT hFont){
+		if (__super::Attach(hFont)){ // base
+			// . determining the AvgWidth and Height of Font characters
+			CClientDC dc(app.m_pMainWnd);
+			const HGDIOBJ hFont0=::SelectObject( dc, m_hObject );
+				TEXTMETRIC tm;
+				dc.GetTextMetrics(&tm);
+				charAvgWidth=tm.tmAveCharWidth;
+				charHeight=tm.tmHeight;
+			::SelectObject(dc,hFont0);
+			return TRUE;
+		}else
+			return FALSE;
 	}
 
 	SIZE CRideFont::GetTextSize(LPCTSTR text,int textLength) const{
@@ -164,6 +175,14 @@ namespace Utils{
 	SIZE CRideFont::GetTextSize(const CString &text) const{
 		// determines and returns the Size of the specified Text using using this font face
 		return GetTextSize( text, text.GetLength() );
+	}
+
+	HFONT CRideFont::CreateRotated(int nDegrees) const{
+		// derived from this Font, returns a new Font rotated by specified Degrees
+		LOGFONT lf;
+			::GetObject( m_hObject, sizeof(lf), &lf );
+			lf.lfEscapement = lf.lfOrientation = nDegrees*10;
+		return ::CreateFontIndirect(&lf);
 	}
 
 	const CRideFont CRideFont::Small(FONT_MS_SANS_SERIF,70,false,false);
