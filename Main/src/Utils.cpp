@@ -958,13 +958,29 @@ namespace Utils{
 		return PerpLine( v, 0, nUnitsLength );
 	}
 
-	int CAxis::CGraphics::PerpLineAndText(TLogValue v,int nUnitsFrom,int nUnitsTo,int nUnitsLabelOffset,LPCTSTR format,...) const{
+	int CAxis::CGraphics::vPerpLineAndText(TLogValue v,int nUnitsFrom,int nUnitsTo,const SIZE &szUnitsLabelOffset,LPCTSTR format,va_list args) const{
 		// draws a line perpendicular to the Axis, and text description
 		const int x=PerpLine( v, nUnitsFrom, nUnitsTo );
+		TCHAR text[80];
+		::TextOut( dc, x+szUnitsLabelOffset.cx,nUnitsTo+szUnitsLabelOffset.cy, text,::wvsprintf(text,format,args) );
+		return x;
+	}
+
+	int CAxis::CGraphics::PerpLineAndText(TLogValue v,int nUnitsFrom,int nUnitsTo,const SIZE &szUnitsLabelOffset,LPCTSTR format,...) const{
+		// draws a line perpendicular to the Axis, and text description
 		va_list argList;
 		va_start( argList, format );
-			TCHAR text[80];
-			::TextOut( dc, x+4,nUnitsTo+nUnitsLabelOffset, text,::wvsprintf(text,format,argList) );
+			const int x=vPerpLineAndText( v, nUnitsFrom, nUnitsTo, szUnitsLabelOffset, format, argList );
+		va_end(argList);
+		return x;
+	}
+
+	int CAxis::CGraphics::PerpLineAndText(TLogValue v,int nUnitsFrom,int nUnitsTo,LPCTSTR format,...) const{
+		// draws a line perpendicular to the Axis, and text description
+		va_list argList;
+		va_start( argList, format );
+			constexpr SIZE UnitsLabelOffset={ 4, 0 };
+			const int x=vPerpLineAndText( v, nUnitsFrom, nUnitsTo, UnitsLabelOffset, format, argList );
 		va_end(argList);
 		return x;
 	}
@@ -1049,13 +1065,14 @@ namespace Utils{
 		logCursorPos=-1; // cursor indicator hidden
 		dcLastDrawing=TDcState( dc, GetUnitCount(visible.a), GetUnitCount(draw.a) ); // saving the current state of DC for any subsequent drawing (e.g. position indicator) to match the Axis
 		const auto &&g=CreateGraphics(dc);
-			int smallMarkLength=0, bigMarkLength=0, labelY=0;
+			int smallMarkLength=0, bigMarkLength=0;
+			SIZE bigMarkLabelOffset={};
 			switch (ticksAndLabelsAlign){
 				case TVerticalAlign::TOP:
-					smallMarkLength=-4, bigMarkLength=-7, labelY=bigMarkLength-font.charHeight;
+					smallMarkLength=-4, bigMarkLength=-7, bigMarkLabelOffset.cy=-font.charHeight;
 					break;
 				case TVerticalAlign::BOTTOM:
-					smallMarkLength=4, bigMarkLength = labelY = 7;
+					smallMarkLength=4, bigMarkLength=7;
 					break;
 			}
 			// . horizontal line representing the Axis
@@ -1069,17 +1086,14 @@ namespace Utils{
 			// . drawing primary value marks on the Axis along with respective Labels
 			if (bigMarkLength)
 				for( TLogValue v=draw.a; v<=draw.z; v+=intervalBig ){
-					const int x=g.PerpLine( v, bigMarkLength );
+					g.PerpLineAndText( v, 0, bigMarkLength, bigMarkLabelOffset,
+						label, label.Format( v/k, unitPrefixes[iUnitPrefix], unit )
+					);
 					if (primaryGridLength && v>draw.a){ // it's undesired to draw a grid at ValueA, e.g. when drawing two orthogonal Axes to divide a plane (one overdraws the other)
 						const HGDIOBJ hPen0=::SelectObject( dc, hPrimaryGridPen );
 							g.PerpLine( v, primaryGridLength );
 						::SelectObject(dc,hPen0);
 					}
-					::TextOut(
-						dc,
-						x, labelY,
-						label, label.Format( v/k, unitPrefixes[iUnitPrefix], unit )
-					);
 				}
 		// - return what has been drawn
 		return draw;

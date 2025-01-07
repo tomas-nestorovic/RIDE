@@ -525,13 +525,16 @@ namespace Utils{
 			const HDC dc;
 			const int iSavedDc;
 			CDC dcMem;
+
+			int vPerpLineAndText(TLogValue v,int nUnitsFrom,int nUnitsTo,const SIZE &szUnitsLabelOffset,LPCTSTR format,va_list args) const; // perpendicular line with text description
 		public:
 			CGraphics(HDC dc,const CAxis &axis);
 			~CGraphics();
 
 			int PerpLine(TLogValue v,int nUnitsFrom,int nUnitsTo) const; // perpendicular line
 			int PerpLine(TLogValue v,int nUnitsLength) const; // perpendicular line
-			int __cdecl PerpLineAndText(TLogValue v,int nUnitsFrom,int nUnitsTo,int nUnitsLabelOffset,LPCTSTR format,...) const; // perpendicular line with text description
+			int __cdecl PerpLineAndText(TLogValue v,int nUnitsFrom,int nUnitsTo,const SIZE &szUnitsLabelOffset,LPCTSTR format,...) const; // perpendicular line with text description
+			int __cdecl PerpLineAndText(TLogValue v,int nUnitsFrom,int nUnitsTo,LPCTSTR format,...) const; // perpendicular line with text description
 			int TextIndirect(int nUnitsX,int nUnitsY,const CRideFont &font,const CString &text,int rop=SRCINVERT) const;
 			int PerpLineAndTextIndirect(TLogValue v,int nUnitsFrom,int nUnitsTo,int nUnitsLabel,const CRideFont &font,const CString &text,int rop=SRCINVERT) const; // perpendicular line with text description
 			void DimensioningIndirect(TLogValue vStart,TLogValue vEnd,int nUnitsFrom,int nUnitsTo,const CString &text,int nUnitsExtra=5,int rop=SRCINVERT) const;

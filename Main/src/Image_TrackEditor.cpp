@@ -224,7 +224,7 @@ using namespace Charting;
 								EXCLUSIVELY_LOCK(p.params);
 								if ( continuePainting=p.params.id==id )
 									g.PerpLineAndText(
-										tr.GetIndexTime(i), INDEX_HEIGHT, -INDEX_HEIGHT, 0,
+										tr.GetIndexTime(i), INDEX_HEIGHT, -INDEX_HEIGHT,
 										_T("Index %d"), i
 									);
 							}
@@ -246,11 +246,8 @@ using namespace Charting;
 									const int bitrate=TIME_MILLI(1)/it->GetBitTimeAvg(); // kilobits
 									EXCLUSIVELY_LOCK(p.params);
 									if ( continuePainting=p.params.id==id ){
-										g.PerpLineAndText(
-											it->tStart, METADATA_HEIGHT, -METADATA_HEIGHT,
-											te.fontMetaData.GetTextSize(  label,  ::wsprintf( label, _T("Fuzzy %d kbps")+6*!it->isFuzzy, bitrate )  ).cx,
-											label
-										);
+										const SIZE offset={ 1, te.fontMetaData.GetTextSize(  label,  ::wsprintf( label, _T("Fuzzy %d kbps")+6*!it->isFuzzy, bitrate )  ).cx };
+										g.PerpLineAndText( it->tStart, METADATA_HEIGHT, -METADATA_HEIGHT, offset, label );
 									}
 								}
 							::RestoreDC(dc,dcSettings0);
