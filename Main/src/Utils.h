@@ -523,12 +523,13 @@ namespace Utils{
 		class CGraphics{
 			const CAxis &axis;
 			const HDC dc;
-			const int iSavedDc;
+			int iSavedDc;
 			CDC dcMem;
 
 			int vPerpLineAndText(TLogValue v,int nUnitsFrom,int nUnitsTo,const SIZE &szUnitsLabelOffset,LPCTSTR format,va_list args) const; // perpendicular line with text description
 		public:
 			CGraphics(HDC dc,const CAxis &axis);
+			CGraphics(CGraphics &&r);
 			~CGraphics();
 
 			int PerpLine(TLogValue v,int nUnitsFrom,int nUnitsTo) const; // perpendicular line

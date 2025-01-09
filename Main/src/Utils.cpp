@@ -940,6 +940,13 @@ namespace Utils{
 		Utils::ScaleLogicalUnit(dcMem);
 	}
 
+	CAxis::CGraphics::CGraphics(CGraphics &&r)
+		// move ctor
+		: axis(r.axis) , dc(r.dc) , iSavedDc(r.iSavedDc) {
+		r.iSavedDc=0;
+		dcMem.Attach( r.dcMem.Detach() );
+	}
+
 	CAxis::CGraphics::~CGraphics(){
 		// dtor
 		axis.dcLastDrawing.RevertFrom( dc, iSavedDc );

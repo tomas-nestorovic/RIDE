@@ -9,12 +9,6 @@
 		itCurrMetaData=pLogTimesInfo->metaData.cbegin();
 	}
 
-	CImage::CTrackReaderBase::~CTrackReaderBase(){
-		// dtor
-		if (pLogTimesInfo->Release())
-			::free(logTimes);
-	}
-
 	CImage::CTrackReaderBase::PCMetaDataItem CImage::CTrackReaderBase::GetCurrentTimeMetaData() const{
 		// returns the MetaDataItem that contain the CurrentTime, or Null
 		if (itCurrMetaData!=pLogTimesInfo->metaData.cend()){
@@ -178,6 +172,12 @@
 		// move ctor
 		: CTrackReaderBase(tr) {
 		pLogTimesInfo->AddRef();
+	}
+
+	CImage::CTrackReader::~CTrackReader(){
+		// dtor
+		if (pLogTimesInfo->Release())
+			::free(logTimes);
 	}
 
 
@@ -1630,7 +1630,7 @@
 		: CTrackReader( trw ) {
 		if (!shareTimes){
 			CTrackReaderWriter tmp( trw.GetBufferCapacity(), trw.profile.method, trw.pLogTimesInfo->resetDecoderOnIndex );
-			std::swap<CTrackReader>( tmp, *this );
+			std::swap<CTrackReaderBase>( tmp, *this );
 			::memcpy( logTimes, trw.logTimes, nLogTimes*sizeof(TLogTime) );
 			*static_cast<TLogTimesInfoData *>(pLogTimesInfo)=*trw.pLogTimesInfo;
 		}

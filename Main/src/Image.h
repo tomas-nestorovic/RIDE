@@ -318,7 +318,7 @@
 			bool IsRealDevice() const;
 		} *PCProperties;
 
-		class CTrackReaderBase abstract{
+		class CTrackReaderBase{
 		public:
 			enum TDecoderMethod:BYTE{
 				NONE			=1,
@@ -374,8 +374,6 @@
 				PCMetaDataItem GetFirst() const;
 				PCMetaDataItem GetLast() const;
 			} CMetaData;
-
-			~CTrackReaderBase();
 		protected:
 			struct TLogTimesInfoData abstract{
 				DWORD nLogTimesMax;
@@ -577,6 +575,7 @@
 
 			CTrackReader(const CTrackReader &tr);
 			CTrackReader(CTrackReader &&rTrackReader);
+			~CTrackReader();
 
 			inline
 			operator bool() const{
