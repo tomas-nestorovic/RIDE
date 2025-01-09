@@ -64,6 +64,7 @@
 
 			bool IsValid() const;
 			bool IsVersion3() const;
+			TLogTime GetCellTime() const;
 		} header;
 
 		#pragma pack(1)

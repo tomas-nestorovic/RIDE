@@ -210,6 +210,10 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		return TIME_SECOND(1)/GetTotalBitRate(dataBitRate);
 	}
 
+	TLogTime CHFE::UHeader::GetCellTime() const{
+		return ::GetCellTime(dataBitRate*1000);
+	}
+
 	TStdWinError CHFE::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
@@ -245,7 +249,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			header.dataBitRate // zero when creating a new image
 		){
 			const auto mp=Medium::GetProperties(pFormat->mediumType);
-			if (!mp->IsAcceptableCountOfCells( mp->revolutionTime/GetCellTime(header.dataBitRate*1000) ))
+			if (!mp->IsAcceptableCountOfCells( mp->revolutionTime/header.GetCellTime() ))
 				return ERROR_UNRECOGNIZED_MEDIA;
 		}
 		// - base
@@ -318,10 +322,10 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		rit.FlushSectorBuffers();
 		PBYTE p=result;
 		CTrackReader tr=rit;
-		for( tr.RewindToIndexAndResetProfile(0); tr && p-result<TRACK_BYTES_MAX; ){
-			const char nBitsRead=tr.ReadBits8(*p);
-			*p++<<=(CHAR_BIT-nBitsRead);
-		}
+			for( tr.RewindToIndexAndResetProfile(0); tr && p-result<TRACK_BYTES_MAX; ){
+				const char nBitsRead=tr.ReadBits8(*p);
+				*p++<<=(CHAR_BIT-nBitsRead);
+			}
 		result.TrimTo( p-result );
 		result.ReverseBitsInEachByte();
 		return result;
@@ -335,7 +339,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		if (header.IsVersion3()){
 			CTrackReaderWriter trw( bytes.GetCount()*CHAR_BIT, params.fluxDecoder, params.resetFluxDecoderOnIndex );
 			PCBYTE p=bytes,const pLast=bytes.end();
-			TLogTime tCell=GetCellTime( header.dataBitRate*1000 );
+			TLogTime tCell=header.GetCellTime();
 			TLogTime tCurr=0;
 			for( BYTE nFollowingDataBitsToSkip=0,fuzzyQuot=0; p<pLast; )
 				switch (BYTE b=*p++){
@@ -364,7 +368,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 						}
 						const BYTE nBits=CHAR_BIT-nFollowingDataBitsToSkip;
 						const TLogTime tSpan=nBits*tCell, tFuzzy=tCell*fuzzyQuot/100;
-						CTrackReader::TMetaDataItem mdi( TLogTimeInterval(tCurr,INT_MAX), fuzzyQuot!=0, tCell );
+						CTrackReader::TMetaDataItem mdi( TLogTimeInterval(tCurr,INT_MAX), fuzzyQuot!=0, nBits );
 						for( BYTE data=b<<nFollowingDataBitsToSkip,i=0; data; data<<=1,i++ )
 							if ((char)data<0)
 								trw.AddTime( tCurr + i*tCell+tFuzzy );
