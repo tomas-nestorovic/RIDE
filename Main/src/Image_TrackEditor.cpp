@@ -874,6 +874,12 @@ using namespace Charting;
 						case ID_NEXT:
 							pCmdUi->Enable( tr.GetIndexCount()>0 && timeEditor.GetCenterTime()<tr.GetIndexTime(tr.GetIndexCount()-1) );
 							return TRUE;
+						case ID_META_PREV:
+							pCmdUi->Enable( timeEditor.GetScrollTime()>0 && tr.GetMetaData() && timeEditor.GetCenterTime()>tr.GetMetaData().cbegin()->tStart );
+							return TRUE;
+						case ID_META_NEXT:
+							pCmdUi->Enable( timeEditor.GetScrollTime()<tr.GetTotalTime() && timeEditor.GetCenterTime()<tr.GetMetaData().GetLast()->GetStartTimeSafe() );
+							return TRUE;
 						case ID_FILE_SHIFT_DOWN:
 							if (const auto it=timeEditor.GetParseEvents().GetFirstByStart())
 								pCmdUi->Enable( it->second->tStart<timeEditor.GetCenterTime() );
@@ -1119,7 +1125,7 @@ using namespace Charting;
 							return TRUE;
 						}
 						case ID_INFORMATION:
-							Utils::Information( _T("Each track item has a reference key, usually the first letter in its name. Keys to the left and right of the reference serve for navigation to previous and next item, respectively:\n\n- reference key I = Index, U/O = previous/next index\n- R = Revolution, E/T\n- B = Bad window, V/N\n- V = eVent, C/B\n- F = Fuzzy event, D/G\n- K = marK, J/L") );
+							Utils::Information( _T("Each track item has a reference key, usually the first letter in its name. Keys to the left and right serve for navigation to previous and next item, respectively:\n\n- reference key I = Index, U/O = previous/next index\n- R = Revolution, E/T\n- B = Bad window, V/N\n- V = eVent, C/B\n- F = Fuzzy event, D/G\n- K = marK, J/L\n- D = meta-Data, S/F") );
 							return TRUE;
 						case ID_PREV:{
 							BYTE i=0;
@@ -1133,6 +1139,18 @@ using namespace Charting;
 							for( const TLogTime tCenter=timeEditor.GetCenterTime(); i<tr.GetIndexCount()&&tCenter>=tr.GetIndexTime(i); i++ );
 							if (i<tr.GetIndexCount())
 								timeEditor.SetCenterTime( tr.GetIndexTime(i) );
+							return TRUE;
+						}
+						case ID_META_PREV:{
+							auto it=tr.GetMetaData().lower_bound( TLogTimeInterval(timeEditor.GetCenterTime(),INT_MAX) );
+							if (it!=tr.GetMetaData().cbegin())
+								timeEditor.SetCenterTime( (--it)->tStart );
+							return TRUE;
+						}
+						case ID_META_NEXT:{
+							const auto it=tr.GetMetaData().upper_bound( TLogTimeInterval(timeEditor.GetCenterTime(),INT_MAX) );
+							if (it!=tr.GetMetaData().cend())
+								timeEditor.SetCenterTime( it->tStart );
 							return TRUE;
 						}
 						case ID_FILE_SHIFT_DOWN:

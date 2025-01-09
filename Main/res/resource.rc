@@ -183,12 +183,14 @@ BEGIN
     "C",            ID_FILE_SHIFT_DOWN,     VIRTKEY, NOINVERT
     "D",            ID_PREV_PANE,           VIRTKEY, NOINVERT
     "E",            ID_REVOLUTION_PREV,     VIRTKEY, NOINVERT
+    "F",            ID_META_NEXT,           VIRTKEY, NOINVERT
     "G",            ID_NEXT_PANE,           VIRTKEY, NOINVERT
     "J",            ID_RECORD_PREV,         VIRTKEY, NOINVERT
     "L",            ID_RECORD_NEXT,         VIRTKEY, NOINVERT
     "N",            ID_NEXT_BAD,            VIRTKEY, NOINVERT
     "O",            ID_NEXT,                VIRTKEY, NOINVERT
     "R",            ID_ZOOM_PART,           VIRTKEY, CONTROL, NOINVERT
+    "S",            ID_META_PREV,           VIRTKEY, NOINVERT
     "T",            ID_REVOLUTION_NEXT,     VIRTKEY, NOINVERT
     "T",            ID_NAVIGATE_ADDRESS,    VIRTKEY, CONTROL, NOINVERT
     "U",            ID_PREV,                VIRTKEY, NOINVERT
@@ -811,6 +813,9 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Previous index\tU",           ID_PREV
         MENUITEM "Next index\tO",               ID_NEXT
+        MENUITEM SEPARATOR
+        MENUITEM "Previous metadata\tS",        ID_META_PREV
+        MENUITEM "Next metadata\tF",            ID_META_NEXT
     END
     POPUP "Helpers"
     BEGIN

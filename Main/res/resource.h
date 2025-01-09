@@ -260,6 +260,8 @@
 #define ID_NAVIGATE_SECTOR              40254
 #define ID_NAVIGATE_UP                  40255
 #define ID_BOOKMARK_DELETEALL           40257
+#define ID_META_PREV                    40258
+#define ID_META_NEXT                    40259
 #define ID_COMPUTE_CHECKSUM             40260
 #define ID_ZOOM_FIT                     40266
 #define ID_ZOOM_OUT                     40267

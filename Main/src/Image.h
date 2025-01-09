@@ -337,6 +337,7 @@
 
 				inline bool operator<(const TMetaDataItem &r) const{ return tStart<r.tStart; }
 				inline bool IsDefault() const{ return nBits<=0; }
+				inline TLogTime GetStartTimeSafe() const{ return this?tStart:0; }
 				TLogTime GetBitTimeAvg() const;
 				TLogTime GetBitTime(int iBit) const;
 				int GetBitIndex(TLogTime t) const;
@@ -368,6 +369,10 @@
 
 			typedef struct:public std::set<TMetaDataItem>{
 				inline operator bool() const{ return size()>0; }
+				const_iterator GetMetaDataIterator(TLogTime t) const;
+				PCMetaDataItem GetMetaDataItem(TLogTime t) const;
+				PCMetaDataItem GetFirst() const;
+				PCMetaDataItem GetLast() const;
 			} CMetaData;
 
 			~CTrackReaderBase();

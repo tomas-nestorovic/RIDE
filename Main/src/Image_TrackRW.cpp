@@ -56,6 +56,32 @@
 
 
 
+	CImage::CTrackReaderBase::CMetaData::const_iterator CImage::CTrackReaderBase::CMetaData::GetMetaDataIterator(TLogTime t) const{
+		// returns an iterator to a MetaDataItem that contains the specified Time, or 'cend()'
+		auto it=upper_bound( TLogTimeInterval(t,INT_MAX) ); // 'upper_bound' = don't search the sharp beginning but rather something bigger ...
+		if (it!=cend())
+			if (it!=cbegin() && (--it)->Contains(t)) // ... and then iterate back, because that's the usual case when "randomly" pinning in the timeline
+				return it;
+		return cend();
+	}
+
+	CImage::CTrackReaderBase::PCMetaDataItem CImage::CTrackReaderBase::CMetaData::GetMetaDataItem(TLogTime t) const{
+		// returns a MetaDataItem that contains the specified Time, or Null
+		const auto it=GetMetaDataIterator(t);
+		return it!=cend() ? &*it : nullptr;
+	}
+
+	CImage::CTrackReaderBase::PCMetaDataItem CImage::CTrackReaderBase::CMetaData::GetFirst() const{
+		return size() ? &*cbegin() : nullptr;
+	}
+
+	CImage::CTrackReaderBase::PCMetaDataItem CImage::CTrackReaderBase::CMetaData::GetLast() const{
+		if (!size())
+			return nullptr;
+		auto it=cend();
+		return &*--it;
+	}
+
 	CImage::CTrackReaderBase::TMetaDataItem::TMetaDataItem(const TLogTimeInterval &ti)
 		// ctor (for clearing MetaData in specified Interval)
 		: TLogTimeInterval(ti)
