@@ -369,11 +369,13 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 							break; // skip it
 						}
 						const BYTE nBits=CHAR_BIT-nFollowingDataBitsToSkip;
-						const TLogTime tSpan=nBits*tCell, tFuzzy=tCell*fuzzyQuot/100;
+						const TLogTime tSpan=nBits*tCell; TLogTime tFuzzy=tCell*fuzzyQuot/100;
 						CTrackReader::TMetaDataItem mdi( TLogTimeInterval(tCurr,INT_MAX), fuzzyQuot!=0, nBits );
 						for( BYTE data=b<<nFollowingDataBitsToSkip,i=0; data; data<<=1,i++ )
-							if ((char)data<0)
+							if ((char)data<0){
 								trw.AddTime( tCurr + i*tCell+tFuzzy );
+								tFuzzy=-tFuzzy;
+							}
 						mdi.tEnd = tCurr+=tSpan;
 						trw.AddMetaData(mdi);
 						nFollowingDataBitsToSkip = fuzzyQuot = 0;
