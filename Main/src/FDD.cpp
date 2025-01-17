@@ -1567,12 +1567,10 @@ Utils::Information(buf);}
 				EnableDlgItem( ID_READABLE, params.calibrationAfterError!=TParams::TCalibrationAfterError::NONE );
 				// . displaying inserted Medium information
 				SetDlgItemSingleCharUsingFont( // a warning that a 40-track disk might have been misrecognized
-					ID_INFORMATION,
-					L'\xf0ea', (HFONT)Utils::CRideFont(FONT_WEBDINGS,175,false,true).Detach()
+					ID_INFORMATION, L'\xf0ea', Utils::CRideFont::Webdings175
 				);
 				SetDlgItemSingleCharUsingFont( // a warning that pre-compensation not up-to-date
-					ID_INSTRUCTION,
-					L'\xf0ea', (HFONT)Utils::CRideFont(FONT_WEBDINGS,175,false,true).Detach()
+					ID_INSTRUCTION, L'\xf0ea', Utils::CRideFont::Webdings175
 				);
 				RefreshMediumInformation();
 				// . adjusting calibration possibilities

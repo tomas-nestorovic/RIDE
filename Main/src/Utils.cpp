@@ -189,6 +189,10 @@ namespace Utils{
 	const CRideFont CRideFont::Std(FONT_MS_SANS_SERIF,90,false,false);
 	const CRideFont CRideFont::StdBold(FONT_MS_SANS_SERIF,90,true,false);
 
+	const CRideFont CRideFont::Webdings80(FONT_WEBDINGS,80);
+	const CRideFont CRideFont::Webdings120(FONT_WEBDINGS,120);
+	const CRideFont CRideFont::Webdings175(FONT_WEBDINGS,175,false,true);
+	
 
 
 

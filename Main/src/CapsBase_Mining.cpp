@@ -99,7 +99,7 @@ using namespace Charting;
 				cbx.Detach();
 				if (const auto savedValue=app.GetProfileEnum( INI_MINING, INI_TARGET, TARGET_NONE ))
 					SelectDlgComboBoxValue( ID_ACCURACY, savedValue, false );
-				SetDlgItemSingleCharUsingFont( ID_SECTOR, 0xf09d, FONT_WEBDINGS, 120 );
+				SetDlgItemSingleCharUsingFont( ID_SECTOR, 0xf09d, Utils::CRideFont::Webdings120 );
 				// . populating the "Mining approach" combo-box
 				cbx.Attach( GetDlgItemHwnd(ID_CREATOR) );
 					if (cb.properties->IsRealDevice())

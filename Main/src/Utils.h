@@ -213,6 +213,7 @@ namespace Utils{
 		void InitBy(const LOGFONT &lf);
 	public:
 		static const CRideFont Small, Std, StdBold;
+		static const CRideFont Webdings80, Webdings120, Webdings175;
 
 		int charAvgWidth,charHeight;
 

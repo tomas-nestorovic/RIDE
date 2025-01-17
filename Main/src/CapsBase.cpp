@@ -1286,7 +1286,7 @@ invalidTrack:
 		class CParamsDialog sealed:public Utils::CRideDialog{
 			const LPCTSTR firmware;
 			const bool initialEditing;
-			const Utils::CRideFont warningFont;
+			const Utils::CRideFont &warningFont;
 			CCapsBase &rcb;
 			Medium::TType currentMediumType;
 			CPrecompensation tmpPrecomp;
@@ -1427,7 +1427,7 @@ invalidTrack:
 					ID_HIDDEN, L'\xf0ea', warningFont
 				);
 				// . if DoubleTrackStep changed manually, adjusting the text of the ID_40D80 checkbox
-				SetDlgItemSingleCharUsingFont( ID_RECOVER, 0xf071, FONT_WEBDINGS, 120 );
+				SetDlgItemSingleCharUsingFont( ID_RECOVER, 0xf071, Utils::CRideFont::Webdings120 );
 				GetDlgItemText( ID_SIDE,   flippyDiskTextOrg );
 				if (CheckDlgItem(ID_SIDE,rcb.params.flippyDisk) && rcb.params.userForcedFlippyDisk)
 					SendMessage( WM_COMMAND, ID_SIDE );
@@ -1647,7 +1647,7 @@ invalidTrack:
 			CParamsDialog(CCapsBase &rcb,LPCTSTR firmware,bool initialEditing)
 				// ctor
 				: Utils::CRideDialog(IDR_CAPS_DEVICE_ACCESS)
-				, warningFont( FONT_WEBDINGS, 175, false, true )
+				, warningFont( Utils::CRideFont::Webdings175 )
 				, rcb(rcb) , params(rcb.params) , initialEditing(initialEditing) , firmware(firmware)
 				, currentMediumType(rcb.floppyType)
 				, tmpPrecomp(rcb.precompensation) {

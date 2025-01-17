@@ -307,8 +307,7 @@
 		const int color0 =	pdis->itemState&ODS_SELECTED
 							? ::GetTextColor(dc)
 							: ::SetTextColor( dc, checkmark?0xa0ffa0:0xff );
-			const Utils::CRideFont statusFont( FONT_WEBDINGS, 120 );
-			const HGDIOBJ hFont0=::SelectObject(dc,statusFont);
+			const HGDIOBJ hFont0=::SelectObject( dc, Utils::CRideFont::Webdings120 );
 				constexpr WCHAR StatusCorrect=0xf061, StatusIncorrect=0xf072;
 				::DrawTextW( dc, checkmark?&StatusCorrect:&StatusIncorrect,1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
 			::SelectObject(dc,hFont0);
