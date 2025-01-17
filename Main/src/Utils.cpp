@@ -189,8 +189,8 @@ namespace Utils{
 	const CRideFont CRideFont::Std(FONT_MS_SANS_SERIF,90,false,false);
 	const CRideFont CRideFont::StdBold(FONT_MS_SANS_SERIF,90,true,false);
 
-	const CRideFont CRideFont::Webdings80(FONT_WEBDINGS,80);
-	const CRideFont CRideFont::Webdings120(FONT_WEBDINGS,120);
+	const CRideFont CRideFont::Webdings80(FONT_WEBDINGS,80,false,true);
+	const CRideFont CRideFont::Webdings120(FONT_WEBDINGS,120,false,true);
 	const CRideFont CRideFont::Webdings175(FONT_WEBDINGS,175,false,true);
 	
 
@@ -2582,7 +2582,7 @@ namespace Utils{
 			rc.left, rc.top, rc.Width(), rc.Height(), hStdCheckbox, (HMENU)id, 0, nullptr
 		);
 		SetDlgItemUserData( id, hHyperlink );
-		SetWindowFont( hHyperlink, GetWindowFont(hStdCheckbox), FALSE );
+		SetParentFont(hHyperlink);
 	}
 
 	void CRideDialog::ConvertToCommandLikeButton(HWND hStdBtn,WCHAR wingdingsGlyphBeforeText,COLORREF textColor,int glyphPointSizeIncrement,COLORREF glyphColor,bool compactPath){
@@ -2601,6 +2601,10 @@ namespace Utils{
 	void CRideDialog::ConvertToCancelLikeButton(HWND hStdBtn,COLORREF textColor,int glyphPointSizeIncrement,COLORREF glyphColor){
 		// converts an existing standard button to a "command-like" one known from Windows Vista, featuring specified GlypfBeforeText ('\0' = no Glyph)
 		ConvertToCommandLikeButton( hStdBtn, CANCEL_COMMAND_GLYPH, textColor, glyphPointSizeIncrement, glyphColor );
+	}
+
+	void CRideDialog::SetParentFont(HWND hWnd){
+		SetWindowFont( hWnd, GetWindowFont(::GetParent(hWnd)), FALSE );
 	}
 
 	void ScaleLogicalUnit(HDC dc){

@@ -316,6 +316,7 @@ namespace Utils{
 		static void SetDlgItemSingleCharUsingFont(HWND hDlg,WORD id,WCHAR singleChar,HFONT hFont);
 		static void ConvertToCommandLikeButton(HWND hStdBtn,WCHAR wingdingsGlyphBeforeText=0xf0e0,COLORREF textColor=0,int glyphPointSizeIncrement=0,COLORREF glyphColor=0,bool compactPath=true); // 0xf0e0 = thin arrow right
 		static void ConvertToCancelLikeButton(HWND hStdBtn,COLORREF textColor=0,int glyphPointSizeIncrement=0,COLORREF glyphColor=0);
+		static void SetParentFont(HWND hWnd);
 		template<typename T> static T GetWindowUserData(HWND hWnd){ return (T)::GetWindowLongW( hWnd, GWL_USERDATA ); }
 		template<typename T> static void SetWindowUserData(HWND hWnd,const T &data){ ::SetWindowLongW( hWnd, GWL_USERDATA, (long)data ); }
 
