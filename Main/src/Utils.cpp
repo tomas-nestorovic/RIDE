@@ -115,8 +115,11 @@ namespace Utils{
 
 	CRideFont::CRideFont(HWND hWnd,bool bold){
 		// ctor
+		HFONT hFont=(HFONT)::SendMessage(hWnd,WM_GETFONT,0,0);
+		if (!hFont) // the window uses system font?
+			hFont=(HFONT)::GetStockObject(SYSTEM_FONT);
 		LOGFONT lf;
-			::GetObject( (HGDIOBJ)::SendMessage(hWnd,WM_GETFONT,0,0), sizeof(lf), &lf );
+			::GetObject( hFont, sizeof(lf), &lf );
 			lf.lfWeight=bold*FW_BOLD;
 		InitBy(lf);
 	}
@@ -134,13 +137,14 @@ namespace Utils{
 	BOOL CRideFont::Attach(HFONT hFont){
 		if (__super::Attach(hFont)){ // base
 			// . determining the AvgWidth and Height of Font characters
-			CClientDC dc(app.m_pMainWnd);
-			const HGDIOBJ hFont0=::SelectObject( dc, m_hObject );
+			CClientDC screen(nullptr);
+			const HGDIOBJ hFont0=::SelectObject( screen, m_hObject );
 				TEXTMETRIC tm;
-				dc.GetTextMetrics(&tm);
+				screen.GetTextMetrics(&tm);
 				charAvgWidth=tm.tmAveCharWidth;
 				charHeight=tm.tmHeight;
-			::SelectObject(dc,hFont0);
+				charDescent=tm.tmDescent;
+			::SelectObject(screen,hFont0);
 			return TRUE;
 		}else
 			return FALSE;
@@ -187,6 +191,7 @@ namespace Utils{
 
 	const CRideFont CRideFont::Small(FONT_MS_SANS_SERIF,70,false,false);
 	const CRideFont CRideFont::Std(FONT_MS_SANS_SERIF,90,false,false);
+	const CRideFont CRideFont::StdDpi(FONT_MS_SANS_SERIF,90,false,true);
 	const CRideFont CRideFont::StdBold(FONT_MS_SANS_SERIF,90,true,false);
 
 	const CRideFont CRideFont::Webdings80(FONT_WEBDINGS,80,false,true);

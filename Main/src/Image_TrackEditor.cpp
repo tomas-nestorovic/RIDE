@@ -1320,14 +1320,14 @@ using namespace Charting;
 								);
 							const auto &peList=timeEditor.GetParseEvents();
 								class CXyParseEventSeries:public CChartView::CXyGraphics{
-									const CFont &font;
+									const Utils::CRideFont font;
 									CBrush peBrushes[TParseEvent::LAST];
 								public:
 									const CImage::CTrackReader::CParseEventList &peList;
 
 									CXyParseEventSeries(const CImage::CTrackReader::CParseEventList &peList)
 										// ctor
-										: peList(peList) , font(Utils::CRideFont::Std) {
+										: peList(peList) , font(Utils::CRideFont::Std.CreateRotated(90)) {
 										for( BYTE i=0; i<TParseEvent::LAST; i++ )
 											peBrushes[i].CreateSolidBrush(
 												Utils::GetBlendedColor( TParseEvent::TypeColors[i], COLOR_WHITE, 0.075f )
@@ -1341,10 +1341,7 @@ using namespace Charting;
 									void DrawAsync(const CChartView::CPainter &p,HDC dc,const CActionProgress &ap) const override{
 										// asynchronous drawing; always compare actual drawing ID with the one on start
 										const auto &di=*(const CChartView::CXyDisplayInfo *)&p.di;
-										LOGFONT logFont;
-										::GetObject( Utils::CRideFont::Std, sizeof(logFont), &logFont );
-										logFont.lfOrientation = logFont.lfEscapement=900; // in tenths of degrees (a tweak to draw vertically oriented text without world transformation)
-										const HGDIOBJ hFont0=::SelectObject( dc, ::CreateFontIndirect(&logFont) );
+										const HGDIOBJ hFont0=::SelectObject( dc, font );
 											const HGDIOBJ hBrush0=::SelectObject( dc, ::GetStockObject(NULL_BRUSH) );
 												for( auto it=peList.GetIterator(); it; ap.IncrementProgress() ){
 													const TParseEvent &pe=*it++->second;
@@ -1358,7 +1355,7 @@ using namespace Charting;
 													::DrawText( dc, pe.GetDescription(),-1, &rc, DT_LEFT|DT_BOTTOM|DT_SINGLELINE );
 												}
 											::SelectObject( dc, hBrush0 );
-										::DeleteObject( ::SelectObject( dc, hFont0 ) );
+										::SelectObject( dc, hFont0 );
 									}
 								} peSeries(peList);
 							class CScatterPlotDialog sealed:public CChartDialog{

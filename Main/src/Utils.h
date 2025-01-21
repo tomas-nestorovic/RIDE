@@ -207,15 +207,16 @@ namespace Utils{
 		CRideBrush(CRideBrush &&r);
 
 		operator COLORREF() const;
+		inline operator LRESULT() const{ return (LRESULT)m_hObject; }
 	};
 
 	class CRideFont sealed:public ::CFont{
 		void InitBy(const LOGFONT &lf);
 	public:
-		static const CRideFont Small, Std, StdBold;
+		static const CRideFont Small, Std, StdDpi, StdBold;
 		static const CRideFont Webdings80, Webdings120, Webdings175;
 
-		int charAvgWidth,charHeight;
+		int charAvgWidth,charHeight,charDescent;
 
 		CRideFont(LPCTSTR face,int pointHeight,bool bold=false,bool dpiScaled=false,int pointWidth=0);
 		CRideFont(HWND hWnd,bool bold=false);
