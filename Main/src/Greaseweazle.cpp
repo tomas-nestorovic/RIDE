@@ -624,13 +624,8 @@
 	TStdWinError CGreaseweazleV4::Reset(){
 		// resets internal representation of the disk (e.g. by disposing all content without warning)
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		// - base (already sampled Tracks are unnecessary to be destroyed)
-		BYTE tmp[sizeof(internalTracks)];
-		::memcpy( tmp, internalTracks, sizeof(internalTracks) );
-		::ZeroMemory( internalTracks, sizeof(internalTracks) );
-			const TStdWinError err=__super::Reset();
-		::memcpy( internalTracks, tmp, sizeof(internalTracks) );
-		if (err!=ERROR_SUCCESS)
+		// - base (preserves existing Tracks for real Devices)
+		if (const TStdWinError err=__super::Reset())
 			return err;
 		// - resetting the Greaseweazle Device
 		EXCLUSIVELY_LOCK_DEVICE();

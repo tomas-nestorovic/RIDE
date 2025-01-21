@@ -991,7 +991,8 @@ invalidTrack:
 	TStdWinError CCapsBase::Reset(){
 		// resets internal representation of the disk (e.g. by disposing all content without warning)
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		DestroyAllTracks();
+		if (!properties->IsRealDevice()) // for real Devices already sampled Tracks are unnecessary to be destroyed (caller to explicitly call 'DestroyAllTracks' method, e.g. in dtor)
+			DestroyAllTracks();
 		return ERROR_SUCCESS;
 	}
 
@@ -1306,12 +1307,13 @@ invalidTrack:
 				// detects a floppy in the Drive and attempts to recognize its Type
 				// . making sure that a floppy is in the Drive
 				ShowDlgItem( ID_INFORMATION, false );
-				static constexpr WORD Interactivity[]={ ID_LATENCY, ID_NUMBER2, ID_GAP, 0 };
+				static constexpr WORD Interactivity[]={ IDOK, ID_LATENCY, ID_NUMBER2, ID_GAP, 0 };
 				const bool fortyTrackDrive=IsDlgItemChecked(ID_DRIVE);
-				if (!EnableDlgItems( Interactivity, rcb.GetInsertedMediumType(0,currentMediumType)==ERROR_SUCCESS ))
+				if (!EnableDlgItems( Interactivity+!initialEditing, rcb.GetInsertedMediumType(0,currentMediumType)==ERROR_SUCCESS )){
 					SetDlgItemText( ID_MEDIUM, _T("Not inserted") );
+					EnableDlgItem( IDOK, false ); // Drives that have a hardware error (e.g. Track 0 sensor) may have long response time; to avoid the application to appear "frozen" later on, we don't allow continuation
 				// . attempting to recognize any previous format on the floppy
-				else
+				}else
 					switch (currentMediumType){
 						case Medium::FLOPPY_DD_525:
 							if (EnableDlgItem( ID_40D80, initialEditing&&!fortyTrackDrive )){
@@ -1554,6 +1556,8 @@ invalidTrack:
 									CheckDlgItem( ID_DRIVE, CheckDlgItem(ID_SIDE,false) );
 									SetDlgItemText( ID_SIDE, flippyDiskTextOrg );
 									SetDlgItemText( ID_40D80, doubleTrackDistanceTextOrg );
+									if (rcb.properties->IsRealDevice())
+										rcb.Reset(); // reset connection (e.g. COM port) to real Devices only, given 'Reset' doesn't implicitly dispose all Tracks for them
 								}
 								RefreshMediumInformation();
 								break;

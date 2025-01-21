@@ -865,22 +865,22 @@
 	TStdWinError CKryoFluxDevice::Reset(){
 		// resets internal representation of the disk (e.g. by disposing all content without warning)
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		// - base (already sampled Tracks are unnecessary to be destroyed)
-		BYTE tmp[sizeof(internalTracks)];
-		::memcpy( tmp, internalTracks, sizeof(internalTracks) );
-		::ZeroMemory( internalTracks, sizeof(internalTracks) );
-			const TStdWinError err=__super::Reset();
-		::memcpy( internalTracks, tmp, sizeof(internalTracks) );
-		if (err!=ERROR_SUCCESS)
+		// - base (preserves existing Tracks for real Devices)
+		if (const TStdWinError err=__super::Reset())
 			return err;
 		// - TODO: the following regards writing to disk and needs to be explained
 		EXCLUSIVELY_LOCK_DEVICE();
+		char nAttempts=64; // empirically, this is sufficient value for the below loop to finish successfully
 		do{
 			if (const TStdWinError err=SetMotorOn())
 				return err;
 			if (const TStdWinError err=SendRequest( TRequest::INDEX_WRITE, 8 ))
 				return err;
-		}while (::strrchr(device.lastRequestResultMsg,'=')[1]!='8');
+			if (::strrchr(device.lastRequestResultMsg,'=')[1]=='8')
+				break;
+			if (--nAttempts<0)
+				return ERROR_INVALID_INDEX;
+		}while (true);
 		// - resetting the KryoFlux device
 		return ERROR_SUCCESS;
 	}
