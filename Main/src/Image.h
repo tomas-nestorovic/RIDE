@@ -766,6 +766,7 @@
 		CMutex destructionLocker;
 		mutable CCriticalSection locker;
 		CMainWindow::CDockableToolBar toolbar;
+		CMainWindow::CMessageBar::CList messageBars;
 		PDos dos;
 		CComPtr<IDataObject> dataInClipboard;
 

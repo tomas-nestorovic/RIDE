@@ -84,6 +84,122 @@
 
 
 
+	constexpr int MessageBarMargin=25;
+
+	CMainWindow::CMessageBar::CMessageBar(CList &owner,LPCWSTR msgHyperlink,WCHAR webdingsGlyph)
+		// ctor
+		: d( Utils::CRideFont::StdDpi.charHeight*(100+2*MessageBarMargin)/100 ) // "dimension"
+		, owner(owner) {
+		// - "base"
+		m_cxLeftBorder = m_cxRightBorder = m_cyTopBorder = m_cyBottomBorder = 0; // assure there is no non-client area that the user might use for resizing
+		if (!Create( app.m_pMainWnd, WS_CHILD|WS_VISIBLE|CBRS_TOP ))
+			return;
+		GetStatusBarCtrl().SetMinHeight(d);
+		// - glyph (adjust vertical centering by empirical constant)
+		hGlyph=::CreateWindowW( WC_STATICW, nullptr, WS_VISIBLE|WS_CHILD|SS_CENTER|SS_CENTERIMAGE, 0,-2, d,d, m_hWnd, (HMENU)ID_HEAD, nullptr, nullptr );
+		Utils::CRideDialog::SetDlgItemSingleCharUsingFont( m_hWnd, ID_HEAD, webdingsGlyph, Utils::CRideFont::Webdings120 );
+		// - message (fake vertical centering by prepending '\n' and positioning then control accordingly)
+		WCHAR msg[256];
+		ASSERT( ::lstrlenW(msgHyperlink)<ARRAYSIZE(msg)-2 );
+		*msg=L'\n', ::lstrcpyW(msg+1,msgHyperlink);
+		const int yCenterFake=Utils::CRideFont::StdDpi.charHeight*(MessageBarMargin-100)/100-Utils::CRideFont::StdDpi.charDescent;
+		hSysLink=::CreateWindowW( WC_LINK, msg, WS_VISIBLE|WS_CHILD, d,yCenterFake, 1,1, m_hWnd, (HMENU)ID_INFORMATION, nullptr, nullptr );
+		SetWindowFont( hSysLink, Utils::CRideFont::StdDpi, TRUE );
+		// - "Close" button
+		hCloseBtn=::CreateWindowW( WC_BUTTONW, nullptr, WS_VISIBLE|WS_CHILD|BS_CENTER|BS_FLAT, 0,0, d,d, m_hWnd, (HMENU)ID_CREDITS, nullptr, nullptr );
+		Utils::CRideDialog::SetDlgItemSingleCharUsingFont( m_hWnd, ID_CREDITS, L'\xf072', Utils::CRideFont::Webdings80 );
+		// - position at top
+		app.GetMainWindow()->RecalcLayout();
+	}
+
+	LRESULT CMainWindow::CMessageBar::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
+		// window procedure
+		switch (msg){
+			case WM_SIZE:{
+				if (const LRESULT err=__super::WindowProc( msg, wParam, lParam ))
+					return err;
+				const Utils::TClientRect client(m_hWnd);
+				::SetWindowPos( hSysLink, nullptr, 0,0, client.Width()-2*d, 2*client.Height(), SWP_NOZORDER|SWP_NOMOVE );
+				::SetWindowPos( hCloseBtn, nullptr, client.Width()-d,0, 0,0, SWP_NOZORDER|SWP_NOSIZE|SWP_SHOWWINDOW );
+				return 0;
+			}
+			case WM_COMMAND:
+				switch (wParam){
+					case MAKELONG(ID_CREDITS,BN_CLICKED):
+						::DestroyWindow(m_hWnd);
+						return 0;
+				}
+				break;
+			case WM_CTLCOLORSTATIC:{
+				static const Utils::CRideBrush Yellowish((COLORREF)0xc8edff);
+				::SetBkMode( (HDC)wParam, TRANSPARENT );
+				return Yellowish;
+			}
+			case WM_NOTIFY:
+				if (Utils::CRideDialog::GetClickedHyperlinkId(lParam)==ID_INFORMATION){
+					HyperlinkClicked( ((PNMLINK)lParam)->item.szID );
+					return 0;
+				}
+				break;
+			case WM_DESTROY:
+				for( POSITION pos=owner.GetHeadPosition(); pos; owner.GetNext(pos) )
+					if (owner.GetAt(pos)==this){
+						owner.RemoveAt(pos);
+						break;
+					}
+				::DestroyWindow(hGlyph);
+				::DestroyWindow(hSysLink);
+				::DestroyWindow(hCloseBtn);
+				__super::WindowProc( msg, wParam, lParam );
+				delete this;
+				if (app.GetMainWindow())
+					app.GetMainWindow()->RecalcLayout();
+				return 0;
+		}
+		return __super::WindowProc( msg, wParam, lParam );
+	}
+
+	void CMainWindow::CMessageBar::HyperlinkClicked(LPCWSTR id) const{
+	}
+
+	CMainWindow::CMessageBar::CList::~CList(){
+		// dtor
+		while (GetCount()>0)
+			RemoveHead()->DestroyWindow();
+		if (app.GetMainWindow())
+			app.GetMainWindow()->RecalcLayout();
+	}
+
+	void CMainWindow::CMessageBar::CList::AddInfoBar(LPCTSTR msgHyperlink){
+		AddTail(
+			new CMessageBar( *this,
+				#ifdef UNICODE
+					msgHyperlink
+				#else
+					// assume ANSI in the input, not UTF-8 !
+					CDos::CPathString(msgHyperlink).GetUnicode()
+				#endif
+			)
+		);
+	}
+
+	void CMainWindow::CMessageBar::CList::AddInfoBarFormatted(LPCTSTR hyperlinkFormat,...){
+		va_list argList;
+		va_start( argList, hyperlinkFormat );
+			CString tmp;
+			tmp.FormatV( hyperlinkFormat, argList );
+			AddInfoBar(tmp);
+		va_end(argList);
+	}
+
+
+
+
+
+
+
+
+
 
 	void CMainWindow::SetStatusBarTextReady(){
 		// sets the MainWindow's StatusBar text

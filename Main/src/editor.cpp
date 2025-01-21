@@ -141,7 +141,6 @@
 	CRideApp app;
 
 	#define INI_MSG_OPEN_AS		_T("msgopenas")
-	#define INI_MSG_READONLY	_T("msgro")
 	#define INI_MSG_FAQ			_T("1stfaq")
 	#define INI_MSG_DEVICE_SHORT _T("devshrt")
 	#define INI_MSG_REAL_DEVICES _T("devhint")
@@ -383,7 +382,7 @@
 			// Image opened successfully
 openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully ...
 				if (!image->CanBeModified()) // ... inform on eventual "read-only" mode (forced if Image on the disk is read-only, e.g. because opened from a CD-R)
-					Utils::InformationWithCheckableShowNoMore(_T("The image has the Read-only flag set - editing will be disabled."),INI_GENERAL,INI_MSG_READONLY);
+					image->messageBars.AddInfoBar( _T("Disk marked as Read-only, editing disabled.") );
 			}else
 				switch (const TStdWinError err=::GetLastError()){
 					case ERROR_BAD_FORMAT:

@@ -106,6 +106,23 @@
 			void RepopulateGuidePost() const;
 		} *pTdi;
 
+		typedef class CMessageBar:public CStatusBar{
+			const int d; // dimension
+			HWND hGlyph,hSysLink,hCloseBtn;
+		protected:
+			virtual void HyperlinkClicked(LPCWSTR id) const;
+			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
+		public:
+			class CList:public Utils::CPtrList<CMessageBar *>{
+			public:
+				~CList();
+				void AddInfoBar(LPCTSTR msgHyperlink);
+				void AddInfoBarFormatted(LPCTSTR hyperlinkFormat,...);
+			} &owner;
+
+			CMessageBar(CList &owner,LPCWSTR msgHyperlink,WCHAR webdingsGlyph=L'\xf069');
+		} *PMessageBar;
+
 		static void SetStatusBarTextReady();
 		static void __resetStatusBar__();
 		static void __setStatusBarText__(LPCTSTR text);

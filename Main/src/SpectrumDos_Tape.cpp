@@ -670,7 +670,7 @@
 		for( WORD blockLength; f.Read(&blockLength,sizeof(blockLength))==sizeof(blockLength); )
 			if (nFiles==ZX_TAPE_FILE_COUNT_MAX){
 				// ERROR: too many Files on the Tape
-error:			Utils::Information(_T("The tape is corrupted."));
+error:			tape->messageBars.AddInfoBarFormatted( _T("The tape \"%s\" is corrupt."), fileName );
 				break;
 			}else if (blockLength>=2){
 				// File (with or without a Header)
