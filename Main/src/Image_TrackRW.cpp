@@ -484,7 +484,7 @@
 				while (*this && logTimes[iNextTime]<=ti.tEnd)
 					iNextTime++;
 				lastReadBits<<=1, lastReadBits|=1; // 'valid' flag
-				lastReadBits<<=1, lastReadBits|=result;
+				lastReadBits<<=1, lastReadBits|=(BYTE)result;
 				return result;
 			}
 			default:
@@ -1305,7 +1305,7 @@
 			return result;
 		}
 
-		static bool IsWellEncodedSequence(BYTE bits){
+		static bool IsWellEncodedSequence(WORD bits){
 			// see comment at 'CTrackReader::lastReadBits'
 			if ((bits&3)==3) // last valid bit is "1"?
 				return (bits&4)==0; // previous bit must be "0" (and we don't care if it's valid or not)
