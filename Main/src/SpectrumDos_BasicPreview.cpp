@@ -358,8 +358,7 @@ defaultPrinting:				if (b<' ')
 									*this << ( keywordTranscript + (int)(isLastWrittenCharSpace&&*keywordTranscript==' ') ); // skipping initial space should it be preceeded by a non-breakable space in the TemporaryFile (as incorrectly two spaces would be displayed in the Listing)
 									if (b==0xea){ // REM command
 										if (pOutRemContents)
-											*pOutRemContents=pLineStart;
-										nRems++;
+											pOutRemContents[nRems++]=pLineStart;
 									}
 								}else{
 									// a character that doesn't require a special treatment - just converting between ZX Spectrum and Ascii charsets
