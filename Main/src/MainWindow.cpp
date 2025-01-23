@@ -84,29 +84,40 @@
 
 
 
-	constexpr int MessageBarMargin=25;
+	constexpr int MessageBarMargin=20;
 
-	CMainWindow::CMessageBar::CMessageBar(CList &owner,LPCWSTR msgHyperlink,WCHAR webdingsGlyph)
+	int CMainWindow::CMessageBar::D;
+
+	CMainWindow::CMessageBar::CMessageBar(LPCTSTR msgHyperlink,WCHAR webdingsGlyph)
 		// ctor
-		: d( Utils::CRideFont::StdDpi.charHeight*(100+2*MessageBarMargin)/100 ) // "dimension"
-		, owner(owner) {
-		// - "base"
+		: glyph(webdingsGlyph) , msgHyperlink(msgHyperlink) {
 		m_cxLeftBorder = m_cxRightBorder = m_cyTopBorder = m_cyBottomBorder = 0; // assure there is no non-client area that the user might use for resizing
+	}
+
+	CMainWindow::CMessageBar::~CMessageBar(){
+		// dtor
+		if (m_hWnd){
+			DestroyWindow();
+			app.GetMainWindow()->RecalcLayout();
+		}
+	}
+
+	void CMainWindow::CMessageBar::Show(){
+		// shows the MessageBar with formatted text at the top of MainWindow
+		// - "base"
 		if (!Create( app.m_pMainWnd, WS_CHILD|WS_VISIBLE|CBRS_TOP ))
 			return;
-		GetStatusBarCtrl().SetMinHeight(d);
+		D = Utils::CRideFont::StdDpi.charHeight*(100+2*MessageBarMargin)/100;
+		GetStatusBarCtrl().SetMinHeight(D);
 		// - glyph (adjust vertical centering by empirical constant)
-		hGlyph=::CreateWindowW( WC_STATICW, nullptr, WS_VISIBLE|WS_CHILD|SS_CENTER|SS_CENTERIMAGE, 0,-2, d,d, m_hWnd, (HMENU)ID_HEAD, nullptr, nullptr );
-		Utils::CRideDialog::SetDlgItemSingleCharUsingFont( m_hWnd, ID_HEAD, webdingsGlyph, Utils::CRideFont::Webdings120 );
+		hGlyph=::CreateWindowW( WC_STATICW, nullptr, WS_VISIBLE|WS_CHILD|SS_CENTER|SS_CENTERIMAGE, 0,0, D,D, m_hWnd, (HMENU)ID_HEAD, nullptr, nullptr );
+		Utils::CRideDialog::SetDlgItemSingleCharUsingFont( m_hWnd, ID_HEAD, glyph, Utils::CRideFont::Webdings120 );
 		// - message (fake vertical centering by prepending '\n' and positioning then control accordingly)
-		WCHAR msg[256];
-		ASSERT( ::lstrlenW(msgHyperlink)<ARRAYSIZE(msg)-2 );
-		*msg=L'\n', ::lstrcpyW(msg+1,msgHyperlink);
 		const int yCenterFake=Utils::CRideFont::StdDpi.charHeight*(MessageBarMargin-100)/100-Utils::CRideFont::StdDpi.charDescent;
-		hSysLink=::CreateWindowW( WC_LINK, msg, WS_VISIBLE|WS_CHILD, d,yCenterFake, 1,1, m_hWnd, (HMENU)ID_INFORMATION, nullptr, nullptr );
+		hSysLink=::CreateWindowW( WC_LINK, CDos::CPathString(L'\n').Append((LPCTSTR)msgHyperlink).GetUnicode(), WS_VISIBLE|WS_CHILD, D,yCenterFake, 1,1, m_hWnd, (HMENU)ID_INFORMATION, nullptr, nullptr );
 		SetWindowFont( hSysLink, Utils::CRideFont::StdDpi, TRUE );
 		// - "Close" button
-		hCloseBtn=::CreateWindowW( WC_BUTTONW, nullptr, WS_VISIBLE|WS_CHILD|BS_CENTER|BS_FLAT, 0,0, d,d, m_hWnd, (HMENU)ID_CREDITS, nullptr, nullptr );
+		hCloseBtn=::CreateWindowW( WC_BUTTONW, nullptr, WS_VISIBLE|WS_CHILD|BS_CENTER|BS_FLAT, 0,0, D,D, m_hWnd, (HMENU)ID_CREDITS, nullptr, nullptr );
 		Utils::CRideDialog::SetDlgItemSingleCharUsingFont( m_hWnd, ID_CREDITS, L'\xf072', Utils::CRideFont::Webdings80 );
 		// - position at top
 		app.GetMainWindow()->RecalcLayout();
@@ -119,19 +130,20 @@
 				if (const LRESULT err=__super::WindowProc( msg, wParam, lParam ))
 					return err;
 				const Utils::TClientRect client(m_hWnd);
-				::SetWindowPos( hSysLink, nullptr, 0,0, client.Width()-2*d, 2*client.Height(), SWP_NOZORDER|SWP_NOMOVE );
-				::SetWindowPos( hCloseBtn, nullptr, client.Width()-d,0, 0,0, SWP_NOZORDER|SWP_NOSIZE|SWP_SHOWWINDOW );
+				::SetWindowPos( hSysLink, nullptr, 0,0, client.Width()-2*D, 2*client.Height(), SWP_NOZORDER|SWP_NOMOVE );
+				::SetWindowPos( hCloseBtn, nullptr, client.Width()-D,0, 0,0, SWP_NOZORDER|SWP_NOSIZE|SWP_SHOWWINDOW );
 				return 0;
 			}
 			case WM_COMMAND:
 				switch (wParam){
 					case MAKELONG(ID_CREDITS,BN_CLICKED):
 						::DestroyWindow(m_hWnd);
+						app.GetMainWindow()->RecalcLayout();
 						return 0;
 				}
 				break;
 			case WM_CTLCOLORSTATIC:{
-				static const Utils::CRideBrush Yellowish((COLORREF)0xc8edff);
+				static const Utils::CRideBrush Yellowish((COLORREF)0xabfbff);
 				::SetBkMode( (HDC)wParam, TRANSPARENT );
 				return Yellowish;
 			}
@@ -142,54 +154,15 @@
 				}
 				break;
 			case WM_DESTROY:
-				for( POSITION pos=owner.GetHeadPosition(); pos; owner.GetNext(pos) )
-					if (owner.GetAt(pos)==this){
-						owner.RemoveAt(pos);
-						break;
-					}
 				::DestroyWindow(hGlyph);
 				::DestroyWindow(hSysLink);
 				::DestroyWindow(hCloseBtn);
-				__super::WindowProc( msg, wParam, lParam );
-				delete this;
-				if (app.GetMainWindow())
-					app.GetMainWindow()->RecalcLayout();
-				return 0;
+				break;
 		}
 		return __super::WindowProc( msg, wParam, lParam );
 	}
 
 	void CMainWindow::CMessageBar::HyperlinkClicked(LPCWSTR id) const{
-	}
-
-	CMainWindow::CMessageBar::CList::~CList(){
-		// dtor
-		while (GetCount()>0)
-			RemoveHead()->DestroyWindow();
-		if (app.GetMainWindow())
-			app.GetMainWindow()->RecalcLayout();
-	}
-
-	void CMainWindow::CMessageBar::CList::AddInfoBar(LPCTSTR msgHyperlink){
-		AddTail(
-			new CMessageBar( *this,
-				#ifdef UNICODE
-					msgHyperlink
-				#else
-					// assume ANSI in the input, not UTF-8 !
-					CDos::CPathString(msgHyperlink).GetUnicode()
-				#endif
-			)
-		);
-	}
-
-	void CMainWindow::CMessageBar::CList::AddInfoBarFormatted(LPCTSTR hyperlinkFormat,...){
-		va_list argList;
-		va_start( argList, hyperlinkFormat );
-			CString tmp;
-			tmp.FormatV( hyperlinkFormat, argList );
-			AddInfoBar(tmp);
-		va_end(argList);
 	}
 
 

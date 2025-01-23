@@ -382,7 +382,7 @@
 			// Image opened successfully
 openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully ...
 				if (!image->CanBeModified()) // ... inform on eventual "read-only" mode (forced if Image on the disk is read-only, e.g. because opened from a CD-R)
-					image->messageBars.AddInfoBar( _T("Disk marked as Read-only, editing disabled.") );
+					image->readOnlyMessageBar.Show();
 			}else
 				switch (const TStdWinError err=::GetLastError()){
 					case ERROR_BAD_FORMAT:

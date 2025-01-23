@@ -150,6 +150,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			return FALSE;
 		}
 		canBeModified&=!header.IsVersion3(); //TODO: Version 3 currently read-only
+		readOnlyMessageBar.SetReadOnlyReason(_T("HFE-3 images currently for reading only"));
 		// - reading content of the Image and continuously validating its structure
 		if (!header.IsValid()){
 			::SetLastError(ERROR_INVALID_DATA);

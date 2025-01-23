@@ -544,6 +544,25 @@ namespace Medium{
 
 
 
+	CImage::CReadOnlyMessageBar::CReadOnlyMessageBar(LPCTSTR readOnlyReason)
+		// ctor
+		: CMainWindow::CMessageBar( _T(""), L'\xf0cf' ) {
+		SetReadOnlyReason(readOnlyReason);
+	}
+
+	void CImage::CReadOnlyMessageBar::SetReadOnlyReason(LPCTSTR readOnlyReason){
+		//
+		msgHyperlink.Format( _T("%s, editing disabled."), readOnlyReason );
+	}
+
+
+
+
+
+
+
+
+
 	CImage::CImage(PCProperties _properties,bool hasEditableSettings)
 		// ctor
 		// - initialization
@@ -552,6 +571,8 @@ namespace Medium{
 		, sideMap(nullptr) // no explicit mapping of Heads to Side numbers
 		// - creating the TrackMap
 		, trackMap(this)
+		// - creating MessageBars
+		, readOnlyMessageBar( _T("Disk marked as Read-only") )
 		// - creating Toolbar (its displaying in CTdiView::ShowContent)
 		, toolbar(IDR_IMAGE,ID_IMAGE) { // ID_IMAGE = "some" unique ID
 		// - when destroying all Views, the document must exist further (e.g. when switching Tabs in TDI)

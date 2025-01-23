@@ -318,6 +318,12 @@
 			bool IsRealDevice() const;
 		} *PCProperties;
 
+		class CReadOnlyMessageBar sealed:public CMainWindow::CMessageBar{
+		public:
+			CReadOnlyMessageBar(LPCTSTR readOnlyReason);
+			void SetReadOnlyReason(LPCTSTR readOnlyReason);
+		} readOnlyMessageBar; // the reason why WriteProtection can't be removed
+
 		class CTrackReaderBase{
 		public:
 			enum TDecoderMethod:BYTE{
@@ -766,7 +772,6 @@
 		CMutex destructionLocker;
 		mutable CCriticalSection locker;
 		CMainWindow::CDockableToolBar toolbar;
-		CMainWindow::CMessageBar::CList messageBars;
 		PDos dos;
 		CComPtr<IDataObject> dataInClipboard;
 
