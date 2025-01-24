@@ -516,8 +516,6 @@
 			::SetLastError( ERROR_CANCELLED );
 			return FALSE;
 		}
-		// - warning on unsupported Cylinders
-		WarnOnAndCorrectExceedingCylinders();
 		// - successfully mounted
 		return TRUE;
 	}
@@ -956,14 +954,14 @@ invalidTrack:
 			return false;
 	}
 
-	void CCapsBase::WarnOnAndCorrectExceedingCylinders(){
-		// if current # of Cylinders exceeds supported limit, shows a pop-up message and corrects the #
-		if (capsImageInfo.maxcylinder>FDD_CYLINDERS_MAX){ // inclusive!
-			TCHAR msg[200];
-			::wsprintf( msg, _T("The image contains %d cylinders, ") _T(APP_ABBREVIATION) _T(" shows just first %d of them."), capsImageInfo.maxcylinder+1, FDD_CYLINDERS_MAX );
-			Utils::Warning(msg);
-			capsImageInfo.maxcylinder=FDD_CYLINDERS_MAX-1; // inclusive!
+	CString CCapsBase::ListUnsupportedFeatures(){
+		// returns a list of all features currently not properly implemented
+		CString list;
+		if (capsImageInfo.maxcylinder>FDD_CYLINDERS_MAX){ // inclusive! - current # of Cylinders exceeds supported limit
+			list.Format( _T("- disk contains %d cylinders, ") _T(APP_ABBREVIATION) _T(" shows just first %d of them\n"), capsImageInfo.maxcylinder+1, FDD_CYLINDERS_MAX );
+			capsImageInfo.maxcylinder=FDD_CYLINDERS_MAX-1; // inclusive! - correct # of Cylinders
 		}
+		return list + __super::ListUnsupportedFeatures();
 	}
 
 	CCapsBase::PInternalTrack CCapsBase::GetModifiedTrackSafe(TCylinder cyl,THead head) const{

@@ -186,7 +186,6 @@
 
 		virtual TStdWinError UploadFirmware();
 		virtual TStdWinError UploadTrack(TCylinder cyl,THead head,CTrackReader tr) const;
-		void WarnOnAndCorrectExceedingCylinders();
 		PInternalTrack GetInternalTrackSafe(TCylinder cyl,THead head) const;
 		PInternalTrack GetModifiedTrackSafe(TCylinder cyl,THead head) const;
 		bool AnyTrackModified(TCylinder cyl) const;
@@ -220,6 +219,7 @@
 		bool RequiresFormattedTracksVerification() const override sealed;
 		TStdWinError UnformatTrack(TCylinder cyl,THead head) override;
 		TStdWinError MineTrack(TCylinder cyl,THead head) override sealed;
+		CString ListUnsupportedFeatures() override;
 	};
 
 

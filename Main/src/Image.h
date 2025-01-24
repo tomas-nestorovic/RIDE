@@ -324,6 +324,14 @@
 			void SetReadOnlyReason(LPCTSTR readOnlyReason);
 		} readOnlyMessageBar; // the reason why WriteProtection can't be removed
 
+		class CUnsupportedFeaturesMessageBar sealed:public CMainWindow::CMessageBar{
+			CString report;
+			void HyperlinkClicked(LPCWSTR id) const override;
+		public:
+			CUnsupportedFeaturesMessageBar();
+			void Show(const CString &report);
+		} unsupportedFeaturesMessageBar;
+
 		class CTrackReaderBase{
 		public:
 			enum TDecoderMethod:BYTE{
@@ -823,6 +831,7 @@
 		virtual TStdWinError MineTrack(TCylinder cyl,THead head);
 		virtual CSectorDataSerializer *CreateSectorDataSerializer(CHexaEditor *pParentHexaEditor)=0;
 		virtual TStdWinError CreateUserInterface(HWND hTdi);
+		virtual CString ListUnsupportedFeatures();
 		void SetRedrawToAllViews(bool redraw) const;
 		bool ReportWriteProtection() const;
 		void ToggleWriteProtection();

@@ -416,6 +416,8 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		image->SetPathName( lpszFileName, FALSE ); // at this moment, Image became application's active document and the name of its underlying file is shown in MainWindow's caption
 		// - adding file Image into list of Most Recently Used (MRU) documents
 		//nop (added by calling CDocument::SetPathName below)
+		// - reporting about not properly implemented features of the Image
+		image->unsupportedFeaturesMessageBar.Show( image->ListUnsupportedFeatures() );
 		// - determining the DOS
 		CDos::PCProperties dosProps=nullptr;
 		TFormat formatBoot=TFormat::Unknown; // information on Format (# of Cylinders, etc.) obtained from Image's Boot record

@@ -557,6 +557,23 @@ namespace Medium{
 
 
 
+	CImage::CUnsupportedFeaturesMessageBar::CUnsupportedFeaturesMessageBar()
+		// ctor
+		: CMainWindow::CMessageBar( _T("The image contains <a>features currently not supported</a> by ") APP_ABBREVIATION _T(".") ) {
+	}
+
+	void CImage::CUnsupportedFeaturesMessageBar::HyperlinkClicked(LPCWSTR id) const{
+		Utils::Information(report);
+	}
+
+	void CImage::CUnsupportedFeaturesMessageBar::Show(const CString &report){
+		//
+		if (!( this->report=report ).IsEmpty())
+			__super::Show();
+	}
+
+
+
 
 
 
@@ -607,6 +624,11 @@ namespace Medium{
 		// - adding the TrackMap to TDI
 		CTdiCtrl::AddTabLast( hTdi, TRACK_MAP_TAB_LABEL, &trackMap.tab, false, TDI_TAB_CANCLOSE_NEVER, nullptr );
 		return ERROR_SUCCESS; // always succeeds (but may fail in CDos-derivates)
+	}
+
+	CString CImage::ListUnsupportedFeatures(){
+		// returns a list of all features currently not properly implemented
+		return CString();
 	}
 
 	void CImage::ToggleWriteProtection(){

@@ -66,6 +66,22 @@
 		return !::memcmp( signature, HEADER_SIGNATURE_V3, sizeof(signature) );
 	}
 
+	CString CHFE::UHeader::ListUnsupportedFeatures() const{
+		// 
+		CString report;
+		if (formatRevision!=0)
+			report+=_T("- format revision");
+		//if (step!=TStep::SINGLE) // according to official HxC source code, this parameter is completely ignored during Image loading
+			//nop
+		for( char side=0; side<ARRAYSIZE(alternative); side++ )
+			if (alternative[side].disabled==0){
+				TCHAR buf[80];
+				::wsprintf( buf, _T("- alternative encoding for Track 0 on Side %d"), side );
+				report+=buf;
+			}
+		return report;
+	}
+
 
 
 
@@ -169,19 +185,12 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			::SetLastError( ERROR_CANCELLED );
 			return FALSE;
 		}
-		// - warning on unsupported features
-		if (header.formatRevision!=0
-			//||
-			//header.step!=TStep::SINGLE // according to official HxC source code, this parameter is completely ignored during Image loading
-			||
-			header.alternative[0].disabled==0
-			||
-			header.alternative[1].disabled==0
-		)
-			Utils::Warning( _T("The image contains features currently not supported by ") APP_ABBREVIATION _T(". Possible unexpected behavior!") );
-		// - warning on unsupported Cylinders
-		WarnOnAndCorrectExceedingCylinders();
 		return TRUE;
+	}
+
+	CString CHFE::ListUnsupportedFeatures(){
+		// returns a list of all features currently not properly implemented
+		return header.ListUnsupportedFeatures() + __super::ListUnsupportedFeatures();
 	}
 
 	CImage::CTrackReader CHFE::ReadTrack(TCylinder cyl,THead head) const{

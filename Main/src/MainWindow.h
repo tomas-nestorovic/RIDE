@@ -107,15 +107,15 @@
 		} *pTdi;
 
 		class CMessageBar:protected CStatusBar{
-			static int D; // dimension
-			const WCHAR glyph;
 			HWND hGlyph,hSysLink,hCloseBtn;
 		protected:
+			static int D; // dimension
+			const WCHAR glyph;
+			CString msgHyperlink;
+
 			virtual void HyperlinkClicked(LPCWSTR id) const;
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 		public:
-			CString msgHyperlink;
-
 			CMessageBar(LPCTSTR msgHyperlink,WCHAR webdingsGlyph=L'\xf069');
 			~CMessageBar();
 

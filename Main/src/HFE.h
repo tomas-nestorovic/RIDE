@@ -64,6 +64,7 @@
 
 			bool IsValid() const;
 			bool IsVersion3() const;
+			CString ListUnsupportedFeatures() const;
 			TLogTime GetCellTime() const;
 		} header;
 
@@ -126,6 +127,7 @@
 		bool EditSettings(bool initialEditing) override;
 		TStdWinError Reset() override;
 		TStdWinError FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte,const volatile bool &cancelled) override;
+		CString ListUnsupportedFeatures() override;
 	};
 
 #endif // HFE_H

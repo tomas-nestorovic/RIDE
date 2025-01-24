@@ -84,8 +84,6 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			return FALSE;
 		}
 		header.flags.normalized|=params.corrections.valid&&params.corrections.use;
-		// - warning on unsupported Cylinders
-		WarnOnAndCorrectExceedingCylinders();
 		return TRUE;
 	}
 
