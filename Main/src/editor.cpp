@@ -158,7 +158,7 @@
 
 	BEGIN_MESSAGE_MAP(CRideApp,CWinApp)
 		ON_COMMAND(ID_FILE_NEW,CreateNewImage)
-		ON_COMMAND(ID_FILE_OPEN,__openImage__)
+		ON_COMMAND(ID_FILE_OPEN,OpenImage)
 		ON_COMMAND_RANGE(ID_FILE_MRU_FIRST,ID_FILE_MRU_LAST,OnOpenRecentFile)
 		ON_COMMAND(ID_OPEN_AS,__openImageAs__)
 		ON_COMMAND(ID_OPEN_UNKNOWN,OpenImageWithoutDos)
@@ -557,7 +557,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		return image.release();
 	}
 
-	afx_msg void CRideApp::__openImage__(){
+	afx_msg void CRideApp::OpenImage(){
 		// opens Image and recognizes suitable DOS automatically
 		manuallyForceDos=nullptr; // use automatic recognition
 		OnFileOpen();

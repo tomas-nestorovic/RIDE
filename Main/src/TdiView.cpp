@@ -233,7 +233,7 @@
 					if (GetClickedHyperlinkId(lParam)){ // some hyperlink clicked
 						const LPCWSTR strId=((PNMLINK)lParam)->item.szID;
 						if (!::lstrcmpW(strId,L"OPENIMG"))
-							app.__openImage__();
+							app.OpenImage();
 						else if (!::lstrcmpW(strId,L"ACCSDRV"))
 							app.__openDevice__();
 						else if (!::lstrcmpW(strId,L"UPDATE"))

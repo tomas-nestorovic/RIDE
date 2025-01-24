@@ -326,8 +326,11 @@
 
 	afx_msg void CMainWindow::OnLButtonDblClk(UINT,CPoint){
 		// mouse double-clicked on the client area
-		if (!pTdi->GetCurrentTab())
-			app.__openImage__(); // double-clicking on the client area is interpreted as wanting to open an Image
+		if (!pTdi->GetCurrentTab()) // double-click on the client interpreted as opening an Image
+			if (::GetKeyState(VK_SHIFT)<0) // without DOS ?
+				app.OpenImageWithoutDos();
+			else
+				app.OpenImage();
 	}
 
 	afx_msg void CMainWindow::OnInitMenu(CMenu *menu){

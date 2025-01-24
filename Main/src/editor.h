@@ -52,7 +52,7 @@
 		afx_msg BOOL OnOpenRecentFile(UINT nID);
 		#endif
 		afx_msg void CreateNewImage();
-		afx_msg void __openImage__();
+		afx_msg void OpenImage();
 		afx_msg void __openImageAs__();
 		afx_msg void OpenImageWithoutDos();
 		afx_msg void __openDevice__();
