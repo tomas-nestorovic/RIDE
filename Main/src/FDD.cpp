@@ -229,7 +229,7 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 									+
 									(	12	// N Bytes 0x00 (see IBM's track layout specification)
 										+
-										3	// 0xA1A1A1 mark with corrupted clock
+										3	// 0xA1A1A1 mark with corrupt clock
 										+
 										1	// Sector ID Address Mark
 										+
@@ -241,7 +241,7 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 										+
 										12	// Gap2: N Bytes 0x00
 										+
-										3	// Gap2: 0xA1A1A1 mark with corrupted clock
+										3	// Gap2: 0xA1A1A1 mark with corrupt clock
 										+
 										1	// Data Address Mark
 										+
@@ -1500,11 +1500,12 @@ Utils::Information(buf);}
 				// . making sure that a floppy is in the Drive
 				ShowDlgItem( ID_INFORMATION, false );
 				fdd->floppyType=Medium::UNKNOWN; // assumption (floppy not inserted or not recognized)
-				static constexpr WORD Interactivity[]={ ID_LATENCY, ID_NUMBER2, ID_GAP, 0 };
-				if (!EnableDlgItems( Interactivity, fdd->GetInsertedMediumType(0,fdd->floppyType)==ERROR_SUCCESS ))
+				static constexpr WORD Interactivity[]={ IDOK, ID_LATENCY, ID_NUMBER2, ID_GAP, 0 };
+				if (!EnableDlgItems( Interactivity+!initialEditing, fdd->GetInsertedMediumType(0,fdd->floppyType)==ERROR_SUCCESS )){
 					SetDlgItemText( ID_MEDIUM, _T("Not inserted") );
+					EnableDlgItem( IDOK, false ); // Drives that have a hardware error (e.g. Track 0 sensor) may have long response time; to avoid the application to appear "frozen" later on, we don't allow continuation
 				// . attempting to recognize any previous format on the floppy
-				else
+				}else
 					switch (const Medium::TType mt=fdd->floppyType){
 						case Medium::FLOPPY_DD_525:
 							SetDlgItemText( ID_MEDIUM, Medium::GetDescription(mt) );
@@ -2104,7 +2105,7 @@ Utils::Information(buf);}
 						/*if (sr.DescribesIdFieldCrcError()){ // commented out as SamDisk doesn't reproduce this error neither [info by Simon Owen]
 							// Sector misses its data part, and its ID Field is corrupted
 							*(pFormatStep+1)=*pFormatStep; // the preceeding Step (as formatted "backwards") is creation of a correct ID Field
-							pFormatStep++->interruption.nMicroseconds=params.controllerLatency+0.5*params.oneByteLatency; // the currect Step is creation of a corrupted ID Field; ".5*" = just to be sure
+							pFormatStep++->interruption.nMicroseconds=params.controllerLatency+0.5*params.oneByteLatency; // the currect Step is creation of a corrupt ID Field; ".5*" = just to be sure
 						}*/
 						nBytesFormatted=gap3+NUMBER_OF_BYTES_OCCUPIED_BY_ID;
 						const WORD minBytesNeeded=NUMBER_OF_OCCUPIED_BYTES(1,reservedSectorLength,gap3,true);
