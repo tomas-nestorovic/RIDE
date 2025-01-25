@@ -215,6 +215,7 @@ namespace Utils{
 	public:
 		static const CRideFont Small, Std, StdDpi, StdBold;
 		static const CRideFont Webdings80, Webdings120, Webdings175;
+		static const CRideFont Wingdings105;
 
 		int charAvgWidth,charHeight,charDescent;
 

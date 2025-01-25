@@ -431,8 +431,7 @@
 
 	void CBackgroundMultiActionCancelable::__drawAction__(HDC dc,WCHAR wingdingsGlyph,LPCTSTR name,RECT &inOutRc) const{
 		// draws Action
-		const Utils::CRideFont glyphFont( FONT_WINGDINGS, 105 );
-		const HGDIOBJ hFont0=::SelectObject( dc, glyphFont );
+		const HGDIOBJ hFont0=::SelectObject( dc, Utils::CRideFont::Wingdings105 );
 			::TextOutW( dc, painting.glyphX, inOutRc.top, &wingdingsGlyph, 1 );
 		::SelectObject( dc, hFont0 );
 		::DrawText( dc, name, -1, &inOutRc, DT_LEFT|DT_TOP );

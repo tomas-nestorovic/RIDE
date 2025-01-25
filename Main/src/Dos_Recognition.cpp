@@ -125,7 +125,7 @@
 		public:
 			CDos::CRecognition recognition;
 		private:
-			const Utils::CRideFont symbolFont;
+			const Utils::CRideFont &symbolFont;
 			CDos::PCProperties newlyDetectedDoses[256];
 
 			void __repopulateListBoxesAndUpdateInteractivity__() const{
@@ -342,7 +342,7 @@
 			CAutomaticRecognitionOrderDialog()
 				// ctor
 				: Utils::CRideDialog(IDR_DOS_RECOGNITION)
-				, symbolFont(FONT_WINGDINGS,110,false,true) {
+				, symbolFont(Utils::CRideFont::Wingdings105) {
 			}
 		} d;
 		// - showing the Dialog and processing its result

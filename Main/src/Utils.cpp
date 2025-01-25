@@ -197,6 +197,8 @@ namespace Utils{
 	const CRideFont CRideFont::Webdings80(FONT_WEBDINGS,80,false,true);
 	const CRideFont CRideFont::Webdings120(FONT_WEBDINGS,120,false,true);
 	const CRideFont CRideFont::Webdings175(FONT_WEBDINGS,175,false,true);
+
+	const CRideFont CRideFont::Wingdings105(FONT_WINGDINGS,105,false,true);
 	
 
 

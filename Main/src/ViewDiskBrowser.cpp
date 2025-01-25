@@ -255,7 +255,7 @@ using namespace Yahel;
 				f->Seek( GetCaretPosition(), CFile::begin );
 				// . defining the Dialog
 				class CGoToSectorDialog sealed:public Utils::CRideDialog{
-					const Utils::CRideFont symbolFont;
+					const Utils::CRideFont &symbolFont;
 					const PCImage image;
 					bool sectorDoubleClicked;
 
@@ -343,7 +343,7 @@ using namespace Yahel;
 
 					CGoToSectorDialog(PCImage image,BYTE rSectorIndexOnTrack,RCPhysicalAddress rChs)
 						: Utils::CRideDialog(IDR_DISKBROWSER_GOTOSECTOR)
-						, symbolFont( FONT_WINGDINGS, 125, false, true )
+						, symbolFont( Utils::CRideFont::Wingdings105 )
 						, image(image)
 						, sectorDoubleClicked(false)
 						, sectorIndexOnTrack(rSectorIndexOnTrack) , chs(rChs) {
