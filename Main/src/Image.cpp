@@ -279,6 +279,7 @@ namespace Medium{
 		{ 1, FDD_CYLINDERS_MAX }, // supported range of Cylinders (min and max)
 		{ 1, 2 },	// supported range of Heads (min and max)
 		{ 1, FDD_SECTORS_MAX }, // supported range of Sectors (min and max)
+		5, // Revolutions per second
 		TIME_SECOND(1)/5, // single revolution time [nanoseconds]
 		TIME_MICRO(1), // single recorded data cell time [nanoseconds] = 1 second / 500kb = 2 탎 -> 1 탎 for MFM encoding
 		200000 // RevolutionTime/CellTime
@@ -289,6 +290,7 @@ namespace Medium{
 		{ 1, FDD_CYLINDERS_MAX }, // supported range of Cylinders (min and max)
 		{ 1, 2 },	// supported range of Heads (min and max)
 		{ 1, FDD_SECTORS_MAX }, // supported range of Sectors (min and max)
+		6, // Revolutions per second
 		TIME_SECOND(1)/6, // single revolution time [nanoseconds]
 		TIME_MICRO(1), // single recorded data cell time [nanoseconds] = same as 3.5" HD floppies
 		166666 // RevolutionTime/CellTime
@@ -299,6 +301,7 @@ namespace Medium{
 		{ 1, FDD_CYLINDERS_MAX }, // supported range of Cylinders (min and max)
 		{ 1, 2 },	// supported range of Heads (min and max)
 		{ 1, FDD_SECTORS_MAX }, // supported range of Sectors (min and max)
+		5, // Revolutions per second
 		TIME_SECOND(1)/5, // single revolution time [nanoseconds]
 		TIME_MICRO(2), // single recorded data cell time [nanoseconds] = 1 second / 250kb = 4 탎 -> 2 탎 for MFM encoding
 		100000 // RevolutionTime/CellTime
@@ -309,6 +312,7 @@ namespace Medium{
 		{ 1, FDD_CYLINDERS_MAX }, // supported range of Cylinders (min and max)
 		{ 1, 2 },	// supported range of Heads (min and max)
 		{ 1, FDD_SECTORS_MAX }, // supported range of Sectors (min and max)
+		6, // Revolutions per second
 		TIME_MICRO(166600), // single revolution time [nanoseconds], rounded TIME_SECOND(1)/6
 		TIME_MICRO(2)*5/6, // single recorded data cell time [nanoseconds] = 1 second / 300kb = 3.333 탎 -> 1.666 탎 for MFM encoding
 		100000 // RevolutionTime/CellTime

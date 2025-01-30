@@ -501,7 +501,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		// - update and save Header
 		header.nCylinders=GetCylinderCount();
 		header.nHeads=GetHeadCount();
-		header.dataBitRate=Medium::GetProperties(floppyType)->nCells/1000/2; // "/2" = only data bits, not clock bits
+		header.dataBitRate= mp->rps * mp->nCells/1000/2; // "/2" = only data bits, not clock bits
 		ASSERT( header.IsValid() );
 		fTarget.SeekToBegin();
 		fTarget.Write( &header, sizeof(header) );

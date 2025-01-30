@@ -85,6 +85,7 @@
 
 			LPCTSTR description;
 			PropGrid::Integer::TUpDownLimits cylinderRange, headRange, sectorRange; // supported range of Cylinders/Heads/Sectors (min and max)
+			BYTE rps; // Revolutions per second
 			TLogTime revolutionTime; // single revolution time [nanoseconds]
 			TLogTime cellTime; // single recorded data cell time [nanoseconds]
 			DWORD nCells; // RevolutionTime/CellTime
