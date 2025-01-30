@@ -3,7 +3,7 @@
 #include "HFE.h"
 
 	static LPCTSTR Recognize(PTCHAR){
-		static constexpr TCHAR SingleDeviceName[]=_T("HxC Floppy Emulator (PIC18F-based)\0");
+		static constexpr TCHAR SingleDeviceName[]=_T("HxC Floppy Emulator, HFE-1 only (PIC18F-based)\0");
 		return SingleDeviceName;
 	}
 	static PImage Instantiate(LPCTSTR){
@@ -125,7 +125,7 @@
 
 	CHFE::CHFE()
 		// ctor
-		: CCapsBase( &Properties, '\0', true, INI_SECTION )
+		: CCapsBase( &Properties, '\0', false, INI_SECTION )
 		, header(HEADER_SIGNATURE_V1) {
 		preservationQuality=false; // no descendant intended for preservation
 		Reset();
@@ -270,10 +270,10 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 
 	bool CHFE::EditSettings(bool initialEditing){
 		// True <=> new settings have been accepted (and adopted by this Image), otherwise False
-		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		/*EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (header.IsVersion3())
 			return params.EditInModalDialog( *this, _T("HxC Floppy Emulator image"), initialEditing );
-		else
+		else*/
 			return true;
 	}
 
