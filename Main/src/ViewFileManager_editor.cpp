@@ -253,7 +253,7 @@
 		// end of File label editing (occurs in DisplayMode other than Report)
 		const NMLVDISPINFOW *const lpdi=(NMLVDISPINFOW *)pNMHDR;
 		if (const LPCWSTR label=lpdi->item.pszText){ // editing NOT cancelled
-			CDos::PFile renamedFile;
+			CDos::PFile renamedFile=(CDos::PFile)lpdi->item.lParam;
 			CDos::CPathString bufName=label;
 			const CDos::CPathString bufExt=bufName.DetachExtension();
 			const TStdWinError err=DOS->ChangeFileNameAndExt( (CDos::PFile)lpdi->item.lParam, bufName, bufExt, renamedFile );

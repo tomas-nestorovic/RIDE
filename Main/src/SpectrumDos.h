@@ -296,10 +296,10 @@
 
 				PEditorBase Create(PFile file,TZxRom::TFileType type,TDisplayTypes _types,PropGrid::Enum::TOnValueConfirmed onChanged) const;
 			} stdTapeHeaderTypeEditor;
-
-			CPathString GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant) const override sealed;
 		protected:
 			CSpectrumBaseFileManagerView(PDos dos,const TZxRom &rZxRom,BYTE supportedDisplayModes,BYTE initialDisplayMode,BYTE nInformation,PCFileInfo informationList,BYTE nameCharsMax,PCDirectoryStructureManagement pDirManagement=nullptr);
+
+			CPathString GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant) const override;
 		public:
 			const TZxRom &zxRom;
 		};
@@ -382,6 +382,7 @@
 
 				CMainWindow::CDockableToolBar toolbar;
 
+				CPathString GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant) const override;
 				void DrawReportModeCell(PCFileInfo pFileInfo,LPDRAWITEMSTRUCT pdis) const override;
 				int CompareFiles(PCFile file1,PCFile file2,BYTE information) const override;
 				PEditorBase CreateFileInformationEditor(PFile,BYTE infoId) const override;

@@ -949,7 +949,7 @@ reportError:Utils::Information(buf);
 		//}
 		// - creating a record for specified File in current Directory
 		//if (const auto pdt=BeginDirectoryTraversal()){
-			PFile tmp;
+			PFile tmp=fDesc;
 			TStdWinError err=ChangeFileNameAndExt( fDesc, fileName, fileExt, tmp );
 			if (err==ERROR_SUCCESS)
 				if (tmp!=fDesc) // a new record was created for the File (in ChangeFileNameAndExt)

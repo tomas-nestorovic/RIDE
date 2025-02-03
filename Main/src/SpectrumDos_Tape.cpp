@@ -239,7 +239,9 @@
 		if (file==ZX_DIR_ROOT)
 			return ERROR_ACCESS_DENIED;
 		// - renaming
-		if (const PHeader h=((PTapeFile)( rRenamedFile=file ))->GetHeader()){
+		const PTapeFile ptfSrc=(PTapeFile)rRenamedFile, ptfDst=(PTapeFile)file;
+		*ptfDst=*ptfSrc, rRenamedFile=file; // note: try copying a File within the same Tape; 'rRenamedFile' must be preset to the existing "source" File
+		if (const PHeader h=ptfDst->GetHeader()){
 			// File with a Header
 			// . Extension must be specified
 			if (newExt.GetLengthW()<1)
@@ -773,6 +775,11 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 				break;
 		}
 		return __super::WindowProc(msg,wParam,lParam);
+	}
+
+	CDos::CPathString CSpectrumDos::CTape::CTapeFileManagerView::GenerateExportNameAndExtOfNextFileCopy(CDos::PCFile file,bool shellCompliant) const{
+		// returns the Buffer populated with the export name and extension of the next File's copy in current Directory; returns Null if no further name and extension can be generated
+		return DOS->GetFileExportNameAndExt( file, shellCompliant ); // don't generate unique Name+Ext combination, the Tape allows duplicates
 	}
 
 	void CSpectrumDos::CTape::CTapeFileManagerView::DrawReportModeCell(PCFileInfo pFileInfo,LPDRAWITEMSTRUCT pdis) const{

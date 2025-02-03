@@ -48,8 +48,8 @@
 				const BYTE n=::wsprintf(postfix,_T("%c%d"),255,copyNumber); // 255 = token of the "COPY" keyword
 				const CPathString bufCopyName=fileName.Clone().TrimToLengthW(nameCharsMax-n).Append(postfix);
 				// . attempting to rename the TemporaryDirectoryEntry
-				CDos::PFile fExisting;
-				switch (DOS->ChangeFileNameAndExt( &tmpDirEntry, bufCopyName, fileExt, fExisting )){
+				CDos::PFile fExisting=(CDos::PFile)file;
+				switch (DOS->ChangeFileNameAndExt( tmpDirEntry, bufCopyName, fileExt, fExisting )){
 					case ERROR_SUCCESS:
 						// generated a unique Name for the next File copy - returning the final export name and extension
 						return DOS->GetFileExportNameAndExt( &tmpDirEntry, shellCompliant );
