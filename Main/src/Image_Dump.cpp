@@ -1318,15 +1318,13 @@ error:				return Utils::FatalError(_T("Cannot dump"),err);
 			const_cast<PImage>(this)->UpdateAllViews(nullptr);
 			if (err)
 				goto error;
-			// . displaying statistics on SourceTrackErrors
-			if (d.showReport){
-				// : saving to temporary file
-				const CString tmpFileName=Utils::GenerateTemporaryFileName()+_T(".html");
-				d.dumpParams.__exportErroneousTracksToHtml__( CFile(tmpFileName,CFile::modeCreate|CFile::modeWrite), bmac.GetDurationTime(), d.realtimeThreadPriority );
-				// : displaying
-				app.GetMainWindow()->OpenWebPage( _T("Dump results"), tmpFileName );
-			}
 			// . reporting success
-			Utils::Information(_T("Dumped successfully."));
+			if (!d.showReport)
+				if (!Utils::QuestionYesNo( _T("Dumped successfully.\n\nShow report?"), MB_DEFBUTTON2 ))
+					return;
+			// . displaying statistics on SourceTrackErrors
+			const CString tmpFileName=Utils::GenerateTemporaryFileName()+_T(".html");
+			d.dumpParams.__exportErroneousTracksToHtml__( CFile(tmpFileName,CFile::modeCreate|CFile::modeWrite), bmac.GetDurationTime(), d.realtimeThreadPriority );
+			app.GetMainWindow()->OpenWebPage( _T("Dump results"), tmpFileName );
 		}
 	}
