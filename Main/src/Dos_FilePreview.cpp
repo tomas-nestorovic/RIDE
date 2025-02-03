@@ -154,10 +154,14 @@
 					switch (wParam){
 						case WMSZ_TOP:
 						case WMSZ_BOTTOM:
+						//case WMSZ_TOPLEFT: // commented out as this corner is troublesome; let it be inactive and fall to 'default'
+						case WMSZ_TOPRIGHT:
 							rc.right=( rc.bottom=r.bottom-r.top+rc.Height()-rw.Height() )*initialClientWidth/initialClientHeight;
 							break;
 						case WMSZ_LEFT:
 						case WMSZ_RIGHT:
+						case WMSZ_BOTTOMLEFT:
+						case WMSZ_BOTTOMRIGHT:
 							rc.bottom=( rc.right=r.right-r.left+rc.Width()-rw.Width() )*initialClientHeight/initialClientWidth;
 							break;
 						default:
