@@ -457,7 +457,7 @@
 		return ERROR_SUCCESS;
 	}
 
-	#define INFO_FILE_EX		_T("T%08x%08x%x")
+	#define INFO_FILE_EX		_T("T%x")
 	
 	CDos::CPathString CTRDOS503::GetFileExportNameAndExt(PCFile file,bool shellCompliant) const{
 		// returns File name concatenated with File extension for export of the File to another Windows application (e.g. Explorer)
@@ -477,7 +477,7 @@
 				}
 			TCHAR buf[80];
 			::wsprintf(	buf+__exportFileInformation__( buf, uts, params, de->__getOfficialFileSize__(nullptr) ),
-						INFO_FILE_EX, de->nameLow, de->nameHigh, de->nSectors
+						INFO_FILE_EX, de->nSectors
 					);
 			result.Append(buf);
 		}
@@ -554,7 +554,7 @@
 			// . processing SpecificInfo (if any)
 			if (pTrdosSpecificInfo){
 				int i=de->nSectors;
-				_stscanf( pTrdosSpecificInfo, INFO_FILE_EX, &de->nameLow, &de->nameHigh, &i );
+				_stscanf(pTrdosSpecificInfo,INFO_FILE_EX,&i);
 				de->nSectors=i;
 			}
 		// - modifying the Boot Sector
