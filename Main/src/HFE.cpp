@@ -73,10 +73,11 @@
 			report+=_T("- format revision");
 		//if (step!=TStep::SINGLE) // according to official HxC source code, this parameter is completely ignored during Image loading
 			//nop
-		for( THead head=0; head<ARRAYSIZE(alternative); head++ )
-			if (alternative[head].disabled==0){
+		TPhysicalAddress chs={};
+		for( ; chs.head<ARRAYSIZE(alternative); chs.head++ )
+			if (alternative[chs.head].disabled==0){
 				TCHAR buf[80];
-				::wsprintf( buf, _T("- alternative encoding for Track 0 on Head %d"), head );
+				::wsprintf( buf, _T("- alternative encoding for %s"), chs.GetTrackIdDesc(ARRAYSIZE(alternative)) );
 				report+=buf;
 			}
 		return report;
