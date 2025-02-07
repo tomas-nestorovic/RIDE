@@ -1097,7 +1097,11 @@ terminateWithError:		return LOG_ERROR(pAction->TerminateWithError(err));
 							case ID_FILE:{
 								TCHAR targetFileNameOrg[MAX_PATH];
 								::lstrcpy( targetFileNameOrg, dumpParams.targetFileName );
-								*dumpParams.targetFileName='\0';
+								if (const CImage::PCProperties p=dumpParams.dos->properties->typicalImage){
+									if (const PTCHAR pSep=::StrChr( ::lstrcpy(dumpParams.targetFileName,p->filter), *IMAGE_FORMAT_SEPARATOR ))
+										*pSep='\0';
+								}else
+									*dumpParams.targetFileName='\0';
 								if (const CImage::PCProperties imgProps=app.DoPromptFileName( dumpParams.targetFileName, true, AFX_IDS_SAVEFILE, 0, nullptr )){
 									targetImageProperties=imgProps;
 setDestination:						// : compacting FileName in order to be better displayable on the button
