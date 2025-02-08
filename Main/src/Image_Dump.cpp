@@ -239,6 +239,7 @@
 			struct{
 				bool idCrc;
 				bool dataCrc;
+				bool dataCrcEmptyOrBadAutofix;
 				bool stdSectorAdded;
 			} modification;
 			TFdcStatus fdcStatus;
@@ -332,7 +333,7 @@
 				PVOID dummyBuffer[(TSector)-1];
 {LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("reading source"));
 				dp.source->GetTrackData( p.chs.cylinder, p.chs.head, Revolution::ANY_GOOD, bufferId, sectorIdAndPositionIdentity, nSectors, bufferSectorData, bufferLength, bufferFdcStatus, (PLogTime)dummyBuffer ); // reading healthy Sectors (unhealthy ones read individually below); "DummyBuffer" = throw away any outputs
-				for( TSector sPrev=~(p.s=p.nSectorsExcluded=0); p.s<nSectors; ){
+				for( TSector sPrev=~(p.s=p.nSectorsExcluded=0),sIncr=1; p.s<nSectors; ){
 					if (pAction->Cancelled)
 						return ERROR_CANCELLED;
 					p.chs.sectorId=bufferId[p.s];
@@ -347,6 +348,9 @@
 						::memmove( bufferFdcStatus+p.s, bufferFdcStatus+p.s+1, sizeof(*bufferFdcStatus)*(nSectors-p.s) );
 						p.trackWriteable=false; // once modified, can't write the Track as a whole anymore
 						sPrev=~--p.s; // as below incremented
+					// : reporting SourceSector Data field automatic fix
+					}else if (p.modification.dataCrc|= p.modification.dataCrcEmptyOrBadAutofix && p.fdcStatus.DescribesDataFieldCrcError() && dp.dos->IsSectorStatusBadOrEmpty(p.chs) ){
+						sIncr=0; // check there are no other errors with current Sector
 					// : reporting SourceSector Errors if ...
 					}else if (
 						p.fdcStatus & ~( // do remain any errors that can't be accepted automatically?
@@ -511,6 +515,7 @@
 									{ ID_CREATOR, _T("Add missing standard sector\tCtrl+A"), MF_GRAYED*( !(rFdcStatus.DescribesMissingId()||rFdcStatus.DescribesMissingDam()) || !dp.source->dos->IsSectorStatusBadOrEmpty(rp.chs) ) },
 									Utils::TSplitButtonAction::HorizontalLine,
 									{ ID_DATAFIELD_CRC, _T("Fix Data CRC only\tCtrl+D"), MF_GRAYED*( rFdcStatus.DescribesMissingDam() || rFdcStatus.DescribesMissingId() || !rFdcStatus.DescribesDataFieldCrcError() ) }, // disabled if the Data CRC ok
+									{ ID_COMPUTE_CHECKSUM, _T("Fix Data CRCs for all empty or bad sectors"), MF_GRAYED*( rFdcStatus.DescribesMissingDam() || rFdcStatus.DescribesMissingId() || !rFdcStatus.DescribesDataFieldCrcError() || !dp.source->dos->IsSectorStatusBadOrEmpty(rp.chs) ) }, // disabled if the Data CRC ok
 									{ ID_RECOVER, _T("Fix ID or Data...\tCtrl+F"), MF_GRAYED*( rFdcStatus.DescribesMissingDam() || rFdcStatus.DescribesMissingId() || !rFdcStatus.DescribesIdFieldCrcError()&&!rFdcStatus.DescribesDataFieldCrcError() ) }, // enabled only if either ID or Data field with error
 									Utils::TSplitButtonAction::HorizontalLine,
 									{ ID_TIME, _T("Mine track...\tCtrl+M"), MF_GRAYED*!( dp.source->MineTrack(TPhysicalAddress::Invalid.cylinder,TPhysicalAddress::Invalid.head)!=ERROR_NOT_SUPPORTED ) }
@@ -605,11 +610,15 @@
 												UpdateData(TRUE);
 												EndDialog(ACCEPT_ERROR_ID);
 												return 0;
+											case ID_COMPUTE_CHECKSUM:
+												// recovering Data field CRC for all Sectors reported as Empty or Bad
+												//fallthrough
 											case ID_DATAFIELD_CRC:
-												// recovering CRC
+												// recovering Data field CRC
 												if (!ConfirmLowLevelTrackModifications())
 													return 0;
 												rp.modification.dataCrc=true;
+												rp.modification.dataCrcEmptyOrBadAutofix|=LOWORD(wParam)==ID_COMPUTE_CHECKSUM;
 												UpdateData(TRUE);
 												EndDialog(ACCEPT_ERROR_ID);
 												return 0;
@@ -795,6 +804,7 @@
 							p.fdcStatus.CancelDataFieldCrcError();
 						warnings.manuallyChangedCrc=true;
 						p.trackWriteable=false; // once modified, can't write the Track as a whole anymore
+						sIncr=0; // check there are no other errors with current Sector
 					}
 					if (p.modification.stdSectorAdded){
 						bufferSectorData[p.s]=defaultSectorContent;
@@ -806,7 +816,8 @@
 						bufferFdcStatus[p.s]=p.fdcStatus; // propagate modifications to the Buffer
 					// : next SourceSector
 					p.exclusion.current = p.modification.idCrc = p.modification.dataCrc = p.modification.stdSectorAdded = false;
-					p.s++;
+					p.s+=sIncr;
+					sIncr=1;
 				}
 }
 				p.acceptance.remainingErrorsOnTrack=false; // "True" valid only for Track it was set on
