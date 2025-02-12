@@ -1055,7 +1055,7 @@ using namespace Charting;
 											return -1; // invalid character in input
 										if (nItems==1 || ::IsCharSpace(u)) // no unit specifier ...
 											u='n'; // ... defaults to Nanoseconds
-										if (const LPCTSTR pUnit=_tcschr( Units, u )){
+										if (const LPCTSTR pUnit=::StrChr( Units, u )){
 											const char iUnit=pUnit-Units;
 											if (iUnit>=iLastUnitUsed)
 												return -1; // mustn't use bigger (or the same) units after smaller have been used
@@ -1538,7 +1538,7 @@ using namespace Charting;
 							// export Track timing
 							class CExportDialog sealed:public Utils::CRideDialog{
 								const CImage::CTrackReader &tr;
-								int iRange, singleRevolution;
+								int iContent, iRange, singleRevolution;
 								TCHAR separator;
 
 								void DoDataExchange(CDataExchange *pDX) override{
@@ -1572,6 +1572,7 @@ using namespace Charting;
 											cb.SetCurSel(0);
 										cb.Detach();
 									}
+									DDX_Radio( pDX, ID_TIME, iContent );
 									DDX_Radio( pDX, ID_TRACK, iRange );
 									DDX_CBIndex( pDX, ID_NUMBER, singleRevolution );
 								}
@@ -1597,7 +1598,7 @@ using namespace Charting;
 									: Utils::CRideDialog( IDR_TRACK_EXPORT )
 									, filename(ELLIPSIS)
 									, tr(tr)
-									, iRange(0) // by default export all everything
+									, iContent(0) , iRange(0) // by default export all low-level timing
 									, singleRevolution(0) {
 								}
 
@@ -1630,13 +1631,26 @@ using namespace Charting;
 									CFileException e;
 									if (!f.Open( d.filename, CFile::modeCreate|CFile::modeWrite|CFile::typeBinary|CFile::shareExclusive ))
 										return bac.TerminateWithError( e.m_cause );
-									for( TLogTime tPrev=tStart; tr; bac.UpdateProgress(tPrev-tStart) ){
-										const TLogTime t=tr.ReadTime();
-										Utils::WriteToFile( f, t-tPrev );
-										if (t>=tEnd)
+									switch (d.iContent){
+										case 0: // low-level timing
+											for( TLogTime tPrev=tStart; tr; bac.UpdateProgress(tPrev-tStart) ){
+												const TLogTime t=tr.ReadTime();
+												Utils::WriteToFile( f, t-tPrev );
+												if (t>=tEnd)
+													break;
+												Utils::WriteToFile( f, d.separator );
+												tPrev=t;
+											}
 											break;
-										Utils::WriteToFile( f, d.separator );
-										tPrev=t;
+										case 1: // inspection window sizes
+											for( ; tr; bac.UpdateProgress(tr.GetCurrentTime()-tStart) ){
+												tr.ReadBit();
+												Utils::WriteToFile( f, tr.GetCurrentProfile().iwTime );
+												if (tr.GetCurrentTime()>=tEnd)
+													break;
+												Utils::WriteToFile( f, d.separator );
+											}
+											break;
 									}
 									return bac.TerminateWithSuccess();
 								}
