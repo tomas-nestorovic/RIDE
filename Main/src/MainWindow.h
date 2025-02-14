@@ -11,6 +11,7 @@
 		BOOL PreCreateWindow(CREATESTRUCT &cs) override;
 		BOOL PreTranslateMessage(PMSG pMsg) override;
 		afx_msg int OnCreate(LPCREATESTRUCT lpcs);
+		afx_msg void OnClose();
 		afx_msg void OnDropFiles(HDROP dropInfo);
 		afx_msg void OnLButtonDblClk(UINT,CPoint);
 		afx_msg void OnInitMenu(CMenu *menu);

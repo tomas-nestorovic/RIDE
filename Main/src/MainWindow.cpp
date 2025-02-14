@@ -207,6 +207,7 @@
 
 	BEGIN_MESSAGE_MAP(CMainWindow,CFrameWnd)
 		ON_WM_CREATE()
+		ON_WM_CLOSE()
 		ON_WM_INITMENU()
 		ON_WM_DROPFILES()
 		ON_WM_LBUTTONDBLCLK()
@@ -315,6 +316,19 @@
 			return FALSE;
 			//*/
 		return 0;
+	}
+
+	afx_msg void CMainWindow::OnClose(){
+		// a fixed (and simplified) version of CFrameWnd::OnClose
+		CDocument *const pDocument=GetActiveDocument();
+		if (pDocument && !pDocument->CanCloseFrame(this)) // document can't close right now
+			return; // don't close us
+		if (!pDocument && !app.SaveAllModified()) // attempt to save all documents
+			return; // don't close us
+		app.CloseAllDocuments(FALSE); // close all documents first
+		if (!AfxOleCanExitApp()) // don't exit if there are outstanding component objects
+			return AfxOleSetUserCtrl(FALSE); // take user out of control of the app
+		DestroyWindow(); // then destroy the window
 	}
 
 	afx_msg void CMainWindow::OnDropFiles(HDROP hDrop){

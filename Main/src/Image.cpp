@@ -617,6 +617,39 @@ namespace Medium{
 			::OleFlushClipboard();
 			dataInClipboard.Release();
 		}
+		// - close DOS and all views
+{		PREVENT_FROM_DESTRUCTION(*this);
+		TDI_INSTANCE->CloseAllTabsOfFocusedImage();
+		if (dos)
+			delete dos, dos=nullptr;
+		// - dispose all Cylinders
+		class CBackgroundActionModal:public CBackgroundActionCancelable{
+			BOOL OnInitDialog() override{
+				const BOOL result=__super::OnInitDialog();
+				EnableDlgItem( IDCANCEL, false );
+				return result;
+			}
+			static UINT AFX_CDECL CylinderDisposalThread(PVOID pCancelableAction){
+				// thread to dispose all Cylinders, regardless if they are modified or not
+				const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
+				const PImage image=(PImage)pAction->GetParams();
+				const TCylinder nCyls=image->GetCylinderCount();
+				pAction->SetProgressTarget(nCyls);
+				EXCLUSIVELY_LOCK_IMAGE(*image);
+				for( TCylinder cyl=nCyls; cyl-->0; pAction->UpdateProgress(nCyls-cyl) )
+					for( THead head=image->GetHeadCount(); head-->0; )
+						if (image->UnscanTrack(cyl,head)==ERROR_NOT_SUPPORTED)
+							image->UnformatTrack(cyl,head);
+				return pAction->TerminateWithSuccess();
+			}
+		public:
+			CBackgroundActionModal(PImage image)
+				: CBackgroundActionCancelable( CylinderDisposalThread, image, THREAD_PRIORITY_NORMAL ) {
+			}
+		} bam(this);
+		bam.Perform(true);
+		// - destroy us
+}		delete this;
 		// - base
 		//nop (CDocument::OnCloseDocument destroys parent FrameWnd (MainWindow) - this must exist even after the document was closed)
 	}

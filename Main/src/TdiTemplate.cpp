@@ -41,18 +41,12 @@
 			if (!m_pOnlyDoc->CanCloseFrame(app.GetMainWindow())) // if refused to close the document ...
 				return false; // ... keeping it open
 			if (app.m_pMainWnd){ // may not exist if the application is starting or closing
-				TDI_INSTANCE->CloseAllTabsOfFocusedImage();
 				( (CFrameWnd *)app.m_pMainWnd )->OnUpdateFrameTitle(FALSE); // updating the MainWindow's title (now without document)
 			}
-			const PImage image=(PImage)m_pOnlyDoc;
-			image->OnCloseDocument();
-			image->destructionLocker.Lock(); // have exlusive rights for destruction
-				image->locker.Lock(); // have exclusive right for manipulation
-					if (image->dos)
-						delete image->dos, image->dos=nullptr;
-					delete m_pOnlyDoc, m_pOnlyDoc=nullptr;
-				//image->locker.Unlock(); // commented out as Locker destroyed along with the Image
-			//image->destructionLocker.Unlock(); // commented out as Locker destroyed along with the Image
+			if (m_pOnlyDoc){
+				m_pOnlyDoc->OnCloseDocument();
+				m_pOnlyDoc=nullptr;
+			}
 		}
 		return true;
 	}
