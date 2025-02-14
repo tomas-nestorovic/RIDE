@@ -639,7 +639,7 @@
 	TStdWinError CCapsBase::UnscanTrack(TCylinder cyl,THead head){
 		// disposes internal representation of specified Track if possible; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead) // can Track actually exist?
+		if (cyl>=ARRAYSIZE(internalTracks) || head>capsImageInfo.maxhead) // can Track actually exist?
 			return ERROR_SEEK;
 		if (const TStdWinError err=__super::UnscanTrack(cyl,head)) // base
 			return err;
