@@ -619,7 +619,7 @@ namespace Medium{
 		}
 		// - close DOS and all views
 {		PREVENT_FROM_DESTRUCTION(*this);
-		TDI_INSTANCE->CloseAllTabsOfFocusedImage();
+		TDI_INSTANCE->CloseAllTabsOfImage(this);
 		if (dos)
 			delete dos, dos=nullptr;
 		// - dispose all Cylinders
