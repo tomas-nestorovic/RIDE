@@ -238,6 +238,8 @@ using namespace Charting;
 						// . drawing MetaData
 						tr.SetCurrentTime(visible.tStart-1);
 						if (te.IsFeatureShown(TCursorFeatures::METADATA)){
+							const SIZE metaDataSizeMin=te.fontMetaData.GetTextSize( _T("M") );
+							const TLogValue metaDataLengthMin=te.timeline.GetValue( metaDataSizeMin.cy );
 							const auto dcSettings0=::SaveDC(dc);
 								::SelectObject( dc, te.penMetaData );
 								::SelectObject( dc, te.fontMetaData );
@@ -246,13 +248,19 @@ using namespace Charting;
 								for( auto it=tr.GetCurrentTimeMetaDataIterator(); it!=tr.GetMetaData().cend(); it++ ){
 									if (visible.tEnd<it->tStart)
 										break;
-									//const int bitrate=TIME_SECOND(1)/it->GetBitTimeAvg();
-									const int bitrate=TIME_MILLI(1)/it->GetBitTimeAvg(); // kilobits
 									EXCLUSIVELY_LOCK(p.params);
-									if ( continuePainting=p.params.id==id ){
-										const SIZE offset={ 1, te.fontMetaData.GetTextSize(  label,  ::wsprintf( label, _T("Fuzzy %d kbps")+6*!it->isFuzzy, bitrate )  ).cx };
-										g.PerpLineAndText( it->tStart, METADATA_HEIGHT, -METADATA_HEIGHT, offset, label );
-									}
+									if ( continuePainting=p.params.id==id )
+										if (it->GetLength()>metaDataLengthMin){
+											//const int bitrate=TIME_SECOND(1)/it->GetBitTimeAvg();
+											const int bitrate=TIME_MILLI(1)/it->GetBitTimeAvg(); // kilobits
+											const int nLabelChars=::wsprintf( label, _T("Fuzzy %d kbps")+6*!it->isFuzzy, bitrate );
+											::TextOut( dc,
+												1+g.PerpLine( it->tStart, METADATA_HEIGHT, -METADATA_HEIGHT ),
+												-METADATA_HEIGHT+te.fontMetaData.GetTextSize( label, nLabelChars ).cx,
+												label, nLabelChars
+											);
+										}else
+											g.PerpLine( it->tStart, -METADATA_HEIGHT, -METADATA_HEIGHT+6 );
 								}
 							::RestoreDC(dc,dcSettings0);
 						}
