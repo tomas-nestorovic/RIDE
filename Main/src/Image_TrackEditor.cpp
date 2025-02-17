@@ -145,7 +145,6 @@ using namespace Charting;
 							const auto &peList=te.GetParseEvents();
 							const auto dcSettings0=::SaveDC(dc);
 								::SelectObject( dc, Utils::CRidePen::BlackHairline );
-								::SetBkMode( dc, OPAQUE );
 								const LPCTSTR byteInfoFormat= te.decadicByteValues ? _T("%c\n%d") : _T("%c\n$%02X");
 								TCHAR label[80];
 								const SIZE byteInfoSizeMin=te.timeline.font.GetTextSize(  label,  ::wsprintf( label, byteInfoFormat, 'M', 255 )  );
@@ -166,32 +165,29 @@ using namespace Charting;
 								}		if (!continuePainting) // new paint request?
 											break;
 										if (showByteInfo && pe->IsDataAny()){
-											auto pbi=pe.data->byteInfos;
-											while (pbi->tStart+iwTimeDefaultHalf<ti.tStart) pbi++; // skip invisible part
-											rcLabel.bottom-=te.timeline.font.charHeight, rcLabel.top=rcLabel.bottom-byteInfoSizeMin.cy;
-											while (continuePainting && pbi->tStart<ti.tEnd && (PCBYTE)pbi-(PCBYTE)pe.data<pe->size){ // draw visible part
-												rcLabel.left=te.timeline.GetClientUnits(pbi->tStart+iwTimeDefaultHalf);
-												rcLabel.right=rcLabel.left+1000;
+											const auto &bis=pe.data->byteInfos;
+											int i=0;
+											while (bis[i].tStart+iwTimeDefaultHalf<ti.tStart) i++; // skip invisible part
+											rcLabel.top=rcLabel.bottom-te.timeline.font.charHeight, rcLabel.bottom=-EVENT_HEIGHT+te.timeline.font.charHeight;
+											const SIZE byteInfoOffset={ 0, -byteInfoSizeMin.cy };
+											while (continuePainting && bis[i].tStart<ti.tEnd && i<pe->dw){ // draw visible part
+												const auto &bi=bis[i];
 												EXCLUSIVELY_LOCK(p.params);
-													if ( continuePainting=p.params.id==id )
-														switch (showByteInfo){
-															case BI_MINIMAL:
-																::MoveToEx( dc, rcLabel.left,-EVENT_HEIGHT-2, nullptr );
-																::LineTo( dc, rcLabel.left,-EVENT_HEIGHT+2 );
-																break;
-															case BI_FULL:
-																::MoveToEx( dc, rcLabel.left,0, nullptr );
-																::LineTo( dc, rcLabel.left,rcLabel.bottom );
-																::DrawText(
-																	dc,
-																	label,	::wsprintf( label, byteInfoFormat, ::isprint(pbi->value)?pbi->value:'?', pbi->value ),
-																	&rcLabel, DT_LEFT|DT_BOTTOM
-																);
-																break;
-															default:
-																ASSERT(FALSE); break;
-														}
-												pbi++;
+												if ( continuePainting=p.params.id==id )
+													switch (showByteInfo){
+														case BI_MINIMAL:
+															g.PerpLine( bi.tStart+iwTimeDefaultHalf, -EVENT_HEIGHT-2, -EVENT_HEIGHT+2 );
+															break;
+														case BI_FULL:
+															g.PerpLineAndText(
+																bi.tStart+iwTimeDefaultHalf, 0, rcLabel.top, byteInfoOffset,
+																byteInfoFormat, ::isprint(bi.value)?bi.value:'?', bi.value
+															);
+															break;
+														default:
+															ASSERT(FALSE); break;
+													}
+												i++;
 											}
 										}
 									}
