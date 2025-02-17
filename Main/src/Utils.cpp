@@ -980,7 +980,8 @@ namespace Utils{
 		// draws a line perpendicular to the Axis, and text description
 		const int x=PerpLine( v, nUnitsFrom, nUnitsTo );
 		TCHAR text[80];
-		::TextOut( dc, x+szUnitsLabelOffset.cx,nUnitsTo+szUnitsLabelOffset.cy, text,::wvsprintf(text,format,args) );
+		RECT rc={ x+szUnitsLabelOffset.cx, nUnitsTo+szUnitsLabelOffset.cy, 1000, 1000 };
+		::DrawText( dc, text, ::wvsprintf(text,format,args), &rc, DT_TOP|DT_LEFT );
 		return x;
 	}
 

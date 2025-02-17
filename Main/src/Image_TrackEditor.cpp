@@ -155,20 +155,22 @@ using namespace Charting;
 									if (const auto ti=pe->Add(iwTimeDefaultHalf).Intersect(visible)){ // offset ParseEvent visible?
 										const int xa=te.timeline.GetClientUnits(ti.tStart), xz=te.timeline.GetClientUnits(ti.tEnd);
 										RECT rcLabel={ te.timeline.GetClientUnits(pe->tStart+iwTimeDefaultHalf), -1000, xz, -EVENT_HEIGHT-3 };
+										const COLORREF textColor=TParseEvent::TypeColors[pe->type];
 								{		EXCLUSIVELY_LOCK(p.params);
 											if ( continuePainting=p.params.id==id ){
 												::SelectObject( dc, parseEventBrushes[pe->type] );
 												::PatBlt( dc, xa,-EVENT_HEIGHT, xz-xa,EVENT_HEIGHT, 0xa000c9 ); // ternary raster operation "dest AND pattern"
-												::SetTextColor( dc, TParseEvent::TypeColors[pe->type] );
+												::SetTextColor( dc, textColor );
 												::DrawText( dc, pe->GetDescription(),-1, &rcLabel, DT_LEFT|DT_BOTTOM|DT_SINGLELINE );
 											}
 								}		if (!continuePainting) // new paint request?
 											break;
 										if (showByteInfo && pe->IsDataAny()){
+											const COLORREF textColorBlend=Utils::GetBlendedColor( textColor, COLOR_BLACK );
 											const auto &bis=pe.data->byteInfos;
 											int i=0;
 											while (bis[i].tStart+iwTimeDefaultHalf<ti.tStart) i++; // skip invisible part
-											rcLabel.top=rcLabel.bottom-te.timeline.font.charHeight, rcLabel.bottom=-EVENT_HEIGHT+te.timeline.font.charHeight;
+											rcLabel.top=rcLabel.bottom-te.timeline.font.charHeight, rcLabel.bottom=-EVENT_HEIGHT+Utils::CRideFont::Small.charHeight;
 											const SIZE byteInfoOffset={ 0, -byteInfoSizeMin.cy };
 											while (continuePainting && bis[i].tStart<ti.tEnd && i<pe->dw){ // draw visible part
 												const auto &bi=bis[i];
@@ -178,12 +180,18 @@ using namespace Charting;
 														case BI_MINIMAL:
 															g.PerpLine( bi.tStart+iwTimeDefaultHalf, -EVENT_HEIGHT-2, -EVENT_HEIGHT+2 );
 															break;
-														case BI_FULL:
-															g.PerpLineAndText(
+														case BI_FULL:{
+															rcLabel.left=g.PerpLineAndText(
 																bi.tStart+iwTimeDefaultHalf, 0, rcLabel.top, byteInfoOffset,
 																byteInfoFormat, ::isprint(bi.value)?bi.value:'?', bi.value
 															);
+															const COLORREF tc0=::SetTextColor( dc, textColorBlend );
+																const HGDIOBJ hFont0=::SelectObject( dc, Utils::CRideFont::Small );
+																	::DrawText( dc, label, ::wsprintf(label,_T("+$%X"),i), &rcLabel, DT_BOTTOM|DT_SINGLELINE );
+																::SelectObject( dc, hFont0 );
+															::SetTextColor( dc, tc0 );
 															break;
+														}
 														default:
 															ASSERT(FALSE); break;
 													}
