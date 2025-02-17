@@ -63,6 +63,37 @@
 		// - base
 		if (!__super::Create(nullptr,nullptr,dwStyle,rect,pParentWnd,nID,nullptr)) // (CCreateContext *)==nullptr => doesn't allow current Image to get crack on MFC commands
 			return FALSE;
+		// - extract icon of local application associated with opening web pages
+		if (!defaultBrowserIcon.m_hObject){ // not yet extracted?
+			WCHAR defBrowserPath[MAX_PATH];
+			DWORD n=ARRAYSIZE(defBrowserPath);
+			if (SUCCEEDED(::AssocQueryStringW( ASSOCF_INIT_IGNOREUNKNOWN, ASSOCSTR_EXECUTABLE, L".html", L"open", defBrowserPath, &n ))){
+				HICON hIcon;
+				if (::ExtractIconExW( defBrowserPath, 0, nullptr, &hIcon, 1 )){
+					// draw the Icon into a usable bitmap
+					CClientDC dcScreen(nullptr);
+					CDC dcMem;
+						dcMem.CreateCompatibleDC( &dcScreen );
+					int w,h;
+					ImageList_GetIconSize(
+						(HIMAGELIST)tab.toolbar.GetToolBarCtrl().SendMessage(TB_GETIMAGELIST),
+						&w, &h
+					);
+					defaultBrowserIcon.CreateCompatibleBitmap( &dcScreen, w, h );
+					const HGDIOBJ hBmp0=::SelectObject( dcMem, defaultBrowserIcon );
+						::DrawIconEx( dcMem, 0,0, hIcon, w, h, 0, nullptr, DI_NORMAL );
+					::SelectObject( dcMem, hBmp0 );
+					::DestroyIcon(hIcon);
+				}
+			}
+		}
+		// - update the "Default browser" toolbar button
+		if (defaultBrowserIcon.m_hObject) // is there a default browser?
+			tab.toolbar.GetToolBarCtrl().SendMessage(
+				TB_CHANGEBITMAP,
+				ID_WEB_DEFAULT_BROWSER,
+				tab.toolbar.GetToolBarCtrl().AddBitmap( 1, &defaultBrowserIcon )
+			);
 		// - performing initial update as the method isn't called automatically during OnCreate
 		OnInitialUpdate(); // calls SetScrollSizes via OnUpdate
 		// - navigating to and displaying CurrentPage

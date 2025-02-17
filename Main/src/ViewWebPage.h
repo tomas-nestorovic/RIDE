@@ -4,6 +4,7 @@
 	class CWebPageView sealed:public CHtmlView{
 		DECLARE_MESSAGE_MAP()
 	private:
+		CBitmap defaultBrowserIcon;
 		struct THistory sealed{
 			#pragma pack(1)
 			struct TPage sealed{
