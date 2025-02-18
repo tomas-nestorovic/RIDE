@@ -10,16 +10,21 @@ namespace Charting
 
 
 
-	void CChartView::CHistogram::AddValue(TLogValue value){
+	void CHistogram::Add(TLogValue value){
 		// increases by one the number of occurences of Value
-		auto it=find(value);
-		if (it!=cend())
-			it->second++;
-		else
-			insert( std::make_pair(value,1) );
+		Add( value, 1 );
 	}
 
-	TIndex CChartView::CHistogram::GetCount(TLogValue value) const{
+	void CHistogram::Add(TLogValue value,TIndex addedCount){
+		// increases the number of occurences of Value
+		auto it=find(value);
+		if (it!=cend())
+			it->second+=addedCount;
+		else
+			insert( std::make_pair(value,addedCount) );
+	}
+
+	TIndex CHistogram::GetCount(TLogValue value) const{
 		// returns the number of occurences of Value (or zero)
 		const auto it=find(value);
 		if (it!=cend())
@@ -111,10 +116,10 @@ namespace Charting
 		::SelectObject( dc, hPen0 );
 	}
 
-	CChartView::CHistogram CChartView::CXyPointSeries::CreateYxHistogram(TLogValue mergeFilter) const{
+	CHistogram CChartView::CXyPointSeries::CreateYxHistogram(TLogValue mergeFilter) const{
 		// creates histogram of Y values
 		CHistogram tmp;
-		for( TIndex n=nPoints; n>0; tmp.AddValue(points[--n].y) );
+		for( TIndex n=nPoints; n>0; tmp.Add(points[--n].y) );
 		if (mergeFilter>0)
 			for( auto it=tmp.begin(); it!=tmp.end(); ){
 				auto itNext=it;

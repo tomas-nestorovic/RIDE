@@ -11,6 +11,17 @@ namespace Charting
 
 	typedef LPCVOID PCItem;
 
+	class CHistogram:public std::map<TLogValue,TIndex>{
+	public:
+		typedef std::pair<TLogValue,TIndex> CPair;
+
+		inline operator bool() const{ return size()>0; }
+		void Add(TLogValue value);
+		void Add(TLogValue value,TIndex addedCount);
+		TIndex GetCount(TLogValue value) const;
+		CHistogram &Append(const CHistogram &r);
+	};
+
 	class CChartView:public CView{
 	public:
 		enum TStatus{
@@ -24,14 +35,6 @@ namespace Charting
 
 			int L,R,T,B;
 		} &RCMargin;
-
-		class CHistogram:public std::map<TLogValue,TIndex>{
-		public:
-			inline operator bool() const{ return size()>0; }
-			void AddValue(TLogValue value);
-			TIndex GetCount(TLogValue value) const;
-			CHistogram &Append(const CHistogram &r);
-		};
 
 		class CPainter; // forward
 		class CDisplayInfo; // forward
