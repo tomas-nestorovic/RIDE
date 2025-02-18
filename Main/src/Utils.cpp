@@ -2542,6 +2542,12 @@ namespace Utils{
 						break;
 					case WM_NOTIFY:
 						return ::SendMessage( ::GetParent(hCheckbox), msg, wParam, lParam ); // forward to Dialog
+					case WM_CTLCOLORSTATIC:
+						::SetBkMode( (HDC)wParam, TRANSPARENT );
+						::SetTextColor( (HDC)wParam,
+							::IsWindowEnabled(hCheckbox) ? ::GetSysColor(COLOR_BTNTEXT) : ::GetSysColor(COLOR_GRAYTEXT)
+						);
+						return CRideBrush::BtnFace;
 					case WM_PAINT:{
 						// . first draw the Checkbox
 						const HWND hHyperlink=GetWindowUserData<HWND>(hCheckbox);
