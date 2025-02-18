@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Charting.h"
 
 	CImage::CTrackReaderBase::CTrackReaderBase(PLogTime logTimes,PLogTimesInfo pLti,TDecoderMethod method)
 		// ctor
@@ -612,10 +613,29 @@
 			}
 			const WORD nGaps=nDataEnds+nSectorsFound;
 			// . analyzing gap between two consecutive ParseEvents
+			typedef WORD TBitPattern;
+			struct:Charting::CHistogram{ // Key = bit pattern (data+clock), Value = number of occurences
+				iterator Find(TBitPattern bp){
+					static_assert( sizeof(TBitPattern)==2, "" ); // the following is valid only for "8 data bits + 8 clock bits"
+					for( char n=sizeof(bp)*CHAR_BIT; n-->0; ){ // try all rotations
+						const auto it=find(bp);
+						if (it!=end())
+							return it;
+						bp= (bp<<1) | (bp>>(sizeof(bp)*CHAR_BIT-1));
+					}
+					return end(); // unknown combination of data+clock bits
+				}
+				void Add(TBitPattern bp){
+					static_assert( sizeof(bp)<=sizeof(key_type), "" ); // must fit in
+					const auto it=Find(bp);
+					if (it!=end())
+						it->second++;
+					else
+						__super::Add(bp); 
+				}
+			} hist;
 			constexpr BYTE nBytesInspectedMax=20; // or maximum number of Bytes inspected before deciding that there are data in the gap
-			ULONGLONG bitPattern;
-			std::map<ULONGLONG,WORD> tmpHist; // Key = bit pattern (data+clock), Value = number of occurences
-			char bitPatternLength=-1; // number of valid bits in the BitPattern
+			TBitPattern bitPattern;
 			for( WORD i=nGaps; i>0; ){
 				const auto &r=dataEnds[--i];
 				if (const auto it=rOutParseEvents.FindByEnd(r.time+1))
@@ -627,44 +647,21 @@
 				const TParseEvent &peNext=*itNext->second;
 				SetCurrentTimeAndProfile( r.time, r.profile );
 				BYTE nBytesInspected=0;
-				for( TLogTime t=r.time; t<peNext.tStart && nBytesInspected<nBytesInspectedMax; nBytesInspected++ ){
+				ReadByte(bitPattern); // skip this Byte written just after the Data CRC; the Head is turned off after that, creating magnetic noise
+				ReadByte(bitPattern); // skip this Byte for the magnetic noise still overlaps into it
+				for( TLogTime t=GetCurrentTime(); t<peNext.tStart && nBytesInspected<nBytesInspectedMax; nBytesInspected++ ){
 					BYTE byte;
-					bitPatternLength=ReadByte( bitPattern, &byte );
-					auto it=tmpHist.find(bitPattern);
-					if (it!=tmpHist.cend())
-						it->second++;
-					else
-						tmpHist.insert( std::make_pair(bitPattern,1) );
+					ReadByte( bitPattern, &byte );
+					hist.Add(bitPattern);
 				}
 			}
-			struct TItem sealed{
-				ULONGLONG bitPattern; // data and clock corresponding to a Byte
-				WORD count;
-
-				inline bool operator<(const TItem &r) const{
-					return count>r.count; // ">" = order descending
-				}
-				bool HasSameBitPatternRotated(ULONGLONG bitPattern,char bitPatternLength) const{
-					const ULONGLONG bitMask=(1<<bitPatternLength)-1; // to mask out only lower N bits
-					bool result=false; // assumption (BitPatterns are unequal no matter how rotated against each other)
-					for( char nRotations=bitPatternLength; nRotations>0; nRotations-- ){
-						result|=bitPattern==this->bitPattern;
-						bitPattern=	( (bitPattern<<1)|(bitPattern>>(bitPatternLength-1)) ) // circular rotation left
-									&
-									bitMask; // masking out only lower N bits
-					}
-					return result;
-				}
-			} histogram[2500];
-			WORD nUniqueBitPatterns=0;
-			for each( const auto &p in tmpHist ){
-				TItem &r=histogram[nUniqueBitPatterns++];
-					r.bitPattern=p.first;
-					r.count=p.second;
-			}
-			std::sort( histogram, histogram+nUniqueBitPatterns );
 			// . production of new ParseEvents
-			if (histogram->count>0) // a gap should always consits of some Bytes, but just to be sure
+			if (hist.size()>0){ // a gap should always consits of some Bytes, but just to be sure
+				typedef const Charting::CHistogram::CPair &RCPair;
+				const TBitPattern typicalBitPattern=std::max_element( // "typical" BitPattern, likely the default gap filler Byte created during formatting
+					hist.cbegin(), hist.cend(),
+					[](RCPair p1,RCPair p2)->bool{ return p1.second<p2.second; }
+				)->first; 
 				for( WORD i=nGaps; i>0; ){
 					const auto &r=dataEnds[--i];
 					if (const auto it=rOutParseEvents.FindByEnd(r.time+1))
@@ -673,9 +670,7 @@
 					const auto itNext=rOutParseEvents.FindByStart(r.time);
 					const TLogTime tNextStart= itNext ? itNext->second->tStart : INT_MAX;
 					SetCurrentTimeAndProfile( r.time, r.profile );
-					const TItem &typicalItem=*histogram; // "typically" the filler Byte of post-ID Gap2, created during formatting, and thus always well aligned
 					BYTE nBytesInspected=0, nBytesTypical=0;
-					constexpr BYTE nGapBytesMax=250;
 					TDataParseEvent peData( TSectorId::Invalid, r.time );
 					while (*this && nBytesInspected<nBytesInspectedMax){
 						TDataParseEvent::TByteInfo &rbi=peData.byteInfos[nBytesInspected];
@@ -685,18 +680,21 @@
 							currentTime=rbi.tStart; // putting unsuitable Byte back
 							break;
 						}
-						nBytesTypical+=typicalItem.HasSameBitPatternRotated( bitPattern, bitPatternLength );
+						const auto it=hist.Find(bitPattern);
+						nBytesTypical+= it!=hist.end() && it->first==typicalBitPattern;
 						nBytesInspected++;
 					}
-					if (nBytesInspected-nBytesTypical>4){
-						// significant amount of other than TypicalBytes, beyond a random noise on Track
+					if (nBytesInspected-nBytesTypical>6){
+						// significant amount of other than TypicalBitPatterns, beyond a random noise on Track
+						constexpr BYTE nGapBytesMax=60;
 						while (*this && nBytesInspected<nGapBytesMax){
 							TDataParseEvent::TByteInfo &rbi=peData.byteInfos[nBytesInspected];
 								rbi.tStart=currentTime;
 								ReadByte( bitPattern, &rbi.value );
+							const auto it=hist.Find(bitPattern);
 							if (currentTime>=tNextStart
 								||
-								typicalItem.HasSameBitPatternRotated( bitPattern, bitPatternLength )
+								it!=hist.end() && it->first==typicalBitPattern
 							){
 								currentTime=rbi.tStart; // putting unsuitable Byte back
 								break; // again Typical, so probably all gap data discovered
@@ -707,6 +705,7 @@
 						rOutParseEvents.Add( peData );
 					}
 				}
+			}
 		}
 		ap.UpdateProgress( 4*StepGranularity );
 		// - Step 5,6,...: search for fuzzy regions in Sectors
@@ -1529,22 +1528,19 @@
 				: 0;
 	}
 
-	char CImage::CTrackReader::ReadByte(ULONGLONG &rOutBits,PBYTE pOutValue){
+	char CImage::CTrackReader::ReadByte(WORD &rOutBits,PBYTE pOutValue){
 		// reads number of bits corresponding to one Byte; if all such bits successfully read, returns their count, or -1 otherwise
 		switch (pLogTimesInfo->codec){
 			case Codec::FM:
 				ASSERT(FALSE); //TODO
 				return -1;
-			case Codec::MFM:{
-				WORD w;
-				if (ReadBits16(w)){ // all bits read?
-					rOutBits=w;
+			case Codec::MFM:
+				if (ReadBits16(rOutBits)){ // all bits read?
 					if (pOutValue)
-						*pOutValue=MFM::DecodeByte(w);
+						*pOutValue=MFM::DecodeByte(rOutBits);
 					return 16;
 				}else
 					return -1;
-			}
 			default:
 				ASSERT(FALSE); // we shouldn't end up here - check if all Codecs are included in the Switch statement!
 				return -1;
