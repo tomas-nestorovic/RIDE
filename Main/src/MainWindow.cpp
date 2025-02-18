@@ -277,7 +277,8 @@
 				if (::TranslateAccelerator(m_hWnd,image->dos->menu.hAccel,pMsg)) return TRUE;
 			}else if (const PCImage image=CImage::GetActive())
 				// active DOS (e.g. MDOS when a WebPage is focused)
-				if (::TranslateAccelerator(m_hWnd,image->dos->menu.hAccel,pMsg)) return TRUE;
+				if (image->dos)
+					if (::TranslateAccelerator(m_hWnd,image->dos->menu.hAccel,pMsg)) return TRUE;
 		}else
 			if (app.GetRecentFileList()->PreTranslateMessage(m_hWnd,pMsg)) return TRUE;
 		return __super::PreTranslateMessage(pMsg); // base
