@@ -706,7 +706,12 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		// - creating a standard "Open/Save File" Dialog
 		CString title;
 			title.LoadString(stdStringId);
-		CFileDialog d( stdStringId==AFX_IDS_OPENFILE, _T(""), nullptr, flags|OFN_OVERWRITEPROMPT, buf );
+		CFileDialog d(
+			stdStringId==AFX_IDS_OPENFILE, _T(""), nullptr, flags|OFN_OVERWRITEPROMPT, buf
+			#if _MFC_VER>=0x0A00
+				, nullptr, 0, FALSE
+			#endif
+		);
 			d.m_ofn.lStructSize=sizeof(OPENFILENAME); // to show the "Places bar"
 			d.m_ofn.nFilterIndex=1;
 			d.m_ofn.lpstrTitle=title;
