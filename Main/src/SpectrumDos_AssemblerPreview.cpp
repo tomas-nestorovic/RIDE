@@ -773,7 +773,7 @@
 					}
 					if (features.instruction){
 						TCHAR format[ARRAYSIZE(argSyntaxBuf)], params[2][64];
-						for( TCHAR i=0,*p=::lstrcpy(format,argSyntax); const PTCHAR percent=_tcschr(p,'%'); p=percent+1,i++ ){
+						for( TCHAR i=0,*p=::lstrcpy(format,argSyntax); const PTCHAR percent=::StrChr(p,'%'); p=percent+1,i++ ){
 							switch (percent[2]){
 								case 'j':
 									::lstrcpy( params[i], _T("(<span class=pair>hl</span>)") );

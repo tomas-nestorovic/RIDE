@@ -710,7 +710,7 @@
 							return err;
 						break;
 					case TDirectoryTraversal::WARNING:
-						// cannot continue if Directory corrupted
+						// cannot continue if Directory corrupt
 						return dt.warning;
 					default:
 						return ERROR_GEN_FAILURE;

@@ -428,7 +428,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 		for( BYTE i=0; i<BSDOS_FAT_COPIES_MAX; i++ )
 			if (const LPCTSTR errMsg=pFats[i]->GetErrorDesc()){
 				CString msg, sol;
-				msg.Format( _T("FAT-%d is corrupted: %s"), 1+i, errMsg );
+				msg.Format( _T("FAT-%d is corrupt: %s"), 1+i, errMsg );
 				sol.Format( _T("A merge with FAT-%d is suggested."), 1+(i+1)%BSDOS_FAT_COPIES_MAX );
 				switch (vp.ConfirmFix( msg, sol )){
 					case IDCANCEL:

@@ -271,7 +271,7 @@
 
 	/*TStdWinError CFileManagerView::__switchToDirectory__(PTCHAR path) const{
 		// changes the current Directory; assumed that the Path is terminated by backslash; returns Windows standard i/o error
-		while (const PTCHAR backslash=_tcschr(path,'\\')){
+		while (const PTCHAR backslash=::StrChr(path,'\\')){
 			// . switching to Subdirectory
 			*backslash='\0';
 				TCHAR buf[MAX_PATH], *pDot=_tcsrchr(::lstrcpy(buf,path),'.');

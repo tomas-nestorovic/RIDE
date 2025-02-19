@@ -231,7 +231,7 @@
 			TCylinder cyl; THead head;
 	{		EXCLUSIVELY_LOCK(rts.params);
 			const THead nHeads=rts.params.nHeads;
-			if (nHeads==0) // "nHeads==0" if disk without any Track (e.g. when opening RawImage of zero length, or if opening a corrupted DSK Image)
+			if (nHeads==0) // "nHeads==0" if disk without any Track (e.g. when opening RawImage of zero length, or if opening a corrupt DSK Image)
 				break;
 			do{
 				const div_t d=div( ++rts.params.x, nHeads );

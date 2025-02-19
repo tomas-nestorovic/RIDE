@@ -2103,7 +2103,7 @@ Utils::Information(buf);}
 						// Sector misses its data part
 						pFormatStep->interruption.nNanoseconds=fddHead.profile.controllerLatency+(GAP2_BYTES_COUNT+SYNCHRONIZATION_BYTES_COUNT-2)*fddHead.profile.oneByteLatency; // "-2" = damaging the A1A1A1 mark
 						/*if (sr.DescribesIdFieldCrcError()){ // commented out as SamDisk doesn't reproduce this error neither [info by Simon Owen]
-							// Sector misses its data part, and its ID Field is corrupted
+							// Sector misses its data part, and its ID Field is corrupt
 							*(pFormatStep+1)=*pFormatStep; // the preceeding Step (as formatted "backwards") is creation of a correct ID Field
 							pFormatStep++->interruption.nMicroseconds=params.controllerLatency+0.5*params.oneByteLatency; // the currect Step is creation of a corrupt ID Field; ".5*" = just to be sure
 						}*/
@@ -2116,9 +2116,9 @@ Utils::Information(buf);}
 						// Sector is complete
 						pFormatStep->interruption.nNanoseconds=fddHead.profile.controllerLatency+sectorLength/2*fddHead.profile.oneByteLatency;
 						/*if (sr.DescribesIdFieldCrcError()){ // commented out as SamDisk doesn't reproduce this error neither [info by Simon Owen]
-							// Sector misses its data part, and its ID Field is corrupted
+							// Sector misses its data part, and its ID Field is corrupt
 							*(pFormatStep+1)=*pFormatStep; // the preceeding Step (as formatted "backwards") is creation of a correct ID Field
-							pFormatStep++->interruption.nMicroseconds=params.controllerLatency+0.5*params.oneByteLatency; // the currect Step is creation of a corrupted ID Field; ".5*" = just to be sure
+							pFormatStep++->interruption.nMicroseconds=params.controllerLatency+0.5*params.oneByteLatency; // the currect Step is creation of a corrupt ID Field; ".5*" = just to be sure
 						}*/
 						nBytesFormatted=NUMBER_OF_OCCUPIED_BYTES(1,sectorLength,gap3,false);
 					}

@@ -1581,9 +1581,9 @@ BEGIN
     GROUPBOX        "ID Field",IDC_STATIC,7,7,186,82,WS_TABSTOP
     CONTROL         "Don't recover",ID_IDFIELD,"Button",BS_AUTORADIOBUTTON | 
                     WS_GROUP | WS_TABSTOP,13,19,59,10
-    CONTROL         "Recover corrupted CRC only",ID_IDFIELD_CRC,"Button",
+    CONTROL         "Recover corrupt CRC only",ID_IDFIELD_CRC,"Button",
                     BS_AUTORADIOBUTTON | WS_TABSTOP,13,32,107,10
-    CONTROL         "Replace corrupted ID Field with alternative sector ID and correct CRC:",
+    CONTROL         "Replace corrupt ID Field with alternative sector ID and correct CRC:",
                     ID_IDFIELD_REPLACE,"Button",BS_AUTORADIOBUTTON | BS_TOP | 
                     BS_MULTILINE | WS_TABSTOP,13,45,162,17
     CONTROL         "IPAddress1",ID_IDFIELD_VALUE,"SysIPAddress32",
@@ -1592,9 +1592,9 @@ BEGIN
     GROUPBOX        "Data Field",IDC_STATIC,7,91,186,83,WS_TABSTOP
     CONTROL         "Don't recover",ID_DATAFIELD,"Button",BS_AUTORADIOBUTTON | 
                     WS_GROUP | WS_TABSTOP,13,104,59,10
-    CONTROL         "Recover corrupted CRC only",ID_DATAFIELD_CRC,"Button",
+    CONTROL         "Recover corrupt CRC only",ID_DATAFIELD_CRC,"Button",
                     BS_AUTORADIOBUTTON | WS_TABSTOP,13,117,107,10
-    CONTROL         "Replace corrupted data with alternative filler Byte and correct CRC",
+    CONTROL         "Replace corrupt data with alternative filler Byte and correct CRC",
                     ID_DATAFIELD_REPLACE,"Button",BS_AUTORADIOBUTTON | 
                     BS_TOP | BS_MULTILINE | WS_TABSTOP,13,130,173,20
     EDITTEXT        ID_DATAFIELD_FILLERBYTE,25,150,78,15,ES_AUTOHSCROLL | 

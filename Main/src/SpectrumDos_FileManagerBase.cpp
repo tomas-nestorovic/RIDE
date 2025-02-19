@@ -159,7 +159,7 @@
 	void CSpectrumBase::CSpectrumBaseFileManagerView::CSingleCharExtensionEditor::DrawReportModeCell(BYTE extension,LPDRAWITEMSTRUCT pdis,LPCSTR knownExtensions) const{
 		// directly draws File's single-character Extension
 		if (knownExtensions) // want to highlight in red unknown Extensions
-			if (!::strchr(knownExtensions,extension))
+			if (!::StrChrA(knownExtensions,extension))
 				DrawRedHighlight(pdis);
 		rZxFileManager.zxRom.PrintAt( pdis->hDC, (LPCSTR)&extension, 1, pdis->rcItem, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
 	}

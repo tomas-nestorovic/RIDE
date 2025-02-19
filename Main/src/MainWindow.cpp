@@ -479,9 +479,9 @@ quitWithErr:const DWORD err=::GetLastError();
 			app.WriteProfileInt( INI_GENERAL, INI_IS_UP_TO_DATE, app.dateRecencyLastChecked );
 		}
 		if (const PCHAR githubTagName=::strstr(buffer,GITHUB_VERSION_TAG_NAME))
-			if (PCHAR r=::strchr(githubTagName+sizeof(GITHUB_VERSION_TAG_NAME),'\"')){ // "R"emote tag
+			if (PCHAR r=::StrChrA(githubTagName+sizeof(GITHUB_VERSION_TAG_NAME),'\"')){ // "R"emote tag
 				buffer[nBytesRead]='\"'; // guaranteeing that closing quote is always found
-				*::strchr( ++r, '\"' )='\0'; // "+1" = skipping the opening quote; replacing the closing quote with the Null character
+				*::StrChrA( ++r, '\"' )='\0'; // "+1" = skipping the opening quote; replacing the closing quote with the Null character
 				app.WriteProfileString( INI_GENERAL, INI_LATEST_KNOWN_VERSION, Utils::ToStringT(r) );
 				LPCSTR t=APP_VERSION; // "T"his tag
 				do{
