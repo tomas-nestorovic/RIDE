@@ -421,7 +421,7 @@
 			pBac->SetProgressTarget(5); // 5 = see number of steps below
 		HINTERNET hSession=nullptr, hConnection=nullptr, hRequest=nullptr;
 		// - Step 1: opening a new Session
-		hSession=::InternetOpenA( APP_IDENTIFIER, INTERNET_OPEN_TYPE_PRECONFIG, nullptr, nullptr, 0 );
+		hSession=::InternetOpen( APP_IDENTIFIER, INTERNET_OPEN_TYPE_PRECONFIG, nullptr, nullptr, 0 );
 		if (hSession==nullptr){
 quitWithErr:const DWORD err=::GetLastError();
 			if (hRequest!=nullptr)
@@ -434,7 +434,7 @@ quitWithErr:const DWORD err=::GetLastError();
 		}
 		if (pBac){
 			if (pBac->Cancelled) return ERROR_CANCELLED;
-			pBac->UpdateProgress(1);
+			pBac->IncrementProgress();
 		}
 		// - Step 2: connecting to the repository server
 		hConnection=::InternetConnect( hSession, GITHUB_API_SERVER_NAME, INTERNET_DEFAULT_HTTPS_PORT, nullptr, nullptr, INTERNET_SERVICE_HTTP, 0, 0 );
@@ -442,26 +442,32 @@ quitWithErr:const DWORD err=::GetLastError();
 			goto quitWithErr;
 		if (pBac){
 			if (pBac->Cancelled) return ERROR_CANCELLED;
-			pBac->UpdateProgress(2);
+			pBac->IncrementProgress();
 		}
 		// - Step 3: creating a new Request to the server
-		hRequest=::HttpOpenRequest(	hConnection, _T("GET"), _T("/repos/tomas-nestorovic/RIDE/releases/latest"),
-									nullptr, nullptr, nullptr,
-									INTERNET_FLAG_SECURE | INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE | INTERNET_NO_CALLBACK,
-									0
-								);
+		hRequest=::HttpOpenRequest( hConnection, nullptr,
+			_T("/repos/tomas-nestorovic/RIDE/releases/latest"),
+			nullptr, nullptr, nullptr,
+			INTERNET_FLAG_SECURE | INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE | INTERNET_NO_CALLBACK,
+			0
+		);
 		if (hRequest==nullptr)
 			goto quitWithErr;
+		DWORD dwFlags, dwBuffLen=sizeof(dwFlags);
+		if (!::InternetQueryOption( hRequest, INTERNET_OPTION_SECURITY_FLAGS, &dwFlags, &dwBuffLen ))
+			goto quitWithErr;
+		dwFlags|= SECURITY_FLAG_IGNORE_REVOCATION | SECURITY_FLAG_IGNORE_WRONG_USAGE;
+		::InternetSetOption( hRequest, INTERNET_OPTION_SECURITY_FLAGS, &dwFlags, sizeof(dwFlags) );
 		if (pBac){
 			if (pBac->Cancelled) return ERROR_CANCELLED;
-			pBac->UpdateProgress(3);
+			pBac->IncrementProgress();
 		}
 		// - Step 4: sending the Request
-		if (!::HttpSendRequestA( hRequest, "User-Agent:" APP_ABBREVIATION, -1, nullptr, 0 ))
+		if (!::HttpSendRequest( hRequest, nullptr, 0, nullptr, 0 ))
 			goto quitWithErr;
 		if (pBac){
 			if (pBac->Cancelled) return ERROR_CANCELLED;
-			pBac->UpdateProgress(4);
+			pBac->IncrementProgress();
 		}
 		// - Step 5: receiving the response
 		char buffer[16384];
@@ -471,7 +477,7 @@ quitWithErr:const DWORD err=::GetLastError();
 		buffer[nBytesRead]='\0';
 		if (pBac){
 			if (pBac->Cancelled) return ERROR_CANCELLED;
-			pBac->UpdateProgress(5);
+			pBac->IncrementProgress();
 		}
 		// - analysing the obtained information (comparing it against this instance version)
 		if (const DWORD now=Utils::CRideTime().GetDosDateTime()){ // recording that recency last checked Now
