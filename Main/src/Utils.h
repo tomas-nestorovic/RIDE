@@ -189,6 +189,22 @@ namespace Utils{
 		~CExclusivelyLocked();
 	};
 
+	struct TInternetHandle{
+		const HINTERNET handle;
+
+		inline TInternetHandle(HINTERNET handle) : handle(handle) {}
+		~TInternetHandle();
+
+		inline operator bool() const{ return handle!=nullptr; }
+		inline operator HINTERNET() const{ return handle; }
+	};
+
+	struct TInternetSession:public TInternetHandle{
+		TInternetSession();
+
+		DWORD Download(LPCTSTR url,LPVOID buffer,DWORD bufferSize) const;
+	};
+
 	class CRidePen sealed:public ::CPen{
 	public:
 		static const CRidePen BlackHairline, WhiteHairline, RedHairline;

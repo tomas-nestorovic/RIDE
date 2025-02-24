@@ -335,6 +335,11 @@
 		return error;
 	}
 
+	TStdWinError CBackgroundActionCancelable::TerminateWithLastError(){
+		// initiates the termination of the Worker with last Windows standard i/o error
+		return TerminateWithError( ::GetLastError() );
+	}
+
 
 
 

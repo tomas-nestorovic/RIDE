@@ -419,52 +419,43 @@
 		const PBackgroundActionCancelable pBac=dynamic_cast<PBackgroundActionCancelable>(pAction);
 		if (pBac)
 			pBac->SetProgressTarget(5); // 5 = see number of steps below
-		HINTERNET hSession=nullptr, hConnection=nullptr, hRequest=nullptr;
 		// - Step 1: opening a new Session
-		hSession=::InternetOpen( APP_IDENTIFIER, INTERNET_OPEN_TYPE_PRECONFIG, nullptr, nullptr, 0 );
-		if (hSession==nullptr){
-quitWithErr:const DWORD err=::GetLastError();
-			if (hRequest!=nullptr)
-				::InternetCloseHandle(hRequest);
-			if (hConnection!=nullptr)
-				::InternetCloseHandle(hConnection);
-			if (hSession!=nullptr)
-				::InternetCloseHandle(hSession);
-			return pBac ? pBac->TerminateWithError(err) : err;
-		}
+		const Utils::TInternetSession session;
+		if (!session)
+			return pBac->TerminateWithLastError();
 		if (pBac){
 			if (pBac->Cancelled) return ERROR_CANCELLED;
 			pBac->IncrementProgress();
 		}
 		// - Step 2: connecting to the repository server
-		hConnection=::InternetConnect( hSession, GITHUB_API_SERVER_NAME, INTERNET_DEFAULT_HTTPS_PORT, nullptr, nullptr, INTERNET_SERVICE_HTTP, 0, 0 );
-		if (hConnection==nullptr)
-			goto quitWithErr;
+		const Utils::TInternetHandle connection=::InternetConnect( session, GITHUB_API_SERVER_NAME, INTERNET_DEFAULT_HTTPS_PORT, nullptr, nullptr, INTERNET_SERVICE_HTTP, 0, 0 );
+		if (!connection)
+			return pBac->TerminateWithLastError();
 		if (pBac){
 			if (pBac->Cancelled) return ERROR_CANCELLED;
 			pBac->IncrementProgress();
 		}
 		// - Step 3: creating a new Request to the server
-		hRequest=::HttpOpenRequest( hConnection, nullptr,
+		const Utils::TInternetHandle request=::HttpOpenRequest( connection, nullptr,
 			_T("/repos/tomas-nestorovic/RIDE/releases/latest"),
 			nullptr, nullptr, nullptr,
 			INTERNET_FLAG_SECURE | INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE | INTERNET_NO_CALLBACK,
 			0
 		);
-		if (hRequest==nullptr)
-			goto quitWithErr;
+		if (!request)
+			return pBac->TerminateWithLastError();
 		DWORD dwFlags, dwBuffLen=sizeof(dwFlags);
-		if (!::InternetQueryOption( hRequest, INTERNET_OPTION_SECURITY_FLAGS, &dwFlags, &dwBuffLen ))
-			goto quitWithErr;
+		if (!::InternetQueryOption( request, INTERNET_OPTION_SECURITY_FLAGS, &dwFlags, &dwBuffLen ))
+			return pBac->TerminateWithLastError();
 		dwFlags|= SECURITY_FLAG_IGNORE_REVOCATION | SECURITY_FLAG_IGNORE_WRONG_USAGE;
-		::InternetSetOption( hRequest, INTERNET_OPTION_SECURITY_FLAGS, &dwFlags, sizeof(dwFlags) );
+		::InternetSetOption( request, INTERNET_OPTION_SECURITY_FLAGS, &dwFlags, sizeof(dwFlags) );
 		if (pBac){
 			if (pBac->Cancelled) return ERROR_CANCELLED;
 			pBac->IncrementProgress();
 		}
 		// - Step 4: sending the Request
-		if (!::HttpSendRequest( hRequest, nullptr, 0, nullptr, 0 ))
-			goto quitWithErr;
+		if (!::HttpSendRequest( request, nullptr, 0, nullptr, 0 ))
+			return pBac->TerminateWithLastError();
 		if (pBac){
 			if (pBac->Cancelled) return ERROR_CANCELLED;
 			pBac->IncrementProgress();
@@ -472,8 +463,8 @@ quitWithErr:const DWORD err=::GetLastError();
 		// - Step 5: receiving the response
 		char buffer[16384];
 		DWORD nBytesRead;
-		if (!::InternetReadFile( hRequest, buffer, sizeof(buffer), &nBytesRead ))
-			goto quitWithErr;
+		if (!::InternetReadFile( request, buffer, sizeof(buffer), &nBytesRead ))
+			return pBac->TerminateWithLastError();
 		buffer[nBytesRead]='\0';
 		if (pBac){
 			if (pBac->Cancelled) return ERROR_CANCELLED;

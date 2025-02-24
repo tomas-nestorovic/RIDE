@@ -42,6 +42,33 @@ namespace Utils{
 
 
 
+	TInternetHandle::~TInternetHandle(){
+		if (handle!=nullptr)
+			::InternetCloseHandle(handle);
+	}
+
+	TInternetSession::TInternetSession()
+		: TInternetHandle(  ::InternetOpen( APP_IDENTIFIER, INTERNET_OPEN_TYPE_PRECONFIG, nullptr, nullptr, 0 )  ) {
+	}
+
+	DWORD TInternetSession::Download(LPCTSTR url,LPVOID buffer,DWORD bufferSize) const{
+		if (const TInternetHandle file=::InternetOpenUrl(
+				handle, url,
+				nullptr, 0,
+				INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE,
+				INTERNET_NO_CALLBACK
+			)
+		){
+			DWORD nBytesRead;
+			if (::InternetReadFile( file, buffer, bufferSize, &nBytesRead ))
+				return nBytesRead;
+		}
+		return 0;
+	}
+
+
+
+
 	CRidePen::CRidePen(BYTE thickness,COLORREF color)
 		// ctor
 		: CPen(PS_SOLID,thickness,color) {

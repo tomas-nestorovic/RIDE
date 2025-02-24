@@ -86,6 +86,7 @@
 		void UpdateProgressFinished() const;
 		TStdWinError TerminateWithSuccess();
 		TStdWinError TerminateWithError(TStdWinError error);
+		TStdWinError TerminateWithLastError();
 		inline const Utils::CRideTime &GetDurationTime() const{ return duration; }
 	} *PBackgroundActionCancelable;
 
