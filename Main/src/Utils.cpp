@@ -62,6 +62,17 @@ namespace Utils{
 			return ::GetLastError();
 	}
 
+	TStdWinError TInternetSession::DownloadOneHttp(LPCTSTR url,LPVOID buffer,DWORD bufferSize,DWORD &outObjectSize) const{
+		TCHAR server[64];
+		TCHAR object[180];
+		URL_COMPONENTS uc={sizeof(uc)};
+			uc.lpszHostName=server, uc.dwHostNameLength=ARRAYSIZE(server);
+			uc.lpszUrlPath=object, uc.dwUrlPathLength=ARRAYSIZE(object);
+		return	::InternetCrackUrl( url, 0, 0, &uc )
+				? DownloadOneHttp( server, object, buffer, bufferSize, outObjectSize )
+				: ::GetLastError();
+	}
+
 	TStdWinError TInternetConnection::DownloadHttp(LPCTSTR object,LPVOID buffer,DWORD bufferSize,DWORD &outObjectSize) const{
 		// - create a Request
 		ASSERT(bufferSize);
@@ -85,21 +96,6 @@ namespace Utils{
 		if (!::InternetReadFile( request, buffer, bufferSize, &outObjectSize ))
 			return ::GetLastError();
 		return ERROR_SUCCESS;
-	}
-
-	DWORD TInternetSession::Download(LPCTSTR url,LPVOID buffer,DWORD bufferSize) const{
-		if (const TInternetHandle file=::InternetOpenUrl(
-				handle, url,
-				nullptr, 0,
-				INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE,
-				INTERNET_NO_CALLBACK
-			)
-		){
-			DWORD nBytesRead;
-			if (::InternetReadFile( file, buffer, bufferSize, &nBytesRead ))
-				return nBytesRead;
-		}
-		return 0;
 	}
 
 

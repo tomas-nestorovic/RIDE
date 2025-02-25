@@ -210,7 +210,7 @@ namespace Utils{
 
 		TInternetConnection ConnectTo(LPCTSTR server) const;
 		TStdWinError DownloadOneHttp(LPCTSTR server,LPCTSTR object,LPVOID buffer,DWORD bufferSize,DWORD &outObjectSize) const;
-		DWORD Download(LPCTSTR url,LPVOID buffer,DWORD bufferSize) const;
+		TStdWinError DownloadOneHttp(LPCTSTR url,LPVOID buffer,DWORD bufferSize,DWORD &outObjectSize) const;
 	};
 
 	class CRidePen sealed:public ::CPen{
