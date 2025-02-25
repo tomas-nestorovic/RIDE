@@ -62,6 +62,8 @@
 
 	static const bool NotCancelled;
 
+	#define PB_INFINITY	INT_MAX
+
 	CActionProgress CActionProgress::None( nullptr, NotCancelled, 0, INT_MAX );
 
 	CActionProgress::CActionProgress(const CActionProgress *parent,const volatile bool &cancelled,int parentProgressBegin,int parentProgressInc)
@@ -69,7 +71,7 @@
 		: parent(parent)
 		, Cancelled(cancelled)
 		, parentProgressBegin(parentProgressBegin) , parentProgressInc(parentProgressInc)
-		, targetProgress(INT_MAX)
+		, targetProgress(PB_INFINITY)
 		, currProgress(0) {
 	}
 
@@ -141,13 +143,14 @@
 	void CActionProgressBar::SetProgressTarget(int targetProgress){
 		// sets Worker's target progress state, "100% completed"
 		__super::SetProgressTarget(targetProgress);
+		::PostMessage( hProgressBar, PBM_SETMARQUEE, targetProgress==PB_INFINITY, 0 );
 		::PostMessage( hProgressBar, PBM_SETRANGE32, 0, targetProgress );
 		::PostMessage( hProgressBar, PBM_SETPOS, 0, 0 ); // zeroing the progress-bar
 	}
 
 	void CActionProgressBar::SetProgressTargetInfinity(){
 		// sets Worker's target progress state to infinity
-		SetProgressTarget(INT_MAX);
+		SetProgressTarget(PB_INFINITY);
 	}
 
 	#define PB_RESOLUTION	100
@@ -305,7 +308,7 @@
 
 	void CBackgroundActionCancelable::UpdateProgressFinished() const{
 		// refreshes the displaying of actual progress to "100% completed"
-		UpdateProgress(INT_MAX);
+		UpdateProgress(PB_INFINITY);
 	}
 
 	void CBackgroundActionCancelable::SignalPausedProgress(HWND hFromChild){

@@ -199,9 +199,17 @@ namespace Utils{
 		inline operator HINTERNET() const{ return handle; }
 	};
 
+	struct TInternetConnection:public TInternetHandle{
+		inline TInternetConnection(HINTERNET handle) : TInternetHandle(handle) {}
+
+		TStdWinError DownloadHttp(LPCTSTR object,LPVOID buffer,DWORD bufferSize,DWORD &outObjectSize) const;
+	};
+
 	struct TInternetSession:public TInternetHandle{
 		TInternetSession();
 
+		TInternetConnection ConnectTo(LPCTSTR server) const;
+		TStdWinError DownloadOneHttp(LPCTSTR server,LPCTSTR object,LPVOID buffer,DWORD bufferSize,DWORD &outObjectSize) const;
 		DWORD Download(LPCTSTR url,LPVOID buffer,DWORD bufferSize) const;
 	};
 

@@ -51,6 +51,42 @@ namespace Utils{
 		: TInternetHandle(  ::InternetOpen( APP_IDENTIFIER, INTERNET_OPEN_TYPE_PRECONFIG, nullptr, nullptr, 0 )  ) {
 	}
 
+	TInternetConnection TInternetSession::ConnectTo(LPCTSTR server) const{
+		return ::InternetConnect( handle, server, INTERNET_DEFAULT_HTTPS_PORT, nullptr, nullptr, INTERNET_SERVICE_HTTP, 0, 0 );
+	}
+
+	TStdWinError TInternetSession::DownloadOneHttp(LPCTSTR server,LPCTSTR object,LPVOID buffer,DWORD bufferSize,DWORD &outObjectSize) const{
+		if (const auto &&conn=ConnectTo(server)){
+			return conn.DownloadHttp( object, buffer, bufferSize, outObjectSize );
+		}else
+			return ::GetLastError();
+	}
+
+	TStdWinError TInternetConnection::DownloadHttp(LPCTSTR object,LPVOID buffer,DWORD bufferSize,DWORD &outObjectSize) const{
+		// - create a Request
+		ASSERT(bufferSize);
+		const Utils::TInternetHandle request=::HttpOpenRequest(
+			handle, nullptr, object,
+			nullptr, nullptr, nullptr,
+			INTERNET_FLAG_SECURE | INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE | INTERNET_NO_CALLBACK,
+			0
+		);
+		if (!request)
+			return ::GetLastError();
+		DWORD dwFlags, dwBuffLen=sizeof(dwFlags);
+		if (!::InternetQueryOption( request, INTERNET_OPTION_SECURITY_FLAGS, &dwFlags, &dwBuffLen ))
+			return ::GetLastError();
+		dwFlags|= SECURITY_FLAG_IGNORE_REVOCATION | SECURITY_FLAG_IGNORE_WRONG_USAGE;
+		::InternetSetOption( request, INTERNET_OPTION_SECURITY_FLAGS, &dwFlags, sizeof(dwFlags) );
+		// - send the Request
+		if (!::HttpSendRequest( request, nullptr, 0, nullptr, 0 ))
+			return ::GetLastError();
+		// - receive the response
+		if (!::InternetReadFile( request, buffer, bufferSize, &outObjectSize ))
+			return ::GetLastError();
+		return ERROR_SUCCESS;
+	}
+
 	DWORD TInternetSession::Download(LPCTSTR url,LPVOID buffer,DWORD bufferSize) const{
 		if (const TInternetHandle file=::InternetOpenUrl(
 				handle, url,
@@ -2877,68 +2913,41 @@ namespace Utils{
 
 
 
-	#pragma pack(1)
-	struct TDownloadSingleFileParams sealed{
-		const LPCTSTR onlineFileUrl;
-		const PBYTE buffer;
-		const DWORD bufferSize;
-		const LPCTSTR fatalErrConsequence;
-		DWORD outOnlineFileSize;
-
-		TDownloadSingleFileParams(LPCTSTR onlineFileUrl,PBYTE buffer,DWORD bufferSize,LPCTSTR fatalErrConsequence)
-			// ctor
-			: onlineFileUrl(onlineFileUrl)
-			, buffer(buffer) , bufferSize(bufferSize)
-			, fatalErrConsequence(fatalErrConsequence)
-			, outOnlineFileSize(-1) {
-		}
-	};
-
-	static UINT AFX_CDECL __downloadSingleFile_thread__(PVOID _pCancelableAction){
-		// thread to download an on-line file with given URL to a local Buffer; caller is to dimension the Buffer so that it can contain the whole on-line file
-		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
-		TDownloadSingleFileParams &rdsfp=*(TDownloadSingleFileParams *)pAction->GetParams();
-		pAction->SetProgressTargetInfinity();
-		HINTERNET hSession=nullptr, hOnlineFile=nullptr;
-		// - opening a new Session
-		hSession=::InternetOpenA(APP_IDENTIFIER,
-								INTERNET_OPEN_TYPE_PRECONFIG,
-								nullptr, nullptr,
-								0
-							);
-		if (hSession==nullptr)
-			goto quitWithErr;
-		// - opening the on-line file with given URL
-		hOnlineFile=::InternetOpenUrl(	hSession,
-										rdsfp.onlineFileUrl,
-										nullptr, 0,
-										INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE,
-										INTERNET_NO_CALLBACK
-									);
-		if (hOnlineFile==nullptr)
-			goto quitWithErr;
-		// - reading the on-line file to the Buffer, allocated and initialized by the caller; caller is to dimension the Buffer so that it can contain the whole on-line file
-		if (!::InternetReadFile( hOnlineFile, rdsfp.buffer, rdsfp.bufferSize, &rdsfp.outOnlineFileSize )){
-quitWithErr:const DWORD err=::GetLastError();
-			FatalError( _T("File download failed"), err, rdsfp.fatalErrConsequence );
-			if (hOnlineFile!=nullptr)
-				::InternetCloseHandle(hOnlineFile);
-			if (hSession!=nullptr)
-				::InternetCloseHandle(hSession);
-			return pAction->TerminateWithError(err);
-		}
-		// - downloaded successfully
-		return pAction->TerminateWithSuccess();
-	}
-
 	TStdWinError DownloadSingleFile(LPCTSTR onlineFileUrl,PBYTE fileDataBuffer,DWORD fileDataBufferLength,PDWORD pDownloadedFileSize,LPCTSTR fatalErrorConsequence){
 		// returns the result of downloading the file with given Url
-		TDownloadSingleFileParams params( onlineFileUrl, fileDataBuffer, fileDataBufferLength, fatalErrorConsequence );
-		const TStdWinError err=	CBackgroundActionCancelable(
-									__downloadSingleFile_thread__,
-									&params,
-									THREAD_PRIORITY_ABOVE_NORMAL
-								).Perform();
+		struct TDownloadSingleFileParams sealed{
+			const LPCTSTR onlineFileUrl;
+			const PBYTE buffer;
+			const DWORD bufferSize;
+			const LPCTSTR fatalErrConsequence;
+			DWORD outOnlineFileSize;
+
+			static UINT AFX_CDECL Thread(PVOID _pCancelableAction){
+				// thread to download an on-line file with given URL to a local Buffer; caller is to dimension the Buffer so that it can contain the whole on-line file
+				const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
+				TDownloadSingleFileParams &rdsfp=*(TDownloadSingleFileParams *)pAction->GetParams();
+				pAction->SetProgressTargetInfinity();
+				const TInternetSession session;
+				TStdWinError err=::GetLastError();
+				if (session)
+					err=session.DownloadOneHttp( rdsfp.onlineFileUrl, rdsfp.buffer, rdsfp.bufferSize, rdsfp.outOnlineFileSize );
+				if (err){
+					FatalError( _T("File download failed"), err, rdsfp.fatalErrConsequence );
+					return pAction->TerminateWithError(err);
+				}
+				return pAction->TerminateWithSuccess();
+			}
+		} params={
+			onlineFileUrl,
+			fileDataBuffer, fileDataBufferLength,
+			fatalErrorConsequence,
+			-1
+		};
+		const TStdWinError err=CBackgroundActionCancelable(
+			TDownloadSingleFileParams::Thread,
+			&params,
+			THREAD_PRIORITY_ABOVE_NORMAL
+		).Perform();
 		if (pDownloadedFileSize!=nullptr)
 			*pDownloadedFileSize=params.outOnlineFileSize;
 		return err;

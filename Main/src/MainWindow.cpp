@@ -418,81 +418,48 @@
 		CBackgroundAction *const pAction=(CBackgroundAction *)pCancelableAction;
 		const PBackgroundActionCancelable pBac=dynamic_cast<PBackgroundActionCancelable>(pAction);
 		if (pBac)
-			pBac->SetProgressTarget(5); // 5 = see number of steps below
-		// - Step 1: opening a new Session
+			pBac->SetProgressTargetInfinity();
+		// - download the JSON description
 		const Utils::TInternetSession session;
 		if (!session)
-			return pBac->TerminateWithLastError();
-		if (pBac){
+			return pBac ? pBac->TerminateWithLastError() : ::GetLastError();
+		if (pBac)
 			if (pBac->Cancelled) return ERROR_CANCELLED;
-			pBac->IncrementProgress();
-		}
-		// - Step 2: connecting to the repository server
-		const Utils::TInternetHandle connection=::InternetConnect( session, GITHUB_API_SERVER_NAME, INTERNET_DEFAULT_HTTPS_PORT, nullptr, nullptr, INTERNET_SERVICE_HTTP, 0, 0 );
-		if (!connection)
-			return pBac->TerminateWithLastError();
-		if (pBac){
-			if (pBac->Cancelled) return ERROR_CANCELLED;
-			pBac->IncrementProgress();
-		}
-		// - Step 3: creating a new Request to the server
-		const Utils::TInternetHandle request=::HttpOpenRequest( connection, nullptr,
-			_T("/repos/tomas-nestorovic/RIDE/releases/latest"),
-			nullptr, nullptr, nullptr,
-			INTERNET_FLAG_SECURE | INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE | INTERNET_NO_CALLBACK,
-			0
-		);
-		if (!request)
-			return pBac->TerminateWithLastError();
-		DWORD dwFlags, dwBuffLen=sizeof(dwFlags);
-		if (!::InternetQueryOption( request, INTERNET_OPTION_SECURITY_FLAGS, &dwFlags, &dwBuffLen ))
-			return pBac->TerminateWithLastError();
-		dwFlags|= SECURITY_FLAG_IGNORE_REVOCATION | SECURITY_FLAG_IGNORE_WRONG_USAGE;
-		::InternetSetOption( request, INTERNET_OPTION_SECURITY_FLAGS, &dwFlags, sizeof(dwFlags) );
-		if (pBac){
-			if (pBac->Cancelled) return ERROR_CANCELLED;
-			pBac->IncrementProgress();
-		}
-		// - Step 4: sending the Request
-		if (!::HttpSendRequest( request, nullptr, 0, nullptr, 0 ))
-			return pBac->TerminateWithLastError();
-		if (pBac){
-			if (pBac->Cancelled) return ERROR_CANCELLED;
-			pBac->IncrementProgress();
-		}
-		// - Step 5: receiving the response
-		char buffer[16384];
+		struct{
+			char buffer[16384];
+			TStdWinError EvaluateRecency(){
+				if (const PCHAR githubTagName=::StrStrIA(buffer,GITHUB_VERSION_TAG_NAME))
+					if (PCHAR r=::StrChrA(githubTagName+sizeof(GITHUB_VERSION_TAG_NAME),'\"')) // "R"emote tag
+						if (const PCHAR q=::StrChrA( ++r, '\"' )){ // "+1" = skip the opening quote
+							*q='\0'; // replace the closing quote with the Null character
+							app.WriteProfileString( INI_GENERAL, INI_LATEST_KNOWN_VERSION, Utils::ToStringT(r) );
+							LPCSTR t=APP_VERSION; // "T"his tag
+							do{
+								if (::IsCharSpaceA(*t))
+									t++; // ignoring any whitespaces in "T"his tag
+								else if (*r++!=*t++)
+									return ERROR_EVT_VERSION_TOO_OLD; // the app is outdated
+							} while (*r/*&&*t*/); // commented out as redundant (any differences already caught above)
+							return ERROR_SUCCESS; // the app is up-to-date
+						}
+				return ERROR_INVALID_FIELD;
+			}
+		} status;
 		DWORD nBytesRead;
-		if (!::InternetReadFile( request, buffer, sizeof(buffer), &nBytesRead ))
-			return pBac->TerminateWithLastError();
-		buffer[nBytesRead]='\0';
-		if (pBac){
-			if (pBac->Cancelled) return ERROR_CANCELLED;
-			pBac->IncrementProgress();
-		}
+		if (const TStdWinError err=session.DownloadOneHttp( GITHUB_API_SERVER_NAME, _T("/repos/tomas-nestorovic/RIDE/releases/latest"), status.buffer, sizeof(status.buffer), nBytesRead ))
+			return pBac ? pBac->TerminateWithError(err) : ::GetLastError();
 		// - analysing the obtained information (comparing it against this instance version)
+		status.buffer[nBytesRead]='\0';
 		if (const DWORD now=Utils::CRideTime().GetDosDateTime()){ // recording that recency last checked Now
 			app.dateRecencyLastChecked=now;
 			app.WriteProfileInt( INI_GENERAL, INI_IS_UP_TO_DATE, app.dateRecencyLastChecked );
 		}
-		if (const PCHAR githubTagName=::strstr(buffer,GITHUB_VERSION_TAG_NAME))
-			if (PCHAR r=::StrChrA(githubTagName+sizeof(GITHUB_VERSION_TAG_NAME),'\"')){ // "R"emote tag
-				buffer[nBytesRead]='\"'; // guaranteeing that closing quote is always found
-				*::StrChrA( ++r, '\"' )='\0'; // "+1" = skipping the opening quote; replacing the closing quote with the Null character
-				app.WriteProfileString( INI_GENERAL, INI_LATEST_KNOWN_VERSION, Utils::ToStringT(r) );
-				LPCSTR t=APP_VERSION; // "T"his tag
-				do{
-					if (::IsCharSpaceA(*t))
-						t++; // ignoring any whitespaces in "T"his tag
-					else if (*r++!=*t++){
-						if (pAction->GetParams())
-							TDI_INSTANCE->RepopulateGuidePost();
-						return ERROR_EVT_VERSION_TOO_OLD; // the app is outdated
-					}
-				} while (*r/*&&*t*/); // commented out as redundant (any differences already caught above)
-				return ERROR_SUCCESS; // the app is up-to-date
-			}
-		return ERROR_DS_SERVER_DOWN;
+		if (const TStdWinError err=status.EvaluateRecency()){
+			if (err==ERROR_EVT_VERSION_TOO_OLD)
+				TDI_INSTANCE->RepopulateGuidePost();
+			return pBac ? pBac->TerminateWithError(err) : err;
+		}else
+			return pBac ? pBac->TerminateWithSuccess() : ERROR_SUCCESS;
 	}
 
 	afx_msg void CMainWindow::__openUrl_checkForUpdates__(){
