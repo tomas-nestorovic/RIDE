@@ -447,7 +447,7 @@
 		} status;
 		DWORD nBytesRead;
 		if (const TStdWinError err=session.DownloadOneHttp( GITHUB_API_SERVER_NAME, _T("/repos/tomas-nestorovic/RIDE/releases/latest"), status.buffer, sizeof(status.buffer), nBytesRead ))
-			return pBac ? pBac->TerminateWithError(err) : ::GetLastError();
+			return pBac ? pBac->TerminateWithError(err) : err;
 		// - analysing the obtained information (comparing it against this instance version)
 		status.buffer[nBytesRead]='\0';
 		if (const DWORD now=Utils::CRideTime().GetDosDateTime()){ // recording that recency last checked Now

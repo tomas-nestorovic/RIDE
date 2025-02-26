@@ -229,6 +229,12 @@ BEGIN
     VK_F8,          ID_TRACK,               VIRTKEY, NOINVERT
 END
 
+IDR_WEBPAGE ACCELERATORS DISCARDABLE 
+BEGIN
+    "D",            ID_WEB_DEFAULT_BROWSER, VIRTKEY, CONTROL, NOINVERT
+END
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Menu

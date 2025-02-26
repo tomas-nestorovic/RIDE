@@ -302,7 +302,7 @@ namespace Screenshot
 					}else
 						return bac.TerminateWithSuccess();
 		}
-		return bac.TerminateWithError( ::GetLastError() );
+		return bac.TerminateWithLastError();
 	}
 }
 	bool CChartView::CDisplayInfo::OnCmdMsg(CChartView &cv,UINT nID,int nCode,PVOID pExtra){
