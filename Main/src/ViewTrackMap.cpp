@@ -757,7 +757,7 @@
 	}
 	afx_msg void CTrackMapView::__toggleSectorNumbering_updateUI__(CCmdUI *pCmdUI){
 		// projecting SectorNumbering into UI
-		pCmdUI->SetCheck(showSectorNumbers);
+		pCmdUI->SetCheck( showSectorNumbers && displayType==TDisplayType::STATUS );
 		pCmdUI->Enable(displayType==TDisplayType::STATUS);
 	}
 
