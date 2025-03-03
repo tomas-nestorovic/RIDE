@@ -1072,12 +1072,14 @@ terminateWithError:		return LOG_ERROR(pAction->TerminateWithError(err));
 								// : showing the Dialog and processing its result
 								switch (d.DoModal()){
 									case IDYES:
-										dumpParams.cylinderA=0, dumpParams.cylinderZ=dos->formatBoot.nCylinders-1;
+										dumpParams.cylinderZ=dos->formatBoot.nCylinders-1;
+										dumpParams.cylinderA=std::min( dumpParams.cylinderA, dumpParams.cylinderZ );
 										//fallthrough
 									case IDNO:
 										break;
 									case IDRETRY:
-										dumpParams.cylinderA=0, dumpParams.cylinderZ=d.lastOccupiedCyl;
+										dumpParams.cylinderZ=d.lastOccupiedCyl;
+										dumpParams.cylinderA=std::min( dumpParams.cylinderA, dumpParams.cylinderZ );
 										break;
 									default:
 										pDX->Fail();
