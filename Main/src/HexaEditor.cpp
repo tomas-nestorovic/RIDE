@@ -403,16 +403,17 @@ using namespace Yahel;
 
 
 
-	bool CHexaEditor::QueryChecksumParams(TChecksumParams &outCp) const{
+	bool CHexaEditor::QueryChecksumParams(Checksum::TParams &outCp) const{
 		return outCp.EditModalWithDefaultEnglishDialog(*this);
 	}
 
-	struct TChecksumParamsEx sealed:public TChecksumParams{
+	struct TChecksumParamsEx sealed:public Checksum::TParams{
 		const IInstance &yahel;
+		const TPosInterval range;
 		
-		TChecksumParamsEx(const TChecksumParams &cp,const IInstance &yahel)
-			: TChecksumParams(cp)
-			, yahel(yahel) {
+		TChecksumParamsEx(const Checksum::TParams &cp,const TPosInterval &range,const IInstance &yahel)
+			: Checksum::TParams(cp)
+			, yahel(yahel) , range(range) {
 		}
 	};
 
@@ -421,25 +422,25 @@ using namespace Yahel;
 		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
 		TChecksumParamsEx &cpe=*(TChecksumParamsEx *)pAction->GetParams();
 		pAction->SetProgressTarget( cpe.range.GetLength() );
-		const auto checksum=cpe.yahel.GetChecksum( cpe, pAction->Cancelled );
+		const auto checksum=cpe.yahel.GetChecksum( cpe, cpe.range, pAction->Cancelled );
 		if (pAction->Cancelled)
 			return pAction->TerminateWithError( ERROR_CANCELLED );
-		if (checksum==cpe.GetErrorChecksumValue())
+		if (checksum==Checksum::GetErrorValue())
 			return pAction->TerminateWithError( ERROR_FUNCTION_FAILED );
 		cpe.initValue=checksum; // reuse the field
 		return pAction->TerminateWithSuccess();
 	}
 
-	int CHexaEditor::ComputeChecksum(const TChecksumParams &cp) const{
-		TChecksumParamsEx cpe( cp, *instance );
+	int CHexaEditor::ComputeChecksum(const Checksum::TParams &cp,const TPosInterval &range) const{
+		TChecksumParamsEx cpe( cp, range, *instance );
 		if (const TStdWinError err=CBackgroundActionCancelable( Checksum_thread, &cpe, THREAD_PRIORITY_BELOW_NORMAL ).Perform())
-			return cpe.GetErrorChecksumValue();
+			return Checksum::GetErrorValue();
 		CString checksumText;
 		checksumText.Format( _T("%d (0x%X)"), cpe.initValue, cpe.initValue ); // reused during computation
 		const CString msg=Utils::SimpleFormat( _T("The checksum of selected stream is (little endian)\n\n%s\n\nCopy to clipboard?"), checksumText );
 		if (Utils::QuestionYesNo( msg, MB_DEFBUTTON2 ))
 			Utils::SetClipboardString( checksumText );
-		return cpe.GetErrorChecksumValue(); // don't do default processing
+		return Checksum::GetErrorValue(); // don't do default processing
 	}
 
 

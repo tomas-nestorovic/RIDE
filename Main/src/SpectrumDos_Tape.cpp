@@ -320,8 +320,7 @@
 
 	static BYTE __getChecksum__(BYTE flag,PCBYTE data,WORD nBytes){
 		// computes and returns the Checksum based on specified Flag and Data
-		while (nBytes--) flag^=*data++;
-		return flag;
+		return Yahel::Checksum::ComputeXor( data, nBytes, flag );
 	}
 
 	TStdWinError CSpectrumDos::CTape::ImportFile(CFile *f,DWORD fileSize,RCPathString nameAndExtension,DWORD winAttr,PFile &rFile){

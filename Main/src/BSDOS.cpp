@@ -443,7 +443,7 @@
 
 	BYTE CBSDOS308::TDirectoryEntry::GetDirNameChecksum() const{
 		// computes and returns the Name Checksum
-		return __xorChecksum__( dir.name, sizeof(dir.name) );
+		return XorChecksum(dir.name);
 	}
 
 	CBSDOS308::TDirectoryEntry::CTraversal::CTraversal(const CBSDOS308 *bsdos,PCFile slot)
@@ -996,7 +996,7 @@
 					);
 			// . disk ID
 			Utils::RandomizeData( boot->diskId, sizeof(boot->diskId) );
-			boot->diskIdChecksum=__xorChecksum__( boot->diskId, sizeof(boot->diskId) );
+			boot->diskIdChecksum=XorChecksum(boot->diskId);
 		ap.IncrementProgress();
 		// - FAT
 		TLogSector ls=1;

@@ -61,8 +61,8 @@
 		// resetting
 		bool QueryByteToResetSelectionWith(Yahel::TResetSelectionParams &outRsp) const override;
 		// checksum
-		bool QueryChecksumParams(Yahel::TChecksumParams &outCp) const override;
-		int ComputeChecksum(const Yahel::TChecksumParams &cp) const override;
+		bool QueryChecksumParams(Yahel::Checksum::TParams &outCp) const override;
+		int ComputeChecksum(const Yahel::Checksum::TParams &cp,const Yahel::TPosInterval &range) const override;
 		// GUI
 		int GetCustomCommandMenuFlags(WORD cmd) const override;
 		bool ShowOpenFileDialog(LPCWSTR singleFilter,DWORD ofnFlags,PWCHAR lpszFileNameBuffer,WORD bufferCapacity) const override sealed;

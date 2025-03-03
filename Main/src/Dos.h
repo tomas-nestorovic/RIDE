@@ -320,8 +320,12 @@
 		static const TSide StdSidesMap[];
 
 		static void __warnOnEnteringCriticalConfiguration__(bool b);
-		static BYTE __xorChecksum__(PCBYTE buffer,WORD nBytes);
-		static BYTE __xorChecksum__(LPCSTR buffer,WORD nChars);
+		static BYTE XorChecksum(LPCVOID bytes,WORD nBytes);
+
+		template <typename T,size_t N>
+		inline static BYTE XorChecksum(const T (&bytes)[N]){
+			return XorChecksum( bytes, sizeof(T)*N );
+		}
 
 		const TFnCompareNames fnCompareNames;
 		const TTrackScheme trackAccessScheme; // single Scheme to access Tracks in Image

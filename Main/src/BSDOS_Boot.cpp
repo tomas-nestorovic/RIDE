@@ -150,7 +150,7 @@
 
 	void WINAPI CBSDOS308::TBootSector::OnDiskIdChanged(PropGrid::PCustomParam bootSector){
 		const PBootSector boot=(PBootSector)bootSector;
-		boot->diskIdChecksum=__xorChecksum__( boot->diskId, sizeof(boot->diskId) );
+		boot->diskIdChecksum=XorChecksum(boot->diskId);
 		CBootView::__bootSectorModified__(boot);
 	}
 
@@ -259,7 +259,7 @@
 			return vp.TerminateAll(err);
 		pAction->UpdateProgress(2);
 		// - Step 3: verifying ID checksum
-		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, _T("FAT Bytes"), boot->diskIdChecksum, __xorChecksum__(boot->diskId,sizeof(boot->diskId)) ))
+		if (const TStdWinError err=vp.VerifyUnsignedValue( CHS, BOOT_SECTOR_LOCATION_STRING, _T("FAT Bytes"), boot->diskIdChecksum, XorChecksum(boot->diskId) ))
 			return vp.TerminateAll(err);
 		pAction->UpdateProgress(3);
 		// - Step 4: verifying DiskName

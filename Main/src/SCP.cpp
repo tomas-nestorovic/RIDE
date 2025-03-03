@@ -318,7 +318,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			fTarget.Seek( 0x10, CFile::begin );
 			do{
 				BYTE checksumBuffer[65536];
-				for( auto nBytesRead=fTarget.Read(checksumBuffer,sizeof(checksumBuffer)); nBytesRead>0; header.checksum+=checksumBuffer[--nBytesRead] );
+				header.checksum=Yahel::Checksum::ComputeAdd( checksumBuffer, fTarget.Read(checksumBuffer,sizeof(checksumBuffer)), header.checksum );
 			}while (fTarget.GetPosition()<fTarget.GetLength());
 		}
 		fTarget.SeekToBegin();
