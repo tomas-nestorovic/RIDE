@@ -126,24 +126,30 @@
 		if (!*nameBase) // saving without knowing the common prefix for all Stream files is NOT SUPPORTED
 			return ERROR_NOT_SUPPORTED; // this error code is required!
 		if (const auto pit=GetModifiedTrackSafe(cyl,head)){ // Track modified?
-				pit->FlushSectorBuffers(); // convert all modifications into flux transitions
-				CFile f; CFileException e;
-				if (!f.Open( GetStreamFileName(cyl,head), CFile::modeCreate|CFile::modeWrite|CFile::typeBinary|CFile::shareExclusive, &e ))
-					return e.m_cause;
-				if (const auto data=Utils::MakeCallocPtr<BYTE>(KF_BUFFER_CAPACITY)){
-					const DWORD nTrackBytes=TrackToStream(
-						head && params.flippyDisk
-							? CTrackReaderWriter(*pit,false).Reverse()
-							: *pit,
-						data
-					);
-					if (GetCurrentDiskFreeSpace()<nTrackBytes)
-						return ERROR_DISK_FULL;
-					f.Write( data, nTrackBytes );
-					pit->modified=false;
-				}else
+			pit->FlushSectorBuffers(); // convert all modifications into flux transitions
+			CFile f; CFileException e;
+			if (!f.Open( GetStreamFileName(cyl,head), CFile::modeCreate|CFile::modeWrite|CFile::typeBinary|CFile::shareExclusive, &e ))
+				return e.m_cause;
+			Utils::CCallocPtr<BYTE> streamData;
+			DWORD dataLength;
+			PCBYTE data=pit->GetRawDeviceData( KF_STREAM_ID, dataLength );
+			if (!data){ // Track has been really modified and original KF Stream disposed ...
+				std::swap( streamData, Utils::MakeCallocPtr<BYTE>(KF_BUFFER_CAPACITY) );
+				data = streamData;
+				if (!streamData)
 					return ERROR_NOT_ENOUGH_MEMORY;
+				dataLength=TrackToStream( // ... must reconstruct it from current state of the Track
+					head && params.flippyDisk
+						? CTrackReaderWriter(*pit,false).Reverse()
+						: *pit,
+					streamData
+				);
 			}
+			if (GetCurrentDiskFreeSpace()<dataLength)
+				return ERROR_DISK_FULL;
+			f.Write( data, dataLength );
+			pit->modified=false;
+		}
 		return ERROR_SUCCESS;
 	}
 

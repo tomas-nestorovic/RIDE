@@ -236,6 +236,7 @@
 		// creates and returns a Track representation of the Stream data
 		const PCBYTE inStreamData=rawBytes; // "in-stream-data" only
 		// - parsing the input raw Bytes obtained from the KryoFlux device (eventually producing an error)
+		auto &&rawBytesOrg=Utils::MakeCallocPtr( nBytes, rawBytes );
 		bool isKryofluxStream=false; // assumption (actually NOT a KryoFlux Stream)
 		LPBYTE pis=rawBytes; // "in-stream-data" only
 		DWORD nFluxes=0;
@@ -416,6 +417,8 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 		// - final index pulse might not have been added if the Track ends with an unformatted area
 		if (nearestIndexPulse<nIndexPulses)
 			indexPulses[nearestIndexPulse].AddIndexTime( result, totalSampleCounter, sck );
+		// - preserve the input RawBytes for fast copying between compatible disks
+		result.SetRawDeviceData( KF_STREAM_ID, std::move(rawBytesOrg) );
 		return result;
 	}
 
@@ -438,8 +441,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 		// converts specified Track representation into Stream data and returns the length of the Stream
 		PCHAR p=(PCHAR)outBuffer;
 		// - writing app signature
-		#define APP_SIGNATURE "creator=" APP_ABBREVIATION " " APP_VERSION
-		p+=::wsprintfA( p, "\xd\x4%c%c" APP_SIGNATURE, sizeof(APP_SIGNATURE), 0 )+1; // "+1" = terminal zero character
+		p+=WriteCreatorOob(outBuffer);
 		// - writing hardware information
 		#define HW_INFO_1 "host_date=2019.09.24, host_time=20:57:32, hc=0"
 		p+=::wsprintfA( p, "\xd\x4%c%c" HW_INFO_1, sizeof(HW_INFO_1), 0 )+1; // "+1" = terminal zero character
@@ -501,4 +503,10 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 		// - end of Stream
 		static constexpr char STREAM_END[]="\xd\xd\xd\xd\xd\xd\xd";
 		return (PBYTE)::lstrcpyA(p,STREAM_END) + sizeof(STREAM_END)-1 - outBuffer;
+	}
+
+	int CKryoFluxBase::WriteCreatorOob(PBYTE streamBuffer){
+		// writes "creator" out-of-stream-buffer block into the Buffer and returns the # of Bytes written
+		#define APP_SIGNATURE "creator=" APP_ABBREVIATION " " APP_VERSION ", " GITHUB_REPOSITORY
+		return ::wsprintfA( (PCHAR)streamBuffer, "\xd\x4%c%c" APP_SIGNATURE, sizeof(APP_SIGNATURE), 0 )+1; // "+1" = terminal zero character
 	}

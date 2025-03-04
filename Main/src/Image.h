@@ -398,6 +398,9 @@
 				TLogTime indexPulses[Revolution::MAX+2]; // "+2" = "+1+1" = "+A+B", A = tail IndexPulse of last possible Revolution, B = terminator
 				CMetaData metaData;
 				TDecoderMethod defaultDecoder; // when no MetaData available
+				struct:public std::shared_ptr<Utils::CCallocPtr<BYTE,DWORD>>{ // this cumbersome construct because of compilation against MFC 4.2
+					TId id;
+				} rawDeviceData; // valid until Track modified, then disposed
 
 				TLogTimesInfoData(DWORD nLogTimesMax,TDecoderMethod defaultDecoder,bool resetDecoderOnIndex);
 			};
@@ -652,6 +655,7 @@
 			TLogTime GetAvgIndexDistance() const;
 			TLogTime GetLastTime() const;
 			TLogTime GetTotalTime() const;
+			PCBYTE GetRawDeviceData(TId dataId,DWORD &outLength) const;
 			TLogTime ReadTime();
 			bool ReadBit(TLogTime &rtOutOne);
 			bool ReadBit();
@@ -698,24 +702,12 @@
 				return pLogTimesInfo->nLogTimesMax;
 			}
 
-			inline
-			void AddTime(TLogTime logTime){
-				// appends LogicalTime at the end of the Track
-				ASSERT( nLogTimes<GetBufferCapacity() );
-				ASSERT( logTime>=0 );
-				logTimes[nLogTimes++]=logTime;
-			}
-
-			inline
-			void TrimToTimesCount(DWORD nKeptLogTimes){
-				// discards some tail LogicalTimes, keeping only specified amount of them
-				ASSERT( nKeptLogTimes<=nLogTimes ); // can only shrink
-				nLogTimes=nKeptLogTimes;
-			}
-
+			void AddTime(TLogTime logTime);
 			void AddTimes(PCLogTime logTimes,DWORD nLogTimes);
 			void AddIndexTime(TLogTime logTime);
 			void AddMetaData(const TMetaDataItem &mdi);
+			void SetRawDeviceData(TId dataId,Utils::CCallocPtr<BYTE,DWORD> &&data);
+			void TrimToTimesCount(DWORD nKeptLogTimes);
 			void ClearMetaData(TLogTime a,TLogTime z);
 			void ClearAllMetaData();
 			WORD WriteData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToWrite,PCBYTE buffer,TFdcStatus sr);

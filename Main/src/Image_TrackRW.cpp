@@ -273,6 +273,16 @@
 		return	std::max( GetLastTime(), GetLastIndexTime() );
 	}
 
+	PCBYTE CImage::CTrackReader::GetRawDeviceData(TId dataId,DWORD &outLength) const{
+		// retrieves data as they were received from a disk (e.g. used for fast copying between compatible disks)
+		if (const auto *p=pLogTimesInfo->rawDeviceData.get())
+			if (pLogTimesInfo->rawDeviceData.id==dataId){
+				outLength=p->length;
+				return p->get();
+			}
+		return nullptr;
+	}
+
 	TLogTime CImage::CTrackReader::ReadTime(){
 		// returns the next LogicalTime (or zero if all time information already read)
 		if (*this){
@@ -1642,6 +1652,14 @@
 		: CTrackReader(tr) {
 	}
 	
+	void CImage::CTrackReaderWriter::AddTime(TLogTime logTime){
+		// appends LogicalTime at the end of the Track
+		ASSERT( nLogTimes<GetBufferCapacity() );
+		ASSERT( logTime>=0 );
+		logTimes[nLogTimes++]=logTime;
+		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
+	}
+
 	void CImage::CTrackReaderWriter::AddTimes(PCLogTime logTimes,DWORD nLogTimes){
 		// appends given amount of LogicalTimes at the end of the Track
 		ASSERT( this->nLogTimes+nLogTimes<=GetBufferCapacity() );
@@ -1653,6 +1671,7 @@
 			::memcpy( this->logTimes+this->nLogTimes, logTimes, nLogTimes*sizeof(TLogTime) );
 			this->nLogTimes+=nLogTimes;
 		}
+		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 	}
 
 	void CImage::CTrackReaderWriter::AddIndexTime(TLogTime logTime){
@@ -1661,6 +1680,14 @@
 		ASSERT( logTime>=0 );
 		indexPulses[nIndexPulses++]=logTime;
 		indexPulses[nIndexPulses]=INT_MAX;
+		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
+	}
+
+	void CImage::CTrackReaderWriter::TrimToTimesCount(DWORD nKeptLogTimes){
+		// discards some tail LogicalTimes, keeping only specified amount of them
+		ASSERT( nKeptLogTimes<=nLogTimes ); // can only shrink
+		nLogTimes=nKeptLogTimes;
+		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 	}
 
 	void CImage::CTrackReaderWriter::AddMetaData(const TMetaDataItem &mdi){
@@ -1720,6 +1747,12 @@
 			metaData.insert(mdi);
 	}
 
+	void CImage::CTrackReaderWriter::SetRawDeviceData(TId dataId,Utils::CCallocPtr<BYTE,DWORD> &&data){
+		// remembers data as they were received from a disk (later used for fast copying between compatible disks)
+		pLogTimesInfo->rawDeviceData.reset( new Utils::CCallocPtr<BYTE,DWORD>(std::move(data)) );
+		pLogTimesInfo->rawDeviceData.id=dataId;
+	}
+
 	void CImage::CTrackReaderWriter::ClearMetaData(TLogTime a,TLogTime z){
 		// removes (or just shortens) all MetaDataItems in specified range
 		AddMetaData( TLogTimeInterval(a,z) );
@@ -1772,6 +1805,7 @@
 				if (*bits++)
 					*pt++=tOverwritingStart+(LONGLONG)tOverwritingLength*i/nBits;
 			::memcpy( pOverwritingStart, newLogTimesTemp, nOnesCurrently*sizeof(TLogTime) );
+		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 		return true;
 	}
 
@@ -1828,6 +1862,7 @@
 			indexPulses[i]=indexPulses[i-1]+revolutionTime;
 		// - correctly re-initializing this object
 		SetCurrentTime(0);
+		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 		return true;
 	}
 
@@ -1853,6 +1888,7 @@
 		// - ignoring what's before the first Index
 		TLogTime tCurrIndexOrg=RewindToIndex(0);
 		// - normalization
+		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 		const TLogTime tLastIndex=GetLastIndexTime();
 		const DWORD iModifStart=iNextTime;
 		DWORD iTime=iModifStart;
@@ -1944,5 +1980,6 @@
 			metaData.insert(mdi);
 		}
 		pLogTimesInfo->metaData=metaData;
+		//pLogTimesInfo->rawDeviceData.reset(); // commented out as reversal occurs only for purposes of this application
 		return *this;
 	}

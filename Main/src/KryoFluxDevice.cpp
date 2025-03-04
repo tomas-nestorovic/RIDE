@@ -813,7 +813,7 @@
 			return CTrackReaderWriter::Invalid;
 	}	// - issuing a Request to the KryoFlux device to read fluxes in the specified Track
 		const Utils::CCallocPtr<BYTE> tmpDataBuffer(KF_BUFFER_CAPACITY);
-		PBYTE p=tmpDataBuffer;
+		PBYTE p=tmpDataBuffer+WriteCreatorOob(tmpDataBuffer); // inject app signature
 	{	EXCLUSIVELY_LOCK_DEVICE();
 		if (SeekTo(cyl) || SelectHead(head))
 			return CTrackReaderWriter::Invalid;

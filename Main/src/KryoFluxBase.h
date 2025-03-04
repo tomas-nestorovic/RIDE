@@ -3,8 +3,12 @@
 
 	#define KF_BUFFER_CAPACITY		2000000
 
+	#define KF_STREAM_ID			MAKE_IMAGE_ID('K','r','y','o','F','l','u','x')
+
 	class CKryoFluxBase abstract:public CCapsBase{
 	protected:
+		static int WriteCreatorOob(PBYTE streamBuffer);
+
 		struct TParamsEtc{
 			// persistent (saved and loaded)
 			CString firmwareFileName;
