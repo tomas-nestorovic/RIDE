@@ -771,19 +771,22 @@
 	void CMDOS2::TMdos2DirectoryTraversal::__reinitToFirstEntry__(){
 		// (re)initializes to the beginning of the Directory
 		entryType=TDirectoryTraversal::UNKNOWN;
-		dirSector=MDOS2_DIR_LOGSECTOR_FIRST, nRemainingEntriesInSector=0;
+		iDirSector=0, nRemainingEntriesInSector=0;
 	}
 
 	bool CMDOS2::TMdos2DirectoryTraversal::AdvanceToNextEntry(){
 		// True <=> another Entry in current Directory exists (Empty or not), otherwise False
 		// - getting the next LogicalSector with Directory
 		if (!nRemainingEntriesInSector){
-			if (dirSector==MDOS2_DATA_LOGSECTOR_FIRST){ // end of Directory
+			static const TLogSector DirSectorOrder[]={ 0, 2, 4, 6, 1, 3, 5, 7 }; // Directory Sectors are not traversed linearly but rather "interleaved"
+			static_assert( ARRAYSIZE(DirSectorOrder)==MDOS2_DATA_LOGSECTOR_FIRST-MDOS2_DIR_LOGSECTOR_FIRST, "" );
+			if (iDirSector==ARRAYSIZE(DirSectorOrder)){ // end of Directory
 				entryType=TDirectoryTraversal::END;
 				return false;
 			}
+			const TLogSector dirSector=MDOS2_DIR_LOGSECTOR_FIRST+DirSectorOrder[iDirSector++];
 			chs=mdos2->__logfyz__(dirSector);
-			entry=mdos2->__getHealthyLogicalSectorData__(dirSector++);
+			entry=mdos2->__getHealthyLogicalSectorData__(dirSector);
 			if (!entry) // LogicalSector not found
 				entryType=TDirectoryTraversal::WARNING, warning=ERROR_SECTOR_NOT_FOUND;
 			else

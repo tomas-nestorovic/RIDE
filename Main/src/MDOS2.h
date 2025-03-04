@@ -168,7 +168,7 @@
 		struct TMdos2DirectoryTraversal sealed:public TDirectoryTraversal{
 		private:
 			const CMDOS2 *const mdos2;
-			TLogSector dirSector;
+			BYTE iDirSector; // index into a list of Sectors to traverse
 			BYTE nRemainingEntriesInSector;
 		public:
 			TMdos2DirectoryTraversal(const CMDOS2 *_mdos2); // ctor
