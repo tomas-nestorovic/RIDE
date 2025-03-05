@@ -606,7 +606,7 @@
 						if (pe.IsDataStd())
 							if (pe.Contains(t0) || pe.Contains(t)){
 								rOutParseEvents.Add(
-									TParseEvent( TParseEvent::NONFORMATTED, t0, t-profile.iwTimeDefault, 0 )
+									TParseEvent( TParseEvent::NONFORMATTED, t0, t, 0 )
 								);
 								break;
 							}
@@ -888,9 +888,10 @@
 	CImage::CTrackReader::CBitSequence::CBitSequence(CTrackReader tr,TLogTime tFrom,const CTrackReader::TProfile &profileFrom, TLogTime tTo)
 		// ctor
 		: nBits(0) {
-		const TLogTime iwTimeDefaultHalf=tr.GetCurrentProfile().iwTimeDefault/2;
+		const TLogTime iwTimeDefaultHalf=profileFrom.iwTimeDefault/2;
 		tr.SetCurrentTimeAndProfile( tFrom, profileFrom );
-		while (tr && tr.GetCurrentTime()+iwTimeDefaultHalf<tTo)
+		tTo-=iwTimeDefaultHalf;
+		while (tr && tr.GetCurrentTime()<tTo)
 			tr.ReadBit(), nBits++;
 		pBits.Realloc( nBits+1 ); // "+1" = auxiliary terminal Bit
 		tr.SetCurrentTimeAndProfile( tFrom, profileFrom );
