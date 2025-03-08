@@ -124,9 +124,9 @@ using namespace Charting;
 							PCInspectionWindow piw=te.GetInspectionWindow(visible.tStart);
 							int i=piw-te.GetInspectionWindows();
 							// : drawing visible inspection windows (avoiding the GDI coordinate limitations by moving the viewport origin)
-							RECT rc={ te.timeline.GetClientUnits(piw++->time), 1, 0, IW_HEIGHT };
+							RECT rc={ te.timeline.GetClientUnits(piw->time), 1, 0, IW_HEIGHT };
 							do{
-								rc.right=te.timeline.GetClientUnits(piw->time);
+								rc.right=te.timeline.GetClientUnits(piw[1].time);
 								EXCLUSIVELY_LOCK(p.params);
 									if ( continuePainting=p.params.id==id ){
 										::FillRect( dc, &rc, iwBrushes[piw->bad][i++&1] );
@@ -136,7 +136,7 @@ using namespace Charting;
 										#endif
 									}
 								rc.left=rc.right;
-							}while (continuePainting && piw++->time<visible.tEnd);
+							}while (continuePainting && (++piw)->time<visible.tEnd);
 							if (!continuePainting) // new paint request?
 								continue;
 						}
@@ -342,13 +342,13 @@ using namespace Charting;
 						);
 					}
 					// . painting inspection window size at current position
-					if (IsFeatureShown(TCursorFeatures::INSPECT) && cursorTime<tr.GetLastTime()){
-						const PCInspectionWindow piw=GetInspectionWindow(cursorTime);
-						const TLogTime a=piw->time, z=piw[1].time;
-						g.DimensioningIndirect(
-							a, z, IW_HEIGHT, IW_TIME_HEIGHT, timeline.ValueToReadableString(z-a), LINE_EXTENSION
-						);
-					}
+					if (IsFeatureShown(TCursorFeatures::INSPECT) && cursorTime<tr.GetLastTime())
+						if (const PCInspectionWindow piw=GetInspectionWindow(cursorTime)){
+							const TLogTime a=piw->time, z=piw[1].time;
+							g.DimensioningIndirect(
+								a, z, IW_HEIGHT, IW_TIME_HEIGHT, timeline.ValueToReadableString(z-a), LINE_EXTENSION
+							);
+						}
 				}
 				cursorFeaturesShown=show;
 			}

@@ -896,14 +896,14 @@
 		while (tr && tr.GetCurrentTime()<tTo)
 			tr.ReadBit(), nBits++;
 		// - create and populate the BitBuffer
-		bitBuffer.Realloc( 1+nBits+1 )->time=-1; // "1+" = one hidden Bit before Sequence (with negative Time), "+1" = auxiliary terminal Bit
+		bitBuffer.Realloc( 1+nBits+2 )->time=-1; // "1+" = one hidden Bit before Sequence (with negative Time), "+2" = auxiliary terminal Bits
 		pBits=bitBuffer+1; // skip that one hidden Bit
 		tr.SetCurrentTimeAndProfile( tFrom, profileFrom );
 		TBit *p=pBits;
 		for( TLogTime tOne; tr && tr.GetCurrentTime()<tTo; ){
-			p->time=tr.GetCurrentTime();
 			p->flags=0;
 			p->value=tr.ReadBit(tOne);
+			p->time=tr.GetCurrentTime();
 			if (oneOkPercent && p->value){ // only windows containing "1" are evaluated as for timing
 				const TLogTime iwTimeHalf=tr.GetCurrentProfile().iwTime/2;
 				const TLogTime absDiff=std::abs(tOne-tr.GetCurrentTime());
@@ -913,7 +913,8 @@
 			p->bad|=!tr.IsLastReadBitHealthy();
 			p+= p[-1].time<p->time; // may not be the case if Decoder went over Index and got reset
 		}
-		p->time=INT_MAX; // auxiliary terminal Bit
+		p->time=p[-1].time; // auxiliary terminal Bit
+		p[1].time=INT_MAX;
 		nBits=p-pBits; // # of Bits may in the end be lower due to dropping of Bits over Indices
 	}
 
@@ -1351,7 +1352,7 @@
 			if ((bits&3)==3) // last valid bit is "1"?
 				return (bits&4)==0; // previous bit must be "0" (and we don't care if it's valid or not)
 			else
-				return bits!=0xaa; // four valid consecutive "0"s are forbidden
+				return (BYTE)bits!=0xaa; // four valid consecutive "0"s are forbidden
 		}
 	}
 
