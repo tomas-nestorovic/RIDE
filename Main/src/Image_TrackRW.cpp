@@ -356,7 +356,7 @@
 			if (pLogTimesInfo->resetDecoderOnIndex){
 				profile.Reset();
 				const TLogTime indexTime=indexPulses[ iNextIndexPulse++ ];
-				currentTime=indexTime + Utils::RoundUpToMuls( currentTime-indexTime, profile.iwTimeDefault );
+				currentTime=indexTime;// + Utils::RoundUpToMuls( currentTime-indexTime, profile.iwTimeDefault );
 				FindMetaDataIteratorAndApply();
 			}else
 				iNextIndexPulse++;
@@ -769,7 +769,7 @@
 			for( BYTE r=0; r<nFullRevolutions; apMerge.UpdateProgress(++r) ){
 				const CBitSequence &rev=*pRevolutionBits[r];
 				CActionProgress apRev=apMerge.CreateSubactionProgress( StepGranularity/nFullRevolutions, rev.GetBitCount() );
-				CBitSequence::PCBit bit=rev.GetBits(), lastBit=bit+rev.GetBitCount();
+				CBitSequence::PCBit bit=rev.begin(), lastBit=rev.end();
 				do{
 					// : finding next Fuzzy interval
 					while (bit<lastBit && !(bit->fuzzy||bit->cosmeticFuzzy)) // skipping Bits that are not Fuzzy
@@ -790,7 +790,7 @@
 					peFuzzy.type=rOutParseEvents.GetTypeOfFuzziness( peIt, peFuzzy, tTrackEnd );
 					// : creating new FuzzyEvent
 					rOutParseEvents.Add( peFuzzy );
-					apRev.UpdateProgress( bit-rev.GetBits() );
+					apRev.UpdateProgress( bit-rev.begin() );
 				} while (bit<lastBit);
 			}
 		}
@@ -885,32 +885,57 @@
 
 
 
-	CImage::CTrackReader::CBitSequence::CBitSequence(CTrackReader tr,TLogTime tFrom,const CTrackReader::TProfile &profileFrom, TLogTime tTo)
+	CImage::CTrackReader::CBitSequence::CBitSequence(CTrackReader tr,TLogTime tFrom,const CTrackReader::TProfile &profileFrom, TLogTime tTo,BYTE oneOkPercent)
 		// ctor
+		// - initialization
 		: nBits(0) {
+		// - count all Bits ("tr.GetTotalTime()/profileFrom.iwTimeMin" not used to account for decoder phase adjustment, allowing for returning back in time)
 		const TLogTime iwTimeDefaultHalf=profileFrom.iwTimeDefault/2;
 		tr.SetCurrentTimeAndProfile( tFrom, profileFrom );
 		tTo-=iwTimeDefaultHalf;
 		while (tr && tr.GetCurrentTime()<tTo)
 			tr.ReadBit(), nBits++;
-		pBits.Realloc( nBits+1 ); // "+1" = auxiliary terminal Bit
+		// - create and populate the BitBuffer
+		bitBuffer.Realloc( 1+nBits+1 )->time=-1; // "1+" = one hidden Bit before Sequence (with negative Time), "+1" = auxiliary terminal Bit
+		pBits=bitBuffer+1; // skip that one hidden Bit
 		tr.SetCurrentTimeAndProfile( tFrom, profileFrom );
-		for( int i=0; i<nBits; ){
-			TBit &r=pBits[i++];
-				r.time=tr.GetCurrentTime();
-				r.flags=0;
-				r.value=tr.ReadBit();
+		TBit *p=pBits;
+		for( TLogTime tOne; tr && tr.GetCurrentTime()<tTo; ){
+			p->time=tr.GetCurrentTime();
+			p->flags=0;
+			p->value=tr.ReadBit(tOne);
+			if (oneOkPercent && p->value){ // only windows containing "1" are evaluated as for timing
+				const TLogTime iwTimeHalf=tr.GetCurrentProfile().iwTime/2;
+				const TLogTime absDiff=std::abs(tOne-tr.GetCurrentTime());
+				//ASSERT( absDiff <= iwTimeHalf+1 ); // "+1" = when IwTime is odd, e.g. 1665, half of which is 833, not 832
+				p->bad=absDiff*100>iwTimeHalf*oneOkPercent;
+			}
+			p->bad|=!tr.IsLastReadBitHealthy();
+			p+= p[-1].time<p->time; // may not be the case if Decoder went over Index and got reset
 		}
-		pBits[nBits].time=tr.GetCurrentTime(); // auxiliary terminal Bit
+		p->time=INT_MAX; // auxiliary terminal Bit
+		nBits=p-pBits; // # of Bits may in the end be lower due to dropping of Bits over Indices
+	}
+
+	CImage::CTrackReader::CBitSequence::PCBit CImage::CTrackReader::CBitSequence::Find(TLogTime tMin) const{
+		// returns the Bit at specified minimum LogicalTime
+		auto it=std::lower_bound(
+			begin(), end(), tMin,
+			[](const TBit &b,TLogTime t){ return b.time<=t; }
+		);
+		if (it==end())
+			return nullptr;
+		it-=tMin<it->time; // correct the result of Binary Seach (usually finds the next Bit)
+		return it;
 	}
 
 	int CImage::CTrackReader::CBitSequence::GetShortestEditScript(const CBitSequence &theirs,CDiffBase::TScriptItem *pOutScript,int nScriptItemsMax,CActionProgress &ap) const{
 		// creates the shortest edit script (SES) and returns the number of its Items (or -1 if SES couldn't have been composed, e.g. insufficient output Buffer)
 		ASSERT( pOutScript!=nullptr );
-		return	CDiff<TBit>(
-					GetBits(), GetBitCount()
+		return	CDiff<const TBit>(
+					begin(), GetBitCount()
 				).GetShortestEditScript(
-					theirs.GetBits(), theirs.GetBitCount(),
+					theirs.begin(), theirs.GetBitCount(),
 					pOutScript, nScriptItemsMax,
 					ap
 				);
@@ -1001,6 +1026,12 @@
 			}
 			pScriptItem++, nScriptItems--;
 		} while(true);
+	}
+
+	void CImage::CTrackReader::CBitSequence::OffsetAll(TLogTime dt) const{
+		// offsets each Bit by given constant
+		for( TBit *p=pBits,*const pLast=pBits+nBits; p<pLast; p++ ) // don't modify the padding Bits at the beginning and end
+			p->time+=dt;
 	}
 
 #ifdef _DEBUG

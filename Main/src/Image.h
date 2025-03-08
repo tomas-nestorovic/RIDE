@@ -567,28 +567,37 @@
 							BYTE value:1; // recognized 0 or 1 from the underlying low-level timing
 							BYTE fuzzy:1; // the Value is likely different in each Revolution
 							BYTE cosmeticFuzzy:1; // the Value is not wrong but should be displayed so for cosmetic reasons
+							BYTE bad:1; // the Value is potentially wrong due to underlying low-level timing
 						};
 						BYTE flags;
 					};
 					TLogTime time;
+					int uid; // unique identifier (unused by default, set by caller)
 
 					inline bool operator==(const TBit &r) const{ return value==r.value; }
+					inline TLogTime GetLength() const{ return this[1].time-time; }
 				} *PCBit;
 			private:
-				Utils::CCallocPtr<TBit> pBits;
+				Utils::CCallocPtr<TBit> bitBuffer;
+				TBit *pBits;
 				int nBits;
 			public:
-				CBitSequence(CTrackReader tr,TLogTime tFrom,const CTrackReader::TProfile &profileFrom, TLogTime tTo);
+				CBitSequence(CTrackReader tr,TLogTime tFrom,const CTrackReader::TProfile &profileFrom, TLogTime tTo,BYTE oneOkPercent=0);
 
-				inline PCBit GetBits() const{ return pBits; }
+				inline TBit *GetBits() const{ return pBits; }
 				inline int GetBitCount() const{ return nBits; }
+				PCBit Find(TLogTime tMin) const;
 				int GetShortestEditScript(const CBitSequence &theirs,CDiffBase::TScriptItem *pOutScript,int nScriptItemsMax,CActionProgress &ap) const;
 				void ScriptToLocalDiffs(const CDiffBase::TScriptItem *pScript,int nScriptItems,TRegion *pOutDiffs) const;
 				DWORD ScriptToLocalRegions(const CDiffBase::TScriptItem *pScript,int nScriptItems,TRegion *pOutRegions,COLORREF regionColor) const;
 				void InheritFlagsFrom(const CBitSequence &theirs,const CDiffBase::TScriptItem *pScript,DWORD nScriptItems) const;
+				void OffsetAll(TLogTime dt) const;
 			#ifdef _DEBUG
 				void SaveCsv(LPCTSTR filename) const;
 			#endif
+				// 'for each' support
+				inline PCBit begin() const{ return pBits; }
+				inline PCBit end() const{ return pBits+nBits; }
 			};
 
 			CTrackReader(const CTrackReader &tr);

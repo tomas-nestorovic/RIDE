@@ -52,17 +52,17 @@ using namespace Charting;
 			DEFAULT	= TIME//|SPACING
 		};
 
-		typedef const struct TInspectionWindow sealed{
-			bool isBad;
-			TLogTime tEnd; // the end determines the beginning of the immediately next inspection window
-			int uid; // Revolution-wide unique identifier; corresponding bits across Revolutions have the same unique identifier
-		} *PCInspectionWindow;
+		typedef CImage::CTrackReader::CBitSequence CBitSequence;
+
+		typedef CImage::CTrackReader::CBitSequence::TBit TInspectionWindow;
+			// "uid" = Revolution-wide unique identifier; corresponding bits across Revolutions have the same unique identifier
+		typedef const TInspectionWindow *PCInspectionWindow;
 		
 		class CTimeEditor sealed:public CScrollView{
 			Utils::CTimeline timeline;
 			CImage::CTrackReader tr;
 			TLogTime scrollTime;
-			Utils::CCallocPtr<TInspectionWindow> inspectionWindows;
+			std::unique_ptr<CImage::CTrackReader::CBitSequence> inspectionWindows;
 			CImage::CTrackReader::CParseEventList parseEvents;
 			TLogTime draggedTime; // Time at which left mouse button has been pressed
 			TLogTime cursorTime; // Time over which the cursor hovers
@@ -121,22 +121,22 @@ using namespace Charting;
 						// . drawing inspection windows (if any)
 						if (te.IsFeatureShown(TCursorFeatures::INSPECT)){
 							// : determining the first visible inspection window
-							int L=te.GetInspectionWindow(visible.tStart);
+							PCInspectionWindow piw=te.GetInspectionWindow(visible.tStart);
+							int i=piw-te.GetInspectionWindows();
 							// : drawing visible inspection windows (avoiding the GDI coordinate limitations by moving the viewport origin)
-							PCInspectionWindow piw=te.inspectionWindows+L-1; // "-1" = the End of the previous is the start for the next
-							RECT rc={ te.timeline.GetClientUnits(piw++->tEnd), 1, 0, IW_HEIGHT };
+							RECT rc={ te.timeline.GetClientUnits(piw++->time), 1, 0, IW_HEIGHT };
 							do{
-								rc.right=te.timeline.GetClientUnits(piw->tEnd);
+								rc.right=te.timeline.GetClientUnits(piw->time);
 								EXCLUSIVELY_LOCK(p.params);
 									if ( continuePainting=p.params.id==id ){
-										::FillRect( dc, &rc, iwBrushes[piw->isBad][L++&1] );
+										::FillRect( dc, &rc, iwBrushes[piw->bad][i++&1] );
 										#ifdef _DEBUG
 											TCHAR uid[8];
 											::DrawText( dc, _itot(piw->uid%100,uid,10), -1, &rc, DT_SINGLELINE|DT_CENTER );
 										#endif
 									}
 								rc.left=rc.right;
-							}while (continuePainting && piw++->tEnd<visible.tEnd);
+							}while (continuePainting && piw++->time<visible.tEnd);
 							if (!continuePainting) // new paint request?
 								continue;
 						}
@@ -302,32 +302,24 @@ using namespace Charting;
 				SetScrollInfo( SB_HORZ, &si );
 			}
 
-			int GetInspectionWindow(TLogTime logTime) const{
-				// returns the index of inspection window at specified LogicalTime
+			PCInspectionWindow GetInspectionWindow(TLogTime logTime) const{
+				// returns the InspectionWindow at specified LogicalTime
 				ASSERT( inspectionWindows );
-				int L=0, R=timeline.GetLength()/tr.GetCurrentProfile().iwTimeMin;
-				do{
-					const int M=(L+R)/2;
-					if (logTime<inspectionWindows[M].tEnd)
-						R=M;
-					else
-						L=M;
-				}while (R-L>1);
-				return L+1; // "+1" = the End (against which the input LogicalTime has been compared) is the beginning of the NEXT InspectionWindow
+				return inspectionWindows->Find(logTime);
 			}
 
-			int GetInspectionWindow(int uid,TLogTime tRevStart,TLogTime tRevEnd) const{
-				// searching specified time interval, returns the index of inspection window with specified UniqueIdentifier
+			PCInspectionWindow GetInspectionWindow(int uid,TLogTime tRevStart,TLogTime tRevEnd) const{
+				// searching specified time interval, returns the InspectionWindow with specified UniqueIdentifier
 				ASSERT( inspectionWindows );
-				int L=GetInspectionWindow(tRevStart), R=GetInspectionWindow(tRevEnd);
-				do{
-					const int M=(L+R)/2;
-					if (std::abs(inspectionWindows[L].uid)<=uid && uid<std::abs(inspectionWindows[M].uid))
-						R=M;
-					else
-						L=M;
-				}while (R-L>1);
-				return L;
+				const auto it=std::lower_bound(
+					inspectionWindows->Find(tRevStart),
+					inspectionWindows->Find(tRevEnd),
+					uid,
+					[](const TInspectionWindow &iw,int uid){
+						return std::abs(iw.uid)<=uid;
+					}
+				);
+				return	it!=inspectionWindows->end() ? it : nullptr;
 			}
 		private:
 			void PaintCursorFeaturesInverted(bool show){
@@ -351,8 +343,8 @@ using namespace Charting;
 					}
 					// . painting inspection window size at current position
 					if (IsFeatureShown(TCursorFeatures::INSPECT) && cursorTime<tr.GetLastTime()){
-						const int i=GetInspectionWindow(cursorTime);
-						const TLogTime a=inspectionWindows[i-1].tEnd, z=inspectionWindows[i].tEnd;
+						const PCInspectionWindow piw=GetInspectionWindow(cursorTime);
+						const TLogTime a=piw->time, z=piw[1].time;
 						g.DimensioningIndirect(
 							a, z, IW_HEIGHT, IW_TIME_HEIGHT, timeline.ValueToReadableString(z-a), LINE_EXTENSION
 						);
@@ -605,11 +597,11 @@ using namespace Charting;
 			}
 
 			inline PCInspectionWindow GetInspectionWindows() const{
-				return inspectionWindows;
+				return inspectionWindows.get() ? inspectionWindows->begin() : nullptr;
 			}
 
-			inline void SetInspectionWindows(TInspectionWindow *list){
-				inspectionWindows.reset( list );
+			inline void SetInspectionWindows(std::unique_ptr<CBitSequence> &&list){
+				inspectionWindows.reset( list.release() );
 			}
 
 			inline const CImage::CTrackReader::CParseEventList &GetParseEvents() const{
@@ -752,49 +744,38 @@ using namespace Charting;
 			CTrackEditor &rte=*(CTrackEditor *)pAction->GetParams();
 			if (rte.timeEditor.GetInspectionWindows()!=nullptr) // already set?
 				return pAction->TerminateWithSuccess();
+			pAction->SetProgressTarget(3);
+			// - Step 1: recognize all Bits
+			const auto &tr=rte.tr;
+			const auto &&resetProfile=tr.CreateResetProfile();
+			std::unique_ptr<CImage::CTrackReader::CBitSequence> bits(
+				new CImage::CTrackReader::CBitSequence(
+					tr, 0, resetProfile, tr.GetTotalTime(), rte.iwInfo.oneOkPercent
+				)
+			);
+			if (!bits.get())
+				return pAction->TerminateWithLastError();
+			pAction->IncrementProgress();
+			// - Step 2: offset all Bits, producing InspectionWindows beginnings
+			bits->OffsetAll( -resetProfile.iwTimeDefault/2 );
+			pAction->IncrementProgress();
+			// - Step 3: populating the list of BadBlocks, i.e. Bits that are reported as Bad
 			auto &badBlocks=rte.iwInfo.badBlocks;
-			CImage::CTrackReader tr=rte.tr;
-			const auto resetProfile=tr.CreateResetProfile();
-			tr.SetCurrentTimeAndProfile( 0, resetProfile );
-			const TLogTime iwTimeDefaultHalf=resetProfile.iwTimeDefault/2;
-			const auto nIwsMax=tr.GetTotalTime()/iwTimeDefaultHalf; // "resetProfile.iwTimeMin" not used to account for decoder phase adjustment, allowing for returning back in time
-			if (auto iwList=Utils::MakeCallocPtr<TInspectionWindow>(nIwsMax)){
-				TInspectionWindow *p=iwList;
-				p++->tEnd=0; // beginning of the very first inspection window
-				TLogTime tOne; // LogicalTime of recording that resulted in recognition of logical "1"
-				BYTE iwStatuses=0; // last 8 InspectionWindows statuses (0 = ok, 1 = bad)
-				BYTE nextIndexPulse=0;
-				for( pAction->SetProgressTarget(tr.GetTotalTime()); tr; pAction->UpdateProgress(p++->tEnd=tr.GetCurrentTime()+iwTimeDefaultHalf) )
-					if (pAction->Cancelled)
-						return ERROR_CANCELLED;
-					else{
-						if (nextIndexPulse<tr.GetIndexCount() && tr.GetIndexTime(nextIndexPulse)<p[-1].tEnd){
-							tr.RewindToIndexAndResetProfile(nextIndexPulse);
-							p--, nextIndexPulse++;
-						}
-						p->isBad=false; // assumption
-						const TLogTime iwTime=tr.GetCurrentProfile().iwTime;
-						if (tr.ReadBit(tOne)){ // only windows containing "1" are evaluated as for timing
-							const TLogTime iwTimeHalf=iwTime/2;
-							const TLogTime absDiff=std::abs(tOne-tr.GetCurrentTime());
-							ASSERT( absDiff <= iwTimeHalf+1 ); // "+1" = when IwTime is odd, e.g. 1665, half of which is 833, not 832
-							p->isBad=absDiff*100>iwTimeHalf*rte.iwInfo.oneOkPercent;
-						}
-						if ( p->isBad|=!tr.IsLastReadBitHealthy() )
-							if (iwStatuses&3){ // between this and the previous bad InspectionWindow is at most one ok InspectionWindow
-								badBlocks.GetTail().tEnd=tr.GetCurrentTime()+iwTimeDefaultHalf; // extending an existing BadBlock
-								p[-1].isBad=true; // involving the previous InspectionWindow into the BadBlock
-							}else
-								badBlocks.AddTail(  TLogTimeInterval( tr.GetCurrentTime()-iwTimeDefaultHalf, tr.GetCurrentTime()+iwTimeDefaultHalf )  );
-						p->uid=INT_MIN;
-						iwStatuses = (iwStatuses<<1) | (BYTE)p->isBad;
-					}
-				for( const PCInspectionWindow last=iwList+nIwsMax; p<last; )
-					p++->tEnd=INT_MAX; // flooding unused part of the buffer with sensible Times
-				rte.timeEditor.SetInspectionWindows(iwList.release()); // disposal left upon the callee
-				return pAction->TerminateWithSuccess();
-			}else
-				return pAction->TerminateWithError(ERROR_NOT_ENOUGH_MEMORY);
+			BYTE iwStatuses=0; // last 8 InspectionWindows statuses (0 = ok, 1 = bad)
+			for( auto *p=bits->GetBits(),*pLast=p+bits->GetBitCount(); p<pLast; p++ ){
+				if (p->bad){
+					const TLogTime tBitEnd=p[1].time;
+					if (iwStatuses&3){ // between this and the previous bad InspectionWindow is at most one ok InspectionWindow
+						badBlocks.GetTail().tEnd=tBitEnd; // extending an existing BadBlock
+						p[-1].bad=true; // involving the previous InspectionWindow into the BadBlock
+					}else
+						badBlocks.AddTail(  TLogTimeInterval( p->time, tBitEnd )  );
+				}
+				p->uid=INT_MIN; // Bits across various Revolutions not yet linked
+				iwStatuses = (iwStatuses<<1) | (BYTE)p->bad;
+			}
+			rte.timeEditor.SetInspectionWindows( std::move(bits) );
+			return pAction->TerminateWithSuccess();
 		}
 
 		static UINT AFX_CDECL CreateParseEventsList_thread(PVOID _pCancelableAction){
@@ -821,18 +802,19 @@ using namespace Charting;
 			const auto &peList=te.timeEditor.GetParseEvents();
 			const TLogTime iwTimeDefaultHalf=tr.GetCurrentProfile().iwTimeDefault/2;
 			for( BYTE i=1; i<tr.GetIndexCount(); i++ ){
-				TInspectionWindow *iw=iwList+te.timeEditor.GetInspectionWindow( tr.GetIndexTime(i-1) );
-				const PCInspectionWindow iwRevEnd=iwList+te.timeEditor.GetInspectionWindow( tr.GetIndexTime(i) );
+				TInspectionWindow *iw=const_cast<TInspectionWindow *>(te.timeEditor.GetInspectionWindow( tr.GetIndexTime(i-1) ));
+				const PCInspectionWindow iwRevEnd=te.timeEditor.GetInspectionWindow( tr.GetIndexTime(i) );
 				int uid=1;
 				do{
-					const auto it=peList.FindByEnd( iw->tEnd, CImage::CTrackReader::TParseEvent::FUZZY_OK, CImage::CTrackReader::TParseEvent::FUZZY_BAD );
-					const TLogTimeInterval tiFuzzy= it ? it->second->Add(iwTimeDefaultHalf) : TLogTimeInterval::Invalid;
-					while (iw<iwRevEnd && iw->tEnd<=tiFuzzy.tStart) // assigning InspectionWindows BEFORE the next Fuzzy event their UniqueIdentifiers
+					const TLogTime tIwEnd=iw->time+iw->GetLength();
+					const auto it=peList.FindByEnd( tIwEnd, CImage::CTrackReader::TParseEvent::FUZZY_OK, CImage::CTrackReader::TParseEvent::FUZZY_BAD );
+					const TLogTimeInterval tiFuzzy= it ? it->second->Add(-iwTimeDefaultHalf) : TLogTimeInterval::Invalid;
+					while (iw<iwRevEnd && tIwEnd<=tiFuzzy.tStart) // assigning InspectionWindows BEFORE the next Fuzzy event their UniqueIdentifiers
 						iw++->uid=uid++;
-					while (iw<iwRevEnd && iw->tEnd<=tiFuzzy.tEnd) // assigning InspectionWindows BEFORE the next Fuzzy event negative UniqueIdentifiers of the last non-Fuzzy InspectionWindow
+					while (iw<iwRevEnd && tIwEnd<=tiFuzzy.tEnd) // assigning InspectionWindows BEFORE the next Fuzzy event negative UniqueIdentifiers of the last non-Fuzzy InspectionWindow
 						iw++->uid=-uid;
 					uid++;
-					pAction->UpdateProgress(iw->tEnd);
+					pAction->UpdateProgress(tIwEnd);
 				}while (iw<iwRevEnd);
 			}
 			return pAction->TerminateWithSuccess();
@@ -1228,25 +1210,23 @@ using namespace Charting;
 							while (tr.GetIndexTime(r)<tCursor)
 								r++;
 							// . try to navigate to corresponding InspectionWindow in the previous Revolution
-							if (const PCInspectionWindow iws=timeEditor.GetInspectionWindows()){ // has interpretation of the Times been made?
-								const TInspectionWindow &iwCursor=iws[ timeEditor.GetInspectionWindow(tCursor) ];
-								if (iwCursor.uid!=INT_MIN){ // the same bits across various Revolutions already linked together via their UniqueIdentifiers?
-									if (iwCursor.uid<0){ // cursor pointing at a Fuzzy region?
+							if (const PCInspectionWindow piwCursor=timeEditor.GetInspectionWindow(tCursor)) // has interpretation of the Times been made?
+								if (piwCursor->uid!=INT_MIN){ // the same bits across various Revolutions already linked together via their UniqueIdentifiers?
+									if (piwCursor->uid<0){ // cursor pointing at a Fuzzy region?
 										Utils::Information(MSG_FUZZY_NAVIGATION);
 										return TRUE;
 									}
-									const TInspectionWindow &iw=iws[  timeEditor.GetInspectionWindow( iwCursor.uid, tr.GetIndexTime(r-2), tr.GetIndexTime(r-1) )  ];
-									if (iw.uid!=iwCursor.uid){
+									const PCInspectionWindow piw=timeEditor.GetInspectionWindow( piwCursor->uid, tr.GetIndexTime(r-2), tr.GetIndexTime(r-1) );
+									if (piw->uid!=piwCursor->uid){
 										Utils::Information( _T("This bit has no counterpart in previous revolution.") );
 										return TRUE;
 									}
-									const TLogTime tIwCursorStart=(&iwCursor)[-1].tEnd, tIwCursorLength=iwCursor.tEnd-tIwCursorStart;
-									const TLogTime tIwStart=(&iw)[-1].tEnd, tIwLength=iw.tEnd-tIwStart;
+									const TLogTime tIwCursorStart=piwCursor->time, tIwCursorLength=piwCursor->GetLength();
+									const TLogTime tIwStart=piw->time, tIwLength=piw->GetLength();
 									const TLogTime t= tIwStart + (LONGLONG)(tCursor-tIwCursorStart)*tIwLength/tIwCursorLength;
 									timeEditor.SetScrollTime( t - (tCursor-timeEditor.GetScrollTime()) );
 									return TRUE;
 								}
-							}
 							// . navigate to proportionally corresponding Time in the previous Revolution
 							const TLogTime tCurrRevLength=tr.GetIndexTime(r)-tr.GetIndexTime(r-1);
 							const TLogTime tPrevRevLength=tr.GetIndexTime(r-1)-tr.GetIndexTime(r-2);
@@ -1259,25 +1239,23 @@ using namespace Charting;
 							BYTE r=tr.GetIndexCount();
 							while (tCursor<tr.GetIndexTime(--r));
 							// . try to navigate to corresponding InspectionWindow in the next Revolution
-							if (const PCInspectionWindow iws=timeEditor.GetInspectionWindows()){ // has interpretation of the Times been made?
-								const TInspectionWindow &iwCursor=iws[ timeEditor.GetInspectionWindow(tCursor) ];
-								if (iwCursor.uid!=INT_MIN){ // the same bits across various Revolutions already linked together via their UniqueIdentifiers?
-									if (iwCursor.uid<0){ // cursor pointing at a Fuzzy region?
+							if (const PCInspectionWindow piwCursor=timeEditor.GetInspectionWindow(tCursor)) // has interpretation of the Times been made?
+								if (piwCursor->uid!=INT_MIN){ // the same bits across various Revolutions already linked together via their UniqueIdentifiers?
+									if (piwCursor->uid<0){ // cursor pointing at a Fuzzy region?
 										Utils::Information(MSG_FUZZY_NAVIGATION);
 										return TRUE;
 									}
-									const TInspectionWindow &iw=iws[  timeEditor.GetInspectionWindow( iwCursor.uid, tr.GetIndexTime(r+1), tr.GetIndexTime(r+2) )  ];
-									if (iw.uid!=iwCursor.uid){
+									const PCInspectionWindow piw=timeEditor.GetInspectionWindow( piwCursor->uid, tr.GetIndexTime(r+1), tr.GetIndexTime(r+2) );
+									if (piw->uid!=piwCursor->uid){
 										Utils::Information( _T("This bit has no counterpart in next revolution.") );
 										return TRUE;
 									}
-									const TLogTime tIwCursorStart=(&iwCursor)[-1].tEnd, tIwCursorLength=iwCursor.tEnd-tIwCursorStart;
-									const TLogTime tIwStart=(&iw)[-1].tEnd, tIwLength=iw.tEnd-tIwStart;
+									const TLogTime tIwCursorStart=piwCursor->time, tIwCursorLength=piwCursor->GetLength();
+									const TLogTime tIwStart=piw->time, tIwLength=piw->GetLength();
 									const TLogTime t= tIwStart + (LONGLONG)(tCursor-tIwCursorStart)*tIwLength/tIwCursorLength;
 									timeEditor.SetScrollTime( t - (tCursor-timeEditor.GetScrollTime()) );
 									return TRUE;
 								}
-							}
 							// . navigate to proportionally corresponding Time in the next Revolution
 							const TLogTime tCurrRevLength=tr.GetIndexTime(r+1)-tr.GetIndexTime(r);
 							const TLogTime tNextRevLength=tr.GetIndexTime(r+2)-tr.GetIndexTime(r+1);
