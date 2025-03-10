@@ -2,8 +2,6 @@
 //
 #include "resource.h"
 
-#define PBS_MARQUEE             0x08
-
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -1340,7 +1338,7 @@ STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
 CAPTION "Please wait..."
 BEGIN
     PUSHBUTTON      "Cancel",IDCANCEL,67,31,50,14
-    CONTROL         "Progress1",ID_STATE,"msctls_progress32",PBS_SMOOTH | PBS_MARQUEE,7,7,
+    CONTROL         "Progress1",ID_STATE,"msctls_progress32",PBS_SMOOTH,7,7,
                     172,14
 END
 
@@ -1815,7 +1813,7 @@ STYLE WS_POPUP | WS_CAPTION
 CAPTION "Please wait..."
 BEGIN
     PUSHBUTTON      "Cancel",IDCANCEL,197,37,50,14
-    CONTROL         "Progress1",ID_STATE,"msctls_progress32",PBS_SMOOTH | PBS_MARQUEE,30,
+    CONTROL         "Progress1",ID_STATE,"msctls_progress32",PBS_SMOOTH,30,
                     23,202,6
     LTEXT           "Thread priority:",ID_STANDARD,7,29,48,8,NOT WS_GROUP
     COMBOBOX        ID_PRIORITY,7,39,73,85,CBS_DROPDOWNLIST | WS_VSCROLL | 

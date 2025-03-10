@@ -82,6 +82,7 @@
 		~CBackgroundActionCancelable();
 
 		TStdWinError Perform(bool suspendAllViews=false);
+		void SetProgressTarget(int targetProgress) override;
 		void UpdateProgress(int newProgress,TBPFLAG status=TBPFLAG::TBPF_NORMAL) const override;
 		void UpdateProgressFinished() const;
 		TStdWinError TerminateWithSuccess();

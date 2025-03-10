@@ -143,6 +143,12 @@
 	void CActionProgressBar::SetProgressTarget(int targetProgress){
 		// sets Worker's target progress state, "100% completed"
 		__super::SetProgressTarget(targetProgress);
+		auto pbStyle=::GetWindowLong( hProgressBar, GWL_STYLE );
+			if (targetProgress==PB_INFINITY)
+				pbStyle|=PBS_MARQUEE;
+			else
+				pbStyle&=~PBS_MARQUEE;
+		::SetWindowLong( hProgressBar, GWL_STYLE, pbStyle );
 		::PostMessage( hProgressBar, PBM_SETMARQUEE, targetProgress==PB_INFINITY, 0 );
 		::PostMessage( hProgressBar, PBM_SETRANGE32, 0, targetProgress );
 		::PostMessage( hProgressBar, PBM_SETPOS, 0, 0 ); // zeroing the progress-bar
@@ -283,6 +289,15 @@
 			::SetThreadPriority(
 				::GetCurrentThread(),
 				std::max(  THREAD_PRIORITY_NORMAL,  std::min( newPriority-2, THREAD_PRIORITY_HIGHEST )  )
+			);
+	}
+
+	void CBackgroundActionCancelable::SetProgressTarget(int targetProgress){
+		// sets Worker's target progress state, "100% completed"
+		__super::SetProgressTarget(targetProgress);
+		if (pActionTaskbarList)
+			pActionTaskbarList->SetProgressState( *app.m_pMainWnd,
+				targetProgress==PB_INFINITY ? TBPFLAG::TBPF_INDETERMINATE : TBPFLAG::TBPF_NORMAL
 			);
 	}
 
