@@ -154,7 +154,7 @@ using namespace Charting;
 									const TParseEventPtr pe=it++->second;
 									if (const auto ti=pe->Add(iwTimeDefaultHalf).Intersect(visible)){ // offset ParseEvent visible?
 										const int xa=te.timeline.GetClientUnits(ti.tStart), xz=te.timeline.GetClientUnits(ti.tEnd);
-										RECT rcLabel={ xa, -1000, xz, -EVENT_HEIGHT-3 };
+										RECT rcLabel={ te.timeline.GetClientUnits(pe->tStart+iwTimeDefaultHalf), -1000, xz, -EVENT_HEIGHT-3 };
 										const COLORREF textColor=TParseEvent::TypeColors[pe->type];
 								{		EXCLUSIVELY_LOCK(p.params);
 											if ( continuePainting=p.params.id==id ){

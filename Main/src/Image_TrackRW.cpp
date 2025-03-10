@@ -193,7 +193,7 @@
 		if (logTime<0)
 			logTime=0;
 		for( iNextIndexPulse=0; iNextIndexPulse<nIndexPulses; iNextIndexPulse++ )
-			if (logTime<=indexPulses[iNextIndexPulse])
+			if (logTime<indexPulses[iNextIndexPulse])
 				break;
 		if (logTime<*logTimes){
 			iNextTime=0;
@@ -1364,7 +1364,7 @@
 			sync1 =	(sync1<<1) | (BYTE)ReadBit();
 			if ((sync1&0xffdf)!=0x4489 || (sync23&0xffdfffdf)!=0x44894489)
 				continue;
-			if (pOutParseEvents){
+			if (pOutParseEvents)
 				pOutParseEvents->Add( TParseEvent( TParseEvent::SYNC_3BYTES, tSyncStarts[(iSyncStart+256-48)&63], currentTime, 0xa1a1a1 ) );
 			sync1=0; // invalidating "buffered" synchronization, so that it isn't reused
 			// . an ID Field mark should follow the synchronization
