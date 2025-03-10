@@ -290,8 +290,8 @@
 					warnings.hasNonformattedArea=peTrack.Contains( CImage::CTrackReader::TParseEvent::NONFORMATTED );
 					warnings.hasDataInGaps=peTrack.Contains( CImage::CTrackReader::TParseEvent::DATA_IN_GAP );
 					warnings.hasFuzzyData=peTrack.Contains( CImage::CTrackReader::TParseEvent::FUZZY_BAD );
-					for( auto it=peTrack.GetIterator(); it; ){
-						const auto &pe=*it++->second;
+					for each( const auto &pair in peTrack ){
+						const auto &pe=*pair.second;
 						if (pe.IsDataStd()){
 							for( BYTE i=0; i<trSrc.GetIndexCount(); i++ )
 								warnings.hasDataOverIndex|=pe.Contains( trSrc.GetIndexTime(i) );

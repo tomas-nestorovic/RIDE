@@ -74,6 +74,7 @@
 			TIwProfile(TLogTime iwTimeDefault,BYTE iwTimeTolerancePercent=0);
 
 			void ClampIwTime();
+			inline TLogTime PeekNextIwTime(TLogTime tIwCurr) const{ return tIwCurr+iwTime; }
 		};
 
 		#pragma pack(1)
@@ -545,6 +546,9 @@
 				bool IntersectsWith(const TLogTimeInterval &ti) const;
 				void RemoveConsecutiveBeforeEnd(TLogTime tEndMax);
 				TParseEvent::TType GetTypeOfFuzziness(CIterator &itContinue,const TLogTimeInterval &tiFuzzy,TLogTime tTrackEnd) const;
+				// 'for each' support
+				inline CLogTiming::const_iterator begin() const{ return logStarts.cbegin(); }
+				inline CLogTiming::const_iterator end() const{ return logStarts.cend(); }
 			};
 		protected:
 			CTrackReader(PLogTime logTimes,PLogTimesInfo pLti,Codec::TType codec,TDecoderMethod method);
@@ -599,6 +603,18 @@
 				inline PCBit begin() const{ return pBits; }
 				inline PCBit end() const{ return pBits+nBits; }
 			};
+
+			template<char N,typename T>
+			bool ReadBits(T &rOut){
+				// True <=> all N bits successfully read, otherwise False
+				static_assert( N>1, "" );
+				for( char n=N; n>0; n-- ){
+					if (!*this)
+						return false;
+					rOut=(rOut<<1)|(T)ReadBit();
+				}
+				return true;
+			}
 
 			CTrackReader(const CTrackReader &tr);
 			CTrackReader(CTrackReader &&rTrackReader);

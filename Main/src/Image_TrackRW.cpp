@@ -184,6 +184,8 @@
 
 
 
+	constexpr TLogTime TimelyFromPrevious=INT_MIN;
+
 	void CImage::CTrackReader::SetCurrentTime(TLogTime logTime){
 		// seeks to the specified LogicalTime
 		if (!nLogTimes)
@@ -366,7 +368,7 @@
 			case TDecoderMethod::NONE:
 				// no decoder - aka. "don't extract bits from the record"
 				if (*this){
-					currentTime+=profile.iwTimeDefault;
+					currentTime=profile.PeekNextIwTime(currentTime);
 					while (*this && logTimes[iNextTime]<=currentTime)
 						iNextTime++;
 				}
@@ -385,7 +387,7 @@
 						break;
 				}while (true);
 				// . move to the next inspection window
-				currentTime+=profile.iwTime;
+				currentTime=profile.PeekNextIwTime(currentTime);
 				IncrMetaDataIteratorAndApply();
 				// . detect zero (longer than 1/2 of an inspection window size)
 				const TLogTime diff=( rtOutOne=logTimes[iNextTime] )-currentTime;
@@ -424,7 +426,7 @@
 						break;
 				}while (true);
 				// . move to the next inspection window
-				currentTime+=profile.iwTime;
+				currentTime=profile.PeekNextIwTime(currentTime);
 				IncrMetaDataIteratorAndApply();
 				// . detect zero (longer than 1/2 of an inspection window size)
 				const TLogTime diff=( rtOutOne=logTimes[iNextTime] )-currentTime;
@@ -519,31 +521,18 @@
 	}
 
 	bool CImage::CTrackReader::ReadBits15(WORD &rOut){
-		// True <=> at least 16 bits have not yet been read, otherwise False
-		for( BYTE n=15; n-->0; rOut=(rOut<<1)|(BYTE)ReadBit() )
-			if (!*this)
-				return false;
-		return true;
+		// True <=> all 15 bits successfully read, otherwise False
+		return ReadBits<15>(rOut);
 	}
 
 	bool CImage::CTrackReader::ReadBits16(WORD &rOut){
-		// True <=> at least 16 bits have not yet been read, otherwise False
-		//if (method&TMethod::FDD_METHODS){
-			for( BYTE n=16; n-->0; rOut=(rOut<<1)|(BYTE)ReadBit() )
-				if (!*this)
-					return false;
-			return true;
-		//}
+		// True <=> all 16 bits successfully read, otherwise False
+		return ReadBits<16>(rOut);
 	}
 
 	bool CImage::CTrackReader::ReadBits32(DWORD &rOut){
-		// True <=> at least 32 bits have not yet been read, otherwise False
-		//if (method&TMethod::FDD_METHODS){
-			for( BYTE n=32; n-->0; rOut=(rOut<<1)|(BYTE)ReadBit() )
-				if (!*this)
-					return false;
-			return true;
-		//}
+		// True <=> all 32 bits successfully read, otherwise False
+		return ReadBits<32>(rOut);
 	}
 
 	WORD CImage::CTrackReader::Scan(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents){
@@ -600,10 +589,10 @@
 			constexpr BYTE nCellsMin=64;
 			const TLogTime tAreaLengthMin=nCellsMin*profile.iwTimeDefault; // ignore all non-formatted areas that are shorter
 			for( TLogTime t0=RewindToIndexAndResetProfile(0),t; *this; t0=t )
-				if (( t=ReadTime() )-t0>=tAreaLengthMin)
-					for( auto it=rOutParseEvents.GetIterator(); it; ){
-						const TParseEvent &pe=*it++->second;
-						if (pe.IsDataStd())
+				if (( t=ReadTime() )-t0>=tAreaLengthMin) // report a non-formatted area ...
+					for each( const auto &pair in rOutParseEvents ){
+						const TParseEvent &pe=*pair.second;
+						if (pe.IsDataStd()) // ... only within a Sector data
 							if (pe.Contains(t0) || pe.Contains(t)){
 								rOutParseEvents.Add(
 									TParseEvent( TParseEvent::NONFORMATTED, t0, t, 0 )
@@ -849,8 +838,8 @@
 		// attempts to read specified amount of Bytes into the Buffer, starting at position pointed to by the BitReader
 		CParseEventList peSector;
 		const TFdcStatus st=ReadData( id, idEndTime, idEndProfile, nBytesToRead, &peSector );
-		for( auto it=peSector.GetIterator(); it; ){
-			const TParseEventPtr pe=it++->second;
+		for each( const auto &pair in peSector ){
+			const TParseEventPtr pe=pair.second;
 			if (pe->IsDataStd()){
 				DWORD nBytes=pe.data->dw;
 				for( auto *pbi=pe.data->byteInfos; nBytes--; *buffer++=pbi++->value );
@@ -1160,7 +1149,10 @@
 	void CImage::CTrackReader::CParseEventList::Add(const TParseEvent &pe){
 		// adds copy of the specified ParseEvent into this List
 		// - creating a copy of the ParseEvent
-		const TParseEvent &copy=GetAt( AddTail(pe,pe.size) );
+		POSITION pos=AddTail( pe, pe.size );
+		TParseEvent &copy=GetPrev(pos);
+		if (pe.tStart==TimelyFromPrevious)
+			copy.tStart=GetAt(pos).tEnd; // the tail assumed to be the ParseEvent added previously
 		// - registering the ParseEvent for quick searching by Start/End time
 		logStarts.insert( std::make_pair(pe.tStart,&copy) );
 		logEnds.insert( std::make_pair(pe.tEnd,&copy) );
@@ -1363,7 +1355,6 @@
 		const TLogTime indexTime=GetIndexTime(0);
 		for( SetCurrentTime(indexTime-10*profile.iwTimeDefault); currentTime<indexTime; ReadBit() ); // "N*" = number of 0x00 Bytes before the 0xA1 clock-distorted mark
 		// - scanning
-		TLogTime tEventStart;
 		TLogTime tSyncStarts[64]; BYTE iSyncStart=0;
 		WORD nSectors=0, w, sync1=0; DWORD sync23=0;
 		while (*this){
@@ -1373,11 +1364,10 @@
 			sync1 =	(sync1<<1) | (BYTE)ReadBit();
 			if ((sync1&0xffdf)!=0x4489 || (sync23&0xffdfffdf)!=0x44894489)
 				continue;
-			//if (pOutParseEvents) // commented out as added later
-				//pOutParseEvents->AddTail( TParseEvent( TParseEvent::SYNC_3BYTES, tSyncStarts[(iSyncStart+256-48)&63], currentTime, 0xa1a1a1 ) );
+			if (pOutParseEvents){
+				pOutParseEvents->Add( TParseEvent( TParseEvent::SYNC_3BYTES, tSyncStarts[(iSyncStart+256-48)&63], currentTime, 0xa1a1a1 ) );
 			sync1=0; // invalidating "buffered" synchronization, so that it isn't reused
 			// . an ID Field mark should follow the synchronization
-			tEventStart=currentTime;
 			if (!ReadBits16(w)) // Track end encountered
 				break;
 			const BYTE idam=MFM::DecodeByte(w);
@@ -1386,12 +1376,9 @@
 			struct{
 				BYTE idFieldAm, cyl, side, sector, length;
 			} data={ idam };
-			if (pOutParseEvents){
-				pOutParseEvents->Add( TParseEvent( TParseEvent::SYNC_3BYTES, tSyncStarts[(iSyncStart+256-48)&63], tEventStart, 0xa1a1a1 ) );
-				pOutParseEvents->Add( TParseEvent( TParseEvent::MARK_1BYTE, tEventStart, currentTime, idam ) );
-			}
+			if (pOutParseEvents)
+				pOutParseEvents->Add( TParseEvent( TParseEvent::MARK_1BYTE, TimelyFromPrevious, currentTime, idam ) );
 			// . reading SectorId
-			tEventStart=currentTime;
 			TSectorId &rid=*pOutFoundSectors++;
 			if (!ReadBits16(w)) // Track end encountered
 				break;
@@ -1410,11 +1397,10 @@
 					TParseEvent base;
 					BYTE etc[80];
 				} peId;
-				TMetaStringParseEvent::Create( peId.base, tEventStart, currentTime, rid.ToString() );
+				TMetaStringParseEvent::Create( peId.base, TimelyFromPrevious, currentTime, rid.ToString() );
 				pOutParseEvents->Add( peId.base );
 			}
 			// . reading and comparing ID Field's CRC
-			tEventStart=currentTime;
 			DWORD dw;
 			CFloppyImage::TCrc16 crc=0;
 			const bool crcBad=!ReadBits32(dw) || Utils::CBigEndianWord(MFM::DecodeWord(dw)).GetBigEndian()!=( crc=CFloppyImage::GetCrc16Ccitt(MFM::CRC_A1A1A1,&data,sizeof(data)) ); // no or wrong IdField CRC
@@ -1424,7 +1410,7 @@
 			*pOutIdEnds++=currentTime;
 			*pOutIdProfiles++=profile;
 			if (pOutParseEvents)
-				pOutParseEvents->Add( TParseEvent( crcBad?TParseEvent::CRC_BAD:TParseEvent::CRC_OK, tEventStart, currentTime, crc ) );
+				pOutParseEvents->Add( TParseEvent( crcBad?TParseEvent::CRC_BAD:TParseEvent::CRC_OK, TimelyFromPrevious, currentTime, crc ) );
 			// . sector found
 			nSectors++;
 		}
@@ -1436,7 +1422,6 @@
 		// attempts to read specified amount of Bytes into the Buffer, starting at position pointed to by the BitReader; returns the amount of Bytes actually read
 		ASSERT( pLogTimesInfo->codec==Codec::MFM );
 		// - searching for the nearest three consecutive 0xA1 distorted synchronization Bytes
-		TLogTime tEventStart;
 		TLogTime tSyncStarts[64]; BYTE iSyncStart=0;
 		WORD w, sync1=0; DWORD sync23=0;
 		while (*this){
@@ -1451,7 +1436,6 @@
 		if (pOutParseEvents)
 			pOutParseEvents->Add( TParseEvent( TParseEvent::SYNC_3BYTES, tSyncStarts[(iSyncStart+256-48)&63], currentTime, 0xa1a1a1 ) );
 		// - a Data Field mark should follow the synchronization
-		tEventStart=currentTime;
 		if (!ReadBits16(w)) // Track end encountered
 			return TFdcStatus::NoDataField;
 		const BYTE dam=MFM::DecodeByte(w);
@@ -1467,9 +1451,9 @@
 				return TFdcStatus::NoDataField; // not the expected Data mark
 		}
 		if (pOutParseEvents)
-			pOutParseEvents->Add( TParseEvent( TParseEvent::MARK_1BYTE, tEventStart, currentTime, dam ) );
+			pOutParseEvents->Add( TParseEvent( TParseEvent::MARK_1BYTE, TimelyFromPrevious, currentTime, dam ) );
 		// - reading specified amount of Bytes into the Buffer
-		TDataParseEvent peData( sectorId, currentTime );
+		TDataParseEvent peData( sectorId, TimelyFromPrevious );
 		TDataParseEvent::TByteInfo *p=peData.byteInfos;
 		CFloppyImage::TCrc16 crc=CFloppyImage::GetCrc16Ccitt( MFM::CRC_A1A1A1, &dam, sizeof(dam) ); // computing actual CRC along the way
 		for( ; nBytesToRead>0; nBytesToRead-- ){
@@ -1489,20 +1473,19 @@
 			return result;
 		}
 		// - comparing Data Field's CRC
-		tEventStart=currentTime;
 		DWORD dw;
 		const bool crcBad=!ReadBits32(dw) || Utils::CBigEndianWord(MFM::DecodeWord(dw)).GetBigEndian()!=crc; // no or wrong Data Field CRC
 		if (crcBad){
 			result.ExtendWith( TFdcStatus::DataFieldCrcError );
 			if (pOutParseEvents){
 				pOutParseEvents->Add( peData );
-				pOutParseEvents->Add( TParseEvent( TParseEvent::CRC_BAD, tEventStart, currentTime, crc ) );
+				pOutParseEvents->Add( TParseEvent( TParseEvent::CRC_BAD, TimelyFromPrevious, currentTime, crc ) );
 			}
 		}else
 			if (pOutParseEvents){
 				peData.type=TParseEvent::DATA_OK;
 				pOutParseEvents->Add( peData );
-				pOutParseEvents->Add( TParseEvent( TParseEvent::CRC_OK, tEventStart, currentTime, crc ) );
+				pOutParseEvents->Add( TParseEvent( TParseEvent::CRC_OK, TimelyFromPrevious, currentTime, crc ) );
 			}
 		return result;
 	}
