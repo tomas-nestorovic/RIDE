@@ -790,12 +790,13 @@
 			else if (itMdi->isFuzzy){
 				// merge all consecutive "fuzzy" MetaDataItems
 				TLogTimeInterval ti=*itMdi;
+				const TLogTime tIw=itMdi->GetBitTimeAvg();
 				while (++itMdi!=itMdiEnd && itMdi->isFuzzy)
 					ti.tEnd=itMdi->tEnd;
 				rOutParseEvents.Add(
 					TParseEvent(
 						rOutParseEvents.GetTypeOfFuzziness( peIt, ti, tTrackEnd ),
-						ti.tStart, ti.tEnd, 0
+						ti.tStart-tIw, ti.tEnd-tIw, 0 // "-tIw" = all ParseEvents must be one InspectionWindow behind to comply with rest of the app
 					)
 				);
 				if (itMdi==itMdiEnd)

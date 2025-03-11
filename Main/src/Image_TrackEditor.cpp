@@ -152,7 +152,7 @@ using namespace Charting;
 								const enum{ BI_NONE, BI_MINIMAL, BI_FULL } showByteInfo = nUnitsPerByte>byteInfoSizeMin.cx ? BI_FULL : nUnitsPerByte>1 ? BI_MINIMAL : BI_NONE;
 								for( auto it=peList.GetIterator(); continuePainting&&it; ){
 									const TParseEventPtr pe=it++->second;
-									if (const auto ti=pe->Add(iwTimeDefaultHalf).Intersect(visible)){ // offset ParseEvent visible?
+									if (const auto ti=pe->Intersect(visible)){ // ParseEvent visible?
 										const int xa=te.timeline.GetClientUnits(ti.tStart), xz=te.timeline.GetClientUnits(ti.tEnd);
 										RECT rcLabel={ te.timeline.GetClientUnits(pe->tStart+iwTimeDefaultHalf), -1000, xz, -EVENT_HEIGHT-3 };
 										const COLORREF textColor=TParseEvent::TypeColors[pe->type];
@@ -169,7 +169,7 @@ using namespace Charting;
 											const COLORREF textColorBlend=Utils::GetBlendedColor( textColor, COLOR_BLACK );
 											const auto &bis=pe.data->byteInfos;
 											int i=0;
-											while (bis[i].tStart+iwTimeDefaultHalf<ti.tStart) i++; // skip invisible part
+											while (bis[i].tStart<ti.tStart) i++; // skip invisible part
 											rcLabel.top=rcLabel.bottom-te.timeline.font.charHeight, rcLabel.bottom=-EVENT_HEIGHT+Utils::CRideFont::Small.charHeight;
 											const SIZE byteInfoOffset={ 0, -byteInfoSizeMin.cy };
 											while (continuePainting && bis[i].tStart<ti.tEnd && i<pe->dw){ // draw visible part
@@ -178,11 +178,11 @@ using namespace Charting;
 												if ( continuePainting=p.params.id==id )
 													switch (showByteInfo){
 														case BI_MINIMAL:
-															g.PerpLine( bi.tStart+iwTimeDefaultHalf, -EVENT_HEIGHT-2, -EVENT_HEIGHT+2 );
+															g.PerpLine( bi.tStart, -EVENT_HEIGHT-2, -EVENT_HEIGHT+2 );
 															break;
 														case BI_FULL:{
 															rcLabel.left=g.PerpLineAndText(
-																bi.tStart+iwTimeDefaultHalf, 0, rcLabel.top, byteInfoOffset,
+																bi.tStart, 0, rcLabel.top, byteInfoOffset,
 																byteInfoFormat, ::isprint(bi.value)?bi.value:'?', bi.value
 															);
 															const COLORREF tc0=::SetTextColor( dc, textColorBlend );
@@ -785,7 +785,25 @@ using namespace Charting;
 			if (rte.timeEditor.GetParseEvents().GetCount()>0) // already set?
 				return pAction->TerminateWithSuccess();
 			CImage::CTrackReader tr=rte.tr; // copy
-			rte.timeEditor.SetParseEvents( tr.ScanAndAnalyze(*pAction) );
+			CImage::CTrackReader::CParseEventList peList;
+			// (1) Each decoder (e.g. Fraser's, Ogden's, etc.) begins by stepping to the NEXT InspectionWindow
+			// (2) All ParseEvents have Start/End set to BEFORE this step took place
+			// (3) So, all ParseEvents are one actual InspectionWindow size BEHIND!
+			// (4) To compensate for (3) and be in sync with decoders, we should step the ParseEvent as 'tStart+tIwStart' and 'tEnd+tIwEnd', but we don't have 'tIwStart' and 'tIwEnd'
+			// (5) So, we assume that all ParseEvents are 'tIwDefault' behind and would step 'tStart+tIwDefault' and 'tEnd+tIwDefault'
+			// (6) But at the same time, all InspectionWindows are shifted by '-tIwDefault/2' (because the first IW begins right with 'tIwDefault' size)
+			// (7) Hence, to compensate for (3) and (6), the ParseEvents are stepped 'tStart+tIwDefault-tIwDefault/2' and 'tEnd+tIwDefault-tIwDefault/2'
+			const TLogTime tIwOffset=tr.CreateResetProfile().iwTimeDefault/2; // see (7)
+			for each( const auto &pair in tr.ScanAndAnalyze(*pAction) ){
+				auto &pe=*const_cast<TParseEvent *>(pair.second);
+				pe.tStart+=tIwOffset, pe.tEnd+=tIwOffset;
+				if (pe.IsDataAny()){
+					auto &dpe=(CImage::CTrackReader::TDataParseEvent &)pe;
+					for( auto i=dpe.GetByteCount(); i>0; dpe.byteInfos[--i].tStart+=tIwOffset );
+				}
+				peList.Add(pe);
+			}
+			rte.timeEditor.SetParseEvents(peList);
 			return pAction->TerminateWithSuccess();
 		}
 
