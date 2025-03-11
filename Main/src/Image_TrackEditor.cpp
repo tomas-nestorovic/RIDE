@@ -170,8 +170,8 @@ using namespace Charting;
 											const auto &bis=pe.data->byteInfos;
 											int i=0;
 											while (bis[i].tStart<ti.tStart) i++; // skip invisible part
-											rcLabel.top=rcLabel.bottom-te.timeline.font.charHeight, rcLabel.bottom=-EVENT_HEIGHT+Utils::CRideFont::Small.charHeight;
-											const SIZE byteInfoOffset={ 0, -byteInfoSizeMin.cy };
+											const int fullBiLineHeight=rcLabel.bottom-te.timeline.font.charHeight;
+											rcLabel.top=fullBiLineHeight-byteInfoSizeMin.cy, rcLabel.bottom=-EVENT_HEIGHT+Utils::CRideFont::Small.charHeight;
 											while (continuePainting && bis[i].tStart<ti.tEnd && i<pe->dw){ // draw visible part
 												const auto &bi=bis[i];
 												EXCLUSIVELY_LOCK(p.params);
@@ -181,9 +181,11 @@ using namespace Charting;
 															g.PerpLine( bi.tStart, -EVENT_HEIGHT-2, -EVENT_HEIGHT+2 );
 															break;
 														case BI_FULL:{
-															rcLabel.left=g.PerpLineAndText(
-																bi.tStart, 0, rcLabel.top, byteInfoOffset,
-																byteInfoFormat, ::isprint(bi.value)?bi.value:'?', bi.value
+															rcLabel.left=2+g.PerpLine( bi.tStart, 0, fullBiLineHeight );
+															::DrawText(
+																dc,
+																label,	::wsprintf( label, byteInfoFormat, ::isprint(bi.value)?bi.value:'?', bi.value ),
+																&rcLabel, DT_LEFT|DT_TOP
 															);
 															const COLORREF tc0=::SetTextColor( dc, textColorBlend );
 																const HGDIOBJ hFont0=::SelectObject( dc, Utils::CRideFont::Small );
