@@ -768,13 +768,13 @@
 							bit++;
 					if (bit==lastBit) // no more Fuzzy bits?
 						break;
-					TParseEvent peFuzzy( TParseEvent::NONE, bit->time, 0, 0 );
+					TParseEvent peFuzzy( TParseEvent::NONE, bit[-1].time, 0, 0 ); // "[-1]" = all ParseEvents must be one InspectionWindow behind to comply with rest of the app
 					while (bit<lastBit && (bit->fuzzy||bit->cosmeticFuzzy)) // discovering consecutive Fuzzy Bits
 						if (ap.Cancelled)
 							return nSectorsFound;
 						else
 							bit++;
-					peFuzzy.tEnd=bit->time;
+					peFuzzy.tEnd=bit[-1].time; // "[-1]" = all ParseEvents must be one InspectionWindow behind to comply with rest of the app
 					// : determining the type of fuzziness
 					peFuzzy.type=rOutParseEvents.GetTypeOfFuzziness( peIt, peFuzzy, tTrackEnd );
 					// : creating new FuzzyEvent
@@ -886,7 +886,7 @@
 		while (tr && tr.GetCurrentTime()<tTo)
 			tr.ReadBit(), nBits++;
 		// - create and populate the BitBuffer
-		bitBuffer.Realloc( 1+nBits+2 )->time=-1; // "1+" = one hidden Bit before Sequence (with negative Time), "+2" = auxiliary terminal Bits
+		bitBuffer.Realloc( 1+nBits+2 )->time=tFrom; // "1+" = one hidden Bit before Sequence (with negative Time), "+2" = auxiliary terminal Bits
 		pBits=bitBuffer+1; // skip that one hidden Bit
 		tr.SetCurrentTimeAndProfile( tFrom, profileFrom );
 		TBit *p=pBits;
@@ -906,6 +906,13 @@
 		p->time=p[-1].time; // auxiliary terminal Bit
 		p[1].time=INT_MAX;
 		nBits=p-pBits; // # of Bits may in the end be lower due to dropping of Bits over Indices
+	#ifdef _DEBUG
+		TLogTime tPrev=INT_MIN;
+		for each( const auto &bit in *this ){
+			ASSERT( tPrev<bit.time );
+			tPrev=bit.time;
+		}
+	#endif
 	}
 
 	CImage::CTrackReader::CBitSequence::PCBit CImage::CTrackReader::CBitSequence::Find(TLogTime tMin) const{
@@ -916,7 +923,7 @@
 		);
 		if (it==end())
 			return nullptr;
-		it-=tMin<it->time; // correct the result of Binary Seach (usually finds the next Bit)
+		it-=tMin<it->time; // correct the result of Binary Search (usually finds the next Bit)
 		return it;
 	}
 

@@ -318,7 +318,7 @@ using namespace Charting;
 					inspectionWindows->Find(tRevEnd),
 					uid,
 					[](const TInspectionWindow &iw,int uid){
-						return std::abs(iw.uid)<=uid;
+						return std::abs(iw.uid)<uid;
 					}
 				);
 				return	it!=inspectionWindows->end() ? it : nullptr;
