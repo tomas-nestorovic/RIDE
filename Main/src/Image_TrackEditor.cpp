@@ -813,28 +813,26 @@ using namespace Charting;
 			// thread to create list of inspection windows used to recognize data in the Track
 			const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
 			const CTrackEditor &te=*(const CTrackEditor *)pAction->GetParams();
-			TInspectionWindow *const iwList=(TInspectionWindow *)te.timeEditor.GetInspectionWindows();
-			ASSERT( iwList!=nullptr ); // must be set!
+			ASSERT( te.timeEditor.GetInspectionWindows()!=nullptr ); // must be set!
 			const CImage::CTrackReader &tr=te.tr;
 			if (tr.GetIndexCount()<3) // at least two full Revolution must exist ...
 				return pAction->TerminateWithSuccess(); // ... otherwise matching bits can't be linked together
 			pAction->SetProgressTarget(tr.GetTotalTime());
 			const auto &peList=te.timeEditor.GetParseEvents();
-			const TLogTime iwTimeDefaultHalf=tr.GetCurrentProfile().iwTimeDefault/2;
+			const TLogTime iwTimeTolerance=tr.GetCurrentProfile().iwTimeMin/4;
 			for( BYTE i=1; i<tr.GetIndexCount(); i++ ){
 				TInspectionWindow *iw=const_cast<TInspectionWindow *>(te.timeEditor.GetInspectionWindow( tr.GetIndexTime(i-1) ));
 				const PCInspectionWindow iwRevEnd=te.timeEditor.GetInspectionWindow( tr.GetIndexTime(i) );
 				int uid=1;
 				do{
-					const TLogTime tIwEnd=iw->time+iw->GetLength();
-					const auto it=peList.FindByEnd( tIwEnd, CImage::CTrackReader::TParseEvent::FUZZY_OK, CImage::CTrackReader::TParseEvent::FUZZY_BAD );
-					const TLogTimeInterval tiFuzzy= it ? it->second->Add(-iwTimeDefaultHalf) : TLogTimeInterval::Invalid;
-					while (iw<iwRevEnd && tIwEnd<=tiFuzzy.tStart) // assigning InspectionWindows BEFORE the next Fuzzy event their UniqueIdentifiers
+					const auto it=peList.FindByEnd( iw->time+iwTimeTolerance, CImage::CTrackReader::TParseEvent::FUZZY_OK, CImage::CTrackReader::TParseEvent::FUZZY_BAD );
+					const TLogTimeInterval &tiFuzzy= it ? it->second->Add(-iwTimeTolerance) : TLogTimeInterval::Invalid;
+					while (iw<iwRevEnd && iw->time<tiFuzzy.tStart) // assigning InspectionWindows BEFORE the next Fuzzy event their UniqueIdentifiers
 						iw++->uid=uid++;
-					while (iw<iwRevEnd && tIwEnd<=tiFuzzy.tEnd) // assigning InspectionWindows BEFORE the next Fuzzy event negative UniqueIdentifiers of the last non-Fuzzy InspectionWindow
+					while (iw<iwRevEnd && iw->time<=tiFuzzy.tEnd) // assigning InspectionWindows BEFORE the next Fuzzy event negative UniqueIdentifiers of the last non-Fuzzy InspectionWindow
 						iw++->uid=-uid;
 					uid++;
-					pAction->UpdateProgress(tIwEnd);
+					pAction->UpdateProgress(iw->time);
 				}while (iw<iwRevEnd);
 			}
 			return pAction->TerminateWithSuccess();
