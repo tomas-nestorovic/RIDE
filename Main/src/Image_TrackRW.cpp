@@ -345,19 +345,33 @@
 		}
 	}
 
+#define SKIP_ALL_FLUXES_IN_CURRENT_INSPECTION_WINDOW() \
+	const TLogTime iwTimeHalf=profile.iwTime/2, tCurrIwEnd=currentTime+iwTimeHalf; \
+	do{																			\
+		if (!*this)																\
+			return 0;															\
+		if (logTimes[iNextTime]<tCurrIwEnd)										\
+			iNextTime++;														\
+		else																	\
+			break;																\
+	}while (true);
+
+#define MOVE_TO_NEXT_INSPECTION_WINDOW() \
+	currentTime=profile.PeekNextIwTime(currentTime);							\
+	IncrMetaDataIteratorAndApply();
+
+#define RESET_PROFILE_ON_INDEX() \
+	if (currentTime>=indexPulses[iNextIndexPulse]){								\
+		if (pLogTimesInfo->resetDecoderOnIndex){								\
+			profile.Reset();													\
+			currentTime=indexPulses[iNextIndexPulse];							\
+			FindMetaDataIteratorAndApply();										\
+		}																		\
+		iNextIndexPulse++;														\
+	}
+
 	bool CImage::CTrackReader::ReadBit(TLogTime &rtOutOne){
 		// returns first bit not yet read
-		// - if we just crossed an IndexPulse, resetting the Profile
-		if (currentTime>=indexPulses[iNextIndexPulse]){
-			if (pLogTimesInfo->resetDecoderOnIndex){
-				profile.Reset();
-				const TLogTime indexTime=indexPulses[ iNextIndexPulse++ ];
-				currentTime=indexTime;// + Utils::RoundUpToMuls( currentTime-indexTime, profile.iwTimeDefault );
-				FindMetaDataIteratorAndApply();
-			}else
-				iNextIndexPulse++;
-		}
-		// - reading next bit
 		switch (profile.method){
 			case TDecoderMethod::NONE:
 				// no decoder - aka. "don't extract bits from the record"
@@ -369,20 +383,11 @@
 				return 0;
 			case TDecoderMethod::KEIR_FRASER:{
 				// FDC-like flux reversal decoding from Keir Fraser's Disk-Utilities/libdisk
-				// . skip all fluxes in current inspection window
-				auto &r=profile.methodState.fraser;
-				const TLogTime iwTimeHalf=profile.iwTime/2, tCurrIwEnd=currentTime+iwTimeHalf;
-				do{
-					if (!*this)
-						return 0;
-					if (logTimes[iNextTime]<tCurrIwEnd)
-						iNextTime++;
-					else
-						break;
-				}while (true);
-				// . move to the next inspection window
-				currentTime=profile.PeekNextIwTime(currentTime);
-				IncrMetaDataIteratorAndApply();
+				auto &r=profile.methodState.fraserObsolete;
+				// . common chores
+				SKIP_ALL_FLUXES_IN_CURRENT_INSPECTION_WINDOW()
+				MOVE_TO_NEXT_INSPECTION_WINDOW()
+				RESET_PROFILE_ON_INDEX()
 				// . detect zero (longer than 1/2 of an inspection window size)
 				const TLogTime diff=( rtOutOne=logTimes[iNextTime] )-currentTime;
 				iNextTime+=logTimes[iNextTime]<=currentTime; // eventual correction of the pointer to the next time
@@ -408,20 +413,11 @@
 			}
 			case TDecoderMethod::MARK_OGDEN:{
 				// FDC-like flux reversal decoding from Mark Ogdens's DiskTools/flux2track
-				// . skip all fluxes in current inspection window
 				auto &r=profile.methodState.ogden;
-				const TLogTime iwTimeHalf=profile.iwTime/2, tCurrIwEnd=currentTime+iwTimeHalf;
-				do{
-					if (!*this)
-						return 0;
-					if (logTimes[iNextTime]<tCurrIwEnd)
-						iNextTime++;
-					else
-						break;
-				}while (true);
-				// . move to the next inspection window
-				currentTime=profile.PeekNextIwTime(currentTime);
-				IncrMetaDataIteratorAndApply();
+				// . common chores
+				SKIP_ALL_FLUXES_IN_CURRENT_INSPECTION_WINDOW()
+				MOVE_TO_NEXT_INSPECTION_WINDOW()
+				RESET_PROFILE_ON_INDEX()
 				// . detect zero (longer than 1/2 of an inspection window size)
 				const TLogTime diff=( rtOutOne=logTimes[iNextTime] )-currentTime;
 				lastReadBits<<=1, lastReadBits|=1; // 'valid' flag
