@@ -297,17 +297,11 @@
 
 	void CImage::CTrackReaderBase::SetCodec(Codec::TType codec){
 		// changes the interpretation of recorded LogicalTimes according to the new Codec
-		switch ( pLogTimesInfo->codec=codec ){
-			default:
-				ASSERT(FALSE); // we shouldn't end up here, this value must be set for all implemented Codecs!
-				//fallthrough
-			case Codec::FM:
-				nConsecutiveZerosMax=1;
-				break;
-			case Codec::MFM:
-				nConsecutiveZerosMax=3;
-				break;
-		}
+		if (const Codec::PCProperties p=Codec::GetProperties(codec)){
+			pLogTimesInfo->codec=codec;
+			nConsecutiveZerosMax=p->RLL.k;
+		}else
+			ASSERT(FALSE); // we shouldn't end up here!
 	}
 
 	void CImage::CTrackReaderBase::SetMediumType(Medium::TType mediumType){

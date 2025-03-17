@@ -357,15 +357,36 @@ namespace Medium{
 
 
 	namespace Codec{
-		LPCTSTR GetDescription(TType codec){
-			// returns the string description of a given Codec
+
+		PCProperties GetProperties(TType codec){
+			// returns Properties of a given Codec
 			switch (codec){
-				case FM			: return _T("FM (Digital Frequency Modulation)");
-				case MFM		: return _T("MFM (Modified FM)");
+				case FM:{
+					static const TProperties P={
+						_T("FM (Digital Frequency Modulation)"),
+						{ 0, 1 }
+					};
+					return &P;
+				}
+				case MFM:{
+					static const TProperties P={
+						_T("MFM (Modified FM)"),
+						{ 1, 3 }
+					};
+					return &P;
+				}
 				default:
 					ASSERT(FALSE);
 					return nullptr;
 			}
+		}
+
+		LPCTSTR GetDescription(TType codec){
+			// returns the string description of a given Codec
+			if (const PCProperties p=GetProperties(codec))
+				return p->description;
+			else
+				return nullptr;
 		}
 
 		TType FirstFromMany(TTypeSet set){
