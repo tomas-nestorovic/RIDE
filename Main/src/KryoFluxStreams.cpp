@@ -134,7 +134,7 @@
 			DWORD dataLength;
 			PCBYTE data=pit->GetRawDeviceData( KF_STREAM_ID, dataLength );
 			if (!data){ // Track has been really modified and original KF Stream disposed ...
-				std::swap( streamData, Utils::MakeCallocPtr<BYTE>(KF_BUFFER_CAPACITY) );
+				streamData.reset( Utils::MakeCallocPtr<BYTE>(KF_BUFFER_CAPACITY) );
 				data = streamData;
 				if (!streamData)
 					return ERROR_NOT_ENOUGH_MEMORY;
