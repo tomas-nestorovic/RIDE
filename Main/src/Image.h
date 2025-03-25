@@ -504,6 +504,7 @@
 				TDataParseEvent(const TSectorId &sectorId,TLogTime tStart);
 
 				void Finalize(TLogTime tEnd,DWORD nBytes,TType type=DATA_BAD);
+				inline DWORD GetByteCount() const{ return dw; }
 				inline bool HasByteInfo() const{ return size>sizeof(TParseEvent); }
 			} *PCDataParseEvent;
 

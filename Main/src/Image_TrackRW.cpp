@@ -383,7 +383,7 @@
 				return 0;
 			case TDecoderMethod::KEIR_FRASER:{
 				// FDC-like flux reversal decoding from Keir Fraser's Disk-Utilities/libdisk
-				auto &r=profile.methodState.fraserObsolete;
+				auto &r=profile.methodState.fraser;
 				// . common chores
 				SKIP_ALL_FLUXES_IN_CURRENT_INSPECTION_WINDOW()
 				MOVE_TO_NEXT_INSPECTION_WINDOW()
