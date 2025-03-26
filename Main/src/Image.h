@@ -342,7 +342,7 @@
 			void Show(const CString &report);
 		} unsupportedFeaturesMessageBar;
 
-		class CTrackReaderBase{
+		class CTrackReaderBuffers{
 		public:
 			enum TDecoderMethod:BYTE{
 				NONE			=1,
@@ -370,34 +370,13 @@
 				bool Equals(const TMetaDataItem &r) const;
 			} *PCMetaDataItem;
 
-			struct TProfile sealed:public Medium::TIwProfile{
-				TDecoderMethod method;
-				union{
-					struct{
-						DWORD nConsecutiveZeros;
-					} fraser;
-					struct{
-						bool up;
-						BYTE fCnt, aifCnt, adfCnt, pcCnt;
-					} ogden;
-					struct{
-						int iCurrBit;
-					} metaData;
-				} methodState;
-
-				TProfile(TDecoderMethod method=TDecoderMethod::NONE);
-				TProfile(const TMetaDataItem &mdi);
-
-				void Reset();
-			};
-
-			typedef struct:public std::set<TMetaDataItem>{
+			struct CMetaData:public std::set<TMetaDataItem>{
 				inline operator bool() const{ return size()>0; }
 				const_iterator GetMetaDataIterator(TLogTime t) const;
 				PCMetaDataItem GetMetaDataItem(TLogTime t) const;
 				PCMetaDataItem GetFirst() const;
 				PCMetaDataItem GetLast() const;
-			} CMetaData;
+			};
 		protected:
 			struct TLogTimesInfoData abstract{
 				DWORD nLogTimesMax;
@@ -425,29 +404,61 @@
 
 			PLogTime logTimes; // absolute logical times since the start of recording
 			PLogTimesInfo pLogTimesInfo;
-			DWORD iNextTime,nLogTimes;
 			PLogTime indexPulses; // buffer to contain 'Max' full Revolutions
-			BYTE iNextIndexPulse,nIndexPulses;
 			CMetaData::const_iterator itCurrMetaData;
+
+			CTrackReaderBuffers(PLogTime logTimes,PLogTimesInfo pLti,TDecoderMethod method);
+		public:
+			inline const CMetaData &GetMetaData() const{ return pLogTimesInfo->metaData; }
+		};
+
+		class CTrackReaderState:public CTrackReaderBuffers{
+		public:
+			struct TProfile sealed:public Medium::TIwProfile{
+				TDecoderMethod method;
+				union{
+					struct{
+						DWORD nConsecutiveZeros;
+					} fraserObsolete;
+					struct{
+						DWORD nConsecutiveZeros;
+					} fraser;
+					struct{
+						bool up;
+						BYTE fCnt, aifCnt, adfCnt, pcCnt;
+					} ogden;
+					struct{
+						int iCurrBit;
+					} metaData;
+				} methodState;
+
+				TProfile(TDecoderMethod method=TDecoderMethod::NONE);
+				TProfile(const TMetaDataItem &mdi);
+
+				void Reset();
+			};
+		protected:
+			DWORD iNextTime,nLogTimes;
+			BYTE iNextIndexPulse,nIndexPulses;
 			TProfile profile;
 			TLogTime currentTime;
 			BYTE nConsecutiveZerosMax; // # of consecutive zeroes to lose synchronization; e.g. 3 for MFM code
 			WORD lastReadBits; // validity flag and bit, e.g. 10b = valid bit '0', 11b = valid bit '1', 0Xb = invalid bit 'X'
 
-			CTrackReaderBase(PLogTime logTimes,PLogTimesInfo pLti,TDecoderMethod method);
+			CTrackReaderState(PLogTime logTimes,PLogTimesInfo pLti,TDecoderMethod method);
 
 			PCMetaDataItem GetCurrentTimeMetaData() const;
 			PCMetaDataItem ApplyCurrentTimeMetaData();
 			PCMetaDataItem IncrMetaDataIteratorAndApply();
+			PCMetaDataItem DecrMetaDataIteratorAndApply();
 			PCMetaDataItem FindMetaDataIteratorAndApply();
 		public:
-			inline const CMetaData &GetMetaData() const{ return pLogTimesInfo->metaData; }
 			inline const CMetaData::const_iterator &GetCurrentTimeMetaDataIterator() const{ return itCurrMetaData; }
 			void SetCodec(Codec::TType codec);
 			void SetMediumType(Medium::TType mediumType);
 		};
 
-		class CTrackReader:public CTrackReaderBase{
+		class CTrackReader:public CTrackReaderState{
 		public:
 			static LPCTSTR GetDescription(TDecoderMethod dm);
 

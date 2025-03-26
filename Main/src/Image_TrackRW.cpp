@@ -1,16 +1,27 @@
 #include "stdafx.h"
 #include "Charting.h"
 
-	CImage::CTrackReaderBase::CTrackReaderBase(PLogTime logTimes,PLogTimesInfo pLti,TDecoderMethod method)
+	CImage::CTrackReaderBuffers::CTrackReaderBuffers(PLogTime logTimes,PLogTimesInfo pLti,TDecoderMethod method)
 		// ctor
-		: logTimes(logTimes) , nLogTimes(0) , pLogTimesInfo(pLti)
-		, indexPulses(pLti->indexPulses) , iNextIndexPulse(0) , nIndexPulses(0)
-		, iNextTime(0) , currentTime(0) , lastReadBits(0)
-		, profile(method) {
+		: logTimes(logTimes) , pLogTimesInfo(pLti)
+		, indexPulses(pLti->indexPulses) {
 		itCurrMetaData=pLogTimesInfo->metaData.cbegin();
 	}
 
-	CImage::CTrackReaderBase::PCMetaDataItem CImage::CTrackReaderBase::GetCurrentTimeMetaData() const{
+
+
+
+
+
+	CImage::CTrackReaderState::CTrackReaderState(PLogTime logTimes,PLogTimesInfo pLti,TDecoderMethod method)
+		// ctor
+		: CTrackReaderBuffers( logTimes, pLti, method )
+		, nLogTimes(0) , iNextIndexPulse(0) , nIndexPulses(0)
+		, iNextTime(0) , currentTime(0) , lastReadBits(0)
+		, profile(method) {
+	}
+
+	CImage::CTrackReaderState::PCMetaDataItem CImage::CTrackReaderState::GetCurrentTimeMetaData() const{
 		// returns the MetaDataItem that contain the CurrentTime, or Null
 		if (itCurrMetaData!=pLogTimesInfo->metaData.cend()){
 			ASSERT( itCurrMetaData->Contains(currentTime) ); // just to be sure
@@ -19,7 +30,7 @@
 			return nullptr;
 	}
 
-	CImage::CTrackReaderBase::PCMetaDataItem CImage::CTrackReaderBase::ApplyCurrentTimeMetaData(){
+	CImage::CTrackReaderState::PCMetaDataItem CImage::CTrackReaderState::ApplyCurrentTimeMetaData(){
 		// uses the MetaDataItem at CurrentTime for reading
 		if (const PCMetaDataItem pmdi=GetCurrentTimeMetaData()){
 			// application of found MetaDataItem
@@ -28,7 +39,7 @@
 			return nullptr;
 	}
 
-	CImage::CTrackReaderBase::PCMetaDataItem CImage::CTrackReaderBase::IncrMetaDataIteratorAndApply(){
+	CImage::CTrackReaderState::PCMetaDataItem CImage::CTrackReaderState::IncrMetaDataIteratorAndApply(){
 		// the CurrentTime has moved forward, and the good strategy is to iterate to the MetaDataItem that contains it
 		while (itCurrMetaData!=pLogTimesInfo->metaData.cend())
 			if (currentTime<itCurrMetaData->tEnd)
@@ -38,7 +49,17 @@
 		return nullptr;
 	}
 
-	CImage::CTrackReaderBase::PCMetaDataItem CImage::CTrackReaderBase::FindMetaDataIteratorAndApply(){
+	CImage::CTrackReaderState::PCMetaDataItem CImage::CTrackReaderState::DecrMetaDataIteratorAndApply(){
+		// the CurrentTime has moved backward, and the good strategy is to iterate to the MetaDataItem that contains it
+		while (itCurrMetaData!=pLogTimesInfo->metaData.cbegin())
+			if (itCurrMetaData->tEnd<=currentTime) // this is already too much ...
+				return IncrMetaDataIteratorAndApply(); // ... hence go one MetaData forward
+			else
+				itCurrMetaData--;
+		return nullptr;
+	}
+
+	CImage::CTrackReaderState::PCMetaDataItem CImage::CTrackReaderState::FindMetaDataIteratorAndApply(){
 		// the CurrentTime has changed randomly
 		itCurrMetaData=pLogTimesInfo->metaData.upper_bound( TLogTimeInterval(currentTime,INT_MAX) ); // 'upper_bound' = don't search the sharp beginning but rather something bigger ...
 		if (itCurrMetaData!=pLogTimesInfo->metaData.cbegin())
@@ -51,7 +72,7 @@
 
 
 
-	CImage::CTrackReaderBase::CMetaData::const_iterator CImage::CTrackReaderBase::CMetaData::GetMetaDataIterator(TLogTime t) const{
+	CImage::CTrackReaderState::CMetaData::const_iterator CImage::CTrackReaderState::CMetaData::GetMetaDataIterator(TLogTime t) const{
 		// returns an iterator to a MetaDataItem that contains the specified Time, or 'cend()'
 		auto it=upper_bound( TLogTimeInterval(t,INT_MAX) ); // 'upper_bound' = don't search the sharp beginning but rather something bigger ...
 		if (it!=cend())
@@ -60,61 +81,61 @@
 		return cend();
 	}
 
-	CImage::CTrackReaderBase::PCMetaDataItem CImage::CTrackReaderBase::CMetaData::GetMetaDataItem(TLogTime t) const{
+	CImage::CTrackReaderState::PCMetaDataItem CImage::CTrackReaderState::CMetaData::GetMetaDataItem(TLogTime t) const{
 		// returns a MetaDataItem that contains the specified Time, or Null
 		const auto it=GetMetaDataIterator(t);
 		return it!=cend() ? &*it : nullptr;
 	}
 
-	CImage::CTrackReaderBase::PCMetaDataItem CImage::CTrackReaderBase::CMetaData::GetFirst() const{
+	CImage::CTrackReaderState::PCMetaDataItem CImage::CTrackReaderState::CMetaData::GetFirst() const{
 		return size() ? &*cbegin() : nullptr;
 	}
 
-	CImage::CTrackReaderBase::PCMetaDataItem CImage::CTrackReaderBase::CMetaData::GetLast() const{
+	CImage::CTrackReaderState::PCMetaDataItem CImage::CTrackReaderState::CMetaData::GetLast() const{
 		if (!size())
 			return nullptr;
 		auto it=cend();
 		return &*--it;
 	}
 
-	CImage::CTrackReaderBase::TMetaDataItem::TMetaDataItem(const TLogTimeInterval &ti)
+	CImage::CTrackReaderState::TMetaDataItem::TMetaDataItem(const TLogTimeInterval &ti)
 		// ctor (for clearing MetaData in specified Interval)
 		: TLogTimeInterval(ti)
 		, isFuzzy(false) , nBits(0) {
 	}
 	
-	CImage::CTrackReaderBase::TMetaDataItem::TMetaDataItem(const TLogTimeInterval &ti,bool isFuzzy,int nBits)
+	CImage::CTrackReaderState::TMetaDataItem::TMetaDataItem(const TLogTimeInterval &ti,bool isFuzzy,int nBits)
 		// ctor
 		: TLogTimeInterval(ti)
 		, isFuzzy(isFuzzy) , nBits(nBits) {
 	}
 
-	TLogTime CImage::CTrackReaderBase::TMetaDataItem::GetBitTimeAvg() const{
+	TLogTime CImage::CTrackReaderState::TMetaDataItem::GetBitTimeAvg() const{
 		// computes and returns the average inspection window size
 		ASSERT( nBits>0 );
 		return GetLength()/nBits;
 	}
 
-	TLogTime CImage::CTrackReaderBase::TMetaDataItem::GetBitTime(int iBit) const{
+	TLogTime CImage::CTrackReaderState::TMetaDataItem::GetBitTime(int iBit) const{
 		// computes and returns the LogicalTime of I-th bit (aka. the center of I-th inspection window)
 		ASSERT( 0<=iBit && iBit<nBits );
 		return	tStart + ::MulDiv( GetLength(), iBit, nBits );
 	}
 
-	int CImage::CTrackReaderBase::TMetaDataItem::GetBitIndex(TLogTime t) const{
+	int CImage::CTrackReaderState::TMetaDataItem::GetBitIndex(TLogTime t) const{
 		//
 		ASSERT( Contains(t) );
 		return ::MulDiv( t-tStart, nBits, GetLength() ); // mathematic rounding
 	}
 
-	TLogTimeInterval CImage::CTrackReaderBase::TMetaDataItem::GetIw(int iBit) const{
+	TLogTimeInterval CImage::CTrackReaderState::TMetaDataItem::GetIw(int iBit) const{
 		// determines and returns the inspection window that has the I-th bit at its center
 		const TLogTime tCenter=GetBitTime(iBit), tAvgSize=GetBitTimeAvg();
 		const TLogTime tStart=tCenter-tAvgSize/2;
 		return TLogTimeInterval( tStart, tStart+tAvgSize );
 	}
 
-	CImage::CTrackReaderBase::TMetaDataItem CImage::CTrackReaderBase::TMetaDataItem::Split(TLogTime tAt){
+	CImage::CTrackReaderState::TMetaDataItem CImage::CTrackReaderState::TMetaDataItem::Split(TLogTime tAt){
 		// trims this MetaDataItem to Interval [tStart,tAt), returning the rest; this semantics is compatible with 'operator<' which uses 'tStart' - when "un-const-ed", Split(.) can be call directly on 'std::set' items (which is nasty, btw)
 		const int iBit=GetBitIndex(tAt);
 		ASSERT( GetBitTime(iBit)==tAt ); // up to the caller to correctly align!
@@ -123,7 +144,7 @@
 		return result;
 	}
 
-	bool CImage::CTrackReaderBase::TMetaDataItem::Equals(const TMetaDataItem &r) const{
+	bool CImage::CTrackReaderState::TMetaDataItem::Equals(const TMetaDataItem &r) const{
 		// True <=> the two MetaDataItems can be merged, otherwise False
 		return isFuzzy==r.isFuzzy && GetBitTimeAvg()==r.GetBitTimeAvg();
 	}
@@ -143,7 +164,7 @@
 		, nRefs(1) {
 	}
 
-	bool CImage::CTrackReaderBase::CLogTimesInfo::Release(){
+	bool CImage::CTrackReaderState::CLogTimesInfo::Release(){
 		// "dtor"
 		if (::InterlockedDecrement(&nRefs)==0){
 			delete this;
@@ -159,19 +180,19 @@
 
 	CImage::CTrackReader::CTrackReader(PLogTime logTimes,PLogTimesInfo pLti,Codec::TType codec,TDecoderMethod method)
 		// ctor
-		: CTrackReaderBase( logTimes, pLti, method ) {
+		: CTrackReaderState( logTimes, pLti, method ) {
 		SetCodec(codec); // setting values associated with the specified Codec
 	}
 
 	CImage::CTrackReader::CTrackReader(const CTrackReader &tr)
 		// copy ctor
-		: CTrackReaderBase(tr) {
+		: CTrackReaderState(tr) {
 		pLogTimesInfo->AddRef();
 	}
 
 	CImage::CTrackReader::CTrackReader(CTrackReader &&tr)
 		// move ctor
-		: CTrackReaderBase(tr) {
+		: CTrackReaderState(tr) {
 		pLogTimesInfo->AddRef();
 	}
 
@@ -295,7 +316,7 @@
 			return 0;
 	}
 
-	void CImage::CTrackReaderBase::SetCodec(Codec::TType codec){
+	void CImage::CTrackReaderState::SetCodec(Codec::TType codec){
 		// changes the interpretation of recorded LogicalTimes according to the new Codec
 		if (const Codec::PCProperties p=Codec::GetProperties(codec)){
 			pLogTimesInfo->codec=codec;
@@ -304,7 +325,7 @@
 			ASSERT(FALSE); // we shouldn't end up here!
 	}
 
-	void CImage::CTrackReaderBase::SetMediumType(Medium::TType mediumType){
+	void CImage::CTrackReaderState::SetMediumType(Medium::TType mediumType){
 		// changes the interpretation of recorded LogicalTimes according to the new MediumType
 		switch ( pLogTimesInfo->mediumType=mediumType ){
 			default:
@@ -1596,21 +1617,21 @@
 
 
 
-	CImage::CTrackReaderBase::TProfile::TProfile(TDecoderMethod method)
+	CImage::CTrackReaderState::TProfile::TProfile(TDecoderMethod method)
 		// ctor
 		: Medium::TIwProfile(0)
 		, method(method) {
 		Reset();
 	}
 
-	CImage::CTrackReaderBase::TProfile::TProfile(const TMetaDataItem &mdi)
+	CImage::CTrackReaderState::TProfile::TProfile(const TMetaDataItem &mdi)
 		// ctor
 		: Medium::TIwProfile( mdi.GetBitTimeAvg() )
 		, method(TDecoderMethod::METADATA) {
 		methodState.metaData.iCurrBit=-1; // begin "before" the MetaDataItem
 	}
 
-	void CImage::CTrackReaderBase::TProfile::Reset(){
+	void CImage::CTrackReaderState::TProfile::Reset(){
 		iwTime=iwTimeDefault;
 		switch (method){
 			default:
@@ -1650,7 +1671,7 @@
 		: CTrackReader( trw ) {
 		if (!shareTimes){
 			CTrackReaderWriter tmp( trw.GetBufferCapacity(), trw.profile.method, trw.pLogTimesInfo->resetDecoderOnIndex );
-			std::swap<CTrackReaderBase>( tmp, *this );
+			std::swap<CTrackReaderBuffers>( tmp, *this );
 			::memcpy( logTimes, trw.logTimes, nLogTimes*sizeof(TLogTime) );
 			*static_cast<TLogTimesInfoData *>(pLogTimesInfo)=*trw.pLogTimesInfo;
 		}
