@@ -43,8 +43,8 @@ namespace Utils{
 				if (tmp!=get()){ // had to move the memory block?
 					release(); // already ::Freed, so don't call ::Free again
 					reset( (T *)tmp );
-					length=newLength;
 				}
+				length=newLength;
 				return get();
 			}else
 				return nullptr; // currently allocated memory has not been affected
