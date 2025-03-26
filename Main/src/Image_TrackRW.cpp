@@ -1173,8 +1173,8 @@
 		if (pe.tStart==TimelyFromPrevious)
 			copy.tStart=GetAt(pos).tEnd; // the tail assumed to be the ParseEvent added previously
 		// - registering the ParseEvent for quick searching by Start/End time
-		logStarts.insert( std::make_pair(pe.tStart,&copy) );
-		logEnds.insert( std::make_pair(pe.tEnd,&copy) );
+		logStarts.insert( std::make_pair(copy.tStart,&copy) );
+		logEnds.insert( std::make_pair(copy.tEnd,&copy) );
 		// - increasing counter
 		peTypeCounts[pe.type]++;
 	}
