@@ -608,6 +608,7 @@
 			public:
 				CBitSequence(CTrackReader tr,TLogTime tFrom,const CTrackReader::TProfile &profileFrom, TLogTime tTo,BYTE oneOkPercent=0);
 
+				inline TBit &operator[](int i) const{ ASSERT(0<=i&&i<nBits); return pBits[i]; }
 				inline TBit *GetBits() const{ return pBits; }
 				inline int GetBitCount() const{ return nBits; }
 				PCBit Find(TLogTime tMin) const;

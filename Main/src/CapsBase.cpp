@@ -1006,115 +1006,76 @@ invalidTrack:
 		const Medium::PCProperties mp=Medium::GetProperties(floppyType);
 		if (!mp)
 			return ERROR_UNRECOGNIZED_MEDIA;
-		// - verification
-		TStdWinError err=ERROR_SUCCESS; // assumption (verification was successful)
+		// - scanning what's been written
 		const Utils::CVarTempReset<PInternalTrack> pit0( internalTracks[cyl][head], nullptr ); // forcing rescan
 			ScanTrack( cyl, head );
-			if (const PInternalTrack pitVerif=internalTracks[cyl][head]){
-				if (pitVerif->sectors.length>0 || !cancelled){
-					const PInternalTrack pitWritten=CInternalTrack::CreateFrom( *this, trwWritten, floppyType );
-						// . comparing common cells between first two Indices
-						const auto &revWrittenFirstSector=pitWritten->sectors.begin()->revolutions[0];
-						pitWritten->SetCurrentTimeAndProfile( revWrittenFirstSector.idEndTime, revWrittenFirstSector.idEndProfile );
-						const auto &revVerifFirstSector=pitVerif->sectors.begin()->revolutions[0];
-						pitVerif->SetCurrentTimeAndProfile( revVerifFirstSector.idEndTime, revVerifFirstSector.idEndProfile );
-						while (
-							*pitWritten && pitWritten->GetCurrentTime()<pitWritten->GetIndexTime(1)
-							&&
-							*pitVerif && pitVerif->GetCurrentTime()<pitVerif->GetIndexTime(1)
-						)
-							if (pitWritten->ReadBit()!=pitVerif->ReadBit()){ // the bits differ
-								if (pitWritten->GetCurrentTime()<mp->revolutionTime/100*95) // TODO: better way than ignoring the last 5% of Track
-									// a significant difference
-									err=ERROR_DS_COMPARE_FALSE;
-								break;
-							}
-						// . if written and read Tracks differ significantly, showing problematic parts
-						if (err==ERROR_DS_COMPARE_FALSE && showDiff){
-							// : composition of Written- and ReadBits
-							const CTrackReader::CBitSequence writtenBits( *pitWritten, revWrittenFirstSector.idEndTime, revWrittenFirstSector.idEndProfile, pitWritten->GetIndexTime(1) );
-							const CTrackReader::CBitSequence readBits( *pitVerif, revVerifFirstSector.idEndTime, revVerifFirstSector.idEndProfile, pitVerif->GetIndexTime(1) );
-							// : composition and display of shortest edit script (SES)
-							const auto nSesItemsMax=writtenBits.GetBitCount()+readBits.GetBitCount();
-							if (const auto pSes=Utils::MakeCallocPtr<CDiffBase::TScriptItem>(nSesItemsMax)){
-								struct TVerifParams sealed{
-									const CTrackReader::CBitSequence &writtenBits;
-									const CTrackReader::CBitSequence &readBits;
-									const int nSesItemsMax;
-									const Utils::CCallocPtr<CDiffBase::TScriptItem> &pSes;
-									int nSesItems; // to be computed
-		
-									TVerifParams(const CTrackReader::CBitSequence &writtenBits,const CTrackReader::CBitSequence &readBits,int nSesItemsMax,const Utils::CCallocPtr<CDiffBase::TScriptItem> &pSes)
-										: writtenBits(writtenBits) , readBits(readBits)
-										, nSesItemsMax(nSesItemsMax) , pSes(pSes)
-										, nSesItems(-1) { // to be computed
-									}
-
-									static UINT AFX_CDECL Thread(PVOID pCancelableAction){
-										const PBackgroundActionCancelable pBac=(PBackgroundActionCancelable)pCancelableAction;
-										TVerifParams &vp=*(TVerifParams *)pBac->GetParams();
-										vp.nSesItems=vp.writtenBits.GetShortestEditScript( vp.readBits, vp.pSes, vp.nSesItemsMax, *pBac );
-										return pBac->TerminateWithSuccess();
-									}
-								} vp( writtenBits, readBits, nSesItemsMax, pSes );
-								//writtenBits.SaveCsv("r:\\written.txt");
-								//readBits.SaveCsv("r:\\read.txt");
-								if (cancelled)
-									err=ERROR_CANCELLED;
-								else if (err=CBackgroundActionCancelable(
-										TVerifParams::Thread, &vp, THREAD_PRIORITY_NORMAL
-									).Perform()
-								)
-									; // nop
-								else if (vp.nSesItems<=0)
-									err=ERROR_FUNCTION_FAILED;
-								else if (const auto pBadRegions=Utils::MakeCallocPtr<CTrackReader::TRegion>(vp.nSesItems)){
-									// composition and display of non-overlapping erroneously written regions of the Track
-									const DWORD nBadRegions=writtenBits.ScriptToLocalRegions( pSes, vp.nSesItems, pBadRegions, COLOR_RED );
-									CTrackReader::CParseEventList peTrack;
-									TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; TLogTime dataEnds[Revolution::MAX*(TSector)-1];
-									const auto nSectors=pitWritten->ScanAndAnalyze( ids, idEnds, dataEnds, peTrack, CActionProgress::None, false ); // False = only linear, time-inexpensive analysis (thus no need for doing this in parallel)
-									if (!params.verifyBadSectors) // remove Events that relate to Bad Sectors
-										for( auto i=nSectors; i>0; ){
-											const TPhysicalAddress chs={ cyl, head, ids[--i] };
-											if (dos->GetSectorStatus(chs)==TSectorStatus::BAD){
-												peTrack.RemoveConsecutiveBeforeEnd( idEnds[i] );
-												peTrack.RemoveConsecutiveBeforeEnd( dataEnds[i] );
-											}
-										}
-									err=ERROR_CONTINUE; // assumption (no intersection with ID or Data fields, thus ignore this error in writing)
-									for( DWORD i=0; i<nBadRegions; i++ )
-										if (peTrack.IntersectsWith(pBadRegions[i])){
-											switch (pitWritten->ShowModal( pBadRegions, nBadRegions, MB_ABORTRETRYIGNORE, true, pBadRegions[i].tStart, _T("Track %02d.%c verification failed: Review RED-MARKED errors (use J and L keys) and decide how to proceed!"), cyl, '0'+head )){
-												case IDOK: // ignore
-													break;
-												case IDCANCEL:
-													err=ERROR_CANCELLED;
-													break;
-												case IDRETRY:
-													err=ERROR_RETRY;
-													break;
-												default:
-													err=ERROR_FUNCTION_FAILED;
-													break;
-											}
-											break;
-										}
-								}else
-									err=ERROR_NOT_ENOUGH_MEMORY;
-							}else
-								err=ERROR_NOT_ENOUGH_MEMORY;
-						}
-					delete pitWritten;
-				}else
-					err=ERROR_SECTOR_NOT_FOUND;
-				if (ppOutReadTrack)
-					ppOutReadTrack->reset( pitVerif );
-				else
-					delete pitVerif;
-			}else
-				err=ERROR_GEN_FAILURE;
-		return err;
+		std::unique_ptr<CInternalTrack> tmp( internalTracks[cyl][head] );
+		if (cancelled)
+			return ERROR_CANCELLED;
+		const PCInternalTrack pitRead=tmp.get();
+		if (!pitRead)
+			return ERROR_GEN_FAILURE;
+		if (ppOutReadTrack) // caller wants to take over ownership?
+			ppOutReadTrack->reset( tmp.release() );
+		// - verification
+		const std::unique_ptr<CInternalTrack> pitWritten(  CInternalTrack::CreateFrom( *this, trwWritten, floppyType )  );
+		const CTrackReader::CBitSequence writtenBits( *pitWritten, pitWritten->GetIndexTime(0), pitWritten->CreateResetProfile(), pitWritten->GetIndexTime(1) );
+		const CTrackReader::CBitSequence readBits( *pitRead, pitRead->GetIndexTime(0), pitRead->CreateResetProfile(), pitRead->GetIndexTime(1) );
+		Utils::CCallocPtr<CDiffBase::TScriptItem> ses( // shortest edit script
+			writtenBits.GetBitCount()+readBits.GetBitCount()
+		);
+		if (!ses)
+			return ERROR_NOT_ENOUGH_MEMORY;
+		const int nSesItems=writtenBits.GetShortestEditScript(
+			readBits, ses, ses.length, CActionProgress::None
+		);
+		if (cancelled)
+			return ERROR_CANCELLED;
+		if (nSesItems<0)
+			return ERROR_FUNCTION_FAILED;
+		if (!nSesItems) // the unlikely case of absolutely no differences
+			return ERROR_SUCCESS;
+		const TLogTimeInterval significant( // TODO: better way than ignoring the first and last 5% of the Revolution
+			mp->revolutionTime/100*3, mp->revolutionTime/100*97
+		);
+		ses.Realloc(nSesItems); // for LowerBound below to function correctly
+		const auto *const psi=ses.LowerBound(
+			significant.tStart,
+			[&writtenBits](const CDiffBase::TScriptItem &si,TLogTime t){ return writtenBits[si.iPosA].time<=t; }
+		);
+		const auto *const aa=ses.end();
+		if (psi==ses.end() || writtenBits[psi->iPosA].time>significant.tEnd)
+			return ERROR_SUCCESS; // only insignificant differences at the beginning and end of Revolution
+		// - composition and display of non-overlapping erroneously written regions of the Track
+		const Utils::CCallocPtr<CTrackReader::TRegion> badRegions(nSesItems);
+		if (!badRegions)
+			return ERROR_NOT_ENOUGH_MEMORY;
+		const DWORD nBadRegions=writtenBits.ScriptToLocalRegions( ses, nSesItems, badRegions, COLOR_RED );
+		CTrackReader::CParseEventList peTrack;
+		TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; TLogTime dataEnds[Revolution::MAX*(TSector)-1];
+		const auto nSectors=pitWritten->ScanAndAnalyze( ids, idEnds, dataEnds, peTrack, CActionProgress::None, false ); // False = only linear, time-inexpensive analysis (thus no need for doing this in parallel)
+		if (!params.verifyBadSectors) // remove Events that relate to Bad Sectors
+			for( auto i=nSectors; i>0; ){
+				const TPhysicalAddress chs={ cyl, head, ids[--i] };
+				if (dos->GetSectorStatus(chs)==TSectorStatus::BAD){
+					peTrack.RemoveConsecutiveBeforeEnd( idEnds[i] );
+					peTrack.RemoveConsecutiveBeforeEnd( dataEnds[i] );
+				}
+			}
+		for each( const auto &br in badRegions )
+			if (peTrack.IntersectsWith(br)) // an intersection with ID or Data fields
+				switch (pitWritten->ShowModal( badRegions, nBadRegions, MB_ABORTRETRYIGNORE, true, br.tStart, _T("Track %02d.%c verification failed: Review RED-MARKED errors (use J and L keys) and decide how to proceed!"), cyl, '0'+head )){
+					case IDOK: // ignore
+						return ERROR_CONTINUE;
+					case IDCANCEL:
+						return ERROR_CANCELLED;
+					case IDRETRY:
+						return ERROR_RETRY;
+					default:
+						return ERROR_FUNCTION_FAILED;
+				}
+		// - none of the BadRegions impairs written data
+		return ERROR_SUCCESS;
 	}
 
 	TStdWinError CCapsBase::DetermineMagneticReliabilityByWriting(Medium::TType floppyType,TCylinder cyl,THead head,const volatile bool &cancelled) const{

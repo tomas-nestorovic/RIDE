@@ -50,6 +50,11 @@ namespace Utils{
 				return nullptr; // currently allocated memory has not been affected
 		}
 
+		template<typename V,class Predicate>
+		T *LowerBound(const V &v,Predicate p) const{
+			return std::lower_bound( begin(), end(), v, p );
+		}
+
 		// 'for each' support
 		inline T *begin() const{ return get(); }
 		inline T *end() const{ return get()+length; }

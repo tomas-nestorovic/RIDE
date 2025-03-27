@@ -756,10 +756,11 @@
 		::wsprintf( msgSavingFailed, ERROR_SAVE_MESSAGE_TEMPLATE, cyl, '0'+head, _T("saving") );
 		char nSilentRetrials=4;
 		do{
+			// . consume one SilentRetrial
+			nSilentRetrials--;
 			if (cancelled)
 				return ERROR_CANCELLED;
-			// . consuming one SilentRetrial
-			nSilentRetrials--;
+			// . writing
 			if (err=UploadTrack( cyl, head, trwCompensated )) // writing to the device failed
 				switch (
 					nSilentRetrials>0 || cancelled
@@ -774,7 +775,7 @@
 					default:		// attempting to save the Track once more (or returning ERROR_CANCELLED if operation externally cancelled)
 						continue;
 				}
-			// . writing verification
+			// . verification (a modal dialog shown upon difference)
 			if (!err && params.verifyWrittenTracks && pit->sectors.length>0){ // can verify the Track only if A&B&C, A = writing successfull, B&C = at least one Sector is recognized in it
 				const Utils::CVarTempReset<TParams::TCalibrationAfterError> cae0( params.calibrationAfterError, TParams::TCalibrationAfterError::NONE ); // already calibrated before writing
 				const Utils::CVarTempReset<TParams::TPrecision> p0( params.precision, TParams::TPrecision::SINGLE );
