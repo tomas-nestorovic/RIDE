@@ -616,7 +616,22 @@ using namespace Charting;
 
 			void SetParseEvents(const CParseEventList &list){
 				ASSERT( parseEvents.GetCount()==0 ); // can set only once
-				parseEvents.Add( list );
+				if (const auto *const pIws=inspectionWindows.get()) // can align with InspectionWindows?
+					for each( const auto &pair in list ){
+						const auto &pe=*pair.second;
+						for each( const TLogTime &t in pe.tArray ){
+							const CBitSequence::PCBit pIw=pIws->Find(t);
+							const TLogTime dist1=t-pIw->time; // distance towards containing InspectionWindow
+							const TLogTime dist2=pIw[1].time-t; // distance towards next InspectionWindow
+							if (dist1<dist2)
+								const_cast<TLogTime &>(t)-=dist1;
+							else
+								const_cast<TLogTime &>(t)+=dist2;
+						}
+						parseEvents.Add(pe);
+					}
+				else
+					parseEvents.Add( list );
 			}
 
 			inline bool IsFeatureShown(TCursorFeatures cf) const{

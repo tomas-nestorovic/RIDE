@@ -133,8 +133,13 @@ typedef TLogValue TLogTime,*PLogTime; // time in nanoseconds
 typedef const TLogTime *PCLogTime;
 
 struct TLogTimeInterval{
-	TLogTime tStart; // inclusive
-	TLogTime tEnd; // exclusive
+	union{
+		struct{
+			TLogTime tStart; // inclusive
+			TLogTime tEnd; // exclusive
+		};
+		TLogTime tArray[2];
+	};
 
 	static const TLogTimeInterval Invalid;
 
