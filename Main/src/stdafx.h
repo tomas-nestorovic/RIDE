@@ -164,6 +164,9 @@ struct TLogTimeInterval{
 	inline TLogTimeInterval Unite(const TLogTimeInterval &ti) const{
 		return TLogTimeInterval( std::min(tStart,ti.tStart), std::max(tEnd,ti.tEnd) );
 	}
+	inline void Offset(TLogTime dt){
+		tStart+=dt, tEnd+=dt;
+	}
 };
 
 #pragma warning( disable : 4228 ) // non-standard language extension

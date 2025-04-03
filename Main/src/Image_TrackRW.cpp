@@ -684,10 +684,10 @@
 					TDataParseEvent peData( TSectorId::Invalid, r.time );
 					while (*this && nBytesInspected<nBytesInspectedMax){
 						TDataParseEvent::TByteInfo &rbi=peData.byteInfos[nBytesInspected];
-							rbi.tStart=currentTime;
+							rbi.dtStart=currentTime-peData.tStart;
 							ReadByte( bitPattern, &rbi.value );
 						if (currentTime>=tNextStart){
-							currentTime=rbi.tStart; // putting unsuitable Byte back
+							currentTime=rbi.dtStart+peData.tStart; // putting unsuitable Byte back
 							break;
 						}
 						const auto it=hist.Find(bitPattern);
@@ -699,14 +699,14 @@
 						constexpr BYTE nGapBytesMax=60;
 						while (*this && nBytesInspected<nGapBytesMax){
 							TDataParseEvent::TByteInfo &rbi=peData.byteInfos[nBytesInspected];
-								rbi.tStart=currentTime;
+								rbi.dtStart=currentTime-peData.tStart;
 								ReadByte( bitPattern, &rbi.value );
 							const auto it=hist.Find(bitPattern);
 							if (currentTime>=tNextStart
 								||
 								it!=hist.end() && it->first==typicalBitPattern
 							){
-								currentTime=rbi.tStart; // putting unsuitable Byte back
+								currentTime=rbi.dtStart+peData.tStart; // putting unsuitable Byte back
 								break; // again Typical, so probably all gap data discovered
 							}
 							nBytesInspected++;
@@ -930,7 +930,7 @@
 		// returns the Bit at specified minimum LogicalTime
 		auto it=std::lower_bound(
 			begin(), end(), tMin,
-			[](const TBit &b,TLogTime t){ return b.time<=t; }
+			[](const TBit &b,TLogTime t){ return b.time<t; }
 		);
 		if (it==end())
 			return nullptr;
@@ -1476,7 +1476,7 @@
 		TDataParseEvent::TByteInfo *p=peData.byteInfos;
 		CFloppyImage::TCrc16 crc=CFloppyImage::GetCrc16Ccitt( MFM::CRC_A1A1A1, &dam, sizeof(dam) ); // computing actual CRC along the way
 		for( ; nBytesToRead>0; nBytesToRead-- ){
-			p->tStart=currentTime;
+			p->dtStart=currentTime-peData.tStart;
 			if (!*this || !ReadBits16(w)){ // Track end encountered
 				result.ExtendWith( TFdcStatus::DataFieldCrcError );
 				break;

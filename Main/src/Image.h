@@ -506,7 +506,7 @@
 			typedef const struct TDataParseEvent:public TParseEvent{
 				typedef const struct TByteInfo sealed{
 					BYTE value;
-					TLogTime tStart;
+					TLogTime dtStart; // offset against ParseEvent's start
 				} *PCByteInfo;
 
 				TSectorId sectorId; // or TSectorId::Invalid
@@ -515,6 +515,7 @@
 				TDataParseEvent(const TSectorId &sectorId,TLogTime tStart);
 
 				void Finalize(TLogTime tEnd,DWORD nBytes,TType type=DATA_BAD);
+				inline TLogTime GetByteTime(DWORD iByte) const{ return tStart+byteInfos[iByte].dtStart; }
 				inline DWORD GetByteCount() const{ return dw; }
 				inline bool HasByteInfo() const{ return size>sizeof(TParseEvent); }
 			} *PCDataParseEvent;

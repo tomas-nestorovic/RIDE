@@ -53,8 +53,9 @@ using namespace Charting;
 		};
 
 		typedef CImage::CTrackReader::CBitSequence CBitSequence;
+		typedef CImage::CTrackReader::CParseEventList CParseEventList;
 
-		typedef CImage::CTrackReader::CBitSequence::TBit TInspectionWindow;
+		typedef CBitSequence::TBit TInspectionWindow;
 			// "uid" = Revolution-wide unique identifier; corresponding bits across Revolutions have the same unique identifier
 		typedef const TInspectionWindow *PCInspectionWindow;
 		
@@ -62,8 +63,8 @@ using namespace Charting;
 			Utils::CTimeline timeline;
 			CImage::CTrackReader tr;
 			TLogTime scrollTime;
-			std::unique_ptr<CImage::CTrackReader::CBitSequence> inspectionWindows;
-			CImage::CTrackReader::CParseEventList parseEvents;
+			std::unique_ptr<CBitSequence> inspectionWindows;
+			CParseEventList parseEvents;
 			TLogTime draggedTime; // Time at which left mouse button has been pressed
 			TLogTime cursorTime; // Time over which the cursor hovers
 			BYTE cursorFeatures; // OR-ed TCursorFeatures values
@@ -169,19 +170,22 @@ using namespace Charting;
 											const COLORREF textColorBlend=Utils::GetBlendedColor( textColor, COLOR_BLACK );
 											const auto &bis=pe.data->byteInfos;
 											int i=0;
-											while (bis[i].tStart<ti.tStart) i++; // skip invisible part
+											for( const TLogTime dt=ti.tStart-pe.data->tStart; bis[i].dtStart<dt; i++ ); // skip invisible part
 											const int fullBiLineHeight=rcLabel.bottom-te.timeline.font.charHeight;
 											rcLabel.top=fullBiLineHeight-byteInfoSizeMin.cy, rcLabel.bottom=-EVENT_HEIGHT+Utils::CRideFont::Small.charHeight;
-											while (continuePainting && bis[i].tStart<ti.tEnd && i<pe->dw){ // draw visible part
+											while (continuePainting && i<pe->dw){ // draw visible part
 												const auto &bi=bis[i];
+												const TLogTime tByteStart=pe.data->GetByteTime(i);
+												if (ti.tEnd<tByteStart) // past the visible part?
+													break;
 												EXCLUSIVELY_LOCK(p.params);
 												if ( continuePainting=p.params.id==id )
 													switch (showByteInfo){
 														case BI_MINIMAL:
-															g.PerpLine( bi.tStart, -EVENT_HEIGHT-2, -EVENT_HEIGHT+2 );
+															g.PerpLine( tByteStart, -EVENT_HEIGHT-2, -EVENT_HEIGHT+2 );
 															break;
 														case BI_FULL:{
-															rcLabel.left=2+g.PerpLine( bi.tStart, 0, fullBiLineHeight );
+															rcLabel.left=2+g.PerpLine( tByteStart, 0, fullBiLineHeight );
 															::DrawText(
 																dc,
 																label,	::wsprintf( label, byteInfoFormat, ::isprint(bi.value)?bi.value:'?', bi.value ),
@@ -606,11 +610,11 @@ using namespace Charting;
 				inspectionWindows.reset( list.release() );
 			}
 
-			inline const CImage::CTrackReader::CParseEventList &GetParseEvents() const{
+			inline const CParseEventList &GetParseEvents() const{
 				return parseEvents;
 			}
 
-			void SetParseEvents(const CImage::CTrackReader::CParseEventList &list){
+			void SetParseEvents(const CParseEventList &list){
 				ASSERT( parseEvents.GetCount()==0 ); // can set only once
 				parseEvents.Add( list );
 			}
@@ -750,8 +754,8 @@ using namespace Charting;
 			// - Step 1: recognize all Bits
 			const auto &tr=rte.tr;
 			const auto &&resetProfile=tr.CreateResetProfile();
-			std::unique_ptr<CImage::CTrackReader::CBitSequence> bits(
-				new CImage::CTrackReader::CBitSequence(
+			std::unique_ptr<CBitSequence> bits(
+				new CBitSequence(
 					tr, 0, resetProfile, tr.GetTotalTime(), rte.iwInfo.oneOkPercent
 				)
 			);
@@ -787,7 +791,7 @@ using namespace Charting;
 			if (rte.timeEditor.GetParseEvents().GetCount()>0) // already set?
 				return pAction->TerminateWithSuccess();
 			CImage::CTrackReader tr=rte.tr; // copy
-			CImage::CTrackReader::CParseEventList peList;
+			CParseEventList peList;
 			// (1) Each decoder (e.g. Fraser's, Ogden's, etc.) begins by stepping to the NEXT InspectionWindow
 			// (2) All ParseEvents have Start/End set to BEFORE this step took place
 			// (3) So, all ParseEvents are one actual InspectionWindow size BEHIND!
@@ -797,12 +801,8 @@ using namespace Charting;
 			// (7) Hence, to compensate for (3) and (6), the ParseEvents are stepped 'tStart+tIwDefault-tIwDefault/2' and 'tEnd+tIwDefault-tIwDefault/2'
 			const TLogTime tIwOffset=tr.CreateResetProfile().iwTimeDefault/2; // see (7)
 			for each( const auto &pair in tr.ScanAndAnalyze(*pAction) ){
-				auto &pe=*const_cast<TParseEvent *>(pair.second);
-				pe.tStart+=tIwOffset, pe.tEnd+=tIwOffset;
-				if (pe.IsDataAny()){
-					auto &dpe=(CImage::CTrackReader::TDataParseEvent &)pe;
-					for( auto i=dpe.GetByteCount(); i>0; dpe.byteInfos[--i].tStart+=tIwOffset );
-				}
+				auto &pe=*const_cast<PParseEvent>(pair.second);
+				pe.Offset(tIwOffset);
 				peList.Add(pe);
 			}
 			rte.timeEditor.SetParseEvents(peList);
@@ -1331,9 +1331,9 @@ using namespace Charting;
 									const Utils::CRideFont font;
 									CBrush peBrushes[TParseEvent::LAST];
 								public:
-									const CImage::CTrackReader::CParseEventList &peList;
+									const CParseEventList &peList;
 
-									CXyParseEventSeries(const CImage::CTrackReader::CParseEventList &peList)
+									CXyParseEventSeries(const CParseEventList &peList)
 										// ctor
 										: peList(peList) , font(Utils::CRideFont::Std.CreateRotated(90)) {
 										for( BYTE i=0; i<TParseEvent::LAST; i++ )

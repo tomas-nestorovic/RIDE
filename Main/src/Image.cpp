@@ -715,9 +715,8 @@ namespace Medium{
 				const auto &peData=*static_cast<const CTrackReader::TDataParseEvent *>(peList.FindByStart(
 					tDataStart, CTrackReader::TParseEvent::DATA_OK, CTrackReader::TParseEvent::DATA_BAD
 				)->second);
-				const auto &bi=peData.byteInfos[ positionInSector ];
 				return tr.ShowModal(
-					nullptr, 0, MB_OK, true, bi.tStart,
+					nullptr, 0, MB_OK, true, peData.GetByteTime(positionInSector),
 					_T("%s, sector %s data timing"), (LPCTSTR)chs.GetTrackIdDesc(), (LPCTSTR)chs.sectorId.ToString()
 				);
 			}else
