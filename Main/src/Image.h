@@ -547,11 +547,16 @@
 				} CIteratorByStart, CIteratorByEnd;
 			private:
 				struct TBinarySearch sealed:public CLogTiming{
+					inline TBinarySearch(){}
+					inline TBinarySearch(TBinarySearch &&r)
+						: CLogTiming( std::move(static_cast<CLogTiming &>(r)) ) {
+					}
 					CIterator Find(TLogTime tMin,TParseEvent::TType typeFrom,TParseEvent::TType typeTo) const;
 				} logStarts, logEnds; // values may not correspond to real ParseEvent timing (hence the prefix "logical") - but the value is always AT LEAST the real Start/End
 			public:
 				CParseEventList();
 				CParseEventList(CParseEventList &r); // copy-ctor implemented as move-ctor
+				CParseEventList(CParseEventList &&r); // move-ctor
 
 				void Add(const TParseEvent &pe);
 				void Add(const CParseEventList &list);

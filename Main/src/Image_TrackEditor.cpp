@@ -624,7 +624,8 @@ using namespace Charting;
 			void AlignParseEvents(){
 				const auto *const pIws=inspectionWindows.get();
 				ASSERT(pIws); // must have InspectionWindows to align ParseEvents to
-				for each( const auto &pair in parseEvents ){
+				const CParseEventList peList0( std::move(parseEvents) );
+				for each( const auto &pair in peList0 ){
 					const auto &pe=*pair.second;
 					for each( const TLogTime &t in pe.tArray ){
 						const CBitSequence::PCBit pIw=pIws->Find(t);
@@ -635,6 +636,7 @@ using namespace Charting;
 						else
 							const_cast<TLogTime &>(t)+=dist2;
 					}
+					parseEvents.Add(pe);
 				}
 			}
 

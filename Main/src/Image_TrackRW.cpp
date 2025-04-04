@@ -1165,6 +1165,16 @@
 		::memcpy( peTypeCounts, r.peTypeCounts, sizeof(peTypeCounts) );
 	}
 
+	CImage::CTrackReader::CParseEventList::CParseEventList(CParseEventList &&r)
+		// move-ctor
+		: Utils::CCopyList<TParseEvent>(r)
+		, logStarts( std::move(r.logStarts) )
+		, logEnds( std::move(r.logEnds) ) {
+		::memcpy( peTypeCounts, r.peTypeCounts, sizeof(peTypeCounts) );
+		::ZeroMemory( r.peTypeCounts, sizeof(r.peTypeCounts) );
+		r.RemoveAll();
+	}
+
 	void CImage::CTrackReader::CParseEventList::Add(const TParseEvent &pe){
 		// adds copy of the specified ParseEvent into this List
 		// - creating a copy of the ParseEvent
