@@ -532,6 +532,8 @@
 
 			class CParseEventList:private Utils::CCopyList<TParseEvent>{
 				DWORD peTypeCounts[TParseEvent::LAST];
+
+				CParseEventList(const CParseEventList &r); //delete
 			public:
 				typedef std::multimap<TLogTime,PCParseEvent> CLogTiming; // multimap to allow ParseEvents starting concurrently at the same time
 
@@ -555,7 +557,6 @@
 				} logStarts, logEnds; // values may not correspond to real ParseEvent timing (hence the prefix "logical") - but the value is always AT LEAST the real Start/End
 			public:
 				CParseEventList();
-				CParseEventList(CParseEventList &r); // copy-ctor implemented as move-ctor
 				CParseEventList(CParseEventList &&r); // move-ctor
 
 				void Add(const TParseEvent &pe);

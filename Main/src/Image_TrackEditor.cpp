@@ -814,7 +814,6 @@ using namespace Charting;
 			if (rte.timeEditor.GetParseEvents().GetCount()>0) // already set?
 				return pAction->TerminateWithSuccess();
 			CImage::CTrackReader tr=rte.tr; // copy
-			CParseEventList peList;
 			// (1) Each decoder (e.g. Fraser's, Ogden's, etc.) begins by stepping to the NEXT InspectionWindow
 			// (2) All ParseEvents have Start/End set to BEFORE this step took place
 			// (3) So, all ParseEvents are one actual InspectionWindow size BEHIND!
@@ -823,10 +822,9 @@ using namespace Charting;
 			// (6) But at the same time, all InspectionWindows are shifted by '-tIwDefault/2' (because the first IW begins right with 'tIwDefault' size)
 			// (7) Hence, to compensate for (3) and (6), the ParseEvents are stepped 'tStart+tIwDefault-tIwDefault/2' and 'tEnd+tIwDefault-tIwDefault/2'
 			const TLogTime tIwOffset=tr.CreateResetProfile().iwTimeDefault/2; // see (7)
-			for each( const auto &pair in tr.ScanAndAnalyze(*pAction) ){
-				auto &pe=*const_cast<PParseEvent>(pair.second);
-				pe.Offset(tIwOffset);
-				peList.Add(pe);
+			const auto peList=std::move(tr.ScanAndAnalyze(*pAction));
+			for each( const auto &pair in peList ){
+				const_cast<PParseEvent>(pair.second)->Offset(tIwOffset);
 			}
 			rte.timeEditor.SetParseEvents(peList);
 			return pAction->TerminateWithSuccess();

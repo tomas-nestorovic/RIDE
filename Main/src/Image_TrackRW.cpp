@@ -1157,14 +1157,6 @@
 		::ZeroMemory( peTypeCounts, sizeof(peTypeCounts) );
 	}
 
-	CImage::CTrackReader::CParseEventList::CParseEventList(CParseEventList &r)
-		// copy-ctor implemented as move-ctor
-		: Utils::CCopyList<TParseEvent>(r)
-		, logStarts( std::move(r.logStarts) )
-		, logEnds( std::move(r.logEnds) ) {
-		::memcpy( peTypeCounts, r.peTypeCounts, sizeof(peTypeCounts) );
-	}
-
 	CImage::CTrackReader::CParseEventList::CParseEventList(CParseEventList &&r)
 		// move-ctor
 		: Utils::CCopyList<TParseEvent>(r)
