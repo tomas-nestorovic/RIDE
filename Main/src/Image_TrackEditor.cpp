@@ -616,22 +616,26 @@ using namespace Charting;
 
 			void SetParseEvents(const CParseEventList &list){
 				ASSERT( parseEvents.GetCount()==0 ); // can set only once
-				if (const auto *const pIws=inspectionWindows.get()) // can align with InspectionWindows?
-					for each( const auto &pair in list ){
-						const auto &pe=*pair.second;
-						for each( const TLogTime &t in pe.tArray ){
-							const CBitSequence::PCBit pIw=pIws->Find(t);
-							const TLogTime dist1=t-pIw->time; // distance towards containing InspectionWindow
-							const TLogTime dist2=pIw[1].time-t; // distance towards next InspectionWindow
-							if (dist1<dist2)
-								const_cast<TLogTime &>(t)-=dist1;
-							else
-								const_cast<TLogTime &>(t)+=dist2;
-						}
-						parseEvents.Add(pe);
+				parseEvents.Add(list);
+				if (inspectionWindows.get()) // can align with InspectionWindows?
+					AlignParseEvents();
+			}
+
+			void AlignParseEvents(){
+				const auto *const pIws=inspectionWindows.get();
+				ASSERT(pIws); // must have InspectionWindows to align ParseEvents to
+				for each( const auto &pair in parseEvents ){
+					const auto &pe=*pair.second;
+					for each( const TLogTime &t in pe.tArray ){
+						const CBitSequence::PCBit pIw=pIws->Find(t);
+						const TLogTime dist1=t-pIw->time; // distance towards containing InspectionWindow
+						const TLogTime dist2=pIw[1].time-t; // distance towards next InspectionWindow
+						if (dist1<dist2)
+							const_cast<TLogTime &>(t)-=dist1;
+						else
+							const_cast<TLogTime &>(t)+=dist2;
 					}
-				else
-					parseEvents.Add( list );
+				}
 			}
 
 			inline bool IsFeatureShown(TCursorFeatures cf) const{
@@ -796,6 +800,8 @@ using namespace Charting;
 				iwStatuses = (iwStatuses<<1) | (BYTE)p->bad;
 			}
 			rte.timeEditor.SetInspectionWindows( std::move(bits) );
+			if (!app.IsInGodMode()) // normal user?
+				rte.timeEditor.AlignParseEvents(); // automatically align existing ParseEvents with InspectionWindows
 			return pAction->TerminateWithSuccess();
 		}
 
