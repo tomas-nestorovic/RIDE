@@ -1021,36 +1021,29 @@ invalidTrack:
 		const std::unique_ptr<CInternalTrack> pitWritten(  CInternalTrack::CreateFrom( *this, trwWritten, floppyType )  );
 		const CTrackReader::CBitSequence writtenBits( *pitWritten, pitWritten->GetIndexTime(0), pitWritten->CreateResetProfile(), pitWritten->GetIndexTime(1) );
 		const CTrackReader::CBitSequence readBits( *pitRead, pitRead->GetIndexTime(0), pitRead->CreateResetProfile(), pitRead->GetIndexTime(1) );
-		Utils::CCallocPtr<CDiffBase::TScriptItem> ses( // shortest edit script
-			writtenBits.GetBitCount()+readBits.GetBitCount()
-		);
-		if (!ses)
-			return ERROR_NOT_ENOUGH_MEMORY;
-		const int nSesItems=writtenBits.GetShortestEditScript(
-			readBits, ses, ses.length, CActionProgress::None
+		const auto &&ses=writtenBits.GetShortestEditScript( // shortest edit script
+			readBits, CActionProgress::None
 		);
 		if (cancelled)
 			return ERROR_CANCELLED;
-		if (nSesItems<0)
+		if (!ses)
 			return ERROR_FUNCTION_FAILED;
-		if (!nSesItems) // the unlikely case of absolutely no differences
+		if (!ses.length) // the unlikely case of absolutely no differences
 			return ERROR_SUCCESS;
 		const TLogTimeInterval significant( // TODO: better way than ignoring the first and last 5% of the Revolution
 			mp->revolutionTime/100*3, mp->revolutionTime/100*97
 		);
-		ses.Realloc(nSesItems); // for LowerBound below to function correctly
 		const auto *const psi=ses.LowerBound(
 			significant.tStart,
 			[&writtenBits](const CDiffBase::TScriptItem &si,TLogTime t){ return writtenBits[si.iPosA].time<=t; }
 		);
-		const auto *const aa=ses.end();
 		if (psi==ses.end() || writtenBits[psi->iPosA].time>significant.tEnd)
 			return ERROR_SUCCESS; // only insignificant differences at the beginning and end of Revolution
 		// - composition and display of non-overlapping erroneously written regions of the Track
-		const Utils::CCallocPtr<CTrackReader::TRegion> badRegions(nSesItems);
+		const Utils::CCallocPtr<CTrackReader::TRegion> badRegions(ses.length);
 		if (!badRegions)
 			return ERROR_NOT_ENOUGH_MEMORY;
-		const DWORD nBadRegions=writtenBits.ScriptToLocalRegions( ses, nSesItems, badRegions, COLOR_RED );
+		const DWORD nBadRegions=writtenBits.ScriptToLocalRegions( ses, ses.length, badRegions, COLOR_RED );
 		CTrackReader::CParseEventList peTrack;
 		TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; TLogTime dataEnds[Revolution::MAX*(TSector)-1];
 		const auto nSectors=pitWritten->ScanAndAnalyze( ids, idEnds, dataEnds, peTrack, CActionProgress::None, false ); // False = only linear, time-inexpensive analysis (thus no need for doing this in parallel)

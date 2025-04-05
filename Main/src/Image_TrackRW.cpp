@@ -728,40 +728,35 @@
 					new CBitSequence( *this, GetIndexTime(i), CreateResetProfile(), GetIndexTime(i+1) )
 				);
 			// . forward comparison of Revolutions, from the first to the last; bits not included in the last diff script are stable across all previous Revolutions
-			struct:Utils::CCallocPtr<CDiffBase::TScriptItem>{
-				int nItems;
-			} shortesEditScripts[Revolution::MAX];
+			Utils::CCallocPtr<CDiffBase::TScriptItem> shortesEditScripts[Revolution::MAX];
 			for( BYTE i=0; i<nFullRevolutions-1; ){
 				// : comparing the two neighboring Revolutions I and J
 				const CBitSequence &jRev=*pRevolutionBits[i], &iRev=*pRevolutionBits[++i];
-				const auto nSesItemsMax=iRev.GetBitCount()+jRev.GetBitCount();
 				auto &ses=shortesEditScripts[i];
-				ses.nItems=iRev.GetShortestEditScript( jRev, ses.Realloc(nSesItemsMax), nSesItemsMax, ap.CreateSubactionProgress(StepGranularity) );
-				if (ses.nItems==0){ // neighboring Revolutions bitwise identical?
+				ses=iRev.GetShortestEditScript( jRev, ap.CreateSubactionProgress(StepGranularity) );
+				if (ap.Cancelled)
+					return nSectorsFound;
+				if (!ses) // comparison failure?
+					break;
+				if (ses.length==0){ // neighboring Revolutions bitwise identical?
 					ses.reset();
 					continue;
-				}else if (ses.nItems<0){ // comparison failure?
-					ses.reset();
-					if (ap.Cancelled)
-						return nSectorsFound;
-					break;
-				}else
-					ses.Realloc(ses.nItems); // spare on space
+				}
 				// : marking different Bits as Fuzzy
-				iRev.ScriptToLocalDiffs( ses, ses.nItems, Utils::MakeCallocPtr<TRegion>(nSesItemsMax) );
+				iRev.ScriptToLocalDiffs( ses, ses.length, Utils::MakeCallocPtr<TRegion>(ses.length) );
 				// : inheriting fuzzyness from previous Revolution
-				iRev.InheritFlagsFrom( jRev, ses, ses.nItems );
+				iRev.InheritFlagsFrom( jRev, ses, ses.length );
 			}
 			// . backward comparison of Revolutions, from the last to the first
 			for( BYTE i=nFullRevolutions; i>1; )
 				if (const auto &ses=shortesEditScripts[--i]){ // neighboring Revolutions bitwise different?
 					// : conversion to dual script
-					for( DWORD k=ses.nItems; k>0; ses[--k].ConvertToDual() );
+					for( DWORD k=ses.length; k>0; ses[--k].ConvertToDual() );
 					// : marking different Bits as Fuzzy
 					const CBitSequence &jRev=*pRevolutionBits[i], &iRev=*pRevolutionBits[i-1];
-					iRev.ScriptToLocalDiffs( ses, ses.nItems, Utils::MakeCallocPtr<TRegion>(ses.nItems) );
+					iRev.ScriptToLocalDiffs( ses, ses.length, Utils::MakeCallocPtr<TRegion>(ses.length) );
 					// : inheriting fuzzyness from next Revolution
-					iRev.InheritFlagsFrom( jRev, ses, ses.nItems );
+					iRev.InheritFlagsFrom( jRev, ses, ses.length );
 				}
 			// . merging consecutive fuzzy bits into FuzzyEvents
 			CActionProgress apMerge=ap.CreateSubactionProgress( StepGranularity, StepGranularity );
@@ -938,16 +933,23 @@
 		return it;
 	}
 
-	int CImage::CTrackReader::CBitSequence::GetShortestEditScript(const CBitSequence &theirs,CDiffBase::TScriptItem *pOutScript,int nScriptItemsMax,CActionProgress &ap) const{
-		// creates the shortest edit script (SES) and returns the number of its Items (or -1 if SES couldn't have been composed, e.g. insufficient output Buffer)
-		ASSERT( pOutScript!=nullptr );
-		return	CDiff<const TBit>(
-					begin(), GetBitCount()
-				).GetShortestEditScript(
-					theirs.begin(), theirs.GetBitCount(),
-					pOutScript, nScriptItemsMax,
-					ap
-				);
+	Utils::CCallocPtr<CDiffBase::TScriptItem> CImage::CTrackReader::CBitSequence::GetShortestEditScript(const CBitSequence &theirs,CActionProgress &ap) const{
+		// creates and returns the shortest edit script (SES)
+		Utils::CCallocPtr<CDiffBase::TScriptItem> ses( GetBitCount()+theirs.GetBitCount() );
+		if (!ses)
+			return ses;
+		const int i=CDiff<const TBit>(
+			begin(), GetBitCount()
+		).GetShortestEditScript(
+			theirs.begin(), theirs.GetBitCount(),
+			ses, ses.length,
+			ap
+		);
+		if (i<0) // e.g. Action cancelled
+			ses.reset();
+		else
+			ses.Realloc(i);
+		return ses;
 	}
 
 	void CImage::CTrackReader::CBitSequence::ScriptToLocalDiffs(const CDiffBase::TScriptItem *pScript,int nScriptItems,TRegion *pOutDiffs) const{

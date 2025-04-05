@@ -619,7 +619,7 @@
 				inline TBit *GetBits() const{ return pBits; }
 				inline int GetBitCount() const{ return nBits; }
 				PCBit Find(TLogTime tMin) const;
-				int GetShortestEditScript(const CBitSequence &theirs,CDiffBase::TScriptItem *pOutScript,int nScriptItemsMax,CActionProgress &ap) const;
+				Utils::CCallocPtr<CDiffBase::TScriptItem> GetShortestEditScript(const CBitSequence &theirs,CActionProgress &ap) const;
 				void ScriptToLocalDiffs(const CDiffBase::TScriptItem *pScript,int nScriptItems,TRegion *pOutDiffs) const;
 				DWORD ScriptToLocalRegions(const CDiffBase::TScriptItem *pScript,int nScriptItems,TRegion *pOutRegions,COLORREF regionColor) const;
 				void InheritFlagsFrom(const CBitSequence &theirs,const CDiffBase::TScriptItem *pScript,DWORD nScriptItems) const;

@@ -38,6 +38,11 @@ namespace Utils{
 		inline T *operator+(TIndex i) const{ return get()+i; }
 		inline T &operator[](TIndex i) const{ return get()[i]; }
 
+		void operator=(CCallocPtr &&r){
+			__super::operator=( std::move(r) );
+			length=r.length;
+		}
+
 		T *Realloc(TIndex newLength){
 			if (const PVOID tmp=::realloc( get(), sizeof(T)*newLength )){ // enough memory for reallocation?
 				if (tmp!=get()){ // had to move the memory block?
