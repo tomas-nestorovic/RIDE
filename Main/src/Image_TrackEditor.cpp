@@ -588,7 +588,8 @@ using namespace Charting;
 					::GetCursorPos(&cursor);
 					ScreenToClient(&cursor);
 					cursorTime=ClientPixelToTime( cursor.x );
-				}
+				}else
+					scrollTime=t;
 				//painter.repaintEvent.SetEvent(); // commented out as drawing invoked by 'ScrollWindow'
 			}
 
