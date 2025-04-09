@@ -22,6 +22,7 @@
 	#define _Xout_of_range(x)
 	#define _Xlength_error(x)
 	#define _Xbad_alloc()
+	#define _Xinvalid_argument(x)
 #endif
 #include <algorithm>
 #include <memory>

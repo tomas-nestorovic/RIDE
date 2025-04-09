@@ -1161,7 +1161,7 @@
 
 	CImage::CTrackReader::CParseEventList::CParseEventList(CParseEventList &&r)
 		// move-ctor
-		: Utils::CCopyList<TParseEvent>(r)
+		: Utils::CCopyList<TParseEvent>( std::move(r) )
 		, logStarts( std::move(r.logStarts) )
 		, logEnds( std::move(r.logEnds) ) {
 		::memcpy( peTypeCounts, r.peTypeCounts, sizeof(peTypeCounts) );
