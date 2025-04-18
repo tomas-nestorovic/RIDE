@@ -66,6 +66,15 @@
 
 	CActionProgress CActionProgress::None( nullptr, NotCancelled, 0, INT_MAX );
 
+	CActionProgress::CActionProgress(const volatile bool &cancelled)
+		// ctor
+		: parent(&None)
+		, Cancelled(cancelled)
+		, parentProgressBegin(0) , parentProgressInc(1)
+		, targetProgress(PB_INFINITY)
+		, currProgress(0) {
+	}
+
 	CActionProgress::CActionProgress(const CActionProgress *parent,const volatile bool &cancelled,int parentProgressBegin,int parentProgressInc)
 		// ctor
 		: parent(parent)

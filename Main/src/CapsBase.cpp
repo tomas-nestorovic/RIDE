@@ -1022,7 +1022,7 @@ invalidTrack:
 		const CTrackReader::CBitSequence writtenBits( *pitWritten, pitWritten->GetIndexTime(0), pitWritten->CreateResetProfile(), pitWritten->GetIndexTime(1) );
 		const CTrackReader::CBitSequence readBits( *pitRead, pitRead->GetIndexTime(0), pitRead->CreateResetProfile(), pitRead->GetIndexTime(1) );
 		const auto &&ses=writtenBits.GetShortestEditScript( // shortest edit script
-			readBits, CActionProgress::None
+			readBits, CActionProgress(cancelled)
 		);
 		if (cancelled)
 			return ERROR_CANCELLED;
@@ -1030,8 +1030,8 @@ invalidTrack:
 			return ERROR_FUNCTION_FAILED;
 		if (!ses.length) // the unlikely case of absolutely no differences
 			return ERROR_SUCCESS;
-		const TLogTimeInterval significant( // TODO: better way than ignoring the first and last 5% of the Revolution
-			mp->revolutionTime/100*3, mp->revolutionTime/100*97
+		const TLogTimeInterval significant( // TODO: better way than ignoring the first and last N% of the Revolution
+			mp->revolutionTime/100*2, mp->revolutionTime/100*98
 		);
 		const auto *const psi=ses.LowerBound(
 			significant.tStart,

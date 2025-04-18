@@ -33,6 +33,7 @@
 
 		const volatile bool &Cancelled;
 
+		CActionProgress(const volatile bool &cancelled);
 		CActionProgress(CActionProgress &&r);
 		~CActionProgress();
 
