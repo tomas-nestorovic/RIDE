@@ -1382,6 +1382,7 @@ invalidTrack:
 				);
 				// . if DoubleTrackStep changed manually, adjusting the text of the ID_40D80 checkbox
 				SetDlgItemSingleCharUsingFont( ID_RECOVER, 0xf071, Utils::CRideFont::Webdings120 );
+				ConvertDlgCheckboxToHyperlink( ID_SIDE );
 				GetDlgItemText( ID_SIDE,   flippyDiskTextOrg );
 				if (CheckDlgItem(ID_SIDE,rcb.params.flippyDisk) && rcb.params.userForcedFlippyDisk)
 					SendMessage( WM_COMMAND, ID_SIDE );
@@ -1578,6 +1579,9 @@ invalidTrack:
 											tmpPrecomp.Save();
 						}		rcb.locker.Lock();
 								RefreshMediumInformation();
+								break;
+							case ID_SIDE:
+								Utils::NavigateToFaqInDefaultBrowser( _T("flippyDisk") );
 								break;
 							case ID_40D80:{
 								const Utils::CVarTempReset<bool> dts0( rcb.params.doubleTrackStep, false );

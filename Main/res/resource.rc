@@ -1857,7 +1857,7 @@ BEGIN
                     CBS_SORT | WS_VSCROLL | WS_TABSTOP
     CONTROL         "",ID_MEDIUM,"SysLink",WS_BORDER,71,70,125,13
     PUSHBUTTON      "",ID_RECOVER,199,70,19,13
-    CONTROL         "Fl&ippy disk",ID_SIDE,"Button",BS_AUTOCHECKBOX | 
+    CONTROL         "Fl&ippy disk (<a>see FAQ</a>)",ID_SIDE,"Button",BS_AUTOCHECKBOX | 
                     WS_DISABLED | WS_TABSTOP,71,87,147,10
     RTEXT           "Warn",ID_INFORMATION,37,102,24,16,NOT WS_GROUP
     CONTROL         "&40-track drive",ID_DRIVE,"Button",BS_AUTOCHECKBOX | 
