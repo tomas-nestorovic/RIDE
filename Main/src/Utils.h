@@ -771,6 +771,7 @@ namespace Utils{
 	CString BytesToHexaText(PCBYTE bytes,BYTE nBytes,bool lastDelimitedWithAnd);
 	CString BytesToHexaText(const char *chars,BYTE nChars,bool lastDelimitedWithAnd);
 	void NavigateToUrlInDefaultBrowser(LPCTSTR url);
+	void NavigateToFaqInDefaultBrowser(LPCTSTR faqPageId);
 	void ScaleLogicalUnit(HDC dc);
 	void ScaleLogicalUnit(PINT values,BYTE nValues);
 	void UnscaleLogicalUnit(PINT values,BYTE nValues);

@@ -1188,11 +1188,9 @@ setDestination:						// : compacting FileName in order to be better displayable 
 								if (targetImageProperties && targetImageProperties->IsRealDevice())
 									mruDevices.Add( dumpParams.targetFileName, &CUnknownDos::Properties, targetImageProperties );
 								break;
-							case ID_HELP_USING:{
-								TCHAR url[200];
-								Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_createStreams.html"),url) );
+							case ID_HELP_USING:
+								Utils::NavigateToFaqInDefaultBrowser( _T("createStreams") );
 								return 0;
-							}
 							default:
 								if (ID_FILE_MRU_FIRST<=wParam && wParam<=ID_FILE_MRU_LAST){
 									wParam-=ID_FILE_MRU_FIRST;
@@ -1237,22 +1235,21 @@ setDestination:						// : compacting FileName in order to be better displayable 
 								}
 							} d;
 							// . showing the Dialog and processing its result
-							TCHAR url[200];
 							switch (d.DoModal()){
 								case ID_IMAGE:
-									Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_floppy2image.html"),url) );
+									Utils::NavigateToFaqInDefaultBrowser( _T("floppy2image") );
 									break;
 								case ID_HELP_USING:
-									Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_createStreams.html"),url) );
+									Utils::NavigateToFaqInDefaultBrowser( _T("createStreams") );
 									break;
 								case ID_DRIVE:
-									Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_image2floppy.html"),url) );
+									Utils::NavigateToFaqInDefaultBrowser( _T("image2floppy") );
 									break;
 								case ID_FILE:
-									Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_convertImage.html"),url) );
+									Utils::NavigateToFaqInDefaultBrowser( _T("convertImage") );
 									break;
 								case ID_ACCURACY:
-									Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_copyFloppy.html"),url) );
+									Utils::NavigateToFaqInDefaultBrowser( _T("copyFloppy") );
 									break;
 							}
 							break;

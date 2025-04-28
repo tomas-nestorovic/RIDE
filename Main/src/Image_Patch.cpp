@@ -150,10 +150,8 @@ errorDuringWriting:			const CString msg=Utils::SimpleFormat( _T("Can't write to 
 						}
 						break;
 					case WM_NOTIFY:
-						if (GetClickedHyperlinkId(lParam)){
-							TCHAR url[200];
-							Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_patch.html"),url) );
-						}
+						if (GetClickedHyperlinkId(lParam))
+							Utils::NavigateToFaqInDefaultBrowser( _T("patch") );
 						break;
 
 				}

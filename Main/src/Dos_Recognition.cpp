@@ -325,10 +325,9 @@
 									}
 								} d;
 								// . showing the Dialog and processing its result
-								TCHAR url[200];
 								switch (d.DoModal()){
 									case ID_DRIVE:
-										Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_recognition.html"),url) );
+										Utils::NavigateToFaqInDefaultBrowser( _T("recognition") );
 										break;
 								}
 								return TRUE;

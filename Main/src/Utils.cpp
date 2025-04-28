@@ -2431,6 +2431,17 @@ namespace Utils{
 		}
 	}
 
+	void NavigateToFaqInDefaultBrowser(LPCTSTR faqPageId){
+		// opens specified application FAQ in user's default browser
+		TCHAR url[200];
+		NavigateToUrlInDefaultBrowser(
+			GetApplicationOnlineHtmlDocumentUrl(
+				SimpleFormat( _T("faq_%s.html"), faqPageId ),
+				url
+			)
+		);
+	}
+
 
 
 

@@ -1723,7 +1723,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 							break;
 						}
 						case ID_SEEK:
-							app.GetMainWindow()->OpenApplicationFaqWebPage(_T("faq_fddCalibration.html"));
+							Utils::NavigateToFaqInDefaultBrowser( _T("fddCalibration") );
 							break;
 						}
 						break;

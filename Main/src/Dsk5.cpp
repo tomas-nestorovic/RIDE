@@ -475,13 +475,12 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 								}
 							} d;
 							// . showing the Dialog and processing its result
-							TCHAR url[200];
 							switch (d.DoModal()){
 								case ID_SIZE:
-									Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_dsk.html"),url) );
+									Utils::NavigateToFaqInDefaultBrowser( _T("dsk") );
 									break;
 								case ID_FORMAT:
-									Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_patch.html"),url) );
+									Utils::NavigateToFaqInDefaultBrowser( _T("patch") );
 									break;
 							}
 						}

@@ -136,16 +136,15 @@
 						}
 					} d;
 					// . showing the Dialog and processing its result
-					TCHAR url[200];
 					switch (d.DoModal()){
 						case ID_DRIVE:
-							Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_realFdd.html"),url) );
+							Utils::NavigateToFaqInDefaultBrowser( _T("realFdd") );
 							break;
 						case ID_FORMAT:
-							Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_formatFloppy.html"),url) );
+							Utils::NavigateToFaqInDefaultBrowser( _T("formatFloppy") );
 							break;
 						case ID_SYSTEM:
-							Utils::NavigateToUrlInDefaultBrowser( Utils::GetApplicationOnlineHtmlDocumentUrl(_T("faq_accessFloppy.html"),url) );
+							Utils::NavigateToFaqInDefaultBrowser( _T("accessFloppy") );
 							break;
 					}
 					*pResult=0;
