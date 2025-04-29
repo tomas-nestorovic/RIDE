@@ -169,8 +169,12 @@
 		// - if queried about the root Directory, populating the FatPath with root Directory Sectors
 		CFatPath::TItem item;
 		if (file==ZX_DIR_ROOT){
-			for( item.value=MDOS2_DIR_LOGSECTOR_FIRST; item.value<MDOS2_DATA_LOGSECTOR_FIRST; item.value++ ){
-				item.chs=__logfyz__(item.value);
+			static const TLogSector DirSectorOrder[]={ 0, 2, 4, 6, 1, 3, 5, 7 }; // Directory Sectors are not traversed linearly but rather "interleaved"
+			static_assert( ARRAYSIZE(DirSectorOrder)==MDOS2_DATA_LOGSECTOR_FIRST-MDOS2_DIR_LOGSECTOR_FIRST, "" );
+			for each( const TLogSector order in DirSectorOrder ){
+				item.chs=__logfyz__(
+					item.value = MDOS2_DIR_LOGSECTOR_FIRST+order
+				);
 				if (!rFatPath.AddItem(&item)) break; // also sets an error in FatPath
 			}
 			return true;
@@ -762,10 +766,11 @@
 
 	#define DIR_SECTOR_ENTRIES_COUNT	(MDOS2_SECTOR_LENGTH_STD/sizeof(TDirectoryEntry))	/* number of Entries in one Directory Sector */
 
-	CMDOS2::TMdos2DirectoryTraversal::TMdos2DirectoryTraversal(const CMDOS2 *_mdos2)
+	CMDOS2::TMdos2DirectoryTraversal::TMdos2DirectoryTraversal(const CMDOS2 *mdos2)
 		// ctor
 		: TDirectoryTraversal( ZX_DIR_ROOT, sizeof(TDirectoryEntry) )
-		, mdos2(_mdos2) {
+		, rootDirSectors( mdos2, ZX_DIR_ROOT )
+		, mdos2(mdos2) {
 		__reinitToFirstEntry__();
 	}
 	void CMDOS2::TMdos2DirectoryTraversal::__reinitToFirstEntry__(){
@@ -778,15 +783,13 @@
 		// True <=> another Entry in current Directory exists (Empty or not), otherwise False
 		// - getting the next LogicalSector with Directory
 		if (!nRemainingEntriesInSector){
-			static const TLogSector DirSectorOrder[]={ 0, 2, 4, 6, 1, 3, 5, 7 }; // Directory Sectors are not traversed linearly but rather "interleaved"
-			static_assert( ARRAYSIZE(DirSectorOrder)==MDOS2_DATA_LOGSECTOR_FIRST-MDOS2_DIR_LOGSECTOR_FIRST, "" );
-			if (iDirSector==ARRAYSIZE(DirSectorOrder)){ // end of Directory
+			if (iDirSector==rootDirSectors.GetNumberOfItems()){ // end of Directory
 				entryType=TDirectoryTraversal::END;
 				return false;
 			}
-			const TLogSector dirSector=MDOS2_DIR_LOGSECTOR_FIRST+DirSectorOrder[iDirSector++];
-			chs=mdos2->__logfyz__(dirSector);
-			entry=mdos2->__getHealthyLogicalSectorData__(dirSector);
+			entry=mdos2->image->GetHealthySectorData(
+				chs = rootDirSectors.GetItem(iDirSector++)->chs
+			);
 			if (!entry) // LogicalSector not found
 				entryType=TDirectoryTraversal::WARNING, warning=ERROR_SECTOR_NOT_FOUND;
 			else

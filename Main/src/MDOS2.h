@@ -168,10 +168,11 @@
 		struct TMdos2DirectoryTraversal sealed:public TDirectoryTraversal{
 		private:
 			const CMDOS2 *const mdos2;
-			BYTE iDirSector; // index into a list of Sectors to traverse
+			const CFatPath rootDirSectors;
+			BYTE iDirSector; // index into RootDirSectors
 			BYTE nRemainingEntriesInSector;
 		public:
-			TMdos2DirectoryTraversal(const CMDOS2 *_mdos2); // ctor
+			TMdos2DirectoryTraversal(const CMDOS2 *mdos2); // ctor
 			bool AdvanceToNextEntry() override;
 			void ResetCurrentEntry(BYTE directoryFillerByte) override;
 			void __reinitToFirstEntry__();
