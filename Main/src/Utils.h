@@ -44,7 +44,11 @@ namespace Utils{
 		}
 
 		T *Realloc(TIndex newLength){
-			if (const PVOID tmp=::realloc( get(), sizeof(T)*newLength )){ // enough memory for reallocation?
+			if (!newLength){ // the special case when 'realloc' below fails
+				reset();
+				length=newLength;
+				return nullptr;
+			}else if (const PVOID tmp=::realloc( get(), sizeof(T)*newLength )){ // enough memory for reallocation?
 				if (tmp!=get()){ // had to move the memory block?
 					release(); // already ::Freed, so don't call ::Free again
 					reset( (T *)tmp );
