@@ -328,6 +328,8 @@
 			bool IsRealDevice() const;
 		} *PCProperties;
 
+		CMainWindow::CMessageBar draftVersionMessageBar;
+
 		class CReadOnlyMessageBar sealed:public CMainWindow::CMessageBar{
 		public:
 			CReadOnlyMessageBar(LPCTSTR readOnlyReason);

@@ -615,6 +615,7 @@ namespace Medium{
 		, trackMap(this)
 		// - creating MessageBars
 		, readOnlyMessageBar( _T("Disk marked as Read-only") )
+		, draftVersionMessageBar( _T("This image is a draft!"), L'\xf060' )
 		// - creating Toolbar (its displaying in CTdiView::ShowContent)
 		, toolbar(IDR_IMAGE,ID_IMAGE) { // ID_IMAGE = "some" unique ID
 		// - when destroying all Views, the document must exist further (e.g. when switching Tabs in TDI)

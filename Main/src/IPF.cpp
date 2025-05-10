@@ -46,7 +46,7 @@
 			return FALSE;
 		// - warn about a draft version
 		if (!capsImageInfo.release || !capsImageInfo.revision)
-			Utils::Warning(_T("This IPF file is a draft!"));
+			draftVersionMessageBar.Show();
 		// - successfully mounted
 		return TRUE;
 	}
