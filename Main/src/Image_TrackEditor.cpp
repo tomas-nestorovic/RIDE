@@ -131,10 +131,10 @@ using namespace Charting;
 								EXCLUSIVELY_LOCK(p.params);
 									if ( continuePainting=p.params.id==id ){
 										::FillRect( dc, &rc, iwBrushes[piw->bad][i++&1] );
-										#ifdef _DEBUG
+										if (app.IsInGodMode()){
 											TCHAR uid[8];
 											::DrawText( dc, _itot(piw->uid%100,uid,10), -1, &rc, DT_SINGLELINE|DT_CENTER );
-										#endif
+										}
 									}
 								rc.left=rc.right;
 							}while (continuePainting && (++piw)->time<visible.tEnd);
@@ -860,7 +860,7 @@ using namespace Charting;
 			return pAction->TerminateWithSuccess();
 		}
 
-		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo){
+		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override{
 			// command processing
 			switch (nCode){
 				case CN_UPDATE_COMMAND_UI:{
