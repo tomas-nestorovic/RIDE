@@ -2611,10 +2611,13 @@ namespace Utils{
 						::InvalidateRect( GetWindowUserData<HWND>(hCheckbox), nullptr, TRUE );
 						return 0;
 					case WM_GETTEXT:
-					case WM_GETTEXTLENGTH:
 					case WM_SETTEXT:
 						if (const HWND hHyperlink=GetWindowUserData<HWND>(hCheckbox))
 							return ::SendMessage( hHyperlink, msg, wParam, lParam );
+						break;
+					case WM_GETTEXTLENGTH:
+						if (const HWND hHyperlink=GetWindowUserData<HWND>(hCheckbox))
+							return ::SendMessageW( hHyperlink, msg, wParam, lParam );
 						break;
 					case WM_NOTIFY:
 						return ::SendMessage( ::GetParent(hCheckbox), msg, wParam, lParam ); // forward to Dialog
