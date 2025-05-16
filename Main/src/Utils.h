@@ -273,7 +273,7 @@ namespace Utils{
 	class CRideContextMenu sealed:public ::CMenu{
 		CMenu parent;
 	public:
-		static void UpdateUI(CWnd *pUiUpdater,CMenu *pMenu);
+		static void UpdateUI(CWnd *pUiUpdater,CMenu *pMenu); // pay attention at spelling of "-UI"
 
 		CRideContextMenu();
 		CRideContextMenu(UINT idMenuRes,CWnd *pUiUpdater=nullptr);
@@ -281,7 +281,7 @@ namespace Utils{
 		~CRideContextMenu();
 
 		CString GetMenuString(UINT uIDItem,UINT flags) const;
-		inline void UpdateUi(CWnd *pUiUpdater){ UpdateUI(pUiUpdater,this); }
+		inline void UpdateUi(CWnd *pUiUpdater){ UpdateUI(pUiUpdater,this); } // pay attention at spelling of "-Ui"
 		inline CString GetMenuStringByCmd(WORD cmd) const{ return GetMenuString(cmd,MF_BYCOMMAND); }
 		inline CString GetMenuStringByPos(WORD pos) const{ return GetMenuString(pos,MF_BYPOSITION); }
 		inline void AppendSeparator(){ AppendMenu(MF_SEPARATOR); }
@@ -406,7 +406,7 @@ namespace Utils{
 		void SetDlgItemSingleCharUsingFont(WORD id,WCHAR singleChar,HFONT hFont) const;
 		void SetDlgItemSingleCharUsingFont(WORD id,WCHAR singleChar,LPCTSTR fontFace,int fontPointSize) const;
 		void PopulateDlgComboBoxWithSequenceOfNumbers(WORD cbId,BYTE iStartValue,LPCTSTR strStartValueDesc,BYTE iEndValue,LPCTSTR strEndValueDesc) const;
-		void ConvertDlgButtonToSplitButtonEx(WORD id,PCSplitButtonAction pAction,BYTE nActions,LPACCEL *ppOutAccels=nullptr) const;
+		void ConvertDlgButtonToSplitButtonEx(WORD id,PCSplitButtonAction pAction,BYTE nActions,LPACCEL *ppOutAccels=nullptr,CWnd *pUiUpdater=nullptr) const;
 		void ConvertDlgCheckboxToHyperlink(WORD id) const;
 		bool GetDlgItemIntList(WORD id,CIntList &rOutList,const PropGrid::Integer::TUpDownLimits &limits,int nIntsMin=0,int nIntsMax=INT_MAX) const;
 		void SetDlgItemIntList(WORD id,const CIntList &list) const;

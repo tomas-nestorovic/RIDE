@@ -1747,10 +1747,8 @@ invalidTrack:
 				p+=::wsprintf( p, _T("bit count, ") );
 			if (fitFluxesIntoIwMiddles)
 				p+=::wsprintf( p, _T("bit positions, ") );
-			if (offsetIndices){
-				TCHAR tmp[32];
+			if (offsetIndices)
 				p+=::wsprintf( p, _T("indices offset %d us, "), indexOffsetMicroseconds );
-			}
 			if (p>buf+1) // more than just the opening '{' bracket?
 				p-=2; // drop tail comma
 		}

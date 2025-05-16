@@ -2458,13 +2458,14 @@ namespace Utils{
 	typedef struct TSplitButtonInfo sealed{
 		const bool existsDefaultAction;
 		const WNDPROC wndProc0;
+		CWnd *const pUiUpdater;
 		RECT rcClientArea;
 		TCHAR text[512];
 		CRideContextMenu mnu;
 
-		TSplitButtonInfo(HWND hBtn,PCSplitButtonAction pActions,BYTE nActions,WNDPROC wndProc0)
+		TSplitButtonInfo(HWND hBtn,PCSplitButtonAction pActions,BYTE nActions,WNDPROC wndProc0,CWnd *pUiUpdater)
 			// ctor
-			: existsDefaultAction(pActions->commandId!=0) , wndProc0(wndProc0) {
+			: existsDefaultAction(pActions->commandId!=0) , wndProc0(wndProc0) , pUiUpdater(pUiUpdater) {
 			::GetClientRect(hBtn,&rcClientArea);
 			*text='\0';
 			for( BYTE id=!existsDefaultAction; id<nActions; id++ ){
@@ -2498,6 +2499,8 @@ namespace Utils{
 					// in area of selecting additional Actions
 					POINT pt={ psbi->rcClientArea.right-SPLITBUTTON_ARROW_WIDTH, psbi->rcClientArea.bottom };
 					::ClientToScreen( hSplitBtn, &pt );
+					if (psbi->pUiUpdater)
+						psbi->mnu.UpdateUi(psbi->pUiUpdater);
 					::TrackPopupMenu( psbi->mnu, TPM_LEFTALIGN|TPM_LEFTBUTTON|TPM_RIGHTBUTTON, pt.x, pt.y, 0, ::GetParent(hSplitBtn), nullptr );
 					//fallthrough
 				}
@@ -2567,7 +2570,7 @@ namespace Utils{
 		return ::CallWindowProc( wndProc0, hSplitBtn, msg, wParam, lParam );
 	}
 
-	void CRideDialog::ConvertDlgButtonToSplitButtonEx(WORD id,PCSplitButtonAction pAction,BYTE nActions,LPACCEL *ppOutAccels) const{
+	void CRideDialog::ConvertDlgButtonToSplitButtonEx(WORD id,PCSplitButtonAction pAction,BYTE nActions,LPACCEL *ppOutAccels,CWnd *pUiUpdater) const{
 		// converts an existing standard button to a SplitButton featuring specified additional Actions
 		const HWND hStdBtn=GetDlgItemHwnd(id);
 		SetDlgItemText(id,nullptr); // before window procedure changed
@@ -2576,7 +2579,8 @@ namespace Utils{
 				hStdBtn,
 				pAction,
 				nActions,
-				Utils::SubclassWindow( hStdBtn, SplitButton_WndProc )
+				Utils::SubclassWindow( hStdBtn, SplitButton_WndProc ),
+				pUiUpdater
 			)
 		);
 		if (IsVistaOrNewer())
