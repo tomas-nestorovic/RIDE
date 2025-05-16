@@ -737,8 +737,9 @@
 			trw.Normalize();
 		}
 		// - pre-compensation of the temporary Track
-		const CTrackReaderWriter trwCompensated( trw, false );
-		if (precompensation.methodVersion!=CPrecompensation::None)
+		const bool canCompensate=precompensation.methodVersion!=CPrecompensation::None;
+		const CTrackReaderWriter trwCompensated( trw, !canCompensate );
+		if (canCompensate)
 			if (const TStdWinError err=precompensation.ApplyTo( *this, cyl, head, trwCompensated ))
 				return err;
 		// - Drive's head calibration
