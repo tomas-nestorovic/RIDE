@@ -1496,6 +1496,10 @@ namespace Utils{
 		showMessageBox( text, nullptr, MB_ICONERROR );
 	}
 
+	LPCTSTR BoolToYesNo(bool value){
+		return value ? _T("Yes") : _T("No");
+	}
+
 	CString SimpleFormat(LPCTSTR format,va_list v){
 		CString result;
 		result.FormatV( format, v );

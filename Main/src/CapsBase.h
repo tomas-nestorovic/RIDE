@@ -135,6 +135,7 @@
 			void Save(LPCTSTR iniSection,LPCTSTR iniName=_T("crt")) const;
 			bool ShowModal(CWnd *pParentWnd);
 			TStdWinError ApplyTo(CTrackReaderWriter &trw) const;
+			void EnumSettings(CSettings &rOut) const;
 		};
 
 		struct TParams{
@@ -169,6 +170,7 @@
 
 			inline BYTE PrecisionToFullRevolutionCount() const{ return precision; }
 			bool EditInModalDialog(CCapsBase &rcb,LPCTSTR firmware,bool initialEditing);
+			void EnumSettings(CSettings &rOut,bool isRealDevice) const;
 		} params;
 
 		const TStdWinError capsLibLoadingError;
@@ -210,6 +212,7 @@
 		TStdWinError GetInsertedMediumType(TCylinder cyl,Medium::TType &rOutMediumType) const override;
 		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
 		bool EditSettings(bool initialEditing) override;
+		void EnumSettings(CSettings &rOut) const override;
 		TStdWinError Reset() override;
 		TStdWinError SaveTrack(TCylinder cyl,THead head,const volatile bool &cancelled) const override;
 		CTrackReader ReadTrack(TCylinder cyl,THead head) const override;

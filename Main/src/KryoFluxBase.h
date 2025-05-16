@@ -38,6 +38,7 @@
 		//TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus) override;
 		//TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
 		bool EditSettings(bool initialEditing) override;
+		void EnumSettings(CSettings &rOut) const override;
 	};
 
 #endif // KRYOFLUXBASE_H

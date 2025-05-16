@@ -954,6 +954,16 @@ invalidTrack:
 			return false;
 	}
 
+	void CCapsBase::EnumSettings(CSettings &rOut) const{
+		// returns a collection of relevant settings for this Image
+		rOut.AddLibrary( _T("CAPS"), capsVersionInfo.release, capsVersionInfo.revision );
+		rOut.AddId(capsImageInfo.release);
+		rOut.AddRevision(capsImageInfo.revision);
+		rOut.AddMediumIsForced( forcedMediumType!=Medium::FLOPPY_ANY );
+		rOut.AddCylinderCount(capsImageInfo.maxcylinder+1);
+		rOut.AddHeadCount(capsImageInfo.maxhead+1);
+	}
+
 	CString CCapsBase::ListUnsupportedFeatures(){
 		// returns a list of all features currently not properly implemented
 		CString list;
@@ -1622,6 +1632,20 @@ invalidTrack:
 			return false;
 	}
 
+	void CCapsBase::TParams::EnumSettings(CSettings &rOut,bool isRealDevice) const{
+		// returns a collection of relevant settings for this Image
+		rOut.Add( _T("decoder"), CTrackReader::GetDescription(fluxDecoder) );
+		rOut.Add( _T("reset on index"), resetFluxDecoderOnIndex );
+		if (isRealDevice)
+			rOut.AddRevolutionCount( PrecisionToFullRevolutionCount() );
+		rOut.AddMediumIsForced(userForcedMedium);
+		rOut.AddMediumIsFlippy( flippyDisk, userForcedFlippyDisk );
+		rOut.Add40TrackDrive(fortyTrackDrive);
+		rOut.AddDoubleTrackStep( doubleTrackStep, userForcedDoubleTrackStep );
+		//TODO: calibrationAfterError (calibrationAfterErrorOnlyForKnownSectors)
+		corrections.EnumSettings(rOut);
+	}
+
 
 
 
@@ -1710,4 +1734,26 @@ invalidTrack:
 					);
 		else
 			return ERROR_SUCCESS;
+	}
+
+	void CCapsBase::TCorrections::EnumSettings(CSettings &rOut) const{
+		// returns a collection of relevant settings for this Image
+		TCHAR buf[256], *p=buf;
+		*p++='{';
+		if (use){
+			if (indexTiming)
+				p+=::wsprintf( p, _T("revolution time, ") );
+			if (cellCountPerTrack)
+				p+=::wsprintf( p, _T("bit count, ") );
+			if (fitFluxesIntoIwMiddles)
+				p+=::wsprintf( p, _T("bit positions, ") );
+			if (offsetIndices){
+				TCHAR tmp[32];
+				p+=::wsprintf( p, _T("indices offset %d us, "), indexOffsetMicroseconds );
+			}
+			if (p>buf+1) // more than just the opening '{' bracket?
+				p-=2; // drop tail comma
+		}
+		::lstrcpy( p, _T("}") );
+		rOut.SetAt( _T("corrections"), buf );
 	}

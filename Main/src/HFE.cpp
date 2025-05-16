@@ -278,6 +278,10 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			return true;
 	}
 
+	void CHFE::EnumSettings(CSettings &rOut) const{
+		// returns a collection of relevant settings for this Image
+	}
+
 	TStdWinError CHFE::Reset(){
 		// resets internal representation of the disk (e.g. by disposing all content without warning)
 		EXCLUSIVELY_LOCK_THIS_IMAGE();

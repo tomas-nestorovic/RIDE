@@ -136,6 +136,7 @@
 
 		//TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
 		bool EditSettings(bool initialEditing) override;
+		void EnumSettings(CSettings &rOut) const override;
 		//TStdWinError Reset() override;
 	};
 

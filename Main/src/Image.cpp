@@ -422,6 +422,107 @@ namespace Medium{
 
 
 
+	void CImage::CSettings::Add(LPCTSTR name,bool value){
+		SetAt( name, Utils::BoolToYesNo(value) );
+	}
+
+	void CImage::CSettings::Add(LPCTSTR name,bool value,bool userForcedValue){
+		TCHAR buf[80];
+		::wsprintf( buf, _T("%s%s"), Utils::BoolToYesNo(value), userForcedValue?_T(" (user forced)"):_T("") );
+		SetAt( name, buf );
+	}
+
+	void CImage::CSettings::Add(LPCTSTR name,int value){
+		TCHAR buf[16];
+		SetAt( name, _itot(value,buf,10) );
+	}
+
+	void CImage::CSettings::Add(LPCTSTR name,LPCSTR value){
+		#ifdef UNICODE
+			static_assert( false, "Unicode support not implemented" );
+		#else
+			SetAt( name, Utils::SimpleFormat(_T("\"%s\""),value) );
+		#endif
+	}
+
+	void CImage::CSettings::AddLibrary(LPCTSTR name,int major,int minor){
+		TCHAR ver[80];
+		::wsprintf( ver, _T("%d%c%d"), major, minor>=0?'.':'\0', minor );
+		SetAt( name, ver );
+	}
+
+	void CImage::CSettings::AddRevision(int major,int minor){
+		AddLibrary( _T("revision"), major, minor );
+	}
+
+	void CImage::CSettings::AddMediumIsForced(bool isForced){
+		Add( _T("user-forced medium"), isForced );
+	}
+
+	void CImage::CSettings::AddMediumIsFlippy(bool isFlippy,bool userForced){
+		Add( _T("medium flippy"), isFlippy, userForced );
+	}
+
+	void CImage::CSettings::AddDecaHexa(LPCTSTR name,int value){
+		TCHAR buf[80];
+		::wsprintf( buf, _T("%u (0x%X)"), value, value );
+		SetAt( name, buf );
+	}
+
+	void CImage::CSettings::AddId(int value){
+		AddDecaHexa( _T("ID"), value );
+	}
+
+	void CImage::CSettings::AddAuto(LPCTSTR name){
+		SetAt( name, _T("Auto") );
+	}
+
+	void CImage::CSettings::AddCylinderCount(TCylinder n){
+		Add( _T("cylinders"), n );
+	}
+
+	void CImage::CSettings::AddHeadCount(THead n){
+		Add( _T("heads"), n );
+	}
+
+	void CImage::CSettings::AddRevolutionCount(BYTE n){
+		Add( _T("revolutions"), n );
+	}
+
+	void CImage::CSettings::AddSectorCount(TSector n){
+		Add( _T("sectors"), n );
+	}
+
+	void CImage::CSettings::AddSides(PCSide list,THead n){
+		ASSERT( list && n );
+		TCHAR buf[1024], *p=buf;
+		while (n-->0)
+			p+=::wsprintf( p, _T("%d, "), (int)*list++ );
+		p[-2]='\0'; // drop last comma
+		SetAt( _T("sides"), buf );
+	}
+
+	void CImage::CSettings::AddSectorSize(WORD nBytes){
+		Add( _T("sector length"), nBytes );
+	}
+
+	void CImage::CSettings::Add40TrackDrive(bool value){
+		Add( _T("40-track drive"), value );
+	}
+
+	void CImage::CSettings::AddDoubleTrackStep(bool isDouble,bool userForced){
+		Add( _T("double track distance"), isDouble, userForced );
+	}
+
+
+
+
+
+
+
+
+
+
 
 
 	PImage CImage::GetActive(){

@@ -308,6 +308,15 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 		app.WriteProfileInt( iniSection, INI_SEEKING, preferRelativeSeeking );
 	}
 
+	void CFDD::TFddHead::EnumSettings(CSettings &rOut) const{
+		// returns a collection of relevant settings for this Image
+		profile.EnumSettings(rOut);
+		rOut.Add40TrackDrive(fortyTrackDrive);
+		rOut.AddDoubleTrackStep( doubleTrackStep, userForcedDoubleTrackStep );
+		rOut.Add( _T("relative seek"), preferRelativeSeeking );
+		//TODO: calibrationAfterError (calibrationAfterErrorOnlyForKnownSectors)
+	}
+
 	CFDD::TFddHead::TProfile::TProfile()
 		// ctor (the defaults for a 2DD floppy)
 		: controllerLatency(TIME_MICRO(86))
@@ -350,6 +359,13 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 		app.WriteProfileInt( iniSection, INI_LATENCY_CONTROLLER, controllerLatency );
 		app.WriteProfileInt( iniSection, INI_LATENCY_1BYTE, oneByteLatency );
 		app.WriteProfileInt( iniSection, INI_LATENCY_GAP3, gap3Latency );
+	}
+
+	void CFDD::TFddHead::TProfile::EnumSettings(CSettings &rOut) const{
+		// returns a collection of relevant settings for this Image
+		TCHAR buf[256];
+		::wsprintf( buf, _T("{FDC=%d, Byte=%d, Gap3=%d}"), (int)controllerLatency, (int)oneByteLatency, (int)gap3Latency );
+		rOut.SetAt( _T("latencies [ns]"), buf );
 	}
 
 	bool CFDD::TFddHead::__seekTo__(TCylinder cyl) const{
@@ -523,7 +539,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 					goto error;
 				}
 				// . logging the recognized floppy drive controller
-				LOG_MESSAGE(__getControllerType__());
+				LOG_MESSAGE(GetControllerType());
 				return ERROR_SUCCESS;
 			}
 			default:
@@ -1213,9 +1229,9 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 		}
 	}
 
-	LPCTSTR CFDD::__getControllerType__() const{
+	LPCTSTR CFDD::GetControllerType() const{
 		// determines and returns the controller type of the Drive
-		LOG_ACTION(_T("LPCTSTR CFDD::__getControllerType__"));
+		LOG_ACTION(_T("LPCTSTR CFDD::GetControllerType"));
 		DWORD nBytesTransferred;
 		switch (DRIVER){
 			case DRV_FDRAWCMD:{
@@ -1552,7 +1568,7 @@ Utils::Information(buf);}
 				// . base
 				__super::PreInitDialog();
 				// . displaying controller information
-				SetDlgItemText( ID_SYSTEM, fdd->__getControllerType__() );
+				SetDlgItemText( ID_SYSTEM, fdd->GetControllerType() );
 				// . some settings are changeable only during InitialEditing
 				static constexpr WORD InitialSettingIds[]={ ID_RECOVER, ID_DRIVE, ID_40D80, 0 };
 				EnableDlgItems( InitialSettingIds, initialEditing );
@@ -1804,6 +1820,13 @@ autodetermineLatencies:		// automatic determination of write latency values
 			return true;
 		}else
 			return LOG_BOOL(false);
+	}
+
+	void CFDD::EnumSettings(CSettings &rOut) const{
+		// returns a collection of relevant settings for this Image
+		rOut.Add( _T("FDC"), GetControllerType() );
+		//TODO: params.EnumSettings(rOut);
+		fddHead.EnumSettings(rOut);
 	}
 
 	TStdWinError CFDD::Reset(){

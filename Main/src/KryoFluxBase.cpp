@@ -45,6 +45,11 @@
 		return params.EditInModalDialog( *this, firmware, initialEditing );
 	}
 
+	void CKryoFluxBase::EnumSettings(CSettings &rOut) const{
+		// returns a collection of relevant settings for this Image
+		params.EnumSettings( rOut, properties->IsRealDevice() );
+	}
+
 
 
 

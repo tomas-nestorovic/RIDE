@@ -328,6 +328,29 @@
 			bool IsRealDevice() const;
 		} *PCProperties;
 
+		class CSettings sealed:public CMapStringToString{
+		public:
+			void Add(LPCTSTR name,bool value);
+			void Add(LPCTSTR name,bool value,bool userForcedValue);
+			void Add(LPCTSTR name,int value);
+			void Add(LPCTSTR name,LPCSTR value);
+			void AddLibrary(LPCTSTR name,int major,int minor=-1);
+			void AddRevision(int major,int minor=-1);
+			void AddMediumIsForced(bool isForced);
+			void AddMediumIsFlippy(bool isFlippy,bool userForced);
+			void AddDecaHexa(LPCTSTR name,int value);
+			void AddId(int value);
+			void AddAuto(LPCTSTR name);
+			void AddCylinderCount(TCylinder n);
+			void AddHeadCount(THead n);
+			void AddRevolutionCount(BYTE n);
+			void AddSectorCount(TSector n);
+			void AddSides(PCSide list,THead n);
+			void AddSectorSize(WORD nBytes);
+			void Add40TrackDrive(bool value);
+			void AddDoubleTrackStep(bool isDouble,bool userForced);
+		};
+
 		CMainWindow::CMessageBar draftVersionMessageBar;
 
 		class CReadOnlyMessageBar sealed:public CMainWindow::CMessageBar{
@@ -868,6 +891,7 @@
 		virtual TStdWinError GetInsertedMediumType(TCylinder cyl,Medium::TType &rOutMediumType) const;
 		virtual TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber);
 		virtual bool EditSettings(bool initialEditing)=0;
+		virtual void EnumSettings(CSettings &rOut) const=0;
 		virtual TStdWinError Reset()=0;
 		virtual TStdWinError SaveTrack(TCylinder cyl,THead head,const volatile bool &cancelled) const;
 		virtual CTrackReader ReadTrack(TCylinder cyl,THead head) const;

@@ -741,6 +741,7 @@ namespace Utils{
 	inline LPCTSTR ToStringT(LPCSTR s){ return s; }
 	CString ToStringT(LPCWSTR lpsz); // converts to UTF-8
 #endif
+	LPCTSTR BoolToYesNo(bool value);
 	CString SimpleFormat(LPCTSTR format,va_list v);
 	CString SimpleFormat(LPCTSTR format,LPCTSTR param);
 	CString SimpleFormat(LPCTSTR format,LPCTSTR param1,LPCTSTR param2);

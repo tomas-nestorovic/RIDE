@@ -667,6 +667,17 @@ trackNotFound:
 			return false;
 	}
 
+	void CImageRaw::EnumSettings(CSettings &rOut) const{
+		// returns a collection of relevant settings for this Image
+		rOut.Add( _T("sequence of cylinders"), trackAccessScheme==TTrackScheme::BY_CYLINDERS );
+		rOut.Add( _T("auto geometry"), !explicitSides );
+		rOut.AddCylinderCount(nCylinders);
+		rOut.AddHeadCount(nHeads);
+		rOut.AddSides( sideMap, nHeads );
+		rOut.Add( _T("first sector"), firstSectorNumber );
+		rOut.AddSectorCount(nSectors);
+	}
+
 	TStdWinError CImageRaw::Reset(){
 		// resets internal representation of the disk (e.g. by disposing all content without warning)
 		EXCLUSIVELY_LOCK_THIS_IMAGE();

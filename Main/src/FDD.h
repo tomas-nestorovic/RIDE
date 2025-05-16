@@ -87,6 +87,7 @@
 
 				bool Load(TCHAR driveLetter,Medium::TType floppyType,TLogTime defaultNanosecondsPerByte);
 				void Save(TCHAR driveLetter,Medium::TType floppyType) const;
+				void EnumSettings(CSettings &rOut) const;
 			} profile;
 
 			TFddHead(); //ctor
@@ -95,6 +96,7 @@
 			bool __calibrate__();
 			void Load(TCHAR driveLetter);
 			void Save(TCHAR driveLetter) const;
+			void EnumSettings(CSettings &rOut) const;
 		} fddHead;
 		mutable PInternalTrack internalTracks[FDD_CYLINDERS_MAX][2]; // 2 = a floppy can have two Sides
 
@@ -105,7 +107,7 @@
 		bool IsFloppyInserted() const;
 		TStdWinError SetDataTransferSpeed(Medium::TType floppyType) const;
 		void __setSecondsBeforeTurningMotorOff__(BYTE nSeconds) const;
-		LPCTSTR __getControllerType__() const;
+		LPCTSTR GetControllerType() const;
 		PInternalTrack __getScannedTrack__(TCylinder cyl,THead head) const;
 		PInternalTrack __scanTrack__(TCylinder cyl,THead head);
 		void __setWaitingForIndex__() const;
@@ -139,6 +141,7 @@
 		TStdWinError GetInsertedMediumType(TCylinder cyl,Medium::TType &rOutMediumType) const override;
 		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
 		bool EditSettings(bool initialEditing) override;
+		void EnumSettings(CSettings &rOut) const override;
 		TStdWinError Reset() override;
 		TStdWinError SaveTrack(TCylinder cyl,THead head,const volatile bool &cancelled) const override;
 		TStdWinError FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte,const volatile bool &cancelled) override;

@@ -621,6 +621,11 @@
 		return result;
 	}
 
+	void CGreaseweazleV4::EnumSettings(CSettings &rOut) const{
+		// returns a collection of relevant settings for this Image
+		params.EnumSettings( rOut, properties->IsRealDevice() );
+	}
+
 	TStdWinError CGreaseweazleV4::Reset(){
 		// resets internal representation of the disk (e.g. by disposing all content without warning)
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
