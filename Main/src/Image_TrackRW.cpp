@@ -1917,12 +1917,10 @@
 		ClearAllMetaData();
 		// - shifting Indices by shifting all Times in oposite direction
 		if (indicesOffset){
-			for( DWORD i=0; i<nLogTimes; logTimes[i++]-=indicesOffset ); // shift all Times in oposite direction
-			for( DWORD i=0; i<nLogTimes; i++ ) // discard negative Times
-				if (logTimes[i]>=0){
-					::memcpy( logTimes, logTimes+i, (nLogTimes-=i)*sizeof(TLogTime) );
-					break;
-				}
+			const TLogTime dt= indicesOffset<0
+				? std::max(*indexPulses+indicesOffset,0)-*indexPulses // mustn't run into negative timing
+				: indicesOffset;
+			for( BYTE i=nIndexPulses; i; indexPulses[--i]+=dt );
 		}
 		// - ignoring what's before the first Index
 		TLogTime tCurrIndexOrg=RewindToIndex(0);
