@@ -790,7 +790,7 @@
 			void ClearMetaData(TLogTime a,TLogTime z);
 			void ClearAllMetaData();
 			WORD WriteData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToWrite,PCBYTE buffer,TFdcStatus sr);
-			bool Normalize();
+			TStdWinError Normalize();
 			TStdWinError NormalizeEx(TLogTime indicesOffset,bool fitTimesIntoIwMiddles,bool correctCellCountPerRevolution,bool correctRevolutionTime);
 			CTrackReaderWriter &Reverse();
 		};

@@ -1874,35 +1874,9 @@
 		return pTime-logTimes;
 	}
 
-	bool CImage::CTrackReaderWriter::Normalize(){
+	TStdWinError CImage::CTrackReaderWriter::Normalize(){
 		// True <=> asked and successfully normalized for a known MediumType, otherwise False
-		// - if the Track contains less than two Indices, we are successfully done
-		if (nIndexPulses<2)
-			return true;
-		// - determining the RevolutionTime to the next Index
-		TLogTime revolutionTime;
-		if (const Medium::PCProperties mp=GetMediumProperties())
-			revolutionTime=mp->revolutionTime;
-		else
-			return false;
-		ClearAllMetaData();
-		// - adjusting consecutive index-to-index distances
-		RewindToIndex(0);
-		for( BYTE i=0; i+1<nIndexPulses; i++ )
-			iNextTime=InterpolateTimes(
-				logTimes, nLogTimes,
-				GetIndexTime(i), iNextTime, GetIndexTime(i+1),
-				GetIndexTime(0)+i*revolutionTime, GetIndexTime(0)+(i+1)*revolutionTime
-			);
-		const TLogTime dt=GetIndexTime(0)+(nIndexPulses-1)*revolutionTime-GetIndexTime(nIndexPulses-1);
-		while (iNextTime<nLogTimes)
-			logTimes[iNextTime++]+=dt; // offsetting the remainder of the Track
-		for( BYTE i=1; i<nIndexPulses; i++ )
-			indexPulses[i]=indexPulses[i-1]+revolutionTime;
-		// - correctly re-initializing this object
-		SetCurrentTime(0);
-		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
-		return true;
+		return NormalizeEx( 0, false, false, true );
 	}
 
 	TStdWinError CImage::CTrackReaderWriter::NormalizeEx(TLogTime indicesOffset,bool fitTimesIntoIwMiddles,bool correctCellCountPerRevolution,bool correctRevolutionTime){
@@ -1916,6 +1890,7 @@
 		if (!mp)
 			return ERROR_UNRECOGNIZED_MEDIA;
 		ClearAllMetaData();
+		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 		// - shifting Indices by shifting all Times in oposite direction
 		const TLogTime tLastIndexOrg=GetLastIndexTime();
 		if (indicesOffset){
@@ -1927,7 +1902,6 @@
 		// - ignoring what's before the first Index
 		TLogTime tCurrIndexOrg=RewindToIndex(0);
 		// - normalization
-		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 		const DWORD iModifStart=iNextTime;
 		DWORD iTime=iModifStart;
 		const Utils::CCallocPtr<TLogTime,DWORD> buffer( GetBufferCapacity(), 0 );

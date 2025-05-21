@@ -192,8 +192,8 @@
 					for( TLogTime t=0; t<nLogTimes; trw.AddTime(++t) );
 				trw.AddIndexTime( nLogTimes );
 				trw.SetMediumType(floppyType);
-				if (!trw.Normalize())
-					return ERROR_MEDIA_INCOMPATIBLE;
+				if (const TStdWinError err=trw.Normalize())
+					return err;
 			// . disposal of previous content
 			if (const TStdWinError err=UnscanTrack( cyl, head ))
 				return err;
