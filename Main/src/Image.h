@@ -404,7 +404,6 @@
 			};
 		protected:
 			struct TLogTimesInfoData abstract{
-				DWORD nLogTimesMax;
 				Medium::TType mediumType;
 				bool resetDecoderOnIndex;
 				Codec::TType codec;
@@ -415,12 +414,14 @@
 					TId id;
 				} rawDeviceData; // valid until Track modified, then disposed
 
-				TLogTimesInfoData(DWORD nLogTimesMax,TDecoderMethod defaultDecoder,bool resetDecoderOnIndex);
+				TLogTimesInfoData(TDecoderMethod defaultDecoder,bool resetDecoderOnIndex);
 			};
 
 			typedef class CLogTimesInfo sealed:public TLogTimesInfoData{
 				UINT nRefs;
 			public:
+				const Utils::CCallocPtr<TLogTime,DWORD> logTimes;
+
 				CLogTimesInfo(DWORD nLogTimesMax,TDecoderMethod defaultDecoder,bool resetDecoderOnIndex);
 
 				inline UINT GetRefCount() const{ return nRefs; }
@@ -433,7 +434,7 @@
 			PLogTime indexPulses; // buffer to contain 'Max' full Revolutions
 			CMetaData::const_iterator itCurrMetaData;
 
-			CTrackReaderBuffers(PLogTime logTimes,PLogTimesInfo pLti,TDecoderMethod method);
+			CTrackReaderBuffers(PLogTimesInfo pLti);
 		public:
 			inline const CMetaData &GetMetaData() const{ return pLogTimesInfo->metaData; }
 		};
@@ -471,7 +472,7 @@
 			BYTE nConsecutiveZerosMax; // # of consecutive zeroes to lose synchronization; e.g. 3 for MFM code
 			WORD lastReadBits; // validity flag and bit, e.g. 10b = valid bit '0', 11b = valid bit '1', 0Xb = invalid bit 'X'
 
-			CTrackReaderState(PLogTime logTimes,PLogTimesInfo pLti,TDecoderMethod method);
+			CTrackReaderState(PLogTimesInfo pLti);
 
 			PCMetaDataItem GetCurrentTimeMetaData() const;
 			PCMetaDataItem ApplyCurrentTimeMetaData();
@@ -604,7 +605,7 @@
 				inline CLogTiming::const_iterator end() const{ return logStarts.cend(); }
 			};
 		protected:
-			CTrackReader(PLogTime logTimes,PLogTimesInfo pLti,Codec::TType codec,TDecoderMethod method);
+			CTrackReader(PLogTimesInfo pLti,Codec::TType codec);
 
 			Medium::PCProperties GetMediumProperties() const;
 			WORD ScanFm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents);
@@ -776,11 +777,7 @@
 				return logTimes;
 			}
 
-			inline
-			DWORD GetBufferCapacity() const{
-				return pLogTimesInfo->nLogTimesMax;
-			}
-
+			DWORD GetBufferCapacity() const;
 			void AddTime(TLogTime logTime);
 			void AddTimes(PCLogTime logTimes,DWORD nLogTimes);
 			void AddIndexTime(TLogTime logTime);

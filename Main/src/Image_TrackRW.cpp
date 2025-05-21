@@ -1,9 +1,9 @@
 #include "stdafx.h"
 #include "Charting.h"
 
-	CImage::CTrackReaderBuffers::CTrackReaderBuffers(PLogTime logTimes,PLogTimesInfo pLti,TDecoderMethod method)
+	CImage::CTrackReaderBuffers::CTrackReaderBuffers(PLogTimesInfo pLti)
 		// ctor
-		: logTimes(logTimes) , pLogTimesInfo(pLti)
+		: logTimes(pLti->logTimes) , pLogTimesInfo(pLti)
 		, indexPulses(pLti->indexPulses) {
 		itCurrMetaData=pLogTimesInfo->metaData.cbegin();
 	}
@@ -13,12 +13,12 @@
 
 
 
-	CImage::CTrackReaderState::CTrackReaderState(PLogTime logTimes,PLogTimesInfo pLti,TDecoderMethod method)
+	CImage::CTrackReaderState::CTrackReaderState(PLogTimesInfo pLti)
 		// ctor
-		: CTrackReaderBuffers( logTimes, pLti, method )
+		: CTrackReaderBuffers( pLti )
 		, nLogTimes(0) , iNextIndexPulse(0) , nIndexPulses(0)
 		, iNextTime(0) , currentTime(0) , lastReadBits(0)
-		, profile(method) {
+		, profile(pLti->defaultDecoder) {
 	}
 
 	CImage::CTrackReaderState::PCMetaDataItem CImage::CTrackReaderState::GetCurrentTimeMetaData() const{
@@ -149,18 +149,20 @@
 		return isFuzzy==r.isFuzzy && GetBitTimeAvg()==r.GetBitTimeAvg();
 	}
 
-	CImage::CTrackReader::TLogTimesInfoData::TLogTimesInfoData(DWORD nLogTimesMax,TDecoderMethod defaultDecoder,bool resetDecoderOnIndex)
+	CImage::CTrackReader::TLogTimesInfoData::TLogTimesInfoData(TDecoderMethod defaultDecoder,bool resetDecoderOnIndex)
 		// ctor
-		: nLogTimesMax(nLogTimesMax)
-		, mediumType(Medium::UNKNOWN) , codec(Codec::UNKNOWN)
+		: mediumType(Medium::UNKNOWN) , codec(Codec::UNKNOWN)
 		, defaultDecoder(defaultDecoder)
 		, resetDecoderOnIndex(resetDecoderOnIndex) {
 		*indexPulses=INT_MAX; // a virtual IndexPulse in infinity
 	}
 
+	#define LOGTIMES_COUNT_EXTRA	1
+
 	CImage::CTrackReader::CLogTimesInfo::CLogTimesInfo(DWORD nLogTimesMax,TDecoderMethod defaultDecoder,bool resetDecoderOnIndex)
 		// "ctor"
-		: TLogTimesInfoData( nLogTimesMax, defaultDecoder, resetDecoderOnIndex )
+		: TLogTimesInfoData( defaultDecoder, resetDecoderOnIndex )
+		, logTimes( nLogTimesMax+LOGTIMES_COUNT_EXTRA )
 		, nRefs(1) {
 	}
 
@@ -178,9 +180,9 @@
 
 
 
-	CImage::CTrackReader::CTrackReader(PLogTime logTimes,PLogTimesInfo pLti,Codec::TType codec,TDecoderMethod method)
+	CImage::CTrackReader::CTrackReader(PLogTimesInfo pLti,Codec::TType codec)
 		// ctor
-		: CTrackReaderState( logTimes, pLti, method ) {
+		: CTrackReaderState( pLti ) {
 		SetCodec(codec); // setting values associated with the specified Codec
 	}
 
@@ -198,8 +200,7 @@
 
 	CImage::CTrackReader::~CTrackReader(){
 		// dtor
-		if (pLogTimesInfo->Release())
-			::free(logTimes);
+		pLogTimesInfo->Release();
 	}
 
 
@@ -1662,10 +1663,8 @@
 	CImage::CTrackReaderWriter::CTrackReaderWriter(DWORD nLogTimesMax,TDecoderMethod method,bool resetDecoderOnIndex)
 		// ctor
 		: CTrackReader(
-			(PLogTime)::calloc( nLogTimesMax+1, sizeof(TLogTime) ),
 			new CLogTimesInfo( nLogTimesMax, method, resetDecoderOnIndex ),
-			Codec::MFM,
-			method
+			Codec::MFM
 		){
 		SetMediumType(Medium::FLOPPY_DD); // setting values associated with the specified MediumType
 	}
@@ -1689,6 +1688,10 @@
 	CImage::CTrackReaderWriter::CTrackReaderWriter(const CTrackReader &tr)
 		// copy ctor
 		: CTrackReader(tr) {
+	}
+
+	DWORD CImage::CTrackReaderWriter::GetBufferCapacity() const{
+		return pLogTimesInfo->logTimes.length-LOGTIMES_COUNT_EXTRA;
 	}
 	
 	void CImage::CTrackReaderWriter::AddTime(TLogTime logTime){
