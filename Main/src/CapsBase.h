@@ -71,7 +71,7 @@
 			CInternalTrack(const CTrackReaderWriter &trw,PInternalSector sectors,TSector nSectors);
 		public:
 			static CInternalTrack *CreateFrom(const CCapsBase &cb,const CapsTrackInfoT2 *ctiRevs,BYTE nRevs,UDWORD lockFlags);
-			static CInternalTrack *CreateFrom(const CCapsBase &cb,CTrackReaderWriter trw,Medium::TType floppyType=Medium::UNKNOWN);
+			static CInternalTrack *CreateFrom(const CCapsBase &cb,CTrackReaderWriter &&trw,Medium::TType floppyType=Medium::UNKNOWN);
 
 			const Utils::CCallocPtr<TInternalSector,TSector> sectors;
 			bool modified;
@@ -192,7 +192,7 @@
 		PInternalTrack GetModifiedTrackSafe(TCylinder cyl,THead head) const;
 		bool AnyTrackModified(TCylinder cyl) const;
 		void DestroyAllTracks();
-		TStdWinError VerifyTrack(TCylinder cyl,THead head,const CTrackReaderWriter &trwWritten,bool showDiff,std::unique_ptr<CTrackReaderWriter> *ppOutReadTrack,const volatile bool &cancelled) const;
+		TStdWinError VerifyTrack(TCylinder cyl,THead head,CTrackReaderWriter trwWritten,bool showDiff,std::unique_ptr<CTrackReaderWriter> *ppOutReadTrack,const volatile bool &cancelled) const;
 		TStdWinError DetermineMagneticReliabilityByWriting(Medium::TType floppyType,TCylinder cyl,THead head,const volatile bool &cancelled) const;
 		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
 	public:

@@ -1907,6 +1907,7 @@
 
 	TStdWinError CImage::CTrackReaderWriter::NormalizeEx(TLogTime indicesOffset,bool fitTimesIntoIwMiddles,bool correctCellCountPerRevolution,bool correctRevolutionTime){
 		// True <=> all Revolutions of this Track successfully normalized using specified parameters, otherwise False
+		ASSERT( pLogTimesInfo->GetRefCount()==1 ); // normalization of a TrackReaderWriter that is used more than once always needs an attention
 		// - if the Track contains less than two Indices, we are successfully done
 		if (nIndexPulses<2)
 			return ERROR_SUCCESS;
@@ -1916,6 +1917,7 @@
 			return ERROR_UNRECOGNIZED_MEDIA;
 		ClearAllMetaData();
 		// - shifting Indices by shifting all Times in oposite direction
+		const TLogTime tLastIndexOrg=GetLastIndexTime();
 		if (indicesOffset){
 			const TLogTime dt= indicesOffset<0
 				? std::max(*indexPulses+indicesOffset,0)-*indexPulses // mustn't run into negative timing
@@ -1926,11 +1928,9 @@
 		TLogTime tCurrIndexOrg=RewindToIndex(0);
 		// - normalization
 		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
-		const TLogTime tLastIndex=GetLastIndexTime();
 		const DWORD iModifStart=iNextTime;
 		DWORD iTime=iModifStart;
-		const DWORD nLogTimesMaxNew=std::max( nIndexPulses*mp->nCells, GetBufferCapacity() );
-		const Utils::CCallocPtr<TLogTime> buffer( nLogTimesMaxNew, 0 ); // pessimistic estimation for FM encoding
+		const Utils::CCallocPtr<TLogTime,DWORD> buffer( GetBufferCapacity(), 0 );
 		const PLogTime ptModified=buffer.get();
 		for( BYTE nextIndex=1; nextIndex<nIndexPulses; nextIndex++ ){
 			// . resetting inspection conditions
@@ -1943,7 +1943,7 @@
 				// alignment wanted
 				for( ; *this&&logTimes[iNextTime]<tNextIndexOrg; nAlignedCells++ )
 					if (ReadBit())
-						if (iTime<nLogTimesMaxNew)
+						if (iTime<buffer.length)
 							ptModified[iTime++] = tCurrIndexOrg + nAlignedCells*profile.iwTimeDefault;
 						else
 							return ERROR_INSUFFICIENT_BUFFER; // mustn't overrun the Buffer
@@ -1981,15 +1981,11 @@
 			iTime=iModifRevEnd;
 		}
 		// - copying Modified LogicalTimes to the Track
-		const DWORD nNewLogTimes=nLogTimes+iTime-iNextTime;
-		CTrackReaderWriter tmp( nLogTimesMaxNew, profile.method, pLogTimesInfo->resetDecoderOnIndex );
-			::memcpy( tmp.logTimes, logTimes, iModifStart*sizeof(TLogTime) ); // Times before first Index
-			::memcpy( tmp.logTimes+iModifStart, ptModified+iModifStart, (iTime-iModifStart)*sizeof(TLogTime) ); // Times in full Revolutions
-			::memcpy( tmp.logTimes+iTime, logTimes+iNextTime, (nLogTimes-iNextTime)*sizeof(TLogTime) ); // Times after last Index
-			if (const TLogTime dt=GetLastIndexTime()-tLastIndex)
-				for( DWORD i=iTime; i<nNewLogTimes; tmp.logTimes[i++]+=dt );
-		std::swap( tmp.logTimes, logTimes );
-		nLogTimes=nNewLogTimes;
+		const TLogTime dtLast=GetLastIndexTime()-tLastIndexOrg;
+		for( auto i=iNextTime; i<nLogTimes; logTimes[i++]+=dtLast );
+		::memmove( logTimes+iTime, logTimes+iNextTime, (nLogTimes-iNextTime)*sizeof(TLogTime) ); // Times after last Index
+		::memcpy( logTimes+iModifStart, ptModified+iModifStart, (iTime-iModifStart)*sizeof(TLogTime) ); // Times in full Revolutions
+		nLogTimes+=iTime-iNextTime;
 		SetCurrentTime(0); // setting valid state
 		// - successfully normalized
 		return ERROR_SUCCESS;

@@ -423,6 +423,7 @@
 			public:
 				CLogTimesInfo(DWORD nLogTimesMax,TDecoderMethod defaultDecoder,bool resetDecoderOnIndex);
 
+				inline UINT GetRefCount() const{ return nRefs; }
 				inline void AddRef(){ ::InterlockedIncrement(&nRefs); }
 				bool Release();
 			} *PLogTimesInfo;

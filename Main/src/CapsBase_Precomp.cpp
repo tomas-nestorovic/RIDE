@@ -114,11 +114,11 @@
 			if (pAction->Cancelled)
 				return ERROR_CANCELLED;
 			// . composition of test Track
-			CTrackReaderWriter trw( mediumProps.nCells, CTrackReader::KEIR_FRASER, false );
+			TLogTime t=0, const doubleCellTime=2*mediumProps.cellTime;
+	{		CTrackReaderWriter trw( mediumProps.nCells, CTrackReader::KEIR_FRASER, false );
 				trw.SetMediumType(rPrecomp.floppyType);
 				trw.AddIndexTime(0);
 				trw.AddIndexTime(mediumProps.revolutionTime);
-			TLogTime t=0, const doubleCellTime=2*mediumProps.cellTime;
 			for( BYTE n=200; n>0; n-- ) // MFM-like inspection window stabilisation
 				trw.AddTime( t+=doubleCellTime );
 			for( BYTE n=10; n>0; n-- ) // indication of beginning of test data
@@ -131,9 +131,9 @@
 				trw.AddTime( t+=doubleCellTime );
 			trw.AddTime( t+=doubleCellTime ); // one extra flux
 			// . saving the test Track
-	{		const CTrackTempReset rit(
+			const CTrackTempReset rit(
 				ptp.cb.internalTracks[cyl][ptp.head],
-				CInternalTrack::CreateFrom( ptp.cb, trw, rPrecomp.floppyType )
+				CInternalTrack::CreateFrom( ptp.cb, std::move(trw), rPrecomp.floppyType )
 			);
 			rit->modified=true; // to pass the save conditions
 			const Utils::CVarTempReset<TMethodVersion> pm0( ptp.cb.precompensation.methodVersion, CPrecompensation::Identity );

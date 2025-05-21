@@ -112,7 +112,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			// it's a SuperCardPro Track
 			if (head && params.flippyDisk)
 				trw.Reverse();
-			rit=CInternalTrack::CreateFrom( *this, trw );
+			rit=CInternalTrack::CreateFrom( *this, std::move(trw) );
 			return *rit;
 		}
 		return CTrackReaderWriter::Invalid;

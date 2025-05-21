@@ -198,7 +198,8 @@
 			if (const TStdWinError err=UnscanTrack( cyl, head ))
 				return err;
 			// . creation of new content
-			if ( const PInternalTrack pit = internalTracks[cyl][head] = CInternalTrack::CreateFrom(*this,trw) ){
+			const Utils::CVarTempReset<TCorrections> cor0( params.corrections, TCorrections() ); // disable Corrections
+			if ( const PInternalTrack pit = internalTracks[cyl][head] = CInternalTrack::CreateFrom(*this,std::move(trw)) ){
 				SetModifiedFlag( pit->modified=true );
 				return ERROR_SUCCESS;
 			}else

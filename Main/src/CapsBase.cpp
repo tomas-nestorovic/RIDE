@@ -239,10 +239,10 @@
 		}
 		trw.AddTimes( trw.GetBuffer(), pFluxTime-trw.GetBuffer() );
 		// - creating a Track from above reconstructed flux information
-		return CreateFrom( cb, trw );
+		return CreateFrom( cb, std::move(trw) );
 	}
 
-	CCapsBase::CInternalTrack *CCapsBase::CInternalTrack::CreateFrom(const CCapsBase &cb,CTrackReaderWriter trw,Medium::TType floppyType){
+	CCapsBase::CInternalTrack *CCapsBase::CInternalTrack::CreateFrom(const CCapsBase &cb,CTrackReaderWriter &&trw,Medium::TType floppyType){
 		// creates and returns a Track decoded from underlying flux representation
 		if (floppyType==Medium::UNKNOWN) // if type not explicitly overridden ...
 			floppyType=cb.floppyType; // ... adopt what the CapsBase contains
@@ -778,15 +778,14 @@ invalidTrack:
 				return ERROR_SUCCESS; // e.g. a KryoFlux Stream file has been manually deleted, thus Unknown Medium has been "successfully" recognized
 			}
 		// - enumerating possible floppy Types and attempting to recognize some Sectors
-		CTrackReaderWriter trw=*ritInserted;
-		trw.ClearAllMetaData(); // don't influence recognition with MetaData
+		ritInserted->ClearAllMetaData(); // don't influence recognition with MetaData
 		WORD highestScore=0; // arbitering the MediumType by the HighestScore and indices distance
 		Medium::TType bestMediumType=Medium::UNKNOWN;
 		for( DWORD type=1; type!=0; type<<=1 )
 			if (type&Medium::FLOPPY_ANY)
 				if (const CTrackTempReset &&rit=CTrackTempReset(
 						internalTracks[cyl][0],
-						CInternalTrack::CreateFrom( *this, trw, rOutMediumType=(Medium::TType)type )
+						CInternalTrack::CreateFrom( *this, std::move(CTrackReaderWriter(*ritInserted,false)), rOutMediumType=(Medium::TType)type )
 					)
 				){
 					const TSector nRecognizedSectors=rit->sectors.length;
@@ -861,7 +860,7 @@ invalidTrack:
 						if (auto &rit=internalTracks[cyl][head]){
 							CTrackReaderWriter trw=*rit; // extract fluxes
 							delete rit;
-							rit=CInternalTrack::CreateFrom( *this, trw, pFormat->mediumType );
+							rit=CInternalTrack::CreateFrom( *this, std::move(trw), pFormat->mediumType );
 						}
 			// . seeing if some Sectors can be recognized in any of Tracks that usually contain the Boot Sector of implemented DOSes
 			if (params.userForcedMedium)
@@ -1010,7 +1009,7 @@ invalidTrack:
 		return ERROR_NOT_SUPPORTED;
 	}
 
-	TStdWinError CCapsBase::VerifyTrack(TCylinder cyl,THead head,const CTrackReaderWriter &trwWritten,bool showDiff,std::unique_ptr<CTrackReaderWriter> *ppOutReadTrack,const volatile bool &cancelled) const{
+	TStdWinError CCapsBase::VerifyTrack(TCylinder cyl,THead head,CTrackReaderWriter trwWritten,bool showDiff,std::unique_ptr<CTrackReaderWriter> *ppOutReadTrack,const volatile bool &cancelled) const{
 		// verifies specified Track that is assumed to be just written; returns Windows standard i/o error
 		// - Medium must be known
 		const Medium::PCProperties mp=Medium::GetProperties(floppyType);
@@ -1028,8 +1027,7 @@ invalidTrack:
 		if (ppOutReadTrack) // caller wants to take over ownership?
 			ppOutReadTrack->reset( tmp.release() );
 		// - verification
-		const std::unique_ptr<CInternalTrack> pitWritten(  CInternalTrack::CreateFrom( *this, trwWritten, floppyType )  );
-		const CTrackReader::CBitSequence writtenBits( *pitWritten, pitWritten->GetIndexTime(0), pitWritten->CreateResetProfile(), pitWritten->GetIndexTime(1) );
+		const CTrackReader::CBitSequence writtenBits( trwWritten, trwWritten.GetIndexTime(0), trwWritten.CreateResetProfile(), trwWritten.GetIndexTime(1) );
 		const CTrackReader::CBitSequence readBits( *pitRead, pitRead->GetIndexTime(0), pitRead->CreateResetProfile(), pitRead->GetIndexTime(1) );
 		const auto &&ses=writtenBits.GetShortestEditScript( // shortest edit script
 			readBits, CActionProgress(cancelled)
@@ -1056,7 +1054,7 @@ invalidTrack:
 		const DWORD nBadRegions=writtenBits.ScriptToLocalRegions( ses, ses.length, badRegions, COLOR_RED );
 		CTrackReader::CParseEventList peTrack;
 		TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; TLogTime dataEnds[Revolution::MAX*(TSector)-1];
-		const auto nSectors=pitWritten->ScanAndAnalyze( ids, idEnds, dataEnds, peTrack, CActionProgress::None, false ); // False = only linear, time-inexpensive analysis (thus no need for doing this in parallel)
+		const auto nSectors=trwWritten.ScanAndAnalyze( ids, idEnds, dataEnds, peTrack, CActionProgress::None, false ); // False = only linear, time-inexpensive analysis (thus no need for doing this in parallel)
 		if (!params.verifyBadSectors) // remove Events that relate to Bad Sectors
 			for( auto i=nSectors; i>0; ){
 				const TPhysicalAddress chs={ cyl, head, ids[--i] };
@@ -1067,7 +1065,7 @@ invalidTrack:
 			}
 		for each( const auto &br in badRegions )
 			if (peTrack.IntersectsWith(br)) // an intersection with ID or Data fields
-				switch (pitWritten->ShowModal( badRegions, nBadRegions, MB_ABORTRETRYIGNORE, true, br.tStart, _T("Track %02d.%c verification failed: Review RED-MARKED errors (use J and L keys) and decide how to proceed!"), cyl, '0'+head )){
+				switch (trwWritten.ShowModal( badRegions, nBadRegions, MB_ABORTRETRYIGNORE, true, br.tStart, _T("Track %02d.%c verification failed: Review RED-MARKED errors (use J and L keys) and decide how to proceed!"), cyl, '0'+head )){
 					case IDOK: // ignore
 						return ERROR_CONTINUE;
 					case IDCANCEL:
@@ -1095,13 +1093,13 @@ invalidTrack:
 		const TLogTime doubleCellTime=2*mp->cellTime;
 		for( TLogTime t=0; t<mp->revolutionTime; trw.AddTime(t+=doubleCellTime) );
 		// - evaluating Track magnetic reliability
+		const std::unique_ptr<CInternalTrack> pit(
+			CInternalTrack::CreateFrom( *this, std::move(trw), floppyType )
+		);
+		pit->modified=true; // to pass the save conditions
 		for( BYTE nTrials=3; nTrials>0; nTrials-- ){
 			// . saving the test Track
-	{		const CTrackTempReset rit(
-				internalTracks[cyl][head],
-				CInternalTrack::CreateFrom( *this, trw )
-			);
-			rit->modified=true; // to pass the save conditions
+	{		const Utils::CVarTempReset<PInternalTrack> pit0( internalTracks[cyl][head], pit.get() );
 			if (const TStdWinError err=SaveTrack( cyl, head, cancelled ))
 				return err;
 	}		// . reading the test Track back
@@ -1163,7 +1161,7 @@ invalidTrack:
 		if (const PInternalTrack tmp=CInternalTrack::CreateFrom( *this, cti, nRevs, lockFlags )){
 			CTrackReaderWriter trw=*tmp; // extracting raw flux data ...
 			delete tmp;
-			rit=CInternalTrack::CreateFrom( *this, trw ); // ... and rescanning the Track using current FloppyType Profile
+			rit=CInternalTrack::CreateFrom( *this, std::move(trw) ); // ... and rescanning the Track using current FloppyType Profile
 		}
 		while (--nRevs>0){
 			const CapsTrackInfoT2 &r=cti[nRevs];
