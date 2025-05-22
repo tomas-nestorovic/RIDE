@@ -19,6 +19,7 @@
 		, nLogTimes(0) , iNextIndexPulse(0) , nIndexPulses(0)
 		, iNextTime(0) , currentTime(0) , lastReadBits(0)
 		, profile(pLti->defaultDecoder) {
+		SetMediumType(Medium::FLOPPY_DD); // setting values associated with the specified MediumType
 	}
 
 	CImage::CTrackReaderState::PCMetaDataItem CImage::CTrackReaderState::GetCurrentTimeMetaData() const{
@@ -328,28 +329,16 @@
 
 	void CImage::CTrackReaderState::SetMediumType(Medium::TType mediumType){
 		// changes the interpretation of recorded LogicalTimes according to the new MediumType
-		switch ( pLogTimesInfo->mediumType=mediumType ){
-			default:
-				ASSERT(FALSE); // we shouldn't end-up here, all Media Types applicable for general Track description should be covered
-				//fallthrough
-			case Medium::FLOPPY_DD:
-				static_cast<Medium::TIwProfile &>(profile)=Medium::TProperties::FLOPPY_DD.CreateIwProfile();
-				break;
-			case Medium::FLOPPY_DD_525:
-				static_cast<Medium::TIwProfile &>(profile)=Medium::TProperties::FLOPPY_DD_525.CreateIwProfile();
-				break;
-			case Medium::FLOPPY_HD_350:
-				static_cast<Medium::TIwProfile &>(profile)=Medium::TProperties::FLOPPY_HD_350.CreateIwProfile();
-				break;
-			case Medium::FLOPPY_HD_525:
-				static_cast<Medium::TIwProfile &>(profile)=Medium::TProperties::FLOPPY_HD_525.CreateIwProfile();
-				break;
-		}
+		pLogTimesInfo->mediumType=mediumType;
+		if (const Medium::PCProperties mp=GetMediumProperties())
+			static_cast<Medium::TIwProfile &>(profile)=mp->CreateIwProfile();
+		else
+			ASSERT(FALSE); // we shouldn't end-up here, all Media Types applicable for general Track description should be covered
 		profile.Reset();
 		ApplyCurrentTimeMetaData();
 	}
 
-	Medium::PCProperties CImage::CTrackReader::GetMediumProperties() const{
+	Medium::PCProperties CImage::CTrackReaderState::GetMediumProperties() const{
 		return Medium::GetProperties( pLogTimesInfo->mediumType );
 	}
 
@@ -1666,7 +1655,6 @@
 			new CLogTimesInfo( nLogTimesMax, method, resetDecoderOnIndex ),
 			Codec::MFM
 		){
-		SetMediumType(Medium::FLOPPY_DD); // setting values associated with the specified MediumType
 	}
 
 	CImage::CTrackReaderWriter::CTrackReaderWriter(const CTrackReaderWriter &trw,bool shareTimes)

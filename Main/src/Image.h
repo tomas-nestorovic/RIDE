@@ -474,6 +474,7 @@
 
 			CTrackReaderState(PLogTimesInfo pLti);
 
+			Medium::PCProperties GetMediumProperties() const;
 			PCMetaDataItem GetCurrentTimeMetaData() const;
 			PCMetaDataItem ApplyCurrentTimeMetaData();
 			PCMetaDataItem IncrMetaDataIteratorAndApply();
@@ -607,7 +608,6 @@
 		protected:
 			CTrackReader(PLogTimesInfo pLti,Codec::TType codec);
 
-			Medium::PCProperties GetMediumProperties() const;
 			WORD ScanFm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents);
 			WORD ScanMfm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents);
 			TFdcStatus ReadDataFm(const TSectorId &sectorId,WORD nBytesToRead,CParseEventList *pOutParseEvents);
