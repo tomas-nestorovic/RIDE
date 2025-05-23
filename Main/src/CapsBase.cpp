@@ -1086,12 +1086,8 @@ invalidTrack:
 		if (!mp)
 			return ERROR_UNRECOGNIZED_MEDIA;
 		// - composition of test Track
-		CTrackReaderWriter trw( mp->nCells, CTrackReader::KEIR_FRASER, false );
-			trw.SetMediumType(floppyType);
-			trw.AddIndexTime(0);
-			trw.AddIndexTime(mp->revolutionTime);
+		CTrackReaderWriter trw( mp->nCells/2, floppyType );
 		const TLogTime doubleCellTime=2*mp->cellTime;
-		for( TLogTime t=0; t<mp->revolutionTime; trw.AddTime(t+=doubleCellTime) );
 		// - evaluating Track magnetic reliability
 		const std::unique_ptr<CInternalTrack> pit(
 			CInternalTrack::CreateFrom( *this, std::move(trw), floppyType )

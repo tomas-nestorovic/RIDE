@@ -1662,6 +1662,19 @@
 			*static_cast<TLogTimesInfoData *>(pLogTimesInfo)=*trw.pLogTimesInfo;
 		}
 	}
+
+	CImage::CTrackReaderWriter::CTrackReaderWriter(DWORD nLogTimes,Medium::TType mediumType)
+		// ctor ('nLogTimes' uniformly distributed across a single-Revolution Track)
+		: CTrackReader(
+			new CLogTimesInfo( nLogTimes, TDecoderMethod::KEIR_FRASER, true ),
+			Codec::MFM
+		){
+		SetMediumType(mediumType);
+		AddIndexTime(0);
+			for( TLogTime t=0; t<nLogTimes; AddTime(++t) );
+		AddIndexTime( nLogTimes );
+		Normalize();
+	}
 	
 	CImage::CTrackReaderWriter::CTrackReaderWriter(CTrackReaderWriter &&rTrackReaderWriter)
 		// move ctor

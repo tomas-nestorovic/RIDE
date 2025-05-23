@@ -185,20 +185,12 @@
 			EXCLUSIVELY_LOCK_THIS_IMAGE();
 			if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
 				return ERROR_INVALID_PARAMETER;
-			// . preparing Track content
-			const int nLogTimes=mp->nCells*2;
-			CTrackReaderWriter trw( nLogTimes, CTrackReader::TDecoderMethod::KEIR_FRASER, true );
-				trw.AddIndexTime(0);
-					for( TLogTime t=0; t<nLogTimes; trw.AddTime(++t) );
-				trw.AddIndexTime( nLogTimes );
-				trw.SetMediumType(floppyType);
-				if (const TStdWinError err=trw.Normalize())
-					return err;
 			// . disposal of previous content
 			if (const TStdWinError err=UnscanTrack( cyl, head ))
 				return err;
-			// . creation of new content
+			// . creation of new empty Track
 			const Utils::CVarTempReset<TCorrections> cor0( params.corrections, TCorrections() ); // disable Corrections
+			CTrackReaderWriter trw( mp->nCells, floppyType );
 			if ( const PInternalTrack pit = internalTracks[cyl][head] = CInternalTrack::CreateFrom(*this,std::move(trw)) ){
 				SetModifiedFlag( pit->modified=true );
 				return ERROR_SUCCESS;

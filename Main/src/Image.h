@@ -766,6 +766,7 @@
 			static const CTrackReaderWriter Invalid;
 
 			CTrackReaderWriter(DWORD nLogTimesMax,TDecoderMethod method,bool resetDecoderOnIndex);
+			CTrackReaderWriter(DWORD nLogTimes,Medium::TType mediumType); // 'nLogTimes' uniformly distributed across a single-Revolution Track
 			CTrackReaderWriter(const CTrackReaderWriter &trw,bool shareTimes=true);
 			CTrackReaderWriter(CTrackReaderWriter &&rTrackReaderWriter);
 			CTrackReaderWriter(const CTrackReader &tr);
