@@ -19,7 +19,7 @@
 		, nLogTimes(0) , iNextIndexPulse(0) , nIndexPulses(0)
 		, iNextTime(0) , currentTime(0) , lastReadBits(0)
 		, profile(pLti->defaultDecoder) {
-		SetMediumType(Medium::FLOPPY_DD); // setting values associated with the specified MediumType
+		SetMediumType(Medium::FLOPPY_DD); // init values associated with the specified Medium
 	}
 
 	CImage::CTrackReaderState::PCMetaDataItem CImage::CTrackReaderState::GetCurrentTimeMetaData() const{
@@ -152,7 +152,7 @@
 
 	CImage::CTrackReader::TLogTimesInfoData::TLogTimesInfoData(TDecoderMethod defaultDecoder,bool resetDecoderOnIndex)
 		// ctor
-		: mediumType(Medium::UNKNOWN) , codec(Codec::UNKNOWN)
+		: mediumProps(nullptr) , codec(Codec::UNKNOWN)
 		, defaultDecoder(defaultDecoder)
 		, resetDecoderOnIndex(resetDecoderOnIndex) {
 		*indexPulses=INT_MAX; // a virtual IndexPulse in infinity
@@ -329,17 +329,12 @@
 
 	void CImage::CTrackReaderState::SetMediumType(Medium::TType mediumType){
 		// changes the interpretation of recorded LogicalTimes according to the new MediumType
-		pLogTimesInfo->mediumType=mediumType;
-		if (const Medium::PCProperties mp=GetMediumProperties())
-			static_cast<Medium::TIwProfile &>(profile)=mp->CreateIwProfile();
+		if ( pLogTimesInfo->mediumProps=Medium::GetProperties(mediumType) )
+			static_cast<Medium::TIwProfile &>(profile)=pLogTimesInfo->mediumProps->CreateIwProfile();
 		else
 			ASSERT(FALSE); // we shouldn't end-up here, all Media Types applicable for general Track description should be covered
 		profile.Reset();
 		ApplyCurrentTimeMetaData();
-	}
-
-	Medium::PCProperties CImage::CTrackReaderState::GetMediumProperties() const{
-		return Medium::GetProperties( pLogTimesInfo->mediumType );
 	}
 
 	LPCTSTR CImage::CTrackReader::GetDescription(TDecoderMethod dm){
@@ -1877,7 +1872,7 @@
 		if (nIndexPulses<2)
 			return ERROR_SUCCESS;
 		// - MediumType must be supported
-		const Medium::PCProperties mp=GetMediumProperties();
+		const Medium::PCProperties mp=pLogTimesInfo->mediumProps;
 		if (!mp)
 			return ERROR_UNRECOGNIZED_MEDIA;
 		ClearAllMetaData();

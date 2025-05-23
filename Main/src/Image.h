@@ -404,7 +404,7 @@
 			};
 		protected:
 			struct TLogTimesInfoData abstract{
-				Medium::TType mediumType;
+				Medium::PCProperties mediumProps;
 				bool resetDecoderOnIndex;
 				Codec::TType codec;
 				TLogTime indexPulses[Revolution::MAX+2]; // "+2" = "+1+1" = "+A+B", A = tail IndexPulse of last possible Revolution, B = terminator
@@ -474,7 +474,6 @@
 
 			CTrackReaderState(PLogTimesInfo pLti);
 
-			Medium::PCProperties GetMediumProperties() const;
 			PCMetaDataItem GetCurrentTimeMetaData() const;
 			PCMetaDataItem ApplyCurrentTimeMetaData();
 			PCMetaDataItem IncrMetaDataIteratorAndApply();
