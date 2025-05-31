@@ -511,6 +511,7 @@
 			::SetLastError(ERROR_NOT_SUPPORTED);
 			return FALSE;
 		}
+		capsImageInfo.maxcylinderOrg=capsImageInfo.maxcylinder;
 		// - confirming initial settings
 		if (!EditSettings(true)){ // dialog cancelled?
 			::SetLastError( ERROR_CANCELLED );
@@ -966,7 +967,7 @@ invalidTrack:
 	CString CCapsBase::ListUnsupportedFeatures(){
 		// returns a list of all features currently not properly implemented
 		CString list;
-		if (capsImageInfo.maxcylinder>FDD_CYLINDERS_MAX){ // inclusive! - current # of Cylinders exceeds supported limit
+		if (capsImageInfo.maxcylinderOrg>FDD_CYLINDERS_MAX){ // inclusive! - current # of Cylinders exceeds supported limit
 			list.Format( _T("- disk contains %d cylinders, ") _T(APP_ABBREVIATION) _T(" shows just first %d of them\n"), capsImageInfo.maxcylinder+1, FDD_CYLINDERS_MAX );
 			capsImageInfo.maxcylinder=FDD_CYLINDERS_MAX-1; // inclusive! - correct # of Cylinders
 		}

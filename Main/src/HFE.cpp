@@ -178,7 +178,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			goto formatError;
 		// - adopting geometry from the Header
 		if (header.nCylinders)
-			capsImageInfo.maxcylinder=header.nCylinders-1; // inclusive!
+			capsImageInfo.maxcylinder = capsImageInfo.maxcylinderOrg = header.nCylinders-1; // inclusive!
 		if (header.nHeads)
 			capsImageInfo.maxhead=header.nHeads-1; // inclusive!
 		// - confirming initial settings

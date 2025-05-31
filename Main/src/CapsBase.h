@@ -176,7 +176,9 @@
 		const TStdWinError capsLibLoadingError;
 		const SDWORD capsDeviceHandle;
 		CapsVersionInfo capsVersionInfo;
-		CapsImageInfo capsImageInfo;
+		struct:CapsImageInfo{
+			UDWORD maxcylinderOrg;
+		} capsImageInfo;
 		PInternalTrack mutable internalTracks[FDD_CYLINDERS_MAX][2]; // "2" = a floppy can have two Sides
 		mutable TCylinder lastCalibratedCylinder;
 		bool preservationQuality; // Images intended for preservation (e.g. IPF and others) mustn't be re-normalized during DOS recognition
