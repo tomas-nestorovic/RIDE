@@ -189,7 +189,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		return TRUE;
 	}
 
-	CString CHFE::ListUnsupportedFeatures(){
+	CString CHFE::ListUnsupportedFeatures() const{
 		// returns a list of all features currently not properly implemented
 		return header.ListUnsupportedFeatures() + __super::ListUnsupportedFeatures();
 	}

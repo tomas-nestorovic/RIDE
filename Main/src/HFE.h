@@ -128,7 +128,7 @@
 		void EnumSettings(CSettings &rOut) const override;
 		TStdWinError Reset() override;
 		TStdWinError FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte,const volatile bool &cancelled) override;
-		CString ListUnsupportedFeatures() override;
+		CString ListUnsupportedFeatures() const override;
 	};
 
 #endif // HFE_H

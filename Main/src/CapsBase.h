@@ -224,7 +224,7 @@
 		bool RequiresFormattedTracksVerification() const override sealed;
 		TStdWinError UnformatTrack(TCylinder cyl,THead head) override;
 		TStdWinError MineTrack(TCylinder cyl,THead head) override sealed;
-		CString ListUnsupportedFeatures() override;
+		CString ListUnsupportedFeatures() const override;
 	};
 
 

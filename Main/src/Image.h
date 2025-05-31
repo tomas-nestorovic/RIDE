@@ -901,7 +901,7 @@
 		virtual TStdWinError MineTrack(TCylinder cyl,THead head);
 		virtual CSectorDataSerializer *CreateSectorDataSerializer(CHexaEditor *pParentHexaEditor)=0;
 		virtual TStdWinError CreateUserInterface(HWND hTdi);
-		virtual CString ListUnsupportedFeatures();
+		virtual CString ListUnsupportedFeatures() const;
 		void SetRedrawToAllViews(bool redraw) const;
 		bool ReportWriteProtection() const;
 		void ToggleWriteProtection();

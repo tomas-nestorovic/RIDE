@@ -786,7 +786,7 @@ namespace Medium{
 		return ERROR_SUCCESS; // always succeeds (but may fail in CDos-derivates)
 	}
 
-	CString CImage::ListUnsupportedFeatures(){
+	CString CImage::ListUnsupportedFeatures() const{
 		// returns a list of all features currently not properly implemented
 		return CString();
 	}
