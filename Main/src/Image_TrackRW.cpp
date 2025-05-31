@@ -354,9 +354,10 @@
 #define SKIP_ALL_FLUXES_IN_CURRENT_INSPECTION_WINDOW() \
 	const TLogTime iwTimeHalf=profile.iwTime/2, tCurrIwEnd=currentTime+iwTimeHalf; \
 	do{																			\
-		if (!*this)																\
+		if (!*this){															\
+			currentTime=profile.PeekNextIwTime(currentTime);					\
 			return 0;															\
-		if (logTimes[iNextTime]<tCurrIwEnd)										\
+		}else if (logTimes[iNextTime]<tCurrIwEnd)								\
 			iNextTime++;														\
 		else																	\
 			break;																\
@@ -469,8 +470,10 @@
 			}
 			case TDecoderMethod::METADATA:{
 				// a hidden decoder to help extract bits from Times tagged with MetaData
-				if (!*this)
+				if (!*this){
+					currentTime=profile.PeekNextIwTime(currentTime);
 					return 0;
+				}
 				auto &r=profile.methodState.metaData;
 				PCMetaDataItem pmdi;
 				do{
@@ -873,15 +876,15 @@
 		// - count all Bits ("tr.GetTotalTime()/profileFrom.iwTimeMin" not used to account for decoder phase adjustment, allowing for returning back in time)
 		const TLogTime iwTimeDefaultHalf=profileFrom.iwTimeDefault/2;
 		tr.SetCurrentTimeAndProfile( tFrom, profileFrom );
-		tTo-=iwTimeDefaultHalf;
-		while (tr && tr.GetCurrentTime()<tTo)
+		tTo=std::min( tTo-iwTimeDefaultHalf, tr.GetTotalTime() );
+		while (tr.GetCurrentTime()<tTo)
 			tr.ReadBit(), nBits++;
 		// - create and populate the BitBuffer
 		bitBuffer.Realloc( 1+nBits+2 )->time=tFrom; // "1+" = one hidden Bit before Sequence (with negative Time), "+2" = auxiliary terminal Bits
 		pBits=bitBuffer+1; // skip that one hidden Bit
 		tr.SetCurrentTimeAndProfile( tFrom, profileFrom );
 		TBit *p=pBits;
-		for( TLogTime tOne; tr && tr.GetCurrentTime()<tTo; ){
+		for( TLogTime tOne; tr.GetCurrentTime()<tTo; ){
 			p->flags=0;
 			p->value=tr.ReadBit(tOne);
 			p->time=tr.GetCurrentTime();
@@ -1026,8 +1029,8 @@
 
 	void CImage::CTrackReader::CBitSequence::OffsetAll(TLogTime dt) const{
 		// offsets each Bit by given constant
-		for( TBit *p=pBits,*const pLast=pBits+nBits; p<pLast; p++ ) // don't modify the padding Bits at the beginning and end
-			p->time+=dt;
+		for each( TBit &p in bitBuffer ) // offset also the padding Bits at the beginning and end
+			p.time+=dt;
 	}
 
 #ifdef _DEBUG
