@@ -120,15 +120,15 @@ using namespace Charting;
 						const auto &&g=te.timeline.CreateGraphics(dc);
 						bool continuePainting=true;
 						// . drawing inspection windows (if any)
-						if (te.IsFeatureShown(TCursorFeatures::INSPECT)){
-							// : determining the first visible inspection window
-							PCInspectionWindow piw=te.GetInspectionWindow(visible.tStart);
-							int i=piw-te.GetInspectionWindows();
-							// : drawing visible inspection windows (avoiding the GDI coordinate limitations by moving the viewport origin)
-							RECT rc={ te.timeline.GetClientUnits(piw->time), 1, 0, IW_HEIGHT };
-							do{
-								rc.right=te.timeline.GetClientUnits(piw[1].time);
-								EXCLUSIVELY_LOCK(p.params);
+						if (te.IsFeatureShown(TCursorFeatures::INSPECT))
+							if (PCInspectionWindow piw=te.GetInspectionWindow(visible.tStart)){ // Visible part of the Track ?
+								int i=piw-te.GetInspectionWindows();
+								const PCInspectionWindow piwEnd=te.inspectionWindows->end();
+								// : drawing visible inspection windows (avoiding the GDI coordinate limitations by moving the viewport origin)
+								RECT rc={ te.timeline.GetClientUnits(piw->time), 1, 0, IW_HEIGHT };
+								do{
+									rc.right=te.timeline.GetClientUnits(piw[1].time);
+									EXCLUSIVELY_LOCK(p.params);
 									if ( continuePainting=p.params.id==id ){
 										::FillRect( dc, &rc, iwBrushes[piw->bad][i++&1] );
 										if (app.IsInGodMode()){
@@ -136,11 +136,11 @@ using namespace Charting;
 											::DrawText( dc, _itot(piw->uid%100,uid,10), -1, &rc, DT_SINGLELINE|DT_CENTER );
 										}
 									}
-								rc.left=rc.right;
-							}while (continuePainting && (++piw)->time<visible.tEnd);
-							if (!continuePainting) // new paint request?
-								continue;
-						}
+									rc.left=rc.right;
+								}while (continuePainting && (++piw)->time<visible.tEnd && piw!=piwEnd);
+								if (!continuePainting) // new paint request?
+									continue;
+							}
 						// . drawing ParseEvents
 						if (te.IsFeatureShown(TCursorFeatures::STRUCT)){
 							const auto &peList=te.GetParseEvents();
