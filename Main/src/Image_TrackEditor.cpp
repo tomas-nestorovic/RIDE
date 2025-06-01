@@ -790,17 +790,17 @@ using namespace Charting;
 			// - Step 3: populating the list of BadBlocks, i.e. Bits that are reported as Bad
 			auto &badBlocks=rte.iwInfo.badBlocks;
 			BYTE iwStatuses=0; // last 8 InspectionWindows statuses (0 = ok, 1 = bad)
-			for( auto *p=bits->GetBits(),*pLast=p+bits->GetBitCount(); p<pLast; p++ ){
-				if (p->bad){
-					const TLogTime tBitEnd=p[1].time;
+			for each( auto &bit in *bits.get() ){
+				if (bit.bad){
+					const TLogTime tBitEnd=(&bit)[1].time;
 					if (iwStatuses&3){ // between this and the previous bad InspectionWindow is at most one ok InspectionWindow
 						badBlocks.GetTail().tEnd=tBitEnd; // extending an existing BadBlock
-						p[-1].bad=true; // involving the previous InspectionWindow into the BadBlock
+						(&bit)[-1].bad=true; // involving the previous InspectionWindow into the BadBlock
 					}else
-						badBlocks.AddTail(  TLogTimeInterval( p->time, tBitEnd )  );
+						badBlocks.AddTail(  TLogTimeInterval( bit.time, tBitEnd )  );
 				}
-				p->uid=INT_MIN; // Bits across various Revolutions not yet linked
-				iwStatuses = (iwStatuses<<1) | (BYTE)p->bad;
+				bit.uid=INT_MIN; // Bits across various Revolutions not yet linked
+				iwStatuses = (iwStatuses<<1) | (BYTE)bit.bad;
 			}
 			rte.timeEditor.SetInspectionWindows( std::move(bits) );
 			if (!app.IsInGodMode()) // normal user?

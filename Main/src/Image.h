@@ -642,7 +642,6 @@
 				CBitSequence(CTrackReader tr,TLogTime tFrom,const CTrackReader::TProfile &profileFrom, TLogTime tTo,BYTE oneOkPercent=0);
 
 				inline TBit &operator[](int i) const{ ASSERT(0<=i&&i<nBits); return pBits[i]; }
-				inline TBit *GetBits() const{ return pBits; }
 				inline int GetBitCount() const{ return nBits; }
 				PCBit Find(TLogTime tMin) const;
 				Utils::CCallocPtr<CDiffBase::TScriptItem> GetShortestEditScript(const CBitSequence &theirs,CActionProgress &ap) const;
@@ -654,8 +653,8 @@
 				void SaveCsv(LPCTSTR filename) const;
 			#endif
 				// 'for each' support
-				inline PCBit begin() const{ return pBits; }
-				inline PCBit end() const{ return pBits+nBits; }
+				inline TBit *begin() const{ return pBits; }
+				inline TBit *end() const{ return pBits+nBits; }
 			};
 
 			template<char N,typename T>
