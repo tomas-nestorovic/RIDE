@@ -1824,6 +1824,7 @@ autodetermineLatencies:		// automatic determination of write latency values
 
 	void CFDD::EnumSettings(CSettings &rOut) const{
 		// returns a collection of relevant settings for this Image
+		__super::EnumSettings(rOut);
 		rOut.Add( _T("FDC"), GetControllerType() );
 		//TODO: params.EnumSettings(rOut);
 		fddHead.EnumSettings(rOut);

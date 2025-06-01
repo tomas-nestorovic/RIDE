@@ -669,6 +669,7 @@ trackNotFound:
 
 	void CImageRaw::EnumSettings(CSettings &rOut) const{
 		// returns a collection of relevant settings for this Image
+		__super::EnumSettings(rOut);
 		rOut.Add( _T("sequence of cylinders"), trackAccessScheme==TTrackScheme::BY_CYLINDERS );
 		rOut.Add( _T("auto geometry"), !explicitSides );
 		rOut.AddCylinderCount(nCylinders);

@@ -956,6 +956,7 @@ invalidTrack:
 
 	void CCapsBase::EnumSettings(CSettings &rOut) const{
 		// returns a collection of relevant settings for this Image
+		__super::EnumSettings(rOut);
 		rOut.AddLibrary( _T("CAPS"), capsVersionInfo.release, capsVersionInfo.revision );
 		rOut.AddId(capsImageInfo.release);
 		rOut.AddRevision(capsImageInfo.revision);

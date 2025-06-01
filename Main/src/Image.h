@@ -889,7 +889,7 @@
 		virtual TStdWinError GetInsertedMediumType(TCylinder cyl,Medium::TType &rOutMediumType) const;
 		virtual TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber);
 		virtual bool EditSettings(bool initialEditing)=0;
-		virtual void EnumSettings(CSettings &rOut) const=0;
+		virtual void EnumSettings(CSettings &rOut) const;
 		virtual TStdWinError Reset()=0;
 		virtual TStdWinError SaveTrack(TCylinder cyl,THead head,const volatile bool &cancelled) const;
 		virtual CTrackReader ReadTrack(TCylinder cyl,THead head) const;

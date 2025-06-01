@@ -47,6 +47,7 @@
 
 	void CSuperCardProBase::EnumSettings(CSettings &rOut) const{
 		// returns a collection of relevant settings for this Image
+		__super::EnumSettings(rOut);
 		params.EnumSettings( rOut, properties->IsRealDevice() );
 	}
 

@@ -1172,6 +1172,11 @@ namespace Medium{
 		return ERROR_SUCCESS;
 	}
 
+	void CImage::EnumSettings(CSettings &rOut) const{
+		// returns a collection of relevant settings for this Image
+		rOut.Add( _T("has unsupported features"), !ListUnsupportedFeatures().IsEmpty() );
+	}
+
 	bool CImage::RequiresFormattedTracksVerification() const{
 		// True <=> the Image requires its newly formatted Tracks be verified, otherwise False (and caller doesn't have to carry out verification)
 		return false; // verification NOT required by default (but Images abstracting physical drives can override this setting)

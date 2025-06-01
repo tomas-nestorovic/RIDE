@@ -125,7 +125,7 @@
 		CTrackReader ReadTrack(TCylinder cyl,THead head) const override;
 		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
 		bool EditSettings(bool initialEditing) override;
-		void EnumSettings(CSettings &rOut) const override;
+		//void EnumSettings(CSettings &rOut) const override;
 		TStdWinError Reset() override;
 		TStdWinError FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte,const volatile bool &cancelled) override;
 		CString ListUnsupportedFeatures() const override;
