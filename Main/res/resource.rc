@@ -2004,9 +2004,9 @@ BEGIN
     LTEXT           "&File:",IDC_STATIC,7,9,14,8,NOT WS_GROUP
     PUSHBUTTON      "",ID_FILE,52,7,131,13,BS_FLAT
     LTEXT           "Content:",IDC_STATIC,7,28,28,8
-    CONTROL         "&Timing",ID_TIME,"Button",BS_AUTORADIOBUTTON | WS_GROUP,
-                    52,27,37,10
-    CONTROL         "Inspection window sizes",ID_ACCURACY,"Button",
+    CONTROL         "Time &deltas",ID_TIME,"Button",BS_AUTORADIOBUTTON | WS_GROUP,
+                    52,27,52,10
+    CONTROL         "Inspection &window sizes",ID_WINDOW_CASCADE,"Button",
                     BS_AUTORADIOBUTTON,52,39,92,10
     LTEXT           "Range:",IDC_STATIC,7,55,24,8,NOT WS_GROUP
     CONTROL         "&All revolutions",ID_TRACK,"Button",BS_AUTORADIOBUTTON | 

@@ -1662,7 +1662,7 @@ using namespace Charting;
 									if (!f.Open( d.filename, CFile::modeCreate|CFile::modeWrite|CFile::typeBinary|CFile::shareExclusive ))
 										return bac.TerminateWithError( e.m_cause );
 									switch (d.iContent){
-										case 0: // low-level timing
+										case 0: // low-level delta timing
 											for( TLogTime tPrev=tStart; tr; bac.UpdateProgress(tPrev-tStart) ){
 												const TLogTime t=tr.ReadTime();
 												Utils::WriteToFile( f, t-tPrev );
