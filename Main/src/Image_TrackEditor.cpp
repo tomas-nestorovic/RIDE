@@ -28,6 +28,9 @@ using namespace Charting;
 
 	#define INI_SECTION	_T("imgte")
 	#define INI_DECADIC	_T("dec")
+	#define INI_EXPORT_CONTENT	_T("ecnt")
+	#define INI_EXPORT_RANGE	_T("erng")
+	#define INI_EXPORT_SEPARATOR _T("esep")
 
 	class CTrackEditor sealed:public Utils::CRideDialog{
 		const CImage::CTrackReader &tr;
@@ -1573,6 +1576,8 @@ using namespace Charting;
 
 								void DoDataExchange(CDataExchange *pDX) override{
 									// transferring data to and from controls
+									DDX_Radio( pDX, ID_TIME, iContent );
+									DDX_Radio( pDX, ID_TRACK, iRange );
 									const HWND hMedium=GetDlgItemHwnd(ID_MEDIUM);
 									if (pDX->m_bSaveAndValidate){
 										pDX->PrepareEditCtrl(ID_FILE);
@@ -1581,6 +1586,9 @@ using namespace Charting;
 											pDX->Fail();
 										}
 										separator=GetDlgComboBoxSelectedValue(ID_SEPARATOR);
+										app.WriteProfileInt( INI_SECTION, INI_EXPORT_CONTENT, iContent );
+										app.WriteProfileInt( INI_SECTION, INI_EXPORT_RANGE, iRange );
+										app.WriteProfileInt( INI_SECTION, INI_EXPORT_SEPARATOR, separator );
 									}else{
 										SetDlgItemText( ID_FILE, ELLIPSIS );
 										static constexpr WORD SingleRevIds[]={ ID_ORDER, ID_NUMBER, 0 };
@@ -1601,9 +1609,8 @@ using namespace Charting;
 											cb.SetItemData( cb.AddString(_T("Line feed LF (0x0A)")), '\n' );
 											cb.SetCurSel(0);
 										cb.Detach();
+										SelectDlgComboBoxValue( ID_SEPARATOR, separator );
 									}
-									DDX_Radio( pDX, ID_TIME, iContent );
-									DDX_Radio( pDX, ID_TRACK, iRange );
 									DDX_CBIndex( pDX, ID_NUMBER, singleRevolution );
 								}
 								BOOL OnCommand(WPARAM wParam, LPARAM lParam) override{
@@ -1628,7 +1635,8 @@ using namespace Charting;
 									: Utils::CRideDialog( IDR_TRACK_EXPORT )
 									, filename(ELLIPSIS)
 									, tr(tr)
-									, iContent(0) , iRange(0) // by default export all low-level timing
+									, iContent(app.GetProfileInt(INI_SECTION,INI_EXPORT_CONTENT,0)) , iRange(app.GetProfileInt(INI_SECTION,INI_EXPORT_RANGE,0)) // by default export all low-level timing
+									, separator( app.GetProfileInt(INI_SECTION,INI_EXPORT_SEPARATOR,',') )
 									, singleRevolution(0) {
 								}
 
