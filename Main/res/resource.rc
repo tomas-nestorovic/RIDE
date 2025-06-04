@@ -1997,7 +1997,7 @@ BEGIN
     LTEXT           "Static",ID_CHART,67,65,395,220,WS_BORDER
 END
 
-IDR_TRACK_EXPORT DIALOG DISCARDABLE  0, 0, 190, 141
+IDR_TRACK_EXPORT DIALOG DISCARDABLE  0, 0, 190, 151
 STYLE WS_POPUP | WS_CAPTION
 CAPTION "Export"
 BEGIN
@@ -2006,22 +2006,24 @@ BEGIN
     LTEXT           "Content:",IDC_STATIC,7,28,28,8
     CONTROL         "Time &deltas",ID_TIME,"Button",BS_AUTORADIOBUTTON | WS_GROUP,
                     52,27,52,10
+    CONTROL         "Absolute &times",ID_ADDRESS,"Button",BS_AUTORADIOBUTTON,
+                    52,38,61,10
     CONTROL         "Inspection &window sizes",ID_WINDOW_CASCADE,"Button",
-                    BS_AUTORADIOBUTTON,52,39,92,10
-    LTEXT           "Range:",IDC_STATIC,7,55,24,8,NOT WS_GROUP
+                    BS_AUTORADIOBUTTON,52,49,92,10
+    LTEXT           "Range:",IDC_STATIC,7,65,24,8,NOT WS_GROUP
     CONTROL         "&All revolutions",ID_TRACK,"Button",BS_AUTORADIOBUTTON | 
-                    WS_GROUP,52,55,59,10
+                    WS_GROUP,52,65,59,10
     CONTROL         "Full &revolutions only",ID_ROTATION,"Button",
-                    BS_AUTORADIOBUTTON,52,67,77,10
+                    BS_AUTORADIOBUTTON,52,77,77,10
     CONTROL         "Single revolution from index",ID_ORDER,"Button",
-                    BS_AUTORADIOBUTTON,52,79,102,10
-    COMBOBOX        ID_NUMBER,155,78,28,105,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    BS_AUTORADIOBUTTON,52,89,102,10
+    COMBOBOX        ID_NUMBER,155,88,28,105,CBS_DROPDOWNLIST | WS_VSCROLL | 
                     WS_TABSTOP
-    LTEXT           "&Separate by:",IDC_STATIC,7,97,41,8,NOT WS_GROUP
-    COMBOBOX        ID_SEPARATOR,52,95,131,77,CBS_DROPDOWNLIST | WS_VSCROLL | 
+    LTEXT           "&Separate by:",IDC_STATIC,7,107,41,8,NOT WS_GROUP
+    COMBOBOX        ID_SEPARATOR,52,105,131,77,CBS_DROPDOWNLIST | WS_VSCROLL | 
                     WS_TABSTOP
-    DEFPUSHBUTTON   "Export",IDOK,79,120,50,14
-    PUSHBUTTON      "Close",IDCANCEL,133,120,50,14
+    DEFPUSHBUTTON   "Export",IDOK,79,130,50,14
+    PUSHBUTTON      "Close",IDCANCEL,133,130,50,14
 END
 
 IDR_CAPS_MINING DIALOG DISCARDABLE  0, 0, 413, 230
@@ -2373,7 +2375,7 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 183
         TOPMARGIN, 7
-        BOTTOMMARGIN, 134
+        BOTTOMMARGIN, 144
     END
 
     IDR_CAPS_MINING, DIALOG

@@ -1672,7 +1672,16 @@ using namespace Charting;
 												tPrev=t;
 											}
 											break;
-										case 1: // inspection window sizes
+										case 1: // low-level absolute timing
+											for( ; tr; bac.UpdateProgress(tr.GetCurrentTime()-tStart) ){
+												const TLogTime t=tr.ReadTime();
+												Utils::WriteToFile( f, t );
+												if (t>=tEnd)
+													break;
+												Utils::WriteToFile( f, d.separator );
+											}
+											break;
+										case 2: // inspection window sizes
 											for( ; tr; bac.UpdateProgress(tr.GetCurrentTime()-tStart) ){
 												tr.ReadBit();
 												Utils::WriteToFile( f, tr.GetCurrentProfile().iwTime );
