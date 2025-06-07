@@ -1461,6 +1461,7 @@
 			default:
 				return TFdcStatus::NoDataField; // not the expected Data mark
 		}
+		const TLogTime tMarkEnd=currentTime;
 		if (pOutParseEvents)
 			pOutParseEvents->Add( TParseEvent( TParseEvent::MARK_1BYTE, TimelyFromPrevious, currentTime, dam ) );
 		// - reading specified amount of Bytes into the Buffer
@@ -1468,7 +1469,7 @@
 		TDataParseEvent::TByteInfo *p=peData.byteInfos;
 		CFloppyImage::TCrc16 crc=CFloppyImage::GetCrc16Ccitt( MFM::CRC_A1A1A1, &dam, sizeof(dam) ); // computing actual CRC along the way
 		for( ; nBytesToRead>0; nBytesToRead-- ){
-			p->dtStart=currentTime-peData.tStart;
+			p->dtStart=currentTime-tMarkEnd;
 			if (!*this || !ReadBits16(w)){ // Track end encountered
 				result.ExtendWith( TFdcStatus::DataFieldCrcError );
 				break;
