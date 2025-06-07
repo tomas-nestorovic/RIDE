@@ -443,6 +443,7 @@
 								// dialog initialization
 								// > base
 								__super::PreInitDialog();
+								BeepWhenShowed=false; // no subdialogs to produce a beep when shown
 								// > creating the Splitter
 								const CRect rcSplitter=MapDlgItemClientRect(ID_ALIGN);
 								splitter.reset( new CSplitterWnd );
@@ -554,7 +555,7 @@
 							}
 							void DoDataExchange(CDataExchange *pDX) override{
 								// exchange of data from and to controls
-								DDX_Check( pDX, ID_BEEP, Utils::CRideDialog::BeepWhenShowed );
+								DDX_Check( pDX, ID_BEEP, beepWhenShowed );
 							}
 							bool ConfirmLowLevelTrackModifications(){
 								// True <=> user confirmed an original command, otherwise False
@@ -780,9 +781,12 @@
 								return __super::WindowProc(msg,wParam,lParam);
 							}
 						public:
+							int beepWhenShowed;
+
 							CErroneousSectorDialog(CWnd *pParentWnd,const TDumpParams &dp,TParams &_rParams,PSectorData sectorData,WORD sectorLength,TFdcStatus &rFdcStatus)
 								// ctor
 								: Utils::CRideDialog( IDR_IMAGE_DUMP_ERROR, pParentWnd )
+								, beepWhenShowed(BeepWhenShowed)
 								, dp(dp) , rp(_rParams) , rFdcStatus(rFdcStatus)
 								, sectorData( rFdcStatus.DescribesMissingDam()?nullptr:sectorData )
 								, sectorDataLength( rFdcStatus.DescribesMissingDam()?0:sectorLength )
@@ -795,7 +799,9 @@
 						} d(pAction,dp,p,bufferSectorData[p.s],bufferLength[p.s],p.fdcStatus);
 						// | showing the Dialog and processing its result
 				{		LOG_DIALOG_DISPLAY(_T("CErroneousSectorDialog"));
-						switch (LOG_DIALOG_RESULT(d.DoModal())){
+						const auto result=LOG_DIALOG_RESULT(d.DoModal());
+						Utils::CRideDialog::BeepWhenShowed=d.beepWhenShowed!=BST_UNCHECKED;
+						switch (result){
 							case IDCANCEL:
 								err=ERROR_CANCELLED;
 								return LOG_ERROR(pAction->TerminateWithError(err));
