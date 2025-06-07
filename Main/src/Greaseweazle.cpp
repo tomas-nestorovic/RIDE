@@ -15,6 +15,12 @@
 
 	#define GW_BUFFER_CAPACITY		2000000
 
+	struct TDCB:public DCB{
+		TDCB(){
+			DCBlength=sizeof(*this);
+		}
+	};
+
 	LPCTSTR CGreaseweazleV4::Recognize(PTCHAR deviceNameList){
 		// returns a null-separated list of floppy drives connected via a local Greaseweazle Device
 		// - evaluating possibilities how to access Greaseweazle
@@ -115,7 +121,7 @@
 		// - setting transfer properties
 		switch (driver){
 			case TDriver::USBSER:{
-				DCB comPortParams={ sizeof(DCB) };
+				TDCB comPortParams;
 				if (!::GetCommState( hDevice, &comPortParams ))
 					return ::GetLastError();
 				comPortParams.BaudRate=CBR_9600;
@@ -625,6 +631,9 @@
 		// returns a collection of relevant settings for this Image
 		__super::EnumSettings(rOut);
 		params.EnumSettings( rOut, properties->IsRealDevice() );
+		TDCB comPortParams;
+		::GetCommState( hDevice, &comPortParams );
+		rOut.AddBaudRate(comPortParams.BaudRate);
 	}
 
 	TStdWinError CGreaseweazleV4::Reset(){
