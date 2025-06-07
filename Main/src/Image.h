@@ -349,6 +349,7 @@
 			void AddSectorSize(WORD nBytes);
 			void Add40TrackDrive(bool value);
 			void AddDoubleTrackStep(bool isDouble,bool userForced);
+			void AddBaudRate(int baudRate);
 		};
 
 		CMainWindow::CMessageBar draftVersionMessageBar;

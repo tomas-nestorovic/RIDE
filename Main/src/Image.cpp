@@ -514,6 +514,9 @@ namespace Medium{
 		Add( _T("double track distance"), isDouble, userForced );
 	}
 
+	void CImage::CSettings::AddBaudRate(int baudRate){
+		Add( _T("baud rate"), baudRate );
+	}
 
 
 
