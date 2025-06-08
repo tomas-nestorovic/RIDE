@@ -1190,7 +1190,7 @@ namespace Medium{
 		return ERROR_NOT_SUPPORTED; // each Track by default must be explicitly formatted to be sure about its structure (but Images abstracting physical drives can override this setting)
 	}
 
-	TStdWinError CImage::MineTrack(TCylinder cyl,THead head){
+	TStdWinError CImage::MineTrack(TCylinder cyl,THead head,bool autoStartLastConfig){
 		// begins mining of specified Track; returns Windows standard i/o error
 		return ERROR_NOT_SUPPORTED; // this container doesn't support Track mining
 	}

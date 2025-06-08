@@ -11,7 +11,7 @@ using namespace Charting;
 
 	#define MSG_CANT_MINE_TRACK	_T("« This track cannot be mined »")
 
-	TStdWinError CCapsBase::MineTrack(TCylinder cyl,THead head){
+	TStdWinError CCapsBase::MineTrack(TCylinder cyl,THead head,bool autoStartLastConfig){
 		// begins mining of specified Track; returns Windows standard i/o error
 		// - has a valid Track been specified?
 {		EXCLUSIVELY_LOCK_THIS_IMAGE();
@@ -22,6 +22,7 @@ using namespace Charting;
 		#define MINED_TRACK_TIMES_COUNT_MAX	800
 		class CTrackMiningDialog sealed:public Utils::CRideDialog{
 			CCapsBase &cb;
+			const bool autoStartLastConfig;
 			const TCylinder cyl;
 			const THead head;
 			const CString trackName;
@@ -139,6 +140,9 @@ using namespace Charting;
 					}
 				cbx.Detach();
 				SelectDlgComboBoxValue( ID_HEAD, headCalibration );
+				// . Auto-start
+				if (autoStartLastConfig && IsDlgItemEnabled(IDOK))
+					OnOK();
 			}
 
 			void ShowScatterPlotOfTrack(const CImage::CTrackReaderWriter &trw){
@@ -329,10 +333,10 @@ using namespace Charting;
 			}
 
 		public:
-			CTrackMiningDialog(CCapsBase &cb,TCylinder cyl,THead head)
+			CTrackMiningDialog(CCapsBase &cb,TCylinder cyl,THead head,bool autoStartLastConfig)
 				// ctor
 				: Utils::CRideDialog(IDR_CAPS_MINING)
-				, cb(cb) , cyl(cyl) , head(head)
+				, cb(cb) , cyl(cyl) , head(head) , autoStartLastConfig(autoStartLastConfig)
 				, trackName(  Utils::SimpleFormat( _T("Track %d (Cyl=%d, Head=%d)"), TPhysicalAddress::GetTrackNumber(cyl,head,cb.GetHeadCount()), cyl, head )  )
 				, miningTarget(TARGET_NONE)
 				, headCalibration( app.GetProfileEnum( INI_MINING, INI_CALIBRATION, HEAD_DONT_CALIBRATE ) )
@@ -346,7 +350,7 @@ using namespace Charting;
 				, scatterPlotView(di)
 				, miningRunning(false) {
 			}
-		} d( *this, cyl, head );
+		} d( *this, cyl, head, autoStartLastConfig );
 		// - showing the Dialog and processing its result
 		if (d.DoModal()==IDOK){
 			return ERROR_SUCCESS;

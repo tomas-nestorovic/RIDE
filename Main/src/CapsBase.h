@@ -223,7 +223,7 @@
 		TStdWinError FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte,const volatile bool &cancelled) override;
 		bool RequiresFormattedTracksVerification() const override sealed;
 		TStdWinError UnformatTrack(TCylinder cyl,THead head) override;
-		TStdWinError MineTrack(TCylinder cyl,THead head) override sealed;
+		TStdWinError MineTrack(TCylinder cyl,THead head,bool autoStartLastConfig) override sealed;
 		CString ListUnsupportedFeatures() const override;
 	};
 

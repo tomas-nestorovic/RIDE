@@ -898,7 +898,7 @@
 		virtual bool RequiresFormattedTracksVerification() const;
 		virtual TStdWinError PresumeHealthyTrackStructure(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,BYTE gap3,BYTE fillerByte);
 		virtual TStdWinError UnformatTrack(TCylinder cyl,THead head)=0;
-		virtual TStdWinError MineTrack(TCylinder cyl,THead head);
+		virtual TStdWinError MineTrack(TCylinder cyl,THead head,bool autoStartLastConfig=false);
 		virtual CSectorDataSerializer *CreateSectorDataSerializer(CHexaEditor *pParentHexaEditor)=0;
 		virtual TStdWinError CreateUserInterface(HWND hTdi);
 		virtual CString ListUnsupportedFeatures() const;

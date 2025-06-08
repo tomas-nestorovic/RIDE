@@ -526,6 +526,7 @@
 									dynamic_cast<CImageRaw *>(dp.target.get())==nullptr // ... the Target Image can accept them
 								);
 								// > converting the "Resolve" button to a SplitButton
+								const UINT miningMenuFlags=MF_GRAYED*!( dp.source->MineTrack(TPhysicalAddress::Invalid.cylinder,TPhysicalAddress::Invalid.head)!=ERROR_NOT_SUPPORTED );
 								const Utils::TSplitButtonAction resolveActions[]={
 									{ 0, onlyPartlyRecoverable?_T("Resolve partly"):_T("Resolve") }, // 0 = no default action
 									{ RESOLVE_EXCLUDE_ID, _T("Exclude from track\tCtrl+X") },
@@ -536,7 +537,8 @@
 									{ ID_COMPUTE_CHECKSUM, _T("Fix Data CRCs for all empty or bad sectors"), MF_GRAYED*( rFdcStatus.DescribesMissingDam() || rFdcStatus.DescribesMissingId() || !rFdcStatus.DescribesDataFieldCrcError() || !dp.source->dos->IsSectorStatusBadOrEmpty(rp.chs) ) }, // disabled if the Data CRC ok
 									{ ID_RECOVER, _T("Fix ID or Data...\tCtrl+F"), MF_GRAYED*( rFdcStatus.DescribesMissingDam() || rFdcStatus.DescribesMissingId() || !rFdcStatus.DescribesIdFieldCrcError()&&!rFdcStatus.DescribesDataFieldCrcError() ) }, // enabled only if either ID or Data field with error
 									Utils::TSplitButtonAction::HorizontalLine,
-									{ ID_TIME, _T("Mine track...\tCtrl+M"), MF_GRAYED*!( dp.source->MineTrack(TPhysicalAddress::Invalid.cylinder,TPhysicalAddress::Invalid.head)!=ERROR_NOT_SUPPORTED ) }
+									{ ID_AUTO, _T("Mine track (auto-start last config)...\tCtrl+S"), miningMenuFlags },
+									{ ID_TIME, _T("Mine track...\tCtrl+M"), miningMenuFlags }
 								};
 								ConvertDlgButtonToSplitButton( IDNO, resolveActions, &pLastAccel );
 								//EnableDlgItem( IDNO, dynamic_cast<CImageRaw *>(dp.target.get())==nullptr ); // recovering errors is allowed only if the Target Image can accept them
@@ -591,7 +593,7 @@
 								// window procedure
 								switch (msg){
 									case WM_COMMAND:
-										switch (LOWORD(wParam)){
+										switch (const WORD id=LOWORD(wParam)){
 											case ID_HEAD:{
 												TStdWinError err;
 												if (!( err=dp.source->SeekHeadsHome() ))
@@ -636,7 +638,7 @@
 												if (!ConfirmLowLevelTrackModifications())
 													return 0;
 												rp.modification.dataCrc=true;
-												rp.modification.dataCrcEmptyOrBadAutofix|=LOWORD(wParam)==ID_COMPUTE_CHECKSUM;
+												rp.modification.dataCrcEmptyOrBadAutofix|=id==ID_COMPUTE_CHECKSUM;
 												UpdateData(TRUE);
 												EndDialog(ACCEPT_ERROR_ID);
 												return 0;
@@ -745,10 +747,11 @@
 												}
 												break;
 											}
+											case ID_AUTO:
 											case ID_TIME:{
 												// Track mining
 												const Utils::CVarTempReset<bool> tempDisabledBeeping( Utils::CRideDialog::BeepWhenShowed, false );
-												if (ERROR_SUCCESS==dp.source->MineTrack( rp.chs.cylinder, rp.chs.head )){
+												if (ERROR_SUCCESS==dp.source->MineTrack( rp.chs.cylinder, rp.chs.head, id==ID_AUTO )){
 													UpdateData(TRUE);
 													rp.trackScanned=false;
 													EndDialog(IDRETRY);
