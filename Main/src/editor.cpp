@@ -693,6 +693,8 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			// list of Filters consists of all recognizable Images
 			// . all known Images
 			a+=_stprintf( a, _T("All known images|") );
+			if (const LPCTSTR pInputExt=::StrRChr(fileName,nullptr,'.'))
+				a+=::wsprintf( a, _T("%s;"), pInputExt ); // extension in the input FileName is the default
 			for( POSITION pos=CImage::Known.GetHeadPosition(); pos; )
 				a+=_stprintf( a, _T("%s;"), CImage::Known.GetNext(pos)->filter );
 			*(a-1)='|'; // replacing semicolon with pipe '|'
