@@ -66,7 +66,7 @@
 			, canCalibrateSourceHeads( source->SeekHeadsHome()==ERROR_SUCCESS )
 			, sourceSupportsTrackReading( source->WriteTrack(0,0,CImage::CTrackReaderWriter::Invalid)!=ERROR_NOT_SUPPORTED )
 			, formatJustBadTracks(false)
-			, requireAllStdSectorDataPresent( source->properties->IsRealDevice() && dos->IsKnown() )
+			, requireAllStdSectorDataPresent( dos->IsKnown() )
 			, fullTrackAnalysis( source->ReadTrack(0,0) ) // if the Source provides access to low-level recording, let's also do the FullTrackAnalysis
 			, beepOnError( source->properties->IsRealDevice() )
 			, fillerByte(dos->properties->sectorFillerByte)
