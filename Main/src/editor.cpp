@@ -215,7 +215,7 @@
 		CImage::Devices.AddTail( &CGreaseweazleV4::Properties );
 		CImage::Devices.AddTail( &CKryoFluxDevice::Properties );
 		#ifdef _DEBUG
-			CImage::Devices.AddTail( &CDsk5::CDummyDevice::Properties );
+			//CImage::Devices.AddTail( &CDsk5::CDummyDevice::Properties );
 		#endif
 		CDos::Known.AddTail( &CBSDOS308::Properties );
 		CDos::Known.AddTail( &CGDOS::Properties );

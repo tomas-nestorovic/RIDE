@@ -70,13 +70,6 @@
 		void __freeAllTracks__();
 		TStdWinError SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap) override;
 	public:
-		class CDummyDevice sealed{
-			static LPCTSTR Recognize(PTCHAR deviceNameList);
-			static PImage Instantiate(LPCTSTR deviceName);
-		public:
-			static const TProperties Properties;
-		};
-
 		static const TProperties Properties;
 
 		~CDsk5();
