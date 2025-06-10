@@ -1058,10 +1058,7 @@
 				// . defining the Dialog
 				class CLongFileNamesRemovalDialog sealed:public CDialog{
 					void DoDataExchange(CDataExchange *pDX) override{
-						if (pDX->m_bSaveAndValidate)
-							DDX_Radio( pDX, ID_DIRECTORY, dirDepth );
-						else
-							CheckDlgButton( ID_DIRECTORY, BST_CHECKED );
+						DDX_Radio( pDX, ID_DIRECTORY, dirDepth );
 					}
 				public:
 					int dirDepth;

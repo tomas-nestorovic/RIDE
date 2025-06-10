@@ -1176,7 +1176,7 @@ setDestination:						// : compacting FileName in order to be better displayable 
 										SelectDlgComboBoxValue( ID_MEDIUM, mt );
 									// : automatically ticking the "Real-time thread priority" check-box if either the source or the target is a real drive
 									if (dos->image->properties->IsRealDevice() || targetImageProperties->IsRealDevice())
-										SendDlgItemMessage( ID_PRIORITY, BM_SETCHECK, BST_CHECKED );
+										CheckDlgItem(ID_PRIORITY);
 									//fallthrough
 								}else{
 									::lstrcpy( dumpParams.targetFileName, targetFileNameOrg );
