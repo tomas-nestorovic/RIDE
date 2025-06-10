@@ -464,7 +464,6 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 									const BOOL result=__super::OnInitDialog();
 									// : supplying available actions
 									AddHelpButton( ID_SIZE, _T("Which version of DSK image should I prefer?") );
-									AddHelpButton( ID_FORMAT, _T("How do I merge two images? What is a \"patch\"?") );
 									AddCancelButton( MSG_HELP_CANCEL );
 									return result;
 								}
@@ -478,9 +477,6 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 							switch (d.DoModal()){
 								case ID_SIZE:
 									Utils::NavigateToFaqInDefaultBrowser( _T("dsk") );
-									break;
-								case ID_FORMAT:
-									Utils::NavigateToFaqInDefaultBrowser( _T("patch") );
 									break;
 							}
 						}

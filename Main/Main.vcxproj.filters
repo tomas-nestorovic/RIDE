@@ -266,9 +266,6 @@
     <ClCompile Include="src\ImageRaw.cpp">
       <Filter>Source Files\Image</Filter>
     </ClCompile>
-    <ClCompile Include="src\Image_Patch.cpp">
-      <Filter>Source Files\Image</Filter>
-    </ClCompile>
     <ClCompile Include="src\Image_Dump.cpp">
       <Filter>Source Files\Image</Filter>
     </ClCompile>

@@ -872,9 +872,6 @@ namespace Medium{
 					case ID_IMAGE_DUMP:
 						((CCmdUI *)pExtra)->Enable(TRUE);
 						return TRUE;
-					case ID_IMAGE_PATCH:
-						((CCmdUI *)pExtra)->Enable( dos->formatBoot.mediumType&Medium::FLOPPY_ANY );
-						return TRUE;
 				}
 				break;
 			case CN_COMMAND:
@@ -904,12 +901,6 @@ namespace Medium{
 						return TRUE;
 					case ID_IMAGE_DUMP:
 						Dump();
-						return TRUE;
-					case ID_IMAGE_PATCH:
-						if (!ReportWriteProtection()){
-							Patch();
-							UpdateAllViews(nullptr,0,nullptr);
-						}
 						return TRUE;
 					case ID_IMAGE_BROWSE:
 						CDiskBrowserView::CreateAndSwitchToTab( CImage::GetActive(), TPhysicalAddress::Invalid, 0 );

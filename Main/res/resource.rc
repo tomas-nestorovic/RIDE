@@ -255,7 +255,6 @@ BEGIN
         MENUITEM "Recognition...",              ID_RECOGNIZE
         MENUITEM SEPARATOR
         MENUITEM "&Dump...",                    ID_IMAGE_DUMP, GRAYED
-        MENUITEM "Apply &patch...",             ID_IMAGE_PATCH, GRAYED
         MENUITEM "Browse sectors",              ID_IMAGE_BROWSE, GRAYED
         MENUITEM SEPARATOR
         MENUITEM "&Write protected\tCtrl+W",    ID_IMAGE_PROTECT
@@ -1462,27 +1461,25 @@ BEGIN
                     WS_VISIBLE | WS_TABSTOP,7,18,259,10
 END
 
-IDR_DSK_TYPE DIALOG DISCARDABLE  0, 0, 146, 111
+IDR_DSK_TYPE DIALOG DISCARDABLE  0, 0, 146, 98
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
 CAPTION "DSK image settings"
 BEGIN
-    DEFPUSHBUTTON   "OK",IDOK,63,90,40,14
-    PUSHBUTTON      "Cancel",IDCANCEL,107,90,32,14
+    DEFPUSHBUTTON   "OK",IDOK,63,77,40,14
+    PUSHBUTTON      "Cancel",IDCANCEL,107,77,32,14
     CONTROL         "<a id=""ID_HELP"">Need help?</a>",ID_HELP_INDEX,"SysLink",
-                    WS_TABSTOP,7,93,45,11
+                    WS_TABSTOP,7,80,45,11
     LTEXT           "Type:",IDC_STATIC,7,7,19,8
     CONTROL         "&Standard",ID_STANDARD,"Button",BS_AUTORADIOBUTTON | 
                     WS_GROUP,39,7,45,10
     CONTROL         "&Revision 5 (recommended)",ID_DRIVE,"Button",
                     BS_AUTORADIOBUTTON,39,20,100,10
-    CONTROL         "&Patch",ID_PROTECTED,"Button",BS_AUTORADIOBUTTON,39,33,
-                    35,10
-    LTEXT           "&Creator:",IDC_STATIC,7,49,26,8
-    COMBOBOX        ID_CREATOR,39,48,100,67,CBS_DROPDOWN | WS_VSCROLL | 
+    LTEXT           "&Creator:",IDC_STATIC,7,36,26,8
+    COMBOBOX        ID_CREATOR,39,35,100,67,CBS_DROPDOWN | WS_VSCROLL | 
                     WS_TABSTOP
-    LTEXT           "Other:",IDC_STATIC,7,67,20,8
+    LTEXT           "Other:",IDC_STATIC,7,54,20,8
     CONTROL         "Preserve &empty tail tracks",ID_TRACK,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,39,67,97,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,39,54,97,10
 END
 
 IDR_IMAGE_DUMP_ERROR DIALOG DISCARDABLE  0, 0, 467, 280
@@ -1606,37 +1603,6 @@ BEGIN
     EDITTEXT        ID_DATAFIELD_FILLERBYTE,25,150,78,15,ES_AUTOHSCROLL | 
                     ES_NUMBER
     PUSHBUTTON      "System default",ID_DEFAULT2,105,150,77,14
-END
-
-IDR_IMAGE_PATCH DIALOGEX 0, 0, 201, 153
-STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
-CAPTION "Patch image"
-BEGIN
-    DEFPUSHBUTTON   "Patch",IDOK,90,132,50,14,WS_DISABLED
-    PUSHBUTTON      "Cancel",IDCANCEL,144,132,50,14
-    CONTROL         "<a id=""ID_HELP"">Need help?</a>",ID_HELP_INDEX,"SysLink",
-                    WS_TABSTOP,7,135,66,11
-    LTEXT           "&Source:",IDC_STATIC,7,9,26,8,NOT WS_GROUP
-    PUSHBUTTON      "",ID_FILE,43,7,151,13,BS_FLAT
-    LTEXT           "Cylinders:",IDC_STATIC,7,27,31,8,NOT WS_GROUP
-    LTEXT           "&From:",IDC_STATIC,43,27,18,8,NOT WS_GROUP
-    EDITTEXT        ID_CYLINDER,84,26,40,12,ES_AUTOHSCROLL | ES_NUMBER | 
-                    WS_DISABLED | NOT WS_BORDER,WS_EX_STATICEDGE
-    LTEXT           "&To:",IDC_STATIC,43,41,12,8,NOT WS_GROUP
-    EDITTEXT        ID_CYLINDER_N,84,40,40,12,ES_AUTOHSCROLL | WS_DISABLED | 
-                    NOT WS_BORDER,WS_EX_STATICEDGE
-    LTEXT           "&Heads:",IDC_STATIC,7,59,24,8,NOT WS_GROUP
-    EDITTEXT        ID_HEAD,84,57,40,12,ES_AUTOHSCROLL | ES_NUMBER | 
-                    WS_DISABLED | NOT WS_BORDER,WS_EX_STATICEDGE
-    LTEXT           "Sectors:",IDC_STATIC,7,76,27,8,NOT WS_GROUP
-    LTEXT           "&Gap3:",IDC_STATIC,43,76,20,8,NOT WS_GROUP
-    EDITTEXT        ID_GAP,84,75,40,12,ES_AUTOHSCROLL | ES_NUMBER | 
-                    WS_DISABLED | NOT WS_BORDER,WS_EX_STATICEDGE
-    CONTROL         "Skip &empty tracks in patch file",ID_TRACK,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,96,110,10
-    CONTROL         "Real-time thread &priority (normal priority if unchecked)",
-                    ID_PRIORITY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,107,
-                    187,10
 END
 
 IDR_DOS_PROPGRID_HEXAEDITOR DIALOG DISCARDABLE  0, 0, 426, 89
@@ -2192,7 +2158,7 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 139
         TOPMARGIN, 7
-        BOTTOMMARGIN, 104
+        BOTTOMMARGIN, 91
     END
 
     IDR_IMAGE_DUMP_ERROR, DIALOG
@@ -2225,14 +2191,6 @@ BEGIN
         RIGHTMARGIN, 193
         TOPMARGIN, 7
         BOTTOMMARGIN, 197
-    END
-
-    IDR_IMAGE_PATCH, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 194
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 146
     END
 
     IDR_DOS_PROPGRID_HEXAEDITOR, DIALOG
@@ -2531,7 +2489,6 @@ STRINGTABLE DISCARDABLE
 BEGIN
     ID_TAPE_CLOSE           "Eject inserted tape"
     ID_IMAGE_DUMP           "Duplicate content to a different medium"
-    ID_IMAGE_PATCH          "Apply existing patch to the disk content (only floppies can be patched)"
     ID_IMAGE_PROTECT        "Toggle the write protection on and off\nWrite protection"
     ID_IMAGE_BROWSE         "Show sector data in hexa-mode"
     ID_IMAGE_SETTINGS       "Disk and drive options\nDisk and drive options"

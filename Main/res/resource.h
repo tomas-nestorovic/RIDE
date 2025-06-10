@@ -35,7 +35,6 @@
 #define IDR_FDD_LATENCY                 181
 #define IDR_WEBPAGE                     183
 #define IDR_IMAGE_DUMP_ERROR_RESOLUTION 185
-#define IDR_IMAGE_PATCH                 186
 #define IDR_DOS_PROPGRID_HEXAEDITOR     188
 #define IDR_DOS_RECOGNITION             189
 #define IDR_SPECTRUM_PREVIEW_BASIC      193
@@ -197,7 +196,6 @@
 #define ID_HELP_FAQ                     40139
 #define ID_TAPE_CLOSE                   40147
 #define ID_IMAGE_DUMP                   40148
-#define ID_IMAGE_PATCH                  40149
 #define ID_IMAGE_PROTECT                40150
 #define ID_IMAGE_BROWSE                 40151
 #define ID_IMAGE_SETTINGS               40152
