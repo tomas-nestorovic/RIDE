@@ -9,7 +9,9 @@
 		OCCUPIED,
 		RESERVED,	// e.g. zero-length File in MDOS, or File with error during importing
 		EMPTY,		// reported as unallocated
-		UNKNOWN		// any Sector whose ID doesn't match any ID from the standard format, e.g. ID={2,1,0,3} for an MDOS Sector
+		UNKNOWN_STD,// officially "Unknown" (e.g. BSDOS 'TFatValue::SectorUnknown')
+		UNKNOWN,	// any Sector whose ID doesn't match any ID from the standard format, e.g. ID={2,1,0,3} for an MDOS Sector
+		LAST
 	} *PSectorStatus;
 
 	#define TRACK_MAP_TAB_LABEL	_T("Track map")
@@ -41,7 +43,7 @@
 			DATA_OK_ONLY=ID_TRACKMAP_DATA,
 			DATA_ALL	=ID_TRACKMAP_BAD_DATA
 		} displayType;
-		HBRUSH statusBrushes[TSectorStatus::UNKNOWN+1];
+		HBRUSH statusBrushes[TSectorStatus::LAST];
 		HBRUSH rainbowBrushes[TRACK_MAP_COLORS_COUNT];
 		struct TTrackScanner sealed{
 			static UINT AFX_CDECL Thread(PVOID _pBackgroundAction);

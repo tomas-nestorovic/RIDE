@@ -498,6 +498,7 @@
 			0xffcc99, // OCCUPIED
 			0xffff99, // RESERVED
 			0xffffff, // EMPTY
+			0x00ffff, // UNKNOWN_STD
 			0x00ffff  // UNKNOWN
 		};
 		static_assert( ARRAYSIZE(StatusColors)==ARRAYSIZE(statusBrushes), "" );
@@ -901,6 +902,7 @@
 						case TSectorStatus::EMPTY		:rsp.sectors.nFree++; break;
 						case TSectorStatus::SKIPPED	:
 						case TSectorStatus::UNAVAILABLE:rsp.sectors.nInaccessible++; break;
+						case TSectorStatus::UNKNOWN_STD:
 						case TSectorStatus::UNKNOWN	:rsp.sectors.nUnknown++; break;
 						#ifdef _DEBUG
 							default: ASSERT(FALSE); // unknown Status

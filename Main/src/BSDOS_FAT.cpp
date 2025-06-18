@@ -119,7 +119,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 								*buffer++=TSectorStatus::BAD;
 								break;
 							case TFatValue::SectorUnknown:
-								*buffer++=TSectorStatus::UNKNOWN;
+								*buffer++=TSectorStatus::UNKNOWN_STD;
 								break;
 							default:
 								// . if Sector is reported Empty, we are done
@@ -192,6 +192,7 @@ systemSector:			*buffer++=TSectorStatus::SYSTEM; // ... are always reserved for 
 			case TSectorStatus::UNAVAILABLE	: value=TFatValue::SectorUnavailable; break;
 			case TSectorStatus::BAD			: value=TFatValue::SectorErrorInDataField; break;
 			case TSectorStatus::EMPTY		: value=TFatValue::SectorEmpty; break;
+			case TSectorStatus::UNKNOWN_STD	:
 			case TSectorStatus::UNKNOWN		: value=TFatValue::SectorUnknown; break;
 			default:
 				ASSERT(FALSE);
