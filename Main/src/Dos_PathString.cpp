@@ -127,6 +127,11 @@
 		return Compare( other, ::StrCmpNIW );
 	}
 
+	bool CDos::CPathString::HasExtensionI(LPCTSTR dotExtension) const{
+		// True <=> the string ends with DotExtension, otherwise False
+		return !::lstrcmpi( FindLastDot(), dotExtension );
+	}
+
 	CDos::CPathString CDos::CPathString::GetTail(TCHAR fromLast) const{
 		// returns substring from last occurence of specified Character, excluding this character, but preserving any non-printables characters (e.g. Null characters)
 		CPathString tail;

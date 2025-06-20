@@ -511,6 +511,7 @@
 				union{
 					BYTE b;
 					DWORD dw;
+					int i;
 					char lpszMetaString[sizeof(DWORD)]; // textual description of a ParseEvent event
 				};
 

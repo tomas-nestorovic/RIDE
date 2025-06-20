@@ -176,7 +176,7 @@ using namespace Charting;
 											for( const TLogTime dt=ti.tStart-pe.data->tStart; bis[i].dtStart<dt; i++ ); // skip invisible part
 											const int fullBiLineHeight=rcLabel.bottom-te.timeline.font.charHeight;
 											rcLabel.top=fullBiLineHeight-byteInfoSizeMin.cy, rcLabel.bottom=-EVENT_HEIGHT+Utils::CRideFont::Small.charHeight;
-											while (continuePainting && i<pe->dw){ // draw visible part
+											while (continuePainting && i<pe->i){ // draw visible part
 												const auto &bi=bis[i];
 												const TLogTime tByteStart=pe.data->GetByteTime(i);
 												if (ti.tEnd<tByteStart) // past the visible part?

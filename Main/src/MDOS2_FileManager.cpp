@@ -202,8 +202,7 @@
 	TStdWinError CMDOS2::CMdos2FileManagerView::ImportPhysicalFile(RCPathString shellName,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution){
 		// dragged cursor released above window
 		// - if the File "looks like an MDOS-File-Commander archivation file", confirming its import by the user
-		if (const LPCTSTR extension=shellName.FindLastDot()){ // has an Extension
-			if (!::lstrcmpi( extension, _T(".d_0") )){ // has correct Extension
+			if (shellName.HasExtensionI( _T(".d_0") )){
 				#pragma pack(1)
 				struct{
 					BYTE version;
@@ -317,7 +316,6 @@
 						}
 					}
 			}
-		}
 		// - importing the File
 		return __super::ImportPhysicalFile( shellName, rImportedFile, rConflictedSiblingResolution );
 	}

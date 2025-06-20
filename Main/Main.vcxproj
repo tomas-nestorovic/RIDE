@@ -105,7 +105,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>comctl32.lib;shlwapi.lib;msimg32.lib;wininet.lib;msxml6.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;shlwapi.lib;msimg32.lib;wininet.lib;msxml6.lib;lz32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize>2500000</StackReserveSize>
     </Link>
   </ItemDefinitionGroup>
@@ -299,7 +299,6 @@
     <ClCompile Include="src\ImageFloppy.cpp" />
     <ClCompile Include="src\ImageRaw.cpp" />
     <ClCompile Include="src\Image_Dump.cpp" />
-    <ClCompile Include="src\Image_Patch.cpp" />
     <ClCompile Include="src\MDOS2.cpp" />
     <ClCompile Include="src\MDOS2_Boot.cpp" />
     <ClCompile Include="src\MDOS2_GKFM.cpp" />

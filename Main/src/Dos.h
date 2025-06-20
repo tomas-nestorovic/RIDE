@@ -71,6 +71,7 @@
 			int Compare(const CPathString &other) const;
 			int CompareI(const CPathString &other) const;
 			inline CPathString GetFileName() const{ return GetTail('\\'); }
+			bool HasExtensionI(LPCTSTR dotExtension) const;
 			CPathString GetQuoted() const;
 			CPathString DetachExtension();
 			CPathString &Prepend(LPCTSTR lpsz);

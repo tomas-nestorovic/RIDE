@@ -65,8 +65,7 @@
 	TStdWinError CSpectrumDos::CSpectrumFileManagerView::ImportPhysicalFile(RCPathString shellName,CDos::PFile &rImportedFile,DWORD &rConflictedSiblingResolution){
 		// dragged cursor released above window
 		// - if the File "looks like an Tape Image", confirming its import by the user
-		if (const LPCTSTR extension=shellName.FindLastDot()){
-			if (!::lstrcmpi( extension, _T(".tap") )){
+			if (shellName.HasExtensionI(_T(".tap"))){
 				// . defining the Dialog
 				static constexpr Utils::CSimpleCommandDialog::TCmdButtonInfo CmdButtons[]={
 					{ IDYES, _T("Open it in a new tab (recommended)") },
@@ -98,7 +97,6 @@
 						return ERROR_CANCELLED;
 				}
 			}
-		}
 		// - importing the File
 		return __super::ImportPhysicalFile( shellName, rImportedFile, rConflictedSiblingResolution );
 	}
