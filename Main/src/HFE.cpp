@@ -177,8 +177,10 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		if (f.Read( cylInfos, nCylInfoBytes )!=nCylInfoBytes)
 			goto formatError;
 		// - adopting geometry from the Header
-		if (header.nCylinders)
-			capsImageInfo.maxcylinder = capsImageInfo.maxcylinderOrg = header.nCylinders-1; // inclusive!
+		if (header.nCylinders){
+			capsImageInfo.maxcylinderOrg=header.nCylinders-1; // inclusive!
+			capsImageInfo.maxcylinder=std::min( capsImageInfo.maxcylinderOrg, (UDWORD)(FDD_CYLINDERS_MAX-1) ); // inclusive! - correct # of Cylinders
+		}
 		if (header.nHeads)
 			capsImageInfo.maxhead=header.nHeads-1; // inclusive!
 		// - confirming initial settings
