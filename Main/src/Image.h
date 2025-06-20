@@ -364,6 +364,7 @@
 			CString report;
 			void HyperlinkClicked(LPCWSTR id) const override;
 		public:
+			static CString CreateListItemIfUnsupported(TCylinder nCyls,TCylinder nCylsMax=FDD_CYLINDERS_MAX);
 			CUnsupportedFeaturesMessageBar();
 			void Show(const CString &report);
 		} unsupportedFeaturesMessageBar;

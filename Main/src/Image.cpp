@@ -691,6 +691,13 @@ namespace Medium{
 		: CMainWindow::CMessageBar( _T("The image contains <a>features currently not supported</a> by ") APP_ABBREVIATION _T(".") ) {
 	}
 
+	CString CImage::CUnsupportedFeaturesMessageBar::CreateListItemIfUnsupported(TCylinder nCyls,TCylinder nCylsMax){
+		CString item;
+		if (nCyls>=nCylsMax) // # of Cylinders exceeds supported limit
+			item.Format( _T("- disk contains %d cylinders, ") _T(APP_ABBREVIATION) _T(" shows just first %d of them\n"), nCyls, nCylsMax );
+		return item;
+	}
+
 	void CImage::CUnsupportedFeaturesMessageBar::HyperlinkClicked(LPCWSTR id) const{
 		Utils::Information(report);
 	}
