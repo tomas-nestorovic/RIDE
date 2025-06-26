@@ -1159,7 +1159,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 				if (SetDataTransferSpeed( (Medium::TType)type )) // error?
 					continue;
 				const Utils::CVarTempReset<PInternalTrack> pit0( internalTracks[cyl][0], nullptr ); // forcing a new scan
-				if (WORD score= internalTracks[cyl][0]->sectors.length + 32*GetCountOfHealthySectors(cyl,0)){
+				if (WORD score= ScanTrack(cyl,0) + 32*GetCountOfHealthySectors(cyl,0)){
 					if (Medium::GetProperties( (Medium::TType)type )->IsAcceptableRevolutionTime(avgIndexDistance))
 						score|=0x8000;
 					if (score>highestScore)
