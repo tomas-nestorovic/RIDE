@@ -109,7 +109,7 @@
 				source->GetInsertedMediumType( 0, srcMediumType );
 				if (srcMediumType==Medium::UNKNOWN)
 					srcMediumType=dos->formatBoot.mediumType;
-				Utils::WriteToFileFormatted( fHtml, _T("<h3>Configuration</h3><table><tr><th><a href=\"%s\">") _T(APP_ABBREVIATION) _T("</a><sup>[1]</sup> version:</th><td>") _T(APP_VERSION) _T("</td></tr><tr><th>System:</th><td>%s</td></tr><tr><th>Source<sup>[2]</sup>:</th><td>%s<br>via<br>%s</td></tr><tr><th>Target<sup>[3]</sup>:</th><td>%s<br>via<br>%s</td></tr><tr><th>Cylinders:</th><td>%d &#8211; %d (%s)</td></tr><tr><th>Heads:</th><td>0 &#8211; %d (%s)</td></tr><tr><th>Full track analysis:</th><td>%s</td></tr><tr><th>Real-time priority:</th><td>%s</td></tr></table><br>"), GITHUB_REPOSITORY, dos->properties->name, Medium::GetDescription(srcMediumType), source->GetPathName().GetLength()?source->GetPathName():_T("N/A"), Medium::GetDescription(mediumType), target->GetPathName().GetLength()?target->GetPathName():_T("N/A"), cylinderA,cylinderZ,cylinderA!=cylinderZ?_T("incl."):_T("single cylinder"), nHeads-1,nHeads>1?_T("incl."):_T("single head"), fullTrackAnalysis?_T("On"):_T("Off"), realtimePriority?_T("On"):_T("Off") );
+				Utils::WriteToFileFormatted( fHtml, _T("<h3>Configuration</h3><table><tr><th><a href=\"%s\">") _T(APP_ABBREVIATION) _T("</a><sup>[1]</sup> version:</th><td>") _T(APP_VERSION) _T("</td></tr><tr><th>System:<sup>[2]</sup></th><td>%s</td></tr><tr><th>Source:<sup>[3]</sup></th><td>%s<br>via<br>%s</td></tr><tr><th>Target:<sup>[4]</sup></th><td>%s<br>via<br>%s</td></tr><tr><th>Cylinders:</th><td>%d &#8211; %d (%s)</td></tr><tr><th>Heads:</th><td>0 &#8211; %d (%s)</td></tr><tr><th>Full track analysis:</th><td>%s</td></tr><tr><th>Real-time priority:</th><td>%s</td></tr></table><br>"), GITHUB_REPOSITORY, dos->properties->name, Medium::GetDescription(srcMediumType), source->GetPathName().GetLength()?source->GetPathName():_T("N/A"), Medium::GetDescription(mediumType), target->GetPathName().GetLength()?target->GetPathName():_T("N/A"), cylinderA,cylinderZ,cylinderA!=cylinderZ?_T("incl."):_T("single cylinder"), nHeads-1,nHeads>1?_T("incl."):_T("single head"), fullTrackAnalysis?_T("On"):_T("Off"), realtimePriority?_T("On"):_T("Off") );
 				Utils::WriteToFile(fHtml,_T("<h3>Overview</h3>"));
 					Utils::WriteToFileFormatted( fHtml, _T("<p>Duration: %d.%03d seconds (%02d:%02d:%02d.%03d).</p>"), div(duration.ToMilliseconds(),1000), duration.wHour, duration.wMinute, duration.wSecond, duration.wMilliseconds );
 					Utils::WriteToFileFormatted( fHtml, _T("<p>Date finished: %s.</p>"), (LPCTSTR)Utils::CRideTime().DateToStdString() );
@@ -208,9 +208,12 @@
 						Utils::WriteToFile(fHtml,_T("</table>"));
 					}else
 						Utils::WriteToFile(fHtml,_T("None."));
-				CImage::CSettings srcSettings, trgSettings;
+				CImage::CSettings srcSettings, trgSettings, dosSettings;
 				source->EnumSettings(srcSettings), target->EnumSettings(trgSettings);
-				Utils::WriteToFileFormatted( fHtml, _T("<h3>Notes</h3><ol><li><p>%s</p></li><li><p>%s</p></li><li><p>%s</p></li></ol>"), GITHUB_REPOSITORY, SettingsToHtml(srcSettings), SettingsToHtml(trgSettings) );
+				TCHAR strFormat[80];
+				::wsprintf( strFormat, _T("%i &times; %i &times; %i &times; %i"), dos->formatBoot.nCylinders, dos->formatBoot.nHeads, dos->formatBoot.nSectors, dos->formatBoot.sectorLength );
+				dosSettings.SetAt( _T("recognized format"), dos->IsKnown()?strFormat:_T("None") );
+				Utils::WriteToFileFormatted( fHtml, _T("<h3>Notes</h3><ol><li><p>%s</p></li><li><p>%s</p></li><li><p>%s</p></li><li><p>%s</p></li></ol>"), GITHUB_REPOSITORY, SettingsToHtml(dosSettings), SettingsToHtml(srcSettings), SettingsToHtml(trgSettings) );
 			Utils::WriteToFile(fHtml,_T("</body></html>"));
 		}
 	};
