@@ -460,6 +460,7 @@
 		virtual bool UpdateCommandUi(WORD cmd,CCmdUI *pCmdUI) const;
 		virtual void InitializeEmptyMedium(CFormatDialog::PCParameters params,CActionProgress &ap)=0;
 		virtual bool ValidateFormatChangeAndReportProblem(bool considerBoot,bool considerFat,RCFormat f) const;
+		virtual bool ChangeFormat(bool considerBoot,bool considerFat,RCFormat f);
 		void ShowFileProcessingError(PCFile file,LPCTSTR cause) const;
 		void ShowFileProcessingError(PCFile file,TStdWinError cause) const;
 		virtual bool CanBeShutDown(CFrameWnd* pFrame) const;

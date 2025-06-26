@@ -63,6 +63,8 @@
 			if (!dos->ValidateFormatChangeAndReportProblem(true,true,fmt))
 				return false;
 			// . accepting the new format
+			if (!dos->ChangeFormat( true, true, fmt ))
+				return false;
 			dos->formatBoot=fmt;
 			dos->FlushToBootSector();
 			dos->image->UpdateAllViews(nullptr);
@@ -90,6 +92,8 @@
 		if (!dos->ValidateFormatChangeAndReportProblem(true,true,fmt))
 			return false;
 		// - adding to or removing from FAT
+		if (!dos->ChangeFormat( true, true, fmt ))
+			return false;
 		TCHAR bufMsg[500];
 		if (newValue>nCyl0){
 			// adding Cylinders to FAT

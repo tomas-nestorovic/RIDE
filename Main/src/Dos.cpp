@@ -113,6 +113,11 @@ reportError:Utils::Information(buf);
 			return true;
 	}
 
+	bool CDos::ChangeFormat(bool considerBoot,bool considerFat,RCFormat f){
+		// True <=> specified Format is acceptable, otherwise False (and informing on error)
+		return ValidateFormatChangeAndReportProblem( considerBoot, considerFat, f );
+	}
+
 	TCylinder CDos::GetLastOccupiedStdCylinder() const{
 		// finds and returns number of the last (at least partially) occupied Cylinder (0..N-1)
 		TSectorId bufferId[(TSector)-1];

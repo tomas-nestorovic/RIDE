@@ -1058,8 +1058,8 @@
 			// . briefly checking the state of FATs
 			#define MSG_MAIN		_T("Can't change disk format")
 			#define MSG_SUGGESTION	_T("Run disk verification and try again.")
-			TDirectoryEntry deFats[]={ TDirectoryEntry(this,bootSector->fatStarts[0]), TDirectoryEntry(this,bootSector->fatStarts[1]) };
-			CFatPath fats[]={ std::move(CFatPath(this,&deFats[0])), std::move(CFatPath(this,&deFats[1])) };
+			const TDirectoryEntry deFats[]={ TDirectoryEntry(this,bootSector->fatStarts[0]), TDirectoryEntry(this,bootSector->fatStarts[1]) };
+			const CFatPath fats[]={ std::move(CFatPath(this,&deFats[0])), std::move(CFatPath(this,&deFats[1])) };
 			if (fats[0].GetNumberOfItems()!=fats[1].GetNumberOfItems()
 				||
 				bootSector->fatStarts[0]>=BSDOS_FAT_LOGSECTOR_MAX || bootSector->fatStarts[1]>=BSDOS_FAT_LOGSECTOR_MAX
@@ -1073,10 +1073,27 @@
 				Utils::Information(MSG_MAIN,_T("FATs are not identical"),MSG_SUGGESTION);
 				return false;
 			}
+		}//else
+			// the new Format shouldn't be officially adopted in FAT (e.g. formatting from scratch a yet empty disk)
+			//nop
+		// - new Format is acceptable
+		return true;
+	}
+
+	bool CBSDOS308::ChangeFormat(bool considerBoot,bool considerFat,RCFormat f){
+		// True <=> specified Format is acceptable, otherwise False (and informing on error)
+		// - base
+		if (!__super::ChangeFormat( considerBoot, considerFat, f ))
+			return false;
+		if (considerFat){
+			// the new Format should affect --existing-- FAT
 			// . collecting information for the upcoming Format change
+			const PBootSector bootSector=boot.GetSectorData(); // guaranteed to be found, otherwise '__super' would return False
 			const auto nNewSectorsTotal=f.GetCountOfAllSectors();
 			const WORD nNewFatSectors=Utils::RoundDivUp( nNewSectorsTotal, (DWORD)BSDOS_FAT_ITEMS_PER_SECTOR );
 			// . adjusting the FAT
+			TDirectoryEntry deFats[]={ TDirectoryEntry(this,bootSector->fatStarts[0]), TDirectoryEntry(this,bootSector->fatStarts[1]) };
+			CFatPath fats[]={ std::move(CFatPath(this,&deFats[0])), std::move(CFatPath(this,&deFats[1])) };
 			deFats[0].file.dataLength = deFats[1].file.dataLength = nNewFatSectors*BSDOS_SECTOR_LENGTH_STD;
 			if (nNewFatSectors<bootSector->nSectorsPerFat)
 				// new FAT is shorter than the original one
@@ -1123,7 +1140,7 @@
 		}//else
 			// the new Format shouldn't be officially adopted in FAT (e.g. formatting from scratch a yet empty disk)
 			//nop
-		// - new Format is acceptable
+		// - new Format has been adopted
 		return true;
 	}
 

@@ -38,18 +38,21 @@
 		// thread to remove std cylinders optionally from boot and FAT
 		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
 		const CUnformatDialog &d=*(CUnformatDialog *)pAction->GetParams();
+		TFormat fmt=d.DOS->formatBoot;
+		if (fmt.nCylinders<=1+d.params.cylZInclusive)
+			fmt.nCylinders=std::min( fmt.nCylinders, d.params.cylA );
 		pAction->SetProgressTarget(200);
-		if (d.updateBoot){
-			// requested to update Format in Boot Sector
-			TCylinder &r=d.DOS->formatBoot.nCylinders;
-			if (1+d.params.cylZInclusive>=r)
-				r=std::min( r, d.params.cylA );
-			d.DOS->FlushToBootSector();
-		}
-		pAction->IncrementProgress(100);
-		if (d.removeTracksFromFat)
+		if (d.removeTracksFromFat){
 			// requested to include newly formatted Tracks into FAT
 			d.DOS->RemoveStdCylindersFromFat( d.params.cylA, d.params.cylZInclusive, pAction->CreateSubactionProgress(100) ); // no error checking as its assumed that some Cylinders couldn't be marked in (eventually shrunk) FAT as Unavailable
+			d.DOS->ChangeFormat( d.updateBoot&&d.params.cylA>0, d.removeTracksFromFat&&d.params.cylA>0, fmt );
+		}
+		pAction->UpdateProgress(100);
+		if (d.updateBoot){
+			// requested to update Format in Boot Sector
+			d.DOS->formatBoot=fmt;
+			d.DOS->FlushToBootSector();
+		}
 		pAction->IncrementProgress(100);
 		return pAction->TerminateWithSuccess();
 	}
